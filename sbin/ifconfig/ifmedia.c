@@ -90,6 +90,13 @@
 
 #include "ifconfig.h"
 
+#define	A_MEDIA			0x0001		/* media command */
+#define	A_MEDIAOPTSET	0x0002		/* mediaopt command */
+#define	A_MEDIAOPTCLR	0x0004		/* -mediaopt command */
+#define	A_MEDIAOPT		(A_MEDIAOPTSET|A_MEDIAOPTCLR)
+#define	A_MEDIAINST		0x0008		/* instance or inst command */
+#define	A_MEDIAMODE		0x0010		/* mode command */
+
 void	setmedia(const char *, int);
 void	setmediamode(const char *, int);
 void	setmediaopt(const char *, int);
@@ -127,7 +134,6 @@ media_init(void)
 	for (i = 0; i < nitems(media_cmds);  i++) {
 		cmd_register(&media_cmds[i]);
 	}
-	af_register(&af_media);
 }
 
 static void

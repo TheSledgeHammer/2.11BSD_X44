@@ -66,109 +66,101 @@
  * SUCH DAMAGE.
  */
 
-#ifndef IFCONFIG_IFCONFIG_H
-#define IFCONFIG_IFCONFIG_H
+#include <sys/cdefs.h>
 
-#define	NEXTARG			0xffffff
-#define	NEXTARG2		0xfffffe
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
 
-struct cmd_head;
-LIST_HEAD(cmd_head, cmd);
-const struct cmd {
-	const char 	*c_name;
-	int			c_parameter;	/* NEXTARG means next argv */
-	int			c_action;		/* defered action */
-	void		(*c_func)(const char *, int);
-	void		(*c_func2)(const char *, const char *);
+#include <net/if.h>
 
-	//struct cmd 	*c_next;
-	LIST_ENTRY(cmd) c_next;
+#define	NSIP
+#include <netns/ns.h>
+#include <netns/ns_if.h>
+
+#include <err.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ifaddrs.h>
+#include <util.h>
+
+#include "ifconfig.h"
+
+void 	xns_getaddr(const char *, int);
+
+struct afswtch af_xns = {
+		.af_name	= "ns",
+		.af_af		= AF_NS,
+		.af_status  = xns_status,
+		.af_getaddr = xns_getaddr,
+		.af_getprefix = NULL,
+		.af_difaddr = SIOCDIFADDR,
+		.af_aifaddr = SIOCAIFADDR,
+		.af_gifaddr = SIOCGIFADDR,
+		.af_ridreq = &ridreq,
+		.af_addreq = &addreq,
 };
 
-void cmd_register(const struct cmd *p);
-const struct cmd *cmd_lookup(const char *name);
+#define SNS(x) ((struct sockaddr_ns *) &(x))
+struct sockaddr_ns *snstab[] = {
+    SNS(ridreq.ifr_addr), SNS(addreq.ifra_addr),
+    SNS(addreq.ifra_mask), SNS(addreq.ifra_broadaddr)};
 
-struct afswtch_head;
-LIST_HEAD(afswtch_head, afswtch);
-/* Known address families */
-struct afswtch {
-	const char 		*af_name;
-	short 			af_af;
-	void 			(*af_status)(int);
-	void 			(*af_getaddr)(const char *, int);
-	void 			(*af_getprefix)(const char *, int);
-	u_long 			af_difaddr;
-	u_long 			af_aifaddr;
-	u_long 			af_gifaddr;
-	void 			*af_ridreq;
-	void 			*af_addreq;
-	//struct afswtch 	*af_next;
-	LIST_ENTRY(afswtch) af_next;
-};
+void
+xns_init(void)
+{
+	af_register(&af_xns);
+}
 
-void af_register(struct afswtch *p);
-struct afswtch *af_getbyname(const char *name);
-struct afswtch *af_getbyfamily(int af);
+void
+xns_getaddr(const char *addr, int which)
+{
+	struct sockaddr_ns *sns = snstab[which];
 
-#define RIDADDR 0
-#define ADDR	1
-#define MASK	2
-#define DSTADDR	3
+	sns->sns_family = AF_NS;
+	sns->sns_len = sizeof(*sns);
+	sns->sns_addr = ns_addr(addr);
+	if (which == MASK) {
+		puts("Attempt to set XNS netmask will be ineffectual");
+	}
+}
 
-extern struct ifreq			ifr, ridreq;
-extern struct ifaliasreq	addreq __attribute__((aligned(4)));
-extern struct in_aliasreq	in_addreq;
-#ifdef INET6
-extern struct in6_ifreq		ifr6;
-extern struct in6_ifreq		in6_ridreq;
-extern struct in6_aliasreq	in6_addreq;
-#endif
+void
+xns_status(int force)
+{
+	struct sockaddr_ns *sns;
 
-extern char 				name[30];
-extern int 					s;
-extern int 					explicit_prefix;
-extern int					actions;			/* Actions performed */
-
-extern u_short 				flags;
-extern int 					lflag;
-extern int 					zflag;
-#ifdef INET6
-extern int 					Lflag;
-#endif /* INET6 */
-
-void getsock(int);
-int  getinfo(struct ifreq *);
-
-/* af_inet */
-void inet_init(void);
-void in_status(int);
-
-/* af_inet6 */
-#ifdef INET6
-void inet6_init(void);
-void in6_init(void);
-void in6_status(int);
-#endif
-
-/* af_ns */
-void xns_init(void);
-void xns_status(int);
-
-/* ifieee80211 */
-void ieee80211_init(void);
-void ieee80211_status(void);
-
-/* ifmedia */
-void media_init(void);
-void process_media_commands(void);
-int  carrier(void);
-
-/* tunnel */
-void settunnel(const char *, const char *);
-void deletetunnel(const char *, int);
-void tunnel_status(void);
-
-/* ifvlan */
-void vlan_init(void);
-void vlan_status(void);
-#endif /* IFCONFIG_IFCONFIG_H */
+	getsock(AF_NS);
+	if (s < 0) {
+		if (errno == EPROTONOSUPPORT)
+			return;
+		err(EXIT_FAILURE, "socket");
+	}
+	(void) memset(&ifr, 0, sizeof(ifr));
+	(void) strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	if (ioctl(s, SIOCGIFADDR, &ifr) == -1) {
+		if (errno == EADDRNOTAVAIL || errno == EAFNOSUPPORT) {
+			if (!force)
+				return;
+			memset(&ifr.ifr_addr, 0, sizeof(ifr.ifr_addr));
+		} else
+			warn("SIOCGIFADDR");
+	}
+	(void) strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
+	sns = (struct sockaddr_ns *)&ifr.ifr_addr;
+	printf("\tns %s ", ns_ntoa(sns->sns_addr));
+	if (flags & IFF_POINTOPOINT) { /* by W. Nesheim@Cornell */
+		if (ioctl(s, SIOCGIFDSTADDR, &ifr) == -1) {
+			if (errno == EADDRNOTAVAIL)
+			    memset(&ifr.ifr_addr, 0, sizeof(ifr.ifr_addr));
+			else
+			    warn("SIOCGIFDSTADDR");
+		}
+		(void) strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+		sns = (struct sockaddr_ns *)&ifr.ifr_dstaddr;
+		printf("--> %s ", ns_ntoa(sns->sns_addr));
+	}
+	printf("\n");
+}

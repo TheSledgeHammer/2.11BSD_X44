@@ -73,21 +73,17 @@
 #include <sys/ioctl.h>
 
 #include <net/if.h>
-#include <net/if_dl.h>
-#include <net/if_media.h>
 #include <net/if_ether.h>
+#include <net/if_media.h>
 #include <net80211/ieee80211.h>
 #include <net80211/ieee80211_ioctl.h>
 
 #include <ctype.h>
 #include <err.h>
-#include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <netdb.h>
 #include <string.h>
-#include <unistd.h>
-#include <ifaddrs.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <util.h>
 
 #include "ifconfig.h"
@@ -112,14 +108,13 @@ const struct cmd ieee80211_cmds[] = {
 		{ "-powersave",	0,		0,		setifpowersave },
 		{ "powersavesleep", NEXTARG,	0,		setifpowersavesleep },
 };
-
-void	ieee80211_status(void);
-
+/*
 struct afswtch af_ieee80211 = {
 		.af_name	= "af_ieee80211",
 		.af_af		= AF_UNSPEC,
 		.af_status = ieee80211_status,
 };
+*/
 
 void
 ieee80211_init(void)
@@ -129,7 +124,7 @@ ieee80211_init(void)
 	for (i = 0; i < nitems(ieee80211_cmds);  i++) {
 		cmd_register(&ieee80211_cmds[i]);
 	}
-	af_register(&af_ieee80211);
+	//af_register(&af_ieee80211);
 }
 
 void

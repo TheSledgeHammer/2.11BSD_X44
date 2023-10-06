@@ -73,22 +73,22 @@
 #include <sys/ioctl.h>
 
 #include <net/if.h>
-#include <net/if_dl.h>
-#include <net/if_media.h>
-#include <net/if_ether.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
 
-#include <ctype.h>
+#include <arpa/inet.h>
+
 #include <err.h>
 #include <errno.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <ifaddrs.h>
 #include <util.h>
 
 #include "ifconfig.h"
+
+struct in_aliasreq in_addreq;
 
 void	in_alias(struct ifreq *);
 void	in_status(int);
@@ -253,13 +253,4 @@ in_getprefix(const char *plen, int which)
 		*cp++ = 0xff;
 	if (len)
 		*cp = 0xff << (8 - len);
-}
-
-void
-in_tunnel_status(struct if_laddrreq req, const int niflag, char *psrcaddr, char *pdstaddr, const char *ver)
-{
-	getnameinfo((struct sockaddr *)&req.addr, req.addr.ss_len, psrcaddr, sizeof(psrcaddr), 0, 0, niflag);
-	getnameinfo((struct sockaddr *)&req.dstaddr, req.dstaddr.ss_len, pdstaddr, sizeof(pdstaddr), 0, 0, niflag);
-
-	printf("\ttunnel inet%s %s --> %s\n", ver, psrcaddr, pdstaddr);
 }

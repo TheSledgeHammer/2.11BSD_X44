@@ -73,9 +73,6 @@
 #include <sys/ioctl.h>
 
 #include <net/if.h>
-#include <net/if_dl.h>
-#include <net/if_media.h>
-#include <net/if_ether.h>
 
 #include <netinet/in.h>
 #include <netinet/in_var.h>
@@ -83,18 +80,20 @@
 #include <netinet6/in6.h>
 #include <netinet6/nd6.h>
 
-#include <ctype.h>
 #include <err.h>
 #include <errno.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <ifaddrs.h>
+#include <netdb.h>
 #include <util.h>
 
 #include "ifconfig.h"
+
+struct in6_ifreq	ifr6;
+struct in6_ifreq    in6_ridreq;
+struct in6_aliasreq in6_addreq;
 
 void 	setia6flags(const char *, int);
 void	setia6pltime(const char *, int);
@@ -115,9 +114,8 @@ const struct cmd inet6_cmds[] = {
 		{ "eui64",	0,		0,		setia6eui64 },
 };
 
-void	in6_fillscopeid(struct sockaddr_in6 *sin6);
+void	in6_fillscopeid(struct sockaddr_in6 *);
 void	in6_alias(struct in6_ifreq *);
-void	in6_status(int);
 void 	in6_getaddr(const char *, int);
 void 	in6_getprefix(const char *, int);
 
@@ -143,6 +141,13 @@ inet6_init(void)
 		cmd_register(&inet6_cmds[i]);
 	}
 	af_register(&af_inet6);
+}
+
+void
+in6_init(void)
+{
+	in6_addreq.ifra_lifetime.ia6t_pltime = ND6_INFINITE_LIFETIME;
+	in6_addreq.ifra_lifetime.ia6t_vltime = ND6_INFINITE_LIFETIME;
 }
 
 void
@@ -468,21 +473,6 @@ in6_getprefix(const char *plen, int which)
 		*cp++ = 0xff;
 	if (len)
 		*cp = 0xff << (8 - len);
-}
-
-void
-in6_tunnel_status(struct if_laddrreq req, const int niflag, char *psrcaddr, char *pdstaddr, const char *ver)
-{
-	if (req.addr.ss_family == AF_INET6) {
-		in6_fillscopeid((struct sockaddr_in6 *)&req.addr);
-	}
-	getnameinfo((struct sockaddr *)&req.addr, req.addr.ss_len, psrcaddr, sizeof(psrcaddr), 0, 0, niflag);
-	if (req.dstaddr.ss_family == AF_INET6) {
-		in6_fillscopeid((struct sockaddr_in6 *)&req.dstaddr);
-	}
-	getnameinfo((struct sockaddr *)&req.dstaddr, req.dstaddr.ss_len, pdstaddr, sizeof(pdstaddr), 0, 0, niflag);
-
-	printf("\ttunnel inet6%s %s --> %s\n", ver, psrcaddr, pdstaddr);
 }
 
 char *

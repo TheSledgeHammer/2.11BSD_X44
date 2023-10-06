@@ -69,104 +69,139 @@
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
-#include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 
 #include <net/if.h>
-#include <net/if_dl.h>
-#include <net/if_media.h>
-#include <net/if_ether.h>
 
-#define	NSIP
-#include <netns/ns.h>
-#include <netns/ns_if.h>
+#ifdef INET6
+#include <netinet/in.h>
+#endif
 
 #include <ctype.h>
 #include <err.h>
-#include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <netdb.h>
 #include <string.h>
-#include <unistd.h>
-#include <ifaddrs.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <util.h>
 
 #include "ifconfig.h"
 
-void 	xns_status(int);
-void 	xns_getaddr(const char *, int);
-
-struct afswtch af_xns = {
-		.af_name	= "ns",
-		.af_af		= AF_NS,
-		.af_status  = xns_status,
-		.af_getaddr = xns_getaddr,
-		.af_getprefix = NULL,
-		.af_difaddr = SIOCDIFADDR,
-		.af_aifaddr = SIOCAIFADDR,
-		.af_gifaddr = SIOCGIFADDR,
-		.af_ridreq = &ridreq,
-		.af_addreq = &addreq,
-};
-
-#define SNS(x) ((struct sockaddr_ns *) &(x))
-struct sockaddr_ns *snstab[] = {
-    SNS(ridreq.ifr_addr), SNS(addreq.ifra_addr),
-    SNS(addreq.ifra_mask), SNS(addreq.ifra_broadaddr)};
-
 void
-xns_init(void)
+settunnel(const char *src, const char *dst)
 {
-	af_register(&af_vlan);
-}
+	struct addrinfo hints, *srcres, *dstres;
+	int ecode;
+	struct if_laddrreq req;
 
-void
-xns_getaddr(const char *addr, int which)
-{
-	struct sockaddr_ns *sns = snstab[which];
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = afp->af_af;
+	hints.ai_socktype = SOCK_DGRAM;	/*dummy*/
 
-	sns->sns_family = AF_NS;
-	sns->sns_len = sizeof(*sns);
-	sns->sns_addr = ns_addr(addr);
-	if (which == MASK)
-		puts("Attempt to set XNS netmask will be ineffectual");
-}
+	if ((ecode = getaddrinfo(src, NULL, &hints, &srcres)) != 0)
+		errx(EXIT_FAILURE, "error in parsing address string: %s",
+		    gai_strerror(ecode));
 
-void
-xns_status(int force)
-{
-	struct sockaddr_ns *sns;
+	if ((ecode = getaddrinfo(dst, NULL, &hints, &dstres)) != 0)
+		errx(EXIT_FAILURE, "error in parsing address string: %s",
+		    gai_strerror(ecode));
 
-	getsock(AF_NS);
-	if (s < 0) {
-		if (errno == EPROTONOSUPPORT)
-			return;
-		err(EXIT_FAILURE, "socket");
-	}
-	(void) memset(&ifr, 0, sizeof(ifr));
-	(void) strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
-	if (ioctl(s, SIOCGIFADDR, &ifr) == -1) {
-		if (errno == EADDRNOTAVAIL || errno == EAFNOSUPPORT) {
-			if (!force)
-				return;
-			memset(&ifr.ifr_addr, 0, sizeof(ifr.ifr_addr));
-		} else
-			warn("SIOCGIFADDR");
-	}
-	(void) strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
-	sns = (struct sockaddr_ns *)&ifr.ifr_addr;
-	printf("\tns %s ", ns_ntoa(sns->sns_addr));
-	if (flags & IFF_POINTOPOINT) { /* by W. Nesheim@Cornell */
-		if (ioctl(s, SIOCGIFDSTADDR, &ifr) == -1) {
-			if (errno == EADDRNOTAVAIL)
-			    memset(&ifr.ifr_addr, 0, sizeof(ifr.ifr_addr));
-			else
-			    warn("SIOCGIFDSTADDR");
+	if (srcres->ai_addr->sa_family != dstres->ai_addr->sa_family)
+		errx(EXIT_FAILURE,
+		    "source and destination address families do not match");
+
+	if (srcres->ai_addrlen > sizeof(req.addr) ||
+	    dstres->ai_addrlen > sizeof(req.dstaddr))
+		errx(EXIT_FAILURE, "invalid sockaddr");
+
+	memset(&req, 0, sizeof(req));
+	strncpy(req.iflr_name, name, sizeof(req.iflr_name));
+	memcpy(&req.addr, srcres->ai_addr, srcres->ai_addrlen);
+	memcpy(&req.dstaddr, dstres->ai_addr, dstres->ai_addrlen);
+
+#ifdef INET6
+	if (req.addr.ss_family == AF_INET6) {
+		struct sockaddr_in6 *s6, *d;
+
+		s6 = (struct sockaddr_in6 *)&req.addr;
+		d = (struct sockaddr_in6 *)&req.dstaddr;
+		if (s6->sin6_scope_id != d->sin6_scope_id) {
+			errx(EXIT_FAILURE, "scope mismatch");
+			/* NOTREACHED */
 		}
-		(void) strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
-		sns = (struct sockaddr_ns *)&ifr.ifr_dstaddr;
-		printf("--> %s ", ns_ntoa(sns->sns_addr));
+#ifdef __KAME__
+		/* embed scopeid */
+		if (s6->sin6_scope_id &&
+		    (IN6_IS_ADDR_LINKLOCAL(&s6->sin6_addr) ||
+		     IN6_IS_ADDR_MC_LINKLOCAL(&s6->sin6_addr))) {
+			*(u_int16_t *)&s6->sin6_addr.s6_addr[2] =
+			    htons(s6->sin6_scope_id);
+		}
+		if (d->sin6_scope_id &&
+		    (IN6_IS_ADDR_LINKLOCAL(&d->sin6_addr) ||
+		     IN6_IS_ADDR_MC_LINKLOCAL(&d->sin6_addr))) {
+			*(u_int16_t *)&d->sin6_addr.s6_addr[2] =
+			    htons(d->sin6_scope_id);
+		}
+#endif
 	}
-	printf("\n");
+#endif
+
+	if (ioctl(s, SIOCSLIFPHYADDR, &req) == -1)
+		warn("SIOCSLIFPHYADDR");
+
+	freeaddrinfo(srcres);
+	freeaddrinfo(dstres);
+}
+
+/* ARGSUSED */
+void
+deletetunnel(const char *vname, int param)
+{
+
+	if (ioctl(s, SIOCDIFPHYADDR, &ifr) == -1) {
+		err(EXIT_FAILURE, "SIOCDIFPHYADDR");
+	}
+}
+
+void
+tunnel_status(void)
+{
+	char psrcaddr[NI_MAXHOST];
+	char pdstaddr[NI_MAXHOST];
+	const char *ver = "";
+#ifdef NI_WITHSCOPEID
+	const int niflag = NI_NUMERICHOST | NI_WITHSCOPEID;
+#else
+	const int niflag = NI_NUMERICHOST;
+#endif
+	struct if_laddrreq req;
+
+	psrcaddr[0] = pdstaddr[0] = '\0';
+
+	memset(&req, 0, sizeof(req));
+	strncpy(req.iflr_name, name, IFNAMSIZ);
+	if (ioctl(s, SIOCGLIFPHYADDR, &req) == -1) {
+		return;
+	}
+#ifdef INET6
+	if (req.addr.ss_family == AF_INET6)
+		in6_fillscopeid((struct sockaddr_in6 *)&req.addr);
+#endif
+	getnameinfo((struct sockaddr *)&req.addr, req.addr.ss_len,
+	    psrcaddr, sizeof(psrcaddr), 0, 0, niflag);
+#ifdef INET6
+	if (req.addr.ss_family == AF_INET6)
+		ver = "6";
+#endif
+
+#ifdef INET6
+	if (req.dstaddr.ss_family == AF_INET6)
+		in6_fillscopeid((struct sockaddr_in6 *)&req.dstaddr);
+#endif
+	getnameinfo((struct sockaddr *)&req.dstaddr, req.dstaddr.ss_len,
+	    pdstaddr, sizeof(pdstaddr), 0, 0, niflag);
+
+	printf("\ttunnel inet%s %s --> %s\n", ver, psrcaddr, pdstaddr);
 }

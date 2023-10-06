@@ -73,22 +73,15 @@
 #include <sys/ioctl.h>
 
 #include <net/if.h>
-#include <net/if_dl.h>
-#include <net/if_media.h>
 #include <net/if_ether.h>
 
 #include <net/if_vlanvar.h>
 
 #include <ctype.h>
 #include <err.h>
-#include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <ifaddrs.h>
-#include <util.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "ifconfig.h"
 
@@ -103,13 +96,13 @@ const struct cmd vlan_cmds[] = {
 		{ "vlanif",	NEXTARG,	0,		setvlanif } ,
 		{ "-vlanif",	0,		0,		unsetvlanif } ,
 };
-
+/*
 struct afswtch af_vlan = {
 		.af_name	= "af_vlan",
 		.af_af		= AF_UNSPEC,
 		.af_status = vlan_status,
 };
-
+*/
 void
 vlan_init(void)
 {
@@ -117,7 +110,7 @@ vlan_init(void)
 	for (i = 0; i < nitems(vlan_cmds);  i++) {
 		cmd_register(&vlan_cmds[i]);
 	}
-	af_register(&af_vlan);
+//	af_register(&af_vlan);
 }
 
 void
