@@ -17,7 +17,7 @@ TOOL_MTREE.unpriv=	-W
 # /etc/mtree/211BSD.dist content without duplicating logic from
 # the Makefile.
 #
-distrib-dirs: .PHONY check_DESTDIR 211BSD.dist
+distrib-dirs: .PHONY check_DESTDIR
 .if !defined(DISTRIBUTION_DONE)						# {
 # Create DESTDIR using HOST_INSTALL_DIR, not INSTALL_DIR, because
 # INSTALL_DIR would want to write to the metalog, and it can't do that
