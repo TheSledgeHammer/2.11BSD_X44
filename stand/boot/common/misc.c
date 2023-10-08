@@ -179,33 +179,33 @@ hexdump(void *region, size_t len)
     char	lbuf[80];
 #define emit(fmt, args...)	{snprintf(lbuf, sizeof(lbuf), fmt , ## args); pager_output(lbuf);}
 
-    pager_open();
-    for (line = region; line < (region + len); line += 16) {
-	emit("%08lx  ", (long) line);
+	pager_open();
+	for (line = region; line < (region + len); line += 16) {
+		emit("%08lx  ", (long ) line);
 
-	for (x = 0; x < 16; x++) {
-	    if ((line + x) < (region + len)) {
-		emit("%02x ", *(u_int8_t *)(line + x));
-	    } else {
-		emit("-- ");
-	    }
-	    if (x == 7)
-		emit(" ");
+		for (x = 0; x < 16; x++) {
+			if ((line + x) < (region + len)) {
+				emit("%02x ", *(u_int8_t* )(line + x));
+			} else {
+				emit("-- ");
+			}
+			if (x == 7)
+				emit(" ");
+		}
+		emit(" |");
+		for (x = 0; x < 16; x++) {
+			if ((line + x) < (region + len)) {
+				c = *(u_int8_t*) (line + x);
+				if ((c < ' ') || (c > '~')) /* !isprint(c) */
+					c = '.';
+				emit("%c", c);
+			} else {
+				emit(" ");
+			}
+		}
+		emit("|\n");
 	}
-	emit(" |");
-	for (x = 0; x < 16; x++) {
-	    if ((line + x) < (region + len)) {
-		c = *(u_int8_t *)(line + x);
-		if ((c < ' ') || (c > '~'))	/* !isprint(c) */
-		    c = '.';
-		emit("%c", c);
-	    } else {
-		emit(" ");
-	    }
-	}
-	emit("|\n");
-    }
-    pager_close();
+	pager_close();
 }
 #endif
 
