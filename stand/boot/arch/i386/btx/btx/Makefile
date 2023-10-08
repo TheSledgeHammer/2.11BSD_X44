@@ -31,7 +31,7 @@ btx: btx.o
 	${LD} -N -e start -Ttext ${ORG} -o btx.out btx.o
 	objcopy -S -O binary btx.out ${.TARGET}
 
-btx.o: btx.s
+btx.o: btx.S
 	(cd ${.CURDIR}; ${M4} ${M4FLAGS} btx.s) | \
 	   ${AS} ${AFLAGS} -o ${.TARGET}
 

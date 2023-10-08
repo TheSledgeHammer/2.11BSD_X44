@@ -2,10 +2,8 @@
 
 PROG=		boot0
 STRIP=
-NOMAN=
+BINMODE=    ${NOBINMODE}
 SRCS=		${PROG}.S
-BINDIR?=	/boot
-BINMODE=	444
 
 # The default set of flags compiled into boot0.  This enables update (writing
 # the modified boot0 back to disk after running so that the selection made is
@@ -22,14 +20,8 @@ BOOT_BOOT0_TICKS?=	0xb6
 # unless you are glutton for punishment.
 BOOT_BOOT0_ORG?=	0x600
 
-boot0: boot0.o
-	${LD} -N -e start -Ttext ${BOOT_BOOT0_ORG} -o boot0.out boot0.o
-	objcopy -S -O binary boot0.out ${.TARGET}
+CFLAGS+=-DFLAGS=${BOOT_BOOT0_FLAGS} -DTICKS=${BOOT_BOOT0_TICKS}
 
-boot0.o: boot0.s
-	${AS} ${AFLAGS} --defsym FLAGS=${BOOT_BOOT0_FLAGS} \
-		--defsym TICKS=${BOOT_BOOT0_TICKS} ${.IMPSRC} -o ${.TARGET}
-
-CLEANFILES+= boot0.out boot0.o
+LDFLAGS+=${LDFLAGS_BIN}
 
 .include <bsd.prog.mk>

@@ -33,17 +33,17 @@ ORG2=	0x2000
 BOOT2_UFS?=	UFS1_AND_UFS2
 # BOOT2_UFS?=	UFS1_ONLY
 
-CFLAGS=	-elf -ffreestanding -Os -fno-builtin \
-	-fno-guess-branch-probability -fomit-frame-pointer\
-	-mno-align-long-strings \
-	-mrtd \
-	-D${BOOT2_UFS} \
-	-DFLAGS=${BOOT_BOOT1_FLAGS} \
-	-I${.CURDIR}/../../common \
-	-I${.CURDIR}/../btx/lib -I. \
-	-Wall -Waggregate-return -Wbad-function-cast -Wcast-align \
-	-Wmissing-declarations -Wmissing-prototypes -Wnested-externs \
-	-Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings
+CFLAGS=	-ffreestanding -Os -fno-builtin \
+	    -fno-guess-branch-probability -fomit-frame-pointer\
+	    -mno-align-long-strings \
+	    -mrtd \
+	    -D${BOOT2_UFS} \
+	    -DFLAGS=${BOOT_BOOT1_FLAGS} \
+	    -I${.CURDIR}/../../common \
+	    -I${.CURDIR}/../btx/lib -I. \
+	    -Wall -Waggregate-return -Wbad-function-cast -Wcast-align \
+	    -Wmissing-declarations -Wmissing-prototypes -Wnested-externs \
+	    -Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings
 
 LDFLAGS=-nostdlib -static -N --gc-sections
 
@@ -55,7 +55,7 @@ boot1: boot1.out
 boot1.out: boot1.o
 	${LD} ${LDFLAGS} -e start -Ttext ${ORG1} -o ${.TARGET} boot1.o
 
-boot1.o: boot1.s
+boot1.o: boot1.S
 	${CPP} ${CFLAGS} ${.IMPSRC} | \
 	    ${AS} ${AFLAGS} --defsym FLAGS=${B1FLAGS} -o ${.TARGET}
 
@@ -91,7 +91,7 @@ boot2.out: boot2.o sio.o
 
 boot2.o: boot2.h
 
-sio.o: sio.s
+sio.o: sio.S
 	${AS} ${AFLAGS} --defsym SIOPRT=${BOOT_COMCONSOLE_PORT} \
 		--defsym SIOFMT=${B2SIOFMT} \
 		--defsym SIOSPD=${BOOT_COMCONSOLE_SPEED} \

@@ -13,11 +13,11 @@ btxldr: btxldr.o
 	${LD} -N -e start -Ttext ${LOADER_ADDRESS} -o btxldr.out btxldr.o
 	objcopy -S -O binary btxldr.out ${.TARGET}
 
-btxldr.o: btxldr.s
+btxldr.o: btxldr.S
 	(cd ${.CURDIR}; ${M4} ${M4FLAGS} btxldr.s ) | \
 		${AS} ${AFLAGS} -o ${.TARGET}
 
 CLEANFILES+= btxldr btxldr.out btxldr.o
 
-.include <${.CURDIR}/../../Makefile.inc>
+#.include <${.CURDIR}/../../Makefile.inc>
 .include <bsd.prog.mk>
