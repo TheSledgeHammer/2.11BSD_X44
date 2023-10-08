@@ -12,7 +12,7 @@ SUBDIR+= .WAIT
 SUBDIR+= mbr pmbr
 .endif
 
-SUBDIR+= boot0 boot2 cdboot isoboot
+SUBDIR+= boot0 boot2 cdboot
 
 .if ${LOADER_GPT_SUPPORT} == "yes"
 SUBDIR+= gptboot
@@ -21,7 +21,5 @@ SUBDIR+= gptboot
 SUBDIR+= loader
 
 INCSDIR= 	/usr/include/stand/boot/arch/i386
-
-release: check_RELEASEDIR
 
 .include <bsd.kinc.mk>
