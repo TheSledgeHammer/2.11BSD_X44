@@ -116,6 +116,4 @@ loader.help: ${HELP_FILES}
 	cat ${HELP_FILES} | awk -f ${LDRSRC}/merge_help.awk > ${.TARGET}
 .endif
 
-.include <bsd.sys.mk>
-
 .endif	# !defined(_BSD_LOADER_MK_)
