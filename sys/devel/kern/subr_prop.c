@@ -50,6 +50,7 @@ int propdebug = 0;
 #endif
 
 #define M_PROP 93
+//MALLOC_DEFINE(M_PROP, "prop", "Kernel properties structures");
 
 /* 
  * Kernel properties database implementation.
@@ -110,17 +111,6 @@ static struct kdbprop *allocprop(const char *name, size_t len, int wait);
 static void kdb_rehash(struct propdb *db);
 static struct kdbobj *kdbobj_find(propdb_t db, opaque_t object, int create, int wait);
 static int prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int type, int wait);
-
-/*
-static int opaque_object_compare(opaque_t, opaque_t);
-static int kdbprop_compare_name(const char *, const char *);
-static int kdbprop_compare_val(const char *, const char *);
-static int kdbprop_compare_len(int, int);
-static int kdbprop_compare_type(int, int);
-*/
-
-#define M_PROP 93
-//MALLOC_DEFINE(M_PROP, "prop", "Kernel properties structures");
 
 /* 
  * Allocate a prop structure large enough to hold
