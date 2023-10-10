@@ -63,6 +63,7 @@ enum {
 	PF_PASS,
 	PF_DROP,
 	PF_SCRUB,
+	PF_NOSCRUB,
 	PF_NAT,
 	PF_NONAT,
 	PF_BINAT,

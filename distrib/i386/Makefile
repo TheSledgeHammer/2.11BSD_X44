@@ -6,10 +6,6 @@ SUBDIR=
 SUBDIR+=	ramdisks
 SUBDIR+=	.WAIT
 SUBDIR+=	instkernel
-.if ${MKKMOD} != "no"
-SUBDIR+=	kmod
-SUBDIR+=	kmod-cgdroot
-.endif
 SUBDIR+=	.WAIT
 SUBDIR+=	cdroms
 SUBDIR+=	floppies

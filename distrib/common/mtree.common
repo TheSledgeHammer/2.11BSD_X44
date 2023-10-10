@@ -1,4 +1,4 @@
-#	$NetBSD: mtree.common,v 1.4.2.1 2004/04/30 03:43:04 jmc Exp $
+#	$NetBSD: mtree.common,v 1.8 2007/08/24 17:11:58 skd Exp $
 
 /set				type=dir uname=root gname=wheel mode=0755
 
@@ -6,6 +6,7 @@
 ./bin
 ./dev
 ./etc
+./libexec
 ./mnt
 ./mnt2
 ./kern

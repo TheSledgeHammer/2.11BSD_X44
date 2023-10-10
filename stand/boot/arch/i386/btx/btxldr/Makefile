@@ -1,23 +1,19 @@
 # $FreeBSD$
 
-M4?=	m4
-M4FLAGS+=	-DLOADER_ADDRESS=${LOADER_ADDRESS}
+.include <bsd.init.mk>
+
+PROG=	btxldr
+INTERNALPROG=
+SRCS=	btxldr.S
+
+CFLAGS+=-DLOADER_ADDRESS=${LOADER_ADDRESS}
+CFLAGS+=-I${.CURDIR}/../../common
 
 .if defined(BTXLDR_VERBOSE)
-M4FLAGS+=	-DBTXLDR_VERBOSE
+CFLAGS+=-DBTXLDR_VERBOSE
 .endif
 
-all: btxldr
+ORG=${LOADER_ADDRESS}
+LDFLAGS+=${LDFLAGS_BIN}
 
-btxldr: btxldr.o
-	${LD} -N -e start -Ttext ${LOADER_ADDRESS} -o btxldr.out btxldr.o
-	objcopy -S -O binary btxldr.out ${.TARGET}
-
-btxldr.o: btxldr.S
-	(cd ${.CURDIR}; ${M4} ${M4FLAGS} btxldr.s ) | \
-		${AS} ${AFLAGS} -o ${.TARGET}
-
-CLEANFILES+= btxldr btxldr.out btxldr.o
-
-#.include <${.CURDIR}/../../Makefile.inc>
 .include <bsd.prog.mk>

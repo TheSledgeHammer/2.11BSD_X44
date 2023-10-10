@@ -39,8 +39,8 @@ __RCSID("$NetBSD: wskbd.c,v 1.5.4.2 2005/07/24 02:25:24 snj Exp $");
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <dev/wscons/wsconsio.h>
-#include <dev/wscons/wsksymdef.h>
+#include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsksymdef.h>
 
 #include "defs.h"
 #include "menu_defs.h"

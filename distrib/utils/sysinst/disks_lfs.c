@@ -40,7 +40,7 @@
 int
 fs_is_lfs(void *fs)
 {
-	struct dlfs *dlfs = (struct dlfs *)fs;
+	struct lfs *dlfs = (struct lfs *)fs;
 
-	return (dlfs->dlfs_magic == LFS_MAGIC);
+	return (dlfs->lfs_magic == LFS_MAGIC);
 }

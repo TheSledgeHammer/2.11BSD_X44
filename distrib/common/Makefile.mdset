@@ -1,4 +1,4 @@
-#	$NetBSD: Makefile.mdset,v 1.24 2004/01/17 20:17:44 dsl Exp $
+#	$NetBSD: Makefile.mdset,v 1.33 2008/07/21 10:00:52 agc Exp $
 #
 # Makefile snippet to ${TOOL_MDSETIMAGE} file system images into kernels
 #
@@ -25,6 +25,10 @@
 # Optional variables:
 #	MDSET_RELEASEDIR		Where to install release kernels.
 #
+#	MDSET_NOGZIP			If defined, don't gzip any kernels.
+#
+#	MDSET_NOGZIP.${FILENAME}	If defined, don't gzip ${FILENAME}
+#
 #	MDSET_NOSTRIP			If defined, don't strip any kernels.
 #
 #	MDSET_NOSTRIP.${FILENAME}	If defined, don't strip ${FILENAME}
@@ -33,6 +37,10 @@
 #
 #	MDSET_NOSYMBOLS.${FILENAME}	If defined, don't generate
 #					${FILENAME}.symbols.gz
+#
+#	MDSET_POST			For each kernel,
+#					execute this after ${NM} / ${STRIP}.
+#					Kernel is available as "${.TARGET}"
 #
 #	MDSET_POST.${FILENAME}		For each kernel named ${FILENAME},
 #					execute this after ${NM} / ${STRIP}.
@@ -70,14 +78,12 @@ _KERNNAME.${_K}.${_F}:=	${KERNOBJDIR}/${_K}/netbsd
 _FILENAME:=${_F}		# (work around obscure issue in make(1))
 .if ${_FILENAME} == "-"
 _KERNEL.${_K}.${_F}:=	netbsd-${_K}
+_FILENAME:=		${_KERNEL.${_K}.${_F}}
 .else
 _KERNEL.${_K}.${_F}:=	${_F}
 .endif
 
-KERNELS+=	${_KERNEL.${_K}.${_F}}.gz
-
-.for _S _C in ${MDSET_SUFFIXES.${_FILENAME}}		# {
-KERNELS+=	${_KERNEL.${_K}.${_F}}.${_S}.gz
+.for _S _C in ${MDSET_SUFFIXES.${_F}}		# {
 CLEANFILES+=	${_KERNEL.${_K}.${_F}}.${_S}
 
 ${_KERNEL.${_K}.${_F}}.${_S}: ${_KERNEL.${_K}.${_F}}
@@ -88,9 +94,16 @@ ${_KERNEL.${_K}.${_F}}.${_S}: ${_KERNEL.${_K}.${_F}}
 	false
 .endif
 
+.if defined(MDSET_NOGZIP.${_FILENAME}) && defined(MDSET_NOGZIP)
+KERNELS+=	${_KERNEL.${_K}.${_F}}.${_S}
+.else							# {
+KERNELS+=	${_KERNEL.${_K}.${_F}}.${_S}.gz
+
 ${_KERNEL.${_K}.${_F}}.${_S}.gz: ${_KERNEL.${_K}.${_F}}.${_S}
+	${_MKTARGET_CREATE}
 	-rm -f ${.TARGET}
 	gzip -9c ${.ALLSRC} > ${.TARGET}
+.endif							# }
 
 .endfor							# }
 
@@ -100,31 +113,55 @@ KERNELSYMS+=	${_KERNEL.${_K}.${_F}}.symbols.gz
 
 .if defined(MDSET_POST.${_FILENAME})
 _POST.${_KERNEL.${_K}.${_F}}:= ${MDSET_POST.${_FILENAME}}
+.elif defined(MDSET_POST)
+_POST.${_KERNEL.${_K}.${_F}}:= ${MDSET_POST}
+.endif
+
+
+CLEANFILES+=	${_KERNEL.${_K}.${_F}}
+
+.if defined(MDSET_NOIMAGE.${_FILENAME})
+${_I}=
+.endif
+
+# Darwin requires a special hack - this is documented in
+# doc/HACKS, and just works around the problems described more
+# fully in http://mail-index.netbsd.org/current-users/2008/06/27/msg003242.html
+OPSYS!= uname -s
+.if ${OPSYS} == "Darwin"
+MDSETIMAGEFLAGS=
+.else
+MDSETIMAGEFLAGS=-v
 .endif
 
 ${_KERNEL.${_K}.${_F}}: .NOTMAIN ${_KERNNAME.${_K}.${_F}} ${_I}
-	@echo "mdsetimage: ${_KERNNAME.${_K}.${_F}}"
-	@echo "      with: ${_I}"
-	@echo "      into: ${.TARGET}"
+	${_MKTARGET_CREATE} "(from: ${.ALLSRC})"
 	@rm -f ${.TARGET} ${.TARGET}.tmp ${.TARGET}.symbols.gz
 	@cp ${_KERNNAME.${_K}.${_F}} ${.TARGET}.tmp
-	${TOOL_MDSETIMAGE} -v ${.TARGET}.tmp ${_I}
+.if !defined(MDSET_NOIMAGE.${_FILENAME})
+	${TOOL_MDSETIMAGE} ${MDSETIMAGEFLAGS} ${.TARGET}.tmp ${_I}
+.endif
 .if !defined(MDSET_NOSYMBOLS.${_FILENAME}) && !defined(MDSET_NOSYMBOLS)
 	${NM} ${.TARGET}.tmp | gzip -9 > ${.TARGET}.symbols.gz
 .endif
 .if !defined(MDSET_NOSTRIP.${_FILENAME}) && !defined(MDSET_NOSTRIP)
-	${STRIP} ${.TARGET}.tmp
+	${STRIP} -R .comment -R .ident ${.TARGET}.tmp
 .endif
 	@mv ${.TARGET}.tmp ${.TARGET}
-.if defined(MDSET_POST.${_FILENAME})
+.if defined(MDSET_POST.${_FILENAME}) || defined(MDSET_POST)
 	${_POST.${.TARGET}}
 .endif
 
+.if defined(MDSET_NOGZIP.${_FILENAME}) || defined(MDSET_NOGZIP)
+KERNELS+=	${_KERNEL.${_K}.${_F}}
+.else							# {
+KERNELS+=	${_KERNEL.${_K}.${_F}}.gz
+
 ${_KERNEL.${_K}.${_F}}.gz: ${_KERNEL.${_K}.${_F}}
+	${_MKTARGET_CREATE}
 	-rm -f ${.TARGET}
 	gzip -9c ${.ALLSRC} > ${.TARGET}
-
-CLEANFILES+=	${_KERNEL.${_K}.${_F}} 
+.endif							# }
 
 .endfor							# }
 
@@ -135,7 +172,7 @@ realall: ${KERNELS}
 .if defined(MDSET_RELEASEDIR)
 release:: check_RELEASEDIR .WAIT ${KERNELS}
 	${RELEASE_INSTALL} ${KERNELS} ${KERNELSYMS} \
-	    ${RELEASEDIR}/${MACHINE}/${MDSET_RELEASEDIR}
+	    ${RELEASEDIR}/${RELEASEMACHINEDIR}/${MDSET_RELEASEDIR}
 .endif
 
 

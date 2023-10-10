@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $NetBSD: buildfloppies.sh,v 1.7.2.1 2004/07/10 13:47:59 tron Exp $
+# $NetBSD: buildfloppies.sh,v 1.13 2008/04/30 13:10:48 martin Exp $
 #
 # Copyright (c) 2002-2003 The NetBSD Foundation, Inc.
 # All rights reserved.
@@ -16,13 +16,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 3. All advertising materials mentioning features or use of this software
-#    must display the following acknowledgement:
-#        This product includes software developed by the NetBSD
-#        Foundation, Inc. and its contributors.
-# 4. Neither the name of The NetBSD Foundation nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
 # ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -104,7 +97,7 @@ rm -f ${floppybase}?${suffix}
 #	create tar file
 #
 dd if=/dev/zero of=${floppy} bs=8k count=1 2>/dev/null
-${PAX} -O -w ${files} >> ${floppy} || exit 1
+${PAX} -O -w -b8k ${files} >> ${floppy} || exit 1
 	# XXX: use pax metafile and set perms?
 if [ -n "$instboot" ]; then
 	instboot=$( echo $instboot | sed -e s/@IMAGE@/${floppy}/ )
@@ -114,7 +107,8 @@ fi
 
 #	check size against available number of disks
 #
-bytes=$( ls -l "${floppy}" | awk '{print $5}' )
+set -- $(ls -ln $floppy)
+bytes=$5
 blocks=$(roundup ${bytes} 512)
 	# when calculating numdisks, take into account:
 	#	a) the image already has an 8K tar header prepended
@@ -124,27 +118,45 @@ if [ -z "${maxdisks}" ]; then
 	maxdisks=${numdisks}
 fi
 
+#	Try to accurately summarise free space
+#
+msg=
+# First floppy has 8k boot code, the rest an 8k 'multivolume header'
+# Each file has a 512 byte header and is rounded to a multiple of 512
+# The archive ends with two 512 byte blocks of zeros
+# The output file is then rounded up to a multiple of 8k
+free_space=$(($maxdisks * ($floppysize - 16) * 512 - 512 * 2))
+for file in $files; do
+	set -- $(ls -ln $file)
+	file_bytes=$5
+	pad_bytes=$(($(roundup $file_bytes 512) * 512 - $file_bytes))
+	[ "$file_bytes" != 0 -o "$file" = "${file#USTAR.volsize.}" ] &&
+		msg="$msg $file $pad_bytes,"
+	free_space=$(($free_space - 512 - $file_bytes - $pad_bytes))
+done
+echo "Free space in last tar block:$msg"
+
 if [ ${numdisks} -gt ${maxdisks} ]; then
-	excess=$(( ( ${blocks} - (${floppysize} - 16) * ${maxdisks} ) * 512 ))
+	# Add in the size of the last item (we really want the kernel) ...
+	excess=$(( 0 - $free_space + $pad_bytes))
 	echo 1>&2 \
 	    "$prog: Image is ${excess} bytes ($(( ${excess} / 1024 )) KB)"\
 	    "too big to fit on ${maxdisks} disk"$(plural ${maxdisks})
 	exit 1
 fi
 
-padsize=$(( ${floppysize} * ${maxdisks} ))
-padcount=$(( ${padsize} - ${blocks} ))
+padto=$(( ${floppysize} * ${maxdisks} ))
 if [ -n "${pad}" ]; then
 	echo \
-	    "Writing $(( ${padsize} * 512 )) bytes ($(( ${padsize} / 2 )) KB)" \
+	    "Writing $(( ${padto} * 512 )) bytes ($(( ${padto} / 2 )) KB)" \
 	    "on ${numdisks} disk"$(plural ${numdisks})"," \
-	    "padded by $(( ${padcount} * 512 )) bytes" \
-	    "($(( ${padcount} / 2 )) KB)"
+	    "padded by ${free_space} bytes" \
+	    "($(( ${free_space} / 1024 )) KB)"
 else
 	echo "Writing ${bytes} bytes ($(( ${blocks} / 2 )) KB)"\
 	    "on ${numdisks} disk"$(plural ${numdisks})"," \
-	    "free space $(( ${padcount} * 512 )) bytes" \
-	    "($(( ${padcount} / 2 )) KB)"
+	    "free space ${free_space} bytes" \
+	    "($(( ${free_space} / 1024 )) KB)"
 fi
 
 #	write disks

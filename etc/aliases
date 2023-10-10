@@ -27,6 +27,36 @@ ntpd:			root
 sshd:			root
 nobody:			root
 
+# Well-known aliases -- these should be filled in!
+# root:
+# operator:
+
 # Aliases to handle mail to msgs and news
 #msgs: 			"|/usr/ucb/msgs -s"
 #rnews:			"|/usr/local/uurec"
+
+# Standard aliases defined by rfc2142
+# address to report network abuse (like spam)
+abuse:		postmaster
+# reports of network infrastructure difficulties
+noc:		root
+# address to report security problems
+security:	root
+# DNS administrator (DNS SOA records should use this)
+hostmaster:	root
+# Usenet news service administrator
+usenet:		root
+news:		usenet
+# http/web service administrator
+webmaster:	root
+www:		webmaster
+# UUCP service administrator
+uucp:		root
+# FTP administrator (especially anonymous FTP)
+ftp:		root
+
+# don't enable this.
+# decode:	/dev/null
+
+# uncomment this for msgs(1):
+# msgs: "|/usr/bin/msgs -s"

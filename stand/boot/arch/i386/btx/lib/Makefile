@@ -1,14 +1,11 @@
 # $FreeBSD$
 
-OBJS=			btxcsu.o btxsys.o btxv86.o
-CLEANFILES+=	crt0.o ${OBJS}
+.include <bsd.init.mk>
 
-all: crt0.o
+PROG=	crt0.o
+INTERNALPROG=
+SRCS=	btxcsu.S btxsys.S btxv86.S
+CFLAGS+=-I${.CURDIR}/../../common
+LDFLAGS+=-Wl,-r
 
-crt0.o: ${OBJS}
-	${LD} ${LDFLAGS} -i -o ${.TARGET} ${OBJS}
-
-.include <bsd.lib.mk>
-
-.s.o:
-	${AS} ${AFLAGS} -o ${.TARGET} ${.IMPSRC}
+.include <bsd.prog.mk>

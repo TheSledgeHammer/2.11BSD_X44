@@ -1,4 +1,4 @@
-#	$NetBSD: parselist.awk,v 1.14 2002/09/16 02:13:16 thorpej Exp $
+#	$NetBSD: parselist.awk,v 1.15.4.1 2009/06/06 22:10:13 bouyer Exp $
 #
 # Copyright (c) 2002 The NetBSD Foundation, Inc.
 # All rights reserved.
@@ -14,13 +14,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 3. All advertising materials mentioning features or use of this software
-#    must display the following acknowledgement:
-#        This product includes software developed by the NetBSD
-#        Foundation, Inc. and its contributors.
-# 4. Neither the name of The NetBSD Foundation nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
 # ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -232,7 +225,7 @@ $1 == "PROG" \
 				    crunchprog, 555);
 				continue;
 			}
-			link(crunchprog, $i);
+			link(crunchprog, $i, 555);
 		}
 	}
 	next;
@@ -255,7 +248,7 @@ $1 == "LINK" \
 		err("Usage: LINK prog link [...]");
 	if (mode == "install" || mode == "mtree" || mode == "populate") {
 		for (i = 3; i <= NF; i++)
-			link($2, $i);
+			link($2, $i, 444);
 	}
 	next;
 }
@@ -312,7 +305,8 @@ function copy (src, dest, perm) \
 	if (perm == "")
 		perm = 444;
 	if (mode == "install") {
-		printf("\t${INSTALL_FILE} -o ${BINOWN} -g ${BINGRP} -m %s %s %s/%s\n",
+		printf("\t${INSTALL_FILE} -o ${BINOWN} -g ${BINGRP}" \
+		    " -m %s %s %s/%s\n",
 		    perm, src, ENVIRON["TARGETDIR"], dest)
 	} else if (mode == "mtree") {
 		printf("./%s mode=%s\n", dest, perm);
@@ -323,13 +317,14 @@ function copy (src, dest, perm) \
 	}
 }
 
-function link (src, dest) \
+function link (src, dest, perm) \
 {
 	if (mode == "install") {
-		printf("\t${INSTALL_LINK} %s/%s %s/%s\n",
-		    ENVIRON["TARGETDIR"], src, ENVIRON["TARGETDIR"], dest)
+		printf("\t${INSTALL_LINK} -o ${BINOWN} -g ${BINGRP}" \
+		    " -m %s %s/%s %s/%s\n",
+		    perm, ENVIRON["TARGETDIR"], src, ENVIRON["TARGETDIR"], dest)
 	} else if (mode == "mtree") {
-		printf("./%s\n", dest);
+		printf("./%s mode=%s\n", dest, perm);
 	} else {
 		printf("rm -rf %s/%s\n", ENVIRON["TARGETDIR"], dest);
 		printf("(cd %s; ln %s %s) || exit 1\n",
