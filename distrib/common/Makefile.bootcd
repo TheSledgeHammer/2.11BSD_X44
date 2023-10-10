@@ -36,7 +36,7 @@
 #
 
 BOOT?=		${DESTDIR}/usr/mdec/boot
-BOOTXX_CD9660?=	${DESTDIR}/usr/mdec/bootxx_cd9660
+BOOTXX_CD9660?=	${DESTDIR}/usr/mdec/cdboot
 CDRELEASE?=	false
 CDSOURCE?=	false
 .if ${CDRELEASE} == false

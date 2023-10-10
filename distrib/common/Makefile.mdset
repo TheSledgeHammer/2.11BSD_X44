@@ -72,12 +72,12 @@ _KERNEL:=${_K}			# (work around obscure issue in make(1))
 .if (${_KERNEL:M*/*} != "")
 _KERNNAME.${_K}.${_F}:=	${_K}
 .else
-_KERNNAME.${_K}.${_F}:=	${KERNOBJDIR}/${_K}/netbsd
+_KERNNAME.${_K}.${_F}:=	${KERNOBJDIR}/${_K}/twobsd
 .endif
 
 _FILENAME:=${_F}		# (work around obscure issue in make(1))
 .if ${_FILENAME} == "-"
-_KERNEL.${_K}.${_F}:=	netbsd-${_K}
+_KERNEL.${_K}.${_F}:=	twobsd-${_K}
 _FILENAME:=		${_KERNEL.${_K}.${_F}}
 .else
 _KERNEL.${_K}.${_F}:=	${_F}
