@@ -62,7 +62,7 @@
 #define	_PATH_SOUND		"/dev/sound"
 #define	_PATH_SOUND0	"/dev/sound0"
 #define	_PATH_TTY		"/dev/tty"
-#define	_PATH_UNIX		"/211bsd"
+#define	_PATH_UNIX		"/kernel/twobsd" /* aka. PATH_KERNEL (sys/boot.h) */
 #define	_PATH_VIDEO		"/dev/video"
 #define	_PATH_VIDEO0	"/dev/video0"
 //#define	_PATH_DEV		"/dev"
