@@ -7,6 +7,7 @@ libdbm/		4.3BSD		 	(dbm & ndbm before it was merged into Berkley DB)
 libedit/	4.4BSD-Lite2
 libexecinfo/	NetBSD
 libform/	NetBSD
+libfortran/	4.3BSD			(Contains libF77, libI77 and libU77)
 libipsec/	NetBSD
 libkvm/		4.4BSD-Lite2
 libm/		NetBSD

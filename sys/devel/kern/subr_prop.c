@@ -112,6 +112,13 @@ static void kdb_rehash(struct propdb *db);
 static struct kdbobj *kdbobj_find(propdb_t db, opaque_t object, int create, int wait);
 static int prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int type, int wait);
 
+struct lock_object propdb_slock;
+
+#define prop_lock_init(lock)	simple_lock_init(lock, "propdb_slock")
+#define prop_lock(lock)			simple_lock(lock);
+#define prop_unlock(lock)		simple_unlock(lock);
+
+
 /* 
  * Allocate a prop structure large enough to hold
  * `name' and `len' bytes of data.  For PROP_CONST
@@ -169,6 +176,7 @@ kdb_rehash(struct propdb *db)
 	}
 
 	/* Now pop an object from the old table and insert it in the new one. */
+	prop_lock(&propdb_slock);
 	for (i = 0; i < db->kd_size; i++) {
 		obj = RB_FIRST(kobj_root, &old[i]);
 		while (obj != NULL) {
@@ -178,6 +186,7 @@ kdb_rehash(struct propdb *db)
 			RB_INSERT(kobj_root, &new[hash], obj);
 		}
 	}
+	prop_unlock(&propdb_slock);
 	db->kd_size = newsize;
 	db->kd_obj = new;
 	splx(s);
@@ -196,6 +205,7 @@ propdb_create(const char *name)
 	size_t i;
 
 	db = (struct propdb *)malloc(sizeof(struct propdb), M_PROP,	M_WAITOK);
+	prop_lock_init(&propdb_slock);
 
 	strncpy(db->kd_name, name, sizeof(db->kd_name));
 
@@ -206,7 +216,9 @@ propdb_create(const char *name)
 	for (i = 0; i < db->kd_size; i++) {
 		RB_INIT(&db->kd_obj[i]);
 	}
+	prop_lock(&propdb_slock);
 	LIST_INSERT_HEAD(&propdbs, db, kd_link);
+	prop_unlock(&propdb_slock);
 	return (db);
 }
 
@@ -217,6 +229,7 @@ propdb_destroy(propdb_t db)
 	struct kdbprop *prop;
 	size_t i;
 
+	prop_lock(&propdb_slock);
 #ifdef DIAGNOSTIC
 	struct propdb *p;
 
@@ -242,6 +255,7 @@ propdb_destroy(propdb_t db)
 	}
 	free(db->kd_obj, M_PROP);
 	free(db, M_PROP);
+	prop_unlock(&propdb_slock);
 }
 
 /*
@@ -257,6 +271,7 @@ kdbobj_find(propdb_t db, opaque_t object, int create, int wait)
 	/* Find our object */
 	hash = KDB_HASH(hash, db->kd_size);
 	i=0;
+	prop_lock(&propdb_slock);
 	RB_FOREACH(obj, kobj_root, &db->kd_obj[hash]) {
 		i++;	/* Measure chain depth */
 		if (obj->ko_object == object)
@@ -283,6 +298,7 @@ kdbobj_find(propdb_t db, opaque_t object, int create, int wait)
 		RB_INIT(&obj->ko_props);
 		RB_INSERT(kobj_root, &db->kd_obj[hash], obj);
 	}
+	prop_unlock(&propdb_slock);
 	return (obj);
 }
 
@@ -340,6 +356,7 @@ prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int typ
 	prop->kp_type = type;
 
 	/* Now clean up if necessary */
+	prop_lock(&propdb_slock);
 	if (prop != oprop) {
 		RB_INSERT(kprop_root, &obj->ko_props, prop);
 		if (oprop) {
@@ -347,6 +364,7 @@ prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int typ
 			free(oprop, M_PROP);
 		}
 	}
+	prop_unlock(&propdb_slock);
 	return (0);
 }
 
@@ -498,6 +516,7 @@ propdb_delete(propdb_t db, opaque_t object, const char *name)
 	}
 
 	if (name) {
+		prop_lock(&propdb_slock);
 		/* Find our prop */
 		RB_FOREACH(prop, kprop_root, &obj->ko_props) {
 			if (strcmp(prop->kp_name, name) == 0)
@@ -505,6 +524,7 @@ propdb_delete(propdb_t db, opaque_t object, const char *name)
 		}
 		if (!prop) {
 			splx(s);
+			prop_unlock(&propdb_slock);
 			return (0);
 		}
 		RB_REMOVE(kprop_root, &obj->ko_props, prop);
@@ -522,6 +542,7 @@ propdb_delete(propdb_t db, opaque_t object, const char *name)
 		RB_REMOVE(kobj_root, &db->kd_obj[i], obj);
 		free(obj, M_PROP);
 	}
+	prop_unlock(&propdb_slock);
 	splx(s);
 	return (i);
 }
