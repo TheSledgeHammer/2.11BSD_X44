@@ -35,7 +35,7 @@
 #include <btxv86.h>
 
 #include "boot2.h"
-
+#include "paths.h"
 #include "lib.h"
 
 #define IO_KEYBOARD		1
@@ -61,15 +61,6 @@
 
 /* pass: -a, -s, -r, -d, -c, -v, -h, -C, -g, -m, -p, -D */
 #define RBX_MASK		0x2005ffff
-
-#define PATH_CONFIG		"/boot.config"
-#define PATH_BOOT3		"/boot/loader"
-#define PATH_KERNEL		"/kernel"
-
-#define PATH_CONFIG		"/boot.config"
-#define PATH_BOOT3		"/loader"			/* /boot is dedicated */
-#define PATH_BOOT3_ALT	"/boot/loader"		/* /boot in root */
-#define PATH_KERNEL		"/kernel"
 
 #define ARGS			0x900
 #define NOPT			12
@@ -252,13 +243,15 @@ main(void)
 
     autoboot = 1;
 
-	if ((ino = lookup(PATH_CONFIG)))
+	if ((ino = lookup(PATH_CONFIG)) || (ino = lookup(PATH_DOTCONFIG))) {
 		fsread(ino, cmd, sizeof(cmd));
+    	}
 
 	if (*cmd) {
 		printf("%s: %s", PATH_CONFIG, cmd);
-		if (parse())
+		if (parse()) {
 			autoboot = 0;
+        }
 		/* Do not process this command twice */
 		*cmd = 0;
 	}
@@ -269,7 +262,7 @@ main(void)
 	 */
 
 	if (autoboot && !*kname) {
-		memcpy(kname, PATH_BOOT3, sizeof(PATH_BOOT3));
+		memcpy(kname, PATH_LOADER, sizeof(PATH_LOADER));
 		if (!keyhit(3 * SECOND)) {
 			load();
 			memcpy(kname, PATH_KERNEL, sizeof(PATH_KERNEL));
