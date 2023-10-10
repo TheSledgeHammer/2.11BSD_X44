@@ -32,8 +32,8 @@
 #ifndef _SYS_BOOT_H_
 #define _SYS_BOOT_H_
 
-#define OLD_PATH_KERNEL	"/kernel"
-#define PATH_KERNEL	    "/boot/kernel/kernel"
+#define OLD_PATH_KERNEL	"/kernel/twobsd"
+#define PATH_KERNEL	    OLD_PATH_KERNEL /* "/boot/kernel/kernel" */
 
 int 	boot_env_to_howto(void);
 void 	boot_howto_to_env(int howto);
