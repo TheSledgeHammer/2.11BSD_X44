@@ -273,15 +273,42 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 .for subdir in . defaults mtree periodic rc.d root
 	${MAKEDIRTARGET} ${subdir} configinstall
 .endfor
+.if (${MKPF} != "no")
+	${MAKEDIRTARGET} ${NETBSDSRCDIR}/usr.sbin/pf configinstall
+.endif
 .if (${MKPOSTFIX} != "no")
 	${MAKEDIRTARGET} ${NETBSDSRCDIR}/contrib/postfix configinstall
 .endif
 
 # distrib-dirs --
-#	Populate $DESTDIR with directories needed by NetBSD
+#	Populate $DESTDIR with directories needed by 211BSD
 #
+.if ${MKUNPRIVED} == "no"
+TOOL_MTREE.unpriv=
+.else
+TOOL_MTREE.unpriv=	-W
+.endif
+
 distrib-dirs: .PHONY check_DESTDIR
-	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
+.if !defined(DISTRIBUTION_DONE)						# {
+# XXX: If METALOG=${DESTDIR}/METALOG (as is normal), and if ${DESTDIR}
+# does not yet exist (as often happens), then the INSTALL_DIR command
+# immediately below will create ${DESTDIR} but will fail to register
+# an entry for "." in the metalog.  We ignore the problem, because the
+# TOOL_MTREE commands a little further below will soon register an entry
+# for "." in the metalog.
+	${INSTALL_DIR} -o root -g wheel -m 755 ${BASE_PKG} ${DESTDIR}
+# XXX: It would be nice if a single mtree invocation could both
+# append to the metalog and do real work.  Instead, we have to
+# repeat the command twice in slightly different ways.
+	${TOOL_MTREE} -def ${.CURDIR}/mtree/TwoBSD.dist -N ${.CURDIR} \
+	    -p ${DESTDIR}/ -U ${TOOL_MTREE.unpriv}
+.if ${MKUNPRIVED} != "no"						# {
+	${TOOL_MTREE} -def ${.CURDIR}/mtree/TwoBSD.dist -N ${.CURDIR} \
+	    -p ${DESTDIR}/ -C -k all | \
+	    ${TOOL_AWK} '/ optional/ {next} // {print}' | ${METALOG.add}
+.endif	# MKUNPRIVED							# }
+.endif	# DISTRIBUTION_DONE						# }
 	    
 COMPRESS_PROGRAM=${"${USE_XZ_SETS:Uno}"!="no":?${TOOL_XZ}:${TOOL_GZIP}}
 XZ_OPT=-9
@@ -517,7 +544,7 @@ kernset-${configfile}: .PHONY build_kernels snap_pre
 			for kernel in $${kernels}; do \
 				if [ ${KERNEL_DIR} = "yes" ]; then \
 					newname=$$(echo $${kernel} | \
-					    ${TOOL_SED} -e s/netbsd/kernel/); \
+					    ${TOOL_SED} -e s/twobsd/kernel/); \
 					ln ../$${kernel} ./twobsd/$${newname}; \
 				else \
 					newname=$${kernel}; \
