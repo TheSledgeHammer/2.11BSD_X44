@@ -72,4 +72,3 @@ DPADD=	${LIBI386} ${LIBSA}
 LDADD=	${LIBI386} ${LIBSA}
 
 .include <bsd.prog.mk>
-.include <bsd.kinc.mk>
