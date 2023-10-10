@@ -48,7 +48,8 @@ LOADER_DEFAULT_INTERP?=dloader
 LOADER_INTERP?=	${LOADER_DEFAULT_INTERP}
 
 # BINDIR is where we install
-BINDIR?=					/boot
+BINDIR?=					/usr/mdec
+#BINDIR?=					/boot
 
 # Machine Dependent
 .if ${MACHINE} == "i386" || ${MACHINE} == "x86_64"
