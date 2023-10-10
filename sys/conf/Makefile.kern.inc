@@ -360,7 +360,7 @@ install: install-kernel-${MACHINE_NAME}
 			exit 1 ; \
 		fi
 	.if exists(${DESTDIR}${KODIR})
-		-thiskernel=`sysctl -n kern.bootfile || echo ${KODIR}/${KERNEL}/${KERNEL_KO}` ; \
+		-thiskernel=`sysctl -n kern.bootfile || echo ${KODIR}/${KERNEL_KO}` ; \
 		if [ ! "`dirname "$$thiskernel"`" -ef ${DESTDIR}${KODIR} ] ; then \
 			chflags -R noschg ${DESTDIR}${KODIR} ; \
 			rm -rf ${DESTDIR}${KODIR} ; \
