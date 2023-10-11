@@ -42,9 +42,9 @@ LIBUTIL?=			/usr.lib/libutil.a
 LIBY?=				/usr.lib/liby.a
 LIBZ?=				/usr.lib/libz.a
 LIBFORTRAN=			/usr.lib/libfortran
-#LIBF77?=			${LIBFORTRAN}/libF77.a
-#LIBI77?=			${LIBFORTRAN}/libI77.a
-#LIBU77?=			${LIBFORTRAN}/libU77.a
+LIBF77?=			${LIBFORTRAN}/libF77.a
+LIBI77?=			${LIBFORTRAN}/libI77.a
+LIBU77?=			${LIBFORTRAN}/libU77.a
 
 MKDEP_SUFFIXES?=	.lo .ln .d
 
