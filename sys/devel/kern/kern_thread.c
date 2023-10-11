@@ -214,6 +214,28 @@ kthread_zombie(void)
 	}
 }
 
+int
+kthread_alloc(func, arg, kt)
+	void (*func)(void *);
+	void *arg;
+	struct kthread *kt;
+{
+	struct proc *p;
+	int error;
+
+	error = kthread_create(func, arg, &p, "kthread_allocation");
+	if (error != 0) {
+		return (error);
+	}
+
+	kt = p->p_kthreado;
+	if (kt != NULL) {
+		kt->kt_flag |= KT_INMEM | KT_SYSTEM | KT_NOCLDWAIT;
+	}
+
+	return (0);
+}
+
 /*
  * An mxthread is a multiplexed kernel thread.
  * Mxthreads are confined to the kthread which created it.
@@ -222,12 +244,16 @@ kthread_zombie(void)
 #define M_MXTHREAD 95
 
 struct mxthread {
-	LIST_ENTRY(mxthread) 	mx_list;
+	LIST_HEAD(, kthread) 	mx_list;
+	struct mpx 				*mx_mpx;
+
+
 	struct kthread			*mx_kthread; /* kernel thread */
 
 	pid_t 					mx_tid;
 	struct pgrp 			*mx_pgrp;
 
+	struct mpx 				*mx_mpx;
 	int 					mx_channel;
 };
 
@@ -237,9 +263,7 @@ mxthread_init(kt)
 {
 	KASSERT(kt != NULL);
 
-	LIST_INIT(kt->kt_mxthreads);
-
-
+	LIST_INIT(&allmxthreads);
 }
 
 struct mxthread *
@@ -247,9 +271,13 @@ mxthread_alloc(channel)
 	int channel;
 {
 	register struct mxthread *mx;
+	register struct mpx 	 *mpx;
 
 	mx = (struct mxthread *)calloc(channel, sizeof(struct mxthread), M_MXTHREAD, M_WAITOK);
+	mpx = (struct mpx *)malloc(sizeof(struct mxthread), M_MXTHREAD, M_WAITOK);
 	mx->mx_channel = channel;
+	mx->mx_mpx = mpx;
+
 	return (mx);
 }
 
@@ -315,22 +343,29 @@ mxthread_remove(kt, channel)
 }
 
 int
-kthread_alloc(func, arg, kt)
+kthread_alloc2(func, arg, kt, chan)
 	void (*func)(void *);
 	void *arg;
 	struct kthread *kt;
+	int 		chan;
 {
-	struct proc *p;
+	struct mpx 	*mpx;
 	int error;
 
-	error = kthread_create(func, arg, &p, "kthread_allocation");
+	error = kthread_alloc(func, arg, kt);
 	if (error != 0) {
 		return (error);
 	}
-	kt = p->p_kthreado;
-	if (kt != NULL) {
-		kt->kt_flag |= KT_INMEM | KT_SYSTEM | KT_NOCLDWAIT;
+	mpx = mpx_alloc();
+	if (mpx) {
+		error = mpx_create(mpx, chan, kt);
+		if (error != 0) {
+			mpx_free(mpx);
+			return (error);
+		}
+		kt->kt_mpx = mpx;
 	}
-
 	return (0);
 }
+
+

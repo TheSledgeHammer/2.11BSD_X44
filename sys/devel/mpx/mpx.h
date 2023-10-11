@@ -90,17 +90,12 @@ void                		mpx_init(void);
 struct mpx 					*mpx_alloc(void);
 void						mpx_free(struct mpx *);
 
-/* syscall callback */
-int 						mpxcall(int, int, struct mpx *, int, void *);
-
-/* channels */
-struct mpx_channel 			*mpx_allocate_channels(struct mpx *, int);
-void						mpx_deallocate_channels(struct mpx *, struct mpx_channel *);
-void						mpx_add_channel(struct mpx_channel *, int, void *);
-void						mpx_remove_channel(struct mpx_channel *, int, void *);
-void                		mpx_create_channel(struct mpx *, int, void *, int);
-void						mpx_destroy_channel(struct mpx *, int, void *);
-struct mpx_channel     		*mpx_get_channel(int, void *);
+/* mpx routines via mpxcall */
+int							mpx_create(struct mpx *, int, void *);
+int							mpx_put(struct mpx *, int, void *);
+int							mpx_get(struct mpx *, int, void *);
+int							mpx_destroy(struct mpx *, int, void *);
+int							mpx_remove(struct mpx *, int, void *);
 
 #ifdef notyet
 struct mpx_channel 			*mpx_get_channel_from_group(int);

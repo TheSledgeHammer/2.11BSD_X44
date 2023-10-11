@@ -753,6 +753,7 @@ pipe()
 	fdp = u.u_procp->p_fd;
 	error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0);
 	if (error) {
+		u.u_error = error;
 		return (error);
 	}
 	error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0);
