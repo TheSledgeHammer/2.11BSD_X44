@@ -18,4 +18,7 @@ SUBDIR= 	libbz2 libcrypt libcurses libdbm libedit libexecinfo libform libkvm 		\
 # IPv6/IPsec
 SUBDIR+=	libipsec					
 
+# Fortran: F77, U77 and I77
+SUBDIR+=    libfortran
+
 .include <bsd.subdir.mk>
