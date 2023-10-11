@@ -36,6 +36,8 @@
 #include <lib/libkern/libkern.h>
 #endif
 
+#undef fls
+
 /*
  * Find Last Set bit
  */

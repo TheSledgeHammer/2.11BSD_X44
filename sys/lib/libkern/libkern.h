@@ -249,12 +249,13 @@ char		*strstr(const char *, const char *);
  * ffs is an instruction on vax.
  */
 int	 		ffs(int);
+int			fls(int);
 #if __GNUC_PREREQ__(2, 95) && (!defined(__vax__) || __GNUC_PREREQ__(4,1))
 #define		ffs(x)				__builtin_ffs(x)
+#define		fls(x)				__builtin_fls(x)
 #endif
 int	 		ffsl(long);
 int			ffsll(long long);
-int			fls(int);
 int	 		flsl(long);
 int			flsll(long long);
 
