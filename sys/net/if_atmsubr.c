@@ -208,17 +208,17 @@ atm_output(ifp, m0, dst, rt0)
 		 */
 		sz = sizeof(atmdst);
 		atm_flags = ATM_PH_FLAGS(&atmdst);
-		if (atm_flags & ATM_PH_LLCSNAP) sz += 8; /* sizeof snap == 8 */
+		if (atm_flags & ATM_PH_LLCSNAP)
+			sz += 8; /* sizeof snap == 8 */
 		M_PREPEND(m, sz, M_DONTWAIT);
 		if (m == 0)
 			senderr(ENOBUFS);
-		ad = mtod(m, struct atm_pseudohdr *);
+		ad = mtod(m, struct atm_pseudohdr*);
 		*ad = atmdst;
 		if (atm_flags & ATM_PH_LLCSNAP) {
-			atmllc = (struct atmllc *)(ad + 1);
-			bcopy(ATMLLC_HDR, atmllc->llchdr, 
-						sizeof(atmllc->llchdr));
-			ATM_LLC_SETTYPE(atmllc, etype); 
+			atmllc = (struct atmllc*) (ad + 1);
+			bcopy(ATMLLC_HDR, atmllc->llchdr, sizeof(atmllc->llchdr));
+			ATM_LLC_SETTYPE(atmllc, etype);
 		}
 	}
 

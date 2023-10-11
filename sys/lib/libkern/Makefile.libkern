@@ -55,7 +55,8 @@ SRCS+=	__assert.c __main.c _que.c
 SRCS+=	inet_addr.c intoa.c
 SRCS+=	murmur3_32.c prospectorhash.c arc4random.c
 SRCS+=	pmatch.c mcount.c bcd.c hexdump.c
-SRCS+=	ffs.c ffsl.c flsl.c flsll.c
+SRCS+=	ffs.c ffsl.c ffsll.c
+SRCS+= 	fls.c flsl.c flsll.c
 
 SRCS+=	bcmp.c bcopy.c bzero.c
 #SRCS+=	memmove.c memcmp.c

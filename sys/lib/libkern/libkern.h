@@ -253,8 +253,15 @@ int	 		ffs(int);
 #define		ffs(x)				__builtin_ffs(x)
 #endif
 int	 		ffsl(long);
+int			ffsll(long long);
+int			fls(int);
 int	 		flsl(long);
 int			flsll(long long);
+
+#define ffs32(mask)	(ffsl(mask))
+#define ffs64(mask)	(ffsll(mask))
+#define fls32(mask) (flsl(mask))
+#define fls64(mask) (flsll(mask))
 
 void	 	__assert(const char *, const char *, int, const char *) __attribute__((__noreturn__));
 void		kern_assert(const char *, ...);

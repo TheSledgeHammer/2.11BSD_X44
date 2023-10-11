@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $DragonFly: src/sys/libkern/flsl.c,v 1.1 2007/06/01 00:23:24 dillon Exp $
+ * $FreeBSD: head/sys/libkern/ffsl.c 128019 2004-04-07 20:46:16Z imp $
  */
 
 #include <sys/cdefs.h>
@@ -37,17 +37,16 @@
 #endif
 
 /*
- * Find Last Set bit
+ * Find First Set bit
  */
 int
-flsl(long mask)
+ffsll(long long mask)
 {
 	int bit;
 
 	if (mask == 0)
 		return (0);
-	for (bit = 1; mask != 1; bit++)
-		mask = (unsigned long)mask >> 1;
+	for (bit = 1; !(mask & 1); bit++)
+		mask = (unsigned long long)mask >> 1;
 	return (bit);
 }
-

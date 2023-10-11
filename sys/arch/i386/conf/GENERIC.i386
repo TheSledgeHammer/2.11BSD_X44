@@ -397,6 +397,7 @@ pseudo-device	strip		  2					# Starmode Radio IP (Metricom)
 pseudo-device	tun		    2					# network tunneling over tty
 pseudo-device	gre		    2 				# generic L3 over IP tunnel
 pseudo-device	gif		    4					# IPv[46] over IPv[46] tunnel (RFC1933)
+pseudo-device	vlan							# IEEE 802.1q encapsulation
 #pseudo-device	bridge						# simple inter-network bridging
 #options 		BRIDGE_IPF						# bridge uses IP/IPv6 pfil hooks too
 pseudo-device	pf							# PF packet filter
