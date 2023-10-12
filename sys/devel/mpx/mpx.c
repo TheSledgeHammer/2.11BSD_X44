@@ -47,18 +47,27 @@
 #include <devel/mpx/mpx.h>
 #include <devel/sys/malloctypes.h>
 
-extern int nchans = NCHANS; /* NCHANS is likely going to be placed in param.c */
-struct channellist  mpx_channels[NCHANS];
+//extern int nchans = NCHANS; /* NCHANS is likely going to be placed in param.c */
+//struct channellist  mpx_channels[NCHANS];
 
 int							mpxcall(int, int, struct mpx *, int, void *);
 static int 					mpxchan(int, int, struct mpx *);
-static struct mpx_channel 	*mpx_allocate_channels(struct mpx *);
+#ifdef notyet
+static struct mpx_channel 	*mpx_allocate_channels(struct mpx *, int, void *);
 static void					mpx_deallocate_channels(struct mpx *, struct mpx_channel *);
-static void					mpx_add_channel(struct mpx_channel *, int, void *);
-static void					mpx_remove_channel(struct mpx_channel *, int, void *);
+#endif
+static void					mpx_add_channel(struct mpx *, int, void *);
+static void					mpx_remove_channel(struct mpx *, int, void *);
 static void                	mpx_create_channel(struct mpx *, int, void *);
 static void					mpx_destroy_channel(struct mpx *, int, void *);
-struct mpx_channel     		*mpx_get_channel(int, void *);
+struct mpx_channel     		*mpx_get_channel(struct mpx *, int, void *);
+
+/* MPX Changes:
+ * - improve multi-processing support
+ * - NCHANS is no longer a global parameter, but a local one.
+ * 		- This means that each mpx structure allocated can set the
+ * 		maximum number of channels available for that instance.
+ */
 
 int
 mpx_create(mpx, idx, data)
@@ -136,31 +145,45 @@ mpx_remove(mpx, idx, data)
 	return (0);
 }
 
-void
-mpx_init(void)
+static void
+mpx_init(mpx, nchans)
+	struct mpx 	*mpx;
+	int nchans;
 {
-	register int i;
+	int i;
 
-	for(j = 0; j < NCHANS; j++) {
-		LIST_INIT(&mpx_channels[j]);
+	for(i = 0; i < nchans; i++) {
+		LIST_INIT(&mpx->mpx_chanlist[i]);
 	}
+	mpx->mpx_nentries = 0;
+	mpx->mpx_refcnt = 1;
+	mpx->mpx_nchans = nchans;
+	simple_lock_init(&mpx->mpx_lock, "mpx_lock");
 }
 
 struct mpx *
-mpx_alloc(void)
+mpx_allocate(nchans)
+	int nchans;
 {
-	struct mpx *mpx;
-	mpx = (struct mpx *)malloc(sizeof(struct mpx *), M_MPX, M_WAITOK);
-
-	return (mpx);
+	struct mpx *result;
+	result = (struct mpx *)malloc(sizeof(struct mpx *), M_MPX, M_WAITOK);
+	mpx_init(result, nchans);
+	return (result);
 }
 
 void
-mpx_free(mpx)
+mpx_deallocate(mpx)
 	struct mpx *mpx;
 {
-	if(mpx == NULL) {
+	int i;
+
+	if (mpx == NULL) {
 		return;
+	}
+	for(i = 0; i < mpx->mpx_nchans; i++) {
+		if (!LIST_EMPTY(&mpx->mpx_chanlist[i])) {
+			return;
+		}
 	}
 	free(mpx, M_MPX);
 }
@@ -237,10 +260,11 @@ mpxchan(cmd, idx, data, mpx)
 
 	switch (cmd) {
 	case MPXCREATE:
-		create:
+	/*
 		if (mpx->mpx_channel->mpc_refcnt == 0) {
 			idx = 0;
 		}
+	*/
 		mpx_create_channel(mpx, idx, data);
 		printf("create channel: %d\n", idx);
 		return (0);
@@ -257,8 +281,7 @@ mpxchan(cmd, idx, data, mpx)
 			if (mpx->mpx_channel->mpc_refcnt == 0) {
 				idx = 0;
 			}
-			if (mpx->mpx_channel->mpc_index == idx
-					&& mpx->mpx_channel->mpc_data == data) {
+			if ((mpx->mpx_channel->mpc_index == idx) && (mpx->mpx_channel->mpc_data == data)) {
 				printf("add channel: channel %d already exists\n", idx);
 				return (EEXIST);
 			}
@@ -278,7 +301,7 @@ mpxchan(cmd, idx, data, mpx)
 		return (0);
 
 	case MPXGET:
-		mpx->mpx_channel = mpx_get_channel(idx, data);
+		mpx->mpx_channel = mpx_get_channel(mpx, idx, data);
 		if (mpx->mpx_channel == NULL) {
 			printf("get channel: no channel %d found\n", idx);
 			return (ENOMEM);
@@ -290,16 +313,107 @@ mpxchan(cmd, idx, data, mpx)
 	return (0);
 }
 
-static struct mpx_channel *
-mpx_allocate_channels(mpx)
-	struct mpx 	*mpx;
+/* revised mpx functions: */
+struct mpx_channel *
+mpx_channel_create(idx, size, data)
 {
 	register struct mpx_channel *result;
+	long totsize;
 
-	result = (struct mpx_channel *)calloc(nchans, sizeof(struct mpx_chan *), M_MPX, M_WAITOK);
-    result->mpc_refcnt = 0;
-	mpx->mpx_channel = result;
+	totsize = (data * size);
+	result = (struct mpx_channel *)malloc(totsize + sizeof(struct mpx_channel *), M_MPX, M_WAITOK);
+	bzero(result, sizeof(struct result));
+	result->mpc_index = idx;
+	result->mpc_refcnt = 0;
+	result->mpc_data = data;
+	result->mpc_size = size;
 	return (result);
+}
+
+void
+mpx_channel_destroy(cp)
+	struct mpx_channel *cp;
+{
+	if (cp == NULL) {
+		return;
+	}
+	free(cp, M_MPX);
+}
+
+void
+mpx_channel_insert(mpx, idx, data)
+	struct mpx *mpx;
+	int idx;
+	void *data;
+{
+	struct channellist *list;
+	struct mpx_channel *cp;
+
+	if (mpx == NULL) {
+		return;
+	}
+
+	list = &mpx->mpx_chanlist[idx];
+	cp = channel_create(idx, sizeof(data), data);
+	cp->mpc_refcnt++;
+	mpx->mpx_channel = cp;
+	mpx_lock(mpx);
+	LIST_INSERT_HEAD(list, cp, mpc_node);
+	mpx->mpx_nentries++;
+	mpx_unlock(mpx);
+}
+
+void
+mpx_channel_remove(mpx, idx, data)
+	struct mpx *mpx;
+	int idx;
+	void *data;
+{
+	struct channellist *list;
+	struct mpx_channel *cp;
+
+	list = &mpx->mpx_chanlist[idx];
+	mpx_lock(mpx);
+	LIST_FOREACH(cp, list, mpc_node) {
+		if ((cp->mpc_index == idx) && (cp->mpc_data == data)) {
+			cp->mpc_refcnt--;
+			LIST_REMOVE(cp, mpc_node);
+			mpx->mpx_nentries--;
+			mpx_unlock(mpx);
+		}
+	}
+}
+
+struct mpx_channel *
+mpx_channel_lookup(mpx, idx, data)
+	struct mpx *mpx;
+	int idx;
+	void *data;
+{
+	struct channellist *list;
+	struct mpx_channel *cp;
+
+	list = &mpx->mpx_chanlist[idx];
+	mpx_lock(mpx);
+	LIST_FOREACH(cp, list, mpc_node) {
+		if ((cp->mpc_index == idx) && (cp->mpc_data == data)) {
+			mpx_unlock(mpx);
+			return (cp);
+		}
+	}
+	mpx_unlock(mpx);
+	return (NULL);
+}
+
+/* old functions */
+#ifdef notyet
+static struct mpx_channel *
+mpx_allocate_channels(mpx, idx, data)
+	struct mpx 	*mpx;
+	int idx;
+	void *data;
+{
+	return (mpx_channel_create(idx, sizeof(data), data));
 }
 
 static void
@@ -307,68 +421,35 @@ mpx_deallocate_channels(mpx, cp)
 	struct mpx 	*mpx;
 	struct mpx_channel *cp;
 {
-	if(cp == NULL) {
-		return;
-	}
-
-	mpx->mpx_channel = mpx_get_channel(cp->mpc_index, cp->mpc_data);
-	if(mpx->mpx_channel != cp) {
-		return;
-	}
-
-	free(cp, M_MPX);
-	mpx->mpx_channel = cp;
+	mpx_destroy_channel(mpx, cp->mpc_index, cp->mpc_data);
 }
+#endif
 
 static struct mpx_channel *
-mpx_get_channel(idx, data)
+mpx_get_channel(mpx, idx, data)
+	struct mpx 	*mpx;
     int idx;
     void *data;
 {
-    struct channellist *chan;
-    struct mpx_channel *cp;
-
-    KASSERT(idx < NCHANS);
-
-    chan = &mpx_channels[idx];
-    LIST_FOREACH(cp, chan, mpc_node) {
-        if(cp->mpc_index == idx && cp->mpc_data == data) {
-            return (cp);
-        }
-    }
-    return (NULL);
+    return (mpx_channel_lookup(mpx, idx, data));
 }
 
 static void
-mpx_add_channel(cp, idx, data)
-	struct mpx_channel *cp;
+mpx_add_channel(mpx, idx, data)
+	struct mpx *mpx;
 	int idx;
 	void *data;
 {
-	struct channellist *chan;
-
-    if (cp == NULL) {
-        return;
-    }
-
-    chan = &mpx_channels[idx];
-    cp->mpc_index = idx;
-    cp->mpc_data = data;
-    LIST_INSERT_HEAD(chan, cp, mpc_node);
-    cp->mpc_refcnt++;
+    mpx_channel_insert(mpx, idx, data);
 }
 
 static void
-mpx_remove_channel(cp, idx, data)
-	struct mpx_channel *cp;
+mpx_remove_channel(mpx, idx, data)
+	struct mpx *mpx;
 	int idx;
     void *data;
 {
-	cp = mpx_get_channel(idx, data);
-    if (cp != NULL) {
-        LIST_REMOVE(cp, mpc_node);
-        cp->mpc_refcnt--;
-    }
+    mpx_channel_remove(mpx, idx, data);
 }
 
 static void
@@ -377,12 +458,7 @@ mpx_create_channel(mpx, idx, data)
 	int 				idx;
     void                *data;
 {
-    struct mpx_channel *cp;
-
-    cp = mpx_allocate_channels(mpx);
-    MPX_LOCK(mpx);
-    mpx_add_channel(cp, idx, data);
-    MPX_UNLOCK(mpx);
+    mpx_add_channel(mpx, idx, data);
 }
 
 static void
@@ -393,11 +469,8 @@ mpx_destroy_channel(mpx, idx, data)
 {
 	struct mpx_channel *cp;
 
-	cp = mpx_get_channel(idx, data);
+	cp = mpx_channel_lookup(mpx, idx, data);
     if (cp != NULL) {
-    	MPX_LOCK(mpx);
-        mpx_remove_channel(cp, cp->mpc_index, cp->mpc_data);
-        mpx_deallocate_channels(mpx, cp);
-        MPX_UNLOCK(mpx);
+    	mpx_channel_destroy(cp);
     }
 }

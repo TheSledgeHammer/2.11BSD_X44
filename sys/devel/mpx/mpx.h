@@ -45,6 +45,7 @@ struct mpx_channel {
     struct mpx_group	    *mpc_group;     /* this channels group */
     int 	                mpc_index;      /* channel index */
     void                    *mpc_data;		/* channel data */
+    u_long					mpc_size;		/* channel size */
     int                     mpc_refcnt;		/* channel reference count */
 };
 
@@ -60,10 +61,20 @@ struct mpx_group {
 struct mpx {
     struct lock_object		mpx_slock;		/* mpx mutex */
     struct lock				mpx_lock;		/* long-term mpx lock */
-
-    struct mpx_group		*mpx_group;
-    struct mpx_channel	    *mpx_channel;
     struct file				*mpx_file;
+    int						mpx_nentries;	/* mpx number of entries */
+    int 					mpx_refcnt;		/* mpx reference count */
+
+    /* channels */
+    struct channellist		mpx_chanlist;	/* list of channels */
+    struct mpx_channel	    *mpx_channel;	/* channel back pointer */
+    int 					mpx_nchans;		/* max number channels for this mpx */
+#ifdef notyet
+    /* groups */
+    struct grouprbtree		mpx_grouptree;
+    struct mpx_group		*mpx_group;
+    int 					mpx_ngroups;	/* max number groups for this mpx */
+#endif
 };
 
 /* mpx type */
@@ -80,15 +91,15 @@ struct mpx {
 #define MPX_LOCK(mpx)		simple_lock((mpx)->mpx_slock)
 #define MPX_UNLOCK(mpx)		simple_unlock((mpx)->mpx_slock)
 
-extern struct grouprbtree   mpx_groups[];
-extern struct channellist   mpx_channels[];
-extern int groupcount;
-extern int channelcount;
+extern struct grouprbtree   mpx_groups[];	/* deprecated */
+extern struct channellist   mpx_channels[]; /* deprecated */
+extern int groupcount;						/* deprecated */
+extern int channelcount;					/* deprecated */
 
 /* common routines */
 void                		mpx_init(void);
-struct mpx 					*mpx_alloc(void);
-void						mpx_free(struct mpx *);
+struct mpx 					*mpx_allocate(int);
+void						mpx_deallocate(struct mpx *);
 
 /* mpx routines via mpxcall */
 int							mpx_create(struct mpx *, int, void *);
