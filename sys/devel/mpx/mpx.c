@@ -315,16 +315,19 @@ mpxchan(cmd, idx, data, mpx)
 
 /* revised mpx functions: */
 struct mpx_channel *
-mpx_channel_create(idx, size, data)
+mpx_channel_create(idx, size, data, nchans)
+	int idx, nchans;
+	u_long size;
+	void *data;
 {
 	register struct mpx_channel *result;
 	long totsize;
 
 	totsize = (data * size);
-	result = (struct mpx_channel *)malloc(totsize + sizeof(struct mpx_channel *), M_MPX, M_WAITOK);
+	result = (struct mpx_channel *)calloc(nchans, totsize + sizeof(struct mpx_channel *), M_MPX, M_WAITOK);
 	bzero(result, sizeof(struct result));
 	result->mpc_index = idx;
-	result->mpc_refcnt = 0;
+	//result->mpc_refcnt = 0;
 	result->mpc_data = data;
 	result->mpc_size = size;
 	return (result);
@@ -354,7 +357,7 @@ mpx_channel_insert(mpx, idx, data)
 	}
 
 	list = &mpx->mpx_chanlist[idx];
-	cp = channel_create(idx, sizeof(data), data);
+	cp = channel_create(idx, sizeof(data), data, mpx->mpx_nchans);
 	cp->mpc_refcnt++;
 	mpx->mpx_channel = cp;
 	mpx_lock(mpx);
@@ -413,7 +416,7 @@ mpx_allocate_channels(mpx, idx, data)
 	int idx;
 	void *data;
 {
-	return (mpx_channel_create(idx, sizeof(data), data));
+	return (mpx_channel_create(idx, sizeof(data), data), mpx->mpx_nchans);
 }
 
 static void
