@@ -29,11 +29,11 @@
 #ifndef _ALTQ_IF_ALTQ_H_
 #define	_ALTQ_IF_ALTQ_H_
 
-#if defined(_KERNEL_OPT)
 #include "opt_altq_enabled.h"
-#endif
 
-struct altq_pktattr; struct tb_regulator; struct top_cdnr;
+struct altq_pktattr;
+struct tb_regulator;
+struct top_cdnr;
 
 /*
  * Structure defining a queue for a network interface.

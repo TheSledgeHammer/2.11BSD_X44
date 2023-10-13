@@ -2,9 +2,7 @@
 
 #ifdef _KERNEL
 
-#if defined(_KERNEL_OPT)
 #include "opt_altq_enabled.h"
-#endif
 
 #include <sys/conf.h>
 
