@@ -47,9 +47,6 @@
 #include <devel/mpx/mpx.h>
 #include <devel/sys/malloctypes.h>
 
-//extern int nchans = NCHANS; /* NCHANS is likely going to be placed in param.c */
-//struct channellist  mpx_channels[NCHANS];
-
 int							mpxcall(int, int, struct mpx *, int, void *);
 static int 					mpxchan(int, int, struct mpx *);
 #ifdef notyet
@@ -360,10 +357,10 @@ mpx_channel_insert(mpx, idx, data)
 	cp = channel_create(idx, sizeof(data), data, mpx->mpx_nchans);
 	cp->mpc_refcnt++;
 	mpx->mpx_channel = cp;
-	mpx_lock(mpx);
+	MPX_LOCK(mpx);
 	LIST_INSERT_HEAD(list, cp, mpc_node);
 	mpx->mpx_nentries++;
-	mpx_unlock(mpx);
+	MPX_UNLOCK(mpx);
 }
 
 void
@@ -376,13 +373,13 @@ mpx_channel_remove(mpx, idx, data)
 	struct mpx_channel *cp;
 
 	list = &mpx->mpx_chanlist[idx];
-	mpx_lock(mpx);
+	MPX_LOCK(mpx);
 	LIST_FOREACH(cp, list, mpc_node) {
 		if ((cp->mpc_index == idx) && (cp->mpc_data == data)) {
 			cp->mpc_refcnt--;
 			LIST_REMOVE(cp, mpc_node);
 			mpx->mpx_nentries--;
-			mpx_unlock(mpx);
+			MPX_UNLOCK(mpx);
 		}
 	}
 }
@@ -397,14 +394,14 @@ mpx_channel_lookup(mpx, idx, data)
 	struct mpx_channel *cp;
 
 	list = &mpx->mpx_chanlist[idx];
-	mpx_lock(mpx);
+	MPX_LOCK(mpx);
 	LIST_FOREACH(cp, list, mpc_node) {
 		if ((cp->mpc_index == idx) && (cp->mpc_data == data)) {
-			mpx_unlock(mpx);
+			MPX_UNLOCK(mpx);
 			return (cp);
 		}
 	}
-	mpx_unlock(mpx);
+	MPX_UNLOCK(mpx);
 	return (NULL);
 }
 

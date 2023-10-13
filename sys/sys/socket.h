@@ -184,6 +184,7 @@ struct sockaddr_storage {
 #define	PF_APPLETALK	AF_APPLETALK
 #define	PF_ROUTE	AF_ROUTE
 #define	PF_INET6	AF_INET6
+#define PF_ARP		AF_ARP
 #define PF_KEY 		        pseudo_AF_KEY	/* like PF_ROUTE, only for key mgmt */
 #define	PF_MAX			AF_MAX
 

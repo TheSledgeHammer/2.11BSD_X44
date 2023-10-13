@@ -39,7 +39,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_tableset_ptree.c,v 1.1.2.2 2012/07/16 22:13:27 r
 #include <sys/param.h>
 #include <sys/types.h>
 
-#include <sys/bitops.h>
+//#include <sys/bitops.h>
 #include <sys/ptree.h>
 
 #include "npf_impl.h"

@@ -80,7 +80,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_arp.c,v 1.94 2003/09/24 06:52:47 itojun Exp $");
 #include "opt_ddb.h"
 #include "opt_inet.h"
 
-#ifdef INET
+//#ifdef INET
 
 #include "bridge.h"
 
@@ -137,19 +137,17 @@ int	arpt_down = 20;		/* once declared down, don't send for 20 secs */
 
 extern	struct domain arpdomain;
 
-static	void arprequest(struct ifnet *,
-	    struct in_addr *, struct in_addr *, u_int8_t *);
+static	void arprequest(struct ifnet *, struct in_addr *, struct in_addr *, u_int8_t *);
 static	void arptfree(struct llinfo_arp *);
 static	void arptimer(void *);
-static	struct llinfo_arp *arplookup(struct mbuf *, struct in_addr *,
-					  int, int);
+static	struct llinfo_arp *arplookup(struct mbuf *, struct in_addr *, int, int);
 static	void in_arpinput(struct mbuf *);
 
 #if NLOOP > 0
 extern	struct ifnet loif[NLOOP];
 #endif
 LIST_HEAD(, llinfo_arp) llinfo_arp;
-struct	ifqueue arpintrq = {0, 0, 0, 50};
+struct ifqueue arpintrq = {0, 0, 0, 50};
 int	arp_inuse, arp_allocated, arp_intimer;
 int	arp_maxtries = 5;
 int	useloopback = 1;	/* use loopback interface for local traffic */
@@ -158,12 +156,13 @@ int	arpinit_done = 0;
 struct	arpstat arpstat;
 struct	callout arptimer_ch;
 
-
 /* revarp state */
 static struct	in_addr myip, srv_ip;
 static int	myip_initialized = 0;
 static int	revarp_in_progress = 0;
 static struct ifnet *myip_ifp = NULL;
+
+static int arp_drainwanted;
 
 #ifdef DDB
 static void db_print_sa(struct sockaddr *);
@@ -212,20 +211,6 @@ lla_snprintf(adrp, len)
 	return p;
 }
 
-struct protosw arpsw[] = {
-	{ 0, 0, 0, 0,
-	  0, 0, 0, 0,
-	  0,
-	  0, 0, 0, arp_drain,
-	}
-};
-
-
-struct domain arpdomain =
-{ 	PF_ARP,  "arp", 0, 0, 0,
-	arpsw, &arpsw[sizeof(arpsw)/sizeof(arpsw[0])]
-};
-
 /*
  * ARP table locking.
  *
@@ -264,7 +249,7 @@ arp_lock_try(int recurse)
 }
 
 static __inline void
-arp_unlock()
+arp_unlock(void)
 {
 	int s;
 
@@ -274,19 +259,19 @@ arp_unlock()
 }
 
 #ifdef DIAGNOSTIC
-#define	ARP_LOCK(recurse)						\
-do {									\
-	if (arp_lock_try(recurse) == 0) {				\
-		printf("%s:%d: arp already locked\n", __FILE__, __LINE__); \
-		panic("arp_lock");					\
-	}								\
+#define	ARP_LOCK(recurse)											\
+do {																\
+	if (arp_lock_try(recurse) == 0) {								\
+		printf("%s:%d: arp already locked\n", __FILE__, __LINE__); 	\
+		panic("arp_lock");											\
+	}																\
 } while (/*CONSTCOND*/ 0)
-#define	ARP_LOCK_CHECK()						\
-do {									\
-	if (arp_locked == 0) {						\
-		printf("%s:%d: arp lock not held\n", __FILE__, __LINE__); \
-		panic("arp lock check");				\
-	}								\
+#define	ARP_LOCK_CHECK()											\
+do {																\
+	if (arp_locked == 0) {											\
+		printf("%s:%d: arp lock not held\n", __FILE__, __LINE__); 	\
+		panic("arp lock check");									\
+	}																\
 } while (/*CONSTCOND*/ 0)
 #else
 #define	ARP_LOCK(x)		(void) arp_lock_try(x)
@@ -301,7 +286,7 @@ do {									\
  */
 
 void
-arp_drain()
+arp_drain(void)
 {
 	struct llinfo_arp *la, *nla;
 	int count = 0;
@@ -327,6 +312,21 @@ arp_drain()
 	arpstat.as_dfrdropped += count;
 }
 
+static void
+arp_fasttimo(void)
+{
+	if (arp_drainwanted) {
+		arp_drain();
+		arp_drainwanted = 0;
+	}
+}
+
+
+static void
+arp_drainstub(void)
+{
+	arp_drainwanted = 1;
+}
 
 /*
  * Timeout routine.  Age arp_tab entries periodically.
@@ -762,7 +762,6 @@ arpintr()
 		if (m == 0 || (m->m_flags & M_PKTHDR) == 0)
 			panic("arpintr");
 
-		MCLAIM(m, &arpdomain.dom_mowner);
 		arpstat.as_rcvtotal++;
 
 		/*
@@ -784,7 +783,7 @@ arpintr()
 		}
 
 		if (/* XXX ntohs(ar->ar_hrd) == ARPHRD_ETHER && */
-		    m->m_len >= arplen)
+		m->m_len >= arplen)
 			switch (ntohs(ar->ar_pro)) {
 			case ETHERTYPE_IP:
 			case ETHERTYPE_IPTRAILERS:
@@ -1486,4 +1485,33 @@ db_show_arptab(addr, have_addr, count, modif)
 	return;
 }
 #endif
+
+struct protosw arpsw[] = {
+		{
+				.pr_type		= 0,
+				.pr_domain		= &arpdomain,
+				.pr_protocol 	= 0,
+				.pr_flags		= 0,
+				.pr_input 		= 0,
+				.pr_output		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput	= 0,
+				.pr_usrreq		= 0,
+				.pr_init		= 0,
+				.pr_fasttimo	= arp_fasttimo,
+				.pr_slowtimo	= 0,
+				.pr_drain		= arp_drainstub,
+				.pr_sysctl		= 0,
+		}
+};
+
+struct domain arpdomain = {
+		.dom_family 			= PF_ARP,
+		.dom_name 				= "arp",
+		.dom_init 				= 0,
+		.dom_externalize 		= 0,
+		.dom_dispose 			= 0,
+		.dom_protosw 			= arpsw,
+		.dom_protoswNPROTOSW 	= &arpsw[nitems(arpsw)]
+};
 #endif /* INET */

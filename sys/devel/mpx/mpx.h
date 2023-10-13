@@ -91,11 +91,6 @@ struct mpx {
 #define MPX_LOCK(mpx)		simple_lock((mpx)->mpx_slock)
 #define MPX_UNLOCK(mpx)		simple_unlock((mpx)->mpx_slock)
 
-extern struct grouprbtree   mpx_groups[];	/* deprecated */
-extern struct channellist   mpx_channels[]; /* deprecated */
-extern int groupcount;						/* deprecated */
-extern int channelcount;					/* deprecated */
-
 /* common routines */
 void                		mpx_init(void);
 struct mpx 					*mpx_allocate(int);

@@ -99,10 +99,6 @@ workqueue_runlist(wq, list)
 	struct work *wk;
 	struct work *next;
 
-	/*
-	 * note that "list" is not a complete SIMPLEQ.
-	 */
-
 	for (wk = SIMPLEQ_FIRST(list); wk != NULL; wk = next) {
 		next = SIMPLEQ_NEXT(wk, wk_entry);
 		(*wq->wq_func)(wk, wq->wq_arg);
@@ -179,7 +175,7 @@ workqueue_initqueue(wq)
 	SIMPLEQ_INIT(&q->q_queue);
 	error = kthread_create(workqueue_worker, wq, &q->q_worker, wq->wq_name);
 
-	return error;
+	return (error);
 }
 
 static void
