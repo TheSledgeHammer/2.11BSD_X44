@@ -44,8 +44,8 @@
 extern struct kthread 		 kthread0;
 struct kthread *curkthread = &kthread0;
 
-
-int	maxthread;// = NTHREAD;
+#define NTHREAD (maxproc * 2)
+int maxthread = NTHREAD;
 
 struct tidhashhead *tidhashtbl;
 u_long tidhash;
@@ -57,6 +57,11 @@ struct kthreadlist 	zombkthread;
 struct kthreadlist 	freekthread;
 
 struct lock_holder 	kthread_loholder;
+
+int				kthread_alloc(void (*)(void *), void *, struct kthread *, char *);
+void			kthread_add(struct kthreadlist *, struct kthread *, int);
+void			kthread_free(struct kthread *, int);
+struct kthread *kthread_find(struct kthreadlist *, pid_t, int);
 
 void
 kthread_init(p, kt)
@@ -92,6 +97,9 @@ kthreadinit(kt)
 	ktqinit(kt);
 	tidhashtbl = hashinit(maxthread / 4, M_PROC, &tidhash);
 	tgrphashtbl = hashinit(maxthread / 4, M_PROC, &tgrphash);
+
+	/* setup kthread multiplexor */
+	kt->kt_mpx = mpx_allocate(maxthread);
 
     /* setup kthread mutex */
     mtx_init(kt->kt_mtx, &kthread_loholder, "kthread mutex", (struct kthread *)kt, kt->kt_tid);
@@ -165,11 +173,131 @@ tgfind(pgid)
 	return (NULL);
 }
 
+struct kthread *
+ktfind1(tid, chan)
+	register pid_t tid;
+	register int chan;
+{
+	register struct kthread *kt;
+
+	kt = kthread_find(TIDHASH(tid), tid, chan);
+	return (kt);
+}
+
+/* Insert a kthread onto allkthread list and remove kthread from the freekthread list */
+void
+kthread_enqueue(kt, chan)
+	struct kthread *kt;
+	int chan;
+{
+	kthread_remove(kt, chan);						/* off freekthread */
+	kthread_add(&allkthread, kt, chan);				/* onto allkthread */
+}
+
+/* Remove a kthread from allkthread list and insert kthread onto the zombkthread list */
+void
+kthread_dequeue(kt, chan)
+	struct kthread *kt;
+	int chan;
+{
+	kthread_remove(kt, chan);						/* off allkthread */
+	kthread_add(&zombkthread, kt, chan);			/* onto zombkthread */
+	kt->kt_stat = KT_SZOMB;
+}
+
+int
+kthread_alloc(func, arg, kt, name)
+	void (*func)(void *);
+	void *arg;
+	struct kthread *kt;
+	char *name;
+{
+	struct proc *p;
+	struct mpx *mpx;
+	int error;
+
+	error = kthread_create(func, arg, &p, name);
+	if (error != 0) {
+		return (error);
+	}
+	kt = p->p_kthreado;
+	if (kt != NULL) {
+		kt->kt_flag |= KT_INMEM | KT_SYSTEM | KT_NOCLDWAIT;
+	}
+	return (0);
+}
+
+void
+kthread_add(ktlist, kt, chan)
+	struct kthreadlist *ktlist;
+	struct kthread *kt;
+	int chan;
+{
+	struct mpx *mpx;
+	int ret;
+
+	LIST_INSERT_HEAD(ktlist, kt, kt_list);
+	mpx = kt->kt_mpx;
+	if (mpx == NULL) {
+		return;
+	}
+	ret = mpx_put(mpx, chan, kt);
+	if (ret != 0) {
+		return;
+	}
+}
+
+void
+kthread_free(kt, chan)
+	struct kthread *kt;
+	int chan;
+{
+	struct mpx *mpx;
+	int ret;
+
+	mpx = kt->kt_mpx;
+	if (mpx == NULL) {
+		return;
+	}
+
+	ret = mpx_remove(mpx, chan, kt);
+	if (ret != 0) {
+		return;
+	}
+	LIST_REMOVE(kt, kt_list);
+}
+
+struct kthread *
+kthread_find(ktlist, tid, chan)
+	struct kthreadlist *ktlist;
+	pid_t tid;
+	int chan;
+{
+	struct kthread *kt;
+	struct mpx *mpx;
+	LIST_FOREACH(kt, ktlist, kt_list) {
+		if ((kt != NULL) && (kt->kt_tid == tid)) {
+			mpx = kt->kt_mpx;
+			if (mpx) {
+				ret = mpx_get(mpx, chan, kt);
+				if (ret) {
+					return (kt);
+				}
+			}
+		}
+	}
+	return (NULL);
+}
+
+#ifdef notyet
 /* Insert a kthread onto allkthread list and remove kthread from the freekthread list */
 void
 kthread_enqueue(kt)
 	struct kthread *kt;
 {
+	kthread_remove(kt, chan);						/* off freekthread */
+	kthread_add(&allkthread, kt, chan)				/* onto allkthread */
+
 	LIST_REMOVE(kt, kt_list);						/* off freekthread */
 	LIST_INSERT_HEAD(&allkthread, kt, kt_list);		/* onto allkthread */
 }
@@ -213,159 +341,10 @@ kthread_zombie(void)
 		}
 	}
 }
-
-int
-kthread_alloc(func, arg, kt)
-	void (*func)(void *);
-	void *arg;
-	struct kthread *kt;
-{
-	struct proc *p;
-	int error;
-
-	error = kthread_create(func, arg, &p, "kthread_allocation");
-	if (error != 0) {
-		return (error);
-	}
-
-	kt = p->p_kthreado;
-	if (kt != NULL) {
-		kt->kt_flag |= KT_INMEM | KT_SYSTEM | KT_NOCLDWAIT;
-	}
-
-	return (0);
-}
+#endif
 
 /*
  * An mxthread is a multiplexed kernel thread.
  * Mxthreads are confined to the kthread which created it.
  * A single kthread can create a limited number (TBA) of mxthreads.
  */
-#define M_MXTHREAD 95
-
-struct mxthread {
-	LIST_HEAD(, kthread) 	mx_list;
-	struct mpx 				*mx_mpx;
-
-
-	struct kthread			*mx_kthread; /* kernel thread */
-
-	pid_t 					mx_tid;
-	struct pgrp 			*mx_pgrp;
-
-	struct mpx 				*mx_mpx;
-	int 					mx_channel;
-};
-
-void
-mxthread_init(kt)
-	struct kthread *kt;
-{
-	KASSERT(kt != NULL);
-
-	LIST_INIT(&allmxthreads);
-}
-
-struct mxthread *
-mxthread_alloc(channel)
-	int channel;
-{
-	register struct mxthread *mx;
-	register struct mpx 	 *mpx;
-
-	mx = (struct mxthread *)calloc(channel, sizeof(struct mxthread), M_MXTHREAD, M_WAITOK);
-	mpx = (struct mpx *)malloc(sizeof(struct mxthread), M_MXTHREAD, M_WAITOK);
-	mx->mx_channel = channel;
-	mx->mx_mpx = mpx;
-
-	return (mx);
-}
-
-void
-mxthread_free(mx)
-	struct mxthread *mx;
-{
-	free(mx, M_MXTHREAD);
-}
-
-void
-mxthread_add(kt, channel)
-	struct kthread 	*kt;
-	int channel;
-{
-	register struct mxthread *mx;
-
-	mx = mxthread_alloc(channel);
-	mx->mx_kthread = kt;
-	//mx->mx_tid	= kt->kt_tid;
-	//mx->mx_pgrp = kt->kt_pgrp;
-
-	KTHREAD_LOCK(kt);
-	LIST_INSERT_HEAD(kt->kt_mxthreads, mx, mx_list);
-	KTHREAD_UNLOCK(kt);
-}
-
-struct mxthread *
-mxthread_find(kt, channel)
-	struct kthread 	*kt;
-	int channel;
-{
-	register struct mxthread *mx;
-
-	KTHREAD_LOCK(kt);
-	LIST_FOREACH(mx, kt->kt_mxthreads, mx_list) {
-		if (mx->mx_kthread == kt && mx->mx_channel == channel) {
-			KTHREAD_UNLOCK(kt);
-			return (mx);
-		}
-	}
-	KTHREAD_UNLOCK(kt);
-	return (NULL);
-}
-
-void
-mxthread_remove(kt, channel)
-	struct kthread 	*kt;
-	int channel;
-{
-	register struct mxthread *mx;
-
-	KTHREAD_LOCK(kt);
-	mx = mxthread_find(kt, channel);
-	if (mx != NULL) {
-		mx->mx_channel = -1;
-		LIST_REMOVE(mx, mx_list);
-	}
-	if (mx == NULL) {
-		mxthread_free(mx);
-	}
-	KTHREAD_UNLOCK(kt);
-}
-
-int
-kthread_alloc2(func, arg, kt, chan)
-	void (*func)(void *);
-	void *arg;
-	struct kthread *kt;
-	int 		chan;
-{
-	struct mpx 	*mpx;
-	int error;
-
-	error = kthread_alloc(func, arg, kt);
-	if (error != 0) {
-		return (error);
-	}
-	mpx = mpx_alloc();
-	if (mpx) {
-		error = mpx_create(mpx, chan, kt);
-		if (error != 0) {
-			mpx_free(mpx);
-			return (error);
-		}
-		kt->kt_mpx = mpx;
-	}
-	return (0);
-}
-
-
