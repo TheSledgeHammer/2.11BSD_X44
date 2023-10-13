@@ -61,7 +61,7 @@ struct lock_holder 	kthread_loholder;
 int				kthread_alloc(void (*)(void *), void *, struct kthread *, char *);
 void			kthread_add(struct kthreadlist *, struct kthread *, int);
 void			kthread_free(struct kthread *, int);
-struct kthread *kthread_find(struct kthreadlist *, pid_t, int);
+struct kthread *kthread_find(struct kthreadlist *, int);
 
 void
 kthread_init(p, kt)
@@ -180,8 +180,11 @@ ktfind1(tid, chan)
 {
 	register struct kthread *kt;
 
-	kt = kthread_find(TIDHASH(tid), tid, chan);
-	return (kt);
+	kt = kthread_find(TIDHASH(tid), chan);
+	if (kt->kt_tid == tid) {
+		return (kt);
+	}
+	return (NULL);
 }
 
 /* Insert a kthread onto allkthread list and remove kthread from the freekthread list */
@@ -268,15 +271,15 @@ kthread_free(kt, chan)
 }
 
 struct kthread *
-kthread_find(ktlist, tid, chan)
+kthread_find(ktlist, chan)
 	struct kthreadlist *ktlist;
-	pid_t tid;
 	int chan;
 {
 	struct kthread *kt;
 	struct mpx *mpx;
+
 	LIST_FOREACH(kt, ktlist, kt_list) {
-		if ((kt != NULL) && (kt->kt_tid == tid)) {
+		if (kt != NULL) {
 			mpx = kt->kt_mpx;
 			if (mpx) {
 				ret = mpx_get(mpx, chan, kt);
