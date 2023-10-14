@@ -45,7 +45,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_tun.c,v 1.68.2.2 2004/05/20 12:28:17 grant Exp $"
 #include <net/netisr.h>
 #include <net/route.h>
 
-
 #ifdef INET
 #include <netinet/in.h>
 #include <netinet/in_systm.h>

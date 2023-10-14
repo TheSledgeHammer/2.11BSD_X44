@@ -31,9 +31,7 @@
 #ifndef _NET_PFIL_H_
 #define _NET_PFIL_H_
 
-#ifdef _KERNEL_OPT
 #include "opt_pfil_hooks.h"
-#endif
 
 #include <sys/queue.h>
 #include <net/dlt.h>

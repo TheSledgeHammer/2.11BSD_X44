@@ -173,9 +173,7 @@ struct ipflow {
 
 #ifdef _KERNEL
 
-#ifdef _KERNEL_OPT
 #include "opt_gateway.h"
-#endif
 
 /* flags passed to ip_output as last parameter */
 #define	IP_FORWARDING		0x1		/* most of ip header exists */

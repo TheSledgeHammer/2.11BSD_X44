@@ -37,9 +37,7 @@
 #ifndef _NETINET6_IPCOMP_H_
 #define _NETINET6_IPCOMP_H_
 
-#if defined(_KERNEL_OPT)
 #include "opt_inet.h"
-#endif
 
 struct ipcomp {
 	u_int8_t comp_nxt;	/* Next Header */

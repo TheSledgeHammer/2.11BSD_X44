@@ -37,9 +37,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(_KERNEL_OPT)
 #include "opt_scsipi_debug.h"
-#endif
 
 /*
  * Originally written by Julian Elischer (julian@tfs.com)

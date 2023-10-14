@@ -54,7 +54,7 @@ S!=	cd ../../../.. && pwd
 ## CPPFLAGS, CFLAGS, and AFLAGS must be set in the port's Makefile
 ##
 INCLUDES?=	-I. ${EXTRA_INCLUDES} -I$S/arch -I$S -nostdinc
-CPPFLAGS+=	${INCLUDES} ${IDENT} ${PARAM} -D_KERNEL -D_KERNEL_OPT
+CPPFLAGS+=	${INCLUDES} ${IDENT} ${PARAM} -D_KERNEL
 .if !defined(COVERITY_TOP_CONFIG)
 CPPFLAGS+=	-std=gnu99
 .endif

@@ -41,11 +41,9 @@
 #error "Kernel-level header only"
 #endif
 
-#ifdef _KERNEL_OPT
 /* For INET/INET6 definitions. */
 #include "opt_inet.h"
 #include "opt_inet6.h"
-#endif
 
 #include <sys/types.h>
 #include <sys/queue.h>

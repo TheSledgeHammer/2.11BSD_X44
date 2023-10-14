@@ -26,9 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef _KERNEL_OPT
 #include "opt_inet.h"
-#endif
 
 #include "pflog.h"
 

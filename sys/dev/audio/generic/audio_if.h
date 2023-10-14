@@ -38,14 +38,11 @@
 #define _SYS_DEV_AUDIO_IF_H_
 
 /* check we have an audio(4) configured into kernel */
-#if defined(_KERNEL_OPT)
 #include "audio.h"
 
 #if (NAUDIO == 0) && (NMIDI == 0) && (NMIDIBUS == 0)
 #error "No 'audio* at audiobus?' or 'midi* at midibus?' or similar configured"
 #endif
-
-#endif /* _KERNEL_OPT */
 
 /*
  * Generic interface to hardware driver.

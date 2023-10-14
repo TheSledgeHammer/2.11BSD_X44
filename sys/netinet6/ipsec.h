@@ -37,9 +37,7 @@
 #ifndef _NETINET6_IPSEC_H_
 #define _NETINET6_IPSEC_H_
 
-#if defined(_KERNEL_OPT)
 #include "opt_inet.h"
-#endif
 
 #include <net/pfkeyv2.h>
 #include <netkey/keydb.h>

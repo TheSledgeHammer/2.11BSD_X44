@@ -516,7 +516,7 @@ struct ctlname udpname[] = UDPCTL_NAMES;
 struct list inetlist = { inetname, IPPROTO_MAXID };
 struct list inetvars[] = {
 	{ ipname, IPCTL_MAXID },	/* ip */
-	{ icmpname, ICMPCTL_MAXID },	/* icmp */
+	{ icmpname, ICMPCTL_MAXID },/* icmp */
 	{ 0, 0 },			/* igmp */
 	{ 0, 0 },			/* ggmp */
 	{ 0, 0 },

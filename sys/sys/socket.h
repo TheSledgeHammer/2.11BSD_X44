@@ -99,33 +99,35 @@ struct	linger {
 /*
  * Address families.
  */
-#define	AF_UNSPEC		0		/* unspecified */
-#define	AF_UNIX			1		/* local to host (pipes, portals) */
-#define	AF_LOCAL		AF_UNIX		/* draft POSIX compatibility */
-#define	AF_INET			2		/* internetwork: UDP, TCP, etc. */
-#define	AF_IMPLINK		3		/* arpanet imp addresses */
-#define	AF_PUP			4		/* pup protocols: e.g. BSP */
-#define	AF_CHAOS		5		/* mit CHAOS protocols */
-#define	AF_NS			6		/* XEROX NS protocols */
-#define	AF_NBS			7		/* nbs protocols */
-#define	AF_ECMA			8		/* european computer manufacturers */
-#define	AF_DATAKIT		9		/* datakit protocols */
-#define	AF_CCITT		10		/* CCITT protocols, X.25 etc */
-#define	AF_SNA			11		/* IBM SNA */
-#define AF_DECnet		12		/* DECnet */
-#define AF_DLI			13		/* Direct data link interface */
-#define AF_LAT			14		/* LAT */
-#define	AF_HYLINK		15		/* NSC Hyperchannel */
-#define	AF_APPLETALK		16		/* Apple Talk */
-#define	AF_ROUTE	        17		/* Internal Routing Protocol */
-#define	AF_LINK		        18		/* Link layer interface */
-#define	AF_INET6			19		/* IP version 6 */
-#define AF_ARP				20		/* (rev.) addr. res. prot. (RFC 826) */
-#define pseudo_AF_KEY		21		/* Internal key management protocol  */
-#define	pseudo_AF_HDRCMPLT 	22		/* Used by BPF to not rewrite hdrs
-					          in interface output routine */
+#define	AF_UNSPEC			0		/* unspecified */
+#define	AF_UNIX				1		/* local to host (pipes, portals) */
+#define	AF_LOCAL			AF_UNIX		/* draft POSIX compatibility */
+#define	AF_INET				2		/* internetwork: UDP, TCP, etc. */
+#define	AF_IMPLINK			3		/* arpanet imp addresses */
+#define	AF_PUP				4		/* pup protocols: e.g. BSP */
+#define	AF_CHAOS			5		/* mit CHAOS protocols */
+#define	AF_NS				6		/* XEROX NS protocols */
+#define	AF_ISO				7		/* ISO protocols */
+#define	AF_OSI				AF_ISO
+#define	AF_NBS				8		/* nbs protocols */
+#define	AF_ECMA				9		/* european computer manufacturers */
+#define	AF_DATAKIT			10		/* datakit protocols */
+#define	AF_CCITT			11		/* CCITT protocols, X.25 etc */
+#define	AF_SNA				12		/* IBM SNA */
+#define AF_DECnet			13		/* DECnet */
+#define AF_DLI				14		/* Direct data link interface */
+#define AF_LAT				15		/* LAT */
+#define	AF_HYLINK			16		/* NSC Hyperchannel */
+#define	AF_APPLETALK		17		/* Apple Talk */
+#define	AF_ROUTE	        18		/* Internal Routing Protocol */
+#define	AF_LINK		        19		/* Link layer interface */
+#define	AF_INET6			20		/* IP version 6 */
+#define AF_ARP				21		/* (rev.) addr. res. prot. (RFC 826) */
+#define pseudo_AF_KEY		22		/* Internal key management protocol  */
+#define	pseudo_AF_HDRCMPLT 	23		/* Used by BPF to not rewrite hdrs
+					          	  	  in interface output routine */
 
-#define	AF_MAX			23
+#define	AF_MAX				24
 
 /*
  * Structure used by kernel to store most
@@ -172,6 +174,8 @@ struct sockaddr_storage {
 #define	PF_PUP			AF_PUP
 #define	PF_CHAOS		AF_CHAOS
 #define	PF_NS			AF_NS
+#define	PF_ISO			AF_ISO
+#define	PF_OSI			AF_ISO
 #define	PF_NBS			AF_NBS
 #define	PF_ECMA			AF_ECMA
 #define	PF_DATAKIT		AF_DATAKIT
@@ -182,10 +186,11 @@ struct sockaddr_storage {
 #define PF_LAT			AF_LAT
 #define	PF_HYLINK		AF_HYLINK
 #define	PF_APPLETALK	AF_APPLETALK
-#define	PF_ROUTE	AF_ROUTE
-#define	PF_INET6	AF_INET6
-#define PF_ARP		AF_ARP
-#define PF_KEY 		        pseudo_AF_KEY	/* like PF_ROUTE, only for key mgmt */
+#define	PF_ROUTE		AF_ROUTE
+#define	PF_LINK			AF_LINK
+#define	PF_INET6		AF_INET6
+#define PF_ARP			AF_ARP
+#define PF_KEY 		    pseudo_AF_KEY	/* like PF_ROUTE, only for key mgmt */
 #define	PF_MAX			AF_MAX
 
 /*
@@ -229,6 +234,11 @@ struct sockaddr_storage {
 	{ "lat", CTLTYPE_NODE }, 		\
 	{ "hylink", CTLTYPE_NODE }, 	\
 	{ "appletalk", CTLTYPE_NODE }, 	\
+	{ "route", CTLTYPE_NODE }, 		\
+	{ "link_layer", CTLTYPE_NODE }, \
+	{ "inet6", CTLTYPE_NODE }, 		\
+	{ "arp", CTLTYPE_NODE }, 		\
+	{ "key", CTLTYPE_NODE }, 		\
 }
 #endif
 

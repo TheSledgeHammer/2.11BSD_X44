@@ -34,9 +34,7 @@
 #ifndef _NETINET_TCP_DEBUG_H_
 #define _NETINET_TCP_DEBUG_H_
 
-#if defined(_KERNEL_OPT)
 #include "opt_inet.h"
-#endif
 
 struct	tcp_debug {
 	n_time	td_time;

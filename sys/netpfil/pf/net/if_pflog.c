@@ -34,9 +34,7 @@
  * PURPOSE.
  */
 
-#ifdef _KERNEL_OPT
 #include "opt_inet.h"
-#endif
 
 #include "bpfilter.h"
 #include "pflog.h"

@@ -31,9 +31,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef _KERNEL_OPT
 #include "opt_inet.h"
-#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>

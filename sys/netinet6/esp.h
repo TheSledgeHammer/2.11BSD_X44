@@ -37,9 +37,7 @@
 #ifndef _NETINET6_ESP_H_
 #define _NETINET6_ESP_H_
 
-#if defined(_KERNEL_OPT)
 #include "opt_inet.h"
-#endif
 
 struct esp {
 	u_int32_t	esp_spi;	/* ESP */

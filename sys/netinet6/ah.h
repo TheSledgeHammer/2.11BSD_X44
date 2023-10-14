@@ -37,9 +37,7 @@
 #ifndef _NETINET6_AH_H_
 #define _NETINET6_AH_H_
 
-#if defined(_KERNEL_OPT)
 #include "opt_inet.h"
-#endif
 
 struct ah {
 	u_int8_t	ah_nxt;		/* Next Header */

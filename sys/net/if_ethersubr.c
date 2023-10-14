@@ -525,7 +525,7 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 	u_int16_t etype;
 	int s;
 	struct ether_header *eh;
-#if defined (ISO) || defined (LLC) || defined(NETATALK)
+#if defined (ISO) || defined (LLC)
 	struct llc *l;
 #endif
 
@@ -534,9 +534,6 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		return;
 	}
 
-#ifdef MBUFTRACE
-	m_claimm(m, &ec->ec_rx_mowner);
-#endif
 	eh = mtod(m, struct ether_header *);
 	etype = ntohs(eh->ether_type);
 
@@ -741,44 +738,12 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 
 #endif
 	default:
-#if defined (ISO) || defined (LLC) || defined (NETATALK)
+#if defined (ISO) || defined (LLC)
 		if (etype > ETHERMTU)
 			goto dropanyway;
 		l = mtod(m, struct llc *);
 		switch (l->llc_dsap) {
-#ifdef NETATALK
 		case LLC_SNAP_LSAP:
-			switch (l->llc_control) {
-			case LLC_UI:
-				if (l->llc_ssap != LLC_SNAP_LSAP) {
-					goto dropanyway;
-				}
-	    
-				if (Bcmp(&(l->llc_snap_org_code)[0],
-				    at_org_code, sizeof(at_org_code)) == 0 &&
-				    ntohs(l->llc_snap_ether_type) ==
-				    ETHERTYPE_ATALK) {
-					inq = &atintrq2;
-					m_adj(m, sizeof(struct llc));
-					schednetisr(NETISR_ATALK);
-					break;
-				}
-
-				if (Bcmp(&(l->llc_snap_org_code)[0],
-				    aarp_org_code,
-				    sizeof(aarp_org_code)) == 0 &&
-				    ntohs(l->llc_snap_ether_type) ==
-				    ETHERTYPE_AARP) {
-					m_adj( m, sizeof(struct llc));
-					aarpinput(ifp, m); /* XXX */
-				    return;
-				}
-		    
-			default:
-				goto dropanyway;
-			}
-			break;
-#endif /* NETATALK */
 #ifdef	ISO
 		case LLC_ISO_LSAP: 
 			switch (l->llc_control) {
@@ -874,10 +839,10 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 			m_freem(m);
 			return;
 		}
-#else /* ISO || LLC  || NETATALK*/
+#else /* ISO || LLC */
 	    m_freem(m);
 	    return;
-#endif /* ISO || LLC || NETATALK*/
+#endif /* ISO || LLC */
 	}
 
 	s = splnet();

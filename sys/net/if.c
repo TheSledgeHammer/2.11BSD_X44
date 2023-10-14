@@ -1573,6 +1573,63 @@ ifconf(cmd, data)
 }
 
 #ifdef notyet
+sysctl_net_ifq_setup(int *name, void *oldp, size_t *oldlenp, void *newp, size_t newlen, struct ifqueue *ifq)
+{
+	int error;
+
+	switch(name[0]) {
+	case IFQCTL_LEN:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_len);
+		break;
+
+	case IFQCTL_MAXLEN:
+		error =sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_maxlen);
+		break;
+#ifdef notyet
+	case IFQCTL_PEAK:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_peak);
+		break;
+#endif
+	case IFQCTL_DROPS:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_drops);
+		break;
+	}
+	return (error);
+}
+
+sysctl_net_inet6_ip6_ifq_setup(pf, pfname, ipn, ipname, qid, struct ifqueue *ifq)
+{
+	sysctl_rdint(where, sizep, ifq, ifq->ifq_drops);
+
+	switch(pf) {
+	case PF_INET:
+	case PF_INET6:
+	}
+	switch(ipn) {
+	case IPPROTO_IP:
+	case IPPROTO_IPV6:
+
+	}
+	switch(qid) {
+	case IPCTL_IFQ:
+
+	case IPV6CTL_IFQ:
+
+	}
+	sysctl_inet();
+}
+
+#ifdef INET
+	{extern struct ifqueue ipintrq;
+	sysctl_net_ifq_setup(NULL, PF_INET, "inet", IPPROTO_IP, "ip",
+			     IPCTL_IFQ, &ipintrq);}
+#endif /* INET */
+#ifdef INET6
+	{extern struct ifqueue ip6intrq;
+	sysctl_net_ifq_setup(NULL, PF_INET6, "inet6", IPPROTO_IPV6, "ip6",
+			     IPV6CTL_IFQ, &ip6intrq);}
+#endif /* INET6 */
+
 #if defined(INET) || defined(INET6)
 static void
 sysctl_net_ifq_setup(struct sysctllog **clog,
