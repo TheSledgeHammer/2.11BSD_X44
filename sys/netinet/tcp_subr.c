@@ -117,7 +117,7 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_subr.c,v 1.160.2.5 2004/09/19 15:38:01 he Exp $"
 #include <sys/kernel.h>
 #if NRND > 0
 #include <sys/md5.h>
-#include <sys/rnd.h>
+#include <dev/misc/rnd/rnd.h>
 #endif
 
 #include <net/route.h>
@@ -2036,8 +2036,7 @@ tcp_new_iss1(void *laddr, void *faddr, u_int16_t lport, u_int16_t fport,
 	 * hash secret.
 	 */
 	if (beenhere == 0) {
-		rnd_extract_data(tcp_iss_secret, sizeof(tcp_iss_secret),
-		    RND_EXTRACT_ANY);
+		rnd_extract_data(tcp_iss_secret, sizeof(tcp_iss_secret));
 		beenhere = 1;
 	}
 
@@ -2085,7 +2084,7 @@ tcp_new_iss1(void *laddr, void *faddr, u_int16_t lport, u_int16_t fport,
 		 * Randomize.
 		 */
 #if NRND > 0
-		rnd_extract_data(&tcp_iss, sizeof(tcp_iss), RND_EXTRACT_ANY);
+		rnd_extract_data(&tcp_iss, sizeof(tcp_iss));
 #else
 		tcp_iss = arc4random();
 #endif
