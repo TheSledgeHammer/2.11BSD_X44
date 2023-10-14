@@ -36,7 +36,14 @@
 #include <sys/socket.h>
 #include <net/route.h>
 #include <net/pfkeyv2.h>
+
+#ifdef IPSEC
 #include <netkey/keydb.h>
+#endif
+#ifdef IPSEC_FAST
+#include <netipsec/keydb.h>
+#endif
+
 #include <netinet/in.h>
 #include <netinet6/ipsec.h>
 

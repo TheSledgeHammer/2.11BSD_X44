@@ -1,10 +1,20 @@
 # $NetBSD: Makefile,v 1.8 2002/08/19 14:55:15 lukem Exp $
 
+USE_FORT= yes
 USE_SHLIBDIR=	yes
 
 LIB=	ipsec
 CFLAGS+=-g
-CPPFLAGS+=-DIPSEC_DEBUG -DIPSEC -DINET6 -I${.CURDIR} -I. -DYY_NO_UNPUT
+
+.if defined(IPSEC)
+CPPFLAGS+=-DIPSEC_DEBUG -DIPSEC
+.endif
+
+.if defined( FAST_IPSEC)
+CPPFLAGS+=-DIPSEC_DEBUG -DFAST_IPSEC
+.endif
+
+CPPFLAGS+=-DINET6 -I${.CURDIR} -I. -DYY_NO_UNPUT
 
 SRCS+=	ipsec_strerror.c policy_parse.y policy_token.l
 SRCS+=	ipsec_get_policylen.c ipsec_dump_policy.c

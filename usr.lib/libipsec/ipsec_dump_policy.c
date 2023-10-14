@@ -37,7 +37,13 @@ __RCSID("$NetBSD: ipsec_dump_policy.c,v 1.5 2003/03/09 01:03:54 lukem Exp $");
 #include <sys/param.h>
 #include <sys/socket.h>
 
+#ifdef IPSEC
 #include <netkey/key_var.h>
+#endif
+#ifdef IPSEC_FAST
+#include <netipsec/key_var.h>
+#endif
+
 #include <netinet/in.h>
 #include <netinet6/ipsec.h>
 
