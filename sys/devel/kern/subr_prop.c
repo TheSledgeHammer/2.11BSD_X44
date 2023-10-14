@@ -67,6 +67,7 @@ int propdebug = 0;
 #define	KDB_MAXLEN		6	/* Max acceptable bucket length */
 #define	KDB_STEP		2	/* Increment size for hash table */
 #define	KDB_HASH(v, s)	((((v)>>16)^((v)>>8))&((s)-1))
+#define	KDB_HASH2(v, s)	(prospector32(v)&(s - 1))
 
 typedef RB_HEAD(kobj_root, kdbobj) kobj_bucket_t;
 
@@ -182,7 +183,7 @@ kdb_rehash(struct propdb *db)
 		while (obj != NULL) {
 			RB_REMOVE(kobj_root, &old[i], obj);
 			hash = (long)obj->ko_object;
-			hash = KDB_HASH(hash, db->kd_size);
+			hash = KDB_HASH2(hash, db->kd_size);
 			RB_INSERT(kobj_root, &new[hash], obj);
 		}
 	}
@@ -588,6 +589,19 @@ propdb_copy(propdb_t db, opaque_t source, opaque_t dest, int wait)
 	DPRINTF(x, ("prop_copy: done\n"));
 	splx(s);
 	return (0);
+}
+
+int
+propdb_obj_type(obj)
+    opaque_t obj;
+{
+    struct kdbprop *kp;
+
+    kp = obj;
+    if (obj == NULL) {
+        return (PROP_UNKNOWN);
+    }
+    return (kp->kp_type);
 }
 
 int

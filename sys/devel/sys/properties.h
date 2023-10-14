@@ -63,5 +63,6 @@ size_t 		propdb_list(propdb_t, opaque_t, char *, size_t);
 size_t 		propdb_get(propdb_t, opaque_t, const char *, void *, size_t, int *);
 int 		propdb_delete(propdb_t, opaque_t, const char *);
 int 		propdb_copy(propdb_t, opaque_t, opaque_t, int);
+int			propdb_obj_type(opaque_t);
 
 #endif
