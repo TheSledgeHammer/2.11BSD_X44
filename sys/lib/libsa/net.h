@@ -88,14 +88,15 @@ void	arp_reply(struct iodesc *, void *);
 int		rarp_getipaddress(int);
 
 /* Link functions: */
-ssize_t sendether(struct iodesc *d, void *pkt, size_t len, u_char *dea, int etype);
-ssize_t readether(struct iodesc *d, void *pkt, size_t len, time_t tleft, u_int16_t *etype);
+ssize_t sendether(struct iodesc *, void *, size_t, u_char *, int );
+ssize_t readether(struct iodesc *, void *, size_t, time_t, u_int16_t *);
 
 ssize_t	sendudp(struct iodesc *, void *, size_t);
 ssize_t	readudp(struct iodesc *, void *, size_t, time_t);
 ssize_t	sendrecv(struct iodesc *, ssize_t (*)(struct iodesc *, void *, size_t), void *, size_t, ssize_t (*)(struct iodesc *, void *, size_t, time_t), void *, size_t);
 
 /* Utilities: */
+char 	*ether_snprintf(char *, size_t, const u_char *);
 char	*ether_sprintf(u_char *);
 int		in_cksum(void *, int);
 int		in_cksum(void *, int);

@@ -60,7 +60,7 @@ struct lock_holder 	kthread_loholder;
 
 int				kthread_alloc(void (*)(void *), void *, struct kthread *, char *);
 void			kthread_add(struct kthreadlist *, struct kthread *, int);
-void			kthread_free(struct kthread *, int);
+void			kthread_remove(struct kthread *, int);
 struct kthread *kthread_find(struct kthreadlist *, int);
 
 void
@@ -126,23 +126,6 @@ ktqinit(kt)
 }
 
 /*
- * Locate a kthread by number
- */
-struct kthread *
-ktfind(tid)
-	register pid_t tid;
-{
-	register struct kthread *kt;
-
-	LIST_FOREACH(kt, TIDHASH(tid), kt_hash) {
-		if (kt->kt_tid == tid) {
-			return (kt);
-		}
-	}
-	return (NULL);
-}
-
-/*
  * remove kthread from thread group
  */
 int
@@ -173,8 +156,11 @@ tgfind(pgid)
 	return (NULL);
 }
 
+/*
+ * Locate a kthread by number & channel
+ */
 struct kthread *
-ktfind1(tid, chan)
+ktfind(tid, chan)
 	register pid_t tid;
 	register int chan;
 {
@@ -251,7 +237,7 @@ kthread_add(ktlist, kt, chan)
 }
 
 void
-kthread_free(kt, chan)
+kthread_remove(kt, chan)
 	struct kthread *kt;
 	int chan;
 {
@@ -292,62 +278,18 @@ kthread_find(ktlist, chan)
 	return (NULL);
 }
 
-#ifdef notyet
-/* Insert a kthread onto allkthread list and remove kthread from the freekthread list */
-void
-kthread_enqueue(kt)
-	struct kthread *kt;
-{
-	kthread_remove(kt, chan);						/* off freekthread */
-	kthread_add(&allkthread, kt, chan)				/* onto allkthread */
-
-	LIST_REMOVE(kt, kt_list);						/* off freekthread */
-	LIST_INSERT_HEAD(&allkthread, kt, kt_list);		/* onto allkthread */
-}
-
-/* Remove a kthread from allkthread list and insert kthread onto the zombkthread list */
-void
-kthread_dequeue(kt)
-	struct kthread *kt;
-{
-	LIST_REMOVE(kt, kt_list);						/* off allkthread */
-	LIST_INSERT_HEAD(&zombkthread, kt, kt_list);	/* onto zombkthread */
-	kt->kt_stat = KT_SZOMB;
-}
-
-/* return kthread from kthreadlist (i.e. allkthread, freekthread, zombkthread) list if not null and matching tid */
-struct kthread *
-kthread_find(ktlist, tid)
-	struct kthreadlist *ktlist;
-	pid_t tid;
-{
-	struct kthread *kt;
-	LIST_FOREACH(kt, ktlist, kt_list) {
-		if (kt != NULL && kt->kt_tid == tid) {
-			return (kt);
-		}
-	}
-	return (NULL);
-}
-
 /* reap all non-null zombie kthreads from zombkthread list */
 void
-kthread_zombie(void)
+kthread_zombie(chan)
+	int chan;
 {
 	struct kthread *kt;
+
 	if (!LIST_EMPTY(&zombkthread)) {
-		LIST_FOREACH(kt, &zombkthread, kt_list) {
-			if (kt != NULL) {
-				LIST_REMOVE(kt, kt_list);						/* off zombkthread */
-				LIST_INSERT_HEAD(&freekthread, kt, kt_list);	/* onto freekthread */
-			}
+		kt = kthread_find(&zombkthread, chan);
+		if (kt != NULL) {
+			kthread_remove(kt, chan);				/* off zombkthread */
+			kthread_add(&freekthread, kt, chan);	/* onto freekthread */
 		}
 	}
 }
-#endif
-
-/*
- * An mxthread is a multiplexed kernel thread.
- * Mxthreads are confined to the kthread which created it.
- * A single kthread can create a limited number (TBA) of mxthreads.
- */

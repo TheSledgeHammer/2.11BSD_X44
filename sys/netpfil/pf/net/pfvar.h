@@ -40,6 +40,9 @@
 #include <sys/tree.h>
 
 #include <net/radix.h>
+#include <net/route.h>
+
+#include <netinet/in.h>
 #include <netinet/tcp_fsm.h>
 
 union sockaddr_union {
@@ -163,8 +166,8 @@ struct pf_addr {
 		u_int16_t		addr16[8];
 		u_int32_t		addr32[4];
 	} pfa;		    /* 128-bit address */
-#define v4	pfa.v4
-#define v6	pfa.v6
+#define v4		pfa.v4
+#define v6		pfa.v6
 #define addr8	pfa.addr8
 #define addr16	pfa.addr16
 #define addr32	pfa.addr32
@@ -183,10 +186,12 @@ struct pf_addr_wrap {
 		struct {
 			struct pf_addr		 addr;
 			struct pf_addr		 mask;
-		}			 a;
+		} a;
 		char			 ifname[IFNAMSIZ];
 		char			 tblname[PF_TABLE_NAME_SIZE];
-	}			 v;
+		//char			 rtlabelname[RTLABEL_LEN];
+		//u_int32_t		 rtlabel;
+	} v;
 	union {
 		struct pfi_dynaddr	*dyn;
 		struct pfr_ktable	*tbl;

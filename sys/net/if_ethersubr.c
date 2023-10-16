@@ -525,9 +525,7 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 	u_int16_t etype;
 	int s;
 	struct ether_header *eh;
-#if defined (ISO) || defined (LLC)
-	struct llc *l;
-#endif
+
 
 	if ((ifp->if_flags & IFF_UP) == 0) {
 		m_freem(m);
@@ -708,8 +706,9 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 #ifdef INET
 	case ETHERTYPE_IP:
 #ifdef GATEWAY
-		if (ipflow_fastforward(m))
+		if (ipflow_fastforward(m)) {
 			return;
+		}
 #endif
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
@@ -738,140 +737,44 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 
 #endif
 	default:
-#if defined (ISO) || defined (LLC)
-		if (etype > ETHERMTU)
-			goto dropanyway;
-		l = mtod(m, struct llc *);
-		switch (l->llc_dsap) {
-		case LLC_SNAP_LSAP:
-#ifdef	ISO
-		case LLC_ISO_LSAP: 
-			switch (l->llc_control) {
-			case LLC_UI:
-				/* LLC_UI_P forbidden in class 1 service */
-				if ((l->llc_dsap == LLC_ISO_LSAP) &&
-				    (l->llc_ssap == LLC_ISO_LSAP)) {
-					/* LSAP for ISO */
-					if (m->m_pkthdr.len > etype)
-						m_adj(m, etype - m->m_pkthdr.len);
-					m->m_data += 3;		/* XXX */
-					m->m_len -= 3;		/* XXX */
-					m->m_pkthdr.len -= 3;	/* XXX */
-					M_PREPEND(m, sizeof *eh, M_DONTWAIT);
-					if (m == 0)
-						return;
-					*mtod(m, struct ether_header *) = *eh;
-#ifdef ARGO_DEBUG
-					if (argo_debug[D_ETHER])
-						printf("clnp packet");
-#endif
-					schednetisr(NETISR_ISO);
-					inq = &clnlintrq;
-					break;
-				}
-				goto dropanyway;
-				
-			case LLC_XID:
-			case LLC_XID_P:
-				if(m->m_len < 6)
-					goto dropanyway;
-				l->llc_window = 0;
-				l->llc_fid = 9;
-				l->llc_class = 1;
-				l->llc_dsap = l->llc_ssap = 0;
-				/* Fall through to */
-			case LLC_TEST:
-			case LLC_TEST_P:
-			{
-				struct sockaddr sa;
-				struct ether_header *eh2;
-				int i;
-				u_char c = l->llc_dsap;
-
-				l->llc_dsap = l->llc_ssap;
-				l->llc_ssap = c;
-				if (m->m_flags & (M_BCAST | M_MCAST))
-					bcopy(LLADDR(ifp->if_sadl),
-					      (caddr_t)eh->ether_dhost, 6);
-				sa.sa_family = AF_UNSPEC;
-				sa.sa_len = sizeof(sa);
-				eh2 = (struct ether_header *)sa.sa_data;
-				for (i = 0; i < 6; i++) {
-					eh2->ether_shost[i] = c = 
-					    eh->ether_dhost[i];
-					eh2->ether_dhost[i] = 
-					    eh->ether_dhost[i] =
-					    eh->ether_shost[i];
-					eh->ether_shost[i] = c;
-				}
-				ifp->if_output(ifp, m, &sa, NULL);
-				return;
-			}
-			default:
-				m_freem(m);
-				return;
-			}
-			break;
-#endif /* ISO */
-#ifdef LLC
-		case LLC_X25_LSAP:
-		{
-			if (m->m_pkthdr.len > etype)
-				m_adj(m, etype - m->m_pkthdr.len);
-			M_PREPEND(m, sizeof(struct sdl_hdr) , M_DONTWAIT);
-			if (m == 0)
-				return;
-			if ( !sdl_sethdrif(ifp, eh->ether_shost, LLC_X25_LSAP,
-					    eh->ether_dhost, LLC_X25_LSAP, 6, 
-					    mtod(m, struct sdl_hdr *)))
-				panic("ETHER cons addr failure");
-			mtod(m, struct sdl_hdr *)->sdlhdr_len = etype;
-#ifdef LLC_DEBUG
-				printf("llc packet\n");
-#endif /* LLC_DEBUG */
-			schednetisr(NETISR_CCITT);
-			inq = &llcintrq;
-			break;
-		}
-#endif /* LLC */
-		dropanyway:
-		default:
-			m_freem(m);
-			return;
-		}
-#else /* ISO || LLC */
 	    m_freem(m);
 	    return;
-#endif /* ISO || LLC */
 	}
 
 	s = splnet();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
-	} else
+	} else {
 		IF_ENQUEUE(inq, m);
+	}
 	splx(s);
 }
 
 /*
  * Convert Ethernet address to printable (loggable) representation.
  */
-static char digits[] = "0123456789abcdef";
+//static char digits[] = "0123456789abcdef";
 char *
-ether_sprintf(const u_char *ap)
+ether_snprintf(char *buf, size_t len, const u_char *ap)
 {
-	static char etherbuf[18];
-	char *cp = etherbuf;
-	int i;
+	char *cp = buf;
+	size_t i;
 
-	for (i = 0; i < 6; i++) {
-		*cp++ = digits[*ap >> 4];
-		*cp++ = digits[*ap++ & 0xf];
+	for (i = 0; i < len / 3; i++) {
+		*cp++ = hexdigits[*ap >> 4];
+		*cp++ = hexdigits[*ap++ & 0xf];
 		*cp++ = ':';
 	}
 	*--cp = 0;
-	return (etherbuf);
+	return (buf);
+}
+
+char *
+ether_sprintf(const u_char *ap)
+{
+	static char etherbuf[3 * ETHER_ADDR_LEN];
+	return ether_snprintf(etherbuf, sizeof(etherbuf), ap);
 }
 
 /*
