@@ -270,7 +270,7 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 		break;
 #endif
 /*	case AF_NSAP: */
-	case AF_CCITT: {
+	case AF_CCITT:
 	case pseudo_AF_HDRCMPLT:
 		hdrcmplt = 1;
 		eh = (struct ether_header *)dst->sa_data;
