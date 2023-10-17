@@ -40,7 +40,7 @@ __KERNEL_RCSID(0, "$NetBSD");
 #include <sys/types.h>
 
 #include <sys/atomic.h>
-#include <sys/kmem.h>
+#include <sys/malloc.h>
 #include <sys/mutex.h>
 
 #include "npf_impl.h"

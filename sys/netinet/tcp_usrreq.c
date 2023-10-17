@@ -536,8 +536,8 @@ tcp_usrreq(so, req, m, nam, control, p)
 		}
 		if ((so->so_oobmark == 0 &&
 		    (so->so_state & SS_RCVATMARK) == 0) ||
-		    so->so_options & SO_OOBINLINE ||
-		    tp->t_oobflags & TCPOOB_HADDATA) {
+		    (so->so_options & SO_OOBINLINE) ||
+		    (tp->t_oobflags & TCPOOB_HADDATA)) {
 			error = EINVAL;
 			break;
 		}

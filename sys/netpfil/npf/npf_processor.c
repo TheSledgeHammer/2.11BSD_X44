@@ -54,7 +54,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_processor.c,v 1.9.2.5 2013/02/11 21:49:49 riz Ex
 
 #include <sys/param.h>
 #include <sys/types.h>
-#include <sys/kmem.h>
+#include <sys/malloc.h>
 
 #include "npf_impl.h"
 #include "npf_ncode.h"
@@ -114,8 +114,7 @@ nc_jump(const void *iptr, int n, u_int *lcount)
  * => Routine prevents from infinite loop.
  */
 int
-npf_ncode_process(npf_cache_t *npc, const void *ncode,
-    nbuf_t *nbuf, const int layer)
+npf_ncode_process(npf_cache_t *npc, const void *ncode, nbuf_t *nbuf, const int layer)
 {
 	/* N-code instruction pointer. */
 	const void *	i_ptr;
@@ -155,7 +154,7 @@ process_next:
 	 */
 	switch (d) {
 	case NPF_OPCODE_ADVR:
-		i_ptr = nc_fetch_word(i_ptr, &i);	/* Register */
+		i_ptr = nc_fetch_word(i_ptr, &i); /* Register */
 		KASSERT(i < NPF_NREGS);
 		if (!nbuf_advance(nbuf, regs[i], 0)) {
 			goto fail;

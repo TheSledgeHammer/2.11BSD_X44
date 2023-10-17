@@ -488,7 +488,6 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 	int s;
 	struct ether_header *eh;
 
-
 	if ((ifp->if_flags & IFF_UP) == 0) {
 		m_freem(m);
 		return;

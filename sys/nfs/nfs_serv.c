@@ -124,7 +124,7 @@ nfsrv3_access(nfsd, slp, procp, mrq)
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_dissect(tl, u_long *, NFSX_UNSIGNED);
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(NFSX_UNSIGNED);
 		nfsm_srvpostop_attr(1, (struct vattr *)0);
@@ -188,7 +188,7 @@ nfsrv_getattr(nfsd, slp, procp, mrq)
 
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(0);
 		return (0);
@@ -280,7 +280,7 @@ nfsrv_setattr(nfsd, slp, procp, mrq)
 	/*
 	 * Now that we have all the fields, lets do it.
 	 */
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(2 * NFSX_UNSIGNED);
 		nfsm_srvwcc_data(preat_ret, &preat, postat_ret, vap);
@@ -314,8 +314,7 @@ nfsrv_setattr(nfsd, slp, procp, mrq)
 		if (vp->v_type == VDIR) {
 			error = EISDIR;
 			goto out;
-		} else if (error = nfsrv_access(vp, VWRITE, cred, rdonly,
-			procp))
+		} else if (error == nfsrv_access(vp, VWRITE, cred, rdonly, procp))
 			goto out;
 	}
 	error = VOP_SETATTR(vp, vap, cred, procp);
@@ -475,7 +474,7 @@ nfsrv_readlink(nfsd, slp, procp, mrq)
 	uiop->uio_rw = UIO_READ;
 	uiop->uio_segflg = UIO_SYSSPACE;
 	uiop->uio_procp = (struct proc *)0;
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		m_freem(mp3);
 		nfsm_reply(2 * NFSX_UNSIGNED);
@@ -558,7 +557,7 @@ nfsrv_read(nfsd, slp, procp, mrq)
 		off = (off_t)fxdr_unsigned(u_long, *tl);
 	}
 	nfsm_srvstrsiz(reqlen, NFS_SRVMAXDATA(nfsd));
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(2 * NFSX_UNSIGNED);
 		nfsm_srvpostop_attr(1, (struct vattr *)0);
@@ -572,7 +571,7 @@ nfsrv_read(nfsd, slp, procp, mrq)
 	}
 	if (!error) {
 	    nqsrv_getl(vp, ND_READ);
-	    if (error = nfsrv_access(vp, VREAD, cred, rdonly, procp))
+	    if (error == nfsrv_access(vp, VREAD, cred, rdonly, procp))
 		error = nfsrv_access(vp, VEXEC, cred, rdonly, procp);
 	}
 	getret = VOP_GETATTR(vp, vap, cred, procp);
@@ -770,7 +769,7 @@ nfsrv_write(nfsd, slp, procp, mrq)
 		nfsm_srvwcc_data(forat_ret, &forat, aftat_ret, vap);
 		return (0);
 	}
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(2 * NFSX_UNSIGNED);
 		nfsm_srvwcc_data(forat_ret, &forat, aftat_ret, vap);
@@ -903,121 +902,123 @@ nfsrv_writegather(ndp, slp, procp, mrq)
 #endif
 	*mrq = NULL;
 	if (*ndp) {
-	    nfsd = *ndp;
-	    *ndp = NULL;
-	    mrep = nfsd->nd_mrep;
-	    md = nfsd->nd_md;
-	    dpos = nfsd->nd_dpos;
-	    cred = &nfsd->nd_cr;
-	    v3 = (nfsd->nd_flag & ND_NFSV3);
-	    LIST_INIT(&nfsd->nd_coalesce);
-	    nfsd->nd_mreq = NULL;
-	    nfsd->nd_stable = NFSV3WRITE_FILESYNC;
-	    cur_usec = (u_quad_t)time.tv_sec * 1000000 + (u_quad_t)time.tv_usec;
-	    nfsd->nd_time = cur_usec + nfsrvw_procrastinate;
-    
-	    /*
-	     * Now, get the write header..
-	     */
-	    nfsm_srvmtofh(&nfsd->nd_fh);
-	    if (v3) {
-		nfsm_dissect(tl, u_long *, 5 * NFSX_UNSIGNED);
-		fxdr_hyper(tl, &nfsd->nd_off);
-		tl += 3;
-		nfsd->nd_stable = fxdr_unsigned(int, *tl++);
-	    } else {
-		nfsm_dissect(tl, u_long *, 4 * NFSX_UNSIGNED);
-		nfsd->nd_off = (off_t)fxdr_unsigned(u_long, *++tl);
-		tl += 2;
-	    }
-	    len = fxdr_unsigned(long, *tl);
-	    nfsd->nd_len = len;
-	    nfsd->nd_eoff = nfsd->nd_off + len;
-    
-	    /*
-	     * Trim the header out of the mbuf list and trim off any trailing
-	     * junk so that the mbuf list has only the write data.
-	     */
-	    zeroing = 1;
-	    i = 0;
-	    mp = mrep;
-	    while (mp) {
-		if (mp == md) {
-		    zeroing = 0;
-		    adjust = dpos - mtod(mp, caddr_t);
-		    mp->m_len -= adjust;
-		    if (mp->m_len > 0 && adjust > 0)
-			NFSMADV(mp, adjust);
+		nfsd = *ndp;
+		*ndp = NULL;
+		mrep = nfsd->nd_mrep;
+		md = nfsd->nd_md;
+		dpos = nfsd->nd_dpos;
+		cred = &nfsd->nd_cr;
+		v3 = (nfsd->nd_flag & ND_NFSV3);
+		LIST_INIT(&nfsd->nd_coalesce);
+		nfsd->nd_mreq = NULL;
+		nfsd->nd_stable = NFSV3WRITE_FILESYNC;
+		cur_usec = (u_quad_t) time.tv_sec * 1000000 + (u_quad_t) time.tv_usec;
+		nfsd->nd_time = cur_usec + nfsrvw_procrastinate;
+
+		/*
+		 * Now, get the write header..
+		 */
+		nfsm_srvmtofh(&nfsd->nd_fh);
+		if (v3) {
+			nfsm_dissect(tl, u_long*, 5 * NFSX_UNSIGNED);
+			fxdr_hyper(tl, &nfsd->nd_off);
+			tl += 3;
+			nfsd->nd_stable = fxdr_unsigned(int, *tl++);
+		} else {
+			nfsm_dissect(tl, u_long*, 4 * NFSX_UNSIGNED);
+			nfsd->nd_off = (off_t) fxdr_unsigned(u_long, *++tl);
+			tl += 2;
 		}
-		if (zeroing)
-		    mp->m_len = 0;
-		else {
-		    i += mp->m_len;
-		    if (i > len) {
-			mp->m_len -= (i - len);
-			zeroing = 1;
-		    }
+		len = fxdr_unsigned(long, *tl);
+		nfsd->nd_len = len;
+		nfsd->nd_eoff = nfsd->nd_off + len;
+
+		/*
+		 * Trim the header out of the mbuf list and trim off any trailing
+		 * junk so that the mbuf list has only the write data.
+		 */
+		zeroing = 1;
+		i = 0;
+		mp = mrep;
+		while (mp) {
+			if (mp == md) {
+				zeroing = 0;
+				adjust = dpos - mtod(mp, caddr_t);
+				mp->m_len -= adjust;
+				if (mp->m_len > 0 && adjust > 0)
+					NFSMADV(mp, adjust);
+			}
+			if (zeroing)
+				mp->m_len = 0;
+			else {
+				i += mp->m_len;
+				if (i > len) {
+					mp->m_len -= (i - len);
+					zeroing = 1;
+				}
+			}
+			mp = mp->m_next;
 		}
-		mp = mp->m_next;
-	    }
-	    if (len > NFS_MAXDATA || len < 0  || i < len) {
+		if (len > NFS_MAXDATA || len < 0 || i < len) {
 nfsmout:
 		m_freem(mrep);
-		error = EIO;
-		nfsm_writereply(2 * NFSX_UNSIGNED, v3);
-		if (v3)
-		    nfsm_srvwcc_data(forat_ret, &forat, aftat_ret, &va);
-		nfsd->nd_mreq = mreq;
-		nfsd->nd_mrep = NULL;
-		nfsd->nd_time = 0;
-	    }
-    
-	    /*
-	     * Add this entry to the hash and time queues.
-	     */
-	    s = splsoftclock();
-	    owp = NULL;
-	    wp = slp->ns_tq.lh_first;
-	    while (wp && wp->nd_time < nfsd->nd_time) {
-		owp = wp;
-		wp = wp->nd_tq.le_next;
-	    }
-	    if (owp) {
-		LIST_INSERT_AFTER(owp, nfsd, nd_tq);
-	    } else {
-		LIST_INSERT_HEAD(&slp->ns_tq, nfsd, nd_tq);
-	    }
-	    if (nfsd->nd_mrep) {
-		wpp = NWDELAYHASH(slp, nfsd->nd_fh.fh_fid.fid_data);
-		owp = NULL;
-		wp = wpp->lh_first;
-		while (wp &&
-		    bcmp((caddr_t)&nfsd->nd_fh,(caddr_t)&wp->nd_fh,NFSX_V3FH)) {
-		    owp = wp;
-		    wp = wp->nd_hash.le_next;
+			error = EIO;
+			nfsm_writereply(2 * NFSX_UNSIGNED, v3);
+			if (v3)
+				nfsm_srvwcc_data(forat_ret, &forat, aftat_ret, &va);
+			nfsd->nd_mreq = mreq;
+			nfsd->nd_mrep = NULL;
+			nfsd->nd_time = 0;
 		}
-		while (wp && wp->nd_off < nfsd->nd_off &&
-		    !bcmp((caddr_t)&nfsd->nd_fh,(caddr_t)&wp->nd_fh,NFSX_V3FH)) {
-		    owp = wp;
-		    wp = wp->nd_hash.le_next;
+
+		/*
+		 * Add this entry to the hash and time queues.
+		 */
+		s = splsoftclock();
+		owp = NULL;
+		wp = slp->ns_tq.lh_first;
+		while (wp && wp->nd_time < nfsd->nd_time) {
+			owp = wp;
+			wp = wp->nd_tq.le_next;
 		}
 		if (owp) {
-		    LIST_INSERT_AFTER(owp, nfsd, nd_hash);
-
-		    /*
-		     * Search the hash list for overlapping entries and
-		     * coalesce.
-		     */
-		    for(; nfsd && NFSW_CONTIG(owp, nfsd); nfsd = wp) {
-			wp = nfsd->nd_hash.le_next;
-			if (NFSW_SAMECRED(owp, nfsd))
-			    nfsrvw_coalesce(owp, nfsd);
-		    }
+			LIST_INSERT_AFTER(owp, nfsd, nd_tq);
 		} else {
-		    LIST_INSERT_HEAD(wpp, nfsd, nd_hash);
+			LIST_INSERT_HEAD(&slp->ns_tq, nfsd, nd_tq);
 		}
-	    }
-	    splx(s);
+		if (nfsd->nd_mrep) {
+			wpp = NWDELAYHASH(slp, nfsd->nd_fh.fh_fid.fid_data);
+			owp = NULL;
+			wp = wpp->lh_first;
+			while (wp
+					&& bcmp((caddr_t) & nfsd->nd_fh, (caddr_t) & wp->nd_fh,
+							NFSX_V3FH)) {
+				owp = wp;
+				wp = wp->nd_hash.le_next;
+			}
+			while (wp && wp->nd_off < nfsd->nd_off
+					&& !bcmp((caddr_t) & nfsd->nd_fh, (caddr_t) & wp->nd_fh,
+							NFSX_V3FH)) {
+				owp = wp;
+				wp = wp->nd_hash.le_next;
+			}
+			if (owp) {
+				LIST_INSERT_AFTER(owp, nfsd, nd_hash);
+
+				/*
+				 * Search the hash list for overlapping entries and
+				 * coalesce.
+				 */
+				for (; nfsd && NFSW_CONTIG(owp, nfsd); nfsd = wp) {
+					wp = nfsd->nd_hash.le_next;
+					if (NFSW_SAMECRED(owp, nfsd))
+						nfsrvw_coalesce(owp, nfsd);
+				}
+			} else {
+				LIST_INSERT_HEAD(wpp, nfsd, nd_hash);
+			}
+		}
+		splx(s);
 	}
     
 	/*
@@ -1025,14 +1026,15 @@ nfsmout:
 	 * and generate the associated reply mbuf list(s).
 	 */
 loop1:
-	cur_usec = (u_quad_t)time.tv_sec * 1000000 + (u_quad_t)time.tv_usec;
+	cur_usec = (u_quad_t) time.tv_sec * 1000000
+			+ (u_quad_t) time.tv_usec;
 	s = splsoftclock();
 	for (nfsd = slp->ns_tq.lh_first; nfsd; nfsd = owp) {
 		owp = nfsd->nd_tq.le_next;
 		if (nfsd->nd_time > cur_usec)
-		    break;
+			break;
 		if (nfsd->nd_mreq)
-		    continue;
+			continue;
 		LIST_REMOVE(nfsd, nd_tq);
 		LIST_REMOVE(nfsd, nd_hash);
 		splx(s);
@@ -1041,66 +1043,66 @@ loop1:
 		cred = &nfsd->nd_cr;
 		v3 = (nfsd->nd_flag & ND_NFSV3);
 		forat_ret = aftat_ret = 1;
-		error = nfsrv_fhtovp(&nfsd->nd_fh, 1, &vp, cred, slp, 
-		    nfsd->nd_nam, &rdonly, (nfsd->nd_flag & ND_KERBAUTH));
+		error = nfsrv_fhtovp(&nfsd->nd_fh, 1, &vp, cred, slp, nfsd->nd_nam,
+				&rdonly, (nfsd->nd_flag & ND_KERBAUTH));
 		if (!error) {
-		    if (v3)
-			forat_ret = VOP_GETATTR(vp, &forat, cred, procp);
-		    if (vp->v_type != VREG) {
 			if (v3)
-			    error = EINVAL;
-			else
-			    error = (vp->v_type == VDIR) ? EISDIR : EACCES;
-		    }
+				forat_ret = VOP_GETATTR(vp, &forat, cred, procp);
+			if (vp->v_type != VREG) {
+				if (v3)
+					error = EINVAL;
+				else
+					error = (vp->v_type == VDIR) ? EISDIR : EACCES;
+			}
 		} else
-		    vp = NULL;
+			vp = NULL;
 		if (!error) {
-		    nqsrv_getl(vp, ND_WRITE);
-		    error = nfsrv_access(vp, VWRITE, cred, rdonly, procp);
+			nqsrv_getl(vp, ND_WRITE);
+			error = nfsrv_access(vp, VWRITE, cred, rdonly, procp);
 		}
-    
+
 		if (nfsd->nd_stable == NFSV3WRITE_UNSTABLE)
-		    ioflags = IO_NODELOCKED;
+			ioflags = IO_NODELOCKED;
 		else if (nfsd->nd_stable == NFSV3WRITE_DATASYNC)
-		    ioflags = (IO_SYNC | IO_NODELOCKED);
+			ioflags = (IO_SYNC | IO_NODELOCKED);
 		else
-		    ioflags = (IO_METASYNC | IO_SYNC | IO_NODELOCKED);
+			ioflags = (IO_METASYNC | IO_SYNC | IO_NODELOCKED);
 		uiop->uio_rw = UIO_WRITE;
 		uiop->uio_segflg = UIO_SYSSPACE;
-		uiop->uio_procp = (struct proc *)0;
+		uiop->uio_procp = (struct proc*) 0;
 		uiop->uio_offset = nfsd->nd_off;
 		uiop->uio_resid = nfsd->nd_eoff - nfsd->nd_off;
 		if (uiop->uio_resid > 0) {
-		    mp = mrep;
-		    i = 0;
-		    while (mp) {
-			if (mp->m_len > 0)
-			    i++;
-			mp = mp->m_next;
-		    }
-		    uiop->uio_iovcnt = i;
-		    MALLOC(iov, struct iovec *, i * sizeof (struct iovec), 
-			M_TEMP, M_WAITOK);
-		    uiop->uio_iov = ivp = iov;
-		    mp = mrep;
-		    while (mp) {
-			if (mp->m_len > 0) {
-			    ivp->iov_base = mtod(mp, caddr_t);
-			    ivp->iov_len = mp->m_len;
-			    ivp++;
+			mp = mrep;
+			i = 0;
+			while (mp) {
+				if (mp->m_len > 0)
+					i++;
+				mp = mp->m_next;
 			}
-			mp = mp->m_next;
-		    }
-		    if (!error) {
-			error = VOP_WRITE(vp, uiop, ioflags, cred);
-			nfsstats.srvvop_writes++;
-		    }
-		    FREE((caddr_t)iov, M_TEMP);
+			uiop->uio_iovcnt = i;
+			MALLOC(iov, struct iovec *, i * sizeof (struct iovec),
+					M_TEMP, M_WAITOK);
+			uiop->uio_iov = ivp = iov;
+			mp = mrep;
+			while (mp) {
+				if (mp->m_len > 0) {
+					ivp->iov_base = mtod(mp, caddr_t);
+					ivp->iov_len = mp->m_len;
+					ivp++;
+				}
+				mp = mp->m_next;
+			}
+			if (!error) {
+				error = VOP_WRITE(vp, uiop, ioflags, cred);
+				nfsstats.srvvop_writes++;
+			}
+			FREE((caddr_t) iov, M_TEMP);
 		}
 		m_freem(mrep);
 		if (vp) {
-		    aftat_ret = VOP_GETATTR(vp, &va, cred, procp);
-		    vput(vp);
+			aftat_ret = VOP_GETATTR(vp, &va, cred, procp);
+			vput(vp);
 		}
 
 		/*
@@ -1109,50 +1111,50 @@ loop1:
 		 */
 		swp = nfsd;
 		do {
-		    if (error) {
-			nfsm_writereply(NFSX_WCCDATA(v3), v3);
-			if (v3) {
-			    nfsm_srvwcc_data(forat_ret, &forat, aftat_ret, &va);
-			}
-		    } else {
-			nfsm_writereply(NFSX_PREOPATTR(v3) +
-			    NFSX_POSTOPORFATTR(v3) + 2 * NFSX_UNSIGNED +
-			    NFSX_WRITEVERF(v3), v3);
-			if (v3) {
-			    nfsm_srvwcc_data(forat_ret, &forat, aftat_ret, &va);
-			    nfsm_build(tl, u_long *, 4 * NFSX_UNSIGNED);
-			    *tl++ = txdr_unsigned(nfsd->nd_len);
-			    *tl++ = txdr_unsigned(swp->nd_stable);
-			    /*
-			     * Actually, there is no need to txdr these fields,
-			     * but it may make the values more human readable,
-			     * for debugging purposes.
-			     */
-			    *tl++ = txdr_unsigned(boottime.tv_sec);
-			    *tl = txdr_unsigned(boottime.tv_usec);
+			if (error) {
+				nfsm_writereply(NFSX_WCCDATA(v3), v3);
+				if (v3) {
+					nfsm_srvwcc_data(forat_ret, &forat, aftat_ret, &va);
+				}
 			} else {
-			    nfsm_build(fp, struct nfs_fattr *, NFSX_V2FATTR);
-			    nfsm_srvfillattr(&va, fp);
+				nfsm_writereply(
+						NFSX_PREOPATTR(v3) + NFSX_POSTOPORFATTR(v3) + 2 * NFSX_UNSIGNED + NFSX_WRITEVERF(v3),
+						v3);
+				if (v3) {
+					nfsm_srvwcc_data(forat_ret, &forat, aftat_ret, &va);
+					nfsm_build(tl, u_long*, 4 * NFSX_UNSIGNED);
+					*tl++ = txdr_unsigned(nfsd->nd_len);
+					*tl++ = txdr_unsigned(swp->nd_stable);
+					/*
+					 * Actually, there is no need to txdr these fields,
+					 * but it may make the values more human readable,
+					 * for debugging purposes.
+					 */
+					*tl++ = txdr_unsigned(boottime.tv_sec);
+					*tl = txdr_unsigned(boottime.tv_usec);
+				} else {
+					nfsm_build(fp, struct nfs_fattr*, NFSX_V2FATTR);
+					nfsm_srvfillattr(&va, fp);
+				}
 			}
-		    }
-		    nfsd->nd_mreq = mreq;
-		    if (nfsd->nd_mrep)
-			panic("nfsrv_write: nd_mrep not free");
+			nfsd->nd_mreq = mreq;
+			if (nfsd->nd_mrep)
+				panic("nfsrv_write: nd_mrep not free");
 
-		    /*
-		     * Done. Put it at the head of the timer queue so that
-		     * the final phase can return the reply.
-		     */
-		    s = splsoftclock();
-		    if (nfsd != swp) {
-			nfsd->nd_time = 0;
-			LIST_INSERT_HEAD(&slp->ns_tq, nfsd, nd_tq);
-		    }
-		    nfsd = swp->nd_coalesce.lh_first;
-		    if (nfsd) {
-			LIST_REMOVE(nfsd, nd_tq);
-		    }
-		    splx(s);
+			/*
+			 * Done. Put it at the head of the timer queue so that
+			 * the final phase can return the reply.
+			 */
+			s = splsoftclock();
+			if (nfsd != swp) {
+				nfsd->nd_time = 0;
+				LIST_INSERT_HEAD(&slp->ns_tq, nfsd, nd_tq);
+			}
+			nfsd = swp->nd_coalesce.lh_first;
+			if (nfsd) {
+				LIST_REMOVE(nfsd, nd_tq);
+			}
+			splx(s);
 		} while (nfsd);
 		s = splsoftclock();
 		swp->nd_time = 0;
@@ -1168,10 +1170,10 @@ loop1:
 	s = splsoftclock();
 	for (nfsd = slp->ns_tq.lh_first; nfsd; nfsd = nfsd->nd_tq.le_next)
 		if (nfsd->nd_mreq) {
-		    LIST_REMOVE(nfsd, nd_tq);
-		    *mrq = nfsd->nd_mreq;
-		    *ndp = nfsd;
-		    break;
+			LIST_REMOVE(nfsd, nd_tq);
+			*mrq = nfsd->nd_mreq;
+			*ndp = nfsd;
+			break;
 		}
 	splx(s);
 	return (0);
@@ -1193,28 +1195,28 @@ nfsrvw_coalesce(owp, nfsd)
         register int overlap;
         register struct mbuf *mp;
 
-        LIST_REMOVE(nfsd, nd_hash);
-        LIST_REMOVE(nfsd, nd_tq);
-        if (owp->nd_eoff < nfsd->nd_eoff) {
-            overlap = owp->nd_eoff - nfsd->nd_off;
-            if (overlap < 0)
-                panic("nfsrv_coalesce: bad off");
-            if (overlap > 0)
-                m_adj(nfsd->nd_mrep, overlap);
-            mp = owp->nd_mrep;
-            while (mp->m_next)
-                mp = mp->m_next;
-            mp->m_next = nfsd->nd_mrep;
-            owp->nd_eoff = nfsd->nd_eoff;
-        } else
-            m_freem(nfsd->nd_mrep);
-        nfsd->nd_mrep = NULL;
-        if (nfsd->nd_stable == NFSV3WRITE_FILESYNC)
-            owp->nd_stable = NFSV3WRITE_FILESYNC;
-        else if (nfsd->nd_stable == NFSV3WRITE_DATASYNC &&
-            owp->nd_stable == NFSV3WRITE_UNSTABLE)
-            owp->nd_stable = NFSV3WRITE_DATASYNC;
-        LIST_INSERT_HEAD(&owp->nd_coalesce, nfsd, nd_tq);
+	LIST_REMOVE(nfsd, nd_hash);
+	LIST_REMOVE(nfsd, nd_tq);
+	if (owp->nd_eoff < nfsd->nd_eoff) {
+		overlap = owp->nd_eoff - nfsd->nd_off;
+		if (overlap < 0)
+			panic("nfsrv_coalesce: bad off");
+		if (overlap > 0)
+			m_adj(nfsd->nd_mrep, overlap);
+		mp = owp->nd_mrep;
+		while (mp->m_next)
+			mp = mp->m_next;
+		mp->m_next = nfsd->nd_mrep;
+		owp->nd_eoff = nfsd->nd_eoff;
+	} else
+		m_freem(nfsd->nd_mrep);
+	nfsd->nd_mrep = NULL;
+	if (nfsd->nd_stable == NFSV3WRITE_FILESYNC)
+		owp->nd_stable = NFSV3WRITE_FILESYNC;
+	else if (nfsd->nd_stable == NFSV3WRITE_DATASYNC
+			&& owp->nd_stable == NFSV3WRITE_UNSTABLE)
+		owp->nd_stable = NFSV3WRITE_DATASYNC;
+	LIST_INSERT_HEAD(&owp->nd_coalesce, nfsd, nd_tq);
 }
 
 /*
@@ -1582,7 +1584,7 @@ nfsrv_mknod(nfsd, slp, procp, mrq)
 		if (!error)
 			FREE(nd.ni_cnd.cn_pnbuf, M_NAMEI);
 	} else {
-		if (error = suser(cred, (u_short *)0)) {
+		if (error == suser1(cred, (u_short *)0)) {
 			vrele(nd.ni_startdir);
 			free((caddr_t)nd.ni_cnd.cn_pnbuf, M_NAMEI);
 			VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
@@ -1590,7 +1592,7 @@ nfsrv_mknod(nfsd, slp, procp, mrq)
 			goto out;
 		}
 		nqsrv_getl(nd.ni_dvp, ND_WRITE);
-		if (error = VOP_MKNOD(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, vap)) {
+		if (error == VOP_MKNOD(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, vap)) {
 			vrele(nd.ni_startdir);
 			goto out;
 		}
@@ -1969,7 +1971,7 @@ nfsrv_link(nfsd, slp, procp, mrq)
 	nfsm_srvmtofh(fhp);
 	nfsm_srvmtofh(dfhp);
 	nfsm_srvnamesiz(len);
-	if (error = nfsrv_fhtovp(fhp, FALSE, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, FALSE, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(NFSX_POSTOPATTR(v3) + NFSX_WCCDATA(v3));
 		nfsm_srvpostop_attr(getret, &at);
@@ -2475,7 +2477,7 @@ nfsrv_readdir(nfsd, slp, procp, mrq)
 	if (siz > xfer)
 		siz = xfer;
 	fullsiz = siz;
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(NFSX_UNSIGNED);
 		nfsm_srvpostop_attr(getret, &at);
@@ -2720,7 +2722,7 @@ nfsrv_readdirplus(nfsd, slp, procp, mrq)
 	if (siz > xfer)
 		siz = xfer;
 	fullsiz = siz;
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(NFSX_UNSIGNED);
 		nfsm_srvpostop_attr(getret, &at);
@@ -2991,7 +2993,7 @@ nfsrv_commit(nfsd, slp, procp, mrq)
 	fxdr_hyper(tl, &off);
 	tl += 2;
 	cnt = fxdr_unsigned(int, *tl);
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(2 * NFSX_UNSIGNED);
 		nfsm_srvwcc_data(for_ret, &bfor, aft_ret, &aft);
@@ -3047,7 +3049,7 @@ nfsrv_statfs(nfsd, slp, procp, mrq)
 #endif
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(NFSX_UNSIGNED);
 		nfsm_srvpostop_attr(getret, &at);
@@ -3122,7 +3124,7 @@ nfsrv_fsinfo(nfsd, slp, procp, mrq)
 #endif
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(NFSX_UNSIGNED);
 		nfsm_srvpostop_attr(getret, &at);
@@ -3193,7 +3195,7 @@ nfsrv_pathconf(nfsd, slp, procp, mrq)
 #endif
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
-	if (error = nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
+	if (error == nfsrv_fhtovp(fhp, 1, &vp, cred, slp, nam,
 		 &rdonly, (nfsd->nd_flag & ND_KERBAUTH))) {
 		nfsm_reply(NFSX_UNSIGNED);
 		nfsm_srvpostop_attr(getret, &at);
@@ -3328,7 +3330,7 @@ nfsrv_access(vp, flags, cred, rdonly, p)
 		if ((vp->v_flag & VTEXT) && !vnode_pager_uncache(vp))
 			return (ETXTBSY);
 	}
-	if (error = VOP_GETATTR(vp, &vattr, cred, p))
+	if (error == VOP_GETATTR(vp, &vattr, cred, p))
 		return (error);
 	if ((error = VOP_ACCESS(vp, flags, cred, p)) &&
 	    cred->cr_uid != vattr.va_uid)

@@ -38,6 +38,7 @@
 
 #include <sys/param.h>
 #include <sys/types.h>
+#include <sys/stdbool.h>
 
 #include <sys/ioctl.h>
 #include <prop/proplib.h>
@@ -53,12 +54,12 @@
 
 /* Storage of address (both for IPv4 and IPv6) and netmask */
 typedef struct in6_addr		npf_addr_t;
-typedef uint8_t			npf_netmask_t;
+typedef uint8_t				npf_netmask_t;
 
 #define	NPF_MAX_NETMASK		(128)
 #define	NPF_NO_NETMASK		((npf_netmask_t)~0)
 
-#if defined(_KERNEL)
+//#if defined(_KERNEL)
 
 #define	NPF_DECISION_BLOCK	0
 #define	NPF_DECISION_PASS	1
@@ -95,24 +96,24 @@ typedef struct {
 	/* Information flags. */
 	uint32_t		npc_info;
 	/* Pointers to the IP v4/v6 addresses. */
-	npf_addr_t *		npc_srcip;
-	npf_addr_t *		npc_dstip;
+	npf_addr_t 		*npc_srcip;
+	npf_addr_t 		*npc_dstip;
 	/* Size (v4 or v6) of IP addresses. */
 	uint8_t			npc_alen;
 	uint8_t			npc_hlen;
 	uint16_t		npc_proto;
 	/* IPv4, IPv6. */
 	union {
-		struct ip *		v4;
-		struct ip6_hdr *	v6;
+		struct ip 			*v4;
+		struct ip6_hdr 		*v6;
 	} npc_ip;
 	/* TCP, UDP, ICMP. */
 	union {
-		struct tcphdr *		tcp;
-		struct udphdr *		udp;
-		struct icmp *		icmp;
-		struct icmp6_hdr *	icmp6;
-		void *			hdr;
+		struct tcphdr 		*tcp;
+		struct udphdr 		*udp;
+		struct icmp 		*icmp;
+		struct icmp6_hdr 	*icmp6;
+		void 				*hdr;
 	} npc_l4;
 } npf_cache_t;
 
@@ -129,30 +130,30 @@ npf_iscached(const npf_cache_t *npc, const int inf)
 #define	NBUF_DATAREF_RESET	0x01
 
 typedef struct {
-	struct mbuf *	nb_mbuf0;
-	struct mbuf *	nb_mbuf;
-	void *		nb_nptr;
-	const ifnet_t *	nb_ifp;
+	struct mbuf 	*nb_mbuf0;
+	struct mbuf 	*nb_mbuf;
+	void 			*nb_nptr;
+	const struct ifnet *nb_ifp;
 	int		nb_flags;
 } nbuf_t;
 
-void		nbuf_init(nbuf_t *, struct mbuf *, const ifnet_t *);
+void		nbuf_init(nbuf_t *, struct mbuf *, const struct ifnet *);
 void		nbuf_reset(nbuf_t *);
-struct mbuf *	nbuf_head_mbuf(nbuf_t *);
+struct mbuf *nbuf_head_mbuf(nbuf_t *);
 
 bool		nbuf_flag_p(const nbuf_t *, int);
 void		nbuf_unset_flag(nbuf_t *, int);
 
-void *		nbuf_dataptr(nbuf_t *);
+void 		*nbuf_dataptr(nbuf_t *);
 size_t		nbuf_offset(const nbuf_t *);
-void *		nbuf_advance(nbuf_t *, size_t, size_t);
+void 		*nbuf_advance(nbuf_t *, size_t, size_t);
 
-void *		nbuf_ensure_contig(nbuf_t *, size_t);
-void *		nbuf_ensure_writable(nbuf_t *, size_t);
+void 		*nbuf_ensure_contig(nbuf_t *, size_t);
+void 		*nbuf_ensure_writable(nbuf_t *, size_t);
 
 bool		nbuf_cksum_barrier(nbuf_t *, int);
-int		nbuf_add_tag(nbuf_t *, uint32_t, uint32_t);
-int		nbuf_find_tag(nbuf_t *, uint32_t, void **);
+int			nbuf_add_tag(nbuf_t *, uint32_t, uint32_t);
+int			nbuf_find_tag(nbuf_t *, uint32_t, void **);
 
 /*
  * NPF extensions and rule procedure interface.
@@ -165,13 +166,13 @@ void		npf_rproc_assign(npf_rproc_t *, void *);
 
 typedef struct {
 	unsigned int	version;
-	void *		ctx;
-	int		(*ctor)(npf_rproc_t *, prop_dictionary_t);
+	void 			*ctx;
+	int			(*ctor)(npf_rproc_t *, prop_dictionary_t);
 	void		(*dtor)(npf_rproc_t *, void *);
 	void		(*proc)(npf_cache_t *, nbuf_t *, void *, int *);
 } npf_ext_ops_t;
 
-void *		npf_ext_register(const char *, const npf_ext_ops_t *);
+void 	*npf_ext_register(const char *, const npf_ext_ops_t *);
 int		npf_ext_unregister(void *);
 
 /*
@@ -206,12 +207,12 @@ bool		npf_autounload_p(void);
 #define	NPF_PRI_LAST			(-1)
 
 /* Types of code. */
-#define	NPF_CODE_NC			1
+#define	NPF_CODE_NC				1
 #define	NPF_CODE_BPF			2
 
 /* Address translation types and flags. */
-#define	NPF_NATIN			1
-#define	NPF_NATOUT			2
+#define	NPF_NATIN				1
+#define	NPF_NATOUT				2
 
 #define	NPF_NAT_PORTS			0x01
 #define	NPF_NAT_PORTMAP			0x02
@@ -221,8 +222,8 @@ bool		npf_autounload_p(void);
 #define	NPF_TABLE_TREE			2
 
 /* Layers. */
-#define	NPF_LAYER_2			2
-#define	NPF_LAYER_3			3
+#define	NPF_LAYER_2				2
+#define	NPF_LAYER_3				3
 
 /* XXX mbuf.h: just for now. */
 #define	PACKET_TAG_NPF			10
@@ -242,9 +243,9 @@ bool		npf_autounload_p(void);
  * NPF ioctl(2): table commands and structures.
  */
 
-#define	NPF_CMD_TABLE_LOOKUP		1
+#define	NPF_CMD_TABLE_LOOKUP	1
 #define	NPF_CMD_TABLE_ADD		2
-#define	NPF_CMD_TABLE_REMOVE		3
+#define	NPF_CMD_TABLE_REMOVE	3
 #define	NPF_CMD_TABLE_LIST		4
 #define	NPF_CMD_TABLE_FLUSH		5
 
@@ -272,15 +273,15 @@ typedef struct npf_ioctl_table {
  * IOCTL operations.
  */
 
-#define	IOC_NPF_VERSION		_IOR('N', 100, int)
-#define	IOC_NPF_SWITCH		_IOW('N', 101, int)
-#define	IOC_NPF_RELOAD		_IOWR('N', 102, struct plistref)
-#define	IOC_NPF_TABLE		_IOW('N', 103, struct npf_ioctl_table)
-#define	IOC_NPF_STATS		_IOW('N', 104, void *)
+#define	IOC_NPF_VERSION			_IOR('N', 100, int)
+#define	IOC_NPF_SWITCH			_IOW('N', 101, int)
+#define	IOC_NPF_RELOAD			_IOWR('N', 102, struct plistref)
+#define	IOC_NPF_TABLE			_IOW('N', 103, struct npf_ioctl_table)
+#define	IOC_NPF_STATS			_IOW('N', 104, void *)
 #define	IOC_NPF_SESSIONS_SAVE	_IOR('N', 105, struct plistref)
 #define	IOC_NPF_SESSIONS_LOAD	_IOW('N', 106, struct plistref)
-#define	IOC_NPF_RULE		_IOWR('N', 107, struct plistref)
-#define	IOC_NPF_GETCONF		_IOR('N', 108, struct plistref)
+#define	IOC_NPF_RULE			_IOWR('N', 107, struct plistref)
+#define	IOC_NPF_GETCONF			_IOR('N', 108, struct plistref)
 
 /*
  * Statistics counters.

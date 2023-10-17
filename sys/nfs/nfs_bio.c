@@ -57,7 +57,7 @@
 #include <nfs/nqnfs.h>
 #include <nfs/nfsnode.h>
 
-struct buf *nfs_getcacheblk();
+struct buf *nfs_getcacheblk(struct vnode *, daddr_t, int, struct proc *);
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_numasync;
 extern struct nfsstats nfsstats;

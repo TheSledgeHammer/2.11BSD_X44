@@ -52,7 +52,7 @@ int	npf_ncode_validate(const void *, size_t, int *);
 /* Error codes. */
 #define	NPF_ERR_OPCODE		-1	/* Invalid instruction. */
 #define	NPF_ERR_JUMP		-2	/* Invalid jump (e.g. out of range). */
-#define	NPF_ERR_REG		-3	/* Invalid register. */
+#define	NPF_ERR_REG			-3	/* Invalid register. */
 #define	NPF_ERR_INVAL		-4	/* Invalid argument value. */
 #define	NPF_ERR_RANGE		-5	/* Processing out of range. */
 

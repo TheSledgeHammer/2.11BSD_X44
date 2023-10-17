@@ -69,7 +69,7 @@ typedef struct {
 	bool			n_default_pass;
 } npf_config_t;
 
-static npf_config_t *		npf_config		__cacheline_aligned;
+static npf_config_t 	*npf_config			__cacheline_aligned;
 static kmutex_t			npf_config_lock		__cacheline_aligned;
 static pserialize_t		npf_config_psz		__cacheline_aligned;
 

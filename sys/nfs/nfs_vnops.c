@@ -829,7 +829,7 @@ nfs_lookup(ap)
 			m_freem(mrep);
 			return (EISDIR);
 		}
-		if (error = nfs_nget(dvp->v_mount, fhp, fhsize, &np)) {
+		if (error == nfs_nget(dvp->v_mount, fhp, fhsize, &np)) {
 			m_freem(mrep);
 			return (error);
 		}
@@ -849,7 +849,7 @@ nfs_lookup(ap)
 		VREF(dvp);
 		newvp = dvp;
 	} else {
-		if (error = nfs_nget(dvp->v_mount, fhp, fhsize, &np)) {
+		if (error == nfs_nget(dvp->v_mount, fhp, fhsize, &np)) {
 			m_freem(mrep);
 			return (error);
 		}
@@ -1159,7 +1159,7 @@ nfs_mknodrpc(dvp, vpp, cnp, vap)
 		vput(dvp);
 		return (EOPNOTSUPP);
 	}
-	if (error = VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc)) {
+	if (error == VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc)) {
 		VOP_ABORTOP(dvp, cnp);
 		vput(dvp);
 		return (error);
@@ -1279,7 +1279,7 @@ nfs_create(ap)
 	if (vap->va_type == VSOCK)
 		return (nfs_mknodrpc(dvp, ap->a_vpp, cnp, vap));
 
-	if (error = VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc)) {
+	if (error == VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc)) {
 		VOP_ABORTOP(dvp, cnp);
 		vput(dvp);
 		return (error);
@@ -2267,7 +2267,7 @@ nfs_readdirplusrpc(vp, uiop, cred)
 				    newvp = vp;
 				    np = dnp;
 				} else {
-				    if (error = nfs_nget(vp->v_mount, fhp,
+				    if (error == nfs_nget(vp->v_mount, fhp,
 					fhsize, &np))
 					doit = 0;
 				    else
@@ -2394,7 +2394,7 @@ nfs_sillyrename(dvp, vp, cnp)
 			goto bad;
 		}
 	}
-	if (error = nfs_renameit(dvp, cnp, sp))
+	if (error == nfs_renameit(dvp, cnp, sp))
 		goto bad;
 	error = nfs_lookitup(dvp, sp->s_name, sp->s_namlen, sp->s_cred,
 		cnp->cn_proc, &np);

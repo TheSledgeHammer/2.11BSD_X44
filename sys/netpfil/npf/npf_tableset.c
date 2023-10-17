@@ -49,7 +49,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_tableset.c,v 1.9.2.8 2013/02/11 21:49:48 riz Exp
 #include <sys/atomic.h>
 #include <sys/hash.h>
 #include <sys/kmem.h>
-#include <sys/pool.h>
+#include <sys/malloc.h>
 #include <sys/queue.h>
 #include <sys/rwlock.h>
 #include <sys/systm.h>
@@ -534,8 +534,7 @@ table_ent_copyout(npf_tblent_t *ent, npf_netmask_t mask,
 }
 
 static int
-table_tree_list(pt_tree_t *tree, npf_netmask_t maxmask, void *ubuf,
-    size_t len, size_t *off)
+table_tree_list(pt_tree_t *tree, npf_netmask_t maxmask, void *ubuf, size_t len, size_t *off)
 {
 	npf_tblent_t *ent = NULL;
 	int error = 0;

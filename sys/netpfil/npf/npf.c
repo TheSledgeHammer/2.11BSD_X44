@@ -36,15 +36,19 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: npf.c,v 1.7.2.7 2013/02/11 21:49:49 riz Exp $");
 
+/*
+#include <sys/kauth.h>
+#include <sys/kmem.h>
+#include <sys/lwp.h>
+#include <sys/module.h>
+*/
 #include <sys/param.h>
 #include <sys/types.h>
 
 #include <sys/atomic.h>
 #include <sys/conf.h>
-#include <sys/kauth.h>
-#include <sys/kmem.h>
-#include <sys/lwp.h>
-#include <sys/module.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
 #include <sys/percpu.h>
 #include <sys/rwlock.h>
 #include <sys/socketvar.h>
@@ -53,36 +57,41 @@ __KERNEL_RCSID(0, "$NetBSD: npf.c,v 1.7.2.7 2013/02/11 21:49:49 riz Exp $");
 
 #include "npf_impl.h"
 
-/*
- * Module and device structures.
- */
-MODULE(MODULE_CLASS_DRIVER, npf, NULL);
-
 void		npfattach(int);
 
 static int	npf_fini(void);
-static int	npf_dev_open(dev_t, int, int, lwp_t *);
-static int	npf_dev_close(dev_t, int, int, lwp_t *);
-static int	npf_dev_ioctl(dev_t, u_long, void *, int, lwp_t *);
-static int	npf_dev_poll(dev_t, int, lwp_t *);
+static int	npf_dev_open(dev_t, int, int, struct proc *);
+static int	npf_dev_close(dev_t, int, int, struct proc *);
+static int	npf_dev_ioctl(dev_t, u_long, void *, int, struct proc *);
+static int	npf_dev_poll(dev_t, int, struct proc *);
 static int	npf_dev_read(dev_t, struct uio *, int);
 
 static int	npfctl_stats(void *);
 
-static percpu_t *		npf_stats_percpu	__read_mostly;
-static struct sysctllog *	npf_sysctl		__read_mostly;
+static struct percpu *npf_stats_percpu;//	__read_mostly;
 
 const struct cdevsw npf_cdevsw = {
 	npf_dev_open, npf_dev_close, npf_dev_read, nowrite, npf_dev_ioctl,
 	nostop, notty, npf_dev_poll, nommap, nokqfilter, D_OTHER | D_MPSAFE
 };
+const struct cdevsw npf_cdevsw = {
+		.d_open = npf_dev_open,
+		.d_close = npf_dev_close,
+		.d_read = npf_dev_read,
+		.d_write = nowrite,
+		.d_ioctl = npf_dev_ioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = npf_dev_poll,
+		.d_mmap = nommap,
+		.d_kqfilter = nokqfilter,
+		.d_type = D_OTHER
+};
 
 static int
 npf_init(void)
 {
-#ifdef _MODULE
-	devmajor_t bmajor = NODEVMAJOR, cmajor = NODEVMAJOR;
-#endif
+
 	int error = 0;
 
 	npf_stats_percpu = percpu_alloc(NPF_STATS_SIZE);
@@ -137,29 +146,6 @@ npf_fini(void)
 	return 0;
 }
 
-/*
- * Module interface.
- */
-static int
-npf_modcmd(modcmd_t cmd, void *arg)
-{
-
-	switch (cmd) {
-	case MODULE_CMD_INIT:
-		return npf_init();
-	case MODULE_CMD_FINI:
-		return npf_fini();
-	case MODULE_CMD_AUTOUNLOAD:
-		if (npf_autounload_p()) {
-			return EBUSY;
-		}
-		break;
-	default:
-		return ENOTTY;
-	}
-	return 0;
-}
-
 void
 npfattach(int nunits)
 {
@@ -168,30 +154,30 @@ npfattach(int nunits)
 }
 
 static int
-npf_dev_open(dev_t dev, int flag, int mode, lwp_t *l)
+npf_dev_open(dev_t dev, int flag, int mode, struct proc *p)
 {
 
 	/* Available only for super-user. */
-	if (kauth_authorize_generic(l->l_cred, KAUTH_GENERIC_ISSUSER, NULL)) {
+	if (suser1(p->p_ucred, &p->p_acflag)) {
 		return EPERM;
 	}
 	return 0;
 }
 
 static int
-npf_dev_close(dev_t dev, int flag, int mode, lwp_t *l)
+npf_dev_close(dev_t dev, int flag, int mode, struct proc *p)
 {
 
 	return 0;
 }
 
 static int
-npf_dev_ioctl(dev_t dev, u_long cmd, void *data, int flag, lwp_t *l)
+npf_dev_ioctl(dev_t dev, u_long cmd, void *data, int flag, struct proc *p)
 {
 	int error;
 
 	/* Available only for super-user. */
-	if (kauth_authorize_generic(l->l_cred, KAUTH_GENERIC_ISSUSER, NULL)) {
+	if (suser1(p->p_ucred, &p->p_acflag)) {
 		return EPERM;
 	}
 
@@ -232,7 +218,7 @@ npf_dev_ioctl(dev_t dev, u_long cmd, void *data, int flag, lwp_t *l)
 }
 
 static int
-npf_dev_poll(dev_t dev, int events, lwp_t *l)
+npf_dev_poll(dev_t dev, int events, struct proc *p)
 {
 
 	return ENOTSUP;
