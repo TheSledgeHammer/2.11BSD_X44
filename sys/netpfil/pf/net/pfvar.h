@@ -45,8 +45,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp_fsm.h>
 
-
-
 union sockaddr_union {
 	struct sockaddr         sa;
 	struct sockaddr_in      sin;
@@ -67,10 +65,14 @@ struct ip6_hdr;
 #endif
 
 enum {
-	PF_INOUT, PF_IN, PF_OUT
+	PF_INOUT,
+	PF_IN,
+	PF_OUT
 };
 enum {
-	PF_LAN_EXT, PF_EXT_GWY, PF_ID
+	PF_LAN_EXT,
+	PF_EXT_GWY,
+	PF_ID
 };
 enum {
 	PF_PASS,
@@ -106,7 +108,10 @@ enum {
 	PF_OP_RRG
 };
 enum {
-	PF_DEBUG_NONE, PF_DEBUG_URGENT, PF_DEBUG_MISC, PF_DEBUG_NOISY
+	PF_DEBUG_NONE,
+	PF_DEBUG_URGENT,
+	PF_DEBUG_MISC,
+	PF_DEBUG_NOISY
 };
 enum {
 	PF_CHANGE_NONE,
@@ -147,10 +152,17 @@ enum {
 	PFTM_UNTIL_PACKET
 };
 enum {
-	PF_NOPFROUTE, PF_FASTROUTE, PF_ROUTETO, PF_DUPTO, PF_REPLYTO
+	PF_NOPFROUTE,
+	PF_FASTROUTE,
+	PF_ROUTETO,
+	PF_DUPTO,
+	PF_REPLYTO
 };
 enum {
-	PF_LIMIT_STATES, PF_LIMIT_SRC_NODES, PF_LIMIT_FRAGS, PF_LIMIT_MAX
+	PF_LIMIT_STATES,
+	PF_LIMIT_SRC_NODES,
+	PF_LIMIT_FRAGS,
+	PF_LIMIT_MAX
 };
 #define PF_POOL_IDMASK		0x0f
 enum {
@@ -161,7 +173,10 @@ enum {
 	PF_POOL_ROUNDROBIN
 };
 enum {
-	PF_ADDR_ADDRMASK, PF_ADDR_NOROUTE, PF_ADDR_DYNIFTL, PF_ADDR_TABLE
+	PF_ADDR_ADDRMASK,
+	PF_ADDR_NOROUTE,
+	PF_ADDR_DYNIFTL,
+	PF_ADDR_TABLE
 };
 #define PF_POOL_TYPEMASK	0x0f
 #define PF_POOL_STICKYADDR	0x20
@@ -205,11 +220,11 @@ struct pf_addr_wrap {
 	union {
 		struct pfi_dynaddr	*dyn;
 		struct pfr_ktable	*tbl;
-		int			 dyncnt;
-		int			 tblcnt;
-	}			 p;
-	u_int8_t		 type;		/* PF_ADDR_* */
-	u_int8_t		 iflags;	/* PFI_AFLAG_* */
+		int			 		dyncnt;
+		int			 		tblcnt;
+	} p;
+	u_int8_t		 		type;		/* PF_ADDR_* */
+	u_int8_t		 		iflags;	/* PFI_AFLAG_* */
 };
 
 #ifdef _KERNEL
@@ -395,10 +410,10 @@ struct pf_rule_addr {
 };
 
 struct pf_pooladdr {
-	struct pf_addr_wrap		 addr;
-	TAILQ_ENTRY(pf_pooladdr)	 entries;
-	char				 ifname[IFNAMSIZ];
-	struct pfi_kif			*kif;
+	struct pf_addr_wrap		 	addr;
+	TAILQ_ENTRY(pf_pooladdr)	entries;
+	char				 		ifname[IFNAMSIZ];
+	struct pfi_kif				*kif;
 };
 
 TAILQ_HEAD(pf_palist, pf_pooladdr);
@@ -693,42 +708,6 @@ struct pf_state_peer {
 
 TAILQ_HEAD(pf_state_queue, pf_state);
 
-/* keep synced with struct pf_state_key, used in RB_FIND */
-struct pf_state_key_cmp {
-	struct pf_state_host lan;
-	struct pf_state_host gwy;
-	struct pf_state_host ext;
-	sa_family_t	 af;
-	u_int8_t	 proto;
-	u_int8_t	 direction;
-	u_int8_t	 pad;
-};
-
-TAILQ_HEAD(pf_statelist, pf_state);
-
-struct pf_state_key {
-	struct pf_state_host lan;
-	struct pf_state_host gwy;
-	struct pf_state_host ext;
-	sa_family_t	 af;
-	u_int8_t	 proto;
-	u_int8_t	 direction;
-	u_int8_t	 pad;
-
-	RB_ENTRY(pf_state_key)	entry_lan_ext;
-	RB_ENTRY(pf_state_key)	entry_ext_gwy;
-	struct pf_statelist	 	states;
-	u_short		 refcnt;	/* same size as if_index */
-};
-
-
-/* keep synced with struct pf_state, used in RB_FIND */
-struct pf_state_cmp {
-	u_int64_t	 id;
-	u_int32_t	 creatorid;
-	u_int32_t	 pad;
-};
-
 struct pf_state {
 	u_int64_t	 id;
 	union {
@@ -963,10 +942,15 @@ struct pfr_addr {
 #define	pfra_ip6addr	pfra_u._pfra_ip6addr
 
 enum {
-	PFR_DIR_IN, PFR_DIR_OUT, PFR_DIR_MAX
+	PFR_DIR_IN,
+	PFR_DIR_OUT,
+	PFR_DIR_MAX
 };
 enum {
-	PFR_OP_BLOCK, PFR_OP_PASS, PFR_OP_ADDR_MAX, PFR_OP_TABLE_MAX
+	PFR_OP_BLOCK,
+	PFR_OP_PASS,
+	PFR_OP_ADDR_MAX,
+	PFR_OP_TABLE_MAX
 };
 #define PFR_OP_XPASS	PFR_OP_ADDR_MAX
 
@@ -1227,9 +1211,9 @@ struct cbq_opts {
 	u_int		maxpktsize;
 	u_int		ns_per_byte;
 	u_int		maxidle;
-	int		minidle;
+	int			minidle;
 	u_int		offtime;
-	int		flags;
+	int			flags;
 };
 
 struct priq_opts {

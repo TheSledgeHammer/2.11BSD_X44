@@ -2712,12 +2712,14 @@ cleanup:
 		}
 		bzero(s, sizeof(*s));
 		r->states++;
-		if (a != NULL)
+		if (a != NULL) {
 			a->states++;
+		}
 		s->rule.ptr = r;
 		s->nat_rule.ptr = nr;
-		if (s->nat_rule.ptr != NULL)
+		if (s->nat_rule.ptr != NULL) {
 			s->nat_rule.ptr->states++;
+		}
 		s->anchor.ptr = a;
 		s->allow_opts = r->allow_opts;
 		s->log = r->log & 2;

@@ -221,6 +221,58 @@ pf_hash_rule(MD5_CTX *ctx, struct pf_rule *rule)
 }
 
 void
+pf_attach_state(struct pf_state_key *sk, struct pf_state *s, int tail)
+{
+	s->state_key = sk;
+	sk->refcnt++;
+
+	/* list is sorted, if-bound states before floating */
+	if (tail) {
+		TAILQ_INSERT_TAIL(&sk->states, s, next);
+	} else {
+		TAILQ_INSERT_HEAD(&sk->states, s, next);
+	}
+}
+
+void
+pf_detach_state(struct pf_state *s, int flags)
+{
+	struct pf_state_key	*sk;
+
+	sk = s->state_key;
+	if (sk == NULL) {
+		return;
+	}
+
+	s->state_key = NULL;
+	TAILQ_REMOVE(&sk->states, s, next);
+	if (--sk->refcnt == 0) {
+		if (!(flags & PF_DT_SKIP_EXTGWY)) {
+			RB_REMOVE(pf_state_tree_ext_gwy, &pf_statetbl_ext_gwy, sk);
+		}
+		if (!(flags & PF_DT_SKIP_LANEXT)) {
+			RB_REMOVE(pf_state_tree_lan_ext, &pf_statetbl_lan_ext, sk);
+		}
+		free(sk, M_PF);
+	}
+}
+
+struct pf_state_key *
+pf_alloc_state_key(struct pf_state *s)
+{
+	struct pf_state_key	*sk;
+
+	sk = (struct pf_state_key *)malloc(sizeof(struct pf_state_key *), M_PF, M_NOWAIT);
+	if (sk == NULL) {
+		return (NULL);
+	}
+	bzero(sk, sizeof(*sk));
+	TAILQ_INIT(&sk->states);
+	pf_attach_state(sk, s, 0);
+	return (sk);
+}
+
+void
 pf_state_export(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_state *s)
 {
 	int secs = time_second;
@@ -316,25 +368,25 @@ pf_state_add(struct pfsync_state* sp)
 			sp->timeout != PFTM_UNTIL_PACKET) {
 		return EINVAL;
 	}
-	s = pool_get(&pf_state_pl, PR_NOWAIT);
+	s = (struct pf_state *)malloc(sizeof(struct pf_state *), M_PF, M_NOWAIT);
 	if (s == NULL) {
 		return ENOMEM;
 	}
 	bzero(s, sizeof(struct pf_state));
 	if ((sk = pf_alloc_state_key(s)) == NULL) {
-		pool_put(&pf_state_pl, s);
+		free(s, M_PF);
 		return ENOMEM;
 	}
 	pf_state_import(sp, sk, s);
 	kif = pfi_attach_rule(sp->ifname);
 	if (kif == NULL) {
-		pool_put(&pf_state_pl, s);
-		pool_put(&pf_state_key_pl, sk);
+		free(s, M_PF);
+		free(sk, M_PF);
 		return ENOENT;
 	}
 	if (pf_insert_state(kif, s)) {
 		pfi_kif_unref(kif, PFI_KIF_REF_NONE);
-		pool_put(&pf_state_pl, s);
+		free(s, M_PF);
 		return ENOMEM;
 	}
 
