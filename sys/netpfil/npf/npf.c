@@ -71,10 +71,6 @@ static int	npfctl_stats(void *);
 static struct percpu *npf_stats_percpu;//	__read_mostly;
 
 const struct cdevsw npf_cdevsw = {
-	npf_dev_open, npf_dev_close, npf_dev_read, nowrite, npf_dev_ioctl,
-	nostop, notty, npf_dev_poll, nommap, nokqfilter, D_OTHER | D_MPSAFE
-};
-const struct cdevsw npf_cdevsw = {
 		.d_open = npf_dev_open,
 		.d_close = npf_dev_close,
 		.d_read = npf_dev_read,

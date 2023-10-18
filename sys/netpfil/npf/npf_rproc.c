@@ -48,10 +48,10 @@ __KERNEL_RCSID(0, "$NetBSD");
 #define	EXT_NAME_LEN		32
 
 typedef struct npf_ext {
-	char			ext_callname[EXT_NAME_LEN];
+	char				ext_callname[EXT_NAME_LEN];
 	LIST_ENTRY(npf_ext)	ext_entry;
-	const npf_ext_ops_t *	ext_ops;
-	unsigned		ext_refcnt;
+	const npf_ext_ops_t *ext_ops;
+	unsigned			ext_refcnt;
 } npf_ext_t;
 
 struct npf_rprocset {

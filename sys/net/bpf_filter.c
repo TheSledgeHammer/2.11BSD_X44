@@ -57,28 +57,28 @@ static const char rcsid[] =
 #define EXTRACT_SHORT(p)	((u_int16_t)ntohs(*(u_int16_t *)p))
 #define EXTRACT_LONG(p)		(ntohl(*(u_int32_t *)p))
 #else
-#define EXTRACT_SHORT(p)\
-	((u_int16_t)\
-		((u_int16_t)*((u_char *)p+0)<<8|\
+#define EXTRACT_SHORT(p)					\
+	((u_int16_t)							\
+		((u_int16_t)*((u_char *)p+0)<<8|	\
 		 (u_int16_t)*((u_char *)p+1)<<0))
-#define EXTRACT_LONG(p)\
-		((u_int32_t)*((u_char *)p+0)<<24|\
-		 (u_int32_t)*((u_char *)p+1)<<16|\
-		 (u_int32_t)*((u_char *)p+2)<<8|\
+#define EXTRACT_LONG(p)						\
+		((u_int32_t)*((u_char *)p+0)<<24|	\
+		 (u_int32_t)*((u_char *)p+1)<<16|	\
+		 (u_int32_t)*((u_char *)p+2)<<8|	\
 		 (u_int32_t)*((u_char *)p+3)<<0)
 #endif
 
 #ifdef _KERNEL
 #include <sys/mbuf.h>
-#define MINDEX(len, m, k) \
-{ \
-	len = m->m_len; \
-	while (k >= len) { \
-		k -= len; \
-		m = m->m_next; \
-		if (m == 0) \
-			return 0; \
-		len = m->m_len; \
+#define MINDEX(len, m, k) 	\
+{ 							\
+	len = m->m_len; 		\
+	while (k >= len) { 		\
+		k -= len; 			\
+		m = m->m_next; 		\
+		if (m == 0) 		\
+			return 0; 		\
+		len = m->m_len; 	\
 	} \
 }
 

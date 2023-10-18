@@ -58,40 +58,38 @@
 #include <netinet/ip6.h>
 #endif /* INET6 */
 
-#define ACCEPT_FLAGS(oklist)			\
-	do {					\
+#define ACCEPT_FLAGS(oklist)		\
+	do {							\
 		if ((flags & ~(oklist)) &	\
 		    PFI_FLAG_ALLMASK)		\
-			return (EINVAL);	\
+			return (EINVAL);		\
 	} while (0)
 
 #define senderr(e)      do { rv = (e); goto _bad; } while (0)
 
-struct pfi_kif		**pfi_index2kif;
-struct pfi_kif		 *pfi_self;
-int			  pfi_indexlim;
-struct pfi_ifhead	  pfi_ifs;
-struct pfi_statehead	  pfi_statehead;
-int			  		pfi_ifcnt;
-//struct pool		  	pfi_addr_pl;
-long			  	pfi_update = 1;
-struct pfr_addr		*pfi_buffer;
-int			  		pfi_buffer_cnt;
-int			  		pfi_buffer_max;
+struct pfi_kif			**pfi_index2kif;
+struct pfi_kif		 	*pfi_self;
+int			  			pfi_indexlim;
+struct pfi_ifhead	  	pfi_ifs;
+struct pfi_statehead	pfi_statehead;
+int			  			pfi_ifcnt;
+long			  		pfi_update = 1;
+struct pfr_addr			*pfi_buffer;
+int			  			pfi_buffer_cnt;
+int			  			pfi_buffer_max;
 
 void		 pfi_dynaddr_update(void *);
 void		 pfi_kifaddr_update(void *);
 void		 pfi_kifaddr_update_if(struct ifnet *);
-void		 pfi_table_update(struct pfr_ktable *, struct pfi_kif *,
-		    int, int);
+void		 pfi_table_update(struct pfr_ktable *, struct pfi_kif *,int, int);
 void		 pfi_instance_add(struct ifnet *, int, int);
 void		 pfi_address_add(struct sockaddr *, int, int);
-int		 pfi_if_compare(struct pfi_kif *, struct pfi_kif *);
+int		 	pfi_if_compare(struct pfi_kif *, struct pfi_kif *);
 struct pfi_kif	*pfi_if_create(const char *, struct pfi_kif *, int);
 void		 pfi_copy_group(char *, const char *, int);
 void		 pfi_newgroup(const char *, int);
-int		 pfi_skip_if(const char *, struct pfi_kif *, int);
-int		 pfi_unmask(void *);
+int			 pfi_skip_if(const char *, struct pfi_kif *, int);
+int			 pfi_unmask(void *);
 void		 pfi_dohooks(struct pfi_kif *);
 
 RB_PROTOTYPE(pfi_ifhead, pfi_kif, pfik_tree, pfi_if_compare);
@@ -343,7 +341,6 @@ _bad:
 		pf_remove_if_empty_ruleset(ruleset);
 	if (dyn->pfid_kif != NULL)
 		pfi_detach_rule(dyn->pfid_kif);
-	//pool_put(&pfi_addr_pl, dyn);
 	free(dyn, M_DEVBUF);
 	splx(s);
 	return (rv);

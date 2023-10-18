@@ -108,8 +108,7 @@ npf_ptree_matchkey(const void *vleft, const void *vright,
 }
 
 static bool
-npf_ptree_matchnode(const void *vleft, const void *vright,
-    pt_bitoff_t maxbitoff, pt_bitoff_t *bitoffp, pt_bitoff_t *slotp, void *ctx)
+npf_ptree_matchnode(const void *vleft, const void *vright, pt_bitoff_t maxbitoff, pt_bitoff_t *bitoffp, pt_bitoff_t *slotp, void *ctx)
 {
 	static const uint32_t zeroes[4] = { 0, 0, 0, 0 };
 	const uint32_t *left = (const uint32_t *)vleft;

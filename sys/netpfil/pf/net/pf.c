@@ -246,12 +246,9 @@ int			 pf_check_congestion(struct ifqueue *);
 	(k)->pfik_parent->pfik_parent)
 
 static __inline int pf_src_compare(struct pf_src_node *, struct pf_src_node *);
-static __inline int pf_state_compare_lan_ext(struct pf_state *,
-	struct pf_state *);
-static __inline int pf_state_compare_ext_gwy(struct pf_state *,
-	struct pf_state *);
-static __inline int pf_state_compare_id(struct pf_state *,
-	struct pf_state *);
+static __inline int pf_state_compare_lan_ext(struct pf_state *,	struct pf_state *);
+static __inline int pf_state_compare_ext_gwy(struct pf_state *, struct pf_state *);
+static __inline int pf_state_compare_id(struct pf_state *, struct pf_state *);
 static __inline int pf_anchor_compare(struct pf_anchor *, struct pf_anchor *);
 
 struct pf_src_tree tree_src_tracking;
@@ -260,12 +257,9 @@ struct pf_state_tree_id tree_id;
 struct pf_state_queue state_updates;
 
 RB_GENERATE(pf_src_tree, pf_src_node, entry, pf_src_compare);
-RB_GENERATE(pf_state_tree_lan_ext, pf_state,
-    u.s.entry_lan_ext, pf_state_compare_lan_ext);
-RB_GENERATE(pf_state_tree_ext_gwy, pf_state,
-    u.s.entry_ext_gwy, pf_state_compare_ext_gwy);
-RB_GENERATE(pf_state_tree_id, pf_state,
-    u.s.entry_id, pf_state_compare_id);
+RB_GENERATE(pf_state_tree_lan_ext, pf_state, u.s.entry_lan_ext, pf_state_compare_lan_ext);
+RB_GENERATE(pf_state_tree_ext_gwy, pf_state, u.s.entry_ext_gwy, pf_state_compare_ext_gwy);
+RB_GENERATE(pf_state_tree_id, pf_state, u.s.entry_id, pf_state_compare_id);
 RB_GENERATE(pf_anchor_global, pf_anchor, entry_global, pf_anchor_compare);
 RB_GENERATE(pf_anchor_node, pf_anchor, entry_node, pf_anchor_compare);
 

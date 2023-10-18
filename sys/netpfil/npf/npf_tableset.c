@@ -348,8 +348,7 @@ table_cidr_check(const u_int aidx, const npf_addr_t *addr,
  * npf_table_insert: add an IP CIDR entry into the table.
  */
 int
-npf_table_insert(npf_tableset_t *tset, u_int tid, const int alen,
-    const npf_addr_t *addr, const npf_netmask_t mask)
+npf_table_insert(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr_t *addr, const npf_netmask_t mask)
 {
 	const u_int aidx = NPF_ADDRLEN2TREE(alen);
 	npf_tblent_t *ent;
@@ -424,8 +423,7 @@ npf_table_insert(npf_tableset_t *tset, u_int tid, const int alen,
  * npf_table_remove: remove the IP CIDR entry from the table.
  */
 int
-npf_table_remove(npf_tableset_t *tset, u_int tid, const int alen,
-    const npf_addr_t *addr, const npf_netmask_t mask)
+npf_table_remove(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr_t *addr, const npf_netmask_t mask)
 {
 	const u_int aidx = NPF_ADDRLEN2TREE(alen);
 	npf_tblent_t *ent;

@@ -84,8 +84,8 @@ struct npf_rule {
 	size_t			r_clen;
 
 	/* NAT policy (optional), rule procedure and subset. */
-	npf_natpolicy_t *	r_natp;
-	npf_rproc_t *		r_rproc;
+	npf_natpolicy_t *r_natp;
+	npf_rproc_t 	*r_rproc;
 
 	/* Rule priority: (highest) 1, 2 ... n (lowest). */
 	pri_t			r_priority;

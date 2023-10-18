@@ -9,6 +9,7 @@ file	netpfil/pf/net/pf_norm.c	pf
 file	netpfil/pf/net/pf_if.c		pf
 file	netpfil/pf/net/pf_ioctl.c	pf
 file	netpfil/pf/net/pf_table.c	pf
+file	netpfil/pf/net/pf_ruleset.c	pf
 file	netpfil/pf/net/pf_osfp.c	pf
 file	netpfil/pf/net/if_pflog.c	pflog		needs-flag
 #file	netpfil/pf/net/if_pfsync.c	pfsync		needs-flag
