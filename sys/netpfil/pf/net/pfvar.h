@@ -1596,6 +1596,8 @@ extern void			 pf_addrcpy(struct pf_addr *, struct pf_addr *,
 void				 pf_rm_rule(struct pf_rulequeue *,
 				    struct pf_rule *);
 
+
+
 #ifdef INET
 int	pf_test(int, struct ifnet *, struct mbuf **, struct ether_header *);
 #endif /* INET */
@@ -1740,6 +1742,30 @@ getmicrouptime(struct timeval *tvp)
 #define	m_copym2	m_copy
 #define	pool_allocator_oldnointr	pool_allocator_nointr
 #endif
+#endif /* _KERNEL */
+
+extern struct pf_anchor_global  pf_anchors;
+extern struct pf_anchor         pf_main_anchor;
+
+/* these ruleset functions can be linked into userland programs (pfctl) */
+int			 pf_get_ruleset_number(u_int8_t);
+void			 pf_init_ruleset(struct pf_ruleset *);
+int			 pf_anchor_setup(struct pf_rule *,
+			    const struct pf_ruleset *, const char *);
+int			 pf_anchor_copyout(const struct pf_ruleset *,
+			    const struct pf_rule *, struct pfioc_rule *);
+void			 pf_anchor_remove(struct pf_rule *);
+void			 pf_remove_if_empty_ruleset(struct pf_ruleset *);
+struct pf_anchor	*pf_find_anchor(const char *);
+struct pf_ruleset	*pf_find_ruleset(const char *);
+struct pf_ruleset	*pf_find_or_create_ruleset(const char *);
+void			 pf_rs_initialize(void);
+
+#ifdef _KERNEL
+int			 pf_anchor_copyout(const struct pf_ruleset *,
+			    const struct pf_rule *, struct pfioc_rule *);
+void			 pf_anchor_remove(struct pf_rule *);
+
 #endif /* _KERNEL */
 
 /* The fingerprint functions can be linked into userland programs (tcpdump) */

@@ -204,14 +204,6 @@ pfattach(int num)
 	pf_status.hostid = arc4random();
 }
 
-void
-pf_thread_create(void *v)
-{
-	if (kthread_create(pf_purge_thread, NULL, NULL, "pfpurge")) {
-		panic("pfpurge thread");
-	}
-}
-
 int
 pfopen(dev_t dev, int flags, int fmt, struct proc *p)
 {

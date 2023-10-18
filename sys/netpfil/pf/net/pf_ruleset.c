@@ -84,7 +84,7 @@
 #endif /* _KERNEL */
 
 struct pf_anchor_global	 pf_anchors;
-struct pf_anchor	 pf_main_anchor;
+struct pf_anchor	     pf_main_anchor;
 
 int		pf_get_ruleset_number(u_int8_t);
 void	pf_init_ruleset(struct pf_ruleset *);
