@@ -1544,6 +1544,7 @@ extern struct pf_state_tree_id tree_id;
 extern struct pf_state_queue state_updates;
 
 extern struct pf_anchor_global		  pf_anchors;
+extern struct pf_anchor         	  pf_main_anchor;
 extern struct pf_ruleset		  pf_main_ruleset;
 TAILQ_HEAD(pf_poolqueue, pf_pool);
 extern struct pf_poolqueue		  pf_pools[2];
@@ -1743,9 +1744,6 @@ getmicrouptime(struct timeval *tvp)
 #define	pool_allocator_oldnointr	pool_allocator_nointr
 #endif
 #endif /* _KERNEL */
-
-extern struct pf_anchor_global  pf_anchors;
-extern struct pf_anchor         pf_main_anchor;
 
 /* these ruleset functions can be linked into userland programs (pfctl) */
 int			 pf_get_ruleset_number(u_int8_t);
