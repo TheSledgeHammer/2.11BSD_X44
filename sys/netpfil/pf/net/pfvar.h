@@ -227,7 +227,7 @@ struct pf_addr_wrap {
 	u_int8_t		 		iflags;	/* PFI_AFLAG_* */
 };
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 struct pfi_dynaddr {
 	TAILQ_ENTRY(pfi_dynaddr) entry;
