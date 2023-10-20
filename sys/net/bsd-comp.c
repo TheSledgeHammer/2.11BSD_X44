@@ -222,36 +222,35 @@ bsd_check(db)
 {
     u_int new_ratio;
 
-    if (db->in_count >= db->checkpoint) {
-	/* age the ratio by limiting the size of the counts */
-	if (db->in_count >= RATIO_MAX
-	    || db->bytes_out >= RATIO_MAX) {
-	    db->in_count -= db->in_count/4;
-	    db->bytes_out -= db->bytes_out/4;
+	if (db->in_count >= db->checkpoint) {
+		/* age the ratio by limiting the size of the counts */
+		if (db->in_count >= RATIO_MAX || db->bytes_out >= RATIO_MAX) {
+			db->in_count -= db->in_count / 4;
+			db->bytes_out -= db->bytes_out / 4;
+		}
+
+		db->checkpoint = db->in_count + CHECK_GAP;
+
+		if (db->max_ent >= db->maxmaxcode) {
+			/* Reset the dictionary only if the ratio is worse,
+			 * or if it looks as if it has been poisoned
+			 * by incompressible data.
+			 *
+			 * This does not overflow, because
+			 *	db->in_count <= RATIO_MAX.
+			 */
+			new_ratio = db->in_count << RATIO_SCALE_LOG;
+			if (db->bytes_out != 0)
+				new_ratio /= db->bytes_out;
+
+			if (new_ratio < db->ratio || new_ratio < 1 * RATIO_SCALE) {
+				bsd_clear(db);
+				return 1;
+			}
+			db->ratio = new_ratio;
+		}
 	}
-
-	db->checkpoint = db->in_count + CHECK_GAP;
-
-	if (db->max_ent >= db->maxmaxcode) {
-	    /* Reset the dictionary only if the ratio is worse,
-	     * or if it looks as if it has been poisoned
-	     * by incompressible data.
-	     *
-	     * This does not overflow, because
-	     *	db->in_count <= RATIO_MAX.
-	     */
-	    new_ratio = db->in_count << RATIO_SCALE_LOG;
-	    if (db->bytes_out != 0)
-		new_ratio /= db->bytes_out;
-
-	    if (new_ratio < db->ratio || new_ratio < 1 * RATIO_SCALE) {
-		bsd_clear(db);
-		return 1;
-	    }
-	    db->ratio = new_ratio;
-	}
-    }
-    return 0;
+	return 0;
 }
 
 /*
@@ -265,20 +264,20 @@ bsd_comp_stats(state, stats)
     struct bsd_db *db = (struct bsd_db *) state;
     u_int out;
 
-    stats->unc_bytes = db->uncomp_bytes;
-    stats->unc_packets = db->uncomp_count;
-    stats->comp_bytes = db->comp_bytes;
-    stats->comp_packets = db->comp_count;
-    stats->inc_bytes = db->incomp_bytes;
-    stats->inc_packets = db->incomp_count;
-    stats->ratio = db->in_count;
-    out = db->bytes_out;
-    if (stats->ratio <= 0x7fffff)
-	stats->ratio <<= 8;
-    else
-	out >>= 8;
-    if (out != 0)
-	stats->ratio /= out;
+	stats->unc_bytes = db->uncomp_bytes;
+	stats->unc_packets = db->uncomp_count;
+	stats->comp_bytes = db->comp_bytes;
+	stats->comp_packets = db->comp_count;
+	stats->inc_bytes = db->incomp_bytes;
+	stats->inc_packets = db->incomp_count;
+	stats->ratio = db->in_count;
+	out = db->bytes_out;
+	if (stats->ratio <= 0x7fffff)
+		stats->ratio <<= 8;
+	else
+		out >>= 8;
+	if (out != 0)
+		stats->ratio /= out;
 }
 
 /*
@@ -307,56 +306,56 @@ bsd_alloc(options, opt_len, decomp)
     u_int newlen, hsize, hshift, maxmaxcode;
     struct bsd_db *db;
 
-    if (opt_len < CILEN_BSD_COMPRESS || options[0] != CI_BSD_COMPRESS
-	|| options[1] != CILEN_BSD_COMPRESS
-	|| BSD_VERSION(options[2]) != BSD_CURRENT_VERSION)
-	return NULL;
-    bits = BSD_NBITS(options[2]);
-    switch (bits) {
-    case 9:			/* needs 82152 for both directions */
-    case 10:			/* needs 84144 */
-    case 11:			/* needs 88240 */
-    case 12:			/* needs 96432 */
-	hsize = 5003;
-	hshift = 4;
-	break;
-    case 13:			/* needs 176784 */
-	hsize = 9001;
-	hshift = 5;
-	break;
-    case 14:			/* needs 353744 */
-	hsize = 18013;
-	hshift = 6;
-	break;
-    case 15:			/* needs 691440 */
-	hsize = 35023;
-	hshift = 7;
-	break;
-    case 16:			/* needs 1366160--far too much, */
-	/* hsize = 69001; */	/* and 69001 is too big for cptr */
-	/* hshift = 8; */	/* in struct bsd_db */
-	/* break; */
-    default:
-	return NULL;
-    }
-
-    maxmaxcode = MAXCODE(bits);
-    newlen = sizeof(*db) + (hsize-1) * (sizeof(db->dict[0]));
-    db = malloc(newlen, M_DEVBUF, M_NOWAIT);
-    if (!db)
-	return NULL;
-    memset(db, 0, sizeof(*db) - sizeof(db->dict));
-
-    if (!decomp) {
-	db->lens = NULL;
-    } else {
-	db->lens = malloc((maxmaxcode+1) * sizeof(db->lens[0]),
-	    M_DEVBUF, M_NOWAIT);
-	if (!db->lens) {
-	    free(db, M_DEVBUF);
-	    return NULL;
+	if (opt_len < CILEN_BSD_COMPRESS || options[0] != CI_BSD_COMPRESS
+			|| options[1] != CILEN_BSD_COMPRESS
+			|| BSD_VERSION(options[2]) != BSD_CURRENT_VERSION)
+		return NULL;
+	bits = BSD_NBITS(options[2]);
+	switch (bits) {
+	case 9: /* needs 82152 for both directions */
+	case 10: /* needs 84144 */
+	case 11: /* needs 88240 */
+	case 12: /* needs 96432 */
+		hsize = 5003;
+		hshift = 4;
+		break;
+	case 13: /* needs 176784 */
+		hsize = 9001;
+		hshift = 5;
+		break;
+	case 14: /* needs 353744 */
+		hsize = 18013;
+		hshift = 6;
+		break;
+	case 15: /* needs 691440 */
+		hsize = 35023;
+		hshift = 7;
+		break;
+	case 16: /* needs 1366160--far too much, */
+		/* hsize = 69001; *//* and 69001 is too big for cptr */
+		/* hshift = 8; *//* in struct bsd_db */
+		/* break; */
+	default:
+		return NULL;
 	}
-    }
+
+	maxmaxcode = MAXCODE(bits);
+	newlen = sizeof(*db) + (hsize - 1) * (sizeof(db->dict[0]));
+	db = malloc(newlen, M_DEVBUF, M_NOWAIT);
+	if (!db)
+		return NULL;
+	memset(db, 0, sizeof(*db) - sizeof(db->dict));
+
+	if (!decomp) {
+		db->lens = NULL;
+	} else {
+		db->lens = malloc((maxmaxcode + 1) * sizeof(db->lens[0]),
+		M_DEVBUF, M_NOWAIT);
+		if (!db->lens) {
+			free(db, M_DEVBUF);
+			return NULL;
+		}
+	}
 
     db->totlen = newlen;
     db->hsize = hsize;
@@ -373,9 +372,9 @@ bsd_free(state)
 {
     struct bsd_db *db = (struct bsd_db *) state;
 
-    if (db->lens)
-	free(db->lens, M_DEVBUF);
-    free(db, M_DEVBUF);
+	if (db->lens)
+		free(db->lens, M_DEVBUF);
+	free(db, M_DEVBUF);
 }
 
 static void *
@@ -405,35 +404,35 @@ bsd_init(db, options, opt_len, unit, hdrlen, mru, debug, decomp)
 {
     int i;
 
-    if (opt_len < CILEN_BSD_COMPRESS || options[0] != CI_BSD_COMPRESS
-	|| options[1] != CILEN_BSD_COMPRESS
-	|| BSD_VERSION(options[2]) != BSD_CURRENT_VERSION
-	|| BSD_NBITS(options[2]) != db->maxbits
-	|| (decomp && db->lens == NULL))
-	return 0;
+	if (opt_len < CILEN_BSD_COMPRESS || options[0] != CI_BSD_COMPRESS
+			|| options[1] != CILEN_BSD_COMPRESS
+			|| BSD_VERSION(options[2]) != BSD_CURRENT_VERSION
+			|| BSD_NBITS(options[2]) != db->maxbits
+			|| (decomp && db->lens == NULL))
+		return 0;
 
-    if (decomp) {
-	i = LAST+1;
-	while (i != 0)
-	    db->lens[--i] = 1;
-    }
-    i = db->hsize;
-    while (i != 0) {
-	db->dict[--i].codem1 = BADCODEM1;
-	db->dict[i].cptr = 0;
-    }
+	if (decomp) {
+		i = LAST + 1;
+		while (i != 0)
+			db->lens[--i] = 1;
+	}
+	i = db->hsize;
+	while (i != 0) {
+		db->dict[--i].codem1 = BADCODEM1;
+		db->dict[i].cptr = 0;
+	}
 
-    db->unit = unit;
-    db->hdrlen = hdrlen;
-    db->mru = mru;
+	db->unit = unit;
+	db->hdrlen = hdrlen;
+	db->mru = mru;
 #ifndef DEBUG
-    if (debug)
+	if (debug)
 #endif
-	db->debug = 1;
+		db->debug = 1;
 
-    bsd_reset(db);
+	bsd_reset(db);
 
-    return 1;
+	return 1;
 }
 
 static int
@@ -498,7 +497,7 @@ bsd_compress(state, mret, mp, slen, maxolen)
 		    MCLGET(m, M_DONTWAIT);		\
 		wptr = mtod(m, u_char *);		\
 		cp_end = wptr + M_TRAILINGSPACE(m);	\
-	    } else					\
+	    } else 					\
 		wptr = NULL;				\
 	}						\
     }								\
@@ -508,166 +507,166 @@ bsd_compress(state, mret, mp, slen, maxolen)
     bitno -= n_bits;						\
     accm |= ((ent) << bitno);				\
     do {									\
-	PUTBYTE(accm >> 24);					\
-	accm <<= 8;								\
-	bitno += 8;								\
+    	PUTBYTE(accm >> 24);				\
+    	accm <<= 8;							\
+    	bitno += 8;							\
     } while (bitno <= 24);					\
 }
 
-    /*
-     * If the protocol is not in the range we're interested in,
-     * just return without compressing the packet.  If it is,
-     * the protocol becomes the first byte to compress.
-     */
-    rptr = mtod(mp, u_char *);
-    ent = PPP_PROTOCOL(rptr);
-    if (ent < 0x21 || ent > 0xf9) {
-	*mret = NULL;
-	return slen;
-    }
+	/*
+	 * If the protocol is not in the range we're interested in,
+	 * just return without compressing the packet.  If it is,
+	 * the protocol becomes the first byte to compress.
+	 */
+	rptr = mtod(mp, u_char*);
+	ent = PPP_PROTOCOL(rptr);
+	if (ent < 0x21 || ent > 0xf9) {
+		*mret = NULL;
+		return slen;
+	}
 
-    /* Don't generate compressed packets which are larger than
-       the uncompressed packet. */
-    if (maxolen > slen)
-	maxolen = slen;
+	/* Don't generate compressed packets which are larger than
+	 the uncompressed packet. */
+	if (maxolen > slen)
+		maxolen = slen;
 
-    /* Allocate one mbuf to start with. */
-    MGET(m, M_DONTWAIT, MT_DATA);
-    *mret = m;
-    if (m != NULL) {
-	m->m_len = 0;
-	if (maxolen + db->hdrlen > MLEN)
-	    MCLGET(m, M_DONTWAIT);
-	m->m_data += db->hdrlen;
-	wptr = mtod(m, u_char *);
-	cp_end = wptr + M_TRAILINGSPACE(m);
-    } else
-	wptr = cp_end = NULL;
+	/* Allocate one mbuf to start with. */
+	MGET(m, M_DONTWAIT, MT_DATA);
+	*mret = m;
+	if (m != NULL) {
+		m->m_len = 0;
+		if (maxolen + db->hdrlen > MLEN)
+			MCLGET(m, M_DONTWAIT);
+		m->m_data += db->hdrlen;
+		wptr = mtod(m, u_char*);
+		cp_end = wptr + M_TRAILINGSPACE(m);
+	} else
+		wptr = cp_end = NULL;
 
     /*
      * Copy the PPP header over, changing the protocol,
      * and install the 2-byte packet sequence number.
      */
-    if (wptr) {
-	*wptr++ = PPP_ADDRESS(rptr);	/* assumes the ppp header is */
-	*wptr++ = PPP_CONTROL(rptr);	/* all in one mbuf */
-	*wptr++ = 0;			/* change the protocol */
-	*wptr++ = PPP_COMP;
-	*wptr++ = db->seqno >> 8;
-	*wptr++ = db->seqno;
-    }
-    ++db->seqno;
+	if (wptr) {
+		*wptr++ = PPP_ADDRESS(rptr); /* assumes the ppp header is */
+		*wptr++ = PPP_CONTROL(rptr); /* all in one mbuf */
+		*wptr++ = 0; /* change the protocol */
+		*wptr++ = PPP_COMP;
+		*wptr++ = db->seqno >> 8;
+		*wptr++ = db->seqno;
+	}
+	++db->seqno;
 
     olen = 0;
     rptr += PPP_HDRLEN;
     slen = mp->m_len - PPP_HDRLEN;
     ilen = slen + 1;
-    for (;;) {
-	if (slen <= 0) {
-	    mp = mp->m_next;
-	    if (!mp)
-		break;
-	    rptr = mtod(mp, u_char *);
-	    slen = mp->m_len;
-	    if (!slen)
-		continue;   /* handle 0-length buffers */
-	    ilen += slen;
+	for (;;) {
+		if (slen <= 0) {
+			mp = mp->m_next;
+			if (!mp)
+				break;
+			rptr = mtod(mp, u_char*);
+			slen = mp->m_len;
+			if (!slen)
+				continue; /* handle 0-length buffers */
+			ilen += slen;
+		}
+
+		slen--;
+		c = *rptr++;
+		fcode = BSD_KEY(ent, c);
+		hval = BSD_HASH(ent, c, hshift);
+		dictp = &db->dict[hval];
+
+		/* Validate and then check the entry. */
+		if (dictp->codem1 >= max_ent)
+			goto nomatch;
+		if (dictp->f.fcode == fcode) {
+			ent = dictp->codem1 + 1;
+			continue; /* found (prefix,suffix) */
+		}
+
+		/* continue probing until a match or invalid entry */
+		disp = (hval == 0) ? 1 : hval;
+		do {
+			hval += disp;
+			if (hval >= db->hsize)
+				hval -= db->hsize;
+			dictp = &db->dict[hval];
+			if (dictp->codem1 >= max_ent)
+				goto nomatch;
+		} while (dictp->f.fcode != fcode);
+		ent = dictp->codem1 + 1; /* finally found (prefix,suffix) */
+		continue;
+
+nomatch:
+		OUTPUT(ent); /* output the prefix */
+
+		/* code -> hashtable */
+		if (max_ent < db->maxmaxcode) {
+			struct bsd_dict *dictp2;
+			/* expand code size if needed */
+			if (max_ent >= MAXCODE(n_bits))
+				db->n_bits = ++n_bits;
+
+			/* Invalidate old hash table entry using
+			 * this code, and then take it over.
+			 */
+			dictp2 = &db->dict[max_ent + 1];
+			if (db->dict[dictp2->cptr].codem1 == max_ent)
+				db->dict[dictp2->cptr].codem1 = BADCODEM1;
+			dictp2->cptr = hval;
+			dictp->codem1 = max_ent;
+			dictp->f.fcode = fcode;
+
+			db->max_ent = ++max_ent;
+		}
+		ent = c;
 	}
 
-	slen--;
-	c = *rptr++;
-	fcode = BSD_KEY(ent, c);
-	hval = BSD_HASH(ent, c, hshift);
-	dictp = &db->dict[hval];
+	OUTPUT(ent); /* output the last code */
+	db->bytes_out += olen;
+	db->in_count += ilen;
+	if (bitno < 32)
+		++db->bytes_out; /* count complete bytes */
 
-	/* Validate and then check the entry. */
-	if (dictp->codem1 >= max_ent)
-	    goto nomatch;
-	if (dictp->f.fcode == fcode) {
-	    ent = dictp->codem1+1;
-	    continue;	/* found (prefix,suffix) */
+	if (bsd_check(db))
+		OUTPUT(CLEAR); /* do not count the CLEAR */
+
+	/*
+	 * Pad dribble bits of last code with ones.
+	 * Do not emit a completely useless byte of ones.
+	 */
+	if (bitno != 32)
+		PUTBYTE((accm | (0xff << (bitno - 8))) >> 24);
+
+	if (m != NULL) {
+		m->m_len = wptr - mtod(m, u_char*);
+		m->m_next = NULL;
 	}
 
-	/* continue probing until a match or invalid entry */
-	disp = (hval == 0) ? 1 : hval;
-	do {
-	    hval += disp;
-	    if (hval >= db->hsize)
-		hval -= db->hsize;
-	    dictp = &db->dict[hval];
-	    if (dictp->codem1 >= max_ent)
-		goto nomatch;
-	} while (dictp->f.fcode != fcode);
-	ent = dictp->codem1 + 1;	/* finally found (prefix,suffix) */
-	continue;
+	/*
+	 * Increase code size if we would have without the packet
+	 * boundary and as the decompressor will.
+	 */
+	if (max_ent >= MAXCODE(n_bits) && max_ent < db->maxmaxcode)
+		db->n_bits++;
 
-    nomatch:
-	OUTPUT(ent);		/* output the prefix */
-
-	/* code -> hashtable */
-	if (max_ent < db->maxmaxcode) {
-	    struct bsd_dict *dictp2;
-	    /* expand code size if needed */
-	    if (max_ent >= MAXCODE(n_bits))
-		db->n_bits = ++n_bits;
-
-	    /* Invalidate old hash table entry using
-	     * this code, and then take it over.
-	     */
-	    dictp2 = &db->dict[max_ent+1];
-	    if (db->dict[dictp2->cptr].codem1 == max_ent)
-		db->dict[dictp2->cptr].codem1 = BADCODEM1;
-	    dictp2->cptr = hval;
-	    dictp->codem1 = max_ent;
-	    dictp->f.fcode = fcode;
-
-	    db->max_ent = ++max_ent;
+	db->uncomp_bytes += ilen;
+	++db->uncomp_count;
+	if (olen + PPP_HDRLEN + BSD_OVHD > maxolen) {
+		/* throw away the compressed stuff if it is longer than uncompressed */
+		if (*mret != NULL) {
+			m_freem(*mret);
+			*mret = NULL;
+		}
+		++db->incomp_count;
+		db->incomp_bytes += ilen;
+	} else {
+		++db->comp_count;
+		db->comp_bytes += olen + BSD_OVHD;
 	}
-	ent = c;
-    }
-
-    OUTPUT(ent);		/* output the last code */
-    db->bytes_out += olen;
-    db->in_count += ilen;
-    if (bitno < 32)
-	++db->bytes_out;	/* count complete bytes */
-
-    if (bsd_check(db))
-	OUTPUT(CLEAR);		/* do not count the CLEAR */
-
-    /*
-     * Pad dribble bits of last code with ones.
-     * Do not emit a completely useless byte of ones.
-     */
-    if (bitno != 32)
-	PUTBYTE((accm | (0xff << (bitno-8))) >> 24);
-
-    if (m != NULL) {
-	m->m_len = wptr - mtod(m, u_char *);
-	m->m_next = NULL;
-    }
-
-    /*
-     * Increase code size if we would have without the packet
-     * boundary and as the decompressor will.
-     */
-    if (max_ent >= MAXCODE(n_bits) && max_ent < db->maxmaxcode)
-	db->n_bits++;
-
-    db->uncomp_bytes += ilen;
-    ++db->uncomp_count;
-    if (olen + PPP_HDRLEN + BSD_OVHD > maxolen) {
-	/* throw away the compressed stuff if it is longer than uncompressed */
-	if (*mret != NULL) {
-	    m_freem(*mret);
-	    *mret = NULL;
-	}
-	++db->incomp_count;
-	db->incomp_bytes += ilen;
-    } else {
-	++db->comp_count;
-	db->comp_bytes += olen + BSD_OVHD;
-    }
 
     return olen + PPP_HDRLEN + BSD_OVHD;
 #undef OUTPUT
@@ -704,92 +703,92 @@ bsd_incomp(state, dmsg)
      */
     rptr = mtod(dmsg, u_char *);
     ent = PPP_PROTOCOL(rptr);
-    if (ent < 0x21 || ent > 0xf9)
-	return;
+	if (ent < 0x21 || ent > 0xf9)
+		return;
 
-    db->seqno++;
-    ilen = 1;		/* count the protocol as 1 byte */
-    rptr += PPP_HDRLEN;
-    slen = dmsg->m_len - PPP_HDRLEN;
-    for (;;) {
-	if (slen <= 0) {
-	    dmsg = dmsg->m_next;
-	    if (!dmsg)
-		break;
-	    rptr = mtod(dmsg, u_char *);
-	    slen = dmsg->m_len;
-	    continue;
-	}
-	ilen += slen;
+	db->seqno++;
+	ilen = 1; /* count the protocol as 1 byte */
+	rptr += PPP_HDRLEN;
+	slen = dmsg->m_len - PPP_HDRLEN;
+	for (;;) {
+		if (slen <= 0) {
+			dmsg = dmsg->m_next;
+			if (!dmsg)
+				break;
+			rptr = mtod(dmsg, u_char*);
+			slen = dmsg->m_len;
+			continue;
+		}
+		ilen += slen;
 
-	do {
-	    c = *rptr++;
-	    fcode = BSD_KEY(ent, c);
-	    hval = BSD_HASH(ent, c, hshift);
-	    dictp = &db->dict[hval];
+		do {
+			c = *rptr++;
+			fcode = BSD_KEY(ent, c);
+			hval = BSD_HASH(ent, c, hshift);
+			dictp = &db->dict[hval];
 
-	    /* validate and then check the entry */
-	    if (dictp->codem1 >= max_ent)
-		goto nomatch;
-	    if (dictp->f.fcode == fcode) {
-		ent = dictp->codem1+1;
-		continue;   /* found (prefix,suffix) */
-	    }
+			/* validate and then check the entry */
+			if (dictp->codem1 >= max_ent)
+				goto nomatch;
+			if (dictp->f.fcode == fcode) {
+				ent = dictp->codem1 + 1;
+				continue; /* found (prefix,suffix) */
+			}
 
-	    /* continue probing until a match or invalid entry */
-	    disp = (hval == 0) ? 1 : hval;
-	    do {
-		hval += disp;
-		if (hval >= db->hsize)
-		    hval -= db->hsize;
-		dictp = &db->dict[hval];
-		if (dictp->codem1 >= max_ent)
-		    goto nomatch;
-	    } while (dictp->f.fcode != fcode);
-	    ent = dictp->codem1+1;
-	    continue;	/* finally found (prefix,suffix) */
+			/* continue probing until a match or invalid entry */
+			disp = (hval == 0) ? 1 : hval;
+			do {
+				hval += disp;
+				if (hval >= db->hsize)
+					hval -= db->hsize;
+				dictp = &db->dict[hval];
+				if (dictp->codem1 >= max_ent)
+					goto nomatch;
+			} while (dictp->f.fcode != fcode);
+			ent = dictp->codem1 + 1;
+			continue; /* finally found (prefix,suffix) */
 
 	nomatch:		/* output (count) the prefix */
-	    bitno += n_bits;
+			bitno += n_bits;
 
-	    /* code -> hashtable */
-	    if (max_ent < db->maxmaxcode) {
-		struct bsd_dict *dictp2;
-		/* expand code size if needed */
-		if (max_ent >= MAXCODE(n_bits))
-		    db->n_bits = ++n_bits;
+			/* code -> hashtable */
+			if (max_ent < db->maxmaxcode) {
+				struct bsd_dict *dictp2;
+				/* expand code size if needed */
+				if (max_ent >= MAXCODE(n_bits))
+					db->n_bits = ++n_bits;
 
-		/* Invalidate previous hash table entry
-		 * assigned this code, and then take it over.
-		 */
-		dictp2 = &db->dict[max_ent+1];
-		if (db->dict[dictp2->cptr].codem1 == max_ent)
-		    db->dict[dictp2->cptr].codem1 = BADCODEM1;
-		dictp2->cptr = hval;
-		dictp->codem1 = max_ent;
-		dictp->f.fcode = fcode;
+				/* Invalidate previous hash table entry
+				 * assigned this code, and then take it over.
+				 */
+				dictp2 = &db->dict[max_ent + 1];
+				if (db->dict[dictp2->cptr].codem1 == max_ent)
+					db->dict[dictp2->cptr].codem1 = BADCODEM1;
+				dictp2->cptr = hval;
+				dictp->codem1 = max_ent;
+				dictp->f.fcode = fcode;
 
-		db->max_ent = ++max_ent;
-		db->lens[max_ent] = db->lens[ent]+1;
-	    }
-	    ent = c;
-	} while (--slen != 0);
-    }
-    bitno += n_bits;		/* output (count) the last code */
-    db->bytes_out += bitno/8;
-    db->in_count += ilen;
-    (void)bsd_check(db);
+				db->max_ent = ++max_ent;
+				db->lens[max_ent] = db->lens[ent] + 1;
+			}
+			ent = c;
+		} while (--slen != 0);
+	}
+	bitno += n_bits; /* output (count) the last code */
+	db->bytes_out += bitno / 8;
+	db->in_count += ilen;
+	(void) bsd_check(db);
 
-    ++db->incomp_count;
-    db->incomp_bytes += ilen;
-    ++db->uncomp_count;
-    db->uncomp_bytes += ilen;
+	++db->incomp_count;
+	db->incomp_bytes += ilen;
+	++db->uncomp_count;
+	db->uncomp_bytes += ilen;
 
-    /* Increase code size if we would have without the packet
-     * boundary and as the decompressor will.
-     */
-    if (max_ent >= MAXCODE(n_bits) && max_ent < db->maxmaxcode)
-	db->n_bits++;
+	/* Increase code size if we would have without the packet
+	 * boundary and as the decompressor will.
+	 */
+	if (max_ent >= MAXCODE(n_bits) && max_ent < db->maxmaxcode)
+		db->n_bits++;
 }
 
 
@@ -839,273 +838,272 @@ bsd_decompress(state, cmp, dmpp)
     rptr += PPP_HDRLEN;
     len = cmp->m_len - PPP_HDRLEN;
     seq = 0;
-    for (i = 0; i < 2; ++i) {
-	while (len <= 0) {
-	    cmp = cmp->m_next;
-	    if (cmp == NULL)
-		return DECOMP_ERROR;
-	    rptr = mtod(cmp, u_char *);
-	    len = cmp->m_len;
-	}
-	seq = (seq << 8) + *rptr++;
-	--len;
-    }
-
-    /*
-     * Check the sequence number and give up if it differs from
-     * the value we're expecting.
-     */
-    if (seq != db->seqno) {
-	if (db->debug)
-	    printf("bsd_decomp%d: bad sequence # %d, expected %d\n",
-		   db->unit, seq, db->seqno - 1);
-	return DECOMP_ERROR;
-    }
-    ++db->seqno;
-
-    /*
-     * Allocate one mbuf to start with.
-     */
-    MGETHDR(dmp, M_DONTWAIT, MT_DATA);
-    if (dmp == NULL)
-	return DECOMP_ERROR;
-    mret = dmp;
-    dmp->m_len = 0;
-    dmp->m_next = NULL;
-    MCLGET(dmp, M_DONTWAIT);
-    dmp->m_data += db->hdrlen;
-    wptr = mtod(dmp, u_char *);
-    space = M_TRAILINGSPACE(dmp) - PPP_HDRLEN + 1;
-
-    /*
-     * Fill in the ppp header, but not the last byte of the protocol
-     * (that comes from the decompressed data).
-     */
-    wptr[0] = adrs;
-    wptr[1] = ctrl;
-    wptr[2] = 0;
-    wptr += PPP_HDRLEN - 1;
-
-    ilen = len;
-    oldcode = CLEAR;
-    explen = 0;
-    for (;;) {
-	if (len == 0) {
-	    cmp = cmp->m_next;
-	    if (!cmp)		/* quit at end of message */
-		break;
-	    rptr = mtod(cmp, u_char *);
-	    len = cmp->m_len;
-	    ilen += len;
-	    continue;		/* handle 0-length buffers */
-	}
-
-	/*
-	 * Accumulate bytes until we have a complete code.
-	 * Then get the next code, relying on the 32-bit,
-	 * unsigned accm to mask the result.
-	 */
-	bitno -= 8;
-	accm |= *rptr++ << bitno;
-	--len;
-	if (tgtbitno < bitno)
-	    continue;
-	incode = accm >> tgtbitno;
-	accm <<= n_bits;
-	bitno += n_bits;
-
-	if (incode == CLEAR) {
-	    /*
-	     * The dictionary must only be cleared at
-	     * the end of a packet.  But there could be an
-	     * empty mbuf at the end.
-	     */
-	    if (len > 0 || cmp->m_next != NULL) {
-		while ((cmp = cmp->m_next) != NULL)
-		    len += cmp->m_len;
-		if (len > 0) {
-		    m_freem(mret);
-		    if (db->debug)
-			printf("bsd_decomp%d: bad CLEAR\n", db->unit);
-		    return DECOMP_FATALERROR;	/* probably a bug */
+	for (i = 0; i < 2; ++i) {
+		while (len <= 0) {
+			cmp = cmp->m_next;
+			if (cmp == NULL)
+				return DECOMP_ERROR;
+			rptr = mtod(cmp, u_char*);
+			len = cmp->m_len;
 		}
-	    }
-	    bsd_clear(db);
-	    explen = ilen = 0;
-	    break;
-	}
-
-	if (incode > max_ent + 2 || incode > db->maxmaxcode
-	    || (incode > max_ent && oldcode == CLEAR)) {
-	    m_freem(mret);
-	    if (db->debug) {
-		printf("bsd_decomp%d: bad code 0x%x oldcode=0x%x ",
-		       db->unit, incode, oldcode);
-		printf("max_ent=0x%x explen=%d seqno=%d\n",
-		       max_ent, explen, db->seqno);
-	    }
-	    return DECOMP_FATALERROR;	/* probably a bug */
-	}
-
-	/* Special case for KwKwK string. */
-	if (incode > max_ent) {
-	    finchar = oldcode;
-	    extra = 1;
-	} else {
-	    finchar = incode;
-	    extra = 0;
-	}
-
-	codelen = db->lens[finchar];
-	explen += codelen + extra;
-	if (explen > db->mru + 1) {
-	    m_freem(mret);
-	    if (db->debug) {
-		printf("bsd_decomp%d: ran out of mru\n", db->unit);
-#ifdef DEBUG
-		while ((cmp = cmp->m_next) != NULL)
-		    len += cmp->m_len;
-		printf("  len=%d, finchar=0x%x, codelen=%d, explen=%d\n",
-		       len, finchar, codelen, explen);
-#endif
-	    }
-	    return DECOMP_FATALERROR;
+		seq = (seq << 8) + *rptr++;
+		--len;
 	}
 
 	/*
-	 * For simplicity, the decoded characters go in a single mbuf,
-	 * so we allocate a single extra cluster mbuf if necessary.
+	 * Check the sequence number and give up if it differs from
+	 * the value we're expecting.
 	 */
-	if ((space -= codelen + extra) < 0) {
-	    dmp->m_len = wptr - mtod(dmp, u_char *);
-	    MGET(m, M_DONTWAIT, MT_DATA);
-	    if (m == NULL) {
-		m_freem(mret);
+	if (seq != db->seqno) {
+		if (db->debug)
+			printf("bsd_decomp%d: bad sequence # %d, expected %d\n", db->unit,
+					seq, db->seqno - 1);
 		return DECOMP_ERROR;
-	    }
-	    m->m_len = 0;
-	    m->m_next = NULL;
-	    dmp->m_next = m;
-	    MCLGET(m, M_DONTWAIT);
-	    space = M_TRAILINGSPACE(m) - (codelen + extra);
-	    if (space < 0) {
-		/* now that's what I call *compression*. */
-		m_freem(mret);
+	}
+	++db->seqno;
+
+	/*
+	 * Allocate one mbuf to start with.
+	 */
+	MGETHDR(dmp, M_DONTWAIT, MT_DATA);
+	if (dmp == NULL)
 		return DECOMP_ERROR;
-	    }
-	    dmp = m;
-	    wptr = mtod(dmp, u_char *);
-	}
+	mret = dmp;
+	dmp->m_len = 0;
+	dmp->m_next = NULL;
+	MCLGET(dmp, M_DONTWAIT);
+	dmp->m_data += db->hdrlen;
+	wptr = mtod(dmp, u_char*);
+	space = M_TRAILINGSPACE(dmp) - PPP_HDRLEN + 1;
 
 	/*
-	 * Decode this code and install it in the decompressed buffer.
+	 * Fill in the ppp header, but not the last byte of the protocol
+	 * (that comes from the decompressed data).
 	 */
-	p = (wptr += codelen);
-	while (finchar > LAST) {
-	    dictp = &db->dict[db->dict[finchar].cptr];
+	wptr[0] = adrs;
+	wptr[1] = ctrl;
+	wptr[2] = 0;
+	wptr += PPP_HDRLEN - 1;
+
+	ilen = len;
+	oldcode = CLEAR;
+	explen = 0;
+	for (;;) {
+		if (len == 0) {
+			cmp = cmp->m_next;
+			if (!cmp) /* quit at end of message */
+				break;
+			rptr = mtod(cmp, u_char*);
+			len = cmp->m_len;
+			ilen += len;
+			continue; /* handle 0-length buffers */
+		}
+
+		/*
+		 * Accumulate bytes until we have a complete code.
+		 * Then get the next code, relying on the 32-bit,
+		 * unsigned accm to mask the result.
+		 */
+		bitno -= 8;
+		accm |= *rptr++ << bitno;
+		--len;
+		if (tgtbitno < bitno)
+			continue;
+		incode = accm >> tgtbitno;
+		accm <<= n_bits;
+		bitno += n_bits;
+
+		if (incode == CLEAR) {
+			/*
+			 * The dictionary must only be cleared at
+			 * the end of a packet.  But there could be an
+			 * empty mbuf at the end.
+			 */
+			if (len > 0 || cmp->m_next != NULL) {
+				while ((cmp = cmp->m_next) != NULL)
+					len += cmp->m_len;
+				if (len > 0) {
+					m_freem(mret);
+					if (db->debug)
+						printf("bsd_decomp%d: bad CLEAR\n", db->unit);
+					return DECOMP_FATALERROR; /* probably a bug */
+				}
+			}
+			bsd_clear(db);
+			explen = ilen = 0;
+			break;
+		}
+
+		if (incode > max_ent + 2 || incode > db->maxmaxcode
+				|| (incode > max_ent && oldcode == CLEAR)) {
+			m_freem(mret);
+			if (db->debug) {
+				printf("bsd_decomp%d: bad code 0x%x oldcode=0x%x ", db->unit,
+						incode, oldcode);
+				printf("max_ent=0x%x explen=%d seqno=%d\n", max_ent, explen,
+						db->seqno);
+			}
+			return DECOMP_FATALERROR; /* probably a bug */
+		}
+
+		/* Special case for KwKwK string. */
+		if (incode > max_ent) {
+			finchar = oldcode;
+			extra = 1;
+		} else {
+			finchar = incode;
+			extra = 0;
+		}
+
+		codelen = db->lens[finchar];
+		explen += codelen + extra;
+		if (explen > db->mru + 1) {
+			m_freem(mret);
+			if (db->debug) {
+				printf("bsd_decomp%d: ran out of mru\n", db->unit);
 #ifdef DEBUG
-	    if (--codelen <= 0 || dictp->codem1 != finchar-1)
-		goto bad;
+				while ((cmp = cmp->m_next) != NULL)
+					len += cmp->m_len;
+				printf("  len=%d, finchar=0x%x, codelen=%d, explen=%d\n", len,
+						finchar, codelen, explen);
 #endif
-	    *--p = dictp->f.hs.suffix;
-	    finchar = dictp->f.hs.prefix;
+			}
+			return DECOMP_FATALERROR;
 	}
-	*--p = finchar;
+
+		/*
+		 * For simplicity, the decoded characters go in a single mbuf,
+		 * so we allocate a single extra cluster mbuf if necessary.
+		 */
+		if ((space -= codelen + extra) < 0) {
+			dmp->m_len = wptr - mtod(dmp, u_char*);
+			MGET(m, M_DONTWAIT, MT_DATA);
+			if (m == NULL) {
+				m_freem(mret);
+				return DECOMP_ERROR;
+			}
+			m->m_len = 0;
+			m->m_next = NULL;
+			dmp->m_next = m;
+			MCLGET(m, M_DONTWAIT);
+			space = M_TRAILINGSPACE(m) - (codelen + extra);
+			if (space < 0) {
+				/* now that's what I call *compression*. */
+				m_freem(mret);
+				return DECOMP_ERROR;
+			}
+			dmp = m;
+			wptr = mtod(dmp, u_char*);
+		}
+
+		/*
+		 * Decode this code and install it in the decompressed buffer.
+		 */
+		p = (wptr += codelen);
+		while (finchar > LAST) {
+			dictp = &db->dict[db->dict[finchar].cptr];
+#ifdef DEBUG
+			if (--codelen <= 0 || dictp->codem1 != finchar - 1)
+				goto bad;
+#endif
+			*--p = dictp->f.hs.suffix;
+			finchar = dictp->f.hs.prefix;
+		}
+		*--p = finchar;
 
 #ifdef DEBUG
-	if (--codelen != 0)
-	    printf("bsd_decomp%d: short by %d after code 0x%x, max_ent=0x%x\n",
-		   db->unit, codelen, incode, max_ent);
+		if (--codelen != 0)
+			printf("bsd_decomp%d: short by %d after code 0x%x, max_ent=0x%x\n",
+					db->unit, codelen, incode, max_ent);
 #endif
 
-	if (extra)		/* the KwKwK case again */
-	    *wptr++ = finchar;
+		if (extra) /* the KwKwK case again */
+			*wptr++ = finchar;
+
+		/*
+		 * If not first code in a packet, and
+		 * if not out of code space, then allocate a new code.
+		 *
+		 * Keep the hash table correct so it can be used
+		 * with uncompressed packets.
+		 */
+		if (oldcode != CLEAR && max_ent < db->maxmaxcode) {
+			struct bsd_dict *dictp2;
+			u_int32_t fcode;
+			u_int32_t hval, disp;
+
+			fcode = BSD_KEY(oldcode, finchar);
+			hval = BSD_HASH(oldcode, finchar, db->hshift);
+			dictp = &db->dict[hval];
+
+			/* look for a free hash table entry */
+			if (dictp->codem1 < max_ent) {
+				disp = (hval == 0) ? 1 : hval;
+				do {
+					hval += disp;
+					if (hval >= db->hsize)
+						hval -= db->hsize;
+					dictp = &db->dict[hval];
+				} while (dictp->codem1 < max_ent);
+			}
+
+			/*
+			 * Invalidate previous hash table entry
+			 * assigned this code, and then take it over
+			 */
+			dictp2 = &db->dict[max_ent + 1];
+			if (db->dict[dictp2->cptr].codem1 == max_ent) {
+				db->dict[dictp2->cptr].codem1 = BADCODEM1;
+			}
+			dictp2->cptr = hval;
+			dictp->codem1 = max_ent;
+			dictp->f.fcode = fcode;
+
+			db->max_ent = ++max_ent;
+			db->lens[max_ent] = db->lens[oldcode] + 1;
+
+			/* Expand code size if needed. */
+			if (max_ent >= MAXCODE(n_bits) && max_ent < db->maxmaxcode) {
+				db->n_bits = ++n_bits;
+				tgtbitno = 32 - n_bits;
+			}
+		}
+		oldcode = incode;
+	}
+	dmp->m_len = wptr - mtod(dmp, u_char*);
 
 	/*
-	 * If not first code in a packet, and
-	 * if not out of code space, then allocate a new code.
-	 *
-	 * Keep the hash table correct so it can be used
-	 * with uncompressed packets.
+	 * Keep the checkpoint right so that incompressible packets
+	 * clear the dictionary at the right times.
 	 */
-	if (oldcode != CLEAR && max_ent < db->maxmaxcode) {
-	    struct bsd_dict *dictp2;
-	    u_int32_t fcode;
-	    u_int32_t hval, disp;
-
-	    fcode = BSD_KEY(oldcode,finchar);
-	    hval = BSD_HASH(oldcode,finchar,db->hshift);
-	    dictp = &db->dict[hval];
-
-	    /* look for a free hash table entry */
-	    if (dictp->codem1 < max_ent) {
-		disp = (hval == 0) ? 1 : hval;
-		do {
-		    hval += disp;
-		    if (hval >= db->hsize)
-			hval -= db->hsize;
-		    dictp = &db->dict[hval];
-		} while (dictp->codem1 < max_ent);
-	    }
-
-	    /*
-	     * Invalidate previous hash table entry
-	     * assigned this code, and then take it over
-	     */
-	    dictp2 = &db->dict[max_ent+1];
-	    if (db->dict[dictp2->cptr].codem1 == max_ent) {
-		db->dict[dictp2->cptr].codem1 = BADCODEM1;
-	    }
-	    dictp2->cptr = hval;
-	    dictp->codem1 = max_ent;
-	    dictp->f.fcode = fcode;
-
-	    db->max_ent = ++max_ent;
-	    db->lens[max_ent] = db->lens[oldcode]+1;
-
-	    /* Expand code size if needed. */
-	    if (max_ent >= MAXCODE(n_bits) && max_ent < db->maxmaxcode) {
-		db->n_bits = ++n_bits;
-		tgtbitno = 32-n_bits;
-	    }
+	db->bytes_out += ilen;
+	db->in_count += explen;
+	if (bsd_check(db) && db->debug) {
+		printf("bsd_decomp%d: peer should have cleared dictionary\n", db->unit);
 	}
-	oldcode = incode;
-    }
-    dmp->m_len = wptr - mtod(dmp, u_char *);
 
-    /*
-     * Keep the checkpoint right so that incompressible packets
-     * clear the dictionary at the right times.
-     */
-    db->bytes_out += ilen;
-    db->in_count += explen;
-    if (bsd_check(db) && db->debug) {
-	printf("bsd_decomp%d: peer should have cleared dictionary\n",
-	       db->unit);
-    }
+	++db->comp_count;
+	db->comp_bytes += ilen + BSD_OVHD;
+	++db->uncomp_count;
+	db->uncomp_bytes += explen;
 
-    ++db->comp_count;
-    db->comp_bytes += ilen + BSD_OVHD;
-    ++db->uncomp_count;
-    db->uncomp_bytes += explen;
-
-    *dmpp = mret;
-    return DECOMP_OK;
+	*dmpp = mret;
+	return DECOMP_OK;
 
 #ifdef DEBUG
  bad:
     if (codelen <= 0) {
-	printf("bsd_decomp%d: fell off end of chain ", db->unit);
-	printf("0x%x at 0x%x by 0x%x, max_ent=0x%x\n",
-	       incode, finchar, db->dict[finchar].cptr, max_ent);
-    } else if (dictp->codem1 != finchar-1) {
-	printf("bsd_decomp%d: bad code chain 0x%x finchar=0x%x ",
-	       db->unit, incode, finchar);
-	printf("oldcode=0x%x cptr=0x%x codem1=0x%x\n", oldcode,
-	       db->dict[finchar].cptr, dictp->codem1);
-    }
-    m_freem(mret);
-    return DECOMP_FATALERROR;
+		printf("bsd_decomp%d: fell off end of chain ", db->unit);
+		printf("0x%x at 0x%x by 0x%x, max_ent=0x%x\n", incode, finchar,
+				db->dict[finchar].cptr, max_ent);
+	} else if (dictp->codem1 != finchar - 1) {
+		printf("bsd_decomp%d: bad code chain 0x%x finchar=0x%x ", db->unit,
+				incode, finchar);
+		printf("oldcode=0x%x cptr=0x%x codem1=0x%x\n", oldcode,
+				db->dict[finchar].cptr, dictp->codem1);
+	}
+	m_freem(mret);
+	return DECOMP_FATALERROR;
 #endif /* DEBUG */
 }
 #endif /* DO_BSD_COMPRESS */

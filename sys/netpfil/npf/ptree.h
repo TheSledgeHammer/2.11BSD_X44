@@ -68,7 +68,7 @@ typedef struct pt_node {
 #ifndef PTNOMASK
 #define	PTN_MASK_BITLEN_BITS		15u
 #define	PTN_MASK_BITLEN_SHIFT		16u
-#define	PTN_MASK_FLAG			0x80000000u
+#define	PTN_MASK_FLAG				0x80000000u
 #endif
 #endif /* _PT_PRIVATE */
 
@@ -157,14 +157,10 @@ typedef struct pt_node {
 #endif /* _PT_PRIVATE */
 
 typedef struct pt_tree_ops {
-	bool (*ptto_matchnode)(const void *, const void *,
-		pt_bitoff_t, pt_bitoff_t *, pt_slot_t *, void *);
-	bool (*ptto_matchkey)(const void *, const void *,
-		pt_bitoff_t, pt_bitlen_t, void *);
-	pt_slot_t (*ptto_testnode)(const void *,
-		pt_bitoff_t, pt_bitlen_t, void *);
-	pt_slot_t (*ptto_testkey)(const void *,
-		pt_bitoff_t, pt_bitlen_t, void *);
+	bool (*ptto_matchnode)(const void *, const void *, pt_bitoff_t, pt_bitoff_t *, pt_slot_t *, void *);
+	bool (*ptto_matchkey)(const void *, const void *, pt_bitoff_t, pt_bitlen_t, void *);
+	pt_slot_t (*ptto_testnode)(const void *, pt_bitoff_t, pt_bitlen_t, void *);
+	pt_slot_t (*ptto_testkey)(const void *, pt_bitoff_t, pt_bitlen_t, void *);
 } pt_tree_ops_t;
 
 typedef struct pt_tree {

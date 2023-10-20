@@ -68,6 +68,8 @@
 #include <netinet/ip_icmp.h>
 
 #include <net/pfvar.h>
+#include <devel/net/pf/ifg_group.h>
+#include <devel/net/pf/pfvar_priv.h>
 
 #if NPFSYNC > 0
 #include <net/if_pfsync.h>
@@ -110,12 +112,9 @@ pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
 	old_rcount = rs->rules[rs_num].active.rcount;
 	old_array = rs->rules[rs_num].active.ptr_array;
 
-	rs->rules[rs_num].active.ptr =
-	    rs->rules[rs_num].inactive.ptr;
-	rs->rules[rs_num].active.ptr_array =
-	    rs->rules[rs_num].inactive.ptr_array;
-	rs->rules[rs_num].active.rcount =
-	    rs->rules[rs_num].inactive.rcount;
+	rs->rules[rs_num].active.ptr = rs->rules[rs_num].inactive.ptr;
+	rs->rules[rs_num].active.ptr_array = rs->rules[rs_num].inactive.ptr_array;
+	rs->rules[rs_num].active.rcount = rs->rules[rs_num].inactive.rcount;
 	rs->rules[rs_num].inactive.ptr = old_rules;
 	rs->rules[rs_num].inactive.ptr_array = old_array;
 	rs->rules[rs_num].inactive.rcount = old_rcount;
@@ -385,7 +384,8 @@ pf_state_add(struct pfsync_state* sp)
 		return ENOENT;
 	}
 	if (pf_insert_state(kif, s)) {
-		pfi_kif_unref(kif, PFI_KIF_REF_NONE);
+		pfi_detach_rule(kif, PFI_KIF_REF_NONE);
+		//pfi_kif_unref(kif, PFI_KIF_REF_NONE);
 		free(s, M_PF);
 		return ENOMEM;
 	}

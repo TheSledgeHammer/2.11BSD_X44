@@ -263,7 +263,6 @@ percpu_create(ci, size, count, ncpus)
 	return (pc);
 }
 
-
 void
 percpu_foreach(pc, size, count, ncpus)
 	struct percpu 	*pc;

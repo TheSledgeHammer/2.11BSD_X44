@@ -206,41 +206,37 @@ pf_find_or_create_ruleset(const char *path)
 	while ((r = strchr(q, '/')) != NULL || *q) {
 		if (r != NULL)
 			*r = 0;
-		if (!*q || strlen(q) >= PF_ANCHOR_NAME_SIZE ||
-		    (parent != NULL && strlen(parent->path) >=
-		    MAXPATHLEN - PF_ANCHOR_NAME_SIZE - 1))
+		if (!*q || strlen(q) >= PF_ANCHOR_NAME_SIZE
+				|| (parent != NULL && strlen(parent->path) >=
+				MAXPATHLEN - PF_ANCHOR_NAME_SIZE - 1))
 			return (NULL);
-		anchor = (struct pf_anchor *)malloc(sizeof(*anchor), M_TEMP,
-		    M_NOWAIT);
+		anchor = (struct pf_anchor*) malloc(sizeof(*anchor), M_TEMP,
+		M_NOWAIT);
 		if (anchor == NULL)
 			return (NULL);
 		memset(anchor, 0, sizeof(*anchor));
 		RB_INIT(&anchor->children);
 		strlcpy(anchor->name, q, sizeof(anchor->name));
 		if (parent != NULL) {
-			strlcpy(anchor->path, parent->path,
-			    sizeof(anchor->path));
+			strlcpy(anchor->path, parent->path, sizeof(anchor->path));
 			strlcat(anchor->path, "/", sizeof(anchor->path));
 		}
 		strlcat(anchor->path, anchor->name, sizeof(anchor->path));
-		if ((dup = RB_INSERT(pf_anchor_global, &pf_anchors, anchor)) !=
-		    NULL) {
+		if ((dup = RB_INSERT(pf_anchor_global, &pf_anchors, anchor)) != NULL) {
 			printf("pf_find_or_create_ruleset: RB_INSERT1 "
-			    "'%s' '%s' collides with '%s' '%s'\n",
-			    anchor->path, anchor->name, dup->path, dup->name);
+					"'%s' '%s' collides with '%s' '%s'\n", anchor->path,
+					anchor->name, dup->path, dup->name);
 			free(anchor, M_TEMP);
 			return (NULL);
 		}
 		if (parent != NULL) {
 			anchor->parent = parent;
-			if ((dup = RB_INSERT(pf_anchor_node, &parent->children,
-			    anchor)) != NULL) {
+			if ((dup = RB_INSERT(pf_anchor_node, &parent->children, anchor)) != NULL) {
 				printf("pf_find_or_create_ruleset: "
-				    "RB_INSERT2 '%s' '%s' collides with "
-				    "'%s' '%s'\n", anchor->path, anchor->name,
-				    dup->path, dup->name);
-				RB_REMOVE(pf_anchor_global, &pf_anchors,
-				    anchor);
+						"RB_INSERT2 '%s' '%s' collides with "
+						"'%s' '%s'\n", anchor->path, anchor->name, dup->path,
+						dup->name);
+				RB_REMOVE(pf_anchor_global, &pf_anchors, anchor);
 				free(anchor, M_TEMP);
 				return (NULL);
 			}

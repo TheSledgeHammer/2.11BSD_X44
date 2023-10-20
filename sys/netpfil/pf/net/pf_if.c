@@ -241,8 +241,9 @@ pfi_attach_rule(const char *name)
 	struct pfi_kif	*p;
 
 	p = pfi_lookup_create(name);
-	if (p != NULL)
+	if (p != NULL) {
 		p->pfik_rules++;
+	}
 	return (p);
 }
 
@@ -513,7 +514,6 @@ pfi_dynaddr_remove(struct pf_addr_wrap *aw)
 	aw->p.dyn->pfid_kif = NULL;
 	pfr_detach_table(aw->p.dyn->pfid_kt);
 	aw->p.dyn->pfid_kt = NULL;
-	//pool_put(&pfi_addr_pl, aw->p.dyn);
 	free(aw->p.dyn, M_DEVBUF);
 	aw->p.dyn = NULL;
 	splx(s);
@@ -565,8 +565,7 @@ pfi_if_create(const char *name, struct pfi_kif *q, int flags)
 	if (p == NULL)
 		return (NULL);
 	bzero(p, sizeof(*p));
-	p->pfik_ah_head = malloc(sizeof(*p->pfik_ah_head), PFI_MTYPE,
-	    M_DONTWAIT);
+	p->pfik_ah_head = malloc(sizeof(*p->pfik_ah_head), PFI_MTYPE, M_DONTWAIT);
 	if (p->pfik_ah_head == NULL) {
 		free(p, PFI_MTYPE);
 		return (NULL);
@@ -584,7 +583,7 @@ pfi_if_create(const char *name, struct pfi_kif *q, int flags)
 	p->pfik_flags = flags;
 	p->pfik_parent = q;
 	p->pfik_tzero = time_second;
-
+	TAILQ_INIT(&p->pfik_dynaddrs);
 	RB_INSERT(pfi_ifhead, &pfi_ifs, p);
 	if (q != NULL) {
 		q->pfik_addcnt++;

@@ -57,9 +57,9 @@ __KERNEL_RCSID(0, "$NetBSD: npf_handler.c,v 1.13.2.9 2013/02/11 21:49:48 riz Exp
  * If npf_ph_if != NULL, pfil hooks are registered.  If NULL, not registered.
  * Used to check the state.  Locked by: softnet_lock + KERNEL_LOCK (XXX).
  */
-static struct pfil_head *	npf_ph_if = NULL;
-static struct pfil_head *	npf_ph_inet = NULL;
-static struct pfil_head *	npf_ph_inet6 = NULL;
+static struct pfil_head *npf_ph_if = NULL;
+static struct pfil_head *npf_ph_inet = NULL;
+static struct pfil_head *npf_ph_inet6 = NULL;
 
 #ifndef INET6
 #define ip6_reass_packet(x, y)	ENOTSUP

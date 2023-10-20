@@ -240,7 +240,7 @@ npf_autounload_p(void)
 void
 npf_stats_inc(npf_stats_t st)
 {
-	uint64_t *stats = percpu_getref(npf_stats_percpu);
+	uint64_t *stats = percpu_lookup(npf_stats_percpu);
 	stats[st]++;
 	percpu_putref(npf_stats_percpu);
 }
@@ -248,7 +248,7 @@ npf_stats_inc(npf_stats_t st)
 void
 npf_stats_dec(npf_stats_t st)
 {
-	uint64_t *stats = percpu_getref(npf_stats_percpu);
+	uint64_t *stats = percpu_lookup(npf_stats_percpu);
 	stats[st]--;
 	percpu_putref(npf_stats_percpu);
 }

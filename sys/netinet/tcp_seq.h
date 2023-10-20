@@ -39,9 +39,9 @@
  * on with modular arithmetic.  These macros can be
  * used to compare such integers.
  */
-#define	SEQ_LT(a,b)	((int)((a)-(b)) < 0)
+#define	SEQ_LT(a,b)		((int)((a)-(b)) < 0)
 #define	SEQ_LEQ(a,b)	((int)((a)-(b)) <= 0)
-#define	SEQ_GT(a,b)	((int)((a)-(b)) > 0)
+#define	SEQ_GT(a,b)		((int)((a)-(b)) > 0)
 #define	SEQ_GEQ(a,b)	((int)((a)-(b)) >= 0)
 
 #define	SEQ_SUB(a,b)	((long)((a)-(b)))

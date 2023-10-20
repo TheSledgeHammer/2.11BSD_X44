@@ -227,9 +227,10 @@ struct pf_addr_wrap {
 	u_int8_t		 		iflags;	/* PFI_AFLAG_* */
 };
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 
 struct pfi_dynaddr {
+	TAILQ_ENTRY(pfi_dynaddr) entry;
 	struct pf_addr		 pfid_addr4;
 	struct pf_addr		 pfid_mask4;
 	struct pf_addr		 pfid_addr6;
@@ -362,34 +363,34 @@ struct pfi_dynaddr {
 #define PF_ACPY(a, b, f) \
 	(a)->v4.s_addr = (b)->v4.s_addr
 
-#define PF_AINC(a, f) \
-	do { \
-		(a)->addr32[0] = htonl(ntohl((a)->addr32[0]) + 1); \
+#define PF_AINC(a, f) 											\
+	do { 														\
+		(a)->addr32[0] = htonl(ntohl((a)->addr32[0]) + 1); 		\
 	} while (0)
 
-#define PF_POOLMASK(a, b, c, d, f) \
-	do { \
-		(a)->addr32[0] = ((b)->addr32[0] & (c)->addr32[0]) | \
-		(((c)->addr32[0] ^ 0xffffffff ) & (d)->addr32[0]); \
+#define PF_POOLMASK(a, b, c, d, f) 								\
+	do { 														\
+		(a)->addr32[0] = ((b)->addr32[0] & (c)->addr32[0]) | 	\
+		(((c)->addr32[0] ^ 0xffffffff ) & (d)->addr32[0]); 		\
 	} while (0)
 
 #endif /* PF_INET_ONLY */
 #endif /* PF_INET6_ONLY */
 #endif /* PF_INET_INET6 */
 
-#define	PF_MISMATCHAW(aw, x, af, neg)				\
-	(							\
-		(((aw)->type == PF_ADDR_NOROUTE &&		\
-		    pf_routable((x), (af))) ||			\
-		((aw)->type == PF_ADDR_TABLE &&			\
+#define	PF_MISMATCHAW(aw, x, af, neg)					\
+	(													\
+		(((aw)->type == PF_ADDR_NOROUTE &&				\
+		    pf_routable((x), (af))) ||					\
+		((aw)->type == PF_ADDR_TABLE &&					\
 		    !pfr_match_addr((aw)->p.tbl, (x), (af))) ||	\
-		((aw)->type == PF_ADDR_DYNIFTL &&		\
+		((aw)->type == PF_ADDR_DYNIFTL &&				\
 		    !pfi_match_addr((aw)->p.dyn, (x), (af))) || \
-		((aw)->type == PF_ADDR_ADDRMASK &&		\
-		    !PF_AZERO(&(aw)->v.a.mask, (af)) &&		\
-		    !PF_MATCHA(0, &(aw)->v.a.addr,		\
-		    &(aw)->v.a.mask, (x), (af)))) !=		\
-		(neg)						\
+		((aw)->type == PF_ADDR_ADDRMASK &&				\
+		    !PF_AZERO(&(aw)->v.a.mask, (af)) &&			\
+		    !PF_MATCHA(0, &(aw)->v.a.addr,				\
+		    &(aw)->v.a.mask, (x), (af)))) !=			\
+		(neg)											\
 	)
 
 struct pf_rule_uid {
@@ -459,10 +460,10 @@ struct pf_osfp_entry {
 	char			fp_version_nm[PF_OSFP_LEN];
 	char			fp_subtype_nm[PF_OSFP_LEN];
 };
-#define PF_OSFP_ENTRY_EQ(a, b) \
-    ((a)->fp_os == (b)->fp_os && \
-    memcmp((a)->fp_class_nm, (b)->fp_class_nm, PF_OSFP_LEN) == 0 && \
-    memcmp((a)->fp_version_nm, (b)->fp_version_nm, PF_OSFP_LEN) == 0 && \
+#define PF_OSFP_ENTRY_EQ(a, b) 												\
+    ((a)->fp_os == (b)->fp_os && 											\
+    memcmp((a)->fp_class_nm, (b)->fp_class_nm, PF_OSFP_LEN) == 0 && 		\
+    memcmp((a)->fp_version_nm, (b)->fp_version_nm, PF_OSFP_LEN) == 0 && 	\
     memcmp((a)->fp_subtype_nm, (b)->fp_subtype_nm, PF_OSFP_LEN) == 0)
 
 /* handle pf_osfp_t packing */
@@ -471,19 +472,19 @@ struct pf_osfp_entry {
 #define _FP_CLASS_BITS		10 /* OS Class (Windows, Linux) */
 #define _FP_VERSION_BITS	10 /* OS version (95, 98, NT, 2.4.54, 3.2) */
 #define _FP_SUBTYPE_BITS	10 /* patch level (NT SP4, SP3, ECN patch) */
-#define PF_OSFP_UNPACK(osfp, class, version, subtype) do { \
-	(class) = ((osfp) >> (_FP_VERSION_BITS+_FP_SUBTYPE_BITS)) & \
-	    ((1 << _FP_CLASS_BITS) - 1); \
-	(version) = ((osfp) >> _FP_SUBTYPE_BITS) & \
-	    ((1 << _FP_VERSION_BITS) - 1);\
-	(subtype) = (osfp) & ((1 << _FP_SUBTYPE_BITS) - 1); \
+#define PF_OSFP_UNPACK(osfp, class, version, subtype) do { 					\
+	(class) = ((osfp) >> (_FP_VERSION_BITS+_FP_SUBTYPE_BITS)) & 			\
+	    ((1 << _FP_CLASS_BITS) - 1); 										\
+	(version) = ((osfp) >> _FP_SUBTYPE_BITS) & 								\
+	    ((1 << _FP_VERSION_BITS) - 1);										\
+	(subtype) = (osfp) & ((1 << _FP_SUBTYPE_BITS) - 1); 					\
 } while(0)
-#define PF_OSFP_PACK(osfp, class, version, subtype) do { \
-	(osfp) = ((class) & ((1 << _FP_CLASS_BITS) - 1)) << (_FP_VERSION_BITS \
-	    + _FP_SUBTYPE_BITS); \
-	(osfp) |= ((version) & ((1 << _FP_VERSION_BITS) - 1)) << \
-	    _FP_SUBTYPE_BITS; \
-	(osfp) |= (subtype) & ((1 << _FP_SUBTYPE_BITS) - 1); \
+#define PF_OSFP_PACK(osfp, class, version, subtype) do { 					\
+	(osfp) = ((class) & ((1 << _FP_CLASS_BITS) - 1)) << (_FP_VERSION_BITS 	\
+	    + _FP_SUBTYPE_BITS); 												\
+	(osfp) |= ((version) & ((1 << _FP_VERSION_BITS) - 1)) << 				\
+	    _FP_SUBTYPE_BITS; 													\
+	(osfp) |= (subtype) & ((1 << _FP_SUBTYPE_BITS) - 1); 					\
 } while(0)
 
 /* the fingerprint of an OSes TCP SYN packet */
@@ -932,7 +933,7 @@ struct pfr_addr {
 	union {
 		struct in_addr	 _pfra_ip4addr;
 		struct in6_addr	 _pfra_ip6addr;
-	}		 pfra_u;
+	} pfra_u;
 	u_int8_t	 pfra_af;
 	u_int8_t	 pfra_net;
 	u_int8_t	 pfra_not;
@@ -995,16 +996,16 @@ struct pfr_kentry {
 SLIST_HEAD(pfr_ktableworkq, pfr_ktable);
 RB_HEAD(pfr_ktablehead, pfr_ktable);
 struct pfr_ktable {
-	struct pfr_tstats	 pfrkt_ts;
-	RB_ENTRY(pfr_ktable)	 pfrkt_tree;
-	SLIST_ENTRY(pfr_ktable)	 pfrkt_workq;
+	struct pfr_tstats	 	pfrkt_ts;
+	RB_ENTRY(pfr_ktable)	pfrkt_tree;
+	SLIST_ENTRY(pfr_ktable)	pfrkt_workq;
 	struct radix_node_head	*pfrkt_ip4;
 	struct radix_node_head	*pfrkt_ip6;
-	struct pfr_ktable	*pfrkt_shadow;
-	struct pfr_ktable	*pfrkt_root;
-	struct pf_ruleset	*pfrkt_rs;
-	long			 pfrkt_larg;
-	int			 pfrkt_nflags;
+	struct pfr_ktable		*pfrkt_shadow;
+	struct pfr_ktable		*pfrkt_root;
+	struct pf_ruleset		*pfrkt_rs;
+	long			 		pfrkt_larg;
+	int			 			pfrkt_nflags;
 };
 #define pfrkt_t			pfrkt_ts.pfrts_t
 #define pfrkt_name		pfrkt_t.pfrt_name
@@ -1028,23 +1029,24 @@ RB_PROTOTYPE(pf_state_tree_ext_gwy, pf_state,
     u.s.entry_ext_gwy, pf_state_compare_ext_gwy)
 
 struct pfi_if {
-	char				 pfif_name[IFNAMSIZ];
-	u_int64_t			 pfif_packets[2][2][2];
-	u_int64_t			 pfif_bytes[2][2][2];
-	u_int64_t			 pfif_addcnt;
-	u_int64_t			 pfif_delcnt;
-	long				 pfif_tzero;
-	int				 pfif_states;
-	int				 pfif_rules;
-	int				 pfif_flags;
+	char				pfif_name[IFNAMSIZ];
+	u_int64_t			pfif_packets[2][2][2];
+	u_int64_t			pfif_bytes[2][2][2];
+	u_int64_t			pfif_addcnt;
+	u_int64_t			pfif_delcnt;
+	long				pfif_tzero;
+	int				 	pfif_states;
+	int				 	pfif_rules;
+	int				 	pfif_flags;
 };
 
 TAILQ_HEAD(pfi_grouphead, pfi_kif);
 TAILQ_HEAD(pfi_statehead, pfi_kif);
+
 RB_HEAD(pfi_ifhead, pfi_kif);
 struct pfi_kif {
-	struct pfi_if			 pfik_if;
-	RB_ENTRY(pfi_kif)		 pfik_tree;
+	struct pfi_if			 	pfik_if;
+	RB_ENTRY(pfi_kif)		 	pfik_tree;
 	struct pf_state_tree_lan_ext	 pfik_lan_ext;
 	struct pf_state_tree_ext_gwy	 pfik_ext_gwy;
 	struct pfi_grouphead		 pfik_grouphead;
@@ -1057,8 +1059,8 @@ struct pfi_kif {
 	//struct ifg_group			*pfik_group;
 	int				 			pfik_states;
 	int				 			pfik_rules;
-
 	struct hook_head		 	*pfik_ifaddrhooks;
+	TAILQ_HEAD(, pfi_dynaddr)	 pfik_dynaddrs;
 };
 #define pfik_name		pfik_if.pfif_name
 #define pfik_packets	pfik_if.pfif_packets
@@ -1174,18 +1176,18 @@ struct pf_pdesc {
 #define SCNT_SRC_NODE_REMOVALS	2
 #define SCNT_MAX		3
 
-#define ACTION_SET(a, x) \
-	do { \
-		if ((a) != NULL) \
-			*(a) = (x); \
+#define ACTION_SET(a, x) 				\
+	do { 								\
+		if ((a) != NULL) 				\
+			*(a) = (x); 				\
 	} while (0)
 
-#define REASON_SET(a, x) \
-	do { \
-		if ((a) != NULL) \
-			*(a) = (x); \
-		if (x < PFRES_MAX) \
-			pf_status.counters[x]++; \
+#define REASON_SET(a, x) 				\
+	do { 								\
+		if ((a) != NULL) 				\
+			*(a) = (x); 				\
+		if (x < PFRES_MAX) 				\
+			pf_status.counters[x]++; 	\
 	} while (0)
 
 struct pf_status {
@@ -1202,6 +1204,7 @@ struct pf_status {
 	u_int32_t	debug;
 	u_int32_t	hostid;
 	char		ifname[IFNAMSIZ];
+	u_int8_t	pf_chksum[PF_MD5_DIGEST_LENGTH];
 };
 
 struct cbq_opts {

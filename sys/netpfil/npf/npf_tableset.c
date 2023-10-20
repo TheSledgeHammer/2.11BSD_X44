@@ -63,35 +63,48 @@ __KERNEL_RCSID(0, "$NetBSD: npf_tableset.c,v 1.9.2.8 2013/02/11 21:49:48 riz Exp
 
 typedef struct npf_tblent {
 	union {
-		LIST_ENTRY(npf_tblent) hashq;
-		pt_node_t	node;
+		LIST_ENTRY(npf_tblent) 	hashq;
+		pt_node_t				node;
 	} te_entry;
-	int			te_alen;
+	int				te_alen;
 	npf_addr_t		te_addr;
 } npf_tblent_t;
 
 LIST_HEAD(npf_hashl, npf_tblent);
 
 struct npf_table {
-	char			t_name[16];
+	char				t_name[16];
 	/* Lock and reference count. */
-	krwlock_t		t_lock;
-	u_int			t_refcnt;
+	krwlock_t			t_lock;
+	u_int				t_refcnt;
 	/* Total number of items. */
-	u_int			t_nitems;
+	u_int				t_nitems;
 	/* Table ID. */
-	u_int			t_id;
+	u_int				t_id;
 	/* The storage type can be: a) hash b) tree. */
-	int			t_type;
-	struct npf_hashl *	t_hashl;
-	u_long			t_hashmask;
+	int					t_type;
+	struct npf_hashl 	*t_hashl;
+	u_long				t_hashmask;
 	/* Separate trees for IPv4 and IPv6. */
-	pt_tree_t		t_tree[2];
+	pt_tree_t			t_tree[2];
 };
 
 #define	NPF_ADDRLEN2TREE(alen)	((alen) >> 4)
 
-static pool_cache_t		tblent_cache	__read_mostly;
+static npf_tblent_t		tblent_cache;
+//static pool_cache_t		tblent_cache	__read_mostly;
+
+void
+npf_tableset_alloc(npf_tblent_t *tblent)
+{
+	tblent = (npf_tblent_t)malloc(sizeof(npf_tblent_t), M_NPF, M_WAITOK);
+}
+
+void
+npf_tableset_free(npf_tblent_t *tblent)
+{
+	free(tblent, M_NPF);
+}
 
 /*
  * npf_table_sysinit: initialise tableset structures.
@@ -99,6 +112,7 @@ static pool_cache_t		tblent_cache	__read_mostly;
 void
 npf_tableset_sysinit(void)
 {
+	npf_tableset_alloc(&tblent_cache);
 
 	tblent_cache = pool_cache_init(sizeof(npf_tblent_t), coherency_unit,
 	    0, 0, "npftblpl", NULL, IPL_NONE, NULL, NULL, NULL);
@@ -107,6 +121,7 @@ npf_tableset_sysinit(void)
 void
 npf_tableset_sysfini(void)
 {
+	npf_tableset_free(&tblent_cache);
 
 	pool_cache_destroy(tblent_cache);
 }

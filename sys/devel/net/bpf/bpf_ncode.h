@@ -80,6 +80,7 @@ int	bpf_ncode_validate(struct bpf_insn_ext *, int *);
  */
 
 /* Return, advance, jump, tag and invalidate instructions. */
+
 #define	NPF_OPCODE_RET			0x00
 #define	NPF_OPCODE_ADVR			0x01
 #define	NPF_OPCODE_J			0x02

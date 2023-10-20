@@ -79,7 +79,7 @@ static const char rcsid[] =
 		if (m == 0) 		\
 			return 0; 		\
 		len = m->m_len; 	\
-	} \
+	} 						\
 }
 
 static int m_xword(struct mbuf *, int, int *);
