@@ -63,6 +63,8 @@
 #define	NPF_PRINTF(x)
 #endif
 
+#define M_NPF 100
+
 /*
  * STRUCTURE DECLARATIONS.
  */
@@ -134,12 +136,12 @@ bool		npf_config_locked_p(void);
 int			npf_config_read_enter(void);
 void		npf_config_read_exit(int);
 
-void			npf_config_reload(prop_dictionary_t, npf_ruleset_t *, npf_tableset_t *, npf_ruleset_t *, npf_rprocset_t *, bool);
-npf_ruleset_t 	*npf_config_ruleset(void);
-npf_ruleset_t 	*npf_config_natset(void);
-npf_tableset_t 	*npf_config_tableset(void);
-prop_dictionary_t npf_config_dict(void);
-bool		npf_default_pass(void);
+void				npf_config_reload(prop_dictionary_t, npf_ruleset_t *, npf_tableset_t *, npf_ruleset_t *, npf_rprocset_t *, bool);
+npf_ruleset_t 		*npf_config_ruleset(void);
+npf_ruleset_t 		*npf_config_natset(void);
+npf_tableset_t 		*npf_config_tableset(void);
+prop_dictionary_t 	npf_config_dict(void);
+bool				npf_default_pass(void);
 
 void		npflogattach(int);
 void		npflogdetach(void);
@@ -158,7 +160,7 @@ void		npf_stats_dec(npf_stats_t);
 int		npf_pfil_register(void);
 void		npf_pfil_unregister(void);
 bool		npf_pfil_registered_p(void);
-int		npf_packet_handler(void *, struct mbuf **, ifnet_t *, int);
+int		npf_packet_handler(void *, struct mbuf **, struct ifnet *, int);
 
 /* Protocol helpers. */
 int		npf_cache_all(npf_cache_t *, nbuf_t *);

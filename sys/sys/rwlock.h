@@ -80,6 +80,7 @@ void 			rwlock_init(struct rwlock *, int, char *, int, u_int);
 int 			rwlockmgr(__volatile struct rwlock *, u_int, struct lock_object *, pid_t);
 int 			rwlockstatus(struct rwlock *);
 
+void			rwlock_simple_init(__volatile struct rwlock *, const char *);
 void			rwlock_lock(__volatile struct rwlock *);
 void			rwlock_unlock(__volatile struct rwlock *);
 int				rwlock_lock_try(__volatile struct rwlock *);

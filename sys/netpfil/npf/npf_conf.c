@@ -66,7 +66,7 @@ typedef struct {
 	npf_ruleset_t *		n_nat_rules;
 	npf_rprocset_t *	n_rprocs;
 	prop_dictionary_t	n_dict;
-	bool			n_default_pass;
+	bool				n_default_pass;
 } npf_config_t;
 
 static npf_config_t 	*npf_config			__cacheline_aligned;

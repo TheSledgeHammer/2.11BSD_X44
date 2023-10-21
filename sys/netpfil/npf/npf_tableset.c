@@ -47,8 +47,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_tableset.c,v 1.9.2.8 2013/02/11 21:49:48 riz Exp
 #include <sys/types.h>
 
 #include <sys/atomic.h>
-#include <sys/hash.h>
-#include <sys/kmem.h>
+#include <sys/fnv_hash.h>
 #include <sys/malloc.h>
 #include <sys/queue.h>
 #include <sys/rwlock.h>
@@ -75,7 +74,7 @@ LIST_HEAD(npf_hashl, npf_tblent);
 struct npf_table {
 	char				t_name[16];
 	/* Lock and reference count. */
-	krwlock_t			t_lock;
+	struct rwlock		t_lock;
 	u_int				t_refcnt;
 	/* Total number of items. */
 	u_int				t_nitems;
@@ -91,8 +90,8 @@ struct npf_table {
 
 #define	NPF_ADDRLEN2TREE(alen)	((alen) >> 4)
 
+static size_t hashsize;
 static npf_tblent_t		tblent_cache;
-//static pool_cache_t		tblent_cache	__read_mostly;
 
 void
 npf_tableset_alloc(npf_tblent_t *tblent)
@@ -114,16 +113,13 @@ npf_tableset_sysinit(void)
 {
 	npf_tableset_alloc(&tblent_cache);
 
-	tblent_cache = pool_cache_init(sizeof(npf_tblent_t), coherency_unit,
-	    0, 0, "npftblpl", NULL, IPL_NONE, NULL, NULL, NULL);
+	rwlock_init();
 }
 
 void
 npf_tableset_sysfini(void)
 {
 	npf_tableset_free(&tblent_cache);
-
-	pool_cache_destroy(tblent_cache);
 }
 
 npf_tableset_t *
@@ -131,7 +127,7 @@ npf_tableset_create(void)
 {
 	const size_t sz = NPF_TABLE_SLOTS * sizeof(npf_table_t *);
 
-	return kmem_zalloc(sz, KM_SLEEP);
+	return malloc(sz, M_NPF, M_NOWAIT);
 }
 
 void
@@ -151,7 +147,7 @@ npf_tableset_destroy(npf_tableset_t *tblset)
 			npf_table_destroy(t);
 		}
 	}
-	kmem_free(tblset, sz);
+	free(tblset, M_NPF);
 }
 
 /*
@@ -217,7 +213,7 @@ static npf_tblent_t *
 table_hash_lookup(const npf_table_t *t, const npf_addr_t *addr,
     const int alen, struct npf_hashl **rhtbl)
 {
-	const uint32_t hidx = hash32_buf(addr, alen, HASH32_BUF_INIT);
+	const uint32_t hidx = fnv_32_buf(addr, alen, FNV1_32_INIT);
 	struct npf_hashl *htbl = &t->t_hashl[hidx & t->t_hashmask];
 	npf_tblent_t *ent;
 
@@ -258,7 +254,7 @@ npf_table_create(u_int tid, int type, size_t hsize)
 
 	KASSERT((u_int)tid < NPF_TABLE_SLOTS);
 
-	t = kmem_zalloc(sizeof(npf_table_t), KM_SLEEP);
+	t = malloc(sizeof(npf_table_t), M_NPF, M_NOWAIT);
 	switch (type) {
 	case NPF_TABLE_TREE:
 		ptree_init(&t->t_tree[0], &npf_table_ptree_ops,
@@ -271,16 +267,17 @@ npf_table_create(u_int tid, int type, size_t hsize)
 		    offsetof(npf_tblent_t, te_addr));
 		break;
 	case NPF_TABLE_HASH:
-		t->t_hashl = hashinit(hsize, HASH_LIST, true, &t->t_hashmask);
+		t->t_hashl = hashinit(hsize, M_NPF, &t->t_hashmask);
+		hashsize = hsize;
 		if (t->t_hashl == NULL) {
-			kmem_free(t, sizeof(npf_table_t));
+			free(t, M_NPF);
 			return NULL;
 		}
 		break;
 	default:
 		KASSERT(false);
 	}
-	rw_init(&t->t_lock);
+	rwlock_simple_init(&t->t_lock, "npf_table_rwlock");
 	t->t_type = type;
 	t->t_id = tid;
 
@@ -299,13 +296,12 @@ npf_table_destroy(npf_table_t *t)
 	case NPF_TABLE_HASH:
 		for (unsigned n = 0; n <= t->t_hashmask; n++) {
 			npf_tblent_t *ent;
-
 			while ((ent = LIST_FIRST(&t->t_hashl[n])) != NULL) {
 				LIST_REMOVE(ent, te_entry.hashq);
-				pool_cache_put(tblent_cache, ent);
+				free(ent, M_NPF);
 			}
 		}
-		hashdone(t->t_hashl, HASH_LIST, t->t_hashmask);
+		hashfree(t->t_hashl, hashsize, M_NPF, t->t_hashmask);
 		break;
 	case NPF_TABLE_TREE:
 		table_tree_destroy(&t->t_tree[0]);
@@ -314,8 +310,8 @@ npf_table_destroy(npf_table_t *t)
 	default:
 		KASSERT(false);
 	}
-	rw_destroy(&t->t_lock);
-	kmem_free(t, sizeof(npf_table_t));
+	rwlock_unlock(&t->t_lock);
+	free(t, M_NPF);
 }
 
 /*
@@ -378,7 +374,7 @@ npf_table_insert(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr
 	if (error) {
 		return error;
 	}
-	ent = pool_cache_get(tblent_cache, PR_WAITOK);
+	ent = malloc(tblent_cache, M_NPF, M_WAITOK);
 	memcpy(&ent->te_addr, addr, alen);
 	ent->te_alen = alen;
 
@@ -429,7 +425,7 @@ npf_table_insert(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr
 	rw_exit(&t->t_lock);
 
 	if (error) {
-		pool_cache_put(tblent_cache, ent);
+		free(ent, M_NPF);
 	}
 	return error;
 }
@@ -485,7 +481,7 @@ npf_table_remove(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr
 	if (ent == NULL) {
 		return ENOENT;
 	}
-	pool_cache_put(tblent_cache, ent);
+	free(ent, M_NPF);
 	return 0;
 }
 

@@ -60,7 +60,7 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	unsigned int flags;
 {
 	bzero(rwl, sizeof(struct rwlock));
-	simple_lock_init(&rwl->rwl_lnterlock, "rwlock_init");
+	rwlock_simple_init(&rwl, "rwlock_init");
 
 	rwl->rwl_flags = flags & RW_EXTFLG_MASK;
 	rwl->rwl_prio = prio;
@@ -283,6 +283,14 @@ rwlock_acquire(rwl, error, extflags, wanted)
 			break;
 		}
 	}
+}
+
+void
+rwlock_simple_init(rwl, name)
+	__volatile struct rwlock *rwl;
+	const char				*name;
+{
+	simple_lock_init(&rwl->rwl_lnterlock, name);
 }
 
 void

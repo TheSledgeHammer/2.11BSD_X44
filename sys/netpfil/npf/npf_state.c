@@ -68,10 +68,10 @@ static const int npf_generic_fsm[NPF_ANY_SESSION_NSTATES][2] = {
 	},
 };
 
-static u_int npf_generic_timeout[] __read_mostly = {
-	[NPF_ANY_SESSION_CLOSED]	= 0,
-	[NPF_ANY_SESSION_NEW]		= 30,
-	[NPF_ANY_SESSION_ESTABLISHED]	= 60,
+static u_int npf_generic_timeout[] = {
+		[NPF_ANY_SESSION_CLOSED]		= 0,
+		[NPF_ANY_SESSION_NEW]			= 30,
+		[NPF_ANY_SESSION_ESTABLISHED]	= 60,
 };
 
 /*

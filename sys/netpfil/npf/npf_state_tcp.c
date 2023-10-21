@@ -73,7 +73,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_state_tcp.c,v 1.3.2.7 2013/02/08 19:18:10 riz Ex
 /*
  * TCP connection timeout table (in seconds).
  */
-static u_int npf_tcp_timeouts[] __read_mostly = {
+static u_int npf_tcp_timeouts[] = {
 	/* Closed, timeout nearly immediately. */
 	[NPF_TCPS_CLOSED]	= 10,
 	/* Unsynchronised states. */
@@ -103,11 +103,11 @@ static bool npf_strict_order_rst __read_mostly = false;
  */
 
 #define	TCPFC_INVALID		0
-#define	TCPFC_SYN		1
+#define	TCPFC_SYN			1
 #define	TCPFC_SYNACK		2
-#define	TCPFC_ACK		3
-#define	TCPFC_FIN		4
-#define	TCPFC_COUNT		5
+#define	TCPFC_ACK			3
+#define	TCPFC_FIN			4
+#define	TCPFC_COUNT			5
 
 static inline u_int
 npf_tcpfl2case(const int tcpfl)

@@ -114,11 +114,11 @@ typedef struct {
 	/* Session entry node and back-pointer to the actual session. */
 	rb_node_t		se_rbnode;
 	union {
-		npf_session_t *	se_backptr;
-		void *		se_common_id;
+		npf_session_t *se_backptr;
+		void 			*se_common_id;
 	};
 	/* Size of the addresses. */
-	int			se_alen;
+	int				se_alen;
 	/* Source and destination addresses. */
 	npf_addr_t		se_src_addr;
 	npf_addr_t		se_dst_addr;

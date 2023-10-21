@@ -250,19 +250,19 @@ bool		npf_autounload_p(void);
 #define	NPF_CMD_TABLE_FLUSH		5
 
 typedef struct npf_ioctl_ent {
-	int			alen;
-	npf_addr_t		addr;
+	int					alen;
+	npf_addr_t			addr;
 	npf_netmask_t		mask;
 } npf_ioctl_ent_t;
 
 typedef struct npf_ioctl_buf {
-	void *			buf;
-	size_t			len;
+	void *				buf;
+	size_t				len;
 } npf_ioctl_buf_t;
 
 typedef struct npf_ioctl_table {
-	int			nct_cmd;
-	u_int			nct_tid;
+	int					nct_cmd;
+	u_int				nct_tid;
 	union {
 		npf_ioctl_ent_t	ent;
 		npf_ioctl_buf_t	buf;

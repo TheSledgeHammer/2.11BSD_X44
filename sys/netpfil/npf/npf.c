@@ -58,7 +58,6 @@ __KERNEL_RCSID(0, "$NetBSD: npf.c,v 1.7.2.7 2013/02/11 21:49:49 riz Exp $");
 #include "npf_impl.h"
 
 void		npfattach(int);
-
 static int	npf_fini(void);
 static int	npf_dev_open(dev_t, int, int, struct proc *);
 static int	npf_dev_close(dev_t, int, int, struct proc *);
@@ -90,8 +89,8 @@ npf_init(void)
 
 	int error = 0;
 
-	npf_stats_percpu = percpu_alloc(NPF_STATS_SIZE);
-	npf_sysctl = NULL;
+	percpu_malloc(npf_stats_percpu, NPF_STATS_SIZE);
+	//npf_sysctl = NULL;
 
 	npf_tableset_sysinit();
 	npf_session_sysinit();
@@ -137,7 +136,7 @@ npf_fini(void)
 	if (npf_sysctl) {
 		sysctl_teardown(&npf_sysctl);
 	}
-	percpu_free(npf_stats_percpu, NPF_STATS_SIZE);
+	percpu_free(npf_stats_percpu);
 
 	return 0;
 }
@@ -145,7 +144,6 @@ npf_fini(void)
 void
 npfattach(int nunits)
 {
-
 	/* Void. */
 }
 
@@ -273,9 +271,9 @@ npfctl_stats(void *data)
 	uint64_t *fullst, *uptr = *(uint64_t **)data;
 	int error;
 
-	fullst = kmem_zalloc(NPF_STATS_SIZE, KM_SLEEP);
+	fullst = malloc(NPF_STATS_SIZE, M_NPF, M_WAITOK);
 	percpu_foreach(npf_stats_percpu, npf_stats_collect, fullst);
 	error = copyout(fullst, uptr, NPF_STATS_SIZE);
-	kmem_free(fullst, NPF_STATS_SIZE);
+	kmem_free(fullst, M_NPF);
 	return error;
 }
