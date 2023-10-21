@@ -574,6 +574,75 @@ m_adj(mp, len)
 	}
 }
 
+/*
+ * Rearange an mbuf chain so that len bytes are contiguous
+ * and in the data area of an mbuf (so that mtod and dtom
+ * will work for a structure of size len).  Returns the resulting
+ * mbuf chain on success, frees it and returns null on failure.
+ * If there is room, it will add up to MPULL_EXTRA bytes to the
+ * contiguous region in an attempt to avoid being called next time.
+ */
+int MPFail;
+
+struct mbuf *
+m_pullup(n, len)
+	register struct mbuf *n;
+	int len;
+{
+	register struct mbuf *m;
+	register int count;
+	int space;
+
+	/*
+	 * If first mbuf has no cluster, and has room for len bytes
+	 * without shifting current data, pullup into it,
+	 * otherwise allocate a new mbuf to prepend to the chain.
+	 */
+	if ((n->m_flags & M_EXT) == 0 &&
+	    n->m_data + len < &n->m_dat[MLEN] && n->m_next) {
+		if (n->m_len >= len)
+			return (n);
+		m = n;
+		n = n->m_next;
+		len -= m->m_len;
+	} else {
+		if (len > MHLEN)
+			goto bad;
+		MGET(m, M_DONTWAIT, n->m_type);
+		if (m == 0)
+			goto bad;
+		m->m_len = 0;
+		if (n->m_flags & M_PKTHDR) {
+			M_COPY_PKTHDR(m, n);
+			n->m_flags &= ~M_PKTHDR;
+		}
+	}
+	space = &m->m_dat[MLEN] - (m->m_data + m->m_len);
+	do {
+		count = min(min(max(len, max_protohdr), space), n->m_len);
+		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
+		  (unsigned)count);
+		len -= count;
+		m->m_len += count;
+		n->m_len -= count;
+		space -= count;
+		if (n->m_len)
+			n->m_data += count;
+		else
+			n = m_free(n);
+	} while (len > 0 && n);
+	if (len > 0) {
+		(void) m_free(m);
+		goto bad;
+	}
+	m->m_next = n;
+	return (m);
+bad:
+	m_freem(n);
+	MPFail++;
+	return (0);
+}
+
 bool_t
 m_ensure_contig(struct mbuf **m0, int len)
 {
@@ -636,18 +705,8 @@ bad:
 	return (FALSE);
 }
 
-/*
- * Rearange an mbuf chain so that len bytes are contiguous
- * and in the data area of an mbuf (so that mtod and dtom
- * will work for a structure of size len).  Returns the resulting
- * mbuf chain on success, frees it and returns null on failure.
- * If there is room, it will add up to MPULL_EXTRA bytes to the
- * contiguous region in an attempt to avoid being called next time.
- */
-int MPFail;
-
 struct mbuf *
-m_pullup(n, len)
+m_pullup1(n, len)
 	register struct mbuf *n;
 	int len;
 {
@@ -662,64 +721,6 @@ m_pullup(n, len)
 	return (m);
 }
 
-struct mbuf *
-m_pullup(n, len)
-	register struct mbuf *n;
-	int len;
-{
-	register struct mbuf *m;
-	register int count;
-	int space;
-
-	/*
-	 * If first mbuf has no cluster, and has room for len bytes
-	 * without shifting current data, pullup into it,
-	 * otherwise allocate a new mbuf to prepend to the chain.
-	 */
-	if ((n->m_flags & M_EXT) == 0 &&
-	    n->m_data + len < &n->m_dat[MLEN] && n->m_next) {
-		if (n->m_len >= len)
-			return (n);
-		m = n;
-		n = n->m_next;
-		len -= m->m_len;
-	} else {
-		if (len > MHLEN)
-			goto bad;
-		MGET(m, M_DONTWAIT, n->m_type);
-		if (m == 0)
-			goto bad;
-		m->m_len = 0;
-		if (n->m_flags & M_PKTHDR) {
-			M_COPY_PKTHDR(m, n);
-			n->m_flags &= ~M_PKTHDR;
-		}
-	}
-	space = &m->m_dat[MLEN] - (m->m_data + m->m_len);
-	do {
-		count = min(min(max(len, max_protohdr), space), n->m_len);
-		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
-		  (unsigned)count);
-		len -= count;
-		m->m_len += count;
-		n->m_len -= count;
-		space -= count;
-		if (n->m_len)
-			n->m_data += count;
-		else
-			n = m_free(n);
-	} while (len > 0 && n);
-	if (len > 0) {
-		(void) m_free(m);
-		goto bad;
-	}
-	m->m_next = n;
-	return (m);
-bad:
-	m_freem(n);
-	MPFail++;
-	return (0);
-}
 
 struct mbuf *
 m_copyup(n, len, dstoff)
