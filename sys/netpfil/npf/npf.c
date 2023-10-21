@@ -274,6 +274,6 @@ npfctl_stats(void *data)
 	fullst = malloc(NPF_STATS_SIZE, M_NPF, M_WAITOK);
 	percpu_foreach(npf_stats_percpu, npf_stats_collect, fullst);
 	error = copyout(fullst, uptr, NPF_STATS_SIZE);
-	kmem_free(fullst, M_NPF);
+	free(fullst, M_NPF);
 	return error;
 }
