@@ -112,8 +112,6 @@ void
 npf_tableset_sysinit(void)
 {
 	npf_tableset_alloc(&tblent_cache);
-
-	rwlock_init();
 }
 
 void
