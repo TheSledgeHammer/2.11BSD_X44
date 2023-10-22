@@ -53,7 +53,6 @@
 #include <netinet/ip_var.h>
 
 #include <net/pfvar.h>
-#include <net/ifg_group.h>
 
 #ifdef INET6
 #include <netinet/ip6.h>
@@ -452,7 +451,7 @@ _bad:
 	if (ruleset != NULL)
 		pf_remove_if_empty_ruleset(ruleset);
 	if (dyn->pfid_kif != NULL)
-		pfi_detach_rule(dyn->pfid_kif);
+        pfi_kif_unref(dyn->pfid_kif, PFI_KIF_REF_RULE);
 	free(dyn, M_DEVBUF);
 	splx(s);
 	return (rv);
@@ -687,7 +686,7 @@ pfi_dynaddr_remove(struct pf_addr_wrap *aw)
 
 	s = splsoftnet();
 	hook_disestablish(aw->p.dyn->pfid_kif->pfik_ah_head, aw->p.dyn->pfid_hook_cookie);
-	pfi_detach_rule(aw->p.dyn->pfid_kif);
+	pfi_kif_unref(aw->p.dyn->pfid_kif, PFI_KIF_REF_RULE);
 	aw->p.dyn->pfid_kif = NULL;
 	pfr_detach_table(aw->p.dyn->pfid_kt);
 	aw->p.dyn->pfid_kt = NULL;
@@ -1039,7 +1038,6 @@ pfi_match_addr(struct pfi_dynaddr *dyn, struct pf_addr *a, sa_family_t af)
 	}
 }
 
-#ifdef notyet
 void
 pfi_init_groups(struct ifnet *ifp)
 {
@@ -1063,4 +1061,3 @@ pfi_destroy_groups(struct ifnet *ifp)
 	if_delgroup(ifp, IFG_ALL);
 	if_destroy_groups(ifp);
 }
-#endif

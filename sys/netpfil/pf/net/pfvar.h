@@ -45,7 +45,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp_fsm.h>
 
-//#include <net/ifg_group.h>
+#include <net/ifg_group.h>
 
 union sockaddr_union {
 	struct sockaddr         sa;
@@ -1706,13 +1706,12 @@ int	pfr_ina_define(struct pfr_table *, struct pfr_addr *, int, int *,
 	    int *, u_int32_t, int);
 
 void		 pfi_initialize(void);
-#ifdef _LKM
 void		 pfi_destroy(void);
-#endif
 void		 pfi_attach_clone(struct if_clone *);
 void		 pfi_attach_ifnet(struct ifnet *);
 void		 pfi_detach_ifnet(struct ifnet *);
-
+void         pfi_init_groups(struct ifnet *);
+void         pfi_destroy_groups(struct ifnet *);
 void		 pfi_attach_ifgroup(struct ifg_group *);
 void		 pfi_detach_ifgroup(struct ifg_group *);
 void		 pfi_group_change(const char *);
@@ -1724,7 +1723,7 @@ int		 		pfi_maybe_destroy(struct pfi_kif *);
 struct pfi_kif *pfi_kif_get(const char *);
 void		 pfi_kif_ref(struct pfi_kif *, enum pfi_kif_refs);
 void		 pfi_kif_unref(struct pfi_kif *, enum pfi_kif_refs);
-int			 pfi_kif_match(struct pfi_kif *rule_kif, struct pfi_kif *packet_kif);
+int			 pfi_kif_match(struct pfi_kif *, struct pfi_kif *);
 int		 	 pfi_dynaddr_setup(struct pf_addr_wrap *, sa_family_t);
 void		 pfi_dynaddr_copyout(struct pf_addr_wrap *);
 void		 pfi_dynaddr_remove(struct pf_addr_wrap *);

@@ -2875,7 +2875,7 @@ pf_pfil_attach(void)
 		struct ifnet *ifp = ifindex2ifnet[i];
 
 		if (ifp != NULL) {
-//			pfi_init_groups(ifp);
+			pfi_init_groups(ifp);
 
 			pfi_attach_ifnet(ifp);
 		}
@@ -2913,7 +2913,7 @@ pf_pfil_detach(void)
 		struct ifnet *ifp = ifindex2ifnet[i];
 
 		if (ifp != NULL) {
-//			pfi_destroy_groups(ifp);
+			pfi_destroy_groups(ifp);
 
 			pfi_detach_ifnet(ifp);
 		}
