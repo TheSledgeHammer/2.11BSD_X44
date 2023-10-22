@@ -445,7 +445,7 @@ pfi_dynaddr_setup(struct pf_addr_wrap *aw, sa_family_t af)
 	if (!strcmp(aw->v.ifname, "self")) {
 		dyn->pfid_kif = pfi_kif_get(IFG_ALL);
 	} else {
-		dyn->pfid_kif = pfi_attach_rule(aw->v.ifname);
+		dyn->pfid_kif = pfi_kif_get(aw->v.ifname);
 	}
 	if (dyn->pfid_kif == NULL) {
 		senderr(1);
