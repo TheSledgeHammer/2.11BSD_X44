@@ -45,7 +45,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp_fsm.h>
 
-#include <net/ifg_group.h>
+//#include <net/ifg_group.h>
 
 union sockaddr_union {
 	struct sockaddr         sa;
@@ -775,6 +775,7 @@ struct pf_state {
 	u_int32_t	 creation;
 	u_int32_t	 expire;
 	u_int32_t	 pfsync_time;
+
 	u_int32_t	 packets[2];
 	u_int32_t	 bytes[2];
 	u_int32_t	 creatorid;
@@ -1710,15 +1711,12 @@ void		 pfi_destroy(void);
 void		 pfi_attach_clone(struct if_clone *);
 void		 pfi_attach_ifnet(struct ifnet *);
 void		 pfi_detach_ifnet(struct ifnet *);
-void		 pfi_init_groups(struct ifnet *)
-void		 pfi_destroy_groups(struct ifnet *);
 
 void		 pfi_attach_ifgroup(struct ifg_group *);
 void		 pfi_detach_ifgroup(struct ifg_group *);
 void		 pfi_group_change(const char *);
 int			 pfi_match_addr(struct pfi_dynaddr *, struct pf_addr *, sa_family_t);
 
-//struct pfi_kif	*pfi_lookup_create(const char *); /* deprecated: use pfi_kif_get */
 struct pfi_kif	*pfi_lookup_if(const char *);
 int		 		pfi_maybe_destroy(struct pfi_kif *);
 
@@ -1727,10 +1725,12 @@ void		 pfi_kif_ref(struct pfi_kif *, enum pfi_kif_refs);
 void		 pfi_kif_unref(struct pfi_kif *, enum pfi_kif_refs);
 int			 pfi_kif_match(struct pfi_kif *rule_kif, struct pfi_kif *packet_kif);
 
-//struct pfi_kif	*pfi_attach_rule(const char *);		/* deprecated: use pfi_kif_ref */
-//void		 pfi_detach_rule(struct pfi_kif *);		/* deprecated: use pfi_kif_unref */
-//void		 pfi_attach_state(struct pfi_kif *);	/* deprecated: use pfi_kif_ref */
-//void		 pfi_detach_state(struct pfi_kif *);	/* deprecated: use pfi_kif_unref */
+
+struct pfi_kif	*pfi_lookup_create(const char *);   /* deprecated: use pfi_kif_get */
+struct pfi_kif	*pfi_attach_rule(const char *);		/* deprecated: use pfi_kif_ref */
+void		    pfi_detach_rule(struct pfi_kif *);	/* deprecated: use pfi_kif_unref */
+void		    pfi_attach_state(struct pfi_kif *);	/* deprecated: use pfi_kif_ref */
+void		    pfi_detach_state(struct pfi_kif *);	/* deprecated: use pfi_kif_unref */
 
 int		 	 pfi_dynaddr_setup(struct pf_addr_wrap *, sa_family_t);
 void		 pfi_dynaddr_copyout(struct pf_addr_wrap *);

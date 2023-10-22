@@ -53,6 +53,7 @@
 #include <netinet/ip_var.h>
 
 #include <net/pfvar.h>
+#include <net/ifg_group.h>
 
 #ifdef INET6
 #include <netinet/ip6.h>
@@ -256,7 +257,7 @@ pfi_kif_ref(struct pfi_kif *kif, enum pfi_kif_refs what)
 		if (!kif->pfik_states++) {
 			TAILQ_INSERT_TAIL(&pfi_statehead, kif, pfik_w_states);
 		}
-		//kif->pfik_states++;
+		kif->pfik_states++;
 		break;
 	default:
 		panic("pfi_kif_ref with unknown type");
@@ -379,7 +380,7 @@ pfi_group_change(const char *group)
 	splx(s);
 }
 
-#ifdef notyet
+
 struct pfi_kif *
 pfi_attach_rule(const char *name)
 {
@@ -424,7 +425,6 @@ pfi_detach_state(struct pfi_kif *p)
 		TAILQ_REMOVE(&pfi_statehead, p, pfik_w_states);
 	pfi_maybe_destroy(p);
 }
-#endif /* notyet */
 
 int
 pfi_dynaddr_setup(struct pf_addr_wrap *aw, sa_family_t af)
@@ -556,7 +556,7 @@ pfi_group_update(struct pfr_ktable *kt, struct pfi_kif *kif, int net, int flags)
             pfi_instance_add(ifgm->ifgm_ifp, net, flags);
         }
     }
-    if ((e = pfr_set_addrs(&kt->pfrkt_t, pfi_buffer, pfi_buffer_cnt, &size2, NULL, NULL, NULL, 0, PFR_TFLAG_ALLMASK))){
+    if ((e = pfr_set_addrs(&kt->pfrkt_t, pfi_buffer, pfi_buffer_cnt, &size2, NULL, NULL, NULL, 0))){
         printf("pfi_table_update: cannot set %d new addresses "
 		    "into table %s: %d\n", pfi_buffer_cnt, kt->pfrkt_name, e);
     }
@@ -989,7 +989,7 @@ pfi_set_flags(const char *name, int flags)
 
 	s = splsoftnet();
 	RB_FOREACH(p, pfi_ifhead, &pfi_ifs) {
-		if (pfi_skip_if(name, p)) {
+		if (pfi_skip_if(name, p, flags)) {
 			continue;
 		}
 		p->pfik_flags |= flags;
@@ -1006,7 +1006,7 @@ pfi_clear_flags(const char *name, int flags)
 
 	s = splsoftnet();
 	RB_FOREACH(p, pfi_ifhead, &pfi_ifs) {
-		if (pfi_skip_if(name, p)) {
+		if (pfi_skip_if(name, p, flags)) {
 			continue;
 		}
 		p->pfik_flags &= ~flags;
@@ -1079,6 +1079,7 @@ pfi_match_addr(struct pfi_dynaddr *dyn, struct pf_addr *a, sa_family_t af)
 	}
 }
 
+#ifdef notyet
 void
 pfi_init_groups(struct ifnet *ifp)
 {
@@ -1102,3 +1103,4 @@ pfi_destroy_groups(struct ifnet *ifp)
 	if_delgroup(ifp, IFG_ALL);
 	if_destroy_groups(ifp);
 }
+#endif

@@ -104,6 +104,7 @@ int			 pf_disable_altq(struct pf_altq *);
 int			 pf_begin_rules(u_int32_t *, int, const char *);
 int			 pf_rollback_rules(u_int32_t, int, char *);
 int			 pf_commit_rules(u_int32_t, int, char *);
+int          pf_setup_pfsync_matching(struct pf_ruleset *);
 
 const struct cdevsw pf_cdevsw = {
 		.d_open = pfopen,
@@ -634,7 +635,7 @@ pf_rollback_rules(u_int32_t ticket, int rs_num, char *anchor)
 	rs->rules[rs_num].inactive.open = 0;
 	return (0);
 }
-
+#ifdef notyet
 #define PF_MD5_UPD(st, elm)											\
 		MD5Update(ctx, (u_int8_t *) &(st)->elm, sizeof((st)->elm))
 
@@ -719,6 +720,7 @@ pf_hash_rule(MD5_CTX *ctx, struct pf_rule *rule)
 	PF_MD5_UPD(rule, rt);
 	PF_MD5_UPD(rule, tos);
 }
+#endif /* notyet */
 
 int
 pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
@@ -736,12 +738,15 @@ pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
 	    ticket != rs->rules[rs_num].inactive.ticket)
 		return (EBUSY);
 
+#ifdef notyet
 	if (rs == &pf_main_ruleset) {
 		error = pf_setup_pfsync_matching(rs);
 		if (error != 0) {
 			return (error);
 		}
 	}
+#endif
+
 	/* Swap rules, keep the old. */
 	s = splsoftnet();
 	old_rules = rs->rules[rs_num].active.ptr;
@@ -772,6 +777,7 @@ pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
 	return (0);
 }
 
+#ifdef notyet
 void
 pf_state_export(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_state *s)
 {
@@ -897,7 +903,7 @@ pf_setup_pfsync_matching(struct pf_ruleset *rs)
 {
 	MD5_CTX			 ctx;
 	struct pf_rule		*rule;
-	int			 rs_cnt;
+	int			    rs_cnt;
 	u_int8_t		 digest[PF_MD5_DIGEST_LENGTH];
 
 	MD5Init(&ctx);
@@ -931,6 +937,7 @@ pf_setup_pfsync_matching(struct pf_ruleset *rs)
 	memcpy(pf_status.pf_chksum, digest, sizeof(pf_status.pf_chksum));
 	return (0);
 }
+#endif /* notyet */
 
 int
 pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
@@ -2783,14 +2790,14 @@ pfil_ifnet_wrapper(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 
 	switch (cmd) {
 	case PFIL_IFNET_ATTACH:
-		pfi_init_groups(ifp);
+//		pfi_init_groups(ifp);
 
 		pfi_attach_ifnet(ifp);
 		break;
 	case PFIL_IFNET_DETACH:
 		pfi_detach_ifnet(ifp);
 
-		pfi_destroy_groups(ifp);
+//		pfi_destroy_groups(ifp);
 		break;
 	default:
 		panic("pfil_ifnet_wrapper: unexpected cmd %lu", cmd);
@@ -2867,7 +2874,7 @@ pf_pfil_attach(void)
 		struct ifnet *ifp = ifindex2ifnet[i];
 
 		if (ifp != NULL) {
-			pfi_init_groups(ifp);
+//			pfi_init_groups(ifp);
 
 			pfi_attach_ifnet(ifp);
 		}
@@ -2904,7 +2911,7 @@ pf_pfil_detach(void)
 		struct ifnet *ifp = ifindex2ifnet[i];
 
 		if (ifp != NULL) {
-			pfi_destroy_groups(ifp);
+//			pfi_destroy_groups(ifp);
 
 			pfi_detach_ifnet(ifp);
 		}

@@ -2490,6 +2490,60 @@ pf_set_rt_ifp(struct pf_state *s, struct pf_addr *saddr)
 	}
 }
 
+#ifdef notyet
+void
+pf_attach_state(struct pf_state_key *sk, struct pf_state *s, int tail)
+{
+	s->state_key = sk;
+	sk->refcnt++;
+
+	/* list is sorted, if-bound states before floating */
+	if (tail) {
+		TAILQ_INSERT_TAIL(&sk->states, s, next);
+	} else {
+		TAILQ_INSERT_HEAD(&sk->states, s, next);
+	}
+}
+
+void
+pf_detach_state(struct pf_state *s, int flags)
+{
+	struct pf_state_key	*sk;
+
+	sk = s->state_key;
+	if (sk == NULL) {
+		return;
+	}
+
+	s->state_key = NULL;
+	TAILQ_REMOVE(&sk->states, s, next);
+	if (--sk->refcnt == 0) {
+		if (!(flags & PF_DT_SKIP_EXTGWY)) {
+			RB_REMOVE(pf_state_tree_ext_gwy, &pf_statetbl_ext_gwy, sk);
+		}
+		if (!(flags & PF_DT_SKIP_LANEXT)) {
+			RB_REMOVE(pf_state_tree_lan_ext, &pf_statetbl_lan_ext, sk);
+		}
+		free(sk, M_PF);
+	}
+}
+
+struct pf_state_key *
+pf_alloc_state_key(struct pf_state *s)
+{
+	struct pf_state_key	*sk;
+
+	sk = (struct pf_state_key *)malloc(sizeof(struct pf_state_key *), M_PF, M_NOWAIT);
+	if (sk == NULL) {
+		return (NULL);
+	}
+	bzero(sk, sizeof(*sk));
+	TAILQ_INIT(&sk->states);
+	pf_attach_state(sk, s, 0);
+	return (sk);
+}
+#endif /* notyet */
+
 int
 pf_test_tcp(struct pf_rule **rm, struct pf_state **sm, int direction,
     struct pfi_kif *kif, struct mbuf *m, int off, void *h,

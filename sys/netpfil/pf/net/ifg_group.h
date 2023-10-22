@@ -35,8 +35,6 @@
 #ifndef _NET_IFG_GROUP_H_
 #define _NET_IFG_GROUP_H_
 
-#include <sys/queue.h>
-
 /*
  * interface groups
  */
