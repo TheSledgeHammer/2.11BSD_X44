@@ -102,7 +102,6 @@ pfi_kif_get(const char *kif_name)
 	return (pfi_lookup_create(kif_name));
 }
 
-
 void
 pfi_kif_ref(struct pfi_kif *kif, enum pfi_kif_refs what)
 {
@@ -273,23 +272,71 @@ pfi_dynaddr_update(struct pfi_dynaddr *dyn)
 	pfr_dynaddr_update(kt, dyn);
 }
 
+static void
+pfi_group_update(struct pfr_ktable *kt, struct pfi_kif *kif, int net, int flags)
+{
+    int	 e, size2 = 0;
+    struct ifg_member	*ifgm;
+
+    pfi_buffer_cnt = 0;
+    if ((kif->pfik_flags & PFI_IFLAG_GROUP)) {
+        pfi_instance_add(kif->pfik_ifp, net, flags);
+    } else if (kif->pfik_group != NULL) {
+        TAILQ_FOREACH(ifgm, &kif->pfik_group->ifg_members, ifgm_next) {
+            pfi_instance_add(ifgm->ifgm_ifp, net, flags);
+        }
+    }
+    if ((e = pfr_set_addrs(&kt->pfrkt_t, pfi_buffer, pfi_buffer_cnt, &size2, NULL, NULL, NULL, 0, PFR_TFLAG_ALLMASK))){
+        printf("pfi_table_update: cannot set %d new addresses "
+		    "into table %s: %d\n", pfi_buffer_cnt, kt->pfrkt_name, e);
+    }
+}
+
+static void
+pfi_instance_update(struct pfr_ktable *kt, struct pfi_kif *kif, int net, int flags)
+{
+	int	 e, size2 = 0;
+    struct pfi_kif		*p;
+	struct pfr_table	 t;
+
+    pfi_buffer_cnt = 0;
+    if ((kif->pfik_flags & PFI_IFLAG_INSTANCE)) {
+        pfi_instance_add(kif->pfik_ifp, net, flags);
+    } else if (strcmp(kif->pfik_name, "self")) {
+        TAILQ_FOREACH(p, &kif->pfik_grouphead, pfik_instances) {
+            pfi_instance_add(p->pfik_ifp, net, flags);
+        }
+    } else {
+        RB_FOREACH(p, pfi_ifhead, &pfi_ifs) {
+			if (p->pfik_flags & PFI_IFLAG_INSTANCE) {
+				pfi_instance_add(p->pfik_ifp, net, flags);
+            }
+        }
+    }
+	t = kt->pfrkt_t;
+	t.pfrt_flags = 0;
+	if ((e = pfr_set_addrs(&t, pfi_buffer, pfi_buffer_cnt, &size2, NULL, NULL, NULL, 0))) {
+		printf("pfi_table_update: cannot set %d new addresses "
+		    "into table %s: %d\n", pfi_buffer_cnt, kt->pfrkt_name, e);
+	}
+}
+
 void
 pfi_table_update(struct pfr_ktable *kt, struct pfi_kif *kif, int net, int flags)
 {
-	int			 e, size2 = 0;
-	struct ifg_member	*ifgm;
+    if ((kif->pfik_flags & (PFI_IFLAG_GROUP | PFI_IFLAG_INSTANCE)) && kif->pfik_ifp == NULL) {
+        pfr_clr_addrs(&kt->pfrkt_t, NULL, 0);
+        return;
+    }
+    if (kif->pfik_ifp != NULL) {
+        switch(kif->pfik_flags) {
+            case PFI_IFLAG_INSTANCE:
+            pfi_instance_update(kt, kif, net, flags);
+            return;
 
-	pfi_buffer_cnt = 0;
-
-	if (kif->pfik_ifp != NULL) {
-		pfi_instance_add(kif->pfik_ifp, net, flags);
-	}
-	else if (kif->pfik_group != NULL)
-		TAILQ_FOREACH(ifgm, &kif->pfik_group->ifg_members, ifgm_next)
-			pfi_instance_add(ifgm->ifgm_ifp, net, flags);
-
-	if ((e = pfr_set_addrs(&kt->pfrkt_t, pfi_buffer, pfi_buffer_cnt, &size2,
-	    NULL, NULL, NULL, 0, PFR_TFLAG_ALLMASK)))
-		printf("pfi_table_update: cannot set %d new addresses "
-		    "into table %s: %d\n", pfi_buffer_cnt, kt->pfrkt_name, e);
+            case PFI_IFLAG_GROUP:
+            pfi_group_update(kt, kif, net, flags);
+            return;
+        }
+    }
 }

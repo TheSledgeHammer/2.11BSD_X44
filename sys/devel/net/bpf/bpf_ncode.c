@@ -159,81 +159,81 @@ process_next:
 	case NPF_OPCODE_LW: {
 		void *n_ptr;
 
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i);	/* Size, register */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Size, register */
 		KASSERT(ncode->i < NPF_NREGS);
-		KASSERT(n >= sizeof(uint8_t) && n <= sizeof(uint32_t));
+		KASSERT(ncode->n >= sizeof(uint8_t) && ncode->n <= sizeof(uint32_t));
 
-		n_ptr = nbuf_ensure_contig(nbuf, n);
+		n_ptr = nbuf_ensure_contig(nbuf, ncode->n);
 		if (nbuf_flag_p(nbuf, NBUF_DATAREF_RESET)) {
 			npf_recache(npc, nbuf);
 		}
 		if (n_ptr == NULL) {
 			goto fail;
 		}
-		memcpy(&regs[ncode->i], n_ptr, n);
+		memcpy(&regs[ncode->i], n_ptr, ncode->n);
 		break;
 	}
 	case NPF_OPCODE_CMP:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i);	/* Value, register */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Value, register */
 		KASSERT(ncode->i < NPF_NREGS);
-		if (n != regs[ncode->i]) {
-			cmpval = (n > regs[ncode->i]) ? 1 : -1;
+		if (ncode->n != regs[ncode->i]) {
+			cmpval = (ncode->n > regs[ncode->i]) ? 1 : -1;
 		} else {
 			cmpval = 0;
 		}
 		break;
 	case NPF_OPCODE_CMPR:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i);	/* Value, register */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Value, register */
 		KASSERT(ncode->i < NPF_NREGS);
-		if (regs[n] != regs[ncode->i]) {
-			cmpval = (regs[n] > regs[ncode->i]) ? 1 : -1;
+		if (regs[ncode->n] != regs[ncode->i]) {
+			cmpval = (regs[ncode->n] > regs[ncode->i]) ? 1 : -1;
 		} else {
 			cmpval = 0;
 		}
 		break;
 	case NPF_OPCODE_BEQ:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n);	/* N-code line */
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);	/* N-code line */
 		if (cmpval == 0)
 			goto make_jump;
 		break;
 	case NPF_OPCODE_BNE:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n);
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
 		if (cmpval != 0)
 			goto make_jump;
 		break;
 	case NPF_OPCODE_BGT:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n);
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
 		if (cmpval > 0)
 			goto make_jump;
 		break;
 	case NPF_OPCODE_BLT:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n);
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
 		if (cmpval < 0)
 			goto make_jump;
 		break;
 	case NPF_OPCODE_RET:
-		(void)nc_fetch_word(ncode->iptr, &n);		/* Return value */
-		return n;
+		(void)nc_fetch_word(ncode->iptr, &ncode->n);		/* Return value */
+		return ncode->n;
 	case NPF_OPCODE_TAG:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i); /* Key, value */
-		if (nbuf_add_tag(nbuf, n, ncode->i)) {
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Key, value */
+		if (nbuf_add_tag(nbuf, ncode->n, ncode->i)) {
 			goto fail;
 		}
 		break;
 	case NPF_OPCODE_MOVE:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i); /* Value, register */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Value, register */
 		KASSERT(ncode->i < NPF_NREGS);
-		regs[ncode->i] = n;
+		regs[ncode->i] = ncode->n;
 		break;
 	case NPF_OPCODE_AND:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i); /* Value, register */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Value, register */
 		KASSERT(ncode->i < NPF_NREGS);
-		regs[ncode->i] = n & regs[ncode->i];
+		regs[ncode->i] = ncode->n & regs[ncode->i];
 		break;
 	case NPF_OPCODE_J:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n); /* N-code line */
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n); /* N-code line */
 make_jump:
-		ncode->iptr = nc_jump(ncode->iptr, n - 2, &lcount);
+		ncode->iptr = nc_jump(ncode->iptr, ncode->n - 2, &lcount);
 		if (__predict_false(ncode->iptr == NULL)) {
 			goto fail;
 		}
@@ -256,10 +256,10 @@ cisc_like:
 	case NPF_OPCODE_IP4MASK:
 		/* Source/destination, network address, subnet. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
-		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0], &n);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0], &ncode->n);
 		cmpval = npf_iscached(npc, NPC_IP46) ? npf_match_ipmask(npc,
 		    (sizeof(struct in_addr) << 1) | (ncode->d & 0x1),
-		    &addr, (npf_netmask_t)n) : -1;
+		    &addr, (npf_netmask_t)ncode->n) : -1;
 		break;
 	case NPF_OPCODE_IP6MASK:
 		/* Source/destination, network address, subnet. */
@@ -268,56 +268,56 @@ cisc_like:
 		    &addr.s6_addr32[0], &addr.s6_addr32[1]);
 		ncode->iptr = nc_fetch_double(ncode->iptr,
 		    &addr.s6_addr32[2], &addr.s6_addr32[3]);
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n);
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
 		cmpval = npf_iscached(npc, NPC_IP46) ? npf_match_ipmask(npc,
 		    (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1),
-		    &addr, (npf_netmask_t)n) : -1;
+		    &addr, (npf_netmask_t)ncode->n) : -1;
 		break;
 	case NPF_OPCODE_TABLE:
 		/* Source/destination, NPF table ID. */
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
 		cmpval = npf_iscached(npc, NPC_IP46) ?
-		    npf_match_table(npc, n, ncode->i) : -1;
+		    npf_match_table(npc, ncode->n, ncode->i) : -1;
 		break;
 	case NPF_OPCODE_TCP_PORTS:
 		/* Source/destination, port range. */
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
 		cmpval = npf_iscached(npc, NPC_TCP) ?
-		    npf_match_tcp_ports(npc, n, ncode->i) : -1;
+		    npf_match_tcp_ports(npc, ncode->n, ncode->i) : -1;
 		break;
 	case NPF_OPCODE_UDP_PORTS:
 		/* Source/destination, port range. */
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
 		cmpval = npf_iscached(npc, NPC_UDP) ?
-		    npf_match_udp_ports(npc, n, ncode->i) : -1;
+		    npf_match_udp_ports(npc, ncode->n, ncode->i) : -1;
 		break;
 	case NPF_OPCODE_TCP_FLAGS:
 		/* TCP flags/mask. */
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n);
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
 		cmpval = npf_iscached(npc, NPC_TCP) ?
-		    npf_match_tcpfl(npc, n) : -1;
+		    npf_match_tcpfl(npc, ncode->n) : -1;
 		break;
 	case NPF_OPCODE_ICMP4:
 		/* ICMP type/code. */
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n);
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
 		cmpval = npf_iscached(npc, NPC_ICMP) ?
-		    npf_match_icmp4(npc, n) : -1;
+		    npf_match_icmp4(npc, ncode->n) : -1;
 		break;
 	case NPF_OPCODE_ICMP6:
 		/* ICMP type/code. */
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n);
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
 		cmpval = npf_iscached(npc, NPC_ICMP) ?
-		    npf_match_icmp6(npc, n) : -1;
+		    npf_match_icmp6(npc, ncode->n) : -1;
 		break;
 	case NPF_OPCODE_PROTO:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &n);
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
 		cmpval = npf_iscached(npc, NPC_IP46) ?
-		    npf_match_proto(npc, n) : -1;
+		    npf_match_proto(npc, ncode->n) : -1;
 		break;
 	case NPF_OPCODE_ETHER:
 		/* Source/destination, reserved, ethernet type. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
-		ncode->iptr = nc_fetch_double(ncode->iptr, &n, &ncode->i);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
 		cmpval = npf_match_ether(nbuf, ncode->d, ncode->i, &regs[NPF_NREGS - 1]);
 		break;
 	default:

@@ -240,15 +240,49 @@ nbuf_ensure_writable(nbuf_t *nbuf, size_t len)
 	return nbuf->nb_nptr;
 }
 
-bool
-nbuf_cksum_barrier(nbuf_t *nbuf, int di)
+void *
+bpf_advance(struct mbuf *m, void *ptr, size_t len, size_t ensure)
 {
-	struct mbuf *m;
+    u_int off, wmark;
+	uint8_t *d;
 
-	if (di != PFIL_OUT) {
+    /* Offset with amount to advance. */
+	off = (uintptr_t)ptr - mtod(m, uintptr_t) + len;
+	wmark = m->m_len;
+
+    while (__predict_false(wmark <= off)) {
+        m = m->m_next;
+        if (__predict_false(m == NULL)) {
+			/*
+			 * If end of the chain, then the offset is
+			 * higher than packet length.
+			 */
+			return NULL;
+		}
+		wmark += m->m_len;
+	}
+	KASSERT(off < m_length(m));
+
+	/* Offset in mbuf data. */
+	d = mtod(m, uint8_t *);
+	KASSERT(off >= (wmark - m->m_len));
+	d += (off - (wmark - m->m_len));
+
+	ptr = d;
+
+	if (ensure) {
+		/* Ensure contiguousness (may change nbuf chain). */
+		d = m_pullup(nbuf, len);
+	}
+	return (d);
+}
+
+bool
+bpf_cksum_barrier(struct mbuf *m, int di)
+{
+    if (di != PFIL_OUT) {
 		return false;
 	}
-	m = nbuf->nb_mbuf0;
 	KASSERT((m->m_flags & M_PKTHDR) != 0);
 
 	if (m->m_pkthdr.csum_flags & (M_CSUM_TCPv4 | M_CSUM_UDPv4)) {
@@ -265,22 +299,21 @@ nbuf_cksum_barrier(nbuf_t *nbuf, int di)
  * => Returns 0 on success or errno on failure.
  */
 int
-nbuf_add_tag(nbuf_t *nbuf, uint32_t key, uint32_t val)
+bpf_add_tag(struct mbuf *m, int tag, uint32_t key, uint32_t val)
 {
-	struct mbuf *m = nbuf->nb_mbuf0;
-	struct m_tag *mt;
-	uint32_t *dat;
+    struct m_tag *mt;
+    uint32_t *dat;
 
-	KASSERT((m->m_flags & M_PKTHDR) != 0);
+    KASSERT((m->m_flags & M_PKTHDR) != 0);
 
-	mt = m_tag_get(PACKET_TAG_NPF, sizeof(uint32_t), M_NOWAIT);
-	if (mt == NULL) {
+    mt = m_tag_get(tag, sizeof(uint32_t), M_NOWAIT);
+    if (mt == NULL) {
 		return ENOMEM;
 	}
 	dat = (uint32_t *)(mt + 1);
 	*dat = val;
 	m_tag_prepend(m, mt);
-	return 0;
+    return (0);
 }
 
 /*
@@ -289,14 +322,13 @@ nbuf_add_tag(nbuf_t *nbuf, uint32_t key, uint32_t val)
  * => Returns 0 on success or errno on failure.
  */
 int
-nbuf_find_tag(nbuf_t *nbuf, uint32_t key, void **data)
+bpf_find_tag(struct mbuf *m, int tag, uint32_t key, void **data)
 {
-	struct mbuf *m = nbuf->nb_mbuf0;
-	struct m_tag *mt;
+    struct m_tag *mt;
 
 	KASSERT((m->m_flags & M_PKTHDR) != 0);
 
-	mt = m_tag_find(m, PACKET_TAG_NPF, NULL);
+    mt = m_tag_find(m, tag, NULL);
 	if (mt == NULL) {
 		return EINVAL;
 	}

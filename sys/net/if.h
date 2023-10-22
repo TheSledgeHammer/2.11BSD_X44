@@ -189,7 +189,7 @@ struct ifnet {							/* and the entries */
 	void				*if_softc;		/* lower-level data for this if */
 	TAILQ_ENTRY(ifnet) 	if_list;		/* all struct ifnets are chained */
 	TAILQ_HEAD(, ifaddr) if_addrlist; 	/* linked list of addresses per if */
-	//TAILQ_HEAD(, ifg_list) if_pf_groups; /* [N] list of groups per if */
+
 	char	if_xname[IFNAMSIZ];	/* external name (name + unit) */
 	int		if_pcount;			/* number of promiscuous listeners */
 	caddr_t	if_bpf;				/* packet filter structure */
@@ -227,6 +227,12 @@ struct ifnet {							/* and the entries */
 	int	if_csum_flags_rx;	/* M_CSUM_* flags for Rx */
 
 	void	*if_afdata[AF_MAX];
+
+	/*
+	 * pf specific data, used only when #if NPF > 0.
+	 */
+	//TAILQ_HEAD(, ifg_list) if_pf_groups; /* [N] list of groups per if */
+	void	*if_pf_groups;		/* pf interface groups */
 };
 #define	if_mtu			if_data.ifi_mtu
 #define	if_type			if_data.ifi_type

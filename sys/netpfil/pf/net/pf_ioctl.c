@@ -283,7 +283,7 @@ pf_empty_pool(struct pf_palist *poola)
 	while ((empty_pool_pa = TAILQ_FIRST(poola)) != NULL) {
 		pfi_dynaddr_remove(&empty_pool_pa->addr);
 		pf_tbladdr_remove(&empty_pool_pa->addr);
-		pfi_detach_rule(empty_pool_pa->kif);
+		pfi_kif_unref(empty_pool_pa->kif, PFI_KIF_REF_RULE);
 		TAILQ_REMOVE(poola, empty_pool_pa, entries);
 		free(empty_pool_pa, M_PF);
 	}
@@ -323,7 +323,7 @@ pf_rm_rule(struct pf_rulequeue *rulequeue, struct pf_rule *rule)
 		pf_tbladdr_remove(&rule->src.addr);
 		pf_tbladdr_remove(&rule->dst.addr);
 	}
-	pfi_detach_rule(rule->kif);
+	pfi_kif_unref(rule->kif, PFI_KIF_REF_RULE);
 	pf_anchor_remove(rule);
 	pf_empty_pool(&rule->rpool.list);
 	free(rule, M_PF);
@@ -635,6 +635,91 @@ pf_rollback_rules(u_int32_t ticket, int rs_num, char *anchor)
 	return (0);
 }
 
+#define PF_MD5_UPD(st, elm)											\
+		MD5Update(ctx, (u_int8_t *) &(st)->elm, sizeof((st)->elm))
+
+#define PF_MD5_UPD_STR(st, elm)										\
+		MD5Update(ctx, (u_int8_t *) (st)->elm, strlen((st)->elm))
+
+#define PF_MD5_UPD_HTONL(st, elm, stor) do {						\
+		(stor) = htonl((st)->elm);									\
+		MD5Update(ctx, (u_int8_t *) &(stor), sizeof(u_int32_t));	\
+} while (0)
+
+#define PF_MD5_UPD_HTONS(st, elm, stor) do {						\
+		(stor) = htons((st)->elm);									\
+		MD5Update(ctx, (u_int8_t *) &(stor), sizeof(u_int16_t));	\
+} while (0)
+
+void
+pf_hash_rule_addr(MD5_CTX *ctx, struct pf_rule_addr *pfr)
+{
+	PF_MD5_UPD(pfr, addr.type);
+	switch (pfr->addr.type) {
+		case PF_ADDR_DYNIFTL:
+			PF_MD5_UPD(pfr, addr.v.ifname);
+			PF_MD5_UPD(pfr, addr.iflags);
+			break;
+		case PF_ADDR_TABLE:
+			PF_MD5_UPD(pfr, addr.v.tblname);
+			break;
+		case PF_ADDR_ADDRMASK:
+			/* XXX ignore af? */
+			PF_MD5_UPD(pfr, addr.v.a.addr.addr32);
+			PF_MD5_UPD(pfr, addr.v.a.mask.addr32);
+			break;
+#ifdef notyet
+		case PF_ADDR_RTLABEL:
+			PF_MD5_UPD(pfr, addr.v.rtlabelname);
+			break;
+#endif
+	}
+
+	PF_MD5_UPD(pfr, port[0]);
+	PF_MD5_UPD(pfr, port[1]);
+	PF_MD5_UPD(pfr, neg);
+	PF_MD5_UPD(pfr, port_op);
+}
+
+void
+pf_hash_rule(MD5_CTX *ctx, struct pf_rule *rule)
+{
+	u_int16_t x;
+	u_int32_t y;
+
+	pf_hash_rule_addr(ctx, &rule->src);
+	pf_hash_rule_addr(ctx, &rule->dst);
+	PF_MD5_UPD_STR(rule, label);
+	PF_MD5_UPD_STR(rule, ifname);
+	PF_MD5_UPD_STR(rule, match_tagname);
+	PF_MD5_UPD_HTONS(rule, match_tag, x); /* dup? */
+	PF_MD5_UPD_HTONL(rule, os_fingerprint, y);
+	PF_MD5_UPD_HTONL(rule, prob, y);
+	PF_MD5_UPD_HTONL(rule, uid.uid[0], y);
+	PF_MD5_UPD_HTONL(rule, uid.uid[1], y);
+	PF_MD5_UPD(rule, uid.op);
+	PF_MD5_UPD_HTONL(rule, gid.gid[0], y);
+	PF_MD5_UPD_HTONL(rule, gid.gid[1], y);
+	PF_MD5_UPD(rule, gid.op);
+	PF_MD5_UPD_HTONL(rule, rule_flag, y);
+	PF_MD5_UPD(rule, action);
+	PF_MD5_UPD(rule, direction);
+	PF_MD5_UPD(rule, af);
+	PF_MD5_UPD(rule, quick);
+	PF_MD5_UPD(rule, ifnot);
+	PF_MD5_UPD(rule, match_tag_not);
+	PF_MD5_UPD(rule, natpass);
+	PF_MD5_UPD(rule, keep_state);
+	PF_MD5_UPD(rule, proto);
+	PF_MD5_UPD(rule, type);
+	PF_MD5_UPD(rule, code);
+	PF_MD5_UPD(rule, flags);
+	PF_MD5_UPD(rule, flagset);
+	PF_MD5_UPD(rule, allow_opts);
+	PF_MD5_UPD(rule, rt);
+	PF_MD5_UPD(rule, tos);
+}
+
 int
 pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
 {
@@ -651,18 +736,21 @@ pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
 	    ticket != rs->rules[rs_num].inactive.ticket)
 		return (EBUSY);
 
+	if (rs == &pf_main_ruleset) {
+		error = pf_setup_pfsync_matching(rs);
+		if (error != 0) {
+			return (error);
+		}
+	}
 	/* Swap rules, keep the old. */
 	s = splsoftnet();
 	old_rules = rs->rules[rs_num].active.ptr;
 	old_rcount = rs->rules[rs_num].active.rcount;
 	old_array = rs->rules[rs_num].active.ptr_array;
 
-	rs->rules[rs_num].active.ptr =
-	    rs->rules[rs_num].inactive.ptr;
-	rs->rules[rs_num].active.ptr_array =
-	    rs->rules[rs_num].inactive.ptr_array;
-	rs->rules[rs_num].active.rcount =
-	    rs->rules[rs_num].inactive.rcount;
+	rs->rules[rs_num].active.ptr = rs->rules[rs_num].inactive.ptr;
+	rs->rules[rs_num].active.ptr_array = rs->rules[rs_num].inactive.ptr_array;
+	rs->rules[rs_num].active.rcount = rs->rules[rs_num].inactive.rcount;
 	rs->rules[rs_num].inactive.ptr = old_rules;
 	rs->rules[rs_num].inactive.ptr_array = old_array;
 	rs->rules[rs_num].inactive.rcount = old_rcount;
@@ -681,6 +769,166 @@ pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
 	rs->rules[rs_num].inactive.open = 0;
 	pf_remove_if_empty_ruleset(rs);
 	splx(s);
+	return (0);
+}
+
+void
+pf_state_export(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_state *s)
+{
+	int secs = time_second;
+	bzero(sp, sizeof(struct pfsync_state));
+
+	/* copy from state key */
+	sp->lan.addr = sk->lan.addr;
+	sp->lan.port = sk->lan.port;
+	sp->gwy.addr = sk->gwy.addr;
+	sp->gwy.port = sk->gwy.port;
+	sp->ext.addr = sk->ext.addr;
+	sp->ext.port = sk->ext.port;
+	sp->proto = sk->proto;
+	sp->af = sk->af;
+	sp->direction = sk->direction;
+
+	/* copy from state */
+	memcpy(&sp->id, &s->id, sizeof(sp->id));
+	sp->creatorid = s->creatorid;
+	strlcpy(sp->ifname, s->kif->pfik_name, sizeof(sp->ifname));
+	pf_state_peer_to_pfsync(&s->src, &sp->src);
+	pf_state_peer_to_pfsync(&s->dst, &sp->dst);
+
+	sp->rule = s->rule.ptr->nr;
+	sp->nat_rule = (s->nat_rule.ptr == NULL) ?  -1 : s->nat_rule.ptr->nr;
+	sp->anchor = (s->anchor.ptr == NULL) ?  -1 : s->anchor.ptr->nr;
+
+	pf_state_counter_to_pfsync(s->bytes[0], sp->bytes[0]);
+	pf_state_counter_to_pfsync(s->bytes[1], sp->bytes[1]);
+	pf_state_counter_to_pfsync(s->packets[0], sp->packets[0]);
+	pf_state_counter_to_pfsync(s->packets[1], sp->packets[1]);
+	sp->creation = secs - s->creation;
+	sp->expire = pf_state_expires(s);
+	sp->log = s->log;
+	sp->allow_opts = s->allow_opts;
+	sp->timeout = s->timeout;
+
+	if (s->src_node)
+		sp->sync_flags |= PFSYNC_FLAG_SRCNODE;
+	if (s->nat_src_node)
+		sp->sync_flags |= PFSYNC_FLAG_NATSRCNODE;
+
+	if (sp->expire > secs)
+		sp->expire -= secs;
+	else
+		sp->expire = 0;
+}
+
+void
+pf_state_import(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_state *s)
+{
+	/* copy to state key */
+	sk->lan.addr = sp->lan.addr;
+	sk->lan.port = sp->lan.port;
+	sk->gwy.addr = sp->gwy.addr;
+	sk->gwy.port = sp->gwy.port;
+	sk->ext.addr = sp->ext.addr;
+	sk->ext.port = sp->ext.port;
+	sk->proto = sp->proto;
+	sk->af = sp->af;
+	sk->direction = sp->direction;
+
+	/* copy to state */
+	memcpy(&s->id, &sp->id, sizeof(sp->id));
+	s->creatorid = sp->creatorid;
+	pf_state_peer_from_pfsync(&sp->src, &s->src);
+	pf_state_peer_from_pfsync(&sp->dst, &s->dst);
+
+	s->rule.ptr = &pf_default_rule;
+	s->rule.ptr->states++;
+	s->nat_rule.ptr = NULL;
+	s->anchor.ptr = NULL;
+	s->rt_kif = NULL;
+	s->creation = time_second;
+	s->expire = time_second;
+	s->timeout = sp->timeout;
+	if (sp->expire > 0)
+		s->expire -= pf_default_rule.timeout[sp->timeout] - sp->expire;
+	s->pfsync_time = 0;
+	s->packets[0] = s->packets[1] = 0;
+	s->bytes[0] = s->bytes[1] = 0;
+}
+
+int
+pf_state_add(struct pfsync_state* sp)
+{
+	struct pf_state		*s;
+	struct pf_state_key	*sk;
+	struct pfi_kif		*kif;
+
+	if (sp->timeout >= PFTM_MAX &&
+			sp->timeout != PFTM_UNTIL_PACKET) {
+		return EINVAL;
+	}
+	s = (struct pf_state *)malloc(sizeof(struct pf_state *), M_PF, M_NOWAIT);
+	if (s == NULL) {
+		return ENOMEM;
+	}
+	bzero(s, sizeof(struct pf_state));
+	if ((sk = pf_alloc_state_key(s)) == NULL) {
+		free(s, M_PF);
+		return ENOMEM;
+	}
+	pf_state_import(sp, sk, s);
+	kif = pfi_kif_get(sp->ifname);
+	if (kif == NULL) {
+		free(s, M_PF);
+		free(sk, M_PF);
+		return ENOENT;
+	}
+	if (pf_insert_state(kif, s)) {
+		pfi_kif_unref(kif, PFI_KIF_REF_NONE);
+		free(s, M_PF);
+		return ENOMEM;
+	}
+
+	return 0;
+}
+
+int
+pf_setup_pfsync_matching(struct pf_ruleset *rs)
+{
+	MD5_CTX			 ctx;
+	struct pf_rule		*rule;
+	int			 rs_cnt;
+	u_int8_t		 digest[PF_MD5_DIGEST_LENGTH];
+
+	MD5Init(&ctx);
+	for (rs_cnt = 0; rs_cnt < PF_RULESET_MAX; rs_cnt++) {
+		/* XXX PF_RULESET_SCRUB as well? */
+		if (rs_cnt == PF_RULESET_SCRUB)
+			continue;
+
+		if (rs->rules[rs_cnt].inactive.ptr_array)
+			free(rs->rules[rs_cnt].inactive.ptr_array, M_TEMP);
+		rs->rules[rs_cnt].inactive.ptr_array = NULL;
+
+		if (rs->rules[rs_cnt].inactive.rcount) {
+			rs->rules[rs_cnt].inactive.ptr_array =
+			    malloc(sizeof(void *) *
+			    rs->rules[rs_cnt].inactive.rcount,
+			    M_TEMP, M_NOWAIT);
+
+			if (!rs->rules[rs_cnt].inactive.ptr_array)
+				return (ENOMEM);
+		}
+
+		TAILQ_FOREACH(rule, rs->rules[rs_cnt].inactive.ptr,
+		    entries) {
+			pf_hash_rule(&ctx, rule);
+			(rs->rules[rs_cnt].inactive.ptr_array)[rule->nr] = rule;
+		}
+	}
+
+	MD5Final(digest, &ctx);
+	memcpy(pf_status.pf_chksum, digest, sizeof(pf_status.pf_chksum));
 	return (0);
 }
 
@@ -883,12 +1131,13 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		else
 			rule->nr = 0;
 		if (rule->ifname[0]) {
-			rule->kif = pfi_attach_rule(rule->ifname);
+			rule->kif = pfi_kif_get(rule->ifname);
 			if (rule->kif == NULL) {
 				free(rule, M_PF);
 				error = EINVAL;
 				break;
 			}
+			pfi_kif_ref(rule->kif, PFI_KIF_REF_RULE);
 		}
 
 #ifdef ALTQ
@@ -1089,12 +1338,13 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			}
 #endif /* INET6 */
 			if (newrule->ifname[0]) {
-				newrule->kif = pfi_attach_rule(newrule->ifname);
+				newrule->kif = pfi_kif_get(newrule->ifname);
 				if (newrule->kif == NULL) {
 					free(newrule, M_PF);
 					error = EINVAL;
 					break;
 				}
+				pfi_kif_ref(newrule->kif, PFI_KIF_REF_RULE);
 			} else
 				newrule->kif = NULL;
 
@@ -1729,7 +1979,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		}
 		bcopy(&pp->addr, pa, sizeof(struct pf_pooladdr));
 		if (pa->ifname[0]) {
-			pa->kif = pfi_attach_rule(pa->ifname);
+			pa->kif = pfi_kif_get(pa->ifname);
 			if (pa->kif == NULL) {
 				free(pa, M_PF);
 				error = EINVAL;
@@ -1738,7 +1988,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		}
 		if (pfi_dynaddr_setup(&pa->addr, pp->af)) {
 			pfi_dynaddr_remove(&pa->addr);
-			pfi_detach_rule(pa->kif);
+			pfi_kif_unref(pa->kif, PFI_KIF_REF_RULE);
 			free(pa, M_PF);
 			error = EINVAL;
 			break;
@@ -1837,7 +2087,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			}
 #endif /* INET6 */
 			if (newpa->ifname[0]) {
-				newpa->kif = pfi_attach_rule(newpa->ifname);
+				newpa->kif = pfi_kif_get(newpa->ifname);
 				if (newpa->kif == NULL) {
 					free(newpa, M_PF);
 					error = EINVAL;
@@ -1848,7 +2098,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			if (pfi_dynaddr_setup(&newpa->addr, pca->af) ||
 			    pf_tbladdr_setup(ruleset, &newpa->addr)) {
 				pfi_dynaddr_remove(&newpa->addr);
-				pfi_detach_rule(newpa->kif);
+				pfi_kif_unref(newpa->kif, PFI_KIF_REF_RULE);
 				free(newpa, M_PF);
 				error = EINVAL;
 				break;
@@ -1877,7 +2127,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			TAILQ_REMOVE(&pool->list, oldpa, entries);
 			pfi_dynaddr_remove(&oldpa->addr);
 			pf_tbladdr_remove(&oldpa->addr);
-			pfi_detach_rule(oldpa->kif);
+			pfi_kif_unref(oldpa->kif, PFI_KIF_REF_RULE);
 			free(oldpa, M_PF);
 		} else {
 			if (oldpa == NULL) {
@@ -2533,11 +2783,17 @@ pfil_ifnet_wrapper(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 
 	switch (cmd) {
 	case PFIL_IFNET_ATTACH:
+		pfi_init_groups(ifp);
+
 		pfi_attach_ifnet(ifp);
 		break;
 	case PFIL_IFNET_DETACH:
 		pfi_detach_ifnet(ifp);
+
+		pfi_destroy_groups(ifp);
 		break;
+	default:
+		panic("pfil_ifnet_wrapper: unexpected cmd %lu", cmd);
 	}
 
 	return (0);
@@ -2561,7 +2817,7 @@ pfil_ifaddr_wrapper(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 		pfi_kifaddr_update_if(ifp);
 		break;
 	default:
-		panic("unexpected ioctl");
+		panic("pfil_ifaddr_wrapper: unexpected ioctl %lu", cmd);
 	}
 
 	return (0);
@@ -2607,9 +2863,15 @@ pf_pfil_attach(void)
 		goto bad4;
 #endif
 
-	for (i = 0; i < if_indexlim; i++)
-		if (ifindex2ifnet[i])
-			pfi_attach_ifnet(ifindex2ifnet[i]);
+	for (i = 0; i < if_indexlim; i++) {
+		struct ifnet *ifp = ifindex2ifnet[i];
+
+		if (ifp != NULL) {
+			pfi_init_groups(ifp);
+
+			pfi_attach_ifnet(ifp);
+		}
+	}
 	pf_pfil_attached = 1;
 
 	return (0);
@@ -2638,9 +2900,15 @@ pf_pfil_detach(void)
 	if (pf_pfil_attached == 0)
 		return (0);
 
-	for (i = 0; i < if_indexlim; i++)
-		if (pfi_index2kif[i])
-			pfi_detach_ifnet(ifindex2ifnet[i]);
+	for (i = 0; i < if_indexlim; i++) {
+		struct ifnet *ifp = ifindex2ifnet[i];
+
+		if (ifp != NULL) {
+			pfi_destroy_groups(ifp);
+
+			pfi_detach_ifnet(ifp);
+		}
+	}
 
 	pfil_remove_hook(pfil_ifaddr_wrapper, NULL, PFIL_IFADDR, &if_pfil);
 	pfil_remove_hook(pfil_ifnet_wrapper, NULL, PFIL_IFNET, &if_pfil);

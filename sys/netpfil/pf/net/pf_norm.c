@@ -102,8 +102,7 @@ struct pf_fragment {
 TAILQ_HEAD(pf_fragqueue, pf_fragment)	pf_fragqueue;
 TAILQ_HEAD(pf_cachequeue, pf_fragment)	pf_cachequeue;
 
-static __inline int	 pf_frag_compare(struct pf_fragment *,
-			    struct pf_fragment *);
+static __inline int	 pf_frag_compare(struct pf_fragment *, struct pf_fragment *);
 RB_HEAD(pf_frag_tree, pf_fragment)	pf_frag_tree, pf_cache_tree;
 RB_PROTOTYPE(pf_frag_tree, pf_fragment, fr_entry, pf_frag_compare);
 RB_GENERATE(pf_frag_tree, pf_fragment, fr_entry, pf_frag_compare);
@@ -114,12 +113,9 @@ void			 pf_remove_fragment(struct pf_fragment *);
 void			 pf_flush_fragments(void);
 void			 pf_free_fragment(struct pf_fragment *);
 struct pf_fragment	*pf_find_fragment(struct ip *, struct pf_frag_tree *);
-struct mbuf		*pf_reassemble(struct mbuf **, struct pf_fragment **,
-			    struct pf_frent *, int);
-struct mbuf		*pf_fragcache(struct mbuf **, struct ip*,
-			    struct pf_fragment **, int, int, int *);
-int			 pf_normalize_tcpopt(struct pf_rule *, struct mbuf *,
-			    struct tcphdr *, int);
+struct mbuf		*pf_reassemble(struct mbuf **, struct pf_fragment **, struct pf_frent *, int);
+struct mbuf		*pf_fragcache(struct mbuf **, struct ip*, struct pf_fragment **, int, int, int *);
+int			 	pf_normalize_tcpopt(struct pf_rule *, struct mbuf *, struct tcphdr *, int);
 
 #define	DPFPRINTF(x) do {				\
 	if (pf_status.debug >= PF_DEBUG_MISC) {		\

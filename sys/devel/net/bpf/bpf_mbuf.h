@@ -140,4 +140,10 @@ bool		nbuf_cksum_barrier(nbuf_t *, int);
 int			nbuf_add_tag(nbuf_t *, uint32_t, uint32_t);
 int			nbuf_find_tag(nbuf_t *, uint32_t, void **);
 
+
+void 	*bpf_advance(struct mbuf *, void *, size_t, size_t);
+bool 	bpf_cksum_barrier(struct mbuf *, int);
+int 	bpf_add_tag(struct mbuf *, int, uint32_t, uint32_t);
+int 	bpf_find_tag(struct mbuf *, int, uint32_t, void **);
+
 #endif /* _BPF_MBUF_H_ */

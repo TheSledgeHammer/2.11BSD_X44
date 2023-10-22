@@ -377,15 +377,14 @@ pf_state_add(struct pfsync_state* sp)
 		return ENOMEM;
 	}
 	pf_state_import(sp, sk, s);
-	kif = pfi_attach_rule(sp->ifname);
+	kif = pfi_kif_get(sp->ifname);
 	if (kif == NULL) {
 		free(s, M_PF);
 		free(sk, M_PF);
 		return ENOENT;
 	}
 	if (pf_insert_state(kif, s)) {
-		pfi_detach_rule(kif, PFI_KIF_REF_NONE);
-		//pfi_kif_unref(kif, PFI_KIF_REF_NONE);
+		pfi_kif_unref(kif, PFI_KIF_REF_NONE);
 		free(s, M_PF);
 		return ENOMEM;
 	}

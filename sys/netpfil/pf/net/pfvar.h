@@ -45,6 +45,8 @@
 #include <netinet/in.h>
 #include <netinet/tcp_fsm.h>
 
+#include <net/ifg_group.h>
+
 union sockaddr_union {
 	struct sockaddr         sa;
 	struct sockaddr_in      sin;
@@ -676,16 +678,16 @@ struct pf_src_node {
 
 struct pf_state_scrub {
 	struct timeval	pfss_last;	/* time received last packet	*/
-	u_int32_t	pfss_tsecr;	/* last echoed timestamp	*/
-	u_int32_t	pfss_tsval;	/* largest timestamp		*/
+	u_int32_t	pfss_tsecr;		/* last echoed timestamp	*/
+	u_int32_t	pfss_tsval;		/* largest timestamp		*/
 	u_int32_t	pfss_tsval0;	/* original timestamp		*/
 	u_int16_t	pfss_flags;
-#define PFSS_TIMESTAMP	0x0001		/* modulate timestamp		*/
+#define PFSS_TIMESTAMP	0x0001	/* modulate timestamp		*/
 #define PFSS_PAWS	0x0010		/* stricter PAWS checks		*/
-#define PFSS_PAWS_IDLED	0x0020		/* was idle too long.  no PAWS	*/
-#define PFSS_DATA_TS	0x0040		/* timestamp on data packets	*/
-#define PFSS_DATA_NOTS	0x0080		/* no timestamp on data packets	*/
-	u_int8_t	pfss_ttl;	/* stashed TTL			*/
+#define PFSS_PAWS_IDLED	0x0020	/* was idle too long.  no PAWS	*/
+#define PFSS_DATA_TS	0x0040	/* timestamp on data packets	*/
+#define PFSS_DATA_NOTS	0x0080	/* no timestamp on data packets	*/
+	u_int8_t	pfss_ttl;		/* stashed TTL			*/
 	u_int8_t	pad;
 	u_int32_t	pfss_ts_mod;	/* timestamp modulation		*/
 };
@@ -708,6 +710,41 @@ struct pf_state_peer {
 };
 
 TAILQ_HEAD(pf_state_queue, pf_state);
+
+/* keep synced with struct pf_state_key, used in RB_FIND */
+struct pf_state_key_cmp {
+	struct pf_state_host lan;
+	struct pf_state_host gwy;
+	struct pf_state_host ext;
+	sa_family_t	 af;
+	u_int8_t	 proto;
+	u_int8_t	 direction;
+	u_int8_t	 pad;
+};
+
+TAILQ_HEAD(pf_statelist, pf_state);
+
+struct pf_state_key {
+	struct pf_state_host lan;
+	struct pf_state_host gwy;
+	struct pf_state_host ext;
+	sa_family_t	 af;
+	u_int8_t	 proto;
+	u_int8_t	 direction;
+	u_int8_t	 pad;
+
+	RB_ENTRY(pf_state_key)	entry_lan_ext;
+	RB_ENTRY(pf_state_key)	entry_ext_gwy;
+	struct pf_statelist	 	states;
+	u_short		 refcnt;	/* same size as if_index */
+};
+
+/* keep synced with struct pf_state, used in RB_FIND */
+struct pf_state_cmp {
+	u_int64_t	 id;
+	u_int32_t	 creatorid;
+	u_int32_t	 pad;
+};
 
 struct pf_state {
 	u_int64_t	 id;
@@ -1042,25 +1079,24 @@ struct pfi_if {
 
 TAILQ_HEAD(pfi_grouphead, pfi_kif);
 TAILQ_HEAD(pfi_statehead, pfi_kif);
-
 RB_HEAD(pfi_ifhead, pfi_kif);
 struct pfi_kif {
-	struct pfi_if			 	pfik_if;
-	RB_ENTRY(pfi_kif)		 	pfik_tree;
-	struct pf_state_tree_lan_ext	 pfik_lan_ext;
-	struct pf_state_tree_ext_gwy	 pfik_ext_gwy;
-	struct pfi_grouphead		 pfik_grouphead;
-	TAILQ_ENTRY(pfi_kif)		 pfik_instances;
-	TAILQ_ENTRY(pfi_kif)		 pfik_w_states;
-	struct hook_head			*pfik_ah_head;
-	void						*pfik_ah_cookie;
-	struct pfi_kif				*pfik_parent;
-	struct ifnet				*pfik_ifp;
-	//struct ifg_group			*pfik_group;
-	int				 			pfik_states;
-	int				 			pfik_rules;
-	struct hook_head		 	*pfik_ifaddrhooks;
-	TAILQ_HEAD(, pfi_dynaddr)	 pfik_dynaddrs;
+	struct pfi_if			 		pfik_if;
+	RB_ENTRY(pfi_kif)		 		pfik_tree;
+	struct pf_state_tree_lan_ext	pfik_lan_ext;
+	struct pf_state_tree_ext_gwy	pfik_ext_gwy;
+	struct pfi_grouphead		 	pfik_grouphead;
+	TAILQ_ENTRY(pfi_kif)		 	pfik_instances;
+	TAILQ_ENTRY(pfi_kif)		 	pfik_w_states;
+	struct hook_head				*pfik_ah_head;
+	void							*pfik_ah_cookie;
+	struct pfi_kif					*pfik_parent;
+	struct ifnet					*pfik_ifp;
+	struct ifg_group				*pfik_group;
+	int				 				pfik_states;
+	int				 				pfik_rules;
+	struct hook_head		 		*pfik_ifaddrhooks;
+	TAILQ_HEAD(, pfi_dynaddr)		pfik_dynaddrs;
 };
 #define pfik_name		pfik_if.pfif_name
 #define pfik_packets	pfik_if.pfif_packets
@@ -1072,17 +1108,17 @@ struct pfi_kif {
 #define pfik_states		pfik_if.pfif_states
 #define pfik_rules		pfik_if.pfif_rules
 
-enum pfi_kif_refs {
-	PFI_KIF_REF_NONE,
-	PFI_KIF_REF_STATE,
-	PFI_KIF_REF_RULE
-};
-
 #define PFI_IFLAG_GROUP		0x0001	/* group of interfaces */
 #define PFI_IFLAG_INSTANCE	0x0002	/* single instance */
 #define PFI_IFLAG_CLONABLE	0x0010	/* clonable group */
 #define PFI_IFLAG_DYNAMIC	0x0020	/* dynamic group */
 #define PFI_IFLAG_ATTACHED	0x0040	/* interface attached */
+
+enum pfi_kif_refs {
+	PFI_KIF_REF_NONE,
+	PFI_KIF_REF_STATE,
+	PFI_KIF_REF_RULE
+};
 
 struct pf_pdesc {
 	u_int64_t	 tot_len;	/* Make Mickey money */
@@ -1597,8 +1633,7 @@ void	pf_poolmask(struct pf_addr *, struct pf_addr*,
 void	pf_addr_inc(struct pf_addr *, sa_family_t);
 #endif /* INET6 */
 
-void   *pf_pull_hdr(struct mbuf *, int, void *, int, u_short *, u_short *,
-	    sa_family_t);
+void   *pf_pull_hdr(struct mbuf *, int, void *, int, u_short *, u_short *, sa_family_t);
 void	pf_change_a(void *, u_int16_t *, u_int32_t, u_int8_t);
 int	pflog_packet(struct pfi_kif *, struct mbuf *, sa_family_t, u_int8_t,
 	    u_int8_t, struct pf_rule *, struct pf_rule *, struct pf_ruleset *);
@@ -1675,21 +1710,36 @@ void		 pfi_destroy(void);
 void		 pfi_attach_clone(struct if_clone *);
 void		 pfi_attach_ifnet(struct ifnet *);
 void		 pfi_detach_ifnet(struct ifnet *);
-struct pfi_kif	*pfi_lookup_create(const char *);
+void		 pfi_init_groups(struct ifnet *)
+void		 pfi_destroy_groups(struct ifnet *);
+
+void		 pfi_attach_ifgroup(struct ifg_group *);
+void		 pfi_detach_ifgroup(struct ifg_group *);
+void		 pfi_group_change(const char *);
+int			 pfi_match_addr(struct pfi_dynaddr *, struct pf_addr *, sa_family_t);
+
+//struct pfi_kif	*pfi_lookup_create(const char *); /* deprecated: use pfi_kif_get */
 struct pfi_kif	*pfi_lookup_if(const char *);
-int		 pfi_maybe_destroy(struct pfi_kif *);
-struct pfi_kif	*pfi_attach_rule(const char *);
-void		 pfi_detach_rule(struct pfi_kif *);
-void		 pfi_attach_state(struct pfi_kif *);
-void		 pfi_detach_state(struct pfi_kif *);
-int		 pfi_dynaddr_setup(struct pf_addr_wrap *, sa_family_t);
+int		 		pfi_maybe_destroy(struct pfi_kif *);
+
+struct pfi_kif *pfi_kif_get(const char *);
+void		 pfi_kif_ref(struct pfi_kif *, enum pfi_kif_refs);
+void		 pfi_kif_unref(struct pfi_kif *, enum pfi_kif_refs);
+int			 pfi_kif_match(struct pfi_kif *rule_kif, struct pfi_kif *packet_kif);
+
+//struct pfi_kif	*pfi_attach_rule(const char *);		/* deprecated: use pfi_kif_ref */
+//void		 pfi_detach_rule(struct pfi_kif *);		/* deprecated: use pfi_kif_unref */
+//void		 pfi_attach_state(struct pfi_kif *);	/* deprecated: use pfi_kif_ref */
+//void		 pfi_detach_state(struct pfi_kif *);	/* deprecated: use pfi_kif_unref */
+
+int		 	 pfi_dynaddr_setup(struct pf_addr_wrap *, sa_family_t);
 void		 pfi_dynaddr_copyout(struct pf_addr_wrap *);
 void		 pfi_dynaddr_remove(struct pf_addr_wrap *);
 void		 pfi_fill_oldstatus(struct pf_status *);
-int		 pfi_clr_istats(const char *, int *, int);
-int		 pfi_get_ifaces(const char *, struct pfi_if *, int *, int);
-int		 pfi_match_addr(struct pfi_dynaddr *, struct pf_addr *,
-		    sa_family_t);
+int		 	 pfi_clr_istats(const char *, int *, int);
+int		 	 pfi_get_ifaces(const char *, struct pfi_if *, int *, int);
+int		   	 pfi_set_flags(const char *, int);
+int		  	 pfi_clear_flags(const char *, int);
 
 extern struct pfi_statehead	pfi_statehead;
 
@@ -1733,12 +1783,10 @@ getmicrouptime(struct timeval *tvp)
 #endif /* _KERNEL */
 
 /* these ruleset functions can be linked into userland programs (pfctl) */
-int			 pf_get_ruleset_number(u_int8_t);
+int			 	 pf_get_ruleset_number(u_int8_t);
 void			 pf_init_ruleset(struct pf_ruleset *);
-int			 pf_anchor_setup(struct pf_rule *,
-			    const struct pf_ruleset *, const char *);
-int			 pf_anchor_copyout(const struct pf_ruleset *,
-			    const struct pf_rule *, struct pfioc_rule *);
+int			 	 pf_anchor_setup(struct pf_rule *, const struct pf_ruleset *, const char *);
+int			 	 pf_anchor_copyout(const struct pf_ruleset *, const struct pf_rule *, struct pfioc_rule *);
 void			 pf_anchor_remove(struct pf_rule *);
 void			 pf_remove_if_empty_ruleset(struct pf_ruleset *);
 struct pf_anchor	*pf_find_anchor(const char *);
@@ -1747,9 +1795,8 @@ struct pf_ruleset	*pf_find_or_create_ruleset(const char *);
 void			 pf_rs_initialize(void);
 
 #ifdef _KERNEL
-int			 pf_anchor_copyout(const struct pf_ruleset *,
-			    const struct pf_rule *, struct pfioc_rule *);
-void			 pf_anchor_remove(struct pf_rule *);
+int			 	pf_anchor_copyout(const struct pf_ruleset *, const struct pf_rule *, struct pfioc_rule *);
+void			pf_anchor_remove(struct pf_rule *);
 
 #endif /* _KERNEL */
 
@@ -1762,7 +1809,7 @@ struct pf_osfp_enlist *
 struct pf_osfp_enlist *
 	pf_osfp_fingerprint_hdr(const struct ip *, const struct tcphdr *);
 void	pf_osfp_flush(void);
-int	pf_osfp_get(struct pf_osfp_ioctl *);
+int		pf_osfp_get(struct pf_osfp_ioctl *);
 void	pf_osfp_initialize(void);
 #ifdef _LKM
 void	pf_osfp_destroy(void);
