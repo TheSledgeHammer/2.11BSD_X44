@@ -103,9 +103,9 @@ struct bpf_cache {
 };
 
 static inline bool
-npf_iscached(const npf_cache_t *npc, const int inf)
+bpf_iscached(const bpf_cache_t *bpc, const int inf)
 {
-	return __predict_true((npc->npc_info & inf) != 0);
+	return __predict_true((bpc->bpc_info & inf) != 0);
 }
 
 /*

@@ -115,6 +115,12 @@ pfi_initialize(void)
 }
 
 void
+pfi_destroy(void)
+{
+	free(pfi_buffer, PFI_MTYPE);
+}
+
+void
 pfi_attach_clone(struct if_clone *ifc)
 {
 	pfi_initialize();
@@ -372,58 +378,12 @@ pfi_group_change(const char *group)
 	s = splsoftnet();
 	pfi_update++;
 	if ((kif = pfi_kif_get(group)) == NULL) {
-		panic("pfi_lookup_create failed");
+		panic("pfi_kif_get failed");
 	}
 
 	pfi_kif_update(kif);
 
 	splx(s);
-}
-
-
-struct pfi_kif *
-pfi_attach_rule(const char *name)
-{
-	struct pfi_kif	*p;
-
-	p = pfi_lookup_create(name);
-	if (p != NULL) {
-		p->pfik_rules++;
-	}
-	return (p);
-}
-
-void
-pfi_detach_rule(struct pfi_kif *p)
-{
-	if (p == NULL)
-		return;
-	if (p->pfik_rules > 0)
-		p->pfik_rules--;
-	else
-		printf("pfi_detach_rule: reference count at 0\n");
-	pfi_maybe_destroy(p);
-}
-
-void
-pfi_attach_state(struct pfi_kif *p)
-{
-	if (!p->pfik_states++)
-		TAILQ_INSERT_TAIL(&pfi_statehead, p, pfik_w_states);
-}
-
-void
-pfi_detach_state(struct pfi_kif *p)
-{
-	if (p == NULL)
-		return;
-	if (p->pfik_states <= 0) {
-		printf("pfi_detach_state: reference count <= 0\n");
-		return;
-	}
-	if (!--p->pfik_states)
-		TAILQ_REMOVE(&pfi_statehead, p, pfik_w_states);
-	pfi_maybe_destroy(p);
 }
 
 int

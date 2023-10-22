@@ -240,6 +240,26 @@ nbuf_ensure_writable(nbuf_t *nbuf, size_t len)
 	return nbuf->nb_nptr;
 }
 
+size_t
+bpf_offset(const struct mbuf *m, void *ptr)
+{
+	const u_int off = (uintptr_t)ptr - mtod(m, uintptr_t);
+	const int poff = m_length(m) + off;
+	return poff;
+}
+
+bool
+bpf_flag_p(struct mbuf *m, int flag)
+{
+	return (m->m_flags & flag) != 0;
+}
+
+void
+bpf_unset_flag(struct mbuf *m, int flag)
+{
+	m->m_flags &= ~flag;
+}
+
 void *
 bpf_advance(struct mbuf *m, void *ptr, size_t len, size_t ensure)
 {

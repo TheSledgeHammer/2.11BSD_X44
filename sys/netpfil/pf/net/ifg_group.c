@@ -76,16 +76,17 @@ __KERNEL_RCSID(0, "$NetBSD: if_compat.c,v 1.2 2008/06/18 09:06:27 yamt Exp $");
 
 #include <netinet/in.h>
 #include <netinet/in_var.h>
-
-#include <devel/net/pf/ifg_group.h>
+#include <net/ifg_group.h>
 
 #if NPF > 0
 #include <net/pfvar.h>
 #endif
 
+#ifdef notyet
 static int if_getgroup(void *, struct ifnet *);
 static int if_getgroupmembers(void *);
 static int if_group_egress_build(void);
+#endif
 
 TAILQ_HEAD(, ifg_group) ifg_head = TAILQ_HEAD_INITIALIZER(ifg_head);
 

@@ -711,6 +711,7 @@ struct pf_state_peer {
 
 TAILQ_HEAD(pf_state_queue, pf_state);
 
+#ifdef notyet
 /* keep synced with struct pf_state_key, used in RB_FIND */
 struct pf_state_key_cmp {
 	struct pf_state_host lan;
@@ -745,6 +746,7 @@ struct pf_state_cmp {
 	u_int32_t	 creatorid;
 	u_int32_t	 pad;
 };
+#endif /* not yet */
 
 struct pf_state {
 	u_int64_t	 id;
@@ -756,7 +758,7 @@ struct pf_state {
 			TAILQ_ENTRY(pf_state)	entry_updates;
 			struct pfi_kif			*kif;
 		} s;
-		char	 ifname[IFNAMSIZ];
+		char			 ifname[IFNAMSIZ];
 	} u;
 	struct pf_state_host lan;
 	struct pf_state_host gwy;
@@ -772,25 +774,24 @@ struct pf_state {
 	struct pfi_kif		*rt_kif;
 	struct pf_src_node	*src_node;
 	struct pf_src_node	*nat_src_node;
-	u_int32_t	 creation;
-	u_int32_t	 expire;
-	u_int32_t	 pfsync_time;
-
-	u_int32_t	 packets[2];
-	u_int32_t	 bytes[2];
-	u_int32_t	 creatorid;
-	sa_family_t	 af;
-	u_int8_t	 proto;
-	u_int8_t	 direction;
-	u_int16_t	 tag;
-	u_int8_t	 log;
-	u_int8_t	 allow_opts;
-	u_int8_t	 timeout;
-	u_int8_t	 sync_flags;
+	u_int32_t	 		creation;
+	u_int32_t	 		expire;
+	u_int32_t	 		pfsync_time;
+	u_int32_t	 		packets[2];
+	u_int32_t	 		bytes[2];
+	u_int32_t	 		creatorid;
+	sa_family_t	 		af;
+	u_int8_t	 		proto;
+	u_int8_t	 		direction;
+	u_int16_t	 		tag;
+	u_int8_t	 		log;
+	u_int8_t	 		allow_opts;
+	u_int8_t	 		timeout;
+	u_int8_t	 		sync_flags;
 #define	PFSTATE_NOSYNC	 0x01
 #define	PFSTATE_FROMSYNC 0x02
 #define	PFSTATE_STALE	 0x04
-	u_int8_t	 pad;
+	u_int8_t	 		pad;
 };
 
 /*
@@ -1724,14 +1725,6 @@ struct pfi_kif *pfi_kif_get(const char *);
 void		 pfi_kif_ref(struct pfi_kif *, enum pfi_kif_refs);
 void		 pfi_kif_unref(struct pfi_kif *, enum pfi_kif_refs);
 int			 pfi_kif_match(struct pfi_kif *rule_kif, struct pfi_kif *packet_kif);
-
-
-struct pfi_kif	*pfi_lookup_create(const char *);   /* deprecated: use pfi_kif_get */
-struct pfi_kif	*pfi_attach_rule(const char *);		/* deprecated: use pfi_kif_ref */
-void		    pfi_detach_rule(struct pfi_kif *);	/* deprecated: use pfi_kif_unref */
-void		    pfi_attach_state(struct pfi_kif *);	/* deprecated: use pfi_kif_ref */
-void		    pfi_detach_state(struct pfi_kif *);	/* deprecated: use pfi_kif_unref */
-
 int		 	 pfi_dynaddr_setup(struct pf_addr_wrap *, sa_family_t);
 void		 pfi_dynaddr_copyout(struct pf_addr_wrap *);
 void		 pfi_dynaddr_remove(struct pf_addr_wrap *);

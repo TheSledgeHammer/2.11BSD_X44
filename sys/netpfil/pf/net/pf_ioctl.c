@@ -1352,8 +1352,9 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 					break;
 				}
 				pfi_kif_ref(newrule->kif, PFI_KIF_REF_RULE);
-			} else
+			} else {
 				newrule->kif = NULL;
+			}
 
 #ifdef ALTQ
 			/* set queue IDs */
@@ -2879,6 +2880,7 @@ pf_pfil_attach(void)
 			pfi_attach_ifnet(ifp);
 		}
 	}
+
 	pf_pfil_attached = 1;
 
 	return (0);

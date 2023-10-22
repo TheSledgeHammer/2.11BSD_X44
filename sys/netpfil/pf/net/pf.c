@@ -259,6 +259,9 @@ RB_GENERATE(pf_state_tree_lan_ext, pf_state, u.s.entry_lan_ext, pf_state_compare
 RB_GENERATE(pf_state_tree_ext_gwy, pf_state, u.s.entry_ext_gwy, pf_state_compare_ext_gwy);
 RB_GENERATE(pf_state_tree_id, pf_state, u.s.entry_id, pf_state_compare_id);
 
+#define	PF_DT_SKIP_LANEXT	0x01
+#define	PF_DT_SKIP_EXTGWY	0x02
+
 static __inline int
 pf_src_compare(struct pf_src_node *a, struct pf_src_node *b)
 {
@@ -372,7 +375,7 @@ pf_state_compare_lan_ext(struct pf_state *a, struct pf_state *b)
 }
 
 static __inline int
-pf_state_compare_ext_gwy(struct pf_state *a, struct pf_state *b)
+pf_state_compare_ext_gwy(struct pf_state  *a, struct pf_state *b)
 {
 	int	diff;
 
@@ -676,7 +679,7 @@ pf_insert_state(struct pfi_kif *kif, struct pf_state *state)
 
 	pf_status.fcounters[FCNT_STATE_INSERT]++;
 	pf_status.states++;
-	pfi_attach_state(kif);
+	pfi_kif_ref(kif, PFI_KIF_REF_STATE);
 #if NPFSYNC
 	pfsync_insert_state(state);
 #endif
@@ -812,7 +815,7 @@ pf_purge_expired_state(struct pf_state *cur)
 		if (--cur->anchor.ptr->states <= 0)
 			pf_rm_rule(NULL, cur->anchor.ptr);
 	pf_normalize_tcp_cleanup(cur);
-	pfi_detach_state(cur->u.s.kif);
+	pfi_kif_unref(cur->u.s.kif, PFI_KIF_REF_STATE);
 	TAILQ_REMOVE(&state_updates, cur, u.s.entry_updates);
 	free(cur, M_PF);
 	pf_status.fcounters[FCNT_STATE_REMOVALS]++;

@@ -238,7 +238,7 @@ table_tree_destroy(pt_tree_t *tree)
 
 	while ((ent = ptree_iterate(tree, NULL, PT_ASCENDING)) != NULL) {
 		ptree_remove_node(tree, ent);
-		pool_cache_put(tblent_cache, ent);
+		free(ent, M_NPF);
 	}
 }
 
@@ -448,7 +448,7 @@ npf_table_remove(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr
 		return EINVAL;
 	}
 
-	rw_enter(&t->t_lock, RW_WRITER);
+	rwl_lock(&t->t_lock);
 	switch (t->t_type) {
 	case NPF_TABLE_HASH: {
 		struct npf_hashl *htbl;
@@ -474,7 +474,7 @@ npf_table_remove(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr
 		KASSERT(false);
 		ent = NULL;
 	}
-	rw_exit(&t->t_lock);
+	rwl_unlock(&t->t_lock);
 
 	if (ent == NULL) {
 		return ENOENT;
@@ -503,7 +503,7 @@ npf_table_lookup(npf_tableset_t *tset, u_int tid,
 		return EINVAL;
 	}
 
-	rw_enter(&t->t_lock, RW_READER);
+	rwl_lock(&t->t_lock);
 	switch (t->t_type) {
 	case NPF_TABLE_HASH: {
 		struct npf_hashl *htbl;
@@ -518,7 +518,7 @@ npf_table_lookup(npf_tableset_t *tset, u_int tid,
 		KASSERT(false);
 		ent = NULL;
 	}
-	rw_exit(&t->t_lock);
+	rwl_unlock(&t->t_lock);
 
 	return ent ? 0 : ENOENT;
 }
@@ -573,7 +573,7 @@ npf_table_list(npf_tableset_t *tset, u_int tid, void *ubuf, size_t len)
 		return EINVAL;
 	}
 
-	rw_enter(&t->t_lock, RW_READER);
+	rwl_lock(&t->t_lock);
 	switch (t->t_type) {
 	case NPF_TABLE_HASH:
 		for (unsigned n = 0; n <= t->t_hashmask; n++) {
@@ -594,7 +594,7 @@ npf_table_list(npf_tableset_t *tset, u_int tid, void *ubuf, size_t len)
 	default:
 		KASSERT(false);
 	}
-	rw_exit(&t->t_lock);
+	rwl_unlock(&t->t_lock);
 
 	return error;
 }
