@@ -1528,7 +1528,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = ENOMEM;
 			break;
 		}
-		kif = pfi_lookup_create(ps->state.u.ifname);
+		kif = pfi_kif_get(ps->state.u.ifname);
 		if (kif == NULL) {
 			free(state, M_PF);
 			error = ENOENT;
