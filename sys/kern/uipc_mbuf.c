@@ -710,7 +710,7 @@ m_pullup1(n, len)
 	register struct mbuf *n;
 	int len;
 {
-	register struct mbuf *m;
+	struct mbuf *m;
 
 	m = n;
 	if (!m_ensure_contig(&m, len)) {
