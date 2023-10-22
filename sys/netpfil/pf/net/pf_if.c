@@ -451,7 +451,7 @@ _bad:
 	if (ruleset != NULL)
 		pf_remove_if_empty_ruleset(ruleset);
 	if (dyn->pfid_kif != NULL)
-        pfi_kif_unref(dyn->pfid_kif, PFI_KIF_REF_RULE);
+        	pfi_kif_unref(dyn->pfid_kif, PFI_KIF_REF_RULE);
 	free(dyn, M_DEVBUF);
 	splx(s);
 	return (rv);
