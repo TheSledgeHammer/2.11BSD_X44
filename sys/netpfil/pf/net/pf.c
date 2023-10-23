@@ -212,31 +212,34 @@ struct pf_state		*pf_find_state_recurse(struct pfi_kif *,
 			    struct pf_state *, u_int8_t);
 int			 pf_check_congestion(struct ifqueue *);
 
-#define STATE_LOOKUP()							\
-	do {								\
-		if (direction == PF_IN)					\
-			*state = pf_find_state_recurse(		\
-			    kif, &key, PF_EXT_GWY);			\
-		else							\
-			*state = pf_find_state_recurse(		\
-			    kif, &key, PF_LAN_EXT);			\
-		if (*state == NULL)					\
-			return (PF_DROP);				\
-		if (direction == PF_OUT &&				\
+void			 pf_attach_state(struct pf_state_key *, struct pf_state *, int);
+void			 pf_detach_state(struct pf_state *, int);
+
+#define STATE_LOOKUP()										\
+	do {													\
+		if (direction == PF_IN)								\
+			*state = pf_find_state_recurse(					\
+			    kif, &key, PF_EXT_GWY);						\
+		else												\
+			*state = pf_find_state_recurse(					\
+			    kif, &key, PF_LAN_EXT);						\
+		if (*state == NULL)									\
+			return (PF_DROP);								\
+		if (direction == PF_OUT &&							\
 		    (((*state)->rule.ptr->rt == PF_ROUTETO &&		\
 		    (*state)->rule.ptr->direction == PF_OUT) ||		\
 		    ((*state)->rule.ptr->rt == PF_REPLYTO &&		\
 		    (*state)->rule.ptr->direction == PF_IN)) &&		\
-		    (*state)->rt_kif != NULL &&				\
-		    (*state)->rt_kif != kif)				\
-			return (PF_PASS);				\
+		    (*state)->rt_kif != NULL &&						\
+		    (*state)->rt_kif != kif)						\
+			return (PF_PASS);								\
 	} while (0)
 
-#define	STATE_TRANSLATE(s) \
-	(s)->lan.addr.addr32[0] != (s)->gwy.addr.addr32[0] || \
-	((s)->af == AF_INET6 && \
-	((s)->lan.addr.addr32[1] != (s)->gwy.addr.addr32[1] || \
-	(s)->lan.addr.addr32[2] != (s)->gwy.addr.addr32[2] || \
+#define	STATE_TRANSLATE(s) 									\
+	(s)->lan.addr.addr32[0] != (s)->gwy.addr.addr32[0] || 	\
+	((s)->af == AF_INET6 && 								\
+	((s)->lan.addr.addr32[1] != (s)->gwy.addr.addr32[1] || 	\
+	(s)->lan.addr.addr32[2] != (s)->gwy.addr.addr32[2] || 	\
 	(s)->lan.addr.addr32[3] != (s)->gwy.addr.addr32[3])) || \
 	(s)->lan.port != (s)->gwy.port
 
@@ -502,8 +505,7 @@ pf_find_state_recurse(struct pfi_kif *kif, struct pf_state *key, u_int8_t tree)
 	switch (tree) {
 	case PF_LAN_EXT:
 		for (; kif != NULL; kif = kif->pfik_parent) {
-			s = RB_FIND(pf_state_tree_lan_ext,
-			    &kif->pfik_lan_ext, key);
+			s = RB_FIND(pf_state_tree_lan_ext, &kif->pfik_lan_ext, key);
 			if (s != NULL)
 				return (s);
 		}
@@ -795,10 +797,8 @@ pf_purge_expired_state(struct pf_state *cur)
 		    cur->ext.port, cur->lan.port,
 		    cur->src.seqhi, cur->src.seqlo + 1,
 		    TH_RST|TH_ACK, 0, 0, 0, 1, NULL, NULL);
-	RB_REMOVE(pf_state_tree_ext_gwy,
-	    &cur->u.s.kif->pfik_ext_gwy, cur);
-	RB_REMOVE(pf_state_tree_lan_ext,
-	    &cur->u.s.kif->pfik_lan_ext, cur);
+	RB_REMOVE(pf_state_tree_ext_gwy, &cur->u.s.kif->pfik_ext_gwy, cur);
+	RB_REMOVE(pf_state_tree_lan_ext, &cur->u.s.kif->pfik_lan_ext, cur);
 	RB_REMOVE(pf_state_tree_id, &tree_id, cur);
 #if NPFSYNC
 	pfsync_delete_state(cur);
@@ -2502,30 +2502,29 @@ pf_attach_state(struct pf_state_key *sk, struct pf_state *s, int tail)
 
 	/* list is sorted, if-bound states before floating */
 	if (tail) {
-		TAILQ_INSERT_TAIL(&sk->states, s, next);
+		TAILQ_INSERT_TAIL(&sk->states, s, u.s.next);
 	} else {
-		TAILQ_INSERT_HEAD(&sk->states, s, next);
+		TAILQ_INSERT_HEAD(&sk->states, s, u.s.next);
 	}
 }
 
 void
 pf_detach_state(struct pf_state *s, int flags)
 {
-	struct pf_state_key	*sk;
+	struct pf_state_key	*sk = s->state_key;
 
-	sk = s->state_key;
 	if (sk == NULL) {
 		return;
 	}
 
 	s->state_key = NULL;
-	TAILQ_REMOVE(&sk->states, s, next);
+	TAILQ_REMOVE(&sk->states, s, u.s.next);
 	if (--sk->refcnt == 0) {
 		if (!(flags & PF_DT_SKIP_EXTGWY)) {
-			RB_REMOVE(pf_state_tree_ext_gwy, &pf_statetbl_ext_gwy, sk);
+			RB_REMOVE(pf_state_tree_ext_gwy, &s->u.s.kif->pfik_ext_gwy, s);
 		}
 		if (!(flags & PF_DT_SKIP_LANEXT)) {
-			RB_REMOVE(pf_state_tree_lan_ext, &pf_statetbl_lan_ext, sk);
+			RB_REMOVE(pf_state_tree_lan_ext, &s->u.s.kif->pfik_lan_ext, s);
 		}
 		free(sk, M_PF);
 	}

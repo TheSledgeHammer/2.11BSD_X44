@@ -710,88 +710,65 @@ struct pf_state_peer {
 };
 
 TAILQ_HEAD(pf_state_queue, pf_state);
-
-#ifdef notyet
-/* keep synced with struct pf_state_key, used in RB_FIND */
-struct pf_state_key_cmp {
-	struct pf_state_host lan;
-	struct pf_state_host gwy;
-	struct pf_state_host ext;
-	sa_family_t	 af;
-	u_int8_t	 proto;
-	u_int8_t	 direction;
-	u_int8_t	 pad;
-};
-
 TAILQ_HEAD(pf_statelist, pf_state);
 
 struct pf_state_key {
-	struct pf_state_host lan;
-	struct pf_state_host gwy;
-	struct pf_state_host ext;
-	sa_family_t	 af;
-	u_int8_t	 proto;
-	u_int8_t	 direction;
-	u_int8_t	 pad;
+	struct pf_state_host 	lan;
+	struct pf_state_host 	gwy;
+	struct pf_state_host 	ext;
+	sa_family_t	 			af;
+	u_int8_t	 			proto;
+	u_int8_t	 			direction;
+	u_int8_t	 			pad;
 
-	RB_ENTRY(pf_state_key)	entry_lan_ext;
-	RB_ENTRY(pf_state_key)	entry_ext_gwy;
 	struct pf_statelist	 	states;
-	u_short		 refcnt;	/* same size as if_index */
+	u_short		 			refcnt;	/* same size as if_index */
 };
-
-/* keep synced with struct pf_state, used in RB_FIND */
-struct pf_state_cmp {
-	u_int64_t	 id;
-	u_int32_t	 creatorid;
-	u_int32_t	 pad;
-};
-#endif /* not yet */
 
 struct pf_state {
-	u_int64_t	 id;
+	u_int64_t	 			id;
 	union {
 		struct {
 			RB_ENTRY(pf_state)	 	entry_lan_ext;
 			RB_ENTRY(pf_state)	 	entry_ext_gwy;
 			RB_ENTRY(pf_state)	 	entry_id;
 			TAILQ_ENTRY(pf_state)	entry_updates;
+			TAILQ_ENTRY(pf_state)	next;
 			struct pfi_kif			*kif;
 		} s;
-		char			 ifname[IFNAMSIZ];
+		char			 	ifname[IFNAMSIZ];
 	} u;
-	struct pf_state_host lan;
-	struct pf_state_host gwy;
-	struct pf_state_host ext;
-	struct pf_state_peer src;
-	struct pf_state_peer dst;
-	union pf_rule_ptr 	rule;
-	union pf_rule_ptr 	anchor;
-	union pf_rule_ptr 	nat_rule;
-	struct pf_addr	 	rt_addr;
-	struct pf_state_key	*state_key;
-	//struct pfi_kif		*kif;
-	struct pfi_kif		*rt_kif;
-	struct pf_src_node	*src_node;
-	struct pf_src_node	*nat_src_node;
-	u_int32_t	 		creation;
-	u_int32_t	 		expire;
-	u_int32_t	 		pfsync_time;
-	u_int32_t	 		packets[2];
-	u_int32_t	 		bytes[2];
-	u_int32_t	 		creatorid;
-	sa_family_t	 		af;
-	u_int8_t	 		proto;
-	u_int8_t	 		direction;
-	u_int16_t	 		tag;
-	u_int8_t	 		log;
-	u_int8_t	 		allow_opts;
-	u_int8_t	 		timeout;
-	u_int8_t	 		sync_flags;
-#define	PFSTATE_NOSYNC	 0x01
-#define	PFSTATE_FROMSYNC 0x02
-#define	PFSTATE_STALE	 0x04
-	u_int8_t	 		pad;
+	struct pf_state_host 	lan;
+	struct pf_state_host 	gwy;
+	struct pf_state_host 	ext;
+	struct pf_state_peer 	src;
+	struct pf_state_peer 	dst;
+	union pf_rule_ptr 		rule;
+	union pf_rule_ptr 		anchor;
+	union pf_rule_ptr 		nat_rule;
+	struct pf_addr	 		rt_addr;
+	struct pf_state_key		*state_key;
+	struct pfi_kif			*rt_kif;
+	struct pf_src_node		*src_node;
+	struct pf_src_node		*nat_src_node;
+	u_int32_t	 			creation;
+	u_int32_t	 			expire;
+	u_int32_t	 			pfsync_time;
+	u_int32_t	 			packets[2];
+	u_int32_t	 			bytes[2];
+	u_int32_t	 			creatorid;
+	sa_family_t	 			af;
+	u_int8_t	 			proto;
+	u_int8_t	 			direction;
+	u_int16_t	 			tag;
+	u_int8_t	 			log;
+	u_int8_t	 			allow_opts;
+	u_int8_t	 			timeout;
+	u_int8_t	 			sync_flags;
+#define	PFSTATE_NOSYNC	 	0x01
+#define	PFSTATE_FROMSYNC 	0x02
+#define	PFSTATE_STALE		0x04
+	u_int8_t	 			pad;
 };
 
 /*
@@ -1062,12 +1039,21 @@ struct pfr_ktable {
 #define pfrkt_tzero		pfrkt_ts.pfrts_tzero
 
 RB_HEAD(pf_state_tree_lan_ext, pf_state);
-RB_PROTOTYPE(pf_state_tree_lan_ext, pf_state,
-    u.s.entry_lan_ext, pf_state_compare_lan_ext)
+RB_PROTOTYPE(pf_state_tree_lan_ext, pf_state, u.s.entry_lan_ext, pf_state_compare_lan_ext)
 
 RB_HEAD(pf_state_tree_ext_gwy, pf_state);
-RB_PROTOTYPE(pf_state_tree_ext_gwy, pf_state,
-    u.s.entry_ext_gwy, pf_state_compare_ext_gwy)
+RB_PROTOTYPE(pf_state_tree_ext_gwy, pf_state, u.s.entry_ext_gwy, pf_state_compare_ext_gwy)
+
+/*
+RB_HEAD(pf_state_tree_lan_ext, pf_state_key);
+RB_PROTOTYPE(pf_state_tree_lan_ext, pf_state_key, entry_lan_ext, pf_state_compare_lan_ext);
+
+RB_HEAD(pf_state_tree_ext_gwy, pf_state_key);
+RB_PROTOTYPE(pf_state_tree_ext_gwy, pf_state_key, entry_ext_gwy, pf_state_compare_ext_gwy);
+*/
+/* state tables */
+//extern struct pf_state_tree_lan_ext	 pf_statetbl_lan_ext;
+//extern struct pf_state_tree_ext_gwy	 pf_statetbl_ext_gwy;
 
 struct pfi_if {
 	char				pfif_name[IFNAMSIZ];

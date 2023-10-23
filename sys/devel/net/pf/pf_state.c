@@ -5,185 +5,20 @@
  *      Author: marti
  */
 
-//#include <net/pfvar.h>
-#include <net/if_pfsync.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/kernel.h>
+#include <sys/time.h>
+#include <sys/malloc.h>
+#include <sys/endian.h>
+
+#include <net/pfvar.h>
+#include <devel/net/pf/if_pfsync.h>
 #include <devel/net/pf/pfvar_priv.h>
-
-/* pf */
-void			 pf_attach_state(struct pf_state_key *, struct pf_state *, int);
-void			 pf_detach_state(struct pf_state *, int);
-
-static __inline int pf_state_compare_lan_ext(struct pf_state_key *, struct pf_state_key *);
-static __inline int pf_state_compare_ext_gwy(struct pf_state_key *,	struct pf_state_key *);
-
-static __inline int
-pf_state_compare_lan_ext(struct pf_state_key *a, struct pf_state_key *b)
-{
-	int	diff;
-
-	if ((diff = a->proto - b->proto) != 0)
-		return (diff);
-	if ((diff = a->af - b->af) != 0)
-		return (diff);
-	switch (a->af) {
-#ifdef INET
-	case AF_INET:
-		if (a->lan.addr.addr32[0] > b->lan.addr.addr32[0])
-			return (1);
-		if (a->lan.addr.addr32[0] < b->lan.addr.addr32[0])
-			return (-1);
-		if (a->ext.addr.addr32[0] > b->ext.addr.addr32[0])
-			return (1);
-		if (a->ext.addr.addr32[0] < b->ext.addr.addr32[0])
-			return (-1);
-		break;
-#endif /* INET */
-#ifdef INET6
-	case AF_INET6:
-		if (a->lan.addr.addr32[3] > b->lan.addr.addr32[3])
-			return (1);
-		if (a->lan.addr.addr32[3] < b->lan.addr.addr32[3])
-			return (-1);
-		if (a->ext.addr.addr32[3] > b->ext.addr.addr32[3])
-			return (1);
-		if (a->ext.addr.addr32[3] < b->ext.addr.addr32[3])
-			return (-1);
-		if (a->lan.addr.addr32[2] > b->lan.addr.addr32[2])
-			return (1);
-		if (a->lan.addr.addr32[2] < b->lan.addr.addr32[2])
-			return (-1);
-		if (a->ext.addr.addr32[2] > b->ext.addr.addr32[2])
-			return (1);
-		if (a->ext.addr.addr32[2] < b->ext.addr.addr32[2])
-			return (-1);
-		if (a->lan.addr.addr32[1] > b->lan.addr.addr32[1])
-			return (1);
-		if (a->lan.addr.addr32[1] < b->lan.addr.addr32[1])
-			return (-1);
-		if (a->ext.addr.addr32[1] > b->ext.addr.addr32[1])
-			return (1);
-		if (a->ext.addr.addr32[1] < b->ext.addr.addr32[1])
-			return (-1);
-		if (a->lan.addr.addr32[0] > b->lan.addr.addr32[0])
-			return (1);
-		if (a->lan.addr.addr32[0] < b->lan.addr.addr32[0])
-			return (-1);
-		if (a->ext.addr.addr32[0] > b->ext.addr.addr32[0])
-			return (1);
-		if (a->ext.addr.addr32[0] < b->ext.addr.addr32[0])
-			return (-1);
-		break;
-#endif /* INET6 */
-	}
-
-	if ((diff = a->lan.port - b->lan.port) != 0)
-		return (diff);
-	if ((diff = a->ext.port - b->ext.port) != 0)
-		return (diff);
-
-	return (0);
-}
-
-static __inline int
-pf_state_compare_ext_gwy(struct pf_state_key *a, struct pf_state_key *b)
-{
-	int	diff;
-
-	if ((diff = a->proto - b->proto) != 0)
-		return (diff);
-	if ((diff = a->af - b->af) != 0)
-		return (diff);
-	switch (a->af) {
-#ifdef INET
-	case AF_INET:
-		if (a->ext.addr.addr32[0] > b->ext.addr.addr32[0])
-			return (1);
-		if (a->ext.addr.addr32[0] < b->ext.addr.addr32[0])
-			return (-1);
-		if (a->gwy.addr.addr32[0] > b->gwy.addr.addr32[0])
-			return (1);
-		if (a->gwy.addr.addr32[0] < b->gwy.addr.addr32[0])
-			return (-1);
-		break;
-#endif /* INET */
-#ifdef INET6
-	case AF_INET6:
-		if (a->ext.addr.addr32[3] > b->ext.addr.addr32[3])
-			return (1);
-		if (a->ext.addr.addr32[3] < b->ext.addr.addr32[3])
-			return (-1);
-		if (a->gwy.addr.addr32[3] > b->gwy.addr.addr32[3])
-			return (1);
-		if (a->gwy.addr.addr32[3] < b->gwy.addr.addr32[3])
-			return (-1);
-		if (a->ext.addr.addr32[2] > b->ext.addr.addr32[2])
-			return (1);
-		if (a->ext.addr.addr32[2] < b->ext.addr.addr32[2])
-			return (-1);
-		if (a->gwy.addr.addr32[2] > b->gwy.addr.addr32[2])
-			return (1);
-		if (a->gwy.addr.addr32[2] < b->gwy.addr.addr32[2])
-			return (-1);
-		if (a->ext.addr.addr32[1] > b->ext.addr.addr32[1])
-			return (1);
-		if (a->ext.addr.addr32[1] < b->ext.addr.addr32[1])
-			return (-1);
-		if (a->gwy.addr.addr32[1] > b->gwy.addr.addr32[1])
-			return (1);
-		if (a->gwy.addr.addr32[1] < b->gwy.addr.addr32[1])
-			return (-1);
-		if (a->ext.addr.addr32[0] > b->ext.addr.addr32[0])
-			return (1);
-		if (a->ext.addr.addr32[0] < b->ext.addr.addr32[0])
-			return (-1);
-		if (a->gwy.addr.addr32[0] > b->gwy.addr.addr32[0])
-			return (1);
-		if (a->gwy.addr.addr32[0] < b->gwy.addr.addr32[0])
-			return (-1);
-		break;
-#endif /* INET6 */
-	}
-
-	if ((diff = a->ext.port - b->ext.port) != 0)
-		return (diff);
-	if ((diff = a->gwy.port - b->gwy.port) != 0)
-		return (diff);
-
-	return (0);
-}
-
-void
-pf_attach_state(struct pf_state_key *sk, struct pf_state *s, int tail)
-{
-	s->state_key = sk;
-	sk->refcnt++;
-
-	/* list is sorted, if-bound states before floating */
-	if (tail) {
-		TAILQ_INSERT_TAIL(&sk->states, s, next);
-	} else {
-		TAILQ_INSERT_HEAD(&sk->states, s, next);
-	}
-}
-
-void
-pf_detach_state(struct pf_state *s, int flags)
-{
-	struct pf_state_key	*sk = s->state_key;
-
-	if (sk == NULL)
-		return;
-
-	s->state_key = NULL;
-	TAILQ_REMOVE(&sk->states, s, next);
-	if (--sk->refcnt == 0) {
-		if (!(flags & PF_DT_SKIP_EXTGWY))
-			RB_REMOVE(pf_state_tree_ext_gwy, &pf_statetbl_ext_gwy, sk);
-		if (!(flags & PF_DT_SKIP_LANEXT))
-			RB_REMOVE(pf_state_tree_lan_ext, &pf_statetbl_lan_ext, sk);
-		pool_put(&pf_state_key_pl, sk);
-	}
-}
 
 
 /* pf_ioctl */
@@ -207,7 +42,7 @@ pf_state_export(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_stat
 	/* copy from state */
 	memcpy(&sp->id, &s->id, sizeof(sp->id));
 	sp->creatorid = s->creatorid;
-	strlcpy(sp->ifname, s->kif->pfik_name, sizeof(sp->ifname));
+	strlcpy(sp->ifname, s->u.s.kif->pfik_name, sizeof(sp->ifname));
 	pf_state_peer_to_pfsync(&s->src, &sp->src);
 	pf_state_peer_to_pfsync(&s->dst, &sp->dst);
 
@@ -306,3 +141,4 @@ pf_state_add(struct pfsync_state* sp)
 
 	return 0;
 }
+

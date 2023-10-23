@@ -896,7 +896,7 @@ pf_state_export(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_stat
 	/* copy from state */
 	memcpy(&sp->id, &s->id, sizeof(sp->id));
 	sp->creatorid = s->creatorid;
-	strlcpy(sp->ifname, s->kif->pfik_name, sizeof(sp->ifname));
+	strlcpy(sp->ifname, s->u.s.kif->pfik_name, sizeof(sp->ifname));
 	pf_state_peer_to_pfsync(&s->src, &sp->src);
 	pf_state_peer_to_pfsync(&s->dst, &sp->dst);
 
