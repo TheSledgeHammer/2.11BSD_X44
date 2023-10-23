@@ -1734,8 +1734,6 @@ void		pf_qid_unref(u_int32_t);
 
 extern struct pf_status	pf_status;
 
-#define PFSTATE_HIWAT		100000		/* default state table size */
-
 struct pf_pool_limit {
 	void		*pp;
 	unsigned	 limit;
