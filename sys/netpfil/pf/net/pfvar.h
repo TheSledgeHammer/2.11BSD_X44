@@ -1039,21 +1039,10 @@ struct pfr_ktable {
 #define pfrkt_tzero		pfrkt_ts.pfrts_tzero
 
 RB_HEAD(pf_state_tree_lan_ext, pf_state);
-RB_PROTOTYPE(pf_state_tree_lan_ext, pf_state, u.s.entry_lan_ext, pf_state_compare_lan_ext)
+RB_PROTOTYPE(pf_state_tree_lan_ext, pf_state, u.s.entry_lan_ext, pf_state_compare_lan_ext);
 
 RB_HEAD(pf_state_tree_ext_gwy, pf_state);
-RB_PROTOTYPE(pf_state_tree_ext_gwy, pf_state, u.s.entry_ext_gwy, pf_state_compare_ext_gwy)
-
-/*
-RB_HEAD(pf_state_tree_lan_ext, pf_state_key);
-RB_PROTOTYPE(pf_state_tree_lan_ext, pf_state_key, entry_lan_ext, pf_state_compare_lan_ext);
-
-RB_HEAD(pf_state_tree_ext_gwy, pf_state_key);
-RB_PROTOTYPE(pf_state_tree_ext_gwy, pf_state_key, entry_ext_gwy, pf_state_compare_ext_gwy);
-*/
-/* state tables */
-//extern struct pf_state_tree_lan_ext	 pf_statetbl_lan_ext;
-//extern struct pf_state_tree_ext_gwy	 pf_statetbl_ext_gwy;
+RB_PROTOTYPE(pf_state_tree_ext_gwy, pf_state, u.s.entry_ext_gwy, pf_state_compare_ext_gwy);
 
 struct pfi_if {
 	char				pfif_name[IFNAMSIZ];
