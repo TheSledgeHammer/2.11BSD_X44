@@ -181,7 +181,7 @@ pfattach(int num)
 	pfi_initialize();
 	pf_osfp_initialize();
 
-	pf_pool_limit_set(pf_pool_limits[PF_LIMIT_STATES], PFSTATE_HIWAT);
+	pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_STATES], PFSTATE_HIWAT);
 
 	RB_INIT(&tree_src_tracking);
 	RB_INIT(&pf_anchors);
@@ -264,7 +264,7 @@ pfdetach(void)
 #endif /* NPFSYNC > 0 */
 	}
 
-	pf_purge_expired_states(pf_status.states);
+	pf_purge_expired_states();
 #if NPFSYNC > 0
 	pfsync_clear_states(pf_status.hostid, NULL);
 #endif /* NPFSYNC > 0 */
@@ -278,7 +278,7 @@ pfdetach(void)
 		node->expire = 1;
 		node->states = 0;
 	}
-	pf_purge_expired_src_nodes(0);
+	pf_purge_expired_src_nodes();
 
 	/* clear tables */
 	memset(&pt, '\0', sizeof(pt));
@@ -297,7 +297,7 @@ pfdetach(void)
 	pf_remove_if_empty_ruleset(&pf_main_ruleset);
 
 	/* destroy the pools */
-	pf_pool_limit_get(pf_pool_limits[PF_LIMIT_STATES]);
+	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_STATES]);
 
 	/* destroy subsystems */
 	pf_normalize_destroy();
@@ -736,7 +736,7 @@ pf_rollback_rules(u_int32_t ticket, int rs_num, char *anchor)
 	rs->rules[rs_num].inactive.open = 0;
 	return (0);
 }
-#ifdef notyet
+
 #define PF_MD5_UPD(st, elm)											\
 		MD5Update(ctx, (u_int8_t *) &(st)->elm, sizeof((st)->elm))
 
@@ -821,7 +821,6 @@ pf_hash_rule(MD5_CTX *ctx, struct pf_rule *rule)
 	PF_MD5_UPD(rule, rt);
 	PF_MD5_UPD(rule, tos);
 }
-#endif /* notyet */
 
 int
 pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
@@ -839,14 +838,12 @@ pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
 	    ticket != rs->rules[rs_num].inactive.ticket)
 		return (EBUSY);
 
-#ifdef notyet
 	if (rs == &pf_main_ruleset) {
 		error = pf_setup_pfsync_matching(rs);
 		if (error != 0) {
 			return (error);
 		}
 	}
-#endif
 
 	/* Swap rules, keep the old. */
 	s = splsoftnet();
@@ -998,7 +995,7 @@ pf_state_add(struct pfsync_state* sp)
 
 	return 0;
 }
-
+#endif /* notyet */
 int
 pf_setup_pfsync_matching(struct pf_ruleset *rs)
 {
@@ -1038,7 +1035,7 @@ pf_setup_pfsync_matching(struct pf_ruleset *rs)
 	memcpy(pf_status.pf_chksum, digest, sizeof(pf_status.pf_chksum));
 	return (0);
 }
-#endif /* notyet */
+
 
 int
 pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
@@ -1876,8 +1873,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EINVAL;
 			goto fail;
 		}
-		pf_pool_limit_set(pf_pool_limits[pl->index], pl->limit);
-		//pool_sethardlimit(pf_pool_limits[pl->index].pp, pl->limit, NULL, 0);
+		pf_pool_limit_set(&pf_pool_limits[pl->index], pl->limit);
 		old_limit = pf_pool_limits[pl->index].limit;
 		pf_pool_limits[pl->index].limit = pl->limit;
 		pl->limit = old_limit;
