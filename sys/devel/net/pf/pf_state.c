@@ -141,4 +141,3 @@ pf_state_add(struct pfsync_state* sp)
 
 	return 0;
 }
-

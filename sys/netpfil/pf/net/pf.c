@@ -146,6 +146,8 @@ struct pf_rule		*pf_get_translation(struct pf_pdesc *, struct mbuf *,
 			    struct pf_addr *, u_int16_t,
 			    struct pf_addr *, u_int16_t,
 			    struct pf_addr *, u_int16_t *);
+void		 pf_attach_state(struct pf_state_key *, struct pf_state *, int);
+void		 pf_detach_state(struct pf_state *, int);
 int			 pf_test_tcp(struct pf_rule **, struct pf_state **,
 			    int, struct pfi_kif *, struct mbuf *, int,
 			    void *, struct pf_pdesc *, struct pf_rule **,
@@ -211,9 +213,6 @@ static int		 pf_add_mbuf_tag(struct mbuf *, u_int);
 struct pf_state		*pf_find_state_recurse(struct pfi_kif *,
 			    struct pf_state *, u_int8_t);
 int			 pf_check_congestion(struct ifqueue *);
-
-void			 pf_attach_state(struct pf_state_key *, struct pf_state *, int);
-void			 pf_detach_state(struct pf_state *, int);
 
 #define STATE_LOOKUP()										\
 	do {													\
@@ -616,47 +615,51 @@ pf_insert_src_node(struct pf_src_node **sn, struct pf_rule *rule,
 	return (0);
 }
 
+void
+pf_stateins_err(const char *tree, struct pf_state *state)
+{
+	if (pf_status.debug >= PF_DEBUG_MISC) {
+		printf("pf: state insert failed: %s", tree);
+		printf(" lan: ");
+		pf_print_host(&state->lan.addr, state->lan.port,
+		    state->af);
+		printf(" gwy: ");
+		pf_print_host(&state->gwy.addr, state->gwy.port,
+		    state->af);
+		printf(" ext: ");
+		pf_print_host(&state->ext.addr, state->ext.port,
+		    state->af);
+		if (state->sync_flags & PFSTATE_FROMSYNC)
+			printf(" (from sync)");
+		printf("\n");
+	}
+}
+
 int
 pf_insert_state(struct pfi_kif *kif, struct pf_state *state)
 {
+	struct pf_state_key *sk;
+	struct pf_state 	*sp;
+
 	/* Thou MUST NOT insert multiple duplicate keys */
 	state->u.s.kif = kif;
 	if (RB_INSERT(pf_state_tree_lan_ext, &kif->pfik_lan_ext, state)) {
-		if (pf_status.debug >= PF_DEBUG_MISC) {
-			printf("pf: state insert failed: tree_lan_ext");
-			printf(" lan: ");
-			pf_print_host(&state->lan.addr, state->lan.port,
-			    state->af);
-			printf(" gwy: ");
-			pf_print_host(&state->gwy.addr, state->gwy.port,
-			    state->af);
-			printf(" ext: ");
-			pf_print_host(&state->ext.addr, state->ext.port,
-			    state->af);
-			if (state->sync_flags & PFSTATE_FROMSYNC)
-				printf(" (from sync)");
-			printf("\n");
+		sk = state->state_key;
+		TAILQ_FOREACH(sp, &sk->states, u.s.entry_next) {
+			if (sp->u.s.kif == kif) {
+				pf_stateins_err("tree_lan_ext", state);
+				pf_detach_state(state, PF_DT_SKIP_LANEXT|PF_DT_SKIP_EXTGWY);
+				return (-1);
+			}
 		}
-		return (-1);
+		pf_detach_state(state, PF_DT_SKIP_LANEXT | PF_DT_SKIP_EXTGWY);
+		pf_attach_state(sk, state, kif == pfi_self ? 1 : 0);
 	}
 
 	if (RB_INSERT(pf_state_tree_ext_gwy, &kif->pfik_ext_gwy, state)) {
-		if (pf_status.debug >= PF_DEBUG_MISC) {
-			printf("pf: state insert failed: tree_ext_gwy");
-			printf(" lan: ");
-			pf_print_host(&state->lan.addr, state->lan.port,
-			    state->af);
-			printf(" gwy: ");
-			pf_print_host(&state->gwy.addr, state->gwy.port,
-			    state->af);
-			printf(" ext: ");
-			pf_print_host(&state->ext.addr, state->ext.port,
-			    state->af);
-			if (state->sync_flags & PFSTATE_FROMSYNC)
-				printf(" (from sync)");
-			printf("\n");
-		}
-		RB_REMOVE(pf_state_tree_lan_ext, &kif->pfik_lan_ext, state);
+		sk = state->state_key;
+		pf_stateins_err("tree_ext_gwy", state);
+		pf_detach_state(state, PF_DT_SKIP_EXTGWY);
 		return (-1);
 	}
 
@@ -673,8 +676,7 @@ pf_insert_state(struct pfi_kif *kif, struct pf_state *state)
 				printf(" (from sync)");
 			printf("\n");
 		}
-		RB_REMOVE(pf_state_tree_lan_ext, &kif->pfik_lan_ext, state);
-		RB_REMOVE(pf_state_tree_ext_gwy, &kif->pfik_ext_gwy, state);
+		pf_detach_state(state, 0);
 		return (-1);
 	}
 	TAILQ_INSERT_HEAD(&state_updates, state, u.s.entry_updates);
@@ -788,22 +790,38 @@ pf_src_tree_remove_state(struct pf_state *s)
 	s->src_node = s->nat_src_node = NULL;
 }
 
+/* callers should be at splsoftnet */
 void
-pf_purge_expired_state(struct pf_state *cur)
+pf_unlink_state(struct pf_state *cur)
 {
-	if (cur->src.state == PF_TCPS_PROXY_DST)
+	if (cur->src.state == PF_TCPS_PROXY_DST) {
 		pf_send_tcp(cur->rule.ptr, cur->af,
 		    &cur->ext.addr, &cur->lan.addr,
 		    cur->ext.port, cur->lan.port,
 		    cur->src.seqhi, cur->src.seqlo + 1,
 		    TH_RST|TH_ACK, 0, 0, 0, 1, NULL, NULL);
-	RB_REMOVE(pf_state_tree_ext_gwy, &cur->u.s.kif->pfik_ext_gwy, cur);
-	RB_REMOVE(pf_state_tree_lan_ext, &cur->u.s.kif->pfik_lan_ext, cur);
+	}
 	RB_REMOVE(pf_state_tree_id, &tree_id, cur);
 #if NPFSYNC
 	pfsync_delete_state(cur);
 #endif
+	cur->timeout = PFTM_UNLINKED;
 	pf_src_tree_remove_state(cur);
+	pf_detach_state(cur, 0);
+}
+
+/* callers should be at splsoftnet and hold the
+ * write_lock on pf_consistency_lock */
+void
+pf_free_state(struct pf_state *cur)
+{
+#if NPFSYNC
+	if (pfsyncif != NULL &&
+	    (pfsyncif->sc_bulk_send_next == cur ||
+	    pfsyncif->sc_bulk_terminator == cur))
+		return;
+#endif
+	KASSERT(cur->timeout == PFTM_UNLINKED);
 	if (--cur->rule.ptr->states <= 0 &&
 	    cur->rule.ptr->src_nodes <= 0)
 		pf_rm_rule(NULL, cur->rule.ptr);
@@ -817,9 +835,19 @@ pf_purge_expired_state(struct pf_state *cur)
 	pf_normalize_tcp_cleanup(cur);
 	pfi_kif_unref(cur->u.s.kif, PFI_KIF_REF_STATE);
 	TAILQ_REMOVE(&state_updates, cur, u.s.entry_updates);
+	if (cur->tag) {
+		pf_tag_unref(cur->tag);
+	}
 	free(cur, M_PF);
 	pf_status.fcounters[FCNT_STATE_REMOVALS]++;
 	pf_status.states--;
+}
+
+void
+pf_purge_expired_state(struct pf_state *cur)
+{
+	pf_unlink_state(cur);
+	pf_free_state(cur);
 }
 
 void
@@ -827,11 +855,14 @@ pf_purge_expired_states(void)
 {
 	struct pf_state		*cur, *next;
 
-	for (cur = RB_MIN(pf_state_tree_id, &tree_id);
-	    cur; cur = next) {
+	for (cur = RB_MIN(pf_state_tree_id, &tree_id); cur; cur = next) {
 		next = RB_NEXT(pf_state_tree_id, &tree_id, cur);
-		if (pf_state_expires(cur) <= time_second)
+		if (cur->timeout == PFTM_UNLINKED) {
+			pf_free_state(cur);
+		} else if (pf_state_expires(cur) <= time_second) {
+			/* unlink and free expired state */
 			pf_purge_expired_state(cur);
+		}
 	}
 }
 
@@ -2493,7 +2524,6 @@ pf_set_rt_ifp(struct pf_state *s, struct pf_addr *saddr)
 	}
 }
 
-#ifdef notyet
 void
 pf_attach_state(struct pf_state_key *sk, struct pf_state *s, int tail)
 {
@@ -2502,9 +2532,9 @@ pf_attach_state(struct pf_state_key *sk, struct pf_state *s, int tail)
 
 	/* list is sorted, if-bound states before floating */
 	if (tail) {
-		TAILQ_INSERT_TAIL(&sk->states, s, u.s.next);
+		TAILQ_INSERT_TAIL(&sk->states, s, u.s.entry_next);
 	} else {
-		TAILQ_INSERT_HEAD(&sk->states, s, u.s.next);
+		TAILQ_INSERT_HEAD(&sk->states, s, u.s.entry_next);
 	}
 }
 
@@ -2518,7 +2548,7 @@ pf_detach_state(struct pf_state *s, int flags)
 	}
 
 	s->state_key = NULL;
-	TAILQ_REMOVE(&sk->states, s, u.s.next);
+	TAILQ_REMOVE(&sk->states, s, u.s.entry_next);
 	if (--sk->refcnt == 0) {
 		if (!(flags & PF_DT_SKIP_EXTGWY)) {
 			RB_REMOVE(pf_state_tree_ext_gwy, &s->u.s.kif->pfik_ext_gwy, s);
@@ -2544,7 +2574,6 @@ pf_alloc_state_key(struct pf_state *s)
 	pf_attach_state(sk, s, 0);
 	return (sk);
 }
-#endif /* notyet */
 
 int
 pf_test_tcp(struct pf_rule **rm, struct pf_state **sm, int direction,

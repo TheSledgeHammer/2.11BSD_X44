@@ -1610,6 +1610,12 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			    state->ext.port)) &&
 			    (!psk->psk_ifname[0] || !strcmp(psk->psk_ifname,
 			    state->u.s.kif->pfik_name))) {
+#if NPFSYNC > 0
+				/* send immediate delete of state */
+				pfsync_delete_state(state);
+				state->sync_flags |= PFSTATE_NOSYNC;
+#endif
+				//pf_unlink_state(state);
 				state->timeout = PFTM_PURGE;
 				killed++;
 			}

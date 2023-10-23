@@ -733,7 +733,7 @@ struct pf_state {
 			RB_ENTRY(pf_state)	 	entry_ext_gwy;
 			RB_ENTRY(pf_state)	 	entry_id;
 			TAILQ_ENTRY(pf_state)	entry_updates;
-			TAILQ_ENTRY(pf_state)	next;
+			TAILQ_ENTRY(pf_state)	entry_next;
 			struct pfi_kif			*kif;
 		} s;
 		char			 	ifname[IFNAMSIZ];
@@ -1556,26 +1556,25 @@ RB_PROTOTYPE(pf_state_tree_id, pf_state, entry_id, pf_state_compare_id);
 extern struct pf_state_tree_id tree_id;
 extern struct pf_state_queue state_updates;
 
-extern struct pf_anchor_global		  pf_anchors;
-extern struct pf_anchor         	  pf_main_anchor;
-extern struct pf_ruleset		  pf_main_ruleset;
+extern struct pf_anchor_global		pf_anchors;
+extern struct pf_anchor         	pf_main_anchor;
+extern struct pf_ruleset		  	pf_main_ruleset;
 TAILQ_HEAD(pf_poolqueue, pf_pool);
-extern struct pf_poolqueue		  pf_pools[2];
+extern struct pf_poolqueue		  	pf_pools[2];
 TAILQ_HEAD(pf_altqqueue, pf_altq);
-extern struct pf_altqqueue		  pf_altqs[2];
-extern struct pf_palist			  pf_pabuf;
-extern struct pfi_kif			**pfi_index2kif;
+extern struct pf_altqqueue		  	pf_altqs[2];
+extern struct pf_palist			  	pf_pabuf;
+extern struct pfi_kif			 	**pfi_index2kif;
 
-extern u_int32_t		 ticket_altqs_active;
-extern u_int32_t		 ticket_altqs_inactive;
-extern int			 altqs_inactive_open;
-extern u_int32_t		 ticket_pabuf;
+extern u_int32_t		 	ticket_altqs_active;
+extern u_int32_t		 	ticket_altqs_inactive;
+extern int			 		altqs_inactive_open;
+extern u_int32_t		 	ticket_pabuf;
 extern struct pf_altqqueue	*pf_altqs_active;
 extern struct pf_altqqueue	*pf_altqs_inactive;
 extern struct pf_poolqueue	*pf_pools_active;
 extern struct pf_poolqueue	*pf_pools_inactive;
-extern int			 pf_tbladdr_setup(struct pf_ruleset *,
-				    struct pf_addr_wrap *);
+extern int			 pf_tbladdr_setup(struct pf_ruleset *, struct pf_addr_wrap *);
 extern void			 pf_tbladdr_remove(struct pf_addr_wrap *);
 extern void			 pf_tbladdr_copyout(struct pf_addr_wrap *);
 extern void			 pf_calc_skip_steps(struct pf_rulequeue *);
@@ -1583,32 +1582,26 @@ extern void			 pf_calc_skip_steps(struct pf_rulequeue *);
 extern void			 pf_purge_timeout(void *);
 extern void			 pf_purge_expired_src_nodes(void);
 extern void			 pf_purge_expired_states(void);
+extern void			 pf_unlink_state(struct pf_state *);
+extern void			 pf_free_state(struct pf_state *);
 extern void			 pf_purge_expired_state(struct pf_state *);
-extern int			 pf_insert_state(struct pfi_kif *,
-				    struct pf_state *);
-extern int			 pf_insert_src_node(struct pf_src_node **,
-				    struct pf_rule *, struct pf_addr *,
-				    sa_family_t);
+extern int			 pf_insert_state(struct pfi_kif *, struct pf_state *);
+extern int			 pf_insert_src_node(struct pf_src_node **, struct pf_rule *, struct pf_addr *, sa_family_t);
 void				 pf_src_tree_remove_state(struct pf_state *);
 extern struct pf_state		*pf_find_state_byid(struct pf_state *);
-extern struct pf_state		*pf_find_state_all(struct pf_state *key,
-				    u_int8_t tree, int *more);
+extern struct pf_state		*pf_find_state_all(struct pf_state *key, u_int8_t tree, int *more);
 extern void			 pf_print_state(struct pf_state *);
 extern void			 pf_print_flags(u_int8_t);
 extern struct pf_anchor		*pf_find_anchor(const char *);
 extern struct pf_ruleset	*pf_find_ruleset(const char *);
 extern struct pf_ruleset	*pf_find_or_create_ruleset(const char *);
-extern void			 pf_remove_if_empty_ruleset(
-				    struct pf_ruleset *);
-extern u_int16_t		 pf_cksum_fixup(u_int16_t, u_int16_t, u_int16_t,
-				    u_int8_t);
+extern void			 pf_remove_if_empty_ruleset(struct pf_ruleset *);
+extern u_int16_t	 pf_cksum_fixup(u_int16_t, u_int16_t, u_int16_t, u_int8_t);
 
 extern struct ifnet		*sync_ifp;
-extern struct pf_rule		 pf_default_rule;
-extern void			 pf_addrcpy(struct pf_addr *, struct pf_addr *,
-				    u_int8_t);
-void				 pf_rm_rule(struct pf_rulequeue *,
-				    struct pf_rule *);
+extern struct pf_rule	pf_default_rule;
+extern void			 pf_addrcpy(struct pf_addr *, struct pf_addr *, u_int8_t);
+void				 pf_rm_rule(struct pf_rulequeue *, struct pf_rule *);
 
 
 
@@ -1625,10 +1618,8 @@ void	pf_addr_inc(struct pf_addr *, sa_family_t);
 
 void   *pf_pull_hdr(struct mbuf *, int, void *, int, u_short *, u_short *, sa_family_t);
 void	pf_change_a(void *, u_int16_t *, u_int32_t, u_int8_t);
-int	pflog_packet(struct pfi_kif *, struct mbuf *, sa_family_t, u_int8_t,
-	    u_int8_t, struct pf_rule *, struct pf_rule *, struct pf_ruleset *);
-int	pf_match_addr(u_int8_t, struct pf_addr *, struct pf_addr *,
-	    struct pf_addr *, sa_family_t);
+int	pflog_packet(struct pfi_kif *, struct mbuf *, sa_family_t, u_int8_t, u_int8_t, struct pf_rule *, struct pf_rule *, struct pf_ruleset *);
+int	pf_match_addr(u_int8_t, struct pf_addr *, struct pf_addr *, struct pf_addr *, sa_family_t);
 int	pf_match(u_int8_t, u_int32_t, u_int32_t, u_int32_t);
 int	pf_match_port(u_int8_t, u_int16_t, u_int16_t, u_int16_t);
 int	pf_match_uid(u_int8_t, uid_t, uid_t, uid_t);
@@ -1636,27 +1627,20 @@ int	pf_match_gid(u_int8_t, gid_t, gid_t, gid_t);
 
 void	pf_normalize_init(void);
 void	pf_normalize_destroy(void);
-int	pf_normalize_ip(struct mbuf **, int, struct pfi_kif *, u_short *,
-	    struct pf_pdesc *);
-int	pf_normalize_ip6(struct mbuf **, int, struct pfi_kif *, u_short *,
-	    struct pf_pdesc *);
-int	pf_normalize_tcp(int, struct pfi_kif *, struct mbuf *, int, int, void *,
-	    struct pf_pdesc *);
+int		pf_normalize_ip(struct mbuf **, int, struct pfi_kif *, u_short *, struct pf_pdesc *);
+int		pf_normalize_ip6(struct mbuf **, int, struct pfi_kif *, u_short *, struct pf_pdesc *);
+int		pf_normalize_tcp(int, struct pfi_kif *, struct mbuf *, int, int, void *, struct pf_pdesc *);
 void	pf_normalize_tcp_cleanup(struct pf_state *);
-int	pf_normalize_tcp_init(struct mbuf *, int, struct pf_pdesc *,
-	    struct tcphdr *, struct pf_state_peer *, struct pf_state_peer *);
-int	pf_normalize_tcp_stateful(struct mbuf *, int, struct pf_pdesc *,
-	    u_short *, struct tcphdr *, struct pf_state *,
-	    struct pf_state_peer *, struct pf_state_peer *, int *);
-u_int32_t
-	pf_state_expires(const struct pf_state *);
+int		pf_normalize_tcp_init(struct mbuf *, int, struct pf_pdesc *, struct tcphdr *, struct pf_state_peer *, struct pf_state_peer *);
+int		pf_normalize_tcp_stateful(struct mbuf *, int, struct pf_pdesc *, u_short *, struct tcphdr *, struct pf_state *, struct pf_state_peer *, struct pf_state_peer *, int *);
+u_int32_t	pf_state_expires(const struct pf_state *);
 void	pf_purge_expired_fragments(void);
-int	pf_routable(struct pf_addr *addr, sa_family_t af);
+int		pf_routable(struct pf_addr *addr, sa_family_t af);
 void	pfr_initialize(void);
 void	pfr_destroy(void);
-int	pfr_match_addr(struct pfr_ktable *, struct pf_addr *, sa_family_t);
+int		pfr_match_addr(struct pfr_ktable *, struct pf_addr *, sa_family_t);
 void	pfr_update_stats(struct pfr_ktable *, struct pf_addr *, sa_family_t, u_int64_t, int, int, int);
-int	pfr_pool_get(struct pfr_ktable *, int *, struct pf_addr *, struct pf_addr **, struct pf_addr **, sa_family_t);
+int		pfr_pool_get(struct pfr_ktable *, int *, struct pf_addr *, struct pf_addr **, struct pf_addr **, sa_family_t);
 void	pfr_dynaddr_update(struct pfr_ktable *, struct pfi_dynaddr *);
 struct pfr_ktable *pfr_attach_table(struct pf_ruleset *, char *);
 void	pfr_detach_table(struct pfr_ktable *);
