@@ -175,16 +175,18 @@ int			 			pfr_ktable_cnt;
 void
 pfr_initialize(void)
 {
-	/*
-	pool_init(&pfr_ktable_pl, sizeof(struct pfr_ktable), 0, 0, 0, "pfrktable", &pool_allocator_oldnointr);
-	pool_init(&pfr_kentry_pl, sizeof(struct pfr_kentry), 0, 0, 0, "pfrkentry", &pool_allocator_oldnointr);
-	*/
 	pfr_sin.sin_len = sizeof(pfr_sin);
 	pfr_sin.sin_family = AF_INET;
 	pfr_sin6.sin6_len = sizeof(pfr_sin6);
 	pfr_sin6.sin6_family = AF_INET6;
 
 	memset(&pfr_ffaddr, 0xff, sizeof(pfr_ffaddr));
+}
+
+void
+pfr_destroy(void)
+{
+
 }
 
 int

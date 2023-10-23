@@ -4823,11 +4823,10 @@ pf_test_state_icmp(struct pf_state **state, int direction, struct pfi_kif *kif,
 }
 
 int
-pf_test_state_other(struct pf_state **state, int direction, struct pfi_kif *kif,
-    struct pf_pdesc *pd)
+pf_test_state_other(struct pf_state **state, int direction, struct pfi_kif *kif, struct pf_pdesc *pd)
 {
 	struct pf_state_peer	*src, *dst;
-	struct pf_state		 key;
+	struct pf_state		 	key;
 
 	key.af = pd->af;
 	key.proto = pd->proto;

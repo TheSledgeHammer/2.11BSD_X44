@@ -67,6 +67,7 @@
 #include <netinet/ip_var.h>
 #include <netinet/ip_icmp.h>
 
+#include <crypto/md5/md5.h>
 #include <net/pfvar.h>
 
 #if NPFSYNC > 0
@@ -150,6 +151,27 @@ static void		 		tag_unref(struct pf_tags *, u_int16_t);
 
 struct pfil_head if_pfil;
 
+struct pf_pool_limit pf_pool_limits[PF_LIMIT_MAX];
+
+void
+pf_pool_limit_set(struct pf_pool_limit *pool, unsigned int limit)
+{
+	unsigned long size;
+	void *pp;
+
+	pool->limit = limit;
+	pool->pp = malloc(pool->limit, M_PF, M_NOWAIT);
+}
+
+void
+pf_pool_limit_get(struct pf_pool_limit *pool)
+{
+	if (pool->pp == NULL) {
+		return;
+	}
+	free(pool->pp, M_PF);
+}
+
 void
 pfattach(int num)
 {
@@ -158,6 +180,8 @@ pfattach(int num)
 	pfr_initialize();
 	pfi_initialize();
 	pf_osfp_initialize();
+
+	pf_pool_limit_set(pf_pool_limits[PF_LIMIT_STATES], PFSTATE_HIWAT);
 
 	RB_INIT(&tree_src_tracking);
 	RB_INIT(&pf_anchors);
@@ -203,6 +227,83 @@ pfattach(int num)
 
 	/* XXX do our best to avoid a conflict */
 	pf_status.hostid = arc4random();
+}
+
+void
+pfdetach(void)
+{
+	struct pf_anchor	*anchor;
+	struct pf_state		*state;
+	struct pf_src_node	*node;
+	struct pfioc_table	 pt;
+	u_int32_t		 	ticket;
+	int			 		i;
+	char			 	r = '\0';
+
+	(void) pf_pfil_detach();
+
+	pf_status.running = 0;
+
+	/* clear the rulesets */
+	for (i = 0; i < PF_RULESET_MAX; i++) {
+		if (pf_begin_rules(&ticket, i, &r) == 0) {
+			pf_commit_rules(ticket, i, &r);
+		}
+	}
+#ifdef ALTQ
+	if (pf_begin_altq(&ticket) == 0) {
+		pf_commit_altq(ticket);
+	}
+#endif /* ALTQ */
+
+	/* clear states */
+	RB_FOREACH(state, pf_state_tree_id, &tree_id) {
+		state->timeout = PFTM_PURGE;
+#if NPFSYNC > 0
+		state->sync_flags = PFSTATE_NOSYNC;
+#endif /* NPFSYNC > 0 */
+	}
+
+	pf_purge_expired_states(pf_status.states);
+#if NPFSYNC > 0
+	pfsync_clear_states(pf_status.hostid, NULL);
+#endif /* NPFSYNC > 0 */
+
+	/* clear source nodes */
+	RB_FOREACH(state, pf_state_tree_id, &tree_id) {
+		state->src_node = NULL;
+		state->nat_src_node = NULL;
+	}
+	RB_FOREACH(node, pf_src_tree, &tree_src_tracking) {
+		node->expire = 1;
+		node->states = 0;
+	}
+	pf_purge_expired_src_nodes(0);
+
+	/* clear tables */
+	memset(&pt, '\0', sizeof(pt));
+	pfr_clr_tables(&pt.pfrio_table, &pt.pfrio_ndel, pt.pfrio_flags);
+
+	/* destroy anchors */
+	while ((anchor = RB_MIN(pf_anchor_global, &pf_anchors)) != NULL) {
+		for (i = 0; i < PF_RULESET_MAX; i++) {
+			if (pf_begin_rules(&ticket, i, anchor->name) == 0) {
+				pf_commit_rules(ticket, i, anchor->name);
+			}
+		}
+	}
+
+	/* destroy main ruleset */
+	pf_remove_if_empty_ruleset(&pf_main_ruleset);
+
+	/* destroy the pools */
+	pf_pool_limit_get(pf_pool_limits[PF_LIMIT_STATES]);
+
+	/* destroy subsystems */
+	pf_normalize_destroy();
+	pf_osfp_destroy();
+	pfr_destroy();
+	pfi_destroy();
 }
 
 int
@@ -1761,12 +1862,12 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EINVAL;
 			goto fail;
 		}
-		//pl->limit = pf_pool_limits[pl->index].limit;
+		pl->limit = pf_pool_limits[pl->index].limit;
 		break;
 	}
 
 	case DIOCSETLIMIT: {
-	/*
+
 		struct pfioc_limit	*pl = (struct pfioc_limit *)addr;
 		int			 old_limit;
 
@@ -1775,11 +1876,11 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EINVAL;
 			goto fail;
 		}
-		pool_sethardlimit(pf_pool_limits[pl->index].pp, pl->limit, NULL, 0);
+		pf_pool_limit_set(pf_pool_limits[pl->index], pl->limit);
+		//pool_sethardlimit(pf_pool_limits[pl->index].pp, pl->limit, NULL, 0);
 		old_limit = pf_pool_limits[pl->index].limit;
 		pf_pool_limits[pl->index].limit = pl->limit;
 		pl->limit = old_limit;
-		*/
 		break;
 	}
 
@@ -2791,14 +2892,14 @@ pfil_ifnet_wrapper(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 
 	switch (cmd) {
 	case PFIL_IFNET_ATTACH:
-//		pfi_init_groups(ifp);
+		pfi_init_groups(ifp);
 
 		pfi_attach_ifnet(ifp);
 		break;
 	case PFIL_IFNET_DETACH:
 		pfi_detach_ifnet(ifp);
 
-//		pfi_destroy_groups(ifp);
+		pfi_destroy_groups(ifp);
 		break;
 	default:
 		panic("pfil_ifnet_wrapper: unexpected cmd %lu", cmd);

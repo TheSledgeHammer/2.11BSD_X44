@@ -45,17 +45,10 @@
 	if (pf_status.debug >= PF_DEBUG_NOISY)	\
 		printf(format , ##x)
 
-# define pool_t			        int
-# define pool_get(pool, flags)		malloc(*(pool), M_PF, flags)
-# define pool_put(pool, item)		free(item, M_PF)
-# define pool_init(pool, size)		(*(pool)) = (size)
-
 #endif /* _KERNEL */
 
 
 SLIST_HEAD(pf_osfp_list, pf_os_fingerprint) pf_osfp_list;
-pool_t  pf_osfp_entry_pl;
-pool_t  pf_osfp_pl;
 
 struct pf_os_fingerprint	*pf_osfp_find(struct pf_osfp_list *,
 				    struct pf_os_fingerprint *, u_int8_t);
@@ -219,21 +212,15 @@ pf_osfp_match(struct pf_osfp_enlist *list, pf_osfp_t os)
 void
 pf_osfp_initialize(void)
 {
-	pool_init(&pf_osfp_entry_pl, sizeof(struct pf_osfp_entry));
-	pool_init(&pf_osfp_pl, sizeof(struct pf_os_fingerprint));
 	SLIST_INIT(&pf_osfp_list);
 }
 
-#ifdef _LKM
+
 void
 pf_osfp_destroy(void)
 {
 	pf_osfp_flush();
-
-	pool_destroy(&pf_osfp_pl);
-	pool_destroy(&pf_osfp_entry_pl);
 }
-#endif
 
 /* Flush the fingerprint list */
 void
@@ -246,9 +233,9 @@ pf_osfp_flush(void)
 		SLIST_REMOVE_HEAD(&pf_osfp_list, fp_next);
 		while ((entry = SLIST_FIRST(&fp->fp_oses))) {
 			SLIST_REMOVE_HEAD(&fp->fp_oses, fp_entry);
-			pool_put(&pf_osfp_entry_pl, entry);
+			free(entry, M_PF);
 		}
-		pool_put(&pf_osfp_pl, fp);
+		free(fp, M_PF);
 	}
 }
 
@@ -300,11 +287,15 @@ pf_osfp_add(struct pf_osfp_ioctl *fpioc)
 			if (PF_OSFP_ENTRY_EQ(entry, &fpioc->fp_os))
 				return (EEXIST);
 		}
-		if ((entry = pool_get(&pf_osfp_entry_pl, M_NOWAIT)) == NULL)
+		entry = (struct pf_osfp_entry *)malloc(sizeof(struct pf_osfp_entry), M_PF, M_NOWAIT);
+		if (entry == NULL) {
 			return (ENOMEM);
+		}
 	} else {
-		if ((fp = pool_get(&pf_osfp_pl, M_NOWAIT)) == NULL)
+		fp = (struct pf_os_fingerprint *)malloc(sizeof(struct pf_os_fingerprint), M_PF, M_NOWAIT);
+		if (fp == NULL) {
 			return (ENOMEM);
+		}
 		memset(fp, 0, sizeof(*fp));
 		fp->fp_tcpopts = fpioc->fp_tcpopts;
 		fp->fp_wsize = fpioc->fp_wsize;
@@ -315,8 +306,9 @@ pf_osfp_add(struct pf_osfp_ioctl *fpioc)
 		fp->fp_wscale = fpioc->fp_wscale;
 		fp->fp_ttl = fpioc->fp_ttl;
 		SLIST_INIT(&fp->fp_oses);
-		if ((entry = pool_get(&pf_osfp_entry_pl, M_NOWAIT)) == NULL) {
-			pool_put(&pf_osfp_pl, fp);
+		entry = (struct pf_osfp_entry *)malloc(sizeof(struct pf_osfp_entry), M_PF, M_NOWAIT);
+		if (entry == NULL) {
+			free(fp, M_PF);
 			return (ENOMEM);
 		}
 		pf_osfp_insert(&pf_osfp_list, fp);

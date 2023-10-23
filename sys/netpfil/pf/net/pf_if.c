@@ -293,7 +293,7 @@ pfi_kif_unref(struct pfi_kif *kif, enum pfi_kif_refs what)
 		if (!kif->pfik_states--) {
 			TAILQ_REMOVE(&pfi_statehead, kif, pfik_w_states);
 		}
-		//kif->pfik_states--;
+		kif->pfik_states--;
 		break;
 	default:
 		panic("pfi_kif_unref with unknown type");

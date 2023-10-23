@@ -97,11 +97,15 @@ typedef __sa_family_t	sa_family_t;
 #define	IPPROTO_NONE		59		/* IP6 no next header */
 #define	IPPROTO_DSTOPTS		60		/* IP6 destination option */
 #define	IPPROTO_EON			80		/* ISO cnlp */
+#define	IPPROTO_ETHERIP		97		/* Ethernet-in-IP */
 #define	IPPROTO_ENCAP		98		/* encapsulation header */
 #define	IPPROTO_PIM			103		/* Protocol indep. multicast */
 #define	IPPROTO_IPCOMP		108		/* IP Payload Comp. Protocol */
 #define	IPPROTO_VRRP		112		/* VRRP RFC 2338 */
-
+#define	IPPROTO_CARP		112		/* Common Address Resolution Protocol */
+#define	IPPROTO_L2TP		115		/* L2TPv3 */
+#define	IPPROTO_SCTP		132		/* SCTP */
+#define IPPROTO_PFSYNC		240		/* PFSYNC */
 #define	IPPROTO_RAW			255		/* raw IP packet */
 #define	IPPROTO_MAX			256
 

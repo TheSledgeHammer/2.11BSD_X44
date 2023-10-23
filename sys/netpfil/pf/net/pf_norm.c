@@ -125,8 +125,6 @@ int			 	pf_normalize_tcpopt(struct pf_rule *, struct mbuf *, struct tcphdr *, in
 } while(0)
 
 /* Globals */
-//struct pool		 pf_frent_pl, pf_frag_pl, pf_cache_pl, pf_cent_pl;
-//struct pool		 pf_state_scrub_pl;
 int			 	 pf_nfrents, pf_ncache;
 
 void
@@ -136,17 +134,11 @@ pf_normalize_init(void)
 	TAILQ_INIT(&pf_cachequeue);
 }
 
-#ifdef _LKM
 void
 pf_normalize_destroy(void)
 {
-	pool_destroy(&pf_state_scrub_pl);
-	pool_destroy(&pf_cent_pl);
-	pool_destroy(&pf_cache_pl);
-	pool_destroy(&pf_frag_pl);
-	pool_destroy(&pf_frent_pl);
+
 }
-#endif
 
 static __inline int
 pf_frag_compare(struct pf_fragment *a, struct pf_fragment *b)
@@ -1315,8 +1307,7 @@ pf_normalize_tcp(int dir, struct pfi_kif *kif, struct mbuf *m, int ipoff,
 }
 
 int
-pf_normalize_tcp_init(struct mbuf *m, int off, struct pf_pdesc *pd,
-    struct tcphdr *th, struct pf_state_peer *src, struct pf_state_peer *dst)
+pf_normalize_tcp_init(struct mbuf *m, int off, struct pf_pdesc *pd, struct tcphdr *th, struct pf_state_peer *src, struct pf_state_peer *dst)
 {
 	u_int32_t tsval, tsecr;
 	u_int8_t hdr[60];

@@ -770,7 +770,7 @@ struct pf_state {
 	union pf_rule_ptr 	nat_rule;
 	struct pf_addr	 	rt_addr;
 	struct pf_state_key	*state_key;
-	struct pfi_kif		*kif;
+	//struct pfi_kif		*kif;
 	struct pfi_kif		*rt_kif;
 	struct pf_src_node	*src_node;
 	struct pf_src_node	*nat_src_node;
@@ -1002,7 +1002,9 @@ struct pfr_astats {
 };
 
 enum {
-	PFR_REFCNT_RULE, PFR_REFCNT_ANCHOR, PFR_REFCNT_MAX
+	PFR_REFCNT_RULE,
+	PFR_REFCNT_ANCHOR,
+	PFR_REFCNT_MAX
 };
 
 struct pfr_tstats {
@@ -1647,9 +1649,7 @@ int	pf_match_uid(u_int8_t, uid_t, uid_t, uid_t);
 int	pf_match_gid(u_int8_t, gid_t, gid_t, gid_t);
 
 void	pf_normalize_init(void);
-#ifdef _LKM
 void	pf_normalize_destroy(void);
-#endif
 int	pf_normalize_ip(struct mbuf **, int, struct pfi_kif *, u_short *,
 	    struct pf_pdesc *);
 int	pf_normalize_ip6(struct mbuf **, int, struct pfi_kif *, u_short *,
@@ -1667,17 +1667,12 @@ u_int32_t
 void	pf_purge_expired_fragments(void);
 int	pf_routable(struct pf_addr *addr, sa_family_t af);
 void	pfr_initialize(void);
-#ifdef _LKM
 void	pfr_destroy(void);
-#endif
 int	pfr_match_addr(struct pfr_ktable *, struct pf_addr *, sa_family_t);
-void	pfr_update_stats(struct pfr_ktable *, struct pf_addr *, sa_family_t,
-	    u_int64_t, int, int, int);
-int	pfr_pool_get(struct pfr_ktable *, int *, struct pf_addr *,
-	    struct pf_addr **, struct pf_addr **, sa_family_t);
+void	pfr_update_stats(struct pfr_ktable *, struct pf_addr *, sa_family_t, u_int64_t, int, int, int);
+int	pfr_pool_get(struct pfr_ktable *, int *, struct pf_addr *, struct pf_addr **, struct pf_addr **, sa_family_t);
 void	pfr_dynaddr_update(struct pfr_ktable *, struct pfi_dynaddr *);
-struct pfr_ktable *
-	pfr_attach_table(struct pf_ruleset *, char *);
+struct pfr_ktable *pfr_attach_table(struct pf_ruleset *, char *);
 void	pfr_detach_table(struct pfr_ktable *);
 int	pfr_clr_tables(struct pfr_table *, int *, int);
 int	pfr_add_tables(struct pfr_table *, int, int *, int);
@@ -1687,23 +1682,17 @@ int	pfr_get_tstats(struct pfr_table *, struct pfr_tstats *, int *, int);
 int	pfr_clr_tstats(struct pfr_table *, int, int *, int);
 int	pfr_set_tflags(struct pfr_table *, int, int, int, int *, int *, int);
 int	pfr_clr_addrs(struct pfr_table *, int *, int);
-int	pfr_add_addrs(struct pfr_table *, struct pfr_addr *, int, int *,
-	    int);
-int	pfr_del_addrs(struct pfr_table *, struct pfr_addr *, int, int *,
-	    int);
-int	pfr_set_addrs(struct pfr_table *, struct pfr_addr *, int, int *,
-	    int *, int *, int *, int);
+int	pfr_add_addrs(struct pfr_table *, struct pfr_addr *, int, int *, int);
+int	pfr_del_addrs(struct pfr_table *, struct pfr_addr *, int, int *, int);
+int	pfr_set_addrs(struct pfr_table *, struct pfr_addr *, int, int *, int *, int *, int *, int);
 int	pfr_get_addrs(struct pfr_table *, struct pfr_addr *, int *, int);
 int	pfr_get_astats(struct pfr_table *, struct pfr_astats *, int *, int);
-int	pfr_clr_astats(struct pfr_table *, struct pfr_addr *, int, int *,
-	    int);
-int	pfr_tst_addrs(struct pfr_table *, struct pfr_addr *, int, int *,
-	    int);
+int	pfr_clr_astats(struct pfr_table *, struct pfr_addr *, int, int *, int);
+int	pfr_tst_addrs(struct pfr_table *, struct pfr_addr *, int, int *, int);
 int	pfr_ina_begin(struct pfr_table *, u_int32_t *, int *, int);
 int	pfr_ina_rollback(struct pfr_table *, u_int32_t, int *, int);
 int	pfr_ina_commit(struct pfr_table *, u_int32_t, int *, int *, int);
-int	pfr_ina_define(struct pfr_table *, struct pfr_addr *, int, int *,
-	    int *, u_int32_t, int);
+int	pfr_ina_define(struct pfr_table *, struct pfr_addr *, int, int *, int *, u_int32_t, int);
 
 void		 pfi_initialize(void);
 void		 pfi_destroy(void);
@@ -1744,6 +1733,14 @@ void		pf_qid2qname(u_int32_t, char *);
 void		pf_qid_unref(u_int32_t);
 
 extern struct pf_status	pf_status;
+
+#define PFSTATE_HIWAT		100000		/* default state table size */
+
+struct pf_pool_limit {
+	void		*pp;
+	unsigned	 limit;
+};
+extern struct pf_pool_limit	pf_pool_limits[PF_LIMIT_MAX];
 
 int pfil4_wrapper(void *, struct mbuf **, struct ifnet *, int);
 int pfil6_wrapper(void *, struct mbuf **, struct ifnet *, int);
@@ -1803,9 +1800,7 @@ struct pf_osfp_enlist *
 void	pf_osfp_flush(void);
 int		pf_osfp_get(struct pf_osfp_ioctl *);
 void	pf_osfp_initialize(void);
-#ifdef _LKM
 void	pf_osfp_destroy(void);
-#endif
 int	pf_osfp_match(struct pf_osfp_enlist *, pf_osfp_t);
 struct pf_os_fingerprint *pf_osfp_validate(void);
 
