@@ -151,6 +151,7 @@ enum {
 	PFTM_TS_DIFF,
 	PFTM_MAX,
 	PFTM_PURGE,
+	PFTM_UNLINKED,
 	PFTM_UNTIL_PACKET
 };
 enum {
@@ -1554,6 +1555,7 @@ TAILQ_HEAD(pf_altqqueue, pf_altq);
 extern struct pf_altqqueue		  	pf_altqs[2];
 extern struct pf_palist			  	pf_pabuf;
 extern struct pfi_kif			 	**pfi_index2kif;
+extern struct pfi_kif               		*pfi_self;
 
 extern u_int32_t		 	ticket_altqs_active;
 extern u_int32_t		 	ticket_altqs_inactive;
