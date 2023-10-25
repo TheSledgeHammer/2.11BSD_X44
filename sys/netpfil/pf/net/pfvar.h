@@ -714,15 +714,6 @@ TAILQ_HEAD(pf_state_queue, pf_state);
 TAILQ_HEAD(pf_statelist, pf_state);
 
 struct pf_state_key {
-/*
-	struct pf_state_host 	lan;
-	struct pf_state_host 	gwy;
-	struct pf_state_host 	ext;
-	sa_family_t	 			af;
-	u_int8_t	 			proto;
-	u_int8_t	 			direction;
-	u_int8_t	 			pad;
-*/
 	struct pf_statelist	 	states;
 	u_short		 			refcnt;	/* same size as if_index */
 };
@@ -844,48 +835,47 @@ struct pfsync_state {
 #define PFSYNC_FLAG_NATSRCNODE	0x08
 
 /* for copies to/from userland via pf_ioctl() */
-#define pf_state_peer_to_pfsync(s,d) do {						\
-	(d)->seqlo = (s)->seqlo;									\
-	(d)->seqhi = (s)->seqhi;									\
-	(d)->seqdiff = (s)->seqdiff;								\
-	(d)->max_win = (s)->max_win;								\
-	(d)->mss = (s)->mss;										\
-	(d)->state = (s)->state;									\
-	(d)->wscale = (s)->wscale;									\
-	if ((s)->scrub) {											\
-		(d)->scrub.pfss_flags = 								\
-		    (s)->scrub->pfss_flags & PFSS_TIMESTAMP;			\
-		(d)->scrub.pfss_ttl = (s)->scrub->pfss_ttl;				\
-		(d)->scrub.pfss_ts_mod = (s)->scrub->pfss_ts_mod;		\
-		(d)->scrub.scrub_flag = PFSYNC_SCRUB_FLAG_VALID;		\
-	}															\
+#define pf_state_peer_to_pfsync(s,d) do {	\
+	(d)->seqlo = (s)->seqlo;		\
+	(d)->seqhi = (s)->seqhi;		\
+	(d)->seqdiff = (s)->seqdiff;		\
+	(d)->max_win = (s)->max_win;		\
+	(d)->mss = (s)->mss;			\
+	(d)->state = (s)->state;		\
+	(d)->wscale = (s)->wscale;		\
+	if ((s)->scrub) {						\
+		(d)->scrub.pfss_flags = 				\
+		    (s)->scrub->pfss_flags & PFSS_TIMESTAMP;		\
+		(d)->scrub.pfss_ttl = (s)->scrub->pfss_ttl;		\
+		(d)->scrub.pfss_ts_mod = (s)->scrub->pfss_ts_mod;	\
+		(d)->scrub.scrub_flag = PFSYNC_SCRUB_FLAG_VALID;	\
+	}								\
 } while (0)
 
-#define pf_state_peer_from_pfsync(s,d) do {						\
-	(d)->seqlo = (s)->seqlo;									\
-	(d)->seqhi = (s)->seqhi;									\
-	(d)->seqdiff = (s)->seqdiff;								\
-	(d)->max_win = (s)->max_win;								\
-	(d)->mss = ntohs((s)->mss);									\
-	(d)->state = (s)->state;									\
-	(d)->wscale = (s)->wscale;									\
+#define pf_state_peer_from_pfsync(s,d) do {	\
+	(d)->seqlo = (s)->seqlo;		\
+	(d)->seqhi = (s)->seqhi;		\
+	(d)->seqdiff = (s)->seqdiff;		\
+	(d)->max_win = (s)->max_win;		\
+	(d)->mss = ntohs((s)->mss);		\
+	(d)->state = (s)->state;		\
+	(d)->wscale = (s)->wscale;		\
 	if ((s)->scrub.scrub_flag == PFSYNC_SCRUB_FLAG_VALID && 	\
-	    (d)->scrub != NULL) {									\
-		(d)->scrub->pfss_flags =								\
-		    ntohs((s)->scrub.pfss_flags) & PFSS_TIMESTAMP;		\
-		(d)->scrub->pfss_ttl = (s)->scrub.pfss_ttl;				\
-		(d)->scrub->pfss_ts_mod = (s)->scrub.pfss_ts_mod;		\
-	}															\
+	    (d)->scrub != NULL) {					\
+		(d)->scrub->pfss_flags =				\
+		    ntohs((s)->scrub.pfss_flags) & PFSS_TIMESTAMP;	\
+		(d)->scrub->pfss_ttl = (s)->scrub.pfss_ttl;		\
+		(d)->scrub->pfss_ts_mod = (s)->scrub.pfss_ts_mod;	\
+	}								\
 } while (0)
 
-#define pf_state_counter_to_pfsync(s,d) do {	\
-	d[0] = (s>>32)&0xffffffff;					\
-	d[1] = s&0xffffffff;						\
+#define pf_state_counter_to_pfsync(s,d) do {			\
+	d[0] = ((s) >> 32)&0xffffffff;				\
+	d[1] = (s)&0xffffffff;					\
 } while (0)
 
-#define pf_state_counter_from_pfsync(s)			\
+#define pf_state_counter_from_pfsync(s)		\
 	(((u_int64_t)(s[0])<<32) | (u_int64_t)(s[1]))
-
 
 TAILQ_HEAD(pf_rulequeue, pf_rule);
 
@@ -1578,7 +1568,7 @@ TAILQ_HEAD(pf_altqqueue, pf_altq);
 extern struct pf_altqqueue		  	pf_altqs[2];
 extern struct pf_palist			  	pf_pabuf;
 extern struct pfi_kif			 	**pfi_index2kif;
-extern struct pfi_kif               pfi_self;
+extern struct pfi_kif               *pfi_self;
 
 extern u_int32_t		 	ticket_altqs_active;
 extern u_int32_t		 	ticket_altqs_inactive;
@@ -1650,6 +1640,7 @@ int		pf_normalize_tcp_stateful(struct mbuf *, int, struct pf_pdesc *, u_short *,
 u_int32_t	pf_state_expires(const struct pf_state *);
 void	pf_purge_expired_fragments(void);
 int		pf_routable(struct pf_addr *addr, sa_family_t af);
+struct pf_state_key *pf_alloc_state_key(struct pf_state *);
 void	pfr_initialize(void);
 void	pfr_destroy(void);
 int		pfr_match_addr(struct pfr_ktable *, struct pf_addr *, sa_family_t);

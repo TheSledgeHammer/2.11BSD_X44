@@ -31,7 +31,7 @@
 __KERNEL_RCSID(0, "$NetBSD: if_pfsync.c,v 1.8 2011/12/19 16:10:07 drochner Exp $");
 
 #include "opt_inet.h"
-#include "opt_inet6.h"
+//#include "opt_inet6.h"
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -48,8 +48,11 @@ __KERNEL_RCSID(0, "$NetBSD: if_pfsync.c,v 1.8 2011/12/19 16:10:07 drochner Exp $
 #include <net/route.h>
 #include <net/bpf.h>
 #include <netinet/in.h>
+#ifndef __NetBSD__
 #include <netinet/if_ether.h>
+#else
 #include <net/if_ether.h>
+#endif /* __NetBSD__ */
 #include <netinet/tcp.h>
 #include <netinet/tcp_seq.h>
 
@@ -72,6 +75,7 @@ extern int carp_suppress_preempt;
 #include <net/pfvar.h>
 #include <net/if_pfsync.h>
 
+#ifdef __NetBSD__
 #include <sys/conf.h>
 #include <sys/proc.h>
 #include <sys/sysctl.h>
@@ -80,7 +84,8 @@ extern int carp_suppress_preempt;
 
 struct percpu	*pfsyncstat_percpu;
 
-#define	PFSYNC_STATINC(x) _NET_STATINC(pfsyncstat_percpu, x)
+//#define	PFSYNC_STATINC(x) _NET_STATINC(pfsyncstat_percpu, x)
+#define	PFSYNC_STATINC(x)     (x)  /* do nothing */
 #endif /* __NetBSD__ */
 
 #include "pfsync.h"
@@ -101,7 +106,7 @@ struct pfsync_softc	*pfsyncif = NULL;
 
 void	pfsyncattach(int);
 int		pfsync_clone_create(struct if_clone *, int);
-int		pfsync_clone_destroy(struct ifnet *);
+void	pfsync_clone_destroy(struct ifnet *);
 void	pfsync_setmtu(struct pfsync_softc *, int);
 int		pfsync_alloc_scrub_memory(struct pfsync_state_peer *, struct pf_state_peer *);
 int		pfsync_insert_net_state(struct pfsync_state *, u_int8_t);
@@ -136,7 +141,6 @@ pfsyncattach(int npfsync)
 	percpu_malloc(pfsyncstat_percpu, sizeof(uint64_t) * PFSYNC_NSTATS);
 }
 
-int
 pfsync_clone_create(struct if_clone *ifc, int unit)
 {
 	struct ifnet *ifp;
@@ -172,10 +176,10 @@ pfsync_clone_create(struct if_clone *ifc, int unit)
 	ifp->if_hdrlen = PFSYNC_HDRLEN;
 	pfsync_setmtu(pfsyncif, ETHERMTU);
 
-	callout_init(&pfsyncif->sc_tmo, 0);
-	callout_init(&pfsyncif->sc_tdb_tmo, 0);
-	callout_init(&pfsyncif->sc_bulk_tmo, 0);
-	callout_init(&pfsyncif->sc_bulkfail_tmo, 0);
+	callout_init(&pfsyncif->sc_tmo);
+	callout_init(&pfsyncif->sc_tdb_tmo);
+	callout_init(&pfsyncif->sc_bulk_tmo);
+	callout_init(&pfsyncif->sc_bulkfail_tmo);
 	callout_setfunc(&pfsyncif->sc_tmo, pfsync_timeout, pfsyncif);
 	callout_setfunc(&pfsyncif->sc_tdb_tmo, pfsync_tdb_timeout, pfsyncif);
 	callout_setfunc(&pfsyncif->sc_bulk_tmo, pfsync_bulk_update, pfsyncif);
@@ -189,14 +193,13 @@ pfsync_clone_create(struct if_clone *ifc, int unit)
 	return (0);
 }
 
-int
+void
 pfsync_clone_destroy(struct ifnet *ifp)
 {
-	bpf_detach(ifp);
+	bpfdetach(ifp);
 	if_detach(ifp);
 	free(pfsyncif, M_DEVBUF);
 	pfsyncif = NULL;
-	return (0);
 }
 
 /*
@@ -238,7 +241,7 @@ int
 pfsync_insert_net_state(struct pfsync_state *sp, u_int8_t chksum_flag)
 {
 	struct pf_state	*st = NULL;
-	//struct pf_state_key *sk = NULL;
+	struct pf_state_key *sk = NULL;
 	struct pf_rule *r = NULL;
 	struct pfi_kif	*kif;
 
@@ -969,7 +972,7 @@ pfsync_set_ioc(struct pfsync_softc *sc, struct ifreq *ifr)
 			in_delmulti(imo->imo_membership[--imo->imo_num_memberships]);
 			imo->imo_multicast_ifp = NULL;
 		}
-		break;
+//		break;
 	}
 
 	if ((sifp = ifunit(pfsyncr.pfsyncr_syncdev)) == NULL)

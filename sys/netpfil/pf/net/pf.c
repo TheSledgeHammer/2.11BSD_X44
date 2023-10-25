@@ -38,8 +38,7 @@
 
 #include "bpfilter.h"
 #include "pflog.h"
-
-#define NPFSYNC	0
+#include "pfsync.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>

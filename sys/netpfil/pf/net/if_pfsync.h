@@ -253,12 +253,12 @@ struct pfsyncreq {
 } while (0)
 
 #ifdef _KERNEL
-void pfsync_input(struct mbuf *, int, int);
+void pfsync_input(struct mbuf *, ...);
 int pfsync_clear_states(u_int32_t, char *);
 int pfsync_pack_state(u_int8_t, struct pf_state *, int);
 #define pfsync_insert_state(st)	do {					\
 	if ((st->rule.ptr->rule_flag & PFRULE_NOSYNC) ||	\
-	    (st->state_key->proto == IPPROTO_PFSYNC))		\
+	    (st->proto == IPPROTO_PFSYNC))		\
 		st->sync_flags |= PFSTATE_NOSYNC;				\
 	else if (!st->sync_flags)							\
 		pfsync_pack_state(PFSYNC_ACT_INS, (st), 		\

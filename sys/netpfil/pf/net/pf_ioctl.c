@@ -39,8 +39,7 @@
 #include "opt_inet.h"
 #include "opt_altq.h"
 #include "opt_pfil_hooks.h"
-
-#define	NPFSYNC	0
+#include "pfsync.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -878,7 +877,6 @@ pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
 	return (0);
 }
 
-//#ifdef notyet
 void
 pf_state_export(struct pfsync_state *sp, struct pf_state *s)
 {
@@ -1635,7 +1633,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 
 	case DIOCADDSTATE: {
 		struct pfioc_state	*ps = (struct pfioc_state *)addr;
-		struct pfsync_state *sp = (struct pfsync_state *)ps->state;
+		struct pfsync_state *sp = &ps->state;
 
 		error = pf_state_add(sp);
 		break;
@@ -2780,7 +2778,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		}
 
 		if (killed > 0)
-			pf_purge_expired_src_nodes(1);
+			pf_purge_expired_src_nodes();
 
 		psnk->psnk_af = killed;
 		break;
