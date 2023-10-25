@@ -138,7 +138,7 @@ struct clockinfo {
 
 #ifdef _KERNEL  /*|| STANDALONE*/
 extern volatile time_t	time_second;
-extern volatile time_t  time__uptime;
+extern volatile time_t  time_uptime;
 #endif
 
 #ifdef _KERNEL
