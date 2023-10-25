@@ -834,6 +834,7 @@ struct pfsync_state {
 #define PFSYNC_FLAG_SRCNODE	0x04
 #define PFSYNC_FLAG_NATSRCNODE	0x08
 
+/* for copies to/from network */
 /* for copies to/from userland via pf_ioctl() */
 void pf_state_peer_hton(const struct pf_state_peer *, struct pfsync_state_peer *);
 void pf_state_peer_ntoh(const struct pfsync_state_peer *, struct pf_state_peer *);
