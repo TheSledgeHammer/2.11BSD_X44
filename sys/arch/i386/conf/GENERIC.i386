@@ -402,6 +402,7 @@ pseudo-device	gif		    4					# IPv[46] over IPv[46] tunnel (RFC1933)
 #options 		BRIDGE_IPF						# bridge uses IP/IPv6 pfil hooks too
 pseudo-device	pf							# PF packet filter
 pseudo-device	pflog							# PF log if
+#pseudo-device	pfsync						# PF sync
 
 # miscellaneous pseudo-devices
 pseudo-device	rnd						# /dev/random and in-kernel generator
