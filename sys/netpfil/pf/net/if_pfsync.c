@@ -141,6 +141,7 @@ pfsyncattach(int npfsync)
 	percpu_malloc(pfsyncstat_percpu, sizeof(uint64_t) * PFSYNC_NSTATS);
 }
 
+int
 pfsync_clone_create(struct if_clone *ifc, int unit)
 {
 	struct ifnet *ifp;
