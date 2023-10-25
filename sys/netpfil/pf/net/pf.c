@@ -6040,3 +6040,41 @@ pf_check_congestion(struct ifqueue *ifq)
 {
 	return 0;
 }
+
+void
+pf_state_peer_hton(const struct pf_state_peer *s, struct pfsync_state_peer *d)
+{
+	d->seqlo = htonl(s->seqlo);
+	d->seqhi = htonl(s->seqhi);
+	d->seqdiff = htonl(s->seqdiff);
+	d->max_win = htons(s->max_win);
+	d->mss = htons(s->mss);
+	d->state = s->state;
+	d->wscale = s->wscale;
+	if (s->scrub) {
+		d->scrub.pfss_flags =
+		    htons(s->scrub->pfss_flags & PFSS_TIMESTAMP);
+		d->scrub.pfss_ttl = (s)->scrub->pfss_ttl;
+		d->scrub.pfss_ts_mod = htonl((s)->scrub->pfss_ts_mod);
+		d->scrub.scrub_flag = PFSYNC_SCRUB_FLAG_VALID;
+	}
+}
+
+void
+pf_state_peer_ntoh(const struct pfsync_state_peer *s, struct pf_state_peer *d)
+{
+	d->seqlo = ntohl(s->seqlo);
+	d->seqhi = ntohl(s->seqhi);
+	d->seqdiff = ntohl(s->seqdiff);
+	d->max_win = ntohs(s->max_win);
+	d->mss = ntohs(s->mss);
+	d->state = s->state;
+	d->wscale = s->wscale;
+	if (s->scrub.scrub_flag == PFSYNC_SCRUB_FLAG_VALID &&
+	    d->scrub != NULL) {
+		d->scrub->pfss_flags =
+		    ntohs(s->scrub.pfss_flags) & PFSS_TIMESTAMP;
+		d->scrub->pfss_ttl = s->scrub.pfss_ttl;
+		d->scrub->pfss_ts_mod = ntohl(s->scrub.pfss_ts_mod);
+	}
+}

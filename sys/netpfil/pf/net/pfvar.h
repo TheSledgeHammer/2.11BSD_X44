@@ -835,47 +835,40 @@ struct pfsync_state {
 #define PFSYNC_FLAG_NATSRCNODE	0x08
 
 /* for copies to/from userland via pf_ioctl() */
-#define pf_state_peer_to_pfsync(s,d) do {	\
-	(d)->seqlo = (s)->seqlo;		\
-	(d)->seqhi = (s)->seqhi;		\
-	(d)->seqdiff = (s)->seqdiff;		\
-	(d)->max_win = (s)->max_win;		\
-	(d)->mss = (s)->mss;			\
-	(d)->state = (s)->state;		\
-	(d)->wscale = (s)->wscale;		\
-	if ((s)->scrub) {						\
-		(d)->scrub.pfss_flags = 				\
-		    (s)->scrub->pfss_flags & PFSS_TIMESTAMP;		\
-		(d)->scrub.pfss_ttl = (s)->scrub->pfss_ttl;		\
-		(d)->scrub.pfss_ts_mod = (s)->scrub->pfss_ts_mod;	\
-		(d)->scrub.scrub_flag = PFSYNC_SCRUB_FLAG_VALID;	\
-	}								\
+void pf_state_peer_hton(const struct pf_state_peer *, struct pfsync_state_peer *);
+void pf_state_peer_ntoh(const struct pfsync_state_peer *, struct pf_state_peer *);
+
+#define pf_state_peer_to_pfsync(s, d)   pf_state_peer_hton(s, d)
+#define pf_state_peer_from_pfsync(s, d) pf_state_peer_ntoh(s, d)
+
+#define pf_state_counter_to_pfsync(s,d) do {		\
+	d[0] = ((s)>>32)&0xffffffff;				    \
+	d[1] = (s)&0xffffffff;					        \
 } while (0)
 
-#define pf_state_peer_from_pfsync(s,d) do {	\
-	(d)->seqlo = (s)->seqlo;		\
-	(d)->seqhi = (s)->seqhi;		\
-	(d)->seqdiff = (s)->seqdiff;		\
-	(d)->max_win = (s)->max_win;		\
-	(d)->mss = ntohs((s)->mss);		\
-	(d)->state = (s)->state;		\
-	(d)->wscale = (s)->wscale;		\
-	if ((s)->scrub.scrub_flag == PFSYNC_SCRUB_FLAG_VALID && 	\
-	    (d)->scrub != NULL) {					\
-		(d)->scrub->pfss_flags =				\
-		    ntohs((s)->scrub.pfss_flags) & PFSS_TIMESTAMP;	\
-		(d)->scrub->pfss_ttl = (s)->scrub.pfss_ttl;		\
-		(d)->scrub->pfss_ts_mod = (s)->scrub.pfss_ts_mod;	\
-	}								\
-} while (0)
-
-#define pf_state_counter_to_pfsync(s,d) do {			\
-	d[0] = ((s) >> 32)&0xffffffff;				\
-	d[1] = (s)&0xffffffff;					\
-} while (0)
-
-#define pf_state_counter_from_pfsync(s)		\
+#define pf_state_counter_from_pfsync(s)				\
 	(((u_int64_t)(s[0])<<32) | (u_int64_t)(s[1]))
+
+#define pf_state_host_hton(s,d) do {					\
+	memcpy(&(d)->addr, &(s)->addr, sizeof((d)->addr));	\
+	(d)->port = (s)->port;								\
+} while (0)
+
+#define pf_state_host_ntoh(s,d) do {					\
+	memcpy(&(d)->addr, &(s)->addr, sizeof((d)->addr));	\
+	(d)->port = (s)->port;								\
+} while (0)
+
+#define pf_state_counter_hton(s,d) do {				\
+	d[0] = htonl((s>>32)&0xffffffff);				\
+	d[1] = htonl((s)&0xffffffff);					\
+} while (0)
+
+#define pf_state_counter_ntoh(s,d) do {				\
+	d = ntohl(s[0]);					            \
+	d = d<<32;						                \
+	d += ntohl(s[1]);					            \
+} while (0)
 
 TAILQ_HEAD(pf_rulequeue, pf_rule);
 

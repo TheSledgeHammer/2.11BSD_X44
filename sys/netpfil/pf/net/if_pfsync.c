@@ -111,8 +111,8 @@ void	pfsync_setmtu(struct pfsync_softc *, int);
 int		pfsync_alloc_scrub_memory(struct pfsync_state_peer *, struct pf_state_peer *);
 int		pfsync_insert_net_state(struct pfsync_state *, u_int8_t);
 void	pfsync_update_net_tdb(struct pfsync_tdb *);
-int		pfsyncoutput(struct ifnet *, struct mbuf *, const struct sockaddr *,  struct rtentry *);
-int		pfsyncioctl(struct ifnet *, u_long, void*);
+int		pfsyncoutput(struct ifnet *, struct mbuf *, struct sockaddr *,  struct rtentry *);
+int		pfsyncioctl(struct ifnet *, u_long, char*);
 void	pfsyncstart(struct ifnet *);
 
 struct mbuf *pfsync_get_mbuf(struct pfsync_softc *, u_int8_t, void **);
@@ -865,7 +865,7 @@ done:
 }
 
 int
-pfsyncoutput(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
+pfsyncoutput(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
 	struct rtentry *rt)
 {
 	m_freem(m);
@@ -874,7 +874,7 @@ pfsyncoutput(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 
 /* ARGSUSED */
 int
-pfsyncioctl(struct ifnet *ifp, u_long cmd, void*  data)
+pfsyncioctl(struct ifnet *ifp, u_long cmd, char *data)
 {
 	struct proc *p = curproc;
 	struct pfsync_softc *sc = ifp->if_softc;
@@ -1225,7 +1225,7 @@ pfsync_pack_state(u_int8_t action, struct pf_state *st, int flags)
 		memcpy(sp->id, &st->id, sizeof(sp->id));
 		sp->creatorid = st->creatorid;
 
-		strlcpy(sp->ifname, st->u.s->kif->pfik_name, sizeof(sp->ifname));
+		strlcpy(sp->ifname, st->u.s.kif->pfik_name, sizeof(sp->ifname));
 		pf_state_host_hton(&st->lan, &sp->lan);
 		pf_state_host_hton(&st->gwy, &sp->gwy);
 		pf_state_host_hton(&st->ext, &sp->ext);
@@ -1555,7 +1555,7 @@ pfsync_sendout(struct pfsync_softc *sc)
 	sc->sc_mbuf = NULL;
 	sc->sc_statep.s = NULL;
 
-	bpf_mtap(ifp, m);
+	bpf_mtap((caddr_t)ifp, m);
 
 	if (sc->sc_mbuf_net) {
 		m_freem(m);
@@ -1581,7 +1581,7 @@ pfsync_tdb_sendout(struct pfsync_softc *sc)
 	sc->sc_mbuf_tdb = NULL;
 	sc->sc_statep_tdb.t = NULL;
 
-	bpf_mtap(ifp, m);
+	bpf_mtap((caddr_t)ifp, m);
 
 	return pfsync_sendout_mbuf(sc, m);
 }
