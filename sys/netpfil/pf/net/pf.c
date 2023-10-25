@@ -254,7 +254,7 @@ static __inline int pf_state_compare_id(struct pf_state *, struct pf_state *);
 struct pf_src_tree tree_src_tracking;
 
 struct pf_state_tree_id tree_id;
-struct pf_state_queue state_updates;
+struct pf_state_queue state_list;
 
 RB_GENERATE(pf_src_tree, pf_src_node, entry, pf_src_compare);
 RB_GENERATE(pf_state_tree_lan_ext, pf_state, u.s.entry_lan_ext, pf_state_compare_lan_ext);
@@ -488,10 +488,10 @@ pf_addrcpy(struct pf_addr *dst, struct pf_addr *src, sa_family_t af)
 #endif /* INET6 */
 
 struct pf_state *
-pf_find_state_byid(struct pf_state *key)
+pf_find_state_byid(struct pf_state_cmp *key)
 {
 	pf_status.fcounters[FCNT_STATE_SEARCH]++;
-	return (RB_FIND(pf_state_tree_id, &tree_id, key));
+	return (RB_FIND(pf_state_tree_id, &tree_id, (struct pf_state *)key));
 }
 
 struct pf_state *
@@ -679,7 +679,7 @@ pf_insert_state(struct pfi_kif *kif, struct pf_state *state)
 		pf_detach_state(state, 0);
 		return (-1);
 	}
-	TAILQ_INSERT_HEAD(&state_updates, state, u.s.entry_updates);
+	TAILQ_INSERT_HEAD(&state_list, state, u.s.entry_list);
 
 	pf_status.fcounters[FCNT_STATE_INSERT]++;
 	pf_status.states++;
@@ -834,7 +834,7 @@ pf_free_state(struct pf_state *cur)
 			pf_rm_rule(NULL, cur->anchor.ptr);
 	pf_normalize_tcp_cleanup(cur);
 	pfi_kif_unref(cur->u.s.kif, PFI_KIF_REF_STATE);
-	TAILQ_REMOVE(&state_updates, cur, u.s.entry_updates);
+	TAILQ_REMOVE(&state_list, cur, u.s.entry_list);
 	if (cur->tag) {
 		pf_tag_unref(cur->tag);
 	}

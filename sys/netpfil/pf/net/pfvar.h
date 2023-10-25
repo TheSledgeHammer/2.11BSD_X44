@@ -714,6 +714,7 @@ TAILQ_HEAD(pf_state_queue, pf_state);
 TAILQ_HEAD(pf_statelist, pf_state);
 
 struct pf_state_key {
+/*
 	struct pf_state_host 	lan;
 	struct pf_state_host 	gwy;
 	struct pf_state_host 	ext;
@@ -721,19 +722,28 @@ struct pf_state_key {
 	u_int8_t	 			proto;
 	u_int8_t	 			direction;
 	u_int8_t	 			pad;
-
+*/
 	struct pf_statelist	 	states;
 	u_short		 			refcnt;	/* same size as if_index */
 };
 
+/* keep synced with struct pf_state, used in RB_FIND */
+struct pf_state_cmp {
+	u_int64_t	 			id;
+	u_int32_t	 			creatorid;
+	u_int32_t	 			pad;
+};
+
 struct pf_state {
 	u_int64_t	 			id;
+	u_int32_t	 			creatorid;
+	u_int32_t	 			pad;
 	union {
 		struct {
 			RB_ENTRY(pf_state)	 	entry_lan_ext;
 			RB_ENTRY(pf_state)	 	entry_ext_gwy;
 			RB_ENTRY(pf_state)	 	entry_id;
-			TAILQ_ENTRY(pf_state)	entry_updates;
+			TAILQ_ENTRY(pf_state)	entry_list;
 			TAILQ_ENTRY(pf_state)	entry_next;
 			struct pfi_kif			*kif;
 		} s;
@@ -757,7 +767,6 @@ struct pf_state {
 	u_int32_t	 			pfsync_time;
 	u_int32_t	 			packets[2];
 	u_int32_t	 			bytes[2];
-	u_int32_t	 			creatorid;
 	sa_family_t	 			af;
 	u_int8_t	 			proto;
 	u_int8_t	 			direction;
@@ -769,7 +778,7 @@ struct pf_state {
 #define	PFSTATE_NOSYNC	 	0x01
 #define	PFSTATE_FROMSYNC 	0x02
 #define	PFSTATE_STALE		0x04
-	u_int8_t	 			pad;
+
 };
 
 /*
@@ -1340,8 +1349,16 @@ struct pfioc_natlook {
 };
 
 struct pfioc_state {
-	u_int32_t	 nr;
-	struct pf_state	 state;
+	u_int32_t	 	 nr;
+	//struct pf_state	 state;
+	struct pfsync_state	state;
+};
+
+struct pfioc_src_node_kill {
+	/* XXX returns the number of src nodes killed in psnk_af */
+	sa_family_t psnk_af;
+	struct pf_rule_addr psnk_src;
+	struct pf_rule_addr psnk_dst;
 };
 
 struct pfioc_state_kill {
@@ -1357,7 +1374,8 @@ struct pfioc_states {
 	int	ps_len;
 	union {
 		caddr_t		 psu_buf;
-		struct pf_state	*psu_states;
+		//struct pf_state	*psu_states;
+		struct pfsync_state	*psu_states;
 	} ps_u;
 #define ps_buf		ps_u.psu_buf
 #define ps_states	ps_u.psu_states
@@ -1475,7 +1493,8 @@ struct pfioc_iface {
 #define DIOCADDRULE	_IOWR('D',  4, struct pfioc_rule)
 #define DIOCGETRULES	_IOWR('D',  6, struct pfioc_rule)
 #define DIOCGETRULE	_IOWR('D',  7, struct pfioc_rule)
-/* XXX cut 8 - 17 */
+#define DIOCSETLCK  _IOWR('D', 8, uint32_t)
+/* XXX cut 9 - 17 */
 #define DIOCCLRSTATES	_IOWR('D', 18, struct pfioc_state_kill)
 #define DIOCGETSTATE	_IOWR('D', 19, struct pfioc_state)
 #define DIOCSETSTATUSIF _IOWR('D', 20, struct pfioc_if)
@@ -1505,7 +1524,8 @@ struct pfioc_iface {
 #define DIOCGETADDRS	_IOWR('D', 53, struct pfioc_pooladdr)
 #define DIOCGETADDR	_IOWR('D', 54, struct pfioc_pooladdr)
 #define DIOCCHANGEADDR	_IOWR('D', 55, struct pfioc_pooladdr)
-/* XXX cut 55 - 57 */
+#define DIOCADDSTATES   _IOWR('D', 56, struct pfioc_states)
+/* XXX cut 56 - 57 */
 #define	DIOCGETRULESETS	_IOWR('D', 58, struct pfioc_ruleset)
 #define	DIOCGETRULESET	_IOWR('D', 59, struct pfioc_ruleset)
 #define	DIOCRCLRTABLES	_IOWR('D', 60, struct pfioc_table)
@@ -1535,6 +1555,9 @@ struct pfioc_iface {
 #define DIOCSETHOSTID	_IOWR('D', 86, u_int32_t)
 #define DIOCIGETIFACES	_IOWR('D', 87, struct pfioc_iface)
 #define DIOCICLRISTATS  _IOWR('D', 88, struct pfioc_iface)
+#define DIOCSETIFFLAG	_IOWR('D', 89, struct pfioc_iface)
+#define DIOCCLRIFFLAG	_IOWR('D', 90, struct pfioc_iface)
+#define DIOCKILLSRCNODES	_IOWR('D', 91, struct pfioc_src_node_kill)
 
 #ifdef _KERNEL
 RB_HEAD(pf_src_tree, pf_src_node);
@@ -1544,7 +1567,7 @@ extern struct pf_src_tree tree_src_tracking;
 RB_HEAD(pf_state_tree_id, pf_state);
 RB_PROTOTYPE(pf_state_tree_id, pf_state, entry_id, pf_state_compare_id);
 extern struct pf_state_tree_id tree_id;
-extern struct pf_state_queue state_updates;
+extern struct pf_state_queue state_list;
 
 extern struct pf_anchor_global		pf_anchors;
 extern struct pf_anchor         	pf_main_anchor;
@@ -1555,7 +1578,7 @@ TAILQ_HEAD(pf_altqqueue, pf_altq);
 extern struct pf_altqqueue		  	pf_altqs[2];
 extern struct pf_palist			  	pf_pabuf;
 extern struct pfi_kif			 	**pfi_index2kif;
-extern struct pfi_kif               		*pfi_self;
+extern struct pfi_kif               pfi_self;
 
 extern u_int32_t		 	ticket_altqs_active;
 extern u_int32_t		 	ticket_altqs_inactive;
@@ -1579,7 +1602,7 @@ extern void			 pf_purge_expired_state(struct pf_state *);
 extern int			 pf_insert_state(struct pfi_kif *, struct pf_state *);
 extern int			 pf_insert_src_node(struct pf_src_node **, struct pf_rule *, struct pf_addr *, sa_family_t);
 void				 pf_src_tree_remove_state(struct pf_state *);
-extern struct pf_state		*pf_find_state_byid(struct pf_state *);
+extern struct pf_state		*pf_find_state_byid(struct pf_state_cmp *);
 extern struct pf_state		*pf_find_state_all(struct pf_state *key, u_int8_t tree, int *more);
 extern void			 pf_print_state(struct pf_state *);
 extern void			 pf_print_flags(u_int8_t);

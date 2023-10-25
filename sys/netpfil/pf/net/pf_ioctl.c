@@ -92,8 +92,8 @@ int			 pfclose(dev_t, int, int, struct proc *);
 struct pf_pool		*pf_get_pool(char *, u_int32_t, u_int8_t, u_int32_t, u_int8_t, u_int8_t, u_int8_t);
 
 
-void			 pf_mv_pool(struct pf_palist *, struct pf_palist *);
-void			 pf_empty_pool(struct pf_palist *);
+void		 pf_mv_pool(struct pf_palist *, struct pf_palist *);
+void		 pf_empty_pool(struct pf_palist *);
 int			 pfioctl(dev_t, u_long, caddr_t, int, struct proc *);
 #ifdef ALTQ
 int			 pf_begin_altq(u_int32_t *);
@@ -106,6 +106,9 @@ int			 pf_begin_rules(u_int32_t *, int, const char *);
 int			 pf_rollback_rules(u_int32_t, int, char *);
 int			 pf_commit_rules(u_int32_t, int, char *);
 int          pf_setup_pfsync_matching(struct pf_ruleset *);
+void		 pf_state_export(struct pfsync_state *, struct pf_state *);
+void		 pf_state_import(struct pfsync_state *, struct pf_state *);
+static	int	 pf_state_add(struct pfsync_state*);
 
 const struct cdevsw pf_cdevsw = {
 		.d_open = pfopen,
@@ -191,7 +194,7 @@ pfattach(int num)
 	TAILQ_INIT(&pf_pabuf);
 	pf_altqs_active = &pf_altqs[0];
 	pf_altqs_inactive = &pf_altqs[1];
-	TAILQ_INIT(&state_updates);
+	TAILQ_INIT(&state_list);
 
 	/* default rule should never be garbage collected */
 	pf_default_rule.entries.tqe_prev = &pf_default_rule.entries.tqe_next;
@@ -875,23 +878,23 @@ pf_commit_rules(u_int32_t ticket, int rs_num, char *anchor)
 	return (0);
 }
 
-#ifdef notyet
+//#ifdef notyet
 void
-pf_state_export(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_state *s)
+pf_state_export(struct pfsync_state *sp, struct pf_state *s)
 {
 	int secs = time_second;
 	bzero(sp, sizeof(struct pfsync_state));
 
 	/* copy from state key */
-	sp->lan.addr = sk->lan.addr;
-	sp->lan.port = sk->lan.port;
-	sp->gwy.addr = sk->gwy.addr;
-	sp->gwy.port = sk->gwy.port;
-	sp->ext.addr = sk->ext.addr;
-	sp->ext.port = sk->ext.port;
-	sp->proto = sk->proto;
-	sp->af = sk->af;
-	sp->direction = sk->direction;
+	sp->lan.addr = s->lan.addr;
+	sp->lan.port = s->lan.port;
+	sp->gwy.addr = s->gwy.addr;
+	sp->gwy.port = s->gwy.port;
+	sp->ext.addr = s->ext.addr;
+	sp->ext.port = s->ext.port;
+	sp->proto = s->proto;
+	sp->af = s->af;
+	sp->direction = s->direction;
 
 	/* copy from state */
 	memcpy(&sp->id, &s->id, sizeof(sp->id));
@@ -926,18 +929,18 @@ pf_state_export(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_stat
 }
 
 void
-pf_state_import(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_state *s)
+pf_state_import(struct pfsync_state *sp, struct pf_state *s)
 {
 	/* copy to state key */
-	sk->lan.addr = sp->lan.addr;
-	sk->lan.port = sp->lan.port;
-	sk->gwy.addr = sp->gwy.addr;
-	sk->gwy.port = sp->gwy.port;
-	sk->ext.addr = sp->ext.addr;
-	sk->ext.port = sp->ext.port;
-	sk->proto = sp->proto;
-	sk->af = sp->af;
-	sk->direction = sp->direction;
+	s->lan.addr = sp->lan.addr;
+	s->lan.port = sp->lan.port;
+	s->gwy.addr = sp->gwy.addr;
+	s->gwy.port = sp->gwy.port;
+	s->ext.addr = sp->ext.addr;
+	s->ext.port = sp->ext.port;
+	s->proto = sp->proto;
+	s->af = sp->af;
+	s->direction = sp->direction;
 
 	/* copy to state */
 	memcpy(&s->id, &sp->id, sizeof(sp->id));
@@ -960,7 +963,7 @@ pf_state_import(struct pfsync_state *sp, struct pf_state_key *sk, struct pf_stat
 	s->bytes[0] = s->bytes[1] = 0;
 }
 
-int
+static int
 pf_state_add(struct pfsync_state* sp)
 {
 	struct pf_state		*s;
@@ -980,7 +983,7 @@ pf_state_add(struct pfsync_state* sp)
 		free(s, M_PF);
 		return ENOMEM;
 	}
-	pf_state_import(sp, sk, s);
+	pf_state_import(sp, s);
 	kif = pfi_kif_get(sp->ifname);
 	if (kif == NULL) {
 		free(s, M_PF);
@@ -995,7 +998,7 @@ pf_state_add(struct pfsync_state* sp)
 
 	return 0;
 }
-#endif /* notyet */
+
 int
 pf_setup_pfsync_matching(struct pf_ruleset *rs)
 {
@@ -1083,6 +1086,10 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		case DIOCCLRSRCNODES:
 		case DIOCIGETIFACES:
 		case DIOCICLRISTATS:
+		case DIOCSETIFFLAG:
+		case DIOCCLRIFFLAG:
+		case DIOCSETLCK:
+		case DIOCADDSTATES:
 			break;
 		case DIOCRCLRTABLES:
 		case DIOCRADDTABLES:
@@ -1130,6 +1137,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		case DIOCRDELADDRS:
 		case DIOCRSETADDRS:
 		case DIOCRSETTFLAGS:
+		case DIOCADDSTATES:
 			if (((struct pfioc_table*) addr)->pfrio_flags &
 			PFR_FLAG_DUMMY)
 				break; /* dummy operation ok */
@@ -1627,41 +1635,35 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 
 	case DIOCADDSTATE: {
 		struct pfioc_state	*ps = (struct pfioc_state *)addr;
-		struct pf_state		*state;
-		struct pfi_kif		*kif;
+		struct pfsync_state *sp = (struct pfsync_state *)ps->state;
 
-		if (ps->state.timeout >= PFTM_MAX &&
-		    ps->state.timeout != PFTM_UNTIL_PACKET) {
-			error = EINVAL;
-			break;
-		}
-		state = (struct pf_state *)malloc(sizeof(struct pf_state *), M_PF, M_NOWAIT);
-		if (state == NULL) {
-			error = ENOMEM;
-			break;
-		}
-		kif = pfi_kif_get(ps->state.u.ifname);
-		if (kif == NULL) {
-			free(state, M_PF);
-			error = ENOENT;
-			break;
-		}
-		bcopy(&ps->state, state, sizeof(struct pf_state));
-		bzero(&state->u, sizeof(state->u));
-		state->rule.ptr = &pf_default_rule;
-		state->nat_rule.ptr = NULL;
-		state->anchor.ptr = NULL;
-		state->rt_kif = NULL;
-		state->creation = time_second;
-		state->pfsync_time = 0;
-		state->packets[0] = state->packets[1] = 0;
-		state->bytes[0] = state->bytes[1] = 0;
+		error = pf_state_add(sp);
+		break;
+	}
 
-		if (pf_insert_state(kif, state)) {
-			pfi_maybe_destroy(kif);
-			free(state, M_PF);
-			error = ENOMEM;
+	case DIOCADDSTATES: {
+		struct pfioc_states	*ps = (struct pfioc_states *)addr;
+		struct pfsync_state	*p = (struct pfsync_state *)ps->ps_states;
+		struct pfsync_state *pk;
+		int size = ps->ps_len;
+		int i = 0;
+		error = 0;
+
+		pk = malloc(sizeof(*pk), M_TEMP,M_WAITOK);
+		while (error == 0 && i < size)
+		{
+			if (copyin(p, pk, sizeof(struct pfsync_state)))
+			{
+				error = EFAULT;
+				free(pk, M_TEMP);
+			} else {
+				error = pf_state_add(pk);
+				i += sizeof(*p);
+				p++;
+			}
 		}
+
+		free(pk, M_TEMP);
 		break;
 	}
 
@@ -1680,24 +1682,15 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EBUSY;
 			break;
 		}
-		bcopy(state, &ps->state, sizeof(struct pf_state));
-		ps->state.rule.nr = state->rule.ptr->nr;
-		ps->state.nat_rule.nr = (state->nat_rule.ptr == NULL) ?
-		    -1 : state->nat_rule.ptr->nr;
-		ps->state.anchor.nr = (state->anchor.ptr == NULL) ?
-		    -1 : state->anchor.ptr->nr;
-		ps->state.expire = pf_state_expires(state);
-		if (ps->state.expire > time_second)
-			ps->state.expire -= time_second;
-		else
-			ps->state.expire = 0;
+		pf_state_export((struct pfsync_state *)&ps->state, state);
 		break;
 	}
 
 	case DIOCGETSTATES: {
 		struct pfioc_states	*ps = (struct pfioc_states *)addr;
 		struct pf_state		*state;
-		struct pf_state		*p, pstore;
+		//struct pf_state		*p, pstore;
+		struct pfsync_state	*p, *pstore;
 		struct pfi_kif		*kif;
 		u_int32_t		 nr = 0;
 		int			 space = ps->ps_len;
@@ -1709,36 +1702,25 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			break;
 		}
 
+		pstore = malloc(sizeof(*pstore), M_TEMP, M_WAITOK);
+
 		p = ps->ps_states;
-		TAILQ_FOREACH(kif, &pfi_statehead, pfik_w_states)
-			RB_FOREACH(state, pf_state_tree_ext_gwy,
-			    &kif->pfik_ext_gwy) {
-				int	secs = time_second;
-
-				if ((nr+1) * sizeof(*p) > (unsigned)ps->ps_len)
+		TAILQ_FOREACH(kif, &pfi_statehead, pfik_w_states) {
+			RB_FOREACH(state, pf_state_tree_ext_gwy, &kif->pfik_ext_gwy) {
+				if ((nr+1) * sizeof(*p) > (unsigned)ps->ps_len) {
 					break;
+				}
 
-				bcopy(state, &pstore, sizeof(pstore));
-				strlcpy(pstore.u.ifname, kif->pfik_name,
-				    sizeof(pstore.u.ifname));
-				pstore.rule.nr = state->rule.ptr->nr;
-				pstore.nat_rule.nr = (state->nat_rule.ptr ==
-				    NULL) ? -1 : state->nat_rule.ptr->nr;
-				pstore.anchor.nr = (state->anchor.ptr ==
-				    NULL) ? -1 : state->anchor.ptr->nr;
-				pstore.creation = secs - pstore.creation;
-				pstore.expire = pf_state_expires(state);
-				if (pstore.expire > secs)
-					pstore.expire -= secs;
-				else
-					pstore.expire = 0;
+				pf_state_export(pstore, state);
 				error = copyout(&pstore, p, sizeof(*p));
-				if (error)
+				if (error) {
 					goto fail;
+				}
 				p++;
 				nr++;
 			}
-		ps->ps_len = sizeof(struct pf_state) * nr;
+		}
+		ps->ps_len = sizeof(struct pfsync_state) * nr;
 		break;
 	}
 
@@ -2766,6 +2748,44 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		break;
 	}
 
+	case DIOCKILLSRCNODES: {
+		struct pf_src_node	*sn;
+		struct pf_state		*ps;
+		struct pfioc_src_node_kill *psnk = \
+			(struct pfioc_src_node_kill *) addr;
+		int			killed = 0;
+
+		RB_FOREACH(sn, pf_src_tree, &tree_src_tracking) {
+			if (PF_MATCHA(psnk->psnk_src.neg, &psnk->psnk_src.addr.v.a.addr,
+					&psnk->psnk_src.addr.v.a.mask, &sn->addr, sn->af) &&
+					PF_MATCHA(psnk->psnk_dst.neg,
+							&psnk->psnk_dst.addr.v.a.addr,
+							&psnk->psnk_dst.addr.v.a.mask,
+							&sn->raddr, sn->af)) {
+				/* Handle state to src_node linkage */
+				if (sn->states != 0) {
+					RB_FOREACH(ps, pf_state_tree_id,
+							&tree_id)
+					{
+						if (ps->src_node == sn)
+							ps->src_node = NULL;
+						if (ps->nat_src_node == sn)
+							ps->nat_src_node = NULL;
+					}
+					sn->states = 0;
+				}
+				sn->expire = 1;
+				killed++;
+			}
+		}
+
+		if (killed > 0)
+			pf_purge_expired_src_nodes(1);
+
+		psnk->psnk_af = killed;
+		break;
+	}
+
 	case DIOCSETHOSTID: {
 		u_int32_t	*hostid = (u_int32_t *)addr;
 
@@ -2796,10 +2816,25 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 	case DIOCICLRISTATS: {
 		struct pfioc_iface *io = (struct pfioc_iface *)addr;
 
-		error = pfi_clr_istats(io->pfiio_name, &io->pfiio_nzero,
-		    io->pfiio_flags);
+		error = pfi_clr_istats(io->pfiio_name, &io->pfiio_nzero, io->pfiio_flags);
 		break;
 	}
+
+	case DIOCSETIFFLAG: {
+		struct pfioc_iface *io = (struct pfioc_iface *)addr;
+
+		error = pfi_set_flags(io->pfiio_name, io->pfiio_flags);
+		break;
+	}
+
+	case DIOCCLRIFFLAG: {
+		struct pfioc_iface *io = (struct pfioc_iface *)addr;
+
+		error = pfi_clear_flags(io->pfiio_name, io->pfiio_flags);
+		break;
+	}
+
+	case DIOCSETLCK:
 
 	default:
 		error = ENODEV;
@@ -3036,6 +3071,5 @@ pf_pfil_detach(void)
 		    PFIL_IN|PFIL_OUT, ph_inet6);
 #endif
 	pf_pfil_attached = 0;
-
 	return (0);
 }

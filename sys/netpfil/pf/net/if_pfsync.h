@@ -118,7 +118,7 @@ struct pfsync_softc {
 	struct in_addr		sc_sendaddr;
 	struct mbuf			*sc_mbuf;		/* current cumulative mbuf */
 	struct mbuf			*sc_mbuf_net;	/* current cumulative mbuf */
-    	struct mbuf		*sc_mbuf_tdb;	/* dito for TDB updates */
+    struct mbuf			*sc_mbuf_tdb;	/* dito for TDB updates */
 	union sc_statep		sc_statep;
 	union sc_statep		sc_statep_net;
 	union sc_tdb_statep	sc_statep_tdb;

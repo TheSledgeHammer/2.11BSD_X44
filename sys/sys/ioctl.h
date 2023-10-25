@@ -320,6 +320,9 @@ struct ttysize {
 #define	SIOCGIFCAP			_IOWR('i', 118, struct ifcapreq)	/* get capabilities */
 #define	SIOCSIFCAP	 		_IOW('i', 117, struct ifcapreq)		/* set capabilities */
 
+#define	SIOCSETPFSYNC		_IOW('i', 247, struct ifreq)
+#define	SIOCGETPFSYNC		_IOWR('i', 248, struct ifreq)
+
 #ifndef _KERNEL
 #include <sys/cdefs.h>
 
