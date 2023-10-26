@@ -84,6 +84,8 @@ static void (*npf_state_sample)(npf_state_t *, bool) = NULL;
 #define	NPF_STATE_SAMPLE(n, r)
 #endif
 
+struct lock_holder npf_state_lock;
+
 /*
  * npf_state_init: initialise the state structure.
  *
@@ -101,7 +103,7 @@ npf_state_init(npf_cache_t *npc, nbuf_t *nbuf, npf_state_t *nst)
 	KASSERT(npf_iscached(npc, NPC_LAYER4));
 
 	memset(nst, 0, sizeof(npf_state_t));
-	mutex_init(&nst->nst_lock, MUTEX_DEFAULT, IPL_SOFTNET);
+	mutex_init(&nst->nst_lock, &npf_state_lock, "npf_state_mutex", (struct proc *)curproc, curproc->p_pid);
 
 	switch (proto) {
 	case IPPROTO_TCP:
@@ -126,7 +128,8 @@ npf_state_destroy(npf_state_t *nst)
 {
 
 	nst->nst_state = 0;
-	mutex_destroy(&nst->nst_lock);
+	//mutex_destroy(&nst->nst_lock);
+	mutex_exit(&nst->nst_lock, &npf_state_lock);
 }
 
 /*
@@ -143,7 +146,7 @@ npf_state_inspect(npf_cache_t *npc, nbuf_t *nbuf,
 	const int di = forw ? NPF_FLOW_FORW : NPF_FLOW_BACK;
 	bool ret;
 
-	mutex_enter(&nst->nst_lock);
+	mutex_enter(&nst->nst_lock, &npf_state_lock);
 	switch (proto) {
 	case IPPROTO_TCP:
 		/* Pass to TCP state tracking engine. */
@@ -159,7 +162,7 @@ npf_state_inspect(npf_cache_t *npc, nbuf_t *nbuf,
 		ret = false;
 	}
 	NPF_STATE_SAMPLE(nst, ret);
-	mutex_exit(&nst->nst_lock);
+	mutex_exit(&nst->nst_lock, &npf_state_lock);
 
 	return ret;
 }

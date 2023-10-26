@@ -218,8 +218,9 @@ bool		npf_autounload_p(void);
 #define	NPF_NAT_PORTMAP			0x02
 
 /* Table types. */
-#define	NPF_TABLE_HASH			1
-#define	NPF_TABLE_TREE			2
+#define	NPF_TABLE_LPM			1
+#define	NPF_TABLE_HASH			2
+#define	NPF_TABLE_TREE			3
 
 /* Layers. */
 #define	NPF_LAYER_2				2

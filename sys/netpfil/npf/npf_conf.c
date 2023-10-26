@@ -61,10 +61,10 @@ __KERNEL_RCSID(0, "$NetBSD: npf_conf.c,v 1.2.2.2 2013/02/11 21:49:48 riz Exp $")
 #include "npf_impl.h"
 
 typedef struct {
-	npf_ruleset_t *		n_rules;
-	npf_tableset_t *	n_tables;
-	npf_ruleset_t *		n_nat_rules;
-	npf_rprocset_t *	n_rprocs;
+	npf_ruleset_t 		*n_rules;
+	npf_tableset_t 		*n_tables;
+	npf_ruleset_t 		*n_nat_rules;
+	npf_rprocset_t 		*n_rprocs;
 	prop_dictionary_t	n_dict;
 	bool				n_default_pass;
 } npf_config_t;

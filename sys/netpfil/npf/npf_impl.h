@@ -50,6 +50,7 @@
 #include <sys/hash.h>
 #include <sys/tree.h>
 #include <sys/rwlock.h>
+#include <sys/mutex.h>
 #include <sys/stdbool.h>
 #include <net/if.h>
 
@@ -116,10 +117,15 @@ typedef struct {
 } npf_tcpstate_t;
 
 typedef struct {
-	kmutex_t		nst_lock;
+	struct mtx		nst_lock;
 	int				nst_state;
 	npf_tcpstate_t	nst_tcpst[2];
 } npf_state_t;
+
+/* NetBSD: mutex lock */
+#define mutex_init(lock, holder, name, data, pid)	mtx_init(lock, holder, name, data, pid)
+#define mutex_enter(lock, holder)					mtx_lock(lock, holder)
+#define mutex_exit(lock, holder)					mtx_unlock(lock, holder)
 
 /*
  * INTERFACES.

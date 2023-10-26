@@ -101,14 +101,6 @@ npf_init(void)
 	/* Load empty configuration. */
 	npf_config_init();
 
-#ifdef _MODULE
-	/* Attach /dev/npf device. */
-	error = devsw_attach("npf", NULL, &bmajor, &npf_cdevsw, &cmajor);
-	if (error) {
-		/* It will call devsw_detach(), which is safe. */
-		(void)npf_fini();
-	}
-#endif
 	return error;
 }
 
@@ -117,9 +109,6 @@ npf_fini(void)
 {
 
 	/* At first, detach device and remove pfil hooks. */
-#ifdef _MODULE
-	devsw_detach(NULL, &npf_cdevsw);
-#endif
 	npf_pfil_unregister();
 
 	/* Flush all sessions, destroy configuration (ruleset, etc). */
@@ -133,9 +122,6 @@ npf_fini(void)
 	npf_session_sysfini();
 	npf_tableset_sysfini();
 
-	if (npf_sysctl) {
-		sysctl_teardown(&npf_sysctl);
-	}
 	percpu_free(npf_stats_percpu);
 
 	return 0;

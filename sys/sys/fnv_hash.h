@@ -21,6 +21,7 @@ typedef u_int64_t Fnv64_t;
 #define FNV_32_PRIME ((Fnv32_t) 0x01000193UL)
 #define FNV_64_PRIME ((Fnv64_t) 0x100000001b3ULL)
 
+/* fnv-1 hash */
 static __inline Fnv32_t
 fnv_32_buf(const void *buf, size_t len, Fnv32_t hval)
 {
@@ -70,4 +71,56 @@ fnv_64_str(const char *str, Fnv64_t hval)
 	}
 	return hval;
 }
+
+/* fnv-1a hash */
+static __inline Fnv32_t
+fnva_32_buf(const void *buf, size_t len, Fnv32_t hval)
+{
+	const u_int8_t *s = (const u_int8_t *)buf;
+
+	while (len-- != 0) {
+		hval ^= *s++;
+		hval *= FNV_32_PRIME;
+	}
+	return hval;
+}
+
+static __inline Fnv32_t
+fnva_32_str(const char *str, Fnv32_t hval)
+{
+	const u_int8_t *s = (const u_int8_t *)str;
+	Fnv32_t c;
+
+	while ((c = *s++) != 0) {
+		hval ^= c;
+		hval *= FNV_32_PRIME;
+	}
+	return hval;
+}
+
+static __inline Fnv64_t
+fnva_64_buf(const void *buf, size_t len, Fnv64_t hval)
+{
+	const u_int8_t *s = (const u_int8_t *)buf;
+
+	while (len-- != 0) {
+		hval ^= *s++;
+		hval *= FNV_64_PRIME;
+	}
+	return hval;
+}
+
+static __inline Fnv64_t
+fnva_64_str(const char *str, Fnv64_t hval)
+{
+	const u_int8_t *s = (const u_int8_t *)str;
+	uregister_t c;		 /* 32 bit on i386, 64 bit on alpha */
+
+	while ((c = *s++) != 0) {
+		hval ^= c;
+		hval *= FNV_64_PRIME;
+	}
+	return hval;
+}
+
 #endif /* _SYS_FNV_HASH_H_ */
