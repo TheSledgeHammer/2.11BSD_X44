@@ -246,12 +246,12 @@ table_lpm_lookup(const npf_table_t *t, const npf_addr_t *addr, const int alen, s
 
 	LIST_FOREACH(ent, list, te_entry.listent) {
 		if ((&ent->te_addr == addr) && (&ent->te_alen == alen)) {
-			if (lpm_lookup(t->t_list, addr, alen) != NULL) {
+			if (lpm_lookup(t->t_lpm, addr, alen) != NULL) {
 				break;
 			}
 			continue;
 		}
-		if (lpm_lookup(t->t_list, addr, alen) != NULL) {
+		if (lpm_lookup(t->t_lpm, addr, alen) != NULL) {
 			break;
 		}
 	}
