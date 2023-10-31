@@ -10,7 +10,7 @@ CFLAGS+=-g
 CPPFLAGS+=-DIPSEC_DEBUG -DIPSEC
 .endif
 
-.if defined( FAST_IPSEC)
+.if defined(FAST_IPSEC)
 CPPFLAGS+=-DIPSEC_DEBUG -DFAST_IPSEC
 .endif
 
