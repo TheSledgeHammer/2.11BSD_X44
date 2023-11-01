@@ -33,7 +33,7 @@
 
 #include <sys/param.h>
 #include <sys/mount.h>
-#include <devel/ufs/ufml/ufml.h>
+#include <ufs/ufml/ufml.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void usage __P((void));
+void usage(void);
 
 int
 main(argc, argv)
