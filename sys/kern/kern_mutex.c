@@ -78,6 +78,44 @@ mtx_unlock(mtx, holder)
 	}
 }
 
+int
+mtx_lock_try(mtx)
+	struct mtx 	*mtx;
+{
+	return (simple_lock_try(mtx->mtx_lock));
+}
+
+int
+mtx_owned(mtx)
+	struct mtx 	*mtx;
+{
+	struct lock_holder 	*holder;
+
+	holder = lockholder_get(mtx->mtx_holder);
+	if (mtx == NULL || holder == NULL) {
+		return (1);
+	}
+
+	if (LOCKHOLDER_PROC(holder) == curproc) {
+		return (0);
+	}
+
+	return (1);
+}
+
+struct proc *
+mtx_owner(mtx)
+	struct mtx 	*mtx;
+{
+	struct lock_holder 	*holder;
+
+	if (mtx_owned(mtx)) {
+		holder = lockholder_get(mtx->mtx_holder);
+		return (LOCKHOLDER_PROC(holder));
+	}
+	return (NULL);
+}
+
 /*
  * Lock Holder:
  */

@@ -62,6 +62,17 @@ int				kthread_alloc(void (*)(void *), void *, struct kthread *, char *);
 void			kthread_add(struct kthreadlist *, struct kthread *, int);
 void			kthread_remove(struct kthread *, int);
 struct kthread *kthread_find(struct kthreadlist *, int);
+void			kthread_dispatch(struct kthread *, int, char);
+
+int
+proc_create(func, arg, p, name)
+	void (*func)(void *);
+	void *arg;
+	struct proc **p;
+	char *name;
+{
+	return (kthread_create(func, arg, p, name));
+}
 
 void
 kthread_init(p, kt)
@@ -173,27 +184,6 @@ ktfind(tid, chan)
 	return (NULL);
 }
 
-/* Insert a kthread onto allkthread list and remove kthread from the freekthread list */
-void
-kthread_enqueue(kt, chan)
-	struct kthread *kt;
-	int chan;
-{
-	kthread_remove(kt, chan);						/* off freekthread */
-	kthread_add(&allkthread, kt, chan);				/* onto allkthread */
-}
-
-/* Remove a kthread from allkthread list and insert kthread onto the zombkthread list */
-void
-kthread_dequeue(kt, chan)
-	struct kthread *kt;
-	int chan;
-{
-	kthread_remove(kt, chan);						/* off allkthread */
-	kthread_add(&zombkthread, kt, chan);			/* onto zombkthread */
-	kt->kt_stat = KT_SZOMB;
-}
-
 int
 kthread_alloc(func, arg, kt, name)
 	void (*func)(void *);
@@ -205,7 +195,7 @@ kthread_alloc(func, arg, kt, name)
 	struct mpx *mpx;
 	int error;
 
-	error = kthread_create(func, arg, &p, name);
+	error = proc_create(func, arg, &p, name);
 	if (error != 0) {
 		return (error);
 	}
@@ -214,6 +204,74 @@ kthread_alloc(func, arg, kt, name)
 		kt->kt_flag |= KT_INMEM | KT_SYSTEM | KT_NOCLDWAIT;
 	}
 	return (0);
+}
+
+/*
+ * Kthread dispatch: changes thread from one queue to another queue depending on state.
+ */
+void
+kthread_dispatch(kt, chan, state)
+	struct kthread *kt;
+	int chan;
+	char state;
+{
+	struct kthread *nkt;
+
+	switch (state) {
+	case KT_ONFREE:
+		/* freekthread list */
+		if (LIST_EMPTY(&freekthread)) {
+			break;
+		}
+		if (kt == NULL) {
+			nkt = kthread_find(&freekthread, chan);
+			if ((nkt != NULL) && (nkt->kt_stat == state)) {
+				kt = nkt;
+			} else {
+				break;
+			}
+		}
+		kthread_remove(kt, chan);						/* off freekthread */
+		kthread_add(&allkthread, kt, chan);				/* onto allkthread */
+		kt->kt_stat = KT_ONALL;
+		break;
+
+	case KT_ONALL:
+		/* allkthread list */
+		if (LIST_EMPTY(&allkthread)) {
+			break;
+		}
+		if (kt == NULL) {
+			nkt = kthread_find(&allkthread, chan);
+			if ((nkt != NULL) && (nkt->kt_stat == state)) {
+				kt = nkt;
+			} else {
+				break;
+			}
+		}
+		kthread_remove(kt, chan);						/* off allkthread */
+		kthread_add(&zombkthread, kt, chan);			/* onto zombkthread */
+		kt->kt_stat = KT_ONZOMB;
+		break;
+
+	case KT_ONZOMB:
+		/* zombkthread list */
+		if (LIST_EMPTY(&zombkthread)) {
+			break;
+		}
+		if (kt == NULL) {
+			nkt = kthread_find(&zombkthread, chan);
+			if ((nkt != NULL) && (nkt->kt_stat == state)) {
+				kt = nkt;
+			} else {
+				break;
+			}
+		}
+		kthread_remove(kt, chan);						/* off zombkthread */
+		kthread_add(&freekthread, kt, chan);			/* onto freekthread */
+		kt->kt_stat = KT_ONFREE;
+		break;
+	}
 }
 
 void
@@ -278,18 +336,30 @@ kthread_find(ktlist, chan)
 	return (NULL);
 }
 
-/* reap all non-null zombie kthreads from zombkthread list */
-void
-kthread_zombie(chan)
-	int chan;
-{
-	struct kthread *kt;
+/* kernel thread runtime */
+struct kthread_runtime {
+	struct kthreadlist 	ktr_zombkthread;
+	struct kthreadlist 	ktr_freekthread;
+	struct kthreadlist 	ktr_allkthread;
+	int					ktr_flags;
 
-	if (!LIST_EMPTY(&zombkthread)) {
-		kt = kthread_find(&zombkthread, chan);
-		if (kt != NULL) {
-			kthread_remove(kt, chan);				/* off zombkthread */
-			kthread_add(&freekthread, kt, chan);	/* onto freekthread */
-		}
+	//send
+	//receive
+};
+struct kthread_runtime kt_runtime;
+
+void
+runtime_init(struct kthread *kt)
+{
+	LIST_INIT(&kt_runtime.ktr_zombkthread);
+	LIST_INIT(&kt_runtime.ktr_freekthread);
+	LIST_INIT(&kt_runtime.ktr_allkthread);
+
+	kt->kt_runtime = &kt_runtime;
+
+	int i;
+
+	for (i = 0; i < maxthread; i++) {
+		kthread_dispatch(kt, i, kt->kt_stat);
 	}
 }

@@ -68,22 +68,29 @@ struct kthread {
 
 	//void				*kt_ctxlink;			/* uc_link {get,set}context */
     //struct sadata_vp 	*kt_savp; 				/* SA "virtual processor" */
-	//LIST_HEAD(mxthreadlist, mxthread)kt_mxthreads;			/* list of mxthreads */
 
 	struct mpx 			*kt_mpx;
+
+	struct kthread_runtime	*kt_runtime;
 };
+
 #define	kt_session		kt_pgrp->pg_session
 #define	kt_tgid			kt_pgrp->pg_id
 
+/* dispatch/stat codes */
+#define KT_ONALL			0			/* on allkthread list */
+#define KT_ONFREE			1			/* on freekthread list */
+#define KT_ONZOMB			2			/* on zombkthread list */
+
 /* stat codes */
-#define KT_SSLEEP			1				/* sleeping/ awaiting an event */
-#define KT_SWAIT			2				/* waiting */
-#define KT_SRUN				3				/* running */
-#define KT_SIDL				4				/* intermediate state in process creation */
-#define	KT_SZOMB			5				/* intermediate state in process termination */
-#define KT_SSTOP			6				/* process being traced */
-#define KT_SREADY			7				/* ready */
-#define KT_SSTART			8				/* start */
+#define KT_SSLEEP			1			/* sleeping/ awaiting an event */
+#define KT_SWAIT			2			/* waiting */
+#define KT_SRUN				3			/* running */
+#define KT_SIDL				4			/* intermediate state in process creation */
+#define	KT_SZOMB			5			/* intermediate state in process termination */
+#define KT_SSTOP			6			/* process being traced */
+#define KT_SREADY			7			/* ready */
+#define KT_SSTART			8			/* start */
 
 /* flag codes */
 #define	KT_INMEM			0x00000004		/* Loaded into memory. */

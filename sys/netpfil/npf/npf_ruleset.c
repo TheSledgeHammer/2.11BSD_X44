@@ -62,33 +62,33 @@ struct npf_ruleset {
 	LIST_HEAD(, npf_rule)	rs_gc;
 
 	/* Unique ID counter. */
-	uint64_t		rs_idcnt;
+	uint64_t				rs_idcnt;
 
 	/* Number of array slots and active rules. */
-	u_int			rs_slots;
-	u_int			rs_nitems;
+	u_int					rs_slots;
+	u_int					rs_nitems;
 
 	/* Array of ordered rules. */
-	npf_rule_t *		rs_rules[];
+	npf_rule_t *			rs_rules[];
 };
 
 struct npf_rule {
 	/* Attributes, interface and skip slot. */
-	uint32_t		r_attr;
-	u_int			r_ifid;
-	u_int			r_skip_to;
+	uint32_t				r_attr;
+	u_int					r_ifid;
+	u_int					r_skip_to;
 
 	/* Code to process, if any. */
-	int			r_type;
-	void *			r_code;
-	size_t			r_clen;
+	int						r_type;
+	void *					r_code;
+	size_t					r_clen;
 
 	/* NAT policy (optional), rule procedure and subset. */
-	npf_natpolicy_t *r_natp;
-	npf_rproc_t 	*r_rproc;
+	npf_natpolicy_t 		*r_natp;
+	npf_rproc_t 			*r_rproc;
 
 	/* Rule priority: (highest) 1, 2 ... n (lowest). */
-	pri_t			r_priority;
+	pri_t					r_priority;
 
 	/*
 	 * Dynamic group: subset queue and a dynamic group list entry.
@@ -104,15 +104,15 @@ struct npf_rule {
 	} /* C11 */;
 
 	/* Rule ID and the original dictionary. */
-	uint64_t		r_id;
-	prop_dictionary_t	r_dict;
+	uint64_t				r_id;
+	prop_dictionary_t		r_dict;
 
 	/* Rule name and all-list entry. */
-	char			r_name[NPF_RULE_MAXNAMELEN];
+	char					r_name[NPF_RULE_MAXNAMELEN];
 	LIST_ENTRY(npf_rule)	r_aentry;
 
 	/* Key (optional). */
-	uint8_t			r_key[NPF_RULE_MAXKEYLEN];
+	uint8_t					r_key[NPF_RULE_MAXKEYLEN];
 };
 
 #define	NPF_DYNAMIC_GROUP_P(attr) \

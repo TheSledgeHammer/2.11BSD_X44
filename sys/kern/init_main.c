@@ -371,16 +371,26 @@ main(framep)
 		return;
 	}
 
+	/* Create process 2 (the pageout daemon). */
+	if (newproc(0)) {
+		panic("fork pager");
+	}
+	if (rval[1]) {
+		/*
+		 * Now in process 2.
+		 */
+		p = curproc;
+		p->p_flag |= P_INMEM | P_SYSTEM;
+		bcopy("pagedaemon", curproc->p_comm, sizeof("pagedaemon"));
+		vm_pageout();
+		/* NOTREACHED */
+	}
+
 	/*
 	 * Create any kernel threads who's creation was deferred because
 	 * initproc had not yet been created.
 	 */
 	kthread_run_deferred_queue();
-
-	/* Create kernel thread (the pageout daemon). */
-	if (kthread_create(vm_pageout, NULL, NULL, "pagedaemon")) {
-		panic("fork pager");
-	}
 
 	/* Initialize exec structures */
 	exec_init();
