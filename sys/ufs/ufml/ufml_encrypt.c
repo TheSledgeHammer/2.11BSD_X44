@@ -45,9 +45,9 @@ ufml_encrypt(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs, type;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
-		if (ufml_check_encryption(meta, meta->ufml_encrypt) > 0) {
+		if (ufml_check_encryption(meta, meta->ufml_encrypt) >= 0) {
 			type = meta->ufml_encrypt;
 			return (UOP_ENCRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
 		}
@@ -65,9 +65,9 @@ ufml_decrypt(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs, type;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
-		if (ufml_check_encryption(meta, meta->ufml_encrypt) > 0) {
+		if (ufml_check_encryption(meta, meta->ufml_encrypt) >= 0) {
 			type = meta->ufml_encrypt;
 			return (UOP_DECRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
 		}

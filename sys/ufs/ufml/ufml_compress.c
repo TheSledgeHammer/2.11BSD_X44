@@ -45,9 +45,9 @@ ufml_compress(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs, type;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
-		if (ufml_check_compression(meta, meta->ufml_compress) > 0) {
+		if (ufml_check_compression(meta, meta->ufml_compress) >= 0) {
 			type = meta->ufml_compress;
 			return (UOP_COMPRESS(ip, ap->a_vp, ap->a_mp, fs, type));
 		}
@@ -65,9 +65,9 @@ ufml_decompress(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs, type;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
-		if (ufml_check_compression(meta, meta->ufml_compress) > 0) {
+		if (ufml_check_compression(meta, meta->ufml_compress) >= 0) {
 			type = meta->ufml_compress;
 			return (UOP_DECOMPRESS(ip, ap->a_vp, ap->a_mp, fs, type));
 		}

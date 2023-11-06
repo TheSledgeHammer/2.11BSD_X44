@@ -26,6 +26,12 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * NOTICE:
+ * Planned support for fuse/puffs lower layer.
+ * - Will remove the need for ufml modules.
+ */
+
 #ifndef _UFS_UFML_MODULE_H_
 #define _UFS_UFML_MODULE_H_
 

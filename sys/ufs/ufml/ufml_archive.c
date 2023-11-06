@@ -45,9 +45,9 @@ ufml_archive(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs, type;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
-		if (ufml_check_archive(meta, meta->ufml_archive) > 0) {
+		if (ufml_check_archive(meta, meta->ufml_archive) >= 0) {
 			type = meta->ufml_archive;
 			return (UOP_ARCHIVE(ip, ap->a_vp, ap->a_mp, fs, type));
 		}
@@ -65,9 +65,9 @@ ufml_extract(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs, type;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
-		if (ufml_check_archive(meta, meta->ufml_archive) > 0) {
+		if (ufml_check_archive(meta, meta->ufml_archive) >= 0) {
 			type = meta->ufml_archive;
 			return (UOP_EXTRACT(ip, ap->a_vp, ap->a_mp, fs, type));
 		}

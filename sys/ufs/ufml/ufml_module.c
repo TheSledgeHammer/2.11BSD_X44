@@ -26,6 +26,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * NOTICE:
+ * Planned support for fuse/puffs lower layer.
+ * - Will remove the need for ufml modules.
+ */
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>

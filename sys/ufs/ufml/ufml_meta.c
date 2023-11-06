@@ -94,25 +94,23 @@ ufml_check_filesystem(meta, fs)
 	struct ufml_metadata *meta;
 	int fs;
 {
-	meta->ufml_filesystem = 0;
-
 	switch(fs) {
+	case UFML_UFS:
 	case UFML_FFS:
-		meta->ufml_filesystem = UFML_FFS;
+		meta->ufml_filesystem = (UFML_UFS | UFML_FFS);
 		return (meta->ufml_filesystem);
-		break;
+
 	case UFML_MFS:
 		meta->ufml_filesystem = UFML_MFS;
 		return (meta->ufml_filesystem);
-		break;
+
 	case UFML_LFS:
 		meta->ufml_filesystem = UFML_LFS;
 		return (meta->ufml_filesystem);
-		break;
+
 	default:
-		meta->ufml_filesystem = UFML_UFS;
-		return (meta->ufml_filesystem);
-		break;
+		meta->ufml_filesystem = -1;
+		return (-1);
 	}
 
 	return (0);
@@ -124,21 +122,22 @@ ufml_check_archive(meta, type)
 	struct ufml_metadata *meta;
 	int			 	type;
 {
-	meta->ufml_archive = 0;
-
 	switch (type) {
 	case UFML_AR:
 		meta->ufml_archive = UFML_AR;
 		return (meta->ufml_archive);
-		break;
+
 	case UFML_CPIO:
 		meta->ufml_archive = UFML_CPIO;
 		return (meta->ufml_archive);
-		break;
-	default:
+
+	case UFML_TAR:
 		meta->ufml_archive = UFML_TAR;
 		return (meta->ufml_archive);
-		break;
+
+	default:
+		meta->ufml_archive = -1;
+		return (-1);
 	}
 
 	return (0);
@@ -150,29 +149,30 @@ ufml_check_compression(meta, type)
 	struct ufml_metadata *meta;
 	int type;
 {
-	meta->ufml_compress = 0;
-
 	switch (type) {
 	case UFML_GZIP:
 		meta->ufml_compress = UFML_GZIP;
 		return (meta->ufml_compress);
-		break;
+
 	case UFML_LZIP:
 		meta->ufml_compress = UFML_LZIP;
 		return (meta->ufml_compress);
-		break;
+
 	case UFML_LZMA:
 		meta->ufml_compress = UFML_LZMA;
 		return (meta->ufml_compress);
-		break;
+
 	case UFML_XZ:
 		meta->ufml_compress = UFML_XZ;
 		return (meta->ufml_compress);
-		break;
-	default:
+
+	case UFML_BZIP2:
 		meta->ufml_compress = UFML_BZIP2;
 		return (meta->ufml_compress);
-		break;
+
+	default:
+		meta->ufml_compress = -1;
+		return (-1);
 	}
 
 	return (0);
@@ -184,12 +184,34 @@ ufml_check_encryption(meta, type)
 	struct ufml_metadata *meta;
 	int type;
 {
-	meta->ufml_encrypt = 0;
-
 	switch (type) {
+	case UFML_BLOWFISH:
+		meta->ufml_encrypt = UFML_BLOWFISH;
+		return (meta->ufml_encrypt);
+
+	case UFML_CAMELLIA:
+		meta->ufml_encrypt = UFML_CAMELLIA;
+		return (meta->ufml_encrypt);
+
+	case UFML_SERPENT:
+		meta->ufml_encrypt = UFML_SERPENT;
+		return (meta->ufml_encrypt);
+
+	case UFML_SHA1:
+		meta->ufml_encrypt = UFML_SHA1;
+		return (meta->ufml_encrypt);
+
+	case UFML_SHA2:
+		meta->ufml_encrypt = UFML_SHA2;
+		return (meta->ufml_encrypt);
+
 	case UFML_TWOFISH:
 		meta->ufml_encrypt = UFML_TWOFISH;
 		return (meta->ufml_encrypt);
+
+	default:
+		meta->ufml_encrypt = -1;
+		return (-1);
 	}
 
 	return (0);

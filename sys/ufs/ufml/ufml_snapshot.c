@@ -44,7 +44,7 @@ ufml_snapshot_write(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
 		return (UOP_SNAPSHOT_WRITE(ip, ap->a_vp, ap->a_mp, fs));
 	}
@@ -59,7 +59,7 @@ ufml_read_snapshot_read(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
 		return (UOP_SNAPSHOT_READ(ip, ap->a_vp, ap->a_mp, fs));
 	}
@@ -74,7 +74,7 @@ ufml_snapshot_delete(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
 		return (UOP_SNAPSHOT_DELETE(ip, ap->a_vp, ap->a_mp, fs));
 	}
@@ -89,7 +89,7 @@ ufml_snapshot_commit(ap)
 	struct ufml_metadata *meta = ip->ufml_meta;
 	int fs;
 
-	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) >= 0) {
 		fs = meta->ufml_filesystem;
 		return (UOP_SNAPSHOT_COMMIT(ip, ap->a_vp, ap->a_mp, fs));
 	}
