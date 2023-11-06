@@ -103,7 +103,7 @@ mtx_owned(mtx)
 	return (1);
 }
 
-struct proc *
+void *
 mtx_owner(mtx)
 	struct mtx 	*mtx;
 {
@@ -111,7 +111,7 @@ mtx_owner(mtx)
 
 	if (mtx_owned(mtx)) {
 		holder = lockholder_get(mtx->mtx_holder);
-		return (LOCKHOLDER_PROC(holder));
+		return (LOCKHOLDER_DATA(holder));
 	}
 	return (NULL);
 }
