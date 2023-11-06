@@ -45,6 +45,6 @@ void mtx_lock(struct mtx *, struct lock_holder *);
 void mtx_unlock(struct mtx *, struct lock_holder *);
 int  mtx_lock_try(struct mtx *);
 int  mtx_owned(struct mtx *);
-int  mtx_owner(struct mtx *);
+void *mtx_owner(struct mtx *);
 #endif /* _KERNEL */
 #endif /* _SYS_MUTEX_H_ */
