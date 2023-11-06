@@ -167,6 +167,7 @@ schedcpu(arg)
 	if (runin != 0) {
 		runin = 0;
 		wakeup((caddr_t)&runin);
+		wakeup((caddr_t)pageproc);
 	}
 	++runrun;					/* swtch at least once a second */
 	timeout(schedcpu, (void *)0, hz);

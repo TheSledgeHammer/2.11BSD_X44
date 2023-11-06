@@ -192,7 +192,6 @@ kthread_alloc(func, arg, kt, name)
 	char *name;
 {
 	struct proc *p;
-	struct mpx *mpx;
 	int error;
 
 	error = proc_create(func, arg, &p, name);
@@ -363,3 +362,4 @@ runtime_init(struct kthread *kt)
 		kthread_dispatch(kt, i, kt->kt_stat);
 	}
 }
+

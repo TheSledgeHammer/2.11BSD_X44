@@ -121,11 +121,10 @@ ufsdirhash_free(struct inode *ip)
 		if (dh->dh_blkfree != NULL) {
 			free(dh->dh_blkfree, M_DIRHASH);
 		}
-		/*
+
 		mem += dh->dh_hashsz;
 		mem += dh->dh_narrays * DH_NBLKOFF * sizeof(**dh->dh_hash);
 		mem += dh->dh_nblk * sizeof(*dh->dh_blkfree);
-		*/
 	}
 	//mutex_destroy(&dh->dh_lock);
 	pool_cache_put(ufsdirhash_cache, dh);

@@ -108,7 +108,7 @@ struct ovlspace ovlspace0;
 #ifndef curproc
 struct 	proc *curproc = &proc0;
 #endif
-struct	proc *initproc;
+struct	proc *initproc, *pageproc;
 
 int	netoff = 1;
 int	securelevel;
@@ -380,6 +380,7 @@ main(framep)
 		 * Now in process 2.
 		 */
 		p = curproc;
+		pageproc = p;
 		p->p_flag |= P_INMEM | P_SYSTEM;
 		bcopy("pagedaemon", curproc->p_comm, sizeof("pagedaemon"));
 		vm_pageout();

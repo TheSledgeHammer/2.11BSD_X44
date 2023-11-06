@@ -54,10 +54,15 @@ struct iodone_chain {
  * We only need three words for these, so this abbreviated
  * definition saves some space.
  */
+#ifdef notyet
 struct bufhd {
 	short				b_flags;			/* see defines below */
 	struct	buf 		*b_forw, *b_back;	/* fwd/bkwd pointer in chain */
 };
+#endif /* notyet */
+struct bufhd;
+LIST_HEAD(bufhd, buf);
+extern struct bufhd *bufhashtbl, invalhash;
 
 /*
  * The buffer header describes an I/O operation in the kernel.
@@ -104,7 +109,6 @@ struct buf {
 	struct	ucred 		*b_wcred;			/* Write credentials reference. */
 	int					b_validoff;			/* Offset in buffer of valid region. */
 	int					b_validend;			/* Offset of end of valid region. */
-	//void				*b_fsdata;			/* fs private data */
 	struct swapbuf		*b_swbuf;			/* swapbuf back pointer */
 	void				*b_private;
 
@@ -127,10 +131,6 @@ struct buf {
 #define	BQ_LRU			1		/* lru, useful buffers */
 #define	BQ_AGE			2		/* rubbish */
 #define	BQ_EMPTY		3		/* buffer headers with no memory */
-
-struct bufhashhdr;
-LIST_HEAD(bufhashhdr, buf);
-extern struct bufhashhdr *bufhashtbl, invalhash;
 
 struct bqueues;
 TAILQ_HEAD(bqueues, buf);
@@ -247,8 +247,6 @@ struct cluster_save {
 };
 
 #ifdef _KERNEL
-//TAILQ_HEAD(swqueue, buf); 			/* Head of swap I/O buffer headers free list. */
-//extern struct 	swqueue bswlist;
 extern int		nbuf;				/* number of buffer headers */
 extern struct	buf *buf;			/* the buffer pool itself */
 extern char		*buffers;			/* The buffer contents. */

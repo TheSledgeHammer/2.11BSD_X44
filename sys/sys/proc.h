@@ -30,8 +30,6 @@
  * is swapped with the process.
  */
 struct	proc {
-    //struct	proc 		*p_forw;		/* Doubly-linked run/sleep queue. */
-	//struct	proc 		*p_back;
     TAILQ_ENTRY(proc)	p_link;			/* Doubly-linked run/sleep queue. */
 	LIST_ENTRY(proc) 	p_list;			/* List of all processes */
 	 	 	 	 	 	 	 	 	 	/* linked list of allocated proc slots */

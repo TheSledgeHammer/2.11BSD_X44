@@ -64,8 +64,8 @@
 u_long	bufhash;
 int 	needbuffer;
 
-struct bufhashhdr 	*bufhashtbl, invalhash;
-struct bqueues 		bufqueues[BQUEUES];
+struct bufhd 	*bufhashtbl, invalhash;
+struct bqueues 	bufqueues[BQUEUES];
 
 void
 bremfree(bp)
@@ -577,7 +577,7 @@ getblk(vp, blkno, size, slpflag, slptimeo)
 	daddr_t blkno;
 	int size, slpflag, slptimeo;
 {
-	struct bufhashhdr *bh;
+	struct bufhd *bh;
 	struct buf *bp;
 	int s, err;
 
@@ -899,7 +899,7 @@ blkflush(vp, blkno, dev)
 	daddr_t 		blkno;
 	dev_t 			dev;
 {
-	struct bufhashhdr	*bhash;
+	struct bufhd		*bhash;
 	struct buf 			*ep;
 	struct buf 			*dp;
 	int s;
@@ -939,7 +939,7 @@ bflush(vp, blkno, dev)
 	daddr_t 		blkno;
 	dev_t 			dev;
 {
-	struct bufhashhdr	*bhash;
+	struct bufhd		*bhash;
 	struct buf 			*bp;
 	struct buf 			*flist;
 	int 				s;
