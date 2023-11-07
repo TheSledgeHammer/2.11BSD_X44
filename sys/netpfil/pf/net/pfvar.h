@@ -756,8 +756,8 @@ struct pf_state {
 	u_int32_t	 			creation;
 	u_int32_t	 			expire;
 	u_int32_t	 			pfsync_time;
-	u_int32_t	 			packets[2];
-	u_int32_t	 			bytes[2];
+	u_int64_t	 			packets[2];
+	u_int64_t	 			bytes[2];
 	sa_family_t	 			af;
 	u_int8_t	 			proto;
 	u_int8_t	 			direction;
