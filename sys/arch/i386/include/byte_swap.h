@@ -72,12 +72,15 @@ __byte_swap_word_variable(u_int16_t x)
 	 (((x) & 0x00ff0000) >>  8) | \
 	 (((x) & 0x0000ff00) <<  8) | \
 	 (((x) & 0x000000ff) << 24))
+
 #define	__byte_swap_word_constant(x) \
 	((((x) & 0xff00) >> 8) | \
 	 (((x) & 0x00ff) << 8))
+
 #define	__byte_swap_long(x) \
 	(__builtin_constant_p((x)) ? \
 	 __byte_swap_long_constant(x) : __byte_swap_long_variable(x))
+
 #define	__byte_swap_word(x) \
 	(__builtin_constant_p((x)) ? \
 	 __byte_swap_word_constant(x) : __byte_swap_word_variable(x))
