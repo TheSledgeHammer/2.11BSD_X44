@@ -25,6 +25,8 @@
 typedef	u_int	 		ufs211_size_t;
 typedef	u_int	 		ufs211_doff_t;
 
+
+
 /*
  * 28 of the di_addr address bytes are used; 7 addresses of 4
  * bytes each: 4 direct (4Kb directly accessible) and 3 indirect.
@@ -115,8 +117,13 @@ struct ufs211_inode {
 */
 	u_short			        	i_flags;				/* user changeable flags */
 	struct ufs211_icommon2  	i_ic2;
+
+    struct ufs211_dinode        *i_din;
 };
 
+/*
+ * The on-disk dinode itself.
+ */
 struct ufs211_dinode {
 	struct	ufs211_icommon1     di_icom1;
 	daddr_t		        		di_addr[7];			/* 7 block addresses 4 bytes each */
@@ -166,23 +173,27 @@ struct ufs211_dinode {
 
 /* i_flag */
 #define	UFS211_ILOCKED	0x00001		/* inode is locked */
-#define	UFS211_IUPD		0x00002		/* file has been modified */
-#define	UFS211_IACC		0x00004		/* inode access time to be updated */
+#define	UFS211_IUPD		0x00002		/* file has been modified (IN_UPDATE) */
+#define	UFS211_IACC		0x00004		/* inode access time to be updated (IN_ACCESS) */
 #define	UFS211_IMOUNT	0x00008		/* inode is mounted on */
 #define	UFS211_IWANT	0x00010		/* some process waiting on lock */
 #define	UFS211_ITEXT	0x00020		/* inode is pure text prototype */
-#define	UFS211_ICHG		0x00040		/* inode has been changed */
-#define	UFS211_ISHLOCK	0x00080		/* file has shared lock */
-#define	UFS211_IEXLOCK	0x00100		/* file has exclusive lock */
+#define	UFS211_ICHG		0x00040		/* inode has been changed (IN_CHANGE) */
+#define	UFS211_ISHLOCK	0x00080		/* file has shared lock (IN_SHLOCK) */
+#define	UFS211_IEXLOCK	0x00100		/* file has exclusive lock (IN_EXLOCK) */
 #define	UFS211_ILWAIT	0x00200		/* someone waiting on file lock */
-#define	UFS211_IMOD		0x00400		/* inode has been modified */
-#define	UFS211_IRENAME	0x00800		/* inode is being renamed */
+#define	UFS211_IMOD		0x00400		/* inode has been modified (IN_MODIFIED) */
+#define	UFS211_IRENAME	0x00800		/* inode is being renamed (IN_RENAME) */
 #define	UFS211_IPIPE	0x01000		/* inode is a pipe */
 #define	UFS211_IRCOLL	0x02000		/* read select collision on pipe */
 #define	UFS211_IWCOLL	0x04000		/* write select collision on pipe */
 #define	UFS211_IXMOD	0x08000		/* inode is text, but impure (XXX) */
+
 #define	UFS211_INCHANGE	0x10000		/* Inode change time update request. */
 #define	UFS211_INUPDATE	0x20000		/* Modification time update request. */
+
+#define	UFS211_INHASHED	 0x40000	/* Inode is on hash list */
+#define	UFS211_INLAZYMOD 0x80000	/* Modified, but don't write yet. */
 
 /* i_mode */
 #define	UFS211_IFMT		0170000		/* type of file */

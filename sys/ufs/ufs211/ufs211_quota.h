@@ -165,6 +165,11 @@ struct ufs211_dquot {
 /*
  * Definitions for the 'quota' system call.
  */
+
+#define SUBCMDMASK	0x00ff
+#define SUBCMDSHIFT	8
+#define	QCMD(cmd, type)	(((cmd) << SUBCMDSHIFT) | ((type) & SUBCMDMASK))
+
 #define	Q_QUOTAON	0x0100	/* enable quotas */
 #define	Q_QUOTAOFF	0x0200	/* disable quotas */
 #define	Q_SETDLIM	0x0300	/* set disc limits & usage */

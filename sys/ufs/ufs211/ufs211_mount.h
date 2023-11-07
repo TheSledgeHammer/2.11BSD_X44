@@ -6,10 +6,15 @@
  *	@(#)mount.h	7.2.5 (2.11BSD GTE) 1997/6/29
  */
 
-#ifndef _UFS211_MOUNT_H_
-#define	_UFS211_MOUNT_H_
+#ifndef _UFS_UFS211_MOUNT_H_
+#define	_UFS_UFS211_MOUNT_H_
 
 #include <sys/mount.h>
+
+struct ufs211_args {
+	char				*fspec;				/* block special device to mount */
+	struct export_args 	export;				/* network export information */
+};
 
 #define UFS211_MNAMELEN 	90				    			/* length of buffer for returned name */
 
@@ -29,12 +34,23 @@ struct ufs211_statfs {
 	char					f_mntfromname[UFS211_MNAMELEN];	/* mounted filesystem */
 };
 
+#ifdef _KERNEL
+
+struct buf;
+struct ufs211_fs;
+struct ufs211_inode;
+struct nameidata;
+struct timeval;
+struct ucred;
+struct uio;
+struct vnode;
+struct netexport;
+
 struct ufs211_mount {
 	struct	mount 			*m_mountp;						/* filesystem vfs structure */
 	dev_t	    			m_dev;		    				/* device mounted */
 	struct	vnode 			*m_devvp;						/* block device mounted vnode */
 	struct	ufs211_fs 		*m_filsys;	        			/* superblock data */
-#define	m_flags		    	m_filsys->fs_flags
 	struct	ufs211_inode 	*m_inodp;	        			/* pointer to mounted on inode */
 	struct	ufs211_inode 	*m_qinod; 	    				/* QUOTA: pointer to quota file */
 	ufs211_size_t	    	m_extern;	        			/* click address of mount table extension */
@@ -56,5 +72,5 @@ struct ufs211_mount {
 
 /* Convert mount ptr to ufs211 mount ptr. */
 #define VFSTOUFS211(mp)	((struct ufs211_mount *)((mp)->mnt_data))
-
-#endif
+#endif /* KERNEL */
+#endif /* _UFS_UFS211_MOUNT_H_ */

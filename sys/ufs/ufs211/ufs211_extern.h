@@ -33,14 +33,6 @@
 int				 		updlock;			/* lock for sync */
 daddr_t	 				rablock;			/* block to be read ahead */
 
-struct ufs211_args {
-	char				*fspec;				/* block special device to mount */
-	struct export_args 	export;				/* network export information */
-
-	struct mount 	    *ufs211_vfs;
-	struct vnode 	    *ufs211_rootvp;	    /* block device mounted vnode */
-};
-
 /* buffer map */
 struct ufs211_bufmap {
 	void 				*bm_data;			/* data */
