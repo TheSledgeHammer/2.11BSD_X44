@@ -83,6 +83,8 @@ uint32_t	ntohl(uint32_t) __attribute__((__const__));
 uint16_t	ntohs(uint16_t) __attribute__((__const__));
 __END_DECLS
 
+#include <machine/bswap.h>
+
 /*
  * Macros for network/external number representation conversion.
  */
@@ -100,6 +102,11 @@ __END_DECLS
 
 #else	/* LITTLE_ENDIAN || !defined(lint) */
 
+#define	ntohl(x)	bswap32((uint32_t)(x))
+#define	ntohs(x)	bswap16((uint16_t)(x))
+#define	htonl(x)	bswap32((uint32_t)(x))
+#define	htons(x)	bswap16((uint16_t)(x))
+
 #define	NTOHL(x)	(x) = ntohl((uint32_t)(x))
 #define	NTOHS(x)	(x) = ntohs((uint16_t)(x))
 #define	HTONL(x)	(x) = htonl((uint32_t)(x))
@@ -110,8 +117,6 @@ __END_DECLS
 /*
  * Macros to convert to a specific endianness.
  */
-
-#include <machine/bswap.h>
 
 #if BYTE_ORDER == BIG_ENDIAN
 
@@ -162,7 +167,7 @@ __END_DECLS
 #define LE64TOH(x)	HTOLE64(x)
 
 #endif /* !_LOCORE */
-#endif /* !_POSIX_SOURCE */
+#endif /* _XOPEN_SOURCE || __BSD_VISIBLE */
 
 /* Alignment-agnostic encode/decode bytestream to/from little/big endian. */
 
