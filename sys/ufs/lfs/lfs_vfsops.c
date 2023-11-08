@@ -716,7 +716,7 @@ lfs1_vget_debug(ip, fs, dip, bp, ino, retries)
 					if ((*bpp)->b_vp == fs->lfs_ivnode && bpp != fs->lfs_sp->bpp) {
 						/* Inode block */
 						printf("block 0x%" PRIx64 ": ", (*bpp)->b_blkno);
-						dp = (struct ufs2_dinode*) (*bpp)->b_data;
+						dp = (struct ufs1_dinode*) (*bpp)->b_data;
 						for (i = 0; i < INOPB(fs); i++) {
 							if (dp[i].di_u.inumber) {
 								printf("%d ", dp[i].di_u.inumber);
