@@ -60,6 +60,9 @@
 #include <miscfs/specfs/specdev.h>
 
 int lfs_mountfs (struct vnode *, struct mount *, struct proc *);
+int lfs1_vget_debug(struct inode *, struct lfs *, struct ufs1_dinode *, struct buf *, ino_t, int);
+int lfs2_vget_debug(struct inode *, struct lfs *, struct ufs2_dinode *, struct buf *, ino_t, int);
+
 #define	 lfs_sysctl ((int (*) (int *, u_int, void *, size_t *, void *, size_t, struct proc *))eopnotsupp)
 
 struct vfsops lfs_vfsops = {
@@ -502,7 +505,8 @@ lfs_vget(mp, ino, vpp)
 	struct vnode **vpp;
 {
 	register struct lfs *fs;
-	struct ufs1_dinode *dip;
+	struct ufs1_dinode *dip1;
+	struct ufs2_dinode *dip2;
 	register struct inode *ip;
 	struct buf *bp;
 	struct ifile *ifp;
@@ -574,43 +578,32 @@ again:
 		*vpp = NULL;
 		return (error);
 	}
-	dip = lfs1_ifind(fs, ino, bp);
-	if (dip == NULL) {
-		/* Assume write has not completed yet; try again */
-		bp->b_flags |= B_INVAL;
-		brelse(bp);
-		++retries;
-		if (retries > LFS_IFIND_RETRIES) {
-#ifdef DEBUG
-			/* If the seglock is held look at the bpp to see
-			   what is there anyway */
-			if (fs->lfs_seglock > 0) {
-				struct buf **bpp;
-				struct ufs1_dinode *dp;
-				int i;
 
-				for (bpp = fs->lfs_sp->bpp; bpp != fs->lfs_sp->cbpp; ++bpp) {
-					if ((*bpp)->b_vp == fs->lfs_ivnode && bpp != fs->lfs_sp->bpp) {
-						/* Inode block */
-						printf("block 0x%" PRIx64 ": ", (*bpp)->b_blkno);
-						dp = (struct ufs1_dinode *)(*bpp)->b_data;
-						for (i = 0; i < INOPB(fs); i++) {
-							if (dp[i].di_u.inumber) {
-								printf("%d ", dp[i].di_u.inumber);
-							}
-						}
-						printf("\n");
-					}
-				}
+	if (UFS1) {
+		dip1 = lfs1_ifind(fs, ino, bp);
+		if (dip1 != NULL) {
+			*ip->i_din.ffs1_din = *dip1;
+			goto end;
+		}else {
+			error = lfs1_vget_debug(ip, fs, dip1, bp, ino, retries);
+			if (error != 0) {
+				goto again;
 			}
-#endif
-			panic("lfs_vget: dinode not found");
 		}
-		printf("lfs_vget: dinode %d not found, retrying...\n", ino);
-		(void)tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs ifind", 1);
-		goto again;
+	} else {
+		dip2 = lfs2_ifind(fs, ino, bp);
+		if (dip1 != NULL) {
+			*ip->i_din.ffs2_din = *dip2;
+			goto end;
+		} else {
+			error = lfs2_vget_debug(ip, fs, dip2, bp, ino, retries);
+			if (error != 0) {
+				goto again;
+			}
+		}
 	}
-	*ip->i_din.ffs1_din = *dip;
+
+end:
 	brelse(bp);
 
 	/*
@@ -694,4 +687,100 @@ lfs_init(vfsp)
 {
 	lfs_mount_type = vfsp->vfc_typenum;
 	return (ufs_init(vfsp));
+}
+
+int
+lfs1_vget_debug(ip, fs, dip, bp, ino, retries)
+	struct inode *ip;
+	struct lfs *fs;
+	struct ufs1_dinode *dip;
+	struct buf *bp;
+	ino_t ino;
+	int retries;
+{
+	if (dip == NULL) {
+		/* Assume write has not completed yet; try again */
+		bp->b_flags |= B_INVAL;
+		brelse(bp);
+		++retries;
+		if (retries > LFS_IFIND_RETRIES) {
+#ifdef DEBUG
+			/* If the seglock is held look at the bpp to see
+			 what is there anyway */
+			if (fs->lfs_seglock > 0) {
+				struct buf **bpp;
+				struct ufs1_dinode *dp;
+				int i;
+
+				for (bpp = fs->lfs_sp->bpp; bpp != fs->lfs_sp->cbpp; ++bpp) {
+					if ((*bpp)->b_vp == fs->lfs_ivnode && bpp != fs->lfs_sp->bpp) {
+						/* Inode block */
+						printf("block 0x%" PRIx64 ": ", (*bpp)->b_blkno);
+						dp = (struct ufs2_dinode*) (*bpp)->b_data;
+						for (i = 0; i < INOPB(fs); i++) {
+							if (dp[i].di_u.inumber) {
+								printf("%d ", dp[i].di_u.inumber);
+							}
+						}
+						printf("\n");
+
+					}
+				}
+			}
+#endif
+			panic("lfs_vget: dinode not found");
+		}
+		printf("lfs_vget: dinode %d not found, retrying...\n", ino);
+		(void) tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs ifind", 1);
+		return (1);
+	}
+	return (0);
+}
+
+int
+lfs2_vget_debug(ip, fs, dip, bp, ino, retries)
+	struct inode *ip;
+	struct lfs *fs;
+	struct ufs2_dinode *dip;
+	struct buf *bp;
+	ino_t ino;
+	int retries;
+{
+	if (dip == NULL) {
+		/* Assume write has not completed yet; try again */
+		bp->b_flags |= B_INVAL;
+		brelse(bp);
+		++retries;
+		if (retries > LFS_IFIND_RETRIES) {
+#ifdef DEBUG
+			/* If the seglock is held look at the bpp to see
+			 what is there anyway */
+			if (fs->lfs_seglock > 0) {
+				struct buf **bpp;
+				struct ufs12_dinode *dp;
+				int i;
+
+				for (bpp = fs->lfs_sp->bpp; bpp != fs->lfs_sp->cbpp; ++bpp) {
+					if ((*bpp)->b_vp == fs->lfs_ivnode && bpp != fs->lfs_sp->bpp) {
+						/* Inode block */
+						printf("block 0x%" PRIx64 ": ", (*bpp)->b_blkno);
+						dp = (struct ufs2_dinode*) (*bpp)->b_data;
+						for (i = 0; i < INOPB(fs); i++) {
+							if (dp[i].di_u.inumber) {
+								printf("%d ", dp[i].di_u.inumber);
+							}
+						}
+						printf("\n");
+
+					}
+				}
+			}
+#endif
+			panic("lfs_vget: dinode not found");
+		}
+		printf("lfs_vget: dinode %d not found, retrying...\n", ino);
+		(void) tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs ifind", 1);
+		return (1);
+	}
+	return (0);
 }
