@@ -406,7 +406,7 @@ ufs211_getattr(ap)
 		vap->va_blocksize = MAXBSIZE;
 	else
 		vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
-	vap->va_bytes = dbtob((u_quad_t)ip->di_blocks);
+	vap->va_bytes = dbtob((u_quad_t)ip->i_din->di_blocks);
 	vap->va_type = vp->v_type;
 	vap->va_filerev = ip->i_modrev; /* nfs */
 	return (0);
@@ -536,7 +536,8 @@ ufs211_chmod1(vp, mode)
  * Set ownership given a path name.
  */
 void
-ufs211_chown()
+ufs211_chown(ap)
+	struct vop_setattr_args *ap;
 {
 	struct vnode *vp;
 	register struct ufs211_inode *ip;
@@ -557,7 +558,7 @@ ufs211_chown()
 	VATTR_NULL(&vattr);
 	vattr.va_uid = uap->uid;
 	vattr.va_gid = uap->gid;
-	u.u_error = ufs211_setattr(ip, &vattr);
+	u.u_error = ufs211_setattr(ap);
 	vput(ip);
 }
 
@@ -830,7 +831,7 @@ abortit:
 		error = EPERM;
 		goto abortit;
 	}
-	if ((ip->i_mode & IFMT) == IFDIR) {
+	if ((ip->i_mode & UFS211_IFMT) == UFS211_IFDIR) {
 		/*
 		 * Avoid ".", "..", and aliases of "." for obvious reasons.
 		 */
@@ -963,7 +964,7 @@ abortit:
 		 * to it. Also, ensure source and target are compatible
 		 * (both directories, or both not directories).
 		 */
-		if ((xp->i_mode & IFMT) == IFDIR) {
+		if ((xp->i_mode & UFS211_IFMT) == UFS211_IFDIR) {
 			if (!ufs211_dirempty(xp, dp->i_number) || xp->i_nlink > 2) {
 				error = ENOTEMPTY;
 				goto bad;
@@ -1564,7 +1565,7 @@ ufs211_symlink(ap)
 	register struct ufs211_inode *ip;
 	int len, error;
 
-	if (error == ufs211_makeinode(IFLNK | ap->a_vap->va_mode, ap->a_dvp, vpp, ap->a_cnp))
+	if (error == ufs211_makeinode(UFS211_IFLNK | ap->a_vap->va_mode, ap->a_dvp, vpp, ap->a_cnp))
 		return (error);
 	vp = *vpp;
 	len = strlen(ap->a_target);
@@ -1591,7 +1592,7 @@ ufs211_readlink(ap)
 	int isize;
 
 	isize = ip->i_size;
-	if (isize < vp->v_mount->mnt_maxsymlinklen || ip->di_blocks == 0) {
+	if (isize < vp->v_mount->mnt_maxsymlinklen || ip->i_din->di_blocks == 0) {
 		uiomove((char *)ip->i_db, isize, ap->a_uio);
 		return (0);
 	}
@@ -1689,10 +1690,10 @@ ufs211_mkdir(ap)
 		dp->i_flag |= UFS211_ICHG;
 		goto bad;
 	}
-	if (DIRBLKSIZ > VFSTOUFS211(dvp->v_mount)->m_mountp->mnt_stat.f_bsize)
+	if (UFS211_DIRBLKSIZ > VFSTOUFS211(dvp->v_mount)->m_mountp->mnt_stat.f_bsize)
 		panic("ufs_mkdir: blksize"); /* XXX should grow with balloc() */
 	else {
-		ip->i_size = DIRBLKSIZ;
+		ip->i_size = UFS211_DIRBLKSIZ;
 		ip->i_flag |= UFS211_ICHG;
 	}
 

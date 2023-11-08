@@ -584,7 +584,7 @@ again:
 		if (dip1 != NULL) {
 			*ip->i_din.ffs1_din = *dip1;
 			goto end;
-		}else {
+		} else {
 			error = lfs1_vget_debug(ip, fs, dip1, bp, ino, retries);
 			if (error != 0) {
 				goto again;
@@ -592,7 +592,7 @@ again:
 		}
 	} else {
 		dip2 = lfs2_ifind(fs, ino, bp);
-		if (dip1 != NULL) {
+		if (dip2 != NULL) {
 			*ip->i_din.ffs2_din = *dip2;
 			goto end;
 		} else {
@@ -731,7 +731,7 @@ lfs1_vget_debug(ip, fs, dip, bp, ino, retries)
 			panic("lfs_vget: dinode not found");
 		}
 		printf("lfs_vget: dinode %d not found, retrying...\n", ino);
-		(void) tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs ifind", 1);
+		(void) tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs1 ifind", 1);
 		return (1);
 	}
 	return (0);
@@ -757,7 +757,7 @@ lfs2_vget_debug(ip, fs, dip, bp, ino, retries)
 			 what is there anyway */
 			if (fs->lfs_seglock > 0) {
 				struct buf **bpp;
-				struct ufs12_dinode *dp;
+				struct ufs2_dinode *dp;
 				int i;
 
 				for (bpp = fs->lfs_sp->bpp; bpp != fs->lfs_sp->cbpp; ++bpp) {
@@ -779,7 +779,7 @@ lfs2_vget_debug(ip, fs, dip, bp, ino, retries)
 			panic("lfs_vget: dinode not found");
 		}
 		printf("lfs_vget: dinode %d not found, retrying...\n", ino);
-		(void) tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs ifind", 1);
+		(void) tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs2 ifind", 1);
 		return (1);
 	}
 	return (0);
