@@ -49,13 +49,12 @@
 #include <miscfs/specfs/specdev.h>
 
 #include <ufs/ufs211/ufs211_dir.h>
+#include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_extern.h>
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_inode.h>
 #include <ufs/ufs211/ufs211_mount.h>
-#include <ufs/ufs211/ufs211_quota.h>
 
-#define ufs211_reallocblks	((int (*) (struct  vop_reallocblks_args *))eopnotsupp)
 /* Global vfs data structures for ufs211. */
 struct vnodeops ufs211_vnodeops = {
 		.vop_default = vop_default_error,	/* default */
@@ -212,39 +211,39 @@ ufs211_itimes(vp)
 	struct timespec ts;
 
 	ip = UFS211_VTOI(vp);
-	if ((ip->i_flag & (IN_ACCESS | IN_CHANGE | IN_UPDATE)) == 0) {
+	if ((ip->i_flag & (UFS211_IACC | UFS211_ICHG | UFS211_IUPD)) == 0) {
 		return;
 	}
 	if ((vp->v_type == VBLK || vp->v_type == VCHR) /* && !DOINGSOFTDEP(vp)*/) {
-		ip->i_flag |= IN_LAZYMOD;
+		ip->i_flag |= UFS211_INLAZYMOD;
 	} else {
-		ip->i_flag |= IN_MODIFIED;
+		ip->i_flag |= UFS211_IMOD;
 	}
 	if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 		vfs_timestamp(&ts);
-		if (ip->i_flag & IN_ACCESS) {
+		if (ip->i_flag & UFS211_IACC) {
 			ip->i_atime = ts.tv_sec;
 			ip->i_atimensec = ts.tv_nsec;
 		}
-		if (ip->i_flag & IN_UPDATE) {
+		if (ip->i_flag & UFS211_IUPD) {
 			ip->i_mtime = ts.tv_sec;
 			ip->i_mtimensec = ts.tv_nsec;
 			ip->i_modrev++;
 		}
-		if (ip->i_flag & IN_CHANGE) {
+		if (ip->i_flag & UFS211_ICHG) {
 			ip->i_ctime = ts.tv_sec;
 			ip->i_ctimensec = ts.tv_nsec;
 		}
 	}
-	ip->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);
+	ip->i_flag &= ~(UFS211_IACC | UFS211_ICHG | UFS211_IUPD);
 }
 
 int
 ufs211_create(ap)
-	struct vop_create_args ap;
+	struct vop_create_args *ap;
 {
-	if(u->u_error == ufs211_makeinode(MAKEIMODE(ap->a_vap->va_type, ap->a_vap->va_mode), ap->a_dvp, ap->a_vpp, ap->a_cnp))
-		return (u->u_error);
+	if(u.u_error == ufs211_makeinode(MAKEIMODE(ap->a_vap->va_type, ap->a_vap->va_mode), ap->a_dvp, ap->a_vpp, ap->a_cnp))
+		return (u.u_error);
 	return (0);
 }
 
@@ -252,7 +251,8 @@ int
 ufs211_open(ap)
 	struct vop_open_args *ap;
 {
-	if ((UFS211_VTOI(ap->a_vp)->di_flags & APPEND) && (ap->a_mode & (FWRITE | O_APPEND)) == FWRITE)
+    
+	if ((UFS211_VTOI(ap->a_vp)->i_din->di_flag & APPEND) && (ap->a_mode & (FWRITE | O_APPEND)) == FWRITE)
 		return (EPERM);
 	return (0);
 }
@@ -290,14 +290,13 @@ ufs211_access(ap)
 {
 	struct vnode *vp = ap->a_vp;
 	register struct ufs211_inode *ip = UFS211_VTOI(vp);
-	int mode;
-	register m;
+	mode_t mask, mode = ap->a_mode;
 	register gid_t *gp;
 
-	m = mode;
-	if (m == VWRITE) {
+    mask = mode;
+	if (mode == VWRITE) {
 		if (ip->i_flags & IMMUTABLE) {
-			u->u_error = EPERM;
+			u.u_error = EPERM;
 			return(1);
 		}
 		/*
@@ -309,7 +308,7 @@ ufs211_access(ap)
 		if (ip->i_fs->fs_ronly != 0) {
 			if ((ip->i_mode & UFS211_IFMT) != UFS211_IFCHR &&
 			    (ip->i_mode & UFS211_IFMT) != UFS211_IFBLK) {
-				u->u_error = EROFS;
+				u.u_error = EROFS;
 				return (1);
 			}
 		}
@@ -320,9 +319,9 @@ ufs211_access(ap)
 		 */
 		/*
 		if (ip->i_flag& ITEXT)
-			xuntext(ip->i_text);
+			vm_xuntext(ip->i_text);
 		if (ip->i_flag & ITEXT) {
-			u->u_error = ETXTBSY;
+			u.u_error = ETXTBSY;
 			return (1);
 		}
 		*/
@@ -331,8 +330,11 @@ ufs211_access(ap)
 	 * If you're the super-user,
 	 * you always get access.
 	 */
-	if (u->u_uid == 0)
+	if (u.u_uid == 0)
 		return (0);
+
+    mask = 0;
+
 	/*
 	 * Access check is based on only
 	 * one of owner, group, public.
@@ -340,19 +342,32 @@ ufs211_access(ap)
 	 * If not a member of the group, then
 	 * check public access.
 	 */
-	if (u->u_uid != ip->i_uid) {
-		m >>= 3;
-		gp = u->u_ucred->cr_groups;
-		for (; gp < &u->u_ucred->cr_groups[NGROUPS] && *gp != NOGROUP; gp++)
+	if (u.u_uid != ip->i_uid) {
+		if (mode & VEXEC)
+			mask |= S_IXUSR;
+		if (mode & VREAD)
+			mask |= S_IRUSR;
+		if (mode & VWRITE)
+			mask |= S_IWUSR;
+        
+		mask >>= 3;
+		gp = u.u_ucred->cr_groups;
+		for (; gp < &u.u_ucred->cr_groups[NGROUPS] && *gp != NOGROUP; gp++)
 			if (ip->i_gid == *gp)
-				goto found;
-		m >>= 3;
+			if (mode & VEXEC)
+				mask |= S_IXGRP;
+			if (mode & VREAD)
+				mask |= S_IRGRP;
+			if (mode & VWRITE)
+				mask |= S_IWGRP;
+			goto found;
+		mask >>= 3;
 found:
 		;
 	}
-	if ((ip->i_mode&m) != 0)
+	if ((ip->i_mode & mask) != 0)
 		return (0);
-	u->u_error = EACCES;
+	u.u_error = EACCES;
 	return (1);
 }
 
@@ -375,15 +390,15 @@ ufs211_getattr(ap)
 	vap->va_uid = ip->i_uid;
 	vap->va_gid = ip->i_gid;
 	vap->va_rdev = (dev_t)ip->i_rdev;
-	vap->va_size = ip->di_size;
+	vap->va_size = ip->i_din->di_size;
 	vap->va_atime.tv_sec = ip->i_atime;
 	vap->va_atime.tv_nsec = ip->i_atimensec;
 	vap->va_mtime.tv_sec = ip->i_mtime;
 	vap->va_mtime.tv_nsec = ip->i_mtimensec;
 	vap->va_ctime.tv_sec = ip->i_ctime;
 	vap->va_ctime.tv_nsec = ip->i_ctimensec;
-	vap->va_flags = ip->di_flags;
-	vap->va_gen = ip->di_gen;
+	vap->va_flags = ip->i_din->di_flag;
+	vap->va_gen = ip->i_din->di_gen;
 	/* this doesn't belong here */
 	if (vp->v_type == VBLK)
 		vap->va_blocksize = BLKDEV_IOSIZE;
@@ -414,9 +429,9 @@ ufs211_setattr(ap)
 	if (ip->i_fs->fs_ronly) /* can't change anything on a RO fs */
 		return (EROFS);
 	if (vap->va_flags != VNOVAL) {
-		if (u->u_uid != ip->i_uid && !ufs211_suser())
-			return (u->u_error);
-		if (u->u_uid == 0) {
+		if (u.u_uid != ip->i_uid && !suser())
+			return (u.u_error);
+		if (u.u_uid == 0) {
 			if ((ip->i_flags & (SF_IMMUTABLE | SF_APPEND)) && securelevel > 0)
 				return (EPERM);
 			ip->i_flags = vap->va_flags;
@@ -442,13 +457,13 @@ ufs211_setattr(ap)
 		if ((ip->i_mode & UFS211_IFMT) == UFS211_IFDIR)
 			return (EISDIR);
 		ufs211_trunc(ip, vap->va_size, 0);
-		if (u->u_error)
-			return (u->u_error);
+		if (u.u_error)
+			return (u.u_error);
 	}
 	ufs211_itimes(vp);
 	if (vap->va_atime != (time_t) VNOVAL || vap->va_mtime != (time_t) VNOVAL) {
-		if (u->u_uid != ip->i_uid && !suser() && ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || access(ip, UFS211_IWRITE)))
-			return (u->u_error);
+		if (u.u_uid != ip->i_uid && !suser() && ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || access(ip, UFS211_IWRITE)))
+			return (u.u_error);
 		if (vap->va_atime != (time_t) VNOVAL && !(ip->i_fs->fs_flags & MNT_NOATIME))
 			ip->i_flag |= UFS211_IACC;
 		if (vap->va_mtime != (time_t) VNOVAL)
@@ -472,7 +487,7 @@ ufs211_chmod()
 	register struct a {
 		char	*fname;
 		int		fmode;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct a *)u.u_ap;
 
 	struct	vattr				vattr;
 	struct	nameidata 			nd;
@@ -484,7 +499,7 @@ ufs211_chmod()
 		return;
 	VATTR_NULL(&vattr);
 	vattr.va_mode = uap->fmode & 07777;
-	u->u_error = ufs_setattr(ip, &vattr);
+	u.u_error = ufs_setattr(ip, &vattr);
 	vput(ip);
 }
 
@@ -496,9 +511,9 @@ ufs211_chmod1(vp, mode)
 	register struct ufs211_inode *ip;
 
 	ip = UFS211_VTOI(vp);
-	if (u->u_uid != ip->i_uid && !suser())
-		return (u->u_error);
-	if (u->u_uid) {
+	if (u.u_uid != ip->i_uid && !suser())
+		return (u.u_error);
+	if (u.u_uid) {
 		if ((ip->i_mode & UFS211_IFMT) != UFS211_IFDIR && (mode & UFS211_ISVTX)) {
 			return (EFTYPE);
 		}
@@ -529,7 +544,7 @@ ufs211_chown()
 		char	*fname;
 		int		uid;
 		int		gid;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct a *)u.u_ap;
 
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
@@ -542,7 +557,7 @@ ufs211_chown()
 	VATTR_NULL(&vattr);
 	vattr.va_uid = uap->uid;
 	vattr.va_gid = uap->gid;
-	u->u_error = ufs211_setattr(ip, &vattr);
+	u.u_error = ufs211_setattr(ip, &vattr);
 	vput(ip);
 }
 
@@ -569,8 +584,8 @@ ufs211_chown1(ip, uid, gid)
 	 * of the file, or are not a member of the target group,
 	 * the caller must be superuser or the call fails.
 	 */
-	if ((u->u_uid != ip->i_uid || uid != ip->i_uid || !groupmember((gid_t) gid)) && !suser()) {
-		return (u->u_error);
+	if ((u.u_uid != ip->i_uid || uid != ip->i_uid || !groupmember((gid_t) gid)) && !suser()) {
+		return (u.u_error);
 	}
 	ouid = ip->i_uid;
 	ogid = ip->i_gid;
@@ -595,9 +610,9 @@ ufs211_chown1(ip, uid, gid)
 #endif
 	if (ouid != uid || ogid != gid)
 		ip->i_flag |= UFS211_ICHG;
-	if (ouid != uid && u->u_uid != 0)
+	if (ouid != uid && u.u_uid != 0)
 		ip->i_mode &= ~UFS211_ISUID;
-	if (ogid != gid && u->u_uid != 0)
+	if (ogid != gid && u.u_uid != 0)
 		ip->i_mode &= ~UFS211_ISGID;
 	return (0);
 }
@@ -619,7 +634,7 @@ ufs211_read(ap)
 
 	error = VOCALL(ap->a_vp->v_op, &ap->a_head);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
-		ip->i_flag |= IN_ACCESS;
+		ip->i_flag |= UFS211_IACC;
 	}
 	return (error);
 }
@@ -641,7 +656,7 @@ ufs211_write(ap)
 
 	error = VOCALL(ap->a_vp->v_op, &ap->a_head);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
-		ip->i_flag |= IN_CHANGE | IN_UPDATE;
+		ip->i_flag |= UFS211_ICHG | UFS211_IUPD;
 	}
 	return (error);
 }
@@ -720,7 +735,7 @@ ufs211_remove(ap)
 	}
 	if ((error = ufs211_dirremove(dvp, ap->a_cnp)) == 0) {
 		ip->i_nlink--;
-		ip->i_flag |= IN_CHANGE;
+		ip->i_flag |= UFS211_ICHG;
 	}
 out:
 	if (dvp == vp) {
@@ -821,12 +836,12 @@ abortit:
 		 */
 		if ((fcnp->cn_namelen == 1 && fcnp->cn_nameptr[0] == '.') ||
 		    dp == ip || (fcnp->cn_flags&ISDOTDOT) ||
-		    (ip->i_flag & IN_RENAME)) {
+		    (ip->i_flag & UFS211_IRENAME)) {
 			VOP_UNLOCK(fvp, 0, p);
 			error = EINVAL;
 			goto abortit;
 		}
-		ip->i_flag |= IN_RENAME;
+		ip->i_flag |= UFS211_IRENAME;
 		oldparent = dp->i_number;
 		doingdirectory++;
 	}
@@ -850,7 +865,7 @@ abortit:
 	//ip->i_effnlink++;
 	ip->i_nlink++;
 	ip->di_nlink = ip->i_nlink;
-	ip->i_flag |= IN_CHANGE;
+	ip->i_flag |= UFS211_ICHG;
 	tv = time;
 	if (error == VOP_UPDATE(fvp, &tv, &tv, 1)) {
 		VOP_UNLOCK(fvp, 0, p);
@@ -910,14 +925,14 @@ abortit:
 			//dp->i_effnlink++;
 			dp->i_nlink++;
 			dp->di_nlink = dp->i_nlink;
-			dp->i_flag |= IN_CHANGE;
+			dp->i_flag |= UFS211_ICHG;
 			if (error == VOP_UPDATE(tdvp, &tv, &tv, 1))
 				goto bad;
 		}
 		if (error == ufs211_direnter(ip, tdvp, tcnp)) {
 			if (doingdirectory && newparent) {
 				dp->i_nlink--;
-				dp->i_flag |= IN_CHANGE;
+				dp->i_flag |= UFS211_ICHG;
 				(void)VOP_UPDATE(tdvp, &tv, &tv, 1);
 			}
 			goto bad;
@@ -972,7 +987,7 @@ abortit:
 		 */
 		 if (doingdirectory && !newparent) {
 			dp->i_nlink--;
-			dp->i_flag |= IN_CHANGE;
+			dp->i_flag |= UFS211_ICHG;
 		}
 		vput(tdvp);
 		/*
@@ -991,7 +1006,7 @@ abortit:
 				panic("rename: linked directory");
 			error = VOP_TRUNCATE(tvp, (off_t)0, IO_SYNC, tcnp->cn_cred, tcnp->cn_proc);
 		}
-		xp->i_flag |= IN_CHANGE;
+		xp->i_flag |= UFS211_ICHG;
 		vput(tvp);
 		xp = NULL;
 	}
@@ -1039,7 +1054,7 @@ abortit:
 		 */
 		if (doingdirectory && newparent) {
 			dp->i_nlink--;
-			dp->i_flag |= IN_CHANGE;
+			dp->i_flag |= UFS211_ICHG;
 			error = vn_rdwr(UIO_READ, fvp, (caddr_t)&dirbuf,
 				sizeof (struct ufs211_dirtemplate), (off_t)0,
 				UIO_SYSSPACE, IO_NODELOCKED,
@@ -1074,9 +1089,9 @@ abortit:
 		error = ufs211_dirremove(fdvp, fcnp);
 		if (!error) {
 			xp->i_nlink--;
-			xp->i_flag |= IN_CHANGE;
+			xp->i_flag |= UFS211_ICHG;
 		}
-		xp->i_flag &= ~IN_RENAME;
+		xp->i_flag &= ~UFS211_IRENAME;
 	}
 	if (dp)
 		vput(fdvp);
@@ -1091,13 +1106,13 @@ bad:
 	vput(UFS211_ITOV(dp));
 out:
 	if (doingdirectory)
-		ip->i_flag &= ~IN_RENAME;
+		ip->i_flag &= ~UFS211_IRENAME;
 	if (vn_lock(fvp, LK_EXCLUSIVE, p) == 0) {
 		//ip->i_effnlink--;
 		ip->i_nlink--;
 		ip->di_nlink = ip->i_nlink;
-		ip->i_flag |= IN_CHANGE;
-		ip->i_flag &= ~IN_RENAME;
+		ip->i_flag |= UFS211_ICHG;
+		ip->i_flag &= ~UFS211_IRENAME;
 		vput(fvp);
 	} else
 		vrele(fvp);
@@ -1238,10 +1253,10 @@ ufs211_inactive(ap)
 		ip->i_rdev = 0;
 		mode = ip->i_mode;
 		ip->i_mode = 0;
-		ip->i_flag |= IN_CHANGE | IN_UPDATE;
+		ip->i_flag |= UFS211_ICHG | UFS211_IUPD;
 		VOP_VFREE(vp, ip->i_number, mode);
 	}
-	if (ip->i_flag & (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) {
+	if (ip->i_flag & (UFS211_IACC | UFS211_ICHG | UFS211_IMOD | UFS211_IUPD)) {
 		tv = time;
 		VOP_UPDATE(vp, &tv, &tv, 0);
 	}
@@ -1464,14 +1479,14 @@ ufs211_link(ap)
 		goto out1;
 	}
 	ip->i_nlink++;
-	ip->i_flag |= IN_CHANGE;
+	ip->i_flag |= UFS211_ICHG;
 	tv = time;
 	error = VOP_UPDATE(vp, &tv, &tv, 1);
 	if (!error)
 		error = ufs211_direnter(ip, tdvp, cnp);
 	if (error) {
 		ip->i_nlink--;
-		ip->i_flag |= IN_CHANGE;
+		ip->i_flag |= UFS211_ICHG;
 	}
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 out1:
@@ -1557,7 +1572,7 @@ ufs211_symlink(ap)
 		ip = UFS211_VTOI(vp);
 		bcopy(ap->a_target, (char*) ip->i_db, len);
 		ip->i_size = len;
-		ip->i_flag |= IN_CHANGE | IN_UPDATE;
+		ip->i_flag |= UFS211_ICHG | UFS211_IUPD;
 	} else {
 		error = vn_rdwr(UIO_WRITE, vp, ap->a_target, len, (off_t) 0,
 				UIO_SYSSPACE, IO_NODELOCKED, ap->a_cnp->cn_cred, (int*) 0,
@@ -1638,7 +1653,7 @@ ufs211_mkdir(ap)
 		return (error);
 	}
 #endif
-	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
+	ip->i_flag |= UFS211_IACC | UFS211_ICHG | UFS211_IUPD;
 	ip->i_mode = dmode;
 	tvp->v_type = VDIR;	/* Rest init'd in getnewvnode(). */
 	ip->i_nlink = 2;
@@ -1654,7 +1669,7 @@ ufs211_mkdir(ap)
 	 * so reparation is possible if we crash.
 	 */
 	dp->i_nlink++;
-	dp->i_flag |= IN_CHANGE;
+	dp->i_flag |= UFS211_ICHG;
 	if (error == VOP_UPDATE(dvp, &tv, &tv, 1))
 		goto bad;
 
@@ -1671,20 +1686,20 @@ ufs211_mkdir(ap)
 	    IO_NODELOCKED|IO_SYNC, cnp->cn_cred, (int *)0, (struct proc *)0);
 	if (error) {
 		dp->i_nlink--;
-		dp->i_flag |= IN_CHANGE;
+		dp->i_flag |= UFS211_ICHG;
 		goto bad;
 	}
 	if (DIRBLKSIZ > VFSTOUFS211(dvp->v_mount)->m_mountp->mnt_stat.f_bsize)
 		panic("ufs_mkdir: blksize"); /* XXX should grow with balloc() */
 	else {
 		ip->i_size = DIRBLKSIZ;
-		ip->i_flag |= IN_CHANGE;
+		ip->i_flag |= UFS211_ICHG;
 	}
 
 	/* Directory set up, now install it's entry in the parent directory. */
 	if (error == ufs211_direnter(ip, dvp, cnp)) {
 		dp->i_nlink--;
-		dp->i_flag |= IN_CHANGE;
+		dp->i_flag |= UFS211_ICHG;
 	}
 bad:
 	/*
@@ -1693,7 +1708,7 @@ bad:
 	 */
 	if (error) {
 		ip->i_nlink = 0;
-		ip->i_flag |= IN_CHANGE;
+		ip->i_flag |= UFS211_ICHG;
 		vput(tvp);
 	} else
 		*ap->a_vpp = tvp;
@@ -1748,7 +1763,7 @@ ufs211_rmdir(ap)
 	if (error == ufs211_dirremove(dvp, cnp))
 		goto out;
 	dp->i_nlink--;
-	dp->i_flag |= IN_CHANGE;
+	dp->i_flag |= UFS211_ICHG;
 	cache_purge(dvp);
 	vput(dvp);
 	dvp = NULL;
@@ -1781,10 +1796,10 @@ ufs211_mknod(ap)
 	struct vnode **vpp = ap->a_vpp;
 	register struct ufs211_inode *ip;
 
-	if (u->u_error == ufs211_makeinode(MAKEIMODE(vap->va_type, vap->va_mode), ap->a_dvp, vpp, ap->a_cnp))
-		return (u->u_error);
+	if (u.u_error == ufs211_makeinode(MAKEIMODE(vap->va_type, vap->va_mode), ap->a_dvp, vpp, ap->a_cnp))
+		return (u.u_error);
 	ip = UFS211_VTOI(*vpp);
-	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
+	ip->i_flag |= UFS211_IACC | UFS211_ICHG | UFS211_IUPD;
 	if (vap->va_rdev != VNOVAL) {
 		/*
 		 * Want to be able to use this to make badblock
@@ -1820,8 +1835,8 @@ ufs211_blkatoff(ap)
 	lbn = lblkno(ap->a_offset);
 	bn = ufs211_bmap1(ip, lbn, B_READ, 0);
 
-	if (u->u_error) {
-		return (u->u_error);
+	if (u.u_error) {
+		return (u.u_error);
 	}
 	if (bn == (daddr_t)-1) {
 		ufs211_dirbad(ip, ap->a_offset, "hole in dir");
@@ -1919,7 +1934,7 @@ ufs211spec_read(ap)
 
 	ip = UFS211_VTOI(ap->a_vp);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
-		ip->i_flag |= IN_ACCESS;
+		ip->i_flag |= UFS211_IACC;
 	}
 	return (error);
 }
@@ -1949,7 +1964,7 @@ ufs211spec_write(ap)
 
 	ip = UFS211_VTOI(ap->a_vp);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
-		UFS211_VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
+		UFS211_VTOI(ap->a_vp)->i_flag |= UFS211_ICHG | UFS211_IUPD;
 	}
 	return (error);
 }
@@ -1987,7 +2002,7 @@ ufs211fifo_read(ap)
 	/*
 	 * Set access flag.
 	 */
-	UFS211_VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
+	UFS211_VTOI(ap->a_vp)->i_flag |= UFS211_IACC;
 
 	return (VOCALL(&fifo_vnodeops, &ap->a_head));
 }
@@ -2001,7 +2016,7 @@ ufs211fifo_write(ap)
 	/*
 	 * Set update and change flags.
 	 */
-	UFS211_VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
+	UFS211_VTOI(ap->a_vp)->i_flag |= UFS211_ICHG | UFS211_IUPD;
 
 	return (VOCALL(&fifo_vnodeops, &ap->a_head));
 }
@@ -2122,7 +2137,7 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 		return (error);
 	}
 #endif
-	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
+	ip->i_flag |= UFS211_IACC | UFS211_ICHG | UFS211_IUPD;
 	ip->i_mode = mode;
 	tvp->v_type = IFTOVT(mode);	/* Rest init'd in getnewvnode(). */
 	ip->i_nlink = 1;
@@ -2154,7 +2169,7 @@ bad:
 	free(cnp->cn_pnbuf, M_NAMEI);
 	vput(dvp);
 	ip->i_nlink = 0;
-	ip->i_flag |= IN_CHANGE;
+	ip->i_flag |= UFS211_ICHG;
 	vput(tvp);
 	return (error);
 }

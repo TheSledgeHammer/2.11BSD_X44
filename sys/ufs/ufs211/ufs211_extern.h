@@ -108,41 +108,62 @@ int		ufs211_vptofh(struct vnode *, struct fid *);
 int		ufs211_fhtovp(struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
 int		ufs211_flushfiles(struct mount *, int, struct proc *);
 void	quotainit(void);
-
-int ufs211_lookup(struct vop_lookup_args *);
-int ufs211_create(struct vop_create_args *);
-int ufs211_whiteout(struct vop_whiteout_args *);
-int ufs211_open(struct vop_open_args *);
-int ufs211_close(struct vop_close_args *);
-int ufs211_access(struct vop_access_args *);
-int ufs211_getattr(struct vop_getattr_args *);
-int ufs211_setattr(struct vop_setattr_args *);
-int ufs211_read(struct vop_read_args *);
-int ufs211_write(struct vop_write_args *);
-int ufs211_fsync(struct vop_fsync_args *);
-int ufs211_remove(struct vop_remove_args *);
-int ufs211_rename(struct vop_rename_args *);
-int ufs211_readdir(struct vop_readdir_args *);
-int ufs211_inactive(struct vop_inactive_args *);
-int ufs211_reclaim(struct vop_reclaim_args *);
-int ufs211_bmap(struct vop_bmap_args *);
-int ufs211_strategy(struct vop_strategy_args *);
-int ufs211_print(struct vop_print_args *);
-int ufs211_advlock(struct vop_advlock_args *);
-int ufs211_pathconf(struct vop_pathconf_args *);
-int ufs211_link(struct vop_link_args *);
-int ufs211_symlink(struct vop_symlink_args *);
-int ufs211_readlink(struct vop_readlink_args *);
-int ufs211_mkdir(struct vop_mkdir_args *);
-int ufs211_rmdir(struct vop_rmdir_args *);
-int ufs211_mknod(struct vop_mknod_args *);
-int	ufs211spec_close(struct vop_close_args *);
-int	ufs211spec_read(struct vop_read_args *);
-int ufs211spec_write(struct vop_write_args *);
+#ifdef NFS
+int	 	lease_check (struct vop_lease_args *);
+#define	 	ufs211_lease_check lease_check
+#else
+#define	 	ufs211_lease_check ((int (*) (struct vop_lease_args *))nullop)
+#endif
+#define		ufs211_revoke ((int (*) (struct vop_revoke_args *))vop_norevoke)
+#define     ufs211_reallocblks ((int (*) (struct  vop_reallocblks_args *))eopnotsupp)
+int 	ufs211_abortop(struct vop_abortop_args *);
+int		ufs211_access(struct vop_access_args *);
+int		ufs211_advlock(struct vop_advlock_args *);
+int		ufs211_bmap(struct vop_bmap_args *);
+int		ufs211_close(struct vop_close_args *);
+int		ufs211_create(struct vop_create_args *);
+int		ufs211_getattr(struct vop_getattr_args *);
+int	 	ufs211_inactive(struct vop_inactive_args *);
+int	 	ufs211_ioctl(struct vop_ioctl_args *);
+int	 	ufs211_islocked(struct vop_islocked_args *);
+int	 	ufs211_link(struct vop_link_args *);
+int	 	ufs211_lock(struct vop_lock_args *);
+int	 	ufs211_lookup(struct vop_lookup_args *);
+int	 	ufs211_mkdir(struct vop_mkdir_args *);
+int	 	ufs211_mknod(struct vop_mknod_args *);
+int	 	ufs211_mmap(struct vop_mmap_args *);
+int	 	ufs211_open(struct vop_open_args *);
+int	 	ufs211_pathconf(struct vop_pathconf_args *);
+int	 	ufs211_print(struct vop_print_args *);
+int	 	ufs211_readdir(struct vop_readdir_args *);
+int	 	ufs211_readlink(struct vop_readlink_args *);
+int	 	ufs211_remove(struct vop_remove_args *);
+int	 	ufs211_rename(struct vop_rename_args *);
+int	 	ufs211_rmdir(struct vop_rmdir_args *);
+int	 	ufs211_seek(struct vop_seek_args *);
+int	 	ufs211_select(struct vop_select_args *);
+int	 	ufs211_poll(struct vop_poll_args *);
+int	 	ufs211_setattr(struct vop_setattr_args *);
+int	 	ufs211_strategy(struct vop_strategy_args *);
+int	 	ufs211_symlink(struct vop_symlink_args *);
+int	 	ufs211_unlock(struct vop_unlock_args *);
+int	 	ufs211_whiteout(struct vop_whiteout_args *);
+int		ufs211_blkatoff(struct vop_blkatoff_args *);
+int		ufs211_fsync(struct vop_fsync_args *);
+int		ufs211_read(struct vop_read_args *);
+int		ufs211_reclaim(struct vop_reclaim_args *);
+int		ufs211_truncate(struct vop_truncate_args *);
+int		ufs211_update(struct vop_update_args *);
+int		ufs211_valloc(struct vop_valloc_args *);
+int		ufs211_vfree(struct vop_vfree_args *);
+int		ufs211_write(struct vop_write_args *);
+int	    ufs211spec_close(struct vop_close_args *);
+int 	ufs211spec_read(struct vop_read_args *);
+int     ufs211spec_write(struct vop_write_args *);
 #ifdef FIFO
-int	ufs211fifo_read(struct vop_read_args *);
-int	ufs211fifo_write(struct vop_write_args *);
-int	ufs211fifo_close(struct vop_close_args *);
+int	    ufs211fifo_read(struct vop_read_args *);
+int	    ufs211fifo_write(struct vop_write_args *);
+int	    ufs211fifo_close(struct vop_close_args *);
 #endif
 __END_DECLS
 
