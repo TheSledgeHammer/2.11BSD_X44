@@ -146,7 +146,7 @@ vm_pmap_bootinit(item, size, nitems)
 	totsize = (size * nitems);
 	result = free - totsize;
 	if (free < totsize) {
-		panic("vm_pbootinit: not enough space allocated");
+		panic("vm_pmap_bootinit: not enough space allocated");
 	}
 	bzero(item, totsize);
 	item = (item + size);
