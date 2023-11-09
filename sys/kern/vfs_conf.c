@@ -133,16 +133,21 @@ vfsconf_fs_init(void)
  * Initially the size of the list, vfs_init will set maxvfsconf
  * to the highest defined type number.
  */
+static struct vfsconf vfssw;
 struct vfs_list vfsconflist = LIST_HEAD_INITIALIZER(vfsconflist);
 int maxvfsconf = 0;
 
 void
-vfsconf_fs_create(vfsp, name, index, typenum, flags, mountroot)
-    struct vfsconf *vfsp;
+vfsconf_fs_create(vfsop, name, index, typenum, flags, mountroot)
+    struct vfsops *vfsop;
     const char *name;
     int index, typenum, flags;
     mountroot_t mountroot;
-{   
+{   	
+    register struct vfsconf *vfsp;
+	
+    vfsp = &vfssw;
+    vfsp->vfc_vfsops = vfsop;
     vfsp->vfc_name =  name;
     vfsp->vfc_index = index;
     vfsp->vfc_typenum = typenum;
