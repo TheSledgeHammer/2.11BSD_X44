@@ -65,7 +65,7 @@ options			PTRACE			# ptrace(2) system call
 file-system 		FFS			# UFS
 file-system 		LFS			# log-structured file system
 file-system 		MFS			# memory file system
-#file-system 		UFS211			# 2.11BSD's UFS
+file-system 		UFS211			# 2.11BSD's UFS
 file-system 		CD9660			# ISO 9660 + Rock Ridge file system
 file-system 		MSDOSFS			# MS-DOS file system
 file-system 		FDESC			# /dev/fd
