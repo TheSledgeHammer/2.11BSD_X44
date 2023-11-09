@@ -6,8 +6,8 @@
  *	@(#)dir.h	1.2 (2.11BSD GTE) 11/4/94
  */
 
-#ifndef	_UFS211_DIR_H_
-#define	_UFS211_DIR_H_
+#ifndef	_UFS_UFS211_DIR_H_
+#define	_UFS_UFS211_DIR_H_
 
 #define UFS211_DIRBLKSIZ	DEV_BSIZE
 #define UFS211_MAXNAMLEN	255
@@ -130,4 +130,4 @@ struct ufs211_odirtemplate {
 	u_int16_t				dotdot_namlen;
 	char					dotdot_name[4];	/* ditto */
 };
-#endif	/* !_UFS211_DIR_H_ */
+#endif	/* !_UFS_UFS211_DIR_H_ */

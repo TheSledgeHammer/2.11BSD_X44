@@ -14,8 +14,8 @@
  * Data in icommon1 and icommon2 is read in from permanent inode on volume.
  */
 
-#ifndef _UFS211_INODE_H_
-#define	_UFS211_INODE_H_
+#ifndef _UFS_UFS211_INODE_H_
+#define	_UFS_UFS211_INODE_H_
 
 #include <sys/queue.h>
 
@@ -160,8 +160,8 @@ struct ufs211_dinode {
 #define	i_lastr			i_un3.if_lastr
 #define	i_socket		i_un3.is_socket
 
-#define di_ic1			di_icom1
-#define di_ic2			di_icom2
+#define di_ic1			i_din->di_icom1
+#define di_ic2			i_din->di_icom2
 #define	di_mode		    di_ic1.ic_mode
 #define	di_nlink	    di_ic1.ic_nlink
 #define	di_uid		    di_ic1.ic_uid
@@ -172,30 +172,26 @@ struct ufs211_dinode {
 #define	di_ctime	    di_ic2.ic_ctime
 
 /* i_flag */
-#define	UFS211_ILOCKED	0x00001		/* inode is locked */
-#define	UFS211_IUPD		0x00002		/* file has been modified (IN_UPDATE) */
-#define	UFS211_IACC		0x00004		/* inode access time to be updated (IN_ACCESS) */
-#define	UFS211_IMOUNT	0x00008		/* inode is mounted on */
-#define	UFS211_IWANT	0x00010		/* some process waiting on lock */
-#define	UFS211_ITEXT	0x00020		/* inode is pure text prototype */
-#define	UFS211_ICHG		0x00040		/* inode has been changed (IN_CHANGE) */
-#define	UFS211_ISHLOCK	0x00080		/* file has shared lock (IN_SHLOCK) */
-#define	UFS211_IEXLOCK	0x00100		/* file has exclusive lock (IN_EXLOCK) */
-#define	UFS211_ILWAIT	0x00200		/* someone waiting on file lock */
-#define	UFS211_IMOD		0x00400		/* inode has been modified (IN_MODIFIED) */
-#define	UFS211_IRENAME	0x00800		/* inode is being renamed (IN_RENAME) */
-#define	UFS211_IPIPE	0x01000		/* inode is a pipe */
-#define	UFS211_IRCOLL	0x02000		/* read select collision on pipe */
-#define	UFS211_IWCOLL	0x04000		/* write select collision on pipe */
-#define	UFS211_IXMOD	0x08000		/* inode is text, but impure (XXX) */
+#define	UFS211_ILOCKED	 0x00001		/* inode is locked */
+#define	UFS211_IUPD		 0x00002		/* file has been modified (IN_UPDATE) */
+#define	UFS211_IACC		 0x00004		/* inode access time to be updated (IN_ACCESS) */
+#define	UFS211_IMOUNT	 0x00008		/* inode is mounted on */
+#define	UFS211_IWANT	 0x00010		/* some process waiting on lock */
+#define	UFS211_ITEXT	 0x00020		/* inode is pure text prototype */
+#define	UFS211_ICHG		 0x00040		/* inode has been changed (IN_CHANGE) */
+#define	UFS211_ISHLOCK	 0x00080		/* file has shared lock (IN_SHLOCK) */
+#define	UFS211_IEXLOCK	 0x00100		/* file has exclusive lock (IN_EXLOCK) */
+#define	UFS211_ILWAIT	 0x00200		/* someone waiting on file lock */
+#define	UFS211_IMOD		 0x00400		/* inode has been modified (IN_MODIFIED) */
+#define	UFS211_IRENAME	 0x00800		/* inode is being renamed (IN_RENAME) */
+#define	UFS211_IPIPE	 0x01000		/* inode is a pipe */
+#define	UFS211_IRCOLL	 0x02000		/* read select collision on pipe */
+#define	UFS211_IWCOLL	 0x04000		/* write select collision on pipe */
+#define	UFS211_IXMOD	 0x08000		/* inode is text, but impure (XXX) */
+#define	UFS211_INHASHED	 0x10000		/* Inode is on hash list */
+#define	UFS211_INLAZYMOD 0x20000		/* Modified, but don't write yet. */
 
-#define	UFS211_INCHANGE	0x10000		/* Inode change time update request. */
-#define	UFS211_INUPDATE	0x20000		/* Modification time update request. */
-
-#define	UFS211_INHASHED	 0x40000	/* Inode is on hash list */
-#define	UFS211_INLAZYMOD 0x80000	/* Modified, but don't write yet. */
-
-/* i_mode */
+/* File types. */
 #define	UFS211_IFMT		0170000		/* type of file */
 #define	UFS211_IFCHR	0020000		/* character special */
 #define	UFS211_IFDIR	0040000		/* directory */
@@ -203,12 +199,15 @@ struct ufs211_dinode {
 #define	UFS211_IFREG	0100000		/* regular */
 #define	UFS211_IFLNK	0120000		/* symbolic link */
 #define	UFS211_IFSOCK	0140000		/* socket */
+#define	UFS211_IFWHT	0160000		/* Whiteout. */
+
+/* File permissions. i_mode */
 #define	UFS211_ISUID	04000		/* set user id on execution */
 #define	UFS211_ISGID	02000		/* set group id on execution */
 #define	UFS211_ISVTX	01000		/* save swapped text even after use */
-#define	UFS211_IREAD	0400		/* read, write, execute permissions */
-#define	UFS211_IWRITE	0200
-#define	UFS211_IEXEC	100
+#define	UFS211_IREAD	0400		/* read permissions */
+#define	UFS211_IWRITE	0200		/* write permissions */
+#define	UFS211_IEXEC	100			/* Executable. */
 
 /* Convert between inode pointers and vnode pointers. */
 #define UFS211_VTOI(vp)	((struct ufs211_inode *)(vp)->v_data)
@@ -222,4 +221,4 @@ struct ufid {
 	ino_t   	 	ufid_ino;	/* File number (ino). */
 };
 
-#endif /* _UFS211_INODE_H_ */
+#endif /* _UFS_UFS211_INODE_H_ */

@@ -6,8 +6,8 @@
  *	@(#)fs.h	1.3 (2.11BSD GTE) 1995/12/24
  */
 
-#ifndef _UFS211_FS_H_
-#define	_UFS211_FS_H_
+#ifndef _UFS_UFS211_FS_H_
+#define	_UFS_UFS211_FS_H_
 
 /*
  * The root inode is the root of the file system.
@@ -135,4 +135,4 @@ struct ufs211_fblk {
  */
 #define	MAXPIPSIZ	(NDADDR * MAXBSIZE)
 
-#endif /* _UFS211_FS_H_ */
+#endif /* _UFS_UFS211_FS_H_ */

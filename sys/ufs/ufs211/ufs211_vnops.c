@@ -44,9 +44,8 @@
 #include <sys/malloc.h>
 #include <sys/dirent.h>
 #include <sys/unistd.h>
-
-#include <vm/include/vm.h>
-#include <miscfs/specfs/specdev.h>
+#include <sys/lock.h>
+#include <sys/lockf.h>
 
 #include <ufs/ufs211/ufs211_dir.h>
 #include <ufs/ufs211/ufs211_quota.h>
@@ -54,6 +53,9 @@
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_inode.h>
 #include <ufs/ufs211/ufs211_mount.h>
+
+#include <vm/include/vm.h>
+#include <miscfs/specfs/specdev.h>
 
 /* Global vfs data structures for ufs211. */
 struct vnodeops ufs211_vnodeops = {
@@ -294,10 +296,19 @@ ufs211_access(ap)
 	register gid_t *gp;
 
     mask = mode;
-	if (mode == VWRITE) {
-		if (ip->i_flags & IMMUTABLE) {
+	if (mode & VWRITE) {
+		switch (vp->v_type) {
+		case VDIR:
+		case VLNK:
+		case VREG:
+			if (vp->v_mount->mnt_flag & MNT_RDONLY) {
+				return (EROFS);
+			}
+			break;
+		}
+		if ((mode & VWRITE) && (ip->i_flags & IMMUTABLE)) {
 			u.u_error = EPERM;
-			return(1);
+			return (EPERM);
 		}
 		/*
 		 * Disallow write attempts on read-only
@@ -309,7 +320,7 @@ ufs211_access(ap)
 			if ((ip->i_mode & UFS211_IFMT) != UFS211_IFCHR &&
 			    (ip->i_mode & UFS211_IFMT) != UFS211_IFBLK) {
 				u.u_error = EROFS;
-				return (1);
+				return (EROFS);
 			}
 		}
 		/*
@@ -429,6 +440,9 @@ ufs211_setattr(ap)
 	if (ip->i_fs->fs_ronly) /* can't change anything on a RO fs */
 		return (EROFS);
 	if (vap->va_flags != VNOVAL) {
+		if (vp->v_mount->mnt_flag & MNT_RDONLY) {
+			return (EROFS);
+		}
 		if (u.u_uid != ip->i_uid && !suser())
 			return (u.u_error);
 		if (u.u_uid == 0) {
@@ -450,19 +464,39 @@ ufs211_setattr(ap)
 	/*
 	 * Go thru the fields (other than 'flags') and update iff not VNOVAL.
 	 */
-	if (vap->va_uid != (uid_t) VNOVAL || vap->va_gid != (gid_t) VNOVAL)
-		if (error == ufs211_chown1(ip, vap->va_uid, vap->va_gid))
+	if (vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL) {
+		if (vp->v_mount->mnt_flag & MNT_RDONLY) {
+			return (EROFS);
+		}
+		if (error == ufs211_chown1(ip, vap->va_uid, vap->va_gid)) {
 			return (error);
-	if (vap->va_size != (off_t) VNOVAL) {
-		if ((ip->i_mode & UFS211_IFMT) == UFS211_IFDIR)
+		}
+	}
+	if (vap->va_size != (off_t)VNOVAL) {
+		switch (vp->v_type) {
+		case VDIR:
+			if ((ip->i_mode & UFS211_IFMT) == UFS211_IFDIR) {
+				return (EISDIR);
+			}
 			return (EISDIR);
+		case VLNK:
+		case VREG:
+			if (vp->v_mount->mnt_flag & MNT_RDONLY) {
+				return (EROFS);
+			}
+			break;
+		}
 		ufs211_trunc(ip, vap->va_size, 0);
-		if (u.u_error)
+		if (u.u_error) {
 			return (u.u_error);
+		}
+		if (error == VOP_TRUNCATE(vp, vap->va_size, 0, u.u_ucred, u.u_procp)) {
+			return (error);
+		}
 	}
 	ufs211_itimes(vp);
 	if (vap->va_atime != (time_t) VNOVAL || vap->va_mtime != (time_t) VNOVAL) {
-		if (u.u_uid != ip->i_uid && !suser() && ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || access(ip, UFS211_IWRITE)))
+		if (u.u_uid != ip->i_uid && !suser() && ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || VOP_ACCESS(vp, VWRITE, u.u_ucred, u.u_procp)))
 			return (u.u_error);
 		if (vap->va_atime != (time_t) VNOVAL && !(ip->i_fs->fs_flags & MNT_NOATIME))
 			ip->i_flag |= UFS211_IACC;
@@ -476,10 +510,10 @@ ufs211_setattr(ap)
 		return (ufs211_chmod1(ip, vap->va_mode));
 	return(0);
 }
-
 /*
  * Change mode of a file given path name.
  */
+#ifdef notyet
 void
 ufs211_chmod()
 {
@@ -502,6 +536,7 @@ ufs211_chmod()
 	u.u_error = ufs_setattr(ip, &vattr);
 	vput(ip);
 }
+#endif /* notyet */
 
 int
 ufs211_chmod1(vp, mode)
@@ -535,32 +570,26 @@ ufs211_chmod1(vp, mode)
 /*
  * Set ownership given a path name.
  */
+#ifdef notyet
 void
 ufs211_chown(ap)
 	struct vop_setattr_args *ap;
 {
 	struct vnode *vp;
 	register struct ufs211_inode *ip;
-	register struct a {
-		char	*fname;
-		int		uid;
-		int		gid;
-	} *uap = (struct a *)u.u_ap;
-
 	struct	nameidata nd;
-	register struct	nameidata *ndp = &nd;
-	struct vattr vattr;
+	register struct	nameidata *ndp;
 
+	ndp = &nd;
 	NDINIT(ndp, LOOKUP, NOFOLLOW, UIO_USERSPACE, uap->fname);
 	ip = namei(ndp);
-	if (ip == NULL)
+	if (ip == NULL) {
 		return;
-	VATTR_NULL(&vattr);
-	vattr.va_uid = uap->uid;
-	vattr.va_gid = uap->gid;
+	}
 	u.u_error = ufs211_setattr(ap);
 	vput(ip);
 }
+#endif /* notyet */
 
 /*
  * Perform chown operation on inode ip.  This routine called from ufs_setattr.
@@ -569,13 +598,20 @@ ufs211_chown(ap)
 int
 ufs211_chown1(ip, uid, gid)
 	register struct ufs211_inode *ip;
-	register int uid, gid;
+	register uid_t uid;
+	register gid_t gid;
 {
-	int ouid, ogid;
+	register struct vnode *vp;
+	uid_t ouid;
+	gid_t ogid;
+	int error;
 #ifdef QUOTA
-	struct	dquot	**xdq;
+	register int i;
 	long change;
 #endif
+
+	vp = UFS211_ITOV(ip);
+
 	if (uid == -1)
 		uid = ip->i_uid;
 	if (gid == -1)
@@ -585,29 +621,79 @@ ufs211_chown1(ip, uid, gid)
 	 * of the file, or are not a member of the target group,
 	 * the caller must be superuser or the call fails.
 	 */
-	if ((u.u_uid != ip->i_uid || uid != ip->i_uid || !groupmember((gid_t) gid)) && !suser()) {
+	if ((u.u_uid != ip->i_uid || uid != ip->i_uid || !groupmember(gid)) && !suser()) {
 		return (u.u_error);
 	}
 	ouid = ip->i_uid;
 	ogid = ip->i_gid;
 #ifdef QUOTA
-	QUOTAMAP();
-	if (ip->i_uid == uid)
+	if (error == getinoquota(ip)) {
+		return (error);
+	}
+	if (ouid == uid) {
+		dqrele(vp, ip->i_dquot[USRQUOTA]);
+		ip->i_dquot[USRQUOTA] = NODQUOT;
 		change = 0;
-	else
+	} else {
 		change = ip->i_size;
-	(void) chkdq(ip, -change, 1);
-	(void) chkiq(ip->i_dev, ip, ip->i_uid, 1);
-	xdq = &ix_dquot[ip - inode];
-	dqrele(*xdq);
+	}
+	if (ogid == gid) {
+		dqrele(vp, ip->i_dquot[GRPQUOTA]);
+		ip->i_dquot[GRPQUOTA] = NODQUOT;
+	} else {
+		//change = ip->i_din->di_blocks;
+	}
+	(void)chkdq(ip, -change, u.u_ucred, CHOWN);
+	(void)chkiq(ip, -1, u.u_cred, CHOWN);
+	for (i = 0; i < MAXQUOTAS; i++) {
+		dqrele(vp, ip->i_dquot[i]);
+		ip->i_dquot[i] = NODQUOT;
+	}
 #endif
 	ip->i_uid = uid;
 	ip->i_gid = gid;
 #ifdef QUOTA
-	*xdq = inoquota(ip);
-	(void) chkdq(ip, change, 1);
-	(void) chkiq(ip->i_dev, (struct inode *)NULL, (uid_t)uid, 1);
-	QUOTAUNMAP();
+	if ((error = getinoquota(ip)) == 0) {
+		if (ouid == uid) {
+			dqrele(vp, ip->i_dquot[USRQUOTA]);
+			ip->i_dquot[USRQUOTA] = NODQUOT;
+		}
+		if (ogid == gid) {
+			dqrele(vp, ip->i_dquot[GRPQUOTA]);
+			ip->i_dquot[GRPQUOTA] = NODQUOT;
+		}
+		if ((error = chkdq(ip, change, u.u_ucred, CHOWN)) == 0) {
+			if ((error = chkiq(ip, 1, u.u_ucred, CHOWN)) == 0) {
+				goto good;
+			} else {
+				(void) chkdq(ip, -change, u.u_ucred, CHOWN | FORCE);
+			}
+		}
+		for (i = 0; i < MAXQUOTAS; i++) {
+			dqrele(vp, ip->i_dquot[i]);
+			ip->i_dquot[i] = NODQUOT;
+		}
+	}
+	ip->i_gid = ogid;
+	ip->i_uid = ouid;
+	if (getinoquota(ip) == 0) {
+		if (ouid == uid) {
+			dqrele(vp, ip->i_dquot[USRQUOTA]);
+			ip->i_dquot[USRQUOTA] = NODQUOT;
+		}
+		if (ogid == gid) {
+			dqrele(vp, ip->i_dquot[GRPQUOTA]);
+			ip->i_dquot[GRPQUOTA] = NODQUOT;
+		}
+		(void) chkdq(ip, change, u.u_ucred, FORCE|CHOWN);
+		(void) chkiq(ip, 1, u.u_ucred, FORCE|CHOWN);
+		(void) getinoquota(ip);
+	}
+	return (error);
+good:
+	if (getinoquota(ip)) {
+		panic("chown: lost quota");
+	}
 #endif
 	if (ouid != uid || ogid != gid)
 		ip->i_flag |= UFS211_ICHG;
@@ -663,13 +749,6 @@ ufs211_write(ap)
 }
 
 int
-ufs211_lease_check(ap)
-	struct vop_lease_check_args *ap;
-{
-	return (0);
-}
-
-int
 ufs211_ioctl(ap)
 	struct vop_ioctl_args *ap;
 {
@@ -688,13 +767,6 @@ ufs211_poll(ap)
 	struct vop_poll_args *ap;
 {
 	return (1);
-}
-
-int
-ufs211_revoke(ap)
-	struct vop_revoke_args *ap;
-{
-	return (0);
 }
 
 int
@@ -1062,9 +1134,9 @@ abortit:
 				tcnp->cn_cred, (int *)0, (struct proc *)0);
 			if (error == 0) {
 #if (BYTE_ORDER == LITTLE_ENDIAN)
-					if (fvp->v_mount->mnt_maxsymlinklen <= 0)
+					if (fvp->v_mount->mnt_maxsymlinklen <= 0) {
 						namlen = dirbuf.dotdot_type;
-					else
+					} else
 						namlen = dirbuf.dotdot_namlen;
 #else
 					namlen = dirbuf.dotdot_namlen;
@@ -1131,7 +1203,7 @@ ufs211_readdir(ap)
 
 	count = uio->uio_resid;
 	/* Make sure we don't return partial entries. */
-	count -= (uio->uio_offset + count) & (DIRBLKSIZ - 1);
+	count -= (uio->uio_offset + count) & (UFS211_DIRBLKSIZ - 1);
 	if (count <= 0)
 		return (EINVAL);
 	lost = uio->uio_resid - count;
@@ -1219,7 +1291,7 @@ ufs211_readdir(ap)
 
 int
 ufs211_abortop(ap)
-	struct vop_abortop_args ap;
+	struct vop_abortop_args *ap;
 {
 	if ((ap->a_cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
 		FREE(ap->a_cnp->cn_pnbuf, M_NAMEI);
@@ -1316,7 +1388,7 @@ ufs211_lock(ap)
 {
 	struct vnode *vp = ap->a_vp;
 
-	return (lockmgr(&UFS211_VTOI(vp)->i_lock, ap->a_flags, &vp->v_interlock, ap->a_p));
+	return (lockmgr(&UFS211_VTOI(vp)->i_lock, ap->a_flags, &vp->v_interlock, ap->a_p->p_pid));
 }
 
 /*
@@ -1328,7 +1400,7 @@ ufs211_unlock(ap)
 {
 	struct vnode *vp = ap->a_vp;
 
-	return (lockmgr(&UFS211_VTOI(vp)->i_lock, ap->a_flags | LK_RELEASE, &vp->v_interlock, ap->a_p));
+	return (lockmgr(&UFS211_VTOI(vp)->i_lock, ap->a_flags | LK_RELEASE, &vp->v_interlock, ap->a_p->p_pid));
 }
 
 int
@@ -1358,9 +1430,10 @@ ufs211_strategy(ap)
 
 	ip = UFS211_VTOI(vp);
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
-			panic("ufs_strategy: spec");
+			panic("ufs211_strategy: spec");
 	if (bp->b_blkno == bp->b_lblkno) {
-		error = ufs211_bmap1(ip, bp->b_lblkno, &blkno, NULL);
+		//error = ufs211_bmap1(ip, bp->b_lblkno, &blkno, NULL);
+		error = VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL);
 		bp->b_blkno = blkno;
 		if (error) {
 			bp->b_error = error;
@@ -1547,7 +1620,7 @@ ufs211_whiteout(ap)
 #endif
 
 		cnp->cn_flags &= ~DOWHITEOUT;
-		error = ufs_dirremove(dvp, cnp);
+		error = ufs211_dirremove(dvp, cnp);
 		break;
 	}
 	if (cnp->cn_flags & HASBUF) {
@@ -1634,7 +1707,7 @@ ufs211_mkdir(ap)
 		goto out;
 	}
 	dmode = vap->va_mode & 0777;
-	dmode |= IFDIR;
+	dmode |= UFS211_IFDIR;
 	/*
 	 * Must simulate part of ufs_makeinode here to acquire the inode,
 	 * but not have it entered in the parent directory. The entry is

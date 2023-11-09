@@ -57,8 +57,8 @@
  * by 'setuid' sys call, &/or by the Q_SETUID quota() call.
  */
 
-#ifndef _UFS211_QUOTA_H_
-#define	_UFS211_QUOTA_H_
+#ifndef _UFS_UFS211_QUOTA_H_
+#define	_UFS_UFS211_QUOTA_H_
 
 //#include <sys/queue.h>
 
@@ -225,28 +225,29 @@ struct proc;
 struct ucred;
 struct ufs211_mount;
 struct vnode;
+
 __BEGIN_DECLS
-int	chkdq(struct ufs211_inode *, long, struct ucred *, int);
-int	chkdqchg(struct ufs211_inode *, long, struct ucred *, int);
-int	chkiq(struct ufs211_inode *, long, struct ucred *, int);
-int	chkiqchg(struct ufs211_inode *, long, struct ucred *, int);
-void dqflush(struct vnode *);
-int	dqget(struct vnode *, u_long, struct ufs211_mount *, int, struct ufs211_dquot **);
-void dqinit(void);
-void dqref(struct ufs211_dquot *);
-void dqrele(struct vnode *, struct ufs211_dquot *);
-int	dqsync(struct vnode *, struct ufs211_dquot *);
-int	getinoquota(struct ufs211_inode *);
-int	getquota(struct mount *, u_long, int, caddr_t);
-int	qsync(struct mount *);
-int	quotaoff(struct proc *, struct mount *, int);
-int	quotaon(struct proc *, struct mount *, int, caddr_t);
-int	setquota(struct mount *, u_long, int, caddr_t);
-int	setuse(struct mount *, u_long, int, caddr_t);
-int setwarn(struct mount *, u_long, int, caddr_t);
-int dowarn(struct mount *, u_long, int);
-int	setduse(struct mount *, u_long, int, caddr_t);
-int	ufs211_quotactl(struct mount *, int, uid_t, caddr_t, struct proc *);
+int		chkdq(struct ufs211_inode *, long, struct ucred *, int);
+int		chkdqchg(struct ufs211_inode *, long, struct ucred *, int);
+int		chkiq(struct ufs211_inode *, long, struct ucred *, int);
+int		chkiqchg(struct ufs211_inode *, long, struct ucred *, int);
+void 	dqflush(struct vnode *);
+int		dqget(struct vnode *, u_long, struct ufs211_mount *, int, struct ufs211_dquot **);
+void 	dqinit(void);
+void 	dqref(struct ufs211_dquot *);
+void 	dqrele(struct vnode *, struct ufs211_dquot *);
+int		dqsync(struct vnode *, struct ufs211_dquot *);
+int		getinoquota(struct ufs211_inode *);
+int		getquota(struct mount *, u_long, int, caddr_t);
+int		qsync(struct mount *);
+int		quotaoff(struct proc *, struct mount *, int);
+int		quotaon(struct proc *, struct mount *, int, caddr_t);
+int		setquota(struct mount *, u_long, int, caddr_t);
+int		setuse(struct mount *, u_long, int, caddr_t);
+int 	setwarn(struct mount *, u_long, int, caddr_t);
+int 	dowarn(struct mount *, u_long, int);
+int		setduse(struct mount *, u_long, int, caddr_t);
+int		ufs211_quotactl(struct mount *, int, uid_t, caddr_t, struct proc *);
 __END_DECLS
 
 #ifdef DIAGNOSTIC
@@ -255,4 +256,4 @@ void chkdquot(struct ufs211_inode *);
 __END_DECLS
 #endif
 
-#endif /* _UFS211_QUOTA_H_ */
+#endif /* _UFS_UFS211_QUOTA_H_ */

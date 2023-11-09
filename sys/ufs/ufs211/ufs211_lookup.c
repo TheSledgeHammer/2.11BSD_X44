@@ -332,7 +332,7 @@ notfound:
 				enduseful = slotoffset + slotsize;
 		}
 		dp->i_endoff = roundup(enduseful, UFS211_DIRBLKSIZ);
-		dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
+		dp->i_flag |= UFS211_ICHG | UFS211_IUPD;
 		/*
 		 * We return with the directory locked, so that
 		 * the parameters we set up above will still be
@@ -368,7 +368,7 @@ notfound:
 	if (entryoffsetinblock + DIRSIZ(FSFMT(vdp), ep) > dp->i_size) {
 		ufs211_dirbad(dp, dp->i_offset, "i_size too small");
 		dp->i_size = entryoffsetinblock + DIRSIZ(FSFMT(vdp), ep);
-		dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
+		dp->i_flag |= UFS211_ICHG | UFS211_IUPD;
 	}
 
 	/*
@@ -663,7 +663,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 			panic("ufs_direnter: frag size");
 		} else if (!error) {
 			dp->i_size = roundup(dp->i_size, UFS211_DIRBLKSIZ);
-			dp->i_flag |= UFS211_INCHANGE;
+			dp->i_flag |= UFS211_ICHG;
 		}
 		return (error);
 	}
@@ -735,7 +735,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	}
 	bcopy((caddr_t)&dirp, (caddr_t)ep, (u_int)newentrysize);
 	error = VOP_BWRITE(bp);
-	dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
+	dp->i_flag |= UFS211_ICHG | UFS211_IUPD;
 	if (!error && dp->i_endoff && dp->i_endoff < dp->i_size)
 		error = VOP_TRUNCATE(dvp, (off_t)dp->i_endoff, IO_SYNC, cnp->cn_cred, cnp->cn_proc);
 	return (error);
@@ -773,7 +773,7 @@ ufs211_dirremove(dvp, cnp)
 		ep->d_ino = UFS211_WINO;
 		ep->d_type = DT_WHT;
 		u.u_error = VOP_BWRITE(bp);
-		dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
+		dp->i_flag |= UFS211_ICHG | UFS211_IUPD;
 		return (u.u_error);
 	}
 	if (dp->i_count == 0) {
@@ -785,7 +785,7 @@ ufs211_dirremove(dvp, cnp)
 			return (u.u_error);
 		ep->d_ino = 0;
 		u.u_error = VOP_BWRITE(bp);
-		dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
+		dp->i_flag |= UFS211_ICHG | UFS211_IUPD;
 		return (u.u_error);
 	}
 	/*
@@ -795,7 +795,7 @@ ufs211_dirremove(dvp, cnp)
 		return (u.u_error);
 	ep->d_reclen += dp->i_reclen;
 	u.u_error = VOP_BWRITE(bp);
-	dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
+	dp->i_flag |= UFS211_ICHG | UFS211_IUPD;
 	return (u.u_error);
 }
 
@@ -821,7 +821,7 @@ ufs211_dirrewrite(dp, ip, cnp)
 		ep->d_type = IFTODT(ip->i_mode);
 
 	u.u_error = VOP_BWRITE(bp);
-	dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
+	dp->i_flag |= UFS211_ICHG | UFS211_IUPD;
 	return (u.u_error);
 }
 

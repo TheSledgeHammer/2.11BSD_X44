@@ -28,7 +28,6 @@
 #define	DOUBLE				1	/* index of double indirect block */
 #define	TRIPLE				2	/* index of triple indirect block */
 
-void	ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
 void    ufs211_indirtrunc(struct ufs211_inode *, daddr_t, daddr_t, int, int);
 
 /*
