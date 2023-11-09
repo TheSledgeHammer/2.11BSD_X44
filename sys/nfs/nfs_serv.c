@@ -86,9 +86,9 @@ extern u_long nfs_false, nfs_true;
 extern enum vtype nv3tov_type[8];
 extern struct nfsstats nfsstats;
 nfstype nfsv2_type[9] = { NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFNON,
-		      NFCHR, NFNON };
+		NFCHR, NFNON };
 nfstype nfsv3_type[9] = { NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFSOCK,
-		      NFFIFO, NFNON };
+		NFFIFO, NFNON };
 int nfsrvw_procrastinate = NFS_GATHERDELAY * 1000;
 
 /*
@@ -267,7 +267,7 @@ nfsrv_setattr(nfsd, slp, procp, mrq)
 #ifdef notyet
 			fxdr_nfsv2time(&sp->sa_atime, &vap->va_atime);
 #else
-			vap->va_atime.ts_sec =
+			vap->va_atime.tv_sec =
 				fxdr_unsigned(long, sp->sa_atime.nfsv2_sec);
 			vap->va_atime.ts_nsec = 0;
 #endif
@@ -290,8 +290,8 @@ nfsrv_setattr(nfsd, slp, procp, mrq)
 	if (v3) {
 		error = preat_ret = VOP_GETATTR(vp, &preat, cred, procp);
 		if (!error && gcheck &&
-			(preat.va_ctime.ts_sec != guard.ts_sec ||
-			 preat.va_ctime.ts_nsec != guard.ts_nsec))
+			(preat.va_ctime.tv_sec != guard.tv_sec ||
+			 preat.va_ctime.tv_nsec != guard.tv_nsec))
 			error = NFSERR_NOT_SYNC;
 		if (error) {
 			vput(vp);
@@ -976,10 +976,10 @@ nfsmout:
 		 */
 		s = splsoftclock();
 		owp = NULL;
-		wp = slp->ns_tq.lh_first;
+		wp = LIST_FIRST(&slp->ns_tq);
 		while (wp && wp->nd_time < nfsd->nd_time) {
 			owp = wp;
-			wp = wp->nd_tq.le_next;
+			wp = LIST_NEXT(wp, nd_tq);
 		}
 		if (owp) {
 			LIST_INSERT_AFTER(owp, nfsd, nd_tq);
@@ -1010,7 +1010,7 @@ nfsmout:
 				 * coalesce.
 				 */
 				for (; nfsd && NFSW_CONTIG(owp, nfsd); nfsd = wp) {
-					wp = nfsd->nd_hash.le_next;
+					wp = LIST_NEXT(nfsd, nd_hash);
 					if (NFSW_SAMECRED(owp, nfsd))
 						nfsrvw_coalesce(owp, nfsd);
 				}
@@ -1029,8 +1029,8 @@ loop1:
 	cur_usec = (u_quad_t) time.tv_sec * 1000000
 			+ (u_quad_t) time.tv_usec;
 	s = splsoftclock();
-	for (nfsd = slp->ns_tq.lh_first; nfsd; nfsd = owp) {
-		owp = nfsd->nd_tq.le_next;
+	for (nfsd = LIST_FIRST(&slp->ns_tq); nfsd; nfsd = owp) {
+		owp = LIST_NEXT(nfsd, nd_tq);
 		if (nfsd->nd_time > cur_usec)
 			break;
 		if (nfsd->nd_mreq)
@@ -1150,7 +1150,7 @@ loop1:
 				nfsd->nd_time = 0;
 				LIST_INSERT_HEAD(&slp->ns_tq, nfsd, nd_tq);
 			}
-			nfsd = swp->nd_coalesce.lh_first;
+			nfsd = LIST_FIRST(swp->nd_coalesce);
 			if (nfsd) {
 				LIST_REMOVE(nfsd, nd_tq);
 			}
@@ -1168,7 +1168,7 @@ loop1:
 	 * Search for a reply to return.
 	 */
 	s = splsoftclock();
-	for (nfsd = slp->ns_tq.lh_first; nfsd; nfsd = nfsd->nd_tq.le_next)
+	for (nfsd = LIST_FIRST(slp->ns_tq); nfsd; nfsd = LIST_NEXT(nfsd, nd_tq))
 		if (nfsd->nd_mreq) {
 			LIST_REMOVE(nfsd, nd_tq);
 			*mrq = nfsd->nd_mreq;
@@ -1389,7 +1389,7 @@ nfsrv_create(nfsd, slp, procp, mrq)
 			vap->va_type == VFIFO) {
 			if (vap->va_type == VCHR && rdev == 0xffffffff)
 				vap->va_type = VFIFO;
-			if (error = suser(cred, (u_short *)0)) {
+			if (error == suser(cred, (u_short *)0)) {
 				vrele(nd.ni_startdir);
 				free(nd.ni_cnd.cn_pnbuf, M_NAMEI);
 				VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
@@ -1399,7 +1399,7 @@ nfsrv_create(nfsd, slp, procp, mrq)
 			} else
 				vap->va_rdev = (dev_t)rdev;
 			nqsrv_getl(nd.ni_dvp, ND_WRITE);
-			if (error = VOP_MKNOD(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, vap)) {
+			if (error == VOP_MKNOD(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, vap)) {
 				vrele(nd.ni_startdir);
 				nfsm_reply(0);
 			}
@@ -1407,7 +1407,7 @@ nfsrv_create(nfsd, slp, procp, mrq)
 			nd.ni_cnd.cn_flags &= ~(LOCKPARENT | SAVESTART);
 			nd.ni_cnd.cn_proc = procp;
 			nd.ni_cnd.cn_cred = cred;
-			if (error = lookup(&nd)) {
+			if (error == lookup(&nd)) {
 				free(nd.ni_cnd.cn_pnbuf, M_NAMEI);
 				nfsm_reply(0);
 			}

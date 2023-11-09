@@ -431,8 +431,8 @@ extern struct mbuf *nfsm_reqh();
 			fxdr_nfsv3time(tl, &(a)->va_mtime); \
 			break; \
 		case NFSV3SATTRTIME_TOSERVER: \
-			(a)->va_mtime.ts_sec = time.tv_sec; \
-			(a)->va_mtime.ts_nsec = time.tv_usec * 1000; \
+			(a)->va_mtime.tv_sec = time.tv_sec; \
+			(a)->va_mtime.tv_nsec = time.tv_usec * 1000; \
 			break; \
 		}; }
 

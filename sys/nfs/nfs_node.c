@@ -117,14 +117,14 @@ nfs_nget(mntp, fhp, fhsize, npp)
 	nhpp = NFSNOHASH(nfs_hash(fhp, fhsize));
 loop:
 	for (np = nhpp->lh_first; np != 0; np = np->n_hash.le_next) {
-		if (mntp != NFSTOV(np)->v_mount || np->n_fhsize != fhsize ||
-		    bcmp((caddr_t)fhp, (caddr_t)np->n_fhp, fhsize))
+		if (mntp != NFSTOV(np)->v_mount || np->n_fhsize != fhsize
+				|| bcmp((caddr_t) fhp, (caddr_t) np->n_fhp, fhsize))
 			continue;
 		vp = NFSTOV(np);
 		if (vget(vp, LK_EXCLUSIVE, p))
 			goto loop;
 		*npp = np;
-		return(0);
+		return (0);
 	}
 	error = getnewvnode(VT_NFS, mntp, nfsv2_vnodeop_p, &nvp);
 	if (error) {
