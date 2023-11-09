@@ -45,10 +45,10 @@
 #include <ufs/ufs211/ufs211_extern.h>
 
 #define	INOHSZ				16							/* must be power of two */
-#define	INOHASH(dev,ino)	(&ihashtbl[((dev) + (ino)) & ihash & (INOHSZ * (dev + ihash) - 1)])
-LIST_HEAD(ufs211_ihashhead, ufs211_inode) *ihashtbl;	/* inode LRU cache, stolen */
-u_long	ihash;											/* size of hash table - 1 */
-struct lock_object			ufs211_ihash;
+#define	INOHASH(dev,ino)	(&ufs211_ihashtbl[((dev) + (ino)) & ufs211_ihash & (INOHSZ * (dev + ufs211_ihash) - 1)])
+LIST_HEAD(ufs211_ihashhead, ufs211_inode) *ufs211_ihashtbl;	/* inode LRU cache, stolen */
+u_long	ufs211_ihash;											/* size of hash table - 1 */
+struct lock_object			ufs211_hashlock;
 
 /*
  * Initialize hash links for inodes
@@ -57,8 +57,8 @@ struct lock_object			ufs211_ihash;
 void
 ufs211_ihinit()
 {
-	ihashtbl = hashinit(desiredvnodes, M_UFS211, &ihash);
-	simple_lock_init(&ufs211_ihash, "ufs211_ihash");
+	ufs211_ihashtbl = hashinit(desiredvnodes, M_UFS211, &ufs211_ihash);
+	simple_lock_init(&ufs211_hashlock, "ufs211_ihash");
 }
 
 /*
@@ -71,13 +71,13 @@ ufs211_ihashfind(dev, ino)
 {
 	register struct ufs211_inode *ip;
 
-	simple_lock(&ufs211_ihash);
+	simple_lock(&ufs211_hashlock);
 	for (ip = LIST_FIRST(INOHASH(dev, ino)); ip; ip = LIST_NEXT(ip, i_chain)) {
 		if (ino == ip->i_number && dev == ip->i_dev) {
 			break;
 		}
 	}
-	simple_unlock(&ufs211_ihash);
+	simple_unlock(&ufs211_hashlock);
 	if (ip) {
 		return (UFS211_ITOV(ip));
 	}
@@ -98,18 +98,18 @@ ufs211_ihashget(dev, ino)
 	struct vnode *vp;
 
 loop:
-	simple_lock(&ufs211_ihash);
+	simple_lock(&ufs211_hashlock);
 	for (ip = LIST_FIRST(INOHASH(dev, ino)); ip; ip = LIST_NEXT(ip, i_chain)) {
 		if (ino == ip->i_number && dev == ip->i_dev) {
 			vp = UFS211_ITOV(ip);
 			simple_lock(&vp->v_interlock);
-			simple_unlock(&ufs211_ihash);
+			simple_unlock(&ufs211_hashlock);
 			if (vget(vp, LK_EXCLUSIVE | LK_INTERLOCK, p))
 				goto loop;
 			return (vp);
 		}
 	}
-	simple_unlock(&ufs211_ihash);
+	simple_unlock(&ufs211_hashlock);
 	return (NULL);
 }
 
@@ -124,12 +124,12 @@ ufs211_ihashins(ip)
 	struct ufs211_ihashhead *ipp;
 
 	/* lock the inode, then put it on the appropriate hash list */
-	lockmgr(&ip->i_lock, LK_EXCLUSIVE, &ufs211_ihash, p->p_pid);
+	lockmgr(&ip->i_lock, LK_EXCLUSIVE, &ufs211_hashlock, p->p_pid);
 
-	simple_lock(&ufs211_ihash);
+	simple_lock(&ufs211_hashlock);
 	ipp = INOHASH(ip->i_dev, ip->i_number);
 	LIST_INSERT_HEAD(ipp, ip, i_chain);
-	simple_unlock(&ufs211_ihash);
+	simple_unlock(&ufs211_hashlock);
 }
 
 /*
@@ -139,11 +139,11 @@ void
 ufs211_ihashrem(ip)
 	struct ufs211_inode *ip;
 {
-	simple_lock(&ufs211_ihash);
+	simple_lock(&ufs211_hashlock);
 	LIST_REMOVE(ip, i_chain);
 #ifdef DIAGNOSTIC
 	LIST_NEXT(ip, i_chain) = NULL;
 	LIST_PREV(ip, i_chain) = NULL;
 #endif
-	simple_unlock(&ufs211_ihash);
+	simple_unlock(&ufs211_hashlock);
 }

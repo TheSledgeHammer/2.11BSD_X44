@@ -41,7 +41,7 @@ void    ufs211_indirtrunc(struct ufs211_inode *, daddr_t, daddr_t, int, int);
 void
 ufs211_updat(ip, ta, tm, waitfor)
 	struct ufs211_inode *ip;
-	struct timeval 		*ta, *tm;
+	volatile struct timeval  *ta, *tm;
 	int 				waitfor;
 {
 	struct buf *bp;
@@ -256,9 +256,7 @@ done:
 
 doquotaupd:
 #ifdef QUOTA
-	//QUOTAMAP();
-	(void)chkdq(oip, -bytesreleased, u.u_ucred, 0);
-	//QUOTAUNMAP();
+	(void)ufs211_chkdq(oip, -bytesreleased, u.u_ucred, 0);
 #endif
 updret:
 	oip->i_flag |= UFS211_ICHG|UFS211_IUPD;

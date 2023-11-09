@@ -18,12 +18,11 @@
 
 #include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_inode.h>
-//#include <ufs/ufs211/ufs211_dir.h>
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_extern.h>
 
-int	dirchk = 0;
+int	ufs211_dirchk = 0;
 #define FSFMT(vp)	((vp)->v_mount->mnt_maxsymlinklen <= 0)
 
 int
@@ -203,7 +202,7 @@ searchloop:
 		 * "dirchk" to be true.
 		 */
 		ep = (struct direct*) ((char*) bp->b_data + entryoffsetinblock);
-		if (ep->d_reclen == 0 || (dirchk && ufs211_dirbadentry(vdp, ep, entryoffsetinblock))) {
+		if (ep->d_reclen == 0 || (ufs211_dirchk && ufs211_dirbadentry(vdp, ep, entryoffsetinblock))) {
 			int i;
 
 			ufs211_dirbad(dp, dp->i_offset, "mangled entry");

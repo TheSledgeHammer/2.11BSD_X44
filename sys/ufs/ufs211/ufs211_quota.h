@@ -211,7 +211,7 @@ struct ufs211_dqwarn {
  * Macros to avoid subroutine calls to trivial functions.
  */
 #ifdef DIAGNOSTIC
-#define	DQREF(dq)	dqref(dq)
+#define	DQREF(dq)	ufs211_dqref(dq)
 #else
 #define	DQREF(dq)	(dq)->dq_cnt++
 #endif
@@ -227,32 +227,32 @@ struct ufs211_mount;
 struct vnode;
 
 __BEGIN_DECLS
-int		chkdq(struct ufs211_inode *, long, struct ucred *, int);
-int		chkdqchg(struct ufs211_inode *, long, struct ucred *, int);
-int		chkiq(struct ufs211_inode *, long, struct ucred *, int);
-int		chkiqchg(struct ufs211_inode *, long, struct ucred *, int);
-void 	dqflush(struct vnode *);
-int		dqget(struct vnode *, u_long, struct ufs211_mount *, int, struct ufs211_dquot **);
-void 	dqinit(void);
-void 	dqref(struct ufs211_dquot *);
-void 	dqrele(struct vnode *, struct ufs211_dquot *);
-int		dqsync(struct vnode *, struct ufs211_dquot *);
-int		getinoquota(struct ufs211_inode *);
-int		getquota(struct mount *, u_long, int, caddr_t);
-int		qsync(struct mount *);
-int		quotaoff(struct proc *, struct mount *, int);
-int		quotaon(struct proc *, struct mount *, int, caddr_t);
-int		setquota(struct mount *, u_long, int, caddr_t);
-int		setuse(struct mount *, u_long, int, caddr_t);
-int 	setwarn(struct mount *, u_long, int, caddr_t);
-int 	dowarn(struct mount *, u_long, int);
-int		setduse(struct mount *, u_long, int, caddr_t);
+int		ufs211_chkdq(struct ufs211_inode *, long, struct ucred *, int);
+int		ufs211_chkdqchg(struct ufs211_inode *, long, struct ucred *, int);
+int		ufs211_chkiq(struct ufs211_inode *, long, struct ucred *, int);
+int		ufs211_chkiqchg(struct ufs211_inode *, long, struct ucred *, int);
+void 	ufs211_dqflush(struct vnode *);
+int		ufs211_dqget(struct vnode *, u_long, struct ufs211_mount *, int, struct ufs211_dquot **);
+void 	ufs211_dqinit(void);
+void 	ufs211_dqref(struct ufs211_dquot *);
+void 	ufs211_dqrele(struct vnode *, struct ufs211_dquot *);
+int		ufs211_dqsync(struct vnode *, struct ufs211_dquot *);
+int		ufs211_getinoquota(struct ufs211_inode *);
+int		ufs211_getquota(struct mount *, u_long, int, caddr_t);
+int		ufs211_qsync(struct mount *);
+int		ufs211_quotaoff(struct proc *, struct mount *, int);
+int		ufs211_quotaon(struct proc *, struct mount *, int, caddr_t);
+int		ufs211_setquota(struct mount *, u_long, int, caddr_t);
+int		ufs211_setuse(struct mount *, u_long, int, caddr_t);
+int 	ufs211_setwarn(struct mount *, u_long, int, caddr_t);
+int 	ufs211_dowarn(struct mount *, u_long, int);
+int		ufs211_setduse(struct mount *, u_long, int, caddr_t);
 int		ufs211_quotactl(struct mount *, int, uid_t, caddr_t, struct proc *);
 __END_DECLS
 
 #ifdef DIAGNOSTIC
 __BEGIN_DECLS
-void chkdquot(struct ufs211_inode *);
+void ufs211_chkdquot(struct ufs211_inode *);
 __END_DECLS
 #endif
 

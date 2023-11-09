@@ -223,6 +223,53 @@ ufs211_unmount(mp, mntflags, p)
 	return (error);
 }
 
+
+/*
+ * Common code for mount and mountroot
+ */
+int
+ufs211_mountfs(devvp, mp, p)
+	register struct vnode *devvp;
+	struct mount *mp;
+	struct proc *p;
+{
+	register struct ufs211_mount *ump;
+	struct buf *bp;
+	register struct ufs211_fs *fs;
+	dev_t dev;
+	struct partinfo dpart;
+	caddr_t base, space;
+	int error, i, blks, size, ronly;
+	int32_t *lp;
+	struct ucred *cred;
+	extern struct vnode *rootvp;
+
+	dev = devvp->v_rdev;
+	cred = p ? p->p_ucred : NOCRED;
+    /*
+	 * Disallow multiple mounts of the same device.
+	 * Disallow mounting of a device that is currently in use
+	 * (except for root, which might share swap device for miniroot).
+	 * Flush out any old buffers remaining from a previous use.
+	 */
+	if (error == vfs_mountedon(devvp))
+		return (error);
+	if (vcount(devvp) > 1 && devvp != rootvp)
+		return (EBUSY);
+	if (error == vinvalbuf(devvp, V_SAVE, cred, p, 0, 0))
+		return (error);
+
+	ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
+	if (error == VOP_OPEN(devvp, ronly ? FREAD : FREAD | FWRITE, FSCRED, p))
+		return (error);
+	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, cred, p) != 0)
+		size = DEV_BSIZE;
+	else
+		size = dpart.disklab->d_secsize;
+
+    return (0);
+}
+
 /*
  * Flush out all the files in a filesystem.
  */
@@ -245,7 +292,7 @@ ufs211_flushfiles(mp, flags, p)
 			if (ump->m_quotas[i] == NULLVP) {
 				continue;
 			}
-			quotaoff(p, mp, i);
+			ufs211_quotaoff(p, mp, i);
 		}
 	}
 #endif
@@ -329,47 +376,47 @@ ufs211_quotactl(mp, cmds, uid, arg, p)
 	switch (cmd) {
 
 	case Q_QUOTAON:
-		error = quotaon(p, mp, type, arg);
+		error = ufs211_quotaon(p, mp, type, arg);
 		break;
 
 	case Q_QUOTAOFF:
-		error = quotaoff(p, mp, type);
+		error = ufs211_quotaoff(p, mp, type);
 		break;
 
 	case Q_SETQUOTA:
-		error = setquota(mp, uid, type, arg);
+		error = ufs211_setquota(mp, uid, type, arg);
 		break;
 
 	case Q_SETUSE:
-		error = setuse(mp, uid, type, arg);
+		error = ufs211_setuse(mp, uid, type, arg);
 		break;
 
 	case Q_GETQUOTA:
-		error = getquota(mp, uid, type, arg);
+		error = ufs211_getquota(mp, uid, type, arg);
 		break;
 
 	case Q_SETDLIM:
-		error = setquota(mp, uid, type, arg);
+		error = ufs211_setquota(mp, uid, type, arg);
 		break;
 
 	case Q_SETDUSE:
-		error = setduse(mp, uid, type, arg);
+		error = ufs211_setduse(mp, uid, type, arg);
 		break;
 
 	case Q_GETDLIM:
-		error = getquota(mp, uid, type, arg);
+		error = ufs211_getquota(mp, uid, type, arg);
 		break;
 
 	case Q_SETWARN:
-		error = setwarn(mp, uid, type, arg);
+		error = ufs211_setwarn(mp, uid, type, arg);
 		break;
 
 	case Q_DOWARN:
-		error = dowarn(mp, uid, type);
+		error = ufs211_dowarn(mp, uid, type);
 		break;
 
 	case Q_SYNC:
-		error = qsync(mp);
+		error = ufs211_qsync(mp);
 		break;
 
 	default:
@@ -492,7 +539,7 @@ loop:
 		bflush(ump->m_devvp, bp->b_blkno, ump->m_dev); 		/* flush dirty data blocks */
 	}
 #ifdef	QUOTA
-	qsync(mp);		/* sync the quotas */
+	ufs211_qsync(mp);		/* sync the quotas */
 #endif
 
 	/*
@@ -586,14 +633,11 @@ ufs211_vget(mp, ino, vpp)
 	ip->i_devvp = ump->m_devvp;
 	VREF(ip->i_devvp);
 
-//  ufs211_mapin(ip->i_din);
-
 	if (fs->fs_magic == FS_UFS211_MAGIC) {
 		ip->i_uid = ip->i_din->di_uid;
 		ip->i_gid = ip->i_din->di_gid;
 		//ip->i_din  = *((struct ufs211_dinode *)bp->b_data + itod(ino));
 	}
-//    ufs211_mapout(bp);
 	*vpp = vp;
 	return (0);
 }
@@ -662,7 +706,7 @@ ufs211_init(vfsp)
 	ufs211_bufmap_init();
 	ufs211_ihinit();
 #ifdef QUOTA
-	quotainit();
+	ufs211_quotainit();
 #endif
 	return (0);
 }

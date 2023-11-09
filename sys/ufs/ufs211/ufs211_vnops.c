@@ -47,12 +47,11 @@
 #include <sys/lock.h>
 #include <sys/lockf.h>
 
-#include <ufs/ufs211/ufs211_dir.h>
 #include <ufs/ufs211/ufs211_quota.h>
-#include <ufs/ufs211/ufs211_extern.h>
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_inode.h>
 #include <ufs/ufs211/ufs211_mount.h>
+#include <ufs/ufs211/ufs211_extern.h>
 
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
@@ -495,19 +494,22 @@ ufs211_setattr(ap)
 		}
 	}
 	ufs211_itimes(vp);
-	if (vap->va_atime != (time_t) VNOVAL || vap->va_mtime != (time_t) VNOVAL) {
+	if (vap->va_atime.tv_sec != VNOVAL || vap->va_mtime.tv_sec != VNOVAL) {
+        if (vp->v_mount->mnt_flag & MNT_RDONLY) {
+            return (EROFS);
+        }
 		if (u.u_uid != ip->i_uid && !suser() && ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || VOP_ACCESS(vp, VWRITE, u.u_ucred, u.u_procp)))
 			return (u.u_error);
-		if (vap->va_atime != (time_t) VNOVAL && !(ip->i_fs->fs_flags & MNT_NOATIME))
+		if (vap->va_atime.tv_sec != (time_t) VNOVAL && !(ip->i_fs->fs_flags & MNT_NOATIME))
 			ip->i_flag |= UFS211_IACC;
-		if (vap->va_mtime != (time_t) VNOVAL)
+		if (vap->va_mtime.tv_sec != VNOVAL)
 			ip->i_flag |= (UFS211_IUPD | UFS211_ICHG);
-		atimeval.tv_sec = vap->va_atime;
-		mtimeval.tv_sec = vap->va_mtime;
+		atimeval.tv_sec = vap->va_atime.tv_sec;
+		mtimeval.tv_sec = vap->va_mtime.tv_sec;
 		ufs211_updat(ip, &atimeval, &mtimeval, 1);
 	}
 	if (vap->va_mode != (mode_t) VNOVAL)
-		return (ufs211_chmod1(ip, vap->va_mode));
+		return (ufs211_chmod1(vp, vap->va_mode));
 	return(0);
 }
 /*
@@ -627,71 +629,71 @@ ufs211_chown1(ip, uid, gid)
 	ouid = ip->i_uid;
 	ogid = ip->i_gid;
 #ifdef QUOTA
-	if (error == getinoquota(ip)) {
+	if (error == ufs211_getinoquota(ip)) {
 		return (error);
 	}
 	if (ouid == uid) {
-		dqrele(vp, ip->i_dquot[USRQUOTA]);
+		ufs211_dqrele(vp, ip->i_dquot[USRQUOTA]);
 		ip->i_dquot[USRQUOTA] = NODQUOT;
 		change = 0;
 	} else {
 		change = ip->i_size;
 	}
 	if (ogid == gid) {
-		dqrele(vp, ip->i_dquot[GRPQUOTA]);
+		ufs211_dqrele(vp, ip->i_dquot[GRPQUOTA]);
 		ip->i_dquot[GRPQUOTA] = NODQUOT;
 	} else {
 		//change = ip->i_din->di_blocks;
 	}
-	(void)chkdq(ip, -change, u.u_ucred, CHOWN);
-	(void)chkiq(ip, -1, u.u_cred, CHOWN);
+	(void)ufs211_chkdq(ip, -change, u.u_ucred, CHOWN);
+	(void)ufs211_chkiq(ip, -1, u.u_ucred, CHOWN);
 	for (i = 0; i < MAXQUOTAS; i++) {
-		dqrele(vp, ip->i_dquot[i]);
+		ufs211_dqrele(vp, ip->i_dquot[i]);
 		ip->i_dquot[i] = NODQUOT;
 	}
 #endif
 	ip->i_uid = uid;
 	ip->i_gid = gid;
 #ifdef QUOTA
-	if ((error = getinoquota(ip)) == 0) {
+	if ((error = ufs211_getinoquota(ip)) == 0) {
 		if (ouid == uid) {
-			dqrele(vp, ip->i_dquot[USRQUOTA]);
+			ufs211_dqrele(vp, ip->i_dquot[USRQUOTA]);
 			ip->i_dquot[USRQUOTA] = NODQUOT;
 		}
 		if (ogid == gid) {
-			dqrele(vp, ip->i_dquot[GRPQUOTA]);
+			ufs211_dqrele(vp, ip->i_dquot[GRPQUOTA]);
 			ip->i_dquot[GRPQUOTA] = NODQUOT;
 		}
-		if ((error = chkdq(ip, change, u.u_ucred, CHOWN)) == 0) {
-			if ((error = chkiq(ip, 1, u.u_ucred, CHOWN)) == 0) {
+		if ((error = ufs211_chkdq(ip, change, u.u_ucred, CHOWN)) == 0) {
+			if ((error = ufs211_chkiq(ip, 1, u.u_ucred, CHOWN)) == 0) {
 				goto good;
 			} else {
-				(void) chkdq(ip, -change, u.u_ucred, CHOWN | FORCE);
+				(void) ufs211_chkdq(ip, -change, u.u_ucred, CHOWN | FORCE);
 			}
 		}
 		for (i = 0; i < MAXQUOTAS; i++) {
-			dqrele(vp, ip->i_dquot[i]);
+			ufs211_dqrele(vp, ip->i_dquot[i]);
 			ip->i_dquot[i] = NODQUOT;
 		}
 	}
 	ip->i_gid = ogid;
 	ip->i_uid = ouid;
-	if (getinoquota(ip) == 0) {
+	if (ufs211_getinoquota(ip) == 0) {
 		if (ouid == uid) {
-			dqrele(vp, ip->i_dquot[USRQUOTA]);
+			ufs211_dqrele(vp, ip->i_dquot[USRQUOTA]);
 			ip->i_dquot[USRQUOTA] = NODQUOT;
 		}
 		if (ogid == gid) {
-			dqrele(vp, ip->i_dquot[GRPQUOTA]);
+			ufs211_dqrele(vp, ip->i_dquot[GRPQUOTA]);
 			ip->i_dquot[GRPQUOTA] = NODQUOT;
 		}
-		(void) chkdq(ip, change, u.u_ucred, FORCE|CHOWN);
-		(void) chkiq(ip, 1, u.u_ucred, FORCE|CHOWN);
-		(void) getinoquota(ip);
+		(void) ufs211_chkdq(ip, change, u.u_ucred, FORCE|CHOWN);
+		(void) ufs211_chkiq(ip, 1, u.u_ucred, FORCE|CHOWN);
+		(void) ufs211_getinoquota(ip);
 	}
 	return (error);
 good:
-	if (getinoquota(ip)) {
+	if (ufs211_getinoquota(ip)) {
 		panic("chown: lost quota");
 	}
 #endif
@@ -780,6 +782,8 @@ int
 ufs211_fsync(ap)
 	struct vop_fsync_args *ap;
 {
+    struct timeval tv;
+
 	ufs211_syncip(ap->a_vp);
 	tv = time;
 	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
@@ -937,7 +941,7 @@ abortit:
 	 */
 	//ip->i_effnlink++;
 	ip->i_nlink++;
-	ip->di_nlink = ip->i_nlink;
+	ip->i_din->di_nlink = ip->i_nlink;
 	ip->i_flag |= UFS211_ICHG;
 	tv = time;
 	if (error == VOP_UPDATE(fvp, &tv, &tv, 1)) {
@@ -997,7 +1001,7 @@ abortit:
 			}
 			//dp->i_effnlink++;
 			dp->i_nlink++;
-			dp->di_nlink = dp->i_nlink;
+			dp->i_din->di_nlink = dp->i_nlink;
 			dp->i_flag |= UFS211_ICHG;
 			if (error == VOP_UPDATE(tdvp, &tv, &tv, 1))
 				goto bad;
@@ -1183,7 +1187,7 @@ out:
 	if (vn_lock(fvp, LK_EXCLUSIVE, p) == 0) {
 		//ip->i_effnlink--;
 		ip->i_nlink--;
-		ip->di_nlink = ip->i_nlink;
+		ip->i_din->di_nlink = ip->i_nlink;
 		ip->i_flag |= UFS211_ICHG;
 		ip->i_flag &= ~UFS211_IRENAME;
 		vput(fvp);
@@ -1247,9 +1251,9 @@ ufs211_readdir(ap)
 		}
 		FREE(dirbuf, M_TEMP);
 	}
-#	else
+#else
 		error = VOP_READ(ap->a_vp, uio, 0, ap->a_cred);
-#	endif
+#endif
 	if (!error && ap->a_ncookies) {
 		struct dirent *dp, *dpstart;
 		off_t offstart;
@@ -1319,8 +1323,9 @@ ufs211_inactive(ap)
 		goto out;
 	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 #ifdef QUOTA
-		if (!inoquota(ip))
-			(void)chkiq(ip, -1, NOCRED, 0);
+        if (!ufs211_getinoquota(ip)) {
+            (void)ufs211_chkiq(ip, -1, NOCRED, 0);
+        }
 #endif
 		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, p);
 		ip->i_rdev = 0;
@@ -1371,7 +1376,7 @@ ufs211_reclaim(ap)
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++) {
 		if (ip->i_dquot[i] != NODQUOT) {
-			dqrele(vp, ip->i_dquot[i]);
+			ufs211_dqrele(vp, ip->i_dquot[i]);
 			ip->i_dquot[i] = NODQUOT;
 		}
 	}
@@ -1410,9 +1415,9 @@ ufs211_bmap(ap)
 	struct ufs211_inode *ip = UFS211_VTOI(ap->a_vp);
 
 	if(ap->a_vpp != NULL) {
-		!ap->a_vpp = ip->i_devvp;
+		ap->a_vpp = &ip->i_devvp;
 	}
-	if (ap->a_bnp == NULL || ap->a_bnp == ufs211_bmap1(ip, ap->a_bn, UFS211_IREAD, ip->i_flag)) {
+	if (ap->a_bnp == NULL || ufs211_bmap1(ip, ap->a_bn, UFS211_IREAD, ip->i_flag)) {
 		return (0);
 	}
 	return (0);
@@ -1424,11 +1429,10 @@ ufs211_strategy(ap)
 {
 	register struct buf *bp = ap->a_bp;
 	register struct vnode *vp = bp->b_vp;
-	struct ufs211_inode *ip;
+	struct ufs211_inode *ip = UFS211_VTOI(vp);
 	daddr_t blkno;
 	int error;
 
-	ip = UFS211_VTOI(vp);
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
 			panic("ufs211_strategy: spec");
 	if (bp->b_blkno == bp->b_lblkno) {
@@ -1582,7 +1586,7 @@ ufs211_whiteout(ap)
 		int a_flags;
 	} */ *ap;
 {
-	struct ufs211_inode ip;
+	struct ufs211_inode *ip;
 	struct vnode *dvp = ap->a_dvp;
 	struct componentname *cnp = ap->a_cnp;
 	struct direct newdir;
@@ -1605,7 +1609,7 @@ ufs211_whiteout(ap)
 			panic("ufs_whiteout: old format filesystem");
 #endif
 
-		newdir.d_ino = WINO;
+		newdir.d_ino = UFS211_WINO;
 		newdir.d_namlen = cnp->cn_namelen;
 		bcopy(cnp->cn_nameptr, newdir.d_name, (unsigned)cnp->cn_namelen + 1);
 		newdir.d_type = DT_WHT;
@@ -1719,7 +1723,7 @@ ufs211_mkdir(ap)
 	ip->i_uid = cnp->cn_cred->cr_uid;
 	ip->i_gid = dp->i_gid;
 #ifdef QUOTA
-	if ((error = getinoquota(ip)) || (error = chkiq(ip, 1, cnp->cn_cred, 0))) {
+	if ((error = ufs211_getinoquota(ip)) || (error = ufs211_chkiq(ip, 1, cnp->cn_cred, 0))) {
 		free(cnp->cn_pnbuf, M_NAMEI);
 		VOP_VFREE(tvp, ip->i_number, dmode);
 		vput(tvp);
@@ -1899,7 +1903,7 @@ ufs211_blkatoff(ap)
 {
 	struct ufs211_inode *ip;
 	register struct ufs211_fs *fs;
-	register struct buf *bp;
+	struct buf *bp;
 	daddr_t lbn, bn;
 	char *junk;
 	int error;
@@ -1915,6 +1919,7 @@ ufs211_blkatoff(ap)
 	if (bn == (daddr_t)-1) {
 		ufs211_dirbad(ip, ap->a_offset, "hole in dir");
 	}
+
 	if (error == bread(ap->a_vp, lbn, bn, NOCRED, &bp)) {
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
@@ -2202,8 +2207,8 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 	else
 		ip->i_uid = cnp->cn_cred->cr_uid;
 #ifdef QUOTA
-	if ((error = getinoquota(ip)) ||
-	    (error = chkiq(ip, 1, cnp->cn_cred, 0))) {
+	if ((error = ufs211_getinoquota(ip)) ||
+	    (error = ufs211_chkiq(ip, 1, cnp->cn_cred, 0))) {
 		free(cnp->cn_pnbuf, M_NAMEI);
 		VOP_VFREE(tvp, ip->i_number, mode);
 		vput(tvp);

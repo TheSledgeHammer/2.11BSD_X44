@@ -81,10 +81,10 @@ u_long ufs211_dqhash;
 #define	QUOTINC		5	/* minimum free quots desired */
 TAILQ_HEAD(ufs211_qfreelist, ufs211_quota) 	ufs211_qfreelist;
 TAILQ_HEAD(ufs211_dqfreelist, ufs211_dquot) ufs211_dqfreelist;
-long numdquot, desiredquot = DQUOTINC;
+long ufs211_numdquot, ufs211_desiredquot = DQUOTINC;
 
 void
-quotainit()
+ufs211_quotainit(void)
 {
 	//ufs211_qhashtbl = hashinit(desiredvnodes, M_DQUOT, &ufs211_qhash);
 	//TAILQ_INIT(&ufs211_qfreelist);
@@ -94,7 +94,7 @@ quotainit()
 }
 
 int
-getinoquota(ip)
+ufs211_getinoquota(ip)
 	register struct ufs211_inode *ip;
 {
 	struct ufs211_mount *ump;
@@ -109,7 +109,7 @@ getinoquota(ip)
 	 * EINVAL means that quotas are not enabled.
 	 */
 	if (ip->i_dquot[USRQUOTA] == NODQUOT
-			&& (error = dqget(vp, ip->i_uid, ump, USRQUOTA,
+			&& (error = ufs211_dqget(vp, ip->i_uid, ump, USRQUOTA,
 					&ip->i_dquot[USRQUOTA])) && error != EINVAL)
 		return (error);
 	/*
@@ -117,7 +117,7 @@ getinoquota(ip)
 	 * EINVAL means that quotas are not enabled.
 	 */
 	if (ip->i_dquot[GRPQUOTA] == NODQUOT
-			&& (error = dqget(vp, ip->i_gid, ump, GRPQUOTA,
+			&& (error = ufs211_dqget(vp, ip->i_gid, ump, GRPQUOTA,
 					&ip->i_dquot[GRPQUOTA])) && error != EINVAL)
 		return (error);
 
@@ -125,7 +125,7 @@ getinoquota(ip)
 }
 
 int
-chkdq(ip, change, cred, flags)
+ufs211_chkdq(ip, change, cred, flags)
 	register struct ufs211_inode *ip;
 	long change;
 	struct ucred *cred;
@@ -137,7 +137,7 @@ chkdq(ip, change, cred, flags)
 
 #ifdef DIAGNOSTIC
 	if ((flags & CHOWN) == 0) {
-		chkdquot(ip);
+		ufs211_chkdquot(ip);
 	}
 #endif
 	if (change == 0) {
@@ -168,7 +168,7 @@ chkdq(ip, change, cred, flags)
 			if ((dq = ip->i_dquot[i]) == NODQUOT) {
 				continue;
 			}
-			error = chkdqchg(ip, change, cred, i);
+			error = ufs211_chkdqchg(ip, change, cred, i);
 			if (error) {
 				return (error);
 			}
@@ -189,7 +189,7 @@ chkdq(ip, change, cred, flags)
 }
 
 int
-chkdqchg(ip, change, cred, type)
+ufs211_chkdqchg(ip, change, cred, type)
 	struct ufs211_inode *ip;
 	long change;
 	struct ucred *cred;
@@ -231,8 +231,67 @@ chkdqchg(ip, change, cred, type)
 	return (0);
 }
 
+/*
+ * Check the inode limit, applying corrective action.
+ */
 int
-chkiqchg(ip, change, cred, type)
+ufs211_chkiq(ip, change, cred, flags)
+	register struct ufs211_inode *ip;
+	long change;
+	struct ucred *cred;
+	int flags;
+{
+	register struct ufs211_dquot *dq;
+	register int i;
+	int ncurinodes, error;
+
+#ifdef DIAGNOSTIC
+	if ((flags & CHOWN) == 0)
+		ufs211_chkdquot(ip);
+#endif
+	if (change == 0)
+		return (0);
+	if (change < 0) {
+		for (i = 0; i < MAXQUOTAS; i++) {
+			if ((dq = ip->i_dquot[i]) == NODQUOT)
+				continue;
+			while (dq->dq_flags & DQ_LOCK) {
+				dq->dq_flags |= DQ_WANT;
+				sleep((caddr_t)dq, PINOD+1);
+			}
+			ncurinodes = dq->dq_curinodes + change;
+			if (ncurinodes >= 0)
+				dq->dq_curinodes = ncurinodes;
+			else
+				dq->dq_curinodes = 0;
+			dq->dq_flags &= ~DQ_INODS;
+			dq->dq_flags |= DQ_MOD;
+		}
+		return (0);
+	}
+	if ((flags & FORCE) == 0 && cred->cr_uid != 0) {
+		for (i = 0; i < MAXQUOTAS; i++) {
+			if ((dq = ip->i_dquot[i]) == NODQUOT)
+				continue;
+			if (error == ufs211_chkiqchg(ip, change, cred, i))
+				return (error);
+		}
+	}
+	for (i = 0; i < MAXQUOTAS; i++) {
+		if ((dq = ip->i_dquot[i]) == NODQUOT)
+			continue;
+		while (dq->dq_flags & DQ_LOCK) {
+			dq->dq_flags |= DQ_WANT;
+			sleep((caddr_t)dq, PINOD+1);
+		}
+		dq->dq_curinodes += change;
+		dq->dq_flags |= DQ_MOD;
+	}
+    return (0);
+}
+
+int
+ufs211_chkiqchg(ip, change, cred, type)
 	struct ufs211_inode *ip;
 	long change;
 	struct ucred *cred;
@@ -289,7 +348,7 @@ chkiqchg(ip, change, cred, type)
  * size and not to have a dquot structure associated with it.
  */
 void
-chkdquot(ip)
+ufs211_chkdquot(ip)
 	register struct ufs211_inode *ip;
 {
 	struct ufs211_mount *ump;
@@ -317,7 +376,7 @@ chkdquot(ip)
  * Q_QUOTAON - set up a quota file for a particular file system.
  */
 int
-quotaon(p, mp, type, fname)
+ufs211_quotaon(p, mp, type, fname)
 	struct proc *p;
 	struct mount *mp;
 	register int type;
@@ -344,7 +403,7 @@ quotaon(p, mp, type, fname)
 		return (EACCES);
 	}
 	if (*vpp != vp) {
-		quotaoff(p, mp, type);
+		ufs211_quotaoff(p, mp, type);
 	}
 	ump->m_qflags[type] |= QTF_OPENING;
 	mp->mnt_flag |= MNT_QUOTA;
@@ -358,14 +417,14 @@ quotaon(p, mp, type, fname)
 	ump->m_cred[type] = p->p_ucred;
 	ump->m_bwarn[type] = MAX_DQ_WARN;
 	ump->m_iwarn[type] = MAX_IQ_WARN;
-	if (dqget(NULLVP, 0, ump, type, &dq) == 0) {
+	if (ufs211_dqget(NULLVP, 0, ump, type, &dq) == 0) {
 		if (dq->dq_bwarn > 0) {
 			ump->m_bwarn[type] = dq->dq_bwarn;
 		}
 		if (dq->dq_iwarn > 0) {
 			ump->m_iwarn[type] = dq->dq_iwarn;
 		}
-		dqrele(NULLVP, dq);
+		ufs211_dqrele(NULLVP, dq);
 	}
 	/*
 	 * Search vnodes associated with this mount point,
@@ -379,7 +438,7 @@ again:
 			continue;
 		if (vget(vp, LK_EXCLUSIVE, p))
 			goto again;
-		if (error == getinoquota(UFS211_VTOI(vp))) {
+		if (error == ufs211_getinoquota(UFS211_VTOI(vp))) {
 			vput(vp);
 			break;
 		}
@@ -390,7 +449,7 @@ again:
 	}
 	ump->m_qflags[type] &= ~QTF_OPENING;
 	if (error) {
-		quotaoff(p, mp, type);
+		ufs211_quotaoff(p, mp, type);
 	}
 	return (error);
 }
@@ -399,7 +458,7 @@ again:
  * Q_QUOTAOFF - turn off disk quotas for a filesystem.
  */
 int
-quotaoff(p, mp, type)
+ufs211_quotaoff(p, mp, type)
 	struct proc *p;
 	struct mount *mp;
 	register int type;
@@ -429,13 +488,13 @@ again:
 		ip = UFS211_VTOI(vp);
 		dq = ip->i_dquot[type];
 		ip->i_dquot[type] = NODQUOT;
-		dqrele(vp, dq);
+		ufs211_dqrele(vp, dq);
 		vput(vp);
 		if (LIST_NEXT(vp, v_mntvnodes) != nextvp || vp->v_mount != mp) {
 			goto again;
 		}
 	}
-	dqflush(qvp);
+	ufs211_dqflush(qvp);
 	qvp->v_flag &= ~VSYSTEM;
 	error = vn_close(qvp, FREAD | FWRITE, p->p_ucred, p);
 	ump->m_quotas[type] = NULLVP;
@@ -457,7 +516,7 @@ again:
  * Q_GETQUOTA - return current values in a dqblk structure.
  */
 int
-getquota(mp, id, type, addr)
+ufs211_getquota(mp, id, type, addr)
 	struct mount *mp;
 	u_long id;
 	int type;
@@ -466,10 +525,10 @@ getquota(mp, id, type, addr)
 	struct ufs211_dquot *dq;
 	int error;
 
-	if (error == dqget(NULLVP, id, VFSTOUFS211(mp), type, &dq))
+	if (error == ufs211_dqget(NULLVP, id, VFSTOUFS211(mp), type, &dq))
 		return (error);
 	error = copyout((caddr_t)&dq->dq_dqb, addr, sizeof (struct ufs211_dqblk));
-	dqrele(NULLVP, dq);
+	ufs211_dqrele(NULLVP, dq);
 	return (error);
 }
 
@@ -477,7 +536,7 @@ getquota(mp, id, type, addr)
  * Q_SETQUOTA - assign an entire dqblk structure.
  */
 int
-setquota(mp, id, type, addr)
+ufs211_setquota(mp, id, type, addr)
 	struct mount *mp;
 	u_long id;
 	int type;
@@ -491,7 +550,7 @@ setquota(mp, id, type, addr)
 
 	if (error == copyin(addr, (caddr_t)&newlim, sizeof (struct ufs211_dqblk)))
 		return (error);
-	if (error == dqget(NULLVP, id, ump, type, &ndq))
+	if (error == ufs211_dqget(NULLVP, id, ump, type, &ndq))
 		return (error);
 	dq = ndq;
 	while (dq->dq_flags & DQ_LOCK) {
@@ -533,7 +592,7 @@ setquota(mp, id, type, addr)
 		dq->dq_flags &= ~DQ_FAKE;
 	}
 	dq->dq_flags |= DQ_MOD;
-	dqrele(NULLVP, dq);
+	ufs211_dqrele(NULLVP, dq);
 	return (0);
 }
 
@@ -541,7 +600,7 @@ setquota(mp, id, type, addr)
  * Q_SETUSE - set current inode and block usage.
  */
 int
-setuse(mp, id, type, addr)
+ufs211_setuse(mp, id, type, addr)
 	struct mount *mp;
 	u_long id;
 	int type;
@@ -555,7 +614,7 @@ setuse(mp, id, type, addr)
 
 	if (error == copyin(addr, (caddr_t)&usage, sizeof (struct ufs211_dqblk)))
 		return (error);
-	if (error == dqget(NULLVP, id, ump, type, &ndq))
+	if (error == ufs211_dqget(NULLVP, id, ump, type, &ndq))
 		return (error);
 	dq = ndq;
 	while (dq->dq_flags & DQ_LOCK) {
@@ -583,7 +642,7 @@ setuse(mp, id, type, addr)
 		dq->dq_flags &= ~DQ_INODS;
 	}
 	dq->dq_flags |= DQ_MOD;
-	dqrele(NULLVP, dq);
+	ufs211_dqrele(NULLVP, dq);
 	return (0);
 }
 
@@ -591,7 +650,7 @@ setuse(mp, id, type, addr)
  * Q_SYNC - sync quota files to disk.
  */
 int
-qsync(mp)
+ufs211_qsync(mp)
 	struct mount *mp;
 {
 	struct ufs211_mount *ump;
@@ -632,7 +691,7 @@ again:
 		for (i = 0; i < MAXQUOTAS; i++) {
 			dq = UFS211_VTOI(vp)->i_dquot[i];
 			if (dq != NODQUOT && (dq->dq_flags & DQ_MOD))
-				dqsync(vp, dq);
+				ufs211_dqsync(vp, dq);
 		}
 		vput(vp);
 		simple_lock(&mntvnode_slock);
@@ -648,7 +707,7 @@ again:
  * reading the information from the file if necessary.
  */
 int
-dqget(vp, id, ump, type, dqp)
+ufs211_dqget(vp, id, ump, type, dqp)
 	struct vnode *vp;
 	u_long id;
 	register struct ufs211_mount *ump;
@@ -690,12 +749,12 @@ dqget(vp, id, ump, type, dqp)
 	 * Not in cache, allocate a new one.
 	 */
 	if (TAILQ_FIRST(&ufs211_dqfreelist) == NODQUOT &&
-	    numdquot < MAXQUOTAS * desiredvnodes)
-		desiredquot += DQUOTINC;
-	if (numdquot < desiredquot) {
+	    ufs211_numdquot < MAXQUOTAS * desiredvnodes)
+		ufs211_desiredquot += DQUOTINC;
+	if (ufs211_numdquot < ufs211_desiredquot) {
 		dq = (struct ufs211_dquot *)malloc(sizeof *dq, M_DQUOT, M_WAITOK);
 		bzero((char *)dq, sizeof *dq);
-		numdquot++;
+		ufs211_numdquot++;
 	} else {
 		if ((dq = TAILQ_FIRST(&ufs211_dqfreelist)) == NULL) {
 			tablefull("dquot");
@@ -741,7 +800,7 @@ dqget(vp, id, ump, type, dqp)
 	 */
 	if (error) {
 		LIST_REMOVE(dq, dq_hash);
-		dqrele(vp, dq);
+		ufs211_dqrele(vp, dq);
 		*dqp = NODQUOT;
 		return (error);
 	}
@@ -766,7 +825,7 @@ dqget(vp, id, ump, type, dqp)
  * Obtain a reference to a dquot.
  */
 void
-dqref(dq)
+ufs211_dqref(dq)
 	struct ufs211_dquot *dq;
 {
 	dq->dq_cnt++;
@@ -776,7 +835,7 @@ dqref(dq)
  * Release a reference to a dquot.
  */
 void
-dqrele(vp, dq)
+ufs211_dqrele(vp, dq)
 	struct vnode *vp;
 	register struct ufs211_dquot *dq;
 {
@@ -788,7 +847,7 @@ dqrele(vp, dq)
 		return;
 	}
 	if (dq->dq_flags & DQ_MOD)
-		(void) dqsync(vp, dq);
+		(void) ufs211_dqsync(vp, dq);
 	if (--dq->dq_cnt > 0)
 		return;
 	TAILQ_INSERT_TAIL(&ufs211_dqfreelist, dq, dq_freelist);
@@ -798,7 +857,7 @@ dqrele(vp, dq)
  * Update the disk quota in the quota file.
  */
 int
-dqsync(vp, dq)
+ufs211_dqsync(vp, dq)
 	struct vnode *vp;
 	struct ufs211_dquot *dq;
 {
@@ -850,7 +909,7 @@ dqsync(vp, dq)
  * Flush all entries from the cache for a particular vnode.
  */
 void
-dqflush(vp)
+ufs211_dqflush(vp)
 	register struct vnode *vp;
 {
 	register struct ufs211_dquot *dq, *nextdq;
@@ -876,7 +935,7 @@ dqflush(vp)
 }
 
 int
-setwarn(mp, id, type, addr)
+ufs211_setwarn(mp, id, type, addr)
 	struct mount *mp;
 	u_long id;
 	int type;
@@ -889,7 +948,7 @@ setwarn(mp, id, type, addr)
 	int error;
 
 	ump = VFSTOUFS211(mp);
-	if (error == dqget(NULLVP, id, ump, type, &ndq)) {
+	if (error == ufs211_dqget(NULLVP, id, ump, type, &ndq)) {
 		return (error);
 	}
 	dq = ndq;
@@ -906,12 +965,12 @@ setwarn(mp, id, type, addr)
 		dq->dq_flags &= ~(DQ_INODS | DQ_BLKS);
 		dq->dq_flags |= DQ_MOD;
 	}
-	dqrele(NULLVP, dq);
+	ufs211_dqrele(NULLVP, dq);
 	return (0);
 }
 
 void
-qwarn(ump, dq)
+ufs211_qwarn(ump, dq)
 	register struct ufs211_mount *ump;
 	register struct ufs211_dquot *dq;
 {
@@ -957,7 +1016,7 @@ qwarn(ump, dq)
 }
 
 int
-dowarn(mp, id, type)
+ufs211_dowarn(mp, id, type)
 	struct mount *mp;
 	u_long id;
 	int type;
@@ -977,15 +1036,15 @@ dowarn(mp, id, type)
 	dqh = DQHASH(dqvp, id);
 	for (dq = LIST_FIRST(dqh); dq; dq = LIST_NEXT(dq, dq_hash)) {
 		if (dq != NODQUOT && dq != LOSTDQUOT) {
-			qwarn(ump, dq);
-			dqrele(NULLVP, dq);
+			ufs211_qwarn(ump, dq);
+			ufs211_dqrele(NULLVP, dq);
 		}
 	}
 	return (0);
 }
 
 int
-setduse(mp, id, type, addr)
+ufs211_setduse(mp, id, type, addr)
 	struct mount *mp;
 	u_long id;
 	int type;
@@ -998,7 +1057,7 @@ setduse(mp, id, type, addr)
 	int error;
 
 	ump = VFSTOUFS211(mp);
-	if (error == dqget(NULLVP, id, ump, type, &ndq)) {
+	if (error == ufs211_dqget(NULLVP, id, ump, type, &ndq)) {
 		return (error);
 	}
 	dq = ndq;
@@ -1021,6 +1080,6 @@ setduse(mp, id, type, addr)
 		dq->dq_flags &= ~(DQ_INODS | DQ_BLKS);
 		dq->dq_flags |= DQ_MOD;
 	}
-	dqrele(NULLVP, dq);
+	ufs211_dqrele(NULLVP, dq);
 	return (error);
 }

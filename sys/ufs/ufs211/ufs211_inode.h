@@ -160,8 +160,8 @@ struct ufs211_dinode {
 #define	i_lastr			i_un3.if_lastr
 #define	i_socket		i_un3.is_socket
 
-#define di_ic1			i_din->di_icom1
-#define di_ic2			i_din->di_icom2
+#define di_ic1			di_icom1
+#define di_ic2			di_icom2
 #define	di_mode		    di_ic1.ic_mode
 #define	di_nlink	    di_ic1.ic_nlink
 #define	di_uid		    di_ic1.ic_uid

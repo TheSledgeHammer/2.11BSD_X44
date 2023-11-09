@@ -23,6 +23,9 @@
 #include <ufs/ufs211/ufs211_extern.h>
 #include <miscfs/specfs/specdev.h>
 
+
+daddr_t ufs211_rablock;
+
 /*
  * Bmap defines the structure of file system storage
  * by returning the physical block number on a device given the
@@ -48,7 +51,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 		u.u_error = EFBIG;
 		return ((daddr_t) 0);
 	}
-	ra = rablock = 0;
+	ra = ufs211_rablock = 0;
 
 	/*
 	 * blocks 0..NADDR-4 are direct blocks
@@ -73,7 +76,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 			ip->i_flag |= UFS211_IUPD | UFS211_ICHG;
 		}
 		if (i < NADDR - 4)
-			rablock = ip->i_addr[i + 1];
+			ufs211_rablock = ip->i_addr[i + 1];
 		return (nb);
 	}
 
@@ -162,6 +165,6 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 		} else
 			brelse(bp);
 	}
-	rablock = ra;
+	ufs211_rablock = ra;
 	return (nb);
 }

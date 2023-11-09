@@ -238,7 +238,7 @@ ufs211_ialloc(pip)
 		sleep((caddr_t)&fs->fs_ilock, PINOD);
 	}
 #ifdef QUOTA
-	u.u_error = chkdq(pip, NULL, u.u_ucred, 0);
+	u.u_error = ufs211_chkdq(pip, NULL, u.u_ucred, 0);
 	if (u.u_error) {
 		return (NULL);
 	}

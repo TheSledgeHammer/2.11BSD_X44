@@ -30,8 +30,8 @@
 #ifndef _UFS_UFS211_EXTERN_H_
 #define	_UFS_UFS211_EXTERN_H_
 
-int				 		updlock;			/* lock for sync */
-daddr_t	 				rablock;			/* block to be read ahead */
+//int				 		ufs211_updlock;			/* lock for sync */
+extern daddr_t	 			ufs211_rablock;			/* block to be read ahead */
 
 /* buffer map */
 struct ufs211_bufmap {
@@ -77,7 +77,7 @@ daddr_t		ufs211_bmap1(struct ufs211_inode *, daddr_t, int, int);
 int			ufs211_makeinode(int, struct vnode *, struct vnode **, struct componentname *);
 void		ufs211_trunc(struct ufs211_inode *, u_long, int);
 void 		ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
-void		ufs211_updat(struct ufs211_inode *, struct timeval *, struct timeval *, int);
+void		ufs211_updat(struct ufs211_inode *, volatile struct timeval *, volatile struct timeval *, int);
 void 		ufs211_dirbad(struct ufs211_inode *, off_t, char *);
 int 		ufs211_dirbadentry(struct vnode *, struct direct *, int);
 int 		ufs211_direnter(struct ufs211_inode *, struct vnode *, struct componentname *);
@@ -109,7 +109,8 @@ int		ufs211_vget(struct mount *, ino_t, struct vnode **);
 int		ufs211_vptofh(struct vnode *, struct fid *);
 int		ufs211_fhtovp(struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
 int		ufs211_flushfiles(struct mount *, int, struct proc *);
-void	quotainit(void);
+void	ufs211_quotainit(void);
+int     ufs211_chmod1(struct vnode *, int);
 int			ufs211_chown1(struct ufs211_inode *, uid_t, gid_t);
 #ifdef NFS
 int	 	lease_check (struct vop_lease_args *);
