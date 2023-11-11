@@ -226,7 +226,6 @@ ufs211_unmount(mp, mntflags, p)
 void
 mount_updname(mp, fsmnt, on, from, lenon, lenfrom)
 	struct mount *mp;
-	char *fsmnt;
 	char *fsmnt, *on, *from;
 	int	 lenon, lenfrom;
 {
