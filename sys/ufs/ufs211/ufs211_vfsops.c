@@ -223,6 +223,22 @@ ufs211_unmount(mp, mntflags, p)
 	return (error);
 }
 
+void
+mount_updname(mp, fsmnt, on, from, lenon, lenfrom)
+	struct mount *mp;
+	char *fsmnt;
+	char *fsmnt, *on, *from;
+	int	 lenon, lenfrom;
+{
+	register struct	xmount	*xmp;
+
+	bzero(fsmnt, sizeof(fsmnt));
+	bcopy(on, fsmnt, sizeof(fsmnt) - 1);
+	xmp = (struct xmount *)mp->mnt_xmnt;
+	bzero(xmp, sizeof (struct xmount));
+	bcopy(on, xmp->xm_mnton, lenon);
+	bcopy(from, xmp->xm_mntfrom, lenfrom);
+}
 
 /*
  * Common code for mount and mountroot
@@ -238,9 +254,7 @@ ufs211_mountfs(devvp, mp, p)
 	register struct ufs211_fs *fs;
 	dev_t dev;
 	struct partinfo dpart;
-	caddr_t base, space;
 	int error, i, blks, size, ronly;
-	int32_t *lp;
 	struct ucred *cred;
 	extern struct vnode *rootvp;
 
@@ -267,7 +281,55 @@ ufs211_mountfs(devvp, mp, p)
 	else
 		size = dpart.disklab->d_secsize;
 
+	bp = NULL;
+	ump = NULL;
+	if (error == bread(devvp, (daddr_t) (UFS211_SBLOCK / size), UFS211_SBSIZE, cred, &bp)) {
+		goto out;
+	}
+	fs = (struct ufs211_fs *) bp->b_data;
+	if (fs->fs_magic != FS_UFS211_MAGIC ) {
+		error = EINVAL; /* XXX needs translation */
+		goto out;
+	}
+	ump = malloc(sizeof(*ump), M_UFS211, M_WAITOK);
+	bzero((caddr_t) ump, sizeof(*ump));
+	ump->m_filsys = malloc(sizeof(struct ufs211_fs), M_UFS211, M_WAITOK);
+	bcopy(bp->b_data, ump->m_filsys, sizeof(struct ufs211_fs));
+	brelse(bp);
+	bp = NULL;
+	fs = ump->m_filsys;
+	fs->fs_ronly = (ronly != 0);
+	if (ronly == 0) {
+		fs->fs_fmod = 1;
+	}
+	fs->fs_ilock = 0;
+	fs->fs_flock = 0;
+	fs->fs_nbehind = 0;
+	fs->fs_lasti = 1;
+	//fs->fs_flags = flags;
+	mp->mnt_data = (qaddr_t) ump;
+	mp->mnt_stat.f_fsid.val[0] = (long) dev;
+	mp->mnt_stat.f_fsid.val[1] = mp->mnt_vfc->vfc_typenum;
+	//mp->mnt_maxsymlinklen = fs->fs_maxsymlinklen;
+	ump->m_mountp = mp;
+	ump->m_dev = dev;
+	ump->m_devvp = devvp;
+	for (i = 0; i < MAXQUOTAS; i++) {
+		ump->m_quotas[i] = NULLVP;
+	}
+	devvp->v_specflags |= SI_MOUNTEDON;
     return (0);
+
+out:
+	if (bp)
+		brelse(bp);
+	(void) VOP_CLOSE(devvp, ronly ? FREAD : FREAD | FWRITE, cred, p);
+	if (ump) {
+		free(ump->m_filsys, M_UFS211);
+		free(ump, M_UFS211);
+		mp->mnt_data = (qaddr_t) 0;
+	}
+	return (error);
 }
 
 /*

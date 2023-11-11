@@ -107,6 +107,7 @@ struct	mount {
 
 	dev_t					mnt_dev;					/* device mounted */
 	memaddr_t				mnt_extern;					/* click address of mount table extension */
+	struct xmount			*mnt_xmnt;
 };
 
 struct	xmount {
