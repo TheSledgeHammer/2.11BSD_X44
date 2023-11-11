@@ -341,9 +341,10 @@ mpx_channel_destroy(cp)
 }
 
 void
-mpx_channel_insert(mpx, idx, data)
+mpx_channel_insert_with_size(mpx, idx, size, data)
 	struct mpx *mpx;
 	int idx;
+	u_long size;
 	void *data;
 {
 	struct channellist *list;
@@ -354,13 +355,22 @@ mpx_channel_insert(mpx, idx, data)
 	}
 
 	list = &mpx->mpx_chanlist[idx];
-	cp = channel_create(idx, sizeof(data), data, mpx->mpx_nchans);
+	cp = channel_create(idx, size, data, mpx->mpx_nchans);
 	cp->mpc_refcnt++;
 	mpx->mpx_channel = cp;
 	MPX_LOCK(mpx);
 	LIST_INSERT_HEAD(list, cp, mpc_node);
 	mpx->mpx_nentries++;
 	MPX_UNLOCK(mpx);
+}
+
+void
+mpx_channel_insert(mpx, idx, data)
+	struct mpx *mpx;
+	int idx;
+	void *data;
+{
+	mpx_channel_insert_with_size(mpx, idx, sizeof(data), data);
 }
 
 void

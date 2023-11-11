@@ -33,10 +33,12 @@
 #include <sys/queue.h>
 #include <sys/tree.h>
 
+#ifdef notyet
 #define	NINDEX				15 	/* comes from ufs inode */
 #define	NGROUPS				10	/* number of group structures */
 #define	NCHANS				20	/* number of channel structures */
 #define	NLEVELS				4
+#endif
 
 struct channellist;
 LIST_HEAD(channellist, mpx_channel);
@@ -49,6 +51,7 @@ struct mpx_channel {
     int                     mpc_refcnt;		/* channel reference count */
 };
 
+#ifdef notyet
 struct grouprbtree;
 RB_HEAD(grouprbtree, mpx_group);
 struct mpx_group {
@@ -57,6 +60,7 @@ struct mpx_group {
     int 					 mpg_index;    	/* group index */
     struct pgrp				*mpg_pgrp;		/* proc group association (Optional) */
 };
+#endif
 
 struct mpx {
     struct lock_object		mpx_slock;		/* mpx mutex */
@@ -77,11 +81,13 @@ struct mpx {
 #endif
 };
 
+#ifdef notyet
 /* mpx type */
 #define MPXCHANNEL 			0x00
 #define MPXGROUP 			0x01
+#endif
 
-/* mpx args */
+/* mpx args: mpxcall */
 #define MPXCREATE			0
 #define MPXDESTROY			1
 #define MPXPUT				2
@@ -96,7 +102,15 @@ void                		mpx_init(void);
 struct mpx 					*mpx_allocate(int);
 void						mpx_deallocate(struct mpx *);
 
-/* mpx routines via mpxcall */
+/* channel functions */
+struct mpx_channel 			*mpx_channel_create(int, u_long, void *, int);
+void						mpx_channel_destroy(struct mpx_channel *);
+void						mpx_channel_insert(struct mpx *, int, void *);
+void						mpx_channel_insert_with_size(struct mpx *, int, u_long, void *);
+void						mpx_channel_remove(struct mpx *, int, void *);
+struct mpx_channel 			*mpx_channel_lookup(struct mpx *, int, void *);
+
+/* mpx channel routines via mpxcall(aka syscall) */
 int							mpx_create(struct mpx *, int, void *);
 int							mpx_put(struct mpx *, int, void *);
 int							mpx_get(struct mpx *, int, void *);
