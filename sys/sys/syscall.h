@@ -89,6 +89,7 @@
 #define	SYS_getpgrp	81
 #define	SYS_setpgrp	82
 #define	SYS_setitimer	83
+#define	SYS_mpx	84
 #define	SYS_pathconf	85
 #define	SYS_getitimer	86
 #define	SYS_setsid	87

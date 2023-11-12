@@ -125,7 +125,7 @@
 81  STD     	{ int getpgrp(); }
 82  STD     	{ int setpgrp(); }
 83  STD     	{ int setitimer(); }
-84  UNIMPL
+84  STD		{ int mpx(); }
 85	STD		    { int pathconf(); }
 86  STD     	{ int getitimer(); }
 87  STD   	    { int setsid(); } 

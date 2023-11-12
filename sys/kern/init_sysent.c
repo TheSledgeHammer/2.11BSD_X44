@@ -93,6 +93,7 @@ int	setgroups();
 int	getpgrp();
 int	setpgrp();
 int	setitimer();
+int	mpx();
 int	pathconf();
 int	getitimer();
 int	setsid();
@@ -339,7 +340,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    setitimer },			/* 83 = setitimer */
 	{ 0, 0,
-	    nosys },				/* 84 = unused */
+	    mpx },				/* 84 = mpx */
 	{ 0, 0,
 	    pathconf },				/* 85 = pathconf */
 	{ 0, 0,

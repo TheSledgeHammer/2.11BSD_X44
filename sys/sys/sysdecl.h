@@ -89,6 +89,7 @@ extern int	setgroups();
 extern int	getpgrp();
 extern int	setpgrp();
 extern int	setitimer();
+extern int	mpx();
 extern int	pathconf();
 extern int	getitimer();
 extern int	setsid();

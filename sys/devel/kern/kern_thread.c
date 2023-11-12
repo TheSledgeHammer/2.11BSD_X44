@@ -342,6 +342,8 @@ struct kthread_runtime {
 	struct kthreadlist 	ktr_allkthread;
 	int					ktr_flags;
 
+	struct proc			*ktr_proc;
+	struct kthread		ktr_kthread;
 	//send
 	//receive
 };
@@ -362,4 +364,6 @@ runtime_init(struct kthread *kt)
 		kthread_dispatch(kt, i, kt->kt_stat);
 	}
 }
+
+
 

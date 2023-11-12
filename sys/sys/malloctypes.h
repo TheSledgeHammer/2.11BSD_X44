@@ -143,7 +143,8 @@
 #define	M_OVLMAPENT		96	/* OVL map entry structures */
 #define M_OVLOBJ		97	/* OVL object structure */
 #define M_OVLOBJHASH	98	/* OVL object hash structure */
-#define	M_TEMP			99	/* misc temporary data buffers */
+#define	M_MPX			99	/* MPX (Multiplexor) Structure */
+#define	M_TEMP			100	/* misc temporary data buffers */
 #define	M_LAST 			M_TEMP+1 	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {									\
@@ -246,7 +247,8 @@
 	"OVL mapent",				/* 96 M_OVLMAPENT */ 	\
 	"OVL object",				/* 97 M_OVLOBJ */ 		\
 	"OVL objhash",				/* 98 M_OVLOBJHASH */	\
-	"temp",						/* 99 M_TEMP */ 		\
+	"MPX Multiplexor"			/* 99 M_MPX */ 			\
+	"temp",						/* 100 M_TEMP */ 		\
 }
 
 #endif /* _SYS_MALLOCTYPES_H_ */
