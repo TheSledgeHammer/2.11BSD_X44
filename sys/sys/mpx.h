@@ -52,7 +52,7 @@ struct mpx {
     int 					mpx_refcnt;		/* mpx reference count */
 
     /* channels */
-    struct channellist		mpx_chanlist;	/* list of channels */
+    struct channellist		*mpx_chanlist;	/* list of channels */
     struct mpx_channel	    *mpx_channel;	/* channel back pointer */
     int 					mpx_nchans;		/* max number channels for this mpx */
 };
@@ -64,11 +64,11 @@ struct mpx {
 #define MPXREMOVE			3
 #define MPXGET				4
 
-#define MPX_LOCK(mpx)		simple_lock((mpx)->mpx_slock)
-#define MPX_UNLOCK(mpx)		simple_unlock((mpx)->mpx_slock)
+#define MPX_LOCK_INIT(mpx, name)  simple_lock_init(&(mpx)->mpx_slock, name)
+#define MPX_LOCK(mpx)		simple_lock(&(mpx)->mpx_slock)
+#define MPX_UNLOCK(mpx)		simple_unlock(&(mpx)->mpx_slock)
 
 /* common routines */
-void                		mpx_init(void);
 struct mpx 					*mpx_allocate(int);
 void						mpx_deallocate(struct mpx *);
 
