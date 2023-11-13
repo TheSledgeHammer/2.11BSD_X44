@@ -27,30 +27,22 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/systm.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/kernel.h>
-#include <sys/vnode.h>
-#include <sys/conf.h>
 #include <sys/lock.h>
 #include <sys/ioctl.h>
 #include <sys/file.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
 #include <sys/event.h>
-#include <sys/poll.h>
 #include <sys/null.h>
 #include <sys/user.h>
 #include <sys/mpx.h>
 #include <sys/sysdecl.h>
 
-int							mpxcall(int, int, struct mpx *, int, void *);
-static int 					mpxchan(int, int, struct mpx *);
-static void					mpx_add_channel(struct mpx *, int, void *);
-static void					mpx_remove_channel(struct mpx *, int, void *);
-static void                	mpx_create_channel(struct mpx *, int, void *);
-static void					mpx_destroy_channel(struct mpx *, int, void *);
-struct mpx_channel     		*mpx_get_channel(struct mpx *, int, void *);
+int							mpxcall(int, struct mpx *, int, void *);
+static int 					mpxchan(int, int, void *, struct mpx *);
 
 int
 mpx_create(mpx, idx, data)
@@ -141,7 +133,7 @@ mpx_init(mpx, nchans)
 	mpx->mpx_nentries = 0;
 	mpx->mpx_refcnt = 1;
 	mpx->mpx_nchans = nchans;
-	simple_lock_init(&mpx->mpx_lock, "mpx_lock");
+	MPX_LOCK_INIT(mpx, "mpx_lock");
 }
 
 struct mpx *
@@ -243,13 +235,16 @@ mpxchan(cmd, idx, data, mpx)
 
 	switch (cmd) {
 	case MPXCREATE:
-		mpx_create_channel(mpx, idx, data);
+		mpx_channel_insert(mpx, idx, data);
 		printf("create channel: %d\n", idx);
 		return (0);
 
 	case MPXDESTROY:
 		if (idx >= 0) {
-			mpx_destroy_channel(mpx, idx, data);
+            mpx->mpx_channel = mpx_channel_lookup(mpx, idx, data);
+            if (mpx->mpx_channel != NULL) {
+                mpx_channel_destroy(mpx->mpx_channel);
+            }
 		}
 		printf("destroy channel: %d\n", idx);
 		return (0);
@@ -263,7 +258,7 @@ mpxchan(cmd, idx, data, mpx)
 				printf("add channel: channel %d already exists\n", idx);
 				return (EEXIST);
 			}
-			mpx_add_channel(mpx->mpx_channel, idx, data);
+			mpx_channel_insert(mpx, idx, data);
 		} else {
 			printf("add channel: channel %d doesn't exist\n", idx);
 			return (ENOMEM);
@@ -273,13 +268,13 @@ mpxchan(cmd, idx, data, mpx)
 
 	case MPXREMOVE:
 		if (mpx->mpx_channel != NULL) {
-			mpx_remove_channel(mpx->mpx_channel, idx, data);
+			mpx_channel_remove(mpx, idx, data);
 		}
 		printf("remove channel: %d\n", idx);
 		return (0);
 
 	case MPXGET:
-		mpx->mpx_channel = mpx_get_channel(mpx, idx, data);
+		mpx->mpx_channel = mpx_channel_lookup(mpx, idx, data);
 		if (mpx->mpx_channel == NULL) {
 			printf("get channel: no channel %d found\n", idx);
 			return (ENOMEM);
@@ -301,11 +296,11 @@ mpx_channel_create(idx, size, data, nchans)
 	register struct mpx_channel *result;
 	long totsize;
 
-	totsize = (data * size);
+	totsize = ((u_long)data * size);
 	result = (struct mpx_channel *)calloc(nchans, totsize + sizeof(struct mpx_channel *), M_MPX, M_WAITOK);
-	bzero(result, sizeof(struct result));
+	bzero(result, sizeof(struct result *));
 	result->mpc_index = idx;
-	//result->mpc_refcnt = 0;
+	result->mpc_refcnt = 0;
 	result->mpc_data = data;
 	result->mpc_size = size;
 	return (result);
@@ -336,7 +331,7 @@ mpx_channel_insert_with_size(mpx, idx, size, data)
 	}
 
 	list = &mpx->mpx_chanlist[idx];
-	cp = channel_create(idx, size, data, mpx->mpx_nchans);
+	cp = mpx_channel_create(idx, size, data, mpx->mpx_nchans);
 	cp->mpc_refcnt++;
 	mpx->mpx_channel = cp;
 	MPX_LOCK(mpx);
@@ -394,55 +389,4 @@ mpx_channel_lookup(mpx, idx, data)
 	}
 	MPX_UNLOCK(mpx);
 	return (NULL);
-}
-
-/* old functions */
-static struct mpx_channel *
-mpx_get_channel(mpx, idx, data)
-	struct mpx 	*mpx;
-    int idx;
-    void *data;
-{
-    return (mpx_channel_lookup(mpx, idx, data));
-}
-
-static void
-mpx_add_channel(mpx, idx, data)
-	struct mpx *mpx;
-	int idx;
-	void *data;
-{
-    mpx_channel_insert(mpx, idx, data);
-}
-
-static void
-mpx_remove_channel(mpx, idx, data)
-	struct mpx *mpx;
-	int idx;
-    void *data;
-{
-    mpx_channel_remove(mpx, idx, data);
-}
-
-static void
-mpx_create_channel(mpx, idx, data)
-	struct mpx 			*mpx;
-	int 				idx;
-    void                *data;
-{
-    mpx_add_channel(mpx, idx, data);
-}
-
-static void
-mpx_destroy_channel(mpx, idx, data)
-	struct mpx 	*mpx;
-	int idx;
-    void *data;
-{
-	struct mpx_channel *cp;
-
-	cp = mpx_channel_lookup(mpx, idx, data);
-    if (cp != NULL) {
-    	mpx_channel_destroy(cp);
-    }
 }
