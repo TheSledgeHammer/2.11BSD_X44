@@ -33,13 +33,6 @@
 #include <sys/queue.h>
 #include <sys/tree.h>
 
-#ifdef notyet
-#define	NINDEX				15 	/* comes from ufs inode */
-#define	NGROUPS				10	/* number of group structures */
-#define	NCHANS				20	/* number of channel structures */
-#define	NLEVELS				4
-#endif
-
 struct channellist;
 LIST_HEAD(channellist, mpx_channel);
 struct mpx_channel {
@@ -51,7 +44,6 @@ struct mpx_channel {
     int                     mpc_refcnt;		/* channel reference count */
 };
 
-#ifdef notyet
 struct grouprbtree;
 RB_HEAD(grouprbtree, mpx_group);
 struct mpx_group {
@@ -60,7 +52,6 @@ struct mpx_group {
     int 					 mpg_index;    	/* group index */
     struct pgrp				*mpg_pgrp;		/* proc group association (Optional) */
 };
-#endif
 
 struct mpx {
     struct lock_object		mpx_slock;		/* mpx mutex */
@@ -73,12 +64,11 @@ struct mpx {
     struct channellist		mpx_chanlist;	/* list of channels */
     struct mpx_channel	    *mpx_channel;	/* channel back pointer */
     int 					mpx_nchans;		/* max number channels for this mpx */
-#ifdef notyet
+
     /* groups */
-    struct grouprbtree		mpx_grouptree;
-    struct mpx_group		*mpx_group;
+    struct grouprbtree		mpx_grouptree;	/* tree of groups */
+    struct mpx_group		*mpx_group;		/* group back pointer */
     int 					mpx_ngroups;	/* max number groups for this mpx */
-#endif
 };
 
 #ifdef notyet

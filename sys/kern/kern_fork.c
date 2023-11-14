@@ -103,7 +103,8 @@ fork1(isvfork)
 	if (newproc(isvfork)) {
 		u.u_r.r_val1 = p1->p_pid;
 		u.u_r.r_val2 = 1;  				/* child */
-//        u.u_start = time.tv_sec;        /* XXX: TODO Fix me */
+		u.u_start.tv_sec = time.tv_sec;
+		u.u_start.tv_usec = time.tv_usec;
 
 		/* set forked but preserve suid/gid state */
 		u.u_acflag = AFORK | (u.u_acflag & ASUGID);

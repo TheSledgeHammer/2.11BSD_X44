@@ -41,6 +41,7 @@
 
 #include <vm/include/vm_param.h>
 
+#define M_KTHREAD 101
 extern struct kthread 		 kthread0;
 struct kthread *curkthread = &kthread0;
 
@@ -58,7 +59,7 @@ struct kthreadlist 	freekthread;
 
 struct lock_holder 	kthread_loholder;
 
-int				kthread_alloc(void (*)(void *), void *, struct kthread *, char *);
+int				kthread_create1(void (*)(void *), void *, struct kthread *, char *);
 void			kthread_add(struct kthreadlist *, struct kthread *, int);
 void			kthread_remove(struct kthread *, int);
 struct kthread *kthread_find(struct kthreadlist *, int);
@@ -71,6 +72,7 @@ proc_create(func, arg, p, name)
 	struct proc **p;
 	char *name;
 {
+	/* set kthread0 to proc0->p_kthreado */
 	return (kthread_create(func, arg, p, name));
 }
 
@@ -185,23 +187,33 @@ ktfind(tid, chan)
 }
 
 int
-kthread_alloc(func, arg, kt, name)
+kthread_create(func, arg, newkt, name)
 	void (*func)(void *);
 	void *arg;
-	struct kthread *kt;
+	struct kthread **newkt;
 	char *name;
 {
 	struct proc *p;
+	struct kthread *kt;
+	register_t 	rval[2];
 	int error;
 
 	error = proc_create(func, arg, &p, name);
 	if (error != 0) {
 		return (error);
 	}
+
 	kt = p->p_kthreado;
-	if (kt != NULL) {
-		kt->kt_flag |= KT_INMEM | KT_SYSTEM | KT_NOCLDWAIT;
+	kt->kt_procp = p;
+	if (rval[1]) {
+		kt->kt_flag |= KT_INMEM | KT_SYSTEM;
+		kt->kt_stat = SIDL;
 	}
+
+	if (newkt != NULL) {
+		*newkt = kt;
+	}
+	//p->p_nkthread++;
 	return (0);
 }
 
@@ -333,6 +345,43 @@ kthread_find(ktlist, chan)
 		}
 	}
 	return (NULL);
+}
+
+struct mpx *
+kthread_mpx(ktlist, chan)
+	struct kthreadlist *ktlist;
+	int chan;
+{
+	struct kthread *kt;
+	struct mpx *mpx;
+	kt = kthread_find(ktlist, chan);
+	if (kt != NULL) {
+		mpx = kt->kt_mpx;
+	} else {
+		mpx = NULL;
+	}
+	return (mpx);
+}
+
+struct kthread *
+kthread_alloc(p)
+	struct proc *p;
+{
+	struct kthread *kt;
+
+	kt = (struct kthread *)malloc(sizeof(struct kthread), M_KTHREAD, M_NOWAIT);
+	kt->kt_procp = p;
+	p->p_kthreado = kt;
+	return (kt);
+}
+
+void
+kthread_free(kt)
+	struct kthread *kt;
+{
+	if (kt != NULL) {
+		free(kt, M_KTHREAD);
+	}
 }
 
 /* kernel thread runtime */

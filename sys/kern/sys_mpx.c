@@ -235,6 +235,9 @@ mpxchan(cmd, idx, data, mpx)
 
 	switch (cmd) {
 	case MPXCREATE:
+		if (mpx->mpx_channel->mpc_refcnt == 0) {
+			idx = 0;
+		}
 		mpx_channel_insert(mpx, idx, data);
 		printf("create channel: %d\n", idx);
 		return (0);
@@ -294,10 +297,8 @@ mpx_channel_create(idx, size, data, nchans)
 	void *data;
 {
 	register struct mpx_channel *result;
-	long totsize;
 
-	totsize = ((u_long)data * size);
-	result = (struct mpx_channel *)calloc(nchans, totsize + sizeof(struct mpx_channel *), M_MPX, M_WAITOK);
+	result = (struct mpx_channel *)calloc(nchans, size + sizeof(struct mpx_channel *), M_MPX, M_WAITOK);
 	bzero(result, sizeof(struct result *));
 	result->mpc_index = idx;
 	result->mpc_refcnt = 0;

@@ -13,8 +13,7 @@
 /*
  * Structure returned by ftime system call
  */
-struct timeb
-{
+struct timeb {
 	time_t			time;			/* seconds since the Epoch */
 	unsigned short 	millitm;		/* + milliseconds since the Epoch */
 	short			timezone;		/* minutes west of CUT */

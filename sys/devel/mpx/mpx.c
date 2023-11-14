@@ -149,9 +149,11 @@ mpx_init(mpx, nchans)
 {
 	int i;
 
-	for(i = 0; i < nchans; i++) {
+	for (i = 0; i < nchans; i++) {
+		RB_INIT(&mpx->mpx_grouptree[i/2]);
 		LIST_INIT(&mpx->mpx_chanlist[i]);
 	}
+
 	mpx->mpx_nentries = 0;
 	mpx->mpx_refcnt = 1;
 	mpx->mpx_nchans = nchans;
@@ -257,11 +259,9 @@ mpxchan(cmd, idx, data, mpx)
 
 	switch (cmd) {
 	case MPXCREATE:
-	/*
 		if (mpx->mpx_channel->mpc_refcnt == 0) {
 			idx = 0;
 		}
-	*/
 		mpx_create_channel(mpx, idx, data);
 		printf("create channel: %d\n", idx);
 		return (0);
@@ -409,6 +409,26 @@ mpx_channel_lookup(mpx, idx, data)
 		if ((cp->mpc_index == idx) && (cp->mpc_data == data)) {
 			MPX_UNLOCK(mpx);
 			return (cp);
+		}
+	}
+	MPX_UNLOCK(mpx);
+	return (NULL);
+}
+
+struct mpx_group *
+mpx_group_lookup(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	struct grouptree *tree;
+	struct mpx_group *gp;
+
+	tree = &mpx->mpx_grouptree[idx];
+	MPX_LOCK(mpx);
+	RB_FOREACH(gp, grouprbtree, tree) {
+		if ((gp->mpg_index == idx)) {
+			MPX_UNLOCK(mpx);
+			return (gp);
 		}
 	}
 	MPX_UNLOCK(mpx);
