@@ -138,15 +138,15 @@ exit(rv)
 	 * for the current process: have to run a bit longer
 	 * using the slots which are about to be freed...
 	 */
-	if (p->p_flag & P_SVFORK)
+	if (p->p_flag & P_SVFORK) {
 		endvfork();
-	/*	XXX: Fix me
-	else {
+	} else {
+		vm_xfree();
 		rmfree(coremap, p->p_dsize, (long)p->p_daddr);
 		rmfree(coremap, p->p_ssize, (long)p->p_saddr);
 	}
 	rmfree(coremap, USIZE, (long)p->p_addr);
-    */
+
 	if (p->p_pid == 1) {
 		panic("init died");
 	}
