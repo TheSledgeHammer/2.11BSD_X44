@@ -1375,6 +1375,7 @@ init386(first)
 
 	softpic_init();			/* Initialize softpic pic selector */
 	intr_default_setup();	/* Initialize vectors */
+	softintr_init();		/* Initialize software interrupts. */
 
 	splhigh();
 	enable_intr();
