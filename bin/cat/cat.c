@@ -57,7 +57,7 @@ static char sccsid[] = "@(#)cat.c	8.2 (Berkeley) 4/27/95";
 #include <string.h>
 #include <unistd.h>
 
-int bflag, eflag, nflag, sflag, tflag, vflag;
+int bflag, eflag, fflag, lflag, nflag, sflag, tflag, vflag;
 int rval;
 char *filename;
 
@@ -72,15 +72,25 @@ main(argc, argv)
 	char *argv[];
 {
 	extern int optind;
+	struct flock stdout_lock;
 	int ch;
 
-	while ((ch = getopt(argc, argv, "benstuv")) != -1)
+	while ((ch = getopt(argc, argv, "B:beflnstuv")) != -1)
 		switch (ch) {
+		case 'B':
+			bsize = (size_t)strtol(optarg, NULL, 0);
+			break;
 		case 'b':
 			bflag = nflag = 1;	/* -b implies -n */
 			break;
 		case 'e':
 			eflag = vflag = 1;	/* -e implies -v */
+			break;
+		case 'f':
+			fflag = 1;
+			break;
+		case 'l':
+			lflag = 1;
 			break;
 		case 'n':
 			nflag = 1;
@@ -100,10 +110,20 @@ main(argc, argv)
 		default:
 		case '?':
 			(void)fprintf(stderr,
-			    "usage: cat [-benstuv] [-] [file ...]\n");
+			    "usage: cat [-beflnstuv] [-B bsize] [-] [file ...]\n");
 			exit(1);
 		}
 	argv += optind;
+
+	if (lflag) {
+		stdout_lock.l_len = 0;
+		stdout_lock.l_start = 0;
+		stdout_lock.l_type = F_WRLCK;
+		stdout_lock.l_whence = SEEK_SET;
+		if (fcntl(STDOUT_FILENO, F_SETLKW, &stdout_lock) == -1) {
+			err(EXIT_FAILURE, "stdout");
+		}
+	}
 
 	if (bflag || eflag || nflag || sflag || tflag || vflag)
 		cook_args(argv);
@@ -212,14 +232,34 @@ raw_args(argv)
 	filename = "stdin";
 	do {
 		if (*argv) {
-			if (!strcmp(*argv, "-"))
+			if (!strcmp(*argv, "-")) {
 				fd = fileno(stdin);
-			else if ((fd = open(*argv, O_RDONLY, 0)) < 0) {
+			} else if (fflag) {
+				struct stat st;
+				fd = open(*argv, O_RDONLY|O_NONBLOCK, 0);
+				if (fd < 0)
+					goto skip;
+
+				if (fstat(fd, &st) == -1) {
+					close(fd);
+					goto skip;
+				}
+				if (!S_ISREG(st.st_mode)) {
+					close(fd);
+					warnx("%s: not a regular file", *argv);
+					goto skipnomsg;
+				}
+			} else if ((fd = open(*argv, O_RDONLY, 0)) < 0) {
+skip:
 				warn("%s", *argv);
+skipnomsg:
+				rval = EXIT_FAILURE;
 				++argv;
 				continue;
 			}
 			filename = *argv++;
+		} else if (fd < 0) {
+			err(EXIT_FAILURE, "stdin");
 		}
 		raw_cat(fd);
 		if (fd != fileno(stdin))
@@ -241,8 +281,13 @@ raw_cat(rfd)
 		if (fstat(wfd, &sbuf))
 			err(1, "%s", filename);
 		bsize = MAX(sbuf.st_blksize, 1024);
-		if ((buf = malloc((u_int)bsize)) == NULL)
+		if ((buf = malloc((u_int)bsize)) == NULL) {
 			err(1, NULL);
+		}
+		if (buf == NULL) {
+			bsize = sizeof(sbuf);
+			buf = sbuf;
+		}
 	}
 	while ((nr = read(rfd, buf, bsize)) > 0)
 		for (off = 0; nr; nr -= nw, off += nw)

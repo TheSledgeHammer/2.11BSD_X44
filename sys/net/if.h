@@ -229,10 +229,9 @@ struct ifnet {							/* and the entries */
 	void	*if_afdata[AF_MAX];
 
 	/*
-	 * pf specific data, used only when #if NPF > 0.
+	 * pf specific data
 	 */
-	//TAILQ_HEAD(, ifg_list) if_pf_groups; /* [N] list of groups per if */
-	void	*if_pf_groups;		/* pf interface groups */
+	TAILQ_HEAD(, ifg_list) if_pf_groups; /* [N] list of groups per if */
 };
 #define	if_mtu			if_data.ifi_mtu
 #define	if_type			if_data.ifi_type

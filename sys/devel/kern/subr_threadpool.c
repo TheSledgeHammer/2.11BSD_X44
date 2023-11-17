@@ -116,8 +116,9 @@ threadpool_lookup_unbound(pri)
 	struct threadpool_unbound *tpu;
 
 	LIST_FOREACH(tpu, &unbound_threadpools, tpu_link) {
-		if (tpu->tpu_pool.tp_pri == pri)
+		if (tpu->tpu_pool.tp_pri == pri) {
 			return tpu;
+		}
 	}
 	return NULL;
 }
@@ -148,8 +149,9 @@ threadpool_lookup_percpu(pri)
 	struct threadpool_percpu *tpp;
 
 	LIST_FOREACH(tpp, &percpu_threadpools, tpp_link) {
-		if (tpp->tpp_pri == pri)
+		if (tpp->tpp_pri == pri) {
 			return tpp;
+		}
 	}
 	return NULL;
 }
@@ -217,6 +219,7 @@ threadpool_create(pool, pri)
 	simple_unlock(&pool->tp_lock);
 
 	return (0);
+
 fail0:
 	KASSERT(error);
 	KASSERT(pool->tp_overseer.tpt_job == NULL);
@@ -729,6 +732,8 @@ threadpool_overseer_proc(p, overseer, pool)
 	/* Wait until we're initialized.  */
 	simple_lock(&pool->tp_lock);
 	while (overseer->tpt_proc == NULL) {
+		sleep(overseer, &pool->tp_pri);
+		unsleep(overseer->tpt_proc);
 		threadpool_wait(overseer->tpt_proc, overseer, &pool->tp_pri);
 	}
 

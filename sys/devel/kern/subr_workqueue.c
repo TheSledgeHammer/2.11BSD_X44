@@ -52,6 +52,8 @@ struct workqueue {
 
 	void 					(*wq_func)(struct work *, void *);
 	void 					*wq_arg;
+	int 					wq_flags;
+
 	const char 				*wq_name;
 	int 					wq_prio;
 	int 					wq_ipl;
@@ -71,11 +73,7 @@ workqueue_lock(wq, q)
 {
 	int s;
 
-#if 0 /* notyet */
-	s = splraiseipl(wq->wq_ipl);
-#else
 	s = splhigh(); /* XXX */
-#endif
 	simple_lock(&q->q_lock);
 	q->q_savedipl = s;
 }
@@ -85,8 +83,9 @@ workqueue_unlock(wq, q)
 	struct workqueue *wq;
 	struct workqueue_queue *q;
 {
-	int s = q->q_savedipl;
+	int s;
 
+	s = q->q_savedipl;
 	simple_unlock(&q->q_lock);
 	splx(s);
 }
@@ -116,6 +115,9 @@ workqueue_run(wq)
 	for (;;) {
 		struct workqhead tmp;
 		int error;
+
+		SIMPLEQ_INIT(&tmp);
+
 
 		/*
 		 * we violate abstraction of SIMPLEQ.

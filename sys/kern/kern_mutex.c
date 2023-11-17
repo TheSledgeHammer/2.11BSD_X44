@@ -86,8 +86,9 @@ mtx_lock_try(mtx)
 }
 
 int
-mtx_owned(mtx)
+mtx_owned(mtx, curowner)
 	struct mtx 	*mtx;
+	void *curowner;
 {
 	struct lock_holder 	*holder;
 
@@ -96,7 +97,7 @@ mtx_owned(mtx)
 		return (1);
 	}
 
-	if (LOCKHOLDER_PROC(holder) == curproc) {
+	if (LOCKHOLDER_DATA(holder) == curowner) {
 		return (0);
 	}
 

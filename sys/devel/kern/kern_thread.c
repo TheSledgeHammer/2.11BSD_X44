@@ -187,7 +187,7 @@ ktfind(tid, chan)
 }
 
 int
-kthread_create(func, arg, newkt, name)
+kthread_create1(func, arg, newkt, name)
 	void (*func)(void *);
 	void *arg;
 	struct kthread **newkt;
@@ -217,73 +217,7 @@ kthread_create(func, arg, newkt, name)
 	return (0);
 }
 
-/*
- * Kthread dispatch: changes thread from one queue to another queue depending on state.
- */
-void
-kthread_dispatch(kt, chan, state)
-	struct kthread *kt;
-	int chan;
-	char state;
-{
-	struct kthread *nkt;
 
-	switch (state) {
-	case KT_ONFREE:
-		/* freekthread list */
-		if (LIST_EMPTY(&freekthread)) {
-			break;
-		}
-		if (kt == NULL) {
-			nkt = kthread_find(&freekthread, chan);
-			if ((nkt != NULL) && (nkt->kt_stat == state)) {
-				kt = nkt;
-			} else {
-				break;
-			}
-		}
-		kthread_remove(kt, chan);						/* off freekthread */
-		kthread_add(&allkthread, kt, chan);				/* onto allkthread */
-		kt->kt_stat = KT_ONALL;
-		break;
-
-	case KT_ONALL:
-		/* allkthread list */
-		if (LIST_EMPTY(&allkthread)) {
-			break;
-		}
-		if (kt == NULL) {
-			nkt = kthread_find(&allkthread, chan);
-			if ((nkt != NULL) && (nkt->kt_stat == state)) {
-				kt = nkt;
-			} else {
-				break;
-			}
-		}
-		kthread_remove(kt, chan);						/* off allkthread */
-		kthread_add(&zombkthread, kt, chan);			/* onto zombkthread */
-		kt->kt_stat = KT_ONZOMB;
-		break;
-
-	case KT_ONZOMB:
-		/* zombkthread list */
-		if (LIST_EMPTY(&zombkthread)) {
-			break;
-		}
-		if (kt == NULL) {
-			nkt = kthread_find(&zombkthread, chan);
-			if ((nkt != NULL) && (nkt->kt_stat == state)) {
-				kt = nkt;
-			} else {
-				break;
-			}
-		}
-		kthread_remove(kt, chan);						/* off zombkthread */
-		kthread_add(&freekthread, kt, chan);			/* onto freekthread */
-		kt->kt_stat = KT_ONFREE;
-		break;
-	}
-}
 
 void
 kthread_add(ktlist, kt, chan)
@@ -414,5 +348,101 @@ runtime_init(struct kthread *kt)
 	}
 }
 
+/*
+ * Kthread dispatch: changes thread from one queue to another queue depending on state.
+ */
+void
+kthread_dispatch(kt, chan, state)
+	struct kthread *kt;
+	int chan;
+	char state;
+{
+	struct kthread *nkt;
 
+	switch (state) {
+	case KT_ONFREE:
+		/* freekthread list */
+		if (LIST_EMPTY(&freekthread)) {
+			break;
+		}
+		if (kt == NULL) {
+			nkt = kthread_find(&freekthread, chan);
+			if ((nkt != NULL) && (nkt->kt_stat == state)) {
+				kt = nkt;
+			} else {
+				break;
+			}
+		}
+		kthread_remove(kt, chan);						/* off freekthread */
+		kthread_add(&allkthread, kt, chan);				/* onto allkthread */
+		kt->kt_stat = KT_ONALL;
+		break;
+
+	case KT_ONALL:
+		/* allkthread list */
+		if (LIST_EMPTY(&allkthread)) {
+			break;
+		}
+		if (kt == NULL) {
+			nkt = kthread_find(&allkthread, chan);
+			if ((nkt != NULL) && (nkt->kt_stat == state)) {
+				kt = nkt;
+			} else {
+				break;
+			}
+		}
+		kthread_remove(kt, chan);						/* off allkthread */
+		kthread_add(&zombkthread, kt, chan);			/* onto zombkthread */
+		kt->kt_stat = KT_ONZOMB;
+		break;
+
+	case KT_ONZOMB:
+		/* zombkthread list */
+		if (LIST_EMPTY(&zombkthread)) {
+			break;
+		}
+		if (kt == NULL) {
+			nkt = kthread_find(&zombkthread, chan);
+			if ((nkt != NULL) && (nkt->kt_stat == state)) {
+				kt = nkt;
+			} else {
+				break;
+			}
+		}
+		kthread_remove(kt, chan);						/* off zombkthread */
+		kthread_add(&freekthread, kt, chan);			/* onto freekthread */
+		kt->kt_stat = KT_ONFREE;
+		break;
+	}
+}
+
+void
+dispatch1(kt, chan)
+	struct kthread *kt;
+	int chan;
+{
+	switch (kt->kt_stat) {
+	case SSLEEP:
+
+	case SRUN:
+		kthread_remove(&allkthread, kt, 0);			/* off allkthread */
+		kthread_add(&zombkthread, kt, chan);		/* onto zombkthread */
+		kt->kt_stat = SZOMB;						/* set state to zombie */
+		break;
+
+	case SIDL:
+		kthread_remove(kt, 0);						/* off freekthread */
+		kthread_add(&allkthread, kt, 0);			/* onto allkthread */
+		kt->kt_stat = SRUN;							/* set state to run */
+		break;
+
+	case SZOMB:
+		kthread_remove(kt, chan);					/* off zombkthread */
+		kthread_add(&freekthread, kt, chan);		/* onto freekthread */
+		kt->kt_stat = SIDL;							/* set state to idle */
+		break;
+
+	case SSTOP:
+	}
+}
 
