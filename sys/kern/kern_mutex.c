@@ -109,7 +109,8 @@ mtx_owner(mtx)
 	struct mtx 	*mtx;
 {
 	struct lock_holder 	*holder;
-
+	void *curowner;
+	
 	holder = lockholder_get(mtx->mtx_holder);
 	curowner = LOCKHOLDER_DATA(holder);
     	if (curowner != NULL) {
