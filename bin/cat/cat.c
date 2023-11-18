@@ -58,6 +58,7 @@ static char sccsid[] = "@(#)cat.c	8.2 (Berkeley) 4/27/95";
 #include <unistd.h>
 
 int bflag, eflag, fflag, lflag, nflag, sflag, tflag, vflag;
+size_t bsize;
 int rval;
 char *filename;
 
@@ -273,7 +274,7 @@ raw_cat(rfd)
 {
 	register int nr, nw, off, wfd;
 	static int bsize;
-	static char *buf;
+	static char *buf, fb_buf[BUFSIZ];
 	struct stat sbuf;
 
 	wfd = fileno(stdout);
@@ -285,8 +286,8 @@ raw_cat(rfd)
 			err(1, NULL);
 		}
 		if (buf == NULL) {
-			bsize = sizeof(sbuf);
-			buf = sbuf;
+			bsize = sizeof(fb_buf);
+			buf = fb_buf;
 		}
 	}
 	while ((nr = read(rfd, buf, bsize)) > 0)
