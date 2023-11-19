@@ -46,6 +46,8 @@ struct kthread {
 	pid_t 				kt_tid;					/* unique thread id */
 	pid_t 				kt_ptid;				/* thread id of parent */
 
+	size_t             	kt_stack;
+
 	/* Substructures: */
 	struct pcred 	 	*kt_cred;				/* Thread owner's identity. */
 #define	kt_ucred		kt_cred->pc_ucred
@@ -54,20 +56,16 @@ struct kthread {
 	struct uthread		*kt_uthreado;			/* uthread overseer (original uthread)  */
 
 	LIST_ENTRY(proc) 	kt_pglist;				/* List of kthreads in pgrp. */
-	struct kthread      *kt_pptr;				/* pointer to process structure of parent */
+
 	LIST_ENTRY(kthread)	kt_sibling;				/* List of sibling kthreads. */
-	LIST_HEAD(, kthread)kt_children;			/* Pointer to list of children. */
-	LIST_ENTRY(proc)	kt_hash;				/* Hash chain. */
+	LIST_ENTRY(kthread)	kt_hash;				/* Hash chain. */
 
 	struct pgrp 	    *kt_pgrp;       		/* Pointer to proc group. */
 	struct kthread 		*kt_link;				/* linked list of running kthreads */
 
     u_short 			kt_acflag;	    		/* Accounting flags. */
 
-	char				*kt_name;				/* (: name, optional */
-
-	//void				*kt_ctxlink;			/* uc_link {get,set}context */
-    //struct sadata_vp 	*kt_savp; 				/* SA "virtual processor" */
+#define kt_name			kt_procp->p_comm
 
 	struct mpx 			*kt_mpx;
 
