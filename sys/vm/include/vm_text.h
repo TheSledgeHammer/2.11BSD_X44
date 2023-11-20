@@ -167,9 +167,6 @@ struct vm_xstats {
 extern
 struct txtlist  vm_text_list;
 
-/* vm_mmap */
-void 	vm_expand(struct proc *, vm_size_t, int);
-
 /* vm_text */
 void	vm_xlock(vm_text_t);
 void	vm_xunlock(vm_text_t);
@@ -189,6 +186,7 @@ void	vm_xswapout(struct proc *, vm_offset_t, vm_size_t, int, u_int, u_int);
 
 /* vm_unix */
 void	sureg(void);
-int	 	vm_estabur(struct proc *, segsz_t, segsz_t, segsz_t, int, int);
+void 	vm_expand(struct proc *, vm_size_t, int);
+int	vm_estabur(struct proc *, segsz_t, segsz_t, segsz_t, int, int);
 #endif
 #endif /* _VM_TEXT_H_ */
