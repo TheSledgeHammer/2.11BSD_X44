@@ -267,40 +267,43 @@ kvtop(addr)
  * for efficiency.
  */
 int
-prober(addr)
-	register u_int addr;
+prober(p, addr)
+    register struct proc *p;
+    register vm_offset_t pa;
 {
-	register int page;
-	register struct proc *p;
+    register vm_offset_t va;
 
-	if (addr >= USRSTACK)
-		return(0);
-	p = u.u_procp;
-	page = btop(addr);
-	if (page < dptov(p, p->p_dsize) || page > sptov(p, p->p_ssize))
-		return(1);
-	return(0);
+    if (pa >= USRSTACK) {
+        return (0);
+    }
+    va = i386_btop(pa);
+    if (pa < dptov(p, p->p_dsize) || pa > sptov(p, p->p_ssize)) {
+        return (1);
+    }
+    return (0);
 }
 
 int
-probew(addr)
-	register u_int addr;
+probew(p, addr)
+    register struct proc *p;
+    register vm_offset_t pa;
 {
-	register int page;
-	register struct proc *p;
+    register vm_offset_t va;
+    int error;
 
-	if (addr >= USRSTACK)
-		return(0);
-	p = u.u_procp;
-	page = btop(addr);
-	if (page < dptov(p, p->p_dsize) || page > sptov(p, p->p_ssize))
-		return((*(int *)vtopte(p, page) & PG_PROT) == PG_UW);
-	return(0);
+    if (pa >= USRSTACK) {
+        return (0);
+    }
+    va = i386_btop(pa);
+    if (pa < dptov(p, p->p_dsize) || pa > sptov(p, p->p_ssize)) {
+        error = (vtopte(va) & PG_PROT);
+        if (error == PG_UW) {
+            return (error);
+        }
+    }
+    return (0);
 }
 #endif
-
-
-//extern vm_map_t phys_map;
 
 /*
  * Map an IO request into kernel virtual address space.  Requests fall into
