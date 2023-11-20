@@ -17,6 +17,8 @@ static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) 9/14/87";
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -31,40 +33,49 @@ __weak_alias(mkstemp,_mkstemp)
 __weak_alias(mktemp,_mktemp)
 #endif
 
-int _gettemp(char *, int);
+int _gettemp(char *, int *, int);
 
 char *
 mkdtemp(as)
-	char	*as;
+	char *as;
 {
-	return (_gettemp(as, (int *)NULL) ? as : (char *)NULL);
+	_DIAGASSERT(as != NULL);
+
+	return (_gettemp(as, (int *)NULL, 1) ? as : (char *)NULL);
 }
 
 char *
 mkstemp(as)
-	char	*as;
+	char *as;
 {
 	int	fd;
 
-	return (_gettemp(as, &fd) ? fd : -1);
+	_DIAGASSERT(as != NULL);
+
+	return (_gettemp(as, &fd, 0) ? fd : -1);
 }
 
 char *
 mktemp(as)
 	char	*as;
 {
-	return(_gettemp(as, (int *)NULL) ? as : (char *)NULL);
+	_DIAGASSERT(as != NULL);
+
+	return(_gettemp(as, (int *)NULL, 0) ? as : (char *)NULL);
 }
 
-static int
-_gettemp(as, doopen)
+int
+_gettemp(as, doopen, domkdir)
 	char	*as;
 	register int *doopen;
+	int domkdir;
 {
 	extern int	errno;
 	register char	*start, *trv;
 	struct stat	sbuf;
 	u_int	pid;
+
+	_DIAGASSERT(as != NULL);
 
 	pid = getpid();
 
@@ -83,34 +94,46 @@ _gettemp(as, doopen)
 	for (start = ++trv; trv > as && *trv != '/'; --trv);
 	if (*trv == '/') {
 		*trv = '\0';
-		if (stat(as, &sbuf) || !(sbuf.st_mode & S_IFDIR))
+		if (stat(as, &sbuf) || !(sbuf.st_mode & S_IFDIR)) {
 			return(NO);
+		}
 		*trv = '/';
-	}
-	else if (stat(".", &sbuf) == -1)
+	} else if (stat(".", &sbuf) == -1) {
 		return(NO);
+	}
 
 	for (;;) {
 		if (doopen) {
-		    if ((*doopen = open(as, O_CREAT|O_EXCL|O_RDWR, 0600)) >= 0)
-			return(YES);
-		    if (errno != EEXIST)
-			return(NO);
-		}
-		else if (stat(as, &sbuf))
+			if ((*doopen = open(as, O_CREAT|O_EXCL|O_RDWR, 0600)) >= 0) {
+				return(YES);
+			}
+			if (errno != EEXIST) {
+				return(NO);
+			}
+		}  else if (domkdir) {
+			if (mkdir(as, 0700) >= 0) {
+				return(YES);
+			}
+			if (errno != EEXIST) {
+				return(NO);
+			}
+		} else if (stat(as, &sbuf)) {
 			return(errno == ENOENT ? YES : NO);
+		}
 
 		/* tricky little algorithm for backward compatibility */
 		for (trv = start;;) {
-			if (!*trv)
+			if (!*trv) {
 				return(NO);
-			if (*trv == 'z')
+			}
+			if (*trv == 'z') {
 				*trv++ = 'a';
-			else {
-				if (isdigit(*trv))
+			} else {
+				if (isdigit(*trv)) {
 					*trv = 'a';
-				else
+				} else {
 					++*trv;
+				}
 				break;
 			}
 		}
