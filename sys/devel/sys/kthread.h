@@ -53,7 +53,7 @@ struct kthread {
 #define	kt_ucred		kt_cred->pc_ucred
 
 	struct proc 		*kt_procp;				/* pointer to proc */
-	struct uthread		*kt_uthreado;			/* uthread overseer (original uthread)  */
+	struct user			*kt_addr;				/* virtual address of u. area */
 
 	LIST_ENTRY(proc) 	kt_pglist;				/* List of kthreads in pgrp. */
 
@@ -61,15 +61,10 @@ struct kthread {
 	LIST_ENTRY(kthread)	kt_hash;				/* Hash chain. */
 
 	struct pgrp 	    *kt_pgrp;       		/* Pointer to proc group. */
-	struct kthread 		*kt_link;				/* linked list of running kthreads */
-
-    u_short 			kt_acflag;	    		/* Accounting flags. */
 
 #define kt_name			kt_procp->p_comm
 
 	struct mpx 			*kt_mpx;
-
-	struct kthread_runtime	*kt_runtime;
 };
 
 #define	kt_session		kt_pgrp->pg_session
@@ -82,12 +77,10 @@ struct kthread {
 
 /* flag codes */
 #define	KT_INMEM			0x00000004		/* Loaded into memory. */
-#define	KT_PPWAIT			0x00000010		/* Parent is waiting for child to exec/exit. */
 #define KT_SULOCK			0x00000040		/* user settable lock in core */
 
 #define	KT_SYSTEM			0x00000200		/* System proc: no sigs, stats or swapping. */
 #define KT_TRACED			0x00000800		/* Debugged process being traced. */
-#define	KT_NOCLDWAIT		0x00002000		/* No zombies if child dies */
 #define	KT_NOSWAP			0x00008000		/* Another flag to prevent swap out. */
 #define KT_INEXEC			0x00100000		/* Process is exec'ing and cannot be traced */
 

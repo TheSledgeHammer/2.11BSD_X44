@@ -35,7 +35,6 @@
 
 #include <devel/sys/kthread.h>
 #include <devel/sys/threadpool.h>
-#include <devel/libuthread/uthread.h>
 
 #include <vm/include/vm_param.h>
 
@@ -43,6 +42,8 @@
  * TODO:
  * - Setup thread pgrp's and tid's to work.
  */
+
+#define THREAD_STACK	(USPACE)
 
 void
 thread_add(p, kt)
@@ -52,8 +53,6 @@ thread_add(p, kt)
     if (kt->kt_procp == p) {
         LIST_INSERT_HEAD(&p->p_allthread, kt, kt_sibling);
     }
-    //LIST_INSERT_HEAD(TIDHASH(kt->kt_tid), kt, kt_hash);
-    /* add to proc/thread grp */
     LIST_INSERT_HEAD(&p->p_allthread, kt, kt_list);
     p->p_nthreads++;
 }
@@ -66,8 +65,6 @@ thread_remove(p, kt)
 	if (kt->kt_procp == p) {
 		LIST_REMOVE(kt, kt_sibling);
 	}
-	//LIST_REMOVE(t, kt_hash);
-	/* remove from proc/thread grp */
 	LIST_REMOVE(kt, kt_list);
 	p->p_nthreads--;
 }
@@ -93,11 +90,11 @@ thread_alloc(p, stack)
 {
     struct kthread *kt;
 
-    kt = (struct kthread *)malloc(sizeof(struct kthread));
+    kt = (struct kthread *)malloc(sizeof(struct kthread), M_KTHREAD, M_NOWAIT);
     kt->kt_procp = p;
     kt->kt_stack = stack;
     kt->kt_stat = SIDL;
-
+    kt->kt_flag = 0;
     if (!LIST_EMPTY(&p->p_allthread)) {
         p->p_kthreado = LIST_FIRST(&p->p_allthread);
     } else {
@@ -111,15 +108,14 @@ void
 thread_free(struct proc *p, struct kthread *kt)
 {
 	if (kt != NULL) {
-		p->p_kthreado = NULL;
-		free(t);
+		thread_remove(p, kt);
+		free(kt, M_KTHREAD);
 	}
 }
 
 int
-proc_create(newpp, name)
+proc_create(newpp)
 	struct proc **newpp;
-	char *name;
 {
 	struct proc *p;
 	register_t 	rval[2];
@@ -136,9 +132,6 @@ proc_create(newpp, name)
 		p->p_flag |= P_INMEM | P_SYSTEM | P_NOCLDWAIT;
 	}
 
-	/* Name it as specified. */
-	bcopy(p->p_comm, name, MAXCOMLEN);
-
 	if (newpp != NULL) {
 		*newpp = p;
 	}
@@ -147,28 +140,23 @@ proc_create(newpp, name)
 }
 
 int
-thread_create(func, arg, newkt, name, stack)
-	void (*func)(void *);
-	void *arg;
+newthread(newkt, name, stack)
 	struct kthread **newkt;
 	char *name;
 	size_t stack;
 {
-	struct kthread *kt;
 	struct proc *p;
+	struct kthread *kt;
 	register_t 	rval[2];
 	int error;
 
-	error = proc_create(&p, name);
+	error = proc_create(&p);
 	if (__predict_false(error != 0)) {
+		panic("thread_create");
 		return (error);
 	}
 
 	kt = thread_alloc(p, stack);
-	if (kt == NULL) {
-		panic("thread_create");
-		return (1);
-	}
 
 	if (rval[1]) {
 		kt->kt_flag |= KT_INMEM | KT_SYSTEM;
@@ -181,4 +169,14 @@ thread_create(func, arg, newkt, name, stack)
 		*newkt = kt;
 	}
 	return (0);
+}
+
+int
+thread_create(func, arg, newkt, name)
+	void (*func)(void *);
+	void *arg;
+	struct kthread **newkt;
+	char *name;
+{
+	return (newthread(newkt, name, THREAD_STACK));
 }

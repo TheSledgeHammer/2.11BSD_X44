@@ -92,6 +92,7 @@ struct	proc {
     struct file 	    *p_tracep;		/* Trace to file. */
     
     struct vnode 	    *p_textvp;		/* Vnode of executable. */
+    struct vm_text		*p_textp;		/* vm text */
     
     long				p_sig;		    /* Signals pending to this process */
     
@@ -148,13 +149,11 @@ struct	proc {
 
 	struct gsched		*p_gsched;		/* global scheduler */
 
+	/* thread */
 	struct kthreadlist	p_allthread;
 	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
 	int 				p_nthreads;
 
-	char				*p_name;		/* (: name, optional */
-
-	struct vm_text		*p_textp;		/* text */
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id

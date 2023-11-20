@@ -596,7 +596,7 @@ threadpool_job_done(job)
 	KASSERT(job->job_thread->tpt_proc == curproc);
 
 	PROC_LOCK(curproc);
-	curproc->p_name = job->job_thread->tpt_proc_savedname;
+	curproc->p_comm = job->job_thread->tpt_proc_savedname;
 	PROC_UNLOCK(curproc);
 
 	/*
@@ -839,7 +839,7 @@ threadpool_proc(p, thread, pool)
 	struct threadpool *const pool;
 {
 	KASSERT(thread->tpt_proc == p);
-	threadpool_processor(p->p_name, thread, pool, p->p_mtx, &proc_loholder);
+	threadpool_processor(p->p_comm, thread, pool, p->p_mtx, &proc_loholder);
 }
 
 static void
