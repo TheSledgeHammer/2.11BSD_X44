@@ -91,7 +91,11 @@ devswtable_configure(devsw, major, bdev, cdev, line)
 	const struct linesw 		*line;
 {
 	int error, rv;
+
 	rv = devsw_io_attach(devsw, major, bdev, cdev, line);
+ if (rv != 0) {
+  return (rv);
+ }
 	error = devswtable_io_init(major, rv);
 	if(error == ENXIO) {
 		devsw_io_detach(major, bdev, cdev, line);
