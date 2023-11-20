@@ -267,7 +267,7 @@ kvtop(addr)
  * for efficiency.
  */
 int
-prober(p, addr)
+prober(p, pa)
     register struct proc *p;
     register vm_offset_t pa;
 {
@@ -284,7 +284,7 @@ prober(p, addr)
 }
 
 int
-probew(p, addr)
+probew(p, pa)
     register struct proc *p;
     register vm_offset_t pa;
 {
