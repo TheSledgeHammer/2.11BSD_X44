@@ -49,9 +49,12 @@ struct gsched_edf {
     u_char  			edf_time;			/* resident time for scheduling */
     char    			edf_slptime;		/* Time since last blocked. secs sleeping */
 
-    u_char 				edf_slack;			/* slack / laxity time */
     char				edf_release;		/* time till release from current block. see above */
     int					edf_priweight;		/* priority weighting (calculated from various factors) */
+    u_char 				edf_slack;			/* slack / laxity time */
+    u_char				edf_utilization;	/* utilization per task */
+    u_char				edf_demand;			/* demand per task */
+    u_char				edf_workload;		/* workload per task */
 
     char 				edf_delta; 			/* Inherited Deadline (UN-USED) */
     u_char 				edf_remtime; 		/* time remaining (UN-USED) */
@@ -66,10 +69,14 @@ struct gsched_edf {
 #define DEMAND(t, d, r, c)      (((t - d + r) * c) / r)
 #define WORKLOAD(t, r, c)       ((t / r) * c)
 
-u_char 	edf_slack(char, u_char, char);
-int 	edf_utilization(char, char);
-int 	edf_demand(char, char, char, char);
-int 	edf_workload(char, char, char);
+void	edf_set_slack(struct gsched_edf *, char, u_char, char);
+void	edf_set_utilization(struct gsched_edf *, char, char);
+void	edf_set_demand(struct gsched_edf *, u_char, char, char, char);
+void	edf_set_workload(struct gsched_edf *, u_char, char, char);
+
+int 	edf_test_utilization(char, char);
+int 	edf_test_demand(char, char, char, char);
+int 	edf_test_workload(char, char, char);
 int 	edf_test(struct gsched_edf *);
 int		edf_schedcpu(struct proc *);
 

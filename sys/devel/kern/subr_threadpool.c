@@ -52,6 +52,7 @@ TAILQ_HEAD(thread_head, threadpool_thread);
 
 struct threadpool_thread {
 	struct proc							*tpt_proc;
+	struct kthread						*tpt_thread;
 	char								*tpt_proc_savedname;
 	struct threadpool					*tpt_pool;
 	struct threadpool_job				*tpt_job;

@@ -26,6 +26,12 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * Kthread renamed:
+ * Are now known as threads.
+ * All thread information in this .c file corresponds to thread.h
+ */
+
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
@@ -33,83 +39,83 @@
 #include <sys/malloc.h>
 #include <sys/mutex.h>
 
-#include <devel/sys/kthread.h>
+#include <devel/sys/thread.h>
 #include <devel/sys/threadpool.h>
 
 #include <vm/include/vm_param.h>
+
+#define M_THREAD 101
 
 /*
  * TODO:
  * - Setup thread pgrp's and tid's to work.
  */
 
-#define THREAD_STACK	(USPACE)
-
 void
-thread_add(p, kt)
+thread_add(p, td)
 	struct proc *p;
-	struct kthread *kt;
+	struct thread *td;
 {
-    if (kt->kt_procp == p) {
-        LIST_INSERT_HEAD(&p->p_allthread, kt, kt_sibling);
+    if (td->td_procp == p) {
+        LIST_INSERT_HEAD(&p->p_allthread, td, td_sibling);
     }
-    LIST_INSERT_HEAD(&p->p_allthread, kt, kt_list);
+    LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
     p->p_nthreads++;
 }
 
 void
-thread_remove(p, kt)
+thread_remove(p, td)
 	struct proc *p;
-	struct kthread *kt;
+	struct thread *td;
 {
-	if (kt->kt_procp == p) {
-		LIST_REMOVE(kt, kt_sibling);
+	if (td->td_procp == p) {
+		LIST_REMOVE(td, td_sibling);
 	}
-	LIST_REMOVE(kt, kt_list);
+	LIST_REMOVE(td, td_list);
 	p->p_nthreads--;
 }
 
-struct kthread *
+struct thread *
 thread_find(p)
 	struct proc *p;
 {
-    struct kthread *kt;
+    struct thread *td;
 
-    LIST_FOREACH(kt, &p->p_allthread, kt_list) {
-        if ((kt->kt_procp == p) && (kt != NULL)) {
+    LIST_FOREACH(td, &p->p_allthread, td_list) {
+        if ((td->td_procp == p) && (td != NULL)) {
             return (t);
         }
     }
     return (NULL);
 }
 
-struct kthread *
+struct thread *
 thread_alloc(p, stack)
 	struct proc *p;
 	size_t stack;
 {
-    struct kthread *kt;
+    struct thread *td;
 
-    kt = (struct kthread *)malloc(sizeof(struct kthread), M_KTHREAD, M_NOWAIT);
-    kt->kt_procp = p;
-    kt->kt_stack = stack;
-    kt->kt_stat = SIDL;
-    kt->kt_flag = 0;
+    td = (struct thread *)malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
+    td->td_procp = p;
+    td->td_stack = stack;
+    td->td_stat = SIDL;
+    td->td_flag = 0;
     if (!LIST_EMPTY(&p->p_allthread)) {
         p->p_kthreado = LIST_FIRST(&p->p_allthread);
     } else {
-        p->p_kthreado = kt;
+        p->p_kthreado = td;
     }
-    thread_add(p, kt);
-    return (kt);
+    thread_add(p, td);
+    return (td);
 }
 
 void
-thread_free(struct proc *p, struct kthread *kt)
+thread_free(struct proc *p, struct thread *td)
 {
-	if (kt != NULL) {
-		thread_remove(p, kt);
-		free(kt, M_KTHREAD);
+	if (td != NULL) {
+		thread_remove(p, td);
+		free(td, M_THREAD);
 	}
 }
 
@@ -124,7 +130,6 @@ proc_create(newpp)
 	/* First, create the new process. */
 	error = newproc(0);
 	if (__predict_false(error != 0)) {
-		panic("proc_create");
 		return (error);
 	}
 
@@ -140,43 +145,45 @@ proc_create(newpp)
 }
 
 int
-newthread(newkt, name, stack)
-	struct kthread **newkt;
+newthread(newtd, name, stack)
+	struct thread **newtd;
 	char *name;
 	size_t stack;
 {
 	struct proc *p;
-	struct kthread *kt;
+	struct thread *td;
 	register_t 	rval[2];
 	int error;
 
+	/* First, create the new process. */
 	error = proc_create(&p);
 	if (__predict_false(error != 0)) {
 		panic("thread_create");
 		return (error);
 	}
 
-	kt = thread_alloc(p, stack);
+	/* allocate and attach a new thread to process */
+	td = thread_alloc(p, stack);
 
 	if (rval[1]) {
-		kt->kt_flag |= KT_INMEM | KT_SYSTEM;
+		td->td_flag |= TD_INMEM | TD_SYSTEM;
 	}
 
 	/* Name it as specified. */
-	bcopy(kt->kt_name, name, MAXCOMLEN);
+	bcopy(td->td_name, name, MAXCOMLEN);
 
-	if (newkt != NULL) {
-		*newkt = kt;
+	if (newtd != NULL) {
+		*newtd = td;
 	}
 	return (0);
 }
 
 int
-thread_create(func, arg, newkt, name)
+thread_create(func, arg, newtd, name)
 	void (*func)(void *);
 	void *arg;
-	struct kthread **newkt;
+	struct thread **newtd;
 	char *name;
 {
-	return (newthread(newkt, name, THREAD_STACK));
+	return (newthread(newtd, name, THREAD_STACK));
 }

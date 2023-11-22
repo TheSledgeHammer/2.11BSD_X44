@@ -45,6 +45,7 @@ struct workqueue_queue {
 	int 					q_savedipl;
 	struct workqhead 		q_queue;
 	struct proc 			*q_worker;
+	struct kthread 			*q_worker2;
 };
 
 struct workqueue {

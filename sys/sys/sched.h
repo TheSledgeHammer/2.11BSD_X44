@@ -98,7 +98,11 @@ struct gsched {
 	struct proc 			*gsc_proc;		/* pointer to proc */
 
     u_char  				gsc_priweight;	/* priority weighting: see below. */
+    /* priority weight factors */
     u_char					gsc_slack;		/* slack / laxity time */
+    u_char					gsc_utilization;/* utilization per task */
+    u_char					gsc_demand;		/* demand per task */
+    u_char					gsc_workload;	/* workload per task */
 
     /* pointer to schedulers */
     struct gsched_edf		*gsc_edf;		/* earliest deadline first scheduler */
@@ -137,6 +141,7 @@ struct gsched_domain {
 			PW_FACTOR((pwl), PW_LAXITY) + 					\
 			PW_FACTOR((pws), PW_SLEEP))/4);					\
 };
+
 
 void 				gsched_init(struct proc *);
 struct proc			*gsched_proc(struct gsched *);
