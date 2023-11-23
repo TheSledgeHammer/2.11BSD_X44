@@ -85,7 +85,7 @@ threadinit(p, td)
 	tidhashtbl = hashinit(maxthread / 4, M_THREAD, &tidhash);
 
 	/* setup thread mutex */
-	mtx_init(td->td_mtx, &thread_loholder, "thread_mutex", (struct kthread *)td, td->td_tid);
+	mtx_init(td->td_mtx, &thread_loholder, "thread_mutex", (struct thread *)td, td->td_tid);
 }
 
 void

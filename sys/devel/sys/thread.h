@@ -84,7 +84,7 @@ extern struct lock_holder 	thread_loholder;
 #define NO_TID			NO_PID
 
 #define	TIDHSZ							16
-#define	TIDHASH(tid)					(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
+#define	TIDHASH(tid)					(&tidhashtbl[(tid) & tidhash & (TIDHSZ * ((tid) + tidhash) - 1)])
 extern 	LIST_HEAD(tidhashhead, thread) 	*tidhashtbl;
 extern u_long 	tidhash;
 
