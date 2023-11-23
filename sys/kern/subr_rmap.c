@@ -42,8 +42,6 @@
 
 extern struct mapent _coremap[];
 
-static struct mapent *rmcreate(struct map *, memaddr_t, size_t, int);
-
 /*
  * Resource map handling routines.
  *
@@ -69,6 +67,29 @@ static struct mapent *rmcreate(struct map *, memaddr_t, size_t, int);
  * the value ``0'' as a legal address or size, since that is used as a
  * delimiter.
  */
+
+/*
+ * creates a mapent in map.
+ */
+struct mapent *
+rmcreate(mp, addr, size, mapsize)
+	register struct map *mp;
+	memaddr_t addr;
+	size_t size;
+	int mapsize;
+{
+	struct mapent *ep;
+
+	ep = (struct mapent *)(mp + mapsize);
+	ep->m_size = size;
+	ep->m_addr = addr;
+
+	/* the remaining slots are unused (indicated by m_addr == 0) */
+	while (++ep < mp->m_limit) {
+		ep->m_addr = 0;
+	}
+	return (ep);
+}
 
 void
 rminit(mp, addr, size, name, mtype, mapsize)
@@ -114,29 +135,6 @@ rmallocate(mp, addr, size, mapsize)
 	if (rmalloc(mp, size) != 0) {
 		rmfree(mp, size, addr);
 	}
-}
-
-/*
- * creates a mapent in map.
- */
-static struct mapent *
-rmcreate(mp, addr, size, mapsize)
-	register struct map *mp;
-	memaddr_t addr;
-	size_t size;
-	int mapsize;
-{
-	struct mapent *ep;
-
-	ep = (struct mapent *)(mp + mapsize);
-	ep->m_size = size;
-	ep->m_addr = addr;
-
-	/* the remaining slots are unused (indicated by m_addr == 0) */
-	while (++ep < mp->m_limit) {
-		ep->m_addr = 0;
-	}
-	return (ep);
 }
 
 /*

@@ -44,16 +44,14 @@ struct thread {
 	pid_t 				td_tid;					/* unique thread id */
 	pid_t 				td_ptid;				/* thread id of parent */
 
-	size_t             	td_stack;
+	size_t             	td_stack;				/* thread stack */
 
 	/* Substructures: */
 	struct pcred 	 	*td_cred;				/* Thread owner's identity. */
-#define	kt_ucred		td_cred->pc_ucred
+#define	td_ucred		td_cred->pc_ucred
 
 	struct proc 		*td_procp;				/* pointer to proc */
 	struct user			*td_addr;				/* virtual address of u. area */
-
-	LIST_ENTRY(proc) 	td_pglist;				/* List of threads in pgrp. */
 
 	LIST_ENTRY(thread)	td_sibling;				/* List of sibling threads. */
 	LIST_ENTRY(thread)	td_hash;				/* Hash chain. */
@@ -66,23 +64,40 @@ struct thread {
 #define THREAD_STACK	USPACE
 
 /* flag codes */
-#define	TD_INMEM			0x00000004		/* Loaded into memory. */
-#define TD_SULOCK			0x00000040		/* user settable lock in core */
+#define	TD_INMEM		0x00000004		/* Loaded into memory. */
+#define TD_SULOCK		0x00000040		/* user settable lock in core */
 
-#define	TD_SYSTEM			0x00000200		/* System proc: no sigs, stats or swapping. */
-#define TD_TRACED			0x00000800		/* Debugged process being traced. */
-#define	TD_NOSWAP			0x00008000		/* Another flag to prevent swap out. */
-#define TD_INEXEC			0x00100000		/* Process is exec'ing and cannot be traced */
-#define	TD_BOUND			0x80000000 		/* Bound to a CPU */
+#define	TD_SYSTEM		0x00000200		/* System proc: no sigs, stats or swapping. */
+#define TD_TRACED		0x00000800		/* Debugged process being traced. */
+#define	TD_NOSWAP		0x00008000		/* Another flag to prevent swap out. */
+#define TD_INEXEC		0x00100000		/* Process is exec'ing and cannot be traced */
+#define	TD_BOUND		0x80000000 		/* Bound to a CPU */
 
+#ifdef _KERNEL
 /* Thread Lock */
-struct lock_holder 			thread_loholder;
+extern struct lock_holder 	thread_loholder;
 #define THREAD_LOCK(td)		(mtx_lock(&(td)->td_mtx, &thread_loholder))
 #define THREAD_UNLOCK(td) 	(mtx_unlock(&(td)->td_mtx, &thread_loholder))
+
+#define	TID_MIN			31000
+#define	TID_MAX			60000
+#define NO_TID			NO_PID
+
+#define	TIDHSZ							16
+#define	TIDHASH(tid)					(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
+extern 	LIST_HEAD(tidhashhead, thread) 	*tidhashtbl;
+extern u_long 	tidhash;
+
+extern struct thread thread0;
+extern int	nthread, maxthread;					/* Current and max number of threads. */
 
 LIST_HEAD(threadlist, thread);
 extern struct threadlist	allthread;			/* List of threads. */
 
+struct thread *tdfind(struct proc *, pid_t);	/* find thread by tid */
+pid_t tidmask(struct proc *);					/* thread tid mask */
+void tdqinit(struct thread *);
+void threadinit(struct thread *);
 void thread_add(struct proc *, struct thread *);
 void thread_remove(struct proc *, struct thread *);
 struct thread *thread_alloc(struct proc *, size_t);
@@ -93,4 +108,5 @@ int proc_create(struct proc **);
 int newthread(struct thread **, char *, size_t);
 int thread_create(void (*)(void *), void *, struct thread **, char *);
 
+#endif 	/* KERNEL */
 #endif /* _SYS_THREAD_H_ */

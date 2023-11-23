@@ -254,7 +254,7 @@ extern struct lock_holder 	proc_loholder;
 #define PROC_UNLOCK(p)		(mtx_unlock(&(p)->p_mtx, &proc_loholder))
 
 #define	PID_MAX			30000
-#define	NO_PID			30001
+#define	NO_PID			100000
 
 #define SESS_LEADER(p)	((p)->p_session->s_leader == (p))
 #define	SESSHOLD(s)		((s)->s_count++)

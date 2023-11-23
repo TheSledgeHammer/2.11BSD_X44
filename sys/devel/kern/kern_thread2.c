@@ -46,10 +46,57 @@
 
 #define M_THREAD 101
 
-/*
- * TODO:
- * - Setup thread pgrp's and tid's to work.
- */
+extern struct thread  thread0;
+struct thread *curthread = &thread0;
+
+struct tidhashhead *tidhashtbl;
+u_long tidhash;
+
+struct lock_holder 	thread_loholder;
+
+void
+thread_init(p, td)
+	register struct proc  	*p;
+	register struct thread *td;
+{
+	/* initialize current thread & proc overseer from thread0 */
+	p->p_threado = &thread0;
+	td = p->p_threado;
+	curthread = td;
+
+	/* Initialize thread structures. */
+	threadinit(p, td);
+
+	/* set up kernel thread */
+    LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+    td->td_pgrp = &pgrp0;
+
+	/* give the thread the same creds as the initial thread */
+	td->td_ucred = p->p_ucred;
+	crhold(td->td_ucred);
+}
+
+void
+threadinit(p, td)
+	struct proc *p;
+	struct thread *td;
+{
+	tdqinit(p, td);
+	tidhashtbl = hashinit(maxthread / 4, M_THREAD, &tidhash);
+
+	/* setup thread mutex */
+	mtx_init(td->td_mtx, &thread_loholder, "thread_mutex", (struct kthread *)td, td->td_tid);
+}
+
+void
+tdqinit(p, td)
+	register struct proc *p;
+	register struct thread *td;
+{
+	LIST_INIT(&allkthread);
+
+	LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+}
 
 void
 thread_add(p, td)
@@ -59,6 +106,7 @@ thread_add(p, td)
     if (td->td_procp == p) {
         LIST_INSERT_HEAD(&p->p_allthread, td, td_sibling);
     }
+    LIST_INSERT_HEAD(TIDHASH(td->td_tid), td , td_hash);
     LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
     p->p_nthreads++;
 }
@@ -71,22 +119,37 @@ thread_remove(p, td)
 	if (td->td_procp == p) {
 		LIST_REMOVE(td, td_sibling);
 	}
+	LIST_REMOVE(td, td_hash);
 	LIST_REMOVE(td, td_list);
 	p->p_nthreads--;
 }
 
-struct thread *
-thread_find(p)
-	struct proc *p;
+pid_t
+tidmask(p)
+	register struct proc *p;
 {
-    struct thread *td;
+	pid_t tid = p->p_pid + p->p_nthreads + TID_MIN;
+	if (tid >= TID_MAX) {
+		printf("tidmask: tid max reached");
+		tid = NO_TID;
+	}
+	return (tid);
+}
 
-    LIST_FOREACH(td, &p->p_allthread, td_list) {
-        if ((td->td_procp == p) && (td != NULL)) {
-            return (t);
-        }
-    }
-    return (NULL);
+struct thread *
+tdfind(p, tid)
+	register struct proc *p;
+	register pid_t tid;
+{
+	register struct thread *td;
+
+	tid = tidmask(p);
+	LIST_FOREACH(td, TIDHASH(tid), td_hash) {
+		if (td->td_tid == tid) {
+			return (td);
+		}
+	}
+	return (NULL);
 }
 
 struct thread *
@@ -101,10 +164,13 @@ thread_alloc(p, stack)
     td->td_stack = stack;
     td->td_stat = SIDL;
     td->td_flag = 0;
+    td->td_tid = tidmask(p);
+    td->td_pgrp = p->p_pgrp;
+
     if (!LIST_EMPTY(&p->p_allthread)) {
-        p->p_kthreado = LIST_FIRST(&p->p_allthread);
+        p->p_threado = LIST_FIRST(&p->p_allthread);
     } else {
-        p->p_kthreado = td;
+        p->p_threado = td;
     }
     thread_add(p, td);
     return (td);

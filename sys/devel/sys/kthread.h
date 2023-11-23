@@ -95,7 +95,7 @@ struct kthread {
 
 #define	TIDHSZ							16
 #define	TIDHASH(tid)					(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
-extern 	LIST_HEAD(tidhashhead, proc) 	*tidhashtbl;
+extern 	LIST_HEAD(tidhashhead, kthread) 	*tidhashtbl;
 u_long 	tid_hash;
 
 #define	TGRPHASH(tgid)					(&tgrphashtbl[(tgid) & tgrphash])
