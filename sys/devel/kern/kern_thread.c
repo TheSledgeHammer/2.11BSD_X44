@@ -26,8 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Common KThread & UThread functions */
-
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
@@ -35,414 +33,148 @@
 #include <sys/malloc.h>
 #include <sys/mutex.h>
 
-#include <devel/sys/kthread.h>
-#include <devel/sys/threadpool.h>
-#include <devel/libuthread/uthread.h>
+#include <devel/sys/thread.h>
 
 #include <vm/include/vm_param.h>
 
-#define M_KTHREAD 101
-extern struct kthread 		 kthread0;
-struct kthread *curkthread = &kthread0;
+#define M_THREAD 101
 
-#define NTHREAD (maxproc * 2)
-int maxthread = NTHREAD;
+extern struct thread  thread0;
+struct thread *curthread = &thread0;
 
 struct tidhashhead *tidhashtbl;
 u_long tidhash;
-struct tgrphashhead *tgrphashtbl;
-u_long tgrphash;
 
-struct kthreadlist 	allkthread;
-struct kthreadlist 	zombkthread;
-struct kthreadlist 	freekthread;
-
-struct lock_holder 	kthread_loholder;
-
-int				kthread_create1(void (*)(void *), void *, struct kthread *, char *);
-void			kthread_add(struct kthreadlist *, struct kthread *, int);
-void			kthread_remove(struct kthread *, int);
-struct kthread *kthread_find(struct kthreadlist *, int);
-void			kthread_dispatch(struct kthread *, int, char);
-
-int
-proc_create(func, arg, p, name)
-	void (*func)(void *);
-	void *arg;
-	struct proc **p;
-	char *name;
-{
-	/* set kthread0 to proc0->p_kthreado */
-	return (kthread_create(func, arg, p, name));
-}
+struct lock_holder 	thread_loholder;
 
 void
-kthread_init(p, kt)
+thread_init(p, td)
 	register struct proc  	*p;
-	register struct kthread *kt;
+	register struct thread *td;
 {
-	register_t 	rval[2];
-	int 		error;
+	/* initialize current thread & proc overseer from thread0 */
+	p->p_threado = &thread0;
+	td = p->p_threado;
+	curthread = td;
 
-	/* initialize current kthread & proc overseer from kthread0 */
-	p->p_kthreado = &kthread0;
-	kt = p->p_kthreado;
-    curkthread = kt;
-
-	/* Initialize kthread and kthread group structures. */
-    kthreadinit(kt);
+	/* Initialize thread structures. */
+	threadinit(p, td);
 
 	/* set up kernel thread */
-    LIST_INSERT_HEAD(&allkthread, kt, kt_list);
-    kt->kt_pgrp = &pgrp0;
-    LIST_INSERT_HEAD(TGRPHASH(0), &pgrp0, pg_hash);
-	p->p_kthreado = kt;
+    LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+    td->td_pgrp = &pgrp0;
 
-	/* give the kthread the same creds as the initial thread */
-	kt->kt_ucred = p->p_ucred;
-	crhold(kt->kt_ucred);
+	/* give the thread the same creds as the initial thread */
+	td->td_ucred = p->p_ucred;
+	crhold(td->td_ucred);
 }
 
 void
-kthreadinit(kt)
-	struct kthread *kt;
+threadinit(p, td)
+	struct proc *p;
+	struct thread *td;
 {
-	ktqinit(kt);
-	tidhashtbl = hashinit(maxthread / 4, M_PROC, &tidhash);
-	tgrphashtbl = hashinit(maxthread / 4, M_PROC, &tgrphash);
+	tdqinit(p, td);
+	tidhashtbl = hashinit(maxthread / 4, M_THREAD, &tidhash);
 
-	/* setup kthread multiplexor */
-	kt->kt_mpx = mpx_allocate(maxthread);
-
-    /* setup kthread mutex */
-    mtx_init(kt->kt_mtx, &kthread_loholder, "kthread mutex", (struct kthread *)kt, kt->kt_tid);
+	/* setup thread mutex */
+	mtx_init(td->td_mtx, &thread_loholder, "thread_mutex", (struct thread *)td, td->td_tid);
 }
 
-/*
- * init the kthread queues
- */
 void
-ktqinit(kt)
-	register struct kthread *kt;
+tdqinit(p, td)
+	register struct proc *p;
+	register struct thread *td;
 {
-	LIST_INIT(&allkthread);
-	LIST_INIT(&zombkthread);
-	LIST_INIT(&freekthread);
+	LIST_INIT(&p->p_allthread);
 
-	/*
-	 * most procs are initially on freequeue
-	 *	nb: we place them there in their "natural" order.
-	 */
-	LIST_INSERT_HEAD(&freekthread, kt, kt_list);
-	LIST_INSERT_HEAD(&allkthread, kt, kt_list);
-	LIST_FIRST(&zombkthread) = NULL;
+	LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
 }
 
-/*
- * remove kthread from thread group
- */
-int
-leavektgrp(kt)
-	struct kthread *kt;
+void
+thread_add(p, td)
+	struct proc *p;
+	struct thread *td;
 {
-	LIST_REMOVE(kt, kt_pglist);
-	if (LIST_FIRST(&kt->kt_pgrp->pg_mem) == 0) {
-		pgdelete(kt->kt_pgrp);
+    if (td->td_procp == p) {
+        LIST_INSERT_HEAD(&p->p_allthread, td, td_sibling);
+    }
+    LIST_INSERT_HEAD(TIDHASH(td->td_tid), td , td_hash);
+    LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+    p->p_nthreads++;
+}
+
+void
+thread_remove(p, td)
+	struct proc *p;
+	struct thread *td;
+{
+	if (td->td_procp == p) {
+		LIST_REMOVE(td, td_sibling);
 	}
-	kt->kt_pgrp = 0;
-	return (0);
+	LIST_REMOVE(td, td_hash);
+	LIST_REMOVE(td, td_list);
+	p->p_nthreads--;
 }
 
-/*
- * Locate a thread group by number
- */
-struct pgrp *
-tgfind(pgid)
-	register pid_t pgid;
+pid_t
+tidmask(p)
+	register struct proc *p;
 {
-	register struct pgrp *tgrp;
-	LIST_FOREACH(tgrp, TGRPHASH(pgid), pg_hash) {
-		if (tgrp->pg_id == pgid) {
-			return (tgrp);
-		}
+	pid_t tid = p->p_pid + p->p_nthreads + TID_MIN;
+	if (tid >= TID_MAX) {
+		printf("tidmask: tid max reached");
+		tid = NO_TID;
 	}
-	return (NULL);
+	return (tid);
 }
 
-/*
- * Locate a kthread by number & channel
- */
-struct kthread *
-ktfind(tid, chan)
+struct thread *
+tdfind(p, tid)
+	register struct proc *p;
 	register pid_t tid;
-	register int chan;
 {
-	register struct kthread *kt;
+	register struct thread *td;
 
-	kt = kthread_find(TIDHASH(tid), chan);
-	if (kt->kt_tid == tid) {
-		return (kt);
-	}
-	return (NULL);
-}
-
-int
-kthread_create1(func, arg, newkt, name)
-	void (*func)(void *);
-	void *arg;
-	struct kthread **newkt;
-	char *name;
-{
-	struct proc *p;
-	struct kthread *kt;
-	register_t 	rval[2];
-	int error;
-
-	error = proc_create(func, arg, &p, name);
-	if (error != 0) {
-		return (error);
-	}
-
-	kt = p->p_kthreado;
-	kt->kt_procp = p;
-	if (rval[1]) {
-		kt->kt_flag |= KT_INMEM | KT_SYSTEM;
-		kt->kt_stat = SIDL;
-	}
-
-	if (newkt != NULL) {
-		*newkt = kt;
-	}
-	//p->p_nkthread++;
-	return (0);
-}
-
-
-
-void
-kthread_add(ktlist, kt, chan)
-	struct kthreadlist *ktlist;
-	struct kthread *kt;
-	int chan;
-{
-	struct mpx *mpx;
-	int ret;
-
-	LIST_INSERT_HEAD(ktlist, kt, kt_list);
-	mpx = kt->kt_mpx;
-	if (mpx == NULL) {
-		return;
-	}
-	ret = mpx_put(mpx, chan, kt);
-	if (ret != 0) {
-		return;
-	}
-}
-
-void
-kthread_remove(kt, chan)
-	struct kthread *kt;
-	int chan;
-{
-	struct mpx *mpx;
-	int ret;
-
-	mpx = kt->kt_mpx;
-	if (mpx == NULL) {
-		return;
-	}
-
-	ret = mpx_remove(mpx, chan, kt);
-	if (ret != 0) {
-		return;
-	}
-	LIST_REMOVE(kt, kt_list);
-}
-
-struct kthread *
-kthread_find(ktlist, chan)
-	struct kthreadlist *ktlist;
-	int chan;
-{
-	struct kthread *kt;
-	struct mpx *mpx;
-
-	LIST_FOREACH(kt, ktlist, kt_list) {
-		if (kt != NULL) {
-			mpx = kt->kt_mpx;
-			if (mpx) {
-				ret = mpx_get(mpx, chan, kt);
-				if (ret) {
-					return (kt);
-				}
-			}
+	tid = tidmask(p);
+	LIST_FOREACH(td, TIDHASH(tid), td_hash) {
+		if (td->td_tid == tid) {
+			return (td);
 		}
 	}
 	return (NULL);
 }
 
-struct mpx *
-kthread_mpx(ktlist, chan)
-	struct kthreadlist *ktlist;
-	int chan;
-{
-	struct kthread *kt;
-	struct mpx *mpx;
-	kt = kthread_find(ktlist, chan);
-	if (kt != NULL) {
-		mpx = kt->kt_mpx;
-	} else {
-		mpx = NULL;
-	}
-	return (mpx);
-}
-
-struct kthread *
-kthread_alloc(p)
+struct thread *
+thread_alloc(p, stack)
 	struct proc *p;
+	size_t stack;
 {
-	struct kthread *kt;
+    struct thread *td;
 
-	kt = (struct kthread *)malloc(sizeof(struct kthread), M_KTHREAD, M_NOWAIT);
-	kt->kt_procp = p;
-	p->p_kthreado = kt;
-	return (kt);
+    td = (struct thread *)malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
+    td->td_procp = p;
+    td->td_stack = stack;
+    td->td_stat = SIDL;
+    td->td_flag = 0;
+    td->td_tid = tidmask(p);
+    td->td_ptid = p->p_pid;
+    td->td_pgrp = p->p_pgrp;
+
+    if (!LIST_EMPTY(&p->p_allthread)) {
+        p->p_threado = LIST_FIRST(&p->p_allthread);
+    } else {
+        p->p_threado = td;
+    }
+    thread_add(p, td);
+    return (td);
 }
 
 void
-kthread_free(kt)
-	struct kthread *kt;
+thread_free(struct proc *p, struct thread *td)
 {
-	if (kt != NULL) {
-		free(kt, M_KTHREAD);
+	if (td != NULL) {
+		thread_remove(p, td);
+		free(td, M_THREAD);
 	}
 }
-
-/* kernel thread runtime */
-struct kthread_runtime {
-	struct kthreadlist 	ktr_zombkthread;
-	struct kthreadlist 	ktr_freekthread;
-	struct kthreadlist 	ktr_allkthread;
-	int					ktr_flags;
-
-	struct proc			*ktr_proc;
-	struct kthread		ktr_kthread;
-	//send
-	//receive
-};
-struct kthread_runtime kt_runtime;
-
-void
-runtime_init(struct kthread *kt)
-{
-	LIST_INIT(&kt_runtime.ktr_zombkthread);
-	LIST_INIT(&kt_runtime.ktr_freekthread);
-	LIST_INIT(&kt_runtime.ktr_allkthread);
-
-	kt->kt_runtime = &kt_runtime;
-
-	int i;
-
-	for (i = 0; i < maxthread; i++) {
-		kthread_dispatch(kt, i, kt->kt_stat);
-	}
-}
-
-/*
- * Kthread dispatch: changes thread from one queue to another queue depending on state.
- */
-void
-kthread_dispatch(kt, chan, state)
-	struct kthread *kt;
-	int chan;
-	char state;
-{
-	struct kthread *nkt;
-
-	switch (state) {
-	case KT_ONFREE:
-		/* freekthread list */
-		if (LIST_EMPTY(&freekthread)) {
-			break;
-		}
-		if (kt == NULL) {
-			nkt = kthread_find(&freekthread, chan);
-			if ((nkt != NULL) && (nkt->kt_stat == state)) {
-				kt = nkt;
-			} else {
-				break;
-			}
-		}
-		kthread_remove(kt, chan);						/* off freekthread */
-		kthread_add(&allkthread, kt, chan);				/* onto allkthread */
-		kt->kt_stat = KT_ONALL;
-		break;
-
-	case KT_ONALL:
-		/* allkthread list */
-		if (LIST_EMPTY(&allkthread)) {
-			break;
-		}
-		if (kt == NULL) {
-			nkt = kthread_find(&allkthread, chan);
-			if ((nkt != NULL) && (nkt->kt_stat == state)) {
-				kt = nkt;
-			} else {
-				break;
-			}
-		}
-		kthread_remove(kt, chan);						/* off allkthread */
-		kthread_add(&zombkthread, kt, chan);			/* onto zombkthread */
-		kt->kt_stat = KT_ONZOMB;
-		break;
-
-	case KT_ONZOMB:
-		/* zombkthread list */
-		if (LIST_EMPTY(&zombkthread)) {
-			break;
-		}
-		if (kt == NULL) {
-			nkt = kthread_find(&zombkthread, chan);
-			if ((nkt != NULL) && (nkt->kt_stat == state)) {
-				kt = nkt;
-			} else {
-				break;
-			}
-		}
-		kthread_remove(kt, chan);						/* off zombkthread */
-		kthread_add(&freekthread, kt, chan);			/* onto freekthread */
-		kt->kt_stat = KT_ONFREE;
-		break;
-	}
-}
-
-void
-dispatch1(kt, chan)
-	struct kthread *kt;
-	int chan;
-{
-	switch (kt->kt_stat) {
-	case SSLEEP:
-
-	case SRUN:
-		kthread_remove(&allkthread, kt, 0);			/* off allkthread */
-		kthread_add(&zombkthread, kt, chan);		/* onto zombkthread */
-		kt->kt_stat = SZOMB;						/* set state to zombie */
-		break;
-
-	case SIDL:
-		kthread_remove(kt, 0);						/* off freekthread */
-		kthread_add(&allkthread, kt, 0);			/* onto allkthread */
-		kt->kt_stat = SRUN;							/* set state to run */
-		break;
-
-	case SZOMB:
-		kthread_remove(kt, chan);					/* off zombkthread */
-		kthread_add(&freekthread, kt, chan);		/* onto freekthread */
-		kt->kt_stat = SIDL;							/* set state to idle */
-		break;
-
-	case SSTOP:
-	}
-}
-

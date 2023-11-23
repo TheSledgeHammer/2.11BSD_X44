@@ -42,7 +42,7 @@ struct thread {
 
 	short				td_uid;					/* user id, used to direct tty signals */
 	pid_t 				td_tid;					/* unique thread id */
-	pid_t 				td_ptid;				/* thread id of parent */
+	pid_t 				td_ptid;				/* thread id of parent (proc) */
 
 	size_t             	td_stack;				/* thread stack */
 
@@ -73,8 +73,14 @@ struct thread {
 #define TD_INEXEC		0x00100000		/* Process is exec'ing and cannot be traced */
 #define	TD_BOUND		0x80000000 		/* Bound to a CPU */
 
+/* Kernel thread handling. */
+#define	THREAD_IDLE		0x01			/* Do not run on creation */
+#define	THREAD_MPSAFE	0x02			/* Do not acquire kernel_lock */
+#define	THREAD_INTR		0x04			/* Software interrupt handler */
+#define	THREAD_TS		0x08			/* Time-sharing priority range */
+#define	THREAD_MUSTJOIN	0x10			/* Must join on exit */
+
 #ifdef _KERNEL
-/* Thread Lock */
 extern struct lock_holder 	thread_loholder;
 #define THREAD_LOCK(td)		(mtx_lock(&(td)->td_mtx, &thread_loholder))
 #define THREAD_UNLOCK(td) 	(mtx_unlock(&(td)->td_mtx, &thread_loholder))
@@ -88,11 +94,13 @@ extern struct lock_holder 	thread_loholder;
 extern 	LIST_HEAD(tidhashhead, thread) 	*tidhashtbl;
 extern u_long 	tidhash;
 
+//#define curthread 	curproc->p_curthread;	/* current running thread */
+
 extern struct thread thread0;
 extern int	nthread, maxthread;					/* Current and max number of threads. */
 
 LIST_HEAD(threadlist, thread);
-extern struct threadlist	allthread;			/* List of threads. */
+//extern struct threadlist	allthread;			/* List of threads. */
 
 struct thread *tdfind(struct proc *, pid_t);	/* find thread by tid */
 pid_t tidmask(struct proc *);					/* thread tid mask */

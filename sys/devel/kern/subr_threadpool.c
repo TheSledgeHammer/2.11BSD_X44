@@ -38,6 +38,7 @@
 #include <sys/user.h>
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
+#include <sys/thread.h>
 #include <sys/mutex.h>
 #include <sys/percpu.h>
 #include <sys/systm.h>
@@ -52,7 +53,7 @@ TAILQ_HEAD(thread_head, threadpool_thread);
 
 struct threadpool_thread {
 	struct proc							*tpt_proc;
-	struct kthread						*tpt_thread;
+	struct thread						*tpt_thread;
 	char								*tpt_proc_savedname;
 	struct threadpool					*tpt_pool;
 	struct threadpool_job				*tpt_job;
@@ -761,9 +762,9 @@ threadpool_overseer_proc(p, overseer, pool)
 			thread->tpt_job = NULL;
 
 			ktflags = 0;
-			ktflags |= KTHREAD_MPSAFE;
+			ktflags |= THREAD_MPSAFE;
 			if (pool->tp_pri < PUSER) {
-				ktflags |= KTHREAD_TS;
+				ktflags |= THREAD_TS;
 			}
 			error = kthread_create(&threadpool_thread, thread, &p, "poolthread/%d@%d");
 

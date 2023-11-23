@@ -150,9 +150,14 @@ struct	proc {
 	struct gsched		*p_gsched;		/* global scheduler */
 
 	/* thread */
-	struct threadlist	p_allthread;
-	struct thread		*p_threado;		/* thread overseer (original thread)  */
 	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
+
+	union {
+		struct threadlist allthread;
+	} p_threadq;
+#define p_allthread		p_threadq.allthread
+	struct thread		*p_curthread;	/* current thread */
+	struct thread		*p_threado;		/* thread overseer (original thread)  */
 	int 				p_nthreads;
 
 };

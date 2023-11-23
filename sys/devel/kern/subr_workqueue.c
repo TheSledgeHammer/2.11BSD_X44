@@ -32,6 +32,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kthread.h>
+#include <sys/thread.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
 #include <sys/user.h>
@@ -45,7 +46,7 @@ struct workqueue_queue {
 	int 					q_savedipl;
 	struct workqhead 		q_queue;
 	struct proc 			*q_worker;
-	struct kthread 			*q_worker2;
+	struct thread 			*q_worker2;
 };
 
 struct workqueue {
@@ -116,9 +117,6 @@ workqueue_run(wq)
 	for (;;) {
 		struct workqhead tmp;
 		int error;
-
-		SIMPLEQ_INIT(&tmp);
-
 
 		/*
 		 * we violate abstraction of SIMPLEQ.
