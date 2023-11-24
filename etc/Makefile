@@ -88,10 +88,11 @@ BINOWN= root
 BINGRP= wheel
 UTMPGRP= utmp
 BIN1+=	csh.cshrc csh.login csh.logout ftpusers gettytab group hosts 	\
-		hosts.allow hosts.deny inetd.conf man.conf netstart networks 	\
-		ntp.conf passwd.conf pf.conf pf.os printcap phones profile protocols rc 		\
-		rc.firewall rc.network rc.resume rc.shutdown rc.subr rc.suspend \
-		rc.sysctl remote services shells shrc syslog.conf wscons.conf 	
+		hosts.allow hosts.deny inetd.conf locate.conf man.conf netstart \
+        networks nsswitch.conf ntp.conf passwd.conf pf.conf pf.os       \
+        printcap phones profile protocols rc rc.firewall rc.network     \
+        rc.resume rc.shutdown rc.subr rc.suspend rc.sysctl remote rpc   \
+        services shells shrc syslog.conf wscons.conf 	
 
 # Use machine-specific disktab if it exists, or the MI one otherwise
 .if exists(etc.${MACHINE}/disktab)
