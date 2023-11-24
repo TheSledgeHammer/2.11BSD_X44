@@ -149,9 +149,8 @@ struct	proc {
 
 	struct gsched		*p_gsched;		/* global scheduler */
 
-	/* thread */
-	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
-
+	/* threads */
+#ifdef notyet
 	union {
 		struct threadlist allthread;
 	} p_threadq;
@@ -159,7 +158,7 @@ struct	proc {
 	struct thread		*p_curthread;	/* current thread */
 	struct thread		*p_threado;		/* thread overseer (original thread)  */
 	int 				p_nthreads;
-
+#endif
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id
