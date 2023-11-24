@@ -67,8 +67,7 @@ edf_set_utilization(edf, release, cost)
 void
 edf_set_demand(edf, timo, deadline, release, cost)
 struct gsched_edf *edf;
-	u_char timo;
-	char deadline, release, cost;
+	char timo, deadline, release, cost;
 {
 	edf->edf_demand = DEMAND(timo, deadline, release, cost);
 }
@@ -76,8 +75,7 @@ struct gsched_edf *edf;
 void
 edf_set_workload(edf, timo, release, cost)
 	struct gsched_edf *edf;
-	u_char timo;
-	char release, cost;
+	char timo, release, cost;
 {
 	edf->edf_workload = WORKLOAD(timo, release, cost);
 }
@@ -122,10 +120,10 @@ void
 edf_compute(edf)
 	struct gsched_edf *edf;
 {
-    edf->edf_slack = edf_set_slack(edf->edf_cpticks, edf->edf_time, edf->edf_cpu); 									/* laxity/slack */
-    edf->edf_utilization = edf_set_utilization(edf->edf_release, edf->edf_cpu);
-    edf->edf_demand = edf_set_demand(edf->edf_time, edf->edf_cpticks, edf->edf_release, edf->edf_cpu);
-    edf->edf_workload = edf_set_workload(edf->edf_time, edf->edf_release, edf->edf_cpu);
+    edf_set_slack(edf, edf->edf_cpticks, edf->edf_time, edf->edf_cpu); 									        /* laxity/slack */
+    edf_set_utilization(edf, edf->edf_cpu, edf->edf_release);                                                   /* utilization */
+    edf_set_demand(edf, edf->edf_time, edf->edf_cpticks, edf->edf_release, edf->edf_cpu);                       /* demand */
+    edf_set_workload(edf, edf->edf_time, edf->edf_release, edf->edf_cpu);                                       /* workload */
     PRIORITY_WEIGHTING(edf->edf_priweight, edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime); 	/* priority weighting */
 }
 
