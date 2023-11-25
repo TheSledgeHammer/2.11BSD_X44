@@ -39,12 +39,11 @@
 
 #define M_THREAD 101
 
-extern struct thread  thread0;
-struct thread *curthread = &thread0;
-
 struct tidhashhead *tidhashtbl;
 u_long tidhash;
 
+extern struct thread  thread0;
+struct thread *curthread = &thread0;
 struct lock_holder 	thread_loholder;
 
 void
@@ -53,9 +52,8 @@ thread_init(p, td)
 	register struct thread *td;
 {
 	/* initialize current thread & proc overseer from thread0 */
-	p->p_threado = &thread0;
-	td = p->p_threado;
-	curthread = td;
+	p->p_threado = td = &thread0;
+	p->p_curthread = curthread = td;
 
 	/* Initialize thread structures. */
 	threadinit(p, td);
@@ -130,11 +128,11 @@ tidmask(p)
 }
 
 struct thread *
-tdfind(p, tid)
+tdfind(p)
 	register struct proc *p;
-	register pid_t tid;
 {
 	register struct thread *td;
+	register pid_t tid;
 
 	tid = tidmask(p);
 	LIST_FOREACH(td, TIDHASH(tid), td_hash) {

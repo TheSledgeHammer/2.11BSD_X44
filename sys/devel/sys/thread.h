@@ -94,16 +94,14 @@ extern struct lock_holder 	thread_loholder;
 extern 	LIST_HEAD(tidhashhead, thread) 	*tidhashtbl;
 extern u_long 	tidhash;
 
-//#define curthread 	curproc->p_curthread;	/* current running thread */
-
+extern struct thread *curthread;				/* current running thread */
 extern struct thread thread0;
 extern int	nthread, maxthread;					/* Current and max number of threads. */
 
 LIST_HEAD(threadlist, thread);
-//extern struct threadlist	allthread;			/* List of threads. */
 
-struct thread *tdfind(struct proc *, pid_t);	/* find thread by tid */
-pid_t tidmask(struct proc *);					/* thread tid mask */
+struct thread *tdfind(struct proc *);			/* find thread by tidmask */
+pid_t tidmask(struct proc *);					/* thread tidmask */
 void tdqinit(struct thread *);
 void threadinit(struct thread *);
 void thread_add(struct proc *, struct thread *);
@@ -111,10 +109,13 @@ void thread_remove(struct proc *, struct thread *);
 struct thread *thread_alloc(struct proc *, size_t);
 void thread_free(struct proc *, struct thread *);
 
-/* move to kern_kthread.c */
+/* kern_kthread.c */
 int proc_create(struct proc **);
-int newthread(struct thread **, char *, size_t);
-int thread_create(void (*)(void *), void *, struct thread **, char *);
+int	newthread(struct proc *, struct thread **, char *, size_t);
+int newthread1(struct thread **, char *, size_t);
+int kthread_create(void (*)(void *), void *, struct thread **, char *);
 
+void kthread_exit(int);
+void kthread_create_deferred(void (*)(void *), void *);
 #endif 	/* KERNEL */
 #endif /* _SYS_THREAD_H_ */

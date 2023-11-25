@@ -53,6 +53,10 @@
 
 int	kthread_create_now;
 
+/*
+ * [Internal Use Only]: see newthread1 for use.
+ * Use newproc(int isvfork) for forking a proc!
+ */
 int
 proc_create(newpp)
 	struct proc **newpp;
@@ -78,6 +82,7 @@ proc_create(newpp)
 	return (0);
 }
 
+/* create a new thread on an existing proc */
 int
 newthread(p, newtd, name, stack)
 	struct proc *p;
@@ -107,6 +112,7 @@ newthread(p, newtd, name, stack)
 	return (0);
 }
 
+/* creates a new thread on a forked (new) proc  */
 int
 newthread1(newtd, name, stack)
 	struct thread **newtd;

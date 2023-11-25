@@ -46,6 +46,17 @@ struct	proc {
     pid_t				p_pid;			/* unique process id */
     pid_t				p_ppid;			/* process id of parent */
 
+    /* Threads: */
+#ifdef notyet
+    union {
+    	struct threadlist allthread;	/* list of all threads */
+    } p_threadq;
+#define p_allthread		p_threadq.allthread
+    struct thread		*p_curthread;	/* current running thread */
+    struct thread		*p_threado;		/* thread overseer (original thread)  */
+    int 				p_nthreads;		/* number of attached threads to this proc */
+#endif
+
     /* Substructures: */
 	struct	pcred 	 	*p_cred;		/* Process owner's identity. */
 	struct	filedesc 	*p_fd;			/* pointer to open files structure. */
@@ -148,17 +159,6 @@ struct	proc {
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
 	struct gsched		*p_gsched;		/* global scheduler */
-
-	/* threads */
-#ifdef notyet
-	union {
-		struct threadlist allthread;
-	} p_threadq;
-#define p_allthread		p_threadq.allthread
-	struct thread		*p_curthread;	/* current thread */
-	struct thread		*p_threado;		/* thread overseer (original thread)  */
-	int 				p_nthreads;
-#endif
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id

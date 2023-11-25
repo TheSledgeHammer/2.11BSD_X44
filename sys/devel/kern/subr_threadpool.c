@@ -37,7 +37,7 @@
 #include <sys/map.h>
 #include <sys/user.h>
 #include <sys/threadpool.h>
-#include <sys/kthread.h>
+//#include <sys/kthread.h>
 #include <sys/thread.h>
 #include <sys/mutex.h>
 #include <sys/percpu.h>
@@ -52,9 +52,8 @@ TAILQ_HEAD(job_head, threadpool_job);
 TAILQ_HEAD(thread_head, threadpool_thread);
 
 struct threadpool_thread {
-	struct proc							*tpt_proc;
 	struct thread						*tpt_thread;
-	char								*tpt_proc_savedname;
+	char								*tpt_savedname;
 	struct threadpool					*tpt_pool;
 	struct threadpool_job				*tpt_job;
 	TAILQ_ENTRY(threadpool_thread)		tpt_entry;
@@ -100,7 +99,7 @@ static void	threadpool_percpu_fini(void);
 static void	threadpool_overseer_thread(void *);
 static void	threadpool_thread(void *);
 
-static void threadpool_wait(struct proc *, const void *, int);
+static void threadpool_wait(struct thread *, const void *, int);
 
 static LIST_HEAD(, threadpool_unbound) 	unbound_threadpools;
 static LIST_HEAD(, threadpool_percpu) 	percpu_threadpools;
@@ -191,8 +190,8 @@ threadpool_create(pool, pri)
 	struct threadpool *const pool;
 	pri_t pri;
 {
-	struct proc *p;
-	int ktflags, error;
+	struct thread *td;
+	int tdflags, error;
 
 	simple_lock_init(&pool->tp_lock, "pool_lock");
 	/* XXX overseer */
@@ -204,19 +203,19 @@ threadpool_create(pool, pri)
 
 	pool->tp_pri = pri;
 
-	pool->tp_overseer.tpt_proc = NULL;
+	pool->tp_overseer.tpt_thread = NULL;
 	pool->tp_overseer.tpt_pool = pool;
 	pool->tp_overseer.tpt_job = NULL;
 
-	ktflags = 0;
+	tdflags = 0;
 	if (pri) {
-		error = kthread_create(&threadpool_overseer_thread, &pool->tp_overseer, &p,  "pooloverseer/%d@%d");
+		error = kthread_create(&threadpool_overseer_thread, &pool->tp_overseer, &td,  "pooloverseer/%d@%d");
 	}
 	if (error) {
 		goto fail0;
 	}
 	simple_lock(&pool->tp_lock);
-	pool->tp_overseer.tpt_proc = p;
+	pool->tp_overseer.tpt_thread = td;
 	wakeup(&pool->tp_overseer);
 	simple_unlock(&pool->tp_lock);
 
@@ -247,7 +246,7 @@ threadpool_destroy(pool)
 		wakeup(&thread);
 	}
 	while (0 < pool->tp_refcnt) {
-		threadpool_wait(&pool->tp_overseer.tpt_proc, &pool->tp_overseer, &pool->tp_pri);
+		threadpool_wait(&pool->tp_overseer.tpt_thread, &pool->tp_overseer, &pool->tp_pri);
 	}
 	KASSERT(pool->tp_overseer.tpt_job == NULL);
 	KASSERT(pool->tp_overseer.tpt_pool == pool);
@@ -260,7 +259,8 @@ threadpool_destroy(pool)
 }
 
 static void
-threadpool_hold(struct threadpool *pool)
+threadpool_hold(pool)
+	struct threadpool *pool;
 {
 
 //	KASSERT(mutex_owned(&pool->tp_lock));
@@ -269,9 +269,9 @@ threadpool_hold(struct threadpool *pool)
 }
 
 static void
-threadpool_rele(struct threadpool *pool)
+threadpool_rele(pool)
+	struct threadpool *pool;
 {
-
 	//KASSERT(mutex_owned(&pool->tp_lock));
 	KASSERT(0 < pool->tp_refcnt);
 	if (--pool->tp_refcnt == 0) {
@@ -320,7 +320,9 @@ threadpool_get(poolp, pri)
 }
 
 void
-threadpool_put(struct threadpool *pool, pri_t pri)
+threadpool_put(pool, pri)
+	struct threadpool *pool;
+	pri_t pri;
 {
 	struct threadpool_unbound *tpu;
 
@@ -501,16 +503,17 @@ threadpool_job_enqueue(pool, job, flag)
 	struct threadpool_job 	*job;
 	int 					flag;
 {
-	//threadpool_job_lock(job->job_lock);
+	threadpool_job_lock(job->job_lock);
 	switch (flag) {
 	case TPJ_HEAD:
 		TAILQ_INSERT_HEAD(&pool->tp_jobs, job, job_entry);
 		break;
+
 	case TPJ_TAIL:
 		 TAILQ_INSERT_TAIL(&pool->tp_jobs, job, job_entry);
 		 break;
 	}
-	//threadpool_job_unlock(job->job_lock);
+	threadpool_job_unlock(job->job_lock);
 }
 
 void
@@ -518,9 +521,9 @@ threadpool_job_dequeue(pool, job)
     struct threadpool       *pool;
     struct threadpool_job   *job;
 {
-    //threadpool_job_lock(job->job_lock);
+    threadpool_job_lock(job->job_lock);
     TAILQ_REMOVE(&pool->tp_jobs, job, job_entry);
-    //threadpool_job_unlock(job->job_lock);
+    threadpool_job_unlock(job->job_lock);
 }
 
 struct threadpool_job *
@@ -557,7 +560,7 @@ threadpool_job_destroy(job, pri)
 	KASSERTMSG((job->job_thread == NULL), "job %p still running", job);
 	threadpool_job_lock(job->job_lock);
 	while (0 < atomic_load_relaxed(&job->job_refcnt)) {
-		threadpool_wait(&job->job_thread->tpt_proc, &job->job_thread, pri);
+		threadpool_wait(&job->job_thread->tpt_thread, &job->job_thread, pri);
 	}
 	threadpool_job_unlock(job->job_lock);
 	job->job_lock = NULL;
@@ -595,11 +598,11 @@ threadpool_job_done(job)
 	struct threadpool_job *job;
 {
 	KASSERT(job->job_thread != NULL);
-	KASSERT(job->job_thread->tpt_proc == curproc);
+	KASSERT(job->job_thread->tpt_thread == curthread);
 
-	PROC_LOCK(curproc);
-	curproc->p_comm = job->job_thread->tpt_proc_savedname;
-	PROC_UNLOCK(curproc);
+	THREAD_LOCK(curthread);
+	curthread->td_name = job->job_thread->tpt_savedname;
+	THREAD_UNLOCK(curthread);
 
 	/*
 	 * Inline the work of threadpool_job_rele(); the job is already
@@ -683,12 +686,12 @@ threadpool_cancel_job(pool, job)
 
 	/* Already running.  Wait for it to complete.  */
 	while (job->job_thread != NULL) {
-		threadpool_wait(&job->job_thread->tpt_proc, &job->job_thread, &pool->tp_pri);
+		threadpool_wait(&job->job_thread->tpt_thread, &job->job_thread, &pool->tp_pri);
 	}
 }
 
-static void threadpool_overseer_proc(struct proc *, struct threadpool_thread *const, struct threadpool *const);
-static void threadpool_proc(struct proc *, struct threadpool_thread *const, struct threadpool *const);
+static void threadpool_process(struct thread *, struct threadpool_thread *const, struct threadpool *const);
+static void threadpool_overseer_processor(struct thread *, struct threadpool_thread *const, struct threadpool *const);
 static void threadpool_processor(char *, struct threadpool_thread *const, struct threadpool *const, struct mtx *, struct lock_holder *);
 
 static void
@@ -698,7 +701,7 @@ threadpool_overseer_thread(arg)
 	struct threadpool_thread *const overseer;
 
 	overseer = arg;
-	threadpool_overseer_proc(NULL, overseer, overseer->tpt_pool);
+	threadpool_overseer_processor(NULL, overseer, overseer->tpt_pool);
 }
 
 static void
@@ -708,35 +711,45 @@ threadpool_thread(arg)
 	struct threadpool_thread *const thread;
 
 	thread = arg;
-	threadpool_proc(curproc, thread, thread->tpt_pool);
+	threadpool_process(curthread, thread, thread->tpt_pool);
 }
 
 static void
-threadpool_wait(p, chan, pri)
-	struct proc *p;
+threadpool_wait(td, chan, pri)
+	struct thread *td;
 	const void *chan;
 	int pri;
 {
+	register struct proc *p;
+
+	p = td->td_procp;
 	sleep(chan, pri);
 	unsleep(p);
 }
 
 static void
-threadpool_overseer_proc(p, overseer, pool)
-	struct proc *p;
+threadpool_process(td, thread, pool)
+	struct thread *td;
+	struct threadpool_thread *const thread;
+	struct threadpool *const pool;
+{
+	KASSERT(thread->tpt_thread == td);
+	threadpool_processor(td->td_name, thread, pool, td->td_mtx, &thread_loholder);
+}
+
+static void
+threadpool_overseer_processor(td, overseer, pool)
+	struct thread *td;
 	struct threadpool_thread *const overseer;
 	struct threadpool *const pool;
 {
-	int ktflags;
+	int tdflags;
 	int error;
 
-	p = NULL;
 	/* Wait until we're initialized.  */
 	simple_lock(&pool->tp_lock);
-	while (overseer->tpt_proc == NULL) {
-		sleep(overseer, &pool->tp_pri);
-		unsleep(overseer->tpt_proc);
-		threadpool_wait(overseer->tpt_proc, overseer, &pool->tp_pri);
+	while (overseer->tpt_thread == NULL) {
+		threadpool_wait(overseer->tpt_thread, overseer, &pool->tp_pri);
 	}
 
 	for (;;) {
@@ -745,7 +758,7 @@ threadpool_overseer_proc(p, overseer, pool)
 			if (ISSET(pool->tp_flags, THREADPOOL_DYING)) {
 				break;
 			}
-			threadpool_wait(overseer->tpt_proc, overseer, &pool->tp_pri);
+			threadpool_wait(overseer->tpt_thread, overseer, &pool->tp_pri);
 		}
 		if (__predict_false(TAILQ_EMPTY(&pool->tp_jobs))) {
 			break;
@@ -757,16 +770,16 @@ threadpool_overseer_proc(p, overseer, pool)
 			simple_unlock(&pool->tp_lock);
 
 			struct threadpool_thread *const thread = &threadpool_thread_pc;
-			thread->tpt_proc = NULL;
+			thread->tpt_thread = NULL;
 			thread->tpt_pool = pool;
 			thread->tpt_job = NULL;
 
-			ktflags = 0;
-			ktflags |= THREAD_MPSAFE;
+			tdflags = 0;
+			tdflags |= THREAD_MPSAFE;
 			if (pool->tp_pri < PUSER) {
-				ktflags |= THREAD_TS;
+				tdflags |= THREAD_TS;
 			}
-			error = kthread_create(&threadpool_thread, thread, &p, "poolthread/%d@%d");
+			error = kthread_create(&threadpool_thread, thread, &td, "poolthread/%d@%d");
 
 			simple_lock(&pool->tp_lock);
 			if (error) {
@@ -774,13 +787,13 @@ threadpool_overseer_proc(p, overseer, pool)
 				continue;
 			}
 			/*
-			 * New kthread now owns the reference to the pool
+			 * New thread now owns the reference to the pool
 			 * taken above.
 			 */
-			KASSERT(p != NULL);
+			KASSERT(td != NULL);
 			TAILQ_INSERT_TAIL(&pool->tp_idle_threads, thread, tpt_entry);
-			thread->tpt_proc = p;
-			p = NULL;
+			thread->tpt_thread = td;
+			td = NULL;
 			wakeup(&thread);
 			continue;
 		}
@@ -835,16 +848,6 @@ threadpool_overseer_proc(p, overseer, pool)
 }
 
 static void
-threadpool_proc(p, thread, pool)
-	struct proc *p;
-	struct threadpool_thread *const thread;
-	struct threadpool *const pool;
-{
-	KASSERT(thread->tpt_proc == p);
-	threadpool_processor(p->p_comm, thread, pool, p->p_mtx, &proc_loholder);
-}
-
-static void
 threadpool_processor(name, thread, pool, mtx, loh)
 	char *name;
 	struct threadpool_thread *const thread;
@@ -872,7 +875,7 @@ threadpool_processor(name, thread, pool, mtx, loh)
 		/* Set our proc name to reflect what job we're doing.  */
 		mtx_lock(mtx, loh);
 		char *const proc_name = name;
-		thread->tpt_proc_savedname = name;
+		thread->tpt_savedname = name;
 		name = job->job_name;
 		mtx_unlock(mtx, loh);
 
