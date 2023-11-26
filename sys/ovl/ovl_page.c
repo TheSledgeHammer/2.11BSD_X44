@@ -135,7 +135,7 @@ ovl_pmap_bootstrap(void)
 /*
  * ovl_pmap_bootinit:
  *
- * Allocates item from space made available by ovl_pbootstrap.
+ * Allocates item from space made available by ovl_pmap_bootstrap.
  */
 void *
 ovl_pmap_bootinit(item, size, nitems)
@@ -152,7 +152,7 @@ ovl_pmap_bootinit(item, size, nitems)
 	totsize = (size * nitems);
 	result = free - totsize;
 	if (free < totsize) {
-		panic("ovl_pbootinit: not enough space allocated");
+		panic("ovl_pmap_bootinit: not enough space allocated");
 	}
 	bzero(item, totsize);
 	item = (item + size);
