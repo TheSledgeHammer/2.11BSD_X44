@@ -86,7 +86,7 @@ extern struct lock_holder 	thread_loholder;
 #define THREAD_UNLOCK(td) 	(mtx_unlock(&(td)->td_mtx, &thread_loholder))
 
 #define	TID_MIN			31000
-#define	TID_MAX			60000
+#define	TID_MAX			99000
 #define NO_TID			NO_PID
 
 #define	TIDHSZ							16
@@ -106,6 +106,8 @@ void tdqinit(struct thread *);
 void threadinit(struct thread *);
 void thread_add(struct proc *, struct thread *);
 void thread_remove(struct proc *, struct thread *);
+void thread_reparent(struct proc *, struct proc *, struct thread *);
+void thread_steal(struct proc *, struct thread *);
 struct thread *thread_alloc(struct proc *, size_t);
 void thread_free(struct proc *, struct thread *);
 

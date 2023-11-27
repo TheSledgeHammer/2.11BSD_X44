@@ -94,7 +94,7 @@ thread_add(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-    if (td->td_procp == p) {
+    if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
         LIST_INSERT_HEAD(&p->p_allthread, td, td_sibling);
     }
     LIST_INSERT_HEAD(TIDHASH(td->td_tid), td , td_hash);
@@ -107,7 +107,7 @@ thread_remove(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	if (td->td_procp == p) {
+	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 		LIST_REMOVE(td, td_sibling);
 	}
 	LIST_REMOVE(td, td_hash);
@@ -141,6 +141,63 @@ tdfind(p)
 		}
 	}
 	return (NULL);
+}
+
+/*
+ * reparent a thread from one proc to another.
+ * from: current thread parent.
+ * to: new thread parent.
+ * td: the thread in question
+ */
+void
+thread_reparent(from, to, td)
+	struct proc *from, *to;
+	struct thread *td;
+{
+	if (LIST_EMPTY(&from->p_allthread) || from == NULL || to == NULL || td == NULL) {
+		return;
+	}
+
+	if (to->p_stat == SZOMB) {
+		return;
+	}
+
+	if (td->td_stat != SZOMB) {
+		thread_remove(from, td);
+		td->td_procp = to;
+    	td->td_flag = 0;
+    	td->td_tid = tidmask(to);
+    	td->td_ptid = to->p_pid;
+    	td->td_pgrp = to->p_pgrp;
+		thread_add(to, td);
+	} else {
+		thread_remove(from, td);
+	}
+}
+
+/*
+ * Like thread_reparent, except all thread siblings are
+ * reparented to the new proc, if the existing parent state is a zombie.
+ */
+void
+thread_steal(to, td)
+	struct proc *to;
+	struct thread *td;
+{
+	register struct proc *from;
+
+	LIST_FOREACH(from, &from->p_allthread, td_sibling) {
+		if ((from->p_threado == td) && (td->td_tid == tidmask(from))) {
+			switch (from->p_stat) {
+			case SRUN:
+			case SIDL:
+			case SZOMB:
+				if (to->p_stat != SZOMB) {
+					thread_reparent(from, to, td);
+				}
+			}
+		}
+	}
 }
 
 struct thread *
