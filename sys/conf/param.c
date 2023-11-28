@@ -84,6 +84,8 @@ int	tick = 			1000000 / HZ;
 int	rtc_offset = RTC_OFFSET;
 #define	NPROC 		(20 + 16 * MAXUSERS)
 int	maxproc = 		NPROC;
+#define NTHREAD		(NPROC * 2)
+int maxthread =		NTHREAD;
 #define	NTEXT 		(80 + NPROC / 8)			/* actually the object cache */
 int	ntext = 		NTEXT;
 #define	NVNODE 		(NPROC + NTEXT + 100)

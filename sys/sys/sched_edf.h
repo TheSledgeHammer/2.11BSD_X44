@@ -64,15 +64,10 @@ struct gsched_edf {
 #define P_EDFPREEMPT 	0x16000 /* Preemption Flag: Suggest to CFS to preempt this process */
 
 /* edf macros */
-#define SLACK(d, t, c)          ((d - t) - c)
-#define UTILIZATION(r, c)       (c / r)
-#define DEMAND(t, d, r, c)      (((t - d + r) * c) / r)
-#define WORKLOAD(t, r, c)       ((t / r) * c)
-
-void	edf_set_slack(struct gsched_edf *, char, u_char, char);
-void	edf_set_utilization(struct gsched_edf *, char, char);
-void	edf_set_demand(struct gsched_edf *, u_char, char, char, char);
-void	edf_set_workload(struct gsched_edf *, u_char, char, char);
+#define SLACK(d, t, c)          (((d) - (t)) - (c))
+#define UTILIZATION(c, r)       ((c) / (r))
+#define DEMAND(t, d, r, c)      ((((t) - (d) + (r)) * (c)) / (r))
+#define WORKLOAD(t, r, c)       (((t) / (r)) * (c))
 
 int 	edf_test_utilization(char, char);
 int 	edf_test_demand(char, char, char, char);

@@ -53,7 +53,7 @@ struct	proc {
     } p_threadq;
 #define p_allthread		p_threadq.allthread
     struct thread		*p_curthread;	/* current running thread */
-    struct thread		*p_threado;		/* thread overseer (original thread)  */
+    struct thread		*p_threado;		/* thread overseer (original thread of process)  */
     int 				p_nthreads;		/* number of attached threads to this proc */
 #endif
 

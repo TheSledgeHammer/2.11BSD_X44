@@ -57,9 +57,9 @@ edf_set_slack(edf, deadline, timo, cost)
 }
 
 void
-edf_set_utilization(edf, release, cost)
+edf_set_utilization(edf, cost, release)
 	struct gsched_edf *edf;
-	char release, cost;
+	char cost, release;
 {
 	edf->edf_utilization = UTILIZATION(cost, release);
 }
@@ -82,8 +82,8 @@ edf_set_workload(edf, timo, release, cost)
 
 /* CPU Utilization per task (U <= 1) */
 int
-edf_test_utilization(release, cost)
-	char release, cost;
+edf_test_utilization(cost, release)
+	char cost, release;
 {
 	u_char U = UTILIZATION(cost, release);
 	if(U <= 1) { 							/* test if can be scheduled */
@@ -158,7 +158,7 @@ edf_test(edf)
     edf->edf_release = edf->edf_time;
 
 	/* test cpu utilization, demand & workload, can be scheduled */
-	if (edf_test_utilization(edf->edf_release, edf->edf_cpu) != 0) {
+	if (edf_test_utilization(edf->edf_cpu, edf->edf_release) != 0) {
 		goto error;
 	}
 

@@ -875,7 +875,7 @@ threadpool_processor(name, thread, pool, mtx, loh)
 
 		/* Set our proc name to reflect what job we're doing.  */
 		mtx_lock(mtx, loh);
-		char *const proc_name = name;
+		char *const thread_name = name;
 		thread->tpt_savedname = name;
 		name = job->job_name;
 		mtx_unlock(mtx, loh);
@@ -886,7 +886,7 @@ threadpool_processor(name, thread, pool, mtx, loh)
 		(*job->job_func)(job);
 
 		/* proc name restored in threadpool_job_done(). */
-		KASSERTMSG((name == proc_name), "someone forgot to call threadpool_job_done()!");
+		KASSERTMSG((name == thread_name), "someone forgot to call threadpool_job_done()!");
 
 		/*
 		 * We can compare pointers, but we can no longer deference

@@ -26,6 +26,15 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * TODO:
+ * - Implement:
+ * 		- thread_steal function
+ * 		- thread scheduling:
+ * 			- exit
+ * 			- wait: blocking thread siblings if a thread is already running
+ */
+
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
@@ -39,12 +48,16 @@
 
 #define M_THREAD 101
 
+int ppnthreadmax;
+
 struct tidhashhead *tidhashtbl;
 u_long tidhash;
 
 extern struct thread  thread0;
 struct thread *curthread = &thread0;
 struct lock_holder 	thread_loholder;
+
+int thread_stacklimit(struct thread *);
 
 void
 thread_init(p, td)
@@ -74,6 +87,7 @@ threadinit(p, td)
 {
 	tdqinit(p, td);
 	tidhashtbl = hashinit(maxthread / 4, M_THREAD, &tidhash);
+	ppnthreadmax = thread_stacklimit(td);
 
 	/* setup thread mutex */
 	mtx_init(td->td_mtx, &thread_loholder, "thread_mutex", (struct thread *)td, td->td_tid);
@@ -209,7 +223,8 @@ thread_alloc(p, stack)
 
     td = (struct thread *)malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
     td->td_procp = p;
-    td->td_stack = stack;
+    td->td_stack = (struct thread *)td;
+    td->td_stacksize = stack;
     td->td_stat = SIDL;
     td->td_flag = 0;
     td->td_tid = tidmask(p);
@@ -232,4 +247,24 @@ thread_free(struct proc *p, struct thread *td)
 		thread_remove(p, td);
 		free(td, M_THREAD);
 	}
+}
+
+/* returns maximum number of threads per process within the thread stacksize */
+int
+thread_stacklimit(td)
+	struct thread *td;
+{
+	size_t size, maxsize;
+	int i, stacklimit;
+
+	size = 0;
+	maxsize = (td->td_stacksize - sizeof(*td));
+	for (i = 0; i < maxthread; i++) {
+		size += sizeof(*td);
+		if ((size >= maxsize) && (size <= td->td_stacksize)) {
+			stacklimit = i;
+			break;
+		}
+	}
+	return (stacklimit);
 }

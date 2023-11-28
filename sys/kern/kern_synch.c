@@ -147,7 +147,7 @@ schedcpu(arg)
 		}
 		if(edf_schedcpu(p)) {
 			if((p != curproc) &&
-					p->p_stat == SRUN &&
+					(p->p_stat == SRUN) &&
 					(p->p_flag & P_INMEM) &&
 					(p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
 				if(cfs_schedcpu(p)) {

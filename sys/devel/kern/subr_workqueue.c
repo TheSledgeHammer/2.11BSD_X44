@@ -40,6 +40,14 @@
 #include <devel/sys/malloctypes.h>
 #include <devel/sys/workqueue.h>
 
+ /* TODO:
+  * - percpu?
+  * - allow thread creation without forking the process
+  * Conditions:
+  * 	- thread overseer is attached to the process
+  * 	- this workqueue belongs to the thread overseer (i.e. the original worker)
+  */
+
 SIMPLEQ_HEAD(workqhead, work);
 struct workqueue_queue {
 	struct lock_object 		*q_lock;
@@ -49,7 +57,7 @@ struct workqueue_queue {
 };
 
 struct workqueue {
-	struct workqueue_queue 	wq_queue; /* todo: make this per-cpu */
+	struct workqueue_queue 	wq_queue;
 
 	void 					(*wq_func)(struct work *, void *);
 	void 					*wq_arg;

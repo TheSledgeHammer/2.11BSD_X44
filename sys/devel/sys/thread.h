@@ -44,7 +44,8 @@ struct thread {
 	pid_t 				td_tid;					/* unique thread id */
 	pid_t 				td_ptid;				/* thread id of parent (proc) */
 
-	size_t             	td_stack;				/* thread stack */
+	void				*td_stack;				/* thread stack */
+	size_t             	td_stacksize;			/* thread stack size */
 
 	/* Substructures: */
 	struct pcred 	 	*td_cred;				/* Thread owner's identity. */
@@ -97,6 +98,7 @@ extern u_long 	tidhash;
 extern struct thread *curthread;				/* current running thread */
 extern struct thread thread0;
 extern int	nthread, maxthread;					/* Current and max number of threads. */
+extern int ppnthreadmax;						/* max number of threads per proc (hits stack limit) */
 
 LIST_HEAD(threadlist, thread);
 
