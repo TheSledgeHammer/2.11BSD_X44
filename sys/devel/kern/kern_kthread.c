@@ -84,23 +84,37 @@ proc_create(newpp)
 
 /* create a new thread on an existing proc */
 int
-newthread(p, newtd, name, stack)
-	struct proc *p;
+newthread(newtd, name, stack, forkproc)
 	struct thread **newtd;
 	char *name;
 	size_t stack;
+	bool_t forkproc;
 {
+	struct proc *p;
 	struct thread *td;
 	register_t 	rval[2];
 	int error;
 
-	KASSERT(p != NULL);
+	if (forkproc == TRUE) {
+		/* First, create the new process. */
+		error = proc_create(&p);
+		if (__predict_false(error != 0)) {
+			panic("newthread: proc_create");
+			return (error);
+		}
+	} else {
+		p = curproc;
+	}
 
 	/* allocate and attach a new thread to process */
 	td = thread_alloc(p, stack);
 
 	if (rval[1]) {
 		td->td_flag |= TD_INMEM | TD_SYSTEM;
+	}
+
+	if (p->p_curthread != td) {
+		p->p_curthread = td;
 	}
 
 	/* Name it as specified. */
@@ -112,36 +126,16 @@ newthread(p, newtd, name, stack)
 	return (0);
 }
 
-/* creates a new thread on a forked (new) proc  */
+/* creates a new thread */
 int
-newthread1(newtd, name, stack)
-	struct thread **newtd;
-	char *name;
-	size_t stack;
-{
-	struct proc *p;
-	struct thread *td;
-	register_t 	rval[2];
-	int error;
-
-	/* First, create the new process. */
-	error = proc_create(&p);
-	if (__predict_false(error != 0)) {
-		panic("thread_create");
-		return (error);
-	}
-
-	return (newthread(p, newtd, name, stack));
-}
-
-int
-kthread_create(func, arg, newtd, name)
+kthread_create(func, arg, newtd, name, forkproc)
 	void (*func)(void *);
 	void *arg;
 	struct thread **newtd;
 	char *name;
+	bool_t forkproc;
 {
-	return (newthread1(newtd, name, THREAD_STACK));
+	return (newthread(newtd, name, THREAD_STACK, forkproc));
 }
 
 void

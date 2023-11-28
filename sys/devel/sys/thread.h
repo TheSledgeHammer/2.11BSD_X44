@@ -113,9 +113,8 @@ void thread_free(struct proc *, struct thread *);
 
 /* kern_kthread.c */
 int proc_create(struct proc **);
-int	newthread(struct proc *, struct thread **, char *, size_t);
-int newthread1(struct thread **, char *, size_t);
-int kthread_create(void (*)(void *), void *, struct thread **, char *);
+int	newthread(struct thread **, char *, size_t, bool_t);
+int kthread_create(void (*)(void *), void *, struct thread **, char *, bool_t);
 
 void kthread_exit(int);
 void kthread_create_deferred(void (*)(void *), void *);

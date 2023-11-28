@@ -209,7 +209,8 @@ threadpool_create(pool, pri)
 
 	tdflags = 0;
 	if (pri) {
-		error = kthread_create(&threadpool_overseer_thread, &pool->tp_overseer, &td,  "pooloverseer/%d@%d");
+		/* fork new process as thread overseer */
+		error = kthread_create(&threadpool_overseer_thread, &pool->tp_overseer, &td, "pooloverseer/%d@%d", TRUE);
 	}
 	if (error) {
 		goto fail0;
@@ -779,7 +780,7 @@ threadpool_overseer_processor(td, overseer, pool)
 			if (pool->tp_pri < PUSER) {
 				tdflags |= THREAD_TS;
 			}
-			error = kthread_create(&threadpool_thread, thread, &td, "poolthread/%d@%d");
+			error = kthread_create(&threadpool_thread, thread, &td, "poolthread/%d@%d", FALSE);
 
 			simple_lock(&pool->tp_lock);
 			if (error) {

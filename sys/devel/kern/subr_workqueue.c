@@ -173,7 +173,7 @@ workqueue_initqueue(wq)
 	q = &wq->wq_queue;
 	simple_lock_init(&q->q_lock);
 	SIMPLEQ_INIT(&q->q_queue);
-	error = kthread_create(workqueue_worker, wq, &q->q_worker, wq->wq_name);
+	error = kthread_create(workqueue_worker, wq, &q->q_worker, wq->wq_name, FALSE);
 
 	return (error);
 }
@@ -191,7 +191,7 @@ workqueue_exit(wk, arg)
 	 * is workqueue_finiqueue.
 	 */
 
-	KASSERT(q->q_worker == curproc());
+	KASSERT(q->q_worker == curthread);
 	simple_lock(&q->q_lock);
 	q->q_worker = NULL;
 	simple_unlock(&q->q_lock);
