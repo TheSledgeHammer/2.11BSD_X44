@@ -54,7 +54,7 @@
 int	kthread_create_now;
 
 /*
- * [Internal Use Only]: see newthread1 for use.
+ * [Internal Use Only]: see newthread for use.
  * Use newproc(int isvfork) for forking a proc!
  */
 int
@@ -147,6 +147,7 @@ kthread_exit(ecode)
 	 * XXX with it?  The parent (proc0) isn't going to do much with
 	 * XXX it.
 	 */
+	KASSERT(curthread == curproc->p_curthread);
 	if (ecode != 0) {
 		printf("WARNING: thread `%s' (%d) exits with status %d\n", curthread->td_name, curthread->td_tid, ecode);
 	}

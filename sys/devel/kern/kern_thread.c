@@ -28,11 +28,25 @@
 
 /*
  * TODO:
+ * - Name conflicts:
+ * 		- vm_glue: thread_block, thread_sleep, thread_wakeup
  * - Implement:
+ * 		- thread groups:
+ * 			- setup in similar style as thread tids
+ * 			- same group as process's pgrp
+ * 				- acts like a subgroup of proc group
+ * 			- e.g. if p1 and p2 are in the same pgrp, then all p1
+ * 			& p2 threads are in that pgrp.
  * 		- thread_steal function
- * 		- thread scheduling:
- * 			- exit
- * 			- wait: blocking thread siblings if a thread is already running
+ * 			- run in: wait, exit, fork?
+ * 		- thread scheduling:  (co-operative or pre-emptive?)
+ * 			- runqueues/tasks?
+ * 			- priorities?
+ * 		- Process related: (what a thread should do when below routine is called?)
+ * 			- wait:
+ * 			- exit:
+ * 			- fork:
+ * 			- reparent: runs thread_reparent
  */
 
 #include <sys/param.h>
@@ -108,11 +122,13 @@ thread_add(p, td)
 	struct proc *p;
 	struct thread *td;
 {
+	thread_hold(td);
     if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
         LIST_INSERT_HEAD(&p->p_allthread, td, td_sibling);
     }
     LIST_INSERT_HEAD(TIDHASH(td->td_tid), td , td_hash);
     LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+    thread_release(td);
     p->p_nthreads++;
 }
 
@@ -121,11 +137,13 @@ thread_remove(p, td)
 	struct proc *p;
 	struct thread *td;
 {
+	thread_hold(td);
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 		LIST_REMOVE(td, td_sibling);
 	}
 	LIST_REMOVE(td, td_hash);
 	LIST_REMOVE(td, td_list);
+	thread_release(td);
 	p->p_nthreads--;
 }
 
@@ -241,7 +259,9 @@ thread_alloc(p, stack)
 }
 
 void
-thread_free(struct proc *p, struct thread *td)
+thread_free(p, td)
+	struct proc *p;
+	struct thread *td;
 {
 	if (td != NULL) {
 		thread_remove(p, td);
@@ -267,4 +287,34 @@ thread_stacklimit(td)
 		}
 	}
 	return (stacklimit);
+}
+
+/* if thread state is running, thread blocks all siblings from running */
+void
+thread_hold(td)
+	struct thread *td;
+{
+	struct proc *p;
+
+	p = td->td_procp;
+	THREAD_LOCK(td);
+	while ((td->td_ptid == p->p_pid) && (td->td_stat == SRUN)) {
+		tsleep(td, (PLOCK | PCATCH), "thread_block", 0);
+	}
+	THREAD_UNLOCK(td);
+}
+
+/* if thread state is not running, thread unblocks all siblings from running */
+void
+thread_release(td)
+	struct thread *td;
+{
+	struct proc *p;
+
+	p = td->td_procp;
+	THREAD_LOCK(td);
+	if ((td->td_ptid == p->p_pid) && (td->td_stat != SRUN)) {
+		wakeup(td);
+	}
+	THREAD_UNLOCK(td);
 }

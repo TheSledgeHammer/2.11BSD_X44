@@ -112,6 +112,8 @@ void thread_reparent(struct proc *, struct proc *, struct thread *);
 void thread_steal(struct proc *, struct thread *);
 struct thread *thread_alloc(struct proc *, size_t);
 void thread_free(struct proc *, struct thread *);
+void thread_hold(struct thread *); 			/* if thread state is running, thread blocks all siblings from running */
+void thread_release(struct thread *);		/* if thread state is not running, thread unblocks all siblings from running */
 
 /* kern_kthread.c */
 int proc_create(struct proc **);

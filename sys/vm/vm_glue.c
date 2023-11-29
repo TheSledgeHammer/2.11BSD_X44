@@ -559,6 +559,7 @@ assert_wait(event, ruptible)
 	curproc->p_thread = event;
 }
 
+/* ARG-UNUSED */
 void
 thread_block()
 {
