@@ -1,4 +1,14 @@
 /*
+ * Copyright (C) 1994, David Greenman. This software may be used, modified,
+ *   copied, distributed, and sold, in both source and binary form provided
+ *   that the above copyright and these terms are retained. Under no
+ *   circumstances is the author responsible for the proper functioning
+ *   of this software, nor does the author assume any responsibility
+ *   for damages incurred with its use.
+ *
+ * $Id: tty_subr.c,v 1.9 1994/11/26 19:23:50 bde Exp $
+ */
+/*
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.

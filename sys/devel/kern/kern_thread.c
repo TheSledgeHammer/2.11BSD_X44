@@ -115,6 +115,9 @@ tdqinit(p, td)
 	LIST_INIT(&p->p_allthread);
 
 	LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+
+	/* no threads are initialized onto the runqueue */
+	p->p_tqsready = 0;
 }
 
 void
@@ -122,13 +125,13 @@ thread_add(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	thread_hold(td);
+	THREAD_LOCK(td);
     if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
         LIST_INSERT_HEAD(&p->p_allthread, td, td_sibling);
     }
     LIST_INSERT_HEAD(TIDHASH(td->td_tid), td , td_hash);
     LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
-    thread_release(td);
+    THREAD_UNLOCK(td);
     p->p_nthreads++;
 }
 
@@ -137,13 +140,13 @@ thread_remove(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	thread_hold(td);
+		THREAD_LOCK(td);
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 		LIST_REMOVE(td, td_sibling);
 	}
 	LIST_REMOVE(td, td_hash);
 	LIST_REMOVE(td, td_list);
-	thread_release(td);
+	THREAD_UNLOCK(td);
 	p->p_nthreads--;
 }
 
@@ -289,6 +292,125 @@ thread_stacklimit(td)
 	return (stacklimit);
 }
 
+/* add thread to runqueue */
+void
+thread_setrq(p, td)
+	register struct proc *p;
+	register struct thread *td;
+{
+	TAILQ_INSERT_HEAD(&p->p_threadqs, td, td_link);
+	p->p_tqsready++;
+}
+
+/* remove thread from runqueue */
+void
+thread_remrq(p, td)
+	register struct proc *p;
+	register struct thread *td;
+{
+	register struct thread *tq;
+
+	if (td == TAILQ_FIRST(&p->p_threadqs)) {
+		TAILQ_REMOVE(&p->p_threadqs, td, td_link);
+		p->p_tqsready--;
+	} else {
+		for (tq = TAILQ_FIRST(&p->p_threadqs); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+			if (tq == td) {
+				TAILQ_REMOVE(&p->p_threadqs, tq, td_link);
+				p->p_tqsready--;
+				return;
+			}
+			panic("thread_remrq");
+		}
+	}
+}
+
+/* get thread from runqueue */
+struct thread *
+thread_getrq(p, td)
+	register struct proc *p;
+	register struct thread *td;
+{
+	register struct thread *tq;
+
+	if (td == TAILQ_FIRST(&p->p_threadqs)) {
+		return (td);
+	} else {
+		for (tq = TAILQ_FIRST(&p->p_threadqs); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+			if (tq == td) {
+				return (tq);
+			} else {
+				goto done;
+			}
+		}
+	}
+
+done:
+	panic("thread_getrq");
+	return (NULL);
+}
+
+int
+thread_isready(p)
+	struct proc *p;
+{
+	if (p->p_tqsready == 0) {
+		return (1);
+	}
+	return (0);
+}
+
+void
+thread_do(p, td)
+	struct proc *p;
+	struct thread *td;
+{
+	struct proc *pp;
+
+	if (thread_isready(p) != 0) {
+		if (td->td_flag == THREAD_STEALABLE) {
+			LIST_FOREACH(pp, &allproc, p_list) {
+				if (pp != NULL) {
+					thread_steal(pp, td);
+				}
+			}
+		}
+	} else {
+		switch (td->td_stat) {
+		case SRUN:
+		case SIDL:
+			/* check for work */
+			thread_setrq(p, td);
+			break;
+
+		case SZOMB:
+			thread_remrq(p, td);
+			break;
+		}
+	}
+}
+
+void
+proc_check_thread(p, td)
+	struct proc *p;
+	struct thread *td;
+{
+	switch (p->p_stat) {
+	case SRUN:
+		thread_do(p, td);
+		break;
+
+	case SIDL:
+		thread_do(p, td);
+		break;
+
+	case SZOMB:
+		thread_do(p, td);
+		break;
+	}
+}
+
+/* Not ready for primetime */
 /* if thread state is running, thread blocks all siblings from running */
 void
 thread_hold(td)
@@ -298,7 +420,7 @@ thread_hold(td)
 
 	p = td->td_procp;
 	THREAD_LOCK(td);
-	while ((td->td_ptid == p->p_pid) && (td->td_stat == SRUN)) {
+	while ((td->td_ptid == p->p_pid) && (td->td_stat != SRUN)) {
 		tsleep(td, (PLOCK | PCATCH), "thread_block", 0);
 	}
 	THREAD_UNLOCK(td);

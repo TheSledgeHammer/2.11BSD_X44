@@ -33,6 +33,7 @@
 #include <sys/mutex.h>
 
 struct thread {
+	TAILQ_ENTRY(thread) td_link;				/* Doubly-linked run queue. */
 	LIST_ENTRY(thread)	td_list;				/* List of all threads */
 
     struct mtx			*td_mtx;				/* thread structure mutex */
@@ -67,7 +68,6 @@ struct thread {
 /* flag codes */
 #define	TD_INMEM		0x00000004		/* Loaded into memory. */
 #define TD_SULOCK		0x00000040		/* user settable lock in core */
-
 #define	TD_SYSTEM		0x00000200		/* System proc: no sigs, stats or swapping. */
 #define TD_TRACED		0x00000800		/* Debugged process being traced. */
 #define	TD_NOSWAP		0x00008000		/* Another flag to prevent swap out. */
@@ -80,6 +80,9 @@ struct thread {
 #define	THREAD_INTR		0x04			/* Software interrupt handler */
 #define	THREAD_TS		0x08			/* Time-sharing priority range */
 #define	THREAD_MUSTJOIN	0x10			/* Must join on exit */
+#define THREAD_STEALABLE 0x12			/* thread able to be taken by another
+										 * process aka thread is reparented
+										 */
 
 #ifdef _KERNEL
 extern struct lock_holder 	thread_loholder;

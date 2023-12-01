@@ -49,12 +49,15 @@ struct	proc {
     /* Threads: */
 #ifdef notyet
     union {
-    	struct threadlist allthread;	/* list of all threads */
-    } p_threadq;
-#define p_allthread		p_threadq.allthread
+    	struct threadlist 			 allthread;	/* list of all threads */
+    	TAILQ_HEAD(threadhd, thread) threadqs; /* Linked list of running threads. */
+    } p_threads;
+#define p_allthread		p_threads.allthread
+#define p_threadqs		p_threads.threadqs
     struct thread		*p_curthread;	/* current running thread */
     struct thread		*p_threado;		/* thread overseer (original thread of process)  */
     int 				p_nthreads;		/* number of attached threads to this proc */
+    int					p_tqsready;		/* number of threads ready */
 #endif
 
     /* Substructures: */

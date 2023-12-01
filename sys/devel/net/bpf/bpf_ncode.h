@@ -66,7 +66,7 @@ int	bpf_ncode_validate(struct bpf_insn_ext *, int *);
 #define	NPF_ERR_RANGE		-5	/* Processing out of range. */
 
 /* Number of registers: [0..N] */
-#define	NPF_NREGS		4
+#define	NPF_NREGS			4
 
 /* Maximum loop count. */
 #define	NPF_LOOP_LIMIT		100
