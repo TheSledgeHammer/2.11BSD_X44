@@ -378,8 +378,9 @@ thread_do(p, td)
 	} else {
 		switch (td->td_stat) {
 		case SRUN:
+			/* Do nothing: all other actions will occur when the process state changes */
 		case SIDL:
-			/* check for work */
+			/* TODO: check for work */
 			thread_setrq(p, td);
 			break;
 
