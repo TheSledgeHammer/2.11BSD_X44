@@ -451,7 +451,7 @@ restart:
 				if ((p->p_flag & P_SLOAD) == 0) {
 					if (runout != 0) {
 						runout = 0;
-						wakeup((caddr_t) & runout);
+						wakeup((caddr_t) &runout);
 					}
 				}
 				/* END INLINE EXPANSION */

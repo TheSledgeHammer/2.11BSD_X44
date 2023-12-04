@@ -42,6 +42,8 @@
  * 		- thread scheduling:  (co-operative or pre-emptive?)
  * 			- runqueues/tasks?
  * 			- priorities?
+ * 			- sleep
+ * 			- unsleep/wakeup
  * 		- Process related: (what a thread should do when below routine is called?)
  * 			- wait:
  * 			- exit:
@@ -92,6 +94,8 @@ thread_init(p, td)
 	/* give the thread the same creds as the initial thread */
 	td->td_ucred = p->p_ucred;
 	crhold(td->td_ucred);
+
+	thread_rqinit(p);
 }
 
 void
@@ -115,9 +119,6 @@ tdqinit(p, td)
 	LIST_INIT(&p->p_allthread);
 
 	LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
-
-	/* no threads are initialized onto the runqueue */
-	p->p_tqsready = 0;
 }
 
 void
@@ -198,6 +199,9 @@ thread_reparent(from, to, td)
 	}
 
 	if (td->td_stat != SZOMB) {
+		if (!TAILQ_EMPTY(&from->p_threadrq)) {
+			thread_remrq(from, td);
+		}
 		thread_remove(from, td);
 		td->td_procp = to;
     	td->td_flag = 0;
@@ -205,6 +209,9 @@ thread_reparent(from, to, td)
     	td->td_ptid = to->p_pid;
     	td->td_pgrp = to->p_pgrp;
 		thread_add(to, td);
+		if (!TAILQ_EMPTY(&from->p_threadrq)) {
+			thread_setrq(to, td);
+		}
 	} else {
 		thread_remove(from, td);
 	}
@@ -221,14 +228,17 @@ thread_steal(to, td)
 {
 	register struct proc *from;
 
-	LIST_FOREACH(from, &from->p_allthread, td_sibling) {
-		if ((from->p_threado == td) && (td->td_tid == tidmask(from))) {
-			switch (from->p_stat) {
-			case SRUN:
-			case SIDL:
-			case SZOMB:
-				if (to->p_stat != SZOMB) {
-					thread_reparent(from, to, td);
+	if ((td->td_flag & THREAD_STEALABLE) == 0) {
+		LIST_FOREACH(from, &from->p_allthread, td_sibling) {
+			if ((from->p_threado == td) && (td->td_tid == tidmask(from))) {
+				switch (from->p_stat) {
+				case SRUN:
+				case SIDL:
+				case SZOMB:
+					if (to->p_stat != SZOMB) {
+						thread_reparent(from, to, td);
+						td->td_flag &= ~THREAD_STEALABLE;
+					}
 				}
 			}
 		}
@@ -298,7 +308,16 @@ thread_setrq(p, td)
 	register struct proc *p;
 	register struct thread *td;
 {
-	TAILQ_INSERT_HEAD(&p->p_threadqs, td, td_link);
+#ifdef DIAGNOSTIC
+	register struct thread *tq;
+
+	for (tq = TAILQ_FIRST(&p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, p_link)) {
+		if (tq == td) {
+			panic("thread_setrq");
+		}
+	}
+#endif
+	TAILQ_INSERT_HEAD(&p->p_threadrq, td, td_link);
 	p->p_tqsready++;
 }
 
@@ -310,13 +329,13 @@ thread_remrq(p, td)
 {
 	register struct thread *tq;
 
-	if (td == TAILQ_FIRST(&p->p_threadqs)) {
-		TAILQ_REMOVE(&p->p_threadqs, td, td_link);
+	if (td == TAILQ_FIRST(&p->p_threadrq)) {
+		TAILQ_REMOVE(&p->p_threadrq, td, td_link);
 		p->p_tqsready--;
 	} else {
-		for (tq = TAILQ_FIRST(&p->p_threadqs); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+		for (tq = TAILQ_FIRST(&p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
 			if (tq == td) {
-				TAILQ_REMOVE(&p->p_threadqs, tq, td_link);
+				TAILQ_REMOVE(&p->p_threadrq, tq, td_link);
 				p->p_tqsready--;
 				return;
 			}
@@ -333,10 +352,10 @@ thread_getrq(p, td)
 {
 	register struct thread *tq;
 
-	if (td == TAILQ_FIRST(&p->p_threadqs)) {
+	if (td == TAILQ_FIRST(&p->p_threadrq)) {
 		return (td);
 	} else {
-		for (tq = TAILQ_FIRST(&p->p_threadqs); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+		for (tq = TAILQ_FIRST(&p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
 			if (tq == td) {
 				return (tq);
 			} else {
@@ -350,14 +369,16 @@ done:
 	return (NULL);
 }
 
-int
-thread_isready(p)
+/*
+ * Initialize the (doubly-linked) run queues
+ * to be empty.
+ */
+void
+thread_rqinit(p)
 	struct proc *p;
 {
-	if (p->p_tqsready == 0) {
-		return (1);
-	}
-	return (0);
+	TAILQ_INIT(&p->p_threadrq);
+	p->p_tqsready = 0;
 }
 
 void
@@ -367,48 +388,96 @@ thread_do(p, td)
 {
 	struct proc *pp;
 
-	if (thread_isready(p) != 0) {
-		if (td->td_flag == THREAD_STEALABLE) {
-			LIST_FOREACH(pp, &allproc, p_list) {
-				if (pp != NULL) {
-					thread_steal(pp, td);
-				}
+	if (p->p_tqsready == 0) {
+		LIST_FOREACH(pp, &allproc, p_list) {
+			if (pp != NULL) {
+				thread_steal(pp, td);
 			}
 		}
 	} else {
 		switch (td->td_stat) {
+		case SWAIT:
 		case SRUN:
 			/* Do nothing: all other actions will occur when the process state changes */
 		case SIDL:
-			/* TODO: check for work */
-			thread_setrq(p, td);
+			if (TAILQ_EMPTY(&p->p_threadrq)) {
+				thread_setrq(p, td);
+				td->td_stat = SRUN;
+			}
 			break;
-
 		case SZOMB:
-			thread_remrq(p, td);
+			if (!TAILQ_EMPTY(&p->p_threadrq)) {
+				thread_remrq(p, td);
+				td->td_stat = SIDL;
+			}
+			break;
+		case SSTOP:
+		case SSLEEP:
+		default:
+			panic("thread_do");
 			break;
 		}
 	}
 }
 
+/*
+ * TODO:
+ * Add thread_do to each state?
+ */
 void
-proc_check_thread(p, td)
+thread_run(p, td)
 	struct proc *p;
 	struct thread *td;
 {
 	switch (p->p_stat) {
+	case SWAIT:
 	case SRUN:
 		thread_do(p, td);
 		break;
-
 	case SIDL:
 		thread_do(p, td);
 		break;
-
 	case SZOMB:
+		td->td_flag |= THREAD_STEALABLE;
 		thread_do(p, td);
 		break;
+	case SSTOP:
+	case SSLEEP:
+	default:
+		panic("thread_run");
+		break;
 	}
+}
+
+void
+thread_schedule(p, pri)
+	struct proc *p;
+	pid_t pri;
+{
+	struct thread *td;
+
+	THREAD_LOCK(td);
+	LIST_FOREACH(td, &p->p_allthread, td_list) {
+		if ((td != p->p_curthread) && (td->td_stat == SRUN) && (td->td_flag & TD_INMEM) && (td->td_pri == pri)) {
+			thread_run(p, td);
+			/*
+			 * - update priorities
+			 * - update runqueue
+			 * 		- reap if necessary (in thread_do: improvement would be to search all instead of one)
+			 * 		- add/create more threads if necessary (in thread_do: improvement would be to search all instead of one and add creation)
+			 * - update state
+			 */
+		}
+	}
+	THREAD_UNLOCK(td);
+}
+
+void
+thread_setpri(td)
+	struct thread *td;
+{
+	/* base priority on process priority and number of threads on process */
+	td->td_pri;
 }
 
 /* Not ready for primetime */

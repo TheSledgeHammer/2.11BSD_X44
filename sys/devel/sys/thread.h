@@ -32,8 +32,10 @@
 #include <sys/proc.h>
 #include <sys/mutex.h>
 
+struct threadhd;
+TAILQ_HEAD(threadhd, thread);
 struct thread {
-	TAILQ_ENTRY(thread) td_link;				/* Doubly-linked run queue. */
+	TAILQ_ENTRY(thread) td_link;				/* Doubly-linked run/sleep queue. */
 	LIST_ENTRY(thread)	td_list;				/* List of all threads */
 
     struct mtx			*td_mtx;				/* thread structure mutex */
@@ -59,6 +61,8 @@ struct thread {
 	LIST_ENTRY(thread)	td_hash;				/* Hash chain. */
 
 	struct pgrp 	    *td_pgrp;       		/* Pointer to proc group. */
+
+	u_char				td_pri;					/* thread priority */
 
 #define td_name			td_procp->p_comm
 };
@@ -109,17 +113,21 @@ struct thread *tdfind(struct proc *);			/* find thread by tidmask */
 pid_t tidmask(struct proc *);					/* thread tidmask */
 void tdqinit(struct thread *);
 void threadinit(struct thread *);
+void thread_rqinit(struct proc *);
 void thread_add(struct proc *, struct thread *);
 void thread_remove(struct proc *, struct thread *);
 void thread_reparent(struct proc *, struct proc *, struct thread *);
 void thread_steal(struct proc *, struct thread *);
 struct thread *thread_alloc(struct proc *, size_t);
 void thread_free(struct proc *, struct thread *);
+void thread_setrq(struct proc *, struct thread *);
+void thread_remrq(struct proc *, struct thread *);
+struct thread *thread_getrq(struct proc *, struct thread *);
+
 void thread_hold(struct thread *); 			/* if thread state is running, thread blocks all siblings from running */
 void thread_release(struct thread *);		/* if thread state is not running, thread unblocks all siblings from running */
 
 /* kern_kthread.c */
-int proc_create(struct proc **);
 int	newthread(struct thread **, char *, size_t, bool_t);
 int kthread_create(void (*)(void *), void *, struct thread **, char *, bool_t);
 
