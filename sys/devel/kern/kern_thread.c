@@ -395,7 +395,7 @@ thread_setrun(p, td)
 
 	if ((p->p_tqsready == 0) && ((td->td_flag & THREAD_STEALABLE) == 0)) {
 		LIST_FOREACH(np, &allproc, p_list) {
-			if (np != NULL) {
+			if ((np != NULL) && (np != p)) {
 				thread_steal(np, td);
 				p = np;
 				break;
