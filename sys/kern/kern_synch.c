@@ -511,7 +511,6 @@ setrun(p)
 	case SSLEEP:
 		unsleep(p); /* e.g. when sending signals */
 		break;
-
 	case SIDL:
 		break;
 	}

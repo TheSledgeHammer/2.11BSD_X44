@@ -63,6 +63,7 @@ struct thread {
 	struct pgrp 	    *td_pgrp;       		/* Pointer to proc group. */
 
 	u_char				td_pri;					/* thread priority */
+	u_char				td_usrpri;				/* thread user priority */
 
 #define td_name			td_procp->p_comm
 };
