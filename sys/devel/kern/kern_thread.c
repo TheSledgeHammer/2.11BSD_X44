@@ -41,9 +41,8 @@
  * 			- run in: wait, exit, fork?
  * 		- thread scheduling:  (co-operative or pre-emptive?)
  * 			- runqueues/tasks?
- * 			- priorities?
- * 			- sleep
- * 			- unsleep/wakeup
+ * 			- priorities: flags for proc priority changes
+ * 			- sleep: flags sleep and wakeup
  * 		- Process related: (what a thread should do when below routine is called?)
  * 			- wait:
  * 			- exit:
@@ -246,6 +245,8 @@ thread_alloc(p, stack)
     td->td_tid = tidmask(p);
     td->td_ptid = p->p_pid;
     td->td_pgrp = p->p_pgrp;
+    td->td_pri = primask(p);
+    td->td_ppri = p->p_pri;
 
     if (!LIST_EMPTY(&p->p_allthread)) {
         p->p_threado = LIST_FIRST(&p->p_allthread);
@@ -287,13 +288,46 @@ thread_stacklimit(td)
 	return (stacklimit);
 }
 
+/* thread priority mask */
+int
+primask(p)
+	struct proc *p;
+{
+	int pri;
+
+	pri = p->p_pri + p->p_nthreads;
+	return (pri);
+}
+
+/* TODO: add thread flags for changes to a process priority */
 void
 thread_updatepri(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	updatepri(p);
-	td->td_pri = p->p_pri + p->p_nthreads;
+    int pri, retry;
+
+    retry = 0;
+    if ((td->td_ppri != p->p_pri)) {
+check:
+        if (td->td_pri == (td->td_ppri + p->p_nthreads)) {
+        	pri = thread_setpri(p, td);
+        	td->td_pri = pri;
+        	return;
+        } else if (td->td_pri != (td->td_ppri + p->p_nthreads)){
+            printf("thread_updatepri: priority mismatch!\n");
+            printf("thread_updatepri: updating priority...\n");
+            pri = thread_setpri(p, td);
+            td->td_pri = pri;
+            return;
+        }
+        if (retry != 0) {
+            printf("thread_updatepri: no change in priority\n");
+        }
+    } else {
+        retry = 1;
+        goto check;
+    }
 }
 
 int
@@ -301,7 +335,11 @@ thread_setpri(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	int pri = setpri(p) + p->p_nthreads;
+	int pri;
+
+	pri = primask(p);
+	td->td_pri = pri;
+	td->td_ppri = p->p_pri;
 	return (pri);
 }
 
@@ -431,7 +469,7 @@ thread_setrun(p, td)
 	}
 	td->td_stat = SRUN;
 	thread_setrq(p, td);
-	td->td_pri = p->p_pri + p->p_nthreads;
+	td->td_pri = thread_setpri(p, td);
 }
 
 /*
@@ -464,22 +502,34 @@ thread_run(p, td)
 	}
 }
 
+/* schedule a single thread */
 void
-thread_schedule(p)
+thread_schedule(p, td)
 	struct proc *p;
-{
 	struct thread *td;
-
-	THREAD_LOCK(td);
-	LIST_FOREACH(td, &p->p_allthread, td_list) {
-		if ((td != p->p_curthread) &&
+{
+	thread_run(p, td);
+	if ((td != p->p_curthread) &&
 				(td->td_stat == SRUN) &&
 				(td->td_flag & TD_INMEM) &&
 				(td->td_pri != td->td_usrpri)) {
-			thread_run(p, td);
-			td->td_pri = td->td_usrpri + p->p_nthreads;
-			thread_setpri(p, td);
-		}
+		thread_remrq(p, td);
+		td->td_pri = td->td_usrpri + p->p_nthreads;
+		thread_setpri(p, td);
+		thread_setrq(p, td);
+	}
+}
+
+/* schedule multiple threads */
+void
+thread_schedcpu(p)
+	struct proc *p;
+{
+	register struct thread *td;
+
+	THREAD_LOCK(td);
+	LIST_FOREACH(td, &p->p_allthread, td_list) {
+		thread_schedule(p, td);
 	}
 	THREAD_UNLOCK(td);
 }
