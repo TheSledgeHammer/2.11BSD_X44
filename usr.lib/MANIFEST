@@ -5,7 +5,7 @@ libcrypt/   NetBSD
 libcurses/	4.4BSD-Lite2
 libdbm/		4.3BSD		 	(dbm & ndbm before it was merged into Berkley DB)
 libedit/	4.4BSD-Lite2
-libexecinfo/ NetBSD
+libexecinfo/	NetBSD
 libform/	NetBSD
 libfortran/	4.3BSD			(Contains libF77, libI77 and libU77)
 libipsec/	NetBSD
@@ -27,9 +27,9 @@ liby/		4.3BSD
 libz/		NetBSD
 
 lib2648/	UNIMPLEMENTED
-libF77/		libfortran/libF77
-libI77/		libfortran/libI77
-libU77/		libfortran/libU77
+libF77/		UNIMPLEMENTED
+libI77/		UNIMPLEMENTED
+libU77/		UNIMPLEMENTED
 libpc/		UNIMPLEMENTED
 libplot/	UNIMPLEMENTED
 libg/		UNIMPLEMENTED 		(4.3 should be ported)

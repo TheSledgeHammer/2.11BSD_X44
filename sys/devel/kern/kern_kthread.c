@@ -108,7 +108,6 @@ newthread(newtd, name, stack, forkproc)
 
 	/* allocate and attach a new thread to process */
 	td = thread_alloc(p, stack);
-	thread_add(p, td);
 
 	if (rval[1]) {
 		td->td_flag |= TD_INMEM | TD_SYSTEM;

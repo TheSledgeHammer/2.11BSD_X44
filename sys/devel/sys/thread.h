@@ -45,7 +45,7 @@ struct thread {
 
 	short				td_uid;					/* user id, used to direct tty signals */
 	pid_t 				td_tid;					/* unique thread id */
-	pid_t 				td_ptid;				/* thread id of processs (parent) */
+	pid_t 				td_ptid;				/* thread id of parent (proc) */
 
 	void				*td_stack;				/* thread stack */
 	size_t             	td_stacksize;			/* thread stack size */
@@ -62,13 +62,13 @@ struct thread {
 
 	struct pgrp 	    *td_pgrp;       		/* Pointer to proc group. */
 
-	u_char				td_ppri;				/* thread process priority (parent) */
+	u_char				td_ppri;				/* thread parent priority */
 	u_char				td_pri;					/* thread priority */
+	u_char				td_usrpri;				/* thread user priority */
 
 #define td_name			td_procp->p_comm
 };
 
-/* stack size */
 #define THREAD_STACK	USPACE
 
 /* flag codes */
@@ -87,7 +87,8 @@ struct thread {
 #define	THREAD_TS		0x08			/* Time-sharing priority range */
 #define	THREAD_MUSTJOIN	0x10			/* Must join on exit */
 #define THREAD_STEALABLE 0x12			/* thread able to be taken by another
-										 * process aka thread is reparented */
+										 * process aka thread is reparented
+										 */
 
 #ifdef _KERNEL
 extern struct lock_holder 	thread_loholder;
@@ -111,8 +112,7 @@ extern int ppnthreadmax;						/* max number of threads per proc (hits stack limi
 LIST_HEAD(threadlist, thread);
 
 struct thread *tdfind(struct proc *);			/* find thread by tidmask */
-struct proc *thread_pfind(struct thread *);
-void thread_init(struct proc *, struct thread *);
+pid_t tidmask(struct proc *);					/* thread tidmask */
 void tdqinit(struct thread *);
 void threadinit(struct thread *);
 void thread_rqinit(struct proc *);
@@ -125,15 +125,6 @@ void thread_free(struct proc *, struct thread *);
 void thread_setrq(struct proc *, struct thread *);
 void thread_remrq(struct proc *, struct thread *);
 struct thread *thread_getrq(struct proc *, struct thread *);
-void thread_updatepri(struct proc *, struct thread *);
-int thread_setpri(struct proc *, struct thread *);
-void thread_setrun(struct proc *, struct thread *);
-void thread_schedule(struct proc *, struct thread *);
-void thread_schedcpu(struct proc *);
-void thread_exit(int);
-
-pid_t tidmask(struct proc *);					/* thread tidmask */
-int primask(struct proc *);						/* thread primask */
 
 void thread_hold(struct thread *); 			/* if thread state is running, thread blocks all siblings from running */
 void thread_release(struct thread *);		/* if thread state is not running, thread unblocks all siblings from running */

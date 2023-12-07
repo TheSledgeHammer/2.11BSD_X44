@@ -31,24 +31,23 @@
  * - Name conflicts:
  * 		- vm_glue: thread_block, thread_sleep, thread_wakeup
  * - Implement:
- * `	- thred destruction:
- * 			- when to free a thread from memory?
+ * 		- thread groups:
+ * 			- setup in similar style as thread tids
+ * 			- same group as process's pgrp
+ * 				- acts like a subgroup of proc group
+ * 			- e.g. if p1 and p2 are in the same pgrp, then all p1
+ * 			& p2 threads are in that pgrp.
  * 		- thread_steal function
  * 			- run in: wait, exit, fork?
  * 		- thread scheduling:  (co-operative or pre-emptive?)
  * 			- runqueues/tasks?
+ * 			- priorities: flags for proc priority changes
  * 			- sleep: flags sleep and wakeup
  * 		- Process related: (what a thread should do when below routine is called?)
  * 			- wait:
- * 			- exit: thread_exit
+ * 			- exit:
  * 			- fork:
- * 				- original process retains threads.
- * 				- if creating a new process with threads. use newthread or kthread_create!
  * 			- reparent: runs thread_reparent
- *
- * 			Note: Most of above are dependent on the process containing attached threads.
- * 			As process's are independent of any thread (but not vice-versa). i.e. a process can
- * 			be created and run without any threads, but a thread cannot be run without a process.
  */
 
 #include <sys/param.h>
@@ -68,10 +67,6 @@ int ppnthreadmax;
 
 struct tidhashhead *tidhashtbl;
 u_long tidhash;
-
-/* struct thread *curthread: change to static and remove external reference from thread.h.
- * Only for initializing thread. p->p_curthread is the curthread.
- */
 
 extern struct thread  thread0;
 struct thread *curthread = &thread0;
@@ -215,7 +210,7 @@ thread_reparent(from, to, td)
 
 /*
  * Like thread_reparent, except all thread siblings are
- * reparented to the new proc, if the current parent state is a zombie.
+ * reparented to the new proc, if the existing parent state is a zombie.
  */
 void
 thread_steal(to, td)
@@ -225,7 +220,7 @@ thread_steal(to, td)
 	register struct proc *from;
 
 	LIST_FOREACH(from, &from->p_allthread, td_sibling) {
-		if ((from != to) && (from->p_threado == td) && (td->td_tid == tidmask(from))) {
+		if ((from->p_threado == td) && (td->td_tid == tidmask(from))) {
 			if ((from->p_stat == SZOMB) && (to->p_stat != (SZOMB | SRUN))) {
 				thread_reparent(from, to, td);
 				td->td_flag &= ~THREAD_STEALABLE;
@@ -258,6 +253,7 @@ thread_alloc(p, stack)
     } else {
         p->p_threado = td;
     }
+    thread_add(p, td);
     return (td);
 }
 
@@ -267,6 +263,7 @@ thread_free(p, td)
 	struct thread *td;
 {
 	if (td != NULL) {
+		thread_remove(p, td);
 		free(td, M_THREAD);
 	}
 }
@@ -291,18 +288,6 @@ thread_stacklimit(td)
 	return (stacklimit);
 }
 
-/* find process from thread */
-struct proc *
-thread_pfind(td)
-	register struct thread *td;
-{
-	td->td_procp = pfind(td->td_ptid);
-	if (td->td_procp != NULL) {
-		return (td->td_procp);
-	}
-	return (NULL);
-}
-
 /* thread priority mask */
 int
 primask(p)
@@ -314,7 +299,7 @@ primask(p)
 	return (pri);
 }
 
-/* update thread priority from proc priority */
+/* TODO: add thread flags for changes to a process priority */
 void
 thread_updatepri(p, td)
 	struct proc *p;
@@ -443,16 +428,24 @@ thread_setrun(p, td)
 	struct thread *td;
 {
 	struct thread *ntd;
+	struct proc *np;
 	int error;
 
 	if ((p->p_tqsready == 0) && ((td->td_flag & THREAD_STEALABLE) == 0)) {
-		thread_steal(p, td);
+		LIST_FOREACH(np, &allproc, p_list) {
+			if ((np != NULL) && (np != p)) {
+				thread_steal(np, td);
+				p = np;
+				break;
+			}
+		}
 	} else if((p->p_tqsready > 0) && (p->p_stat != SRUN)) {
 		error = newthread(&ntd, NULL, THREAD_STACK, TRUE);
 		if (error != 0) {
-			panic("thread_setrun: newthread");
+			panic("thread_setrun");
 			return;
 		}
+		td = ntd;
 	}
 	switch (td->td_stat) {
 	case 0:
@@ -474,22 +467,21 @@ thread_setrun(p, td)
 		panic("thread_setrun");
 		break;
 	}
-	thread_updatepri(p, td);
 	td->td_stat = SRUN;
 	thread_setrq(p, td);
 	td->td_pri = thread_setpri(p, td);
 }
 
+/*
+ * TODO:
+ * Add thread_setrun to each state?
+ */
 void
 thread_run(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	register int s;
-
-	s = splhigh();
 	switch (p->p_stat) {
-	case 0:
 	case SWAIT:
 	case SRUN:
 		thread_setrun(p, td);
@@ -503,14 +495,11 @@ thread_run(p, td)
 		break;
 	case SSTOP:
 	case SSLEEP:
-		unsleep(p);
-		thread_setrun(p, td);
 		break;
 	default:
 		panic("thread_run");
 		break;
 	}
-	splx(s);
 }
 
 /* schedule a single thread */
@@ -523,9 +512,9 @@ thread_schedule(p, td)
 	if ((td != p->p_curthread) &&
 				(td->td_stat == SRUN) &&
 				(td->td_flag & TD_INMEM) &&
-				(td->td_pri != (p->p_usrpri + p->p_nthreads))) {
+				(td->td_pri != td->td_usrpri)) {
 		thread_remrq(p, td);
-		td->td_pri = p->p_usrpri + p->p_nthreads;
+		td->td_pri = td->td_usrpri + p->p_nthreads;
 		thread_setpri(p, td);
 		thread_setrq(p, td);
 	}
@@ -543,31 +532,6 @@ thread_schedcpu(p)
 		thread_schedule(p, td);
 	}
 	THREAD_UNLOCK(td);
-}
-
-void
-thread_exit(ecode)
-	int ecode;
-{
-	struct proc *p;
-	struct thread *td;
-
-	p = u.u_procp;
-	td = u.u_curthread;
-
-	if (ecode != 0) {
-		printf("WARNING: thread `%s' (%d) exits with status %d\n", td->td_name, td->td_tid, ecode);
-	}
-
-	td->td_stat = SZOMB;
-	thread_remove(p, td);
-	if (p->p_stat == SZOMB) {
-		thread_free(p, td);
-	}
-	td = NULL;
-	p->p_curthread = td;
-	exit(W_EXITCODE(ecode, 0));
-	for (;;);
 }
 
 /* Not ready for primetime */
