@@ -66,9 +66,9 @@ struct user {
 	struct fperr 		u_fperr;				/* floating point error save */
 	struct proc 		*u_procp;				/* pointer to proc structure */
 
-#define u_curthread		u_procp.p_curthread		/* current running thread */
-#define u_threado		u_procp.p_threado		/* thread overseer (original thread)  */
-#define	u_nthreads		u_procp.p_nthreads		/* number of attached threads */
+#define u_curthread		u_procp->p_curthread	/* current running thread */
+#define u_threado		u_procp->p_threado		/* thread overseer (original thread)  */
+#define	u_nthreads		u_procp->p_nthreads		/* number of attached threads */
 
 	int					*u_ar0;					/* address of users saved R0 */
 	char				u_comm[MAXCOMLEN + 1];

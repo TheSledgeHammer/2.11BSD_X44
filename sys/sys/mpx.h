@@ -68,6 +68,13 @@ struct mpx {
 #define MPX_LOCK(mpx)		simple_lock(&(mpx)->mpx_slock)
 #define MPX_UNLOCK(mpx)		simple_unlock(&(mpx)->mpx_slock)
 
+/*
+extern struct lock_holder mpx_loholder;
+#define MPX_MUTEX_INIT(mpx, name, data, pid)	mtx_init(mpx, &mpx_loholder, name, data, pid)
+#define MPX_MUTEX_ENTER(mpx) 					mtx_lock(mpx, &mpx_loholder)
+#define MPX_MUTEX_EXIT(mpx)	 					mtx_unlock(mpx, &mpx_loholder)
+*/
+
 /* common routines */
 struct mpx 					*mpx_allocate(int);
 void						mpx_deallocate(struct mpx *);

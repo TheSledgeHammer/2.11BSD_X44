@@ -94,17 +94,7 @@ void
 kthread_exit(ecode)
 	int ecode;
 {
-	/*
-	 * XXX What do we do with the exit code?  Should we even bother
-	 * XXX with it?  The parent (proc0) isn't going to do much with
-	 * XXX it.
-	 */
-	if (ecode != 0) {
-		printf("WARNING: thread `%s' (%d) exits with status %d\n", curproc->p_comm, curproc->p_pid, ecode);
-	}
-	exit(W_EXITCODE(ecode, 0));
-
-	for (;;);
+	thread_exit(ecode);
 }
 
 struct kthread_queue {
