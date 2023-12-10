@@ -142,7 +142,7 @@ SUBDIR+=	../crypto/heimdal/lib	# depends on libcrypto
 
 SUBDIR+=	../crypto/openssh/lib # depends on libcrypto, libz
 
-#SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
+SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT
