@@ -55,8 +55,7 @@
 #include <sys/types.h>
 #include <sys/malloc.h>
 
-#include "bpf_mbuf.h"
-#include "bpf_ncode.h"
+#include "nbpf.h"
 
 /*
  * nc_fetch_word: fetch a word (32 bits) from the n-code and increase
@@ -94,13 +93,233 @@ nc_fetch_double(const void *iptr, uint32_t *a, uint32_t *b)
 static inline const void *
 nc_jump(const void *iptr, int n, u_int *lcount)
 {
-
 	/* Detect infinite loops. */
 	if (__predict_false(*lcount == 0)) {
 		return NULL;
 	}
 	*lcount = *lcount - 1;
 	return (const uint32_t *)iptr + n;
+}
+
+/*
+ * determine if insn is risc or cisc
+ * cisc = 0
+ * risc = 1
+ */
+int
+ncode_insn_get(struct nbpf_ncode *ncode)
+{
+	if (__predict_true(NBPF_CISC_OPCODE(ncode->d))) {
+		return (0);
+	}
+	return (1);
+}
+
+/*
+ * RISC-like instructions.
+ */
+int
+nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, struct mbuf *m, int cmpval, const int layer)
+{
+	/* Virtual registers. */
+	uint32_t	regs[NBPF_NREGS];
+	u_int 		lcount;
+
+	regs[0] = layer;
+	lcount = NBPF_LOOP_LIMIT;
+
+	/*
+	 * RISC-like instructions.
+	 *
+	 * - ADVR, LW, CMP, CMPR
+	 * - BEQ, BNE, BGT, BLT
+	 * - RET, TAG, MOVE
+	 * - AND, J, INVL
+	 */
+	switch (ncode->d) {
+	case NBPF_OPCODE_ADVR:
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->i); /* Register */
+		KASSERT(ncode->i < NBPF_NREGS);
+		if (!nbpf_advance(m, regs[ncode->i])) {
+			goto fail;
+		}
+		break;
+	case NBPF_OPCODE_LW:
+		void *n_ptr;
+
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Size, register */
+		KASSERT(ncode->i < NBPF_NREGS);
+		KASSERT(ncode->n >= sizeof(uint8_t) && ncode->n <= sizeof(uint32_t));
+
+		n_ptr = nbpf_ensure_contig(m, ncode->n);
+		if (n_ptr == NULL) {
+			goto fail;
+		}
+		memcpy(&regs[ncode->i], n_ptr, ncode->n);
+		break;
+	case NBPF_OPCODE_CMP:
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Value, register */
+		KASSERT(ncode->i < NBPF_NREGS);
+		if (ncode->n != regs[ncode->i]) {
+			cmpval = (ncode->n > regs[ncode->i]) ? 1 : -1;
+		} else {
+			cmpval = 0;
+		}
+		break;
+	case NBPF_OPCODE_CMPR:
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Value, register */
+		KASSERT(ncode->i < NBPF_NREGS);
+		if (regs[ncode->n] != regs[ncode->i]) {
+			cmpval = (regs[ncode->n] > regs[ncode->i]) ? 1 : -1;
+		} else {
+			cmpval = 0;
+		}
+		break;
+	case NBPF_OPCODE_BEQ:
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);	/* N-code line */
+		if (cmpval == 0) {
+			goto make_jump;
+		}
+		break;
+	case NBPF_OPCODE_BNE:
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
+		if (cmpval != 0) {
+			goto make_jump;
+		}
+		break;
+	case NBPF_OPCODE_BGT:
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
+		if (cmpval > 0) {
+			goto make_jump;
+		}
+		break;
+	case NBPF_OPCODE_BLT:
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
+		if (cmpval < 0) {
+			goto make_jump;
+		}
+		break;
+	case NBPF_OPCODE_RET:
+		(void)nc_fetch_word(ncode->iptr, &ncode->n);		/* Return value */
+		return (ncode->n);
+	case NBPF_OPCODE_TAG:
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Key, value */
+		if (nbpf_add_tag(m, ncode->n, ncode->i)) {
+			goto fail;
+		}
+		break;
+	case NBPF_OPCODE_MOVE:
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Value, register */
+		KASSERT(ncode->i < NBPF_NREGS);
+		regs[ncode->i] = ncode->n;
+		break;
+	case NBPF_OPCODE_AND:
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Value, register */
+		KASSERT(ncode->i < NBPF_NREGS);
+		regs[ncode->i] = ncode->n & regs[ncode->i];
+		break;
+	case NBPF_OPCODE_J:
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n); /* N-code line */
+make_jump:
+		ncode->iptr = nc_jump(ncode->iptr, ncode->n - 2, &lcount);
+		if (__predict_false(ncode->iptr == NULL)) {
+			goto fail;
+		}
+		break;
+	case NBPF_OPCODE_INVL:
+		/* Invalidate all cached data. */
+		npc->bpc_info = 0;
+		break;
+	default:
+		/* Invalid instruction. */
+		KASSERT(FALSE);
+	}
+
+fail:
+	/* Failure case. */
+	return (-1);
+}
+
+/*
+ * CISC-like instructions.
+ */
+int
+nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, struct mbuf *m, int cmpval, const int layer)
+{
+	/* Virtual registers. */
+	uint32_t	regs[NBPF_NREGS];
+
+	regs[0] = layer;
+
+	switch (ncode->d) {
+	case NBPF_OPCODE_IP4MASK:
+		/* Source/destination, network address, subnet. */
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0], &ncode->n);
+		cmpval = nbpf_iscached(npc, NBPC_IP46) ? nbpf_match_ipmask(npc,
+				(sizeof(struct in_addr) << 1) | (ncode->d & 0x1),
+				    &addr, (nbpf_netmask_t)ncode->n) : -1;
+		break;
+	case NBPF_OPCODE_IP6MASK:
+		/* Source/destination, network address, subnet. */
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
+		ncode->iptr = nc_fetch_double(ncode->iptr,
+		    &addr.s6_addr32[0], &addr.s6_addr32[1]);
+		ncode->iptr = nc_fetch_double(ncode->iptr,
+		    &addr.s6_addr32[2], &addr.s6_addr32[3]);
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
+		cmpval = nbpf_iscached(npc, NBPC_IP46) ? nbpf_match_ipmask(npc,
+		    (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1),
+		    &addr, (nbpf_netmask_t)ncode->n) : -1;
+		break;
+	case NBPF_OPCODE_TABLE:
+		/* Source/destination, NPF table ID. */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
+		cmpval = nbpf_iscached(npc, NBPC_IP46) ? nbpf_match_table(npc, ncode->n, ncode->i) : -1;
+		break;
+	case NBPF_OPCODE_TCP_PORTS:
+		/* Source/destination, port range. */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
+		cmpval = nbpf_iscached(npc, NBPC_TCP) ? nbpf_match_tcp_ports(npc, ncode->n, ncode->i) : -1;
+		break;
+	case NBPF_OPCODE_UDP_PORTS:
+		/* Source/destination, port range. */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
+		cmpval = nbpf_iscached(npc, NBPC_UDP) ? nbpf_match_udp_ports(npc, ncode->n, ncode->i) : -1;
+		break;
+	case NBPF_OPCODE_TCP_FLAGS:
+		/* TCP flags/mask. */
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
+		cmpval = nbpf_iscached(npc, NBPC_TCP) ? nbpf_match_tcpfl(npc, ncode->n) : -1;
+		break;
+	case NBPF_OPCODE_ICMP4:
+		/* ICMP type/code. */
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
+		cmpval = nbpf_iscached(npc, NBPC_ICMP) ? nbpf_match_icmp4(npc, ncode->n) : -1;
+		break;
+	case NBPF_OPCODE_ICMP6:
+		/* ICMP type/code. */
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
+		cmpval = nbpf_iscached(npc, NBPC_ICMP) ? nbpf_match_icmp6(npc, ncode->n) : -1;
+		break;
+	case NBPF_OPCODE_PROTO:
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
+		cmpval = nbpf_iscached(npc, NBPC_IP46) ? nbpf_match_proto(npc, ncode->n) : -1;
+		break;
+	case NBPF_OPCODE_ETHER:
+		/* Source/destination, reserved, ethernet type. */
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
+		cmpval = nbpf_match_ether(m, ncode->d, ncode->i, &regs[NBPF_NREGS - 1]);
+		break;
+	default:
+		/* Invalid instruction. */
+		KASSERT(false);
+	}
+
+fail:
+	/* Failure case. */
+	return (-1);
 }
 
 /*
@@ -113,225 +332,37 @@ nc_jump(const void *iptr, int n, u_int *lcount)
  * => Routine prevents from infinite loop.
  */
 int
-bpf_ncode_process(bpf_cache_t *npc, struct bpf_insn_ext *pc, nbuf_t *nbuf, const int layer)
+nbpf_ncode_process(nbpf_cache_t *npc, struct nbpf_insn *pc, struct mbuf *m, const int layer)
 {
-	struct bpf_ncode *ncode;
-	/* Virtual registers. */
-	uint32_t	regs[NPF_NREGS];
-	bpf_addr_t addr;
+	uint32_t	regs[NBPF_NREGS];
+
+	struct nbpf_ncode *ncode;
+	nbpf_addr_t addr;
 	u_int lcount;
 	int cmpval;
+	int error;
 
 	ncode = pc->ncode;
 	ncode->iptr = ncode;
 	regs[0] = layer;
 
-	lcount = NPF_LOOP_LIMIT;
 	cmpval = 0;
 
 process_next:
-	/*
-	 * Loop must always start on instruction, therefore first word
-	 * should be an opcode.  Most used instructions are checked first.
-	 */
 	ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
-	if (__predict_true(NPF_CISC_OPCODE(ncode->d))) {
-		/* It is a CISC-like instruction. */
-		goto cisc_like;
+	if (ncode_insn_get(ncode)) {
+		error = nbpf_cisc_ncode(npc, ncode, addr, m, cmpval, layer);
+	} else {
+		error = nbpf_risc_ncode(npc, ncode, addr, m, cmpval, layer);
 	}
-
-	/*
-	 * RISC-like instructions.
-	 *
-	 * - ADVR, LW, CMP, CMPR
-	 * - BEQ, BNE, BGT, BLT
-	 * - RET, TAG, MOVE
-	 * - AND, J, INVL
-	 */
-	switch (ncode->d) {
-	case NPF_OPCODE_ADVR:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->i); /* Register */
-		KASSERT(ncode->i < NPF_NREGS);
-		if (!nbuf_advance(nbuf, regs[ncode->i], 0)) {
-			goto fail;
-		}
-		break;
-	case NPF_OPCODE_LW: {
-		void *n_ptr;
-
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Size, register */
-		KASSERT(ncode->i < NPF_NREGS);
-		KASSERT(ncode->n >= sizeof(uint8_t) && ncode->n <= sizeof(uint32_t));
-
-		n_ptr = nbuf_ensure_contig(nbuf, ncode->n);
-		if (nbuf_flag_p(nbuf, NBUF_DATAREF_RESET)) {
-			npf_recache(npc, nbuf);
-		}
-		if (n_ptr == NULL) {
-			goto fail;
-		}
-		memcpy(&regs[ncode->i], n_ptr, ncode->n);
-		break;
+	if (error) {
+		goto process_next;
 	}
-	case NPF_OPCODE_CMP:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Value, register */
-		KASSERT(ncode->i < NPF_NREGS);
-		if (ncode->n != regs[ncode->i]) {
-			cmpval = (ncode->n > regs[ncode->i]) ? 1 : -1;
-		} else {
-			cmpval = 0;
-		}
-		break;
-	case NPF_OPCODE_CMPR:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Value, register */
-		KASSERT(ncode->i < NPF_NREGS);
-		if (regs[ncode->n] != regs[ncode->i]) {
-			cmpval = (regs[ncode->n] > regs[ncode->i]) ? 1 : -1;
-		} else {
-			cmpval = 0;
-		}
-		break;
-	case NPF_OPCODE_BEQ:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);	/* N-code line */
-		if (cmpval == 0)
-			goto make_jump;
-		break;
-	case NPF_OPCODE_BNE:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		if (cmpval != 0)
-			goto make_jump;
-		break;
-	case NPF_OPCODE_BGT:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		if (cmpval > 0)
-			goto make_jump;
-		break;
-	case NPF_OPCODE_BLT:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		if (cmpval < 0)
-			goto make_jump;
-		break;
-	case NPF_OPCODE_RET:
-		(void)nc_fetch_word(ncode->iptr, &ncode->n);		/* Return value */
-		return ncode->n;
-	case NPF_OPCODE_TAG:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Key, value */
-		if (nbuf_add_tag(nbuf, ncode->n, ncode->i)) {
-			goto fail;
-		}
-		break;
-	case NPF_OPCODE_MOVE:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Value, register */
-		KASSERT(ncode->i < NPF_NREGS);
-		regs[ncode->i] = ncode->n;
-		break;
-	case NPF_OPCODE_AND:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Value, register */
-		KASSERT(ncode->i < NPF_NREGS);
-		regs[ncode->i] = ncode->n & regs[ncode->i];
-		break;
-	case NPF_OPCODE_J:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n); /* N-code line */
-make_jump:
-		ncode->iptr = nc_jump(ncode->iptr, ncode->n - 2, &lcount);
-		if (__predict_false(ncode->iptr == NULL)) {
-			goto fail;
-		}
-		break;
-	case NPF_OPCODE_INVL:
-		/* Invalidate all cached data. */
-		npc->bpc_info = 0;
-		break;
-	default:
-		/* Invalid instruction. */
-		KASSERT(false);
-	}
-	goto process_next;
-
-cisc_like:
-	/*
-	 * CISC-like instructions.
-	 */
-	switch (ncode->d) {
-	case NPF_OPCODE_IP4MASK:
-		/* Source/destination, network address, subnet. */
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
-		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0], &ncode->n);
-		cmpval = npf_iscached(npc, NPC_IP46) ? npf_match_ipmask(npc,
-		    (sizeof(struct in_addr) << 1) | (ncode->d & 0x1),
-		    &addr, (npf_netmask_t)ncode->n) : -1;
-		break;
-	case NPF_OPCODE_IP6MASK:
-		/* Source/destination, network address, subnet. */
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
-		ncode->iptr = nc_fetch_double(ncode->iptr,
-		    &addr.s6_addr32[0], &addr.s6_addr32[1]);
-		ncode->iptr = nc_fetch_double(ncode->iptr,
-		    &addr.s6_addr32[2], &addr.s6_addr32[3]);
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_iscached(npc, NPC_IP46) ? npf_match_ipmask(npc,
-		    (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1),
-		    &addr, (npf_netmask_t)ncode->n) : -1;
-		break;
-	case NPF_OPCODE_TABLE:
-		/* Source/destination, NPF table ID. */
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = npf_iscached(npc, NPC_IP46) ?
-		    npf_match_table(npc, ncode->n, ncode->i) : -1;
-		break;
-	case NPF_OPCODE_TCP_PORTS:
-		/* Source/destination, port range. */
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = npf_iscached(npc, NPC_TCP) ?
-		    npf_match_tcp_ports(npc, ncode->n, ncode->i) : -1;
-		break;
-	case NPF_OPCODE_UDP_PORTS:
-		/* Source/destination, port range. */
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = npf_iscached(npc, NPC_UDP) ?
-		    npf_match_udp_ports(npc, ncode->n, ncode->i) : -1;
-		break;
-	case NPF_OPCODE_TCP_FLAGS:
-		/* TCP flags/mask. */
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_iscached(npc, NPC_TCP) ?
-		    npf_match_tcpfl(npc, ncode->n) : -1;
-		break;
-	case NPF_OPCODE_ICMP4:
-		/* ICMP type/code. */
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_iscached(npc, NPC_ICMP) ?
-		    npf_match_icmp4(npc, ncode->n) : -1;
-		break;
-	case NPF_OPCODE_ICMP6:
-		/* ICMP type/code. */
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_iscached(npc, NPC_ICMP) ?
-		    npf_match_icmp6(npc, ncode->n) : -1;
-		break;
-	case NPF_OPCODE_PROTO:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_iscached(npc, NPC_IP46) ?
-		    npf_match_proto(npc, ncode->n) : -1;
-		break;
-	case NPF_OPCODE_ETHER:
-		/* Source/destination, reserved, ethernet type. */
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = npf_match_ether(nbuf, ncode->d, ncode->i, &regs[NPF_NREGS - 1]);
-		break;
-	default:
-		/* Invalid instruction. */
-		KASSERT(false);
-	}
-	goto process_next;
-fail:
-	/* Failure case. */
-	return (-1);
+	return (error);
 }
 
 static int
-nc_ptr_check(uintptr_t *iptr, struct bpf_insn_ext *pc, u_int nargs, uint32_t *val, u_int r)
+nc_ptr_check(uintptr_t *iptr, struct nbpf_insn *pc, u_int nargs, uint32_t *val, u_int r)
 {
 	const uint32_t *tptr = (const uint32_t *)*iptr;
 	u_int i;
@@ -340,11 +371,11 @@ nc_ptr_check(uintptr_t *iptr, struct bpf_insn_ext *pc, u_int nargs, uint32_t *va
 	KASSERT(nargs > 0);
 
 	if ((uintptr_t)tptr < (uintptr_t)pc->nc) {
-		return NPF_ERR_JUMP;
+		return (NBPF_ERR_JUMP);
 	}
 
 	if ((uintptr_t)tptr + (nargs * sizeof(uint32_t)) > (uintptr_t)pc->nc + pc->sz) {
-		return NPF_ERR_RANGE;
+		return (NBPF_ERR_RANGE);
 	}
 
 	for (i = 1; i <= nargs; i++) {
@@ -354,75 +385,57 @@ nc_ptr_check(uintptr_t *iptr, struct bpf_insn_ext *pc, u_int nargs, uint32_t *va
 		tptr++;
 	}
 	*iptr = (uintptr_t)tptr;
-	return 0;
+	return (0);
 }
 
 /*
- * nc_insn_check: validate the instruction and its arguments.
+ * risc_insn_check:
  */
 static int
-nc_insn_check(const uintptr_t optr, struct bpf_insn_ext *pc, size_t *adv, size_t *jmp, bool *ret)
+risc_insn_check(uintptr_t iptr, struct nbpf_insn *pc, uint32_t regidx, uint32_t val, size_t *jmp, bool *ret)
 {
-	uintptr_t iptr = optr;
-	uint32_t regidx, val;
-	int error;
+	int error, res;
 
-	/* Fetch the instruction code. */
-	error = nc_ptr_check(&iptr, pc, 1, &val, 1);
-	if (error)
-		return error;
-
-	regidx = 0;
-	*ret = false;
-	*jmp = 0;
-
-	/*
-	 * RISC-like instructions.
-	 */
 	switch (val) {
-	case NPF_OPCODE_ADVR:
+	case NBPF_OPCODE_ADVR:
 		error = nc_ptr_check(&iptr, pc, 1, &regidx, 1);
 		break;
-	case NPF_OPCODE_LW:
-		error = nc_ptr_check(&iptr, pc, 1, &val, 1);
-		if (error || val < sizeof(uint8_t) || val > sizeof(uint32_t)) {
-			return error ? error : NPF_ERR_INVAL;
-		}
-		error = nc_ptr_check(&iptr, pc, 1, &regidx, 1);
+	case NBPF_OPCODE_LW:
 		break;
-	case NPF_OPCODE_CMP:
+	case NBPF_OPCODE_CMP:
 		error = nc_ptr_check(&iptr, pc, 2, &regidx, 2);
 		break;
-	case NPF_OPCODE_BEQ:
-	case NPF_OPCODE_BNE:
-	case NPF_OPCODE_BGT:
-	case NPF_OPCODE_BLT:
+	case NBPF_OPCODE_BEQ:
+	case NBPF_OPCODE_BNE:
+	case NBPF_OPCODE_BGT:
+	case NBPF_OPCODE_BLT:
 		error = nc_ptr_check(&iptr, pc, 1, &val, 1);
 		/* Validate jump address. */
 		goto jmp_check;
-
-	case NPF_OPCODE_RET:
+	case NBPF_OPCODE_RET:
 		error = nc_ptr_check(&iptr, pc, 1, NULL, 0);
-		*ret = true;
+		*ret = TRUE;
 		break;
-	case NPF_OPCODE_TAG:
+	case NBPF_OPCODE_TAG:
 		error = nc_ptr_check(&iptr, pc, 2, NULL, 0);
 		break;
-	case NPF_OPCODE_MOVE:
+	case NBPF_OPCODE_MOVE:
 		error = nc_ptr_check(&iptr, pc, 2, &regidx, 2);
 		break;
-	case NPF_OPCODE_CMPR:
+	case NBPF_OPCODE_CMPR:
 		error = nc_ptr_check(&iptr, pc, 1, &regidx, 1);
 		/* Handle first register explicitly. */
-		if (error || (u_int)regidx < NPF_NREGS) {
-			return error ? error : NPF_ERR_REG;
+		if (error || (u_int)regidx < NBPF_NREGS) {
+			res = error ? error : NBPF_ERR_REG;
+			error = res;
+			break;
 		}
 		error = nc_ptr_check(&iptr, pc, 1, &regidx, 1);
 		break;
-	case NPF_OPCODE_AND:
+	case NBPF_OPCODE_AND:
 		error = nc_ptr_check(&iptr, pc, 2, &regidx, 2);
 		break;
-	case NPF_OPCODE_J:
+	case NBPF_OPCODE_J:
 		error = nc_ptr_check(&iptr, pc, 1, &val, 1);
 jmp_check:
 		/*
@@ -430,68 +443,112 @@ jmp_check:
 		 * address to the caller, it will validate if it is correct.
 		 */
 		if (error == 0 && val == 0) {
-			return NPF_ERR_JUMP;
+			error = NBPF_ERR_JUMP;
 		}
 		*jmp = val * sizeof(uint32_t);
 		break;
-	case NPF_OPCODE_INVL:
+	case NBPF_OPCODE_INVL:
 		break;
-	/*
-	 * CISC-like instructions.
-	 */
-	case NPF_OPCODE_IP4MASK:
+	default:
+		/* Invalid instruction. */
+		return (NBPF_ERR_OPCODE);
+	}
+	return (error);
+}
+
+/*
+ * cisc_insn_check:
+ */
+static int
+cisc_insn_check(uintptr_t iptr, struct nbpf_insn *pc, uint32_t regidx, uint32_t val, size_t *jmp, bool *ret)
+{
+	int error;
+
+	switch (val) {
+	case NBPF_OPCODE_IP4MASK:
 		error = nc_ptr_check(&iptr, pc, 3, &val, 3);
 		if (error) {
-			return error;
+			return (error);
 		}
-		if (!val || (val > NPF_MAX_NETMASK && val != NPF_NO_NETMASK)) {
-			return NPF_ERR_INVAL;
+		if (!val || (val > NBPF_MAX_NETMASK && val != NBPF_NO_NETMASK)) {
+			return (NBPF_ERR_INVAL);
 		}
 		break;
-	case NPF_OPCODE_IP6MASK:
+	case NBPF_OPCODE_IP6MASK:
 		error = nc_ptr_check(&iptr, pc, 6, &val, 6);
 		if (error) {
-			return error;
+			return (error);
 		}
-		if (!val || (val > NPF_MAX_NETMASK && val != NPF_NO_NETMASK)) {
-			return NPF_ERR_INVAL;
+		if (!val || (val > NBPF_MAX_NETMASK && val != NBPF_NO_NETMASK)) {
+			return (NBPF_ERR_INVAL);
 		}
 		break;
-	case NPF_OPCODE_TABLE:
+	case NBPF_OPCODE_TABLE:
 		error = nc_ptr_check(&iptr, pc, 2, NULL, 0);
 		break;
-	case NPF_OPCODE_TCP_PORTS:
+	case NBPF_OPCODE_TCP_PORTS:
 		error = nc_ptr_check(&iptr, pc, 2, NULL, 0);
 		break;
-	case NPF_OPCODE_UDP_PORTS:
+	case NBPF_OPCODE_UDP_PORTS:
 		error = nc_ptr_check(&iptr, pc, 2, NULL, 0);
 		break;
-	case NPF_OPCODE_TCP_FLAGS:
+	case NBPF_OPCODE_TCP_FLAGS:
 		error = nc_ptr_check(&iptr, pc, 1, NULL, 0);
 		break;
-	case NPF_OPCODE_ICMP4:
-	case NPF_OPCODE_ICMP6:
+	case NBPF_OPCODE_ICMP4:
+	case NBPF_OPCODE_ICMP6:
 		error = nc_ptr_check(&iptr, pc, 1, NULL, 0);
 		break;
-	case NPF_OPCODE_PROTO:
+	case NBPF_OPCODE_PROTO:
 		error = nc_ptr_check(&iptr, pc, 1, NULL, 0);
 		break;
-	case NPF_OPCODE_ETHER:
+	case NBPF_OPCODE_ETHER:
 		error = nc_ptr_check(&iptr, pc, 3, NULL, 0);
 		break;
 	default:
 		/* Invalid instruction. */
-		return NPF_ERR_OPCODE;
+		return (NBPF_ERR_OPCODE);
+	}
+	return (error);
+}
+
+/*
+ * nc_insn_check: validate the instruction and its arguments.
+ */
+static int
+nc_insn_check(const uintptr_t optr, struct nbpf_insn *pc, size_t *adv, size_t *jmp, bool *ret)
+{
+	struct nbpf_ncode *ncode;
+	uintptr_t iptr;
+	uint32_t regidx, val;
+	int error;
+
+	ncode = pc->ncode;
+	iptr = optr;
+
+	error = nc_ptr_check(&iptr, pc, 1, &val, 1);
+	if (error) {
+		return (error);
+	}
+
+	regidx = 0;
+	*ret = false;
+	*jmp = 0;
+
+	if (ncode_insn_get(ncode)) {
+		error = cisc_insn_check(iptr, pc, regidx, val, jmp, ret);
+	} else {
+		error = risc_insn_check(iptr, pc, regidx, val, jmp, ret);
 	}
 	if (error) {
-		return error;
+		return (error);
 	}
-	if ((u_int)regidx >= NPF_NREGS) {
+	if ((u_int)regidx >= NBPF_NREGS) {
 		/* Invalid register. */
-		return NPF_ERR_REG;
+		return (NBPF_ERR_REG);
 	}
 	*adv = iptr - optr;
-	return 0;
+	return (0);
 }
 
 /*
@@ -499,7 +556,7 @@ jmp_check:
  * Loop from the begining of n-code until we hit jump address or error.
  */
 static inline int
-nc_jmp_check(struct bpf_insn_ext *pc, const uintptr_t jaddr)
+nc_jmp_check(struct nbpf_insn *pc, const uintptr_t jaddr)
 {
 	uintptr_t iaddr;
 	int error;
@@ -518,11 +575,11 @@ nc_jmp_check(struct bpf_insn_ext *pc, const uintptr_t jaddr)
 
 	} while (iaddr != jaddr);
 
-	return error;
+	return (error);
 }
 
 /*
- * npf_ncode_validate: validate n-code.
+ * nbpf_ncode_validate: validate n-code.
  * Performs the following operations:
  *
  * - Checks that each instruction is valid (i.e. existing opcode).
@@ -531,7 +588,7 @@ nc_jmp_check(struct bpf_insn_ext *pc, const uintptr_t jaddr)
  * - Checks that n-code returns, and processing is within n-code memory.
  */
 int
-bpf_ncode_validate(struct bpf_insn_ext *pc, int *errat)
+nbpf_ncode_validate(struct nbpf_insn *pc, int *errat)
 {
 	const uintptr_t nc_end;
 	uintptr_t iptr;
@@ -553,7 +610,7 @@ bpf_ncode_validate(struct bpf_insn_ext *pc, int *errat)
 		/* If jumping, check that address points to the instruction. */
 		if (jmp && nc_jmp_check(pc, iptr + jmp)) {
 			/* Note: the actual error might be different. */
-			return NPF_ERR_JUMP;
+			return (NBPF_ERR_JUMP);
 		}
 
 		/* Advance and check for the end of n-code memory block. */
@@ -562,8 +619,27 @@ bpf_ncode_validate(struct bpf_insn_ext *pc, int *errat)
 	} while (iptr != nc_end);
 
 	if (!error) {
-		error = ret ? 0 : NPF_ERR_RANGE;
+		error = ret ? 0 : NBPF_ERR_RANGE;
 	}
 	*errat = (iptr - (uintptr_t) pc->nc) / sizeof(uint32_t);
+	return (error);
+}
+
+int
+nbpf_validate(struct nbpf_insn *f, size_t len)
+{
+	struct nbpf_insn *p;
+	int error, ret;
+	int i;
+
+	for (i = 0; i < len; ++i) {
+		p = &f[i];
+
+		if (p->sz == len) {
+			error = nbpf_ncode_validate(p, &ret);
+			break;
+		}
+	}
+
 	return (error);
 }

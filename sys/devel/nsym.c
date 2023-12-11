@@ -17,7 +17,17 @@
 
 #include <exec_aout.h>
 
-#define __LDPGSZ 4096
+#define N_DRELOC(ep)		n_dreloc(ep)
+#define N_TRELOC(ep)		n_treloc(ep)
+#define	N_DATOFF_1(ep) 		n_datoff(ep)
+#define	N_STROFF_1(ep) 		n_stroff(ep)
+
+off_t n_stroff(struct xexec *);
+off_t n_datoff(struct xexec *);
+off_t n_dreloc(struct xexec *);
+off_t n_treloc(struct xexec *);
+off_t n_symoff(struct xexec *);
+off_t n_ovlsum(u_int *);
 
 off_t
 n_stroff(ep)

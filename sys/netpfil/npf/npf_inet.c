@@ -163,8 +163,7 @@ npf_addr_mask(const npf_addr_t *addr, const npf_netmask_t mask,
  * => Ignore the mask, if NPF_NO_NETMASK is specified.
  */
 int
-npf_addr_cmp(const npf_addr_t *addr1, const npf_netmask_t mask1,
-    const npf_addr_t *addr2, const npf_netmask_t mask2, const int alen)
+npf_addr_cmp(const npf_addr_t *addr1, const npf_netmask_t mask1, const npf_addr_t *addr2, const npf_netmask_t mask2, const int alen)
 {
 	npf_addr_t realaddr1, realaddr2;
 

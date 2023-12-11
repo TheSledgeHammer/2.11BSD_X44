@@ -145,7 +145,7 @@ thread_remove(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-		THREAD_LOCK(td);
+	THREAD_LOCK(td);
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 		LIST_REMOVE(td, td_sibling);
 	}
