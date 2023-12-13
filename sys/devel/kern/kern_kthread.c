@@ -114,10 +114,6 @@ newthread(newtd, name, stack, forkproc)
 		td->td_flag |= TD_INMEM | TD_SYSTEM;
 	}
 
-	if (p->p_curthread != td) {
-		p->p_curthread = td;
-	}
-
 	/* Name it as specified. */
 	bcopy(td->td_name, name, MAXCOMLEN);
 

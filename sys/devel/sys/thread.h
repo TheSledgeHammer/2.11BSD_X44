@@ -103,8 +103,6 @@ extern struct lock_holder 	thread_loholder;
 extern 	LIST_HEAD(tidhashhead, thread) 	*tidhashtbl;
 extern u_long 	tidhash;
 
-extern struct thread *curthread;				/* current running thread */
-extern struct thread thread0;
 extern int	nthread, maxthread;					/* Current and max number of threads. */
 extern int ppnthreadmax;						/* max number of threads per proc (hits stack limit) */
 
@@ -131,12 +129,11 @@ void thread_setrun(struct proc *, struct thread *);
 void thread_schedule(struct proc *, struct thread *);
 void thread_schedcpu(struct proc *);
 void thread_exit(int);
+void thread_sleep(struct proc *, struct thread *);
+void thread_unsleep(struct proc *, struct thread *);
 
 pid_t tidmask(struct proc *);					/* thread tidmask */
 int primask(struct proc *);						/* thread primask */
-
-void thread_hold(struct thread *); 			/* if thread state is running, thread blocks all siblings from running */
-void thread_release(struct thread *);		/* if thread state is not running, thread unblocks all siblings from running */
 
 /* kern_kthread.c */
 int	newthread(struct thread **, char *, size_t, bool_t);

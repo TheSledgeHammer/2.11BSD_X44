@@ -69,12 +69,8 @@ int ppnthreadmax;
 struct tidhashhead *tidhashtbl;
 u_long tidhash;
 
-/* struct thread *curthread: change to static and remove external reference from thread.h.
- * Only for initializing thread. p->p_curthread is the curthread.
- */
-
-extern struct thread  thread0;
-struct thread *curthread = &thread0;
+static struct thread  thread0;
+static struct thread *curthread = &thread0;
 struct lock_holder 	thread_loholder;
 
 int thread_stacklimit(struct thread *);
@@ -100,6 +96,7 @@ thread_init(p, td)
 	crhold(td->td_ucred);
 
 	thread_rqinit(p);
+	thread_sqinit(p);
 }
 
 void
@@ -437,6 +434,18 @@ thread_rqinit(p)
 	p->p_tqsready = 0;
 }
 
+/*
+ * Initialize the (doubly-linked) sleep queues
+ * to be empty.
+ */
+void
+thread_sqinit(p)
+	struct proc *p;
+{
+	TAILQ_INIT(&p->p_threadsq);
+	p->p_tqssleep = 0;
+}
+
 void
 thread_setrun(p, td)
 	struct proc *p;
@@ -470,6 +479,10 @@ thread_setrun(p, td)
 		break;
 	case SSTOP:
 	case SSLEEP:
+		if (!TAILQ_EMPTY(&p->p_threadsq)) {
+			thread_unsleep(p, td);
+		}
+		break;
 	default:
 		panic("thread_setrun");
 		break;
@@ -561,7 +574,7 @@ thread_exit(ecode)
 
 	td->td_stat = SZOMB;
 	thread_remove(p, td);
-	if (p->p_stat == SZOMB) {
+	if ((p->p_stat == SZOMB) && ((td->td_flag & THREAD_STEALABLE) != 0)) {
 		thread_free(p, td);
 	}
 	td = NULL;
@@ -570,33 +583,26 @@ thread_exit(ecode)
 	for (;;);
 }
 
-/* Not ready for primetime */
-/* if thread state is running, thread blocks all siblings from running */
 void
-thread_hold(td)
+thread_sleep(p, td)
+	struct proc *p;
 	struct thread *td;
 {
-	struct proc *p;
-
-	p = td->td_procp;
-	THREAD_LOCK(td);
-	while ((td->td_ptid == p->p_pid) && (td->td_stat != SRUN)) {
-		tsleep(td, (PLOCK | PCATCH), "thread_block", 0);
+	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+		TAILQ_INSERT_TAIL(&p->p_threadsq, td, td_link);
+		td->td_stat = SSLEEP;
+		p->p_tqssleep++;
 	}
-	THREAD_UNLOCK(td);
 }
 
-/* if thread state is not running, thread unblocks all siblings from running */
 void
-thread_release(td)
+thread_unsleep(p, td)
+	struct proc *p;
 	struct thread *td;
 {
-	struct proc *p;
-
-	p = td->td_procp;
-	THREAD_LOCK(td);
-	if ((td->td_ptid == p->p_pid) && (td->td_stat != SRUN)) {
-		wakeup(td);
+	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+		TAILQ_REMOVE(&p->p_threadsq, td, td_link);
+		td->td_stat = SRUN;
+		p->p_tqssleep--;
 	}
-	THREAD_UNLOCK(td);
 }

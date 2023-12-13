@@ -51,13 +51,16 @@ struct	proc {
     union {
     	struct threadlist 	allthread;	/* list of all threads */
     	struct threadhd	 	threadrq; 	/* Linked list of running threads. */
+    	struct threadhd		threadsq;	/* Linked list of sleeping threads. */
     } p_threads;
 #define p_allthread		p_threads.allthread
 #define p_threadrq		p_threads.threadrq
+#define p_threadsq		p_threads.threadsq
     struct thread		*p_curthread;	/* current running thread */
     struct thread		*p_threado;		/* thread overseer (original thread of process)  */
     int 				p_nthreads;		/* number of attached threads to this proc */
     int					p_tqsready;		/* number of threads ready */
+    int					p_tqssleep;		/* number of threads sleeping */
 #endif
 
     /* Substructures: */
