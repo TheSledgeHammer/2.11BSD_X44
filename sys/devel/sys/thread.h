@@ -60,6 +60,8 @@ struct thread {
 	LIST_ENTRY(thread)	td_sibling;				/* List of sibling threads. */
 	LIST_ENTRY(thread)	td_hash;				/* Hash chain. */
 
+	 caddr_t	        td_wchan;				/* event process is awaiting */
+
 	struct pgrp 	    *td_pgrp;       		/* Pointer to proc group. */
 
 	u_char				td_ppri;				/* thread process priority (parent) */
@@ -123,6 +125,9 @@ void thread_free(struct proc *, struct thread *);
 void thread_setrq(struct proc *, struct thread *);
 void thread_remrq(struct proc *, struct thread *);
 struct thread *thread_getrq(struct proc *, struct thread *);
+void thread_setsq(struct proc *, struct thread *);
+void thread_remsq(struct proc *, struct thread *);
+struct thread *thread_getsq(struct proc *, struct thread *);
 void thread_updatepri(struct proc *, struct thread *);
 int thread_setpri(struct proc *, struct thread *);
 void thread_setrun(struct proc *, struct thread *);

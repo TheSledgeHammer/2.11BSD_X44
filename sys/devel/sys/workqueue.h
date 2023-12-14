@@ -29,6 +29,7 @@
 #ifndef SYS_WORKQUEUE_H_
 #define SYS_WORKQUEUE_H_
 
+#include <sys/lock.h>
 #include <sys/queue.h>
 
 /*
@@ -40,7 +41,7 @@
  */
 
 struct work {
-	SIMPLEQ_ENTRY(work) wk_entry;
+	SIMPLEQ_ENTRY(work) 	wk_entry;
 };
 
 struct 	workqueue;

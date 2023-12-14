@@ -422,6 +422,55 @@ done:
 	return (NULL);
 }
 
+/* add thread to sleepqueue */
+void
+thread_setsq(p, td)
+	struct proc *p;
+	struct thread *td;
+{
+	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+		TAILQ_INSERT_TAIL(&p->p_threadsq, td, td_link);
+		p->p_tqssleep++;
+	}
+}
+
+/* remove thread from sleepqueue */
+void
+thread_remsq(p, td)
+	struct proc *p;
+	struct thread *td;
+{
+	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+		TAILQ_REMOVE(&p->p_threadsq, td, td_link);
+		p->p_tqssleep--;
+	}
+}
+
+/* get thread from sleepqueue */
+struct thread *
+thread_getsq(p, td)
+	register struct proc *p;
+	register struct thread *td;
+{
+	register struct thread *tq;
+
+	if (td == TAILQ_FIRST(&p->p_threadsq)) {
+		return (td);
+	} else {
+		for (tq = TAILQ_FIRST(&p->p_threadsq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+			if (tq == td) {
+				return (tq);
+			} else {
+				goto done;
+			}
+		}
+	}
+
+done:
+	panic("thread_getsq");
+	return (NULL);
+}
+
 /*
  * Initialize the (doubly-linked) run queues
  * to be empty.
@@ -516,7 +565,6 @@ thread_run(p, td)
 		break;
 	case SSTOP:
 	case SSLEEP:
-		unsleep(p);
 		thread_setrun(p, td);
 		break;
 	default:
@@ -541,6 +589,9 @@ thread_schedule(p, td)
 		td->td_pri = p->p_usrpri + p->p_nthreads;
 		thread_setpri(p, td);
 		thread_setrq(p, td);
+	} else {
+		td->td_pri = p->p_usrpri + p->p_nthreads;
+		thread_setpri(p, td);
 	}
 }
 
@@ -584,15 +635,20 @@ thread_exit(ecode)
 }
 
 void
-thread_sleep(p, td)
-	struct proc *p;
-	struct thread *td;
+thread_sleep(chan, pri)
+	void *chan;
+	int pri;
 {
-	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-		TAILQ_INSERT_TAIL(&p->p_threadsq, td, td_link);
-		td->td_stat = SSLEEP;
-		p->p_tqssleep++;
-	}
+	register struct proc *p;
+	register struct thread *td;
+
+	p = u.u_procp;
+	td = u.u_curthread;
+
+	td->td_wchan = chan;
+	td->td_pri = primask(p) & PRIMASK;
+	td->td_stat = SSLEEP;
+	thread_setsq(p, td);
 }
 
 void
@@ -600,9 +656,9 @@ thread_unsleep(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-		TAILQ_REMOVE(&p->p_threadsq, td, td_link);
+	if (td->td_wchan) {
+		thread_remsq(p, td);
 		td->td_stat = SRUN;
-		p->p_tqssleep--;
+		td->td_wchan = 0;
 	}
 }

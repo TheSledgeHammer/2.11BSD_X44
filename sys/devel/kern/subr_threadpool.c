@@ -37,7 +37,6 @@
 #include <sys/map.h>
 #include <sys/user.h>
 #include <sys/threadpool.h>
-//#include <sys/kthread.h>
 #include <sys/thread.h>
 #include <sys/mutex.h>
 #include <sys/percpu.h>
@@ -691,6 +690,15 @@ threadpool_cancel_job(pool, job)
 	}
 }
 
+static void
+threadpool_wait(td, chan, pri)
+	struct thread *td;
+	const void *chan;
+	int pri;
+{
+	thread_sleep(chan, pri);
+}
+
 static void threadpool_process(struct thread *, struct threadpool_thread *const, struct threadpool *const);
 static void threadpool_overseer_processor(struct thread *, struct threadpool_thread *const, struct threadpool *const);
 static void threadpool_processor(char *, struct threadpool_thread *const, struct threadpool *const, struct mtx *, struct lock_holder *);
@@ -713,19 +721,6 @@ threadpool_thread(arg)
 
 	thread = arg;
 	threadpool_process(curthread, thread, thread->tpt_pool);
-}
-
-static void
-threadpool_wait(td, chan, pri)
-	struct thread *td;
-	const void *chan;
-	int pri;
-{
-	register struct proc *p;
-
-	p = td->td_procp;
-	sleep(chan, pri);
-	unsleep(p);
 }
 
 static void

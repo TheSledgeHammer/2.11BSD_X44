@@ -31,7 +31,6 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-//#include <sys/kthread.h>
 #include <sys/thread.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
@@ -104,8 +103,7 @@ workqueue_runlist(wq, list)
 	struct workqueue *wq;
 	struct workqhead *list;
 {
-	struct work *wk;
-	struct work *next;
+	struct work *wk, *next;
 
 	for (wk = SIMPLEQ_FIRST(list); wk != NULL; wk = next) {
 		next = SIMPLEQ_NEXT(wk, wk_entry);
@@ -157,18 +155,18 @@ workqueue_worker(arg)
 }
 
 static void
-workqueue_init(wq, name, callback_func, callback_arg, prio, ipl)
+workqueue_init(wq, name, func, arg, prio, ipl)
 	struct workqueue *wq;
 	const char *name;
-	void (*callback_func)(struct work *, void *);
-	void *callback_arg;
+	void (*func)(struct work *, void *);
+	void *arg;
 	int prio, ipl;
 {
-	wq->wq_ipl = ipl;
-	wq->wq_prio = prio;
 	wq->wq_name = name;
-	wq->wq_func = callback_func;
-	wq->wq_arg = callback_arg;
+	wq->wq_func = func;
+	wq->wq_arg = arg;
+	wq->wq_prio = prio;
+	wq->wq_ipl = ipl;
 }
 
 static int
@@ -181,7 +179,7 @@ workqueue_initqueue(wq)
 	q = &wq->wq_queue;
 	simple_lock_init(&q->q_lock);
 	SIMPLEQ_INIT(&q->q_queue);
-	error = kthread_create(workqueue_worker, wq, &q->q_worker, wq->wq_name, FALSE);
+	error = kthread_create(workqueue_worker, wq, &q->q_worker, wq->wq_name, TRUE);
 
 	return (error);
 }
@@ -199,7 +197,7 @@ workqueue_exit(wk, arg)
 	 * is workqueue_finiqueue.
 	 */
 
-	KASSERT(q->q_worker == curthread);
+	KASSERT(q->q_worker == curproc->p_curthread);
 	simple_lock(&q->q_lock);
 	q->q_worker = NULL;
 	simple_unlock(&q->q_lock);
@@ -236,11 +234,11 @@ workqueue_finiqueue(wq)
 
 /* --- */
 int
-workqueue_create(wqp, name, callback_func, callback_arg, prio, ipl, flags)
+workqueue_create(wqp, name, func, arg, prio, ipl, flags)
 	struct workqueue **wqp;
 	const char *name;
-	void (*callback_func)(struct work *, void *);
-	void *callback_arg;
+	void (*func)(struct work *, void *);
+	void *arg;
 	int prio, ipl, flags;
 {
 	struct workqueue *wq;
@@ -251,7 +249,7 @@ workqueue_create(wqp, name, callback_func, callback_arg, prio, ipl, flags)
 		return ENOMEM;
 	}
 
-	workqueue_init(wq, name, callback_func, callback_arg, prio, ipl);
+	workqueue_init(wq, name, func, arg, prio, ipl);
 
 	error = workqueue_initqueue(wq);
 	if (error) {
@@ -287,4 +285,15 @@ workqueue_enqueue(wq, wk)
 	if (wasempty) {
 		wakeup(q);
 	}
+}
+
+void
+workqueue_sleep(q, chan, pri)
+	struct workqueue_queue *q;
+	void *chan;
+	int pri;
+{
+	simple_lock(&q->q_lock);
+	thread_sleep(chan, pri);
+	simple_unlock(&q->q_lock);
 }
