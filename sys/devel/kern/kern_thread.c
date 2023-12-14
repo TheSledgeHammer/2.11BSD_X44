@@ -617,7 +617,7 @@ thread_exit(ecode)
 	struct thread *td;
 
 	p = u.u_procp;
-	td = u.u_curthread;
+	td = u.u_threado;
 
 	if (ecode != 0) {
 		printf("WARNING: thread `%s' (%d) exits with status %d\n", td->td_name, td->td_tid, ecode);
@@ -643,7 +643,7 @@ thread_sleep(chan, pri)
 	register struct thread *td;
 
 	p = u.u_procp;
-	td = u.u_curthread;
+	td = u.u_threado;
 
 	td->td_wchan = chan;
 	td->td_pri = primask(p) & PRIMASK;
