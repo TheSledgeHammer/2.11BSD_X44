@@ -1,6 +1,6 @@
 # $FreeBSD$
 
-FILES=	200.accounting \
-	999.local
+FILES=	monthly \
+	    monthly.conf
 
 .include <bsd.prog.mk>

@@ -5,6 +5,8 @@ SUBDIR=  	byacc expat fetch file flex gnu \
 		libarchive lua mdocml nawk xz
 #SUBDIR+=	oscompat
 
+SUBDIR+=	pkg_install
+
 #.if ${MKINGRES} != "no"
 #SUBDIR+= ingres
 #.endif
