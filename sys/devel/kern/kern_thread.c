@@ -459,6 +459,7 @@ thread_getsq(p, td)
 	} else {
 		for (tq = TAILQ_FIRST(&p->p_threadsq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
 			if (tq == td ) {
+				return (tq);
 			} else {
 				goto done;
 			}
