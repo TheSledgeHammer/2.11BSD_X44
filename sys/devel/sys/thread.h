@@ -61,6 +61,7 @@ struct thread {
 	LIST_ENTRY(thread)	td_hash;				/* Hash chain. */
 
 	 caddr_t	        td_wchan;				/* event process is awaiting */
+	 caddr_t			td_wmesg;				/* Reason for sleep. */
 
 	struct pgrp 	    *td_pgrp;       		/* Pointer to proc group. */
 
@@ -134,8 +135,11 @@ void thread_setrun(struct proc *, struct thread *);
 void thread_schedule(struct proc *, struct thread *);
 void thread_schedcpu(struct proc *);
 void thread_exit(int);
-void thread_sleep(struct proc *, struct thread *);
+int thread_tsleep(void *, int, char *, u_short);
+void thread_sleep(void *, int);
 void thread_unsleep(struct proc *, struct thread *);
+void thread_endtsleep(struct proc *, struct thread *);
+void thread_wakeup(struct proc *, void *);
 
 pid_t tidmask(struct proc *);					/* thread tidmask */
 int primask(struct proc *);						/* thread primask */

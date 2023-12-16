@@ -52,7 +52,8 @@ struct workqueue_queue {
 	struct lock_object 		*q_lock;
 	int 					q_savedipl;
 	struct workqhead 		q_queue;
-	struct thread 			*q_worker;
+	struct proc				*q_proc;
+	struct thread 			*q_thread;
 };
 
 struct workqueue {
@@ -173,14 +174,18 @@ static int
 workqueue_initqueue(wq)
 	struct workqueue *wq;
 {
+	struct thread *td;
 	struct workqueue_queue *q;
 	int error;
 
 	q = &wq->wq_queue;
 	simple_lock_init(&q->q_lock);
 	SIMPLEQ_INIT(&q->q_queue);
-	error = kthread_create(workqueue_worker, wq, &q->q_worker, wq->wq_name, TRUE);
-
+	error = kthread_create(workqueue_worker, wq, &td, wq->wq_name, TRUE);
+	if (error) {
+		q->q_thread = td;
+		q->q_proc = td->td_procp;
+	}
 	return (error);
 }
 
@@ -196,10 +201,10 @@ workqueue_exit(wk, arg)
 	 * no need to raise ipl because only competition at this point
 	 * is workqueue_finiqueue.
 	 */
-
-	KASSERT(q->q_worker == curproc->p_curthread);
+	KASSERT(q->q_proc != NULL || q->q_proc == curproc);
+	KASSERT(q->q_thread == q->q_proc->p_curthread);
 	simple_lock(&q->q_lock);
-	q->q_worker = NULL;
+	q->q_thread = NULL;
 	simple_unlock(&q->q_lock);
 	wakeup(q);
 	kthread_exit(0);
@@ -217,14 +222,18 @@ workqueue_finiqueue(wq)
 
 	wqe.wqe_q = q;
 	KASSERT(SIMPLEQ_EMPTY(&q->q_queue));
-	KASSERT(q->q_worker != NULL);
+	KASSERT(q->q_thread != NULL);
 	workqueue_lock(wq, q);
 	SIMPLEQ_INSERT_TAIL(&q->q_queue, &wqe.wqe_wk, wk_entry);
-	wakeup(q);
-	while (q->q_worker != NULL) {
+	thread_wakeup(q->q_proc, q);
+
+	while (q->q_thread != NULL) {
 		int error;
 
-		error = ltsleep(q, wq->wq_prio, "wqfini", 0, &q->q_lock);
+		simple_lock(&q->q_lock);
+		error = thread_tsleep(q, wq->wq_prio, "wqfini", 0);
+		simple_unlock(&q->q_lock);
+
 		if (error) {
 			panic("%s: %s error=%d", __func__, wq->wq_name, error);
 		}
@@ -285,15 +294,4 @@ workqueue_enqueue(wq, wk)
 	if (wasempty) {
 		wakeup(q);
 	}
-}
-
-void
-workqueue_sleep(q, chan, pri)
-	struct workqueue_queue *q;
-	void *chan;
-	int pri;
-{
-	simple_lock(&q->q_lock);
-	thread_sleep(chan, pri);
-	simple_unlock(&q->q_lock);
 }
