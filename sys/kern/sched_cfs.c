@@ -210,8 +210,97 @@ cfs_compute(cfs, slack)
 	}
 }
 
+struct gsched_cfs *
+cfs_process(p)
+	struct proc *p;
+{
+	struct gsched_cfs *cfsp; 	/* cfs process */
+	u_char slack; 				/* slack/laxity time */
+	u_char priw; 				/* priority weighting */
+
+	cfsp = gsched_cfs(p->p_gsched);
+	slack = p->p_gsched->gsc_slack;
+	priw = p->p_gsched->gsc_priweight;
+
+	/* add to cfs queue */
+	cfsp->cfs_estcpu = cfs_decay(p, priw);
+	cfsp->cfs_priweight = priw;
+	gsched_estcpu(cfsp->cfs_estcpu, p->p_estcpu);
+	RB_INSERT(gsched_cfs_rbtree, &cfsp->cfs_parent, cfsp);
+
+	/* calculate cfs variables */
+	cfs_compute(cfsp, slack);
+
+	return (cfsp);
+}
+
 int
 cfs_schedcpu(p)
+	struct proc *p;
+{
+	register struct gsched_cfs *cfs, *cfsp;
+	int cpticks;		/* p_cpticks counter (deadline) */
+
+	cpticks = 0;
+
+	cfsp = cfs_process(p);
+
+	/* run-through red-black tree */
+	for (cfs = RB_FIRST(gsched_cfs_rbtree, &cfs->cfs_parent); cfs != NULL; cfs = RB_LEFT(cfs, cfs_entry)) {
+		if ((cfs == cfsp) && (cfs->cfs_proc == p)) {
+			/* set cpticks */
+			gsched_cpticks(cfs->cfs_cpticks, p->p_cpticks);
+			/* start deadline counter */
+			while (cpticks < cfs->cfs_cpticks) {
+				cpticks++;
+				/* Test if deadline was reached before end of scheduling period */
+				if (cfs->cfs_cpticks == cpticks) {
+					/* test if time doesn't equal the base scheduling period */
+					if (cfs->cfs_time != cfs->cfs_bsched) {
+						goto fin;
+						break;
+					} else {
+						goto out;
+						break;
+					}
+				} else if (cfs->cfs_cpticks != cpticks) {
+					/* test if time equals the base scheduling period */
+					if (cfs->cfs_time == cfs->cfs_bsched) {
+						goto fin;
+						break;
+					} else {
+						goto out;
+						break;
+					}
+				} else {
+					/* SHOULD NEVER REACH THIS POINT!! */
+					/* panic?? */
+					goto out;
+					break;
+				}
+			}
+		}
+	}
+
+out:
+	/* update cfs variables */
+	cfs_update(p, cfs->cfs_priweight);
+	/* remove from cfs queue */
+	RB_REMOVE(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
+
+	return (0);
+
+fin:
+	/* update cfs variables */
+	cfs_update(p, cfs->cfs_priweight);
+	/* remove from cfs queue */
+	RB_REMOVE(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
+
+	return (1);
+}
+
+int
+cfs_schedcpu_v1(p)
 	struct proc *p;
 {
 	register struct gsched_cfs *cfs;
@@ -290,5 +379,5 @@ fin:
 	/* remove from run-queue */
 	remrq(p);
 
-	return(0);
+	return (0);
 }

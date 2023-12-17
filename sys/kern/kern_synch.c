@@ -150,11 +150,15 @@ schedcpu(arg)
 					(p->p_stat == SRUN) &&
 					(p->p_flag & P_INMEM) &&
 					(p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
-				if(cfs_schedcpu(p)) {
-					continue;
+				if (cfs_schedcpu(p) == 0) {
+					remrq(p);
+					reschedule(p);
+				} else {
+					remrq(p);
 				}
 				p->p_pri = p->p_usrpri;
 				setpri(p);
+				setrq(p);
 			} else {
 				p->p_pri = p->p_usrpri;
 				setpri(p);
