@@ -364,7 +364,7 @@ thread_setrq(p, td)
 #ifdef DIAGNOSTIC
 	register struct thread *tq;
 
-	for (tq = TAILQ_FIRST(&p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, p_link)) {
+	for (tq = TAILQ_FIRST(&p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
 		if (tq == td) {
 			panic("thread_setrq");
 		}
@@ -428,10 +428,17 @@ thread_setsq(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-		TAILQ_INSERT_TAIL(&p->p_threadsq, td, td_link);
-		p->p_tqssleep++;
+#ifdef DIAGNOSTIC
+	register struct thread *tq;
+
+	for (tq = TAILQ_FIRST(&p->p_threadsq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+		if (tq == td) {
+			panic("thread_setsq");
+		}
 	}
+#endif
+	TAILQ_INSERT_TAIL(&p->p_threadsq, td, td_link);
+	p->p_tqssleep++;
 }
 
 /* remove thread from sleepqueue */
@@ -440,10 +447,8 @@ thread_remsq(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-		TAILQ_REMOVE(&p->p_threadsq, td, td_link);
-		p->p_tqssleep--;
-	}
+	TAILQ_REMOVE(&p->p_threadsq, td, td_link);
+	p->p_tqssleep--;
 }
 
 /* get thread from sleepqueue */
@@ -644,27 +649,33 @@ thread_tsleep(chan, pri, wmesg, timo)
 	register struct proc *p;
 	register struct thread *td;
 	int catch;
+
 	p = u.u_procp;
 	td = u.u_threado;
 
-	catch = pri & PCATCH;
-	td->td_wchan = (caddr_t)chan;
-	td->td_wmesg = wmesg;
-	td->td_pri = primask(p) & PRIMASK;
+	/* only thread's on same process sleep */
+	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+		catch = pri & PCATCH;
+		td->td_wchan = (caddr_t)chan;
+		td->td_wmesg = wmesg;
+		td->td_pri = primask(p) & PRIMASK;
 
-	thread_setsq(p, td);
-	if (timo) {
-		timeout((void *)thread_endtsleep, (caddr_t)td, timo);
-	}
-	if (catch) {
-		if (td->td_wchan) {
-			thread_unsleep(p, td);
+		thread_setsq(p, td);
+		if (timo) {
+			timeout((void *)thread_endtsleep, (caddr_t)td, timo);
 		}
-		if (td->td_wchan == 0) {
-			catch = 0;
+		if (catch) {
+			if (td->td_wchan) {
+				thread_unsleep(p, td);
+			}
+			if (td->td_wchan == 0) {
+				catch = 0;
+			}
 		}
+		td->td_stat = SSLEEP;
+	} else {
+		return (EWOULDBLOCK);
 	}
-	td->td_stat = SSLEEP;
 	return (0);
 }
 
@@ -678,6 +689,7 @@ thread_sleep(chan, pri)
 	if (pri > PZERO) {
 		priority |= PCATCH;
 	}
+
 	u.u_error = thread_tsleep(chan, priority, "thread_sleep", 0);
 
 	if ((priority & PCATCH) == 0 || (u.u_error == 0)) {
@@ -690,10 +702,12 @@ thread_unsleep(p, td)
 	register struct proc *p;
 	register struct thread *td;
 {
-	if (td->td_wchan) {
-		thread_remsq(p, td);
-		td->td_stat = SRUN;
-		td->td_wchan = 0;
+	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+		if (td->td_wchan) {
+			thread_remsq(p, td);
+			td->td_stat = SRUN;
+			td->td_wchan = 0;
+		}
 	}
 }
 
@@ -718,20 +732,22 @@ thread_wakeup(p, chan)
 {
 	register struct thread *td, tq;
 
-	for (tq = TAILQ_FIRST(&p->p_threadsq); tq != NULL; td = tq) {
-		if (td->td_stat != SSLEEP && td->td_stat != SSTOP) {
-			panic("thread_wakeup");
-		}
-		if (td->td_wchan == chan) {
-			td->td_wchan = 0;
-			tq = TAILQ_NEXT(td, td_link);
-			if (td->td_stat == SSLEEP) {
-				thread_updatepri(p, td);
-				td->td_stat = SRUN;
-				thread_setrq(p, td);
+	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+		for (tq = TAILQ_FIRST(&p->p_threadsq); tq != NULL; td = tq) {
+			if (td->td_stat != SSLEEP && td->td_stat != SSTOP) {
+				panic("thread_wakeup");
 			}
-		} else {
-			tq = TAILQ_NEXT(td, td_link);
+			if (td->td_wchan == chan) {
+				td->td_wchan = 0;
+				tq = TAILQ_NEXT(td, td_link);
+				if (td->td_stat == SSLEEP) {
+					thread_updatepri(p, td);
+					td->td_stat = SRUN;
+					thread_setrq(p, td);
+				}
+			} else {
+				tq = TAILQ_NEXT(td, td_link);
+			}
 		}
 	}
 }
