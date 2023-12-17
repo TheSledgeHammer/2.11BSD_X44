@@ -247,7 +247,7 @@ cfs_schedcpu(p)
 
 	/* run-through red-black tree */
 	for (cfs = RB_FIRST(gsched_cfs_rbtree, &cfs->cfs_parent); cfs != NULL; cfs = RB_LEFT(cfs, cfs_entry)) {
-		if ((cfs == cfsp) && (cfs->cfs_proc == p)) {
+		if (cfs == cfsp) {
 			/* set cpticks */
 			gsched_cpticks(cfs->cfs_cpticks, p->p_cpticks);
 			/* start deadline counter */
