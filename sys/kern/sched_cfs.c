@@ -232,7 +232,7 @@ cfs_schedcpu(p)
 	RB_INSERT(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
 
 	/* calculate cfs variables */
-	cfs_compute(cfsp, slack);
+	cfs_compute(cfs, slack);
 
 	/* run-through red-black tree */
 	for (cfs = RB_FIRST(gsched_cfs_rbtree, &cfs->cfs_parent); cfs != NULL; cfs = RB_LEFT(cfs, cfs_entry)) {
