@@ -550,6 +550,29 @@ tc_setclock(struct timespec *ts)
 }
 
 /*
+ * Skew the timehands according to any adjtime(2) adjustment.
+ */
+void
+ntp_update_second(int64_t *adjustment, time_t *newsec)
+{
+	int64_t adj;
+
+	if ((*newsec) % 86400 == 0) {
+		(*newsec)--;
+	} else if (((*newsec) + 1) % 86400 == 0) {
+		(*newsec)++;
+	}
+
+	if (adjustment > 0) {
+		adj = MIN(5000, adjustment);
+	} else {
+		adj = MAX(-5000, adjustment);
+	}
+	adjustment -= adj;
+	adjustment = (adj * 1000) << 32;
+}
+
+/*
  * Initialize the next struct timehands in the ring and make
  * it the active timehands.  Along the way we might switch to a different
  * timecounter and/or do seconds processing in NTP.  Slightly magic.
