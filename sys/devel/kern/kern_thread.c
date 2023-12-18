@@ -191,6 +191,8 @@ thread_reparent(from, to, td)
 	struct proc *from, *to;
 	struct thread *td;
 {
+	int isrq, issq;
+
 	if (LIST_EMPTY(&from->p_allthread) || from == NULL || to == NULL || td == NULL) {
 		return;
 	}
@@ -198,7 +200,13 @@ thread_reparent(from, to, td)
 	if (td->td_stat != (SZOMB | SRUN)) {
 		if (!TAILQ_EMPTY(&from->p_threadrq)) {
 			thread_remrq(from, td);
+			isrq = 1;
 		}
+		if (!TAILQ_EMPTY(&from->p_threadsq)) {
+			thread_remsq(from, td);
+			issq = 1;
+		}
+
 		thread_remove(from, td);
 		td->td_procp = to;
     	td->td_flag = 0;
@@ -206,7 +214,15 @@ thread_reparent(from, to, td)
     	td->td_ptid = to->p_pid;
     	td->td_pgrp = to->p_pgrp;
 		thread_add(to, td);
-		thread_setrq(to, td);
+
+		if (isrq == 1) {
+			thread_setrq(to, td);
+			isrq = 0;
+		}
+		if (issq == 1) {
+			thread_setsq(to, td);
+			issq = 0;
+		}
 	}
 }
 

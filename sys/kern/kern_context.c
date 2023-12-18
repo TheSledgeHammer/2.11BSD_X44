@@ -139,24 +139,24 @@ setucontext()
 
 /*
 void
-kthread_getucontext(kt, ucp)
-	struct kthread *kt;
+thread_getucontext(td, ucp)
+	struct thread *td;
 	ucontext_t *ucp;
 {
 	struct proc *p;
 
-	p = kt->kt_procp;
+	p = td->td_procp;
 	proc_getucontext(p, ucp);
 }
 
 void
-kthread_setucontext(kt, ucp)
-	struct kthread *kt;
+thread_setucontext(td, ucp)
+	struct thread *td;
 	ucontext_t *ucp;
 {
 	struct proc *p;
 
-	p = kt->kt_procp;
+	p = td->td_procp;
 	proc_setucontext(p, ucp);
 }
 */

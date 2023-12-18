@@ -90,7 +90,7 @@ struct npf_table;
 typedef struct npf_sehash	npf_sehash_t;
 typedef struct npf_table	npf_table_t;
 
-typedef npf_table_t *		npf_tableset_t;
+typedef npf_table_t 		*npf_tableset_t;
 
 /*
  * DEFINITIONS.
@@ -123,9 +123,10 @@ typedef struct {
 } npf_state_t;
 
 /* NetBSD: mutex lock */
-#define mutex_init(lock, holder, name, data, pid)	mtx_init(lock, holder, name, data, pid)
-#define mutex_enter(lock, holder)					mtx_lock(lock, holder)
-#define mutex_exit(lock, holder)					mtx_unlock(lock, holder)
+struct lock_holder npf_loholder;
+#define mutex_init(lock, name, data, pid)	mtx_init(lock, &npf_loholder, name, data, pid)
+#define mutex_enter(lock)					mtx_lock(lock, &npf_loholder)
+#define mutex_exit(lock)					mtx_unlock(lock, &npf_loholder)
 
 /*
  * INTERFACES.

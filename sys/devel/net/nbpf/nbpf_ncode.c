@@ -140,7 +140,7 @@ nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, s
 	case NBPF_OPCODE_ADVR:
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->i); /* Register */
 		KASSERT(ncode->i < NBPF_NREGS);
-		if (!nbpf_advance(m, regs[ncode->i])) {
+		if (!nbpf_advance(m, regs[ncode->i]), 0) {
 			goto fail;
 		}
 		break;
@@ -622,6 +622,19 @@ nbpf_ncode_validate(struct nbpf_insn *pc, int *errat)
 		error = ret ? 0 : NBPF_ERR_RANGE;
 	}
 	*errat = (iptr - (uintptr_t) pc->nc) / sizeof(uint32_t);
+	return (error);
+}
+
+int
+nbpf_filter(struct nbpf_insn *pc, struct mbuf *m, int layer)
+{
+	nbpf_cache_t *npc;
+	int error;
+
+	npc = nbpf_cache_init(m);
+	if (npc != NULL) {
+		error = nbpf_ncode_process(npc, pc, m, layer);
+	}
 	return (error);
 }
 

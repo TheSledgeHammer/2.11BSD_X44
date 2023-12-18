@@ -135,13 +135,11 @@ struct gsched_domain {
 /*
  * Priority Weighting Calculation:
  */
-#define PRIORITY_WEIGHTING(pw, pwp, pwd, pwl, pws) {		\
-	(pw) = 	((PW_FACTOR((pwp), PW_PRIORITY) +  				\
-			PW_FACTOR((pwd), PW_DEADLINE) + 				\
-			PW_FACTOR((pwl), PW_LAXITY) + 					\
-			PW_FACTOR((pws), PW_SLEEP))/4);					\
-};
-
+#define PRIORITY_WEIGHTING(pwp, pwd, pwl, pws)				\
+		((PW_FACTOR((pwp), PW_PRIORITY) +  					\
+				PW_FACTOR((pwd), PW_DEADLINE) + 			\
+				PW_FACTOR((pwl), PW_LAXITY) + 				\
+				PW_FACTOR((pws), PW_SLEEP)) / (4));
 
 void 				gsched_init(struct proc *);
 struct proc			*gsched_proc(struct gsched *);

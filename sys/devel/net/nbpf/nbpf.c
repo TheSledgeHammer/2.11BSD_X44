@@ -95,7 +95,7 @@ nbpf_ensure_contig(struct mbuf *m, size_t len)
  * => Current nbuf and the offset is stored in the nbuf metadata.
  */
 uint32_t
-nbpf_advance(struct mbuf *m, size_t len)
+nbpf_advance(struct mbuf *m, size_t len, size_t ensure)
 {
 	uint32_t ret;
 	u_int off, wmark;
@@ -114,7 +114,9 @@ nbpf_advance(struct mbuf *m, size_t len)
 	ret = mtod(m, u_char *);
 	KASSERT(off >= (wmark - m->m_len));
 	ret += (off - (wmark - m->m_len));
-	ret = nbpf_ensure_contig(m, len);
+	if (ensure) {
+		ret = nbpf_ensure_contig(m, len);
+	}
 	return (ret);
 }
 
@@ -225,4 +227,230 @@ nbpf_addr_cmp(const nbpf_addr_t *addr1, const nbpf_netmask_t mask1, const nbpf_a
 		addr2 = &realaddr2;
 	}
 	return memcmp(addr1, addr2, alen);
+}
+
+static int
+nbpf_cache_ip(nbpf_cache_t *npc, struct mbuf *m)
+{
+	const void *nptr = mtod(m, void *);
+	const uint8_t ver = *(const uint8_t *)nptr;
+	int flags = 0;
+
+	switch (ver >> 4) {
+	case IPVERSION: {
+		struct ip *ip;
+
+		ip = nbpf_ensure_contig(m, sizeof(struct ip));
+		if (ip == NULL) {
+			return 0;
+		}
+
+		/* Check header length and fragment offset. */
+		if ((u_int) (ip->ip_hl << 2) < sizeof(struct ip)) {
+			return 0;
+		}
+		if (ip->ip_off & ~htons(IP_DF | IP_RF)) {
+			/* Note fragmentation. */
+			flags |= NBPC_IPFRAG;
+		}
+
+		/* Cache: layer 3 - IPv4. */
+		npc->bpc_alen = sizeof(struct in_addr);
+		npc->bpc_srcip = (npf_addr_t*) &ip->ip_src;
+		npc->bpc_dstip = (npf_addr_t*) &ip->ip_dst;
+		npc->bpc_hlen = ip->ip_hl << 2;
+		npc->bpc_proto = ip->ip_p;
+
+		npc->bpc_ip.v4 = ip;
+		flags |= NBPC_IP4;
+		break;
+	}
+
+	case (IPV6_VERSION >> 4): {
+		struct ip6_hdr *ip6;
+		struct ip6_ext *ip6e;
+		size_t off, hlen;
+
+		ip6 = nbpf_ensure_contig(m, sizeof(struct ip6_hdr));
+		if (ip6 == NULL) {
+			return 0;
+		}
+
+		/* Set initial next-protocol value. */
+		hlen = sizeof(struct ip6_hdr);
+		npc->bpc_proto = ip6->ip6_nxt;
+		npc->bpc_hlen = hlen;
+
+		/*
+		 * Advance by the length of the current header.
+		 */
+		off = nbpf_offset(m);
+		while (nbpf_advance(m, hlen, 0) != NULL) {
+			ip6e = nbpf_ensure_contig(m, sizeof(*ip6e));
+			if (ip6e == NULL) {
+				return 0;
+			}
+
+			/*
+			 * Determine whether we are going to continue.
+			 */
+			switch (npc->bpc_proto) {
+			case IPPROTO_HOPOPTS:
+			case IPPROTO_DSTOPTS:
+			case IPPROTO_ROUTING:
+				hlen = (ip6e->ip6e_len + 1) << 3;
+				break;
+			case IPPROTO_FRAGMENT:
+				hlen = sizeof(struct ip6_frag);
+				flags |= NBPC_IPFRAG;
+				break;
+			case IPPROTO_AH:
+				hlen = (ip6e->ip6e_len + 2) << 2;
+				break;
+			default:
+				hlen = 0;
+				break;
+			}
+
+			if (!hlen) {
+				break;
+			}
+			npc->bpc_proto = ip6e->ip6e_nxt;
+			npc->bpc_hlen += hlen;
+		}
+
+		/*
+		 * Re-fetch the header pointers (nbufs might have been
+		 * reallocated).  Restore the original offset (if any).
+		 */
+		nptr = mtod(m, void *);
+		ip6 = nptr;
+		if (off) {
+			nbpf_advance(m, off, 0);
+		}
+
+		/* Cache: layer 3 - IPv6. */
+		npc->bpc_alen = sizeof(struct in6_addr);
+		npc->bpc_srcip = (npf_addr_t*) &ip6->ip6_src;
+		npc->bpc_dstip = (npf_addr_t*) &ip6->ip6_dst;
+
+		npc->bpc_ip.v6 = ip6;
+		flags |= NBPC_IP6;
+		break;
+	}
+	default:
+		break;
+	}
+	return (flags);
+}
+
+int
+nbpf_cache_all(nbpf_cache_t *npc, struct mbuf *m)
+{
+	int flags, l4flags;
+	u_int hlen;
+
+	flags = nbpf_cache_ip(npc, m);
+	if ((flags & NBPC_IP46) == 0 || (flags & NBPC_IPFRAG) != 0) {
+		npc->bpc_info |= flags;
+		return (flags);
+	}
+	hlen = npc->bpc_hlen;
+
+	switch (npc->bpc_proto) {
+	case IPPROTO_TCP:
+		/* Cache: layer 4 - TCP. */
+		npc->bpc_l4.tcp = nbpf_advance(m, hlen, sizeof(struct tcphdr));
+		l4flags = NBPC_LAYER4 | NBPC_TCP;
+		break;
+	case IPPROTO_UDP:
+		/* Cache: layer 4 - UDP. */
+		npc->bpc_l4.udp = nbpf_advance(m, hlen, sizeof(struct udphdr));
+		l4flags = NBPC_LAYER4 | NBPC_UDP;
+		break;
+	case IPPROTO_ICMP:
+		/* Cache: layer 4 - ICMPv4. */
+		npc->bpc_l4.icmp = nbpf_advance(m, hlen, offsetof(struct icmp, icmp_void));
+		l4flags = NBPC_LAYER4 | NBPC_ICMP;
+		break;
+	case IPPROTO_ICMPV6:
+		/* Cache: layer 4 - ICMPv6. */
+		npc->bpc_l4.icmp6 = nbpf_advance(m, hlen, offsetof(struct icmp6_hdr, icmp6_data32));
+		l4flags = NBPC_LAYER4 | NBPC_ICMP;
+		break;
+	default:
+		l4flags = 0;
+		break;
+	}
+
+	/* Add the L4 flags if nbuf_advance() succeeded. */
+	if (l4flags && npc->bpc_l4.hdr) {
+		flags |= l4flags;
+	}
+	npc->bpc_info |= flags;
+	return (flags);
+}
+
+void
+nbpf_recache(nbpf_cache_t *npc, struct mbuf *m)
+{
+	const int mflags __unused = npc->bpc_info & (NBPC_IP46 | NBPC_LAYER4);
+	int flags;
+
+	npc->bpc_info = 0;
+	flags = nbpf_cache_all(npc, m);
+	KASSERT((flags & mflags) == mflags);
+}
+
+int
+nbpf_reassembly(nbpf_cache_t *npc, struct mbuf *m)
+{
+	struct mbuf *mp;
+	const void *nptr;
+	int error;
+
+	mp = m;
+	nptr = mtod(mp, void *);
+	if (nbpf_iscached(npc, NBPC_IP4)) {
+		struct ip *ip = nptr;
+		error = ip_reass_packet(mp, ip);
+	} else if (npf_iscached(npc, NBPC_IP6)) {
+		error = ip6_reass_packet(mp, npc->bpc_hlen);
+		if (error && mp == NULL) {
+			memset(nptr, 0, sizeof(struct mbuf *));
+		}
+	}
+	if (error) {
+		return (error);
+	}
+	if (mp == NULL) {
+		return (0);
+	}
+	npc->bpc_info = 0;
+	if (nbpf_cache_all(npc, mp) & NBPC_IPFRAG) {
+		return (EINVAL);
+	}
+	return (0);
+}
+
+nbpf_cache_t *
+nbpf_cache_init(struct mbuf *m)
+{
+	nbpf_cache_t np, *npc;
+	int error;
+
+	if (nbpf_cache_all(&np, m) &  NBPC_IPFRAG) {
+		error = nbpf_reassembly(&np, m);
+		if (error && np == NULL) {
+			return (NULL);
+		}
+		if (m == NULL) {
+			return (NULL);
+		}
+	}
+	npc = &np;
+	if (npc != NULL) {
+		return (npc);
+	}
+	return (NULL);
 }

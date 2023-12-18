@@ -48,6 +48,15 @@
 #include <machine/cpu.h>
 
 void
+edf_set_priority_weighting(edf, pri, deadline, slack, slptime)
+	struct gsched_edf *edf;
+	char deadline, slptime;
+	u_char pri, slack;
+{
+	edf->edf_priweight = PRIORITY_WEIGHTING(pri, deadline, slack, slptime);
+}
+
+void
 edf_set_slack(edf, deadline, timo, cost)
 	struct gsched_edf *edf;
 	char deadline, cost;
@@ -66,7 +75,7 @@ edf_set_utilization(edf, cost, release)
 
 void
 edf_set_demand(edf, timo, deadline, release, cost)
-struct gsched_edf *edf;
+	struct gsched_edf *edf;
 	char timo, deadline, release, cost;
 {
 	edf->edf_demand = DEMAND(timo, deadline, release, cost);
@@ -124,7 +133,7 @@ edf_compute(edf)
     edf_set_utilization(edf, edf->edf_cpu, edf->edf_release);                                                   /* utilization */
     edf_set_demand(edf, edf->edf_time, edf->edf_cpticks, edf->edf_release, edf->edf_cpu);                       /* demand */
     edf_set_workload(edf, edf->edf_time, edf->edf_release, edf->edf_cpu);                                       /* workload */
-    PRIORITY_WEIGHTING(edf->edf_priweight, edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime); 	/* priority weighting */
+    edf_set_priority_weighting(edf, edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime);			/* priority weighting */
 }
 
 int
