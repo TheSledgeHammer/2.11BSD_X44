@@ -164,6 +164,8 @@ struct	proc {
 	struct  rusage    	p_ru;			/* exit information */
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
+	int					p_tcgen;		/* for timecounter removal */
+
 	struct gsched		*p_gsched;		/* global scheduler */
 };
 #define	p_session		p_pgrp->pg_session

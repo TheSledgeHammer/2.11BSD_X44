@@ -66,8 +66,7 @@
 #include <nfs/nqnfs.h>
 
 struct nfsstats nfsstats;
-static int nfs_sysctl(int *, u_int, void *, size_t *, void *, size_t,
-		      struct proc *);
+static int nfs_sysctl(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 extern int nfs_ticks;
 
 /*

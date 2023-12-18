@@ -52,7 +52,9 @@ __KERNEL_RCSID(0, "$NetBSD: kern_tc.c,v 1.62 2021/06/02 21:34:58 riastradh Exp $
 #include <sys/syslog.h>
 #include <sys/systm.h>
 #include <sys/timepps.h>
+#include <sys/time.h>
 
+#include <devel/sys/timebin.h>
 #include <devel/sys/timetc.h>
 
 /*
@@ -126,14 +128,14 @@ static struct timehands *volatile timehands = &th0;
 struct timecounter *timecounter = &dummy_timecounter;
 static struct timecounter *timecounters = &dummy_timecounter;
 
-volatile time_t time_second __cacheline_aligned = 1;
-volatile time_t time_uptime __cacheline_aligned = 1;
+volatile time_t time_second = 1;
+volatile time_t time_uptime = 1;
 
 static struct bintime timebasebin;
 
 static int timestepwarnings;
 
-struct mtx timecounter_lock;
+struct lock_object timecounter_lock;
 static u_int timecounter_mods;
 static volatile int timecounter_removals = 1;
 static u_int timecounter_bad;
@@ -347,16 +349,6 @@ dogetnanotime(struct timespec *tsp)
 void
 getnanotime(struct timespec *tsp)
 {
-
-	dogetnanotime(tsp);
-}
-
-void dtrace_getnanotime(struct timespec *tsp);
-
-void
-dtrace_getnanotime(struct timespec *tsp)
-{
-
 	dogetnanotime(tsp);
 }
 
@@ -428,7 +420,7 @@ tc_init(struct timecounter *tc)
 				tc->tc_quality);
 	}
 
-	mutex_spin_enter(&timecounter_lock);
+	simple_lock(&timecounter_lock);
 	tc->tc_next = timecounters;
 	timecounters = tc;
 	timecounter_mods++;
@@ -446,7 +438,7 @@ tc_init(struct timecounter *tc)
 		timecounter = tc;
 		tc_windup();
 	}
-	mutex_spin_exit(&timecounter_lock);
+	simple_unlock(&timecounter_lock);
 }
 
 /*
@@ -497,7 +489,7 @@ tc_detach(struct timecounter *target)
 	struct proc *p;
 
 	/* First, find the timecounter. */
-	mutex_spin_enter(&timecounter_lock);
+	simple_lock(&timecounter_lock);
 
 	for (tcp = &timecounters, tc = timecounters;
 	     tc != NULL;
@@ -506,7 +498,7 @@ tc_detach(struct timecounter *target)
 			break;
 	}
 	if (tc == NULL) {
-		mutex_spin_exit(&timecounter_lock);
+		simple_unlock(&timecounter_lock);
 		return ESRCH;
 	}
 
@@ -518,52 +510,8 @@ tc_detach(struct timecounter *target)
 	}
 	timecounter_mods++;
 	removals = timecounter_removals++;
-	mutex_spin_exit(&timecounter_lock);
-
-	/*
-	 * We now have to determine if any threads in the system are still
-	 * making use of this timecounter.
-	 *
-	 * We issue a broadcast cross call to elide memory ordering issues,
-	 * then scan all LWPs in the system looking at each's timecounter
-	 * generation number.  We need to see a value of zero (not actively
-	 * using a timecounter) or a value greater than our removal value.
-	 *
-	 * We may race with threads that read `timecounter_removals' and
-	 * and then get preempted before updating `l_tcgen'.  This is not
-	 * a problem, since it means that these threads have not yet started
-	 * accessing timecounter state.  All we do need is one clean
-	 * snapshot of the system where every thread appears not to be using
-	 * old timecounter state.
-	 */
-	for (;;) {
-		xc_barrier(0);
-
-		PROC_LOCK(p);
-		LIST_FOREACH(p, &allproc, p_list) {
-			if (p->p_tcgen == 0 || p->p_tcgen > removals) {
-				/*
-				 * Not using timecounter or old timecounter
-				 * state at time of our xcall or later.
-				 */
-				continue;
-			}
-			break;
-		}
-		PROC_UNLOCK(p);
-
-		/*
-		 * If the timecounter is still in use, wait at least 10ms
-		 * before retrying.
-		 */
-		if (p == NULL) {
-			break;
-		}
-		(void)kpause("tcdetach", FALSE, mstohz(10), NULL);
-	}
-
-	tc->tc_next = NULL;
-	return 0;
+	simple_unlock(&timecounter_lock);
+	return (0);
 }
 
 /* Report the frequency of the current timecounter. */
@@ -571,4 +519,351 @@ uint64_t
 tc_getfrequency(void)
 {
 	return (timehands->th_counter->tc_frequency);
+}
+
+/*
+ * Step our concept of UTC.  This is done by modifying our estimate of
+ * when we booted.
+ */
+void
+tc_setclock(struct timespec *ts)
+{
+	struct timespec ts2;
+	struct bintime bt, bt2;
+
+	simple_lock(&timecounter_lock);
+	TC_COUNT(nsetclock);
+	binuptime(&bt2);
+	timespec2bintime(ts, &bt);
+	bintime_sub(&bt, &bt2);
+	bintime_add(&bt2, &timebasebin);
+	timebasebin = bt;
+	tc_windup();
+	simple_unlock(&timecounter_lock);
+
+	if (timestepwarnings) {
+		bintime2timespec(&bt2, &ts2);
+		log(LOG_INFO, "Time stepped from %jd.%09ld to %jd.%09ld\n",
+		    (intmax_t)ts2.tv_sec, ts2.tv_nsec,
+		    (intmax_t)ts->tv_sec, ts->tv_nsec);
+	}
+}
+
+/*
+ * Initialize the next struct timehands in the ring and make
+ * it the active timehands.  Along the way we might switch to a different
+ * timecounter and/or do seconds processing in NTP.  Slightly magic.
+ */
+static void
+tc_windup(void)
+{
+	struct bintime bt;
+	struct timehands *th, *tho;
+	u_int64_t scale;
+	u_int delta, ncount, ogen;
+	int i, s_update;
+	time_t t;
+
+	s_update = 0;
+
+	/*
+	 * Make the next timehands a copy of the current one, but do not
+	 * overwrite the generation or next pointer.  While we update
+	 * the contents, the generation must be zero.  Ensure global
+	 * visibility of the generation before proceeding.
+	 */
+	tho = timehands;
+	th = tho->th_next;
+	ogen = th->th_generation;
+	th->th_generation = 0;
+	membar_producer();
+	bcopy(tho, th, offsetof(struct timehands, th_generation));
+
+	/*
+	 * Capture a timecounter delta on the current timecounter and if
+	 * changing timecounters, a counter value from the new timecounter.
+	 * Update the offset fields accordingly.
+	 */
+	delta = tc_delta(th);
+	if (th->th_counter != timecounter)
+		ncount = timecounter->tc_get_timecount(timecounter);
+	else
+		ncount = 0;
+	th->th_offset_count += delta;
+	th->th_offset_count &= th->th_counter->tc_counter_mask;
+	bintime_addx(&th->th_offset, th->th_scale * delta);
+
+	/*
+	 * Hardware latching timecounters may not generate interrupts on
+	 * PPS events, so instead we poll them.  There is a finite risk that
+	 * the hardware might capture a count which is later than the one we
+	 * got above, and therefore possibly in the next NTP second which might
+	 * have a different rate than the current NTP second.  It doesn't
+	 * matter in practice.
+	 */
+	if (tho->th_counter->tc_poll_pps)
+		tho->th_counter->tc_poll_pps(tho->th_counter);
+
+	/*
+	 * Deal with NTP second processing.  The for loop normally
+	 * iterates at most once, but in extreme situations it might
+	 * keep NTP sane if timeouts are not run for several seconds.
+	 * At boot, the time step can be large when the TOD hardware
+	 * has been read, so on really large steps, we call
+	 * ntp_update_second only twice.  We need to call it twice in
+	 * case we missed a leap second.
+	 * If NTP is not compiled in ntp_update_second still calculates
+	 * the adjustment resulting from adjtime() calls.
+	 */
+	bt = th->th_offset;
+	bintime_add(&bt, &timebasebin);
+	i = bt.sec - tho->th_microtime.tv_sec;
+	if (i > LARGE_STEP)
+		i = 2;
+	for (; i > 0; i--) {
+		t = bt.sec;
+		ntp_update_second(&th->th_adjustment, &bt.sec);
+		s_update = 1;
+		if (bt.sec != t)
+			timebasebin.sec += bt.sec - t;
+	}
+
+	/* Update the UTC timestamps used by the get*() functions. */
+	/* XXX shouldn't do this here.  Should force non-`get' versions. */
+	bintime2timeval(&bt, &th->th_microtime);
+	bintime2timespec(&bt, &th->th_nanotime);
+
+	/* Now is a good time to change timecounters. */
+	if (th->th_counter != timecounter) {
+		th->th_counter = timecounter;
+		th->th_offset_count = ncount;
+		s_update = 1;
+	}
+
+	/*-
+	 * Recalculate the scaling factor.  We want the number of 1/2^64
+	 * fractions of a second per period of the hardware counter, taking
+	 * into account the th_adjustment factor which the NTP PLL/adjtime(2)
+	 * processing provides us with.
+	 *
+	 * The th_adjustment is nanoseconds per second with 32 bit binary
+	 * fraction and we want 64 bit binary fraction of second:
+	 *
+	 *	 x = a * 2^32 / 10^9 = a * 4.294967296
+	 *
+	 * The range of th_adjustment is +/- 5000PPM so inside a 64bit int
+	 * we can only multiply by about 850 without overflowing, but that
+	 * leaves suitably precise fractions for multiply before divide.
+	 *
+	 * Divide before multiply with a fraction of 2199/512 results in a
+	 * systematic undercompensation of 10PPM of th_adjustment.  On a
+	 * 5000PPM adjustment this is a 0.05PPM error.  This is acceptable.
+ 	 *
+	 * We happily sacrifice the lowest of the 64 bits of our result
+	 * to the goddess of code clarity.
+	 *
+	 */
+	if (s_update) {
+		scale = (u_int64_t)1 << 63;
+		scale += (th->th_adjustment / 1024) * 2199;
+		scale /= th->th_counter->tc_frequency;
+		th->th_scale = scale * 2;
+	}
+	/*
+	 * Now that the struct timehands is again consistent, set the new
+	 * generation number, making sure to not make it zero.  Ensure
+	 * changes are globally visible before changing.
+	 */
+	if (++ogen == 0)
+		ogen = 1;
+	membar_producer();
+	th->th_generation = ogen;
+
+	/*
+	 * Go live with the new struct timehands.  Ensure changes are
+	 * globally visible before changing.
+	 */
+	time_second = th->th_microtime.tv_sec;
+	time_uptime = th->th_offset.sec;
+	membar_producer();
+	timehands = th;
+
+	/*
+	 * Force users of the old timehand to move on.  This is
+	 * necessary for MP systems; we need to ensure that the
+	 * consumers will move away from the old timehand before
+	 * we begin updating it again when we eventually wrap
+	 * around.
+	 */
+	if (++tho->th_generation == 0)
+		tho->th_generation = 1;
+}
+
+/*
+ * Timecounters need to be updated every so often to prevent the hardware
+ * counter from overflowing.  Updating also recalculates the cached values
+ * used by the get*() family of functions, so their precision depends on
+ * the update frequency.
+ */
+
+static int tc_tick;
+
+void
+tc_ticktock(void)
+{
+	static int count;
+
+	if (++count < tc_tick)
+		return;
+	count = 0;
+	simple_lock(&timecounter_lock);
+	if (timecounter_bad != 0) {
+		/* An existing timecounter has gone bad, pick a new one. */
+		(void)atomic_swap_uint(&timecounter_bad, 0);
+		if (timecounter->tc_quality < 0) {
+			tc_pick();
+		}
+	}
+	tc_windup();
+	simple_unlock(&timecounter_lock);
+}
+
+void
+inittimecounter(void)
+{
+	u_int p;
+
+	simple_lock_init(&timecounter_lock, "timecounter_lock");
+
+	/*
+	 * Set the initial timeout to
+	 * max(1, <approx. number of hardclock ticks in a millisecond>).
+	 * People should probably not use the sysctl to set the timeout
+	 * to smaller than its inital value, since that value is the
+	 * smallest reasonable one.  If they want better timestamps they
+	 * should use the non-"get"* functions.
+	 */
+	if (hz > 1000)
+		tc_tick = (hz + 500) / 1000;
+	else
+		tc_tick = 1;
+	p = (tc_tick * 1000000) / hz;
+	printf("timecounter: Timecounters tick every %d.%03u msec\n",
+	    p / 1000, p % 1000);
+
+	/* warm up new timecounter (again) and get rolling. */
+	(void)timecounter->tc_get_timecount(timecounter);
+	(void)timecounter->tc_get_timecount(timecounter);
+}
+
+/* Report or change the active timecounter hardware. */
+static int
+sysctl_kern_timecounter_hardware(void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+{
+	char newname[32];
+	struct timecounter *newtc, *tc;
+	int error;
+
+	tc = timecounter;
+	strlcpy(newname, tc->tc_name, sizeof(newname));
+
+	error = sysctl_string(oldp, oldlenp, newp, newlen, newname, sizeof(newname));
+	if (error != 0 || strcmp(newname, tc->tc_name) == 0) {
+		return (error);
+	}
+	if (!cold) {
+		simple_lock(&timecounter_lock);
+	}
+	error = EINVAL;
+	for (newtc = timecounters; newtc != NULL; newtc = newtc->tc_next) {
+		if (strcmp(newname, newtc->tc_name) != 0) {
+			continue;
+		}
+		/* Warm up new timecounter. */
+		(void)newtc->tc_get_timecount(newtc);
+		(void)newtc->tc_get_timecount(newtc);
+		timecounter = newtc;
+		error = 0;
+		break;
+	}
+	if (!cold) {
+		simple_unlock(&timecounter_lock);
+	}
+	return (error);
+}
+
+/* Report or change the active timecounter hardware. */
+static int
+sysctl_kern_timecounter_choice(u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+{
+	char buf[32], *spc, *choices;
+	struct timecounter *tc;
+	size_t needed, left, slen;
+	int error, mods;
+
+	if (newp != NULL) {
+		return (EPERM);
+	}
+	if (namelen != 0) {
+		return (EINVAL);
+	}
+
+	simple_lock(&timecounter_lock);
+
+retry:
+	spc = "";
+	error = 0;
+	needed = 0;
+	left = *oldlenp;
+	where = oldp;
+	for (tc = timecounters; error == 0 && tc != NULL; tc = tc->tc_next) {
+		if (where == NULL) {
+			needed += sizeof(buf); /* be conservative */
+		} else {
+			slen = snprintf(buf, sizeof(buf), "%s%s(q=%d, f=%" PRId64
+					" Hz)", spc, tc->tc_name, tc->tc_quality,
+					tc->tc_frequency);
+			if (left < slen + 1)
+				break;
+			mods = timecounter_mods;
+			simple_unlock(&timecounter_lock);
+			error = copyout(buf, where, slen + 1);
+			simple_lock(&timecounter_lock);
+			if (mods != timecounter_mods) {
+				goto retry;
+			}
+			spc = " ";
+			where += slen;
+			needed += slen;
+			left -= slen;
+		}
+	}
+	simple_unlock(&timecounter_lock);
+
+	*oldlenp = needed;
+	return (error);
+}
+
+/*
+ * Return timecounter-related information.
+ */
+int
+sysctl_timecounter(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+{
+	int error;
+
+	if (namelen != 1) {
+		return (ENOTDIR);
+	}
+
+	switch (name[0]) {
+	case KERN_TIMECOUNTER_HARDWARE:
+		error = sysctl_kern_timecounter_hardware(oldp, oldlenp, newp, newlen);
+		break;
+
+	case KERN_TIMECOUNTER_CHOICE:
+		error = sysctl_kern_timecounter_choice(namelen, oldp, oldlenp, newp, newlen);
+		break;
+	}
+	return (error);
 }

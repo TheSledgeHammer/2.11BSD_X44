@@ -18,6 +18,24 @@
 #error "no user-serviceable parts inside"
 #endif
 
+/* place in sysctl.h */
+/*
+ * KERN_TIMECOUNTER
+ */
+#define KERN_TIMECOUNTER_TICK				1	/* int: number of revolutions */
+#define KERN_TIMECOUNTER_TIMESTEPWARNINGS 	2	/* int: log a warning when time changes */
+#define KERN_TIMECOUNTER_HARDWARE			3	/* string: tick hardware used */
+#define KERN_TIMECOUNTER_CHOICE				4	/* string: tick hardware used */
+#define KERN_TIMECOUNTER_MAXID				5
+
+#define CTL_KERN_TIMECOUNTER_NAMES { 		\
+	{ 0, 0 }, 								\
+	{ "tick", CTLTYPE_INT }, 				\
+	{ "timestepwarnings", CTLTYPE_INT }, 	\
+	{ "hardware", CTLTYPE_STRING }, 		\
+	{ "choice", CTLTYPE_STRING }, 			\
+}
+
 struct timecounter;
 struct timespec;
 
@@ -50,29 +68,24 @@ struct timecounter {
 			 * another timecounter higher means better.  Negative
 			 * means "only use at explicit request".
 			 */
-	u_int				tc_flags;
-#define	TC_FLAGS_C2STOP			1	/* Timer dies in C2+. */
-#define	TC_FLAGS_SUSPEND_SAFE	2	/*
-					 * Timer functional across
-					 * suspend/resume.
-					 */
 
 	void				*tc_priv;		/* Pointer to the timecounter's private parts. */
 	struct timecounter	*tc_next;		/* Pointer to the next timecounter. */
 };
 
-
+#ifdef _KERNEL
 extern struct timecounter *timecounter;
 
-u_int64_t 	tc_getfrequency(void);
-void		tc_init(struct timecounter *tc);
-int			tc_detach(struct timecounter *);
-void		tc_setclock(struct timespec *ts);
-void		tc_ticktock(int cnt);
-void		cpu_tick_calibration(void);
+u_int64_t tc_getfrequency(void);
+void	tc_init(struct timecounter *tc);
+int		tc_detach(struct timecounter *);
+void	tc_setclock(struct timespec *ts);
+void	tc_ticktock(void);
+void	tc_gonebad(struct timecounter *);
 
 #ifdef SYSCTL_DECL
-SYSCTL_DECL(_kern_timecounter);
+int		sysctl_timecounter(int *, u_int, void *, size_t *, void *, size_t);
 #endif
+#endif /* _KERNEL */
 
 #endif /* _SYS_TIMETC_H_ */
