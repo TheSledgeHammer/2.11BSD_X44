@@ -47,7 +47,7 @@ struct	proc {
     pid_t				p_ppid;			/* process id of parent */
 
     /* Threads: */
-//#ifdef notyet
+#ifdef notyet
     union {
     	struct threadlist 	allthread;	/* list of all threads */
     	struct threadhd	 	threadrq; 	/* Linked list of running threads. */
