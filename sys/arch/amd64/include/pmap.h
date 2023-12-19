@@ -160,6 +160,10 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define l4tol5(idx)     ((idx) >> (L5_SHIFT - L4_SHIFT))
 #define l4tol4(idx)     ((idx) & (L4_REALMASK >> L4_SHIFT))
 
+#define L4ETOL5E_SHIFT  (PTP_SHIFT * 2)- 3)
+#define l4etol4e(idx)   (l4tol4(idx) & (L4_REALMASK >> L4_SHIFT))
+#define l4etol5e(idx)   (((l4tol4(idx) + l4tol5(idx)) + L4ETOL5E_SHIFT) & ((1UL << PTP_SHIFT)-1))
+
 /*
  * Pte related macros
  */
@@ -258,6 +262,16 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define PDES_INITIALIZER		{ L2_BASE, L3_BASE, L4_BASE }
 #define APDES_INITIALIZER		{ AL2_BASE, AL3_BASE, AL4_BASE }
 
+/*
+ * Return a non-clipped indexes for a given VA, which are page table
+ * pages indexes at the corresponding level.
+ */
+#define PL1_E(va)       ((((va)) >> L1_SHIFT) & ((1UL << PTP_SHIFT)-1))
+#define PL2_E(va)       ((((va)) >> L2_SHIFT) & ((1UL << PTP_SHIFT)-1))
+#define PL3_E(va)       ((((va)) >> L3_SHIFT) & ((1UL << PTP_SHIFT)-1))
+#define PL4_E(va)       ((((va)) >> L4_SHIFT) & ((1UL << PTP_SHIFT)-1))
+#define PL_E(va, lvl)   ((((va)) >> ptp_shifts[(lvl)-1]) & ((1UL << PTP_SHIFT)-1))
+
 #ifndef LOCORE
 #include <sys/queue.h>
 
@@ -335,6 +349,7 @@ extern pml5_entry_t 		*IdlePML5;
 extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
 extern bool_t 				pmap_initialized;		/* Has pmap_init completed? */
+extern int 					la57; 					/* amd64 md_var.h */
 
 extern vm_offset_t 			physfree;				/* phys addr of next free page */
 extern vm_offset_t 			KERNend;
