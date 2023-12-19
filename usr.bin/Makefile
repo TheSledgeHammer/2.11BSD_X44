@@ -11,6 +11,7 @@ SUBDIR= at 															\
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
 		hexdump 													\
 		join 														\
+		ktrace														\
 		ldd lorder 													\
 		m4 make man menuc mkdep mkfifo mklocale mkstr mktemp msgc 	\
 		rpcgen rpcinfo												\

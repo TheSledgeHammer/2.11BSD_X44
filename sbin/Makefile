@@ -4,15 +4,16 @@
 .include <bsd.own.mk>
 
 SUBDIR=	ccdconfig 				\
-		disklabel 				\
+		disklabel dmesg			\
 		fastboot fdisk fsck 	\
-		ifconfig init 					\
+		ifconfig init 			\
 		ldconfig 				\
 		mknod mount mountd		\
+		nologin 				\
 	    pfctl pflogd ping		\
         reboot rcorder 			\
-		savecore shutdown 		\
-		swapctl					\
+		savecore shutdown  		\
+		slattach swapctl		\
 		umount					\
 		wsconsctl
 

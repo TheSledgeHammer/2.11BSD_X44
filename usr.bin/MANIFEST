@@ -25,6 +25,7 @@ grep/		NetBSD
 gzip/		NetBSD
 hexdump/	NetBSD
 join/		NetBSD
+ktrace/     4.4BSD-Lite2
 ldd/		NetBSD
 lorder/		NetBSD
 m4/			NetBSD
