@@ -4,8 +4,11 @@
 .include <bsd.own.mk>
 
 PROG=	xinstall
-SRCS=	xinstall.c getid.c
+SRCS=	xinstall.c getid.c metachar.c
 MAN=	install.1
+
+.PATH:		${NETBSDSRCDIR}/usr.bin/make
+CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.bin/make
 
 .PATH:		${NETBSDSRCDIR}/usr.sbin/mtree
 CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree
@@ -19,7 +22,5 @@ LDADD+= -lutil
 COPTS.xinstall.c += -Wno-format-nonliteral
 
 PROGNAME=install
-
-CWARNFLAGS.gcc+=	${GCC_NO_FORMAT_TRUNCATION}
 
 .include <bsd.prog.mk>
