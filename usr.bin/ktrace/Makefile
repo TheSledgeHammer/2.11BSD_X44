@@ -4,7 +4,7 @@
 
 PROG=	ktrace
 SRCS=	ktrace.c subr.c
-MLINKS=	ktrace.1
+#MLINKS=	ktrace.1
 
 .if (${MKDYNAMICROOT} == "no")
 LDSTATIC?=-static
