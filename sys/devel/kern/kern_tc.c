@@ -54,8 +54,8 @@ __KERNEL_RCSID(0, "$NetBSD: kern_tc.c,v 1.62 2021/06/02 21:34:58 riastradh Exp $
 #include <sys/timepps.h>
 #include <sys/time.h>
 
-#include <devel/sys/timebin.h>
-#include <devel/sys/timetc.h>
+//#include <devel/sys/timebin.h>
+#include <sys/timetc.h>
 
 /*
  * A large step happens on boot.  This constant detects such steps.
@@ -128,8 +128,8 @@ static struct timehands *volatile timehands = &th0;
 struct timecounter *timecounter = &dummy_timecounter;
 static struct timecounter *timecounters = &dummy_timecounter;
 
-volatile time_t time_second = 1;
-volatile time_t time_uptime = 1;
+//volatile time_t time_second = 1;
+//volatile time_t time_uptime = 1;
 
 static struct bintime timebasebin;
 
@@ -157,6 +157,8 @@ TC_STATS(setclock);
 #endif	/* TC_COUNTERS */
 
 static void tc_windup(void);
+
+void getbinboottime(struct bintime *);
 
 /*
  * Return the difference between the timehands' counter value now and what
@@ -264,7 +266,7 @@ nanotime(struct timespec *tsp)
 	bintime(&bt);
 	bintime2timespec(&bt, tsp);
 }
-
+/*
 void
 microtime(struct timeval *tvp)
 {
@@ -274,7 +276,7 @@ microtime(struct timeval *tvp)
 	bintime(&bt);
 	bintime2timeval(&bt, tvp);
 }
-
+*/
 void
 getbinuptime(struct bintime *bt)
 {
@@ -449,8 +451,6 @@ tc_pick(void)
 {
 	struct timecounter *best, *tc;
 
-	KASSERT(mutex_owned(&timecounter_lock));
-
 	for (best = tc = timecounters; tc != NULL; tc = tc->tc_next) {
 		if (tc->tc_quality > best->tc_quality)
 			best = tc;
@@ -474,7 +474,7 @@ tc_gonebad(struct timecounter *tc)
 
 	tc->tc_quality = -100;
 	membar_producer();
-	atomic_inc_uint(&timecounter_bad);
+	atomic_inc_int(&timecounter_bad);
 }
 
 /*
@@ -564,12 +564,12 @@ ntp_update_second(int64_t *adjustment, time_t *newsec)
 	}
 
 	if (adjustment > 0) {
-		adj = MIN(5000, adjustment);
+		adj = MIN(5000, *adjustment);
 	} else {
-		adj = MAX(-5000, adjustment);
+		adj = MAX(-5000, *adjustment);
 	}
-	adjustment -= adj;
-	adjustment = (adj * 1000) << 32;
+	*adjustment -= adj;
+	*adjustment = (adj * 1000) << 32;
 }
 
 /*
@@ -781,7 +781,7 @@ inittimecounter(void)
 
 /* Report or change the active timecounter hardware. */
 static int
-sysctl_kern_timecounter_hardware(void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+sysctl_timecounter_hardware(void *oldp, size_t *oldlenp, void *newp, size_t newlen)
 {
 	char newname[32];
 	struct timecounter *newtc, *tc;
@@ -817,11 +817,12 @@ sysctl_kern_timecounter_hardware(void *oldp, size_t *oldlenp, void *newp, size_t
 
 /* Report or change the active timecounter hardware. */
 static int
-sysctl_kern_timecounter_choice(u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+sysctl_timecounter_choice(u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen)
 {
 	char buf[32], *spc, *choices;
 	struct timecounter *tc;
 	size_t needed, left, slen;
+    void *where;
 	int error, mods;
 
 	if (newp != NULL) {
@@ -881,11 +882,11 @@ sysctl_timecounter(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *
 
 	switch (name[0]) {
 	case KERN_TIMECOUNTER_HARDWARE:
-		error = sysctl_kern_timecounter_hardware(oldp, oldlenp, newp, newlen);
+		error = sysctl_timecounter_hardware(oldp, oldlenp, newp, newlen);
 		break;
 
 	case KERN_TIMECOUNTER_CHOICE:
-		error = sysctl_kern_timecounter_choice(namelen, oldp, oldlenp, newp, newlen);
+		error = sysctl_timecounter_choice(namelen, oldp, oldlenp, newp, newlen);
 		break;
 	}
 	return (error);
