@@ -177,9 +177,10 @@ void	 srandom(unsigned long);
 
 char	*mkdtemp(char *);
 int	 	mkstemp(char *);
-#ifndef __AUDIT__
-char	*mktemp(char *);
+#ifdef __MKTEMP_OK__
+	__RENAME(_mktemp)
 #endif
+	;
 
 int	 	setkey(const char *);
 
