@@ -3,17 +3,19 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	authpf boot0cfg btxld 											\
-		catman chown chroot config cron 						\
-		dev_mkdb 												\
-		etcupdate 												\
-		link                                                    \
-        makefs mtree moused                                            \
+SUBDIR=	ac accton arp authpf 						\
+		boot0cfg btxld 								\
+		catman chown chroot config cron 			\
+		dev_mkdb 									\
+		etcupdate 									\
+		kvm_mkdb 									\
+		link                                        \
+        makefs mtree moused                         \
 		pcictl pwd_mkdb 							\
-        rmt                                                     \
-		unlink  												\
-		vnconfig 												\
-		wsconscfg wsfontload wsmoused wsmuxctl					\
+        rmt                                         \
+		unlink  									\
+		vnconfig 									\
+		wsconscfg wsfontload wsmoused wsmuxctl		\
         zdump zic
 
 .if ${MKMAKEMANDB} != "no"

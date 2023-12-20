@@ -18,6 +18,10 @@ SRCS+=	getnbyaddr.c getnbyname.c getnent.c getpent.c getpname.c	\
 		getproto.c getsbyname.c getsbyport.c getsent.c rcmd.c 		\
 		rexec.c ruserpass.c
 
+.if (${MKHESIOD} != "no")
+SRCS+=	hesiod.c
+.endif
+
 # sub-directories net sources
 .include "${.CURDIR}/net/hosttable/Makefile.inc"
 .include "${.CURDIR}/net/named/Makefile.inc"

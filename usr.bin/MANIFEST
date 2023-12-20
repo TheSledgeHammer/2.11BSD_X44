@@ -23,8 +23,10 @@ gentext/	NetBSD
 gprof/		NetBSD
 grep/		NetBSD
 gzip/		NetBSD
+hesinfo/	NetBSD
 hexdump/	NetBSD
 join/		NetBSD
+kdump/     	4.4BSD-Lite2
 ktrace/     4.4BSD-Lite2
 ldd/		NetBSD
 lorder/		NetBSD
