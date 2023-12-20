@@ -57,7 +57,7 @@ MKISOFS!=       (which mkisofs || echo true) 2>/dev/null
 .endif
 DISTRIBREV!=	${HOST_SH} ${KERNSRCDIR}/conf/osrelease.sh -s
 # ISO 9660 volume ID.  Note that this can only contain [A-Z0-9_].
-ISO_VOLID!=	echo 211BSD_${DISTRIBREV} | tr a-z A-Z
+ISO_VOLID!=	echo TwoBSD_${DISTRIBREV} | tr a-z A-Z
 MKISOFS_FLAGS+= -J -l -hide-joliet-trans-tbl -r -T \
 				-V ${ISO_VOLID} \
 				-publisher "The 2.11BSD Project" \
@@ -90,10 +90,10 @@ UTMPGRP= utmp
 BIN1+=	csh.cshrc csh.login csh.logout ftpusers gettytab group hosts 	\
 		hosts.allow hosts.deny inetd.conf locate.conf man.conf 			\
 		mrouted.conf named.conf netstart networks nsswitch.conf 		\
-		ntp.conf passwd.conf pf.conf pf.os printcap phones profile 		\
-		protocols rc rc.local rc.resume rc.shutdown rc.subr rc.suspend 	\
-		remote rpc services shells shrc 	\
-		syslog.conf wscons.conf 	
+		ntp.conf passwd.conf pkgpath.conf pf.conf pf.os printcap phones \
+        profile protocols rc rc.conf rc.local rc.resume rc.shutdown     \
+        rc.subr rc.suspend remote rpc services shells shrc syslog.conf  \
+        wscons.conf 	
 
 # Use machine-specific disktab if it exists, or the MI one otherwise
 .if exists(etc.${MACHINE}/disktab)
@@ -131,12 +131,25 @@ PWD_MKDB_ENDIAN=	-B
 PWD_MKDB_ENDIAN=
 .endif
 
+# distribution --
+#	Build a distribution
+#
+distribution: .PHONY .MAKE check_DESTDIR distrib-dirs
+.if !defined(DISTRIBUTION_DONE)
+.if !defined(INSTALL_DONE)
+	${MAKEDIRTARGET} ${NETBSDSRCDIR} include _DISTRIB=
+	${MAKEDIRTARGET} ${NETBSDSRCDIR} install _DISTRIB=
+.endif	# !INSTALL_DONE
+	${MAKEDIRTARGET} . install-etc-files
+	${MAKEDIRTARGET} ${NETBSDSRCDIR}/distrib/sets makesetfiles
+.endif	# !DISTRIBUTION_DONE
+
 .include "${NETBSDSRCDIR}/etc/Makefile.params"
 
 CLEANFILES+=	etc-release
 etc-release: .EXEC .MAKE
 	${_MKTARGET_CREATE}
-	@(	echo "211BSD ${DISTRIBVER}/${MACHINE}"; \
+	@(	echo "TwoBSD ${DISTRIBVER}/${MACHINE}"; \
 		echo ; \
 		cat ${NETBSDSRCDIR}/sys/conf/copyright; \
 		echo ; \
@@ -157,6 +170,9 @@ etc-release: .EXEC .MAKE
 		echo ; \
 		${PRINT_PARAMS} ; \
 	) >${.OBJDIR}/${.TARGET}
+
+MAKEDEV_MACHINE=${"${MACHINE_CPU}" == "aarch64":?${MACHINE_CPU}:${MACHINE}}
+MAKEDEV: ${.CURDIR}/MAKEDEV.local ${.CURDIR}/etc.${MAKEDEV_MACHINE}/MAKEDEV
 
 install-etc-release: .PHONY etc-release
 	${_MKMSG_INSTALL} etc/release
@@ -231,7 +247,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 	    ${.CURDIR}/etc.${MACHINE_CPU}/ttys ${DESTDIR}/etc
 .endif
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 555 \
-		${.CURDIR}/MAKEDEV.local ${.CURDIR}/etc.${MACHINE_CPU}/MAKEDEV ${DESTDIR}/dev
+        MAKEDEV ${DESTDIR}/dev
 .for owner group mode file in 									\
 		${BINOWN} operator		664	/etc/dumpdates  			\
 		${BINOWN} operator		600	/etc/skeykeys 				\
@@ -272,7 +288,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 			/dev/null ${DESTDIR}${file}; \
 	else true; fi
 .endfor
-.for subdir in . defaults mtree namedb periodic rc.d root
+.for subdir in . defaults mtree namedb rc.d root
 	${MAKEDIRTARGET} ${subdir} configinstall
 .endfor
 .if (${MKPF} != "no")
@@ -299,7 +315,7 @@ distrib-dirs: .PHONY check_DESTDIR
 # an entry for "." in the metalog.  We ignore the problem, because the
 # TOOL_MTREE commands a little further below will soon register an entry
 # for "." in the metalog.
-	${INSTALL_DIR} -o root -g wheel -m 755 ${BASE_PKG} ${DESTDIR}
+	${HOST_INSTALL_DIR} -m 755 ${DESTDIR}
 # XXX: It would be nice if a single mtree invocation could both
 # append to the metalog and do real work.  Instead, we have to
 # repeat the command twice in slightly different ways.
