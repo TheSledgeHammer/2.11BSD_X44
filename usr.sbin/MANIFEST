@@ -14,6 +14,7 @@ makefs/     NetBSD / FreeBSD
 makemandb/  NetBSD
 mdsetimage/	NetBSD
 mtree/			NetBSD
+pcictl/   NetBSD
 periodic/   FreeBSD
 postinstall/	NetBSD
 pwd_mkdb/		NetBSD

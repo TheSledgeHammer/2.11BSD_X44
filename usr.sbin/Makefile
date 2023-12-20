@@ -9,7 +9,7 @@ SUBDIR=	authpf boot0cfg btxld 											\
 		etcupdate 												\
 		link                                                    \
         makefs mtree moused                                            \
-		periodic pwd_mkdb 							\
+		pcictl pwd_mkdb 							\
         rmt                                                     \
 		unlink  												\
 		vnconfig 												\
