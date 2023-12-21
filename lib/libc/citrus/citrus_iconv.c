@@ -106,7 +106,7 @@ lookup_iconv_entry(const char *curdir, const char *key, char *linebuf, size_t li
 	snprintf(path, (size_t)PATH_MAX, ("%s/" _CITRUS_ICONV_DIR), curdir);
 
 	/* lookup db */
-	cp = p = _lookup_simple(path, key, linebuf, linebufsize, _LOOKUP_CASE_IGNORE);
+	cp = p = _citrus_lookup_simple(path, key, linebuf, linebufsize, _LOOKUP_CASE_IGNORE);
 	if (p == NULL) {
 		return ENOENT;
 	}
@@ -119,9 +119,9 @@ lookup_iconv_entry(const char *curdir, const char *key, char *linebuf, size_t li
 	cq++;
 
 	/* get variable */
-	cp = _bcs_skip_ws(cq);
+	cp = _citrus_bcs_skip_ws(cq);
 	*variable = p += cp - cq;
-	cq = _bcs_skip_nonws(cp);
+	cq = _citrus_bcs_skip_nonws(cp);
 	p[cq-cp] = '\0';
 
 	return 0;
@@ -143,7 +143,6 @@ open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci, const cha
 {
 	int ret;
 	struct _citrus_iconv_shared *ci;
-	_citrus_iconv_getops_t getops;
 	char linebuf[LINE_MAX];
 	const char *module, *variable;
 	size_t len_convname;
@@ -188,7 +187,7 @@ err:
 static __inline int
 hash_func(const char *key)
 {
-	return _string_hash_func(key, CI_HASH_SIZE);
+	return _citrus_string_hash_func(key, CI_HASH_SIZE);
 }
 
 static __inline int

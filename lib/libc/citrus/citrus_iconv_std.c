@@ -42,6 +42,7 @@
 #include "citrus_stdenc.h"
 #include "citrus_iconv.h"
 #include "citrus_iconv_std.h"
+#include "citrus_esdb.h"
 
 /*
  * convenience routines for stdenc.
@@ -130,16 +131,16 @@ init_encoding(struct _citrus_iconv_std_encoding *se, _ENCODING_INFO *cs, void *p
 }
 
 static int
-open_csmapper(struct _csmapper **rcm, const char *src, const char *dst, unsigned long *rnorm)
+open_csmapper(struct _citrus_csmapper **rcm, const char *src, const char *dst, unsigned long *rnorm)
 {
 	int ret;
-	struct _csmapper *cm;
+	struct _citrus_csmapper *cm;
 
-	ret = _csmapper_open(&cm, src, dst, 0, rnorm);
+	ret = _citrus_csmapper_open(&cm, src, dst, 0, rnorm);
 	if (ret)
 		return ret;
 	if (_csmapper_get_src_max(cm) != 1 || _csmapper_get_dst_max(cm) != 1 || _csmapper_get_state_size(cm) != 0) {
-		_csmapper_close(cm);
+		_citrus_csmapper_close(cm);
 		return EINVAL;
 	}
 
@@ -155,13 +156,13 @@ close_dsts(struct _citrus_iconv_std_dst_list *dl)
 
 	while ((sd = TAILQ_FIRST(dl)) != NULL) {
 		TAILQ_REMOVE(dl, sd, sd_entry);
-		_csmapper_close(sd->sd_mapper);
+		_citrus_csmapper_close(sd->sd_mapper);
 		free(sd);
 	}
 }
 
 static int
-open_dsts(struct _citrus_iconv_std_dst_list *dl, const struct _esdb_charset *ec, const struct _esdb *dbdst)
+open_dsts(struct _citrus_iconv_std_dst_list *dl, const struct _citrus_esdb_charset *ec, const struct _citrus_esdb *dbdst)
 {
 	int i, ret;
 	struct _citrus_iconv_std_dst *sd, *sdtmp;
@@ -216,7 +217,7 @@ close_srcs(struct _citrus_iconv_std_src_list *sl)
 }
 
 static int
-open_srcs(struct _citrus_iconv_std_src_list *sl, const struct _esdb *dbsrc, const struct _esdb *dbdst)
+open_srcs(struct _citrus_iconv_std_src_list *sl, const struct _citrus_esdb *dbsrc, const struct _citrus_esdb *dbdst)
 {
 	int i, ret, count = 0;
 	struct _citrus_iconv_std_src *ss;
@@ -268,7 +269,7 @@ do_conv(const struct _citrus_iconv_std_shared *is, struct _citrus_iconv_std_cont
 	TAILQ_FOREACH(ss, &is->is_srcs, ss_entry) {
 		if (ss->ss_csid == *csid) {
 			TAILQ_FOREACH(sd, &ss->ss_dsts, sd_entry) {
-				ret = _csmapper_convert(sd->sd_mapper, &tmpidx, *idx, NULL);
+				ret = _citrus_csmapper_convert(sd->sd_mapper, &tmpidx, *idx, NULL);
 				switch (ret) {
 				case _MAPPER_CONVERT_SUCCESS:
 					*csid = sd->sd_csid;
@@ -331,8 +332,8 @@ _citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_shared *ci, const char 
 	if (ret) {
 		goto err5;
 	}
-	_esdb_close(&esdbsrc);
-	_esdb_close(&esdbdst);
+	_citrus_esdb_close(&esdbsrc);
+	_citrus_esdb_close(&esdbdst);
 	ci->ci_closure = is;
 
 	return 0;
@@ -342,9 +343,9 @@ err5:
 err4:
 	_citrus_stdenc_uninit(is->is_src_encoding);
 err3:
-	_esdb_close(&esdbdst);
+	_citrus_esdb_close(&esdbdst);
 err2:
-	_esdb_close(&esdbsrc);
+	_citrus_esdb_close(&esdbsrc);
 err1:
 	free(is);
 err0:

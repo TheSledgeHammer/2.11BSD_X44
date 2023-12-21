@@ -49,7 +49,7 @@ _citrus_string_hash_func(const char *key, int hashsize)
 	struct _region r;
 
 	/* LINTED: discard const */
-	_region_init(&r, (char *)key, strlen(key));
+	_citrus_region_init(&r, (char *)key, strlen(key));
 
-	return (int)(_db_hash_std(NULL, &r) % (u_int32_t)hashsize);
+	return (int)(_citrus_db_hash_std(NULL, &r) % (u_int32_t)hashsize);
 }
