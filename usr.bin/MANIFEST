@@ -35,6 +35,7 @@ make/		NetBSD
 man/		NetBSD
 menuc/		NetBSD
 mkdep/		NetBSD
+mkerrlst/   2.11
 mklocale/	NetBSD
 mktemp/		NetBSD
 msgc/		NetBSD

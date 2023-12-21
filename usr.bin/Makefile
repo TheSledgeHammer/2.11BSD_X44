@@ -12,8 +12,9 @@ SUBDIR= at 															\
 		hexdump 													\
 		join 														\
 		kdump ktrace												\
-		ldd lorder 													\
-		m4 make man menuc mkdep mkfifo mklocale mkstr mktemp msgc 	\
+		ldd locate lorder 											\
+		m4 make man menuc mkdep mkerrlst mkfifo mklocale mkstr      \
+        mktemp msgc 	                                            \
 		rpcgen rpcinfo												\
 		sed sortinfo stat strfile 									\
 		time touch tsort 										\
