@@ -632,9 +632,7 @@ nbpf_filter(struct nbpf_insn *pc, struct mbuf *m, int layer)
 	int error;
 
 	npc = nbpf_cache_init(m);
-	if (npc != NULL) {
-		error = nbpf_ncode_process(npc, pc, m, layer);
-	}
+	error = nbpf_ncode_process(npc, pc, m, layer);
 	return (error);
 }
 

@@ -20,6 +20,4 @@ SUBDIR+= gptboot
 
 SUBDIR+= loader
 
-INCSDIR= 	/usr/include/stand/boot/arch/i386
-
 .include <bsd.kinc.mk>

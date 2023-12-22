@@ -139,7 +139,7 @@ int			nbpf_add_tag(struct mbuf *, uint32_t, uint32_t);
 int 		nbpf_find_tag(struct mbuf *, int, uint32_t, void **);
 int 		nbpf_addr_cmp(const nbpf_addr_t *, const nbpf_netmask_t, const nbpf_addr_t *, const nbpf_netmask_t, const int);
 void		nbpf_addr_mask(const nbpf_addr_t *, const nbpf_netmask_t, const int, nbpf_addr_t *);
-
+nbpf_cache_t *nbpf_cache_init(struct mbuf *);
 /*
  * NBPF n-code interface.
  */
@@ -155,6 +155,9 @@ struct nbpf_insn {
 	const void 			*nc;
 	size_t 				sz;
 };
+
+int nbpf_filter(struct nbpf_insn *, struct mbuf *, int);
+int nbpf_validate(struct nbpf_insn *, size_t);
 
 /* Error codes. */
 #define	NBPF_ERR_OPCODE		-1	/* Invalid instruction. */

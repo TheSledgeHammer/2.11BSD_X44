@@ -4,7 +4,7 @@ PROG	bin/dd
 PROG	bin/df
 PROG	bin/ed
 PROG	bin/mt
-PROG	bin/rcmd
+#PROG	bin/rcmd
 PROG	bin/sync
 
 PROG	sbin/fdisk
@@ -13,7 +13,7 @@ PROG	usr/bin/more	usr/bin/less
 
 # PROG	usr/bin/tip
 
-SPECIAL	ed		srcdir	distrib/utils/x_ed
+SPECIAL	ed			srcdir	distrib/utils/x_ed
 SPECIAL	more		srcdir	distrib/utils/more
 SPECIAL	umount		srcdir	distrib/utils/x_umount
 SPECIAL	gzip		srcdir	distrib/utils/x_gzip

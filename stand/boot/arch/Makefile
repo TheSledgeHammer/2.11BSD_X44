@@ -12,6 +12,4 @@ SUBDIR+= ${ARCHSUBDIR}
 .endif
 .endif
 
-INCSDIR= 	/usr/include/stand/boot/arch
-
 .include <bsd.kinc.mk>

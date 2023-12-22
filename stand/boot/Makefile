@@ -16,7 +16,5 @@ SUBDIR+=	fdt
 
 SUBDIR+=	arch
 
-INCSDIR= 	/usr/include/stand/boot
-
 .include <bsd.kinc.mk>
 		

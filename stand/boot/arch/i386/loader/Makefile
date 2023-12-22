@@ -1,6 +1,6 @@
 # $FreeBSD$
 
-.include <bsd.loader.mk>
+.include "${.CURDIR}/../Makefile.inc" 
 
 LOADER?=		loader
 PROG=			${LOADER}.sym

@@ -32,7 +32,6 @@
 ./mnt
 ./root
 ./sbin
-./stand
 ./tmp								mode=01777
 ./usr
 ./usr/bin

@@ -1,5 +1,7 @@
 # $FreeBSD$
 
+.include "${.CURDIR}/../Makefile.inc" 
+
 PROG=	pmbr
 STRIP=
 BINMODE=${NOBINMODE}

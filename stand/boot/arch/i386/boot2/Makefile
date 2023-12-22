@@ -1,5 +1,7 @@
 # $FreeBSD$
 
+.include "${.CURDIR}/../Makefile.inc" 
+
 PROG=			boot2
 NOMAN=
 STRIP=

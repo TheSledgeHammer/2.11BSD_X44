@@ -189,7 +189,7 @@ nbpf_addr_mask(const nbpf_addr_t *addr, const nbpf_netmask_t mask, const int ale
 	uint_fast8_t length = mask;
 
 	/* Note: maximum length is 32 for IPv4 and 128 for IPv6. */
-	KASSERT(length <= NPF_MAX_NETMASK);
+	KASSERT(length <= NBPF_MAX_NETMASK);
 
 	for (int i = 0; i < nwords; i++) {
 		uint32_t wordmask;

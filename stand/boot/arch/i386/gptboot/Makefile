@@ -1,5 +1,7 @@
 # $FreeBSD$
 
+.include "${.CURDIR}/../Makefile.inc" 
+
 .PATH:		${.CURDIR}/../boot2
 
 FILES=		gptboot

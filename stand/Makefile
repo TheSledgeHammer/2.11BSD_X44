@@ -2,6 +2,4 @@
 
 SUBDIR= 	boot
 
-INCSDIR= 	 /usr/include/stand
-
 .include <bsd.kinc.mk>

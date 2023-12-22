@@ -2,8 +2,6 @@
 
 .include <bsd.loader.mk>
 
-INCSDIR= 	/usr/include/stand/boot/common
-
 SRCS+=		boot.c commands.c console.c devopen.c environment.c 	\
 			fileload.c getopt.c install.c interp_backslash.c 		\
 			interp_parse.c interp.c load_exec.c load_ksyms.c ls.c 	\

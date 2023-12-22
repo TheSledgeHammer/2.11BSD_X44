@@ -16,16 +16,18 @@ LISTS+=		${.CURDIR}/list
 MTREECONF=	${DISTRIBDIR}/common/mtree.common
 IMAGEENDIAN=	le
 IMAGEDEPENDS+= 	${CRUNCHBIN} \
-		dot.profile \
-		${DESTDIR}/usr/mdec/boot \
-		${DESTDIR}/usr/mdec/bootxx_ffsv1 \
-		${DESTDIR}/usr/mdec/mbr \
-		${DESTDIR}/usr/mdec/mbr_ext \
-		${DESTDIR}/usr/mdec/mbr_bootsel \
-		${NETBSDSRCDIR}/etc/group ${NETBSDSRCDIR}/etc/master.passwd \
-		${NETBSDSRCDIR}/etc/netconfig ${NETBSDSRCDIR}/etc/protocols \
-		${NETBSDSRCDIR}/distrib/common/services \
-		${NETBSDSRCDIR}/distrib/common/termcap.mini
+				dot.profile \
+        		${DESTDIR}/usr/mdec/boot0 \
+				${DESTDIR}/usr/mdec/boot2 \
+        		${DESTDIR}/usr/mdec/cdboot \
+        		${DESTDIR}/usr/mdec/gptboot \
+				${DESTDIR}/usr/mdec/loader \
+				${DESTDIR}/usr/mdec/mbr \
+				${DESTDIR}/usr/mdec/pmbr \
+				${NETBSDSRCDIR}/etc/group ${NETBSDSRCDIR}/etc/master.passwd \
+				${NETBSDSRCDIR}/etc/netconfig ${NETBSDSRCDIR}/etc/protocols \
+				${NETBSDSRCDIR}/distrib/common/services \
+				${NETBSDSRCDIR}/distrib/common/termcap.mini
 PARSELISTENV+=	BOOTMODEL=${BOOTMODEL:Q}
 
 # This propogates through to the link of ramdiskbin

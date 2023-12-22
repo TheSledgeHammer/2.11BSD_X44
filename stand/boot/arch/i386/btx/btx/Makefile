@@ -1,6 +1,7 @@
 # $FreeBSD$
 
 .include <bsd.init.mk>
+.include "${.CURDIR}/../Makefile.inc" 
 
 PROG=	btx
 INTERNALPROG=

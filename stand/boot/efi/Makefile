@@ -1,11 +1,8 @@
 # $FreeBSD$
 
-#.include <bsd.loader.mk>
-.include <stand.mk>
+.include <bsd.loader.mk>
 
 SUBDIR=		boot1 include libefi
-
-INCSDIR= 	/usr/include/stand/boot/efi
 
 CFLAGS+=	-ffreestanding -fshort-wchar -Wformat
 LDFLAGS+=	-nostdlib

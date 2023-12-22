@@ -109,7 +109,8 @@ create_knlist_aout(name, db)
 	DB *db;
 {
 	int nsyms;
-	struct exec ebuf;
+	//struct exec ebuf;
+	struct xexec ebuf;
 	FILE *fp;
 	NLIST nbuf;
 	DBT data, key;
@@ -124,12 +125,12 @@ create_knlist_aout(name, db)
 	}
 
 	/* Read in exec structure. */
-	nr = read(fd, &ebuf, sizeof(struct exec));
+	nr = read(fd, &ebuf.e, sizeof(struct exec));
 	if (nr != sizeof(struct exec))
 		return (-1);
 
 	/* Check magic number. */
-	if (N_BADMAG(ebuf))
+	if (N_BADMAG(ebuf.e))
 		return (-1);
 
 	/*
@@ -138,11 +139,11 @@ create_knlist_aout(name, db)
 	 */
 
 	/* Check symbol count. */
-	if (!ebuf.a_syms)
+	if (!ebuf.e.a_syms)
 		badfmt("stripped");
 
 	/* Seek to string table. */
-	if (lseek(fd, N_STROFF(ebuf), SEEK_SET) == -1)
+	if (lseek(fd, N_STROFF(ebuf.e), SEEK_SET) == -1)
 		badfmt("corrupted string table");
 
 	/* Read in the size of the symbol table. */
@@ -164,7 +165,7 @@ create_knlist_aout(name, db)
 		warn("%s", name);
 		punt();
 	}
-	if (fseek(fp, N_SYMOFF(ebuf), SEEK_SET) == -1) {
+	if (fseek(fp, N_SYMOFF(ebuf.e), SEEK_SET) == -1) {
 		warn("%s", name);
 		punt();
 	}
@@ -175,7 +176,7 @@ create_knlist_aout(name, db)
 	kerntextoff = get_kerntext(name);
 
 	/* Read each symbol and enter it into the database. */
-	nsyms = ebuf.a_syms / sizeof(struct nlist);
+	nsyms = ebuf.e.a_syms / sizeof(struct nlist);
 	while (nsyms--) {
 		if (fread((char *)&nbuf, sizeof (NLIST), 1, fp) != 1) {
 			if (feof(fp))
@@ -183,7 +184,7 @@ create_knlist_aout(name, db)
 			warn("%s", name);
 			punt();
 		}
-		if (!nbuf._strx || nbuf.n_type&N_STAB)
+		if (!nbuf._strx || (nbuf.n_type&N_STAB))
 			continue;
 
 		key.data = (u_char *)strtab + nbuf._strx - sizeof(long);
@@ -201,11 +202,11 @@ create_knlist_aout(name, db)
 			 * loaded; N_TXTADDR is where a normal file is loaded.
 			 * From there, locate file offset in text or data.
 			 */
-			voff = nbuf.n_value - kerntextoff + N_TXTADDR(ebuf);
+			voff = nbuf.n_value - kerntextoff + N_TXTADDR(ebuf.e);
 			if ((nbuf.n_type & N_TYPE) == N_TEXT)
-				voff += N_TXTOFF(ebuf) - N_TXTADDR(ebuf);
+				voff += N_TXTOFF(ebuf.e) - N_TXTADDR(ebuf.e);
 			else
-				voff += N_DATOFF(ebuf) - N_DATADDR(ebuf);
+				voff += N_DATOFF(ebuf.e) - N_DATADDR(ebuf.e);
 			cur_off = ftell(fp);
 			if (fseek(fp, voff, SEEK_SET) == -1)
 				badfmt("corrupted string table");
