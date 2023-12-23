@@ -3,18 +3,18 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	ccdconfig 				\
-		disklabel dmesg			\
-		fastboot fdisk fsck 	\
-		ifconfig init 			\
-		ldconfig 				\
-		mknod mount mountd		\
-		nologin 				\
-	    pfctl pflogd ping		\
-        reboot rcorder 			\
-		savecore shutdown  		\
-		slattach swapctl		\
-		umount					\
+SUBDIR=	apmlabel atactl                                 \
+        ccdconfig 				                        \
+		disklabel dmesg			                        \
+		fastboot fdisk fsck 	                        \
+		ifconfig init 			                        \
+		ldconfig 				                        \
+		mknod mount mountd		                        \
+		nologin 				                        \
+	    pfctl pflogd ping pppoectl                      \
+        rcorder reboot 			                        \
+		savecore scsictl shutdown slattach swapctl		\
+		umount					                        \
 		wsconsctl
 
 # support for various file systems
