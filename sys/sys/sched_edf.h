@@ -26,6 +26,25 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+/* Basic Concept */
+/*
+- Generalised routines as per kern_synch
+- Scheduler expands on those rountines, in a pluggable manner
+- All current rountines in kern_synch are generic for proc
+- edf goals: maintain and prioritise the run queues, pass of to cfs
+- cfs goals: Equal time, must adhere to edf's priorities (priority weighting). But providing fair time.
+    Incomplete jobs are passed back to edf after x time or completed CFS loop
+Multiple CFS?
+ - Each priority queue runs its own CFS
+    - Different sized priority queues?
+    &/ OR
+    - Different Time Slices (Could be calculated from EDF)?
+
+ Start-up:
+ - edf must start & have process in run-queue before cfs can start (rqinit)
+*/
+
 #ifndef _SYS_GSCHED_EDF_H
 #define _SYS_GSCHED_EDF_H
 
@@ -69,28 +88,12 @@ struct gsched_edf {
 #define DEMAND(t, d, r, c)      ((((t) - (d) + (r)) * (c)) / (r))
 #define WORKLOAD(t, r, c)       (((t) / (r)) * (c))
 
+#ifdef _KERNEL
 int 	edf_test_utilization(char, char);
 int 	edf_test_demand(char, char, char, char);
 int 	edf_test_workload(char, char, char);
 int 	edf_test(struct gsched_edf *);
 int		edf_schedcpu(struct proc *);
+#endif /* _KERNEL */
 
-
-/* Basic Concept */
-/*
-- Generalised routines as per kern_synch
-- Scheduler expands on those rountines, in a pluggable manner
-- All current rountines in kern_synch are generic for proc
-- edf goals: maintain and prioritise the run queues, pass of to cfs
-- cfs goals: Equal time, must adhere to edf's priorities (priority weighting). But providing fair time.
-    Incomplete jobs are passed back to edf after x time or completed CFS loop
-Multiple CFS?
- - Each priority queue runs its own CFS
-    - Different sized priority queues?
-    &/ OR
-    - Different Time Slices (Could be calculated from EDF)?
-
- Start-up:
- - edf must start & have process in run-queue before cfs can start (rqinit)
-*/
 #endif /* _SYS_GSCHED_EDF_H */

@@ -563,6 +563,20 @@ disk_find_by_dev(dev)
     return (NULL);
 }
 
+struct dkdevice *
+disk_find_by_slice(slicep)
+   struct diskslices *slicep;
+{
+    struct dkdevice *diskp;
+
+    TAILQ_FOREACH(diskp, &disklist, dk_link) {
+        if(diskp->dk_slices == slicep) {
+            return (diskp);
+        }
+    }
+    return (NULL);
+}
+
 char *
 devtoname(dev)
     dev_t dev;
@@ -578,20 +592,6 @@ devtoname(dev)
 		 }
 	 }
 	 return (NULL);
-}
-
-struct dkdevice *
-disk_find_by_slice(slicep)
-   struct diskslices *slicep;
-{
-    struct dkdevice *diskp;
-    
-    TAILQ_FOREACH(diskp, &disklist, dk_link) {
-        if(diskp->dk_slices == slicep) {
-            return (diskp);
-        }
-    }
-    return (NULL);
 }
 
 int

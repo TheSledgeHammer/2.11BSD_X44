@@ -141,6 +141,7 @@ struct gsched_domain {
 				PW_FACTOR((pwl), PW_LAXITY) + 				\
 				PW_FACTOR((pws), PW_SLEEP)) / (4));
 
+#ifdef _KERNEL
 void 				gsched_init(struct proc *);
 struct proc			*gsched_proc(struct gsched *);
 struct gsched_edf 	*gsched_edf(struct gsched *);
@@ -149,5 +150,5 @@ void				gsched_estcpu(u_int, u_int);
 void				gsched_cpticks(int, int);
 int					gsched_compare(const void *, const void *);
 void				gsched_sort(struct proc *);
-
+#endif /* _KERNEL */
 #endif /* _SYS_GSCHED_H */

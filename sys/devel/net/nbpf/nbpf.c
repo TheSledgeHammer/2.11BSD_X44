@@ -414,7 +414,7 @@ nbpf_reassembly(nbpf_cache_t *npc, struct mbuf *m)
 	if (nbpf_iscached(npc, NBPC_IP4)) {
 		struct ip *ip = nptr;
 		error = ip_reass_packet(mp, ip);
-	} else if (npf_iscached(npc, NBPC_IP6)) {
+	} else if (nbpf_iscached(npc, NBPC_IP6)) {
 		error = ip6_reass_packet(mp, npc->bpc_hlen);
 		if (error && mp == NULL) {
 			memset(nptr, 0, sizeof(struct mbuf *));

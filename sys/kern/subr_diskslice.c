@@ -56,7 +56,6 @@ static void set_ds_label(struct diskslices *, int, struct disklabel *);
 static void set_ds_labeldevs(dev_t, struct diskslices *);
 static void set_ds_wlabel(struct diskslices *, int, int);
 static void set_ds_klabel(struct diskslices *, int, int);
-//static char *devtoname(dev_t);
 
 static struct disklabel *
 clone_label(lp)
@@ -913,20 +912,3 @@ set_ds_klabel(ssp, slice, klabel)
 	else if (slice == ssp->dss_first_bsd_slice)
 		ssp->dss_slices[COMPATIBILITY_SLICE].ds_klabel = klabel;
 }
-
-#ifdef notyet
-static char *
-devtoname(dev)
-    dev_t dev;
-{
-    struct dkdevice *diskp;
-    struct device   dv, *dvp;
-    
-    diskp = disk_find_by_dev(dev);
-    if (diskp != NULL) {
-    	dv = disk_device(diskp, dev);
-    	dvp = &dv;
-    }
-    return (dvp->dv_xname);
-}
-#endif

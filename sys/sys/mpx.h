@@ -74,7 +74,7 @@ extern struct lock_holder mpx_loholder;
 #define MPX_MUTEX_ENTER(mpx) 					mtx_lock(mpx, &mpx_loholder)
 #define MPX_MUTEX_EXIT(mpx)	 					mtx_unlock(mpx, &mpx_loholder)
 */
-
+#ifdef _KERNEL
 /* common routines */
 struct mpx 					*mpx_allocate(int);
 void						mpx_deallocate(struct mpx *);
@@ -93,5 +93,5 @@ int							mpx_put(struct mpx *, int, void *);
 int							mpx_get(struct mpx *, int, void *);
 int							mpx_destroy(struct mpx *, int, void *);
 int							mpx_remove(struct mpx *, int, void *);
-
+#endif /* _KERNEL */
 #endif /* SYS_MPX_H_ */
