@@ -15,14 +15,7 @@
 
 /set type=dir uname=root gname=wheel mode=0755
 
-.								type=dir  mode=0755 uname=root gname=wheel
-
-./boot							type=dir  mode=0644 uname=root gname=wheel
-./boot/defaults					type=dir  mode=0644
-./boot/efi						type=dir  mode=0644
-./boot/firmware					type=dir  mode=0644
-./boot/kernel					type=dir  mode=0644
-./boot/modules					type=dir  mode=0644
+.				                type=dir  mode=0755
 
 ./dev							type=dir  mode=0755 uname=root gname=wheel
 ./dev/drum						type=char mode=0640 uname=root gname=kmem
@@ -31,6 +24,7 @@
 ./dev/mem						type=char mode=0640 uname=root gname=kmem
 
 ./etc							type=dir  mode=0755
+./etc/ccd.conf			type=file mode=0644 optional
 ./etc/crontab					type=file mode=0644 optional
 ./etc/csh.cshrc					type=file mode=0644
 ./etc/csh.login					type=file mode=0644
@@ -40,23 +34,56 @@
 ./etc/defaults/rc.conf			type=file mode=0444
 ./etc/disktab					type=file mode=0644
 ./etc/fstab						type=file mode=0644
+./etc/ftpusers			        type=file mode=0644
 ./etc/gettytab					type=file mode=0644
 ./etc/group						type=file mode=0644
 ./etc/hosts						type=file mode=0644
 ./etc/hosts.allow				type=file mode=0644 optional
 ./etc/hosts.deny				type=file mode=0644 optional
 ./etc/hosts.equiv				type=file mode=0600 optional tags=nodiff
+./etc/inetd.conf		        type=file mode=0644
+./etc/ld.so.conf		        type=file mode=0644 optional
+./etc/locate.conf		        type=file mode=0644 optional
+./etc/login.conf		        type=file mode=0644 optional
 ./etc/man.conf					type=file mode=0644
 ./etc/master.passwd				type=file mode=0600 tags=nodiff
 ./etc/mtree						type=dir  mode=0755
 ./etc/mtree/special				type=file mode=0444
-./etc/periodic/daily			type=dir  mode=0755
-./etc/periodic/monthly			type=dir  mode=0755
-./etc/periodic/security			type=dir  mode=0755
-./etc/periodic/weekly			type=dir  mode=0755
+./etc/mtree/special.local	    type=file mode=0644 optional
+./etc/named.conf		        type=file mode=0644 optional
+./etc/namedb			        type=dir  mode=0755
+./etc/netconfig			        type=file mode=0644
+./etc/netgroup			        type=file mode=0644 optional
+./etc/netstart.local		    type=file mode=0644 optional
+./etc/networks			        type=file mode=0644
+./etc/npf.conf			        type=file mode=0644 optional
+./etc/nsswitch.conf		        type=file mode=0644
+./etc/ntp.conf			        type=file mode=0644 optional
+./etc/passwd			        type=file mode=0644
+./etc/passwd.conf		        type=file mode=0644 optional
+./etc/pf.conf			        type=file mode=0644
+./etc/pf.os			            type=file mode=0444
 ./etc/phones					type=file mode=0644
-./etc/profile					type=file mode=0644
-./etc/rc						type=file mode=0644
+./etc/printcap			        type=file mode=0644
+./etc/profile		    	    type=file mode=0644
+./etc/protocols			        type=file mode=0644
+
+./etc/periodic			        type=file mode=0644
+./etc/periodic/daily			type=file mode=0644
+./etc/periodic/daily.conf		type=file mode=0644
+./etc/periodic/daily.local		type=file mode=0644 optional
+./etc/periodic/monthly			type=file mode=0644
+./etc/periodic/monthly.conf		type=file mode=0644
+./etc/periodic/monthly.local	type=file mode=0644 optional
+./etc/periodic/security			type=file mode=0644
+./etc/periodic/security.conf	type=file mode=0644
+./etc/periodic/security.local	type=file mode=0644 optional
+./etc/periodic/weekly			type=file mode=0644
+./etc/periodic/weekly.conf		type=file mode=0644
+./etc/periodic/weekly.local		type=file mode=0644 optional
+
+./etc/rc			            type=file mode=0644
+./etc/rc.conf			        type=file mode=0644
 ./etc/rc.d						type=dir  mode=0755
 ./etc/rc.d/DAEMON				type=file mode=0555
 ./etc/rc.d/LOGIN				type=file mode=0555
@@ -76,16 +103,19 @@
 ./etc/rc.d/ttys					type=file mode=0555
 ./etc/rc.d/wscons				type=file mode=0555
 ./etc/rc.d/wsmoused				type=file mode=0555
-./etc/rc.firewall				type=file mode=0644
-./etc/rc.network				type=file mode=0644
+./etc/rc.local			        type=file mode=0644 optional
 ./etc/rc.resume					type=file mode=0644
 ./etc/rc.shutdown				type=file mode=0644
+./etc/rc.shutdown.local		    type=file mode=0644 optional
 ./etc/rc.subr					type=file mode=0644
 ./etc/rc.suspend				type=file mode=0644
-./etc/rc.sysctl					type=file mode=0644
 ./etc/services					type=file mode=0644
 ./etc/shells					type=file mode=0644
+./etc/skel			            type=dir  mode=0755 optional
+./etc/spwd.db			        type=file mode=0600 tags=exclude tags=nodiff
 ./etc/syslog.conf				type=file mode=0644
+./etc/ttyaction			        type=file mode=0644 optional
+./etc/ttys			            type=file mode=0644
 ./etc/wscons.conf				type=file mode=0644
 
 ./root							type=dir  mode=0755
@@ -115,6 +145,23 @@
 ./var/at						type=dir  mode=0755 ignore
 ./var/backups					type=dir  mode=0755 ignore
 ./var/chroot					type=dir  mode=0755
+./var/chroot/named/dev		    type=dir  mode=0755
+./var/chroot/named/etc		    type=dir  mode=0755
+./var/chroot/named/etc/namedb	type=dir  mode=0755 uname=named gname=named
+./var/chroot/named/etc/namedb/cache	type=dir mode=0775 uname=named gname=named
+./var/chroot/named/etc/namedb/keys	type=dir mode=0775 uname=named gname=named
+./var/chroot/named/usr		    type=dir  mode=0755
+./var/chroot/named/usr/libexec	type=dir  mode=0755
+./var/chroot/named/var		    type=dir  mode=0755
+./var/chroot/named/var/run	    type=dir  mode=0775 uname=named gname=named
+./var/chroot/named/var/tmp	    type=dir  mode=01775 uname=named gname=named
+./var/chroot/ntpd		        type=dir  mode=0755
+./var/chroot/ntpd/dev		    type=dir  mode=0755
+./var/chroot/ntpd/etc		    type=dir  mode=0755
+./var/chroot/ntpd/var		    type=dir  mode=0755
+./var/chroot/ntpd/var/db	    type=dir  mode=0775 uname=ntpd gname=ntpd
+./var/chroot/ntpd/var/run	    type=dir  mode=0775 uname=ntpd gname=ntpd
+./var/chroot/pflogd		        type=dir  mode=0755
 ./var/cron						type=dir  mode=0755
 ./var/cron/tabs					type=dir  mode=0700
 ./var/cron/tabs/root			type=file mode=0600 tags=nodiff
@@ -130,6 +177,15 @@
 ./var/run						type=dir  mode=0755
 ./var/run/utmp					type=file mode=0664 gname=utmp tags=exclude
 ./var/run/utmpx					type=file mode=0664 gname=utmp tags=exclude
-./var/spool						type=dir  mode=0755
-./var/spool/uucp				type=dir  mode=0755 uname=uucp gname=daemon ignore optional
-./var/spool/uucppublic			type=dir  mode=1777 uname=uucp gname=daemon ignore optional
+./var/spool			            type=dir  mode=0755
+./var/spool/ftp			        type=dir  mode=0755 optional
+./var/spool/ftp/bin		        type=dir  mode=0755 optional
+./var/spool/ftp/bin/ls		    type=file mode=0555 optional
+./var/spool/ftp/etc		        type=dir  mode=0755 optional
+./var/spool/ftp/etc/group		type=file mode=0644 optional
+./var/spool/ftp/etc/localtime	type=file mode=0644 optional
+./var/spool/ftp/etc/master.passwd	type=file mode=0600 optional tags=nodiff
+./var/spool/ftp/etc/passwd		type=file mode=0644 optional
+./var/spool/ftp/hidden		    type=dir  mode=0111 ignore optional
+./var/spool/ftp/pub		        type=dir  mode=0775 ignore optional
+./var/spool/output		        type=dir  mode=0755 ignore
