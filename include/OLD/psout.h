@@ -6,6 +6,9 @@
  *	@(#)psout.h	5.2 (2.11BSD GTE) 1/3/93
  */
 
+#ifndef _PSOUT_H_
+#define	_PSOUT_H_
+
 /*
  * psout: structure output by 'ps -U'.
  * Mostly the pre-processed /dev directory.
@@ -39,3 +42,5 @@ struct psout {
 	char	o_comm[MAXCOMLEN+1];	/* u_comm */
 	char	o_args[64];	/* best guess at args to process */
 };
+
+#endif /* !_PSOUT_H_ */
