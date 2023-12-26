@@ -99,10 +99,10 @@ sched_cfs_setup(gsd, p)
 	struct sched *gsd;
 	struct proc *p;
 {
-	register struct sched_cfs *cfs = gsched_cfs(gsd);
+	register struct sched_cfs *cfs = sched_cfs(gsd);
 
 	if (cfs == NULL) {
-		MALLOC(cfs, struct sched_cfs *, sizeof(struct sched_cfs *), M_GSCHED, M_WAITOK);
+		MALLOC(cfs, struct sched_cfs *, sizeof(struct sched_cfs *), M_SCHED, M_WAITOK);
 	}
 
 	RB_INIT(&cfs->cfs_parent);
