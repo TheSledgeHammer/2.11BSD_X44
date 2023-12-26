@@ -45,13 +45,13 @@ Multiple CFS?
  - edf must start & have process in run-queue before cfs can start (rqinit)
 */
 
-#ifndef _SYS_GSCHED_EDF_H
-#define _SYS_GSCHED_EDF_H
+#ifndef _SYS_SCHED_EDF_H
+#define _SYS_SCHED_EDF_H
 
 #include <sys/sched.h>
 
-struct gsched_edf {
-	struct gsched 		*edf_gsched;		/* pointer to global scheduler */
+struct sched_edf {
+	struct sched 		*edf_sched;		/* pointer to global scheduler */
 
 	struct proc 		*edf_rqlink;		/* pointer to linked list of running processes */
 
@@ -92,8 +92,8 @@ struct gsched_edf {
 int 	edf_test_utilization(char, char);
 int 	edf_test_demand(char, char, char, char);
 int 	edf_test_workload(char, char, char);
-int 	edf_test(struct gsched_edf *);
+int 	edf_test(struct sched_edf *);
 int		edf_schedcpu(struct proc *);
 #endif /* _KERNEL */
 
-#endif /* _SYS_GSCHED_EDF_H */
+#endif /* _SYS_SCHED_EDF_H */

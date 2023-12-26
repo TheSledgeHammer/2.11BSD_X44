@@ -49,7 +49,7 @@
 
 void
 edf_set_priority_weighting(edf, pri, deadline, slack, slptime)
-	struct gsched_edf *edf;
+	struct sched_edf *edf;
 	char deadline, slptime;
 	u_char pri, slack;
 {
@@ -58,7 +58,7 @@ edf_set_priority_weighting(edf, pri, deadline, slack, slptime)
 
 void
 edf_set_slack(edf, deadline, timo, cost)
-	struct gsched_edf *edf;
+	struct sched_edf *edf;
 	char deadline, cost;
 	u_char timo;
 {
@@ -67,7 +67,7 @@ edf_set_slack(edf, deadline, timo, cost)
 
 void
 edf_set_utilization(edf, cost, release)
-	struct gsched_edf *edf;
+	struct sched_edf *edf;
 	char cost, release;
 {
 	edf->edf_utilization = UTILIZATION(cost, release);
@@ -75,7 +75,7 @@ edf_set_utilization(edf, cost, release)
 
 void
 edf_set_demand(edf, timo, deadline, release, cost)
-	struct gsched_edf *edf;
+	struct sched_edf *edf;
 	char timo, deadline, release, cost;
 {
 	edf->edf_demand = DEMAND(timo, deadline, release, cost);
@@ -83,7 +83,7 @@ edf_set_demand(edf, timo, deadline, release, cost)
 
 void
 edf_set_workload(edf, timo, release, cost)
-	struct gsched_edf *edf;
+	struct sched_edf *edf;
 	char timo, release, cost;
 {
 	edf->edf_workload = WORKLOAD(timo, release, cost);
@@ -127,7 +127,7 @@ edf_test_workload(timo, release, cost)
 
 void
 edf_compute(edf)
-	struct gsched_edf *edf;
+	struct sched_edf *edf;
 {
     edf_set_slack(edf, edf->edf_cpticks, edf->edf_time, edf->edf_cpu); 									        /* laxity/slack */
     edf_set_utilization(edf, edf->edf_cpu, edf->edf_release);                                                   /* utilization */
@@ -138,7 +138,7 @@ edf_compute(edf)
 
 int
 edf_test(edf)
-	struct gsched_edf *edf;
+	struct sched_edf *edf;
 {
 	/* check deadline is possible in given time */
 	/*
@@ -192,8 +192,8 @@ int
 edf_schedcpu(p)
 	struct proc *p;
 {
-	register struct gsched *gsched = p->p_gsched;
-	register struct gsched_edf *edf = gsched_edf(gsched);
+	register struct sched *gsched = p->p_sched;
+	register struct sched_edf *edf = sched_edf(gsched);
 	int error;
 
 	edf_compute(edf);
@@ -202,7 +202,7 @@ edf_schedcpu(p)
 	gsched->gsc_demand = edf->edf_demand;
 	gsched->gsc_workload = edf->edf_workload;
 	gsched->gsc_priweight = edf->edf_priweight;
-	p->p_gsched = gsched;
+	p->p_sched = gsched;
 
 	if (edf_test(edf)) {
 		return (0);

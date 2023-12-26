@@ -333,7 +333,7 @@ main(framep)
 #endif
 
 	/* Initialize Global Scheduler */
-	gsched_init(p);
+	sched_init(p);
 
 	/* Kick off timeout driven events by calling first time. */
 	roundrobin(NULL);

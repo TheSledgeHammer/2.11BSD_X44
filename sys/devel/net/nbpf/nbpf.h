@@ -124,7 +124,6 @@ int nbpf_match_icmp4(const nbpf_cache_t *, uint32_t);
 int nbpf_match_icmp6(const nbpf_cache_t *, uint32_t);
 int nbpf_match_tcpfl(const nbpf_cache_t *, uint32_t);
 
-
 static inline bool_t
 nbpf_iscached(const nbpf_cache_t *bpc, const int inf)
 {

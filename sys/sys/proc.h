@@ -166,7 +166,7 @@ struct	proc {
 
 	int					p_tcgen;		/* for timecounter removal */
 
-	struct gsched		*p_gsched;		/* global scheduler */
+	struct sched		*p_sched;		/* global scheduler */
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id

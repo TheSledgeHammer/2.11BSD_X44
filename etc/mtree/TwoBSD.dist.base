@@ -12,8 +12,6 @@
 ./etc
 ./etc/defaults
 ./etc/fonts
-./etc/fonts/conf.avail
-./etc/fonts/conf.d
 ./etc/mail
 ./etc/mtree
 ./etc/namedb
@@ -21,7 +19,8 @@
 ./etc/openssl
 ./etc/openssl/certs
 ./etc/openssl/misc
-./etc/openssl/private		mode=0700
+./etc/openssl/private
+./etc/postfix
 ./etc/rc.conf.d
 ./etc/rc.d
 ./etc/skel
@@ -44,11 +43,12 @@
 ./usr/include
 ./usr/include/altq
 ./usr/include/arpa
+./usr/include/c++
+./usr/include/c++/experimental
 ./usr/include/crypto
 ./usr/include/dev
 ./usr/include/dev/audio
 ./usr/include/dev/core
-./usr/include/dev/core/ic
 ./usr/include/dev/core/io
 ./usr/include/dev/core/isa
 ./usr/include/dev/core/pci
@@ -62,12 +62,57 @@
 ./usr/include/dev/power/apm
 ./usr/include/dev/usb
 ./usr/include/dev/video
-./usr/include/hash
-./usr/include/heimdal
+./usr/include/g++
+./usr/include/g++/backward
+./usr/include/g++/bits
+./usr/include/g++/debug
+./usr/include/g++/decimal
+./usr/include/g++/experimental
+./usr/include/g++/experimental/bits
+./usr/include/g++/ext
+./usr/include/g++/ext/pb_ds
+./usr/include/g++/ext/pb_ds/detail
+./usr/include/g++/ext/pb_ds/detail/bin_search_tree_
+./usr/include/g++/ext/pb_ds/detail/binary_heap_
+./usr/include/g++/ext/pb_ds/detail/binomial_heap_
+./usr/include/g++/ext/pb_ds/detail/binomial_heap_base_
+./usr/include/g++/ext/pb_ds/detail/branch_policy
+./usr/include/g++/ext/pb_ds/detail/cc_hash_table_map_
+./usr/include/g++/ext/pb_ds/detail/eq_fn
+./usr/include/g++/ext/pb_ds/detail/gp_hash_table_map_
+./usr/include/g++/ext/pb_ds/detail/hash_fn
+./usr/include/g++/ext/pb_ds/detail/left_child_next_sibling_heap_
+./usr/include/g++/ext/pb_ds/detail/list_update_map_
+./usr/include/g++/ext/pb_ds/detail/list_update_policy
+./usr/include/g++/ext/pb_ds/detail/ov_tree_map_
+./usr/include/g++/ext/pb_ds/detail/pairing_heap_
+./usr/include/g++/ext/pb_ds/detail/pat_trie_
+./usr/include/g++/ext/pb_ds/detail/rb_tree_map_
+./usr/include/g++/ext/pb_ds/detail/rc_binomial_heap_
+./usr/include/g++/ext/pb_ds/detail/resize_policy
+./usr/include/g++/ext/pb_ds/detail/splay_tree_
+./usr/include/g++/ext/pb_ds/detail/thin_heap_
+./usr/include/g++/ext/pb_ds/detail/tree_policy
+./usr/include/g++/ext/pb_ds/detail/trie_policy
+./usr/include/g++/ext/pb_ds/detail/unordered_iterator
+./usr/include/g++/parallel
+./usr/include/g++/profile
+./usr/include/g++/profile/impl
+./usr/include/g++/pstl
+./usr/include/g++/tr1
+./usr/include/g++/tr1_impl
+./usr/include/g++/tr2
+./usr/include/gcc-10
+./usr/include/gcc-10/sanitizer
 ./usr/include/fs
 ./usr/include/fs/isofs
 ./usr/include/fs/isofs/cd9660
 ./usr/include/fs/msdosfs
+./usr/include/hash
+./usr/include/heimdal
+./usr/include/kadm5
+./usr/include/krb5
+./usr/include/lzma
 ./usr/include/miscfs
 ./usr/include/miscfs/fdesc
 ./usr/include/miscfs/fifofs
@@ -79,12 +124,15 @@
 ./usr/include/netinet
 ./usr/include/netinet6
 ./usr/include/netipsec
+./usr/include/netkey
 ./usr/include/netns
-./usr/include/netpfil
 ./usr/include/nfs
+./usr/include/objc
 ./usr/include/OLD
+./usr/include/openssl
 ./usr/include/ovl
 ./usr/include/ovl/include
+./usr/include/pcap
 ./usr/include/protocols
 ./usr/include/rpc
 ./usr/include/ssp
@@ -101,13 +149,14 @@
 ./usr/lib
 ./usr/lib/lua
 ./usr/lib/lua/5.3
+./usr/lib/named
+./usr/lib/openssl
 ./usr/lib/postfix
 ./usr/lib/security
 ./usr/libdata
 ./usr/libdata/ldscripts
 ./usr/libdata/lint
 ./usr/libexec
-./usr/libexec/lpr
 ./usr/libexec/postfix
 ./usr/libexec/sendmail
 ./usr/libexec/sm.bin
@@ -118,10 +167,6 @@
 ./usr/share/adb
 ./usr/share/dict
 ./usr/share/doc
-./usr/share/font
-./usr/share/fontinfo
-./usr/share/learn
-./usr/share/lint
 ./usr/share/locale
 ./usr/share/locale/af_ZA.ISO8859-1
 ./usr/share/locale/af_ZA.ISO8859-1/LC_MESSAGES
@@ -582,6 +627,7 @@
 ./var/at
 ./var/at/jobs			mode=0700
 ./var/at/spool			mode=0700
+./var/backups
 ./var/chroot
 ./var/chroot/named
 ./var/chroot/named/dev
@@ -594,33 +640,34 @@
 ./var/chroot/named/var/run	mode=0775 gname=named
 ./var/chroot/named/var/run/named	mode=0775 uname=named gname=named
 ./var/chroot/named/var/tmp	mode=01775 gname=named
-./var/chroot/pflogd		mode=0755
-./var/crash			mode=0770
+./var/chroot/pflogd			mode=0755
+./var/crash					mode=0770
 ./var/cron
-./var/cron/tabs			mode=0700
+./var/cron/tabs				mode=0700
 ./var/db
 ./var/db/ns
-./var/db/postfix		uname=postfix gname=postfix mode=0755
-./var/games			uname=games gname=games mode=0775
+./var/db/postfix			uname=postfix gname=postfix mode=0755
+./var/games					uname=games gname=games mode=0775
 ./var/heimdal
 ./var/log
-./var/mail			mode=1777
-./var/msgs			uname=daemon
+./var/log/rdist
+./var/mail					mode=1777
+./var/msgs					uname=daemon
 ./var/preserve
-./var/quotas			gname=operator mode=0750
+./var/quotas				gname=operator mode=0750
 ./var/run
-./var/run/named			mode=0775 uname=named gname=named
+./var/run/named				mode=0775 uname=named gname=named
 ./var/rwho
 ./var/spool
 ./var/spool/ftp
 ./var/spool/ftp/bin
 ./var/spool/ftp/etc
 ./var/spool/ftp/hidden		mode=0111
-./var/spool/lock		uname=uucp gname=daemon
+./var/spool/lock			uname=uucp gname=daemon
+./var/spool/mqueue
 ./var/spool/output
 ./var/spool/output/lpd
 ./var/spool/postfix
 ./var/spool/postfix/etc
-./var/spool/sockets		mode=0777
-./var/tmp			mode=01777
-./var/www
+./var/spool/sockets			mode=0777
+./var/tmp					mode=01777

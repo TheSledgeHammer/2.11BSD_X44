@@ -83,8 +83,8 @@
  *  Which is not shown in the above decision tree for the sake of simplicity.
  */
 
-#ifndef _SYS_GSCHED_H
-#define _SYS_GSCHED_H
+#ifndef _SYS_SCHED_H
+#define _SYS_SCHED_H
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -93,7 +93,7 @@
 
 /* Schedulers & Common Information used across schedulers */
 /* global scheduler */
-struct gsched {
+struct sched {
 	struct proc 			*gsc_rqlink; 	/* pointer to linked list of running processes */
 	struct proc 			*gsc_proc;		/* pointer to proc */
 
@@ -105,21 +105,21 @@ struct gsched {
     u_char					gsc_workload;	/* workload per task */
 
     /* pointer to schedulers */
-    struct gsched_edf		*gsc_edf;		/* earliest deadline first scheduler */
-    struct gsched_cfs 		*gsc_cfs;		/* completely fair scheduler */
+    struct sched_edf		*gsc_edf;		/* earliest deadline first scheduler */
+    struct sched_cfs 		*gsc_cfs;		/* completely fair scheduler */
 };
 
 /* Scheduler Domains: Hyperthreading, multi-cpu */
 /* Not Implemented */
-struct gsched_group {
-	CIRCLEQ_ENTRY(gsched_group) gsg_entry;
+struct sched_group {
+	CIRCLEQ_ENTRY(sched_group) gsg_entry;
 };
 
 /* Not Implemented */
-struct gsched_grphead;
-CIRCLEQ_HEAD(gsched_grphead, gsched_group);
-struct gsched_domain {
-	struct gsched_grphead	gsd_header;
+struct sched_grphead;
+CIRCLEQ_HEAD(sched_grphead, sched_group);
+struct sched_domain {
+	struct sched_grphead	gsd_header;
 	int 					gsd_nentries;
 	int 					gsd_refcnt;
 };
@@ -142,13 +142,13 @@ struct gsched_domain {
 				PW_FACTOR((pws), PW_SLEEP)) / (4));
 
 #ifdef _KERNEL
-void 				gsched_init(struct proc *);
-struct proc			*gsched_proc(struct gsched *);
-struct gsched_edf 	*gsched_edf(struct gsched *);
-struct gsched_cfs 	*gsched_cfs(struct gsched *);
-void				gsched_estcpu(u_int, u_int);
-void				gsched_cpticks(int, int);
-int					gsched_compare(const void *, const void *);
-void				gsched_sort(struct proc *);
+void 				sched_init(struct proc *);
+struct proc			*sched_proc(struct sched *);
+struct sched_edf 	*sched_edf(struct sched *);
+struct sched_cfs 	*sched_cfs(struct sched *);
+void				sched_estcpu(u_int, u_int);
+void				sched_cpticks(int, int);
+int					sched_compare(const void *, const void *);
+void				sched_sort(struct proc *);
 #endif /* _KERNEL */
-#endif /* _SYS_GSCHED_H */
+#endif /* _SYS_SCHED_H */

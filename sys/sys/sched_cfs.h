@@ -77,8 +77,8 @@ scheduling policies to intentionally segregate tasks.
 
 */
 
-#ifndef _SYS_GSCHED_CFS_H
-#define _SYS_GSCHED_CFS_H
+#ifndef _SYS_SCHED_CFS_H
+#define _SYS_SCHED_CFS_H
 
 #include <sys/sched.h>
 #include <sys/tree.h>
@@ -91,13 +91,13 @@ scheduling policies to intentionally segregate tasks.
 /* Error Checking */
 #define EBSCHEDULE(slack, p)   	((slack) > (p)->cfs_bsched)  		/* new scheduling period if slack/laxity time exceeds base scheduling period (BTL/BMG) */
 
-struct gsched_cfs_rbtree;
-RB_HEAD(gsched_cfs_rbtree, gsched_cfs);
-struct gsched_cfs {
-	struct gsched 				*cfs_gsched;						/* pointer to global scheduler */
+struct sched_cfs_rbtree;
+RB_HEAD(sched_cfs_rbtree, sched_cfs);
+struct sched_cfs {
+	struct sched 				*cfs_gsched;						/* pointer to global scheduler */
 
-	struct gsched_cfs_rbtree	cfs_parent;							/* rbtree cfs parent/root */
-    RB_ENTRY(gsched_cfs) 		cfs_entry;							/* rbtree cfs entries */
+	struct sched_cfs_rbtree		cfs_parent;							/* rbtree cfs parent/root */
+    RB_ENTRY(sched_cfs) 		cfs_entry;							/* rbtree cfs entries */
 
 	struct proc 				*cfs_rqlink;						/* pointer to linked list of running processes */
 	struct proc 				*cfs_proc;
@@ -125,4 +125,4 @@ unsigned int 	cfs_decay(struct proc *, u_char);
 void 			cfs_update(struct proc *, u_char);
 int				cfs_schedcpu(struct proc *);
 #endif /* _KERNEL */
-#endif /* _SYS_GSCHED_CFS_H */
+#endif /* _SYS_SCHED_CFS_H */

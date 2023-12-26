@@ -180,7 +180,7 @@ cfs_update(p, priweight)
 
 int
 cfs_rb_compare(a, b)
-	struct gsched_cfs *a, *b;
+	struct sched_cfs *a, *b;
 {
 	if (a->cfs_cpticks < b->cfs_cpticks) {
 		return (-1);
@@ -190,8 +190,8 @@ cfs_rb_compare(a, b)
 	return (0);
 }
 
-RB_PROTOTYPE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
-RB_GENERATE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
+RB_PROTOTYPE(sched_cfs_rbtree, sched_cfs, cfs_entry, cfs_rb_compare);
+RB_GENERATE(sched_cfs_rbtree, sched_cfs, cfs_entry, cfs_rb_compare);
 
 /*
  * calculate base scheduling period
@@ -199,7 +199,7 @@ RB_GENERATE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
  */
 void
 cfs_compute(cfs, slack)
-	struct gsched_cfs *cfs;
+	struct sched_cfs *cfs;
 	u_char slack;
 {
 	u_char new_bsched; 			/* new base schedule period */
@@ -214,30 +214,30 @@ int
 cfs_schedcpu(p)
 	struct proc *p;
 {
-	register struct gsched_cfs *cfs;
-	struct gsched_cfs *cfsp;	/* cfs process */
+	register struct sched_cfs *cfs;
+	struct sched_cfs *cfsp;	/* cfs process */
 	int cpticks;				/* p_cpticks counter (deadline) */
 	u_char slack; 				/* slack/laxity time */
 	u_char priw; 				/* priority weighting */
 
 	cpticks = 0;
-	slack = p->p_gsched->gsc_slack;
-	priw = p->p_gsched->gsc_priweight;
+	slack = p->p_sched->gsc_slack;
+	priw = p->p_sched->gsc_priweight;
 
 	/* add to cfs queue */
 	cfs->cfs_proc = p;
 	cfs->cfs_estcpu = cfs_decay(p, priw);
 	cfs->cfs_priweight = priw;
-	gsched_estcpu(cfs->cfs_estcpu, p->p_estcpu);
-	RB_INSERT(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
+	sched_estcpu(cfs->cfs_estcpu, p->p_estcpu);
+	RB_INSERT(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 
 	/* calculate cfs variables */
 	cfs_compute(cfs, slack);
 
 	/* run-through red-black tree */
-	for (cfs = RB_FIRST(gsched_cfs_rbtree, &cfs->cfs_parent); cfs != NULL; cfs = RB_LEFT(cfs, cfs_entry)) {
+	for (cfs = RB_FIRST(sched_cfs_rbtree, &cfs->cfs_parent); cfs != NULL; cfs = RB_LEFT(cfs, cfs_entry)) {
 		/* set cpticks */
-		gsched_cpticks(cfs->cfs_cpticks, p->p_cpticks);
+		sched_cpticks(cfs->cfs_cpticks, p->p_cpticks);
 		/* start deadline counter */
 		while (cpticks < cfs->cfs_cpticks) {
 			cpticks++;
@@ -277,20 +277,20 @@ cfs_schedcpu(p)
 out:
 	/* update cfs variables */
 	cfs = cfsp;
-	p->p_gsched->gsc_cfs = cfs;
+	p->p_sched->gsc_cfs = cfs;
 	cfs_update(p, cfs->cfs_priweight);
 	/* remove from cfs queue */
-	RB_REMOVE(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
+	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 
 	return (0);
 
 fin:
 	/* update cfs variables */
 	cfs = cfsp;
-	p->p_gsched->gsc_cfs = cfs;
+	p->p_sched->gsc_cfs = cfs;
 	cfs_update(p, cfs->cfs_priweight);
 	/* remove from cfs queue */
-	RB_REMOVE(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
+	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 
 	return (1);
 }
@@ -299,21 +299,21 @@ int
 cfs_schedcpu_v1(p)
 	struct proc *p;
 {
-	register struct gsched_cfs *cfs;
+	register struct sched_cfs *cfs;
 	int cpticks;		/* p_cpticks counter (deadline) */
 	u_char slack;		/* slack/laxity time */
 	u_char priw;		/* priority weighting */
 
 	cpticks = 0;
-	slack = p->p_gsched->gsc_slack;
-	priw = p->p_gsched->gsc_priweight;
-	cfs = gsched_cfs(p->p_gsched);
+	slack = p->p_sched->gsc_slack;
+	priw = p->p_sched->gsc_priweight;
+	cfs = sched_cfs(p->p_sched);
 
 	/* add to cfs queue */
 	cfs->cfs_estcpu = cfs_decay(p, priw);
 	cfs->cfs_priweight = priw;
-	gsched_estcpu(cfs->cfs_estcpu, p->p_estcpu);
-	RB_INSERT(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
+	sched_estcpu(cfs->cfs_estcpu, p->p_estcpu);
+	RB_INSERT(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 	/* add to run-queue */
 	setrq(p);
 
@@ -321,9 +321,9 @@ cfs_schedcpu_v1(p)
 	cfs_compute(cfs, slack);
 
 	/* run-through red-black tree */
-	for (p = RB_FIRST(gsched_cfs_rbtree, &cfs->cfs_parent)->cfs_proc; p != NULL; p = RB_LEFT(cfs, cfs_entry)->cfs_proc) {
+	for (p = RB_FIRST(sched_cfs_rbtree, &cfs->cfs_parent)->cfs_proc; p != NULL; p = RB_LEFT(cfs, cfs_entry)->cfs_proc) {
 		/* set cpticks */
-		gsched_cpticks(cfs->cfs_cpticks, p->p_cpticks);
+		sched_cpticks(cfs->cfs_cpticks, p->p_cpticks);
 		/* start deadline counter */
 		while (cpticks < cfs->cfs_cpticks) {
 			cpticks++;
@@ -359,7 +359,7 @@ out:
 	/* update cfs variables */
 	cfs_update(p, cfs->cfs_priweight);
 	/* remove from cfs queue */
-	RB_REMOVE(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
+	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 	/* remove from run-queue */
 	remrq(p);
 	/* deadline reached before completion, reschedule */
@@ -371,7 +371,7 @@ fin:
 	/* update cfs variables */
 	cfs_update(p, cfs->cfs_priweight);
 	/* remove from cfs queue */
-	RB_REMOVE(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
+	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 	/* remove from run-queue */
 	remrq(p);
 

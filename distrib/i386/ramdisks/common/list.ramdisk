@@ -1,6 +1,5 @@
 #	$NetBSD: list.ramdisk,v 1.7.4.1 2008/11/06 23:11:12 snj Exp $
 
-SRCDIRS	usr.bin/less
 SRCDIRS	bin sbin usr.bin usr.sbin gnu/usr.bin
 
 # Programs for a minimal ramdisk image
@@ -62,7 +61,7 @@ SPECIAL more		srcdir	distrib/utils/more
 ARGVLN	sh -sh
 
 # libhack.o is built by Makefile & included Makefile.inc
-LIBS	libhack.o -lbz2 -ledit -lutil -lcurses -ltermcap -lrmt -lcrypt -ll -lm -lz -lprop
+LIBS	libhack.o -lbz2 -ledit -lutil -lcurses -ltermcap -lrmt -lcrypt -ll -lm -lz
 
 # various files that we need in /etc for the install
 COPY	${NETBSDSRCDIR}/etc/group				etc/group
@@ -72,9 +71,11 @@ COPY	${NETBSDSRCDIR}/etc/protocols			etc/protocols
 COPY	${NETBSDSRCDIR}/distrib/common/services	etc/services
 
 # we need the boot block in /usr/mdec + the MBR copy
+COPY	${DESTDIR}/usr/mdec/loader.sym			usr/mdec/loader.sym
 COPY	${DESTDIR}/usr/mdec/boot0				usr/mdec/boot0
 COPY	${DESTDIR}/usr/mdec/boot2				usr/mdec/boot2
-COPY	${DESTDIR}/usr/mdec/loader				usr/mdec/loader
+COPY	${DESTDIR}/usr/mdec/cdboot				usr/mdec/cdboot
+COPY	${DESTDIR}/usr/mdec/gptboot				usr/mdec/gptboot
 COPY	${DESTDIR}/usr/mdec/mbr					usr/mdec/mbr
 COPY	${DESTDIR}/usr/mdec/pmbr				usr/mdec/pmbr
 

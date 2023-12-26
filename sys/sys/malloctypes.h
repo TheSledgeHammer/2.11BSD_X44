@@ -124,7 +124,7 @@
 #define M_PERCPU		77	/* percpu structure */
 #define M_UFS211		78	/* UFS211 bufmap */
 #define M_UFMLOPS		79	/* UFML uop structure */
-#define M_GSCHED		80	/* global scheduler structures */
+#define M_SCHED			80	/* global scheduler structures */
 #define M_EVDEV			81	/* evdev structures */
 #define M_IFMEDIA       82  /* ifmedia interface media state */
 #define M_PACKET_TAGS	83	/* Packet-attached information */
@@ -228,7 +228,7 @@
 	"percpu",					/* 77 M_PERCPU */		\
 	"ufs211 buf",				/* 78 M_UFS211 */		\
 	"ufml uops",				/* 79 M_UFMLOPS */		\
-	"gscheduler",				/* 80 M_GSCHED */		\
+	"scheduler",				/* 80 M_SCHED */		\
 	"evdev",					/* 81 M_EVDEV */		\
 	"ifmedia",      			/* 82 M_IFMEDIA */      \
 	"packet tags",				/* 83 M_PACKET_TAGS */	\

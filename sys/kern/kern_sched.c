@@ -47,28 +47,28 @@
 
 #include <vm/include/vm.h>
 
-struct gsched 	*gsched_setup(struct proc *);
-static void		gsched_edf_setup(struct gsched *, struct proc *);
-static void		gsched_cfs_setup(struct gsched *, struct proc *);
+struct sched 	*sched_setup(struct proc *);
+static void		sched_edf_setup(struct sched *, struct proc *);
+static void		sched_cfs_setup(struct sched *, struct proc *);
 
 void
-gsched_init(p)
+sched_init(p)
 	struct proc *p;
 {
-	struct gsched *gsd;
-	gsd = gsched_setup(p);
-	gsched_edf_setup(gsd, p);
-	gsched_cfs_setup(gsd, p);
+	struct sched *gsd;
+	gsd = sched_setup(p);
+	sched_edf_setup(gsd, p);
+	sched_cfs_setup(gsd, p);
 }
 
-struct gsched *
-gsched_setup(p)
+struct sched *
+sched_setup(p)
 	struct proc *p;
 {
-	struct gsched *gsd = p->p_gsched;
+	struct sched *gsd = p->p_sched;
 
 	if (gsd == NULL) {
-		MALLOC(gsd, struct gsched *, sizeof(struct gsched *), M_GSCHED, M_WAITOK);
+		MALLOC(gsd, struct sched *, sizeof(struct sched *), M_SCHED, M_WAITOK);
 	}
 
 	gsd->gsc_proc = p;
@@ -76,14 +76,14 @@ gsched_setup(p)
 }
 
 static void
-gsched_edf_setup(gsd, p)
-	struct gsched *gsd;
+sched_edf_setup(gsd, p)
+	struct sched *gsd;
 	struct proc *p;
 {
-	register struct gsched_edf *edf = gsched_edf(gsd);
+	register struct sched_edf *edf = sched_edf(gsd);
 
 	if (edf == NULL) {
-		MALLOC(edf, struct gsched_edf *, sizeof(struct gsched_edf *), M_GSCHED, M_WAITOK);
+		MALLOC(edf, struct sched_edf *, sizeof(struct sched_edf *), M_GCHED, M_WAITOK);
 	}
 
 	edf->edf_proc = p;
@@ -95,14 +95,14 @@ gsched_edf_setup(gsd, p)
 }
 
 static void
-gsched_cfs_setup(gsd, p)
-	struct gsched *gsd;
+sched_cfs_setup(gsd, p)
+	struct sched *gsd;
 	struct proc *p;
 {
-	register struct gsched_cfs *cfs = gsched_cfs(gsd);
+	register struct sched_cfs *cfs = gsched_cfs(gsd);
 
 	if (cfs == NULL) {
-		MALLOC(cfs, struct gsched_cfs *, sizeof(struct gsched_cfs *), M_GSCHED, M_WAITOK);
+		MALLOC(cfs, struct sched_cfs *, sizeof(struct sched_cfs *), M_GSCHED, M_WAITOK);
 	}
 
 	RB_INIT(&cfs->cfs_parent);
@@ -120,24 +120,24 @@ gsched_cfs_setup(gsd, p)
 }
 
 /* return edf scheduler */
-struct gsched_edf *
-gsched_edf(gsd)
-	struct gsched *gsd;
+struct sched_edf *
+sched_edf(gsd)
+	struct sched *gsd;
 {
 	return (gsd->gsc_edf);
 }
 
 /* return cfs scheduler */
-struct gsched_cfs *
-gsched_cfs(gsd)
-	struct gsched *gsd;
+struct sched_cfs *
+sched_cfs(gsd)
+	struct sched *gsd;
 {
 	return (gsd->gsc_cfs);
 }
 
 /* set estcpu */
 void
-gsched_estcpu(estcpu1, estcpu2)
+sched_estcpu(estcpu1, estcpu2)
 	u_int estcpu1, estcpu2;
 {
 	u_int diff;
@@ -158,42 +158,10 @@ gsched_estcpu(estcpu1, estcpu2)
 
 /* set cpticks */
 void
-gsched_cpticks(cpticks1, cpticks2)
+sched_cpticks(cpticks1, cpticks2)
 	int cpticks1, cpticks2;
 {
 	if(cpticks1 != cpticks2) {
 		cpticks1 = cpticks2;
 	}
-}
-
-/* compare cpu ticks (deadline) of cur proc and the next proc in run-queue */
-int
-gsched_compare(a1, a2)
-   const void *a1, *a2;
-{
-    struct proc *p1, *p2;
-    p1 = (struct proc *)a1;
-    p2 = (struct proc *)a2;
-    
-    if(p1->p_cpticks < p2->p_cpticks) {
-        return (-1);
-    } else if(p1->p_cpticks > p2->p_cpticks) {
-        return (1);
-    }
-    return (0);
-}
-
-/* Initial sort of run-queue (lowest first): using gsched_compare; see above */
-void
-gsched_sort(cur)
-    struct proc *cur;  
-{
-    struct proc *nxt;
-    int count = 0;
-
-    for(cur = LIST_FIRST(&allproc); cur != NULL; cur = nxt) {
-    	 nxt = LIST_NEXT(cur, p_list);
-    	 count++;
-    	 qsort(cur, count, sizeof(struct proc), gsched_compare);
-    }
 }

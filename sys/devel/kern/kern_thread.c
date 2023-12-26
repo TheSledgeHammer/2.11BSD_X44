@@ -623,11 +623,11 @@ thread_schedcpu(p)
 {
 	register struct thread *td;
 
-	THREAD_LOCK(td);
-	LIST_FOREACH(td, &p->p_allthread, td_list) {
-		thread_schedule(p, td);
+	if (!LIST_EMPTY(&p->p_allthread)) {
+		LIST_FOREACH(td, &p->p_allthread, td_list) {
+			thread_schedule(p, td);
+		}
 	}
-	THREAD_UNLOCK(td);
 }
 
 void

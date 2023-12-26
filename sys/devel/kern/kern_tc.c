@@ -45,6 +45,7 @@ __KERNEL_RCSID(0, "$NetBSD: kern_tc.c,v 1.62 2021/06/02 21:34:58 riastradh Exp $
 */
 #include <sys/param.h>
 #include <sys/atomic.h>
+#include <sys/device.h>
 #include <sys/kernel.h>
 #include <sys/mutex.h>
 #include <sys/reboot.h>
