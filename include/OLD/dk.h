@@ -5,7 +5,8 @@
  *
  *	@(#)dk.h	5.1 (Berkeley) 12/13/86
  */
-
+#ifndef _DK_H_
+#define	_DK_H_
 /*
  * switch commands
  */
@@ -54,3 +55,5 @@ struct	ring {
 	char	r_lchan;
 	char	r_srv;
 };
+
+#endif /* !_DK_H_ */
