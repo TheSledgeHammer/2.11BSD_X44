@@ -43,8 +43,8 @@ PROG	usr/bin/gzip	usr/bin/gzcat usr/bin/gunzip
 PROG	usr/bin/sed
 
 # One of these is rather useful
-# PROG	usr/bin/less	usr/bin/more
-# PROG	usr/bin/more	usr/bin/less
+PROG	usr/bin/less	usr/bin/more
+PROG	usr/bin/more	usr/bin/less
 
 # sysinst doesn't use installboot
 # PROG	usr/sbin/installboot
