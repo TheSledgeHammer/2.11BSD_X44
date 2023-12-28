@@ -47,15 +47,20 @@
 
 /* constants and defines */
 
-#include <sys/bootblock.h>
+#include <sys/diskmbr.h>
+
+#define MBR_PART_COUNT 		NDOSPART
+#define MBR_MAGIC 			DOSMAGIC
+
+#define MBR_PFLAG_ACTIVE 	DOSPFLG_ACTIVE
 
 /*      
  * XXX  I (dsl) haven't the foggiest idea what the MBR extended chain
  *	looks like if the sector size isn't 512.
  */     
-#define MBR_SECSIZE     512
+#define MBR_SECSIZE     			512
 
-#define MBR_PUT_LSCYL(c)		((c) & 0xff)
+#define MBR_PUT_LSCYL(c)			((c) & 0xff)
 #define MBR_PUT_MSCYLANDSEC(c,s)	(((s) & 0x3f) | (((c) >> 2) & 0xc0))
 
 typedef struct mbr_info_t mbr_info_t;
@@ -70,7 +75,7 @@ struct mbr_info_t {
 	mbr_info_t	*prev_ext;	/* and back ptr */
 	const char	*last_mounted[MBR_PART_COUNT];
 	/* only in first item... */
-	int		opt;		/* entry being edited */
+	int			opt;		/* entry being edited */
 	uint		install;	/* start sector of install partition */
 #ifdef BOOTSEL
 	uint		bootsec;	/* start sector of bootmenu default */
@@ -101,24 +106,24 @@ struct mbr_bootsel *mbs;
 /* from mbr.c */
 void	set_fdisk_geom(void);	/* edit incore BIOS geometry */
 void	disp_cur_geom(void);
-int	check_geom(void);		/* primitive geometry sanity-check */
+int		check_geom(void);		/* primitive geometry sanity-check */
 
-void	disp_cur_part(struct mbr_partition *, int, int);
-int	edit_mbr(mbr_info_t *);
-int 	partsoverlap(struct mbr_partition *, int, int);
+void	disp_cur_part(struct dos_partition *, int, int);
+int		edit_mbr(mbr_info_t *);
+int 	partsoverlap(struct dos_partition *, int, int);
 
 /* from mbr.c */
  
 int     read_mbr(const char *, mbr_info_t *);
 int     write_mbr(const char *, mbr_info_t *, int);
 int     valid_mbr(struct mbr_sector *);
-int	guess_biosgeom_from_mbr(mbr_info_t *, int *, int *, int *);
-int	md_bios_info(char *);
+int		guess_biosgeom_from_mbr(mbr_info_t *, int *, int *, int *);
+int		md_bios_info(char *);
 void	set_bios_geom(int, int, int);
-int	otherpart(int);
-int	ourpart(int);
+int		otherpart(int);
+int		ourpart(int);
 const char	*get_partname(int);
-void	edit_ptn_bounds(void);
+void		edit_ptn_bounds(void);
 #ifdef BOOTSEL
 void	disp_bootsel(void);
 void	edit_bootsel_entry(int);

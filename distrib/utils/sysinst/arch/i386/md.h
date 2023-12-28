@@ -42,7 +42,7 @@
 #include <machine/cpu.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/bootblock.h>
+#include <sys/diskmbr.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -62,13 +62,13 @@
  *      base etc comp games man misc text xbase xcomp xetc xfont xserver
  */
 
-#define SET_KERNEL_GENERIC	SET_KERNEL_1
-#define SET_KERNEL_MP		SET_KERNEL_2
-#define SET_KERNEL_MPACPI	SET_KERNEL_3
-#define SET_KERNEL_TINY		SET_KERNEL_4
-#define SET_KERNEL_LAPTOP	SET_KERNEL_5
+#define SET_KERNEL_GENERIC		SET_KERNEL_1
+#define SET_KERNEL_MP			SET_KERNEL_2
+#define SET_KERNEL_MPACPI		SET_KERNEL_3
+#define SET_KERNEL_TINY			SET_KERNEL_4
+#define SET_KERNEL_LAPTOP		SET_KERNEL_5
 #define SET_KERNEL_DIAGNOSTIC	SET_KERNEL_6
-#define SET_KERNEL_PS2		SET_KERNEL_7
+#define SET_KERNEL_PS2			SET_KERNEL_7
 
 #define SET_KERNEL_1_NAME	"kern-GENERIC"
 #define SET_KERNEL_2_NAME	"kern-GENERIC.MP"

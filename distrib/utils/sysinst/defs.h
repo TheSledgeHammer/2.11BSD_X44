@@ -44,6 +44,7 @@
 /* System includes needed for this. */
 #include <sys/types.h>
 #include <sys/disklabel.h>
+
 extern const char * const fstypenames[];
 extern const char * const mountnames[];
 

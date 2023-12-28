@@ -74,6 +74,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <util.h>
+
 #include "defs.h"
 #include "mbr.h"
 #include "md.h"
@@ -92,30 +93,29 @@ struct part_id {
 	const char *name;
 } part_ids[] = {
 	{0,			"unused"},
-	{MBR_PTYPE_NETBSD,	"NetBSD"},
-	{MBR_PTYPE_EXT_LBA,	"Extended partition, LBA"},
-	{MBR_PTYPE_386BSD,	"FreeBSD/386BSD"},
-	{MBR_PTYPE_OPENBSD,	"OpenBSD"},
-	{MBR_PTYPE_LNXEXT2,	"Linux native"},
-	{MBR_PTYPE_LNXSWAP,	"Linux swap"},
-	{MBR_PTYPE_FAT12,	"DOS FAT12"},
-	{MBR_PTYPE_FAT16S,	"DOS FAT16, <32M"},
-	{MBR_PTYPE_FAT16B,	"DOS FAT16, >32M"},
-	{MBR_PTYPE_FAT16L,	"Windows FAT16, LBA"},
-	{MBR_PTYPE_FAT32,	"Windows FAT32"},
-	{MBR_PTYPE_FAT32L,	"Windows FAT32, LBA"},
-	{MBR_PTYPE_NTFSVOL,	"NTFS volume set"},
-	{MBR_PTYPE_NTFS,	"NTFS"},
-#ifdef MBR_PTYPE_SOLARIS
-	{MBR_PTYPE_SOLARIS,	"Solaris"},
+	{DOSPTYP_NETBSD,	"NetBSD"},
+	{DOSPTYP_EXTLBA,	"Extended partition, LBA"},
+	{DOSPTYP_386BSD,	"FreeBSD/386BSD"},
+	{DOSPTYP_OPENBSD,	"OpenBSD"},
+	{DOSPTYP_DFLYBSD,	"DragonFlyBSD"},
+	{DOSPTYP_LINUX,		"Linux native"},
+	{DOSPTYP_LINSWP,	"Linux swap"},
+	{DOSPTYP_FAT12,		"DOS FAT12"},
+	{DOSPTYP_FAT16S,	"DOS FAT16, <32M"},
+	{DOSPTYP_FAT16B,	"DOS FAT16, >32M"},
+	{DOSPTYP_FAT16LBA,	"Windows FAT16, LBA"},
+	{DOSPTYP_FAT32,		"Windows FAT32"},
+	{DOSPTYP_FAT32LBA,	"Windows FAT32, LBA"},
+	{DOSPTYP_NTFSVOL,	"NTFS volume set"},
+	{DOSPTYP_NTFS,		"NTFS"},
+#ifdef DOSPTYP_SOLARIS
+	{DOSPTYP_SOLARIS,	"Solaris"},
 #endif
-	{-1,			"Unknown"},
+	{-1,				"Unknown"},
 };
 
-static int get_mapping(struct mbr_partition *, int, int *, int *, int *,
-			    unsigned long *);
-static void convert_mbr_chs(int, int, int, uint8_t *, uint8_t *,
-				 uint8_t *, uint32_t);
+static int get_mapping(struct mbr_partition *, int, int *, int *, int *, unsigned long *);
+static void convert_mbr_chs(int, int, int, uint8_t *, uint8_t *, uint8_t *, uint32_t);
 
 /*
  * Notes on the extended partition editor.
@@ -177,11 +177,11 @@ dump_mbr(mbr_info_t *mbr, const char *msg)
 		for (i = 0; i < 4; i++)
 			fprintf(stderr, " %*d %9d %9d %9d,\n",
 			    i ? 41 : 3,
-			    mbr->mbr.mbr_parts[i].mbrp_type,
-			    mbr->mbr.mbr_parts[i].mbrp_start,
-			    mbr->mbr.mbr_parts[i].mbrp_size,
-			    mbr->mbr.mbr_parts[i].mbrp_start +
-				mbr->mbr.mbr_parts[i].mbrp_size);
+			    mbr->mbr.mbr_parts[i].dp_typ,
+			    mbr->mbr.mbr_parts[i].dp_start,
+			    mbr->mbr.mbr_parts[i].dp_size,
+			    mbr->mbr.mbr_parts[i].dp_start +
+				mbr->mbr.mbr_parts[i].dp_size);
 	} while ((mbr = mbr->extended));
 }
 #endif
@@ -268,8 +268,8 @@ find_mbr_space(struct mbr_sector *mbrs, uint *start, uint *size, int from, int i
 	for (i = 0; i < MBR_PART_COUNT; i++) {
 		if (i == ignore)
 			continue;
-		s = mbrs->mbr_parts[i].mbrp_start;
-		e = s + mbrs->mbr_parts[i].mbrp_size;
+		s = mbrs->mbr_parts[i].dp_start;
+		e = s + mbrs->mbr_parts[i].dp_size;
 		if (s <= from && e > from) {
 			from = e;
 			goto check_again;
@@ -286,15 +286,15 @@ find_mbr_space(struct mbr_sector *mbrs, uint *start, uint *size, int from, int i
 	return 0;
 }
 
-static struct mbr_partition *
+static struct dos_partition *
 get_mbrp(mbr_info_t **mbrip, int opt)
 {
 	mbr_info_t *mbri = *mbrip;
-
-	if (opt >= MBR_PART_COUNT)
-		for (opt -= MBR_PART_COUNT - 1; opt; opt--)
+	if (opt >= MBR_PART_COUNT) {
+		for (opt -= MBR_PART_COUNT - 1; opt; opt--) {
 			mbri = mbri->extended;
-
+		}
+	}
 	*mbrip = mbri;
 	return &mbri->mbr.mbr_parts[opt];
 }
@@ -324,7 +324,7 @@ set_mbr_type(menudesc *m, void *arg)
 	mbr_info_t *mbri = arg;
 	mbr_info_t *ombri = arg;
 	mbr_info_t *ext;
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	char *cp;
 	int opt = mbri->opt;
 	int type;
@@ -343,7 +343,7 @@ set_mbr_type(menudesc *m, void *arg)
 		return 1;
 	type = part_ids[type - 1].id;
 	while (type == -1) {
-		snprintf(numbuf, sizeof numbuf, "%u", mbrp->mbrp_type);
+		snprintf(numbuf, sizeof numbuf, "%u", mbrp->dp_typ);
 		msg_prompt_win(MSG_get_ptn_id, -1, 18, 0, 0,
 			numbuf, numbuf, sizeof numbuf);
 		type = strtoul(numbuf, &cp, 0);
@@ -351,13 +351,13 @@ set_mbr_type(menudesc *m, void *arg)
 			type = -1;
 	}
 
-	if (type == mbrp->mbrp_type)
+	if (type == mbrp->dp_typ)
 		/* type not changed... */
 		return 1;
 
 	mbri->last_mounted[opt < MBR_PART_COUNT ? opt : 0] = NULL;
 
-	if (MBR_IS_EXTENDED(mbrp->mbrp_type)) {
+	if (MBR_IS_EXTENDED(mbrp->dp_typ)) {
 		/* deleting extended partition.... */
 		if (mbri->sector || mbri->extended->extended)
 			/* We should have stopped this happening... */
@@ -368,12 +368,12 @@ set_mbr_type(menudesc *m, void *arg)
 
 	if (type == 0) {
 		/* Deleting partition */
-		mbrp->mbrp_type = 0;
+		mbrp->dp_typ = 0;
 		/* Remove references to this space from the NetBSD label */
-		remove_old_partitions(mbri->sector + mbrp->mbrp_start,
-		    mbrp->mbrp_size);
+		remove_old_partitions(mbri->sector + mbrp->dp_start,
+		    mbrp->dp_size);
 #ifdef BOOTSEL
-		if (ombri->bootsec == mbri->sector + mbrp->mbrp_start)
+		if (ombri->bootsec == mbri->sector + mbrp->dp_start)
 			ombri->bootsec = 0;
 				
 		memset(mbri->mbrb.mbrbs_nametab[opt], 0,
@@ -387,18 +387,18 @@ set_mbr_type(menudesc *m, void *arg)
 
 		/* Merge with previous and next free areas */
 		ext = mbri->prev_ext;
-		if (ext != NULL && ext->mbr.mbr_parts[0].mbrp_type == 0) {
+		if (ext != NULL && ext->mbr.mbr_parts[0].dp_typ == 0) {
 			/* previous was free - back up one entry */
 			mbri = ext;
 			ombri->opt--;
 		}
 		while ((ext = mbri->extended)) {
-			if (ext->mbr.mbr_parts[0].mbrp_type != 0)
+			if (ext->mbr.mbr_parts[0].dp_typ != 0)
 				break;
-			sz = ext->mbr.mbr_parts[0].mbrp_start +
-						ext->mbr.mbr_parts[0].mbrp_size;
+			sz = ext->mbr.mbr_parts[0].dp_start +
+						ext->mbr.mbr_parts[0].dp_size;
 			/* Increase size of our (empty) partition */
-			mbri->mbr.mbr_parts[0].mbrp_size += sz;
+			mbri->mbr.mbr_parts[0].dp_size += sz;
 			/* Make us describe the next partition */
 			mbri->mbr.mbr_parts[1] = ext->mbr.mbr_parts[1];
 			/* fix list of extended partitions */
@@ -409,12 +409,12 @@ set_mbr_type(menudesc *m, void *arg)
 			/* Make previous size cover all our ptn */
 			ext = mbri->prev_ext;
 			if (ext != NULL)
-				ext->mbr.mbr_parts[1].mbrp_size += sz;
+				ext->mbr.mbr_parts[1].dp_size += sz;
 		}
 		return 1;
 	}
 
-	if (mbrp->mbrp_start == 0) {
+	if (mbrp->dp_start == 0) {
 		/* Find first chunk of space... */
 		/* Must be in the main partition */
 		if (mbri->sector != 0)
@@ -423,15 +423,15 @@ set_mbr_type(menudesc *m, void *arg)
 		if (find_mbr_space(&mbri->mbr, &start, &sz, bsec, -1) != 0)
 			/* no space */
 			return err_msg_win(MSG_No_free_space);
-		mbrp->mbrp_start = start;
-		mbrp->mbrp_size = sz;
+		mbrp->dp_start = start;
+		mbrp->dp_size = sz;
 		/* If there isn't an active partition mark this one active */
 		if (!MBR_IS_EXTENDED(type)) {
 			for (i = 0; i < MBR_PART_COUNT; i++)
-				if (mbri->mbr.mbr_parts[i].mbrp_flag != 0)
+				if (mbri->mbr.mbr_parts[i].dp_flag != 0)
 					break;
 			if (i == MBR_PART_COUNT)
-				mbrp->mbrp_flag = MBR_PFLAG_ACTIVE;
+				mbrp->dp_flag = MBR_PFLAG_ACTIVE;
 		}
 	}
 
@@ -447,11 +447,11 @@ set_mbr_type(menudesc *m, void *arg)
 		if (!ext)
 			return 0;
 		mbri->extended = ext;
-		ext->sector = mbrp->mbrp_start;
-		ext->mbr.mbr_parts[0].mbrp_start = bsec;
-		ext->mbr.mbr_parts[0].mbrp_size = mbrp->mbrp_size - bsec;
+		ext->sector = mbrp->dp_start;
+		ext->mbr.mbr_parts[0].dp_start = bsec;
+		ext->mbr.mbr_parts[0].dp_size = mbrp->dp_size - bsec;
 	}
-	mbrp->mbrp_type = type;
+	mbrp->dp_typ = type;
 
 	return 1;
 }
@@ -505,7 +505,7 @@ edit_mbr_start(menudesc *m, void *arg)
 {
 	mbr_info_t *mbri = arg;
 	mbr_info_t *ext;
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	int opt = mbri->opt;
 	uint start, sz;
 	uint new_r, new, limit, dflt_r;
@@ -533,10 +533,10 @@ edit_mbr_start(menudesc *m, void *arg)
 	for (start = bsec, i = 0; i < MBR_PART_COUNT; start += sz, i++) {
 		if (find_mbr_space(&mbri->mbr, &start, &sz, start, opt))
 			break;
-		if (MBR_IS_EXTENDED(mbrp->mbrp_type)) {
+		if (MBR_IS_EXTENDED(mbrp->dp_typ)) {
 			/* Only want the area that contains this partition */
-			if (mbrp->mbrp_start < start ||
-			    mbrp->mbrp_start >= start + sz)
+			if (mbrp->dp_start < start ||
+			    mbrp->dp_start >= start + sz)
 				continue;
 			i = MBR_PART_COUNT - 1;
 		}
@@ -562,7 +562,7 @@ edit_mbr_start(menudesc *m, void *arg)
 	}
 
 	/* And loop until the user gives a sensible answer */
-	dflt_r = mbrp->mbrp_start / sizemult;
+	dflt_r = mbrp->dp_start / sizemult;
 	errmsg = "";
 	for (;;) {
 		snprintf(numbuf, sizeof numbuf, "%d", dflt_r);
@@ -600,56 +600,56 @@ edit_mbr_start(menudesc *m, void *arg)
 		 * We can only increase the start of an extended partition
 		 * if the corresponding space inside the partition isn't used.
 		 */
-		if (new > mbrp->mbrp_start &&
-		    MBR_IS_EXTENDED(mbrp->mbrp_type) &&
-		    (mbri->extended->mbr.mbr_parts[0].mbrp_type != 0 ||
-			    mbri->extended->mbr.mbr_parts[0].mbrp_size <
-						new - mbrp->mbrp_start)) {
+		if (new > mbrp->dp_start &&
+		    MBR_IS_EXTENDED(mbrp->dp_typ) &&
+		    (mbri->extended->mbr.mbr_parts[0].dp_typ != 0 ||
+			    mbri->extended->mbr.mbr_parts[0].dp_size <
+						new - mbrp->dp_start)) {
 			errmsg = MSG_Space_allocated;
 			continue;
 		}
 		break;
 	}
 
-	if (new < mbrp->mbrp_start + mbrp->mbrp_size &&
-	    limit > mbrp->mbrp_start)
+	if (new < mbrp->dp_start + mbrp->dp_size &&
+	    limit > mbrp->dp_start)
 		/* Keep end of partition in the same place */
-		limit = mbrp->mbrp_start + mbrp->mbrp_size;
+		limit = mbrp->dp_start + mbrp->dp_size;
 
-	delta = new - mbrp->mbrp_start;
-	if (MBR_IS_EXTENDED(mbrp->mbrp_type)) {
+	delta = new - mbrp->dp_start;
+	if (MBR_IS_EXTENDED(mbrp->dp_typ)) {
 		ext = mbri->extended;
-		if (ext->mbr.mbr_parts[0].mbrp_type != 0) {
+		if (ext->mbr.mbr_parts[0].dp_typ != 0) {
 			/* allocate an extended ptn for the free item */
 			ext = calloc(1, sizeof *ext);
 			if (!ext)
 				return 0;
-			ext->sector = mbrp->mbrp_start;
+			ext->sector = mbrp->dp_start;
 			ext->extended = mbri->extended;
 			mbri->extended->prev_ext = ext;
 			mbri->extended = ext;
-			ext->mbr.mbr_parts[0].mbrp_start = bsec;
-			ext->mbr.mbr_parts[0].mbrp_size = -bsec;
-			ext->mbr.mbr_parts[1].mbrp_type = MBR_PTYPE_EXT;
-			ext->mbr.mbr_parts[1].mbrp_start = 0;
-			ext->mbr.mbr_parts[1].mbrp_size =
-				ext->extended->mbr.mbr_parts[0].mbrp_start +
-				ext->extended->mbr.mbr_parts[0].mbrp_size;
+			ext->mbr.mbr_parts[0].dp_start = bsec;
+			ext->mbr.mbr_parts[0].dp_size = -bsec;
+			ext->mbr.mbr_parts[1].dp_typ = DOSPTYP_EXT;
+			ext->mbr.mbr_parts[1].dp_start = 0;
+			ext->mbr.mbr_parts[1].dp_size =
+				ext->extended->mbr.mbr_parts[0].dp_start +
+				ext->extended->mbr.mbr_parts[0].dp_size;
 		}
 		/* adjust size of first free item */
-		ext->mbr.mbr_parts[0].mbrp_size -= delta;
+		ext->mbr.mbr_parts[0].dp_size -= delta;
 		ext->sector += delta;
 		/* and the link of all extended partitions */
 		do
 			if (ext->extended)
-				ext->mbr.mbr_parts[1].mbrp_start -= delta;
+				ext->mbr.mbr_parts[1].dp_start -= delta;
 		while ((ext = ext->extended));
 	}
-	remove_old_partitions(mbri->sector + mbrp->mbrp_start, delta);
+	remove_old_partitions(mbri->sector + mbrp->dp_start, delta);
 
 	/* finally set partition base and size */
-	mbrp->mbrp_start = new;
-	mbrp->mbrp_size = limit - new;
+	mbrp->dp_start = new;
+	mbrp->dp_size = limit - new;
 	mbri->last_mounted[opt] = NULL;
 
 	return 0;
@@ -661,7 +661,7 @@ edit_mbr_size(menudesc *m, void *arg)
 	mbr_info_t *mbri = arg;
 	mbr_info_t *ombri = arg;
 	mbr_info_t *ext;
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	int opt = mbri->opt;
 	uint start, max, max_r, dflt, dflt_r, new;
 	uint freespace;
@@ -671,11 +671,11 @@ edit_mbr_size(menudesc *m, void *arg)
 	const char *errmsg;
 
 	mbrp = get_mbrp(&mbri, opt);
-	dflt = mbrp->mbrp_size;
+	dflt = mbrp->dp_size;
 	if (opt < MBR_PART_COUNT) {
 		max = 0;
-		find_mbr_space(&mbri->mbr, &start, &max, mbrp->mbrp_start, opt);
-		if (start != mbrp->mbrp_start)
+		find_mbr_space(&mbri->mbr, &start, &max, mbrp->dp_start, opt);
+		if (start != mbrp->dp_start)
 			return 0;
 		if (dflt == 0)
 			dflt = max;
@@ -686,21 +686,21 @@ edit_mbr_size(menudesc *m, void *arg)
 		 * If the next extended partition describes a free area,
 		 * then merge it onto this area.
 		 */
-		if (ext != NULL && ext->mbr.mbr_parts[0].mbrp_type == 0) {
+		if (ext != NULL && ext->mbr.mbr_parts[0].dp_typ == 0) {
 			if (ext->extended)
 				ext->extended->prev_ext = mbri;
 			mbri->extended = ext->extended;
 			if (mbri->prev_ext)
-				mbri->prev_ext->mbr.mbr_parts[1].mbrp_size
-					+= mbri->mbr.mbr_parts[1].mbrp_size;
-			mbrp->mbrp_size += mbri->mbr.mbr_parts[1].mbrp_size;
-			max += mbri->mbr.mbr_parts[1].mbrp_size;
+				mbri->prev_ext->mbr.mbr_parts[1].dp_size
+					+= mbri->mbr.mbr_parts[1].dp_size;
+			mbrp->dp_size += mbri->mbr.mbr_parts[1].dp_size;
+			max += mbri->mbr.mbr_parts[1].dp_size;
 			mbri->mbr.mbr_parts[1] = ext->mbr.mbr_parts[1];
 			free(ext);
 		}
 	}
 
-	start = mbri->sector + mbrp->mbrp_start;
+	start = mbri->sector + mbrp->dp_start;
 	dflt_r = (start + dflt) / sizemult - start / sizemult;
 	if (max == dflt)
 		max_r = dflt_r;
@@ -738,7 +738,7 @@ edit_mbr_size(menudesc *m, void *arg)
 			continue;
 		}
 		if (new == dflt || opt >= MBR_PART_COUNT
-		    || !MBR_IS_EXTENDED(mbrp->mbrp_type))
+		    || !MBR_IS_EXTENDED(mbrp->dp_typ))
 			break;
 		/*
 		 * We've been asked to change the size of the main extended
@@ -749,18 +749,18 @@ edit_mbr_size(menudesc *m, void *arg)
 		/* Find last extended partition */
 		for (ext = mbri->extended; ext->extended; ext = ext->extended)
 			continue;
-		if ((new < dflt && (ext->mbr.mbr_parts[0].mbrp_type != 0
-			    || (mbrp->mbrp_start + new < ext->sector + bsec
-				&& mbrp->mbrp_start + new != ext->sector)))
-		    || (new > dflt && ext->mbr.mbr_parts[0].mbrp_type != 0
+		if ((new < dflt && (ext->mbr.mbr_parts[0].dp_typ != 0
+			    || (mbrp->dp_start + new < ext->sector + bsec
+				&& mbrp->dp_start + new != ext->sector)))
+		    || (new > dflt && ext->mbr.mbr_parts[0].dp_typ != 0
 							&& new < dflt + bsec)) {
 			errmsg = MSG_Space_allocated;
 			continue;
 		}
 		delta = new - dflt;
-		if (ext->mbr.mbr_parts[0].mbrp_type == 0) {
+		if (ext->mbr.mbr_parts[0].dp_typ == 0) {
 			/* adjust size of last item (free space) */
-			if (mbrp->mbrp_start + new == ext->sector) {
+			if (mbrp->dp_start + new == ext->sector) {
 				/* kill last extended ptn */
 				ext = ext->prev_ext;
 				free(ext->extended);
@@ -769,10 +769,10 @@ edit_mbr_size(menudesc *m, void *arg)
 					sizeof ext->mbr.mbr_parts[1]);
 				break;
 			}
-			ext->mbr.mbr_parts[0].mbrp_size += delta;
+			ext->mbr.mbr_parts[0].dp_size += delta;
 			ext = ext->prev_ext;
 			if (ext != NULL)
-				ext->mbr.mbr_parts[1].mbrp_size += delta;
+				ext->mbr.mbr_parts[1].dp_size += delta;
 			break;
 		}
 		/* Joy of joys, we must allocate another extended ptn */
@@ -782,13 +782,13 @@ edit_mbr_size(menudesc *m, void *arg)
 			return 0;
 		mbri->extended = ext;
 		ext->prev_ext = mbri;
-		ext->mbr.mbr_parts[0].mbrp_start = bsec;
-		ext->mbr.mbr_parts[0].mbrp_size = delta - bsec;
-		ext->sector = mbri->sector + mbri->mbr.mbr_parts[0].mbrp_start
-					   + mbri->mbr.mbr_parts[0].mbrp_size;
-		mbri->mbr.mbr_parts[1].mbrp_start = ext->sector - ombri->extended->sector;
-		mbri->mbr.mbr_parts[1].mbrp_type = MBR_PTYPE_EXT;
-		mbri->mbr.mbr_parts[1].mbrp_size = delta;
+		ext->mbr.mbr_parts[0].dp_start = bsec;
+		ext->mbr.mbr_parts[0].dp_size = delta - bsec;
+		ext->sector = mbri->sector + mbri->mbr.mbr_parts[0].dp_start
+					   + mbri->mbr.mbr_parts[0].dp_size;
+		mbri->mbr.mbr_parts[1].dp_start = ext->sector - ombri->extended->sector;
+		mbri->mbr.mbr_parts[1].dp_typ = DOSPTYP_EXT;
+		mbri->mbr.mbr_parts[1].dp_size = delta;
 		break;
 	}
 
@@ -796,21 +796,21 @@ edit_mbr_size(menudesc *m, void *arg)
 		/* Round up if not enough space for a header for free area */
 		new = max;
 
-	if (new != mbrp->mbrp_size) {
+	if (new != mbrp->dp_size) {
 		/* Kill information about old partition from label */
 		mbri->last_mounted[opt < MBR_PART_COUNT ? opt : 0] = NULL;
-		remove_old_partitions(mbri->sector + mbrp->mbrp_start +
-					mbrp->mbrp_size, new - mbrp->mbrp_size);
+		remove_old_partitions(mbri->sector + mbrp->dp_start +
+					mbrp->dp_size, new - mbrp->dp_size);
 	}
 
-	mbrp->mbrp_size = new;
+	mbrp->dp_size = new;
 	if (opt < MBR_PART_COUNT || new == max)
 		return 0;
 
 	/* Add extended partition for the free space */
 	ext = calloc(1, sizeof *ext);
 	if (!ext) {
-		mbrp->mbrp_size = max;
+		mbrp->dp_size = max;
 		return 0;
 	}
 	/* Link into our extended chain */
@@ -822,16 +822,16 @@ edit_mbr_size(menudesc *m, void *arg)
 	ext->mbr.mbr_parts[1] = mbri->mbr.mbr_parts[1];
 	freespace = max - new;
 	if (mbri->prev_ext != NULL)
-		mbri->prev_ext->mbr.mbr_parts[1].mbrp_size -= freespace;
+		mbri->prev_ext->mbr.mbr_parts[1].dp_size -= freespace;
 
-	ext->mbr.mbr_parts[0].mbrp_start = bsec;
-	ext->mbr.mbr_parts[0].mbrp_size = freespace - bsec;
+	ext->mbr.mbr_parts[0].dp_start = bsec;
+	ext->mbr.mbr_parts[0].dp_size = freespace - bsec;
 
-	ext->sector = mbri->sector + mbri->mbr.mbr_parts[0].mbrp_start
-				   + mbri->mbr.mbr_parts[0].mbrp_size;
-	mbri->mbr.mbr_parts[1].mbrp_start = ext->sector - ombri->extended->sector;
-	mbri->mbr.mbr_parts[1].mbrp_type = MBR_PTYPE_EXT;
-	mbri->mbr.mbr_parts[1].mbrp_size = freespace;
+	ext->sector = mbri->sector + mbri->mbr.mbr_parts[0].dp_start
+				   + mbri->mbr.mbr_parts[0].dp_size;
+	mbri->mbr.mbr_parts[1].dp_start = ext->sector - ombri->extended->sector;
+	mbri->mbr.mbr_parts[1].dp_typ = DOSPTYP_EXT;
+	mbri->mbr.mbr_parts[1].dp_size = freespace;
 
 	return 0;
 }
@@ -848,7 +848,7 @@ edit_mbr_active(menudesc *m, void *arg)
 		return 0;
 
 	/* Invert active flag */
-	fl = &mbri->mbr.mbr_parts[mbri->opt].mbrp_flag;
+	fl = &mbri->mbr.mbr_parts[mbri->opt].dp_flag;
 	if (*fl == MBR_PFLAG_ACTIVE) {
 		*fl = 0;
 		return 0;
@@ -856,7 +856,7 @@ edit_mbr_active(menudesc *m, void *arg)
 		
 	/* Ensure there is at most one active partition */
 	for (i = 0; i < MBR_PART_COUNT; i++)
-		mbri->mbr.mbr_parts[i].mbrp_flag = 0;
+		mbri->mbr.mbr_parts[i].dp_flag = 0;
 	*fl = MBR_PFLAG_ACTIVE;
 
 	return 0;
@@ -867,7 +867,7 @@ edit_mbr_install(menudesc *m, void *arg)
 {
 	mbr_info_t *mbri = arg;
 	mbr_info_t *ombri = arg;
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	int opt = mbri->opt;
 	uint start;
 
@@ -875,7 +875,7 @@ edit_mbr_install(menudesc *m, void *arg)
 	if (opt >= MBR_PART_COUNT)
 		opt = 0;
 
-	start = mbri->sector + mbrp->mbrp_start;
+	start = mbri->sector + mbrp->dp_start;
 	/* We just remember the start address of the partition... */
 	if (start == ombri->install)
 		ombri->install = 0;
@@ -884,13 +884,13 @@ edit_mbr_install(menudesc *m, void *arg)
 	return 0;
 }
 
-#ifdef BOOTSEL
+//#ifdef BOOTSEL
 static int
 edit_mbr_bootmenu(menudesc *m, void *arg)
 {
 	mbr_info_t *mbri = arg;
 	mbr_info_t *ombri = arg;
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	int opt = mbri->opt;
 
 	mbrp = get_mbrp(&mbri, opt);
@@ -904,7 +904,7 @@ edit_mbr_bootmenu(menudesc *m, void *arg)
 	if (mbri->mbrb.mbrbs_nametab[opt][0] == ' ')
 		mbri->mbrb.mbrbs_nametab[opt][0] = 0;
 	if (mbri->mbrb.mbrbs_nametab[opt][0] == 0
-	    && ombri->bootsec == mbri->sector + mbrp->mbrp_start)
+	    && ombri->bootsec == mbri->sector + mbrp->dp_start)
 		ombri->bootsec = 0;
 	return 0;
 }
@@ -918,7 +918,7 @@ edit_mbr_bootdefault(menudesc *m, void *arg)
 
 	mbrp = get_mbrp(&mbri, mbri->opt);
 
-	ombri->bootsec = mbri->sector + mbrp->mbrp_start;
+	ombri->bootsec = mbri->sector + mbrp->dp_start;
 	return 0;
 }
 #endif
@@ -990,31 +990,31 @@ set_ptn_label(menudesc *m, int line, void *arg)
 	switch (line) {
 	case PTN_OPT_TYPE:
 		wprintw(m->mw, msg_string(MSG_ptn_type),
-			get_partname(mbrp->mbrp_type));
+			get_partname(mbrp->dp_type));
 		break;
 	case PTN_OPT_START:
 		wprintw(m->mw, msg_string(MSG_ptn_start),
-		    (mbri->sector + mbrp->mbrp_start) / sizemult, multname);
+		    (mbri->sector + mbrp->dp_start) / sizemult, multname);
 		break;
 	case PTN_OPT_SIZE:
 		wprintw(m->mw, msg_string(MSG_ptn_size),
-		    (mbri->sector + mbrp->mbrp_start + mbrp->mbrp_size) /
+		    (mbri->sector + mbrp->dp_start + mbrp->dp_size) /
 			    sizemult -
-		    (mbri->sector + mbrp->mbrp_start) / sizemult, multname);
+		    (mbri->sector + mbrp->dp_start) / sizemult, multname);
 		break;
 	case PTN_OPT_END:
 		wprintw(m->mw, msg_string(MSG_ptn_end),
-		    (mbri->sector + mbrp->mbrp_start + mbrp->mbrp_size) /
+		    (mbri->sector + mbrp->dp_start + mbrp->dp_size) /
 			    sizemult, multname);
 		break;
 	case PTN_OPT_ACTIVE:
 		wprintw(m->mw, msg_string(MSG_ptn_active),
-		    mbrp->mbrp_flag == MBR_PFLAG_ACTIVE ? yes : no);
+		    mbrp->dp_flag == MBR_PFLAG_ACTIVE ? yes : no);
 		break;
 	case PTN_OPT_INSTALL:
 		wprintw(m->mw, msg_string(MSG_ptn_install),
-		    mbri->sector + mbrp->mbrp_start == ombri->install &&
-			mbrp->mbrp_type == MBR_PTYPE_NETBSD ? yes : no);
+		    mbri->sector + mbrp->dp_start == ombri->install &&
+			mbrp->dp_type == DOSPTYP_NETBSD ? yes : no);
 		break;
 #ifdef BOOTSEL
 	case PTN_OPT_BOOTMENU:
@@ -1023,7 +1023,7 @@ set_ptn_label(menudesc *m, int line, void *arg)
 		break;
 	case PTN_OPT_BOOTDEFAULT:
 		wprintw(m->mw, msg_string(MSG_boot_dflt),
-		    ombri->bootsec == mbri->sector + mbrp->mbrp_start ? yes
+		    ombri->bootsec == mbri->sector + mbrp->dp_start ? yes
 								      : no);
 		break;
 #endif
@@ -1035,14 +1035,14 @@ static void
 set_ptn_header(menudesc *m, void *arg)
 {
 	mbr_info_t *mbri = arg;
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	int opt = mbri->opt;
 	int typ;
 
 	mbrp = get_mbrp(&mbri, opt);
 	if (opt >= MBR_PART_COUNT)
 		opt = 0;
-	typ = mbrp->mbrp_type;
+	typ = mbrp->dp_type;
 
 #define DISABLE(opt,cond) \
 	if (cond) \
@@ -1052,7 +1052,7 @@ set_ptn_header(menudesc *m, void *arg)
 
 	/* Can't change type of the extended partition unless it is empty */
 	DISABLE(PTN_OPT_TYPE, MBR_IS_EXTENDED(typ) &&
-	    (mbri->extended->mbr.mbr_parts[0].mbrp_type != 0 ||
+	    (mbri->extended->mbr.mbr_parts[0].dp_type != 0 ||
 					    mbri->extended->extended != NULL));
 
 	/* It is unnecessary to be able to change the base of an extended ptn */
@@ -1065,7 +1065,7 @@ set_ptn_header(menudesc *m, void *arg)
 	DISABLE(PTN_OPT_ACTIVE, mbri->sector != 0 || MBR_IS_EXTENDED(typ) || typ == 0);
 
 	/* Can only install into NetBSD partition */
-	DISABLE(PTN_OPT_INSTALL, typ != MBR_PTYPE_NETBSD);
+	DISABLE(PTN_OPT_INSTALL, typ != DOSPTYP_NETBSD);
 
 #ifdef BOOTSEL
 	/* The extended partition isn't bootable */
@@ -1085,7 +1085,7 @@ set_mbr_label(menudesc *m, int opt, void *arg)
 {
 	mbr_info_t *mbri = arg;
 	mbr_info_t *ombri = arg;
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	uint rstart, rend;
 	const char *name, *cp, *mounted;
 	int len;
@@ -1094,24 +1094,24 @@ set_mbr_label(menudesc *m, int opt, void *arg)
 	if (opt >= MBR_PART_COUNT)
 		opt = 0;
 
-	if (mbrp->mbrp_type == 0 && mbri->sector == 0) {
+	if (mbrp->dp_typ == 0 && mbri->sector == 0) {
 		len = snprintf(0, 0, msg_string(MSG_part_row_used), 0, 0, 0);
 		wprintw(m->mw, "%*s", len, "");
 	} else {
-		rstart = mbri->sector + mbrp->mbrp_start;
-		rend = (rstart + mbrp->mbrp_size) / sizemult;
+		rstart = mbri->sector + mbrp->dp_start;
+		rend = (rstart + mbrp->dp_size) / sizemult;
 		rstart = rstart / sizemult;
 		wprintw(m->mw, msg_string(MSG_part_row_used),
 		    rstart, rend - rstart,
-		    mbrp->mbrp_flag == MBR_PFLAG_ACTIVE ? 'a' : ' ',
+		    mbrp->dp_flag == MBR_PFLAG_ACTIVE ? 'a' : ' ',
 #ifdef BOOTSEL
-		    ombri->bootsec == mbri->sector + mbrp->mbrp_start ? 'd' :
+		    ombri->bootsec == mbri->sector + mbrp->dp_start ? 'd' :
 #endif
 			' ',
-		    mbri->sector + mbrp->mbrp_start == ombri->install &&
-			mbrp->mbrp_type == MBR_PTYPE_NETBSD ? 'I' : ' ');
+		    mbri->sector + mbrp->dp_start == ombri->install &&
+			mbrp->dp_typ == DOSPTYP_NETBSD ? 'I' : ' ');
 	}
-	name = get_partname(mbrp->mbrp_type);
+	name = get_partname(mbrp->dp_typ);
 	mounted = mbri->last_mounted[opt];
 	len = strlen(name);
 	cp = strchr(name, ',');
@@ -1208,7 +1208,7 @@ edit_mbr(mbr_info_t *mbri)
 {
 	struct mbr_sector *mbrs = &mbri->mbr;
 	mbr_info_t *ext;
-	struct mbr_partition *part;
+	struct dos_partition *part;
 	int i, j;
 	int usefull;
 	int mbr_menu;
@@ -1228,11 +1228,11 @@ edit_mbr(mbr_info_t *mbri)
 		/* Count nonempty, non-BSD partitions. */
 		numbsd = 0;
 		for (i = 0; i < MBR_PART_COUNT; i++) {
-			j = part[i].mbrp_type;
+			j = part[i].dp_typ;
 			if (j == 0)
 				continue;
 			numbsd++;
-			if (j != MBR_PTYPE_NETBSD)
+			if (j != DOSPTYP_NETBSD)
 				numbsd++;
 		}
 
@@ -1256,10 +1256,10 @@ edit_mbr(mbr_info_t *mbri)
 #ifdef BOOTSEL
 		memset(&mbri->mbrb, 0, sizeof mbri->mbrb);
 #endif
-		part[0].mbrp_type = MBR_PTYPE_NETBSD;
-		part[0].mbrp_size = dlsize - bsec;
-		part[0].mbrp_start = bsec;
-		part[0].mbrp_flag = MBR_PFLAG_ACTIVE;
+		part[0].dp_typ = DOSPTYP_NETBSD;
+		part[0].dp_size = dlsize - bsec;
+		part[0].dp_start = bsec;
+		part[0].dp_flag = MBR_PFLAG_ACTIVE;
 
 		ptstart = bsec;
 		ptsize = dlsize - bsec;
@@ -1288,20 +1288,20 @@ edit_mbr(mbr_info_t *mbri)
 		for (ext = mbri; ext; ext = ext->extended) {
 			part = ext->mbr.mbr_parts;
 			for (i = 0; i < MBR_PART_COUNT; part++, i++) {
-				if (part->mbrp_flag != 0)
+				if (part->dp_flag != 0)
 					activepart = 1;
-				if (part->mbrp_type != MBR_PTYPE_NETBSD)
+				if (part->dp_typ != DOSPTYP_NETBSD)
 					continue;
-				start = ext->sector + part->mbrp_start;
+				start = ext->sector + part->dp_start;
 				if (start == mbri->install) {
 					ptstart = mbri->install;
-					ptsize = part->mbrp_size;
+					ptsize = part->dp_size;
 				}
 				if (bsdstart != 0)
 					bsdstart = ~0;
 				else {
 					bsdstart = start;
-					bsdsize = part->mbrp_size;
+					bsdsize = part->dp_size;
 				}
 			}
 		}
@@ -1355,7 +1355,7 @@ get_partname(int typ)
 int
 read_mbr(const char *disk, mbr_info_t *mbri)
 {
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	struct mbr_sector *mbrs = &mbri->mbr;
 	mbr_info_t *ext = NULL;
 	char diskpath[MAXPATHLEN];
@@ -1392,12 +1392,12 @@ read_mbr(const char *disk, mbr_info_t *mbri)
 		mbrp = &mbrs->mbr_parts[0];
 		if (ext_base != 0) {
 			/* sanity check extended chain */
-			if (MBR_IS_EXTENDED(mbrp[0].mbrp_type))
+			if (DP_IS_EXTENDED(mbrp[0].dp_typ))
 				break;
-			if (mbrp[1].mbrp_type != 0 &&
-			    !MBR_IS_EXTENDED(mbrp[1].mbrp_type))
+			if (mbrp[1].dp_typ != 0 &&
+			    !DP_IS_EXTENDED(mbrp[1].dp_typ))
 				break;
-			if (mbrp[2].mbrp_type != 0 || mbrp[3].mbrp_type != 0)
+			if (mbrp[2].dp_typ != 0 || mbrp[3].dp_typ != 0)
 				break;
 			/* Looks ok, link into extended chain */
 			mbri->extended = ext;
@@ -1426,32 +1426,32 @@ read_mbr(const char *disk, mbr_info_t *mbri)
 		next_ext = 0;
 		rval = 0;
 		for (i = 0; i < MBR_PART_COUNT; mbrp++, i++) {
-			if (mbrp->mbrp_type == 0) {
+			if (mbrp->dp_typ == 0) {
 				/* type is unused, discard scum */
 				memset(mbrp, 0, sizeof *mbrp);
 				continue;
 			}
-			mbrp->mbrp_start = le32toh(mbrp->mbrp_start);
-			mbrp->mbrp_size = le32toh(mbrp->mbrp_size);
-			if (MBR_IS_EXTENDED(mbrp->mbrp_type)) {
-				next_ext = mbrp->mbrp_start;
+			mbrp->dp_start = le32toh(mbrp->dp_start);
+			mbrp->dp_size = le32toh(mbrp->dp_size);
+			if (DP_IS_EXTENDED(mbrp->dp_typ)) {
+				next_ext = mbrp->dp_start;
 				if (ext_base == 0)
-					ext_size = mbrp->mbrp_size;
+					ext_size = mbrp->dp_size;
 			} else {
 				mbri->last_mounted[i] = strdup(get_last_mounted(
-					fd, mbri->sector + mbrp->mbrp_start));
+					fd, mbri->sector + mbrp->dp_start));
 #if BOOTSEL
 				if (ombri->install == 0 &&
 				    strcmp(mbri->last_mounted[i], "/") == 0)
 					ombri->install = mbri->sector +
-							mbrp->mbrp_start;
+							mbrp->dp_start;
 #endif
 			}
 #if BOOTSEL
 			if (mbri->mbrb.mbrbs_nametab[i][0] != 0
 			    && bootkey-- == 0)
 				ombri->bootsec = mbri->sector +
-							mbrp->mbrp_start;
+							mbrp->dp_start;
 #endif
 		}
 
@@ -1462,8 +1462,8 @@ read_mbr(const char *disk, mbr_info_t *mbri)
 			if (limit == 0)
 				limit = ext_size;
 			mbrp -= MBR_PART_COUNT;
-			base =mbri->sector + mbrp->mbrp_start + mbrp->mbrp_size;
-			if (mbrp->mbrp_type != 0 && ext_base + limit != base) {
+			base =mbri->sector + mbrp->dp_start + mbrp->dp_size;
+			if (mbrp->dp_typ != 0 && ext_base + limit != base) {
 				/* Mock up an extry for the space */
 				ext = calloc(1, sizeof *ext);
 				if (!ext)
@@ -1471,12 +1471,12 @@ read_mbr(const char *disk, mbr_info_t *mbri)
 				ext->sector = base;
 				ext->mbr.mbr_magic = htole16(MBR_MAGIC);
 				ext->mbr.mbr_parts[1] = mbrp[1];
-				ext->mbr.mbr_parts[0].mbrp_start = bsec;
-				ext->mbr.mbr_parts[0].mbrp_size =
+				ext->mbr.mbr_parts[0].dp_start = bsec;
+				ext->mbr.mbr_parts[0].dp_size =
 				    ext_base + limit - base - bsec;
-				mbrp[1].mbrp_type = MBR_PTYPE_EXT;
-				mbrp[1].mbrp_start = base - ext_base;
-				mbrp[1].mbrp_size = limit - mbrp[1].mbrp_start;
+				mbrp[1].dp_typ = DOSPTYP_EXT;
+				mbrp[1].dp_start = base - ext_base;
+				mbrp[1].dp_size = limit - mbrp[1].dp_start;
 				mbri->extended = ext;
 				ext->prev_ext = mbri;
 				ext->extended = NULL;
@@ -1514,7 +1514,7 @@ write_mbr(const char *disk, mbr_info_t *mbri, int convert)
 {
 	char diskpath[MAXPATHLEN];
 	int fd, i, ret = 0;
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	u_int32_t pstart, psize;
 #ifdef BOOTSEL
 	struct mbr_sector *mbrs;
@@ -1573,7 +1573,7 @@ write_mbr(const char *disk, mbr_info_t *mbri, int convert)
 		mbrp = &mbrsec.mbr_parts[0];
 
 		if (sector != 0 && ext->extended != NULL
-		    && ext->extended->mbr.mbr_parts[0].mbrp_type == 0) {
+		    && ext->extended->mbr.mbr_parts[0].dp_typ == 0) {
 			/* We are followed by an empty slot, collapse out */
 			ext = ext->extended;
 			/* Make us describe the next non-empty partition */
@@ -1581,26 +1581,26 @@ write_mbr(const char *disk, mbr_info_t *mbri, int convert)
 		}
 
 		for (i = 0; i < MBR_PART_COUNT; i++) {
-			if (mbrp[i].mbrp_start == 0 && mbrp[i].mbrp_size == 0) {
-				mbrp[i].mbrp_scyl = 0;
-				mbrp[i].mbrp_shd = 0;
-				mbrp[i].mbrp_ssect = 0;
-				mbrp[i].mbrp_ecyl = 0;
-				mbrp[i].mbrp_ehd = 0;
-				mbrp[i].mbrp_esect = 0;
+			if (mbrp[i].dp_start == 0 && mbrp[i].dp_size == 0) {
+				mbrp[i].dp_scyl = 0;
+				mbrp[i].dp_shd = 0;
+				mbrp[i].dp_ssect = 0;
+				mbrp[i].dp_ecyl = 0;
+				mbrp[i].dp_ehd = 0;
+				mbrp[i].dp_esect = 0;
 				continue;
 			}
-			pstart = mbrp[i].mbrp_start;
-			psize = mbrp[i].mbrp_size;
-			mbrp[i].mbrp_start = htole32(pstart);
-			mbrp[i].mbrp_size = htole32(psize);
+			pstart = mbrp[i].dp_start;
+			psize = mbrp[i].dp_size;
+			mbrp[i].dp_start = htole32(pstart);
+			mbrp[i].dp_size = htole32(psize);
 			if (convert) {
 				convert_mbr_chs(bcyl, bhead, bsec,
-				    &mbrp[i].mbrp_scyl, &mbrp[i].mbrp_shd,
-				    &mbrp[i].mbrp_ssect, pstart);
+				    &mbrp[i].dp_scyl, &mbrp[i].dp_shd,
+				    &mbrp[i].dp_ssect, pstart);
 				convert_mbr_chs(bcyl, bhead, bsec,
-				    &mbrp[i].mbrp_ecyl, &mbrp[i].mbrp_ehd,
-				    &mbrp[i].mbrp_esect, pstart + psize - 1);
+				    &mbrp[i].dp_ecyl, &mbrp[i].dp_ehd,
+				    &mbrp[i].dp_esect, pstart + psize - 1);
 			}
 		}
 
@@ -1659,7 +1659,7 @@ int
 guess_biosgeom_from_mbr(mbr_info_t *mbri, int *cyl, int *head, int *sec)
 {
 	struct mbr_sector *mbrs = &mbri->mbr;
-	struct mbr_partition *parts = &mbrs->mbr_parts[0];
+	struct dos_partition *parts = &mbrs->mbr_parts[0];
 	int xcylinders, xheads, xsectors, i, j;
 	int c1, h1, s1, c2, h2, s2;
 	unsigned long a1, a2;
@@ -1746,24 +1746,24 @@ guess_biosgeom_from_mbr(mbr_info_t *mbri, int *cyl, int *head, int *sec)
 }
 
 static int
-get_mapping(struct mbr_partition *parts, int i,
+get_mapping(struct dos_partition *parts, int i,
 	    int *cylinder, int *head, int *sector, unsigned long *absolute)
 {
-	struct mbr_partition *apart = &parts[i / 2];
+	struct dos_partition *apart = &parts[i / 2];
 
-	if (apart->mbrp_type == 0)
+	if (apart->dp_typ == 0)
 		return -1;
 	if (i % 2 == 0) {
-		*cylinder = MBR_PCYL(apart->mbrp_scyl, apart->mbrp_ssect);
-		*head = apart->mbrp_shd;
-		*sector = MBR_PSECT(apart->mbrp_ssect) - 1;
-		*absolute = le32toh(apart->mbrp_start);
+		*cylinder = DPCYL(apart->dp_scyl, apart->dp_ssect);
+		*head = apart->dp_shd;
+		*sector = DPSECT(apart->dp_ssect) - 1;
+		*absolute = le32toh(apart->dp_start);
 	} else {
-		*cylinder = MBR_PCYL(apart->mbrp_ecyl, apart->mbrp_esect);
-		*head = apart->mbrp_ehd;
-		*sector = MBR_PSECT(apart->mbrp_esect) - 1;
-		*absolute = le32toh(apart->mbrp_start)
-			+ le32toh(apart->mbrp_size) - 1;
+		*cylinder = DPCYL(apart->dp_ecyl, apart->dp_esect);
+		*head = apart->dp_ehd;
+		*sector = DPSECT(apart->dp_esect) - 1;
+		*absolute = le32toh(apart->dp_start)
+			+ le32toh(apart->dp_size) - 1;
 	}
 	/* Sanity check the data against max values */
 	if ((((*cylinder * MAXHEAD) + *head) * MAXSECTOR + *sector) < *absolute)

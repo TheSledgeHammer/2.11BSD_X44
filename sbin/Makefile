@@ -7,6 +7,7 @@ SUBDIR=	apmlabel atactl                                 \
         ccdconfig 				                        \
 		disklabel dmesg			                        \
 		fastboot fdisk fsck 	                        \
+		gpt												\
 		ifconfig init 			                        \
 		ldconfig 				                        \
 		mknod mount mountd		                        \

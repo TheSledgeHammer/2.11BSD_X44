@@ -77,7 +77,7 @@ int
 md_get_info(void)
 {
 	mbr_info_t *ext;
-	struct mbr_partition *p;
+	struct dos_partition *p;
 	const char *bootcode;
 	int i;
 	int names, fl, ofl;
@@ -120,16 +120,16 @@ edit:
 	for (ext = &mbr; ext != NULL; ext = ext->extended) {
 		p = ext->mbr.mbr_parts;
 		for (i = 0; i < MBR_PART_COUNT; p++, i++) {
-			if (p->mbrp_flag == MBR_PFLAG_ACTIVE) {
+			if (p->dp_flag == MBR_PFLAG_ACTIVE) {
 				fl |= ACTIVE_FOUND;
-			    if (ext->sector + p->mbrp_start == ptstart)
+			    if (ext->sector + p->dp_start == ptstart)
 				fl |= NETBSD_ACTIVE;
 			}
 			if (ext->mbrb.mbrbs_nametab[i][0] == 0) {
 				/* No bootmenu label... */
 				if (ext->sector == 0)
 					continue;
-				if (ext->sector + p->mbrp_start == ptstart)
+				if (ext->sector + p->dp_start == ptstart)
 					/*
 					 * Have installed into an extended ptn
 					 * force name & bootsel...
@@ -140,9 +140,9 @@ edit:
 			/* Partition has a bootmenu label... */
 			if (ext->sector != 0)
 				fl |= MBR_BS_EXTLBA;
-			if (ext->sector + p->mbrp_start == ptstart)
+			if (ext->sector + p->dp_start == ptstart)
 				fl |= NETBSD_NAMED;
-			else if (p->mbrp_flag == MBR_PFLAG_ACTIVE)
+			else if (p->dp_flag == MBR_PFLAG_ACTIVE)
 				fl |= ACTIVE_NAMED;
 			else
 				names++;
@@ -150,7 +150,7 @@ edit:
 	}
 	if (!(fl & ACTIVE_FOUND))
 		fl |= NETBSD_ACTIVE;
-	if (fl & NETBSD_NAMED && fl & NETBSD_ACTIVE)
+	if ((fl & NETBSD_NAMED) && (fl & NETBSD_ACTIVE))
 		fl |= ACTIVE_NAMED;
 
 	if ((names > 0 || !(fl & NETBSD_ACTIVE)) && 
@@ -189,14 +189,14 @@ edit:
 	if (ofl == 0) {
 		/* Check there is some bootcode at all... */
 		if (mbr.mbr.mbr_magic != htole16(MBR_MAGIC) ||
-		    mbr.mbr.mbr_jmpboot[0] == 0 ||
+		    mbr.mbr.mbr_bootsel.jump[0] == 0 ||
 		    mbr_root_above_chs())
 			/* Existing won't do, force update */
 			fl |= MBR_BS_NEWMBR;
 	}
 	ofl = mbr.oflags & (MBR_BS_ACTIVE | MBR_BS_EXTLBA);
 
-	if (fl & ~ofl || (fl == 0 && ofl & MBR_BS_ACTIVE)) {
+	if ((fl & ~ofl) || (fl == 0 && (ofl & MBR_BS_ACTIVE))) {
 		/* Existing boot code isn't the right one... */
 		if (fl & MBR_BS_ACTIVE)
 			msg_display(MSG_installbootsel);
@@ -430,7 +430,7 @@ md_update(void)
 void
 md_upgrade_mbrtype(void)
 {
-	struct mbr_partition *mbrp;
+	struct dos_partition *mbrp;
 	int i, netbsdpart = -1, oldbsdpart = -1, oldbsdcount = 0;
 
 	if (no_mbr)
@@ -442,15 +442,15 @@ md_upgrade_mbrtype(void)
 	mbrp = &mbr.mbr.mbr_parts[0];
 
 	for (i = 0; i < MBR_PART_COUNT; i++) {
-		if (mbrp[i].mbrp_type == MBR_PTYPE_386BSD) {
+		if (mbrp[i].dp_typ == DOSPTYP_386BSD) {
 			oldbsdpart = i;
 			oldbsdcount++;
-		} else if (mbrp[i].mbrp_type == MBR_PTYPE_NETBSD)
+		} else if (mbrp[i].dp_typ == DOSPTYP_NETBSD)
 			netbsdpart = i;
 	}
 
 	if (netbsdpart == -1 && oldbsdcount == 1) {
-		mbrp[oldbsdpart].mbrp_type = MBR_PTYPE_NETBSD;
+		mbrp[oldbsdpart].dp_typ = DOSPTYP_NETBSD;
 		write_mbr(diskdev, &mbr, 0);
 	}
 }

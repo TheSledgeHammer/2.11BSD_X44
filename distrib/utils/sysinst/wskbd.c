@@ -45,6 +45,7 @@ __RCSID("$NetBSD: wskbd.c,v 1.5.4.2 2005/07/24 02:25:24 snj Exp $");
 #include "defs.h"
 #include "menu_defs.h"
 #include "msg_defs.h"
+
 void save_kb_encoding(void);
 
 #define nelem(x) (sizeof (x) / sizeof *(x))

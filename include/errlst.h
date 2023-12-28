@@ -8,6 +8,9 @@
  *      1.0     05Mar96         1. Initial release into the public domain.
 */
 
+#ifndef _ERRLST_H_
+#define	_ERRLST_H_
+
 /*
  * Definitions used by the 'mkerrlst' program which creates error message 
  * files.
@@ -39,3 +42,5 @@ struct	ERRLST {
 
 #define	ERRMAGIC		012345
 #define	_PATH_SYSERRLST	"/etc/syserrlst"
+
+#endif /* !_ERRLST_H_ */

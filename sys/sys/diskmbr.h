@@ -53,22 +53,33 @@
 #define NEW					1
 #define OLD					0
 
+#define DOSPFLG_ACTIVE		0x80	/* The active partition */
+
+#define	DOSPTYP_UNUSED		0x00	/* Unused */
+#define	DOSPTYP_FAT12		0x01	/* FAT12 partition*/
+#define	DOSPTYP_FAT16S		0x04	/* FAT16 partition, less than 32M */
 #define	DOSPTYP_EXT			0x05	/* DOS extended partition */
-#define	DOSPTYP_FAT16		0x06	/* FAT16 partition */
+#define	DOSPTYP_FAT16B		0x06	/* FAT16 partition, more than 32M */
 #define	DOSPTYP_NTFS		0x07	/* NTFS partition */
 #define	DOSPTYP_FAT32		0x0b	/* FAT32 partition */
 #define	DOSPTYP_FAT32LBA	0x0c	/* FAT32 with LBA partition */
+#define	DOSPTYP_FAT16LBA	0x0e	/* FAT16 with LBA partition */
 #define	DOSPTYP_EXTLBA		0x0f	/* DOS extended partition */
 #define	DOSPTYP_PPCBOOT		0x41	/* PReP/CHRP boot partition */
 #define	DOSPTYP_LDM			0x42	/* Win2k dynamic extended partition */
 #define	DOSPTYP_DFLYBSD		0x6c	/* DragonFlyBSD partition type */
 #define	DOSPTYP_LINSWP		0x82	/* Linux swap partition */
 #define	DOSPTYP_LINUX		0x83	/* Linux partition */
+#define	DOSPTYP_EXTLNX		0x85	/* Linux extended partition */
+#define	DOSPTYP_NTFSVOL		0x87	/* NTFS partition with volume set or HPFS mirrored */
 #define	DOSPTYP_LINLVM		0x8e	/* Linux LVM partition */
 #define	DOSPTYP_386BSD		0xa5	/* 386BSD partition type */
+#define	DOSPTYP_OPENBSD		0xa6	/* OpenBSD partition type */
 #define	DOSPTYP_APPLE_UFS	0xa8	/* Apple Mac OS X boot */
+#define	DOSPTYP_NETBSD		0xa9	/* NetBSD partition type */
 #define	DOSPTYP_APPLE_BOOT	0xab	/* Apple Mac OS X UFS */
 #define	DOSPTYP_HFS			0xaf	/* HFS/HFS+ partition type */
+#define	DOSPTYP_SOLARIS		0xbf	/* Solaris partition type */
 #define	DOSPTYP_PMBR		0xee	/* GPT Protective MBR */
 #define	DOSPTYP_EFI			0xef	/* EFI FAT parition */
 #define	DOSPTYP_VMFS		0xfb	/* VMware VMFS partition */
@@ -124,9 +135,25 @@ struct bootsector {
 	unsigned char junk[476];	/* who cares? */
 };
 
+/* MBR boot sector */
+struct mbr_sector {
+	struct bootsector 		mbr_bootsec;
+	struct dos_partition 	mbr_parts[NDOSPART];
+	struct directory		mbr_dir;
+	uint16_t				mbr_magic;
+	uint16_t				mbr_bootsel_magic;
+	unsigned char 			*mbr_bootcode;					/* boot code */
+	off_t 					mbr_bootsize;
+	char					mbr_nametab[NDOSPART][8 + 1];
+};
+
 #define	DPSECT(s) 	((s) & 0x3f)				/* isolate relevant bits of sector */
 #define	DPCYL(c, s) ((c) + (((s) & 0xc0)<<2))	/* and those that are cylinder */
 
+#define	DP_IS_EXTENDED(x) 				\
+	((x) == DOSPTYP_EXT || 				\
+			(x) == DOSPTYP_EXTLBA || 	\
+			(x) == DOSPTYP_EXTLNX)
 /*
  * Diskmbr-specific ioctls.
  */
