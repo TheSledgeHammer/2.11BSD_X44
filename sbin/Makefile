@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	apmlabel atactl                                 \
+SUBDIR=	atactl                                 \
         ccdconfig 				                        \
 		disklabel dmesg			                        \
 		fastboot fdisk fsck 	                        \
