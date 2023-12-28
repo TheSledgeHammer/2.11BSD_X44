@@ -4,7 +4,6 @@
 *.diff
 !/contrib/groff/src/devices/grops/psfig.diff
 !/lib/libstand/bzlib.c.diff
-*.old
 *.orig
 *.patch
 *.plist
