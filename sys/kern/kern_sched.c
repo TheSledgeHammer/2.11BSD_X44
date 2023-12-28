@@ -83,7 +83,7 @@ sched_edf_setup(gsd, p)
 	register struct sched_edf *edf = sched_edf(gsd);
 
 	if (edf == NULL) {
-		MALLOC(edf, struct sched_edf *, sizeof(struct sched_edf *), M_GCHED, M_WAITOK);
+		MALLOC(edf, struct sched_edf *, sizeof(struct sched_edf *), M_SCHED, M_WAITOK);
 	}
 
 	edf->edf_proc = p;
