@@ -111,6 +111,10 @@ BIN1+=	etc.${MACHINE}/ld.so.conf
 BIN1+=	etc.${MACHINE}/ttyaction
 .endif
 
+.if exists(etc.${MACHINE}/ttys)
+BIN1+=	etc.${MACHINE}/ttys
+.endif
+
 # -rw-rw-r--
 BIN2+=	motd
 

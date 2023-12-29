@@ -46,7 +46,7 @@ __RCSID("$NetBSD: label.c,v 1.43.4.1 2005/07/24 02:25:24 snj Exp $");
 #include <fcntl.h>
 #include <util.h>
 #include <unistd.h>
-#include <sys/dkio.h>
+#include <sys/dk.h>
 #include <ufs/ffs/fs.h>
 
 #include "defs.h"

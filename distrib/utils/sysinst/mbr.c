@@ -114,7 +114,7 @@ struct part_id {
 	{-1,				"Unknown"},
 };
 
-static int get_mapping(struct mbr_partition *, int, int *, int *, int *, unsigned long *);
+static int get_mapping(struct dos_partition *, int, int *, int *, int *, unsigned long *);
 static void convert_mbr_chs(int, int, int, uint8_t *, uint8_t *, uint8_t *, uint32_t);
 
 /*
@@ -884,7 +884,7 @@ edit_mbr_install(menudesc *m, void *arg)
 	return 0;
 }
 
-//#ifdef BOOTSEL
+#ifdef BOOTSEL
 static int
 edit_mbr_bootmenu(menudesc *m, void *arg)
 {
