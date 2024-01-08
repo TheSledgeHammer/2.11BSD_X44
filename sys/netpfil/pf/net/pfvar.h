@@ -1722,17 +1722,6 @@ int pfil_ifaddr_wrapper(void *, struct mbuf **, struct ifnet *, int);
 #endif
 #if !defined(__OpenBSD__)
 #include <sys/kernel.h> /* mono_time */
-static __inline void getmicrouptime(struct timeval *);
-static __inline void
-getmicrouptime(struct timeval *tvp)
-{
-	int s;
-
-	s = splclock();
-	*tvp = mono_time;
-	splx(s);
-}
-#define	time_second	time.tv_sec
 #define	m_copym2	m_copy
 #define	pool_allocator_oldnointr	pool_allocator_nointr
 #endif
