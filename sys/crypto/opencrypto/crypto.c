@@ -52,15 +52,6 @@ __KERNEL_RCSID(0, "$NetBSD: crypto.c,v 1.8.2.1 2004/04/30 03:53:18 jmc Exp $");
   #define setsoftcrypto(x) 			softintr_schedule(x)
 #endif
 
-static void nanouptime(struct timespec *);
-static void
-nanouptime(struct timespec *tp)
-{
-	struct timeval tv;
-	microtime(&tv);
-	TIMEVAL_TO_TIMESPEC(&tv, tp);
-}
-
 #define	SESID2HID(sid)	(((sid) >> 32) & 0xffffffff)
 
 /*
