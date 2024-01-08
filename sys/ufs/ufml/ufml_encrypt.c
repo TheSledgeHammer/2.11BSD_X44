@@ -49,9 +49,10 @@ ufml_encrypt(ap)
 		fs = meta->ufml_filesystem;
 		if (ufml_check_encryption(meta, meta->ufml_encrypt) >= 0) {
 			type = meta->ufml_encrypt;
-			return (UOP_ENCRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
+		} else {
+			type = -1;
 		}
-		return (UOP_ENCRYPT(ip, ap->a_vp, ap->a_mp, fs, 0));
+		return (UOP_ENCRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
 	}
 
 	return (EINVAL);
@@ -69,9 +70,10 @@ ufml_decrypt(ap)
 		fs = meta->ufml_filesystem;
 		if (ufml_check_encryption(meta, meta->ufml_encrypt) >= 0) {
 			type = meta->ufml_encrypt;
-			return (UOP_DECRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
+		} else {
+			type = -1;
 		}
-		return (UOP_DECRYPT(ip, ap->a_vp, ap->a_mp, fs, 0));
+		return (UOP_DECRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
 	}
 
 	return (EINVAL);

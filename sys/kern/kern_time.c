@@ -400,7 +400,7 @@ ratecheck(lasttime, mininterval)
 	struct timeval tv, delta;
 	int rv = 0;
 
-	//getmicrouptime(&tv); /* need timecounters (unimplemented!) */
+	getmicrouptime(&tv);
 	timersub(&tv, lasttime, &delta);
 
 	/*
@@ -428,7 +428,7 @@ ppsratecheck(lasttime, curpps, maxpps)
 	struct timeval tv, delta;
 	int rv;
 
-	//getmicrouptime(&tv); /* need timecounters (unimplemented!) */
+	getmicrouptime(&tv);
 	timersub(&tv, lasttime, &delta);
 
 	/*

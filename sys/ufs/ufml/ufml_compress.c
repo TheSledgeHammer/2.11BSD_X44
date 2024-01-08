@@ -49,9 +49,10 @@ ufml_compress(ap)
 		fs = meta->ufml_filesystem;
 		if (ufml_check_compression(meta, meta->ufml_compress) >= 0) {
 			type = meta->ufml_compress;
-			return (UOP_COMPRESS(ip, ap->a_vp, ap->a_mp, fs, type));
+		} else {
+			type = -1;
 		}
-		return (UOP_COMPRESS(ip, ap->a_vp, ap->a_mp, fs, 0));
+		return (UOP_COMPRESS(ip, ap->a_vp, ap->a_mp, fs, type));
 	}
 
 	return (EINVAL);
@@ -69,9 +70,10 @@ ufml_decompress(ap)
 		fs = meta->ufml_filesystem;
 		if (ufml_check_compression(meta, meta->ufml_compress) >= 0) {
 			type = meta->ufml_compress;
-			return (UOP_DECOMPRESS(ip, ap->a_vp, ap->a_mp, fs, type));
+		} else {
+			type = -1;
 		}
-		return (UOP_DECOMPRESS(ip, ap->a_vp, ap->a_mp, fs, 0));
+		return (UOP_DECOMPRESS(ip, ap->a_vp, ap->a_mp, fs, type));
 	}
 
 	return (EINVAL);

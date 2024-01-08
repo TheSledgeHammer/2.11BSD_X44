@@ -71,7 +71,8 @@ __KERNEL_RCSID(0, "$NetBSD: kern_tc.c,v 1.62 2021/06/02 21:34:58 riastradh Exp $
  */
 
 static u_int
-dummy_get_timecount(struct timecounter *tc)
+dummy_get_timecount(tc)
+	struct timecounter *tc;
 {
 	static u_int now;
 
@@ -157,14 +158,13 @@ TC_STATS(setclock);
 
 static void tc_windup(void);
 
-//void getbinboottime(struct bintime *);
-
 /*
  * Return the difference between the timehands' counter value now and what
  * was when we copied it to the timehands' offset_count.
  */
 static inline u_int
-tc_delta(struct timehands *th)
+tc_delta(th)
+	struct timehands *th;
 {
 	struct timecounter *tc;
 
@@ -179,7 +179,8 @@ tc_delta(struct timehands *th)
  */
 
 void
-binuptime(struct bintime *bt)
+binuptime(bt)
+	struct bintime *bt;
 {
 	struct timehands *th;
 	struct proc *p;
@@ -228,7 +229,8 @@ binuptime(struct bintime *bt)
 }
 
 void
-nanouptime(struct timespec *tsp)
+nanouptime(tsp)
+	struct timespec *tsp;
 {
 	struct bintime bt;
 
@@ -238,7 +240,8 @@ nanouptime(struct timespec *tsp)
 }
 
 void
-microuptime(struct timeval *tvp)
+microuptime(tvp)
+	struct timeval *tvp;
 {
 	struct bintime bt;
 
@@ -248,7 +251,8 @@ microuptime(struct timeval *tvp)
 }
 
 void
-bintime(struct bintime *bt)
+bintime(bt)
+	struct bintime *bt;
 {
 
 	TC_COUNT(nbintime);
@@ -257,7 +261,8 @@ bintime(struct bintime *bt)
 }
 
 void
-nanotime(struct timespec *tsp)
+nanotime(tsp)
+	struct timespec *tsp;
 {
 	struct bintime bt;
 
@@ -267,7 +272,8 @@ nanotime(struct timespec *tsp)
 }
 
 void
-microtime1(struct timeval *tvp)
+microtime(tvp)
+	struct timeval *tvp;
 {
 	struct bintime bt;
 
@@ -277,7 +283,8 @@ microtime1(struct timeval *tvp)
 }
 
 void
-getbinuptime(struct bintime *bt)
+getbinuptime(bt)
+	struct bintime *bt;
 {
 	struct timehands *th;
 	u_int gen;
@@ -291,7 +298,8 @@ getbinuptime(struct bintime *bt)
 }
 
 void
-getnanouptime(struct timespec *tsp)
+getnanouptime(tsp)
+	struct timespec *tsp;
 {
 	struct timehands *th;
 	u_int gen;
@@ -305,7 +313,8 @@ getnanouptime(struct timespec *tsp)
 }
 
 void
-getmicrouptime(struct timeval *tvp)
+getmicrouptime(tvp)
+	struct timeval *tvp;
 {
 	struct timehands *th;
 	u_int gen;
@@ -319,7 +328,8 @@ getmicrouptime(struct timeval *tvp)
 }
 
 void
-getbintime(struct bintime *bt)
+getbintime(bt)
+	struct bintime *bt;
 {
 	struct timehands *th;
 	u_int gen;
@@ -334,7 +344,8 @@ getbintime(struct bintime *bt)
 }
 
 static inline void
-dogetnanotime(struct timespec *tsp)
+dogetnanotime(tsp)
+	struct timespec *tsp;
 {
 	struct timehands *th;
 	u_int gen;
@@ -348,13 +359,15 @@ dogetnanotime(struct timespec *tsp)
 }
 
 void
-getnanotime(struct timespec *tsp)
+getnanotime(tsp)
+	struct timespec *tsp;
 {
 	dogetnanotime(tsp);
 }
 
 void
-getmicrotime(struct timeval *tvp)
+getmicrotime(tvp)
+	struct timeval *tvp;
 {
 	struct timehands *th;
 	u_int gen;
@@ -368,7 +381,8 @@ getmicrotime(struct timeval *tvp)
 }
 
 void
-getnanoboottime(struct timespec *tsp)
+getnanoboottime(tsp)
+	struct timespec *tsp;
 {
 	struct bintime bt;
 
@@ -377,7 +391,8 @@ getnanoboottime(struct timespec *tsp)
 }
 
 void
-getmicroboottime(struct timeval *tvp)
+getmicroboottime(tvp)
+	struct timeval *tvp;
 {
 	struct bintime bt;
 
@@ -386,7 +401,8 @@ getmicroboottime(struct timeval *tvp)
 }
 
 void
-getbinboottime(struct bintime *bt)
+getbinboottime(bt)
+	struct bintime *bt;
 {
 
 	/*
@@ -400,7 +416,8 @@ getbinboottime(struct bintime *bt)
  * Initialize a new timecounter and possibly use it.
  */
 void
-tc_init(struct timecounter *tc)
+tc_init(tc)
+	struct timecounter *tc;
 {
 	u_int u;
 
@@ -468,7 +485,8 @@ tc_pick(void)
  * clock tick.
  */
 void
-tc_gonebad(struct timecounter *tc)
+tc_gonebad(tc)
+	struct timecounter *tc;
 {
 
 	tc->tc_quality = -100;
@@ -480,7 +498,8 @@ tc_gonebad(struct timecounter *tc)
  * Stop using a timecounter and remove it from the timecounters list.
  */
 int
-tc_detach(struct timecounter *target)
+tc_detach(target)
+	struct timecounter *target;
 {
 	struct timecounter *tc;
 	struct timecounter **tcp = NULL;
@@ -525,7 +544,8 @@ tc_getfrequency(void)
  * when we booted.
  */
 void
-tc_setclock(struct timespec *ts)
+tc_setclock(ts)
+	struct timespec *ts;
 {
 	struct timespec ts2;
 	struct bintime bt, bt2;
@@ -552,7 +572,9 @@ tc_setclock(struct timespec *ts)
  * Skew the timehands according to any adjtime(2) adjustment.
  */
 void
-ntp_update_second(int64_t *adjustment, time_t *newsec)
+ntp_update_second(adjustment, newsec)
+	int64_t *adjustment;
+	time_t *newsec;
 {
 	int64_t adj;
 
@@ -780,7 +802,10 @@ inittimecounter(void)
 
 /* Report or change the active timecounter hardware. */
 static int
-sysctl_timecounter_hardware(void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+sysctl_timecounter_hardware(oldp, oldlenp, newp, newlen)
+	void *oldp, *newp;
+	size_t *oldlenp;
+	size_t newlen;
 {
 	char newname[32];
 	struct timecounter *newtc, *tc;
@@ -816,7 +841,11 @@ sysctl_timecounter_hardware(void *oldp, size_t *oldlenp, void *newp, size_t newl
 
 /* Report or change the active timecounter hardware. */
 static int
-sysctl_timecounter_choice(u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+sysctl_timecounter_choice(namelen, oldp, oldlenp, newp, newlen)
+	u_int namelen;
+	void *oldp, *newp;
+	size_t *oldlenp;
+	size_t newlen;
 {
 	char buf[32], *spc, *choices;
 	struct timecounter *tc;
@@ -871,7 +900,12 @@ retry:
  * Return timecounter-related information.
  */
 int
-sysctl_timecounter(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+sysctl_timecounter(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp, *newp;
+	size_t *oldlenp;
+	size_t newlen;
 {
 	int error;
 

@@ -110,11 +110,11 @@ void	cpu_need_proftick(struct proc *p);
 extern void (*delay_func)(int);
 extern void (*initclocks_func)(void);
 struct timeval;
-extern void (*microtime_func)(struct timeval *);
+//extern void (*microtime_func)(struct timeval *);
 
 #define	DELAY(x)			(*delay_func)(x)
 #define delay(x)			(*delay_func)(x)
-#define microtime(tv)		(*microtime_func)(tv)
+//#define microtime(tv)		(*microtime_func)(tv)
 #define cpu_initclocks()	(*initclocks_func)()
 
 extern char		btext[];

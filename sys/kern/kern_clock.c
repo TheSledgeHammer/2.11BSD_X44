@@ -44,9 +44,6 @@ long cp_time[CPUSTATES];
 
 volatile struct timeval time;
 volatile struct	timeval mono_time;
-/* does not belong here */
-volatile time_t time_second = 1;
-volatile time_t time_uptime = 1;
 
 #ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 static void softclockintr(void *);

@@ -69,7 +69,7 @@
 }
 
 struct buf *lfs_fakebuf (struct vnode *, int, size_t, caddr_t);
-//int	lfs_fastvget(struct mount *, ino_t, ufs2_daddr_t, struct vnode **, void *);
+int	lfs_fastvget(struct mount *, ino_t, ufs2_daddr_t, struct vnode **, void *);
 int lfs1_fastvget(struct mount *, ino_t, ufs1_daddr_t, struct vnode **, struct ufs1_dinode *);
 int lfs2_fastvget(struct mount *, ino_t, ufs2_daddr_t, struct vnode **, struct ufs2_dinode *);
 
@@ -182,7 +182,7 @@ lfs_markv()
 				continue;
 
 			/* Get the vnode/inode. */
-			if (lfs1_fastvget(mntp, blkp->bi_inode, v_daddr, &vp,
+			if (lfs_fastvget(mntp, blkp->bi_inode, v_daddr, &vp,
 			    blkp->bi_lbn == LFS_UNUSED_LBN ? 
 			    blkp->bi_bp : NULL)) {
 #ifdef DIAGNOSTIC

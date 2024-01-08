@@ -113,7 +113,7 @@
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
 
-void i386_microtime(struct timeval *);
+//void i386_microtime(struct timeval *);
 void cpu_dumpconf(void);
 int	 cpu_dump(void);
 void dumpsys(void);
@@ -125,7 +125,7 @@ void identify_cpu(void);
 caddr_t allocsys(caddr_t);
 
 void (*delay_func)(int) = i8254_delay;
-void (*microtime_func)(struct timeval *) = i386_microtime;
+//void (*microtime_func)(struct timeval *) = i386_microtime;
 void (*initclocks_func)(void) = i8254_initclocks;
 
 /*
@@ -944,7 +944,7 @@ err:
 	printf("\n\n");
 	delay(5000000);
 }
-
+/*
 void
 i386_microtime(tvp)
 	struct timeval *tvp;
@@ -959,7 +959,7 @@ i386_microtime(tvp)
 	}
 	splx(s);
 }
-
+*/
 void
 physstrat(bp, strat, prio)
 	struct buf *bp;

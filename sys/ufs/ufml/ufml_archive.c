@@ -49,9 +49,10 @@ ufml_archive(ap)
 		fs = meta->ufml_filesystem;
 		if (ufml_check_archive(meta, meta->ufml_archive) >= 0) {
 			type = meta->ufml_archive;
-			return (UOP_ARCHIVE(ip, ap->a_vp, ap->a_mp, fs, type));
+		} else {
+			type = -1;
 		}
-		return (UOP_ARCHIVE(ip, ap->a_vp, ap->a_mp, fs, 0));
+		return (UOP_ARCHIVE(ip, ap->a_vp, ap->a_mp, fs, type));
 	}
 
 	return (EINVAL);
@@ -69,9 +70,10 @@ ufml_extract(ap)
 		fs = meta->ufml_filesystem;
 		if (ufml_check_archive(meta, meta->ufml_archive) >= 0) {
 			type = meta->ufml_archive;
-			return (UOP_EXTRACT(ip, ap->a_vp, ap->a_mp, fs, type));
+		} else {
+			type = -1;
 		}
-		return (UOP_EXTRACT(ip, ap->a_vp, ap->a_mp, fs, 0));
+		return (UOP_EXTRACT(ip, ap->a_vp, ap->a_mp, fs, type));
 	}
 
 	return (EINVAL);
