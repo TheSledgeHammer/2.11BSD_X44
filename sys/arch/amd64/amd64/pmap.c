@@ -1049,6 +1049,14 @@ pmap_pde(pmap_t pmap, vm_offset_t va)
 	return (&pde[PL2_E(va)]);
 }
 
+/*
+ *	Routine:	pmap_pte
+ *	Function:
+ *		Extract the page table entry associated
+ *		with the given map/virtual_address pair.
+ * [ what about induced faults -wfj]
+ */
+
 pt_entry_t *
 pmap_pte(pmap_t pmap, vm_offset_t va)
 {
@@ -1107,27 +1115,6 @@ pmap_pml4e_to_pml5e(pmap_t pmap, vm_offset_t va)
 	}
 
 	return (pml5);
-}
-
-/*
- *	Routine:	pmap_pte
- *	Function:
- *		Extract the page table entry associated
- *		with the given map/virtual_address pair.
- * [ what about induced faults -wfj]
- */
-static pt_entry_t *
-pmap_pte(pmap, va)
-	register pmap_t pmap;
-	vm_offset_t va;
-{
-	pt_entry_t *pte;
-
-	pte = (pt_entry_t *)pmap_table(pmap, va, 1);
-	if (pte != NULL) {
-		return (pte);
-	}
-	return (NULL);
 }
 
 /*

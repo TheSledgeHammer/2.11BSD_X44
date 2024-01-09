@@ -789,9 +789,11 @@ pipe()
 free4:
 	ffree(wf);
 	fdp->fd_ofiles[retval[1]] = 0;
+	ufdsync(fdp);
 free3:
 	ffree(rf);
 	fdp->fd_ofiles[retval[0]] = 0;
+	ufdsync(fdp);
 free2:
 	(void)soclose(wso);
 free1:

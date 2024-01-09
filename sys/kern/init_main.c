@@ -191,7 +191,7 @@ main(framep)
 	procinit(p);
 
 	/*
-	 * Initialize device switch tables & kernel environment
+	 * Initialize device switch tables
 	 */
 	devswtable_init();
 

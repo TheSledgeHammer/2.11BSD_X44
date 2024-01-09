@@ -125,7 +125,7 @@ pd_entry_t 	*APDE[] = APDES_INITIALIZER;
 /*
  * Get PDEs and PTEs for user/kernel address space
  */
-#define pmap_pde(m, v, lvl)     (&((m)->pm_pdir[PL_I(v, lvl)]))
+#define (m, v, lvl)     (&((m)->pm_pdir[PL_I(v, lvl)]))
 
 /*
  * Given a map and a machine independent protection code,

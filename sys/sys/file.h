@@ -12,7 +12,7 @@
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 #include <sys/queue.h>
 #include <sys/lock.h>
 
@@ -36,7 +36,7 @@ struct file {
 	union {
 		void			*f_Data;
 		struct socket 	*f_Socket;
-		//struct mpx		*f_Mpx;
+		struct mpx		*f_Mpx;
 	} f_un;
 
 	struct fileops		*f_ops;
@@ -45,7 +45,7 @@ struct file {
 	struct lock_object 	f_slock;
 #define f_data			f_un.f_Data
 #define f_socket		f_un.f_Socket
-//#define f_mpx			f_un.f_Mpx
+#define f_mpx			f_un.f_Mpx
 };
 
 struct fileops {

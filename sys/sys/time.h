@@ -302,7 +302,7 @@ void	getmicrotime(struct timeval *);
 void	getbinboottime(struct bintime *);
 void	getnanoboottime(struct timespec *);
 void	getmicroboottime(struct timeval *);
-
+void	inittimecounter(void);
 int		itimerdecr(struct itimerval *itp,int usec);
 int		itimerfix(struct timeval *);
 void	timevaladd(struct timeval *, struct timeval *);

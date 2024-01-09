@@ -76,6 +76,8 @@ initclocks()
 	if (profhz == 0)
 		profhz = i;
 	psratio = profhz / i;
+
+	inittimecounter();
 }
 
 void
