@@ -52,6 +52,7 @@
 #include "ses.h"
 #include "vnd.h"
 #include "ccd.h"
+#include "md.h"
 #include "fdc.h"
 
 #include "rnd.h"
@@ -203,6 +204,7 @@ disks_init(devsw)
 	/* Pseudo Devices */
 	DEVSWIO_CONFIG_INIT(devsw, NVND, &vnd_bdevsw, &vnd_cdevsw, NULL);		/* vnode disk driver */
 	DEVSWIO_CONFIG_INIT(devsw, NCCD, &ccd_bdevsw, &ccd_cdevsw, NULL);		/* "Concatenated" disk driver */
+	DEVSWIO_CONFIG_INIT(devsw, NMD, &md_bdevsw, &md_cdevsw, NULL);			/* memory disk driver */
 }
 
 /* Add miscellaneous driver configuration */

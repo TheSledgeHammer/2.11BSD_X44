@@ -385,6 +385,9 @@ wsmouse*		at mms? mux 0
 pseudo-device 	crypto						# opencrypto framework
 
 # disk/mass storage pseudo-devices
+pseudo-device	md						# memory disk device (ramdisk)
+options 	MEMORY_DISK_HOOKS				# enable root ramdisk
+options 	MEMORY_DISK_DYNAMIC				# loaded via kernel module(7)
 pseudo-device	ccd				4			# concatenated/striped disk devices
 pseudo-device	vnd				4			# disk-like interface to files
 
