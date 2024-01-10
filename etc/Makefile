@@ -87,7 +87,7 @@ INSTALLATION_DIRS=	binary binary/sets binary/kernel installation
 BINOWN= root
 BINGRP= wheel
 UTMPGRP= utmp
-BIN1+=	csh.cshrc csh.login csh.logout ftpusers gettytab group hosts 	\
+BIN1+=	changelist csh.cshrc csh.login csh.logout dm.conf ftpusers gettytab group hosts 	\
 		hosts.allow hosts.deny inetd.conf locate.conf man.conf 			\
 		mrouted.conf named.conf netstart networks nsswitch.conf 		\
 		ntp.conf passwd.conf periodic pf.conf pf.os printcap phones \
@@ -251,6 +251,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 644 \
 	    ${.CURDIR}/etc.${MACHINE_CPU}/ttys ${DESTDIR}/etc
 .endif
+	${_MKMSG_INSTALL} ${DESTDIR}/dev/MAKEDEV
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 555 \
         MAKEDEV ${DESTDIR}/dev
 .for owner group mode file in 									\
@@ -293,12 +294,13 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 			/dev/null ${DESTDIR}${file}; \
 	else true; fi
 .endfor
-.for subdir in . defaults mtree namedb rc.d root
+.for subdir in . defaults mtree namedb rc.d root ssh
 	${MAKEDIRTARGET} ${subdir} configinstall
 .endfor
 .if (${MKPF} != "no")
 	${MAKEDIRTARGET} ${NETBSDSRCDIR}/usr.sbin/pf configinstall
 .endif
+	${MAKEDIRTARGET} ${NETBSDSRCDIR}/crypto/openssh/bin configinstall
 .if (${MKPOSTFIX} != "no")
 	${MAKEDIRTARGET} ${NETBSDSRCDIR}/contrib/postfix configinstall
 .endif
