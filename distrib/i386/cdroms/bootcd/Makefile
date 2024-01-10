@@ -5,4 +5,6 @@
 
 CDBASE=		boot			# gives ${CDBASE}.iso
 
+prepare_md_post:
+
 .include "${.CURDIR}/../../../common/Makefile.bootcd"
