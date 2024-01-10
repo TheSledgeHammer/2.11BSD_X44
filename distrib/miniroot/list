@@ -3,6 +3,7 @@
 SRCDIRS bin sbin usr.bin usr.sbin gnu/usr.bin
 
 PROG	bin/cat
+PROG	bin/chflags
 PROG	bin/chmod
 PROG	bin/cp
 PROG	bin/dd
@@ -40,7 +41,6 @@ PROG	sbin/shutdown
 PROG	sbin/slattach
 PROG	sbin/umount
 
-PROG	usr/bin/chflags
 PROG	usr/bin/ftp
 PROG	usr/bin/gzip	usr/bin/gunzip usr/bin/gzcat
 PROG	usr/bin/sed
