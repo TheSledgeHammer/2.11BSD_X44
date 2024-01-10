@@ -55,6 +55,7 @@ __KERNEL_RCSID(0, "$NetBSD: md.c,v 1.36 2003/06/29 22:30:00 fvdl Exp $");
 #include <sys/malloc.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
+#include <sys/bufq.h>
 #include <sys/device.h>
 #include <sys/disk.h>
 #include <sys/proc.h>
@@ -62,6 +63,8 @@ __KERNEL_RCSID(0, "$NetBSD: md.c,v 1.36 2003/06/29 22:30:00 fvdl Exp $");
 #include <sys/devsw.h>
 #include <sys/disklabel.h>
 
+#include <vm/include/vm.h>
+#include <vm/include/vm_kern.h>
 #include <vm/include/vm_extern.h>
 
 #include <dev/disk/md/md.h>
@@ -80,7 +83,7 @@ __KERNEL_RCSID(0, "$NetBSD: md.c,v 1.36 2003/06/29 22:30:00 fvdl Exp $");
  * We should use the raw partition for ioctl.
  */
 #define MD_MAX_UNITS	0x10
-#define MD_UNIT(unit)	DISKUNIT(unit)
+#define MD_UNIT(unit)	dkunit(unit)
 
 /* autoconfig stuff... */
 
@@ -155,7 +158,7 @@ mdattach(n)
 
 #ifdef	DIAGNOSTIC
 	if (ramdisk_ndevs) {
-		aprint_error("ramdisk: multiple attach calls?\n");
+		printf("ramdisk: multiple attach calls?\n");
 		return;
 	}
 #endif
@@ -172,7 +175,7 @@ mdattach(n)
 
 		sc = malloc(sizeof(*sc), M_DEVBUF, M_NOWAIT|M_ZERO);
 		if (!sc) {
-			aprint_error("ramdisk: malloc for attach failed!\n");
+			printf("ramdisk: malloc for attach failed!\n");
 			return;
 		}
 		ramdisk_devs[i] = sc;
@@ -238,7 +241,7 @@ md_detach(self, flags)
 		return rc;
 
 	disk_detach(&sc->sc_dkdev);
-	bufq_free(sc->sc_buflist);
+	bufq_free(&sc->sc_buflist);
 	return 0;
 }
 
@@ -294,7 +297,7 @@ mdopen(dev, flag, fmt, proc)
 	/*
 	 * The raw partition is used for ioctl to configure.
 	 */
-	if (DISKPART(dev) == RAW_PART)
+	if (dkpart(dev) == RAW_PART)
 		return 0;
 
 #ifdef	MEMORY_DISK_HOOKS
@@ -453,7 +456,7 @@ mdioctl(dev, cmd, data, flag, proc)
 	sc = ramdisk_devs[unit];
 
 	/* If this is not the raw partition, punt! */
-	if (DISKPART(dev) != RAW_PART)
+	if (dkpart(dev) != RAW_PART)
 		return ENOTTY;
 
 	umd = (struct md_conf *)data;
@@ -491,12 +494,12 @@ md_ioctl_kalloc(sc, umd, proc)
 	struct md_conf *umd;
 	struct proc *proc;
 {
-	vaddr_t addr;
-	vsize_t size;
+	vm_offset_t addr;
+	vm_size_t size;
 
 	/* Sanity check the size. */
 	size = umd->md_size;
-	addr = uvm_km_zalloc(kernel_map, size);
+	addr = kmem_alloc(kernel_map, size);
 	if (!addr)
 		return ENOMEM;
 
@@ -519,14 +522,14 @@ md_ioctl_server(sc, umd, proc)
 	struct md_conf *umd;
 	struct proc *proc;
 {
-	vaddr_t end;
+	vm_offset_t end;
 	int error;
 
 	/* Sanity check addr, size. */
-	end = (vaddr_t) (umd->md_addr + umd->md_size);
+	end = (vm_offset_t) (umd->md_addr + umd->md_size);
 
 	if ((end >= VM_MAXUSER_ADDRESS) ||
-		(end < ((vaddr_t) umd->md_addr)) )
+		(end < ((vm_offset_t) umd->md_addr)) )
 		return EINVAL;
 
 	/* This unit is now configured. */

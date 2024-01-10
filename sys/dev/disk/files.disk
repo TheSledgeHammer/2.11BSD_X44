@@ -5,9 +5,9 @@
 #
 include		"dev/disk/ata/files.ata"
 include		"dev/disk/fd/files.fd"
+include		"dev/disk/md/files.mmd"
 include		"dev/disk/scsi/files.scsi"
 
 # pseudo disks
 file 		dev/disk/ccd/ccd.c			ccd			needs-flag
-file		dev/disk/md/md.c			md			needs-count
 file 		dev/disk/vnd/vnd.c			vnd			needs-flag

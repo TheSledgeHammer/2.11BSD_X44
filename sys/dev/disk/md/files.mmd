@@ -1,0 +1,12 @@
+# $211BSD:
+
+# memory (ram) disk options
+#
+
+defflag	opt_md.h		MEMORY_DISK_HOOKS MEMORY_DISK_IS_ROOT
+				        MEMORY_DISK_DYNAMIC
+defparam opt_md.h		MEMORY_DISK_SERVER MEMORY_DISK_ROOT_SIZE
+				        MEMORY_DISK_RBFLAGS
+
+file    dev/disk/md/md.c			md			needs-flag
+file    dev/disk/md/md_root.c       md          
