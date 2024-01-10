@@ -6,7 +6,7 @@
 # so that the fake deflate functions in zcat.c will satisfy the
 # references to those functions in gzio.c (yes, it's a hack).
 
-SRCDIR=		${.CURDIR}/../../../lib/libz
+SRCDIR=		${.CURDIR}/../../../usr.lib/libz
 
 PROG=		zcat
 NOMAN=		# defined
