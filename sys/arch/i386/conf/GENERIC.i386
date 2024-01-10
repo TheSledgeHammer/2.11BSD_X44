@@ -84,7 +84,7 @@ options			QUOTA			# UFS quotas
 #options 		GATEWAY			# packet forwarding
 options 		INET			    	# IP + ICMP + TCP + UDP
 options 		INET6			    	# IPV6
-options		FAST_IPSEC    		# IP security with opencrypto
+options		    FAST_IPSEC    		# IP security with opencrypto
 #options 		IPSEC				# IP security
 #options 		IPSEC_ESP			# IP security (encryption part; define w/IPSEC)
 #options 		IPSEC_DEBUG			# debug for IP security
@@ -121,6 +121,11 @@ options 		MCAVERBOSE			# verbose MCA device autoconfig messages
 options 		SCSIVERBOSE			# human readable SCSI error messages
 #options 		USBVERBOSE			# verbose USB device autoconfig messages
 #options 		HDAUDIOVERBOSE		# verbose HDAUDIO driver messages
+
+#
+# evdev options
+#
+#options		EVDEV_SUPPORT
 
 #
 # wscons options
@@ -250,6 +255,9 @@ wsdisplay*		at wsemuldisplaydev?
 wskbd*			at pckbd? console ?
 wsmouse*		at pms? mux 0
 wsmouse*		at wsmousedev?
+
+#evkbd* 		at wskbddev?
+#evmouse* 		at wsmousedev?
 
 pcppi0			at isa?
 sysbeep0		at pcppi?
@@ -404,6 +412,8 @@ pseudo-device	gif		    4					# IPv[46] over IPv[46] tunnel (RFC1933)
 #pseudo-device	vlan							# IEEE 802.1q encapsulation
 #pseudo-device	bridge						# simple inter-network bridging
 #options 		BRIDGE_IPF						# bridge uses IP/IPv6 pfil hooks too
+
+# PF
 pseudo-device	pf							  # PF packet filter
 pseudo-device	pflog							# PF log if
 pseudo-device	pfsync						# PF sync
