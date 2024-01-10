@@ -6,4 +6,6 @@
 CDBASE=		boot-com			# gives ${CDBASE}.iso
 CDBOOTOPTIONS=	-o console=com0
 
+prepare_md_post:
+
 .include "${.CURDIR}/../../../common/Makefile.bootcd"
