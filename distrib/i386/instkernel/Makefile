@@ -17,12 +17,13 @@ ${V}=		${${V}DIR}/${F}.fs
 
 # If you change the list of distributed install kernels, don't forget
 # to update the release documentation in distrib/notes/common/contents
-MDSETTARGETS+=	GENERIC			${RAMDISK_B}	-
-MDSETTARGETS+=	INSTALL_FLOPPY		${RAMDISK_B}	-
+MDSETTARGETS+=	GENERIC			    ${RAMDISK_B}	-
+MDSETTARGETS+=	INSTALL			    ${RAMDISK_B}	-
+# MDSETTARGETS+=	INSTALL_FLOPPY		${RAMDISK_B}	-
 # MDSETTARGETS+=	INSTALL_SMALL		${RAMDISK_S}	-
 # MDSETTARGETS+=	INSTALL_TINY		${RAMDISK_T}	-
-# MDSETTARGETS+=	INSTALL_PS2		${RAMDISK_S}	-
-# MDSETTARGETS+=	INSTALL_TINY		${RESCUE_T}	netbsd-RESCUE_TINY
+# MDSETTARGETS+=	INSTALL_PS2		    ${RAMDISK_S}	-
+# MDSETTARGETS+=	INSTALL_TINY		${RESCUE_T}	twobsd-RESCUE_TINY
 
 MDSET_RELEASEDIR=	binary/kernel
 # need symbols to load modules. don't actually want image inserted.
