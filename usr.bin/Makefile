@@ -3,25 +3,27 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= ar at 															\
-		bzip2 bzip2recover											\
-		c11 c89 c99 cap_mkdb cksum crontab crunch ctags 			\
+SUBDIR= apply ar at 															\
+		basename bzip2 bzip2recover											\
+		c11 c89 c99 cap_mkdb cksum cmp crontab crunch ctags 			\
 		db 															\
 		elf2aout elf2ecoff 											\
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
 		hexdump 													\
+        indent                                                      \
 		join 														\
 		kdump ktrace												\
 		ldd locate lorder 											\
 		m4 make man menuc mkdep mkerrlst mkfifo mklocale mkstr      \
         mktemp msgc 	                                            \
+        netstat                                                     \
 		rpcgen rpcinfo												\
-		sed sortinfo stat strfile 									\
+		script sed shar sortinfo stat strfile 									\
 		time touch tsort 										\
 		unstr uudecode uuencode 									\
 		vmstat vgrind 														\
 		write 														\
-		xinstall xlint
+		xinstall xlint xstr
 												
 SUBDIR+= ../contrib/zlib/pigz/bin/pigz
 
