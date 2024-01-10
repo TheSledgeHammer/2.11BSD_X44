@@ -9,8 +9,6 @@
 ##### Default values
 LIBC?=				/usr/lib/libc.a
 LIBCOMPAT?=			/usr/lib/libcompat.a
-LIBCRYPT?=			/usr.lib/libcrypt.a
-LIBCURSES?=			/usr/lib/libcurses.a
 LIBC_PIC?=			/usr/lib/libc_pic.a
 LIBC_SO?=			/usr/lib/libc.so
 LIBGCC?=			/usr/lib/libgcc.a
@@ -22,6 +20,8 @@ LIBOBJC?=			/usr/lib/libobjc.a
 LIBSTDCXX?=			/usr/lib/libstdc++.a
 LIBSUPCXX?=			/usr/lib/libsupc++.a
 
+LIBCRYPT?=			/usr.lib/libcrypt.a
+LIBCURSES?=			/usr.lib/libcurses.a
 LIBDBM?=			/usr.lib/libdbm.a
 LIBEDIT?=			/usr.lib/libedit.a
 LIBIPSEC?=		    /usr.lib/libipsec.a
