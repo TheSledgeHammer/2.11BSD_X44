@@ -4,6 +4,7 @@
 # Install CD, to be made after 'build.sh release'
 # Requires populated $RELEASEDIR/${MACHINE}
 
+.include <bsd.own.mk>
 .include "${.CURDIR}/../Makefile.cdrom"
 
 CDBASE=		i386cd			# gives ${CDBASE}.iso
