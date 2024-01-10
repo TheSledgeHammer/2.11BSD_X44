@@ -17,6 +17,7 @@ kvm_mkdb/		NetBSD
 link/			  NetBSD
 makefs/     NetBSD / FreeBSD
 makemandb/  NetBSD
+mdconfig/   NetBSD
 mdsetimage/	NetBSD
 mtree/			NetBSD
 pcictl/   NetBSD

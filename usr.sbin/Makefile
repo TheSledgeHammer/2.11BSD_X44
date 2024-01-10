@@ -10,7 +10,7 @@ SUBDIR=	ac accton arp authpf 						\
 		etcupdate 									\
 		kvm_mkdb 									\
 		link                                        \
-        makefs mtree moused                         \
+        makefs mdconfig mtree moused                \
 		pcictl pwd_mkdb 							\
         rmt                                         \
 		unlink  									\
