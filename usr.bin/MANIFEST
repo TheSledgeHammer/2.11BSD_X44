@@ -3,6 +3,7 @@ Application	Version
 ar/         2.11
 at/			4.3
 bzip2/		NetBSD
+bzip2recover/ NetBSD
 c11/		NetBSD
 c89/		NetBSD
 c99/		NetBSD

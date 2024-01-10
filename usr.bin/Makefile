@@ -4,7 +4,7 @@
 .include <bsd.own.mk>
 
 SUBDIR= at 															\
-		bzip2 														\
+		bzip2 bzip2recover											\
 		c11 c89 c99 cap_mkdb cksum crontab crunch ctags 			\
 		db 															\
 		elf2aout elf2ecoff 											\
