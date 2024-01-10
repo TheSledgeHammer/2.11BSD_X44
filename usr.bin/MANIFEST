@@ -1,7 +1,9 @@
 Application	Version
 -----------	-------
+apply/		NetBSD
 ar/         2.11
 at/			4.3
+basename/		NetBSD
 bzip2/		NetBSD
 bzip2recover/ NetBSD
 c11/		NetBSD
@@ -9,6 +11,7 @@ c89/		NetBSD
 c99/		NetBSD
 cap_mkdb/	NetBSD
 cksum/		NetBSD
+cmp/		NetBSD
 crontab/	4.3
 crunch/		NetBSD
 ctags/		NetBSD
@@ -40,9 +43,12 @@ mkerrlst/   2.11
 mklocale/	NetBSD
 mktemp/		NetBSD
 msgc/		NetBSD
+netstat/	NetBSD
 rpcgen/		NetBSD
 rpcinfo/	NetBSD
+script/		NetBSD
 sed/		NetBSD
+shar/		NetBSD
 sortinfo/	NetBSD
 stat/		NetBSD
 strfile/	NetBSD
@@ -57,3 +63,4 @@ vgrind/		NetBSD
 write/		NetBSD
 xinstall/	NetBSD
 xlint/		NetBSD
+xstr/		NetBSD
