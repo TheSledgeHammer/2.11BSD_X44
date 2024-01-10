@@ -9,4 +9,6 @@
 CDBASE=		i386cd			# gives ${CDBASE}.iso
 CDRELEASE=      true                    # include $RELEASEDIR/$MACHINE
 
+prepare_md_post:
+
 .include "${.CURDIR}/../../../common/Makefile.bootcd"
