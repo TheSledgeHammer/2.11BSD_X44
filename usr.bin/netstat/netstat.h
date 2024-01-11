@@ -56,7 +56,6 @@ extern int	rflag;		/* show routing tables (or routing stats) */
 extern int	sflag;		/* show protocol statistics */
 extern int	tagflag;	/* show route tags */
 extern int	tflag;		/* show i/f watchdog timers */
-extern int	Vflag;	       /* show Vestigial TIME_WAIT (VTW) information */
 extern int	vflag;	/* verbose route information or don't truncate names */
 
 extern int	interval;	/* repeat interval for i/f stats */
