@@ -397,6 +397,9 @@ main(argc, argv)
 		case 'u':
 			af = AF_LOCAL;
 			break;
+		case 'v':
+			vflag++;
+			break;
 		case 'w':
 			interval = atoi(optarg);
 			iflag = 1;
@@ -712,7 +715,7 @@ usage(void)
 	(void)fprintf(stderr,
 "usage: %s [-Aan] [-f address_family[,family ...]] [-M core] [-N system]\n", progname);
 	(void)fprintf(stderr,
-"       %s [-bdgiLmnrsS] [-f address_family[,family ...]] [-M core] [-N system]\n",
+"       %s [-bdgiLmnrsSv] [-f address_family[,family ...]] [-M core] [-N system]\n",
 	progname);
 	(void)fprintf(stderr,
 "       %s [-dn] [-I interface] [-M core] [-N system] [-w wait]\n", progname);
