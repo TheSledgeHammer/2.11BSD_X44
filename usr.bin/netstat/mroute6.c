@@ -117,7 +117,6 @@
 #include <stdio.h>
 #include <kvm.h>
 #include "netstat.h"
-#include "rtutil.h"
 
 #ifdef INET6
 

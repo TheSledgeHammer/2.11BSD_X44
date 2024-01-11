@@ -32,8 +32,7 @@ termcap.db: reorder termcap.src
 	${_MKTARGET_CREATE}
 	${TOOL_CAP_MKDB} ${CAP_MKDB_ENDIAN} -f termcap ${.ALLSRC}
 
-.include <bsd.subdir.mk>
-
 SUBDIR= tabset
 
+.include <bsd.subdir.mk>
 .include <bsd.prog.mk>

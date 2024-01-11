@@ -277,16 +277,16 @@ struct sadb_x_ipsecrequest {
 #define SADB_X_EXT_SA2                19
 #define SADB_EXT_MAX                  19
 
-#define SADB_SATYPE_UNSPEC	0
-#define SADB_SATYPE_AH		2
-#define SADB_SATYPE_ESP		3
-#define SADB_SATYPE_RSVP	5
-#define SADB_SATYPE_OSPFV2	6
-#define SADB_SATYPE_RIPV2	7
-#define SADB_SATYPE_MIP		8
+#define SADB_SATYPE_UNSPEC		0
+#define SADB_SATYPE_AH			2
+#define SADB_SATYPE_ESP			3
+#define SADB_SATYPE_RSVP		5
+#define SADB_SATYPE_OSPFV2		6
+#define SADB_SATYPE_RIPV2		7
+#define SADB_SATYPE_MIP			8
 #define SADB_X_SATYPE_IPCOMP	9
 /*#define SADB_X_SATYPE_POLICY	10	obsolete, do not reuse */
-#define SADB_SATYPE_MAX		11
+#define SADB_SATYPE_MAX			11
 
 #define SADB_SASTATE_LARVAL   0
 #define SADB_SASTATE_MATURE   1

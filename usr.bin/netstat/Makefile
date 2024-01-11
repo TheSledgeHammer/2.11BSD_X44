@@ -5,10 +5,9 @@
 
 USE_FORT?= yes	# setgid
 
-RUMPPRG=netstat
-SRCS=	atalk.c bpf.c fast_ipsec.c if.c inet.c inet6.c \
-	main.c mbuf.c mroute.c mroute6.c pfkey.c pfsync.c route.c \
-	unix.c vtw.c rtutil.c
+PROG=	netstat
+SRCS=	fast_ipsec.c if.c inet.c inet6.c ipsec.c \
+		main.c mbuf.c mroute.c mroute6.c ns.c pfkey.c route.c unix.c rtutil.c
 BINGRP=	kmem
 BINMODE=2555
 LDADD=	-lutil -lkvm
@@ -19,7 +18,6 @@ CPPFLAGS+= -I${NETBSDSRCDIR}/sbin/pflogd
 CPPFLAGS+= -I${NETBSDSRCDIR}/sbin/route
 
 .PATH:  ${.CURDIR}/../../sbin/route
-
 
 .if (${USE_INET6} != "no")
 CPPFLAGS+= -DINET6

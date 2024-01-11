@@ -43,7 +43,7 @@ mkerrlst/   2.11
 mklocale/	NetBSD
 mktemp/		NetBSD
 msgc/		NetBSD
-netstat/	NetBSD
+netstat/	4.4BSD-Lite2 / NetBSD
 rpcgen/		NetBSD
 rpcinfo/	NetBSD
 script/		NetBSD

@@ -334,8 +334,7 @@ DESTDIR?=
 # Don't append another copy of sysroot (coming from COMPATCPPFLAGS etc.)
 # because it confuses Coverity. Still we need to cov-configure specially
 # for each specific sysroot argument.
-# Also don't add a sysroot at all if a rumpkernel build.
-.if !defined(HOSTPROG) && !defined(HOSTLIB) && !defined(RUMPRUN)
+.if !defined(HOSTPROG) && !defined(HOSTLIB)
 .  if ${DESTDIR} != ""
 .	if empty(CPPFLAGS:M*--sysroot=*)
 CPPFLAGS+=	--sysroot=${DESTDIR}
@@ -1147,11 +1146,6 @@ OBJECT_FMTS+=	elf32
 OBJECT_FMTS+=	elf64
 . endif
 .endif
-
-#
-# Bootloader is supported
-#
-MKBOOT?=	 	yes
 
 #
 # Set defaults for the USE_xxx variables.

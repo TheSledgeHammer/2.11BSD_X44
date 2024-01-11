@@ -1,4 +1,4 @@
-/*	$NetBSD: inet.c,v 1.109.2.2 2022/09/12 14:23:41 martin Exp $	*/
+/*	$NetBSD: inet.c,v 1.63 2004/09/06 14:51:32 martin Exp $	*/
 
 /*
  * Copyright (c) 1983, 1988, 1993
@@ -34,11 +34,9 @@
 #if 0
 static char sccsid[] = "from: @(#)inet.c	8.4 (Berkeley) 4/20/94";
 #else
-__RCSID("$NetBSD: inet.c,v 1.109.2.2 2022/09/12 14:23:41 martin Exp $");
+__RCSID("$NetBSD: inet.c,v 1.63 2004/09/06 14:51:32 martin Exp $");
 #endif
 #endif /* not lint */
-
-#define	_CALLOUT_PRIVATE	/* for defs in sys/callout.h */
 
 #include <sys/param.h>
 #include <sys/queue.h>
@@ -46,7 +44,6 @@ __RCSID("$NetBSD: inet.c,v 1.109.2.2 2022/09/12 14:23:41 martin Exp $");
 #include <sys/socketvar.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
-#include <sys/sysctl.h>
 
 #include <net/if_arp.h>
 #include <net/route.h>
@@ -54,7 +51,6 @@ __RCSID("$NetBSD: inet.c,v 1.109.2.2 2022/09/12 14:23:41 martin Exp $");
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/in_pcb.h>
-#define ICMP_STRINGS
 #include <netinet/ip_icmp.h>
 
 #ifdef INET6
@@ -64,8 +60,9 @@ __RCSID("$NetBSD: inet.c,v 1.109.2.2 2022/09/12 14:23:41 martin Exp $");
 #include <netinet/icmp_var.h>
 #include <netinet/igmp_var.h>
 #include <netinet/ip_var.h>
-#include <netinet/pim_var.h>
+//#include <netinet/pim_var.h>
 #include <netinet/tcp.h>
+#include <netinet/tcpip.h>
 #include <netinet/tcp_seq.h>
 #define TCPSTATES
 #include <netinet/tcp_fsm.h>
@@ -74,29 +71,21 @@ __RCSID("$NetBSD: inet.c,v 1.109.2.2 2022/09/12 14:23:41 martin Exp $");
 #include <netinet/tcp_var.h>
 #include <netinet/tcp_debug.h>
 #include <netinet/udp.h>
-#include <netinet/ip_carp.h>
 #include <netinet/udp_var.h>
-#include <netinet/tcp_vtw.h>
 
 #include <arpa/inet.h>
-#include <kvm.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <err.h>
-#include <util.h>
-#include <errno.h>
-
 #include "netstat.h"
-#include "vtw.h"
-#include "prog_ops.h"
+
+struct	inpcb inpcb;
+struct	tcpcb tcpcb;
+struct	socket sockb;
 
 char	*inetname(struct in_addr *);
-void	inetprint(struct in_addr *, uint16_t, const char *, int);
-
-void	print_vtw_v4(const vtw_t *);
+void	inetprint(struct in_addr *, u_int16_t, const char *, int);
 
 /*
  * Print a summary of connections related to an Internet
@@ -105,245 +94,30 @@ void	print_vtw_v4(const vtw_t *);
  * -a (all) flag is specified.
  */
 static int width;
-static int compact;
-
-/* VTW-related variables. */
-static struct timeval now;
-
-static void
-protoprhdr(void)
-{
-	printf("Active Internet connections");
-	if (aflag)
-		printf(" (including servers)");
-	putchar('\n');
-	if (Aflag)
-		printf("%-8.8s ", "PCB");
-	printf(
-	    Vflag ? "%-5.5s %-6.6s %-6.6s %s%-*.*s %-*.*s %-13.13s Expires\n"
-		  : "%-5.5s %-6.6s %-6.6s %s%-*.*s %-*.*s %s\n",
-		"Proto", "Recv-Q", "Send-Q", compact ? "" : " ",
-		width, width, "Local Address",
-		width, width, "Foreign Address",
-		"State");
-}
-
-static void
-protopr0(intptr_t ppcb, u_long rcv_sb_cc, u_long snd_sb_cc,
-	 struct in_addr *laddr, uint16_t lport,
-	 struct in_addr *faddr, uint16_t fport,
-	 short t_state, const char *name, int inp_flags,
-	 const struct timeval *expires)
-{
-	static const char *shorttcpstates[] = {
-		"CLOSED",	"LISTEN",	"SYNSEN",	"SYSRCV",
-		"ESTABL",	"CLWAIT",	"FWAIT1",	"CLOSNG",
-		"LASTAK",	"FWAIT2",	"TMWAIT"
-	};
-	int istcp;
-
-	istcp = strcmp(name, "tcp") == 0;
-
-	if (Aflag)
-		printf("%8" PRIxPTR " ", ppcb);
-
-	printf("%-5.5s %6ld %6ld%s", name, rcv_sb_cc, snd_sb_cc,
-	    compact ? "" : " ");
-	if (numeric_port) {
-		inetprint(laddr, lport, name, 1);
-		inetprint(faddr, fport, name, 1);
-	} else if (inp_flags & INP_ANONPORT) {
-		inetprint(laddr, lport, name, 1);
-		inetprint(faddr, fport, name, 0);
-	} else {
-		inetprint(laddr, lport, name, 0);
-		inetprint(faddr, fport, name, 0);
-	}
-	if (istcp) {
-		if (t_state < 0 || t_state >= TCP_NSTATES)
-			printf(" %d", t_state);
-		else
-			printf(" %s", compact ? shorttcpstates[t_state] :
-			    tcpstates[t_state]);
-	}
-	if (Vflag && expires != NULL) {
-		if (expires->tv_sec == 0 && expires->tv_usec == -1)
-			printf(" reclaimed");
-		else {
-			struct timeval delta;
-
-			timersub(expires, &now, &delta);
-			printf(" %.3fms",
-			    delta.tv_sec * 1000.0 + delta.tv_usec / 1000.0);
-		}
-	}
-	putchar('\n');
-}
-
-static void
-dbg_printf(const char *fmt, ...)
-{
-	return;
-}
 
 void
-print_vtw_v4(const vtw_t *vtw)
-{
-	const vtw_v4_t *v4 = (const vtw_v4_t *)vtw;
-	struct timeval delta;
-	struct in_addr la, fa;
-	char buf[2][32];
-	static const struct timeval zero = {.tv_sec = 0, .tv_usec = 0};
-
-	la.s_addr = v4->laddr;
-	fa.s_addr = v4->faddr;
-
-	snprintf(&buf[0][0], 32, "%s", inet_ntoa(la));
-	snprintf(&buf[1][0], 32, "%s", inet_ntoa(fa));
-
-	timersub(&vtw->expire, &now, &delta);
-
-	if (vtw->expire.tv_sec == 0 && vtw->expire.tv_usec == -1) {
-		dbg_printf("%15.15s:%d %15.15s:%d reclaimed\n",
-		    buf[0], ntohs(v4->lport),
-		    buf[1], ntohs(v4->fport));
-		if (!(Vflag && vflag))
-			return;
-	} else if (vtw->expire.tv_sec == 0)
-		return;
-	else if (timercmp(&delta, &zero, <) && !(Vflag && vflag)) {
-		dbg_printf("%15.15s:%d %15.15s:%d expired\n",
-		    buf[0], ntohs(v4->lport),
-		    buf[1], ntohs(v4->fport));
-		return;
-	} else {
-		dbg_printf("%15.15s:%d %15.15s:%d expires in %.3fms\n",
-		    buf[0], ntohs(v4->lport),
-		    buf[1], ntohs(v4->fport),
-		    delta.tv_sec * 1000.0 + delta.tv_usec / 1000.0);
-	}
-	protopr0(0, 0, 0,
-		 &la, v4->lport,
-		 &fa, v4->fport,
-		 TCPS_TIME_WAIT, "tcp", 0, &vtw->expire);
-}
-
-struct kinfo_pcb *
-getpcblist_sysctl(const char *name, size_t *len)
-{
-	int mib[8];
-	size_t namelen = 0, size = 0;
-	char *mibname = NULL;
-	struct kinfo_pcb *pcblist;
-
-	memset(mib, 0, sizeof(mib));
-
-	if (asprintf(&mibname, "net.inet%s.%s.pcblist", name + 3, name) == -1)
-		err(1, "asprintf");
-
-	/* get dynamic pcblist node */
-	if (prog_sysctlnametomib(mibname, mib, &namelen) == -1) {
-		if (errno == ENOENT) {
-			*len = 0;
-			return NULL;
-		}
-
-		err(1, "sysctlnametomib: %s", mibname);
-	}
-
-	free(mibname);
-
-	if (prog_sysctl(mib, __arraycount(mib), NULL, &size, NULL, 0) == -1)
-		err(1, "sysctl (query)");
-
-	if ((pcblist = malloc(size)) == NULL)
-		err(1, "malloc");
-	memset(pcblist, 0, size);
-
-	mib[6] = sizeof(*pcblist);
-	mib[7] = size / sizeof(*pcblist);
-
-	if (prog_sysctl(mib, __arraycount(mib), pcblist, &size, NULL, 0) == -1)
-		err(1, "sysctl (copy)");
-
-	*len = size / sizeof(*pcblist);
-	return pcblist;
-
-}
-
-static struct kinfo_pcb *
-getpcblist_kmem(u_long off, const char *name, size_t *len)
+protopr(off, name)
+	u_long off;
+	char *name;
 {
 	struct inpcbtable table;
-	struct inpcb_hdr *next, *prev;
+	struct inpcb *head, *next, *prev;
 	struct inpcb inpcb;
-	struct tcpcb tcpcb;
-	struct socket sockb;
-	int istcp = strcmp(name, "tcp") == 0;
-	struct kinfo_pcb *pcblist;
-	size_t size = 100, i;
-	struct sockaddr_in sin;
-	struct inpcbqueue *head;
-
-	if (off == 0) {
-		*len = 0;
-		return NULL;
-	}
-
-	kread(off, (char *)&table, sizeof table);
-	head = &table.inpt_queue;
-	next = TAILQ_FIRST(head);
-	prev = TAILQ_END(head);
-
-	if ((pcblist = malloc(size * sizeof(*pcblist))) == NULL)
-		err(1, "malloc");
-
-	i = 0;
-	while (next != TAILQ_END(head)) {
-		kread((u_long)next, (char *)&inpcb, sizeof inpcb);
-		prev = next;
-		next = TAILQ_NEXT(&inpcb, inp_queue);
-
-		if (inpcb.inp_af != AF_INET)
-			continue;
-
-		kread((u_long)inpcb.inp_socket, (char *)&sockb, sizeof(sockb));
-		if (istcp) {
-			kread((u_long)inpcb.inp_ppcb,
-			    (char *)&tcpcb, sizeof (tcpcb));
-		}
-		pcblist[i].ki_ppcbaddr =
-		    istcp ? (uintptr_t) inpcb.inp_ppcb : (uintptr_t) prev;
-		pcblist[i].ki_rcvq = (uint64_t)sockb.so_rcv.sb_cc;
-		pcblist[i].ki_sndq = (uint64_t)sockb.so_snd.sb_cc;
-
-		sin.sin_addr = inpcb.inp_laddr;
-		sin.sin_port = inpcb.inp_lport;
-		memcpy(&pcblist[i].ki_s, &sin, sizeof(sin));
-		sin.sin_addr = inpcb.inp_faddr;
-		sin.sin_port = inpcb.inp_fport;
-		memcpy(&pcblist[i].ki_d, &sin, sizeof(sin));
-		pcblist[i].ki_tstate = tcpcb.t_state;
-		pcblist[i].ki_pflags = inpcb.inp_flags;
-		if (i++ == size) {
-			size += 100;
-			struct kinfo_pcb *n = realloc(pcblist,
-			    size * sizeof(*pcblist));
-			if (n == NULL)
-				err(1, "realloc");
-			pcblist = n;
-		}
-	}
-	*len = i;
-	return pcblist;
-}
-
-void
-protopr(u_long off, const char *name)
-{
+	int istcp, compact;
 	static int first = 1;
-	struct kinfo_pcb *pcblist;
-	size_t i, len;
+	static char *shorttcpstates[] = {
+		"CLOSED",	"LISTEN",	"SYNSEN",	"SYSRCV",
+		"ESTABL",	"CLWAIT",	"FWAIT1",	"CLOSNG",
+		"LASTAK",	"FWAIT2",	"TMWAIT",
+	};
+
+	if (off == 0)
+		return;
+	istcp = strcmp(name, "tcp") == 0;
+	kread(off, (char *)&table, sizeof table);
+	prev = head =
+	    (struct inpcb *)&((struct inpcbtable *)off)->inpt_queue.cqh_first;
+	next = (struct inpcb *)table.inpt_queue.cqh_first;
 
 	compact = 0;
 	if (Aflag) {
@@ -355,41 +129,67 @@ protopr(u_long off, const char *name)
 		}
 	} else
 		width = 22;
+	while (next != head) {
+		kread((u_long)next, (char *)&inpcb, sizeof inpcb);
+		if ((struct inpcb *)inpcb.inp_queue.cqe_prev != prev) {
+			printf("???\n");
+			break;
+		}
+		prev = next;
+		next = (struct inpcb *)inpcb.inp_queue.cqe_next;
 
-	if (use_sysctl)
-		pcblist = getpcblist_sysctl(name, &len);
-	else
-		pcblist = getpcblist_kmem(off, name, &len);
-
-	for (i = 0; i < len; i++) {
-		struct sockaddr_in src, dst;
-
-		memcpy(&src, &pcblist[i].ki_s, sizeof(src));
-		memcpy(&dst, &pcblist[i].ki_d, sizeof(dst));
-
-		if (!aflag && (inet_lnaof(dst.sin_addr) == INADDR_ANY))
+		if (inpcb.inp_af != AF_INET)
 			continue;
 
+		if (!aflag &&
+		    inet_lnaof(inpcb.inp_laddr) == INADDR_ANY)
+			continue;
+		kread((u_long)inpcb.inp_socket, (char *)&sockb, sizeof (sockb));
+		if (istcp) {
+			kread((u_long)inpcb.inp_ppcb,
+			    (char *)&tcpcb, sizeof (tcpcb));
+		}
 		if (first) {
-			protoprhdr();
+			printf("Active Internet connections");
+			if (aflag)
+				printf(" (including servers)");
+			putchar('\n');
+			if (Aflag)
+				printf("%-8.8s ", "PCB");
+			printf("%-5.5s %-6.6s %-6.6s %s%-*.*s %-*.*s %s\n",
+				"Proto", "Recv-Q", "Send-Q",
+				compact ? "" : " ",
+				width, width, "Local Address",
+				width, width, "Foreign Address", "State");
 			first = 0;
 		}
-		protopr0((intptr_t) pcblist[i].ki_ppcbaddr,
-			 pcblist[i].ki_rcvq, pcblist[i].ki_sndq,
-			 &src.sin_addr, src.sin_port,
-			 &dst.sin_addr, dst.sin_port,
-			 pcblist[i].ki_tstate, name,
-			 pcblist[i].ki_pflags, NULL);
-	}
-
-	free(pcblist);
-
-	if (strcmp(name, "tcp") == 0) {
-		struct timeval t;
-		timebase(&t);
-		gettimeofday(&now, NULL);
-		timersub(&now, &t, &now);
-		show_vtw_v4(print_vtw_v4);
+		if (Aflag) {
+			if (istcp)
+				printf("%8lx ", (u_long) inpcb.inp_ppcb);
+			else
+				printf("%8lx ", (u_long) prev);
+		}
+		printf("%-5.5s %6ld %6ld%s", name, sockb.so_rcv.sb_cc,
+			sockb.so_snd.sb_cc, compact ? "" : " ");
+		if (numeric_port) {
+			inetprint(&inpcb.inp_laddr, inpcb.inp_lport, name, 1);
+			inetprint(&inpcb.inp_faddr, inpcb.inp_fport, name, 1);
+		} else if (inpcb.inp_flags & INP_ANONPORT) {
+			inetprint(&inpcb.inp_laddr, inpcb.inp_lport, name, 1);
+			inetprint(&inpcb.inp_faddr, inpcb.inp_fport, name, 0);
+		} else {
+			inetprint(&inpcb.inp_laddr, inpcb.inp_lport, name, 0);
+			inetprint(&inpcb.inp_faddr, inpcb.inp_fport, name, 0);
+		}
+		if (istcp) {
+			if (tcpcb.t_state < 0 || tcpcb.t_state >= TCP_NSTATES)
+				printf(" %d", tcpcb.t_state);
+			else
+				printf(" %s", compact ?
+				    shorttcpstates[tcpcb.t_state] :
+				    tcpstates[tcpcb.t_state]);
+		}
+		putchar('\n');
 	}
 }
 
@@ -397,192 +197,159 @@ protopr(u_long off, const char *name)
  * Dump TCP statistics structure.
  */
 void
-tcp_stats(u_long off, const char *name)
+tcp_stats(off, name)
+	u_long off;
+	char *name;
 {
-	uint64_t tcpstat[TCP_NSTATS];
+	struct tcpstat tcpstat;
 
-	if (use_sysctl) {
-		size_t size = sizeof(tcpstat);
-
-		if (prog_sysctlbyname("net.inet.tcp.stats", tcpstat, &size,
-				 NULL, 0) == -1)
-			return;
-	} else {
-		warnx("%s stats not available via KVM.", name);
+	if (off == 0)
 		return;
-	}
-
 	printf ("%s:\n", name);
+	kread(off, (char *)&tcpstat, sizeof (tcpstat));
 
-#define	ps(f, m) if (tcpstat[f] || sflag <= 1)	\
-		printf(m, tcpstat[f])
-#define	p(f, m) if (tcpstat[f] || sflag <= 1)			\
-		printf(m, tcpstat[f], plural(tcpstat[f]))
-#define	p2(f1, f2, m) if (tcpstat[f1] || tcpstat[f2] || sflag <= 1)	\
-		printf(m, tcpstat[f1], plural(tcpstat[f1]),		\
-		    tcpstat[f2], plural(tcpstat[f2]))
-#define	p2s(f1, f2, m) if (tcpstat[f1] || tcpstat[f2] || sflag <= 1)	\
-		printf(m, tcpstat[f1], plural(tcpstat[f1]),		\
-		    tcpstat[f2])
-#define	p3(f, m) if (tcpstat[f] || sflag <= 1)			\
-		printf(m, tcpstat[f], plurales(tcpstat[f]))
+#define	ps(f, m) if (tcpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)tcpstat.f)
+#define	p(f, m) if (tcpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)tcpstat.f, plural(tcpstat.f))
+#define	p2(f1, f2, m) if (tcpstat.f1 || tcpstat.f2 || sflag <= 1) \
+    printf(m, (unsigned long long)tcpstat.f1, plural(tcpstat.f1), \
+    (unsigned long long)tcpstat.f2, plural(tcpstat.f2))
+#define	p2s(f1, f2, m) if (tcpstat.f1 || tcpstat.f2 || sflag <= 1) \
+    printf(m, (unsigned long long)tcpstat.f1, plural(tcpstat.f1), \
+    (unsigned long long)tcpstat.f2)
+#define	p3(f, m) if (tcpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)tcpstat.f, plurales(tcpstat.f))
 
-	p(TCP_STAT_SNDTOTAL, "\t%" PRIu64 " packet%s sent\n");
-	p2(TCP_STAT_SNDPACK,TCP_STAT_SNDBYTE,
-		"\t\t%" PRIu64 " data packet%s (%" PRIu64 " byte%s)\n");
-	p2(TCP_STAT_SNDREXMITPACK, TCP_STAT_SNDREXMITBYTE,
-		"\t\t%" PRIu64 " data packet%s (%" PRIu64 " byte%s) retransmitted\n");
-	p2s(TCP_STAT_SNDACKS, TCP_STAT_DELACK,
-		"\t\t%" PRIu64 " ack-only packet%s (%" PRIu64 " delayed)\n");
-	p(TCP_STAT_SNDURG, "\t\t%" PRIu64 " URG only packet%s\n");
-	p(TCP_STAT_SNDPROBE, "\t\t%" PRIu64 " window probe packet%s\n");
-	p(TCP_STAT_SNDWINUP, "\t\t%" PRIu64 " window update packet%s\n");
-	p(TCP_STAT_SNDCTRL, "\t\t%" PRIu64 " control packet%s\n");
-	p(TCP_STAT_SELFQUENCH,
-	    "\t\t%" PRIu64 " send attempt%s resulted in self-quench\n");
-	p(TCP_STAT_RCVTOTAL, "\t%" PRIu64 " packet%s received\n");
-	p2(TCP_STAT_RCVACKPACK, TCP_STAT_RCVACKBYTE,
-	    "\t\t%" PRIu64 " ack%s (for %" PRIu64 " byte%s)\n");
-	p(TCP_STAT_RCVDUPACK, "\t\t%" PRIu64 " duplicate ack%s\n");
-	p(TCP_STAT_RCVACKTOOMUCH, "\t\t%" PRIu64 " ack%s for unsent data\n");
-	p2(TCP_STAT_RCVPACK, TCP_STAT_RCVBYTE,
-	    "\t\t%" PRIu64 " packet%s (%" PRIu64 " byte%s) received in-sequence\n");
-	p2(TCP_STAT_RCVDUPPACK, TCP_STAT_RCVDUPBYTE,
-	    "\t\t%" PRIu64 " completely duplicate packet%s (%" PRIu64 " byte%s)\n");
-	p(TCP_STAT_PAWSDROP, "\t\t%" PRIu64 " old duplicate packet%s\n");
-	p2(TCP_STAT_RCVPARTDUPPACK, TCP_STAT_RCVPARTDUPBYTE,
-	    "\t\t%" PRIu64 " packet%s with some dup. data (%" PRIu64 " byte%s duped)\n");
-	p2(TCP_STAT_RCVOOPACK, TCP_STAT_RCVOOBYTE,
-	    "\t\t%" PRIu64 " out-of-order packet%s (%" PRIu64 " byte%s)\n");
-	p2(TCP_STAT_RCVPACKAFTERWIN, TCP_STAT_RCVBYTEAFTERWIN,
-	    "\t\t%" PRIu64 " packet%s (%" PRIu64 " byte%s) of data after window\n");
-	p(TCP_STAT_RCVWINPROBE, "\t\t%" PRIu64 " window probe%s\n");
-	p(TCP_STAT_RCVWINUPD, "\t\t%" PRIu64 " window update packet%s\n");
-	p(TCP_STAT_RCVAFTERCLOSE,
-	    "\t\t%" PRIu64 " packet%s received after close\n");
-	p(TCP_STAT_RCVBADSUM,
-	    "\t\t%" PRIu64 " discarded for bad checksum%s\n");
-	p(TCP_STAT_RCVBADOFF,
-	    "\t\t%" PRIu64 " discarded for bad header offset field%s\n");
-	ps(TCP_STAT_RCVSHORT,
-	    "\t\t%" PRIu64 " discarded because packet too short\n");
-	p(TCP_STAT_CONNATTEMPT, "\t%" PRIu64 " connection request%s\n");
-	p(TCP_STAT_ACCEPTS, "\t%" PRIu64 " connection accept%s\n");
-	p(TCP_STAT_CONNECTS,
-	    "\t%" PRIu64 " connection%s established (including accepts)\n");
-	p2(TCP_STAT_CLOSED, TCP_STAT_DROPS,
-	    "\t%" PRIu64 " connection%s closed (including %" PRIu64 " drop%s)\n");
-	p(TCP_STAT_CONNDROPS,
-	    "\t%" PRIu64 " embryonic connection%s dropped\n");
-	p(TCP_STAT_DELAYED_FREE, "\t%" PRIu64 " delayed free%s of tcpcb\n");
-	p2(TCP_STAT_RTTUPDATED, TCP_STAT_SEGSTIMED,
-	    "\t%" PRIu64 " segment%s updated rtt (of %" PRIu64 " attempt%s)\n");
-	p(TCP_STAT_REXMTTIMEO, "\t%" PRIu64 " retransmit timeout%s\n");
-	p(TCP_STAT_TIMEOUTDROP,
-	    "\t\t%" PRIu64 " connection%s dropped by rexmit timeout\n");
-	p2(TCP_STAT_PERSISTTIMEO, TCP_STAT_PERSISTDROPS,
-	   "\t%" PRIu64 " persist timeout%s (resulting in %" PRIu64 " dropped "
+	p(tcps_sndtotal, "\t%llu packet%s sent\n");
+	p2(tcps_sndpack,tcps_sndbyte,
+		"\t\t%llu data packet%s (%llu byte%s)\n");
+	p2(tcps_sndrexmitpack, tcps_sndrexmitbyte,
+		"\t\t%llu data packet%s (%llu byte%s) retransmitted\n");
+	p2s(tcps_sndacks, tcps_delack,
+		"\t\t%llu ack-only packet%s (%llu delayed)\n");
+	p(tcps_sndurg, "\t\t%llu URG only packet%s\n");
+	p(tcps_sndprobe, "\t\t%llu window probe packet%s\n");
+	p(tcps_sndwinup, "\t\t%llu window update packet%s\n");
+	p(tcps_sndctrl, "\t\t%llu control packet%s\n");
+	p(tcps_selfquench,
+	    "\t\t%llu send attempt%s resulted in self-quench\n");
+	p(tcps_rcvtotal, "\t%llu packet%s received\n");
+	p2(tcps_rcvackpack, tcps_rcvackbyte,
+		"\t\t%llu ack%s (for %llu byte%s)\n");
+	p(tcps_rcvdupack, "\t\t%llu duplicate ack%s\n");
+	p(tcps_rcvacktoomuch, "\t\t%llu ack%s for unsent data\n");
+	p2(tcps_rcvpack, tcps_rcvbyte,
+		"\t\t%llu packet%s (%llu byte%s) received in-sequence\n");
+	p2(tcps_rcvduppack, tcps_rcvdupbyte,
+		"\t\t%llu completely duplicate packet%s (%llu byte%s)\n");
+	p(tcps_pawsdrop, "\t\t%llu old duplicate packet%s\n");
+	p2(tcps_rcvpartduppack, tcps_rcvpartdupbyte,
+		"\t\t%llu packet%s with some dup. data (%llu byte%s duped)\n");
+	p2(tcps_rcvoopack, tcps_rcvoobyte,
+		"\t\t%llu out-of-order packet%s (%llu byte%s)\n");
+	p2(tcps_rcvpackafterwin, tcps_rcvbyteafterwin,
+		"\t\t%llu packet%s (%llu byte%s) of data after window\n");
+	p(tcps_rcvwinprobe, "\t\t%llu window probe%s\n");
+	p(tcps_rcvwinupd, "\t\t%llu window update packet%s\n");
+	p(tcps_rcvafterclose, "\t\t%llu packet%s received after close\n");
+	p(tcps_rcvbadsum, "\t\t%llu discarded for bad checksum%s\n");
+	p(tcps_rcvbadoff, "\t\t%llu discarded for bad header offset field%s\n");
+	ps(tcps_rcvshort, "\t\t%llu discarded because packet too short\n");
+	p(tcps_connattempt, "\t%llu connection request%s\n");
+	p(tcps_accepts, "\t%llu connection accept%s\n");
+	p(tcps_connects,
+		"\t%llu connection%s established (including accepts)\n");
+	p2(tcps_closed, tcps_drops,
+		"\t%llu connection%s closed (including %llu drop%s)\n");
+	p(tcps_conndrops, "\t%llu embryonic connection%s dropped\n");
+	p(tcps_delayed_free, "\t%llu delayed free%s of tcpcb\n");
+	p2(tcps_rttupdated, tcps_segstimed,
+		"\t%llu segment%s updated rtt (of %llu attempt%s)\n");
+	p(tcps_rexmttimeo, "\t%llu retransmit timeout%s\n");
+	p(tcps_timeoutdrop,
+		"\t\t%llu connection%s dropped by rexmit timeout\n");
+	p2(tcps_persisttimeo, tcps_persistdrops,
+	   "\t%llu persist timeout%s (resulting in %llu dropped "
 		"connection%s)\n");
-	p(TCP_STAT_KEEPTIMEO, "\t%" PRIu64 " keepalive timeout%s\n");
-	p(TCP_STAT_KEEPPROBE, "\t\t%" PRIu64 " keepalive probe%s sent\n");
-	p(TCP_STAT_KEEPDROPS,
-	    "\t\t%" PRIu64 " connection%s dropped by keepalive\n");
-	p(TCP_STAT_PREDACK, "\t%" PRIu64 " correct ACK header prediction%s\n");
-	p(TCP_STAT_PREDDAT,
-	    "\t%" PRIu64 " correct data packet header prediction%s\n");
-	p3(TCP_STAT_PCBHASHMISS, "\t%" PRIu64 " PCB hash miss%s\n");
-	ps(TCP_STAT_NOPORT, "\t%" PRIu64 " dropped due to no socket\n");
-	p(TCP_STAT_CONNSDRAINED,
-	    "\t%" PRIu64 " connection%s drained due to memory shortage\n");
-	p(TCP_STAT_PMTUBLACKHOLE,
-	    "\t%" PRIu64 " PMTUD blackhole%s detected\n");
+	p(tcps_keeptimeo, "\t%llu keepalive timeout%s\n");
+	p(tcps_keepprobe, "\t\t%llu keepalive probe%s sent\n");
+	p(tcps_keepdrops, "\t\t%llu connection%s dropped by keepalive\n");
+	p(tcps_predack, "\t%llu correct ACK header prediction%s\n");
+	p(tcps_preddat, "\t%llu correct data packet header prediction%s\n");
+	p3(tcps_pcbhashmiss, "\t%llu PCB hash miss%s\n");
+	ps(tcps_noport, "\t%llu dropped due to no socket\n");
+	p(tcps_connsdrained, "\t%llu connection%s drained due to memory "
+		"shortage\n");
+	p(tcps_pmtublackhole, "\t%llu PMTUD blackhole%s detected\n");
 
-	p(TCP_STAT_BADSYN, "\t%" PRIu64 " bad connection attempt%s\n");
-	ps(TCP_STAT_SC_ADDED, "\t%" PRIu64 " SYN cache entries added\n");
-	p(TCP_STAT_SC_COLLISIONS, "\t\t%" PRIu64 " hash collision%s\n");
-	ps(TCP_STAT_SC_COMPLETED, "\t\t%" PRIu64 " completed\n");
-	ps(TCP_STAT_SC_ABORTED,
-	    "\t\t%" PRIu64 " aborted (no space to build PCB)\n");
-	ps(TCP_STAT_SC_TIMED_OUT, "\t\t%" PRIu64 " timed out\n");
-	ps(TCP_STAT_SC_OVERFLOWED,
-	    "\t\t%" PRIu64 " dropped due to overflow\n");
-	ps(TCP_STAT_SC_BUCKETOVERFLOW,
-	    "\t\t%" PRIu64 " dropped due to bucket overflow\n");
-	ps(TCP_STAT_SC_RESET, "\t\t%" PRIu64 " dropped due to RST\n");
-	ps(TCP_STAT_SC_UNREACH,
-	    "\t\t%" PRIu64 " dropped due to ICMP unreachable\n");
-	ps(TCP_STAT_SC_DELAYED_FREE,
-	    "\t\t%" PRIu64 " delayed free of SYN cache entries\n");
-	p(TCP_STAT_SC_RETRANSMITTED,
-	    "\t%" PRIu64 " SYN,ACK%s retransmitted\n");
-	p(TCP_STAT_SC_DUPESYN,
-	    "\t%" PRIu64 " duplicate SYN%s received for entries "
+	p(tcps_badsyn, "\t%llu bad connection attempt%s\n");
+	ps(tcps_sc_added, "\t%llu SYN cache entries added\n");
+	p(tcps_sc_collisions, "\t\t%llu hash collision%s\n");
+	ps(tcps_sc_completed, "\t\t%llu completed\n");
+	ps(tcps_sc_aborted, "\t\t%llu aborted (no space to build PCB)\n");
+	ps(tcps_sc_timed_out, "\t\t%llu timed out\n");
+	ps(tcps_sc_overflowed, "\t\t%llu dropped due to overflow\n");
+	ps(tcps_sc_bucketoverflow, "\t\t%llu dropped due to bucket overflow\n");
+	ps(tcps_sc_reset, "\t\t%llu dropped due to RST\n");
+	ps(tcps_sc_unreach, "\t\t%llu dropped due to ICMP unreachable\n");
+	ps(tcps_sc_delayed_free, "\t\t%llu delayed free of SYN cache "
+		"entries\n");
+	p(tcps_sc_retransmitted, "\t%llu SYN,ACK%s retransmitted\n");
+	p(tcps_sc_dupesyn, "\t%llu duplicate SYN%s received for entries "
 		"already in the cache\n");
-	p(TCP_STAT_SC_DROPPED,
-	    "\t%" PRIu64 " SYN%s dropped (no route or no space)\n");
-	p(TCP_STAT_BADSIG, "\t%" PRIu64 " packet%s with bad signature\n");
-	p(TCP_STAT_GOODSIG, "\t%" PRIu64 " packet%s with good signature\n");
+	p(tcps_sc_dropped, "\t%llu SYN%s dropped (no route or no space)\n");
+	p(tcps_badsig, "\t%llu packet%s with bad signature\n");
+	p(tcps_goodsig, "\t%llu packet%s with good signature\n");
 
-	p(TCP_STAT_ECN_SHS, "\t%" PRIu64 " successful ECN handshake%s\n");
-	p(TCP_STAT_ECN_CE, "\t%" PRIu64 " packet%s with ECN CE bit\n");
-	p(TCP_STAT_ECN_ECT, "\t%" PRIu64 " packet%s ECN ECT(0) bit\n");
 #undef p
 #undef ps
 #undef p2
 #undef p2s
 #undef p3
-	show_vtw_stats();
 }
 
 /*
  * Dump UDP statistics structure.
  */
 void
-udp_stats(u_long off, const char *name)
+udp_stats(off, name)
+	u_long off;
+	char *name;
 {
-	uint64_t udpstat[UDP_NSTATS];
+	struct udpstat udpstat;
 	u_quad_t delivered;
 
-	if (use_sysctl) {
-		size_t size = sizeof(udpstat);
-
-		if (prog_sysctlbyname("net.inet.udp.stats", udpstat, &size,
-				 NULL, 0) == -1)
-			return;
-	} else {
-		warnx("%s stats not available via KVM.", name);
+	if (off == 0)
 		return;
-	}
+	printf("%s:\n", name);
+	kread(off, (char *)&udpstat, sizeof (udpstat));
 
-	printf ("%s:\n", name);
+#define	ps(f, m) if (udpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)udpstat.f)
+#define	p(f, m) if (udpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)udpstat.f, plural(udpstat.f))
+#define	p3(f, m) if (udpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)udpstat.f, plurales(udpstat.f))
 
-#define	ps(f, m) if (udpstat[f] || sflag <= 1)	\
-		printf(m, udpstat[f])
-#define	p(f, m) if (udpstat[f] || sflag <= 1)			\
-		printf(m, udpstat[f], plural(udpstat[f]))
-#define	p3(f, m) if (udpstat[f] || sflag <= 1)			\
-		printf(m, udpstat[f], plurales(udpstat[f]))
-
-	p(UDP_STAT_IPACKETS, "\t%" PRIu64 " datagram%s received\n");
-	ps(UDP_STAT_HDROPS, "\t%" PRIu64 " with incomplete header\n");
-	ps(UDP_STAT_BADLEN, "\t%" PRIu64 " with bad data length field\n");
-	ps(UDP_STAT_BADSUM, "\t%" PRIu64 " with bad checksum\n");
-	ps(UDP_STAT_NOPORT, "\t%" PRIu64 " dropped due to no socket\n");
-	p(UDP_STAT_NOPORTBCAST, "\t%" PRIu64
-	    " broadcast/multicast datagram%s dropped due to no socket\n");
-	ps(UDP_STAT_FULLSOCK, "\t%" PRIu64
-	    " dropped due to full socket buffers\n");
-	delivered = udpstat[UDP_STAT_IPACKETS] -
-		    udpstat[UDP_STAT_HDROPS] -
-		    udpstat[UDP_STAT_BADLEN] -
-		    udpstat[UDP_STAT_BADSUM] -
-		    udpstat[UDP_STAT_NOPORT] -
-		    udpstat[UDP_STAT_NOPORTBCAST] -
-		    udpstat[UDP_STAT_FULLSOCK];
+	p(udps_ipackets, "\t%llu datagram%s received\n");
+	ps(udps_hdrops, "\t%llu with incomplete header\n");
+	ps(udps_badlen, "\t%llu with bad data length field\n");
+	ps(udps_badsum, "\t%llu with bad checksum\n");
+	ps(udps_noport, "\t%llu dropped due to no socket\n");
+	p(udps_noportbcast, "\t%llu broadcast/multicast datagram%s dropped due to no socket\n");
+	ps(udps_fullsock, "\t%llu dropped due to full socket buffers\n");
+	delivered = udpstat.udps_ipackets -
+		    udpstat.udps_hdrops -
+		    udpstat.udps_badlen -
+		    udpstat.udps_badsum -
+		    udpstat.udps_noport -
+		    udpstat.udps_noportbcast -
+		    udpstat.udps_fullsock;
 	if (delivered || sflag <= 1)
-		printf("\t%" PRIu64 " delivered\n", delivered);
-	p3(UDP_STAT_PCBHASHMISS, "\t%" PRIu64 " PCB hash miss%s\n");
-	p(UDP_STAT_OPACKETS, "\t%" PRIu64 " datagram%s output\n");
+		printf("\t%llu delivered\n", (unsigned long long)delivered);
+	p3(udps_pcbhashmiss, "\t%llu PCB hash miss%s\n");
+	p(udps_opackets, "\t%llu datagram%s output\n");
 
 #undef ps
 #undef p
@@ -593,136 +360,126 @@ udp_stats(u_long off, const char *name)
  * Dump IP statistics structure.
  */
 void
-ip_stats(u_long off, const char *name)
+ip_stats(off, name)
+	u_long off;
+	char *name;
 {
-	uint64_t ipstat[IP_NSTATS];
+	struct ipstat ipstat;
 
-	if (use_sysctl) {
-		size_t size = sizeof(ipstat);
-
-		if (prog_sysctlbyname("net.inet.ip.stats", ipstat, &size,
-		    NULL, 0) == -1)
-			return;
-	} else {
-		warnx("%s stats not available via KVM.", name);
+	if (off == 0)
 		return;
-	}
-
+	kread(off, (char *)&ipstat, sizeof (ipstat));
 	printf("%s:\n", name);
 
-#define	ps(f, m) if (ipstat[f] || sflag <= 1)	\
-		printf(m, ipstat[f])
-#define	p(f, m) if (ipstat[f] || sflag <= 1)		\
-		printf(m, ipstat[f], plural(ipstat[f]))
+#define	ps(f, m) if (ipstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)ipstat.f)
+#define	p(f, m) if (ipstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)ipstat.f, plural(ipstat.f))
 
-	p(IP_STAT_TOTAL, "\t%" PRIu64 " total packet%s received\n");
-	p(IP_STAT_BADSUM, "\t%" PRIu64 " bad header checksum%s\n");
-	ps(IP_STAT_TOOSMALL, "\t%" PRIu64 " with size smaller than minimum\n");
-	ps(IP_STAT_TOOSHORT, "\t%" PRIu64 " with data size < data length\n");
-	ps(IP_STAT_TOOLONG,
-	    "\t%" PRIu64 " with length > max ip packet size\n");
-	ps(IP_STAT_BADHLEN, "\t%" PRIu64 " with header length < data size\n");
-	ps(IP_STAT_BADLEN, "\t%" PRIu64 " with data length < header length\n");
-	ps(IP_STAT_BADOPTIONS, "\t%" PRIu64 " with bad options\n");
-	ps(IP_STAT_BADVERS, "\t%" PRIu64 " with incorrect version number\n");
-	p(IP_STAT_FRAGMENTS, "\t%" PRIu64 " fragment%s received\n");
-	p(IP_STAT_FRAGDROPPED,
-	    "\t%" PRIu64 " fragment%s dropped (dup or out of space)\n");
-	p(IP_STAT_RCVMEMDROP,
-	    "\t%" PRIu64 " fragment%s dropped (out of ipqent)\n");
-	p(IP_STAT_BADFRAGS, "\t%" PRIu64 " malformed fragment%s dropped\n");
-	p(IP_STAT_FRAGTIMEOUT,
-	    "\t%" PRIu64 " fragment%s dropped after timeout\n");
-	p(IP_STAT_REASSEMBLED, "\t%" PRIu64 " packet%s reassembled ok\n");
-	p(IP_STAT_DELIVERED, "\t%" PRIu64 " packet%s for this host\n");
-	p(IP_STAT_NOPROTO,
-	    "\t%" PRIu64 " packet%s for unknown/unsupported protocol\n");
-	p(IP_STAT_FORWARD, "\t%" PRIu64 " packet%s forwarded");
-	p(IP_STAT_FASTFORWARD, " (%" PRIu64 " packet%s fast forwarded)");
-	if (ipstat[IP_STAT_FORWARD] || sflag <= 1)
+	p(ips_total, "\t%llu total packet%s received\n");
+	p(ips_badsum, "\t%llu bad header checksum%s\n");
+	ps(ips_toosmall, "\t%llu with size smaller than minimum\n");
+	ps(ips_tooshort, "\t%llu with data size < data length\n");
+	ps(ips_toolong, "\t%llu with length > max ip packet size\n");
+	ps(ips_badhlen, "\t%llu with header length < data size\n");
+	ps(ips_badlen, "\t%llu with data length < header length\n");
+	ps(ips_badoptions, "\t%llu with bad options\n");
+	ps(ips_badvers, "\t%llu with incorrect version number\n");
+	p(ips_fragments, "\t%llu fragment%s received\n");
+	p(ips_fragdropped, "\t%llu fragment%s dropped (dup or out of space)\n");
+	p(ips_rcvmemdrop, "\t%llu fragment%s dropped (out of ipqent)\n");
+	p(ips_badfrags, "\t%llu malformed fragment%s dropped\n");
+	p(ips_fragtimeout, "\t%llu fragment%s dropped after timeout\n");
+	p(ips_reassembled, "\t%llu packet%s reassembled ok\n");
+	p(ips_delivered, "\t%llu packet%s for this host\n");
+	p(ips_noproto, "\t%llu packet%s for unknown/unsupported protocol\n");
+	p(ips_forward, "\t%llu packet%s forwarded");
+	p(ips_fastforward, " (%llu packet%s fast forwarded)");
+	if (ipstat.ips_forward || sflag <= 1)
 		putchar('\n');
-	p(IP_STAT_CANTFORWARD, "\t%" PRIu64 " packet%s not forwardable\n");
-	p(IP_STAT_REDIRECTSENT, "\t%" PRIu64 " redirect%s sent\n");
-	p(IP_STAT_NOGIF, "\t%" PRIu64 " packet%s no matching gif found\n");
-	p(IP_STAT_NOIPSEC,
-	    "\t%" PRIu64 " packet%s no matching ipsecif found\n");
-	p(IP_STAT_LOCALOUT, "\t%" PRIu64 " packet%s sent from this host\n");
-	p(IP_STAT_RAWOUT,
-	    "\t%" PRIu64 " packet%s sent with fabricated ip header\n");
-	p(IP_STAT_ODROPPED,
-	    "\t%" PRIu64 " output packet%s dropped due to no bufs, etc.\n");
-	p(IP_STAT_NOROUTE,
-	    "\t%" PRIu64 " output packet%s discarded due to no route\n");
-	p(IP_STAT_FRAGMENTED, "\t%" PRIu64 " output datagram%s fragmented\n");
-	p(IP_STAT_OFRAGMENTS, "\t%" PRIu64 " fragment%s created\n");
-	p(IP_STAT_CANTFRAG,
-	    "\t%" PRIu64 " datagram%s that can't be fragmented\n");
-	p(IP_STAT_BADADDR,
-	    "\t%" PRIu64 " datagram%s with bad address in header\n");
-	p(IP_STAT_PFILDROP_IN,
-	    "\t%" PRIu64 " input packet%s dropped by pfil\n");
-	p(IP_STAT_PFILDROP_OUT,
-	    "\t%" PRIu64 " output packet%s dropped by pfil\n");
+	p(ips_cantforward, "\t%llu packet%s not forwardable\n");
+	p(ips_redirectsent, "\t%llu redirect%s sent\n");
+	p(ips_nogif, "\t%llu packet%s no matching gif found\n");
+	p(ips_localout, "\t%llu packet%s sent from this host\n");
+	p(ips_rawout, "\t%llu packet%s sent with fabricated ip header\n");
+	p(ips_odropped, "\t%llu output packet%s dropped due to no bufs, etc.\n");
+	p(ips_noroute, "\t%llu output packet%s discarded due to no route\n");
+	p(ips_fragmented, "\t%llu output datagram%s fragmented\n");
+	p(ips_ofragments, "\t%llu fragment%s created\n");
+	p(ips_cantfrag, "\t%llu datagram%s that can't be fragmented\n");
+	p(ips_badaddr, "\t%llu datagram%s with bad address in header\n");
 #undef ps
 #undef p
 }
+
+static	char *icmpnames[] = {
+	"echo reply",
+	"#1",
+	"#2",
+	"destination unreachable",
+	"source quench",
+	"routing redirect",
+	"alternate host address",
+	"#7",
+	"echo",
+	"router advertisement",
+	"router solicitation",
+	"time exceeded",
+	"parameter problem",
+	"time stamp",
+	"time stamp reply",
+	"information request",
+	"information request reply",
+	"address mask request",
+	"address mask reply",
+};
 
 /*
  * Dump ICMP statistics.
  */
 void
-icmp_stats(u_long off, const char *name)
+icmp_stats(off, name)
+	u_long off;
+	char *name;
 {
-	uint64_t icmpstat[ICMP_NSTATS];
+	struct icmpstat icmpstat;
 	int i, first;
 
-	if (use_sysctl) {
-		size_t size = sizeof(icmpstat);
-
-		if (prog_sysctlbyname("net.inet.icmp.stats", icmpstat, &size,
-				 NULL, 0) == -1)
-			return;
-	} else {
-		warnx("%s stats not available via KVM.", name);
+	if (off == 0)
 		return;
-	}
-
+	kread(off, (char *)&icmpstat, sizeof (icmpstat));
 	printf("%s:\n", name);
 
-#define	p(f, m) if (icmpstat[f] || sflag <= 1) \
-    printf(m, icmpstat[f], plural(icmpstat[f]))
+#define	p(f, m) if (icmpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)icmpstat.f, plural(icmpstat.f))
 
-	p(ICMP_STAT_ERROR, "\t%" PRIu64 " call%s to icmp_error\n");
-	p(ICMP_STAT_OLDICMP, "\t%" PRIu64
-	    " error%s not generated because old message was icmp\n");
+	p(icps_error, "\t%llu call%s to icmp_error\n");
+	p(icps_oldicmp,
+	    "\t%llu error%s not generated because old message was icmp\n");
 	for (first = 1, i = 0; i < ICMP_MAXTYPE + 1; i++)
-		if (icmpstat[ICMP_STAT_OUTHIST + i] != 0) {
+		if (icmpstat.icps_outhist[i] != 0) {
 			if (first) {
 				printf("\tOutput histogram:\n");
 				first = 0;
 			}
-			printf("\t\t%s: %" PRIu64 "\n", icmp_type[i],
-			   icmpstat[ICMP_STAT_OUTHIST + i]);
+			printf("\t\t%s: %llu\n", icmpnames[i],
+				(unsigned long long)icmpstat.icps_outhist[i]);
 		}
-	p(ICMP_STAT_BADCODE, "\t%" PRIu64 " message%s with bad code fields\n");
-	p(ICMP_STAT_TOOSHORT, "\t%" PRIu64 " message%s < minimum length\n");
-	p(ICMP_STAT_CHECKSUM, "\t%" PRIu64 " bad checksum%s\n");
-	p(ICMP_STAT_BADLEN, "\t%" PRIu64 " message%s with bad length\n");
-	p(ICMP_STAT_BMCASTECHO,
-	    "\t%" PRIu64 " multicast echo request%s ignored\n");
-	p(ICMP_STAT_BMCASTTSTAMP,
-	    "\t%" PRIu64 " multicast timestamp request%s ignored\n");
+	p(icps_badcode, "\t%llu message%s with bad code fields\n");
+	p(icps_tooshort, "\t%llu message%s < minimum length\n");
+	p(icps_checksum, "\t%llu bad checksum%s\n");
+	p(icps_badlen, "\t%llu message%s with bad length\n");
 	for (first = 1, i = 0; i < ICMP_MAXTYPE + 1; i++)
-		if (icmpstat[ICMP_STAT_INHIST + i] != 0) {
+		if (icmpstat.icps_inhist[i] != 0) {
 			if (first) {
 				printf("\tInput histogram:\n");
 				first = 0;
 			}
-			printf("\t\t%s: %" PRIu64 "\n", icmp_type[i],
-			    icmpstat[ICMP_STAT_INHIST + i]);
+			printf("\t\t%s: %llu\n", icmpnames[i],
+				(unsigned long long)icmpstat.icps_inhist[i]);
 		}
-	p(ICMP_STAT_REFLECT, "\t%" PRIu64 " message response%s generated\n");
-	p(ICMP_STAT_PMTUCHG, "\t%" PRIu64 " path MTU change%s\n");
+	p(icps_reflect, "\t%llu message response%s generated\n");
+	p(icps_pmtuchg, "\t%llu path MTU change%s\n");
 #undef p
 }
 
@@ -730,107 +487,41 @@ icmp_stats(u_long off, const char *name)
  * Dump IGMP statistics structure.
  */
 void
-igmp_stats(u_long off, const char *name)
+igmp_stats(off, name)
+	u_long off;
+	char *name;
 {
-	uint64_t igmpstat[IGMP_NSTATS];
+	struct igmpstat igmpstat;
 
-	if (use_sysctl) {
-		size_t size = sizeof(igmpstat);
-
-		if (prog_sysctlbyname("net.inet.igmp.stats", igmpstat, &size,
-		    NULL, 0) == -1)
-			return;
-	} else {
-		warnx("%s stats not available via KVM.", name);
+	if (off == 0)
 		return;
-	}
-
+	kread(off, (char *)&igmpstat, sizeof (igmpstat));
 	printf("%s:\n", name);
 
-#define	p(f, m) if (igmpstat[f] || sflag <= 1)			\
-		printf(m, igmpstat[f], plural(igmpstat[f]))
-#define	py(f, m) if (igmpstat[f] || sflag <= 1)				\
-		printf(m, igmpstat[f], igmpstat[f] != 1 ? "ies" : "y")
-
-	p(IGMP_STAT_RCV_TOTAL, "\t%" PRIu64 " message%s received\n");
-	p(IGMP_STAT_RCV_TOOSHORT,
-	    "\t%" PRIu64 " message%s received with too few bytes\n");
-	p(IGMP_STAT_RCV_BADSUM,
-	    "\t%" PRIu64 " message%s received with bad checksum\n");
-	py(IGMP_STAT_RCV_QUERIES,
-	    "\t%" PRIu64 " membership quer%s received\n");
-	py(IGMP_STAT_RCV_BADQUERIES,
-	    "\t%" PRIu64 " membership quer%s received with invalid field(s)\n");
-	p(IGMP_STAT_RCV_REPORTS,
-	    "\t%" PRIu64 " membership report%s received\n");
-	p(IGMP_STAT_RCV_BADREPORTS, "\t%" PRIu64
-	    " membership report%s received with invalid field(s)\n");
-	p(IGMP_STAT_RCV_OURREPORTS, "\t%" PRIu64
-	    " membership report%s received for groups to which we belong\n");
-	p(IGMP_STAT_SND_REPORTS,
-	    "\t%" PRIu64 " membership report%s sent\n");
+#define	p(f, m) if (igmpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)igmpstat.f, plural(igmpstat.f))
+#define	py(f, m) if (igmpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)igmpstat.f, igmpstat.f != 1 ? "ies" : "y")
+	p(igps_rcv_total, "\t%llu message%s received\n");
+        p(igps_rcv_tooshort, "\t%llu message%s received with too few bytes\n");
+        p(igps_rcv_badsum, "\t%llu message%s received with bad checksum\n");
+        py(igps_rcv_queries, "\t%llu membership quer%s received\n");
+        py(igps_rcv_badqueries, "\t%llu membership quer%s received with invalid field(s)\n");
+        p(igps_rcv_reports, "\t%llu membership report%s received\n");
+        p(igps_rcv_badreports, "\t%llu membership report%s received with invalid field(s)\n");
+        p(igps_rcv_ourreports, "\t%llu membership report%s received for groups to which we belong\n");
+        p(igps_snd_reports, "\t%llu membership report%s sent\n");
 #undef p
 #undef py
-}
-
-/*
- * Dump CARP statistics structure.
- */
-void
-carp_stats(u_long off, const char *name)
-{
-	uint64_t carpstat[CARP_NSTATS];
-
-	if (use_sysctl) {
-		size_t size = sizeof(carpstat);
-
-		if (prog_sysctlbyname("net.inet.carp.stats", carpstat, &size,
-				 NULL, 0) == -1)
-			return;
-	} else {
-		warnx("%s stats not available via KVM.", name);
-		return;
-	}
-
-	printf("%s:\n", name);
-
-#define p(f, m) if (carpstat[f] || sflag <= 1) \
-	printf(m, carpstat[f], plural(carpstat[f]))
-#define p2(f, m) if (carpstat[f] || sflag <= 1) \
-	printf(m, carpstat[f])
-
-	p(CARP_STAT_IPACKETS, "\t%" PRIu64 " packet%s received (IPv4)\n");
-	p(CARP_STAT_IPACKETS6, "\t%" PRIu64 " packet%s received (IPv6)\n");
-	p(CARP_STAT_BADIF,
-	    "\t\t%" PRIu64 " packet%s discarded for bad interface\n");
-	p(CARP_STAT_BADTTL,
-	    "\t\t%" PRIu64 " packet%s discarded for wrong TTL\n");
-	p(CARP_STAT_HDROPS, "\t\t%" PRIu64 " packet%s shorter than header\n");
-	p(CARP_STAT_BADSUM,
-	    "\t\t%" PRIu64 " packet%s discarded for bad checksum\n");
-	p(CARP_STAT_BADVER,
-	    "\t\t%" PRIu64 " packet%s discarded with a bad version\n");
-	p2(CARP_STAT_BADLEN,
-	    "\t\t%" PRIu64 " discarded because packet was too short\n");
-	p(CARP_STAT_BADAUTH,
-	    "\t\t%" PRIu64 " packet%s discarded for bad authentication\n");
-	p(CARP_STAT_BADVHID,
-	    "\t\t%" PRIu64 " packet%s discarded for bad vhid\n");
-	p(CARP_STAT_BADADDRS, "\t\t%" PRIu64
-	    " packet%s discarded because of a bad address list\n");
-	p(CARP_STAT_OPACKETS, "\t%" PRIu64 " packet%s sent (IPv4)\n");
-	p(CARP_STAT_OPACKETS6, "\t%" PRIu64 " packet%s sent (IPv6)\n");
-	p2(CARP_STAT_ONOMEM,
-	    "\t\t%" PRIu64 " send failed due to mbuf memory error\n");
-#undef p
-#undef p2
 }
 
 /*
  * Dump PIM statistics structure.
  */
 void
-pim_stats(u_long off, const char *name)
+pim_stats(off, name)
+	u_long off;
+	char *name;
 {
 	struct pimstat pimstat;
 
@@ -844,28 +535,19 @@ pim_stats(u_long off, const char *name)
 	printf("%s:\n", name);
 
 #define	p(f, m) if (pimstat.f || sflag <= 1) \
-	printf(m, pimstat.f, plural(pimstat.f))
+	printf(m, (unsigned long long)pimstat.f, plural(pimstat.f))
 
-	p(pims_rcv_total_msgs, "\t%" PRIu64 " message%s received\n");
-	p(pims_rcv_total_bytes, "\t%" PRIu64 " byte%s received\n");
-	p(pims_rcv_tooshort,
-	    "\t%" PRIu64 " message%s received with too few bytes\n");
-	p(pims_rcv_badsum,
-	    "\t%" PRIu64 " message%s received with bad checksum\n");
-	p(pims_rcv_badversion,
-	    "\t%" PRIu64 " message%s received with bad version\n");
-	p(pims_rcv_registers_msgs,
-	    "\t%" PRIu64 " data register message%s received\n");
-	p(pims_rcv_registers_bytes,
-	    "\t%" PRIu64 " data register byte%s received\n");
-	p(pims_rcv_registers_wrongiif,
-	    "\t%" PRIu64 " data register message%s received on wrong iif\n");
-	p(pims_rcv_badregisters,
-	    "\t%" PRIu64 " bad register%s received\n");
-	p(pims_snd_registers_msgs,
-	    "\t%" PRIu64 " data register message%s sent\n");
-	p(pims_snd_registers_bytes,
-	    "\t%" PRIu64 " data register byte%s sent\n");
+	p(pims_rcv_total_msgs, "\t%llu message%s received\n");
+	p(pims_rcv_total_bytes, "\t%llu byte%s received\n");
+	p(pims_rcv_tooshort, "\t%llu message%s received with too few bytes\n");
+        p(pims_rcv_badsum, "\t%llu message%s received with bad checksum\n");
+	p(pims_rcv_badversion, "\t%llu message%s received with bad version\n");
+	p(pims_rcv_registers_msgs, "\t%llu data register message%s received\n");
+	p(pims_rcv_registers_bytes, "\t%llu data register byte%s received\n");
+	p(pims_rcv_registers_wrongiif, "\t%llu data register message%s received on wrong iif\n");
+	p(pims_rcv_badregisters, "\t%llu bad register%s received\n");
+	p(pims_snd_registers_msgs, "\t%llu data register message%s sent\n");
+	p(pims_snd_registers_bytes, "\t%llu data register byte%s sent\n");
 #undef p
 }
 
@@ -873,67 +555,50 @@ pim_stats(u_long off, const char *name)
  * Dump the ARP statistics structure.
  */
 void
-arp_stats(u_long off, const char *name)
+arp_stats(off, name)
+	u_long off;
+	char *name;
 {
-	uint64_t arpstat[ARP_NSTATS];
+	struct arpstat arpstat;
 
-	if (use_sysctl) {
-		size_t size = sizeof(arpstat);
-
-		if (prog_sysctlbyname("net.inet.arp.stats", arpstat, &size,
-				 NULL, 0) == -1)
-			return;
-	} else {
-		warnx("%s stats not available via KVM.", name);
+	if (off == 0)
 		return;
-	}
-
+	kread(off, (char *)&arpstat, sizeof (arpstat));
 	printf("%s:\n", name);
 
-#define	ps(f, m) if (arpstat[f] || sflag <= 1) \
-    printf(m, arpstat[f])
-#define	p(f, m) if (arpstat[f] || sflag <= 1) \
-    printf(m, arpstat[f], plural(arpstat[f]))
+#define	ps(f, m) if (arpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)arpstat.f)
+#define	p(f, m) if (arpstat.f || sflag <= 1) \
+    printf(m, (unsigned long long)arpstat.f, plural(arpstat.f))
 
-	p(ARP_STAT_SNDTOTAL, "\t%" PRIu64 " packet%s sent\n");
-	p(ARP_STAT_SNDREPLY, "\t\t%" PRIu64 " reply packet%s\n");
-	p(ARP_STAT_SENDREQUEST, "\t\t%" PRIu64 " request packet%s\n");
+	p(as_sndtotal, "\t%llu packet%s sent\n");
+	p(as_sndreply, "\t\t%llu reply packet%s\n");
+	p(as_sndrequest, "\t\t%llu request packet%s\n");
 
-	p(ARP_STAT_RCVTOTAL, "\t%" PRIu64 " packet%s received\n");
-	p(ARP_STAT_RCVREPLY, "\t\t%" PRIu64 " reply packet%s\n");
-	p(ARP_STAT_RCVREQUEST, "\t\t%" PRIu64 " valid request packet%s\n");
-	p(ARP_STAT_RCVMCAST, "\t\t%" PRIu64 " broadcast/multicast packet%s\n");
-	p(ARP_STAT_RCVBADPROTO,
-	    "\t\t%" PRIu64 " packet%s with unknown protocol type\n");
-	p(ARP_STAT_RCVBADLEN,
-	    "\t\t%" PRIu64 " packet%s with bad (short) length\n");
-	p(ARP_STAT_RCVZEROTPA,
-	    "\t\t%" PRIu64 " packet%s with null target IP address\n");
-	p(ARP_STAT_RCVZEROSPA,
-	    "\t\t%" PRIu64 " packet%s with null source IP address\n");
-	ps(ARP_STAT_RCVNOINT,
-	    "\t\t%" PRIu64 " could not be mapped to an interface\n");
-	p(ARP_STAT_RCVLOCALSHA,
-	    "\t\t%" PRIu64 " packet%s sourced from a local hardware "
+	p(as_rcvtotal, "\t%llu packet%s received\n");
+	p(as_rcvreply, "\t\t%llu reply packet%s\n");
+	p(as_rcvrequest, "\t\t%llu valid request packet%s\n");
+	p(as_rcvmcast, "\t\t%llu broadcast/multicast packet%s\n");
+	p(as_rcvbadproto, "\t\t%llu packet%s with unknown protocol type\n");
+	p(as_rcvbadlen, "\t\t%llu packet%s with bad (short) length\n");
+	p(as_rcvzerotpa, "\t\t%llu packet%s with null target IP address\n");
+	p(as_rcvzerospa, "\t\t%llu packet%s with null source IP address\n");
+	ps(as_rcvnoint, "\t\t%llu could not be mapped to an interface\n");
+	p(as_rcvlocalsha, "\t\t%llu packet%s sourced from a local hardware "
 	    "address\n");
-	p(ARP_STAT_RCVBCASTSHA, "\t\t%" PRIu64 " packet%s with a broadcast "
+	p(as_rcvbcastsha, "\t\t%llu packet%s with a broadcast "
 	    "source hardware address\n");
-	p(ARP_STAT_RCVLOCALSPA,
-	    "\t\t%" PRIu64 " duplicate%s for a local IP address\n");
-	p(ARP_STAT_RCVOVERPERM,
-	    "\t\t%" PRIu64 " attempt%s to overwrite a static entry\n");
-	p(ARP_STAT_RCVOVERINT,
-	    "\t\t%" PRIu64 " packet%s received on wrong interface\n");
-	p(ARP_STAT_RCVOVER, "\t\t%" PRIu64 " entry%s overwritten\n");
-	p(ARP_STAT_RCVLENCHG,
-	    "\t\t%" PRIu64 " change%s in hardware address length\n");
+	p(as_rcvlocalspa, "\t\t%llu duplicate%s for a local IP address\n");
+	p(as_rcvoverperm, "\t\t%llu attempt%s to overwrite a static entry\n");
+	p(as_rcvoverint, "\t\t%llu packet%s received on wrong interface\n");
+	p(as_rcvover, "\t\t%llu entry%s overwritten\n");
+	p(as_rcvlenchg, "\t\t%llu change%s in hardware address length\n");
 
-	p(ARP_STAT_DFRTOTAL,
-	    "\t%" PRIu64 " packet%s deferred pending ARP resolution\n");
-	ps(ARP_STAT_DFRSENT, "\t\t%" PRIu64 " sent\n");
-	ps(ARP_STAT_DFRDROPPED, "\t\t%" PRIu64 " dropped\n");
+	p(as_dfrtotal, "\t%llu packet%s deferred pending ARP resolution\n");
+	ps(as_dfrsent, "\t\t%llu sent\n");
+	ps(as_dfrdropped, "\t\t%llu dropped\n");
 
-	p(ARP_STAT_ALLOCFAIL, "\t%" PRIu64 " failure%s to allocate llinfo\n");
+	p(as_allocfail, "\t%llu failure%s to allocate llinfo\n");
 
 #undef ps
 #undef p
@@ -944,8 +609,11 @@ arp_stats(u_long off, const char *name)
  * Take numeric_addr and numeric_port into consideration.
  */
 void
-inetprint(struct in_addr *in, uint16_t port, const char *proto,
-	  int port_numeric)
+inetprint(in, port, proto, numeric_port)
+	struct in_addr *in;
+	u_int16_t port;
+	const char *proto;
+	int numeric_port;
 {
 	struct servent *sp = 0;
 	char line[80], *cp;
@@ -954,7 +622,7 @@ inetprint(struct in_addr *in, uint16_t port, const char *proto,
 	(void)snprintf(line, sizeof line, "%.*s.",
 	    (Aflag && !numeric_addr) ? 12 : 16, inetname(in));
 	cp = strchr(line, '\0');
-	if (!port_numeric && port)
+	if (!numeric_port && port)
 		sp = getservbyport((int)port, proto);
 	space = sizeof line - (cp-line);
 	if (sp || port == 0)
@@ -970,7 +638,8 @@ inetprint(struct in_addr *in, uint16_t port, const char *proto,
  * numeric value, otherwise try for symbolic name.
  */
 char *
-inetname(struct in_addr *inp)
+inetname(inp)
+	struct in_addr *inp;
 {
 	char *cp;
 	static char line[50];
@@ -1022,33 +691,18 @@ inetname(struct in_addr *inp)
 		    C(inp->s_addr >> 8), C(inp->s_addr));
 #undef C
 	}
-	return line;
+	return (line);
 }
 
 /*
  * Dump the contents of a TCP PCB.
  */
 void
-tcp_dump(u_long off, const char *name, u_long pcbaddr)
+tcp_dump(pcbaddr)
+	u_long pcbaddr;
 {
-	callout_impl_t *ci;
 	struct tcpcb tcpcb;
 	int i, hardticks;
-	struct kinfo_pcb *pcblist;
-	size_t j, len;
-
-	if (use_sysctl)
-		pcblist = getpcblist_sysctl(name, &len);
-	else
-		pcblist = getpcblist_kmem(off, name, &len);
-
-	for (j = 0; j < len; j++)
-		if (pcblist[j].ki_ppcbaddr == pcbaddr)
-			break;
-	free(pcblist);
-
-	if (j == len)
-		errx(1, "0x%lx is not a valid pcb address", pcbaddr);
 
 	kread(pcbaddr, (char *)&tcpcb, sizeof(tcpcb));
 	hardticks = get_hardticks();
@@ -1057,14 +711,9 @@ tcp_dump(u_long off, const char *name, u_long pcbaddr)
 
 	printf("Timers:\n");
 	for (i = 0; i < TCPT_NTIMERS; i++) {
-		char buf[128];
-		ci = (callout_impl_t *)&tcpcb.t_timer[i];
-		snprintb(buf, sizeof(buf), CALLOUT_FMT, ci->c_flags);
-		printf("\t%s\t%s", tcptimers[i], buf);
-		if (ci->c_flags & CALLOUT_PENDING)
-			printf("\t%d\n", ci->c_time - hardticks);
-		else
-			printf("\n");
+		printf("\t%s: %d", tcptimers[i],
+		    (tcpcb.t_timer[i].c_flags & CALLOUT_PENDING) ?
+		    tcpcb.t_timer[i].c_time - hardticks : 0);
 	}
 	printf("\n\n");
 
@@ -1077,8 +726,8 @@ tcp_dump(u_long off, const char *name, u_long pcbaddr)
 
 	printf("rxtshift %d, rxtcur %d, dupacks %d\n", tcpcb.t_rxtshift,
 	    tcpcb.t_rxtcur, tcpcb.t_dupacks);
-	printf("peermss %u, ourmss %u, segsz %u, segqlen %u\n\n",
-	    tcpcb.t_peermss, tcpcb.t_ourmss, tcpcb.t_segsz, tcpcb.t_segqlen);
+	printf("peermss %u, ourmss %u, segsz %u\n\n", tcpcb.t_peermss,
+	    tcpcb.t_ourmss, tcpcb.t_segsz);
 
 	printf("snd_una %u, snd_nxt %u, snd_up %u\n",
 	    tcpcb.snd_una, tcpcb.snd_nxt, tcpcb.snd_up);
