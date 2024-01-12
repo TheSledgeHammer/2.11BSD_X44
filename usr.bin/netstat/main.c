@@ -141,35 +141,41 @@ struct nlist nl[] = {
 	{ "_ip_mrtproto" },
 #define N_MRTSTAT	20
 	{ "_mrtstat" },
-#define N_MRTTABLE	21
+#define N_MFCHASHTBL 21
+	{ "_mfchashtbl" },
+#define	N_MFCHASH	22
+	{ "_mfchash" },
+#define N_MRTTABLE	23
 	{ "_mrttable" },
-#define N_VIFTABLE	22
+#define N_VIFTABLE	24
 	{ "_viftable" },
-#define N_IP6STAT	23
+#define N_IP6STAT	25
 	{ "_ip6stat" },
-#define N_TCP6STAT	24
+#define N_TCP6STAT	26
 	{ "_tcp6stat" },
-#define N_UDP6STAT	25
+#define N_UDP6STAT	27
 	{ "_udp6stat" },
-#define N_ICMP6STAT	26
+#define N_ICMP6STAT	28
 	{ "_icmp6stat" },
-#define N_IPSECSTAT 27
+#define N_IPSECSTAT 29
 	{ "_ipsecstat" },
-#define N_IPSEC6STAT 28
+#define N_IPSEC6STAT 30
 	{ "_ipsec6stat" },
-#define N_MRT6PROTO	29
+#define N_PIM6STAT	31
+	{ "_pim6stat" },
+#define N_MRT6PROTO	32
 	{ "_ip6_mrtproto" },
-#define N_MRT6STAT	30
+#define N_MRT6STAT	33
 	{ "_mrt6stat" },
-#define N_MF6CTABLE	31
+#define N_MF6CTABLE	34
 	{ "_mf6ctable" },
-#define N_MIF6TABLE	32
+#define N_MIF6TABLE	35
 	{ "_mif6table" },
-#define N_PFKEYSTAT	33
+#define N_PFKEYSTAT	36
 	{ "_pfkeystat" },
-#define N_ARPSTAT	34
+#define N_ARPSTAT	37
 	{ "_arpstat" },
-#define N_RIP6STAT	35
+#define N_RIP6STAT	38
 	{ "_rip6stat" },
 	{ "" },
 };
@@ -225,6 +231,8 @@ struct protox ip6protox[] = {
 	{ -1,		N_IPSEC6STAT,	1,	0,
 	  ipsec_switch,	NULL,		0,	"ipsec6" },
 #endif
+	{ -1,		N_PIM6STAT,	1,	0,
+	  pim6_stats,	NULL,		0,	"pim6" },
 	{ -1,		N_RIP6STAT,	1,	0,
 	  rip6_stats,	NULL,		0,	"rip6" },
 	{ -1,		-1,		0,	0,
@@ -331,7 +339,7 @@ main(argc, argv)
 			} else if (strcmp(optarg, "pfkey") == 0) {
 				af = PF_KEY;
 			} else if (strcmp(optarg, "unix") == 0
-			    || strcmp(optarg, "local") == 0) {
+					|| strcmp(optarg, "local") == 0) {
 				af = AF_LOCAL;
 			} else {
 				errx(1, "%s: unknown address family",

@@ -7,7 +7,7 @@ USE_FORT?= yes	# setgid
 
 PROG=	netstat
 SRCS=	fast_ipsec.c if.c inet.c inet6.c ipsec.c \
-		main.c mbuf.c mroute.c mroute6.c ns.c pfkey.c route.c unix.c rtutil.c
+		main.c mbuf.c mroute.c mroute6.c ns.c pfkey.c route.c unix.c
 BINGRP=	kmem
 BINMODE=2555
 LDADD=	-lutil -lkvm
@@ -22,7 +22,5 @@ CPPFLAGS+= -I${NETBSDSRCDIR}/sbin/route
 .if (${USE_INET6} != "no")
 CPPFLAGS+= -DINET6
 .endif
-
-#.include "../../compat/exec.mk"
 
 .include <bsd.prog.mk>

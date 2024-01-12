@@ -60,7 +60,6 @@ __RCSID("$NetBSD: inet.c,v 1.63 2004/09/06 14:51:32 martin Exp $");
 #include <netinet/icmp_var.h>
 #include <netinet/igmp_var.h>
 #include <netinet/ip_var.h>
-//#include <netinet/pim_var.h>
 #include <netinet/tcp.h>
 #include <netinet/tcpip.h>
 #include <netinet/tcp_seq.h>
@@ -299,8 +298,6 @@ tcp_stats(off, name)
 	p(tcps_sc_dupesyn, "\t%llu duplicate SYN%s received for entries "
 		"already in the cache\n");
 	p(tcps_sc_dropped, "\t%llu SYN%s dropped (no route or no space)\n");
-	p(tcps_badsig, "\t%llu packet%s with bad signature\n");
-	p(tcps_goodsig, "\t%llu packet%s with good signature\n");
 
 #undef p
 #undef ps
@@ -513,42 +510,6 @@ igmp_stats(off, name)
         p(igps_snd_reports, "\t%llu membership report%s sent\n");
 #undef p
 #undef py
-}
-
-/*
- * Dump PIM statistics structure.
- */
-void
-pim_stats(off, name)
-	u_long off;
-	char *name;
-{
-	struct pimstat pimstat;
-
-	if (off == 0)
-		return;
-	if (kread(off, (char *)&pimstat, sizeof (pimstat)) != 0) {
-		/* XXX: PIM is probably not enabled in the kernel */
-		return;
-	}
-
-	printf("%s:\n", name);
-
-#define	p(f, m) if (pimstat.f || sflag <= 1) \
-	printf(m, (unsigned long long)pimstat.f, plural(pimstat.f))
-
-	p(pims_rcv_total_msgs, "\t%llu message%s received\n");
-	p(pims_rcv_total_bytes, "\t%llu byte%s received\n");
-	p(pims_rcv_tooshort, "\t%llu message%s received with too few bytes\n");
-        p(pims_rcv_badsum, "\t%llu message%s received with bad checksum\n");
-	p(pims_rcv_badversion, "\t%llu message%s received with bad version\n");
-	p(pims_rcv_registers_msgs, "\t%llu data register message%s received\n");
-	p(pims_rcv_registers_bytes, "\t%llu data register byte%s received\n");
-	p(pims_rcv_registers_wrongiif, "\t%llu data register message%s received on wrong iif\n");
-	p(pims_rcv_badregisters, "\t%llu bad register%s received\n");
-	p(pims_snd_registers_msgs, "\t%llu data register message%s sent\n");
-	p(pims_snd_registers_bytes, "\t%llu data register byte%s sent\n");
-#undef p
 }
 
 /*

@@ -249,7 +249,7 @@ disk_ioctl(diskp, dev, cmd, data, flag, p)
 	}
 
 	/* diskslices */
-#ifdef DK_SLICES
+#ifdef DISK_SLICES
 	if(ssp != NULL) {
 		return (dsioctl(dev, cmd, data, flag, &ssp));
 	}

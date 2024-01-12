@@ -71,8 +71,6 @@ extern int wsmuxdebug;
 
 CFDRIVER_DECL(NULL, evdev, DV_DULL);
 
-extern struct cfdriver evdev_cd;
-
 #define	DEF_RING_REPORTS	8
 
 dev_type_open(evdev_open);

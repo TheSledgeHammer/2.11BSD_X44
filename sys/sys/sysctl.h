@@ -145,7 +145,8 @@ struct ctlname {
 #define KERN_OSRELDATE		28	/* int: OS release date */
 #define KERN_NTP_PLL		29	/* node: NTP PLL control */
 #define	KERN_BOOTFILE		30	/* string: name of booted kernel */
-#define	KERN_MAXID			31	/* number of valid kern ids */
+#define	KERN_TIMECOUNTER	31	/* node: timecounter */
+#define	KERN_MAXID			32	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { 				\
 	{ 0, 0 }, 							\
@@ -178,6 +179,7 @@ struct ctlname {
 	{ "osreldate", CTLTYPE_INT }, 		\
     { "ntp_pll", CTLTYPE_NODE }, 		\
 	{ "bootfile", CTLTYPE_STRING }, 	\
+	{ "timecounter", CTLTYPE_NODE }, 	\
 }
 
 /* 
@@ -231,6 +233,19 @@ struct kinfo_proc {
 		long			e_spare[4];
 	} kp_eproc;
 };
+
+/*
+ * KERN_TIMECOUNTER
+ */
+#define KERN_TIMECOUNTER_HARDWARE	1	/* string: tick hardware used */
+#define KERN_TIMECOUNTER_CHOICE		2	/* string: tick hardware used */
+#define KERN_TIMECOUNTER_MAXID		3
+
+#define CTL_KERN_TIMECOUNTER_NAMES { 	\
+	{ 0, 0 }, 							\
+	{ "hardware", CTLTYPE_STRING }, 	\
+	{ "choice", CTLTYPE_STRING }, 		\
+}
 
 /*
  * CTL_HW identifiers
@@ -388,6 +403,7 @@ int	sysctl_disknames(char *, size_t *);
 int sysctl_cnmagic(char *, size_t *, void *, size_t);
 int	sysctl_vnode(char *, size_t *, struct proc *);
 int sysctl_text(char *, size_t *);
+int	sysctl_timecounter(int *, u_int, void *, size_t *, void *, size_t);
 void fill_eproc(struct proc *, struct eproc *);
 
 #else	/* !KERNEL */

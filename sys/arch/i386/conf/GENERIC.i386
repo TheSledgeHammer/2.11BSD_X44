@@ -78,7 +78,7 @@ file-system 		UFML			# ufml file system
 options			QUOTA			# UFS quotas
 
 # Disk Format options
-#options			DK_SLICES		# enable diskslices (WIP)
+#options			DISK_SLICES		# enable diskslices (WIP)
 
 # Networking options
 #options 		GATEWAY			# packet forwarding
@@ -256,7 +256,8 @@ wskbd*			at pckbd? console ?
 wsmouse*		at pms? mux 0
 wsmouse*		at wsmousedev?
 
-#evkbd* 		at wskbddev?
+#evkbd* 		at pckbd? console ?
+#evmouse*		at pms? mux 0
 #evmouse* 		at wsmousedev?
 
 pcppi0			at isa?
@@ -381,12 +382,8 @@ mms0			at isa? port 0x23c irq 5	# Microsoft InPort mouse
 mms1			at isa? port 0x238 irq 5
 wsmouse*		at lms? mux 0
 wsmouse*		at mms? mux 0
-
-# Evdev Support
-#options			EVDEV_SUPPORT
-
-#evkbd* 			at wskbddev?
-#evmouse* 		at wsmousedev?
+#evmouse*		at lms? mux 0
+#evmouse* 		at mms? mux 0
 
 # Pseudo-Devices
 

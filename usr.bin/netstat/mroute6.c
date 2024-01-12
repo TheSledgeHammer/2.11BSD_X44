@@ -118,7 +118,7 @@
 #include <kvm.h>
 #include "netstat.h"
 
-#ifdef INET6
+//#ifdef INET6
 
 /* Width of origin column */
 #define	WID_ORG	(lflag ? 39 : (numeric_addr ? 29 : 18))

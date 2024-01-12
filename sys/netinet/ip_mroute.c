@@ -173,10 +173,11 @@ extern struct domain inetdomain;
 static void vif_input(struct mbuf *, ...);
 static int vif_encapcheck(const struct mbuf *, int, int, void *);
 static struct protosw vif_protosw =
-{ SOCK_RAW,	&inetdomain,	IPPROTO_IPV4,	PR_ATOMIC|PR_ADDR,
-  vif_input,	rip_output,	0,		rip_ctloutput,
-  rip_usrreq,
-  0,            0,              0,              0,
+{
+		SOCK_RAW,	&inetdomain,	IPPROTO_IPV4,	PR_ATOMIC|PR_ADDR,
+		vif_input,	rip_output,	0,		rip_ctloutput,
+		rip_usrreq,
+		0,            0,              0,              0,
 };
 
 #define		EXPIRE_TIMEOUT	(hz / 4)	/* 4x / second */

@@ -246,8 +246,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_file(oldp, oldlenp));
 #ifdef GPROF
 	case KERN_PROF:
-		return (sysctl_doprof(name + 1, namelen - 1, oldp, oldlenp,
-		    newp, newlen));
+		return (sysctl_doprof(name + 1, namelen - 1, oldp, oldlenp, newp, newlen));
 #endif
 	case KERN_NGROUPS:
 		return (sysctl_rdint(oldp, oldlenp, newp, NGROUPS_MAX));
@@ -259,6 +258,8 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, 0));
 	case KERN_BOOTFILE:
 		return (sysctl_string(oldp, oldlenp, newp, newlen, kernelname, sizeof(kernelname)));
+	case KERN_TIMECOUNTER:
+		return (sysctl_timecounter(name + 1, namelen - 1, oldp, oldlenp, newp, newlen));
 	default:
 		return (EOPNOTSUPP);
 	}

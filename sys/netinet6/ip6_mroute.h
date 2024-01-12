@@ -94,7 +94,7 @@ typedef	struct if_set {
 #define	IF_CLR(n, p)	((p)->ifs_bits[(n)/NIFBITS] &= ~(1 << ((n) % NIFBITS)))
 #define	IF_ISSET(n, p)	((p)->ifs_bits[(n)/NIFBITS] & (1 << ((n) % NIFBITS)))
 #define	IF_COPY(f, t)	bcopy(f, t, sizeof(*(f)))
-#define	IF_ZERO(p)	bzero(p, sizeof(*(p)))
+#define	IF_ZERO(p)		bzero(p, sizeof(*(p)))
 
 /*
  * Argument structure for MRT6_ADD_IF.

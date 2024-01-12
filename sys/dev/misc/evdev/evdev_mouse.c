@@ -48,7 +48,6 @@ struct evdev_mouse_softc {
 
 extern struct cfdriver evdev_cd;
 CFOPS_DECL(evdev_mouse, evdev_mouse_match, evdev_mouse_attach, NULL, NULL);
-//CFDRIVER_DECL(NULL, evdev_mouse, DV_DULL);
 CFATTACH_DECL(evdev_mouse, &evdev_cd, &evdev_mouse_cops, sizeof(struct evdev_mouse_softc));
 
 #if NWSMUX > 0

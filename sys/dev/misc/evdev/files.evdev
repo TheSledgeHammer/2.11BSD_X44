@@ -5,13 +5,13 @@
 defflag opt_evdev.h EVDEV_SUPPORT
 
 device	evmouse
-attach	evmouse at wsmousedev with evdev
+attach	evmouse at wsmousedev
 device	evkbd
-attach	evkbd at wskbddev with evdev
+attach	evkbd at wskbddev
 
-file 	dev/misc/evdev/evdev_mouse.c	evmouse				#needs_flag
-file 	dev/misc/evdev/evdev_kbd.c		evkbd				#needs_flag
-file	dev/misc/evdev/evdev.c			evmouse & evkbd
-file	dev/misc/evdev/evdev_mt.c		evmouse & evkbd
-file	dev/misc/evdev/evdev_support.c	evmouse & evkbd
-file	dev/misc/evdev/evdev_utils.c	evmouse & evkbd
+file 	dev/misc/evdev/evdev_mouse.c	evmouse				needs_flag
+file 	dev/misc/evdev/evdev_kbd.c		evkbd				needs_flag
+file	dev/misc/evdev/evdev.c			evmouse | evkbd		needs_flag
+file	dev/misc/evdev/evdev_mt.c		evmouse | evkbd
+file	dev/misc/evdev/evdev_support.c	evmouse | evkbd
+file	dev/misc/evdev/evdev_utils.c	evmouse | evkbd

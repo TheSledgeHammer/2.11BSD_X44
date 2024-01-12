@@ -58,7 +58,7 @@
 #include <sys/null.h>
 #include <sys/devsw.h>
 
-#ifdef DK_SLICES
+#ifdef DISK_SLICES
 #include <sys/diskslice.h>
 #endif
 
@@ -218,7 +218,7 @@ setswap(majdev, mindev)
 	}
 }
 
-#ifdef DK_SLICES
+#ifdef DISK_SLICES
 int
 setroot_slices(void)
 {
@@ -256,7 +256,7 @@ setroot(void)
 		return;
 	}
 	majdev = B_TYPE(bootdev);
-#ifdef DK_SLICES
+#ifdef DISK_SLICES
 	mindev = setroot_slices();
 
 #else

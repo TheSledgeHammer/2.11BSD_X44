@@ -48,7 +48,6 @@ struct evdev_kbd_softc {
 
 extern struct cfdriver evdev_cd;
 CFOPS_DECL(evdev_kbd, evdev_kbd_match, evdev_kbd_attach, NULL, NULL);
-//CFDRIVER_DECL(NULL, evdev_kbd, DV_DULL);
 CFATTACH_DECL(evdev_kbd, &evdev_cd, &evdev_kbd_cops, sizeof(struct evdev_kbd_softc));
 
 #if NWSMUX > 0
