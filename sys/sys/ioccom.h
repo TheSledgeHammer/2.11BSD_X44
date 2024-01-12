@@ -75,5 +75,6 @@
 #define	_IOW(x,y,t)			_IOC(IOC_IN,	(x), (y), sizeof(t))
 /* this should be _IORW, but stdio got there first */
 #define	_IOWR(x,y,t)		_IOC(IOC_INOUT,	(x), (y), sizeof(t))
+#define	_IOWINT(x,y)	    _IOC(IOC_VOID,	(x), (y), sizeof(int))
 
 #endif /* !_SYS_IOCCOM_H_ */
