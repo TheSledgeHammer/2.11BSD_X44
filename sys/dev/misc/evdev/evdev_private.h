@@ -36,11 +36,14 @@
 #include <sys/queue.h>
 #include <sys/sysctl.h>
 
+#include <dev/misc/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsmuxvar.h>
+#include <dev/misc/wscons/wsconsio.h>
+
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/input.h>
 #include <dev/misc/evdev/freebsd-bitstring.h>
 
-//#define M_EVDEV		91
 #define	NAMELEN		80
 
 /*
@@ -147,14 +150,15 @@ struct evdev_dev {
 	/* Parent driver callbacks: */
 	const struct evdev_methods 	*ev_methods;
 	void 						*ev_softc;
+    int                         ev_ledstate;
 
 	/* client callback: we use wsmux for multiplexing */
 	struct evdev_client 		*ev_client;
 };
 
-#define	EVDEV_LOCK(evdev)			lockmgr((evdev)->ev_lock, LK_EXCLUSIVE, NULL)  //simple_lock((evdev)->ev_lock)
-#define	EVDEV_UNLOCK(evdev)			lockmgr((evdev)->ev_lock, LK_RELEASE, NULL) //simple_unlock((evdev)->ev_lock)
-#define	EVDEV_LOCK_ASSERT(evdev) 	KASSERT(lockstatus((evdev)->ev_lock) != 0)
+#define	EVDEV_LOCK(evdev)			lockmgr(&(evdev)->ev_lock, LK_EXCLUSIVE, NULL, 0)
+#define	EVDEV_UNLOCK(evdev)			lockmgr(&(evdev)->ev_lock, LK_RELEASE, NULL, 0)
+#define	EVDEV_LOCK_ASSERT(evdev) 	KASSERT(lockstatus(&(evdev)->ev_lock) != 0)
 #define	EVDEV_ENTER(evdev)  do {					\
 	if ((evdev)->ev_lock_type == EV_LOCK_INTERNAL)	\
 		EVDEV_LOCK(evdev);							\
@@ -165,6 +169,7 @@ struct evdev_dev {
 	if ((evdev)->ev_lock_type == EV_LOCK_INTERNAL)	\
 		EVDEV_UNLOCK(evdev);						\
 } while (0)
+
 
 struct evdev_client {
 	struct evdev_dev 			*ec_evdev;			/* evdev pointer */
@@ -179,10 +184,13 @@ struct evdev_client {
 	struct input_event			ec_buffer[];
 };
 
-#define	EVDEV_CLIENT_LOCKQ(client)			lockmgr((client)->ec_buffer_lock, LK_EXCLUSIVE|LK_CANRECURSE, NULL)
-#define	EVDEV_CLIENT_UNLOCKQ(client)		lockmgr((client)->ec_buffer_lock, LK_RELEASE, NULL)
-#define	EVDEV_CLIENT_LOCKQ_ASSERT(client) 	KASSERT(lockstatus((client)->ec_buffer_lock) != 0)
+#define	EVDEV_CLIENT_LOCKQ(client)			lockmgr(&(client)->ec_buffer_lock, LK_EXCLUSIVE|LK_CANRECURSE, NULL, 0)
+#define	EVDEV_CLIENT_UNLOCKQ(client)		lockmgr(&(client)->ec_buffer_lock, LK_RELEASE, NULL, 0)
+#define	EVDEV_CLIENT_LOCKQ_ASSERT(client) 	KASSERT(lockstatus(&(client)->ec_buffer_lock) != 0)
 #define	EVDEV_CLIENT_EMPTYQ(client) 		WSEVENT_EMPTYQ((client)->ec_base.me_evp)
+#define	EVDEV_CLIENT_SIZEQ(client)          \
+    (((client)->ec_buffer_ready + (client)->ec_buffer_size - \
+    WSEVENT_CLIENT_QSIZE((client)->ec_base.me_evp)) % (client)->ec_buffer_size)        
 
 /* softc */
 struct evdev_softc {
@@ -197,6 +205,7 @@ struct evdev_softc {
 void	evdev_attach_subr(struct evdev_softc *, int);
 int		evdev_doopen(struct evdev_dev *);
 int		evdev_doclose(struct evdev_dev *);
+int     evdev_do_ioctl(struct device *, u_long, caddr_t, int, struct proc *);
 
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
@@ -207,7 +216,7 @@ void 	evdev_set_absinfo(struct evdev_dev *, uint16_t, struct input_absinfo *);
 void 	evdev_restore_after_kdb(struct evdev_dev *);
 
 /* Client interface: */
-void	evdev_client_alloc(struct evdev_dev *, size_t);
+struct evdev_client *evdev_client_alloc(struct evdev_dev *, size_t);
 void	evdev_client_free(struct evdev_client *);
 int 	evdev_register_client(struct evdev_dev *, struct evdev_client *);
 void 	evdev_dispose_client(struct evdev_dev *, struct evdev_client *);

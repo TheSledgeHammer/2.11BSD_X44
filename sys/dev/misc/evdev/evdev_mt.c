@@ -183,7 +183,7 @@ evdev_support_mt_compat(struct evdev_dev *evdev)
 	/* Echo 0-th MT-slot as ST-slot */
 	for (i = 0; i < nitems(evdev_mtstmap); i++)
 		if (bit_test(evdev->ev_abs_flags, evdev_mtstmap[i][0]))
-			evdev_support_abs(evdev, evdev_mtstmap[i][1],
+			evdev_support_abs(evdev, evdev_mtstmap[i][1], 0, 
 			    evdev->ev_absinfo[evdev_mtstmap[i][0]].minimum,
 			    evdev->ev_absinfo[evdev_mtstmap[i][0]].maximum,
 			    evdev->ev_absinfo[evdev_mtstmap[i][0]].fuzz,

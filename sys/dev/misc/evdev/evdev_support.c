@@ -226,7 +226,7 @@ evdev_register(struct evdev_dev *evdev)
 	int ret;
 
 	evdev->ev_lock_type = EV_LOCK_INTERNAL;
-	evdev->ev_lock->lk_lnterlock = &evdev->ev_mtx;
+	evdev->ev_lock.lk_lnterlock = evdev->ev_mtx;
 	simple_lock_init(&evdev->ev_mtx, "evmtx");
 
 	ret = evdev_register_common(evdev);
@@ -237,7 +237,7 @@ int
 evdev_register_mtx(struct evdev_dev *evdev, struct lock *mtx)
 {
 	evdev->ev_lock_type = EV_LOCK_MTX;
-	evdev->ev_lock = mtx;
+//	evdev->ev_lock = mtx;
 	return (evdev_register_common(evdev));
 }
 
@@ -313,7 +313,7 @@ inline void
 evdev_support_prop(struct evdev_dev *evdev, uint16_t prop)
 {
 
-	KASSERT(prop < INPUT_PROP_CNT ("invalid evdev input property"));
+	KASSERTMSG(prop < INPUT_PROP_CNT, "invalid evdev input property");
 	bit_set(evdev->ev_prop_flags, prop);
 }
 
@@ -321,7 +321,7 @@ inline void
 evdev_support_event(struct evdev_dev *evdev, uint16_t type)
 {
 
-	KASSERT(type < EV_CNT ("invalid evdev event property"));
+	KASSERTMSG(type < EV_CNT, "invalid evdev event property");
 	bit_set(evdev->ev_type_flags, type);
 }
 
@@ -329,7 +329,7 @@ inline void
 evdev_support_key(struct evdev_dev *evdev, uint16_t code)
 {
 
-	KASSERT(code < KEY_CNT ("invalid evdev key property"));
+	KASSERTMSG(code < KEY_CNT, "invalid evdev key property");
 	bit_set(evdev->ev_key_flags, code);
 }
 
@@ -337,7 +337,7 @@ inline void
 evdev_support_rel(struct evdev_dev *evdev, uint16_t code)
 {
 
-	KASSERT(code < REL_CNT ("invalid evdev rel property"));
+	KASSERTMSG(code < REL_CNT, "invalid evdev rel property");
 	bit_set(evdev->ev_rel_flags, code);
 }
 
@@ -348,7 +348,7 @@ evdev_support_abs(struct evdev_dev *evdev, uint16_t code, int32_t value,
 {
 	struct input_absinfo absinfo;
 
-	KASSERT(code < ABS_CNT ("invalid evdev abs property"));
+	KASSERTMSG(code < ABS_CNT, "invalid evdev abs property");
 
 	absinfo = (struct input_absinfo) {
 		.value = value,
@@ -366,7 +366,7 @@ inline void
 evdev_set_abs_bit(struct evdev_dev *evdev, uint16_t code)
 {
 
-	KASSERT(code < ABS_CNT ("invalid evdev abs property"));
+	KASSERTMSG(code < ABS_CNT, "invalid evdev abs property");
 	if (evdev->ev_absinfo == NULL)
 		evdev->ev_absinfo = evdev_alloc_absinfo();
 	bit_set(evdev->ev_abs_flags, code);
@@ -376,7 +376,7 @@ inline void
 evdev_support_msc(struct evdev_dev *evdev, uint16_t code)
 {
 
-	KASSERT(code < MSC_CNT ("invalid evdev msc property"));
+	KASSERTMSG(code < MSC_CNT, "invalid evdev msc property");
 	bit_set(evdev->ev_msc_flags, code);
 }
 
@@ -384,7 +384,7 @@ inline void
 evdev_support_led(struct evdev_dev *evdev, uint16_t code)
 {
 
-	KASSERT(code < LED_CNT ("invalid evdev led property"));
+	KASSERTMSG(code < LED_CNT, "invalid evdev led property");
 	bit_set(evdev->ev_led_flags, code);
 }
 
@@ -392,7 +392,7 @@ inline void
 evdev_support_snd(struct evdev_dev *evdev, uint16_t code)
 {
 
-	KASSERT(code < SND_CNT ("invalid evdev snd property"));
+	KASSERTMSG(code < SND_CNT, "invalid evdev snd property");
 	bit_set(evdev->ev_snd_flags, code);
 }
 
@@ -400,7 +400,7 @@ inline void
 evdev_support_sw(struct evdev_dev *evdev, uint16_t code)
 {
 
-	KASSERT(code < SW_CNT ("invalid evdev sw property"));
+	KASSERTMSG(code < SW_CNT, "invalid evdev sw property");
 	bit_set(evdev->ev_sw_flags, code);
 }
 
@@ -408,7 +408,7 @@ bool_t
 evdev_event_supported(struct evdev_dev *evdev, uint16_t type)
 {
 
-	KASSERT(type < EV_CNT ("invalid evdev event property"));
+	KASSERTMSG(type < EV_CNT, "invalid evdev event property");
 	return (bit_test(evdev->ev_type_flags, type));
 }
 
@@ -416,7 +416,7 @@ inline void
 evdev_set_absinfo(struct evdev_dev *evdev, uint16_t axis, struct input_absinfo *absinfo)
 {
 
-	KASSERT(axis < ABS_CNT ("invalid evdev abs property"));
+	KASSERTMSG(axis < ABS_CNT, "invalid evdev abs property");
 
 	if (axis == ABS_MT_SLOT &&
 	    (absinfo->maximum < 1 || absinfo->maximum >= MAX_MT_SLOTS))
@@ -435,7 +435,7 @@ inline void
 evdev_set_repeat_params(struct evdev_dev *evdev, uint16_t property, int value)
 {
 
-	KASSERT(property < REP_CNT ("invalid evdev repeat property"));
+	KASSERTMSG(property < REP_CNT, "invalid evdev repeat property");
 	evdev->ev_rep[property] = value;
 }
 
@@ -443,7 +443,7 @@ inline void
 evdev_set_flag(struct evdev_dev *evdev, uint16_t flag)
 {
 
-	KASSERT(flag < EVDEV_FLAG_CNT ("invalid evdev flag property"));
+	KASSERTMSG(flag < EVDEV_FLAG_CNT, "invalid evdev flag property");
 	bit_set(evdev->ev_flags, flag);
 }
 
@@ -685,8 +685,9 @@ evdev_propagate_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int
 
 	/* Propagate event through all clients */
 	client = evdev->ev_client;
-	if (evdev->ev_grabber != NULL && evdev->ev_grabber != client)
-		continue;
+	if (evdev->ev_grabber != NULL && evdev->ev_grabber != client) {
+	//	continue;
+    }
 
 	EVDEV_CLIENT_LOCKQ(client);
 	evdev_client_push(client, type, code, value);
@@ -716,6 +717,7 @@ evdev_send_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t 
 	}
 }
 
+#ifdef notyet
 void
 evdev_restore_after_kdb(struct evdev_dev *evdev)
 {
@@ -734,6 +736,7 @@ evdev_restore_after_kdb(struct evdev_dev *evdev)
 	evdev_send_event(evdev, EV_KEY, code, KEY_EVENT_UP);
 	evdev_send_event(evdev, EV_SYN, SYN_REPORT, 1);
 }
+#endif
 
 int
 evdev_push_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
@@ -774,8 +777,9 @@ evdev_inject_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_
 	case EV_SND:
 	case EV_FF:
 
-		if (evdev->ev_methods != NULL && evdev->ev_methods->ev_event != NULL)
-			evdev->ev_methods->ev_event(evdev, evdev->ev_softc, type, code, value);
+		if (evdev->ev_methods != NULL) {
+			evdev_method_event(evdev, type, code, value);
+        }
 		/*
 		 * Leds and driver repeats should be reported in ev_event
 		 * method body to interoperate with kbdmux states and rates
@@ -830,15 +834,14 @@ evdev_dispose_client(struct evdev_dev *evdev, struct evdev_client *client)
 	if(evdev->ev_client == NULL) {
 		if (evdev->ev_methods != NULL) {
 			ret = evdev_doclose(evdev);
-			if(ret == 0) {
-				continue;
-			}
 		}
 		if (evdev_event_supported(evdev, EV_REP) && bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT)) {
 			evdev_stop_repeat(evdev);
 		}
 	}
-	evdev_release_client(evdev, client);
+	if (ret == 0) {
+		evdev_release_client(evdev, client);		
+	}
 }
 
 int

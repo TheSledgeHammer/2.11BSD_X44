@@ -26,6 +26,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "opt_evdev.h"
+
+#include "evkbd.h"
+#include "wsmux.h"
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/conf.h>
@@ -33,26 +38,30 @@
 #include <sys/device.h>
 #include <sys/proc.h>
 
-#include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wskbdvar.h>
-#include <dev/misc/wscons/wsmuxvar.h>
 
-#include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
+#include <dev/misc/evdev/evdev.h>
 
 struct evdev_kbd_softc {
-	struct evdev_softc 				sc_evdev;
+	struct evdev_softc 				sc;
     const struct wskbd_accessops  	*sc_accessops;
 	void							*sc_accesscookie;
 };
+
+int evdev_kbd_match(struct device *, struct cfdata *, void *);
+void evdev_kbd_attach(struct device *, struct device *, void *);
 
 extern struct cfdriver evdev_cd;
 CFOPS_DECL(evdev_kbd, evdev_kbd_match, evdev_kbd_attach, NULL, NULL);
 CFATTACH_DECL(evdev_kbd, &evdev_cd, &evdev_kbd_cops, sizeof(struct evdev_kbd_softc));
 
 #if NWSMUX > 0
+int evdev_kbd_mux_open(struct wsevsrc *, struct wseventvar *);
+int evdev_kbd_mux_close(struct wsevsrc *);
+
 struct wssrcops evmouse_srcops = {
-		.type = WSMUX_EVKBD,
+		.type = WSMUX_EVDEV,
 		.dopen = evdev_kbd_mux_open,
 		.dclose = evdev_kbd_mux_close,
 		.dioctl = evdev_do_ioctl,
@@ -80,8 +89,8 @@ evdev_kbd_attach(parent, self, aux)
 	struct wskbddev_attach_args 	*ap;
 
 	ksc = (struct evdev_kbd_softc *)self;
-	sc = &ksc->sc_evdev;
-	ap = (struct wskbddev_attach_args)aux;
+	sc = &ksc->sc;
+	ap = (struct wskbddev_attach_args *)aux;
 
 	ksc->sc_accessops = ap->accessops;
 	ksc->sc_accesscookie = ap->accesscookie;
@@ -104,11 +113,13 @@ evdev_kbd_mux_open(me, evp)
 	struct wseventvar *evp;
 {
 	struct evdev_kbd_softc 	*ksc;
+    struct evdev_softc			*sc;
 	struct evdev_dev 			*evdev;
 	struct evdev_client			*client;
 
 	ksc = (struct evdev_kbd_softc *)me;
-	evdev = &ksc->sc_evdev;
+    sc = &ksc->sc;
+	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
 	if (client->ec_base.me_evp != NULL) {
@@ -123,11 +134,13 @@ evdev_kbd_mux_close(me)
 	struct wsevsrc *me;
 {
 	struct evdev_kbd_softc 	*ksc;
+    struct evdev_softc		*sc;
 	struct evdev_dev 		*evdev;
 	struct evdev_client		*client;
 
 	ksc = (struct evdev_kbd_softc *)me;
-	evdev = &ksc->sc_evdev;
+    sc = &ksc->sc;
+	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
 	client->ec_base.me_evp = NULL;
@@ -141,16 +154,17 @@ evdev_kbd_add_mux(unit, muxsc)
 	int unit;
 	struct wsmux_softc *muxsc;
 {
-	struct evdev_mouse_softc 	*ksc;
+	struct evdev_kbd_softc 	    *ksc;
+    struct evdev_softc			*sc;
 	struct evdev_dev 			*evdev;
 	struct evdev_client			*client;
 
 	ksc = evdev_cd.cd_devs[unit];
-	if (unit < 0 || unit >= evdev_cd.cd_ndevs || sc == NULL) {
+	if (unit < 0 || unit >= evdev_cd.cd_ndevs || ksc == NULL) {
 		return (ENXIO);
 	}
-
-	evdev = &ksc->sc_evdev;
+    sc = &ksc->sc;
+	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
 	if (client->ec_base.me_parent != NULL || client->ec_base.me_evp != NULL) {

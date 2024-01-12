@@ -358,4 +358,5 @@ bit_count(bitstr_t *_bitstr, int _start, int _nbits, int *_result)
 out:
 	*_result = _value;
 }
+
 #endif	/* _SYS_BITSTRING_H_ */

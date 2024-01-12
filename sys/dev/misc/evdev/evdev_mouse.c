@@ -26,6 +26,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "opt_evdev.h"
+
+#include "evmouse.h"
+#include "wsmux.h"
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/conf.h>
@@ -33,26 +38,30 @@
 #include <sys/device.h>
 #include <sys/proc.h>
 
-#include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wsmousevar.h>
-#include <dev/misc/wscons/wsmuxvar.h>
 
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
 
 struct evdev_mouse_softc {
-	struct evdev_softc 				sc_evdev;
+	struct evdev_softc 				sc;
     const struct wsmouse_accessops  *sc_accessops;
 	void							*sc_accesscookie;
 };
+
+int evdev_mouse_match(struct device *, struct cfdata *, void *);
+void evdev_mouse_attach(struct device *, struct device *, void *);
 
 extern struct cfdriver evdev_cd;
 CFOPS_DECL(evdev_mouse, evdev_mouse_match, evdev_mouse_attach, NULL, NULL);
 CFATTACH_DECL(evdev_mouse, &evdev_cd, &evdev_mouse_cops, sizeof(struct evdev_mouse_softc));
 
 #if NWSMUX > 0
+int evdev_mouse_mux_open(struct wsevsrc *, struct wseventvar *);
+int evdev_mouse_mux_close(struct wsevsrc *);
+
 struct wssrcops evmouse_srcops = {
-		.type = WSMUX_EVMOUSE,
+		.type = WSMUX_EVDEV,
 		.dopen = evdev_mouse_mux_open,
 		.dclose = evdev_mouse_mux_close,
 		.dioctl = evdev_do_ioctl,
@@ -80,8 +89,8 @@ evdev_mouse_attach(parent, self, aux)
 	struct wsmousedev_attach_args 	*ap;
 
 	msc = (struct evdev_mouse_softc *)self;
-	sc = &msc->sc_evdev;
-	ap = (struct wsmousedev_attach_args)aux;
+	sc = &msc->sc;
+	ap = (struct wsmousedev_attach_args *)aux;
 
 	msc->sc_accessops = ap->accessops;
 	msc->sc_accesscookie = ap->accesscookie;
@@ -96,11 +105,11 @@ evdev_mouse_enable(msc)
 	return ((*msc->sc_accessops->enable)(msc->sc_accesscookie));
 }
 
-int
+void
 evdev_mouse_disable(msc)
 	struct evdev_mouse_softc *msc;
 {
-	return ((*msc->sc_accessops->disable)(msc->sc_accesscookie));
+	(*msc->sc_accessops->disable)(msc->sc_accesscookie);
 }
 
 #if NWSMUX > 0
@@ -110,11 +119,13 @@ evdev_mouse_mux_open(me, evp)
 	struct wseventvar *evp;
 {
 	struct evdev_mouse_softc 	*msc;
+    struct evdev_softc          *sc;
 	struct evdev_dev 			*evdev;
 	struct evdev_client			*client;
 
 	msc = (struct evdev_mouse_softc *)me;
-	evdev = &msc->sc_evdev;
+	sc = &msc->sc;
+    evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
 	if (client->ec_base.me_evp != NULL) {
@@ -129,15 +140,17 @@ evdev_mouse_mux_close(me)
 	struct wsevsrc *me;
 {
 	struct evdev_mouse_softc 	*msc;
+    struct evdev_softc          *sc;
 	struct evdev_dev 			*evdev;
 	struct evdev_client			*client;
 
 	msc = (struct evdev_mouse_softc *)me;
-	evdev = &msc->sc_evdev;
+    sc = &msc->sc;
+	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
 	client->ec_base.me_evp = NULL;
-	(void)evdev_mouse_disable(msc);
+	evdev_mouse_disable(msc);
 
 	return (0);
 }
@@ -148,15 +161,16 @@ evdev_mouse_add_mux(unit, muxsc)
 	struct wsmux_softc *muxsc;
 {
 	struct evdev_mouse_softc 	*msc;
+    struct evdev_softc          *sc;
 	struct evdev_dev 			*evdev;
 	struct evdev_client			*client;
 
 	msc = evdev_cd.cd_devs[unit];
-	if (unit < 0 || unit >= evdev_cd.cd_ndevs || sc == NULL) {
+	if (unit < 0 || unit >= evdev_cd.cd_ndevs || msc == NULL) {
 		return (ENXIO);
 	}
-
-	evdev = &msc->sc_evdev;
+    sc = &msc->sc;
+	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
 	if (client->ec_base.me_parent != NULL || client->ec_base.me_evp != NULL) {

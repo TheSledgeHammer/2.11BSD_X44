@@ -31,8 +31,11 @@
 
 #include <dev/misc/evdev/input.h>
 
-struct evdev_dev;
 struct cdevsw;
+struct evdev_dev;
+struct lock;
+struct wskbd_keyrepeat_data;
+
 typedef const struct cdevsw  evdev_cdev_t;
 typedef void (evdev_event_t)(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 typedef void (evdev_keycode_t)(struct evdev_dev *, struct input_keymap_entry *);
@@ -92,9 +95,15 @@ struct evdev_methods {
 	evdev_keycode_t 			*ev_get_keycode;
 };
 
+const struct cdevsw *evdev_method_cdev(struct evdev_dev *);
+void evdev_method_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
+void evdev_method_set_keycode(struct evdev_dev *, struct input_keymap_entry *);
+void evdev_method_get_keycode(struct evdev_dev *, struct input_keymap_entry *);
+
 /* Input device interface: */
 struct evdev_dev *evdev_alloc(void);
 void evdev_free(struct evdev_dev *);
+
 void evdev_set_name(struct evdev_dev *, const char *);
 void evdev_set_id(struct evdev_dev *, uint16_t, uint16_t, uint16_t, uint16_t);
 void evdev_set_phys(struct evdev_dev *, const char *);
@@ -108,7 +117,7 @@ void evdev_support_prop(struct evdev_dev *, uint16_t);
 void evdev_support_event(struct evdev_dev *, uint16_t);
 void evdev_support_key(struct evdev_dev *, uint16_t);
 void evdev_support_rel(struct evdev_dev *, uint16_t);
-void evdev_support_abs(struct evdev_dev *, uint16_t, int32_t, int32_t, int32_t, int32_t, int32_t);
+void evdev_support_abs(struct evdev_dev *, uint16_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
 void evdev_support_msc(struct evdev_dev *, uint16_t);
 void evdev_support_led(struct evdev_dev *, uint16_t);
 void evdev_support_snd(struct evdev_dev *, uint16_t);
@@ -131,7 +140,7 @@ uint16_t evdev_scancode2key(int *, int);
 void evdev_push_mouse_btn(struct evdev_dev *, int);
 void evdev_push_leds(struct evdev_dev *, int);
 void evdev_push_repeats(struct evdev_dev *, struct wskbd_keyrepeat_data *);
-void evdev_kbd_event(struct evdev_dev *, void *, uint16_t, uint16_t, int32_t);
+void evdev_kbd_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 
 /* Event reporting shortcuts: */
 static __inline int

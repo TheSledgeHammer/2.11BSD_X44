@@ -37,8 +37,8 @@
 #include <sys/lock.h>
 #include <sys/systm.h>
 
-#include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/evdev/evdev.h>
+#include <dev/misc/evdev/evdev_private.h>
 #include <dev/misc/evdev/input.h>
 
 //#include <machine/bus.h>
@@ -316,14 +316,14 @@ evdev_push_repeats(struct evdev_dev *evdev, struct wskbd_keyrepeat_data *kbd)
 int
 evdev_wskbd_ioctl(evdev, kbd, cmd, data)
 	struct evdev_dev 	*evdev;
-	struct wskbd_softc 	*kbd;
+	struct wskbd_keyrepeat_data *kbd;
 	u_long 				cmd;
 	caddr_t 			data;
 {
 	switch (cmd) {
 	case WSKBDIO_SETKEYREPEAT:
 		if (evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_WSKBD)) {
-			evdev_push_repeats(evdev, kbd->sc_keyrepeat_data);
+			evdev_push_repeats(evdev, kbd);
 		}
 		return (0);
 	case WSKBDIO_SETLEDS:
@@ -332,20 +332,18 @@ evdev_wskbd_ioctl(evdev, kbd, cmd, data)
 		}
 		return (0);
 	}
-	return (ENIVAL);
+	return (EINVAL);
 }
 
 void
-evdev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t code, int32_t value)
+evdev_kbd_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
-	struct wskbd_softc *kbd = (struct wskbd_softc *)softc;
-	struct wskbd_keyrepeat_data *rdat = kbd->sc_keyrepeat_data;
+	struct wskbd_keyrepeat_data *kbd = (struct wskbd_keyrepeat_data *)evdev->ev_softc;
 	int delay[2], leds, oleds;
 	size_t i;
 
 	if (type == EV_LED) {
-		leds = oleds = kbd->sc_ledstate;
-		update_leds(kbd->id);
+		leds = oleds = 0;//kbd->sc_ledstate; /* TODO: fix so can retrieve ledstate from wskbd */
 		for (i = 0; i < nitems(evdev_led_codes); i++) {
 			if (evdev_led_codes[i] == code) {
 				if (value)
@@ -359,10 +357,10 @@ evdev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t co
 		}
 	} else if (type == EV_REP && code == REP_DELAY) {
 		delay[0] = value;
-		delay[1] = rdat->delN;
+		delay[1] = kbd->delN;
 		evdev_wskbd_ioctl(evdev, kbd, WSKBDIO_SETKEYREPEAT, (caddr_t)delay);
 	}  else if (type == EV_REP && code == REP_PERIOD) {
-		delay[0] = rdat->del1;
+		delay[0] = kbd->del1;
 		delay[1] = value;
 		evdev_wskbd_ioctl(evdev, kbd, WSKBDIO_SETKEYREPEAT, (caddr_t)delay);
 	}
