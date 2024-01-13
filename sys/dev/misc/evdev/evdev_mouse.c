@@ -97,7 +97,7 @@ evdev_mouse_attach(parent, self, aux)
 	msc->sc_accessops = ap->accessops;
 	msc->sc_accesscookie = ap->accesscookie;
 
-	evdev_attach_subr(sc, WSMOUSEDEVCF_MUX);
+	evdev_attach_subr(sc, &evmouse_srcops, WSMOUSEDEVCF_MUX);
 }
 
 int
