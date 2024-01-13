@@ -60,7 +60,7 @@ CFATTACH_DECL(evdev_kbd, &evdev_cd, &evdev_kbd_cops, sizeof(struct evdev_kbd_sof
 int evdev_kbd_mux_open(struct wsevsrc *, struct wseventvar *);
 int evdev_kbd_mux_close(struct wsevsrc *);
 
-struct wssrcops evmouse_srcops = {
+struct wssrcops evkbd_srcops = {
 		.type = WSMUX_EVDEV,
 		.dopen = evdev_kbd_mux_open,
 		.dclose = evdev_kbd_mux_close,
