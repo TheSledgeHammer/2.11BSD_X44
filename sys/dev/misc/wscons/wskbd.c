@@ -509,7 +509,7 @@ wskbd_evdev_init(sc)
 	/* register as evdev provider */
 	wskbd_evdev = evdev_alloc();
 	evdev_set_name(wskbd_evdev, "wskbd evdev");
-	snprintf(phys_loc, NAMELEN, KEYBOARD_NAME, unit);
+	//snprintf(phys_loc, NAMELEN, KEYBOARD_NAME, unit);
 	evdev_set_phys(wskbd_evdev, phys_loc);
 	evdev_set_id(wskbd_evdev, BUS_VIRTUAL, 0, 0, 0);
 	evdev_set_methods(wskbd_evdev, sc, &wskbd_evdev_methods);
@@ -1666,6 +1666,9 @@ wskbd_translate(id, type, value)
 	keysym_t ksym, res, *group;
 	struct wscons_keymap kpbuf, *kp;
 	int iscommand = 0;
+#ifdef EVDEV_SUPPORT
+	struct evdev_softc *evsc = sc->sc_evsc;
+#endif
 
 	if (type == WSCONS_EVENT_ALL_KEYS_UP) {
 		id->t_modifiers &= ~(MOD_SHIFT_L | MOD_SHIFT_R | MOD_CONTROL_L
@@ -1786,8 +1789,7 @@ wskbd_translate(id, type, value)
 	case KS_GROUP_Ascii:
 		/* right place ??? */
 #ifdef EVDEV_SUPPORT
-		struct evdev_softc *evsc = sc->sc_evsc;
-		keysym_t scancode = wskbd_ksym_scanode(ksym);
+		keysym_t scancode = wskbd_ksym_scancode(ksym);
 			
 		if ((evdev_rcpt_mask & EVDEV_RCPT_WSKBD) && evsc->sc_evdev != NULL) {
 			res = evdev_scancode2key(&evsc->sc_evdev_state, scancode);
