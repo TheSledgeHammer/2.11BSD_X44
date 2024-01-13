@@ -76,7 +76,7 @@
 #include "pty.h"
 #include "video.h"
 
-//#include "evdev.h"
+#include "evdev.h"
 #include "wsdisplay.h"
 #include "wskbd.h"
 #include "wsmouse.h"
@@ -260,5 +260,5 @@ wscons_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NWSMUX, NULL, &wsmux_cdevsw, NULL);			/* Wscons Multiplexor */
 	DEVSWIO_CONFIG_INIT(devsw, NWSFONT, NULL, &wsfont_cdevsw, NULL);		/* Wsfont */
 
-	//DEVSWIO_CONFIG_INIT(devsw, NEVDEV, NULL, &evdev_cdevsw, NULL);			/* Evdev */
+	DEVSWIO_CONFIG_INIT(devsw, NEVDEV, NULL, &evdev_cdevsw, NULL);		    	/* Evdev Keyboard & Mouse*/
 }
