@@ -97,7 +97,7 @@ evdev_kbd_attach(parent, self, aux)
 	ksc->sc_accessops = ap->accessops;
 	ksc->sc_accesscookie = ap->accesscookie;
 
-	evdev_attach_subr(sc, WSKBDDEVCF_MUX);
+	evdev_attach_subr(sc, &evkbd_srcops, WSKBDDEVCF_MUX);
 }
 
 int
