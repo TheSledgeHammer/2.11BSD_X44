@@ -310,7 +310,7 @@ evdev_wsmouse_init(sc)
 		evdev_free(wsmouse_evdev);
 		wsmouse_evdev = NULL;
 	} else {
-		sc->sc_evdev = wskbd_evdev;
+		sc->sc_evdev = wsmouse_evdev;
 	}
 	sc->sc_evdev_state = 0;
 }
