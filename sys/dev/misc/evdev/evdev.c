@@ -1015,6 +1015,81 @@ evdev_client_filter_queue(client, type)
 	wsevent_get(ev, tail);
 }
 
+static void
+evdev_client_gettime(client, tv)
+    struct evdev_client *client;
+    struct timeval *tv;
+{
+
+	switch (client->ec_clock_id) {
+	case EV_CLOCK_BOOTTIME:
+		/*
+		 * XXX: FreeBSD does not support true POSIX monotonic clock.
+		 *      So aliase EV_CLOCK_BOOTTIME to EV_CLOCK_MONOTONIC.
+		 */
+	case EV_CLOCK_MONOTONIC:
+		microuptime(tv);
+		break;
+
+	case EV_CLOCK_REALTIME:
+	default:
+		microtime(tv);
+		break;
+	}
+}
+
+void
+evdev_client_push(client, type, code, value)
+    struct evdev_client *client;
+    uint16_t type, code;
+    int32_t value;
+{
+    struct timeval time;
+    struct wseventvar *ev;
+    size_t count, head, tail, ready;
+
+    EVDEV_CLIENT_LOCKQ_ASSERT(client);
+    ev = client->ec_base.me_evp;
+    head = ev->put;
+	tail = ev->get;
+	ready = client->ec_buffer_ready;
+	count = client->ec_buffer_size;
+
+    /* If queue is full drop its content and place SYN_DROPPED event */
+	if ((tail + 1) % count == head) {
+		debugf(client, "client %p: buffer overflow", client);
+
+		head = (tail + count - 1) % count;
+		client->ec_buffer[head] = (struct input_event) {
+			.type = EV_SYN,
+			.code = SYN_DROPPED,
+			.value = 0
+		};
+		/*
+		 * XXX: Here is a small race window from now till the end of
+		 *      report. The queue is empty but client has been already
+		 *      notified of data readyness. Can be fixed in two ways:
+		 * 1. Implement bulk insert so queue lock would not be dropped
+		 *    till the SYN_REPORT event.
+		 * 2. Insert SYN_REPORT just now and skip remaining events
+		 */
+		ev->put = head;
+		client->ec_buffer_ready = head;
+	}
+	client->ec_buffer[tail].type = type;
+	client->ec_buffer[tail].code = code;
+	client->ec_buffer[tail].value = value;
+	ev->get = (tail + 1) % count;
+	/* Allow users to read events only after report has been completed */
+	if (type == EV_SYN && code == SYN_REPORT) {
+		evdev_client_gettime(client, &time);
+		for (; ready != ev->get;
+		    ready = (ready + 1) % count)
+			client->ec_buffer[ready].time = time;
+		client->ec_buffer_ready = ev->get;
+	}
+}
+
 const struct cdevsw *
 evdev_method_cdev(evdev)
     struct evdev_dev *evdev;
