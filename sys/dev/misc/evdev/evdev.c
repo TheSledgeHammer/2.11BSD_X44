@@ -177,12 +177,6 @@ evdev_mux_init(wse, wsops, mux_loc)
 #endif
 }
 
-void
-evdev_attach(int num)
-{
-
-}
-
 int
 evdev_activate(self, act)
 	struct device *self;
