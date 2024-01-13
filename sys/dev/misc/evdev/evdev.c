@@ -66,12 +66,13 @@ extern int wsmuxdebug;
 #define	debugf(client, fmt, args...)
 #endif
 
-static int evdev_ioctl_eviocgbit(struct evdev_dev *, int, int, caddr_t, struct proc *);
 int evdev_do_ioctl_sc(struct evdev_dev *, int, caddr_t, int, struct proc *);
 struct wseventvar *evdev_register_wsevent(struct evdev_client *);
 void evdev_unregister_wsevent(struct evdev_client *);
 int evdev_wsevent_inject(struct wseventvar *, struct input_event *, size_t);
 
+static void evdev_mux_init(struct wsevsrc *, struct wssrcops *, int);
+static int evdev_ioctl_eviocgbit(struct evdev_dev *, int, int, caddr_t, struct proc *);
 static void evdev_client_filter_queue(struct evdev_client *, uint16_t);
 
 CFDRIVER_DECL(NULL, evdev, DV_DULL);
@@ -111,8 +112,9 @@ evdev_buffer_size(evdev)
 }
 
 static void
-evdev_init(evdev, mux_loc)
+evdev_init(evdev, wsops, mux_loc)
     struct evdev_dev        *evdev;
+	struct wssrcops *wsops;
 	int mux_loc;
 {
     struct evdev_client     *client;
@@ -137,12 +139,31 @@ evdev_init(evdev, mux_loc)
 	client->ec_buffer_ready = 0;
 
     client->ec_evdev = evdev;
+    evdev_mux_init(&client->ec_base, wsops, mux_loc);
+}
 
+void
+evdev_attach_subr(sc, wsops, mux_loc)
+    struct evdev_softc  *sc;
+    struct wssrcops *wsops;
+	int mux_loc;
+{
+    evdev_init(sc->sc_evdev, wsops, mux_loc);
+}
+
+static void
+evdev_mux_init(wse, wsops, mux_loc)
+    struct wsevsrc  *wse;
+    struct wssrcops *wsops;
+    int mux_loc;
+{
 #if NWSMUX > 0
-	//client->ec_base.me_ops = &evdev_srcops;
-	mux = client->ec_base.me_dv.dv_cfdata->cf_loc[mux_loc];
+	int mux, error;
+
+	wse->me_ops = wsops;
+	mux = wse->me_dv.dv_cfdata->cf_loc[mux_loc];
 	if (mux >= 0) {
-		error = wsmux_attach_sc(wsmux_getmux(mux), &client->ec_base);
+		error = wsmux_attach_sc(wsmux_getmux(mux), wse);
 		if (error) {
 			printf(" attach error=%d", error);
 		} else {
@@ -150,20 +171,10 @@ evdev_init(evdev, mux_loc)
 		}
 	}
 #else
-	if (client->ec_base.me_dv.dv_cfdata->cf_loc[mux_loc] >= 0) {
+	if (wse->me_dv.dv_cfdata->cf_loc[mux_loc] >= 0) {
 		printf(" (mux ignored)");
 	}
 #endif
-	printf("\n");
-    lockinit(&client->ec_buffer_lock, PLOCK, "evclient", 0, LK_CANRECURSE);
-}
-
-void
-evdev_attach_subr(sc, mux_loc)
-    struct evdev_softc  *sc;
-	int mux_loc;
-{
-    evdev_init(sc->sc_evdev, mux_loc);
 }
 
 void
