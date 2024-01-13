@@ -95,7 +95,7 @@ struct wseventvar {
 #define	splwsevent()	spltty()
 
 #define WSEVENT_EMPTYQ(ev)			((ev)->put < (ev)->get)
-#define WSEVENT_CLIENT_QSIZE(ev)	((ev)->put = ((ev)->put + 1) % WSEVENT_QSIZE);
+#define WSEVENT_CLIENT_QSIZE(ev)	((ev)->put = ((ev)->put + 1) % WSEVENT_QSIZE)
 
 void	wsevent_init(struct wseventvar *);
 void	wsevent_fini(struct wseventvar *);
