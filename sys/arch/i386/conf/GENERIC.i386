@@ -256,9 +256,9 @@ wskbd*			at pckbd? console ?
 wsmouse*		at pms? mux 0
 wsmouse*		at wsmousedev?
 
-#evkbd* 		at pckbd? console ?
-#evmouse*		at pms? mux 0
-#evmouse* 		at wsmousedev?
+evdev* 		    at pckbd? console ?
+evdev*		    at pms? mux 0
+evdev* 		    at wsmousedev?
 
 pcppi0			at isa?
 sysbeep0		at pcppi?
@@ -382,8 +382,9 @@ mms0			at isa? port 0x23c irq 5	# Microsoft InPort mouse
 mms1			at isa? port 0x238 irq 5
 wsmouse*		at lms? mux 0
 wsmouse*		at mms? mux 0
-#evmouse*		at lms? mux 0
-#evmouse* 		at mms? mux 0
+
+evdev*	    at lms? mux 0
+evdev*	    at mms? mux 0
 
 # Pseudo-Devices
 
