@@ -28,7 +28,7 @@
 
 #include "opt_evdev.h"
 
-#include "evkbd.h"
+#include "evdev.h"
 #include "wsmux.h"
 
 #include <sys/cdefs.h>
@@ -40,8 +40,10 @@
 
 #include <dev/misc/wscons/wskbdvar.h>
 
-#include <dev/misc/evdev/evdev_private.h>
 #include <dev/misc/evdev/evdev.h>
+#include <dev/misc/evdev/evdev_private.h>
+
+#include "ioconf.h"
 
 struct evdev_kbd_softc {
 	struct evdev_softc 				sc;
