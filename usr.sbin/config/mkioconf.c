@@ -91,7 +91,7 @@ mkioconf(void)
 	v = emithdr(fp);
 	if (v != 0 || emitexterns(fp) || emitloc(fp)
 			|| emitpv(fp) || emitcfdata(fp) || emitroots(fp)
-			|| emitpseudo(fp) /*|| emithints(fp)*/) {
+			|| emitpseudo(fp) || emithints(fp)) {
 		if (v >= 0)
 			(void)fprintf(stderr,
 			    "config: error writing ioconf.c: %s\n",
@@ -409,29 +409,6 @@ emithintcount(FILE *fp, int count)
     return (fprintf(fp, "\nint cfhint_count = %d;\n", count) < 0);
 }
 
-static void
-write_device_resources(FILE *fp, struct devi *i)
-{
-    struct devi **ps;
-	struct nvlist *nv;
-	struct attr *a;
-    char buf[80];
-    int unit, v;
-    const char *lastname = "";
-
-    fprintf(fp, "\t{ \"at\",\tRES_STRING,\t{ (long)\"%s\" }},\n", i->i_name);
-
-    a = i->i_atattr;
-    for (nv = a->a_locs, v = 0; nv != NULL; nv = nv->nv_next, v++) {
-		if (ARRNAME(nv->nv_name, lastname)) {
-            fprintf(fp, "\t{ \"%s\",\tRES_INT,\t{ (int)\"%s\" }},\n", nv->nv_name, i->i_locs[v]);
-		} else {
-           fprintf(fp, "\t{ \"%s\",\tRES_INT,\t{ (int)\"%s\" }},\n", nv->nv_name, i->i_locs[v]);
-		   lastname = nv->nv_name;
-		}
-	}
-}
-
 static const char *
 devstr(struct devi *dp)
 {
@@ -446,7 +423,7 @@ devstr(struct devi *dp)
 }
 
 static void
-write_device_resources1(FILE *fp, struct devi *dp)
+write_device_resources(FILE *fp, struct devi *dp)
 {
 	struct devi **ps;
 	struct nvlist *nv;
@@ -511,22 +488,7 @@ emithints(FILE *fp)
 		return (1);
 	}
 	for (p = packed; (i = *p) != NULL; p++) {
-/*
-        if (i->i_name) {
-            if (i->i_unit >= 0) {
-                  snprintf(buf, sizeof(buf), "%s%d", i->i_name, i->i_unit);
-            } else {
-                  snprintf(buf, sizeof(buf), "%s", i->i_name);
-            }
-            if (fprintf(fp, "\t\"%s\",\n", buf) < 0) {
-                return (1);
-            }
-
-            write_device_resources(fp, i);
-            count++;
-        }
-*/
-        write_device_resources1(fp, i);
+//        write_device_resources(fp, i);
         count++;
 	}
     if (fprintf(fp,"};\n") < 0) {
