@@ -72,7 +72,7 @@ extern int wsmuxdebug;
 #endif
 
 static void evdev_mux_init(struct wsevsrc *, struct wssrcops *, int);
-static int evdev_do_ioctl_sc(struct evdev_dev *, int, caddr_t, int, struct proc *);
+static int evdev_do_ioctl_sc(struct evdev_dev *, u_long, caddr_t, int, struct proc *);
 static int evdev_ioctl_eviocgbit(struct evdev_dev *, int, int, caddr_t, struct proc *);
 static struct wseventvar *evdev_register_wsevent(struct evdev_client *);
 static void evdev_unregister_wsevent(struct evdev_client *);
@@ -143,7 +143,7 @@ evdev_init(evdev, wsops, mux_loc)
 	client->ec_buffer_ready = 0;
 
     client->ec_evdev = evdev;
-    evdev_mux_init(&client->ec_base, wsops, mux_loc);
+    evdev_mux_init(client->ec_base, wsops, mux_loc);
 }
 
 void
@@ -207,14 +207,14 @@ evdev_detach(self, flags)
 
 #if NWSMUX > 0
 	/* Tell parent mux we're leaving. */
-	if (client->ec_base.me_parent != NULL) {
+	if (client->ec_base->me_parent != NULL) {
 		DPRINTF(("evdev_detach:\n"));
-		wsmux_detach_sc(&client->ec_base);
+		wsmux_detach_sc(client->ec_base);
 	}
 #endif
 
 	/* If we're open ... */
-	evar = client->ec_base.me_evp;
+	evar = client->ec_base->me_evp;
 	if (evar != NULL && evar->io != NULL) {
 		s = spltty();
 		if (--sc->sc_refcnt >= 0) {
@@ -232,7 +232,7 @@ evdev_detach(self, flags)
 			/* Wait for processes to go away. */
 			if (tsleep(sc, PZERO, "evddet", hz * 60))
 				printf("evdev_detach: %s didn't detach\n",
-						client->ec_base.me_dv.dv_xname);
+						client->ec_base->me_dv.dv_xname);
 		}
 		splx(s);
 	}
@@ -365,7 +365,7 @@ evdev_read(dev, uio, flags)
 
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
-	evar = client->ec_base.me_evp;
+	evar = client->ec_base->me_evp;
 
 	if (sc->sc_dying) {
 		return (EIO);
@@ -435,7 +435,7 @@ evdev_write(dev, uio, flags)
 
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
-	evar = client->ec_base.me_evp;
+	evar = client->ec_base->me_evp;
 
 	if (evar->revoked || evdev == NULL) {
 		return (ENODEV);
@@ -477,14 +477,14 @@ evdev_poll(dev, events, p)
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
-	if (client->ec_base.me_evp == NULL)
+	if (client->ec_base->me_evp == NULL)
 		return (EINVAL);
 
 	EVDEV_CLIENT_LOCKQ(client);
 	if(!EVDEV_CLIENT_EMPTYQ(client)) {
-		error = wsevent_poll(client->ec_base.me_evp, events & (POLLIN | POLLRDNORM), p);
+		error = wsevent_poll(client->ec_base->me_evp, events & (POLLIN | POLLRDNORM), p);
 	} else {
-		error = wsevent_poll(client->ec_base.me_evp, events, p);
+		error = wsevent_poll(client->ec_base->me_evp, events, p);
 	}
 	EVDEV_CLIENT_UNLOCKQ(client);
 	return (error);
@@ -507,10 +507,10 @@ evdev_kqfilter(dev, kn)
 	}
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
-	if (client->ec_base.me_evp == NULL) {
+	if (client->ec_base->me_evp == NULL) {
 		return (EINVAL);
 	}
-	return (wsevent_kqfilter(client->ec_base.me_evp, kn));
+	return (wsevent_kqfilter(client->ec_base->me_evp, kn));
 }
 
 int
@@ -565,7 +565,7 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 
 	client = evdev->ev_client;
 
-	if (client->ec_base.me_evp->revoked || evdev == NULL) {
+	if (client->ec_base->me_evp->revoked || evdev == NULL) {
 		return (ENODEV);
 	}
 
@@ -575,7 +575,7 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 		return (0);
 
 	case FIONREAD:
-		if (client->ec_base.me_evp == NULL)
+		if (client->ec_base->me_evp == NULL)
 			return (EINVAL);
 		EVDEV_CLIENT_LOCKQ(client);
 		*(int*) data = EVDEV_CLIENT_SIZEQ(client) * sizeof(struct input_event);
@@ -583,23 +583,23 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 		return (0);
 
 	case FIOASYNC:
-		if (client->ec_base.me_evp == NULL)
+		if (client->ec_base->me_evp == NULL)
 			return (EINVAL);
-		client->ec_base.me_evp->async = *(int*) data != 0;
+		client->ec_base->me_evp->async = *(int*) data != 0;
 		return (0);
 
 	case FIOSETOWN:
-		if (client->ec_base.me_evp == NULL)
+		if (client->ec_base->me_evp == NULL)
 			return (EINVAL);
-		if (-*(int*) data != client->ec_base.me_evp->io->p_pgid
-				&& *(int*) data != client->ec_base.me_evp->io->p_pid)
+		if (-*(int*) data != client->ec_base->me_evp->io->p_pgid
+				&& *(int*) data != client->ec_base->me_evp->io->p_pid)
 			return (EPERM);
 		return (0);
 
 	case TIOCSPGRP:
-		if (client->ec_base.me_evp == NULL)
+		if (client->ec_base->me_evp == NULL)
 			return (EINVAL);
-		if (*(int*) data != client->ec_base.me_evp->io->p_pgid)
+		if (*(int*) data != client->ec_base->me_evp->io->p_pgid)
 			return (EPERM);
 		return (0);
 	}
@@ -704,7 +704,7 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 			return (EINVAL);
 
 		EVDEV_LOCK(evdev);
-		if ((client->ec_evdev != NULL) && !client->ec_base.me_evp->revoked) {
+		if ((client->ec_evdev != NULL) && !client->ec_base->me_evp->revoked) {
 			evdev_dispose_client(evdev, client);
 			evdev_revoke_client(client);
 		}
@@ -881,13 +881,13 @@ evdev_register_wsevent(client)
 {
 	struct wseventvar *evar;
 
-	if (client->ec_base.me_evp != NULL) {
+	if (client->ec_base->me_evp != NULL) {
 		return (NULL);
 	}
 
-	evar = &client->ec_base.me_evar;
+	evar = &client->ec_base->me_evar;
 	wsevent_init(evar);
-	client->ec_base.me_evp = evar;
+	client->ec_base->me_evp = evar;
 
 	return (evar);
 }
@@ -898,8 +898,8 @@ evdev_unregister_wsevent(client)
 {
 	struct wseventvar *evar;
 
-	evar = client->ec_base.me_evp;
-	client->ec_base.me_evp = NULL;
+	evar = client->ec_base->me_evp;
+	client->ec_base->me_evp = NULL;
 	wsevent_fini(evar);
 }
 
@@ -950,9 +950,9 @@ evdev_revoke_client(client)
 {
 	struct wseventvar *evar;
 
-	evar = &client->ec_base.me_evar;
+	evar = &client->ec_base->me_evar;
 	evar->revoked = TRUE;
-	client->ec_base.me_evp = evar;
+	client->ec_base->me_evp = evar;
 }
 
 void
@@ -961,7 +961,7 @@ evdev_notify_event(client)
 {
 	struct wseventvar *evar;
 
-	evar = &client->ec_base.me_evar;
+	evar = &client->ec_base->me_evar;
 
 	if (evar->blocked) {
 		evar->blocked = FALSE;
@@ -977,7 +977,7 @@ evdev_notify_event(client)
 	if (evar->async) {
 		psignal(evar->io, SIGIO);
 	}
-	client->ec_base.me_evp = evar;
+	client->ec_base->me_evp = evar;
 }
 
 static void
@@ -990,7 +990,7 @@ evdev_client_filter_queue(client, type)
 	size_t head, tail, count, i;
 	bool_t last_was_syn = FALSE;
 
-	ev = client->ec_base.me_evp;
+	ev = client->ec_base->me_evp;
 
 	i = head = ev->put;
 	tail = ev->get;
@@ -1064,7 +1064,7 @@ evdev_client_push(client, type, code, value)
     size_t count, head, tail, ready;
 
     EVDEV_CLIENT_LOCKQ_ASSERT(client);
-    ev = client->ec_base.me_evp;
+    ev = client->ec_base->me_evp;
     head = ev->put;
 	tail = ev->get;
 	ready = client->ec_buffer_ready;

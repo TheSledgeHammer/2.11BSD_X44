@@ -37,6 +37,8 @@
 #include <sys/lock.h>
 #include <sys/systm.h>
 
+#include <dev/misc/wscons/wsconsio.h>
+
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
 #include <dev/misc/evdev/input.h>

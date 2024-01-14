@@ -7,8 +7,7 @@ include 	"dev/misc/pccons/files.pccons"
 include 	"dev/misc/wscons/files.wscons"
 include 	"dev/misc/wsfont/files.wsfont"
 
-# NOT FULLY SUPPORTED (should not be included for compiliation)
-#include 	"dev/misc/evdev/files.evdev"
+include 	"dev/misc/evdev/files.evdev"
 
 file		dev/misc/cnmagic/cnmagic.c
 file		dev/misc/kobj/kobj.c

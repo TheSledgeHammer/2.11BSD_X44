@@ -53,6 +53,7 @@ enum evdev_sparse_result {
 };
 
 int evdev_rcpt_mask = EVDEV_RCPT_WSMOUSE | EVDEV_RCPT_WSKBD;
+int evdev_sysmouse_t_axis = 0;
 
 static void evdev_start_repeat(struct evdev_dev *, uint16_t);
 static void evdev_stop_repeat(struct evdev_dev *);

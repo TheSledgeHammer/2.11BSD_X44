@@ -1670,6 +1670,7 @@ wskbd_translate(id, type, value)
 	int iscommand = 0;
 #ifdef EVDEV_SUPPORT
 	struct evdev_softc *evsc = sc->sc_evsc;
+    keysym_t scancode;
 #endif
 
 	if (type == WSCONS_EVENT_ALL_KEYS_UP) {
@@ -1791,7 +1792,7 @@ wskbd_translate(id, type, value)
 	case KS_GROUP_Ascii:
 		/* right place ??? */
 #ifdef EVDEV_SUPPORT
-		keysym_t scancode = wskbd_ksym_scancode(ksym);
+		scancode = wskbd_ksym_scancode(ksym);
 			
 		if ((evdev_rcpt_mask & EVDEV_RCPT_WSKBD) && evsc->sc_evdev != NULL) {
 			res = evdev_scancode2key(&evsc->sc_evdev_state, scancode);

@@ -165,9 +165,10 @@ struct evdev_dev {
 		EVDEV_UNLOCK(evdev);						\
 } while (0)
 
+struct wsevsrc;
 struct evdev_client {
 	struct evdev_dev 			*ec_evdev;			/* evdev pointer */
-	struct wsevsrc				ec_base;			/* input event to wscons event */
+	struct wsevsrc				*ec_base;			/* input event to wscons event */
 
 	struct lock					ec_buffer_lock;
 	size_t						ec_buffer_size;
@@ -181,10 +182,10 @@ struct evdev_client {
 #define	EVDEV_CLIENT_LOCKQ(client)			lockmgr(&(client)->ec_buffer_lock, LK_EXCLUSIVE|LK_CANRECURSE, NULL, 0)
 #define	EVDEV_CLIENT_UNLOCKQ(client)		lockmgr(&(client)->ec_buffer_lock, LK_RELEASE, NULL, 0)
 #define	EVDEV_CLIENT_LOCKQ_ASSERT(client) 	KASSERT(lockstatus(&(client)->ec_buffer_lock) != 0)
-#define	EVDEV_CLIENT_EMPTYQ(client) 		WSEVENT_EMPTYQ((client)->ec_base.me_evp)
+#define	EVDEV_CLIENT_EMPTYQ(client) 		WSEVENT_EMPTYQ((client)->ec_base->me_evp)
 #define	EVDEV_CLIENT_SIZEQ(client)          \
     (((client)->ec_buffer_ready + (client)->ec_buffer_size - \
-    WSEVENT_CLIENT_QSIZE((client)->ec_base.me_evp)) % (client)->ec_buffer_size)        
+    WSEVENT_CLIENT_QSIZE((client)->ec_base->me_evp)) % (client)->ec_buffer_size)        
 
 /* softc */
 struct evdev_softc {
@@ -194,6 +195,8 @@ struct evdev_softc {
 	int							sc_refcnt;
 	u_char						sc_dying;
 };
+
+struct wssrcops;
 
 /* Common functions */
 void	evdev_attach_subr(struct evdev_softc *, struct wssrcops *, int);

@@ -41,6 +41,7 @@
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wsmuxvar.h>
 #include <dev/misc/wscons/wskbdvar.h>
+#include <dev/misc/wscons/wsconsio.h>
 
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
@@ -130,7 +131,7 @@ evdev_kbd_mux_open(me, evp)
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
-	if (client->ec_base.me_evp != NULL) {
+	if (client->ec_base->me_evp != NULL) {
 		return (EBUSY);
 	}
 
@@ -151,7 +152,7 @@ evdev_kbd_mux_close(me)
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
-	client->ec_base.me_evp = NULL;
+	client->ec_base->me_evp = NULL;
 	(void)evdev_kbd_enable(ksc, 0);
 
 	return (0);
@@ -175,9 +176,9 @@ evdev_kbd_add_mux(unit, muxsc)
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
-	if (client->ec_base.me_parent != NULL || client->ec_base.me_evp != NULL) {
+	if (client->ec_base->me_parent != NULL || client->ec_base->me_evp != NULL) {
 		return (EBUSY);
 	}
-	return (wsmux_attach_sc(muxsc, &client->ec_base));
+	return (wsmux_attach_sc(muxsc, client->ec_base));
 }
 #endif

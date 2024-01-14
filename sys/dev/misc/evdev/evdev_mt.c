@@ -32,6 +32,8 @@
 #include <sys/lock.h>
 #include <sys/systm.h>
 
+#include <dev/misc/wscons/wseventvar.h>
+
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
 #include <dev/misc/evdev/input.h>
