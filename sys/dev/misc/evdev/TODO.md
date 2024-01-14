@@ -8,7 +8,7 @@ FreeBSD Evdev API's:
 
 TODO:
 - Check wsmouse & wskbd evdev support is correct
-- add: wsmux device for evdev kbd and mouse
+- fix config param opt_evdev, causes conflicts in wscons when enabled.
 	
 
 		

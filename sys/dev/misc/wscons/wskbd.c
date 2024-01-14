@@ -228,7 +228,7 @@ static void	wskbd_attach(struct device *, struct device *, void *);
 static int  wskbd_detach(struct device *, int);
 static int  wskbd_activate(struct device *, enum devact);
 #ifdef EVDEV_SUPPORT
-void		wskbd_evdev_init(struct evdev_softc *);
+void		wskbd_evdev_init(struct evdev_softc *, int);
 #endif
 static int  wskbd_displayioctl(struct device *, u_long, caddr_t, int, struct proc *);
 #if NWSDISPLAY > 0
@@ -436,10 +436,6 @@ wskbd_attach(parent, self, aux)
 		printf(" (mux ignored)");
 #endif
 
-#ifdef EVDEV_SUPPORT
-	wskbd_evdev_init(sc->sc_evsc);
-#endif
-
 	if (ap->console) {
 		sc->id = &wskbd_console_data;
 	} else {
@@ -496,12 +492,17 @@ wskbd_attach(parent, self, aux)
 			    sc->sc_base.me_dv.dv_xname, error);
 	}
 #endif
+
+#ifdef EVDEV_SUPPORT
+	wskbd_evdev_init(sc->sc_evsc, sc->sc_ledstate);
+#endif
 }
 
 #ifdef EVDEV_SUPPORT
 void
-wskbd_evdev_init(sc)
+wskbd_evdev_init(sc, ledstate)
 	struct evdev_softc *sc;
+	int ledstate;
 {
 	struct evdev_dev 	*wskbd_evdev;
 	char		 		phys_loc[NAMELEN];
@@ -512,6 +513,7 @@ wskbd_evdev_init(sc)
 	//snprintf(phys_loc, NAMELEN, KEYBOARD_NAME, unit);
 	evdev_set_phys(wskbd_evdev, phys_loc);
 	evdev_set_id(wskbd_evdev, BUS_VIRTUAL, 0, 0, 0);
+	evdev_set_ledstate(wskbd_evdev, ledstate);
 	evdev_set_methods(wskbd_evdev, sc, &wskbd_evdev_methods);
 	evdev_support_event(wskbd_evdev, EV_SYN);
 	evdev_support_event(wskbd_evdev, EV_KEY);

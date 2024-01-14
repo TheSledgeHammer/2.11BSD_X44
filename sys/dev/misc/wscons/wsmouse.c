@@ -263,10 +263,6 @@ wsmouse_attach(parent, self, aux)
 	callout_init(&sc->sc_repeat_callout);
 	callout_setfunc(&sc->sc_repeat_callout, wsmouse_repeat, sc);
 
-#ifdef EVDEV_SUPPORT
-	evdev_wsmouse_init(sc->sc_evsc);
-#endif
-
 #if NWSMUX > 0
 	sc->sc_base.me_ops = &wsmouse_srcops;
 	mux = sc->sc_base.me_dv.dv_cfdata->cf_loc[WSMOUSEDEVCF_MUX];
@@ -282,6 +278,10 @@ wsmouse_attach(parent, self, aux)
 		printf(" (mux ignored)");
 #endif
 	printf("\n");
+
+#ifdef EVDEV_SUPPORT
+	evdev_wsmouse_init(sc->sc_evsc);
+#endif
 }
 
 #ifdef EVDEV_SUPPORT

@@ -32,17 +32,12 @@
 
 #include <sys/lock.h>
 #include <sys/malloc.h>
-#include <sys/lock.h>
 #include <sys/queue.h>
-#include <sys/sysctl.h>
 
-#include <dev/misc/wscons/wseventvar.h>
-#include <dev/misc/wscons/wsmuxvar.h>
-#include <dev/misc/wscons/wsconsio.h>
+#include "freebsd-bitstring.h"
 
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/input.h>
-#include <dev/misc/evdev/freebsd-bitstring.h>
 
 #define	NAMELEN		80
 
@@ -170,7 +165,6 @@ struct evdev_dev {
 		EVDEV_UNLOCK(evdev);						\
 } while (0)
 
-
 struct evdev_client {
 	struct evdev_dev 			*ec_evdev;			/* evdev pointer */
 	struct wsevsrc				ec_base;			/* input event to wscons event */
@@ -207,6 +201,9 @@ int		evdev_doopen(struct evdev_dev *);
 int		evdev_doclose(struct evdev_dev *);
 int     evdev_do_ioctl(struct device *, u_long, caddr_t, int, struct proc *);
 
+struct evdev_client *evdev_client_alloc(struct evdev_dev *, size_t);
+void	evdev_client_free(struct evdev_client *);
+
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 int 	evdev_inject_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
@@ -216,8 +213,6 @@ void 	evdev_set_absinfo(struct evdev_dev *, uint16_t, struct input_absinfo *);
 void 	evdev_restore_after_kdb(struct evdev_dev *);
 
 /* Client interface: */
-struct evdev_client *evdev_client_alloc(struct evdev_dev *, size_t);
-void	evdev_client_free(struct evdev_client *);
 int 	evdev_register_client(struct evdev_dev *, struct evdev_client *);
 void 	evdev_dispose_client(struct evdev_dev *, struct evdev_client *);
 int 	evdev_grab_client(struct evdev_dev *, struct evdev_client *);

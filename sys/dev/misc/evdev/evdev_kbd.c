@@ -38,6 +38,8 @@
 #include <sys/device.h>
 #include <sys/proc.h>
 
+#include <dev/misc/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsmuxvar.h>
 #include <dev/misc/wscons/wskbdvar.h>
 
 #include <dev/misc/evdev/evdev.h>
@@ -89,15 +91,19 @@ evdev_kbd_attach(parent, self, aux)
 	struct evdev_kbd_softc 			*ksc;
 	struct evdev_softc				*sc;
 	struct wskbddev_attach_args 	*ap;
+	struct wssrcops *wsops;
 
 	ksc = (struct evdev_kbd_softc *)self;
-	sc = &ksc->sc;
 	ap = (struct wskbddev_attach_args *)aux;
-
+	sc = &ksc->sc;
 	ksc->sc_accessops = ap->accessops;
 	ksc->sc_accesscookie = ap->accesscookie;
-
-	evdev_attach_subr(sc, &evkbd_srcops, WSKBDDEVCF_MUX);
+#if NWSMUX > 0
+	wsops = &evkbd_srcops;
+#else
+	wsops = NULL;
+#endif
+	evdev_attach_subr(sc, wsops, WSKBDDEVCF_MUX);
 }
 
 int

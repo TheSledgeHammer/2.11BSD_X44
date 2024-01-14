@@ -36,10 +36,6 @@ struct evdev_dev;
 struct lock;
 struct wskbd_keyrepeat_data;
 
-typedef const struct cdevsw  evdev_cdev_t;
-typedef void (evdev_event_t)(struct evdev_dev *, uint16_t, uint16_t, int32_t);
-typedef void (evdev_keycode_t)(struct evdev_dev *, struct input_keymap_entry *);
-
 /*
  * Keyboard and mouse events recipient mask.
  * evdev_rcpt_mask variable should be respected by keyboard and mouse drivers
@@ -88,11 +84,15 @@ extern int evdev_sysmouse_t_axis;
 #define	EVDEV_FLAG_MAX			0x1F
 #define	EVDEV_FLAG_CNT			(EVDEV_FLAG_MAX + 1)
 
+typedef const struct cdevsw  evdev_cdev_t;
+typedef void (evdev_event_t)(struct evdev_dev *, uint16_t, uint16_t, int32_t);
+typedef void (evdev_keycode_t)(struct evdev_dev *, struct input_keymap_entry *);
+
 struct evdev_methods {
-	evdev_cdev_t				*ev_cdev;
-	evdev_event_t				*ev_event;
-	evdev_keycode_t				*ev_set_keycode;
-	evdev_keycode_t 			*ev_get_keycode;
+	evdev_cdev_t	*ev_cdev;
+	evdev_event_t	*ev_event;
+	evdev_keycode_t	*ev_set_keycode;
+	evdev_keycode_t *ev_get_keycode;
 };
 
 const struct cdevsw *evdev_method_cdev(struct evdev_dev *);
@@ -103,7 +103,6 @@ void evdev_method_get_keycode(struct evdev_dev *, struct input_keymap_entry *);
 /* Input device interface: */
 struct evdev_dev *evdev_alloc(void);
 void evdev_free(struct evdev_dev *);
-
 void evdev_set_name(struct evdev_dev *, const char *);
 void evdev_set_id(struct evdev_dev *, uint16_t, uint16_t, uint16_t, uint16_t);
 void evdev_set_phys(struct evdev_dev *, const char *);
@@ -141,6 +140,7 @@ void evdev_push_mouse_btn(struct evdev_dev *, int);
 void evdev_push_leds(struct evdev_dev *, int);
 void evdev_push_repeats(struct evdev_dev *, struct wskbd_keyrepeat_data *);
 void evdev_kbd_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
+void evdev_set_ledstate(struct evdev_dev *, int);
 
 /* Event reporting shortcuts: */
 static __inline int

@@ -38,6 +38,8 @@
 #include <sys/device.h>
 #include <sys/proc.h>
 
+#include <dev/misc/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsmuxvar.h>
 #include <dev/misc/wscons/wsmousevar.h>
 
 #include <dev/misc/evdev/evdev.h>
@@ -89,15 +91,19 @@ evdev_mouse_attach(parent, self, aux)
 	struct evdev_mouse_softc 		*msc;
 	struct evdev_softc				*sc;
 	struct wsmousedev_attach_args 	*ap;
+	struct wssrcops *wsops;
 
 	msc = (struct evdev_mouse_softc *)self;
-	sc = &msc->sc;
 	ap = (struct wsmousedev_attach_args *)aux;
-
+	sc = &msc->sc;
 	msc->sc_accessops = ap->accessops;
 	msc->sc_accesscookie = ap->accesscookie;
-
-	evdev_attach_subr(sc, &evmouse_srcops, WSMOUSEDEVCF_MUX);
+#if NWSMUX > 0
+	wsops = &evmouse_srcops;
+#else
+	wsops = NULL;
+#endif
+	evdev_attach_subr(sc, wsops, WSMOUSEDEVCF_MUX);
 }
 
 int

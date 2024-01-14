@@ -46,10 +46,15 @@
 #include <sys/stddef.h>
 #include <sys/uio.h>
 
+#include <dev/misc/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsmuxvar.h>
+#include <dev/misc/wscons/wsconsio.h>
+
+#include "freebsd-bitstring.h"
+
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
 #include <dev/misc/evdev/input.h>
-#include <dev/misc/evdev/freebsd-bitstring.h>
 
 #if defined(WSMUX_DEBUG) && NWSMUX > 0
 #define DPRINTF(x)		if (wsmuxdebug) printf x
@@ -66,13 +71,12 @@ extern int wsmuxdebug;
 #define	debugf(client, fmt, args...)
 #endif
 
-int evdev_do_ioctl_sc(struct evdev_dev *, int, caddr_t, int, struct proc *);
-struct wseventvar *evdev_register_wsevent(struct evdev_client *);
-void evdev_unregister_wsevent(struct evdev_client *);
-int evdev_wsevent_inject(struct wseventvar *, struct input_event *, size_t);
-
 static void evdev_mux_init(struct wsevsrc *, struct wssrcops *, int);
+static int evdev_do_ioctl_sc(struct evdev_dev *, int, caddr_t, int, struct proc *);
 static int evdev_ioctl_eviocgbit(struct evdev_dev *, int, int, caddr_t, struct proc *);
+static struct wseventvar *evdev_register_wsevent(struct evdev_client *);
+static void evdev_unregister_wsevent(struct evdev_client *);
+static int evdev_wsevent_inject(struct wseventvar *, struct input_event *, size_t);
 static void evdev_client_filter_queue(struct evdev_client *, uint16_t);
 
 CFDRIVER_DECL(NULL, evdev, DV_DULL);
@@ -465,7 +469,7 @@ evdev_poll(dev, events, p)
 	int unit, error;
 
 	unit = minor(dev);
-	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+	sc = (struct evdev_softc *)evdev_cd.cd_devs[unit];
 
 	if (sc == NULL) {
 		return (ENXIO);
@@ -497,14 +501,15 @@ evdev_kqfilter(dev, kn)
 	int unit, error;
 
 	unit = minor(dev);
-	sc = (struct evdev_softc *) evdev_cd.cd_devs[unit];
+	sc = (struct evdev_softc *)evdev_cd.cd_devs[unit];
 	if (sc == NULL) {
 		return (ENXIO);
 	}
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
-	if (client->ec_base.me_evp == NULL)
+	if (client->ec_base.me_evp == NULL) {
 		return (EINVAL);
+	}
 	return (wsevent_kqfilter(client->ec_base.me_evp, kn));
 }
 
@@ -516,7 +521,10 @@ evdev_ioctl(dev, cmd, data, flag, p)
 	int flag;
 	struct proc *p;
 {
-	return (evdev_do_ioctl(evdev_cd.cd_devs[minor(dev)], cmd, data, flag, p));
+	struct device *dv;
+
+	dv = (struct device *)evdev_cd.cd_devs[minor(dev)];
+	return (evdev_do_ioctl(dv, cmd, data, flag, p));
 }
 
 int
@@ -535,15 +543,16 @@ evdev_do_ioctl(dv, cmd, data, fflag, p)
 	evdev = (struct evdev_dev *)sc->sc_evdev;
 	sc->sc_refcnt++;
 	error = evdev_do_ioctl_sc(evdev, cmd, data, fflag, p);
-	if (--sc->sc_refcnt < 0)
+	if (--sc->sc_refcnt < 0) {
 		wakeup(sc);
+	}
 	return (error);
 }
 
-int
+static int
 evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 	struct evdev_dev *evdev;
-	int cmd;
+	u_long cmd;
 	caddr_t data;
 	int fflag;
 	struct proc *p;
@@ -619,8 +628,9 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 		return (0);
 
 	case EVIOCSREP:
-		if (!evdev_event_supported(evdev, EV_REP))
+		if (!evdev_event_supported(evdev, EV_REP)) {
 			return (EOPNOTSUPP);
+		}
 
 		evdev_inject_event(evdev, EV_REP, REP_DELAY, ((int*) data)[0]);
 		evdev_inject_event(evdev, EV_REP, REP_PERIOD, ((int*) data)[1]);
@@ -631,12 +641,12 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 		return (0);
 
 	case EVIOCGKEYCODE_V2:
-		if (evdev->ev_methods == NULL ||
-				    evdev->ev_methods->ev_get_keycode == NULL)
-					return (EOPNOTSUPP);
+		if (evdev->ev_methods == NULL || evdev->ev_methods->ev_get_keycode == NULL) {
+			return (EOPNOTSUPP);
+		}
 
 		ke = (struct input_keymap_entry*) data;
-		evdev->ev_methods->ev_get_keycode(evdev, ke);
+		evdev_method_get_keycode(evdev, ke);
 		return (0);
 
 	case EVIOCSKEYCODE:
@@ -644,12 +654,12 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 		return (0);
 
 	case EVIOCSKEYCODE_V2:
-		if (evdev->ev_methods == NULL
-				|| evdev->ev_methods->ev_set_keycode == NULL)
+		if (evdev->ev_methods == NULL || evdev->ev_methods->ev_set_keycode == NULL) {
 			return (EOPNOTSUPP);
+		}
 
 		ke = (struct input_keymap_entry*) data;
-		evdev->ev_methods->ev_set_keycode(evdev, ke);
+		evdev_method_set_keycode(evdev, ke);
 		return (0);
 
 	case EVIOCGABS(0) ... EVIOCGABS(ABS_MAX):
@@ -865,7 +875,7 @@ evdev_ioctl_eviocgbit(evdev, type, len, data, p)
 	return (0);
 }
 
-struct wseventvar *
+static struct wseventvar *
 evdev_register_wsevent(client)
 	struct evdev_client *client;
 {
@@ -882,7 +892,7 @@ evdev_register_wsevent(client)
 	return (evar);
 }
 
-void
+static void
 evdev_unregister_wsevent(client)
 	struct evdev_client *client;
 {
@@ -893,7 +903,7 @@ evdev_unregister_wsevent(client)
 	wsevent_fini(evar);
 }
 
-int
+static int
 evdev_wsevent_inject(ev, events, nevents)
 	struct wseventvar *ev;
 	struct input_event *events;
@@ -1088,9 +1098,9 @@ evdev_client_push(client, type, code, value)
 	/* Allow users to read events only after report has been completed */
 	if (type == EV_SYN && code == SYN_REPORT) {
 		evdev_client_gettime(client, &time);
-		for (; ready != ev->get;
-		    ready = (ready + 1) % count)
+		for (; ready != ev->get; ready = (ready + 1) % count) {
 			client->ec_buffer[ready].time = time;
+		}
 		client->ec_buffer_ready = ev->get;
 	}
 }

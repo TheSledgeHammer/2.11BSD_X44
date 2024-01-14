@@ -141,9 +141,12 @@ const struct cdevsw wsmux_cdevsw = {
 };
 
 struct wssrcops wsmux_srcops = {
-	WSMUX_MUX,
-	wsmux_mux_open, wsmux_mux_close, wsmux_do_ioctl, wsmux_do_displayioctl,
-	wsmux_evsrc_set_display
+		.type = WSMUX_MUX,
+		.dopen = wsmux_mux_open,
+		.dclose = wsmux_mux_close,
+		.dioctl = wsmux_do_ioctl,
+		.ddispioctl = wsmux_do_displayioctl,
+		.dsetdisplay = wsmux_evsrc_set_display
 };
 
 /* From upper level */

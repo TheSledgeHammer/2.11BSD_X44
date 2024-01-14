@@ -336,6 +336,12 @@ evdev_wskbd_ioctl(evdev, kbd, cmd, data)
 }
 
 void
+evdev_set_ledstate(struct evdev_dev *evdev, int ledstate)
+{
+	evdev->ev_ledstate = ledstate;
+}
+
+void
 evdev_kbd_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
 	struct wskbd_keyrepeat_data *kbd = (struct wskbd_keyrepeat_data *)evdev->ev_softc;
@@ -343,7 +349,7 @@ evdev_kbd_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t v
 	size_t i;
 
 	if (type == EV_LED) {
-		leds = oleds = 0;//kbd->sc_ledstate; /* TODO: fix so can retrieve ledstate from wskbd */
+		leds = oleds = evdev->ev_ledstate;
 		for (i = 0; i < nitems(evdev_led_codes); i++) {
 			if (evdev_led_codes[i] == code) {
 				if (value)
