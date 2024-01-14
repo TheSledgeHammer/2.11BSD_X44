@@ -488,7 +488,7 @@ emithints(FILE *fp)
 		return (1);
 	}
 	for (p = packed; (i = *p) != NULL; p++) {
-//        write_device_resources(fp, i);
+        write_device_resources(fp, i);
         count++;
 	}
     if (fprintf(fp,"};\n") < 0) {
