@@ -29,6 +29,7 @@
 
 #include <sys/cdefs.h>
 
+#include "evdev.h"
 #include "wsmux.h"
 
 #include <sys/param.h>
