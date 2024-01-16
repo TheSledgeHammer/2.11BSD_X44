@@ -4,13 +4,13 @@
 .include <bsd.own.mk>
 
 SUBDIR=	ac accton arp authpf 						\
-		boot0cfg btxld 								\
+		bad144 boot0cfg btxld 						\
 		catman chown chroot config cron 			\
 		dev_mkdb 									\
 		etcupdate 									\
 		kvm_mkdb 									\
 		link                                        \
-        makefs mdconfig mtree moused                \
+        makefs mdconfig mrouted mtree moused        \
 		pcictl pwd_mkdb 							\
         rmt                                         \
 		unlink  									\
