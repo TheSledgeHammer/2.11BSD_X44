@@ -56,9 +56,11 @@ struct evdev_mouse_softc {
 
 int evdev_mouse_match(struct device *, struct cfdata *, void *);
 void evdev_mouse_attach(struct device *, struct device *, void *);
+int evdev_mouse_activate(struct device *, enum devact);
+int evdev_mouse_detach(struct device *, int);
 
 extern struct cfdriver evdev_cd;
-CFOPS_DECL(evdev_mouse, evdev_mouse_match, evdev_mouse_attach, NULL, NULL);
+CFOPS_DECL(evdev_mouse, evdev_mouse_match, evdev_mouse_attach, evdev_mouse_detach, evdev_mouse_activate);
 CFATTACH_DECL(evdev_mouse, &evdev_cd, &evdev_mouse_cops, sizeof(struct evdev_mouse_softc));
 
 #if NWSMUX > 0
@@ -105,6 +107,32 @@ evdev_mouse_attach(parent, self, aux)
 	wsops = NULL;
 #endif
 	evdev_attach_subr(sc, wsops, WSMOUSEDEVCF_MUX);
+}
+
+int
+evdev_mouse_activate(self, act)
+	struct device *self;
+	enum devact act;
+{
+	struct evdev_mouse_softc *msc;
+	struct evdev_softc		*sc;
+
+	msc = (struct evdev_mouse_softc *)self;
+	sc = &msc->sc;
+	return (evdev_activate(sc, act));
+}
+
+int
+evdev_mouse_detach(self, flags)
+	struct device *self;
+	int flags;
+{
+	struct evdev_mouse_softc *msc;
+	struct evdev_softc		*sc;
+
+	msc = (struct evdev_mouse_softc *)self;
+	sc = &msc->sc;
+	return (evdev_detach(sc, flags));
 }
 
 int

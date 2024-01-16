@@ -56,9 +56,11 @@ struct evdev_kbd_softc {
 
 int evdev_kbd_match(struct device *, struct cfdata *, void *);
 void evdev_kbd_attach(struct device *, struct device *, void *);
+int evdev_kbd_activate(struct device *, enum devact);
+int evdev_kbd_detach(struct device *, int);
 
 extern struct cfdriver evdev_cd;
-CFOPS_DECL(evdev_kbd, evdev_kbd_match, evdev_kbd_attach, NULL, NULL);
+CFOPS_DECL(evdev_kbd, evdev_kbd_match, evdev_kbd_attach, evdev_kbd_detach, evdev_kbd_activate);
 CFATTACH_DECL(evdev_kbd, &evdev_cd, &evdev_kbd_cops, sizeof(struct evdev_kbd_softc));
 
 #if NWSMUX > 0
@@ -89,9 +91,9 @@ evdev_kbd_attach(parent, self, aux)
 	struct device *parent, *self;
 	void *aux;
 {
-	struct evdev_kbd_softc 			*ksc;
-	struct evdev_softc				*sc;
-	struct wskbddev_attach_args 	*ap;
+	struct evdev_kbd_softc 		*ksc;
+	struct evdev_softc			*sc;
+	struct wskbddev_attach_args *ap;
 	struct wssrcops *wsops;
 
 	ksc = (struct evdev_kbd_softc *)self;
@@ -104,7 +106,34 @@ evdev_kbd_attach(parent, self, aux)
 #else
 	wsops = NULL;
 #endif
+
 	evdev_attach_subr(sc, wsops, WSKBDDEVCF_MUX);
+}
+
+int
+evdev_kbd_activate(self, act)
+	struct device *self;
+	enum devact act;
+{
+	struct evdev_kbd_softc *ksc;
+	struct evdev_softc		*sc;
+
+	ksc = (struct evdev_kbd_softc *)self;
+	sc = &ksc->sc;
+	return (evdev_activate(sc, act));
+}
+
+int
+evdev_kbd_detach(self, flags)
+	struct device *self;
+	int flags;
+{
+	struct evdev_kbd_softc *ksc;
+	struct evdev_softc		*sc;
+
+	ksc = (struct evdev_kbd_softc *)self;
+	sc = &ksc->sc;
+	return (evdev_detach(sc, flags));
 }
 
 int

@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef notyet
+
 #include <sys/cdefs.h>
 #ifndef lint
 __RCSID("$NetBSD: ldd_aout.c,v 1.2.2.4 2009/02/25 03:09:31 snj Exp $");
@@ -47,19 +47,24 @@ __RCSID("$NetBSD: ldd_aout.c,v 1.2.2.4 2009/02/25 03:09:31 snj Exp $");
 #include <string.h>
 #include <unistd.h>
 
-typedef unsigned int netbsd32_u_long;
+/*
+ * Header prepended to each a.out file.
+ * only manipulate the a_midmag field via the
+ * N_SETMAGIC/N_GET{MAGIC,MID,FLAG} macros below.
+ */
+typedef unsigned int twobsd32_u_long;
 struct twobsd_exec {
-	netbsd32_u_long a_midmag;       /* htonl(flags<<26 | mid<<16 | magic) */
-	netbsd32_u_long a_text;         /* text segment size */
-	netbsd32_u_long a_data;         /* initialized data size */
-	netbsd32_u_long a_bss;          /* uninitialized data size */
-	netbsd32_u_long a_syms;         /* symbol table size */
-	netbsd32_u_long a_entry;        /* entry point */
-	netbsd32_u_long a_trsize;       /* text relocation size */
-	netbsd32_u_long a_drsize;       /* data relocation size */
+	twobsd32_u_long a_midmag;       /* htonl(flags<<26 | mid<<16 | magic) */
+	twobsd32_u_long a_text;         /* text segment size */
+	twobsd32_u_long a_data;         /* initialized data size */
+	twobsd32_u_long a_bss;          /* uninitialized data size */
+	twobsd32_u_long a_syms;         /* symbol table size */
+	twobsd32_u_long a_entry;        /* entry point */
+	twobsd32_u_long a_trsize;       /* text relocation size */
+	twobsd32_u_long a_drsize;       /* data relocation size */
 
-	netbsd32_u_long	a_max_ovl;		/* maximum overlay size */
-	netbsd32_u_long	a_ov_siz[NOVL];	/* overlay sizes */
+	twobsd32_u_long	a_max_ovl;		/* maximum overlay size */
+	twobsd32_u_long	a_ov_siz[NOVL];	/* overlay sizes */
 };
 
 int aout_ldd(int, char *, const char *, const char *);
@@ -117,4 +122,3 @@ aout_ldd(int fd, char *file, const char *fmt1, const char *fmt2)
 	}
 	return rval;
 }
-#endif

@@ -294,7 +294,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 			/dev/null ${DESTDIR}${file}; \
 	else true; fi
 .endfor
-.for subdir in . defaults mtree namedb rc.d root ssh
+.for subdir in . defaults mtree namedb rc.d root skel ssh
 	${MAKEDIRTARGET} ${subdir} configinstall
 .endfor
 .if (${MKPF} != "no")

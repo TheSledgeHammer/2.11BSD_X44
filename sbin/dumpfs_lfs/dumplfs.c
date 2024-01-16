@@ -59,16 +59,16 @@ static char sccsid[] = "@(#)dumplfs.c	8.5 (Berkeley) 5/24/95";
 #include <unistd.h>
 #include "extern.h"
 
-static void	addseg __P((char *));
-static void	dump_cleaner_info __P((struct lfs *, void *));
-static void	dump_dinode __P((struct dinode *));
-static void	dump_ifile __P((int, struct lfs *, int));
-static int	dump_ipage_ifile __P((int, IFILE *, int));
-static int	dump_ipage_segusage __P((struct lfs *, int, IFILE *, int));
-static void	dump_segment __P((int, int, daddr_t, struct lfs *, int));
-static int	dump_sum __P((int, struct lfs *, SEGSUM *, int, daddr_t));
-static void	dump_super __P((struct lfs *));
-static void	usage __P((void));
+static void	addseg(char *);
+static void	dump_cleaner_info(struct lfs *, void *);
+static void	dump_dinode(struct dinode *);
+static void	dump_ifile(int, struct lfs *, int);
+static int	dump_ipage_ifile(int, IFILE *, int);
+static int	dump_ipage_segusage(struct lfs *, int, IFILE *, int);
+static void	dump_segment(int, int, daddr_t, struct lfs *, int);
+static int	dump_sum(int, struct lfs *, SEGSUM *, int, daddr_t);
+static void	dump_super(struct lfs *);
+static void	usage(void);
 
 typedef struct seglist SEGLIST;
 struct seglist {

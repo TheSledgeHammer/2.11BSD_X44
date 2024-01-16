@@ -6,14 +6,22 @@
 #  Makefile for -ms macros
 #
 
-SRCS=	README end.awk endnote s.acc s.cov s.eqn s.ref s.tbl s.ths s.toc
+FILES=  README endnote s.acc s.cov s.eqn s.ref s.tbl s.ths s.toc
+FILESDIR=${BINDIR}/ms
 
-all:	${SRCS}
+endnotes:
+	< /dev/null ${TOOL_AWK} -f end.awk > endnotes
 
-install:${SRCS}
-	-mkdir -p /usr/share/ms
-	-chmod a+r /usr/share/ms
-	install -c -m 444 ${SRCS} ${DESTDIR}/usr/share/ms
-	chmod a+x ${DESTDIR}/usr/share/ms/endnote
+.include <bsd.prog.mk>
 
-clean:
+#SRCS=	README end.awk endnote s.acc s.cov s.eqn s.ref s.tbl s.ths s.toc
+
+#all:	${SRCS}
+
+#install:${SRCS}
+#	-mkdir -p /usr/share/ms
+#	-chmod a+r /usr/share/ms
+#	install -c -m 444 ${SRCS} ${DESTDIR}/usr/share/ms
+#	chmod a+x ${DESTDIR}/usr/share/ms/endnote
+
+#clean:

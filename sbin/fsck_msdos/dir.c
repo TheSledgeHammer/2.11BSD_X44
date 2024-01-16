@@ -93,20 +93,20 @@ __RCSID("$NetBSD: dir.c,v 1.16 2003/07/13 08:18:25 itojun Exp $");
 
 
 /* dir.c */
-static struct dosDirEntry *newDosDirEntry __P((void));
-static void freeDosDirEntry __P((struct dosDirEntry *));
-static struct dirTodoNode *newDirTodo __P((void));
-static void freeDirTodo __P((struct dirTodoNode *));
-static char *fullpath __P((struct dosDirEntry *));
-static u_char calcShortSum __P((u_char *));
-static int delete __P((int, struct bootblock *, struct fatEntry *, cl_t, int,
-    cl_t, int, int));
-static int removede __P((int, struct bootblock *, struct fatEntry *, u_char *,
-    u_char *, cl_t, cl_t, cl_t, char *, int));
-static int checksize __P((struct bootblock *, struct fatEntry *, u_char *,
-    struct dosDirEntry *));
-static int readDosDirSection __P((int, struct bootblock *, struct fatEntry *,
-    struct dosDirEntry *));
+static struct dosDirEntry *newDosDirEntry(void);
+static void freeDosDirEntry(struct dosDirEntry *);
+static struct dirTodoNode *newDirTodo(void);
+static void freeDirTodo(struct dirTodoNode *);
+static char *fullpath(struct dosDirEntry *);
+static u_char calcShortSum(u_char *);
+static int delete(int, struct bootblock *, struct fatEntry *, cl_t, int,
+    cl_t, int, int);
+static int removede(int, struct bootblock *, struct fatEntry *, u_char *,
+    u_char *, cl_t, cl_t, cl_t, char *, int);
+static int checksize(struct bootblock *, struct fatEntry *, u_char *,
+    struct dosDirEntry *);
+static int readDosDirSection(int, struct bootblock *, struct fatEntry *,
+    struct dosDirEntry *);
 
 /*
  * Manage free dosDirEntry structures.

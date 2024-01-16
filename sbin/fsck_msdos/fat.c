@@ -47,10 +47,10 @@ __RCSID("$NetBSD: fat.c,v 1.15 2003/02/28 05:50:33 matt Exp $");
 #include "ext.h"
 #include "fsutil.h"
 
-static int checkclnum __P((struct bootblock *, int, cl_t, cl_t *));
-static int clustdiffer __P((cl_t, cl_t *, cl_t *, int));
-static int tryclear __P((struct bootblock *, struct fatEntry *, cl_t, cl_t *));
-static int _readfat __P((int, struct bootblock *, int, u_char **));
+static int checkclnum(struct bootblock *, int, cl_t, cl_t *);
+static int clustdiffer(cl_t, cl_t *, cl_t *, int);
+static int tryclear(struct bootblock *, struct fatEntry *, cl_t, cl_t *);
+static int _readfat(int, struct bootblock *, int, u_char **);
 
 /*
  * Check a cluster number for valid value

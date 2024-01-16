@@ -60,8 +60,8 @@ struct mntopt mopts[] = {
 	{ NULL }
 };
 
-void	usage __P((void));
-void	invoke_cleaner __P((char *));
+void	usage(void);
+void	invoke_cleaner(char *);
 
 int short_rds, cleaner_debug;
 

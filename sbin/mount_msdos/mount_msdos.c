@@ -66,9 +66,9 @@ static const struct mntopt mopts[] = {
 	{ NULL }
 };
 
-int	main __P((int, char *[]));
-int	mount_msdos __P((int argc, char **argv));
-static void	usage __P((void)) __attribute__((__noreturn__));
+int	main(int, char *[]);
+int	mount_msdos(int argc, char **argv);
+static void	usage(void)) __attribute__((__noreturn__);
 
 #ifndef MOUNT_NOMAIN
 int

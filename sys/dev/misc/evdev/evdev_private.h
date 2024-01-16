@@ -200,6 +200,8 @@ struct wssrcops;
 
 /* Common functions */
 void	evdev_attach_subr(struct evdev_softc *, struct wssrcops *, int);
+int		evdev_activate(struct evdev_softc *, enum devact);
+int		evdev_detach(struct evdev_softc *, int);
 int		evdev_doopen(struct evdev_dev *);
 int		evdev_doclose(struct evdev_dev *);
 int     evdev_do_ioctl(struct device *, u_long, caddr_t, int, struct proc *);

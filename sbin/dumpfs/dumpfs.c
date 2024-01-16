@@ -70,10 +70,10 @@ union {
 
 long	dev_bsize = 1;
 
-int	dumpfs __P((char *));
-int	dumpcg __P((char *, int, int));
-void	pbits __P((void *, int));
-void	usage __P((void));
+int	dumpfs(char *);
+int	dumpcg(char *, int, int);
+void	pbits(void *, int);
+void	usage(void);
 
 int
 main(argc, argv)

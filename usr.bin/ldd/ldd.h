@@ -30,6 +30,8 @@
 
 int aout_ldd(int, char *, const char *, const char *);
 int elf32_ldd(int, char *, const char *, const char *);
+void print_needed(Obj_Entry *, const char *, const char *);
+void fmtprint(const char *, Obj_Entry *, const char *, const char *);
 
 #ifdef _LP64
 #define LDD_ELF64

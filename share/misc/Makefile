@@ -7,7 +7,7 @@
 #
 
 FILES= 	eign lib.b Mail.help Mail.tildehelp units gprof.callg gprof.flat \
- 	vlpmacs mkproto.data
+ 		vlpmacs mkproto.data
 FILESDIR=${BINDIR}/misc
 
 .include <bsd.prog.mk>

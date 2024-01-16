@@ -54,8 +54,8 @@ int alwaysyes;		/* assume "yes" for all questions */
 int preen;		/* set when preening */
 int rdonly;		/* device is opened read only (supersedes above) */
 
-static void usage __P((void));
-int main __P((int, char **));
+static void usage(void);
+int main(int, char **);
 
 static void
 usage()

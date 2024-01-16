@@ -118,7 +118,7 @@ evdev_buffer_size(evdev)
 
 static void
 evdev_init(evdev, wsops, mux_loc)
-    struct evdev_dev        *evdev;
+    struct evdev_dev *evdev;
 	struct wssrcops *wsops;
 	int mux_loc;
 {
@@ -183,12 +183,10 @@ evdev_mux_init(wse, wsops, mux_loc)
 }
 
 int
-evdev_activate(self, act)
-	struct device *self;
+evdev_activate(sc, act)
+	struct evdev_softc *sc;
 	enum devact act;
 {
-	struct evdev_softc *sc = (struct evdev_softc *)self;
-
 	if (act == DVACT_DEACTIVATE) {
 		sc->sc_dying = 1;
 	}
@@ -196,16 +194,17 @@ evdev_activate(self, act)
 }
 
 int
-evdev_detach(self, flags)
-	struct device *self;
+evdev_detach(sc, flags)
+	struct evdev_softc *sc;
 	int flags;
 {
-	struct evdev_softc *sc = (struct evdev_softc *)self;
-	struct evdev_dev *evdev = sc->sc_evdev;
-	struct evdev_client *client = evdev->ev_client;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
 	struct wseventvar *evar;
 	int maj, mn, s;
 
+	evdev = sc->sc_evdev;
+	client = evdev->ev_client;
 #if NWSMUX > 0
 	/* Tell parent mux we're leaving. */
 	if (client->ec_base->me_parent != NULL) {
@@ -213,9 +212,11 @@ evdev_detach(self, flags)
 		wsmux_detach_sc(client->ec_base);
 	}
 #endif
-
 	/* If we're open ... */
 	evar = client->ec_base->me_evp;
+
+	/* locate the major number */
+	maj = cdevsw_lookup_major(&evdev_cdevsw);
 	if (evar != NULL && evar->io != NULL) {
 		s = spltty();
 		if (--sc->sc_refcnt >= 0) {
@@ -237,12 +238,8 @@ evdev_detach(self, flags)
 		}
 		splx(s);
 	}
-
-	/* locate the major number */
-	maj = cdevsw_lookup_major(&evdev_cdevsw);
-
 	/* Nuke the vnodes for any open instances (calls close). */
-	mn = self->dv_unit;
+	mn = sc->sc_device->dv_unit;
 	vdevgone(maj, mn, mn, VCHR);
 	return (0);
 }

@@ -65,10 +65,10 @@ static const struct mntopt mopts[] = {
 	{ NULL }
 };
 
-int	main __P((int, char *[]));
-int	mount_union __P((int argc, char **argv));
-static int	subdir __P((const char *, const char *));
-static void	usage __P((void));
+int	main(int, char *[]);
+int	mount_union(int argc, char **argv);
+static int	subdir(const char *, const char *);
+static void	usage(void);
 
 #ifndef MOUNT_NOMAIN
 int

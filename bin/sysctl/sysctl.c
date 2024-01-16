@@ -69,7 +69,9 @@ struct ctlname netname[] = CTL_NET_NAMES;
 struct ctlname hwname[] = CTL_HW_NAMES;
 struct ctlname username[] = CTL_USER_NAMES;
 struct ctlname debugname[CTL_DEBUG_MAXID];
+#ifdef CTL_MACHDEP_NAMES
 struct ctlname machdepname[] = CTL_MACHDEP_NAMES;
+#endif
 char names[BUFSIZ];
 
 struct list {
@@ -81,7 +83,7 @@ struct list secondlevel[] = {
 	{ 0, 0 },					/* CTL_UNSPEC */
 	{ kernname, KERN_MAXID },	/* CTL_KERN */
 	{ vmname, VM_MAXID },		/* CTL_VM */
-	{ 0, 0 },					/* CTL_FS */
+	{ 0, 0 },					/* CTL_VFS */
 #ifdef	CTL_NET_NAMES
 	{ netname, NET_MAXID },		/* CTL_NET */
 #else
@@ -89,7 +91,11 @@ struct list secondlevel[] = {
 #endif
 	{ 0, CTL_DEBUG_MAXID },		/* CTL_DEBUG */
 	{ hwname, HW_MAXID },		/* CTL_HW */
+#ifdef CTL_MACHDEP_NAMES
 	{ machdepname, CPU_MAXID },	/* CTL_MACHDEP */
+#else
+	{ 0, 0 },					/* CTL_MACHDEP */
+#endif
 	{ username, USER_MAXID },	/* CTL_USER_NAMES */
 };
 

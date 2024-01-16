@@ -3,9 +3,10 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= apply ar at 															\
-		basename bzip2 bzip2recover											\
-		c11 c89 c99 cap_mkdb cksum cmp crontab crunch ctags 			\
+SUBDIR= apply ar asa at 											\
+		banner basename bzip2 bzip2recover							\
+		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
+		compress crontab crunch ctags 								\
 		db 															\
 		elf2aout elf2ecoff 											\
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
@@ -18,14 +19,22 @@ SUBDIR= apply ar at 															\
         mktemp msgc 	                                            \
         netstat                                                     \
 		rpcgen rpcinfo												\
-		script sed shar sortinfo stat strfile 									\
-		time touch tsort 										\
+		script sed shar sortinfo stat strfile 						\
+		time touch tsort 											\
 		unstr uudecode uuencode 									\
-		vmstat vgrind 														\
+		vmstat vgrind 												\
 		write 														\
 		xinstall xlint xstr
 												
 SUBDIR+= ../contrib/zlib/pigz/bin/pigz
+
+.if (${MKGROFF} == "no")
+SUBDIR+= soelim
+.endif
+
+.if (${MKMAKEMANDB} == "no")
+SUBDIR+= apropos whatis
+.endif
 
 .if (${MKBSDGREP} != "no")
 SUBDIR+= grep
@@ -40,5 +49,7 @@ SUBDIR+= gzip
 .if (${MKHESIOD} != "no")
 SUBDIR+= hesinfo
 .endif
+
+SUBDIR+= bdes
 
 .include <bsd.subdir.mk>

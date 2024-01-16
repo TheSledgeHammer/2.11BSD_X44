@@ -10,6 +10,11 @@ MAN=	ldd.1
 
 .PATH: ${.CURDIR}/..
 
+.if ${OBJECT_FMTS:Maout} != ""
+LIB_AOUTDIR!=  cd ${.CURDIR}/../aout && ${PRINTOBJDIR}
+EXTRA_LIBS+=   ${LIB_AOUTDIR}/libldd_aout.a
+.endif
+
 .if ${OBJECT_FMTS:Melf32} != ""
 LIB_ELF32DIR!=	cd ${.CURDIR}/../elf32 && ${PRINTOBJDIR}
 EXTRA_LIBS+=	${LIB_ELF32DIR}/libldd_elf32.a
