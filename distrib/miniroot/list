@@ -47,7 +47,7 @@ PROG	usr/bin/sed
 PROG	usr/bin/sort
 PROG	usr/bin/tip
 
-PROG	usr/sbin/chown usr/bin/chgrp
+PROG	usr/sbin/chown usr/sbin/chgrp
 PROG	usr/sbin/chroot
 
 ARGVLN	sh -sh
