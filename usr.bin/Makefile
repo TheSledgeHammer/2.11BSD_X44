@@ -11,20 +11,20 @@ SUBDIR= apply ar asa at 											\
 		elf2aout elf2ecoff 											\
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
 		hexdump 													\
-        indent                                                      \
+                                                                    \
 		join 														\
 		kdump ktrace												\
 		ldd locate lorder 											\
 		m4 make man menuc mkdep mkerrlst mkfifo mklocale mkstr      \
         mktemp msgc 	                                            \
-        netstat                                                     \
+        netgroup netstat                                            \
 		rpcgen rpcinfo												\
-		script sed shar sortinfo stat strfile 						\
-		time touch tsort 											\
+		script sed shar sort sortinfo stat strfile 						\
+		time tip touch tsort 											\
 		unstr uudecode uuencode 									\
 		vmstat vgrind 												\
 		write 														\
-		xinstall xlint xstr
+		xargs xinstall xlint xstr
 												
 SUBDIR+= ../contrib/zlib/pigz/bin/pigz
 
