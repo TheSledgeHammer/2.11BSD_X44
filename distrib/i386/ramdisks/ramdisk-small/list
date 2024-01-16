@@ -9,7 +9,7 @@ PROG	bin/rcmd
 PROG	bin/sync
 
 PROG	sbin/fdisk
-PROG	sbin/mbrlabel
+#PROG	sbin/mbrlabel
 PROG	sbin/restore	sbin/rrestore
 PROG	sbin/scsictl
 

@@ -16,6 +16,6 @@
 
 FLOPPYBASE=	boot-big
 FLOPPYSIZE=	7200
-FLOPPYKERNEL=	netbsd-INSTALL_FLOPPY.gz
+FLOPPYKERNEL=	twobsd-INSTALL_FLOPPY.gz
 
 .include "${.CURDIR}/../common/Makefile.bootfloppy"

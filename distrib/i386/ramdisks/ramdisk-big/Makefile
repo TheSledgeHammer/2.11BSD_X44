@@ -3,8 +3,7 @@
 BOOTMODEL=	big
 IMAGE=		ramdisk-${BOOTMODEL}.fs
 IMAGESIZE=	5000k
-IMAGEDEPENDS= 	disktab.preinstall \
-		${NETBSDSRCDIR}/usr.sbin/dhcp/clientscript/dhclient-script
+IMAGEDEPENDS= 	disktab.preinstall
 USE_SYSINST=	yes
 SMALLPROG_INET6=1
 

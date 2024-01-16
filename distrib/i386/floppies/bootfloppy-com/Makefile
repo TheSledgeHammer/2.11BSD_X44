@@ -2,7 +2,7 @@
 
 FLOPPYBASE=	boot-com
 FLOPPYMAX=	3
-FLOPPYKERNEL=	netbsd-INSTALL_FLOPPY.gz
+FLOPPYKERNEL=	twobsd-INSTALL_FLOPPY.gz
 FLOPPYBOOTOPTIONS=	-o console=com0
 
 .include "${.CURDIR}/../common/Makefile.bootfloppy"
