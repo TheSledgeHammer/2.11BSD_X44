@@ -135,17 +135,17 @@ crc32_ext(uint32_t crc, const uint8_t *buf, size_t len)
 uint32_t
 crc32(const void *buf, size_t len)
 {
-    const uint8_t *p;
-    uint32_t crc, ocrc;
+   const uint8_t *p;
+   uint32_t crc, ocrc;
 
-   	p = buf;
-    ocrc = REV((u4)0U);
-	crc = ~ocrc;
+   p = buf;
+   ocrc = REV((u4)0U);
+   crc = ~ocrc;
 
-	while (len--) {
-        crc = crc_table[0][(crc ^ *p++) & 0xff] ^ (crc >> 8);
+    while (len--) {
+        crc = crc_table[4][(crc >> 24) ^ *p++] ^ (crc << 8);
     }
 
-    return (crc ^ ~0U);
+    return (REV(crc ^ ~0U));
 }
 #endif
