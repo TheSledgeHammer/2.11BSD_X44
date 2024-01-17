@@ -293,6 +293,9 @@ u_int32_t 	arc4random(void);
 u_int64_t	arc4random64(void);
 void	 	arc4randbytes(void *, size_t);
 
+uint32_t    crc32(const void *, size_t);
+uint32_t    crc32_ext(uint32_t, const uint8_t *, size_t);
+
 /* Hash Functions */
 uint32_t 	prospector32(uint32_t);
 uint32_t 	lowbias32(uint32_t);
