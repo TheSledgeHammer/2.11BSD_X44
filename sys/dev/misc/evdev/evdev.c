@@ -239,7 +239,7 @@ evdev_detach(sc, flags)
 		splx(s);
 	}
 	/* Nuke the vnodes for any open instances (calls close). */
-	mn = sc->sc_device->dv_unit;
+	mn = sc->sc_device.dv_unit;
 	vdevgone(maj, mn, mn, VCHR);
 	return (0);
 }
