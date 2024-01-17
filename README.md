@@ -1,6 +1,6 @@
 # 2.11BSD_X44 (TBA)
 
-2.11BSD is unique in BSD's history, still receiving patches to it's codebase up until the present. As well as being the only BSD to receive patches that were backported from numerous versions of 4BSD.
+2.11BSD is unique in BSD's history, still receiving patches to it's codebase long after it's release. As well as being the only BSD to receive patches that were backported from numerous versions of 4BSD.
 
 2.11BSD_X44 is 2.11BSD that continues with that tradition. Replacing the 4BSD (4.1BSD to 4.3BSD) styled vmspace and inodes with 4.4BSD's vmspace and vnodes. While retaining 2.11BSD's kernel and user space. 2.11BSD_X44 adopts the 4.4BSD & later BSD's (i.e. FreeBSD, NetBSD, OpenBSD & DragonflyBSD) approach of having a clearly defined architecture dependent code and architecture independent code, allowing for easier portability.
 
