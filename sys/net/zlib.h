@@ -1144,8 +1144,9 @@ ZEXTERN uLong ZEXPORT adler32 __P((uLong, const Bytef *, uInt));
      }
      if (adler != original_adler) error();
 */
-
+#ifdef STANDALONE
 ZEXTERN uLong ZEXPORT crc32   __P((uLong, const Bytef *, uInt));
+#endif
 /*
      Update a running crc with the bytes buf[0..len-1] and return the updated
    crc. If buf is NULL, this function returns the required initial value
