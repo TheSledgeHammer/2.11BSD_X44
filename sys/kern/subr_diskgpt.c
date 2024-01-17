@@ -85,7 +85,6 @@ gptinit(disk, dev, lp, sspp)
 	 * The GPT starts in sector 1.
 	 */
 	i = 0;
-	dname = devtoname(dev);
 	bp1 = geteblk((int)lp->d_secsize);
 	bp1->b_dev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
 	bp1->b_blkno = lp->d_secsize;
@@ -171,7 +170,7 @@ gptinit(disk, dev, lp, sspp)
 		sent.ent_lba_end = le64toh(ent->ent_lba_end);
 		sent.ent_attr = le64toh(ent->ent_attr);
 
-		for (j = 0; j < NELEM(ent->ent_name); ++j)
+		for (j = 0; j < nitems(ent->ent_name); ++j)
 			sent.ent_name[j] = le16toh(ent->ent_name[j]);
 
 		/*
