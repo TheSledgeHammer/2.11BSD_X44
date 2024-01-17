@@ -228,13 +228,6 @@ extract_currdev(void)
 	    currdev.d_kind.biosdisk.partition = 0;
 		biosdev = -1;
 	} else {
-		/*
-	    currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
-		currdev.d_kind.biosdisk.slice = (B_ADAPTOR(initial_bootdev) << 4) + B_CONTROLLER(initial_bootdev) - 1;
-	    currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
-		biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
-		major = B_TYPE(initial_bootdev);
-		*/
 		set_diskformat(currdev, major, biosdev);
 
 		/*
@@ -267,43 +260,16 @@ extract_currdev(void)
 void
 set_diskformat(struct i386_devdesc currdev, int major, int biosdev)
 {
-	if (dvar_istrue(dvar_get("bsd_slices")) && !dvar_istrue(dvar_get("bsd_traditional"))) {
-		bsd_slices(currdev, major, biosdev);
-		printf("setting disks to bsd slices format \n");
-		goto success;
-	}
-	if (dvar_istrue(dvar_get("bsd_traditional")) && !dvar_istrue(dvar_get("bsd_slices"))) {
-		bsd_traditional(currdev, major, biosdev);
-		printf("setting disks to bsd traditional format \n");
-		goto success;
-	}
-	if (dvar_istrue(dvar_get("bsd_slices")) && dvar_istrue(dvar_get("bsd_traditional"))) {
-		printf("cannot set disk format to both \n");
-		goto defacto;
-	}
-
-success:
-	printf("disk format set successfully \n");
-
-defacto:
-	printf("disk format set to default (bsd_traditional) \n");
-	bsd_traditional(currdev, major, biosdev);
-}
-
-void
-bsd_slices(struct i386_devdesc currdev, int major, int biosdev)
-{
-	currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
-	currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
-	biosdev = initial_bootinfo->bi_bios_dev;
+	/*
+    currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
+	currdev.d_kind.biosdisk.slice = (B_ADAPTOR(initial_bootdev) << 4) + B_CONTROLLER(initial_bootdev) - 1;
+    currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
+	biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
 	major = B_TYPE(initial_bootdev);
-}
-
-void
-bsd_traditional(struct i386_devdesc currdev, int major, int biosdev)
-{
+	*/
 	currdev.d_kind.biosdisk.adaptor = B_ADAPTOR(initial_bootdev) << 4;
 	currdev.d_kind.biosdisk.controller = B_CONTROLLER(initial_bootdev) - 1;
+	currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
     currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
 	biosdev = initial_bootinfo->bi_bios_dev;
 	major = B_TYPE(initial_bootdev);

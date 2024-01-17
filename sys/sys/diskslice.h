@@ -35,6 +35,7 @@
 #endif
 
 #include <sys/reboot.h>
+#include <sys/uuid.h>
 
 struct diskslice {
 	u_long					ds_offset;				/* starting sector */
@@ -44,6 +45,9 @@ struct diskslice {
 	u_char					ds_openmask;			/* devs open */
 	u_char					ds_wlabel;				/* nonzero if label is writable */
 	u_char					ds_klabel;
+	struct uuid				ds_type_uuid;			/* slice type uuid */
+	struct uuid				ds_stor_uuid;			/* slice storage unique uuid */
+	u_int32_t				ds_reserved;			/* sectors reserved parent overlap */
 };
 
 struct diskslices {
@@ -97,6 +101,7 @@ struct diskslices 	*dsmakeslicestruct(int, struct disklabel *);
 char				*dsname(struct dkdevice *, dev_t, int, int, int, char *);
 int					dsopen(struct dkdevice *, dev_t, int, u_int, struct disklabel *);
 int					dssize(struct dkdevice *, dev_t);
-int					dsinit(struct dkdevice *, dev_t, struct disklabel *, struct diskslices **);
+int					mbrinit(struct dkdevice *, dev_t, struct disklabel *, struct diskslices **);
+int					gptinit(struct dkdevice *, dev_t, struct disklabel *, struct diskslices **);
 #endif /* _KERNEL */
 #endif /* _SYS_DISKSLICE_H_ */

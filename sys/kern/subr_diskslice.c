@@ -102,6 +102,16 @@ makediskslice(dev, unit, slice, part)
 }
 
 int
+dsinit(disk, dev, lp, sspp)
+	struct dkdevice *disk;
+	dev_t	dev;
+	struct disklabel *lp;
+	struct diskslices **sspp;
+{
+	return (mbrinit(disk, dev, lp, sspp));
+}
+
+int
 dscheck(bp, ssp)
 	struct buf *bp;
 	struct diskslices *ssp;

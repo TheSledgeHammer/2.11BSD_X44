@@ -22,6 +22,6 @@ SUBDIR+=	${EXTERNAL_GCC_SUBDIR}
 SUBDIR+=    ${EXTERNAL_GDB_SUBDIR}
 .endif
 
-SUBDIR+= gettext texinfo
+SUBDIR+= gettext diffutils texinfo rcs
 
 .include <bsd.subdir.mk>

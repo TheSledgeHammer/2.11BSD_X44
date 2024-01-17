@@ -168,7 +168,7 @@ check_part(sname, dp, offset, nsectors, ntracks, mbr_offset)
 }
 
 int
-dsinit(disk, dev, lp, sspp)
+mbrinit(disk, dev, lp, sspp)
     struct dkdevice *disk;
 	dev_t	dev;
 	struct disklabel *lp;
@@ -223,6 +223,12 @@ reread_mbr:
 
 	/* Check for "Ontrack Diskmanager". */
 	for (dospart = 0, dp = dp0; dospart < NDOSPART; dospart++, dp++) {
+		if (dospart == 0 && (dp->dp_typ == DOSPTYP_PMBR || dp->dp_typ == DOSPTYP_GPT)) {
+			if (bootverbose)
+				printf("%s: Found GPT in slice #%d\n", sname, dospart + 1);
+			error = gptinit(disk, dev, lp, sspp);
+			goto done;
+		}
 		if (dp->dp_typ == DOSPTYP_ONTRACK) {
 			if (bootverbose)
 				printf("%s: Found \"Ontrack Disk Manager\" on this disk.\n",
@@ -281,6 +287,7 @@ reread_mbr:
 	 * Check for overlaps.
 	 * Check against d_secperunit if the latter is reliable.
 	 */
+	(void)dkoverlapchk(lp, disk->dk_openmask, dev, disk->dk_label, sname);
 	error = 0;
 	for (dospart = 0, dp = dp0; dospart < NDOSPART; dospart++, dp++) {
 		if (dp->dp_scyl == 0 && dp->dp_shd == 0 && dp->dp_ssect == 0
@@ -485,8 +492,11 @@ mbr_setslice(sname, lp, sp, dp, br_offset)
 	sp->ds_offset = offset;
 	sp->ds_size = size;
 	sp->ds_type = dp->dp_typ;
+	bzero(&sp->ds_type_uuid, sizeof(sp->ds_type_uuid));
+	bzero(&sp->ds_stor_uuid, sizeof(sp->ds_type_uuid));
 #if 0
 	lp->d_subtype |= (lp->d_subtype & 3) | dospart | DSTYPE_INDOSPART;
 #endif
+	sp->ds_reserved = 0;
 	return (0);
 }

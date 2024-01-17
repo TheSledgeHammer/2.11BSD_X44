@@ -2,9 +2,9 @@
 
 .include <bsd.own.mk>
 SUBDIR=  	byacc expat fetch file flex gnu \
-		libarchive lua mdocml nawk xz
-#SUBDIR+=	oscompat
+		less libarchive lua mdocml nawk xz
 
+#SUBDIR+=	oscompat
 SUBDIR+=	pkg_install
 
 #.if ${MKINGRES} != "no"
