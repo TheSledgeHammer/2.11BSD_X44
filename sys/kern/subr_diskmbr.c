@@ -287,7 +287,7 @@ reread_mbr:
 	 * Check for overlaps.
 	 * Check against d_secperunit if the latter is reliable.
 	 */
-	(void)dkoverlapchk(lp, disk->dk_openmask, dev, disk->dk_label, sname);
+	//(void)dkoverlapchk(lp, disk->dk_openmask, dev, disk->dk_label, sname);
 	error = 0;
 	for (dospart = 0, dp = dp0; dospart < NDOSPART; dospart++, dp++) {
 		if (dp->dp_scyl == 0 && dp->dp_shd == 0 && dp->dp_ssect == 0
