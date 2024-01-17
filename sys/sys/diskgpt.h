@@ -29,6 +29,8 @@
 #ifndef _SYS_DISKGPT_H_
 #define	_SYS_DISKGPT_H_
 
+#include <sys/uuid.h>
+	
 /*
  * Applications can define GPT_UUID_TYPE if they want the GPT structures
  * to use a particular type definition for UUIDs/GUIDs.  This header uses
@@ -64,7 +66,7 @@ struct gpt_hdr {
 	uint64_t	hdr_lba_alt;
 	uint64_t	hdr_lba_start;
 	uint64_t	hdr_lba_end;
-	gpt_uuid_t	hdr_uuid;
+	struct uuid	hdr_uuid;
 	uint64_t	hdr_lba_table;
 	uint32_t	hdr_entries;
 	uint32_t	hdr_entsz;
@@ -86,8 +88,8 @@ CTASSERT(offsetof(struct gpt_hdr, padding) == 92);
 #endif
 
 struct gpt_ent {
-	gpt_uuid_t	ent_type;
-	gpt_uuid_t	ent_uuid;
+	struct uuid	ent_type;
+	struct uuid	ent_uuid;
 	uint64_t	ent_lba_start;
 	uint64_t	ent_lba_end;
 	uint64_t	ent_attr;
