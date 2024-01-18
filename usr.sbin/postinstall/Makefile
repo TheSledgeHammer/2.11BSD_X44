@@ -9,15 +9,15 @@ FILESDIR=	/usr/sbin
 FILESMODE=	${BINMODE}
 FILESBUILD=	yes
 
-ARCHSUBDIRS	!= ${TOOL_SED} -n '/ARCHDIR_SUBDIR/s/[[:space:]]//gp' \
-	${NETBSDSRCDIR}/compat/archdirs.mk
+#ARCHSUBDIRS	!= ${TOOL_SED} -n '/ARCHDIR_SUBDIR/s/[[:space:]]//gp' \
+#	${NETBSDSRCDIR}/compat/archdirs.mk
 
-.SUFFIXES: .in
-.in:
-	${_MKTARGET_CREATE}
-	@rm -f ${.TARGET}
-	${TOOL_SED} -e "s#@ARCHSUBDIRS@#${ARCHSUBDIRS}#" < ${.ALLSRC} > ${.TARGET}
+#.SUFFIXES: .in
+#.in:
+#	${_MKTARGET_CREATE}
+#	@rm -f ${.TARGET}
+#	${TOOL_SED} -e "s#@ARCHSUBDIRS@#${ARCHSUBDIRS}#" < ${.ALLSRC} > ${.TARGET}
 
-CLEANFILES+= postinstall
+#CLEANFILES+= postinstall
 
 .include <bsd.prog.mk>

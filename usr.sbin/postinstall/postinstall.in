@@ -1630,11 +1630,11 @@ do_mtree()
 		mkdir "${SCRATCHDIR}/obj"
 		${MAKE} -s -C "${SRC_DIR}/etc/mtree" TOOL_AWK="${AWK}" \
 		    MAKEOBJDIR="${SCRATCHDIR}/obj" emit_dist_file > \
-		    "${SCRATCHDIR}/NetBSD.dist"
+		    "${SCRATCHDIR}/TwoBSD.dist"
 		MTREE_DIR="${SCRATCHDIR}"
 		/bin/rm -rf "${SCRATCHDIR}/obj"
 	fi
-	compare_dir "$1" "${MTREE_DIR}" "${DEST_DIR}/etc/mtree" 444 NetBSD.dist
+	compare_dir "$1" "${MTREE_DIR}" "${DEST_DIR}/etc/mtree" 444 TwoBSD.dist
 	failed=$(( ${failed} + $? ))
 
 	return ${failed}
@@ -1688,12 +1688,12 @@ do_pam()
 #	periodic
 #
 
-additem periodic "/etc/{daily,weekly,monthly,security} being up to date"
+additem periodic "/etc/periodic/{daily,weekly,monthly,security} being up to date"
 do_periodic()
 {
 	[ -n "$1" ] || err 3 "USAGE: do_periodic fix|check"
 
-	compare_dir "$1" "${SRC_DIR}/etc" "${DEST_DIR}/etc" 644 \
+	compare_dir "$1" "${SRC_DIR}/etc/periodic" "${DEST_DIR}/etc/periodic" 644 \
 		daily weekly monthly security
 }
 
@@ -1710,7 +1710,7 @@ do_pf()
 	failed=0
 
 	find_file_in_dirlist pf.os "pf.os" \
-	    "${SRC_DIR}/dist/pf/etc" "${SRC_DIR}/etc" \
+	    "${SRC_DIR}/etc" "${SRC_DIR}/etc" \
 	    || return 1
 			# ${dir} is set by find_file_in_dirlist()
 	populate_dir "${op}" true \
