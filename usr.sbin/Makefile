@@ -11,7 +11,7 @@ SUBDIR=	ac accton arp authpf 						\
 		kvm_mkdb 									\
 		link                                        \
         makefs mdconfig mrouted mtree moused        \
-		pcictl postinstall pwd_mkdb 							\
+		pcictl pwd_mkdb 							\
         rmt                                         \
 		unlink  									\
 		vnconfig 									\
