@@ -33,7 +33,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/systm.h>
 #include <sys/kernel.h>
 
-#include <devel/sys/timetc.h>
+#include <sys/timetc.h>
 
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
@@ -41,10 +41,10 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/led/led.h>
 
-#include <machine/bus.h>
-#include <machine/bios.h>
+#include <arch/i386/include/bus.h>
+#include <arch/i386/include/bios.h>
 
-#include <devel/arch/i386/pci/geodescreg.h>
+#include <devel/arch/i386/include/geodescreg.h>
 
 struct geodesc_softc {
 	struct device		sc_dev;

@@ -35,7 +35,7 @@ static const char rcsid[] =
 /* In the makefs case we only want struct disklabel */
 #include <sys/disk/bsd.h>
 #else
-#include <sys/fdcio.h>
+#include <sys/fdio.h>
 #include <sys/disk.h>
 #include <sys/disklabel.h>
 #include <sys/mount.h>
@@ -918,8 +918,7 @@ compute_geometry_from_file(int fd, const char *fname, struct disklabel *lp)
  * Get disk slice, partition, and geometry information.
  */
 static int
-getdiskinfo(int fd, const char *fname, const char *dtype, __unused int oflag,
-	    struct bpb *bpb)
+getdiskinfo(int fd, const char *fname, const char *dtype, int oflag, struct bpb *bpb)
 {
     struct disklabel *lp, dlp;
     off_t hs = 0;
@@ -1098,6 +1097,5 @@ setstr(u_int8_t *dest, const char *src, size_t len)
 static void
 infohandler(int sig __unused)
 {
-
 	got_siginfo = 1;
 }

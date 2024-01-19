@@ -1722,7 +1722,7 @@ int pfil_ifaddr_wrapper(void *, struct mbuf **, struct ifnet *, int);
 #endif
 #if !defined(__OpenBSD__)
 #include <sys/kernel.h> /* mono_time */
-#define	m_copym2	m_copy
+#define	m_copym2					m_copy
 #define	pool_allocator_oldnointr	pool_allocator_nointr
 #endif
 #endif /* _KERNEL */

@@ -123,14 +123,14 @@ struct winentry {
 #define DD_YEAR_SHIFT		9
 
 #ifdef _KERNEL
-void	unix2dostime (struct timespec *tsp, int gmtoff, u_int16_t *ddp, u_int16_t *dtp, u_int8_t *dhp);
-void	dos2unixtime (u_int dd, u_int dt, u_int dh, int gmtoff, struct timespec *tsp);
-int		dos2unixfn (u_char dn[11], u_char *un, int lower);
-int		unix2dosfn (const u_char *un, u_char dn[12], int unlen, u_int gen);
-int		unix2winfn (const u_char *un, int unlen, struct winentry *wep, int cnt, int chksum);
-int		winChkName (const u_char *un, int unlen, struct winentry *wep, int chksum);
-int		win2unixfn (struct winentry *wep, struct dirent *dp, int chksum);
-u_int8_t winChksum (u_int8_t *name);
-int		winSlotCnt (const u_char *un, int unlen);
+void	unix2dostime(struct timespec *tsp, int gmtoff, u_int16_t *ddp, u_int16_t *dtp, u_int8_t *dhp);
+void	dos2unixtime(u_int dd, u_int dt, u_int dh, int gmtoff, struct timespec *tsp);
+int		dos2unixfn(u_char dn[11], u_char *un, int lower);
+int		unix2dosfn(const u_char *un, u_char dn[12], int unlen, u_int gen);
+int		unix2winfn(const u_char *un, int unlen, struct winentry *wep, int cnt, int chksum);
+int		winChkName(const u_char *un, int unlen, struct winentry *wep, int chksum);
+int		win2unixfn(struct winentry *wep, struct dirent *dp, int chksum);
+u_int8_t winChksum(u_int8_t *name);
+int		winSlotCnt(const u_char *un, int unlen);
 #endif	/* _KERNEL */
 #endif	/* !_MSDOSFS_DIRENTRY_H_ */
