@@ -4,10 +4,21 @@
 .include <bsd.own.mk>
 
 CONFIGFILES=	DAEMON DISKS LOGIN NETWORKING SERVERS 		\
+                accounting                                  \
 				bootconf.sh bootparams						\
-				ccd cron fsck ldconfig local 				\
-				makemandb motd mountcritlocal moused root 	\
-				ttys wscons wsmoused
+				ccd cron                                    \
+                dmesg                                       \
+                fsck                                        \
+                identd ipsec                                \
+                ldconfig local 				                \
+				makemandb motd mountcritlocal mountd moused \
+                mrouted                                     \
+                named network                               \
+                pf pflogd ppp                               \
+                root route6d routed rpcbind                 \
+                savecore securelevel swap1 swap2            \
+				timed ttys                                  \
+                wscons wsmoused
 
 FILESDIR=		/etc/rc.d
 FILESMODE=		${BINMODE}
