@@ -13,8 +13,9 @@ SUBDIR=	atactl                                 			\
 		mknod mount mountd		                        \
 		nologin 				                        \
 	    pfctl pflogd ping pppoectl                      \
-        rcorder reboot 			                        \
+        rcorder reboot route routed			            \
 		savecore scsictl shutdown slattach swapctl		\
+        ttyflags                                        \
 		umount					                        \
 		wsconsctl
 
@@ -33,5 +34,8 @@ SUBDIR+= mount_union
 .if (${USE_INET6} != "no")
 SUBDIR+= ping6
 .endif
+
+# IPsec
+SUBDIR+= setkey
 
 .include <bsd.subdir.mk>
