@@ -29,7 +29,6 @@ LIBCURSES?=			/usr.lib/libcurses.a
 LIBDBM?=			/usr.lib/libdbm.a
 LIBEDIT?=			/usr.lib/libedit.a
 LIBFORM?=			/usr.lib/libform.a
-LIBFORTRAN?=		/usr.lib/libfortran
 LIBIPSEC?=		    /usr.lib/libipsec.a
 LIBKVM?=			/usr.lib/libkvm.a
 LIBM?=				/usr.lib/libm.a
@@ -50,7 +49,7 @@ LIBVMF?=			/usr.lib/libvmf.a
 #LIBWRAP?=			/usr.lib/libwrap.a
 LIBY?=				/usr.lib/liby.a
 LIBZ?=				/usr.lib/libz.a
-
+LIBFORTRAN=		/usr.lib/libfortran
 LIBF77?=			${LIBFORTRAN}/libF77.a
 LIBI77?=			${LIBFORTRAN}/libI77.a
 LIBU77?=			${LIBFORTRAN}/libU77.a
