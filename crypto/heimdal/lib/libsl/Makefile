@@ -11,8 +11,8 @@ NOLINT=		# defined
 
 LIB=		sl
 
-LIBDPLIBS+=	edit		${NETBSDSRCDIR}/lib/libedit	\
-		terminfo	${NETBSDSRCDIR}/lib/libterminfo	\
+LIBDPLIBS+=	edit		${NETBSDSRCDIR}/usr.lib/libedit	\
+		terminfo	${NETBSDSRCDIR}/usr.lib/libtermcap	\
 		roken		${HEIMBASE}/lib/libroken
 
 SRCS=		sl.c
