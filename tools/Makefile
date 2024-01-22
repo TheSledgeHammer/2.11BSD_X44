@@ -91,7 +91,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT 																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
 		asn1_compile cksum compile_et db																\
-		file lint1 																\
+		file lint1 slc																\
 		makefs sortinfo 																\
 		.WAIT menuc mklocale mknod msgc 										\
 		.WAIT 																	\
