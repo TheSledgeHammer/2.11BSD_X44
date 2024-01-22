@@ -23,7 +23,7 @@ INCS=		ss.h
 INCSDIR=	/usr/include/krb5
 
 CPPFLAGS+= -I. \
-	 -I${DIST}/heimdal/lib/sl		\
+	 -I${DIST}/heimdal/lib/sl			\
 	 -I${NETBSDSRCDIR}/include/heimdal	\
 	 -I${NETBSDSRCDIR}/lib/libcom_err	\
 	 -I${DIST}/heimdal/lib/com_err		\

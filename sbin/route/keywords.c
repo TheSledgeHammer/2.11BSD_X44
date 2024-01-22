@@ -55,6 +55,12 @@ struct keytab keywords[] = {
 	{"xns", K_XNS},
 	{"xresolve", K_XRESOLVE},
 	{"flushall", K_FLUSHALL},
+	{"noconnected", K_NOCONNECTED},
+	{"noblackhole", K_NOBLACKHOLE},
+	{"noreject", K_NOREJECT},
+	{"mpls", K_MPLS},
+	{"tag", K_TAG},
+	{"proxy", K_PROXY},
 	{0, 0}
 };
 

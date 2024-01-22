@@ -900,11 +900,6 @@ MKSTATICPIE?=	no
 .endif
 
 #
-# bootloader	
-# MKBOOT: to be added to MKVARS.yes once current issues are fixed. see TODO.md 
-#
-
-#
 # MK* options which default to "yes".
 #
 _MKVARS.yes= \
@@ -1035,7 +1030,7 @@ _MKVARS.no= \
 	MKZFS \
 	MKPAM \
     MKKERBEROS \
-	 MKPOSTFIX 
+	MKPOSTFIX 
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
 .endfor
@@ -1098,6 +1093,13 @@ _NEEDS_LIBCXX.x86_64=		yes
 
 .if ${MKLLVM} == "yes" && ${_NEEDS_LIBCXX.${MACHINE_ARCH}:Uno} == "yes"
 MKLIBCXX:=		yes
+.endif
+
+#
+# Disable MKSTRIPSYM if MKDEBUG is enabled.
+#
+.if ${MKDEBUG} != "no"
+MKSTRIPSYM:=	no
 .endif
 
 #

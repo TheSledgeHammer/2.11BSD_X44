@@ -54,10 +54,10 @@ __RCSID("$NetBSD: route.c,v 1.71 2004/01/05 23:23:33 jmmv Exp $");
 #include <net/route.h>
 #include <net/if_dl.h>
 #include <netinet/in.h>
-#include <netatalk/at.h>
+//#include <netatalk/at.h>
 #include <netns/ns.h>
-#include <netiso/iso.h>
-#include <netccitt/x25.h>
+//#include <netiso/iso.h>
+//#include <netccitt/x25.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
@@ -76,48 +76,48 @@ __RCSID("$NetBSD: route.c,v 1.71 2004/01/05 23:23:33 jmmv Exp $");
 
 typedef union sockunion *sup;
 
-int main __P((int, char **));
-static void usage __P((char *)) __attribute__((__noreturn__));
-static char *any_ntoa __P((const struct sockaddr *));
-static void set_metric __P((char *, int));
-static int newroute __P((int, char **));
-static void inet_makenetandmask __P((u_int32_t, struct sockaddr_in *));
+int main(int, char **);
+static void usage(char *) __attribute__((__noreturn__));
+static char *any_ntoa(const struct sockaddr *);
+static void set_metric(char *, int);
+static int newroute(int, char **);
+static void inet_makenetandmask(u_int32_t, struct sockaddr_in *);
 #ifdef INET6
-static int inet6_makenetandmask __P((struct sockaddr_in6 *));
+static int inet6_makenetandmask(struct sockaddr_in6 *);
 #endif
-static int getaddr __P((int, char *, struct hostent **));
-static int flushroutes __P((int, char *[], int));
+static int getaddr(int, char *, struct hostent **);
+static int flushroutes(int, char *[], int);
 #ifndef SMALL
-static int prefixlen __P((char *));
-static int x25_makemask __P((void));
-static void interfaces __P((void));
-static void monitor __P((void));
-static void print_getmsg __P((struct rt_msghdr *, int));
-static const char *linkstate __P((struct if_msghdr *));
+static int prefixlen(char *);
+static void interfaces(void);
+static void monitor(void);
+static void print_getmsg(struct rt_msghdr *, int);
+static const char *linkstate(struct if_msghdr *);
 #endif /* SMALL */
-static int rtmsg __P((int, int ));
-static void mask_addr __P((void));
-static void print_rtmsg __P((struct rt_msghdr *, int));
-static void pmsg_common __P((struct rt_msghdr *));
-static void pmsg_addrs __P((char *, int));
-static void bprintf __P((FILE *, int, u_char *));
-static int keyword __P((char *));
-static void sodump __P((sup, char *));
-static void sockaddr __P((char *, struct sockaddr *));
+static int rtmsg(int, int );
+static void mask_addr(void);
+static void print_rtmsg(struct rt_msghdr *, int);
+static void pmsg_common(struct rt_msghdr *);
+static void pmsg_addrs(char *, int);
+static void bprintf(FILE *, int, u_char *);
+static int keyword(char *);
+static void sodump(sup, char *);
+static void sockaddr(char *, struct sockaddr *);
 
-union	sockunion {
+union sockunion {
 	struct	sockaddr sa;
 	struct	sockaddr_in sin;
 #ifdef INET6
 	struct	sockaddr_in6 sin6;
 #endif
-	struct	sockaddr_at sat;
+	//struct	sockaddr_at sat;
 	struct	sockaddr_dl sdl;
 #ifndef SMALL
 	struct	sockaddr_ns sns;
-	struct	sockaddr_iso siso;
-	struct	sockaddr_x25 sx25;
+	//struct	sockaddr_iso siso;
+	//struct	sockaddr_x25 sx25;
 #endif /* SMALL */
+	struct	sockaddr_storage sstorage;
 } so_dst, so_gate, so_mask, so_genmask, so_ifa, so_ifp;
 
 int	pid, rtm_addrs;
@@ -813,9 +813,6 @@ newroute(argc, argv)
 
 #ifndef SMALL
 			case K_ATALK:
-				af = AF_APPLETALK;
-				aflen = sizeof(struct sockaddr_at);
-				break;
 #endif
 
 			case K_INET:
@@ -836,17 +833,11 @@ newroute(argc, argv)
 				break;
 
 #ifndef SMALL
+			case K_MPLS:
+			case K_TAG:
 			case K_OSI:
 			case K_ISO:
-				af = AF_ISO;
-				aflen = sizeof(struct sockaddr_iso);
-				break;
-
 			case K_X25:
-				af = AF_CCITT;
-				aflen = sizeof(struct sockaddr_x25);
-				break;
-
 			case K_XNS:
 				af = AF_NS;
 				aflen = sizeof(struct sockaddr_ns);
@@ -875,8 +866,14 @@ newroute(argc, argv)
 			case K_REJECT:
 				flags |= RTF_REJECT;
 				break;
+			case K_NOREJECT:
+				flags &= ~RTF_REJECT;
+				break;
 			case K_BLACKHOLE:
 				flags |= RTF_BLACKHOLE;
+				break;
+			case K_NOBLACKHOLE:
+				flags &= ~RTF_BLACKHOLE;
 				break;
 			case K_CLONED:
 				flags |= RTF_CLONED;
@@ -1267,18 +1264,8 @@ getaddr(which, s, hpp)
 		return (!ns_nullhost(su->sns.sns_addr));
 
 	case AF_OSI:
-		su->siso.siso_addr = *iso_addr(s);
-		if (which == RTA_NETMASK || which == RTA_GENMASK) {
-			char *cp = (char *)TSEL(&su->siso);
-			su->siso.siso_nlen = 0;
-			do {--cp ;} while ((cp > (char *)su) && (*cp == 0));
-			su->siso.siso_len = 1 + cp - (char *)su;
-		}
-		return (1);
 
 	case AF_CCITT:
-		ccitt_addr(s, &su->sx25);
-		return (which == RTA_DST ? x25_makemask() : 1);
 #endif /* SMALL */
 
 	case PF_ROUTE:
@@ -1288,21 +1275,6 @@ getaddr(which, s, hpp)
 
 #ifndef SMALL
 	case AF_APPLETALK:
-		t = strchr (s, '.');
-		if (!t) {
-badataddr:
-			errx(1, "bad address: %s", s);
-		}
-		val = atoi (s);
-		if (val > 65535)
-			goto badataddr;
-		su->sat.sat_addr.s_net = val;
-		val = atoi (t);
-		if (val > 256)
-			goto badataddr;
-		su->sat.sat_addr.s_node = val;
-		rtm_addrs |= RTA_NETMASK;
-		return(forcehost || su->sat.sat_addr.s_node != 0);
 #endif
 
 	case AF_LINK:
@@ -1408,21 +1380,6 @@ prefixlen(s)
 }
 
 #ifndef SMALL
-int
-x25_makemask()
-{
-	char *cp;
-
-	if ((rtm_addrs & RTA_NETMASK) == 0) {
-		rtm_addrs |= RTA_NETMASK;
-		for (cp = (char *)&so_mask.sx25.x25_net;
-		     cp < &so_mask.sx25.x25_opts.op_flags; cp++)
-			*cp = -1;
-		so_mask.sx25.x25_len = (u_char)&(((sup)0)->sx25.x25_opts);
-	}
-	return 0;
-}
-
 
 char *
 ns_print(sns)
@@ -1665,8 +1622,12 @@ char *msgtypes[] = {
 	"RTM_OIFINFO: iface status change (pre-1.5)",
 	"RTM_IFINFO: iface status change",
 	"RTM_IFANNOUNCE: iface arrival/departure",
+	"RTM_IEEE80211: RTM_IEEE80211: IEEE80211 wireless event",
+	"RTM_IFINFO: RTM_IFINFO: iface status change",
+	"RTM_CHGADDR: RTM_CHGADDR: address being changed on iface",
 	0,
 };
+
 
 char metricnames[] =
 "\011pksent\010rttvar\7rtt\6ssthresh\5sendpipe\4recvpipe\3expire\2hopcount\1mtu";
@@ -1757,11 +1718,17 @@ print_rtmsg(rtm, msglen)
 		}
 		printf("\n");
 		break;
-	default:
-		(void) printf("pid: %d, seq %d, errno %d, flags:",
-			rtm->rtm_pid, rtm->rtm_seq, rtm->rtm_errno);
-		bprintf(stdout, rtm->rtm_flags, routeflags);
-		pmsg_common(rtm);
+		case RTM_ADD:		/* FALLTHROUGH */
+		case RTM_CHANGE:	/* FALLTHROUGH */
+		case RTM_DELETE:	/* FALLTHROUGH */
+		case RTM_GET:		/* FALLTHROUGH */
+		case RTM_LOSING:	/* FALLTHROUGH */
+		case RTM_MISS:
+			(void) printf("pid: %d, seq %d, errno %d, flags:",
+				rtm->rtm_pid, rtm->rtm_seq, rtm->rtm_errno);
+			bprintf(stdout, rtm->rtm_flags, routeflags);
+			pmsg_common(rtm);
+			break;
 	}
 }
 
@@ -1832,7 +1799,7 @@ print_getmsg(rtm, msglen)
 		    routename(mask, NULL, RTF_HOST));
 		nflag = savenflag;
 	}
-	if (gate && rtm->rtm_flags & RTF_GATEWAY && ! shortoutput)
+	if (gate && (rtm->rtm_flags & RTF_GATEWAY) && ! shortoutput)
 		(void)printf("    gateway: %s\n",
 		    routename(gate, NULL, RTF_HOST));
 	if (ifa && ! shortoutput)
@@ -1994,9 +1961,6 @@ sodump(su, which)
 		break;
 #ifndef SMALL
 	case AF_APPLETALK:
-		(void) printf("%s: atalk %d.%d; ",
-		    which, su->sat.sat_addr.s_net, su->sat.sat_addr.s_node);
-		break;
 #endif
 	case AF_LINK:
 		(void) printf("%s: link %s; ",
@@ -2011,9 +1975,6 @@ sodump(su, which)
 		break;
 #endif
 	case AF_ISO:
-		(void) printf("%s: iso %s; ",
-		    which, iso_ntoa(&su->siso.siso_addr));
-		break;
 	case AF_NS:
 		(void) printf("%s: xns %s; ",
 		    which, ns_ntoa(su->sns.sns_addr));

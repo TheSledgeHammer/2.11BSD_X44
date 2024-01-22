@@ -608,7 +608,7 @@ walk_supply(struct radix_node *rn,
 	    && !(ws.state & WS_ST_QUERY)
 	    && (ws.state & WS_ST_TO_ON_NET)
 	    && (!(RT->rt_state & RS_IF)
-		|| ws.ifp->int_if_flags & IFF_POINTOPOINT)) {
+		|| (ws.ifp->int_if_flags & IFF_POINTOPOINT))) {
 		for (rts = RT->rt_spares, i = NUM_SPARES; i != 0; i--, rts++) {
 			if (rts->rts_metric > metric
 			    || rts->rts_ifp != ws.ifp)

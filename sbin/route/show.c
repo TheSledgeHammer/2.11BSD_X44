@@ -92,11 +92,11 @@ static const struct bits bits[] = {
 	{ 0 }
 };
 
-static void pr_rthdr __P((void));
-static void p_rtentry __P((struct rt_msghdr *));
-static void pr_family __P((int));
-static void p_sockaddr __P((struct sockaddr *, struct sockaddr *, int, int ));
-static void p_flags __P((int));
+static void pr_rthdr(void);
+static void p_rtentry(struct rt_msghdr *);
+static void pr_family(int);
+static void p_sockaddr(struct sockaddr *, struct sockaddr *, int, int );
+static void p_flags(int);
 
 /*
  * Print routing tables.

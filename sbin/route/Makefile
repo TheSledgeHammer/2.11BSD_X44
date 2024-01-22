@@ -5,7 +5,7 @@
 
 PROG=	route
 MAN=	route.8
-SRCS=	route.c show.c keywords.c ccitt_addr.c
+SRCS=	route.c show.c keywords.c
 
 .if (${USE_INET6} != "no")
 CPPFLAGS+=-DINET6

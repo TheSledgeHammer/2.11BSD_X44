@@ -67,8 +67,22 @@ LIBCRTI=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o
 USRSLASHLIB=	${DESTDIR}/usr/lib # Modern BSD's (i.e. 4.4 and above)
 USRDOTLIB=		${DESTDIR}/usr.lib # Older BSD's (i.e. 4.3 and below)
 
-_USRSLASHLIBLIST=	C COMPAT
-
+_USRSLASHLIBLIST= \
+			C \
+			C_PIC \
+			COM_ERR \
+			COMPAT \
+			CXX \
+			EXPAT \
+			FETCH \
+			GCC \
+			GNUMALLOC \
+			L \
+			MAGIC \
+			OBJC \
+			STDC++ \
+			SUPC++ \
+			
 .for _var in ${_USRSLASHLIBLIST}
 .ifndef LIB${_var}
 LIB${_var}:=	 ${USRSLASHLIB}/lib${_var:tl}.a
@@ -76,9 +90,35 @@ LIB${_var}:=	 ${USRSLASHLIB}/lib${_var:tl}.a
 .endif
 .endfor
 
-_USRDOTLIBLIST=		BZ2 CRYPT CRYPTO CURSES DBM EDIT EXECINFO EXPAT FORM GCC GNUMALLOC  	\
-					KVM M MENU MP OM PANEL PCI RESOLV STUBS TERMCAP UTIL 					\
-					VMF Y Z
+_USRDOTLIBLIST=	\
+			BZ2 \
+			CRYPT \
+			CRYPTO \
+			CURSES \
+			DBM \
+			EDIT \
+			EXECINFO \
+			FORM \
+			FORTRAN \
+			IPSEC \
+			KVM \
+			M \
+			MENU \
+			MP \
+			OM \
+			PANEL \
+			PCAP \
+			PCI \
+			PTHREAD \
+			RESOLV \
+			SKEY \
+			SS \
+			STUBS \
+			TERMCAP \
+			UTIL \
+			VMF \
+			Y \
+			Z
 
 .for _var in ${_USRDOTLIBLIST}
 .ifndef LIB${_var}
