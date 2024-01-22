@@ -72,16 +72,12 @@ _USRSLASHLIBLIST= \
 			C_PIC \
 			COM_ERR \
 			COMPAT \
-			CXX \
 			EXPAT \
 			FETCH \
 			GCC \
 			GNUMALLOC \
 			L \
 			MAGIC \
-			OBJC \
-			STDC++ \
-			SUPC++ \
 			
 .for _var in ${_USRSLASHLIBLIST}
 .ifndef LIB${_var}
