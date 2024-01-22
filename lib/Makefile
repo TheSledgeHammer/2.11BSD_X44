@@ -49,6 +49,7 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 	\
 			${USRLIBDIR}/libpthread_dbg \
 			${USRLIBDIR}/libstubs  \
 			${USRLIBDIR}/libtermcap \
+            ${USRLIBDIR}/libtelnet  \
 			${USRLIBDIR}/libutil 	\
 			${USRLIBDIR}/libvmf 	\
 			${USRLIBDIR}/liby 		\
@@ -59,6 +60,9 @@ SUBDIR+=	libkern
 #SUBDIR+=	libsa	
 .endif
 
+.if (${MKSKEY} != "no")
+SUBDIR+=	${USRLIBDIR}/libskey
+.endif
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/libelf
 SUBDIR+=	../contrib/expat/lib
@@ -143,6 +147,8 @@ SUBDIR+=	../crypto/heimdal/lib	# depends on libcrypto
 SUBDIR+=	../crypto/openssh/lib # depends on libcrypto, libz
 
 SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
+
+#SUBDIR+= 	../libexec/httpd/libbozohttpd 	# depends on libssl & libcrypto
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT
