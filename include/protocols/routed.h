@@ -1,3 +1,35 @@
+/*	$NetBSD: routed.h,v 1.15 2016/01/22 23:11:50 dholland Exp $	*/
+
+/*-
+ * Copyright (c) 1983, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)routed.h	8.1 (Berkeley) 6/2/93
+ */
 /*
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -9,6 +41,8 @@
 #ifndef _ROUTED_H_
 #define	_ROUTED_H_
 
+#include <stdint.h>
+
 /*
  * Routing Information Protocol
  *
@@ -16,11 +50,72 @@
  * by changing 32-bit net numbers to sockaddr's and
  * padding stuff to 32-bit boundaries.
  */
-#define	RIPVERSION	1
 
+#define RIP_VERSION_0	0
+#define	RIP_VERSION_1	1
+#define	RIP_VERSION_2	2
+
+#define	RIPv1			RIP_VERSION_1
+#define	RIPv2			RIP_VERSION_2
+#ifndef RIPVERSION
+#define	RIPVERSION		RIPv1
+#endif
+
+#define RIP_PORT		520
+
+#ifdef notyet
 struct netinfo {
-	struct	sockaddr rip_dst;	/* destination net/host */
-	u_long			rip_metric;	/* cost of route */
+	struct	sockaddr rip_dst;		/* destination net/host */
+	u_long			 rip_metric;	/* cost of route */
+};
+#endif
+
+#if RIPVERSION == 1
+/* We include the V2 fields to get the right size */
+struct netinfo {
+	uint16_t   rip_family;
+	uint16_t   rip_tag;
+	uint32_t   rip_dst;			/* destination net/host */
+	uint32_t   rip_dst_mask;	/* destination mask (V2 only) */
+	uint32_t   rip_router;		/* next host (V2 only) */
+	uint32_t   rip_metric;		/* cost of route */
+};
+#else
+struct netinfo {
+	uint16_t   n_family;
+#define	    RIP_AF_INET	    htons(AF_INET)
+#define	    RIP_AF_UNSPEC   0
+#define	    RIP_AF_AUTH	    0xffff
+	uint16_t   n_tag;		/* optional in RIPv2 */
+	uint32_t   n_dst;		/* destination net or host */
+#define	    RIP_DEFAULT	    0
+	uint32_t   n_mask;		/* netmask in RIPv2 */
+	uint32_t   n_nhop;		/* optional next hop in RIPv2 */
+	uint32_t   n_metric;		/* cost of route */
+};
+#endif
+
+/* RIPv2 authentication */
+struct netauth {
+	uint16_t a_family; /* always RIP_AF_AUTH */
+	uint16_t a_type;
+#define	    RIP_AUTH_NONE   0
+#define	    RIP_AUTH_PW	    htons(2)	/* password type */
+#define	    RIP_AUTH_MD5    htons(3)	/* Keyed MD5 */
+	union {
+#define	    RIP_AUTH_PW_LEN 16
+		uint8_t au_pw[RIP_AUTH_PW_LEN];
+		struct a_md5 {
+			int16_t md5_pkt_len; /* RIP-II packet length */
+			int8_t md5_keyid; /* key ID and auth data len */
+			int8_t md5_auth_len; /* 16 */
+			uint32_t md5_seqno; /* sequence number */
+			uint32_t rsvd[2]; /* must be 0 */
+#define	    RIP_AUTH_MD5_KEY_LEN   RIP_AUTH_PW_LEN
+#define	    RIP_AUTH_MD5_HASH_XTRA (sizeof(struct netauth)-sizeof(struct a_md5))
+#define	    RIP_AUTH_MD5_HASH_LEN  (RIP_AUTH_MD5_KEY_LEN+RIP_AUTH_MD5_HASH_XTRA)
+		} a_md5;
+	} au;
 };
 
 struct rip {
@@ -30,8 +125,10 @@ struct rip {
 	union {
 		struct	netinfo ru_nets[1];			/* variable length... */
 		char			ru_tracefile[1];	/* ditto ... */
+		 struct netauth ru_auth[1];
 	} ripun;
 #define	rip_nets		ripun.ru_nets
+#define rip_auths		ripun.ru_auth
 #define	rip_tracefile	ripun.ru_tracefile
 };
  
@@ -43,7 +140,13 @@ struct rip {
 #define	RIPCMD_TRACEON		3	/* turn tracing on */
 #define	RIPCMD_TRACEOFF		4	/* turn it off */
 
-#define	RIPCMD_MAX			5
+/* Gated extended RIP to include a "poll" command instead of using
+ * RIPCMD_REQUEST with (RIP_AF_UNSPEC, RIP_DEFAULT).  RFC 1058 says
+ * command 5 is used by Sun Microsystems for its own purposes.
+ */
+#define RIPCMD_POLL			5
+
+#define	RIPCMD_MAX			6
 #ifdef RIPCMDS
 char *ripcmds[RIPCMD_MAX] =
   { "#0", "REQUEST", "RESPONSE", "TRACEON", "TRACEOFF" };
@@ -51,6 +154,10 @@ char *ripcmds[RIPCMD_MAX] =
 
 #define	HOPCNT_INFINITY		16L	/* per Xerox NS */
 #define	MAXPACKETSIZE		512	/* max broadcast size */
+#define NETS_LEN ((MAXPACKETSIZE-sizeof(struct rip))	\
+		      / sizeof(struct netinfo) +1)
+
+#define INADDR_RIP_GROUP (uint32_t)0xe0000009	/* 224.0.0.9 */
 
 /*
  * Timer values used in managing the routing table.
@@ -62,7 +169,10 @@ char *ripcmds[RIPCMD_MAX] =
 #define	TIMER_RATE			30	/* alarm clocks every 30 seconds */
 
 #define	SUPPLY_INTERVAL		30	/* time to supply tables */
+#define	MIN_WAITTIME		2	/* min sec until next flash updates */
+#define	MAX_WAITTIME		5	/* max sec until flash update */
 
+#define STALE_TIME			90	/* switch to a new gateway */
 #define	EXPIRE_TIME			180	/* time to mark entry invalid */
 #define	GARBAGE_TIME		240	/* time to garbage collect */
 

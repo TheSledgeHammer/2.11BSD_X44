@@ -21,8 +21,10 @@ struct tsp {
 	u_char	tsp_vers;
 	u_short	tsp_seq;
 	union {
-		struct timeval tspu_time;
-		char tspu_hopcnt;
+		struct timeval 	tspu_time;
+#define tv_sec 			tspu_time.tv_sec
+#define tv_usec 		tspu_time.tv_usec
+		char 			tspu_hopcnt;
 	} tsp_u;
 	char tsp_name[MAXHOSTNAMELEN];
 };

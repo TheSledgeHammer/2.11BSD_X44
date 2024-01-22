@@ -111,12 +111,14 @@ extern int ppnthreadmax;						/* max number of threads per proc (hits stack limi
 
 LIST_HEAD(threadlist, thread);
 
-struct thread *tdfind(struct proc *);			/* find thread by tidmask */
-struct proc *thread_pfind(struct thread *);
+/* Thread initialization */
 void thread_init(struct proc *, struct thread *);
 void tdqinit(struct thread *);
 void threadinit(struct thread *);
 void thread_rqinit(struct proc *);
+
+struct thread *tdfind(struct proc *);			/* find thread by tidmask */
+struct proc *thread_pfind(struct thread *);
 void thread_add(struct proc *, struct thread *);
 void thread_remove(struct proc *, struct thread *);
 void thread_reparent(struct proc *, struct proc *, struct thread *);
@@ -141,8 +143,8 @@ void thread_unsleep(struct proc *, struct thread *);
 void thread_endtsleep(struct proc *, struct thread *);
 void thread_wakeup(struct proc *, void *);
 
-pid_t tidmask(struct proc *);					/* thread tidmask */
-int primask(struct proc *);						/* thread primask */
+pid_t thread_tidmask(struct proc *);					/* thread tidmask */
+int thread_primask(struct proc *);						/* thread primask */
 
 /* kern_kthread.c */
 int	newthread(struct thread **, char *, size_t, bool_t);

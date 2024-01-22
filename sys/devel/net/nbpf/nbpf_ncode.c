@@ -56,6 +56,7 @@
 #include <sys/malloc.h>
 
 #include "nbpf.h"
+#include "nbpf_ncode.h"
 
 /*
  * nc_fetch_word: fetch a word (32 bits) from the n-code and increase
@@ -140,7 +141,7 @@ nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, s
 	case NBPF_OPCODE_ADVR:
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->i); /* Register */
 		KASSERT(ncode->i < NBPF_NREGS);
-		if (!nbpf_advance(m, regs[ncode->i]), 0) {
+		if (!nbpf_advance(m, regs[ncode->i], 0)) {
 			goto fail;
 		}
 		break;
@@ -534,7 +535,6 @@ nc_insn_check(const uintptr_t optr, struct nbpf_insn *pc, size_t *adv, size_t *j
 	regidx = 0;
 	*ret = false;
 	*jmp = 0;
-
 	if (ncode_insn_get(ncode)) {
 		error = cisc_insn_check(iptr, pc, regidx, val, jmp, ret);
 	} else {

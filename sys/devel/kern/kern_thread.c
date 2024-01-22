@@ -75,6 +75,9 @@ struct lock_holder 	thread_loholder;
 
 int thread_stacklimit(struct thread *);
 
+/*
+ * Initialize threads structures.
+ */
 void
 thread_init(p, td)
 	register struct proc  	*p;
@@ -153,12 +156,12 @@ thread_remove(p, td)
 }
 
 pid_t
-tidmask(p)
+thread_tidmask(p)
 	register struct proc *p;
 {
 	pid_t tid = p->p_pid + p->p_nthreads + TID_MIN;
 	if (tid >= TID_MAX) {
-		printf("tidmask: tid max reached");
+		printf("thread_tidmask: tid max reached");
 		tid = NO_TID;
 	}
 	return (tid);
@@ -171,7 +174,7 @@ tdfind(p)
 	register struct thread *td;
 	register pid_t tid;
 
-	tid = tidmask(p);
+	tid = thread_tidmask(p);
 	LIST_FOREACH(td, TIDHASH(tid), td_hash) {
 		if (td->td_tid == tid) {
 			return (td);
@@ -210,7 +213,7 @@ thread_reparent(from, to, td)
 		thread_remove(from, td);
 		td->td_procp = to;
     	td->td_flag = 0;
-    	td->td_tid = tidmask(to);
+    	td->td_tid = thread_tidmask(to);
     	td->td_ptid = to->p_pid;
     	td->td_pgrp = to->p_pgrp;
 		thread_add(to, td);
@@ -238,7 +241,7 @@ thread_steal(to, td)
 	register struct proc *from;
 
 	LIST_FOREACH(from, &from->p_allthread, td_sibling) {
-		if ((from != to) && (from->p_threado == td) && (td->td_tid == tidmask(from))) {
+		if ((from != to) && (from->p_threado == td) && (td->td_tid == thread_tidmask(from))) {
 			if ((from->p_stat == SZOMB) && (to->p_stat != (SZOMB | SRUN))) {
 				thread_reparent(from, to, td);
 				td->td_flag &= ~THREAD_STEALABLE;
@@ -260,10 +263,10 @@ thread_alloc(p, stack)
     td->td_stacksize = stack;
     td->td_stat = SIDL;
     td->td_flag = 0;
-    td->td_tid = tidmask(p);
+    td->td_tid = thread_tidmask(p);
     td->td_ptid = p->p_pid;
     td->td_pgrp = p->p_pgrp;
-    td->td_pri = primask(p);
+    td->td_pri = thread_primask(p);
     td->td_ppri = p->p_pri;
 
     if (!LIST_EMPTY(&p->p_allthread)) {
@@ -318,7 +321,7 @@ thread_pfind(td)
 
 /* thread priority mask */
 int
-primask(p)
+thread_primask(p)
 	struct proc *p;
 {
 	int pri;
@@ -365,7 +368,7 @@ thread_setpri(p, td)
 {
 	int pri;
 
-	pri = primask(p);
+	pri = thread_primask(p);
 	td->td_pri = pri;
 	td->td_ppri = p->p_pri;
 	return (pri);
@@ -527,7 +530,7 @@ thread_setrun(p, td)
 	if ((p->p_tqsready == 0) && ((td->td_flag & THREAD_STEALABLE) == 0)) {
 		thread_steal(p, td);
 	} else if((p->p_tqsready > 0) && (p->p_stat != SRUN)) {
-		error = newthread(&ntd, NULL, THREAD_STACK, TRUE);
+		error = newthread(&ntd, td->td_name, THREAD_STACK, TRUE);
 		if (error != 0) {
 			panic("thread_setrun: newthread");
 			return;
@@ -674,7 +677,7 @@ thread_tsleep(chan, pri, wmesg, timo)
 		catch = pri & PCATCH;
 		td->td_wchan = (caddr_t)chan;
 		td->td_wmesg = wmesg;
-		td->td_pri = primask(p) & PRIMASK;
+		td->td_pri = thread_primask(p) & PRIMASK;
 
 		thread_setsq(p, td);
 		if (timo) {
