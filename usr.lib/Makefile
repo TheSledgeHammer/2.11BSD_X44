@@ -11,8 +11,8 @@
 .include <bsd.own.mk>
 
 SUBDIR= 	libbz2 libcrypt libcurses libdbm libedit libexecinfo libform libkvm 		\
-		libm libmenu libmp libom libpanel libpcap libpci libpthread             \
-            libpthread_dbg libresolv libstubs libtermcap libutil libvmf     \
+		    libm libmenu libmp libom libpanel libpcap libpci libpthread             \
+            libpthread_dbg libresolv libstubs libtelnet libtermcap libutil libvmf     \
             liby libz
                         
 # IPv6/IPsec
@@ -20,5 +20,9 @@ SUBDIR+=	libipsec
 
 # Fortran: F77, U77 and I77
 SUBDIR+=    libfortran
+
+.if (${MKSKEY} != "no")
+SUBDIR+=	libskey
+.endif
 
 .include <bsd.subdir.mk>

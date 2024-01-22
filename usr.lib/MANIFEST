@@ -19,7 +19,11 @@ libpcap/	NetBSD
 libpci/		NetBSD
 libpthread/	NetBSD
 libpthread_dbg/	NetBSD
+libresolv/  NetBSD
+libskey/    NetBSD
+libss/      NetBSD
 libstubs/	2.11BSD
+libtelenet/ NetBSD
 libtermcap/	4.4BSD-Lite2
 libutil/	4.4BSD-Lite2
 libvmf/		4.3BSD
