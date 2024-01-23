@@ -6,8 +6,8 @@
  *	@(#)talkd.h	5.2 (Berkeley) 3/13/86
  */
 
-#ifndef _TALKD_H_
-#define	_TALKD_H_
+#ifndef _PROTOCOLS_TALKD_H_
+#define	_PROTOCOLS_TALKD_H_
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -87,4 +87,4 @@ typedef struct {
 /* RING_WAIT should be 10's of seconds less than MAX_LIFE */
 #define RING_WAIT		30	/* time to wait before resending invitation */
 
-#endif /* !_TALKD_H_ */
+#endif /* !_PROTOCOLS_TALKD_H_ */

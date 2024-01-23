@@ -6,8 +6,8 @@
  *	@(#)rwhod.h	5.1 (Berkeley) 5/28/85
  */
 
-#ifndef _RWHOD_H_
-#define	_RWHOD_H_
+#ifndef _PROTOCOLS_RWHOD_H_
+#define	_PROTOCOLS_RWHOD_H_
 
 /*
  * rwho protocol packet format.
@@ -36,4 +36,4 @@ struct	whod {
 #define	WHODVERSION	1
 #define	WHODTYPE_STATUS	1		/* host status */
 
-#endif /* !_RWHOD_H_ */
+#endif /* !_PROTOCOLS_RWHOD_H_ */

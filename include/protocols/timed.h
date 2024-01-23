@@ -6,8 +6,8 @@
 
 /*	@(#)timed.h	1.6	(Berkeley)	5/28/86	*/
 
-#ifndef	_TIMED_H_
-#define	_TIMED_H_
+#ifndef	_PROTOCOLS_TIMED_H_
+#define	_PROTOCOLS_TIMED_H_
 
 /*
  * Time Synchronization Protocol
@@ -71,4 +71,4 @@ char *tsptype[TSPTYPENUMBER] =
   "TEST", "SETDATE", "SETDATEREQ", "LOOP" };
 #endif
 
-#endif /* !_TIMED_H_ */
+#endif /* !_PROTOCOLS_TIMED_H_ */

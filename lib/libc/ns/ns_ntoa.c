@@ -21,7 +21,6 @@ ns_ntoa(addr)
 	struct ns_addr addr;
 {
 	static char obuf[40];
-	char *spectHex();
 	union { union ns_net net_e; u_long long_e; } net;
 	u_short port = htons(addr.x_port);
 	register char *cp;

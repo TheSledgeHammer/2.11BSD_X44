@@ -38,8 +38,8 @@
  *	@(#)protocol.h	5.1 (Berkeley) 6/4/85
  */
 
-#ifndef _ROUTED_H_
-#define	_ROUTED_H_
+#ifndef _PROTOCOLS_ROUTED_H_
+#define	_PROTOCOLS_ROUTED_H_
 
 #include <stdint.h>
 
@@ -63,22 +63,10 @@
 
 #define RIP_PORT		520
 
-#ifdef notyet
-struct netinfo {
-	struct	sockaddr rip_dst;		/* destination net/host */
-	u_long			 rip_metric;	/* cost of route */
-};
-#endif
-
 #if RIPVERSION == 1
-/* We include the V2 fields to get the right size */
 struct netinfo {
-	uint16_t   rip_family;
-	uint16_t   rip_tag;
-	uint32_t   rip_dst;			/* destination net/host */
-	uint32_t   rip_dst_mask;	/* destination mask (V2 only) */
-	uint32_t   rip_router;		/* next host (V2 only) */
-	uint32_t   rip_metric;		/* cost of route */
+	struct sockaddr rip_dst;	/* destination net/host */
+	u_long			rip_metric;	/* cost of route */
 };
 #else
 struct netinfo {
@@ -176,4 +164,4 @@ char *ripcmds[RIPCMD_MAX] =
 #define	EXPIRE_TIME			180	/* time to mark entry invalid */
 #define	GARBAGE_TIME		240	/* time to garbage collect */
 
-#endif /* !_ROUTED_H_ */
+#endif /* !_PROTOCOLS_ROUTED_H_ */

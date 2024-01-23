@@ -114,6 +114,10 @@ assym.h: ${ARCHDIR}/genassym.cf
 .include "${.CURDIR}/time/Makefile.inc"
 .include "${.CURDIR}/uuid/Makefile.inc"
 
+.if (${MKYP} != "no")
+.include "${.CURDIR}/yp/Makefile.inc"
+.endif
+
 # Remove from SRCS the .c files for any .S files added by the MD makefiles,
 # also remove from SRCS the .c files for the .S and .c files in NO_SRCS.
 # Add the .c file for .S files (in both variables) to LSRCS so that the

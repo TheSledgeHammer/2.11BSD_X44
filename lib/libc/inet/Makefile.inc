@@ -9,8 +9,8 @@
 # machine-independent net sources
 .PATH: 	${.CURDIR}/inet
 
-SRCS+=	inet_addr.c inet_addr.c inet_lnaof.c 	\
-		inet_net_ntop.c inet_net_pton.c 		\
+SRCS+=	inet_addr.c inet_cidr_ntop.c inet_cidr_pton.c \
+		inet_lnaof.c inet_net_ntop.c inet_net_pton.c \
 		inet_neta.c inet_ntop.c inet_pton.c 	\
 		inet_netof.c inet_network.c inet_ntoa.c	\
 		nsap_addr.c	_inet_aton.c _inet_pton.c

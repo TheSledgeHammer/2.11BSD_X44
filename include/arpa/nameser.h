@@ -17,26 +17,39 @@
  *	@(#)nameser.h	5.20.1 (2.11BSD GTE) 12/31/93
 */
 
-#ifndef _NAMESER_H_
-#define	_NAMESER_H_
+#ifndef _ARPA_NAMESER_H_
+#define	_ARPA_NAMESER_H_
+
+#include <sys/types.h>
 
 /*
- * Define constants based on rfc883
+ * Define constants based on RFC0883, RFC1034, RFC 1035
  */
 #define PACKETSZ	512		/* maximum packet size */
-#define MAXDNAME	256		/* maximum domain name */
+#define MAXDNAME	1025	/* maximum domain name */
+#define MAXMSG		65535	/* maximum message size */
 #define MAXCDNAME	255		/* maximum compressed domain name */
 #define MAXLABEL	63		/* maximum length of domain label */
+#define MAXLABELS	128		/* theoretical max #/labels per domain name */
+#define MAXNNAME	256		/* maximum uncompressed (binary) domain name*/
+#define	MAXPADDR	(sizeof "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+#define HFIXEDSZ	12		/* #/bytes of fixed data in header */
 	/* Number of bytes of fixed size data in query structure */
 #define QFIXEDSZ	4
 	/* number of bytes of fixed size data in resource record */
 #define RRFIXEDSZ	10
+#define INT32SZ		4		/* #/bytes of data in a uint32_t */
+#define INT16SZ		2		/* #/bytes of data in a uint16_t */
+#define INT8SZ		1		/* #/bytes of data in a u_int8_t */
+#define INADDRSZ	4		/* IPv4 T_A */
+#define IN6ADDRSZ	16		/* IPv6 T_AAAA */
+#define CMPRSFLGS	0xc0	/* Flag bits indicating name compression. */
 
 /*
  * Internet nameserver port number
  */
-#define NAMESERVER_PORT	53
-
+#define NAMESERVER_PORT	53	/* For both TCP and UDP. */
+#define DEFAULTPORT  NAMESERVER_PORT
 /*
  * Currently defined opcodes
  */
@@ -44,6 +57,7 @@
 #define IQUERY		0x1		/* inverse query */
 #define STATUS		0x2		/* nameserver status query */
 /*#define xxx		0x3		/* 0x3 reserved */
+#define NS_NOTIFY_OP 0x4	/* notify secondary of SOA change */
 	/* non standard */
 #define UPDATEA		0x9		/* add resource record */
 #define UPDATED		0xa		/* delete a specific resource record */
@@ -84,13 +98,47 @@
 #define T_HINFO		13		/* host information */
 #define T_MINFO		14		/* mailbox information */
 #define T_MX		15		/* mail routing information */
-#define	T_TXT		16
+#define	T_TXT		16		/* text strings */
+#define T_RP		17		/* responsible person */
+#define T_AFSDB		18		/* AFS cell database */
+#define T_X25		19		/* X_25 calling address */
+#define T_ISDN		20		/* ISDN calling address */
+#define T_RT		21		/* router */
+#define T_NSAP		22		/* NSAP address */
+#define T_NSAP_PTR	23		/* reverse NSAP lookup (deprecated) */
+#define T_SIG		24		/* security signature */
+#define T_KEY		25		/* security key */
+#define T_PX		26		/* X.400 mail mapping */
+#define T_GPOS		27		/* geographical position (withdrawn) */
+#define T_AAAA		28		/* IP6 Address */
+#define T_LOC		29		/* Location Information */
+#define T_NXT		30		/* Next Valid Name in Zone */
+#define T_EID		31		/* Endpoint identifier */
+#define T_NIMLOC	32		/* Nimrod locator */
+#define T_SRV		33		/* Server selection */
+#define T_ATMA		34		/* ATM Address */
+#define T_NAPTR		35		/* Naming Authority PoinTeR */
+#define T_KX		36		/* Key Exchanger */
+#define T_CERT		37		/* CERT */
+#define T_A6		38		/* A6 */
+#define T_DNAME		39		/* DNAME */
+#define T_SINK		40		/* SINK */
+#define T_OPT		41		/* OPT pseudo-RR, RFC2671 */
+#define T_APL		42		/* APL */
+#define T_DS		43		/* Delegation Signer */
+#define T_SSHFP		44		/* SSH Key Fingerprint */
+#define T_RRSIG		46		/* RRSIG */
+#define T_NSEC		47		/* NSEC */
+#define T_DNSKEY	48		/* DNSKEY */
 	/* non standard */
 #define T_UINFO		100		/* user (finger) information */
 #define T_UID		101		/* user ID */
 #define T_GID		102		/* group ID */
 #define T_UNSPEC	103		/* Unspecified format (binary data) */
 	/* Query type values which do not appear in resource records */
+#define	T_TKEY		249		/* Transaction Key */
+#define	T_TSIG		250		/* Transaction Signature */
+#define	T_IXFR		251		/* incremental zone transfer */
 #define T_AXFR		252		/* transfer zone of authority */
 #define T_MAILB		253		/* transfer mailbox records */
 #define T_MAILA		254		/* transfer mail agent records */
@@ -211,8 +259,8 @@ struct rrec {
 	char	*r_data;		/* pointer to data */
 };
 
-extern	u_short	_getshort();
-extern	u_long	_getlong();
+extern	u_short	_getshort(u_char *);
+extern	u_long	_getlong(u_char *);
 
 /*
  * Inline versions of get/put short/long.
@@ -249,4 +297,4 @@ extern	u_long	_getlong();
 	(cp) += sizeof(u_long); \
 }
 
-#endif /* !_NAMESER_H_ */
+#endif /* !_ARPA_NAMESER_H_ */

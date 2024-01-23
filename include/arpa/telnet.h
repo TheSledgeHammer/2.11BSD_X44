@@ -1,3 +1,35 @@
+/*	$NetBSD: telnet.h,v 1.13 2017/01/12 18:42:53 christos Exp $	*/
+
+/*
+ * Copyright (c) 1983, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)telnet.h	8.2 (Berkeley) 12/15/93
+ */
 /*
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
@@ -17,8 +49,8 @@
  *	@(#)telnet.h	5.4 (Berkeley) 2/15/89
  */
 
-#ifndef _TELNET_H_
-#define	_TELNET_H_
+#ifndef _ARPA_TELNET_H_
+#define	_ARPA_TELNET_H_
 
 /*
  * Definitions for the TELNET protocol.
@@ -85,11 +117,27 @@ char *telcmds[] = {
 #define	TELOPT_NAWS		31	/* window size */
 #define	TELOPT_TSPEED	32	/* terminal speed */
 #define	TELOPT_LFLOW	33	/* remote flow control */
+#define TELOPT_LINEMODE	34	/* Linemode option */
+#define TELOPT_XDISPLOC	35	/* X Display Location */
+#define TELOPT_OLD_ENVIRON 36	/* Old - Environment variables */
+#define	TELOPT_AUTHENTICATION 37/* Authenticate */
+#define	TELOPT_ENCRYPT	38	/* Encryption option */
+#define TELOPT_NEW_ENVIRON 39	/* New - Environment variables */
+#define	TELOPT_TN3270E	40	/* RFC2355 - TN3270 Enhancements */
+#define	TELOPT_CHARSET	42	/* RFC2066 - Charset */
+#define	TELOPT_COMPORT	44	/* RFC2217 - Com Port Control */
+#define	TELOPT_KERMIT	47	/* RFC2840 - Kermit */
 #define	TELOPT_EXOPL	255	/* extended-options-list */
 
+#define	TELOPT_FIRST	TELOPT_BINARY
+#define	TELOPT_LAST		TELOPT_KERMIT
+#define	TELOPT_OK(x)	((unsigned int)(x) <= TELOPT_LAST)
+#define	TELOPT(x)		telopts[(x)-TELOPT_FIRST]
+
+#define	NTELOPTS		(1+TELOPT_LAST)
+
 #ifdef TELOPTS
-#define	NTELOPTS	(1+TELOPT_LFLOW)
-char *telopts[NTELOPTS] = {
+const char *telopts[NTELOPTS+1] = {
 	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
 	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
 	"NAOCRD", "NAOHTS", "NAOHTD", "NAOFFD", "NAOVTS",
@@ -98,11 +146,213 @@ char *telopts[NTELOPTS] = {
 	"SEND LOCATION", "TERMINAL TYPE", "END OF RECORD",
 	"TACACS UID", "OUTPUT MARKING", "TTYLOC",
 	"3270 REGIME", "X.3 PAD", "NAWS", "TSPEED", "LFLOW",
+	"LINEMODE", "XDISPLOC", "OLD-ENVIRON", "AUTHENTICATION",
+	"ENCRYPT", "NEW-ENVIRON", "TN3270E", "CHARSET", "COM-PORT",
+	"KERMIT",
+	0
 };
+#else
+extern const char *telopts[NTELOPTS+1];
 #endif
 
 /* sub-option qualifiers */
 #define	TELQUAL_IS		0	/* option is... */
 #define	TELQUAL_SEND	1	/* send option */
+#define	TELQUAL_INFO	2	/* ENVIRON: informational version of IS */
+#define	TELQUAL_REPLY	2	/* AUTHENTICATION: client version of IS */
+#define	TELQUAL_NAME	3	/* AUTHENTICATION: client version of IS */
 
-#endif /* !_TELNET_H_ */
+#define	LFLOW_OFF			0	/* Disable remote flow control */
+#define	LFLOW_ON			1	/* Enable remote flow control */
+#define	LFLOW_RESTART_ANY	2	/* Restart output on any char */
+#define	LFLOW_RESTART_XON	3	/* Restart output only on XON */
+
+/*
+ * LINEMODE suboptions
+ */
+
+#define	LM_MODE			1
+#define	LM_FORWARDMASK	2
+#define	LM_SLC			3
+
+#define	MODE_EDIT		0x01
+#define	MODE_TRAPSIG	0x02
+#define	MODE_ACK		0x04
+#define MODE_SOFT_TAB	0x08
+#define MODE_LIT_ECHO	0x10
+
+#define	MODE_MASK		0x1f
+
+/* Not part of protocol, but needed to simplify things... */
+#define MODE_FLOW		0x0100
+#define MODE_ECHO		0x0200
+#define MODE_INBIN		0x0400
+#define MODE_OUTBIN		0x0800
+#define MODE_FORCE		0x1000
+
+#define	SLC_SYNCH		1
+#define	SLC_BRK			2
+#define	SLC_IP			3
+#define	SLC_AO			4
+#define	SLC_AYT			5
+#define	SLC_EOR			6
+#define	SLC_ABORT		7
+#define	SLC_EOF			8
+#define	SLC_SUSP		9
+#define	SLC_EC			10
+#define	SLC_EL			11
+#define	SLC_EW			12
+#define	SLC_RP			13
+#define	SLC_LNEXT		14
+#define	SLC_XON			15
+#define	SLC_XOFF		16
+#define	SLC_FORW1		17
+#define	SLC_FORW2		18
+#define	SLC_MCL         19
+#define	SLC_MCR         20
+#define	SLC_MCWL        21
+#define	SLC_MCWR        22
+#define	SLC_MCBOL       23
+#define	SLC_MCEOL       24
+#define	SLC_INSRT       25
+#define	SLC_OVER        26
+#define	SLC_ECR         27
+#define	SLC_EWR         28
+#define	SLC_EBOL        29
+#define	SLC_EEOL        30
+
+#define	NSLC			30
+
+/*
+ * For backwards compatibility, we define SLC_NAMES to be the
+ * list of names if SLC_NAMES is not defined.
+ */
+#define	SLC_NAMELIST	"0", "SYNCH", "BRK", "IP", "AO", "AYT", "EOR",	\
+ 			"ABORT", "EOF", "SUSP", "EC", "EL", "EW", "RP",				\
+ 			"LNEXT", "XON", "XOFF", "FORW1", "FORW2",					\
+ 			"MCL", "MCR", "MCWL", "MCWR", "MCBOL",						\
+ 			"MCEOL", "INSRT", "OVER", "ECR", "EWR",						\
+ 			"EBOL", "EEOL",												\
+ 			0
+
+#ifdef	SLC_NAMES
+const char *slc_names[] = {
+	SLC_NAMELIST
+};
+#else
+extern const char *slc_names[];
+#define	SLC_NAMES SLC_NAMELIST
+#endif
+
+#define	SLC_NAME_OK(x)	((unsigned int)(x) <= NSLC)
+#define SLC_NAME(x)		slc_names[x]
+
+#define	SLC_NOSUPPORT	0
+#define	SLC_CANTCHANGE	1
+#define	SLC_VARIABLE	2
+#define	SLC_DEFAULT		3
+#define	SLC_LEVELBITS	0x03
+
+#define	SLC_FUNC		0
+#define	SLC_FLAGS		1
+#define	SLC_VALUE		2
+
+#define	SLC_ACK			0x80
+#define	SLC_FLUSHIN		0x40
+#define	SLC_FLUSHOUT	0x20
+
+#define	OLD_ENV_VAR		1
+#define	OLD_ENV_VALUE	0
+#define	NEW_ENV_VAR		0
+#define	NEW_ENV_VALUE	1
+#define	ENV_ESC			2
+#define ENV_USERVAR		3
+
+/*
+ * AUTHENTICATION suboptions
+ */
+
+/*
+ * Who is authenticating who ...
+ */
+#define	AUTH_WHO_CLIENT			0	/* Client authenticating server */
+#define	AUTH_WHO_SERVER			1	/* Server authenticating client */
+#define	AUTH_WHO_MASK			1
+
+/*
+ * amount of authentication done
+ */
+#define	AUTH_HOW_ONE_WAY		0
+#define	AUTH_HOW_MUTUAL			2
+#define	AUTH_HOW_MASK			2
+
+/*
+ * should we be encrypting? (not yet formally standardized)
+ */
+#define AUTH_ENCRYPT_OFF		0
+#define AUTH_ENCRYPT_ON			4
+#define AUTH_ENCRYPT_MASK		4
+
+#define	AUTHTYPE_NULL			0
+#define	AUTHTYPE_KERBEROS_V4	1
+#define	AUTHTYPE_KERBEROS_V5	2
+#define	AUTHTYPE_SPX			3
+#define	AUTHTYPE_MINK			4
+#define	AUTHTYPE_SRA			6
+#define	AUTHTYPE_CNT			7
+
+#define	AUTHTYPE_TEST			99
+
+#ifdef	AUTH_NAMES
+const char *authtype_names[] = {
+	"NULL", "KERBEROS_V4", "KERBEROS_V5", "SPX", "MINK", NULL, "SRA",
+	0
+};
+#else
+extern const char *authtype_names[];
+#endif
+
+#define	AUTHTYPE_NAME_OK(x)	((unsigned int)(x) < AUTHTYPE_CNT)
+#define	AUTHTYPE_NAME(x)	authtype_names[x]
+
+/*
+ * ENCRYPTion suboptions
+ */
+#define	ENCRYPT_IS			0	/* I pick encryption type ... */
+#define	ENCRYPT_SUPPORT		1	/* I support encryption types ... */
+#define	ENCRYPT_REPLY		2	/* Initial setup response */
+#define	ENCRYPT_START		3	/* Am starting to send encrypted */
+#define	ENCRYPT_END			4	/* Am ending encrypted */
+#define	ENCRYPT_REQSTART	5	/* Request you start encrypting */
+#define	ENCRYPT_REQEND		6	/* Request you send encrypting */
+#define	ENCRYPT_ENC_KEYID	7
+#define	ENCRYPT_DEC_KEYID	8
+#define	ENCRYPT_CNT			9
+
+#define	ENCTYPE_ANY			0
+#define	ENCTYPE_DES_CFB64	1
+#define	ENCTYPE_DES_OFB64	2
+#define	ENCTYPE_CNT			3
+
+#ifdef	ENCRYPT_NAMES
+const char *encrypt_names[] = {
+	"IS", "SUPPORT", "REPLY", "START", "END",
+	"REQUEST-START", "REQUEST-END", "ENC-KEYID", "DEC-KEYID",
+	0
+};
+const char *enctype_names[] = {
+	"ANY", "DES_CFB64",  "DES_OFB64",
+	0
+};
+#else
+extern const char *encrypt_names[];
+extern const char *enctype_names[];
+#endif
+
+
+#define	ENCRYPT_NAME_OK(x)	((unsigned int)(x) < ENCRYPT_CNT)
+#define	ENCRYPT_NAME(x)		encrypt_names[x]
+
+#define	ENCTYPE_NAME_OK(x)	((unsigned int)(x) < ENCTYPE_CNT)
+#define	ENCTYPE_NAME(x)		enctype_names[x]
+#endif /* !_ARPA_TELNET_H_ */

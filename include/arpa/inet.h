@@ -17,15 +17,25 @@
  *	@(#)inet.h	5.2.2 (2.11BSD GTE) 12/31/93
  */
 
-#ifndef _INET_H_
-#define	_INET_H_
+#ifndef _ARPA_INET_H_
+#define	_ARPA_INET_H_
 
 /*
  * External definitions for
  * functions in inet(3N)
  */
 
+#include <sys/ansi.h>
 #include <sys/cdefs.h>
+#include <sys/types.h>
+
+#include <netinet/in.h>
+
+#ifndef	_SOCKLEN_T_DEFINED_
+#define	_SOCKLEN_T_DEFINED_
+typedef __socklen_t	socklen_t;
+#define socklen_t	__socklen_t
+#endif
 
 __BEGIN_DECLS
 unsigned long 	inet_addr(const char *);
@@ -34,6 +44,19 @@ struct	in_addr inet_makeaddr(long , long);
 unsigned long 	inet_network(const char *);
 unsigned long 	inet_netof(struct in_addr);
 unsigned long 	inet_lnaof(struct in_addr);
+const char		*inet_ntop(int, const void * __restrict, char * __restrict, socklen_t);
+int		 		inet_pton(int, const char * __restrict, void * __restrict);
+
+#if __BSD_VISIBLE
+int		 		inet_aton(const char *, struct in_addr *);
+char 			*inet_neta(u_long, char *, size_t);
+char			*inet_net_ntop(int, const void *, int, char *, size_t);
+int		 		inet_net_pton(int, const char *, void *, size_t);
+char			*inet_cidr_ntop(int, const void *, int, char *, size_t);
+int		 		inet_cidr_pton(int, const char *, void *, int *);
+u_int			inet_nsap_addr(const char *, u_char *, int);
+char			*inet_nsap_ntoa(int, const u_char *, char *);
+#endif
 __END_DECLS
 
-#endif /* !_INET_H_ */
+#endif /* !_ARPA_INET_H_ */

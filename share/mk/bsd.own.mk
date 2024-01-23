@@ -912,7 +912,7 @@ _MKVARS.yes= \
 	MKGCC \
     MKGDB \
     MKGROFF \
-    	MKHESIOD \
+    MKHESIOD \
 	MKHTML \
     MKIEEEFP \
     MKINET6 \
@@ -934,7 +934,8 @@ _MKVARS.yes= \
 	MKSKEY \
     MKSTATICLIB \
     MKSTRIPSYM \
-    MKUNBOUND
+    MKUNBOUND \
+    MKYP
 	
 .for var in ${_MKVARS.yes}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uyes}}
@@ -982,7 +983,7 @@ _MKVARS.no= \
     MKCOMPATX11 \
     MKCTF \
     MKCVS \
-       MKCXX \
+    MKCXX \
 	MKDEBUG \
     MKDEBUGLIB \
     MKDTC \
@@ -1026,11 +1027,11 @@ _MKVARS.no= \
     MKX11FONTS \
     MKX11MOTIF \
     MKXORG_SERVER \
-    MKYP \
 	MKZFS \
 	MKPAM \
     MKKERBEROS \
-	MKPOSTFIX 
+	MKPOSTFIX
+	
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
 .endfor

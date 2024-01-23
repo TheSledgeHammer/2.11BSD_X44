@@ -17,8 +17,8 @@
  *	@(#)ftp.h	5.4 (Berkeley) 2/21/89
  */
 
-#ifndef _FTP_H_
-#define	_FTP_H_
+#ifndef _ARPA_FTP_H_
+#define	_ARPA_FTP_H_
 
 /*
  * Definitions for FTP
@@ -93,4 +93,4 @@ char *modenames[] =  {"0", "Stream", "Block", "Compressed" };
 
 #define	BLK_BYTECOUNT	2	/* Bytes in this block */
 
-#endif /* !_FTP_H_ */
+#endif /* !_ARPA_FTP_H_ */

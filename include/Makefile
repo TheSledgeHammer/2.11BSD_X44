@@ -32,6 +32,10 @@ INCS+=	hesiod.h
 
 .include <bsd.own.mk>
 
+.if (${MKYP} != "no")
+INCS+=	rpcsvc/yp_prot.h rpcsvc/ypclnt.h
+.endif
+
 INCS+=  ssp/ssp.h ssp/stdio.h ssp/string.h ssp/strings.h ssp/unistd.h
 
 INCSDIR= /usr/include

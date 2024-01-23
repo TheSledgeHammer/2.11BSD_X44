@@ -45,8 +45,8 @@
  *	@(#)dumprestor.h	5.1 (Berkeley) 12/13/86
  */
 
-#ifndef _DUMPRESTORE_H_
-#define _DUMPRESTORE_H_
+#ifndef _PROTOCOLS_DUMPRESTORE_H_
+#define _PROTOCOLS_DUMPRESTORE_H_
 
 #include <ufs/ufs/dinode.h>
 
@@ -144,4 +144,4 @@ union u_spcl {
 										/* name, incno, ctime(date) */
 #define	DUMPINFMT	"%16s %c %[^\n]\n"	/* inverse for scanf */
 
-#endif /* !_DUMPRESTORE_H_ */
+#endif /* !_PROTOCOLS_DUMPRESTORE_H_ */
