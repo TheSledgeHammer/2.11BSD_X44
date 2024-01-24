@@ -10,7 +10,8 @@ SUBDIR= acctd atrun \
 		identd \
 		ld.aout_so ld.elf_so lfs_cleanerd \
 		makekey \
-		talkd
+		talkd \
+		utmp_update
 
 .if ${MKMAKEMANDB} == "no"
 SUBDIR+= getNAME makewhatis
