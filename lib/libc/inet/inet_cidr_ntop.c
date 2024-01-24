@@ -175,7 +175,7 @@ inet_cidr_ntop_ipv6(const u_char *src, int bits, char *dst, size_t size) {
 	char tmp[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255/128"];
 	char *tp;
 	struct { int base, len; } best, cur;
-	u_int words[NS_IN6ADDRSZ / NS_INT16SZ];
+	u_int words[IN6ADDRSZ / INT16SZ];
 	int i;
 
 	if ((bits < -1) || (bits > 128)) {
@@ -189,13 +189,13 @@ inet_cidr_ntop_ipv6(const u_char *src, int bits, char *dst, size_t size) {
 	 *	Find the longest run of 0x00's in src[] for :: shorthanding.
 	 */
 	memset(words, '\0', sizeof words);
-	for (i = 0; i < NS_IN6ADDRSZ; i++)
+	for (i = 0; i < IN6ADDRSZ; i++)
 		words[i / 2] |= (src[i] << ((1 - (i % 2)) << 3));
 	best.base = -1;
 	best.len = 0;
 	cur.base = -1;
 	cur.len = 0;
-	for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++) {
+	for (i = 0; i < (IN6ADDRSZ / INT16SZ); i++) {
 		if (words[i] == 0) {
 			if (cur.base == -1)
 				cur.base = i, cur.len = 1;
@@ -220,7 +220,7 @@ inet_cidr_ntop_ipv6(const u_char *src, int bits, char *dst, size_t size) {
 	 * Format the result.
 	 */
 	tp = tmp;
-	for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++) {
+	for (i = 0; i < (IN6ADDRSZ / INT16SZ); i++) {
 		/* Are we inside the best run of 0x00's? */
 		if (best.base != -1 && i >= best.base &&
 		    i < (best.base + best.len)) {
@@ -256,7 +256,7 @@ inet_cidr_ntop_ipv6(const u_char *src, int bits, char *dst, size_t size) {
 
 	/* Was it a trailing run of 0x00's? */
 	if (best.base != -1 && (best.base + best.len) ==
-	    (NS_IN6ADDRSZ / NS_INT16SZ))
+	    (IN6ADDRSZ / INT16SZ))
 		*tp++ = ':';
 	*tp = '\0';
 

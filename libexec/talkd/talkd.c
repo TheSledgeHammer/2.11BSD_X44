@@ -1,4 +1,4 @@
-/*	$NetBSD: talkd.c,v 1.21 2009/03/16 01:04:32 lukem Exp $	*/
+/*	$NetBSD: talkd.c,v 1.17 2003/08/07 09:46:51 agc Exp $	*/
 
 /*
  * Copyright (c) 1983, 1993
@@ -31,15 +31,15 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
-__COPYRIGHT("@(#) Copyright (c) 1983, 1993\
- The Regents of the University of California.  All rights reserved.");
+__COPYRIGHT("@(#) Copyright (c) 1983, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n");
 #endif /* not lint */
 
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)talkd.c	8.1 (Berkeley) 6/4/93";
 #else
-__RCSID("$NetBSD: talkd.c,v 1.21 2009/03/16 01:04:32 lukem Exp $");
+__RCSID("$NetBSD: talkd.c,v 1.17 2003/08/07 09:46:51 agc Exp $");
 #endif
 #endif /* not lint */
 
@@ -73,7 +73,7 @@ CTL_RESPONSE	response;
 int	sockt = STDIN_FILENO;
 int	debug = 0;
 int	logging = 0;
-time_t	lastmsgtime;
+long	lastmsgtime;
 
 char	hostname[MAXHOSTNAMELEN + 1];
 
@@ -84,7 +84,9 @@ static void timeout(int);
 int	main(int, char *[]);
 
 int
-main(int argc, char *argv[])
+main(argc, argv)
+	int argc;
+	char *argv[];
 {
 	CTL_MSG *mp = &request;
 	int cc, ch;
@@ -131,7 +133,9 @@ main(int argc, char *argv[])
 		lastmsgtime = time(0);
 		process_request(mp, &response);
 
-		tsa2sa(&ctl_addr, &mp->ctl_addr);
+		(void)memcpy(&ctl_addr, &mp->ctl_addr, sizeof(ctl_addr));
+		ctl_addr.sa_family = mp->ctl_addr.sa_family;
+		ctl_addr.sa_len = sizeof(ctl_addr);
 		if (ctl_addr.sa_family != AF_INET)
 			continue;
 
@@ -144,7 +148,8 @@ main(int argc, char *argv[])
 }
 
 void
-timeout(int n)
+timeout(n)
+	int n;
 {
 	int save_errno = errno;
 
@@ -152,12 +157,4 @@ timeout(int n)
 		_exit(0);
 	alarm(TIMEOUT);
 	errno = save_errno;
-}
-
-void
-tsa2sa(struct sockaddr *sa, const struct talkd_sockaddr *tsa)
-{
-	(void)memcpy(sa, tsa, sizeof(*tsa));
-	sa->sa_len = sizeof(*tsa);
-	sa->sa_family = tsa->sa_family;
 }

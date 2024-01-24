@@ -11,7 +11,7 @@ SUBDIR= apply ar asa at 											\
 		elf2aout elf2ecoff 											\
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
 		hexdump 													\
-                                                                    \
+        iostat                                                      \
 		join 														\
 		kdump ktrace												\
 		ldd locate lorder 											\
@@ -19,11 +19,11 @@ SUBDIR= apply ar asa at 											\
         mktemp msgc 	                                            \
         netgroup netstat                                            \
 		rpcgen rpcinfo												\
-		script sed shar sort sortinfo stat strfile 						\
-		time tip touch tsort 											\
+		script sed shar sort sortinfo stat strfile 					\
+		time tip touch tsort 										\
 		unstr uudecode uuencode 									\
 		vmstat vgrind 												\
-		write 														\
+		wall wc what whereis who whois write 						\
 		xargs xinstall xlint xstr
 												
 SUBDIR+= ../contrib/zlib/pigz/bin/pigz
@@ -48,6 +48,10 @@ SUBDIR+= gzip
 
 .if (${MKHESIOD} != "no")
 SUBDIR+= hesinfo
+.endif
+
+.if (${MKYP} != "no")
+SUBDIR+= ypcat ypmatch ypwhich
 .endif
 
 SUBDIR+= bdes

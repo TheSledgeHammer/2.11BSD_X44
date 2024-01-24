@@ -29,3 +29,4 @@ sys/			4.4BSD-lite2
 termios/		NetBSD
 time/			211BSD
 uuid/			NetBSD
+yp/				NetBSD

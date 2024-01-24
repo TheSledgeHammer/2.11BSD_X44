@@ -20,8 +20,8 @@ SRCS+=	alarm.c assert.c basename.c closedir.c crypt.c ctermid.c ctype_.c daemon.
 		popen.c	psignal.c pw_scan.c pwcache.c readdir.c rewinddir.c regex.c remque.c 	\
 		scandir.c seekdir.c sethostname.c setmode.c siginterrupt.c siglist.c signal.c 	\
 		sigsetops.c sleep.c sysctl.c syserrlst.c syslog.c telldir.c time.c timezone.c 	\
-		ttyname.c ttyslot.c ualarm.c usleep.c valloc.c vis.c uname.c unvis.c wait.c 	\
-		wait3.c waitpid.c
+		ttyname.c ttyslot.c ualarm.c usleep.c utmp.c utmpx.c valloc.c vis.c uname.c 	\
+		unvis.c wait.c wait3.c waitpid.c
 
 # machine-dependent gen sources
 .include "${ARCHDIR}/gen/Makefile.inc"

@@ -1,13 +1,12 @@
-#	$NetBSD: Makefile,v 1.13 2008/09/27 04:41:20 reed Exp $
+#	$NetBSD: Makefile,v 1.12 2004/03/24 21:20:26 he Exp $
 #	@(#)Makefile	8.1 (Berkeley) 6/4/93
 
 .include <bsd.own.mk>
 
 PROG=	ntalkd
 SRCS=	talkd.c announce.c process.c table.c print.c utmpentry.c
-MAN=	ntalkd.8
-BUILDSYMLINKS+= talkd.8 ntalkd.8
-MLINKS+=ntalkd.8 talkd.8
+MAN=	talkd.8
+MLINKS+=talkd.8 ntalkd.8
 DPADD+=${LIBUTIL}
 LDADD+=-lutil
 

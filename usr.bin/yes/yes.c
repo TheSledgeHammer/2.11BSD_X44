@@ -1,8 +1,8 @@
-/*	$NetBSD: citrus_hash.c,v 1.1 2003/06/25 09:51:32 tshiozak Exp $	*/
+/*	$NetBSD: yes.c,v 1.6 2003/08/07 11:17:56 agc Exp $	*/
 
-/*-
- * Copyright (c)2003 Citrus Project,
- * All rights reserved.
+/*
+ * Copyright (c) 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,11 +12,14 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -27,29 +30,30 @@
  */
 
 #include <sys/cdefs.h>
-#if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: citrus_hash.c,v 1.1 2003/06/25 09:51:32 tshiozak Exp $");
-#endif /* LIBC_SCCS and not lint */
+#ifndef lint
+__COPYRIGHT("@(#) Copyright (c) 1987, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n");
+#endif /* not lint */
 
-#include "namespace.h"
-#include <assert.h>
+#ifndef lint
+#if 0
+static char sccsid[] = "@(#)yes.c	8.1 (Berkeley) 6/6/93";
+#endif
+__RCSID("$NetBSD: yes.c,v 1.6 2003/08/07 11:17:56 agc Exp $");
+#endif /* not lint */
+
 #include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
 
-#include "citrus_namespace.h"
-#include "citrus_types.h"
-#include "citrus_region.h"
-#include "citrus_hash.h"
-#include "citrus_db_hash.h"
+int main(int, char **);
 
 int
-_citrus_string_hash_func(const char *key, int hashsize)
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-	struct _region r;
-
-	/* LINTED: discard const */
-	_citrus_region_init(&r, (char *)key, strlen(key));
-
-	return (int)(_citrus_db_hash_std(NULL, &r) % (u_int32_t)hashsize);
+	if (argc > 1)
+		for(;;)
+			(void)puts(argv[1]);
+	else for (;;)
+		(void)puts("y");
 }

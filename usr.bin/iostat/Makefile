@@ -1,11 +1,15 @@
 #	@(#)Makefile	8.1 (Berkeley) 6/6/93
 
+.include <bsd.own.mk>
+
 PROG=	iostat
-CFLAGS+=-I/sys -I${.CURDIR}/../../usr.bin/vmstat
-MAN8=	iostat.0
+MAN=	iostat.8
+
+.PATH:	${NETBSDSRCDIR}/usr.bin/vmstat
+
+CPPFLAGS+=-I${NETBSDSRCDIR}/usr.bin/vmstat
+
 DPADD=	${LIBKVM}
 LDADD=	-lkvm
-BINGRP=	kmem
-BINMODE=2555
 
 .include <bsd.prog.mk>

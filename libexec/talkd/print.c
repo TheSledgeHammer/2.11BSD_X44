@@ -1,4 +1,4 @@
-/*	$NetBSD: print.c,v 1.10 2009/03/16 01:13:38 lukem Exp $	*/
+/*	$NetBSD: print.c,v 1.7 2003/08/07 09:46:50 agc Exp $	*/
 
 /*
  * Copyright (c) 1983, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)print.c	8.1 (Berkeley) 6/4/93";
 #else
-__RCSID("$NetBSD: print.c,v 1.10 2009/03/16 01:13:38 lukem Exp $");
+__RCSID("$NetBSD: print.c,v 1.7 2003/08/07 09:46:50 agc Exp $");
 #endif
 #endif /* not lint */
 
@@ -43,12 +43,11 @@ __RCSID("$NetBSD: print.c,v 1.10 2009/03/16 01:13:38 lukem Exp $");
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <protocols/talkd.h>
-#include <inttypes.h>
 #include <syslog.h>
 #include <stdio.h>
 #include "extern.h"
 
-static	const char *types[] = {
+static	char *types[] = {
 	"leave_invite",
 	"look_up",
 	"delete",
@@ -56,7 +55,7 @@ static	const char *types[] = {
 };
 #define	NTYPES	(sizeof (types) / sizeof (types[0]))
 
-static	const char *answers[] = {
+static	char *answers[] = {
 	"success",
 	"not_here",
 	"failed",
@@ -70,37 +69,39 @@ static	const char *answers[] = {
 #define	NANSWERS	(sizeof (answers) / sizeof (answers[0]))
 
 void
-print_request(const char *cp, CTL_MSG *mp)
+print_request(cp, mp)
+	char *cp;
+	CTL_MSG *mp;
 {
-	char tbuf[80];
-	const char *tp;
+	char tbuf[80], *tp;
 	
-	if (mp->type >= NTYPES) {
+	if (mp->type > NTYPES) {
 		(void)snprintf(tbuf, sizeof tbuf, "type %d", mp->type);
 		tp = tbuf;
 	} else
 		tp = types[mp->type];
 	syslog(debug ? LOG_DEBUG : LOG_INFO,
-	    "%s: %s: id %"PRIu32", l_user %s, r_user %s, r_tty %s",
+	    "%s: %s: id %d, l_user %s, r_user %s, r_tty %s",
 	    cp, tp, mp->id_num, mp->l_name, mp->r_name, mp->r_tty);
 }
 
 void
-print_response(const char *cp, CTL_RESPONSE *rp)
+print_response(cp, rp)
+	char *cp;
+	CTL_RESPONSE *rp;
 {
-	char tbuf[80], abuf[80];
-	const char *tp, *ap;
+	char tbuf[80], *tp, abuf[80], *ap;
 	
-	if (rp->type >= NTYPES) {
+	if (rp->type > NTYPES) {
 		(void)snprintf(tbuf, sizeof tbuf, "type %d", rp->type);
 		tp = tbuf;
 	} else
 		tp = types[rp->type];
-	if (rp->answer >= NANSWERS) {
+	if (rp->answer > NANSWERS) {
 		(void)snprintf(abuf, sizeof abuf, "answer %d", rp->answer);
 		ap = abuf;
 	} else
 		ap = answers[rp->answer];
-	syslog(debug ? LOG_DEBUG : LOG_INFO, "%s: %s: %s, id %"PRIu32,
+	syslog(debug ? LOG_DEBUG : LOG_INFO, "%s: %s: %s, id %d",
 	    cp, tp, ap, ntohl(rp->id_num));
 }

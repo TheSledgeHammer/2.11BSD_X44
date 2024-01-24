@@ -16,8 +16,8 @@
 
 struct lastlog {
 	time_t	ll_time;
-	char	ll_line[8];
-	char	ll_host[16];		/* same as in utmp */
+	char	ll_line[UT_LINESIZE];
+	char	ll_host[UT_HOSTSIZE];		/* same as in utmp */
 };
 
 #endif /* !_LASTLOG_H_ */
