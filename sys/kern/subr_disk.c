@@ -129,7 +129,7 @@ disk_attach(diskp)
 
 	diskp->dk_label = (struct disklabel *)malloc(sizeof(struct disklabel *), M_DEVBUF, M_NOWAIT);
 	diskp->dk_cpulabel = (struct cpu_disklabel *)malloc(sizeof(struct cpu_disklabel *), M_DEVBUF, M_NOWAIT);
-	diskp->dk_slices = dsmakeslicestruct(BASE_SLICE, lp);
+	diskp->dk_slices = dsmakeslicestruct(BASE_SLICE, diskp->dk_label);
 
 	if (diskp->dk_label == NULL) {
 		panic("disk_attach: can't allocate storage for cpu_disklabel");
