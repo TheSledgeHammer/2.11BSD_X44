@@ -126,13 +126,20 @@ disk_attach(diskp)
 	struct dkdevice *diskp;
 {
 	int s;
+
 	diskp->dk_label = (struct disklabel *)malloc(sizeof(struct disklabel *), M_DEVBUF, M_NOWAIT);
-	diskp->dk_slices = (struct diskslices *)malloc(sizeof(struct diskslices *), M_DEVBUF, M_NOWAIT);
+	diskp->dk_cpulabel = (struct cpu_disklabel *)malloc(sizeof(struct cpu_disklabel *), M_DEVBUF, M_NOWAIT);
+	diskp->dk_slices = dsmakeslicestruct(BASE_SLICE, lp);
 
 	if (diskp->dk_label == NULL) {
-		panic("disk_attach: can't allocate storage for disklabel");
+		panic("disk_attach: can't allocate storage for cpu_disklabel");
 	} else {
 		bzero(diskp->dk_label, sizeof(struct disklabel));
+	}
+	if (diskp->dk_cpulabel == NULL) {
+		panic("disk_attach: can't allocate storage for cpu_disklabel");
+	} else {
+		bzero(diskp->dk_cpulabel, sizeof(struct cpu_disklabel));
 	}
 	if (diskp->dk_slices == NULL) {
 		panic("disk_attach: can't allocate storage for diskslices");
@@ -173,7 +180,8 @@ disk_detach(diskp)
 	 * Free the space used by the disklabel structures.
 	 */
 	free(diskp->dk_label, M_DEVBUF);
-	free(diskp->dk_slices, M_DEVBUF);
+	free(diskp->dk_cpulabel, M_DEVBUF);
+	dsgone(&diskp->dk_slices);
 }
 
 /*

@@ -198,6 +198,7 @@ reread_mbr:
 	bp->b_dev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
 	bp->b_blkno = mbr_offset;
 	bp->b_bcount = lp->d_secsize;
+	bp->b_flags |= B_READ;
 	VOP_STRATEGY(bp);
 	if (biowait(bp) != 0) {
 		diskerr(bp, devtoname(dev), "reading primary partition table: error", LOG_PRINTF, 0, (struct disklabel*) NULL);
@@ -430,8 +431,7 @@ mbr_extended(disk, dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors
 		if (dp->dp_typ == DOSPTYP_EXTENDED || dp->dp_typ == DOSPTYP_EXTENDEDX) {
 			static char buf[32];
 
-			sname = dsname(disk, dev, dkunit(dev), WHOLE_DISK_SLICE,
-			RAW_PART, partname);
+			sname = dsname(disk, dev, dkunit(dev), WHOLE_DISK_SLICE, RAW_PART, partname);
 			snprintf(buf, sizeof(buf), "%s", sname);
 			if (strlen(buf) < sizeof buf - 11)
 				strcat(buf, "<extended>");

@@ -30,29 +30,6 @@
 #define	_SYS_DISKGPT_H_
 
 #include <sys/uuid.h>
-	
-/*
- * Applications can define GPT_UUID_TYPE if they want the GPT structures
- * to use a particular type definition for UUIDs/GUIDs.  This header uses
- * a generic (DCE 1.1 compatible) definition otherwise.
- */
-#ifndef GPT_UUID_TYPE
-struct gpt_uuid {
-	uint32_t	time_low;
-	uint16_t	time_mid;
-	uint16_t	time_hi_and_version;
-	uint8_t		clock_seq_hi_and_reserved;
-	uint8_t		clock_seq_low;
-	uint8_t		node[6];
-};
-#define	GPT_UUID_TYPE	struct gpt_uuid
-#endif /* !GPT_UUID_TYPE */
-
-typedef GPT_UUID_TYPE gpt_uuid_t;
-
-#ifdef CTASSERT
-CTASSERT(sizeof(gpt_uuid_t) == 16);
-#endif
 
 struct gpt_hdr {
 	char		hdr_sig[8];

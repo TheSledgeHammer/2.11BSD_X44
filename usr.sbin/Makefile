@@ -22,6 +22,10 @@ SUBDIR=	ac accton arp authpf 						\
 SUBDIR+= makemandb
 .endif
 
+.if (${MKYP} != "no")
+SUBDIR+= ypbind yppoll ypserv ypset
+.endif
+
 .if ${TOOLCHAIN_MISSING} != "no"
 SUBDIR+= mdsetimage
 .endif

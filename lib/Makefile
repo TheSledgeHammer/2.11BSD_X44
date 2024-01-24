@@ -49,7 +49,6 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 	\
 			${USRLIBDIR}/libpthread_dbg \
 			${USRLIBDIR}/libstubs  \
 			${USRLIBDIR}/libtermcap \
-            ${USRLIBDIR}/libtelnet  \
 			${USRLIBDIR}/libutil 	\
 			${USRLIBDIR}/libvmf 	\
 			${USRLIBDIR}/liby 		\

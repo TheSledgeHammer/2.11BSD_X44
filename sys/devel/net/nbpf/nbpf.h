@@ -130,14 +130,14 @@ nbpf_iscached(const nbpf_cache_t *bpc, const int inf)
 	return __predict_true((bpc->bpc_info & inf) != 0);
 }
 
-size_t		nbpf_offset(struct mbuf *);
-uint32_t 	nbpf_ensure_contig(struct mbuf *, size_t);
-uint32_t	nbpf_advance(struct mbuf *, size_t);
-bool 		nbpf_cksum_barrier(struct mbuf *, int);
-int			nbpf_add_tag(struct mbuf *, uint32_t, uint32_t);
-int 		nbpf_find_tag(struct mbuf *, int, uint32_t, void **);
-int 		nbpf_addr_cmp(const nbpf_addr_t *, const nbpf_netmask_t, const nbpf_addr_t *, const nbpf_netmask_t, const int);
-void		nbpf_addr_mask(const nbpf_addr_t *, const nbpf_netmask_t, const int, nbpf_addr_t *);
-nbpf_cache_t *nbpf_cache_init(struct mbuf *);
+size_t			nbpf_offset(struct mbuf *);
+uint32_t 		nbpf_ensure_contig(struct mbuf *, size_t);
+uint32_t		nbpf_advance(struct mbuf *, size_t);
+bool 			nbpf_cksum_barrier(struct mbuf *, int);
+int				nbpf_add_tag(struct mbuf *, uint32_t, uint32_t);
+int 			nbpf_find_tag(struct mbuf *, int, uint32_t, void **);
+int 			nbpf_addr_cmp(const nbpf_addr_t *, const nbpf_netmask_t, const nbpf_addr_t *, const nbpf_netmask_t, const int);
+void			nbpf_addr_mask(const nbpf_addr_t *, const nbpf_netmask_t, const int, nbpf_addr_t *);
+nbpf_cache_t 	*nbpf_cache_init(struct mbuf *);
 
 #endif /* _NET_NBPF_H_ */
