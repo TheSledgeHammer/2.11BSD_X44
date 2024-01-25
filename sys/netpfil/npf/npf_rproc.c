@@ -72,12 +72,15 @@ struct npf_rproc {
 	void *			rp_ext_meta[RPROC_EXT_COUNT];
 
 	/* Name of the procedure and list entry. */
-	char			rp_name[RPROC_NAME_LEN];
+	char					rp_name[RPROC_NAME_LEN];
 	LIST_ENTRY(npf_rproc)	rp_entry;
 };
 
 static LIST_HEAD(, npf_ext)	ext_list	__cacheline_aligned;
 static kmutex_t			ext_lock	__cacheline_aligned;
+
+#define npf_ext_malloc(size)	(npf_malloc(size, M_NPF_EXT, M_NOWAIT))
+#define npf_ext_free(addr)		(npf_free(addr, M_NPF_EXT))
 
 void
 npf_ext_sysinit(void)
@@ -115,14 +118,14 @@ npf_ext_register(const char *name, const npf_ext_ops_t *ops)
 {
 	npf_ext_t *ext;
 
-	ext = kmem_zalloc(sizeof(npf_ext_t), KM_SLEEP);
+	ext = npf_ext_malloc(sizeof(npf_ext_t));
 	strlcpy(ext->ext_callname, name, EXT_NAME_LEN);
 	ext->ext_ops = ops;
 
 	mutex_enter(&ext_lock);
 	if (npf_ext_lookup(name)) {
 		mutex_exit(&ext_lock);
-		kmem_free(ext, sizeof(npf_ext_t));
+		npf_ext_free(ext);
 		return NULL;
 	}
 	LIST_INSERT_HEAD(&ext_list, ext, ext_entry);
@@ -152,7 +155,7 @@ npf_ext_unregister(void *extid)
 	LIST_REMOVE(ext, ext_entry);
 	mutex_exit(&ext_lock);
 
-	kmem_free(ext, sizeof(npf_ext_t));
+	npf_ext_free(ext);
 	return 0;
 }
 
@@ -201,7 +204,7 @@ npf_rprocset_create(void)
 {
 	npf_rprocset_t *rpset;
 
-	rpset = kmem_zalloc(sizeof(npf_rprocset_t), KM_SLEEP);
+	rpset = npf_ext_malloc(sizeof(npf_rprocset_t));
 	LIST_INIT(&rpset->rps_list);
 	return rpset;
 }
@@ -215,7 +218,7 @@ npf_rprocset_destroy(npf_rprocset_t *rpset)
 		LIST_REMOVE(rp, rp_entry);
 		npf_rproc_release(rp);
 	}
-	kmem_free(rpset, sizeof(npf_rprocset_t));
+	npf_ext_free(rpset);
 }
 
 /*
@@ -256,7 +259,7 @@ npf_rproc_create(prop_dictionary_t rpdict)
 		return NULL;
 	}
 
-	rp = kmem_intr_zalloc(sizeof(npf_rproc_t), KM_SLEEP);
+	rp = npf_ext_malloc(sizeof(npf_rproc_t));
 	rp->rp_refcnt = 1;
 
 	strlcpy(rp->rp_name, name, RPROC_NAME_LEN);
@@ -293,7 +296,7 @@ npf_rproc_release(npf_rproc_t *rp)
 		extops->dtor(rp, rp->rp_ext_meta[i]);
 		atomic_dec_uint(&ext->ext_refcnt);
 	}
-	kmem_intr_free(rp, sizeof(npf_rproc_t));
+	npf_ext_free(rp);
 }
 
 void

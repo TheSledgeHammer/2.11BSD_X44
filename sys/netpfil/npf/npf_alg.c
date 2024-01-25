@@ -39,8 +39,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_alg.c,v 1.2.16.5 2013/02/11 21:49:49 riz Exp $")
 #include <sys/param.h>
 #include <sys/types.h>
 
-#include <sys/kmem.h>
-#include <sys/pserialize.h>
+#include <sys/malloc.h>
 #include <sys/mutex.h>
 #include <net/pfil.h>
 
@@ -49,20 +48,22 @@ __KERNEL_RCSID(0, "$NetBSD: npf_alg.c,v 1.2.16.5 2013/02/11 21:49:49 riz Exp $")
 /* NAT ALG structure for registration. */
 struct npf_alg {
 	LIST_ENTRY(npf_alg)	na_entry;
-	npf_alg_t *		na_bptr;
+	npf_alg_t 			*na_bptr;
 	npf_alg_func_t		na_match_func;
 	npf_alg_func_t		na_tr_func;
 	npf_alg_sfunc_t		na_se_func;
 };
 
-static LIST_HEAD(, npf_alg)	nat_alg_list	__cacheline_aligned;
-static kmutex_t			nat_alg_lock	__cacheline_aligned;
-static pserialize_t		nat_alg_psz	__cacheline_aligned;
+static LIST_HEAD(, npf_alg)	nat_alg_list;//	__cacheline_aligned;
+static struct mutex			nat_alg_lock;//	__cacheline_aligned;
+static pserialize_t			nat_alg_psz;//	__cacheline_aligned;
+
+#define npf_alg_malloc(size)	(npf_malloc(size, M_NPF_ALG, M_WAITOK))
+#define npf_alg_free(addr)		(npf_free(addr, M_NPF_ALG))
 
 void
 npf_alg_sysinit(void)
 {
-
 	mutex_init(&nat_alg_lock, MUTEX_DEFAULT, IPL_NONE);
 	nat_alg_psz = pserialize_create();
 	LIST_INIT(&nat_alg_list);
@@ -86,7 +87,7 @@ npf_alg_register(npf_alg_func_t mfunc, npf_alg_func_t tfunc,
 {
 	npf_alg_t *alg;
 
-	alg = kmem_zalloc(sizeof(npf_alg_t), KM_SLEEP);
+	alg = npf_alg_malloc(sizeof(npf_alg_t));
 	alg->na_bptr = alg;
 	alg->na_match_func = mfunc;
 	alg->na_tr_func = tfunc;
@@ -114,7 +115,7 @@ npf_alg_unregister(npf_alg_t *alg)
 	npf_ruleset_freealg(npf_config_natset(), alg);
 	npf_config_exit();
 
-	kmem_free(alg, sizeof(npf_alg_t));
+	npf_alg_free(alg);
 	return 0;
 }
 

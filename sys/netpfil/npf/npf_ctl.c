@@ -41,7 +41,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_ctl.c,v 1.12.2.9.2.1 2013/09/22 17:27:45 riz Exp
 
 #include <sys/param.h>
 #include <sys/conf.h>
-#include <sys/kmem.h>
+#include <sys/malloc.h>
 #include <net/bpf.h>
 
 #include <prop/proplib.h>
@@ -252,7 +252,7 @@ npf_mk_code(prop_object_t obj, int type, void **code, size_t *csize,
 		return ENOTSUP;
 	}
 
-	bc = kmem_alloc(clen, KM_SLEEP);
+	bc = npf_malloc(clen, M_NPF, M_NOWAIT);
 	memcpy(bc, cptr, clen);
 
 	*code = bc;

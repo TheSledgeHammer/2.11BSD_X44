@@ -197,7 +197,7 @@ hashmap_insert(lpm_hmap_t *hmap, const void *key, size_t len, int flags)
 		entry = entry->next;
 	}
 
-	if ((entry = kmem_alloc(entlen, flags)) != NULL) {
+	if ((entry = malloc(entlen, M_DEVBUF, flags)) != NULL) {
 		memcpy(entry->key, key, len);
 		entry->next = hmap->bucket[i];
 		entry->len = len;

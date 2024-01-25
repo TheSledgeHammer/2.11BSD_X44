@@ -132,8 +132,8 @@ npf_iscached(const npf_cache_t *npc, const int inf)
 typedef struct {
 	struct mbuf 	*nb_mbuf0;
 	struct mbuf 	*nb_mbuf;
-	void 			*nb_nptr;
-	const struct ifnet *nb_ifp;
+	void 				*nb_nptr;
+	const struct ifnet 	*nb_ifp;
 	int		nb_flags;
 } nbuf_t;
 

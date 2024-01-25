@@ -54,7 +54,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_conf.c,v 1.2.2.2 2013/02/11 21:49:48 riz Exp $")
 #include <sys/types.h>
 
 #include <sys/atomic.h>
-#include <sys/kmem.h>
+#include <sys/malloc.h>
 #include <sys/pserialize.h>
 #include <sys/mutex.h>
 
@@ -102,7 +102,7 @@ npf_config_destroy(npf_config_t *nc)
 	npf_ruleset_destroy(nc->n_nat_rules);
 	npf_rprocset_destroy(nc->n_rprocs);
 	npf_tableset_destroy(nc->n_tables);
-	kmem_free(nc, sizeof(npf_config_t));
+	npf_free(nc, M_NPF);
 }
 
 void
@@ -124,7 +124,7 @@ npf_config_reload(prop_dictionary_t dict, npf_ruleset_t *rset,
 {
 	npf_config_t *nc, *onc;
 
-	nc = kmem_zalloc(sizeof(npf_config_t), KM_SLEEP);
+	nc = npf_malloc(sizeof(npf_config_t), M_NPF, M_WAITOK);
 	nc->n_rules = rset;
 	nc->n_tables = tset;
 	nc->n_nat_rules = nset;

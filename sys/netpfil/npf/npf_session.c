@@ -89,9 +89,8 @@ __KERNEL_RCSID(0, "$NetBSD: npf_session.c,v 1.10.4.9.2.1 2013/11/17 19:17:04 bou
 #include <netinet/tcp.h>
 
 #include <sys/atomic.h>
-#include <sys/condvar.h>
 #include <sys/hash.h>
-#include <sys/kmem.h>
+#include <sys/malloc.h>
 #include <sys/kthread.h>
 #include <sys/mutex.h>
 #include <net/pfil.h>
@@ -182,11 +181,11 @@ CTASSERT(PFIL_ALL == (0x001 | 0x002));
  * Session tracking state: disabled (off), enabled (on) or flush request.
  */
 enum { SESS_TRACKING_OFF, SESS_TRACKING_ON, SESS_TRACKING_FLUSH };
-static int			sess_tracking	__cacheline_aligned;
+static int			sess_tracking;//	__cacheline_aligned;
 
 /* Session hash table, lock and session cache. */
-static npf_sehash_t *		sess_hashtbl	__read_mostly;
-static pool_cache_t		sess_cache	__read_mostly;
+static npf_sehash_t *		sess_hashtbl;//	__read_mostly;
+static npf_session_t		sess_cache;//	__read_mostly;
 
 static kmutex_t			sess_lock;
 static kcondvar_t		sess_cv;
@@ -198,6 +197,10 @@ static void	sess_tracking_stop(void);
 static void	npf_session_destroy(npf_session_t *);
 static void	npf_session_worker(void *) __dead;
 
+#define npf_sess_malloc(size)			(npf_malloc(size, M_NPF_SESS, M_WAITOK))
+#define npf_sess_calloc(nitems, size)	(npf_calloc(nitems, size, M_NPF_SESS, M_WAITOK))
+#define npf_sess_free(addr)				(npf_free(addr, M_NPF_SESS))
+
 /*
  * npf_session_sys{init,fini}: initialise/destroy session handling structures.
  *
@@ -208,9 +211,8 @@ static void	npf_session_worker(void *) __dead;
 void
 npf_session_sysinit(void)
 {
-
-	sess_cache = pool_cache_init(sizeof(npf_session_t), coherency_unit,
-	    0, 0, "npfsespl", NULL, IPL_NET, NULL, NULL, NULL);
+	npf_cache_get(&sess_cache, sizeof(npf_session_t), M_NPF_SESS);
+	KASSERT(sess_cache != NULL);
 	mutex_init(&sess_lock, MUTEX_DEFAULT, IPL_NONE);
 	cv_init(&sess_cv, "npfgccv");
 	sess_hashtbl = NULL;
@@ -233,7 +235,7 @@ npf_session_sysfini(void)
 		sess_htable_destroy(sess_hashtbl);
 	}
 
-	pool_cache_destroy(sess_cache);
+	npf_cache_put(&sess_cache);
 	cv_destroy(&sess_cv);
 	mutex_destroy(&sess_lock);
 }
@@ -319,7 +321,7 @@ sess_htable_create(void)
 	npf_sehash_t *stbl, *sh;
 	u_int i;
 
-	stbl = kmem_zalloc(SESS_HASH_BUCKETS * sizeof(*sh), KM_SLEEP);
+	stbl = npf_sess_calloc(SESS_HASH_BUCKETS, sizeof(*sh));
 	if (stbl == NULL) {
 		return NULL;
 	}
@@ -346,7 +348,7 @@ sess_htable_destroy(npf_sehash_t *stbl)
 		KASSERT(!rb_tree_iterate(&sh->sh_tree, NULL, RB_DIR_LEFT));
 		rw_destroy(&sh->sh_lock);
 	}
-	kmem_free(stbl, SESS_HASH_BUCKETS * sizeof(*sh));
+	 npf_sess_free(stbl);
 }
 
 void
@@ -644,7 +646,7 @@ npf_session_establish(npf_cache_t *npc, nbuf_t *nbuf, const int di)
 	}
 
 	/* Allocate and initialise new state. */
-	se = pool_cache_get(sess_cache, PR_NOWAIT);
+	se =  npf_sess_malloc(sizeof(sess_cache));
 	if (__predict_false(se == NULL)) {
 		return NULL;
 	}
@@ -777,7 +779,8 @@ npf_session_destroy(npf_session_t *se)
 	npf_state_destroy(&se->s_state);
 
 	/* Free the structure, increase the counter. */
-	pool_cache_put(sess_cache, se);
+	npf_sess_free(se);
+	npf_sess_free(sess_cache);
 	npf_stats_inc(NPF_STAT_SESSION_DESTROY);
 	NPF_PRINTF(("NPF: se %p destroyed\n", se));
 }
@@ -1167,7 +1170,7 @@ npf_session_restore(npf_sehash_t *stbl, prop_dictionary_t sedict)
 	 * Copy the binary data of the structure.  Warning: must reset
 	 * reference count, rule procedure and state lock.
 	 */
-	se = pool_cache_get(sess_cache, PR_WAITOK);
+	se = npf_sess_malloc(sizeof(sess_cache));
 	memcpy(se, d, sizeof(npf_session_t));
 	se->s_refcnt = 0;
 	se->s_rproc = NULL;

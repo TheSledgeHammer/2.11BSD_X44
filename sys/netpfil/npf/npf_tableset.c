@@ -100,17 +100,8 @@ struct npf_table {
 static size_t hashsize;
 static npf_tblent_t		tblent_cache;
 
-void
-npf_tableset_alloc(npf_tblent_t *tblent)
-{
-	tblent = (npf_tblent_t)malloc(sizeof(npf_tblent_t), M_NPF, M_WAITOK);
-}
-
-void
-npf_tableset_free(npf_tblent_t *tblent)
-{
-	free(tblent, M_NPF);
-}
+#define npf_tableset_malloc(size)	(npf_malloc(size, M_NPF_TABLE, M_NOWAIT))
+#define npf_tableset_free(addr)		(npf_free(addr, M_NPF_TABLE))
 
 /*
  * npf_table_sysinit: initialise tableset structures.
@@ -118,13 +109,14 @@ npf_tableset_free(npf_tblent_t *tblent)
 void
 npf_tableset_sysinit(void)
 {
-	npf_tableset_alloc(&tblent_cache);
+	npf_cache_get(&tblent_cache, sizeof(npf_tblent_t), M_NPF_TABLE);
+	KASSERT(tblent_cache != NULL);
 }
 
 void
 npf_tableset_sysfini(void)
 {
-	npf_tableset_free(&tblent_cache);
+	npf_cache_put(&tblent_cache, M_NPF_TABLE);
 }
 
 npf_tableset_t *
@@ -132,7 +124,7 @@ npf_tableset_create(void)
 {
 	const size_t sz = NPF_TABLE_SLOTS * sizeof(npf_table_t *);
 
-	return malloc(sz, M_NPF, M_NOWAIT);
+	return npf_tableset_malloc(sz);
 }
 
 void
@@ -152,7 +144,7 @@ npf_tableset_destroy(npf_tableset_t *tblset)
 			npf_table_destroy(t);
 		}
 	}
-	free(tblset, M_NPF);
+	npf_tableset_free(tblset);
 }
 
 /*
@@ -266,7 +258,7 @@ table_tree_destroy(pt_tree_t *tree)
 
 	while ((ent = ptree_iterate(tree, NULL, PT_ASCENDING)) != NULL) {
 		ptree_remove_node(tree, ent);
-		free(ent, M_NPF);
+		npf_tableset_free(ent);
 	}
 }
 
@@ -277,7 +269,7 @@ table_lpm_destroy(npf_table_t *t)
 
 	while ((ent = LIST_FIRST(&t->t_list)) != NULL) {
 		LIST_REMOVE(ent, te_entry.listent);
-		free(ent, M_NPF);
+		npf_tableset_free(ent);
 	}
 	lpm_clear(t->t_lpm, NULL, NULL);
 	t->t_nitems = 0;
@@ -293,12 +285,12 @@ npf_table_create(u_int tid, int type, size_t hsize)
 
 	KASSERT((u_int)tid < NPF_TABLE_SLOTS);
 
-	t = malloc(sizeof(npf_table_t), M_NPF, M_NOWAIT);
+	t = npf_tableset_malloc(sizeof(npf_table_t));
 	switch (type) {
 	case NPF_TABLE_LPM:
 		t->t_lpm = lpm_create(M_NOWAIT);
 		if (t->t_lpm == NULL) {
-			free(t, M_NPF);
+			npf_tableset_free(t);
 			return (NULL);
 		}
 		LIST_INIT(&t->t_list);
@@ -317,7 +309,7 @@ npf_table_create(u_int tid, int type, size_t hsize)
 		t->t_hashl = hashinit(hsize, M_NPF, &t->t_hashmask);
 		hashsize = hsize;
 		if (t->t_hashl == NULL) {
-			free(t, M_NPF);
+			npf_tableset_free(t);
 			return NULL;
 		}
 		break;
@@ -349,7 +341,7 @@ npf_table_destroy(npf_table_t *t)
 			npf_tblent_t *ent;
 			while ((ent = LIST_FIRST(&t->t_hashl[n])) != NULL) {
 				LIST_REMOVE(ent, te_entry.hashq);
-				free(ent, M_NPF);
+				npf_tableset_free(ent);
 			}
 		}
 		hashfree(t->t_hashl, hashsize, M_NPF, t->t_hashmask);
@@ -429,7 +421,7 @@ npf_table_insert(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr
 	if (error) {
 		return error;
 	}
-	ent = malloc(tblent_cache, M_NPF, M_WAITOK);
+	ent = npf_tableset_malloc(sizeof(&tblent_cache));
 	memcpy(&ent->te_addr, addr, alen);
 	ent->te_alen = alen;
 
@@ -494,7 +486,7 @@ npf_table_insert(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr
 	rw_exit(&t->t_lock);
 
 	if (error) {
-		free(ent, M_NPF);
+		npf_tableset_free(ent);
 	}
 	return error;
 }
@@ -560,7 +552,7 @@ npf_table_remove(npf_tableset_t *tset, u_int tid, const int alen, const npf_addr
 	if (ent == NULL) {
 		return ENOENT;
 	}
-	free(ent, M_NPF);
+	npf_tableset_free(ent);
 	return 0;
 }
 

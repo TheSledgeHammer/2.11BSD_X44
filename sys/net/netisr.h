@@ -117,6 +117,7 @@ extern void pppnetisr(void);
 #define	NETISR_STRIP	30		/* for STRIP processing */
 #define	NETISR_PPP		31		/* for PPP processing */
 #endif
+#define	NETISR_MPLS		33		/* same as AF_MPLS */
 
 #if defined(_KERNEL) && !defined(_LOCORE)
 

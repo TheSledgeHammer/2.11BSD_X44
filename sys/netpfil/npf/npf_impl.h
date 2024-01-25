@@ -47,7 +47,7 @@
 
 #include <sys/types.h>
 #include <sys/queue.h>
-#include <sys/hash.h>
+//#include <sys/hash.h>
 #include <sys/tree.h>
 #include <sys/rwlock.h>
 #include <sys/mutex.h>
@@ -64,7 +64,36 @@
 #define	NPF_PRINTF(x)
 #endif
 
-#define M_NPF 100
+/* npf malloctypes */
+#define M_NPF		100
+#define M_NPF_TABLE	101
+#define M_NPF_SESS	102
+#define M_NPF_NAT	103
+#define M_NPF_ALG	104
+#define M_NPF_EXT	105
+
+/* npf allocation macro's */
+#define npf_malloc(size, type, flags)			(malloc(size, type, flags))
+#define npf_calloc(nitems, size, type, flags)	(calloc(nitems, size, type, flags))
+#define npf_free(addr, type)					(free(addr, type))
+
+/* npf cache */
+static __inline void
+npf_cache_put(cache, type)
+	void *cache;
+	int type;
+{
+	npf_free(cache, type);
+}
+
+static __inline void
+npf_cache_get(cache, size, type)
+	void *cache;
+	u_long size;
+	int type;
+{
+	cache = npf_malloc(size, type, M_WAITOK);
+}
 
 /*
  * STRUCTURE DECLARATIONS.

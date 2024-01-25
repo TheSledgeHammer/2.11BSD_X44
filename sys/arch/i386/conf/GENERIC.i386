@@ -88,6 +88,7 @@ options		    FAST_IPSEC    		# IP security with opencrypto
 #options 		IPSEC				# IP security
 #options 		IPSEC_ESP			# IP security (encryption part; define w/IPSEC)
 #options 		IPSEC_DEBUG			# debug for IP security
+#options 		MPLS			# MultiProtocol Label Switching (needs ifmpls)
 #options 		MROUTING			# IP multicast routing
 options 		NS			     	# XNS
 #options 		NSIP				  # XNS tunneling over IP

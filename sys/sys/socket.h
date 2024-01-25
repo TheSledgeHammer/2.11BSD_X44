@@ -126,8 +126,9 @@ struct	linger {
 #define pseudo_AF_KEY		22		/* Internal key management protocol  */
 #define	pseudo_AF_HDRCMPLT 	23		/* Used by BPF to not rewrite hdrs
 					          	  	  in interface output routine */
+#define	AF_MPLS				24		/* MultiProtocol Label Switching */
 
-#define	AF_MAX				24
+#define	AF_MAX				25
 
 /*
  * Structure used by kernel to store most
@@ -191,6 +192,7 @@ struct sockaddr_storage {
 #define	PF_INET6		AF_INET6
 #define PF_ARP			AF_ARP
 #define PF_KEY 		    pseudo_AF_KEY	/* like PF_ROUTE, only for key mgmt */
+#define	PF_MPLS			AF_MPLS
 #define	PF_MAX			AF_MAX
 
 /*

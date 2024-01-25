@@ -4,7 +4,9 @@
 
 SUBDIR=	arch crypto dev fs miscfs 		\
 		net net80211 netinet netinet6 	\
-		netipsec netkey netns netpfil	\
-		nfs sys ufs vm ovl
+		netipsec netkey netmpls netns 	\
+		netpfil nfs sys ufs vm
+
+SUBDIR+= ovl
 
 .include <bsd.kinc.mk>

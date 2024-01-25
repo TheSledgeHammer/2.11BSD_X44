@@ -84,7 +84,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_nat.c,v 1.10.2.8.2.1 2013/11/17 19:17:04 bouyer 
 #include <sys/atomic.h>
 #include <sys/bitops.h>
 #include <sys/condvar.h>
-#include <sys/kmem.h>
+#include <sys/malloc.h>
 #include <sys/mutex.h>
 #include <sys/pool.h>
 #include <sys/proc.h>
@@ -133,6 +133,9 @@ struct npf_natpolicy {
 #define	NPF_NP_CMP_START	offsetof(npf_natpolicy_t, n_type)
 #define	NPF_NP_CMP_SIZE		(sizeof(npf_natpolicy_t) - NPF_NP_CMP_START)
 
+#define npf_nat_malloc(size)	(npf_malloc(size, M_NPF_NAT, M_NOWAIT))
+#define npf_nat_free(addr)		(npf_free(addr, M_NPF_NAT))
+
 /*
  * NAT translation entry for a session.
  */
@@ -151,7 +154,7 @@ struct npf_nat {
 	uintptr_t		nt_alg_arg;
 };
 
-static pool_cache_t		nat_cache	__read_mostly;
+static npf_nat_t		nat_cache;
 
 /*
  * npf_nat_sys{init,fini}: initialise/destroy NAT subsystem structures.
@@ -160,9 +163,7 @@ static pool_cache_t		nat_cache	__read_mostly;
 void
 npf_nat_sysinit(void)
 {
-
-	nat_cache = pool_cache_init(sizeof(npf_nat_t), coherency_unit,
-	    0, 0, "npfnatpl", NULL, IPL_NET, NULL, NULL, NULL);
+	npf_cache_get(&nat_cache, sizeof(npf_nat_t), M_NPF_NAT);
 	KASSERT(nat_cache != NULL);
 }
 
@@ -171,7 +172,7 @@ npf_nat_sysfini(void)
 {
 
 	/* NAT policies should already be destroyed. */
-	pool_cache_destroy(nat_cache);
+	npf_cache_put(&nat_cache, M_NPF_NAT);
 }
 
 /*
@@ -187,7 +188,7 @@ npf_nat_newpolicy(prop_dictionary_t natdict, npf_ruleset_t *nrlset)
 	prop_object_t obj;
 	npf_portmap_t *pm;
 
-	np = kmem_zalloc(sizeof(npf_natpolicy_t), KM_SLEEP);
+	np = npf_nat_malloc(sizeof(npf_natpolicy_t));
 
 	/* Translation type and flags. */
 	prop_dictionary_get_int32(natdict, "type", &np->n_type);
@@ -195,7 +196,7 @@ npf_nat_newpolicy(prop_dictionary_t natdict, npf_ruleset_t *nrlset)
 
 	/* Should be exclusively either inbound or outbound NAT. */
 	if (((np->n_type == NPF_NATIN) ^ (np->n_type == NPF_NATOUT)) == 0) {
-		kmem_free(np, sizeof(npf_natpolicy_t));
+		free(np, sizeof(npf_natpolicy_t));
 		return NULL;
 	}
 	mutex_init(&np->n_lock, MUTEX_DEFAULT, IPL_SOFTNET);
@@ -224,7 +225,7 @@ npf_nat_newpolicy(prop_dictionary_t natdict, npf_ruleset_t *nrlset)
 	 */
 	if (!npf_ruleset_sharepm(nrlset, np)) {
 		/* Allocate a new port map for the NAT policy. */
-		pm = kmem_zalloc(PORTMAP_MEM_SIZE, KM_SLEEP);
+		pm = npf_nat_malloc(PORTMAP_MEM_SIZE);
 		pm->p_refcnt = 1;
 		KASSERT((uintptr_t)pm->p_bitmap == (uintptr_t)pm + sizeof(*pm));
 		np->n_portmap = pm;
@@ -268,11 +269,11 @@ npf_nat_freepolicy(npf_natpolicy_t *np)
 	/* Destroy the port map, on last reference. */
 	if (pm && --pm->p_refcnt == 0) {
 		KASSERT((np->n_flags & NPF_NAT_PORTMAP) != 0);
-		kmem_free(pm, PORTMAP_MEM_SIZE);
+		npf_nat_free(pm);
 	}
 	cv_destroy(&np->n_cv);
 	mutex_destroy(&np->n_lock);
-	kmem_free(np, sizeof(npf_natpolicy_t));
+	npf_nat_free(np);
 }
 
 void
@@ -457,7 +458,7 @@ npf_nat_create(npf_cache_t *npc, npf_natpolicy_t *np)
 	KASSERT(npf_iscached(npc, NPC_LAYER4));
 
 	/* New NAT association. */
-	nt = pool_cache_get(nat_cache, PR_NOWAIT);
+	nt = npf_nat_malloc(sizeof(nat_cache));
 	if (nt == NULL){
 		return NULL;
 	}
@@ -750,7 +751,8 @@ npf_nat_expire(npf_nat_t *nt)
 	mutex_exit(&np->n_lock);
 
 	/* Free structure, increase the counter. */
-	pool_cache_put(nat_cache, nt);
+	npf_nat_free(nt);
+	npf_nat_free(nat_cache);
 	npf_stats_inc(NPF_STAT_NAT_DESTROY);
 }
 
@@ -842,7 +844,7 @@ npf_nat_restore(prop_dictionary_t sedict, npf_session_t *se)
 	}
 
 	/* Create and return NAT entry for association. */
-	nt = pool_cache_get(nat_cache, PR_WAITOK);
+	nt = npf_nat_malloc(sizeof(nat_cache));
 	memcpy(nt, ntraw, sizeof(npf_nat_t));
 	LIST_INSERT_HEAD(&np->n_nat_list, nt, nt_entry);
 	nt->nt_natpolicy = np;

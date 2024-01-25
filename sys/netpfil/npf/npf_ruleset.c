@@ -39,7 +39,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_ruleset.c,v 1.10.2.7 2013/02/18 18:26:14 riz Exp
 #include <sys/param.h>
 #include <sys/types.h>
 
-#include <sys/kmem.h>
+#include <sys/malloc.h>
 #include <sys/queue.h>
 #include <sys/mbuf.h>
 #include <sys/types.h>
@@ -127,7 +127,7 @@ npf_ruleset_create(size_t slots)
 	size_t len = offsetof(npf_ruleset_t, rs_rules[slots]);
 	npf_ruleset_t *rlset;
 
-	rlset = kmem_zalloc(len, KM_SLEEP);
+	rlset = malloc(len, M_DEVBUF, M_WAITOK);
 	LIST_INIT(&rlset->rs_dynamic);
 	LIST_INIT(&rlset->rs_all);
 	LIST_INIT(&rlset->rs_gc);
@@ -161,7 +161,7 @@ npf_ruleset_destroy(npf_ruleset_t *rlset)
 	}
 	KASSERT(LIST_EMPTY(&rlset->rs_dynamic));
 	KASSERT(LIST_EMPTY(&rlset->rs_gc));
-	kmem_free(rlset, len);
+	free(rlset, M_DEVBUF);
 }
 
 /*
@@ -493,7 +493,7 @@ npf_rule_alloc(prop_dictionary_t rldict)
 	const char *rname;
 
 	/* Allocate a rule structure. */
-	rl = kmem_zalloc(sizeof(npf_rule_t), KM_SLEEP);
+	rl = malloc(sizeof(npf_rule_t), M_DEVBUF, M_WAITOK);
 	TAILQ_INIT(&rl->r_subset);
 	rl->r_natp = NULL;
 
@@ -519,7 +519,7 @@ npf_rule_alloc(prop_dictionary_t rldict)
 	if (key) {
 		size_t len = prop_data_size(obj);
 		if (len > NPF_RULE_MAXKEYLEN) {
-			kmem_free(rl, sizeof(npf_rule_t));
+			free(rl, M_DEVBUF);
 			return NULL;
 		}
 		memcpy(rl->r_key, key, len);
@@ -574,13 +574,13 @@ npf_rule_free(npf_rule_t *rl)
 	}
 	if (rl->r_code) {
 		/* Free n-code. */
-		kmem_free(rl->r_code, rl->r_clen);
+		free(rl->r_code, M_DEVBUF);
 	}
 	if (rl->r_dict) {
 		/* Destroy the dictionary. */
 		prop_object_release(rl->r_dict);
 	}
-	kmem_free(rl, sizeof(npf_rule_t));
+	free(rl, M_DEVBUF);
 }
 
 /*
