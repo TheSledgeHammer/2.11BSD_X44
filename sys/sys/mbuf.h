@@ -489,7 +489,7 @@ void			m_tag_free(struct m_tag *);
 void			m_tag_prepend(struct mbuf *, struct m_tag *);
 void			m_tag_unlink(struct mbuf *, struct m_tag *);
 void			m_tag_delete(struct mbuf *, struct m_tag *);
-void			m_tag_delete_chain(struct mbuf *, struct m_tag *);
+void			m_tag_delete_chain(struct mbuf *);
 void			m_tag_delete_nonpersistent(struct mbuf *);
 struct m_tag 	*m_tag_find(struct mbuf *, int, struct m_tag *);
 struct m_tag 	*m_tag_copy(struct m_tag *);
