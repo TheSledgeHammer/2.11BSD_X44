@@ -152,9 +152,9 @@ ieee80211_wep_crypt(struct ifnet *ifp, struct mbuf *m0, int txflag)
 		goto fail;
 	}
 #ifdef __FreeBSD__
-	M_MOVE_PKTHDR(n, m);
+	m_move_pkthdr(n, m);
 #else
-	M_COPY_PKTHDR(n, m);
+	m_copy_pkthdr(n, m);
 #endif
 	len = IEEE80211_WEP_IVLEN + IEEE80211_WEP_KIDLEN + IEEE80211_WEP_CRCLEN;
 	if (txflag) {

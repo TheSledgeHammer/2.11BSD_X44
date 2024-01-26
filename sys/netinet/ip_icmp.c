@@ -183,8 +183,6 @@ static struct rttimer_queue *icmp_redirect_timeout_q = NULL;
 static void icmp_mtudisc_timeout(struct rtentry *, struct rttimer *);
 static void icmp_redirect_timeout(struct rtentry *, struct rttimer *);
 
-static int icmp_ratelimit(const struct in_addr *, const int, const int);
-
 
 void
 icmp_init()
@@ -1130,7 +1128,7 @@ icmp_redirect_timeout(rt, r)
  *
  * XXX per-destination/type check necessary?
  */
-static int
+int
 icmp_ratelimit(dst, type, code)
 	const struct in_addr *dst;
 	const int type;			/* not used at this moment */

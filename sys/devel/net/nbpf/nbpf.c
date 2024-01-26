@@ -149,7 +149,7 @@ nbpf_add_tag(struct mbuf *m, uint32_t key, uint32_t val)
 
     KASSERT((m->m_flags & M_PKTHDR) != 0);
 
-    mt = m_tag_get(PACKET_TAG_NONE, sizeof(uint32_t), M_NOWAIT);
+    mt = m_tag_get(PACKET_TAG_NBPF, sizeof(uint32_t), M_NOWAIT);
     if (mt == NULL) {
 		return ENOMEM;
 	}

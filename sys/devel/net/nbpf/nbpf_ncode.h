@@ -123,4 +123,251 @@ int nbpf_validate(struct nbpf_insn *, size_t);
 #define	NBPF_OPCODE_UDP_PORTS	0xa1
 #define	NBPF_OPCODE_TCP_FLAGS	0xa2
 
+#ifdef NBPF_OPCODES_STRINGS
+
+# define	NBPF_OPERAND_NONE			0
+# define	NBPF_OPERAND_REGISTER		1
+# define	NBPF_OPERAND_KEY			2
+# define	NBPF_OPERAND_VALUE			3
+# define	NBPF_OPERAND_SD				4
+# define	NBPF_OPERAND_SD_SRC			1
+# define	NBPF_OPERAND_SD_DST			0
+# define	NBPF_OPERAND_REL_ADDRESS	5
+# define	NBPF_OPERAND_NET_ADDRESS4	6
+# define	NBPF_OPERAND_NET_ADDRESS6	7
+# define	NBPF_OPERAND_ETHER_TYPE		8
+# define	NBPF_OPERAND_SUBNET			9
+# define	NBPF_OPERAND_LENGTH			10
+# define	NBPF_OPERAND_TABLE_ID		11
+# define	NBPF_OPERAND_ICMP_TYPE_CODE	12
+# define	NBPF_OPERAND_TCP_FLAGS_MASK	13
+# define	NBPF_OPERAND_PORT_RANGE		14
+# define	NBPF_OPERAND_PROTO			15
+
+static const struct nbpf_instruction {
+	const char 	*name;
+	uint8_t		op[4];
+} nbpf_instructions[] = {
+	[NBPF_OPCODE_RET] = {
+		.name = "ret",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+		},
+	},
+	[NBPF_OPCODE_ADVR] = {
+		.name = "advr",
+		.op = {
+			[0] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_J] = {
+		.name = "j",
+		.op = {
+			[0] = NBPF_OPERAND_REL_ADDRESS,
+		},
+	},
+	[NBPF_OPCODE_INVL] = {
+		.name = "invl",
+	},
+	[NBPF_OPCODE_TAG] = {
+		.name = "tag",
+		.op = {
+			[0] = NBPF_OPERAND_KEY,
+			[1] = NBPF_OPERAND_VALUE,
+		},
+	},
+	[NBPF_OPCODE_MOVE] = {
+		.name = "move",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_LW] = {
+		.name = "lw",
+		.op = {
+			[0] = NBPF_OPERAND_LENGTH,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_CMP] = {
+		.name = "cmp",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_CMPR] = {
+		.name = "cmpr",
+		.op = {
+			[0] = NBPF_OPERAND_REGISTER,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_BEQ] = {
+		.name = "beq",
+		.op = {
+			[0] = NBPF_OPERAND_REL_ADDRESS,
+		},
+	},
+	[NBPF_OPCODE_BNE] = {
+		.name = "bne",
+		.op = {
+			[0] = NBPF_OPERAND_REL_ADDRESS,
+		},
+	},
+	[NBPF_OPCODE_BGT] = {
+		.name = "bge",
+		.op = {
+			[0] = NBPF_OPERAND_REL_ADDRESS,
+		},
+	},
+	[NBPF_OPCODE_BLT] = {
+		.name = "blt",
+		.op = {
+			[0] = NBPF_OPERAND_REL_ADDRESS,
+		},
+	},
+	[NBPF_OPCODE_ADD] = {
+		.name = "add",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_SUB] = {
+		.name = "sub",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_MULT] = {
+		.name = "mult",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_DIV] = {
+		.name = "div",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_NOT] = {
+		.name = "not",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_AND] = {
+		.name = "and",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_OR] = {
+		.name = "or",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_XOR] = {
+		.name = "xor",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_SLL] = {
+		.name = "sll",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_SRL] = {
+		.name = "srl",
+		.op = {
+			[0] = NBPF_OPERAND_VALUE,
+			[1] = NBPF_OPERAND_REGISTER,
+		},
+	},
+	[NBPF_OPCODE_ETHER] = {
+		.name = "ether",
+		.op = {
+			[0] = NBPF_OPERAND_SD,
+			[1] = NBPF_OPERAND_NET_ADDRESS4,
+			[2] = NBPF_OPERAND_ETHER_TYPE,
+		},
+	},
+	[NBPF_OPCODE_PROTO] = {
+		.name = "proto",
+		.op = {
+			[0] = NBPF_OPERAND_PROTO,
+		},
+	},
+	[NBPF_OPCODE_IP4MASK] = {
+		.name = "ip4mask",
+		.op = {
+			[0] = NBPF_OPERAND_SD,
+			[1] = NBPF_OPERAND_NET_ADDRESS4,
+			[2] = NBPF_OPERAND_SUBNET,
+		},
+	},
+	[NBPF_OPCODE_TABLE] = {
+		.name = "table",
+		.op = {
+			[0] = NBPF_OPERAND_SD,
+			[1] = NBPF_OPERAND_TABLE_ID,
+		},
+	},
+	[NBPF_OPCODE_ICMP4] = {
+		.name = "icmp4",
+		.op = {
+			[0] = NBPF_OPERAND_ICMP_TYPE_CODE,
+		},
+	},
+	[NBPF_OPCODE_ICMP6] = {
+		.name = "icmp6",
+		.op = {
+			[0] = NBPF_OPERAND_ICMP_TYPE_CODE,
+		},
+	},
+	[NBPF_OPCODE_IP6MASK] = {
+		.name = "ip6mask",
+		.op = {
+			[0] = NBPF_OPERAND_SD,
+			[1] = NBPF_OPERAND_NET_ADDRESS6,
+			[2] = NBPF_OPERAND_SUBNET,
+		},
+	},
+	[NBPF_OPCODE_TCP_PORTS] = {
+		.name = "tcp_ports",
+		.op = {
+			[0] = NBPF_OPERAND_SD,
+			[1] = NBPF_OPERAND_PORT_RANGE,
+		},
+	},
+	[NBPF_OPCODE_UDP_PORTS] = {
+		.name = "udp_ports",
+		.op = {
+			[0] = NBPF_OPERAND_SD,
+			[1] = NBPF_OPERAND_PORT_RANGE,
+		},
+	},
+	[NBPF_OPCODE_TCP_FLAGS] = {
+		.name = "tcp_flags",
+		.op = {
+			[0] = NBPF_OPERAND_TCP_FLAGS_MASK,
+		},
+	},
+};
+#endif /* NBPF_OPCODES_STRINGS */
+
 #endif /* _NET_NBPF_NCODE_H_ */

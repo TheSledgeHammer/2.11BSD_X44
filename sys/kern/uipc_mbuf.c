@@ -320,7 +320,7 @@ m_prepend(m, len, how)
 		return ((struct mbuf *)NULL);
 	}
 	if (m->m_flags & M_PKTHDR) {
-		M_COPY_PKTHDR(mn, m);
+		m_copy_pkthdr(mn, m);
 		m->m_flags &= ~M_PKTHDR;
 	}
 	mn->m_next = m;
@@ -376,7 +376,7 @@ m_copy(m, off0, len)
 		if (n == 0)
 			goto nospace;
 		if (copyhdr) {
-			M_COPY_PKTHDR(n, m);
+			m_copy_pkthdr(n, m);
 			if (len == M_COPYALL)
 				n->m_pkthdr.len -= off0;
 			else
@@ -613,7 +613,7 @@ m_pullup(n, len)
 			goto bad;
 		m->m_len = 0;
 		if (n->m_flags & M_PKTHDR) {
-			M_COPY_PKTHDR(m, n);
+			m_copy_pkthdr(m, n);
 			n->m_flags &= ~M_PKTHDR;
 		}
 	}
@@ -642,85 +642,6 @@ bad:
 	MPFail++;
 	return (0);
 }
-
-bool_t
-m_ensure_contig(struct mbuf **m0, int len)
-{
-	struct mbuf *n, *m;
-	register int count;
-	int space;
-
-	n = *m0;
-
-	/*
-	 * If first mbuf has no cluster, and has room for len bytes
-	 * without shifting current data, pullup into it,
-	 * otherwise allocate a new mbuf to prepend to the chain.
-	 */
-	if ((n->m_flags & M_EXT) == 0 && n->m_data + len < &n->m_dat[MLEN] && n->m_next) {
-		if (n->m_len >= len) {
-			return (TRUE);
-		}
-		m = n;
-		n = n->m_next;
-		len -= m->m_len;
-	} else {
-		if (len > MHLEN) {
-			goto bad;
-		}
-		MGET(m, M_DONTWAIT, n->m_type);
-		if (m == 0) {
-			goto bad;
-		}
-		m->m_len = 0;
-		if (n->m_flags & M_PKTHDR) {
-			M_COPY_PKTHDR(m, n);
-			n->m_flags &= ~M_PKTHDR;
-		}
-	}
-	space = &m->m_dat[MLEN] - (m->m_data + m->m_len);
-	do {
-		count = min(min(max(len, max_protohdr), space), n->m_len);
-		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len, (unsigned)count);
-		len -= count;
-		m->m_len += count;
-		n->m_len -= count;
-		space -= count;
-		if (n->m_len) {
-			n->m_data += count;
-		} else {
-			n = m_free(n);
-		}
-	} while (len > 0 && n);
-	if (len > 0) {
-		(void)m_free(m);
-		goto bad;
-	}
-	m->m_next = n;
-	*m0 = m;
-	return (len <= 0);
-
-bad:
-	MPFail++;
-	return (FALSE);
-}
-
-struct mbuf *
-m_pullup1(n, len)
-	register struct mbuf *n;
-	int len;
-{
-	struct mbuf *m;
-
-	m = n;
-	if (!m_ensure_contig(&m, len)) {
-		KASSERT(m != NULL);
-		m_freem(n);
-		m = NULL;
-	}
-	return (m);
-}
-
 
 struct mbuf *
 m_copyup(n, len, dstoff)
@@ -1128,7 +1049,7 @@ m_getptr(m, loc, off)
 	return (NULL);
 }
 
-/*
+
 void
 m_remove_pkthdr(m)
 	struct mbuf *m;
@@ -1156,7 +1077,7 @@ m_copy_pkthdr(to, from)
 	SLIST_INIT(&to->m_pkthdr.tags);
 	m_tag_copy_chain(to, from);
 }
-*/
+
 void
 m_move_pkthdr(to, from)
 	struct mbuf *to, *from;

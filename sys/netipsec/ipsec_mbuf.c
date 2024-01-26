@@ -141,7 +141,7 @@ m_clone(struct mbuf *m0)
 			/*
 			 * NB: if a packet header is present we must
 			 * allocate the mbuf separately from any cluster
-			 * because M_MOVE_PKTHDR will smash the data
+			 * because m_move_pkthdr will smash the data
 			 * pointer and drop the M_EXT marker.
 			 */
 			MGETHDR(n, M_DONTWAIT, m->m_type);
@@ -149,7 +149,7 @@ m_clone(struct mbuf *m0)
 				m_freem(m0);
 				return (NULL);
 			}
-			M_MOVE_PKTHDR(n, m);
+			m_move_pkthdr(n, m);
 			MCLGET(n, M_DONTWAIT);
 			if ((n->m_flags & M_EXT) == 0) {
 				m_free(n);

@@ -14,6 +14,7 @@ file	net/if_gif.c			gif								needs-flag
 file	net/if_gre.c			gre								needs-flag
 file	net/if_loop.c			loop							needs-count
 file	net/if_media.c
+file	net/if_mpls.c			ifmpls							needs-flag
 file	net/if_ppp.c			ppp								needs-count
 file	net/if_sl.c				sl								needs-count
 file	net/if_spppsubr.c		sppp

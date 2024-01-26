@@ -106,7 +106,15 @@ struct rtentry {
 	struct	rtentry *rt_gwroute;	/* implied entry for gatewayed routes */
 	LIST_HEAD(, rttimer) rt_timer;  /* queue of timeouts for misc funcs */
 	struct	rtentry *rt_parent;	/* parent of cloned route */
+	struct	sockaddr *_rt_key;
+	struct	sockaddr *rt_tag;	/* route tagging info */
 };
+
+static inline const struct sockaddr *
+rt_getkey(const struct rtentry *rt)
+{
+	return (rt->_rt_key);
+}
 
 /*
  * Following structure necessary for 4.3 compatibility;
@@ -207,6 +215,7 @@ struct rt_msghdr {
 #define RTA_IFA		0x20	/* interface addr sockaddr present */
 #define RTA_AUTHOR	0x40	/* sockaddr for author of redirect */
 #define RTA_BRD		0x80	/* for NEWADDR, broadcast or p-p dest addr */
+#define RTA_TAG		0x100	/* route tag */
 
 /*
  * Index offsets for sockaddr array for alternate internal encoding.
@@ -219,7 +228,8 @@ struct rt_msghdr {
 #define RTAX_IFA	5	/* interface addr sockaddr present */
 #define RTAX_AUTHOR	6	/* sockaddr for author of redirect */
 #define RTAX_BRD	7	/* for NEWADDR, broadcast or p-p dest addr */
-#define RTAX_MAX	8	/* size of array to allocate */
+#define RTAX_TAG	8	/* route tag */
+#define RTAX_MAX	9	/* size of array to allocate */
 
 struct rt_addrinfo {
 	int	rti_addrs;
@@ -306,5 +316,7 @@ int	 	rtioctl(u_long, caddr_t, struct proc *);
 void	rtredirect(struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct sockaddr *, struct rtentry **);
 int	 	rtrequest(int, struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct rtentry **);
 int	 	rtrequest1(int, struct rt_addrinfo *, struct rtentry **);
+const struct sockaddr *rt_settag(struct rtentry *, const struct sockaddr *);
+struct sockaddr *rt_gettag(struct rtentry *);
 #endif /* _KERNEL */
 #endif /* _NET_ROUTE_H_ */

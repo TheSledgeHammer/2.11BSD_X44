@@ -182,7 +182,7 @@ void	icmp_init(void);
 void	icmp_reflect(struct mbuf *);
 void	icmp_send(struct mbuf *, struct mbuf *);
 int		icmp_sysctl(int *, u_int, void *, size_t *, void *, size_t);
-
+int 	icmp_ratelimit(const struct in_addr *, const int, const int);
 void	icmp_mtudisc_callback_register(void (*)(struct in_addr));
 #endif
 

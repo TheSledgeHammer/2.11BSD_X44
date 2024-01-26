@@ -122,24 +122,24 @@ int	npf_ncode_validate(const void *, size_t, int *);
 
 #ifdef NPF_OPCODES_STRINGS
 
-# define	NPF_OPERAND_NONE		0
+# define	NPF_OPERAND_NONE			0
 # define	NPF_OPERAND_REGISTER		1
-# define	NPF_OPERAND_KEY			2
-# define	NPF_OPERAND_VALUE		3
-# define	NPF_OPERAND_SD			4
-# define		NPF_OPERAND_SD_SRC		1
-# define		NPF_OPERAND_SD_DST		0
+# define	NPF_OPERAND_KEY				2
+# define	NPF_OPERAND_VALUE			3
+# define	NPF_OPERAND_SD				4
+# define	NPF_OPERAND_SD_SRC			1
+# define	NPF_OPERAND_SD_DST			0
 # define	NPF_OPERAND_REL_ADDRESS		5
 # define	NPF_OPERAND_NET_ADDRESS4	6
 # define	NPF_OPERAND_NET_ADDRESS6	7
 # define	NPF_OPERAND_ETHER_TYPE		8
-# define	NPF_OPERAND_SUBNET		9
-# define	NPF_OPERAND_LENGTH		10
+# define	NPF_OPERAND_SUBNET			9
+# define	NPF_OPERAND_LENGTH			10
 # define	NPF_OPERAND_TABLE_ID		11
 # define	NPF_OPERAND_ICMP_TYPE_CODE	12
 # define	NPF_OPERAND_TCP_FLAGS_MASK	13
 # define	NPF_OPERAND_PORT_RANGE		14
-# define	NPF_OPERAND_PROTO		15
+# define	NPF_OPERAND_PROTO			15
 
 static const struct npf_instruction {
 	const char *	name;

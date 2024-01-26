@@ -533,9 +533,9 @@ ieee80211_decap(struct ifnet *ifp, struct mbuf *m)
 					return NULL;
 				}
 #ifdef __FreeBSD__
-				M_MOVE_PKTHDR(n, m);
+				m_move_pkthdr(n, m);
 #else
-				M_COPY_PKTHDR(n, m);
+				m_copy_pkthdr(n, m);
 #endif
 				n->m_len = MHLEN;
 			} else {

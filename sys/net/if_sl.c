@@ -978,7 +978,7 @@ slintr(void *arg)
 			struct mbuf *n;
 
 			MGETHDR(n, M_DONTWAIT, MT_DATA);
-			M_COPY_PKTHDR(n, m);
+			m_copy_pkthdr(n, m);
 			memcpy(mtod(n, caddr_t), mtod(m, caddr_t),
 			    m->m_pkthdr.len);
 			n->m_len = m->m_len;

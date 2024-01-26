@@ -107,8 +107,8 @@ nc_jump(const void *iptr, int n, u_int *lcount)
  * cisc = 0
  * risc = 1
  */
-int
-ncode_insn_get(struct nbpf_ncode *ncode)
+static inline int
+nc_insn_get(struct nbpf_ncode *ncode)
 {
 	if (__predict_true(NBPF_CISC_OPCODE(ncode->d))) {
 		return (0);
@@ -351,7 +351,7 @@ nbpf_ncode_process(nbpf_cache_t *npc, struct nbpf_insn *pc, struct mbuf *m, cons
 
 process_next:
 	ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
-	if (ncode_insn_get(ncode)) {
+	if (nc_insn_get(ncode)) {
 		error = nbpf_cisc_ncode(npc, ncode, addr, m, cmpval, layer);
 	} else {
 		error = nbpf_risc_ncode(npc, ncode, addr, m, cmpval, layer);
@@ -535,7 +535,7 @@ nc_insn_check(const uintptr_t optr, struct nbpf_insn *pc, size_t *adv, size_t *j
 	regidx = 0;
 	*ret = false;
 	*jmp = 0;
-	if (ncode_insn_get(ncode)) {
+	if (nc_insn_get(ncode)) {
 		error = cisc_insn_check(iptr, pc, regidx, val, jmp, ret);
 	} else {
 		error = risc_insn_check(iptr, pc, regidx, val, jmp, ret);
@@ -651,6 +651,7 @@ nbpf_validate(struct nbpf_insn *f, size_t len)
 			break;
 		}
 	}
-
 	return (error);
 }
+
+

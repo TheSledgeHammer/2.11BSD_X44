@@ -85,6 +85,8 @@ typedef uint8_t				nbpf_netmask_t;
 
 #define	NBPC_IP46			(NBPC_IP4|NBPC_IP6)
 
+#define PACKET_TAG_NBPF		10
+
 struct bpf_filter {
 	struct bpf_insn 		*bf_insn;
 	struct nbpf_insn 		*bf_ncode;

@@ -48,6 +48,7 @@
 
 #if defined(_KERNEL)
 #include "opt_inet.h"
+#include "opt_mpls.h"
 #include "opt_ns.h"
 #include "arp.h"
 #ifndef __HAVE_GENERIC_SOFT_INTERRUPTS
@@ -81,6 +82,9 @@
 #include <netinet/ip6.h> 
 #include <netinet6/ip6_var.h>
 #endif
+#ifdef MPLS
+#include <netmpls/mpls_var.h>
+#endif
 #ifdef NS
 #include <netns/ns_var.h>
 #endif
@@ -109,8 +113,15 @@ extern void pppnetisr(void);
 #define	NETISR_RAW		0		/* same as AF_UNSPEC */
 #define	NETISR_IP		2		/* same as AF_INET */
 #define	NETISR_NS		6		/* same as AF_NS */
+#define	NETISR_ISO		7		/* same as AF_ISO */
+#define	NETISR_CCITT	10		/* same as AF_CCITT */
 #define	NETISR_CLOCK	15		/* protocol timeout */
+#define	NETISR_CCITT	10		/* same as AF_CCITT */
+#define	NETISR_ATALK	16		/* same as AF_APPLETALK */
+#define	NETISR_IPX		23		/* same as AF_IPX */
 #define	NETISR_IPV6		24		/* same as AF_INET6 */
+#define	NETISR_ISDN		26		/* same as AF_E164 */
+#define	NETISR_NATM		27		/* same as AF_NATM */
 #define	NETISR_ARP		28		/* same as AF_ARP */
 #ifndef __HAVE_GENERIC_SOFT_INTERRUPTS
 #define	NETISR_SLIP		29		/* for SLIP processing */

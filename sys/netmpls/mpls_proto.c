@@ -33,7 +33,6 @@
 __KERNEL_RCSID(0, "$NetBSD: mpls_proto.c,v 1.3 2012/02/01 16:49:36 christos Exp $");
 
 #include "opt_inet.h"
-#include "opt_mbuftrace.h"
 
 #include <sys/param.h>
 #include <sys/socket.h>

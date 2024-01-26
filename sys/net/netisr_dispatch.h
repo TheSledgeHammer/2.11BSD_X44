@@ -32,6 +32,9 @@
 #ifdef INET6
 	DONET(NETISR_IPV6,ip6intr);
 #endif
+#ifdef MPLS
+	DONET(NETISR_MPLS,mplsintr)
+#endif
 #ifdef NS
 	DONET(NETISR_NS,nsintr)
 #endif

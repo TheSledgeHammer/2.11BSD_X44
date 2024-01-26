@@ -333,7 +333,7 @@ gif_output(ifp, m, dst, rt)
 
 #ifndef __HAVE_GENERIC_SOFT_INTERRUPTS
 void
-gifnetisr()
+gifnetisr(void)
 {
 	struct gif_softc *sc;
 

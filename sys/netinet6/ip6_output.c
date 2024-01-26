@@ -2363,7 +2363,7 @@ ip6_splithdr(m, exthdrs)
 			m_freem(m);
 			return ENOBUFS;
 		}
-		M_COPY_PKTHDR(mh, m);
+		m_copy_pkthdr(mh, m);
 		MH_ALIGN(mh, sizeof(*ip6));
 		m_tag_delete_chain(m, NULL);
 		m->m_flags &= ~M_PKTHDR;

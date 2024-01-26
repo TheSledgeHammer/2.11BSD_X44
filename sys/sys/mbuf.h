@@ -360,18 +360,6 @@ union mcluster {
 }
 
 /*
- * Copy mbuf pkthdr from from to to.
- * from must have M_PKTHDR set, and to must be empty.
- */
-#define	M_COPY_PKTHDR(to, from) { 						\
-	(to)->m_pkthdr = (from)->m_pkthdr; 					\
-	(to)->m_flags = (from)->m_flags & M_COPYFLAGS; 		\
-	SLIST_INIT(&(to)->m_pkthdr.tags);				\
-	m_tag_copy_chain((to), (from));					\
-	(to)->m_data = (to)->m_pktdat; 						\
-}
-
-/*
  * Set the m_data pointer of a newly-allocated mbuf (m_get/MGET) to place
  * an object of the specified size at the end of the mbuf, longword aligned.
  */
@@ -488,8 +476,8 @@ void			m_freem(struct mbuf *);
 void			m_reclaim(void);
 void 			mbinit2(void *, int, int);
 struct mbuf 	*m_getptr(struct mbuf *, int, int *);
-//void			m_remove_pkthdr(struct mbuf *);
-//void			m_copy_pkthdr(struct mbuf *, struct mbuf *);
+void			m_remove_pkthdr(struct mbuf *);
+void			m_copy_pkthdr(struct mbuf *, struct mbuf *);
 void			m_move_pkthdr(struct mbuf *, struct mbuf *);
 
 #define m_copyback(m, off, len, cp)	\

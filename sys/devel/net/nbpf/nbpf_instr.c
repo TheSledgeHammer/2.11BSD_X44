@@ -70,7 +70,7 @@ nbpf_match_ether(struct mbuf *m, int sd, uint16_t ethertype, uint32_t *r)
 	*r = 0;
 again:
 	if ((nptr = nbpf_advance(m, offby)) == NULL) {
-		return -1;
+		return (-1);
 	}
 	memcpy(&val16, nptr, sizeof(val16));
 	*r += offby;
@@ -86,10 +86,10 @@ again:
 	nbpf_advance(m, off);
 
 	if (val16 != ETHERTYPE_IP) {
-		return -1;
+		return (-1);
 	}
 	*r += ETHER_TYPE_LEN;
-	return 0;
+	return (0);
 }
 
 /*
@@ -105,7 +105,7 @@ nbpf_match_proto(const nbpf_cache_t *npc, uint32_t ap)
 	if (alen && npc->bpc_alen != alen) {
 		return -1;
 	}
-	return (proto != 0xff && npc->bpc_proto != proto) ? -1 : 0;
+	return ((proto != 0xff && npc->bpc_proto != proto) ? -1 : 0);
 }
 
 /*
@@ -121,7 +121,7 @@ nbpf_match_table(const nbpf_cache_t *npc, int sd, u_int tid)
 	KASSERT(nbpf_iscached(npc, NBPC_IP46));
 
 	/* Match address against NPF table. */
-	return npf_table_lookup(tblset, tid, alen, addr) ? -1 : 0;
+	return (npf_table_lookup(tblset, tid, alen, addr) ? -1 : 0);
 }
 
 /*
@@ -138,7 +138,7 @@ nbpf_match_ipmask(const nbpf_cache_t *npc, int szsd, const nbpf_addr_t *maddr, n
 		return -1;
 	}
 	addr = (szsd & 0x1) ? npc->bpc_srcip : npc->bpc_dstip;
-	return nbpf_addr_cmp(maddr, NBPF_NO_NETMASK, addr, mask, alen) ? -1 : 0;
+	return (nbpf_addr_cmp(maddr, NBPF_NO_NETMASK, addr, mask, alen) ? -1 : 0);
 }
 
 /*
@@ -153,7 +153,7 @@ nbpf_match_tcp_ports(const nbpf_cache_t *npc, int sd, uint32_t prange)
 	KASSERT(nbpf_iscached(npc, NBPC_TCP));
 
 	/* Match against the port range. */
-	return NBPF_PORTRANGE_MATCH(prange, ntohs(p)) ? 0 : -1;
+	return (NBPF_PORTRANGE_MATCH(prange, ntohs(p)) ? 0 : -1);
 }
 
 /*
@@ -168,7 +168,7 @@ nbpf_match_udp_ports(const nbpf_cache_t *npc, int sd, uint32_t prange)
 	KASSERT(nbpf_iscached(npc, NBPC_UDP));
 
 	/* Match against the port range. */
-	return NBPF_PORTRANGE_MATCH(prange, ntohs(p)) ? 0 : -1;
+	return (NBPF_PORTRANGE_MATCH(prange, ntohs(p)) ? 0 : -1);
 }
 
 /*
@@ -185,16 +185,16 @@ nbpf_match_icmp4(const nbpf_cache_t *npc, uint32_t tc)
 	if ((1 << 31) & tc) {
 		const uint8_t type = (tc >> 8) & 0xff;
 		if (type != ic->icmp_type) {
-			return -1;
+			return (-1);
 		}
 	}
 	if ((1 << 30) & tc) {
 		const uint8_t code = tc & 0xff;
 		if (code != ic->icmp_code) {
-			return -1;
+			return (-1);
 		}
 	}
-	return 0;
+	return (0);
 }
 
 /*
@@ -211,16 +211,16 @@ nbpf_match_icmp6(const nbpf_cache_t *npc, uint32_t tc)
 	if ((1 << 31) & tc) {
 		const uint8_t type = (tc >> 8) & 0xff;
 		if (type != ic6->icmp6_type) {
-			return -1;
+			return (-1);
 		}
 	}
 	if ((1 << 30) & tc) {
 		const uint8_t code = tc & 0xff;
 		if (code != ic6->icmp6_code) {
-			return -1;
+			return (-1);
 		}
 	}
-	return 0;
+	return (0);
 }
 
 /*
@@ -233,5 +233,5 @@ nbpf_match_tcpfl(const nbpf_cache_t *npc, uint32_t fl)
 	const struct tcphdr *th = npc->bpc_l4.tcp;
 
 	KASSERT(nbpf_iscached(npc, NBPC_TCP));
-	return (th->th_flags & mask) == tcpfl ? 0 : -1;
+	return ((th->th_flags & mask) == tcpfl ? 0 : -1);
 }

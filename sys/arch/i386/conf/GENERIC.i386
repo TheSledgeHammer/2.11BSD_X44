@@ -402,6 +402,7 @@ options 	MEMORY_DISK_DYNAMIC				# loaded via kernel module(7)
 # network pseudo-devices
 pseudo-device	bpfilter		8				# Berkeley packet filter
 pseudo-device	loop			        			# network loopback
+#pseudo-device	ifmpls							# MPLS pseudo-interface
 pseudo-device	ppp		    2					# Point-to-Point Protocol
 #pseudo-device	pppoe			  				# PPP over Ethernet (RFC 2516)
 pseudo-device	sl		    2					# Serial Line IP

@@ -3228,7 +3228,7 @@ ipsec4_splithdr(m)
 			m_freem(m);
 			return NULL;
 		}
-		M_COPY_PKTHDR(mh, m);
+		m_copy_pkthdr(mh, m);
 		MH_ALIGN(mh, hlen);
 		m_tag_delete_chain(m, NULL);
 		m->m_flags &= ~M_PKTHDR;
@@ -3266,7 +3266,7 @@ ipsec6_splithdr(m)
 			m_freem(m);
 			return NULL;
 		}
-		M_COPY_PKTHDR(mh, m);
+		m_copy_pkthdr(mh, m);
 		MH_ALIGN(mh, hlen);
 		m_tag_delete_chain(m, NULL);
 		m->m_flags &= ~M_PKTHDR;
@@ -3394,7 +3394,7 @@ ipsec_copypkt(m)
 						    m_copym(n->m_pkthdr.aux, 0, M_COPYALL);
 					}
 #endif
-					M_COPY_PKTHDR(mnew, n);
+					m_copy_pkthdr(mnew, n);
 				}
 				else {
 					MGET(mnew, M_DONTWAIT, MT_DATA);

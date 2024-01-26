@@ -122,7 +122,7 @@ read_random(void *bufp, u_int len)
  * so we are safe for fast-ipsec but not in general..
  */
 #ifdef __NetBSD__
-#define M_MOVE_PKTHDR(_f, _t) M_COPY_PKTHDR(_f, _t)
+#define M_MOVE_PKTHDR(_f, _t) m_copy_pkthdr(_f, _t)
 #endif /* __NetBSD__ */
 
 
