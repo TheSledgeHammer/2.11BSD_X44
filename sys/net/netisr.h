@@ -116,7 +116,6 @@ extern void pppnetisr(void);
 #define	NETISR_ISO		7		/* same as AF_ISO */
 #define	NETISR_CCITT	10		/* same as AF_CCITT */
 #define	NETISR_CLOCK	15		/* protocol timeout */
-#define	NETISR_CCITT	10		/* same as AF_CCITT */
 #define	NETISR_ATALK	16		/* same as AF_APPLETALK */
 #define	NETISR_IPX		23		/* same as AF_IPX */
 #define	NETISR_IPV6		24		/* same as AF_INET6 */
