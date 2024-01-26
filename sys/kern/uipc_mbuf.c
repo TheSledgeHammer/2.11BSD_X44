@@ -1145,13 +1145,11 @@ m_tag_delete(struct mbuf *m, struct m_tag *t)
 
 /* Unlink and free a packet tag chain, starting from given tag. */
 __inline void
-m_tag_delete_chain(struct mbuf *m, struct m_tag *t)
+m_tag_delete_chain(struct mbuf *m)
 {
 	struct m_tag *p, *q;
 
-	if (t != NULL)
-		p = t;
-	else
+	KASSERT((m->m_flags & M_PKTHDR) != 0);
 		p = SLIST_FIRST(&m->m_pkthdr.tags);
 	if (p == NULL)
 		return;
