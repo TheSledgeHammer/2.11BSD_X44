@@ -125,7 +125,7 @@ bool	nbpf_fetch_udp(nbpf_cache_t *, nbpf_buf_t *, void *);
 bool	nbpf_fetch_icmp(nbpf_cache_t *, nbpf_buf_t *, void *);
 
 /* Complex instructions. */
-int		nbpf_match_ether(nbuf_t *, int, int, uint16_t, uint32_t *);
+int		nbpf_match_ether(nbpf_buf_t *, int, int, uint16_t, uint32_t *);
 int		nbpf_match_proto(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
 int		nbpf_match_table(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const u_int);
 int		nbpf_match_ipmask(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const nbpf_addr_t *, const nbpf_netmask_t);
