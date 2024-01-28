@@ -30,7 +30,7 @@
  */
 
 /*
- * NBPF: A BPF Extension (Based of the NPF ncode from NetBSD 6.1)
+ * NBPF: A BPF Extension (Based of the NPF ncode from NetBSD 6.0/6.1)
  * Goals:
  * - Use most of the existing BPF framework
  * - Works with BPF not instead of.
