@@ -263,41 +263,41 @@ nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, n
 		ncode->iptr = nc_fetch_double(ncode->iptr,
 		    &addr.s6_addr32[2], &addr.s6_addr32[3]);
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_match_ipmask(npc, nbuf, n_ptr, (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
+		cmpval = nbpf_match_ipmask(npc, nbuf, n_ptr, (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
 		break;
 	case NBPF_OPCODE_TABLE:
 		/* Source/destination, NPF table ID. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = npf_match_table(npc, nbuf, n_ptr, ncode->n, ncode->i);
+		cmpval = nbpf_match_table(npc, nbuf, n_ptr, ncode->n, ncode->i);
 		break;
 	case NBPF_OPCODE_TCP_PORTS:
 		/* Source/destination, port range. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = npf_match_tcp_ports(npc, nbuf, n_ptr, ncode->n, ncode->i);
+		cmpval = nbpf_match_tcp_ports(npc, nbuf, n_ptr, ncode->n, ncode->i);
 		break;
 	case NBPF_OPCODE_UDP_PORTS:
 		/* Source/destination, port range. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = npf_match_udp_ports(npc, nbuf, n_ptr, ncode->n, ncode->i);
+		cmpval = nbpf_match_udp_ports(npc, nbuf, n_ptr, ncode->n, ncode->i);
 		break;
 	case NBPF_OPCODE_TCP_FLAGS:
 		/* TCP flags/mask. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_match_tcpfl(npc, nbuf, n_ptr, ncode->n);
+		cmpval = nbbpf_match_tcpfl(npc, nbuf, n_ptr, ncode->n);
 		break;
 	case NBPF_OPCODE_ICMP4:
 		/* ICMP type/code. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_match_icmp4(npc, nbuf, n_ptr, ncode->n);
+		cmpval = nbpf_match_icmp4(npc, nbuf, n_ptr, ncode->n);
 		break;
 	case NBPF_OPCODE_ICMP6:
 		/* ICMP type/code. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_match_icmp6(npc, nbuf, n_ptr, ncode->n);
+		cmpval = nbpf_match_icmp6(npc, nbuf, n_ptr, ncode->n);
 		break;
 	case NBPF_OPCODE_PROTO:
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = npf_match_proto(npc, nbuf, n_ptr, ncode->n);
+		cmpval = nbpf_match_proto(npc, nbuf, n_ptr, ncode->n);
 		break;
 	case NBPF_OPCODE_ETHER:
 		/* Source/destination, reserved, ethernet type. */
