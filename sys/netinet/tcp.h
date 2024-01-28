@@ -88,6 +88,9 @@ struct tcphdr {
 #define TCPOPT_TSTAMP_HDR	\
     (TCPOPT_NOP<<24|TCPOPT_NOP<<16|TCPOPT_TIMESTAMP<<8|TCPOLEN_TIMESTAMP)
 
+
+#define MAX_TCPOPTLEN	32	/* max # bytes that go in options */
+
 /*
  * Default maximum segment size for TCP.
  * With an IP MSS of 576, this is 536,

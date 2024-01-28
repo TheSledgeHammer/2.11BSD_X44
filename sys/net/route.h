@@ -116,6 +116,12 @@ rt_getkey(const struct rtentry *rt)
 	return (rt->_rt_key);
 }
 
+static inline struct sockaddr *
+rt_gettag(struct rtentry *rt)
+{
+	return (rt->rt_tag);
+}
+
 /*
  * Following structure necessary for 4.3 compatibility;
  * We should eventually move it to a compat file.
@@ -295,7 +301,7 @@ void	 rt_ifmsg(struct ifnet *);
 void	 rt_maskedcopy(struct sockaddr *, struct sockaddr *, struct sockaddr *);
 void	 rt_missmsg(int, struct rt_addrinfo *, int, int);
 void	 rt_newaddrmsg(int, struct ifaddr *, int, struct rtentry *);
-int	 rt_setgate(struct rtentry *, struct sockaddr *, struct sockaddr *);
+int	 	rt_setgate(struct rtentry *, struct sockaddr *, struct sockaddr *);
 void	 rt_setmetrics(u_long, struct rt_metrics *, struct rt_metrics *);
 int      rt_timer_add(struct rtentry *, void(*)(struct rtentry *, struct rttimer *), struct rttimer_queue *);
 void	 rt_timer_init(void);
@@ -316,7 +322,5 @@ int	 	rtioctl(u_long, caddr_t, struct proc *);
 void	rtredirect(struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct sockaddr *, struct rtentry **);
 int	 	rtrequest(int, struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct rtentry **);
 int	 	rtrequest1(int, struct rt_addrinfo *, struct rtentry **);
-const struct sockaddr *rt_settag(struct rtentry *, const struct sockaddr *);
-struct sockaddr *rt_gettag(struct rtentry *);
 #endif /* _KERNEL */
 #endif /* _NET_ROUTE_H_ */

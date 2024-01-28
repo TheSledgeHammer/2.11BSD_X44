@@ -195,8 +195,6 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_output.c,v 1.108.2.1 2004/05/11 13:00:20 tron Ex
 extern struct mbuf *m_copypack();
 #endif
 
-#define MAX_TCPOPTLEN	32	/* max # bytes that go in options */
-
 /*
  * Knob to enable Congestion Window Monitoring, and control the
  * the burst size it allows.  Default burst is 4 packets, per

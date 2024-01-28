@@ -120,7 +120,7 @@ nc_insn_get(struct nbpf_ncode *ncode)
  * RISC-like instructions.
  */
 int
-nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, struct mbuf *m, int cmpval, const int layer)
+nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, nbpf_buf_t *nbuf, void *n_ptr, int cmpval, const int layer)
 {
 	/* Virtual registers. */
 	uint32_t	regs[NBPF_NREGS];
@@ -141,22 +141,18 @@ nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, s
 	case NBPF_OPCODE_ADVR:
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->i); /* Register */
 		KASSERT(ncode->i < NBPF_NREGS);
-		if (!nbpf_advance(m, regs[ncode->i], 0)) {
+		n_ptr = nbpf_advance(&nbuf, n_ptr, regs[ncode->i]);
+		if (__predict_false(n_ptr == NULL)) {
 			goto fail;
 		}
 		break;
 	case NBPF_OPCODE_LW:
-		void *n_ptr;
-
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Size, register */
 		KASSERT(ncode->i < NBPF_NREGS);
 		KASSERT(ncode->n >= sizeof(uint8_t) && ncode->n <= sizeof(uint32_t));
-
-		n_ptr = nbpf_ensure_contig(m, ncode->n);
-		if (n_ptr == NULL) {
+		if (nbpf_fetch_datum(nbuf, n_ptr, ncode->n, (uint32_t *)regs + ncode->i)) {
 			goto fail;
 		}
-		memcpy(&regs[ncode->i], n_ptr, ncode->n);
 		break;
 	case NBPF_OPCODE_CMP:
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Value, register */
@@ -205,7 +201,7 @@ nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, s
 		return (ncode->n);
 	case NBPF_OPCODE_TAG:
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Key, value */
-		if (nbpf_add_tag(m, ncode->n, ncode->i)) {
+		if (nbpf_add_tag(n_ptr, ncode->n, ncode->i)) {
 			goto fail;
 		}
 		break;
@@ -245,7 +241,7 @@ fail:
  * CISC-like instructions.
  */
 int
-nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, struct mbuf *m, int cmpval, const int layer)
+nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, nbpf_buf_t *nbuf, void *n_ptr, int cmpval, const int layer)
 {
 	/* Virtual registers. */
 	uint32_t	regs[NBPF_NREGS];
@@ -257,9 +253,7 @@ nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, s
 		/* Source/destination, network address, subnet. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
 		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0], &ncode->n);
-		cmpval = nbpf_iscached(npc, NBPC_IP46) ? nbpf_match_ipmask(npc,
-				(sizeof(struct in_addr) << 1) | (ncode->d & 0x1),
-				    &addr, (nbpf_netmask_t)ncode->n) : -1;
+		cmpval = nbpf_match_ipmask(npc, nbuf, n_ptr, (sizeof(struct in_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
 		break;
 	case NBPF_OPCODE_IP6MASK:
 		/* Source/destination, network address, subnet. */
@@ -269,49 +263,47 @@ nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, s
 		ncode->iptr = nc_fetch_double(ncode->iptr,
 		    &addr.s6_addr32[2], &addr.s6_addr32[3]);
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_iscached(npc, NBPC_IP46) ? nbpf_match_ipmask(npc,
-		    (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1),
-		    &addr, (nbpf_netmask_t)ncode->n) : -1;
+		cmpval = npf_match_ipmask(npc, nbuf, n_ptr, (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
 		break;
 	case NBPF_OPCODE_TABLE:
 		/* Source/destination, NPF table ID. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = nbpf_iscached(npc, NBPC_IP46) ? nbpf_match_table(npc, ncode->n, ncode->i) : -1;
+		cmpval = npf_match_table(npc, nbuf, n_ptr, ncode->n, ncode->i);
 		break;
 	case NBPF_OPCODE_TCP_PORTS:
 		/* Source/destination, port range. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = nbpf_iscached(npc, NBPC_TCP) ? nbpf_match_tcp_ports(npc, ncode->n, ncode->i) : -1;
+		cmpval = npf_match_tcp_ports(npc, nbuf, n_ptr, ncode->n, ncode->i);
 		break;
 	case NBPF_OPCODE_UDP_PORTS:
 		/* Source/destination, port range. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = nbpf_iscached(npc, NBPC_UDP) ? nbpf_match_udp_ports(npc, ncode->n, ncode->i) : -1;
+		cmpval = npf_match_udp_ports(npc, nbuf, n_ptr, ncode->n, ncode->i);
 		break;
 	case NBPF_OPCODE_TCP_FLAGS:
 		/* TCP flags/mask. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_iscached(npc, NBPC_TCP) ? nbpf_match_tcpfl(npc, ncode->n) : -1;
+		cmpval = npf_match_tcpfl(npc, nbuf, n_ptr, ncode->n);
 		break;
 	case NBPF_OPCODE_ICMP4:
 		/* ICMP type/code. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_iscached(npc, NBPC_ICMP) ? nbpf_match_icmp4(npc, ncode->n) : -1;
+		cmpval = npf_match_icmp4(npc, nbuf, n_ptr, ncode->n);
 		break;
 	case NBPF_OPCODE_ICMP6:
 		/* ICMP type/code. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_iscached(npc, NBPC_ICMP) ? nbpf_match_icmp6(npc, ncode->n) : -1;
+		cmpval = npf_match_icmp6(npc, nbuf, n_ptr, ncode->n);
 		break;
 	case NBPF_OPCODE_PROTO:
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_iscached(npc, NBPC_IP46) ? nbpf_match_proto(npc, ncode->n) : -1;
+		cmpval = npf_match_proto(npc, nbuf, n_ptr, ncode->n);
 		break;
 	case NBPF_OPCODE_ETHER:
 		/* Source/destination, reserved, ethernet type. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = nbpf_match_ether(m, ncode->d, ncode->i, &regs[NBPF_NREGS - 1]);
+		cmpval = nbpf_match_ether(nbuf, ncode->d, ncode->n, ncode->i, &regs[NBPF_NREGS - 1]);
 		break;
 	default:
 		/* Invalid instruction. */
@@ -333,10 +325,14 @@ fail:
  * => Routine prevents from infinite loop.
  */
 int
-nbpf_ncode_process(nbpf_cache_t *npc, struct nbpf_insn *pc, struct mbuf *m, const int layer)
+nbpf_ncode_process(nbpf_cache_t *npc, struct nbpf_insn *pc, nbpf_buf_t *nbuf0, const int layer)
 {
+	/* Pointer of current nbuf in the chain. */
+	nbpf_buf_t 	*nbuf;
+	/* Data pointer in the current nbuf. */
+	void 		*n_ptr;
+	/* Virtual registers. */
 	uint32_t	regs[NBPF_NREGS];
-
 	struct nbpf_ncode *ncode;
 	nbpf_addr_t addr;
 	u_int lcount;
@@ -346,15 +342,18 @@ nbpf_ncode_process(nbpf_cache_t *npc, struct nbpf_insn *pc, struct mbuf *m, cons
 	ncode = pc->ncode;
 	ncode->iptr = ncode;
 	regs[0] = layer;
-
 	cmpval = 0;
+
+	/* Note: offset = n_ptr - nbpf_dataptr(nbuf); */
+	nbuf = nbuf0;
+	n_ptr = nbpf_dataptr(nbuf);
 
 process_next:
 	ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
 	if (nc_insn_get(ncode)) {
-		error = nbpf_cisc_ncode(npc, ncode, addr, m, cmpval, layer);
+		error = nbpf_cisc_ncode(npc, ncode, addr, nbuf, n_ptr, cmpval, layer);
 	} else {
-		error = nbpf_risc_ncode(npc, ncode, addr, m, cmpval, layer);
+		error = nbpf_risc_ncode(npc, ncode, addr, nbuf, n_ptr, cmpval, layer);
 	}
 	if (error) {
 		goto process_next;
@@ -626,21 +625,23 @@ nbpf_ncode_validate(struct nbpf_insn *pc, int *errat)
 }
 
 int
-nbpf_filter(struct nbpf_insn *pc, struct mbuf *m, int layer)
+nbpf_filter(struct nbpf_insn *pc, nbpf_buf_t *nbuf, int layer)
 {
+	struct mbuf *m;
 	nbpf_cache_t *npc;
 	int error;
 
-	npc = nbpf_cache_init(m);
-	error = nbpf_ncode_process(npc, pc, m, layer);
+	npc = nbpf_cache_init(&m);
+	KASSERT(npc != NULL);
+	error = nbpf_ncode_process(npc, pc, nbuf, layer);
 	return (error);
 }
 
 int
-nbpf_validate(struct nbpf_insn *f, size_t len)
+nbpf_validate(struct nbpf_insn *f, size_t len, int ret)
 {
 	struct nbpf_insn *p;
-	int error, ret;
+	int error;
 	int i;
 
 	for (i = 0; i < len; ++i) {
@@ -653,5 +654,3 @@ nbpf_validate(struct nbpf_insn *f, size_t len)
 	}
 	return (error);
 }
-
-

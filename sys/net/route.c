@@ -1045,28 +1045,3 @@ rt_timer_timer(arg)
 
 	callout_reset(&rt_timer_ch, hz, rt_timer_timer, NULL);
 }
-
-const struct sockaddr *
-rt_settag(rt, tag)
-	struct rtentry *rt;
-	const struct sockaddr *tag;
-{
-	if (rt->rt_tag != tag) {
-		if (rt->rt_tag != NULL) {
-			Free(rt->rt_tag);
-		}
-		R_Malloc(rt->rt_tag, tag->sa_family, tag->sa_len);
-		if (rt->rt_tag == NULL) {
-			return (NULL);
-		}
-		Bcopy(tag, rt->rt_tag, tag->sa_len);
-	}
-	return (rt->rt_tag);
-}
-
-struct sockaddr *
-rt_gettag(rt)
-	struct rtentry *rt;
-{
-	return (rt->rt_tag);
-}

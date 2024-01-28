@@ -1,0 +1,7 @@
+#	$211BSD: files.nbpf,v 1.0 2024/01/28 $
+
+file net/nbpf/nbpf_buf.c		nbpf
+file net/nbpf/nbpf_inet.c		nbpf
+file net/nbpf/nbpf_instr.c		nbpf
+file net/nbpf/nbpf_ncode.c		nbpf
+file net/nbpf/nbpf.c			nbpf

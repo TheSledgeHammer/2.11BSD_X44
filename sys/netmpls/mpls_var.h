@@ -36,11 +36,9 @@
 #error This file should NOT be included anywhere else than kernel
 #endif
 
-//#include "opt_mbuftrace.h"
-
 #include "netmpls/mpls.h"
 
-//#define MPLS_GETSADDR(rt) ntohl(((struct sockaddr_mpls*)rt_gettag(rt))->smpls_addr.s_addr)
+#define MPLS_GETSADDR(rt) ntohl(((struct sockaddr_mpls*)rt_gettag(rt))->smpls_addr.s_addr)
 
 #define	MPLSCTL_DEFTTL			1	/* Default TTL */
 #define	MPLSCTL_FORWARD			2	/* MPLS forwarding*/
