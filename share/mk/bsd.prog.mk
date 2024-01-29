@@ -78,6 +78,8 @@ _USRSLASHLIBLIST= \
 			GNUMALLOC \
 			L \
 			MAGIC \
+            		STDC++ \
+            		SUPC++
 			
 .for _var in ${_USRSLASHLIBLIST}
 .ifndef LIB${_var}
