@@ -145,7 +145,7 @@ nbpf_reassembly(nbpf_cache_t *npc, nbpf_buf_t *nbuf, struct mbuf **mp)
 
 	nptr = nbpf_dataptr(nbuf);
 	if (nbpf_iscached(npc, NBPC_IP4)) {
-		struct ip *ip = nbpf_dataptr(nbuf);
+		struct ip *ip = nptr;
 		error = ip_reass_packet(mp, ip);
 	} else if (nbpf_iscached(npc, NBPC_IP6)) {
 		error = ip6_reass_packet(mp, npc->bpc_hlen);
