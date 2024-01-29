@@ -67,11 +67,11 @@ struct radix_node {
 };
 
 #define rn_dupedkey rn_u.rn_leaf.rn_Dupedkey
-#define rn_key rn_u.rn_leaf.rn_Key
-#define rn_mask rn_u.rn_leaf.rn_Mask
-#define rn_off rn_u.rn_node.rn_Off
-#define rn_l rn_u.rn_node.rn_L
-#define rn_r rn_u.rn_node.rn_R
+#define rn_key 		rn_u.rn_leaf.rn_Key
+#define rn_mask 	rn_u.rn_leaf.rn_Mask
+#define rn_off 		rn_u.rn_node.rn_Off
+#define rn_l 		rn_u.rn_node.rn_L
+#define rn_r 		rn_u.rn_node.rn_R
 
 /*
  * Annotations to tree concerning potential routes applying to subtrees.
@@ -96,10 +96,15 @@ extern struct radix_mask {
 	if (rn_mkfreelist) {									\
 		m = rn_mkfreelist; 									\
 		rn_mkfreelist = (m)->rm_mklist; 					\
-	} else 													\
-		R_Malloc(m, struct radix_mask *, sizeof (*(m))); }	\
+	} else {												\
+		R_Malloc(m, struct radix_mask *, sizeof (*(m)));	\
+	}														\
+}															\
 
-#define MKFree(m) { (m)->rm_mklist = rn_mkfreelist; rn_mkfreelist = (m);}
+#define MKFree(m) { 										\
+	(m)->rm_mklist = rn_mkfreelist; 						\
+	rn_mkfreelist = (m);									\
+}
 
 struct radix_node_head {
 	struct	radix_node *rnh_treetop;
@@ -136,19 +141,16 @@ struct radix_node_head {
 #define Free(p) 			free((caddr_t)p, M_RTABLE);
 #endif /*_KERNEL*/
 
-void	 rn_init(void);
+void rn_init(void);
 int	 rn_inithead(void **, int);
 int	 rn_inithead0(struct radix_node_head *, int);
 int	 rn_refines(void *, void *);
-int	 rn_walktree(struct radix_node_head *,
-			  int (*)(struct radix_node *, void *), void *);
+int	 rn_walktree(struct radix_node_head *, int (*)(struct radix_node *, void *), void *);
 struct radix_node
 	 *rn_addmask(void *, int, int),
-	 *rn_addroute(void *, void *, struct radix_node_head *,
-			struct radix_node [2]),
+	 *rn_addroute(void *, void *, struct radix_node_head *, struct radix_node [2]),
 	 *rn_delete(void *, void *, struct radix_node_head *),
-	 *rn_insert(void *, struct radix_node_head *, int *,
-			struct radix_node [2]),
+	 *rn_insert(void *, struct radix_node_head *, int *, struct radix_node [2]),
 	 *rn_lookup(void *, void *, struct radix_node_head *),
 	 *rn_match(void *, struct radix_node_head *),
 	 *rn_newpair(void *, int, struct radix_node[2]),

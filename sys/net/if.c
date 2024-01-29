@@ -1284,7 +1284,7 @@ ifioctl(so, cmd, data, p)
 	switch (cmd) {
 	case SIOCIFCREATE:
 	case SIOCIFDESTROY:
-		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 			return (error);
 		return ((cmd == SIOCIFCREATE) ?
 			if_clone_create(ifr->ifr_name) :

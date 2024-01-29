@@ -98,11 +98,11 @@ struct ifgroupreq {
 void	if_init_groups(struct ifnet *);
 void	if_destroy_groups(struct ifnet *);
 struct	ifg_list_head *if_get_groups(struct ifnet *);
-
 struct	ifg_group *if_creategroup(const char *);
 int		if_addgroup(struct ifnet *, const char *);
 int		if_delgroup(struct ifnet *, const char *);
 void	if_group_routechange(struct sockaddr *, struct sockaddr *);
+int		ifgioctl_get(u_long, caddr_t);
 #endif /* _KERNEL */
 
 #endif /* _NET_IFG_GROUP_H_ */

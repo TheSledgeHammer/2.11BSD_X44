@@ -104,11 +104,9 @@ next:
 		 */
 		if (mss && *mss) {
 			val16 = *mss;
-			if (nbpf_advstore(&nbuf, &nptr, 2,
-			    sizeof(val16), &val16))
+			if (nbpf_advstore(&nbuf, &nptr, 2, sizeof(val16), &val16))
 				return false;
-		} else if (nbpf_advfetch(&nbuf, &nptr, 2,
-		    sizeof(val16), &val16)) {
+		} else if (nbpf_advfetch(&nbuf, &nptr, 2, sizeof(val16), &val16)) {
 			return false;
 		}
 		if (mss) {

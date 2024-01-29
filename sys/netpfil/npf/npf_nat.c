@@ -118,16 +118,16 @@ typedef struct {
  */
 struct npf_natpolicy {
 	LIST_HEAD(, npf_nat)	n_nat_list;
-	volatile u_int		n_refcnt;
-	kmutex_t		n_lock;
-	kcondvar_t		n_cv;
-	npf_portmap_t *		n_portmap;
+	volatile u_int			n_refcnt;
+	kmutex_t				n_lock;
+	kcondvar_t				n_cv;
+	npf_portmap_t 			*n_portmap;
 	/* NPF_NP_CMP_START */
-	int			n_type;
-	u_int			n_flags;
-	size_t			n_addr_sz;
-	npf_addr_t		n_taddr;
-	in_port_t		n_tport;
+	int						n_type;
+	u_int					n_flags;
+	size_t					n_addr_sz;
+	npf_addr_t				n_taddr;
+	in_port_t				n_tport;
 };
 
 #define	NPF_NP_CMP_START	offsetof(npf_natpolicy_t, n_type)

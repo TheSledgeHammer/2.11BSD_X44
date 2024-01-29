@@ -143,7 +143,7 @@ fnv1a_hash(const void *buf, size_t len)
 	return (hash);
 }
 
-static bool
+static bool_t
 hashmap_rehash(lpm_hmap_t *hmap, unsigned size, int flags)
 {
 	lpm_ent_t **bucket;

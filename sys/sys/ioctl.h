@@ -320,6 +320,14 @@ struct ttysize {
 #define	SIOCGIFCAP			_IOWR('i', 118, struct ifcapreq)	/* get capabilities */
 #define	SIOCSIFCAP	 		_IOW('i', 117, struct ifcapreq)		/* set capabilities */
 
+#define	SIOCAIFGROUP		_IOW('i', 135, struct ifgroupreq) 	/* add an ifgroup */
+#define	SIOCGIFGROUP   		_IOWR('i', 136, struct ifgroupreq) 	/* get ifgroups */
+#define	SIOCDIFGROUP    	_IOW('i', 137, struct ifgroupreq) 	/* delete ifgroup */
+#define	SIOCGIFGMEMB   		_IOWR('i', 138, struct ifgroupreq) 	/* get members */
+#define	SIOCGIFGATTR   		_IOWR('i', 139, struct ifgroupreq) 	/* get ifgroup attribs */
+#define	SIOCSIFGATTR   		_IOW('i', 140, struct ifgroupreq) 	/* set ifgroup attribs */
+#define	SIOCGIFGLIST   		_IOWR('i', 141, struct ifgroupreq) 	/* get ifgroup list */
+
 #define	SIOCSETPFSYNC		_IOW('i', 247, struct ifreq)
 #define	SIOCGETPFSYNC		_IOWR('i', 248, struct ifreq)
 

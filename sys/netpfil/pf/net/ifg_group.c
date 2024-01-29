@@ -82,11 +82,11 @@ __KERNEL_RCSID(0, "$NetBSD: if_compat.c,v 1.2 2008/06/18 09:06:27 yamt Exp $");
 #include <net/pfvar.h>
 #endif
 
-#ifdef notyet
 static int if_getgroup(void *, struct ifnet *);
 static int if_getgroupmembers(void *);
+static int if_getgroupattribs(void *);
+static int if_getgrouplist(void *);
 static int if_group_egress_build(void);
-#endif
 
 TAILQ_HEAD(, ifg_group) ifg_head = TAILQ_HEAD_INITIALIZER(ifg_head);
 
@@ -236,7 +236,6 @@ if_delgroup(struct ifnet *ifp, const char *groupname)
 	return (0);
 }
 
-#if 0
 /*
  * Stores all groups from an interface in memory pointed
  * to by data.
@@ -251,21 +250,23 @@ if_getgroup(void *data, struct ifnet *ifp)
 	struct ifgroupreq	*ifgr = (struct ifgroupreq *)data;
 
 	if (ifgr->ifgr_len == 0) {
-		TAILQ_FOREACH(ifgl, ifgh, ifgl_next)
+		TAILQ_FOREACH(ifgl, ifgh, ifgl_next) {
 			ifgr->ifgr_len += sizeof(struct ifg_req);
+		}
 		return (0);
 	}
 
 	len = ifgr->ifgr_len;
 	ifgp = ifgr->ifgr_groups;
 	TAILQ_FOREACH(ifgl, ifgh, ifgl_next) {
-		if (len < sizeof(ifgrq))
+		if (len < sizeof(ifgrq)) {
 			return (EINVAL);
+		}
 		bzero(&ifgrq, sizeof ifgrq);
-		strlcpy(ifgrq.ifgrq_group, ifgl->ifgl_group->ifg_group,
-				sizeof(ifgrq.ifgrq_group));
-		if ((error = copyout(&ifgrq, ifgp, sizeof(struct ifg_req))))
+		strlcpy(ifgrq.ifgrq_group, ifgl->ifgl_group->ifg_group, sizeof(ifgrq.ifgrq_group));
+		if ((error = copyout(&ifgrq, ifgp, sizeof(struct ifg_req)))) {
 			return (error);
+		}
 		len -= sizeof(ifgrq);
 		ifgp++;
 	}
@@ -283,11 +284,12 @@ if_getgroupmembers(void *data)
 	struct ifg_group	*ifg;
 	struct ifg_member	*ifgm;
 	struct ifg_req		 ifgrq, *ifgp;
-	int			 len, error;
+	int			 		len, error;
 
-	TAILQ_FOREACH(ifg, &ifg_head, ifg_next)
+	TAILQ_FOREACH(ifg, &ifg_head, ifg_next) {
 		if (!strcmp(ifg->ifg_group, ifgr->ifgr_name))
 			break;
+	}
 	if (ifg == NULL)
 		return (ENOENT);
 
@@ -300,13 +302,102 @@ if_getgroupmembers(void *data)
 	len = ifgr->ifgr_len;
 	ifgp = ifgr->ifgr_groups;
 	TAILQ_FOREACH(ifgm, &ifg->ifg_members, ifgm_next) {
-		if (len < sizeof(ifgrq))
+		if (len < sizeof(ifgrq)) {
 			return (EINVAL);
+		}
 		bzero(&ifgrq, sizeof ifgrq);
-		strlcpy(ifgrq.ifgrq_member, ifgm->ifgm_ifp->if_xname,
-		    sizeof(ifgrq.ifgrq_member));
-		if ((error = copyout(&ifgrq, ifgp, sizeof(struct ifg_req))))
+		strlcpy(ifgrq.ifgrq_member, ifgm->ifgm_ifp->if_xname, sizeof(ifgrq.ifgrq_member));
+		if ((error = copyout(&ifgrq, ifgp, sizeof(struct ifg_req)))) {
 			return (error);
+		}
+		len -= sizeof(ifgrq);
+		ifgp++;
+	}
+
+	return (0);
+}
+
+static int
+if_getgroupattribs(void *data)
+{
+	struct ifgroupreq	*ifgr = (struct ifgroupreq *)data;
+	struct ifg_group	*ifg;
+
+	TAILQ_FOREACH(ifg, &ifg_head, ifg_next) {
+		if (!strcmp(ifg->ifg_group, ifgr->ifgr_name)) {
+			break;
+		}
+	}
+	if (ifg == NULL) {
+		return (ENOENT);
+	}
+
+	ifgr->ifgr_attrib.ifg_carp_demoted = ifg->ifg_carp_demoted;
+
+	return (0);
+}
+
+int
+if_setgroupattribs(void *data)
+{
+	struct ifgroupreq	*ifgr = (struct ifgroupreq *)data;
+	struct ifg_group	*ifg;
+	struct ifg_member	*ifgm;
+	int			 demote;
+
+	TAILQ_FOREACH(ifg, &ifg_head, ifg_next) {
+		if (!strcmp(ifg->ifg_group, ifgr->ifgr_name)) {
+			break;
+		}
+	}
+	if (ifg == NULL) {
+		return (ENOENT);
+	}
+
+	demote = ifgr->ifgr_attrib.ifg_carp_demoted;
+	if (demote + ifg->ifg_carp_demoted > 0xff ||
+	    demote + ifg->ifg_carp_demoted < 0) {
+		return (EINVAL);
+	}
+
+	ifg->ifg_carp_demoted += demote;
+
+	TAILQ_FOREACH(ifgm, &ifg->ifg_members, ifgm_next) {
+		ifgm->ifgm_ifp->if_ioctl(ifgm->ifgm_ifp, SIOCSIFGATTR, data);
+	}
+
+	return (0);
+}
+
+/*
+ * Stores all groups in memory pointed to by data
+ */
+static int
+if_getgrouplist(void *data)
+{
+	struct ifgroupreq	*ifgr = (struct ifgroupreq *)data;
+	struct ifg_group	*ifg;
+	struct ifg_req		 ifgrq, *ifgp;
+	int			 len, error;
+
+	if (ifgr->ifgr_len == 0) {
+		TAILQ_FOREACH(ifg, &ifg_head, ifg_next) {
+			ifgr->ifgr_len += sizeof(ifgrq);
+		}
+		return (0);
+	}
+
+	len = ifgr->ifgr_len;
+	ifgp = ifgr->ifgr_groups;
+	TAILQ_FOREACH(ifg, &ifg_head, ifg_next) {
+		if (len < sizeof(ifgrq)) {
+			return (EINVAL);
+		}
+		bzero(&ifgrq, sizeof ifgrq);
+		strlcpy(ifgrq.ifgrq_group, ifg->ifg_group, sizeof(ifgrq.ifgrq_group));
+		if ((error = copyout((caddr_t)&ifgrq, (caddr_t)ifgp, sizeof(struct ifg_req)))) {
+			return (error);
+		}
 		len -= sizeof(ifgrq);
 		ifgp++;
 	}
@@ -319,14 +410,16 @@ if_group_routechange(struct sockaddr *dst, struct sockaddr *mask)
 {
 	switch (dst->sa_family) {
 	case AF_INET:
-		if (satosin(dst)->sin_addr.s_addr == INADDR_ANY)
+		if (satosin(dst)->sin_addr.s_addr == INADDR_ANY) {
 			if_group_egress_build();
+		}
 		break;
 #ifdef INET6
 	case AF_INET6:
 		if (IN6_ARE_ADDR_EQUAL(&(satosin6(dst))->sin6_addr, &in6addr_any) &&
-				mask && IN6_ARE_ADDR_EQUAL(&(satosin6(mask))->sin6_addr, &in6addr_any))
+				mask && IN6_ARE_ADDR_EQUAL(&(satosin6(mask))->sin6_addr, &in6addr_any)) {
 			if_group_egress_build();
+		}
 		break;
 #endif
 	}
@@ -345,10 +438,11 @@ if_group_egress_build(void)
 	struct rtentry		*rt;
 
 	TAILQ_FOREACH(ifg, &ifg_head, ifg_next)
-		if (!strcmp(ifg->ifg_group, IFG_EGRESS))
+		if (!strcmp(ifg->ifg_group, IFG_EGRESS)) {
 			break;
+		}
 
-	if (ifg != NULL)
+	if (ifg != NULL) {
 		for (ifgm = TAILQ_FIRST(&ifg->ifg_members); ifgm; ifgm = next) {
 			next = TAILQ_NEXT(ifgm, ifgm_next);
 			if_delgroup(ifgm->ifgm_ifp, IFG_EGRESS);
@@ -381,44 +475,52 @@ if_group_egress_build(void)
 	return (0);
 }
 
-
 int
 ifgioctl_get(u_long cmd, caddr_t data)
 {
 	struct ifnet *ifp;
 	struct ifreq *ifr = (struct ifreq *)data;
+	struct ifgroupreq *ifgr = (struct ifgroupreq *)data;
 	int error = 0;
 
 	switch(cmd) {
 	case SIOCGIFGMEMB:
-		NET_LOCK_SHARED();
+		//NET_LOCK_SHARED();
 		error = if_getgroupmembers(data);
-		NET_UNLOCK_SHARED();
+		//NET_UNLOCK_SHARED();
 		return (error);
 	case SIOCGIFGATTR:
-		NET_LOCK_SHARED();
+		//NET_LOCK_SHARED();
 		error = if_getgroupattribs(data);
-		NET_UNLOCK_SHARED();
+		//NET_UNLOCK_SHARED();
+		return (error);
+	case SIOCSIFGATTR:
+		error = if_setgroupattribs(data);
 		return (error);
 	case SIOCGIFGLIST:
-		NET_LOCK_SHARED();
+		//NET_LOCK_SHARED();
 		error = if_getgrouplist(data);
-		NET_UNLOCK_SHARED();
+		//NET_UNLOCK_SHARED();
 		return (error);
 	}
 
-	ifp = if_unit(ifr->ifr_name);
+	ifp = ifunit(ifr->ifr_name);
 	if (ifp == NULL) {
-		KERNEL_UNLOCK();
+		//KERNEL_UNLOCK();
 		return (ENXIO);
 	}
 
 	switch(cmd) {
+	case SIOCAIFGROUP:
+		error = if_addgroup(ifp, ifgr->ifgr_group);
+		break;
 	case SIOCGIFGROUP:
 		error = if_getgroup(data, ifp);
+		break;
+	case SIOCDIFGROUP:
+		error = if_delgroup(ifp, ifgr->ifgr_group);
 		break;
 	}
 
 	return (error);
 }
-#endif
