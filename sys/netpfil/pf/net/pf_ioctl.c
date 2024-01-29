@@ -199,8 +199,8 @@ pfattach(int num)
 	pfi_initialize();
 	pf_osfp_initialize();
 
-    /* initialize the pools */
-    pf_pool_limit_init();
+    	/* initialize the pools */
+    	pf_pool_limit_init();
 
 	RB_INIT(&tree_src_tracking);
 	RB_INIT(&pf_anchors);
@@ -316,7 +316,7 @@ pfdetach(void)
 	pf_remove_if_empty_ruleset(&pf_main_ruleset);
 
 	/* destroy the pools */
-    pf_pool_limit_free();
+    	pf_pool_limit_free();
 
 	/* destroy subsystems */
 	pf_normalize_destroy();
