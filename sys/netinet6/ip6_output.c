@@ -2365,7 +2365,7 @@ ip6_splithdr(m, exthdrs)
 		}
 		m_copy_pkthdr(mh, m);
 		MH_ALIGN(mh, sizeof(*ip6));
-		m_tag_delete_chain(m, NULL);
+		m_tag_delete_chain(m);
 		m->m_flags &= ~M_PKTHDR;
 		m->m_len -= sizeof(*ip6);
 		m->m_data += sizeof(*ip6);
