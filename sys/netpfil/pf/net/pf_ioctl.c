@@ -175,6 +175,22 @@ pf_pool_limit_get(struct pf_pool_limit *pool)
 }
 
 void
+pf_pool_limit_init(void)
+{
+	pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_STATES], PFSTATE_HIWAT);
+	pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_SRC_NODES], PFSNODE_HIWAT);
+	pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_FRAGS], PFFRAG_FRENT_HIWAT);
+}
+
+void
+pf_pool_limit_free(void)
+{
+   	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_STATES]);
+	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_SRC_NODES]);
+	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_FRAGS]); 
+}
+
+void
 pfattach(int num)
 {
 	u_int32_t *timeout = pf_default_rule.timeout;
@@ -183,7 +199,8 @@ pfattach(int num)
 	pfi_initialize();
 	pf_osfp_initialize();
 
-	pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_STATES], PFSTATE_HIWAT);
+    /* initialize the pools */
+    pf_pool_limit_init();
 
 	RB_INIT(&tree_src_tracking);
 	RB_INIT(&pf_anchors);
@@ -299,7 +316,7 @@ pfdetach(void)
 	pf_remove_if_empty_ruleset(&pf_main_ruleset);
 
 	/* destroy the pools */
-	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_STATES]);
+    pf_pool_limit_free();
 
 	/* destroy subsystems */
 	pf_normalize_destroy();
