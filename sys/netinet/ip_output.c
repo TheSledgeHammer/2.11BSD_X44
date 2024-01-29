@@ -1056,7 +1056,7 @@ ip_insertoptions(m, opt, phlen)
 		if (n == 0)
 			return (m);
 		m_copy_pkthdr(n, m);
-		m_tag_delete_chain(m, NULL);
+		m_tag_delete_chain(m);
 		m->m_flags &= ~M_PKTHDR;
 		m->m_len -= sizeof(struct ip);
 		m->m_data += sizeof(struct ip);
