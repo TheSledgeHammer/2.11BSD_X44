@@ -1169,7 +1169,7 @@ void
 m_tag_delete_nonpersistent(struct mbuf *m)
 {
 	/* NetBSD has no persistent tags yet, so just delete all tags. */
-	return m_tag_delete_chain(m, NULL);
+	return m_tag_delete_chain(m);
 }
 
 
@@ -1215,11 +1215,11 @@ m_tag_copy_chain(struct mbuf *to, struct mbuf *from)
 {
 	struct m_tag *p, *t, *tprev = NULL;
 
-	m_tag_delete_chain(to, NULL);
+	m_tag_delete_chain(to);
 	SLIST_FOREACH(p, &from->m_pkthdr.tags, m_tag_link) {
 		t = m_tag_copy(p);
 		if (t == NULL) {
-			m_tag_delete_chain(to, NULL);
+			m_tag_delete_chain(to);
 			return (0);
 		}
 		if (tprev == NULL)
