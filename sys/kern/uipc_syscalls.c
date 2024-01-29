@@ -16,6 +16,7 @@
 #include <sys/buf.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
+#include <sys/mpx.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -737,6 +738,104 @@ bad:
 	return (u.u_error);
 }
 
+/* pipe multiplexor */
+#define FMPX_NCHANS 	2	/* number of channels */
+#define FMPX_READ 	0	/* read channel */
+#define FMPX_WRITE 	1	/* write channel */
+
+static struct mpx *
+pipe_mpx_create(fp, idx, data)
+	struct file *fp;
+	int idx;
+	void *data;
+{
+	int error;
+
+	if (fp->f_mpx == NULL) {
+		fp->f_mpx = mpx_allocate(FMPX_NCHANS);
+	}
+	error = mpx_create(fp->f_mpx, idx, data);
+	if (error != 0) {
+		mpx_deallocate(fp->f_mpx);
+		return (NULL);
+	}
+	return (mpx);
+}
+
+static int
+pipe_mpx_read(fp, data)
+	struct file *fp;
+	void *data;
+{
+	register struct mpx *rmpx;
+	int error;
+
+	rmpx = pipe_mpx_create(fp, FMPX_READ, data);
+	if (rmpx != NULL) {
+		error = mpx_get(rmpx, FMPX_READ, data);
+		if (error != 0) {
+			return (error);
+		}
+		rmpx->mpx_file = fp;
+	}
+	return (0);
+}
+
+static int
+pipe_mpx_write(fp, data)
+	struct file *fp;
+	void *data;
+{
+	register struct mpx *wmpx;
+	int error;
+
+	wmpx = pipe_mpx_create(fp, FMPX_WRITE, data);
+	if (wmpx != NULL) {
+		error = mpx_put(wmpx, FMPX_WRITE, data);
+		if (error != 0) {
+			return (error);
+		}
+		wmpx->mpx_file = fp;
+	}
+	return (0);
+}
+
+/* pipe read using mpx */
+static void
+pipe_read(rf, rso)
+	struct file *rf;
+	struct socket *rso;
+{
+	int error;
+
+	error = pipe_mpx_read(rf, rso);
+	if (error != 0) {
+		u.u_error = error;
+		return;
+	}
+	rf->f_flag = FREAD;
+	rf->f_type = DTYPE_SOCKET;
+	rf->f_ops = &socketops;
+	rf->f_data = (caddr_t)rso;
+}
+
+static void
+pipe_write(wf, wso)
+	struct file *wf;
+	struct socket *wso;
+{
+	int error;
+
+	error = pipe_mpx_write(wf, wso);
+	if (error != 0) {
+		u.u_error = error;
+		return;
+	}
+	wf->f_flag = FWRITE;
+	wf->f_type = DTYPE_SOCKET;
+	wf->f_ops = &socketops;
+	wf->f_data = (caddr_t)wso;
+}
 
 /* ARGSUSED */
 int
@@ -766,18 +865,12 @@ pipe()
 	}
 	retval[0] = fd;
 	u.u_r.r_val1 = retval[0];
-	rf->f_flag = FREAD;
-	rf->f_type = DTYPE_SOCKET;
-	rf->f_ops = &socketops;
-	rf->f_data = (caddr_t)rso;
+	pipe_read(rf, rso);
 	wf = falloc();
 	if (wf == NULL) {
 		goto free3;
 	}
-	wf->f_flag = FWRITE;
-	wf->f_type = DTYPE_SOCKET;
-	wf->f_ops = &socketops;
-	wf->f_data = (caddr_t)wso;
+	pipe_write(wf, wso);
 	retval[1] = fd;
 	u.u_r.r_val2 = retval[1];
 	error = unp_connect2(wso, rso);

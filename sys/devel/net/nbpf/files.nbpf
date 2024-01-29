@@ -1,7 +1,12 @@
 #	$211BSD: files.nbpf,v 1.0 2024/01/28 $
 
-file net/nbpf/nbpf_buf.c		nbpf
-file net/nbpf/nbpf_inet.c		nbpf
-file net/nbpf/nbpf_instr.c		nbpf
-file net/nbpf/nbpf_ncode.c		nbpf
-file net/nbpf/nbpf.c			nbpf
+define		nbpf_filter
+
+# Enable NBPF cisc-like instruction set
+defparam	opt_nbpf.h			NBPF_NCODE_CISC	
+
+file net/nbpf/nbpf_buf.c		nbpf_filter
+file net/nbpf/nbpf_inet.c		nbpf_filter
+file net/nbpf/nbpf_instr.c		nbpf_filter
+file net/nbpf/nbpf_ncode.c		nbpf_filter
+file net/nbpf/nbpf.c			nbpf_filter

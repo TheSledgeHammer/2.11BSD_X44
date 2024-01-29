@@ -62,7 +62,7 @@ nbpf_dataptr(nbpf_buf_t *nbuf)
  * => Sets nbuf to current (after advance) mbuf in the chain.
  */
 void *
-nbpf_advance(nbpf_buf_t **nbuf, void *n_ptr, size_t len)
+nbpf_advance(nbpf_buf_t **nbuf, void *nptr, size_t len)
 {
 	struct mbuf *m;
 	u_int off, wmark;
@@ -70,7 +70,7 @@ nbpf_advance(nbpf_buf_t **nbuf, void *n_ptr, size_t len)
 
 	m = *nbuf;
 	/* Offset with amount to advance. */
-	off = (uintptr_t)n_ptr - mtod(m, uintptr_t) + len;
+	off = (uintptr_t)nptr - mtod(m, uintptr_t) + len;
 	wmark = m->m_len;
 
 	/* Find the mbuf according to offset. */
@@ -110,16 +110,16 @@ nbpf_advance(nbpf_buf_t **nbuf, void *n_ptr, size_t len)
 #define	NBPF_BUF_DATA_WRITE		1
 
 static inline int
-nbpf_rw_datum(const int wr, struct mbuf *m, void *n_ptr, size_t len, void *buf)
+nbpf_rw_datum(const int wr, struct mbuf *m, void *nptr, size_t len, void *buf)
 {
 	uint8_t *d, *b;
 	u_int off, wmark, end;
 
-	d = n_ptr;
+	d = nptr;
 	b = buf;
 
 	/* Current offset in mbuf. */
-	off = (uintptr_t)n_ptr - mtod(m, uintptr_t);
+	off = (uintptr_t)nptr - mtod(m, uintptr_t);
 	KASSERT(off < (u_int)m->m_len);
 	wmark = m->m_len;
 
@@ -157,7 +157,7 @@ nbpf_rw_datum(const int wr, struct mbuf *m, void *n_ptr, size_t len, void *buf)
 		d = mtod(m, uint8_t *);
 		off = 0;
 	}
-	KASSERT(n_ptr == d || mtod(m, uint8_t *) == d);
+	KASSERT(nptr == d || mtod(m, uint8_t *) == d);
 	KASSERT(len <= (u_int)m->m_len);
 
 	/* Non-overlapping case: fetch the actual data. */
@@ -178,45 +178,45 @@ nbpf_rw_datum(const int wr, struct mbuf *m, void *n_ptr, size_t len, void *buf)
  * nbpf_{fetch|store}_datum: read/write absraction calls on nbuf_rw_datum().
  */
 int
-nbpf_fetch_datum(nbpf_buf_t *nbuf, void *n_ptr, size_t len, void *buf)
+nbpf_fetch_datum(nbpf_buf_t *nbuf, void *nptr, size_t len, void *buf)
 {
 	struct mbuf *m;
 
 	m = nbuf;
-	return (nbpf_rw_datum(NBPF_BUF_DATA_READ, m, n_ptr, len, buf));
+	return (nbpf_rw_datum(NBPF_BUF_DATA_READ, m, nptr, len, buf));
 }
 
 int
-nbpf_store_datum(nbpf_buf_t *nbuf, void *n_ptr, size_t len, void *buf)
+nbpf_store_datum(nbpf_buf_t *nbuf, void *nptr, size_t len, void *buf)
 {
 	struct mbuf *m;
 
 	m = nbuf;
 	KASSERT((m->m_flags & M_PKTHDR) != 0 || !M_READONLY(m));
-	return (nbpf_rw_datum(NBPF_BUF_DATA_WRITE, m, n_ptr, len, buf));
+	return (nbpf_rw_datum(NBPF_BUF_DATA_WRITE, m, nptr, len, buf));
 }
 
 /*
  * nbpf_advfetch: advance and fetch the datum.
  */
 int
-nbpf_advfetch(nbpf_buf_t **nbuf, void **n_ptr, u_int n, size_t len, void *buf)
+nbpf_advfetch(nbpf_buf_t **nbuf, void **nptr, u_int n, size_t len, void *buf)
 {
 	nbpf_buf_t *orig_nbuf;
 	void *orig_nptr;
 	int error;
 
 	orig_nbuf = *nbuf;
-	orig_nptr = *n_ptr;
-	*n_ptr = nbpf_advance(nbuf, *n_ptr, n);
-	if (__predict_false(*n_ptr != NULL)) {
-		error = nbpf_fetch_datum(*nbuf, *n_ptr, len, buf);
+	orig_nptr = *nptr;
+	*nptr = nbpf_advance(nbuf, *nptr, n);
+	if (__predict_false(*nptr != NULL)) {
+		error = nbpf_fetch_datum(*nbuf, *nptr, len, buf);
 	} else {
 		error = EINVAL;
 	}
 	if (__predict_false(error)) {
 		*nbuf = orig_nbuf;
-		*n_ptr = orig_nptr;
+		*nptr = orig_nptr;
 	}
 	return (error);
 }
@@ -225,23 +225,23 @@ nbpf_advfetch(nbpf_buf_t **nbuf, void **n_ptr, u_int n, size_t len, void *buf)
  * nbpf_advstore: advance and store the datum.
  */
 int
-nbpf_advstore(nbpf_buf_t **nbuf, void **n_ptr, u_int n, size_t len, void *buf)
+nbpf_advstore(nbpf_buf_t **nbuf, void **nptr, u_int n, size_t len, void *buf)
 {
 	nbpf_buf_t *orig_nbuf;
 	void *orig_nptr;
 	int error;
 
 	orig_nbuf = *nbuf;
-	orig_nptr = *n_ptr;
-	*n_ptr = nbpf_advance(nbuf, *n_ptr, n);
-	if (__predict_false(*n_ptr != NULL)) {
-		error = nbpf_store_datum(*nbuf, *n_ptr, len, buf);
+	orig_nptr = *nptr;
+	*nptr = nbpf_advance(nbuf, *nptr, n);
+	if (__predict_false(*nptr != NULL)) {
+		error = nbpf_store_datum(*nbuf, *nptr, len, buf);
 	} else {
 		error = EINVAL;
 	}
 	if (__predict_false(error)) {
 		*nbuf = orig_nbuf;
-		*n_ptr = orig_nptr;
+		*nptr = orig_nptr;
 	}
 	return (error);
 }

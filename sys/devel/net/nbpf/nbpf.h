@@ -59,9 +59,6 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp6.h>
 
-#include <net/bpf.h>
-#include <net/bpfdesc.h>
-
 /* Storage of address (both for IPv4 and IPv6) and netmask */
 typedef struct in6_addr		nbpf_addr_t;
 typedef uint8_t				nbpf_netmask_t;
@@ -80,18 +77,10 @@ typedef struct nbpf_cache 	nbpf_cache_t;
 #define	NBPC_TCP			0x10	/* TCP header. */
 #define	NBPC_UDP			0x20	/* UDP header. */
 #define	NBPC_ICMP			0x40	/* ICMP header. */
-#define	NBPC_ICMP_ID		0x80	/* ICMP with query ID. */
-
-#define	NBPC_ALG_EXEC		0x100	/* ALG execution. */
 
 #define	NBPC_IP46			(NBPC_IP4|NBPC_IP6)
 
 #define PACKET_TAG_NBPF		10
-
-struct bpf_filter {
-	struct bpf_insn 		*bf_insn;
-	struct nbpf_insn 		*bf_ncode;
-};
 
 struct nbpf_cache {
     /* Information flags. */
@@ -118,23 +107,6 @@ struct nbpf_cache {
 	} bpc_l4;
 };
 
-/* Protocol helpers. */
-bool	nbpf_fetch_ip(nbpf_cache_t *, nbpf_buf_t *, void *);
-bool	nbpf_fetch_tcp(nbpf_cache_t *, nbpf_buf_t *, void *);
-bool	nbpf_fetch_udp(nbpf_cache_t *, nbpf_buf_t *, void *);
-bool	nbpf_fetch_icmp(nbpf_cache_t *, nbpf_buf_t *, void *);
-
-/* Complex instructions. */
-int		nbpf_match_ether(nbpf_buf_t *, int, int, uint16_t, uint32_t *);
-int		nbpf_match_proto(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
-int		nbpf_match_table(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const u_int);
-int		nbpf_match_ipmask(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const nbpf_addr_t *, const nbpf_netmask_t);
-int		nbpf_match_tcp_ports(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const uint32_t);
-int		nbpf_match_udp_ports(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const uint32_t);
-int		nbpf_match_icmp4(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
-int		nbpf_match_icmp6(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
-int		nbpf_match_tcpfl(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
-
 static inline bool_t
 nbpf_iscached(const nbpf_cache_t *bpc, const int inf)
 {
@@ -154,6 +126,23 @@ nbpf_cache_hlen(const nbpf_cache_t *bpc)
 	KASSERT(nbpf_iscached(bpc, NBPC_IP46));
 	return (bpc->bpc_hlen);
 }
+
+/* Protocol helpers. */
+bool	nbpf_fetch_ip(nbpf_cache_t *, nbpf_buf_t *, void *);
+bool	nbpf_fetch_tcp(nbpf_cache_t *, nbpf_buf_t *, void *);
+bool	nbpf_fetch_udp(nbpf_cache_t *, nbpf_buf_t *, void *);
+bool	nbpf_fetch_icmp(nbpf_cache_t *, nbpf_buf_t *, void *);
+
+/* Complex instructions. */
+int		nbpf_match_ether(nbpf_buf_t *, int, int, uint16_t, uint32_t *);
+int		nbpf_match_proto(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
+int		nbpf_match_table(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const u_int);
+int		nbpf_match_ipmask(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const nbpf_addr_t *, const nbpf_netmask_t);
+int		nbpf_match_tcp_ports(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const uint32_t);
+int		nbpf_match_udp_ports(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const uint32_t);
+int		nbpf_match_icmp4(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
+int		nbpf_match_icmp6(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
+int		nbpf_match_tcpfl(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
 
 /* Network buffer interface. */
 void 	*nbpf_dataptr(void *);
