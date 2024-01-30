@@ -245,11 +245,12 @@ do {															\
 #ifdef _KERNEL
 
 /* symbolic names for terminal (per-protocol) CTL_IFQ_ nodes */
-#define IFQCTL_LEN 		1
-#define IFQCTL_MAXLEN 	2
-#define IFQCTL_PEAK 	3
-#define IFQCTL_DROPS 	4
-#define IFQCTL_MAXID 	5
+#define IFQCTL_IFQ	1
+#define IFQCTL_LEN 	2
+#define IFQCTL_MAXLEN 	3
+#define IFQCTL_PEAK 	4
+#define IFQCTL_DROPS 	5
+#define IFQCTL_MAXID 	6
 
 /*
  * ifq sysctl support
@@ -267,7 +268,8 @@ int	sysctl_ifq_ip6(int *, void *, size_t *, void *, size_t);
  * sysctl for ifq (per-protocol packet input queue variant of ifqueue)
  */
 #define CTL_IFQ_NAMES  { 		\
-	{ 0, 0 }, 					\
+	{ 0, 0 }, 			\
+	{ "ifq", CTLTYPE_STRUCT	}, 	\
 	{ "len", CTLTYPE_INT }, 	\
 	{ "maxlen", CTLTYPE_INT }, 	\
 	{ "peak", CTLTYPE_INT }, 	\
