@@ -39,7 +39,7 @@
 
 #include <net/if.h>
 #include <netinet/in.h>
-#include <net/pfvar.h>
+#include <net/pf/pfvar.h>
 #include <arpa/inet.h>
 #include <altq/altq.h>
 

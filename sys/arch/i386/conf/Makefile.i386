@@ -111,5 +111,5 @@ mpboot.o: assym.h
 ##
 ## (10) Other Make flags & options needed for various source directories
 ##
-#CPPFLAGS+= -I$S/netpfil/npf
-CPPFLAGS+= -I$S/netpfil/pf
+#CPPFLAGS+= -I$S/net/npf
+#CPPFLAGS+= -I$S/net/pf

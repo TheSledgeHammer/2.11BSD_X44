@@ -39,7 +39,7 @@
 #ifdef __NetBSD__
 #include <netinet/in.h>
 #endif
-#include <net/pfvar.h>
+#include <net/pf/pfvar.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 

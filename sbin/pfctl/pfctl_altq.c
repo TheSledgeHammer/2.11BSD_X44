@@ -29,7 +29,7 @@
 
 #include <net/if.h>
 #include <netinet/in.h>
-#include <net/pfvar.h>
+#include <net/pf/pfvar.h>
 
 #include <err.h>
 #include <errno.h>

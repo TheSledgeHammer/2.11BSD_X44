@@ -40,7 +40,7 @@
 #endif
 
 #include <net/if.h>
-#include <net/pfvar.h>
+#include <net/pf/pfvar.h>
 
 #include <errno.h>
 #include <string.h>

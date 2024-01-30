@@ -5,7 +5,7 @@
 SUBDIR=	arch crypto dev fs miscfs 		\
 		net net80211 netinet netinet6 	\
 		netipsec netkey netmpls netns 	\
-		netpfil nfs sys ufs vm
+		nfs sys ufs vm
 
 SUBDIR+= ovl
 

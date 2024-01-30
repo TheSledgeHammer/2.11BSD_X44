@@ -26,7 +26,7 @@
 #endif
 
 #include <net/if.h>
-#include <net/pfvar.h>
+#include <net/pf/pfvar.h>
 
 #include <ctype.h>
 #include <err.h>
