@@ -759,7 +759,7 @@ pipe_mpx_create(fp, idx, data)
 		mpx_deallocate(fp->f_mpx);
 		return (NULL);
 	}
-	return (mpx);
+	return (fp->f_mpx);
 }
 
 static int
