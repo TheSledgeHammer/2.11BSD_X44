@@ -127,6 +127,8 @@ __KERNEL_RCSID(0, "$NetBSD: if.c,v 1.139.2.1.4.1 2006/11/19 17:30:11 bouyer Exp 
 #include <net/route.h>
 #include <net/netisr.h>
 
+#include <net/ifg_group.h>
+
 #ifdef INET6
 #include <netinet/in.h>
 #include <netinet6/in6_var.h>
@@ -1606,7 +1608,7 @@ sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq)
 		error = sysctl_rdstruct(oldp, oldlenp, newp, ifq, sizeof(struct ifqueue));
 		break;
 	case IFQCTL_LEN:
-		error = sysctl_rdint(oldp, oldlenp, newp, &ifq->ifq_len);
+		error = sysctl_rdint(oldp, oldlenp, newp, ifq->ifq_len);
 		break;
 	case IFQCTL_MAXLEN:
 		error = sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_maxlen);
@@ -1617,7 +1619,7 @@ sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq)
 		break;
 #endif
 	case IFQCTL_DROPS:
-		error = sysctl_rdint(oldp, oldlenp, newp, &ifq->ifq_drops);
+		error = sysctl_rdint(oldp, oldlenp, newp, ifq->ifq_drops);
 		break;
 	}
 	return (error);
@@ -1642,7 +1644,7 @@ sysctl_ifqctl_protocol(ipn, name, oldp, oldlenp, newp, newlen, ifq)
 		error = sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq);
 		break;
 	default:
-		error = ENIVAL;
+		error = EINVAL;
 		break;
 	}
 	return (error);
@@ -1667,7 +1669,7 @@ sysctl_ifqctl_ip(ipn, qid, name, oldp, oldlenp, newp, newlen, ifq)
 		error = sysctl_ifqctl_protocol(ipn, name, oldp, oldlenp, newp, newlen, ifq);
 		break;
 	default:
-		error = ENIVAL;
+		error = EINVAL;
 		break;
 	}
 	return (error);
@@ -1692,7 +1694,7 @@ sysctl_ifq(pf, ipn, qid, name, oldp, oldlenp, newp, newlen, ifq)
 		error = sysctl_ifqctl_ip(ipn, qid, name, oldp, oldlenp, newp, newlen, ifq);
 		break;
 	default:
-		error = ENIVAL;
+		error = EINVAL;
 		break;
 	}
 	return (error);
