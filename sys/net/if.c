@@ -1283,23 +1283,40 @@ ifioctl(so, cmd, data, p)
 
 	switch (cmd) {
 	case SIOCIFCREATE:
-	case SIOCIFDESTROY:
-		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0) {
 			return (error);
-		return ((cmd == SIOCIFCREATE) ?
-			if_clone_create(ifr->ifr_name) :
-			if_clone_destroy(ifr->ifr_name));
+		}
+		error = if_clone_create(ifr->ifr_name);
+		return (error);
+
+	case SIOCIFDESTROY:
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0) {
+			return (error);
+		}
+		error = if_clone_destroy(ifr->ifr_name);
+		return (error);
 
 	case SIOCIFGCLONERS:
 		return (if_clone_list((struct if_clonereq *)data));
+
+	case SIOCGIFGMEMB:
+	case SIOCGIFGATTR:
+	case SIOCSIFGATTR:
+	case SIOCGIFGLIST:
+	case SIOCAIFGROUP:
+	case SIOCGIFGROUP:
+	case SIOCDIFGROUP:
+		error = ifgioctl_get(cmd, data);
+		return (error);
 	}
 
 	ifp = ifunit(ifr->ifr_name);
-	if (ifp == 0)
+	if (ifp == 0){
 		return (ENXIO);
+	}
 	oif_flags = ifp->if_flags;
-	switch (cmd) {
 
+	switch (cmd) {
 	case SIOCGIFFLAGS:
 		ifr->ifr_flags = ifp->if_flags;
 		break;
@@ -1572,142 +1589,143 @@ ifconf(cmd, data)
 	return (error);
 }
 
-#ifdef notyet
-sysctl_net_ifq_setup(int *name, void *oldp, size_t *oldlenp, void *newp, size_t newlen, struct ifqueue *ifq)
+#if defined(INET) || defined(INET6)
+static int
+sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq)
+	int *name;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct ifqueue *ifq;
 {
 	int error;
 
 	switch(name[0]) {
-	case IFQCTL_LEN:
-		error = sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_len);
+	case IFQCTL_IFQ:
+		error = sysctl_rdstruct(oldp, oldlenp, newp, ifq, sizeof(struct ifqueue));
 		break;
-
+	case IFQCTL_LEN:
+		error = sysctl_rdint(oldp, oldlenp, newp, &ifq->ifq_len);
+		break;
 	case IFQCTL_MAXLEN:
-		error =sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_maxlen);
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_maxlen);
 		break;
 #ifdef notyet
 	case IFQCTL_PEAK:
-		error = sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_peak);
+		error = sysctl_rdint(oldp, oldlenp, newp, &ifq->ifq_peak);
 		break;
 #endif
 	case IFQCTL_DROPS:
-		error = sysctl_int(oldp, oldlenp, newp, newlen, &ifq->ifq_drops);
+		error = sysctl_rdint(oldp, oldlenp, newp, &ifq->ifq_drops);
 		break;
 	}
 	return (error);
 }
 
-sysctl_net_inet6_ip6_ifq_setup(pf, pfname, ipn, ipname, qid, struct ifqueue *ifq)
+static int
+sysctl_ifqctl_protocol(ipn, name, oldp, oldlenp, newp, newlen, ifq)
+	int ipn, *name;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct ifqueue *ifq;
 {
-	sysctl_rdint(where, sizep, ifq, ifq->ifq_drops);
+	int error;
 
-	switch(pf) {
-	case PF_INET:
-	case PF_INET6:
-	}
-	switch(ipn) {
+	switch (ipn) {
 	case IPPROTO_IP:
+		error = sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq);
+		break;
 	case IPPROTO_IPV6:
-
+		error = sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq);
+		break;
+	default:
+		error = ENIVAL;
+		break;
 	}
+	return (error);
+}
+
+static int
+sysctl_ifqctl_ip(ipn, qid, name, oldp, oldlenp, newp, newlen, ifq)
+	int ipn, qid, *name;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct ifqueue *ifq;
+{
+	int error;
+
 	switch(qid) {
 	case IPCTL_IFQ:
-
+		error = sysctl_ifqctl_protocol(ipn, name, oldp, oldlenp, newp, newlen, ifq);
+		break;
+		break;
 	case IPV6CTL_IFQ:
-
+		error = sysctl_ifqctl_protocol(ipn, name, oldp, oldlenp, newp, newlen, ifq);
+		break;
+	default:
+		error = ENIVAL;
+		break;
 	}
-	sysctl_inet();
+	return (error);
 }
 
-#ifdef INET
-	{extern struct ifqueue ipintrq;
-	sysctl_net_ifq_setup(NULL, PF_INET, "inet", IPPROTO_IP, "ip",
-			     IPCTL_IFQ, &ipintrq);}
-#endif /* INET */
-#ifdef INET6
-	{extern struct ifqueue ip6intrq;
-	sysctl_net_ifq_setup(NULL, PF_INET6, "inet6", IPPROTO_IPV6, "ip6",
-			     IPV6CTL_IFQ, &ip6intrq);}
-#endif /* INET6 */
-
-#if defined(INET) || defined(INET6)
-static void
-sysctl_net_ifq_setup(struct sysctllog **clog,
-		     int pf, const char *pfname,
-		     int ipn, const char *ipname,
-		     int qid, struct ifqueue *ifq)
+static int
+sysctl_ifq(pf, ipn, qid, name, oldp, oldlenp, newp, newlen, ifq)
+	int pf, ipn, qid, *name;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct ifqueue *ifq;
 {
+	int error;
 
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "net", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, pfname, NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, pf, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, ipname, NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, pf, ipn, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "ifq",
-		       SYSCTL_DESCR("Protocol input queue controls"),
-		       NULL, 0, NULL, 0,
-		       CTL_NET, pf, ipn, qid, CTL_EOL);
-
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_INT, "len",
-		       SYSCTL_DESCR("Current input queue length"),
-		       NULL, 0, &ifq->ifq_len, 0,
-		       CTL_NET, pf, ipn, qid, IFQCTL_LEN, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "maxlen",
-		       SYSCTL_DESCR("Maximum allowed input queue length"),
-		       NULL, 0, &ifq->ifq_maxlen, 0,
-		       CTL_NET, pf, ipn, qid, IFQCTL_MAXLEN, CTL_EOL);
-#ifdef notyet
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_INT, "peak",
-		       SYSCTL_DESCR("Highest input queue length"),
-		       NULL, 0, &ifq->ifq_peak, 0,
-		       CTL_NET, pf, ipn, qid, IFQCTL_PEAK, CTL_EOL);
-#endif
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_INT, "drops",
-		       SYSCTL_DESCR("Packets dropped due to full input queue"),
-		       NULL, 0, &ifq->ifq_drops, 0,
-		       CTL_NET, pf, ipn, qid, IFQCTL_DROPS, CTL_EOL);
+	switch (pf) {
+	case PF_INET:
+		error = sysctl_ifqctl_ip(ipn, qid, name, oldp, oldlenp, newp, newlen, ifq);
+		break;
+	case PF_INET6:
+		error = sysctl_ifqctl_ip(ipn, qid, name, oldp, oldlenp, newp, newlen, ifq);
+		break;
+	default:
+		error = ENIVAL;
+		break;
+	}
+	return (error);
 }
+#endif /* INET || INET6 */
 
 #ifdef INET
-SYSCTL_SETUP(sysctl_net_inet_ip_ifq_setup,
-	     "sysctl net.inet.ip.ifq subtree setup")
+int
+sysctl_ifq_ip4(name, oldp, oldlenp, newp, newlen)
+	int *name;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
 	extern struct ifqueue ipintrq;
 
-	sysctl_net_ifq_setup(clog, PF_INET, "inet", IPPROTO_IP, "ip",
-			     IPCTL_IFQ, &ipintrq);
+	return (sysctl_ifq(PF_INET, IPPROTO_IP, IPCTL_IFQ, name, oldp, oldlenp, newp, newlen, &ipintrq));
 }
 #endif /* INET */
 
 #ifdef INET6
-SYSCTL_SETUP(sysctl_net_inet6_ip6_ifq_setup,
-	     "sysctl net.inet6.ip6.ifq subtree setup")
+int
+sysctl_ifq_ip6(name, oldp, oldlenp, newp, newlen)
+	int *name;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
 	extern struct ifqueue ip6intrq;
 
-	sysctl_net_ifq_setup(clog, PF_INET6, "inet6", IPPROTO_IPV6, "ip6",
-			     IPV6CTL_IFQ, &ip6intrq);
+	return (sysctl_ifq(PF_INET6, IPPROTO_IPV6, IPV6CTL_IFQ, name, oldp, oldlenp, newp, newlen, &ip6intrq));
 }
 #endif /* INET6 */
-#endif /* INET || INET6 */
-#endif

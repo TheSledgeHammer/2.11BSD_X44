@@ -322,5 +322,8 @@ int	 	rtioctl(u_long, caddr_t, struct proc *);
 void	rtredirect(struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct sockaddr *, struct rtentry **);
 int	 	rtrequest(int, struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct rtentry **);
 int	 	rtrequest1(int, struct rt_addrinfo *, struct rtentry **);
+
+struct radix_node_head 	*rt_gettable(sa_family_t);
+struct radix_node 		*rt_lookup(struct sockaddr *, struct sockaddr *);
 #endif /* _KERNEL */
 #endif /* _NET_ROUTE_H_ */

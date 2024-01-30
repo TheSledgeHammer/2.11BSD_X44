@@ -928,3 +928,21 @@ rn_init()
 	if (rn_inithead((void *)&mask_rnhead, 0) == 0)
 		panic("rn_init 2");
 }
+
+struct radix_node *
+rn_next(rn)
+	struct radix_node *rn;
+{
+	struct radix_node	*next;
+	struct rtentry		*rt;
+
+	rt = (struct rtentry *)rn;
+	if (!rn->rn_dupedkey) {
+		return (NULL);
+	}
+	next = rn->rn_dupedkey;
+	if (rn->rn_mask == next->rn_mask) {
+		return (next);
+	}
+	return (NULL);
+}

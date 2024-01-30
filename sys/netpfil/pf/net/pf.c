@@ -76,6 +76,7 @@
 #include <dev/misc/rnd/rnd.h>
 #include <net/pfvar.h>
 #include <net/if_pflog.h>
+#include <net/ifg_group.h>
 
 #if NPFSYNC > 0
 #include <net/if_pfsync.h>

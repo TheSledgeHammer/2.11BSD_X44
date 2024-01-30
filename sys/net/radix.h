@@ -157,4 +157,6 @@ struct radix_node
 	 *rn_search(void *, struct radix_node *),
 	 *rn_search_m(void *, struct radix_node *, void *);
 
+struct radix_node *rn_next(struct radix_node *);
+
 #endif /* _NET_RADIX_H_ */

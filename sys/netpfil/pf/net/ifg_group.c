@@ -451,23 +451,23 @@ if_group_egress_build(void)
 	bzero(&sa_in, sizeof(sa_in));
 	sa_in.sin_len = sizeof(sa_in);
 	sa_in.sin_family = AF_INET;
-	if ((rn = rt_lookup(sintosa(&sa_in), sintosa(&sa_in), 0)) != NULL) {
+	if ((rn = rt_lookup(sintosa(&sa_in), sintosa(&sa_in))) != NULL) {
 		do {
 			rt = (struct rtentry *)rn;
 			if (rt->rt_ifp)
 				if_addgroup(rt->rt_ifp, IFG_EGRESS);
-			rn = rn_mpath_next(rn);
+			rn = rn_next(rn);
 		} while (rn != NULL);
 	}
 
 #ifdef INET6
 	bcopy(&sa6_any, &sa_in6, sizeof(sa_in6));
-	if ((rn = rt_lookup(sin6tosa(&sa_in6), sin6tosa(&sa_in6), 0)) != NULL) {
+	if ((rn = rt_lookup(sin6tosa(&sa_in6), sin6tosa(&sa_in6))) != NULL) {
 		do {
 			rt = (struct rtentry *)rn;
 			if (rt->rt_ifp)
 				if_addgroup(rt->rt_ifp, IFG_EGRESS);
-			rn = rn_mpath_next(rn);
+			rn = rn_next(rn);
 		} while (rn != NULL);
 	}
 #endif

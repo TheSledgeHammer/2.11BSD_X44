@@ -243,10 +243,7 @@ do {															\
 #define	IFQ_SET_MAXLEN(ifq, len)((ifq)->ifq_maxlen = (len))
 
 #ifdef _KERNEL
-/*
- * ifq sysctl support
- */
-int	sysctl_ifq(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen, struct ifqueue *ifq);
+
 /* symbolic names for terminal (per-protocol) CTL_IFQ_ nodes */
 #define IFQCTL_LEN 		1
 #define IFQCTL_MAXLEN 	2
@@ -254,6 +251,15 @@ int	sysctl_ifq(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp
 #define IFQCTL_DROPS 	4
 #define IFQCTL_MAXID 	5
 
+/*
+ * ifq sysctl support
+ */
+#ifdef INET
+int sysctl_ifq_ip4(int *, void *, size_t *, void *, size_t);
+#endif
+#ifdef INET6
+int	sysctl_ifq_ip6(int *, void *, size_t *, void *, size_t);
+#endif
 #endif /* _KERNEL */
 
 #ifdef __BSD_VISIBLE

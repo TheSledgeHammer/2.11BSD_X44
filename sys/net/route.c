@@ -1045,3 +1045,26 @@ rt_timer_timer(arg)
 
 	callout_reset(&rt_timer_ch, hz, rt_timer_timer, NULL);
 }
+
+struct radix_node_head *
+rt_gettable(af)
+	sa_family_t af;
+{
+	if (af > AF_MAX+1) {
+		return (NULL);
+	}
+	return (rt_tables[af]);
+}
+
+struct radix_node *
+rt_lookup(dst, mask)
+	struct sockaddr *dst, *mask;
+{
+	struct radix_node_head	*rnh;
+
+	rnh = rt_gettable(dst->sa_family);
+	if (rnh == NULL) {
+		return (NULL);
+	}
+	return (rnh->rnh_lookup(dst, mask, rnh));
+}
