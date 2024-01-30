@@ -1663,7 +1663,6 @@ sysctl_ifqctl_ip(ipn, qid, name, oldp, oldlenp, newp, newlen, ifq)
 	case IPCTL_IFQ:
 		error = sysctl_ifqctl_protocol(ipn, name, oldp, oldlenp, newp, newlen, ifq);
 		break;
-		break;
 	case IPV6CTL_IFQ:
 		error = sysctl_ifqctl_protocol(ipn, name, oldp, oldlenp, newp, newlen, ifq);
 		break;
