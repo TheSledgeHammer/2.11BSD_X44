@@ -437,16 +437,18 @@ if_group_egress_build(void)
 	struct radix_node	*rn;
 	struct rtentry		*rt;
 
-	TAILQ_FOREACH(ifg, &ifg_head, ifg_next)
+	TAILQ_FOREACH(ifg, &ifg_head, ifg_next) {
 		if (!strcmp(ifg->ifg_group, IFG_EGRESS)) {
 			break;
 		}
+	}
 
 	if (ifg != NULL) {
 		for (ifgm = TAILQ_FIRST(&ifg->ifg_members); ifgm; ifgm = next) {
 			next = TAILQ_NEXT(ifgm, ifgm_next);
 			if_delgroup(ifgm->ifgm_ifp, IFG_EGRESS);
 		}
+	}
 
 	bzero(&sa_in, sizeof(sa_in));
 	sa_in.sin_len = sizeof(sa_in);
