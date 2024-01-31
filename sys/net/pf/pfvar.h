@@ -165,6 +165,8 @@ enum {
 	PF_LIMIT_STATES,
 	PF_LIMIT_SRC_NODES,
 	PF_LIMIT_FRAGS,
+	PF_LIMIT_TABLES,
+	PF_LIMIT_TABLE_ENTRIES,
 	PF_LIMIT_MAX
 };
 #define PF_POOL_IDMASK		0x0f
@@ -1287,10 +1289,14 @@ struct pf_tagname {
 	int			ref;
 };
 
-#define PFFRAG_FRENT_HIWAT	5000	/* Number of fragment entries */
-#define PFFRAG_FRAG_HIWAT	1000	/* Number of fragmented packets */
-#define PFFRAG_FRCENT_HIWAT	50000	/* Number of fragment cache entries */
+#define PFFRAG_FRENT_HIWAT		5000	/* Number of fragment entries */
+#define PFFRAG_FRAG_HIWAT		1000	/* Number of fragmented packets */
+#define PFFRAG_FRCENT_HIWAT		50000	/* Number of fragment cache entries */
 #define PFFRAG_FRCACHE_HIWAT	10000	/* Number of fragment descriptors */
+
+#define PFR_KTABLE_HIWAT		1000	/* Number of tables */
+#define PFR_KENTRY_HIWAT		200000	/* Number of table entries */
+#define PFR_KENTRY_HIWAT_SMALL	100000	/* Number of table entries (tiny hosts) */
 
 /*
  * ioctl parameter structures

@@ -112,6 +112,7 @@ extern void pppnetisr(void);
  */
 #define	NETISR_RAW		0		/* same as AF_UNSPEC */
 #define	NETISR_IP		2		/* same as AF_INET */
+#define	NETISR_IMP		3		/* same as AF_IMPLINK */
 #define	NETISR_NS		6		/* same as AF_NS */
 #define	NETISR_ISO		7		/* same as AF_ISO */
 #define	NETISR_CCITT	10		/* same as AF_CCITT */
@@ -122,12 +123,13 @@ extern void pppnetisr(void);
 #define	NETISR_ISDN		26		/* same as AF_E164 */
 #define	NETISR_NATM		27		/* same as AF_NATM */
 #define	NETISR_ARP		28		/* same as AF_ARP */
+#define	NETISR_MPLS		33		/* same as AF_MPLS */
+
 #ifndef __HAVE_GENERIC_SOFT_INTERRUPTS
 #define	NETISR_SLIP		29		/* for SLIP processing */
 #define	NETISR_STRIP	30		/* for STRIP processing */
 #define	NETISR_PPP		31		/* for PPP processing */
 #endif
-#define	NETISR_MPLS		33		/* same as AF_MPLS */
 
 #if defined(_KERNEL) && !defined(_LOCORE)
 

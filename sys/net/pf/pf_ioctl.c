@@ -180,6 +180,12 @@ pf_pool_limit_init(void)
 	pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_STATES], PFSTATE_HIWAT);
 	pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_SRC_NODES], PFSNODE_HIWAT);
 	pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_FRAGS], PFFRAG_FRENT_HIWAT);
+	pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_TABLES], PFR_KTABLE_HIWAT);
+	if (ctob(physmem) <= 100*1024*1024) {
+		pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_TABLE_ENTRIES], PFR_KENTRY_HIWAT_SMALL);
+	} else {
+		pf_pool_limit_set(&pf_pool_limits[PF_LIMIT_TABLE_ENTRIES], PFR_KENTRY_HIWAT);
+	}
 }
 
 void
@@ -187,7 +193,9 @@ pf_pool_limit_free(void)
 {
    	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_STATES]);
 	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_SRC_NODES]);
-	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_FRAGS]); 
+	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_FRAGS]);
+	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_TABLES]);
+	pf_pool_limit_get(&pf_pool_limits[PF_LIMIT_TABLE_ENTRIES]);
 }
 
 void
@@ -199,8 +207,8 @@ pfattach(int num)
 	pfi_initialize();
 	pf_osfp_initialize();
 
-    	/* initialize the pools */
-    	pf_pool_limit_init();
+   	/* initialize the pools */
+   	pf_pool_limit_init();
 
 	RB_INIT(&tree_src_tracking);
 	RB_INIT(&pf_anchors);
