@@ -31,7 +31,7 @@
 #define	_ALTQ_ALTQ_AFMAP_H_
 
 #include <sys/queue.h>
-#include <altq/altq.h>
+#include <net/altq/altq.h>
 
 struct atm_flowmap {
 	char		af_ifname[IFNAMSIZ];	/* if name, e.g. "en0" */

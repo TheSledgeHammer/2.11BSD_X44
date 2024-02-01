@@ -60,9 +60,9 @@ __KERNEL_RCSID(0, "$NetBSD: altq_cdnr.c,v 1.8 2004/02/13 11:36:09 wiz Exp $");
 #include <netinet/ip6.h>
 #endif
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
-#include <altq/altq_cdnr.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
+#include <net/altq/altq_cdnr.h>
 
 /*
  * diffserv traffic conditioning module

@@ -67,11 +67,11 @@ __KERNEL_RCSID(0, "$NetBSD: altq_rmclass.c,v 1.8 2003/11/09 22:11:12 christos Ex
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 
-#include <altq/altq.h>
-#include <altq/altq_rmclass.h>
-#include <altq/altq_rmclass_debug.h>
-#include <altq/altq_red.h>
-#include <altq/altq_rio.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_rmclass.h>
+#include <net/altq/altq_rmclass_debug.h>
+#include <net/altq/altq_red.h>
+#include <net/altq/altq_rio.h>
 
 #ifdef CBQ_TRACE
 struct cbqtrace		cbqtrace_buffer[NCBQTRACE+1];

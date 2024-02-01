@@ -79,7 +79,7 @@
 #endif /* INET6 */
 
 #ifdef ALTQ
-#include <altq/altq.h>
+#include <net/altq/altq.h>
 #endif
 
 void			 pfattach(int);

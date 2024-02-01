@@ -93,9 +93,9 @@ __KERNEL_RCSID(0, "$NetBSD: altq_blue.c,v 1.9.2.1 2004/06/27 13:25:27 he Exp $")
 #include <netinet/ip6.h>
 #endif
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
-#include <altq/altq_blue.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
+#include <net/altq/altq_blue.h>
 
 /*
  * Blue is proposed and implemented by Wu-chang Feng <wuchang@eecs.umich.edu>.

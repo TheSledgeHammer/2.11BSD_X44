@@ -45,7 +45,9 @@ crc32_ext(uint32_t crc, const uint8_t *buf, size_t len)
     register u4 c;
     register const u4 *buf4;
 
-    if (buf == NULL) return 0UL;
+    if (buf == NULL) {
+    	return (0UL);
+    }
 
     c = (u4)crc;
     c = ~c;
@@ -69,23 +71,43 @@ crc32_ext(uint32_t crc, const uint8_t *buf, size_t len)
         c = crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8);
     } while (--len);
     c = ~c;
-    return (uint32_t)c;
+    return ((uint32_t)c);
 }
 
 uint32_t
 crc32(const void *buf, size_t len)
 {
     const uint8_t *p;
-    uint32_t crc;
+    const u4 *buf4;
+    u4 crc;
 
-   	p = buf;
-	crc = (u4)~0U;
-
-	while (len--) {
-        crc = crc_table[0][(crc ^ *p++) & 0xff] ^ (crc >> 8);
+    if (buf == NULL) {
+    	return (0UL);
     }
 
-    return (crc ^ ~0U);
+    p = buf;
+	crc = (u4)~0U;
+	while (len && ((uintptr_t)p & 3)) {
+		 crc = crc_table[0][(crc ^ *p++) & 0xff] ^ (crc >> 8);
+		 len--;
+	}
+
+	buf4 = (const u4 *)(const void *)p;
+    while (len >= 32) {
+        DOLIT32;
+        len -= 32;
+    }
+    while (len >= 4) {
+        DOLIT4;
+        len -= 4;
+    }
+    p = (const unsigned char *)buf4;
+
+    if (len) do {
+    	crc = crc_table[0][(crc ^ *p++) & 0xff] ^ (crc >> 8);
+    } while (--len);
+    crc = ~crc;
+    return ((uint32_t)crc);
 }
 
 #else /* BIG_ENDIAN */
@@ -103,7 +125,9 @@ crc32_ext(uint32_t crc, const uint8_t *buf, size_t len)
     register u4 c;
     register const u4 *buf4;
 
-    if (buf == NULL) return 0UL;
+    if (buf == NULL) {
+    	return (0UL);
+    }
 
     c = REV((u4)crc);
     c = ~c;
@@ -129,23 +153,44 @@ crc32_ext(uint32_t crc, const uint8_t *buf, size_t len)
         c = crc_table[4][(c >> 24) ^ *buf++] ^ (c << 8);
     } while (--len);
     c = ~c;
-    return (uint32_t)(REV(c));
+    return ((uint32_t)REV(c));
 }
 
 uint32_t
 crc32(const void *buf, size_t len)
 {
    const uint8_t *p;
+   const u4 *buf4;
    uint32_t crc, ocrc;
+
+   if (buf == NULL) {
+	   return (0UL);
+   }
 
    p = buf;
    ocrc = REV((u4)0U);
    crc = ~ocrc;
+   while (len && ((uintptr_t)p & 3)) {
+	   crc = crc_table[4][(crc >> 24) ^ *p++] ^ (crc << 8);
+   }
 
-    while (len--) {
-        crc = crc_table[4][(crc >> 24) ^ *p++] ^ (crc << 8);
-    }
+   buf4 = (const u4*) (const void *)p;
+   buf4--;
+   while (len >= 32) {
+	   DOBIG32;
+	   len -= 32;
+   }
+   while (len >= 4) {
+	   DOBIG4;
+	   len -= 4;
+   }
+   buf4++;
+   p = (const unsigned char*) buf4;
 
-    return (REV(crc ^ ~0U));
+   if (len) do {
+	   crc = crc_table[4][(crc >> 24) ^ *p++] ^ (crc << 8);
+   } while (--len);
+   crc = ~crc;
+   return ((uint32_t)REV(crc));
 }
 #endif

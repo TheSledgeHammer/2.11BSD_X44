@@ -21,8 +21,8 @@ __KERNEL_RCSID(0, "$NetBSD: altq_localq.c,v 1.4 2001/11/12 23:14:22 lukem Exp $"
 #include <net/if.h>
 #include <netinet/in.h>
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
 
 /*
  * localq device interface

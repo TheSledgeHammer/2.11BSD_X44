@@ -66,8 +66,8 @@ __KERNEL_RCSID(0, "$NetBSD: altq_subr.c,v 1.11 2004/02/13 11:36:09 wiz Exp $");
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
 
 /* machine dependent clock related includes */
 #ifdef __FreeBSD__

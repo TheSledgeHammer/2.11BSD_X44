@@ -30,7 +30,7 @@
 #ifndef _ALTQ_ALTQ_RIO_H_
 #define	_ALTQ_ALTQ_RIO_H_
 
-#include <altq/altq_classq.h>
+#include <net/altq/altq_classq.h>
 
 /*
  * RIO: RED with IN/OUT bit

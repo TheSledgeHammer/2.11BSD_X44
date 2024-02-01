@@ -98,11 +98,11 @@ __KERNEL_RCSID(0, "$NetBSD: altq_red.c,v 1.10 2004/02/13 18:02:05 wiz Exp $");
 #include <netinet/ip6.h>
 #endif
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
-#include <altq/altq_red.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
+#include <net/altq/altq_red.h>
 #ifdef ALTQ_FLOWVALVE
-#include <altq/altq_flowvalve.h>
+#include <net/altq/altq_flowvalve.h>
 #endif
 
 /*

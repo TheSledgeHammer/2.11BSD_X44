@@ -58,9 +58,9 @@ __KERNEL_RCSID(0, "$NetBSD: altq_priq.c,v 1.7 2003/11/09 22:11:12 christos Exp $
 #include <net/if.h>
 #include <net/if_types.h>
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
-#include <altq/altq_priq.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
+#include <net/altq/altq_priq.h>
 
 /*
  * function prototypes

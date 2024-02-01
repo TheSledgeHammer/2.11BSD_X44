@@ -93,11 +93,11 @@ __KERNEL_RCSID(0, "$NetBSD: altq_rio.c,v 1.6 2004/02/13 18:02:05 wiz Exp $");
 #include <netinet/ip6.h>
 #endif
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
-#include <altq/altq_cdnr.h>
-#include <altq/altq_red.h>
-#include <altq/altq_rio.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
+#include <net/altq/altq_cdnr.h>
+#include <net/altq/altq_red.h>
+#include <net/altq/altq_rio.h>
 
 /*
  * RIO: RED with IN/OUT bit

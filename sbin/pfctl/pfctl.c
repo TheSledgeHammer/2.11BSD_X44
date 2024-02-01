@@ -41,7 +41,7 @@
 #include <netinet/in.h>
 #include <net/pf/pfvar.h>
 #include <arpa/inet.h>
-#include <altq/altq.h>
+#include <net/altq/altq.h>
 
 #include <err.h>
 #include <errno.h>

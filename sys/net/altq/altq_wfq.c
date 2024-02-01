@@ -60,9 +60,9 @@ __KERNEL_RCSID(0, "$NetBSD: altq_wfq.c,v 1.6 2003/11/09 22:11:12 christos Exp $"
 #include <net/if_types.h>
 #include <netinet/in.h>
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
-#include <altq/altq_wfq.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
+#include <net/altq/altq_wfq.h>
 
 /*
 #define	WFQ_DEBUG

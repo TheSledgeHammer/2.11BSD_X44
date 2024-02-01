@@ -56,9 +56,9 @@ __KERNEL_RCSID(0, "$NetBSD: altq_fifoq.c,v 1.5 2003/11/09 22:11:12 christos Exp 
 #include <net/if_types.h>
 #include <netinet/in.h>
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
-#include <altq/altq_fifoq.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
+#include <net/altq/altq_fifoq.h>
 
 /* fifoq_list keeps all fifoq_state_t's allocated. */
 static fifoq_state_t *fifoq_list = NULL;

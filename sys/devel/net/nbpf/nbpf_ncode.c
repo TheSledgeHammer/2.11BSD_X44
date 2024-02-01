@@ -120,7 +120,7 @@ nc_insn_get(struct nbpf_ncode *ncode)
  * RISC-like instructions.
  */
 int
-nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
+nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
 {
 	/* Virtual registers. */
 	uint32_t	regs[NBPF_NREGS];
@@ -241,10 +241,11 @@ fail:
  * CISC-like instructions.
  */
 int
-nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_addr_t addr, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
+nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
 {
 	/* Virtual registers. */
 	uint32_t	regs[NBPF_NREGS];
+	nbpf_addr_t addr;
 
 	regs[0] = layer;
 
@@ -332,8 +333,6 @@ nbpf_ncode_process(nbpf_cache_t *npc, struct nbpf_insn *pc, nbpf_buf_t *nbuf0, c
 	/* Virtual registers. */
 	uint32_t	regs[NBPF_NREGS];
 	struct nbpf_ncode *ncode;
-	nbpf_addr_t addr;
-	u_int lcount;
 	int cmpval;
 	int error;
 
@@ -349,9 +348,9 @@ nbpf_ncode_process(nbpf_cache_t *npc, struct nbpf_insn *pc, nbpf_buf_t *nbuf0, c
 process_next:
 	ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
 	if (nc_insn_get(ncode)) {
-		error = nbpf_cisc_ncode(npc, ncode, addr, nbuf, nptr, cmpval, layer);
+		error = nbpf_cisc_ncode(npc, ncode, nbuf, nptr, cmpval, layer);
 	} else {
-		error = nbpf_risc_ncode(npc, ncode, addr, nbuf, nptr, cmpval, layer);
+		error = nbpf_risc_ncode(npc, ncode, nbuf, nptr, cmpval, layer);
 	}
 	if (error) {
 		goto process_next;

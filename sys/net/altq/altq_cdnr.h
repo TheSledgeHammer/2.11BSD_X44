@@ -30,7 +30,7 @@
 #ifndef _ALTQ_ALTQ_CDNR_H_
 #define	_ALTQ_ALTQ_CDNR_H_
 
-#include <altq/altq.h>
+#include <net/altq/altq.h>
 
 /*
  * traffic conditioner element types

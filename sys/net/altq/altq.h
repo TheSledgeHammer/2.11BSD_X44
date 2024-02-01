@@ -193,7 +193,7 @@ struct pktcntr {
 #endif
 
 #ifdef _KERNEL
-#include <altq/altq_var.h>
+#include <net/altq/altq_var.h>
 #endif
 
 #endif /* _ALTQ_ALTQ_H_ */

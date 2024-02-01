@@ -34,7 +34,7 @@
 #ifndef _ALTQ_ALTQ_WFQ_H_
 #define	_ALTQ_ALTQ_WFQ_H_
 
-#include <altq/altq.h>
+#include <net/altq/altq.h>
 
 #define	DEFAULT_QSIZE	256
 #define	MAX_QSIZE	2048

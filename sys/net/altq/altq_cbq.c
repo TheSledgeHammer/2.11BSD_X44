@@ -62,9 +62,9 @@ __KERNEL_RCSID(0, "$NetBSD: altq_cbq.c,v 1.9 2004/02/24 15:22:01 wiz Exp $");
 #include <net/if_types.h>
 #include <netinet/in.h>
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
-#include <altq/altq_cbq.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
+#include <net/altq/altq_cbq.h>
 
 /*
  * Local Data structures.

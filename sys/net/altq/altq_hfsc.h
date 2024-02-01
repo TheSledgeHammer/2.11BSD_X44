@@ -36,10 +36,10 @@
 #ifndef _ALTQ_ALTQ_HFSC_H_
 #define	_ALTQ_ALTQ_HFSC_H_
 
-#include <altq/altq.h>
-#include <altq/altq_classq.h>
-#include <altq/altq_red.h>
-#include <altq/altq_rio.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_classq.h>
+#include <net/altq/altq_red.h>
+#include <net/altq/altq_rio.h>
 
 #ifdef __cplusplus
 extern "C" {

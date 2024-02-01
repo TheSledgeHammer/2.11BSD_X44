@@ -37,7 +37,7 @@
 #ifndef _ALTQ_ALTQ_RMCLASS_H_
 #define	_ALTQ_ALTQ_RMCLASS_H_
 
-#include <altq/altq_classq.h>
+#include <net/altq/altq_classq.h>
 
 /* #pragma ident "@(#)rm_class.h  1.20     97/10/23 SMI" */
 

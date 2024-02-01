@@ -30,7 +30,7 @@
 #ifndef _ALTQ_ALTQ_BLUE_H_
 #define	_ALTQ_ALTQ_BLUE_H_
 
-#include <altq/altq_classq.h>
+#include <net/altq/altq_classq.h>
 
 struct blue_interface {
 	char	blue_ifname[IFNAMSIZ];

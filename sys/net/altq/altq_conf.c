@@ -54,9 +54,9 @@ __KERNEL_RCSID(0, "$NetBSD: altq_conf.c,v 1.10 2002/10/23 09:10:25 jdolecek Exp 
 #endif /*DEVFS*/
 #include <net/if.h>
 
-#include <altq/altq.h>
-#include <altq/altqconf.h>
-#include <altq/altq_conf.h>
+#include <net/altq/altq.h>
+#include <net/altq/altqconf.h>
+#include <net/altq/altq_conf.h>
 
 #ifdef ALTQ_CBQ
 altqdev_decl(cbq);

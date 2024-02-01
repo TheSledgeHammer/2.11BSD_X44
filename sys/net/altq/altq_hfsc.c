@@ -69,9 +69,9 @@ __KERNEL_RCSID(0, "$NetBSD: altq_hfsc.c,v 1.9 2004/02/13 11:36:09 wiz Exp $");
 #include <net/if.h>
 #include <net/if_types.h>
 
-#include <altq/altq.h>
-#include <altq/altq_conf.h>
-#include <altq/altq_hfsc.h>
+#include <net/altq/altq.h>
+#include <net/altq/altq_conf.h>
+#include <net/altq/altq_hfsc.h>
 
 /*
  * function prototypes
