@@ -36,19 +36,17 @@
 
 #include "gettemp.h"
 
-#if !HAVE_NBTOOL_CONFIG_H
+#if !HAVE_NBTOOL_CONFIG_H || !HAVE_MKSTEMP || !HAVE_MKDTEMP
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) 9/14/87";
 #endif LIBC_SCCS and not lint
 
-#include "local.h"
-
-#if !HAVE_MKDTEMP
-
 #ifdef __weak_alias
 __weak_alias(mkdtemp,_mkdtemp)
+__weak_alias(mkstemp,_mkstemp)
+__weak_alias(mktemp,_mktemp)
 #endif
 
 char *
@@ -64,15 +62,8 @@ mkdtemp(as)
 {
 	_DIAGASSERT(as != NULL);
 
-	return (GETTEMP(as, (int *)NULL, 1) ? as : (char *)NULL);
+	return (_gettemp(as, (int *)NULL, 1) ? as : (char *)NULL);
 }
-
-#endif /* !HAVE_MKDTEMP */
-#if !HAVE_MKSTEMP
-
-#ifdef __weak_alias
-__weak_alias(mkstemp,_mkstemp)
-#endif
 
 char *
 _mkstemp(as)
@@ -91,15 +82,8 @@ mkstemp(as)
 
 	_DIAGASSERT(as != NULL);
 
-	return (GETTEMP(as, &fd, 0) ? fd : -1);
+	return (_gettemp(as, &fd, 0) ? fd : -1);
 }
-
-#endif /* !HAVE_MKSTEMP */
-#endif /* !HAVE_NBTOOL_CONFIG_H */
-
-#ifdef __weak_alias
-__weak_alias(mktemp,_mktemp)
-#endif
 
 char *
 _mktemp(as)
@@ -114,5 +98,7 @@ mktemp(as)
 {
 	_DIAGASSERT(as != NULL);
 
-	return (GETTEMP(as, (int *)NULL, 0) ? as : (char *)NULL);
+	return (_gettemp(as, (int *)NULL, 0) ? as : (char *)NULL);
 }
+
+#endif /* !HAVE_NBTOOL_CONFIG_H || !HAVE_MKSTEMP || !HAVE_MKDTEMP */
