@@ -170,7 +170,7 @@ nbpf_fetch_tcp(nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, void *np
 	th = &tcp->nbp_tcp;
 
 	/* Fetch TCP header. */
-	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen2(state), sizeof(struct tcphdr), th)) {
+	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen(state), sizeof(struct tcphdr), th)) {
 		return (false);
 	}
 
