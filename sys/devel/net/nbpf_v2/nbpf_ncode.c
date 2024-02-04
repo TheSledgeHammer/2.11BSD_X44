@@ -622,9 +622,8 @@ nbpf_ncode_validate(struct nbpf_insn *pc, int *errat)
 }
 
 int
-nbpf_filter(nbpf_cache_t *npc, struct nbpf_insn *pc, nbpf_buf_t *nbuf, int layer)
+nbpf_filter(nbpf_state_t *state, struct nbpf_insn *pc, nbpf_buf_t *nbuf, int layer)
 {
-	nbpf_state_t *state = npc;
 	return (nbpf_ncode_process(state, pc, nbuf, layer));
 }
 

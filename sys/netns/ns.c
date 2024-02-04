@@ -345,7 +345,7 @@ ns_iaonnetof(dst)
 	struct ns_ifaddr *ia_maybe = 0;
 	union ns_net net = dst->x_net;
 
-	for (ia = ns_ifaddr.tqh_first; ia != 0; ia = ia->ia_list.tqe_next) {
+	for (ia = TAILQ_FIRST(&ns_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
 		if ((ifp = ia->ia_ifp) != NULL) {
 			if (ifp->if_flags & IFF_POINTOPOINT) {
 				compare = &satons_addr(ia->ia_dstaddr);

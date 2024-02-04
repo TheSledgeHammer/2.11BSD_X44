@@ -48,7 +48,7 @@ struct nbpf_insn {
 	size_t 				sz;
 };
 
-int nbpf_filter(struct nbpf_insn *, nbpf_buf_t *, int);
+int nbpf_filter(nbpf_state_t *, struct nbpf_insn *, nbpf_buf_t *, int);
 int nbpf_validate(struct nbpf_insn *, size_t);
 
 /* Error codes. */

@@ -135,6 +135,10 @@ __KERNEL_RCSID(0, "$NetBSD: if.c,v 1.139.2.1.4.1 2006/11/19 17:30:11 bouyer Exp 
 #include <netinet6/nd6.h>
 #endif
 
+#ifdef NS
+#include <netns/ns_if.h>
+#endif
+
 int	ifqmaxlen = IFQ_MAXLEN;
 struct	callout if_slowtimo_ch;
 
@@ -1643,6 +1647,9 @@ sysctl_ifqctl_protocol(ipn, name, oldp, oldlenp, newp, newlen, ifq)
 	case IPPROTO_IPV6:
 		error = sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq);
 		break;
+	case IPPROTO_IDP:
+		error = sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq);
+		break;
 	default:
 		error = EINVAL;
 		break;
@@ -1693,6 +1700,9 @@ sysctl_ifq(pf, ipn, qid, name, oldp, oldlenp, newp, newlen, ifq)
 	case PF_INET6:
 		error = sysctl_ifqctl_ip(ipn, qid, name, oldp, oldlenp, newp, newlen, ifq);
 		break;
+	case PF_NS:
+		error = sysctl_ifqctl_ip(ipn, qid, name, oldp, oldlenp, newp, newlen, ifq);
+		break;
 	default:
 		error = EINVAL;
 		break;
@@ -1730,3 +1740,18 @@ sysctl_ifq_ip6(name, oldp, oldlenp, newp, newlen)
 	return (sysctl_ifq(PF_INET6, IPPROTO_IPV6, IPV6CTL_IFQ, name, oldp, oldlenp, newp, newlen, &ip6intrq));
 }
 #endif /* INET6 */
+
+#ifdef NS
+int
+sysctl_ifq_ns(name, oldp, oldlenp, newp, newlen)
+	int *name;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+{
+	extern struct ifqueue ip6intrq;
+
+	return (sysctl_ifq(PF_NS, IPPROTO_IDP, IPCTL_IFQ, name, oldp, oldlenp, newp, newlen, &nsintrq));
+}
+#endif /* NS */

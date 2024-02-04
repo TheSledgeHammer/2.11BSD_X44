@@ -261,6 +261,9 @@ int sysctl_ifq_ip4(int *, void *, size_t *, void *, size_t);
 #ifdef INET6
 int	sysctl_ifq_ip6(int *, void *, size_t *, void *, size_t);
 #endif
+#ifdef NS
+int	sysctl_ifq_ns(int *, void *, size_t *, void *, size_t);
+#endif
 #endif /* _KERNEL */
 
 #ifdef __BSD_VISIBLE
