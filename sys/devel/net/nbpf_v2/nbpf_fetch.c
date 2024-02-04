@@ -154,7 +154,7 @@ nbpf_fetch_tcp(nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, void *np
 	struct tcphdr *th;
 
 	/* Must have IP header processed for its length and protocol. */
-	if (!nbpf_iscached2(state, NBPC_IP46)) {
+	if (!nbpf_iscached(state, NBPC_IP46)) {
 		if(!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr)) {
 			return (false);
 		}
@@ -163,7 +163,7 @@ nbpf_fetch_tcp(nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, void *np
 		}
 		return (false);
 	}
-	if (nbpf_cache_ipproto2(state) != IPPROTO_TCP) {
+	if (nbpf_cache_ipproto(state) != IPPROTO_TCP) {
 		return (false);
 	}
 
@@ -206,7 +206,7 @@ nbpf_fetch_udp(nbpf_state_t *state, nbpf_port_t *udp, nbpf_buf_t *nbuf, void *np
 	uh = &udp->nbp_udp;
 
 	/* Fetch UDP header. */
-	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen2(state), sizeof(struct udphdr), uh)) {
+	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen(state), sizeof(struct udphdr), uh)) {
 		return (false);
 	}
 
@@ -245,7 +245,7 @@ nbpf_fetch_icmp(nbpf_state_t *state, nbpf_icmp_t *icmp, nbpf_buf_t *nbuf, void *
 	CTASSERT(offsetof(struct icmp, icmp_void) == offsetof(struct icmp6_hdr, icmp6_data32));
 
 	iclen = offsetof(struct icmp, icmp_void);
-	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen2(state), iclen, ic)) {
+	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen(state), iclen, ic)) {
 		return (false);
 	}
 
