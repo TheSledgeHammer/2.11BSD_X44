@@ -101,7 +101,7 @@
 #include <ovl/include/ovl_page.h>
 
 void
-ovl_mem_init()
+ovl_mem_init(void)
 {
 	ovl_segment_startup(&overlay_avail, &overlay_end);
 	ovl_page_startup(&overlay_avail, &overlay_end);

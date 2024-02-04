@@ -2110,10 +2110,8 @@ ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	switch (name[0]) {
 	case IPCTL_FORWARDING:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &ipforwarding));
-
 	case IPCTL_SENDREDIRECTS:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &ipsendredirects));
-
 	case IPCTL_DEFTTL:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_defttl));
 #ifdef notyet
@@ -2126,22 +2124,17 @@ ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 			return (sysctl_rdint(oldp, oldlenp, newp, ip_forwsrcrt));
 		else
 			return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_forwsrcrt));
-
 	case IPCTL_DIRECTEDBCAST:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_directedbcast));
-
 	case IPCTL_ALLOWSRCRT:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_allowsrcrt));
-
 	case IPCTL_SUBNETSARELOCAL:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &subnetsarelocal));
-
 	case IPCTL_MTUDISC:
 		error = sysctl_int(oldp, oldlenp, newp, newlen, &ip_mtudisc);
 		if (error == 0 && ip_mtudisc == 0)
 			rt_timer_queue_remove_all(ip_mtudisc_timeout_q, TRUE);
 		return error;
-
 	case IPCTL_ANONPORTMIN:
 		old = anonportmin;
 		error = sysctl_int(oldp, oldlenp, newp, newlen, &anonportmin);
@@ -2154,7 +2147,6 @@ ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 			return (EINVAL);
 		}
 		return (error);
-
 	case IPCTL_ANONPORTMAX:
 		old = anonportmax;
 		error = sysctl_int(oldp, oldlenp, newp, newlen, &anonportmax);
@@ -2167,13 +2159,11 @@ ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 			return (EINVAL);
 		}
 		return (error);
-
 	case IPCTL_MTUDISCTIMEOUT:
 		error = sysctl_int(oldp, oldlenp, newp, newlen, &ip_mtudisc_timeout);
 		if (error == 0)
 			rt_timer_queue_change(ip_mtudisc_timeout_q, ip_mtudisc_timeout);
 		return (error);
-
 #ifdef GATEWAY
 	case IPCTL_MAXFLOWS:
 	    {
@@ -2186,20 +2176,16 @@ ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	    	return (error);
 	    }
 #endif
-
 	case IPCTL_HOSTZEROBROADCAST:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &hostzeroisbroadcast));
-
 #if NGIF > 0
 	case IPCTL_GIF_TTL:
 		return(sysctl_int(oldp, oldlenp, newp, newlen, &ip_gif_ttl));
 #endif
-
 #if NGRE > 0
 	case IPCTL_GRE_TTL:
 		return(sysctl_int(oldp, oldlenp, newp, newlen, &ip_gre_ttl));
 #endif
-
 #ifndef IPNOPRIVPORTS
 	case IPCTL_LOWPORTMIN:
 		old = lowportmin;
@@ -2209,7 +2195,6 @@ ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 			return (EINVAL);
 		}
 		return (error);
-
 	case IPCTL_LOWPORTMAX:
 		old = lowportmax;
 		error = sysctl_int(oldp, oldlenp, newp, newlen, &lowportmax);
@@ -2219,10 +2204,12 @@ ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		}
 		return (error);
 #endif
-
 	case IPCTL_MAXFRAGPACKETS:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_maxfragpackets));
-
+	case IPCTL_IFQ:
+		return (sysctl_ifq_ip4(name, oldp, oldlenp, newp, newlen));
+	case IPCTL_RANDOMID:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_do_randomid));
 	default:
 		return (EOPNOTSUPP);
 	}

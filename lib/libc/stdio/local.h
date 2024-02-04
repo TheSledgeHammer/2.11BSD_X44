@@ -61,6 +61,7 @@ extern void		(*__cleanup) (void);
 extern void		__smakebuf (FILE *);
 extern int		__swhatbuf (FILE *, size_t *, int *);
 extern int		_fwalk (int (*)(FILE *));
+extern char    *_mktemp(char *);
 extern int		__swsetup (FILE *);
 extern int		__sflags (const char *, int *);
 

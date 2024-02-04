@@ -1540,6 +1540,10 @@ ip6_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 			return (EINVAL);
 		}
 		return (error);
+	case IPV6CTL_MAXFRAGS:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip6_maxfrags));
+	case IPV6CTL_IFQ:
+		return (sysctl_ifq_ip6(name, oldp, oldlenp, newp, newlen));
 #endif
 	default:
 		return EOPNOTSUPP;
