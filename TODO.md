@@ -105,13 +105,19 @@ A General todo list. Don't hesitate to add to this list. :)
 		- Could work with wscons
 
 ## miscfs:
-- add NFS: Can actually support it now. With network functionality implemented!!
+- NFS: Update Me, I'm not working yet!!
 
-## net / net80211 / netinet / netinet6 / netipsec / netkey / netns / netpfil :
-- Update to make use of tcp_checksum & udp_checksum
-- netpfil: 
-	- NPF: Ported from NetBSD 6.x
-		- Needs alot of changes to actually make it work. 
+## net / net80211 / netinet / netinet6 / netipsec / netkey / netns :
+- net: 
+	- add if_faith, if_ipsec, if_l2tp, if_llatbl, if_tap
+	- NBPF: Add generic api's
+	- NPF: Update Me, I'm not working yet!!
+
+- netinet / netinet6: 
+	- add multicast support
+		- dccp
+		- scope
+		- sctp
 		
 ## ufs:
 - implement Extended Attributes
