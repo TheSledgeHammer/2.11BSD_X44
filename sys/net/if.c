@@ -1750,7 +1750,7 @@ sysctl_ifq_ns(name, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	extern struct ifqueue ip6intrq;
+	extern struct ifqueue nsintrq;
 
 	return (sysctl_ifq(PF_NS, IPPROTO_IDP, IPCTL_IFQ, name, oldp, oldlenp, newp, newlen, &nsintrq));
 }
