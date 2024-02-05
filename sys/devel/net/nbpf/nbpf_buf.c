@@ -42,7 +42,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.1.4.1 2012/12/16 18:20:09 riz Ex
 #include <sys/param.h>
 #include <sys/mbuf.h>
 
-#include "nbpf.h"
+#include "nbpf_impl.h"
 
 /*
  * nbpf_dataptr: return a pointer to data in nbuf.

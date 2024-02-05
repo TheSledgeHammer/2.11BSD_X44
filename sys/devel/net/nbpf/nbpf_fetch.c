@@ -49,15 +49,6 @@ __KERNEL_RCSID(0, "$NetBSD: npf_inet.c,v 1.10.4.5.4.1 2012/12/16 18:20:09 riz Ex
 #include <net/ethertypes.h>
 #include <net/if_ether.h>
 
-#include <netinet/in_systm.h>
-#include <netinet/in.h>
-#include <netinet/in_var.h>
-#include <netinet/ip.h>
-#include <netinet/ip6.h>
-#include <netinet/tcp.h>
-#include <netinet/udp.h>
-#include <netinet/ip_icmp.h>
-
 #include "nbpf_impl.h"
 
 /*
@@ -154,15 +145,12 @@ nbpf_fetch_tcp(nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, void *np
 	struct tcphdr *th;
 
 	/* Must have IP header processed for its length and protocol. */
-	if (!nbpf_iscached(state, NBPC_IP46)) {
-		if(!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr)) {
-			return (false);
-		}
-		if(!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
-			return (false);
-		}
+	if (!nbpf_iscached(state, NBPC_IP46) &&
+			!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr) &&
+			!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
 		return (false);
 	}
+
 	if (nbpf_cache_ipproto(state) != IPPROTO_TCP) {
 		return (false);
 	}
@@ -190,13 +178,9 @@ nbpf_fetch_udp(nbpf_state_t *state, nbpf_port_t *udp, nbpf_buf_t *nbuf, void *np
 	struct udphdr *uh;
 
 	/* Must have IP header processed for its length and protocol. */
-	if (!nbpf_iscached(state, NBPC_IP46)) {
-		if(!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr)) {
-			return (false);
-		}
-		if(!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
-			return (false);
-		}
+	if (!nbpf_iscached(state, NBPC_IP46) &&
+			!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr) &&
+			!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
 		return (false);
 	}
 	if (nbpf_cache_ipproto(state) != IPPROTO_UDP) {
@@ -226,13 +210,9 @@ nbpf_fetch_icmp(nbpf_state_t *state, nbpf_icmp_t *icmp, nbpf_buf_t *nbuf, void *
 	u_int iclen;
 
 	/* Must have IP header processed for its length and protocol. */
-	if (!nbpf_iscached(state, NBPC_IP46)) {
-		if(!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr)) {
-			return (false);
-		}
-		if(!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
-			return (false);
-		}
+	if (!nbpf_iscached(state, NBPC_IP46) &&
+			!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr) &&
+			!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
 		return (false);
 	}
 	if (nbpf_cache_ipproto(state) != IPPROTO_ICMP &&

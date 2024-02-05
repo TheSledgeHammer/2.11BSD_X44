@@ -29,69 +29,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * NPF network buffer management interface.
- *
- * Network buffer in NetBSD is mbuf.  Internal mbuf structures are
- * abstracted within this source.
- */
-
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.3 2013/02/08 19:18:10 riz Exp $");
 
 #include <sys/param.h>
 #include <sys/mbuf.h>
 
-#include "nbpf.h"
+#include "nbpf_impl.h"
 
-/*
- * npf_addr_mask: apply the mask to a given address and store the result.
- */
-void
-nbpf_addr_mask(const nbpf_addr_t *addr, const nbpf_netmask_t mask, const int alen, nbpf_addr_t *out)
+static int
+nbpf_check_cache(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr)
 {
-	const int nwords = alen >> 2;
-	uint_fast8_t length = mask;
-
-	/* Note: maximum length is 32 for IPv4 and 128 for IPv6. */
-	KASSERT(length <= NBPF_MAX_NETMASK);
-
-	for (int i = 0; i < nwords; i++) {
-		uint32_t wordmask;
-
-		if (length >= 32) {
-			wordmask = htonl(0xffffffff);
-			length -= 32;
-		} else if (length) {
-			wordmask = htonl(0xffffffff << (32 - length));
-			length = 0;
-		} else {
-			wordmask = 0;
-		}
-		out->s6_addr32[i] = addr->s6_addr32[i] & wordmask;
+	if (!nbpf_iscached(state, NBPC_IP46) &&
+			!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr) &&
+			!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
+		return (state->nbs_info);
 	}
-}
-
-/*
- * npf_addr_cmp: compare two addresses, either IPv4 or IPv6.
- *
- * => Return 0 if equal and negative/positive if less/greater accordingly.
- * => Ignore the mask, if NPF_NO_NETMASK is specified.
- */
-int
-nbpf_addr_cmp(const nbpf_addr_t *addr1, const nbpf_netmask_t mask1, const nbpf_addr_t *addr2, const nbpf_netmask_t mask2, const int alen)
-{
-	nbpf_addr_t realaddr1, realaddr2;
-
-	if (mask1 != NBPF_NO_NETMASK) {
-		nbpf_addr_mask(addr1, mask1, alen, &realaddr1);
-		addr1 = &realaddr1;
+	if (nbpf_iscached(state, NBPC_IPFRAG)) {
+		return (state->nbs_info);
 	}
-	if (mask2 != NBPF_NO_NETMASK) {
-		nbpf_addr_mask(addr2, mask2, alen, &realaddr2);
-		addr2 = &realaddr2;
+	switch (nbpf_cache_ipproto(state)) {
+	case IPPROTO_TCP:
+		(void)nbpf_fetch_tcp(state, &state->nbs_proto, nbuf, nptr);
+		break;
+	case IPPROTO_UDP:
+		(void)nbpf_fetch_udp(state, &state->nbs_proto, nbuf, nptr);
+		break;
+	case IPPROTO_ICMP:
+	case IPPROTO_ICMPV6:
+		(void)nbpf_fetch_icmp(state, &state->nbs_icmp, nbuf, nptr);
+		break;
 	}
-	return (memcmp(addr1, addr2, alen));
+	return (state->nbs_info);
 }
 
 /*
@@ -99,54 +68,36 @@ nbpf_addr_cmp(const nbpf_addr_t *addr1, const nbpf_netmask_t mask1, const nbpf_a
  * and TCP, UDP or ICMP headers.
  */
 int
-nbpf_cache_all(nbpf_cache_t *npc, nbpf_buf_t *nbuf)
+nbpf_cache_all(nbpf_state_t *state, nbpf_buf_t *nbuf)
 {
 	void *nptr;
 
 	nptr = nbpf_dataptr(nbuf);
-	if (!nbpf_iscached(npc, NBPC_IP46) && !nbpf_fetch_ip(npc, nbuf, nptr)) {
-		return (npc->bpc_info);
-	}
-	if (nbpf_iscached(npc, NBPC_IPFRAG)) {
-		return (npc->bpc_info);
-	}
-	switch (nbpf_cache_ipproto(npc)) {
-	case IPPROTO_TCP:
-		(void)nbpf_fetch_tcp(npc, nbuf, nptr);
-		break;
-	case IPPROTO_UDP:
-		(void)nbpf_fetch_udp(npc, nbuf, nptr);
-		break;
-	case IPPROTO_ICMP:
-	case IPPROTO_ICMPV6:
-		(void)nbpf_fetch_icmp(npc, nbuf, nptr);
-		break;
-	}
-	return (npc->bpc_info);
+	return (nbpf_check_cache(state, nbuf, nptr));
 }
 
 void
-nbpf_recache(nbpf_cache_t *npc, nbpf_buf_t *nbuf)
+nbpf_recache(nbpf_state_t *state, nbpf_buf_t *nbuf)
 {
 	const int mflags;
 	int flags;
 
-	mflags = npc->bpc_info & (NBPC_IP46 | NBPC_LAYER4);
-	npc->bpc_info = 0;
-	flags = nbpf_cache_all(npc, nbuf);
+	mflags = state->nbs_info & (NBPC_IP46 | NBPC_LAYER4);
+	state->nbs_info = 0;
+	flags = nbpf_cache_all(state, nbuf);
 	KASSERT((flags & mflags) == mflags);
 }
 
 int
-nbpf_reassembly(nbpf_cache_t *npc, nbpf_buf_t *nbuf, struct mbuf **mp)
+nbpf_reassembly(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
 {
 	int error;
 
-	if (nbpf_iscached(npc, NBPC_IP4)) {
+	if (nbpf_iscached(state, NBPC_IP4)) {
 		struct ip *ip = nbpf_dataptr(nbuf);
 		error = ip_reass_packet(mp, ip);
-	} else if (nbpf_iscached(npc, NBPC_IP6)) {
-		error = ip6_reass_packet(mp, npc->bpc_hlen);
+	} else if (nbpf_iscached(state, NBPC_IP6)) {
+		error = ip6_reass_packet(mp, state->nbs_hlen);
 		if (error && *mp == NULL) {
 			memset(nbuf, 0, sizeof(nbpf_buf_t));
 		}
@@ -157,32 +108,9 @@ nbpf_reassembly(nbpf_cache_t *npc, nbpf_buf_t *nbuf, struct mbuf **mp)
 	if (*mp == NULL) {
 		return (0);
 	}
-	npc->bpc_info = 0;
-	if (nbpf_cache_all(npc, nbuf) & NBPC_IPFRAG) {
+	state->nbs_info = 0;
+	if (nbpf_cache_all(state, nbuf) & NBPC_IPFRAG) {
 		return (EINVAL);
 	}
 	return (0);
-}
-
-nbpf_cache_t *
-nbpf_cache_init(struct mbuf **m)
-{
-	nbpf_buf_t nbuf;
-	nbpf_cache_t *npc, np;
-	int error;
-
-	if (nbpf_cache_all(&np, &nbuf) &  NBPC_IPFRAG) {
-		error = nbpf_reassembly(&np, &nbuf, m);
-		if (error && np == NULL) {
-			return (NULL);
-		}
-		if (m == NULL) {
-			return (NULL);
-		}
-	}
-	npc = &np;
-	if (npc != NULL) {
-		return (npc);
-	}
-	return (NULL);
 }

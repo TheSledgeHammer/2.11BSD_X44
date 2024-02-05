@@ -29,24 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * NBPF: A BPF Extension (Based of the NPF ncode from NetBSD 6.0/6.1)
- * Goals:
- * - Use most of the existing BPF framework
- * - Works with BPF not instead of.
- * - Most Important: Extend upon filter capabilities
- */
-
 #ifndef _NET_NBPF_IMPL_H_
 #define _NET_NBPF_IMPL_H_
-
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/stdbool.h>
-
-#include <sys/ioctl.h>
-#include <netinet/in_systm.h>
-#include <netinet/in.h>
 
 /*
  * Packet information cache.
@@ -59,15 +43,14 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp6.h>
 
+#include "nbpf.h"
+#include "nbpf_ncode.h"
+
 /* Storage of address (both for IPv4 and IPv6) and netmask */
 typedef struct in_addr 		nbpf_in4_t;
 typedef struct in6_addr		nbpf_in6_t;
 typedef uint8_t				nbpf_netmask_t;
 
-typedef void 				nbpf_buf_t;
-typedef void 				nbpf_cache_t;
-
-typedef struct nbpf_state	nbpf_state_t;
 typedef union nbpf_ipv4 	nbpf_ipv4_t;
 typedef union nbpf_ipv6 	nbpf_ipv6_t;
 typedef union nbpf_port 	nbpf_port_t;
@@ -88,19 +71,19 @@ typedef union nbpf_icmp 	nbpf_icmp_t;
 #define	NBPC_IP46			(NBPC_IP4|NBPC_IP6)
 
 union nbpf_icmp {
-	struct nbpf_state	*nbi_state;
+	nbpf_state_t		*nbi_state;
 	struct icmp 		nbi_icmp;
 	struct icmp6_hdr 	nbi_icmp6;
 };
 
 union nbpf_port {
-	struct nbpf_state	*nbp_state;
+	nbpf_state_t		*nbp_state;
 	struct tcphdr 		nbp_tcp;
 	struct udphdr 		nbp_udp;
 };
 
 union nbpf_ipv4 {
-	struct nbpf_state	*nb4_state;
+	nbpf_state_t		*nb4_state;
 	/* Pointers to the IP v4 addresses. */
 	nbpf_in4_t 			*nb4_srcip;
 	nbpf_in4_t 			*nb4_dstip;
@@ -108,26 +91,11 @@ union nbpf_ipv4 {
 };
 
 union nbpf_ipv6 {
-	struct nbpf_state	*nb6_state;
+	nbpf_state_t		*nb6_state;
 	/* Pointers to the IP v6 addresses. */
 	nbpf_in6_t			*nb6_srcip;
 	nbpf_in6_t			*nb6_dstip;
 	struct ip6_hdr 		nb6_v6;
-};
-
-struct nbpf_state {
-	/* Information flags. */
-	uint32_t 			nbs_info;
-	/* Size (v4 & v6) of IP addresses. */
-	uint8_t				nbs_alen;
-	uint8_t				nbs_hlen;
-	uint16_t			nbs_proto;
-	/* IPv4, IPv6. */
-	nbpf_ipv4_t			nbs_ip4;
-	nbpf_ipv6_t			nbs_ip6;
-	/* TCP, UDP, ICMP. */
-	nbpf_port_t			nbs_port;
-	nbpf_icmp_t			nbs_icmp;
 };
 
 static inline bool_t
@@ -158,10 +126,19 @@ bool	nbpf_fetch_udp(nbpf_state_t *, nbpf_port_t *, nbpf_buf_t *, void *);
 bool	nbpf_fetch_icmp(nbpf_state_t *, nbpf_icmp_t *, nbpf_buf_t *, void *);
 bool	nbpf_fetch_tcpopts(const nbpf_state_t *, nbpf_port_t *, nbpf_buf_t *, uint16_t *, int *);
 
+int		nbpf_cache_all(nbpf_state_t *, nbpf_buf_t *);
+void	nbpf_recache(nbpf_state_t *, nbpf_buf_t *);
+int		nbpf_reassembly(nbpf_state_t *, nbpf_buf_t *, struct mbuf **);
+
+int		nbpf_ipv4_addr_cmp(const nbpf_in4_t *, const nbpf_netmask_t, const nbpf_in4_t *, const nbpf_netmask_t, const int);
+int		nbpf_ipv6_addr_cmp(const nbpf_in6_t *, const nbpf_netmask_t, const nbpf_in6_t *, const nbpf_netmask_t, const int);
+void	nbpf_ipv4_addr_mask(const nbpf_in4_t *, const nbpf_netmask_t, const int, nbpf_in4_t *);
+void	nbpf_ipv6_addr_mask(const nbpf_in6_t *, const nbpf_netmask_t, const int, nbpf_in6_t *);
+
 /* Complex instructions. */
 int		nbpf_match_ether(nbpf_buf_t *, int, int, uint16_t, uint32_t *);
 int		nbpf_match_proto(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
-int		nbpf_match_table(nbpf_state_t *, nbpf_buf_t *, void *, const int, const u_int);
+int		nbpf_match_table(nbpf_state_t *, nbpf_buf_t *, void *, const int, const u_int); /* Not implemented */
 int		nbpf_match_ipv4(nbpf_state_t *, nbpf_buf_t *, void *, const int, const nbpf_in4_t *, const nbpf_netmask_t);
 int		nbpf_match_ipv6(nbpf_state_t *, nbpf_buf_t *, void *, const int, const nbpf_in6_t *, const nbpf_netmask_t);
 int		nbpf_match_tcp_ports(nbpf_state_t *, nbpf_buf_t *, void *, const int, const uint32_t);

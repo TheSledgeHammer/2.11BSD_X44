@@ -42,8 +42,6 @@ __KERNEL_RCSID(0, "$NetBSD: npf_instr.c,v 1.9.2.7.2.1 2013/11/17 19:21:14 bouyer
 #include <net/if.h>
 #include <net/ethertypes.h>
 #include <net/if_ether.h>
-#include <netinet/in_systm.h>
-#include <netinet/in.h>
 
 #include "nbpf_impl.h"
 

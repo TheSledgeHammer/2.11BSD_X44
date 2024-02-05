@@ -102,7 +102,6 @@ struct npf_cache {
 	} npc_l4;
 };
 
-
 #endif	/* _KERNEL */
 
 #endif /* _NPF_NET_H_ */

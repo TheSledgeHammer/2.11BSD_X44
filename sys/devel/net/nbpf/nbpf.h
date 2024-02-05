@@ -48,101 +48,29 @@
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
 
-/*
- * Packet information cache.
- */
-#include <net/if.h>
-#include <netinet/ip.h>
-#include <netinet/ip6.h>
-#include <netinet/tcp.h>
-#include <netinet/udp.h>
-#include <netinet/ip_icmp.h>
-#include <netinet/icmp6.h>
-
-/* Storage of address (both for IPv4 and IPv6) and netmask */
-typedef struct in6_addr		nbpf_addr_t;
-typedef uint8_t				nbpf_netmask_t;
-
 typedef void 				nbpf_buf_t;
-typedef struct nbpf_cache 	nbpf_cache_t;
+typedef void 				nbpf_cache_t;
+typedef struct nbpf_state	nbpf_state_t;
 
-#define	NBPF_MAX_NETMASK	(128)
-#define	NBPF_NO_NETMASK		((nbpf_netmask_t)~0)
+union nbpf_ipv4;
+union nbpf_ipv6;
+union nbpf_port;
+union nbpf_icmp;
 
-#define	NBPC_IP4			0x01	/* Indicates fetched IPv4 header. */
-#define	NBPC_IP6			0x02	/* Indicates IPv6 header. */
-#define	NBPC_IPFRAG			0x04	/* IPv4/IPv6 fragment. */
-#define	NBPC_LAYER4			0x08	/* Layer 4 has been fetched. */
-
-#define	NBPC_TCP			0x10	/* TCP header. */
-#define	NBPC_UDP			0x20	/* UDP header. */
-#define	NBPC_ICMP			0x40	/* ICMP header. */
-
-#define	NBPC_IP46			(NBPC_IP4|NBPC_IP6)
-
-#define PACKET_TAG_NBPF		10
-
-struct nbpf_cache {
-    /* Information flags. */
-	uint32_t				bpc_info;
-	/* Pointers to the IP v4/v6 addresses. */
-	nbpf_addr_t 			*bpc_srcip;
-	nbpf_addr_t 			*bpc_dstip;
-	/* Size (v4 or v6) of IP addresses. */
-	uint8_t					bpc_alen;
-	uint8_t					bpc_hlen;
-	uint16_t				bpc_proto;
+struct nbpf_state {
+	/* Information flags. */
+	uint32_t 			nbs_info;
+	/* Size (v4 & v6) of IP addresses. */
+	uint8_t				nbs_alen;
+	uint8_t				nbs_hlen;
+	uint16_t			nbs_proto;
 	/* IPv4, IPv6. */
-	union {
-		struct ip 			*v4;
-		struct ip6_hdr 		*v6;
-	} bpc_ip;
+	nbpf_ipv4_t			nbs_ip4;
+	nbpf_ipv6_t			nbs_ip6;
 	/* TCP, UDP, ICMP. */
-	union {
-		struct tcphdr 		*tcp;
-		struct udphdr 		*udp;
-		struct icmp 		*icmp;
-		struct icmp6_hdr 	*icmp6;
-		void 				*hdr;
-	} bpc_l4;
+	nbpf_port_t			nbs_port;
+	nbpf_icmp_t			nbs_icmp;
 };
-
-static inline bool_t
-nbpf_iscached(const nbpf_cache_t *bpc, const int inf)
-{
-	return __predict_true((bpc->bpc_info & inf) != 0);
-}
-
-static inline int
-nbpf_cache_ipproto(const nbpf_cache_t *bpc)
-{
-	KASSERT(nbpf_iscached(bpc, NBPC_IP46));
-	return (bpc->bpc_proto);
-}
-
-static inline u_int
-nbpf_cache_hlen(const nbpf_cache_t *bpc)
-{
-	KASSERT(nbpf_iscached(bpc, NBPC_IP46));
-	return (bpc->bpc_hlen);
-}
-
-/* Protocol helpers. */
-bool	nbpf_fetch_ip(nbpf_cache_t *, nbpf_buf_t *, void *);
-bool	nbpf_fetch_tcp(nbpf_cache_t *, nbpf_buf_t *, void *);
-bool	nbpf_fetch_udp(nbpf_cache_t *, nbpf_buf_t *, void *);
-bool	nbpf_fetch_icmp(nbpf_cache_t *, nbpf_buf_t *, void *);
-
-/* Complex instructions. */
-int		nbpf_match_ether(nbpf_buf_t *, int, int, uint16_t, uint32_t *);
-int		nbpf_match_proto(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
-int		nbpf_match_table(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const u_int);
-int		nbpf_match_ipmask(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const nbpf_addr_t *, const nbpf_netmask_t);
-int		nbpf_match_tcp_ports(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const uint32_t);
-int		nbpf_match_udp_ports(nbpf_cache_t *, nbpf_buf_t *, void *, const int, const uint32_t);
-int		nbpf_match_icmp4(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
-int		nbpf_match_icmp6(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
-int		nbpf_match_tcpfl(nbpf_cache_t *, nbpf_buf_t *, void *, uint32_t);
 
 /* Network buffer interface. */
 void 	*nbpf_dataptr(void *);
@@ -154,13 +82,5 @@ int		nbpf_store_datum(nbpf_buf_t *, void *, size_t, void *);
 void	nbpf_cksum_barrier(nbpf_buf_t *);
 int		nbpf_add_tag(nbpf_buf_t *, uint32_t, uint32_t);
 int		nbpf_find_tag(nbpf_buf_t *, uint32_t, void **);
-
-int 	nbpf_addr_cmp(const nbpf_addr_t *, const nbpf_netmask_t, const nbpf_addr_t *, const nbpf_netmask_t, const int);
-void	nbpf_addr_mask(const nbpf_addr_t *, const nbpf_netmask_t, const int, nbpf_addr_t *);
-
-int		nbpf_cache_all(nbpf_cache_t *, nbpf_buf_t *);
-void	nbpf_recache(nbpf_cache_t *, nbpf_buf_t *);
-int		nbpf_reassembly(nbpf_cache_t *, nbpf_buf_t *, struct mbuf **);
-nbpf_cache_t *nbpf_cache_init(struct mbuf **);
 
 #endif /* _NET_NBPF_H_ */

@@ -32,9 +32,14 @@
 #include <sys/param.h>
 #include <sys/mbuf.h>
 
-#include <devel/net/npf/npf_nbpf.h>
+#include <devel/net/nbpf/nbpf.h>
+#include <devel/net/nbpf/nbpf_ncode.h>
 
 #include "npf_impl.h"
+
+/*
+ * NPF compatibility routines with NBPF
+ */
 
 void *
 nbuf_advance(nbuf_t *nbuf, size_t len, size_t ensure)
@@ -42,14 +47,13 @@ nbuf_advance(nbuf_t *nbuf, size_t len, size_t ensure)
 	struct mbuf *m = nbuf->nb_mbuf;
 	uint8_t *d;
 
-	d = nbpf_advance(&nbuf, len);
+	d = nbpf_advance(&nbuf, nbuf->nb_nptr, len);
 	if (ensure) {
 		/* Ensure contiguousness (may change nbuf chain). */
 		d = nbuf_ensure_contig(nbuf, ensure);
 	}
 	return (d);
 }
-
 
 void *
 nbuf_ensure_contig(nbuf_t *nbuf, size_t len)
@@ -119,4 +123,49 @@ nbuf_ensure_contig(nbuf_t *nbuf, size_t len)
 		}
 	}
 	return (nbuf->nb_nptr);
+}
+
+/*
+ * npf_cache_all: general routine to cache all relevant IP (v4 or v6)
+ * and TCP, UDP or ICMP headers.
+ *
+ * => nbuf offset shall be set accordingly.
+ */
+int
+npf_cache_all(nbpf_cache_t *npc, nbuf_t *nbuf)
+{
+	nbpf_state_t *state = npc;
+
+	return (nbpf_cache_all(state, nbuf));
+}
+
+void
+npf_recache(nbpf_cache_t *npc, nbuf_t *nbuf)
+{
+	nbpf_state_t *state = npc;
+
+	nbpf_recache(state, nbuf);
+}
+
+/*
+ * npf_addr_mask: apply the mask to a given address and store the result.
+ */
+void
+npf_addr_mask(const npf_addr_t *addr, const npf_netmask_t mask, const int alen, npf_addr_t *out)
+{
+	nbpf_ipv6_addr_mask(addr, mask, alen, out);
+}
+
+int
+npf_filter(nbpf_cache_t *npc, struct nbpf_insn *pc, nbuf_t *nbuf, int layer)
+{
+	nbpf_state_t *state = npc;
+
+	return (nbpf_filter(state, pc, nbuf, layer));
+}
+
+int
+npf_validate(struct nbpf_insn *f, size_t len, int ret)
+{
+	return (nbpf_validate(f, len, ret));
 }

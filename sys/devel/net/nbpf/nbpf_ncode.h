@@ -48,8 +48,8 @@ struct nbpf_insn {
 	size_t 				sz;
 };
 
-int nbpf_filter(struct nbpf_insn *, nbpf_buf_t *, int);
-int nbpf_validate(struct nbpf_insn *, size_t);
+int nbpf_filter(nbpf_state_t *, struct nbpf_insn *, nbpf_buf_t *, int);
+int nbpf_validate(struct nbpf_insn *, size_t, int);
 
 /* Error codes. */
 #define	NBPF_ERR_OPCODE		-1	/* Invalid instruction. */

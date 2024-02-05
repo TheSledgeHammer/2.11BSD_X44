@@ -55,8 +55,7 @@
 #include <sys/types.h>
 #include <sys/malloc.h>
 
-#include "nbpf.h"
-#include "nbpf_ncode.h"
+#include "nbpf_impl.h"
 
 /*
  * nc_fetch_word: fetch a word (32 bits) from the n-code and increase
@@ -120,7 +119,7 @@ nc_insn_get(struct nbpf_ncode *ncode)
  * RISC-like instructions.
  */
 int
-nbpf_risc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
+nbpf_risc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
 {
 	/* Virtual registers. */
 	uint32_t	regs[NBPF_NREGS];
@@ -225,7 +224,7 @@ make_jump:
 		break;
 	case NBPF_OPCODE_INVL:
 		/* Invalidate all cached data. */
-		npc->bpc_info = 0;
+		state->nbs_info = 0;
 		break;
 	default:
 		/* Invalid instruction. */
@@ -241,7 +240,7 @@ fail:
  * CISC-like instructions.
  */
 int
-nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
+nbpf_cisc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
 {
 	/* Virtual registers. */
 	uint32_t	regs[NBPF_NREGS];
@@ -254,7 +253,7 @@ nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, v
 		/* Source/destination, network address, subnet. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
 		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0], &ncode->n);
-		cmpval = nbpf_match_ipmask(npc, nbuf, nptr, (sizeof(struct in_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
+		cmpval = nbpf_match_ipv4(state, nbuf, nptr, (sizeof(struct in_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
 		break;
 	case NBPF_OPCODE_IP6MASK:
 		/* Source/destination, network address, subnet. */
@@ -262,41 +261,41 @@ nbpf_cisc_ncode(nbpf_cache_t *npc, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, v
 		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0], &addr.s6_addr32[1]);
 		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[2], &addr.s6_addr32[3]);
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_match_ipmask(npc, nbuf, nptr, (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
+		cmpval = nbpf_match_ipv6(state, nbuf, nptr, (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
 		break;
 	case NBPF_OPCODE_TABLE:
 		/* Source/destination, NPF table ID. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = nbpf_match_table(npc, nbuf, nptr, ncode->n, ncode->i);
+		cmpval = nbpf_match_table(state, nbuf, nptr, ncode->n, ncode->i);
 		break;
 	case NBPF_OPCODE_TCP_PORTS:
 		/* Source/destination, port range. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = nbpf_match_tcp_ports(npc, nbuf, nptr, ncode->n, ncode->i);
+		cmpval = nbpf_match_tcp_ports(state, nbuf, nptr, ncode->n, ncode->i);
 		break;
 	case NBPF_OPCODE_UDP_PORTS:
 		/* Source/destination, port range. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = nbpf_match_udp_ports(npc, nbuf, nptr, ncode->n, ncode->i);
+		cmpval = nbpf_match_udp_ports(state, nbuf, nptr, ncode->n, ncode->i);
 		break;
 	case NBPF_OPCODE_TCP_FLAGS:
 		/* TCP flags/mask. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbbpf_match_tcpfl(npc, nbuf, nptr, ncode->n);
+		cmpval = nbpf_match_tcpfl(state, nbuf, nptr, ncode->n);
 		break;
 	case NBPF_OPCODE_ICMP4:
 		/* ICMP type/code. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_match_icmp4(npc, nbuf, nptr, ncode->n);
+		cmpval = nbpf_match_icmp4(state, nbuf, nptr, ncode->n);
 		break;
 	case NBPF_OPCODE_ICMP6:
 		/* ICMP type/code. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_match_icmp6(npc, nbuf, nptr, ncode->n);
+		cmpval = nbpf_match_icmp6(state, nbuf, nptr, ncode->n);
 		break;
 	case NBPF_OPCODE_PROTO:
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_match_proto(npc, nbuf, nptr, ncode->n);
+		cmpval = nbpf_match_proto(state, nbuf, nptr, ncode->n);
 		break;
 	case NBPF_OPCODE_ETHER:
 		/* Source/destination, reserved, ethernet type. */
@@ -324,7 +323,7 @@ fail:
  * => Routine prevents from infinite loop.
  */
 int
-nbpf_ncode_process(nbpf_cache_t *npc, struct nbpf_insn *pc, nbpf_buf_t *nbuf0, const int layer)
+nbpf_ncode_process(nbpf_state_t *state, struct nbpf_insn *pc, nbpf_buf_t *nbuf0, const int layer)
 {
 	/* Pointer of current nbuf in the chain. */
 	nbpf_buf_t 	*nbuf;
@@ -348,9 +347,9 @@ nbpf_ncode_process(nbpf_cache_t *npc, struct nbpf_insn *pc, nbpf_buf_t *nbuf0, c
 process_next:
 	ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
 	if (nc_insn_get(ncode)) {
-		error = nbpf_cisc_ncode(npc, ncode, nbuf, nptr, cmpval, layer);
+		error = nbpf_cisc_ncode(state, ncode, nbuf, nptr, cmpval, layer);
 	} else {
-		error = nbpf_risc_ncode(npc, ncode, nbuf, nptr, cmpval, layer);
+		error = nbpf_risc_ncode(state, ncode, nbuf, nptr, cmpval, layer);
 	}
 	if (error) {
 		goto process_next;
@@ -622,20 +621,9 @@ nbpf_ncode_validate(struct nbpf_insn *pc, int *errat)
 }
 
 int
-_nbpf_filter(nbpf_cache_t *npc, struct nbpf_insn *pc, nbpf_buf_t *nbuf, int layer)
+nbpf_filter(nbpf_state_t *state, struct nbpf_insn *pc, nbpf_buf_t *nbuf, int layer)
 {
-	KASSERT(npc != NULL);
-	return (nbpf_ncode_process(npc, pc, nbuf, layer));
-}
-
-int
-nbpf_filter(struct nbpf_insn *pc, nbpf_buf_t *nbuf, int layer)
-{
-	struct mbuf *m;
-	nbpf_cache_t *npc;
-
-	npc = nbpf_cache_init(&m);
-	return (_nbpf_filter(npc, pc, nbuf, layer));
+	return (nbpf_ncode_process(state, pc, nbuf, layer));
 }
 
 int
