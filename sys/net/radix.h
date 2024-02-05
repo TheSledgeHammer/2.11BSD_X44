@@ -130,6 +130,7 @@ struct radix_node_head {
 		(struct radix_node_head *,
 		     int (*)(struct radix_node *, void *), void *);
 	struct	radix_node rnh_nodes[3];	/* empty tree for common case */
+	int	rnh_multipath;		/* multipath? */
 };
 
 
@@ -146,6 +147,8 @@ int	 rn_inithead(void **, int);
 int	 rn_inithead0(struct radix_node_head *, int);
 int	 rn_refines(void *, void *);
 int	 rn_walktree(struct radix_node_head *, int (*)(struct radix_node *, void *), void *);
+struct radix_node *rn_next(struct radix_node *);
+
 struct radix_node
 	 *rn_addmask(void *, int, int),
 	 *rn_addroute(void *, void *, struct radix_node_head *, struct radix_node [2]),
@@ -156,7 +159,5 @@ struct radix_node
 	 *rn_newpair(void *, int, struct radix_node[2]),
 	 *rn_search(void *, struct radix_node *),
 	 *rn_search_m(void *, struct radix_node *, void *);
-
-struct radix_node *rn_next(struct radix_node *);
 
 #endif /* _NET_RADIX_H_ */

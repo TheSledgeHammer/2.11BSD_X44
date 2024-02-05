@@ -38,6 +38,8 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: radix.c,v 1.20 2003/08/07 16:32:56 agc Exp $");
 
+#include "opt_mpath.h"
+
 #ifndef _NET_RADIX_H_
 #include <sys/param.h>
 #ifdef	_KERNEL
@@ -50,6 +52,9 @@ __KERNEL_RCSID(0, "$NetBSD: radix.c,v 1.20 2003/08/07 16:32:56 agc Exp $");
 #endif
 #include <sys/syslog.h>
 #include <net/radix.h>
+#ifdef RADIX_MPATH
+#include <net/radix_mpath.h>
+#endif
 #endif
 
 int	max_keylen;
@@ -65,8 +70,7 @@ static char *rn_zeros, *rn_ones;
 
 static int rn_satisfies_leaf(char *, struct radix_node *, int);
 static int rn_lexobetter(void *, void *);
-static struct radix_mask *rn_new_radix_mask(struct radix_node *,
-    struct radix_mask *);
+static struct radix_mask *rn_new_radix_mask(struct radix_node *, struct radix_mask *);
 
 /*
  * The data structure for the keys is a radix tree with one way
@@ -544,6 +548,21 @@ rn_addroute(v_arg, n_arg, head, treenodes)
 	saved_tt = tt = rn_insert(v, head, &keyduplicated, treenodes);
 	if (keyduplicated) {
 		for (t = tt; tt; t = tt, tt = tt->rn_dupedkey) {
+#ifdef RADIX_MPATH
+			/* permit multipath, if enabled for the family */
+			if (rn_mpath_capable(head) && netmask == tt->rn_mask) {
+				/*
+				 * go down to the end of multipaths, so that
+				 * new entry goes into the end of rn_dupedkey
+				 * chain.
+				 */
+				do {
+					t = tt;
+					tt = tt->rn_dupedkey;
+				} while (tt && t->rn_mask == tt->rn_mask);
+				break;
+			}
+#endif
 			if (tt->rn_mask == netmask)
 				return (0);
 			if (netmask == 0 ||
@@ -925,8 +944,9 @@ rn_init()
 	addmask_key = cplim = rn_ones + max_keylen;
 	while (cp < cplim)
 		*cp++ = -1;
-	if (rn_inithead((void *)&mask_rnhead, 0) == 0)
+	if (rn_inithead((void *)&mask_rnhead, 0) == 0) {
 		panic("rn_init 2");
+	}
 }
 
 struct radix_node *

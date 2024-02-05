@@ -64,6 +64,7 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: if_compat.c,v 1.2 2008/06/18 09:06:27 yamt Exp $");
 
+#include "opt_mpath.h"
 #include "pf.h"
 
 #include <sys/param.h>
@@ -457,7 +458,11 @@ if_group_egress_build(void)
 			rt = (struct rtentry *)rn;
 			if (rt->rt_ifp)
 				if_addgroup(rt->rt_ifp, IFG_EGRESS);
+#ifdef RADIX_MPATH
+			rn = rn_mpath_next(rn);
+#else
 			rn = rn_next(rn);
+#endif
 		} while (rn != NULL);
 	}
 
@@ -468,7 +473,11 @@ if_group_egress_build(void)
 			rt = (struct rtentry *)rn;
 			if (rt->rt_ifp)
 				if_addgroup(rt->rt_ifp, IFG_EGRESS);
+#ifdef RADIX_MPATH
+			rn = rn_mpath_next(rn);
+#else
 			rn = rn_next(rn);
+#endif
 		} while (rn != NULL);
 	}
 #endif
