@@ -109,7 +109,7 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## net / net80211 / netinet / netinet6 / netipsec / netkey / netns :
 - net: 
-	- add if_faith, if_ipsec, if_l2tp, if_llatbl, if_tap
+	- add if_ipsec, if_l2tp, if_llatbl, if_tap
 	- NBPF: Add generic api's
 	- NPF: Update Me, I'm not working yet!!
 

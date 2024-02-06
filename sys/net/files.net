@@ -10,12 +10,17 @@ file	net/if_atmsubr.c		atm
 file	net/if_bridge.c			bridge							needs-flag
 file	net/bridgestp.c			bridge
 file	net/if_ethersubr.c		ether | token | wlan
+
+file	net/if_faith.c			faith & (inet | inet6)			needs-flag
+file	net/if_fddisubr.c		fddi							needs-flag
 file	net/if_gif.c			gif								needs-flag
 file	net/if_gre.c			gre								needs-flag
+file	net/if_hippisubr.c		hippi							needs-flag
 file	net/if_loop.c			loop							needs-count
 file	net/if_media.c
-file	net/if_mpls.c			ifmpls							needs-flag
+file	net/if_mpls.c			mpls							needs-flag
 file	net/if_ppp.c			ppp								needs-count
+file	net/if_stf.c			stf & inet & inet6				needs-flag
 file	net/if_sl.c				sl								needs-count
 file	net/if_spppsubr.c		sppp
 file	net/if_strip.c			strip							needs-count
