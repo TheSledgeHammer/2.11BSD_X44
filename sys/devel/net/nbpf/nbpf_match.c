@@ -43,7 +43,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_instr.c,v 1.9.2.7.2.1 2013/11/17 19:21:14 bouyer
 #include <net/ethertypes.h>
 #include <net/if_ether.h>
 
-#include "nbpf_impl.h"
+#include "nbpf.h"
 
 #define	NBPF_PORTRANGE_MATCH(r, p)	(p >= (r >> 16) && p <= (r & 0xffff))
 
@@ -99,7 +99,7 @@ nbpf_match_proto(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, uint32_t ap)
 	const int alen = (ap >> 8) & 0xff;
 	const int proto = ap & 0xff;
 
-	if (!npf_iscached(state, NBPC_IP46)) {
+	if (!nbpf_iscached(state, NBPC_IP46)) {
 		/* Match an address against IPv4 */
 		if (!nbpf_fetch_ipv4(state, nb4, nbuf, nptr)) {
 			return (-1);
@@ -108,7 +108,7 @@ nbpf_match_proto(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, uint32_t ap)
 		if (!nbpf_fetch_ipv6(state, nb6, nbuf, nptr)) {
 			return (-1);
 		}
-		KASSERT(npf_iscached(state, NBPC_IP46));
+		KASSERT(nbpf_iscached(state, NBPC_IP46));
 	}
 	if (alen && state->nbs_alen != alen) {
 		return (-1);
@@ -120,11 +120,11 @@ nbpf_match_proto(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, uint32_t ap)
  * npf_match_ipmask: match an address against netaddr/mask.
  */
 int
-nbpf_match_ipv4(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int szsd, const nbpf_in4_t *maddr, nbpf_netmask_t mask)
+nbpf_match_ipv4(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int szsd, const nbpf_addr_t *maddr, nbpf_netmask_t mask)
 {
 	nbpf_ipv4_t *nb4 = &state->nbs_ip4;
 	const int alen = szsd >> 1;
-	nbpf_in4_t *addr;
+	nbpf_addr_t *addr;
 
 	if (!nbpf_iscached(state, NBPC_IP4)) {
 		if (!nbpf_fetch_ipv4(state, nb4, nbuf, nptr)) {
@@ -135,18 +135,18 @@ nbpf_match_ipv4(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int szs
 	if (state->nbs_alen != alen) {
 		return (-1);
 	}
-	return (nbpf_ipv4_addr_cmp(maddr, NBPF_NO_NETMASK, addr, mask, alen) ? -1 : 0);
+	return (nbpf_addr_cmp(maddr, NBPF_NO_NETMASK, addr, mask, alen) ? -1 : 0);
 }
 
 /*
  * npf_match_ipmask: match an address against netaddr/mask.
  */
 int
-nbpf_match_ipv6(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int szsd, const nbpf_in6_t *maddr, nbpf_netmask_t mask)
+nbpf_match_ipv6(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int szsd, const nbpf_addr_t *maddr, nbpf_netmask_t mask)
 {
 	nbpf_ipv6_t *nb6 = &state->nbs_ip6;
 	const int alen = szsd >> 1;
-	nbpf_in6_t *addr;
+	nbpf_addr_t *addr;
 
 	if (!nbpf_iscached(state, NBPC_IP6)) {
 		if (!nbpf_fetch_ipv6(state, nb6, nbuf, nptr)) {
@@ -157,7 +157,7 @@ nbpf_match_ipv6(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int szs
 	if (state->nbs_alen != alen) {
 		return (-1);
 	}
-	return (nbpf_ipv6_addr_cmp(maddr, NBPF_NO_NETMASK, addr, mask, alen) ? -1 : 0);
+	return (nbpf_addr_cmp(maddr, NBPF_NO_NETMASK, addr, mask, alen) ? -1 : 0);
 }
 
 /*
@@ -287,36 +287,8 @@ nbpf_match_tcpfl(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, uint32_t fl)
 	return (((th->th_flags & mask) == tcpfl) ? 0 : -1);
 }
 
-/*
- * npf_addr_mask: apply the mask to a given address and store the result.
- */
 void
-nbpf_ipv4_addr_mask(const nbpf_in4_t *addr, const nbpf_netmask_t mask, const int alen, nbpf_in4_t *out)
-{
-	const int nwords = alen >> 2;
-	uint_fast8_t length = mask;
-
-	/* Note: maximum length is 32 for IPv4 and 128 for IPv6. */
-	KASSERT(length <= NBPF_MAX_NETMASK);
-
-	for (int i = 0; i < nwords; i++) {
-		uint32_t wordmask;
-
-		if (length >= 32) {
-			wordmask = htonl(0xffffffff);
-			length -= 32;
-		} else if (length) {
-			wordmask = htonl(0xffffffff << (32 - length));
-			length = 0;
-		} else {
-			wordmask = 0;
-		}
-		out->s_addr[i] = addr->s_addr[i] & wordmask;
-	}
-}
-
-void
-nbpf_ipv6_addr_mask(const nbpf_in6_t *addr, const nbpf_netmask_t mask, const int alen, nbpf_in6_t *out)
+nbpf_addr_mask(const nbpf_addr_t *addr, const nbpf_netmask_t mask, const int alen, nbpf_addr_t *out)
 {
 	const int nwords = alen >> 2;
 	uint_fast8_t length = mask;
@@ -347,32 +319,16 @@ nbpf_ipv6_addr_mask(const nbpf_in6_t *addr, const nbpf_netmask_t mask, const int
  * => Ignore the mask, if NPF_NO_NETMASK is specified.
  */
 int
-nbpf_ipv4_addr_cmp(const nbpf_in4_t *addr1, const nbpf_netmask_t mask1, const nbpf_in4_t *addr2, const nbpf_netmask_t mask2, const int alen)
+nbpf_addr_cmp(const nbpf_addr_t *addr1, const nbpf_netmask_t mask1, const nbpf_addr_t *addr2, const nbpf_netmask_t mask2, const int alen)
 {
-	nbpf_in4_t realaddr1, realaddr2;
+	nbpf_addr_t realaddr1, realaddr2;
 
 	if (mask1 != NBPF_NO_NETMASK) {
-		nbpf_ipv4_addr_mask(addr1, mask1, alen, &realaddr1);
+		nbpf_addr_mask(addr1, mask1, alen, &realaddr1);
 		addr1 = &realaddr1;
 	}
 	if (mask2 != NBPF_NO_NETMASK) {
-		nbpf_ipv4_addr_mask(addr2, mask2, alen, &realaddr2);
-		addr2 = &realaddr2;
-	}
-	return (memcmp(addr1, addr2, alen));
-}
-
-int
-nbpf_ipv6_addr_cmp(const nbpf_in6_t *addr1, const nbpf_netmask_t mask1, const nbpf_in6_t *addr2, const nbpf_netmask_t mask2, const int alen)
-{
-	nbpf_in6_t realaddr1, realaddr2;
-
-	if (mask1 != NBPF_NO_NETMASK) {
-		nbpf_ipv6_addr_mask(addr1, mask1, alen, &realaddr1);
-		addr1 = &realaddr1;
-	}
-	if (mask2 != NBPF_NO_NETMASK) {
-		nbpf_ipv6_addr_mask(addr2, mask2, alen, &realaddr2);
+		nbpf_addr_mask(addr2, mask2, alen, &realaddr2);
 		addr2 = &realaddr2;
 	}
 	return (memcmp(addr1, addr2, alen));

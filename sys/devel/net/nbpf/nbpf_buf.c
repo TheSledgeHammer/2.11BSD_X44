@@ -42,7 +42,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.1.4.1 2012/12/16 18:20:09 riz Ex
 #include <sys/param.h>
 #include <sys/mbuf.h>
 
-#include "nbpf_impl.h"
+#include "nbpf.h"
 
 /*
  * nbpf_dataptr: return a pointer to data in nbuf.
@@ -271,14 +271,14 @@ nbpf_cksum_barrier(nbpf_buf_t *nbuf, int di)
  * => Returns 0 on success, or errno on failure.
  */
 int
-nbuf_add_tag(nbpf_buf_t *nbuf, uint32_t key, uint32_t val)
+nbpf_add_tag(nbpf_buf_t *nbuf, uint32_t key, uint32_t val)
 {
 	struct mbuf *m;
 	struct m_tag *mt;
 	uint32_t *dat;
 
 	m = nbuf;
-	mt = m_tag_get(PACKET_TAG_NBPF, sizeof(uint32_t), M_NOWAIT);
+	mt = m_tag_get(PACKET_TAG_NONE, sizeof(uint32_t), M_NOWAIT);
 	if (__predict_false(mt == NULL)) {
 		return ENOMEM;
 	}
@@ -300,7 +300,7 @@ nbpf_find_tag(nbpf_buf_t *nbuf, uint32_t key, void **data)
 	struct m_tag *mt;
 
 	m = nbuf;
-	mt = m_tag_find(m, PACKET_TAG_NBPF, NULL);
+	mt = m_tag_find(m, PACKET_TAG_NONE, NULL);
 	if (__predict_false(mt == NULL)) {
 		return EINVAL;
 	}

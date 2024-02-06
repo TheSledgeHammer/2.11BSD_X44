@@ -55,7 +55,8 @@
 #include <sys/types.h>
 #include <sys/malloc.h>
 
-#include "nbpf_impl.h"
+#include "nbpf.h"
+#include "nbpf_ncode.h"
 
 /*
  * nc_fetch_word: fetch a word (32 bits) from the n-code and increase
@@ -244,7 +245,7 @@ nbpf_cisc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 {
 	/* Virtual registers. */
 	uint32_t	regs[NBPF_NREGS];
-	nbpf_addr_t addr;
+	nbpf_addr_t  addr;
 
 	regs[0] = layer;
 
@@ -265,9 +266,9 @@ nbpf_cisc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 		break;
 	case NBPF_OPCODE_TABLE:
 		/* Source/destination, NPF table ID. */
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = nbpf_match_table(state, nbuf, nptr, ncode->n, ncode->i);
-		break;
+	//	ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
+//		cmpval = nbpf_match_table(state, nbuf, nptr, ncode->n, ncode->i);
+		//break;
 	case NBPF_OPCODE_TCP_PORTS:
 		/* Source/destination, port range. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
@@ -585,7 +586,7 @@ nc_jmp_check(struct nbpf_insn *pc, const uintptr_t jaddr)
 int
 nbpf_ncode_validate(struct nbpf_insn *pc, int *errat)
 {
-	const uintptr_t nc_end;
+	uintptr_t nc_end;
 	uintptr_t iptr;
 	int error;
 	bool ret;

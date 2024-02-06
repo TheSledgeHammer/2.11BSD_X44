@@ -49,7 +49,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_inet.c,v 1.10.4.5.4.1 2012/12/16 18:20:09 riz Ex
 #include <net/ethertypes.h>
 #include <net/if_ether.h>
 
-#include "nbpf_impl.h"
+#include "nbpf.h"
 
 /*
  * npf_fetch_ip4: fetch, check and cache IPv6 header.
@@ -72,12 +72,11 @@ nbpf_fetch_ipv4(nbpf_state_t *state, nbpf_ipv4_t *nb4, nbpf_buf_t *nbuf, void *n
 		state->nbs_info |= NBPC_IPFRAG;
 	}
 	state->nbs_alen = sizeof(struct in_addr);
-	nb4->nb4_srcip = (nbpf_in4_t *)&ip->ip_src;
-	nb4->nb4_dstip = (nbpf_in4_t *)&ip->ip_dst;
+	nb4->nb4_srcip = (nbpf_addr_t *)&ip->ip_src;
+	nb4->nb4_dstip = (nbpf_addr_t *)&ip->ip_dst;
 	state->nbs_info |= NBPC_IP4;
 	state->nbs_hlen = ip->ip_hl << 2;
-	state->nbs_proto = nb4->nb4_v4->ip_p;
-	*state->nbs_ip4 = nb4;
+	state->nbs_proto = nb4->nb4_v4.ip_p;
 	return (true);
 }
 
@@ -128,10 +127,9 @@ nbpf_fetch_ipv6(nbpf_state_t *state, nbpf_ipv6_t *nb6, nbpf_buf_t *nbuf, void *n
 		state->nbs_hlen += hlen;
 	}
 	state->nbs_alen = sizeof(struct in6_addr);
-	nb6->nb6_srcip = (nbpf_in6_t *)&ip6->ip6_src;
-	nb6->nb6_dstip = (nbpf_in6_t *)&ip6->ip6_dst;
+	nb6->nb6_srcip = (nbpf_addr_t *)&ip6->ip6_src;
+	nb6->nb6_dstip = (nbpf_addr_t *)&ip6->ip6_dst;
 	state->nbs_info |= NBPC_IP6;
-	*state->nbs_ip6 = nb6;
 	return (true);
 }
 
@@ -164,7 +162,6 @@ nbpf_fetch_tcp(nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, void *np
 
 	/* Cache: layer 4 - TCP. */
 	state->nbs_info |= (NBPC_LAYER4 | NBPC_TCP);
-	*state->nbs_port = tcp;
 	return (true);
 }
 
@@ -196,7 +193,6 @@ nbpf_fetch_udp(nbpf_state_t *state, nbpf_port_t *udp, nbpf_buf_t *nbuf, void *np
 
 	/* Cache: layer 4 - UDP. */
 	state->nbs_info |= (NBPC_LAYER4 | NBPC_UDP);
-	*state->nbs_port = udp;
 	return (true);
 }
 
@@ -231,7 +227,6 @@ nbpf_fetch_icmp(nbpf_state_t *state, nbpf_icmp_t *icmp, nbpf_buf_t *nbuf, void *
 
 	/* Cache: layer 4 - ICMP. */
 	state->nbs_info |= (NBPC_LAYER4 | NBPC_ICMP);
-	*state->nbs_icmp = icmp;
 	return (true);
 }
 
@@ -241,7 +236,7 @@ nbpf_fetch_icmp(nbpf_state_t *state, nbpf_icmp_t *icmp, nbpf_buf_t *nbuf, void *
 bool
 nbpf_fetch_tcpopts(const nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, uint16_t *mss, int *wscale)
 {
-	void *nptr = nbuf_dataptr(nbuf);
+	void *nptr = nbpf_dataptr(nbuf);
 	const struct tcphdr *th = &tcp->nbp_tcp;
 	int topts_len, step;
 	uint16_t val16;
@@ -292,7 +287,7 @@ next:
 		break;
 	case TCPOPT_WINDOW:
 		/* TCP Window Scaling (RFC 1323). */
-		if (nbuf_advfetch(&nbuf, &nptr, 2, sizeof(val), &val)) {
+		if (nbpf_advfetch(&nbuf, &nptr, 2, sizeof(val), &val)) {
 			return (false);
 		}
 		*wscale = (val > TCP_MAX_WINSHIFT) ? TCP_MAX_WINSHIFT : val;

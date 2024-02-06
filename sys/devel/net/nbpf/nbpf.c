@@ -35,7 +35,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.3 2013/02/08 19:18:10 riz Exp $"
 #include <sys/param.h>
 #include <sys/mbuf.h>
 
-#include "nbpf_impl.h"
+#include "nbpf.h"
 
 static int
 nbpf_check_cache(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr)
@@ -48,14 +48,17 @@ nbpf_check_cache(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr)
 	if (nbpf_iscached(state, NBPC_IPFRAG)) {
 		return (state->nbs_info);
 	}
+
 	switch (nbpf_cache_ipproto(state)) {
 	case IPPROTO_TCP:
-		(void)nbpf_fetch_tcp(state, &state->nbs_proto, nbuf, nptr);
+		(void)nbpf_fetch_tcp(state, &state->nbs_port, nbuf, nptr);
 		break;
 	case IPPROTO_UDP:
-		(void)nbpf_fetch_udp(state, &state->nbs_proto, nbuf, nptr);
+		(void)nbpf_fetch_udp(state, &state->nbs_port, nbuf, nptr);
 		break;
 	case IPPROTO_ICMP:
+        (void)nbpf_fetch_icmp(state, &state->nbs_icmp, nbuf, nptr);
+        break;
 	case IPPROTO_ICMPV6:
 		(void)nbpf_fetch_icmp(state, &state->nbs_icmp, nbuf, nptr);
 		break;
@@ -79,8 +82,7 @@ nbpf_cache_all(nbpf_state_t *state, nbpf_buf_t *nbuf)
 void
 nbpf_recache(nbpf_state_t *state, nbpf_buf_t *nbuf)
 {
-	const int mflags;
-	int flags;
+	int mflags, flags;
 
 	mflags = state->nbs_info & (NBPC_IP46 | NBPC_LAYER4);
 	state->nbs_info = 0;
@@ -88,6 +90,7 @@ nbpf_recache(nbpf_state_t *state, nbpf_buf_t *nbuf)
 	KASSERT((flags & mflags) == mflags);
 }
 
+/*
 int
 nbpf_reassembly(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
 {
@@ -114,3 +117,4 @@ nbpf_reassembly(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
 	}
 	return (0);
 }
+*/
