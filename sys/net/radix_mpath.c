@@ -33,6 +33,9 @@
  * PROPERTIES.
  */
 
+
+#include "opt_mpath.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
