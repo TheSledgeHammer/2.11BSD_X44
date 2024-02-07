@@ -72,11 +72,21 @@ static int gif_validate6(const struct ip6_hdr *, struct gif_softc *, struct ifne
 int	ip6_gif_hlim = GIF_HLIM;
 
 extern struct domain inet6domain;
-struct ip6protosw in6_gif_protosw =
-{ SOCK_RAW,	&inet6domain,	0/* IPPROTO_IPV[46] */,	PR_ATOMIC|PR_ADDR,
-  in6_gif_input, rip6_output,	in6_gif_ctlinput, rip6_ctloutput,
-  rip6_usrreq,
-  0,            0,              0,              0,
+struct ip6protosw in6_gif_protosw = {
+		.pr_type		= SOCK_RAW,
+		.pr_domain		= &inet6domain,
+		.pr_protocol 	= 0,
+		.pr_flags		= PR_ATOMIC|PR_ADDR,
+		.pr_input 		= in6_gif_input,
+		.pr_output		= rip6_output,
+		.pr_ctlinput 	= in6_gif_ctlinput,
+		.pr_ctloutput	= rip6_ctloutput,
+		.pr_usrreq		= rip6_usrreq,
+		.pr_init		= 0,
+		.pr_fasttimo	= 0,
+		.pr_slowtimo	= 0,
+		.pr_drain		= 0,
+		.pr_wassysctl	= 0,
 };
 
 extern LIST_HEAD(, gif_softc) gif_softc_list;

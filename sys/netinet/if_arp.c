@@ -80,7 +80,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_arp.c,v 1.94 2003/09/24 06:52:47 itojun Exp $");
 #include "opt_ddb.h"
 #include "opt_inet.h"
 
-//#ifdef INET
+#ifdef INET
 
 #include "bridge.h"
 
@@ -609,7 +609,6 @@ arprequest(ifp, sip, tip, enaddr)
 
 	if ((m = m_gethdr(M_DONTWAIT, MT_DATA)) == NULL)
 		return;
-	MCLAIM(m, &arpdomain.dom_mowner);
 	switch (ifp->if_type) {
 	case IFT_IEEE1394:
 		m->m_len = sizeof(*ah) + 2 * sizeof(struct in_addr) +
@@ -1312,7 +1311,6 @@ revarprequest(ifp)
 
 	if ((m = m_gethdr(M_DONTWAIT, MT_DATA)) == NULL)
 		return;
-	MCLAIM(m, &arpdomain.dom_mowner);
 	m->m_len = sizeof(*ah) + 2*sizeof(struct in_addr) +
 	    2*ifp->if_addrlen;
 	m->m_pkthdr.len = m->m_len;

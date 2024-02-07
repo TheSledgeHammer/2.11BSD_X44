@@ -449,7 +449,7 @@ struct domain inetdomain = {
 		.dom_next 				= 0,
 		.dom_rtattach			= rn_inithead,
 		.dom_rtoffset			= 32,
-		.dom_maxrtkey			= sizeof(struct sockaddr_in)
+		.dom_maxrtkey			= sizeof(struct sockaddr_in),
 };
 
 u_char	ip_protox[IPPROTO_MAX];

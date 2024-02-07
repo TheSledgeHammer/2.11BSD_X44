@@ -678,18 +678,32 @@ DOMAIN_SET(key);
 
 #else /* !__FreeBSD__ */
 
-
 struct protosw keysw[] = {
-{ SOCK_RAW,	&keydomain,	PF_KEY_V2,	PR_ATOMIC|PR_ADDR,
-  0,		key_output,	raw_ctlinput,	0,
-  key_usrreq,
-  raw_init,	0,		0,		0,
-  NULL,
-}
+		{
+				.pr_type		= SOCK_RAW,
+				.pr_domain		= &keydomain,
+				.pr_protocol 	= PF_KEY_V2,
+				.pr_flags		= PR_ATOMIC|PR_ADDR,
+				.pr_input 		= 0,
+				.pr_output		= key_output,
+				.pr_ctlinput 	= raw_ctlinput,
+				.pr_ctloutput	= 0,
+				.pr_usrreq		= key_usrreq,
+				.pr_init		= raw_init,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
+				.pr_sysctl		= 0,
+		}
 };
 
-struct domain keydomain =
-    { PF_KEY, "key", key_init, 0, 0,
-      keysw, &keysw[sizeof(keysw)/sizeof(keysw[0])] };
-
+struct domain keydomain = {
+		.dom_family 			= PF_KEY,
+		.dom_name 				= "key",
+		.dom_init 				= key_init,
+		.dom_externalize 		= 0,
+		.dom_dispose 			= 0,
+		.dom_protosw 			= keysw,
+		.dom_protoswNPROTOSW 	= &keysw[sizeof(keysw)/sizeof(keysw[0])],
+};
 #endif

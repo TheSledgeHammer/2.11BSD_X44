@@ -51,6 +51,7 @@ struct rtentry *rt_mpath_matchgate(struct rtentry *, struct sockaddr *);
 int rt_mpath_conflict(struct radix_node_head *, struct rtentry *, struct sockaddr *);
 void rtalloc_mpath(struct route *, int);
 struct radix_node *rn_mpath_lookup(void *, void *, struct radix_node_head *);
+int	rn_mpath_inithead(void **, int);
 #endif /* _KERNEL */
 
 #endif /* _NET_RADIX_MPATH_H_ */

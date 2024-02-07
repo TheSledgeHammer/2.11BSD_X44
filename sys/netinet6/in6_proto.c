@@ -231,14 +231,21 @@ struct ip6protosw inet6sw[] = {
 },
 };
 
-struct domain inet6domain =
-    { AF_INET6, "internet6", 0, 0, 0,
-      (struct protosw *)inet6sw,
-      (struct protosw *)&inet6sw[sizeof(inet6sw)/sizeof(inet6sw[0])], 0,
-      rn_inithead,
-      offsetof(struct sockaddr_in6, sin6_addr) << 3,
-      sizeof(struct sockaddr_in6),
-      in6_domifattach, in6_domifdetach, };
+struct domain inet6domain = {
+		.dom_family 			= AF_INET6,
+		.dom_name 				= "internet6",
+		.dom_init 				= 0,
+		.dom_externalize 		= 0,
+		.dom_dispose 			= 0,
+		.dom_protosw 			= (struct protosw *)inet6sw,
+		.dom_protoswNPROTOSW 	= (struct protosw *)&inet6sw[sizeof(inet6sw)/sizeof(inet6sw[0])],
+		.dom_next 				= 0,
+		.dom_rtattach			= rn_inithead,
+		.dom_rtoffset			= offsetof(struct sockaddr_in6, sin6_addr) << 3,
+		.dom_maxrtkey			= sizeof(struct sockaddr_in6),
+		.dom_ifattach 			= in6_domifattach,
+		.dom_ifdetach 			= in6_domifdetach,
+};
 
 /*
  * Internet configuration info

@@ -46,6 +46,10 @@ __KERNEL_RCSID(0, "$NetBSD: mpls_proto.c,v 1.3 2012/02/01 16:49:36 christos Exp 
 #include <netmpls/mpls.h>
 #include <netmpls/mpls_var.h>
 
+#ifndef offsetof		/* XXX */
+#define	offsetof(type, member)	((size_t)(&((type *)0)->member))
+#endif
+
 struct ifqueue mplsintrq;
 
 static int mpls_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
@@ -59,6 +63,8 @@ int mpls_forwarding = 0;
 int mpls_accept = 0;
 int mpls_mapprec_inet = 1;
 int mpls_mapclass_inet6 = 1;
+
+int mpls_offset = offsetof(struct sockaddr_mpls, smpls_addr) << 3;
 
 void
 mpls_init(void)
@@ -95,7 +101,13 @@ struct domain mplsdomain = {
 		.dom_externalize 		= 0,
 		.dom_dispose 			= 0,
 		.dom_protosw 			= mplssw,
-		.dom_protoswNPROTOSW 	= &mplssw[nitems(mplssw)]
+		.dom_protoswNPROTOSW 	= &mplssw[nitems(mplssw)],
+		.dom_next 				= 0,
+		.dom_rtattach			= rn_inithead,
+		.dom_rtoffset			= mpls_offset,
+		.dom_maxrtkey			= sizeof(union mpls_shim),
+		.dom_ifattach 			= 0,
+		.dom_ifdetach 			= 0,
 };
 
 static int

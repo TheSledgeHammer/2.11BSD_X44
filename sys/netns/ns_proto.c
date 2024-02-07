@@ -168,5 +168,11 @@ struct domain nsdomain = {
 		.dom_externalize 		= 0,
 		.dom_dispose 			= 0,
 		.dom_protosw 			= nssw,
-		.dom_protoswNPROTOSW 	= &nssw[nitems(nssw)]
+		.dom_protoswNPROTOSW 	= &nssw[sizeof(nssw)/sizeof(nssw[0])],
+		.dom_next 				= 0,
+		.dom_rtattach			= rn_inithead,
+		.dom_rtoffset			= 16,
+		.dom_maxrtkey			= sizeof(struct sockaddr_ns),
+		.dom_ifattach 			= NULL,
+		.dom_ifdetach 			= NULL,
 };
