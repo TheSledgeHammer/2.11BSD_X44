@@ -73,11 +73,6 @@ typedef void 				nbpf_buf_t;
 typedef void 				nbpf_cache_t;
 typedef struct nbpf_state	nbpf_state_t;
 
-union nbpf_ipv4;
-union nbpf_ipv6;
-union nbpf_port;
-union nbpf_icmp;
-
 #define	NBPF_MAX_NETMASK	(128)
 #define	NBPF_NO_NETMASK		((nbpf_netmask_t)~0)
 
