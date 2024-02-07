@@ -47,7 +47,9 @@
 #include <net/radix_mpath.h>
 #include <net/route.h>
 
+#ifdef NRND > 0
 #include <dev/misc/rnd/rnd.h>
+#endif
 
 /*
  * give some jitter to hash, to avoid synchronization between routers
