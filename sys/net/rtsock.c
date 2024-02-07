@@ -190,13 +190,7 @@ route_usrreq(so, req, m, nam, control, p)
 
 /*ARGSUSED*/
 int
-#if __STDC__
 route_output(struct mbuf *m, ...)
-#else
-route_output(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	struct rt_msghdr *rtm = 0;
 	struct radix_node *rn = 0;

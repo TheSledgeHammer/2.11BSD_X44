@@ -110,6 +110,7 @@ struct radix_node_head {
 	struct	radix_node *rnh_treetop;
 	int	rnh_addrsize;		/* permit, but not require fixed keys */
 	int	rnh_pktsize;		/* permit, but not require fixed keys */
+	int	rnh_multipath;		/* multipath? */
 	struct	radix_node *(*rnh_addaddr)	/* add based on sockaddr */
 		(void *v, void *mask,
 		     struct radix_node_head *head, struct radix_node nodes[]);
@@ -130,9 +131,7 @@ struct radix_node_head {
 		(struct radix_node_head *,
 		     int (*)(struct radix_node *, void *), void *);
 	struct	radix_node rnh_nodes[3];	/* empty tree for common case */
-	int	rnh_multipath;		/* multipath? */
 };
-
 
 #ifdef _KERNEL
 #define Bcmp(a, b, n) 		bcmp(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
@@ -143,6 +142,7 @@ struct radix_node_head {
 #endif /*_KERNEL*/
 
 void rn_init(void);
+int	 rnh_inithead(void **, int);
 int	 rn_inithead(void **, int);
 int	 rn_inithead0(struct radix_node_head *, int);
 int	 rn_refines(void *, void *);

@@ -143,16 +143,20 @@ rtable_init(table)
 	void **table;
 {
 	struct domain *dom;
-	for (dom = domains; dom; dom = dom->dom_next)
-		if (dom->dom_rtattach)
-			dom->dom_rtattach(&table[dom->dom_family],
-			    dom->dom_rtoffset);
+	for (dom = domains; dom; dom = dom->dom_next) {
+		if (dom->dom_rtattach) {
+			dom->dom_rtattach(&table[dom->dom_family], dom->dom_rtoffset);
+		}
+	}
 }
 
 void
 route_init(void)
 {
 	rn_init();	/* initialize all zeroes, all ones, mask table */
+#ifdef RADIX_ART
+	rn_art_init();
+#endif
 	rtable_init((void **)rt_tables);
 }
 
@@ -249,7 +253,6 @@ void
 ifafree(ifa)
 	struct ifaddr *ifa;
 {
-
 #ifdef DIAGNOSTIC
 	if (ifa == NULL)
 		panic("ifafree: null ifa");

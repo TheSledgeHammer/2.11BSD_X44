@@ -38,7 +38,7 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: radix.c,v 1.20 2003/08/07 16:32:56 agc Exp $");
 
-#include "opt_mpath.h"
+#include "opt_radix.h"
 
 #ifndef _NET_RADIX_H_
 #include <sys/param.h>
@@ -52,7 +52,10 @@ __KERNEL_RCSID(0, "$NetBSD: radix.c,v 1.20 2003/08/07 16:32:56 agc Exp $");
 #endif
 #include <sys/syslog.h>
 #include <net/radix.h>
-#ifdef RADIX_MPATH
+#if defined(RADIX_ART) && !defined(RADIX_MPATH)
+#include <net/radix_art.h>
+#endif
+#if !defined(RADIX_ART) && defined(RADIX_MPATH)
 #include <net/radix_mpath.h>
 #endif
 #endif
@@ -878,20 +881,54 @@ rn_walktree(h, f, w)
 	/* NOTREACHED */
 }
 
+struct radix_node *
+rn_next(rn)
+	struct radix_node *rn;
+{
+	struct radix_node	*next;
+	struct rtentry		*rt;
+
+	rt = (struct rtentry *)rn;
+	if (!rn->rn_dupedkey) {
+		return (NULL);
+	}
+	next = rn->rn_dupedkey;
+	if (rn->rn_mask == next->rn_mask) {
+		return (next);
+	}
+	return (NULL);
+}
+
 int
-rn_inithead(head, off)
+rnh_inithead(head, off)
 	void **head;
 	int off;
 {
 	struct radix_node_head *rnh;
 
-	if (*head)
+	if (*head) {
 		return (1);
+	}
 	R_Malloc(rnh, struct radix_node_head *, sizeof (*rnh));
-	if (rnh == 0)
+	if (rnh == 0) {
 		return (0);
+	}
 	*head = rnh;
 	return rn_inithead0(rnh, off);
+}
+
+int
+rn_inithead(head, off)
+	void **head;
+	int off;
+{
+#if defined(RADIX_ART) && !defined(RADIX_MPATH)
+	return (rn_art_inithead(head, off));
+#elif !defined(RADIX_ART) && defined(RADIX_MPATH)
+	return (rn_mpath_inithead(head, off));
+#else
+	return (rnh_inithead(head, off));
+#endif
 }
 
 int
@@ -921,15 +958,17 @@ rn_inithead0(rnh, off)
 }
 
 void
-rn_init()
+rn_init(void)
 {
 	char *cp, *cplim;
 #ifdef _KERNEL
 	struct domain *dom;
 
-	for (dom = domains; dom; dom = dom->dom_next)
-		if (dom->dom_maxrtkey > max_keylen)
+	for (dom = domains; dom; dom = dom->dom_next) {
+		if (dom->dom_maxrtkey > max_keylen) {
 			max_keylen = dom->dom_maxrtkey;
+		}
+	}
 #endif
 	if (max_keylen == 0) {
 		log(LOG_ERR,
@@ -937,32 +976,16 @@ rn_init()
 		return;
 	}
 	R_Malloc(rn_zeros, char *, 3 * max_keylen);
-	if (rn_zeros == NULL)
+	if (rn_zeros == NULL) {
 		panic("rn_init");
+	}
 	Bzero(rn_zeros, 3 * max_keylen);
 	rn_ones = cp = rn_zeros + max_keylen;
 	addmask_key = cplim = rn_ones + max_keylen;
-	while (cp < cplim)
+	while (cp < cplim) {
 		*cp++ = -1;
+	}
 	if (rn_inithead((void *)&mask_rnhead, 0) == 0) {
 		panic("rn_init 2");
 	}
-}
-
-struct radix_node *
-rn_next(rn)
-	struct radix_node *rn;
-{
-	struct radix_node	*next;
-	struct rtentry		*rt;
-
-	rt = (struct rtentry *)rn;
-	if (!rn->rn_dupedkey) {
-		return (NULL);
-	}
-	next = rn->rn_dupedkey;
-	if (rn->rn_mask == next->rn_mask) {
-		return (next);
-	}
-	return (NULL);
 }

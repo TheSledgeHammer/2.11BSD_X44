@@ -31,6 +31,7 @@ file	net/if_pppoe.c			pppoe							needs-flag
 file	net/pfil.c				pfil_hooks
 file	net/ppp-deflate.c		ppp & ppp_deflate
 file	net/ppp_tty.c			ppp
+file	net/radix_art.c
 file	net/radix_mpath.c										
 file	net/radix.c
 file	net/raw_cb.c

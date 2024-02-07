@@ -34,7 +34,7 @@
  */
 
 
-#include "opt_mpath.h"
+#include "opt_radix.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -87,7 +87,9 @@ rn_mpath_count(rn)
 }
 
 struct rtentry *
-rt_mpath_matchgate(struct rtentry *rt, struct sockaddr *gate)
+rt_mpath_matchgate(rt, gate)
+	struct rtentry *rt;
+	struct sockaddr *gate;
 {
 	struct radix_node *rn;
 
@@ -114,7 +116,10 @@ rt_mpath_matchgate(struct rtentry *rt, struct sockaddr *gate)
  * check if we have the same key/mask/gateway on the table already.
  */
 int
-rt_mpath_conflict(struct radix_node_head *rnh, struct rtentry *rt, struct sockaddr *netmask)
+rt_mpath_conflict(rnh, rt, netmask)
+	struct radix_node_head *rnh;
+	struct rtentry *rt;
+	struct sockaddr *netmask;
 {
 	struct radix_node *rn, *rn1;
 	struct rtentry *rt1;
@@ -212,7 +217,9 @@ rt_mpath_conflict(struct radix_node_head *rnh, struct rtentry *rt, struct sockad
 }
 
 void
-rtalloc_mpath(struct route *ro, int hash)
+rtalloc_mpath(ro, hash)
+	struct route *ro;
+	int hash;
 {
 	struct radix_node *rn0, *rn;
 	int n;
@@ -254,12 +261,14 @@ rtalloc_mpath(struct route *ro, int hash)
 }
 
 int
-rn_mpath_inithead(void **head, int off)
+rn_mpath_inithead(head, off)
+	void **head;
+	int off;
 {
 	struct radix_node_head *rnh;
 
 	hashjitter = arc4random();
-	if (rn_inithead(head, off) == 1) {
+	if (rnh_inithead(head, off) == 1) {
 		rnh = (struct radix_node_head *)*head;
 		rnh->rnh_multipath = 1;
 		return (1);
