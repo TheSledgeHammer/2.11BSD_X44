@@ -135,10 +135,6 @@ __KERNEL_RCSID(0, "$NetBSD: if.c,v 1.139.2.1.4.1 2006/11/19 17:30:11 bouyer Exp 
 #include <netinet6/nd6.h>
 #endif
 
-#ifdef NS
-#include <netns/ns_if.h>
-#endif
-
 int	ifqmaxlen = IFQ_MAXLEN;
 struct	callout if_slowtimo_ch;
 
