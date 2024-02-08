@@ -97,6 +97,8 @@ options 		PPP_DEFLATE			# Deflate compression support for PPP
 options 		PPP_FILTER			# Active filter support for PPP (requires bpf)
 options 		PFIL_HOOKS			# pfil(9) packet filter hooks
 #options		RADIX_ART			# Radix ART support (enabling is currently not recommended)
+#options    RADIX_ART_TRACE     # Radix ART Tracing
+#options    RADIX_ART_STAT      # Radix ART Stats
 #options		RADIX_MPATH			# Radix Multipath support
 options 		IPFILTER_LOG		# ipmon(8) log support
 #options 		IPFILTER_DEFAULT_BLOCK	# block all packets by default
