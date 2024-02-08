@@ -157,23 +157,21 @@ static int ip_gif_ttl = 40;	/*XXX*/
 #endif
 
 extern struct domain inetdomain;
-struct protosw in_stf_protosw[] = {
-		{
-				.pr_type		= SOCK_RAW,
-				.pr_domain		= &inetdomain,
-				.pr_protocol 	= IPPROTO_IPV6,
-				.pr_flags		= PR_ATOMIC|PR_ADDR,
-				.pr_input 		= in_stf_input,
-				.pr_output		= rip_output,
-				.pr_ctlinput 	= 0,
-				.pr_ctloutput	= rip_ctloutput,
-				.pr_usrreq		= rip_usrreq,
-				.pr_init		= 0,
-				.pr_fasttimo	= 0,
-				.pr_slowtimo	= 0,
-				.pr_drain		= 0,
-				.pr_sysctl		= 0,
-		}
+struct protosw in_stf_protosw = {
+		.pr_type	= SOCK_RAW,
+		.pr_domain	= &inetdomain,
+		.pr_protocol 	= IPPROTO_IPV6,
+		.pr_flags	= PR_ATOMIC|PR_ADDR,
+		.pr_input 	= in_stf_input,
+		.pr_output	= rip_output,
+		.pr_ctlinput 	= 0,
+		.pr_ctloutput	= rip_ctloutput,
+		.pr_usrreq	= rip_usrreq,
+		.pr_init	= 0,
+		.pr_fasttimo	= 0,
+		.pr_slowtimo	= 0,
+		.pr_drain	= 0,
+		.pr_sysctl	= 0,
 };
 
 void stfattach(int);
