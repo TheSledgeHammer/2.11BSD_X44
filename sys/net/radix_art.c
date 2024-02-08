@@ -224,13 +224,6 @@ static int art_gc(u_int8_t *, int, int, struct art_table *, struct art_table *, 
 static int art_delete(u_int8_t *, int, struct art_table *, void *);
 static int art_prefixlen(void *, struct radix_node_head *);
 
-/*
-extern struct radix_node
-	 *rn_delete(void *, void *, struct radix_node_head *),
-	 *rn_insert(void *, struct radix_node_head *, int *, struct radix_node [2]),
-	 *rn_lookup(void *, void *, struct radix_node_head *);
-*/
-
 #if defined(RADIX_ART_TRACE) || defined(RADIX_ART_TEST)
 static void
 art_printaddr(u_int8_t p, size_t l)
@@ -1070,4 +1063,12 @@ rn_art_init(void)
 		return;
 	}
 #endif
+}
+
+void
+rtable_art_init(af, addrsize)
+	int af;
+	int addrsize;
+{
+	rt_tables[af]->rnh_addrsize = addrsize;
 }

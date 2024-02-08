@@ -101,7 +101,7 @@ __KERNEL_RCSID(0, "$NetBSD: icmp6.c,v 1.106.2.1.4.1 2005/10/28 23:10:38 riz Exp 
 #include <netkey/key.h>
 #endif
 
-//#include "faith.h"
+#include "faith.h"
 #if defined(NFAITH) && 0 < NFAITH
 #include <net/if_faith.h>
 #endif

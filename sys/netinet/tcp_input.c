@@ -211,7 +211,7 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_input.c,v 1.190.2.6.2.2 2005/04/22 06:58:50 tron
 #include <netkey/key.h>
 #endif /*IPSEC*/
 #ifdef INET6
-//#include "faith.h"
+#include "faith.h"
 #if defined(NFAITH) && NFAITH > 0
 #include <net/if_faith.h>
 #endif

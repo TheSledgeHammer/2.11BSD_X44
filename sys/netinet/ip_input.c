@@ -416,7 +416,8 @@ ip_init()
 #endif
 
 #ifdef RADIX_ART
-	rt_tables[AF_INET]->rnh_addrsize = sizeof(struct in_addr);
+	//rt_tables[AF_INET]->rnh_addrsize = sizeof(struct in_addr);
+	rtable_art_init(AF_INET, sizeof(struct in_addr));
 #endif
 
 #ifdef PFIL_HOOKS

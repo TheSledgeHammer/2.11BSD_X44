@@ -136,6 +136,7 @@ struct art_node_head {
 void	 rn_art_init(void);
 int	 	 rn_art_inithead(void **, int);
 void	 rn_art_setlimit(struct radix_node_head *, unsigned int);
+void	 rtable_art_init(int, int); /* sets rnh_addrsize */
 
 struct radix_node
 	 *rn_art_addroute(void *, void *, struct radix_node_head *, struct radix_node [2]),

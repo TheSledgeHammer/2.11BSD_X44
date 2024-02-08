@@ -96,7 +96,7 @@ __KERNEL_RCSID(0, "$NetBSD: udp6_usrreq.c,v 1.62.2.1 2004/05/28 07:23:40 tron Ex
 #include <netinet6/udp6_var.h>
 #include <netinet6/ip6protosw.h>
 
-//#include "faith.h"
+#include "faith.h"
 #if defined(NFAITH) && NFAITH > 0
 #include <net/if_faith.h>
 #endif
