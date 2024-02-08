@@ -100,6 +100,8 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: route.c,v 1.58 2003/08/07 16:32:57 agc Exp $");
 
+#include "opt_radix.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/callout.h>
@@ -119,6 +121,10 @@ __KERNEL_RCSID(0, "$NetBSD: route.c,v 1.58 2003/08/07 16:32:57 agc Exp $");
 #include <netinet/in.h>
 #include <netinet/in_var.h>
 
+#ifdef RADIX_ART
+#include <net/radix_art.h>
+#endif
+	
 #ifdef NS
 #include <netns/ns.h>
 #endif
