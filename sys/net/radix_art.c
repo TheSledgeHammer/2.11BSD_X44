@@ -224,11 +224,12 @@ static int art_gc(u_int8_t *, int, int, struct art_table *, struct art_table *, 
 static int art_delete(u_int8_t *, int, struct art_table *, void *);
 static int art_prefixlen(void *, struct radix_node_head *);
 
-
+/*
 extern struct radix_node
 	 *rn_delete(void *, void *, struct radix_node_head *),
 	 *rn_insert(void *, struct radix_node_head *, int *, struct radix_node [2]),
 	 *rn_lookup(void *, void *, struct radix_node_head *);
+*/
 
 #if defined(RADIX_ART_TRACE) || defined(RADIX_ART_TEST)
 static void
@@ -962,13 +963,13 @@ rn_art_addroute(void *v_arg, void *n_arg, struct radix_node_head *head,
 }
 
 struct radix_node *
-rn_art_delete(void *v_arg, void *netmask_arg, struct radix_node_head *head,
-	struct radix_node *rn)
+rn_art_delete(void *v_arg, void *netmask_arg, struct radix_node_head *head)
 {
+    struct radix_node *rn;
 	u_int8_t *p;
 	int prefixlen;
 
-	rn = rn_delete(v_arg, netmask_arg, head, rn);
+	rn = rn_delete(v_arg, netmask_arg, head);
 
 	if (rn) {
 		/*

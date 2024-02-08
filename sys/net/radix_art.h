@@ -136,14 +136,14 @@ struct art_node_head {
 void	 rn_art_init(void);
 int	 	 rn_art_inithead(void **, int);
 void	 rn_art_setlimit(struct radix_node_head *, unsigned int);
+
 struct radix_node
-	 *rn_art_addroute(void *, void *, struct radix_node_head *,
-			struct radix_node [2]),
+	 *rn_art_addroute(void *, void *, struct radix_node_head *, struct radix_node [2]),
 	 *rn_art_delete(void *, void *, struct radix_node_head *),
-	 *rn_art_insert(void *, struct radix_node_head *, int *,
-			struct radix_node [2]),
+	 *rn_art_insert(void *, struct radix_node_head *, int *, struct radix_node [2]),
 	 *rn_art_lookup(void *, void *, struct radix_node_head *),
 	 *rn_art_match(void *, struct radix_node_head *);
+
 #endif
 
 #endif /* _NET_RADIX_ART_H_ */
