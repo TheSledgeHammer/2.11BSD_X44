@@ -64,7 +64,7 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: if_compat.c,v 1.2 2008/06/18 09:06:27 yamt Exp $");
 
-#include "opt_mpath.h"
+#include "opt_radix.h"
 #include "pf.h"
 
 #include <sys/param.h>
