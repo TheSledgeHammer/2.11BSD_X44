@@ -106,6 +106,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_input.c,v 1.197.2.1 2004/05/28 07:25:05 tron Exp 
 #include "opt_ipsec.h"
 #include "opt_mrouting.h"
 #include "opt_inet_csum.h"
+#include "opt_radix.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -412,6 +413,10 @@ ip_init()
 	ip_mtudisc_timeout_q = rt_timer_queue_create(ip_mtudisc_timeout);
 #ifdef GATEWAY
 	ipflow_init();
+#endif
+
+#ifdef RADIX_ART
+	rt_tables[AF_INET]->rnh_addrsize = sizeof(struct in_addr);
 #endif
 
 #ifdef PFIL_HOOKS
