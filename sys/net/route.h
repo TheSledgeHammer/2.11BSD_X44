@@ -90,6 +90,12 @@ struct rt_metrics {
 #ifndef RNF_NORMAL
 #include <net/radix.h>
 #endif
+#if defined(RADIX_ART) && !defined(RADIX_MPATH)
+#include <net/radix_art.h>
+#endif
+#if !defined(RADIX_ART) && defined(RADIX_MPATH)
+#include <net/radix_mpath.h>
+#endif
 struct rtentry {
 	struct	radix_node rt_nodes[2];	/* tree glue, and other values */
 #define	rt_key(r)	((struct sockaddr *)((r)->rt_nodes->rn_key))
@@ -163,6 +169,12 @@ struct	rtstat {
 	u_quad_t rts_newgateway;	/* routes modified by redirects */
 	u_quad_t rts_unreach;		/* lookups which failed */
 	u_quad_t rts_wildcard;		/* lookups satisfied by a wildcard */
+	u_quad_t rts_art_lookups;	/* ART: total lookups */
+	u_quad_t rts_art_invalid;	/* ART: result to invalid entry */
+	u_quad_t rts_art_mismatch;	/* ART: mismatch with radix */
+	u_quad_t rts_art_alloc;		/* ART: # of table allocations */
+	u_quad_t rts_art_free;		/* ART: # of table free */
+	u_quad_t rts_art_table;		/* ART: # of table resident */
 };
 /*
  * Structures for routing messages.
