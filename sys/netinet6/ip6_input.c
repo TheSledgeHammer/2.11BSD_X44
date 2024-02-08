@@ -67,6 +67,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_input.c,v 1.73.2.1.4.3 2007/06/04 19:26:07 bouye
 #include "opt_inet.h"
 #include "opt_ipsec.h"
 #include "opt_pfil_hooks.h"
+#include "opt_radix.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -114,7 +115,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_input.c,v 1.73.2.1.4.3 2007/06/04 19:26:07 bouye
 
 /* we need it for NLOOP. */
 #include "loop.h"
-//#include "faith.h"
+#include "faith.h"
 #include "gif.h"
 #include "bpfilter.h"
 
@@ -157,6 +158,10 @@ ip6_init()
 	struct ip6protosw *pr;
 	int i;
 
+#ifdef RADIX_ART
+	rt_tables[AF_INET6]->rnh_addrsize = sizeof(struct in6_addr);
+#endif
+	
 	pr = (struct ip6protosw *)pffindproto(PF_INET6, IPPROTO_RAW, SOCK_RAW);
 	if (pr == 0)
 		panic("ip6_init");
