@@ -202,7 +202,7 @@ omem_alloc_wait(map, size)
 		}
 		assert_wait(map, TRUE);
 		ovl_map_unlock(map);
-		thread_block();
+		vm_thread_block();
 	}
 	ovl_map_insert(map, NULL, (vm_offset_t)0, addr, addr + size);
 	ovl_map_unlock(map);
@@ -217,7 +217,7 @@ omem_free_wakeup(map, addr, size)
 {
 	ovl_map_lock(map);
 	(void) ovl_map_delete(map, addr, (addr + size));
-	thread_wakeup(map);
+	vm_thread_wakeup(map);
 	ovl_map_unlock(map);
 }
 
