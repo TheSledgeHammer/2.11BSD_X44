@@ -145,7 +145,7 @@ vm_object_t			kmem_object;
 #define	vm_object_unlock(object)	simple_unlock(&(object)->Lock)
 #define	vm_object_lock_try(object)	simple_lock_try(&(object)->Lock)
 #define	vm_object_sleep(event, object, interruptible) \
-			thread_sleep((event), &(object)->Lock, (interruptible))
+			vm_thread_sleep((event), &(object)->Lock, (interruptible))
 
 #ifdef _KERNEL
 vm_object_t	 vm_object_allocate(vm_size_t);

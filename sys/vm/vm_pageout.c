@@ -336,7 +336,7 @@ vm_pageout_inactive_scanner(page, segment, object, pages_freed)
 	} else
 #endif
 		vm_pageout_active(page, segment, object);
-		thread_wakeup(object);
+		vm_thread_wakeup(object);
 		vm_object_unlock(object);
 }
 
@@ -402,7 +402,7 @@ vm_pageout_active(page, segment, object)
 	/*
 	 * Do a wakeup here in case the following operations block.
 	 */
-	thread_wakeup(&cnt.v_page_free_count);
+	vm_thread_wakeup(&cnt.v_page_free_count);
 
 	/*
 	 * If there is no pager for the page, use the default pager.
@@ -687,7 +687,7 @@ vm_pageout(void)
 
 	simple_lock(&vm_pages_needed_lock);
 	while (TRUE) {
-		thread_sleep(&vm_pages_needed, &vm_pages_needed_lock, FALSE);
+		vm_thread_sleep(&vm_pages_needed, &vm_pages_needed_lock, FALSE);
 		/*
 		 * Compute the inactive target for this scan.
 		 * We need to keep a reasonable amount of memory in the
@@ -709,7 +709,7 @@ vm_pageout(void)
 		}
 		vm_pager_sync();
 		simple_lock(&vm_pages_needed_lock);
-		thread_wakeup(&cnt.v_page_free_count);
+		vm_thread_wakeup(&cnt.v_page_free_count);
 	}
 }
 
@@ -721,6 +721,6 @@ void
 vm_wait(void)
 {
 	simple_lock(&vm_pages_needed_lock);
-	thread_wakeup(&vm_pages_needed);
-	thread_sleep(&cnt.v_page_free_count, &vm_pages_needed_lock, FALSE);
+	vm_thread_wakeup(&vm_pages_needed);
+	vm_thread_sleep(&cnt.v_page_free_count, &vm_pages_needed_lock, FALSE);
 }

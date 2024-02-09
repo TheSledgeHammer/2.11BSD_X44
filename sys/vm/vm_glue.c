@@ -561,7 +561,7 @@ assert_wait(event, ruptible)
 
 /* ARG-UNUSED */
 void
-thread_block()
+vm_thread_block()
 {
 	int s = splhigh();
 
@@ -572,7 +572,7 @@ thread_block()
 }
 
 void
-thread_sleep(event, lock, ruptible)
+vm_thread_sleep(event, lock, ruptible)
 	void *event;
 	simple_lock_t lock;
 	bool_t ruptible;
@@ -591,7 +591,7 @@ thread_sleep(event, lock, ruptible)
 }
 
 void
-thread_wakeup(event)
+vm_thread_wakeup(event)
 	void *event;
 {
 	int s = splhigh();

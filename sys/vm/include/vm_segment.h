@@ -201,7 +201,7 @@ simple_lock_data_t	vm_segment_list_free_lock;
     (s)->flags &= ~SEG_BUSY; 							\
     if ((s)->flags & SEG_WANTED) { 						\
         (s)->flags &= ~SEG_WANTED; 						\
-		thread_wakeup((s)); 							\
+		vm_thread_wakeup((s)); 							\
 	} 													\
 }
 

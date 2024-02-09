@@ -549,7 +549,7 @@ vm_page_alloc(segment, offset)
 	if (cnt.v_page_free_count < cnt.v_page_free_min ||
 	    (cnt.v_page_free_count < cnt.v_page_free_target &&
 	     cnt.v_page_inactive_count < cnt.v_page_inactive_target)) {
-		thread_wakeup(&vm_pages_needed);
+		vm_thread_wakeup(&vm_pages_needed);
 	}
 	return (mem);
 }

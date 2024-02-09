@@ -222,7 +222,7 @@ simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 				(m)->flags &= ~PG_BUSY; 			\
 				if ((m)->flags & PG_WANTED) { 		\
 					(m)->flags &= ~PG_WANTED; 		\
-					thread_wakeup((m)); 			\
+					vm_thread_wakeup((m)); 			\
 				} 									\
 }
 

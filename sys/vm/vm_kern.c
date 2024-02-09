@@ -500,7 +500,7 @@ kmem_alloc_wait(map, size)
 		}
 		assert_wait(map, TRUE);
 		vm_map_unlock(map);
-		thread_block();
+		vm_thread_block();
 	}
 	vm_map_insert(map, NULL, (vm_offset_t)0, addr, addr + size);
 	vm_map_unlock(map);
@@ -521,7 +521,7 @@ kmem_free_wakeup(map, addr, size)
 {
 	vm_map_lock(map);
 	(void) vm_map_delete(map, trunc_page(addr), round_page(addr + size));
-	thread_wakeup(map);
+	vm_thread_wakeup(map);
 	vm_map_unlock(map);
 }
 
