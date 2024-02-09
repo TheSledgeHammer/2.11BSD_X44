@@ -96,7 +96,7 @@ options 		PPP_BSDCOMP			# BSD-Compress compression support for PPP
 options 		PPP_DEFLATE			# Deflate compression support for PPP
 options 		PPP_FILTER			# Active filter support for PPP (requires bpf)
 options 		PFIL_HOOKS			# pfil(9) packet filter hooks
-#options		RADIX_ART			# Radix ART support (enabling is currently not recommended)
+#options		RADIX_ART			# Radix ART support
 #options    RADIX_ART_TRACE     # Radix ART Tracing
 #options    RADIX_ART_STAT      # Radix ART Stats
 #options		RADIX_MPATH			# Radix Multipath support
