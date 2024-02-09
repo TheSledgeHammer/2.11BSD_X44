@@ -30,10 +30,8 @@
 #define _SYS_THREAD_H_
 
 #include <sys/proc.h>
-#include <sys/mutex.h>
+#include <sys/queue.h>
 
-struct threadhd;
-TAILQ_HEAD(threadhd, thread);
 struct thread {
 	TAILQ_ENTRY(thread) td_link;				/* Doubly-linked run/sleep queue. */
 	LIST_ENTRY(thread)	td_list;				/* List of all threads */
@@ -94,8 +92,8 @@ struct thread {
 
 #ifdef _KERNEL
 extern struct lock_holder 	thread_loholder;
-#define THREAD_LOCK(td)		(mtx_lock(&(td)->td_mtx, &thread_loholder))
-#define THREAD_UNLOCK(td) 	(mtx_unlock(&(td)->td_mtx, &thread_loholder))
+#define THREAD_LOCK(td)		(mtx_lock((td)->td_mtx, &thread_loholder))
+#define THREAD_UNLOCK(td) 	(mtx_unlock((td)->td_mtx, &thread_loholder))
 
 #define	TID_MIN			31000
 #define	TID_MAX			99000
@@ -109,13 +107,17 @@ extern u_long 	tidhash;
 extern int	nthread, maxthread;					/* Current and max number of threads. */
 extern int ppnthreadmax;						/* max number of threads per proc (hits stack limit) */
 
+struct threadhd;
+TAILQ_HEAD(threadhd, thread);
+struct threadlist;
 LIST_HEAD(threadlist, thread);
 
 /* Thread initialization */
 void thread_init(struct proc *, struct thread *);
-void tdqinit(struct thread *);
-void threadinit(struct thread *);
+void tdqinit(struct proc *, struct thread *);
+void threadinit(struct proc *, struct thread *);
 void thread_rqinit(struct proc *);
+void thread_sqinit(struct proc *);
 
 struct thread *tdfind(struct proc *);			/* find thread by tidmask */
 struct proc *thread_pfind(struct thread *);
@@ -137,17 +139,20 @@ void thread_setrun(struct proc *, struct thread *);
 void thread_schedule(struct proc *, struct thread *);
 void thread_schedcpu(struct proc *);
 void thread_exit(int);
+
 int thread_tsleep(void *, int, char *, u_short);
 void thread_sleep(void *, int);
 void thread_unsleep(struct proc *, struct thread *);
 void thread_endtsleep(struct proc *, struct thread *);
-void thread_wakeup(struct proc *, void *);
+void thread_wakeup(struct proc *, const void *);
 
 pid_t thread_tidmask(struct proc *);					/* thread tidmask */
 int thread_primask(struct proc *);						/* thread primask */
 
 /* kern_kthread.c */
+
 int	newthread(struct thread **, char *, size_t, bool_t);
+
 int kthread_create(void (*)(void *), void *, struct thread **, char *, bool_t);
 
 void kthread_exit(int);
