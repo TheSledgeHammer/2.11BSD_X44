@@ -235,6 +235,7 @@ main(framep)
 	p->p_emul = &emul_211bsd;
 
 	u.u_procp = p;
+ u.u_threado = td;
 	u.u_ap = u.u_arg;
 	bcopy("swapper", p->p_comm, sizeof ("swapper"));
 
