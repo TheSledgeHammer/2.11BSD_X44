@@ -20,6 +20,7 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/lock.h>
+//#include <sys/thread.h>
 
 /*
  * One structure allocated per active
