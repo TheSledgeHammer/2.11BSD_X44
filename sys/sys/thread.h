@@ -67,6 +67,8 @@ struct thread {
 	u_char				td_pri;					/* thread priority */
 
 #define td_name			td_procp->p_comm
+
+	void				*td_event;				/* Id for this "thread"; Mach glue. XXX */
 };
 
 /* stack size */
@@ -140,7 +142,7 @@ void thread_schedule(struct proc *, struct thread *);
 void thread_schedcpu(struct proc *);
 void thread_exit(int);
 
-int  thread_tsleep(void *, int, char *, u_short);
+int thread_tsleep(void *, int, char *, u_short);
 void thread_sleep(void *, int);
 void thread_unsleep(struct proc *, struct thread *);
 void thread_endtsleep(struct proc *, struct thread *);
@@ -148,5 +150,6 @@ void thread_wakeup(struct proc *, const void *);
 
 pid_t thread_tidmask(struct proc *);					/* thread tidmask */
 int thread_primask(struct proc *);						/* thread primask */
+
 #endif 	/* KERNEL */
 #endif /* _SYS_THREAD_H_ */

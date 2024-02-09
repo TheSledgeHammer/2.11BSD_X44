@@ -159,7 +159,6 @@ ip6_init()
 	int i;
 
 #ifdef RADIX_ART
-	//rt_tables[AF_INET6]->rnh_addrsize = sizeof(struct in6_addr);
 	rtable_art_init(AF_INET6, sizeof(struct in6_addr));
 #endif
 	

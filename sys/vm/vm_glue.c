@@ -563,10 +563,16 @@ assert_wait(event, ruptible)
 void
 vm_thread_block()
 {
+	struct thread *curthread;
 	int s = splhigh();
-
+	/*
 	if (curproc->p_thread) {
 		tsleep(curproc->p_thread, PVM, "thrd_block", 0);
+	}
+	*/
+	curthread = curproc->p_curthread;
+	if (curthread->td_event) {
+		thread_tsleep(curthread->td_event, PVM, "thrd_sleep", 0);
 	}
 	splx(s);
 }
@@ -577,16 +583,26 @@ vm_thread_sleep(event, lock, ruptible)
 	simple_lock_t lock;
 	bool_t ruptible;
 {
+	struct thread *curthread;
 	int s = splhigh();
 
 #ifdef lint
 	ruptible++;
 #endif
+/*
 	curproc->p_thread = event;
 	simple_unlock(lock);
 	if (curproc->p_thread) {
 		tsleep(event, PVM, "thrd_sleep", 0);
 	}
+*/
+	curthread = curproc->p_curthread;
+	curthread->td_event = event;
+	simple_unlock(lock);
+	if (curthread->td_event) {
+		thread_tsleep(event, PVM, "thrd_sleep", 0);
+	}
+
 	splx(s);
 }
 
@@ -596,7 +612,8 @@ vm_thread_wakeup(event)
 {
 	int s = splhigh();
 
-	wakeup(event);
+	//wakeup(event);
+	thread_wakeup(curproc, event);
 	splx(s);
 }
 

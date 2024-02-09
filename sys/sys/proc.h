@@ -20,7 +20,7 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/lock.h>
-//#include <sys/thread.h>
+#include <sys/thread.h>
 
 /*
  * One structure allocated per active
@@ -47,8 +47,7 @@ struct	proc {
     pid_t				p_pid;			/* unique process id */
     pid_t				p_ppid;			/* process id of parent */
 
-    /* Threads: */
-#ifdef notyet
+    /* Thread Structure: */
     union {
     	struct threadlist 	allthread;	/* list of all threads */
     	struct threadhd	 	threadrq; 	/* Linked list of running threads. */
@@ -62,7 +61,6 @@ struct	proc {
     int 				p_nthreads;		/* number of attached threads to this proc */
     int					p_tqsready;		/* number of threads ready */
     int					p_tqssleep;		/* number of threads sleeping */
-#endif
 
     /* Substructures: */
 	struct	pcred 	 	*p_cred;		/* Process owner's identity. */

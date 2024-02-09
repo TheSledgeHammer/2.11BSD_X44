@@ -173,6 +173,6 @@ struct domain nsdomain = {
 		.dom_rtattach			= rn_inithead,
 		.dom_rtoffset			= 16,
 		.dom_maxrtkey			= sizeof(struct sockaddr_ns),
-		.dom_ifattach 			= NULL,
-		.dom_ifdetach 			= NULL,
+		.dom_ifattach 			= 0,
+		.dom_ifdetach 			= 0,
 };

@@ -145,11 +145,13 @@ schedcpu(arg)
 		if (p->p_pri >= PUSER) {
 			setpri(p);
 		}
-		if(edf_schedcpu(p)) {
+		if (edf_schedcpu(p)) {
 			if((p != curproc) &&
 					(p->p_stat == SRUN) &&
 					(p->p_flag & P_INMEM) &&
 					(p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
+				/* schedule threads if any */
+				thread_schedcpu(p);
 				if (cfs_schedcpu(p) == 0) {
 					remrq(p);
 					reschedule(p);

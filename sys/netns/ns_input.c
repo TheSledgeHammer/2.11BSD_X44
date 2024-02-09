@@ -34,6 +34,8 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: ns_input.c,v 1.20 2003/09/30 00:01:18 christos Exp $");
 
+#include "opt_radix.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -88,7 +90,9 @@ long	ns_pexseq;
 void
 ns_init()
 {
-
+#ifdef RADIX_ART
+	rtable_art_init(AF_NS, sizeof(struct ns_addr));
+#endif
 	ns_broadhost = * (union ns_host *) allones;
 	ns_broadnet = * (union ns_net *) allones;
 	nspcb.nsp_next = nspcb.nsp_prev = &nspcb;

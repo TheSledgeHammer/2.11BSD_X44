@@ -59,6 +59,7 @@
 #include <sys/map.h>
 #include <sys/proc.h>
 #include <sys/kthread.h>
+#include <sys/thread.h>
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
 #include <sys/vnode.h>
@@ -98,6 +99,7 @@ extern char copyright[];
 struct 	session session0;
 struct 	pgrp pgrp0;
 struct 	proc proc0;
+struct thread thread0;
 struct 	pcred cred0;
 struct 	filedesc0 filedesc0;
 struct 	plimit limit0;
@@ -108,7 +110,7 @@ struct ovlspace ovlspace0;
 #ifndef curproc
 struct 	proc *curproc = &proc0;
 #endif
-struct	proc *initproc, *pageproc;
+struct proc *initproc, *pageproc;
 
 int	netoff = 1;
 int	securelevel;
@@ -149,6 +151,7 @@ main(framep)
 	void *framep;
 {
 	register struct proc *p;
+	register struct thread *td;
 	register struct filedesc0 *fdp;
 	register struct pdevinit *pdev;
 	register int i;
@@ -163,6 +166,10 @@ main(framep)
 	 */
 	p = &proc0;
 	curproc = p;
+
+	/* initialize current thread & proc overseer from thread0 */
+	p->p_threado = td = &thread0;
+	p->p_curthread = td;
 
 	/*
 	 * Attempt to find console and initialize
@@ -190,6 +197,9 @@ main(framep)
 	 */
 	procinit(p);
 
+	/* Initialize thread structures. */
+	threadinit(p, td);
+
 	/*
 	 * Initialize device switch tables
 	 */
@@ -206,6 +216,11 @@ main(framep)
 	 */
     LIST_INSERT_HEAD(&allproc, p, p_list);
 	p->p_pgrp = &pgrp0;
+
+	/* set up kernel thread 0 */
+    LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+    td->td_pgrp = &pgrp0;
+
 	LIST_INSERT_HEAD(PGRPHASH(0), &pgrp0, pg_hash);
 	LIST_INIT(&pgrp0.pg_mem);
 	LIST_INSERT_HEAD(&pgrp0.pg_mem, p, p_pglist);
@@ -231,6 +246,10 @@ main(framep)
 	p->p_ucred = u.u_ucred;
 
 	callout_init(&p->p_tsleep_ch);
+
+	/* give the thread the same creds as the initial thread */
+	td->td_ucred = p->p_ucred;
+	crhold(td->td_ucred);
 
 	/* Create the file descriptor table. */
 	fdp = &filedesc0;
@@ -286,6 +305,9 @@ main(framep)
 
 	rqinit();
 	sqinit();
+
+	thread_rqinit(p);
+	thread_sqinit(p);
 
 	/* Configure virtual memory system, set vm rlimits. */
 	vm_init_limits(p);
