@@ -28,8 +28,6 @@
 
 /*
  * TODO:
- * - Name conflicts:
- * 		- vm_glue: thread_block, thread_sleep, thread_wakeup
  * - Implement:
  * `	- thred destruction:
  * 			- when to free a thread from memory?
@@ -65,9 +63,6 @@
 
 #include <vm/include/vm_param.h>
 
-struct thread  thread0;
-struct thread *curthread = &thread0;
-
 struct tidhashhead *tidhashtbl;
 u_long tidhash;
 
@@ -76,33 +71,6 @@ struct lock_holder 	thread_loholder;
 int ppnthreadmax;
 
 int thread_stacklimit(struct thread *);
-
-/*
- * Initialize threads structures.
- */
-void
-thread_init(p, td)
-	register struct proc  	*p;
-	register struct thread *td;
-{
-	/* initialize current thread & proc overseer from thread0 */
-	p->p_threado = td = &thread0;
-	p->p_curthread = curthread = td;
-
-	/* Initialize thread structures. */
-	threadinit(p, td);
-
-	/* set up kernel thread */
-    LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
-//    td->td_pgrp = &pgrp0;
-
-	/* give the thread the same creds as the initial thread */
-	td->td_ucred = p->p_ucred;
-	crhold(td->td_ucred);
-
-	thread_rqinit(p);
-	thread_sqinit(p);
-}
 
 void
 threadinit(p, td)
