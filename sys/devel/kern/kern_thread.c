@@ -50,19 +50,19 @@
  * 			As process's are independent of any thread (but not vice-versa). i.e. a process can
  * 			be created and run without any threads, but a thread cannot be run without a process.
  */
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/mutex.h>
-
-#include <devel/sys/thread.h>
+#include <sys/thread.h>
+#include <sys/wait.h>
 
 #include <vm/include/vm_param.h>
-
-#define M_THREAD 101
 
 int ppnthreadmax;
 
@@ -92,7 +92,7 @@ thread_init(p, td)
 
 	/* set up kernel thread */
     LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
-    td->td_pgrp = &pgrp0;
+//    td->td_pgrp = &pgrp0;
 
 	/* give the thread the same creds as the initial thread */
 	td->td_ucred = p->p_ucred;
@@ -159,12 +159,12 @@ pid_t
 thread_tidmask(p)
 	register struct proc *p;
 {
-	pid_t tid = p->p_pid + p->p_nthreads + TID_MIN;
+	int tid = (p->p_pid + p->p_nthreads + TID_MIN);
 	if (tid >= TID_MAX) {
 		printf("thread_tidmask: tid max reached");
-		tid = NO_TID;
+		tid = NO_PID;
 	}
-	return (tid);
+	return ((pid_t)tid);
 }
 
 struct thread *
@@ -240,7 +240,7 @@ thread_steal(to, td)
 {
 	register struct proc *from;
 
-	LIST_FOREACH(from, &from->p_allthread, td_sibling) {
+	LIST_FOREACH(from->p_threado, &from->p_allthread, td_sibling) {
 		if ((from != to) && (from->p_threado == td) && (td->td_tid == thread_tidmask(from))) {
 			if ((from->p_stat == SZOMB) && (to->p_stat != (SZOMB | SRUN))) {
 				thread_reparent(from, to, td);
@@ -749,10 +749,12 @@ thread_wakeup(p, chan)
 	register struct proc *p;
 	register const void *chan;
 {
-	register struct thread *td, tq;
+	register struct thread *td, *tq;
+    struct threadhd *qt;
 
+    qt = &p->p_threadsq;
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-		for (tq = TAILQ_FIRST(&p->p_threadsq); tq != NULL; td = tq) {
+		for (tq = TAILQ_FIRST(qt); tq != NULL; td = tq) {
 			if (td->td_stat != SSLEEP && td->td_stat != SSTOP) {
 				panic("thread_wakeup");
 			}
