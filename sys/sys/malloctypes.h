@@ -144,7 +144,8 @@
 #define M_OVLOBJ		97	/* OVL object structure */
 #define M_OVLOBJHASH	98	/* OVL object hash structure */
 #define	M_MPX			99	/* MPX (Multiplexor) Structure */
-#define	M_TEMP			100	/* misc temporary data buffers */
+#define	M_THREAD		100	/* Thread Structures */
+#define	M_TEMP			101	/* misc temporary data buffers */
 #define	M_LAST 			M_TEMP+1 	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {									\
@@ -248,7 +249,8 @@
 	"OVL object",				/* 97 M_OVLOBJ */ 		\
 	"OVL objhash",				/* 98 M_OVLOBJHASH */	\
 	"MPX Multiplexor"			/* 99 M_MPX */ 			\
-	"temp",						/* 100 M_TEMP */ 		\
+    "thread"			        /* 100 M_THREAD */ 		\
+	"temp",						/* 101 M_TEMP */ 		\
 }
 
 #endif /* _SYS_MALLOCTYPES_H_ */
