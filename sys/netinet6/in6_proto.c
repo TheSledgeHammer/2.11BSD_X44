@@ -128,7 +128,7 @@ __KERNEL_RCSID(0, "$NetBSD: in6_proto.c,v 1.56 2003/12/04 19:38:24 atatat Exp $"
 
 extern	struct domain inet6domain;
 
-struct protosw inet6sw[] = {
+struct ip6protosw inet6sw[] = {
 		{
 				.pr_type		= 0,
 				.pr_domain		= &inet6domain,
@@ -143,7 +143,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= frag6_slowtimo,
 				.pr_drain		= frag6_drain,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
         {
 				.pr_type		= SOCK_DGRAM,
@@ -159,7 +159,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
         {
 				.pr_type		= SOCK_STREAM,
@@ -182,7 +182,7 @@ struct protosw inet6sw[] = {
 				.pr_slowtimo	= tcp_slowtimo,
 				.pr_drain		= tcp_drain,
 #endif
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
         {
 				.pr_type		= SOCK_RAW,
@@ -198,7 +198,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
         {
 				.pr_type		= SOCK_RAW,
@@ -214,7 +214,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= icmp6_fasttimo,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
         {
 				.pr_type		= SOCK_RAW,
@@ -230,7 +230,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
         {
 				.pr_type		= SOCK_RAW,
@@ -246,7 +246,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
         {
 				.pr_type		= SOCK_RAW,
@@ -262,7 +262,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
 #ifdef IPSEC
         {
@@ -279,7 +279,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
 #ifdef IPSEC_ESP
         {
@@ -296,7 +296,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
 #endif
         {
@@ -313,7 +313,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
 #endif /* IPSEC */
 #ifdef INET
@@ -331,7 +331,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
 #endif
         {
@@ -348,7 +348,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
         {
 				.pr_type		= SOCK_RAW,
@@ -364,7 +364,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
 #ifdef ISO
         {
@@ -381,7 +381,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
 #endif
         /* raw wildcard */
@@ -399,7 +399,7 @@ struct protosw inet6sw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= 0,
+				.pr_wassysctl	= 0,
 		},
 };
 
