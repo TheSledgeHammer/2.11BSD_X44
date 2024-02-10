@@ -568,6 +568,10 @@ thread_run(p, td)
 	splx(s);
 }
 
+/*
+ * Consider changing to return an int.
+ * Would offer better thread control in schedcpu.
+ */
 /* schedule a single thread */
 void
 thread_schedule(p, td)

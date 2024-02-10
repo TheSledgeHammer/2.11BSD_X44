@@ -150,7 +150,7 @@ schedcpu(arg)
 					(p->p_stat == SRUN) &&
 					(p->p_flag & P_INMEM) &&
 					(p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
-				/* schedule threads if any */
+				/* schedule threads if any (should change, inefficient!) */
 				thread_schedcpu(p);
 				if (cfs_schedcpu(p) == 0) {
 					remrq(p);

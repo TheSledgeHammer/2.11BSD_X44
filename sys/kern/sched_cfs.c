@@ -119,7 +119,7 @@
  * 		1. Higher priority weighting equals a lower CPU decay.
  * 		2. Lower priority weighting equals a higher CPU decay.
  */
-#define	loadfactor(loadav)		(2 * (loadav))
+#define	loadfactor(loadav)				(2 * (loadav))
 #define priwfactor(loadav, priweight)   (((2 * (loadav)) / (priweight)) * (priweight))
 #define	decay_cpu(loadfac, cpu)	        (((loadfac) * (cpu)) / ((loadfac) + FSCALE))
 
@@ -293,87 +293,4 @@ fin:
 	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 
 	return (1);
-}
-
-int
-cfs_schedcpu_v1(p)
-	struct proc *p;
-{
-	register struct sched_cfs *cfs;
-	int cpticks;		/* p_cpticks counter (deadline) */
-	u_char slack;		/* slack/laxity time */
-	u_char priw;		/* priority weighting */
-
-	cpticks = 0;
-	slack = p->p_sched->gsc_slack;
-	priw = p->p_sched->gsc_priweight;
-	cfs = sched_cfs(p->p_sched);
-
-	/* add to cfs queue */
-	cfs->cfs_estcpu = cfs_decay(p, priw);
-	cfs->cfs_priweight = priw;
-	sched_estcpu(cfs->cfs_estcpu, p->p_estcpu);
-	RB_INSERT(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
-	/* add to run-queue */
-	setrq(p);
-
-	/* calculate cfs variables */
-	cfs_compute(cfs, slack);
-
-	/* run-through red-black tree */
-	for (p = RB_FIRST(sched_cfs_rbtree, &cfs->cfs_parent)->cfs_proc; p != NULL; p = RB_LEFT(cfs, cfs_entry)->cfs_proc) {
-		/* set cpticks */
-		sched_cpticks(cfs->cfs_cpticks, p->p_cpticks);
-		/* start deadline counter */
-		while (cpticks < cfs->cfs_cpticks) {
-			cpticks++;
-			/* Test if deadline was reached before end of scheduling period */
-			if (cfs->cfs_cpticks == cpticks) {
-				/* test if time doesn't equal the base scheduling period */
-				if (cfs->cfs_time != cfs->cfs_bsched) {
-					goto fin;
-					break;
-				} else {
-					goto out;
-					break;
-				}
-			} else if (cfs->cfs_cpticks != cpticks) {
-				/* test if time equals the base scheduling period */
-				if (cfs->cfs_time == cfs->cfs_bsched) {
-					goto fin;
-					break;
-				} else {
-					goto out;
-					break;
-				}
-			} else {
-				/* SHOULD NEVER REACH THIS POINT!! */
-				/* panic?? */
-				goto out;
-				break;
-			}
-		}
-	}
-
-out:
-	/* update cfs variables */
-	cfs_update(p, cfs->cfs_priweight);
-	/* remove from cfs queue */
-	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
-	/* remove from run-queue */
-	remrq(p);
-	/* deadline reached before completion, reschedule */
-	reschedule(p);
-
-	return (0);
-
-fin:
-	/* update cfs variables */
-	cfs_update(p, cfs->cfs_priweight);
-	/* remove from cfs queue */
-	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
-	/* remove from run-queue */
-	remrq(p);
-
-	return (0);
 }

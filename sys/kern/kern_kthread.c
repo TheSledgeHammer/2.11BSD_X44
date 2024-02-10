@@ -81,7 +81,9 @@ proc_create(newpp)
 	return (0);
 }
 
-/* create a new thread on an existing proc */
+/*
+ * create a new thread on an existing proc
+ */
 int
 newthread(newtd, name, stack, forkproc)
 	struct thread **newtd;
@@ -121,6 +123,7 @@ newthread(newtd, name, stack, forkproc)
 	}
 	return (0);
 }
+
 #ifdef notyet
 /*
  * Fork a kernel thread.  Any process can request this to be done.
@@ -149,6 +152,7 @@ kthread_exit(ecode)
 	thread_exit(ecode);
 }
 #endif
+
 /*
  * Fork a kernel thread.  Any process can request this to be done.
  * The VM space and limits, etc. will be shared with proc0.
