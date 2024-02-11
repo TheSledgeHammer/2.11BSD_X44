@@ -76,22 +76,25 @@ ns_control(so, cmd, data, ifp, p)
 	 * Find address for this interface, if it exists.
 	 */
 	if (ifp)
-		for (ia = ns_ifaddr.tqh_first; ia != 0; ia = ia->ia_list.tqe_next)
-			if (ia->ia_ifp == ifp)
+		for (ia = TAILQ_FIRST(&ns_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
+			if (ia->ia_ifp == ifp) {
 				break;
+			}
+		}
 
 	switch (cmd) {
 
 	case SIOCAIFADDR:
 	case SIOCDIFADDR:
 		if (ifra->ifra_addr.sns_family == AF_NS)
-			for (; ia; ia = ia->ia_list.tqe_next) {
+			for (; ia; ia = TAILQ_NEXT(ia, ia_list)) {
 				if (ia->ia_ifp == ifp  &&
 				    ns_neteq(ia->ia_addr.sns_addr, ifra->ifra_addr.sns_addr))
 					break;
 			}
-		if (cmd == SIOCDIFADDR && ia == 0)
+		if (cmd == SIOCDIFADDR && ia == 0) {
 			return (EADDRNOTAVAIL);
+		}
 		/* FALLTHROUGH */
 	case SIOCSIFADDR:
 	case SIOCSIFDSTADDR:

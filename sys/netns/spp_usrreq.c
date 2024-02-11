@@ -81,13 +81,7 @@ struct spp_istat spp_istat;
 
 /*ARGSUSED*/
 void
-#if __STDC__
 spp_input(struct mbuf *m, ...)
-#else
-spp_input(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	struct nspcb *nsp;
 	struct sppcb *cb;
@@ -265,7 +259,7 @@ spp_input(m, va_alist)
 			    cb->s_rtt = 0;
 		}
 	}
-	if (so->so_options & SO_DEBUG || traceallspps)
+	if ((so->so_options & SO_DEBUG) || traceallspps)
 		spp_trace(SA_INPUT, (u_char)ostate, cb, &spp_savesi, 0);
 
 	m->m_len -= sizeof (struct idp);
@@ -753,13 +747,7 @@ struct nspcb *nsp;
 #endif
 
 int
-#if __STDC__
 spp_output(struct mbuf *m0, ...)
-#else
-spp_output(m0, va_alist)
-	struct mbuf *m0;
-	va_dcl
-#endif
 {
 	struct sppcb *cb = NULL;
 	struct socket *so;
