@@ -45,8 +45,8 @@ __KERNEL_RCSID(0, "$NetBSD: ns_cksum.c,v 1.9 2003/08/07 16:33:45 agc Exp $");
  * code and should be modified for each CPU to be as fast as possible.
  */
 
-#define ADDCARRY(x)  { if ((x) > 65535) (x) -= 65535; }
-#define FOLD(x) {l_util.l = (x); (x) = l_util.s[0] + l_util.s[1]; ADDCARRY(x);}
+#define ADDCARRY(x)  	{ if ((x) > 65535) (x) -= 65535; }
+#define FOLD(x) 		{l_util.l = (x); (x) = l_util.s[0] + l_util.s[1]; ADDCARRY(x);}
 
 u_int16_t
 ns_cksum(m, len)

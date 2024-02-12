@@ -133,7 +133,7 @@ next:
 	nsintr_getpck++;
 	if (m == 0)
 		return;
-	if ((m->m_flags & M_EXT || m->m_len < sizeof (struct idp)) &&
+	if (((m->m_flags & M_EXT) || m->m_len < sizeof (struct idp)) &&
 	    (m = m_pullup(m, sizeof (struct idp))) == 0) {
 		idpstat.idps_toosmall++;
 		goto next;

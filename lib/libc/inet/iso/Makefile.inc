@@ -5,8 +5,8 @@
 #
 #	@(#)Makefile	6.1 (Berkeley) 1/29/86
 #
-.PATH: ${ARCHDIR}/ns ${.CURDIR}/ns
+.PATH: ${ARCHDIR}/inet/iso ${.CURDIR}/inet/iso
 
-SRCS+=	ns_addr.c ns_ntoa.c
+SRCS+=	iso_addr.c iso_ntoa.c
 
-MAN+= 	ns.3
+MAN+= 	iso_addr.3
