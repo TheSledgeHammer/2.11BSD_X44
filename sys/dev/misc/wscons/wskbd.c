@@ -80,9 +80,9 @@
 
 #include <sys/cdefs.h>
 
-#include "opt_evdev.h"
 #include "opt_wsdisplay_compat.h"
 
+#include "evdev.h"
 #include "wsdisplay.h"
 #include "wskbd.h"
 #include "wsmux.h"
@@ -111,7 +111,7 @@
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wscons_callbacks.h>
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
 #endif
@@ -177,12 +177,12 @@ struct wskbd_softc {
 
 	int								sc_refcnt;
 	u_char							sc_dying;			/* device is being detached */
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 	struct evdev_softc				*sc_evsc;			/* pointer to evdev softc */
 #endif
 };
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 static const struct evdev_methods wskbd_evdev_methods = {
 		.ev_cdev = &evdev_cdevsw,
 		.ev_event = evdev_kbd_event,
@@ -227,7 +227,7 @@ static int	wskbd_match(struct device *, struct cfdata *, void *);
 static void	wskbd_attach(struct device *, struct device *, void *);
 static int  wskbd_detach(struct device *, int);
 static int  wskbd_activate(struct device *, enum devact);
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 void		wskbd_evdev_init(struct evdev_softc *, int);
 #endif
 static int  wskbd_displayioctl(struct device *, u_long, caddr_t, int, struct proc *);
@@ -493,12 +493,12 @@ wskbd_attach(parent, self, aux)
 	}
 #endif
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 	wskbd_evdev_init(sc->sc_evsc, sc->sc_ledstate);
 #endif
 }
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 void
 wskbd_evdev_init(sc, ledstate)
 	struct evdev_softc *sc;
@@ -1668,7 +1668,7 @@ wskbd_translate(id, type, value)
 	keysym_t ksym, res, *group;
 	struct wscons_keymap kpbuf, *kp;
 	int iscommand = 0;
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 	struct evdev_softc *evsc = sc->sc_evsc;
     keysym_t scancode;
 #endif
@@ -1791,7 +1791,7 @@ wskbd_translate(id, type, value)
 	switch (KS_GROUP(ksym)) {
 	case KS_GROUP_Ascii:
 		/* right place ??? */
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 		scancode = wskbd_ksym_scancode(ksym);
 			
 		if ((evdev_rcpt_mask & EVDEV_RCPT_WSKBD) && evsc->sc_evdev != NULL) {

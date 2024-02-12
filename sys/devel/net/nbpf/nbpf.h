@@ -72,6 +72,7 @@ typedef union nbpf_icmp 	nbpf_icmp_t;
 typedef void 				nbpf_buf_t;
 typedef void 				nbpf_cache_t;
 typedef struct nbpf_state	nbpf_state_t;
+typedef int 				nbpf_tag_t;
 
 #define	NBPF_MAX_NETMASK	(128)
 #define	NBPF_NO_NETMASK		((nbpf_netmask_t)~0)
@@ -118,6 +119,8 @@ union nbpf_ipv6 {
 struct nbpf_state {
 	/* Information flags. */
 	uint32_t 			nbs_info;
+	/* mbuf tag */
+	nbpf_tag_t			nbs_tag;
 	/* Size (v4 & v6) of IP addresses. */
 	uint8_t				nbs_alen;
 	uint8_t				nbs_hlen;
@@ -150,6 +153,18 @@ nbpf_cache_hlen(const nbpf_state_t *state)
 	return (state->nbs_hlen);
 }
 
+static inline void
+nbpf_set_tag(const nbpf_state_t *state, int tag)
+{
+	state->nbs_tag = tag;
+}
+
+static inline int
+nbpf_get_tag(const nbpf_state_t *state)
+{
+	return (state->nbs_tag);
+}
+
 /* Network buffer interface. */
 void 	*nbpf_dataptr(void *);
 void 	*nbpf_advance(nbpf_buf_t **, void *, u_int);
@@ -158,8 +173,8 @@ int		nbpf_advstore(nbpf_buf_t **, void **, u_int, size_t, void *);
 int		nbpf_fetch_datum(nbpf_buf_t *, void *, size_t, void *);
 int		nbpf_store_datum(nbpf_buf_t *, void *, size_t, void *);
 bool_t	nbpf_cksum_barrier(nbpf_buf_t *, int);
-int		nbpf_add_tag(nbpf_buf_t *, uint32_t, uint32_t);
-int		nbpf_find_tag(nbpf_buf_t *, uint32_t, void **);
+int		nbpf_add_tag(nbpf_state_t *, nbpf_buf_t *, uint32_t, uint32_t);
+int		nbpf_find_tag(nbpf_state_t *, nbpf_buf_t *, uint32_t, void **);
 
 /* Protocol helpers. */
 bool	nbpf_fetch_ipv4(nbpf_state_t *, nbpf_ipv4_t *, nbpf_buf_t *, void *);

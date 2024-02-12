@@ -2,8 +2,6 @@
 #
 # Evdev Protocol Support 
 
-defflag opt_evdev.h EVDEV_SUPPORT
-
 device  evdev
 attach	evdev at wsmousedev with evdev_mouse
 attach	evdev at wskbddev with evdev_kbd

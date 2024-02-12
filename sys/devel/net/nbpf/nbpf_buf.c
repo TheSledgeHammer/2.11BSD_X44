@@ -271,21 +271,21 @@ nbpf_cksum_barrier(nbpf_buf_t *nbuf, int di)
  * => Returns 0 on success, or errno on failure.
  */
 int
-nbpf_add_tag(nbpf_buf_t *nbuf, uint32_t key, uint32_t val)
+nbpf_add_tag(nbpf_state_t *state, nbpf_buf_t *nbuf, uint32_t key, uint32_t val)
 {
 	struct mbuf *m;
 	struct m_tag *mt;
 	uint32_t *dat;
 
 	m = nbuf;
-	mt = m_tag_get(PACKET_TAG_NONE, sizeof(uint32_t), M_NOWAIT);
+	mt = m_tag_get(state->nbs_tag, sizeof(uint32_t), M_NOWAIT);
 	if (__predict_false(mt == NULL)) {
-		return ENOMEM;
+		return (ENOMEM);
 	}
 	dat = (uint32_t *)(mt + 1);
 	*dat = val;
 	m_tag_prepend(m, mt);
-	return 0;
+	return (0);
 }
 
 /*
@@ -294,17 +294,16 @@ nbpf_add_tag(nbpf_buf_t *nbuf, uint32_t key, uint32_t val)
  * => Returns 0 on success, or errno on failure.
  */
 int
-nbpf_find_tag(nbpf_buf_t *nbuf, uint32_t key, void **data)
+nbpf_find_tag(nbpf_state_t *state, nbpf_buf_t *nbuf, uint32_t key, void **data)
 {
 	struct mbuf *m;
 	struct m_tag *mt;
 
 	m = nbuf;
-	mt = m_tag_find(m, PACKET_TAG_NONE, NULL);
+	mt = m_tag_find(m, state->nbs_tag, NULL);
 	if (__predict_false(mt == NULL)) {
 		return EINVAL;
 	}
 	*data = (void *)(mt + 1);
 	return 0;
 }
-

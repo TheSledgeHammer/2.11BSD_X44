@@ -201,7 +201,7 @@ nbpf_risc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 		return (ncode->n);
 	case NBPF_OPCODE_TAG:
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Key, value */
-		if (nbpf_add_tag(nptr, ncode->n, ncode->i)) {
+		if (nbpf_add_tag(state, nptr, ncode->n, ncode->i)) {
 			goto fail;
 		}
 		break;

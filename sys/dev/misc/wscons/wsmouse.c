@@ -76,8 +76,7 @@
 
 #include <sys/cdefs.h>
 
-#include "opt_evdev.h"
-
+#include "evdev.h"
 #include "wsmouse.h"
 #include "wsdisplay.h"
 #include "wsmux.h"
@@ -103,7 +102,7 @@
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wsmuxvar.h>
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
 #endif
@@ -151,7 +150,7 @@ struct wsmouse_softc {
 	int								sc_horiz_scroll_dist;
 	int								sc_vert_scroll_dist;
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 	struct evdev_softc				*sc_evsc;	/* pointer to evdev softc */
 #endif
 };
@@ -166,7 +165,7 @@ static int  wsmouse_get_params(struct wsmouse_softc *, struct wsmouse_param *, s
 static int  wsmouse_handle_params(struct wsmouse_softc *, struct wsmouse_parameters *, bool_t);
 
 static int  wsmouse_do_ioctl(struct wsmouse_softc *, u_long, caddr_t, int, struct proc *);
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 void		evdev_wsmouse_init(struct evdev_softc *);
 void		evdev_wsmouse_write(struct wsmouse_softc *, int, int, int, int);
 #endif
@@ -279,12 +278,12 @@ wsmouse_attach(parent, self, aux)
 #endif
 	printf("\n");
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 	evdev_wsmouse_init(sc->sc_evsc);
 #endif
 }
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 void
 evdev_wsmouse_init(sc)
 	struct evdev_softc *sc;
@@ -555,7 +554,7 @@ wsmouse_input(wsmousedev, btns, x, y, z, flags)
 		}
 	}
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 	evdev_wsmouse_write(sc, x, y, z, btns);
 #endif
 
@@ -747,7 +746,7 @@ error:
 	return error;
 }
 
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 void
 evdev_wsmouse_write(sc, x, y, z, buttons)
 	struct wsmouse_softc *sc;

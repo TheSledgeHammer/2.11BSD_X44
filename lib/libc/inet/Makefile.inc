@@ -17,6 +17,7 @@ SRCS+=	inet_addr.c inet_cidr_ntop.c inet_cidr_pton.c \
 
 # sub-directories inet sources
 .include "${.CURDIR}/inet/iso/Makefile.inc"
+.include "${.CURDIR}/inet/ns/Makefile.inc"
 
 MAN+=		inet.3 inet_net.3
 MLINKS+=	inet_net.3 inet_net_ntop.3 inet_net.3 inet_net_pton.3

@@ -128,11 +128,6 @@ options 		SCSIVERBOSE			# human readable SCSI error messages
 #options 		HDAUDIOVERBOSE		# verbose HDAUDIO driver messages
 
 #
-# evdev options
-#
-#options		EVDEV_SUPPORT
-
-#
 # wscons options
 #
 # builtin terminal emulations

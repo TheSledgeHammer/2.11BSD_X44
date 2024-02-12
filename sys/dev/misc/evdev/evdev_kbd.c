@@ -26,8 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "opt_evdev.h"
-
 #include "evdev.h"
 #include "wsmux.h"
 

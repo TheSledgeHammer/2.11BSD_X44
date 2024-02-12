@@ -134,7 +134,7 @@ nbuf_ensure_contig(nbuf_t *nbuf, size_t len)
 int
 npf_cache_all(nbpf_cache_t *npc, nbuf_t *nbuf)
 {
-	nbpf_state_t *state = npc;
+	nbpf_state_t *state = (nbpf_state_t *)npc;
 
 	return (nbpf_cache_all(state, nbuf));
 }
@@ -142,24 +142,42 @@ npf_cache_all(nbpf_cache_t *npc, nbuf_t *nbuf)
 void
 npf_recache(nbpf_cache_t *npc, nbuf_t *nbuf)
 {
-	nbpf_state_t *state = npc;
+	nbpf_state_t *state = (nbpf_state_t *)npc;
 
 	nbpf_recache(state, nbuf);
 }
 
 /*
- * npf_addr_mask: apply the mask to a given address and store the result.
+ * nbuf_add_tag: add a tag to specified network buffer.
+ *
+ * => Returns 0 on success or errno on failure.
  */
-void
-npf_addr_mask(const npf_addr_t *addr, const npf_netmask_t mask, const int alen, npf_addr_t *out)
+int
+nbuf_add_tag(nbuf_t *nbuf, uint32_t key, uint32_t val)
 {
-	nbpf_ipv6_addr_mask(addr, mask, alen, out);
+	nbpf_state_t *state = (nbpf_state_t *)nbuf;
+
+	nbpf_set_tag(state, PACKET_TAG_NPF);
+	return (nbpf_add_tag(state, nbuf, key, val));
+}
+
+/*
+ * nbuf_find_tag: find a tag in specified network buffer.
+ *
+ * => Returns 0 on success or errno on failure.
+ */
+int
+nbuf_find_tag(nbuf_t *nbuf, uint32_t key, void **data)
+{
+	nbpf_state_t *state = (nbpf_state_t *)nbuf;
+
+	return (nbpf_get_tag(state, nbuf, key, data));
 }
 
 int
 npf_filter(nbpf_cache_t *npc, struct nbpf_insn *pc, nbuf_t *nbuf, int layer)
 {
-	nbpf_state_t *state = npc;
+	nbpf_state_t *state = (nbpf_state_t *)npc;
 
 	return (nbpf_filter(state, pc, nbuf, layer));
 }

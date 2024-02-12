@@ -471,7 +471,7 @@ wsmux_do_ioctl(struct device *dv, u_long cmd, caddr_t data, int flag,
 		case WSMUX_KBD:
 			return (wskbd_add_mux(d->idx, sc));
 #endif
-#ifdef EVDEV_SUPPORT
+#if NEVDEV > 0
 		case WSMUX_EVDEV:
 			return (evdev_add_mux(d->idx, sc));
 #endif
