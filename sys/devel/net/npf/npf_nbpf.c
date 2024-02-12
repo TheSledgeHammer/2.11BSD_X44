@@ -171,7 +171,7 @@ nbuf_find_tag(nbuf_t *nbuf, uint32_t key, void **data)
 {
 	nbpf_state_t *state = (nbpf_state_t *)nbuf;
 
-	return (nbpf_get_tag(state, nbuf, key, data));
+	return (nbpf_find_tag(state, nbuf, key, data));
 }
 
 int
