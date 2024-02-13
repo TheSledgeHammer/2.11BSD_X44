@@ -52,79 +52,7 @@
 
 int	kthread_create_now;
 
-/*
- * [Internal Use Only]: see newthread for use.
- * Use newproc(int isvfork) for forking a proc!
- */
-int
-proc_create(newpp)
-	struct proc **newpp;
-{
-	struct proc *p;
-	register_t 	rval[2];
-	int 		error;
 
-	/* First, create the new process. */
-	error = newproc(0);
-	if (__predict_false(error != 0)) {
-		return (error);
-	}
-
-	if (rval[1]) {
-		p->p_flag |= P_INMEM | P_SYSTEM | P_NOCLDWAIT;
-	}
-
-	if (newpp != NULL) {
-		*newpp = p;
-	}
-
-	return (0);
-}
-
-/*
- * create a new thread on an existing proc
- */
-int
-newthread(newtd, name, stack, forkproc)
-	struct thread **newtd;
-	char *name;
-	size_t stack;
-	bool_t forkproc;
-{
-	struct proc *p;
-	struct thread *td;
-	register_t 	rval[2];
-	int error;
-
-	if (forkproc == TRUE) {
-		/* First, create the new process. */
-		error = proc_create(&p);
-		if (__predict_false(error != 0)) {
-			panic("newthread: proc_create");
-			return (error);
-		}
-	} else {
-		p = curproc;
-	}
-
-	/* allocate and attach a new thread to process */
-	td = thread_alloc(p, stack);
-	thread_add(p, td);
-
-	if (rval[1]) {
-		td->td_flag |= TD_INMEM | TD_SYSTEM;
-	}
-
-	/* Name it as specified. */
-	bcopy(td->td_name, name, MAXCOMLEN);
-
-	if (newtd != NULL) {
-		*newtd = td;
-	}
-	return (0);
-}
-
-#ifdef notyet
 /*
  * Fork a kernel thread.  Any process can request this to be done.
  * The VM space and limits, etc. will be shared with proc0.
@@ -151,8 +79,8 @@ kthread_exit(ecode)
 {
 	thread_exit(ecode);
 }
-#endif
 
+#ifdef notyet
 /*
  * Fork a kernel thread.  Any process can request this to be done.
  * The VM space and limits, etc. will be shared with proc0.
@@ -208,7 +136,7 @@ kthread_exit(ecode)
 
 	for (;;);
 }
-
+#endif
 struct kthread_queue {
 	SIMPLEQ_ENTRY(kthread_queue) 	kq_q;
 	void 							(*kq_func)(void *);

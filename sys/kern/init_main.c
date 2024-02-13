@@ -214,12 +214,12 @@ main(framep)
 	/*
 	 * set up system process 0 (swapper)
 	 */
-    	LIST_INSERT_HEAD(&allproc, p, p_list);
+    LIST_INSERT_HEAD(&allproc, p, p_list);
 	p->p_pgrp = &pgrp0;
 
 	/* set up kernel thread 0 */
-    	LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
-    	td->td_pgrp = &pgrp0;
+	LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+	td->td_pgrp = &pgrp0;
 
 	LIST_INSERT_HEAD(PGRPHASH(0), &pgrp0, pg_hash);
 	LIST_INIT(&pgrp0.pg_mem);
@@ -235,7 +235,6 @@ main(framep)
 	p->p_emul = &emul_211bsd;
 
 	u.u_procp = p;
- 	u.u_threado = td;
 	u.u_ap = u.u_arg;
 	bcopy("swapper", p->p_comm, sizeof ("swapper"));
 

@@ -115,7 +115,6 @@ struct threadlist;
 LIST_HEAD(threadlist, thread);
 
 /* Thread initialization */
-void thread_init(struct proc *, struct thread *);
 void tdqinit(struct proc *, struct thread *);
 void threadinit(struct proc *, struct thread *);
 void thread_rqinit(struct proc *);
@@ -140,6 +139,7 @@ int thread_setpri(struct proc *, struct thread *);
 void thread_setrun(struct proc *, struct thread *);
 void thread_schedule(struct proc *, struct thread *);
 void thread_schedcpu(struct proc *);
+int	 newthread(struct thread **, char *, size_t, bool_t);
 void thread_exit(int);
 
 int thread_tsleep(void *, int, char *, u_short);
