@@ -693,11 +693,29 @@ rn_delete(v_arg, netmask_arg, head)
 	struct radix_node *dupedkey, *saved_tt, *top;
 	caddr_t v, netmask;
 	int b, head_off, vlen;
+#ifdef RADIX_MPATH
+	int mpath_enable = 0;
+#endif
 
 	v = v_arg;
 	netmask = netmask_arg;
 	x = head->rnh_treetop;
+#ifdef RADIX_MPATH
+	if (rn) {
+		tt = rn;
+		/*
+		 * Is this route(rn) a rn->dupedkey chain?
+		 */
+		if (rn_mpath_next(tt->rn_p)) {
+			mpath_enable = 1;
+		} else {
+			tt = rn_search(v, x);
+		}
+	} else
+		tt = rn_search(v, x);
+#else
 	tt = rn_search(v, x);
+#endif
 	head_off = x->rn_off;
 	vlen =  *(u_char *)v;
 	saved_tt = tt;
@@ -793,6 +811,16 @@ on1:
 		}
 		goto out;
 	}
+#ifdef RADIX_MPATH
+	if (mpath_enable) {
+		/*
+		 * my parent dupedkey is NULL
+		 * end of mpath route.
+		 */
+		t->rn_dupedkey = NULL;
+		goto out;
+	}
+#endif
 	if (t->rn_l == tt) x = t->rn_r; else x = t->rn_l;
 	p = t->rn_p;
 	if (p->rn_r == t) p->rn_r = x; else p->rn_l = x;
@@ -917,6 +945,19 @@ rnh_inithead(head, off)
 	return rn_inithead0(rnh, off);
 }
 
+/* For protocols that don't support multipath and/or art */
+#ifdef NS
+
+int
+rn_inithead(head, off)
+	void **head;
+	int off;
+{
+	return (rnh_inithead(head, off));
+}
+
+#else
+
 int
 rn_inithead(head, off)
 	void **head;
@@ -930,6 +971,7 @@ rn_inithead(head, off)
 	return (rnh_inithead(head, off));
 #endif
 }
+#endif
 
 int
 rn_inithead0(rnh, off)

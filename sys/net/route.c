@@ -140,9 +140,18 @@ struct	sockaddr wildcard;	/* zero valued cookie for wildcard searches */
 
 struct callout rt_timer_ch; /* callout for rt_timer_timer() */
 
+/* XXX do these values make any sense? */
+static long rt_cache_max = 32768;
+static long rt_cache_hiwat = 28672; /* 7/8 of max */
+static long rt_cache_lowat = 24576; /* 75% of max */
+
+static int rt_cachetimeout = 3600;	/* should be configurable */
+static struct rttimer_queue *rt_cache_timeout_q = NULL;
+
 static int rtdeletemsg(struct rtentry *);
 static int rtflushclone1(struct radix_node *, void *);
 static void rtflushclone(struct radix_node_head *, struct rtentry *);
+static void rt_draincache(void);
 
 void
 rtable_init(table)
@@ -164,6 +173,8 @@ route_init(void)
 	rn_art_init();
 #endif
 	rtable_init((void **)rt_tables);
+
+	rt_cache_timeout_q = rt_timer_queue_create(rt_cachetimeout);
 }
 
 /*
@@ -568,12 +579,15 @@ rtrequest1(req, info, ret_nrt)
 	struct rt_addrinfo *info;
 	struct rtentry **ret_nrt;
 {
-	int s = splsoftnet(); int error = 0;
+	int s = splsoftnet();
+	int error = 0;
+	int cache = 0;
 	struct rtentry *rt, *crt;
 	struct radix_node *rn;
 	struct radix_node_head *rnh;
 	struct ifaddr *ifa;
 	struct sockaddr *ndst;
+
 #define senderr(x) { error = x ; goto bad; }
 
 	if ((rnh = rt_tables[dst->sa_family]) == 0)
@@ -585,6 +599,18 @@ rtrequest1(req, info, ret_nrt)
 		if ((rn = rnh->rnh_lookup(dst, netmask, rnh)) == 0)
 			senderr(ESRCH);
 		rt = (struct rtentry *)rn;
+#ifdef RADIX_MPATH
+		/*
+		 * if we got multipath routes, we require users to specify
+		 * a matching RTAX_GATEWAY.
+		 */
+		if (rn_mpath_capable(rnh)) {
+			rt = rt_mpath_matchgate(rt, gateway);
+			rn = (struct radix_node *)rt;
+			if (!rt)
+				senderr(ESRCH);
+		}
+#endif
 		if ((rt->rt_flags & RTF_CLONING) != 0) {
 			/* clean up any cloned children */
 			rtflushclone(rnh, rt);
@@ -632,6 +658,18 @@ rtrequest1(req, info, ret_nrt)
 			senderr(error);
 		ifa = info->rti_ifa;
 	makeroute:
+
+		if (cache && rt_cache_max) {
+			unsigned long rtcount;
+
+			rtcount = rt_timer_count(rt_cache_timeout_q);
+			if (rtcount > rt_cache_max) {
+				senderr(ENOBUFS);
+			}
+			if (rtcount > rt_cache_hiwat) {
+				rt_draincache();
+			}
+		}
 		R_Malloc(rt, struct rtentry *, sizeof(*rt));
 		if (rt == 0)
 			senderr(ENOBUFS);
@@ -655,6 +693,20 @@ rtrequest1(req, info, ret_nrt)
 			rt->rt_parent = *ret_nrt;
 			rt->rt_parent->rt_refcnt++;
 		}
+#ifdef RADIX_MPATH
+		/* do not permit exactly the same dst/mask/gw pair */
+		if (rn_mpath_capable(rnh) &&
+		    rt_mpath_conflict(rnh, rt, netmask)) {
+			IFAFREE(ifa);
+			if ((rt->rt_flags & RTF_CLONED) != 0 && rt->rt_parent)
+				rtfree(rt->rt_parent);
+			if (rt->rt_gwroute)
+				rtfree(rt->rt_gwroute);
+			Free(rt_key(rt));
+			pool_put(&rtentry_pool, rt);
+			senderr(EEXIST);
+		}
+#endif
 		rn = rnh->rnh_addaddr((caddr_t)ndst, (caddr_t)netmask,
 		    rnh, rt->rt_nodes);
 		if (rn == NULL && (crt = rtalloc1(ndst, 0)) != NULL) {
@@ -685,6 +737,9 @@ rtrequest1(req, info, ret_nrt)
 		if ((rt->rt_flags & RTF_CLONING) != 0) {
 			/* clean up any cloned children */
 			rtflushclone(rnh, rt);
+		}
+		if (cache) {
+			rt_add_cache(rt, NULL);
 		}
 		break;
 	}
@@ -1053,6 +1108,94 @@ rt_timer_timer(arg)
 	splx(s);
 
 	callout_reset(&rt_timer_ch, hz, rt_timer_timer, NULL);
+}
+
+void
+rt_add_cache(rt, func)
+	struct rtentry *rt;
+	void(*func)(struct rtentry *, struct rttimer *);
+{
+	struct rttimer *r;
+
+	/*
+	 * check if we already have a cache timer entry associated to the
+	 * route.
+	 */
+	for (r = LIST_FIRST(&rt->rt_timer); r != NULL;
+	     r = LIST_NEXT(r, rtt_link)) {
+		if (r->rtt_queue == rt_cache_timeout_q)
+			return;	/* we already have one.  do nothing. */
+	}
+
+	rt_timer_add(rt, func, rt_cache_timeout_q);
+
+	/* TODO: adjust timeout based on the number of entries */
+}
+
+static void
+rt_draincache()
+{
+	int s, again = 0;
+	struct rttimer *r, *r_next;
+	long rtcount;
+
+	s = splsoftnet();
+
+#if 0				/* for debug */
+	printf("rt_draincache: purge cache entries from %ld", rt_cache_timeout_q->rtq_count);
+#endif
+
+  again:
+	rtcount = rt_cache_timeout_q->rtq_count;
+
+	/* First, make entries that do not have references expire. */
+	for (r = TAILQ_FIRST(&rt_cache_timeout_q->rtq_head); r; r = r_next) {
+		r_next = TAILQ_NEXT(r, rtt_next);
+
+		if (r->rtt_rt->rt_refcnt <= 0) {
+			TAILQ_REMOVE(&rt_cache_timeout_q->rtq_head, r, rtt_next);
+			r->rtt_time = 0;
+			TAILQ_INSERT_HEAD(&rt_cache_timeout_q->rtq_head, r, rtt_next);
+		}
+
+		/*
+		 * At the first attempt, we try to limit the number of entries
+		 * being dropped so that entries won't shrink too much beyond
+		 * the lower limit.
+		 */
+		if (!again && --rtcount < rt_cache_lowat)
+			break;
+	}
+
+	/* then perform expiration.  XXX code borrowed from rt_timer_timer() */
+	while ((r = TAILQ_FIRST(&rt_cache_timeout_q->rtq_head)) != NULL && (r->rtt_time == 0)) {
+		LIST_REMOVE(r, rtt_link);
+		TAILQ_REMOVE(&rt_cache_timeout_q->rtq_head, r, rtt_next);
+		RTTIMER_CALLOUT(r);
+		Free(r);
+		if (rt_cache_timeout_q->rtq_count > 0)
+			rt_cache_timeout_q->rtq_count--;
+		else
+			printf("rt_draincache: rtq_count reached 0\n");
+	}
+
+	/*
+	 * if we cannot purge enough entries, do it again with a more
+	 * aggressive policy.
+	 */
+	rtcount = rt_cache_timeout_q->rtq_count;
+	if (!again && rtcount > rt_cache_hiwat) {
+#if 0
+		printf("...to %ld (not enough)...", rtcount);
+#endif
+		again = 1;
+		goto again;
+	}
+#if 0
+	printf(" to %ld\n", rtcount);
+#endif
+
+	splx(s);
 }
 
 struct radix_node_head *

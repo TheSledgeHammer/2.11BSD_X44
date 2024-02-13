@@ -162,13 +162,7 @@ extern struct pfil_head inet_pfil_hook;			/* XXX */
  * The mbuf opt, if present, will not be freed.
  */
 int
-#if __STDC__
 ip_output(struct mbuf *m0, ...)
-#else
-ip_output(m0, va_alist)
-	struct mbuf *m0;
-	va_dcl
-#endif
 {
 	struct ip *ip;
 	struct ifnet *ifp;
@@ -288,7 +282,11 @@ ip_output(m0, va_alist)
 		IFP_TO_IA(ifp, ia);
 	} else {
 		if (ro->ro_rt == 0)
+#ifdef RADIX_MPATH
+			rtalloc_mpath(ro, ntohl(ip->ip_src.s_addr ^ ip->ip_dst.s_addr));
+#else
 			rtalloc(ro);
+#endif
 		if (ro->ro_rt == 0) {
 			ipstat.ips_noroute++;
 			error = EHOSTUNREACH;

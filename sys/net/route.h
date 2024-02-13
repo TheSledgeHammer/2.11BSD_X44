@@ -324,6 +324,7 @@ void	 rt_timer_queue_destroy(struct rttimer_queue *, int);
 void	 rt_timer_remove_all(struct rtentry *, int);
 unsigned long	rt_timer_count(struct rttimer_queue *);
 void	rt_timer_timer(void *);
+void	rt_add_cache(struct rtentry *, void(*)(struct rtentry *, struct rttimer *));
 void	rtable_init(void **);
 void	rtalloc(struct route *);
 struct 	rtentry *rtalloc1(struct sockaddr *, int);

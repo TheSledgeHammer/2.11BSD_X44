@@ -53,6 +53,9 @@ __KERNEL_RCSID(0, "$NetBSD: nd6_nbr.c,v 1.53 2004/02/10 20:57:20 itojun Exp $");
 #include <net/if_types.h>
 #include <net/if_dl.h>
 #include <net/route.h>
+#ifdef RADIX_MPATH
+#include <net/radix_mpath.h>
+#endif
 
 #include <netinet/in.h>
 #include <netinet/in_var.h>
@@ -202,13 +205,22 @@ nd6_ns_input(m, off, icmp6len)
 	if (!ifa) {
 		struct rtentry *rt;
 		struct sockaddr_in6 tsin6;
+#ifdef RADIX_MPATH
+		struct route_in6 ro;
+#endif /* RADIX_MPATH */
 
 		bzero(&tsin6, sizeof tsin6);
 		tsin6.sin6_len = sizeof(struct sockaddr_in6);
 		tsin6.sin6_family = AF_INET6;
 		tsin6.sin6_addr = taddr6;
-
+#ifdef RADIX_MPATH
+		bzero(&ro, sizeof(ro));
+		ro.ro_dst = tsin6;
+		rtalloc_mpath((struct route *)&ro, RTF_ANNOUNCE);
+		rt = ro.ro_rt;
+#else /* RADIX_MPATH */
 		rt = rtalloc1((struct sockaddr *)&tsin6, 0);
+#endif /* RADIX_MPATH */
 		if (rt && (rt->rt_flags & RTF_ANNOUNCE) != 0 &&
 		    rt->rt_gateway->sa_family == AF_LINK) {
 			/*
