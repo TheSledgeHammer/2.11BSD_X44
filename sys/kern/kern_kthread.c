@@ -52,7 +52,7 @@
 
 int	kthread_create_now;
 
-
+#ifdef notyet
 /*
  * Fork a kernel thread.  Any process can request this to be done.
  * The VM space and limits, etc. will be shared with proc0.
@@ -79,8 +79,7 @@ kthread_exit(ecode)
 {
 	thread_exit(ecode);
 }
-
-#ifdef notyet
+#endif
 /*
  * Fork a kernel thread.  Any process can request this to be done.
  * The VM space and limits, etc. will be shared with proc0.
@@ -136,7 +135,7 @@ kthread_exit(ecode)
 
 	for (;;);
 }
-#endif
+
 struct kthread_queue {
 	SIMPLEQ_ENTRY(kthread_queue) 	kq_q;
 	void 							(*kq_func)(void *);
