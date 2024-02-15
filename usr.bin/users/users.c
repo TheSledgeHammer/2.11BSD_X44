@@ -1,7 +1,7 @@
-/*	$NetBSD: colrm.c,v 1.6 2003/08/07 11:13:25 agc Exp $	*/
+/*	$NetBSD: users.c,v 1.17 2016/09/05 00:40:30 sevan Exp $	*/
 
-/*-
- * Copyright (c) 1991, 1993
+/*
+ * Copyright (c) 1980, 1987, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,111 +31,80 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
-__COPYRIGHT("@(#) Copyright (c) 1991, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n");
+__COPYRIGHT("@(#) Copyright (c) 1980, 1987, 1993\
+ The Regents of the University of California.  All rights reserved.");
 #endif /* not lint */
 
 #ifndef lint
 #if 0
-static char sccsid[] = "@(#)colrm.c	8.2 (Berkeley) 5/4/95";
+static char sccsid[] = "@(#)users.c	8.1 (Berkeley) 6/6/93";
 #endif
-__RCSID("$NetBSD: colrm.c,v 1.6 2003/08/07 11:13:25 agc Exp $");
+__RCSID("$NetBSD: users.c,v 1.17 2016/09/05 00:40:30 sevan Exp $");
 #endif /* not lint */
 
 #include <sys/types.h>
 
 #include <err.h>
-#include <errno.h>
-#include <limits.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#define	TAB	8
-
-void	check(FILE *);
-int	main(int, char **);
-void	usage(void);
+#include "utmpentry.h"
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char **argv)
 {
-	u_long column, start, stop;
+	int ncnt = 0;
 	int ch;
-	char *p;
+	struct utmpentry *from, *ehead, *save, **nextp;
 
 	while ((ch = getopt(argc, argv, "")) != -1)
 		switch(ch) {
 		case '?':
 		default:
-			usage();
+			(void)fprintf(stderr, "usage: %s\n", getprogname());
+			exit(1);
 		}
 	argc -= optind;
 	argv += optind;
 
-	start = stop = 0;
-	switch(argc) {
-	case 2:
-		stop = strtol(argv[1], &p, 10);
-		if (stop <= 0 || *p)
-			errx(1, "illegal column -- %s", argv[1]);
-		/* FALLTHROUGH */
-	case 1:
-		start = strtol(argv[0], &p, 10);
-		if (start <= 0 || *p)
-			errx(1, "illegal column -- %s", argv[0]);
-		break;
-	case 0:
-		break;
-	default:
-		usage();
+	ncnt = getutentries(NULL, &ehead);
+
+	if (ncnt == 0)
+		return 0;
+
+	/*
+	 * XXX the utmp list belongs to getutentries and we shouldn't
+	 * sort it in place. Since we don't call endutentries and we
+	 * don't call getutentries again it doesn't matter, but it's
+	 * untidy. Maybe give getutentries a sort function? It has to
+	 * sort anyway if it's merging utmp and utmpx data.
+	 */
+
+	from = ehead;
+	ehead = NULL;
+	while (from != NULL) {
+		for (nextp = &ehead;
+		    (*nextp) && strcmp(from->name, (*nextp)->name) > 0;
+		    nextp = &(*nextp)->next)
+			continue;
+		save = from;
+		from = from->next;
+		save->next = *nextp;
+		*nextp = save;
 	}
 
-	if (stop && start > stop)
-		err(1, "illegal start and stop columns");
+	save = ehead;
+	(void)printf("%s", ehead->name);
 
-	for (column = 0;;) {
-		switch (ch = getchar()) {
-		case EOF:
-			check(stdin);
-			break;
-		case '\b':
-			if (column)
-				--column;
-			break;
-		case '\n':
-			column = 0;
-			break;
-		case '\t':
-			column = (column + TAB) & ~(TAB - 1);
-			break;
-		default:
-			++column;
-			break;
+	for (from = ehead->next; from; from = from->next)
+		if (strcmp(save->name, from->name) != 0) {
+			(void)printf(" %s", from->name);
+			save = from;
 		}
 
-		if ((!start || column < start || (stop && column > stop)) &&
-		    putchar(ch) == EOF)
-			check(stdout);
-	}
-}
-
-void
-check(stream)
-	FILE *stream;
-{
-	if (feof(stream))
-		exit(0);
-	if (ferror(stream))
-		err(1, "%s", stream == stdin ? "stdin" : "stdout");
-}
-
-void
-usage()
-{
-	(void)fprintf(stderr, "usage: colrm [start [stop]]\n");
-	exit(1);
+	(void)printf("\n");
+	exit(0);
 }

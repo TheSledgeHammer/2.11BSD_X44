@@ -6,9 +6,9 @@
 SUBDIR= apply ar asa at 											\
 		banner basename bzip2 bzip2recover							\
 		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
-		compress crontab crunch ctags 								\
+		compress crontab crunch ctags cut 								\
 		db 															\
-		elf2aout elf2ecoff 											\
+		elf2aout elf2ecoff env											\
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
 		hexdump 													\
         iostat                                                      \
@@ -21,9 +21,9 @@ SUBDIR= apply ar asa at 											\
 		rpcgen rpcinfo												\
 		script sed shar sort sortinfo stat strfile 					\
 		time tip touch tsort 										\
-		unstr uudecode uuencode 									\
-		vmstat vgrind 												\
-		wall wc what whereis who whois write 						\
+		uname users unstr uudecode uuencode 						\
+		vgrind vis vmstat 											\
+		w wall wc what whereis who whois write 						\
 		xargs xinstall xlint xstr
 												
 SUBDIR+= ../contrib/zlib/pigz/bin/pigz
@@ -48,6 +48,10 @@ SUBDIR+= gzip
 
 .if (${MKHESIOD} != "no")
 SUBDIR+= hesinfo
+.endif
+
+.if (${MKSKEY} != "no")
+SUBDIR+= skey skeyinfo skeyinit
 .endif
 
 .if (${MKYP} != "no")

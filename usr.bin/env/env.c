@@ -1,7 +1,6 @@
-/*	$NetBSD: colrm.c,v 1.6 2003/08/07 11:13:25 agc Exp $	*/
-
-/*-
- * Copyright (c) 1991, 1993
+/*	$NetBSD: env.c,v 1.23 2020/02/08 11:02:07 kamil Exp $	*/
+/*
+ * Copyright (c) 1988, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,111 +30,84 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
-__COPYRIGHT("@(#) Copyright (c) 1991, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n");
+__COPYRIGHT("@(#) Copyright (c) 1988, 1993, 1994\
+ The Regents of the University of California.  All rights reserved.");
 #endif /* not lint */
 
 #ifndef lint
-#if 0
-static char sccsid[] = "@(#)colrm.c	8.2 (Berkeley) 5/4/95";
-#endif
-__RCSID("$NetBSD: colrm.c,v 1.6 2003/08/07 11:13:25 agc Exp $");
+/*static char sccsid[] = "@(#)env.c	8.3 (Berkeley) 4/2/94";*/
+__RCSID("$NetBSD: env.c,v 1.23 2020/02/08 11:02:07 kamil Exp $");
 #endif /* not lint */
 
-#include <sys/types.h>
-
 #include <err.h>
-#include <errno.h>
-#include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <locale.h>
+#include <errno.h>
 
-#define	TAB	8
+static void usage(void) __dead;
 
-void	check(FILE *);
-int	main(int, char **);
-void	usage(void);
+extern char **environ;
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char **argv)
 {
-	u_long column, start, stop;
+	char **ep, term;
+	char *cleanenv[1];
 	int ch;
-	char *p;
 
-	while ((ch = getopt(argc, argv, "")) != -1)
-		switch(ch) {
+	setprogname(*argv);
+	(void)setlocale(LC_ALL, "");
+
+	term = '\n';
+	while ((ch = getopt(argc, argv, "-0iu:")) != -1)
+		switch((char)ch) {
+		case '0':
+			term = '\0';
+			break;
+		case '-':			/* obsolete */
+		case 'i':
+			environ = cleanenv;
+			cleanenv[0] = NULL;
+			break;
+		case 'u':
+			if (unsetenv(optarg) == -1)
+				errx(EXIT_FAILURE, "unsetenv %s", optarg);
+			break;
 		case '?':
 		default:
 			usage();
 		}
-	argc -= optind;
-	argv += optind;
 
-	start = stop = 0;
-	switch(argc) {
-	case 2:
-		stop = strtol(argv[1], &p, 10);
-		if (stop <= 0 || *p)
-			errx(1, "illegal column -- %s", argv[1]);
-		/* FALLTHROUGH */
-	case 1:
-		start = strtol(argv[0], &p, 10);
-		if (start <= 0 || *p)
-			errx(1, "illegal column -- %s", argv[0]);
-		break;
-	case 0:
-		break;
-	default:
-		usage();
+	for (argv += optind; *argv && strchr(*argv, '=') != NULL; ++argv)
+		(void)putenv(*argv);
+
+	if (*argv) {
+		/* return 127 if the command to be run could not be found; 126
+		   if the command was found but could not be invoked; 125 if
+		   -0 was specified with utility.*/
+
+		if (term == '\0')
+			errx(125, "cannot specify command with -0");
+
+		(void)execvp(*argv, argv);
+		err((errno == ENOENT) ? 127 : 126, "%s", *argv);
+		/* NOTREACHED */
 	}
 
-	if (stop && start > stop)
-		err(1, "illegal start and stop columns");
+	for (ep = environ; *ep; ep++)
+		(void)printf("%s%c", *ep, term);
 
-	for (column = 0;;) {
-		switch (ch = getchar()) {
-		case EOF:
-			check(stdin);
-			break;
-		case '\b':
-			if (column)
-				--column;
-			break;
-		case '\n':
-			column = 0;
-			break;
-		case '\t':
-			column = (column + TAB) & ~(TAB - 1);
-			break;
-		default:
-			++column;
-			break;
-		}
-
-		if ((!start || column < start || (stop && column > stop)) &&
-		    putchar(ch) == EOF)
-			check(stdout);
-	}
+	exit(0);
 }
 
-void
-check(stream)
-	FILE *stream;
+static void
+usage(void)
 {
-	if (feof(stream))
-		exit(0);
-	if (ferror(stream))
-		err(1, "%s", stream == stdin ? "stdin" : "stdout");
-}
-
-void
-usage()
-{
-	(void)fprintf(stderr, "usage: colrm [start [stop]]\n");
+	(void)fprintf(stderr,
+	    "Usage: %s [-0i] [-u name] [name=value ...] [command]\n",
+	    getprogname());
 	exit(1);
 }

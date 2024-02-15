@@ -69,13 +69,7 @@ struct	sockaddr_ns idp_ns = { sizeof(idp_ns), AF_NS };
  *  This may also be called for raw listeners.
  */
 void
-#if __STDC__
 idp_input(struct mbuf *m, ...)
-#else
-idp_input(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	struct nspcb *nsp;
 	struct idp *idp = mtod(m, struct idp *);
@@ -157,13 +151,7 @@ idp_drop(nsp, errno)
 }
 
 int
-#if __STDC__
 idp_output(struct mbuf *m0, ...)
-#else
-idp_output(m0, va_alist)
-	struct mbuf *m0;
-	va_dcl
-#endif
 {
 	struct nspcb *nsp;
 	struct mbuf *m;
