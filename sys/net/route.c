@@ -703,7 +703,7 @@ rtrequest1(req, info, ret_nrt)
 			if (rt->rt_gwroute)
 				rtfree(rt->rt_gwroute);
 			Free(rt_key(rt));
-			pool_put(&rtentry_pool, rt);
+			Free(rt);
 			senderr(EEXIST);
 		}
 #endif

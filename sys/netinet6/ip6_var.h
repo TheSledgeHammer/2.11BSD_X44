@@ -275,6 +275,7 @@ int	route6_input(struct mbuf **, int *, int);
 
 void	frag6_init(void);
 int	frag6_input(struct mbuf **, int *, int);
+int	ip6_reass_packet(struct mbuf **, int);
 void	frag6_slowtimo(void);
 void	frag6_drain(void);
 

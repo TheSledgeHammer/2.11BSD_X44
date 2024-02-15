@@ -2021,8 +2021,7 @@ in6ifa_ifpwithaddr(ifp, addr)
 {
 	struct ifaddr *ifa;
 
-	for (ifa = ifp->if_addrlist.tqh_first; ifa; ifa = ifa->ifa_list.tqe_next)
-	{
+	for (ifa = TAILQ_FIRST(ifp->if_addrlist); ifa != 0; ifa = TAILQ_NEXT(ifa, ifa_list)) {
 		if (ifa->ifa_addr == NULL)
 			continue;	/* just for safety */
 		if (ifa->ifa_addr->sa_family != AF_INET6)

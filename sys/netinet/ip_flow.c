@@ -64,8 +64,6 @@ __KERNEL_RCSID(0, "$NetBSD: ip_flow.c,v 1.27 2003/12/12 21:17:59 scw Exp $");
 #include <netinet/in_var.h>
 #include <netinet/ip_var.h>
 
-struct pool ipflow_pool;
-
 LIST_HEAD(ipflowhead, ipflow);
 
 #define	IPFLOW_TIMER		(5 * PR_SLOWHZ)
@@ -134,8 +132,9 @@ ipflow_init()
 	    NULL);
 
 	LIST_INIT(&ipflowlist);
-	for (i = 0; i < IPFLOW_HASHSIZE; i++)
+	for (i = 0; i < IPFLOW_HASHSIZE; i++) {
 		LIST_INIT(&ipflowtable[i]);
+	}
 }
 
 int
@@ -300,7 +299,7 @@ ipflow_free(
 	ipflow_addstats(ipf);
 	RTFREE(ipf->ipf_ro.ro_rt);
 	ipflow_inuse--;
-	pool_put(&ipflow_pool, ipf);
+	free(ipf, M_IPFLOW);
 }
 
 struct ipflow *
@@ -345,7 +344,8 @@ ipflow_reap(
 		RTFREE(ipf->ipf_ro.ro_rt);
 		if (just_one)
 			return ipf;
-		pool_put(&ipflow_pool, ipf);
+		free(ipf, M_IPFLOW);
+
 		ipflow_inuse--;
 	}
 	return NULL;
@@ -398,7 +398,7 @@ ipflow_create(
 		if (ipflow_inuse >= ip_maxflows) {
 			ipf = ipflow_reap(1);
 		} else {
-			ipf = pool_get(&ipflow_pool, PR_NOWAIT);
+			ipf = (struct ipflow *)malloc(sizeof(struct ipflow), M_IPFLOW, M_NOWAIT);
 			if (ipf == NULL)
 				return;
 			ipflow_inuse++;

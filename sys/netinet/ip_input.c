@@ -1006,12 +1006,12 @@ DPRINTF(("ip_input: no SP, packet discarded\n"));/*XXX*/
 		ia->ia_ifa.ifa_data.ifad_inbytes += ntohs(ip->ip_len);
 #endif
 	ipstat.ips_delivered++;
-    {
-	int off = hlen, nh = ip->ip_p;
+	{
+		int off = hlen, nh = ip->ip_p;
 
-	(*inetsw[ip_protox[nh]].pr_input)(m, off, nh);
-	return;
-    }
+		(*inetsw[ip_protox[nh]].pr_input)(m, off, nh);
+		return;
+	}
 bad:
 	m_freem(m);
 	return;
@@ -1038,6 +1038,7 @@ ip_reass(ipqe, fp, ipqhead)
 	struct ip *ip;
 	struct mbuf *t;
 	int hlen = ipqe->ipqe_ip->ip_hl << 2;
+	int ipsecflags = m->m_flags & (M_DECRYPTED|M_AUTHIPHDR);
 	int i, next;
 
 	IPQ_LOCK_CHECK();
@@ -1073,19 +1074,23 @@ ip_reass(ipqe, fp, ipqhead)
 		 * If maxfrag is 0, never accept fragments.
 		 * If maxfrag is -1, accept all fragments without limitation.
 		 */
-		if (ip_maxfragpackets < 0)
+		if (ip_maxfragpackets < 0) {
 			;
-		else if (ip_nfragpackets >= ip_maxfragpackets)
+		} else if (ip_nfragpackets >= ip_maxfragpackets) {
 			goto dropfrag;
+		}
 		ip_nfragpackets++;
 		MALLOC(fp, struct ipq *, sizeof (struct ipq), M_FTABLE, M_NOWAIT);
-		if (fp == NULL)
+		if (fp == NULL) {
 			goto dropfrag;
+		}
 		LIST_INSERT_HEAD(ipqhead, fp, ipq_q);
 		fp->ipq_nfrags = 1;
 		fp->ipq_ttl = IPFRAGTTL;
 		fp->ipq_p = ipqe->ipqe_ip->ip_p;
 		fp->ipq_id = ipqe->ipqe_ip->ip_id;
+		fp->ipq_tos = ip->ip_tos;
+		fp->ipq_ipsec = ipsecflags;
 		TAILQ_INIT(&fp->ipq_fragq);
 		fp->ipq_src = ipqe->ipqe_ip->ip_src;
 		fp->ipq_dst = ipqe->ipqe_ip->ip_dst;
@@ -1098,10 +1103,16 @@ ip_reass(ipqe, fp, ipqhead)
 	/*
 	 * Find a segment which begins after this one does.
 	 */
-	for (p = NULL, q = TAILQ_FIRST(&fp->ipq_fragq); q != NULL;
-	    p = q, q = TAILQ_NEXT(q, ipqe_q))
-		if (ntohs(q->ipqe_ip->ip_off) > ntohs(ipqe->ipqe_ip->ip_off))
+	for (p = NULL, q = TAILQ_FIRST(&fp->ipq_fragq); q != NULL; p = q, q = TAILQ_NEXT(q, ipqe_q)) {
+		if (ntohs(q->ipqe_ip->ip_off) > ntohs(ipqe->ipqe_ip->ip_off)) {
 			break;
+		}
+	}
+	if (q != NULL) {
+		p = TAILQ_PREV(q, ipqehead, ipqe_q);
+	} else {
+		p = TAILQ_LAST(&fp->ipq_fragq, ipqehead);
+	}
 
 	/*
 	 * If there is a preceding segment, it may provide some of
@@ -1164,6 +1175,7 @@ insert:
 			return (0);
 		next += ntohs(q->ipqe_ip->ip_len);
 	}
+	p = TAILQ_LAST(&fp->ipq_fragq, ipqehead);
 	if (p->ipqe_mff)
 		return (0);
 
@@ -1212,6 +1224,7 @@ insert:
 		for (t = m; t; t = t->m_next)
 			plen += t->m_len;
 		m->m_pkthdr.len = plen;
+		m->m_pkthdr.csum_flags = 0;
 	}
 	return (m);
 
@@ -1322,13 +1335,129 @@ ip_reass_drophalf(void)
 
 }
 
+void
+ip_reass_drain(void)
+{
+	ip_drain();
+}
+
+void
+ip_reass_slowtimo(void)
+{
+	ip_slowtimo();
+}
+
+/*
+ * ip_reass_packet: generic routine to perform IP reassembly.
+ *
+ * => Passed fragment should have IP_MF flag and/or offset set.
+ * => Fragment should not have other than IP_MF flags set.
+ *
+ * => Returns 0 on success or error otherwise.
+ * => On complete, m0 represents a constructed final packet.
+ */
+int
+ip_reass_packet(m0, ip)
+	struct mbuf **m0;
+	struct ip *ip;
+{
+	struct mbuf *m = *m0;
+	//struct ip *ip = mtod(m, struct ip *);
+	const int hlen = ip->ip_hl << 2;
+	const int len = ntohs(ip->ip_len);
+	int ipsecflags = m->m_flags & (M_DECRYPTED|M_AUTHIPHDR);
+	struct ipq *fp;
+	struct ipqent *ipqe;
+	struct ipqhead *ipqhead;
+	u_int hash, off, flen;
+	bool mff;
+
+
+	/*
+	 * Prevent TCP blind data attacks by not allowing non-initial
+	 * fragments to start at less than 68 bytes (minimal fragment
+	 * size) and making sure the first fragment is at least 68
+	 * bytes.
+	 */
+	off = (ntohs(ip->ip_off) & IP_OFFMASK) << 3;
+	if ((off > 0 ? off + hlen : len) < IP_MINFRAGSIZE - 1) {
+		ipstat.ips_badfrags++;
+		return EINVAL;
+	}
+	if (off + len > IP_MAXPACKET) {
+		ipstat.ips_toolong++;
+		return EINVAL;
+	}
+
+	/*
+	 * Fragment length and MF flag.  Make sure that fragments have
+	 * a data length which is non-zero and multiple of 8 bytes.
+	 */
+	flen = ntohs(ip->ip_len) - hlen;
+	mff = (ip->ip_off & htons(IP_MF)) != 0;
+	if (mff && (flen == 0 || (flen & 0x7) != 0)) {
+		ipstat.ips_badfrags++;
+		return EINVAL;
+	}
+
+	/* Look for queue of fragments of this datagram. */
+	hash = IPREASS_HASH(ip->ip_src.s_addr, ip->ip_id);
+	LIST_FOREACH(fp, &ipq[hash], ipq_q) {
+		if (ip->ip_id != fp->ipq_id)
+			continue;
+		if (!in_hosteq(ip->ip_src, fp->ipq_src))
+			continue;
+		if (!in_hosteq(ip->ip_dst, fp->ipq_dst))
+			continue;
+		if (ip->ip_p != fp->ipq_p)
+			continue;
+		break;
+	}
+
+	if (fp) {
+		/* All fragments must have the same IPsec flags. */
+		if (fp->ipq_ipsec != ipsecflags) {
+			ipstat.ips_badfrags++;
+			return EINVAL;
+		}
+
+		/* Make sure that TOS matches previous fragments. */
+		if (fp->ipq_tos != ip->ip_tos) {
+			ipstat.ips_badfrags++;
+			return EINVAL;
+		}
+	}
+
+	/*
+	 * Create new entry and attempt to reassembly.
+	 */
+	ipstat.ips_fragments++;
+	MALLOC(ipqe, struct ipqent *, sizeof (struct ipqent), M_FTABLE, M_NOWAIT);
+	if (ipqe == NULL) {
+		ipstat.ips_rcvmemdrop++;
+		return ENOMEM;
+	}
+	ipqe->ipqe_mff = mff;
+	ipqe->ipqe_m = m;
+	ipqe->ipqe_ip = ip;
+	ipqe->ipqe_ip->ip_off = off;
+	ipqe->ipqe_len = flen;
+
+	*m0 = ip_reass(ipqe, fp, hash);
+	if (*m0) {
+		/* Note that finally reassembled. */
+		ipstat.ips_reassembled++;
+	}
+	return (0);
+}
+
 /*
  * IP timer processing;
  * if a timer expires on a reassembly
  * queue, discard it.
  */
 void
-ip_slowtimo()
+ip_slowtimo(void)
 {
 	static u_int dropscanidx = 0;
 	u_int i;
@@ -1385,7 +1514,7 @@ ip_slowtimo()
  * Drain off all datagram fragments.
  */
 void
-ip_drain()
+ip_drain(void)
 {
 
 	/*

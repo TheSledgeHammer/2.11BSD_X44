@@ -66,9 +66,10 @@ struct ipqent {
 		struct ip	*_ip;
 		struct tcpiphdr *_tcp;
 	} _ipqe_u1;
-	struct mbuf	*ipqe_m;	/* point to first mbuf */
+	struct mbuf	*ipqe_m;		/* point to first mbuf */
 	struct mbuf	*ipre_mlast;	/* point to last mbuf */
-	u_int8_t	ipqe_mff;	/* for IP fragmentation */
+	u_int8_t	ipqe_mff;		/* for IP fragmentation */
+
 	/*
 	 * The following are used in TCP reassembly
 	 */
@@ -87,13 +88,16 @@ struct ipqent {
  * be reclaimed if memory becomes tight.
  */
 struct ipq {
-	LIST_ENTRY(ipq) ipq_q;		/* to other reass headers */
-	u_int8_t  ipq_ttl;		/* time for reass q to live */
-	u_int8_t  ipq_p;		/* protocol of this fragment */
-	u_int16_t ipq_id;		/* sequence id for reassembly */
+	LIST_ENTRY(ipq) ipq_q;			/* to other reass headers */
+	u_int8_t  ipq_ttl;				/* time for reass q to live */
+	u_int8_t  ipq_p;				/* protocol of this fragment */
+	u_int16_t ipq_id;				/* sequence id for reassembly */
 	struct	  ipqehead ipq_fragq;	/* to ip fragment queue */
-	struct	  in_addr ipq_src, ipq_dst;
-	u_int16_t ipq_nfrags;		/* frags in this queue entry */
+	struct	  in_addr ipq_src;
+	struct	  in_addr ipq_dst;
+	u_int16_t ipq_nfrags;			/* frags in this queue entry */
+	uint8_t	  ipq_tos;				/* TOS of this fragment */
+	int		  ipq_ipsec;			/* IPsec flags */
 };
 
 /*
@@ -181,7 +185,7 @@ struct ipflow {
 #define	IP_RETURNMTU		0x4		/* pass back mtu on EMSGSIZE */
 #define	IP_ROUTETOIF		SO_DONTROUTE	/* bypass routing tables */
 #define	IP_ALLOWBROADCAST	SO_BROADCAST	/* can send broadcast packets */
-#define	IP_MTUDISC		0x0400		/* Path MTU Discovery; set DF */
+#define	IP_MTUDISC			0x0400		/* Path MTU Discovery; set DF */
 
 #ifdef __NO_STRICT_ALIGNMENT
 #define	IP_HDR_ALIGNED_P(ip)	1
@@ -221,6 +225,7 @@ int	 ip_fragment(struct mbuf *, struct ifnet *, u_long);
 int	 ip_pcbopts(struct mbuf **, struct mbuf *);
 struct mbuf *
 	 ip_reass(struct ipqent *, struct ipq *, struct ipqhead *);
+int  ip_reass_packet(struct mbuf **, struct ip *);
 struct in_ifaddr *
 	 ip_rtaddr(struct in_addr);
 void	 ip_savecontrol(struct inpcb *, struct mbuf **, struct ip *,

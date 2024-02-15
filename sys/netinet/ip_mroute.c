@@ -1591,13 +1591,7 @@ encap_send(ip, vifp, m)
  * De-encapsulate a packet and feed it back through ip input.
  */
 static void
-#if __STDC__
 vif_input(struct mbuf *m, ...)
-#else
-vif_input(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	int off, proto;
 	va_list ap;

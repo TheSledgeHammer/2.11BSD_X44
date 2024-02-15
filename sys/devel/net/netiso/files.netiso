@@ -1,0 +1,29 @@
+#	$NetBSD: files.netiso,v 1.4 2007/01/11 00:00:41 cube Exp $
+
+defflag opt_iso.h		ISO 	# ISO network stack
+defflag					EON		# # ISO clnp over IP
+
+
+file	netiso/clnp_debug.c		iso
+file	netiso/clnp_er.c		iso
+file	netiso/clnp_frag.c		iso
+file	netiso/clnp_input.c		iso
+file	netiso/clnp_options.c	iso
+file	netiso/clnp_output.c	iso
+file	netiso/clnp_raw.c		iso
+file	netiso/clnp_subr.c		iso
+file	netiso/clnp_timer.c		iso
+file	netiso/cltp_usrreq.c	iso
+
+file	netiso/esis.c			iso
+file	netiso/isis.c			iso
+file	netiso/idrp_usrreq.c	iso
+file	netiso/if_eon.c			eon
+
+file	netiso/iso.c			iso
+file	netiso/iso_chksum.c		iso
+file	netiso/iso_pcb.c		iso
+file	netiso/iso_proto.c		iso
+file	netiso/iso_snpac.c		iso
+
+file	netiso/tp_iso.c			iso

@@ -68,6 +68,7 @@ struct ip {
 };
 
 #define	IP_MAXPACKET	65535		/* maximum packet size */
+#define	IP_MINFRAGSIZE	69			/* minimum size that can be fraged */
 
 /*
  * Definitions for IP type of service (ip_tos)

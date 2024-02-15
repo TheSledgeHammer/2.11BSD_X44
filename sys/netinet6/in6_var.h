@@ -357,7 +357,7 @@ struct	in6_rrenumreq {
 #define IA6_MASKIN6(ia)	(&((ia)->ia_prefixmask.sin6_addr))
 #define IA6_SIN6(ia)	(&((ia)->ia_addr))
 #define IA6_DSTSIN6(ia)	(&((ia)->ia_dstaddr))
-#define IFA_IN6(x)	(&((struct sockaddr_in6 *)((x)->ifa_addr))->sin6_addr)
+#define IFA_IN6(x)		(&((struct sockaddr_in6 *)((x)->ifa_addr))->sin6_addr)
 #define IFA_DSTIN6(x)	(&((struct sockaddr_in6 *)((x)->ifa_dstaddr))->sin6_addr)
 
 #ifdef _KERNEL

@@ -175,7 +175,7 @@ nbuf_find_tag(nbuf_t *nbuf, uint32_t key, void **data)
 }
 
 int
-npf_filter(nbpf_cache_t *npc, struct nbpf_insn *pc, nbuf_t *nbuf, int layer)
+npf_filter(npf_cache_t *npc, struct nbpf_insn *pc, nbuf_t *nbuf, int layer)
 {
 	nbpf_state_t *state = (nbpf_state_t *)npc;
 

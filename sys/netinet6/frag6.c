@@ -601,6 +601,18 @@ insert:
 	return IPPROTO_DONE;
 }
 
+int
+ip6_reass_packet(mp, offset)
+	struct mbuf **mp;
+	int offset;
+{
+	if (frag6_input(mp, &offset, IPPROTO_IPV6) == IPPROTO_DONE) {
+		*mp = NULL;
+		return EINVAL;
+	}
+	return 0;
+}
+
 /*
  * Free a fragment reassembly header and all
  * associated datagrams.

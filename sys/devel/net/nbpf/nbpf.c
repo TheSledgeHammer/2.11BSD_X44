@@ -90,7 +90,7 @@ nbpf_recache(nbpf_state_t *state, nbpf_buf_t *nbuf)
 	KASSERT((flags & mflags) == mflags);
 }
 
-/*
+
 int
 nbpf_reassembly(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
 {
@@ -117,4 +117,3 @@ nbpf_reassembly(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
 	}
 	return (0);
 }
-*/
