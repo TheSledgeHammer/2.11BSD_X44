@@ -74,7 +74,7 @@ struct sockaddr_dl {
 				     contains both if name and ll address */
 };
 
-#define LLADDR(s) 		((caddr_t)((s)->sdl_data + (s)->sdl_nlen))
+#define LLADDR(s) 	((caddr_t)((s)->sdl_data + (s)->sdl_nlen))
 #define LLADDRLEN(s) 	((s)->sdl_alen + (s)->sdl_nlen)
 #define	LLSAPADDR(s) 	((s)->sdl_data[LLADDRLEN(s)-1] & 0xff)
 #define LLSAPLOC(s, if) ((s)->sdl_nlen + (if)->if_addrlen)
