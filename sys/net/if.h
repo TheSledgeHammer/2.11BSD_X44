@@ -218,7 +218,12 @@ struct ifnet {							/* and the entries */
 	struct pfil_head 	if_pfil;				/* filtering point */
 	uint64_t 			if_capabilities;		/* interface capabilities */
 	uint64_t 			if_capenable;			/* capabilities enabled */
-
+	union {
+		void 			*carp_s;				/* carp structure (used by !carp ifs) */
+		struct ifnet	*carp_d;				/* ptr to carpdev (used by carp ifs) */
+	} if_carp_ptr;
+#define if_carp			if_carp_ptr.carp_s
+#define if_carpdev		if_carp_ptr.carp_d
 	/*
 	 * These are pre-computed based on an interfaces enabled
 	 * capabilities, for speed elsewhere.
@@ -232,6 +237,7 @@ struct ifnet {							/* and the entries */
 	 * pf specific data
 	 */
 	void 			*if_pf_groups; /* [N] list of groups per if */
+	//TAILQ_HEAD(ifg_list_head, ifg_list) if_pf_groups; /* [N] list of groups per if */
 };
 #define	if_mtu			if_data.ifi_mtu
 #define	if_type			if_data.ifi_type

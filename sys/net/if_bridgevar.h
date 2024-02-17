@@ -303,15 +303,13 @@ extern const uint8_t bstp_etheraddr[];
 
 void	bridge_ifdetach(struct ifnet *);
 
-int	bridge_output(struct ifnet *, struct mbuf *, struct sockaddr *,
-	    struct rtentry *);
+int	bridge_output(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
 struct mbuf *bridge_input(struct ifnet *, struct mbuf *);
 
 void	bstp_initialization(struct bridge_softc *);
 void	bstp_stop(struct bridge_softc *);
 struct mbuf *bstp_input(struct ifnet *, struct mbuf *);
 
-void	bridge_enqueue(struct bridge_softc *, struct ifnet *, struct mbuf *,
-	    int);
+void	bridge_enqueue(struct bridge_softc *, struct ifnet *, struct mbuf *, int);
 
 #endif /* _KERNEL */

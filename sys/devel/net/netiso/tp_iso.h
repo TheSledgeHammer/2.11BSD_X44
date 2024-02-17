@@ -93,13 +93,12 @@ struct mbuf;
 struct sockaddr;
 
 /* tp_iso.c */
-void iso_getsufx(void *, u_short *, caddr_t, int);
-void iso_putsufx(void *, caddr_t, int, int);
-void iso_recycle_tsuffix(void *);
-void iso_putnetaddr(void *, struct sockaddr *, int);
-int iso_cmpnetaddr(void *, struct sockaddr *, int);
-void iso_getnetaddr(void *, struct mbuf *, int);
-void iso_rtchange(struct isopcb *);
-
+void 	iso_getsufx(void *, u_short *, caddr_t, int);
+void 	iso_putsufx(void *, caddr_t, int, int);
+void 	iso_recycle_tsuffix(void *);
+void 	iso_putnetaddr(void *, struct sockaddr *, int);
+int 	iso_cmpnetaddr(void *, struct sockaddr *, int);
+void 	iso_getnetaddr(void *, struct mbuf *, int);
+void 	iso_rtchange(struct isopcb *);
 #endif
 #endif /* _NETISO_TP_ISO_H_ */

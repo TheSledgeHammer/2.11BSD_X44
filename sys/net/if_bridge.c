@@ -105,7 +105,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_bridge.c,v 1.22.2.1.4.2 2006/02/12 16:29:54 tron 
 #include <net/if_bridgevar.h>
 #include <net/radix.h>
 
-#ifdef BRIDGE_IPF /* Used for bridge_ip[6]_checkbasic */
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
@@ -114,7 +113,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_bridge.c,v 1.22.2.1.4.2 2006/02/12 16:29:54 tron 
 #include <netinet/ip6.h>
 #include <netinet6/in6_var.h>
 #include <netinet6/ip6_var.h>
-#endif /* BRIDGE_IPF */
 
 /*
  * Size of the route hash table.  Must be a power of two.
@@ -161,7 +159,7 @@ int	bridge_rtable_prune_period = BRIDGE_RTABLE_PRUNE_PERIOD;
 
 void	bridgeattach(int);
 
-int	bridge_clone_create(struct if_clone *, int);
+int		bridge_clone_create(struct if_clone *, int);
 void	bridge_clone_destroy(struct ifnet *);
 
 int	bridge_ioctl(struct ifnet *, u_long, caddr_t);
@@ -175,8 +173,7 @@ void	bridge_timer(void *);
 
 void	bridge_broadcast(struct bridge_softc *, struct ifnet *, struct mbuf *);
 
-int	bridge_rtupdate(struct bridge_softc *, const uint8_t *,
-	    struct ifnet *, int, uint8_t);
+int	bridge_rtupdate(struct bridge_softc *, const uint8_t *, struct ifnet *, int, uint8_t);
 struct ifnet *bridge_rtlookup(struct bridge_softc *, const uint8_t *);
 void	bridge_rttrim(struct bridge_softc *);
 void	bridge_rtage(struct bridge_softc *);
@@ -187,15 +184,12 @@ void	bridge_rtdelete(struct bridge_softc *, struct ifnet *ifp);
 int	bridge_rtable_init(struct bridge_softc *);
 void	bridge_rtable_fini(struct bridge_softc *);
 
-struct bridge_rtnode *bridge_rtnode_lookup(struct bridge_softc *,
-	    const uint8_t *);
+struct bridge_rtnode *bridge_rtnode_lookup(struct bridge_softc *, const uint8_t *);
 int	bridge_rtnode_insert(struct bridge_softc *, struct bridge_rtnode *);
 void	bridge_rtnode_destroy(struct bridge_softc *, struct bridge_rtnode *);
 
-struct bridge_iflist *bridge_lookup_member(struct bridge_softc *,
-	    const char *name);
-struct bridge_iflist *bridge_lookup_member_if(struct bridge_softc *,
-	    struct ifnet *ifp);
+struct bridge_iflist *bridge_lookup_member(struct bridge_softc *, const char *name);
+struct bridge_iflist *bridge_lookup_member_if(struct bridge_softc *, struct ifnet *ifp);
 void	bridge_delete_member(struct bridge_softc *, struct bridge_iflist *);
 
 int	bridge_ioctl_add(struct bridge_softc *, void *);
@@ -221,7 +215,6 @@ int	bridge_ioctl_gma(struct bridge_softc *, void *);
 int	bridge_ioctl_sma(struct bridge_softc *, void *);
 int	bridge_ioctl_sifprio(struct bridge_softc *, void *);
 int	bridge_ioctl_sifcost(struct bridge_softc *, void *);
-#ifdef BRIDGE_IPF
 int	bridge_ioctl_gfilt(struct bridge_softc *, void *);
 int	bridge_ioctl_sfilt(struct bridge_softc *, void *);
 static int bridge_ipf(void *, struct mbuf **, struct ifnet *, int);
@@ -229,7 +222,6 @@ static int bridge_ip_checkbasic(struct mbuf **mp);
 # ifdef INET6
 static int bridge_ip6_checkbasic(struct mbuf **mp);
 # endif /* INET6 */
-#endif /* BRIDGE_IPF */
 
 struct bridge_control {
 	int	(*bc_func)(struct bridge_softc *, void *);
@@ -238,7 +230,7 @@ struct bridge_control {
 };
 
 #define	BC_F_COPYIN		0x01	/* copy arguments in */
-#define	BC_F_COPYOUT		0x02	/* copy arguments out */
+#define	BC_F_COPYOUT	0x02	/* copy arguments out */
 #define	BC_F_SUSER		0x04	/* do super-user check */
 
 const struct bridge_control bridge_control_table[] = {
@@ -301,12 +293,11 @@ const struct bridge_control bridge_control_table[] = {
 
 	{ bridge_ioctl_sifcost,		sizeof(struct ifbreq),
 	  BC_F_COPYIN|BC_F_SUSER },
-#ifdef BRIDGE_IPF
+
 	{ bridge_ioctl_gfilt,		sizeof(struct ifbrparam),
 	  BC_F_COPYOUT },
 	{ bridge_ioctl_sfilt,		sizeof(struct ifbrparam),
 	  BC_F_COPYIN|BC_F_SUSER },
-#endif /* BRIDGE_IPF */
 };
 const int bridge_control_table_size =
     sizeof(bridge_control_table) / sizeof(bridge_control_table[0]);
@@ -982,7 +973,7 @@ bridge_ioctl_sifprio(struct bridge_softc *sc, void *arg)
 	return (0);
 }
 
-#ifdef BRIDGE_IPF
+
 int
 bridge_ioctl_gfilt(struct bridge_softc *sc, void *arg)
 {
@@ -1018,7 +1009,6 @@ bridge_ioctl_sfilt(struct bridge_softc *sc, void *arg)
 
 	return (0);
 }
-#endif /* BRIDGE_IPF */
 
 int
 bridge_ioctl_sifcost(struct bridge_softc *sc, void *arg)
@@ -1913,7 +1903,6 @@ bridge_rtnode_destroy(struct bridge_softc *sc, struct bridge_rtnode *brt)
 	Free(brt);
 }
 
-#ifdef BRIDGE_IPF
 extern struct pfil_head inet_pfil_hook;                 /* XXX */
 extern struct pfil_head inet6_pfil_hook;                /* XXX */
 
@@ -1938,17 +1927,17 @@ bridge_ipf(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 	/*
 	 * Check for SNAP/LLC.
 	 */
-        if (ether_type < ETHERMTU) { 
-                struct llc *llc = (struct llc *)(eh1 + 1);
-                            
-                if ((*mp)->m_len >= ETHER_HDR_LEN + 8 &&
-                    llc->llc_dsap == LLC_SNAP_LSAP &&
-                    llc->llc_ssap == LLC_SNAP_LSAP &&
-                    llc->llc_control == LLC_UI) {
-                	ether_type = htons(llc->llc_un.type_snap.ether_type);
+	if (ether_type < ETHERMTU) {
+		struct llc *llc = (struct llc*) (eh1 + 1);
+
+		if ((*mp)->m_len >= ETHER_HDR_LEN + 8&&
+		llc->llc_dsap == LLC_SNAP_LSAP &&
+		llc->llc_ssap == LLC_SNAP_LSAP &&
+		llc->llc_control == LLC_UI) {
+			ether_type = htons(llc->llc_un.type_snap.ether_type);
 			snap = 1;
-                }
-        }       
+		}
+	}
 
 	/*
 	 * If we're trying to filter bridge traffic, don't look at anything
@@ -1960,16 +1949,16 @@ bridge_ipf(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 	 * ARP traffic.)
 	 */
 	switch (ether_type) {
-		case ETHERTYPE_ARP:
-		case ETHERTYPE_REVARP:
-			return 0; /* Automatically pass */
-		case ETHERTYPE_IP:
+	case ETHERTYPE_ARP:
+	case ETHERTYPE_REVARP:
+		return 0; /* Automatically pass */
+	case ETHERTYPE_IP:
 # ifdef INET6
 		case ETHERTYPE_IPV6:
 # endif /* INET6 */
-			break;
-		default:
-			goto bad;
+		break;
+	default:
+		goto bad;
 	}
 
 	/* Strip off the Ethernet header and keep a copy. */
@@ -1985,9 +1974,8 @@ bridge_ipf(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 	/*
 	 * Check basic packet sanity and run IPF through pfil.
 	 */
-	switch (ether_type)
-	{
-	case ETHERTYPE_IP :
+	switch (ether_type) {
+	case ETHERTYPE_IP:
 		error = (dir == PFIL_IN) ? bridge_ip_checkbasic(mp) : 0;
 		if (error == 0)
 			error = pfil_run_hooks(&inet_pfil_hook, mp, ifp, dir);
@@ -1998,8 +1986,8 @@ bridge_ipf(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 		if (error == 0)
 			error = pfil_run_hooks(&inet6_pfil_hook, mp, ifp, dir);
 		break;
-# endif
-	default :
+#endif
+	default:
 		error = 0;
 		break;
 	}
@@ -2057,20 +2045,20 @@ bridge_ip_checkbasic(struct mbuf **mp)
 		return -1;
 
 	if (IP_HDR_ALIGNED_P(mtod(m, caddr_t)) == 0) {
-		if ((m = m_copyup(m, sizeof(struct ip),
-			(max_linkhdr + 3) & ~3)) == NULL) {
+		if ((m = m_copyup(m, sizeof(struct ip), (max_linkhdr + 3) & ~3)) == NULL) {
 			/* XXXJRT new stat, please */
 			ipstat.ips_toosmall++;
 			goto bad;
 		}
-	} else if (__predict_false(m->m_len < sizeof (struct ip))) {
-		if ((m = m_pullup(m, sizeof (struct ip))) == NULL) {
+	} else if (__predict_false(m->m_len < sizeof(struct ip))) {
+		if ((m = m_pullup(m, sizeof(struct ip))) == NULL) {
 			ipstat.ips_toosmall++;
 			goto bad;
-		} 
+		}
 	}
-	ip = mtod(m, struct ip *);
-	if (ip == NULL) goto bad;
+	ip = mtod(m, struct ip*);
+	if (ip == NULL)
+		goto bad;
 
 	if (ip->ip_v != IPVERSION) {
 		ipstat.ips_badvers++;
@@ -2086,50 +2074,51 @@ bridge_ip_checkbasic(struct mbuf **mp)
 			ipstat.ips_badhlen++;
 			goto bad;
 		}
-		ip = mtod(m, struct ip *);
-		if (ip == NULL) goto bad;
+		ip = mtod(m, struct ip*);
+		if (ip == NULL)
+			goto bad;
 	}
 
-        switch (m->m_pkthdr.csum_flags &
-                ((m->m_pkthdr.rcvif->if_csum_flags_rx & M_CSUM_IPv4) |
-                 M_CSUM_IPv4_BAD)) {
-        case M_CSUM_IPv4|M_CSUM_IPv4_BAD:
-                /* INET_CSUM_COUNTER_INCR(&ip_hwcsum_bad); */
-                goto bad;
+	switch (m->m_pkthdr.csum_flags
+			& ((m->m_pkthdr.rcvif->if_csum_flags_rx & M_CSUM_IPv4) |
+			M_CSUM_IPv4_BAD)) {
+	case M_CSUM_IPv4 | M_CSUM_IPv4_BAD:
+		/* INET_CSUM_COUNTER_INCR(&ip_hwcsum_bad); */
+		goto bad;
 
-        case M_CSUM_IPv4:
-                /* Checksum was okay. */
-                /* INET_CSUM_COUNTER_INCR(&ip_hwcsum_ok); */
-                break;
+	case M_CSUM_IPv4:
+		/* Checksum was okay. */
+		/* INET_CSUM_COUNTER_INCR(&ip_hwcsum_ok); */
+		break;
 
-        default:
-                /* Must compute it ourselves. */
-                /* INET_CSUM_COUNTER_INCR(&ip_swcsum); */
-                if (in_cksum(m, hlen) != 0)
-                        goto bad;
-                break;
-        }
+	default:
+		/* Must compute it ourselves. */
+		/* INET_CSUM_COUNTER_INCR(&ip_swcsum); */
+		if (in_cksum(m, hlen) != 0)
+			goto bad;
+		break;
+	}
 
-        /* Retrieve the packet length. */
-        len = ntohs(ip->ip_len);
+	/* Retrieve the packet length. */
+	len = ntohs(ip->ip_len);
 
-        /*
-         * Check for additional length bogosity
-         */
-        if (len < hlen) {
-                ipstat.ips_badlen++;
-                goto bad;
-        }
+	/*
+	 * Check for additional length bogosity
+	 */
+	if (len < hlen) {
+		ipstat.ips_badlen++;
+		goto bad;
+	}
 
-        /*
-         * Check that the amount of data in the buffers
-         * is as at least much as the IP header would have us expect.
-         * Drop packet if shorter than we expect.
-         */
-        if (m->m_pkthdr.len < len) {
-                ipstat.ips_tooshort++;
-                goto bad;
-        }
+	/*
+	 * Check that the amount of data in the buffers
+	 * is as at least much as the IP header would have us expect.
+	 * Drop packet if shorter than we expect.
+	 */
+	if (m->m_pkthdr.len < len) {
+		ipstat.ips_tooshort++;
+		goto bad;
+	}
 
 	/* Checks out, proceed */
 	*mp = m;
@@ -2152,37 +2141,37 @@ bridge_ip6_checkbasic(struct mbuf **mp)
 	struct mbuf *m = *mp;
 	struct ip6_hdr *ip6;
 
-        /*
-         * If the IPv6 header is not aligned, slurp it up into a new
-         * mbuf with space for link headers, in the event we forward
-         * it.  Otherwise, if it is aligned, make sure the entire base
-         * IPv6 header is in the first mbuf of the chain.
-         */
-        if (IP6_HDR_ALIGNED_P(mtod(m, caddr_t)) == 0) {
-                struct ifnet *inifp = m->m_pkthdr.rcvif;
-                if ((m = m_copyup(m, sizeof(struct ip6_hdr),
-                                  (max_linkhdr + 3) & ~3)) == NULL) {
-                        /* XXXJRT new stat, please */
-                        ip6stat.ip6s_toosmall++;
-                        in6_ifstat_inc(inifp, ifs6_in_hdrerr);
-                        goto bad;
-                }
-        } else if (__predict_false(m->m_len < sizeof(struct ip6_hdr))) {
-                struct ifnet *inifp = m->m_pkthdr.rcvif;
-                if ((m = m_pullup(m, sizeof(struct ip6_hdr))) == NULL) {
-                        ip6stat.ip6s_toosmall++;
-                        in6_ifstat_inc(inifp, ifs6_in_hdrerr);
-                        goto bad;
-                }
-        }
+	/*
+	 * If the IPv6 header is not aligned, slurp it up into a new
+	 * mbuf with space for link headers, in the event we forward
+	 * it.  Otherwise, if it is aligned, make sure the entire base
+	 * IPv6 header is in the first mbuf of the chain.
+	 */
+	if (IP6_HDR_ALIGNED_P(mtod(m, caddr_t)) == 0) {
+		struct ifnet *inifp = m->m_pkthdr.rcvif;
+		if ((m = m_copyup(m, sizeof(struct ip6_hdr), (max_linkhdr + 3) & ~3))
+				== NULL) {
+			/* XXXJRT new stat, please */
+			ip6stat.ip6s_toosmall++;
+			in6_ifstat_inc(inifp, ifs6_in_hdrerr);
+			goto bad;
+		}
+	} else if (__predict_false(m->m_len < sizeof(struct ip6_hdr))) {
+		struct ifnet *inifp = m->m_pkthdr.rcvif;
+		if ((m = m_pullup(m, sizeof(struct ip6_hdr))) == NULL) {
+			ip6stat.ip6s_toosmall++;
+			in6_ifstat_inc(inifp, ifs6_in_hdrerr);
+			goto bad;
+		}
+	}
 
-        ip6 = mtod(m, struct ip6_hdr *);
+	ip6 = mtod(m, struct ip6_hdr*);
 
-        if ((ip6->ip6_vfc & IPV6_VERSION_MASK) != IPV6_VERSION) {
-                ip6stat.ip6s_badvers++;
-                in6_ifstat_inc(m->m_pkthdr.rcvif, ifs6_in_hdrerr);
-                goto bad;
-        }
+	if ((ip6->ip6_vfc & IPV6_VERSION_MASK) != IPV6_VERSION) {
+		ip6stat.ip6s_badvers++;
+		in6_ifstat_inc(m->m_pkthdr.rcvif, ifs6_in_hdrerr);
+		goto bad;
+	}
 
 	/* Checks out, proceed */
 	*mp = m;
@@ -2193,4 +2182,3 @@ bridge_ip6_checkbasic(struct mbuf **mp)
 	return -1;
 }
 # endif /* INET6 */
-#endif /* BRIDGE_IPF */

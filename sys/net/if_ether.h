@@ -149,6 +149,7 @@ struct ethercom {
 	int	ec_capabilities;		/* capabilities, provided by driver */
 	int	ec_capenable;			/* tells hardware which capabilities to enable */
 
+	//SIMPLEQ_HEAD(, vlanid_list) ec_vids;	/* list of VLAN IDs */
 	int	ec_nvlans;				/* # VLANs on this interface */
 };
 

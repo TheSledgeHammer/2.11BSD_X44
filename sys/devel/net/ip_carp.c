@@ -61,7 +61,6 @@ __KERNEL_RCSID(0, "$NetBSD: ip_carp.c,v 1.26.10.2 2009/06/09 17:31:46 snj Exp $"
 #include <net/if_ether.h>
 #include <net/route.h>
 #include <net/netisr.h>
-//#include <net/net_stats.h>
 #include <netinet/if_inarp.h>
 
 #include <machine/stdarg.h>
@@ -79,7 +78,6 @@ __KERNEL_RCSID(0, "$NetBSD: ip_carp.c,v 1.26.10.2 2009/06/09 17:31:46 snj Exp $"
 #include <netinet/in_var.h>
 #include <netinet/ip.h>
 #include <netinet/ip_var.h>
-
 #include <net/if_dl.h>
 #endif
 
@@ -89,6 +87,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_carp.c,v 1.26.10.2 2009/06/09 17:31:46 snj Exp $"
 #include <netinet6/ip6_var.h>
 #include <netinet6/nd6.h>
 #include <netinet6/scope6_var.h>
+#include <netinet6/in6_var.h>
 #endif
 
 #include "bpfilter.h"
@@ -98,7 +97,9 @@ __KERNEL_RCSID(0, "$NetBSD: ip_carp.c,v 1.26.10.2 2009/06/09 17:31:46 snj Exp $"
 
 #include <sys/sha1.h>
 
-#include "../devel/net/ip_carp.h"
+#include <netinet/ip_carp.h>
+
+#include "ioconf.h"
 
 struct carp_mc_entry {
 	LIST_ENTRY(carp_mc_entry)	mc_entries;
@@ -378,7 +379,7 @@ carp_setroute(struct carp_softc *sc, int cmd)
 			(void)rtrequest(RTM_GET, ifa->ifa_addr, ifa->ifa_addr,
 			    ifa->ifa_netmask, RTF_HOST, &rt);
 			hr_otherif = (rt && rt->rt_ifp != &sc->sc_if &&
-			    rt->rt_flags & (RTF_CLONING|RTF_CLONED));
+			    (rt->rt_flags & (RTF_CLONING|RTF_CLONED)));
 			if (rt != NULL) {
 				RTFREE(rt);
 				rt = NULL;
@@ -590,13 +591,15 @@ carp_proto_input_c(struct mbuf *m, struct carp_header *ch, sa_family_t af)
 	u_int64_t tmp_counter;
 	struct timeval sc_tv, ch_tv;
 
-	TAILQ_FOREACH(sc, &((struct carp_if *)
-	    m->m_pkthdr.rcvif->if_carpdev->if_carp)->vhif_vrs, sc_list)
-		if (sc->sc_vhid == ch->carp_vhid)
+	TAILQ_FOREACH(sc, &((struct carp_if *)m->m_pkthdr.rcvif->if_carpdev->if_carp)->vhif_vrs, sc_list) {
+		if (sc->sc_vhid == ch->carp_vhid) {
 			break;
+		}
+	}
 
-	if (!sc || (sc->sc_if.if_flags & (IFF_UP|IFF_RUNNING)) !=
-	    (IFF_UP|IFF_RUNNING)) {
+	if (!sc
+			|| (sc->sc_if.if_flags & (IFF_UP | IFF_RUNNING))
+					!= (IFF_UP | IFF_RUNNING)) {
 		CARP_STATINC(CARP_STAT_BADVHID);
 		m_freem(m);
 		return;
@@ -2131,8 +2134,7 @@ carp_ether_addmulti(struct carp_softc *sc, struct ifreq *ifr)
 	 * about it.  Also, remember this multicast address so that
 	 * we can delete them on unconfigure.
 	 */
-	MALLOC(mc, struct carp_mc_entry *, sizeof(struct carp_mc_entry),
-	    M_DEVBUF, M_NOWAIT);
+	MALLOC(mc, struct carp_mc_entry *, sizeof(struct carp_mc_entry), M_DEVBUF, M_NOWAIT);
 	if (mc == NULL) {
 		error = ENOMEM;
 		goto alloc_failed;
@@ -2239,6 +2241,7 @@ carp_ether_purgemulti(struct carp_softc *sc)
 	}
 }
 
+#ifdef notyet
 static int
 sysctl_net_inet_carp_stats(SYSCTLFN_ARGS)
 {
@@ -2302,3 +2305,4 @@ SYSCTL_SETUP(sysctl_net_inet_carp_setup, "sysctl net.inet.carp subtree setup")
 		       CTL_NET, PF_INET, IPPROTO_CARP, CARPCTL_STATS,
 		       CTL_EOL);
 }
+#endif

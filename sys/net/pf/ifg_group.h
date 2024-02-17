@@ -36,6 +36,7 @@
 #define _NET_IFG_GROUP_H_
 
 #include <sys/queue.h>
+//#include <net/if.h>
 
 /*
  * interface groups
@@ -64,7 +65,6 @@ struct ifg_list {
 };
 
 TAILQ_HEAD(ifg_list_head, ifg_list);
-
 struct ifg_req {
 	union {
 		char			 ifgrqu_group[IFNAMSIZ];

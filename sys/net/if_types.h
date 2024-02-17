@@ -263,4 +263,7 @@
 #define IFT_FAITH	0xf2
 #define IFT_PFLOG	0xf5		/* Packet filter logging */
 #define IFT_PFSYNC	0xf6		/* Packet filter state syncing */
+#define IFT_CARP	0xf8		/* Common Address Redundancy Protocol */
+#define IFT_IPSEC	0xf9		/* IPsec I/F */
+#define IFT_MBIM	0xfa		/* Mobile Broadband Interface Model */
 #endif /* _NET_IF_TYPES_H_ */

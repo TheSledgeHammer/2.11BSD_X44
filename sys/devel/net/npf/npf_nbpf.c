@@ -171,6 +171,8 @@ nbuf_find_tag(nbuf_t *nbuf, uint32_t key, void **data)
 {
 	nbpf_state_t *state = (nbpf_state_t *)nbuf;
 
+	KASSERT(nbpf_get_tag(state) == PACKET_TAG_NPF);
+
 	return (nbpf_find_tag(state, nbuf, key, data));
 }
 

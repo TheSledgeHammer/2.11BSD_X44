@@ -122,7 +122,7 @@ __KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $")
 #include <netipsec/key.h>
 #endif	/* FAST_IPSEC */
 
-#ifdef NSIP
+#ifdef NSIP > 0
 #include <netns/ns_var.h>
 #include <netns/idp_var.h>
 #endif /* NSIP */
@@ -130,6 +130,11 @@ __KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $")
 #include "gre.h"
 #if NGRE > 0
 #include <netinet/ip_gre.h>
+#endif
+
+//#include "carp.h"
+#if NCARP > 0
+#include <netinet/ip_carp.h>
 #endif
 
 extern	struct domain inetdomain;
@@ -401,7 +406,43 @@ struct protosw inetsw[] = {
 				.pr_drain		= 0,
 				.pr_sysctl		= NULL,
 		},
-#ifdef NSIP
+#if NCARP > 0
+		{
+				.pr_type		= SOCK_RAW,
+				.pr_domain		= &inetdomain,
+				.pr_protocol 	= IPPROTO_CARP,
+				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+				.pr_input 		= carp_proto_input,
+				.pr_output		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput	= rip_ctloutput,
+				.pr_usrreq		= rip_usrreq,
+				.pr_init		= 0,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
+				.pr_sysctl		= NULL,
+		},
+#endif /* NCARP > 0 */
+#if NPFSYNC > 0
+		{
+				.pr_type		= SOCK_RAW,
+				.pr_domain		= &inetdomain,
+				.pr_protocol 	= IPPROTO_PFSYNC,
+				.pr_flags		= PR_ATOMIC|PR_ADDR,
+				.pr_input 		= pfsync_input,
+				.pr_output		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput	= rip_ctloutput,
+				.pr_usrreq		= rip_usrreq,
+				.pr_init		= 0,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
+				.pr_sysctl		= NULL,
+		},
+#endif /* NPFSYNC > 0 */
+#ifdef NSIP > 0
 		{
 				.pr_type		= SOCK_RAW,
 				.pr_domain		= &inetdomain,
@@ -418,8 +459,7 @@ struct protosw inetsw[] = {
 				.pr_drain		= 0,
 				.pr_sysctl		= NULL,
 		},
-#endif /* NSIP */
-/* raw wildcard */
+#endif /* NSIP > 0 */
 		{
 				.pr_type		= SOCK_RAW,
 				.pr_domain		= &inetdomain,
