@@ -195,11 +195,13 @@ in6_embedscope(in6, sin6, in6p, ifpp)
 	 * don't try to read sin6->sin6_addr beyond here, since the caller may
 	 * ask us to overwrite existing sockaddr_in6
 	 */
-
+	
+#ifdef ENABLE_DEFAULT_SCOPE
 	if (scopeid == 0) {
 		scopeid = scope6_addr2default(in6);
 	}
-
+#endif
+	
 	if (IN6_IS_SCOPE_LINKLOCAL(in6) || IN6_IS_ADDR_MC_INTFACELOCAL(in6)) {
 		struct in6_pktinfo *pi;
 
