@@ -80,19 +80,19 @@ sockaddr_dl_copylen(struct sockaddr_dl *sdl_f, struct sockaddr_dl *sdl_t, u_char
 void
 sockaddr_dl_copy(struct sockaddr_dl *sdl_f, struct sockaddr_dl *sdl_t)
 {
-	sdl_copylen(sdl_f, sdl_t, sdl_f->sdl_len);
+	sockaddr_dl_copylen(sdl_f, sdl_t, sdl_f->sdl_len);
 }
 
 void
 sockaddr_dl_copyaddrlen(struct sockaddr_dl *sdl_f, struct sockaddr_dl *sdl_t, u_char len)
 {
-	sdl_copylen(LLADDR(sdl_f), LLADDR(sdl_t), len);
+	sockaddr_dl_copylen(LLADDR(sdl_f), LLADDR(sdl_t), len);
 }
 
 void
 sockaddr_dl_copyaddr(struct sockaddr_dl *sdl_f, struct sockaddr_dl *sdl_t)
 {
-	sdl_copyaddrlen(sdl_f, sdl_t, sdl_f->sdl_len);
+	sockaddr_dl_copyaddrlen(sdl_f, sdl_t, sdl_f->sdl_len);
 }
 
 /* Swap sdl_a w/ sdl_b */
@@ -101,9 +101,9 @@ sockaddr_dl_swapaddr(struct sockaddr_dl *sdl_a, struct sockaddr_dl *sdl_b)
 {
 	struct sockaddr_dl sdl_tmp;
 
-	sdl_copy(sdl_a, &sdl_tmp);
-	sdl_copy(sdl_b, sdl_a);
-	sdl_copy(&sdl_tmp, sdl_b);
+	sockaddr_dl_copy(sdl_a, &sdl_tmp);
+	sockaddr_dl_copy(sdl_b, sdl_a);
+	sockaddr_dl_copy(&sdl_tmp, sdl_b);
 }
 
 /* Fetch the sdl of the associated if */
@@ -129,7 +129,7 @@ sockaddr_dl_checkaddrif(struct ifnet *ifp, struct sockaddr_dl *sdl_c, sa_family_
 
 	TAILQ_FOREACH(ifa, ifp->if_addrlist, ifa_list) {
 		if ((ifa->ifa_addr->sa_family == af)
-				&& !sdl_cmp((struct sockaddr_dl*) (ifa->ifa_addr), sdl_c)) {
+				&& !sockaddr_dl_cmp((struct sockaddr_dl*) (ifa->ifa_addr), sdl_c)) {
 			return (1);
 		}
 	}
@@ -142,9 +142,9 @@ sockaddr_dl_setaddrif(struct ifnet *ifp, u_char *mac_addr, u_char dlsap_addr, u_
 {
 	register struct sockaddr_dl *sdl_tmp;
 
-	sdl_tmp = sdl_getaddrif(ifp, af);
+	sdl_tmp = sockaddr_dl_getaddrif(ifp, af);
 	if (sdl_tmp) {
-		sdl_copy(sdl_tmp, sdl_to);
+		sockaddr_dl_copy(sdl_tmp, sdl_to);
 		bcopy((caddr_t)mac_addr, (caddr_t)LLADDR(sdl_to), mac_len);
 		*(LLADDR(sdl_to) + mac_len) = dlsap_addr;
 		sdl_to->sdl_alen = mac_len + 1;
