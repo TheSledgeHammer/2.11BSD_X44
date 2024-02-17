@@ -46,11 +46,11 @@ struct	llinfo_nd6 {
 	struct	llinfo_nd6 *ln_prev;
 	struct	rtentry *ln_rt;
 	struct	mbuf *ln_hold;	/* last packet until resolved/timeout */
-	long	ln_asked;	/* number of queries already sent for this addr */
-	u_long	ln_expire;	/* lifetime for NDP state transition */
-	short	ln_state;	/* reachability state */
-	short	ln_router;	/* 2^0: ND6 router bit */
-	int	ln_byhint;	/* # of times we made it reachable by UL hint */
+	long	ln_asked;		/* number of queries already sent for this addr */
+	u_long	ln_expire;		/* lifetime for NDP state transition */
+	short	ln_state;		/* reachability state */
+	short	ln_router;		/* 2^0: ND6 router bit */
+	int		ln_byhint;		/* # of times we made it reachable by UL hint */
 
 	long	ln_ntick;
 	struct callout ln_timer_ch;

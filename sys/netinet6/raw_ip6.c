@@ -121,7 +121,6 @@ struct rip6stat rip6stat;
 void
 rip6_init()
 {
-
 	in6_pcbinit(&raw6cbtable, 1, 1);
 }
 
@@ -749,8 +748,7 @@ rip6_usrreq(so, req, m, nam, control, p)
 			/* protect *addr */
 			sin6 = *addr;
 			addr = &sin6;
-			addr->sin6_scope_id =
-			    scope6_addr2default(&addr->sin6_addr);
+			addr->sin6_scope_id = scope6_addr2default(&addr->sin6_addr);
 		}
 #endif
 

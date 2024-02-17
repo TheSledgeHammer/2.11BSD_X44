@@ -277,17 +277,19 @@ extern const struct in6_addr in6addr_linklocal_allrouters;
  */
 
 #ifdef _KERNEL	/* XXX nonstandard */
-#define IPV6_ADDR_SCOPE_NODELOCAL	0x01
-#define IPV6_ADDR_SCOPE_LINKLOCAL	0x02
-#define IPV6_ADDR_SCOPE_SITELOCAL	0x05
-#define IPV6_ADDR_SCOPE_ORGLOCAL	0x08	/* just used in this file */
-#define IPV6_ADDR_SCOPE_GLOBAL		0x0e
+#define IPV6_ADDR_SCOPE_NODELOCAL		0x01
+#define IPV6_ADDR_SCOPE_INTFACELOCAL 	0x01
+#define IPV6_ADDR_SCOPE_LINKLOCAL		0x02
+#define IPV6_ADDR_SCOPE_SITELOCAL		0x05
+#define IPV6_ADDR_SCOPE_ORGLOCAL		0x08	/* just used in this file */
+#define IPV6_ADDR_SCOPE_GLOBAL			0x0e
 #else
-#define __IPV6_ADDR_SCOPE_NODELOCAL	0x01
-#define __IPV6_ADDR_SCOPE_LINKLOCAL	0x02
-#define __IPV6_ADDR_SCOPE_SITELOCAL	0x05
-#define __IPV6_ADDR_SCOPE_ORGLOCAL	0x08	/* just used in this file */
-#define __IPV6_ADDR_SCOPE_GLOBAL	0x0e
+#define __IPV6_ADDR_SCOPE_NODELOCAL		0x01
+#define __IPV6_ADDR_SCOPE_INTFACELOCAL	0x01
+#define __IPV6_ADDR_SCOPE_LINKLOCAL		0x02
+#define __IPV6_ADDR_SCOPE_SITELOCAL		0x05
+#define __IPV6_ADDR_SCOPE_ORGLOCAL		0x08	/* just used in this file */
+#define __IPV6_ADDR_SCOPE_GLOBAL		0x0e
 #endif
 
 /*
@@ -317,6 +319,9 @@ extern const struct in6_addr in6addr_linklocal_allrouters;
 #define IN6_IS_ADDR_MC_NODELOCAL(a)	\
 	(IN6_IS_ADDR_MULTICAST(a) &&	\
 	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_NODELOCAL))
+#define IN6_IS_ADDR_MC_INTFACELOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_INTFACELOCAL))
 #define IN6_IS_ADDR_MC_LINKLOCAL(a)	\
 	(IN6_IS_ADDR_MULTICAST(a) &&	\
 	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_LINKLOCAL))
@@ -333,6 +338,9 @@ extern const struct in6_addr in6addr_linklocal_allrouters;
 #define IN6_IS_ADDR_MC_NODELOCAL(a)	\
 	(IN6_IS_ADDR_MULTICAST(a) &&	\
 	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_NODELOCAL))
+#define IN6_IS_ADDR_MC_LINKLOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_LINKLOCAL))
 #define IN6_IS_ADDR_MC_LINKLOCAL(a)	\
 	(IN6_IS_ADDR_MULTICAST(a) &&	\
 	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_LINKLOCAL))

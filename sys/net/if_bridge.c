@@ -1922,7 +1922,8 @@ extern struct pfil_head inet6_pfil_hook;                /* XXX */
  * with, or if they are ARP or REVARP.  (IPF will pass ARP and REVARP without
  * question.)
  */
-static int bridge_ipf(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
+static int
+bridge_ipf(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 {
 	int snap, error;
 	struct ether_header *eh1, eh2;

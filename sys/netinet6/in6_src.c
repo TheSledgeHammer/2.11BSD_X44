@@ -61,6 +61,10 @@
  *	@(#)in_pcb.c	8.2 (Berkeley) 1/4/94
  */
 
+/*
+ * TODO: Add addrsel_policy
+ */
+
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: in6_src.c,v 1.18 2003/12/10 11:46:33 itojun Exp $");
 
@@ -91,9 +95,7 @@ __KERNEL_RCSID(0, "$NetBSD: in6_src.c,v 1.18 2003/12/10 11:46:33 itojun Exp $");
 #include <netinet6/in6_pcb.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/nd6.h>
-#ifdef ENABLE_DEFAULT_SCOPE
 #include <netinet6/scope6_var.h>
-#endif
 
 #include <net/net_osdep.h>
 
@@ -404,132 +406,4 @@ found:
 	in6p->in6p_lport = htons(lport);
 	in6_pcbstate(in6p, IN6P_BOUND);
 	return (0);		/* success */
-}
-
-/*
- * generate kernel-internal form (scopeid embedded into s6_addr16[1]).
- * If the address scope of is link-local, embed the interface index in the
- * address.  The routine determines our precedence
- * between advanced API scope/interface specification and basic API
- * specification.
- *
- * this function should be nuked in the future, when we get rid of
- * embedded scopeid thing.
- *
- * XXX actually, it is over-specification to return ifp against sin6_scope_id.
- * there can be multiple interfaces that belong to a particular scope zone
- * (in specification, we have 1:N mapping between a scope zone and interfaces).
- * we may want to change the function to return something other than ifp.
- */
-int
-in6_embedscope(in6, sin6, in6p, ifpp)
-	struct in6_addr *in6;
-	const struct sockaddr_in6 *sin6;
-	struct in6pcb *in6p;
-	struct ifnet **ifpp;
-{
-	struct ifnet *ifp = NULL;
-	u_int32_t scopeid;
-
-	*in6 = sin6->sin6_addr;
-	scopeid = sin6->sin6_scope_id;
-	if (ifpp)
-		*ifpp = NULL;
-
-	/*
-	 * don't try to read sin6->sin6_addr beyond here, since the caller may
-	 * ask us to overwrite existing sockaddr_in6
-	 */
-
-#ifdef ENABLE_DEFAULT_SCOPE
-	if (scopeid == 0)
-		scopeid = scope6_addr2default(in6);
-#endif
-
-	if (IN6_IS_SCOPE_LINKLOCAL(in6)) {
-		struct in6_pktinfo *pi;
-
-		/*
-		 * KAME assumption: link id == interface id
-		 */
-
-		if (in6p && in6p->in6p_outputopts &&
-		    (pi = in6p->in6p_outputopts->ip6po_pktinfo) &&
-		    pi->ipi6_ifindex) {
-			ifp = ifindex2ifnet[pi->ipi6_ifindex];
-			in6->s6_addr16[1] = htons(pi->ipi6_ifindex);
-		} else if (in6p && IN6_IS_ADDR_MULTICAST(in6) &&
-			   in6p->in6p_moptions &&
-			   in6p->in6p_moptions->im6o_multicast_ifp) {
-			ifp = in6p->in6p_moptions->im6o_multicast_ifp;
-			in6->s6_addr16[1] = htons(ifp->if_index);
-		} else if (scopeid) {
-			/* boundary check */
-			if (scopeid < 0 || if_indexlim <= scopeid ||
-			    !ifindex2ifnet[scopeid])
-				return ENXIO;  /* XXX EINVAL? */
-			ifp = ifindex2ifnet[scopeid];
-			/* XXX assignment to 16bit from 32bit variable */
-			in6->s6_addr16[1] = htons(scopeid & 0xffff);
-		}
-
-		if (ifpp)
-			*ifpp = ifp;
-	}
-
-	return 0;
-}
-
-/*
- * generate standard sockaddr_in6 from embedded form.
- * touches sin6_addr and sin6_scope_id only.
- *
- * this function should be nuked in the future, when we get rid of
- * embedded scopeid thing.
- */
-int
-in6_recoverscope(sin6, in6, ifp)
-	struct sockaddr_in6 *sin6;
-	const struct in6_addr *in6;
-	struct ifnet *ifp;
-{
-	u_int32_t scopeid;
-
-	sin6->sin6_addr = *in6;
-
-	/*
-	 * don't try to read *in6 beyond here, since the caller may
-	 * ask us to overwrite existing sockaddr_in6
-	 */
-
-	sin6->sin6_scope_id = 0;
-	if (IN6_IS_SCOPE_LINKLOCAL(in6)) {
-		/*
-		 * KAME assumption: link id == interface id
-		 */
-		scopeid = ntohs(sin6->sin6_addr.s6_addr16[1]);
-		if (scopeid) {
-			/* sanity check */
-			if (scopeid < 0 || if_indexlim <= scopeid ||
-			    !ifindex2ifnet[scopeid])
-				return ENXIO;
-			if (ifp && ifp->if_index != scopeid)
-				return ENXIO;
-			sin6->sin6_addr.s6_addr16[1] = 0;
-			sin6->sin6_scope_id = scopeid;
-		}
-	}
-
-	return 0;
-}
-
-/*
- * just clear the embedded scope identifer.
- */
-void
-in6_clearscope(addr)
-	struct in6_addr *addr;
-{
-	if (IN6_IS_SCOPE_LINKLOCAL(addr))
-		addr->s6_addr16[1] = 0;
 }

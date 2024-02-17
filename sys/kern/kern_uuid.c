@@ -105,6 +105,14 @@ uuid_node(node)
 	s = splnet();
 	TAILQ_FOREACH(ifp, &ifnet, if_list)	{
 		/* Walk the address list */
+		sdl = sockaddr_dl_getaddrif(ifp, AF_LINK);
+		if (sdl != NULL && sdl->sdl_type == IFT_ETHER) {
+			/* Got a MAC address. */
+			bcopy(LLADDR(sdl), node, UUID_NODE_LEN);
+			splx(s);
+			return;
+		}
+#ifdef notyet
 		TAILQ_FOREACH(ifa, &ifp->if_addrlist, ifa_list)	{
 			sdl = (struct sockaddr_dl*) ifa->ifa_addr;
 			if (sdl != NULL && sdl->sdl_family == AF_LINK
@@ -115,6 +123,7 @@ uuid_node(node)
 				return;
 			}
 		}
+#endif
 	}
 	splx(s);
 

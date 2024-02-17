@@ -60,6 +60,8 @@
 #include <netinet/tcp_var.h>
 #include <netinet/tcpip.h>
 #include <netinet/tcp_debug.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
 
 #include <netiso/argo_debug.h>
 #include <netiso/iso.h>
@@ -67,13 +69,6 @@
 #include <netiso/iso_pcb.h>
 #include <netiso/iso_var.h>
 #include <netiso/tuba_table.h>
-
-struct tuba_cksum {
-	int		tck_error;
-	int		tck_offset;
-	int		tck_thlen;
-	u_long	tck_sum;
-};
 
 void
 tuba_init()
@@ -105,84 +100,127 @@ tuba_cksum(sum, offset, siso, index)
 }
 
 int
-tuba_tcp_checksum(af, m, th, siso)
-	sa_family_t af;
+tuba_tcp_output_checksum(af, m, isop, th)
+	int af;
 	struct mbuf *m;
+	struct isopcb *isop;
 	struct tcpiphdr *th;
-	struct sockaddr_iso **siso;
 {
-	struct in_addr src, dst;
 	int error, offset, thlen;
 	u_long sum;
 
-	sum = 0;
-	offset = 0;
-	src = th->ti_src;
-	dst = th->ti_dst;
-
-	if (th->ti_sum == 0) {
-		siso = NULL;
-	} else {
+	if (th == NULL || isop == NULL) {
+		isop = &tuba_isopcb;
 		th = mtod(m, struct tcpiphdr *);
+		sum = 0;
+		offset = 0;
+		error = tuba_cksum(&sum, &offset, &isop->isop_faddr, th->ti_dst.s_addr);
+		if (error) {
+			m_freem(m);
+			return (EADDRNOTAVAIL);
+		}
+		error = tuba_cksum(&sum, &offset, &isop->isop_laddr, th->ti_src.s_addr);
+		if (error) {
+			m_freem(m);
+			return (EADDRNOTAVAIL);
+		}
+		REDUCE(sum, sum);
 	}
-	error = tuba_cksum(&sum, &offset, siso, dst.s_addr);
-	if (error) {
-		m_freem(m);
-		return (EADDRNOTAVAIL);
-	}
-	error = tuba_cksum(&sum, &offset, siso, src.s_addr);
-	if (error) {
-		m_freem(m);
-		return (EADDRNOTAVAIL);
-	}
-	REDUCE(sum, sum);
 	if (th->ti_sum == 0) {
+		isop = NULL;
+		sum = 0;
+		offset = 0;
+		error = tuba_cksum(&sum, &offset, NULL, th->ti_dst.s_addr);
+		if (error) {
+			m_freem(m);
+			return (EADDRNOTAVAIL);
+		}
+		error = tuba_cksum(&sum, &offset, NULL, th->ti_src.s_addr);
+		if (error) {
+			m_freem(m);
+			return (EADDRNOTAVAIL);
+		}
+		REDUCE(sum, sum);
 		th->ti_sum = sum;
 		th = mtod(m, struct tcpiphdr *);
 	}
-	REDUCE(th->ti_sum, th->ti_sum + (0xffff ^ sum));
-	thlen = offset << 2;
-	return (tcp_input_checksum(af, m, &th->ti_t, offset, thlen, sum - thlen));
+	REDUCE(th->ti_sum, (th->ti_sum + (0xffff ^ sum)));
+
+	switch (af) {
+	case AF_INET:
+		m->m_len -= sizeof(struct ip);
+		m->m_pkthdr.len -= sizeof(struct ip);
+		m->m_data += sizeof(struct ip);
+		break;
+	case AF_INET6:
+		m->m_len -= sizeof(struct ip6_hdr);
+		m->m_pkthdr.len -= sizeof(struct ip6_hdr);
+		m->m_data += sizeof(struct ip6_hdr);
+		break;
+	}
+	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
 
 int
-tuba_udp_checksum(af, m, uh, siso)
-	sa_family_t af;
+tuba_udp_output_checksum(af, m, isop, uh)
+	int af;
 	struct mbuf *m;
+	struct isopcb *isop;
 	struct udpiphdr *uh;
-	struct sockaddr_iso **siso;
 {
-	struct in_addr src, dst;
-	int error, offset;
+	int error, offset, thlen;
 	u_long sum;
 
-	sum = 0;
-	offset = 0;
-	src = uh->ui_src;
-	dst = uh->ui_dst;
-
+	if (th == NULL || isop == NULL) {
+		isop = &tuba_isopcb;
+		th = mtod(m, struct udpiphdr *);
+		sum = 0;
+		offset = 0;
+		error = tuba_cksum(&sum, &offset, &isop->isop_faddr, uh->ui_dst.s_addr);
+		if (error) {
+			m_freem(m);
+			return (EADDRNOTAVAIL);
+		}
+		error = tuba_cksum(&sum, &offset, &isop->isop_laddr, uh->ui_src.s_addr);
+		if (error) {
+			m_freem(m);
+			return (EADDRNOTAVAIL);
+		}
+		REDUCE(sum, sum);
+	}
 	if (uh->ui_sum == 0) {
-		siso = NULL;
-	} else {
-		uh = mtod(m, struct udpiphdr *);
-	}
-	error = tuba_cksum(&sum, &offset, siso, dst.s_addr);
-	if (error) {
-		m_freem(m);
-		return (EADDRNOTAVAIL);
-	}
-	error = tuba_cksum(&sum, &offset, siso, src.s_addr);
-	if (error) {
-		m_freem(m);
-		return (EADDRNOTAVAIL);
-	}
-	REDUCE(sum, sum);
-	if (uh->ui_sum == 0) {
+		isop = NULL;
+		sum = 0;
+		offset = 0;
+		error = tuba_cksum(&sum, &offset, NULL, uh->ui_dst.s_addr);
+		if (error) {
+			m_freem(m);
+			return (EADDRNOTAVAIL);
+		}
+		error = tuba_cksum(&sum, &offset, NULL, uh->ui_src.s_addr);
+		if (error) {
+			m_freem(m);
+			return (EADDRNOTAVAIL);
+		}
+		REDUCE(sum, sum);
 		uh->ui_sum = sum;
 		uh = mtod(m, struct udpiphdr *);
 	}
-	REDUCE(uh->ui_sum, uh->ui_sum + (0xffff ^ sum));
-	return (udp_input_checksum(af, m, &uh->ui_u, offset, sum));
+	REDUCE(uh->ui_sum, (uh->ui_sum + (0xffff ^ sum)));
+
+	switch (af) {
+	case AF_INET:
+		m->m_len -= sizeof(struct ip);
+		m->m_pkthdr.len -= sizeof(struct ip);
+		m->m_data += sizeof(struct ip);
+		break;
+	case AF_INET6:
+		m->m_len -= sizeof(struct ip6_hdr);
+		m->m_pkthdr.len -= sizeof(struct ip6_hdr);
+		m->m_data += sizeof(struct ip6_hdr);
+		break;
+	}
+	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
 
 void

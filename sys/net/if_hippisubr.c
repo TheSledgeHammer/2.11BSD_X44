@@ -154,8 +154,7 @@ hippi_output(ifp, m0, dst, rt0)
 #ifdef INET
 	case AF_INET:
 		if (rt) {
-			struct sockaddr_dl *sdl = 
-				(struct sockaddr_dl *) SDL(rt->rt_gateway);
+			struct sockaddr_dl *sdl = (struct sockaddr_dl *) SDL(rt->rt_gateway);
 			if (sdl->sdl_family == AF_LINK && sdl->sdl_alen != 0)
 				bcopy(LLADDR(sdl), &ifield, sizeof(ifield));
 		}

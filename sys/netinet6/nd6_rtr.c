@@ -1987,13 +1987,15 @@ nd6_setdefaultiface(ifindex)
 		nd6_defifindex = ifindex;
 		if (nd6_defifindex > 0) {
 			nd6_defifp = ifindex2ifnet[nd6_defifindex];
-		} else
+		} else {
 			nd6_defifp = NULL;
+		}
 
 		/*
 		 * Rescan default router list, refresh default route(s).
 		 */
-		defrouter_select();
+		//defrouter_select();
+		scope6_setdefault(nd6_defifp);
 	}
 
 	return (error);

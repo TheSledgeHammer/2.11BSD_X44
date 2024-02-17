@@ -91,6 +91,7 @@ struct in6_ifextra {
 	struct in6_ifstat *in6_ifstat;
 	struct icmp6_ifstat *icmp6_ifstat;
 	struct nd_ifinfo *nd_ifinfo;
+	struct scope6_id *scope6_id;
 };
 
 struct	in6_ifaddr {
@@ -118,6 +119,15 @@ struct	in6_ifaddr {
 
 	/* multicast addresses joined from the kernel */
 	LIST_HEAD(, in6_multi_mship) ia6_memberships;
+};
+
+/* control structure to manage address selection policy */
+struct in6_addrpolicy {
+	struct sockaddr_in6 addr; /* prefix address */
+	struct sockaddr_in6 addrmask; /* prefix mask */
+	int preced;		/* precedence */
+	int label;		/* matching label */
+	u_quad_t use;		/* statistics */
 };
 
 /*
@@ -251,6 +261,7 @@ struct	in6_ifreq {
 		struct in6_addrlifetime ifru_lifetime;
 		struct in6_ifstat ifru_stat;
 		struct icmp6_ifstat ifru_icmp6stat;
+		u_int32_t ifru_scope_id[16];
 	} ifr_ifru;
 };
 
@@ -413,19 +424,19 @@ struct	in6_rrenumreq {
 
 #define SIOCSIFINFO_FLAGS	_IOWR('i', 87, struct in6_ndireq) /* XXX */
 
+#define SIOCSSCOPE6			_IOW('i', 88, struct in6_ifreq)
+#define SIOCGSCOPE6			_IOWR('i', 89, struct in6_ifreq)
+#define SIOCGSCOPE6DEF		_IOWR('i', 90, struct in6_ifreq)
+
 #define SIOCSIFPREFIX_IN6	_IOW('i', 100, struct in6_prefixreq) /* set */
 #define SIOCGIFPREFIX_IN6	_IOWR('i', 101, struct in6_prefixreq) /* get */
 #define SIOCDIFPREFIX_IN6	_IOW('i', 102, struct in6_prefixreq) /* del */
 #define SIOCAIFPREFIX_IN6	_IOW('i', 103, struct in6_rrenumreq) /* add */
-#define SIOCCIFPREFIX_IN6	_IOW('i', 104, \
-				     struct in6_rrenumreq) /* change */
-#define SIOCSGIFPREFIX_IN6	_IOW('i', 105, \
-				     struct in6_rrenumreq) /* set global */
+#define SIOCCIFPREFIX_IN6	_IOW('i', 104, struct in6_rrenumreq) /* change */
+#define SIOCSGIFPREFIX_IN6	_IOW('i', 105, struct in6_rrenumreq) /* set global */
 
-#define SIOCGETSGCNT_IN6	_IOWR('u', 106, \
-				      struct sioc_sg_req6) /* get s,g pkt cnt */
-#define SIOCGETMIFCNT_IN6	_IOWR('u', 107, \
-				      struct sioc_mif_req6) /* get pkt cnt per if */
+#define SIOCGETSGCNT_IN6	_IOWR('u', 106, struct sioc_sg_req6) /* get s,g pkt cnt */
+#define SIOCGETMIFCNT_IN6	_IOWR('u', 107, struct sioc_mif_req6) /* get pkt cnt per if */
 
 #define IN6_IFF_ANYCAST		0x01	/* anycast address */
 #define IN6_IFF_TENTATIVE	0x02	/* tentative address */
@@ -594,19 +605,21 @@ void	in6_purgemkludge(struct ifnet *);
 struct in6_ifaddr *in6ifa_ifpforlinklocal(struct ifnet *, int);
 struct in6_ifaddr *in6ifa_ifpwithaddr(struct ifnet *, struct in6_addr *);
 int		ip6_sprintf(const struct in6_addr *);
-int	in6_addr2scopeid(struct ifnet *, struct in6_addr *);
-int	in6_matchlen(struct in6_addr *, struct in6_addr *);
-int	in6_are_prefix_equal(struct in6_addr *, struct in6_addr *, int);
+int		in6_matchlen(struct in6_addr *, struct in6_addr *);
+int		in6_are_prefix_equal(struct in6_addr *, struct in6_addr *, int);
 void	in6_prefixlen2mask(struct in6_addr *, int);
 void	in6_purgeprefix(struct ifnet *);
 
-int	in6_is_addr_deprecated(struct sockaddr_in6 *);
+int		in6_is_addr_deprecated(struct sockaddr_in6 *);
+
 struct in6pcb;
-int in6_embedscope(struct in6_addr *, const struct sockaddr_in6 *,
-	struct in6pcb *, struct ifnet **);
-int in6_recoverscope(struct sockaddr_in6 *, const struct in6_addr *,
-	struct ifnet *);
-void in6_clearscope(struct in6_addr *);
+
+int		in6_addr2scopeid(struct ifnet *, struct in6_addr *);
+int  	in6_embedscope(struct in6_addr *, const struct sockaddr_in6 *, struct in6pcb *, struct ifnet **);
+int		in6_setzoneid(struct in6_addr *, uint32_t);
+int		in6_setscope(struct in6_addr *, const struct ifnet *, u_int32_t *);
+int		in6_recoverscope(struct sockaddr_in6 *, const struct in6_addr *, struct ifnet *);
+void	in6_clearscope(struct in6_addr *);
 #endif /* _KERNEL */
 
 #endif /* _NETINET6_IN6_VAR_H_ */

@@ -93,6 +93,7 @@ __KERNEL_RCSID(0, "$NetBSD: in6.c,v 1.86 2004/03/28 08:28:06 christos Exp $");
 #include <netinet6/mld6_var.h>
 #include <netinet6/ip6_mroute.h>
 #include <netinet6/in6_ifattach.h>
+#include <netinet6/scope6_var.h>
 
 #include <net/net_osdep.h>
 
@@ -296,7 +297,7 @@ in6_ifindex2scopeid(idx)
 	if (!ifp)
 		return -1;
 
-	for (ifa = ifp->if_addrlist.tqh_first; ifa; ifa = ifa->ifa_list.tqe_next)
+	for (ifa = TAILQ_FIRST(ifp->if_addrlist); ifa; ifa = TAILQ_NEXT(ifa, ifa_list))
 	{
 		if (ifa->ifa_addr->sa_family != AF_INET6)
 			continue;
@@ -405,6 +406,18 @@ in6_control(so, cmd, data, ifp, p)
 		    "prefix ioctls are now invalidated. "
 		    "please use ifconfig.\n");
 		return (EOPNOTSUPP);
+	}
+
+	switch (cmd) {
+	case SIOCSSCOPE6:
+		if (!privileged) {
+			return (EPERM);
+		}
+		return (scope6_set(ifp,(struct scope6_id *)ifr->ifr_ifru.ifru_scope_id));
+	case SIOCGSCOPE6:
+		return (scope6_get(ifp,(struct scope6_id *)ifr->ifr_ifru.ifru_scope_id));
+	case SIOCGSCOPE6DEF:
+		return (scope6_get_default((struct scope6_id *)ifr->ifr_ifru.ifru_scope_id));
 	}
 
 	switch (cmd) {
@@ -524,7 +537,7 @@ in6_control(so, cmd, data, ifp, p)
 			return (EADDRNOTAVAIL);
 		break;
 	case SIOCSIFALIFETIME_IN6:
-	    {
+	{
 		struct in6_addrlifetime *lt;
 
 		if (!privileged)
@@ -534,15 +547,15 @@ in6_control(so, cmd, data, ifp, p)
 		/* sanity for overflow - beware unsigned */
 		lt = &ifr->ifr_ifru.ifru_lifetime;
 		if (lt->ia6t_vltime != ND6_INFINITE_LIFETIME
-		 && lt->ia6t_vltime + time.tv_sec < time.tv_sec) {
+				&& lt->ia6t_vltime + time.tv_sec < time.tv_sec) {
 			return EINVAL;
 		}
 		if (lt->ia6t_pltime != ND6_INFINITE_LIFETIME
-		 && lt->ia6t_pltime + time.tv_sec < time.tv_sec) {
+				&& lt->ia6t_pltime + time.tv_sec < time.tv_sec) {
 			return EINVAL;
 		}
 		break;
-	    }
+	}
 	}
 
 	switch (cmd) {
@@ -2119,81 +2132,6 @@ in6_localaddr(in6)
 	return (0);
 }
 
-/*
- * Get a scope of the address. Node-local, link-local, site-local or global.
- */
-int
-in6_addrscope (addr)
-struct in6_addr *addr;
-{
-	int scope;
-
-	if (addr->s6_addr8[0] == 0xfe) {
-		scope = addr->s6_addr8[1] & 0xc0;
-
-		switch (scope) {
-		case 0x80:
-			return IPV6_ADDR_SCOPE_LINKLOCAL;
-		case 0xc0:
-			return IPV6_ADDR_SCOPE_SITELOCAL;
-		default:
-			return IPV6_ADDR_SCOPE_GLOBAL; /* just in case */
-		}
-	}
-
-
-	if (addr->s6_addr8[0] == 0xff) {
-		scope = addr->s6_addr8[1] & 0x0f;
-
-		/*
-		 * due to other scope such as reserved,
-		 * return scope doesn't work.
-		 */
-		switch (scope) {
-		case IPV6_ADDR_SCOPE_NODELOCAL:
-			return IPV6_ADDR_SCOPE_NODELOCAL;
-		case IPV6_ADDR_SCOPE_LINKLOCAL:
-			return IPV6_ADDR_SCOPE_LINKLOCAL;
-		case IPV6_ADDR_SCOPE_SITELOCAL:
-			return IPV6_ADDR_SCOPE_SITELOCAL;
-		default:
-			return IPV6_ADDR_SCOPE_GLOBAL;
-		}
-	}
-
-	if (bcmp(&in6addr_loopback, addr, sizeof(*addr) - 1) == 0) {
-		if (addr->s6_addr8[15] == 1) /* loopback */
-			return IPV6_ADDR_SCOPE_NODELOCAL;
-		if (addr->s6_addr8[15] == 0) /* unspecified */
-			return IPV6_ADDR_SCOPE_LINKLOCAL;
-	}
-
-	return IPV6_ADDR_SCOPE_GLOBAL;
-}
-
-int
-in6_addr2scopeid(ifp, addr)
-	struct ifnet *ifp;	/* must not be NULL */
-	struct in6_addr *addr;	/* must not be NULL */
-{
-	int scope = in6_addrscope(addr);
-
-	switch (scope) {
-	case IPV6_ADDR_SCOPE_NODELOCAL:
-		return (-1);	/* XXX: is this an appropriate value? */
-
-	case IPV6_ADDR_SCOPE_LINKLOCAL:
-		/* XXX: we do not distinguish between a link and an I/F. */
-		return (ifp->if_index);
-
-	case IPV6_ADDR_SCOPE_SITELOCAL:
-		return (0);	/* XXX: invalid. */
-
-	default:
-		return (0);	/* XXX: treat as global. */
-	}
-}
-
 int
 in6_is_addr_deprecated(sa6)
 	struct sockaddr_in6 *sa6;
@@ -2728,6 +2666,7 @@ in6_domifattach(ifp)
 	bzero(ext->icmp6_ifstat, sizeof(*ext->icmp6_ifstat));
 
 	ext->nd_ifinfo = nd6_ifattach(ifp);
+	ext->scope6_id = scope6_ifattach(ifp);
 	return ext;
 }
 
@@ -2741,5 +2680,6 @@ in6_domifdetach(ifp, aux)
 	nd6_ifdetach(ext->nd_ifinfo);
 	free(ext->in6_ifstat, M_IFADDR);
 	free(ext->icmp6_ifstat, M_IFADDR);
+	scope6_ifdetach(ext->scope6_id);
 	free(ext, M_IFADDR);
 }

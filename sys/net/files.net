@@ -9,6 +9,7 @@ file	net/if_arcsubr.c		arc								needs-flag
 file	net/if_atmsubr.c		atm
 file	net/if_bridge.c			bridge							needs-flag
 file	net/bridgestp.c			bridge
+file	net/if_dl.c
 file	net/if_ethersubr.c		ether | token | wlan
 
 file	net/if_faith.c			faith & (inet | inet6)			needs-flag

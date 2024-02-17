@@ -2242,10 +2242,8 @@ ipsec6_encapsulate(m, sav)
 		/* ip6->ip6_plen will be updated in ip6_output() */
 	}
 	ip6->ip6_nxt = IPPROTO_IPV6;
-	in6_embedscope(&ip6->ip6_src,
-	    (struct sockaddr_in6 *)&sav->sah->saidx.src, NULL, NULL);
-	in6_embedscope(&ip6->ip6_dst, 
-	    (struct sockaddr_in6 *)&sav->sah->saidx.dst, NULL, NULL);
+	in6_embedscope(&ip6->ip6_src, (struct sockaddr_in6 *)&sav->sah->saidx.src, NULL, NULL);
+	in6_embedscope(&ip6->ip6_dst, (struct sockaddr_in6 *)&sav->sah->saidx.dst, NULL, NULL);
 	ip6->ip6_hlim = IPV6_DEFHLIM;
 
 	/* XXX Should ip6_src be updated later ? */

@@ -1073,8 +1073,7 @@ ether_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		switch (ifa->ifa_addr->sa_family) {
 		case AF_LINK:
 		    {
-			struct sockaddr_dl *sdl =
-			    (struct sockaddr_dl *) ifa->ifa_addr;
+			struct sockaddr_dl *sdl = (struct sockaddr_dl *) ifa->ifa_addr;
 
 			if (sdl->sdl_type != IFT_ETHER ||
 			    sdl->sdl_alen != ifp->if_addrlen) {
@@ -1082,9 +1081,8 @@ ether_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 				break;
 			}
 
-			memcpy(LLADDR(ifp->if_sadl), LLADDR(sdl),
-			    ifp->if_addrlen);
-
+			//memcpy(LLADDR(ifp->if_sadl), LLADDR(sdl), ifp->if_addrlen);
+			sdl_copyaddrlen(ifp->if_sadl, sdl, ifp->if_addrlen);
 			/* Set new address. */
 			error = (*ifp->if_init)(ifp);
 			break;
@@ -1121,8 +1119,7 @@ ether_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		break;
 
 	case SIOCGIFADDR:
-		memcpy(((struct sockaddr *)&ifr->ifr_data)->sa_data,
-		    LLADDR(ifp->if_sadl), ETHER_ADDR_LEN);
+		memcpy(((struct sockaddr *)&ifr->ifr_data)->sa_data, LLADDR(ifp->if_sadl), ETHER_ADDR_LEN);
 		break;
 
 	case SIOCSIFMTU:
