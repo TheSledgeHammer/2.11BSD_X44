@@ -122,7 +122,7 @@ __KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $")
 #include <netipsec/key.h>
 #endif	/* FAST_IPSEC */
 
-#ifdef NSIP > 0
+#ifdef NSIP
 #include <netns/ns_var.h>
 #include <netns/idp_var.h>
 #endif /* NSIP */
@@ -442,7 +442,7 @@ struct protosw inetsw[] = {
 				.pr_sysctl		= NULL,
 		},
 #endif /* NPFSYNC > 0 */
-#ifdef NSIP > 0
+#ifdef NSIP
 		{
 				.pr_type		= SOCK_RAW,
 				.pr_domain		= &inetdomain,
@@ -459,7 +459,7 @@ struct protosw inetsw[] = {
 				.pr_drain		= 0,
 				.pr_sysctl		= NULL,
 		},
-#endif /* NSIP > 0 */
+#endif /* NSIP */
 		{
 				.pr_type		= SOCK_RAW,
 				.pr_domain		= &inetdomain,

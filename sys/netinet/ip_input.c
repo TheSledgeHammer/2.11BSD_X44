@@ -1443,7 +1443,7 @@ ip_reass_packet(m0, ip)
 	ipqe->ipqe_ip->ip_off = off;
 	ipqe->ipqe_len = flen;
 
-	*m0 = ip_reass(ipqe, fp, hash);
+	*m0 = ip_reass(ipqe, fp, &ipq[hash]);
 	if (*m0) {
 		/* Note that finally reassembled. */
 		ipstat.ips_reassembled++;
