@@ -64,7 +64,6 @@ struct ifg_list {
 	TAILQ_ENTRY(ifg_list)	 	ifgl_next;
 };
 
-TAILQ_HEAD(ifg_list_head, ifg_list);
 struct ifg_req {
 	union {
 		char			 ifgrqu_group[IFNAMSIZ];
