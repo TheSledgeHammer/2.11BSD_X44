@@ -55,6 +55,7 @@ __KERNEL_RCSID(0, "$NetBSD: nd6_rtr.c,v 1.47 2003/12/10 11:46:33 itojun Exp $");
 #include <netinet/ip6.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/nd6.h>
+#include <netinet6/scope6_var.h>
 #include <netinet/icmp6.h>
 
 #include <net/net_osdep.h>

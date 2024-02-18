@@ -78,9 +78,14 @@ __KERNEL_RCSID(0, "$NetBSD: in6_src.c,v 1.18 2003/12/10 11:46:33 itojun Exp $");
 #include <net/route.h>
 
 #include <netinet/in.h>
-
-#include <netinet6/in6.h>
+#include <netinet/in_var.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
 #include <netinet6/in6_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/in6_pcb.h>
+#include <netinet6/ip6_var.h>
 #include <netinet6/scope6_var.h>
 
 #define SID(ifp) (((struct in6_ifextra *)(ifp)->if_afdata[AF_INET6])->scope6_id)
@@ -90,7 +95,7 @@ __KERNEL_RCSID(0, "$NetBSD: in6_src.c,v 1.18 2003/12/10 11:46:33 itojun Exp $");
  */
 int
 in6_addrscope(addr)
-	struct in6_addr *addr;
+	const struct in6_addr *addr;
 {
 	int scope;
 

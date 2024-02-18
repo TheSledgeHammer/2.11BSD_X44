@@ -363,6 +363,9 @@ extern const struct in6_addr in6addr_linklocal_allrouters;
 	((IN6_IS_ADDR_LINKLOCAL(a)) ||	\
 	 (IN6_IS_ADDR_MC_LINKLOCAL(a)))
 
+#define	IN6_IS_SCOPE_EMBEDDABLE(__a)	\
+    (IN6_IS_SCOPE_LINKLOCAL(__a) || IN6_IS_ADDR_MC_INTFACELOCAL(__a))
+
 #define IFA6_IS_DEPRECATED(a) \
 	((a)->ia6_lifetime.ia6t_pltime != ND6_INFINITE_LIFETIME && \
 	 (u_int32_t)((time.tv_sec - (a)->ia6_updatetime)) > \
@@ -659,7 +662,7 @@ struct mbuf;
 
 int	in6_cksum(struct mbuf *, u_int8_t, u_int32_t, u_int32_t);
 int	in6_localaddr(struct in6_addr *);
-int	in6_addrscope(struct in6_addr *);
+int	in6_addrscope(const struct in6_addr *);
 struct	in6_ifaddr *in6_ifawithscope(struct ifnet *, struct in6_addr *);
 struct	in6_ifaddr *in6_ifawithifp(struct ifnet *, struct in6_addr *);
 extern void in6_if_up(struct ifnet *);
