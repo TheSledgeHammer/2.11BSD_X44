@@ -236,8 +236,8 @@ struct ifnet {							/* and the entries */
 	/*
 	 * pf specific data
 	 */
-	void 			*if_pf_groups; /* [N] list of groups per if */
-	//TAILQ_HEAD(ifg_list_head, ifg_list) if_pf_groups; /* [N] list of groups per if */
+	//void 			*if_pf_groups; /* [N] list of groups per if */
+	TAILQ_HEAD(ifg_list_head, ifg_list) *if_pf_groups; /* [N] list of groups per if */
 };
 #define	if_mtu			if_data.ifi_mtu
 #define	if_type			if_data.ifi_type
