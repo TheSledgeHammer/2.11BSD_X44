@@ -87,6 +87,6 @@ struct	fddi_header {
 #define	fddi_delmulti		ether_delmulti
 #define	fddi_sprintf		ether_sprintf
 
-void    fddi_ifattach(struct ifnet *, caddr_t));
+void    fddi_ifattach(struct ifnet *, caddr_t);
 #endif
 #endif

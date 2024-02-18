@@ -73,7 +73,7 @@ sockaddr_dl_cmp(struct sockaddr_dl *sdl_a, struct sockaddr_dl *sdl_b)
 void
 sockaddr_dl_copylen(struct sockaddr_dl *sdl_f, struct sockaddr_dl *sdl_t, u_char len)
 {
-	bcopy((caddr_t)sdl_f, (caddr_t)sdl_t, len);
+	bcopy(sdl_f, sdl_t, len);
 }
 
 /* Copy sdl_f to sdl_t */
@@ -86,7 +86,7 @@ sockaddr_dl_copy(struct sockaddr_dl *sdl_f, struct sockaddr_dl *sdl_t)
 void
 sockaddr_dl_copyaddrlen(struct sockaddr_dl *sdl_f, struct sockaddr_dl *sdl_t, u_char len)
 {
-	sockaddr_dl_copylen(LLADDR(sdl_f), LLADDR(sdl_t), len);
+	bcopy(LLADDR(sdl_f), LLADDR(sdl_t), len);
 }
 
 void
@@ -113,7 +113,7 @@ sockaddr_dl_getaddrif(struct ifnet *ifp, sa_family_t af)
 {
 	register struct ifaddr *ifa;
 
-	TAILQ_FOREACH(ifa, ifp->if_addrlist, ifa_list) {
+	TAILQ_FOREACH(ifa, &ifp->if_addrlist, ifa_list) {
 		if (ifa->ifa_addr->sa_family == af) {
 			return((struct sockaddr_dl *)(ifa->ifa_addr));
 		}
@@ -127,7 +127,7 @@ sockaddr_dl_checkaddrif(struct ifnet *ifp, struct sockaddr_dl *sdl_c, sa_family_
 {
 	register struct ifaddr *ifa;
 
-	TAILQ_FOREACH(ifa, ifp->if_addrlist, ifa_list) {
+	TAILQ_FOREACH(ifa, &ifp->if_addrlist, ifa_list) {
 		if ((ifa->ifa_addr->sa_family == af)
 				&& !sockaddr_dl_cmp((struct sockaddr_dl*) (ifa->ifa_addr), sdl_c)) {
 			return (1);
