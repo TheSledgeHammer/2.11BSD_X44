@@ -109,6 +109,11 @@ __KERNEL_RCSID(0, "$NetBSD: if_loop.c,v 1.49 2003/11/13 01:48:13 jonathan Exp $"
 #include <netns/ns_if.h>
 #endif
 
+#ifdef MPLS
+#include <netmpls/mpls.h>
+#include <netmpls/mpls_var.h>
+#endif
+
 #if NBPFILTER > 0
 #include <net/bpf.h>
 #endif
@@ -122,9 +127,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_loop.c,v 1.49 2003/11/13 01:48:13 jonathan Exp $"
 #endif
 
 struct	ifnet loif[NLOOP];
-#ifdef MBUFTRACE
-struct	mowner lomowner[NLOOP];
-#endif
 
 #ifdef ALTQ
 void	lostart(struct ifnet *);
@@ -171,7 +173,6 @@ looutput(ifp, m, dst, rt)
 	int s, isr;
 	struct ifqueue *ifq = 0;
 
-	//MCLAIM(m, ifp->if_mowner);
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("looutput: no header mbuf");
 #if NBPFILTER > 0
@@ -234,10 +235,22 @@ looutput(ifp, m, dst, rt)
 	}
 #endif /* ALTQ */
 
-//	m_tag_delete_nonpersistent(m);
-
+	m_tag_delete_chain(m);
+#ifdef MPLS
+	bool_t is_mpls = false;
+	if (rt != NULL && rt_gettag(rt) != NULL &&
+	    rt_gettag(rt)->sa_family == AF_MPLS &&
+	    (m->m_flags & (M_MCAST | M_BCAST)) == 0) {
+		union mpls_shim msh;
+		msh.s_addr = MPLS_GETSADDR(rt);
+		if (msh.shim.label != MPLS_LABEL_IMPLNULL) {
+			is_mpls = true;
+			ifq = &mplsintrq;
+		}
+	}
+	//if (!is_mpls)
+#endif
 	switch (dst->sa_family) {
-
 #ifdef INET
 	case AF_INET:
 		ifq = &ipintrq;

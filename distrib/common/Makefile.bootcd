@@ -54,8 +54,8 @@ CDRELEASE_EXCLUDE=	-s ',./installation/cdrom.*,,gp'
 
 DISTRIBVER!=	${HOST_SH} ${KERNSRCDIR}/conf/osrelease.sh
 DISTRIBREV!=	${HOST_SH} ${KERNSRCDIR}/conf/osrelease.sh -s
-ISO_VOLID!=	echo NETBSD_${DISTRIBREV} | tr a-z A-Z
-PUBLISHER?= The_NetBSD_Project
+ISO_VOLID!=	echo TWOBSD_${DISTRIBREV} | tr a-z A-Z
+PUBLISHER?= The_TwoBSD_Project
 .if defined(CDMAKEFSOPTIONS)
 _CDMAKEFSOPTIONS=	rockridge,label=${ISO_VOLID},publisher=${PUBLISHER},${CDMAKEFSOPTIONS}
 .else
@@ -71,7 +71,7 @@ CHMOD?=		chmod
 .if ${CDRELEASE} == false
 CDIMAGE=	${CDBASE}.iso
 .else
-CDIMAGE=	NetBSD-${DISTRIBVER}-${CDBASE:S/cd$//}.iso
+CDIMAGE=	TwoBSD-${DISTRIBVER}-${CDBASE:S/cd$//}.iso
 .endif
 
 CLEANFILES+=	${CDIMAGE}

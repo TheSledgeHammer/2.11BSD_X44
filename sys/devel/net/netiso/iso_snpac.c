@@ -238,8 +238,9 @@ llc_rtrequest(req, rt, info)
 		case RTM_DELETE:
 			if (rt->rt_flags & RTF_CLONING)
 				iso_setmcasts(ifp, req);
-			if (lc == 0)
+			if (lc == 0) {
 				return;
+			}
 			LIST_REMOVE(lc, lc_list);
 			Free(lc);
 			rt->rt_llinfo = 0;
@@ -433,8 +434,8 @@ snpac_add(ifp, nsap, snpa, type, ht, nsellength)
 	struct rtentry *rt;
 	struct rtentry *mrt = 0;
 	struct iso_addr *r;	/* for zap_isoaddr macro */
-	int             snpalen = min(ifp->if_addrlen, MAX_SNPALEN);
-	int             new_entry = 0, index = ifp->if_index, iftype = ifp->if_type;
+	int snpalen = min(ifp->if_addrlen, MAX_SNPALEN);
+	int new_entry = 0, index = ifp->if_index, iftype = ifp->if_type;
 
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_SNPA]) {
@@ -707,8 +708,9 @@ snpac_flushifp(ifp)
 	struct llinfo_llc *lc;
 
 	for (lc = LIST_FIRST(llinfo_llc); lc != 0; lc = LIST_NEXT(lc, lc_list)) {
-		if (lc->lc_rt->rt_ifp == ifp && (lc->lc_flags & SNPA_VALID))
+		if (lc->lc_rt->rt_ifp == ifp && (lc->lc_flags & SNPA_VALID)) {
 			snpac_free(lc);
+		}
 	}
 }
 
@@ -795,8 +797,9 @@ snpac_addrt(ifp, host, gateway, netmask)
 		msk.siso_len = msk.siso_pad - (u_char *) & msk;
 		rtredirect(sisotosa(&dst), sisotosa(&gte), sisotosa(&msk),
 			   RTF_DONE, sisotosa(&gte), 0);
-	} else
+	} else {
 		rtredirect(sisotosa(&dst), sisotosa(&gte), (struct sockaddr *) 0,
 			   RTF_DONE | RTF_HOST, sisotosa(&gte), 0);
+	}
 }
 #endif				/* ISO */

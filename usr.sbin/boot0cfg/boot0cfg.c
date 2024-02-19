@@ -113,6 +113,9 @@ static unsigned vol_id[5];	/* 4 plus 1 for flag */
 
 static int v_flag;
 
+#define BPATH0 "/mdec/boot0"	/* current default boot path */
+#define BPATH1 "/boot/boot0"
+
 /*
  * Boot manager installation/configuration utility.
  */
@@ -128,7 +131,7 @@ main(int argc, char *argv[])
     int o_and, o_or, o_e = -1;
     int up, c;
 
-    bpath = "/boot/boot0";
+    bpath = BPATH0;
     fpath = NULL;
     B_flag = v_flag = o_flag = 0;
     d_arg = m_arg = s_arg = t_arg = -1;

@@ -57,7 +57,7 @@ MKISOFS!=       (which mkisofs || echo true) 2>/dev/null
 .endif
 DISTRIBREV!=	${HOST_SH} ${KERNSRCDIR}/conf/osrelease.sh -s
 # ISO 9660 volume ID.  Note that this can only contain [A-Z0-9_].
-ISO_VOLID!=	echo TwoBSD_${DISTRIBREV} | tr a-z A-Z
+ISO_VOLID!=	echo TWOBSD_${DISTRIBREV} | tr a-z A-Z
 MKISOFS_FLAGS+= -J -l -hide-joliet-trans-tbl -r -T \
 				-V ${ISO_VOLID} \
 				-publisher "The 2.11BSD Project" \
@@ -531,8 +531,8 @@ kernset-${configfile}: .PHONY build_kernels snap_pre
 			if [ ${KERNEL_DIR} = "yes" ]; then \
 				tmpdir=kernel$$; \
 				trap "rm -fr $${tmpdir}" 0 1 2 3 15; \
-				mkdir -p $${tmpdir}/netbsd; \
-				d=./netbsd; \
+				mkdir -p $${tmpdir}/twobsd; \
+				d=./twobsd; \
 				cd $${tmpdir}; \
 			else \
 				d=.; \

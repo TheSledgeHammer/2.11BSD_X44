@@ -167,12 +167,8 @@ struct eon_stat {
 #undef IncStat
 #define IncStat(xxx) eonstat.xxx++
 
-typedef struct qhdr {
-	struct qhdr    *link, *rlink;
-} *queue_t;
-
 struct eon_llinfo {
-	struct qhdr     el_qhdr;/* keep all in a list */
+	LIST_ENTRY(eon_llinfo) el_list;/* keep all in a list */
 	int             el_flags;	/* cache valid ? */
 	int             el_snpaoffset;	/* IP address contained in dst nsap */
 	struct rtentry *el_rt;	/* back pointer to parent route */

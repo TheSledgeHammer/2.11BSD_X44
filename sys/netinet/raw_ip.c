@@ -134,13 +134,7 @@ rip_init()
  * mbuf chain.
  */
 void
-#if __STDC__
 rip_input(struct mbuf *m, ...)
-#else
-rip_input(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	int proto;
 	struct ip *ip = mtod(m, struct ip *);
@@ -194,8 +188,9 @@ rip_input(m, va_alist)
 #endif /*IPSEC*/
 			if ((n = m_copy(m, 0, (int)M_COPYALL)) != NULL) {
 				if ((last->inp_flags & INP_CONTROLOPTS) ||
-				    last->inp_socket->so_options & SO_TIMESTAMP)
+				    (last->inp_socket->so_options & SO_TIMESTAMP)) {
 					ip_savecontrol(last, &opts, ip, n);
+				}
 				if (sbappendaddr(&last->inp_socket->so_rcv,
 				    sintosa(&ripsrc), n, opts) == 0) {
 					/* should notify about lost packet */
@@ -309,13 +304,7 @@ rip_ctlinput(cmd, sa, v)
  * Tack on options user may have setup with control call.
  */
 int
-#if __STDC__
 rip_output(struct mbuf *m, ...)
-#else
-rip_output(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	struct inpcb *inp;
 	struct ip *ip;

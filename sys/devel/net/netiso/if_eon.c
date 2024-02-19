@@ -124,7 +124,7 @@ eonprotoinit()
 	(void) eonattach();
 }
 
-struct eon_llinfo eon_llinfo;
+LIST_HEAD( , eon_llinfo) llinfo_eon;
 #define PROBE_OK 0;
 
 
@@ -160,7 +160,7 @@ eonattach()
 	if_attach(ifp);
 	if_alloc_sadl(ifp);
 	eonioctl(ifp, SIOCSIFADDR, (caddr_t) TAILQ_FIRST(ifp->if_addrlist));
-	eon_llinfo.el_qhdr.link = eon_llinfo.el_qhdr.rlink = &(eon_llinfo.el_qhdr);
+	LIST_INIT(&llinfo_eon);
 
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_EON]) {
@@ -307,7 +307,7 @@ eonrtrequest(cmd, rt, info)
 		if (el == 0)
 			return;
 		Bzero(el, sizeof(*el));
-		insque(&(el->el_qhdr), &eon_llinfo.el_qhdr);
+		LIST_INSERT_HEAD(&llinfo_eon, el, el_list);
 		el->el_rt = rt;
 		break;
 	}
@@ -315,10 +315,11 @@ eonrtrequest(cmd, rt, info)
 		switch (gate->sa_family) {
 		case AF_LINK:
 #define SDL(x) ((struct sockaddr_dl *)x)
-			if (SDL(gate)->sdl_alen == 1)
+			if (SDL(gate)->sdl_alen == 1) {
 				el->el_snpaoffset = *(u_char *) LLADDR(SDL(gate));
-			else
+			} else {
 				ipaddrloc = LLADDR(SDL(gate));
+			}
 			break;
 		case AF_INET:
 			ipaddrloc = (caddr_t) & satosin(gate)->sin_addr;
@@ -328,9 +329,10 @@ eonrtrequest(cmd, rt, info)
 		}
 	el->el_flags |= RTF_UP;
 	eoniphdr(&el->el_ei, ipaddrloc, &el->el_iproute, EON_NORMAL_ADDR, 0);
-	if (el->el_iproute.ro_rt)
+	if (el->el_iproute.ro_rt) {
 		rt->rt_rmx.rmx_mtu = el->el_iproute.ro_rt->rt_rmx.rmx_mtu
 			- sizeof(el->el_ei);
+	}
 }
 
 /*
@@ -607,9 +609,9 @@ eonctlinput(cmd, sa, dummy)
 	switch (cmd) {
 
 	case PRC_QUENCH:
-	//case PRC_QUENCH2:
-	//	/* TODO: set the dec bit */
-	//	break;
+	case PRC_QUENCH2:
+		/* TODO: set the dec bit */
+		break;
 	case PRC_TIMXCEED_REASS:
 	case PRC_ROUTEDEAD:
 	case PRC_HOSTUNREACH:

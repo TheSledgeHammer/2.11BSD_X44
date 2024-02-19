@@ -272,7 +272,7 @@ ipflow_fastforward(
 	}
 	return 1;
 }
-
+
 static void
 ipflow_addstats(
 	struct ipflow *ipf)

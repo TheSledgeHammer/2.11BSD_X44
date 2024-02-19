@@ -2,6 +2,6 @@
 
 .include <bsd.own.mk>
 
-CDMAKEFSOPTIONS= bootimage=i386; boot/cdboot,no-emul-boot
+CDMAKEFSOPTIONS= bootimage=i386; cdboot,no-emul-boot
 CDINSTKERNEL=	../../instkernel
-CDKERNELS=		twobsd-GENERIC.gz       twobsd
+CDKERNELS=	twobsd-GENERIC.gz       twobsd

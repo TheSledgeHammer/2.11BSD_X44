@@ -137,6 +137,15 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #include <netns/ns_if.h>
 #endif
 
+#ifdef MPLS
+#include <netmpls/mpls.h>
+#include <netmpls/mpls_var.h>
+#endif
+
+static struct timeval bigpktppslim_last;
+static int bigpktppslim = 2;	/* XXX */
+static int bigpktpps_count;
+
 u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 #define senderr(e) { error = (e); goto bad;}
 
@@ -270,6 +279,8 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 		break;
 #endif
 /*	case AF_NSAP: */
+	case AF_APPLETALK:
+	case AF_ISO:
 	case AF_CCITT:
 	case pseudo_AF_HDRCMPLT:
 		hdrcmplt = 1;
@@ -289,6 +300,17 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 			dst->sa_family);
 		senderr(EAFNOSUPPORT);
 	}
+
+#ifdef MPLS
+	if (rt0 != NULL && rt_gettag(rt0) != NULL &&
+	    rt_gettag(rt0)->sa_family == AF_MPLS &&
+	    (m->m_flags & (M_MCAST | M_BCAST)) == 0) {
+		union mpls_shim msh;
+		msh.s_addr = MPLS_GETSADDR(rt0);
+		if (msh.shim.label != MPLS_LABEL_IMPLNULL)
+			etype = htons(ETHERTYPE_MPLS);
+	}
+#endif
 
 	if (mcopy)
 		(void) looutput(ifp, mcopy, dst, rt);
@@ -486,7 +508,11 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 	struct ifqueue *inq;
 	u_int16_t etype;
 	int s;
+#if defined (ISO) || defined (LLC)
+	register struct llc *l;
+#endif
 	struct ether_header *eh;
+	size_t ehlen;
 
 	if ((ifp->if_flags & IFF_UP) == 0) {
 		m_freem(m);
@@ -495,12 +521,15 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 
 	eh = mtod(m, struct ether_header *);
 	etype = ntohs(eh->ether_type);
+	ehlen = sizeof(*eh);
 
 	/*
 	 * Determine if the packet is within its size limits.
 	 */
-	if (m->m_pkthdr.len >
+	if (etype != ETHERTYPE_MPLS && m->m_pkthdr.len >
 	    ETHER_MAX_FRAME(ifp, etype, m->m_flags & M_HASFCS)) {
+		if (ppsratecheck(&bigpktppslim_last, &bigpktpps_count,
+					    bigpktppslim)) {
 		printf("%s: discarding oversize frame (len=%d)\n",
 		    ifp->if_xname, m->m_pkthdr.len);
 		m_freem(m);
@@ -561,8 +590,7 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 	{
 		if ((m->m_flags & (M_BCAST|M_MCAST)) == 0 &&
 		    (ifp->if_flags & IFF_PROMISC) != 0 &&
-		    memcmp(LLADDR(ifp->if_sadl), eh->ether_dhost,
-			   ETHER_ADDR_LEN) != 0) {
+		    memcmp(LLADDR(ifp->if_sadl), eh->ether_dhost, ETHER_ADDR_LEN) != 0) {
 			m->m_flags |= M_PROMISC;
 		}
 	}
@@ -604,14 +632,32 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 	switch (etype) {
 #if NVLAN > 0
 	case ETHERTYPE_VLAN:
+		struct ether_vlan_header *evl = (void *)eh;
+		/*
+		 * If there is a tag of 0, then the VLAN header was probably
+		 * just being used to store the priority.  Extract the ether
+		 * type, and if IP or IPV6, let them deal with it.
+		 */
+		if (m->m_len <= sizeof(*evl)
+				    && EVL_VLANOFTAG(evl->evl_tag) == 0) {
+			etype = ntohs(evl->evl_proto);
+			ehlen = sizeof(*evl);
+			if ((m->m_flags & M_PROMISC) == 0
+			    && (etype == ETHERTYPE_IP
+				|| etype == ETHERTYPE_IPV6)) {
+				break;
+			}
+		}
+
 		/*
 		 * vlan_input() will either recursively call ether_input()
 		 * or drop the packet.
 		 */
-		if (((struct ethercom *)ifp)->ec_nvlans != 0)
+		if (((struct ethercom *)ifp)->ec_nvlans != 0) {
 			vlan_input(ifp, m);
-		else
+		} else {
 			m_freem(m);
+		}
 		return;
 #endif /* NVLAN > 0 */
 #if NPPPOE > 0
@@ -690,6 +736,12 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		inq = &ip6intrq;
 		break;
 #endif
+#ifdef MPLS
+	case ETHERTYPE_MPLS:
+		schednetisr(NETISR_MPLS);
+		inq = &mplsintrq;
+		break;
+#endif
 #ifdef NS
 	case ETHERTYPE_NS:
 		schednetisr(NETISR_NS);
@@ -698,6 +750,32 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 
 #endif
 	default:
+#if defined (ISO) || defined (LLC)
+		if (eh->ether_type > ETHERMTU) {
+			goto dropanyway;
+		}
+		l = mtod(m, struct llc *);
+		switch (l->llc_dsap) {
+		case LLC_SNAP_LSAP:
+		case LLC_ISO_LSAP:
+			switch (l->llc_control) {
+			case LLC_UI:
+			case LLC_XID:
+			case LLC_XID_P:
+			case LLC_TEST:
+			case LLC_TEST_P:
+			default:
+			    m_freem(m);
+			    return;
+			}
+			break;
+		case LLC_X25_LSAP:
+		default:
+		    m_freem(m);
+		    return;
+		}
+dropanyway:
+#endif
 	    m_freem(m);
 	    return;
 	}
@@ -1082,7 +1160,7 @@ ether_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 			}
 
 			//memcpy(LLADDR(ifp->if_sadl), LLADDR(sdl), ifp->if_addrlen);
-			sdl_copyaddrlen(ifp->if_sadl, sdl, ifp->if_addrlen);
+			sockaddr_dl_copyaddrlen(ifp->if_sadl, sdl, ifp->if_addrlen);
 			/* Set new address. */
 			error = (*ifp->if_init)(ifp);
 			break;

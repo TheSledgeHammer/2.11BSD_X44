@@ -82,6 +82,11 @@ __KERNEL_RCSID(0, "$NetBSD: if_gre.c,v 1.49.2.1.2.2 2005/05/24 19:34:16 riz Exp 
 #error "Huh? if_gre without inet?"
 #endif
 
+#ifdef MPLS
+#include <netmpls/mpls.h>
+#include <netmpls/mpls_var.h>
+#endif
+
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
@@ -302,6 +307,14 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rtent
 			error = EAFNOSUPPORT;
 			goto end;
 		}
+#ifdef MPLS
+		if (rt != NULL && rt_gettag(rt) != NULL) {
+			union mpls_shim msh;
+			msh.s_addr = MPLS_GETSADDR(rt);
+			if (msh.shim.label != MPLS_LABEL_IMPLNULL)
+				etype = htons(ETHERTYPE_MPLS);
+		}
+#endif
 		M_PREPEND(m, sizeof(struct greip), M_DONTWAIT);
 	} else {
 		IF_DROP(&ifp->if_snd);

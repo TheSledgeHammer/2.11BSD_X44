@@ -51,7 +51,7 @@ boot.cfg:	${FLOPPY_BOOT_CFG}
 .endif	# FLOPPY_BOOT_CFG
 
 .if defined(FLOPPY_NETBSD)				# {
-CLEANFILES+=	netbsd netbsd.tmp
+CLEANFILES+=	twobsd twobsd.tmp
 .if ${FLOPPY_NETBSD:E}=="gz"
 COPY_CMD=	gunzip -c ${.ALLSRC} > ${.TARGET}.tmp
 COMPRESS_CMD=	gzip -9c ${.TARGET}.tmp > ${.TARGET}; rm -f ${.TARGET}.tmp
