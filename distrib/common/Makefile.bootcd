@@ -35,7 +35,8 @@
 # longer than 8 chars)
 #
 
-BOOT?=		${DESTDIR}/usr/mdec/boot
+BOOT?=			${DESTDIR}/usr/mdec/boot0
+BOOT2?=			${DESTDIR}/usr/mdec/boot2
 BOOTXX_CD9660?=	${DESTDIR}/usr/mdec/cdboot
 CDRELEASE?=	false
 CDSOURCE?=	false
@@ -83,11 +84,11 @@ CLEANFILES+=	bootxx.${MACHINE}
 .if defined(CDINSTKERNEL)
 _INSTKERNELNOBJDIR!=	cd ${.CURDIR}/${CDINSTKERNEL} && ${PRINTOBJDIR}
 .endif
-.if exists(${DESTDIR}/usr/mdec/bootxx_cd9660)
-.if exists(${DESTDIR}/usr/mdec/boot.${MACHINE})
-BOOT2=boot.${MACHINE}
+.if exists(${DESTDIR}/usr/mdec/cdboot)
+.if exists(${DESTDIR}/usr/mdec/boot0)
+BOOT2=boot2
 .else
-BOOT2=boot
+BOOT2=boot2
 .endif
 .endif
 

@@ -100,8 +100,7 @@ tuba_cksum(sum, offset, siso, index)
 }
 
 int
-tuba_tcp_output_checksum(af, m, isop, th)
-	int af;
+tuba_tcp_output(m, isop, th)
 	struct mbuf *m;
 	struct isopcb *isop;
 	struct tcpiphdr *th;
@@ -146,24 +145,21 @@ tuba_tcp_output_checksum(af, m, isop, th)
 	}
 	REDUCE(th->ti_sum, (th->ti_sum + (0xffff ^ sum)));
 
-	switch (af) {
-	case AF_INET:
-		m->m_len -= sizeof(struct ip);
-		m->m_pkthdr.len -= sizeof(struct ip);
-		m->m_data += sizeof(struct ip);
-		break;
-	case AF_INET6:
-		m->m_len -= sizeof(struct ip6_hdr);
-		m->m_pkthdr.len -= sizeof(struct ip6_hdr);
-		m->m_data += sizeof(struct ip6_hdr);
-		break;
-	}
+#ifdef INET
+	m->m_len -= sizeof(struct ip);
+	m->m_pkthdr.len -= sizeof(struct ip);
+	m->m_data += sizeof(struct ip);
+#endif
+#ifdef INET6
+	m->m_len -= sizeof(struct ip6_hdr);
+	m->m_pkthdr.len -= sizeof(struct ip6_hdr);
+	m->m_data += sizeof(struct ip6_hdr);
+#endif
 	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
 
 int
-tuba_udp_output_checksum(af, m, isop, uh)
-	int af;
+tuba_udp_output(m, isop, uh)
 	struct mbuf *m;
 	struct isopcb *isop;
 	struct udpiphdr *uh;
@@ -208,18 +204,16 @@ tuba_udp_output_checksum(af, m, isop, uh)
 	}
 	REDUCE(uh->ui_sum, (uh->ui_sum + (0xffff ^ sum)));
 
-	switch (af) {
-	case AF_INET:
-		m->m_len -= sizeof(struct ip);
-		m->m_pkthdr.len -= sizeof(struct ip);
-		m->m_data += sizeof(struct ip);
-		break;
-	case AF_INET6:
-		m->m_len -= sizeof(struct ip6_hdr);
-		m->m_pkthdr.len -= sizeof(struct ip6_hdr);
-		m->m_data += sizeof(struct ip6_hdr);
-		break;
-	}
+#ifdef INET
+	m->m_len -= sizeof(struct ip);
+	m->m_pkthdr.len -= sizeof(struct ip);
+	m->m_data += sizeof(struct ip);
+#endif
+#ifdef INET6
+	m->m_len -= sizeof(struct ip6_hdr);
+	m->m_pkthdr.len -= sizeof(struct ip6_hdr);
+	m->m_data += sizeof(struct ip6_hdr);
+#endif
 	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
 
@@ -250,4 +244,68 @@ tuba_refcnt(isop, delta)
 	if ((index != 0) && (tc != NULL) && (delta == 1 || tc->tc_refcnt > 0)) {
 		tc->tc_refcnt += delta;
 	}
+}
+
+void
+tuba_pcbdetach(isop)
+	struct isopcb *isop;
+{
+	if (isop == 0) {
+		return;
+	}
+	tuba_refcnt(isop, -1);
+	isop->isop_socket = 0;
+	iso_pcbdetach(isop);
+}
+
+/*
+ * Avoid  in_pcbconnect in faked out tcp_input()
+ */
+int
+tuba_pcbconnect(inp, nam)
+	register struct inpcb *inp;
+	struct mbuf *nam;
+{
+	register struct sockaddr_iso *siso;
+	struct sockaddr_in *sin;
+	struct isopcb *isop;
+	struct tcpcb *tp;
+	int error;
+
+	sin = mtod(nam, struct sockaddr_in*);
+	tp = intotcpcb(inp);
+	isop = (struct isopcb*) tp->t_tuba_pcb;
+	/* hardwire iso_pcbbind() here */
+	siso = isop->isop_laddr = &isop->isop_sladdr;
+	*siso = tuba_table[inp->inp_laddr.s_addr]->tc_siso;
+	siso->siso_tlen = sizeof(inp->inp_lport);
+	bcopy((caddr_t) &inp->inp_lport, TSEL(siso), sizeof(inp->inp_lport));
+
+	/* hardwire in_pcbconnect() here without assigning route */
+	inp->inp_fport = sin->sin_port;
+	inp->inp_faddr = sin->sin_addr;
+
+	/* reuse nam argument to call iso_pcbconnect() */
+	nam->m_len = sizeof(*siso);
+	siso = mtod(nam, struct sockaddr_iso *);
+	*siso = tuba_table[inp->inp_faddr.s_addr]->tc_siso;
+	siso->siso_tlen = sizeof(inp->inp_fport);
+	bcopy((caddr_t) &inp->inp_fport, TSEL(siso), sizeof(inp->inp_fport));
+	error = iso_pcbconnect(isop, nam);
+	if (error == 0) {
+		tuba_refcnt(isop, 1);
+	}
+	return (error);
+}
+
+tuba_tcp_input(m, src, dst)
+	register struct mbuf *m;
+	struct sockaddr_iso *src, *dst;
+{
+
+}
+
+tuba_udp_input()
+{
+
 }

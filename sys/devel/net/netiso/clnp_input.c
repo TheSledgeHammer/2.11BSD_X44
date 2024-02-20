@@ -95,13 +95,12 @@ __KERNEL_RCSID(0, "$NetBSD: clnp_input.c,v 1.27 2003/09/26 22:23:58 wiz Exp $");
 #include <machine/stdarg.h>
 
 #ifdef ISO
-u_char          clnp_protox[ISOPROTO_MAX];
+u_char clnp_protox[ISOPROTO_MAX];
 struct clnl_protosw clnl_protox[256];
-int             clnpqmaxlen = IFQ_MAXLEN;	/* RAH? why is this a
-						 * variable */
+int    clnpqmaxlen = IFQ_MAXLEN;	/* RAH? why is this a variable */
 #ifdef	ISO_X25ESIS
 #if 0
-void            x25esis_input();
+void    x25esis_input();
 #endif
 #endif				/* ISO_X25ESIS */
 struct iso_ifaddrhead iso_ifaddr = TAILQ_HEAD_INITIALIZER(iso_ifaddr);
@@ -188,8 +187,7 @@ next:
 	switch ((sh.snh_ifp = m->m_pkthdr.rcvif)->if_type) {
 	case IFT_EON:
 		bcopy(mtod(m, caddr_t), (caddr_t) sh.snh_dhost, sizeof(u_long));
-		bcopy(sizeof(u_long) + mtod(m, caddr_t),
-		      (caddr_t) sh.snh_shost, sizeof(u_long));
+		bcopy(sizeof(u_long) + mtod(m, caddr_t), (caddr_t) sh.snh_shost, sizeof(u_long));
 		sh.snh_dhost[4] = mtod(m, u_char *)[sizeof(struct ip) +
 				     offsetof(struct eon_hdr, eonh_class)];
 		m->m_data += EONIPLEN;

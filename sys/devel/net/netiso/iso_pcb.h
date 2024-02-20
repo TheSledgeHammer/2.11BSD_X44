@@ -93,8 +93,8 @@ struct isopcb {
 	struct ifaddr  		*isop_ifa;			/* ESIS interface assoc w/sock */
 	struct mbuf    		*isop_mladdr;		/* dynamically allocated laddr */
 	struct mbuf    		*isop_mfaddr;		/* dynamically allocated faddr */
-	struct sockaddr_iso isop_sladdr,		/* preallocated laddr */
-	                	isop_sfaddr;		/* preallocated faddr */
+	struct sockaddr_iso isop_sladdr;		/* preallocated laddr */
+	struct sockaddr_iso isop_sfaddr;		/* preallocated faddr */
 };
 
 #ifdef sotorawcb

@@ -182,14 +182,12 @@ struct carp_if {
 void	carp_hmac_prepare(struct carp_softc *);
 void	carp_hmac_generate(struct carp_softc *, u_int32_t *,
 	    unsigned char *);
-int	carp_hmac_verify(struct carp_softc *, u_int32_t *,
-	    unsigned char *);
+int	carp_hmac_verify(struct carp_softc *, u_int32_t *, unsigned char *);
 void	carp_setroute(struct carp_softc *, int);
 void	carp_proto_input_c(struct mbuf *, struct carp_header *, sa_family_t);
 void	carpattach(int);
 void	carpdetach(struct carp_softc *);
-int	carp_prepare_ad(struct mbuf *, struct carp_softc *,
-	    struct carp_header *);
+int	carp_prepare_ad(struct mbuf *, struct carp_softc *, struct carp_header *);
 void	carp_send_ad_all(void);
 void	carp_send_ad(void *);
 void	carp_send_arp(struct carp_softc *);
