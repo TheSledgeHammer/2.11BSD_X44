@@ -93,8 +93,8 @@ struct	nlist {
 #define	N_EXT		0x01		/* external (global) bit, OR'ed in */
 #define	N_TYPE		0x1e		/* mask for all the type bits */
 
-#define	N_FORMAT	"%06o"		/* namelist value format; XXX */
-//#define	N_FORMAT	"%08x"		/* namelist value format; XXX */
+///#define	N_FORMAT	"%06o"		/* namelist value format; XXX */
+#define	N_FORMAT	"%08x"		/* namelist value format; XXX */
 #define	N_STAB		0x0e0		/* mask for debugger symbols -- stab(5) */
 
 __BEGIN_DECLS
