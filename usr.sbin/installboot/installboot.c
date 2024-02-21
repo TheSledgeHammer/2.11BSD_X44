@@ -337,7 +337,7 @@ setup_ffs_ufs2_blks(diskdev, inode)
 	blk = fsbtodb(fs, ino_to_fsba(fs, inode));
 	if (devread(devfd, buf, blk, (size_t)fs->fs_bsize, "inode"))
 		goto out;
-	ip = (struct ufs1_dinode *)buf + ino_to_fsbo(fs, inode);
+	ip = (struct ufs2_dinode *)buf + ino_to_fsbo(fs, inode);
 
 	/*
 	 * Have the inode.  Figure out how many blocks we need.
