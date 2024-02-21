@@ -27,8 +27,14 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD$"); */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include <nbinclude/sys/disklabel.h>
+#include <nbinclude/sys/diskmbr.h>
+#else
 #include <sys/disklabel.h>
 #include <sys/diskmbr.h>
+#endif /* HAVE_NBTOOL_CONFIG_H */
+
 #include <sys/endian.h>
 #include <sys/param.h>
 #include <sys/stat.h>
