@@ -94,7 +94,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		file lint1 slc																\
 		makefs sortinfo 																\
 		.WAIT menuc mklocale mknod msgc 										\
-		.WAIT 																	\
+		.WAIT disklabel																	\
 		.WAIT 																	\
 		.WAIT 																	\
 		.WAIT 																	\
