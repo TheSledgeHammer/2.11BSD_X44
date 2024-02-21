@@ -65,12 +65,9 @@ static char copyright[] =
 #include <syslog.h>
 #include <unistd.h>
 
-#if __STDC__
 #include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
 
+#include "extern.h"
 #include "mntopts.h"
 
 struct mntopt mopts[] = {
@@ -79,11 +76,10 @@ struct mntopt mopts[] = {
 	{ NULL },
 };
 
-#if __STDC__
+struct disklabel *getdisklabel(char *, int);
+static gid_t mfs_group(const char *);
+static uid_t mfs_user(const char *);
 void	fatal(const char *fmt, ...);
-#else
-void	fatal();
-#endif
 
 #define	COMPAT			/* allow non-labeled disks */
 
@@ -134,47 +130,48 @@ void	fatal();
  * rotational positions that we distinguish.  With NRPOS of 8 the resolution
  * of our summary information is 2ms for a typical 3600 rpm drive.
  */
-#define	NRPOS		8	/* number distinct rotational positions */
+#define	NRPOS		8		/* number distinct rotational positions */
 
 
-int	mfs;			/* run as the memory based filesystem */
-int	Nflag;			/* run without writing file system */
-int	Oflag;			/* format as an 4.3BSD file system */
-int	fssize;			/* file system size */
-int	ntracks;		/* # tracks/cylinder */
-int	nsectors;		/* # sectors/track */
-int	nphyssectors;		/* # sectors/track including spares */
-int	secpercyl;		/* sectors per cylinder */
-int	trackspares = -1;	/* spare sectors per track */
-int	cylspares = -1;		/* spare sectors per cylinder */
-int	sectorsize;		/* bytes/sector */
+int	mfs;					/* run as the memory based filesystem */
+int	Nflag;					/* run without writing file system */
+int	Oflag;					/* format as an 4.3BSD file system */
+int	fssize;					/* file system size */
+int	ntracks;				/* # tracks/cylinder */
+int	nsectors;				/* # sectors/track */
+int	nphyssectors;			/* # sectors/track including spares */
+int	secpercyl;				/* sectors per cylinder */
+int	trackspares = -1;		/* spare sectors per track */
+int	cylspares = -1;			/* spare sectors per cylinder */
+int	sectorsize;				/* bytes/sector */
 #ifdef tahoe
-int	realsectorsize;		/* bytes/sector in hardware */
+int	realsectorsize;			/* bytes/sector in hardware */
 #endif
-int	rpm;			/* revolutions/minute of drive */
-int	interleave;		/* hardware sector interleave */
-int	trackskew = -1;		/* sector 0 skew, per track */
-int	headswitch;		/* head switch time, usec */
-int	trackseek;		/* track-to-track seek, usec */
-int	fsize = 0;		/* fragment size */
-int	bsize = 0;		/* block size */
-int	cpg = DESCPG;		/* cylinders/cylinder group */
-int	cpgflg;			/* cylinders/cylinder group flag was given */
-int	minfree = MINFREE;	/* free space threshold */
-int	opt = DEFAULTOPT;	/* optimization preference (space or time) */
-int	density;		/* number of bytes per inode */
-int	maxcontig = 0;		/* max contiguous blocks to allocate */
+int	rpm;					/* revolutions/minute of drive */
+int	interleave;				/* hardware sector interleave */
+int	trackskew = -1;			/* sector 0 skew, per track */
+int	headswitch;				/* head switch time, usec */
+int	trackseek;				/* track-to-track seek, usec */
+int	fsize = 0;				/* fragment size */
+int	bsize = 0;				/* block size */
+int	cpg = DESCPG;			/* cylinders/cylinder group */
+int	cpgflg;					/* cylinders/cylinder group flag was given */
+int	minfree = MINFREE;		/* free space threshold */
+int	opt = DEFAULTOPT;		/* optimization preference (space or time) */
+int	density;				/* number of bytes per inode */
+int	maxcontig = 0;			/* max contiguous blocks to allocate */
 int	rotdelay = ROTDELAY;	/* rotational delay between blocks */
-int	maxbpg;			/* maximum blocks per file in a cyl group */
-int	nrpos = NRPOS;		/* # of distinguished rotational positions */
-int	bbsize = BBSIZE;	/* boot block size */
-int	sbsize = SBSIZE;	/* superblock size */
+int	maxbpg;					/* maximum blocks per file in a cyl group */
+int	nrpos = NRPOS;			/* # of distinguished rotational positions */
+int	bbsize = BBSIZE;		/* boot block size */
+int	sbsize = SBSIZE;		/* superblock size */
 int	mntflags = MNT_ASYNC;	/* flags to be passed to mount */
-u_long	memleft;		/* virtual memory available */
-caddr_t	membase;		/* start address of memory based filesystem */
+u_long	memleft;			/* virtual memory available */
+caddr_t	membase;			/* start address of memory based filesystem */
+
 #ifdef COMPAT
-char	*disktype;
-int	unlabeled;
+char *disktype;
+int	 unlabeled;
 #endif
 
 char	device[MAXPATHLEN];
@@ -190,12 +187,15 @@ main(argc, argv)
 	register int ch;
 	register struct partition *pp;
 	register struct disklabel *lp;
-	struct disklabel *getdisklabel();
 	struct partition oldpartition;
 	struct stat st;
 	struct statfs *mp;
 	int fsi, fso, len, n;
 	char *cp, *s1, *s2, *special, *opstring, buf[BUFSIZ];
+
+	mode_t mfsmode = 01777;	/* default mode for a /tmp-type directory */
+	uid_t mfsuid = 0;	/* user root */
+	gid_t mfsgid = 0;	/* group wheel */
 
 	if (progname == strrchr(*argv, '/'))
 		++progname;
@@ -209,7 +209,7 @@ main(argc, argv)
 
 	opstring = mfs ?
 	    "NT:a:b:c:d:e:f:i:m:o:s:" :
-	    "NOS:T:a:b:c:d:e:f:i:k:l:m:n:o:p:r:s:t:u:x:";
+	    "NOS:T:a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:r:s:t:u:x:";
 	while ((ch = getopt(argc, argv, opstring)) != EOF)
 		switch (ch) {
 		case 'N':
@@ -254,9 +254,27 @@ main(argc, argv)
 			if ((fsize = atoi(optarg)) <= 0)
 				fatal("%s: bad fragment size", optarg);
 			break;
+		case 'g':
+			/* mfs only */
+			if (mfs) {
+				mfsgid = mfs_group(optarg);
+			}
+			break;
+		case 'h':
+			/* mfs only */
+			if (mfs) {
+				mfsuid = mfs_user(optarg);
+			}
+			break;
 		case 'i':
 			if ((density = atoi(optarg)) <= 0)
 				fatal("%s: bad bytes per inode\n", optarg);
+			break;
+		case 'j':
+			/* mfs only */
+			if ((mfsmode = strtol(optarg, NULL, 8)) <= 0) {
+				fatal("%s: bad mode `%s'", optarg);
+			}
 			break;
 		case 'k':
 			if ((trackskew = atoi(optarg)) < 0)
@@ -496,7 +514,7 @@ main(argc, argv)
 		pp->p_size /= secperblk;
 	}
 #endif
-	mkfs(pp, special, fsi, fso);
+	mkfs(pp, special, fsi, fso, mfsmode, mfsuid, mfsgid);
 #ifdef tahoe
 	if (realsectorsize != DEV_BSIZE)
 		pp->p_size *= DEV_BSIZE / realsectorsize;
@@ -532,6 +550,7 @@ char lmsg[] = "%s: can't read disk label; disk type must be specified";
 char lmsg[] = "%s: can't read disk label";
 #endif
 
+
 struct disklabel *
 getdisklabel(s, fd)
 	char *s;
@@ -557,6 +576,7 @@ getdisklabel(s, fd)
 	return (&lab);
 }
 
+void
 rewritelabel(s, fd, lp)
 	char *s;
 	int fd;
@@ -607,23 +627,34 @@ rewritelabel(s, fd, lp)
 #endif
 }
 
+
+static gid_t
+mfs_group(const char *gname)
+{
+	struct group *gp;
+
+	if (!(gp = getgrnam(gname)) && !isdigit((unsigned char)*gname))
+		errx(1, "unknown gname %s", gname);
+	return gp ? gp->gr_gid : (gid_t)atoi(gname);
+}
+
+static uid_t
+mfs_user(const char *uname)
+{
+	struct passwd *pp;
+
+	if (!(pp = getpwnam(uname)) && !isdigit((unsigned char)*uname))
+		errx(1, "unknown user %s", uname);
+	return pp ? pp->pw_uid : (uid_t)atoi(uname);
+}
+
 /*VARARGS*/
 void
-#if __STDC__
 fatal(const char *fmt, ...)
-#else
-fatal(fmt, va_alist)
-	char *fmt;
-	va_dcl
-#endif
 {
 	va_list ap;
 
-#if __STDC__
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
 	if (fcntl(STDERR_FILENO, F_GETFL) < 0) {
 		openlog(progname, LOG_CONS, LOG_DAEMON);
 		vsyslog(LOG_ERR, fmt, ap);
@@ -636,6 +667,7 @@ fatal(fmt, va_alist)
 	/*NOTREACHED*/
 }
 
+void
 usage()
 {
 	if (mfs) {
@@ -665,7 +697,10 @@ usage()
 	fprintf(stderr, "\t-d rotational delay between contiguous blocks\n");
 	fprintf(stderr, "\t-e maximum blocks per file in a cylinder group\n");
 	fprintf(stderr, "\t-f frag size\n");
+	fprintf(stderr, "\t-g mfs groupname\tgroup name of mount point\n");
+	fprintf(stderr, "\t-h mfs username\tuser name of mount point\n");
 	fprintf(stderr, "\t-i number of bytes per inode\n");
+	fprintf(stderr, "\t-j mfs perm\t\tpermissions (in octal)\n");
 	fprintf(stderr, "\t-k sector 0 skew, per track\n");
 	fprintf(stderr, "\t-l hardware sector interleave\n");
 	fprintf(stderr, "\t-m minimum free space %%\n");
