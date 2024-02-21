@@ -39,7 +39,13 @@
  */
 
 #include <sys/param.h>
+
+#if HAVE_NBTOOL_CONFIG_H
+#include <nbinclude/sys/disklabel.h>
+#else
 #include <sys/disklabel.h>
+#endif /* HAVE_NBTOOL_CONFIG_H */
+
 #include <sys/dk.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
