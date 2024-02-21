@@ -55,6 +55,7 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+
 #define DKTYPENAMES
 #define FSTYPENAMES
 
@@ -72,8 +73,11 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 //#include <ufs/ufs/dinode.h>
 //#include <ufs/ffs/fs.h>
 
+#if HAVE_NBTOOL_CONFIG_H
+#include <nbinclude/sys/disklabel.h>
+#else
 #include <sys/disklabel.h>
-
+#endif /* HAVE_NBTOOL_CONFIG_H */
 #include "pathnames.h"
 #include "dkcksum.h"
 
