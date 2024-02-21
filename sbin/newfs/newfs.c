@@ -209,7 +209,7 @@ main(argc, argv)
 
 	opstring = mfs ?
 	    "NT:a:b:c:d:e:f:i:m:o:s:" :
-	    "NOS:T:a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:r:s:t:u:x:";
+	    "NOS:T:a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:r:s:t:u:x:";
 	while ((ch = getopt(argc, argv, opstring)) != EOF)
 		switch (ch) {
 		case 'N':
