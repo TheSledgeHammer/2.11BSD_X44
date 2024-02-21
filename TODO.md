@@ -21,14 +21,13 @@ A General todo list. Don't hesitate to add to this list. :)
 ## libexec:
 
 ## sbin:
-- ifconfig: finish updates and fixes
+- fdisk: fix
 
 ## share:
 
 ## tools:
 - add fgen
 - Fix: Below will compile but not as a part of the host toolchain
-	- Disklabel
  	- Fdisk
 
 ## stand:
