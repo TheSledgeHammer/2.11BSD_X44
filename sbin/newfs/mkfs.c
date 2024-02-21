@@ -127,7 +127,7 @@ mkfs(pp, fsys, fi, fo, mfsmode, mfsuid, mfsgid)
 	long mapcramped, inodecramped;
 	long postblsize, rotblsize, totalsbsize;
 	int ppid, status;
-	const struct timeval *utime;
+	struct timeval utime;
 	quad_t sizepb;
 
 #ifndef STANDALONE
@@ -646,7 +646,7 @@ next:
 		printf("super-block backups (for fsck -b #) at:");
 	}
 	for (cylno = 0; cylno < sblock.fs_ncg; cylno++) {
-		initcg(cylno, utime);
+		initcg(cylno, &utime);
 		if (mfs) {
 			continue;
 		}
@@ -665,8 +665,8 @@ next:
 	 * Now construct the initial file system,
 	 * then write out the super-block.
 	 */
-	fsinit(utime, mfsmode, mfsuid, mfsgid);
-	sblock.fs_time = utime;
+	fsinit(&utime, mfsmode, mfsuid, mfsgid);
+	sblock.fs_time = &utime;
 	wtfs((int)SBOFF / sectorsize, sbsize, (char *)&sblock);
 	for (i = 0; i < sblock.fs_cssize; i += sblock.fs_bsize) {
 		wtfs(fsbtodb(&sblock, sblock.fs_csaddr + numfrags(&sblock, i)),
