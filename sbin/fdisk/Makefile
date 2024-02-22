@@ -13,6 +13,3 @@ COPTS.fdisk.c+=	${GCC_NO_STRINGOP_TRUNCATION}
 DPADD+=	${LIBUTIL}
 LDADD+=	-lutil
 .endif
-
-test:	${PROG}
-	sh ${.CURDIR}/runtest.sh
