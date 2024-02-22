@@ -96,7 +96,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT menuc mklocale mknod msgc 										\
 		.WAIT disklabel																	\
 		.WAIT 																	\
-		.WAIT 																	\
+		.WAIT fdisk																\
 		.WAIT 																	\
 		pwd_mkdb strfile vgrind zic												
 														
