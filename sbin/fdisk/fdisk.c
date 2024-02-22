@@ -253,7 +253,7 @@ static int write_disk(off_t sector, void *buf);
 static void guess_geometry(u_int);
 static int  check_params(void);
 static int get_params(void);
-static void dos_partition_dec(void *, struct dos_partition *);
+static void dos_partition_dec(void const *, struct dos_partition *);
 static void dos_partition_enc(void *, struct dos_partition *);
 static int read_s0(void);
 static int write_s0(void);
