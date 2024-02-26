@@ -571,7 +571,7 @@ int
 dsopen(disk, dev, mode, flags, lp)
 	struct dkdevice 	*disk;
 	dev_t				dev;
-	int					mode;
+	int					mode; /* fmt */
 	u_int				flags;
 	struct disklabel 	*lp;
 {

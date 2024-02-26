@@ -101,6 +101,7 @@ struct diskslices 	*dsmakeslicestruct(int, struct disklabel *);
 char				*dsname(struct dkdevice *, dev_t, int, int, int, char *);
 int					dsopen(struct dkdevice *, dev_t, int, u_int, struct disklabel *);
 int					dssize(struct dkdevice *, dev_t);
+int					dsinit(struct dkdevice *, dev_t, struct disklabel *, struct diskslices **);
 int					mbrinit(struct dkdevice *, dev_t, struct disklabel *, struct diskslices **);
 int					gptinit(struct dkdevice *, dev_t, struct disklabel *, struct diskslices **);
 #endif /* _KERNEL */

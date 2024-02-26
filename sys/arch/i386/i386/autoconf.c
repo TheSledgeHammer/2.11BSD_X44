@@ -222,11 +222,12 @@ setswap(majdev, mindev)
 int
 setroot_slices(void)
 {
-	int mindev, unit, part, slice;
+	int mindev, unit, part, slice, adaptor;
 
 	unit = B_UNIT(bootdev);
 	part = B_PARTITION(bootdev);
 	slice = B_SLICE(bootdev);
+	adaptor = B_SLICE_TO_B_ADAPTOR(slice);
 	mindev = dkmakeminor(unit, slice, part);
 
 	return (mindev);
