@@ -135,16 +135,6 @@ disk_attach(diskp)
 	diskp->dk_cpulabel = (struct cpu_disklabel *)malloc(sizeof(struct cpu_disklabel *), M_DEVBUF, M_NOWAIT);
 	diskp->dk_slices = dsmakeslicestruct(BASE_SLICE, diskp->dk_label);
 
-#ifndef DISK_SLICES
-	/*
-	 * When slices aren't enabled, fake slices structure to keep mbrinit and gptinit happy!
-	 */
-	dev = diskp->dk_dev.dv_unit;
-	pdev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
-	ret = dsinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
-#else
-	ret = 0;
-#endif
 	if (diskp->dk_label == NULL) {
 		panic("disk_attach: can't allocate storage for cpu_disklabel");
 	} else {
@@ -155,6 +145,18 @@ disk_attach(diskp)
 	} else {
 		bzero(diskp->dk_cpulabel, sizeof(struct cpu_disklabel));
 	}
+
+#ifndef DISK_SLICES
+	/*
+	 * When slices aren't enabled, fake slices structure to keep mbrinit and gptinit happy!
+	 */
+	dev = diskp->dk_dev.dv_unit;
+	pdev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
+	ret = dsinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
+#else
+	ret = 0;
+#endif
+
 	if (diskp->dk_slices == NULL || ret != 0) {
 		panic("disk_attach: can't allocate storage or initialize diskslices");
 	} else {
@@ -607,7 +609,7 @@ dkop_open(diskp, dev, flag, fmt, p)
 		return (ENXIO);
 	}
 #ifdef DISK_SLICES
-	error = dsopen(diskp, dev, fmt, flag, diskp->dk_label);
+	error = dsopen(diskp, pdev, fmt, flag, diskp->dk_label);
 	if (error != 0) {
 		return (error);
 	}
@@ -662,7 +664,7 @@ dkop_ioctl(diskp, dev, cmd, data, flag, p)
 		return (ENXIO);
 	}
 #ifdef DISK_SLICES
-	error = dsioctl(dev, cmd, data, flag, &diskp->dk_slices);
+	error = dsioctl(pdev, cmd, data, flag, &diskp->dk_slices);
 	if (error == ENOIOCTL) {
 		goto out;
 	}
