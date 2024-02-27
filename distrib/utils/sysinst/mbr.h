@@ -51,15 +51,16 @@
 
 #define MBR_PART_COUNT 		NDOSPART
 #define MBR_MAGIC 			DOSMAGIC
-
+#define MBR_BS_OFFSET		DOSBS_OFFSET
+#define MBR_BS_OLD_OFFSET	DOSBS_OLD_OFFSET
+#define MBR_BS_MAGIC		DOSBS_MAGIC
 #define MBR_PFLAG_ACTIVE 	DOSPFLG_ACTIVE
 
 /*      
  * XXX  I (dsl) haven't the foggiest idea what the MBR extended chain
  *	looks like if the sector size isn't 512.
  */     
-#define MBR_SECSIZE     			512
-
+#define MBR_SECSIZE     			MSECTOR_SIZE
 #define MBR_PUT_LSCYL(c)			((c) & 0xff)
 #define MBR_PUT_MSCYLANDSEC(c,s)	(((s) & 0x3f) | (((c) >> 2) & 0xc0))
 

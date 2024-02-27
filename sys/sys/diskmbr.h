@@ -44,6 +44,12 @@
 #define	DOSMAGICOFFSET		510
 #define	DOSMAGIC			0xAA55
 
+#define	DOSBS_OFFSET		400		/* offsetof(mbr_sector, mbr_bootsel) */
+#define	DOSBS_OLD_OFFSET	404		/* where mbr_bootsel used to be */
+#define	DOSBS_MAGIC_OFFSET	444		/* offsetof(mbr_sector, mbr_bootsel_magic) */
+#define	DOSBS_MAGIC			0xB5E1	/* mbr_bootsel magic number */
+#define	DOSBS_PARTNAMESIZE	8	/* Size of name mbr_bootsel nametab */
+
 #define MSECTOR_SIZE		512		/* MSDOS sector size in bytes */
 #define MDIR_SIZE			32		/* MSDOS directory size in bytes */
 #define MAX_CLUSTER			8192	/* largest cluster size */
@@ -136,16 +142,29 @@ struct bootsector {
 	unsigned char junk[476];	/* who cares? */
 };
 
-/* MBR boot sector */
+/*
+ * (x86) MBR boot selector
+ */
+struct mbr_bootsel {
+	uint8_t					mbrbs_defkey;
+	uint8_t					mbrbs_flags;
+	uint16_t				mbrbs_timeo;
+	char					mbrbs_nametab[NDOSPART][DOSBS_PARTNAMESIZE + 1];
+};
+
+/*
+ * MBR boot sector
+ */
 struct mbr_sector {
-	struct bootsector 		mbr_bootsec;
-	struct dos_partition 	mbr_parts[NDOSPART];
-	struct directory		mbr_dir;
+	struct bootsector 		mbr_bootsec;					/* bootsector */
+	struct dos_partition 	mbr_parts[NDOSPART];			/* partitions */
+	struct directory		mbr_dir;						/* directory */
 	uint16_t				mbr_magic;
-	uint16_t				mbr_bootsel_magic;
 	unsigned char 			*mbr_bootcode;					/* boot code */
 	off_t 					mbr_bootsize;
-	char					mbr_nametab[NDOSPART][8 + 1];
+
+	struct mbr_bootsel		mbr_bootsel;
+	uint16_t				mbr_bootsel_magic;
 };
 
 #define	DPSECT(s) 	((s) & 0x3f)				/* isolate relevant bits of sector */
@@ -155,6 +174,7 @@ struct mbr_sector {
 	((x) == DOSPTYP_EXT || 				\
 			(x) == DOSPTYP_EXTLBA || 	\
 			(x) == DOSPTYP_EXTLNX)
+
 /*
  * Diskmbr-specific ioctls.
  */

@@ -45,7 +45,7 @@ __RCSID("$NetBSD: savenewlabel.c,v 1.5 2003/07/27 08:57:27 dsl Exp $");
 #include <fcntl.h>
 #include <util.h>
 #include <unistd.h>
-#include <sys/dkio.h>
+#include <sys/dk.h>
 #include <sys/ioctl.h>
 
 #include "defs.h"

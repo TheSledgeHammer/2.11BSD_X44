@@ -47,7 +47,7 @@
 #include <util.h>
 
 #include <sys/param.h>
-#include <sys/swap.h>
+#include <vm/include/vm_swap.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #define FSTYPENAMES

@@ -135,6 +135,17 @@ disk_attach(diskp)
 	diskp->dk_cpulabel = (struct cpu_disklabel *)malloc(sizeof(struct cpu_disklabel *), M_DEVBUF, M_NOWAIT);
 	diskp->dk_slices = dsmakeslicestruct(BASE_SLICE, diskp->dk_label);
 
+#ifndef DISK_SLICES
+	/*
+	 * When slices aren't enabled, fake slices structure to keep mbrinit and gptinit happy!
+	 */
+	//pdev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
+	//ret = dsinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
+	ret = 0;
+#else
+	ret = 0;
+#endif
+
 	if (diskp->dk_label == NULL) {
 		panic("disk_attach: can't allocate storage for cpu_disklabel");
 	} else {
@@ -145,18 +156,6 @@ disk_attach(diskp)
 	} else {
 		bzero(diskp->dk_cpulabel, sizeof(struct cpu_disklabel));
 	}
-
-#ifndef DISK_SLICES
-	/*
-	 * When slices aren't enabled, fake slices structure to keep mbrinit and gptinit happy!
-	 */
-	dev = diskp->dk_dev.dv_unit;
-	pdev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
-	ret = dsinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
-#else
-	ret = 0;
-#endif
-
 	if (diskp->dk_slices == NULL || ret != 0) {
 		panic("disk_attach: can't allocate storage or initialize diskslices");
 	} else {
@@ -805,3 +804,44 @@ sysctl_disknames(where, sizep)
 	*sizep = needed;
 	return (error);
 }
+
+#ifdef WIP
+void
+disk_attach2(diskp, driverp, name, unit)
+	struct dkdevice *diskp;
+	struct dkdriver *driverp;
+	char *name;
+	int unit;
+{
+	diskp->dk_driver = driverp;
+	diskp->dk_name = name;
+	diskp->dk_dev.dv_unit = unit;
+}
+
+void
+disk_setformat(formatp, name, dev)
+	struct dkformat *formatp;
+	char *name;
+	dev_t dev;
+{
+    formatp->df_name = name;
+    formatp->df_dev = dev;
+}
+
+struct dkformat *
+disk_getformat(diskp)
+	struct dkdevice *diskp;
+{
+	return (&diskp->dk_format);
+}
+
+create_format(formatp)
+	struct dkformat *formatp;
+{
+	dev_t unit = dkunit(formatp->df_dev);
+	if (formatp->df_unit != unit) {
+		formatp->df_unit = unit;
+	}
+	return (dkmakedev(major(formatp->df_dev), dkunit(formatp->df_dev), RAW_PART));
+}
+#endif

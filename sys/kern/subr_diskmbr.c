@@ -88,8 +88,7 @@ static void mbr_extended(struct dkdevice *disk, dev_t dev, struct disklabel *lp,
 		struct diskslices *ssp, u_long ext_offset, u_long ext_size,
 		u_long base_ext_offset, int nsectors, int ntracks, u_long mbr_offset,
 		int level);
-static int mbr_setslice(char *sname, struct disklabel *lp, struct diskslice *sp,
-		struct dos_partition *dp, u_long br_offset);
+static int mbr_setslice(char *sname, struct disklabel *lp, struct diskslice *sp, struct dos_partition *dp, u_long br_offset);
 
 static int
 check_part(sname, dp, offset, nsectors, ntracks, mbr_offset)
@@ -114,8 +113,7 @@ check_part(sname, dp, offset, nsectors, ntracks, mbr_offset)
 	secpercyl = (u_long)nsectors * ntracks;
 	chs_scyl = DPCYL(dp->dp_scyl, dp->dp_ssect);
 	chs_ssect = DPSECT(dp->dp_ssect);
-	ssector = chs_ssect - 1 + dp->dp_shd * nsectors + chs_scyl * secpercyl
-			+ mbr_offset;
+	ssector = chs_ssect - 1 + dp->dp_shd * nsectors + chs_scyl * secpercyl + mbr_offset;
 	ssector1 = offset + dp->dp_start;
 
 	/*

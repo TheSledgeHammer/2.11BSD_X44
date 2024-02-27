@@ -357,7 +357,7 @@ set_mbr_type(menudesc *m, void *arg)
 
 	mbri->last_mounted[opt < MBR_PART_COUNT ? opt : 0] = NULL;
 
-	if (MBR_IS_EXTENDED(mbrp->dp_typ)) {
+	if (DP_IS_EXTENDED(mbrp->dp_typ)) {
 		/* deleting extended partition.... */
 		if (mbri->sector || mbri->extended->extended)
 			/* We should have stopped this happening... */
@@ -426,7 +426,7 @@ set_mbr_type(menudesc *m, void *arg)
 		mbrp->dp_start = start;
 		mbrp->dp_size = sz;
 		/* If there isn't an active partition mark this one active */
-		if (!MBR_IS_EXTENDED(type)) {
+		if (!DP_IS_EXTENDED(type)) {
 			for (i = 0; i < MBR_PART_COUNT; i++)
 				if (mbri->mbr.mbr_parts[i].dp_flag != 0)
 					break;
@@ -435,7 +435,7 @@ set_mbr_type(menudesc *m, void *arg)
 		}
 	}
 
-	if (MBR_IS_EXTENDED(type)) {
+	if (DP_IS_EXTENDED(type)) {
 		if (mbri->sector != 0)
 			/* Can't set extended partition in an extended one */
 			return err_msg_win(MSG_Only_one_extended_ptn);
@@ -533,7 +533,7 @@ edit_mbr_start(menudesc *m, void *arg)
 	for (start = bsec, i = 0; i < MBR_PART_COUNT; start += sz, i++) {
 		if (find_mbr_space(&mbri->mbr, &start, &sz, start, opt))
 			break;
-		if (MBR_IS_EXTENDED(mbrp->dp_typ)) {
+		if (DP_IS_EXTENDED(mbrp->dp_typ)) {
 			/* Only want the area that contains this partition */
 			if (mbrp->dp_start < start ||
 			    mbrp->dp_start >= start + sz)
@@ -601,7 +601,7 @@ edit_mbr_start(menudesc *m, void *arg)
 		 * if the corresponding space inside the partition isn't used.
 		 */
 		if (new > mbrp->dp_start &&
-		    MBR_IS_EXTENDED(mbrp->dp_typ) &&
+		    DP_IS_EXTENDED(mbrp->dp_typ) &&
 		    (mbri->extended->mbr.mbr_parts[0].dp_typ != 0 ||
 			    mbri->extended->mbr.mbr_parts[0].dp_size <
 						new - mbrp->dp_start)) {
@@ -617,7 +617,7 @@ edit_mbr_start(menudesc *m, void *arg)
 		limit = mbrp->dp_start + mbrp->dp_size;
 
 	delta = new - mbrp->dp_start;
-	if (MBR_IS_EXTENDED(mbrp->dp_typ)) {
+	if (DP_IS_EXTENDED(mbrp->dp_typ)) {
 		ext = mbri->extended;
 		if (ext->mbr.mbr_parts[0].dp_typ != 0) {
 			/* allocate an extended ptn for the free item */
@@ -738,7 +738,7 @@ edit_mbr_size(menudesc *m, void *arg)
 			continue;
 		}
 		if (new == dflt || opt >= MBR_PART_COUNT
-		    || !MBR_IS_EXTENDED(mbrp->dp_typ))
+		    || !DP_IS_EXTENDED(mbrp->dp_typ))
 			break;
 		/*
 		 * We've been asked to change the size of the main extended
@@ -1042,7 +1042,7 @@ set_ptn_header(menudesc *m, void *arg)
 	mbrp = get_mbrp(&mbri, opt);
 	if (opt >= MBR_PART_COUNT)
 		opt = 0;
-	typ = mbrp->dp_type;
+	typ = mbrp->dp_typ;
 
 #define DISABLE(opt,cond) \
 	if (cond) \
@@ -1051,8 +1051,8 @@ set_ptn_header(menudesc *m, void *arg)
 		m->opts[opt].opt_flags &= ~OPT_IGNORE;
 
 	/* Can't change type of the extended partition unless it is empty */
-	DISABLE(PTN_OPT_TYPE, MBR_IS_EXTENDED(typ) &&
-	    (mbri->extended->mbr.mbr_parts[0].dp_type != 0 ||
+	DISABLE(PTN_OPT_TYPE, DP_IS_EXTENDED(typ) &&
+	    (mbri->extended->mbr.mbr_parts[0].dp_typ != 0 ||
 					    mbri->extended->extended != NULL));
 
 	/* It is unnecessary to be able to change the base of an extended ptn */
@@ -1062,14 +1062,14 @@ set_ptn_header(menudesc *m, void *arg)
 	DISABLE(PTN_OPT_SIZE, typ == 0);
 
 	/* Only 'normal' partitions can be 'Active' */
-	DISABLE(PTN_OPT_ACTIVE, mbri->sector != 0 || MBR_IS_EXTENDED(typ) || typ == 0);
+	DISABLE(PTN_OPT_ACTIVE, mbri->sector != 0 || DP_IS_EXTENDED(typ) || typ == 0);
 
 	/* Can only install into NetBSD partition */
 	DISABLE(PTN_OPT_INSTALL, typ != DOSPTYP_NETBSD);
 
 #ifdef BOOTSEL
 	/* The extended partition isn't bootable */
-	DISABLE(PTN_OPT_BOOTMENU, MBR_IS_EXTENDED(typ) || typ == 0);
+	DISABLE(PTN_OPT_BOOTMENU, DP_IS_EXTENDED(typ) || typ == 0);
 
 	if (typ == 0)
 		mbri->mbrb.mbrbs_nametab[opt][0] = 0;
@@ -1406,7 +1406,7 @@ read_mbr(const char *disk, mbr_info_t *mbri)
 			mbri = ext;
 			ext = NULL;
 		}
-#if BOOTSEL
+//#if BOOTSEL
 		if (mbrs->mbr_bootsel_magic == htole16(MBR_MAGIC)) {
 			/* old bootsel, grab bootsel info */
 			mbri->mbrb = *(struct mbr_bootsel *)

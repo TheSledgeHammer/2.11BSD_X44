@@ -122,16 +122,23 @@ struct dkdevice {
 	struct diskslices	*dk_slices;				/* slices */
 	struct partition 	dk_parts[MAXPARTITIONS];/* in-kernel portion */
 	struct cpu_disklabel *dk_cpulabel;
+
+	//struct dkformat		dk_format;				/* WIP */
 };
+
+#ifdef WIP
+/* dkdevice format: WIP */
+struct dkformat {
+    char    			*df_name;   /* dkdevice name */
+    dev_t   			df_dev;     /* dkdevice dev */
+    int     			df_unit;    /* dkdevice unit */
+    int     			df_part;    /* dkdevice part */
+    int     			df_slice;   /* dkdevice slice */
+};
+#endif
 
 #define	DK_DISKNAMELEN	16
 
-/*
-struct cpu_disklabel {
-#define __HAVE_DISKLABEL_DKBAD
-	struct dkbad  		bad;
-};
-*/
 struct dkdriver {
 	void				(*d_strategy)(struct buf *);
 	void				(*d_minphys)(struct buf *);

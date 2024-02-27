@@ -1343,7 +1343,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 
 	wd = wd_cd.cd_devs[WDUNIT(dev)];
 	error = wdioctl_sc(wd, dev, xfer, addr, flag, p);
-	if(error != 0) {
+	if (error != 0) {
 		error = ioctldisklabel(&wd->sc_dk, wdstrategy, dev, xfer, addr, flag);
 	}
 	return (error);
