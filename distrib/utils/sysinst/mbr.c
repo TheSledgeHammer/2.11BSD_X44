@@ -1406,7 +1406,7 @@ read_mbr(const char *disk, mbr_info_t *mbri)
 			mbri = ext;
 			ext = NULL;
 		}
-//#if BOOTSEL
+#if BOOTSEL
 		if (mbrs->mbr_bootsel_magic == htole16(MBR_MAGIC)) {
 			/* old bootsel, grab bootsel info */
 			mbri->mbrb = *(struct mbr_bootsel *)
