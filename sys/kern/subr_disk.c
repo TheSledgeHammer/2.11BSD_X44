@@ -681,7 +681,7 @@ dkop_ioctl(diskp, dev, cmd, data, flag, p)
 		goto out;
 	}
 out:
-	error = (*diskp->dk_driver->d_ioctl)(pdev, flag, fmt, p);
+	error = (*diskp->dk_driver->d_ioctl)(pdev, cmd, data, flag, p);
 	return (error);
 }
 
@@ -697,7 +697,7 @@ dkop_dump(diskp, dev)
 	if (!diskp) {
 		return (ENXIO);
 	}
-	error = (*diskp->dk_driver->d_dump)(diskp, pdev);
+	error = (*diskp->dk_driver->d_dump)(pdev);
 	return (error);
 }
 
@@ -707,7 +707,7 @@ dkop_start(diskp, bp)
 	struct buf *bp;
 {
 	disk_bufio(diskp, bp);
-	(*diskp->dk_driver->d_start)(diskp, bp);
+	(*diskp->dk_driver->d_start)(bp);
 }
 
 int
@@ -743,7 +743,7 @@ disk_bufio(diskp, bp)
 {
 	dev_t pdev;
 
-	pdev = disk_pdev(dev);
+	pdev = disk_pdev(bp->b_dev);
 	if (!diskp) {
 		bp->b_error = ENXIO;
 		bp->b_flags |= B_ERROR;
