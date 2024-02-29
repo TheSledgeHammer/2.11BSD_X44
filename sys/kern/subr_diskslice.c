@@ -108,6 +108,7 @@ dsinit(disk, dev, lp, sspp)
 	struct disklabel *lp;
 	struct diskslices **sspp;
 {
+
 	return (mbrinit(disk, dev, lp, sspp));
 }
 
@@ -301,25 +302,25 @@ dsgone(sspp)
  * is subject to the same restriction as dsopen().
  */
 int
-dsioctl(dev, cmd, data, flags, sspp)
+dsioctl(diskp, dev, cmd, data, flags, sspp)
+	struct dkdevice *diskp;
 	dev_t	dev;
 	u_long	cmd;
 	caddr_t	data;
 	int	flags;
 	struct diskslices **sspp;
 {
-	struct dkdevice *diskp;
 	struct disklabel *lp;
 	int	error, old_wlabel, part, slice;
 	u_char	openmask;
 	struct diskslice *sp;
 	struct diskslices *ssp;
+	dev_t pdev;
 
 	slice = dkslice(dev);
 	ssp = *sspp;
 	sp = &ssp->dss_slices[slice];
 	lp = sp->ds_label;
-	diskp = disk_find_by_slice(ssp);
 	
 	switch (cmd) {
 	case DIOCGDINFO:
@@ -358,21 +359,26 @@ dsioctl(dev, cmd, data, flags, sspp)
 			openmask = 0;
 		else {
 			openmask = sp->ds_openmask;
-			if (slice == COMPATIBILITY_SLICE)
+			if (slice == COMPATIBILITY_SLICE) {
 				openmask |=	ssp->dss_slices[ssp->dss_first_bsd_slice].ds_openmask;
-			else if (slice == ssp->dss_first_bsd_slice)
+			} else if (slice == ssp->dss_first_bsd_slice) {
 				openmask |= ssp->dss_slices[COMPATIBILITY_SLICE].ds_openmask;
+			}
 		}
 		error = setdisklabel(lp, (struct disklabel*) data, (u_long) openmask);
 		/* XXX why doesn't setdisklabel() check this? */
-		if (error == 0 && lp->d_partitions[RAW_PART].p_offset != 0)
+		if (error == 0 && lp->d_partitions[RAW_PART].p_offset != 0) {
 			error = EXDEV;
+		}
 		if (error == 0) {
-			if (lp->d_secperunit > sp->ds_size)
+			if (lp->d_secperunit > sp->ds_size) {
 				error = ENOSPC;
-			for (part = 0; part < lp->d_npartitions; part++)
-				if (lp->d_partitions[part].p_size > sp->ds_size)
+			}
+			for (part = 0; part < lp->d_npartitions; part++) {
+				if (lp->d_partitions[part].p_size > sp->ds_size) {
 					error = ENOSPC;
+				}
+			}
 		}
 		if (error != 0) {
 			free(lp, M_DEVBUF);
@@ -417,9 +423,12 @@ dsioctl(dev, cmd, data, flags, sspp)
 		for (slice = 0; slice < ssp->dss_nslices; slice++) {
 			for (openmask = ssp->dss_slices[slice].ds_openmask, part = 0;
 					openmask; openmask >>= 1, part++) {
-				if (!(openmask & 1))
+				if (!(openmask & 1)) {
 					continue;
-				error = dsopen(diskp, dkmodslice(dkmodpart(dev, part), slice), S_IFCHR, ssp->dss_oflags, lp);
+				}
+				pdev = dkmakedev(major(dev), dkunit(dev), part);
+				//pdev = dkmodslice(dkmodpart(dev, part), slice);
+				error = dsopen(diskp, pdev, S_IFCHR, ssp->dss_oflags, lp);
 				if (error != 0) {
 					free(lp, M_DEVBUF);
 					*sspp = ssp;
@@ -433,7 +442,7 @@ dsioctl(dev, cmd, data, flags, sspp)
 		return (0);
 
 	case DIOCWDINFO:
-		error = dsioctl(dev, DIOCSDINFO, data, flags, &ssp);
+		error = dsioctl(diskp, dev, DIOCSDINFO, data, flags, &ssp);
 		if (error != 0) {
 			return (error);
 		}
@@ -519,7 +528,7 @@ dsmakeslicestruct(nslices, lp)
 	struct diskslice *sp;
 	struct diskslices *ssp;
 
-	ssp = malloc(offsetof(struct diskslices, dss_slices) + nslices * sizeof(*sp), M_DEVBUF, M_WAITOK);
+	ssp = calloc(offsetof(struct diskslices, dss_slices) + nslices, sizeof(*sp), M_DEVBUF, M_WAITOK);
 	ssp->dss_first_bsd_slice = COMPATIBILITY_SLICE;
 	ssp->dss_nslices = nslices;
 	ssp->dss_oflags = 0;
@@ -536,8 +545,8 @@ dsmakeslicestruct(nslices, lp)
 }
 
 char *
-dsname(disk, dev, unit, slice, part, partname)
-	struct dkdevice *disk;
+dsname(diskp, dev, unit, slice, part, partname)
+	struct dkdevice *diskp;
 	dev_t			dev;
 	int		unit;
 	int		slice;
@@ -547,7 +556,7 @@ dsname(disk, dev, unit, slice, part, partname)
 	static char name[32];
 	const char *dname;
 
-	dname = disk[dkunit(dev)].dk_name;
+	dname = diskp[dkunit(dev)].dk_name;
 	if (strlen(dname) > 16) {
 		dname = "nametoolong";
 	}
@@ -562,47 +571,19 @@ dsname(disk, dev, unit, slice, part, partname)
 	}
 	return (name);
 }
-/*
- * This should only be called when the unit is inactive and the strategy
- * routine should not allow it to become active unless we call it.  Our
- * strategy routine must be special to allow activity.
- */
-int
-dsopen(disk, dev, mode, flags, lp)
-	struct dkdevice 	*disk;
-	dev_t				dev;
-	int					mode; /* fmt */
-	u_int				flags;
-	struct disklabel 	*lp;
-{
-	dev_t dev1;
-	int error;
-	struct disklabel *lp1;
-	char *msg;
-	u_char mask;
-	bool_t	need_init;
-	int part;
-	char partname[2];
-	int slice;
-	char *sname;
+
+static int
+dsreinit(diskp, dev, flags, lp, sp, ds, ssp, sspp, need_init)
+	struct dkdevice 	*diskp;
+	dev_t dev;
+	u_int	flags;
+	struct disklabel *lp;
 	struct diskslice *sp;
-	struct diskslices *ssp, *ds, **sspp;
-	int unit;
+	struct diskslices *ds, *ssp, **sspp;
+	bool_t	need_init;
+{
+	int error, slice;
 
-	unit = dkunit(dev);
-	if (lp->d_secsize % DEV_BSIZE) {
-		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long) lp->d_secsize);
-		return (EINVAL);
-	}
-
-	/*
-	 * XXX reinitialize the slice table unless there is an open device
-	 * on the unit.  This should only be done if the media has changed.
-	 */
-	ds = disk_slices(disk, dev);
-	sspp = &ds;
-	ssp = *sspp;
-	need_init = !dsisopen(ssp);
 	if (ssp != NULL && need_init) {
 		dsgone(sspp);
 	}
@@ -616,7 +597,7 @@ dsopen(disk, dev, mode, flags, lp)
 
 		if (!(flags & DSO_ONESLICE)) {
 			TRACE(("dsinit\n"));
-			error = dsinit(disk, dev, lp, sspp);
+			error = dsinit(diskp, dev, lp, sspp);
 			if (error != 0) {
 				dsgone(sspp);
 				return (error);
@@ -647,18 +628,68 @@ dsopen(disk, dev, mode, flags, lp)
 		ssp->dss_slices[WHOLE_DISK_SLICE].ds_label = clone_label(lp);
 		ssp->dss_slices[WHOLE_DISK_SLICE].ds_wlabel = TRUE;
 	}
+	return (0);
+}
+
+/*
+ * This should only be called when the unit is inactive and the strategy
+ * routine should not allow it to become active unless we call it.  Our
+ * strategy routine must be special to allow activity.
+ */
+int
+dsopen(diskp, dev, mode, flags, lp)
+	struct dkdevice 	*diskp;
+	dev_t				dev;
+	int					mode; /* fmt */
+	u_int				flags;
+	struct disklabel 	*lp;
+{
+	dev_t pdev;
+	int error;
+	struct disklabel *lp1;
+	char *msg;
+	u_char mask;
+	bool_t	need_init;
+	int part;
+	char partname[2];
+	int slice;
+	char *sname;
+	struct diskslice *sp;
+	struct diskslices *ssp, *ds, **sspp;
+	int unit;
+
+	unit = dkunit(dev);
+	if (lp->d_secsize % DEV_BSIZE) {
+		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long) lp->d_secsize);
+		return (EINVAL);
+	}
+
+	/*
+	 * XXX reinitialize the slice table unless there is an open device
+	 * on the unit.  This should only be done if the media has changed.
+	 */
+	ds = disk_slices(diskp, dev);
+	sspp = &ds;
+	ssp = *sspp;
+	need_init = !dsisopen(ssp);
+	error = dsreinit(diskp, dev, flags, lp, sp, ds, ssp, sspp, need_init);
+	if (error != 0) {
+		return (error);
+	}
 
 	/* Initialize secondary info for all slices.  */
 	for (slice = 0; slice < ssp->dss_nslices; slice++) {
 		sp = &ssp->dss_slices[slice];
-		if (sp->ds_label != NULL)
+		if (sp->ds_label != NULL) {
 			continue;
-		dev1 = dkmodslice(dkmodpart(dev, RAW_PART), slice);
+		}
+		pdev = dkmakedev(major(dev), unit, RAW_PART);
+		//pdev = dkmodslice(dkmodpart(dev, RAW_PART), slice);
 #if 0
-			sname = dsname(disk, dev, unit, slice, RAW_PART, partname);
+		sname = dsname(diskp, dev, unit, slice, RAW_PART, partname);
 #else
 		*partname = '\0';
-		sname = dsname(disk, dev, unit, slice, RAW_PART, partname);
+		sname = dsname(diskp, dev, unit, slice, RAW_PART, partname);
 #endif
 		/*
 		 * XXX this should probably only be done for the need_init
@@ -671,7 +702,7 @@ dsopen(disk, dev, mode, flags, lp)
 			msg = NULL;
 		} else {
 
-			msg = readdisklabel(dev, disk->dk_driver->d_strategy, lp1);
+			msg = readdisklabel(dev, diskp->dk_driver->d_strategy, lp1);
 
 			/*
 			 * readdisklabel() returns NULL for success, and an
@@ -708,7 +739,7 @@ dsopen(disk, dev, mode, flags, lp)
 			continue;
 		}
 		set_ds_label(ssp, slice, lp1);
-		set_ds_labeldevs(dev1, ssp);
+		set_ds_labeldevs(pdev, ssp);
 		set_ds_wlabel(ssp, slice, FALSE);
 	}
 
@@ -718,8 +749,9 @@ dsopen(disk, dev, mode, flags, lp)
 	sp = &ssp->dss_slices[slice];
 	part = dkpart(dev);
 	if (part != RAW_PART
-			&& (sp->ds_label == NULL || part >= sp->ds_label->d_npartitions))
+			&& (sp->ds_label == NULL || part >= sp->ds_label->d_npartitions)) {
 		return (EINVAL); /* XXX needs translation */
+	}
 	mask = 1 << part;
 	sp->ds_openmask |= mask;
 
@@ -727,26 +759,25 @@ dsopen(disk, dev, mode, flags, lp)
 }
 
 int
-dssize(disk, dev)
-	struct dkdevice *disk;
+dssize(diskp, dev)
+	struct dkdevice *diskp;
 	dev_t			dev;
 {
 	struct disklabel *lp;
 	struct diskslices *ssp;
 	struct dkdriver *dkr;
-	int	part;
-	int	slice;
+	int	part, slice;
 
 	part = dkpart(dev);
 	slice = dkslice(dev);
-	dkr = disk_driver(disk, dev);
-	ssp = disk_slices(disk, dev);
+	dkr = disk_driver(diskp, dev);
+	ssp = disk_slices(diskp, dev);
 	if (ssp == NULL || slice >= ssp->dss_nslices || !(ssp->dss_slices[slice].ds_openmask & (1 << part))) {
 		if (dkr->d_open(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL) != 0) {
 			return (-1);
 		}
 		dkr->d_close(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL);
-		ssp = disk_slices(disk, dev);
+		ssp = disk_slices(diskp, dev);
 	}
 	lp = ssp->dss_slices[slice].ds_label;
 	if (lp == NULL) {
@@ -765,8 +796,9 @@ free_ds_label(ssp, slice)
 
 	sp = &ssp->dss_slices[slice];
 	lp = sp->ds_label;
-	if (lp == NULL)
+	if (lp == NULL) {
 		return;
+	}
 	free(lp, M_DEVBUF);
 	set_ds_label(ssp, slice, (struct disklabel*) NULL);
 }
@@ -786,10 +818,12 @@ fixlabel(sname, sp, lp, writeflag)
 	bool_t	warned;
 
 	/* These errors "can't happen" so don't bother reporting details. */
-	if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC)
+	if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
 		return ("fixlabel: invalid magic");
-	if (dkcksum(lp) != 0)
+	}
+	if (dkcksum(lp) != 0) {
 		return ("fixlabel: invalid checksum");
+	}
 
 	pp = &lp->d_partitions[RAW_PART];
 	if (writeflag) {

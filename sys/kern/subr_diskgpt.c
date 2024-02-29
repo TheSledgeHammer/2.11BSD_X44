@@ -50,6 +50,29 @@
 
 static void gpt_setslice(const char *, struct dkdevice *, struct diskslice *, struct gpt_ent *);
 
+static int
+gpt_read_sector(bp, lp, dev, sector, count, msg)
+	struct buf *bp;
+	struct disklabel *lp;
+	dev_t dev;
+	u_long sector, count;
+	char *msg;
+{
+	int	error;
+
+	bp->b_blkno = sector;
+	bp->b_bcount = count;
+	bp->b_flags = (bp->b_flags & ~(B_WRITE | B_DONE)) | B_READ;
+	bp->b_cylin = sector / lp->d_secpercyl;
+	VOP_STRATEGY(bp);
+	error = biowait(bp);
+	if (error != 0) {
+		diskerr(bp, devtoname(dev), msg, LOG_PRINTF, 0, (struct disklabel*) NULL);
+		printf("\n");
+	}
+	return (error);
+}
+
 /*
  * Handle GPT on raw disk.  Note that GPTs are not recursive.  The MBR is
  * ignored once a GPT has been detected.
@@ -61,8 +84,8 @@ static void gpt_setslice(const char *, struct dkdevice *, struct diskslice *, st
  * This routine is called from mbrinit() when a GPT has been detected.
  */
 int
-gptinit(disk, dev, lp, sspp)
-	struct dkdevice *disk;
+gptinit(diskp, dev, lp, sspp)
+	struct dkdevice *diskp;
 	dev_t	dev;
 	struct disklabel *lp;
 	struct diskslices **sspp;
@@ -86,13 +109,10 @@ gptinit(disk, dev, lp, sspp)
 	 */
 	i = 0;
 	bp1 = geteblk((int)lp->d_secsize);
-	bp1->b_dev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
-	bp1->b_blkno = lp->d_secsize;
-	bp1->b_bcount = lp->d_secsize;
-	VOP_STRATEGY(bp1);
-	if (biowait(bp1) != 0) {
-		diskerr(bp1, devtoname(dev), "reading GPT: error", LOG_PRINTF, 0, (struct disklabel*) NULL);
-		printf("\n");
+	//bp1->b_dev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
+	bp1->b_dev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
+	error = gpt_read_sector(bp1, lp, dev, lp->d_secsize, lp->d_secsize, "reading GPT: error");
+	if (error != 0) {
 		error = EIO;
 		goto done;
 	}
@@ -133,13 +153,10 @@ gptinit(disk, dev, lp, sspp)
 	}
 
 	bp2 = geteblk((int)(table_blocks * lp->d_secsize));
-	bp2->b_dev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
-	bp2->b_blkno = (off_t)table_lba * lp->d_secsize;
-	bp2->b_bcount = table_blocks * lp->d_secsize;
-	VOP_STRATEGY(bp2);
-	if (biowait(bp2) != 0) {
-		diskerr(bp2, devtoname(dev), "reading GPT partition table: error", LOG_PRINTF, 0, (struct disklabel*) NULL);
-		printf("\n");
+	//bp2->b_dev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
+	bp2->b_dev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
+	error = gpt_read_sector(bp2, lp, dev, ((off_t)table_lba * lp->d_secsize), (table_blocks * lp->d_secsize), "reading GPT partition table: error");
+	if (error != 0) {
 		error = EIO;
 		goto done;
 	}
@@ -183,7 +200,7 @@ gptinit(disk, dev, lp, sspp)
 		} else {
 			sp = &ssp->dss_slices[BASE_SLICE + i - 1];
 		}
-		sname = dsname(disk, dev, dkunit(dev), WHOLE_DISK_SLICE, RAW_PART, partname);
+		sname = dsname(diskp, dev, dkunit(dev), WHOLE_DISK_SLICE, RAW_PART, partname);
 
 		if (sent.ent_lba_start < table_lba + table_blocks ||
 				sent.ent_lba_end >= lp->d_secperunit ||
@@ -191,7 +208,7 @@ gptinit(disk, dev, lp, sspp)
 			printf("%s part %d: unavailable, bad start or "
 					"ending lba\n", sname, i);
 		} else {
-			gpt_setslice(sname, disk, sp, &sent);
+			gpt_setslice(sname, diskp, sp, &sent);
 		}
 	}
 	ssp->dss_nslices = BASE_SLICE + i;
@@ -214,9 +231,9 @@ done:
 }
 
 static void
-gpt_setslice(sname, disk, sp, sent)
+gpt_setslice(sname, diskp, sp, sent)
 	const char *sname;
-	struct dkdevice *disk;
+	struct dkdevice *diskp;
 	struct diskslice *sp;
 	struct gpt_ent *sent;
 {

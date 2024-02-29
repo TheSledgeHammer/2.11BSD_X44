@@ -103,7 +103,7 @@ dev_t 				makediskslice(dev_t, int, int, int);
 int					dscheck(struct buf *, struct diskslices *);
 void 				dsclose(dev_t, int, struct diskslices *);
 void 				dsgone(struct diskslices **);
-int					dsioctl(dev_t, u_long, caddr_t, int, struct diskslices **);
+int					dsioctl(struct dkdevice *, dev_t, u_long, caddr_t, int, struct diskslices **);
 int					dsisopen(struct diskslices *);
 struct diskslices 	*dsmakeslicestruct(int, struct disklabel *);
 char				*dsname(struct dkdevice *, dev_t, int, int, int, char *);

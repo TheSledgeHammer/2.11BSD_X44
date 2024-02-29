@@ -135,13 +135,14 @@ disk_attach(diskp)
 	diskp->dk_cpulabel = (struct cpu_disklabel *)malloc(sizeof(struct cpu_disklabel *), M_DEVBUF, M_NOWAIT);
 	diskp->dk_slices = dsmakeslicestruct(BASE_SLICE, diskp->dk_label);
 
-#ifndef DISK_SLICES
+#ifdef DISK_SLICES
+//#ifndef DISK_SLICES
 	/*
 	 * When slices aren't enabled, fake slices structure to keep mbrinit and gptinit happy!
 	 */
 	//pdev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
-	//ret = dsinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
-	ret = 0;
+	pdev = dkmakedev(major(dev), devp->dv_unit, RAW_PART);
+	ret = mbrinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
 #else
 	ret = 0;
 #endif
@@ -663,7 +664,7 @@ dkop_ioctl(diskp, dev, cmd, data, flag, p)
 		return (ENXIO);
 	}
 #ifdef DISK_SLICES
-	error = dsioctl(pdev, cmd, data, flag, &diskp->dk_slices);
+	error = dsioctl(diskp, pdev, cmd, data, flag, &diskp->dk_slices);
 	if (error == ENOIOCTL) {
 		goto out;
 	}
