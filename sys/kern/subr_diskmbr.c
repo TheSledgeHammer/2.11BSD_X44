@@ -175,7 +175,6 @@ mbr_read_sector(bp, lp, dev, sector, msg)
 {
 	int	error;
 
-	bp->b_dev = dev;
 	bp->b_blkno = sector;
 	bp->b_bcount = lp->d_secsize;
 	bp->b_flags = (bp->b_flags & ~(B_WRITE | B_DONE)) | B_READ;
