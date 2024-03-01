@@ -1160,7 +1160,7 @@ ccdioctl_sc(cs, dev, cmd, data, flag, p)
 		bufq_alloc(&cs->sc_bufq, BUFQ_FCFS);
 
 		/* Attach the disk. */
-		disk_attach(&cs->sc_dkdev);
+		disk_attach(&cs->sc_dkdev, &ccd_bdevsw, &ccd_cdevsw);
 
 		/* Try and read the disklabel. */
 		ccdgetdisklabel(dev);

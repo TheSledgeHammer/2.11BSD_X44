@@ -416,7 +416,7 @@ wdattach(struct device *parent, struct device *self, void *aux)
 	 */
 	wd->sc_dk.dk_driver = &wddkdriver;
 	wd->sc_dk.dk_name = wd->sc_dev.dv_xname;
-	disk_attach(&wd->sc_dk);
+	disk_attach(&wd->sc_dk, &wd_bdevsw, &wd_cdevsw);
 	wd->sc_wdc_bio.lp = wd->sc_dk.dk_label;
 	wd->sc_sdhook = shutdownhook_establish(wd_shutdown, wd);
 	if (wd->sc_sdhook == NULL)

@@ -272,7 +272,7 @@ sdattach(parent, self, aux)
 	 */
 	sd->sc_dk.dk_driver = &sddkdriver;
 	sd->sc_dk.dk_name = sd->sc_dev.dv_xname;
-	disk_attach(&sd->sc_dk);
+	disk_attach(&sd->sc_dk, &sd_bdevsw, &sd_cdevsw);
 
 	/*
 	 * Use the subdriver to request information regarding the drive.

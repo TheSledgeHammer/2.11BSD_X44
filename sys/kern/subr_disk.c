@@ -87,6 +87,7 @@
 #include <sys/disklabel.h>
 #include <sys/diskslice.h>
 #include <sys/disk.h>
+#include <sys/devsw.h>
 #include <sys/user.h>
 
 #include <machine/param.h>
@@ -121,12 +122,42 @@ disk_find(name)
 	return (NULL);
 }
 
+dev_t
+disk_isvalid(bdev, cdev)
+	const struct bdevsw *bdev;
+	const struct cdevsw *cdev;
+{
+	dev_t dev1, dev2;
+
+	if ((bdev != NULL) && (cdev != NULL)) {
+		dev1 = bdevsw_lookup_major(bdev);
+		dev2 = cdevsw_lookup_major(cdev);
+		if (dev1 == dev2) {
+			return (dev1);
+		}
+	} else {
+		if ((bdev != NULL) && (cdev == NULL)) {
+			dev1 = bdevsw_lookup_major(bdev);
+			dev2 = NODEVMAJOR;
+			return (dev1);
+		}
+		if ((cdev != NULL) && (bdev == NULL)) {
+			dev1 = NODEVMAJOR;
+			dev2 = cdevsw_lookup_major(cdev);
+			return (dev2);
+		}
+	}
+	return (NODEVMAJOR);
+}
+
 /*
  * Attach a disk.
  */
 void
-disk_attach(diskp)
+disk_attach(diskp, bdev, cdev)
 	struct dkdevice *diskp;
+	const struct bdevsw *bdev;
+	const struct cdevsw *cdev;
 {
 	int s, ret;
 	dev_t pdev, dev;
@@ -136,15 +167,15 @@ disk_attach(diskp)
 	diskp->dk_slices = dsmakeslicestruct(BASE_SLICE, diskp->dk_label);
 
 #ifdef DISK_SLICES
-//#ifndef DISK_SLICES
-	/*
-	 * When slices aren't enabled, fake slices structure to keep mbrinit and gptinit happy!
-	 */
-	//pdev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
-	pdev = dkmakedev(major(dev), devp->dv_unit, RAW_PART);
-	ret = mbrinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
-#else
 	ret = 0;
+#else /* !DISK_SLICES */
+	dev = disk_isvalid(bdev, cdev);
+	if (dev != NODEVMAJOR) {
+		pdev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
+		ret = mbrinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
+	} else {
+		ret = -1;
+	}
 #endif
 
 	if (diskp->dk_label == NULL) {

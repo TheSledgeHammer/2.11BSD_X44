@@ -271,7 +271,7 @@ cdattach(parent, self, aux)
 	 */
   	cd->sc_dk.dk_driver = &cddkdriver;
 	cd->sc_dk.dk_name = cd->sc_dev.dv_xname;
-	disk_attach(&cd->sc_dk);
+	disk_attach(&cd->sc_dk, &cd_bdevsw, &cd_cdevsw);
 
 	printf("\n");
 }

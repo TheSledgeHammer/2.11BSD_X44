@@ -235,7 +235,7 @@ struct dkbadsecinfo {
 extern	int 		disk_count;			/* number of disks in global disklist */
 
 void				disk_init(void);
-void				disk_attach(struct dkdevice *);
+void				disk_attach(struct dkdevice *, const struct bdevsw *, const struct cdevsw *);
 void				disk_detach(struct dkdevice *);
 void				disk_busy(struct dkdevice *);
 void				disk_unbusy(struct dkdevice *, long);

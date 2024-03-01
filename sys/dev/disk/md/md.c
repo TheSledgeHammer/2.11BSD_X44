@@ -218,7 +218,7 @@ md_attach(parent, self, aux)
 	 */
 	sc->sc_dkdev.dk_driver = &mddkdriver;
 	sc->sc_dkdev.dk_name = sc->sc_dev.dv_xname;
-	disk_attach(&sc->sc_dkdev);
+	disk_attach(&sc->sc_dkdev, &md_bdevsw, &md_cdevsw);
 }
 
 

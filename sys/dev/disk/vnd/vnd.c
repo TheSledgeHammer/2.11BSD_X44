@@ -982,7 +982,7 @@ vndioctl_sc(vnd, dev, cmd, data, flag, p)
 
 		/* Attach the disk. */
 		vnd->sc_dkdev.dk_name = vnd->sc_xname;
-		disk_attach(&vnd->sc_dkdev);
+		disk_attach(&vnd->sc_dkdev, &vnd_bdevsw, &vnd_cdevsw);
 
 		/* Try and read the disklabel. */
 		vndgetdisklabel(dev);

@@ -506,7 +506,7 @@ fdattach(parent, self, aux)
 	 */
 	fd->sc_dk.dk_name = fd->sc_dev.dv_xname;
 	fd->sc_dk.dk_driver = &fddkdriver;
-	disk_attach(&fd->sc_dk);
+	disk_attach(&fd->sc_dk, &fd_bdevsw, &fd_cdevsw);
 
 	/*
 	 * Establish a mountroot hook.
