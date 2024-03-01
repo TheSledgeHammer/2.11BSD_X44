@@ -606,190 +606,6 @@ devtoname(dev)
 	 return (NULL);
 }
 
-/* dkdriver ops */
-void
-dkop_strategy(diskp, bp)
-	struct dkdevice *diskp;
-	struct buf *bp;
-{
-	disk_bufio(diskp, bp);
-	(*diskp->dk_driver->d_strategy)(bp);
-}
-
-void
-dkop_minphys(diskp, bp)
-	struct dkdevice *diskp;
-	struct buf *bp;
-{
-	disk_bufio(diskp, bp);
-	(*diskp->dk_driver->d_minphys)(bp);
-}
-
-int
-dkop_open(diskp, dev, flag, fmt, p)
-	struct dkdevice *diskp;
-	dev_t dev;
-	int flag, fmt;
-	struct proc	*p;
-{
-	dev_t pdev;
-	int error;
-
-	pdev = disk_pdev(dev);
-	if (!diskp) {
-		return (ENXIO);
-	}
-#ifdef DISK_SLICES
-	error = dsopen(diskp, pdev, fmt, flag, diskp->dk_label);
-	if (error != 0) {
-		return (error);
-	}
-	if (!dsisopen(diskp->dk_slices)) {
-		goto out;
-	}
-out:
-#endif
-	error = (*diskp->dk_driver->d_open)(pdev, flag, fmt, p);
-	return (error);
-}
-
-int
-dkop_close(diskp, dev, flag, fmt, p)
-	struct dkdevice *diskp;
-	dev_t dev;
-	int flag, fmt;
-	struct proc	*p;
-{
-	dev_t pdev;
-	int error;
-
-	pdev = disk_pdev(dev);
-	if (!diskp) {
-		return (ENXIO);
-	}
-#ifdef DISK_SLICES
-	dsclose(pdev, fmt, diskp->dk_slices);
-	if (!dsisopen(diskp->dk_slices)) {
-		goto out;
-	}
-out:
-#endif
-	error = (*diskp->dk_driver->d_close)(pdev, flag, fmt, p);
-	return (error);
-}
-
-int
-dkop_ioctl(diskp, dev, cmd, data, flag, p)
-	struct dkdevice *diskp;
-	dev_t 			dev;
-	u_long			cmd;
-	void 			*data;
-	int				flag;
-	struct proc 	*p;
-{
-	dev_t pdev;
-	int error;
-
-	pdev = disk_pdev(dev);
-	if (!diskp) {
-		return (ENXIO);
-	}
-#ifdef DISK_SLICES
-	error = dsioctl(diskp, pdev, cmd, data, flag, &diskp->dk_slices);
-	if (error == ENOIOCTL) {
-		goto out;
-	}
-#endif
-	switch (cmd) {
-	case DIOCGSECTORSIZE:
-		*(u_int *)data = diskp->dk_label->d_secsize;
-		return (0);
-	case DIOCGMEDIASIZE:
-		*(off_t *)data = (off_t)diskp->dk_label->d_secsize * diskp->dk_label->d_secperunit;
-		return (0);
-	default:
-		error = ENOIOCTL;
-		goto out;
-	}
-out:
-	error = (*diskp->dk_driver->d_ioctl)(pdev, cmd, data, flag, p);
-	return (error);
-}
-
-int
-dkop_dump(diskp, dev)
-	struct dkdevice *diskp;
-	dev_t 			dev;
-{
-	dev_t pdev;
-	int error;
-
-	pdev = disk_pdev(dev);
-	if (!diskp) {
-		return (ENXIO);
-	}
-	error = (*diskp->dk_driver->d_dump)(pdev);
-	return (error);
-}
-
-void
-dkop_start(diskp, bp)
-	struct dkdevice *diskp;
-	struct buf *bp;
-{
-	disk_bufio(diskp, bp);
-	(*diskp->dk_driver->d_start)(bp);
-}
-
-int
-dkop_mklabel(diskp)
-	struct dkdevice *diskp;
-{
-	int error;
-
-	if (!diskp) {
-		return (ENXIO);
-	}
-	error = (*diskp->dk_driver->d_mklabel)(diskp);
-	return (error);
-}
-
-static dev_t
-disk_pdev(dev)
-	dev_t dev;
-{
-	dev_t pdev;
-#ifdef DISK_SLICES
-	pdev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
-#else
-	pdev = dev;
-#endif
-	return (pdev);
-}
-
-static void
-disk_bufio(diskp, bp)
-	struct dkdevice *diskp;
-	struct buf *bp;
-{
-	dev_t pdev;
-
-	pdev = disk_pdev(bp->b_dev);
-	if (!diskp) {
-		bp->b_error = ENXIO;
-		bp->b_flags |= B_ERROR;
-		biodone(bp);
-		return;
-	}
-#ifdef DISK_SLICES
-	if (dscheck(bp, diskp->dk_slices) <= 0) {
-		biodone(bp);
-		return;
-	}
-#endif
-	biodone(bp);
-}
-
 int
 sysctl_disknames(where, sizep)
 	char *where;
@@ -837,43 +653,188 @@ sysctl_disknames(where, sizep)
 	return (error);
 }
 
-#ifdef WIP
+/* dkdriver */
 void
-disk_attach2(diskp, driverp, name, unit)
+dkdriver_strategy(diskp, bp)
 	struct dkdevice *diskp;
-	struct dkdriver *driverp;
-	char *name;
-	int unit;
+	struct buf *bp;
 {
-	diskp->dk_driver = driverp;
-	diskp->dk_name = name;
-	diskp->dk_dev.dv_unit = unit;
+	disk_bufio(diskp, bp);
+	(*diskp->dk_driver->d_strategy)(bp);
 }
 
 void
-disk_setformat(formatp, name, dev)
-	struct dkformat *formatp;
-	char *name;
+dkdriver_minphys(diskp, bp)
+	struct dkdevice *diskp;
+	struct buf *bp;
+{
+	disk_bufio(diskp, bp);
+	(*diskp->dk_driver->d_minphys)(bp);
+}
+
+int
+dkdriver_open(diskp, dev, flag, fmt, p)
+	struct dkdevice *diskp;
+	dev_t dev;
+	int flag, fmt;
+	struct proc	*p;
+{
+	dev_t pdev;
+	int error;
+
+	pdev = disk_pdev(dev);
+	if (!diskp) {
+		return (ENXIO);
+	}
+#ifdef DISK_SLICES
+	error = dsopen(diskp, pdev, fmt, flag, diskp->dk_label);
+	if (error != 0) {
+		return (error);
+	}
+	if (!dsisopen(diskp->dk_slices)) {
+		goto out;
+	}
+out:
+#endif
+	error = (*diskp->dk_driver->d_open)(pdev, flag, fmt, p);
+	return (error);
+}
+
+int
+dkdriver_close(diskp, dev, flag, fmt, p)
+	struct dkdevice *diskp;
+	dev_t dev;
+	int flag, fmt;
+	struct proc	*p;
+{
+	dev_t pdev;
+	int error;
+
+	pdev = disk_pdev(dev);
+	if (!diskp) {
+		return (ENXIO);
+	}
+#ifdef DISK_SLICES
+	dsclose(pdev, fmt, diskp->dk_slices);
+	if (!dsisopen(diskp->dk_slices)) {
+		goto out;
+	}
+out:
+#endif
+	error = (*diskp->dk_driver->d_close)(pdev, flag, fmt, p);
+	return (error);
+}
+
+int
+dkdriver_ioctl(diskp, dev, cmd, data, flag, p)
+	struct dkdevice *diskp;
+	dev_t 			dev;
+	u_long			cmd;
+	void 			*data;
+	int				flag;
+	struct proc 	*p;
+{
+	dev_t pdev;
+	int error;
+
+	pdev = disk_pdev(dev);
+	if (!diskp) {
+		return (ENXIO);
+	}
+#ifdef DISK_SLICES
+	error = dsioctl(diskp, pdev, cmd, data, flag, &diskp->dk_slices);
+	if (error == ENOIOCTL) {
+		goto out;
+	} else {
+		return (error);
+	}
+#endif
+	switch (cmd) {
+	case DIOCGSECTORSIZE:
+		*(u_int *)data = diskp->dk_label->d_secsize;
+		return (0);
+	case DIOCGMEDIASIZE:
+		*(off_t *)data = (off_t)diskp->dk_label->d_secsize * diskp->dk_label->d_secperunit;
+		return (0);
+	default:
+		error = ENOIOCTL;
+		goto out;
+	}
+out:
+	error = (*diskp->dk_driver->d_ioctl)(pdev, cmd, data, flag, p);
+	return (error);
+}
+
+int
+dkdriver_dump(diskp, dev)
+	struct dkdevice *diskp;
+	dev_t 			dev;
+{
+	dev_t pdev;
+	int error;
+
+	pdev = disk_pdev(dev);
+	if (!diskp) {
+		return (ENXIO);
+	}
+	error = (*diskp->dk_driver->d_dump)(pdev);
+	return (error);
+}
+
+void
+dkdriver_start(diskp, bp)
+	struct dkdevice *diskp;
+	struct buf *bp;
+{
+	disk_bufio(diskp, bp);
+	(*diskp->dk_driver->d_start)(bp);
+}
+
+int
+dkdriver_mklabel(diskp)
+	struct dkdevice *diskp;
+{
+	int error;
+
+	if (!diskp) {
+		return (ENXIO);
+	}
+	error = (*diskp->dk_driver->d_mklabel)(diskp);
+	return (error);
+}
+
+static dev_t
+disk_pdev(dev)
 	dev_t dev;
 {
-    formatp->df_name = name;
-    formatp->df_dev = dev;
-}
-
-struct dkformat *
-disk_getformat(diskp)
-	struct dkdevice *diskp;
-{
-	return (&diskp->dk_format);
-}
-
-create_format(formatp)
-	struct dkformat *formatp;
-{
-	dev_t unit = dkunit(formatp->df_dev);
-	if (formatp->df_unit != unit) {
-		formatp->df_unit = unit;
-	}
-	return (dkmakedev(major(formatp->df_dev), dkunit(formatp->df_dev), RAW_PART));
-}
+	dev_t pdev;
+#ifdef DISK_SLICES
+	pdev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
+#else
+	pdev = dev;
 #endif
+	return (pdev);
+}
+
+static void
+disk_bufio(diskp, bp)
+	struct dkdevice *diskp;
+	struct buf *bp;
+{
+	dev_t pdev;
+
+	pdev = disk_pdev(bp->b_dev);
+	if (!diskp) {
+		bp->b_error = ENXIO;
+		bp->b_flags |= B_ERROR;
+		biodone(bp);
+		return;
+	}
+#ifdef DISK_SLICES
+	if (dscheck(bp, diskp->dk_slices) <= 0) {
+		biodone(bp);
+		return;
+	}
+#endif
+	biodone(bp);
+}

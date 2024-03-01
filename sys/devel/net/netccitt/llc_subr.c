@@ -104,6 +104,7 @@ int
 sockaddr_dl_sethdrif(struct ifnet *ifp, u_char *mac_src, u_char dlsap_src, u_char *mac_dst, u_char dlsap_dst, u_char mac_len, struct mbuf *m)
 {
 	struct sockaddr_dl_header *sdlhdr;
+
 	sdlhdr = sockaddr_dl_createhdr(m);
 	return (sockaddr_dl_cmphdrif(ifp, mac_src, dlsap_src, mac_dst, dlsap_dst, mac_len, sdlhdr));
 }

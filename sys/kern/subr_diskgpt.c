@@ -109,7 +109,6 @@ gptinit(diskp, dev, lp, sspp)
 	 */
 	i = 0;
 	bp1 = geteblk((int)lp->d_secsize);
-	//bp1->b_dev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
 	bp1->b_dev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
 	error = gpt_read_sector(bp1, lp, dev, lp->d_secsize, lp->d_secsize, "reading GPT: error");
 	if (error != 0) {
@@ -153,7 +152,6 @@ gptinit(diskp, dev, lp, sspp)
 	}
 
 	bp2 = geteblk((int)(table_blocks * lp->d_secsize));
-	//bp2->b_dev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
 	bp2->b_dev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
 	error = gpt_read_sector(bp2, lp, dev, ((off_t)table_lba * lp->d_secsize), (table_blocks * lp->d_secsize), "reading GPT partition table: error");
 	if (error != 0) {

@@ -216,7 +216,6 @@ mbrinit(diskp, dev, lp, sspp)
 reread_mbr:
 	/* Read master boot record. */
 	bp = geteblk((int)lp->d_secsize);
-	//bp->b_dev = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART);
 	bp->b_dev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
 	error = mbr_read_sector(bp, lp, dev, mbr_offset, "reading primary partition table: error");
 	if (error != 0) {

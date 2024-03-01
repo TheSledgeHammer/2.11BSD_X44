@@ -390,14 +390,17 @@ dsioctl(diskp, dev, cmd, data, flags, sspp)
 		return (0);
 
 	case DIOCSYNCSLICEINFO:
-		if (slice != WHOLE_DISK_SLICE || dkpart(dev) != RAW_PART)
+		if (slice != WHOLE_DISK_SLICE || dkpart(dev) != RAW_PART) {
 			return (EINVAL);
-		if (!*(int*) data)
+		}
+		if (!*(int*) data) {
 			for (slice = 0; slice < ssp->dss_nslices; slice++) {
 				openmask = ssp->dss_slices[slice].ds_openmask;
-				if (openmask && (slice != WHOLE_DISK_SLICE || (openmask & ~(1 << RAW_PART))))
+				if (openmask && (slice != WHOLE_DISK_SLICE || (openmask & ~(1 << RAW_PART)))) {
 					return (EBUSY);
+				}
 			}
+		}
 
 		/*
 		 * Temporarily forget the current slices struct and read
@@ -427,7 +430,6 @@ dsioctl(diskp, dev, cmd, data, flags, sspp)
 					continue;
 				}
 				pdev = dkmakedev(major(dev), dkunit(dev), part);
-				//pdev = dkmodslice(dkmodpart(dev, part), slice);
 				error = dsopen(diskp, pdev, S_IFCHR, ssp->dss_oflags, lp);
 				if (error != 0) {
 					free(lp, M_DEVBUF);
@@ -684,7 +686,6 @@ dsopen(diskp, dev, mode, flags, lp)
 			continue;
 		}
 		pdev = dkmakedev(major(dev), unit, RAW_PART);
-		//pdev = dkmodslice(dkmodpart(dev, RAW_PART), slice);
 #if 0
 		sname = dsname(diskp, dev, unit, slice, RAW_PART, partname);
 #else
@@ -765,18 +766,16 @@ dssize(diskp, dev)
 {
 	struct disklabel *lp;
 	struct diskslices *ssp;
-	struct dkdriver *dkr;
 	int	part, slice;
 
 	part = dkpart(dev);
 	slice = dkslice(dev);
-	dkr = disk_driver(diskp, dev);
 	ssp = disk_slices(diskp, dev);
 	if (ssp == NULL || slice >= ssp->dss_nslices || !(ssp->dss_slices[slice].ds_openmask & (1 << part))) {
-		if (dkr->d_open(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL) != 0) {
+		if ((*diskp->dk_driver->d_open)(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL) != 0) {
 			return (-1);
 		}
-		dkr->d_close(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL);
+		(*diskp->dk_driver->d_close)(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL);
 		ssp = disk_slices(diskp, dev);
 	}
 	lp = ssp->dss_slices[slice].ds_label;

@@ -122,20 +122,7 @@ struct dkdevice {
 	struct diskslices	*dk_slices;				/* slices */
 	struct partition 	dk_parts[MAXPARTITIONS];/* in-kernel portion */
 	struct cpu_disklabel *dk_cpulabel;
-
-	//struct dkformat		dk_format;				/* WIP */
 };
-
-#ifdef WIP
-/* dkdevice format: WIP */
-struct dkformat {
-    char    			*df_name;   /* dkdevice name */
-    dev_t   			df_dev;     /* dkdevice dev */
-    int     			df_unit;    /* dkdevice unit */
-    int     			df_part;    /* dkdevice part */
-    int     			df_slice;   /* dkdevice slice */
-};
-#endif
 
 #define	DK_DISKNAMELEN	16
 
@@ -152,24 +139,24 @@ struct dkdriver {
 
 /* dkdriver ops */
 #ifdef _KERNEL
-void 	dkop_strategy(struct dkdevice *, struct buf *);
-void 	dkop_minphys(struct dkdevice *, struct buf *);
-int 	dkop_open(struct dkdevice *, dev_t, int, int, struct proc *);
-int 	dkop_close(struct dkdevice *, dev_t, int, int, struct proc *);
-int 	dkop_ioctl(struct dkdevice *, dev_t, u_long, void *, int, struct proc *);
-int	dkop_dump(struct dkdevice *, dev_t);
-void 	dkop_start(struct dkdevice *, struct buf *);
-int	dkop_mklabel(struct dkdevice *);
+void 	dkdriver_strategy(struct dkdevice *, struct buf *);
+void 	dkdriver_minphys(struct dkdevice *, struct buf *);
+int 	dkdriver_open(struct dkdevice *, dev_t, int, int, struct proc *);
+int 	dkdriver_close(struct dkdevice *, dev_t, int, int, struct proc *);
+int 	dkdriver_ioctl(struct dkdevice *, dev_t, u_long, void *, int, struct proc *);
+int		dkdriver_dump(struct dkdevice *, dev_t);
+void 	dkdriver_start(struct dkdevice *, struct buf *);
+int		dkdriver_mklabel(struct dkdevice *);
 #endif
 
-#define DKOP_STRATEGY(diskp, bp)			(dkop_strategy(diskp, bp))
-#define DKOP_MINPHYS(diskp, bp)				(dkop_minphys)(diskp, bp))
-#define DKOP_OPEN(diskp, dev, flag, fmt, p)		(dkop_open)(diskp, dev, flag, fmt, p))
-#define DKOP_CLOSE(diskp, dev, flag, fmt, p)		(dkop_close)(diskp, dev, flag, fmt, p))
-#define DKOP_IOCTL(diskp, dev, cmd, data, flag, p)	(dkop_ioctl)(diskp, dev, cmd, data, flag, p))
-#define DKOP_DUMP(diskp, dev)				(dkop_dump)(diskp, dev))
-#define DKOP_START(diskp, bp)				(dkop_start)(diskp, bp))
-#define DKOP_MKLABEL(diskp) 				(dkop_mklabel)(diskp))
+#define DKOP_STRATEGY(diskp, bp)			((dkdriver_strategy)(diskp, bp))
+#define DKOP_MINPHYS(diskp, bp)				((dkdriver_minphys)(diskp, bp))
+#define DKOP_OPEN(diskp, dev, flag, fmt, p)		((dkdriver_open)(diskp, dev, flag, fmt, p))
+#define DKOP_CLOSE(diskp, dev, flag, fmt, p)		((dkdriver_close)(diskp, dev, flag, fmt, p))
+#define DKOP_IOCTL(diskp, dev, cmd, data, flag, p)	((dkdriver_ioctl)(diskp, dev, cmd, data, flag, p))
+#define DKOP_DUMP(diskp, dev)				((dkdriver_dump)(diskp, dev))
+#define DKOP_START(diskp, bp)				((dkdriver_start)(diskp, bp))
+#define DKOP_MKLABEL(diskp) 				((dkdriver_mklabel)(diskp))
 
 /* states */
 #define	DKF_OPENING			0x0001				/* drive is being opened */
