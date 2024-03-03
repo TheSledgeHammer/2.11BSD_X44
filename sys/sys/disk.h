@@ -219,6 +219,9 @@ struct dkbadsecinfo {
 #define dkmakedev(maj, unit, part) 	(makedev(maj, dkminor(unit, part)))
 
 #ifdef _KERNEL
+struct bdevsw;
+struct cdevsw;
+
 extern	int 		disk_count;			/* number of disks in global disklist */
 
 void				disk_init(void);
