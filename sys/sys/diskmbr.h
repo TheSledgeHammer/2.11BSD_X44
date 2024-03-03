@@ -161,7 +161,7 @@ struct mbr_sector {
 	struct directory		mbr_dir;						/* directory */
 	uint16_t				mbr_magic;
 	unsigned char 			*mbr_bootcode;					/* boot code */
-	off_t 					mbr_bootsize;
+	off_t 					mbr_bootsize;					/* boot size */
 
 	struct mbr_bootsel		mbr_bootsel;
 	uint16_t				mbr_bootsel_magic;
@@ -174,6 +174,12 @@ struct mbr_sector {
 	((x) == DOSPTYP_EXT || 				\
 			(x) == DOSPTYP_EXTLBA || 	\
 			(x) == DOSPTYP_EXTLNX)
+
+#define	DOSBS_ACTIVE	0x01	/* Bootselector active (or code present) */
+#define	DOSBS_EXTLBA	0x08	/* Extended ptn capable (LBA reads) */
+#define	DOSBS_ASCII		0x10	/* Bootselect code needs ascii key code */
+/* This is always set, the bootsel is located using the magic number...  */
+#define	DOSBS_NEWMBR	0x80	/* New bootsel at offset 440 */
 
 /*
  * Diskmbr-specific ioctls.

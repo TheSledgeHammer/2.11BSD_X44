@@ -72,7 +72,6 @@ static char *md_bootxx_name(void);
 
 const char *fdtype = "msdos";
 
-
 int
 md_get_info(void)
 {

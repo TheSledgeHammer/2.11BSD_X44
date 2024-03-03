@@ -6,7 +6,7 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/localedef.h>
+//#include <sys/localedef.h>
 #include <locale.h>
 #include <limits.h>
 

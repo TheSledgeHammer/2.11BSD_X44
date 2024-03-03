@@ -46,15 +46,18 @@
  */
 
 /* constants and defines */
-
 #include <sys/diskmbr.h>
 
 #define MBR_PART_COUNT 		NDOSPART
 #define MBR_MAGIC 			DOSMAGIC
+#define MBR_PFLAG_ACTIVE 	DOSPFLG_ACTIVE
 #define MBR_BS_OFFSET		DOSBS_OFFSET
 #define MBR_BS_OLD_OFFSET	DOSBS_OLD_OFFSET
 #define MBR_BS_MAGIC		DOSBS_MAGIC
-#define MBR_PFLAG_ACTIVE 	DOSPFLG_ACTIVE
+#define	MBR_BS_ACTIVE		DOSBS_ACTIVE
+#define MBR_BS_EXTLBA		DOSBS_EXTLBA
+#define	MBR_BS_ASCII		DOSBS_ASCII
+#define	MBR_BS_NEWMBR		DOSBS_NEWMBR
 
 /*      
  * XXX  I (dsl) haven't the foggiest idea what the MBR extended chain

@@ -5,7 +5,7 @@
  * Public domain.
  */
 
-#include <sys/localedef.h>
+//#include <sys/localedef.h>
 #include <stdlib.h>
 #define __SETLOCALE_SOURCE__
 #include <locale.h>

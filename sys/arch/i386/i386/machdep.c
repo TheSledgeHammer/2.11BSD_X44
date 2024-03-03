@@ -1831,6 +1831,7 @@ has_smapbase(smapbase)
 	return (has_smap);
 }
 
+/* Spl */
 /*
  * Add a mask to cpl, and return the old value of cpl.
  */

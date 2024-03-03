@@ -204,8 +204,21 @@ llc_getsapinfo(u_char sap, struct ifnet *ifp)
 	return ((struct llc_sapinfo *)sirt->rt_llinfo);
 }
 
+
+short
+llc_seq2slot(struct llc_linkcb *linkp, short seqn)
+{
+	register short sn = 0;
+
+	sn = (linkp->llcl_freeslot + linkp->llcl_window -
+	      (linkp->llcl_projvs + LLC_MAX_SEQUENCE - seqn) %
+	      LLC_MAX_SEQUENCE) % linkp->llcl_window;
+
+	return (sn);
+}
+
 void
-llc_init()
+llc_init(void)
 {
 	rn_inithead((void **)&rt_tables[AF_LINK], 32);
 
@@ -338,4 +351,25 @@ llc_dellink(struct llc_linkcb *linkp)
 
 	/* return the control block space --- now it's gone ... */
 	llc_free(linkp);
+}
+
+int
+llc_statehandler(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
+{
+	register int action = 0;
+
+	switch (action) {
+	case LLC_CONNECT_INDICATION:
+	case LLC_CONNECT_CONFIRM:
+	case LLC_DISCONNECT_INDICATION:
+	case LLC_RESET_CONFIRM:
+	case LLC_RESET_INDICATION_LOCAL:
+		break;
+	case LLC_RESET_INDICATION_REMOTE:
+	case LLC_FRMR_SENT:
+	case LLC_FRMR_RECEIVED:
+	case LLC_REMOTE_BUSY:
+	case LLC_REMOTE_NOT_BUSY:
+	}
+	return (action);
 }

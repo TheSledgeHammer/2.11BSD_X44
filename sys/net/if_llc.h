@@ -150,6 +150,8 @@ struct frmrinfo {
  */
 #define	LLC_8021D_LSAP	0x42
 #define LLC_X25_LSAP	0x7e
+#define LLC_XNS_LSAP	0x80
+#define LLC_ARP_LSAP	0x98 /* ARPNET */
 #define LLC_SNAP_LSAP	0xaa
 #define LLC_ISO_LSAP	0xfe
 
