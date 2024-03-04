@@ -24,6 +24,8 @@ ctags/		NetBSD
 db/			NetBSD
 elf2aout/	NetBSD
 elf2ecoff/	NetBSD
+false/	    NetBSD
+fdformat/	NetBSD
 genassym/	NetBSD
 gencat/		NetBSD
 genaddrinfo/NetBSD
@@ -71,6 +73,7 @@ strfile/	NetBSD
 time/		NetBSD
 tip/		NetBSD
 touch/		NetBSD
+true/	    NetBSD
 tsort/		NetBSD
 uname/		4.4BSD-Lite2
 users/		NetBSD

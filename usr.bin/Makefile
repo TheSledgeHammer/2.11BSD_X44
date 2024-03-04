@@ -6,10 +6,11 @@
 SUBDIR= apply ar asa at 											\
 		banner basename bzip2 bzip2recover							\
 		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
-		compress crontab crunch ctags cut 								\
+		compress crontab crunch ctags cut 							\
 		db 															\
-		elf2aout elf2ecoff env											\
+		elf2aout elf2ecoff env										\
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
+        false fdformat                                              \
 		hexdump 													\
         iostat                                                      \
 		join 														\
@@ -20,11 +21,12 @@ SUBDIR= apply ar asa at 											\
         netgroup netstat                                            \
 		rpcgen rpcinfo												\
 		script sed shar sort sortinfo stat strfile 					\
-		time tip touch tsort 										\
+		time tip touch true tsort 									\
 		uname users unstr uudecode uuencode 						\
 		vgrind vis vmstat 											\
 		w wall wc what whereis who whois write 						\
-		xargs xinstall xlint xstr
+		xargs xinstall xlint xstr                                   \
+        yes
 												
 SUBDIR+= ../contrib/zlib/pigz/bin/pigz
 
