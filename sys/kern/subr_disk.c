@@ -167,7 +167,7 @@ disk_attach(diskp, bdev, cdev)
 	diskp->dk_slices = dsmakeslicestruct(BASE_SLICE, diskp->dk_label);
 
 	if (diskp->dk_label == NULL) {
-		panic("disk_attach: can't allocate storage for cpu_disklabel");
+		panic("disk_attach: can't allocate storage for disklabel");
 	} else {
 		bzero(diskp->dk_label, sizeof(struct disklabel));
 	}
