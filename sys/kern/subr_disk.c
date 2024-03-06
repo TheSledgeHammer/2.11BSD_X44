@@ -176,7 +176,7 @@ disk_attach(diskp, bdev, cdev)
 	} else {
 		bzero(diskp->dk_cpulabel, sizeof(struct cpu_disklabel));
 	}
-	if (diskp->dk_slices == NULL || ret != 0) {
+	if (diskp->dk_slices == NULL) {
 		panic("disk_attach: can't allocate storage for diskslices");
 	} else {
 		bzero(diskp->dk_slices, sizeof(struct diskslices));
