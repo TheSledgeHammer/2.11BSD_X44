@@ -154,3 +154,34 @@ sockaddr_dl_setaddrif(struct ifnet *ifp, u_char *mac_addr, u_char dlsap_addr, u_
 	}
 }
 
+/* create sockaddr_dl_header */
+struct sockaddr_dl_header *
+sockaddr_dl_createhdr(struct mbuf *m)
+{
+    struct sockaddr_dl_header *sdlhdr;
+
+    sdlhdr = mtod(m, struct sockaddr_dl_header *);
+    return (sdlhdr);
+}
+
+/* Compare the sockaddr_dl header source and destination aggregate */
+int
+sockaddr_dl_cmphdrif(struct ifnet *ifp, u_char *mac_src, u_char dlsap_src, u_char *mac_dst, u_char dlsap_dst, u_char mac_len, struct sockaddr_dl_header *sdlhdr_to)
+{
+	if (!sockaddr_dl_setaddrif(ifp, mac_src, dlsap_src, mac_len, &sdlhdr_to->sdlhdr_src) ||
+			!sockaddr_dl_setaddrif(ifp, mac_dst, dlsap_dst, mac_len, &sdlhdr_to->sdlhdr_dst)) {
+		return (0);
+	} else {
+		return (1);
+	}
+}
+
+/* Fill out the sockaddr_dl header aggregate */
+int
+sockaddr_dl_sethdrif(struct ifnet *ifp, u_char *mac_src, u_char dlsap_src, u_char *mac_dst, u_char dlsap_dst, u_char mac_len, struct mbuf *m)
+{
+	struct sockaddr_dl_header *sdlhdr;
+
+	sdlhdr = sockaddr_dl_createhdr(m);
+	return (sockaddr_dl_cmphdrif(ifp, mac_src, dlsap_src, mac_dst, dlsap_dst, mac_len, sdlhdr));
+}

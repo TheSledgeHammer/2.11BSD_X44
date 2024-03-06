@@ -66,6 +66,20 @@
 int llc_tracelevel = LLCTR_URGENT;
 
 /*
+ * Values for accessing various bitfields
+ */
+struct bitslice llc_bitslice[] = {
+/*	  mask, shift value */
+	{ 0x1,  0x0 },
+	{ 0xfe, 0x1 },
+	{ 0x3,  0x0 },
+	{ 0xc,  0x2 },
+	{ 0x10, 0x4 },
+	{ 0xe0, 0x5 },
+	{ 0x1f, 0x0 }
+};
+
+/*
  * We keep the link control blocks on a doubly linked list -
  * primarily for checking in llc_time()
  */
@@ -76,38 +90,6 @@ static struct sockaddr_dl sap_sgate = {
 		.sdl_len = sizeof(struct sockaddr_dl), 		/* _len */
 		.sdl_family = AF_LINK,					  	/* _af */
 };
-
-/* create sockaddr_dl_header */
-struct sockaddr_dl_header *
-sockaddr_dl_createhdr(struct mbuf *m)
-{
-    struct sockaddr_dl_header *sdlhdr;
-
-    sdlhdr = mtod(m, struct sockaddr_dl_header *);
-    return (sdlhdr);
-}
-
-/* Compare the sockaddr_dl header source and destination aggregate */
-int
-sockaddr_dl_cmphdrif(struct ifnet *ifp, u_char *mac_src, u_char dlsap_src, u_char *mac_dst, u_char dlsap_dst, u_char mac_len, struct sockaddr_dl_header *sdlhdr_to)
-{
-	if (!sockaddr_dl_setaddrif(ifp, mac_src, dlsap_src, mac_len, &sdlhdr_to->sdlhdr_src) ||
-			!sockaddr_dl_setaddrif(ifp, mac_dst, dlsap_dst, mac_len, &sdlhdr_to->sdlhdr_dst)) {
-		return (0);
-	} else {
-		return (1);
-	}
-}
-
-/* Fill out the sockaddr_dl header aggregate */
-int
-sockaddr_dl_sethdrif(struct ifnet *ifp, u_char *mac_src, u_char dlsap_src, u_char *mac_dst, u_char dlsap_dst, u_char mac_len, struct mbuf *m)
-{
-	struct sockaddr_dl_header *sdlhdr;
-
-	sdlhdr = sockaddr_dl_createhdr(m);
-	return (sockaddr_dl_cmphdrif(ifp, mac_src, dlsap_src, mac_dst, dlsap_dst, mac_len, sdlhdr));
-}
 
 /*
  * Set sapinfo for SAP address, llcconfig, af, and interface
@@ -199,11 +181,10 @@ llc_getsapinfo(u_char sap, struct ifnet *ifp)
 	if (sirt != NULL) {
 		sirt->rt_refcnt--;
 	} else {
-		return (0);
+		return (NULL);
 	}
 	return ((struct llc_sapinfo *)sirt->rt_llinfo);
 }
-
 
 short
 llc_seq2slot(struct llc_linkcb *linkp, short seqn)
@@ -354,22 +335,170 @@ llc_dellink(struct llc_linkcb *linkp)
 }
 
 int
+llc_decode(struct llc* frame, struct llc_linkcb * linkp)
+{
+	register int ft;
+
+	ft = LLC_BAD_PDU;
+	if ((frame->llc_control & 01) == 0) {
+		ft = LLCFT_INFO;
+	} else {
+		switch (frame->llc_control) {
+		/* U frames */
+		case LLC_UI:
+		case LLC_UI_P:
+			ft = LLC_UI;
+			break;
+		case LLC_DM:
+		case LLC_DM_P:
+			ft = LLCFT_DM;
+			break;
+		case LLC_DISC:
+		case LLC_DISC_P:
+			ft = LLCFT_DISC;
+			break;
+		case LLC_UA:
+		case LLC_UA_P:
+			ft = LLCFT_UA;
+			break;
+		case LLC_SABME:
+		case LLC_SABME_P:
+			ft = LLCFT_SABME;
+			break;
+		case LLC_FRMR:
+		case LLC_FRMR_P:
+			ft = LLCFT_FRMR;
+			break;
+		case LLC_XID:
+		case LLC_XID_P:
+			ft = LLCFT_XID;
+			break;
+		case LLC_TEST:
+		case LLC_TEST_P:
+			ft = LLCFT_TEST;
+			break;
+
+		/* S frames */
+		case LLC_RR:
+			ft = LLCFT_RR;
+			break;
+		case LLC_RNR:
+			ft = LLCFT_RNR;
+			break;
+		case LLC_REJ:
+			ft = LLCFT_REJ;
+			break;
+		}
+	}
+	if (linkp) {
+		switch (ft) {
+		case LLCFT_INFO:
+			if (LLCGBITS(frame->llc_control, i_ns) != linkp->llcl_vr) {
+				ft = LLC_INVALID_NS;
+				break;
+			}
+			/* fall thru --- yeeeeeee */
+		case LLCFT_RR:
+		case LLCFT_RNR:
+		case LLCFT_REJ:
+			/* splash! */
+			if (LLC_NR_VALID(linkp, LLCGBITS(frame->llc_control_ext, s_nr))	== 0) {
+				ft = LLC_INVALID_NR;
+			}
+			break;
+		}
+	}
+	return (ft);
+}
+
+int
 llc_statehandler(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
 	register int action = 0;
 
+once_more_and_again:
 	switch (action) {
-	case LLC_CONNECT_INDICATION:
+	case LLC_CONNECT_INDICATION: {
+		int naction;
+
+		LLC_TRACE(linkp, LLCTR_INTERESTING, "CONNECT INDICATION");
+		linkp->llcl_nlnext =
+		     (*linkp->llcl_sapinfo->si_ctlinput)(PRC_CONNECT_INDICATION, (struct sockaddr *) &linkp->llcl_addr, (caddr_t) linkp);
+		if (linkp->llcl_nlnext == 0) {
+			naction = NL_DISCONNECT_REQUEST;
+		} else {
+			naction = NL_CONNECT_RESPONSE;
+		}
+		action = (*linkp->llcl_statehandler)(linkp, frame, naction, 0, 0);
+		goto once_more_and_again;
+	}
 	case LLC_CONNECT_CONFIRM:
+		/* llc_resend(linkp, LLC_CMD, 0); */
+		llc_start(linkp);
+		break;
 	case LLC_DISCONNECT_INDICATION:
+		LLC_TRACE(linkp, LLCTR_INTERESTING, "DISCONNECT INDICATION");
+		(*linkp->llcl_sapinfo->si_ctlinput)(PRC_DISCONNECT_INDICATION,(struct sockaddr *) &linkp->llcl_addr, linkp->llcl_nlnext);
+		break;
 	case LLC_RESET_CONFIRM:
 	case LLC_RESET_INDICATION_LOCAL:
 		break;
 	case LLC_RESET_INDICATION_REMOTE:
+		LLC_TRACE(linkp, LLCTR_SHOULDKNOW, "RESET INDICATION (REMOTE)");
+		action = (*linkp->llcl_statehandler)(linkp, frame, NL_RESET_RESPONSE, 0, 0);
+		goto once_more_and_again;
 	case LLC_FRMR_SENT:
+		LLC_TRACE(linkp, LLCTR_URGENT, "FRMR SENT");
+		break;
 	case LLC_FRMR_RECEIVED:
+		LLC_TRACE(linkp, LLCTR_URGEN, "FRMR RECEIVED");
+		action = (*linkp->llcl_statehandler)(linkp, frame, NL_RESET_REQUEST, 0, 0);
+		goto once_more_and_again;
 	case LLC_REMOTE_BUSY:
+		LLC_TRACE(linkp, LLCTR_SHOULDKNOW, "REMOTE BUSY");
+		break;
 	case LLC_REMOTE_NOT_BUSY:
+		LLC_TRACE(linkp, LLCTR_SHOULDKNOW, "REMOTE BUSY CLEARED");
+		llc_start(linkp);
+		break;
 	}
 	return (action);
+}
+
+#define SAL(s) ((struct sockaddr_dl *)&(s)->llcl_addr)
+
+void
+llc_link_dump(struct llc_linkcb* linkp, const char *message)
+{
+	register int i;
+	register char *state;
+
+	/* print interface */
+	printf("if %s\n", linkp->llcl_if->if_xname);
+
+	/* print message */
+	printf(">> %s <<\n", message);
+
+	/* print MAC and LSAP */
+	printf("llc addr ");
+	for (i = 0; i < (SAL(linkp)->sdl_alen)-2; i++) {
+		printf("%x:", (char)*(LLADDR(SAL(linkp))+i) & 0xff);
+	}
+	printf("%x,", (char)*(LLADDR(SAL(linkp))+i) & 0xff);
+	printf("%x\n", (char)*(LLADDR(SAL(linkp))+i+1) & 0xff);
+
+	/* print send and receive state variables, ack, and window */
+	printf("V(R) %d/V(S) %d/N(R) received %d/window %d/freeslot %d\n",
+	       linkp->llcl_vs, linkp->llcl_vr, linkp->llcl_nr_received,
+	       linkp->llcl_window, linkp->llcl_freeslot);
+}
+
+
+void
+llc_trace(struct llc_linkcb *linkp, int level, const char *message)
+{
+	if (linkp->llcl_sapinfo->si_trace && level > llc_tracelevel) {
+		llc_link_dump(linkp, message);
+	}
+	return;
 }

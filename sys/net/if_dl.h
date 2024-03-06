@@ -79,10 +79,17 @@ struct sockaddr_dl {
 #define	LLSAPADDR(s) 	((s)->sdl_data[LLADDRLEN(s)-1] & 0xff)
 #define LLSAPLOC(s, if) ((s)->sdl_nlen + (if)->if_addrlen)
 
+struct sockaddr_dl_header {
+	struct sockaddr_dl 	sdlhdr_dst;
+	struct sockaddr_dl 	sdlhdr_src;
+	long 				sdlhdr_len;
+};
+
 #ifdef _KERNEL
 
 struct ifnet;
 
+/* sockaddr_dl */
 int 	sockaddr_dl_cmp(struct sockaddr_dl *, struct sockaddr_dl *);
 void	sockaddr_dl_copylen(struct sockaddr_dl *, struct sockaddr_dl *, u_char);
 void 	sockaddr_dl_copy(struct sockaddr_dl *, struct sockaddr_dl *);
@@ -93,6 +100,10 @@ struct sockaddr_dl *sockaddr_dl_getaddrif(struct ifnet *, sa_family_t);
 int		sockaddr_dl_checkaddrif(struct ifnet *, struct sockaddr_dl *, sa_family_t);
 int 	sockaddr_dl_setaddrif(struct ifnet *, u_char *, u_char, u_char, struct sockaddr_dl *, sa_family_t);
 
+/* sockaddr_dl_header */
+struct sockaddr_dl_header *sockaddr_dl_createhdr(struct mbuf *);
+int    sockaddr_dl_cmphdrif(struct ifnet *, u_char *, u_char, u_char *, u_char, u_char, struct sockaddr_dl_header *);
+int	   sockaddr_dl_sethdrif(struct ifnet *, u_char *, u_char, u_char *, u_char, u_char, struct mbuf *);
 #else /* !_KERNEL */
 
 #include <sys/cdefs.h>

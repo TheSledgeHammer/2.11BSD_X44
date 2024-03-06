@@ -769,6 +769,8 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 			    return;
 			}
 			break;
+		case LLC_ARP_LSAP:
+		case LLC_XNS_LSAP:
 		case LLC_X25_LSAP:
 		default:
 		    m_freem(m);

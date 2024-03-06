@@ -110,12 +110,79 @@ extern struct bitslice llc_bitslice[];
 #define LLC_MAXCMDRSP   2
 
 /*
- * Other necessary definitions
+ * LLC events --- These events may either be frames received from the
+ *                remote LLC DSAP, request from the network layer user,
+ *                timer events from llc_timer(), or diagnostic events from
+ *                llc_input().
  */
 
-#define LLC_MAX_SEQUENCE    128
-#define LLC_MAX_WINDOW	    127
-#define LLC_WINDOW_SIZE	    7
+/* LLC frame types */
+#define LLCFT_INFO                       0 * LLC_MAXCMDRSP
+#define LLCFT_RR                         1 * LLC_MAXCMDRSP
+#define LLCFT_RNR                        2 * LLC_MAXCMDRSP
+#define LLCFT_REJ                        3 * LLC_MAXCMDRSP
+#define LLCFT_DM                         4 * LLC_MAXCMDRSP
+#define LLCFT_SABME                      5 * LLC_MAXCMDRSP
+#define LLCFT_DISC                       6 * LLC_MAXCMDRSP
+#define LLCFT_UA                         7 * LLC_MAXCMDRSP
+#define LLCFT_FRMR                       8 * LLC_MAXCMDRSP
+#define LLCFT_UI                         9 * LLC_MAXCMDRSP
+#define LLCFT_XID                       10 * LLC_MAXCMDRSP
+#define LLCFT_TEST                      11 * LLC_MAXCMDRSP
+
+/* LLC2 timer events */
+#define LLC_ACK_TIMER_EXPIRED           12 * LLC_MAXCMDRSP
+#define LLC_P_TIMER_EXPIRED             13 * LLC_MAXCMDRSP
+#define LLC_REJ_TIMER_EXPIRED           14 * LLC_MAXCMDRSP
+#define LLC_BUSY_TIMER_EXPIRED          15 * LLC_MAXCMDRSP
+
+/* LLC2 diagnostic events */
+#define LLC_INVALID_NR                  16 * LLC_MAXCMDRSP
+#define LLC_INVALID_NS                  17 * LLC_MAXCMDRSP
+#define LLC_BAD_PDU                     18 * LLC_MAXCMDRSP
+#define LLC_LOCAL_BUSY_DETECTED         19 * LLC_MAXCMDRSP
+#define LLC_LOCAL_BUSY_CLEARED          20 * LLC_MAXCMDRSP
+
+/* Network layer user requests */
+#define NL_CONNECT_REQUEST              21 * LLC_MAXCMDRSP
+#define NL_CONNECT_RESPONSE             22 * LLC_MAXCMDRSP
+#define NL_RESET_REQUEST                23 * LLC_MAXCMDRSP
+#define NL_RESET_RESPONSE               24 * LLC_MAXCMDRSP
+#define NL_DISCONNECT_REQUEST           25 * LLC_MAXCMDRSP
+#define NL_DATA_REQUEST                 26 * LLC_MAXCMDRSP
+#define NL_INITIATE_PF_CYCLE            27 * LLC_MAXCMDRSP
+#define NL_LOCAL_BUSY_DETECTED          28 * LLC_MAXCMDRSP
+
+#define LLCFT_NONE                      255
+
+/* return message from state handlers */
+#define LLC_CONNECT_INDICATION      	1
+#define LLC_CONNECT_CONFIRM         	2
+#define LLC_DISCONNECT_INDICATION   	3
+#define LLC_RESET_CONFIRM           	4
+#define LLC_RESET_INDICATION_REMOTE 	5
+#define LLC_RESET_INDICATION_LOCAL  	6
+#define LLC_FRMR_RECEIVED           	7
+#define LLC_FRMR_SENT               	8
+#define LLC_DATA_INDICATION         	9
+#define LLC_REMOTE_NOT_BUSY         	10
+#define LLC_REMOTE_BUSY             	11
+
+/* Internal return code */
+#define LLC_PASSITON                	255
+
+#define INFORMATION_CONTROL				0x00
+#define SUPERVISORY_CONTROL				0x02
+#define UNUMBERED_CONTROL 				0x03
+
+/*
+ * Other necessary definitions
+ */
+#define LLC_MAX_SEQUENCE    			128
+#define LLC_MAX_WINDOW	    			127
+#define LLC_WINDOW_SIZE	    			7
+
+#define NLHDRSIZEGUESS      			3
 
 /*
  * LLC control block
@@ -124,16 +191,20 @@ extern struct bitslice llc_bitslice[];
 struct llccb_q;
 TAILQ_HEAD(llccb_q, llc_linkcb);
 struct llc_linkcb {
-	TAILQ_ENTRY(llc_linkcb) llcl_q;		/* admin chain */
-	struct llc_sapinfo 	*llcl_sapinfo;	/* SAP information */
-	struct sockaddr_dl 	llcl_addr;		/* link snpa address */
-	struct rtentry 		*llcl_nlrt;		/* layer 3 -> LLC */
-	struct rtentry		*llcl_llrt;		/* LLC -> layer 3 */
-	struct ifnet        *llcl_if;       /* our interface */
-	caddr_t				llcl_nlnext;	/* cb for network layer */
-	struct mbuf   	 	*llcl_wqhead;	/* Write queue head */
-	struct mbuf    		*llcl_wqtail;	/* Write queue tail */
+	TAILQ_ENTRY(llc_linkcb) llcl_q;			/* admin chain */
+	struct llc_sapinfo 	*llcl_sapinfo;		/* SAP information */
+	struct sockaddr_dl 	llcl_addr;			/* link snpa address */
+	struct rtentry 		*llcl_nlrt;			/* layer 3 -> LLC */
+	struct rtentry		*llcl_llrt;			/* LLC -> layer 3 */
+	struct ifnet        *llcl_if;       	/* our interface */
+	caddr_t				llcl_nlnext;		/* cb for network layer */
+	struct mbuf   	 	*llcl_wqhead;		/* Write queue head */
+	struct mbuf    		*llcl_wqtail;		/* Write queue tail */
 	struct mbuf    		**llcl_output_buffers;
+	short               llcl_timers[6]; 	/* timer array */
+	long                llcl_timerflags;	/* flags signalling running timers */
+	int                 (*llcl_statehandler)(struct llc_linkcb *, struct llc *, int, int, int);
+
 	/*
 	 * The following components deal --- in one way or the other ---
 	 * with the LLC2 window. Indicated by either [L] or [W] is the
@@ -142,17 +213,18 @@ struct llc_linkcb {
 	 *        [L]    The domain is 0--LLC_MAX_WINDOW
      *    	  [W]    The domain is 0--llcl_window
 	 */
-	short           	llcl_vr;        /* next to receive [L] */
-	short           	llcl_vs;        /* next to send [L] */
-	short               llcl_freeslot;  /* next free slot [W] */
-	short               llcl_projvs;    /* V(S) associated with freeslot */
-	short               llcl_slotsfree; /* free slots [W] */
-	short           	llcl_window;    /* window size */
+	short           	llcl_vr;        	/* next to receive [L] */
+	short           	llcl_vs;        	/* next to send [L] */
+	short           	llcl_nr_received;   /* next frame to b ack'd [L] */
+	short               llcl_freeslot;  	/* next free slot [W] */
+	short               llcl_projvs;    	/* V(S) associated with freeslot */
+	short               llcl_slotsfree; 	/* free slots [W] */
+	short           	llcl_window;    	/* window size */
 	/*
 	 * In llcl_frmrinfo we jot down the last frmr info field, which we
 	 * need to do as we need to be able to resend it in the ERROR state.
 	 */
-	struct frmrinfo     llcl_frmrinfo;  /* last FRMR info field */
+	struct frmrinfo     llcl_frmrinfo;  	/* last FRMR info field */
 #define llcl_frmr_pdu0          llcl_frmrinfo.rej_pdu_0
 #define llcl_frmr_pdu1          llcl_frmrinfo.rej_pdu_1
 #define llcl_frmr_control       llcl_frmrinfo.frmr_control
@@ -186,14 +258,8 @@ struct llc_linkcb {
 			}													\
 		}
 
-struct sockaddr_dl_header {
-	struct sockaddr_dl 	sdlhdr_dst;
-	struct sockaddr_dl 	sdlhdr_src;
-	long 				sdlhdr_len;
-};
-
 #define LLC_GETHDR(f, m) { 										\
-	struct mbuf *_m = (struct mbuf *) (m); 						\
+	struct mbuf *_m = (struct mbuf *)(m); 						\
 	if (_m) { 													\
 		M_PREPEND(_m, LLC_ISFRAMELEN, M_DONTWAIT); 				\
 		bzero(mtod(_m, caddr_t), LLC_ISFRAMELEN); 				\
@@ -211,13 +277,29 @@ struct sockaddr_dl_header {
 	}															\
 }
 
-#define LLC_INC(i) 		((i) = ((i)+1) % LLC_MAX_SEQUENCE)
+#define LLC_SETFLAG(l, LLCflag, v) 	((l)->llcl_##LLCflag##_flag = (v))
+#define LLC_GETFLAG(l, LLCflag) 	((l)->llcl_##LLCflag##_flag)
 
-#define LLC_FRMR_W     (1<<0)
-#define LLC_FRMR_X     (1<<1)
-#define LLC_FRMR_Y     (1<<2)
-#define LLC_FRMR_Z     (1<<3)
-#define LLC_FRMR_V     (1<<4)
+#define LLC_INC(i) 												\
+		((i) = ((i)+1) % LLC_MAX_SEQUENCE)
+
+#define LLC_NR_VALID(l, nr)    									\
+	((l)->llcl_vs < (l)->llcl_nr_received ? 					\
+			(((nr) >= (l)->llcl_nr_received) || 				\
+			((nr) <= (l)->llcl_vs) ? 1 : 0) : 					\
+			(((nr) <= (l)->llcl_vs) && 							\
+			((nr) >= (l)->llcl_nr_received) ? 1 : 0))
+
+#define LLC_DACKCMD      0x1
+#define LLC_DACKCMDPOLL  0x2
+#define LLC_DACKRSP      0x3
+#define LLC_DACKRSPFINAL 0x4
+
+#define LLC_FRMR_W     	(1<<0)
+#define LLC_FRMR_X     	(1<<1)
+#define LLC_FRMR_Y     	(1<<2)
+#define LLC_FRMR_Z     	(1<<3)
+#define LLC_FRMR_V     	(1<<4)
 
 #define LLC_SETFRMR(l, f, cr, c) { 								\
 	if ((f)->llc_control & 0x3) { 								\
@@ -243,6 +325,12 @@ struct sockaddr_dl_header {
 #define LLCTR_INTERESTING       1
 #define LLCTR_SHOULDKNOW        2
 #define LLCTR_URGENT            3
+
+#ifdef LLCDEBUG
+#define LLC_TRACE(lp, l, msg) llc_trace((lp), (l), (msg))
+#else /* LLCDEBUG */
+#define LLC_TRACE(lp, l, msg) /* NOOP */
+#endif /* LLCDEBUG */
 
 struct ifqueue llcintrq;
 extern struct llccb_q llccb_q;

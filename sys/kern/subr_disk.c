@@ -166,18 +166,6 @@ disk_attach(diskp, bdev, cdev)
 	diskp->dk_cpulabel = (struct cpu_disklabel *)malloc(sizeof(struct cpu_disklabel *), M_DEVBUF, M_NOWAIT);
 	diskp->dk_slices = dsmakeslicestruct(BASE_SLICE, diskp->dk_label);
 
-#ifdef DISK_SLICES
-	ret = 0;
-#else /* !DISK_SLICES */
-	dev = disk_isvalid(bdev, cdev);
-	if (dev != NODEVMAJOR) {
-		pdev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
-		ret = mbrinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
-	} else {
-		ret = -1;
-	}
-#endif
-
 	if (diskp->dk_label == NULL) {
 		panic("disk_attach: can't allocate storage for cpu_disklabel");
 	} else {
@@ -189,9 +177,23 @@ disk_attach(diskp, bdev, cdev)
 		bzero(diskp->dk_cpulabel, sizeof(struct cpu_disklabel));
 	}
 	if (diskp->dk_slices == NULL || ret != 0) {
-		panic("disk_attach: can't allocate storage or initialize diskslices");
+		panic("disk_attach: can't allocate storage for diskslices");
 	} else {
 		bzero(diskp->dk_slices, sizeof(struct diskslices));
+	}
+#ifdef DISK_SLICES
+	ret = 0;
+#else /* !DISK_SLICES */
+	dev = disk_isvalid(bdev, cdev);
+	if (dev != NODEVMAJOR) {
+		pdev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
+		ret = mbrinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
+	} else {
+		ret = -1;
+	}
+#endif
+	if (ret != 0) {
+		panic("disk_attach: can't initialize diskslices");
 	}
 
 	/*
