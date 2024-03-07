@@ -489,9 +489,9 @@ _kvm_uvatop(kd, p, va, pa)
 	switch (i386_use_pae) {
 	default:
 	case 0:
-		return (_i386_uvatop_pae(kd, va, pa));
+		return (_i386_uvatop_pae(kd, vms, va, pa));
 	case 1:
-		return (_i386_uvatop(kd, va, pa));
+		return (_i386_uvatop(kd, vms, va, pa));
 	}
 	return (0);
 }
