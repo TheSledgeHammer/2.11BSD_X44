@@ -374,9 +374,9 @@ _kvm_vatop(kd, va, pa)
 	switch (i386_use_pae) {
 	default:
 	case 0:
-		return (_i386_vatop_pae(kd, vms, va, pa));
+		return (_i386_vatop_pae(kd, va, pa));
 	case 1:
-		return (_i386_vatop(kd, vms, va, pa));
+		return (_i386_vatop(kd, va, pa));
 	}
 	return (0);
 }
