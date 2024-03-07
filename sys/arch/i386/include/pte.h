@@ -72,7 +72,10 @@
 #define	PG_AVAIL2	PG_FOD		/*   <	programmers use		*/
 #define	PG_NX		(1ULL << 63)/* No-execute 			*/
 
-#define	PG_FRAME	0xfffff000
+#define PG_4KFRAME	0xfffff000
+#define PG_4MFRAME	0xffc00000
+
+#define	PG_FRAME	PG_4KFRAME
 
 #define	PG_NOACC	0
 #define	PG_KR		0x2000
