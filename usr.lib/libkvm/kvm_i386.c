@@ -349,7 +349,7 @@ _i386_vatop_pae(kd, va, pa)
 	a = (pte & PG_FRAME) + offset;
 	s = _kvm_pa2off(kd, a);
 	if (s == 0) {
-		_kvm_err(kd, kd->program, "_i386_vatop: address not in dump");
+		_kvm_err(kd, kd->program, "_i386_vatop_pae: address not in dump");
 		goto invalid;
 	} else {
 		return (I386_PAGE_SIZE - offset);
