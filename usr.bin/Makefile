@@ -9,8 +9,8 @@ SUBDIR= apply ar asa at 											\
 		compress crontab crunch ctags cut 							\
 		db 															\
 		elf2aout elf2ecoff env										\
+		false fdformat                                              \
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
-        false fdformat                                              \
 		hexdump 													\
         iostat                                                      \
 		join 														\
