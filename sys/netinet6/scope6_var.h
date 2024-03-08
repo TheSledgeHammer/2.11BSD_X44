@@ -55,6 +55,8 @@ uint32_t scope6_addr2default(const struct in6_addr *);
 //int		sa6_embedscope(struct sockaddr_in6 *, int);
 //int		sa6_recoverscope(struct sockaddr_in6 *);
 
+/* see in6_scope.c for in6 scope related methods */
+
 #endif /* _KERNEL */
 
 #endif /* _NETINET6_SCOPE6_VAR_H_ */
