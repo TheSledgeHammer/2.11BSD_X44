@@ -32,11 +32,6 @@ SRCS+=	kvm_${MACHINE_CPU}.c
 	@false
 .endif
 
-#.if ${MACHINE_ARCH} == "i386"
-#LINTFLAGS+=-w
-#SRCS+=	kvm_i386pae.c # Hook PAE support in the i386 build
-#.endif
-
 MAN=	kvm.3 kvm_geterr.3 kvm_getfiles.3 kvm_getloadavg.3 \
 		kvm_getprocs.3 kvm_nlist.3 kvm_open.3 kvm_read.3
 
