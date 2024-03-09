@@ -7,9 +7,9 @@ SUBDIR= apply ar asa at 											\
 		banner basename bzip2 bzip2recover							\
 		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
 		compress crontab crunch ctags cut 							\
-		db 															\
-		elf2aout elf2ecoff env										\
-		false fdformat                                              \
+		db dirname du												\
+		elf2aout elf2ecoff env expand								\
+		false fdformat find fmt fold fpr fsplit                     \
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
 		hexdump 													\
         iostat                                                      \
@@ -19,10 +19,11 @@ SUBDIR= apply ar asa at 											\
 		m4 make man menuc mkdep mkerrlst mkfifo mklocale mkstr      \
         mktemp msgc 	                                            \
         netgroup netstat                                            \
+        paste patch pathchk pr printenv printf						\
 		rpcgen rpcinfo												\
 		script sed shar sort sortinfo stat strfile 					\
 		time tip touch true tsort 									\
-		uname users unstr uudecode uuencode 						\
+		uname unexpand users unstr uudecode uuencode 				\
 		vgrind vis vmstat 											\
 		w wall wc what whereis who whois write 						\
 		xargs xinstall xlint xstr                                   \

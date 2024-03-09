@@ -114,6 +114,7 @@ llc_send(struct llc_linkcb *linkp, int frame_kind, int cmdrsp, int pollfinal)
 
 #define LLC_SETLEN(m, l) ((m)->m_pkthdr.len = (m)->m_len = (l))
 
+void
 llc_rawsend(struct llc_linkcb *linkp, struct mbuf *m, struct llc *frame,
 	    int frame_kind, int vs, int cmdrsp, int pollfinal)
 {

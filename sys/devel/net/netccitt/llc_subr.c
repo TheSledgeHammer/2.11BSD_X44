@@ -493,7 +493,6 @@ llc_link_dump(struct llc_linkcb* linkp, const char *message)
 	       linkp->llcl_window, linkp->llcl_freeslot);
 }
 
-
 void
 llc_trace(struct llc_linkcb *linkp, int level, const char *message)
 {
@@ -501,4 +500,81 @@ llc_trace(struct llc_linkcb *linkp, int level, const char *message)
 		llc_link_dump(linkp, message);
 	}
 	return;
+}
+
+struct sockaddr_dl npdl_netmask = {
+		.sdl_len = 		sizeof(struct sockaddr_dl),	/* _len */
+		.sdl_family = 	0,			/* _family */
+		.sdl_index = 	0,			/* _index */
+		.sdl_type = 	0,			/* _type */
+		.sdl_nlen = 	-1,			/* _nlen */
+		.sdl_alen = 	-1,			/* _alen */
+		.sdl_slen = 	-1,			/* _slen */
+		.sdl_data = {
+				-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+		},							/* _data */
+};
+struct sockaddr npdl_dummy;
+
+struct rtentry *
+llc_sapinfo_enter(struct sockaddr_dl *key, struct sockaddr *value, struct rtentry *rt, struct llc_linkcb *link)
+{
+	struct rtentry *nprt;
+	int    i;
+
+	nprt = rtalloc1((struct sockaddr *)key, 0);
+	if (nprt == NULL) {
+		u_int  size = sizeof(struct llc_sapinfo);
+		u_char saploc = LLSAPLOC(key, rt->rt_ifp);
+		int npdl_datasize = sizeof(struct sockaddr_dl) - ((int) ((unsigned long)&((struct sockaddr_dl *) 0)->sdl_data[0]));
+
+		npdl_netmask.sdl_data[saploc] = NPDL_SAPNETMASK;
+		bzero((caddr_t)&npdl_netmask.sdl_data[saploc + 1], npdl_datasize - saploc - 1);
+		if (value == 0) {
+			value = &npdl_dummy;
+		}
+
+		/* now enter it */
+		rtrequest(RTM_ADD, SA(key), SA(value),
+			  SA(&npdl_netmask), 0, &nprt);
+
+		/* and reset npdl_netmask */
+		for (i = saploc; i < npdl_datasize; i++) {
+			npdl_netmask.sdl_data[i] = -1;
+		}
+
+		nprt->rt_llinfo = malloc(size, M_PCB, M_WAITOK|M_ZERO);
+		if (nprt->rt_llinfo) {
+			((struct llc_sapinfo *) (nprt->rt_llinfo))->np_rt = rt;
+		}
+	} else {
+		nprt->rt_refcnt--;
+	}
+	return (nprt);
+}
+
+struct rtentry *
+llc_sapinfo_enrich(short type, caddr_t info, struct sockaddr_dl *sdl)
+{
+	struct rtentry *rt;
+	rt = rtalloc1((struct sockaddr *) sdl, 0);
+	if (rt != NULL) {
+		rt->rt_refcnt--;
+		switch (type) {
+		case 0:
+			((struct llc_sapinfo *) (rt->rt_llinfo))->np_link = (struct llc_linkcb *) info;
+			break;
+		}
+		return (rt);
+	}
+	return (NULL);
+}
+
+int
+llc_sapinfo_destroy(struct rtentry *rt)
+{
+	if (rt->rt_llinfo) {
+		free((caddr_t) rt->rt_llinfo, M_PCB);
+	}
+	return (rtrequest(RTM_DELETE, rt_key(rt), rt->rt_gateway, rt_mask(rt), 0, 0));
 }

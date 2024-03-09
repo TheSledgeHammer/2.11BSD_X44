@@ -3,7 +3,7 @@ Application	Version
 apply/		NetBSD
 ar/         2.11
 at/			4.3
-basename/		NetBSD
+basename/	NetBSD
 bzip2/		NetBSD
 bzip2recover/ NetBSD
 c11/		NetBSD
@@ -22,10 +22,19 @@ crontab/	4.3
 crunch/		NetBSD
 ctags/		NetBSD
 db/			NetBSD
+dirname/	NetBSD
+du/			NetBSD
 elf2aout/	NetBSD
 elf2ecoff/	NetBSD
+env/		NetBSD
+expand/		NetBSD
 false/	    NetBSD
 fdformat/	NetBSD
+find/		NetBSD
+fmt/		NetBSD
+fold/		NetBSD
+fpr/		NetBSD
+fsplit/		NetBSD
 genassym/	NetBSD
 gencat/		NetBSD
 genaddrinfo/NetBSD
@@ -57,6 +66,12 @@ mktemp/		NetBSD
 msgc/		NetBSD
 netgroup/	NetBSD
 netstat/	4.4BSD-Lite2 / NetBSD
+paste/		NetBSD
+patch/		NetBSD
+pathchk/	NetBSD
+pr/			NetBSD
+printenv/	NetBSD
+printf/		NetBSD
 rpcgen/		NetBSD
 rpcinfo/	NetBSD
 script/		NetBSD
@@ -76,8 +91,9 @@ touch/		NetBSD
 true/	    NetBSD
 tsort/		NetBSD
 uname/		4.4BSD-Lite2
-users/		NetBSD
+unexpand/	NetBSD
 unstr/		NetBSD
+users/		NetBSD
 uudecode/	NetBSD
 uuencode/	NetBSD
 vgrind/		NetBSD
