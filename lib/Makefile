@@ -51,6 +51,7 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 	\
 			${USRLIBDIR}/libtermcap \
 			${USRLIBDIR}/libutil 	\
 			${USRLIBDIR}/libvmf 	\
+            ${USRLIBDIR}/libwrap 	\
 			${USRLIBDIR}/liby 		\
 			${USRLIBDIR}/libz
 
@@ -62,6 +63,9 @@ SUBDIR+=	libkern
 .if (${MKSKEY} != "no")
 SUBDIR+=	${USRLIBDIR}/libskey
 .endif
+
+SUBDIR+=	../contrib/sqlite/lib
+
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/libelf
 SUBDIR+=	../contrib/expat/lib
