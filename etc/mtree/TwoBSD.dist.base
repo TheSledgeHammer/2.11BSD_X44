@@ -189,6 +189,7 @@
 ./usr/share/doc/misc/sysperf
 ./usr/share/doc/misc/uchanges.4.2
 ./usr/share/doc/papers
+./usr/share/doc/ps1
 ./usr/share/doc/ps1/01.Clang
 ./usr/share/doc/ps1/02.f77
 ./usr/share/doc/ps1/03.f77io
@@ -207,6 +208,7 @@
 ./usr/share/doc/ps1/16.lex
 ./usr/share/doc/ps1/17.m4
 ./usr/share/doc/ps1/18.curses
+./usr/share/doc/ps2
 ./usr/share/doc/ps2/01.cacm
 ./usr/share/doc/ps2/02.summary
 ./usr/share/doc/ps2/03.uprog
@@ -217,6 +219,7 @@
 ./usr/share/doc/ps2/08.ratfor
 ./usr/share/doc/ps2/09.lisp
 ./usr/share/doc/run
+./usr/share/doc/smm
 ./usr/share/doc/smm/01.setup
 ./usr/share/doc/smm/02.config
 ./usr/share/doc/smm/03.kdebug
@@ -239,6 +242,7 @@
 ./usr/share/doc/smm/20.termdesc
 ./usr/share/doc/smm/21.uucpnet
 ./usr/share/doc/smm/22.timed
+./usr/share/doc/usd
 ./usr/share/doc/usd/01.begin
 ./usr/share/doc/usd/02.learn
 ./usr/share/doc/usd/03.shell
