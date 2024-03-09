@@ -27,6 +27,7 @@ libtelenet/ NetBSD
 libtermcap/	4.4BSD-Lite2
 libutil/	4.4BSD-Lite2
 libvmf/		4.3BSD
+libwrap/	NetBSD
 liby/		4.3BSD
 libz/		NetBSD
 

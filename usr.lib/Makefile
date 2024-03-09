@@ -13,7 +13,7 @@
 SUBDIR= 	libbz2 libcrypt libcurses libdbm libedit libexecinfo libform libkvm 	\
 		    libm libmenu libmp libom libpanel libpcap libpci libpthread             \
             libpthread_dbg libresolv libstubs libtermcap libutil libvmf     		\
-            liby libz
+            libwrap liby libz
                         
 # IPv6/IPsec
 SUBDIR+=	libipsec					
