@@ -68,18 +68,40 @@ USRSLASHLIB=	${DESTDIR}/usr/lib # Modern BSD's (i.e. 4.4 and above)
 USRDOTLIB=		${DESTDIR}/usr.lib # Older BSD's (i.e. 4.3 and below)
 
 _USRSLASHLIBLIST= \
+            ARCHIVE \
+            ASN1 \
 			C \
 			C_PIC \
 			COM_ERR \
 			COMPAT \
+            CRYPTO \
+            CXX \
+            DES \
 			EXPAT \
 			FETCH \
 			GCC \
 			GNUMALLOC \
+            GSSAPI \
+            HDB \
+            HEIMBASE \
+            HEIMTLM \
+            HX509 \
+            KADM5CLNT \
+            KADM5SRV \
+            KAFS \
+            KRB5 \
 			L \
 			MAGIC \
-            		STDC++ \
-            		SUPC++
+            OBJC \
+            ROKEN \
+            SASLC \
+            SL \
+            SQLITE3 \
+            SSH \
+            SSL \
+            STDC++ \
+            SUPC++ \
+            WIND
 			
 .for _var in ${_USRSLASHLIBLIST}
 .ifndef LIB${_var}
@@ -91,7 +113,6 @@ LIB${_var}:=	 ${USRSLASHLIB}/lib${_var:tl}.a
 _USRDOTLIBLIST=	\
 			BZ2 \
 			CRYPT \
-			CRYPTO \
 			CURSES \
 			DBM \
 			EDIT \
@@ -115,6 +136,7 @@ _USRDOTLIBLIST=	\
 			TERMCAP \
 			UTIL \
 			VMF \
+            WRAP \
 			Y \
 			Z
 

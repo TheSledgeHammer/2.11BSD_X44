@@ -65,6 +65,7 @@ LIBCRYPT_DIR=		usr.lib/libcrypt
 LIBM_DIR=			usr.lib/libm
 LIBPTHREAD_DIR= 	usr.lib/libpthread
 LIBRT_DIR=			usr.lib/librt
+LIBUTIL_DIR=		usr.lib/libutil
 LIBZ_DIR=			usr.lib/libz
 
 ##### Libraries that this may depend upon.
