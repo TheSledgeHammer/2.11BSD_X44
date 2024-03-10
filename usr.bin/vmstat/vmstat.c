@@ -170,8 +170,6 @@ struct vmsum osum;
 struct vm_xstats pxstats, cxstats;
 static kvm_t *kd;
 
-char *defdrives[] = { 0 };
-
 int	hz, phz, HZ, hdrcnt;
 int deficit;
 int	winlines = 20;
@@ -200,6 +198,7 @@ static void	cpustats(void);
 static void	dointr(void);
 static void	domem(void);
 static int dkinit(char *, char *, int);
+static void read_names(void);
 static void	kread(int, void *, size_t);
 static void kread2(void *, void *, size_t);
 static void	usage(void);
@@ -293,7 +292,7 @@ main(argc, argv)
 		struct winsize winsize;
 
 		dkinit(memf, nlistf, 0);	/* Initialize disk stats, no disks selected. */
-
+		read_names();
 		(void)setgid(getgid()); 	/* don't need privs anymore */
 
 		argv = getdrivedata(argv);
@@ -375,8 +374,9 @@ getdrivedata(argv)
 	}
 	/*
 	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
-		if (dr_select[i])
+		if (dr_select[i]) {
 			continue;
+		}
 		for (cp = defdrives; *cp; cp++) {
 			if (strcmp(dr_name[i], *cp) == 0) {
 				dr_select[i] = 1;
@@ -1023,6 +1023,21 @@ read_names(void)
 	}
 }
 #endif
+
+static void
+read_names(void)
+{
+	char two_char[2];
+	int i;
+
+	kread(X_DK_NAME, &dk_name, dk_ndrive * sizeof(char *));
+	kread(X_DK_UNIT, &dk_unit, dk_ndrive * sizeof(int));
+
+	for(i = 0; dk_name[i]; i++) {
+		kread2(dk_name[i], two_char, sizeof(two_char));
+		sprintf(dr_name[i], "%c%c%d", two_char[0], two_char[1], dk_unit[i]);
+	}
+}
 
 /*
  * kread reads something from the kernel, given its nlist index.

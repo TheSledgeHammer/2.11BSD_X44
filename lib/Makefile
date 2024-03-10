@@ -33,31 +33,29 @@ SUBDIR+=	.WAIT
 SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
-SUBDIR+=  	${USRLIBDIR}/libbz2 	\
-            ${USRLIBDIR}/libcrypt    \
-			${USRLIBDIR}/libdbm 	\
-			${USRLIBDIR}/libfortran	\
-			${USRLIBDIR}/libipsec 	\
-			${USRLIBDIR}/libkvm 	\
-			${USRLIBDIR}/libm 		\
-			${USRLIBDIR}/libmp 		\
-			${USRLIBDIR}/libom 		\
-			${USRLIBDIR}/libresolv 	\
-			${USRLIBDIR}/libpcap	\
-			${USRLIBDIR}/libpci		\
-			${USRLIBDIR}/libpthread \
+SUBDIR+=  	${USRLIBDIR}/libbz2 		\
+            ${USRLIBDIR}/libcrypt   	\
+			${USRLIBDIR}/libdbm 		\
+			${USRLIBDIR}/libfortran		\
+			${USRLIBDIR}/libipsec 		\
+			${USRLIBDIR}/libkvm 		\
+			${USRLIBDIR}/libm 			\
+			${USRLIBDIR}/libmp 			\
+			${USRLIBDIR}/libom 			\
+			${USRLIBDIR}/libresolv 		\
+			${USRLIBDIR}/libpci			\
+			${USRLIBDIR}/libpthread 	\
 			${USRLIBDIR}/libpthread_dbg \
-			${USRLIBDIR}/libstubs  \
-			${USRLIBDIR}/libtermcap \
-			${USRLIBDIR}/libutil 	\
-			${USRLIBDIR}/libvmf 	\
-            ${USRLIBDIR}/libwrap 	\
-			${USRLIBDIR}/liby 		\
+			${USRLIBDIR}/libstubs  		\
+			${USRLIBDIR}/libtermcap 	\
+			${USRLIBDIR}/libutil 		\
+			${USRLIBDIR}/libvmf 		\
+            ${USRLIBDIR}/libwrap 		\
+			${USRLIBDIR}/liby 			\
 			${USRLIBDIR}/libz
 
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern
-#SUBDIR+=	libsa	
 .endif
 
 .if (${MKSKEY} != "no")
@@ -68,6 +66,9 @@ SUBDIR+=	../contrib/sqlite/lib
 
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/libelf
+
+SUBDIR+=	${USRLIBDIR}/libpcap
+
 SUBDIR+=	../contrib/expat/lib
 
 SUBDIR+=	../contrib/gnu/libmalloc
@@ -122,8 +123,6 @@ SUBDIR+=	../contrib/llvm/include
 #==================== 2nd library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-#SUBDIR+=	${USRLIBDIR}/libwrap
-
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
 .for sanitizer in asan lsan ubsan
 .if exists(../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer})
@@ -143,11 +142,11 @@ SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
 
 .if (${MKKERBEROS} != "no")
-SUBDIR+=	../crypto/heimdal/lib	# depends on libcrypto
-							# libedit, libterminfo,
+SUBDIR+=	../crypto/heimdal/lib		# depends on libcrypto
+										# libedit, libterminfo,
 .endif
 
-SUBDIR+=	../crypto/openssh/lib # depends on libcrypto, libz
+SUBDIR+=	../crypto/openssh/lib 		# depends on libcrypto, libz
 
 SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
 
