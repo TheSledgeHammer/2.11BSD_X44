@@ -107,7 +107,6 @@ struct _disk {
 
 kvm_t	 	*kd;
 double	  	etime;
-int	tohdr = 1;
 float		*dk_mspw;
 long	 	*dk_wpms, *dk_wps;
 int	  		dk_ndrive, *dr_select, *dk_unit, hz, kmemfd, ndrives;
@@ -137,7 +136,7 @@ main(argc, argv)
 	register int i;
 	long tmp;
 	int ch, hdrcnt, stathz, ndrives;
-	char **cp, *memf, *nlistf, errbuf[_POSIX2_LINE_MAX];
+	char *memf, *nlistf, errbuf[_POSIX2_LINE_MAX];
 	struct timespec	tv;
 	struct ttysize ts;
 
