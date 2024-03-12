@@ -10,7 +10,7 @@ NOLINT=		# defined
 LIB=		wind
 
 LIBDPLIBS+=	com_err ${HEIMBASE}/lib/libcom_err	\
-		crypt ${NETBSDSRCDIR}/lib/libcrypt	\
+		crypt ${NETBSDSRCDIR}/usr.lib/libcrypt	\
 		roken ${HEIMBASE}/lib/libroken
 
 
