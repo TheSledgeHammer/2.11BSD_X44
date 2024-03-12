@@ -7,8 +7,8 @@
 
 LIB=		roken
 
-LIBDPLIBS+=	util ${NETBSDSRCDIR}/lib/libutil \
-		crypt ${NETBSDSRCDIR}/lib/libcrypt
+LIBDPLIBS+=	util ${NETBSDSRCDIR}/usr.lib/libutil \
+		crypt ${NETBSDSRCDIR}/usr.lib/libcrypt
 
 CLEANFILES+=	${BUILT_SRCS}
 
