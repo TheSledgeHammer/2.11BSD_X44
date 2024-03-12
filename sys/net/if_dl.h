@@ -102,8 +102,8 @@ int 	sockaddr_dl_setaddrif(struct ifnet *, u_char *, u_char, u_char, struct sock
 
 /* sockaddr_dl_header */
 struct sockaddr_dl_header *sockaddr_dl_createhdr(struct mbuf *);
-int    sockaddr_dl_cmphdrif(struct ifnet *, u_char *, u_char, u_char *, u_char, u_char, struct sockaddr_dl_header *);
-int	   sockaddr_dl_sethdrif(struct ifnet *, u_char *, u_char, u_char *, u_char, u_char, struct mbuf *);
+int    sockaddr_dl_cmphdrif(struct ifnet *, u_char *, u_char, u_char *, u_char, u_char, struct sockaddr_dl_header *, sa_family_t);
+int	   sockaddr_dl_sethdrif(struct ifnet *, u_char *, u_char, u_char *, u_char, u_char, struct mbuf *, sa_family_t);
 #else /* !_KERNEL */
 
 #include <sys/cdefs.h>
