@@ -9,8 +9,8 @@ NOLINT=		# defined
 
 LIB=		ipc
 
-LIBDPLIBS+=	util ${NETBSDSRCDIR}/lib/libutil \
-		crypt ${NETBSDSRCDIR}/lib/libcrypt
+LIBDPLIBS+=	util ${NETBSDSRCDIR}/usr.lib/libutil \
+		crypt ${NETBSDSRCDIR}/usr.lib/libcrypt
 
 SRCS= common.c client.c server.c
 
