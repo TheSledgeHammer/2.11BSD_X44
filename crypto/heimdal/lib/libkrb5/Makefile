@@ -23,8 +23,8 @@ LIBDPLIBS+=	\
 	roken		${HEIMBASE}/lib/libroken	\
 	wind		${HEIMBASE}/lib/libwind		\
 	heimbase	${HEIMBASE}/lib/libheimbase	\
-	sqlite3		${NETBSDSRCDIR}/external/public-domain/sqlite/lib \
-	crypt		${NETBSDSRCDIR}/lib/libcrypt
+	sqlite3		${NETBSDSRCDIR}/contrib/sqlite/lib \
+	crypt		${NETBSDSRCDIR}/usr.lib/libcrypt
 
 HEIMSRCS= krb_err.et krb5_err.et heim_err.et k524_err.et
 
