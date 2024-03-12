@@ -75,26 +75,6 @@ struct diskslices {
 #define	dkmakeminor(unit, slice, part) 	(((slice) << 16) | (((unit) & 0x1e0) << 16) | (((unit) & 0x1f) << 3) | (part))
 #define	dkslice(dev)					((minor(dev) >> 16) & 0x1f)
 #define	dksparebits(dev)       			((minor(dev) >> 25) & 0x7f)
-/*
- * Note: (deprecation notice: dkmodpart and dkmodslice)
- * The below example shows that both "res1" and "res2" are always equal to each other.
- * dev_t res1 = dkmodpart(dkmodslice(dev, WHOLE_DISK_SLICE), RAW_PART)
- * dev_t res2 = dkmakedev(major(dev), dkunit(dev), RAW_PART);
- */
-
-/* deprecation notice */
-static __inline dev_t
-dkmodpart(dev_t dev, int part)
-{
-	return (makedev(major(dev), (minor(dev) & ~7) | part));
-}
-
-/* deprecation notice */
-static __inline dev_t
-dkmodslice(dev_t dev, int slice)
-{
-	return (makedev(major(dev), (minor(dev) & ~0x1f0000) | (slice << 16)));
-}
 
 struct buf;
 struct disklabel;

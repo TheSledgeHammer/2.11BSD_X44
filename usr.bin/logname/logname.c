@@ -1,5 +1,7 @@
+/*	$NetBSD: logname.c,v 1.8 2003/08/07 11:14:26 agc Exp $	*/
+
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -29,17 +27,62 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)extern.h	8.2 (Berkeley) 5/24/95
  */
 
-u_long	cksum(void *, size_t);
-u_short	dkcksum(struct disklabel *);
-void	fatal(const char *fmt, ...);
-u_int	log2(u_int);
-int	make_lfs1(int, struct disklabel *, struct partition *, int, int, int, int);
-int	make_lfs2(int, struct disklabel *, struct partition *, int, int, int, int);
-int	mkfs(struct partition *, char *, int, int);
+#include <sys/cdefs.h>
+#ifndef lint
+__COPYRIGHT("@(#) Copyright (c) 1991, 1993, 1994\n\
+	The Regents of the University of California.  All rights reserved.\n");
+#endif /* not lint */
 
-extern char	*progname;
-extern char	*special;
+#ifndef lint
+#if 0
+static char sccsid[] = "@(#)logname.c	8.2 (Berkeley) 4/3/94";
+#endif
+__RCSID("$NetBSD: logname.c,v 1.8 2003/08/07 11:14:26 agc Exp $");
+#endif /* not lint */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <locale.h>
+#include <unistd.h>
+#include <err.h>
+
+int	main(int, char **);
+void	usage(void);
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	int ch;
+	char *p;
+
+	setlocale(LC_ALL, "");
+
+	while ((ch = getopt(argc, argv, "")) != -1)
+		switch (ch) {
+		case '?':
+		default:
+			usage();
+			/* NOTREACHED */
+		}
+
+	if (argc != optind) {
+		usage();
+		/* NOTREACHED */
+	}
+
+	if ((p = getlogin()) == NULL)
+		err(1, "getlogin");
+	(void)printf("%s\n", p);
+	exit(0);
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: logname\n");
+	exit(1);
+}

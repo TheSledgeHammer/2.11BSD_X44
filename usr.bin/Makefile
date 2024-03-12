@@ -11,18 +11,18 @@ SUBDIR= apply ar asa at 											\
 		elf2aout elf2ecoff env expand								\
 		false fdformat find fmt fold fpr fsplit                     \
 		genassym gencat getaddrinfo getopt getconf gettext gprof	\
-		hexdump 													\
-        iostat                                                      \
+		head hexdump 												\
+        id iostat                                                   \
 		join 														\
 		kdump ktrace												\
-		ldd locate lorder 											\
+		ldd locate logname look lorder 								\
 		m4 make man menuc mkdep mkerrlst mkfifo mklocale mkstr      \
-        mktemp msgc 	                                            \
+        mktemp msgc msgs                                            \
         netgroup netstat                                            \
         paste patch pathchk pr printenv printf						\
 		rpcgen rpcinfo												\
 		script sed shar sort sortinfo stat strfile 					\
-		time tip touch true tsort 									\
+		tail time tip touch true tsort 								\
 		uname unexpand users unstr uudecode uuencode 				\
 		vgrind vis vmstat 											\
 		w wall wc what whereis who whois write 						\

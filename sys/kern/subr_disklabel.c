@@ -283,6 +283,17 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 		error = writedisklabel(dev & ~7, strat, lp);
 		disk->dk_flags = flag;
 		return (error);
+
+	case DIOCGSECTORSIZE:
+		*(u_int *)data = disk->dk_label->d_secsize;
+		return (0);
+
+	case DIOCGMEDIASIZE:
+		*(off_t *)data = (off_t)disk->dk_label->d_secsize * disk->dk_label->d_secperunit;
+		return (0);
+
+	default:
+		return (ENOIOCTL);
 	}
 
 	return (EINVAL);

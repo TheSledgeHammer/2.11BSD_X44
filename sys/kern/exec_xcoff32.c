@@ -96,27 +96,29 @@ exec_xcoff_prep_zmagic(elp, xcoff, vp)
 	xcoff_exechdr *xcoff;
 	struct vnode *vp;
 {
-		struct xcoff_aouthdr *xcoff_aout = &xcoff->a;
-		struct vmspace *vmspace = elp->el_proc->p_vmspace;
+	xcoff_aouthdr *xcoff_aout = &xcoff->a;
+	struct vmspace *vmspace = elp->el_proc->p_vmspace;
 
-		elp->el_taddr = XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->text_start);
-		elp->el_tsize = xcoff_aout->tsize;
-		elp->el_daddr = XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->data_start);
-		elp->el_dsize = xcoff_aout->dsize + xcoff_aout->bsize;
-		elp->el_entry = xcoff_aout->entry;
+	elp->el_taddr = XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->text_start);
+	elp->el_tsize = xcoff_aout->tsize;
+	elp->el_daddr = XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->data_start);
+	elp->el_dsize = xcoff_aout->dsize + xcoff_aout->bsize;
+	elp->el_entry = xcoff_aout->entry;
 
-		/* set up command for text and data segments */
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, xcoff_aout->tsize - xcoff_aout->dsize,
-				elp->el_taddr, (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, XCOFF_TXTOFF(xcoff));
+	/* set up command for text and data segments */
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn,
+			xcoff_aout->tsize - xcoff_aout->dsize, elp->el_taddr,
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp,
+			XCOFF_TXTOFF(xcoff));
 
-		/* set up for bss segment */
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, xcoff_aout->bsize,
-				XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->bss_start),
-				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, 0);
+	/* set up for bss segment */
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, xcoff_aout->bsize,
+			XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->bss_start),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, 0);
 
-		return (0);
+	return (0);
 }
 
 int
@@ -125,33 +127,34 @@ exec_xcoff_prep_nmagic(elp, xcoff, vp)
 	xcoff_exechdr *xcoff;
 	struct vnode *vp;
 {
-		xcoff_aouthdr *xcoff_aout = &xcoff->a;
+	xcoff_aouthdr *xcoff_aout = &xcoff->a;
 
-		elp->el_taddr = XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->text_start);
-		elp->el_tsize = xcoff_aout->tsize;
-		elp->el_daddr = XCOFF_ROUND(xcoff_aout->data_start, XCOFF_LDPGSZ);
-		elp->el_dsize = xcoff_aout->dsize + xcoff_aout->bsize;
-		elp->el_entry = xcoff_aout->entry;
+	elp->el_taddr = XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->text_start);
+	elp->el_tsize = xcoff_aout->tsize;
+	elp->el_daddr = XCOFF_ROUND(xcoff_aout->data_start, XCOFF_LDPGSZ);
+	elp->el_dsize = xcoff_aout->dsize + xcoff_aout->bsize;
+	elp->el_entry = xcoff_aout->entry;
 
-		/* set up for text */
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, elp->el_tsize, elp->el_taddr,
-				(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_EXECUTE),
-				vp, XCOFF_TXTOFF(xcoff));
+	/* set up for text */
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, elp->el_tsize, elp->el_taddr,
+			(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_EXECUTE),
+			vp, XCOFF_TXTOFF(xcoff));
 
-		/* set up for data segment */
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, elp->el_dsize, elp->el_daddr,
+	/* set up for data segment */
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, elp->el_dsize, elp->el_daddr,
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp,
+			XCOFF_DATOFF(xcoff));
+
+	/* set up for bss segment */
+	if (xcoff_aout->bsize > 0) {
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, xcoff_aout->bsize,
+				XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->bss_start),
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, XCOFF_DATOFF(xcoff));
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, 0);
+	}
 
-		/* set up for bss segment */
-		if(xcoff_aout->bsize > 0) {
-			NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, xcoff_aout->bsize,
-					XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->bss_start),
-					(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-					(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, 0);
-		}
-
-		return (0);
+	return (0);
 }
 
 int

@@ -1,5 +1,7 @@
-/*-
- * Copyright (c) 1991, 1993
+/*	$NetBSD: pathnames.h,v 1.4 2003/08/07 11:15:18 agc Exp $	*/
+
+/*
+ * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,16 +28,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)extern.h	8.2 (Berkeley) 5/24/95
+ *	@(#)pathnames.h	8.1 (Berkeley) 6/6/93
  */
 
-u_long	cksum(void *, size_t);
-u_short	dkcksum(struct disklabel *);
-void	fatal(const char *fmt, ...);
-u_int	log2(u_int);
-int	make_lfs1(int, struct disklabel *, struct partition *, int, int, int, int);
-int	make_lfs2(int, struct disklabel *, struct partition *, int, int, int, int);
-int	mkfs(struct partition *, char *, int, int);
-
-extern char	*progname;
-extern char	*special;
+#define	_PATH_MSGS	"/var/msgs"
+#define	_PATH_MAIL	"/usr/bin/Mail -f %s"
+#define	_PATH_PAGER	"/usr/bin/more -%d"
+#undef _PATH_TMP
+#define	_PATH_TMP	"/tmp/msgXXXXXX"

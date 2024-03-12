@@ -130,7 +130,7 @@
 #define L1_FRAME				(L2_FRAME | L1_MASK)
 
 #define L2_SLOT_PTE				((KERNBASE / NBPD_L2)-1)/* 767: for recursive PDP map */
-#define L2_SLOT_KERN			(KERNBASE / NBPD_L2)  /* 768: start of kernel space */
+#define L2_SLOT_KERN			(KERNBASE / NBPD_L2)  	/* 768: start of kernel space */
 #define	L2_SLOT_KERNBASE 		L2_SLOT_KERN
 #define L2_SLOT_APTE			1007
 

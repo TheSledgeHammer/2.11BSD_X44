@@ -314,7 +314,7 @@ main(argc, argv)
 		fatal("%s: `%c' partition is unavailable", argv[0], *cp);
 
 	/* If we're making a LFS, we break out here */
-	exit(make_lfs(fso, lp, pp, minfree, bsize, fsize, segsize));
+	exit(make_lfs1(fso, lp, pp, minfree, bsize, fsize, segsize));
 }
 
 #ifdef COMPAT

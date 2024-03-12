@@ -751,17 +751,6 @@ dkdriver_ioctl(diskp, dev, cmd, data, flag, p)
 		return (error);
 	}
 #endif
-	switch (cmd) {
-	case DIOCGSECTORSIZE:
-		*(u_int *)data = diskp->dk_label->d_secsize;
-		return (0);
-	case DIOCGMEDIASIZE:
-		*(off_t *)data = (off_t)diskp->dk_label->d_secsize * diskp->dk_label->d_secperunit;
-		return (0);
-	default:
-		error = ENOIOCTL;
-		goto out;
-	}
 out:
 	error = (*diskp->dk_driver->d_ioctl)(pdev, cmd, data, flag, p);
 	return (error);
@@ -772,11 +761,19 @@ dkdriver_dump(diskp, dev)
 	struct dkdevice *diskp;
 	dev_t 			dev;
 {
+	struct disklabel *lp;
 	dev_t pdev;
 	int error;
 
 	pdev = disk_pdev(dev);
 	if (!diskp) {
+		return (ENXIO);
+	}
+	if (!diskp->dk_slices) {
+		return (ENXIO);
+	}
+	lp = dsgetlabel(dev, diskp->dk_slices);
+	if (!lp) {
 		return (ENXIO);
 	}
 	error = (*diskp->dk_driver->d_dump)(pdev);
@@ -801,7 +798,6 @@ dkdriver_mklabel(diskp)
 	if (!diskp) {
 		return (ENXIO);
 	}
-	error = (*diskp->dk_driver->d_mklabel)(diskp);
 	return (error);
 }
 
