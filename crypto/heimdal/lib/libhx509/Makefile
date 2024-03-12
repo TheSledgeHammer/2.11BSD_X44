@@ -9,11 +9,11 @@ NOLINT=		# defined
 
 LIB=		hx509
 
-SSLBASE=	${NETBSDSRCDIR}/crypto/external/bsd/${EXTERNAL_OPENSSL_SUBDIR}
+SSLBASE=	${NETBSDSRCDIR}/crypto/${EXTERNAL_OPENSSL_SUBDIR}
 
 LIBDPLIBS+=	asn1	${HEIMBASE}/lib/libasn1		\
 		com_err	${HEIMBASE}/lib/libcom_err	\
-		crypt	${NETBSDSRCDIR}/lib/libcrypt	\
+		crypt	${NETBSDSRCDIR}/usr.lib/libcrypt	\
 		crypto	${SSLBASE}/lib/libcrypto	\
 		roken	${HEIMBASE}/lib/libroken	\
 		wind	${HEIMBASE}/lib/libwind
