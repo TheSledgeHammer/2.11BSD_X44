@@ -340,6 +340,17 @@ kvm_deadprocs(kd, what, arg, a_allproc, a_zombproc, maxcnt)
 	return (acnt + zcnt);
 }
 
+struct nlist nl[] = {
+#define	X_NPROC		0
+		{ .n_name = "_nprocs" },
+#define	X_ALLPROC	1
+		{ .n_name = "_allproc" },
+#define	X_ZOMBPROC	2
+		{ .n_name = "_zombproc" },
+#define	X_END		3
+		{ .n_name = NULL },
+};
+
 struct kinfo_proc *
 kvm_getprocs(kd, op, arg, cnt)
 	kvm_t *kd;
@@ -383,12 +394,7 @@ kvm_getprocs(kd, op, arg, cnt)
 		}
 		nprocs = size / sizeof(struct kinfo_proc);
 	} else {
-		struct nlist nl[4], *p;
-
-		nl[0].n_name = "_nprocs";
-		nl[1].n_name = "_allproc";
-		nl[2].n_name = "_zombproc";
-		nl[3].n_name = 0;
+		struct nlist *p;
 
 		if (kvm_nlist(kd, nl) != 0) {
 			for (p = nl; p->n_type != 0; ++p)
@@ -406,8 +412,7 @@ kvm_getprocs(kd, op, arg, cnt)
 		if (kd->procbase == 0)
 			return (0);
 
-		nprocs = kvm_deadprocs(kd, op, arg, nl[1].n_value,
-				      nl[2].n_value, nprocs);
+		nprocs = kvm_deadprocs(kd, op, arg, nl[1].n_value, nl[2].n_value, nprocs);
 #ifdef notdef
 		size = nprocs * sizeof(struct kinfo_proc);
 		(void)realloc(kd->procbase, size);

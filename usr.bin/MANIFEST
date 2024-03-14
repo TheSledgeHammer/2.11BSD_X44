@@ -1,8 +1,8 @@
 Application	Version
 -----------	-------
 apply/		NetBSD
-ar/         2.11
-at/			4.3
+ar/         2.11BSD
+at/			4.3BSD
 basename/	NetBSD
 bzip2/		NetBSD
 bzip2recover/ NetBSD
@@ -18,7 +18,7 @@ colrm/		NetBSD
 column/		NetBSD
 comm/		NetBSD
 compress/	NetBSD
-crontab/	4.3
+crontab/	4.3BSD
 crunch/		NetBSD
 ctags/		NetBSD
 db/			NetBSD
@@ -35,6 +35,7 @@ fmt/		NetBSD
 fold/		NetBSD
 fpr/		NetBSD
 fsplit/		NetBSD
+gcore/     	4.4BSD-Lite2
 genassym/	NetBSD
 gencat/		NetBSD
 genaddrinfo/NetBSD
@@ -44,21 +45,25 @@ gentext/	NetBSD
 gprof/		NetBSD
 grep/		NetBSD
 gzip/		NetBSD
+head/		NetBSD
 hesinfo/	NetBSD
 hexdump/	NetBSD
+id/			NetBSD
 iostat/		4.4BSD-Lite2 / 2.11BSD
 join/		NetBSD
 kdump/     	4.4BSD-Lite2
 ktrace/     4.4BSD-Lite2
 ldd/		NetBSD
 locate/		NetBSD
+logname/	NetBSD
+look/		NetBSD
 lorder/		NetBSD
 m4/			NetBSD
 make/		NetBSD
 man/		NetBSD
 menuc/		NetBSD
 mkdep/		NetBSD
-mkerrlst/   2.11
+mkerrlst/   2.11BSD
 mkfifo/  	NetBSD
 mklocale/	NetBSD
 mkstr/		NetBSD
@@ -85,6 +90,7 @@ sort/		NetBSD
 sortinfo/	NetBSD
 stat/		NetBSD
 strfile/	NetBSD
+tail/		NetBSD
 time/		NetBSD
 tip/		NetBSD
 touch/		NetBSD

@@ -100,11 +100,13 @@ procxmt(p)
 	vm_text_t xp;
 	struct vattr vattr;
 
-	if (ipc.ip_lock != u.u_procp->p_pid)
+	if (ipc.ip_lock != u.u_procp->p_pid) {
 		return (0);
+	}
 	u.u_procp->p_slptime = 0;
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
+
 	switch (i) {
 
 	/* read user I */
@@ -244,8 +246,7 @@ procxmt(p)
 		return (1);
 
 	default:
-	error:
-		ipc.ip_req = -1;
+		error: ipc.ip_req = -1;
 	}
 	wakeup((caddr_t) &ipc);
 	return (0);

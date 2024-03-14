@@ -54,11 +54,11 @@ struct sect {
 	unsigned long len;
 };
 
-void	combine __P((struct sect *, struct sect *, int));
-int	phcmp __P((const void *, const void *));
-char   *saveRead __P((int file, off_t offset, off_t len, char *name));
-void	copy __P((int, int, off_t, off_t));
-void	translate_syms __P((int, int, off_t, off_t, off_t, off_t));
+void	combine(struct sect *, struct sect *, int);
+int	phcmp(const void *, const void *);
+char   *saveRead(int file, off_t offset, off_t len, char *name);
+void	copy(int, int, off_t, off_t);
+void	translate_syms(int, int, off_t, off_t, off_t, off_t);
 
 int    *symTypeTable;
 

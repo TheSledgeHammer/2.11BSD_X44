@@ -917,7 +917,6 @@ _MKVARS.yes= \
     MKIEEEFP \
     MKINET6 \
 	MKINFO \
-    MKLDAP \
     MKLINKLIB \
 	MKMAN \
     MKMANDOC \
@@ -1028,8 +1027,9 @@ _MKVARS.no= \
     MKX11MOTIF \
     MKXORG_SERVER \
 	MKZFS \
+	MKLDAP \
+	MKKERBEROS \
 	MKPAM \
-    MKKERBEROS \
 	MKPOSTFIX
 	
 .for var in ${_MKVARS.no}

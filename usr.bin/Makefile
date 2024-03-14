@@ -10,7 +10,8 @@ SUBDIR= apply ar asa at 											\
 		db dirname du												\
 		elf2aout elf2ecoff env expand								\
 		false fdformat find fmt fold fpr fsplit                     \
-		genassym gencat getaddrinfo getopt getconf gettext gprof	\
+		gcore genassym gencat getaddrinfo getopt getconf gettext 	\
+		gprof														\
 		head hexdump 												\
         id iostat                                                   \
 		join 														\

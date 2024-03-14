@@ -61,37 +61,37 @@ static char sccsid[] = "@(#)iostat.c	8.3 (Berkeley) 4/28/95";
 
 struct nlist namelist[] = {
 #define	X_DK_BUSY	0
-		{ "_dk_busy" },
+		{ .n_name = "_dk_busy" },
 #define	X_DK_TIME	1
-		{ "_dk_time" },
+		{ .n_name = "_dk_time" },
 #define	X_DK_XFER	2
-		{ "_dk_xfer" },
+		{ .n_name = "_dk_xfer" },
 #define	X_DK_WDS	3
-		{ "_dk_wds" },
+		{ .n_name = "_dk_wds" },
 #define	X_TK_NIN	4
-		{ "_tk_nin" },
+		{ .n_name = "_tk_nin" },
 #define	X_TK_NOUT	5
-		{ "_tk_nout" },
+		{ .n_name = "_tk_nout" },
 #define	X_DK_SEEK	6
-		{ "_dk_seek" },
+		{ .n_name = "_dk_seek" },
 #define	X_CP_TIME	7
-		{ "_cp_time" },
+		{ .n_name = "_cp_time" },
 #define	X_DK_WPMS	8
-		{ "_dk_wpms" },
+		{ .n_name = "_dk_wpms" },
 #define	X_DK_WPS	9
-		{ "_dk_wps" },
+		{ .n_name = "_dk_wps" },
 #define	X_HZ		10
-		{ "_hz" },
+		{ .n_name = "_hz" },
 #define	X_STATHZ	11
-		{ "_stathz" },
+		{ .n_name = "_stathz" },
 #define	X_DK_NDRIVE	12
-		{ "_dk_ndrive" },
+		{ .n_name = "_dk_ndrive" },
 #define	X_DK_NAME	13
-		{ "_dk_name" },
+		{ .n_name = "_dk_name" },
 #define	X_DK_UNIT	14
-		{ "_dk_unit" },
+		{ .n_name = "_dk_unit" },
 #define	X_END		14
-	{ NULL },
+		{ .n_name = NULL },
 };
 
 struct _disk {

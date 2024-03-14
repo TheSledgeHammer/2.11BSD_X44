@@ -1000,30 +1000,6 @@ dkinit(memf, nlistf, select)
 	return (1);
 }
 
-#ifdef notyet
-void
-read_names(void)
-{
-	struct disklist_head disk_head;
-	struct dkdevice	cur_disk, *p;
-
-	char two_char[2];
-	register int i;
-
-	kread(X_DK_NAME, &dk_name, dk_ndrive * sizeof(char *));
-	kread(X_DK_UNIT, &dk_unit, dk_ndrive * sizeof(int));
-
-	p = dk_drivehead;
-	for (i = 0; dk_ndrive; i++) {
-		kread2(p, &cur_disk, sizeof(cur_disk));
-		dk_name[i] = &cur_disk.dk_name;
-		kread2(dk_name[i], two_char, sizeof(two_char));
-		sprintf(dr_name[i], "%c%c%d", two_char[0], two_char[1], dk_unit[i]);
-		p = TAILQ_NEXT(cur_disk, dk_link);
-	}
-}
-#endif
-
 static void
 read_names(void)
 {
