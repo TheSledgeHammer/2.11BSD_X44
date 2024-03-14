@@ -403,7 +403,7 @@ kvm_getprocs(kd, op, arg, cnt)
 				 "%s: no such symbol", p->n_name);
 			return (0);
 		}
-		if (KREAD(kd, nl[0].n_value, &nprocs)) {
+		if (KREAD(kd, nl[X_NPROC].n_value, &nprocs)) {
 			_kvm_err(kd, kd->program, "can't read nprocs");
 			return (0);
 		}
@@ -412,7 +412,7 @@ kvm_getprocs(kd, op, arg, cnt)
 		if (kd->procbase == 0)
 			return (0);
 
-		nprocs = kvm_deadprocs(kd, op, arg, nl[1].n_value, nl[2].n_value, nprocs);
+		nprocs = kvm_deadprocs(kd, op, arg, nl[X_ALLPROC].n_value, nl[X_ZOMBPROC].n_value, nprocs);
 #ifdef notdef
 		size = nprocs * sizeof(struct kinfo_proc);
 		(void)realloc(kd->procbase, size);
