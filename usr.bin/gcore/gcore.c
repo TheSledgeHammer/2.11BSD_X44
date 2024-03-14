@@ -383,9 +383,9 @@ read_elf32(argv, efd)
 				cnt > 0 ? strerror(EIO) : strerror(errno));
 	}
 	/* Read the program headers... */
-	ph = (Elf32_Phdr *) saveRead(infile, ex.e_phoff, ex.e_phnum * sizeof(Elf32_Phdr), "ph");
+	ph = (Elf32_Phdr *) saveRead(cnt, ex.e_phoff, ex.e_phnum * sizeof(Elf32_Phdr), "ph");
 	/* Read the section headers... */
-	sh = (Elf32_Shdr *) saveRead(infile, ex.e_shoff, ex.e_shnum * sizeof(Elf32_Shdr), "sh");
+	sh = (Elf32_Shdr *) saveRead(cnt, ex.e_shoff, ex.e_shnum * sizeof(Elf32_Shdr), "sh");
 	/* Read in the section string table. */
 	shstrtab = saveRead(cnt, sh[ex.e_shstrndx].sh_offset, sh[ex.e_shstrndx].sh_size, "shstrtab");
 	for (i = 0; i < ex.e_shnum; i++) {
@@ -422,9 +422,9 @@ read_elf64(argv, efd)
 				cnt > 0 ? strerror(EIO) : strerror(errno));
 	}
 	/* Read the program headers... */
-	ph = (Elf64_Phdr *) saveRead(infile, ex.e_phoff, ex.e_phnum * sizeof(Elf64_Phdr), "ph");
+	ph = (Elf64_Phdr *) saveRead(cnt, ex.e_phoff, ex.e_phnum * sizeof(Elf64_Phdr), "ph");
 	/* Read the section headers... */
-	sh = (Elf64_Shdr *) saveRead(infile, ex.e_shoff, ex.e_shnum * sizeof(Elf64_Shdr), "sh");
+	sh = (Elf64_Shdr *) saveRead(cnt, ex.e_shoff, ex.e_shnum * sizeof(Elf64_Shdr), "sh");
 	/* Read in the section string table. */
 	shstrtab = saveRead(cnt, sh[ex.e_shstrndx].sh_offset, sh[ex.e_shstrndx].sh_size, "shstrtab");
 	for (i = 0; i < ex.e_shnum; i++) {
