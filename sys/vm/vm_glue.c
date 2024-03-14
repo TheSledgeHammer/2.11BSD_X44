@@ -572,7 +572,7 @@ vm_thread_block()
 	*/
 	curthread = curproc->p_curthread;
 	if (curthread->td_event) {
-		thread_tsleep(curthread->td_event, PVM, "thrd_sleep", 0);
+		thread_tsleep(curthread->td_event, PVM, "thrd_block", 0);
 	}
 	splx(s);
 }
