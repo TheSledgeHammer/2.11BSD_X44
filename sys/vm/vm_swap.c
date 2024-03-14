@@ -302,11 +302,12 @@ swfree(p, index, nslots)
 		npages = dbtob(nblks) >> PAGE_SHIFT;
 	}
 
+	startslot = swap_search(sdp, nblks, npages);
+	if (startslot == sdp->swd_drumoffset) {
+		vm_swap_free(startslot, nslots);
+	}
+
 	if (nblks == 0) {
-		if (sdp != NULL) {
-			startslot = swap_search(sdp, nblks, npages);
-			vm_swap_free(startslot, nslots);
-		}
 		(void) VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
 		swp->sw_flags &= ~SW_FREED;
 		return (0);
