@@ -12,6 +12,8 @@
 ./etc
 ./etc/defaults
 ./etc/fonts
+./etc/fonts/conf.avail
+./etc/fonts/conf.d
 ./etc/mail
 ./etc/mtree
 ./etc/namedb
@@ -20,7 +22,6 @@
 ./etc/openssl/certs
 ./etc/openssl/misc
 ./etc/openssl/private
-./etc/postfix
 ./etc/rc.conf.d
 ./etc/rc.d
 ./etc/skel
@@ -104,6 +105,7 @@
 ./usr/include/g++/tr2
 ./usr/include/gcc-10
 ./usr/include/gcc-10/sanitizer
+./usr/include/gssapi
 ./usr/include/fs
 ./usr/include/fs/isofs
 ./usr/include/fs/isofs/cd9660
@@ -125,10 +127,11 @@
 ./usr/include/netinet6
 ./usr/include/netipsec
 ./usr/include/netkey
+./usr/include/netmpls
 ./usr/include/netns
 ./usr/include/nfs
 ./usr/include/objc
-./usr/include/OLD
+./usr/include/old
 ./usr/include/openssl
 ./usr/include/ovl
 ./usr/include/ovl/include
@@ -151,21 +154,25 @@
 ./usr/lib/lua/5.3
 ./usr/lib/named
 ./usr/lib/openssl
-./usr/lib/postfix
+./usr/lib/openssl/engines
 ./usr/lib/security
 ./usr/libdata
 ./usr/libdata/ldscripts
 ./usr/libdata/lint
 ./usr/libexec
-./usr/libexec/postfix
+./usr/libexec/lpr
+./usr/libexec/named
 ./usr/libexec/sendmail
 ./usr/libexec/sm.bin
 ./usr/mdec
 ./usr/pkg						ignore optional
 ./usr/sbin
 ./usr/share
-./usr/share/adb
+./usr/share/calendar
+./usr/share/dhcpd
 ./usr/share/dict
+./usr/share/dict/papers
+./usr/share/dict/special
 ./usr/share/doc
 ./usr/share/doc/2.10
 ./usr/share/doc/2.10/fsck
@@ -277,6 +284,27 @@
 ./usr/share/doc/usd/32.diction
 ./usr/share/doc/usd/33.rogue
 ./usr/share/doc/usd/34.trek
+./usr/share/games
+./usr/share/gdb
+./usr/share/gnats
+./usr/share/groff_font
+./usr/share/groff_font/devX100
+./usr/share/groff_font/devX100-12
+./usr/share/groff_font/devX75
+./usr/share/groff_font/devX75-12
+./usr/share/groff_font/devascii
+./usr/share/groff_font/devcp1047
+./usr/share/groff_font/devdvi
+./usr/share/groff_font/devdvi/generate
+./usr/share/groff_font/devhtml
+./usr/share/groff_font/devkoi8-r
+./usr/share/groff_font/devlatin1
+./usr/share/groff_font/devlbp
+./usr/share/groff_font/devlj4
+./usr/share/groff_font/devlj4/generate
+./usr/share/groff_font/devps
+./usr/share/groff_font/devps/generate
+./usr/share/groff_font/devutf8
 ./usr/share/locale
 ./usr/share/locale/af_ZA.ISO8859-1
 ./usr/share/locale/af_ZA.ISO8859-1/LC_MESSAGES
@@ -739,6 +767,8 @@
 ./var/at/spool			mode=0700
 ./var/backups
 ./var/chroot
+./var/chroot/dhcpcd
+./var/chroot/ftp-proxy		mode=0755
 ./var/chroot/named
 ./var/chroot/named/dev
 ./var/chroot/named/etc
@@ -751,12 +781,15 @@
 ./var/chroot/named/var/run/named	mode=0775 uname=named gname=named
 ./var/chroot/named/var/tmp	mode=01775 gname=named
 ./var/chroot/pflogd			mode=0755
+./var/chroot/sshd		mode=0755
+./var/chroot/tcpdump		mode=0755
+./var/chroot/tftp-proxy		mode=0755
 ./var/crash					mode=0770
 ./var/cron
 ./var/cron/tabs				mode=0700
 ./var/db
 ./var/db/ns
-./var/db/postfix			uname=postfix gname=postfix mode=0755
+./var/db/obsolete
 ./var/games					uname=games gname=games mode=0775
 ./var/heimdal
 ./var/log
@@ -777,7 +810,5 @@
 ./var/spool/mqueue
 ./var/spool/output
 ./var/spool/output/lpd
-./var/spool/postfix
-./var/spool/postfix/etc
 ./var/spool/sockets			mode=0777
 ./var/tmp					mode=01777
