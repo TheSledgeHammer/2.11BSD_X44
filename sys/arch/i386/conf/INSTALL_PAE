@@ -1,0 +1,14 @@
+#	$NetBSD: INSTALL,v 1.114.2.6 2000/05/22 21:11:44 he Exp $
+#
+#	INSTALL - Installation kernel.
+#
+
+include 	"arch/i386/conf/GENERIC_PAE.i386"
+
+# Enable the hooks used for initializing the root memory-disk.
+no options	MEMORY_DISK_DYNAMIC
+options 	MEMORY_DISK_IS_ROOT			# force root on memory disk
+options 	MEMORY_DISK_SERVER=0			# no userspace memory disk support
+options 	MEMORY_DISK_ROOT_SIZE=3174		# size of memory disk, in blocks
+#options 	MEMORY_DISK_ROOT_SIZE=2880		# 1.44M, same as a floppy
+options 	MEMORY_DISK_RBFLAGS=RB_SINGLE		# boot in single-user mode
