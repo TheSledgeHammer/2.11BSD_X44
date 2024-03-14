@@ -412,8 +412,8 @@ read_elf64(argv, efd)
 	Elf64_Ehdr ex;
 	Elf64_Phdr *ph;
 	Elf64_Shdr *sh;
-	char   *shstrtab;
-	int     strtabix, symtabix;
+	char *shstrtab;
+	int strtabix, symtabix;
 	int cnt, i;
 
 	cnt = read(efd, &ex, sizeof(ex));
