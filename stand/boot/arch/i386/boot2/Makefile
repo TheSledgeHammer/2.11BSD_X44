@@ -5,7 +5,7 @@
 PROG=			boot2
 NOMAN=
 STRIP=
-BINDIR?=		/boot
+BINDIR?=		/usr/mdec
 BINMODE=		444
 CLEANFILES+=	boot1 boot1.out boot1.o \
 				boot2.ldr boot2.bin boot2.ld boot2.out boot2.o boot2.h \
@@ -52,7 +52,7 @@ LDFLAGS=-nostdlib -static -N --gc-sections
 all: boot1 boot2
 
 boot1: boot1.out
-	objcopy -S -O binary boot1.out ${.TARGET}
+	${OBJCOPY} -S -O binary boot1.out ${.TARGET}
 
 boot1.out: boot1.o
 	${LD} ${LDFLAGS} -e start -Ttext ${ORG1} -o ${.TARGET} boot1.o
@@ -85,7 +85,7 @@ boot2.ldr:
 	dd if=/dev/zero of=${.TARGET} bs=276 count=1 2>/dev/null
 
 boot2.bin: boot2.out
-	objcopy -S -O binary boot2.out ${.TARGET}
+	${OBJCOPY} -S -O binary boot2.out ${.TARGET}
 
 boot2.out: boot2.o sio.o
 	${LD} ${LDFLAGS} -Ttext ${ORG2} -o ${.TARGET} \

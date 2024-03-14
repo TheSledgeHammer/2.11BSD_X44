@@ -28,7 +28,7 @@
 #ifndef _PATHS_H_
 #define	_PATHS_H_
 
-#include <sys/boot.h>		/* To get kernel path */
+#include <sys/boot.h>		/* To get boot & kernel path */
 
 #define PATH_DOTCONFIG		"/boot.config"
 #define PATH_CONFIG			"/boot/config"

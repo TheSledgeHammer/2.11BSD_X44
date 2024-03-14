@@ -113,7 +113,7 @@ static unsigned vol_id[5];	/* 4 plus 1 for flag */
 
 static int v_flag;
 
-#define BPATH0 "/mdec/boot0"	/* current default boot path */
+#define BPATH0 "/usr/mdec/boot0"	/* current default boot path */
 #define BPATH1 "/boot/boot0"
 
 /*

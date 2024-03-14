@@ -54,7 +54,7 @@ gptboot: gptldr.bin gptboot.bin ${BTXKERN}
 CLEANFILES+=	gptldr.bin gptldr.out gptldr.o
 
 gptldr.bin: gptldr.out
-	objcopy -S -O binary gptldr.out ${.TARGET}
+	${OBJCOPY} -S -O binary gptldr.out ${.TARGET}
 
 gptldr.out: gptldr.o
 	${LD} ${LDFLAGS} -e start -Ttext ${ORG1} -o ${.TARGET} gptldr.o
@@ -62,7 +62,7 @@ gptldr.out: gptldr.o
 CLEANFILES+=	gptboot.bin gptboot.out gptboot.o sio.o
 
 gptboot.bin: gptboot.out
-	objcopy -S -O binary gptboot.out ${.TARGET}
+	${OBJCOPY} -S -O binary gptboot.out ${.TARGET}
 
 gptboot.out: ${BTXCRT} gptboot.o sio.o
 	${LD} ${LDFLAGS} -Ttext ${ORG2} -o ${.TARGET} ${.ALLSRC}
