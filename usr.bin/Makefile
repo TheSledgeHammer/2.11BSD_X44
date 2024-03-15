@@ -13,7 +13,7 @@ SUBDIR= apply ar asa at 											\
 		gcore genassym gencat getaddrinfo getopt getconf gettext 	\
 		gprof														\
 		head hexdump 												\
-        id iostat                                                   \
+        id indent iostat                                                   \
 		join 														\
 		kdump ktrace												\
 		ldd locate logname look lorder 								\
