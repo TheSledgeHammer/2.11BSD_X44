@@ -1316,6 +1316,9 @@ vm_amap_cleaner(amap, anon)
 			vm_segment_deactivate(segment);
 			vm_segment_unlock_lists();
 		}
+		if (segment->wire_tracker != 0) {
+			simple_unlock(&anon->an_lock);
+		}
 	}
 }
 

@@ -48,7 +48,7 @@
 #define	DOSBS_OLD_OFFSET	404		/* where mbr_bootsel used to be */
 #define	DOSBS_MAGIC_OFFSET	444		/* offsetof(mbr_sector, mbr_bootsel_magic) */
 #define	DOSBS_MAGIC			0xB5E1	/* mbr_bootsel magic number */
-#define	DOSBS_PARTNAMESIZE	8	/* Size of name mbr_bootsel nametab */
+#define	DOSBS_PARTNAMESIZE	8		/* Size of name mbr_bootsel nametab */
 
 #define MSECTOR_SIZE		512		/* MSDOS sector size in bytes */
 #define MDIR_SIZE			32		/* MSDOS directory size in bytes */

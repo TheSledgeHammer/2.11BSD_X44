@@ -15,7 +15,6 @@
  *      --------------------------------------------------
 */
 
-//#include <sys/exec_aout.h>
 #include <a.out.h>
 
 off_t n_stroff(struct xexec *);
