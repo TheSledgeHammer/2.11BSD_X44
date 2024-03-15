@@ -115,6 +115,10 @@ BIN1+=	etc.${MACHINE}/ttyaction
 BIN1+=	etc.${MACHINE}/ttys
 .endif
 
+.if exists(etc.${MACHINE}/fstab)
+BIN1+=	etc.${MACHINE}/fstab
+.endif
+
 # -rw-rw-r--
 BIN2+=	motd
 
@@ -250,6 +254,14 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 .else
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 644 \
 	    ${.CURDIR}/etc.${MACHINE_CPU}/ttys ${DESTDIR}/etc
+.endif
+	${_MKMSG_INSTALL} ${DESTDIR}/etc/fstab
+.if exists(${.CURDIR}/etc.${MACHINE}/fstab)
+	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    ${.CURDIR}/etc.${MACHINE}/fstab ${DESTDIR}/etc
+.else
+	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    ${.CURDIR}/etc.${MACHINE_CPU}/fstab ${DESTDIR}/etc
 .endif
 	${_MKMSG_INSTALL} ${DESTDIR}/dev/MAKEDEV
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 555 \
