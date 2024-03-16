@@ -255,8 +255,8 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 644 \
 	    ${.CURDIR}/etc.${MACHINE_CPU}/ttys ${DESTDIR}/etc
 .endif
-	${_MKMSG_INSTALL} ${DESTDIR}/etc/fstab
-.if exists(${.CURDIR}/etc.${MACHINE}/fstab)
+	${_MKMSG_INSTALL} ${DESTDIR}/etc/fstab.*
+.if exists(${.CURDIR}/etc.${MACHINE}/fstab.*)
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 444 \
 	    ${.CURDIR}/etc.${MACHINE}/fstab.* ${DESTDIR}/etc
 .else
