@@ -7,7 +7,7 @@ SUBDIR= apply ar asa at 											\
 		banner basename bzip2 bzip2recover							\
 		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
 		compress crontab crunch ctags cut 							\
-		db dirname du												\
+		db deroff dirname du												\
 		elf2aout elf2ecoff env expand								\
 		false fdformat find fmt fold fpr fsplit                     \
 		gcore genassym gencat getaddrinfo getopt getconf gettext 	\
@@ -22,9 +22,9 @@ SUBDIR= apply ar asa at 											\
         netgroup netstat                                            \
         paste patch pathchk pr printenv printf						\
 		rpcgen rpcinfo												\
-		script sed shar sort sortinfo stat strfile 					\
+		script sed shar sort sortinfo spell split stat strfile su					\
 		tail time tip touch true tsort 								\
-		uname unexpand users unstr uudecode uuencode 				\
+		uname unexpand users unstr unzip uudecode uuencode 				\
 		vgrind vis vmstat 											\
 		w wall wc what whereis who whois write 						\
 		xargs xinstall xlint xstr                                   \
