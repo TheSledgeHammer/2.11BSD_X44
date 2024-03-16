@@ -5,12 +5,13 @@
 
 SUBDIR= acctd atrun \
 		comsat ctimed \
-		fingerd \
+		fingerd ftpd \
 		getty \
+		httpd \
 		identd \
 		ld.aout_so ld.elf_so lfs_cleanerd \
 		makekey \
-		talkd \
+		talkd tftpd \
 		utmp_update
 
 .if ${MKMAKEMANDB} == "no"
