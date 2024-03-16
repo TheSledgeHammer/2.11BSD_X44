@@ -154,7 +154,7 @@
 				/* 149 is obsolete old quota */
 #define	SYS_getsockname	150
 #define	SYS_uuidgen	151
-				/* 152 is obsolete old nostk */
+#define	SYS_nostk	152
 				/* 153 is obsolete old fetchi */
 				/* 154 is obsolete old ucall */
 				/* 155 is obsolete old fperr */

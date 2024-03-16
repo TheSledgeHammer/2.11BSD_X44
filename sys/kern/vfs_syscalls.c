@@ -428,7 +428,7 @@ int
 sync()
 {
     register struct proc *p;
-    void *uap;
+    void *uap = u.u_ap;
 	register_t *retval;
 	register struct mount *mp, *nmp;
 	int asyncflag;

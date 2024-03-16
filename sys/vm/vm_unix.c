@@ -100,10 +100,33 @@ obreak()
 		rv = vm_deallocate(&vm->vm_map, new, diff);
 		if (rv != KERN_SUCCESS) {
 			uprintf("sbrk: shrink failed, return = %d\n", rv);
-			return(ENOMEM);
+			return (ENOMEM);
 		}
 		vm->vm_dsize -= btoc(diff);
 	}
+	return (0);
+}
+
+/*
+ * set up the process to have no stack segment.  The process is
+ * responsible for the management of its own stack, and can thus
+ * use the full 64K byte address space.
+ */
+int
+nostk()
+{
+	void *uap = u.u_ap;
+	struct proc *p;
+	register struct vmspace *vm;
+
+	p = u.u_procp;
+	vm = p->p_vmspace;
+	if (vm_estabur(p, 0, u.u_ssize, u.u_tsize, u.u_sep, SEG_RO)) {
+		return (0);
+	}
+	vm_expand(p, 0, PSEG_STACK);
+	vm->vm_ssize = 0;
+	u.u_ssize = vm->vm_ssize;
 	return (0);
 }
 
@@ -246,7 +269,7 @@ vm_expand(p, newsize, type)
 			 *  Since the base of stack is different,
 			 *  segmentation registers must be repointed.
 			 */
-			sureg();
+			vm_sureg();
 			return;
 		}
 	}
@@ -269,7 +292,7 @@ vm_expand(p, newsize, type)
 			}
 			bcopy(a1, a2, n);
 		}
-		sureg();
+		vm_sureg();
 		return;
 	}
 	if (u.u_fpsaved == 0) {
@@ -300,7 +323,7 @@ vm_expand(p, newsize, type)
 	}
 	bcopy(a1, a2, n);
 	rmfree(coremap, n, (long)a1);
-	sureg();
+	vm_sureg();
 }
 
 /*
@@ -371,7 +394,7 @@ estabur(data, stack, text, dsize, ssize, tsize, sep, flags)
  * estabur.
  */
 void
-sureg()
+vm_sureg()
 {
 	vm_text_t tp;
 	caddr_t taddr, daddr, saddr;
@@ -388,7 +411,7 @@ sureg()
 
 /*
  * Routine to change overlays.  Only hardware registers are changed; must be
- * called from sureg since the software prototypes will be out of date.
+ * called from vm_sureg since the software prototypes will be out of date.
  */
 void
 choverlay(flags)

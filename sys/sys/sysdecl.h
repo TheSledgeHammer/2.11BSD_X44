@@ -146,6 +146,7 @@ extern int	killpg();
 extern int	quotactl();
 extern int	getsockname();
 extern int	uuidgen();
+extern int	nostk();
 extern int	lfs_bmapv();
 extern int	lfs_markv();
 extern int	lfs_segclean();

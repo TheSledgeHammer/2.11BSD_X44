@@ -50,7 +50,6 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
 			${USRLIBDIR}/libtermcap 	\
 			${USRLIBDIR}/libutil 		\
 			${USRLIBDIR}/libvmf 		\
-            ${USRLIBDIR}/libwrap 		\
 			${USRLIBDIR}/liby 			\
 			${USRLIBDIR}/libz
 
@@ -61,8 +60,6 @@ SUBDIR+=	libkern
 .if (${MKSKEY} != "no")
 SUBDIR+=	${USRLIBDIR}/libskey
 .endif
-
-SUBDIR+=	../contrib/sqlite/lib
 
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/libelf
@@ -96,6 +93,7 @@ SUBDIR+=	.WAIT
 SUBDIR+=	../contrib/xz/lib			# depends on libpthread
 SUBDIR+=	../contrib/elftoolchain/libdwarf # depends on libelf
 SUBDIR+=	../contrib/lua/lib          # depends on libm
+SUBDIR+=	../contrib/sqlite/lib		# depends on libm
 SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
@@ -123,6 +121,8 @@ SUBDIR+=	../contrib/llvm/include
 #==================== 2nd library dependency barrier ====================
 SUBDIR+=	.WAIT
 
+SUBDIR+=	${USRLIBDIR}/libwrap
+
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
 .for sanitizer in asan lsan ubsan
 .if exists(../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer})
@@ -146,14 +146,14 @@ SUBDIR+=	../crypto/heimdal/lib		# depends on libcrypto
 										# libedit, libterminfo,
 .endif
 
-SUBDIR+=	../crypto/openssh/lib 		# depends on libcrypto, libz
-
 SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
 
-#SUBDIR+= 	../libexec/httpd/libbozohttpd 	# depends on libssl & libcrypto
+SUBDIR+= 	../libexec/httpd/libbozohttpd 	# depends on libssl & libcrypto
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT
+
+SUBDIR+=	../crypto/openssh/lib 		# depends on libcrypto, libz
 
 SUBDIR+=	../contrib/mdocml/lib
 

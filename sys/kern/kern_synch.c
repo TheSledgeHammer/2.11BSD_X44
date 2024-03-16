@@ -610,7 +610,7 @@ idle_check(void)
 {
     /* If not the idle process, resume the idle process. */
 	if (setjmp(&u.u_rsave)) {
-		sureg();
+		vm_sureg();
 		return;
 	}
 	if (u.u_fpsaved == 0) {

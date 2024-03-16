@@ -185,8 +185,8 @@ void	vm_xswapin(struct proc *, vm_offset_t);
 void	vm_xswapout(struct proc *, vm_offset_t, vm_size_t, int, u_int, u_int);
 
 /* vm_unix */
-void	sureg(void);
+void	vm_sureg(void);
 void 	vm_expand(struct proc *, vm_size_t, int);
-int	vm_estabur(struct proc *, segsz_t, segsz_t, segsz_t, int, int);
+int		vm_estabur(struct proc *, segsz_t, segsz_t, segsz_t, int, int);
 #endif
 #endif /* _VM_TEXT_H_ */

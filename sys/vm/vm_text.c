@@ -218,7 +218,7 @@ vm_xexpand(p, xp)
 		return;
 	}
 	if (setjmp(&u.u_ssave)) {
-		sureg();
+		vm_sureg();
 		return;
 	}
 	xswapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);

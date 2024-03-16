@@ -109,6 +109,11 @@ sstk()
 }
 #endif
 
+/*
+ * TODO:
+ * Maybe possible to reduce required arguments?
+ * - size, sep and incr?
+ */
 /* ARGSUSED */
 int
 sbrk()

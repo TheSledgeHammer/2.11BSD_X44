@@ -150,6 +150,7 @@ int	killpg();
 int	quotactl();
 int	getsockname();
 int	uuidgen();
+int	nostk();
 int	lfs_bmapv();
 int	lfs_markv();
 int	lfs_segclean();
@@ -476,7 +477,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    uuidgen },				/* 151 = uuidgen */
 	{ 0, 0,
-	    nosys },				/* 152 = obsolete old nostk */
+	    nostk },				/* 152 = nostk */
 	{ 0, 0,
 	    nosys },				/* 153 = obsolete old fetchi */
 	{ 0, 0,
