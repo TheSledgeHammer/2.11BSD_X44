@@ -17,6 +17,7 @@ file	netinet/if_arp.c		arp									needs-flag
 file	netinet/if_atm.c		atm
 file	netinet/in_gif.c		gif & inet
 file	netinet/ip_ecn.c		ipsec | fast_ipsec | gif
+file	netinet/ip_carp.c		carp & (inet | inet6)				needs-flag
 file	netinet/ip_encap.c		inet | inet6
 file	netinet/ip_gre.c		inet & gre
 

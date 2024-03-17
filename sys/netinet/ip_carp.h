@@ -152,8 +152,8 @@ struct carpreq {
 }
 
 #ifdef _KERNEL
-void	carp_ifdetach (struct ifnet *);
-void	carp_proto_input (struct mbuf *, ...);
+void	carp_ifdetach(struct ifnet *);
+void	carp_proto_input(struct mbuf *, ...);
 void	carp_carpdev_state(void *);
 int		carp6_proto_input(struct mbuf **, int *, int);
 int		carp_iamatch(struct in_ifaddr *, u_char *, u_int32_t *, u_int32_t);

@@ -53,7 +53,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_carp.c,v 1.26.10.2 2009/06/09 17:31:46 snj Exp $"
 #include <sys/syslog.h>
 #include <sys/acct.h>
 
-#include <sys/cpu.h>
+//#include <sys/cpu.h>
 
 #include <net/if.h>
 #include <net/pfil.h>

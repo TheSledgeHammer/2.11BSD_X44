@@ -78,52 +78,13 @@ int mmapdebug = 0;
 #define MDB_SYNC	0x02
 #define MDB_MAPIT	0x04
 #endif
-#ifdef notyet
+
 /* ARGSUSED */
 int
 sbrk()
 {
 	register struct sbrk_args {
-		syscallarg(int)	type;
-		syscallarg(segsz_t)	size;
-		syscallarg(caddr_t)	addr;
 		syscallarg(int)	sep;
-		syscallarg(int)	flags;
-		syscallarg(int) incr;
-	} *uap = (struct sbrk_args *) u.u_ap;
-
-	/* Not yet implemented */
-	return (EOPNOTSUPP);
-}
-
-/* ARGSUSED */
-int
-sstk()
-{
-	register struct sstk_args {
-		syscallarg(int) incr;
-	} *uap = (struct sstk_args *) u.u_ap;
-
-	/* Not yet implemented */
-	return (EOPNOTSUPP);
-}
-#endif
-
-/*
- * TODO:
- * Maybe possible to reduce required arguments?
- * - size, sep and incr?
- */
-/* ARGSUSED */
-int
-sbrk()
-{
-	register struct sbrk_args {
-		syscallarg(int)	type;
-		syscallarg(segsz_t)	size;
-		syscallarg(caddr_t)	addr;
-		syscallarg(int)	sep;
-		syscallarg(int)	flags;
 		syscallarg(int) incr;
 	} *uap = (struct sbrk_args *) u.u_ap;
 
@@ -132,16 +93,25 @@ sbrk()
 	register segsz_t n, d;
 
 	p = u.u_procp;
-	n = btoc(SCARG(uap, size));
-	if (!SCARG(uap, sep)) {
+	n = btoc(SCARG(uap, incr));
+	switch (SCARG(uap, sep)) {
+	case PSEG_NOSEP:
 		SCARG(uap, sep) = PSEG_NOSEP;
-	} else {
+		break;
+
+	case PSEG_SEP:
+		SCARG(uap, sep) = PSEG_SEP;
 		n -= ctos(p->p_tsize) * stoc(1);
+		break;
+
+	default:
+		SCARG(uap, sep) = PSEG_NOSEP;
+		break;
 	}
+
 	if (n < 0) {
 		n = 0;
 	}
-
 	if (vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
 		return (0);
 	}
@@ -161,11 +131,7 @@ int
 sstk()
 {
 	register struct sstk_args {
-		syscallarg(int)	type;
-		syscallarg(segsz_t)	size;
-		syscallarg(caddr_t)	addr;
 		syscallarg(int)	sep;
-		syscallarg(int)	flags;
 		syscallarg(int) incr;
 	} *uap = (struct sstk_args *) u.u_ap;
 	struct proc *p;
@@ -173,12 +139,22 @@ sstk()
 	register segsz_t n, s;
 	
 	p = u.u_procp;
-	n = btoc(SCARG(uap, size));
-	if (!SCARG(uap, sep)) {
+	n = btoc(SCARG(uap, incr));
+	switch (SCARG(uap, sep)) {
+	case PSEG_NOSEP:
 		SCARG(uap, sep) = PSEG_NOSEP;
-	} else {
+		break;
+
+	case PSEG_SEP:
+		SCARG(uap, sep) = PSEG_SEP;
 		n -= ctos(p->p_tsize) * stoc(1);
+		break;
+
+	default:
+		SCARG(uap, sep) = PSEG_NOSEP;
+		break;
 	}
+
 	if (n < 0) {
 		n = 0;
 	}
