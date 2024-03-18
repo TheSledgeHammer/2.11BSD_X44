@@ -98,7 +98,7 @@ vm_psegment_expand(pseg, newsize, newaddr, type)
 	vm_text_t text;
 
 	if (pseg == NULL) {
-		panic("vm_segment_register_expand: segments could not be expanded\n");
+		panic("vm_psegment_expand: segments could not be expanded\n");
 		return;
 	}
 
