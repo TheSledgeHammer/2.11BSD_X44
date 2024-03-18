@@ -84,7 +84,7 @@ int
 sbrk()
 {
 	register struct sbrk_args {
-  syscallarg(int) incr;
+		syscallarg(int) incr;
 		syscallarg(int)	sep;
 	} *uap = (struct sbrk_args *) u.u_ap;
 
@@ -131,7 +131,7 @@ int
 sstk()
 {
 	register struct sstk_args {
-  syscallarg(int) incr;
+		syscallarg(int) incr;
 		syscallarg(int)	sep;
 	} *uap = (struct sstk_args *) u.u_ap;
 	struct proc *p;
