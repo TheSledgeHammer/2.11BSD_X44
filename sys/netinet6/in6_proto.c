@@ -114,6 +114,11 @@ __KERNEL_RCSID(0, "$NetBSD: in6_proto.c,v 1.56 2003/12/04 19:38:24 atatat Exp $"
 #include <netinet6/ipcomp.h>
 #endif /* IPSEC */
 
+#include "carp.h"
+#if NCARP > 0
+#include <netinet/ip_carp.h>
+#endif
+
 #include <netinet6/ip6protosw.h>
 
 #include <net/net_osdep.h>
@@ -350,6 +355,24 @@ struct ip6protosw inet6sw[] = {
 				.pr_drain		= 0,
 				.pr_wassysctl	= 0,
 		},
+#if NCARP > 0
+        {
+				.pr_type		= SOCK_RAW,
+				.pr_domain		= &inet6domain,
+				.pr_protocol 	= IPPROTO_CARP,
+				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+				.pr_input 		= carp6_proto_input,
+				.pr_output		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput	= rip6_ctloutput,
+				.pr_usrreq		= rip6_usrreq,
+				.pr_init		= 0,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
+				.pr_wassysctl	= 0,
+		},
+#endif
         {
 				.pr_type		= SOCK_RAW,
 				.pr_domain		= &inet6domain,

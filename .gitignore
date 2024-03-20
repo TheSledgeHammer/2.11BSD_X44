@@ -14,4 +14,5 @@
 .sw[po]
 cscope.*
 *.prefs
-.settings/language.settings.xml
+.settings
+.metadata

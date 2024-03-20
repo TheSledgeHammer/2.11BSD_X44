@@ -80,8 +80,9 @@ __KERNEL_RCSID(0, "$NetBSD: if_arp.c,v 1.94 2003/09/24 06:52:47 itojun Exp $");
 #include "opt_ddb.h"
 #include "opt_inet.h"
 
-#ifdef INET
+//#ifdef INET
 
+#include "arp.h"
 #include "bridge.h"
 
 #include <sys/param.h>
@@ -116,6 +117,10 @@ __KERNEL_RCSID(0, "$NetBSD: if_arp.c,v 1.94 2003/09/24 06:52:47 itojun Exp $");
 #include "arc.h"
 #if NARC > 0
 #include <net/if_arc.h>
+#endif
+#include "carp.h"
+#if NCARP > 0
+#include <netinet/ip_carp.h>
 #endif
 #include "token.h"
 
@@ -717,6 +722,11 @@ arpresolve(ifp, rt, m, dst, desten)
 	struct mbuf *mold;
 	int s;
 
+#if NCARP > 0
+	if (rt != NULL && rt->rt_ifp->if_type == IFT_CARP) {
+		ifp = rt->rt_ifp;
+	}
+#endif
 	if (rt)
 		la = (struct llinfo_arp *)rt->rt_llinfo;
 	else {
@@ -872,6 +882,9 @@ in_arpinput(m)
 #if NBRIDGE > 0
 	struct in_ifaddr *bridge_ia = NULL;
 #endif
+#if NCARP > 0
+	uint32_t count = 0, index = 0;
+#endif
 	struct sockaddr_dl *sdl;
 	struct sockaddr sa;
 	struct in_addr isaddr, itaddr, myaddr;
@@ -934,9 +947,21 @@ in_arpinput(m)
 	 */
 	INADDR_TO_IA(itaddr, ia);
 	while (ia != NULL) {
-		if (ia->ia_ifp == m->m_pkthdr.rcvif)
+#if NCARP > 0
+		if (ia->ia_ifp->if_type == IFT_CARP
+				&& ((ia->ia_ifp->if_flags & (IFF_UP | IFF_RUNNING))
+						== (IFF_UP | IFF_RUNNING))) {
+			index++;
+			/* XXX: ar_hln? */
+			if (ia->ia_ifp == rcvif && (ah->ar_hln >= 6)
+					&& carp_iamatch(ia, ar_sha(ah), &count, index)) {
+				break;
+			}
+		} else
+#endif
+		if (ia->ia_ifp == m->m_pkthdr.rcvif) {
 			break;
-
+		}
 #if NBRIDGE > 0
 		/*
 		 * If the interface we received the packet on
@@ -946,8 +971,9 @@ in_arpinput(m)
 		 * but allow this weaker match if necessary.
 		 */
 		if (m->m_pkthdr.rcvif->if_bridge != NULL &&
-		    m->m_pkthdr.rcvif->if_bridge == ia->ia_ifp->if_bridge)
+		    m->m_pkthdr.rcvif->if_bridge == ia->ia_ifp->if_bridge) {
 			bridge_ia = ia;
+		}
 #endif /* NBRIDGE > 0 */
 
 		NEXT_IA_WITH_SAME_ADDR(ia);

@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	bounce
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 SRCS=	bounce.c bounce_append_service.c bounce_notify_service.c \

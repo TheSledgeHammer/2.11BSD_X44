@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	qmgr
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 SRCS=	qmgr.c qmgr_active.c qmgr_transport.c qmgr_queue.c qmgr_entry.c \

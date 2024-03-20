@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	virtual
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 SRCS=	virtual.c mailbox.c recipient.c deliver_attr.c maildir.c unknown.c

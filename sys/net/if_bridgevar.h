@@ -200,7 +200,7 @@ struct ifbrparam {
 #define	ifbrp_maxage	ifbrp_ifbrpu.ifbrpu_int8	/* max age (sec) */
 #define	ifbrp_filter	ifbrp_ifbrpu.ifbrpu_int32	/* filtering flags */
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 /*
  * Timekeeping structure used in spanning tree code.
  */

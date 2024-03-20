@@ -11,7 +11,7 @@ DPADD+=		${LIBLUA} ${LIBM} ${LIBEDIT} ${LIBTERMINFO}
 
 .include <bsd.own.mk>
 
-.PATH:		${NETBSDSRCDIR}/external/mit/lua/dist/src \
-		${NETBSDSRCDIR}/external/mit/lua/dist/doc
+.PATH:		${NETBSDSRCDIR}/contrib/lua/dist/src \
+			${NETBSDSRCDIR}/contrib/lua/dist/doc
 
 .include <bsd.prog.mk>

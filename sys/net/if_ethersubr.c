@@ -142,6 +142,11 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #include <netmpls/mpls_var.h>
 #endif
 
+#include "carp.h"
+#if NCARP > 0
+#include <netinet/ip_carp.h>
+#endif
+
 static struct timeval bigpktppslim_last;
 static int bigpktppslim = 2;	/* XXX */
 static int bigpktpps_count;
@@ -177,8 +182,22 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 #endif /* INET */
 	short mflags;
 
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING))
+#if NCARP > 0
+	if (ifp->if_type == IFT_CARP) {
+		struct ifaddr *ifa;
+
+		if (dst != NULL && ifp->if_link_state == LINK_STATE_UP && (ifa = ifa_ifwithaddr(dst)) != NULL) {
+			if (ifa->ifa_ifp == ifp) {
+				return (looutput(ifp, m, dst, rt));
+			}
+		}
+
+		ifp = ifp->if_carpdev;
+	}
+#endif
+	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
 		senderr(ENETDOWN);
+	}
 	if ((rt = rt0) != NULL) {
 		if ((rt->rt_flags & RTF_UP) == 0) {
 			if ((rt0 = rt = rtalloc1(dst, 1)) != NULL) {
@@ -624,6 +643,19 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 #endif
 		return;
 	}
+
+#if NCARP > 0
+	if (__predict_false(ifp->if_carp && ifp->if_type != IFT_CARP)) {
+		/*
+		 * Clear M_PROMISC, in case the packet comes from a
+		 * vlan.
+		 */
+		m->m_flags &= ~M_PROMISC;
+		if (carp_input(m, (uint8_t*) &eh->ether_shost, (uint8_t*) &eh->ether_dhost, eh->ether_type) == 0) {
+			return;
+		}
+	}
+#endif
 
 	/*
 	 * Handle protocols that expect to have the Ethernet header

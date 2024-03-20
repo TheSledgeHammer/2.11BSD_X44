@@ -6,7 +6,7 @@
 
 BINDIR=	${PFIX_HTMLDIR}
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/html
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/html
 .PATH:	${DIST}
 
 PFX_DAEMONS= anvil.8.html bounce.8.html cleanup.8.html discard.8.html \

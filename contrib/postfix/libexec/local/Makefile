@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	local
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 SRCS=	alias.c command.c dotforward.c file.c forward.c \

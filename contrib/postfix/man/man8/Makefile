@@ -2,7 +2,7 @@
 
 .include <bsd.own.mk>
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/man/man8
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/man/man8
 .PATH:	${DIST}
 
 MAN=	anvil.8 bounce.8 cleanup.8 discard.8 dnsblog.8 error.8 local.8 \

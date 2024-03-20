@@ -6,7 +6,7 @@ LIBISPRIVATE=	yes
 
 LIB=	xsasl
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${LIB}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${LIB}
 .PATH:	${DIST}
 
 SRCS+= \

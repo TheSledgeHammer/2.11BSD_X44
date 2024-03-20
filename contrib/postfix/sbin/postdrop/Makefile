@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	postdrop
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 BINGRP=	maildrop

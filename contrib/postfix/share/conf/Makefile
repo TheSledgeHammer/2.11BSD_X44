@@ -4,7 +4,7 @@
 
 BINDIR=	${PFIX_EXAMPLEDIR}
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/conf
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/conf
 .PATH:	${DIST}
 
 # Not built: main.cf.default

@@ -6,7 +6,7 @@
 
 BINDIR=	${PFIX_EXAMPLEDIR}
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/README_FILES
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/README_FILES
 .PATH:	${DIST}
 
 .include "../readme.mk"

@@ -12,7 +12,7 @@ NOMAN=	# defined
 
 PROG=	postconf
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 PSRCS=	postconf.c postconf_builtin.c postconf_dbms.c postconf_edit.c \

@@ -132,7 +132,7 @@ __KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $")
 #include <netinet/ip_gre.h>
 #endif
 
-//#include "carp.h"
+#include "carp.h"
 #if NCARP > 0
 #include <netinet/ip_carp.h>
 #endif

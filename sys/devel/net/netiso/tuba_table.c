@@ -58,7 +58,7 @@ struct	radix_node_head *tuba_tree;
 extern	int arpt_keep, arpt_prune;	/* use same values as arp cache */
 
 void
-tuba_timer()
+tuba_timer(void)
 {
 	register struct	tuba_cache *tc;
 	int	i, s;

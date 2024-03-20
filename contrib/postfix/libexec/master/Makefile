@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	master
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 SRCS=	master.c master_conf.c master_ent.c master_sig.c master_avail.c \

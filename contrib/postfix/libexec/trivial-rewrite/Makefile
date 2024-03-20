@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	trivial-rewrite
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 SRCS=	trivial-rewrite.c rewrite.c resolve.c transport.c

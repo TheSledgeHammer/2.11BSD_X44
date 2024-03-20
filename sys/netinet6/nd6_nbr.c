@@ -69,6 +69,11 @@ __KERNEL_RCSID(0, "$NetBSD: nd6_nbr.c,v 1.53 2004/02/10 20:57:20 itojun Exp $");
 #include <netinet6/ipsec.h>
 #endif
 
+#include "carp.h"
+#if NCARP > 0
+#include <netinet/ip_carp.h>
+#endif
+
 #include <net/net_osdep.h>
 
 #define SDL(s) ((struct sockaddr_dl *)s)
@@ -199,8 +204,23 @@ nd6_ns_input(m, off, icmp6len)
 	 * (3) "tentative" address on which DAD is being performed.
 	 */
 	/* (1) and (3) check. */
+#if NCARP > 0
+	if (ifp->if_carp && ifp->if_type != IFT_CARP) {
+		ifa = carp_iamatch6(ifp->if_carp, &taddr6);
+		if (ifa != NULL) {
+			if (ifa->ifa_ifp && ifa->ifa_ifp != ifp) {
+				ifp = ifa->ifa_ifp;
+			}
+		}
+	} else {
+		ifa = NULL;
+	}
+	if (!ifa) {
+		ifa = (struct ifaddr *)in6ifa_ifpwithaddr(ifp, &taddr6);
+	}
+#else
 	ifa = (struct ifaddr *)in6ifa_ifpwithaddr(ifp, &taddr6);
-
+#endif
 	/* (2) check. */
 	if (!ifa) {
 		struct rtentry *rt;

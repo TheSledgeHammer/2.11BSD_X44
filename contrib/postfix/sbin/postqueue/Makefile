@@ -7,7 +7,7 @@ NOMAN=	# defined
 PROG=	postqueue
 SRCS=	postqueue.c showq_compat.c showq_json.c
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 BINGRP=	maildrop

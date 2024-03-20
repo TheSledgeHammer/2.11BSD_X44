@@ -1150,7 +1150,7 @@ carp_send_arp(struct carp_softc *sc)
 			continue;
 
 		in = &ifatoia(ifa)->ia_addr.sin_addr;
-		arprequest(sc->sc_carpdev, in, in, CLLADDR(sc->sc_if.if_sadl));
+		arprequest(sc->sc_carpdev, in, in, LLADDR(sc->sc_if.if_sadl));
 		DELAY(1000);	/* XXX */
 	}
 	splx(s);
@@ -1324,12 +1324,11 @@ carp_ourether(void *v, struct ether_header *eh, u_char iftype, int src)
 	}
 
 	TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list)
-		if ((vh->sc_if.if_flags & (IFF_UP|IFF_RUNNING)) ==
-		    (IFF_UP|IFF_RUNNING) && vh->sc_state == MASTER &&
-		    !bcmp(ena, CLLADDR(vh->sc_if.if_sadl),
-		    ETHER_ADDR_LEN)) {
+		if ((vh->sc_if.if_flags & (IFF_UP | IFF_RUNNING))
+				== (IFF_UP | IFF_RUNNING) && vh->sc_state == MASTER
+				&& !bcmp(ena, LLADDR(vh->sc_if.if_sadl), ETHER_ADDR_LEN)) {
 			return (&vh->sc_if);
-		    }
+		}
 
 	return (NULL);
 }

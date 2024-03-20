@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	cleanup
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 SRCS=	cleanup.c cleanup_out.c cleanup_envelope.c cleanup_message.c \

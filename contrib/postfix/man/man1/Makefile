@@ -2,7 +2,7 @@
 
 .include <bsd.own.mk>
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/man/man1
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/man/man1
 .PATH:	${DIST}
 
 # This follows the order in COMMANDS= in src/external/ibm-public/postfix/dist/man/Makefile.in

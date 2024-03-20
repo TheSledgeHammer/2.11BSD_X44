@@ -135,6 +135,11 @@ __KERNEL_RCSID(0, "$NetBSD: if.c,v 1.139.2.1.4.1 2006/11/19 17:30:11 bouyer Exp 
 #include <netinet6/nd6.h>
 #endif
 
+#include "carp.h"
+#if NCARP > 0
+#include <netinet/ip_carp.h>
+#endif
+
 int	ifqmaxlen = IFQ_MAXLEN;
 struct	callout if_slowtimo_ch;
 
@@ -560,7 +565,11 @@ if_detach(ifp)
 	if (ALTQ_IS_ATTACHED(&ifp->if_snd))
 		altq_detach(&ifp->if_snd);
 #endif
-
+#if NCARP > 0
+	if (ifp->if_carp != NULL && ifp->if_type != IFT_CARP) {
+		carp_ifdetach(ifp);
+	}
+#endif
 #ifdef PFIL_HOOKS
 	(void) pfil_head_unregister(&ifp->if_pfil);
 #endif
@@ -1114,6 +1123,11 @@ if_down(ifp)
 	     ifa = TAILQ_NEXT(ifa, ifa_list))
 		pfctlinput(PRC_IFDOWN, ifa->ifa_addr);
 	IFQ_PURGE(&ifp->if_snd);
+#if NCARP > 0
+	if (ifp->if_carp) {
+		carp_carpdev_state(ifp);
+	}
+#endif
 	rt_ifmsg(ifp);
 }
 
@@ -1137,6 +1151,11 @@ if_up(ifp)
 	for (ifa = TAILQ_FIRST(&ifp->if_addrlist); ifa != NULL;
 	     ifa = TAILQ_NEXT(ifa, ifa_list))
 		pfctlinput(PRC_IFUP, ifa->ifa_addr);
+#endif
+#if NCARP > 0
+	if (ifp->if_carp) {
+		carp_carpdev_state(ifp);
+	}
 #endif
 	rt_ifmsg(ifp);
 #ifdef INET6
