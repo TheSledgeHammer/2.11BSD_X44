@@ -77,10 +77,10 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: if_arp.c,v 1.94 2003/09/24 06:52:47 itojun Exp $");
 
-#include "opt_ddb.h"
+//#include "opt_ddb.h"
 #include "opt_inet.h"
 
-//#ifdef INET
+#ifdef INET
 
 #include "arp.h"
 #include "bridge.h"
