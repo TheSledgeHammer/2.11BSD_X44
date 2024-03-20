@@ -95,7 +95,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_carp.c,v 1.26.10.2 2009/06/09 17:31:46 snj Exp $"
 #include <net/bpf.h>
 #endif
 
-#include <sys/sha1.h>
+#include <crypto/sha1/sha1.h>
 
 #include <netinet/ip_carp.h>
 
