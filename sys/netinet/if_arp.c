@@ -953,7 +953,7 @@ in_arpinput(m)
 						== (IFF_UP | IFF_RUNNING))) {
 			index++;
 			/* XXX: ar_hln? */
-			if (ia->ia_ifp == rcvif && (ah->ar_hln >= 6)
+			if (ia->ia_ifp == m->m_pkthdr.rcvif && (ah->ar_hln >= 6)
 					&& carp_iamatch(ia, ar_sha(ah), &count, index)) {
 				break;
 			}
@@ -1238,7 +1238,7 @@ arplookup(m, addr, create, proxy)
 	if (create) {
 		log(LOG_DEBUG, "arplookup: unable to enter address"
 		    " for %s@%s on %s (%s)\n",
-		    in_fmtaddr(*addr), lla_snprintf(ar_sha(ah), ah->ar_hln),
+		    in_fmtaddr(addr), lla_snprintf(ar_sha(ah), ah->ar_hln),
 		    (ifp) ? ifp->if_xname : 0, why);
 		if (rt->rt_refcnt <= 0 && (rt->rt_flags & RTF_CLONED) != 0) {
 			rtrequest(RTM_DELETE, (struct sockaddr *)rt_key(rt),
