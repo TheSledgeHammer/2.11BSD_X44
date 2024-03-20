@@ -132,6 +132,11 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #include <netinet6/nd6.h>
 #endif
 
+#include "carp.h"
+#if NCARP > 0
+#include <netinet/ip_carp.h>
+#endif
+
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
@@ -140,11 +145,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #ifdef MPLS
 #include <netmpls/mpls.h>
 #include <netmpls/mpls_var.h>
-#endif
-
-#include "carp.h"
-#if NCARP > 0
-#include <netinet/ip_carp.h>
 #endif
 
 static struct timeval bigpktppslim_last;
@@ -545,14 +545,15 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 	/*
 	 * Determine if the packet is within its size limits.
 	 */
-	if (etype != ETHERTYPE_MPLS && m->m_pkthdr.len >
-	    ETHER_MAX_FRAME(ifp, etype, m->m_flags & M_HASFCS)) {
-		if (ppsratecheck(&bigpktppslim_last, &bigpktpps_count,
-					    bigpktppslim)) {
-		printf("%s: discarding oversize frame (len=%d)\n",
-		    ifp->if_xname, m->m_pkthdr.len);
-		m_freem(m);
-		return;
+	if (etype != ETHERTYPE_MPLS
+			&& m->m_pkthdr.len
+					> ETHER_MAX_FRAME(ifp, etype, m->m_flags & M_HASFCS)) {
+		if (ppsratecheck(&bigpktppslim_last, &bigpktpps_count, bigpktppslim)) {
+			printf("%s: discarding oversize frame (len=%d)\n", ifp->if_xname,
+					m->m_pkthdr.len);
+			m_freem(m);
+			return;
+		}
 	}
 
 	if (ETHER_IS_MULTICAST(eh->ether_dhost)) {
