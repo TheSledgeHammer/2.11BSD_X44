@@ -4,7 +4,6 @@ NOSANITIZER=	# defined
 
 .include <bsd.own.mk>
 .include "${NETBSDSRCDIR}/distrib/common/Makefile.distrib"
-.include "${NETBSDSRCDIR}/distrib/common/Makefile.parselist"
 
 WARNS=		1
 DBG=		-Os
@@ -47,11 +46,8 @@ all: ${IMAGEDEPENDS}
 	dd if=/dev/zero of=${IMAGE} count=${IMAGESIZE}
 	vnconfig -t ${DISKTYPE} -v -c ${VND_CDEV} ${IMAGE}
 	disklabel -rw ${VND_CDEV} ${DISKTYPE}
-	newfs -B le -m 0 -o space -i 5120 -c 80 ${VND_RDEV} ${DISKTYPE}
+	newfs -B ${IMAGEENDIAN} -m 0 -o space -i 5120 -c 80 ${VND_RDEV} ${DISKTYPE}
 	mount ${VND_DEV} ${MOUNT_POINT}
-	mtree -def ${MTREE} -p ${MOUNT_POINT}/ -u
-	${PARSELISTENV} \
-		${PARSELIST} -v mode=populate ${LISTS}
 	boot0cfg -v ${VND_DEV} -s 1 
 	@echo ""
 	@df -i ${MOUNT_POINT}
@@ -72,7 +68,7 @@ CLEANFILES+=	${CRUNCHBIN}.map
 
 .include "${DISTRIBDIR}/common/Makefile.crunch"
 
-release:	${IMAGE}
+release: ${IMAGE}
 	${HOST_INSTALL_FILE} -m ${NONBINMODE} ${IMAGE} \
 		${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/ramdisk/
 

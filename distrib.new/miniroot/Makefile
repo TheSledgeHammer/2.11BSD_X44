@@ -2,7 +2,6 @@
 
 .include <bsd.own.mk>
 .include "${NETBSDSRCDIR}/distrib/common/Makefile.distrib"
-.include "${NETBSDSRCDIR}/distrib/common/Makefile.parselist"
 
 .include <bsd.kernobj.mk>
 
@@ -17,6 +16,7 @@ IMAGE=		miniroot.fs
 IMAGESIZE?=	12288 # 6MB in 512 byte blocks
 NEWFSOPTS?=
 MOUNT_POINT?= /mnt
+PRELABEL?=
 BOOTINSTALL?= true
 
 .ifdef DISKTYPE
@@ -30,8 +30,6 @@ PARSELISTENV=	ARCHDIR=${ARCHDIR:Q} \
 				DISTRIBREV=${DISTRIBREV:Q} \
 				DISTRIBVER=${DISTRIBVER:Q} \
 				KERNOBJDIR=${KERNOBJDIR:Q} \
-				TARGDIR=${MOUNT_POINT} \
-				VND_RDEV=${VND_RDEV}
 		
 IMAGE_RELEASEDIR=	installation/miniroot
 
@@ -44,9 +42,6 @@ all: unconfig ${CRUNCHBIN}
 	-newfs -m 0 -o space ${NEWFSOPTS} ${VND_RDEV} ${DISKTYPE}
 	${BOOTINSTALL}
 	mount ${VND_DEV} ${MOUNT_POINT}
-	mtree -def ${MTREE} -p ${MOUNT_POINT}/ -u
-	${PARSELISTENV} \
-		${PARSELIST} -v mode=populate ${LISTS}
 	@echo ""
 	@df -i ${MOUNT_POINT}
 	@echo ""
