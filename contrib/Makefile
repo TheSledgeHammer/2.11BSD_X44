@@ -2,7 +2,7 @@
 
 .include <bsd.own.mk>
 SUBDIR=  	bc byacc expat fetch file flex gnu \
-		less libarchive lua mdocml nawk xz
+		less libarchive liblzf lua mdocml nawk xz openresolv
 
 #SUBDIR+=	oscompat
 SUBDIR+=	pkg_install
