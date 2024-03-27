@@ -136,6 +136,7 @@ SUBDIR+=	../contrib/llvm/librt
 .endif
 
 SUBDIR+=	../contrib/libarchive/lib	# depends on libxz, libcrypto
+SUBDIR+=	../contrib/file/lib		# depends on libz, libbz2, libxz
 
 SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
