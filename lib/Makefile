@@ -99,7 +99,6 @@ SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
 
 SUBDIR+=	../crypto/${EXTERNAL_OPENSSL_SUBDIR}/lib # depends on libcrypt
-SUBDIR+=	../contrib/file/lib			# depends on libz, libbz2, libxz
 
 .if (${MKBINUTILS} != "no")
 SUBDIR+=	../contrib/gnu/${EXTERNAL_BINUTILS_SUBDIR}/lib	# libbfd depends on libz
