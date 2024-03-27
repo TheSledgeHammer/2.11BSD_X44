@@ -63,6 +63,7 @@ SUBDIR+=	${USRLIBDIR}/libskey
 
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/libelf
+SUBDIR+=	../contrib/liblzf/lib
 
 SUBDIR+=	${USRLIBDIR}/libpcap
 
