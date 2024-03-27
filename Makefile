@@ -512,12 +512,12 @@ do-build: .PHONY .MAKE
 #.endif
 
 do-extsrc: .PHONY .MAKE
-#.if ${MKEXTSRC} != "no"
-#	${MAKEDIRTARGET} extsrc build
-#.else
-#	@echo "MKEXTSRC is not enabled"
-#	@false
-#.endif
+.if ${MKEXTSRC} != "no"
+	${MAKEDIRTARGET} extsrc build
+.else
+	@echo "MKEXTSRC is not enabled"
+	@false
+.endif
 
 do-obsolete: .PHONY .MAKE
 	${MAKEDIRTARGET} etc install-obsolete-lists

@@ -1,7 +1,9 @@
-#!/bin/sh
+#!/bin/sh -
 #
-# Copyright (c) 1999  Mitsuru IWASAKI
-# All rights reserved.
+#	$NetBSD: pagesize.sh,v 1.3 2000/03/22 17:35:56 tron Exp $
+#
+# Copyright (c) 1994
+#	The Regents of the University of California.  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -11,11 +13,18 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#	This product includes software developed by the University of
+#	California, Berkeley and its contributors.
+# 4. Neither the name of the University nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
 #
-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
 # FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 # DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -24,27 +33,10 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $FreeBSD$
+#	@(#)pagesize.sh	8.1 (Berkeley) 4/3/94
 #
 
-# sample run command file for APM Suspend Event
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+export PATH
 
-if [ -r /var/run/rc.suspend.pid ]; then
-	exit 1
-fi
-
-echo $$ > /var/run/rc.suspend.pid
-
-# If you have troubles on suspending with PC-CARD modem, try this.
-# See also contrib/pccardq.c (Only for PAO users).
-# pccardq | awk -F '~' '$5 == "filled" && $4 ~ /sio/ \
-#	{ printf("pccardc power %d 0", $1); }' | sh
-
-logger -t apmd suspend at `date +'%Y%m%d %H:%M:%S'`
-sync && sync && sync
-sleep 3
-
-rm -f /var/run/rc.suspend.pid
-zzz
-
-exit 0
+exec sysctl -n hw.pagesize

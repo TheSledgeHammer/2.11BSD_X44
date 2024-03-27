@@ -1,5 +1,4 @@
-# $NetBSD: rc.subr,v 1.49 2002/05/21 12:31:01 lukem Exp $
-# $FreeBSD$
+# $NetBSD: rc.subr,v 1.49.2.3 2003/06/29 00:07:36 grant Exp $
 #
 # Copyright (c) 1997-2002 The NetBSD Foundation, Inc.
 # All rights reserved.
@@ -40,76 +39,8 @@
 #
 
 #
-#	Operating System dependent/independent variables
-#
-
-SYSCTL="/sbin/sysctl"
-SYSCTL_N="${SYSCTL} -n"
-CMD_OSTYPE="${SYSCTL_N} kern.ostype"
-OSTYPE=`${CMD_OSTYPE}`
-
-case ${OSTYPE} in
-FreeBSD)
-	SYSCTL_W="${SYSCTL}"
-	;;
-NetBSD)
-	SYSCTL_W="${SYSCTL} -w"
-	;;
-esac
-
-#
 #	functions
 #	---------
-
-#
-# set_rcvar base_var
-#	Set the variable name enabling a specific service.
-#	FreeBSD uses ${service}_enable, while NetBSD uses
-#	just the name of the service. For example:
-#	FreeBSD: sendmail_enable="YES"
-#	NetBSD : sendmail="YES"
-#	$1 - if $name is not the base to work of off, specify
-#	     a different one
-#
-set_rcvar()
-{
-	if [ -z "$1" ]; then
-		base_var=${name}
-	else
-		base_var="$1"
-	fi
-
-	case ${OSTYPE} in
-	FreeBSD)
-		echo ${base_var}_enable
-		;;
-	NetBSD)
-		echo ${base_var}
-		;;
-	*)
-		echo 'XXX'
-		;;
-	esac
-}
-
-#
-# force_depend script
-#	Force a service to start. Intended for use by services
-#	to resolve dependency issues. It is assumed the caller
-#	has check to make sure this call is necessary
-#	$1 - filename of script, in /etc/rc.d, to run
-#
-force_depend()
-{
-	_depend="$1"
-
-	info "${name} depends on ${_depend}, which will be forced to start."
-	if ! /etc/rc.d/${_depend} forcestart ; then
-		warn "Unable to force ${_depend}. It may already be running."
-		return 1
-	fi
-	return 0
-}
 
 #
 # checkyesno var
@@ -119,7 +50,6 @@ force_depend()
 checkyesno()
 {
 	eval _value=\$${1}
-	debug "checkyesno: $1 is set to $_value."
 	case $_value in
 
 		#	"yes", "true", "on", or "1"
@@ -190,12 +120,10 @@ check_pidfile()
 		err 3 'USAGE: check_pidfile pidfile procname [interpreter]'
 	fi
 	if [ ! -f $_pidfile ]; then
-		debug "pid file {$_pidfile): not readable."
 		return
 	fi
 	read _pid _junk < $_pidfile
 	if [ -z "$_pid" ]; then
-		debug "pid file {$_pidfile): no pid in file."
 		return
 	fi
 	_find_processes $_procname ${_interpreter:-.} '-p '"$_pid"
@@ -275,7 +203,7 @@ _find_processes()
 			esac
 		done'
 
-	debug "in _find_processes: proccheck is ($_proccheck)."
+#echo 1>&2 "proccheck is :$_proccheck:"
 	eval $_proccheck
 }
 
@@ -467,11 +395,6 @@ run_rc_command()
 		;;
 	esac
 
-	eval _overide_command=\$${name}_program
-	if [ -n "$_overide_command" ]; then
-		command=$_overide_command
-	fi
-
 	_keywords="start stop restart rcvar $extra_commands"
 	rc_pid=
 	_pidcmd=
@@ -532,7 +455,6 @@ run_rc_command()
 		eval _cmd=\$${rc_arg}_cmd _precmd=\$${rc_arg}_precmd \
 		    _postcmd=\$${rc_arg}_postcmd
 		if [ -n "$_cmd" ]; then
-			debug "run_rc_command: using XXX_cmd functions."
 					# if the precmd failed and force
 					# isn't set, exit
 					#
@@ -564,8 +486,7 @@ run_rc_command()
 				exit 1
 			fi
 
-			if [ ! -x $command ]; then
-				info "run_rc_command: cannot run ($command)."
+			if [ ! -x ${_chroot}${command} ]; then
 				return 0
 			fi
 
@@ -625,7 +546,6 @@ $command $rc_flags $command_args"
 					# if the cmd failed and force
 					# isn't set, exit
 					#
-			debug "run_rc_command: _doit: $_doit"
 			if ! eval $_doit && [ -z "$rc_force" ]; then
 				return 1
 			fi
@@ -762,8 +682,6 @@ run_rc_script()
 		err 3 'USAGE: run_rc_script file arg'
 	fi
 
-	trap "echo 'Reboot interrupted'; exit 1" 3
-
 	unset	name command command_args command_interpreter \
 		extra_commands pidfile procname \
 		rcvar required_dirs required_files required_vars
@@ -781,8 +699,7 @@ run_rc_script()
 			if [ -n "$rc_fast_and_loose" ]; then
 				set $_arg ; . $_file
 			else
-				( trap "echo 'Reboot interrupted'; exit 1" 3
-				  set $_arg ; . $_file )
+				( set $_arg ; . $_file )
 			fi
 		fi
 		;;
@@ -801,36 +718,14 @@ load_rc_config()
 	fi
 
 	if [ -z "$_rc_conf_loaded" ]; then
-		if [ -r /etc/defaults/rc.conf ]; then
-			debug "Sourcing /etc/defaults/rc.conf"
-			. /etc/defaults/rc.conf
-			source_rc_confs
-		elif [ -r /etc/rc.conf ]; then
-			debug "Sourcing /etc/rc.conf (/etc/defaults/rc.conf doesn't exist)."
-			. /etc/rc.conf
-		fi
+		. /etc/rc.conf
 		_rc_conf_loaded=YES
 	fi
 	if [ -f /etc/rc.conf.d/"$_command" ]; then
-		debug "Sourcing /etc/rc.conf.d/${_command}"
 		. /etc/rc.conf.d/"$_command"
 	fi
-
-	# XXX - Deprecated variable name support
-	#
-	case ${OSTYPE} in
-	FreeBSD)
-        	[ -n "$portmap_enable" ] && rpcbind_enable="$portmap_enable"
-        	[ -n "$portmap_program" ] && rpcbind_program="$portmap_program"
-        	[ -n "$portmap_flags" ] && rpcbind_flags="$portmap_flags"
-        	[ -n "$single_mountd_enable" ] && mountd_enable="$single_mountd_enable"
-        	[ -n "$xntpd_enable" ] && ntpd_enable="$xntpd_enable"
-        	[ -n "$xntpd_program" ] && ntpd_program="$xntpd_program"
-        	[ -n "$xntpd_flags" ] && ntpd_flags="$xntpd_flags"
-        	;;
-	esac
-
 }
+
 
 #
 # rc_usage commands
@@ -876,36 +771,6 @@ warn()
 		logger "$0: WARNING: $*"
 	fi
 	echo 1>&2 "$0: WARNING: $*"
-}
-
-#
-# info message
-#	Display informational message to stdout and log to syslog.
-#
-info()
-{
-	if [ -x /usr/bin/logger ]; then
-		logger "$0: INFO: $*"
-	fi
-	echo "$0: INFO: $*"
-}
-
-#
-# debug message
-#	If debugging is enabled in rc.conf output message to stderr.
-#	BEWARE that you don't call any subroutine that itself calls this
-#	function.
-#
-debug()
-{
-	case ${rc_debug} in
-	[Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]|[Oo][Nn]|1)
-		if [ -x /usr/bin/logger ]; then
-			logger "$0: INFO: $*"
-		fi
-        	echo 1>&2 "$0: DEBUG: $*"
-		;;
-	esac
 }
 
 #

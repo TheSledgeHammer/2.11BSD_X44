@@ -7,24 +7,26 @@ SUBDIR= apply ar asa at 											\
 		banner basename bzip2 bzip2recover							\
 		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
 		compress crontab crunch ctags cut 							\
-		db deroff dirname du												\
+		db deroff dirname du										\
 		elf2aout elf2ecoff env expand								\
 		false fdformat find fmt fold fpr fsplit                     \
 		gcore genassym gencat getaddrinfo getopt getconf gettext 	\
 		gprof														\
 		head hexdump 												\
-        id indent iostat                                                   \
-		join 														\
+        id indent iostat                                            \
+		join jot													\
 		kdump ktrace												\
-		ldd locate logname look lorder 								\
-		m4 make man menuc mkdep mkerrlst mkfifo mklocale mkstr      \
-        mktemp msgc msgs                                            \
-        netgroup netstat                                            \
-        paste patch pathchk pr printenv printf						\
-		rpcgen rpcinfo												\
-		script sed shar sort sortinfo spell split stat strfile su					\
+		lam lastcomm ldd leave locate lock logger logname look 		\
+		lorder 														\
+		m4 machine make man menuc mkdep mkerrlst mkfifo mklocale 	\
+		mkstr mktemp msgc msgs                                      \
+        netgroup netstat nice nl nohup                              \
+        pagesize paste patch pathchk pr printenv printf				\
+		renice rev rpcgen rpcinfo									\
+		script sed shar shlock showmount sort sortinfo spell split 	\
+		stat strfile su												\
 		tail time tip touch true tsort 								\
-		uname unexpand users unstr unzip uudecode uuencode 				\
+		uname unexpand unstr unzip users uudecode uuencode 			\
 		vgrind vis vmstat 											\
 		w wall wc what whereis who whois write 						\
 		xargs xinstall xlint xstr                                   \

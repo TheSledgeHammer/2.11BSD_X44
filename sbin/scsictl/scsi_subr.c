@@ -41,7 +41,6 @@
 __RCSID("$NetBSD: scsi_subr.c,v 1.12 2008/04/28 20:23:09 martin Exp $");
 #endif
 
-
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/scsiio.h>
@@ -51,8 +50,6 @@ __RCSID("$NetBSD: scsi_subr.c,v 1.12 2008/04/28 20:23:09 martin Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <dev/disk/scsi/scsi_spc.h>
 
 #include "extern.h"
 

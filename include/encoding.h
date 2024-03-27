@@ -38,7 +38,20 @@ typedef uint32_t	_index_t;
 typedef uint32_t 	_csid_t;
 
 /* generic encoding structures */
+
 typedef struct {
+	u_char				type;
+#define	CS94			(0U)
+#define	CS96			(1U)
+#define	CS94MULTI		(2U)
+#define	CS96MULTI		(3U)
+	u_char				final;
+	u_char				interm;
+	u_char				vers;
+} _Encoding_Charset;						/* ISO2022 */
+
+typedef struct {
+	//_Encoding_Charset	g[4];				/* ISO2022 */
 	wchar_t				*ch;
 	int 				chlen;
 	int					current_endian;		/* UTF16 & UTF32 needs this */
@@ -56,6 +69,14 @@ typedef struct {
 	wchar_t				mask;
 	unsigned			mb_cur_max;
 	_Encoding_Traits	*traits;
+	/* ISO2022 */
+/*
+	_Encoding_Charset	*recommend[4];
+	_Encoding_Charset	initg[4];
+	size_t				recommendsize[4];
+	int					maxcharset;
+	int					flags;
+*/
 } _Encoding_Info;
 
 typedef struct {

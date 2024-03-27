@@ -359,7 +359,8 @@ PAXCTL=				${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
 TSORT=				${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
 YACC=				${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
 
-TOOL_AR=            	${TOOLDIR}/bin/${_TOOL_PREFIX}ar
+TOOL_AR=            ${TOOLDIR}/bin/${_TOOL_PREFIX}ar
+TOOL_ASN1_COMPILE=	${TOOLDIR}/bin/${_TOOL_PREFIX}asn1_compile
 TOOL_AWK=			${TOOLDIR}/bin/${_TOOL_PREFIX}awk
 TOOL_CAP_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}cap_mkdb
 TOOL_CAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}cat
@@ -434,10 +435,12 @@ TOOL_ROFF_PS=		${TOOL_GROFF} -Tps ${ROFF_PAGESIZE}
 TOOL_ROFF_RAW=		${TOOL_GROFF} -Z
 TOOL_RPCGEN=		RPCGEN_CPP=${CPP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}rpcgen
 TOOL_SED=			${TOOLDIR}/bin/${_TOOL_PREFIX}sed
+TOOL_SLC=			${TOOLDIR}/bin/${_TOOL_PREFIX}slc
 TOOL_SOELIM=		${TOOLDIR}/bin/${_TOOL_PREFIX}soelim
 TOOL_SORTINFO=		${TOOLDIR}/bin/${_TOOL_PREFIX}sortinfo
 TOOL_STAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}stat
 TOOL_STRFILE=		${TOOLDIR}/bin/${_TOOL_PREFIX}strfile
+TOOL_TBL=			${TOOLDIR}/bin/${_TOOL_PREFIX}tbl
 TOOL_TIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}tic
 TOOL_UUDECODE=		${TOOLDIR}/bin/${_TOOL_PREFIX}uudecode
 TOOL_VGRIND=		${TOOLDIR}/bin/${_TOOL_PREFIX}vgrind -f
@@ -621,7 +624,6 @@ BINGRP?=		wheel
 BINOWN?=		root
 BINMODE?=		555
 NONBINMODE?=	444
-#DIRMODE?=		755
 
 SHAREDIR?=		/usr/share
 SHAREGRP?=		wheel
@@ -632,9 +634,11 @@ MANDIR?=		/usr/share/man
 MANGRP?=		wheel
 MANOWN?=		root
 MANMODE?=		${NONBINMODE}
-#MANINSTALL?=	maninstall catinstall
+MANINSTALL?=	${_MANINSTALL}
+#catinstall
 
 LIBDIR?=		/usr/lib
+
 LINTLIBDIR?=	/usr/libdata/lint
 LIBGRP?=		${BINGRP}
 LIBOWN?=		${BINOWN}
@@ -659,11 +663,6 @@ DEBUGDIR?=		/usr/libdata/debug
 DEBUGGRP?=		wheel
 DEBUGOWN?=		root
 DEBUGMODE?=		${NONBINMODE}
-
-DTBDIR?=		/boot/dtb
-DTBGRP?=		wheel
-DTBOWN?=		root
-DTBMODE?=		${NONBINMODE}
 
 MKDIRMODE?=		0755
 MKDIRPERM?=		-m ${MKDIRMODE}
@@ -932,7 +931,6 @@ _MKVARS.yes= \
 	MKSHARE \
 	MKSKEY \
     MKSTATICLIB \
-    MKSTRIPSYM \
     MKUNBOUND \
     MKYP
 	
@@ -1126,8 +1124,6 @@ INSTPRIV.unpriv=
 .endif
 INSTPRIV?=		${INSTPRIV.unpriv} -N ${NETBSDSRCDIR}/etc
 .endif
-SYSPKGTAG?=		${SYSPKG:D-T ${SYSPKG}_pkg}
-SYSPKGDOCTAG?=	${SYSPKG:D-T ${SYSPKG}-doc_pkg}
 STRIPFLAG?=	
 
 .if ${NEED_OWN_INSTALL_TARGET} != "no"
@@ -1135,7 +1131,6 @@ INSTALL_DIR?=		${INSTALL} ${INSTPRIV} -d
 INSTALL_FILE?=		${INSTALL} ${INSTPRIV} ${COPY} ${PRESERVE} ${RENAME}
 INSTALL_LINK?=		${INSTALL} ${INSTPRIV} ${HRDLINK} ${RENAME}
 INSTALL_SYMLINK?=	${INSTALL} ${INSTPRIV} ${SYMLINK} ${RENAME}
-HOST_INSTALL_FILE?=	${INSTALL} ${COPY} ${PRESERVE} ${RENAME}
 .endif
 
 # for crunchide & ldd, define the OBJECT_FMTS used by a MACHINE_ARCH

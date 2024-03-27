@@ -90,7 +90,7 @@ struct nlist namelist[] = {
 		{ .n_name = "_dk_name" },
 #define	X_DK_UNIT	14
 		{ .n_name = "_dk_unit" },
-#define	X_END		14
+#define	X_END		15
 		{ .n_name = NULL },
 };
 

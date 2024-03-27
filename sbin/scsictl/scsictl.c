@@ -53,7 +53,6 @@ __RCSID("$NetBSD: scsictl.c,v 1.33 2011/08/29 14:35:04 joerg Exp $");
 #include <unistd.h>
 #include <util.h>
 
-#include <dev/disk/scsi/scsi_spc.h>
 #include <dev/disk/scsi/scsipi_all.h>
 #include <dev/disk/scsi/scsi_disk.h>
 #include <dev/disk/scsi/scsipiconf.h>

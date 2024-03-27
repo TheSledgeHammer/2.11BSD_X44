@@ -46,7 +46,7 @@ LIBCRTBEGIN=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o ${_GCC_CRTBEGIN}
 LIBCRTEND=	${_GCC_CRTEND} ${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crtn.o
 .MADE: ${LIBCRTEND}
 .endif
-_SHLINKER=	${SHLINKDIR}/ld.so
+_SHLINKER=	${SHLINKDIR}/ld.elf_so
 .endif
 
 .ifndef LIBCRT0
