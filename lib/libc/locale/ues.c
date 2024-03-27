@@ -64,9 +64,9 @@ static int _UES_encoding_module_init(_UESEncodingInfo * __restrict, const void *
 
 _RuneOps _ues_runeops = {
 		.ro_sgetrune 	=  	_UES_sgetrune,
-		.ro_sgetrune 	=  	_UES_sgetrune,
+		.ro_sputrune 	=  	_UES_sputrune,
 		.ro_sgetmbrune 	=  	_UES_sgetmbrune,
-		.ro_sgetmbrune 	=  	_UES_sgetmbrune,
+		.ro_sputmbrune 	=  	_UES_sputmbrune,
 		.ro_sgetcsrune  =	_UES_sgetcsrune,
 		.ro_sputcsrune	= 	_UES_sputcsrune,
 };

@@ -130,9 +130,9 @@ static int _EUC_encoding_module_init(_EUCEncodingInfo * __restrict, const void *
 
 _RuneOps _euc_runeops = {
 		.ro_sgetrune 	=  	_EUC_sgetrune,
-		.ro_sgetrune 	=  	_EUC_sgetrune,
+		.ro_sputrune 	=  	_EUC_sputrune,
 		.ro_sgetmbrune 	=  	_EUC_sgetmbrune,
-		.ro_sgetmbrune 	=  	_EUC_sgetmbrune,
+		.ro_sputmbrune 	=  	_EUC_sputmbrune,
 		.ro_sgetcsrune  =	_EUC_sgetcsrune,
 		.ro_sputcsrune	= 	_EUC_sputcsrune,
 };

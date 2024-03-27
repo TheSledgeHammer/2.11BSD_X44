@@ -62,9 +62,9 @@ static int _UTF1632_encoding_module_init(_UTF1632EncodingInfo * __restrict, cons
 
 _RuneOps _utf1632_runeops = {
 		.ro_sgetrune 	=  	_UTF1632_sgetrune,
-		.ro_sgetrune 	=  	_UTF1632_sgetrune,
+		.ro_sputrune 	=  	_UTF1632_sputrune,
 		.ro_sgetmbrune 	=  	_UTF1632_sgetmbrune,
-		.ro_sgetmbrune 	=  	_UTF1632_sgetmbrune,
+		.ro_sputmbrune 	=  	_UTF1632_sputmbrune,
 		.ro_sgetcsrune  =	_UTF1632_sgetcsrune,
 		.ro_sputcsrune	= 	_UTF1632_sputcsrune,
 };

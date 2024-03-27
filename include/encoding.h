@@ -48,13 +48,20 @@ typedef struct {
 	u_char				final;
 	u_char				interm;
 	u_char				vers;
-} _Encoding_Charset;						/* ISO2022 */
+} _Encoding_Charset;
 
 typedef struct {
-	//_Encoding_Charset	g[4];				/* ISO2022 */
 	wchar_t				*ch;
 	int 				chlen;
 	int					current_endian;		/* UTF16 & UTF32 needs this */
+
+	/* ISO2022 */
+	_Encoding_Charset	g[4];
+	int					gl:3;
+	int					gr:3;
+	int					singlegl:3;
+	int					singlegr:3;
+	int 				flags;
 } _Encoding_State;
 
 typedef struct {
@@ -69,14 +76,28 @@ typedef struct {
 	wchar_t				mask;
 	unsigned			mb_cur_max;
 	_Encoding_Traits	*traits;
+
 	/* ISO2022 */
-/*
 	_Encoding_Charset	*recommend[4];
 	_Encoding_Charset	initg[4];
 	size_t				recommendsize[4];
 	int					maxcharset;
 	int					flags;
-*/
+#define	F_8BIT			0x0001
+#define	F_NOOLD			0x0002
+#define	F_SI			0x0010	/*0F*/
+#define	F_SO			0x0020	/*0E*/
+#define	F_LS0			0x0010	/*0F*/
+#define	F_LS1			0x0020	/*0E*/
+#define	F_LS2			0x0040	/*ESC n*/
+#define	F_LS3			0x0080	/*ESC o*/
+#define	F_LS1R			0x0100	/*ESC ~*/
+#define	F_LS2R			0x0200	/*ESC }*/
+#define	F_LS3R			0x0400	/*ESC |*/
+#define	F_SS2			0x0800	/*ESC N*/
+#define	F_SS3			0x1000	/*ESC O*/
+#define	F_SS2R			0x2000	/*8E*/
+#define	F_SS3R			0x4000	/*8F*/
 } _Encoding_Info;
 
 typedef struct {

@@ -66,9 +66,9 @@ static int _UTF2_encoding_module_init(_UTF2EncodingInfo * __restrict, const void
 
 _RuneOps _utf2_runeops = {
 		.ro_sgetrune 	=  	_UTF2_sgetrune,
-		.ro_sgetrune 	=  	_UTF2_sgetrune,
+		.ro_sputrune 	=  	_UTF2_sputrune,
 		.ro_sgetmbrune 	=  	_UTF2_sgetmbrune,
-		.ro_sgetmbrune 	=  	_UTF2_sgetmbrune,
+		.ro_sputmbrune 	=  	_UTF2_sputmbrune,
 		.ro_sgetcsrune  =	_UTF2_sgetcsrune,
 		.ro_sputcsrune	= 	_UTF2_sputcsrune,
 };

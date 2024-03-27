@@ -91,9 +91,9 @@ static int const *_UTF8_count = NULL;
 
 _RuneOps _utf8_runeops = {
 		.ro_sgetrune 	=  	_UTF8_sgetrune,
-		.ro_sgetrune 	=  	_UTF8_sgetrune,
+		.ro_sputrune 	=  	_UTF8_sputrune,
 		.ro_sgetmbrune 	=  	_UTF8_sgetmbrune,
-		.ro_sgetmbrune 	=  	_UTF8_sgetmbrune,
+		.ro_sputmbrune 	=  	_UTF8_sputmbrune,
 		.ro_sgetcsrune  =	_UTF8_sgetcsrune,
 		.ro_sputcsrune	= 	_UTF8_sputcsrune,
 };
