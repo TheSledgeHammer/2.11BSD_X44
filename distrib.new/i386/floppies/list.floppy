@@ -1,0 +1,3 @@
+
+# copy the kernel
+COPY	${OBJDIR}/twobsd.ram.gz	twobsd

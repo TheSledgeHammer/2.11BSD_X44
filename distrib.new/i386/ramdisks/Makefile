@@ -48,7 +48,6 @@ all: ${IMAGEDEPENDS}
 	disklabel -rw ${VND_CDEV} ${DISKTYPE}
 	newfs -B ${IMAGEENDIAN} -m 0 -o space -i 5120 -c 80 ${VND_RDEV} ${DISKTYPE}
 	mount ${VND_DEV} ${MOUNT_POINT}
-	boot0cfg -v ${VND_DEV} -s 1 
 	@echo ""
 	@df -i ${MOUNT_POINT}
 	@echo ""
@@ -65,6 +64,11 @@ unconfig:
 LDFLAGS+=	-Wl,-Map,${CRUNCHBIN}.map,--cref
 CRUNCHENV+=	LDFLAGS=${LDFLAGS:Q}
 CLEANFILES+=	${CRUNCHBIN}.map
+
+# Use stubs to eliminate some large stuff from libc
+HACKSRC=	${DISTRIBDIR}/utils/libhack
+.include	"${HACKSRC}/Makefile.inc"
+${CRUNCHBIN}:	libhack.o
 
 .include "${DISTRIBDIR}/common/Makefile.crunch"
 
