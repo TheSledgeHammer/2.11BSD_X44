@@ -48,24 +48,6 @@ DISTRIBVER!=		${HOST_SH} ${NETBSDSRCDIR}/sys/conf/osrelease.sh
 
 GZIP_FLAGS= -9 ${GZIP_N_FLAG}
 
-# Flags for creating ISO CDROM image
-# mkisofs is expected to be in $PATH, install via pkgsrc/sysutils/cdrtools
-# Note: At least mkisofs 2.0 should be used.
-#
-.if !defined(MKISOFS)
-MKISOFS!=       (which mkisofs || echo true) 2>/dev/null
-.endif
-DISTRIBREV!=	${HOST_SH} ${KERNSRCDIR}/conf/osrelease.sh -s
-# ISO 9660 volume ID.  Note that this can only contain [A-Z0-9_].
-ISO_VOLID!=	echo TWOBSD_${DISTRIBREV} | tr a-z A-Z
-MKISOFS_FLAGS+= -J -l -hide-joliet-trans-tbl -r -T \
-				-V ${ISO_VOLID} \
-				-publisher "The 2.11BSD Project" \
-				-m "${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/cdrom"
-.if ${MKISOFS_FLAGS:N-v}
-MKISOFS_FLAGS+=	-quiet
-.endif
-
 # MD Makefile.inc may append MD targets to BIN[123].  Make sure all
 # are empty, to preserve the old semantics of setting them below with "+=".
 #
@@ -311,9 +293,6 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 	${MAKEDIRTARGET} ${NETBSDSRCDIR}/usr.sbin/pf configinstall
 .endif
 	${MAKEDIRTARGET} ${NETBSDSRCDIR}/crypto/openssh/bin configinstall
-.if (${MKPOSTFIX} != "no")
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/contrib/postfix configinstall
-.endif
 
 # distrib-dirs --
 #	Populate $DESTDIR with directories needed by 211BSD
@@ -321,108 +300,14 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 distrib-dirs: .PHONY check_DESTDIR
 	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
 
-COMPRESS_PROGRAM=${"${USE_XZ_SETS:Uno}"!="no":?${TOOL_XZ}:${TOOL_GZIP}}
-XZ_OPT=-9
-TAR_SUFF=${"${USE_XZ_SETS:Uno}"!="no":?tar.xz:tgz}
-
 # release, snapshot --
 #	Build a full distribution including kernels & install media.
 #
 release snapshot: .PHONY .MAKE check_DESTDIR check_RELEASEDIR snap_md_post
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/distrib/sets sets
-	${MAKESUMS} -A -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/sets \
-		${KERNEL_SETS:@.SETS.@kern-${.SETS.}.${TAR_SUFF}@}
+	sh ${NETBSDSRCDIR}/distrib/sets/maketars -s ${NETBSDSRCDIR}/distrib/sets \
+		-d ${DESTDIR} -t ${RELEASEDIR}/binary/sets
+	${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/sets
 	${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/kernel '*.gz'
-
-# iso-image --
-#	Standalone target to create a CDROM image after the release
-#	was composed.  Should be run after "make release" in src and xsrc.
-#	The do-iso-image is to be called from etc.$MACHINE/Makefile.inc
-#
-#	Note: At least mkisofs 2.0 should be used.
-#
-CDROM_NAME_ADD?=
-CDROM_IMAGE?=${RELEASEDIR}/images/TwoBSD-${DISTRIBVER}-${MACHINE}.iso
-CDROM.dir=	${.OBJDIR}/cdrom.dir
-CDROM.pathlist=	${.OBJDIR}/cdrom.pathlist
-
-iso-image:
-
-.if ${MKISOFS} != true
-do-iso-image: .PHONY check_DESTDIR check_RELEASEDIR iso-image-md-post
-	${MAKESUMS} -t ${RELEASEDIR}/images/ '*.iso'
-	@echo "iso-image created as: ${CDROM_IMAGE}"
-.else
-do-iso-image:
-	@echo iso-image: mkisofs not found
-.endif
-
-iso-image-setup: .PHONY check_RELEASEDIR
-	rm -f ${CDROM.pathlist}
-.for extra in README SOURCE_DATE source
-.if exists(${RELEASEDIR}/${extra})
-	echo "${extra}=${RELEASEDIR}/${extra}" >> ${CDROM.pathlist}
-.endif
-.endfor
-	echo "${MACHINE}/=${RELEASEDIR}/${RELEASEMACHINEDIR}/" >> ${CDROM.pathlist}
-	mkdir -p ${CDROM.dir}
-
-check_imagedir:
-	mkdir -p ${RELEASEDIR}/images
-
-# iso-image-mi --
-#	Create the image after the MD operations have completed.
-#
-iso-image-mi: .PHONY check_DESTDIR check_RELEASEDIR iso-image-md-pre check_imagedir
-	@if ! ${MKISOFS} --version; then \
-		echo "install pkgsrc/sysutils/cdrtools and run 'make iso-image'." ; \
-		false; \
-	fi
-	${MKISOFS} ${MKISOFS_FLAGS} -graft-points -path-list ${CDROM.pathlist} \
-	    -o ${CDROM_IMAGE} ${CDROM.dir}
-
-# iso-image-md-pre --
-#	Setup ${CDROM.dir} to produce a bootable CD image.
-#	Overridden by etc.$MACHINE/Makefile.inc
-#
-iso-image-md-pre: .PHONY check_DESTDIR check_RELEASEDIR iso-image-setup
-#	(empty -- look in the machine-dependent Makefile.inc)
-
-# iso-image-md-post --
-#	Fixup the CD-image to be bootable.
-#	Overridden by etc.$MACHINE/Makefile.inc
-#
-iso-image-md-post: .PHONY check_DESTDIR check_RELEASEDIR iso-image-mi
-#	(empty -- look in the machine-dependent Makefile.inc)
-
-
-
-# live-image --
-#	Standalone target to create live images after the release was composed.
-#	Should be run after "make release" in src and xsrc.
-#	LIVEIMG_RELEASEDIR specifies where to install live images and
-#	it can be set in MD etc.${MACHINE}/Makefile.inc.
-#
-LIVEIMG_RELEASEDIR?= ${RELEASEDIR}/images
-
-live-image: .PHONY check_DESTDIR check_RELEASEDIR
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/distrib live_image \
-	    LIVEIMG_RELEASEDIR=${LIVEIMG_RELEASEDIR}
-	${MAKESUMS} -t ${LIVEIMG_RELEASEDIR} '*.img.gz'
-
-# install-image --
-#	Standalone target to create installation images
-#	after the release was composed.
-#	Should be run after "make release" in src and xsrc.
-#	INSTIMG_RELEASEDIR specifies where to install live images and
-#	it can be set in MD etc.${MACHINE}/Makefile.inc.
-#
-INSTIMG_RELEASEDIR?= ${RELEASEDIR}/images
-
-install-image: .PHONY check_DESTDIR check_RELEASEDIR
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/distrib install_image \
-	    INSTIMG_RELEASEDIR=${INSTIMG_RELEASEDIR}
-	${MAKESUMS} -t ${INSTIMG_RELEASEDIR} '*.img.gz'
 
 # snap_pre --
 #	Create ${RELEASEDIR} and necessary subdirectories.
@@ -441,186 +326,12 @@ snap_pre: .PHONY check_DESTDIR check_RELEASEDIR distribution
 # snap_post --
 #	Build the install media and notes from distrib
 #
-snap_post: .PHONY .MAKE build_kernelsets build_releasekernels
+snap_post: .PHONY .MAKE #build_kernelsets build_releasekernels
 .if ${MKUPDATE} == "no"
 	cd ${NETBSDSRCDIR}/distrib && ${MAKE} cleandir
 .endif
 	cd ${NETBSDSRCDIR}/distrib && ${MAKE} depend && ${MAKE} && \
 	    ${MAKE} release
-
-# build kernels --
-#	This target builds the kernels specified by each port.
-#	A port may specify the following kernels:
-#
-#	KERNEL_SETS		The list of kernels that will be
-#				packaged into sets, named
-#				kern-${kernel}.tgz (or .tar.xz).
-#				These kernels are also placed in the
-#				binary/kernel area of the release package
-#				as netbsd-${kernel}.gz.
-#
-#	EXTRA_KERNELS		Additional kernels to place in the
-#				binary/kernel area of the release
-#				package as netbsd-${kernel}.gz, but
-#				which are not placed into sets. This
-#				allows a port to provide e.g. a netbootable
-#				installation kernel containing a ramdisk.
-#
-#	BUILD_KERNELS		Additional kernels to build which are
-#				not placed into sets nor into the
-#				binary/kernel area of the release
-#				package.  These are typically kernels
-#				that are built for inclusion only in
-#				installation disk/CD-ROM/tape images.
-#
-#	A port may also specify KERNEL_SUFFIXES, which is an optional list
-#	of filename suffixes for kernels to include in the kernel sets and
-#	in the binary/kernel area of the release package (e.g. "netbsd" vs.
-#	"netbsd.ecoff" and "netbsd.srec").  It is not an error if kernels
-#	with these suffixes do not exist in the kernel build directory.
-#
-#
-# A list of all the kernels to build, which can be overridden from
-# external sources (such as make(1)'s environment or command line)
-#
-ALL_KERNELS?=	${KERNEL_SETS} ${EXTRA_KERNELS} ${BUILD_KERNELS}
-.export ALL_KERNELS
-
-GETKERNELAWK=	${TOOL_AWK} '/^config/ {print $$2; found=1} \
-		END{ if (found == 0) print "twobsd"; }'
-
-build_kernels: .PHONY
-#	Configure & compile kernels listed in ${ALL_KERNELS}
-#
-.if !defined(KERNELS_DONE)						# {
-.for configfile in ${ALL_KERNELS:O:u}					# {
-build_kernels: kern-${configfile}
-kern-${configfile}: .PHONY .MAKE
-	cd ${KERNCONFDIR} && ${TOOL_CONFIG} ${CONFIGOPTS} -s ${KERNSRCDIR} \
-	    ${MKDEBUGKERNEL == "yes" :? -DDEBUG=-g :} \
-	    -b ${KERNOBJDIR}/${configfile:C/.*\///} ${configfile}
-.if ${MKUPDATE} == "no"
-	${MAKE} -C ${KERNOBJDIR}/${configfile:C/.*\///} distclean
-.endif
-	${MAKE} -C ${KERNOBJDIR}/${configfile:C/.*\///} depend && \
-	${MAKE} -C ${KERNOBJDIR}/${configfile:C/.*\///} && \
-	${MAKE} -C ${KERNOBJDIR}/${configfile:C/.*\///} debuginstall
-.endfor	# ALL_KERNELS							# }
-.endif	# KERNELS_DONE							# }
-
-build_kernelsets: .PHONY
-#	Create kernel sets from ${KERNEL_SETS} into
-#	${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/sets
-#
-.for configfile in ${KERNEL_SETS:O:u}					# {
-.for configsel in ${ALL_KERNELS:O:u}
-.if ${configfile} == ${configsel}
-build_kernelsets: kernset-${configfile}
-kernset-${configfile}: .PHONY build_kernels snap_pre
-	@kernlist=$$(${GETKERNELAWK} ${KERNCONFDIR}/${configfile}); \
-	kerndir=${KERNOBJDIR}/${configfile:C/.*\///}; \
-	kernsuffixes="${KERNEL_SUFFIXES:S/^/./}"; \
-	kern_tgz=${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/sets/kern-${configfile}.${TAR_SUFF}; \
-	pax_cmd="GZIP=${GZIP_FLAGS:Q} XZ_OPT=${XZ_OPT:Q} ${TOOL_PAX} ${PAX_TIMESTAMP} --use-compress-program ${COMPRESS_PROGRAM:Q} -O -w -M -N ${NETBSDSRCDIR}/etc -f $${kern_tgz}"; \
-	cd $${kerndir} && { \
-		kernels=; newest=; \
-		for kernel in $${kernlist}; do \
-			for s in "" $${kernsuffixes}; do \
-				ks="$${kernel}$${s}"; \
-				[ -f $${ks} ] || continue; \
-				kernels="$${kernels} $${ks}"; \
-				[ -z "$${newest}" -o $${ks} \
-				    -nt "$${newest}" ] && newest=$${ks}; \
-				[ ${MKDEBUGKERNEL} = "no" -o \
-				     ! -f $${ks}.gdb ] && continue; \
-				kernels="$${kernels} $${ks}.gdb"; \
-			done; \
-		done; \
-		[ $${kern_tgz} -nt "$${newest}" ] || { \
-			echo "echo $${kernels} | $${pax_cmd}"; \
-			if [ ${KERNEL_DIR} = "yes" ]; then \
-				tmpdir=kernel$$; \
-				trap "rm -fr $${tmpdir}" 0 1 2 3 15; \
-				mkdir -p $${tmpdir}/twobsd; \
-				d=./twobsd; \
-				cd $${tmpdir}; \
-			else \
-				d=.; \
-			fi; \
-			( echo "/set uname=${BINOWN} gname=${BINGRP}"; \
-			echo ". type=dir optional"; \
-			if [ ${KERNEL_DIR} = "yes" ]; then \
-				echo "./twobsd type=dir optional"; \
-			fi; \
-			for kernel in $${kernels}; do \
-				if [ ${KERNEL_DIR} = "yes" ]; then \
-					newname=$$(echo $${kernel} | \
-					    ${TOOL_SED} -e s/twobsd/kernel/); \
-					ln ../$${kernel} ./twobsd/$${newname}; \
-				else \
-					newname=$${kernel}; \
-				fi; \
-				echo "$${d}/$${newname} type=file"; \
-			done ) | eval $${pax_cmd}; \
-			if [ ${KERNEL_DIR} = "yes" ]; then \
-				mv $${kern_tgz} ..; \
-			fi; \
-		} \
-	}
-.endif
-.endfor
-.endfor	# KERNEL_SETS							# }
-
-build_releasekernels: .PHONY
-#	Build kernel.gz from ${KERNEL_SETS} ${EXTRA_KERNELS} into
-#	${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/kernel
-#
-.for configfile in ${KERNEL_SETS:O:u} ${EXTRA_KERNELS:O:u}		# {
-.for configsel in ${ALL_KERNELS:O:u}
-.if ${configfile} == ${configsel}
-build_releasekernels: releasekern-${configfile}
-releasekern-${configfile}: .PHONY build_kernels snap_pre
-	@kernlist=$$(${GETKERNELAWK} ${KERNCONFDIR}/${configfile:C/.*\///}); \
-	kerndir=${KERNOBJDIR}/${configfile:C/.*\///}; \
-	kernsuffixes="${KERNEL_SUFFIXES:S/^/./}"; \
-	dest="${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/kernel"; \
-	cd $${kerndir} && {	\
-		for kernel in $${kernlist}; do \
-			for s in "" $${kernsuffixes}; do \
-				ks="$${kernel}$${s}"; \
-				[ ! -f $${ks} ] && continue; \
-				knl_gz="$${dest}/$${kernel}-${configfile:C/.*\///}$${s}.gz"; \
-				[ $${knl_gz} -nt $${ks} ] && continue; \
-				rm -f $${knl_gz}; \
-				echo "${TOOL_GZIP} ${GZIP_FLAGS} -c < $${kerndir}/$${ks} > $${knl_gz}"; \
-				${TOOL_GZIP} ${GZIP_FLAGS} -c < $${ks} > $${knl_gz}; \
-			done; \
-		done; \
-	}
-.endif
-.endfor
-.endfor	# KERNEL_SETS EXTRA_KERNELS					# }
-
-# install-debugkernels:
-#	Create fake kernel debug files to satisfy the sets requirements
-#	They will be later replaced with the real ones if we are building
-#	kernels. This mess is needed because checkflist runs before the
-#	kernels are built. It should really run before the sets are build.
-install-debugkernels:
-.if ${MKDEBUG:Uno} == "yes"
-	@for i in $$(${NETBSDSRCDIR}/distrib/sets/makeflist debug | \
-	    ${TOOL_GREP} -E '^./usr/libdata/debug/(nfs)?twobsd-'); do \
-		echo touch ${DESTDIR}/$$i; \
-		touch ${DESTDIR}/$$i; \
-	done
-.	for k in ${ALL_KERNELS}
-install-debugkernels: ${DESTDIR}${DEBUGDIR}/twobsd-${k}.debug
-		
-${DESTDIR}${DEBUGDIR}/twobsd-${k}.debug:
-	${_MKTARGET_INSTALL}
-	touch ${.TARGET}
-.	endfor
-.endif
 
 # snap_md_post --
 #	Machine dependent distribution media operations.
@@ -629,8 +340,6 @@ ${DESTDIR}${DEBUGDIR}/twobsd-${k}.debug:
 snap_md_post: .PHONY check_DESTDIR check_RELEASEDIR snap_post
 #	(empty -- look in the machine-dependent Makefile.inc)
 
-clean:
-	-rm -rf ${CDROM.dir} ${CDROM.pathlist}
 
 SUBDIR=	defaults periodic rc.d mtree
 

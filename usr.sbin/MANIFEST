@@ -23,7 +23,6 @@ moused/			NetBSD
 mrouted/		NetBSD
 mtree/			NetBSD
 pcictl/  		NetBSD
-postinstall/	NetBSD
 rmt/			NetBSD
 pwd_mkdb/		NetBSD
 unlink/			NetBSD

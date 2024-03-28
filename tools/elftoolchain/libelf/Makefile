@@ -49,8 +49,10 @@ LIBELF_GENSRCS=	libelf_fsize.c libelf_msize.c libelf_convert.c
 LIBELF_DIR=	${.CURDIR}/../../contrib/elftoolchain/libelf
 
 CLEANFILES+=	${LIBELF_GENSRCS}
-CPPFLAGS+=		-I${.CURDIR}/../compat -I${LIBELF_DIR} -I${LIBELF_DIR}/../common
-#CPPFLAGS+=		-I${TOOLDIR}/include/nbinclude
+CPPFLAGS+=		-I${.CURDIR}/../../compat
+CPPFLAGS+=		-I${LIBELF_DIR}
+CPPFLAGS+= 		-I${LIBELF_DIR}/../common
+CPPFLAGS+=		-I${TOOLDIR}/include/nbinclude
 
 CPPFLAGS+=	-DLIBELF_TEST_HOOKS
 
@@ -79,7 +81,7 @@ COMPATLIB_NO_LIB= yes # only the include files, not the library
 HOST_CPPFLAGS:=	${CPPFLAGS} ${HOST_CPPFLAGS}
 CPPFLAGS:=	# empty
 
-#.include "${.CURDIR}/../Makefile.nbincludes"
+.include "${.CURDIR}/../../Makefile.nbincludes"
 .include <bsd.hostlib.mk>
 
 # Keep the .SUFFIXES line after the include of bsd.hostlib.mk

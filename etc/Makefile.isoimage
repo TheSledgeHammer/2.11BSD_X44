@@ -1,0 +1,111 @@
+#	$NetBSD: Makefile,v 1.449 2020/12/29 16:46:44 martin Exp $
+#	from: @(#)Makefile	8.7 (Berkeley) 5/25/95
+
+# Flags for creating ISO CDROM image
+# mkisofs is expected to be in $PATH, install via pkgsrc/sysutils/cdrtools
+# Note: At least mkisofs 2.0 should be used.
+#
+.if !defined(MKISOFS)
+MKISOFS!=       (which mkisofs || echo true) 2>/dev/null
+.endif
+DISTRIBREV!=	${HOST_SH} ${KERNSRCDIR}/conf/osrelease.sh -s
+# ISO 9660 volume ID.  Note that this can only contain [A-Z0-9_].
+ISO_VOLID!=	echo TWOBSD_${DISTRIBREV} | tr a-z A-Z
+MKISOFS_FLAGS+= -J -l -hide-joliet-trans-tbl -r -T \
+				-V ${ISO_VOLID} \
+				-publisher "The 2.11BSD Project" \
+				-m "${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/cdrom"
+.if ${MKISOFS_FLAGS:N-v}
+MKISOFS_FLAGS+=	-quiet
+.endif
+
+# iso-image --
+#	Standalone target to create a CDROM image after the release
+#	was composed.  Should be run after "make release" in src and xsrc.
+#	The do-iso-image is to be called from etc.$MACHINE/Makefile.inc
+#
+#	Note: At least mkisofs 2.0 should be used.
+#
+CDROM_NAME_ADD?=
+CDROM_IMAGE?=${RELEASEDIR}/images/TwoBSD-${DISTRIBVER}-${MACHINE}.iso
+CDROM.dir=	${.OBJDIR}/cdrom.dir
+CDROM.pathlist=	${.OBJDIR}/cdrom.pathlist
+
+iso-image:
+
+.if ${MKISOFS} != true
+do-iso-image: .PHONY check_DESTDIR check_RELEASEDIR iso-image-md-post
+	${MAKESUMS} -t ${RELEASEDIR}/images/ '*.iso'
+	@echo "iso-image created as: ${CDROM_IMAGE}"
+.else
+do-iso-image:
+	@echo iso-image: mkisofs not found
+.endif
+
+iso-image-setup: .PHONY check_RELEASEDIR
+	rm -f ${CDROM.pathlist}
+.for extra in README SOURCE_DATE source
+.if exists(${RELEASEDIR}/${extra})
+	echo "${extra}=${RELEASEDIR}/${extra}" >> ${CDROM.pathlist}
+.endif
+.endfor
+	echo "${MACHINE}/=${RELEASEDIR}/${RELEASEMACHINEDIR}/" >> ${CDROM.pathlist}
+	mkdir -p ${CDROM.dir}
+
+check_imagedir:
+	mkdir -p ${RELEASEDIR}/images
+
+# iso-image-mi --
+#	Create the image after the MD operations have completed.
+#
+iso-image-mi: .PHONY check_DESTDIR check_RELEASEDIR iso-image-md-pre check_imagedir
+	@if ! ${MKISOFS} --version; then \
+		echo "install pkgsrc/sysutils/cdrtools and run 'make iso-image'." ; \
+		false; \
+	fi
+	${MKISOFS} ${MKISOFS_FLAGS} -graft-points -path-list ${CDROM.pathlist} \
+	    -o ${CDROM_IMAGE} ${CDROM.dir}
+
+# iso-image-md-pre --
+#	Setup ${CDROM.dir} to produce a bootable CD image.
+#	Overridden by etc.$MACHINE/Makefile.inc
+#
+iso-image-md-pre: .PHONY check_DESTDIR check_RELEASEDIR iso-image-setup
+#	(empty -- look in the machine-dependent Makefile.inc)
+
+# iso-image-md-post --
+#	Fixup the CD-image to be bootable.
+#	Overridden by etc.$MACHINE/Makefile.inc
+#
+iso-image-md-post: .PHONY check_DESTDIR check_RELEASEDIR iso-image-mi
+#	(empty -- look in the machine-dependent Makefile.inc)
+
+# live-image --
+#	Standalone target to create live images after the release was composed.
+#	Should be run after "make release" in src and xsrc.
+#	LIVEIMG_RELEASEDIR specifies where to install live images and
+#	it can be set in MD etc.${MACHINE}/Makefile.inc.
+#
+LIVEIMG_RELEASEDIR?= ${RELEASEDIR}/images
+
+live-image: .PHONY check_DESTDIR check_RELEASEDIR
+	${MAKEDIRTARGET} ${NETBSDSRCDIR}/distrib live_image \
+	    LIVEIMG_RELEASEDIR=${LIVEIMG_RELEASEDIR}
+	${MAKESUMS} -t ${LIVEIMG_RELEASEDIR} '*.img.gz'
+
+# install-image --
+#	Standalone target to create installation images
+#	after the release was composed.
+#	Should be run after "make release" in src and xsrc.
+#	INSTIMG_RELEASEDIR specifies where to install live images and
+#	it can be set in MD etc.${MACHINE}/Makefile.inc.
+#
+INSTIMG_RELEASEDIR?= ${RELEASEDIR}/images
+
+install-image: .PHONY check_DESTDIR check_RELEASEDIR
+	${MAKEDIRTARGET} ${NETBSDSRCDIR}/distrib install_image \
+	    INSTIMG_RELEASEDIR=${INSTIMG_RELEASEDIR}
+	${MAKESUMS} -t ${INSTIMG_RELEASEDIR} '*.img.gz'
+	
+clean:
+	-rm -rf ${CDROM.dir} ${CDROM.pathlist}

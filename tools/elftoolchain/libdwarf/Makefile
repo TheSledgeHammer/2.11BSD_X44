@@ -71,7 +71,9 @@ COMPATLIB_NO_LIB= yes # only the include files, not the library
 .-include	"${TOOLDIR}/share/compat/defs.mk"
 .endif
 
-CPPFLAGS+=	-I${.CURDIR}/../compat -I${LIBDWARF_DIR} -I${LIBELF_DIR}
+CPPFLAGS+=	-I${.CURDIR}/../../compat 
+CPPFLAGS+=	-I${LIBDWARF_DIR}
+CPPFLAGS+= 	-I${LIBELF_DIR}
 CPPFLAGS+=	-I${COMMON_DIR}
 
 BUILD_OSTYPE!=  uname -s
@@ -91,5 +93,5 @@ CPPFLAGS+=	-DHAVE_NBTOOL_CONFIG_H=1 -D_FILE_OFFSET_BITS=64
 HOST_CPPFLAGS:=	${CPPFLAGS} ${HOST_CPPFLAGS}
 CPPFLAGS:=	# empty
 
-#.include "${.CURDIR}/../Makefile.nbincludes"
+.include "${.CURDIR}/../../Makefile.nbincludes"
 .include <bsd.hostlib.mk>

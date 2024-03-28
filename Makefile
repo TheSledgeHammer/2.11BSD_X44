@@ -155,10 +155,6 @@ regression-tests: .PHONY .MAKE
 	${MAKEDIRTARGET} regress regress
 .endif
 
-.if ${MKUNPRIVED} != "no"
-NOPOSTINSTALL=	# defined
-.endif
-
 afterinstall: .PHONY .MAKE
 .if ${MKMAN} != "no"
 	${MAKEDIRTARGET} share/man makedb
@@ -166,47 +162,6 @@ afterinstall: .PHONY .MAKE
 .if (${MKUNPRIVED} != "no" && ${MKINFO} != "no")
 	${MAKEDIRTARGET} contrib/gnu/texinfo/bin/install-info infodir-meta
 .endif
-.if !defined(NOPOSTINSTALL)
-	${MAKEDIRTARGET} . postinstall-check
-.endif
-
-_POSTINSTALL=	${:!cd ${.CURDIR}/usr.sbin/postinstall && \
-			${MAKE} print-objdir!}/postinstall  \
-		-m ${MACHINE} -a ${MACHINE_ARCH}
-_POSTINSTALL_ENV= \
-	AWK=${TOOL_AWK:Q}		\
-	DB=${TOOL_DB:Q}			\
-	HOST_SH=${HOST_SH:Q}		\
-	MAKE=${MAKE:Q}			\
-	PWD_MKDB=${TOOL_PWD_MKDB:Q}	\
-	SED=${TOOL_SED:Q}		\
-	STAT=${TOOL_STAT:Q}
-
-#.if ${MKX11} != "no"
-#_POSTINSTALL_X11=-x ${X11SRCDIR:Q}
-#.endif
-
-postinstall-check: .PHONY
-	@echo "   === Post installation checks ==="
-	${_POSTINSTALL_ENV} ${HOST_SH} ${_POSTINSTALL} -s ${.CURDIR} ${_POSTINSTALL_X11} -d ${DESTDIR}/ check; if [ $$? -gt 1 ]; then exit 1; fi
-	@echo "   ================================"
-
-postinstall-fix: .NOTMAIN .PHONY
-	@echo "   === Post installation fixes ==="
-	${_POSTINSTALL_ENV} ${HOST_SH} ${_POSTINSTALL} -s ${.CURDIR} ${_POSTINSTALL_X11} -d ${DESTDIR}/ fix
-	@echo "   ==============================="
-
-postinstall-fix-obsolete: .NOTMAIN .PHONY
-	@echo "   === Removing obsolete files ==="
-	${_POSTINSTALL_ENV} ${HOST_SH} ${_POSTINSTALL} -s ${.CURDIR} ${_POSTINSTALL_X11} -d ${DESTDIR}/ fix obsolete
-	@echo "   ==============================="
-
-postinstall-fix-obsolete_stand: .NOTMAIN .PHONY
-	@echo "   === Removing obsolete files ==="
-	${_POSTINSTALL_ENV} ${HOST_SH} ${_POSTINSTALL} -s ${.CURDIR} ${_POSTINSTALL_X11} -d ${DESTDIR}/ fix obsolete_stand
-	${_POSTINSTALL_ENV} ${HOST_SH} ${_POSTINSTALL} -s ${.CURDIR} ${_POSTINSTALL_X11} -d ${DESTDIR}/ fix obsolete_stand_debug
-	@echo "   ==============================="
-
 
 #
 # Targets (in order!) called by "make build".
@@ -243,14 +198,8 @@ BUILDTARGETS+=	do-sanitizer
 BUILDTARGETS+=	do-sanitizer-tools
 .endif
 .endif
-.if ${MKX11} != "no"
-BUILDTARGETS+=	do-x11
-.endif
 .if !defined(NOBINARIES)
 BUILDTARGETS+=	do-build
-.if ${MKEXTSRC} != "no"
-BUILDTARGETS+=	do-extsrc
-.endif
 BUILDTARGETS+=	do-obsolete
 .endif
 
@@ -317,11 +266,8 @@ distribution buildworld: .PHONY .MAKE
 	@echo "Won't make ${.TARGET} with DESTDIR=/"
 	@false
 .endif
-	${MAKEDIRTARGET} . build NOPOSTINSTALL=1
 	${MAKEDIRTARGET} etc distribution INSTALL_DONE=1
 .if defined(DESTDIR) && ${DESTDIR} != "" && ${DESTDIR} != "/"
-	${MAKEDIRTARGET} . postinstall-fix-obsolete
-	${MAKEDIRTARGET} . postinstall-fix-obsolete_stand
 	${MAKEDIRTARGET} distrib/sets checkflist
 .endif
 	@echo   "make ${.TARGET} started at:  ${START_TIME}"
@@ -352,32 +298,7 @@ installworld: .PHONY .MAKE
 	@false
 .endif
 .endif
-	${MAKEDIRTARGET} distrib/sets installsets \
-		INSTALLDIR=${INSTALLWORLDDIR:U/} INSTALLSETS=${INSTALLSETS:Q}
-	${MAKEDIRTARGET} . postinstall-check DESTDIR=${INSTALLWORLDDIR}
-	@echo   "make ${.TARGET} started at:  ${START_TIME}"
-	@printf "make ${.TARGET} finished at: " && date
-
-#
-# Install modules from $DESTDIR to $INSTALLMODULESDIR
-#
-installmodules: .PHONY .MAKE
-.if (!defined(DESTDIR) || ${DESTDIR} == "" || ${DESTDIR} == "/")
-	@echo "Can't make ${.TARGET} to DESTDIR=/"
-	@false
-.endif
-.if !defined(INSTALLMODULESDIR) || \
-    ${INSTALLMODULESDIR} == "" || ${INSTALLMODULESDIR} == "/"
-.if (${HOST_UNAME_S} != "NetBSD")
-	@echo "Won't cross-make ${.TARGET} from ${HOST_UNAME_S} to NetBSD with INSTALLMODULESDIR=/"
-	@false
-.endif
-.if (${HOST_UNAME_M} != ${MACHINE})
-	@echo "Won't cross-make ${.TARGET} from ${HOST_UNAME_M} to ${MACHINE} with INSTALLMODULESDIR=/"
-	@false
-.endif
-.endif
-	${MAKEDIRTARGET} sys/modules install DESTDIR=${INSTALLMODULESDIR:U/}
+	${MAKEDIRTARGET} distrib/sets installsets INSTALLDIR=${INSTALLWORLDDIR:U/} INSTALLSETS=${INSTALLSETS:Q}
 	@echo   "make ${.TARGET} started at:  ${START_TIME}"
 	@printf "make ${.TARGET} finished at: " && date
 
@@ -385,7 +306,7 @@ installmodules: .PHONY .MAKE
 # Create sets from $DESTDIR or $NETBSDSRCDIR into $RELEASEDIR
 #
 
-.for tgt in sets sourcesets syspkgs
+.for tgt in sets
 ${tgt}: .PHONY .MAKE
 	${MAKEDIRTARGET} distrib/sets ${tgt}
 .endfor
@@ -475,9 +396,6 @@ do-tools: .PHONY .MAKE
 do-lib: .PHONY .MAKE
 	${MAKEDIRTARGET} lib build_install
 
-do-compat-lib: .PHONY .MAKE
-	${MAKEDIRTARGET} compat build_install BOOTSTRAP_SUBDIRS="../../../lib"
-
 do-sanitizer: .PHONY .MAKE
 	${MAKEDIRTARGET} contrib/compiler_rt build_install
 
@@ -498,26 +416,6 @@ do-build: .PHONY .MAKE
 .for targ in dependall install
 	${MAKEDIRTARGET} . ${targ} BUILD_tools=no BUILD_lib=no
 .endfor
-
-#do-x11: .PHONY .MAKE
-#.if ${MKX11} != "no"
-#	${MAKEDIRTARGET} contrib/xorg/tools all
-#	${MAKEDIRTARGET} contrib/xorg/lib build_install
-#.if ${MKCOMPATX11} != "no"
-#	${MAKEDIRTARGET} compat build_install BOOTSTRAP_SUBDIRS="../../../contrib/xorg/lib"
-#.endif
-#.else
-#	@echo "MKX11 is not enabled"
-#	@false
-#.endif
-
-do-extsrc: .PHONY .MAKE
-.if ${MKEXTSRC} != "no"
-	${MAKEDIRTARGET} extsrc build
-.else
-	@echo "MKEXTSRC is not enabled"
-	@false
-.endif
 
 do-obsolete: .PHONY .MAKE
 	${MAKEDIRTARGET} etc install-obsolete-lists

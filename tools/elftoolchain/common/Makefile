@@ -6,9 +6,7 @@ SRCDIR=	${.CURDIR}/../../../contrib/elftoolchain/common
 
 .PATH:	${SRCDIR}
 
-SUBDIR=		sys
-
-INCS=		elfdefinitions.h
+INCS=			elfdefinitions.h
 HOST_INCSDIR=	${TOOLDIR}/include
 
 HOST_INCINSTFILES=
@@ -29,5 +27,3 @@ all depend clean clobber:
 
 cleandepend:
 	rm -f ${.OBJDIR}/.depend
-
-.include <bsd.subdir.mk>
