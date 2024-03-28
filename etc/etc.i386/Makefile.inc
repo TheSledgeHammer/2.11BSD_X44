@@ -22,6 +22,6 @@ snap_md_post:
 	  cd ${NETBSDSRCDIR}/distrib/i386 && ${MAKE} release
 	  cd ${NETBSDSRCDIR}/distrib/notes && ${MAKE} release
 	  ${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/cdrom '*.iso'
-	  ${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/floppy '*.fs'
+	  ${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/floppy '*.gz' '*.fs'
 	  ${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/miniroot '*.*'
 	  ${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/misc '*.*'
