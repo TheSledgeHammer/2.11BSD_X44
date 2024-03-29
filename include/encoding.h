@@ -135,6 +135,7 @@ typedef struct {
 
 #define _ENCODING_INFO						_Encoding_Info
 #define _CTYPE_INFO							_Encoding_TypeInfo
+#define _ENCODING_CHARSET                   			_Encoding_Charset
 #define _ENCODING_STATE						_Encoding_State
 #define _ENCODING_TRAITS					_Encoding_Traits
 #define _ENCODING_MB_CUR_MAX(_ei_)			(_ei_)->mb_cur_max
