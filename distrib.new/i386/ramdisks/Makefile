@@ -22,7 +22,7 @@ VND_CDEV=		/dev/${VND}d
 VND_CRDEV=		/dev/r${VND}d
 MDEC=			${DESTDIR}/usr/mdec
 
-LISTS=			list.ramdisk
+LISTS=			list
 MTREECONF=		${DISTRIBDIR}/common/mtree.common
 CRUNCHCONF=		${CRUNCHBIN}.conf
 IMAGEENDIAN=	le
