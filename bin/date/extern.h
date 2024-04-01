@@ -33,4 +33,4 @@
  *	@(#)extern.h	8.1 (Berkeley) 5/31/93
  */
 
-int	netsettime (time_t);
+int	netsettime(time_t);

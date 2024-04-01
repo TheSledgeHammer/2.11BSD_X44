@@ -31,6 +31,11 @@
  * SUCH DAMAGE.
  */
 
+
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #ifndef lint
 static char copyright[] =
@@ -48,22 +53,28 @@ static char sccsid[] = "@(#)date.c	8.2 (Berkeley) 4/28/95";
 #include <ctype.h>
 #include <err.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <time.h>
+#include <tzfile.h>
 #include <unistd.h>
-
+#include <util.h>
+#if !HAVE_NBTOOL_CONFIG_H
+#include <utmpx.h>
+#endif
 #include "extern.h"
 
 time_t tval;
 int retval, nflag;
 
-static void setthetime __P((char *));
-static void badformat __P((void));
-static void usage __P((void));
+static void setthetime(char *);
+static void badformat(void);
+static void usage(void);
 
-int logwtmp __P((char *, char *, char *));
+int logwtmp(char *, char *, char *);
 
 int
 main(argc, argv)
