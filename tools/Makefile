@@ -81,17 +81,17 @@ dependall-binstall: dependall-compat
 # Dependencies in SUBDIR below ordered to maximize parallel ability.
 # See above for special treatment for host-mkdep, compat, and binstall.
 #
-SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
+SUBDIR=	host-mkdep compat binstall date .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		cap_mkdb crunchgen ctags gencat hexdump 								\
 		${LINT_BITS} 															\
 		makewhatis mtree .WAIT uudecode 										\
 		cat rpcgen join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
-		xz-include .WAIT grep pax xz-lib ar										\
+		xz-include .WAIT grep pax xz-lib									\
 		.WAIT texinfo 															\
 		.WAIT 																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
-		asn1_compile cksum compile_et db																\
-		file lint1 slc																\
+		cksum db																\
+		file lint1																\
 		makefs sortinfo 																\
 		.WAIT menuc mklocale mknod msgc 										\
 		.WAIT disklabel																	\
