@@ -99,3 +99,5 @@ COPY	${CURDIR}/disktab.preinstall		etc/disktab.preinstall
 COPY	${NETBSDSRCDIR}/distrib/common/termcap.mini	usr/share/misc/termcap
 
 # and the installation tools
+COPY	dot.profile			.profile
+COPY	dot.hdprofile			tmp/.hdprofile
