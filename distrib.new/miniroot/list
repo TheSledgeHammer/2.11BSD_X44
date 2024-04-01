@@ -70,3 +70,7 @@ COPY	${NETBSDSRCDIR}/etc/protocols		etc/protocols
 COPY	${NETBSDSRCDIR}/etc/services		etc/services
 
 # and the installation scripts
+COPY	${CURDIR}/install.sh		install		555
+COPY	${CURDIR}/upgrade.sh		upgrade		555
+CMD	sed "/^VERSION=/s/=.*/=${DISTRIBREV}/" < ${CURDIR}/install.sub > install.sub
+MTREE	./install.sub	type=file uname=root gname=wheel mode=0444
