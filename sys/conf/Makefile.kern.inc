@@ -64,6 +64,7 @@ CPPFLAGS+=	-DKERNEL_DIR
 DEFCOPTS?=	-O2
 COPTS?=		${DEFCOPTS}
 DBG=		# might contain unwanted -Ofoo
+DEFWARNINGS?=	yes
 CWARNFLAGS+=	-Wall -Wno-main -Wno-format-zero-length -Wpointer-arith
 CWARNFLAGS+=	-Wmissing-prototypes -Wstrict-prototypes
 CWARNFLAGS+=	-Wold-style-definition
@@ -259,14 +260,24 @@ config_time.h: Makefile
 	cp config_time.src config_time.h
 .endif
 
+.if defined(MEMORY_DISK_IMAGE)
+md_root_image.h: ${MEMORY_DISK_IMAGE}
+	${_MKTARGET_CREATE}
+	${TOOL_HEXDUMP} -v -e '"\t" 8/1 "0x%02x, " "\n"' ${.ALLSRC} > ${.TARGET}
+
+# XXX This is only needed when building md_root.o
+CPPFLAGS+=	-DMEMORY_DISK_IMAGE
+md_root.o: md_root_image.h
+.endif
+
+# depend on MEMORY_DISK_IMAGE configuration
+md_root.o: Makefile
+
 # depend on root or device configuration
-#autoconf.o: Makefile
+autoconf.o conf.o: Makefile
 
 # depend on network or filesystem configuration
-#uipc_proto.o: Makefile
-
-# depend on maxusers and CPU configuration
-#assym.h machdep.o: Makefile
+uipc_proto.o vfs_conf.o: Makefile
 
 ##
 ## (7) misc targets: install, clean(dir), depend(all), lint, links, tags,
