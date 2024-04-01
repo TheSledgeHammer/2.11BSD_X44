@@ -7,7 +7,7 @@ USE_SHLIBDIR=	yes
 LIB=			termcap
 WARNS?=			5
 
-CPPFLAGS+=		-I${.CURDIR}
+CPPFLAGS+=		-I${.CURDIR} -DCM_N -DCM_GT -DCM_B -DCM_D
 SRCS=			termcap.c tgoto.c tputs.c
 
 MAN=	termcap.3
