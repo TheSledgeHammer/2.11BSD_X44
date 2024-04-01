@@ -16,7 +16,7 @@ VND_CDEV=	    /dev/${VND}d
 VND_CRDEV=	    /dev/r${VND}d
 MDEC=		    ${DESTDIR}/usr/mdec
 
-LISTS=		    list.floppy
+LISTS=		    list
 
 # Some reasonable values for the -i parameter to newfs are:
 #
