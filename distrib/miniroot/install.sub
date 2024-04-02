@@ -1,5 +1,5 @@
 #!/bin/sh
-#	$NetBSD: install.sub,v 1.43 2002/06/12 09:10:02 bouyer Exp $
+#	$NetBSD: install.sub,v 1.25.2.5 2000/02/04 23:02:41 he Exp $
 #
 # Copyright (c) 1996 The NetBSD Foundation, Inc.
 # All rights reserved.
@@ -161,10 +161,6 @@ dir_has_sets() {
 		if [ -f $_dir/${_file}.tgz ]; then
 			return 0
 		fi
-		# Try for uncompressed files
-		if [ -f $_dir/${_file}.tar ]; then
-			return 0
-		fi
 		# Try for split files
 		if [ -f $_dir/${_file}${VERSION}.aa ]; then
 			return 0
@@ -275,7 +271,7 @@ __labelmoredisks_1
 	echo -n	"Label which disk? [done] "
 	getresp "done"
 	case "$resp" in
-		"done")
+		done)
 			;;
 
 		*)
@@ -293,8 +289,6 @@ addhostent() {
 	# $1 - IP address
 	# $2 - symbolic name
 
-	local fqdn
-
 	# Create an entry in the hosts table.  If no host table
 	# exists, create one.  If the IP address already exists,
 	# replace it's entry.
@@ -305,10 +299,7 @@ addhostent() {
 	sed "/^$1 /d" < /tmp/hosts > /tmp/hosts.new
 	mv /tmp/hosts.new /tmp/hosts
 
-	if [ X${FQDN} != X ]; then
-		fqdn=$2.$FQDN
-	fi
-	echo "$1 $2 $fqdn" >> /tmp/hosts
+	echo "$1 $2 $2.$FQDN" >> /tmp/hosts
 }
 
 addifconfig() {
@@ -316,12 +307,16 @@ addifconfig() {
 	# $2 - interface symbolic name
 	# $3 - interface IP address
 	# $4 - interface netmask
-	# $5 - (optional) interface link-layer medium, preceded by "media ", else ""
+	# $5 - (optional) interface link-layer medium
 	# $6 - (optional) interface link-layer directives
 	local _m
 
+	_m=""
+	if [ "$5" != "" ]; then
+		_m="media $5"
+	fi
 	# Create a ifconfig.* file for the interface.
-	echo "inet $2 netmask $4 $5 $6" > /tmp/ifconfig.$1
+	echo "inet $2 netmask $4 $_m $6" > /tmp/ifconfig.$1
 
 	addhostent $3 $2
 }
@@ -343,7 +338,7 @@ configurenetwork() {
 	cat << \__configurenetwork_1
 
 You may configure the following network interfaces (the interfaces
-marked with [X] have been successfully configured):
+marked with [X] have been succesfully configured):
 
 __configurenetwork_1
 
@@ -478,7 +473,7 @@ configure_ifs() {
 			    "${_interface_symname}" \
 			    "${_interface_ip}" \
 			    "${_interface_mask}" \
-			    "${_m}" \
+			    "${_interface_mediumtype}" \
 			    "${_interface_extra}"
 			return 0
 		fi
@@ -490,37 +485,27 @@ configure_ifs() {
 		    "${_interface_symname}" \
 		    "${_interface_ip}" \
 		    "${_interface_mask}" \
-		    "${_m}" \
+		    "${_interface_mediumtype}" \
 		    "${_interface_extra}"
 	fi
 	return 1
 }
 
-# Much of this is gratuitously stolen from /etc/rc.d/network.
+# Much of this is gratuitously stolen from /etc/netstart.
 enable_network() {
 
 	# Set up the hostname.
-	if [ -f /mnt/etc/myname ]; then
-		hostname=`cat /mnt/etc/myname`
-	elif [ -f /mnt/etc/rc.conf ];then
-		hostname=`sh -c '. /mnt/etc/rc.conf ; echo $hostname'`
-	else
+	if [ ! -f /mnt/etc/myname ]; then
 		echo "ERROR: no /etc/myname!"
 		return 1
 	fi
-	if [ -z "$hostname" ];then
-		echo "ERROR: hostname not set in /etc/myname or /etc/rc.conf!"
-		return 1
-	fi
+	hostname=`cat /mnt/etc/myname`
 	hostname $hostname
 
 	# configure all the interfaces which we know about.
 if [ -f /mnt/etc/rc.conf ]; then
 (
 	# assume network interface configuration style 1.2D and up
-	if [ -f /mnt/etc/defaults/rc.conf ]; then
-		. /mnt/etc/defaults/rc.conf
-	fi
 	. /mnt/etc/rc.conf
 
 	if [ "$net_interfaces" != NO ]; then
@@ -635,7 +620,7 @@ install_ftp() {
 	echo "while read line; do"	>> /tmp/fname_filter.sh
 	echo "    case \$line in"	>> /tmp/fname_filter.sh
 	for _f in $THESETS; do
-		echo "    $_f.tar.gz|$_f.tgz|$_f.tar|$_f.${VERSION}.aa)" \
+		echo "    $_f.tar.gz|$_f.tgz|$_f.${VERSION}.aa)" \
 					>> /tmp/fname_filter.sh
 		echo '        echo -n "$line ";;' \
 					>> /tmp/fname_filter.sh
@@ -715,7 +700,7 @@ __install_ftp_2
 		# Make a copy of this script that lists the directory
 		# contents, and use that to determine the files to get.
 		cat /tmp/ftp-script.sh	>  /tmp/ftp-dir.sh
-		echo "nlist"		>> /tmp/ftp-dir.sh
+		echo "ls"		>> /tmp/ftp-dir.sh
 		echo "quit"		>> /tmp/ftp-dir.sh
 		echo "__end_commands"	>> /tmp/ftp-dir.sh
 
@@ -729,7 +714,7 @@ __install_ftp_2
 
 	while : ; do
 		echo "The following sets are available for extraction:"
-		echo "(marked sets are already on the extraction list)"
+		echo "(marked sets have already been extracted)"
 		echo ""
 
 		_next=""
@@ -757,7 +742,7 @@ __install_ftp_2
 		echo -n "File name [$_next]? "
 		getresp "$_next"
 		if isin $resp $_sets; then
-			echo "get $resp |\"pax -zr${verbose_flag}pe\"" >> \
+			echo "get $resp |\"pax -zrvpe\"" >> \
 					/tmp/ftp-script.sh
 			_setsdone="$resp $_setsdone"
 		else
@@ -786,49 +771,43 @@ install_from_mounted_fs() {
 	_dirname=$1
 	_sets=""
 
-	if ! dir_has_sets ${_dirname} $THESETS
-	then
+	echo ""
+	echo "The directory at the mount point, \"${_dirname}\", contains: "
+	echo ""
+	ls -F ${_dirname}
+	echo ""
+	echo    "Enter the subdirectory relative to the mountpoint, that"
+	echo -n "contains the savesets: [try this directory] "
+	getresp ""
+	if [ "X${resp}" != "X" ]; then
+		_dirname=${_dirname}/$resp
+	fi
 
+	while ! dir_has_sets ${_dirname} $THESETS; do
 		echo ""
-		echo "The directory at the mount point, \"${_dirname}\", contains: "
+		echo -n "There are no NetBSD install sets available in "
+		echo "\"${_dirname}\"."
+		echo "\"${_dirname}\" contains: "
 		echo ""
 		ls -F ${_dirname}
 		echo ""
-		echo    "Enter the subdirectory relative to the mountpoint, that"
-		echo -n "contains the savesets: [try this directory] "
+		echo -n "Enter subdirectory: [try other install media] "
 		getresp ""
-		if [ "X${resp}" != "X" ]; then
+		if [ "X${resp}" = "X" ]; then
+			return
+		fi
+		if [ ! -d ${_dirname}/${resp} ]; then
+			echo "\"${resp}\" is no directory; try again."
+		else
 			_dirname=${_dirname}/$resp
 		fi
-
-		while ! dir_has_sets ${_dirname} $THESETS; do
-			echo ""
-			echo -n "There are no NetBSD install sets available in "
-			echo "\"${_dirname}\"."
-			echo "\"${_dirname}\" contains: "
-			echo ""
-			ls -F ${_dirname}
-			echo ""
-			echo -n "Enter subdirectory: [try other install media] "
-			getresp ""
-			if [ "X${resp}" = "X" ]; then
-				return
-			fi
-			if [ ! -d ${_dirname}/${resp} ]; then
-				echo "\"${resp}\" is no directory; try again."
-			else
-				_dirname=${_dirname}/$resp
-			fi
-		done
-	fi
+	done
 
 	for _f in $THESETS ; do
 		if [ -f ${_dirname}/${_f}.tar.gz ]; then
 			_sets="$_sets ${_f}.tar.gz"
 		elif [ -f ${_dirname}/${_f}.tgz ]; then
 			_sets="$_sets ${_f}.tgz"
-		elif [ -f ${_dirname}/${_f}.tar ]; then
-			_sets="$_sets ${_f}.tar"
 		elif [ -f ${_dirname}/${_f}${VERSION}.aa ]; then
 			_sets="$_sets ${_f}${VERSION}"
 		fi
@@ -857,11 +836,7 @@ install_from_mounted_fs() {
 		echo ""
 
 		# Get the name of the file.
-		if [ "X$_next" = "X" ]; then
-			resp=n
-		else
-			resp=y
-		fi
+		if [ "X$_next" = "X" ]; then resp=n; else resp=y; fi
 		echo -n "Continue extraction [$resp]?"
 		getresp "$resp"
 		if [ "$resp" = "n" ]; then
@@ -890,15 +865,7 @@ install_from_mounted_fs() {
 
 			# Extract file
 			echo "Extracting the $_f set:"
-			case "$_filename" in
-			*.tar)
-				(cd /mnt; pax -r${verbose_flag}pe < $_filename)
-				;;
-			*)
-				cat $_filename | \
-					(cd /mnt; pax -zr${verbose_flag}pe)
-				;;
-			esac
+			cat $_filename | (cd /mnt; pax -zrvpe)
 			echo "Extraction complete."
 			_setsdone="$_f $_setsdone"
 		done
@@ -1161,19 +1128,7 @@ install_nfs() {
 			;;
 
 		*)
-			echo -n "Use small NFS transfers (needed when server "
-			echo "or client"
-			echo -n "has a slow network card)? [n] "
-			getresp "n"
-			case "$resp" in
-			y*|Y*)
-				_nfs_tcp="-r 1024 -w 1024"
-				;;
-
-			*)
-				_nfs_tcp=""
-				;;
-			esac
+			_nfs_tcp=""
 			;;
 	esac
 
@@ -1264,11 +1219,11 @@ __install_tape_2
 		getresp "1"
 		case "$resp" in
 		1)
-			_xcmd="pax -zr${verbose_flag}pe"
+			_xcmd="pax -zrvpe"
 			;;
 
 		2)
-			_xcmd="pax -r${verbose_flag}pe"
+			_xcmd="tar -rvpe"
 			;;
 
 		*)
@@ -1302,7 +1257,7 @@ get_timezone() {
 cat << \__get_timezone_1
 
 Select a time zone for your location. Timezones are represented on the
-system by a directory structure rooted in "/usr/share/zoneinfo". Most
+system by a directory structure rooted in "/usr/share/timezone". Most
 timezones can be selected by entering a token like "MET" or "GMT-6".
 Other zones are grouped by continent, with detailed zone information
 separated by a slash ("/"), e.g. "US/Pacific".
@@ -1360,35 +1315,14 @@ install_sets()
 	_yup="FALSE"
 
 	# Ask the user which media to load the distribution from.
-	# Ask the user if they want verbose extraction.  They might not want
-	# it on, eg, SPARC frame buffer console.
 	cat << \__install_sets_1
 
 It is now time to extract the installation sets onto the hard disk.
 Make sure the sets are either on a local device (i.e. tape, CD-ROM) or on a
 network server.
 
-Would you like to see each file listed during extraction (verbose) mode?
-On some console hardware, such as serial consoles and Sun frame buffers,
-this can extend the total extraction time.
 __install_sets_1
-	echo -n "Use verbose listing for extractions? [y] "
-	getresp "y"
-	case "$resp" in
-	y*|Y*)
-		verbose_flag=v
-		;;
-	*)
-		echo "Not using verbose listing."
-		verbose_flag=""
-		;;
-	esac
 
-	if [ -d ${Default_sets_dir:-/dev/null} ]; then
-		if dir_has_sets $Default_sets_dir $THESETS; then
-			local_sets_dir=$Default_sets_dir
-		fi
-	fi
 	if [ "X$local_sets_dir" != "X" ]; then
 		install_from_mounted_fs ${local_sets_dir}
 		if [ X"$_setsdone" != X ]; then

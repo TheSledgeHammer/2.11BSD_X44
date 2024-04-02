@@ -36,8 +36,7 @@ __RCSID("$NetBSD: iconv.c,v 1.14 2019/10/24 18:17:59 kamil Exp $");
 #include <paths.h>
 #include <sys/queue.h>
 
-//#include <iconv.h>
-typedef void *iconv_t;
+#include <iconv.h>
 
 #ifdef CITRUS_ICONV
 #include <sys/types.h>
@@ -134,6 +133,7 @@ __iconv(handle, in, szin, out, szout, flags, invalids)
 	return (ret);
 }
 #else
+
 iconv_t
 iconv_open(out, in)
     const char *out;
@@ -175,5 +175,19 @@ __iconv(handle, in, szin, out, szout, flags, invalids)
 {
 	errno = EBADF;
 	return ((size_t) - 1);
+}
+
+int
+/*ARGSUSED*/
+__iconv_get_list(char ***rlist, size_t *rsz)
+{
+	errno = EINVAL;
+	return -1;
+}
+void
+/*ARGSUSED*/
+__iconv_free_list(char **list, size_t sz)
+{
+
 }
 #endif

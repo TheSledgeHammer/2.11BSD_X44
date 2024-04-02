@@ -69,10 +69,8 @@ USRDOTLIB=		${DESTDIR}/usr.lib # Older BSD's (i.e. 4.3 and below)
 
 _USRSLASHLIBLIST= \
             ARCHIVE \
-            ASN1 \
 			C \
 			C_PIC \
-			COM_ERR \
 			COMPAT \
             CRYPTO \
             CXX \
@@ -80,22 +78,12 @@ _USRSLASHLIBLIST= \
 			EXPAT \
 			FETCH \
 			GCC \
+			GNUCTF \
 			GNUMALLOC \
-            GSSAPI \
-            HDB \
-            HEIMBASE \
-            HEIMTLM \
-            HX509 \
-            KADM5CLNT \
-            KADM5SRV \
-            KAFS \
-            KRB5 \
 			L \
+			LUA \
 			MAGIC \
             OBJC \
-            ROKEN \
-            SASLC \
-            SL \
             SQLITE3 \
             SSH \
             SSL \
@@ -104,9 +92,9 @@ _USRSLASHLIBLIST= \
             WIND
 			
 .for _var in ${_USRSLASHLIBLIST}
-.ifndef LIB${_var}
+.ifndef LIB${_var:tu}
 LIB${_var}:=	 ${USRSLASHLIB}/lib${_var:tl}.a
-.MADE: ${LIB${_var}}
+.MADE: ${LIB${_var:tu}}
 .endif
 .endfor
 
@@ -119,6 +107,7 @@ _USRDOTLIBLIST=	\
 			EXECINFO \
 			FORM \
 			FORTRAN \
+			INTL \
 			IPSEC \
 			KVM \
 			M \
@@ -131,7 +120,6 @@ _USRDOTLIBLIST=	\
 			PTHREAD \
 			RESOLV \
 			SKEY \
-			SS \
 			STUBS \
 			TERMCAP \
 			UTIL \
@@ -143,7 +131,7 @@ _USRDOTLIBLIST=	\
 .for _var in ${_USRDOTLIBLIST}
 .ifndef LIB${_var}
 LIB${_var}:=	 ${USRDOTLIB}/lib${_var:tl}.a
-.MADE: ${LIB${_var}}
+.MADE: ${LIB${_var:tu}}
 .endif
 .endfor
 

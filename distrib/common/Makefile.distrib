@@ -19,11 +19,11 @@ _MAKEFILE_DISTRIB_=1
 
 .include <bsd.sys.mk>		# for HOST_SH
 
-DISTRIBDIR=	${NETBSDSRCDIR}/distrib
+DISTRIBDIR=		${NETBSDSRCDIR}/distrib
 DISTRIBREV!=	${HOST_SH} ${NETBSDSRCDIR}/sys/conf/osrelease.sh -s
 DISTRIBVER!=	${HOST_SH} ${NETBSDSRCDIR}/sys/conf/osrelease.sh
 DISTRIBVERDEP=	${NETBSDSRCDIR}/sys/sys/param.h \
-		${NETBSDSRCDIR}/sys/conf/osrelease.sh
+				${NETBSDSRCDIR}/sys/conf/osrelease.sh
 
 MAKESUMS=	MAKE=${MAKE:Q} CKSUM=${TOOL_CKSUM:Q} ${HOST_SH} ${DISTRIBDIR}/sets/makesums
 RELEASE_INSTALL=${INSTALL} ${RENAME} ${PRESERVE} ${COPY} -m ${NONBINMODE}

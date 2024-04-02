@@ -1,5 +1,5 @@
 #!/bin/sh
-#	$NetBSD: install.sh,v 1.22 2000/04/11 08:26:34 pk Exp $
+#	$NetBSD: install.sh,v 1.19.2.1 1999/04/13 17:20:42 is Exp $
 #
 # Copyright (c) 1996 The NetBSD Foundation, Inc.
 # All rights reserved.
@@ -64,20 +64,11 @@ MODE="install"
 #	md_native_fsopts()	- native filesystem options for disk installs
 #	md_makerootwritable()	- make root writable (at least /tmp)
 
-# we need to make sure .'s below work if this directory is not in $PATH
-# dirname may not be available but expr is
-Mydir=`expr $0 : '^\(.*\)/[^/]*$'`
-Mydir=`cd ${Mydir:-.}; pwd`
-
-# this is the most likely place to find the binary sets
-# so save them having to type it in
-Default_sets_dir=$Mydir/../../binary/sets
-
 # include machine dependent subroutines
-. $Mydir/install.md
+. install.md
 
 # include common subroutines
-. $Mydir/install.sub
+. install.sub
 
 # which sets?
 THESETS="$ALLSETS $MDSETS"
@@ -246,10 +237,11 @@ case "$resp" in
 		echo $resp > /tmp/myname
 
 		echo -n "Enter DNS domain name: "
-		getresp "none"
-		if [ "X${resp}" != X"none" ]; then
-			FQDN=$resp
-		fi
+		resp=""		# force at least one iteration
+		while [ "X${resp}" = X"" ]; do
+			getresp ""
+		done
+		FQDN=$resp
 
 		configurenetwork
 
@@ -262,11 +254,8 @@ case "$resp" in
 			fi
 		fi
 
-		resp="none"
-		if [ X${FQDN} != X ]; then
-			echo -n	"Enter IP address of primary nameserver: [none] "
-			getresp "none"
-		fi
+		echo -n	"Enter IP address of primary nameserver: [none] "
+		getresp "none"
 		if [ "X${resp}" != X"none" ]; then
 			echo "domain $FQDN" > /tmp/resolv.conf
 			echo "nameserver $resp" >> /tmp/resolv.conf

@@ -5,39 +5,58 @@
 
 .include <bsd.kernobj.mk>
 
+CRUNCHBIN=	instbin
 ARCHDIR=	${.CURDIR}/../${MACHINE}/miniroot
 
-CRUNCHBIN=	instbin
-CRUNCHGEN_FLAGS= -d "${DBG}"
+VND?=		vnd0c
+VND_DEV=	/dev/${VND}
+VND_RDEV=	/dev/r${VND}
+VND_GEOM?=
+IMAGE=		miniroot.fs
+IMAGESIZE?=	12288 # 6MB in 512 byte blocks
+NEWFSOPTS?=
+MOUNT_POINT?= /mnt
+PRELABEL?=
+BOOTINSTALL?= true
+
+.ifdef DISKTYPE
+DISKTYPEARG=	-t ${DISKTYPE}
+.endif
+
 LISTS=		${.CURDIR}/list ${ARCHDIR}/list
 MTREECONF=	${DISTRIBDIR}/common/mtree.common
-IMAGE=		miniroot.fs
-IMAGEDEPENDS=	${CRUNCHBIN} install.sub install.sh upgrade.sh \
-		${KERNSRCDIR}/conf/osrelease.sh \
-		${NETBSDSRCDIR}/etc/group ${NETBSDSRCDIR}/etc/master.passwd \
-		${NETBSDSRCDIR}/etc/netconfig ${NETBSDSRCDIR}/etc/protocols \
-		${NETBSDSRCDIR}/etc/services
-PARSELISTENV=	ARCHDIR=${ARCHDIR:Q} \
-		DISTRIBREV=${DISTRIBREV:Q} \
-		DISTRIBVER=${DISTRIBVER:Q} \
-		KERNOBJDIR=${KERNOBJDIR:Q}
 
+PARSELISTENV=	ARCHDIR=${ARCHDIR:Q} \
+				DISTRIBREV=${DISTRIBREV:Q} \
+				DISTRIBVER=${DISTRIBVER:Q} \
+				KERNOBJDIR=${KERNOBJDIR:Q} \
+		
 IMAGE_RELEASEDIR=	installation/miniroot
 
-.include "${ARCHDIR}/Makefile.inc"
+.include 	"${ARCHDIR}/Makefile.inc"
 
-# Use stubs to eliminate some large stuff from libc
-HACKSRC=	${DISTRIBDIR}/utils/libhack
-.include	"${HACKSRC}/Makefile.inc"
-${CRUNCHBIN}:	libhack.o
+all: unconfig ${CRUNCHBIN}
+	dd if=/dev/zero of=${IMAGE} count=${IMAGESIZE}
+	vnconfig ${DISKTYPEARG} -v -c ${VND_DEV} ${IMAGE} ${VND_GEOM}
+	${PRELABEL}
+	-newfs -m 0 -o space ${NEWFSOPTS} ${VND_RDEV} ${DISKTYPE}
+	${BOOTINSTALL}
+	mount ${VND_DEV} ${MOUNT_POINT}
+	@echo ""
+	@df -i ${MOUNT_POINT}
+	@echo ""
+	umount ${MOUNT_POINT}
+	vnconfig -u ${VND_DEV}
+
+unconfig:
+	-umount -f ${MOUNT_POINT}
+	-vnconfig -u ${VND_DEV}
+	-/bin/rm -f ${IMAGE}
 
 .include "${DISTRIBDIR}/common/Makefile.crunch"
-.if defined(MAKEDEVTARGETS)
-.include "${DISTRIBDIR}/common/Makefile.makedev"
-.endif
-.include "${DISTRIBDIR}/common/Makefile.image"
 
-release:: check_RELEASEDIR .WAIT
-	${MAKESUMS} -t ${RELEASEDIR}/${MACHINE}/${IMAGE_RELEASEDIR} ${IMAGE}.gz
-
+release: $(IMAGE)
+	gzip -c -9 < $(.OBJDIR)/${IMAGE} \
+		> $(RELEASEDIR)/${IMAGE_RELEASEDIR}/${IMAGE}.gz
+		
 .include <bsd.prog.mk>

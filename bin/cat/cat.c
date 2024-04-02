@@ -34,6 +34,10 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #ifndef lint
 static char copyright[] =
@@ -62,10 +66,10 @@ size_t bsize;
 int rval;
 char *filename;
 
-void cook_args (char *argv[]);
-void cook_buf (FILE *);
-void raw_args (char *argv[]);
-void raw_cat (int);
+void cook_args(char *argv[]);
+void cook_buf(FILE *);
+void raw_args(char *argv[]);
+void raw_cat(int);
 
 int
 main(argc, argv)

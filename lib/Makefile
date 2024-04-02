@@ -142,11 +142,6 @@ SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
 
-.if (${MKKERBEROS} != "no")
-SUBDIR+=	../crypto/heimdal/lib		# depends on libcrypto
-										# libedit, libterminfo,
-.endif
-
 SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
 
 SUBDIR+= 	../libexec/httpd/libbozohttpd 	# depends on libssl & libcrypto

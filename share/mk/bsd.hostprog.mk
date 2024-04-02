@@ -7,6 +7,7 @@
 ##### Basic targets
 
 ##### Default values
+
 LIBC?=				/usr/lib/libc.a
 LIBCOMPAT?=			/usr/lib/libcompat.a
 LIBC_PIC?=			/usr/lib/libc_pic.a
@@ -15,12 +16,15 @@ LIBDES?=		    /usr/lib/libdes.a
 LIBEXPAT?=			/usr/lib/libexpat.a
 LIBFETCH?=			/usr/lib/libfetch.a
 LIBGCC?=			/usr/lib/libgcc.a
+LIBGNUCTF?=			/usr/lib/libgnuctf.a
 LIBGNUMALLOC?=		/usr/lib/libgnumalloc.a
 LIBL?=				/usr/lib/libl.a
 LIBLZMA?=			/usr/lib/liblzma.a
 LIBMAGIC?=			/usr/lib/libmagic.a
 LIBNTP?=			/usr/lib/libntp.a
 LIBOBJC?=			/usr/lib/libobjc.a
+LIBPC?=				/usr/lib/libpc.a
+LIBPLOT?=			/usr/lib/libplot.a
 LIBSQLITE3?=		/usr/lib/libsqlite3.a
 LIBSSP?=		    /usr/lib/libssp.a
 LIBSTDCXX?=			/usr/lib/libstdc++.a
@@ -29,33 +33,37 @@ LIBSUPCXX?=			/usr/lib/libsupc++.a
 LIBBZ2?=			/usr.lib/libbz2.a
 LIBCRYPT?=			/usr.lib/libcrypt.a
 LIBCURSES?=			/usr.lib/libcurses.a
-LIBDBM?=			/usr.lib/libdbm.a
 LIBEDIT?=			/usr.lib/libedit.a
 LIBFORM?=			/usr.lib/libform.a
+LIBINTL?=			/usr.lib/libintl.a
 LIBIPSEC?=		    /usr.lib/libipsec.a
 LIBKVM?=			/usr.lib/libkvm.a
 LIBM?=				/usr.lib/libm.a
 LIBMENU?=			/usr.lib/libmenu.a
 LIBMP?=				/usr.lib/libmp.a
-LIBOM?=				/usr.lib/libom.a
 LIBPANEL?=			/usr.lib/libpanel.a
 LIBPCAP?=			/usr.lib/libpcap.a
 LIBPCI?=			/usr.lib/libpci.a
 LIBPTHREAD?=		/usr.lib/libpthread.a
 LIBRESOLV?=			/usr.lib/libresolv.a
+LIBRPCSVC?=			/usr.lib/librpcsvc.a
 LIBSKEY?=			/usr.lib/libskey.a
-LIBSTUBS?=			/usr.lib/libstubs.a
 LIBTERMCAP?=		/usr.lib/libtermcap.a
-LIBTERMINFO=		${LIBTERMCAP}
+LIBTERMINFO?=		${LIBTERMCAP}
 LIBUTIL?=			/usr.lib/libutil.a
-LIBVMF?=			/usr.lib/libvmf.a
 LIBWRAP?=			/usr.lib/libwrap.a
 LIBY?=				/usr.lib/liby.a
 LIBZ?=				/usr.lib/libz.a
-LIBFORTRAN=		/usr.lib/libfortran
+
+# 2.11BSD Libraries
+LIBDBM?=			/usr.lib/libdbm.a
+LIBFORTRAN?=		/usr.lib/libfortran
 LIBF77?=			${LIBFORTRAN}/libF77.a
 LIBI77?=			${LIBFORTRAN}/libI77.a
 LIBU77?=			${LIBFORTRAN}/libU77.a
+LIBOM?=				/usr.lib/libom.a
+LIBSTUBS?=			/usr.lib/libstubs.a
+LIBVMF?=			/usr.lib/libvmf.a
 
 MKDEP_SUFFIXES?=	.lo .ln .d
 

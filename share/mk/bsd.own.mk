@@ -634,8 +634,12 @@ MANDIR?=		/usr/share/man
 MANGRP?=		wheel
 MANOWN?=		root
 MANMODE?=		${NONBINMODE}
-MANINSTALL?=	${_MANINSTALL}
-#catinstall
+MANINSTALL?=	${_MANINSTALL} ${_CATINSTALL}
+
+INFODIR?=		/usr/share/info
+INFOGRP?=		wheel
+INFOOWN?=		root
+INFOMODE?=		${NONBINMODE}
 
 LIBDIR?=		/usr/lib
 
@@ -645,6 +649,7 @@ LIBOWN?=		${BINOWN}
 LIBMODE?=		${NONBINMODE}
 
 DOCDIR?=    	/usr/share/doc
+HTMLDOCDIR?=	/usr/share/doc/html
 DOCGRP?=		wheel
 DOCOWN?=		root
 DOCMODE?=   	${NONBINMODE}
@@ -931,7 +936,6 @@ _MKVARS.yes= \
 	MKSHARE \
 	MKSKEY \
     MKSTATICLIB \
-    MKUNBOUND \
     MKYP
 	
 .for var in ${_MKVARS.yes}
@@ -1028,7 +1032,8 @@ _MKVARS.no= \
 	MKLDAP \
 	MKKERBEROS \
 	MKPAM \
-	MKPOSTFIX
+	MKPOSTFIX \
+	MKUNBOUND \
 	
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}

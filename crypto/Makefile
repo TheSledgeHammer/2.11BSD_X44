@@ -2,6 +2,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR+= ${EXTERNAL_OPENSSL_SUBDIR} .WAIT heimdal .WAIT openssh
+SUBDIR+= ${EXTERNAL_OPENSSL_SUBDIR}
+SUBDIR+= .WAIT openssh
 
 .include <bsd.subdir.mk>

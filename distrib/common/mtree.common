@@ -6,12 +6,10 @@
 ./bin
 ./dev
 ./etc
-./libexec
 ./mnt
 ./mnt2
 ./kern
 ./sbin
-./targetroot
 ./tmp				mode=01777
 ./usr
 ./usr/bin

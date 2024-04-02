@@ -1,5 +1,5 @@
 #!/bin/sh
-#	$NetBSD: upgrade.sh,v 1.20 2000/11/17 17:36:39 pk Exp $
+#	$NetBSD: upgrade.sh,v 1.16.2.2 1999/04/13 19:38:18 pk Exp $
 #
 # Copyright (c) 1996 The NetBSD Foundation, Inc.
 # All rights reserved.
@@ -58,26 +58,12 @@ MODE="upgrade"
 #	md_welcome_banner()	- display friendly message
 #	md_not_going_to_install() - display friendly message
 #	md_congrats()		- display friendly message
-#	md_set_term		- set terminal type
-#	md_makerootwritable	- what it says
-# optional:
-#	md_upgrade_prep_needed	- variable: set if you md_prepare_upgrade()
-#	md_prepare_upgrade	- any machine dependent preparations
-
-# we need to make sure .'s below work if this directory is not in $PATH
-# dirname may not be available but expr is
-Mydir=`expr $0 : '^\(.*\)/[^/]*$'`
-Mydir=`cd ${Mydir:-.}; pwd`
-
-# this is the most likely place to find the binary sets
-# so save them having to type it in
-Default_sets_dir=$Mydir/../../binary/sets
 
 # include machine dependent subroutines
-. $Mydir/install.md
+. install.md
 
 # include common subroutines
-. $Mydir/install.sub
+. install.sub
 
 # which sets?
 THESETS="$UPGRSETS $MDSETS"
@@ -286,26 +272,6 @@ check_fs /tmp/fstab.shadow
 
 # Mount filesystems.
 mount_fs /tmp/fstab.shadow
-
-# Machine dependent preparation.
-test "$md_upgrade_prep_needed" && {
-	md_prepare_upgrade || {
-		cat << 'EOF'
-The preparations for upgrading your machine did not complete successfully.
-
-EOF
-		echo -n "Continue anyway? [n]"
-		getresp "n"
-		case "$resp" in
-			y*|Y*)
-				;;
-			*)
-				exit 1
-				;;
-		esac
-	}
-}
-
 
 echo -n	"Are the upgrade sets on one of your normally mounted (local) filesystems? [y] "
 getresp "y"

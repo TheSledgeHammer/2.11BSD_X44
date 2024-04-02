@@ -13,9 +13,9 @@ CPPFLAGS+=	-DSMALL -DNO_CPIO
 .else
 SRCS+=		getid.c spec.c misc.c pack_dev.c cpio.c
 CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree \
-		-I${NETBSDSRCDIR}/sbin/mknod
+			-I${NETBSDSRCDIR}/sbin/mknod
 .PATH:		${NETBSDSRCDIR}/usr.sbin/mtree \
-		${NETBSDSRCDIR}/sbin/mknod
+			${NETBSDSRCDIR}/sbin/mknod
 
 .if (${HOSTPROG:U} == "")
 DPADD+= ${LIBUTIL}
