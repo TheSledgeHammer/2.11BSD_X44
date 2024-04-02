@@ -140,7 +140,7 @@ _SUBDIR=	tools .WAIT lib
 _SUBDIR+=	include contrib crypto bin 
 _SUBDIR+=	games libexec sbin usr.bin #usr.lib
 _SUBDIR+=	usr.sbin share sys stand etc #tests
-_SUBDIR+=	.WAIT rescue .WAIT distrib regress
+#_SUBDIR+=	.WAIT distrib
 
 .for dir in ${_SUBDIR}
 .if "${dir}" == ".WAIT" \
@@ -183,7 +183,7 @@ BUILDTARGETS+=	params
 .if ${MKOBJDIRS} != "no"
 BUILDTARGETS+=	obj
 .endif
-BUILDTARGETS+=	clean_METALOG
+#BUILDTARGETS+=	clean_METALOG
 .if !defined(NODISTRIBDIRS)
 BUILDTARGETS+=	do-distrib-dirs
 .endif
@@ -266,9 +266,10 @@ distribution buildworld: .PHONY .MAKE
 	@echo "Won't make ${.TARGET} with DESTDIR=/"
 	@false
 .endif
+	${MAKEDIRTARGET} . build NOPOSTINSTALL=1
 	${MAKEDIRTARGET} etc distribution INSTALL_DONE=1
 .if defined(DESTDIR) && ${DESTDIR} != "" && ${DESTDIR} != "/"
-	${MAKEDIRTARGET} distrib/sets checkflist
+#	${MAKEDIRTARGET} distrib/sets checkflist
 .endif
 	@echo   "make ${.TARGET} started at:  ${START_TIME}"
 	@printf "make ${.TARGET} finished at: " && date
@@ -298,7 +299,7 @@ installworld: .PHONY .MAKE
 	@false
 .endif
 .endif
-	${MAKEDIRTARGET} distrib/sets installsets INSTALLDIR=${INSTALLWORLDDIR:U/} INSTALLSETS=${INSTALLSETS:Q}
+	#${MAKEDIRTARGET} distrib/sets installsets INSTALLDIR=${INSTALLWORLDDIR:U/} INSTALLSETS=${INSTALLSETS:Q}
 	@echo   "make ${.TARGET} started at:  ${START_TIME}"
 	@printf "make ${.TARGET} finished at: " && date
 
@@ -306,10 +307,10 @@ installworld: .PHONY .MAKE
 # Create sets from $DESTDIR or $NETBSDSRCDIR into $RELEASEDIR
 #
 
-.for tgt in sets
-${tgt}: .PHONY .MAKE
-	${MAKEDIRTARGET} distrib/sets ${tgt}
-.endfor
+#.for tgt in sets
+#${tgt}: .PHONY .MAKE
+#	${MAKEDIRTARGET} distrib/sets ${tgt}
+#.endfor
 
 #
 # Build a release or snapshot (implies "make distribution").  Note that
@@ -373,10 +374,10 @@ check-tools: .PHONY
 .endif
 
 # Delete or sanitise a leftover METALOG from a previous build.
-clean_METALOG: .PHONY .MAKE
-.if ${MKUPDATE} != "no"
-	${MAKEDIRTARGET} distrib/sets clean_METALOG
-.endif
+#clean_METALOG: .PHONY .MAKE
+#.if ${MKUPDATE} != "no"
+#	${MAKEDIRTARGET} distrib/sets clean_METALOG
+#.endif
 
 do-distrib-dirs: .PHONY .MAKE
 .if !defined(DESTDIR) || ${DESTDIR} == ""
