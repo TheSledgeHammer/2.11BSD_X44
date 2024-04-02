@@ -17,7 +17,6 @@
 ./etc/mail
 ./etc/mtree
 ./etc/namedb
-./etc/openldap
 ./etc/openssl
 ./etc/openssl/certs
 ./etc/openssl/misc
@@ -30,6 +29,7 @@
 ./etc/unbound
 ./lib
 ./libdata
+./libdata/firmware
 ./libexec
 ./mnt
 ./rescue
@@ -49,20 +49,57 @@
 ./usr/include/crypto
 ./usr/include/dev
 ./usr/include/dev/audio
+./usr/include/dev/audio/auconv
+./usr/include/dev/audio/generic
+./usr/include/dev/audio/midi
+./usr/include/dev/audio/mulaw
+./usr/include/dev/audio/speaker
 ./usr/include/dev/core
+./usr/include/dev/core/eisa
+./usr/include/dev/core/ic
 ./usr/include/dev/core/io
+./usr/include/dev/core/io/com
+./usr/include/dev/core/io/i82365
+./usr/include/dev/core/io/lpt
+./usr/include/dev/core/io/puc
+./usr/include/dev/core/io/upc
+./usr/include/dev/core/io/wdc
 ./usr/include/dev/core/isa
+./usr/include/dev/core/isapnp
+./usr/include/dev/core/mca
 ./usr/include/dev/core/pci
+./usr/include/dev/core/pcmcia
 ./usr/include/dev/disk
 ./usr/include/dev/disk/ata
+./usr/include/dev/disk/ccd
+./usr/include/dev/disk/fd
+./usr/include/dev/disk/md
 ./usr/include/dev/disk/scsi
+./usr/include/dev/disk/vnd
 ./usr/include/dev/misc
+./usr/include/dev/misc/cnmagic
+./usr/include/dev/misc/cons
+./usr/include/dev/misc/evdev
+./usr/include/dev/misc/kobj
+./usr/include/dev/misc/ksym
 ./usr/include/dev/misc/pccons
+./usr/include/dev/misc/rnd
 ./usr/include/dev/misc/wscons
+./usr/include/dev/misc/wsfont
 ./usr/include/dev/power
 ./usr/include/dev/power/apm
 ./usr/include/dev/usb
 ./usr/include/dev/video
+./usr/include/dev/video/agp
+./usr/include/dev/video/ega
+./usr/include/dev/video/generic
+./usr/include/dev/video/vga
+./usr/include/dev/video/videomode
+./usr/include/fido
+./usr/include/fs
+./usr/include/fs/isofs
+./usr/include/fs/isofs/cd9660
+./usr/include/fs/msdosfs
 ./usr/include/g++
 ./usr/include/g++/backward
 ./usr/include/g++/bits
@@ -105,15 +142,7 @@
 ./usr/include/g++/tr2
 ./usr/include/gcc-10
 ./usr/include/gcc-10/sanitizer
-./usr/include/gssapi
-./usr/include/fs
-./usr/include/fs/isofs
-./usr/include/fs/isofs/cd9660
-./usr/include/fs/msdosfs
 ./usr/include/hash
-./usr/include/heimdal
-./usr/include/kadm5
-./usr/include/krb5
 ./usr/include/lzma
 ./usr/include/miscfs
 ./usr/include/miscfs/fdesc
@@ -138,6 +167,8 @@
 ./usr/include/pcap
 ./usr/include/protocols
 ./usr/include/rpc
+./usr/include/rpcsvc
+./usr/include/security
 ./usr/include/ssp
 ./usr/include/sys
 ./usr/include/ufs
@@ -155,8 +186,10 @@
 ./usr/lib/named
 ./usr/lib/openssl
 ./usr/lib/openssl/engines
+./usr/lib/pkgconfig
 ./usr/lib/security
 ./usr/libdata
+./usr/libdata/firmware
 ./usr/libdata/ldscripts
 ./usr/libdata/lint
 ./usr/libexec
@@ -305,6 +338,9 @@
 ./usr/share/groff_font/devps
 ./usr/share/groff_font/devps/generate
 ./usr/share/groff_font/devutf8
+./usr/share/info
+./usr/share/keymaps
+./usr/share/ldscripts
 ./usr/share/locale
 ./usr/share/locale/af_ZA.ISO8859-1
 ./usr/share/locale/af_ZA.ISO8859-1/LC_MESSAGES
@@ -748,10 +784,11 @@
 ./usr/share/skel
 ./usr/share/tabset
 ./usr/share/term
-./usr/share/termcap
 ./usr/share/tmac
 ./usr/share/tmac/mdoc
 ./usr/share/tmac/mm
+./usr/share/vi
+./usr/share/vi/catalog
 ./usr/share/wscons
 ./usr/share/wscons/fonts
 ./usr/share/wscons/keymaps
@@ -791,7 +828,6 @@
 ./var/db/ns
 ./var/db/obsolete
 ./var/games					uname=games gname=games mode=0775
-./var/heimdal
 ./var/log
 ./var/log/rdist
 ./var/mail					mode=1777
@@ -812,3 +848,5 @@
 ./var/spool/output/lpd
 ./var/spool/sockets			mode=0777
 ./var/tmp					mode=01777
+./var/yp
+./var/yp/binding
