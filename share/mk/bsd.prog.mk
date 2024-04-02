@@ -92,7 +92,7 @@ _USRSLASHLIBLIST= \
             WIND
 			
 .for _var in ${_USRSLASHLIBLIST}
-.ifndef LIB${_var:tu}
+.ifndef LIB${_var}
 LIB${_var}:=	 ${USRSLASHLIB}/lib${_var:tl}.a
 .MADE: ${LIB${_var:tu}}
 .endif
