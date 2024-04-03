@@ -1,7 +1,7 @@
-/*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Copyright (c) 1989, 1993
+/*	$NetBSD: logwtmpx.c,v 1.2 2003/08/07 16:44:59 agc Exp $	*/
+
+/*
+ * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,36 +27,51 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * From: @(#)gethostname.c	8.1 (Berkeley) 6/4/93
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)logwtmp.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: logwtmpx.c,v 1.2 2003/08/07 16:44:59 agc Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
 
-#include <sys/param.h>
-#include <sys/sysctl.h>
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
-#include <paths.h>
+#include <assert.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#include <utmp.h>
+#include <utmpx.h>
+#include <util.h>
 
-const char *
-getbootfile(void)
+void
+logwtmpx(line, name, host, status, type)
+	const char *line, *name, *host;
+	int status, type;
 {
-	const char *kernel;
-	static char name[MAXPATHLEN];
-	size_t size = sizeof(name);
-	int mib[2];
+	struct utmpx ut;
 
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_BOOTFILE;
-	if (sysctl(mib, 2, name, &size, NULL, 0) == -1) {
-		if (name[1] != '\0') {
-			name[0] = '/';
-			kernel = name;
-		}
-		if (strcmp(kernel, _PATH_UNIX) != 0) {
-			kernel = _PATH_UNIX;
-		}
-	}
-	return (name);
+	_DIAGASSERT(line != NULL);
+	_DIAGASSERT(name != NULL);
+	_DIAGASSERT(host != NULL);
+
+	(void)memset(&ut, 0, sizeof(ut));
+	(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
+	(void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
+	(void)strncpy(ut.ut_host, host, sizeof(ut.ut_host));
+	ut.ut_type = type;
+	if (WIFEXITED(status))
+		ut.ut_exit.e_exit = (uint16_t)WEXITSTATUS(status);
+	if (WIFSIGNALED(status))
+		ut.ut_exit.e_termination = (uint16_t)WTERMSIG(status);
+	(void)gettimeofday(&ut.ut_tv, NULL);
+	(void)updwtmpx(_PATH_WTMPX, &ut);
 }

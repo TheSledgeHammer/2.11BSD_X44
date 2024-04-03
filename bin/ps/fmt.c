@@ -48,8 +48,8 @@ static char sccsid[] = "@(#)fmt.c	8.5 (Berkeley) 4/27/95";
 
 #include "ps.h"
 
-static char *cmdpart (char *);
-static char *shquote (char **);
+static char *cmdpart(char *);
+static char *shquote(char **);
 
 /*
  * XXX

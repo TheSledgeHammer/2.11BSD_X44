@@ -1,8 +1,11 @@
+/*	$NetBSD: termcap.h,v 1.14 2003/08/07 16:44:57 agc Exp $	*/
+
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Christos Zoulas of Cornell University.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,35 +31,26 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * From: @(#)gethostname.c	8.1 (Berkeley) 6/4/93
+ *	@(#)termcap.h	8.1 (Berkeley) 6/4/93
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#ifndef _TERMCAP_H_
+#define _TERMCAP_H_
 
-#include <sys/param.h>
-#include <sys/sysctl.h>
+#include <sys/types.h>
 
-#include <paths.h>
+__BEGIN_DECLS
+int   	tgetent(char *, const char *);
+char 	*tgetstr(const char *, char **);
+int   	tgetflag(const char *);
+int   	tgetnum(const char *);
+char 	*tgoto(const char *, int, int);
+void  	tputs(const char *, int, int (*)(int));
 
-const char *
-getbootfile(void)
-{
-	const char *kernel;
-	static char name[MAXPATHLEN];
-	size_t size = sizeof(name);
-	int mib[2];
+extern	char PC;
+extern	char *BC;
+extern	char *UP;
+extern	short ospeed;
+__END_DECLS
 
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_BOOTFILE;
-	if (sysctl(mib, 2, name, &size, NULL, 0) == -1) {
-		if (name[1] != '\0') {
-			name[0] = '/';
-			kernel = name;
-		}
-		if (strcmp(kernel, _PATH_UNIX) != 0) {
-			kernel = _PATH_UNIX;
-		}
-	}
-	return (name);
-}
+#endif /* !_TERMCAP_H_ */

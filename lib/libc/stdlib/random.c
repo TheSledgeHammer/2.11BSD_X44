@@ -49,8 +49,6 @@ static char sccsid[] = "@(#)random.c	5.2 (Berkeley) 3/9/86";
  * predicted by this formula.
  */
 
-
-
 /*
  * For each of the currently supported random number generators, we have a
  * break value on the amount of state information (you need at least this
@@ -111,15 +109,12 @@ static  int		seps[ MAX_TYPES ]	= { SEP_0, SEP_1, SEP_2,
  *	MAX_TYPES*(rptr - state) + TYPE_3 == TYPE_3.
  */
 
-static  long		randtbl[ DEG_3 + 1 ]	= { TYPE_3,
-			    0x9a319039, 0x32d9c024, 0x9b663182, 0x5da1f342, 
-			    0xde3b81e0, 0xdf0a6fb5, 0xf103bc02, 0x48f340fb, 
-			    0x7449e56b, 0xbeb1dbb0, 0xab5c5918, 0x946554fd, 
-			    0x8c2e680f, 0xeb3d799f, 0xb11ee0b7, 0x2d436b86, 
-			    0xda672e2a, 0x1588ca88, 0xe369735d, 0x904f35f7, 
-			    0xd7158fd6, 0x6fa6f051, 0x616e6b96, 0xac94efdc, 
-			    0x36413f93, 0xc622c298, 0xf5a42ab8, 0x8a88d77b, 
-					0xf5ad9d0e, 0x8999220b, 0x27fb47b9 };
+static long randtbl[DEG_3 + 1] = { TYPE_3, 0x9a319039, 0x32d9c024, 0x9b663182,
+		0x5da1f342, 0xde3b81e0, 0xdf0a6fb5, 0xf103bc02, 0x48f340fb, 0x7449e56b,
+		0xbeb1dbb0, 0xab5c5918, 0x946554fd, 0x8c2e680f, 0xeb3d799f, 0xb11ee0b7,
+		0x2d436b86, 0xda672e2a, 0x1588ca88, 0xe369735d, 0x904f35f7, 0xd7158fd6,
+		0x6fa6f051, 0x616e6b96, 0xac94efdc, 0x36413f93, 0xc622c298, 0xf5a42ab8,
+		0x8a88d77b, 0xf5ad9d0e, 0x8999220b, 0x27fb47b9 };
 
 /*
  * fptr and rptr are two pointers into the state info, a front and a rear
@@ -173,24 +168,24 @@ static  long	*end_ptr		= &randtbl[ DEG_3 + 1 ];
  * values produced by this routine.
  */
 
-srandom( x )
-
-    unsigned		x;
+void
+srandom(x)
+    unsigned long x;
 {
-    	register  int		i, j;
+	register int i, j;
 
-	if(  rand_type  ==  TYPE_0  )  {
-	    state[ 0 ] = x;
-	}
-	else  {
-	    j = 1;
-	    state[ 0 ] = x;
-	    for( i = 1; i < rand_deg; i++ )  {
-		state[i] = 1103515245*state[i - 1] + 12345;
-	    }
-	    fptr = &state[ rand_sep ];
-	    rptr = &state[ 0 ];
-	    for( i = 0; i < 10*rand_deg; i++ )  random();
+	if (rand_type == TYPE_0) {
+		state[0] = x;
+	} else {
+		j = 1;
+		state[0] = x;
+		for (i = 1; i < rand_deg; i++) {
+			state[i] = 1103515245 * state[i - 1] + 12345;
+		}
+		fptr = &state[rand_sep];
+		rptr = &state[0];
+		for (i = 0; i < 10 * rand_deg; i++)
+			random();
 	}
 }
 
@@ -212,11 +207,10 @@ srandom( x )
  */
 
 char  *
-initstate( seed, arg_state, n )
-
-    unsigned		seed;			/* seed for R. N. G. */
-    char		*arg_state;		/* pointer to state array */
-    int			n;			/* # bytes of state info */
+initstate(seed, arg_state, n)
+    unsigned long seed;			/* seed for R. N. G. */
+    char *arg_state;		/* pointer to state array */
+    size_t n;			/* # bytes of state info */
 {
 	register  char		*ostate		= (char *)( &state[ -1 ] );
 
@@ -228,7 +222,7 @@ initstate( seed, arg_state, n )
 		if (n < BREAK_0) {
 			fprintf(stderr,
 					"initstate: not enough state (%d bytes) with which to do jack; ignored.\n");
-			return(0);
+			return (0);
 		}
 		rand_type = TYPE_0;
 		rand_deg = DEG_0;
@@ -281,14 +275,13 @@ initstate( seed, arg_state, n )
  */
 
 char  *
-setstate( arg_state )
-
-    char		*arg_state;
+setstate(arg_state)
+    char *arg_state;
 {
-	register  long		*new_state	= (long *)arg_state;
-	register  int		type		= new_state[0]%MAX_TYPES;
-	register  int		rear		= new_state[0]/MAX_TYPES;
-	char			*ostate		= (char *)( &state[ -1 ] );
+	register long *new_state = (long*) arg_state;
+	register int type = new_state[0] % MAX_TYPES;
+	register int rear = new_state[0] / MAX_TYPES;
+	char *ostate = (char*) (&state[-1]);
 
 	if (rand_type == TYPE_0)
 		state[-1] = rand_type;
@@ -336,10 +329,10 @@ setstate( arg_state )
  */
 
 long
-random()
+random(void)
 {
-	long		i;
-	
+	long i;
+
 	if (rand_type == TYPE_0) {
 		i = state[0] = (state[0] * 1103515245 + 12345) & 0x7fffffff;
 	} else {

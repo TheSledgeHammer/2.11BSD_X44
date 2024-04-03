@@ -31,9 +31,13 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
 static char sccsid[] = "@(#)tgoto.c	8.1 (Berkeley) 6/4/93";
 #endif /* not lint */
+
+#include <termcap.h>
 
 #define	CTRL(c)	((c) & 037)
 
@@ -68,7 +72,7 @@ char	*BC;
  */
 char *
 tgoto(CM, destcol, destline)
-	char *CM;
+	const char *CM;
 	int destcol, destline;
 {
 	static char result[MAXRETURNSIZE];

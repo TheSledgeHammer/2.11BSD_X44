@@ -74,10 +74,8 @@ uintmax_t	wcstoumax_l(const wchar_t * __restrict,
 
 
 #if defined(__BSD_VISIBLE)
-intmax_t	strtoi(const char * __restrict, char ** __restrict, int,
-	               intmax_t, intmax_t, int *);
-uintmax_t	strtou(const char * __restrict, char ** __restrict, int,
-	               uintmax_t, uintmax_t, int *);
+intmax_t	strtoi(const char * __restrict, char ** __restrict, int, intmax_t, intmax_t, int *);
+uintmax_t	strtou(const char * __restrict, char ** __restrict, int, uintmax_t, uintmax_t, int *);
 
 /* i18n variations */
 intmax_t	strtoi_l(const char * __restrict, char ** __restrict, int, intmax_t, intmax_t, int *, locale_t);

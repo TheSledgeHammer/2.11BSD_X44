@@ -1,7 +1,7 @@
+/*	$NetBSD: putenv.c,v 1.12 2003/08/07 16:43:42 agc Exp $	*/
+
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,36 +27,45 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * From: @(#)gethostname.c	8.1 (Berkeley) 6/4/93
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)putenv.c	8.2 (Berkeley) 3/27/94";
+#else
+__RCSID("$NetBSD: putenv.c,v 1.12 2003/08/07 16:43:42 agc Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
 
-#include <sys/param.h>
-#include <sys/sysctl.h>
+#include "namespace.h"
 
-#include <paths.h>
+#include <assert.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
-const char *
-getbootfile(void)
+#ifdef __weak_alias
+__weak_alias(putenv,_putenv)
+#endif
+
+int
+putenv(str)
+	const char *str;
 {
-	const char *kernel;
-	static char name[MAXPATHLEN];
-	size_t size = sizeof(name);
-	int mib[2];
+	char *p, *equal;
+	int rval;
 
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_BOOTFILE;
-	if (sysctl(mib, 2, name, &size, NULL, 0) == -1) {
-		if (name[1] != '\0') {
-			name[0] = '/';
-			kernel = name;
-		}
-		if (strcmp(kernel, _PATH_UNIX) != 0) {
-			kernel = _PATH_UNIX;
-		}
+	_DIAGASSERT(str != NULL);
+
+	if ((p = strdup(str)) == NULL)
+		return (-1);
+	if ((equal = strchr(p, '=')) == NULL) {
+		(void)free(p);
+		return (-1);
 	}
-	return (name);
+	*equal = '\0';
+	rval = setenv(p, equal + 1, 1);
+	(void)free(p);
+	return (rval);
 }

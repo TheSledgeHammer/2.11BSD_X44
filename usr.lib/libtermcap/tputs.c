@@ -31,21 +31,23 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
 static char sccsid[] = "@(#)tputs.c	8.1 (Berkeley) 6/4/93";
 #endif /* not lint */
 
 #include <sgtty.h>
 #include <ctype.h>
+#include <termcap.h>
 
 /*
  * The following array gives the number of tens of milliseconds per
  * character for each speed as returned by gtty.  Thus since 300
  * baud returns a 7, there are 33.3 milliseconds per char at 300 baud.
  */
-static
-short	tmspc10[] = {
-	0, 2000, 1333, 909, 743, 666, 500, 333, 166, 83, 55, 41, 20, 10, 5
+static short tmspc10[] = {
+		0, 2000, 1333, 909, 743, 666, 500, 333, 166, 83, 55, 41, 20, 10, 5
 };
 
 short	ospeed;

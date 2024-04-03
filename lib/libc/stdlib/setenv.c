@@ -20,8 +20,7 @@ static char sccsid[] = "@(#)setenv.c	1.3 (Berkeley) 6/16/87";
  *	"value".  If rewrite is set, replace any current value.
  */
 setenv(name,value,rewrite)
-	register char	*name,
-			*value;
+	register char	*name, *value;
 	int	rewrite;
 {
 	extern char	**environ;

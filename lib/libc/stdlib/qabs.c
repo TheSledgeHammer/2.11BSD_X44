@@ -1,8 +1,8 @@
+/*	$NetBSD: qabs.c,v 1.6 2003/08/07 16:43:42 agc Exp $	*/
+
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Copyright (c) 1989, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,36 +27,27 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * From: @(#)gethostname.c	8.1 (Berkeley) 6/4/93
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char *sccsid = "from: @(#)labs.c	5.2 (Berkeley) 5/17/90";
+#else
+__RCSID("$NetBSD: qabs.c,v 1.6 2003/08/07 16:43:42 agc Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
 
-#include <sys/param.h>
-#include <sys/sysctl.h>
+#include "namespace.h"
+#include <stdlib.h>
 
-#include <paths.h>
+#ifdef __weak_alias
+__weak_alias(qabs,_qabs)
+#endif
 
-const char *
-getbootfile(void)
+quad_t
+qabs(j)
+	quad_t j;
 {
-	const char *kernel;
-	static char name[MAXPATHLEN];
-	size_t size = sizeof(name);
-	int mib[2];
-
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_BOOTFILE;
-	if (sysctl(mib, 2, name, &size, NULL, 0) == -1) {
-		if (name[1] != '\0') {
-			name[0] = '/';
-			kernel = name;
-		}
-		if (strcmp(kernel, _PATH_UNIX) != 0) {
-			kernel = _PATH_UNIX;
-		}
-	}
-	return (name);
+	return(j < 0 ? -j : j);
 }

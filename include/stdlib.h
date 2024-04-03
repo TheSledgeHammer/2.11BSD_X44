@@ -82,11 +82,12 @@ typedef struct {
 	long long int rem;	/* remainder */
 } lldiv_t;
 #endif
-
+#if defined(__BSD_VISIBLE)
 typedef struct {
 	quad_t 	quot;		/* quotient */
 	quad_t 	rem;		/* remainder */
 } qdiv_t;
+#endif
 
 #include <sys/null.h>
 
@@ -137,7 +138,6 @@ size_t	wcstombs(char * __restrict, const wchar_t * __restrict, size_t);
 
 #if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 
-
 /*
  * IEEE Std 1003.1c-95, also adopted by X/Open CAE Spec Issue 5 Version 2
  */
@@ -160,13 +160,13 @@ unsigned short *seed48(unsigned short[3]);
 void	 srand48(long);
 
 int	 	 putenv(const char *);
+
 #endif
 
 /*
  * X/Open Portability Guide >= Issue 4 Version 2
  */
-#if (defined(_XOPEN_SOURCE) && defined(_XOPEN_SOURCE_EXTENDED)) || \
-    (_XOPEN_SOURCE - 0) >= 500 || defined(__BSD_VISIBLE)
+#if (defined(_XOPEN_SOURCE) && defined(_XOPEN_SOURCE_EXTENDED)) || (_XOPEN_SOURCE - 0) >= 500 || defined(__BSD_VISIBLE)
 long	 a64l(const char *);
 char	 *l64a(long);
 
@@ -213,12 +213,7 @@ unsigned long long int
  */
 #if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 600 || defined(__BSD_VISIBLE)
 int	 	setenv(const char *, const char *, int);
-#ifdef __LIBC12_SOURCE__
-void	unsetenv(const char *);
-int	 	__unsetenv13(const char *);
-#else
 int	 	unsetenv(const char *);
-#endif
 #endif
 
 /*
@@ -231,9 +226,6 @@ void		*alloca(int);     /* built-in for gcc */
 void		*alloca(size_t);
 #endif /* __GNUC__ */
 
-u_int32_t 	arc4random(void);
-void	 	arc4random_stir(void);
-void	 	arc4random_addrandom(u_char *, int);
 char	*getbsize(int *, long *);
 char	*cgetcap(char *, const char *, int);
 int	 	cgetclose(void);
@@ -257,11 +249,14 @@ int	 	mergesort (void *, size_t, size_t, int (*)(const void *, const void *));
 int	 	radixsort(const unsigned char **, int, const unsigned char *, unsigned);
 int	 	sradixsort(const unsigned char **, int, const unsigned char *, unsigned);
 
+void	 mi_vector_hash(const void * __restrict, size_t, uint32_t, uint32_t[3]);
+
 void	 setproctitle(const char *, ...) __attribute__((__format__(__printf__, 1, 2)));
 const char *getprogname(void) __attribute__((__const__));
-void	setprogname(const char *);
+void		setprogname(const char *);
 
 quad_t	 qabs(quad_t);
+qdiv_t	 qdiv(quad_t, quad_t);
 quad_t	 strtoq(const char * __restrict, char ** __restrict, int);
 u_quad_t strtouq(const char * __restrict, char ** __restrict, int);
 
@@ -269,16 +264,18 @@ u_quad_t strtouq(const char * __restrict, char ** __restrict, int);
 long long strsuftoll(const char *, const char *, long long, long long);
 	/* LONGLONG */
 long long strsuftollx(const char *, const char *, long long, long long, char *, size_t);
+/*
 
-int	 	l64a_r(long, char *, int);
+size_t		shquote(const char *, char *, size_t);
+size_t		shquotev(int, char * const *, char *, size_t);
+*/
 
-size_t	shquote(const char *, char *, size_t);
-size_t	shquotev(int, char * const *, char *, size_t);
+u_int32_t 	arc4random(void);
+void	 	arc4random_stir(void);
+void	 	arc4random_addrandom(u_char *, int);
+
 #endif /* __BSD_VISIBLE */
 #endif /* _POSIX_C_SOURCE || _XOPEN_SOURCE || __BSD_VISIBLE */
 
-#if defined(__BSD_VISIBLE)
-qdiv_t	 qdiv(quad_t, quad_t);
-#endif
 __END_DECLS
 #endif /* _STDLIB_H_ */

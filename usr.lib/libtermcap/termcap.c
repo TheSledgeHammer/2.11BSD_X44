@@ -31,6 +31,8 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
 static char sccsid[] = "@(#)termcap.c	8.1 (Berkeley) 6/4/93";
 #endif /* not lint */
@@ -42,6 +44,8 @@ static char sccsid[] = "@(#)termcap.c	8.1 (Berkeley) 6/4/93";
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termcap.h>
+
 #include "pathnames.h"
 
 /*
@@ -65,7 +69,8 @@ static	char *tbuf;	/* termcap buffer */
  */
 int
 tgetent(bp, name)
-	char *bp, *name;
+	char *bp;
+	const char *name;
 {
 	register char *p;
 	register char *cp;
@@ -93,22 +98,22 @@ tgetent(bp, name)
 	 * instead.  The path is found in the TERMPATH variable, or
 	 * becomes "$HOME/.termcap /etc/termcap" if no TERMPATH exists.
 	 */
-	if (!cp || *cp != '/') {	/* no TERMCAP or it holds an entry */
+	if (!cp || *cp != '/') { /* no TERMCAP or it holds an entry */
 		if (termpath == getenv("TERMPATH"))
 			strncpy(pathbuf, termpath, PBUFSIZ);
 		else {
-			if (home == getenv("HOME")) {	/* set up default */
-				p += strlen(home);	/* path, looking in */
-				strcpy(pathbuf, home);	/* $HOME first */
+			if (home == getenv("HOME")) { /* set up default */
+				p += strlen(home); /* path, looking in */
+				strcpy(pathbuf, home); /* $HOME first */
 				*p++ = '/';
-			}	/* if no $HOME look in current directory */
+			} /* if no $HOME look in current directory */
 			strncpy(p, _PATH_DEF, PBUFSIZ - (p - pathbuf));
 		}
-	}
-	else				/* user-defined name in TERMCAP */
-		strncpy(pathbuf, cp, PBUFSIZ);	/* still can be tokenized */
+	} else
+		/* user-defined name in TERMCAP */
+		strncpy(pathbuf, cp, PBUFSIZ); /* still can be tokenized */
 
-	*fname++ = pathbuf;	/* tokenize path into vector of names */
+	*fname++ = pathbuf; /* tokenize path into vector of names */
 	while (*++p)
 		if (*p == ' ' || *p == ':') {
 			*p = '\0';
@@ -123,13 +128,13 @@ tgetent(bp, name)
 				break;
 			}
 		}
-	*fname = (char *) 0;			/* mark end of vector */
+	*fname = (char*) 0; /* mark end of vector */
 	if (cp && *cp && *cp != '/')
 		if (cgetset(cp) < 0)
-			return(-2);
+			return (-2);
 
-	i = cgetent(&dummy, pathvec, name);      
-	
+	i = cgetent(&dummy, pathvec, name);
+
 	if (i == 0)
 		strcpy(bp, dummy);
 	
@@ -137,8 +142,8 @@ tgetent(bp, name)
 		free(dummy);
 	/* no tc reference loop return code in libterm XXX */
 	if (i == -3)
-		return(-1);
-	return(i + 1);
+		return (-1);
+	return (i + 1);
 }
 
 /*
@@ -151,14 +156,15 @@ tgetent(bp, name)
  */
 int
 tgetnum(id)
-	char *id;
+	const char *id;
 {
 	long num;
 
-	if (cgetnum(tbuf, id, &num) == 0)
-		return(num);
-	else
-		return(-1);
+	if (cgetnum(tbuf, id, &num) == 0) {
+		return (num);
+	} else {
+		return (-1);
+	}
 }
 
 /*
@@ -169,9 +175,9 @@ tgetnum(id)
  */
 int
 tgetflag(id)
-	char *id;
+	const char *id;
 {
-	return(cgetcap(tbuf, id, ':') != NULL);
+	return (cgetcap(tbuf, id, ':') != NULL);
 }
 
 /*
@@ -184,7 +190,8 @@ tgetflag(id)
  */
 char *
 tgetstr(id, area)
-	char *id, **area;
+	const char *id;
+	char **area;
 {
 	char ids[3];
 	char *s;
@@ -201,8 +208,8 @@ tgetstr(id, area)
 
 	if ((i = cgetstr(tbuf, ids, &s)) < 0)
 		return NULL;
-	
+
 	strcpy(*area, s);
 	*area += i + 1;
-	return(s);
+	return (s);
 }

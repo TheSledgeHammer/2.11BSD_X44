@@ -339,7 +339,6 @@
 #define jrand48				_jrand48
 #define kill				_kill
 #define l64a				_l64a
-#define l64a_r				_l64a_r
 #define lcong48				_lcong48
 #define llabs				_llabs
 #define lldiv				_lldiv

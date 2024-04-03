@@ -28,17 +28,47 @@ WARNS?=	5
 LIB=	util
 CPPFLAGS+=-DLIBC_SCCS -I${.CURDIR}
 LINTFLAGS+=-w
-SRCS+=	efun.c login.c login_tty.c logout.c logwtmp.c	\
-		pty.c stat_flags.c
+SRCS+=	efun.c \
+		login.c loginx.c login_cap.c login_tty.c logout.c logoutx.c \
+		logwtmp.c logwtmpx.c pty.c raise_default_signal.c stat_flags.c
 
-MAN=	efun.3 login.3 stat_flags.3
+MAN=	efun.3 \
+		login.3 login_cap.3 loginx.3 raise_default_signal.3 stat_flags.3
 
 COPTS.logwtmp.c+=	${GCC_NO_STRINGOP_TRUNCATION}
+COPTS.logwtmpx.c+=	${CC_WNO_STRINGOP_TRUNCATION}
 
 YPREFIX=__pd
 .PATH:	${NETBSDSRCDIR}/lib/libc/gen
 
 MLINKS+=login.3 logout.3
 MLINKS+=login.3 logwtmp.3
+MLINKS+=login_cap.3 login_getclass.3
+MLINKS+=login_cap.3 login_getcapbool.3
+MLINKS+=login_cap.3 login_getcapnum.3
+MLINKS+=login_cap.3 login_getcapsize.3
+MLINKS+=login_cap.3 login_getcapstr.3
+MLINKS+=login_cap.3 login_getcaptime.3
+MLINKS+=login_cap.3 login_getpwclass.3
+MLINKS+=login_cap.3 login_close.3
+MLINKS+=login_cap.3 setclasscontext.3
+MLINKS+=login_cap.3 setusercontext.3
+MLINKS+=loginx.3 logoutx.3 loginx.3 logwtmpx.3
+MLINKS+=efun.3 esetfunc.3
+MLINKS+=efun.3 easprintf.3
+MLINKS+=efun.3 estrlcpy.3
+MLINKS+=efun.3 estrlcat.3
+MLINKS+=efun.3 estrdup.3
+MLINKS+=efun.3 estrndup.3
+MLINKS+=efun.3 estrtoi.3
+MLINKS+=efun.3 estrtou.3
+MLINKS+=efun.3 emalloc.3
+MLINKS+=efun.3 ecalloc.3
+MLINKS+=efun.3 erealloc.3
+MLINKS+=efun.3 ereallocarr.3
+MLINKS+=efun.3 efopen.3
+MLINKS+=efun.3 evasprintf.3
+MLINKS+=stat_flags.3 string_to_flags.3
+MLINKS+=stat_flags.3 flags_to_string.3
 
 .include <bsd.lib.mk>

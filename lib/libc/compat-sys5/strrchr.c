@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)strrchr.c	5.2 (berkeley) 86/03/09";
 
 char *
 strrchr(sp, c)
-register char *sp, c;
+	register char *sp, c;
 {
 	register char *r;
 

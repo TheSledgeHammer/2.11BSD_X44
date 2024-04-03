@@ -1,5 +1,7 @@
+/*	$NetBSD: llabs.c,v 1.3 2003/08/07 16:43:41 agc Exp $	*/
+
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -32,23 +30,25 @@
  */
 
 #include <sys/cdefs.h>
-#if	!defined(lint) && defined(LIBC_SCCS)
-static char sccsid[] = "@(#)dkcksum.c	8.1 (Berkeley) 6/5/93";
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "from: @(#)labs.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: llabs.c,v 1.3 2003/08/07 16:43:41 agc Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
+#include <stdlib.h>
+
+#ifdef __weak_alias
+__weak_alias(llabs, _llabs)
 #endif
 
-#include <sys/types.h>
-#include <sys/disklabel.h>
-
-u_short
-dkcksum(lp)
-	register struct disklabel *lp;
+/* LONGLONG */
+long long int
+llabs(j)
+	long long int j;
 {
-	register u_short *start, *end;
-	register u_short sum = 0;
-
-	start = (u_short *)lp;
-	end = (u_short *)&lp->d_partitions[lp->d_npartitions];
-	while (start < end)
-		sum ^= *start++;
-	return (sum);
+	return (j < 0 ? -j : j);
 }
