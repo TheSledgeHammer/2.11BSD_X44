@@ -6,15 +6,15 @@ HOSTLIB=	nbcompat
 
 SRCS=		basename.c dirname.c err.c fgetln.c flock.c fparseln.c 		\
 			fpurge.c getcap.c getline.c getmode.c getopt_long.c 		\
-			getsubopt.c gettemp.c heapsort.c 							\
+			getsubopt.c gettemp.c heapsort.c							\
 			issetugid.c lchflags.c lchmod.c lchown.c libyywrap.c 		\
-			mktemp.c pread.c putc_unlocked.c pwcache.c pwrite.c 		\
-			pw_scan.c reallocarr.c reallocarray.c regcomp.c regerror.c 	\
-			regexec.c regfree.c 										\
+			mi_vector_hash.c mktemp.c pread.c putc_unlocked.c pwcache.c \
+            pwrite.c pw_scan.c raise_default_signal.c reallocarr.c      \
+            reallocarray.c regcomp.c regerror.c regexec.c regfree.c 	\
 			setenv.c setgroupent.c setpassent.c setprogname.c 			\
 			snprintf.c stat_flags.c strlcat.c strlcpy.c strmode.c 		\
 			strcasecmp.c strndup.c strnlen.c strsep.c strsuftoll.c      \
-            	strtoll.c strtoi.c strtou.c										\
+            strtoll.c strtoi.c strtou.c									\
 			unvis.c vis.c fts.c glob.c efun.c
 SRCS+= 		md2.c md2hl.c md4c.c md4hl.c md5c.c md5hl.c rmd160.c 		\
 			rmd160hl.c sha1.c sha1hl.c sha2.c sha256hl.c sha384hl.c 	\
@@ -37,6 +37,7 @@ CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 			${.CURDIR}/../../lib/libc/compat-4.1					\
 			${.CURDIR}/../../lib/libc/compat-4.3					\
 			${.CURDIR}/../../lib/libc/compat-sys5					\
+            ${.CURDIR}/../../lib/libc/cdb                           \
 			${.CURDIR}/../../lib/libc/gen 							\
 			${.CURDIR}/../../lib/libc/hash 							\
 			${.CURDIR}/../../lib/libc/hash/md 						\

@@ -168,7 +168,7 @@ AC_CHECK_MEMBERS([struct stat.st_flags, struct stat.st_gen,
 	struct stat.st_birthtime, struct stat.st_birthtime.tv_nsec,
 	struct stat.st_atim, struct stat.st_mtime.tv_nsec],,, 
 	[#include <sys/stat.h>])
-#AC_CHECK_MEMBERS(struct statvfs.f_iosize,,, [#include <sys/statvfs.h>])
+AC_CHECK_MEMBERS(struct statvfs.f_iosize,,, [#include <sys/statvfs.h>])
 AC_CHECK_MEMBERS(struct tm.tm_gmtoff,,, [#include <time.h>])
 
 # Global variable decls.
@@ -219,13 +219,13 @@ AC_FUNC_ALLOCA
 AC_CHECK_FUNCS(asprintf asnprintf basename devname dirfd dirname 		\
 	esetfunc fgetln flock fpurge __fpurge futimes getline 				\
 	getopt getopt_long group_from_gid gid_from_group 					\
-	heapsort isblank issetugid lchflags lchmod lchown lutimes 			\
-	poll pread putc_unlocked pwcache_userdb pwcache_groupdb 			\
-	pwrite random reallocarr reallocarray setenv 						\
+	heapsort isblank issetugid lchflags lchmod lchown lutimes mkstemp	\
+	mkdtemp poll pread putc_unlocked pwcache_userdb pwcache_groupdb 	\
+	pwrite raise_default_signal random reallocarr reallocarray setenv   \
 	setgroupent setprogname setpassent 									\
-	snprintf strlcat strlcpy strmode strcasecmp strndup 				\
-	strnlen strsep strtoll user_from_uid uid_from_user vasprintf 		\
-	vasnprintf vsnprintf)
+	snprintf strlcat strlcpy strmode strcasecmp strncasecmp strndup 	\
+	strnlen strsep strsuftoll strtoll strtou                            \
+    user_from_uid uid_from_user vasprintf vasnprintf vsnprintf)
 
 AC_CHECK_DECLS([user_from_uid, uid_from_user, pwcache_userdb],,,[
 #include <pwd.h>
@@ -261,7 +261,7 @@ AC_CHECK_DECLS([be16dec, le16dec, be16enc, le16enc,
 		be64dec, le64dec, be64enc, le64enc],,,
 		[#include <sys/endian.h>])
 
-#AC_CHECK_DECLS([fstatvfs],,, [#include <sys/statvfs.h>])
+dnl # AC_CHECK_DECLS([fstatvfs],,, [#include <sys/statvfs.h>])
 
 AC_CHECK_DECLS([setgroupent, setpassent],,, [
 #include <sys/types.h>
