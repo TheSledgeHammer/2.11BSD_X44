@@ -361,7 +361,7 @@ sig_cleanup(int which_sig)
 	if (tflag)
 		atdir_end();
 
-//	(void)raise_default_signal(which_sig);
+	(void)raise_default_signal(which_sig);
 	exit(1);
 }
 
