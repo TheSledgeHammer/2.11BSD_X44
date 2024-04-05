@@ -15,7 +15,7 @@
 
 MELIB=	${BINDIR}/me
 #TMLIB=	${BINDIR}/tmac
-MESRCS=	tmac.e acm.me chars.me deltext.me eqn.me \
+MESRCS=	acm.me chars.me deltext.me eqn.me \
 	float.me footnote.me index.me local.me null.me \
 	refer.me sh.me tbl.me thesis.me
 #TMSRCS=	tmac.e
