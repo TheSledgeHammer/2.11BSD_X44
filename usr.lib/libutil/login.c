@@ -24,15 +24,15 @@ static char sccsid[] = "@(#)login.c	5.2 (Berkeley) 4/18/89";
 #include <sys/file.h>
 #include <utmp.h>
 #include <stdio.h>
-//#include "pathnames.h"
+#include <unistd.h>
+#include <util.h>
 
 void
 login(ut)
-	struct utmp *ut;
+	const struct utmp *ut;
 {
 	register int fd;
 	int tty;
-	off_t lseek();
 
 	tty = ttyslot();
 	if (tty > 0 && (fd = open(_PATH_UTMP, O_WRONLY, 0)) >= 0) {

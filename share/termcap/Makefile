@@ -9,13 +9,12 @@
 # (in reverse order from n'th to 1'st most commonly used)
 # to move them to the front of termcap
 #
-#DESTDIR =
 
 MAN=	termcap.5
 
 CLEANFILES= termcap.db
 realall: termcap.db
-FILES=termcap.db reorder termcap.src map3270
+FILES=termcap.db termcap.src map3270
 FILESNAME_termcap.src=termcap
 FILESDIR= ${BINDIR}/misc
 
@@ -28,11 +27,8 @@ CAP_MKDB_ENDIAN=	-b
 CAP_MKDB_ENDIAN=
 .endif
 
-termcap.db: reorder termcap.src
+termcap.db: termcap.src
 	${_MKTARGET_CREATE}
 	${TOOL_CAP_MKDB} ${CAP_MKDB_ENDIAN} -f termcap ${.ALLSRC}
 
-SUBDIR= tabset
-
-.include <bsd.subdir.mk>
 .include <bsd.prog.mk>

@@ -487,10 +487,12 @@ emithints(FILE *fp)
     if (fprintf(fp,"\nstruct cfhint allhints[] = {\n") < 0) {
 		return (1);
 	}
+    /*
 	for (p = packed; (i = *p) != NULL; p++) {
         write_device_resources(fp, i);
         count++;
 	}
+	*/
     if (fprintf(fp,"};\n") < 0) {
         return (1);
     }

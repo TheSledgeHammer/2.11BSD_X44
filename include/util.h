@@ -76,12 +76,16 @@ struct iovec;
 struct passwd;
 struct termios;
 struct utmp;
+struct utmpx;
 struct winsize;
 
-void		login(struct utmp *);
+void		login(const struct utmp *);
+void		loginx(const struct utmpx *);
 int			login_tty(int);
 int			logout(const char *);
+int			logoutx(const char *, int, int);
 void		logwtmp(const char *, const char *, const char *);
+void		logwtmpx(const char *, const char *, const char *, int, int);
 int			pw_lock(int);
 int			pw_mkdb(void);
 int			pw_abort(void);
@@ -93,8 +97,7 @@ int			pw_scan(char *, struct passwd *, int *);
 void		pw_error(const char *, int, int);
 int			openpty(int *, int *, char *, struct termios *, struct winsize *);
 pid_t		forkpty(int *, char *, struct termios *, struct winsize *);
-int			getmaxpartitions(void);
-int			getrawpartition(void);
+int			raise_default_signal(int);
 
 /* stat_flags.c */
 char 		*flags_to_string(u_long, const char *);
