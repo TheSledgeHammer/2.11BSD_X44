@@ -80,7 +80,7 @@ tgetent(bp, name)
 	int    i;
 	char   pathbuf[PBUFSIZ];	/* holds raw path of filenames */
 	char  *pathvec[PVECSIZ];	/* to point to names in pathbuf */
-	char **pvec;			/* holds usable tail of path vector */
+	char **pvec;				/* holds usable tail of path vector */
 	char  *termpath;
 
 	fname = pathvec;
@@ -88,6 +88,7 @@ tgetent(bp, name)
 	tbuf = bp;
 	p = pathbuf;
 	cp = getenv("TERMCAP");
+
 	/*
 	 * TERMCAP can have one of two things in it. It can be the
 	 * name of a file to use instead of /etc/termcap. In this
@@ -107,7 +108,7 @@ tgetent(bp, name)
 				strcpy(pathbuf, home); /* $HOME first */
 				*p++ = '/';
 			} /* if no $HOME look in current directory */
-			strncpy(p, _PATH_DEF, PBUFSIZ - (p - pathbuf));
+			strncpy(p, _PATH_TERMCAP, PBUFSIZ - (p - pathbuf));
 		}
 	} else
 		/* user-defined name in TERMCAP */

@@ -33,4 +33,4 @@
  *	@(#)pathnames.h	8.1 (Berkeley) 6/4/93
  */
 
-#define	_PATH_DEF	".termcap /usr/share/misc/termcap"
+#define	_PATH_TERMCAP	".termcap /usr/share/misc/termcap"

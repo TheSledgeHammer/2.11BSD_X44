@@ -3,7 +3,7 @@
 .include <bsd.own.mk>
 
 .if ${MKSHARE} != "no" || make(clean) || make(cleandir) || make(distclean) || make(obj)
-SUBDIR= dict man me misc mk ms tabset \
+SUBDIR= dict man me misc mk tabset \
         termcap tmac wscons zoneinfo
 		
 # 2.11BSD:

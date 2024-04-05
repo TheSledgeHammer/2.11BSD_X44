@@ -77,17 +77,17 @@ __weak_alias(csetexpandtc,_csetexpandtc)
 #define	BFRAG			1024
 #define	BSIZE			1024
 #define	ESC				('[' & 037)	/* ASCII ESC */
-#define	MAX_RECURSION	32		/* maximum getent recursion */
-#define	SFRAG			100		/* cgetstr mallocs in SFRAG chunks */
+#define	MAX_RECURSION	32			/* maximum getent recursion */
+#define	SFRAG			100			/* cgetstr mallocs in SFRAG chunks */
 
 #define RECOK	(char)0
 #define TCERR	(char)1
 #define	SHADOW	(char)2
 
-static size_t	 topreclen;	/* toprec length */
-static char		*toprec;	/* Additional record specified by cgetset() */
-static int		gottoprec;	/* Flag indicating retrieval of toprecord */
-static int	 	expandtc = 1;	/* flag to expand tc= or not */
+static size_t	 topreclen;			/* toprec length */
+static char		*toprec;			/* Additional record specified by cgetset() */
+static int		gottoprec;			/* Flag indicating retrieval of toprecord */
+static int	 	expandtc = 1;		/* flag to expand tc= or not */
 
 static int	cdbget(DB *, char **, const char *);
 static int 	getent(char **, size_t *, const char * const *, int, const char *, int, char *);

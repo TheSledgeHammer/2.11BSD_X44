@@ -101,8 +101,16 @@ u_long	bootdev = 0;
 int		dmmin, dmmax, dmtext;
 
 struct swdevt swdevt[] = {
-		{ 1, 0,	0 },
-		{ NODEV, 1,	0 },
+		{
+				.sw_dev = 1,
+				.sw_flags = 0,
+				.sw_nblks = 0,
+		},
+		{
+				.sw_dev = NODEV,
+				.sw_flags = 1,
+				.sw_nblks = 0,
+		},
 };
 
 /*

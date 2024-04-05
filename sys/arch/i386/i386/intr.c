@@ -558,7 +558,7 @@ intr_establish(irq, type, level, ih_fun, ih_arg, isapic, pictemplate)
 		pin = spic->sp_pins[irq].sp_irq;
 		irq = pin;
 	}
-	error = intr_allocate_slot(spic, &ci, irq, level &slot, &idtvec, isapic);
+	error = intr_allocate_slot(spic, &ci, irq, level, &slot, &idtvec, isapic);
 	if (error) {
 		ih = softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isapic, pictemplate);
 	} else {

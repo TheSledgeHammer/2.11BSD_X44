@@ -58,10 +58,11 @@ char	PC;
  * The number of affected lines is affcnt, and the routine
  * used to output one character is outc.
  */
+void
 tputs(cp, affcnt, outc)
 	register char *cp;
 	int affcnt;
-	int (*outc)();
+	int (*outc)(int);
 {
 	register int i = 0;
 	register int mspc10;
@@ -93,8 +94,9 @@ tputs(cp, affcnt, outc)
 	 * If the delay is followed by a `*', then
 	 * multiply by the affected lines count.
 	 */
-	if (*cp == '*')
+	if (*cp == '*') {
 		cp++, i *= affcnt;
+	}
 
 	/*
 	 * The guts of the string.
@@ -108,8 +110,9 @@ tputs(cp, affcnt, outc)
 	 */
 	if (i == 0)
 		return;
-	if (ospeed <= 0 || ospeed >= (sizeof tmspc10 / sizeof tmspc10[0]))
+	if (ospeed <= 0 || ospeed >= (sizeof(tmspc10) / sizeof(tmspc10[0]))) {
 		return;
+	}
 
 	/*
 	 * Round up by a half a character frame,
@@ -120,6 +123,7 @@ tputs(cp, affcnt, outc)
 	 */
 	mspc10 = tmspc10[ospeed];
 	i += mspc10 / 2;
-	for (i /= mspc10; i > 0; i--)
+	for (i /= mspc10; i > 0; i--) {
 		(*outc)(PC);
+	}
 }

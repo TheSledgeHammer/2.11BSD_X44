@@ -44,9 +44,9 @@ ASAN_SRCS= \
 
 LIB=	asan
 SRCS+=	${ASAN_SRCS} lsan_common.cc lsan_common_linux.cc
-LIBDPLIBS+= rt ${NETBSDSRCDIR}/${LIBRT_DIR}
-LIBDPLIBS+= m  ${NETBSDSRCDIR}/${LIBM_DIR}
-LIBDPLIBS+= pthread ${NETBSDSRCDIR}/${LIBPTHREAD_DIR}
+LIBDPLIBS+= rt ${NETBSDSRCDIR}/usr.lib/librt
+LIBDPLIBS+= m  ${NETBSDSRCDIR}/usr.lib/libm
+LIBDPLIBS+= pthread ${NETBSDSRCDIR}/usr.lib/libpthread
 CPPFLAGS+=-DCAN_SANITIZE_UB=0
 
 .if ${MACHINE_ARCH} == "vax"
