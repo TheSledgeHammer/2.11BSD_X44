@@ -82,7 +82,7 @@ CPPFLAGS+=-DSANITIZER_NEEDS_SEGV=1
 #CPPFLAGS+=-DCAN_SANITIZE_UB=0
 
 
-LIBDPLIBS+=    pthread ${.CURDIR}/../../../../../lib/libpthread
+LIBDPLIBS+=    pthread ${.CURDIR}/../../../../../usr.lib/libpthread
 COPTS+=-std=gnu++11 -fsized-deallocation -fvisibility=hidden
 COPTS+=-fno-builtin -fno-exceptions -fno-rtti -funwind-tables
 
