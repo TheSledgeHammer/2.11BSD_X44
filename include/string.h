@@ -82,14 +82,21 @@ char	*strtok_r(char *, const char *, char **);
 #endif /* _POSIX_C_SOURCE >= 199506 || XOPEN_SOURCE >= 500 || ... */
 size_t	strxfrm(char * __restrict, const char * __restrict, size_t);
 
-#if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
+#if (_POSIX_C_SOURCE - 0 >= 200112L) || defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 void	*memccpy(void *, const void *, int, size_t);
 char	*strdup(const char *);
 #endif
 
+#if (_POSIX_C_SOURCE - 0 >= 200809L) || (_XOPEN_SOURCE - 0 >= 700) || defined(__BSD_VISIBLE)
+char	*strndup(const char *, size_t);
+size_t	strnlen(const char *, size_t);
+#endif
+
+
 #if defined(__BSD_VISIBLE)
 #include <strings.h>		/* for backwards-compatibilty */
 char	*strcasestr(const char *, const char *);
+char	*strchrnul(const char *, int);
 size_t	strlcat(char *, const char *, size_t);
 size_t	strlcpy(char *, const char *, size_t);
 char	*strsep(char **, const char *);
