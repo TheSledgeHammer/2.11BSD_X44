@@ -47,6 +47,7 @@
 #include <sys/boot.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
+#include <sys/disklabel.h>
 #include <sys/kernel.h>
 #include <sys/file.h>
 #include <sys/vnode.h>
@@ -261,9 +262,9 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case KERN_BOOTFILE:
 		return (sysctl_string(oldp, oldlenp, newp, newlen, kernelname, sizeof(kernelname)));
 	case KERN_MAXPARTITIONS:
-		return (sysctl_rdint(oldp, oldlenp, newp, &maxpartitions));
+		return (sysctl_rdint(oldp, oldlenp, newp, maxpartitions));
 	case KERN_RAWPARTITION:
-		return (sysctl_rdint(oldp, oldlenp, newp, &raw_part));
+		return (sysctl_rdint(oldp, oldlenp, newp, raw_part));
 	case KERN_TIMECOUNTER:
 		return (sysctl_timecounter(name + 1, namelen - 1, oldp, oldlenp, newp, newlen));
 	default:
