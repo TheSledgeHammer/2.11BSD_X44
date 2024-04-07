@@ -74,11 +74,15 @@ __BEGIN_DECLS
 struct disklabel;
 struct iovec;
 struct passwd;
+struct sockaddr;
 struct termios;
 struct utmp;
 struct utmpx;
 struct winsize;
 
+const char 	*getbootfile(void);
+int			getmaxpartitions(void);
+int			getrawpartition(void);
 void		login(const struct utmp *);
 void		loginx(const struct utmpx *);
 int			login_tty(int);
@@ -86,6 +90,10 @@ int			logout(const char *);
 int			logoutx(const char *, int, int);
 void		logwtmp(const char *, const char *, const char *);
 void		logwtmpx(const char *, const char *, const char *, int, int);
+int			opendisk(const char *, int, char *, size_t, int);
+int			openpty(int *, int *, char *, struct termios *, struct winsize *);
+pid_t		forkpty(int *, char *, struct termios *, struct winsize *);
+int			pidfile(const char *);
 int			pw_lock(int);
 int			pw_mkdb(void);
 int			pw_abort(void);
@@ -95,9 +103,11 @@ void		pw_prompt(void);
 void		pw_copy(int, int, struct passwd *);
 int			pw_scan(char *, struct passwd *, int *);
 void		pw_error(const char *, int, int);
-int			openpty(int *, int *, char *, struct termios *, struct winsize *);
-pid_t		forkpty(int *, char *, struct termios *, struct winsize *);
 int			raise_default_signal(int);
+int			secure_path(const char *);
+int			snprintb(char *, size_t, const char *, uint64_t);
+int			sockaddr_snprintf(char *, size_t, const char *, const struct sockaddr *);
+char	    *ttymsg(struct iovec *, int, const char *, int);
 
 /* stat_flags.c */
 char 		*flags_to_string(u_long, const char *);

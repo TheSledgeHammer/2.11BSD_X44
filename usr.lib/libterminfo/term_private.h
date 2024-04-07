@@ -99,6 +99,11 @@
 #define VALID_NUMERIC(s) 	((s) >= 0)
 #define VALID_STRING(s)  	((s) != CANCELLED_STRING && (s) != ABSENT_STRING)
 
+typedef struct termuserdef 	TERMUSERDEF;
+typedef struct terminal 	TERMINAL;
+typedef struct tbuf 		TBUF;
+typedef struct tic 			TIC;
+
 struct termuserdef {
 	const char *id;
 	char type;
@@ -150,12 +155,7 @@ struct tic {
 	struct tbuf extras;
 };
 
-typedef struct termuserdef 	TERMUSERDEF;
-typedef struct terminal 	TERMINAL;
-typedef struct tbuf 		TBUF;
-typedef struct tic 			TIC;
-
-extern const char *	_ti_database;
+extern const char 	*_ti_database;
 
 ssize_t		_ti_flagindex(const char *);
 ssize_t		_ti_numindex(const char *);

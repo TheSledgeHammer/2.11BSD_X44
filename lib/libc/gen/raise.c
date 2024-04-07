@@ -1,7 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,7 +10,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,37 +29,17 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * From: @(#)gethostname.c	8.1 (Berkeley) 6/4/93
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)raise.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
 
-#include <sys/param.h>
-#include <sys/sysctl.h>
+#include <signal.h>
+#include <unistd.h>
 
-#include <paths.h>
-#include <util.h>
-
-const char *
-getbootfile(void)
+raise(s)
+	int s;
 {
-	const char *kernel;
-	static char name[MAXPATHLEN];
-	size_t size = sizeof(name);
-	int mib[2];
-
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_BOOTFILE;
-	if (sysctl(mib, 2, name, &size, NULL, 0) == -1) {
-		if (name[1] != '\0') {
-			name[0] = '/';
-			kernel = name;
-		}
-		if (strcmp(kernel, _PATH_UNIX) != 0 && secure_path(kernel) != 0) {
-			kernel = _PATH_UNIX;
-		}
-	}
-	return (name);
+	return(kill(getpid(), s));
 }

@@ -123,13 +123,13 @@ SUBDIR+=	.WAIT
 
 SUBDIR+=	${USRLIBDIR}/libwrap
 
-.if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
-.for sanitizer in asan lsan ubsan
-.if exists(../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer})
-SUBDIR+= ../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer}
-.endif
-.endfor
-.endif
+#.if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
+#.for sanitizer in asan lsan ubsan
+#.if exists(../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer})
+#SUBDIR+= ../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer}
+#.endif
+#.endfor
+#.endif
 
 .if (${MKLLVMRT} != "no" && (!defined(MLIBDIR) || ${MKCOMPATX11} != "no"))
 SUBDIR+=	../contrib/llvm/librt

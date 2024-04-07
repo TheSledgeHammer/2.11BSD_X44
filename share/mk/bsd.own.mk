@@ -698,6 +698,7 @@ MKGCC:= no
 MKGCC:= no
 .endif
 
+# No GDB support for aarch64eb
 MKGDB.riscv32=	no
 MKGDB.riscv64=	no
 
@@ -911,6 +912,7 @@ _MKVARS.yes= \
 	MKBSDTAR \
     MKCLEANSRC \
 	MKCOMPLEX \
+	MKCXX \
 	MKDOC \
 	MKDYNAMICROOT \
 	MKGCC \
@@ -921,12 +923,12 @@ _MKVARS.yes= \
     MKIEEEFP \
     MKINET6 \
 	MKINFO \
+	MKLIBSTDCXX \
     MKLINKLIB \
 	MKMAN \
     MKMANDOC \
     MKMDNS \
 	MKNLS \
-	MKNPF \
 	MKOBJ \
     MKPF \
 	MKPIC \
@@ -938,7 +940,7 @@ _MKVARS.yes= \
     MKYP
 	
 .for var in ${_MKVARS.yes}
-${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uyes}}
+${var}?=	${${var}.${MACHINE_ARCH}:Uyes}
 .endfor
 
 #
@@ -983,7 +985,6 @@ _MKVARS.no= \
     MKCOMPATX11 \
     MKCTF \
     MKCVS \
-    MKCXX \
 	MKDEBUG \
     MKDEBUGLIB \
     MKDTC \
@@ -992,7 +993,6 @@ _MKVARS.no= \
 	MKEXTSRC \
 	MKFIRMWARE \
 	MKGROFFHTMLDOC \
-    MKIPFILTER \
     MKISCSI \
 	MKKYUA \
 	MKLIBCXX \
@@ -1001,12 +1001,12 @@ _MKVARS.no= \
     MKLLVM \
     MKLLVMRT \
     MKLINT \
-    MKLIBSTDCXX \
     MKLVM \
 	MKMANZ \
     MKMCLINKER \
     MKKMOD \
 	MKNOUVEAUFIRMWARE \
+	MKNPF \
     MKNSD \
 	MKOBJDIRS \
 	MKPCC \

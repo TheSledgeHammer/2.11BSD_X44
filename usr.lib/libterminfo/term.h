@@ -1928,6 +1928,7 @@ enum TISTRS{
  */
 
 #ifndef _TERMINFO
+typedef struct terminal TERMINAL;
 struct terminal {
 	int fildes;
 	/* We need to expose these so that the macros work */
@@ -1937,7 +1938,6 @@ struct terminal {
 	int *nums;
 	const char **strs;
 };
-typedef struct terminal TERMINAL;
 #endif
 
 #include <sys/cdefs.h>

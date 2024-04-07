@@ -11,13 +11,14 @@ SUBDIR+= liblto_plugin
 .if (${MKLIBSTDCXX} != "no") && (${MKCXX} != "no")
 SUBDIR+= libsupc++ libstdc++-v3
 
-SUBDIR+= .WAIT libasan liblsan libubsan
+#SUBDIR+= .WAIT libasan liblsan libubsan
 
 # TSan does not work with 32bit address space and has not been ported
 # to all 64-bit architectures.
-.if ${MACHINE} == "amd64"
-SUBDIR+= libtsan
-.endif
+
+#.if ${MACHINE} == "amd64"
+#SUBDIR+= libtsan
+#.endif
 
 .endif
 

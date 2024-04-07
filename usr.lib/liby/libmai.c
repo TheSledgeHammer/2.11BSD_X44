@@ -4,12 +4,18 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
 static char sccsid[] = "@(#)libmai.c	5.1 (Berkeley) 8/9/85";
 #endif not lint
 
-main()
-{
+#include <stdlib.h>
 
-	yyparse();
+int yyparse(void);
+
+int
+main(int argc, char *argv[])
+{
+	return yyparse();
 }

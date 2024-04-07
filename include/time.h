@@ -85,7 +85,7 @@ void 		tzsetwall(void);
  * HZ. The value of _SC_CLK_TCK is 39 -- we hard code it so we do not
  * need to include unistd.h
  */
-long __sysconf(int);
+long 		__sysconf(int);
 __END_DECLS
 
 #endif /* !_TIME_H_ */

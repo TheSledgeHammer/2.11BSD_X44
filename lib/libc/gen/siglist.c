@@ -43,7 +43,6 @@ static char sccsid[] = "@(#)siglist.c	5.2 (Berkeley) 3/9/86";
 #include <sys/cdefs.h>
 #include <signal.h>
 
-
 const char *const sys_signame[NSIG] = {
 		"Signal 0",
 		"hup",						/* SIGHUP */

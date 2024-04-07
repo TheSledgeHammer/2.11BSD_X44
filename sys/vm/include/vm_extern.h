@@ -74,7 +74,6 @@ void		 	munmapfd(struct proc *, int);
 int		 		pager_cache(vm_object_t, bool_t);
 void			scheduler(void);
 void			swapinit(void);
-int		 		swapctl();
 void		 	swapin(struct proc *);
 void		 	swapout(struct proc *);
 void		 	swapout_threads(void);

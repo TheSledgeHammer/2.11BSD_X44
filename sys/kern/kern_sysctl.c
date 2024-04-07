@@ -172,6 +172,8 @@ int hostnamelen;
 long hostid;
 //int securelevel;
 char kernelname[MAXPATHLEN] = PATH_KERNEL;	/* XXX bloat */
+int maxpartitions = MAXPARTITIONS;
+int raw_part = RAW_PART;
 char osversion[0];
 //char osrelease[];
 long osrevision[0];
@@ -258,6 +260,10 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, 0));
 	case KERN_BOOTFILE:
 		return (sysctl_string(oldp, oldlenp, newp, newlen, kernelname, sizeof(kernelname)));
+	case KERN_MAXPARTITIONS:
+		return (sysctl_rdint(oldp, oldlenp, newp, &maxpartitions));
+	case KERN_RAWPARTITION:
+		return (sysctl_rdint(oldp, oldlenp, newp, &raw_part));
 	case KERN_TIMECOUNTER:
 		return (sysctl_timecounter(name + 1, namelen - 1, oldp, oldlenp, newp, newlen));
 	default:

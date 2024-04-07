@@ -4,15 +4,19 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
 static char sccsid[] = "@(#)libzer.c	5.1 (Berkeley) 8/9/85";
 #endif not lint
 
-# include <stdio.h>
+#include <stdio.h>
 
+int
 yyerror(s)
 	char *s;
 {
 
 	fprintf(stderr, "%s\n", s);
+	return(0);
 }

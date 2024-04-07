@@ -145,8 +145,10 @@ struct ctlname {
 #define KERN_OSRELDATE		28	/* int: OS release date */
 #define KERN_NTP_PLL		29	/* node: NTP PLL control */
 #define	KERN_BOOTFILE		30	/* string: name of booted kernel */
-#define	KERN_TIMECOUNTER	31	/* node: timecounter */
-#define	KERN_MAXID			32	/* number of valid kern ids */
+#define	KERN_MAXPARTITIONS	31	/* int: number of partitions/disk */
+#define	KERN_RAWPARTITION	32	/* int: raw partition number */
+#define	KERN_TIMECOUNTER	33	/* node: timecounter */
+#define	KERN_MAXID			34	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { 				\
 	{ 0, 0 }, 							\
@@ -179,6 +181,8 @@ struct ctlname {
 	{ "osreldate", CTLTYPE_INT }, 		\
     { "ntp_pll", CTLTYPE_NODE }, 		\
 	{ "bootfile", CTLTYPE_STRING }, 	\
+	{ "maxpartitions", CTLTYPE_INT }, 	\
+	{ "rawpartition", CTLTYPE_INT }, 	\
 	{ "timecounter", CTLTYPE_NODE }, 	\
 }
 

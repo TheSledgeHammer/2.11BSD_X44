@@ -237,12 +237,12 @@ do_single(int argc, char **argv, int action)
 
 	/* Next is the list of disks to make the ccd from. */
 	disks = emalloc(argc * sizeof(char *));
-	for (ndisks = 0; argc != 0; ++argv, --argc) {
-		if (getfsspecname(buf, sizeof(buf), *argv) == NULL) {
-			warn("%s", *argv);
-			goto error;
-		}
+	if (disks == NULL) {
+		warnx("no memory to configure ccd");
+		return (1);
+	}
 
+	for (ndisks = 0; argc != 0; ++argv, --argc) {
 		cp = strdup(buf);
 		if (cp == NULL) {
 			warn("strdup failed");
@@ -412,17 +412,6 @@ resolve_ccdname(char *name)
 		} else
 			easprintf(&path, "/dev/%s", name);
 	}
-
-	/*
-	 * Convert to raw device if possible.
-	 */
-	buf = emalloc(MAXPATHLEN);
-	p = getdiskrawname(buf, MAXPATHLEN, path);
-	if (p) {
-		free(path);
-		path = estrdup(p);
-	}
-	free(buf);
 
 	return path;
 }

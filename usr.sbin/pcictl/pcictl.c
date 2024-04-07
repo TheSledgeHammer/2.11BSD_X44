@@ -52,9 +52,9 @@
 #include <unistd.h>
 #include <util.h>
 
-#include <dev/pci/pcireg.h>
-#include <dev/pci/pcidevs.h>
-#include <dev/pci/pciio.h>
+#include <dev/core/pci/pcireg.h>
+#include <dev/core/pci/pcidevs.h>
+#include <dev/core/pci/pciio.h>
 
 struct command {
 	const char *cmd_name;
