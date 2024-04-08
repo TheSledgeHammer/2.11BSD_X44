@@ -204,8 +204,7 @@ _nsdbtget(name)
 		qsort(_nsmap, (size_t)_nsmapsize, sizeof(ns_dbt), _nscmp);
 		confmod = statbuf.st_mtime;
 	}
-	return (bsearch(&dbt, _nsmap, (size_t)_nsmapsize, sizeof(ns_dbt),
-	    _nscmp));
+	return (bsearch(&dbt, _nsmap, (size_t)_nsmapsize, sizeof(ns_dbt), _nscmp));
 }
 
 
@@ -243,8 +242,7 @@ _nsdbtput(dbt)
 
 int
 /*ARGSUSED*/
-nsdispatch(void *retval, const ns_dtab disp_tab[], const char *database,
-	    const char *method, const ns_src defaults[], ...)
+nsdispatch(void *retval, const ns_dtab disp_tab[], const char *database, const char *method, const ns_src defaults[], ...)
 {
 	va_list		 ap;
 	int		 i, curdisp, result;

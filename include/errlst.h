@@ -29,15 +29,15 @@
 */
 
 struct	ERRLSTHDR {
-		short	magic;
-		short	maxmsgnum;
-		short	maxmsglen;
-		short	pad[5];		/* Reserved */
+	short	magic;
+	short	maxmsgnum;
+	short	maxmsglen;
+	short	pad[5];		/* Reserved */
 };
 
 struct	ERRLST {
-		off_t	offmsg;
-		short	lenmsg;
+	off_t	offmsg;
+	short	lenmsg;
 };
 
 #define	ERRMAGIC		012345

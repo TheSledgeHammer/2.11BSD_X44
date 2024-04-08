@@ -29,13 +29,17 @@ typedef _BSD_SIZE_T_	size_t;
 #undef  _BSD_SIZE_T_
 #endif
 
-#define	_PATH_HEQUIV	"/etc/hosts.equiv"
-#define	_PATH_HOSTS		"/etc/hosts"
-#define	_PATH_NETWORKS	"/etc/networks"
-#define	_PATH_PROTOCOLS	"/etc/protocols"
-#define	_PATH_SERVICES	"/etc/services"
+#define	_PATH_HEQUIV		"/etc/hosts.equiv"
+#define	_PATH_HOSTS			"/etc/hosts"
+#define	_PATH_NETWORKS		"/etc/networks"
+#define	_PATH_PROTOCOLS		"/etc/protocols"
+#define	_PATH_SERVICES		"/etc/services"
+#define	_PATH_SERVICES_DB 	"/var/db/services.db"
 
+__BEGIN_DECLS
 extern int h_errno;
+extern int * __h_errno(void);
+__END_DECLS
 
 /*
  * Structures returned by network
@@ -201,10 +205,17 @@ struct protoent	*getprotobyname(const char *);
 struct protoent	*getprotobynumber(int);
 struct protoent	*getprotoent(void);
 void			herror(const char *);
+const char		*hstrerror(int);
 void			sethostent(int);
 void			setnetent(int);
 void			setprotoent(int);
 void			setservent(int);
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 520 || defined(__BSD_VISIBLE)
+int				getaddrinfo(const char * __restrict, const char * __restrict, const struct addrinfo * __restrict, struct addrinfo ** __restrict);
+int				getnameinfo(const struct sockaddr * __restrict, socklen_t, char * __restrict, socklen_t, char * __restrict, socklen_t, int);
+void			freeaddrinfo(struct addrinfo *);
+const char		*gai_strerror(int);
+#endif
 __END_DECLS
 
 #endif /* !_NETDB_H_ */

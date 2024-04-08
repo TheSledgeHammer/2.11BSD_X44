@@ -35,7 +35,8 @@ struct ifaddrs {
 	struct sockaddr	*ifa_addr;
 	struct sockaddr	*ifa_netmask;
 	struct sockaddr	*ifa_dstaddr;
-	void		*ifa_data;
+	void			*ifa_data;
+	unsigned int	ifa_addrflags;
 };
 
 /*

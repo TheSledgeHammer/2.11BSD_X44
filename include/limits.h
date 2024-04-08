@@ -36,7 +36,7 @@
 #ifndef _LIMITS_H_
 #define	_LIMITS_H_
 
-#if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE)
+#if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 #define	_POSIX_AIO_LISTIO_MAX	2
 #define	_POSIX_AIO_MAX			1
 #define	_POSIX_ARG_MAX			4096
@@ -90,7 +90,7 @@
  * X/Open CAE Specifications,
  * adopted in IEEE Std 1003.1-2001 XSI.
  */
-#if (_POSIX_C_SOURCE - 0) >= 200112L || defined(_XOPEN_SOURCE)
+#if (_POSIX_C_SOURCE - 0) >= 200112L || defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 #define	_XOPEN_IOV_MAX		16
 #define	_XOPEN_NAME_MAX		256
 #define	_XOPEN_PATH_MAX		1024
@@ -113,9 +113,9 @@
 #ifndef TMP_MAX
 #define TMP_MAX			308915776	/* Legacy */
 #endif
-#endif /* _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE */
+#endif /* _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE || __BSD_VISIBLE */
 
-#endif /* _POSIX_C_SOURCE  || _XOPEN_SOURCE */
+#endif /* _POSIX_C_SOURCE  || _XOPEN_SOURCE || __BSD_VISIBLE */
 
 #define MB_LEN_MAX		32	/* Allow ISO/IEC 2022 */
 

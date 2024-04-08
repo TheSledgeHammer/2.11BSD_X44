@@ -190,7 +190,7 @@ int		xdr_fhs(XDR *, caddr_t);
 int		xdr_mlist(XDR *, caddr_t);
 
 /* C library */
-int	getnetgrent();
+int		getnetgrent();
 void	endnetgrent();
 void	setnetgrent();
 

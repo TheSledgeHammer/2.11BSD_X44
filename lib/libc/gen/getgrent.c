@@ -14,20 +14,23 @@ static char *members[MAXGRP];
 #define	MAXLINELENGTH	1024
 static char line[MAXLINELENGTH];
 
-static char GROUP[] = "/etc/group";
 static FILE *grf = NULL;
 static char line[256+1];
 static struct group group;
 static int _gr_stayopen;
 static char *gr_mem[MAXGRP];
 
+static char *grskip(char *, char);
+static int	start_gr(void);
+static int 	grscan(int, int, char *);
+
 void
-setgrent()
+setgrent(void)
 {
-	if( !grf )
-		grf = fopen( GROUP, "r" );
+	if (!grf)
+		grf = fopen(_PATH_GROUP, "r");
 	else
-		rewind( grf );
+		rewind(grf);
 }
 
 int
@@ -41,10 +44,10 @@ setgroupent(stayopen)
 }
 
 void
-endgrent()
+endgrent(void)
 {
-	if( grf ){
-		fclose( grf );
+	if (grf) {
+		fclose(grf);
 		grf = NULL;
 	}
 }
@@ -52,11 +55,13 @@ endgrent()
 static char *
 grskip(p,c)
 	register char *p;
-	register c;
+	register char c;
 {
-	while( *p && *p != c ) ++p;
-	if( *p ) *p++ = 0;
-	return( p );
+	while (*p && *p != c)
+		++p;
+	if (*p)
+		*p++ = 0;
+	return (p);
 }
 
 struct group *
@@ -64,24 +69,38 @@ getgrent()
 {
 	register char *p, **q;
 
-	if( !grf && !(grf = fopen( GROUP, "r" )) )
-		return(NULL);
-	if( !(p = fgets( line, sizeof(line)-1, grf )) )
-		return(NULL);
+	if (!grf && !(grf = fopen(_PATH_GROUP, "r")))
+		return (NULL);
+	if (!(p = fgets(line, sizeof(line) - 1, grf)))
+		return (NULL);
 	group.gr_name = p;
-	group.gr_passwd = p = grskip(p,':');
-	group.gr_gid = atoi( p = grskip(p,':') );
+	group.gr_passwd = p = grskip(p, ':');
+	group.gr_gid = atoi(p = grskip(p, ':'));
 	group.gr_mem = gr_mem;
-	p = grskip(p,':');
-	grskip(p,'\n');
+	p = grskip(p, ':');
+	grskip(p, '\n');
 	q = gr_mem;
-	while( *p ){
-		if (q < &gr_mem[MAXGRP-1])
+	while (*p) {
+		if (q < &gr_mem[MAXGRP - 1])
 			*q++ = p;
-		p = grskip(p,',');
+		p = grskip(p, ',');
 	}
 	*q = NULL;
-	return( &group );
+	return (&group);
+}
+
+struct group *
+getgrnam(name)
+	const char *name;
+{
+	int rval;
+
+	if (!start_gr())
+		return (NULL);
+	rval = grscan(1, 0, name);
+	if (!_gr_stayopen)
+		endgrent();
+	return (rval ? &group : NULL);
 }
 
 struct group *
@@ -91,11 +110,21 @@ getgrgid(gid)
 	int rval;
 
 	if (!start_gr())
-		return(NULL);
+		return (NULL);
 	rval = grscan(1, gid, NULL);
 	if (!_gr_stayopen)
 		endgrent();
-	return(rval ? &group : NULL);
+	return (rval ? &group : NULL);
+}
+
+static int
+start_gr(void)
+{
+	if (grf) {
+		rewind(grf);
+		return (1);
+	}
+	return ((grf == fopen(_PATH_GROUP, "r")) ? 1 : 0);
 }
 
 static int
@@ -109,7 +138,7 @@ grscan(search, gid, name)
 
 	for (;;) {
 		if (!fgets(line, sizeof(line), grf))
-			return(0);
+			return (0);
 		bp = line;
 		/* skip lines that are too big */
 		if (!index(line, '\n')) {
@@ -142,13 +171,13 @@ grscan(search, gid, name)
 				if (cp) {
 					*bp = '\0';
 					*m++ = cp;
-			}
+				}
 				break;
 			} else if (cp == NULL)
 				cp = bp;
 		}
 		*m = NULL;
-		return(1);
+		return (1);
 	}
 	/* NOTREACHED */
 }

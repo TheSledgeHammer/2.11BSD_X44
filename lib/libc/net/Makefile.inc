@@ -18,7 +18,7 @@ SRCS+=	ethers.c getifaddrs.c getnbyaddr.c getnbyname.c getnent.c 	\
 		getpent.c getpname.c getproto.c getsbyname.c getsbyport.c 	\
 		getsent.c if_indextoname.c if_nameindex.c if_nametoindex.c 	\
 		ip6opt.c linkaddr.c rcmd.c rexec.c rthdr.c ruserpass.c		\
-		sockatmark.c vars6.c
+		sockatmark.c
 SRCS+=	nsdispatch.c nslexer.l nsparser.y
 
 .if (${MKHESIOD} != "no")
@@ -29,10 +29,11 @@ SRCS+=	hesiod.c
 .include "${.CURDIR}/net/hosttable/Makefile.inc"
 .include "${.CURDIR}/net/named/Makefile.inc"
 
+SRCS+=	getaddrinfo.c getnameinfo.c
 .if (${USE_INET6} != "no")
 SRCS+=	ip6opt.c rthdr.c inet6_scopeid.c
 .endif
-
+SRCS+=	vars6.c
 
 LPREFIX=_nsyy
 YPREFIX=_nsyy
@@ -45,3 +46,7 @@ nslexer.c: nslexer.l nsparser.h
 	${LEX.l} -t ${.IMPSRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' >${.TARGET}
 
 .include "${ARCHDIR}/net/Makefile.inc"
+
+MAN+=	ethers.3 gai_strerror.3 getaddrinfo.3 getifaddrs.3 getnameinfo.3 \
+		if_indextoname.3 linkaddr.3 nsdispatch.3 sockatmark.3
+

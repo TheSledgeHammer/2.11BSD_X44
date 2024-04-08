@@ -9,15 +9,16 @@
 # Doing a make includes builds /usr/include
 
 NOOBJ=		# defined
-INCS=   a.out.h ar.h assert.h atomic.h bitstring.h complex.h cpio.h ctype.h 	\
-	    db.h dirent.h dlfcn.h encoding.h endian.h err.h errlst.h errno.h    	\
-        fmtmsg.h fnmatch.h fstab.h fts.h ftw.h getopt.h glob.h grp.h iconv.h    \
-        ident.h ifaddrs.h inttypes.h iso646.h kenv.h kvm.h langinfo.h       	\
+
+INCS=   a.out.h ar.h assert.h atomic.h bitstring.h cdbr.h cdbw.h complex.h 		\
+		cpio.h ctype.h db.h dirent.h dlfcn.h encoding.h endian.h err.h errlst.h \
+		errno.h fmtmsg.h fnmatch.h fstab.h fts.h ftw.h getopt.h glob.h grp.h 	\
+		iconv.h ident.h ifaddrs.h inttypes.h iso646.h kenv.h kvm.h langinfo.h   \
         lastlog.h lastlogx.h libgen.h limits.h link.h link_aout.h 				\
         link_elf.h locale.h login_cap.h math.h memory.h mp.h mpool.h mtab.h 	\
-        ndbm.h netconfig.h netdb.h nlist.h nl_types.h nsswitch.h paths.h 		\
-        pwd.h ranlib.h regex.h regexp.h resolv.h rune.h runetype.h setjmp.h 	\
-        sgtty.h signal.h stab.h stdio.h stdlib.h string.h stringlist.h 			\
+        ndbm.h netconfig.h netdb.h netgroup.h nlist.h nl_types.h nsswitch.h 	\
+        paths.h pwd.h ranlib.h regex.h regexp.h resolv.h rune.h runetype.h 		\
+        setjmp.h sgtty.h signal.h stab.h stdio.h stdlib.h string.h stringlist.h \
         strings.h struct.h sysexits.h tar.h time.h ttyent.h tzfile.h 			\
         ucontext.h ulimit.h unistd.h util.h utime.h utmp.h utmpx.h uuid.h 		\
         varargs.h vfont.h vis.h vmf.h wchar.h wctype.h

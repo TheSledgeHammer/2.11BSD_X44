@@ -18,10 +18,8 @@ int *__errno(void);
 #define __errno __errno
 #endif
 
-
 #ifndef errno
 #define errno (*__errno())
-
 __END_DECLS
 
 #endif /* !_ERRNO_H_ */

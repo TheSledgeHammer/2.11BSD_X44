@@ -99,7 +99,7 @@ int scandir(const char *, struct dirent ***, int (*)(struct dirent *), int (*)(c
 int alphasort(const void *, const void *);
 int getdirentries(int, char *, int, long *);
 int getdents(int, char *, size_t);
-#endif /* not POSIX */
+#endif /* !POSIX */
 __END_DECLS
 
 #endif /* !_KERNEL */

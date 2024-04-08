@@ -39,9 +39,9 @@
  * Simple string list
  */
 typedef struct _stringlist {
-	char	**sl_str;
-	size_t	  sl_max;
-	size_t	  sl_cur;
+	char		**sl_str;
+	size_t	  	sl_max;
+	size_t	  	sl_cur;
 } StringList;
 
 __BEGIN_DECLS

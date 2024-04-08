@@ -1,11 +1,11 @@
-/*	$NetBSD: nl_types.h,v 1.13 2013/08/19 08:03:33 joerg Exp $	*/
+/*	$NetBSD: servent.h,v 1.3 2008/04/28 20:23:00 martin Exp $	*/
 
 /*-
- * Copyright (c) 1996 The NetBSD Foundation, Inc.
+ * Copyright (c) 2004 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by J.T. Conklin.
+ * by Christos Zoulas.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,63 +29,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _NL_TYPES_H_
-#define _NL_TYPES_H_
+#include <stdio.h>
 
-#include <sys/cdefs.h>
+struct servent_data {
+        void *db;
+	struct servent serv;
+	char **aliases;
+	size_t maxaliases;
+	int flags;
+#define	_SV_STAYOPEN	1
+#define	_SV_DB		2
+#define	_SV_FIRST	4
+	char *line;
+	void *dummy;
+};
 
-#ifdef _NLS_PRIVATE
-/*
- * MESSAGE CATALOG FILE FORMAT.
- *
- * The NetBSD message catalog format is similar to the format used by
- * Svr4 systems.  The differences are:
- *   * fixed byte order (big endian)
- *   * fixed data field sizes
- *
- * A message catalog contains four data types: a catalog header, one
- * or more set headers, one or more message headers, and one or more
- * text strings.
- */
+struct servent	*getservent_r(struct servent *, struct servent_data *);
+struct servent	*getservbyname_r(const char *, const char *,
+    struct servent *, struct servent_data *);
+struct servent	*getservbyport_r(int, const char *,
+    struct servent *, struct servent_data *);
+void setservent_r(int, struct servent_data *);
+void endservent_r(struct servent_data *);
 
-#define _NLS_MAGIC	0xff88ff89
-
-struct _nls_cat_hdr {
-	int32_t __magic;
-	int32_t __nsets;
-	int32_t __mem;
-	int32_t __msg_hdr_offset;
-	int32_t __msg_txt_offset;
-} ;
-
-struct _nls_set_hdr {
-	int32_t __setno;	/* set number: 0 < x <= NL_SETMAX */
-	int32_t __nmsgs;	/* number of messages in the set  */
-	int32_t __index;	/* index of first msg_hdr in msg_hdr table */
-} ;
-
-struct _nls_msg_hdr {
-	int32_t __msgno;	/* msg number: 0 < x <= NL_MSGMAX */
-	int32_t __msglen;
-	int32_t __offset;
-} ;
-
-#endif
-
-#define	NL_SETD			1
-#define NL_CAT_LOCALE   1
-
-typedef struct __nl_cat_d {
-	void	*__data;
-	int		__size;
-} *nl_catd;
-
-typedef long	nl_item;
-
-__BEGIN_DECLS
-nl_catd  catopen(const char *, int);
-char    *catgets(nl_catd, int, int, const char *) __format_arg(4);
-int	 	catclose(nl_catd);
-__END_DECLS
-
-#endif	/* _NL_TYPES_H_ */
+int _servent_open(struct servent_data *);
+void _servent_close(struct servent_data *);
+int _servent_getline(struct servent_data *);
+struct servent *_servent_parseline(struct servent_data *, struct servent *);

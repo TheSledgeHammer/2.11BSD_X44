@@ -82,9 +82,6 @@ int		setclasscontext(const char *, unsigned int);
 #ifndef __LIBC12_SOURCE__
 int		setusercontext(login_cap_t *, struct passwd *, uid_t, unsigned int);
 #endif
-void	setuserpath(login_cap_t *, const char *, envfunc_t, void *);
-int		setuserenv(login_cap_t *, envfunc_t, void *);
-
 __END_DECLS
 
 #endif	/* !_LOGIN_CAP_H_ */

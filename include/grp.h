@@ -38,6 +38,11 @@
 #define	_GRP_H_
 
 #include <sys/cdefs.h>
+#include <sys/types.h>
+
+#ifndef _POSIX_SOURCE
+#define	_PATH_GROUP		"/etc/group"
+#endif
 
 struct	group { /* see getgrent(3) */
 	char	*gr_name;			/* group name */
@@ -47,9 +52,21 @@ struct	group { /* see getgrent(3) */
 };
 
 __BEGIN_DECLS
-struct group *getgrent(void);
 struct group *getgrgid(gid_t);
 struct group *getgrnam(const char *);
+#if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
+struct group *getgrent(void);
+void 		 setgrent(void);
+void 		 endgrent(void);
+#endif
+#if defined(__BSD_VISIBLE)
+void 		 setgrfile(const char *);
+int 		 setgroupent(int);
+
+const char	*group_from_gid(gid_t, int);
+int		 	gid_from_group(const char *, gid_t *);
+int		 	pwcache_groupdb(int (*)(int), void (*)(void), struct group * (*)(const char *), struct group * (*)(gid_t));
+#endif
 __END_DECLS
 
 #endif /* !_GRP_H_ */

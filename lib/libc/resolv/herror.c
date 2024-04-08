@@ -1,3 +1,50 @@
+/*	$NetBSD: herror.c,v 1.10 2015/02/24 17:56:20 christos Exp $	*/
+
+/*
+ * Copyright (c) 1987, 1993
+ *    The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+/*
+ * Copyright (c) 2004 by Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (c) 1996-1999 by Internet Software Consortium.
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS.  IN NO EVENT SHALL ISC BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
 /*
  * Copyright (c) 1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -8,6 +55,9 @@
 static char sccsid[] = "@(#)herror.c	6.1 (Berkeley) 12/4/87";
 #endif LIBC_SCCS and not lint
 
+#include "port_before.h"
+
+#include "namespace.h"
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/uio.h>
@@ -20,7 +70,9 @@ static char sccsid[] = "@(#)herror.c	6.1 (Berkeley) 12/4/87";
 #include <string.h>
 #include <unistd.h>
 
-char	*h_errlist[] = {
+#include "port_after.h"
+
+const char *h_errlist[] = {
 	"Error 0",
 	"Unknown host",				/* 1 HOST_NOT_FOUND */
 	"Host name lookup failure",		/* 2 TRY_AGAIN */
@@ -30,6 +82,10 @@ char	*h_errlist[] = {
 int	h_nerr = { sizeof(h_errlist)/sizeof(h_errlist[0]) };
 
 extern int	h_errno;
+
+#ifdef __weak_alias
+__weak_alias(herror,_herror)
+#endif
 
 /*
  * herror --
@@ -56,4 +112,19 @@ herror(s)
 	v->iov_base = "\n";
 	v->iov_len = 1;
 	writev(2, iov, (v - iov) + 1);
+}
+
+/*%
+ * hstrerror --
+ *	return the string associated with a given "host" errno value.
+ */
+const char *
+hstrerror(err)
+	int err;
+{
+	if (err < 0)
+		return ("Resolver internal error");
+	else if (err < h_nerr)
+		return (h_errlist[err]);
+	return ("Unknown resolver error");
 }
