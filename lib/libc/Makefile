@@ -86,6 +86,7 @@ assym.h: ${ARCHDIR}/genassym.cf
 .endif
 
 .include "${.CURDIR}/atomic/Makefile.inc"
+.include "${.CURDIR}/cdb/Makefile.inc"
 .include "${.CURDIR}/citrus/Makefile.inc"
 .include "${.CURDIR}/compat-4.1/Makefile.inc"
 .include "${.CURDIR}/compat-4.3/Makefile.inc"
