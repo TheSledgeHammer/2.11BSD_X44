@@ -4,9 +4,9 @@ HOSTLIB=	nbcompat
 
 .include <bsd.hostinit.mk>
 
-SRCS=		basename.c dirname.c err.c fgetln.c flock.c fparseln.c 		\
-			fpurge.c getcap.c getline.c getmode.c getopt_long.c 		\
-			getsubopt.c gettemp.c heapsort.c							\
+SRCS=		basename.c cdbr.c cdbw.c dirname.c err.c fgetln.c flock.c   \
+            fparseln.c fpurge.c getcap.c getline.c getmode.c            \
+            getopt_long.c getsubopt.c gettemp.c heapsort.c				\
 			issetugid.c lchflags.c lchmod.c lchown.c libyywrap.c 		\
 			mi_vector_hash.c mktemp.c pread.c putc_unlocked.c pwcache.c \
             pwrite.c pw_scan.c raise_default_signal.c reallocarr.c      \
@@ -33,7 +33,8 @@ CPPFLAGS+=	-no-cpp-precomp
 CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 		-DHAVE_NBTOOL_CONFIG_H=1 -D_FILE_OFFSET_BITS=64
 
-.PATH:		 														\
+.PATH:		${.CURDIR}/../../lib/libc/cdb           				\
+		    ${.CURDIR}/../../lib/libc/compat-4.1					\
 			${.CURDIR}/../../lib/libc/compat-4.1					\
 			${.CURDIR}/../../lib/libc/compat-4.3					\
 			${.CURDIR}/../../lib/libc/compat-sys5					\
