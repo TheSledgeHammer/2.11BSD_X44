@@ -43,12 +43,12 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
 			${USRLIBDIR}/libmp 			\
 			${USRLIBDIR}/libom 			\
 			${USRLIBDIR}/libresolv 		\
-            		${USRLIBDIR}/librpcsvc      	\
+            ${USRLIBDIR}/librpcsvc      \
 			${USRLIBDIR}/libpci			\
 			${USRLIBDIR}/libpthread 	\
 			${USRLIBDIR}/libpthread_dbg \
 			${USRLIBDIR}/libstubs  		\
-			${USRLIBDIR}/libtermcap 	\
+			${USRLIBDIR}/libterminfo 	\
 			${USRLIBDIR}/libutil 		\
 			${USRLIBDIR}/libvmf 		\
 			${USRLIBDIR}/liby 			\

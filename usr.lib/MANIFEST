@@ -25,6 +25,7 @@ libss/      NetBSD
 libstubs/	2.11BSD
 libtelenet/ NetBSD
 libtermcap/	4.4BSD-Lite2
+libterminfo/ NetBSD
 libutil/	4.4BSD-Lite2
 libvmf/		4.3BSD
 libwrap/	NetBSD

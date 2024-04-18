@@ -4,10 +4,10 @@
 
 .if ${MKSHARE} != "no" || make(clean) || make(cleandir) || make(distclean) || make(obj)
 SUBDIR= dict man me misc mk tabset \
-        termcap tmac wscons zoneinfo
+        terminfo tmac wscons zoneinfo
 		
 # 2.11BSD:
-#SUBDIR+= adb font fontinfo learn lint pascal term
+#SUBDIR+= adb font fontinfo learn lint pascal term termcap
 
 .if ${MKGROFF} != "no"
 SUBDIR+=doc

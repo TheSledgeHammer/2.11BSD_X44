@@ -4,7 +4,7 @@
 
 SUBDIR= byacc expat fetch file flex gnu 		\
 		less libarchive liblzf lua mdocml nawk 	\
-		xz
+		sqlite xz
 
 #SUBDIR+=	oscompat
 SUBDIR+=	pkg_install

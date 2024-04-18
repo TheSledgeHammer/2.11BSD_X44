@@ -90,7 +90,7 @@ struct cdbr {
 };
 
 static void
-cdbr_unmap(void *cookie __unused, void *base, size_t size)
+cdbr_unmap(void *cookie, void *base, size_t size)
 {
 	munmap(base, size);
 }
@@ -133,8 +133,7 @@ cdbr_open(const char *path, int flags)
 }
 
 struct cdbr *
-cdbr_open_mem(void *base, size_t size, int flags __unused,
-    void (*unmap)(void *, void *, size_t), void *cookie)
+cdbr_open_mem(void *base, size_t size, int flags, void (*unmap)(void *, void *, size_t), void *cookie)
 {
 	struct cdbr *cdbr;
 	uint8_t *buf = base;

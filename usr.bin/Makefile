@@ -20,12 +20,12 @@ SUBDIR= apply ar asa at 											\
 		lorder 														\
 		m4 machine make man menuc mkdep mkerrlst mkfifo mklocale 	\
 		mkstr mktemp msgc msgs                                      \
-        netgroup netstat nice nl nohup                              \
+        nbperf netgroup netstat nice nl nohup                       \
         pagesize paste patch pathchk pr printenv printf				\
 		renice rev rpcgen rpcinfo									\
 		script sed shar shlock showmount sort sortinfo spell split 	\
 		stat strfile su												\
-		tail time tip touch true tsort 								\
+		tail tic time tip touch true tsort 							\
 		uname unexpand unstr unzip users uudecode uuencode 			\
 		vgrind vis vmstat 											\
 		w wall wc what whereis who whois write 						\

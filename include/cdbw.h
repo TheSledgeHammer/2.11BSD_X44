@@ -43,16 +43,12 @@ struct cdbw;
 __BEGIN_DECLS
 
 struct cdbw	*cdbw_open(void);
-int		 cdbw_put(struct cdbw *, const void *, size_t,
-    const void *, size_t);
-int		 cdbw_put_data(struct cdbw *, const void *, size_t,
-    uint32_t *);
-int		 cdbw_put_key(struct cdbw *, const void *, size_t,
-    uint32_t);
-uint32_t	 cdbw_stable_seeder(void);
-int		 cdbw_output(struct cdbw *, int, const char[16],
-    uint32_t (*)(void));
-void		 cdbw_close(struct cdbw *);
+int		 	cdbw_put(struct cdbw *, const void *, size_t, const void *, size_t);
+int		 	cdbw_put_data(struct cdbw *, const void *, size_t, uint32_t *);
+int		 	cdbw_put_key(struct cdbw *, const void *, size_t, uint32_t);
+uint32_t	cdbw_stable_seeder(void);
+int		 	cdbw_output(struct cdbw *, int, const char[16], uint32_t (*)(void));
+void		cdbw_close(struct cdbw *);
 
 __END_DECLS
 
