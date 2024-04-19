@@ -2,12 +2,12 @@
 static char sccsid[] = "@(#)gcvt.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
+#include <stdlib.h>
+
 /*
  * gcvt  - Floating output conversion to
  * minimal length string
  */
-
-extern char	*ecvt(double, int, int *, int *);
 
 char *
 gcvt(number, ndigit, buf)

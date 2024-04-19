@@ -2,6 +2,8 @@
 static char sccsid[] = "@(#)ecvt.c	5.1 (Berkeley) 3/15/86";
 #endif LIBC_SCCS and not lint
 
+#include <stdlib.h>
+
 /*
  *	ecvt converts to decimal
  *	the number of digits is specified by ndigit
@@ -12,12 +14,13 @@ static char sccsid[] = "@(#)ecvt.c	5.1 (Berkeley) 3/15/86";
 static char	*cvt(double, int, int *, int *);
 
 #define	NDIG	80
+
 char*
 ecvt(arg, ndigits, decpt, sign)
 	double arg;
 	int ndigits, *decpt, *sign;
 {
-	return(cvt(arg, ndigits, decpt, sign, 1));
+	return (cvt(arg, ndigits, decpt, sign, 1));
 }
 
 char*
@@ -25,7 +28,7 @@ fcvt(arg, ndigits, decpt, sign)
 	double arg;
 	int ndigits, *decpt, *sign;
 {
-	return(cvt(arg, ndigits, decpt, sign, 0));
+	return (cvt(arg, ndigits, decpt, sign, 0));
 }
 
 static char*

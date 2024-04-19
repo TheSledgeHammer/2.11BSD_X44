@@ -129,6 +129,11 @@ long	strtol(const char * __restrict, char ** __restrict, int);
 unsigned long strtoul(const char * __restrict, char ** __restrict, int);
 int	 	system(const char *);
 
+/* Floating output conversion */
+char	*ecvt(double, int, int *, int *);
+char	*fcvt(double, int, int *, int *);
+char	*gcvt(double, int, char *);
+
 /* These are currently just stubs. */
 int	 	mblen(const char *, size_t);
 size_t	mbstowcs(wchar_t * __restrict, const char * __restrict, size_t);

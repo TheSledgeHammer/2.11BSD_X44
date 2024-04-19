@@ -141,12 +141,12 @@ typedef struct _WCTypeEntry {
 #define _WCTYPE_NINDEXES		12
 
 typedef struct {
+	/* legacy */
 	rune_t						(*ro_sgetrune)(const char *, size_t, char const **);
 	int							(*ro_sputrune)(rune_t, char *, size_t, char **);
 	/* ctype: */
 	int 						(*ro_sgetmbrune)(_Encoding_Info * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _Encoding_State * __restrict, size_t * __restrict);
 	int							(*ro_sputmbrune)(_Encoding_Info * __restrict, char * __restrict, size_t, wchar_t, _Encoding_State * __restrict, size_t * __restrict);
-
 	/* stdenc */
 	int 						(*ro_sgetcsrune)(_Encoding_Info * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 	int 						(*ro_sputcsrune)(_Encoding_Info * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
@@ -179,7 +179,6 @@ typedef struct {
 	/*
 	 * the following portion is generated on the fly
 	 */
-
 	_RuneOps					*ops;
 	_WCTransEntry				wctrans[_WCTRANS_NINDEXES];
 	_WCTypeEntry				wctype[_WCTYPE_NINDEXES];

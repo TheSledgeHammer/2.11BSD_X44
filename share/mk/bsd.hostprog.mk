@@ -48,7 +48,6 @@ LIBPTHREAD?=		/usr.lib/libpthread.a
 LIBRESOLV?=			/usr.lib/libresolv.a
 LIBRPCSVC?=			/usr.lib/librpcsvc.a
 LIBSKEY?=			/usr.lib/libskey.a
-
 LIBTERMINFO?=		/usr.lib/libterminfo.a
 LIBUTIL?=			/usr.lib/libutil.a
 LIBWRAP?=			/usr.lib/libwrap.a
