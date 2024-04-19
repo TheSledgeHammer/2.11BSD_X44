@@ -48,8 +48,8 @@ LIBPTHREAD?=		/usr.lib/libpthread.a
 LIBRESOLV?=			/usr.lib/libresolv.a
 LIBRPCSVC?=			/usr.lib/librpcsvc.a
 LIBSKEY?=			/usr.lib/libskey.a
-LIBTERMCAP?=		/usr.lib/libtermcap.a
-LIBTERMINFO?=		${LIBTERMCAP}
+
+LIBTERMINFO?=		/usr.lib/libterminfo.a
 LIBUTIL?=			/usr.lib/libutil.a
 LIBWRAP?=			/usr.lib/libwrap.a
 LIBY?=				/usr.lib/liby.a
@@ -63,6 +63,7 @@ LIBI77?=			${LIBFORTRAN}/libI77.a
 LIBU77?=			${LIBFORTRAN}/libU77.a
 LIBOM?=				/usr.lib/libom.a
 LIBSTUBS?=			/usr.lib/libstubs.a
+#LIBTERMCAP?=		/usr.lib/libtermcap.a
 LIBVMF?=			/usr.lib/libvmf.a
 
 MKDEP_SUFFIXES?=	.lo .ln .d

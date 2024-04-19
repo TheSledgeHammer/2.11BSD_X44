@@ -121,7 +121,7 @@ _USRDOTLIBLIST=	\
 			RESOLV \
 			SKEY \
 			STUBS \
-			TERMCAP \
+			TERMINFO \
 			UTIL \
 			VMF \
             WRAP \
@@ -135,9 +135,9 @@ LIB${_var}:=	 ${USRDOTLIB}/lib${_var:tl}.a
 .endif
 .endfor
 
-.ifndef LIBTERMINFO
-LIBTERMINFO = ${USRDOTLIB}/libtermcap.a
-.MADE: 		${LIBTERMINFO}
+.ifndef LIBTERMCAP
+LIBTERMCAP = ${USRDOTLIB}/libterminfo.a
+.MADE: 		${LIBTERMCAP}
 .endif
 
 .ifndef LIBSTDCXX
