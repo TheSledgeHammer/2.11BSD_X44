@@ -134,6 +134,11 @@ char	*ecvt(double, int, int *, int *);
 char	*fcvt(double, int, int *, int *);
 char	*gcvt(double, int, char *);
 
+/* convert longs to 3-byte disk addresses */
+void	ltol3(char *, long *, int);
+/* convert 3-byte disk addresses to longs */
+void 	l3tol(long *, char *, int);
+
 /* These are currently just stubs. */
 int	 	mblen(const char *, size_t);
 size_t	mbstowcs(wchar_t * __restrict, const char * __restrict, size_t);
@@ -269,11 +274,10 @@ u_quad_t strtouq(const char * __restrict, char ** __restrict, int);
 long long strsuftoll(const char *, const char *, long long, long long);
 	/* LONGLONG */
 long long strsuftollx(const char *, const char *, long long, long long, char *, size_t);
-/*
+
 
 size_t		shquote(const char *, char *, size_t);
-size_t		shquotev(int, char * const *, char *, size_t);
-*/
+//size_t		shquotev(int, char * const *, char *, size_t);
 
 u_int32_t 	arc4random(void);
 void	 	arc4random_stir(void);

@@ -49,18 +49,18 @@ static char sccsid[] = "@(#)fmt.c	8.5 (Berkeley) 4/27/95";
 #include "ps.h"
 
 static char *cmdpart(char *);
-static char *shquote(char **);
+static char *fmt_put(char **);
 
 /*
  * XXX
  * This is a stub until marc does the real one.
  */
 static char *
-shquote(argv)
+fmt_put(argv)
 	char **argv;
 {
 	char **p, *dst, *src;
-	static char buf[4096];		/* XXX */
+	static char buf[4096];	/* XXX */
 
 	if (*argv == 0) {
 		buf[0] = 0;
@@ -68,15 +68,18 @@ shquote(argv)
 	}
 	dst = buf;
 	for (p = argv; (src = *p++) != 0; ) {
-		if (*src == 0)
+		if (*src == 0) {
 			continue;
-		strvis(dst, src, VIS_NL | VIS_CSTYLE);
-		while (*dst)
+		}
+		strvis(dst, src, VIS_TAB | VIS_NL | VIS_CSTYLE);
+		while (*dst) {
 			dst++;
+		}
 		*dst++ = ' ';
 	}
-	if (dst != buf)
+	if (dst != buf) {
 		--dst;
+	}
 	*dst = '\0';
 	return (buf);
 }
@@ -100,21 +103,25 @@ fmt_argv(argv, cmd, maxlen)
 	char *ap, *cp;
 
 	if (argv == 0 || argv[0] == 0) {
-		if (cmd == NULL)
+		if (cmd == NULL) {
 			return ("");
+		}
 		ap = NULL;
 		len = maxlen + 3;
 	} else {
-		ap = shquote(argv);
+		ap = fmt_put(argv);
 		len = strlen(ap) + maxlen + 4;
 	}
-	if ((cp = malloc(len)) == NULL)
+	if ((cp = malloc(len)) == NULL) {
 		return (NULL);
-	if (ap == NULL)
+	}
+	shquote(ap, cp, len);
+	if (ap == NULL) {
 		sprintf(cp, "(%.*s)", maxlen, cmd);
-	else if (strncmp(cmdpart(argv[0]), cmd, maxlen) != 0)
+	} else if (strncmp(cmdpart(argv[0]), cmd, maxlen) != 0) {
 		sprintf(cp, "%s (%.*s)", ap, maxlen, cmd);
-	else
+	} else {
 		(void) strcpy(cp, ap);
+	}
 	return (cp);
 }

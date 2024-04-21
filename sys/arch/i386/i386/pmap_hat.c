@@ -87,13 +87,16 @@ pmap_hat_attach(hatlist, hat, map, object, flags)
 }
 
 void
-pmap_hat_detach(hatlist, map, object, flags)
+pmap_hat_detach(hatlist, hat, map, object, flags)
 	pmap_hat_list_t hatlist;
+	pmap_hat_t hat;
 	pmap_hat_map_t map;
 	pmap_hat_object_t object;
 	int flags;
 {
-	pmap_hat_t hat;
+	if (LIST_EMPTY(hatlist) || hat == NULL) {
+		return;
+	}
 	LIST_FOREACH(hat, hatlist, ph_next) {
         if (map == hat->ph_map && object == hat->ph_object && flags == hat->ph_flags) {
         	LIST_REMOVE(hat, ph_next);
@@ -109,12 +112,54 @@ pmap_hat_find(hatlist, map, object, flags)
 	int flags;
 {
 	pmap_hat_t hat;
+
 	LIST_FOREACH(hat, hatlist, ph_next) {
         if (map == hat->ph_map && object == hat->ph_object && flags == hat->ph_flags) {
             return (hat);
         }
     }
     return (NULL);
+}
+
+/*
+ * Copies pmap hat src from hatlist.
+ * add dst to hatlist and removes src from hatlist
+ * returns pmap hat dst
+ */
+pmap_hat_t
+pmap_hat_copy(hatlist, map, object, flags)
+	pmap_hat_list_t hatlist;
+	pmap_hat_map_t map;
+	pmap_hat_object_t object;
+	int flags;
+{
+	register pmap_hat_t src, dst;
+
+	if (LIST_EMPTY(hatlist)) {
+		return (NULL);
+	}
+
+	src = pmap_hat_find(hatlist, map, object, flags);
+	if (src == NULL) {
+		pmap_release(src);
+		return (NULL);
+	}
+
+	LIST_FOREACH(src, hatlist, ph_next) {
+		LIST_INSERT_HEAD(hatlist, dst, ph_next);
+	}
+
+	if (dst != src) {
+		pmap_hat_detach(hatlist, dst, map, object, flags);
+		pmap_release(dst);
+		pmap_release(src);
+		return (NULL);
+	}
+
+	pmap_hat_detach(hatlist, src, map, object, flags);
+	pmap_hat_attach(hatlist, dst, map, object, flags);
+	pmap_release(src);
+	return (dst);
 }
 
 static vm_offset_t

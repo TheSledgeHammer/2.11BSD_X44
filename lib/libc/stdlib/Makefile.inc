@@ -10,7 +10,7 @@
 .PATH: ${ARCHDIR}/stdlib ${.CURDIR}/stdlib
 
 SRCS+=	a64l.c abort.c abs.c atexit.c atof.c atoi.c atol.c bsearch.c calloc.c div.c drand48.c 	\
-		erand48.c exit.c getenv.c getopt_long.c getopt.c getsubopt.c heapsort.c jrand48.c 		\
+		erand48.c exit.c getenv.c getopt_long.c getopt.c getsubopt.c hcreate.c heapsort.c jrand48.c 		\
 		l64a.c labs.c lcong48.c ldiv.c llabs.c lldiv.c lrand48.c malloc.c merge.c mi_vector_hash.c \
 		mrand48.c nrand48.c putenv.c qabs.c qdiv.c qsort.c radixsort.c rand_r.c random.c 		\
 		reallocarr.c reallocarray.c seed48.c setenv.c srand48.c strod.c strsuftoll.c strtoi.c 	\
@@ -19,7 +19,7 @@ SRCS+=	a64l.c abort.c abs.c atexit.c atof.c atoi.c atol.c bsearch.c calloc.c div
 .include "${ARCHDIR}/stdlib/Makefile.inc"
 
 MAN+= 	a64l.3 abort.3 abs.3 atexit.3 atof.3 atoi.3 atol.3 bsearch.3 calloc.3 div.3 exit.3		\
-		getopt_long.3 getopt.3 getsubopt.3 labs.3 ldiv.3 llabs.3 lldiv.3 malloc.3 qabs.3 qdiv.3 \
+		getopt_long.3 getopt.3 getsubopt.3 hcreate.3 labs.3 ldiv.3 llabs.3 lldiv.3 malloc.3 qabs.3 qdiv.3 \
 		qsort.3 radixsort.3 rand48.3 random.3 reallocarr.3 reallocarray.3 strod.3 strol.3 		\
 		stroul.3 strsuftoll.3 system.3
 
