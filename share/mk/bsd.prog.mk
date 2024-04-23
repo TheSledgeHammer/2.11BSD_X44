@@ -119,6 +119,7 @@ _USRDOTLIBLIST=	\
 			PCI \
 			PTHREAD \
 			RESOLV \
+			RPCSVC \
 			SKEY \
 			STUBS \
 			TERMINFO \
