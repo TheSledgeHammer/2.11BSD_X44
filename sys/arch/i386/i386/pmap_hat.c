@@ -141,7 +141,6 @@ pmap_hat_copy(hatlist, map, object, flags)
 
 	src = pmap_hat_find(hatlist, map, object, flags);
 	if (src == NULL) {
-		pmap_release(src);
 		return (NULL);
 	}
 
@@ -151,14 +150,11 @@ pmap_hat_copy(hatlist, map, object, flags)
 
 	if (dst != src) {
 		pmap_hat_detach(hatlist, dst, map, object, flags);
-		pmap_release(dst);
-		pmap_release(src);
 		return (NULL);
 	}
 
 	pmap_hat_detach(hatlist, src, map, object, flags);
 	pmap_hat_attach(hatlist, dst, map, object, flags);
-	pmap_release(src);
 	return (dst);
 }
 
