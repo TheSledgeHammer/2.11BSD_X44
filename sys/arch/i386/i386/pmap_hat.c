@@ -122,42 +122,41 @@ pmap_hat_find(hatlist, map, object, flags)
 }
 
 /*
- * Copies pmap hat src from hatlist.
- * add dst to hatlist and removes src from hatlist
- * returns pmap hat dst
+ * Create a copy of pmap hatlist and the specified hat's contents.
  */
-pmap_hat_t
-pmap_hat_copy(hatlist, map, object, flags)
-	pmap_hat_list_t hatlist;
+void
+pmap_hat_copy(from, to, map, object, flags)
+	pmap_hat_list_t from, to;
 	pmap_hat_map_t map;
 	pmap_hat_object_t object;
 	int flags;
 {
 	register pmap_hat_t src, dst;
 
-	if (LIST_EMPTY(hatlist)) {
-		return (NULL);
+	if (LIST_EMPTY(from)) {
+		return;
 	}
 
-	src = pmap_hat_find(hatlist, map, object, flags);
+	src = pmap_hat_find(from, map, object, flags);
 	if (src == NULL) {
-		return (NULL);
+		return;
 	}
 
-	LIST_FOREACH(src, hatlist, ph_next) {
-		LIST_INSERT_HEAD(hatlist, dst, ph_next);
+	LIST_INIT(to);
+
+	LIST_FOREACH(src, from, ph_next) {
+		LIST_INSERT_HEAD(to, dst, ph_next);
 	}
 
 	if (dst != src) {
-		pmap_hat_detach(hatlist, dst, map, object, flags);
-		return (NULL);
+		pmap_hat_detach(to, dst, map, object, flags);
+		return;
 	}
 
-	pmap_hat_detach(hatlist, src, map, object, flags);
-	pmap_hat_attach(hatlist, dst, map, object, flags);
-	return (dst);
+	pmap_hat_attach(to, dst, map, object, flags);
 }
 
+/* PMAP HAT PV's */
 static vm_offset_t
 pmap_hat_to_pa_index(pa, first_phys)
 	vm_offset_t pa;
@@ -331,6 +330,8 @@ pmap_hat_enter_pv(pmap, va, pa, flags, first_phys, last_phys)
 		pmap_enter_pv(pmap, va, pv);
 	}
 }
+
+/* PMAP HAT's Initialization */
 
 /* VM HAT */
 void
