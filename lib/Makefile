@@ -34,25 +34,26 @@ SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 		\
-            ${USRLIBDIR}/libcrypt   	\
-			${USRLIBDIR}/libdbm 		\
-			${USRLIBDIR}/libfortran		\
-			${USRLIBDIR}/libipsec 		\
-			${USRLIBDIR}/libkvm 		\
-			${USRLIBDIR}/libm 			\
-			${USRLIBDIR}/libmp 			\
-			${USRLIBDIR}/libom 			\
-			${USRLIBDIR}/libresolv 		\
-            ${USRLIBDIR}/librpcsvc      \
-			${USRLIBDIR}/libpci			\
-			${USRLIBDIR}/libpthread 	\
-			${USRLIBDIR}/libpthread_dbg \
-			${USRLIBDIR}/libstubs  		\
-			${USRLIBDIR}/libterminfo 	\
-			${USRLIBDIR}/libutil 		\
-			${USRLIBDIR}/libvmf 		\
-			${USRLIBDIR}/liby 			\
-			${USRLIBDIR}/libz
+            	${USRLIBDIR}/libcrypt   	\
+		${USRLIBDIR}/libdbm 		\
+		${USRLIBDIR}/libfortran		\
+		${USRLIBDIR}/libintl 	    	\
+		${USRLIBDIR}/libipsec 		\
+		${USRLIBDIR}/libkvm 		\
+		${USRLIBDIR}/libm 		\
+		${USRLIBDIR}/libmp 		\
+		${USRLIBDIR}/libom 		\
+		${USRLIBDIR}/libresolv 		\
+            	${USRLIBDIR}/librpcsvc      	\
+		${USRLIBDIR}/libpci		\
+		${USRLIBDIR}/libpthread 	\
+		${USRLIBDIR}/libpthread_dbg 	\
+		${USRLIBDIR}/libstubs  		\
+		${USRLIBDIR}/libterminfo 	\
+		${USRLIBDIR}/libutil 		\
+		${USRLIBDIR}/libvmf 		\
+		${USRLIBDIR}/liby 		\
+		${USRLIBDIR}/libz
 
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern
@@ -92,9 +93,9 @@ SUBDIR+=	../contrib/gnu/mpc/lib/libmpc
 #==================== 1st library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-SUBDIR+=	../contrib/xz/lib			# depends on libpthread
+SUBDIR+=	../contrib/xz/lib		# depends on libpthread
 SUBDIR+=	../contrib/elftoolchain/libdwarf # depends on libelf
-SUBDIR+=	../contrib/lua/lib          # depends on libm
+SUBDIR+=	../contrib/lua/lib          	# depends on libm
 SUBDIR+=	../contrib/sqlite/lib		# depends on libm
 SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
@@ -143,7 +144,7 @@ SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
 
-SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
+SUBDIR+=	../contrib/fetch/lib	    	# depends on libssl
 
 SUBDIR+= 	../libexec/httpd/libbozohttpd 	# depends on libssl & libcrypto
 
