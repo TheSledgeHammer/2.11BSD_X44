@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)res_mkquery.c	6.7 (Berkeley) 3/7/88";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
@@ -40,7 +41,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	register int n;
 	char dnbuf[MAXDNAME];
 	char *dnptrs[10], **dpp, **lastdnptr;
-	extern char *index();
+	//extern char *index();
 
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG)
@@ -122,12 +123,12 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		 */
 		if (buflen < 1 + RRFIXEDSZ + datalen)
 			return (-1);
-		*cp++ = '\0';	/* no domain name */
+		*cp++ = '\0'; /* no domain name */
 		putshort(type, cp);
 		cp += sizeof(u_short);
 		putshort(class, cp);
 		cp += sizeof(u_short);
-		putlong((long)0, cp);
+		putlong((long) 0, cp);
 		cp += sizeof(u_long);
 		putshort(datalen, cp);
 		cp += sizeof(u_short);

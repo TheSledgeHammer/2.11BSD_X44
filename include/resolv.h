@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1983, 1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -6,6 +5,7 @@
  *
  *	@(#)resolv.h	5.5 (Berkeley) 5/12/87
  */
+
 #ifndef _RESOLV_H_
 #define	_RESOLV_H_
 
@@ -36,7 +36,7 @@
 
 #define	RES_TIMEOUT			4		/* seconds between retries */
 
-struct state {
+struct __res_state {
 	int					retrans;	 			/* retransmition time interval */
 	int					retry;					/* number of times to retransmit */
 	long				options;				/* option flags - see below. */
@@ -48,6 +48,8 @@ struct state {
 	char				*dnsrch[MAXDNSRCH+1];	/* components of domain to search */
 	long				pfcode;					/* RES_PRF_ flags - see below. */
 };
+
+typedef struct __res_state *res_state;
 
 /*
  * Resolver options
@@ -85,7 +87,7 @@ struct state {
 #define RES_PRF_INIT    0x4000
 /*						0x8000	*/
 
-extern struct state _res;
+extern struct __res_state _res;
 
 /* Private routines shared between libc/net, named, nslookup and others. */
 #define	__dn_skipname	dn_skipname

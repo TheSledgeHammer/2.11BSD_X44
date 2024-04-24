@@ -13,6 +13,7 @@ chroot/			4.4BSD-Lite2
 config/			NetBSD
 cron/			2.11BSD
 dev_mkdb/		NetBSD
+diskpart/		4.4BSD-Lite2
 kvm_mkdb/		NetBSD
 link/			NetBSD
 makefs/     	NetBSD / FreeBSD
@@ -22,10 +23,13 @@ mdsetimage/		NetBSD
 moused/			NetBSD
 mrouted/		NetBSD
 mtree/			NetBSD
+netgroup_mkdb/	NetBSD
 pcictl/  		NetBSD
-rmt/			NetBSD
+portmap/		4.4BSD-Lite2
 pwd_mkdb/		NetBSD
+rmt/			NetBSD
 unlink/			NetBSD
+update/			4.4BSD-Lite2
 vnconfig/		NetBSD
 wsconscfg/		NetBSD
 wsfontload/		NetBSD

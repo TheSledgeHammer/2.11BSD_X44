@@ -48,6 +48,7 @@
 
 #define __sgetrune      					_CurrentRuneLocale->ops->ro_sgetrune
 #define __sputrune     		 				_CurrentRuneLocale->ops->ro_sputrune
+
 #define __sgetmbrune      					_CurrentRuneLocale->ops->ro_sgetmbrune
 #define __sputmbrune     					_CurrentRuneLocale->ops->ro_sputmbrune
 
@@ -56,12 +57,12 @@
 
 #define sgetrune(s, n, r)       			(*__sgetrune)((s), (n), (r))
 #define sputrune(c, s, n, r)    			(*__sputrune)((c), (s), (n), (r))
+
 #define sgetmbrune(ei, wc, s, n, es, r)    	(*__sgetmbrune)((ei), (wc), (s), (n), (es), (r))
 #define sputmbrune(ei, s, n, wc, es, r)    	(*__sputmbrune)((ei), (s), (n), (wc), (es), (r))
 
 #define sgetcsrune(ei, wc, csid, idx) 		(*__sgetcsrune)((ei), (wc), (csid), (idx))
 #define sputcsrune(ei, csid, idx, wc)  		(*__sputcsrune)((ei), (csid), (idx), (wc))
-
 
 /*
  * Other namespace conversion.

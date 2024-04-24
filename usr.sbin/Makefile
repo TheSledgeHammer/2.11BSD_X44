@@ -6,13 +6,14 @@
 SUBDIR=	ac accton arp authpf 						\
 		bad144 boot0cfg btxld 						\
 		catman chown chroot config cron 			\
-		dev_mkdb 									\
+		dev_mkdb diskpart							\
 		kvm_mkdb 									\
 		link                                        \
         makefs mdconfig mrouted mtree moused        \
-		pcictl pwd_mkdb 							\
+        netgroup_mkdb								\
+		pcictl portmap pwd_mkdb 					\
         rmt                                         \
-		unlink  									\
+		update unlink  								\
 		vnconfig 									\
 		wsconscfg wsfontload wsmoused wsmuxctl		\
         zdump zic

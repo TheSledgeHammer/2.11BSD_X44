@@ -590,7 +590,7 @@ parse_variable(_ISO2022EncodingInfo * __restrict ei, const void * __restrict var
 			;
 		else
 			ret = _PARSEFAIL;
-		if (ret==_PARSEFAIL)
+		if (ret == _PARSEFAIL)
 			goto parsefail;
 		v = e;
 
@@ -718,7 +718,7 @@ _ISO2022_sgetwchar(_ISO2022EncodingInfo * __restrict ei, const char * __restrict
 	int i;
 
 	_DIAGASSERT(ei != NULL);
-	_DIAGASSERT(state != NULL);
+	_DIAGASSERT(psenc != NULL);
 	_DIAGASSERT(string != NULL);
 	/* result may be NULL */
 

@@ -6,7 +6,7 @@
 SUBDIR= apply ar asa at 											\
 		banner basename bzip2 bzip2recover							\
 		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
-		compress crontab crunch ctags cut 							\
+		compress crontab crunch csplit ctags cut 					\
 		db deroff dirname du										\
 		elf2aout elf2ecoff env expand								\
 		false fdformat find fmt fold fpr fsplit                     \
@@ -16,8 +16,8 @@ SUBDIR= apply ar asa at 											\
         id indent iostat                                            \
 		join jot													\
 		kdump ktrace												\
-		lam lastcomm ldd leave locate lock logger logname look 		\
-		lorder 														\
+		lam last lastcomm ldd leave locate lock logger login 		\
+		logname look lorder 										\
 		m4 machine make man menuc mkdep mkerrlst mkfifo mklocale 	\
 		mkstr mktemp msgc msgs                                      \
         nbperf netgroup netstat nice nl nohup                       \
@@ -25,8 +25,9 @@ SUBDIR= apply ar asa at 											\
 		renice rev rpcgen rpcinfo									\
 		script sed shar shlock showmount sort sortinfo spell split 	\
 		stat strfile su												\
-		tail tic time tip touch true tsort 							\
-		uname unexpand unstr unzip users uudecode uuencode 			\
+		tail tcopy tic time tip touch tput true tset tsort tty		\
+		ul uname unexpand unifdef uniq unstr unvis unzip users 		\
+		uudecode uuencode 											\
 		vgrind vis vmstat 											\
 		w wall wc what whereis who whois write 						\
 		xargs xinstall xlint xstr                                   \

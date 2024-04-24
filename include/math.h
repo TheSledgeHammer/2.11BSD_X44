@@ -5,6 +5,7 @@
  *
  *	@(#)math.h	1.1 (2.10BSD Berkeley) 12/1/86
  */
+
 #ifndef _MATH_H_
 #define _MATH_H_
 

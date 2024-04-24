@@ -82,6 +82,8 @@ char	*strtok_r(char *, const char *, char **);
 #endif /* _POSIX_C_SOURCE >= 199506 || XOPEN_SOURCE >= 500 || ... */
 size_t	strxfrm(char * __restrict, const char * __restrict, size_t);
 
+char 	*index(char *, char);
+
 #if (_POSIX_C_SOURCE - 0 >= 200112L) || defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 void	*memccpy(void *, const void *, int, size_t);
 char	*strdup(const char *);

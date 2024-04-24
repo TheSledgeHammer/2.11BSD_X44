@@ -35,6 +35,8 @@ static char sccsid[] = "@(#)res_query.c	5.3 (Berkeley) 4/5/88";
 extern int errno;
 int h_errno;
 
+char *hostalias(const char *);
+
 /*
  * Formulate a normal query, send, and await answer.
  * Returned answer is placed in supplied buffer "answer".
@@ -128,7 +130,6 @@ res_search(name, class, type, answer, anslen)
 {
 	register char *cp, **domain;
 	int n, ret;
-	char *hostalias();
 
 	if ((_res.options & RES_INIT) == 0 && res_init() == -1)
 		return (-1);
@@ -222,7 +223,7 @@ hostalias(name)
 {
 	register char *C1, *C2;
 	FILE *fp;
-	char *file, *getenv(), *strcpy(), *strncpy();
+	char *file;
 	char buf[BUFSIZ];
 	static char abuf[MAXDNAME];
 
@@ -231,17 +232,20 @@ hostalias(name)
 		return (NULL);
 	buf[sizeof(buf) - 1] = '\0';
 	while (fgets(buf, sizeof(buf), fp)) {
-		for (C1 = buf; *C1 && !isspace(*C1); ++C1);
+		for (C1 = buf; *C1 && !isspace(*C1); ++C1)
+			;
 		if (!*C1)
 			break;
 		*C1 = '\0';
 		if (!strcasecmp(buf, name)) {
-			while (isspace(*++C1));
+			while (isspace(*++C1))
+				;
 			if (!*C1)
 				break;
-			for (C2 = C1 + 1; *C2 && !isspace(*C2); ++C2);
+			for (C2 = C1 + 1; *C2 && !isspace(*C2); ++C2)
+				;
 			abuf[sizeof(abuf) - 1] = *C2 = '\0';
-			(void)strncpy(abuf, C1, sizeof(abuf) - 1);
+			(void) strncpy(abuf, C1, sizeof(abuf) - 1);
 			fclose(fp);
 			return (abuf);
 		}
