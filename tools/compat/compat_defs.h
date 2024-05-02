@@ -349,6 +349,10 @@ void vwarnc(int, const char *, va_list);
 void vwarnx(const char *, va_list);
 #endif
 
+#if !HAVE_DECL_MI_VECTOR_HASH
+void     mi_vector_hash(const void * __restrict, size_t, uint32_t, uint32_t[3]);
+#endif
+
 #if !HAVE_ESETFUNC
 void 	(*esetfunc(void (*)(int, const char *, ...)))(int, const char *, ...);
 size_t 	estrlcpy(char *, const char *, size_t);
@@ -362,6 +366,9 @@ FILE 	*efopen(const char *, const char *);
 int 	easprintf(char **, const char *, ...);
 int 	evasprintf(char **, const char *, va_list);
 #endif
+
+char	*flags_to_string(unsigned long, const char *);
+int	string_to_flags(char **, unsigned long *, unsigned long *);
 
 #if !HAVE_DECL_FGETLN
 char *fgetln(FILE *, size_t *);
