@@ -51,6 +51,8 @@ __RCSID("$NetBSD: scsi_subr.c,v 1.12 2008/04/28 20:23:09 martin Exp $");
 #include <string.h>
 #include <unistd.h>
 
+#include <dev/disk/scsi/scsipi_all.h>
+
 #include "extern.h"
 
 #define	STRVIS_ISWHITE(x) ((x) == ' ' || (x) == '\0' || (x) == (u_char)'\377')
@@ -99,7 +101,7 @@ scsi_mode_sense(int fd, u_int8_t pgcode, u_int8_t pctl, void *buf, size_t len)
 	memset(&cmd, 0, sizeof(cmd));
 	memset(buf, 0, len);
 
-	cmd.opcode = SCSI_MODE_SENSE_6;
+	cmd.opcode = MODE_SENSE;
 	cmd.page = pgcode | pctl;
 	cmd.length = len;
 
@@ -113,7 +115,7 @@ scsi_mode_select(int fd, u_int8_t byte2, void *buf, size_t len)
 
 	memset(&cmd, 0, sizeof(cmd));
 
-	cmd.opcode = SCSI_MODE_SELECT_6;
+	cmd.opcode = MODE_SELECT;
 	cmd.byte2 = SMS_PF | byte2;
 	cmd.length = len;
 
@@ -128,7 +130,7 @@ scsi_request_sense(int fd, void *buf, size_t len)
 	memset(&cmd, 0, sizeof(cmd));
 	memset(buf, 0, len);
 
-	cmd.opcode = SCSI_REQUEST_SENSE;
+	cmd.opcode = REQUEST_SENSE;
 	cmd.length = len;
  	scsi_command(fd, &cmd, sizeof(cmd), buf, len, 10000, SCCMD_READ);
 }

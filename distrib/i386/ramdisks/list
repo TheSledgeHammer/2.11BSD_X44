@@ -67,7 +67,7 @@ SYMLINK	/bin/cat				usr/sbin/boot0cfg
 SYMLINK	/bin/cat				usr/sbin/bad144
 SYMLINK	/bin/cat				usr/sbin/chown
 SYMLINK	/bin/cat				usr/sbin/chroot
-#SYMLINK	/bin/cat				usr/sbin/update
+SYMLINK	/bin/cat				usr/sbin/update
 
 SPECIAL	/bin/rm 				ramdiskbin
 

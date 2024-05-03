@@ -235,10 +235,10 @@ static const struct bitinfo ata_cmd_ext[] = {
 static const struct bitinfo ata_sata_caps[] = {
 	{ SATA_SIGNAL_GEN1, "1.5Gb/s signaling" },
 	{ SATA_SIGNAL_GEN2, "3.0Gb/s signaling" },
-	{ SATA_SIGNAL_GEN3, "6.0Gb/s signaling" },
+	//{ SATA_SIGNAL_GEN3, "6.0Gb/s signaling" },
 	{ SATA_NATIVE_CMDQ, "Native Command Queuing" },
 	{ SATA_HOST_PWR_MGMT, "Host-Initiated Interface Power Management" },
-	{ SATA_PHY_EVNT_CNT, "PHY Event Counters" },
+	//{ SATA_PHY_EVNT_CNT, "PHY Event Counters" },
 	{ 0, NULL },
 };
 
@@ -246,8 +246,8 @@ static const struct bitinfo ata_sata_feat[] = {
 	{ SATA_NONZERO_OFFSETS, "Non-zero Offset DMA" },
 	{ SATA_DMA_SETUP_AUTO, "DMA Setup Auto Activate" },
 	{ SATA_DRIVE_PWR_MGMT, "Device-Initiated Interface Power Managment" },
-	{ SATA_IN_ORDER_DATA, "In-order Data Delivery" },
-	{ SATA_SW_STTNGS_PRS, "Software Settings Preservation" },
+	//{ SATA_IN_ORDER_DATA, "In-order Data Delivery" },
+	//{ SATA_SW_STTNGS_PRS, "Software Settings Preservation" },
 	{ 0, NULL },
 };
 
@@ -882,14 +882,6 @@ device_identify(int argc, char *argv[])
 
 	inqbuf = getataparams();
 
-	if ((inqbuf->atap_integrity & WDC_INTEGRITY_MAGIC_MASK) ==
-	    WDC_INTEGRITY_MAGIC) {
-		for (i = checksum = 0; i < 512; i++)
-			checksum += ((const uint8_t *)inqbuf)[i];
-		if (checksum != 0)
-			puts("IDENTIFY DEVICE data checksum invalid\n");
-	}
-
 #if BYTE_ORDER == LITTLE_ENDIAN
 	/*
 	 * On little endian machines, we need to shuffle the string
@@ -922,70 +914,9 @@ device_identify(int argc, char *argv[])
 	printf("Model: %s, Rev: %s, Serial #: %s\n",
 		model, revision, serial);
 
-	if (inqbuf->atap_cmd_ext != 0 && inqbuf->atap_cmd_ext != 0xffff &&
-	    inqbuf->atap_cmd_ext & ATA_CMDE_WWN)
-		printf("World Wide Name: %016" PRIX64 "\n",
-		    ((uint64_t)inqbuf->atap_wwn[0] << 48) |
-		    ((uint64_t)inqbuf->atap_wwn[1] << 32) |
-		    ((uint64_t)inqbuf->atap_wwn[2] << 16) |
-		    ((uint64_t)inqbuf->atap_wwn[3] <<  0));
-
 	printf("Device type: %s, %s\n", inqbuf->atap_config & WDC_CFG_ATAPI ?
 	       "ATAPI" : "ATA", inqbuf->atap_config & ATA_CFG_FIXED ? "fixed" :
 	       "removable");
-
-	if (inqbuf->atap_cmd2_en != 0 && inqbuf->atap_cmd2_en != 0xffff &&
-	    inqbuf->atap_cmd2_en & ATA_CMD2_LBA48) {
-		sectors =
-		    ((uint64_t)inqbuf->atap_max_lba[3] << 48) |
-		    ((uint64_t)inqbuf->atap_max_lba[2] << 32) |
-		    ((uint64_t)inqbuf->atap_max_lba[1] << 16) |
-		    ((uint64_t)inqbuf->atap_max_lba[0] <<  0);
-	} else if (inqbuf->atap_capabilities1 & WDC_CAP_LBA) {
-		sectors = (inqbuf->atap_capacity[1] << 16) |
-		    inqbuf->atap_capacity[0];
-	} else {
-		sectors = inqbuf->atap_cylinders *
-		    inqbuf->atap_heads * inqbuf->atap_sectors;
-	}
-
-	secsize = 512;
-
-	if ((inqbuf->atap_secsz & ATA_SECSZ_VALID_MASK) == ATA_SECSZ_VALID) {
-		if (inqbuf->atap_secsz & ATA_SECSZ_LLS) {
-			secsize = 2 *		/* words to bytes */
-			    (inqbuf->atap_lls_secsz[1] << 16 |
-			    inqbuf->atap_lls_secsz[0] <<  0);
-		}
-	}
-
-	capacity = sectors * secsize;
-
-	humanize_number(hnum, sizeof(hnum), capacity, "bytes",
-		HN_AUTOSCALE, HN_DIVISOR_1000);
-
-	printf("Capacity %s, %" PRIu64 " sectors, %" PRIu32 " bytes/sector\n",
-		       hnum, sectors, secsize);
-
-	printf("Cylinders: %d, heads: %d, sec/track: %d\n",
-		inqbuf->atap_cylinders, inqbuf->atap_heads,
-		inqbuf->atap_sectors);
-
-	lb_per_pb = 1;
-
-	if ((inqbuf->atap_secsz & ATA_SECSZ_VALID_MASK) == ATA_SECSZ_VALID) {
-		if (inqbuf->atap_secsz & ATA_SECSZ_LPS) {
-			lb_per_pb <<= inqbuf->atap_secsz & ATA_SECSZ_LPS_SZMSK;
-			printf("Physical sector size: %d bytes\n",
-			    lb_per_pb * secsize);
-			if ((inqbuf->atap_logical_align &
-			    ATA_LA_VALID_MASK) == ATA_LA_VALID) {
-				printf("First physically aligned sector: %d\n",
-				    lb_per_pb - (inqbuf->atap_logical_align &
-					ATA_LA_MASK));
-			}
-		}
-	}
 
 	if (((inqbuf->atap_sata_caps & SATA_NATIVE_CMDQ) ||
 	    (inqbuf->atap_cmd_set2 & ATA_CMD2_RWQ)) &&
