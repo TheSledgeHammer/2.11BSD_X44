@@ -58,7 +58,7 @@ strsep(stringp, delim)
 	const char *delim;
 {
 	register char *s;
-	register char *spanp;
+	register const char *spanp;
 	int c, sc;
 	char *tok;
 
