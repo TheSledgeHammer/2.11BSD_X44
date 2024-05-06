@@ -2,4 +2,8 @@
 
 .PATH: ${ARCHDIR}/citrus ${.CURDIR}/citrus
 
+CITRUS?=	yes
+
+.if ${CITRUS} == "yes"
 SRCS+=	citrus_ctype.c citrus_stdenc.c
+.endif
