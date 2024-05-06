@@ -368,7 +368,7 @@ int 	evasprintf(char **, const char *, va_list);
 #endif
 
 char	*flags_to_string(unsigned long, const char *);
-int	string_to_flags(char **, unsigned long *, unsigned long *);
+int		string_to_flags(char **, unsigned long *, unsigned long *);
 
 #if !HAVE_DECL_FGETLN
 char *fgetln(FILE *, size_t *);
@@ -507,6 +507,10 @@ int lchown(const char *, uid_t, gid_t);
 
 #if !HAVE_DECL_PWRITE
 ssize_t pwrite(int, const void *, size_t, off_t);
+#endif
+
+#if !HAVE_RAISE_DEFAULT_SIGNAL
+int raise_default_signal(int);
 #endif
 
 #if !HAVE_DECL_REALLOCARR
