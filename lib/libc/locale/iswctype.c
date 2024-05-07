@@ -150,6 +150,14 @@ iswblank(c)
 	return (__isctype_w((c), _CTYPE_B));
 }
 
+#undef iswascii
+int
+iswascii(c)
+	wint_t c;
+{
+	return ((c & ~0x7F) == 0);
+}
+
 #undef iswcntrl
 int
 iswcntrl(c)
@@ -174,12 +182,42 @@ iswgraph(c)
 	return (__isctype_w((c), _CTYPE_G));
 }
 
+#undef iswhexnumber
+int
+iswhexnumber(c)
+	wint_t c;
+{
+	return (__isctype_w((c), _CTYPE_X));
+}
+
+#undef iswideogram
+int
+iswideogram(c)
+	wint_t c;
+{
+	return (__isctype_w((c), _CTYPE_I));
+}
+
 #undef iswlower
 int
 iswlower(c)
 	wint_t c;
 {
 	return (__isctype_w((c), _CTYPE_L));
+}
+
+#undef iswnumber
+int
+iswnumber(int c)
+{
+	return (__isctype_w(c, _CTYPE_N));
+}
+
+#undef iswphonogram
+int
+iswphonogram(int c)
+{
+	return (__isctype_w(c, _CTYPE_Q));
 }
 
 #undef iswprint
@@ -196,6 +234,14 @@ iswpunct(c)
 	wint_t c;
 {
 	return (__isctype_w((c), _CTYPE_P));
+}
+
+#undef iswrune
+int
+iswrune(c)
+	wint_t c;
+{
+	return (__isctype_w(c, 0xFFFFFF00L));
 }
 
 #undef iswspace
@@ -222,6 +268,15 @@ iswxdigit(c)
 	return (__isctype_w((c), _CTYPE_X));
 }
 
+#undef iswspecial
+int
+iswspecial(c)
+	wint_t c;
+{
+	return (__isctype_w((c), _CTYPE_T));
+}
+
+#undef towupper
 wint_t
 towupper(c)
 	wint_t c;
@@ -229,6 +284,7 @@ towupper(c)
 	return (__toupper_w(c));
 }
 
+#undef towlower
 wint_t
 towlower(c)
 	wint_t c;

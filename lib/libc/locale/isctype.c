@@ -105,16 +105,18 @@ isgraph(c)
 
 #undef ishexnumber
 int
-ishexnumber(int c)
+ishexnumber(c)
+	int c;
 {
 	return (__istype(c, _CTYPE_X));
 }
 
 #undef isideogram
 int
-isideogram(int c)
+isideogram(c)
+	int c;
 {
-	return (__istype(c, _CTYPE_I));
+	return (__istype((c), _CTYPE_I));
 }
 
 #undef islower
@@ -127,16 +129,18 @@ islower(c)
 
 #undef isnumber
 int
-isnumber(int c)
+isnumber(c)
+	int c;
 {
 	return (__istype(c, _CTYPE_N));
 }
 
 #undef isphonogram
 int
-isphonogram(int c)
+isphonogram(c)
+	int c;
 {
-	return (__istype(c, _CTYPE_Q));
+	return (__istype((c), _CTYPE_Q));
 }
 
 #undef isprint
@@ -157,9 +161,10 @@ ispunct(c)
 
 #undef isrune
 int
-isrune(int c)
+isrune(c)
+	int c;
 {
-	return (__istype(c, 0xFFFFFF00L));
+	return (__istype((c), 0xFFFFFF00L));
 }
 
 #undef isspace
@@ -172,9 +177,10 @@ isspace(c)
 
 #undef isspecial
 int
-isspecial(int c)
+isspecial(c)
+	int c;
 {
-	return (__istype(c, _CTYPE_T));
+	return (__istype((c), _CTYPE_T));
 }
 
 #undef isupper

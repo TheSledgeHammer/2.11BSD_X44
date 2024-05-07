@@ -478,10 +478,7 @@ __istype(c, f)
 	rune_t c;
 	unsigned long f;
 {
-	return (((
-			(_RUNE_ISCACHED(c)) ?
-					___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ?
-			1 : 0);
+	return ((((_RUNE_ISCACHED(c)) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
 }
 
 int
@@ -489,39 +486,34 @@ __isctype(c, f)
 	rune_t c;
 	unsigned long f;
 {
-	return ((((_RUNE_ISCACHED(c)) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ?
-			1 : 0);
+	return ((((_RUNE_ISCACHED(c)) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
 }
 
 rune_t
 toupper(c)
 	rune_t c;
 {
-	return ((_RUNE_ISCACHED(c)) ?
-			___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+	return ((_RUNE_ISCACHED(c)) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 rune_t
 tolower(c)
 	rune_t c;
 {
-	return ((_RUNE_ISCACHED(c)) ?
-			___tolower(c) : _CurrentRuneLocale->maplower[c]);
+	return ((_RUNE_ISCACHED(c)) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
 
 wint_t
 toupper_mb(c)
 	wint_t c;
 {
-	return ((_RUNE_ISCACHED(c)) ?
-			___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
+	return ((_RUNE_ISCACHED(c)) ? ___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 wint_t
 tolower_mb(c)
 	wint_t c;
 {
-	return ((_RUNE_ISCACHED(c)) ?
-			___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
+	return ((_RUNE_ISCACHED(c)) ? ___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
 }
 #endif

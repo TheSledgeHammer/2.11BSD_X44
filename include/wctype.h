@@ -72,6 +72,16 @@ wint_t		towlower(wint_t);
 wint_t		towupper(wint_t);
 wctrans_t 	wctrans(const char *);
 wctype_t 	wctype(const char *);
+
+#if __BSD_VISIBLE
+wint_t		iswascii(wint_t);
+wint_t		iswhexnumber(wint_t);
+wint_t		iswideogram(wint_t);
+wint_t		iswnumber(wint_t);
+wint_t		iswphonogram(wint_t);
+wint_t		iswrune(wint_t);
+wint_t		iswspecial(wint_t);
+#endif
 __END_DECLS
 
 #endif		/* _WCTYPE_H_ */

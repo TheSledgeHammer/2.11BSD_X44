@@ -67,6 +67,7 @@
 
 #include <sys/cdefs.h>
 #include <machine/ansi.h>
+#include <sys/ansi.h>
 #include <sys/null.h>
 
 #include <stdio.h> /* for FILE* */
@@ -94,11 +95,6 @@ typedef	_BSD_SIZE_T_	size_t;
 #ifndef WEOF
 #define	WEOF 			((wint_t)-1)
 #endif
-
-#define getwc(f) 		fgetwc(f)
-#define getwchar() 		getwc(stdin)
-#define putwc(wc, f) 	fputwc((wc), (f))
-#define putwchar(wc) 	putwc((wc), stdout)
 
 __BEGIN_DECLS
 wint_t	btowc(int);
@@ -131,12 +127,17 @@ wchar_t	*wmemcpy(wchar_t * __restrict, const wchar_t * __restrict, size_t);
 wchar_t	*wmemmove(wchar_t *, const wchar_t *, size_t);
 wchar_t	*wmemset(wchar_t *, wchar_t, size_t);
 
+#if defined(__BSD_VISIBLE)
 size_t	wcslcat(wchar_t *, const wchar_t *, size_t);
 size_t	wcslcpy(wchar_t *, const wchar_t *, size_t);
-int		wcswidth(const wchar_t *, size_t);
-int		wctob(wint_t);
-int		wcwidth(wchar_t);
+#endif
 
+#if defined(__BSD_VISIBLE) || (_POSIX_C_SOURCE - 0 >= 200112L) || (_XOPEN_SOURCE - 0) >= 600
+int		wcswidth(const wchar_t *, size_t);
+int		wcwidth(wchar_t);
+#endif
+
+int		wctob(wint_t);
 unsigned long int wcstoul(const wchar_t * __restrict, wchar_t ** __restrict, int);
 long int wcstol(const wchar_t * __restrict, wchar_t ** __restrict, int);
 double wcstod(const wchar_t * __restrict, wchar_t ** __restrict);
@@ -147,6 +148,11 @@ long long int wcstoll(const wchar_t * __restrict, wchar_t ** __restrict, int);
 /* LONGLONG */
 unsigned long long int wcstoull(const wchar_t * __restrict, wchar_t ** __restrict, int);
 #endif
+
+#define getwc(f) 		fgetwc(f)
+#define getwchar() 		getwc(stdin)
+#define putwc(wc, f) 	fputwc((wc), (f))
+#define putwchar(wc) 	putwc((wc), stdout)
 
 wint_t 	ungetwc(wint_t, FILE *);
 wint_t 	fgetwc(FILE *);
