@@ -757,7 +757,7 @@ cgetfirst(buf, db_array)
 
 static FILE *pfp;
 static int slash;
-static char **dbp;
+static const char * const *dbp;
 
 int
 cgetclose()
