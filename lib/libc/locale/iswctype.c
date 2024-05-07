@@ -48,7 +48,6 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #include <string.h>
 #include <rune.h>
 
-#include "runefile.h"
 #include "_wctrans_local.h"
 
 #ifdef lint
@@ -132,7 +131,7 @@ int
 iswalnum(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_A|_RUNETYPE_D));
+	return (__isctype_w((c), _CTYPE_A|_CTYPE_D));
 }
 
 #undef iswalpha
@@ -140,7 +139,7 @@ int
 iswalpha(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_A));
+	return (__isctype_w((c), _CTYPE_A));
 }
 
 #undef iswblank
@@ -148,7 +147,7 @@ int
 iswblank(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_B));
+	return (__isctype_w((c), _CTYPE_B));
 }
 
 #undef iswcntrl
@@ -156,7 +155,7 @@ int
 iswcntrl(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_C));
+	return (__isctype_w((c), _CTYPE_C));
 }
 
 #undef iswdigit
@@ -164,7 +163,7 @@ int
 iswdigit(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_D));
+	return (__isctype_w((c), _CTYPE_D));
 }
 
 #undef iswgraph
@@ -172,7 +171,7 @@ int
 iswgraph(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_G));
+	return (__isctype_w((c), _CTYPE_G));
 }
 
 #undef iswlower
@@ -180,7 +179,7 @@ int
 iswlower(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_L));
+	return (__isctype_w((c), _CTYPE_L));
 }
 
 #undef iswprint
@@ -188,7 +187,7 @@ int
 iswprint(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_R));
+	return (__isctype_w((c), _CTYPE_R));
 }
 
 #undef iswpunct
@@ -196,7 +195,7 @@ int
 iswpunct(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_P));
+	return (__isctype_w((c), _CTYPE_P));
 }
 
 #undef iswspace
@@ -204,7 +203,7 @@ int
 iswspace(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_S));
+	return (__isctype_w((c), _CTYPE_S));
 }
 
 #undef iswupper
@@ -212,7 +211,7 @@ int
 iswupper(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_U));
+	return (__isctype_w((c), _CTYPE_U));
 }
 
 #undef iswxdigit
@@ -220,7 +219,7 @@ int
 iswxdigit(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _RUNETYPE_X));
+	return (__isctype_w((c), _CTYPE_X));
 }
 
 wint_t
@@ -241,8 +240,8 @@ int
 wcwidth(c)
 	wchar_t c;
 {
-	if (__isctype_w(c, _RUNETYPE_R)) {
-		return (((unsigned)__runetype_w(c) & _RUNETYPE_SWM) >> _RUNETYPE_SWS);
+	if (__isctype_w(c, _CTYPE_R)) {
+		return (((unsigned)__runetype_w(c) & _CTYPE_SWM) >> _CTYPE_SWS);
 	}
 	return (-1);
 }
