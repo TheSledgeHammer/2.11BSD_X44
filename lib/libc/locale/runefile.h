@@ -61,7 +61,7 @@ typedef uint32_t 		_RuneType;
 #define	_RUNETYPE_I		0x00080000U	/* Ideogram */
 #define	_RUNETYPE_T		0x00100000U	/* Special */
 #define	_RUNETYPE_Q		0x00200000U	/* Phonogram */
-#define	_RUNETYPE_SWM	0xe0000000U	/* Mask to get screen width data */
+#define	_RUNETYPE_SWM	0xc0000000U	/* Mask to get screen width data */
 #define	_RUNETYPE_SWS	30			/* Bits to shift to get width */
 #define	_RUNETYPE_SW0	0x00000000U	/* 0 width character */
 #define	_RUNETYPE_SW1	0x40000000U	/* 1 width character */
