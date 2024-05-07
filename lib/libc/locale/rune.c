@@ -419,15 +419,15 @@ ___toupper_mb(c)
 	_RuneEntry *re = rr->ranges;
 
 	if (c < 0 || c == EOF)
-		return(c);
+		return (c);
 
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		if (c < re->min)
-			return(c);
+			return (c);
 		if (c <= re->max)
-			return(re->map + c - re->min);
+			return (re->map + c - re->min);
 	}
-	return(c);
+	return (c);
 }
 
 rune_t
@@ -458,15 +458,15 @@ ___tolower_mb(c)
 	_RuneEntry *re = rr->ranges;
 
 	if (c < 0 || c == EOF)
-		return(c);
+		return (c);
 
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		if (c < re->min)
-			return(c);
+			return (c);
 		if (c <= re->max)
-			return(re->map + c - re->min);
+			return (re->map + c - re->min);
 	}
-	return(c);
+	return (c);
 }
 
 #if !defined(_USE_CTYPE_INLINE_) && !defined(_USE_CTYPE_MACROS_)

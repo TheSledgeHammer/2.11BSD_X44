@@ -46,33 +46,27 @@ typedef uint32_t 		_RuneType;
 #define _INVALID_RUNE   ((rune_t)-3)
 #endif
 
-/* for cross host tools on older systems */
-#ifndef UINT32_C
-/* assumes sizeof(unsigned int)>=4 */
-#define UINT32_C(c) 	((uint32_t)(c##U))
-#endif
-
 /* runetype */
-#define	_RUNETYPE_A		UINT32_C(0x00000100)	/* Alpha */
-#define	_RUNETYPE_C		UINT32_C(0x00000200)	/* Control */
-#define	_RUNETYPE_D		UINT32_C(0x00000400)	/* Digit */
-#define	_RUNETYPE_G		UINT32_C(0x00000800)	/* Graph */
-#define	_RUNETYPE_L		UINT32_C(0x00001000)	/* Lower */
-#define	_RUNETYPE_P		UINT32_C(0x00002000)	/* Punct */
-#define	_RUNETYPE_S		UINT32_C(0x00004000)	/* Space */
-#define	_RUNETYPE_U		UINT32_C(0x00008000)	/* Upper */
-#define	_RUNETYPE_X		UINT32_C(0x00010000)	/* X digit */
-#define	_RUNETYPE_B		UINT32_C(0x00020000)	/* Blank */
-#define	_RUNETYPE_R		UINT32_C(0x00040000)	/* Print */
-#define	_RUNETYPE_I		UINT32_C(0x00080000)	/* Ideogram */
-#define	_RUNETYPE_T		UINT32_C(0x00100000)	/* Special */
-#define	_RUNETYPE_Q		UINT32_C(0x00200000)	/* Phonogram */
-#define	_RUNETYPE_SWM	UINT32_C(0xc0000000)	/* Mask to get screen width data */
-#define	_RUNETYPE_SWS	30						/* Bits to shift to get width */
-#define	_RUNETYPE_SW0	UINT32_C(0x00000000)	/* 0 width character */
-#define	_RUNETYPE_SW1	UINT32_C(0x40000000)	/* 1 width character */
-#define	_RUNETYPE_SW2	UINT32_C(0x80000000)	/* 2 width character */
-#define	_RUNETYPE_SW3	UINT32_C(0xc0000000)	/* 3 width character */
+#define	_RUNETYPE_A		0x00000100U	/* Alpha */
+#define	_RUNETYPE_C		0x00000200U	/* Control */
+#define	_RUNETYPE_D		0x00000400U	/* Digit */
+#define	_RUNETYPE_G		0x00000800U	/* Graph */
+#define	_RUNETYPE_L		0x00001000U	/* Lower */
+#define	_RUNETYPE_P		0x00002000U	/* Punct */
+#define	_RUNETYPE_S		0x00004000U	/* Space */
+#define	_RUNETYPE_U		0x00008000U	/* Upper */
+#define	_RUNETYPE_X		0x00010000U	/* X digit */
+#define	_RUNETYPE_B		0x00020000U	/* Blank */
+#define	_RUNETYPE_R		0x00040000U	/* Print */
+#define	_RUNETYPE_I		0x00080000U	/* Ideogram */
+#define	_RUNETYPE_T		0x00100000U	/* Special */
+#define	_RUNETYPE_Q		0x00200000U	/* Phonogram */
+#define	_RUNETYPE_SWM	0xe0000000U	/* Mask to get screen width data */
+#define	_RUNETYPE_SWS	30			/* Bits to shift to get width */
+#define	_RUNETYPE_SW0	0x00000000U	/* 0 width character */
+#define	_RUNETYPE_SW1	0x40000000U	/* 1 width character */
+#define	_RUNETYPE_SW2	0x80000000U	/* 2 width character */
+#define	_RUNETYPE_SW3	0xc0000000U	/* 3 width character */
 
 typedef struct {
 	int32_t			min;

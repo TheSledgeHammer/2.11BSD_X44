@@ -55,10 +55,46 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #define __inline
 #endif
 
-static __inline _RuneType 	__runetype_w (wint_t);
-static __inline int 		__isctype_w (wint_t, _RuneType);
-static __inline wint_t 		__toupper_w (wint_t);
-static __inline wint_t 		__tolower_w (wint_t);
+static __inline _RuneType 	__runetype_w(wint_t);
+static __inline int 		__isctype_w(wint_t, _RuneType);
+static __inline wint_t 		__toupper_w(wint_t);
+static __inline wint_t 		__tolower_w(wint_t);
+
+#ifdef notyet
+static __inline _RuneType
+__runetype_priv(rl, wc)
+	_RuneLocale *rl;
+	wint_t wc;
+{
+	return (_RUNE_ISCACHED(wc) ? rl->runetype[wc] : ___runetype_mb(wc));
+}
+
+static __inline int
+__iswctype_priv(rl, wc, index)
+	_RuneLocale *rl;
+	wint_t wc;
+	_RuneType index;
+{
+	_WCTypeEntry *te = &rl->wctype[index];
+	return (!!(__runetype_priv(rl, wc) & te->mask));
+}
+
+static __inline wint_t
+__toupper_priv(rl, wc)
+	_RuneLocale *rl;
+	wint_t wc;
+{
+	return (_towctrans(wc, _wctrans_upper(rl)));
+}
+
+static __inline wint_t
+__tolower_priv(rl, wc)
+	_RuneLocale *rl;
+	wint_t wc;
+{
+	return (_towctrans(wc, _wctrans_lower(rl)));
+}
+#endif
 
 static __inline _RuneType
 __runetype_w(c)
@@ -96,7 +132,7 @@ int
 iswalnum(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_A|_CTYPE_D));
+	return (__isctype_w((c), _RUNETYPE_A|_RUNETYPE_D));
 }
 
 #undef iswalpha
@@ -104,7 +140,7 @@ int
 iswalpha(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_A));
+	return (__isctype_w((c), _RUNETYPE_A));
 }
 
 #undef iswblank
@@ -112,7 +148,7 @@ int
 iswblank(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_B));
+	return (__isctype_w((c), _RUNETYPE_B));
 }
 
 #undef iswcntrl
@@ -120,7 +156,7 @@ int
 iswcntrl(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_C));
+	return (__isctype_w((c), _RUNETYPE_C));
 }
 
 #undef iswdigit
@@ -128,7 +164,7 @@ int
 iswdigit(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_D));
+	return (__isctype_w((c), _RUNETYPE_D));
 }
 
 #undef iswgraph
@@ -136,7 +172,7 @@ int
 iswgraph(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_G));
+	return (__isctype_w((c), _RUNETYPE_G));
 }
 
 #undef iswlower
@@ -144,7 +180,7 @@ int
 iswlower(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_L));
+	return (__isctype_w((c), _RUNETYPE_L));
 }
 
 #undef iswprint
@@ -152,7 +188,7 @@ int
 iswprint(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_R));
+	return (__isctype_w((c), _RUNETYPE_R));
 }
 
 #undef iswpunct
@@ -160,7 +196,7 @@ int
 iswpunct(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_P));
+	return (__isctype_w((c), _RUNETYPE_P));
 }
 
 #undef iswspace
@@ -168,7 +204,7 @@ int
 iswspace(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_S));
+	return (__isctype_w((c), _RUNETYPE_S));
 }
 
 #undef iswupper
@@ -176,7 +212,7 @@ int
 iswupper(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_U));
+	return (__isctype_w((c), _RUNETYPE_U));
 }
 
 #undef iswxdigit
@@ -184,10 +220,9 @@ int
 iswxdigit(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_X));
+	return (__isctype_w((c), _RUNETYPE_X));
 }
 
-#undef towupper
 wint_t
 towupper(c)
 	wint_t c;
@@ -195,7 +230,6 @@ towupper(c)
 	return (__toupper_w(c));
 }
 
-#undef towlower
 wint_t
 towlower(c)
 	wint_t c;
@@ -203,15 +237,16 @@ towlower(c)
 	return (__tolower_w(c));
 }
 
-#undef wcwidth
 int
 wcwidth(c)
 	wchar_t c;
 {
-	return (((unsigned)__runetype_w(c) & _CTYPE_SWM) >> _CTYPE_SWS);
+	if (__isctype_w(c, _RUNETYPE_R)) {
+		return (((unsigned)__runetype_w(c) & _RUNETYPE_SWM) >> _RUNETYPE_SWS);
+	}
+	return (-1);
 }
 
-#undef wctrans
 wctrans_t
 wctrans(charclass)
 	const char *charclass;
@@ -219,52 +254,53 @@ wctrans(charclass)
 	int i;
 	_RuneLocale *rl = _CurrentRuneLocale;
 
-	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name==NULL)
+	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name == NULL) {
 		_wctrans_init(rl);
+	}
 
-	for (i=0; i<_WCTRANS_NINDEXES; i++)
-		if (!strcmp(rl->wctrans[i].name, charclass))
-			return ((wctrans_t)&rl->wctrans[i]);
-
-	return ((wctrans_t)NULL);
+	for (i = 0; i < _WCTRANS_NINDEXES; i++) {
+		if (!strcmp(rl->wctrans[i].name, charclass)) {
+			return ((wctrans_t) &rl->wctrans[i]);
+		}
+	}
+	return ((wctrans_t) NULL);
 }
 
-#undef towctrans
 wint_t
 towctrans(c, desc)
 	wint_t c;
 	wctrans_t desc;
 {
-	if (desc==NULL) {
+	if (desc == NULL) {
 		errno = EINVAL;
 		return (c);
 	}
-	return (_towctrans(c, (_WCTransEntry *)desc));
+	return (_towctrans(c, (_WCTransEntry*) desc));
 }
 
-#undef wctype
 wctype_t
 wctype(const char *property)
 {
 	int i;
 	_RuneLocale *rl = _CurrentRuneLocale;
 
-	for (i=0; i<_WCTYPE_NINDEXES; i++)
-		if (!strcmp(rl->wctype[i].name, property))
-			return ((wctype_t)&rl->wctype[i]);
-	return ((wctype_t)NULL);
+	for (i = 0; i < _WCTYPE_NINDEXES; i++) {
+		if (!strcmp(rl->wctype[i].name, property)) {
+			return ((wctype_t) &rl->wctype[i]);
+		}
+	}
+	return ((wctype_t) NULL);
 }
 
-#undef iswctype
 int
 iswctype(wint_t c, wctype_t charclass)
 {
 	/*
 	 * SUSv3: If charclass is 0, iswctype() shall return 0.
 	 */
-	if (charclass == (wctype_t)0) {
-		return 0;
+	if (charclass == (wctype_t) 0) {
+		return (0);
 	}
 
-	return (__isctype_w(c, ((_WCTypeEntry *)charclass)->mask));
+	return (__isctype_w(c, ((_WCTypeEntry*) charclass)->mask));
 }
