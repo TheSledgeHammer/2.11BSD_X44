@@ -331,6 +331,30 @@ _citrus_ctype_wcsnrtombs_priv(_ENCODING_INFO * __restrict ei, char * __restrict 
 	return (0);
 }
 
+static void
+_citrus_ctype_init_charset(_ENCODING_INFO * __restrict ei, _ENCODING_STATE * __restrict s)
+{
+	int i;
+
+	/* state doesn't need explicit init */
+	if ((s->flags & 1)) {
+		return;
+	}
+
+	s->gl = 0;
+	s->gr = (ei->flags & F_8BIT) ? 1 : -1;
+
+	for (i = 0; i < 4; i++) {
+		if (ei->initg[i].final) {
+			s->g[i].type = ei->initg[i].type;
+			s->g[i].final = ei->initg[i].final;
+			s->g[i].interm = ei->initg[i].interm;
+		}
+	}
+	s->singlegl = s->singlegr = -1;
+	s->flags |= 1;
+}
+
 /* ----------------------------------------------------------------------
  * templates for public functions
  */
@@ -339,6 +363,7 @@ void
 _citrus_ctype_init_state(_ENCODING_INFO * __restrict ei, _ENCODING_STATE * __restrict s)
 {
 	memset(s, 0, sizeof(*s));
+	_citrus_ctype_init_charset(ei, s);
 }
 
 void

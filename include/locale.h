@@ -71,7 +71,7 @@ struct lconv {
 
 #include <sys/cdefs.h>
 
-typedef void *_locale_t;
+typedef void *locale_t;
 
 __BEGIN_DECLS
 struct lconv	*localeconv(void);

@@ -309,27 +309,6 @@ get_flags(_ISO2022EncodingInfo * __restrict ei, const char * __restrict token)
 	return (_NOTMATCH);
 }
 
-static __inline void
-_citrus_ISO2022_init_state(_ISO2022EncodingInfo * __restrict ei, _ISO2022State * __restrict s)
-{
-	int i;
-
-	_citrus_ctype_init_state(ei, s);
-
-	s->gl = 0;
-	s->gr = (ei->flags & F_8BIT) ? 1 : -1;
-
-	for (i = 0; i < 4; i++) {
-		if (ei->initg[i].final) {
-			s->g[i].type = ei->initg[i].type;
-			s->g[i].final = ei->initg[i].final;
-			s->g[i].interm = ei->initg[i].interm;
-		}
-	}
-	s->singlegl = s->singlegr = -1;
-	s->flags |= _ISO2022STATE_FLAG_INITIALIZED;
-}
-
 
 int
 /*ARGSUSED*/
@@ -375,7 +354,7 @@ _ISO2022_sgetmbrune(_ISO2022EncodingInfo *ei, wchar_t *pwc, const char **s, size
 	 */
 	if (psenc->chlen < 0 || psenc->chlen > sizeof(psenc->ch)) {
 		/* illgeal state */
-		_citrus_ISO2022_init_state(ei, psenc);
+		_citrus_ctype_init_state(ei, psenc);
 		goto encoding_error;
 	}
 	if (psenc->chlen == 0)

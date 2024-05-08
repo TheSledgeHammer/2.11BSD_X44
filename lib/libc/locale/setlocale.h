@@ -27,6 +27,15 @@
 #ifndef _SETLOCALE_H_
 #define	_SETLOCALE_H_
 
+/* Encoding Name */
+#define ENCODING_UTF8 		"UTF-8"
+#define ENCODING_UTF1632 	"UTF-1632"
+#define ENCODING_UES 		"UES"
+#define ENCODING_UTF2 		"UTF-2"
+#define ENCODING_ISO2022 	"ISO2022"
+#define ENCODING_NONE 		"NONE"
+#define ENCODING_EUC 		"EUC"
+
 extern char *PathLocale;
 
 #ifdef __SETLOCALE_SOURCE__

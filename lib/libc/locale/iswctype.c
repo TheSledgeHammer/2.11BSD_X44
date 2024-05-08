@@ -359,3 +359,4 @@ iswctype(wint_t c, wctype_t charclass)
 
 	return (__isctype_w(c, ((_WCTypeEntry*) charclass)->mask));
 }
+
