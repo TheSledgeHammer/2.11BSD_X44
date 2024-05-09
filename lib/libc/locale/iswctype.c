@@ -60,39 +60,30 @@ static __inline wint_t 		__toupper_w(wint_t);
 static __inline wint_t 		__tolower_w(wint_t);
 
 #ifdef notyet
+
+#include <locale.h>
+
+#define _RUNE_LOCALE(loc) ((_RuneLocale *)((loc)[(size_t)LC_CTYPE]))
+
 static __inline _RuneType
-__runetype_priv(rl, wc)
-	_RuneLocale *rl;
-	wint_t wc;
+__runetype_wl(c, locale)
+	wint_t c;
+	locale_t locale;
 {
-	return (_RUNE_ISCACHED(wc) ? rl->runetype[wc] : ___runetype_mb(wc));
+	_RuneLocale *rl = _RUNE_LOCALE(locale);
+	return (_RUNE_ISCACHED(c) ? ___runetype_mb(c) : rl->runetype[c]);
 }
 
 static __inline int
-__iswctype_priv(rl, wc, index)
-	_RuneLocale *rl;
-	wint_t wc;
-	_RuneType index;
+__isctype_wl(c, f, locale)
+	wint_t c;
+	_RuneType f;
+	locale_t locale;
 {
-	_WCTypeEntry *te = &rl->wctype[index];
-	return (!!(__runetype_priv(rl, wc) & te->mask));
+	_RuneLocale *rl = _RUNE_LOCALE(locale);
+	return (!!(__runetype_wl(c) & f));
 }
 
-static __inline wint_t
-__toupper_priv(rl, wc)
-	_RuneLocale *rl;
-	wint_t wc;
-{
-	return (_towctrans(wc, _wctrans_upper(rl)));
-}
-
-static __inline wint_t
-__tolower_priv(rl, wc)
-	_RuneLocale *rl;
-	wint_t wc;
-{
-	return (_towctrans(wc, _wctrans_lower(rl)));
-}
 #endif
 
 static __inline _RuneType
@@ -101,7 +92,7 @@ __runetype_w(c)
 {
 	_RuneLocale *rl = _CurrentRuneLocale;
 
-	return (_RUNE_ISCACHED(c) ? rl->runetype[c] : ___runetype_mb(c));
+	return (_RUNE_ISCACHED(c) ? ___runetype_mb(c) : rl->runetype[c]);
 }
 
 static __inline int
@@ -334,7 +325,24 @@ towctrans(c, desc)
 }
 
 wctype_t
-wctype(const char *property)
+wctype_l(property, locale)
+	const char *property;
+	locale_t locale;
+{
+	_RuneLocale *rl;
+	int i;
+
+	for (i = 0; i < _WCTYPE_NINDEXES; i++) {
+		if (!strcmp(rl->wctype[i].name, property)) {
+			return ((wctype_t) &rl->wctype[i]);
+		}
+	}
+	return ((wctype_t) NULL);
+}
+
+wctype_t
+wctype(property)
+	const char *property;
 {
 	int i;
 	_RuneLocale *rl = _CurrentRuneLocale;
@@ -348,7 +356,9 @@ wctype(const char *property)
 }
 
 int
-iswctype(wint_t c, wctype_t charclass)
+iswctype(c, charclass)
+	wint_t c;
+	wctype_t charclass;
 {
 	/*
 	 * SUSv3: If charclass is 0, iswctype() shall return 0.

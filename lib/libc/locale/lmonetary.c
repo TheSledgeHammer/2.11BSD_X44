@@ -45,27 +45,27 @@ static char	empty[] = "";
 static char	numempty[] = { CHAR_MAX, '\0'};
 
 static const struct lc_monetary_T _C_monetary_locale = {
-	empty,		/* int_curr_symbol */
-	empty,		/* currency_symbol */
-	empty,		/* mon_decimal_point */
-	empty,		/* mon_thousands_sep */
-	numempty,	/* mon_grouping */
-	empty,		/* positive_sign */
-	empty,		/* negative_sign */
-	numempty,	/* int_frac_digits */
-	numempty,	/* frac_digits */
-	numempty,	/* p_cs_precedes */
-	numempty,	/* p_sep_by_space */
-	numempty,	/* n_cs_precedes */
-	numempty,	/* n_sep_by_space */
-	numempty,	/* p_sign_posn */
-	numempty,	/* n_sign_posn */
-	numempty,	/* int_p_cs_precedes */
-	numempty,	/* int_n_cs_precedes */
-	numempty,	/* int_p_sep_by_space */
-	numempty,	/* int_n_sep_by_space */
-	numempty,	/* int_p_sign_posn */
-	numempty	/* int_n_sign_posn */
+		empty,		/* int_curr_symbol */
+		empty,		/* currency_symbol */
+		empty,		/* mon_decimal_point */
+		empty,		/* mon_thousands_sep */
+		numempty,	/* mon_grouping */
+		empty,		/* positive_sign */
+		empty,		/* negative_sign */
+		numempty,	/* int_frac_digits */
+		numempty,	/* frac_digits */
+		numempty,	/* p_cs_precedes */
+		numempty,	/* p_sep_by_space */
+		numempty,	/* n_cs_precedes */
+		numempty,	/* n_sep_by_space */
+		numempty,	/* p_sign_posn */
+		numempty,	/* n_sign_posn */
+		numempty,	/* int_p_cs_precedes */
+		numempty,	/* int_n_cs_precedes */
+		numempty,	/* int_p_sep_by_space */
+		numempty,	/* int_n_sep_by_space */
+		numempty,	/* int_p_sign_posn */
+		numempty	/* int_n_sign_posn */
 };
 
 static struct lc_monetary_T _monetary_locale;

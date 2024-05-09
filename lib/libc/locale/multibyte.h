@@ -53,8 +53,7 @@ typedef union _RuneState {
 } _RuneState;
 #define _PRIVSIZE	(sizeof(mbstate_t)-offsetof(_RuneStatePriv, __private))
 
-#define _RUNE_LOCALE(loc) \
-	((_RuneLocale *)((loc)[(size_t)LC_CTYPE]))
+#define _RUNE_LOCALE(loc) ((_RuneLocale *)((loc)[(size_t)LC_CTYPE]))
 
 static __inline _RuneLocale *
 _to_cur_ctype(void)
@@ -81,30 +80,33 @@ _ps_to_runelocale(mbstate_t const *ps)
 }
 
 static __inline _RuneLocale *
-_ps_to_ctype(mbstate_t const *ps, locale_t loc)
+_ps_to_ctype(mbstate_t const *ps)
 {
-	if (!ps)
-		return _RUNE_LOCALE(loc);
+	if (!ps) {
+		return (_to_cur_ctype());
+	}
 
 	_DIAGASSERT(_ps_to_runelocale(ps) != NULL);
 
-	return _ps_to_runelocale(ps);
+	return (_ps_to_runelocale(ps));
 }
 
 static __inline void *
 _ps_to_private(mbstate_t *ps)
 {
-	if (ps == NULL)
-		return NULL;
+	if (ps == NULL) {
+		return (NULL);
+	}
 	return (_ps_to_runestate(ps)->rs_private);
 }
 
 static __inline void const *
 _ps_to_private_const(mbstate_t const *ps)
 {
-	if (ps == NULL)
-		return NULL;
-	return _ps_to_runestate_const(ps)->rs_private;
+	if (ps == NULL) {
+		return (NULL);
+	}
+	return (_ps_to_runestate_const(ps)->rs_private);
 }
 
 static __inline void

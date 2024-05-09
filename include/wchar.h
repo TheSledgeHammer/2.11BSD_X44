@@ -96,6 +96,20 @@ typedef	_BSD_SIZE_T_	size_t;
 #define	WEOF 			((wint_t)-1)
 #endif
 
+#define getwc(f) 		fgetwc(f)
+#define getwchar() 		getwc(stdin)
+#define putwc(wc, f) 	fputwc((wc), (f))
+#define putwchar(wc) 	putwc((wc), stdout)
+
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
+#  ifndef __LOCALE_T_DECLARED
+typedef void		*locale_t;
+#  define __LOCALE_T_DECLARED
+#  endif
+
+
+#endif
+
 __BEGIN_DECLS
 wint_t	btowc(int);
 size_t	mbrlen(const char * __restrict, size_t, mbstate_t * __restrict);
@@ -148,11 +162,6 @@ long long int wcstoll(const wchar_t * __restrict, wchar_t ** __restrict, int);
 /* LONGLONG */
 unsigned long long int wcstoull(const wchar_t * __restrict, wchar_t ** __restrict, int);
 #endif
-
-#define getwc(f) 		fgetwc(f)
-#define getwchar() 		getwc(stdin)
-#define putwc(wc, f) 	fputwc((wc), (f))
-#define putwchar(wc) 	putwc((wc), stdout)
 
 wint_t 	ungetwc(wint_t, FILE *);
 wint_t 	fgetwc(FILE *);

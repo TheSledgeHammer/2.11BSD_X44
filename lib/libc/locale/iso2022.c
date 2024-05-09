@@ -63,13 +63,13 @@ typedef _Encoding_State				_ISO2022State;
  *								1xxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
  */
 #define _ISO2022INVALID 					(wchar_t)-1
-#define _ISO2022STATE_FLAG_INITIALIZED		1
+#define _STATE_FLAG_INITIALIZED				1
 
 #define _FUNCNAME(m)						_ISO2022_##m
 
 #define _ENCODING_MB_CUR_MAX(_ei_)			MB_LEN_MAX
 #define _ENCODING_IS_STATE_DEPENDENT		1
-#define _STATE_NEEDS_EXPLICIT_INIT(_ps_) 	(!((_ps_)->flags & _ISO2022STATE_FLAG_INITIALIZED))
+#define _STATE_NEEDS_EXPLICIT_INIT(_ps_) 	(!((_ps_)->flags & _STATE_FLAG_INITIALIZED))
 
 rune_t	_ISO2022_sgetrune(const char *, size_t, char const **);
 int		_ISO2022_sputrune(rune_t, char *, size_t, char **);

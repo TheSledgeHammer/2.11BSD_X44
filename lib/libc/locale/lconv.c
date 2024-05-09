@@ -45,24 +45,24 @@ static char empty[] = "";
  * Default (C) locale conversion.
  */
 static struct lconv C_lconv = {
-	".",			/* decimal_point */
-	empty,			/* thousands_sep */
-	empty,			/* grouping */
-	empty,			/* int_curr_symbol */
-	empty,			/* currency_symbol */
-	empty,			/* mon_decimal_point */
-	empty,			/* mon_thousands_sep */
-	empty,			/* mon_grouping */
-	empty,			/* positive_sign */
-	empty,			/* negative_sign */
-	CHAR_MAX,		/* int_frac_digits */
-	CHAR_MAX,		/* frac_digits */
-	CHAR_MAX,		/* p_cs_precedes */
-	CHAR_MAX,		/* p_sep_by_space */
-	CHAR_MAX,		/* n_cs_precedes */
-	CHAR_MAX,		/* n_sep_by_space */
-	CHAR_MAX,		/* p_sign_posn */
-	CHAR_MAX,		/* n_sign_posn */
+		".",			/* decimal_point */
+		empty,			/* thousands_sep */
+		empty,			/* grouping */
+		empty,			/* int_curr_symbol */
+		empty,			/* currency_symbol */
+		empty,			/* mon_decimal_point */
+		empty,			/* mon_thousands_sep */
+		empty,			/* mon_grouping */
+		empty,			/* positive_sign */
+		empty,			/* negative_sign */
+		CHAR_MAX,		/* int_frac_digits */
+		CHAR_MAX,		/* frac_digits */
+		CHAR_MAX,		/* p_cs_precedes */
+		CHAR_MAX,		/* p_sep_by_space */
+		CHAR_MAX,		/* n_cs_precedes */
+		CHAR_MAX,		/* n_sep_by_space */
+		CHAR_MAX,		/* p_sign_posn */
+		CHAR_MAX,		/* n_sign_posn */
 };
 
 /*

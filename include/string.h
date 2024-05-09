@@ -94,7 +94,6 @@ char	*strndup(const char *, size_t);
 size_t	strnlen(const char *, size_t);
 #endif
 
-
 #if defined(__BSD_VISIBLE)
 #include <strings.h>		/* for backwards-compatibilty */
 char	*strcasestr(const char *, const char *);

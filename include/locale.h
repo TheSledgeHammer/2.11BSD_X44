@@ -71,7 +71,12 @@ struct lconv {
 
 #include <sys/cdefs.h>
 
-typedef void *locale_t;
+#if (_POSIX_C_SOURCE - 0) >= 200809L
+#ifndef	__LOCALE_T_DECLARED
+typedef void 		*locale_t;
+#define	__LOCALE_T_DECLARED
+#endif
+#endif /* __POSIX_VISIBLE >= 200809 */
 
 __BEGIN_DECLS
 struct lconv	*localeconv(void);

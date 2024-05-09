@@ -39,6 +39,13 @@ typedef	_BSD_TIMER_T_	timer_t;
 #undef	_BSD_TIMER_T_
 #endif
 
+#if (_POSIX_C_SOURCE - 0) >= 200809L
+#ifndef	__LOCALE_T_DECLARED
+typedef void 		*locale_t;
+#define	__LOCALE_T_DECLARED
+#endif
+#endif /* __POSIX_VISIBLE >= 200809 */
+
 #define CLOCKS_PER_SEC	100
 
 /*

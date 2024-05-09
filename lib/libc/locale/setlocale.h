@@ -36,12 +36,9 @@
 #define ENCODING_NONE 		"NONE"
 #define ENCODING_EUC 		"EUC"
 
-extern char *PathLocale;
+#define _C_LOCALE			"C"
+#define _POSIX_LOCALE		"POSIX"
 
-#ifdef __SETLOCALE_SOURCE__
-char	*setlocale(int, const char *);
-char	*__setlocale_mb_len_max_32(int, const char *);
-char	*__setlocale(int, const char *);
-#endif /* !__SETLOCALE_SOURCE__ */
+extern char *PathLocale;
 
 #endif /* !_SETLOCALE_H_ */

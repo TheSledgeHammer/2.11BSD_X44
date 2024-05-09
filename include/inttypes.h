@@ -59,7 +59,7 @@ imaxdiv_t	imaxdiv(intmax_t, intmax_t);
 
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #  ifndef __LOCALE_T_DECLARED
-typedef struct _locale		*locale_t;
+typedef void		*locale_t;
 #  define __LOCALE_T_DECLARED
 #  endif
 intmax_t	strtoimax_l(const char * __restrict,

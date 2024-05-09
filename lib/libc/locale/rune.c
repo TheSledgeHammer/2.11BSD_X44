@@ -414,11 +414,11 @@ wint_t
 ___toupper_mb(c)
 	wint_t c;
 {
-	int x;
+	uint32_t x;
 	_RuneRange *rr = &_CurrentRuneLocale->mapupper_ext;
 	_RuneEntry *re = rr->ranges;
 
-	if (c < 0 || c == EOF)
+	if (c < 0 || c == WEOF)
 		return (c);
 
 	for (x = 0; x < rr->nranges; ++x, ++re) {
@@ -453,11 +453,11 @@ wint_t
 ___tolower_mb(c)
 	wint_t c;
 {
-	int x;
+	uint32_t x;
 	_RuneRange *rr = &_CurrentRuneLocale->maplower_ext;
 	_RuneEntry *re = rr->ranges;
 
-	if (c < 0 || c == EOF)
+	if (c < 0 || c == WEOF)
 		return (c);
 
 	for (x = 0; x < rr->nranges; ++x, ++re) {

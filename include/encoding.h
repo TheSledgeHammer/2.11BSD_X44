@@ -53,9 +53,9 @@ typedef struct {
 typedef struct {
 	wchar_t				*ch;
 	int 				chlen;
-	int					current_endian;		/* UTF16 & UTF32 needs this */
-
-	/* ISO2022 */
+	/* UTF16, UTF32 & UES extension */
+	int					current_endian;
+	/* ISO2022 extension */
 	_Encoding_Charset	g[4];
 	int					gl:3;
 	int					gr:3;
@@ -65,19 +65,19 @@ typedef struct {
 } _Encoding_State;
 
 typedef struct {
-	int					preffered_endian; 	/* UTF16 & UTF32 needs this */
+	unsigned int			count[4];
+	wchar_t				bits[4];
+	wchar_t				mask;
+	unsigned int		mb_cur_max;
+	_Encoding_Traits	*traits;
+	/* UTF16, UTF32 & UES extension */
+	int					preffered_endian;
 	uint32_t			mode;
 #define _ENDIAN_UNKNOWN	0
 #define _ENDIAN_BIG		1
 #define _ENDIAN_LITTLE	2
-#define _MODE_C99		3					/* UES needs this */
-	unsigned			count[4];
-	wchar_t				bits[4];
-	wchar_t				mask;
-	unsigned			mb_cur_max;
-	_Encoding_Traits	*traits;
-
-	/* ISO2022 */
+#define _MODE_C99		3
+	/* ISO2022 extension */
 	_Encoding_Charset	*recommend[4];
 	_Encoding_Charset	initg[4];
 	size_t				recommendsize[4];
@@ -141,5 +141,6 @@ typedef struct {
 #define _ENCODING_MB_CUR_MAX(_ei_)			(_ei_)->mb_cur_max
 #define _ENCODING_IS_STATE_DEPENDENT		0
 #define _STATE_NEEDS_EXPLICIT_INIT(_ps_)	0
+#define _STATE_FLAG_INITIALIZED				0
 
 #endif /* _ENCODING_H_ */

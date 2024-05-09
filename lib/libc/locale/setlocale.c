@@ -92,7 +92,7 @@ static char	*currentlocale(void);
 static char	*loadlocale(int);
 
 char *
-setlocale(category, locale)
+__setlocale(category, locale)
 	int category;
 	const char *locale;
 {
@@ -183,6 +183,16 @@ setlocale(category, locale)
 	if (found)
 		return (currentlocale());
 	return (NULL);
+}
+
+char *
+setlocale(category, locale)
+	int category;
+	const char *locale;
+{
+	/* locale may be NULL */
+	__mb_len_max_runtime = MB_LEN_MAX;
+	return (__setlocale(category, locale));
 }
 
 static char *

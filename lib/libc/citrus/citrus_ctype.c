@@ -336,11 +336,6 @@ _citrus_ctype_init_charset(_ENCODING_INFO * __restrict ei, _ENCODING_STATE * __r
 {
 	int i;
 
-	/* state doesn't need explicit init */
-	if ((s->flags & 1)) {
-		return;
-	}
-
 	s->gl = 0;
 	s->gr = (ei->flags & F_8BIT) ? 1 : -1;
 
@@ -363,6 +358,13 @@ void
 _citrus_ctype_init_state(_ENCODING_INFO * __restrict ei, _ENCODING_STATE * __restrict s)
 {
 	memset(s, 0, sizeof(*s));
+
+	/* check state flags: returns if equals 0 */
+	if (!_STATE_FLAG_INITIALIZED) {
+		return;
+	}
+
+	/* Only ISO2022 should reach this point! */
 	_citrus_ctype_init_charset(ei, s);
 }
 
