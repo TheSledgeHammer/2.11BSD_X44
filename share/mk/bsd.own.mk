@@ -911,34 +911,33 @@ MKSTATICPIE?=	no
 _MKVARS.yes= \
 	MKBINUTILS \
 	MKBSDTAR \
-    MKCLEANSRC \
 	MKCOMPLEX \
 	MKCXX \
 	MKDOC \
 	MKDYNAMICROOT \
 	MKGCC \
-    MKGDB \
-    MKGROFF \
-    MKHESIOD \
+    	MKGDB \
+    	MKGROFF \
+    	MKHESIOD \
 	MKHTML \
-    MKIEEEFP \
-    MKINET6 \
+    	MKIEEEFP \
+    	MKINET6 \
 	MKINFO \
 	MKLIBSTDCXX \
-    MKLINKLIB \
+    	MKLINKLIB \
 	MKMAN \
-    MKMANDOC \
-    MKMAKEMANDB \
+    	MKMANDOC \
+    	MKMAKEMANDB \
 	MKNLS \
 	MKOBJ \
-    MKPF \
+    	MKPF \
 	MKPIC \
-    MKPICLIB \
-    MKPROFILE \
+    	MKPICLIB \
+    	MKPROFILE \
 	MKSHARE \
 	MKSKEY \
-    MKSTATICLIB \
-    MKYP
+    	MKSTATICLIB \
+    	MKYP
 	
 .for var in ${_MKVARS.yes}
 ${var}?=	${${var}.${MACHINE_ARCH}:Uyes}
@@ -977,58 +976,58 @@ KERNEL_DIR?=	no
 # MK* options which default to "no".
 #
 _MKVARS.no= \
-    MKATF   \
+    	MKATF   \
 	MKARGON2 \
 	MKARZERO \
 	MKBSDGREP \
 	MKCATPAGES \
-    MKCOMPATTESTS \
-    MKCOMPATX11 \
-    MKCTF \
-    MKCVS \
+    	MKCOMPATTESTS \
+    	MKCOMPATX11 \
+    	MKCTF \
+    	MKCVS \
 	MKDEBUG \
-    MKDEBUGLIB \
-    MKDTC \
-    MKDTB \
-    MKDTRACE \
+    	MKDEBUGLIB \
+    	MKDTC \
+    	MKDTB \
+    	MKDTRACE \
 	MKEXTSRC \
 	MKFIRMWARE \
 	MKGROFFHTMLDOC \
-    MKISCSI \
+    	MKISCSI \
 	MKKYUA \
 	MKLIBCXX \
-    MKLLD \
-    MKLLDB \
-    MKLLVM \
-    MKLLVMRT \
-    MKLINT \
-    MKLVM \
+    	MKLLD \
+    	MKLLDB \
+    	MKLLVM \
+    	MKLLVMRT \
+    	MKLINT \
+    	MKLVM \
 	MKMANZ \
-    MKMCLINKER \
-    MKMDNS \
-    MKKMOD \
+    	MKMCLINKER \
+    	MKMDNS \
+    	MKKMOD \
 	MKNOUVEAUFIRMWARE \
 	MKNPF \
-    MKNSD \
+    	MKNSD \
 	MKOBJDIRS \
 	MKPCC \
-    MKPERFUSE \
-    MKPICINSTALL \
-    MKPIGZGZIP \
+    	MKPERFUSE \
+    	MKPICINSTALL \
+    	MKPIGZGZIP \
 	MKRADEONFIRMWARE \
-    MKREPRO \
-    MKRUMP \
+    	MKREPRO \
+    	MKRUMP \
 	MKSLJIT \
-    MKSOFTFLOAT \
-    MKSTRIPIDENT \
+    	MKSOFTFLOAT \
+    	MKSTRIPIDENT \
 	MKTEGRAFIRMWARE \
-    MKTPM \
-    MKUNPRIVED \
-    MKUPDATE \
+    	MKTPM \
+    	MKUNPRIVED \
+    	MKUPDATE \
 	MKX11 \
-    MKX11FONTS \
-    MKX11MOTIF \
-    MKXORG_SERVER \
+    	MKX11FONTS \
+    	MKX11MOTIF \
+    	MKXORG_SERVER \
 	MKZFS \
 	MKLDAP \
 	MKKERBEROS \
