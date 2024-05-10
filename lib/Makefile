@@ -143,6 +143,7 @@ SUBDIR+=	../contrib/file/lib		# depends on libz, libbz2, libxz
 SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
+SUBDIR+=	${USRLIBDIR}/libradius	    	# depends on libcrypto
 
 SUBDIR+=	../contrib/fetch/lib	    	# depends on libssl
 
