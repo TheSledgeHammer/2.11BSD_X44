@@ -42,11 +42,11 @@
 #ifndef _h_termcap
 #define _h_termcap
 
-int   tgetent	__P((char *, char *));
-char *tgetstr	__P((char *, char **));
-int   tgetflag	__P((char *));
-int   tgetnum	__P((char *));
-char *tgoto	__P((char *, int, int));
-char *tputs	__P((char *, int, void (*)(int)));
+int   	tgetent(char *, char *);
+char 	*tgetstr(char *, char **);
+int   	tgetflag(char *);
+int   	tgetnum(char *);
+char 	*tgoto(char *, int, int);
+char 	*tputs(char *, int, void (*)(int));
 
 #endif /* _h_termcap */

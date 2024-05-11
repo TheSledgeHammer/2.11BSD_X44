@@ -76,28 +76,28 @@ typedef struct lineinfo {
 /*
  * Initialization, cleanup, and resetting
  */
-EditLine	*el_init	__P((const char *, FILE *, FILE *));
-void		 el_reset	__P((EditLine *));
-void		 el_end		__P((EditLine *));
+EditLine	*el_init(const char *, FILE *, FILE *);
+void		 el_reset(EditLine *);
+void		 el_end	(EditLine *);
 
 
 /*
  * Get a line, a character or push a string back in the input queue
  */
-__const char    *el_gets	__P((EditLine *, int *));
-int		 el_getc	__P((EditLine *, char *));
-void		 el_push	__P((EditLine *, const char *));
+__const char    *el_gets(EditLine *, int *);
+int		 el_getc(EditLine *, char *);
+void		 el_push(EditLine *, const char *);
 
 /*
  * High level function internals control
  * Parses argc, argv array and executes builtin editline commands
  */
-int		 el_parse	__P((EditLine *, int, char **)); 
+int		 el_parse(EditLine *, int, char **);
 
 /*
  * Low level editline access function
  */
-int 		 el_set		__P((EditLine *, int, ...));
+int 		 el_set	(EditLine *, int, ...);
 
 /*
  * el_set/el_get parameters
@@ -118,22 +118,22 @@ int 		 el_set		__P((EditLine *, int, ...));
 /*
  * Source named file or $PWD/.editrc or $HOME/.editrc
  */
-int		el_source	__P((EditLine *, const char *));
+int		el_source(EditLine *, const char *);
 
 /*
  * Must be called when the terminal changes size; If EL_SIGNAL
  * is set this is done automatically otherwise it is the responsibility
  * of the application
  */
-void		 el_resize	__P((EditLine *));
+void		 el_resize(EditLine *);
 
 
 /*
  * User-defined function interface.
  */
-__const LineInfo *el_line	__P((EditLine *));
-int   		  el_insertstr	__P((EditLine *, char *));
-void		  el_deletestr	__P((EditLine *, int));
+__const LineInfo *el_line(EditLine *);
+int   		  el_insertstr(EditLine *, char *);
+void		  el_deletestr(EditLine *, int);
 
 /*
  * ==== History ====
@@ -149,10 +149,10 @@ typedef struct HistEvent {
 /*
  * History access functions.
  */
-History *		history_init	__P((void));
-void 			history_end	__P((History *));
+History *		history_init(void);
+void 			history_end(History *);
 
-__const HistEvent *	history		__P((History *, int, ...));
+__const HistEvent *history(History *, int, ...);
 
 #define H_FUNC		 0	/* , UTSL		*/
 #define H_EVENT		 1	/* , const int);	*/
@@ -165,7 +165,7 @@ __const HistEvent *	history		__P((History *, int, ...));
 #define H_ENTER		 8	/* , const char*);	*/
 #define H_END		 9	/* , void);		*/
 #define H_NEXT_STR	10	/* , const char*);	*/
-#define H_PREV_STR	11	/* , const char*);	*/
+#define H_PREV_STR		11	/* , const char*);	*/
 #define H_NEXT_EVENT	12	/* , const int);	*/
 #define H_PREV_EVENT	13	/* , const int);	*/
 

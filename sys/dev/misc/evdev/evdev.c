@@ -286,6 +286,7 @@ evdev_doopen(evdev)
 
 	/* check event buffer */
 	if(buffer_size > wsevent_avail(evar)) {
+		EVDEV_UNLOCK(evdev);
 		return (EINVAL);
 	}
 	ret = evdev_register_client(evdev, client);

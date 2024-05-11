@@ -6,8 +6,7 @@ SUBDIR= byacc expat fetch file flex gnu 		\
 		less libarchive liblzf lua mdocml nawk 	\
 		sqlite xz
 
-#SUBDIR+=	oscompat
-SUBDIR+=	pkg_install
+SUBDIR+= pkg_install
 
 .if (${MKLDAP} != "no")
 SUBDIR+= openldap
@@ -28,5 +27,8 @@ SUBDIR+= pcc
 .if ${MKUNBOUND} != "no"
 SUBDIR+= unbound
 .endif
+
+SUBDIR+= nvi
+#SUBDIR+=	oscompat
 
 .include <bsd.subdir.mk>
