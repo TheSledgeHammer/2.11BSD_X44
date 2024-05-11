@@ -303,7 +303,7 @@ kmembucket_search(cache, meta, size, mtype)
 		next = CIRCLEQ_NEXT(slab, ksl_list);
 		CIRCLEQ_FOREACH(next, &cache->ksc_head, ksl_list) {
 			if(next != slab) {
-				switch (slab->ksl_flags) {
+				switch (next->ksl_flags) {
 				case SLAB_PARTIAL:
 					slab = next;
 					goto partial;
