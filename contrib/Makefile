@@ -2,9 +2,9 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= byacc expat fetch file flex gnu 		\
-		less libarchive liblzf lua mdocml nawk 	\
-		sqlite xz
+SUBDIR= byacc expat fetch file flex gnu libevent 	\
+	less libarchive liblzf lua mdocml nawk 		\
+	sqlite xz
 
 SUBDIR+= pkg_install
 

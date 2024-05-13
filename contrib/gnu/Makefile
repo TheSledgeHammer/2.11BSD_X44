@@ -2,12 +2,16 @@
 
 .include <bsd.own.mk>
 
+.if (${MKCVS} != "no")
+SUBDIR+= 	xcvs
+.endif
+
 .if ${MKBSDGREP} == "no"
 SUBDIR+=	grep
 .endif
 
 .if ${MKGROFF} != "no"
-SUBDIR+=    groff
+SUBDIR+=    	groff
 .endif
 
 .if ${MKBINUTILS} != "no"
@@ -19,7 +23,7 @@ SUBDIR+=	${EXTERNAL_GCC_SUBDIR}
 .endif
 
 .if ${MKGDB} != "no"
-SUBDIR+=    ${EXTERNAL_GDB_SUBDIR}
+SUBDIR+=    	${EXTERNAL_GDB_SUBDIR}
 .endif
 
 SUBDIR+= gettext diffutils texinfo rcs
