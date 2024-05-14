@@ -12,8 +12,11 @@ CPPFLAGS+=	-DBINDIR='"${BINDIR}"'
 DPADD+=	${LIBINSTALL}/libinstall.a
 LDADD+=	-L${LIBINSTALL} -linstall -ltermcap
 
-DPADD+=		${LIBNETPGPVERIFY} ${LIBFETCH} ${LIBSSL} ${LIBCRYPTO}
-LDADD+=		-lnetpgpverify -lfetch -lssl -lcrypto
+DPADD+=		${LIBFETCH} ${LIBSSL} ${LIBCRYPTO}
+LDADD+=		-lfetch -lssl -lcrypto
+
+#DPADD+=		${LIBNETPGPVERIFY}
+#LDADD+=		-lnetpgpverify
 
 DPADD+=		${LIBARCHIVE}
 LDADD+=		-larchive
