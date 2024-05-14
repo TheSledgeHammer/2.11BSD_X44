@@ -12,23 +12,23 @@ SUBDIR+= pkg_install
 SUBDIR+= openldap
 .endif
 
-.if ${MKLIBCXX} != "no"
+.if (${MKLIBCXX} != "no")
 SUBDIR+= libc++
 .endif
 
-.if ${MKPAM} != "no"
+.if (${MKPAM} != "no")
 SUBDIR+= pam-u2f
 .endif
 
-.if ${MKPCC} != "no"
+.if (${MKPCC} != "no")
 SUBDIR+= pcc
 .endif
 
-.if ${MKUNBOUND} != "no"
+.if (${MKUNBOUND} != "no")
 SUBDIR+= unbound
 .endif
 
 SUBDIR+= nvi
-#SUBDIR+=	oscompat
+#SUBDIR+= oscompat
 
 .include <bsd.subdir.mk>
