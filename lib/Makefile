@@ -145,14 +145,15 @@ SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libradius	    	# depends on libcrypto
 
+SUBDIR+=	../crypto/openssh/lib 		# depends on libcrypto, libz
+SUBDIR+=	../contrib/libevent/lib	    	# depends on libcrypto
+
 SUBDIR+=	../contrib/fetch/lib	    	# depends on libssl
 
 SUBDIR+= 	../libexec/httpd/libbozohttpd 	# depends on libssl & libcrypto
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT
-
-SUBDIR+=	../crypto/openssh/lib 		# depends on libcrypto, libz
 
 SUBDIR+=	../contrib/mdocml/lib
 
