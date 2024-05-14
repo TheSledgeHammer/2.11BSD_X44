@@ -174,4 +174,37 @@ pmap_overlay_enter(pmap, va, pa)
 	}
 	pmap_hat_enter_pv(pmap, va, pa, PMAP_HAT_OVL, ovl_first_phys, ovl_last_phys);
 }
+
+#ifdef notyet
+
+/* copy ovlhat_list out to hatlist and remove ovlhat_list  */
+void
+pmap_overlay_copyout(hatlist, map, object)
+	pmap_hat_list_t hatlist;
+	ovl_map_t 	map;
+	ovl_object_t object;
+{
+
+	/* Copy ovlhat_list to hatlist */
+	pmap_hat_copy(ovlhat_list, hatlist, map, object, PMAP_HAT_OVL);
+
+	/* Remove ovlhat_list */
+	pmap_hat_detach(ovlhat_list, map, object, PMAP_HAT_OVL);
+}
+
+/* copy hatlist in to ovlhat_list and remove hatlist  */
+void
+pmap_overlay_copyin(hatlist, map, object)
+	pmap_hat_list_t hatlist;
+	ovl_map_t 	map;
+	ovl_object_t object;
+{
+	/* Copy hatlist to ovlhat_list */
+	pmap_hat_copy(hatlist, ovlhat_list, map, object, PMAP_HAT_OVL);
+
+	/* Remove hatlist */
+	pmap_hat_detach(hatlist, map, object, PMAP_HAT_OVL);
+}
+#endif
+
 #endif
