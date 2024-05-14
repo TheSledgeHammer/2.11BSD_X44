@@ -642,7 +642,6 @@ INFOOWN?=		root
 INFOMODE?=		${NONBINMODE}
 
 LIBDIR?=		/usr/lib
-ULIBDIR?=       	/usr/usr.lib
 
 LINTLIBDIR?=	/usr/libdata/lint
 LIBGRP?=		${BINGRP}

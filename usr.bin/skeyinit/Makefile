@@ -6,7 +6,7 @@ USE_FORT?= yes	# setuid
 PROG= skeyinit
 BINOWN=root
 BINMODE=4555
-CPPFLAGS+= -I${NETBSDSRCDIR}/usr.lib/libskey
+CPPFLAGS+= -I${NETBSDSRCDIR}/lib/libskey
 DPADD=	${LIBCRYPT} ${LIBSKEY}
 LDADD=	-lcrypt -lskey
 

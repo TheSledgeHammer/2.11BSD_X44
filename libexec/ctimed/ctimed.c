@@ -18,7 +18,7 @@
 
 /*
  * These should probably be placed in an include file.  If you add anything
- * here then you will also have to modify /usr/src/usr.lib/libstubs/stubs.c
+ * here then you will also have to modify /usr/src/lib/libstubs/stubs.c
  * (if for no other reason than to add the stub code).
 */
 

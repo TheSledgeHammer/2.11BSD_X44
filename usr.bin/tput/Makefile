@@ -7,6 +7,6 @@ LDADD=	-lterminfo
 MLINKS=	tput.1 clear.1
 SCRIPTS=clear.sh
 
-CPPFLAGS+=	-I${.CURDIR}/../../usr.lib/libterminfo
+CPPFLAGS+=	-I${.CURDIR}/../../lib/libterminfo
 
 .include <bsd.prog.mk>

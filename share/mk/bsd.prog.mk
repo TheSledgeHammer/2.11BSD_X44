@@ -65,31 +65,59 @@ LIBCRTI=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o
 #
 
 USRSLASHLIB=	${DESTDIR}/usr/lib # Modern BSD's (i.e. 4.4 and above)
-USRDOTLIB=		${DESTDIR}/usr.lib # Older BSD's (i.e. 4.3 and below)
 
 _USRSLASHLIBLIST= \
             ARCHIVE \
+            BZ2 \
 			C \
 			C_PIC \
 			COMPAT \
+			CRYPT \
             CRYPTO \
+            CURSES \
             CXX \
+            DBM \
             DES \
+            EDIT \
+			EXECINFO \
 			EXPAT \
 			FETCH \
+			FORM \
+			FORTRAN \
 			GCC \
 			GNUCTF \
 			GNUMALLOC \
+			INTL \
+			IPSEC \
+			KVM \
 			L \
 			LUA \
+			M \
 			MAGIC \
+			MENU \
+			MP \
             OBJC \
+            OM \
+            PANEL \
+			PCAP \
+			PCI \
+			PTHREAD \
+			RESOLV \
+			RPCSVC \
+			SKEY \
             SQLITE3 \
             SSH \
             SSL \
             STDC++ \
+            STUBS \
             SUPC++ \
-            WIND
+            TERMINFO \
+			UTIL \
+			VMF \
+            WIND \
+            WRAP \
+            Y \
+			Z
 			
 .for _var in ${_USRSLASHLIBLIST}
 .ifndef LIB${_var}
@@ -98,46 +126,8 @@ LIB${_var}:=	 ${USRSLASHLIB}/lib${_var:tl}.a
 .endif
 .endfor
 
-_USRDOTLIBLIST=	\
-			BZ2 \
-			CRYPT \
-			CURSES \
-			DBM \
-			EDIT \
-			EXECINFO \
-			FORM \
-			FORTRAN \
-			INTL \
-			IPSEC \
-			KVM \
-			M \
-			MENU \
-			MP \
-			OM \
-			PANEL \
-			PCAP \
-			PCI \
-			PTHREAD \
-			RESOLV \
-			RPCSVC \
-			SKEY \
-			STUBS \
-			TERMINFO \
-			UTIL \
-			VMF \
-            WRAP \
-			Y \
-			Z
-
-.for _var in ${_USRDOTLIBLIST}
-.ifndef LIB${_var}
-LIB${_var}:=	 ${USRDOTLIB}/lib${_var:tl}.a
-.MADE: ${LIB${_var:tu}}
-.endif
-.endfor
-
 .ifndef LIBTERMCAP
-LIBTERMCAP = ${USRDOTLIB}/libterminfo.a
+LIBTERMCAP = ${USRSLASHLIB}/libterminfo.a
 .MADE: 		${LIBTERMCAP}
 .endif
 

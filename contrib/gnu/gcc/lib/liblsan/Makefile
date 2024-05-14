@@ -23,9 +23,9 @@ COPTS.sanitizer_file.cc += -O1
 
 LIB=	lsan
 SRCS+=	${LSAN_SRCS}
-LIBDPLIBS+= m ${NETBSDSRCDIR}/usr.lib/libm
-LIBDPLIBS+= rt ${NETBSDSRCDIR}/usr.lib/librt
-LIBDPLIBS+= pthread ${NETBSDSRCDIR}/usr.lib/libpthread
+LIBDPLIBS+= m ${NETBSDSRCDIR}/lib/libm
+LIBDPLIBS+= rt ${NETBSDSRCDIR}/lib/librt
+LIBDPLIBS+= pthread ${NETBSDSRCDIR}/lib/libpthread
 
 CWARNFLAGS.clang+=	-Wno-error=unused-private-field
 

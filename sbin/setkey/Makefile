@@ -25,9 +25,9 @@ CLEANFILES+=	scriptdump
 
 # libpfkey.
 # ipsec_strerror.c is for avoiding shlib reference to non-exported function.
-.PATH: ${NETBSDSRCDIR}/usr.lib/libipsec ${NETBSDSRCDIR}/sys/netipsec
+.PATH: ${NETBSDSRCDIR}/lib/libipsec ${NETBSDSRCDIR}/sys/netipsec
 SRCS+= pfkey.c pfkey_dump.c key_debug.c ipsec_strerror.c
-CPPFLAGS+=-I${NETBSDSRCDIR}/usr.lib/libipsec -I${NETBSDSRCDIR}/sys/netipsec
+CPPFLAGS+=-I${NETBSDSRCDIR}/lib/libipsec -I${NETBSDSRCDIR}/sys/netipsec
 
 MAN=	setkey.8
 LOCALPREFIX=	/usr/pkg

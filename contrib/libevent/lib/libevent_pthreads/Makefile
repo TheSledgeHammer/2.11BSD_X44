@@ -8,6 +8,6 @@ SRCS=		evthread_pthread.c
 
 LIBDPLIBS+= \
 	event	${.CURDIR}/../libevent \
-	pthread	${NETBSDSRCDIR}/usr.lib/libpthread
+	pthread	${NETBSDSRCDIR}/lib/libpthread
 
 .include <bsd.lib.mk>

@@ -49,7 +49,7 @@ CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 			${.CURDIR}/../../lib/libc/stdio 						\
 			${.CURDIR}/../../lib/libc/stdlib 						\
 			${.CURDIR}/../../lib/libc/string 						\
-			${.CURDIR}/../../usr.lib/libutil 						\
+			${.CURDIR}/../../lib/libutil 							\
 			${.CURDIR}/../../contrib/flex/dist/src
 
 DPSRCS+=		defs.mk

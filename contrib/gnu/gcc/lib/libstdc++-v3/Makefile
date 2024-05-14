@@ -10,7 +10,7 @@ UNSUPPORTED_COMPILER.clang=	# defined
 
 LIB=		stdc++
 
-LIBDPLIBS+=	m ${.CURDIR}/../../../../../usr.lib/libm
+LIBDPLIBS+=	m ${.CURDIR}/../../../../../lib/libm
 
 #COPTS+=		-pthread
 #LDFLAGS+=	-pthread

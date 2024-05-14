@@ -7,7 +7,7 @@ HOST_SRCDIR=	usr.bin/tic
 CPPFLAGS+=	-DTERMINFO_COMPILE -DTERMINFO_COMPAT -DTERMINFO_DB
 HOST_SRCS=	compile.c hash.c
 
-TERMINFODIR=	${NETBSDSRCDIR}/usr.lib/libterminfo
+TERMINFODIR=	${NETBSDSRCDIR}/lib/libterminfo
 
 .include "${.CURDIR}/../Makefile.host"
 .include "${TERMINFODIR}/Makefile.hash"

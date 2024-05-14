@@ -31,43 +31,26 @@ SUBDIR+=	.WAIT
 #
 
 SUBDIR+=	libarch libcompat
-
-USRLIBDIR= 	../usr.lib
-SUBDIR+=  	${USRLIBDIR}/libbz2 		\
-            	${USRLIBDIR}/libcrypt   	\
-		${USRLIBDIR}/libdbm 		\
-		${USRLIBDIR}/libfortran		\
-		${USRLIBDIR}/libintl 	    	\
-		${USRLIBDIR}/libipsec 		\
-		${USRLIBDIR}/libkvm 		\
-		${USRLIBDIR}/libm 		\
-		${USRLIBDIR}/libmp 		\
-		${USRLIBDIR}/libom 		\
-		${USRLIBDIR}/libresolv 		\
-            	${USRLIBDIR}/librpcsvc      	\
-		${USRLIBDIR}/libpci		\
-		${USRLIBDIR}/libpthread 	\
-		${USRLIBDIR}/libpthread_dbg 	\
-		${USRLIBDIR}/libstubs  		\
-		${USRLIBDIR}/libterminfo 	\
-		${USRLIBDIR}/libutil 		\
-		${USRLIBDIR}/libvmf 		\
-		${USRLIBDIR}/liby 		\
-		${USRLIBDIR}/libz
+SUBDIR+=  	libbz2 libcrypt libdbm libfortran 		\
+		libintl libipsec libkvm libm 			\
+		libmp libom libresolv librpcsvc      		\
+		libpci libpthread libpthread_dbg libstubs 	\
+		libterminfo libutil libvmf liby 		\
+		libz
 
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern
 .endif
 
 .if (${MKSKEY} != "no")
-SUBDIR+=	${USRLIBDIR}/libskey
+SUBDIR+=	libskey
 .endif
 
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/libelf
 SUBDIR+=	../contrib/liblzf/lib
 
-SUBDIR+=	${USRLIBDIR}/libpcap
+SUBDIR+=	libpcap
 
 SUBDIR+=	../contrib/expat/lib
 
@@ -97,9 +80,9 @@ SUBDIR+=	../contrib/xz/lib		# depends on libpthread
 SUBDIR+=	../contrib/elftoolchain/libdwarf # depends on libelf
 SUBDIR+=	../contrib/lua/lib          	# depends on libm
 SUBDIR+=	../contrib/sqlite/lib		# depends on libm
-SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
-SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
-SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
+SUBDIR+= 	libcurses		# depends on libterminfo/libtermcap
+SUBDIR+=	libedit		# depends on libterminfo
+SUBDIR+=	libexecinfo 	# depends on libelf
 
 SUBDIR+=	../crypto/${EXTERNAL_OPENSSL_SUBDIR}/lib # depends on libcrypt
 
@@ -123,7 +106,7 @@ SUBDIR+=	../contrib/llvm/include
 #==================== 2nd library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-SUBDIR+=	${USRLIBDIR}/libwrap
+SUBDIR+=	libwrap
 
 #.if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
 #.for sanitizer in asan lsan ubsan
@@ -140,10 +123,10 @@ SUBDIR+=	../contrib/llvm/librt
 SUBDIR+=	../contrib/libarchive/lib	# depends on libxz, libcrypto
 SUBDIR+=	../contrib/file/lib		# depends on libz, libbz2, libxz
 
-SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
-SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
-SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
-SUBDIR+=	${USRLIBDIR}/libradius	    	# depends on libcrypto
+SUBDIR+=	libform				# depends on libcurses
+SUBDIR+=	libmenu				# depends on libcurses
+SUBDIR+=	libpanel			# depends on libcurses
+SUBDIR+=	libradius	    		# depends on libcrypto
 
 SUBDIR+=	../crypto/openssh/lib 		# depends on libcrypto, libz
 SUBDIR+=	../contrib/libevent/lib	    	# depends on libcrypto

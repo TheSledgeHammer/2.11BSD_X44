@@ -3,7 +3,7 @@
 PROG=		tic
 WARNS=		4
 
-CPPFLAGS+=	-I${.CURDIR}/../../usr.lib/libterminfo
+CPPFLAGS+=	-I${.CURDIR}/../../lib/libterminfo
 
 .ifndef HOSTPROG
 LDADD+=		-lterminfo -lutil

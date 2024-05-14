@@ -5,7 +5,7 @@
 USE_FORT?= yes	# data-driven bugs?
 
 PROG=	   bzip2
-LDDIR!=	   cd ${NETBSDSRCDIR}/usr.lib/libbz2 && ${PRINTOBJDIR}
+LDDIR!=	   cd ${NETBSDSRCDIR}/lib/libbz2 && ${PRINTOBJDIR}
 LDADD+=	   -L${LDDIR} -lbz2
 DPADD+=	   ${LIBBZ2}
 
