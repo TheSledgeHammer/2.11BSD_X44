@@ -628,19 +628,21 @@ nbpf_filter(nbpf_state_t *state, struct nbpf_insn *pc, nbpf_buf_t *nbuf, int lay
 }
 
 int
-nbpf_validate(struct nbpf_insn *f, size_t len, int ret)
+nbpf_validate(struct nbpf_insn *f, size_t len, int *ret)
 {
 	struct nbpf_insn *p;
-	int error;
-	int i;
+	int i, error;
 
 	for (i = 0; i < len; ++i) {
 		p = &f[i];
 
 		if (p->sz == len) {
-			error = nbpf_ncode_validate(p, &ret);
+			error = nbpf_ncode_validate(p, ret);
 			break;
 		}
+	}
+	if (*ret != 0) {
+		printf("nbpf_validate: %d\n", *ret);
 	}
 	return (error);
 }
