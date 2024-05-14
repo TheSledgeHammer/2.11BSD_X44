@@ -157,7 +157,7 @@ detached_gpg_verify(const char *content, size_t len, const char *signature, size
 int
 gpg_verify(const char *content, size_t len, const char *keyring, const char *sig, size_t sig_len)
 {
-    return detached_gpg_verify(content, len, keyring, sig, sig_len);
+    return detached_gpg_verify(content, len, sig, sig_len, keyring);
 }
 
 #ifdef notyet
