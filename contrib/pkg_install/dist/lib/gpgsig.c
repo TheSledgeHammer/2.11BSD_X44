@@ -50,13 +50,119 @@ __RCSID("$NetBSD: gpgsig.c,v 1.2 2017/04/20 13:18:23 joerg Exp $");
 #include <stdlib.h>
 #endif
 
-#include <netpgp/verify.h>
+//#include <netpgp/verify.h>
 
 #include "lib.h"
 
+static void
+verify_signature(const char *input, size_t input_len, const char *keyring, const char *detached_signature)
+{
+	const char *argv[8], **argvp;
+	pid_t child;
+	int fd[2], status;
+
+	if (pipe(fd) == -1)
+		err(EXIT_FAILURE, "cannot create input pipes");
+
+	child = vfork();
+	if (child == -1)
+		err(EXIT_FAILURE, "cannot fork GPG process");
+	if (child == 0) {
+		close(fd[1]);
+		close(STDIN_FILENO);
+		if (dup2(fd[0], STDIN_FILENO) == -1) {
+			static const char err_msg[] =
+			    "cannot redirect stdin of GPG process\n";
+			write(STDERR_FILENO, err_msg, sizeof(err_msg) - 1);
+			_exit(255);
+		}
+		close(fd[0]);
+		argvp = argv;
+		*argvp++ = gpg_cmd;
+		*argvp++ = "--verify";
+		if (keyring != NULL) {
+			*argvp++ = "--no-default-keyring";
+			*argvp++ = "--keyring";
+			*argvp++ = keyring;
+		}
+
+		if (detached_signature != NULL)
+			*argvp++ = detached_signature;
+		*argvp++ = "-";
+
+		*argvp = NULL;
+
+		execvp(gpg_cmd, __UNCONST(argv));
+		_exit(255);
+	}
+	close(fd[0]);
+	if (write(fd[1], input, input_len) != (ssize_t)input_len)
+		errx(EXIT_FAILURE, "Short read from GPG");
+	close(fd[1]);
+	waitpid(child, &status, 0);
+	if (status)
+		errx(EXIT_FAILURE, "GPG could not verify the signature");
+}
+
+static int
+inline_gpg_verify(const char *content, size_t len, const char *keyring)
+{
+	verify_signature(content, len, keyring, NULL);
+
+	return (0);
+}
+
+static int
+detached_gpg_verify(const char *content, size_t len, const char *signature, size_t signature_len, const char *keyring)
+{
+	int fd;
+	const char *tmpdir;
+	char *tempsig;
+	ssize_t ret;
+
+	if (gpg_cmd == NULL) {
+		warnx("GPG variable not set, failing signature check");
+		return -1;
+	}
+
+	if ((tmpdir = getenv("TMPDIR")) == NULL)
+		tmpdir = "/tmp";
+	tempsig = xasprintf("%s/pkg_install.XXXXXX", tmpdir);
+
+	fd = mkstemp(tempsig);
+	if (fd == -1) {
+		warnx("Creating temporary file for GPG signature failed");
+		return -1;
+	}
+
+	while (signature_len) {
+		ret = write(fd, signature, signature_len);
+		if (ret == -1)
+			err(EXIT_FAILURE, "Write to GPG failed");
+		if (ret == 0)
+			errx(EXIT_FAILURE, "Short write to GPG");
+		signature_len -= ret;
+		signature += ret;
+	}
+
+	verify_signature(content, len, keyring, tempsig);
+
+	unlink(tempsig);
+	close(fd);
+	free(tempsig);
+
+	return 0;
+}
+
 int
-gpg_verify(const char *content, size_t len, const char *keyring,
-    const char *sig, size_t sig_len)
+gpg_verify(const char *content, size_t len, const char *keyring, const char *sig, size_t sig_len)
+{
+    return detached_gpg_verify(content, len, keyring, sig, sig_len);
+}
+
+#ifdef notyet
+int
+gpg_verify(const char *content, size_t len, const char *keyring, const char *sig, size_t sig_len)
 {
 	pgpv_t *pgp;
 	pgpv_cursor_t *cursor;
@@ -95,10 +201,10 @@ gpg_verify(const char *content, size_t len, const char *keyring,
 
 	return 0;
 }
+#endif
 
 int
-detached_gpg_sign(const char *content, size_t len, char **sig, size_t *sig_len,
-    const char *keyring, const char *user)
+detached_gpg_sign(const char *content, size_t len, char **sig, size_t *sig_len, const char *keyring, const char *user)
 {
 	const char *argv[12], **argvp;
 	pid_t child;
