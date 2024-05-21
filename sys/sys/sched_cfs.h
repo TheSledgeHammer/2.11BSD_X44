@@ -94,13 +94,11 @@ scheduling policies to intentionally segregate tasks.
 struct sched_cfs_rbtree;
 RB_HEAD(sched_cfs_rbtree, sched_cfs);
 struct sched_cfs {
-	struct sched 				*cfs_gsched;						/* pointer to global scheduler */
-
 	struct sched_cfs_rbtree		cfs_parent;							/* rbtree cfs parent/root */
     RB_ENTRY(sched_cfs) 		cfs_entry;							/* rbtree cfs entries */
 
-	struct proc 				*cfs_rqlink;						/* pointer to linked list of running processes */
-	struct proc 				*cfs_proc;
+	//struct sched 				*cfs_sched;							/* pointer to global scheduler */
+	//struct proc 				*cfs_procp;
 
     int	    					cfs_flag;
     char    					cfs_stat;
@@ -118,6 +116,7 @@ struct sched_cfs {
     u_char 						cfs_bsched;							/* base scheduling period */
 
     u_char  					cfs_priweight;						/* priority weighting (calculated from various scheduling factors) */
+    u_char						cfs_slack;							/* slack / laxity time */
 };
 
 #ifdef _KERNEL

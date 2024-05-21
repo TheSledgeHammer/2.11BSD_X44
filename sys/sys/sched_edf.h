@@ -51,11 +51,8 @@ Multiple CFS?
 #include <sys/sched.h>
 
 struct sched_edf {
-	struct sched 		*edf_sched;		/* pointer to global scheduler */
-
-	struct proc 		*edf_rqlink;		/* pointer to linked list of running processes */
-
-	struct proc			*edf_proc;
+	//struct sched 		*edf_sched;			/* pointer to global scheduler */
+	//struct proc			*edf_procp;
 
     int	    			edf_flag;			/* P_* flags. */
     char    			edf_stat;			/* S* process status. */
@@ -67,26 +64,21 @@ struct sched_edf {
     u_char  			edf_cpu;			/* cpu usage for scheduling */
     u_char  			edf_time;			/* resident time for scheduling */
     char    			edf_slptime;		/* Time since last blocked. secs sleeping */
-
     char				edf_release;		/* time till release from current block. see above */
+
     int					edf_priweight;		/* priority weighting (calculated from various factors) */
     u_char 				edf_slack;			/* slack / laxity time */
-    u_char				edf_utilization;	/* utilization per task */
-    u_char				edf_demand;			/* demand per task */
-    u_char				edf_workload;		/* workload per task */
 
     char 				edf_delta; 			/* Inherited Deadline (UN-USED) */
     u_char 				edf_remtime; 		/* time remaining (UN-USED) */
+
+    //u_char				edf_utilization;	/* utilization per task */
+    //u_char				edf_demand;			/* demand per task */
+    //u_char				edf_workload;		/* workload per task */
 };
 
 #define P_EDFFAIL 		0x8000	/* Failed EDF Test */
 #define P_EDFPREEMPT 	0x16000 /* Preemption Flag: Suggest to CFS to preempt this process */
-
-/* edf macros */
-#define SLACK(d, t, c)          (((d) - (t)) - (c))
-#define UTILIZATION(c, r)       ((c) / (r))
-#define DEMAND(t, d, r, c)      ((((t) - (d) + (r)) * (c)) / (r))
-#define WORKLOAD(t, r, c)       (((t) / (r)) * (c))
 
 #ifdef _KERNEL
 int 	edf_test_utilization(char, char);

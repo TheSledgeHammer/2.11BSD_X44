@@ -94,34 +94,38 @@
 /* Schedulers & Common Information used across schedulers */
 /* global scheduler */
 struct sched {
-	struct proc 			*gsc_rqlink; 	/* pointer to linked list of running processes */
-	struct proc 			*gsc_proc;		/* pointer to proc */
+	struct proc 			*sc_procp;		/* pointer to proc */
+	struct thread			*sc_threado;	/* pointer to thread */
 
-    u_char  				gsc_priweight;	/* priority weighting: see below. */
+    u_char  				sc_priweight;	/* priority weighting: see below. */
     /* priority weight factors */
-    u_char					gsc_slack;		/* slack / laxity time */
-    u_char					gsc_utilization;/* utilization per task */
-    u_char					gsc_demand;		/* demand per task */
-    u_char					gsc_workload;	/* workload per task */
+    u_char					sc_slack;		/* slack / laxity time */
+    u_char					sc_utilization;	/* utilization per task */
+    u_char					sc_demand;		/* demand per task */
+    u_char					sc_workload;	/* workload per task */
 
-    /* pointer to schedulers */
-    struct sched_edf		*gsc_edf;		/* earliest deadline first scheduler */
-    struct sched_cfs 		*gsc_cfs;		/* completely fair scheduler */
+    /* schedulers */
+    union {
+    	struct sched_edf	u_edf;			/* earliest deadline first scheduler */
+    	struct sched_cfs 	u_cfs;			/* completely fair scheduler */
+    } sc_u;
+#define sc_edf				sc_u.u_edf
+#define sc_cfs				sc_u.u_cfs
 };
 
 /* Scheduler Domains: Hyperthreading, multi-cpu */
 /* Not Implemented */
 struct sched_group {
-	CIRCLEQ_ENTRY(sched_group) gsg_entry;
+	CIRCLEQ_ENTRY(sched_group) sg_entry;
 };
 
 /* Not Implemented */
 struct sched_grphead;
 CIRCLEQ_HEAD(sched_grphead, sched_group);
 struct sched_domain {
-	struct sched_grphead	gsd_header;
-	int 					gsd_nentries;
-	int 					gsd_refcnt;
+	struct sched_grphead	sd_header;
+	int 					sd_nentries;
+	int 					sd_refcnt;
 };
 
 
@@ -141,14 +145,18 @@ struct sched_domain {
 				PW_FACTOR((pwl), PW_LAXITY) + 				\
 				PW_FACTOR((pws), PW_SLEEP)) / (4));
 
+/* Priority Weighting & Scheduling Macros */
+#define SLACK(d, t, c)          (((d) - (t)) - (c))
+#define UTILIZATION(c, r)       ((c) / (r))
+#define DEMAND(t, d, r, c)      ((((t) - (d) + (r)) * (c)) / (r))
+#define WORKLOAD(t, r, c)       (((t) / (r)) * (c))
+
 #ifdef _KERNEL
 void 				sched_init(struct proc *);
-struct proc			*sched_proc(struct sched *);
 struct sched_edf 	*sched_edf(struct sched *);
 struct sched_cfs 	*sched_cfs(struct sched *);
 void				sched_estcpu(u_int, u_int);
 void				sched_cpticks(int, int);
-int					sched_compare(const void *, const void *);
-void				sched_sort(struct proc *);
+void				sched_compute(struct sched *, struct proc *);
 #endif /* _KERNEL */
 #endif /* _SYS_SCHED_H */

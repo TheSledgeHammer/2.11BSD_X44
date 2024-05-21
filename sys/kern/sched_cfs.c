@@ -193,46 +193,45 @@ cfs_rb_compare(a, b)
 RB_PROTOTYPE(sched_cfs_rbtree, sched_cfs, cfs_entry, cfs_rb_compare);
 RB_GENERATE(sched_cfs_rbtree, sched_cfs, cfs_entry, cfs_rb_compare);
 
-/*
- * calculate base scheduling period
- * calculated from slack/ laxity time.
- */
 void
-cfs_compute(cfs, slack)
+cfs_compute(cfs, p)
 	struct sched_cfs *cfs;
-	u_char slack;
+	struct proc *p;
 {
-	u_char new_bsched; 			/* new base schedule period */
-
-	if (EBSCHEDULE(slack, cfs)) {
-		new_bsched = (slack * cfs->cfs_bmg);
-		cfs->cfs_bsched = new_bsched;
-	}
+	cfs->cfs_cpticks = p->p_cpticks;
+	cfs->cfs_pri = p->p_pri;
+	cfs->cfs_cpu = p->p_cpu;
+	cfs->cfs_time = p->p_time;
+	cfs->cfs_slptime = p->p_slptime;
 }
 
 int
 cfs_schedcpu(p)
 	struct proc *p;
 {
+	register struct sched *sc;
 	register struct sched_cfs *cfs;
-	struct sched_cfs *cfsp;	/* cfs process */
+	struct sched_cfs *cfsp;		/* cfs process */
 	int cpticks;				/* p_cpticks counter (deadline) */
-	u_char slack; 				/* slack/laxity time */
-	u_char priw; 				/* priority weighting */
+	u_char new_bsched; 			/* new base schedule period */
 
 	cpticks = 0;
-	slack = p->p_sched->gsc_slack;
-	priw = p->p_sched->gsc_priweight;
+
+	sc = p->p_sched;
+	cfs_compute(cfs, p);
+	cfs->cfs_slack = sc->sc_slack;
+	cfs->cfs_priweight = sc->sc_priweight;
+	cfs->cfs_estcpu = cfs_decay(p, cfs->cfs_priweight);
+	sched_estcpu(cfs->cfs_estcpu, p->p_estcpu);
 
 	/* add to cfs queue */
-	cfs->cfs_proc = p;
-	cfs->cfs_estcpu = cfs_decay(p, priw);
-	cfs->cfs_priweight = priw;
-	sched_estcpu(cfs->cfs_estcpu, p->p_estcpu);
 	RB_INSERT(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 
-	/* calculate cfs variables */
-	cfs_compute(cfs, slack);
+	/* calculate cfs base scheduling period */
+	if (EBSCHEDULE(cfs->cfs_slack, cfs)) {
+		new_bsched = (cfs->cfs_slack * cfs->cfs_bmg);
+		cfs->cfs_bsched = new_bsched;
+	}
 
 	/* run-through red-black tree */
 	for (cfs = RB_FIRST(sched_cfs_rbtree, &cfs->cfs_parent); cfs != NULL; cfs = RB_LEFT(cfs, cfs_entry)) {
@@ -277,7 +276,6 @@ cfs_schedcpu(p)
 out:
 	/* update cfs variables */
 	cfs = cfsp;
-	p->p_sched->gsc_cfs = cfs;
 	cfs_update(p, cfs->cfs_priweight);
 	/* remove from cfs queue */
 	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
@@ -287,7 +285,6 @@ out:
 fin:
 	/* update cfs variables */
 	cfs = cfsp;
-	p->p_sched->gsc_cfs = cfs;
 	cfs_update(p, cfs->cfs_priweight);
 	/* remove from cfs queue */
 	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);

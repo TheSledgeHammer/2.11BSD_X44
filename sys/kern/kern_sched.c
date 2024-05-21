@@ -47,7 +47,6 @@
 
 #include <vm/include/vm.h>
 
-struct sched 	*sched_setup(struct proc *);
 static void		sched_edf_setup(struct sched *, struct proc *);
 static void		sched_cfs_setup(struct sched *, struct proc *);
 
@@ -55,58 +54,49 @@ void
 sched_init(p)
 	struct proc *p;
 {
-	struct sched *gsd;
-	gsd = sched_setup(p);
-	sched_edf_setup(gsd, p);
-	sched_cfs_setup(gsd, p);
-}
+	register struct sched *sc;
 
-struct sched *
-sched_setup(p)
-	struct proc *p;
-{
-	struct sched *gsd = p->p_sched;
+	MALLOC(sc, struct sched *, sizeof(struct sched *), M_SCHED, M_WAITOK);
 
-	if (gsd == NULL) {
-		MALLOC(gsd, struct sched *, sizeof(struct sched *), M_SCHED, M_WAITOK);
-	}
+	p->p_sched = sc;
+	sched_edf_setup(&sc->sc_edf, p);
+	sched_cfs_setup(&sc->sc_cfs, p);
 
-	gsd->gsc_proc = p;
-	return (gsd);
 }
 
 static void
-sched_edf_setup(gsd, p)
-	struct sched *gsd;
+sched_edf_setup(sc, p)
+	struct sched *sc;
 	struct proc *p;
 {
-	register struct sched_edf *edf = sched_edf(gsd);
+	register struct sched_edf *edf;
 
+	edf = sched_edf(sc);
 	if (edf == NULL) {
 		MALLOC(edf, struct sched_edf *, sizeof(struct sched_edf *), M_SCHED, M_WAITOK);
 	}
 
-	edf->edf_proc = p;
 	edf->edf_cpticks = p->p_cpticks;
 	edf->edf_pri = p->p_pri;
 	edf->edf_cpu = p->p_cpu;
 	edf->edf_time = p->p_time;
 	edf->edf_slptime = p->p_slptime;
+	edf->edf_release = p->p_swtime;
 }
 
 static void
-sched_cfs_setup(gsd, p)
-	struct sched *gsd;
+sched_cfs_setup(sc, p)
+	struct sched *sc;
 	struct proc *p;
 {
-	register struct sched_cfs *cfs = sched_cfs(gsd);
+	register struct sched_cfs *cfs;
 
+	cfs = sched_cfs(sc);
 	if (cfs == NULL) {
 		MALLOC(cfs, struct sched_cfs *, sizeof(struct sched_cfs *), M_SCHED, M_WAITOK);
 	}
 
 	RB_INIT(&cfs->cfs_parent);
-	cfs->cfs_proc = p;
 	cfs->cfs_cpticks = p->p_cpticks;
 	cfs->cfs_pri = p->p_pri;
 	cfs->cfs_cpu = p->p_cpu;
@@ -121,18 +111,30 @@ sched_cfs_setup(gsd, p)
 
 /* return edf scheduler */
 struct sched_edf *
-sched_edf(gsd)
-	struct sched *gsd;
+sched_edf(sc)
+	struct sched *sc;
 {
-	return (gsd->gsc_edf);
+	struct sched_edf *edf;
+
+	edf = &sc->sc_edf;
+	if (edf != NULL) {
+		return (edf);
+	}
+	return (NULL);
 }
 
 /* return cfs scheduler */
 struct sched_cfs *
-sched_cfs(gsd)
-	struct sched *gsd;
+sched_cfs(sc)
+	struct sched *sc;
 {
-	return (gsd->gsc_cfs);
+	struct sched_cfs *cfs;
+
+	cfs = &sc->sc_cfs;
+	if (cfs != NULL) {
+		return (cfs);
+	}
+	return (NULL);
 }
 
 /* set estcpu */
@@ -141,15 +143,16 @@ sched_estcpu(estcpu1, estcpu2)
 	u_int estcpu1, estcpu2;
 {
 	u_int diff;
-	if(estcpu1 != estcpu2) {
-		if(estcpu1 > estcpu2) {
+
+	if (estcpu1 != estcpu2) {
+		if (estcpu1 > estcpu2) {
 			diff = estcpu1 - estcpu2;
-			if(diff >= 3) {
+			if (diff >= 3) {
 				estcpu1 = estcpu2;
 			}
-		} else if(estcpu1 < estcpu2) {
+		} else if (estcpu1 < estcpu2) {
 			diff = estcpu2 - estcpu1;
-			if(diff >= 3) {
+			if (diff >= 3) {
 				estcpu2 = estcpu1;
 			}
 		}
@@ -161,7 +164,61 @@ void
 sched_cpticks(cpticks1, cpticks2)
 	int cpticks1, cpticks2;
 {
-	if(cpticks1 != cpticks2) {
+	if (cpticks1 != cpticks2) {
 		cpticks1 = cpticks2;
 	}
+}
+
+void
+sched_set_priority_weighting(sc, pri, deadline, slack, slptime)
+	struct sched *sc;
+	char deadline, slptime;
+	u_char pri, slack;
+{
+	sc->sc_priweight = PRIORITY_WEIGHTING(pri, deadline, slack, slptime);
+}
+
+void
+sched_set_slack(sc, deadline, timo, cost)
+	struct sched *sc;
+	char deadline, cost;
+	u_char timo;
+{
+	sc->sc_slack = SLACK(deadline, timo, cost);
+}
+
+void
+sched_set_utilization(sc, cost, release)
+	struct sched *sc;
+	char cost, release;
+{
+	sc->sc_utilization = UTILIZATION(cost, release);
+}
+
+void
+sched_set_demand(sc, timo, deadline, release, cost)
+	struct sched *sc;
+	char timo, deadline, release, cost;
+{
+	sc->sc_demand = DEMAND(timo, deadline, release, cost);
+}
+
+void
+sched_set_workload(sc, timo, release, cost)
+	struct sched *sc;
+	char timo, release, cost;
+{
+	sc->sc_workload = WORKLOAD(timo, release, cost);
+}
+
+void
+sched_compute(sc, p)
+	struct sched *sc;
+	struct proc *p;
+{
+	sched_set_slack(sc, p->p_cpticks, p->p_time, p->p_cpu); 								/* laxity/slack */
+    sched_set_utilization(sc, p->p_cpu, p->p_swtime);                               		/* utilization */
+    sched_set_demand(sc, p->p_time, p->p_cpticks, p->p_swtime, p->p_cpu);                   /* demand */
+    sched_set_workload(sc, p->p_time, p->p_swtime, p->p_cpu);                            	/* workload */
+    sched_set_priority_weighting(sc, p->p_pri, p->p_cpticks, sc->sc_slack, p->p_slptime);	/* priority weighting */
 }
