@@ -150,6 +150,7 @@ void thread_wakeup(struct proc *, const void *);
 
 pid_t thread_tidmask(struct proc *);					/* thread tidmask */
 int thread_primask(struct proc *);						/* thread primask */
+int	thread_usrprimask(struct proc *);					/* thread usrprimask */
 
 #endif 	/* KERNEL */
 #endif /* _SYS_THREAD_H_ */

@@ -844,9 +844,10 @@ reschedule(p)
 	register struct proc *p;
 {
 	register int newpri;
-	newpri = setpri(p);
+
+	newpri = min(setpri(p), MAXPRI);
 	p->p_usrpri = newpri;
-	if(newpri < curpri) {
+	if (newpri < curpri) {
 		need_resched(p);
 	}
 }

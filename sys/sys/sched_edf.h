@@ -51,9 +51,6 @@ Multiple CFS?
 #include <sys/sched.h>
 
 struct sched_edf {
-	//struct sched 		*edf_sched;			/* pointer to global scheduler */
-	//struct proc			*edf_procp;
-
     int	    			edf_flag;			/* P_* flags. */
     char    			edf_stat;			/* S* process status. */
 
@@ -71,10 +68,6 @@ struct sched_edf {
 
     char 				edf_delta; 			/* Inherited Deadline (UN-USED) */
     u_char 				edf_remtime; 		/* time remaining (UN-USED) */
-
-    //u_char				edf_utilization;	/* utilization per task */
-    //u_char				edf_demand;			/* demand per task */
-    //u_char				edf_workload;		/* workload per task */
 };
 
 #define P_EDFFAIL 		0x8000	/* Failed EDF Test */

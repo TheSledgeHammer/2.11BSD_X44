@@ -323,6 +323,9 @@ struct msghdr {
 	int				msg_iovlen;			/* # elements in msg_iov */
 	caddr_t			msg_accrights;		/* access rights sent/received */
 	int				msg_accrightslen;
+	int				msg_flags;			/* flags on received message */
+#define msg_control 	msg_accrights
+#define msg_controllen	msg_accrightslen
 };
 
 #define	MSG_OOB			0x1		/* process out-of-band data */

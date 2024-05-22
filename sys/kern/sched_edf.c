@@ -46,49 +46,6 @@
 #include <vm/include/vm.h>
 
 #include <machine/cpu.h>
-/*
-void
-edf_set_priority_weighting(edf, pri, deadline, slack, slptime)
-	struct sched_edf *edf;
-	char deadline, slptime;
-	u_char pri, slack;
-{
-	edf->edf_priweight = PRIORITY_WEIGHTING(pri, deadline, slack, slptime);
-}
-
-void
-edf_set_slack(edf, deadline, timo, cost)
-	struct sched_edf *edf;
-	char deadline, cost;
-	u_char timo;
-{
-	edf->edf_slack = SLACK(deadline, timo, cost);
-}
-
-void
-edf_set_utilization(edf, cost, release)
-	struct sched_edf *edf;
-	char cost, release;
-{
-	edf->edf_utilization = UTILIZATION(cost, release);
-}
-
-void
-edf_set_demand(edf, timo, deadline, release, cost)
-	struct sched_edf *edf;
-	char timo, deadline, release, cost;
-{
-	edf->edf_demand = DEMAND(timo, deadline, release, cost);
-}
-
-void
-edf_set_workload(edf, timo, release, cost)
-	struct sched_edf *edf;
-	char timo, release, cost;
-{
-	edf->edf_workload = WORKLOAD(timo, release, cost);
-}
-*/
 
 /* CPU Utilization per task (U <= 1) */
 int
@@ -143,14 +100,6 @@ int
 edf_test(edf)
 	struct sched_edf *edf;
 {
-	/* check deadline is possible in given time */
-	/*
-	if(edf->edf_time < edf->edf_cpticks) {
-		edf->edf_release = 0;
-		goto error;
-	}
-	*/
-
 	/* Sanity Check */
 	if(edf->edf_time == 0) {
 		printf("edf_test: time not set");
@@ -168,7 +117,7 @@ edf_test(edf)
 		printf("edf_test: cost > deadline");
 		goto error;
 	}
-    edf->edf_release = edf->edf_time;
+    //edf->edf_release = edf->edf_time;
 
 	/* test cpu utilization, demand & workload, can be scheduled */
 	if (edf_test_utilization(edf->edf_cpu, edf->edf_release) != 0) {

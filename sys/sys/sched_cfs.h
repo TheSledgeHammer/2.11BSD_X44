@@ -97,9 +97,6 @@ struct sched_cfs {
 	struct sched_cfs_rbtree		cfs_parent;							/* rbtree cfs parent/root */
     RB_ENTRY(sched_cfs) 		cfs_entry;							/* rbtree cfs entries */
 
-	//struct sched 				*cfs_sched;							/* pointer to global scheduler */
-	//struct proc 				*cfs_procp;
-
     int	    					cfs_flag;
     char    					cfs_stat;
 

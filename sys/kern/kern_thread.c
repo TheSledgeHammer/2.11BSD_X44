@@ -300,6 +300,17 @@ thread_primask(p)
 	return (pri);
 }
 
+/* thread usr priority mask */
+int
+thread_usrprimask(p)
+	struct proc *p;
+{
+	int pri;
+
+	pri = p->p_usrpri + p->p_nthreads;
+	return (pri);
+}
+
 /* update thread priority from proc priority */
 void
 thread_updatepri(p, td)
@@ -584,11 +595,11 @@ thread_schedule(p, td)
 				(td->td_flag & TD_INMEM) &&
 				(td->td_pri != (p->p_usrpri + p->p_nthreads))) {
 		thread_remrq(p, td);
-		td->td_pri = p->p_usrpri + p->p_nthreads;
+		td->td_pri = thread_usrprimask(p); //p->p_usrpri + p->p_nthreads;
 		thread_setpri(p, td);
 		thread_setrq(p, td);
 	} else {
-		td->td_pri = p->p_usrpri + p->p_nthreads;
+		td->td_pri = thread_usrprimask(p);//p->p_usrpri + p->p_nthreads;
 		thread_setpri(p, td);
 	}
 }

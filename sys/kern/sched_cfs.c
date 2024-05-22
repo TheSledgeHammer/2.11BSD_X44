@@ -133,8 +133,10 @@ cfs_loadfactor(priweight)
 	 loadfac = loadfactor(averunnable.ldavg[0]);
 	 priwfac = priwfactor(averunnable.ldavg[0], priweight);
 
-	 if (loadfac > priwfac && priweight != 0) {
-		 return (priwfac);
+	 if (priweight != 0) {
+		 if (loadfac >= priwfac) {
+			 return (priwfac);
+		 }
 	 }
 	 return (loadfac);
 }

@@ -13,6 +13,7 @@ SUBDIR=	ac accton arp authpf 						\
         netgroup_mkdb								\
 		pcictl portmap pwd_mkdb 					\
         rmt                                         \
+        traceroute 									\
 		update unlink  								\
 		vnconfig 									\
 		wsconscfg wsfontload wsmoused wsmuxctl		\
@@ -28,6 +29,14 @@ SUBDIR+= ypbind yppoll ypserv ypset
 
 .if ${TOOLCHAIN_MISSING} != "no"
 SUBDIR+= mdsetimage
+.endif
+
+#.if (${MKINET6} != "no")
+#SUBDIR+=
+#.endif
+
+.if (${USE_INET6} != "no")
+SUBDIR+= traceroute6 
 .endif
 
 .include <bsd.subdir.mk>

@@ -40,30 +40,30 @@
 #include <netinet6/ipsec.h>
 
 char *requests[] = {
-"must_error",		/* must be error */
-"ipsec must_error",	/* must be error */
-"ipsec esp/must_error",	/* must be error */
-"discard",
-"none",
-"entrust",
-"bypass",		/* may be error */
-"ipsec esp",		/* must be error */
-"ipsec ah/require",
-"ipsec ah/use/",
-"ipsec esp/require ah/default/203.178.141.194",
-"ipsec ah/use/203.178.141.195 esp/use/203.178.141.194",
-"ipsec esp/elf.wide.ydc.co.jp esp/www.wide.ydc.co.jp"
-"
-ipsec esp/require ah/use esp/require/10.0.0.1
-ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
-ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
-ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
-ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
-ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
-ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
-ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
-ah/use/3ffe:501:481d::1  ah/use/3ffe:501:481d::1ah/use/3ffe:501:481d::1
-",
+	"must_error", /* must be error */
+	"ipsec must_error", /* must be error */
+	"ipsec esp/must_error", /* must be error */
+	"discard",
+	"none",
+	"entrust",
+	"bypass", /* may be error */
+	"ipsec esp", /* must be error */
+	"ipsec ah/require",
+	"ipsec ah/use/",
+	"ipsec esp/require ah/default/203.178.141.194",
+	"ipsec ah/use/203.178.141.195 esp/use/203.178.141.194",
+	"ipsec esp/elf.wide.ydc.co.jp esp/www.wide.ydc.co.jp"
+	"
+	ipsec esp/require ah/use esp/require/10.0.0.1
+	ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
+	ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
+	ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
+	ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
+	ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
+	ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
+	ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1
+	ah/use/3ffe:501:481d::1 ah/use/3ffe:501:481d::1ah/use/3ffe:501:481d::1
+	",
 };
 
 u_char *p_secpolicy;
