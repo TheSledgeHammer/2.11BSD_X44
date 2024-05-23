@@ -106,8 +106,8 @@ struct sched {
 
     /* schedulers */
     union {
-    	struct sched_edf	u_edf;			/* earliest deadline first scheduler */
-    	struct sched_cfs 	u_cfs;			/* completely fair scheduler */
+    	struct sched_edf	*u_edf;			/* earliest deadline first scheduler */
+    	struct sched_cfs 	*u_cfs;			/* completely fair scheduler */
     } sc_u;
 #define sc_edf				sc_u.u_edf
 #define sc_cfs				sc_u.u_cfs
