@@ -59,8 +59,8 @@ sched_init(p)
 	MALLOC(sc, struct sched *, sizeof(struct sched *), M_SCHED, M_WAITOK);
 
 	p->p_sched = sc;
-	sched_edf_setup(&sc->sc_edf, p);
-	sched_cfs_setup(&sc->sc_cfs, p);
+	sched_edf_setup(sc->sc_edf, p);
+	sched_cfs_setup(sc->sc_cfs, p);
 
 }
 
@@ -116,7 +116,7 @@ sched_edf(sc)
 {
 	struct sched_edf *edf;
 
-	edf = &sc->sc_edf;
+	edf = sc->sc_edf;
 	if (edf != NULL) {
 		return (edf);
 	}
@@ -130,7 +130,7 @@ sched_cfs(sc)
 {
 	struct sched_cfs *cfs;
 
-	cfs = &sc->sc_cfs;
+	cfs = sc->sc_cfs;
 	if (cfs != NULL) {
 		return (cfs);
 	}
