@@ -47,8 +47,8 @@
 
 #include <vm/include/vm.h>
 
-static void		sched_edf_setup(struct sched *, struct proc *);
-static void		sched_cfs_setup(struct sched *, struct proc *);
+static void		sched_edf_setup(struct sched_edf *, struct proc *);
+static void		sched_cfs_setup(struct sched_cfs *, struct proc *);
 
 void
 sched_init(p)
@@ -59,19 +59,15 @@ sched_init(p)
 	MALLOC(sc, struct sched *, sizeof(struct sched *), M_SCHED, M_WAITOK);
 
 	p->p_sched = sc;
-	sched_edf_setup(sc, p);
-	sched_cfs_setup(sc, p);
-
+	sched_edf_setup(sc->sc_edf, p);
+	sched_cfs_setup(sc->sc_cfs, p);
 }
 
 static void
-sched_edf_setup(sc, p)
-	struct sched *sc;
+sched_edf_setup(edf, p)
+	struct sched_edf *edf;
 	struct proc *p;
 {
-	register struct sched_edf *edf;
-
-	edf = sched_edf(sc);
 	if (edf == NULL) {
 		MALLOC(edf, struct sched_edf *, sizeof(struct sched_edf *), M_SCHED, M_WAITOK);
 	}
@@ -85,13 +81,10 @@ sched_edf_setup(sc, p)
 }
 
 static void
-sched_cfs_setup(sc, p)
-	struct sched *sc;
+sched_cfs_setup(cfs, p)
+	struct sched_cfs *cfs;
 	struct proc *p;
 {
-	register struct sched_cfs *cfs;
-
-	cfs = sched_cfs(sc);
 	if (cfs == NULL) {
 		MALLOC(cfs, struct sched_cfs *, sizeof(struct sched_cfs *), M_SCHED, M_WAITOK);
 	}
@@ -114,7 +107,7 @@ struct sched_edf *
 sched_edf(sc)
 	struct sched *sc;
 {
-	struct sched_edf *edf;
+	register struct sched_edf *edf;
 
 	edf = sc->sc_edf;
 	if (edf != NULL) {
@@ -128,7 +121,7 @@ struct sched_cfs *
 sched_cfs(sc)
 	struct sched *sc;
 {
-	struct sched_cfs *cfs;
+	register struct sched_cfs *cfs;
 
 	cfs = sc->sc_cfs;
 	if (cfs != NULL) {

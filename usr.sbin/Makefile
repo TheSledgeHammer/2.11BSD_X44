@@ -13,9 +13,10 @@ SUBDIR=	ac accton arp authpf 						\
         netgroup_mkdb								\
 		pcictl portmap pwd_mkdb 					\
         rmt                                         \
+	sa service 					\
         traceroute 									\
-		update unlink  								\
-		vnconfig 									\
+		unlink update user  								\
+		vipw vnconfig 									\
 		wsconscfg wsfontload wsmoused wsmuxctl		\
         zdump zic
 

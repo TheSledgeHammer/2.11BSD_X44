@@ -27,6 +27,7 @@
 #define	_PATH_MASTERPASSWD	"/etc/master.passwd"
 #define	_PATH_MKPASSWD		"/etc/mkpasswd"
 #define	_PATH_PTMP			"/etc/ptmp"
+#define	_PATH_MASTERPASSWD_LOCK	_PATH_PTMP
 
 #define	_PATH_PASSWD_CONF	"/etc/passwd.conf"
 #define	_PATH_PASSWDCONF	_PATH_PASSWD_CONF	/* XXX: compat */

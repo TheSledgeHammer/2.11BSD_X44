@@ -1,11 +1,9 @@
-/* $NetBSD: termcap.h,v 1.2 2011/04/11 21:13:09 roy Exp $ */
+/* $NetBSD: pathnames.h,v 1.5 2003/11/12 13:31:08 grant Exp $ */
 
 /*
- * Copyright (c) 2009, 2011 The NetBSD Foundation, Inc.
- *
- * This code is derived from software contributed to The NetBSD Foundation
- * by Roy Marples.
- *
+ * Copyright (c) 1994 Christopher G. Demetriou
+ * All rights reserved.
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +12,14 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *          This product includes software developed for the
+ *          NetBSD Project.  See http://www.NetBSD.org/ for
+ *          information about NetBSD.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -25,30 +30,10 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * <<Id: LICENSE,v 1.2 2000/06/14 15:57:33 cgd Exp>>
  */
 
-#ifndef _TERMCAP_H_
-#define	_TERMCAP_H_
-
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-
-/* Output functions.
- * These are still valid for terminfo. */
-int		putp(const char *);
-int		tputs(const char *, int, int (*)(int));
-
-extern short ospeed;
-extern char PC;
-extern char *BC;
-extern char *UP;
-
-int		tgetent(char *, const char *);
-char 	*tgetstr(const char *, char **);
-int		tgetflag(const char *);
-int		tgetnum(const char *);
-char 	*tgoto(const char *, int, int);
-
-__END_DECLS
-#endif
+#define	_PATH_ACCT	"/var/account/acct"
+#define _PATH_SAVACCT	"/var/account/savacct"
+#define _PATH_USRACCT	"/var/account/usracct"

@@ -4,12 +4,12 @@
 .include <bsd.own.mk>
 
 SUBDIR= apply ar asa at 											\
-		banner basename bzip2 bzip2recover							\
+		banner base64 basename bzip2 bzip2recover							\
 		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
 		compress crontab crunch csplit ctags cut 					\
 		db deroff dirname du										\
 		elf2aout elf2ecoff env expand								\
-		false fdformat find fmt fold fpr fsplit                     \
+		false fdformat find fmt fold fpr fsplit ftp                     \
 		gcore genassym gencat getaddrinfo getopt getconf gettext 	\
 		gprof														\
 		head hexdump 												\
@@ -25,7 +25,7 @@ SUBDIR= apply ar asa at 											\
 		renice rev rpcgen rpcinfo									\
 		script sed shar shlock showmount sort sortinfo spell split 	\
 		stat strfile su												\
-		tail tcopy tic time tip touch tput true tset tsort tty		\
+		tail tcopy tftp tic time tip touch tput true tset tsort tty		\
 		ul uname unexpand unifdef uniq unstr unvis unzip users 		\
 		uudecode uuencode 											\
 		vgrind vis vmstat 											\
