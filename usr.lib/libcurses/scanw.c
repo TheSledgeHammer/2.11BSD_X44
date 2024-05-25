@@ -1,3 +1,5 @@
+/*	$NetBSD: scanw.c,v 1.23 2019/06/30 22:16:20 blymn Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,19 +29,20 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)scanw.c	8.3 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: scanw.c,v 1.23 2019/06/30 22:16:20 blymn Exp $");
+#endif
+#endif				/* not lint */
 
 /*
  * scanw and friends.
  */
 
-#ifdef __STDC__
 #include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
 
 #include "curses.h"
 
@@ -52,124 +51,81 @@ static char sccsid[] = "@(#)scanw.c	8.3 (Berkeley) 5/4/94";
  *	Implement a scanf on the standard screen.
  */
 int
-#ifdef __STDC__
-scanw(const char *fmt, ...)
-#else
-scanw(fmt, va_alist)
-	char *fmt;
-	va_dcl
-#endif
+scanw(const char *fmt,...)
 {
 	va_list ap;
-	int ret;
+	int     ret;
 
-#ifdef __STDC__
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	ret = vwscanw(stdscr, fmt, ap);
+	ret = vw_scanw(stdscr, fmt, ap);
 	va_end(ap);
-	return (ret);
+	return ret;
 }
-
 /*
  * wscanw --
  *	Implements a scanf on the given window.
  */
 int
-#ifdef __STDC__
-wscanw(WINDOW *win, const char *fmt, ...)
-#else
-wscanw(win, fmt, va_alist)
-	WINDOW *win;
-	char *fmt;
-	va_dcl
-#endif
+wscanw(WINDOW *win, const char *fmt,...)
 {
 	va_list ap;
-	int ret;
+	int     ret;
 
-#ifdef __STDC__
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	ret = vwscanw(win, fmt, ap);
+	ret = vw_scanw(win, fmt, ap);
 	va_end(ap);
-	return (ret);
+	return ret;
 }
-
 /*
- * mvscanw, mvwscanw -- 
+ * mvscanw, mvwscanw --
  *	Implement the mvscanw commands.  Due to the variable number of
  *	arguments, they cannot be macros.  Another sigh....
  */
 int
-#ifdef __STDC__
-mvscanw(register int y, register int x, const char *fmt,...)
-#else
-mvscanw(y, x, fmt, va_alist)
-	register int y, x;
-	char *fmt;
-	va_dcl
-#endif
+mvscanw(int y, int x, const char *fmt,...)
 {
 	va_list ap;
-	int ret;
+	int     ret;
 
 	if (move(y, x) != OK)
-		return (ERR);
-#ifdef __STDC__
+		return ERR;
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	ret = vwscanw(stdscr, fmt, ap);
+	ret = vw_scanw(stdscr, fmt, ap);
 	va_end(ap);
-	return (ret);
+	return ret;
 }
 
 int
-#ifdef __STDC__
-mvwscanw(register WINDOW * win, register int y, register int x,
-    const char *fmt, ...)
-#else
-mvwscanw(win, y, x, fmt, va_alist)
-	register WINDOW *win;
-	register int y, x;
-	char *fmt;
-	va_dcl
-#endif
+mvwscanw(WINDOW * win, int y, int x, const char *fmt,...)
 {
 	va_list ap;
-	int ret;
+	int     ret;
 
 	if (move(y, x) != OK)
-		return (ERR);
-#ifdef __STDC__
+		return ERR;
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	ret = vwscanw(win, fmt, ap);
+	ret = vw_scanw(win, fmt, ap);
 	va_end(ap);
-	return (ret);
+	return ret;
 }
-
 /*
  * vwscanw --
  *	This routine actually executes the scanf from the window.
  */
 int
-vwscanw(win, fmt, ap)
-	WINDOW *win;
-	const char *fmt;
-	va_list ap;
+vw_scanw(WINDOW *win, const char *fmt, va_list ap)
 {
+	char    buf[1024];
+	int	ret;
 
-	char buf[1024];
+	ret = ERR;
+	if (wgetnstr(win, buf, (int) sizeof(buf)) == OK) {
+		if (vsscanf(buf, fmt, ap) > 0) {
+			ret = OK;
+		}
+	}
 
-	return (wgetstr(win, buf) == OK ?
-	    vsscanf(buf, fmt, ap) : ERR);
+	return ret;
 }
+
+__strong_alias(vwscanw, vw_scanw)

@@ -1,3 +1,5 @@
+/*	$NetBSD: insertln.c,v 1.14 2017/01/06 13:53:18 roy Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,52 +29,40 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)insertln.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
-
-#include <string.h>
+#else
+__RCSID("$NetBSD: insertln.c,v 1.14 2017/01/06 13:53:18 roy Exp $");
+#endif
+#endif				/* not lint */
 
 #include "curses.h"
+#include "curses_private.h"
+
+#ifndef _CURSES_USE_MACROS
+
+/*
+ * insertln --
+ *	Do an insert-line on stdscr, leaving (cury, curx) unchanged.
+ */
+int
+insertln(void)
+{
+
+	return winsdelln(stdscr, 1);
+}
+
+#endif
 
 /*
  * winsertln --
  *	Do an insert-line on the window, leaving (cury, curx) unchanged.
  */
 int
-winsertln(win)
-	register WINDOW *win;
+winsertln(WINDOW *win)
 {
 
-	register int y, i;
-	register __LINE *temp;
-
-#ifdef DEBUG
-	__CTRACE("insertln: (%0.2o)\n", win);
-#endif
-	if (win->orig == NULL)
-		temp = win->lines[win->maxy - 1];
-	for (y = win->maxy - 1; y > win->cury; --y) {
-		win->lines[y]->flags &= ~__ISPASTEOL;
-		win->lines[y - 1]->flags &= ~__ISPASTEOL;
-		if (win->orig == NULL)
-			win->lines[y] = win->lines[y - 1];
-		else
-			(void)memcpy(win->lines[y]->line, 
-			    win->lines[y - 1]->line, 
-			    win->maxx * __LDATASIZE);
-		__touchline(win, y, 0, win->maxx - 1, 0);
-	}
-	if (win->orig == NULL)
-		win->lines[y] = temp;
-	else
-		temp = win->lines[y];
-	for(i = 0; i < win->maxx; i++) {
-		temp->line[i].ch = ' ';
-		temp->line[i].attr = 0;
-	}
-	__touchline(win, y, 0, win->maxx - 1, 0);
-	if (win->orig == NULL)
-		__id_subwins(win);
-	return (OK);
+	return winsdelln(win, 1);
 }

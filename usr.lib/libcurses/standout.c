@@ -1,3 +1,5 @@
+/*	$NetBSD: standout.c,v 1.19 2017/01/10 23:49:20 roy Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,37 +29,73 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)standout.c	8.3 (Berkeley) 8/10/94";
-#endif /* not lint */
+#else
+__RCSID("$NetBSD: standout.c,v 1.19 2017/01/10 23:49:20 roy Exp $");
+#endif
+#endif				/* not lint */
 
 #include "curses.h"
+#include "curses_private.h"
+
+#ifndef _CURSES_USE_MACROS
 
 /*
- * wstandout
- *	Enter standout mode.
+ * standout --
+ *	Enter standout mode on stdscr.
  */
 int
-wstandout(win)
-	WINDOW *win;
+standout(void)
 {
+
+	return wstandout(stdscr);
+}
+
+/*
+ * standend --
+ *	Exit standout mode on stdscr.
+ */
+int
+standend(void)
+{
+
+	return wstandend(stdscr);
+}
+
+#endif
+
+/*
+ * wstandout --
+ *	Enter standout mode in window win.
+ */
+int
+wstandout(WINDOW *win)
+{
+	const TERMINAL *t = win->screen->term;
+
 	/*
 	 * If standout/standend strings, or can underline, set the
 	 * screen standout bit.
 	 */
-	if (SO != NULL && SE != NULL || UC != NULL)
-		win->flags |= __WSTANDOUT;
-	return (1);
+	if ((t_enter_standout_mode(t) != NULL &&
+	    t_exit_standout_mode(t) != NULL) ||
+	    t_underline_char(t) != NULL)
+		win->wattr |= __STANDOUT;
+	return 1;
 }
 
 /*
  * wstandend --
- *	Exit standout mode.
+ *	Exit standout mode in window win.
  */
 int
-wstandend(win)
-	WINDOW *win;
+wstandend(WINDOW *win)
 {
-	win->flags &= ~__WSTANDOUT;
-	return (1);
+
+	// http://pubs.opengroup.org/onlinepubs/7908799/xcurses/wstandend.html
+	win->wattr = __NORMAL;
+	return 1;
 }

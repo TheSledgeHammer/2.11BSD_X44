@@ -1,11 +1,15 @@
-#	@(#)Makefile	8.2 (Berkeley) 5/23/94
+#	$NetBSD: Makefile,v 1.14 2014/07/15 13:27:58 christos Exp $
+#	from: @(#)Makefile	8.2 (Berkeley) 5/23/94
 
-DIR=	psd/19.curses
+SECTION=reference/ref3
+ARTICLE=curses
 SRCS=	Master
+CEXAMPLES= ex1.gr ex2.gr life.gr twinkle1.gr twinkle2.gr win_st.gr
+DEPSRCS=appen.A appen.B appen.C doc.I doc.II doc.III doc.IV fns.doc \
+	intro.0 intro.1 intro.2.tbl intro.3 intro.4 intro.5 intro.6 \
+	macros c_macros $(CEXAMPLES)
 MACROS=	-me
-
-CLEANFILES+=win_st.gr twinkle1.gr twinkle2.gr life.gr intro.2.tbl appen.A.tbl \
-	ex1.gr ex2.gr
+CLEANFILES+= ${CEXAMPLES} intro.2.tbl
 
 .SUFFIXES:
 .SUFFIXES: .c .gr
@@ -17,19 +21,12 @@ CLEANFILES+=win_st.gr twinkle1.gr twinkle2.gr life.gr intro.2.tbl appen.A.tbl \
 #
 
 # Don't re-run vgrind unless you want to patch the output files.
-VFONT=	/usr/libexec/vfontedpr
+
 .c.gr:
-	${VFONT} $*.c | grep -v "^'wh" > $*.gr
+	${TOOL_VFONTEDPR} ${.IMPSRC} | grep -v "^'wh" > ${.TARGET}
 
-paper.ps: ${SRCS}
-	soelim ${SRCS} | ${ROFF} > ${.TARGET}
-
-Master: twinkle1.gr ex1.gr ex2.gr fns.doc intro.5 intro.2.tbl intro.0 intro.1 \
-	intro.3 intro.4 intro.6 macros c_macros
-
+# Unfortunately our make doesn't handle single-suffix rules.
 intro.2.tbl: intro.2
-	${TBL} intro.2 > intro.2.tbl
+	${TOOL_TBL} ${.ALLSRC} > ${.TARGET}
 
 .include <bsd.doc.mk>
-
-

@@ -1,3 +1,5 @@
+/*	$NetBSD: newwin.c,v 1.57.2.1 2020/07/14 13:37:18 martin Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,84 +29,192 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)newwin.c	8.3 (Berkeley) 7/27/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: newwin.c,v 1.57.2.1 2020/07/14 13:37:18 martin Exp $");
+#endif
+#endif				/* not lint */
 
 #include <stdlib.h>
 
 #include "curses.h"
+#include "curses_private.h"
 
-#undef	nl		/* Don't need it here, and it interferes. */
 
-static WINDOW 	*__makenew __P((int, int, int, int, int));
+static WINDOW *__makenew(SCREEN *screen, int nlines, int ncols, int by,
+			 int bx, int sub, int ispad);
+static WINDOW *__subwin(WINDOW *orig, int nlines, int ncols, int by, int bx,
+			 int ispad);
 
-void	 __set_subwin __P((WINDOW *, WINDOW *));
+/*
+ * derwin --
+ *      Create a new window in the same manner as subwin but (by, bx)
+ *      are relative to the origin of window orig instead of absolute.
+ */
+WINDOW *
+derwin(WINDOW *orig, int nlines, int ncols, int by, int bx)
+{
+
+	return __subwin(orig, nlines, ncols, orig->begy + by, orig->begx + bx,
+	    FALSE);
+}
+
+/*
+ * subpad --
+ *      Create a new pad in the same manner as subwin but (by, bx)
+ *      are relative to the origin of window orig instead of absolute.
+ */
+WINDOW *
+subpad(WINDOW *orig, int nlines, int ncols, int by, int bx)
+{
+
+	return __subwin(orig, nlines, ncols, orig->begy + by, orig->begx + bx,
+	    TRUE);
+}
+
+/*
+ * dupwin --
+ *      Create a copy of the given window.
+ */
+WINDOW *
+dupwin(WINDOW *win)
+{
+	WINDOW *new_one;
+
+	if ((new_one = __newwin(_cursesi_screen, win->maxy, win->maxx,
+				win->begy, win->begx, FALSE,
+				win == stdscr ? TRUE : FALSE)) == NULL)
+		return NULL;
+
+	overwrite(win, new_one);
+	return new_one;
+}
 
 /*
  * newwin --
  *	Allocate space for and set up defaults for a new window.
  */
 WINDOW *
-newwin(nl, nc, by, bx)
-	register int nl, nc, by, bx;
+newwin(int nlines, int ncols, int by, int bx)
 {
-	register WINDOW *win;
-	register __LINE *lp;
-	register int  i, j;
-	register __LDATA *sp;
 
-	if (nl == 0)
-		nl = LINES - by;
-	if (nc == 0)
-		nc = COLS - bx;
+	return __newwin(_cursesi_screen, nlines, ncols, by, bx, FALSE, FALSE);
+}
 
-	if ((win = __makenew(nl, nc, by, bx, 0)) == NULL)
-		return (NULL);
+/*
+ * newpad --
+ *	Allocate space for and set up defaults for a new pad.
+ */
+WINDOW *
+newpad(int nlines, int ncols)
+{
 
+	if (nlines < 1 || ncols < 1)
+		return NULL;
+	return __newwin(_cursesi_screen, nlines, ncols, 0, 0, TRUE, FALSE);
+}
+
+WINDOW *
+__newwin(SCREEN *screen, int nlines, int ncols, int by, int bx, int ispad,
+    int isstdscr)
+{
+	WINDOW *win;
+	__LINE *lp;
+	int     i, j;
+	int	ry, maxy, maxx;
+	__LDATA *sp;
+
+	if (by < 0 || bx < 0)
+		return NULL;
+
+	if (isstdscr) {
+		ry = __rippedlines(screen, -1);
+		by += __rippedlines(screen, 1);
+	} else
+		ry = 0;
+
+	maxy = nlines > 0 ? nlines : LINES - by - ry + nlines;
+	maxx = ncols > 0 ? ncols : COLS - bx + ncols;
+
+	if ((win = __makenew(screen, maxy, maxx, by, bx, 0, ispad)) == NULL)
+		return NULL;
+
+	win->bch = ' ';
+	if (__using_color)
+		win->battr = __default_color;
+	else
+		win->battr = 0;
 	win->nextp = win;
 	win->ch_off = 0;
 	win->orig = NULL;
+	win->reqy = nlines;
+	win->reqx = ncols;
 
 #ifdef DEBUG
-	__CTRACE("newwin: win->ch_off = %d\n", win->ch_off);
+	__CTRACE(__CTRACE_WINDOW, "newwin: win->ch_off = %d\n", win->ch_off);
 #endif
 
-	for (i = 0; i < nl; i++) {
-		lp = win->lines[i];
-		lp->flags = 0;
-		for (sp = lp->line, j = 0; j < nc; j++, sp++) {
-			sp->ch = ' ';
+	for (i = 0; i < maxy; i++) {
+		lp = win->alines[i];
+		if (ispad)
+			lp->flags = __ISDIRTY;
+		else
+			lp->flags = 0;
+		for (sp = lp->line, j = 0; j < maxx; j++, sp++) {
 			sp->attr = 0;
+#ifndef HAVE_WCHAR
+			sp->ch = win->bch;
+#else
+			sp->ch = (wchar_t)btowc((int) win->bch);
+			sp->nsp = NULL;
+			SET_WCOL(*sp, 1);
+#endif /* HAVE_WCHAR */
 		}
-		lp->hash = __hash((char *) lp->line, nc * __LDATASIZE);
+		lp->hash = __hash((char *)(void *)lp->line,
+				  (size_t)(maxx * __LDATASIZE));
 	}
 	return (win);
 }
 
 WINDOW *
-subwin(orig, nl, nc, by, bx)
-	register WINDOW *orig;
-	register int by, bx, nl, nc;
+subwin(WINDOW *orig, int nlines, int ncols, int by, int bx)
 {
-	int i;
+
+	return __subwin(orig, nlines, ncols, by, bx, FALSE);
+}
+
+static WINDOW *
+__subwin(WINDOW *orig, int nlines, int ncols, int by, int bx, int ispad)
+{
+	int     i;
 	__LINE *lp;
-	register WINDOW *win;
+	WINDOW *win;
+	int	maxy, maxx;
+
+#ifdef	DEBUG
+	__CTRACE(__CTRACE_WINDOW, "subwin: (%p, %d, %d, %d, %d, %d)\n",
+	    orig, nlines, ncols, by, bx, ispad);
+#endif
+	if (orig == NULL)
+		return NULL;
 
 	/* Make sure window fits inside the original one. */
-#ifdef	DEBUG
-	__CTRACE("subwin: (%0.2o, %d, %d, %d, %d)\n", orig, nl, nc, by, bx);
-#endif
+	maxy = nlines > 0 ? nlines : orig->maxy + orig->begy - by + nlines;
+	maxx = ncols > 0 ? ncols : orig->maxx + orig->begx - bx + ncols;
 	if (by < orig->begy || bx < orig->begx
-	    || by + nl > orig->maxy + orig->begy
-	    || bx + nc > orig->maxx + orig->begx)
-		return (NULL);
-	if (nl == 0)
-		nl = orig->maxy + orig->begy - by;
-	if (nc == 0)
-		nc = orig->maxx + orig->begx - bx;
-	if ((win = __makenew(nl, nc, by, bx, 1)) == NULL)
-		return (NULL);
+	    || by + maxy > orig->maxy + orig->begy
+	    || bx + maxx > orig->maxx + orig->begx)
+		return NULL;
+	if ((win = __makenew(_cursesi_screen, maxy, maxx,
+			     by, bx, 1, ispad)) == NULL)
+		return NULL;
+	win->bch = orig->bch;
+	win->battr = orig->battr;
+	win->reqy = nlines;
+	win->reqx = ncols;
 	win->nextp = orig->nextp;
 	orig->nextp = win;
 	win->orig = orig;
@@ -117,128 +223,229 @@ subwin(orig, nl, nc, by, bx)
 	for (lp = win->lspace, i = 0; i < win->maxy; i++, lp++)
 		lp->flags = 0;
 	__set_subwin(orig, win);
-	return (win);
+	return win;
 }
-
 /*
  * This code is shared with mvwin().
  */
 void
-__set_subwin(orig, win)
-	register WINDOW *orig, *win;
+__set_subwin(WINDOW *orig, WINDOW *win)
 {
-	int i;
+	int     i;
 	__LINE *lp, *olp;
+#ifdef HAVE_WCHAR
+	__LDATA *cp;
+	int j;
+	nschar_t *np;
+#endif /* HAVE_WCHAR */
 
 	win->ch_off = win->begx - orig->begx;
-	/*  Point line pointers to line space. */
+	/* Point line pointers to line space. */
 	for (lp = win->lspace, i = 0; i < win->maxy; i++, lp++) {
-		win->lines[i] = lp;
-		olp = orig->lines[i + win->begy];
-		lp->line = &olp->line[win->begx];
+		win->alines[i] = lp;
+		olp = orig->alines[i + win->begy - orig->begy];
+#ifdef DEBUG
+		lp->sentinel = SENTINEL_VALUE;
+#endif
+		lp->line = &olp->line[win->ch_off];
 		lp->firstchp = &olp->firstch;
 		lp->lastchp = &olp->lastch;
-		lp->hash = __hash((char *) lp->line, win->maxx * __LDATASIZE);
+#ifndef HAVE_WCHAR
+		lp->hash = __hash((char *)(void *)lp->line,
+				  (size_t)(win->maxx * __LDATASIZE));
+#else
+		for (cp = lp->line, j = 0; j < win->maxx; j++, cp++) {
+			lp->hash = __hash_more( &cp->ch,
+			    sizeof( wchar_t ), lp->hash );
+			lp->hash = __hash_more( &cp->attr,
+			    sizeof( wchar_t ), lp->hash );
+			if ( cp->nsp ) {
+				np = cp->nsp;
+				while ( np ) {
+					lp->hash = __hash_more( &np->ch,
+					    sizeof( wchar_t ), lp->hash );
+					np = np->next;
+				}
+			}
+		}
+#endif /* HAVE_WCHAR */
 	}
 
 #ifdef DEBUG
-	__CTRACE("__set_subwin: win->ch_off = %d\n", win->ch_off);
+	__CTRACE(__CTRACE_WINDOW, "__set_subwin: win->ch_off = %d\n",
+	    win->ch_off);
 #endif
 }
-
 /*
  * __makenew --
  *	Set up a window buffer and returns a pointer to it.
  */
 static WINDOW *
-__makenew(nl, nc, by, bx, sub)
-	register int by, bx, nl, nc;
-	int sub;
+__makenew(SCREEN *screen, int nlines, int ncols, int by, int bx, int sub,
+	int ispad)
 {
-	register WINDOW *win;
-	register __LINE *lp;
-	int i;
-	
+	WINDOW			*win;
+	__LINE			*lp;
+	struct __winlist	*wlp, *wlp2;
+	int			 i;
+
 
 #ifdef	DEBUG
-	__CTRACE("makenew: (%d, %d, %d, %d)\n", nl, nc, by, bx);
+	__CTRACE(__CTRACE_WINDOW, "makenew: (%d, %d, %d, %d)\n",
+	    nlines, ncols, by, bx);
 #endif
-	if ((win = malloc(sizeof(*win))) == NULL)
-		return (NULL);
-#ifdef DEBUG
-	__CTRACE("makenew: nl = %d\n", nl);
-#endif
+	if (nlines <= 0 || ncols <= 0)
+		return NULL;
 
-	/* 
-	 * Set up line pointer array and line space.
-	 */
-	if ((win->lines = malloc (nl * sizeof(__LINE *))) == NULL) {
+	if ((win = malloc(sizeof(WINDOW))) == NULL)
+		return NULL;
+#ifdef DEBUG
+	__CTRACE(__CTRACE_WINDOW, "makenew: win = %p\n", win);
+#endif
+	win->fp = NULL;
+	win->buf = NULL;
+	win->buflen = 0;
+
+	/* Set up line pointer array and line space. */
+	if ((win->alines = malloc(nlines * sizeof(__LINE *))) == NULL) {
 		free(win);
 		return NULL;
 	}
-	if ((win->lspace = malloc (nl * sizeof(__LINE))) == NULL) {
-		free (win);
-		free (win->lines);
+	if ((win->lspace = malloc(nlines * sizeof(__LINE))) == NULL) {
+		free(win->alines);
+		free(win);
 		return NULL;
 	}
-
 	/* Don't allocate window and line space if it's a subwindow */
-	if (!sub) {
+	if (sub)
+		win->wspace = NULL;
+	else {
 		/*
 		 * Allocate window space in one chunk.
 		 */
-		if ((win->wspace = 
-		    malloc(nc * nl * sizeof(__LDATA))) == NULL) {
-			free(win->lines);
+		if ((win->wspace =
+			malloc(ncols * nlines * sizeof(__LDATA))) == NULL) {
 			free(win->lspace);
+			free(win->alines);
 			free(win);
 			return NULL;
 		}
-		
+		/*
+		 * Append window to window list.
+		 */
+		if ((wlp = malloc(sizeof(struct __winlist))) == NULL) {
+			free(win->wspace);
+			free(win->lspace);
+			free(win->alines);
+			free(win);
+			return NULL;
+		}
+		wlp->winp = win;
+		wlp->nextp = NULL;
+		if (screen->winlistp == NULL)
+			screen->winlistp = wlp;
+		else {
+			wlp2 = screen->winlistp;
+			while (wlp2->nextp != NULL)
+				wlp2 = wlp2->nextp;
+			wlp2->nextp = wlp;
+		}
 		/*
 		 * Point line pointers to line space, and lines themselves into
 		 * window space.
 		 */
-		for (lp = win->lspace, i = 0; i < nl; i++, lp++) {
-			win->lines[i] = lp;
-			lp->line = &win->wspace[i * nc];
+		for (lp = win->lspace, i = 0; i < nlines; i++, lp++) {
+			win->alines[i] = lp;
+			lp->line = &win->wspace[i * ncols];
+#ifdef DEBUG
+			lp->sentinel = SENTINEL_VALUE;
+#endif
 			lp->firstchp = &lp->firstch;
 			lp->lastchp = &lp->lastch;
-			lp->firstch = 0;
-			lp->lastch = 0;
+			if (ispad) {
+				lp->firstch = 0;
+				lp->lastch = ncols;
+			} else {
+				lp->firstch = ncols;
+				lp->lastch = 0;
+			}
 		}
 	}
 #ifdef DEBUG
-	__CTRACE("makenew: nc = %d\n", nc);
+	__CTRACE(__CTRACE_WINDOW, "makenew: ncols = %d\n", ncols);
 #endif
+	win->screen = screen;
 	win->cury = win->curx = 0;
-	win->maxy = nl;
-	win->maxx = nc;
+	win->maxy = nlines;
+	win->maxx = ncols;
+	win->reqy = nlines;
+	win->reqx = ncols;
 
 	win->begy = by;
 	win->begx = bx;
-	win->flags = 0;
-	__swflags(win);
+	win->flags = (__IDLINE | __IDCHAR);
+	win->delay = -1;
+	win->wattr = 0;
+#ifdef HAVE_WCHAR
+	win->bnsp = NULL;
+	SET_BGWCOL(*win, 1);
+#endif /* HAVE_WCHAR */
+	win->scr_t = 0;
+	win->scr_b = win->maxy - 1;
+	if (ispad) {
+		win->flags |= __ISPAD;
+		win->pbegy = 0;
+		win->pbegx = 0;
+		win->sbegy = 0;
+		win->sbegx = 0;
+		win->smaxy = 0;
+		win->smaxx = 0;
+	} else
+		__swflags(win);
 #ifdef DEBUG
-	__CTRACE("makenew: win->flags = %0.2o\n", win->flags);
-	__CTRACE("makenew: win->maxy = %d\n", win->maxy);
-	__CTRACE("makenew: win->maxx = %d\n", win->maxx);
-	__CTRACE("makenew: win->begy = %d\n", win->begy);
-	__CTRACE("makenew: win->begx = %d\n", win->begx);
+	__CTRACE(__CTRACE_WINDOW, "makenew: win->wattr = %08x\n", win->wattr);
+	__CTRACE(__CTRACE_WINDOW, "makenew: win->flags = %#.4x\n", win->flags);
+	__CTRACE(__CTRACE_WINDOW, "makenew: win->maxy = %d\n", win->maxy);
+	__CTRACE(__CTRACE_WINDOW, "makenew: win->maxx = %d\n", win->maxx);
+	__CTRACE(__CTRACE_WINDOW, "makenew: win->begy = %d\n", win->begy);
+	__CTRACE(__CTRACE_WINDOW, "makenew: win->begx = %d\n", win->begx);
+	__CTRACE(__CTRACE_WINDOW, "makenew: win->scr_t = %d\n", win->scr_t);
+	__CTRACE(__CTRACE_WINDOW, "makenew: win->scr_b = %d\n", win->scr_b);
 #endif
-	return (win);
+	return win;
 }
 
 void
-__swflags(win)
-	register WINDOW *win;
+__swflags(WINDOW *win)
 {
+	TERMINAL *term = win->screen->term;
+
 	win->flags &= ~(__ENDLINE | __FULLWIN | __SCROLLWIN | __LEAVEOK);
-	if (win->begx + win->maxx == COLS) {
+	if (win->begx + win->maxx == win->screen->COLS &&
+	    !(win->flags & __ISPAD))
+	{
 		win->flags |= __ENDLINE;
-		if (win->begx == 0 && win->maxy == LINES && win->begy == 0)
+		if (win->begx == 0 &&
+		    win->maxy == win->screen->LINES &&
+		    win->begy == 0)
 			win->flags |= __FULLWIN;
-		if (win->begy + win->maxy == LINES)
+		if (win->begy + win->maxy == win->screen->LINES &&
+		    t_auto_right_margin(term) &&
+		    !(t_insert_character(term) != NULL ||
+		    t_parm_ich(term) != NULL ||
+		    (t_enter_insert_mode(term) != NULL &&
+		     t_exit_insert_mode(term) != NULL)))
 			win->flags |= __SCROLLWIN;
 	}
+}
+
+/*
+ * is_pad --
+ *	Return true if window was created by newpad.
+ */
+bool
+is_pad(const WINDOW *win)
+{
+
+	return win->flags & __ISPAD ? true : false;
 }

@@ -1,3 +1,5 @@
+.\"	$NetBSD: appen.C,v 1.7 2003/08/07 16:44:26 agc Exp $
+.\"
 .\" Copyright (c) 1980, 1993
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
@@ -9,11 +11,7 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
+.\" 3. Neither the name of the University nor the names of its contributors
 .\"    may be used to endorse or promote products derived from this software
 .\"    without specific prior written permission.
 .\"
@@ -44,8 +42,9 @@
 Here we present a few examples
 of how to use the package.
 They attempt to be representative,
-though not comprehensive.  Further examples can be found in the games section
-of the source tree and in various utilities that use the screen such as 
+though not comprehensive.
+Further examples can be found in the games section
+of the source tree and in various utilities that use the screen such as
 .i systat(1) .
 .sh 2 "Screen Updating"
 .pp
@@ -61,18 +60,18 @@ of what the relevant portions do.
 .sh 3 "Simple Character Output"
 .pp
 This program demonstrates how to set up a window and output characters to it.
-Also, it demonstrates how one might control the output to the window.  If
-you run this program, you will get a demonstration of the character output
+Also, it demonstrates how one might control the output to the window.
+If you run this program, you will get a demonstration of the character output
 chracteristics discussed in the above Character Output section.
 .(l I
 .so t2.gr
 .)l
 .sh 3 "A Small Screen Manipulator"
 .pp
-The next example follows the lines of the previous one but extends then to 
-demonstrate the various othe uses of the package.  Make sure you understand 
-how this program works as it encompasses most of anything you will
-need to do with the package.
+The next example follows the lines of the previous one but extends then to
+demonstrate the various othe uses of the package.
+Make sure you understand how this program works as it encompasses most of
+anything you will need to do with the package.
 .(l I
 .so t3.gr
 .)l

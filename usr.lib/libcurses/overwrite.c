@@ -1,3 +1,5 @@
+/*	$NetBSD: overwrite.c,v 1.18 2007/01/21 13:25:36 jdc Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,46 +29,32 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)overwrite.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: overwrite.c,v 1.18 2007/01/21 13:25:36 jdc Exp $");
+#endif
+#endif				/* not lint */
 
 #include <ctype.h>
 #include <string.h>
 
 #include "curses.h"
+#include "curses_private.h"
 
 /*
  * overwrite --
  *	Writes win1 on win2 destructively.
  */
 int
-overwrite(win1, win2)
-	register WINDOW *win1, *win2;
+overwrite(const WINDOW *win1, WINDOW *win2)
 {
-	register int x, y, endy, endx, starty, startx;
-
 #ifdef DEBUG
-	__CTRACE("overwrite: (%0.2o, %0.2o);\n", win1, win2);
+	__CTRACE(__CTRACE_WINDOW, "overwrite: (%p, %p);\n", win1, win2);
 #endif
-	starty = max(win1->begy, win2->begy);
-	startx = max(win1->begx, win2->begx);
-	endy = min(win1->maxy + win1->begy, win2->maxy + win2->begx);
-	endx = min(win1->maxx + win1->begx, win2->maxx + win2->begx);
-	if (starty >= endy || startx >= endx)
-		return (OK);
-#ifdef DEBUG
-	__CTRACE("overwrite: from (%d, %d) to (%d, %d)\n",
-	    starty, startx, endy, endx);
-#endif
-	x = endx - startx;
-	for (y = starty; y < endy; y++) {
-		(void)memcpy(
-		    &win2->lines[y - win2->begy]->line[startx - win2->begx], 
-		    &win1->lines[y - win1->begy]->line[startx - win1->begx],
-		    x * __LDATASIZE);
-		__touchline(win2, y, startx - win2->begx, endx - win2->begx,
-		    0);
-	}
-	return (OK);
+	return copywin(win1, win2,
+			win2->begy - win1->begy, win2->begx - win1->begx,
+			0, 0, win2->maxy - 1, win2->maxx - 1, FALSE);
 }

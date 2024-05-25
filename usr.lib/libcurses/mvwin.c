@@ -1,3 +1,5 @@
+/*	$NetBSD: mvwin.c,v 1.21 2017/01/11 20:43:03 roy Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,26 +29,82 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)mvwin.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: mvwin.c,v 1.21 2017/01/11 20:43:03 roy Exp $");
+#endif
+#endif				/* not lint */
 
 #include "curses.h"
+#include "curses_private.h"
+
+/*
+ * mvderwin --
+ *      Move a derived window.  This does not change the physical screen
+ * coordinates of the subwin, rather maps the characters in the subwin
+ * sized part of the parent window starting at dy, dx into the subwin.
+ *
+ */
+int
+mvderwin(WINDOW *win, int dy, int dx)
+{
+	WINDOW *parent;
+	int x, i;
+	__LINE *plp;
+
+	if (win == NULL)
+		return ERR;
+
+	parent = win->orig;
+
+	if (parent == NULL)
+		return ERR;
+
+	if (((win->maxx + dx) > parent->maxx) ||
+	    ((win->maxy + dy) > parent->maxy))
+		return ERR;
+
+	win->flags |= __ISDERWIN;
+	win->derx = dx;
+	win->dery = dy;
+
+	x = parent->begx + dx;
+
+	/*
+	 * Mark the source area for the derwin as changed so it will be
+	 * copied to the destination window on refresh.
+	 */
+	for (i = 0; i < win->maxy; i++) {
+		plp = parent->alines[i + dy];
+		plp->flags = __ISDIRTY;
+		if (*plp->firstchp > x)
+			*plp->firstchp = x;
+		if (*plp->lastchp < x + win->maxx)
+			*plp->lastchp = x + win->maxx;
+#ifdef DEBUG
+		__CTRACE(__CTRACE_REFRESH, "mvderwin: firstchp = %d, lastchp = %d\n", *plp->firstchp, *plp->lastchp);
+#endif
+	}
+
+	return OK;
+}
 
 /*
  * mvwin --
  *	Relocate the starting position of a window.
  */
 int
-mvwin(win, by, bx)
-	register WINDOW *win;
-	register int by, bx;
+mvwin(WINDOW *win, int by, int bx)
 {
-	register WINDOW *orig;
-	register int dy, dx;
+	WINDOW *orig;
+	int     dy, dx;
 
-	if (by + win->maxy > LINES || bx + win->maxx > COLS)
-		return (ERR);
+	if (by < 0 || by + win->maxy > win->screen->LINES ||
+	    bx < 0 || bx + win->maxx > win->screen->COLS)
+		return ERR;
 	dy = by - win->begy;
 	dx = bx - win->begx;
 	orig = win->orig;
@@ -64,14 +118,14 @@ mvwin(win, by, bx)
 		} while (win != orig);
 	} else {
 		if (by < orig->begy || win->maxy + dy > orig->maxy)
-			return (ERR);
+			return ERR;
 		if (bx < orig->begx || win->maxx + dx > orig->maxx)
-			return (ERR);
+			return ERR;
 		win->begy = by;
 		win->begx = bx;
 		__swflags(win);
 		__set_subwin(orig, win);
 	}
 	__touchwin(win);
-	return (OK);
+	return OK;
 }

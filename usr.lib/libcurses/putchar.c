@@ -1,3 +1,5 @@
+/*	$NetBSD: putchar.c,v 1.23 2019/05/20 22:17:41 blymn Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,19 +29,75 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)putchar.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: putchar.c,v 1.23 2019/05/20 22:17:41 blymn Exp $");
+#endif
+#endif				/* not lint */
 
 #include "curses.h"
+#include "curses_private.h"
 
-void
-__cputchar(ch)
-	int ch;
+int
+__cputchar(int ch)
 {
 
 #ifdef DEBUG
-	__CTRACE("__cputchar: %s\n", unctrl(ch));
+	__CTRACE(__CTRACE_OUTPUT, "__cputchar: %s\n", unctrl(ch));
 #endif
-	(void)putchar(ch);
+	return __cputchar_args(ch, _cursesi_screen->outfd);
 }
+
+/*
+ * This is the same as __cputchar but the extra argument holds the file
+ * descriptor to write the output to.  This function can only be used with
+ * the "new" libterm interface.
+ */
+int
+__cputchar_args(int ch, void *args)
+{
+	FILE *outfd = (FILE *)args;
+	int status;
+
+#ifdef DEBUG
+	__CTRACE(__CTRACE_OUTPUT, "__cputchar_args: %s on fd %d\n",
+	    unctrl(ch), outfd->_file);
+#endif
+	status = putc(ch, outfd);
+	fflush(outfd);
+	return status;
+}
+
+#ifdef HAVE_WCHAR
+int
+__cputwchar(wchar_t wch)
+{
+#ifdef DEBUG
+	__CTRACE(__CTRACE_OUTPUT, "__cputwchar: 0x%x\n", wch);
+#endif
+	return __cputwchar_args(wch, _cursesi_screen->outfd);
+}
+
+/*
+ * This is the same as __cputchar but the extra argument holds the file
+ * descriptor to write the output to.  This function can only be used with
+ * the "new" libterm interface.
+ */
+int
+__cputwchar_args(wchar_t wch, void *args)
+{
+	FILE *outfd = (FILE *)args;
+	int status;
+
+#ifdef DEBUG
+	__CTRACE(__CTRACE_OUTPUT, "__cputwchar_args: 0x%x on fd %d\n",
+	    wch, outfd->_file);
+#endif
+	status = putwc(wch, outfd);
+	fflush(outfd);
+	return status;
+}
+#endif /* HAVE_WCHAR */

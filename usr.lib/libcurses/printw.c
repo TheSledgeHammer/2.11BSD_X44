@@ -1,3 +1,5 @@
+/*	$NetBSD: printw.c,v 1.29 2019/06/09 07:40:14 blymn Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,170 +29,112 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)printw.c	8.3 (Berkeley) 5/4/94";
-#endif	/* not lint */
-
-#ifdef __STDC__
-#include <stdarg.h>
 #else
-#include <varargs.h>
+__RCSID("$NetBSD: printw.c,v 1.29 2019/06/09 07:40:14 blymn Exp $");
 #endif
+#endif				/* not lint */
+
+#include <stdarg.h>
 
 #include "curses.h"
+#include "curses_private.h"
 
 /*
  * printw and friends.
- *
- * These routines make nonportable assumptions about varargs if __STDC__
- * is not in effect.
  */
-
-static int __winwrite __P((void *, const char *, int));
 
 /*
  * printw --
  *	Printf on the standard screen.
  */
 int
-#ifdef __STDC__
-printw(const char *fmt, ...)
-#else
-printw(fmt, va_alist)
-	char *fmt;
-	va_dcl
-#endif
+printw(const char *fmt,...)
 {
 	va_list ap;
-	int ret;
+	int     ret;
 
-#ifdef __STDC__
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	ret = vwprintw(stdscr, fmt, ap);
+	ret = vw_printw(stdscr, fmt, ap);
 	va_end(ap);
-	return (ret);
+	return ret;
 }
-
 /*
  * wprintw --
  *	Printf on the given window.
  */
 int
-#ifdef __STDC__
-wprintw(WINDOW * win, const char *fmt, ...)
-#else
-wprintw(win, fmt, va_alist)
-	WINDOW *win;
-	char *fmt;
-	va_dcl
-#endif
+wprintw(WINDOW *win, const char *fmt,...)
 {
 	va_list ap;
-	int ret;
+	int     ret;
 
-#ifdef __STDC__
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	ret = vwprintw(win, fmt, ap);
+	ret = vw_printw(win, fmt, ap);
 	va_end(ap);
-	return (ret);
+	return ret;
 }
-
 /*
  * mvprintw, mvwprintw --
  *	Implement the mvprintw commands.  Due to the variable number of
  *	arguments, they cannot be macros.  Sigh....
  */
 int
-#ifdef __STDC__
-mvprintw(register int y, register int x, const char *fmt, ...)
-#else
-mvprintw(y, x, fmt, va_alist)
-	register int y, x;
-	char *fmt;
-	va_dcl
-#endif
+mvprintw(int y, int x, const char *fmt,...)
 {
 	va_list ap;
-	int ret;
+	int     ret;
 
-#ifdef __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
 	if (move(y, x) != OK)
-		return (ERR);
-	ret = vwprintw(stdscr, fmt, ap);
+		return ERR;
+	va_start(ap, fmt);
+	ret = vw_printw(stdscr, fmt, ap);
 	va_end(ap);
-	return (ret);
+	return ret;
 }
 
 int
-#ifdef __STDC__
-mvwprintw(register WINDOW * win, register int y, register int x,
-    const char *fmt, ...)
-#else
-mvwprintw(win, y, x, fmt, va_alist)
-	register WINDOW *win;
-	register int y, x;
-	char *fmt;
-	va_dcl
-#endif
+mvwprintw(WINDOW * win, int y, int x, const char *fmt,...)
 {
 	va_list ap;
-	int ret;
+	int     ret;
 
-#ifdef __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
 	if (wmove(win, y, x) != OK)
-		return (ERR);
+		return ERR;
 
-	ret = vwprintw(win, fmt, ap);
+	va_start(ap, fmt);
+	ret = vw_printw(win, fmt, ap);
 	va_end(ap);
-	return (ret);
+	return ret;
 }
 
 /*
- * Internal write-buffer-to-window function.
- */
-static int
-__winwrite(cookie, buf, n)
-	void *cookie;
-	register const char *buf;
-	int n;
-{
-	register WINDOW *win;
-	register int c;
-
-	for (c = n, win = cookie; --c >= 0;)
-		if (waddch(win, *buf++) == ERR)
-			return (-1);
-	return (n);
-}
-
-/*
- * vwprintw --
+ * vw_printw --
  *	This routine actually executes the printf and adds it to the window.
  */
 int
-vwprintw(win, fmt, ap)
-	WINDOW *win;
-	const char *fmt;
-	va_list ap;
+vw_printw(WINDOW *win, const char *fmt, va_list ap)
 {
-	FILE *f;
+	int n;
 
-	if ((f = funopen(win, NULL, __winwrite, NULL, NULL)) == NULL)
-		return (ERR);
-	(void)vfprintf(f, fmt, ap);
-	return (fclose(f) ? ERR : OK);
+	if (win->fp == NULL) {
+		win->fp = open_memstream(&win->buf, &win->buflen);
+		if (__predict_false(win->fp == NULL))
+			return ERR;
+	} else
+		rewind(win->fp);
+
+	n = vfprintf(win->fp, fmt, ap);
+	if (__predict_false(n == 0))
+		return OK;
+	if (__predict_false(n == -1))
+		return ERR;
+	if (__predict_false(fflush(win->fp) != 0))
+		return ERR;
+	return waddnstr(win, win->buf, n);
 }
+
+__strong_alias(vwprintw, vw_printw)

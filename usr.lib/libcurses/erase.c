@@ -1,3 +1,5 @@
+/*	$NetBSD: erase.c,v 1.28 2019/06/09 07:40:14 blymn Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,42 +29,82 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)erase.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: erase.c,v 1.28 2019/06/09 07:40:14 blymn Exp $");
+#endif
+#endif				/* not lint */
+
+#include <stdlib.h>
 
 #include "curses.h"
+#include "curses_private.h"
+
+#ifndef _CURSES_USE_MACROS
+
+/*
+ * erase --
+ *	Erases everything on stdscr.
+ */
+int
+erase(void)
+{
+	return werase(stdscr);
+}
+
+#endif
 
 /*
  * werase --
  *	Erases everything on the window.
  */
 int
-werase(win)
-	register WINDOW *win;
+werase(WINDOW *win)
 {
 
-	register int minx, y;
-	register __LDATA *sp, *end, *start, *maxx;
+	int     y;
+	__LDATA *sp, *end, *start;
+	attr_t	attr;
 
 #ifdef DEBUG
-	__CTRACE("werase: (%0.2o)\n", win);
+	__CTRACE(__CTRACE_ERASE, "werase: (%p)\n", win);
 #endif
+	if (win != curscr)
+		attr = win->battr & __ATTRIBUTES;
+	else
+		attr = 0;
 	for (y = 0; y < win->maxy; y++) {
-		minx = -1;
-		start = win->lines[y]->line;
+		start = win->alines[y]->line;
 		end = &start[win->maxx];
 		for (sp = start; sp < end; sp++)
-			if (sp->ch != ' ' || sp->attr != 0) {
-				maxx = sp; 
-				if (minx == -1)
-					minx = sp - start;
-				sp->ch = ' ';
-				sp->attr = 0;
+#ifndef HAVE_WCHAR
+			if (sp->ch != win->bch || sp->attr != 0) {
+#else
+			if (sp->ch != ( wchar_t )btowc(( int ) win->bch ) ||
+			    (sp->attr & WA_ATTRIBUTES) != 0 || sp->nsp) {
+#endif /* HAVE_WCHAR */
+				if (sp->attr & __ALTCHARSET)
+					sp->attr = attr | __ALTCHARSET;
+				else
+					sp->attr = attr;
+#ifdef HAVE_WCHAR
+				sp->ch = ( wchar_t )btowc(( int ) win->bch);
+				if (_cursesi_copy_nsp(win->bnsp, sp) == ERR)
+					return ERR;
+				SET_WCOL( *sp, 1 );
+#else
+				sp->ch = win->bch;
+#endif /* HAVE_WCHAR */
 			}
-		if (minx != -1)
-			__touchline(win, y, minx, maxx - win->lines[y]->line,
-			   0);
 	}
-	return (OK);
+	/*
+	 * Mark the whole window as changed in case we have overlapping
+	 * windows - this will result in the (intended) clearing of the
+	 * screen over the area covered by the window. */
+	__touchwin(win);
+	wmove(win, 0, 0);
+	return OK;
 }

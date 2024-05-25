@@ -1,3 +1,5 @@
+.\"	$NetBSD: ex2.c,v 1.7 2003/08/07 16:44:27 agc Exp $
+.\"
 .\" Copyright (c) 1992, 1993
 .\"	 The Regents of the University of California.  All rights reserved.
 .\"
@@ -9,11 +11,7 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
+.\" 3. Neither the name of the University nor the names of its contributors
 .\"    may be used to endorse or promote products derived from this software
 .\"    without specific prior written permission.
 .\"
@@ -52,7 +50,7 @@ main()
 	char id[100];
 	int hh = 0;
 	int curx, cury, base, arg;
-	
+
 	initscr();
 	signal(SIGINT, quit);
 	crmode();
@@ -68,7 +66,7 @@ main()
 	move(0,0);
 	refresh();
 	for (i = 0; i < YSIZE + 2; i++) {
-		sprintf(id, "%d: ", i);
+		(void)snprintf(id, sizeof id, "%d: ", i);
 		addstr(id);
 		for (j = 0; j < XSIZE - strlen(id); j++)
 			addch('0' + (i % 10));
@@ -179,16 +177,16 @@ main()
 			base--;
 			move(0, 0);
 			insertln();
-			sprintf(id, "%d: ", base);
+			(void)snprintf(id, sizeof id, "%d: ", base);
 			addstr(id);
-			for (j = 0; j < XSIZE - strlen(id) - 2; j++) 
+			for (j = 0; j < XSIZE - strlen(id) - 2; j++)
 				addch('0' + (base % 10));
 			cury++;
 		} else if (cury >= YSIZE) {
 			move(0, 0);
 			deleteln();
 			move(YSIZE - 1, 0);
-			sprintf(id, "%d: ", base + YSIZE);
+			(void)snprintf(id, sizeof id, "%d: ", base + YSIZE);
 			addstr(id);
 			for (j = 0; j < XSIZE - strlen(id) - 2; j++)
 				addch('0' + ((base + YSIZE) % 10));

@@ -1,3 +1,5 @@
+/*	$NetBSD: move.c,v 1.21 2019/06/09 07:40:14 blymn Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,32 +29,60 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)move.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: move.c,v 1.21 2019/06/09 07:40:14 blymn Exp $");
+#endif
+#endif				/* not lint */
 
 #include "curses.h"
+#include "curses_private.h"
+
+#ifndef _CURSES_USE_MACROS
+/*
+ * move --
+ *	Moves the cursor to the given point on stdscr.
+ */
+int
+move(int y, int x)
+{
+
+	return wmove(stdscr, y, x);
+}
+
+#endif
 
 /*
  * wmove --
  *	Moves the cursor to the given point.
  */
 int
-wmove(win, y, x)
-	register WINDOW *win;
-	register int y, x;
+wmove(WINDOW *win, int y, int x)
 {
-
 #ifdef DEBUG
-	__CTRACE("wmove: (%d, %d)\n", y, x);
+	__CTRACE(__CTRACE_MISC, "wmove: (%d, %d)\n", y, x);
 #endif
 	if (x < 0 || y < 0)
-		return (ERR);
+		return ERR;
 	if (x >= win->maxx || y >= win->maxy)
-		return (ERR);
+		return ERR;
+
 	win->curx = x;
-	win->lines[win->cury]->flags &= ~__ISPASTEOL;
 	win->cury = y;
-	win->lines[y]->flags &= ~__ISPASTEOL;
-	return (OK);
+
+	return OK;
+}
+
+void
+wcursyncup(WINDOW *win)
+{
+
+	while (win->orig) {
+		wmove(win->orig, win->cury + win->begy - win->orig->begy,
+		      win->curx + win->begx - win->orig->begx);
+		win = win->orig;
+	}
 }

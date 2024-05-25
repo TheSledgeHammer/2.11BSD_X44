@@ -1,3 +1,5 @@
+/*	$NetBSD: overlay.c,v 1.17 2007/01/21 13:25:36 jdc Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,52 +29,32 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)overlay.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: overlay.c,v 1.17 2007/01/21 13:25:36 jdc Exp $");
+#endif
+#endif				/* not lint */
 
 #include <ctype.h>
 
 #include "curses.h"
+#include "curses_private.h"
 
 /*
  * overlay --
  *	Writes win1 on win2 non-destructively.
  */
 int
-overlay(win1, win2)
-	register WINDOW *win1, *win2;
+overlay(const WINDOW *win1, WINDOW *win2)
 {
 
-	register int x, y, y1, y2, endy, endx, starty, startx;
-	register __LDATA *sp, *end;
-
 #ifdef DEBUG
-	__CTRACE("overlay: (%0.2o, %0.2o);\n", win1, win2);
+	__CTRACE(__CTRACE_WINDOW, "overlay: (%p, %p);\n", win1, win2);
 #endif
-	starty = max(win1->begy, win2->begy);
-	startx = max(win1->begx, win2->begx);
-	endy = min(win1->maxy + win1->begy, win2->maxy + win2->begx);
-	endx = min(win1->maxx + win1->begx, win2->maxx + win2->begx);
-#ifdef DEBUG
-	__CTRACE("overlay: from (%d,%d) to (%d,%d)\n",
-	    starty, startx, endy, endx);
-#endif
-	if (starty >= endy || startx >= endx)
-		return (OK);
-	y1 = starty - win1->begy;
-	y2 = starty - win2->begy;
-	for (y = starty; y < endy; y++, y1++, y2++) {
-		end = &win1->lines[y1]->line[endx - win1->begx];
-		x = startx - win2->begx;
-		for (sp = &win1->lines[y1]->line[startx - win1->begx]; 
-		     sp < end; sp++) {
-			if (!isspace(sp->ch)) {
-				wmove(win2, y2, x);
-				__waddch(win2, sp);
-			}
-			x++;
-		}
-	}
-	return (OK);
+	return copywin(win1, win2,
+			win2->begy - win1->begy, win2->begx - win1->begx,
+			0, 0, win2->maxy - 1, win2->maxx - 1, TRUE);
 }

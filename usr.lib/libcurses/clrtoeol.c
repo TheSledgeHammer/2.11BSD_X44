@@ -1,3 +1,5 @@
+/*	$NetBSD: clrtoeol.c,v 1.28 2017/01/06 13:53:18 roy Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,53 +29,92 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)clrtoeol.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: clrtoeol.c,v 1.28 2017/01/06 13:53:18 roy Exp $");
+#endif
+#endif				/* not lint */
 
+#include <stdlib.h>
 #include "curses.h"
+#include "curses_private.h"
+
+#ifndef _CURSES_USE_MACROS
+
+/*
+ * clrtoeol --
+ *	Clear up to the end of line.
+ */
+int
+clrtoeol(void)
+{
+	return wclrtoeol(stdscr);
+}
+
+#endif
 
 /*
  * wclrtoeol --
  *	Clear up to the end of line.
  */
 int
-wclrtoeol(win)
-	register WINDOW *win;
+wclrtoeol(WINDOW *win)
 {
-	register int minx, x, y;
-	register __LDATA *end, *maxx, *sp;
+	int     minx, x, y;
+	__LDATA *end, *maxx, *sp;
+	attr_t	attr;
 
 	y = win->cury;
 	x = win->curx;
-	if (win->lines[y]->flags & __ISPASTEOL) {
+	if (win->alines[y]->flags & __ISPASTEOL) {
 		if (y < win->maxy - 1) {
+			win->alines[y]->flags &= ~__ISPASTEOL;
 			y++;
 			x = 0;
+			win->cury = y;
+			win->curx = x;
 		} else
-			return (OK);
+			return OK;
 	}
-	end = &win->lines[y]->line[win->maxx];
+	end = &win->alines[y]->line[win->maxx];
 	minx = -1;
-	maxx = &win->lines[y]->line[x];
+	maxx = &win->alines[y]->line[x];
+	if (win != curscr)
+		attr = win->battr & __ATTRIBUTES;
+	else
+		attr = 0;
 	for (sp = maxx; sp < end; sp++)
-		if (sp->ch != ' ' || sp->attr != 0) {
+#ifndef HAVE_WCHAR
+		if (sp->ch != win->bch || sp->attr != attr) {
+#else
+		if (sp->ch != (wchar_t)btowc((int) win->bch ) ||
+		    (sp->attr & WA_ATTRIBUTES) != attr || sp->nsp
+		    || (WCOL(*sp) < 0)) {
+#endif /* HAVE_WCHAR */
 			maxx = sp;
 			if (minx == -1)
-				minx = sp - win->lines[y]->line;
-			sp->ch = ' ';
-			sp->attr = 0;
+				minx = (int) (sp - win->alines[y]->line);
+			sp->attr = attr | (sp->attr & __ALTCHARSET);
+#ifdef HAVE_WCHAR
+			sp->ch = (wchar_t)btowc((int) win->bch);
+			if (_cursesi_copy_nsp(win->bnsp, sp) == ERR)
+				return ERR;
+			SET_WCOL(*sp, 1);
+#else
+			sp->ch = win->bch;
+#endif /* HAVE_WCHAR */
 		}
 #ifdef DEBUG
-	__CTRACE("CLRTOEOL: minx = %d, maxx = %d, firstch = %d, lastch = %d\n",
-	    minx, maxx - win->lines[y]->line, *win->lines[y]->firstchp, 
-	    *win->lines[y]->lastchp);
+	__CTRACE(__CTRACE_ERASE, "CLRTOEOL: y = %d, minx = %d, maxx = %d, "
+	    "firstch = %d, lastch = %d\n",
+	    y, minx, (int)(maxx - win->alines[y]->line),
+	    *win->alines[y]->firstchp, *win->alines[y]->lastchp);
 #endif
 	/* Update firstch and lastch for the line. */
-	return (__touchline(win, y, x, win->maxx - 1, 0));
+	__touchline(win, y, x, (int)win->maxx - 1);
+	__sync(win);
+	return OK;
 }
-
-
-
-
-

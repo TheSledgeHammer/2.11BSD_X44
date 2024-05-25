@@ -1,3 +1,5 @@
+/*	$NetBSD: id_subwins.c,v 1.14 2009/07/22 16:57:14 roy Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,35 +29,32 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)id_subwins.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: id_subwins.c,v 1.14 2009/07/22 16:57:14 roy Exp $");
+#endif
+#endif				/* not lint */
 
 #include "curses.h"
+#include "curses_private.h"
 
 /*
  * __id_subwins --
  *	Re-sync the pointers to lines for all the subwindows.
  */
 void
-__id_subwins(orig)
-	register WINDOW *orig;
+__id_subwins(WINDOW *orig)
 {
-	register WINDOW *win;
-	register int oy, realy, y;
+	WINDOW *win;
+	int     oy, y;
 
-	realy = orig->begy + orig->cury;
 	for (win = orig->nextp; win != orig; win = win->nextp) {
-		/*
-		 * If the window ends before our current position, don't need
-		 * to do anything.
-		 */
-		if (win->begy + win->maxy <= realy)
-			continue;
-
-		oy = orig->cury;
-		for (y = realy - win->begy; y < win->maxy; y++, oy++)
-			win->lines[y]->line = 
-				&orig->lines[oy]->line[win->ch_off];
+		oy = win->begy - orig->begy;
+		for (y = 0; y < win->maxy; y++)
+			win->alines[y]->line =
+			    &orig->alines[oy + y]->line[win->ch_off];
 	}
 }

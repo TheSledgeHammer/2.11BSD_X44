@@ -1,3 +1,5 @@
+/*	$NetBSD: setterm.c,v 1.68 2018/10/26 22:22:24 uwe Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,11 +29,14 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)setterm.c	8.8 (Berkeley) 10/25/94";
+#else
+__RCSID("$NetBSD: setterm.c,v 1.68 2018/10/26 22:22:24 uwe Exp $");
+#endif
 #endif /* not lint */
-
-#include <sys/ioctl.h>		/* TIOCGWINSZ on old systems. */
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,191 +44,372 @@ static char sccsid[] = "@(#)setterm.c	8.8 (Berkeley) 10/25/94";
 #include <unistd.h>
 
 #include "curses.h"
+#include "curses_private.h"
 
-static void zap __P((void));
+static int does_esc_m(const char *cap);
+static int does_ctrl_o(const char *exit_cap, const char *acs_cap);
 
-static char	*sflags[] = {
-		/*       am   bs   da   eo   hc   in   mi   ms  */
-			&AM, &BS, &DA, &EO, &HC, &IN, &MI, &MS,
-		/*	 nc   ns   os   ul   xb   xn   xt   xs   xx  */
-			&NC, &NS, &OS, &UL, &XB, &XN, &XT, &XS, &XX
-		};
-
-static char	*_PC,
-		**sstrs[] = {
-		/*	 AL   bc   bt   cd   ce   cl   cm   cr   cs  */
-			&AL, &BC, &BT, &CD, &CE, &CL, &CM, &CR, &CS,
-		/*	 dc   DL   dm   do   ed   ei   k0   k1   k2  */
-			&DC, &DL, &DM, &DO, &ED, &EI, &K0, &K1, &K2,
-		/*	 k3   k4   k5   k6   k7   k8   k9   ho   ic  */
-			&K3, &K4, &K5, &K6, &K7, &K8, &K9, &HO, &IC,
-		/*	 im   ip   kd   ke   kh   kl   kr   ks   ku  */
-			&IM, &IP, &KD, &KE, &KH, &KL, &KR, &KS, &KU,
-		/*	 ll   ma   nd   nl    pc   rc   sc   se   SF */
-			&LL, &MA, &ND, &NL, &_PC, &RC, &SC, &SE, &SF,
-		/*	 so   SR   ta   te   ti   uc   ue   up   us  */
-			&SO, &SR, &TA, &TE, &TI, &UC, &UE, &UP, &US,
-		/*	 vb   vs   ve   al   dl   sf   sr   AL	     */
-			&VB, &VS, &VE, &al, &dl, &sf, &sr, &AL_PARM, 
-		/*	 DL	   UP	     DO		 LE	     */
-			&DL_PARM, &UP_PARM, &DOWN_PARM, &LEFT_PARM, 
-		/*	 RI					     */
-			&RIGHT_PARM,
-		};
-
-static char	*aoftspace;		/* Address of _tspace for relocation */
-static char	tspace[2048];		/* Space for capability strings */
-
-char *ttytype;
+attr_t	 __mask_op, __mask_me, __mask_ue, __mask_se;
 
 int
-setterm(type)
-	register char *type;
+setterm(char *type)
 {
-	static char genbuf[1024];
-	static char __ttytype[1024];
-	register int unknown;
-	struct winsize win;
+
+	return _cursesi_setterm(type, _cursesi_screen);
+}
+
+int
+_cursesi_setterm(char *type, SCREEN *screen)
+{
+	int unknown, r;
 	char *p;
 
-#ifdef DEBUG
-	__CTRACE("setterm: (\"%s\")\nLINES = %d, COLS = %d\n",
-	    type, LINES, COLS);
-#endif
 	if (type[0] == '\0')
 		type = "xx";
 	unknown = 0;
-	if (tgetent(genbuf, type) != 1) {
+	if (screen->term)
+		del_curterm(screen->term);
+	(void)ti_setupterm(&screen->term, type, fileno(screen->outfd), &r);
+	if (screen->term == NULL) {
 		unknown++;
-		strcpy(genbuf, "xx|dumb:");
+		(void)ti_setupterm(&screen->term, "dumb",
+		    fileno(screen->outfd), &r);
+		/* No dumb term? We can't continue */
+		if (screen->term == NULL)
+			return ERR;
 	}
 #ifdef DEBUG
-	__CTRACE("setterm: tty = %s\n", type);
+	__CTRACE(__CTRACE_INIT, "setterm: tty = %s\n", type);
 #endif
 
-	/* Try TIOCGWINSZ, and, if it fails, the termcap entry. */
-	if (ioctl(STDERR_FILENO, TIOCGWINSZ, &win) != -1 &&
-	    win.ws_row != 0 && win.ws_col != 0) {
-		LINES = win.ws_row;
-		COLS = win.ws_col;
-	}  else {
-		LINES = tgetnum("li");
-		COLS = tgetnum("co");
+	/* lines and cols will have been setup correctly by ti_setupterm(3). */
+	screen->LINES = t_lines(screen->term);
+	screen->COLS = t_columns(screen->term);
+
+	if (screen->filtered) {
+		/* Disable use of clear, cud, cud1, cup, cuu1 and vpa. */
+		screen->term->strs[TICODE_clear] = NULL;
+		screen->term->strs[TICODE_cud] = NULL;
+		screen->term->strs[TICODE_cud1] = NULL;
+		screen->term->strs[TICODE_cup] = NULL;
+		screen->term->strs[TICODE_cuu] = NULL;
+		screen->term->strs[TICODE_cuu1] = NULL;
+		screen->term->strs[TICODE_vpa] = NULL;
+		/* Set the value of the home string to the value of
+		 * the cr string. */
+		screen->term->strs[TICODE_home] = screen->term->strs[TICODE_cr];
+		/* Set lines equal to 1. */
+		screen->LINES = 1;
+		t_lines(screen->term) = 1;
 	}
+#ifdef DEBUG
+	__CTRACE(__CTRACE_INIT, "setterm: filtered %d", screen->filtered);
+#endif
 
-	/* POSIX 1003.2 requires that the environment override. */
-	if ((p = getenv("LINES")) != NULL)
-		LINES = strtol(p, NULL, 10);
-	if ((p = getenv("COLUMNS")) != NULL)
-		COLS = strtol(p, NULL, 10);
-
+	if ((p = getenv("ESCDELAY")) != NULL)
+		screen->ESCDELAY = (int)strtol(p, NULL, 0);
+	else
+		screen->ESCDELAY = ESCDELAY_DEFAULT;
+	if ((p = getenv("TABSIZE")) != NULL)
+		screen->TABSIZE = (int)strtol(p, NULL, 0);
+	else if (t_init_tabs(screen->term) >= 0)
+		screen->TABSIZE = (int)t_init_tabs(screen->term);
+	else
+		screen->TABSIZE = TABSIZE_DEFAULT;
 	/*
 	 * Want cols > 4, otherwise things will fail.
 	 */
-	if (COLS <= 4)
-		return (ERR);
+	if (screen->COLS <= 4)
+		return ERR;
+
+	LINES = screen->LINES;
+	COLS = screen->COLS;
+	ESCDELAY = screen->ESCDELAY;
+	TABSIZE = screen->TABSIZE;
 
 #ifdef DEBUG
-	__CTRACE("setterm: LINES = %d, COLS = %d\n", LINES, COLS);
+	__CTRACE(__CTRACE_INIT,
+	    "setterm: LINES = %d, COLS = %d, TABSIZE = %d\n",
+	    LINES, COLS, TABSIZE);
 #endif
-	aoftspace = tspace;
-	zap();			/* Get terminal description. */
-
-	/* If we can't tab, we can't backtab, either. */
-	if (!GT)
-		BT = NULL;
 
 	/*
-	 * Test for cursor motion capbility.
-	 *
-	 * XXX
-	 * This is truly stupid -- historically, tgoto returns "OOPS" if it
-	 * can't do cursor motions.  Some systems have been fixed to return
-	 * a NULL pointer.
+	 * set the pad char, only take the first char of the pc capability
+	 * as this is all we can use.
 	 */
-	if ((p = tgoto(CM, 0, 0)) == NULL || *p == 'O') {
-		CA = 0;
-		CM = 0;
-	} else
-		CA = 1;
-
-	PC = _PC ? _PC[0] : 0;
-	aoftspace = tspace;
-	ttytype = longname(genbuf, __ttytype);
+	screen->padchar = t_pad_char(screen->term) ?
+	    t_pad_char(screen->term)[0] : 0;
 
 	/* If no scrolling commands, no quick change. */
-	__noqch =
-	    (CS == NULL || HO == NULL ||
-	    SF == NULL && sf == NULL || SR == NULL && sr == NULL) &&
-	    (AL == NULL && al == NULL || DL == NULL && dl == NULL);
+	screen->noqch =
+	    (t_change_scroll_region(screen->term) == NULL ||
+		t_cursor_home(screen->term) == NULL ||
+		(t_parm_index(screen->term) == NULL &&
+		    t_scroll_forward(screen->term) == NULL) ||
+		(t_parm_rindex(screen->term) == NULL &&
+		    t_scroll_reverse(screen->term) == NULL)) &&
+	    ((t_parm_insert_line(screen->term) == NULL &&
+		t_insert_line(screen->term) == NULL) ||
+		(t_parm_delete_line(screen->term) == NULL &&
+		    t_delete_line(screen->term) == NULL));
 
-	return (unknown ? ERR : OK);
-}
+	/*
+	 * Precalculate conflict info for color/attribute end commands.
+	 */
+#ifndef HAVE_WCHAR
+	screen->mask_op = __ATTRIBUTES & ~__COLOR;
+#else
+	screen->mask_op = WA_ATTRIBUTES & ~__COLOR;
+#endif /* HAVE_WCHAR */
 
-/*
- * zap --
- *	Gets all the terminal flags from the termcap database.
- */
-static void
-zap()
-{
-	register char *namp, ***sp;
-	register char **fp;
-	char tmp[3];
-#ifdef DEBUG
-	register char	*cp;
-#endif
-	tmp[2] = '\0';
+	const char *t_op = t_orig_pair(screen->term);
+	const char *t_esm = t_exit_standout_mode(screen->term);
+	const char *t_eum = t_exit_underline_mode(screen->term);
+	const char *t_eam = t_exit_attribute_mode(screen->term);
 
-	namp = "ambsdaeohcinmimsncnsosulxbxnxtxsxx";
-	fp = sflags;
-	do {
-		*tmp = *namp;
-		*(tmp + 1) = *(namp + 1);
-		*(*fp++) = tgetflag(tmp);
-#ifdef DEBUG
-		__CTRACE("2.2s = %s\n", namp, *fp[-1] ? "TRUE" : "FALSE");
-#endif
-		namp += 2;
-		
-	} while (*namp);
-	namp = "ALbcbtcdceclcmcrcsdcDLdmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullmandnlpcrcscseSFsoSRtatetiucueupusvbvsvealdlsfsrALDLUPDOLERI";
-	sp = sstrs;
-	do {
-		*tmp = *namp;
-		*(tmp + 1) = *(namp + 1);
-		*(*sp++) = tgetstr(tmp, &aoftspace);
-#ifdef DEBUG
-		__CTRACE("2.2s = %s", namp, *sp[-1] == NULL ? "NULL\n" : "\"");
-		if (*sp[-1] != NULL) {
-			for (cp = *sp[-1]; *cp; cp++)
-				__CTRACE("%s", unctrl(*cp));
-			__CTRACE("\"\n");
-		}
-#endif
-		namp += 2;
-	} while (*namp);
-	if (XS)
-		SO = SE = NULL;
-	else {
-		if (tgetnum("sg") > 0)
-			SO = NULL;
-		if (tgetnum("ug") > 0)
-			US = NULL;
-		if (!SO && US) {
-			SO = US;
-			SE = UE;
+	if (t_op != NULL) {
+		if (does_esc_m(t_op))
+			screen->mask_op &=
+			    ~(__STANDOUT | __UNDERSCORE | __TERMATTR);
+		else {
+			if (t_esm != NULL && !strcmp(t_op, t_esm))
+				screen->mask_op &= ~__STANDOUT;
+
+			if (t_eum != NULL && !strcmp(t_op, t_eum))
+				screen->mask_op &= ~__UNDERSCORE;
+
+			if (t_eam != NULL && !strcmp(t_op, t_eam))
+				screen->mask_op &= ~__TERMATTR;
 		}
 	}
+	/*
+	 * Assume that "me" turns off all attributes apart from ACS.
+	 * It might turn off ACS, so check for that.
+	 */
+	if (t_exit_attribute_mode(screen->term) != NULL &&
+	    t_exit_alt_charset_mode(screen->term) != NULL &&
+	    does_ctrl_o(t_exit_attribute_mode(screen->term),
+	    t_exit_alt_charset_mode(screen->term)))
+		screen->mask_me = 0;
+	else
+		screen->mask_me = __ALTCHARSET;
+
+	/* Check what turning off the attributes also turns off */
+#ifndef HAVE_WCHAR
+	screen->mask_ue = __ATTRIBUTES & ~__UNDERSCORE;
+#else
+	screen->mask_ue = WA_ATTRIBUTES & ~__UNDERSCORE;
+#endif /* HAVE_WCHAR */
+	if (t_eum != NULL) {
+		if (does_esc_m(t_eum))
+			screen->mask_ue &=
+			    ~(__STANDOUT | __TERMATTR | __COLOR);
+		else {
+			if (t_esm && !strcmp(t_eum, t_esm))
+				screen->mask_ue &= ~__STANDOUT;
+
+			if (t_eam != NULL && !strcmp(t_eum, t_eam))
+				screen->mask_ue &= ~__TERMATTR;
+
+			if (t_op != NULL && !strcmp(t_eum, t_op))
+				screen->mask_ue &= ~__COLOR;
+		}
+	}
+#ifndef HAVE_WCHAR
+	screen->mask_se = __ATTRIBUTES & ~__STANDOUT;
+#else
+	screen->mask_se = WA_ATTRIBUTES & ~__STANDOUT;
+#endif /* HAVE_WCHAR */
+	if (t_esm != NULL) {
+		if (does_esc_m(t_esm))
+			screen->mask_se &=
+			    ~(__UNDERSCORE | __TERMATTR | __COLOR);
+		else {
+			if (t_eum != NULL && !strcmp(t_esm, t_eum))
+				screen->mask_se &= ~__UNDERSCORE;
+
+			if (t_eam != NULL && !strcmp(t_esm, t_eam))
+				screen->mask_se &= ~__TERMATTR;
+
+			if (t_op != NULL && !strcmp(t_esm, t_op))
+				screen->mask_se &= ~__COLOR;
+		}
+	}
+
+	return unknown ? ERR : OK;
 }
 
 /*
- * getcap --
- *	Return a capability from termcap.
+ * _cursesi_resetterm --
+ *  Copy the terminal instance data for the given screen to the global
+ *  variables.
  */
-char *
-getcap(name)
-	char *name;
+void
+_cursesi_resetterm(SCREEN *screen)
 {
-	return (tgetstr(name, &aoftspace));
+
+	LINES = screen->LINES;
+	COLS = screen->COLS;
+	ESCDELAY = screen->ESCDELAY;
+	TABSIZE = screen->TABSIZE;
+	__GT = screen->GT;
+
+	__noqch = screen->noqch;
+	__mask_op = screen->mask_op;
+	__mask_me = screen->mask_me;
+	__mask_ue = screen->mask_ue;
+	__mask_se = screen->mask_se;
+
+	set_curterm(screen->term);
+}
+
+/*
+ * does_esc_m --
+ * A hack for xterm-like terminals where "\E[m" or "\E[0m" will turn off
+ * other attributes, so we check for this in the capability passed to us.
+ * Note that we can't just do simple string comparison, as the capability
+ * may contain multiple, ';' separated sequence parts.
+ */
+static int
+does_esc_m(const char *cap)
+{
+#define WAITING 0
+#define PARSING 1
+#define NUMBER 2
+#define FOUND 4
+	const char *capptr;
+	int seq;
+
+#ifdef DEBUG
+	__CTRACE(__CTRACE_INIT, "does_esc_m: Checking %s\n", cap);
+#endif
+	/* Is it just "\E[m" or "\E[0m"? */
+	if (!strcmp(cap, "\x1b[m") || !strcmp(cap, "\x1b[0m"))
+		return 1;
+
+	/* Does it contain a "\E[...m" sequence? */
+	if (strlen(cap) < 4)
+		return 0;
+	capptr = cap;
+	seq = WAITING;
+	while (*capptr != 0) {
+		switch (seq) {
+		/* Start of sequence */
+		case WAITING:
+			if (!strncmp(capptr, "\x1b[", 2)) {
+				capptr+=2;
+				if (*capptr == 'm')
+					return 1;
+				else {
+					seq=PARSING;
+					continue;
+				}
+			}
+			break;
+		/* Looking for '0' */
+		case PARSING:
+			if (*capptr == '0')
+				seq=FOUND;
+			else if (*capptr > '0' && *capptr <= '9')
+				seq=NUMBER;
+			else if (*capptr != ';')
+				seq=WAITING;
+			break;
+		/* Some other number */
+		case NUMBER:
+			if (*capptr == ';')
+				seq=PARSING;
+			else if (!(*capptr >= '0' && *capptr <= '9'))
+				seq=WAITING;
+			break;
+		/* Found a '0' */
+		case FOUND:
+			if (*capptr == 'm')
+				return 1;
+			else if (!((*capptr >= '0' && *capptr <= '9') ||
+			    *capptr == ';'))
+				seq=WAITING;
+			break;
+		default:
+			break;
+		}
+		capptr++;
+	}
+	return 0;
+}
+
+/*
+ * capdup_nodelay --
+ * A helper for does_ctrl_o below that creates a copy of the given
+ * capability with delay specifications dropped.
+ */
+static char *
+capdup_nodelay(const char *src)
+{
+	char *clean, *dst;
+
+	dst = clean = malloc(strlen(src) + 1);
+	if (__predict_false(clean == NULL))
+		return NULL;
+
+	while (*src != '\0') {
+		if (src[0] == '$' && src[1] == '<') {
+			const char *end = strchr(src + 2, '>');
+			if (__predict_true(end != NULL)) {
+				src = end + 1;
+				continue;
+			}
+		}
+		*dst++ = *src++;
+	}
+
+	*dst = '\0';
+	return clean;
+}
+
+/*
+ * does_ctrl_o --
+ * A hack for vt100/xterm-like terminals where the "me" capability also
+ * unsets acs.
+ */
+static int
+does_ctrl_o(const char *exit_cap, const char *acs_cap)
+{
+	char *eptr, *aptr;
+	int res;
+
+#ifdef DEBUG
+	__CTRACE(__CTRACE_INIT, "does_ctrl_o: Testing %s for %s\n", exit_cap, acs_cap);
+#endif
+
+	eptr = capdup_nodelay(exit_cap);
+	if (__predict_false(eptr == NULL))
+		return 0;
+
+	aptr = capdup_nodelay(acs_cap);
+	if (__predict_false(aptr == NULL)) {
+		free(eptr);
+		return 0;
+	}
+
+	res = strstr(eptr, aptr) != NULL;
+
+	free(eptr);
+	free(aptr);
+	return res;
+}
+
+/*
+ * set_tabsize --
+ *   Sets the tabsize for the current screen.
+ */
+int
+set_tabsize(int tabsize)
+{
+
+	if (_cursesi_screen == NULL)
+		return ERR;
+	_cursesi_screen->TABSIZE = tabsize;
+	TABSIZE = tabsize;
+	return OK;
 }

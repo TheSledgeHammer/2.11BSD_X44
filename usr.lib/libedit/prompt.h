@@ -1,3 +1,5 @@
+/*	$NetBSD: prompt.h,v 1.15 2016/05/09 21:46:56 christos Exp $	*/
+
 /*-
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -13,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -40,20 +38,21 @@
  * el.prompt.h: Prompt printing stuff
  */
 #ifndef _h_el_prompt
-#define _h_el_prompt
+#define	_h_el_prompt
 
-#include "histedit.h"
-
-typedef char * (*el_pfunc_t) __P((EditLine*));
+typedef wchar_t    *(*el_pfunc_t)(EditLine *);
 
 typedef struct el_prompt_t {
-    el_pfunc_t p_func;		/* Function to return the prompt	*/
-    coord_t    p_pos;		/* position in the line after prompt	*/
+	el_pfunc_t	p_func;		/* Function to return the prompt */
+	coord_t		p_pos;		/* position in the line after prompt */
+	wchar_t		p_ignore;	/* character to start/end literal */
+	int		p_wide;
 } el_prompt_t;
 
-protected void prompt_print	__P((EditLine *));
-protected int  prompt_set	__P((EditLine *, el_pfunc_t));
-protected int  prompt_init	__P((EditLine *));
-protected void prompt_end	__P((EditLine *));
+libedit_private void	prompt_print(EditLine *, int);
+libedit_private int	prompt_set(EditLine *, el_pfunc_t, wchar_t, int, int);
+libedit_private int	prompt_get(EditLine *, el_pfunc_t *, wchar_t *, int);
+libedit_private int	prompt_init(EditLine *);
+libedit_private void	prompt_end(EditLine *);
 
 #endif /* _h_el_prompt */

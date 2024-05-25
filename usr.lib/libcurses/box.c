@@ -1,3 +1,5 @@
+/*	$NetBSD: box.c,v 1.15 2017/01/06 13:53:18 roy Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,48 +29,35 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)box.c	8.2 (Berkeley) 5/4/94";
-#endif	/* not lint */
+#else
+__RCSID("$NetBSD: box.c,v 1.15 2017/01/06 13:53:18 roy Exp $");
+#endif
+#endif				/* not lint */
 
 #include "curses.h"
 
 /*
  * box --
  *	Draw a box around the given window with "vert" as the vertical
- *	delimiting char, and "hor", as the horizontal one.
+ *	delimiting char, and "hor", as the horizontal one.  Uses wborder().
  */
 int
-box(win, vert, hor)
-	register WINDOW *win;
-	int vert, hor;
+box(WINDOW *win, chtype vert, chtype hor)
 {
-	register int endy, endx, i;
-	register __LDATA *fp, *lp;
+	return (wborder(win, vert, vert, hor, hor, 0, 0, 0, 0));
+}
 
-	endx = win->maxx;
-	endy = win->maxy - 1;
-	fp = win->lines[0]->line;
-	lp = win->lines[endy]->line;
-	for (i = 0; i < endx; i++) {
-		fp[i].ch = lp[i].ch = hor;
-		fp[i].attr &= ~__STANDOUT;
-		lp[i].attr &= ~__STANDOUT;
-	}
-	endx--;
-	for (i = 0; i <= endy; i++) {
-		win->lines[i]->line[0].ch = vert;
-	        win->lines[i]->line[endx].ch = vert;
-		win->lines[i]->line[0].attr &= ~__STANDOUT;
-		win->lines[i]->line[endx].attr &= ~__STANDOUT;
-	}
-	if (!(win->flags & __SCROLLOK) && (win->flags & __SCROLLWIN)) {
-		fp[0].ch = fp[endx].ch = lp[0].ch = lp[endx].ch = ' ';
-		fp[0].attr &= ~__STANDOUT;
-		fp[endx].attr &= ~__STANDOUT;
-		lp[0].attr &= ~__STANDOUT;
-		lp[endx].attr &= ~__STANDOUT;
-	}
-	__touchwin(win);
-	return (OK);
+int
+box_set(WINDOW *win, const cchar_t *verch, const cchar_t *horch)
+{
+#ifndef HAVE_WCHAR
+	return ERR;
+#else
+	return wborder_set(win, verch, verch, horch, horch,
+			   NULL, NULL, NULL, NULL);
+#endif /* HAVE_WCHAR */
 }

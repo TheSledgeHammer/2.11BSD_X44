@@ -1,3 +1,5 @@
+/*	$NetBSD: curses.c,v 1.28 2017/01/31 09:17:53 roy Exp $	*/
+
 /*
  * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,31 +29,30 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+#include <stdlib.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)curses.c	8.3 (Berkeley) 5/4/94";
-#endif /* not lint */
+#else
+__RCSID("$NetBSD: curses.c,v 1.28 2017/01/31 09:17:53 roy Exp $");
+#endif
+#endif				/* not lint */
 
 #include "curses.h"
+#include "curses_private.h"
 
 /* Private. */
-int	__echoit = 1;			/* If stty indicates ECHO. */
+int	__echoit = 1;			 /* If stty indicates ECHO. */
 int	__pfast;
-int	__rawmode = 0;			/* If stty indicates RAW mode. */
-int	__noqch = 0;			/* 
-					 * If terminal doesn't have 
-					 * insert/delete line capabilities 
+int	__rawmode = 0;			 /* If stty indicates RAW mode. */
+int	__noqch = 0;
+					 /* If terminal doesn't have
+					 * insert/delete line capabilities
 					 * for quick change on refresh.
 					 */
-char	AM, BS, CA, DA, EO, HC, IN, MI, MS, NC, NS, OS, PC,
-	UL, XB, XN, XT, XS, XX;
-char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
-	*DM, *DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6,
-	*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
-	*KR, *KS, *KU, *LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF,
-	*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VS,
-	*VE, *al, *dl, *sf, *sr,
-	*AL_PARM, *DL_PARM, *UP_PARM, *DOWN_PARM, *LEFT_PARM,
-	*RIGHT_PARM;
+char	__CA;
+
 /*
  * Public.
  *
@@ -65,10 +62,102 @@ char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
  */
 WINDOW	*curscr;			/* Current screen. */
 WINDOW	*stdscr;			/* Standard screen. */
+WINDOW	*__virtscr;			/* Virtual screen (for doupdate()). */
+SCREEN  *_cursesi_screen;               /* the current screen we are using */
+volatile bool	 _reentrant;		/* If true, some global vars are ro. */
 int	 COLS;				/* Columns on the screen. */
 int	 LINES;				/* Lines on the screen. */
+int	 ESCDELAY;			/* ms delay between keys for esc seq */
+int	 TABSIZE;			/* Size of a tab. */
+int	 COLORS;			/* Maximum colors on the screen */
+int	 COLOR_PAIRS = 0;		/* Maximum color pairs on the screen */
 int	 My_term = 0;			/* Use Def_term regardless. */
-char	*Def_term = "unknown";		/* Default terminal type. */
-char	 GT;				/* Gtty indicates tabs. */
-char	 NONL;				/* Term can't hack LF doing a CR. */
-char	 UPPERCASE;			/* Terminal is uppercase only. */
+const char	*Def_term = "unknown";	/* Default terminal type. */
+char	 __GT;				/* Gtty indicates tabs. */
+char	 __NONL;			/* Term can't hack LF doing a CR. */
+char	 __UPPERCASE;			/* Terminal is uppercase only. */
+
+#ifdef HAVE_WCHAR
+/*
+ * Copy the non-spacing character list (src_nsp) to the given character,
+ * allocate or free storage as required.
+ */
+int
+_cursesi_copy_nsp(nschar_t *src_nsp, struct __ldata *ch)
+{
+	nschar_t *np, *tnp, *pnp;
+
+	pnp = NULL;
+	np = src_nsp;
+	if (np) {
+		tnp = ch->nsp;
+		while (np) {
+			if (tnp) {
+				tnp->ch = np->ch;
+				pnp = tnp;
+				tnp = tnp->next;
+			} else {
+				tnp = malloc(sizeof(nschar_t));
+				if (!tnp)
+					return ERR;
+				tnp->ch = np->ch;
+				pnp->next = tnp;
+				tnp->next = NULL;
+				pnp = tnp;
+				tnp = NULL;
+			}
+			np = np->next;
+		}
+                np = tnp;
+		if (np) {
+			pnp->next = NULL;
+			__cursesi_free_nsp(np);
+		}
+	} else {
+		if (ch->nsp) {
+			__cursesi_free_nsp(ch->nsp);
+			ch->nsp = NULL;
+		}
+	}
+
+	return OK;
+}
+
+/*
+ * Free the storage associated with a non-spacing character - traverse the
+ * linked list until all storage is done.
+ */
+void
+__cursesi_free_nsp(nschar_t *inp)
+{
+	nschar_t *tnp, *np;
+
+	np = inp;
+	if (np) {
+		while (np) {
+			tnp = np->next;
+			free(np);
+			np = tnp;
+		}
+	}
+}
+
+/*
+ * Traverse all the cells in the given window free'ing the non-spacing
+ * character storage.
+ */
+void
+__cursesi_win_free_nsp(WINDOW *win)
+{
+	int     i, j;
+	__LDATA *sp;
+
+	for (i = 0; i < win->maxy; i++) {
+		for (sp = win->alines[i]->line, j = 0; j < win->maxx;
+		     j++, sp++) {
+			__cursesi_free_nsp(sp->nsp);
+		}
+	}
+}
+
+#endif
