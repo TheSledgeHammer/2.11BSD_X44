@@ -25,7 +25,6 @@ MDEC=			${DESTDIR}/usr/mdec
 LISTS=			list
 MTREECONF=		${DISTRIBDIR}/common/mtree.common
 CRUNCHCONF=		${CRUNCHBIN}.conf
-IMAGEENDIAN=	le
 IMAGEDEPENDS+= 	${CRUNCHBIN} \
 				dot.profile \
         		${DESTDIR}/usr/mdec/boot0 \
@@ -46,7 +45,7 @@ all: ${IMAGEDEPENDS}
 	dd if=/dev/zero of=${IMAGE} count=${IMAGESIZE}
 	vnconfig -t ${DISKTYPE} -v -c ${VND_CDEV} ${IMAGE}
 	disklabel -rw ${VND_CDEV} ${DISKTYPE}
-	newfs -B ${IMAGEENDIAN} -m 0 -o space -i 5120 -c 80 ${VND_RDEV} ${DISKTYPE}
+	newfs -B -m 0 -o space -i 5120 -c 80 ${VND_RDEV} ${DISKTYPE}
 	mount ${VND_DEV} ${MOUNT_POINT}
 	@echo ""
 	@df -i ${MOUNT_POINT}
