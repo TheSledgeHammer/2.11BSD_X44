@@ -75,18 +75,25 @@ _USRSLASHLIBLIST= \
             CRYPTO \
             CXX \
             DES \
+            EVENT \
+            EVENT_OPENSSL \
+            EVENT_PTHREADS \
 			EXPAT \
 			FETCH \
+            FL \
+            G2C \
 			GCC \
 			GNUCTF \
 			GNUMALLOC \
 			L \
 			LUA \
 			MAGIC \
+            NS \
             OBJC \
             SQLITE3 \
             SSH \
             SSL \
+            SSP \
             STDC++ \
             SUPC++ \
             WIND
@@ -136,10 +143,10 @@ LIB${_var}:=	 ${USRDOTLIB}/lib${_var:tl}.a
 .endif
 .endfor
 
-.ifndef LIBTERMCAP
-LIBTERMCAP = ${USRDOTLIB}/libterminfo.a
-.MADE: 		${LIBTERMCAP}
-.endif
+#.ifndef LIBTERMCAP
+#LIBTERMCAP = ${USRDOTLIB}/libterminfo.a
+#.MADE: 		${LIBTERMCAP}
+#.endif
 
 .ifndef LIBSTDCXX
 LIBSTDCXX=	${USRSLASHLIB}/libstdc++.a
