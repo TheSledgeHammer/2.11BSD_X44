@@ -28,6 +28,11 @@
 
 /*
  * TODO:
+ * - Update:
+ * 		- flags: additional flags
+ * 		- exit:
+ * 		- kill:
+ * 			- add capability to kill thread\s if needed
  * - Implement:
  * `	- thred destruction:
  * 			- when to free a thread from memory?
@@ -214,7 +219,7 @@ thread_steal(to, td)
 		if ((from != to) && (from->p_threado == td) && (td->td_tid == thread_tidmask(from))) {
 			if ((from->p_stat == SZOMB) && (to->p_stat != (SZOMB | SRUN))) {
 				thread_reparent(from, to, td);
-				td->td_flag &= ~THREAD_STEALABLE;
+				td->td_flag &= ~TD_STEALABLE;
 			}
 		}
 	}
@@ -508,7 +513,7 @@ thread_setrun(p, td)
 	struct thread *ntd;
 	int error;
 
-	if ((p->p_tqsready == 0) && ((td->td_flag & THREAD_STEALABLE) == 0)) {
+	if ((p->p_tqsready == 0) && ((td->td_flag & TD_STEALABLE) == 0)) {
 		thread_steal(p, td);
 	} else if((p->p_tqsready > 0) && (p->p_stat != SRUN)) {
 		error = newthread(&ntd, td->td_name, THREAD_STACK, TRUE);
@@ -565,7 +570,7 @@ thread_run(p, td)
 		thread_setrun(p, td);
 		break;
 	case SZOMB:
-		td->td_flag |= THREAD_STEALABLE;
+		td->td_flag |= TD_STEALABLE;
 		thread_setrun(p, td);
 		break;
 	case SSTOP:
@@ -699,6 +704,8 @@ thread_exit(ecode)
 
 	p = u.u_procp;
 	td = u.u_threado;
+	//td->td_flag &= ~(TD_TRACED | TD_SULOCK);
+	td->td_flag |= TD_WEXIT;
 
 	if (ecode != 0) {
 		printf("WARNING: thread `%s' (%d) exits with status %d\n", td->td_name, td->td_tid, ecode);
@@ -706,11 +713,12 @@ thread_exit(ecode)
 
 	td->td_stat = SZOMB;
 	thread_remove(p, td);
-	if ((p->p_stat == SZOMB) && ((td->td_flag & THREAD_STEALABLE) != 0)) {
+	if ((p->p_stat == SZOMB) && ((td->td_flag & TD_STEALABLE) != 0)) {
 		thread_free(p, td);
 	}
 	td = NULL;
 	p->p_curthread = td;
+
 	exit(W_EXITCODE(ecode, 0));
 	for (;;);
 }
@@ -810,6 +818,7 @@ thread_wakeup(p, chan)
     struct threadhd *qt;
 
     qt = &p->p_threadsq;
+restart:
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 		for (tq = TAILQ_FIRST(qt); tq != NULL; td = tq) {
 			if (td->td_stat != SSLEEP && td->td_stat != SSTOP) {
@@ -822,6 +831,7 @@ thread_wakeup(p, chan)
 					thread_updatepri(p, td);
 					td->td_stat = SRUN;
 					thread_setrq(p, td);
+					goto restart;
 				}
 			} else {
 				tq = TAILQ_NEXT(td, td_link);

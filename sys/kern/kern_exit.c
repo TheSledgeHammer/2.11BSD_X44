@@ -103,6 +103,7 @@ exit(rv)
 	 */
 	p = u.u_procp;
 	p->p_flag &= ~(P_TRACED | P_PPWAIT | P_SULOCK);
+	p->p_flag |= P_WEXIT;
 	p->p_sigignore = ~0;
 	p->p_sigacts = 0;
 	untimeout(realitexpire, (caddr_t)p);

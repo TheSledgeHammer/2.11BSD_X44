@@ -186,6 +186,8 @@ sched_set_utilization(sc, cost, release)
 	char cost, release;
 {
 	sc->sc_utilization = UTILIZATION(cost, release);
+
+	sc->sc_utilrate = sched_rating(sc->sc_utilization);
 }
 
 void
@@ -214,4 +216,85 @@ sched_compute(sc, p)
     sched_set_demand(sc, p->p_time, p->p_cpticks, p->p_swtime, p->p_cpu);                   /* demand */
     sched_set_workload(sc, p->p_time, p->p_swtime, p->p_cpu);                            	/* workload */
     sched_set_priority_weighting(sc, p->p_pri, p->p_cpticks, sc->sc_slack, p->p_slptime);	/* priority weighting */
+}
+
+static int
+sched_rate(val)
+	u_char val;
+{
+    if (SCHED_RATE_LOW(val)) {
+    	return (val);
+    }
+    if (SCHED_RATE_MEDIUM(val)) {
+    	return (val);
+    }
+    if (SCHED_RATE_HIGH(val)) {
+    	return (val);
+    }
+    return (-1);
+}
+
+static int
+sched_weight(val)
+	u_char val;
+{
+    if (SCHED_RATE_LOW(val)) {
+        return (SCHED_WEIGHT_LOW);
+    }
+    if (SCHED_RATE_MEDIUM(val)) {
+        return (SCHED_WEIGHT_MEDIUM);
+    }
+    if (SCHED_RATE_HIGH(val)) {
+        return (SCHED_WEIGHT_HIGH);
+    }
+    return (-1);
+}
+
+static int
+sched_rating(val)
+	u_char val;
+{
+	int i, rate, weight;
+
+	rate = sched_rate(val);
+	weight = sched_weight(val);
+	for (i = rate; i >= 0; i -= weight) {
+		 if (sched_weight(i) != -1) {
+			 weight = sched_weight(i);
+			 return (weight);
+		 }
+	 }
+	 return (-1);
+}
+
+void
+sched_utilization_rate(sc)
+	struct sched *sc;
+{
+	sc->sc_utilrate = sched_rating(sc->sc_utilization);
+}
+
+void
+sched_demand_rate(sc)
+	struct sched *sc;
+{
+	sc->sc_demandrate = sched_rating(sc->sc_demand);
+}
+
+void
+sched_workload_rate(sc)
+	struct sched *sc;
+{
+	sc->sc_workrate = sched_rating(sc->sc_workload);
+}
+
+int
+sched_avg_rate(sc)
+	struct sched *sc;
+{
+	sched_utilization_rate(sc);
+	sched_demand_rate(sc);
+	sched_workload_rate(sc);
+	sc->sc_avgrate = ((sc->sc_utilrate + sc->sc_demandrate + sc->sc_workrate) / 3);
+	return (sc->sc_avgrate);
 }

@@ -75,22 +75,26 @@ struct thread {
 #define THREAD_STACK	USPACE
 
 /* flag codes */
-#define	TD_INMEM		0x00000004		/* Loaded into memory. */
-#define TD_SULOCK		0x00000040		/* user settable lock in core */
-#define	TD_SYSTEM		0x00000200		/* System proc: no sigs, stats or swapping. */
-#define TD_TRACED		0x00000800		/* Debugged process being traced. */
-#define	TD_NOSWAP		0x00008000		/* Another flag to prevent swap out. */
-#define TD_INEXEC		0x00100000		/* Process is exec'ing and cannot be traced */
-#define	TD_BOUND		0x80000000 		/* Bound to a CPU */
+#define	TD_SLOCK		0x001		/* process being swapped out */
+#define TD_TRACED		0x002		/* Debugged process being traced. */
+#define	TD_WAITED		0x004		/* another tracing flag */
+#define TD_SULOCK		0x008		/* user settable lock in core */
+#define	TD_SINTR		0x010		/* sleeping interruptibly */
+#define	TD_SYSTEM		0x020		/* System proc: no sigs, stats or swapping. */
+#define	TD_INMEM		0x040		/* Loaded into memory. */
+#define TD_INEXEC		0x080		/* Process is exec'ing and cannot be traced */
+
+#define	TD_NOSWAP		0x100		/* Another flag to prevent swap out. */
+#define	TD_WEXIT		0x200
+#define	TD_BOUND		0x400 		/* Bound to a CPU */
+#define TD_STEALABLE 	0x800		/* thread able to be taken by another process aka thread is reparented */
 
 /* Kernel thread handling. */
-#define	THREAD_IDLE		0x01			/* Do not run on creation */
-#define	THREAD_MPSAFE	0x02			/* Do not acquire kernel_lock */
-#define	THREAD_INTR		0x04			/* Software interrupt handler */
-#define	THREAD_TS		0x08			/* Time-sharing priority range */
-#define	THREAD_MUSTJOIN	0x10			/* Must join on exit */
-#define THREAD_STEALABLE 0x12			/* thread able to be taken by another
-										 * process aka thread is reparented */
+#define	THREAD_IDLE		0x01		/* Do not run on creation */
+#define	THREAD_MPSAFE	0x02		/* Do not acquire kernel_lock */
+#define	THREAD_INTR		0x04		/* Software interrupt handler */
+#define	THREAD_TS		0x08		/* Time-sharing priority range */
+#define	THREAD_MUSTJOIN	0x10		/* Must join on exit */
 
 #ifdef _KERNEL
 extern struct lock_holder 	thread_loholder;

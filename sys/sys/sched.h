@@ -97,37 +97,29 @@ struct sched {
 	struct proc 			*sc_procp;		/* pointer to proc */
 	struct thread			*sc_threado;	/* pointer to thread */
 
-    u_char  				sc_priweight;	/* priority weighting: see below. */
-    /* priority weight factors */
-    u_char					sc_slack;		/* slack / laxity time */
-    u_char					sc_utilization;	/* utilization per task */
-    u_char					sc_demand;		/* demand per task */
-    u_char					sc_workload;	/* workload per task */
-
-    /* schedulers */
+	/* schedulers */
     union {
     	struct sched_edf	*u_edf;			/* earliest deadline first scheduler */
     	struct sched_cfs 	*u_cfs;			/* completely fair scheduler */
     } sc_u;
 #define sc_edf				sc_u.u_edf
 #define sc_cfs				sc_u.u_cfs
-};
 
-/* Scheduler Domains: Hyperthreading, multi-cpu */
-/* Not Implemented */
-struct sched_group {
-	CIRCLEQ_ENTRY(sched_group) sg_entry;
-};
+	/* scheduling proc / thread variables*/
+    u_char  				sc_priweight;	/* priority weighting: see below. */
+    u_char					sc_slack;		/* slack / laxity time */
 
-/* Not Implemented */
-struct sched_grphead;
-CIRCLEQ_HEAD(sched_grphead, sched_group);
-struct sched_domain {
-	struct sched_grphead	sd_header;
-	int 					sd_nentries;
-	int 					sd_refcnt;
-};
+    /* schedulability factors */
+    u_char					sc_utilization;	/* utilization per task */
+    u_char					sc_demand;		/* demand per task */
+    u_char					sc_workload;	/* workload per task */
 
+    /* schedulability rate */
+	int						sc_utilrate;	/* utilization rate */
+	int						sc_demandrate;	/* demand rate */
+	int						sc_workrate;	/* workload rate */
+	int						sc_avgrate;		/* average rate (determined from the above rates) */
+};
 
 /* Priority Weighting Factors */
 #define	PW_PRIORITY 		25 	 			/* Current Processes Priority */
@@ -150,6 +142,44 @@ struct sched_domain {
 #define UTILIZATION(c, r)       ((c) / (r))
 #define DEMAND(t, d, r, c)      ((((t) - (d) + (r)) * (c)) / (r))
 #define WORKLOAD(t, r, c)       (((t) / (r)) * (c))
+
+/* Schedule Rating Range */
+static __inline int
+sched_rate_range(val, min, max)
+	int val, min, max;
+{
+    if ((val >= min) && (val <= max)) {
+        return (0);
+    }
+	return (1);
+}
+
+/* Schedule Rating */
+#define SCHED_RATE_LOW(val)        	((sched_rate_range(val, 0, 33) == 0) || ((val) < 0))
+#define SCHED_RATE_MEDIUM(val)   	(sched_rate_range(val, 34, 66) == 0)
+#define SCHED_RATE_HIGH(val)       	((sched_rate_range(val, 67, 100) == 0) || ((val) > 100))
+
+/* Schedule Weighting */
+#define SCHED_WEIGHT_LOW			9
+#define SCHED_WEIGHT_MEDIUM			6
+#define SCHED_WEIGHT_HIGH 			3
+
+#ifdef notyet
+/* Scheduler Domains: Hyperthreading, multi-cpu */
+/* Not Implemented */
+struct sched_group {
+	CIRCLEQ_ENTRY(sched_group) sg_entry;
+};
+
+/* Not Implemented */
+struct sched_grphead;
+CIRCLEQ_HEAD(sched_grphead, sched_group);
+struct sched_domain {
+	struct sched_grphead	sd_header;
+	int 					sd_nentries;
+	int 					sd_refcnt;
+};
+#endif
 
 #ifdef _KERNEL
 void 				sched_init(struct proc *);

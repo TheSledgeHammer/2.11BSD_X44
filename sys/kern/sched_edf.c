@@ -117,7 +117,6 @@ edf_test(edf)
 		printf("edf_test: cost > deadline");
 		goto error;
 	}
-    //edf->edf_release = edf->edf_time;
 
 	/* test cpu utilization, demand & workload, can be scheduled */
 	if (edf_test_utilization(edf->edf_cpu, edf->edf_release) != 0) {
