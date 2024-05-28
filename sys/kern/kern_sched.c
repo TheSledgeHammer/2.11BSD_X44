@@ -186,8 +186,6 @@ sched_set_utilization(sc, cost, release)
 	char cost, release;
 {
 	sc->sc_utilization = UTILIZATION(cost, release);
-
-	sc->sc_utilrate = sched_rating(sc->sc_utilization);
 }
 
 void
