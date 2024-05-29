@@ -115,10 +115,14 @@ struct sched {
     u_char					sc_workload;	/* workload per task */
 
     /* schedulability rate */
+    int 					sc_rate;		/* rate */
+    int						sc_weight;		/* weight */
 	int						sc_utilrate;	/* utilization rate */
 	int						sc_demandrate;	/* demand rate */
 	int						sc_workrate;	/* workload rate */
 	int						sc_avgrate;		/* average rate (determined from the above rates) */
+
+	int 					sc_opt_nthreads;/* optimal number of threads for process */
 };
 
 /* Priority Weighting Factors */
