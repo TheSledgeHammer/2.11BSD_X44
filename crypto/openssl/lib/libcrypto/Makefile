@@ -31,8 +31,16 @@ CWARNFLAGS.clang+=	-Wno-empty-body -Wno-unused-value -Wno-parentheses -Wno-impli
 # XXX: This warning seems to trigger incorrectly
 CWARNFLAGS.clang+=	-Wno-atomic-alignment
 
+
+LINTFLAGS+=	-X 161	# constant in conditional context
+LINTFLAGS+=	-X 129	# expression has null effect
+LINTFLAGS+=	-X 117	# bitwise '>>' on signed value possibly nonportable
+LINTFLAGS+=	-X 231	# argument '%s' unused in function '%s'
+LINTFLAGS+=	-X 220	# fallthrough on case statement
+LINTFLAGS+=	-X 118	# semantics of '%s' change in ANSI C; use explicit cast
+
 # XXX Not yet.
-LINTFLAGS+=-D__int128='long long'
+#LINTFLAGS+=-D__int128='long long'
 
 CPPFLAGS+= -Dlib${LIB} -I. -I${OPENSSLSRC}/crypto -I${OPENSSLSRC}
 CPPFLAGS+= -I${OPENSSLSRC}/include -I${OPENSSLSRC}/crypto/include
