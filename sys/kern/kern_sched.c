@@ -50,6 +50,7 @@
 static void		sched_edf_setup(struct sched_edf *, struct proc *);
 static void		sched_cfs_setup(struct sched_cfs *, struct proc *);
 void 			sched_avg_rate(struct sched *);
+void			sched_avg_weight(struct sched *);
 void 			sched_nthreads(struct sched *);
 
 void
@@ -223,6 +224,8 @@ sched_compute(sc, p)
     sched_set_priority_weighting(sc, p->p_pri, p->p_cpticks, sc->sc_slack, p->p_slptime);
     /* average rate */
     sched_avg_rate(sc);
+    /* average weight */
+    sched_avg_weight(sc);
     /* optimal nthreads for process */
     sched_nthreads(sc);
 }
@@ -259,53 +262,31 @@ sched_weight(val)
     return (-1);
 }
 
-static int
-sched_rating(sc, val)
-	struct sched *sc;
-	u_char val;
-{
-	int i, w;
+#define sched_utilization_rate(sc)		((sc)->sc_utilrate = sched_rate((sc)->sc_utilization))
+#define sched_demand_rate(sc)			((sc)->sc_demandrate = sched_rate((sc)->sc_demand))
+#define sched_workload_rate(sc)			((sc)->sc_workrate = sched_rate((sc)->sc_workload))
 
-	sc->sc_rate = sched_rate(val);
-	sc->sc_weight = sched_weight(val);
-	for (i = sc->sc_rate; i >= 0; i -= sc->sc_weight) {
-		 if (sched_weight(i) != -1) {
-			 w = sched_weight(i);
-			 return (w);
-		 }
-	 }
-	 return (-1);
-}
-
-void
-sched_utilization_rate(sc)
-	struct sched *sc;
-{
-	sc->sc_utilrate = sched_rating(sc, sc->sc_utilization);
-}
-
-void
-sched_demand_rate(sc)
-	struct sched *sc;
-{
-	sc->sc_demandrate = sched_rating(sc, sc->sc_demand);
-}
-
-void
-sched_workload_rate(sc)
-	struct sched *sc;
-{
-	sc->sc_workrate = sched_rating(sc, sc->sc_workload);
-}
+#define sched_utilization_weight(sc)	((sc)->sc_utilweight = sched_weight((sc)->sc_utilization))
+#define sched_demand_weight(sc)			((sc)->sc_demandweight = sched_weight((sc)->sc_demand))
+#define sched_workload_weight(sc)		((sc)->sc_workweight = sched_weight((sc)->sc_workload))
 
 void
 sched_avg_rate(sc)
 	struct sched *sc;
 {
-	sched_utilization_rate(sc);
-	sched_demand_rate(sc);
-	sched_workload_rate(sc);
-	sc->sc_avgrate = ((sc->sc_utilrate + sc->sc_demandrate + sc->sc_workrate) / 3);
+    sched_utilization_rate(sc);
+    sched_demand_rate(sc);
+    sched_workload_rate(sc);
+    sc->sc_avgrate = ((sc->sc_utilrate + sc->sc_demandrate + sc->sc_workrate) / 3);
+}
+
+void
+sched_avg_weight(struct sched *sc)
+{
+    sched_utilization_weight(sc);
+    sched_demand_weight(sc);
+    sched_workload_weight(sc);
+    sc->sc_avgweight = ((sc->sc_utilweight + sc->sc_demandweight + sc->sc_workweight) / 3);
 }
 
 void
@@ -315,8 +296,8 @@ sched_nthreads(sc)
 	int nthreads;
 	int i, r, w;
 
-    r = sc->sc_rate;
-    w = sc->sc_weight;
+    r = sc->sc_avgrate;
+    w = sc->sc_avgweight;
     nthreads = 0;
     for (i = r; i >= 0; i -= w) {
     	nthreads++;
