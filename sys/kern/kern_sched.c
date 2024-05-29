@@ -260,15 +260,16 @@ sched_weight(val)
 }
 
 static int
-sched_rating(val)
+sched_rating(sc, val)
+	struct sched *sc;
 	u_char val;
 {
 	int i, r, w;
 
-	sc->sc_rate = sched_rate(val);
-	sc->sc_weight = sched_weight(val);
-	r = sc->sc_rate;
-	w = sc->sc_weight;
+	r = sched_rate(val);
+	w = sched_weight(val);
+	sc->sc_rate = r;
+	sc->sc_weight = w;
 	for (i = r; i >= 0; i -= w) {
 		 if (sched_weight(i) != -1) {
 			 w = sched_weight(i);
@@ -282,21 +283,21 @@ void
 sched_utilization_rate(sc)
 	struct sched *sc;
 {
-	sc->sc_utilrate = sched_rating(sc->sc_utilization);
+	sc->sc_utilrate = sched_rating(sc, sc->sc_utilization);
 }
 
 void
 sched_demand_rate(sc)
 	struct sched *sc;
 {
-	sc->sc_demandrate = sched_rating(sc->sc_demand);
+	sc->sc_demandrate = sched_rating(sc, sc->sc_demand);
 }
 
 void
 sched_workload_rate(sc)
 	struct sched *sc;
 {
-	sc->sc_workrate = sched_rating(sc->sc_workload);
+	sc->sc_workrate = sched_rating(sc, sc->sc_workload);
 }
 
 void
