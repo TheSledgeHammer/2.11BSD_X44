@@ -264,13 +264,11 @@ sched_rating(sc, val)
 	struct sched *sc;
 	u_char val;
 {
-	int i, r, w;
+	int i, w;
 
-	r = sched_rate(val);
-	w = sched_weight(val);
-	sc->sc_rate = r;
-	sc->sc_weight = w;
-	for (i = r; i >= 0; i -= w) {
+	sc->sc_rate = sched_rate(val);
+	sc->sc_weight = sched_weight(val);
+	for (i = sc->sc_rate; i >= 0; i -= sc->sc_weight) {
 		 if (sched_weight(i) != -1) {
 			 w = sched_weight(i);
 			 return (w);
