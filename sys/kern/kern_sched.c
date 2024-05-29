@@ -265,8 +265,10 @@ sched_rating(val)
 {
 	int i, r, w;
 
-	r = sched_rate(val);
-	w = sched_weight(val);
+	sc->sc_rate = sched_rate(val);
+	sc->sc_weight = sched_weight(val);
+	r = sc->sc_rate;
+	w = sc->sc_weight;
 	for (i = r; i >= 0; i -= w) {
 		 if (sched_weight(i) != -1) {
 			 w = sched_weight(i);
