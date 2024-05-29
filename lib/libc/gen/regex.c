@@ -4,10 +4,20 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
-#
+
+#include <sys/types.h>
+#include <stddef.h>
+
+#include <assert.h>
+#include <regexp.h>
+
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /*
  * routines to do regular expression matching
@@ -91,6 +101,10 @@ static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
 
 #define	ESIZE	512
 #define	NBRA	9
+
+static int advance(char *, char *);
+int backref(int, char *);
+int cclass(char *, char *, int);
 
 static	char	expbuf[ESIZE], *braslist[NBRA], *braelist[NBRA];
 static	char	circf;
@@ -370,6 +384,7 @@ advance(lp, ep)
 		}
 }
 
+int
 backref(i, lp)
 	register int	i;
 	register char	*lp;
