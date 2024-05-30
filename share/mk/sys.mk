@@ -41,7 +41,7 @@ CFLAGS?=		${DBG}
 COMPILE.c?=		${CC} ${CFLAGS} ${CPPFLAGS} -c
 LINK.c?=		${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-CXX?=			g++
+CXX?=			c++
 CXXFLAGS?=		${CFLAGS}
 COMPILE.cc?=	${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
 LINK.cc?=		${CXX} ${CXXFLAGS} ${CPPFLAGS} ${LDFLAGS}
