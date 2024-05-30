@@ -5,6 +5,7 @@ unix?=			We run 2.11BSD.
 
 .SUFFIXES: 		.out .a .o .c .cc .C .cxx .cpp .F .f .r .y .l .s .S .cl .p .h .sh .m4
 
+.LIBS:			.a
 
 AR?=			ar
 ARFLAGS?=		rl
@@ -19,7 +20,24 @@ COMPILE.S?=		${CC} ${AFLAGS} ${CPPFLAGS} -c -traditional-cpp
 LINK.S?=		${CC} ${AFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 CC?=			cc
-CFLAGS?=		-O
+.if ${MACHINE_ARCH} == "alpha" || \
+    ${MACHINE_ARCH} == "arm" || \
+    ${MACHINE_ARCH} == "x86_64" || \
+    ${MACHINE_ARCH} == "armeb" || \
+    ${MACHINE_ARCH} == "i386" || \
+    ${MACHINE_ARCH} == "m68k" || \
+    ${MACHINE_ARCH} == "mipsel" || ${MACHINE_ARCH} == "mipseb" || \
+    ${MACHINE_ARCH} == "ns32k" || \
+    ${MACHINE_ARCH} == "powerpc" || \
+    ${MACHINE_ARCH} == "sh5el" || ${MACHINE_ARCH} == "sh5eb" || \
+    ${MACHINE_ARCH} == "sparc" || \
+    ${MACHINE_ARCH} == "sparc64" || \
+    ${MACHINE_ARCH} == "vax"
+DBG?=			-O2
+.else
+DBG?=			-O
+.endif
+CFLAGS?=		${DBG}
 COMPILE.c?=		${CC} ${CFLAGS} ${CPPFLAGS} -c
 LINK.c?=		${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS}
 

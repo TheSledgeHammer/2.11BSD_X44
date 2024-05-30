@@ -4,7 +4,6 @@
 
 # OpenSSL libraries.
 SUBDIR= libcrypto libcryptotest libdes
-
 SUBDIR+= .WAIT	libssl		# depends on libcrypto
 
 .include <bsd.subdir.mk>

@@ -31,7 +31,6 @@ CWARNFLAGS.clang+=	-Wno-empty-body -Wno-unused-value -Wno-parentheses -Wno-impli
 # XXX: This warning seems to trigger incorrectly
 CWARNFLAGS.clang+=	-Wno-atomic-alignment
 
-
 LINTFLAGS+=	-X 161	# constant in conditional context
 LINTFLAGS+=	-X 129	# expression has null effect
 LINTFLAGS+=	-X 117	# bitwise '>>' on signed value possibly nonportable
