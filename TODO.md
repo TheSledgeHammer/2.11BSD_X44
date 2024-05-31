@@ -64,7 +64,7 @@ A General todo list. Don't hesitate to add to this list. :)
 		- amd, eeprom, kgmon, pstat, syslog
 	- Filesystem:
 		- edquota, quot, quotaon, repquota
-	Network:
+	- Network:
 		- altq, inetd, sliplogin, rwhod, trpt, trsp
 
 # usr/sys/ (Kernel):
