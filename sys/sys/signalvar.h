@@ -147,7 +147,7 @@ char sigprop[NSIG + 1] = {
 #define	sigcantmask	(sigmask(SIGKILL) | sigmask(SIGSTOP))
 
 #ifdef _KERNEL
-extern char sigprop[NSIG + 1];
+//extern char sigprop[NSIG + 1];
 /*
  * Machine-independent functions:
  */

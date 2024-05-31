@@ -167,7 +167,7 @@ MKDEP?=		mkdep
 MKDEPCXX?=	mkdep
 OBJCOPY?=	objcopy
 OBJDUMP?=	objdump
-STRIP?=	    strip
+STRIP?=		strip
 
 .SUFFIXES:	.m .o .ln .lo .c .cc .cpp .cxx .C ${YHEADER:D.h}
 

@@ -282,7 +282,7 @@ softclock(frame, pc)
 			CIRCQ_NEXT(&p1->c_list) = callfree;
 			callfree = p1;
 			splx(s);
-			//CLKF_PC(frame)(*func)(arg, a);
+			//CLKF_PC(frame);
 		}
 	}
 
@@ -318,14 +318,12 @@ softclockintr(void *arg)
 }
 #endif
 
-typedef void (*fun_t)(void *);
 /*
  * Arrange that (*fun)(arg) is called in t/hz seconds.
  */
 void
 timeout(fun, arg, t)
-	//void (*fun)(void *);
-	fun_t fun;
+	void (*fun)(void *);
 	void *arg;
 	register int t;
 {
@@ -361,8 +359,7 @@ timeout(fun, arg, t)
  */
 void
 untimeout(fun, arg)
-	//void (*fun)(void *);
-	fun_t fun;
+	void (*fun)(void *);
 	void *arg;
 {
 	register struct callout *p1, *p2;

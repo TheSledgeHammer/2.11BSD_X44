@@ -305,7 +305,7 @@ sched_nthreads(sc)
             w = sched_weight(i);
         }
     }
-    sc->sc_opt_nthreads = nthreads;
+    sc->sc_optnthreads = nthreads;
 }
 
 /* thread creation/destruction test */
@@ -316,9 +316,9 @@ edf_sched_nthreads(sc, p)
 {
 	int error;
 
-    if (p->p_nthreads > sc->sc_opt_nthreads) {
+    if (p->p_nthreads > sc->sc_optnthreads) {
     	error = P_TDDESTROY;
-    } else if (p->p_nthreads < sc->sc_opt_nthreads) {
+    } else if (p->p_nthreads < sc->sc_optnthreads) {
     	error = P_TDCREATE;
     } else {
     	error = 0;

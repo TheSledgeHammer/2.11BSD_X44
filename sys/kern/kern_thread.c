@@ -30,12 +30,14 @@
  * TODO:
  * - Update:
  * 		- flags: additional flags
- * 		- exit:
  * 		- kill:
  * 			- add capability to kill thread\s if needed
+ * 		- steal:
+ * 			- add a time counter for how long a thread can remain held before exiting.
+ * 				- prevent indefinite loop, where a thread is flagged as stealable but not need by a process
+ * 				- reduce resource hogging, with threads stuck in this indefinite loop.
+ *
  * - Implement:
- * `	- thred destruction:
- * 			- when to free a thread from memory?
  * 		- thread_steal function
  * 			- run in: wait, exit, fork?
  * 		- thread scheduling:  (co-operative or pre-emptive?)
@@ -204,6 +206,7 @@ thread_reparent(from, to, td)
 	}
 }
 
+/* TODO: add time counter feature */
 /*
  * Like thread_reparent, except all thread siblings are
  * reparented to the new proc, if the current parent state is a zombie.
@@ -704,7 +707,6 @@ thread_exit(ecode)
 
 	p = u.u_procp;
 	td = u.u_threado;
-	//td->td_flag &= ~(TD_TRACED | TD_SULOCK);
 	td->td_flag |= TD_WEXIT;
 
 	if (ecode != 0) {
@@ -716,11 +718,14 @@ thread_exit(ecode)
 	if ((p->p_stat == SZOMB) && ((td->td_flag & TD_STEALABLE) != 0)) {
 		thread_free(p, td);
 	}
-	td = NULL;
-	p->p_curthread = td;
 
-	exit(W_EXITCODE(ecode, 0));
-	for (;;);
+	psignal(td->td_procp, SIGCHLD);
+	wakeup((caddr_t)td->td_procp);
+
+	p->p_curthread = NULL;
+
+	//exit(W_EXITCODE(ecode, 0));
+	//for (;;);
 }
 
 int

@@ -126,7 +126,7 @@ struct sched {
 	int						sc_workweight;	/* workload weight */
 	int						sc_avgweight;	/* average weight (determined from the above weights) */
 
-	int 					sc_opt_nthreads;/* optimal number of threads for process */
+	int 					sc_optnthreads;/* optimal number of threads for process */
 };
 
 /* Priority Weighting Factors */
@@ -156,16 +156,16 @@ static __inline int
 sched_rate_range(val, min, max)
 	int val, min, max;
 {
-    if ((val >= min) && (val <= max)) {
-        return (0);
-    }
-	return (1);
+	if ((val >= min) &&	((val <= max) || (val > 100))) {
+		return (0);
+	}
+	return (-1);
 }
 
 /* Schedule Rating */
-#define SCHED_RATE_LOW(val)        	((sched_rate_range(val, 0, 33) == 0) || ((val) < 0))
+#define SCHED_RATE_LOW(val)        	(sched_rate_range(val, 0, 33) == 0)
 #define SCHED_RATE_MEDIUM(val)   	(sched_rate_range(val, 34, 66) == 0)
-#define SCHED_RATE_HIGH(val)       	((sched_rate_range(val, 67, 100) == 0) || ((val) > 100))
+#define SCHED_RATE_HIGH(val)       	(sched_rate_range(val, 67, 100) == 0)
 
 /* Schedule Weighting */
 #define SCHED_WEIGHT_LOW			9

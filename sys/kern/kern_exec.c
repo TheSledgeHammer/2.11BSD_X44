@@ -59,7 +59,7 @@
 #include <machine/cpu.h>
 #include <machine/reg.h>
 
-extern void     syscall();
+extern void syscall();
 extern char	sigcode[], esigcode[];
 
 struct emul emul_211bsd = {
