@@ -14,21 +14,27 @@ A General todo list. Don't hesitate to add to this list. :)
 ## Contrib:
 	
 ## lib:
-- libc
-	- citrus:
-		- implement iconv 
+- libc:
+	- sys:
+		- move mpx to usr.lib/libmpx
 
 ## libexec:
+- add:
+	- Network:
+		- rbootd, rexecd, rlogind, rshd, telnetd
 
 ## sbin:
-- fdisk: fix
+- add: More critical software
+	- Generic:
+		- savecore
+	- Filesystem:
+		- badsect, clri, dump, quotacheck, tunefs
+	- Network:
+		- startslip
 
 ## share:
 
 ## tools:
-- add fgen
-- Fix: Below will compile but not as a part of the host toolchain
- 	- Fdisk
 
 ## stand:
 - boot:
@@ -39,18 +45,27 @@ A General todo list. Don't hesitate to add to this list. :)
 		- needs acpica.
 
 ## usr.bin:
+- Add: More critical software
+	- Generic:
+		- cal, calendar, error, finger, fstat, getent, nc, systat, tabs, tee, tip, tr
+	- Filesystem:
+		- quota
+	- Network:
+		- rlogin, rs, rsh, ruptime, rwho, telnet
 
 ## usr.lib:
-- librt: (Needed in order to compile c++)
-	- needs aio and sem support
-- libkvm:
-	- i386: support pae
- - libm
- 	- Makefile: Add parameter USE_COMPILER_RT instead of just blanking it out
-  - add: following 2.11BSD usr.lib's:
-  	- libln: few compiler issues
+- add:
+	- Network:
+		- libtelnet
 
 ## usr.sbin:
+- add: More critical software
+	- Generic:
+		- amd, eeprom, kgmon, pstat, syslog
+	- Filesystem:
+		- edquota, quot, quotaon, repquota
+	Network:
+		- altq, inetd, sliplogin, rwhod, trpt, trsp
 
 # usr/sys/ (Kernel):
 ## conf:
@@ -106,16 +121,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - NFS: Update Me, I'm not working yet!!
 
 ## net / net80211 / netinet / netinet6 / netipsec / netkey / netns :
-- net: 
-	- add if_ipsec, if_l2tp, if_llatbl, if_tap
-	- NBPF: Add generic api's
-	- NPF: Update Me, I'm not working yet!!
-
-- netinet / netinet6: 
-	- add multicast support
-		- dccp
-		- scope
-		- sctp
 		
 ## ufs:
 - implement Extended Attributes
