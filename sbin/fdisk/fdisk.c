@@ -464,7 +464,7 @@ static void
 usage()
 {
 	fprintf(stderr, "%s%s",
-		"usage: fdisk [-BIFaipqstu] [-b bootcode] [-0123] [disk]\n",
+		"usage: fdisk [-BIFaipqstu] [-b bootcode] [-1234] [disk]\n",
  		"       fdisk -f configfile [-itv] [disk]\n");
         exit(1);
 }
