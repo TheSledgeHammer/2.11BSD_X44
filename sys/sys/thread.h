@@ -79,20 +79,20 @@ struct thread {
 #define THREAD_STACK	USPACE
 
 /* flag codes */
-#define	TD_SLOCK		0x001		/* process being swapped out */
-#define TD_TRACED		0x002		/* Debugged process being traced. */
-#define	TD_WAITED		0x004		/* another tracing flag */
-#define TD_SULOCK		0x008		/* user settable lock in core */
-#define	TD_SINTR		0x010		/* sleeping interruptibly */
-#define	TD_TIMEOUT		0x020		/* tsleep timeout expired */
-#define	TD_SYSTEM		0x020		/* System proc: no sigs, stats or swapping. */
-#define	TD_INMEM		0x040		/* Loaded into memory. */
-#define TD_INEXEC		0x080		/* Process is exec'ing and cannot be traced */
+#define	TD_SLOCK		0x0001		/* process being swapped out */
+#define TD_TRACED		0x0002		/* Debugged process being traced. */
+#define	TD_WAITED		0x0004		/* another tracing flag */
+#define TD_SULOCK		0x0008		/* user settable lock in core */
+#define	TD_SINTR		0x0010		/* sleeping interruptibly */
+#define	TD_TIMEOUT		0x0020		/* tsleep timeout expired */
+#define	TD_SYSTEM		0x0040		/* System proc: no sigs, stats or swapping. */
+#define	TD_INMEM		0x0080		/* Loaded into memory. */
+#define TD_INEXEC		0x0100		/* Process is exec'ing and cannot be traced */
 
-#define	TD_NOSWAP		0x100		/* Another flag to prevent swap out. */
-#define	TD_WEXIT		0x200
-#define	TD_BOUND		0x400 		/* Bound to a CPU */
-#define TD_STEALABLE 	0x800		/* thread able to be taken by another process aka thread is reparented */
+#define	TD_NOSWAP		0x0200		/* Another flag to prevent swap out. */
+#define	TD_WEXIT		0x0400
+#define	TD_BOUND		0x0800 		/* Bound to a CPU */
+#define TD_STEALABLE 		0x1000		/* thread able to be taken by another process aka thread is reparented */
 
 /* Kernel thread handling. */
 #define	THREAD_IDLE		0x01		/* Do not run on creation */
