@@ -546,8 +546,7 @@ pcic_event_thread(arg)
 		} else {
 			splx(s);
 			/* sleep .25s to be enqueued chatterling interrupts */
-			(void) tsleep((caddr_t)pcic_event_thread, PWAIT,
-			    "pcicss", hz/4);
+			(void) tsleep((caddr_t)pcic_event_thread, PWAIT, "pcicss", hz/4);
 		}
 		s = splhigh();
 		SIMPLEQ_REMOVE_HEAD(&h->events, pe_q);

@@ -214,11 +214,12 @@ updatepri(p)
 */
 
 int
-tsleep(ident, priority, wmesg, timo)
+ltsleep(ident, priority, wmesg, timo, interlock)
 	void *ident;
 	int	priority;
 	char	*wmesg;
 	u_short	timo;
+	__volatile struct lock_object *interlock;
 {
 	register struct proc *p = u.u_procp;
 	register struct sleepque *qp;
@@ -241,6 +242,9 @@ tsleep(ident, priority, wmesg, timo)
 		(void)splnet();
 //		noop(); /* 2.11BSD provide enough time for interrupts */
 		splx(s);
+		if (interlock != NULL) {
+			simple_unlock(interlock);
+		}
 		return (0);
 	}
 #ifdef	DIAGNOSTIC
@@ -256,6 +260,9 @@ tsleep(ident, priority, wmesg, timo)
 	if (timo) {
 		timeout((void*) endtsleep, (caddr_t) p, timo);
 	}
+	if (interlock != NULL) {
+		simple_unlock(interlock);
+	}
 	/*
 	 * We put outselves on the sleep queue and start the timeout before calling
 	 * CURSIG as we could stop there and a wakeup or a SIGCONT (or both) could
@@ -267,8 +274,9 @@ tsleep(ident, priority, wmesg, timo)
 	if (catch) {
 		p->p_flag |= P_SINTR;
 		if (sig == CURSIG(p)) {
-			if (p->p_wchan)
+			if (p->p_wchan) {
 				unsleep(p);
+			}
 			p->p_stat = SRUN;
 			goto resume;
 		}
@@ -276,8 +284,9 @@ tsleep(ident, priority, wmesg, timo)
 			catch = 0;
 			goto resume;
 		}
-	} else
+	} else {
 		sig = 0;
+	}
 	p->p_stat = SSLEEP;
 	u.u_ru.ru_nvcsw++;
 	swtch();
@@ -289,44 +298,50 @@ resume:
 		p->p_flag &= ~P_TIMEOUT;
 		if (sig == 0) {
 #ifdef KTRACE
-			if (KTRPOINT(p, KTR_CSW))
+			if (KTRPOINT(p, KTR_CSW)) {
 				ktrcsw(p, 0, 0);
+			}
 #endif
+			if (interlock != NULL) {
+				simple_unlock(interlock);
+			}
 			return (EWOULDBLOCK);
 		}
-	} else if (timo)
+	} else if (timo) {
 		untimeout((void *)endtsleep, (caddr_t) p);
-	if ( catch && (sig != 0 || (sig = CURSIG(p)))) {
+	}
+	if (catch && (sig != 0 || (sig = CURSIG(p)))) {
 #ifdef KTRACE
-		if (KTRPOINT(p, KTR_CSW))
+		if (KTRPOINT(p, KTR_CSW)) {
 			ktrcsw(p, 0, 0);
+		}
 #endif
-		if (u.u_sigintr & sigmask(sig))
+		if (interlock != NULL) {
+			simple_unlock(interlock);
+		}
+		if (u.u_sigintr & sigmask(sig)) {
 			return (EINTR);
+		}
 		return (ERESTART);
 	}
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_CSW))
 		ktrcsw(p, 0, 0);
 #endif
+	if (interlock != NULL) {
+		simple_unlock(interlock);
+	}
 	return (0);
 }
 
 int
-ltsleep(ident, priority, wmesg, timo, interlock)
+tsleep(ident, priority, wmesg, timo)
 	void 		*ident;
 	int			priority;
 	char		*wmesg;
 	u_short		timo;
-	__volatile struct lock_object *interlock;
 {
-	int error;
-
-	simple_lock(interlock);
-	error = tsleep(ident, priority, wmesg, timo);
-	simple_unlock(interlock);
-
-	return (error);
+	return (ltsleep(ident, priority, wmesg, timo, NULL));
 }
 
 /*

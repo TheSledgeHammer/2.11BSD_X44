@@ -246,6 +246,7 @@ thread_alloc(p, stack)
     td->td_pgrp = p->p_pgrp;
     td->td_pri = thread_primask(p);
     td->td_ppri = p->p_pri;
+    td->td_steal = 0;
 
     if (!LIST_EMPTY(&p->p_allthread)) {
         p->p_threado = LIST_FIRST(&p->p_allthread);
@@ -553,6 +554,16 @@ thread_setrun(p, td)
 	td->td_stat = SRUN;
 	thread_setrq(p, td);
 	td->td_pri = thread_setpri(p, td);
+
+	/* check if thread is flagged as stealable and increment steal counter */
+	if ((td->td_flag & TD_STEALABLE) == 0) {
+		td->td_steal++;
+		/* check if steal counter reaches limit, unflag thread as stealable */
+		if (td->td_steal >= TD_STEALLIMIT) {
+			td->td_flag &= ~TD_STEALABLE;
+			td->td_steal = 0;
+		}
+	}
 }
 
 void
@@ -584,6 +595,7 @@ thread_run(p, td)
 		panic("thread_run");
 		break;
 	}
+
 	splx(s);
 }
 
@@ -723,24 +735,31 @@ thread_exit(ecode)
 	wakeup((caddr_t)td->td_procp);
 
 	p->p_curthread = NULL;
-
-	//exit(W_EXITCODE(ecode, 0));
-	//for (;;);
 }
 
 int
-thread_tsleep(chan, pri, wmesg, timo)
+thread_ltsleep(chan, pri, wmesg, timo, interlock)
 	void *chan;
 	int pri;
 	char *wmesg;
 	u_short	timo;
+	__volatile struct lock_object *interlock;
 {
 	register struct proc *p;
 	register struct thread *td;
-	int catch;
+	int sig, catch;
 
 	p = u.u_procp;
 	td = u.u_threado;
+
+	KASSERT(p->p_pri == pri);
+
+	if (panicstr) {
+		if (interlock != NULL) {
+			simple_unlock(interlock);
+		}
+		return (0);
+	}
 
 	/* only thread's on same process sleep */
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
@@ -753,19 +772,48 @@ thread_tsleep(chan, pri, wmesg, timo)
 		if (timo) {
 			timeout((void *)thread_endtsleep, (caddr_t)td, timo);
 		}
+		if (interlock != NULL) {
+			simple_unlock(interlock);
+		}
 		if (catch) {
 			if (td->td_wchan) {
 				thread_unsleep(p, td);
+				td->td_stat = SRUN;
+				goto resume;
 			}
 			if (td->td_wchan == 0) {
 				catch = 0;
+				goto resume;
 			}
 		}
 		td->td_stat = SSLEEP;
+
+resume:
+		if (td->td_flag & TD_TIMEOUT) {
+			td->td_flag &= ~TD_TIMEOUT;
+			if (interlock != NULL) {
+				simple_unlock(interlock);
+			}
+			return (EWOULDBLOCK);
+		} else if (timo) {
+			untimeout((void *)thread_endtsleep, (caddr_t)td);
+		}
 	} else {
+		if (interlock != NULL) {
+			simple_unlock(interlock);
+		}
 		return (EWOULDBLOCK);
 	}
+	if (interlock != NULL) {
+		simple_unlock(interlock);
+	}
 	return (0);
+}
+
+int
+thread_tsleep(chan, pri, wmesg, timo)
+{
+	return (thread_ltsleep(chan, pri, wmesg, timo, NULL));
 }
 
 void
@@ -811,6 +859,7 @@ thread_endtsleep(p, td)
 		} else {
 			thread_unsleep(p, td);
 		}
+		td->td_flag |= TD_TIMEOUT;
 	}
 }
 
@@ -844,3 +893,76 @@ restart:
 		}
 	}
 }
+
+#ifdef notyet
+
+thread_kill(pid, signo)
+{
+	int error;
+
+	if (signo < 0 || signo >= NSIG) {
+		error = EINVAL;
+		goto out;
+	}
+	if (pid > 0) {
+		p = thread_pfind(td);
+		if (p == 0) {
+			error = ESRCH;
+			goto out;
+		}
+		if (!cansignal(p, signo)) {
+			error = EPERM;
+		} else if (signo) {
+			psignal(p, signo);
+		}
+		goto out;
+	}
+	switch (pid) {
+	case -1:
+		error = killpg1(signo, 0, 1);
+		break;
+	case 0:
+		error = killpg1(signo, 0, 0);
+		break;
+	default:
+		error = killpg1(signo, -pid, 0);
+		break;
+	}
+
+out:
+
+	return (error);
+}
+
+thread_psignal(td, sig)
+	register struct thread *td;
+	register int sig;
+{
+
+	switch (td->td_stat) {
+	case SSLEEP:
+		if ((td->td_flag & TD_SINTR) == 0) {
+			goto out;
+		} else {
+			goto run;
+		}
+		/*NOTREACHED*/
+	case SSTOP:
+		if (sig == SIGKILL) {
+			goto run;
+		}
+		if (td->td_wchan && (td->td_flag & TD_SINTR)) {
+			thread_unsleep(p, td);
+		}
+		goto out;
+		/*NOTREACHED*/
+	default:
+		/*NOTREACHED*/
+	}
+
+run:
+
+out:
+	splx(s);
+}
+#endif

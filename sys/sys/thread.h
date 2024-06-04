@@ -69,7 +69,11 @@ struct thread {
 #define td_name			td_procp->p_comm
 
 	void				*td_event;				/* Id for this "thread"; Mach glue. XXX */
+
+	u_quad_t			td_steal;				/* steal time count. */
 };
+
+#define TD_STEALLIMIT	10
 
 /* stack size */
 #define THREAD_STACK	USPACE
@@ -80,6 +84,7 @@ struct thread {
 #define	TD_WAITED		0x004		/* another tracing flag */
 #define TD_SULOCK		0x008		/* user settable lock in core */
 #define	TD_SINTR		0x010		/* sleeping interruptibly */
+#define	TD_TIMEOUT		0x020		/* tsleep timeout expired */
 #define	TD_SYSTEM		0x020		/* System proc: no sigs, stats or swapping. */
 #define	TD_INMEM		0x040		/* Loaded into memory. */
 #define TD_INEXEC		0x080		/* Process is exec'ing and cannot be traced */
@@ -146,6 +151,7 @@ void thread_schedcpu(struct proc *);
 int	 newthread(struct thread **, char *, size_t, bool_t);
 void thread_exit(int);
 
+int thread_ltsleep(void *, int, char *, u_short, __volatile struct lock_object *);
 int thread_tsleep(void *, int, char *, u_short);
 void thread_sleep(void *, int);
 void thread_unsleep(struct proc *, struct thread *);
