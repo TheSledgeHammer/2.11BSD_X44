@@ -812,6 +812,10 @@ resume:
 
 int
 thread_tsleep(chan, pri, wmesg, timo)
+	void *chan;
+	int pri;
+	char *wmesg;
+	u_short	timo;
 {
 	return (thread_ltsleep(chan, pri, wmesg, timo, NULL));
 }
