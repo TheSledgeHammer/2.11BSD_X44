@@ -96,9 +96,9 @@ cpu_topo_empty(topo)
 	cpu_topo_t *topo;
 {
 	if (topo == NULL) {
-		return (0);
+		return (1);
 	}
-	return (1);
+	return (0);
 }
 
 /*
