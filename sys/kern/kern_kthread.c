@@ -52,7 +52,7 @@
 
 int	kthread_create_now;
 
-//#ifdef notyet
+#ifdef notyet
 /*
  * Fork a kernel thread.  Any process can request this to be done.
  * The VM space and limits, etc. will be shared with proc0.
