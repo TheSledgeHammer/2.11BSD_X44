@@ -69,7 +69,7 @@ cpu_topo_get(topo)
 	if (bt != NULL) {
 		return (bt->value);
 	}
-    return (0);
+	return (0);
 }
 
 void
