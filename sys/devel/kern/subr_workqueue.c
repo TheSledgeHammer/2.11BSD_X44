@@ -189,6 +189,38 @@ workqueue_initqueue(wq)
 	return (error);
 }
 
+int
+workqueue_create(wq, q, td)
+	struct workqueue *wq;
+	struct workqueue_queue *q;
+	struct thread *td;
+{
+	int error;
+
+	error = kthread_create(workqueue_worker, wq, &td, wq->wq_name, FALSE);
+	if (error) {
+		q->q_thread = td;
+		q->q_proc = td->td_procp;
+	}
+	return (error);
+}
+
+static int
+workqueue_initqueue(wq)
+	struct workqueue *wq;
+{
+	struct workqueue_queue *q;
+	struct thread *td;
+	int error;
+
+	q = &wq->wq_queue;
+	simple_lock_init(&q->q_lock);
+	SIMPLEQ_INIT(&q->q_queue);
+
+	error = workqueue_create(wq, q, td);
+	return (error);
+}
+
 static void
 workqueue_exit(wk, arg)
 	struct work *wk;
@@ -293,5 +325,20 @@ workqueue_enqueue(wq, wk)
 
 	if (wasempty) {
 		wakeup(q);
+	}
+}
+
+void
+workqueue_dequeue(wq, wk)
+	struct workqueue *wq;
+	struct work *wk;
+{
+	struct workqueue_queue *q;
+
+	q = &wq->wq_queue;
+
+	workqueue_lock(wq, q);
+	if (!SIMPLEQ_EMPTY(&q->q_queue)) {
+		SIMPLEQ_REMOVE(&q->q_queue, wk, work, wk_entry);
 	}
 }

@@ -48,22 +48,22 @@
 
 #include <machine/cpu.h>
 
-union cpu_top {
+union cpu_topo {
     uint32_t 				ct_mask;
 };
-typedef union cpu_top 		ctop_t;
+typedef union cpu_topo 		cpu_topo_t;
 
-extern ctop_t 				*ctop;
+void		cpu_topo_init(cpu_topo_t *);
+void		cpu_topo_set(cpu_topo_t *, uint32_t);
+uint32_t	cpu_topo_get(cpu_topo_t *);
+int			cpu_topo_isset(cpu_topo_t *, uint32_t);
+int			cpu_topo_empty(cpu_topo_t *);
 
-void		ctop_set(ctop_t *, uint32_t);
-uint32_t	ctop_get(ctop_t *);
-int			ctop_isset(ctop_t *, uint32_t);
-
-/* ctop macros */
-#define CPU_SET(top, val) 	(ctop_set(top, val))
-#define CPU_GET(top) 		(ctop_get(top))
-#define CPU_ISSET(top, val)	(ctop_isset(top, val))
-#define CPU_EMPTY(top)		((top) == NULL)
+/* cpu topo macros */
+#define CPU_SET(top, val) 	(cpu_topo_set(top, val))
+#define CPU_GET(top) 		(cpu_topo_get(top))
+#define CPU_ISSET(top, val)	(cpu_topo_isset(top, val))
+#define CPU_EMPTY(top)		(cpu_topo_empty(top))
 
 /*
  * Types of nodes in the topological tree.
@@ -94,7 +94,7 @@ struct topo_node {
 	struct topo_node						*parent;
 	TAILQ_HEAD(topo_children, topo_node)	children;
 	TAILQ_ENTRY(topo_node)					siblings;
-	union cpu_top							cpuset;
+	cpu_topo_t								cpuset;
 	topo_node_type							type;
 	__uintptr_t								subtype;
 	hwid_t									hwid;

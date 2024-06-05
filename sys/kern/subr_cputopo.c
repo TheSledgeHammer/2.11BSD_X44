@@ -36,55 +36,69 @@
 #include <sys/cputopo.h>
 
 /*
- * Cpu_top (MI & MD related) is an interface to the underlying bitlist/hash array.
+ * Cpu_topo (MI & MD related) is an interface to the underlying bitlist/hash array.
  * With the main goal of transferring information about the smp topology (topo_node)
  * to the cpu (cpu_info).
  *
  */
-ctop_t	*ctop;
 
 void
-ctop_init(void)
+cpu_topo_init(topo)
+	cpu_topo_t 	*topo;
 {
-	ctop = (ctop_t *)malloc(sizeof(ctop_t *), M_TOPO, M_WAITOK);
 	bitlist_init();
+	topo = (cpu_topo_t *)malloc(sizeof(cpu_topo_t *), M_CPUTOPO, M_WAITOK);
 }
 
 void
-ctop_set(top, val)
-	ctop_t 	*top;
+cpu_topo_set(topo, val)
+	cpu_topo_t 	*topo;
 	uint32_t val;
 {
-    top = ctop;
-    top->ct_mask = val;
+    topo->ct_mask = val;
     bitlist_insert(val);
 }
 
 uint32_t
-ctop_get(top)
-	ctop_t *top;
+cpu_topo_get(topo)
+	cpu_topo_t *topo;
 {
-    top = ctop;
-    return (bitlist_search(top->ct_mask)->value);
+	bitlist_t *bt;
+
+	bt = bitlist_search(topo->ct_mask);
+	if (bt != NULL) {
+		return (bt->value);
+	}
+    return (0);
 }
 
 void
-ctop_remove(top)
-	ctop_t *top;
+cpu_topo_remove(topo)
+	cpu_topo_t *topo;
 {
-    top = ctop;
-    bitlist_remove(top->ct_mask);
+
+    bitlist_remove(topo->ct_mask);
 }
 
 int
-ctop_isset(top, val)
-	ctop_t *top;
+cpu_topo_isset(topo, val)
+	cpu_topo_t *topo;
 	uint32_t val;
 {
-	if (top->ct_mask != val) {
+	if (topo->ct_mask != val) {
 		return (1);
 	}
 	return (0);
+}
+
+int
+cpu_topo_empty(topo)
+	cpu_topo_t *topo;
+{
+	if (topo == NULL) {
+		return (0);
+	}
+	return (1);
 }
 
 /*
@@ -98,6 +112,7 @@ topo_init_node(struct topo_node *node)
 {
 	bzero(node, sizeof(*node));
 	TAILQ_INIT(&node->children);
+	cpu_topo_init(&node->cpuset);
 }
 
 void

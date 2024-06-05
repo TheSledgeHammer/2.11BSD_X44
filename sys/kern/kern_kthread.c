@@ -52,7 +52,7 @@
 
 int	kthread_create_now;
 
-#ifdef notyet
+//#ifdef notyet
 /*
  * Fork a kernel thread.  Any process can request this to be done.
  * The VM space and limits, etc. will be shared with proc0.
@@ -77,7 +77,16 @@ void
 kthread_exit(ecode)
 	int ecode;
 {
-	thread_exit(ecode);
+	struct thread *curthread;
+
+	curthread = curproc->p_curthread;
+
+	if (ecode != 0) {
+		printf("WARNING: thread `%s' (%d) exits with status %d\n", curthread->td_name, curthread->td_tid, ecode);
+	}
+	thread_exit(W_EXITCODE(ecode, 0));
+
+	for (;;);
 }
 #endif
 /*

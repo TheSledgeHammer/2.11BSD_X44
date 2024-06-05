@@ -73,7 +73,10 @@ struct thread {
 	u_quad_t			td_steal;				/* steal time count. */
 };
 
-#define TD_STEALLIMIT	10
+/* Steal counter max */
+#define TD_STEALCOUNTMAX 10			/* Threads flagged as stealable will iterate
+ 	 	 	 	 	 	 	 	 	 "TD_STEALCOUNTMAX" times through the schedcpu before
+ 	 	 	 	 	 	 	 	 	 being unflagged */
 
 /* stack size */
 #define THREAD_STACK	USPACE
@@ -85,14 +88,15 @@ struct thread {
 #define TD_SULOCK		0x0008		/* user settable lock in core */
 #define	TD_SINTR		0x0010		/* sleeping interruptibly */
 #define	TD_TIMEOUT		0x0020		/* tsleep timeout expired */
-#define	TD_SYSTEM		0x0040		/* System proc: no sigs, stats or swapping. */
-#define	TD_INMEM		0x0080		/* Loaded into memory. */
-#define TD_INEXEC		0x0100		/* Process is exec'ing and cannot be traced */
+#define	TD_PPWAIT		0x0040		/* Parent is waiting for child to exec/exit. */
+#define	TD_SYSTEM		0x0080		/* System proc: no sigs, stats or swapping. */
+#define	TD_INMEM		0x0100		/* Loaded into memory. */
+#define TD_INEXEC		0x0200		/* Process is exec'ing and cannot be traced */
 
-#define	TD_NOSWAP		0x0200		/* Another flag to prevent swap out. */
-#define	TD_WEXIT		0x0400
-#define	TD_BOUND		0x0800 		/* Bound to a CPU */
-#define TD_STEALABLE 		0x1000		/* thread able to be taken by another process aka thread is reparented */
+#define	TD_NOSWAP		0x0400		/* Another flag to prevent swap out. */
+#define	TD_WEXIT		0x0800
+#define	TD_BOUND		0x1000 		/* Bound to a CPU */
+#define TD_STEALABLE 	0x2000		/* thread able to be taken by another process aka thread is reparented */
 
 /* Kernel thread handling. */
 #define	THREAD_IDLE		0x01		/* Do not run on creation */

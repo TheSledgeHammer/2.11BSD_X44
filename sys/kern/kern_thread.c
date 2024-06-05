@@ -33,7 +33,7 @@
  * 		- kill:
  * 			- add capability to kill thread\s if needed
  * 		- steal:
- * 			- add a time counter for how long a thread can remain held before exiting.
+ * 			- add a time counter for how long a thread can remain held as stealable before being released.
  * 				- prevent indefinite loop, where a thread is flagged as stealable but not need by a process
  * 				- reduce resource hogging, with threads stuck in this indefinite loop.
  *
@@ -559,7 +559,7 @@ thread_setrun(p, td)
 	if ((td->td_flag & TD_STEALABLE) == 0) {
 		td->td_steal++;
 		/* check if steal counter reaches limit, unflag thread as stealable */
-		if (td->td_steal >= TD_STEALLIMIT) {
+		if (td->td_steal == TD_STEALCOUNTMAX) {
 			td->td_flag &= ~TD_STEALABLE;
 			td->td_steal = 0;
 		}
@@ -719,12 +719,14 @@ thread_exit(ecode)
 
 	p = u.u_procp;
 	td = u.u_threado;
+	td->td_flag &= (TD_PPWAIT | TD_SULOCK);
 	td->td_flag |= TD_WEXIT;
-
+	untimeout(realitexpire, (caddr_t)p);
+/*
 	if (ecode != 0) {
 		printf("WARNING: thread `%s' (%d) exits with status %d\n", td->td_name, td->td_tid, ecode);
 	}
-
+*/
 	td->td_stat = SZOMB;
 	thread_remove(p, td);
 	if ((p->p_stat == SZOMB) && ((td->td_flag & TD_STEALABLE) != 0)) {

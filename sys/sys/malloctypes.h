@@ -119,7 +119,7 @@
 #define M_USB			72	/* USB general */
 #define	M_TTY			73	/* allocated tty structures */
 #define M_KEVENT 		74	/* kevents/knotes */
-#define M_TOPO			75	/* cpu topology structure */
+#define M_CPUTOPO		75	/* cpu topology structure */
 #define M_BITLIST		76	/* bitlist structure */
 #define M_PERCPU		77	/* percpu structure */
 #define M_UFS211		78	/* UFS211 bufmap */
@@ -225,7 +225,7 @@
 	"usb",						/* 72 M_USB */			\
 	"tty",						/* 73 M_TTY */			\
 	"kevent",					/* 74 M_KEVENT */		\
-	"cpu topo",					/* 75 M_TOPO */			\
+	"cpu topo",					/* 75 M_CPUTOPO */		\
 	"bitlist",					/* 76 M_BITLIST */		\
 	"percpu",					/* 77 M_PERCPU */		\
 	"ufs211 buf",				/* 78 M_UFS211 */		\
