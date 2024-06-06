@@ -52,7 +52,10 @@
 #include <net/radix.h>
 #include <sys/socket.h>		/* XXX for AF_MAX */
 
-typedef struct { long val[2]; } fsid_t;	/* file system id type */
+typedef struct {
+	long val[2];
+} fsid_t;					/* file system id type */
+
 /*
  * File identifier.
  * These are unique per filesystem on a single machine.
