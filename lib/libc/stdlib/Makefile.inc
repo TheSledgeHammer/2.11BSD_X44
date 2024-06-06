@@ -21,10 +21,12 @@ SRCS+=	a64l.c abort.c abs.c atexit.c atof.c atoi.c atol.c bsearch.c calloc.c div
 MAN+= 	a64l.3 abort.3 abs.3 atexit.3 atof.3 atoi.3 atol.3 bsearch.3 calloc.3 div.3 exit.3		\
 		getopt_long.3 getopt.3 getsubopt.3 hcreate.3 labs.3 ldiv.3 llabs.3 lldiv.3 malloc.3     \
         mi_vector_hash.3 qabs.3 qdiv.3 qsort.3 radixsort.3 rand48.3 random.3 reallocarr.3       \
-        reallocarray.3 strod.3 strol.3 stroul.3 strsuftoll.3 system.3
+        reallocarray.3 strod.3 strol.3 stroul.3 strsuftoll.3 system.3 tsearch.3 tdelete.c 		\
+		tfind.c tsearch.c twalk.c
 
 MLINKS+=a64l.3 l64a.3
 MLINKS+=a64l.3 l64a_r.3
+MLINKS+=hcreate.3 hdestroy.3 hcreate.3 hsearch.3
 MLINKS+=rand.3 rand_r.3
 MLINKS+=rand.3 srand.3
 MLINKS+=rand48.3 drand48.3 rand48.3 erand48.3 rand48.3 lrand48.3
@@ -40,3 +42,4 @@ MLINKS+=strtol.3 strtoq.3
 MLINKS+=strtoul.3 strtoull.3
 MLINKS+=strtoul.3 strtoumax.3
 MLINKS+=strtoul.3 strtouq.3
+MLINKS+=tsearch.3 tfind.3 tsearch.3 twalk.3 tsearch.3 tdelete.3

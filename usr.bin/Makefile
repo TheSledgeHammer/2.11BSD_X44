@@ -9,7 +9,7 @@ SUBDIR= apply ar asa at 											\
 		compress crontab crunch csplit ctags cut 					\
 		db deroff dirname du										\
 		elf2aout elf2ecoff env expand								\
-		false fdformat find fmt fold fpr fsplit fstat ftp           \
+		false fdformat find finger fmt fold fpr fsplit fstat ftp    \
 		gcore genassym gencat getaddrinfo getopt getconf gettext 	\
 		gprof														\
 		head hexdump 												\

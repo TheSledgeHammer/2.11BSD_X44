@@ -98,7 +98,8 @@ struct ctlname {
 #define	CTL_HW		6		/* generic cpu/io */
 #define	CTL_MACHDEP	7		/* machine dependent */
 #define	CTL_USER	8		/* user-level */
-#define	CTL_MAXID	9		/* number of valid top-level ids */
+#define	CTL_DDB		9
+#define	CTL_MAXID	10		/* number of valid top-level ids */
 
 #define CTL_NAMES { \
 	{ 0, 0 }, \
@@ -110,6 +111,7 @@ struct ctlname {
 	{ "hw", CTLTYPE_NODE }, \
 	{ "machdep", CTLTYPE_NODE }, \
 	{ "user", CTLTYPE_NODE }, \
+	{ "ddb", CTLTYPE_NODE }, \
 }
 
 /*

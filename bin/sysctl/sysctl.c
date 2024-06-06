@@ -41,9 +41,13 @@ static char sccsid[] = "@(#)sysctl.c	8.1.4 (2.11BSD GTE) 1998/4/3";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/gmon.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/socket.h>
+#include <vm/include/vm_param.h>
+
 #include <machine/cpu.h>
 
 #include <netinet/in.h>
@@ -57,22 +61,28 @@ static char sccsid[] = "@(#)sysctl.c	8.1.4 (2.11BSD GTE) 1998/4/3";
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 
 struct ctlname topname[] = CTL_NAMES;
 struct ctlname kernname[] = CTL_KERN_NAMES;
 struct ctlname vmname[] = CTL_VM_NAMES;
+//struct ctlname vfsname[] = CTL_VFS_NAMES;
 #ifdef	CTL_NET_NAMES
 struct ctlname netname[] = CTL_NET_NAMES;
 #endif
 struct ctlname hwname[] = CTL_HW_NAMES;
 struct ctlname username[] = CTL_USER_NAMES;
+//struct ctlname ddbname[] = CTL_DDB_NAMES;
 struct ctlname debugname[CTL_DEBUG_MAXID];
+struct ctlname *vfsname;
 #ifdef CTL_MACHDEP_NAMES
 struct ctlname machdepname[] = CTL_MACHDEP_NAMES;
 #endif
 char names[BUFSIZ];
+int lastused;
 
 struct list {
 	struct	ctlname *list;
@@ -97,6 +107,7 @@ struct list secondlevel[] = {
 	{ 0, 0 },					/* CTL_MACHDEP */
 #endif
 	{ username, USER_MAXID },	/* CTL_USER_NAMES */
+	{ 0, 0 },					/* CTL_DDB_NAMES */
 };
 
 int	Aflag, aflag, nflag, wflag;
@@ -107,9 +118,9 @@ extern int optind, errno;
 /*
  * Variables requiring special processing.
  */
-#define	CLOCK		0x0001
-#define	BOOTTIME	0x0002
-#define	CONSDEV		0x0004
+#define	CLOCK		0x00000001
+#define	BOOTTIME	0x00000002
+#define	CONSDEV		0x00000004
 
 void
 main(argc, argv)
@@ -146,6 +157,7 @@ main(argc, argv)
 
 	if (Aflag || aflag) {
 		debuginit();
+		vfsinit();
 		for (lvl1 = 1; lvl1 < CTL_MAXID; lvl1++)
 			listall(topname[lvl1].ctl_name, &secondlevel[lvl1]);
 		exit(0);
@@ -197,6 +209,7 @@ parse(string, flags)
 	int intval, newsize = 0;
 	long longval;
 	struct list *lp;
+	struct vfsconf vfc;
 	int mib[CTL_MAXNAME];
 	char *cp, *bufp, buf[BUFSIZ], strval[BUFSIZ];
 
@@ -217,6 +230,8 @@ parse(string, flags)
 	if ((indx = findname(string, "top", &bufp, &toplist)) == -1)
 		return;
 	mib[0] = indx;
+	if (indx == CTL_VFS)
+		vfsinit();
 	if (indx == CTL_DEBUG)
 		debuginit();
 	lp = &secondlevel[indx];
@@ -238,10 +253,29 @@ parse(string, flags)
 	case CTL_KERN:
 		switch (mib[1]) {
 		case KERN_PROF:
+			mib[2] = GPROF_STATE;
+			size = sizeof state;
+			if (sysctl(mib, 3, &state, &size, NULL, 0) < 0) {
+				if (flags == 0)
+					return;
+				if (!nflag)
+					fprintf(stdout, "%s: ", string);
+				fprintf(stderr,
+				    "kernel is not compiled for profiling\n");
+				return;
+			}
+			if (!nflag)
+				fprintf(stdout, "%s: %s\n", string,
+				    state == GMON_PROF_OFF ? "off" : "running");
+			return;
 			fprintf(stderr, "kern.prof =  not supported in 2.11BSD\n");
 			return;
 		case KERN_VNODE:
 		case KERN_FILE:
+			if (flags == 0)
+				return;
+			fprintf(stderr, "Use pstat to view %s information\n", string);
+			return;
 		case KERN_TEXT:
 			if (flags == 0)
 				return;
@@ -276,7 +310,7 @@ parse(string, flags)
 		}
 		if (flags == 0)
 			return;
-		fprintf(stderr, "Use vmstat or pstat to view %s information\n", string);
+		fprintf(stderr, "Use vmstat or systat to view %s information\n", string);
 		return;
 
 	case CTL_NET:
@@ -297,8 +331,11 @@ parse(string, flags)
 		break;
 
 	case CTL_MACHDEP:
+#ifdef CPU_CONSDEV
 		if (mib[1] == CPU_CONSDEV)
 			special |= CONSDEV;
+#endif
+		/*
 		if (mib[1] == CPU_TMSCP) {
 			len = sysctl_tmscp(string, &bufp, mib, flags, &type);
 			if (len >= 0)
@@ -311,12 +348,32 @@ parse(string, flags)
 				goto doit;
 			return;
 		}
+		*/
 		break;
 
 	case CTL_VFS:
-	case CTL_USER:
-		break;
+		mib[3] = mib[1];
+		mib[1] = VFS_GENERIC;
+		mib[2] = VFS_CONF;
+		len = 4;
+		size = sizeof vfc;
+		if (sysctl(mib, 4, &vfc, &size, (void *)0, (size_t)0) < 0) {
+			perror("vfs print");
+			return;
+		}
+		if (flags == 0 && vfc.vfc_refcount == 0)
+			return;
+		if (!nflag)
+			fprintf(stdout, "%s has %d mounted instance%s\n",
+			    string, vfc.vfc_refcount,
+			    vfc.vfc_refcount != 1 ? "s" : "");
+		else
+			fprintf(stdout, "%d\n", vfc.vfc_refcount);
+		return;
 
+	case CTL_USER:
+	case CTL_DDB:
+		break;
 	default:
 		fprintf(stderr, "Illegal top level value: %d\n", mib[0]);
 		return;
@@ -334,7 +391,7 @@ doit:
 			newval = (void*) &intval;
 			newsize = sizeof intval;
 			break;
-
+		case CTLTYPE_QUAD:
 		case CTLTYPE_LONG:
 			sscanf(newval, "%ld", &longval);
 			newval = (void*) &longval;
@@ -413,7 +470,7 @@ doit:
 			fprintf(stdout, "%s\n", newval);
 		}
 		return;
-
+	case CTLTYPE_QUAD:
 	case CTLTYPE_LONG:
 		if (newsize == 0) {
 			if (!nflag)
@@ -437,6 +494,7 @@ doit:
 	}
 }
 
+#ifdef notyet
 struct	ctlname tmscpname[]  = TMSCP_NAMES;
 struct	list tmscplist = { tmscpname, TMSCP_MAXID };
 
@@ -490,6 +548,7 @@ sysctl_mscp(string, bufpp, mib, flags, typep)
 	*typep = mscpname[indx].ctl_type;
 	return (3);
 }
+#endif
 
 /*
  * Initialize the set of debugging names
@@ -515,30 +574,74 @@ debuginit()
 	}
 }
 
+/*
+ * Initialize the set of filesystem names
+ */
+void
+vfsinit(void)
+{
+	int mib[4], maxtypenum, cnt, loc, size;
+	struct vfsconf vfc;
+	size_t buflen;
+
+	if (secondlevel[CTL_VFS].list != 0)
+		return;
+	mib[0] = CTL_VFS;
+	mib[1] = VFS_GENERIC;
+	mib[2] = VFS_MAXTYPENUM;
+	buflen = 4;
+	if (sysctl(mib, 3, &maxtypenum, &buflen, (void *)0, (size_t)0) < 0)
+		return;
+	if ((vfsname = malloc(maxtypenum * sizeof(*vfsname))) == 0)
+		return;
+	memset(vfsname, 0, maxtypenum * sizeof(*vfsname));
+	mib[2] = VFS_CONF;
+	buflen = sizeof vfc;
+	for (loc = lastused, cnt = 0; cnt < maxtypenum; cnt++) {
+		mib[3] = cnt;
+		if (sysctl(mib, 4, &vfc, &buflen, (void *)0, (size_t)0) < 0) {
+			if (errno == EOPNOTSUPP)
+				continue;
+			perror("vfsinit");
+			free(vfsname);
+			return;
+		}
+		strcat(&names[loc], vfc.vfc_name);
+		vfsname[cnt].ctl_name = &names[loc];
+		vfsname[cnt].ctl_type = CTLTYPE_INT;
+		size = strlen(vfc.vfc_name) + 1;
+		loc += size;
+	}
+	lastused = loc;
+	secondlevel[CTL_VFS].list = vfsname;
+	secondlevel[CTL_VFS].size = maxtypenum;
+	return;
+}
+
 struct ctlname inetname[] = CTL_IPPROTO_NAMES;
 struct ctlname ipname[] = IPCTL_NAMES;
 struct ctlname icmpname[] = ICMPCTL_NAMES;
 struct ctlname udpname[] = UDPCTL_NAMES;
 struct list inetlist = { inetname, IPPROTO_MAXID };
 struct list inetvars[] = {
-	{ ipname, IPCTL_MAXID },	/* ip */
-	{ icmpname, ICMPCTL_MAXID },/* icmp */
-	{ 0, 0 },			/* igmp */
-	{ 0, 0 },			/* ggmp */
-	{ 0, 0 },
-	{ 0, 0 },
-	{ 0, 0 },			/* tcp */
-	{ 0, 0 },
-	{ 0, 0 },			/* egp */
-	{ 0, 0 },
-	{ 0, 0 },
-	{ 0, 0 },
-	{ 0, 0 },			/* pup */
-	{ 0, 0 },
-	{ 0, 0 },
-	{ 0, 0 },
-	{ 0, 0 },
-	{ udpname, UDPCTL_MAXID },	/* udp */
+		{ ipname, IPCTL_MAXID },	/* ip */
+		{ icmpname, ICMPCTL_MAXID },/* icmp */
+		{ 0, 0 },					/* igmp */
+		{ 0, 0 },					/* ggmp */
+		{ 0, 0 },
+		{ 0, 0 },
+		{ 0, 0 },					/* tcp */
+		{ 0, 0 },
+		{ 0, 0 },					/* egp */
+		{ 0, 0 },
+		{ 0, 0 },
+		{ 0, 0 },
+		{ 0, 0 },					/* pup */
+		{ 0, 0 },
+		{ 0, 0 },
+		{ 0, 0 },
+		{ 0, 0 },
+		{ udpname, UDPCTL_MAXID },	/* udp */
 };
 
 /*

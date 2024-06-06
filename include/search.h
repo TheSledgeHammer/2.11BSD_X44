@@ -56,7 +56,7 @@ void	*bsearch(const void *, const void *, size_t, size_t,
 		      int (*)(const void *, const void *));
 #endif /* __BSEARCH_DECLARED */
 
-int	 hcreate(size_t);
+int	 	hcreate(size_t);
 void	 hdestroy(void);
 ENTRY	*hsearch(ENTRY, ACTION);
 
@@ -74,7 +74,6 @@ void	*lsearch(const void *, void *, size_t *, size_t,
 		      int (*)(const void *, const void *));
 void	 insque(void *, void *);
 void	 remque(void *);
-#ifdef notyet
 void	*tdelete(const void * __restrict, void ** __restrict,
 		      int (*)(const void *, const void *));
 void	*tfind(const void *, void * const *,
@@ -82,7 +81,6 @@ void	*tfind(const void *, void * const *,
 void	*tsearch(const void *, void **, 
 		      int (*)(const void *, const void *));
 void	 twalk(const void *, void (*)(const void *, VISIT, int));
-#endif
 __END_DECLS
 
 #endif /* !_SEARCH_H_ */
