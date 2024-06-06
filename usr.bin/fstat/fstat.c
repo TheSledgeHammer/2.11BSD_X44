@@ -593,12 +593,12 @@ ufs211_filestat(vp, fsp)
 	struct ufs211_mount ufsmount;
 
 	if (!KVM_READ(UFS211_VTOI(vp), &inode, sizeof(inode))) {
-		dprintf(stderr, "can't read inode at %x for pid %d\n", UFS211_VTOI(vp), Pid);
+		dprintf(stderr, "can't read ufs211_inode at %x for pid %d\n", UFS211_VTOI(vp), Pid);
 		return 0;
 	}
 
 	if (!KVM_READ(inode.i_ump, &ufsmount, sizeof(struct ufs211_mount))) {
-		dprintf("can't read ufsmount at %p for pid %d", inode.i_ump, Pid);
+		dprintf("can't read ufs211_mount at %p for pid %d", inode.i_ump, Pid);
 		return 0;
 	}
 	fsp->fsid = inode.i_dev & 0xffff;
