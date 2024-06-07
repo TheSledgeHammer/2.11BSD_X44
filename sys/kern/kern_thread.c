@@ -722,11 +722,7 @@ thread_exit(ecode)
 	td->td_flag &= (TD_PPWAIT | TD_SULOCK);
 	td->td_flag |= TD_WEXIT;
 	untimeout(realitexpire, (caddr_t)p);
-/*
-	if (ecode != 0) {
-		printf("WARNING: thread `%s' (%d) exits with status %d\n", td->td_name, td->td_tid, ecode);
-	}
-*/
+
 	td->td_stat = SZOMB;
 	thread_remove(p, td);
 	if ((p->p_stat == SZOMB) && ((td->td_flag & TD_STEALABLE) != 0)) {
@@ -763,7 +759,7 @@ thread_ltsleep(chan, pri, wmesg, timo, interlock)
 		return (0);
 	}
 
-	/* only thread's on same process sleep */
+	/* thread's on same process */
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 		catch = pri & PCATCH;
 		td->td_wchan = (caddr_t)chan;
@@ -777,9 +773,16 @@ thread_ltsleep(chan, pri, wmesg, timo, interlock)
 		if (interlock != NULL) {
 			simple_unlock(interlock);
 		}
+		/*
+		 * thread's on the same process do not need to signal a process
+		 * interrupt.
+		 */
 		if (catch) {
-			if (td->td_wchan) {
-				thread_unsleep(p, td);
+			td->td_flag |= TD_SINTR;
+			if ((p->p_flag && P_SINTR) != 0) {
+				if (td->td_wchan) {
+					thread_unsleep(p, td);
+				}
 				td->td_stat = SRUN;
 				goto resume;
 			}
@@ -789,8 +792,9 @@ thread_ltsleep(chan, pri, wmesg, timo, interlock)
 			}
 		}
 		td->td_stat = SSLEEP;
-
+		/* switch counter? */
 resume:
+		td->td_flag &= ~TD_SINTR;
 		if (td->td_flag & TD_TIMEOUT) {
 			td->td_flag &= ~TD_TIMEOUT;
 			if (interlock != NULL) {
@@ -801,6 +805,7 @@ resume:
 			untimeout((void *)thread_endtsleep, (caddr_t)td);
 		}
 	} else {
+		/* just return if a different process */
 		if (interlock != NULL) {
 			simple_unlock(interlock);
 		}
@@ -940,7 +945,35 @@ out:
 	return (error);
 }
 
-thread_psignal(td, sig)
+
+thread_psignal(p)
+	register struct proc *p;
+{
+	if ()
+	switch (p->p_stat) {
+	case SSLEEP:
+		if ((p->p_flag & P_SINTR) == 0) {
+			thread_signal(p, td, sig);
+		}
+
+		switch (p->p_flag) {
+		case P_TRACED:
+		case P_SINTR:
+			thread_signal();
+
+		case P_SVFORK:
+			ps
+		}
+		break;
+	case SSTOP:
+
+	default:
+
+	}
+}
+
+thread_signal(p, td, sig)
+	register struct proc *p;
 	register struct thread *td;
 	register int sig;
 {
@@ -948,8 +981,9 @@ thread_psignal(td, sig)
 	switch (td->td_stat) {
 	case SSLEEP:
 		if ((td->td_flag & TD_SINTR) == 0) {
-			goto out;
+			return;
 		} else {
+
 			goto run;
 		}
 		/*NOTREACHED*/
@@ -967,7 +1001,11 @@ thread_psignal(td, sig)
 	}
 
 run:
+	if (p->p_pri > PUSER) {
+		thread_updatepri(p, td);
+	}
 
+	thread_setrun(p, td);
 out:
 	splx(s);
 }
