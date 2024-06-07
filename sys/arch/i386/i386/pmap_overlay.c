@@ -41,7 +41,7 @@
 #include <machine/pmap_hat.h>
 
 #ifdef OVERLAY
-
+#ifdef deprecated
 void
 pmap_overlay_bootstrap(firstaddr, res)
 	vm_offset_t firstaddr;
@@ -59,7 +59,19 @@ pmap_overlay_bootstrap(firstaddr, res)
 	res = atop(overlay_end - (vm_offset_t)KERNLOAD);
 
 	avail_start = overlay_end;
+	virtual_avail = (vm_offset_t)overlay_end;
+	virtual_end = VM_MAX_KERNEL_ADDRESS;
+}
+#endif
 
+void
+pmap_overlay_bootstrap(firstaddr)
+	vm_offset_t firstaddr;
+{
+	 extern vm_offset_t avail_start, virtual_avail, virtual_end;
+
+	overlay_avail = (vm_offset_t)firstaddr;
+	overlay_end = OVL_MAX_ADDRESS;
 	virtual_avail = (vm_offset_t)overlay_end;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
 }

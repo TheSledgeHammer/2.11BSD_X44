@@ -549,13 +549,13 @@ pmap_bootstrap(firstaddr)
 	u_long res;
 	int i;
 
-#ifdef OVERLAY
-	pmap_overlay_bootstrap(firstaddr, res);
-#else
 	res = atop(firstaddr - (vm_offset_t)KERNLOAD);
 
 	avail_start = firstaddr;
 
+#ifdef OVERLAY
+	pmap_overlay_bootstrap(firstaddr);
+#else
 	virtual_avail = (vm_offset_t)firstaddr;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
 #endif
