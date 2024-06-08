@@ -308,20 +308,17 @@ sched_nthreads(sc)
     sc->sc_optnthreads = nthreads;
 }
 
-/* thread creation/destruction test */
-int
-edf_sched_nthreads(sc, p)
+void
+sched_check_threads(sc, p)
 	struct sched *sc;
 	struct proc *p;
 {
-	int error;
-
-    if (p->p_nthreads > sc->sc_optnthreads) {
-    	error = P_TDDESTROY;
-    } else if (p->p_nthreads < sc->sc_optnthreads) {
-    	error = P_TDCREATE;
-    } else {
-    	error = 0;
-    }
-    return (error);
+	if (sc->sc_optnthreads > 0) {
+		if (p->p_nthreads < sc->sc_optnthreads) {
+			p->p_flag |= P_TDCREATE;
+		}
+		if (p->p_nthreads > sc->sc_optnthreads) {
+			p->p_flag |= P_TDDESTROY;
+		}
+	}
 }

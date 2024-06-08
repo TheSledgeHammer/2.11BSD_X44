@@ -66,7 +66,11 @@ kthread_create(func, arg, newtd, name, forkproc)
 	char *name;
 	bool_t forkproc;
 {
-	return (newthread(newtd, name, THREAD_STACK, forkproc));
+	error = newthread(newtd, name, THREAD_STACK, forkproc);
+	if (__predict_false(error != 0)) {
+		return (error);
+	}
+	return (0);
 }
 
 /*

@@ -218,7 +218,7 @@ killpg1(signo, pgrp, all)
 	}
 	for (f = 0, p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
 		if ((p->p_pgrp->pg_id != pgrp && !all) || p->p_ppid == 0 ||
-		    (p->p_flag & P_SSYS) || (all && p == u.u_procp))
+		    (p->p_flag & (P_SSYS | P_SYSTEM)) || (all && p == u.u_procp))
 			continue;
 		if (!cansignal(p, signo)) {
 			if (!all)

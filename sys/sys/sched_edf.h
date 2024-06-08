@@ -72,6 +72,7 @@ struct sched_edf {
 
 #define P_TDCREATE		0x1	/* create nthreads */
 #define P_TDDESTROY		0x2	/* destroy nthreads */
+
 #define P_EDFFAIL 		0x4	/* Failed EDF Test */
 #define P_EDFPREEMPT 	0x8 /* Preemption Flag: Suggest to CFS to preempt this process */
 
