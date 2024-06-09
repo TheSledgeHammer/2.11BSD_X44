@@ -8,7 +8,7 @@ SUBDIR= apply ar asa at 											\
 		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
 		compress crontab crunch csplit ctags cut 					\
 		db deroff dirname du										\
-		elf2aout elf2ecoff env expand								\
+		elf2aout elf2ecoff env error expand								\
 		false fdformat find finger fmt fold fpr fsplit fstat ftp    \
 		gcore genassym gencat getaddrinfo getopt getconf gettext 	\
 		gprof														\
@@ -20,12 +20,13 @@ SUBDIR= apply ar asa at 											\
 		logname look lorder 										\
 		m4 machine make man menuc mkdep mkerrlst mkfifo mklocale 	\
 		mkstr mktemp msgc msgs                                      \
-        nbperf netgroup netstat nice nl nohup                       \
+        nbperf nc netgroup netstat nice nl nohup                       \
         pagesize paste patch pathchk pr printenv printf				\
 		renice rev rpcgen rpcinfo									\
 		script sed shar shlock showmount sort sortinfo spell split 	\
 		stat strfile su												\
-		tail tcopy tftp tic time tip touch tput true tset tsort tty		\
+		tabs tail tcopy tee tftp tic time tip touch tput true tset 	\
+		tsort tty													\
 		ul uname unexpand unifdef uniq unstr unvis unzip users 		\
 		uudecode uuencode 											\
 		vgrind vis vmstat 											\

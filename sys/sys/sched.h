@@ -168,9 +168,9 @@ sched_rate_range(val, min, max)
 #define SCHED_RATE_HIGH(val)       	(sched_rate_range(val, 67, 100) == 0)
 
 /* Schedule Weighting */
-#define SCHED_WEIGHT_LOW			9
+#define SCHED_WEIGHT_HIGH			9
 #define SCHED_WEIGHT_MEDIUM			6
-#define SCHED_WEIGHT_HIGH 			3
+#define SCHED_WEIGHT_LOW 			3
 
 #ifdef notyet
 /* Scheduler Domains: Hyperthreading, multi-cpu */
@@ -191,10 +191,9 @@ struct sched_domain {
 
 #ifdef _KERNEL
 void 				sched_init(struct proc *);
-struct sched_edf 	*sched_edf(struct sched *);
-struct sched_cfs 	*sched_cfs(struct sched *);
 void				sched_estcpu(u_int, u_int);
 void				sched_cpticks(int, int);
 void				sched_compute(struct sched *, struct proc *);
+void				sched_check_threads(struct sched *, struct proc *);
 #endif /* _KERNEL */
 #endif /* _SYS_SCHED_H */

@@ -149,13 +149,14 @@ edf_schedcpu(p)
 	int error;
 
 	sc = p->p_sched;
-	edf = sched_edf(sc);
+	edf = sc->sc_edf;
 	edf_compute(edf, p);
 	sched_compute(sc, p);
 	edf->edf_slack = sc->sc_slack;
 	edf->edf_priweight = sc->sc_priweight;
 
 	if (edf_test(edf)) {
+		sched_check_threads(sc, p);
 		return (0);
 	} else {
 		panic("edf_schedpu: edf_test failed");

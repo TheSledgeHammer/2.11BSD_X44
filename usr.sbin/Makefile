@@ -13,7 +13,7 @@ SUBDIR=	ac accton arp authpf 						\
         netgroup_mkdb								\
 		pcictl portmap pwd_mkdb 					\
         rmt                                         \
-	sa service 					\
+		sa service services_mkdb sliplogin			\
         traceroute 									\
 		unlink update user  								\
 		vipw vnconfig 									\

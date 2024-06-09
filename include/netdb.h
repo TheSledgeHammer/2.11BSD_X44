@@ -34,6 +34,7 @@ typedef _BSD_SIZE_T_	size_t;
 #define	_PATH_NETWORKS		"/etc/networks"
 #define	_PATH_PROTOCOLS		"/etc/protocols"
 #define	_PATH_SERVICES		"/etc/services"
+#define	_PATH_SERVICES_CDB 	"/var/db/services.cdb"
 #define	_PATH_SERVICES_DB 	"/var/db/services.db"
 
 __BEGIN_DECLS

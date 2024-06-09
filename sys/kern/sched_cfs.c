@@ -220,7 +220,7 @@ cfs_schedcpu(p)
 	cpticks = 0;
 
 	sc = p->p_sched;
-	cfs = sched_cfs(sc);
+	cfs = sc->sc_cfs;
 	cfs_compute(cfs, p);
 	cfs->cfs_slack = sc->sc_slack;
 	cfs->cfs_priweight = sc->sc_priweight;

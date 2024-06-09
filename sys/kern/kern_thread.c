@@ -907,89 +907,15 @@ restart:
 
 #ifdef notyet
 
-thread_kill(pid, signo)
-{
-	int error;
-
-	if (signo < 0 || signo >= NSIG) {
-		error = EINVAL;
-		goto out;
-	}
-	if (pid > 0) {
-		p = thread_pfind(td);
-		if (p == 0) {
-			error = ESRCH;
-			goto out;
-		}
-		if (!cansignal(p, signo)) {
-			error = EPERM;
-		} else if (signo) {
-			psignal(p, signo);
-		}
-		goto out;
-	}
-	switch (pid) {
-	case -1:
-		error = killpg1(signo, 0, 1);
-		break;
-	case 0:
-		error = killpg1(signo, 0, 0);
-		break;
-	default:
-		error = killpg1(signo, -pid, 0);
-		break;
-	}
-
-out:
-
-	return (error);
-}
-
-thread_kill(p, pid, signo)
-	struct proc *p;
-	pid_t pid;
-	int signo;
-{
-	register struct thread *td;
-	register int error = 0;
-
-	if (signo < 0 || signo >= NSIG) {
-		error = EINVAL;
-		goto out;
-	}
-	if (pid > 0) {
-		td = tdfind(p);
-		if (td == 0) {
-			error = ESRCH;
-			goto out;
-		}
-		if (!cansignal(p, signo)) {
-			error = EPERM;
-			goto out;
-		} else if (signo) {
-			psignal(p, signo);
-		}
-		goto out;
-	}
-
-out:
-
-	return (error);
-}
-
-
 /*
  * signal a specified thread on that process.
  */
 static void
-tdsignal(p, td, sig)
+thread_signal(p, td, sig)
 	struct proc *p;
 	struct thread *td;
 	int sig;
 {
-	if (td->td_stat != SSTOP) {
-		return;
-	}
 	switch (td->td_stat) {
 	case SSLEEP:
 		if ((td->td_flag & TD_SINTR) == 0) {
@@ -1019,14 +945,16 @@ run:
  * signal all threads on that process.
  */
 static void
-thread_psignal(p, sig)
+thread_signal_all(p, sig)
 	struct proc *p;
 	int sig;
 {
 	register struct thread *td;
 
 	LIST_FOREACH(td, &p->p_allthread, td_list) {
-		tdsignal(p, td, sig);
+		if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+			thread_signal(p, td, sig);
+		}
 	}
 }
 
@@ -1034,20 +962,29 @@ thread_psignal(p, sig)
  * Send the specified signal to
  * all threads on that process, while the process
  * is not interruptible.
+ * all: 0 = all threads, 1 = single thread
  */
 void
-thread_signal(p, sig)
+thread_psignal(p, sig, all)
 	struct proc *p;
-	int sig;
+	int sig, all;
 {
 	if ((p->p_flag & P_SINTR) != 0) {
 		switch (p->p_stat) {
 		case SSLEEP:
-			thread_psignal(p, sig);
+			if (!all) {
+				thread_signal(p, sig);
+			} else if (all){
+				thread_signal_all(p, sig);
+			}
 			return;
 
 		case SSTOP:
-			thread_psignal(p, sig);
+			if (!all) {
+				thread_signal(p, sig);
+			} else if (all){
+				thread_signal_all(p, sig);
+			}
 			return;
 		}
 	} else {
@@ -1082,9 +1019,53 @@ thread_killpg1(p, signo, pgrp, all)
 		}
 		f++;
 		if (signo) {
-			thread_signal(p, signo);
+			thread_psignal(p, signo, !all);
 		}
 	}
 	return (error ? error : (f == 0 ? ESRCH : 0));
+}
+
+int
+thread_kill(p, signo, tid)
+	struct proc *p;
+	int signo;
+	pid_t tid;
+{
+	register struct thread *td;
+	register int error = 0;
+
+	if (signo < 0 || signo >= NSIG) {
+		error = EINVAL;
+		goto out;
+	}
+
+	if (tid > 0) {
+		td = tdfind(p);
+		if (td == 0) {
+			error = ESRCH;
+			goto out;
+		}
+		if (!cansignal(p, signo)) {
+			error = EPERM;
+		} else if (signo) {
+			thread_psignal(p, signo, 1);
+		}
+		goto out;
+	}
+
+	switch (tid) {
+	case -1:		/* broadcast signal */
+		error = thread_killpg1(p, signo, 0, 1);
+		break;
+	case 0:			/* signal own thread group */
+		error = thread_killpg1(p, signo, 0, 0);
+		break;
+	default:		/* negative explicit thread group */
+		error = thread_killpg1(p, signo, -tid, 0);
+		break;
+	}
+
+out:
+	return (error);
 }
 #endif

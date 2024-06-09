@@ -47,7 +47,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## usr.bin:
 - Add: More critical software
 	- Generic:
-		- cal, calendar, error, finger, fstat, getent, nc, systat, tabs, tee, tr
+		- cal, calendar, error, getent, nc, systat, tabs, tee, tr
 	- Filesystem:
 		- quota
 	- Network:
