@@ -120,6 +120,7 @@ _USRDOTLIBLIST=	\
 			M \
 			MENU \
 			MP \
+			MPX \
 			OM \
 			PANEL \
 			PCAP \

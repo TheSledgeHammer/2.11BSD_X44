@@ -63,6 +63,7 @@ LIBFORTRAN?=		/usr.lib/libfortran
 LIBF77?=			${LIBFORTRAN}/libF77.a
 LIBI77?=			${LIBFORTRAN}/libI77.a
 LIBU77?=			${LIBFORTRAN}/libU77.a
+LIBMPX?=			/usr.lib/libmpx.a
 LIBOM?=				/usr.lib/libom.a
 LIBSTUBS?=			/usr.lib/libstubs.a
 #LIBTERMCAP?=		/usr.lib/libtermcap.a

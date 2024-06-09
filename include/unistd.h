@@ -171,8 +171,11 @@ void	 		usleep(long);
 pid_t	 		vfork(void);
 #endif /* !_POSIX_SOURCE */
 
+/*
+ * see libmpx
+ * mpx (multiplexor is a non-standard system call unique to 2.11BSD_X44);
+ */
 struct mpx;
-/* mpx (multiplexor is a non-standard system call unique to 2.11BSD_X44); */
 /* int 			mpx(int, struct mpx *, int, void *); */
 int				mpx_create(struct mpx *, int, void *);
 int				mpx_put(struct mpx *, int, void *);

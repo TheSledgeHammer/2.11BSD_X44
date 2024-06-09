@@ -75,23 +75,12 @@ extern struct lock_holder mpx_loholder;
 #define MPX_MUTEX_EXIT(mpx)	 					mtx_unlock(mpx, &mpx_loholder)
 */
 #ifdef _KERNEL
-/* common routines */
 struct mpx 					*mpx_allocate(int);
 void						mpx_deallocate(struct mpx *);
-
-/* channel functions */
-struct mpx_channel 			*mpx_channel_create(int, u_long, void *, int);
-void						mpx_channel_destroy(struct mpx_channel *);
-void						mpx_channel_insert(struct mpx *, int, void *);
-void						mpx_channel_insert_with_size(struct mpx *, int, u_long, void *);
-void						mpx_channel_remove(struct mpx *, int, void *);
-struct mpx_channel 			*mpx_channel_lookup(struct mpx *, int, void *);
-
-/* mpx channel routines via mpxcall(aka syscall) */
-int							mpx_create(struct mpx *, int, void *);
-int							mpx_put(struct mpx *, int, void *);
-int							mpx_get(struct mpx *, int, void *);
-int							mpx_destroy(struct mpx *, int, void *);
-int							mpx_remove(struct mpx *, int, void *);
+int							mpx_channel_create(struct mpx *, int, u_long, void *);
+int							mpx_channel_put(struct mpx *, int, u_long, void *);
+int							mpx_channel_get(struct mpx *, int, void *);
+int							mpx_channel_destroy(struct mpx *, int, void *);
+int							mpx_channel_remove(struct mpx *, int, void *);
 #endif /* _KERNEL */
 #endif /* SYS_MPX_H_ */

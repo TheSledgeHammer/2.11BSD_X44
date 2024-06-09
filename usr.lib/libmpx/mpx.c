@@ -29,7 +29,6 @@
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include <sys/mpx.h>
-#include <sys/unistd.h>
 
 int
 mpx(int cmd, struct mpx *mpx, int idx, void *data)

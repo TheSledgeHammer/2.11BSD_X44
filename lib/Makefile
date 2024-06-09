@@ -42,6 +42,7 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
 		${USRLIBDIR}/libkvm 		\
 		${USRLIBDIR}/libm 		\
 		${USRLIBDIR}/libmp 		\
+		${USRLIBDIR}/libmpx 		\
 		${USRLIBDIR}/libom 		\
 		${USRLIBDIR}/libresolv 		\
             	${USRLIBDIR}/librpcsvc      	\

@@ -778,9 +778,10 @@ bad:
 #define FMPX_NCHANS 	2	/* number of channels */
 
 static struct mpx *
-pipe_mpx_create(fp, idx, data)
+pipe_mpx_create(fp, idx, size, data)
 	struct file *fp;
 	int idx;
+	u_long size;
 	void *data;
 {
 	int error;
@@ -788,7 +789,7 @@ pipe_mpx_create(fp, idx, data)
 	if (fp->f_mpx == NULL) {
 		fp->f_mpx = mpx_allocate(FMPX_NCHANS);
 	}
-	error = mpx_create(fp->f_mpx, idx, data);
+	error = mpx_channel_create(fp->f_mpx, idx, size, data);
 	if (error != 0) {
 		mpx_deallocate(fp->f_mpx);
 		return (NULL);
@@ -797,16 +798,17 @@ pipe_mpx_create(fp, idx, data)
 }
 
 static int
-pipe_mpx_read(fp, data)
+pipe_mpx_read(fp, size, data)
 	struct file *fp;
+	u_long size;
 	void *data;
 {
 	register struct mpx *rmpx;
 	int error;
 
-	rmpx = pipe_mpx_create(fp, FMPX_READ, data);
+	rmpx = pipe_mpx_create(fp, FMPX_READ, size, data);
 	if (rmpx != NULL) {
-		error = mpx_get(rmpx, FMPX_READ, data);
+		error = mpx_channel_get(rmpx, FMPX_READ, data);
 		if (error != 0) {
 			return (error);
 		}
@@ -816,16 +818,17 @@ pipe_mpx_read(fp, data)
 }
 
 static int
-pipe_mpx_write(fp, data)
+pipe_mpx_write(fp, size, data)
 	struct file *fp;
+	u_long size;
 	void *data;
 {
 	register struct mpx *wmpx;
 	int error;
 
-	wmpx = pipe_mpx_create(fp, FMPX_WRITE, data);
+	wmpx = pipe_mpx_create(fp, FMPX_WRITE, size, data);
 	if (wmpx != NULL) {
-		error = mpx_put(wmpx, FMPX_WRITE, data);
+		error = mpx_channel_put(wmpx, FMPX_WRITE, size, data);
 		if (error != 0) {
 			return (error);
 		}
@@ -842,7 +845,7 @@ pipe_read(rf, rso)
 {
 	int error;
 
-	error = pipe_mpx_read(rf, rso);
+	error = pipe_mpx_read(rf, sizeof(rso), rso);
 	if (error != 0) {
 		u.u_error = error;
 		return;
@@ -860,7 +863,7 @@ pipe_write(wf, wso)
 {
 	int error;
 
-	error = pipe_mpx_write(wf, wso);
+	error = pipe_mpx_write(wf, sizeof(wso), wso);
 	if (error != 0) {
 		u.u_error = error;
 		return;
