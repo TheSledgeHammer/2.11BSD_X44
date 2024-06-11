@@ -73,7 +73,7 @@ struct vmrate {
 
 	/* Distribution of page usages. */
 	unsigned 	v_page_size;				/* page size in bytes */
-	//unsigned 	v_page_in_kernel;			/* total number of pages in system */
+	unsigned 	v_page_in_kernel;			/* total number of pages in system */
 	unsigned 	v_page_free_target;			/* number of pages desired free */
 	unsigned 	v_page_free_min;			/* minimum number of pages desired free */
 	unsigned 	v_page_free_count;			/* number of pages free */
@@ -84,7 +84,7 @@ struct vmrate {
 
 	/* Distribution of segment usages */
 	unsigned 	v_segment_size;				/* segment size in bytes */
-	//unsigned 	v_segment_in_kernel;		/* total number of segments in system */
+	unsigned 	v_segment_in_kernel;		/* total number of segments in system */
 	unsigned 	v_segment_free_count;		/* number of segments free */
 	unsigned 	v_segment_active_count;		/* number of segments active */
 	unsigned 	v_segment_inactive_count;  	/* number of segments inactive */
@@ -148,7 +148,7 @@ struct vmsum {
 
 	/* Distribution of page usages. */
 	long 		v_page_size;				/* page size in bytes */
-	//long 		v_page_in_kernel;			/* total number of pages in system */
+	long 		v_page_in_kernel;			/* total number of pages in system */
 	long 		v_page_free_target;			/* number of pages desired free */
 	long 		v_page_free_min;			/* minimum number of pages desired free */
 	long 		v_page_free_count;			/* number of pages free */
@@ -159,7 +159,7 @@ struct vmsum {
 
 	/* Distribution of segment usages */
 	long 		v_segment_size;				/* segment size in bytes */
-	//long 		v_segment_in_kernel;		/* total number of segments in system */
+	long 		v_segment_in_kernel;		/* total number of segments in system */
 	long 		v_segment_free_count;		/* number of segments free */
 	long 		v_segment_active_count;		/* number of segments active */
 	long 		v_segment_inactive_count;  	/* number of segments inactive */

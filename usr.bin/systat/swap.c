@@ -95,7 +95,7 @@ static int nfree, hlen;
 	}
 
 WINDOW *
-openswap()
+openswap(void)
 {
 	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
 }
@@ -111,7 +111,8 @@ closeswap(w)
 	delwin(w);
 }
 
-initswap()
+int
+initswap(void)
 {
 	int i;
 	char msgbuf[BUFSIZ];
@@ -147,7 +148,7 @@ initswap()
 }
 
 void
-fetchswap()
+fetchswap(void)
 {
 	int s, e, i;
 
@@ -196,7 +197,7 @@ fetchswap()
 }
 
 void
-labelswap()
+labelswap(void)
 {
 	char *header, *p;
 	int row, i;
@@ -214,7 +215,7 @@ labelswap()
 }
 
 void
-showswap()
+showswap(void)
 {
 	int col, row, div, i, j, avail, npfree, used, xsize, xfree;
 

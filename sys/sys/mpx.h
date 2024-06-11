@@ -37,7 +37,7 @@ struct channellist;
 LIST_HEAD(channellist, mpx_channel);
 struct mpx_channel {
     LIST_ENTRY(mpx_channel) mpc_node;       /* channel node in list */
-    struct mpx_group	    *mpc_group;     /* this channels group */
+    //struct mpx_group	    *mpc_group;     /* this channels group */
     int 	                mpc_index;      /* channel index */
     void                    *mpc_data;		/* channel data */
     u_long					mpc_size;		/* channel size */

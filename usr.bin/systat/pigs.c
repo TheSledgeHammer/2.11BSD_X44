@@ -63,12 +63,12 @@ static struct p_times {
 	struct kinfo_proc *pt_kp;
 } *pt;
 
-static long stime[CPUSTATES];
+static long 	stime[CPUSTATES];
 static int     fscale;
 static double  lccpu;
 
 WINDOW *
-openpigs()
+openpigs(void)
 {
 	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
 }
@@ -86,7 +86,7 @@ closepigs(w)
 
 
 void
-showpigs()
+showpigs(void)
 {
 	register int i, j, y, k;
 	struct	eproc *ep;
@@ -135,26 +135,25 @@ showpigs()
 }
 
 static struct nlist namelist[] = {
-#define X_FIRST		0
-#define X_CPTIME	0
-	{ "_cp_time" },
+#define X_FIRST			0
+#define X_CPTIME		0
+		{ .n_name = "_cp_time" },
 #define X_CCPU          1
-	{ "_ccpu" },
+		{ .n_name = "_ccpu" },
 #define X_FSCALE        2
-	{ "_fscale" },
-
-	{ "" }
+		{ .n_name = "_fscale" },
+		{ .n_name = NULL },
 };
 
 int
-initpigs()
+initpigs(void)
 {
 	fixpt_t ccpu;
 
 	if (namelist[X_FIRST].n_type == 0) {
 		if (kvm_nlist(kd, namelist)) {
 			nlisterr(namelist);
-		        return(0);
+			return(0);
 		}
 		if (namelist[X_FIRST].n_type == 0) {
 			error("namelist failed");
@@ -166,11 +165,11 @@ initpigs()
 	NREAD(X_FSCALE,  &fscale, LONG);
 	lccpu = log((double) ccpu / fscale);
 
-	return(1);
+	return (1);
 }
 
 void
-fetchpigs()
+fetchpigs(void)
 {
 	register int i;
 	register float time;
@@ -228,7 +227,7 @@ fetchpigs()
 }
 
 void
-labelpigs()
+labelpigs(void)
 {
 	wmove(wnd, 0, 0);
 	wclrtoeol(wnd);

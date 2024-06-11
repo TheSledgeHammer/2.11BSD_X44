@@ -63,34 +63,35 @@ static char sccsid[] = "@(#)vmstat.c	8.2 (Berkeley) 1/12/94";
 
 static struct Info {
 	long	time[CPUSTATES];
-	struct	vmmeter Cnt;
+	struct	vmrate Cnt;
 	struct	vmtotal Total;
 	long	*dk_time;
 	long	*dk_wds;
+	long	*dk_wps;
 	long	*dk_seek;
 	long	*dk_xfer;
-	int	dk_busy;
+	int		dk_busy;
 	struct	nchstats nchstats;
 	long	nchcount;
 	long	*intrcnt;
 } s, s1, s2, z;
 
-#define	cnt s.Cnt
-#define oldcnt s1.Cnt
-#define	total s.Total
-#define	nchtotal s.nchstats
+#define	cnt 		s.Cnt
+#define oldcnt 		s1.Cnt
+#define	total 		s.Total
+#define	nchtotal 	s.nchstats
 #define	oldnchtotal s1.nchstats
 
 static	enum state { BOOT, TIME, RUN } state = TIME;
 
-static void allocinfo __P((struct Info *));
-static void copyinfo __P((struct Info *, struct Info *));
-static float cputime __P((int));
-static void dinfo __P((int, int));
-static void getinfo __P((struct Info *, enum state));
-static void putint __P((int, int, int, int));
-static void putfloat __P((double, int, int, int, int, int));
-static int ucount __P((void));
+static void allocinfo(struct Info *);
+static void copyinfo(struct Info *, struct Info *);
+static float cputime(int);
+static void dinfo(int, int);
+static void getinfo(struct Info *, enum state);
+static void putint(int, int, int, int);
+static void putfloat(double, int, int, int, int, int);
+static int ucount(void);
 
 static	int ut;
 static	char buf[26];
@@ -106,7 +107,7 @@ struct	utmp utmp;
 
 
 WINDOW *
-openkre()
+openkre(void)
 {
 
 	ut = open(_PATH_UTMP, O_RDONLY);
@@ -130,32 +131,34 @@ closekre(w)
 
 static struct nlist namelist[] = {
 #define X_CPTIME	0
-	{ "_cp_time" },
+		{ .n_name = "_cp_time" },
 #define X_CNT		1
-	{ "_cnt" },
+		{ .n_name = "_cnt" },
 #define X_TOTAL		2
-	{ "_total" },
+		{ .n_name = "_total" },
 #define	X_DK_BUSY	3
-	{ "_dk_busy" },
+		{ .n_name = "_dk_busy" },
 #define	X_DK_TIME	4
-	{ "_dk_time" },
+		{ .n_name = "_dk_time" },
 #define	X_DK_XFER	5
-	{ "_dk_xfer" },
+		{ .n_name = "_dk_xfer" },
 #define	X_DK_WDS	6
-	{ "_dk_wds" },
-#define	X_DK_SEEK	7
-	{ "_dk_seek" },
-#define	X_NCHSTATS	8
-	{ "_nchstats" },
-#define	X_INTRNAMES	9
-	{ "_intrnames" },
-#define	X_EINTRNAMES	10
-	{ "_eintrnames" },
-#define	X_INTRCNT	11
-	{ "_intrcnt" },
-#define	X_EINTRCNT	12
-	{ "_eintrcnt" },
-	{ "" },
+		{ .n_name = "_dk_wds" },
+#define	X_DK_WPS	7
+		{ .n_name = "_dk_wps" },
+#define	X_DK_SEEK	8
+		{ .n_name = "_dk_seek" },
+#define	X_NCHSTATS	9
+		{ .n_name = "_nchstats" },
+#define	X_INTRNAMES	10
+		{ .n_name = "_intrnames" },
+#define	X_EINTRNAMES	11
+		{ .n_name = "_eintrnames" },
+#define	X_INTRCNT	12
+		{ .n_name = "_intrcnt" },
+#define	X_EINTRCNT	13
+		{ .n_name = "_eintrcnt" },
+		{ .n_name = NULL },
 };
 
 /*
@@ -191,7 +194,7 @@ static struct nlist namelist[] = {
 #endif
 
 int
-initkre()
+initkre(void)
 {
 	char *intrnamebuf, *cp;
 	int i;
@@ -218,6 +221,7 @@ initkre()
     z./**/e = (t *)calloc(dk_ndrive, sizeof (t));
 		allocate(dk_time, long);
 		allocate(dk_wds, long);
+		allocate(dk_wps, long);
 		allocate(dk_seek, long);
 		allocate(dk_xfer, long);
 		once = 1;
@@ -259,7 +263,7 @@ initkre()
 }
 
 void
-fetchkre()
+fetchkre(void)
 {
 	time_t now;
 
@@ -270,7 +274,7 @@ fetchkre()
 }
 
 void
-labelkre()
+labelkre(void)
 {
 	register int i, j;
 
@@ -353,7 +357,7 @@ static	char cpuchar[CPUSTATES] = { '=' , '>', '-', ' ' };
 static	char cpuorder[CPUSTATES] = { CP_SYS, CP_USER, CP_NICE, CP_IDLE };
 
 void
-showkre()
+showkre(void)
 {
 	float f1, f2;
 	int psiz, inttotal;
@@ -361,7 +365,7 @@ showkre()
 	static int failcnt = 0;
 
 	for (i = 0; i < dk_ndrive; i++) {
-		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
+		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_wps); X(dk_time);
 	}
 	etime = 0;
 	for(i = 0; i < CPUSTATES; i++) {
@@ -435,14 +439,15 @@ showkre()
 	putfloat(avenrun[2], STATROW, STATCOL + 29, 6, 2, 0);
 	mvaddstr(STATROW, STATCOL + 53, buf);
 #define pgtokb(pg)	((pg) * cnt.v_page_size / 1024)
+#define sgtokb(sg)	((sg) * cnt.v_segment_size / 1024)
 	putint(pgtokb(total.t_arm), MEMROW + 2, MEMCOL + 3, 6);
-	putint(pgtokb(total.t_armshr), MEMROW + 2, MEMCOL + 9, 6);
+	putint(pgtokb(total.t_armtxt), MEMROW + 2, MEMCOL + 9, 6);
 	putint(pgtokb(total.t_avm), MEMROW + 2, MEMCOL + 15, 7);
-	putint(pgtokb(total.t_avmshr), MEMROW + 2, MEMCOL + 22, 7);
+	putint(pgtokb(total.t_avmtxt), MEMROW + 2, MEMCOL + 22, 7);
 	putint(pgtokb(total.t_rm), MEMROW + 3, MEMCOL + 3, 6);
-	putint(pgtokb(total.t_rmshr), MEMROW + 3, MEMCOL + 9, 6);
+	putint(pgtokb(total.t_rmtxt), MEMROW + 3, MEMCOL + 9, 6);
 	putint(pgtokb(total.t_vm), MEMROW + 3, MEMCOL + 15, 7);
-	putint(pgtokb(total.t_vmshr), MEMROW + 3, MEMCOL + 22, 7);
+	putint(pgtokb(total.t_vmtxt), MEMROW + 3, MEMCOL + 22, 7);
 	putint(pgtokb(total.t_free), MEMROW + 2, MEMCOL + 29, 6);
 	putint(total.t_rq - 1, PROCSROW + 1, PROCSCOL + 3, 3);
 	putint(total.t_pw, PROCSROW + 1, PROCSCOL + 6, 3);
@@ -456,11 +461,15 @@ showkre()
 	PUTRATE(Cnt.v_nzfod, VMSTATROW + 4, VMSTATCOL + 3, 6);
 	putfloat(cnt.v_nzfod == 0 ? 0.0 : (100.0 * cnt.v_zfod / cnt.v_nzfod),
 		 VMSTATROW + 5, VMSTATCOL + 2, 7, 2, 1);
-	putint(pgtokb(cnt.v_kernel_pages), VMSTATROW + 6, VMSTATCOL, 9);
-	putint(pgtokb(cnt.v_wire_count), VMSTATROW + 7, VMSTATCOL, 9);
-	putint(pgtokb(cnt.v_active_count), VMSTATROW + 8, VMSTATCOL, 9);
-	putint(pgtokb(cnt.v_inactive_count), VMSTATROW + 9, VMSTATCOL, 9);
-	putint(pgtokb(cnt.v_free_count), VMSTATROW + 10, VMSTATCOL, 9);
+	putint(pgtokb(cnt.v_page_in_kernel), VMSTATROW + 6, VMSTATCOL, 9);
+	putint(pgtokb(cnt.v_page_wire_count), VMSTATROW + 7, VMSTATCOL, 9);
+	putint(pgtokb(cnt.v_page_active_count), VMSTATROW + 8, VMSTATCOL, 9);
+	putint(pgtokb(cnt.v_page_inactive_count), VMSTATROW + 9, VMSTATCOL, 9);
+	putint(pgtokb(cnt.v_page_free_count), VMSTATROW + 10, VMSTATCOL, 9);
+	putint(sgtokb(cnt.v_segment_in_kernel), VMSTATROW + 6, VMSTATCOL, 9);
+	putint(sgtokb(cnt.v_segment_active_count), VMSTATROW + 8, VMSTATCOL, 9);
+	putint(sgtokb(cnt.v_segment_inactive_count), VMSTATROW + 9, VMSTATCOL, 9);
+	putint(sgtokb(cnt.v_segment_free_count), VMSTATROW + 10, VMSTATCOL, 9);
 	PUTRATE(Cnt.v_dfree, VMSTATROW + 11, VMSTATCOL, 9);
 	PUTRATE(Cnt.v_pfree, VMSTATROW + 12, VMSTATCOL, 9);
 	PUTRATE(Cnt.v_reactivated, VMSTATROW + 13, VMSTATCOL, 9);
@@ -529,7 +538,7 @@ cmdkre(cmd, args)
 
 /* calculate number of users on the system */
 static int
-ucount()
+ucount(void)
 {
 	register int nusers = 0;
 
@@ -615,6 +624,7 @@ getinfo(s, st)
 	NREAD(X_DK_TIME, s->dk_time, dk_ndrive * LONG);
 	NREAD(X_DK_XFER, s->dk_xfer, dk_ndrive * LONG);
 	NREAD(X_DK_WDS, s->dk_wds, dk_ndrive * LONG);
+	NREAD(X_DK_WPS, s->dk_wps, dk_ndrive * LONG);
 	NREAD(X_DK_SEEK, s->dk_seek, dk_ndrive * LONG);
 	NREAD(X_NCHSTATS, &s->nchstats, sizeof s->nchstats);
 	NREAD(X_INTRCNT, s->intrcnt, nintr * LONG);
@@ -643,7 +653,7 @@ static void
 copyinfo(from, to)
 	register struct Info *from, *to;
 {
-	long *time, *wds, *seek, *xfer;
+	long *time, *wds, *wps, *seek, *xfer;
 	long *intrcnt;
 
 	/*
@@ -651,11 +661,12 @@ copyinfo(from, to)
 	 * save the pointers before the structure copy and then 
 	 * copy by hand.
 	 */
-	time = to->dk_time; wds = to->dk_wds; seek = to->dk_seek;
+	time = to->dk_time; wds = to->dk_wds; wps = to->dk_wps; seek = to->dk_seek;
 	xfer = to->dk_xfer; intrcnt = to->intrcnt;
 	*to = *from;
 	bcopy(from->dk_time, to->dk_time = time, dk_ndrive * sizeof (long));
 	bcopy(from->dk_wds, to->dk_wds = wds, dk_ndrive * sizeof (long));
+	bcopy(from->dk_wps, to->dk_wps = wps, dk_ndrive * sizeof (long));
 	bcopy(from->dk_seek, to->dk_seek = seek, dk_ndrive * sizeof (long));
 	bcopy(from->dk_xfer, to->dk_xfer = xfer, dk_ndrive * sizeof (long));
 	bcopy(from->intrcnt, to->intrcnt = intrcnt, nintr * sizeof (int));

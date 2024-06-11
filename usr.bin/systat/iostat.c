@@ -94,7 +94,7 @@ static void stat1(int, int);
 
 
 WINDOW *
-openiostat()
+openiostat(void)
 {
 	return (subwin(stdscr, LINES-1-5, 0, 5, 0));
 }
@@ -111,7 +111,7 @@ closeiostat(w)
 }
 
 int
-initiostat()
+initiostat(void)
 {
 	if (namelist[X_DK_BUSY].n_type == 0) {
 		if (kvm_nlist(kd, namelist)) {
@@ -139,7 +139,7 @@ initiostat()
 }
 
 void
-fetchiostat()
+fetchiostat(void)
 {
 	if (namelist[X_DK_BUSY].n_type == 0)
 		return;
@@ -154,7 +154,7 @@ fetchiostat()
 #define	INSET	10
 
 void
-labeliostat()
+labeliostat(void)
 {
 	int row;
 
@@ -238,7 +238,7 @@ barlabels(row)
 
 
 void
-showiostat()
+showiostat(void)
 {
 	register long t;
 	register int i, row, col;

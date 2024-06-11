@@ -86,7 +86,7 @@ char **dr_name;
 #include "names.c"					/* XXX */
 
 int
-dkinit()
+dkinit(void)
 {
 	register int i;
 	register char *cp;

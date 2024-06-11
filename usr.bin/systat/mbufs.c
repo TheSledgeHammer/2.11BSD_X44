@@ -68,7 +68,7 @@ char *mtnames[] = {
 #define	NNAMES	(sizeof (mtnames) / sizeof (mtnames[0]))
 
 WINDOW *
-openmbufs()
+openmbufs(void)
 {
 	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
 }
@@ -93,7 +93,7 @@ labelmbufs()
 }
 
 void
-showmbufs()
+showmbufs(void)
 {
 	register int i, j, max, index;
 	char buf[10];
@@ -132,12 +132,12 @@ showmbufs()
 
 static struct nlist namelist[] = {
 #define	X_MBSTAT	0
-	{ "_mbstat" },
-	{ "" }
+	{ .n_name = "_mbstat" },
+	{ .n_name = NULL }
 };
 
 int
-initmbufs()
+initmbufs(void)
 {
 	if (namelist[X_MBSTAT].n_type == 0) {
 		if (kvm_nlist(kd, namelist)) {
@@ -151,11 +151,11 @@ initmbufs()
 	}
 	if (mb == 0)
 		mb = (struct mbstat *)calloc(1, sizeof (*mb));
-	return(1);
+	return (1);
 }
 
 void
-fetchmbufs()
+fetchmbufs(void)
 {
 	if (namelist[X_MBSTAT].n_type == 0)
 		return;

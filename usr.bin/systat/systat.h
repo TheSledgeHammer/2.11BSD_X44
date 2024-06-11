@@ -36,15 +36,15 @@
 #include <curses.h>
 
 struct cmdtab {
-	char    *c_name;		/* command name */
-    void    (*c_refresh)();		/* display refresh */
-    void    (*c_fetch)();		/* sets up data structures */
-    void    (*c_label)();		/* label display */
-	int		(*c_init)();		/* initialize namelist, etc. */
-	WINDOW	*(*c_open)();		/* open display */
-	void	(*c_close)();		/* close display */
-	int		(*c_cmd)();		/* display command interpreter */
-	char	c_flags;		/* see below */
+	char    *c_name;			/* command name */
+    void    (*c_refresh)(void);		/* display refresh */
+    void    (*c_fetch)(void);		/* sets up data structures */
+    void    (*c_label)(void);		/* label display */
+	int		(*c_init)(void);		/* initialize namelist, etc. */
+	WINDOW	*(*c_open)(void);		/* open display */
+	void	(*c_close)(WINDOW *);	/* close display */
+	int		(*c_cmd)(char *cmd, char *args);	/* display command interpreter */
+	char	c_flags;				/* see below */
 };
 
 #define	CF_INIT		0x1		/* been initialized */

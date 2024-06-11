@@ -47,7 +47,7 @@ static int 						mpxchan(int, int, void *, struct mpx *);
 /* channel functions */
 static struct mpx_channel 		*mpxchan_create(int, u_long, void *, int);
 static void						mpxchan_destroy(struct mpx_channel *);
-static void						mpxchan_insert_with_size(struct mpx *, int, u_long, void *);
+static void						mpxchan_insert(struct mpx *, int, u_long, void *);
 static void						mpxchan_remove(struct mpx *, int, void *);
 static struct mpx_channel 		*mpxchan_lookup(struct mpx *, int, void *);
 
@@ -216,7 +216,7 @@ mpx_channel_create(mpx, idx, size, data)
 	if (mpx->mpx_channel->mpc_refcnt == 0) {
 		idx = 0;
 	}
-	mpxchan_insert_with_size(mpx, idx, size, data);
+	mpxchan_insert(mpx, idx, size, data);
 	printf("mpx_channel_create: %d\n", idx);
 	return (0);
 }
@@ -266,7 +266,7 @@ mpx_channel_put(mpx, idx, size, data)
 			printf("mpx_channel_put: channel %d already exists\n", idx);
 			return (EEXIST);
 		}
-		mpxchan_insert_with_size(mpx, idx, size, data);
+		mpxchan_insert(mpx, idx, size, data);
 	} else {
 		printf("mpx_channel_put: channel %d doesn't exist\n", idx);
 		return (ENOMEM);
@@ -319,7 +319,7 @@ mpxchan_destroy(cp)
 }
 
 static void
-mpxchan_insert_with_size(mpx, idx, size, data)
+mpxchan_insert(mpx, idx, size, data)
 	struct mpx *mpx;
 	int idx;
 	u_long size;

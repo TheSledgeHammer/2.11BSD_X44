@@ -171,7 +171,7 @@ lookup(name)
 }
 
 void
-status()
+status(void)
 {
 
         error("Showing %s, refresh every %d seconds.",
