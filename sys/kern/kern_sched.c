@@ -44,6 +44,7 @@
 #include <sys/sched.h>
 #include <sys/sched_cfs.h>
 #include <sys/sched_edf.h>
+#include <sys/wait.h>
 
 #include <vm/include/vm.h>
 
@@ -308,7 +309,7 @@ int
 proc_create_nthreads(p)
 	struct proc *p;
 {
-	register struct thread *td;
+	struct thread *td;
 	int nthreads, error, i;
 
 	if ((p->p_flag & P_TDCREATE) == 0) {
