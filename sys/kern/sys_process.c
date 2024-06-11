@@ -158,11 +158,11 @@ procxmt(p)
 			rv = vm_map_protect(&p->p_vmspace->vm_map, sa, ea, VM_PROT_DEFAULT, FALSE);
 
 			if (rv == KERN_SUCCESS) {
-				vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, SEG_RW);
+				vm_estabur(p, u.u_dsize, u.u_ssize, u.u_tsize, u.u_sep, SEG_RW);
 				i = suiword((caddr_t) ipc.ip_addr, 0);
 				suiword((caddr_t) ipc.ip_addr, ipc.ip_data);
 				(void) vm_map_protect(&p->p_vmspace->vm_map, sa, ea, VM_PROT_READ | VM_PROT_EXECUTE, FALSE);
-				vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, SEG_RO);
+				vm_estabur(p, u.u_dsize, u.u_ssize, u.u_tsize, u.u_sep, SEG_RO);
 			}
 		}
 		if (i < 0)
