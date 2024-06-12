@@ -4,14 +4,14 @@
 .include <bsd.own.mk>
 
 SUBDIR= apply ar asa at 											\
-		banner base64 basename bzip2 bzip2recover							\
-		c11 c89 c99 cap_mkdb cksum cmp col colcrt colrm column comm \
-		compress crontab crunch csplit ctags cut 					\
-		db deroff dirname du										\
-		elf2aout elf2ecoff env error expand								\
+		banner base64 basename bzip2 bzip2recover					\
+		c11 c89 c99 cal cap_mkdb cksum cmp col colcrt colrm column 	\
+		comm compress crontab crunch csplit ctags cut 				\
+		db dc deroff dirname du										\
+		elf2aout elf2ecoff env error expand							\
 		false fdformat find finger fmt fold fpr fsplit fstat ftp    \
-		gcore genassym gencat getaddrinfo getopt getconf gettext 	\
-		gprof														\
+		gcore genassym gencat getaddrinfo getopt getconf getent 	\
+		gettext gprof												\
 		head hexdump 												\
         id indent iostat                                            \
 		join jot													\
@@ -20,7 +20,7 @@ SUBDIR= apply ar asa at 											\
 		logname look lorder 										\
 		m4 machine make man menuc mkdep mkerrlst mkfifo mklocale 	\
 		mkstr mktemp msgc msgs                                      \
-        nbperf nc netgroup netstat nice nl nohup                       \
+        nbperf nc netgroup netstat nice nl nohup                    \
         pagesize paste patch pathchk pr printenv printf				\
 		renice rev rpcgen rpcinfo									\
 		script sed shar shlock showmount sort sortinfo spell split 	\
