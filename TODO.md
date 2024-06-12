@@ -15,8 +15,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## lib:
 - libc:
-	- sys:
-		- move mpx to usr.lib/libmpx
 
 ## libexec:
 - add:
@@ -45,9 +43,11 @@ A General todo list. Don't hesitate to add to this list. :)
 		- needs acpica.
 
 ## usr.bin:
+- Systat:
+	- add: ifcmds, ifstat, icmp, ip, ip6, tcp
 - Add: More critical software
 	- Generic:
-		- cal, calendar, error, getent, nc, systat, tabs, tee, tr
+		- cal, calendar, getent, tr
 	- Filesystem:
 		- quota
 	- Network:
@@ -65,7 +65,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	- Filesystem:
 		- edquota, quot, quotaon, repquota
 	- Network:
-		- altq, inetd, sliplogin, rwhod, trpt, trsp
+		- altq, inetd, rwhod, trpt, trsp
 
 # usr/sys/ (Kernel):
 ## conf:

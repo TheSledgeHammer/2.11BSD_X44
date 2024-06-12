@@ -196,11 +196,11 @@ thread_reparent(from, to, td)
 		thread_add(to, td);
 
 		if (isrq == 1) {
-			thread_setrq(to, td);
+//			thread_setrq(to, td);
 			isrq = 0;
 		}
 		if (issq == 1) {
-			thread_setsq(to, td);
+//			thread_setsq(to, td);
 			issq = 0;
 		}
 	}
@@ -1019,7 +1019,11 @@ thread_killpg1(p, signo, pgrp, all)
 		}
 		f++;
 		if (signo) {
-			thread_psignal(p, signo, !all);
+			if (!all) {
+				thread_psignal(p, signo, !all);
+			} else {
+				thread_psignal(p, signo, all);
+			}
 		}
 	}
 	return (error ? error : (f == 0 ? ESRCH : 0));

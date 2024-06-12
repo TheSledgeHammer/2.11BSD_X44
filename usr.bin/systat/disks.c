@@ -38,6 +38,8 @@ static char sccsid[] = "@(#)disks.c	8.1 (Berkeley) 6/6/93";
 #include <sys/types.h>
 #include <sys/buf.h>
 
+#include <sys/disk.h>
+
 #include <nlist.h>
 #include <ctype.h>
 #include <paths.h>
@@ -47,94 +49,84 @@ static char sccsid[] = "@(#)disks.c	8.1 (Berkeley) 6/6/93";
 #include "extern.h"
 
 static void dkselect(char *, int, int []);
-static int read_names(void);
 
 static struct nlist namelist[] = {
 #define	X_DK_NDRIVE	0
-	{ "_dk_ndrive" },
+		{ .n_name = "_dk_ndrive" },
 #define	X_DK_WPMS	1
-	{ "_dk_wpms" },
-#ifdef vax
-#define	X_MBDINIT	(X_DK_WPMS+1)
-	{ "_mbdinit" },
-#define	X_UBDINIT	(X_DK_WPMS+2)
-	{ "_ubdinit" },
-#endif
-#ifdef sun
-#define	X_MBDINIT	(X_DK_WPMS+1)
-	{ "_mbdinit" },
-#endif
-#ifdef tahoe
-#define	X_VBDINIT	(X_DK_WPMS+1)
-	{ "_vbdinit" },
-#endif
-#if defined(hp300) || defined(luna68k)
-#define X_HPDINIT       (X_DK_WPMS+1)
-        { "_hp_dinit" }, 
-#endif
-#ifdef mips
-#define X_SCSI_DINIT	(X_DK_WPMS+1)
-	{ "_scsi_dinit" },
-#endif
-	{ "" },
+		{ .n_name = "_dk_wpms" },
+#define	X_DK_DISKLIST	2
+		{ .n_name = "_dk_disklist" },
+		{ .n_name = NULL },
 };
 
 float *dk_mspw;
 int dk_ndrive, *dk_select;
 char **dr_name;
-
-#include "names.c"					/* XXX */
+static struct dkdevice *dk_drivehead = NULL;
 
 int
 dkinit(void)
 {
+	struct disklist_head disk_head;
+	struct dkdevice	cur_disk, *p;
 	register int i;
 	register char *cp;
 	static int once = 0;
 	static char buf[1024];
 
-	if (once)
-		return(1);
+	if (once) {
+		return (1);
+	}
 
 	if (kvm_nlist(kd, namelist)) {
 		nlisterr(namelist);
-		return(0);
+		return (0);
 	}
 	if (namelist[X_DK_NDRIVE].n_value == 0) {
 		error("dk_ndrive undefined in kernel");
-		return(0);
+		return (0);
 	}
 	NREAD(X_DK_NDRIVE, &dk_ndrive, LONG);
 	if (dk_ndrive <= 0) {
 		error("dk_ndrive=%d according to %s", dk_ndrive, _PATH_UNIX);
-		return(0);
+		return (0);
 	}
-	dk_mspw = (float *)calloc(dk_ndrive, sizeof (float));
+	dk_mspw = (float*) calloc(dk_ndrive, sizeof(float));
 	{
-		long *wpms = (long *)calloc(dk_ndrive, sizeof(long));
-		KREAD(NPTR(X_DK_WPMS), wpms, dk_ndrive * sizeof (long));
+		long *wpms = (long*) calloc(dk_ndrive, sizeof(long));
+		KREAD(NPTR(X_DK_WPMS), wpms, dk_ndrive * sizeof(long));
 		for (i = 0; i < dk_ndrive; i++)
-			*(dk_mspw + i) = (*(wpms + i) == 0)? 0.0:
-			                 (float) 1.0 / *(wpms + i);
+			*(dk_mspw + i) =
+					(*(wpms + i) == 0) ? 0.0 : (float) 1.0 / *(wpms + i);
 		free(wpms);
 	}
-	dr_name = (char **)calloc(dk_ndrive, sizeof (char *));
-	dk_select = (int *)calloc(dk_ndrive, sizeof (int));
-	for (cp = buf, i = 0; i < dk_ndrive; i++) {
-		dr_name[i] = cp;
-		sprintf(dr_name[i], "dk%d", i);
-		cp += strlen(dr_name[i]) + 1;
-		if (dk_mspw[i] != 0.0)
-			dk_select[i] = 1;
-	}
-	if (!read_names()) {
+	dr_name = (char**) calloc(dk_ndrive, sizeof(char*));
+	dk_select = (int*) calloc(dk_ndrive, sizeof(int));
+	NREAD(X_DK_DISKLIST, &disk_head, sizeof(disk_head));
+	dk_drivehead = TAILQ_FIRST(disk_head);
+	p = dk_drivehead;
+	if (p != NULL) {
+		for (cp = buf, i = 0; i < dk_ndrive; i++) {
+			KREAD(p, &cur_disk, sizeof(cur_disk));
+			KREAD(cur_disk.dk_name, cp, sizeof(cp));
+			dr_name[i] = strdup(cp);
+			sprintf(dr_name[i], "dk%d", i);
+			cp += strlen(dr_name[i]) + 1;
+			if (dk_mspw[i] != 0.0) {
+				dk_select[i] = 1;
+			}
+			p = TAILQ_NEXT(cur_disk, dk_link);
+		}
+	} else {
 		free(dr_name);
 		free(dk_select);
 		free(dk_mspw);
-		return(0);
+		return (0);
 	}
+
 	once = 1;
-	return(1);
+	return (1);
 }
 
 int
@@ -152,7 +144,8 @@ dkcmd(cmd, args)
 	if (prefix(cmd, "drives")) {
 		register int i;
 
-		move(CMDLINE, 0); clrtoeol();
+		move(CMDLINE, 0);
+		clrtoeol();
 		for (i = 0; i < dk_ndrive; i++)
 			if (dk_mspw[i] != 0.0)
 				printw("%s ", dr_name[i]);
@@ -168,7 +161,7 @@ dkselect(args, truefalse, selections)
 {
 	register char *cp;
 	register int i;
-	char *index();
+	//char *index();
 
 	cp = index(args, '\n');
 	if (cp)
@@ -188,8 +181,7 @@ dkselect(args, truefalse, selections)
 				if (dk_mspw[i] != 0.0)
 					selections[i] = truefalse;
 				else
-					error("%s: drive not configured",
-					    dr_name[i]);
+					error("%s: drive not configured", dr_name[i]);
 				break;
 			}
 		if (i >= dk_ndrive)

@@ -24,6 +24,7 @@ static char *proto_aliases[MAXALIASES];
 static char *any();
 int _proto_stayopen;
 
+void
 setprotoent(f)
 	int f;
 {
@@ -34,7 +35,8 @@ setprotoent(f)
 	_proto_stayopen |= f;
 }
 
-endprotoent()
+void
+endprotoent(void)
 {
 	if (protof) {
 		fclose(protof);
@@ -44,7 +46,7 @@ endprotoent()
 }
 
 struct protoent *
-getprotoent()
+getprotoent(void)
 {
 	char *p;
 	register char *cp, **q;

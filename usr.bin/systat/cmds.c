@@ -40,38 +40,39 @@ static char sccsid[] = "@(#)cmds.c	8.2 (Berkeley) 4/29/95";
 #include <signal.h>
 #include <ctype.h>
 #include <string.h>
+
 #include "systat.h"
 #include "extern.h"
 
 void
 command(cmd)
-        char *cmd;
+	char *cmd;
 {
-        register struct cmdtab *p;
-        register char *cp;
+	register struct cmdtab *p;
+    register char *cp;
 	int interval, omask;
 
 	omask = sigblock(sigmask(SIGALRM));
-        for (cp = cmd; *cp && !isspace(*cp); cp++)
-                ;
-        if (*cp)
-                *cp++ = '\0';
+	for (cp = cmd; *cp && !isspace(*cp); cp++)
+		;
+	if (*cp)
+		*cp++ = '\0';
 	if (*cmd == '\0')
 		return;
 	for (; *cp && isspace(*cp); cp++)
 		;
-        if (strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0)
-                die(0);
+	if (strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0)
+		die(0);
 	if (strcmp(cmd, "load") == 0) {
 		load();
 		goto done;
 	}
-        if (strcmp(cmd, "stop") == 0) {
-                alarm(0);
-                mvaddstr(CMDLINE, 0, "Refresh disabled.");
-                clrtoeol();
+	if (strcmp(cmd, "stop") == 0) {
+		alarm(0);
+		mvaddstr(CMDLINE, 0, "Refresh disabled.");
+		clrtoeol();
 		goto done;
-        }
+	}
 	if (strcmp(cmd, "help") == 0) {
 		int col, len;
 
@@ -80,7 +81,8 @@ command(cmd)
 			len = strlen(p->c_name);
 			if (col + len > COLS)
 				break;
-			addstr(p->c_name); col += len;
+			addstr(p->c_name);
+			col += len;
 			if (col + 1 < COLS)
 				addch(' ');
 		}
@@ -88,30 +90,30 @@ command(cmd)
 		goto done;
 	}
 	interval = atoi(cmd);
-        if (interval <= 0 &&
-	    (strcmp(cmd, "start") == 0 || strcmp(cmd, "interval") == 0)) {
+	if (interval <= 0
+			&& (strcmp(cmd, "start") == 0 || strcmp(cmd, "interval") == 0)) {
 		interval = *cp ? atoi(cp) : naptime;
-                if (interval <= 0) {
+		if (interval <= 0) {
 			error("%d: bad interval.", interval);
 			goto done;
-                }
+		}
 	}
 	if (interval > 0) {
-                alarm(0);
-                naptime = interval;
-                display(0);
-                status();
+		alarm(0);
+		naptime = interval;
+		display(0);
+		status();
 		goto done;
-        }
+	}
 	p = lookup(cmd);
-	if (p == (struct cmdtab *)-1) {
+	if (p == (struct cmdtab*) -1) {
 		error("%s: Ambiguous command.", cmd);
 		goto done;
 	}
-        if (p) {
-                if (curcmd == p)
+	if (p) {
+		if (curcmd == p)
 			goto done;
-                alarm(0);
+		alarm(0);
 		(*curcmd->c_close)(wnd);
 		wnd = (*p->c_open)();
 		if (wnd == 0) {
@@ -129,12 +131,12 @@ command(cmd)
 			else
 				goto done;
 		}
-                curcmd = p;
+		curcmd = p;
 		labels();
-                display(0);
-                status();
+		display(0);
+		status();
 		goto done;
-        }
+	}
 	if (curcmd->c_cmd == 0 || !(*curcmd->c_cmd)(cmd, cp))
 		error("%s: Unknown command.", cmd);
 done:
@@ -151,12 +153,12 @@ lookup(name)
 
 	longest = 0;
 	nmatches = 0;
-	found = (struct cmdtab *) 0;
-	for (c = cmdtab; p = c->c_name; c++) {
+	found = (struct cmdtab*) 0;
+	for (c = cmdtab; p == c->c_name; c++) {
 		for (q = name; *q == *p++; q++)
-			if (*q == 0)		/* exact match? */
+			if (*q == 0) /* exact match? */
 				return (c);
-		if (!*q) {			/* the name was a prefix */
+		if (!*q) { /* the name was a prefix */
 			if (q - name > longest) {
 				longest = q - name;
 				nmatches = 1;
@@ -166,7 +168,7 @@ lookup(name)
 		}
 	}
 	if (nmatches != 1)
-		return ((struct cmdtab *)-1);
+		return ((struct cmdtab*) -1);
 	return (found);
 }
 
@@ -174,8 +176,7 @@ void
 status(void)
 {
 
-        error("Showing %s, refresh every %d seconds.",
-          curcmd->c_name, naptime);
+	error("Showing %s, refresh every %d seconds.", curcmd->c_name, naptime);
 }
 
 int
@@ -183,10 +184,10 @@ prefix(s1, s2)
         register char *s1, *s2;
 {
 
-        while (*s1 == *s2) {
-                if (*s1 == '\0')
-                        return (1);
-                s1++, s2++;
-        }
-        return (*s1 == '\0');
+	while (*s1 == *s2) {
+		if (*s1 == '\0')
+			return (1);
+		s1++, s2++;
+	}
+	return (*s1 == '\0');
 }

@@ -159,8 +159,7 @@ edf_schedcpu(p)
 		sched_check_threads(sc, p);
 		return (0);
 	} else {
-		panic("edf_schedpu: edf_test failed");
-		reschedule(p);
+		//reschedule(p);
 		error = P_EDFFAIL;
 	}
 	return (error);

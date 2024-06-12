@@ -439,7 +439,7 @@ showkre(void)
 	putfloat(avenrun[2], STATROW, STATCOL + 29, 6, 2, 0);
 	mvaddstr(STATROW, STATCOL + 53, buf);
 #define pgtokb(pg)	((pg) * cnt.v_page_size / 1024)
-#define sgtokb(sg)	((sg) * cnt.v_segment_size / 1024)
+#define sgtomb(sg)	((sg) * cnt.v_segment_size / 1048576)
 	putint(pgtokb(total.t_arm), MEMROW + 2, MEMCOL + 3, 6);
 	putint(pgtokb(total.t_armtxt), MEMROW + 2, MEMCOL + 9, 6);
 	putint(pgtokb(total.t_avm), MEMROW + 2, MEMCOL + 15, 7);
@@ -466,10 +466,10 @@ showkre(void)
 	putint(pgtokb(cnt.v_page_active_count), VMSTATROW + 8, VMSTATCOL, 9);
 	putint(pgtokb(cnt.v_page_inactive_count), VMSTATROW + 9, VMSTATCOL, 9);
 	putint(pgtokb(cnt.v_page_free_count), VMSTATROW + 10, VMSTATCOL, 9);
-	putint(sgtokb(cnt.v_segment_in_kernel), VMSTATROW + 6, VMSTATCOL, 9);
-	putint(sgtokb(cnt.v_segment_active_count), VMSTATROW + 8, VMSTATCOL, 9);
-	putint(sgtokb(cnt.v_segment_inactive_count), VMSTATROW + 9, VMSTATCOL, 9);
-	putint(sgtokb(cnt.v_segment_free_count), VMSTATROW + 10, VMSTATCOL, 9);
+	putint(sgtomb(cnt.v_segment_in_kernel), VMSTATROW + 6, VMSTATCOL, 9);
+	putint(sgtomb(cnt.v_segment_active_count), VMSTATROW + 8, VMSTATCOL, 9);
+	putint(sgtomb(cnt.v_segment_inactive_count), VMSTATROW + 9, VMSTATCOL, 9);
+	putint(sgtomb(cnt.v_segment_free_count), VMSTATROW + 10, VMSTATCOL, 9);
 	PUTRATE(Cnt.v_dfree, VMSTATROW + 11, VMSTATCOL, 9);
 	PUTRATE(Cnt.v_pfree, VMSTATROW + 12, VMSTATCOL, 9);
 	PUTRATE(Cnt.v_reactivated, VMSTATROW + 13, VMSTATCOL, 9);

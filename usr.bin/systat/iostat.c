@@ -48,32 +48,22 @@ static char sccsid[] = "@(#)iostat.c	8.1 (Berkeley) 6/6/93";
 
 static struct nlist namelist[] = {
 #define X_DK_BUSY	0
-	{ "_dk_busy" },
+		{ .n_name = "_dk_busy" },
 #define X_DK_TIME	1
-	{ "_dk_time" },
+		{ .n_name = "_dk_time" },
 #define X_DK_XFER	2
-	{ "_dk_xfer" },
+		{ .n_name = "_dk_xfer" },
 #define X_DK_WDS	3
-	{ "_dk_wds" },
+		{ .n_name = "_dk_wds" },
 #define X_DK_SEEK	4
-	{ "_dk_seek" },
+		{ .n_name = "_dk_seek" },
 #define X_CP_TIME	5
-	{ "_cp_time" },
-#ifdef vax
-#define X_MBDINIT	(X_CP_TIME+1)
-	{ "_mbdinit" },
-#define X_UBDINIT	(X_CP_TIME+2)
-	{ "_ubdinit" },
-#endif
-#ifdef tahoe
-#define	X_VBDINIT	(X_CP_TIME+1)
-	{ "_vbdinit" },
-#endif
-	{ "" },
+		{ .n_name = "_cp_time" },
+		{ .n_name = NULL },
 };
 
 static struct {
-	int	dk_busy;
+	int		dk_busy;
 	long	cp_time[CPUSTATES];
 	long	*dk_time;
 	long	*dk_wds;
@@ -123,7 +113,7 @@ initiostat(void)
 			return(0);
 		}
 	}
-	if (! dkinit())
+	if (!dkinit())
 		return(0);
 	if (dk_ndrive) {
 #define	allocate(e, t) \

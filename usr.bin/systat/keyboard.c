@@ -38,6 +38,8 @@ static char sccsid[] = "@(#)keyboard.c	8.1 (Berkeley) 6/6/93";
 #include <ctype.h>
 #include <signal.h>
 #include <termios.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "systat.h"
 #include "extern.h"

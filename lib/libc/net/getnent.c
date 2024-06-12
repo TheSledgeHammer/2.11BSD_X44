@@ -47,7 +47,7 @@ setnetent(f)
 }
 
 void
-endnetent()
+endnetent(void)
 {
 	endhostent();
 	if (netf) {
@@ -58,7 +58,7 @@ endnetent()
 }
 
 struct netent *
-getnetent()
+getnetent(void)
 {
 	char *p;
 	register char *cp, **q;

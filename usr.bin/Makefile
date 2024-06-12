@@ -24,7 +24,7 @@ SUBDIR= apply ar asa at 											\
         pagesize paste patch pathchk pr printenv printf				\
 		renice rev rpcgen rpcinfo									\
 		script sed shar shlock showmount sort sortinfo spell split 	\
-		stat strfile su												\
+		stat strfile su	systat										\
 		tabs tail tcopy tee tftp tic time tip touch tput true tset 	\
 		tsort tty													\
 		ul uname unexpand unifdef uniq unstr unvis unzip users 		\

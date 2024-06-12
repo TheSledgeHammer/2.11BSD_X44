@@ -46,16 +46,18 @@ static char sccsid[] = "@(#)main.c	8.1 (Berkeley) 6/6/93";
 #include <nlist.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdarg.h>
+
 #include "systat.h"
 #include "extern.h"
 
 static struct nlist namelist[] = {
 #define X_FIRST		0
 #define	X_HZ		0
-	{ "_hz" },
-#define	X_STATHZ		1
-	{ "_stathz" },
-	{ "" }
+		{ .n_name = "_hz" },
+#define	X_STATHZ	1
+		{ .n_name = "_stathz" },
+		{ .n_name = NULL }
 };
 static int     dellave;
 
@@ -223,30 +225,14 @@ die(signo)
 	exit(0);
 }
 
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-#if __STDC__
 void
 error(const char *fmt, ...)
-#else
-void
-error(fmt, va_alist)
-	char *fmt;
-	va_dcl
-#endif
 {
 	va_list ap;
 	char buf[255];
 	int oy, ox;
-#if __STDC__
+
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
 
 	if (wnd) {
 		getyx(stdscr, oy, ox);
