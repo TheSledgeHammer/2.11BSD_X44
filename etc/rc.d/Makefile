@@ -8,7 +8,8 @@ CONFIGFILES=	DAEMON DISKS LOGIN NETWORKING SERVERS 		\
 				bootconf.sh bootparams						\
 				ccd cron                                    \
                 dmesg                                       \
-                fsck                                        \
+                fsck ftpd                                   \
+                httpd                                       \
                 identd ipsec                                \
                 ldconfig local 				                \
 				makemandb motd mountcritlocal mountd moused \
@@ -16,13 +17,16 @@ CONFIGFILES=	DAEMON DISKS LOGIN NETWORKING SERVERS 		\
                 named network                               \
                 pf pflogd ppp                               \
                 root route6d routed rpcbind                 \
-                savecore securelevel swap1 swap2            \
+                savecore securelevel swap1 swap2 sysdb      \
 				timed ttys                                  \
-                wscons wsmoused 							\
-				ypbind yppasswdd ypserv
+                wscons wsmoused 							
 
 FILESDIR=		/etc/rc.d
 FILESMODE=		${BINMODE}
+
+.if ${MKYP} != "no"
+CONFIGFILES+=	ypbind yppasswdd ypserv
+.endif
 
 NOPROG= noprog
 
