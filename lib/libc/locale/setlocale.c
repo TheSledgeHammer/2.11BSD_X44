@@ -59,26 +59,26 @@ static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
  * Category names for getenv()
  */
 static char *categories[_LC_LAST] = {
-    "LC_ALL",
-    "LC_COLLATE",
-    "LC_CTYPE",
-    "LC_MONETARY",
-    "LC_NUMERIC",
-    "LC_TIME",
-	"LC_MESSAGES",
+		"LC_ALL",
+		"LC_COLLATE",
+		"LC_CTYPE",
+		"LC_MONETARY",
+		"LC_NUMERIC",
+		"LC_TIME",
+		"LC_MESSAGES",
 };
 
 /*
  * Current locales for each category
  */
 static char current_categories[_LC_LAST][32] = {
-    "C",
-    "C",
-    "C",
-    "C",
-    "C",
-    "C",
-    "C",
+		"C",
+		"C",
+		"C",
+		"C",
+		"C",
+		"C",
+		"C",
 };
 
 /*
@@ -90,6 +90,7 @@ static char current_locale_string[_LC_LAST * 33];
 
 static char	*currentlocale(void);
 static char	*loadlocale(int);
+static void	showpathlocale(char *, int);
 
 char *
 __setlocale(category, locale)
@@ -196,13 +197,13 @@ setlocale(category, locale)
 }
 
 static char *
-currentlocale()
+currentlocale(void)
 {
 	int i;
 
 	(void)strcpy(current_locale_string, current_categories[1]);
 
-	for (i = 2; i < _LC_LAST; ++i)
+	for (i = 2; i < _LC_LAST; ++i) {
 		if (strcmp(current_categories[1], current_categories[i])) {
 			(void)snprintf(current_locale_string,
 			    sizeof(current_locale_string), "%s/%s/%s/%s/%s",
@@ -211,6 +212,7 @@ currentlocale()
 			    current_categories[5]);
 			break;
 		}
+	}
 	return (current_locale_string);
 }
 
@@ -218,36 +220,38 @@ static char *
 loadlocale(category)
 	int category;
 {
-	char name[PATH_MAX];
+	char *newcat;
+	char *curcat;
 	int (*func)(const char *);
 
-	if (strcmp(new_categories[category], current_categories[category]) == 0)
-		return (current_categories[category]);
+	newcat = new_categories[category];
+	curcat = current_categories[category];
 
-	if (category == LC_CTYPE) {
-		if (setrunelocale(new_categories[LC_CTYPE]))
-			return (NULL);
-		(void) strcpy(current_categories[LC_CTYPE], new_categories[LC_CTYPE]);
-		return (current_categories[LC_CTYPE]);
+	if (strcmp(newcat, curcat) == 0) {
+		return (curcat);
 	}
 
-	if (!strcmp(new_categories[category], "C")
-			|| !strcmp(new_categories[category], "POSIX")) {
-
+	if (category == LC_CTYPE) {
+		if (setrunelocale(newcat)) {
+			return (NULL);
+		}
+		(void)strcpy(curcat, newcat);
+		return (curcat);
+	}
+	if (!strcmp(newcat, "C") || !strcmp(newcat, "POSIX")) {
 		/*
 		 * Some day this will need to reset the locale to the default
 		 * C locale.  Since we have no way to change them as of yet,
 		 * there is no need to reset them.
 		 */
-		(void) strcpy(current_categories[category], new_categories[category]);
-		return (current_categories[category]);
+		(void)strcpy(curcat, newcat);
+		return (curcat);
 	}
 
 	/*
 	 * Some day we will actually look at this file.
 	 */
-	(void) snprintf(name, sizeof(name), "%s/%s/%s", PathLocale,
-			new_categories[category], categories[category]);
+	showpathlocale(PathLocale, category);
 
 	switch (category) {
 	case LC_COLLATE:
@@ -268,4 +272,14 @@ loadlocale(category)
 	}
 
 	return (NULL);
+}
+
+static void
+showpathlocale(path, category)
+	char *path;
+	int category;
+{
+	char name[PATH_MAX];
+
+	(void)snprintf(name, sizeof(name), "%s/%s/%s", path, new_categories[category], categories[category]);
 }
