@@ -85,7 +85,6 @@ static char current_categories[_LC_LAST][32] = {
  * The locales we are going to try and load
  */
 static char new_categories[_LC_LAST][32];
-
 static char current_locale_string[_LC_LAST * 33];
 
 static char	*currentlocale(void);
@@ -263,11 +262,11 @@ loadlocale(category)
 	case LC_NUMERIC:
 		func = __numeric_load_locale;
 		break;
-	case LC_MESSAGES:
-		func = __messages_load_locale;
-		break;
 	case LC_TIME:
 		func = __time_load_locale;
+		break;
+	case LC_MESSAGES:
+		func = __messages_load_locale;
 		break;
 	}
 

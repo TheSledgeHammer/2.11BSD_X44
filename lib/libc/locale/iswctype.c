@@ -80,8 +80,7 @@ __isctype_wl(c, f, locale)
 	_RuneType f;
 	locale_t locale;
 {
-	_RuneLocale *rl = _RUNE_LOCALE(locale);
-	return (!!(__runetype_wl(c) & f));
+	return (!!(__runetype_wl(c, locale) & f));
 }
 
 #endif

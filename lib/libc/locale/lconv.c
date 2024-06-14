@@ -63,6 +63,12 @@ static struct lconv C_lconv = {
 		CHAR_MAX,		/* n_sep_by_space */
 		CHAR_MAX,		/* p_sign_posn */
 		CHAR_MAX,		/* n_sign_posn */
+		CHAR_MAX,		/* int_p_cs_precedes */
+		CHAR_MAX,		/* int_n_cs_precedes */
+		CHAR_MAX,		/* int_p_sep_by_space */
+		CHAR_MAX,		/* int_n_sep_by_space */
+		CHAR_MAX,		/* int_p_sign_posn */
+		CHAR_MAX,		/* int_n_sign_posn */
 };
 
 /*

@@ -29,7 +29,7 @@
 #ifndef _LMESSAGES_H_
 #define	_LMESSAGES_H_
 
-struct	lc_messages_T {
+struct lc_messages_T {
 	const char	*yesexpr;
 	const char	*noexpr;
 	const char	*yesstr;

@@ -39,9 +39,9 @@ extern const char *__fix_locale_grouping_str(const char *);
 static char	numempty[] = { CHAR_MAX, '\0' };
 
 static const struct lc_numeric_T _C_numeric_locale = {
-	".",     	/* decimal_point */
-	"",     	/* thousands_sep */
-	numempty	/* grouping */
+		".",     	/* decimal_point */
+		"",     	/* thousands_sep */
+		numempty	/* grouping */
 };
 
 static struct lc_numeric_T _numeric_locale;

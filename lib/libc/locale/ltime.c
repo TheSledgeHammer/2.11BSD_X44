@@ -44,63 +44,65 @@ __FBSDID("$FreeBSD$");
 #define	LCTIME_SIZE (sizeof(struct lc_time_T) / sizeof(char *))
 
 static const struct lc_time_T	_C_time_locale = {
-	{
-		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-	}, {
-		"January", "February", "March", "April", "May", "June",
-		"July", "August", "September", "October", "November", "December"
-	}, {
-		"Sun", "Mon", "Tue", "Wed",
-		"Thu", "Fri", "Sat"
-	}, {
-		"Sunday", "Monday", "Tuesday", "Wednesday",
-		"Thursday", "Friday", "Saturday"
-	},
+		{
+				"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+		},
+		{
+				"January", "February", "March", "April", "May", "June",
+				"July", "August", "September", "October", "November", "December"
+		},
+		{
+				"Sun", "Mon", "Tue", "Wed",
+				"Thu", "Fri", "Sat"
+		},
+		{
+				"Sunday", "Monday", "Tuesday", "Wednesday",
+				"Thursday", "Friday", "Saturday"
+		},
+		/* X_fmt */
+		"%H:%M:%S",
 
-	/* X_fmt */
-	"%H:%M:%S",
+		/*
+		 * x_fmt
+		 * Since the C language standard calls for
+	 	 * "date, using locale's date format," anything goes.
+	 	 * Using just numbers (as here) makes Quakers happier;
+	 	 * it's also compatible with SVR4.
+	 	 */
+		"%m/%d/%y",
 
-	/*
-	 * x_fmt
-	 * Since the C language standard calls for
-	 * "date, using locale's date format," anything goes.
-	 * Using just numbers (as here) makes Quakers happier;
-	 * it's also compatible with SVR4.
-	 */
-	"%m/%d/%y",
+		/*
+		 * c_fmt
+		 */
+		"%a %b %e %H:%M:%S %Y",
 
-	/*
-	 * c_fmt
-	 */
-	"%a %b %e %H:%M:%S %Y",
+		/* am */
+		"AM",
 
-	/* am */
-	"AM",
+		/* pm */
+		"PM",
 
-	/* pm */
-	"PM",
+		/* date_fmt */
+		"%a %b %e %H:%M:%S %Z %Y",
 
-	/* date_fmt */
-	"%a %b %e %H:%M:%S %Z %Y",
+		/* alt_month
+		 * Standalone months forms for %OB
+		 */
+		{
+				"January", "February", "March", "April", "May", "June",
+				"July", "August", "September", "October", "November", "December"
+		},
 
-	/* alt_month
-	 * Standalone months forms for %OB
-	 */
-	{
-		"January", "February", "March", "April", "May", "June",
-		"July", "August", "September", "October", "November", "December"
-	},
+		/* md_order
+		 * Month / day order in dates
+		 */
+		"md",
 
-	/* md_order
-	 * Month / day order in dates
-	 */
-	"md",
-
-	/* ampm_fmt
-	 * To determine 12-hour clock format time (empty, if N/A)
-	 */
-	"%I:%M:%S %p"
+		/* ampm_fmt
+		 * To determine 12-hour clock format time (empty, if N/A)
+		 */
+		"%I:%M:%S %p"
 };
 
 static struct lc_time_T _time_locale;

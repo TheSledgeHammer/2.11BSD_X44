@@ -53,6 +53,7 @@ static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 #include "runefile.h"
 #include "setlocale.h"
 
+#ifdef notyet
 extern int			_none_init(_RuneLocale *);
 extern int			_UES_init(_RuneLocale *);
 extern int			_UTF1632_init(_RuneLocale *);
@@ -60,134 +61,10 @@ extern int			_UTF2_init(_RuneLocale *);
 extern int			_UTF8_init(_RuneLocale *);
 extern int			_EUC_init(_RuneLocale *);
 extern int			_ISO2022_init(_RuneLocale *);
+#endif notyet
 static _RuneLocale	*_Read_RuneMagi(FILE *);
 
 static char *PathLocale = 0;
-
-#ifdef notyet
-#include <sys/queue.h>
-
-void 	addrunelocale(_RuneLocale *, char *, int (*)(_RuneLocale *));
-void	delrunelocale(char *);
-
-struct localetable_head;
-LIST_HEAD(localetable_head, localetable);
-struct localetable {
-	char 		encoding[32];
-	//int 		index;
-	int 		(*init)(_RuneLocale *);
-	_RuneLocale *runelocale;
-	LIST_ENTRY(localetable) next;
-};
-
-struct localetable_head lthead = LIST_HEAD_INITIALIZER(lthead);
-
-struct localetable *
-lookuplocaletable(char *encoding/*, int index*/)
-{
-    struct localetable *lt = NULL;
-
-    LIST_FOREACH(lt, &lthead, next) {
-        if ((!strcmp(encoding, lt->encoding))/* && (lt->index == index)*/) {
-            return (lt);
-        }
-    }
-    return (NULL);
-}
-
-int
-initlocaletable(encoding)
-	char *encoding;
-{
-	struct localetable *lt;
-	int ret;
-
-	lt = lookuplocaletable(encoding);
-	if (lt == NULL) {
-		ret = EINVAL;
-	} else {
-		ret = (*lt->init)(lt->runelocale);
-	}
-
-	return (ret);
-}
-
-void
-loadlocaletable(rl)
-	_RuneLocale *rl;
-{
-	addrunelocale(rl, ENCODING_UTF8, _UTF8_init);
-	addrunelocale(rl, ENCODING_UTF1632, _UTF1632_init);
-	addrunelocale(rl, ENCODING_UES, _UES_init);
-	addrunelocale(rl, ENCODING_UTF2, _UTF2_init);
-	addrunelocale(rl, ENCODING_ISO2022, _ISO2022_init);
-	addrunelocale(rl, ENCODING_NONE, _none_init);
-	addrunelocale(rl, ENCODING_EUC, _EUC_init);
-}
-
-void
-addrunelocale(rl, encoding, init)
-	_RuneLocale *rl;
-	char *encoding;
-	int (*init)(_RuneLocale *);
-{
-	struct localetable *lt;
-
-	lt = (struct localetable *)malloc(sizeof(struct localetable));
-	lt->runelocale = rl;
-	lt->encoding = encoding;
-	lt->init = init;
-	LIST_INSERT_HEAD(&lthead, lt, next);
-}
-
-void
-delrunelocale(encoding)
-	char *encoding;
-{
-	struct localetable *lt;
-
-	LIST_FOREACH(lt, &lthead, next) {
-		if (strcmp(encoding, lt->encoding) == 0) {
-			LIST_REMOVE(lt, next);
-		}
-	}
-}
-
-int
-initrunelocale(rl)
-	_RuneLocale *rl;
-{
-	if (!rl->encoding[0] || !strcmp(rl->encoding, ENCODING_UTF8)) {
-		return (initlocaletable(ENCODING_UTF8));
-	} else if (!strcmp(rl->encoding, ENCODING_UTF1632)) {
-		return (initlocaletable(ENCODING_UTF1632));
-	} else if (!strcmp(rl->encoding, ENCODING_UES)) {
-		return (initlocaletable(ENCODING_UES));
-	} else if (!strcmp(rl->encoding, ENCODING_UTF2)) {
-		return (initlocaletable(ENCODING_UTF2));
-	} else if (!strcmp(rl->encoding, ENCODING_ISO2022)) {
-		return (initlocaletable(ENCODING_ISO2022));
-	} else if (!strcmp(rl->encoding, ENCODING_NONE)) {
-		return (initlocaletable(ENCODING_NONE));
-	} else if (!strcmp(rl->encoding, ENCODING_EUC)) {
-		return (initlocaletable(ENCODING_EUC));
-	} else {
-		return (EINVAL);
-	}
-}
-
-int
-newrunelocale(rl)
-	_RuneLocale *rl;
-{
-	int ret;
-
-	loadlocaletable(rl);
-	ret = initrunelocale(rl);
-	return (ret);
-}
-
-#endif  /* notyet */
 
 /* wctype_init: */
 void
@@ -210,6 +87,7 @@ wctrans_init(rl)
 	rl->wctrans[_WCTRANS_INDEX_UPPER].extmap = &rl->mapupper_ext;
 }
 
+#ifdef notyet
 int
 initrunelocale(rl)
 	_RuneLocale *rl;
@@ -232,6 +110,7 @@ initrunelocale(rl)
 		return (EINVAL);
 	}
 }
+#endif notyet
 
 int
 setrunelocale(encoding)
@@ -272,7 +151,8 @@ setrunelocale(encoding)
 	wctype_init(rl);
 	wctrans_init(rl);
 
-	return (initrunelocale(rl));
+	//return (initrunelocale(rl));
+	return (newrunelocale(rl));
 }
 
 void

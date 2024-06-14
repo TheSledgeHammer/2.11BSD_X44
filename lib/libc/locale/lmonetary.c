@@ -30,16 +30,15 @@ __FBSDID("$FreeBSD$");
 #include <limits.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "lmonetary.h"
+
 #include "ldpart.h"
+#include "lmonetary.h"
 
 extern int __mlocale_changed;
 extern const char * __fix_locale_grouping_str(const char *);
 
 #define LCMONETARY_SIZE_FULL (sizeof(struct lc_monetary_T) / sizeof(char *))
-#define LCMONETARY_SIZE_MIN \
-		(offsetof(struct lc_monetary_T, int_p_cs_precedes) / \
-		    sizeof(char *))
+#define LCMONETARY_SIZE_MIN  (offsetof(struct lc_monetary_T, int_p_cs_precedes) / sizeof(char *))
 
 static char	empty[] = "";
 static char	numempty[] = { CHAR_MAX, '\0'};
@@ -114,13 +113,13 @@ __monetary_load_locale(const char *name)
 		 * parameters default to the national parameters when
 		 * reading FreeBSD 4 LC_MONETARY data files.
 		 */
-#define	M_ASSIGN_ICHAR(NAME)						\
-		do {							\
+#define	M_ASSIGN_ICHAR(NAME)							\
+		do {											\
 			if (_monetary_locale.int_##NAME == NULL)	\
-				_monetary_locale.int_##NAME =		\
-				    _monetary_locale.NAME;		\
-			else						\
-				M_ASSIGN_CHAR(int_##NAME);		\
+				_monetary_locale.int_##NAME =			\
+				    _monetary_locale.NAME;				\
+			else										\
+				M_ASSIGN_CHAR(int_##NAME);				\
 		} while (0)
 
 		M_ASSIGN_ICHAR(p_cs_precedes);
@@ -159,6 +158,12 @@ monetdebug() {
 			"n_sep_by_space = %d\n"
 			"p_sign_posn = %d\n"
 			"n_sign_posn = %d\n",
+			"int_p_cs_precedes = %d\n"
+			"int_p_sep_by_space = %d\n"
+			"int_n_cs_precedes = %d\n"
+			"int_n_sep_by_space = %d\n"
+			"int_p_sign_posn = %d\n"
+			"int_n_sign_posn = %d\n",
 			_monetary_locale.int_curr_symbol,
 			_monetary_locale.currency_symbol,
 			_monetary_locale.mon_decimal_point,
@@ -173,6 +178,13 @@ monetdebug() {
 			_monetary_locale.n_cs_precedes[0],
 			_monetary_locale.n_sep_by_space[0],
 			_monetary_locale.p_sign_posn[0],
-			_monetary_locale.n_sign_posn[0]);
+			_monetary_locale.n_sign_posn[0],
+			_monetary_locale.int_p_cs_precedes[0],
+			_monetary_locale.int_p_sep_by_space[0],
+			_monetary_locale.int_n_cs_precedes[0],
+			_monetary_locale.int_n_sep_by_space[0],
+			_monetary_locale.int_p_sign_posn[0],
+			_monetary_locale.int_n_sign_posn[0]
+											 );
 }
 #endif /* LOCALE_DEBUG */

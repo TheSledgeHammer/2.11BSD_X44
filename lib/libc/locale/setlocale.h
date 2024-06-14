@@ -41,4 +41,10 @@
 
 extern char *PathLocale;
 
+__BEGIN_DECLS
+extern void addrunelocale(_RuneLocale *, char *, int (*)(_RuneLocale *));
+extern void delrunelocale(char *);
+extern int	newrunelocale(_RuneLocale *);
+__END_DECLS
+
 #endif /* !_SETLOCALE_H_ */
