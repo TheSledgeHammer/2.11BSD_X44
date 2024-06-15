@@ -101,7 +101,7 @@ initrunelocale(rl)
 	} else if (!strcmp(rl->encoding, "UTF-2")) {
 		return (_UTF2_init(rl));
 	} else if (!strcmp(rl->encoding, "ISO2022")) {
-				return (_ISO2022_init(rl));
+		return (_ISO2022_init(rl));
 	} else if (!strcmp(rl->encoding, "NONE")) {
 		return (_none_init(rl));
 	} else if (!strcmp(rl->encoding, "EUC")) {
