@@ -37,13 +37,13 @@ __FBSDID("$FreeBSD$");
 extern int __mlocale_changed;
 extern const char * __fix_locale_grouping_str(const char *);
 
-#define LCMONETARY_SIZE_FULL (sizeof(struct lc_monetary_T) / sizeof(char *))
-#define LCMONETARY_SIZE_MIN  (offsetof(struct lc_monetary_T, int_p_cs_precedes) / sizeof(char *))
+#define LCMONETARY_SIZE_FULL (sizeof(monetary_locale_t) / sizeof(char *))
+#define LCMONETARY_SIZE_MIN  (offsetof(monetary_locale_t, int_p_cs_precedes) / sizeof(char *))
 
 static char	empty[] = "";
 static char	numempty[] = { CHAR_MAX, '\0'};
 
-static const struct lc_monetary_T _C_monetary_locale = {
+static const monetary_locale_t _C_monetary_locale = {
 		empty,		/* int_curr_symbol */
 		empty,		/* currency_symbol */
 		empty,		/* mon_decimal_point */
@@ -67,7 +67,7 @@ static const struct lc_monetary_T _C_monetary_locale = {
 		numempty	/* int_n_sign_posn */
 };
 
-static struct lc_monetary_T _monetary_locale;
+static monetary_locale_t _monetary_locale;
 static int	_monetary_using_locale;
 static char	*_monetary_locale_buf;
 
@@ -132,12 +132,12 @@ __monetary_load_locale(const char *name)
 	return (ret);
 }
 
-struct lc_monetary_T *
+monetary_locale_t *
 __get_current_monetary_locale(void)
 {
 	return (_monetary_using_locale
 		? &_monetary_locale
-		: (struct lc_monetary_T *)&_C_monetary_locale);
+		: (monetary_locale_t *)&_C_monetary_locale);
 }
 
 #ifdef LOCALE_DEBUG

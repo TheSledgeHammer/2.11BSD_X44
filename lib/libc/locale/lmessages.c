@@ -32,19 +32,19 @@ __FBSDID("$FreeBSD$");
 #include "lmessages.h"
 #include "ldpart.h"
 
-#define LCMESSAGES_SIZE_FULL (sizeof(struct lc_messages_T) / sizeof(char *))
-#define LCMESSAGES_SIZE_MIN  (offsetof(struct lc_messages_T, yesstr) / sizeof(char *))
+#define LCMESSAGES_SIZE_FULL (sizeof(messages_locale_t) / sizeof(char *))
+#define LCMESSAGES_SIZE_MIN  (offsetof(messages_locale_t, yesstr) / sizeof(char *))
 
 static char empty[] = "";
 
-static const struct lc_messages_T _C_messages_locale = {
+static const messages_locale_t _C_messages_locale = {
 		"^[yY]" ,	/* yesexpr */
 		"^[nN]" ,	/* noexpr */
 		"yes" , 	/* yesstr */
 		"no"		/* nostr */
 };
 
-static struct lc_messages_T _messages_locale;
+static messages_locale_t _messages_locale;
 static int	_messages_using_locale;
 static char	*_messages_locale_buf;
 
@@ -66,11 +66,11 @@ __messages_load_locale(const char *name)
 	return (ret);
 }
 
-struct lc_messages_T *
+messages_locale_t *
 __get_current_messages_locale(void)
 {
 	return (_messages_using_locale ?
-			&_messages_locale : (struct lc_messages_T*) &_C_messages_locale);
+			&_messages_locale : (messages_locale_t *) &_C_messages_locale);
 }
 
 #ifdef LOCALE_DEBUG

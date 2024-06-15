@@ -29,14 +29,15 @@
 #ifndef _LMESSAGES_H_
 #define	_LMESSAGES_H_
 
-struct lc_messages_T {
+struct messages_locale {
 	const char	*yesexpr;
 	const char	*noexpr;
 	const char	*yesstr;
 	const char	*nostr;
 };
+typedef struct messages_locale messages_locale_t;
 
-struct lc_messages_T *__get_current_messages_locale(void);
+messages_locale_t *__get_current_messages_locale(void);
 int	__messages_load_locale(const char *);
 
 #endif /* !_LMESSAGES_H_ */

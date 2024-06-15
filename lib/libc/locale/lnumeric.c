@@ -34,17 +34,17 @@ __FBSDID("$FreeBSD$");
 extern int __nlocale_changed;
 extern const char *__fix_locale_grouping_str(const char *);
 
-#define LCNUMERIC_SIZE (sizeof(struct lc_numeric_T) / sizeof(char *))
+#define LCNUMERIC_SIZE (sizeof(numeric_locale_t) / sizeof(char *))
 
 static char	numempty[] = { CHAR_MAX, '\0' };
 
-static const struct lc_numeric_T _C_numeric_locale = {
+static const numeric_locale_t _C_numeric_locale = {
 		".",     	/* decimal_point */
 		"",     	/* thousands_sep */
 		numempty	/* grouping */
 };
 
-static struct lc_numeric_T _numeric_locale;
+static numeric_locale_t _numeric_locale;
 static int	_numeric_using_locale;
 static char	*_numeric_locale_buf;
 
@@ -65,12 +65,12 @@ __numeric_load_locale(const char *name)
 	return (ret);
 }
 
-struct lc_numeric_T *
+numeric_locale_t *
 __get_current_numeric_locale(void)
 {
 	return (_numeric_using_locale
 		? &_numeric_locale
-		: (struct lc_numeric_T *)&_C_numeric_locale);
+		: (numeric_locale_t *)&_C_numeric_locale);
 }
 
 #ifdef LOCALE_DEBUG

@@ -29,7 +29,7 @@
 #ifndef _LMONETARY_H_
 #define	_LMONETARY_H_
 
-struct lc_monetary_T {
+struct monetary_locale {
 	const char	*int_curr_symbol;
 	const char	*currency_symbol;
 	const char	*mon_decimal_point;
@@ -52,8 +52,9 @@ struct lc_monetary_T {
 	const char	*int_p_sign_posn;
 	const char	*int_n_sign_posn;
 };
+typedef struct monetary_locale monetary_locale_t;
 
-struct lc_monetary_T *__get_current_monetary_locale(void);
+monetary_locale_t *__get_current_monetary_locale(void);
 int	__monetary_load_locale(const char *);
 
 #endif /* !_LMONETARY_H_ */

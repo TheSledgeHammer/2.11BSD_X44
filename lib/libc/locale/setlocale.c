@@ -55,6 +55,7 @@ static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
 #include "ltime.h"		/* for __time_load_locale() */
 #include "ldpart.h"
 #include "setlocale.h"
+
 /*
  * Category names for getenv()
  */

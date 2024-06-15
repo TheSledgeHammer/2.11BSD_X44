@@ -41,9 +41,9 @@ __FBSDID("$FreeBSD$");
 #include "ldpart.h"
 #include "ltime.h"
 
-#define	LCTIME_SIZE (sizeof(struct lc_time_T) / sizeof(char *))
+#define	LCTIME_SIZE (sizeof(time_locale_t) / sizeof(char *))
 
-static const struct lc_time_T	_C_time_locale = {
+static const time_locale_t	_C_time_locale = {
 		{
 				"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -105,7 +105,7 @@ static const struct lc_time_T	_C_time_locale = {
 		"%I:%M:%S %p"
 };
 
-static struct lc_time_T _time_locale;
+static time_locale_t _time_locale;
 static int	_time_using_locale;
 static char	*_time_locale_buf;
 
@@ -120,8 +120,8 @@ __time_load_locale(const char *name)
 	return (ret);
 }
 
-struct lc_time_T *
+time_locale_t *
 __get_current_time_locale(void)
 {
-	return (_time_locale ? &_time_locale : (struct lc_time_t *)&_C_time_locale);
+	return (_time_locale ? &_time_locale : (time_locale_t *)&_C_time_locale);
 }

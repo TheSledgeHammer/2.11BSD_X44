@@ -36,7 +36,7 @@
 #ifndef _LTIME_H_
 #define _LTIME_H_
 
-struct lc_time_T {
+struct time_locale {
 	const char	*mon[12];
 	const char	*month[12];
 	const char	*wday[7];
@@ -52,7 +52,9 @@ struct lc_time_T {
 	const char	*ampm_fmt;
 };
 
-struct lc_time_T *__get_current_time_locale(void);
+typedef struct time_locale time_locale_t;
+
+time_locale_t *__get_current_time_locale(void);
 int	__time_load_locale(const char *);
 
 #endif /* !_LTIME_H_ */
