@@ -14,7 +14,7 @@ SRCS+=	collate.c ldpart.c lmessages.c lmonetary.c lnumeric.c ltime.c
 # we have quirk for libc.a - see the last part of lib/libc/Makefile
 
 CPPFLAGS+=-DWITH_RUNE -I${.CURDIR}
-SRCS+=	_wctrans.c iswctype.c multibyte.c
+SRCS+=	_wctrans.c iswctype_l.c iswctype.c multibyte.c
 
 MAN+=	ctype.3 isalnum.3 isalpha.3 isascii.3 isblank.3 iscntrl.3 		\
 		isdigit.3 isgraph.3 islower.3 isprint.3 ispunct.3 isspace.3 	\

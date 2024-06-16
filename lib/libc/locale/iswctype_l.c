@@ -33,11 +33,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 #include <sys/cdefs.h>
-#if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
-#endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
 
@@ -47,234 +43,246 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #include <errno.h>
 #include <string.h>
 #include <rune.h>
+#include <locale.h>
 
+#include "setlocale.h"
 #include "_wctrans_local.h"
 
 #ifdef lint
 #define __inline
 #endif
 
-static __inline _RuneType 	__runetype_w(wint_t);
-static __inline int 		__isctype_w(wint_t, _RuneType);
-static __inline wint_t 		__toupper_w(wint_t);
-static __inline wint_t 		__tolower_w(wint_t);
+static __inline _RuneType 	__runetype_wl(wint_t, locale_t);
+static __inline int 		__isctype_wl(wint_t, _RuneType, locale_t);
+static __inline wint_t 		__toupper_wl(wint_t, locale_t);
+static __inline wint_t 		__tolower_wl(wint_t, locale_t);
+
+#define _RUNE_LOCALE(loc) ((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))
 
 static __inline _RuneType
-__runetype_w(c)
+__runetype_wl(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	_RuneLocale *rl = _CurrentRuneLocale;
-
+	_RuneLocale *rl = _RUNE_LOCALE(locale);
 	return (_RUNE_ISCACHED(c) ? ___runetype_mb(c) : rl->runetype[c]);
 }
 
 static __inline int
-__isctype_w(c, f)
+__isctype_wl(c, f, locale)
 	wint_t c;
 	_RuneType f;
+	locale_t locale;
 {
-	return (!!(__runetype_w(c) & f));
+	return (!!(__runetype_wl(c, locale) & f));
 }
 
 static __inline wint_t
-__toupper_w(c)
+__toupper_wl(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (_towctrans(c, _wctrans_upper(_CurrentRuneLocale)));
+	_RuneLocale *rl = _RUNE_LOCALE(locale);
+	return (_towctrans(c, _wctrans_upper(rl)));
 }
 
 static __inline wint_t
-__tolower_w(c)
+__tolower_wl(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (_towctrans(c, _wctrans_lower(_CurrentRuneLocale)));
+	_RuneLocale *rl = _RUNE_LOCALE(locale);
+	return (_towctrans(c, _wctrans_lower(rl)));
 }
 
-#undef iswalnum
 int
-iswalnum(c)
+iswalnum_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_A|_CTYPE_D));
+	return (__isctype_wl((c), _CTYPE_A|_CTYPE_D, locale));
 }
 
-#undef iswalpha
 int
-iswalpha(c)
+iswalpha_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_A));
+	return (__isctype_wl((c), _CTYPE_A, locale));
 }
 
-#undef iswblank
 int
-iswblank(c)
+iswblank_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_B));
+	return (__isctype_wl((c), _CTYPE_B, locale));
 }
 
-#undef iswascii
 int
-iswascii(c)
+iswascii_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
 	return ((c & ~0x7F) == 0);
 }
 
-#undef iswcntrl
 int
-iswcntrl(c)
+iswcntrl_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_C));
+	return (__isctype_wl((c), _CTYPE_C, locale));
 }
 
-#undef iswdigit
 int
-iswdigit(c)
+iswdigit_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_D));
+	return (__isctype_wl((c), _CTYPE_D, locale));
 }
 
-#undef iswgraph
 int
-iswgraph(c)
+iswgraph_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_G));
+	return (__isctype_wl((c), _CTYPE_G, locale));
 }
 
-#undef iswhexnumber
 int
-iswhexnumber(c)
+iswhexnumber_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_X));
+	return (__isctype_wl((c), _CTYPE_X, locale));
 }
 
-#undef iswideogram
 int
-iswideogram(c)
+iswideogram_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_I));
+	return (__isctype_wl((c), _CTYPE_I, locale));
 }
 
-#undef iswlower
 int
-iswlower(c)
+iswlower_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_L));
+	return (__isctype_wl((c), _CTYPE_L, locale));
 }
 
-#undef iswnumber
 int
-iswnumber(c)
+iswnumber_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w(c, _CTYPE_N));
+	return (__isctype_wl(c, _CTYPE_N, locale));
 }
 
-#undef iswphonogram
 int
-iswphonogram(c)
+iswphonogram_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w(c, _CTYPE_Q));
+	return (__isctype_wl(c, _CTYPE_Q, locale));
 }
 
-#undef iswprint
 int
-iswprint(c)
+iswprint_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_R));
+	return (__isctype_wl((c), _CTYPE_R, locale));
 }
 
-#undef iswpunct
 int
-iswpunct(c)
+iswpunct_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_P));
+	return (__isctype_wl((c), _CTYPE_P, locale));
 }
 
-#undef iswrune
 int
-iswrune(c)
+iswrune_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w(c, 0xFFFFFF00L));
+	return (__isctype_wl(c, 0xFFFFFF00L, locale));
 }
 
-#undef iswspace
 int
-iswspace(c)
+iswspace_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_S));
+	return (__isctype_wl((c), _CTYPE_S, locale));
 }
 
-#undef iswupper
 int
-iswupper(c)
+iswupper_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_U));
+	return (__isctype_wl((c), _CTYPE_U, locale));
 }
 
-#undef iswxdigit
 int
-iswxdigit(c)
+iswxdigit_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_X));
+	return (__isctype_wl((c), _CTYPE_X, locale));
 }
 
-#undef iswspecial
 int
-iswspecial(c)
+iswspecial_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__isctype_w((c), _CTYPE_T));
+	return (__isctype_wl((c), _CTYPE_T, locale));
 }
 
-#undef towupper
 wint_t
-towupper(c)
+towupper_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__toupper_w(c));
+	return (__toupper_wl(c, locale));
 }
 
-#undef towlower
 wint_t
-towlower(c)
+towlower_l(c, locale)
 	wint_t c;
+	locale_t locale;
 {
-	return (__tolower_w(c));
+	return (__tolower_wl(c, locale));
 }
 
 int
-wcwidth(c)
+wcwidth_l(c, locale)
 	wchar_t c;
+	locale_t locale;
 {
-	if (__isctype_w(c, _CTYPE_R)) {
-		return (((unsigned)__runetype_w(c) & _CTYPE_SWM) >> _CTYPE_SWS);
+	if (__isctype_wl(c, _CTYPE_R, locale)) {
+		return (((unsigned)__runetype_wl(c, locale) & _CTYPE_SWM) >> _CTYPE_SWS);
 	}
 	return (-1);
 }
 
 wctrans_t
-wctrans(charclass)
+wctrans_l(charclass, locale)
 	const char *charclass;
+	locale_t locale;
 {
+	_RuneLocale *rl;
 	int i;
-	_RuneLocale *rl = _CurrentRuneLocale;
 
+	rl = _RUNE_LOCALE(locale);
 	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name == NULL) {
 		_wctrans_init(rl);
 	}
@@ -288,24 +296,23 @@ wctrans(charclass)
 }
 
 wint_t
-towctrans(c, desc)
+towctrans_l(c, desc, locale)
 	wint_t c;
 	wctrans_t desc;
+	locale_t locale;
 {
-	if (desc == NULL) {
-		errno = EINVAL;
-		return (c);
-	}
-	return (_towctrans(c, (_WCTransEntry*) desc));
+	return (towctrans(c, desc));
 }
 
 wctype_t
-wctype(property)
+wctype_l(property, locale)
 	const char *property;
+	locale_t locale;
 {
+	_RuneLocale *rl;
 	int i;
-	_RuneLocale *rl = _CurrentRuneLocale;
 
+	rl = _RUNE_LOCALE(locale);
 	for (i = 0; i < _WCTYPE_NINDEXES; i++) {
 		if (!strcmp(rl->wctype[i].name, property)) {
 			return ((wctype_t) &rl->wctype[i]);
@@ -315,9 +322,10 @@ wctype(property)
 }
 
 int
-iswctype(c, charclass)
+iswctype_l(c, charclass, locale)
 	wint_t c;
 	wctype_t charclass;
+	locale_t locale;
 {
 	/*
 	 * SUSv3: If charclass is 0, iswctype() shall return 0.
@@ -326,6 +334,5 @@ iswctype(c, charclass)
 		return (0);
 	}
 
-	return (__isctype_w(c, ((_WCTypeEntry*) charclass)->mask));
+	return (__isctype_wl(c, ((_WCTypeEntry*) charclass)->mask, locale));
 }
-

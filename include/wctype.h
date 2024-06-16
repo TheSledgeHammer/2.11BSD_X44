@@ -82,6 +82,43 @@ wint_t		iswphonogram(wint_t);
 wint_t		iswrune(wint_t);
 wint_t		iswspecial(wint_t);
 #endif
+
+#if (_POSIX_C_SOURCE - 0) >= 200809L
+#ifndef	__LOCALE_T_DECLARED
+typedef struct _locale 	*locale_t;
+#define	__LOCALE_T_DECLARED
+#endif
+#endif /* __POSIX_VISIBLE >= 200809 */
+
+int			iswalnum_l(wint_t, locale_t);
+int			iswalpha_l(wint_t, locale_t);
+int			iswblank_l(wint_t, locale_t);
+int			iswcntrl_l(wint_t, locale_t);
+int			iswdigit_l(wint_t, locale_t);
+int			iswgraph_l(wint_t, locale_t);
+int			iswlower_l(wint_t, locale_t);
+int			iswprint_l(wint_t, locale_t);
+int			iswpunct_l(wint_t, locale_t);
+int			iswspace_l(wint_t, locale_t);
+int			iswupper_l(wint_t, locale_t);
+int			iswxdigit_l(wint_t, locale_t);
+int			iswctype_l(wint_t, wctype_t, locale_t);
+wint_t		towctrans_l(wint_t, wctrans_t, locale_t);
+wint_t		towlower_l(wint_t, locale_t);
+wint_t		towupper_l(wint_t, locale_t);
+wctrans_t 	wctrans_l(const char *, locale_t);
+wctype_t 	wctype_l(const char *, locale_t);
+
+#if __BSD_VISIBLE
+wint_t		iswascii_l(wint_t, locale_t);
+wint_t		iswhexnumber_l(wint_t, locale_t);
+wint_t		iswideogram_l(wint_t, locale_t);
+wint_t		iswnumber_l(wint_t, locale_t);
+wint_t		iswphonogram_l(wint_t, locale_t);
+wint_t		iswrune_l(wint_t, locale_t);
+wint_t		iswspecial_l(wint_t, locale_t);
+#endif
+
 __END_DECLS
 
 #endif		/* _WCTYPE_H_ */
