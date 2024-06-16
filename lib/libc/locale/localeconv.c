@@ -37,14 +37,31 @@ static char sccsid[] = "@(#)localeconv.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <locale.h>
+#include "setlocale.h"
 
 /*
  * Return the current locale conversion.
  */
+/*
 struct lconv *
 localeconv(void)
 {
 	extern struct lconv *__lconv;
 
 	return (__lconv);
+}
+*/
+
+struct lconv *
+localeconv(void)
+{
+//	extern struct lconv *__lconv;
+
+	return (localeconv_l(get_locale()));
+}
+
+struct lconv *
+localeconv_l(locale_t locale)
+{
+	return (locale->part_lconv);
 }

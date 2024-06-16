@@ -63,7 +63,9 @@ static __inline wint_t 		__tolower_w(wint_t);
 
 #include <locale.h>
 
-#define _RUNE_LOCALE(loc) ((_RuneLocale *)((loc)[(size_t)LC_CTYPE]))
+#include "setlocale.h"
+
+#define _RUNE_LOCALE(loc) ((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))
 
 static __inline _RuneType
 __runetype_wl(c, locale)
@@ -81,6 +83,80 @@ __isctype_wl(c, f, locale)
 	locale_t locale;
 {
 	return (!!(__runetype_wl(c, locale) & f));
+}
+
+int
+wcwidth_l(c, locale)
+	wchar_t c;
+	locale_t locale;
+{
+	if (__isctype_wl(c, _CTYPE_R, locale)) {
+		return (((unsigned)__runetype_wl(c, locale) & _CTYPE_SWM) >> _CTYPE_SWS);
+	}
+	return (-1);
+}
+
+wctrans_t
+wctrans_l(charclass, locale)
+	const char *charclass;
+	locale_t locale;
+{
+	_RuneLocale *rl;
+	int i;
+
+	rl = _RUNE_LOCALE(locale);
+	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name == NULL) {
+		_wctrans_init(rl);
+	}
+
+	for (i = 0; i < _WCTRANS_NINDEXES; i++) {
+		if (!strcmp(rl->wctrans[i].name, charclass)) {
+			return ((wctrans_t) &rl->wctrans[i]);
+		}
+	}
+	return ((wctrans_t) NULL);
+}
+
+wint_t
+towctrans_l(c, desc, locale)
+	wint_t c;
+	wctrans_t desc;
+	locale_t locale;
+{
+	return (towctrans(c, desc));
+}
+
+wctype_t
+wctype_l(property, locale)
+	const char *property;
+	locale_t locale;
+{
+	_RuneLocale *rl;
+	int i;
+
+	rl = _RUNE_LOCALE(locale);
+	for (i = 0; i < _WCTYPE_NINDEXES; i++) {
+		if (!strcmp(rl->wctype[i].name, property)) {
+			return ((wctype_t) &rl->wctype[i]);
+		}
+	}
+	return ((wctype_t) NULL);
+}
+
+int
+iswctype_l(c, charclass, locale)
+	wint_t c;
+	wctype_t charclass;
+	locale_t locale;
+{
+	/*
+	 * SUSv3: If charclass is 0, iswctype() shall return 0.
+	 */
+	if (charclass == (wctype_t) 0) {
+		return (0);
+	}
+
+	return (__isctype_wl(c, ((_WCTypeEntry*) charclass)->mask, locale));
 }
 
 #endif
@@ -321,22 +397,6 @@ towctrans(c, desc)
 		return (c);
 	}
 	return (_towctrans(c, (_WCTransEntry*) desc));
-}
-
-wctype_t
-wctype_l(property, locale)
-	const char *property;
-	locale_t locale;
-{
-	_RuneLocale *rl;
-	int i;
-
-	for (i = 0; i < _WCTYPE_NINDEXES; i++) {
-		if (!strcmp(rl->wctype[i].name, property)) {
-			return ((wctype_t) &rl->wctype[i]);
-		}
-	}
-	return ((wctype_t) NULL);
 }
 
 wctype_t

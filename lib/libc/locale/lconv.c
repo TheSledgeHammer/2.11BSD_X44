@@ -36,8 +36,17 @@
 static char sccsid[] = "@(#)lconv.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
+#include <errno.h>
+#include <langinfo.h>
 #include <limits.h>
 #include <locale.h>
+#include <stdlib.h>
+
+#include "lmessages.h"
+#include "lmonetary.h"
+#include "lnumeric.h"
+#include "ltime.h"
+#include "setlocale.h"
 
 static char empty[] = "";
 
@@ -74,4 +83,50 @@ static struct lconv C_lconv = {
 /*
  * Current locale conversion.
  */
-struct lconv *__lconv = &C_lconv;
+//struct lconv *__lconv = &C_lconv;
+
+/* Current C locale */
+const struct _locale c_locale = {
+		.part_lconv = &C_lconv,
+        .part_name = {
+        		[LC_ALL     ] = "C",
+                [LC_COLLATE ] = "C",
+                [LC_CTYPE   ] = "C",
+                [LC_MONETARY] = "C",
+                [LC_NUMERIC ] = "C",
+                [LC_TIME    ] = "C",
+                [LC_MESSAGES] = "C",
+        },
+		.part_impl = {
+        		[LC_ALL     ] = (locale_part_t)NULL,
+                [LC_COLLATE ] = (locale_part_t)NULL,
+                [LC_CTYPE   ] = (locale_part_t)&_DefaultRuneLocale,
+                [LC_MONETARY] = (locale_part_t)__get_current_monetary_locale,
+                [LC_NUMERIC ] = (locale_part_t)__get_current_numeric_locale,
+                [LC_TIME    ] = (locale_part_t)__get_current_time_locale,
+                [LC_MESSAGES] = (locale_part_t)__get_current_messages_locale,
+		},
+};
+
+/* Current global locale */
+struct _locale global_locale = {
+		.part_lconv = &C_lconv,
+        .part_name = {
+        		[LC_ALL     ] = "C",
+                [LC_COLLATE ] = "C",
+                [LC_CTYPE   ] = "C",
+                [LC_MONETARY] = "C",
+                [LC_NUMERIC ] = "C",
+                [LC_TIME    ] = "C",
+                [LC_MESSAGES] = "C",
+        },
+		.part_impl = {
+        		[LC_ALL     ] = (locale_part_t)NULL,
+                [LC_COLLATE ] = (locale_part_t)NULL,
+                [LC_CTYPE   ] = (locale_part_t)&_DefaultRuneLocale,
+                [LC_MONETARY] = (locale_part_t)__get_current_monetary_locale,
+                [LC_NUMERIC ] = (locale_part_t)__get_current_numeric_locale,
+                [LC_TIME    ] = (locale_part_t)__get_current_time_locale,
+                [LC_MESSAGES] = (locale_part_t)__get_current_messages_locale,
+		},
+};

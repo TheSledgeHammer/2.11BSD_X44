@@ -168,7 +168,7 @@ struct kmemslabs_cache {
 /* slot macros */
 #define BUCKET_SLOTS(bsize)     ((bsize)/BUCKETINDX(bsize))       				/* Number of slots in a bucket */
 #define ALLOCATED_SLOTS(size)	(BUCKET_SLOTS(size)/BUCKETINDX(size))			/* Number slots taken by space to be allocated */
-#define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket (s = size) */
+#define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket */
 
 #if defined(KMEMSTATS) || defined(DIAGNOSTIC)
 #define	MALLOC(space, cast, size, type, flags) 						\

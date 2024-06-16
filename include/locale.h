@@ -79,7 +79,8 @@ struct lconv {
 
 #if (_POSIX_C_SOURCE - 0) >= 200809L
 #ifndef	__LOCALE_T_DECLARED
-typedef void 		*locale_t;
+//typedef void 			*locale_t;
+typedef struct _locale 	*locale_t;
 #define	__LOCALE_T_DECLARED
 #endif
 #endif /* __POSIX_VISIBLE >= 200809 */
@@ -87,6 +88,20 @@ typedef void 		*locale_t;
 __BEGIN_DECLS
 struct lconv	*localeconv(void);
 char			*setlocale(int, const char *);
+
+#define	LC_ALL_MASK			((int)~0)
+#define	LC_COLLATE_MASK		((int)(1 << LC_COLLATE))
+#define	LC_CTYPE_MASK		((int)(1 << LC_CTYPE))
+#define	LC_MONETARY_MASK	((int)(1 << LC_MONETARY))
+#define	LC_NUMERIC_MASK		((int)(1 << LC_NUMERIC))
+#define	LC_TIME_MASK		((int)(1 << LC_TIME))
+#define	LC_MESSAGES_MASK	((int)(1 << LC_MESSAGES))
+
+struct lconv 	*localeconv_l(locale_t);
+
+extern struct _locale 		global_locale;
+extern const struct _locale c_locale;
+
 __END_DECLS
 
 #endif /* _LOCALE_H_ */

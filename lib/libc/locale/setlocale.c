@@ -220,10 +220,12 @@ static char *
 loadlocale(category)
 	int category;
 {
+	locale_t locale;
 	char *newcat;
 	char *curcat;
 	int (*func)(const char *);
 
+	locale = &global_locale;
 	newcat = new_categories[category];
 	curcat = current_categories[category];
 
@@ -269,6 +271,16 @@ loadlocale(category)
 	case LC_MESSAGES:
 		func = __messages_load_locale;
 		break;
+	}
+
+	if (strcmp(newcat, curcat) == 0) {
+		return (curcat);
+	}
+
+	if (func(newcat) != _LDP_ERROR) {
+		(void)strcpy(curcat, newcat);
+		(void)strcpy(locale->part_name[category], newcat);
+		return (curcat);
 	}
 
 	return (NULL);

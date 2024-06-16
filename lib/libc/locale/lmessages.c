@@ -32,6 +32,8 @@ __FBSDID("$FreeBSD$");
 #include "lmessages.h"
 #include "ldpart.h"
 
+#include "setlocale.h"
+
 #define LCMESSAGES_SIZE_FULL (sizeof(messages_locale_t) / sizeof(char *))
 #define LCMESSAGES_SIZE_MIN  (offsetof(messages_locale_t, yesstr) / sizeof(char *))
 
