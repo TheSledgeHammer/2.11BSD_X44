@@ -57,7 +57,7 @@ localeconv(void)
 {
 //	extern struct lconv *__lconv;
 
-	return (localeconv_l(get_locale()));
+	return (localeconv_l(__get_locale()));
 }
 
 struct lconv *
