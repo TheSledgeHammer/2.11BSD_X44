@@ -87,9 +87,9 @@ int			_none_sputcsrune(void * __restrict, _csid_t * __restrict, _index_t * __res
 
 _RuneOps _none_runeops = {
 		.ro_sgetrune 	=  	_none_sgetrune,
-		.ro_sgetrune 	=  	_none_sgetrune,
+		.ro_sputrune 	=  	_none_sputrune,
 		.ro_sgetmbrune 	=  	_none_sgetmbrune,
-		.ro_sgetmbrune 	=  	_none_sgetmbrune,
+		.ro_sputmbrune 	=  	_none_sputmbrune,
 		.ro_sgetcsrune  =	_none_sgetcsrune,
 		.ro_sputcsrune	= 	_none_sputcsrune,
 };
