@@ -263,14 +263,29 @@ int
 wcwidth(c)
 	wchar_t c;
 {
-	return (wcwidth_l(c, __get_locale()));
+	if (__isctype_w(c, _CTYPE_R)) {
+		return (((unsigned)__runetype_w(c) & _CTYPE_SWM) >> _CTYPE_SWS);
+	}
+	return (-1);
 }
 
 wctrans_t
 wctrans(charclass)
 	const char *charclass;
 {
-	return (wctrans_l(charclass, __get_locale()));
+	int i;
+	_RuneLocale *rl = _RUNE_LOCALE(__get_locale());
+
+	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name == NULL) {
+		_wctrans_init(rl);
+	}
+
+	for (i = 0; i < _WCTRANS_NINDEXES; i++) {
+		if (!strcmp(rl->wctrans[i].name, charclass)) {
+			return ((wctrans_t) &rl->wctrans[i]);
+		}
+	}
+	return ((wctrans_t) NULL);
 }
 
 wint_t
@@ -289,7 +304,15 @@ wctype_t
 wctype(property)
 	const char *property;
 {
-	return (wctype_l(property, __get_locale()));
+	int i;
+	_RuneLocale *rl = _RUNE_LOCALE(__get_locale());
+
+	for (i = 0; i < _WCTYPE_NINDEXES; i++) {
+		if (!strcmp(rl->wctype[i].name, property)) {
+			return ((wctype_t) &rl->wctype[i]);
+		}
+	}
+	return ((wctype_t) NULL);
 }
 
 int
@@ -297,5 +320,12 @@ iswctype(c, charclass)
 	wint_t c;
 	wctype_t charclass;
 {
-	return (iswctype_l(c, charclass, __get_locale()));
+	/*
+	 * SUSv3: If charclass is 0, iswctype() shall return 0.
+	 */
+	if (charclass == (wctype_t) 0) {
+		return (0);
+	}
+
+	return (__isctype_w(c, ((_WCTypeEntry*) charclass)->mask));
 }

@@ -279,7 +279,7 @@ loadlocale(category)
 
 	if (func(newcat) != _LDP_ERROR) {
 		(void)strcpy(curcat, newcat);
-		(void)strcpy(locale->part_name[category], newcat);
+		//(void)strcpy(locale->part_name[category], newcat); /* Fix */
 		return (curcat);
 	}
 
