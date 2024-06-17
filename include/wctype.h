@@ -83,7 +83,7 @@ wint_t		iswrune(wint_t);
 wint_t		iswspecial(wint_t);
 #endif
 
-#if (_POSIX_C_SOURCE - 0) >= 200809L
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #ifndef	__LOCALE_T_DECLARED
 typedef struct _locale 	*locale_t;
 #define	__LOCALE_T_DECLARED

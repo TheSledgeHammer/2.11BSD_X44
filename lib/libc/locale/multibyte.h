@@ -31,7 +31,7 @@
 
 #include <stdalign.h>
 
-#include <locale.h>
+//#include <locale.h>
 
 /* mbstate_t private */
 
@@ -53,12 +53,18 @@ typedef union _RuneState {
 } _RuneState;
 #define _PRIVSIZE	(sizeof(mbstate_t)-offsetof(_RuneStatePriv, __private))
 
-#define _RUNE_LOCALE(loc) ((_RuneLocale *)((loc)[(size_t)LC_CTYPE]))
+#define _RUNE_LOCALE(loc) ((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))
 
 static __inline _RuneLocale *
-_to_cur_ctype(void)
+_to_cur_ctype(locale_t locale)
 {
-	return (_CurrentRuneLocale);
+	_RuneLocale *rl;
+
+	rl = _RUNE_LOCALE(locale);
+	if (rl == NULL) {
+		return (NULL);
+	}
+	return (rl);
 }
 
 static __inline _RuneState *
@@ -80,10 +86,10 @@ _ps_to_runelocale(mbstate_t const *ps)
 }
 
 static __inline _RuneLocale *
-_ps_to_ctype(mbstate_t const *ps)
+_ps_to_ctype(mbstate_t const *ps, locale_t locale)
 {
 	if (!ps) {
-		return (_to_cur_ctype());
+		return (_to_cur_ctype(locale));
 	}
 
 	_DIAGASSERT(_ps_to_runelocale(ps) != NULL);

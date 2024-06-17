@@ -59,7 +59,6 @@ struct localetable_head;
 LIST_HEAD(localetable_head, localetable);
 struct localetable {
 	char 		encoding[32];
-	//int 		index;
 	int 		(*init)(_RuneLocale *);
 	_RuneLocale *runelocale;
 	LIST_ENTRY(localetable) next;
@@ -68,12 +67,13 @@ struct localetable {
 struct localetable_head lthead;// = LIST_HEAD_INITIALIZER(lthead);
 
 struct localetable *
-lookuplocaletable(char *encoding/*, int index*/)
+lookuplocaletable(encoding)
+	char *encoding;
 {
     struct localetable *lt = NULL;
 
     LIST_FOREACH(lt, &lthead, next) {
-        if ((!strcmp(encoding, lt->encoding))/* && (lt->index == index)*/) {
+        if ((!strcmp(encoding, lt->encoding))) {
             return (lt);
         }
     }

@@ -45,13 +45,13 @@
 #include <rune.h>
 #include <locale.h>
 
-#include "setlocale.h"
-#include "_wctrans_local.h"
+#include "_wctype_local.h"
 
 #ifdef lint
 #define __inline
 #endif
 
+/*
 static __inline _RuneType 	__runetype_wl(wint_t, locale_t);
 static __inline int 		__isctype_wl(wint_t, _RuneType, locale_t);
 static __inline wint_t 		__toupper_wl(wint_t, locale_t);
@@ -94,6 +94,37 @@ __tolower_wl(c, locale)
 	_RuneLocale *rl = _RUNE_LOCALE(locale);
 	return (_towctrans(c, _wctrans_lower(rl)));
 }
+
+static __inline _RuneType
+__runetype_w(c)
+	wint_t c;
+{
+	return (__runetype_wl(c, __get_locale()));
+}
+
+static __inline int
+__isctype_w(c, f)
+	wint_t c;
+	_RuneType f;
+{
+	return (__isctype_wl(c, f, __get_locale()));
+}
+
+static __inline wint_t
+__toupper_w(c)
+	wint_t c;
+{
+	return (__toupper_wl(c, __get_locale()));
+}
+
+static __inline wint_t
+__tolower_w(c)
+	wint_t c;
+{
+	return (__tolower_wl(c, __get_locale()));
+}
+
+*/
 
 int
 iswalnum_l(c, locale)

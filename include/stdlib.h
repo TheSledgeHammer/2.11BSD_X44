@@ -139,7 +139,6 @@ void	ltol3(char *, long *, int);
 /* convert 3-byte disk addresses to longs */
 void 	l3tol(long *, char *, int);
 
-/* These are currently just stubs. */
 int	 	mblen(const char *, size_t);
 size_t	mbstowcs(wchar_t * __restrict, const char * __restrict, size_t);
 int	 	wctomb(char *, wchar_t);
@@ -286,5 +285,21 @@ void	 	arc4random_addrandom(u_char *, int);
 #endif /* __BSD_VISIBLE */
 #endif /* _POSIX_C_SOURCE || _XOPEN_SOURCE || __BSD_VISIBLE */
 
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
+#  ifndef __LOCALE_T_DECLARED
+//typedef void		*locale_t;
+typedef struct _locale *locale_t;
+#  define __LOCALE_T_DECLARED
+#  endif
+
+#if defined(__BSD_VISIBLE)
+
+int	 	mblen_l(const char *, size_t, locale_t);
+size_t	mbstowcs_l(wchar_t * __restrict, const char * __restrict, size_t, locale_t);
+int	 	wctomb_l(char *, wchar_t, locale_t);
+int	 	mbtowc_l(wchar_t * __restrict, const char * __restrict, size_t, locale_t);
+size_t	wcstombs_l(char * __restrict, const wchar_t * __restrict, size_t, locale_t);
+#endif /* __BSD_VISIBLE */
+#endif /* _POSIX_C_SOURCE >= 200809 || __BSD_VISIBLE */
 __END_DECLS
 #endif /* _STDLIB_H_ */

@@ -48,12 +48,12 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #include <string.h>
 #include <rune.h>
 
-#include "_wctrans_local.h"
+#include "_wctype_local.h"
 
 #ifdef lint
 #define __inline
 #endif
-
+/*
 static __inline _RuneType 	__runetype_w(wint_t);
 static __inline int 		__isctype_w(wint_t, _RuneType);
 static __inline wint_t 		__toupper_w(wint_t);
@@ -89,6 +89,7 @@ __tolower_w(c)
 {
 	return (_towctrans(c, _wctrans_lower(_CurrentRuneLocale)));
 }
+*/
 
 #undef iswalnum
 int
@@ -262,29 +263,14 @@ int
 wcwidth(c)
 	wchar_t c;
 {
-	if (__isctype_w(c, _CTYPE_R)) {
-		return (((unsigned)__runetype_w(c) & _CTYPE_SWM) >> _CTYPE_SWS);
-	}
-	return (-1);
+	return (wcwidth_l(c, __get_locale()));
 }
 
 wctrans_t
 wctrans(charclass)
 	const char *charclass;
 {
-	int i;
-	_RuneLocale *rl = _CurrentRuneLocale;
-
-	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name == NULL) {
-		_wctrans_init(rl);
-	}
-
-	for (i = 0; i < _WCTRANS_NINDEXES; i++) {
-		if (!strcmp(rl->wctrans[i].name, charclass)) {
-			return ((wctrans_t) &rl->wctrans[i]);
-		}
-	}
-	return ((wctrans_t) NULL);
+	return (wctrans_l(charclass, __get_locale()));
 }
 
 wint_t
@@ -303,15 +289,7 @@ wctype_t
 wctype(property)
 	const char *property;
 {
-	int i;
-	_RuneLocale *rl = _CurrentRuneLocale;
-
-	for (i = 0; i < _WCTYPE_NINDEXES; i++) {
-		if (!strcmp(rl->wctype[i].name, property)) {
-			return ((wctype_t) &rl->wctype[i]);
-		}
-	}
-	return ((wctype_t) NULL);
+	return (wctype_l(property, __get_locale()));
 }
 
 int
@@ -319,13 +297,5 @@ iswctype(c, charclass)
 	wint_t c;
 	wctype_t charclass;
 {
-	/*
-	 * SUSv3: If charclass is 0, iswctype() shall return 0.
-	 */
-	if (charclass == (wctype_t) 0) {
-		return (0);
-	}
-
-	return (__isctype_w(c, ((_WCTypeEntry*) charclass)->mask));
+	return (iswctype_l(c, charclass, __get_locale()));
 }
-

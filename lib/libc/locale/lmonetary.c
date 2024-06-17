@@ -34,8 +34,7 @@ __FBSDID("$FreeBSD$");
 #include "ldpart.h"
 #include "lmonetary.h"
 
-extern int __mlocale_changed;
-extern const char * __fix_locale_grouping_str(const char *);
+extern int __monetary_locale_changed;
 
 #define LCMONETARY_SIZE_FULL (sizeof(monetary_locale_t) / sizeof(char *))
 #define LCMONETARY_SIZE_MIN  (offsetof(monetary_locale_t, int_p_cs_precedes) / sizeof(char *))
@@ -91,7 +90,7 @@ __monetary_load_locale(const char *name)
 		LCMONETARY_SIZE_FULL, LCMONETARY_SIZE_MIN,
 		(const char **)&_monetary_locale);
 	if (ret != _LDP_ERROR)
-		__mlocale_changed = 1;
+		__monetary_locale_changed = 1;
 	if (ret == _LDP_LOADED) {
 		_monetary_locale.mon_grouping =
 		     __fix_locale_grouping_str(_monetary_locale.mon_grouping);

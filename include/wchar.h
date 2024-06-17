@@ -101,15 +101,6 @@ typedef	_BSD_SIZE_T_	size_t;
 #define putwc(wc, f) 	fputwc((wc), (f))
 #define putwchar(wc) 	putwc((wc), stdout)
 
-#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
-#  ifndef __LOCALE_T_DECLARED
-typedef void		*locale_t;
-#  define __LOCALE_T_DECLARED
-#  endif
-
-
-#endif
-
 __BEGIN_DECLS
 wint_t	btowc(int);
 size_t	mbrlen(const char * __restrict, size_t, mbstate_t * __restrict);
@@ -173,6 +164,28 @@ int 	fputws(const wchar_t * __restrict, FILE * __restrict);
 //wint_t 	putwc(wchar_t, FILE *);
 //wint_t 	putwchar(wchar_t);
 int 	fwide (FILE *, int);
+
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
+#  ifndef __LOCALE_T_DECLARED
+//typedef void		*locale_t;
+typedef struct _locale *locale_t;
+#  define __LOCALE_T_DECLARED
+#  endif
+
+#endif /* _POSIX_C_SOURCE >= 200809 || __BSD_VISIBLE */
+
+#if defined(__BSD_VISIBLE)
+
+wint_t	btowc_l(int, locale_t);
+size_t	mbrlen_l(const char * __restrict, size_t, mbstate_t * __restrict, locale_t);
+size_t	mbrtowc_l(wchar_t * __restrict, const char * __restrict, size_t, mbstate_t * __restrict, locale_t);
+int		mbsinit_l(const mbstate_t *, locale_t);
+size_t	mbsrtowcs_l(wchar_t * __restrict, const char ** __restrict, size_t, mbstate_t * __restrict, locale_t);
+size_t	mbsnrtowcs_l(wchar_t * __restrict, const char ** __restrict, size_t, size_t, mbstate_t * __restrict, locale_t);
+size_t	wcrtomb_l(char * __restrict, wchar_t, mbstate_t * __restrict, locale_t);
+size_t	wcsrtombs_l(char * __restrict, const wchar_t ** __restrict, size_t, mbstate_t * __restrict, locale_t);
+int		wctob_l(wint_t, locale_t);
+#endif /* __BSD_VISIBLE */
 __END_DECLS
 
 #endif /* !_WCHAR_H_ */

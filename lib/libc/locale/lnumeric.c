@@ -31,8 +31,7 @@ __FBSDID("$FreeBSD$");
 #include "lnumeric.h"
 #include "ldpart.h"
 
-extern int __nlocale_changed;
-extern const char *__fix_locale_grouping_str(const char *);
+extern int __numeric_locale_changed;
 
 #define LCNUMERIC_SIZE (sizeof(numeric_locale_t) / sizeof(char *))
 
@@ -58,7 +57,7 @@ __numeric_load_locale(const char *name)
 		LCNUMERIC_SIZE, LCNUMERIC_SIZE,
 		(const char **)&_numeric_locale);
 	if (ret != _LDP_ERROR)
-		__nlocale_changed = 1;
+		__numeric_locale_changed = 1;
 	if (ret == _LDP_LOADED)
 		_numeric_locale.grouping =
 		    __fix_locale_grouping_str(_numeric_locale.grouping);

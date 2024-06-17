@@ -51,7 +51,6 @@ struct _locale {
     locale_part_t 			part_impl[_LC_LAST];
 };
 
-
 static __inline struct _locale *
 __get_locale(void)
 {

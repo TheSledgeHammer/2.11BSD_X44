@@ -80,10 +80,12 @@ static struct lconv C_lconv = {
 		CHAR_MAX,		/* int_n_sign_posn */
 };
 
+int __monetary_locale_changed = 1;
+int __numeric_locale_changed = 1;
+
 /*
  * Current locale conversion.
  */
-//struct lconv *__lconv = &C_lconv;
 
 /* Current C locale */
 const struct _locale c_locale = {
