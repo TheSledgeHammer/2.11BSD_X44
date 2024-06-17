@@ -99,6 +99,15 @@ const struct _locale c_locale = {
                 [LC_TIME    ] = "C",
                 [LC_MESSAGES] = "C",
         },
+        .part_category = {
+                [LC_ALL     ] = "LC_ALL",
+                [LC_COLLATE ] = "LC_COLLATE",
+                [LC_CTYPE   ] = "LC_CTYPE",
+                [LC_MONETARY] = "LC_MONETARY",
+                [LC_NUMERIC ] = "LC_NUMERIC",
+                [LC_TIME    ] = "LC_TIME",
+                [LC_MESSAGES] = "LC_MESSAGES",
+        },
 		.part_impl = {
         		[LC_ALL     ] = (locale_part_t)NULL,
                 [LC_COLLATE ] = (locale_part_t)NULL,
@@ -121,6 +130,15 @@ struct _locale global_locale = {
                 [LC_NUMERIC ] = "C",
                 [LC_TIME    ] = "C",
                 [LC_MESSAGES] = "C",
+        },
+        .part_category = {
+                [LC_ALL     ] = "LC_ALL",
+                [LC_COLLATE ] = "LC_COLLATE",
+                [LC_CTYPE   ] = "LC_CTYPE",
+                [LC_MONETARY] = "LC_MONETARY",
+                [LC_NUMERIC ] = "LC_NUMERIC",
+                [LC_TIME    ] = "LC_TIME",
+                [LC_MESSAGES] = "LC_MESSAGES",
         },
 		.part_impl = {
         		[LC_ALL     ] = (locale_part_t)NULL,

@@ -41,6 +41,8 @@
 #define _C_LOCALE			"C"
 #define _POSIX_LOCALE		"POSIX"
 
+#define ENCODING_LEN 		31
+
 extern char *PathLocale;
 
 typedef void 				*locale_part_t;
@@ -48,6 +50,7 @@ typedef void 				*locale_part_t;
 struct _locale {
     struct lconv 		    *part_lconv;
     const char 				*part_name[_LC_LAST];
+    char 					part_category[_LC_LAST][ENCODING_LEN+1];
     locale_part_t 			part_impl[_LC_LAST];
 };
 

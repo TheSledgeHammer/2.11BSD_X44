@@ -43,7 +43,7 @@ static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
-#include <locale.h>
+#include <include/locale.h>
 #include <rune.h>
 #include <stdlib.h>
 #include <string.h>
@@ -279,7 +279,7 @@ loadlocale(category)
 
 	if (func(newcat) != _LDP_ERROR) {
 		(void)strcpy(curcat, newcat);
-		//(void)strcpy(locale->part_name[category], newcat); /* Fix */
+		(void)strcpy(locale->part_category[category], newcat); /* Fix */
 		return (curcat);
 	}
 
