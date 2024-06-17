@@ -89,9 +89,9 @@ int __numeric_locale_changed = 1;
 
 /* Current C locale */
 const struct _locale c_locale = {
-		.part_lconv = &C_lconv,
+	.part_lconv = &C_lconv,
         .part_name = {
-        		[LC_ALL     ] = "C",
+        	[LC_ALL     ] = "C",
                 [LC_COLLATE ] = "C",
                 [LC_CTYPE   ] = "C",
                 [LC_MONETARY] = "C",
@@ -108,22 +108,22 @@ const struct _locale c_locale = {
                 [LC_TIME    ] = "LC_TIME",
                 [LC_MESSAGES] = "LC_MESSAGES",
         },
-		.part_impl = {
-        		[LC_ALL     ] = (locale_part_t)NULL,
+	.part_impl = {
+        	[LC_ALL     ] = (locale_part_t)NULL,
                 [LC_COLLATE ] = (locale_part_t)NULL,
                 [LC_CTYPE   ] = (locale_part_t)_CurrentRuneLocale,
                 [LC_MONETARY] = (locale_part_t)__get_current_monetary_locale,
                 [LC_NUMERIC ] = (locale_part_t)__get_current_numeric_locale,
                 [LC_TIME    ] = (locale_part_t)__get_current_time_locale,
                 [LC_MESSAGES] = (locale_part_t)__get_current_messages_locale,
-		},
+	},
 };
 
 /* Current global locale */
 struct _locale global_locale = {
-		.part_lconv = &C_lconv,
+	.part_lconv = &C_lconv,
         .part_name = {
-        		[LC_ALL     ] = "C",
+        	[LC_ALL     ] = "C",
                 [LC_COLLATE ] = "C",
                 [LC_CTYPE   ] = "C",
                 [LC_MONETARY] = "C",
@@ -140,13 +140,13 @@ struct _locale global_locale = {
                 [LC_TIME    ] = "LC_TIME",
                 [LC_MESSAGES] = "LC_MESSAGES",
         },
-		.part_impl = {
-        		[LC_ALL     ] = (locale_part_t)NULL,
+	.part_impl = {
+        	[LC_ALL     ] = (locale_part_t)NULL,
                 [LC_COLLATE ] = (locale_part_t)NULL,
                 [LC_CTYPE   ] = (locale_part_t)_CurrentRuneLocale,
                 [LC_MONETARY] = (locale_part_t)__get_current_monetary_locale,
                 [LC_NUMERIC ] = (locale_part_t)__get_current_numeric_locale,
                 [LC_TIME    ] = (locale_part_t)__get_current_time_locale,
                 [LC_MESSAGES] = (locale_part_t)__get_current_messages_locale,
-		},
+	},
 };
