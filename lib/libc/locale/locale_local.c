@@ -127,7 +127,7 @@ newlocale(mask, name, src)
 	const char *name;
 	locale_t src;
 {
-	struct locale *dst;
+	struct _locale *dst;
 	const char *realname;
     int useenv = 0;
     int success = 1;
