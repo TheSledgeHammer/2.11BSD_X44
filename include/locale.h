@@ -77,18 +77,19 @@ struct lconv {
 
 #include <sys/cdefs.h>
 
-#if (_POSIX_C_SOURCE - 0) >= 200809L
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #ifndef	__LOCALE_T_DECLARED
 //typedef void 			*locale_t;
 typedef struct _locale 	*locale_t;
 #define	__LOCALE_T_DECLARED
 #endif
-#endif /* __POSIX_VISIBLE >= 200809 */
+#endif /* __POSIX_VISIBLE >= 200809 || __BSD_VISIBLE */
 
 __BEGIN_DECLS
 struct lconv	*localeconv(void);
 char			*setlocale(int, const char *);
 
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #define	LC_ALL_MASK			((int)~0)
 #define	LC_COLLATE_MASK		((int)(1 << LC_COLLATE))
 #define	LC_CTYPE_MASK		((int)(1 << LC_CTYPE))
@@ -97,11 +98,14 @@ char			*setlocale(int, const char *);
 #define	LC_TIME_MASK		((int)(1 << LC_TIME))
 #define	LC_MESSAGES_MASK	((int)(1 << LC_MESSAGES))
 
+extern struct _locale 	global_locale;
+extern const struct 	_locale c_locale;
+
 struct lconv 	*localeconv_l(locale_t);
-
-extern struct _locale 		global_locale;
-extern const struct _locale c_locale;
-
+locale_t		newlocale(int, const char *, name, locale_t);
+void 			freelocale(locale_t);
+locale_t		duplocale(locale_t);
+#endif /* __POSIX_VISIBLE >= 200809 || __BSD_VISIBLE */
 __END_DECLS
 
 #endif /* _LOCALE_H_ */

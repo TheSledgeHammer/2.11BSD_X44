@@ -61,7 +61,6 @@ localeconv_l(locale)
 {
 	numeric_lconv(locale->part_lconv);
 	monetary_lconv(locale->part_lconv);
-
 	return (locale->part_lconv);
 }
 

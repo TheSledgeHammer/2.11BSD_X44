@@ -8,7 +8,7 @@ SRCS+=	ansi.c ctype.c euc.c frune.c isctype.c iso2022.c lconv.c			\
 		setrunelocale.c srune.c table.c ues.c utf1632.c utf2.c utf8.c 		\
 		wcscoll.c wcstod.c wcstol.c wcstoll.c wcstoimax.c wcstoul.c 		\
 		wcstoull.c wcstoumax.c wcsxfrm.c aliasname.c
-SRCS+=	collate.c ldpart.c lmessages.c lmonetary.c lnumeric.c ltime.c
+SRCS+=	collate.c ldpart.c lmessages.c lmonetary.c lnumeric.c ltime.c locale_local.c
 
 # citrus multibyte locale support
 # we have quirk for libc.a - see the last part of lib/libc/Makefile

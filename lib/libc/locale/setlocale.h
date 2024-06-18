@@ -61,6 +61,10 @@ __get_locale(void)
 }
 
 __BEGIN_DECLS
+/* setlocale.c */
+const char *__get_locale_env(int);
+
+/* setrunelocale.c */
 void addrunelocale(_RuneLocale *, char *, int (*)(_RuneLocale *));
 void delrunelocale(char *);
 int	newrunelocale(_RuneLocale *);

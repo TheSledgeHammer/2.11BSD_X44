@@ -295,3 +295,30 @@ showpathlocale(path, category)
 
 	(void)snprintf(name, sizeof(name), "%s/%s/%s", path, new_categories[category], categories[category]);
 }
+
+const char *
+__get_locale_env(category)
+	int category;
+{
+        const char *env;
+
+        /* 1. check LC_ALL. */
+        env = getenv(categories[0]);
+
+        /* 2. check LC_* */
+        if (env == NULL || !*env) {
+            env = getenv(categories[category]);
+        }
+
+        /* 3. check LANG */
+        if (env == NULL || !*env) {
+            env = getenv("LANG");
+        }
+
+        /* 4. if none is set, fall to "C" */
+        if (env == NULL || !*env) {
+            env = "C";
+        }
+
+        return (env);
+}

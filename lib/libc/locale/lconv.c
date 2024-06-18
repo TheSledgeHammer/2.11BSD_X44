@@ -112,10 +112,10 @@ const struct _locale c_locale = {
         	[LC_ALL     ] = (locale_part_t)NULL,
                 [LC_COLLATE ] = (locale_part_t)NULL,
                 [LC_CTYPE   ] = (locale_part_t)_CurrentRuneLocale,
-                [LC_MONETARY] = (locale_part_t)__get_current_monetary_locale,
-                [LC_NUMERIC ] = (locale_part_t)__get_current_numeric_locale,
-                [LC_TIME    ] = (locale_part_t)__get_current_time_locale,
-                [LC_MESSAGES] = (locale_part_t)__get_current_messages_locale,
+                [LC_MONETARY] = (locale_part_t)__monetary_load_locale,
+                [LC_NUMERIC ] = (locale_part_t)__numeric_load_locale,
+                [LC_TIME    ] = (locale_part_t)__time_load_locale,
+                [LC_MESSAGES] = (locale_part_t)__messages_load_locale,
 	},
 };
 
@@ -144,9 +144,9 @@ struct _locale global_locale = {
         	[LC_ALL     ] = (locale_part_t)NULL,
                 [LC_COLLATE ] = (locale_part_t)NULL,
                 [LC_CTYPE   ] = (locale_part_t)_CurrentRuneLocale,
-                [LC_MONETARY] = (locale_part_t)__get_current_monetary_locale,
-                [LC_NUMERIC ] = (locale_part_t)__get_current_numeric_locale,
-                [LC_TIME    ] = (locale_part_t)__get_current_time_locale,
-                [LC_MESSAGES] = (locale_part_t)__get_current_messages_locale,
+                [LC_MONETARY] = (locale_part_t)__monetary_load_locale,
+                [LC_NUMERIC ] = (locale_part_t)__numeric_load_locale,
+                [LC_TIME    ] = (locale_part_t)__time_load_locale,
+                [LC_MESSAGES] = (locale_part_t)__messages_load_locale,
 	},
 };
