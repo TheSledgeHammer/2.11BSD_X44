@@ -113,7 +113,7 @@ duppart(category, src, dst)
 		if (dst->part_impl[category]) {
 			strncpy(dst->part_category[category], src->part_category[category], ENCODING_LEN);
 		}
-	} else if (src->part_category[category]) {
+	} else if (src->part_impl[category]) {
 		dst->part_impl[category] = src->part_impl[category];
 	} else {
         return (1);
