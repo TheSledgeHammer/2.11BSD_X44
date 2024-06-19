@@ -24,9 +24,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## sbin:
 - add: More critical software
 	- Generic:
-		- savecore
+		- restore
 	- Filesystem:
-		- badsect, clri, dump, quotacheck, tunefs
+		- quotacheck
 	- Network:
 		- startslip
 
@@ -47,7 +47,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	- add: ifcmds, ifstat, icmp, ip, ip6, tcp
 - Add: More critical software
 	- Generic:
-		- cal, calendar, getent, tr
+		- calendar, tr
 	- Filesystem:
 		- quota
 	- Network:

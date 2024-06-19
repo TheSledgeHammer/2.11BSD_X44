@@ -101,6 +101,8 @@ extern struct __res_state _res;
 #define __p_class		p_class
 #define __p_type		p_type
 
+#define res_close		_res_close
+
 __BEGIN_DECLS
 int	 dn_skipname(const u_char *, const u_char *);
 //void fp_resstat(struct state *, FILE *);
@@ -119,6 +121,9 @@ int	 dn_expand(const u_char *, const u_char *, const u_char *, u_char *, int);
 
 int	 res_init(void);
 int	 res_mkquery(int, const char *, int, int, const char *, int, const char *, char *, int);
+int	 res_query(char *, int, int, u_char *, int);
+int	 res_querydomain(char *, char *, int, int, u_char *, int);
+int	 res_search(char *, int, int, u_char *, int);
 int	 res_send(const char *, int, char *, int);
 __END_DECLS
 #endif /* !_RESOLV_H_ */

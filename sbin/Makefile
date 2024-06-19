@@ -4,6 +4,7 @@
 .include <bsd.own.mk>
 
 SUBDIR=	atactl                                 			\
+		badsect											\ 
         ccdconfig 				                        \
 		disklabel dmesg			                        \
 		fastboot fdisk fsck 	                        \
@@ -20,7 +21,7 @@ SUBDIR=	atactl                                 			\
 		wsconsctl
 
 # support for various file systems
-SUBDIR+= newfs dumpfs
+SUBDIR+= newfs dumpfs clri tunefs
 SUBDIR+= newfs_lfs dumpfs_lfs
 SUBDIR+= newfs_msdos fsck_msdos
 SUBDIR+= mount_cd9660

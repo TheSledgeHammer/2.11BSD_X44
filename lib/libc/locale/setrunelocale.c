@@ -110,6 +110,7 @@ loadlocaletable(rl)
 	addrunelocale(rl, ENCODING_EUC, _EUC_init);
 }
 
+/* add rune to table */
 void
 addrunelocale(rl, encoding, init)
 	_RuneLocale *rl;
@@ -125,6 +126,7 @@ addrunelocale(rl, encoding, init)
 	LIST_INSERT_HEAD(&lthead, lt, next);
 }
 
+/* delete rune from table */
 void
 delrunelocale(encoding)
 	char *encoding;
@@ -161,6 +163,7 @@ initrunelocale(rl)
 	}
 }
 
+/* initializes all runes in table */
 int
 newrunelocale(rl)
 	_RuneLocale *rl;
@@ -177,4 +180,23 @@ newrunelocale(rl)
 		return (ret);
 	}
 	return (0);
+}
+
+/* search table for rune */
+_RuneLocale *
+findrunelocale(encoding)
+	char *encoding;
+{
+	struct localetable *lt;
+	_RuneLocale *rl;
+
+	lt = lookuplocaletable(encoding);
+	if (lt == NULL) {
+		return (NULL);
+	}
+	rl = lt->runelocale;
+	if (rl == NULL) {
+		return (NULL);
+	}
+	return (rl);
 }

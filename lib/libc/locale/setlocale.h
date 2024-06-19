@@ -65,9 +65,10 @@ __BEGIN_DECLS
 const char *__get_locale_env(int);
 
 /* setrunelocale.c */
-void addrunelocale(_RuneLocale *, char *, int (*)(_RuneLocale *));
-void delrunelocale(char *);
-int	newrunelocale(_RuneLocale *);
+void 		addrunelocale(_RuneLocale *, char *, int (*)(_RuneLocale *));
+void 		delrunelocale(char *);
+int			newrunelocale(_RuneLocale *);
+_RuneLocale *findrunelocale(char *);
 __END_DECLS
 
 #endif /* !_SETLOCALE_H_ */
