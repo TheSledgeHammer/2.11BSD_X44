@@ -118,7 +118,7 @@ duppart(category, src, dst)
 	} else {
         return (1);
     }
-	return (0 != dst->part_category[category]);
+	return (0 != dst->part_impl[category]);
 }
 
 locale_t
