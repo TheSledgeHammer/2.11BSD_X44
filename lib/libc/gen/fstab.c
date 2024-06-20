@@ -79,7 +79,7 @@ getfstab(void)
 }
 
 static int
-fstabscan()
+fstabscan(void)
 {
 	char *cp;
 	register char *bp;

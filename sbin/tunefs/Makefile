@@ -4,6 +4,7 @@
 
 PROG=	tunefs
 MAN=	tunefs.8
+LDADD+=-lutil
 
 .PATH:  ${NETBSDSRCDIR}/sys/ufs/ffs
 

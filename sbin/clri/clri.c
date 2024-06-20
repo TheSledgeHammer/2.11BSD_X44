@@ -77,7 +77,6 @@ main(argc, argv)
 	register struct ufs2_dinode *ip2;
 	register int fd;
 	void *ibuf;
-	///struct dinode ibuf[MAXBSIZE / sizeof (struct dinode)];
 	long generation, bsize;
 	off_t offset;
 	int inonum;

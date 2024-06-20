@@ -88,8 +88,7 @@ opendisk(const char *path, int flags, char *buf, size_t buflen, int iscooked)
 	if (f != -1 || errno != ENOENT)
 		return (f);
 
-	snprintf(buf, buflen, "%s%s%s%c", _PATH_DEV, iscooked ? "" : "r", path,
-	    'a' + rawpart);
+	snprintf(buf, buflen, "%s%s%s%c", _PATH_DEV, iscooked ? "" : "r", path, 'a' + rawpart);
 	f = open(buf, flags);
 	return (f);
 }
