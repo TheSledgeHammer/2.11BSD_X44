@@ -53,43 +53,6 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #ifdef lint
 #define __inline
 #endif
-/*
-static __inline _RuneType 	__runetype_w(wint_t);
-static __inline int 		__isctype_w(wint_t, _RuneType);
-static __inline wint_t 		__toupper_w(wint_t);
-static __inline wint_t 		__tolower_w(wint_t);
-
-static __inline _RuneType
-__runetype_w(c)
-	wint_t c;
-{
-	_RuneLocale *rl = _CurrentRuneLocale;
-
-	return (_RUNE_ISCACHED(c) ? ___runetype_mb(c) : rl->runetype[c]);
-}
-
-static __inline int
-__isctype_w(c, f)
-	wint_t c;
-	_RuneType f;
-{
-	return (!!(__runetype_w(c) & f));
-}
-
-static __inline wint_t
-__toupper_w(c)
-	wint_t c;
-{
-	return (_towctrans(c, _wctrans_upper(_CurrentRuneLocale)));
-}
-
-static __inline wint_t
-__tolower_w(c)
-	wint_t c;
-{
-	return (_towctrans(c, _wctrans_lower(_CurrentRuneLocale)));
-}
-*/
 
 #undef iswalnum
 int
