@@ -266,9 +266,9 @@ nbpf_cisc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 		break;
 	case NBPF_OPCODE_TABLE:
 		/* Source/destination, NPF table ID. */
-	//	ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-//		cmpval = nbpf_match_table(state, nbuf, nptr, ncode->n, ncode->i);
-		//break;
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
+		cmpval = nbpf_match_table(state, nbuf, nptr, ncode->n, ncode->i);
+		break;
 	case NBPF_OPCODE_TCP_PORTS:
 		/* Source/destination, port range. */
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);

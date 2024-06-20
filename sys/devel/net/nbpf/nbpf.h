@@ -69,6 +69,10 @@ typedef union nbpf_ipv6 	nbpf_ipv6_t;
 typedef union nbpf_port 	nbpf_port_t;
 typedef union nbpf_icmp 	nbpf_icmp_t;
 
+typedef struct nbpf_table	nbpf_table_t;
+typedef struct nbpf_tblent 	nbpf_tblent_t;
+typedef nbpf_table_t 		*nbpf_tableset_t;
+
 typedef void 				nbpf_buf_t;
 typedef void 				nbpf_cache_t;
 typedef struct nbpf_state	nbpf_state_t;
@@ -165,6 +169,23 @@ nbpf_get_tag(const nbpf_state_t *state)
 	return (state->nbs_tag);
 }
 
+static __inline void
+nbpf_malloc(cache, size, type, flags)
+	void *cache;
+	u_long size;
+	int type, flags;
+{
+	cache = npf_malloc(size, type, flags);
+}
+
+static __inline void
+nbpf_free(cache, type)
+	void *cache;
+	int type;
+{
+	free(cache, type);
+}
+
 /* Network buffer interface. */
 void 	*nbpf_dataptr(void *);
 void 	*nbpf_advance(nbpf_buf_t **, void *, u_int);
@@ -194,7 +215,7 @@ void	nbpf_addr_mask(const nbpf_addr_t *, const nbpf_netmask_t, const int, nbpf_a
 /* Complex instructions. */
 int		nbpf_match_ether(nbpf_buf_t *, int, int, uint16_t, uint32_t *);
 int		nbpf_match_proto(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
-int		nbpf_match_table(nbpf_state_t *, nbpf_buf_t *, void *, const int, const u_int); /* Not implemented */
+int		nbpf_match_table(nbpf_state_t *, nbpf_buf_t *, void *, const int, const u_int);
 int		nbpf_match_ipv4(nbpf_state_t *, nbpf_buf_t *, void *, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int		nbpf_match_ipv6(nbpf_state_t *, nbpf_buf_t *, void *, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int		nbpf_match_tcp_ports(nbpf_state_t *, nbpf_buf_t *, void *, const int, const uint32_t);
@@ -203,4 +224,23 @@ int		nbpf_match_icmp4(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 int		nbpf_match_icmp6(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 int		nbpf_match_tcpfl(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 
+/* Tableset interface. */
+void	nbpf_tableset_sysinit(void);
+void	nbpf_tableset_sysfini(void);
+
+extern const pt_tree_ops_t nbpf_table_ptree_ops;
+
+nbpf_tableset_t *nbpf_tableset_create(void);
+void	nbpf_tableset_destroy(nbpf_tableset_t *);
+int		nbpf_tableset_insert(nbpf_tableset_t *, nbpf_table_t *);
+void	nbpf_tableset_reload(nbpf_tableset_t *, nbpf_tableset_t *);
+
+nbpf_table_t *nbpf_table_create(u_int, int, size_t);
+void		nbpf_table_destroy(nbpf_table_t *);
+
+int		nbpf_table_check(const nbpf_tableset_t *, u_int, int);
+int		nbpf_table_insert(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
+int		nbpf_table_remove(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
+int		nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *);
+int		nbpf_table_list(nbpf_tableset_t *, u_int, void *, size_t);
 #endif /* _NET_NBPF_H_ */

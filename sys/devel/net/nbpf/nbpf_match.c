@@ -117,6 +117,38 @@ nbpf_match_proto(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, uint32_t ap)
 }
 
 /*
+ * npf_match_table: match IP address against NPF table.
+ */
+int
+nbpf_match_table(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int sd, const u_int tid)
+{
+	nbpf_tableset_t *tblset;
+	nbpf_ipv4_t *nb4 = &state->nbs_ip4;
+	nbpf_ipv6_t *nb6 = &state->nbs_ip6;
+	const nbpf_addr_t *addr, *addr4, addr6;
+	const int alen;
+
+	if (!nbpf_iscached(state, NBPC_IP46)) {
+		/* Match an address against IPv4 */
+		if (!nbpf_fetch_ipv4(state, nb4, nbuf, nptr)) {
+			return (-1);
+		}
+		/* Match an address against IPv6 */
+		if (!nbpf_fetch_ipv6(state, nb6, nbuf, nptr)) {
+			return (-1);
+		}
+		KASSERT(nbpf_iscached(state, NBPC_IP46));
+	}
+	addr4 = (sd ? nb4->nb4_srcip : nb4->nb4_dstip);
+	addr6 = (sd ? nb6->nb6_srcip : nb6->nb6_dstip);
+	addr = (sd ? addr4 : addr6);
+	//tblset = npf_core_tableset();
+	alen = state->nbs_alen;
+
+	return (nbpf_table_lookup(tblset, tid, alen, addr) ? -1 : 0);
+}
+
+/*
  * npf_match_ipmask: match an address against netaddr/mask.
  */
 int

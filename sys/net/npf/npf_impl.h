@@ -115,9 +115,11 @@ typedef struct npf_session		npf_session_t;
 
 struct npf_sehash;
 struct npf_table;
+struct npf_tblent;
 
 typedef struct npf_sehash	npf_sehash_t;
 typedef struct npf_table	npf_table_t;
+typedef struct npf_tblent 	npf_tblent_t;
 
 typedef npf_table_t 		*npf_tableset_t;
 
