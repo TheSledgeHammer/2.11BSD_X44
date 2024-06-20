@@ -4,7 +4,7 @@
 .include <bsd.own.mk>
 
 SUBDIR=	atactl                                 			\
-		badsect											\ 
+		badsect											\
         ccdconfig 				                        \
 		disklabel dmesg			                        \
 		fastboot fdisk fsck 	                        \
