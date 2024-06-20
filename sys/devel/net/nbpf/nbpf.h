@@ -175,7 +175,7 @@ nbpf_malloc(cache, size, type, flags)
 	u_long size;
 	int type, flags;
 {
-	cache = npf_malloc(size, type, flags);
+	cache = malloc(size, type, flags);
 }
 
 static __inline void
