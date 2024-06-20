@@ -374,7 +374,7 @@ bread(bno, buf, cnt)
 		err(6, "FS SEEK");
 	}
 	if ((i = read(fi, buf, cnt)) != cnt) {
-		err(6, "FS READ");
+		err(5, "FS READ");
 	}
 }
 
