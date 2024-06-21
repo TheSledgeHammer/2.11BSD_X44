@@ -81,7 +81,7 @@ tuba_callout(tc)
 	callout_init(&tc->tc_callout);
 	callout_schedule(&tc->tc_callout, arpt_prune * hz);
 	for (i = tuba_table_size; i > 0; i--) {
-		if ((tc == tuba_table[i]) && (tc->tc_refcnt == 0) && (tc->tc_time < timelimit)) {
+		if ((tc = tuba_table[i]) && (tc->tc_refcnt == 0) && (tc->tc_time < timelimit)) {
 			tuba_table[i] = 0;
 			rn_delete(&tc->tc_siso.siso_addr, NULL, tuba_tree);
 			Free(tc);
