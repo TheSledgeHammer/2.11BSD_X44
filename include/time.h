@@ -75,12 +75,16 @@ double 		difftime(time_t, time_t);
 struct tm 	*gmtime(const time_t *);
 struct tm 	*localtime(const time_t *);
 time_t 		mktime(struct tm *);
-size_t 		strftime(char *, size_t, const char *, const struct tm *);
+size_t 		strftime(char * __restrict, size_t, const char * __restrict, const struct tm * __restrict);
 time_t 		time(time_t *);
 
 #ifndef _ANSI_SOURCE
 void 		tzset(void);
 #endif /* not ANSI */
+
+#if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
+char 		*strptime(const char * __restrict, const char * __restrict, struct tm * __restrict);
+#endif
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 char 		*timezone(int, int);
@@ -93,6 +97,18 @@ void 		tzsetwall(void);
  * need to include unistd.h
  */
 long 		__sysconf(int);
+
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
+#  ifndef __LOCALE_T_DECLARED
+typedef struct _locale		*locale_t;
+#  define __LOCALE_T_DECLARED
+#  endif
+size_t strftime_l(char * __restrict, size_t, const char * __restrict, const struct tm * __restrict, locale_t)
+#endif
+
+#if defined(__BSD_VISIBLE)
+char *strptime_l(const char * __restrict, const char * __restrict, struct tm * __restrict, locale_t);
+#endif
 __END_DECLS
 
 #endif /* !_TIME_H_ */

@@ -1,11 +1,12 @@
 #	$211BSD: files.nbpf Sources v 1.0
 
 # NBPF Sources
-file	net/nbpf/lpm.c
 file	net/nbpf/nbpf.c
 file	net/nbpf/nbpf_buf.c
 file	net/nbpf/nbpf_fetch.c
 file	net/nbpf/nbpf_match.c
 file	net/nbpf/nbpf_ncode.c
+
+file	net/nbpf/lpm.c
 file	net/nbpf/nbpf_tableset.c
 file	net/nbpf/nbpf_tableset_ptree.c

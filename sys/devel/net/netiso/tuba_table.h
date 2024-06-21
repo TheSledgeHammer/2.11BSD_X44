@@ -46,6 +46,7 @@ struct tuba_cache {
 	u_short	                tc_ssum;	/* swab(tc_sum) */
 	struct sockaddr_iso    	tc_siso;	/* for responding */
 	struct iso_addr        	tc_addr;
+	struct callout			tc_callout; /* callouts */
 };
 
 #define ADDCARRY(x)  (x >= 65535 ? x -= 65535 : x)

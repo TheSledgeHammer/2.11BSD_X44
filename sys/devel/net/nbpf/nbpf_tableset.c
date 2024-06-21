@@ -611,20 +611,32 @@ nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	return ent ? 0 : ENOENT;
 }
 
+struct nbpf_ioctl_table {
+	int					nct_cmd;
+	u_int				nct_tid;
+	int					nct_alen;
+	nbpf_addr_t			nct_addr;
+	nbpf_netmask_t		nct_mask;
+
+	int 				nct_type;
+	size_t				nct_hsize;
+};
+typedef struct nbpf_ioctl_table nbpf_ioctl_table_t;
+
 static int
 table_ent_copyout(nbpf_tblent_t *ent, nbpf_netmask_t mask, void *ubuf, size_t len, size_t *off)
 {
 	void *ubufp = (uint8_t *)ubuf + *off;
-	nbpf_ioctl_ent_t uent;
+	nbpf_ioctl_table_t uent;
 
-	if ((*off += sizeof(nbpf_ioctl_ent_t)) > len) {
+	if ((*off += sizeof(nbpf_ioctl_table_t)) > len) {
 		return ENOMEM;
 	}
-	uent.alen = ent->te_alen;
-	memcpy(&uent.addr, &ent->te_addr, sizeof(nbpf_addr_t));
-	uent.mask = mask;
+	uent.nct_alen = ent->te_alen;
+	memcpy(&uent.nct_addr, &ent->te_addr, sizeof(nbpf_addr_t));
+	uent.nct_mask = mask;
 
-	return copyout(&uent, ubufp, sizeof(nbpf_ioctl_ent_t));
+	return copyout(&uent, ubufp, sizeof(nbpf_ioctl_table_t));
 }
 
 static int
@@ -694,4 +706,97 @@ nbpf_table_list(nbpf_tableset_t *tset, u_int tid, void *ubuf, size_t len)
 	rwl_unlock(&t->t_lock);
 
 	return error;
+}
+
+/*
+#define CREATE	0
+#define DESTROY	1
+#define LOOKUP	2
+#define INSERT	3
+#define REMOVE	4
+#define CHECK	5
+
+int
+nbpf_ioctl()
+{
+
+	switch (cmd) {
+	case CREATE:
+		nbpf_table_create(tid, type, hsize);
+		break;
+	case DESTROY:
+		nbpf_table_destroy(tbl);
+		break;
+	case LOOKUP:
+		nbpf_table_lookup(tset, tid, alen, addr);
+		break;
+	case INSERT:
+		nbpf_table_insert(tset, tid, alen, addr, mask);
+		break;
+	case REMOVE:
+		nbpf_table_remove(tset, tid, alen, addr, mask);
+		break;
+	case CHECK:
+		nbpf_table_check(tset, tid, type);
+		break;
+	}
+}
+*/
+
+int
+nbpf_mktable(tblset, tid, type, hsize)
+	nbpf_tableset_t *tblset;
+	u_int tid;
+	int type;
+	size_t hsize;
+{
+	nbpf_table_t *tbl;
+	int error;
+
+	error = nbpf_table_check(tblset, tid, type);
+	if (error != 0) {
+		return (error);
+	}
+	tbl = nbpf_table_create(tid, type, hsize);
+	if (tbl == NULL) {
+		return (ENOMEM);
+	}
+	error = nbpf_tableset_insert(tblset, tbl);
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
+}
+
+nbpf_tableset_t *
+nbpf_init_table(tid, type, hsize)
+	u_int tid;
+	int type;
+	size_t hsize;
+{
+	nbpf_tableset_t *tset;
+	int error;
+
+	nbpf_tableset_sysinit();
+
+	tset = nbpf_tableset_create();
+	if (tset == NULL) {
+		return (NULL);
+	}
+	error = nbpf_mktable(tset, tid, type, hsize);
+	if (error != 0) {
+		return (NULL);
+	}
+	return (tset);
+}
+
+nbpf_tcp()
+{
+	nbpf_tableset_t *tblset;
+
+	tblset = nbpf_init_table(tid, NBPF_TABLE_LPM, 1024);
+
+	nbpf_table_t *t;
+
+	t = nbpf_table_insert(tblset, );
 }

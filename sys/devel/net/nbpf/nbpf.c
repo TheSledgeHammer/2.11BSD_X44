@@ -117,13 +117,3 @@ nbpf_reassembly(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
 	}
 	return (0);
 }
-
-void
-nbpf_init(void)
-{
-	nbpf_tableset_t *tset;
-
-	nbpf_tableset_sysinit();
-
-	tset = nbpf_tableset_create();
-}

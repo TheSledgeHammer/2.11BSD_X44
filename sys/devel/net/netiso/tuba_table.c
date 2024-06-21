@@ -57,31 +57,43 @@ struct	tuba_cache **tuba_table;
 struct	radix_node_head *tuba_tree;
 extern	int arpt_keep, arpt_prune;	/* use same values as arp cache */
 
+static void	tuba_callout(struct	tuba_cache *);
+
 void
 tuba_timer(void)
 {
-	register struct	tuba_cache *tc;
-	int	i, s;
-	long timelimit;
+	register struct	tuba_cache tc;
+	int	s;
 
 	s = splnet();
+	tuba_callout(&tc);
+	splx(s);
+}
+
+static void
+tuba_callout(tc)
+	struct	tuba_cache *tc;
+{
+	int	i;
+	long timelimit;
+
 	timelimit = time.tv_sec - arpt_keep;
-	timeout(tuba_timer, (caddr_t)0, arpt_prune * hz);
+	callout_init(&tc->tc_callout);
+	callout_schedule(&tc->tc_callout, arpt_prune * hz);
 	for (i = tuba_table_size; i > 0; i--) {
-		if ((tc = tuba_table[i]) && (tc->tc_refcnt == 0) && (tc->tc_time < timelimit)) {
+		if ((tc == tuba_table[i]) && (tc->tc_refcnt == 0) && (tc->tc_time < timelimit)) {
 			tuba_table[i] = 0;
 			rn_delete(&tc->tc_siso.siso_addr, NULL, tuba_tree);
 			Free(tc);
 		}
 	}
-	splx(s);
 }
 
 void
 tuba_table_init()
 {
 	rn_inithead((void **)&tuba_tree, 0);
-	timeout(tuba_timer, (caddr_t)0, arpt_prune * hz);
+	//timeout(tuba_timer, (caddr_t)0, arpt_prune * hz);
 }
 
 int

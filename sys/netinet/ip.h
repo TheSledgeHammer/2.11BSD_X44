@@ -61,10 +61,11 @@ struct ip {
 #define	IP_DF 0x4000			/* dont fragment flag */
 #define	IP_MF 0x2000			/* more fragments flag */
 #define	IP_OFFMASK 0x1fff		/* mask for fragmenting bits */
-	u_int8_t  ip_ttl;		/* time to live */
-	u_int8_t  ip_p;			/* protocol */
-	u_int16_t ip_sum;		/* checksum */
-	struct	  in_addr ip_src, ip_dst; /* source and dest address */
+	u_int8_t  ip_ttl;			/* time to live */
+	u_int8_t  ip_p;				/* protocol */
+	u_int16_t ip_sum;			/* checksum */
+	struct	  in_addr ip_src;	/* source address */
+	struct	  in_addr ip_dst; 	/* destination address */
 };
 
 #define	IP_MAXPACKET	65535		/* maximum packet size */
