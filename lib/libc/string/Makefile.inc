@@ -8,7 +8,7 @@
 # string sources
 .PATH: ${ARCHDIR}/string ${.CURDIR}/string
 
-SRCS+=	bcmp.c bcopy.c bzero.c ffs.c index.c rindex.c						\
+SRCS+=	bcmp.c bcopy.c bzero.c ffs.c index.c rindex.c strcasestr.c			\
 		strcasecmp.c strcat.c strcmp.c strcoll.c strcpy.c strcspn.c 		\
 		strdup.c strerror.c strlcat.c strlcpy.c strlen.c strmode.c 			\
 		strncat.c strncmp.c strncpy.c strndup.c	strnlen.c strpbrk.c 		\
