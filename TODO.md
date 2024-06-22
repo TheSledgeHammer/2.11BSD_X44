@@ -24,7 +24,6 @@ A General todo list. Don't hesitate to add to this list. :)
 ## sbin:
 - add: More critical software
 	- Generic:
-		- restore
 	- Filesystem:
 		- quotacheck
 	- Network:

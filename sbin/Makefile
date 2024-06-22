@@ -6,7 +6,7 @@
 SUBDIR=	atactl                                 			\
 		badsect											\
         ccdconfig 				                        \
-		disklabel dmesg			                        \
+		disklabel dmesg	dump	                        \
 		fastboot fdisk fsck 	                        \
 		gpt												\
 		ifconfig init 			                        \
@@ -21,11 +21,12 @@ SUBDIR=	atactl                                 			\
 		wsconsctl
 
 # support for various file systems
-SUBDIR+= newfs dumpfs clri tunefs
+SUBDIR+= newfs dumpfs clri restore tunefs
 SUBDIR+= newfs_lfs dumpfs_lfs
 SUBDIR+= newfs_msdos fsck_msdos
 SUBDIR+= mount_cd9660
 SUBDIR+= mount_fdesc
+SUBDIR+= mount_ffs
 SUBDIR+= mount_lfs
 SUBDIR+= mount_lofs
 SUBDIR+= mount_msdos
