@@ -790,13 +790,197 @@ nbpf_init_table(tid, type, hsize)
 	return (tset);
 }
 
-nbpf_tcp()
+nbpf_tcp(tid, alen, addr, mask)
+	u_int tid;
+	const int alen;
+	const nbpf_addr_t *addr;
+	const nbpf_netmask_t mask;
 {
 	nbpf_tableset_t *tblset;
+	nbpf_table_t 	*t;
 
 	tblset = nbpf_init_table(tid, NBPF_TABLE_LPM, 1024);
 
-	nbpf_table_t *t;
+	t = nbpf_table_insert(tblset, tid, alen, addr, mask);
+	if (t == NULL) {
+		nbpf_table_remove(tblset, tid, alen, addr, mask);
+	}
+}
 
-	t = nbpf_table_insert(tblset, );
+struct nbpf_program {
+	u_int 				bf_len;
+	struct nbpf_insn 	*bf_insns; /* ncode */
+};
+
+struct nbpf_d {
+	nbpf_tableset_t		*bd_table;
+
+	nbpf_state_t		*bd_state;
+	struct nbpf_insn 	*bd_filter;
+	int 				bd_layer;
+};
+
+#define	NBPF_CMD_TABLE_LOOKUP	1
+#define	NBPF_CMD_TABLE_ADD		2
+#define	NBPF_CMD_TABLE_REMOVE	3
+
+int
+nbpf_table_ioctl(cmd, tid, alen, addr, mask)
+{
+	npf_tableset_t *tblset;
+	int error;
+
+	tblset = nbpf_init_table(tid, NBPF_TABLE_LPM, 1024);
+
+	switch (cmd) {
+	case NBPF_CMD_TABLE_LOOKUP:
+		error = nbpf_table_lookup(tblset, tid, alen, addr);
+		break;
+	case NBPF_CMD_TABLE_ADD:
+		error = nbpf_table_insert(tblset, tid, alen, addr, mask);
+		break;
+	case NBPF_CMD_TABLE_REMOVE:
+		error = nbpf_table_remove(tblset, tid, alen, addr, mask);
+		break;
+	default:
+		error = EINVAL;
+		break;
+	}
+	return (error);
+}
+
+struct bpf_program {
+	u_int 				bf_len;
+	struct bpf_insn 	*bf_insns;
+	struct nbpf_insn 	*bf_nc_insns; /* ncode */
+};
+
+struct bpf_d {
+	caddr_t				bd_sbuf;		/* store slot */
+	struct bpf_insn 	*bd_filter;
+
+	nbpf_state_t		*bd_nc_state;
+	struct nbpf_insn 	*bd_nc_filter; 	/* ncode filter */
+	int 				bd_nc_layer;
+};
+
+struct bpf_if {
+	struct bpf_if 		*bif_next;
+};
+
+void
+nbpf_init_state(d, layer)
+	struct bpf_d *d;
+	int layer;
+{
+	nbpf_state_t *state;
+
+	state = (nbpf_state_t *)malloc(sizeof(*state), M_DEVBUF, M_DONTWAIT);
+
+	/* TODO: if no tags set, disable */
+	nbpf_set_tag(state, tag);
+
+	d->bd_nc_state = state;
+	d->bd_nc_layer = layer;
+
+	/* place in bpf_allocbufs: */
+	nbpf_cache_all(state, d->bd_sbuf);
+}
+
+int
+nbpf_setf(d, fp)
+	struct bpf_d *d;
+	struct bpf_program *fp;
+{
+	struct nbpf_insn *ncode, *old;
+	u_int nlen, size;
+	int error, s;
+
+	old = d->bd_nc_filter;
+	if (fp->bf_nc_insns == 0) {
+		if (fp->bf_len != 0) {
+			return (EINVAL);
+		}
+		s = splnet();
+		d->bd_nc_filter = 0;
+		reset_d(d);
+		splx(s);
+		if (old != 0) {
+			free((caddr_t)old, M_DEVBUF);
+		}
+		return (0);
+	}
+	nlen = fp->bf_len;
+
+	size = nlen * sizeof(*fp->bf_nc_insns);
+	ncode = (struct nbpf_insn *)malloc(size, M_DEVBUF, M_WAITOK);
+	if (copyin((caddr_t)fp->bf_nc_insns, (caddr_t)ncode, size) == 0 && nbpf_validate(ncode, (int)nlen, &error)) {
+		s = splnet();
+		d->bd_nc_filter = ncode;
+		reset_d(d);
+		splx(s);
+		if (old != 0) {
+			free((caddr_t)old, M_DEVBUF);
+		}
+		return (0);
+	}
+	free((caddr_t)ncode, M_DEVBUF);
+	return (EINVAL);
+}
+
+void
+nbpf_tap(arg, pkt, pktlen)
+	caddr_t arg;
+	u_char *pkt;
+	u_int pktlen;
+{
+	struct bpf_if *bp;
+	struct bpf_d *d;
+	u_int slen;
+
+	bp = (struct bpf_if *)arg;
+	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
+		++d->bd_rcount;
+
+		slen = nbpf_filter(d->bd_nc_state, d->bd_nc_filter, pktlen, d->bd_nc_layer);
+		if (slen != 0) {
+			catchpacket(d, pkt, pktlen, slen, memcpy);
+		}
+	}
+}
+
+void
+nbpf_mtap(arg, m)
+	caddr_t arg;
+	struct mbuf *m;
+{
+	void *(*cpfn)(void *, const void *, size_t);
+	struct bpf_if *bp = (struct bpf_if *)arg;
+	struct bpf_d *d;
+	u_int pktlen, slen, buflen;
+	struct mbuf *m0;
+	void *marg;
+
+	pktlen = 0;
+	for (m0 = m; m0 != 0; m0 = m0->m_next)
+		pktlen += m0->m_len;
+
+	if (pktlen == m->m_len) {
+		cpfn = memcpy;
+		marg = mtod(m, void *);
+		buflen = pktlen;
+	} else {
+		cpfn = bpf_mcpy;
+		marg = m;
+		buflen = 0;
+	}
+
+	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
+		if (!d->bd_seesent && (m->m_pkthdr.rcvif == NULL))
+			continue;
+		++d->bd_rcount;
+		slen = nbpf_filter(d->bd_nc_state, d->bd_nc_filter, pktlen, d->bd_nc_layer);
+		if (slen != 0)
+			catchpacket(d, marg, pktlen, slen, cpfn);
+	}
 }

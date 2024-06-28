@@ -237,20 +237,20 @@ fetchnetstat4(off, istcp)
 	struct inpcb inpcb;
 
 	KREAD(off, &pcbtable, sizeof pcbtable);
-	pprev = &((struct inpcbtable *)off)->inpt_queue.tqh_first;
-	next = TAILQ_FIRST(&pcbtable.inpt_queue);
+	pprev = CIRCLEQ_FIRST(&((struct inpcbtable *)off)->inpt_queue);
+	next = CIRCLEQ_FIRST(&pcbtable.inpt_queue);
 	while (next != TAILQ_END(&pcbtable.inpt_queue)) {
 		inpcbp = (struct inpcb*) next;
 		KREAD(inpcbp, &inpcb, sizeof(inpcb));
 		inp = (struct inpcb*) &inpcb;
-		if (inp->inp_queue.tqe_prev != pprev) {
+		if (CIRCLEQ_PREV(inp, inp_queue) != pprev) {
 			for (p = netcb.ni_forw; p != (struct netinfo *)&netcb; p = p->ni_forw)
 				p->ni_seen = 1;
 			error("Kernel state in transition");
 			return;
 		}
-		pprev = &next->inp_queue.tqe_next;
-		next = inp->inp_queue.tqe_next;
+		pprev = CIRCLEQ_NEXT(next, inp_queue); //&next->inp_queue.tqe_next;
+		next = CIRCLEQ_NEXT(inp, inp_queue); //inp->inp_queue.tqe_next;
 
 		if (inp->inp_af != AF_INET)
 			continue;

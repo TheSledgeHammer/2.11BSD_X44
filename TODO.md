@@ -25,7 +25,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - add: More critical software
 	- Generic:
 	- Filesystem:
-		- quotacheck
 	- Network:
 		- startslip
 

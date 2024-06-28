@@ -14,6 +14,7 @@ SUBDIR=	atactl                                 			\
 		mknod mount mountd		                        \
 		nologin 				                        \
 	    pfctl pflogd ping pppoectl                      \
+	    quotacheck										\
         rcorder reboot route routed			            \
 		savecore scsictl shutdown slattach swapctl		\
         ttyflags                                        \

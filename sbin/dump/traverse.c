@@ -572,7 +572,7 @@ getino(inum, modep)
 	struct ufs1_dinode *dp1;
 	struct ufs2_dinode *dp2;
 
-	if (inoblock == NULL && (inoblock = malloc(ufsib->ufs_bsize)) == NULL) {
+	if (inoblock == NULL && (inoblock = malloc(sblock->fs_bsize)) == NULL) {
 		quit("cannot allocate inode memory.\n");
 	}
 	curino = inum;

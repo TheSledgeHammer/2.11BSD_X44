@@ -3,7 +3,7 @@
 .include <bsd.own.mk>
 
 PROG=	badsect
-MAN8=	badsect.0
+MAN=	badsect.8
 
 .PATH:  ${NETBSDSRCDIR}/sys/ufs/ffs
 
