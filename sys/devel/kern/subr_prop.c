@@ -630,6 +630,8 @@ kdbprop_compare(struct kdbprop *pr1, struct kdbprop *pr2)
 void
 propdb_add(propdb_t db, opaque_t obj, char *name, void *val, size_t len, int type)
 {
+	int ret;
+
 	ret = propdb_set(db, obj, name, val, len, &type, M_NOWAIT);
     if (ret) {
         printf("propdb_add: successful \n");

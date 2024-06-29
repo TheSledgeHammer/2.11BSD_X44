@@ -90,13 +90,6 @@ union dinode {
 #define DIP(dp, field) \
 	(is_ufs2 ? (dp)->dp2.di_##field : (dp)->dp1.di_##field)
 
-#define DIP_SET(dp, field, val) do {	\
-	if (is_ufs2)						\
-		(dp)->dp2.di_##field = (val);	\
-	else								\
-		(dp)->dp1.di_##field = (val);	\
-} while (0)
-
 struct quotaname {
 	long	flags;
 	char	grpqfname[MAXPATHLEN + 1];

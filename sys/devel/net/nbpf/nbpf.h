@@ -225,8 +225,8 @@ int		nbpf_match_icmp6(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 int		nbpf_match_tcpfl(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 
 /* Tableset interface. */
-void	nbpf_tableset_sysinit(void);
-void	nbpf_tableset_sysfini(void);
+void	nbpf_tableset_init(void);
+void	nbpf_tableset_fini(void);
 
 extern const pt_tree_ops_t nbpf_table_ptree_ops;
 

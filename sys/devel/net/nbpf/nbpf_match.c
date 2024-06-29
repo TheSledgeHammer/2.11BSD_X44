@@ -142,7 +142,7 @@ nbpf_match_table(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int sd
 	addr4 = (sd ? nb4->nb4_srcip : nb4->nb4_dstip);
 	addr6 = (sd ? nb6->nb6_srcip : nb6->nb6_dstip);
 	addr = (sd ? addr4 : addr6);
-	//tblset = npf_core_tableset();
+	tblset = nbpf_tableset_create();
 	alen = state->nbs_alen;
 
 	return (nbpf_table_lookup(tblset, tid, alen, addr) ? -1 : 0);

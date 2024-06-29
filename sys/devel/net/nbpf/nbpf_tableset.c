@@ -62,10 +62,8 @@ __KERNEL_RCSID(0, "$NetBSD: npf_tableset.c,v 1.9.2.8 2013/02/11 21:49:48 riz Exp
 #include <net/if.h>
 
 #include "lpm.h"
-
 #include "ptree.h"
 #include "nbpf.h"
-//#include "nbpf_ncode.h"
 
 /*
  * Table structures.
@@ -120,14 +118,14 @@ static nbpf_tblent_t		tblent_cache;
 #define nbpf_tableset_free(addr)		(nbpf_free(addr, M_NBPF))
 
 void
-nbpf_tableset_sysinit(void)
+nbpf_tableset_init(void)
 {
 	nbpf_malloc(&tblent_cache, sizeof(nbpf_tblent_t), M_NBPF, M_WAITOK);
 	KASSERT(tblent_cache != NULL);
 }
 
 void
-nbpf_tableset_sysfini(void)
+nbpf_tableset_fini(void)
 {
 	nbpf_free(&tblent_cache, M_NBPF);
 }
@@ -574,7 +572,7 @@ nbpf_table_remove(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 int
 nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_addr_t *addr)
 {
-	const u_int aidx = NPF_ADDRLEN2TREE(alen);
+	const u_int aidx = NBPF_ADDRLEN2TREE(alen);
 	nbpf_tblent_t *ent;
 	nbpf_table_t *t;
 
@@ -617,9 +615,7 @@ struct nbpf_ioctl_table {
 	int					nct_alen;
 	nbpf_addr_t			nct_addr;
 	nbpf_netmask_t		nct_mask;
-
 	int 				nct_type;
-	size_t				nct_hsize;
 };
 typedef struct nbpf_ioctl_table nbpf_ioctl_table_t;
 
@@ -777,7 +773,7 @@ nbpf_init_table(tid, type, hsize)
 	nbpf_tableset_t *tset;
 	int error;
 
-	nbpf_tableset_sysinit();
+	nbpf_tableset_init();
 
 	tset = nbpf_tableset_create();
 	if (tset == NULL) {
@@ -808,16 +804,21 @@ nbpf_tcp(tid, alen, addr, mask)
 }
 
 struct nbpf_program {
-	u_int 				bf_len;
-	struct nbpf_insn 	*bf_insns; /* ncode */
+	u_int 				nbf_len;
+	struct nbpf_insn 	*nbf_insns; /* ncode */
 };
 
 struct nbpf_d {
-	nbpf_tableset_t		*bd_table;
+	/* ncode */
+	nbpf_tableset_t		*nbd_table;
 
-	nbpf_state_t		*bd_state;
-	struct nbpf_insn 	*bd_filter;
-	int 				bd_layer;
+	nbpf_state_t		*nbd_state;
+	struct nbpf_insn 	*nbd_filter;
+	int 				nbd_layer;
+};
+
+struct nbpf_if {
+	struct nbpf_d 		*nbif_dlist;		/* descriptor list */
 };
 
 #define	NBPF_CMD_TABLE_LOOKUP	1
@@ -827,10 +828,8 @@ struct nbpf_d {
 int
 nbpf_table_ioctl(cmd, tid, alen, addr, mask)
 {
-	npf_tableset_t *tblset;
+	nbpf_tableset_t *tblset;
 	int error;
-
-	tblset = nbpf_init_table(tid, NBPF_TABLE_LPM, 1024);
 
 	switch (cmd) {
 	case NBPF_CMD_TABLE_LOOKUP:
@@ -847,6 +846,20 @@ nbpf_table_ioctl(cmd, tid, alen, addr, mask)
 		break;
 	}
 	return (error);
+}
+
+nbpf_attachd(nd, nbp)
+	struct nbpf_d 	*nd;
+	struct nbpf_if 	*nbp;
+{
+	register nbpf_state_t 	*state;
+
+	state = (nbpf_state_t *)malloc(sizeof(*state), M_DEVBUF, M_DONTWAIT);
+
+	table = nbpf_init_table(tid, type, 1024);
+
+	nd->nbd_state = state;
+	nd->nbd_table = table;
 }
 
 struct bpf_program {
@@ -868,23 +881,22 @@ struct bpf_if {
 	struct bpf_if 		*bif_next;
 };
 
-void
-nbpf_init_state(d, layer)
-	struct bpf_d *d;
-	int layer;
+nbpfioctl()
 {
-	nbpf_state_t *state;
 
+}
+
+void
+nbpf_init(d, layer, tag)
+	struct bpf_d *d;
+	int layer, tag;
+{
+	nbpf_state_t 		*state;
+	nbpf_tableset_t 	*table;
 	state = (nbpf_state_t *)malloc(sizeof(*state), M_DEVBUF, M_DONTWAIT);
-
-	/* TODO: if no tags set, disable */
 	nbpf_set_tag(state, tag);
-
 	d->bd_nc_state = state;
 	d->bd_nc_layer = layer;
-
-	/* place in bpf_allocbufs: */
-	nbpf_cache_all(state, d->bd_sbuf);
 }
 
 int
