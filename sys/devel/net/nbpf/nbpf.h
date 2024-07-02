@@ -186,6 +186,29 @@ nbpf_free(cache, type)
 	free(cache, type);
 }
 
+/* Table types. */
+#define	NBPF_TABLE_LPM			1
+#define	NBPF_TABLE_HASH			2
+#define	NBPF_TABLE_TREE			3
+
+#define	NBPF_TABLE_SLOTS		32
+
+/* Table Defaults */
+#define NBPF_TABLE_TID_DEFAULT 		0				/* default starting tid*/
+#define NBPF_TABLE_TYPE_DEFAULT		NBPF_TABLE_TREE	/* default type */
+#define NBPF_TABLE_HSIZE_DEFAULT	1024			/* default hsize */
+
+#ifndef NBPF_TABLE_TID
+#define NBPF_TABLE_TID 				NBPF_TABLE_TID_DEFAULT
+#endif
+
+#ifndef NBPF_TABLE_TYPE
+#define NBPF_TABLE_TYPE 			NBPF_TABLE_TYPE_DEFAULT
+#endif
+#ifndef NBPF_TABLE_HSIZE
+#define NBPF_TABLE_HSIZE			NBPF_TABLE_HSIZE_DEFAULT
+#endif
+
 /* Network buffer interface. */
 void 	*nbpf_dataptr(void *);
 void 	*nbpf_advance(nbpf_buf_t **, void *, u_int);
@@ -242,5 +265,7 @@ int				nbpf_table_check(const nbpf_tableset_t *, u_int, int);
 int				nbpf_table_insert(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int				nbpf_table_remove(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int				nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *);
-int				nbpf_table_list(nbpf_tableset_t *, u_int, void *, size_t);
+
+int				nbpf_mktable(nbpf_tableset_t *, nbpf_table_t *, u_int, int, size_t);
+
 #endif /* _NET_NBPF_H_ */

@@ -35,7 +35,317 @@ __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.3 2013/02/08 19:18:10 riz Exp $"
 #include <sys/param.h>
 #include <sys/mbuf.h>
 
+#include <net/bpf.h>
+#include <net/bpfdesc.h>
+
 #include "nbpf.h"
+
+/* TODO:
+ * - catchpacket??
+ */
+
+struct nbpf_program {
+	u_int 				nbf_len;
+	struct nbpf_insn 	*nbf_insns; /* ncode */
+};
+
+struct nbpf_d {
+	struct nbpf_d		*nbd_next;			/* Linked list of descriptors */
+
+	/* nbpf tables */
+	nbpf_tableset_t		*nbd_tableset;
+	nbpf_table_t 		*nbd_table;
+
+	u_long				nbd_rcount;			/* number of packets received */
+	int					nbd_seesent;	/* true if bpf should see sent packets */
+	/* nbpf ncode */
+	nbpf_state_t		*nbd_state;
+	struct nbpf_insn 	*nbd_filter;
+	int 				nbd_layer;
+};
+
+struct nbpf_if {
+	struct nbpf_if		*nbif_next;			/* list of all interfaces */
+	struct nbpf_d 		*nbif_dlist;		/* descriptor list */
+	struct nbpf_if 		**nbif_driverp;		/* pointer into softc */
+	u_int 				nbif_dlt;			/* link layer type */
+	u_int 				nbif_hdrlen;		/* length of header (with padding) */
+	struct ifnet 		*nbif_ifp;			/* correspoding interface */
+};
+
+struct nbpf_d	nbpf_dtab[NNBPFILTER];
+
+dev_type_open(nbpfopen);
+dev_type_close(nbpfclose);
+dev_type_read(nbpfread);
+dev_type_write(nbpfwrite);
+dev_type_ioctl(nbpfioctl);
+dev_type_poll(nbpfpoll);
+dev_type_kqfilter(nbpfkqfilter);
+
+const struct cdevsw nbpf_cdevsw = {
+		.d_open = nbpfopen,
+		.d_close = nbpfclose,
+		.d_read = nbpfread,
+		.d_write = nbpfwrite,
+		.d_ioctl = nbpfioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = nbpfpoll,
+		.d_mmap = nommap,
+		.d_kqfilter = nbpfkqfilter,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
+};
+
+void
+nbpf_table_init(nd)
+	struct nbpf_d *nd;
+{
+	nbpf_tableset_t tset;
+	nbpf_table_t t;
+	nbpf_tableset_t *tblset;
+	nbpf_table_t *tbl;
+	int error;
+
+	nbpf_tableset_init();
+
+	error = nbpf_mktable(&tset, &t, NBPF_TABLE_TID, NBPF_TABLE_TYPE, NBPF_TABLE_HSIZE);
+	if (error != 0) {
+		return;
+	}
+	tblset = &tset;
+	tbl = &t;
+	nd->nbd_tableset = tblset;
+	nd->nbd_table = tbl;
+}
+
+void
+nbpf_init(nd, layer, tag)
+	struct nbpf_d *nd;
+	int layer, tag;
+{
+	nbpf_state_t *state;
+
+	state = (nbpf_state_t *)malloc(sizeof(*state), M_DEVBUF, M_DONTWAIT);
+	nbpf_set_tag(state, tag);
+	nd->nbd_state = state;
+	nd->nbd_layer = layer;
+}
+
+static void
+nbpf_attachd(nd)
+	struct nbpf_d *nd;
+{
+	nbpf_init(nd, NBPC_LAYER4, PACKET_TAG_NONE);
+}
+
+static void
+nbpf_detachd(nd)
+	struct nbpf_d *nd;
+{
+	free(nd->nbd_state, M_DEVBUF);
+}
+
+int
+nbpfopen(dev, flag, mode, p)
+	dev_t dev;
+	int flag;
+	int mode;
+	struct proc *p;
+{
+	return (0);
+}
+
+int
+nbpfclose(dev, flag, mode, p)
+	dev_t dev;
+	int flag;
+	int mode;
+	struct proc *p;
+{
+	int error;
+	return (error);
+}
+
+int
+nbpfread(dev, uio, ioflag)
+	dev_t dev;
+	struct uio *uio;
+	int ioflag;
+{
+	int error;
+	return (error);
+}
+
+int
+nbpfwrite(dev, uio, ioflag)
+	dev_t dev;
+	struct uio *uio;
+	int ioflag;
+{
+	int error;
+	return (error);
+}
+
+#define BIOCSTBLF	_IOW('B', 115, struct nbpf_program) /* nbpf tblset */
+
+int
+nbpfioctl(dev, cmd, addr, flag, p)
+	dev_t dev;
+	u_long cmd;
+	caddr_t addr;
+	int flag;
+	struct proc *p;
+{
+	struct nbpf_d *d;
+	int error;
+
+	d = &nbpf_dtab[minor(dev)];
+
+	switch (cmd) {
+	case BIOCSETF:
+		int ret = 0;
+		error = nbpf_setf(d, (struct nbpf_program *)addr, &ret);
+		if (ret != 0) {
+			error = ret;
+		}
+		break;
+
+	case BIOCSTBLF:
+		struct nbpf_ioctl_table *nbiot = (struct nbpf_ioctl_table *)arg;
+		nbpf_tableset_t *tset = d->nbd_tableset;
+		if (tset == NULL) {
+			nbpf_table_init(d);
+		}
+		error = nbpf_table_ioctl1(nbiot, tset);
+		break;
+	}
+	return (error);
+}
+
+int
+nbpfpoll(dev, events, p)
+{
+	int revents;
+
+	return (revents);
+}
+
+int
+nbpfkqfilter(dev, kn)
+{
+	return (0);
+}
+
+int
+nbpf_setf(d, fp, error)
+	struct nbpf_d *d;
+	struct nbpf_program *fp;
+	int *error;
+{
+	struct nbpf_insn *ncode, *old;
+	u_int nlen, size;
+	int s;
+
+	old = d->nbd_filter;
+	if (fp->nbf_insns == 0) {
+		if (fp->nbf_len != 0) {
+			return (EINVAL);
+		}
+		s = splnet();
+		d->nbd_filter = 0;
+		reset_d(d);
+		splx(s);
+		if (old != 0) {
+			free((caddr_t)old, M_DEVBUF);
+		}
+		return (0);
+	}
+	nlen = fp->nbf_len;
+
+	size = nlen * sizeof(*fp->nbf_insns);
+	ncode = (struct nbpf_insn *)malloc(size, M_DEVBUF, M_WAITOK);
+	if (copyin((caddr_t)fp->nbf_insns, (caddr_t)ncode, size) == 0 && nbpf_validate(ncode, (int)nlen, error)) {
+		s = splnet();
+		d->nbd_filter = ncode;
+		reset_d(d);
+		splx(s);
+		if (old != 0) {
+			free((caddr_t)old, M_DEVBUF);
+		}
+		return (0);
+	}
+	free((caddr_t)ncode, M_DEVBUF);
+	return (EINVAL);
+}
+
+void
+nbpf_filtncatch(d, pkt, pktlen, slen, cpfn)
+	struct nbpf_d *d;
+	u_char *pkt;
+	u_int pktlen;
+	u_int slen;
+	void *(*cpfn)(void *, const void *, size_t);
+{
+	slen = nbpf_filter(d->nbd_state, d->nbd_filter, pktlen, d->nbd_layer);
+	if (slen != 0) {
+		catchpacket(d, pkt, pktlen, slen, cpfn);
+	}
+}
+
+void
+nbpf_tap(arg, pkt, pktlen)
+	caddr_t arg;
+	u_char *pkt;
+	u_int pktlen;
+{
+	struct nbpf_if *bp;
+	struct nbpf_d *d;
+	u_int slen;
+
+	bp = (struct nbpf_if *)arg;
+	for (d = bp->nbif_dlist; d != 0; d = d->nbd_next) {
+		++d->nbd_rcount;
+
+		nbpf_filtncatch(d, pkt, pktlen, memcpy);
+	}
+}
+
+void
+nbpf_mtap(arg, m)
+	caddr_t arg;
+	struct mbuf *m;
+{
+	void *(*cpfn)(void *, const void *, size_t);
+	struct nbpf_if *bp = (struct nbpf_if *)arg;
+	struct nbpf_d *d;
+	u_int pktlen, slen, buflen;
+	struct mbuf *m0;
+	void *marg;
+
+	pktlen = 0;
+	for (m0 = m; m0 != 0; m0 = m0->m_next)
+		pktlen += m0->m_len;
+
+	if (pktlen == m->m_len) {
+		cpfn = memcpy;
+		marg = mtod(m, void *);
+		buflen = pktlen;
+	} else {
+		cpfn = bpf_mcpy;
+		marg = m;
+		buflen = 0;
+	}
+
+	for (d = bp->nbif_dlist; d != 0; d = d->nbd_next) {
+		if (!d->nbd_seesent && (m->m_pkthdr.rcvif == NULL))
+			continue;
+		++d->nbd_rcount;
+
+		nbpf_filtncatch(d, marg, pktlen, slen, cpfn);
+	}
+}
 
 static int
 nbpf_check_cache(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr)
@@ -90,7 +400,6 @@ nbpf_recache(nbpf_state_t *state, nbpf_buf_t *nbuf)
 	KASSERT((flags & mflags) == mflags);
 }
 
-
 int
 nbpf_reassembly(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
 {
@@ -116,4 +425,32 @@ nbpf_reassembly(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
 		return (EINVAL);
 	}
 	return (0);
+}
+
+int
+nbpf_packet_handler(d, buf, mp)
+	struct nbpf_d *d;
+	void *buf;
+	struct mbuf **mp;
+{
+	int error;
+
+	if (nbpf_cache_all(d->nbd_state, buf) & NBPC_IPFRAG) {
+		error = nbpf_reassembly(d->nbd_state, buf, mp);
+		if (error) {
+			goto out;
+		}
+		if (*mp == NULL) {
+			return (0);
+		}
+	}
+out:
+	if (!error) {
+		error = ENETUNREACH;
+	}
+	if (*mp) {
+		m_freem(*mp);
+		*mp = NULL;
+	}
+	return (error);
 }

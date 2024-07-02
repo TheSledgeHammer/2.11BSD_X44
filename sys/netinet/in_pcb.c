@@ -139,7 +139,7 @@ __KERNEL_RCSID(0, "$NetBSD: in_pcb.c,v 1.94 2004/03/02 02:26:28 thorpej Exp $");
 #include <netipsec/key.h>
 #endif /* IPSEC */
 
-struct	in_addr zeroin_addr;
+struct in_addr zeroin_addr;
 
 #define	INPCBHASH_PORT(table, lport) \
 	&(table)->inpt_porthashtbl[ntohs(lport) & (table)->inpt_porthash]

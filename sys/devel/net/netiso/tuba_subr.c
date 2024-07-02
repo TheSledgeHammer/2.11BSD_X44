@@ -70,6 +70,8 @@
 #include <netiso/iso_var.h>
 #include <netiso/tuba_table.h>
 
+struct	isopcb	tuba_isopcb;
+
 void
 tuba_init()
 {

@@ -36,6 +36,7 @@ LIST_HEAD(nbpf_propdb_list, nbpf_propdb);
 struct nbpf_propdb {
 	nbpf_tableset_t			*nbp_tblset;
 	nbpf_table_t			*nbp_tbl;
+
 	u_int					nbp_tid;
 	int 					nbp_type;
 	int						nbp_alen;
@@ -44,42 +45,12 @@ struct nbpf_propdb {
 	LIST_ENTRY(nbpf_propdb) nbp_next;
 };
 
+struct prop_object {
+	nbpf_tableset_t			*nbp_tblset;
+	nbpf_table_t			*nbp_tbl;
+};
+
 struct nbpf_propdb_list nbpf_propdb;
-
-static nbpf_tableset_t *
-nbpf_propdb_tableset_create(tid, type)
-	u_int tid;
-	int type;
-{
-	nbpf_tableset_t *tset;
-	int error;
-
-	tset = nbpf_tableset_create();
-	if (tset == NULL) {
-		return (NULL);
-	}
-	error = nbpf_table_check(tset, tid, type);
-	if (error != 0) {
-		return (error);
-	}
-	return (tset);
-}
-
-static nbpf_table_t *
-nbpf_propdb_table_create(tid, type, hsize)
-	u_int tid;
-	int type;
-	size_t hsize;
-{
-	nbpf_table_t *tbl;
-	int error;
-
-	tbl = nbpf_table_create(tid, type, hsize);
-	if (tbl == NULL) {
-		return (NULL);
-	}
-	return (tbl);
-}
 
 nbpf_propdb_t *
 nbpf_propdb_create(void)
@@ -106,33 +77,26 @@ nbpf_propdb_destroy(prop)
 }
 
 void
-nbpf_propdb_insert(prop, tid, type, hsize, alen, addr, mask)
+nbpf_propdb_insert(prop, tset, tbl, tid, type, hsize, alen, addr, mask)
 	nbpf_propdb_t *prop;
+	nbpf_tableset_t *tset;
+	nbpf_table_t 	*tbl;
 	u_int tid;
 	size_t hsize;
 	int type, alen;
 	nbpf_addr_t addr;
 	nbpf_netmask_t mask;
 {
+		/*
 	nbpf_tableset_t *tset;
 	nbpf_table_t 	*tbl;
 	int error;
 
-	if (prop == NULL) {
-		return;
-	}
-	tset = nbpf_propdb_tableset_create(tid, type);
-	if (tset == NULL) {
-		return;
-	}
-	tbl = nbpf_propdb_table_create(tid, type, hsize);
-	if (tbl == NULL) {
-		return;
-	}
-	error = nbpf_tableset_insert(tset, tbl);
+	error = nbpf_mktable(tset, tbl, tid, type, hsize);
 	if (error != 0) {
 		return;
 	}
+	*/
 	prop->nbp_tblset = tset;
 	prop->nbp_tbl = tbl;
 	prop->nbp_tid = tid;
@@ -143,7 +107,6 @@ nbpf_propdb_insert(prop, tid, type, hsize, alen, addr, mask)
 
 	LIST_INSERT_HEAD(&nbpf_propdb, prop, nbp_next);
 }
-
 
 nbpf_propdb_t *
 nbpf_propdb_lookup(tid, type, alen)
@@ -185,6 +148,8 @@ nbpf_table_ioctl(cmd, addr)
 	int error;
 
 	prop = (nbpf_propdb_t *)addr;
+
+	tset = propdb_table_lookup
 
 	switch (cmd) {
 	case NBPF_CMD_TABLE_LOOKUP:
