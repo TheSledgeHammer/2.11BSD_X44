@@ -1325,6 +1325,7 @@ carp_input(struct ifnet *ifp, struct mbuf *m, u_int8_t *shost, u_int8_t *dhost, 
 	struct ifnet *ifpn;
 	struct ether_header eh;
 	struct carp_if *cif;
+	struct carp_softc *sc;
 
 	bcopy(shost, &eh.ether_shost, sizeof(eh.ether_shost));
 	bcopy(dhost, &eh.ether_dhost, sizeof(eh.ether_dhost));
@@ -1332,7 +1333,6 @@ carp_input(struct ifnet *ifp, struct mbuf *m, u_int8_t *shost, u_int8_t *dhost, 
 
 	cif = (struct carp_if *)m->m_pkthdr.rcvif->if_carp;
 	if (m->m_flags & (M_BCAST|M_MCAST)) {
-		struct carp_softc *sc;
 		struct mbuf *m0;
 
 		TAILQ_FOREACH(sc, &cif->vhif_vrs, sc_list) {
@@ -1341,7 +1341,7 @@ carp_input(struct ifnet *ifp, struct mbuf *m, u_int8_t *shost, u_int8_t *dhost, 
 				continue;
 			}
 			m0->m_pkthdr.rcvif = &sc->sc_if;
-			carp_input_sc(&sc->sc_if, m0);
+			carp_input_sc(sc, &sc->sc_if, m0);
 		}
 		return;
 	}
@@ -1370,7 +1370,7 @@ carp_input(struct ifnet *ifp, struct mbuf *m, u_int8_t *shost, u_int8_t *dhost, 
 	}
 #endif
 	ifp->if_ipackets++;
-	carp_input_sc(ifp, m);
+	carp_input_sc(sc, ifp, m);
 }
 
 void
