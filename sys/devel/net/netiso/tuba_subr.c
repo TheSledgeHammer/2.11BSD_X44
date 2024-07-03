@@ -307,7 +307,9 @@ tuba_tcp_input(m, src, dst)
 
 }
 
-tuba_udp_input()
+tuba_udp_input(m, src, dst)
+	register struct mbuf *m;
+	struct sockaddr_iso *src, *dst;
 {
 
 }

@@ -43,12 +43,11 @@
 
 #include <sys/types.h>
 #include <sys/queue.h>
-#include <sys/hash.h>
 #include <sys/tree.h>
-#include <sys/ptree.h>
 #include <sys/rwlock.h>
 #include <net/if.h>
 
+#include "nbpf/ptree.h"
 #include "npf.h"
 #include "nbpf/nbpf_ncode.h"
 
@@ -84,6 +83,9 @@ typedef struct npf_table		npf_table_t;
 
 typedef npf_table_t 			*npf_tableset_t;
 
+typedef struct npf_tcpstate 	npf_tcpstate_t;
+typedef struct npf_state 		npf_state_t;
+
 /*
  * DEFINITIONS.
  */
@@ -103,18 +105,18 @@ typedef bool (*npf_algfunc_t)(npf_cache_t *, nbuf_t *, void *);
 #define	NPF_FLOW_FORW		0
 #define	NPF_FLOW_BACK		1
 
-typedef struct {
+struct npf_tcpstate {
 	uint32_t		nst_end;
 	uint32_t		nst_maxend;
 	uint32_t		nst_maxwin;
 	int				nst_wscale;
-} npf_tcpstate_t;
+};
 
-typedef struct {
-	kmutex_t		nst_lock;
+struct npf_state {
+	struct mtx		nst_lock;
 	int				nst_state;
 	npf_tcpstate_t	nst_tcpst[2];
-} npf_state_t;
+};
 
 #if defined(_NPF_TESTING)
 void		npf_state_sample(npf_state_t *, bool);
@@ -137,5 +139,26 @@ bool			npf_core_locked(void);
 bool			npf_default_pass(void);
 prop_dictionary_t npf_core_dict(void);
 
+void	npf_reload(prop_dictionary_t, npf_ruleset_t *, npf_tableset_t *, npf_ruleset_t *, bool);
+
+void	npflogattach(int);
+void	npflogdetach(void);
+int		npfctl_switch(void *);
+int		npfctl_reload(u_long, void *);
+int		npfctl_getconf(u_long, void *);
+int		npfctl_sessions_save(u_long, void *);
+int		npfctl_sessions_load(u_long, void *);
+int		npfctl_update_rule(u_long, void *);
+int		npfctl_table(void *);
+
+void	npf_stats_inc(npf_stats_t);
+void	npf_stats_dec(npf_stats_t);
+
+/* Packet filter hooks. */
+int		npf_pfil_register(void);
+void	npf_pfil_unregister(void);
+bool	npf_pfil_registered_p(void);
+int		npf_packet_handler(void *, struct mbuf **, struct ifnet *, int);
+void	npf_log_packet(npf_cache_t *, nbuf_t *, int);
 
 #endif /* _NPF_IMPL_H_ */

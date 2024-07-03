@@ -300,13 +300,7 @@ badcsum:
 
 #ifdef INET
 void
-#if __STDC__
 udp_input(struct mbuf *m, ...)
-#else
-udp_input(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	va_list ap;
 	struct sockaddr_in src, dst;
@@ -963,13 +957,7 @@ udp_ctlinput(cmd, sa, v)
 }
 
 int
-#if __STDC__
 udp_output(struct mbuf *m, ...)
-#else
-udp_output(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	struct inpcb *inp;
 	struct udpiphdr *ui;

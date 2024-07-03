@@ -59,13 +59,12 @@ static int	npf_dev_poll(dev_t, int, struct proc *);
 static int	npf_dev_read(dev_t, struct uio *, int);
 
 typedef struct npf_core npf_core_t;
-
 struct npf_core {
-	npf_ruleset_t *		n_rules;
-	npf_tableset_t *	n_tables;
-	npf_ruleset_t *		n_nat_rules;
+	npf_ruleset_t 		*n_rules;
+	npf_tableset_t 		*n_tables;
+	npf_ruleset_t 		*n_nat_rules;
 	prop_dictionary_t	n_dict;
-	bool				n_default_pass;
+	bool_t				n_default_pass;
 };
 
 static void	npf_core_destroy(npf_core_t *);
@@ -91,6 +90,48 @@ const struct cdevsw npf_cdevsw = {
 
 //state, nat, table, session, ruleset, log
 
+static int
+npf_init(void)
+{
+	npf_ruleset_t *rset, *nset;
+	npf_tableset_t *tset;
+	prop_dictionary_t dict;
+	int error = 0;
+
+	npf_tableset_sysinit();
+	npf_session_sysinit();
+	npf_nat_sysinit();
+	npf_alg_sysinit();
+	npflogattach(1);
+
+	/* Load empty configuration. */
+	dict = prop_dictionary_create();
+	rset = npf_ruleset_create();
+	tset = npf_tableset_create();
+	nset = npf_ruleset_create();
+	npf_reload(dict, rset, tset, nset, true);
+	KASSERT(npf_core != NULL);
+
+	return (error);
+}
+
+static int
+npf_fini(void)
+{
+	npflogdetach();
+	npf_pfil_unregister();
+
+	/* Flush all sessions, destroy configuration (ruleset, etc). */
+	npf_session_tracking(false);
+	npf_core_destroy(npf_core);
+
+	/* Finally, safe to destroy the subsystems. */
+	npf_alg_sysfini();
+	npf_nat_sysfini();
+	npf_session_sysfini();
+	npf_tableset_sysfini();
+	return (0);
+}
 
 void
 npfattach(int nunits)
@@ -176,6 +217,55 @@ npf_dev_read(dev_t dev, struct uio *uio, int flag)
 	return ENOTSUP;
 }
 
+/*
+ * NPF core loading/reloading/unloading mechanism.
+ */
+
+static void
+npf_core_destroy(npf_core_t *nc)
+{
+
+	prop_object_release(nc->n_dict);
+	npf_ruleset_destroy(nc->n_rules);
+	npf_ruleset_destroy(nc->n_nat_rules);
+	npf_tableset_destroy(nc->n_tables);
+
+	free(nc, M_NPF);
+}
+
+/*
+ * npf_reload: atomically load new ruleset, tableset and NAT policies.
+ * Then destroy old (unloaded) structures.
+ */
+void
+npf_reload(prop_dictionary_t dict, npf_ruleset_t *rset, npf_tableset_t *tset, npf_ruleset_t *nset, bool_t flush)
+{
+	npf_core_t *nc, *onc;
+
+	/* Setup a new core structure. */
+	nc = (npf_core_t *)malloc(sizeof(npf_core_t), M_NPF, M_WAITOK);
+	nc->n_rules = rset;
+	nc->n_tables = tset;
+	nc->n_nat_rules = nset;
+	nc->n_dict = dict;
+	nc->n_default_pass = flush;
+
+	/* Lock and load the core structure. */
+	rw_enter(&npf_rwlock, RW_WRITER);
+	onc = atomic_swap_ptr(&npf_core, nc);
+	if (onc) {
+		/* Reload only necessary NAT policies. */
+		npf_ruleset_natreload(nset, onc->n_nat_rules);
+	}
+	/* Unlock.  Everything goes "live" now. */
+	rw_exit(&npf_rwlock);
+
+	if (onc) {
+		/* Destroy unloaded structures. */
+		npf_core_destroy(onc);
+	}
+}
+
 void
 npf_core_enter(void)
 {
@@ -209,7 +299,7 @@ npf_core_exit(void)
 	rw_exit(&npf_rwlock);
 }
 
-bool
+bool_t
 npf_core_locked(void)
 {
 	return rw_lock_held(&npf_rwlock);
@@ -222,7 +312,7 @@ npf_core_dict(void)
 	return (npf_core->n_dict);
 }
 
-bool
+bool_t
 npf_default_pass(void)
 {
 	KASSERT(rw_lock_held(&npf_rwlock));

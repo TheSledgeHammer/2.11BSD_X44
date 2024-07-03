@@ -177,7 +177,7 @@ nbuf_find_tag(nbuf_t *nbuf, uint32_t key, void **data)
 }
 
 int
-npf_filter(npf_cache_t *npc, struct nbpf_insn *pc, nbuf_t *nbuf, int layer)
+npf_ncode_process(npf_cache_t *npc, struct nbpf_insn *pc, nbuf_t *nbuf, int layer)
 {
 	nbpf_state_t *state = (nbpf_state_t *)npc;
 
@@ -185,7 +185,7 @@ npf_filter(npf_cache_t *npc, struct nbpf_insn *pc, nbuf_t *nbuf, int layer)
 }
 
 int
-npf_validate(struct nbpf_insn *f, size_t len, int *ret)
+npf_ncode_validate(struct nbpf_insn *f, size_t len, int *ret)
 {
 	return (nbpf_validate(f, len, ret));
 }

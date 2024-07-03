@@ -340,6 +340,7 @@ void	timevalfix(struct timeval *);
 void	timevalsub(struct timeval *, struct timeval *);
 int 	ratecheck(struct timeval *, const struct timeval *);
 int		ppsratecheck(struct timeval *, int *, int);
+int 	tvtohz(const struct timeval *);
 #else /* !KERNEL */
 
 #include <time.h>

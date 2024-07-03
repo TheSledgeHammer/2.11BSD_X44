@@ -159,7 +159,7 @@ int		carp6_proto_input(struct mbuf **, int *, int);
 int		carp_iamatch(struct in_ifaddr *, u_char *, u_int32_t *, u_int32_t);
 struct ifaddr	*carp_iamatch6(void *, struct in6_addr *);
 struct ifnet	*carp_ourether(void *, struct ether_header *, u_char, int);
-int		carp_input(struct mbuf *, u_int8_t *, u_int8_t *, u_int16_t);
+void		carp_input(struct ifnet *, struct mbuf *, u_int8_t *, u_int8_t *, u_int16_t);
 int		carp_output(struct ifnet *, struct mbuf *, const struct sockaddr *, struct rtentry *);
 #endif /* _KERNEL */
 #endif /* _NETINET_IP_CARP_H_ */

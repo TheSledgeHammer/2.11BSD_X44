@@ -92,6 +92,8 @@ typedef int 				nbpf_tag_t;
 
 #define	NBPC_IP46			(NBPC_IP4|NBPC_IP6)
 
+#define	NBPF_NCODE_LIMIT	1024
+
 union nbpf_icmp {
 	nbpf_state_t		*nbi_state;
 	struct icmp 		nbi_icmp;
@@ -194,9 +196,9 @@ nbpf_free(cache, type)
 #define	NBPF_TABLE_SLOTS		32
 
 /* Table Defaults */
-#define NBPF_TABLE_TID_DEFAULT 		0				/* default starting tid*/
-#define NBPF_TABLE_TYPE_DEFAULT		NBPF_TABLE_TREE	/* default type */
-#define NBPF_TABLE_HSIZE_DEFAULT	1024			/* default hsize */
+#define NBPF_TABLE_TID_DEFAULT 		0					/* default starting tid*/
+#define NBPF_TABLE_TYPE_DEFAULT		NBPF_TABLE_TREE		/* default type */
+#define NBPF_TABLE_HSIZE_DEFAULT	NBPF_NCODE_LIMIT	/* default hsize */
 
 #ifndef NBPF_TABLE_TID
 #define NBPF_TABLE_TID 				NBPF_TABLE_TID_DEFAULT

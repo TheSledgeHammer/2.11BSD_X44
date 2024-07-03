@@ -652,9 +652,7 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		 * vlan.
 		 */
 		m->m_flags &= ~M_PROMISC;
-		if (carp_input(m, (uint8_t*) &eh->ether_shost, (uint8_t*) &eh->ether_dhost, eh->ether_type) == 0) {
-			return;
-		}
+		carp_input(ifp, m, (uint8_t*) &eh->ether_shost, (uint8_t*) &eh->ether_dhost, eh->ether_type);
 	}
 #endif
 

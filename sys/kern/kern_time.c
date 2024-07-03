@@ -421,3 +421,71 @@ timevalfix(t1)
 		t1->tv_usec -= 1000000L;
 	}
 }
+
+/*
+ * Compute number of ticks in the specified amount of time.
+ */
+int
+tvtohz(tv)
+	const struct timeval *tv;
+{
+	unsigned long ticks;
+	long sec, usec;
+
+	/*
+	 * If the number of usecs in the whole seconds part of the time
+	 * difference fits in a long, then the total number of usecs will
+	 * fit in an unsigned long.  Compute the total and convert it to
+	 * ticks, rounding up and adding 1 to allow for the current tick
+	 * to expire.  Rounding also depends on unsigned long arithmetic
+	 * to avoid overflow.
+	 *
+	 * Otherwise, if the number of ticks in the whole seconds part of
+	 * the time difference fits in a long, then convert the parts to
+	 * ticks separately and add, using similar rounding methods and
+	 * overflow avoidance.  This method would work in the previous
+	 * case, but it is slightly slower and assumes that hz is integral.
+	 *
+	 * Otherwise, round the time difference down to the maximum
+	 * representable value.
+	 *
+	 * If ints are 32-bit, then the maximum value for any timeout in
+	 * 10ms ticks is 248 days.
+	 */
+	sec = tv->tv_sec;
+	usec = tv->tv_usec;
+
+	KASSERT(usec >= 0);
+	KASSERT(usec < 1000000);
+
+	/* catch overflows in conversion time_t->int */
+	if (tv->tv_sec > INT_MAX) {
+		return INT_MAX;
+	}
+	if (tv->tv_sec < 0) {
+		return 0;
+	}
+
+	if (sec < 0 || (sec == 0 && usec == 0)) {
+		/*
+		 * Would expire now or in the past.  Return 0 ticks.
+		 * This is different from the legacy tvhzto() interface,
+		 * and callers need to check for it.
+		 */
+		ticks = 0;
+	} else if (sec <= (LONG_MAX / 1000000)) {
+		ticks = (((sec * 1000000) + (unsigned long)usec + (tick - 1))
+		    / tick) + 1;
+	} else if (sec <= (LONG_MAX / hz)) {
+		ticks = (sec * hz) +
+		    (((unsigned long)usec + (tick - 1)) / tick) + 1;
+	} else {
+		ticks = LONG_MAX;
+	}
+
+	if (ticks > INT_MAX) {
+		ticks = INT_MAX;
+	}
+
+	return ((int)ticks);
+}

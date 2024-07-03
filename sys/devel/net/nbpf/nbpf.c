@@ -57,7 +57,7 @@ struct nbpf_d {
 	nbpf_table_t 		*nbd_table;
 
 	u_long				nbd_rcount;			/* number of packets received */
-	int					nbd_seesent;	/* true if bpf should see sent packets */
+	int					nbd_seesent;		/* true if bpf should see sent packets */
 	/* nbpf ncode */
 	nbpf_state_t		*nbd_state;
 	struct nbpf_insn 	*nbd_filter;
@@ -104,8 +104,6 @@ nbpf_table_init(nd)
 {
 	nbpf_tableset_t tset;
 	nbpf_table_t t;
-	nbpf_tableset_t *tblset;
-	nbpf_table_t *tbl;
 	int error;
 
 	nbpf_tableset_init();
@@ -114,10 +112,8 @@ nbpf_table_init(nd)
 	if (error != 0) {
 		return;
 	}
-	tblset = &tset;
-	tbl = &t;
-	nd->nbd_tableset = tblset;
-	nd->nbd_table = tbl;
+	nd->nbd_tableset = &tset;
+	nd->nbd_table = &t;
 }
 
 void

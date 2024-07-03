@@ -104,4 +104,104 @@ struct npf_cache {
 
 #endif	/* _KERNEL */
 
+/* Rule attributes. */
+#define	NPF_RULE_PASS			0x0001
+#define	NPF_RULE_DEFAULT		0x0002
+#define	NPF_RULE_FINAL			0x0004
+#define	NPF_RULE_STATEFUL		0x0008
+#define	NPF_RULE_RETRST			0x0010
+#define	NPF_RULE_RETICMP		0x0020
+
+#define	NPF_RULE_IN				0x10000000
+#define	NPF_RULE_OUT			0x20000000
+#define	NPF_RULE_DIMASK			(NPF_RULE_IN | NPF_RULE_OUT)
+
+/* Rule procedure flags. */
+#define	NPF_RPROC_LOG			0x0001
+#define	NPF_RPROC_NORMALIZE		0x0002
+
+/* Address translation types and flags. */
+#define	NPF_NATIN				1
+#define	NPF_NATOUT				2
+
+#define	NPF_NAT_PORTS			0x01
+#define	NPF_NAT_PORTMAP			0x02
+
+/* Table types. */
+#define	NPF_TABLE_HASH			1
+#define	NPF_TABLE_TREE			2
+
+/* Layers. */
+#define	NPF_LAYER_2				2
+#define	NPF_LAYER_3				3
+
+/* XXX mbuf.h: just for now. */
+#define	PACKET_TAG_NPF			10
+
+/*
+ * IOCTL structures.
+ */
+
+#define	NPF_IOCTL_TBLENT_ADD	1
+#define	NPF_IOCTL_TBLENT_REM	2
+
+typedef struct npf_ioctl_table npf_ioctl_table_t;
+struct npf_ioctl_table {
+	int					nct_action;
+	u_int				nct_tid;
+	int					nct_alen;
+	npf_addr_t			nct_addr;
+	npf_netmask_t		nct_mask;
+};
+
+typedef enum npf_stats npf_stats_t;
+enum npf_stats {
+	/* Packets passed. */
+	NPF_STAT_PASS_DEFAULT,
+	NPF_STAT_PASS_RULESET,
+	NPF_STAT_PASS_SESSION,
+	/* Packets blocked. */
+	NPF_STAT_BLOCK_DEFAULT,
+	NPF_STAT_BLOCK_RULESET,
+	/* Session and NAT entries. */
+	NPF_STAT_SESSION_CREATE,
+	NPF_STAT_SESSION_DESTROY,
+	NPF_STAT_NAT_CREATE,
+	NPF_STAT_NAT_DESTROY,
+	/* Invalid state cases. */
+	NPF_STAT_INVALID_STATE,
+	NPF_STAT_INVALID_STATE_TCP1,
+	NPF_STAT_INVALID_STATE_TCP2,
+	NPF_STAT_INVALID_STATE_TCP3,
+	/* Raced packets. */
+	NPF_STAT_RACE_SESSION,
+	NPF_STAT_RACE_NAT,
+	/* Rule procedure cases. */
+	NPF_STAT_RPROC_LOG,
+	NPF_STAT_RPROC_NORM,
+	/* Fragments. */
+	NPF_STAT_FRAGMENTS,
+	NPF_STAT_REASSEMBLY,
+	NPF_STAT_REASSFAIL,
+	/* Other errors. */
+	NPF_STAT_ERROR,
+	/* Count (last). */
+	NPF_STATS_COUNT
+};
+
+#define	NPF_STATS_SIZE		(sizeof(uint64_t) * NPF_STATS_COUNT)
+
+/*
+ * IOCTL operations.
+ */
+
+#define	IOC_NPF_VERSION			_IOR('N', 100, int)
+#define	IOC_NPF_SWITCH			_IOW('N', 101, int)
+#define	IOC_NPF_RELOAD			_IOWR('N', 102, struct plistref)
+#define	IOC_NPF_TABLE			_IOW('N', 103, struct npf_ioctl_table)
+#define	IOC_NPF_STATS			_IOW('N', 104, void *)
+#define	IOC_NPF_SESSIONS_SAVE	_IOR('N', 105, struct plistref)
+#define	IOC_NPF_SESSIONS_LOAD	_IOW('N', 106, struct plistref)
+#define	IOC_NPF_UPDATE_RULE		_IOWR('N', 107, struct plistref)
+#define	IOC_NPF_GETCONF			_IOR('N', 108, struct plistref)
 #endif /* _NPF_NET_H_ */
