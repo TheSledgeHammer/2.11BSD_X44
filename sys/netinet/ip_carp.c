@@ -783,6 +783,7 @@ carp_clone_create(struct if_clone *ifc, int unit)
 	IFQ_SET_READY(&ifp->if_snd);
 	if_attach(ifp);
 	ether_ifattach(ifp, LLADDR(ifp->if_sadl));
+	ifp->if_input = carp_input;
 	ifp->if_output = carp_output;
 	ifp->if_broadcastaddr = etherbroadcastaddr;
 	carp_set_enaddr(sc);
@@ -1310,8 +1311,10 @@ carp_ourether(void *v, struct ether_header *eh, u_char iftype, int src)
 }
 
 static void
-carp_input_sc(struct carp_softc *sc, struct ifnet *ifp, struct mbuf *m)
+carp_input_sc(void *arg, struct ifnet *ifp, struct mbuf *m)
 {
+	struct carp_softc *sc = ((struct carp_softc *)arg);
+
 	if (sc->sc_carpdev != NULL && sc->sc_state == MASTER) {
 		(sc->sc_carpdev->if_input)(ifp, m);
 	} else {
@@ -1319,32 +1322,16 @@ carp_input_sc(struct carp_softc *sc, struct ifnet *ifp, struct mbuf *m)
 	}
 }
 
-void
-carp_input(struct ifnet *ifp, struct mbuf *m, u_int8_t *shost, u_int8_t *dhost, u_int16_t etype)
+static void
+carp_ethervalid(struct carp_if *cif, struct ifnet *ifp, struct mbuf *m, struct ether_header *eth)
 {
 	struct ifnet *ifpn;
-	struct ether_header eh;
-	struct carp_if *cif;
 	struct carp_softc *sc;
+	struct ether_header eh;
 
-	bcopy(shost, &eh.ether_shost, sizeof(eh.ether_shost));
-	bcopy(dhost, &eh.ether_dhost, sizeof(eh.ether_dhost));
-	eh.ether_type = etype;
-
-	cif = (struct carp_if *)m->m_pkthdr.rcvif->if_carp;
-	if (m->m_flags & (M_BCAST|M_MCAST)) {
-		struct mbuf *m0;
-
-		TAILQ_FOREACH(sc, &cif->vhif_vrs, sc_list) {
-			m0 = m_copy(m, 0, M_COPYALL);
-			if (m0 == NULL) {
-				continue;
-			}
-			m0->m_pkthdr.rcvif = &sc->sc_if;
-			carp_input_sc(sc, &sc->sc_if, m0);
-		}
-		return;
-	}
+	bcopy(eth->ether_shost, &eh.ether_shost, sizeof(eh.ether_shost));
+	bcopy(eth->ether_dhost, &eh.ether_dhost, sizeof(eh.ether_dhost));
+	eh.ether_type = eth->ether_type;
 
 	/* check ourether against ether */
 	ifpn = carp_ourether(cif, &eh, m->m_pkthdr.rcvif->if_type, 0);
@@ -1370,7 +1357,33 @@ carp_input(struct ifnet *ifp, struct mbuf *m, u_int8_t *shost, u_int8_t *dhost, 
 	}
 #endif
 	ifp->if_ipackets++;
-	carp_input_sc(sc, ifp, m);
+	carp_input_sc(ifp->if_softc, ifp, m);
+}
+
+void
+carp_input(struct ifnet *ifp, struct mbuf *m)
+{
+	struct carp_if *cif;
+	struct ether_header *eth;
+
+	cif = (struct carp_if *)m->m_pkthdr.rcvif->if_carp;
+	if (m->m_flags & (M_BCAST|M_MCAST)) {
+		struct carp_softc *sc;
+		struct mbuf *m0;
+
+		TAILQ_FOREACH(sc, &cif->vhif_vrs, sc_list) {
+			m0 = m_copy(m, 0, M_COPYALL);
+			if (m0 == NULL) {
+				continue;
+			}
+			m0->m_pkthdr.rcvif = &sc->sc_if;
+			carp_input_sc(sc, &sc->sc_if, m0);
+		}
+		return;
+	}
+
+	eth = mtod(m, struct ether_header *);
+	carp_ethervalid(cif, ifp, m, eth);
 }
 
 void
