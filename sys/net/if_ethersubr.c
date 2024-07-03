@@ -653,7 +653,6 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		 */
 		m->m_flags &= ~M_PROMISC;
 		carp_input(ifp, m);
-		carp_ether_input(ifp, m, (uint8_t*) &eh->ether_shost, (uint8_t*) &eh->ether_dhost, eh->ether_type);
 	}
 #endif
 
