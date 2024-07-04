@@ -95,7 +95,7 @@ static struct sockaddr_dl sap_sgate = {
  * Set sapinfo for SAP address, llcconfig, af, and interface
  */
 struct llc_sapinfo *
-llc_setsapinfo(struct ifnet *ifp, u_char af, u_char sap, struct dllconfig *llconf)
+llc_setsapinfo(struct ifnet *ifp, sa_family_t af, u_char sap, struct dllconfig *llconf, u_char llcclass)
 {
 	struct protosw *pp;
 	struct sockaddr_dl *ifdl_addr;
@@ -146,7 +146,23 @@ llc_setsapinfo(struct ifnet *ifp, u_char af, u_char sap, struct dllconfig *llcon
 		 * For the time being we support LLC CLASS II here
 		 * only
 		 */
-		sapinfo->si_class = LLC_CLASS_II;
+		switch (llcclass) {
+		case LLC_CLASS_I:
+			sapinfo->si_class = LLC_CLASS_I;
+			break;
+		case LLC_CLASS_II:
+			sapinfo->si_class = LLC_CLASS_II;
+			break;
+		case LLC_CLASS_III:
+			sapinfo->si_class = LLC_CLASS_III;
+			break;
+		case LLC_CLASS_IV:
+			sapinfo->si_class = LLC_CLASS_IV;
+			break;
+		default:
+			sapinfo->si_class = LLC_CLASS_II;
+			break;
+		}
 		sapinfo->si_window = llconf->dllcfg_window;
 		sapinfo->si_trace = llconf->dllcfg_trace;
 		if (sapinfo->si_trace) {
@@ -422,8 +438,7 @@ once_more_and_again:
 		int naction;
 
 		LLC_TRACE(linkp, LLCTR_INTERESTING, "CONNECT INDICATION");
-		linkp->llcl_nlnext =
-		     (*linkp->llcl_sapinfo->si_ctlinput)(PRC_CONNECT_INDICATION, (struct sockaddr *) &linkp->llcl_addr, (caddr_t) linkp);
+		linkp->llcl_nlnext = llc_sapinfo_ctlinput(linkp, PRC_CONNECT_INDICATION, (struct sockaddr *) &linkp->llcl_addr, (caddr_t) linkp);
 		if (linkp->llcl_nlnext == 0) {
 			naction = NL_DISCONNECT_REQUEST;
 		} else {
@@ -438,7 +453,7 @@ once_more_and_again:
 		break;
 	case LLC_DISCONNECT_INDICATION:
 		LLC_TRACE(linkp, LLCTR_INTERESTING, "DISCONNECT INDICATION");
-		(*linkp->llcl_sapinfo->si_ctlinput)(PRC_DISCONNECT_INDICATION,(struct sockaddr *) &linkp->llcl_addr, linkp->llcl_nlnext);
+		llc_sapinfo_ctlinput(linkp, PRC_DISCONNECT_INDICATION,(struct sockaddr *) &linkp->llcl_addr, linkp->llcl_nlnext);
 		break;
 	case LLC_RESET_CONFIRM:
 	case LLC_RESET_INDICATION_LOCAL:
@@ -535,8 +550,7 @@ llc_sapinfo_enter(struct sockaddr_dl *key, struct sockaddr *value, struct rtentr
 		}
 
 		/* now enter it */
-		rtrequest(RTM_ADD, SA(key), SA(value),
-			  SA(&npdl_netmask), 0, &nprt);
+		rtrequest(RTM_ADD, SA(key), SA(value), SA(&npdl_netmask), 0, &nprt);
 
 		/* and reset npdl_netmask */
 		for (i = saploc; i < npdl_datasize; i++) {

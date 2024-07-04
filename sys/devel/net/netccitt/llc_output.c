@@ -115,8 +115,7 @@ llc_send(struct llc_linkcb *linkp, int frame_kind, int cmdrsp, int pollfinal)
 #define LLC_SETLEN(m, l) ((m)->m_pkthdr.len = (m)->m_len = (l))
 
 void
-llc_rawsend(struct llc_linkcb *linkp, struct mbuf *m, struct llc *frame,
-	    int frame_kind, int vs, int cmdrsp, int pollfinal)
+llc_rawsend(struct llc_linkcb *linkp, struct mbuf *m, struct llc *frame, int frame_kind, int vs, int cmdrsp, int pollfinal)
 {
 	register short adjust = LLC_UFRAMELEN;
 	struct ifnet *ifp;
@@ -232,8 +231,7 @@ llc_rawsend(struct llc_linkcb *linkp, struct mbuf *m, struct llc *frame,
 		 * send out a copy of the frame, retain the
 		 * original
 		 */
-		(*ifp->if_output)(ifp, m_copy(m, 0, (int) M_COPYALL),
-				rt_key(linkp->llcl_nlrt), linkp->llcl_nlrt);
+		(*ifp->if_output)(ifp, m_copy(m, 0, (int) M_COPYALL), rt_key(linkp->llcl_nlrt), linkp->llcl_nlrt);
 		/*
 		 * Account for the LLC header and let it ``disappear''
 		 * as the raw info frame payload is what we hold in

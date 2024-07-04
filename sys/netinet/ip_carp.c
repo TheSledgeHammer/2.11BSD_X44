@@ -1610,7 +1610,7 @@ carp_set_sadl(struct ifnet *ifp, void *addr, u_char addrlen)
     ifp->if_addrlen = addrlen;
     if_alloc_sadl(ifp);
     sdl = ifp->if_sadl;
-    sockaddr_dl_setaddrif(ifp, addr, LLC_8021D_LSAP, addrlen, sdl, AF_INET|AF_INET6);
+    sockaddr_dl_setaddrif(ifp, addr, LLC_8021_LSAP, addrlen, sdl, (AF_INET|AF_INET6|AF_LINK));
 }
 
 void

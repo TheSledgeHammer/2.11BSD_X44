@@ -42,6 +42,9 @@
 #ifndef _NETCCITT_LLC_VAR_H_
 #define _NETCCITT_LLC_VAR_H_
 
+
+#define	SAPINFO_LINK	0
+
 struct llc_sapinfo {
 	union {
 		struct {
@@ -65,6 +68,20 @@ struct llc_sapinfo {
 #define si_input                un.si.si_input
 #define si_ctlinput             un.si.si_ctlinput
 };
+
+#define NPDL_SAPNETMASK 		0x7e
+
+static __inline void
+llc_sapinfo_input(struct llc_linkcb *linkp, struct mbuf *m)
+{
+	(*linkp->llcl_sapinfo->si_input)(m);
+}
+
+static __inline void *
+llc_sapinfo_ctlinput(struct llc_linkcb *linkp, int level, struct sockaddr *sa, void *addr)
+{
+	return ((*linkp->llcl_sapinfo->si_ctlinput)(level, sa, addr));
+}
 
 #define LLC_CLASS_I			0x1
 #define	LLC_CLASS_II		0x3
@@ -108,6 +125,7 @@ extern struct bitslice llc_bitslice[];
 #define LLC_CMD         0
 #define LLC_RSP         1
 #define LLC_MAXCMDRSP   2
+#define LLC_CMDRSP(val)	((val) * LLC_MAXCMDRSP)
 
 /*
  * LLC events --- These events may either be frames received from the
@@ -117,41 +135,41 @@ extern struct bitslice llc_bitslice[];
  */
 
 /* LLC frame types */
-#define LLCFT_INFO                       0 * LLC_MAXCMDRSP
-#define LLCFT_RR                         1 * LLC_MAXCMDRSP
-#define LLCFT_RNR                        2 * LLC_MAXCMDRSP
-#define LLCFT_REJ                        3 * LLC_MAXCMDRSP
-#define LLCFT_DM                         4 * LLC_MAXCMDRSP
-#define LLCFT_SABME                      5 * LLC_MAXCMDRSP
-#define LLCFT_DISC                       6 * LLC_MAXCMDRSP
-#define LLCFT_UA                         7 * LLC_MAXCMDRSP
-#define LLCFT_FRMR                       8 * LLC_MAXCMDRSP
-#define LLCFT_UI                         9 * LLC_MAXCMDRSP
-#define LLCFT_XID                       10 * LLC_MAXCMDRSP
-#define LLCFT_TEST                      11 * LLC_MAXCMDRSP
+#define LLCFT_INFO                      LLC_CMDRSP(0)
+#define LLCFT_RR                        LLC_CMDRSP(1)
+#define LLCFT_RNR                       LLC_CMDRSP(2)
+#define LLCFT_REJ                      	LLC_CMDRSP(3)
+#define LLCFT_DM                        LLC_CMDRSP(4)
+#define LLCFT_SABME                     LLC_CMDRSP(5)
+#define LLCFT_DISC                      LLC_CMDRSP(6)
+#define LLCFT_UA                        LLC_CMDRSP(7)
+#define LLCFT_FRMR                      LLC_CMDRSP(8)
+#define LLCFT_UI                        LLC_CMDRSP(9)
+#define LLCFT_XID                       LLC_CMDRSP(10)
+#define LLCFT_TEST                      LLC_CMDRSP(11)
 
 /* LLC2 timer events */
-#define LLC_ACK_TIMER_EXPIRED           12 * LLC_MAXCMDRSP
-#define LLC_P_TIMER_EXPIRED             13 * LLC_MAXCMDRSP
-#define LLC_REJ_TIMER_EXPIRED           14 * LLC_MAXCMDRSP
-#define LLC_BUSY_TIMER_EXPIRED          15 * LLC_MAXCMDRSP
+#define LLC_ACK_TIMER_EXPIRED          	LLC_CMDRSP(12)
+#define LLC_P_TIMER_EXPIRED             LLC_CMDRSP(13)
+#define LLC_REJ_TIMER_EXPIRED          	LLC_CMDRSP(14)
+#define LLC_BUSY_TIMER_EXPIRED          LLC_CMDRSP(15)
 
 /* LLC2 diagnostic events */
-#define LLC_INVALID_NR                  16 * LLC_MAXCMDRSP
-#define LLC_INVALID_NS                  17 * LLC_MAXCMDRSP
-#define LLC_BAD_PDU                     18 * LLC_MAXCMDRSP
-#define LLC_LOCAL_BUSY_DETECTED         19 * LLC_MAXCMDRSP
-#define LLC_LOCAL_BUSY_CLEARED          20 * LLC_MAXCMDRSP
+#define LLC_INVALID_NR                  LLC_CMDRSP(16)
+#define LLC_INVALID_NS                  LLC_CMDRSP(17)
+#define LLC_BAD_PDU                     LLC_CMDRSP(18)
+#define LLC_LOCAL_BUSY_DETECTED         LLC_CMDRSP(19)
+#define LLC_LOCAL_BUSY_CLEARED          LLC_CMDRSP(20)
 
 /* Network layer user requests */
-#define NL_CONNECT_REQUEST              21 * LLC_MAXCMDRSP
-#define NL_CONNECT_RESPONSE             22 * LLC_MAXCMDRSP
-#define NL_RESET_REQUEST                23 * LLC_MAXCMDRSP
-#define NL_RESET_RESPONSE               24 * LLC_MAXCMDRSP
-#define NL_DISCONNECT_REQUEST           25 * LLC_MAXCMDRSP
-#define NL_DATA_REQUEST                 26 * LLC_MAXCMDRSP
-#define NL_INITIATE_PF_CYCLE            27 * LLC_MAXCMDRSP
-#define NL_LOCAL_BUSY_DETECTED          28 * LLC_MAXCMDRSP
+#define NL_CONNECT_REQUEST              LLC_CMDRSP(21)
+#define NL_CONNECT_RESPONSE             LLC_CMDRSP(22)
+#define NL_RESET_REQUEST                LLC_CMDRSP(23)
+#define NL_RESET_RESPONSE              	LLC_CMDRSP(24)
+#define NL_DISCONNECT_REQUEST           LLC_CMDRSP(25)
+#define NL_DATA_REQUEST                 LLC_CMDRSP(26)
+#define NL_INITIATE_PF_CYCLE            LLC_CMDRSP(27)
+#define NL_LOCAL_BUSY_DETECTED          LLC_CMDRSP(28)
 
 #define LLCFT_NONE                      255
 
@@ -204,6 +222,14 @@ struct llc_linkcb {
 	short               llcl_timers[6]; 	/* timer array */
 	long                llcl_timerflags;	/* flags signalling running timers */
 	int                 (*llcl_statehandler)(struct llc_linkcb *, struct llc *, int, int, int);
+
+	int                 llcl_P_flag;		/* poll flag */
+	int                 llcl_F_flag;		/* final flag */
+	int                 llcl_S_flag; 		/* supervisory flag */
+	int                 llcl_DATA_flag;
+	int                 llcl_REMOTE_BUSY_flag;
+	int                 llcl_DACTION_flag; /* delayed action */
+	int                 llcl_retry;
 
 	/*
 	 * The following components deal --- in one way or the other ---
@@ -277,6 +303,9 @@ struct llc_linkcb {
 	}															\
 }
 
+#define LLC_NEWSTATE(l, LLCstate) 	((l)->llcl_statehandler = llc_state_##LLCstate)
+#define LLC_STATEEQ(l, LLCstate) 	((l)->llcl_statehandler == llc_state_##LLCstate ? 1 : 0)
+
 #define LLC_SETFLAG(l, LLCflag, v) 	((l)->llcl_##LLCflag##_flag = (v))
 #define LLC_GETFLAG(l, LLCflag) 	((l)->llcl_##LLCflag##_flag)
 
@@ -334,5 +363,10 @@ struct llc_linkcb {
 
 struct ifqueue llcintrq;
 extern struct llccb_q llccb_q;
+
+struct llc_sapinfo 	*llc_setsapinfo(struct ifnet *ifp, sa_family_t af, u_char sap, struct dllconfig *llconf, u_char llclass);
+struct llc_sapinfo 	*llc_getsapinfo(u_char sap, struct ifnet *ifp);
+struct llc_linkcb 	*llc_newlink(struct sockaddr_dl *dst, struct ifnet *ifp, struct rtentry *nlrt, caddr_t nlnext, struct rtentry *llrt);
+void				llc_dellink(struct llc_linkcb *linkp);
 
 #endif /* _NETCCITT_LLC_VAR_H_ */

@@ -314,7 +314,7 @@ llc_ctlinput(int prc, struct sockaddr *addr, caddr_t info)
 
 	switch (prc) {
 	case PRC_IFUP:
-		(void) llc_setsapinfo(ifp, addr->sa_family, sap, config);
+		(void) llc_setsapinfo(ifp, addr->sa_family, sap, config, LLC_CLASS_II);
 		return (0);
 	case PRC_IFDOWN: {
 		register struct llc_linkcb *linkp;
