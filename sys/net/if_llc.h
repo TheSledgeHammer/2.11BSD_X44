@@ -152,7 +152,7 @@ struct frmrinfo {
 #define	LLC_NULL_LSAP		0x00	/* NULL LSAP */
 #define	LLC_ISUBMGMT_LSAP	0x02	/* LLC Individual Sub-Management */
 #define	LLC_GSUBMGMT_LSAP	0x03	/* LLC Group Sub-Management */
-#define	LLC_IP_LSAP			0x06 	/* ARPNET Internet Protocol (IP) */
+#define	LLC_IP_LSAP		0x06 	/* ARPNET Internet Protocol (IP) */
 #define	LLC_8021_LSAP		0x42	/* IEEE 802.1 Bridge Spanning Tree Protocol */
 #define LLC_X25_LSAP		0x7e	/* X25 over IEEE 802.2 Type 2 LLC */
 #define LLC_XNS_LSAP		0x80	/* Xerox Network Systems (XNS) */
