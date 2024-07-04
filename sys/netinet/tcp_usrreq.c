@@ -1239,7 +1239,7 @@ sysctl_setup_tcpctl(pf, pfname, tcpname, name, namelen, oldp, oldlenp, newp, new
 	case PF_INET:
 		inet = "inet";
 		tcp = "tcp";
-		if (strncmp(pfname, inet) == 0 && strncmp(tcpname, tcp) == 0) {
+		if (strncmp(pfname, inet, sizeof(pfname)) == 0 && strncmp(tcpname, tcp, sizeof(tcpname)) == 0) {
 			error = sysctl_tcpctl(name, namelen, oldp, oldlenp, newp, newlen);
 		} else {
 			error = EINVAL;
@@ -1249,7 +1249,7 @@ sysctl_setup_tcpctl(pf, pfname, tcpname, name, namelen, oldp, oldlenp, newp, new
 	case PF_INET6:
 		inet = "inet6";
 		tcp = "tcp6";
-		if (strncmp(pfname, inet) == 0 && strncmp(tcpname, tcp) == 0) {
+		if (strncmp(pfname, inet, sizeof(pfname)) == 0 && strncmp(tcpname, tcp, sizeof(tcpname)) == 0) {
 			error = sysctl_tcpctl(name, namelen, oldp, oldlenp, newp, newlen);
 		} else {
 			error = EINVAL;

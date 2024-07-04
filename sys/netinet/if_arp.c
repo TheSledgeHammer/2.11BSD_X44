@@ -142,7 +142,6 @@ int	arpt_down = 20;		/* once declared down, don't send for 20 secs */
 
 extern	struct domain arpdomain;
 
-static	void arprequest(struct ifnet *, struct in_addr *, struct in_addr *, u_int8_t *);
 static	void arptfree(struct llinfo_arp *);
 static	void arptimer(void *);
 static	void arp_rtdrain(struct rtentry *, struct rttimer *);
@@ -649,7 +648,7 @@ arp_rtdrain(rt, rtt)
  *	- arp header target ip address
  *	- arp header source ethernet address
  */
-static void
+void
 arprequest(ifp, sip, tip, enaddr)
 	struct ifnet *ifp;
 	struct in_addr *sip, *tip;

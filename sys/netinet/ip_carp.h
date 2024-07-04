@@ -74,7 +74,11 @@ struct carp_header {
 	u_int16_t	carp_cksum;
 	u_int32_t	carp_counter[2];
 	unsigned char	carp_md[20];	/* SHA1 HMAC */
-} __packed;
+};
+
+#ifdef __CTASSERT
+__CTASSERT(sizeof(struct carp_header) == 36);
+#endif
 
 #define	CARP_DFLTTL			255
 
@@ -160,6 +164,6 @@ int		carp_iamatch(struct in_ifaddr *, u_char *, u_int32_t *, u_int32_t);
 struct ifaddr	*carp_iamatch6(void *, struct in6_addr *);
 struct ifnet	*carp_ourether(void *, struct ether_header *, u_char, int);
 void		carp_input(struct ifnet *, struct mbuf *);
-int		carp_output(struct ifnet *, struct mbuf *, const struct sockaddr *, struct rtentry *);
+int		carp_output(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
 #endif /* _KERNEL */
 #endif /* _NETINET_IP_CARP_H_ */

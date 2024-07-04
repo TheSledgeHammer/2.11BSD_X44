@@ -63,6 +63,7 @@ struct sockaddr_inarp {
 extern struct ifqueue arpintrq;
 void arp_ifinit(struct ifnet *, struct ifaddr *);
 void arp_rtrequest(int, struct rtentry *, struct rt_addrinfo *);
+void arprequest(struct ifnet *, struct in_addr *, struct in_addr *, u_int8_t *);
 int arpresolve(struct ifnet *, struct rtentry *, struct mbuf *, struct sockaddr *, u_char *);
 void arpintr(void);
 void arp_drain(void);

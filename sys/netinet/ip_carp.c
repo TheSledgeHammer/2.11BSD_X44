@@ -64,6 +64,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_carp.c,v 1.26.10.2 2009/06/09 17:31:46 snj Exp $"
 #include <net/route.h>
 #include <net/netisr.h>
 #include <net/if_dl.h>
+#include <net/if_llc.h>
 
 #include <netinet/if_inarp.h>
 
@@ -195,7 +196,7 @@ void	carp_send_ad_all(void);
 void	carp_send_ad(void *);
 void	carp_send_arp(struct carp_softc *);
 void	carp_master_down(void *);
-int	carp_ioctl(struct ifnet *, u_long, void *);
+int	carp_ioctl(struct ifnet *, u_long, caddr_t);
 void	carp_start(struct ifnet *);
 void	carp_setrun(struct carp_softc *, sa_family_t);
 void	carp_set_state(struct carp_softc *, int);
@@ -215,7 +216,7 @@ int	carp_set_addr6(struct carp_softc *, struct sockaddr_in6 *);
 int	carp_join_multicast6(struct carp_softc *);
 #endif
 int	carp_clone_create(struct if_clone *, int);
-int	carp_clone_destroy(struct ifnet *);
+void carp_clone_destroy(struct ifnet *);
 int	carp_ether_addmulti(struct carp_softc *, struct ifreq *);
 int	carp_ether_delmulti(struct carp_softc *, struct ifreq *);
 void	carp_ether_purgemulti(struct carp_softc *);
@@ -332,8 +333,7 @@ carp_hmac_generate(struct carp_softc *sc, u_int32_t counter[2],
 }
 
 int
-carp_hmac_verify(struct carp_softc *sc, u_int32_t counter[2],
-    unsigned char md[20])
+carp_hmac_verify(struct carp_softc *sc, u_int32_t counter[2], unsigned char md[20])
 {
 	unsigned char md2[20];
 
@@ -759,9 +759,9 @@ carp_clone_create(struct if_clone *ifc, int unit)
 	sc->sc_im6o.im6o_multicast_hlim = CARP_DFLTTL;
 #endif /* INET6 */
 
-	callout_init(&sc->sc_ad_tmo, 0);
-	callout_init(&sc->sc_md_tmo, 0);
-	callout_init(&sc->sc_md6_tmo, 0);
+	callout_init(&sc->sc_ad_tmo);
+	callout_init(&sc->sc_md_tmo);
+	callout_init(&sc->sc_md6_tmo);
 
 	callout_setfunc(&sc->sc_ad_tmo, carp_send_ad, sc);
 	callout_setfunc(&sc->sc_md_tmo, carp_master_down, sc);
@@ -802,9 +802,9 @@ carp_clone_destroy(struct ifnet *ifp)
 	carpdetach(ifp->if_softc);
 	ether_ifdetach(ifp);
 	if_detach(ifp);
-	callout_destroy(&sc->sc_ad_tmo);
-	callout_destroy(&sc->sc_md_tmo);
-	callout_destroy(&sc->sc_md6_tmo);
+	callout_stop(&sc->sc_ad_tmo);
+	callout_stop(&sc->sc_md_tmo);
+	callout_stop(&sc->sc_md6_tmo);
 	free(ifp->if_softc, M_DEVBUF);
 }
 
@@ -1603,6 +1603,17 @@ carp_set_ifp(struct carp_softc *sc, struct ifnet *ifp)
 }
 
 void
+carp_set_sadl(struct ifnet *ifp, void *addr, u_char addrlen)
+{
+	struct sockaddr_dl *sdl;
+
+    ifp->if_addrlen = addrlen;
+    if_alloc_sadl(ifp);
+    sdl = ifp->if_sadl;
+    sockaddr_dl_setaddrif(ifp, addr, LLC_8021D_LSAP, addrlen, sdl, AF_INET|AF_INET6);
+}
+
+void
 carp_set_enaddr(struct carp_softc *sc)
 {
 	uint8_t enaddr[ETHER_ADDR_LEN];
@@ -1621,7 +1632,7 @@ carp_set_enaddr(struct carp_softc *sc)
 		enaddr[4] = 1;
 		enaddr[5] = sc->sc_vhid;
 	}
-	if_set_sadl(&sc->sc_if, enaddr, sizeof(enaddr));
+	carp_set_sadl(&sc->sc_if, enaddr, sizeof(enaddr));
 }
 
 void
@@ -1840,7 +1851,7 @@ carp_join_multicast6(struct carp_softc *sc)
 	addr6.sin6_addr.s6_addr16[1] = htons(sc->sc_if.if_index);
 	addr6.sin6_addr.s6_addr8[15] = 0x12;
 	if ((imm = in6_joingroup(&sc->sc_if,
-	    &addr6.sin6_addr, &error, 0)) == NULL) {
+	    &addr6.sin6_addr, &error)) == NULL) {
 		return (error);
 	}
 	/* join solicited multicast address */
@@ -1852,7 +1863,7 @@ carp_join_multicast6(struct carp_softc *sc)
 	addr6.sin6_addr.s6_addr32[3] = 0;
 	addr6.sin6_addr.s6_addr8[12] = 0xff;
 	if ((imm2 = in6_joingroup(&sc->sc_if,
-	    &addr6.sin6_addr, &error, 0)) == NULL) {
+	    &addr6.sin6_addr, &error)) == NULL) {
 		in6_leavegroup(imm);
 		return (error);
 	}
@@ -1874,7 +1885,7 @@ carp_join_multicast6(struct carp_softc *sc)
 int
 carp_ioctl(struct ifnet *ifp, u_long cmd, caddr_t addr)
 {
-	struct proc *p = curpoc;		/* XXX */
+	struct proc *p = curproc;		/* XXX */
 	struct carp_softc *sc = ifp->if_softc, *vr;
 	struct carpreq carpr;
 	struct ifaddr *ifa;
@@ -2041,7 +2052,7 @@ carp_start(struct ifnet *ifp)
 }
 
 int
-carp_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *sa,
+carp_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sa,
     struct rtentry *rt)
 {
 	struct carp_softc *sc = ((struct carp_softc *)ifp->if_softc);
@@ -2120,12 +2131,13 @@ carp_carpdev_state(void *v)
 int
 carp_ether_addmulti(struct carp_softc *sc, struct ifreq *ifr)
 {
-	const struct sockaddr *sa = ifreq_getaddr(SIOCADDMULTI, ifr);
+	struct sockaddr *sa;
 	struct ifnet *ifp;
 	struct carp_mc_entry *mc;
 	u_int8_t addrlo[ETHER_ADDR_LEN], addrhi[ETHER_ADDR_LEN];
 	int error;
-
+    
+    sa = &ifr->ifr_addr;
 	ifp = sc->sc_carpdev;
 	if (ifp == NULL)
 		return (EINVAL);
@@ -2149,7 +2161,7 @@ carp_ether_addmulti(struct carp_softc *sc, struct ifreq *ifr)
 	 * As ether_addmulti() returns ENETRESET, following two
 	 * statement shouldn't fail.
 	 */
-	(void)ether_multiaddr(ifr, addrlo, addrhi);
+	(void)ether_multiaddr(sa, addrlo, addrhi);
 	ETHER_LOOKUP_MULTI(addrlo, addrhi, &sc->sc_ac, mc->mc_enm);
 	memcpy(&mc->mc_addr, sa, sa->sa_len);
 	LIST_INSERT_HEAD(&sc->carp_mc_listhead, mc, mc_entries);
@@ -2172,13 +2184,14 @@ carp_ether_addmulti(struct carp_softc *sc, struct ifreq *ifr)
 int
 carp_ether_delmulti(struct carp_softc *sc, struct ifreq *ifr)
 {
-	const struct sockaddr *sa = ifreq_getaddr(SIOCDELMULTI, ifr);
+	struct sockaddr *sa;
 	struct ifnet *ifp;
 	struct ether_multi *enm;
 	struct carp_mc_entry *mc;
 	u_int8_t addrlo[ETHER_ADDR_LEN], addrhi[ETHER_ADDR_LEN];
 	int error;
 
+    sa = &ifr->ifr_addr;
 	ifp = sc->sc_carpdev;
 	if (ifp == NULL)
 		return (EINVAL);
