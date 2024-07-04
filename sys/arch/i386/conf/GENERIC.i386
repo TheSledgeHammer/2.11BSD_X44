@@ -399,7 +399,7 @@ options 	MEMORY_DISK_DYNAMIC				# loaded via kernel module(7)
 
 # network pseudo-devices
 pseudo-device	bpfilter		8				# Berkeley packet filter
-#pseudo-device	carp							# Common Address Redundancy Protocol
+pseudo-device	carp							# Common Address Redundancy Protocol
 pseudo-device	loop			        			# network loopback
 #pseudo-device	mpls							# MPLS pseudo-interface
 pseudo-device	ppp		    2					# Point-to-Point Protocol
