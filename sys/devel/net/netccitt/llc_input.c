@@ -103,7 +103,7 @@ llcintr(void)
 			}
 		}
 		if (m->m_len > sizeof(struct sockaddr_dl_header)) {
-			frame = mtod((struct mbuf* )((struct sdl_hdr* )(m + 1)), struct llc *);
+			frame = mtod((struct mbuf* )((struct sockaddr_dl_header* )(m + 1)), struct llc *);
 		} else {
 			frame = mtod(m->m_next, struct llc *);
 		}
@@ -246,7 +246,7 @@ llc_input(struct llc_linkcb *linkp, struct mbuf *m, u_char cmdrsp)
 		m = m_pullup(m, NLHDRSIZEGUESS);
 		if (m) {
 			m->m_pkthdr.rcvif = (struct ifnet *)linkp->llcl_nlnext;
-			(*linkp->llcl_sapinfo->si_input)(m);
+			llc_sapinfo_input(linkp, m);
 		}
 		break;
 	}

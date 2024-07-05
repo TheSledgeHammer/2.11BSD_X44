@@ -42,8 +42,7 @@
 #ifndef _NETCCITT_LLC_VAR_H_
 #define _NETCCITT_LLC_VAR_H_
 
-
-#define	SAPINFO_LINK	0
+#define	SAPINFO_LINK			0
 
 struct llc_sapinfo {
 	union {
@@ -88,44 +87,10 @@ llc_sapinfo_ctlinput(struct llc_linkcb *linkp, int level, struct sockaddr *sa, v
 #define LLC_CLASS_III		0x4		/* Future */
 #define LLC_CLASS_IV		0x7		/* Future */
 
-/*
- * Definitions for accessing bitfields/bitslices inside
- * LLC2 headers
- */
-struct bitslice {
-	unsigned int bs_mask;
-	unsigned int bs_shift;
-};
-
-/* bitslice index */
-#define	i_z	        	0
-#define	i_ns	        1
-#define	i_pf	        0
-#define	i_nr	        1
-#define	s_oz            2
-#define	s_selector		3
-#define	s_pf            0
-#define	s_nr            1
-#define	u_bb            2
-#define	u_select_other	3
-#define	u_pf            4
-#define	u_select		5
-
-#define	f_vs            1
-#define	f_cr            0
-#define	f_vr            1
-#define	f_wxyzv         6
-
-#define	LLCGBITS(Arg, Index)		(((Arg) & llc_bitslice[(Index)].bs_mask) >> llc_bitslice[(Index)].bs_shift)
-#define	LLCSBITS(Arg, Index, Val)	(Arg) |= (((Val) << llc_bitslice[(Index)].bs_shift) & llc_bitslice[(Index)].bs_mask)
-#define	LLCCSBITS(Arg, Index, Val)	(Arg) = (((Val) << llc_bitslice[(Index)].bs_shift) & llc_bitslice[(Index)].bs_mask)
-
-extern struct bitslice llc_bitslice[];
-
-#define LLC_CMD         0
-#define LLC_RSP         1
-#define LLC_MAXCMDRSP   2
-#define LLC_CMDRSP(val)	((val) * LLC_MAXCMDRSP)
+#define LLC_CMD         	0
+#define LLC_RSP         	1
+#define LLC_MAXCMDRSP   	2
+#define LLC_CMDRSP(val)		((val) * LLC_MAXCMDRSP)
 
 /*
  * LLC events --- These events may either be frames received from the
@@ -205,6 +170,7 @@ extern struct bitslice llc_bitslice[];
 /*
  * LLC control block
  */
+struct frmrinfo;
 
 struct llccb_q;
 TAILQ_HEAD(llccb_q, llc_linkcb);
@@ -251,122 +217,35 @@ struct llc_linkcb {
 	 * need to do as we need to be able to resend it in the ERROR state.
 	 */
 	struct frmrinfo     llcl_frmrinfo;  	/* last FRMR info field */
+};
 #define llcl_frmr_pdu0          llcl_frmrinfo.rej_pdu_0
 #define llcl_frmr_pdu1          llcl_frmrinfo.rej_pdu_1
 #define llcl_frmr_control       llcl_frmrinfo.frmr_control
 #define llcl_frmr_control_ext   llcl_frmrinfo.frmr_control_ext
 #define llcl_frmr_cause         llcl_frmrinfo.frmr_cause
-};
 
-#define LLC_ENQUEUE(l, m) 										\
-	if ((l)->llcl_wqhead == NULL) { 							\
-		(l)->llcl_wqhead = (m); 								\
-		(l)->llcl_wqtail = (m); 								\
-	} else { 													\
-		(l)->llcl_wqtail->m_nextpkt = (m); 						\
-		(l)->llcl_wqtail = (m); 								\
-	}
+/* llc macro's and definitions */
+#include <netccitt/llc_defs.h>
 
-#define LLC_DEQUEUE(l, m) 										\
-		if ((l)->llcl_wqhead == NULL) { 						\
-			(m) = NULL; 										\
-		} else { 												\
-			(m) = (l)->llcl_wqhead; 							\
-			(l)->llcl_wqhead = (l)->llcl_wqhead->m_nextpkt; 	\
-		} 														\
-
-#define LLC_SETFRAME(l, m) { \
-			if ((l)->llcl_slotsfree > 0) { 						\
-				(l)->llcl_slotsfree--; 							\
-				(l)->llcl_output_buffers[(l)->llcl_freeslot] = (m); \
-				(l)->llcl_freeslot = ((l)->llcl_freeslot+1) % (l)->llcl_window; \
-				LLC_INC((l)->llcl_projvs); 						\
-			}													\
-		}
-
-#define LLC_GETHDR(f, m) { 										\
-	struct mbuf *_m = (struct mbuf *)(m); 						\
-	if (_m) { 													\
-		M_PREPEND(_m, LLC_ISFRAMELEN, M_DONTWAIT); 				\
-		bzero(mtod(_m, caddr_t), LLC_ISFRAMELEN); 				\
-	} else { 													\
-		MGETHDR (_m, M_DONTWAIT, MT_HEADER); 					\
-		if (_m != NULL) { 										\
-			_m->m_pkthdr.len = _m->m_len = LLC_UFRAMELEN; 		\
-			_m->m_next = _m->m_act = NULL; 						\
-			bzero(mtod(_m, caddr_t), LLC_UFRAMELEN); 			\
-		} else { 												\
-			return; 											\
-		}														\
-		(m) = _m; 												\
-		(f) = mtod(m, struct llc *); 							\
-	}															\
-}
-
-#define LLC_NEWSTATE(l, LLCstate) 	((l)->llcl_statehandler = llc_state_##LLCstate)
-#define LLC_STATEEQ(l, LLCstate) 	((l)->llcl_statehandler == llc_state_##LLCstate ? 1 : 0)
-
-#define LLC_SETFLAG(l, LLCflag, v) 	((l)->llcl_##LLCflag##_flag = (v))
-#define LLC_GETFLAG(l, LLCflag) 	((l)->llcl_##LLCflag##_flag)
-
-#define LLC_INC(i) 												\
-		((i) = ((i)+1) % LLC_MAX_SEQUENCE)
-
-#define LLC_NR_VALID(l, nr)    									\
-	((l)->llcl_vs < (l)->llcl_nr_received ? 					\
-			(((nr) >= (l)->llcl_nr_received) || 				\
-			((nr) <= (l)->llcl_vs) ? 1 : 0) : 					\
-			(((nr) <= (l)->llcl_vs) && 							\
-			((nr) >= (l)->llcl_nr_received) ? 1 : 0))
-
-#define LLC_DACKCMD      0x1
-#define LLC_DACKCMDPOLL  0x2
-#define LLC_DACKRSP      0x3
-#define LLC_DACKRSPFINAL 0x4
-
-#define LLC_FRMR_W     	(1<<0)
-#define LLC_FRMR_X     	(1<<1)
-#define LLC_FRMR_Y     	(1<<2)
-#define LLC_FRMR_Z     	(1<<3)
-#define LLC_FRMR_V     	(1<<4)
-
-#define LLC_SETFRMR(l, f, cr, c) { 								\
-	if ((f)->llc_control & 0x3) { 								\
-		(l)->llcl_frmr_pdu0 = (f)->llc_control; 				\
-		(l)->llcl_frmr_pdu1 = 0; 								\
-	} else { 													\
-		(l)->llcl_frmr_pdu0 = (f)->llc_control; 				\
-		(l)->llcl_frmr_pdu1 = (f)->llc_control_ext; 			\
-	} 															\
-	LLCCSBITS((l)->llcl_frmr_control, f_vs, (l)->llcl_vs); 		\
-	LLCCSBITS((l)->llcl_frmr_control_ext, f_cr, (cr)); 			\
-	LLCSBITS((l)->llcl_frmr_control_ext, f_vr, (l)->llcl_vr); 	\
-	LLCCSBITS((l)->llcl_frmr_cause, f_wxyzv, (c)); 				\
-}
-
-/*
- * LLC tracing levels:
- *     LLCTR_INTERESTING        interesting event, we might care to know about
- *                              it, but then again, we might not ...
- *     LLCTR_SHOULDKNOW         we probably should know about this event
- *     LLCTR_URGENT             something has gone utterly wrong ...
- */
-#define LLCTR_INTERESTING       1
-#define LLCTR_SHOULDKNOW        2
-#define LLCTR_URGENT            3
-
-#ifdef LLCDEBUG
-#define LLC_TRACE(lp, l, msg) llc_trace((lp), (l), (msg))
-#else /* LLCDEBUG */
-#define LLC_TRACE(lp, l, msg) /* NOOP */
-#endif /* LLCDEBUG */
+extern int llc_n2;
+extern int llc_ACK_timer;
+extern int llc_P_timer;
+extern int llc_REJ_timer;
+extern int llc_BUSY_timer;
+extern int llc_AGE_timer;
+extern int llc_DACTION_timer;
 
 struct ifqueue llcintrq;
 extern struct llccb_q llccb_q;
+extern struct bitslice llc_bitslice[];
 
-struct llc_sapinfo 	*llc_setsapinfo(struct ifnet *ifp, sa_family_t af, u_char sap, struct dllconfig *llconf, u_char llclass);
-struct llc_sapinfo 	*llc_getsapinfo(u_char sap, struct ifnet *ifp);
-struct llc_linkcb 	*llc_newlink(struct sockaddr_dl *dst, struct ifnet *ifp, struct rtentry *nlrt, caddr_t nlnext, struct rtentry *llrt);
-void				llc_dellink(struct llc_linkcb *linkp);
+struct llc_sapinfo 	*llc_setsapinfo(struct ifnet *, sa_family_t, u_char, struct dllconfig *, u_char);
+struct llc_sapinfo 	*llc_getsapinfo(u_char, struct ifnet *);
+short				llc_seq2slot(struct llc_linkcb *, short);
+void				llc_init(void);
+struct llc_linkcb 	*llc_newlink(struct sockaddr_dl *, struct ifnet *, struct rtentry *, caddr_t, struct rtentry *);
+void				llc_dellink(struct llc_linkcb *);
+int					llc_anytimersup(struct llc_linkcb *);
+void				llc_slowtimo(void);
 
 #endif /* _NETCCITT_LLC_VAR_H_ */

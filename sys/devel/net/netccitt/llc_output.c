@@ -60,6 +60,12 @@
 #include <netccitt/dll.h>
 #include <netccitt/llc_var.h>
 
+/*
+ * llc_output() --- called by an upper layer (network layer) entity whenever
+ *                  there is an INFO frame to be transmitted. We enqueue the
+ *                  info frame and call llc_start() to do the actual sending.
+ */
+
 void
 llc_output(struct llc_linkcb *linkp, struct mbuf *m)
 {
@@ -71,6 +77,10 @@ llc_output(struct llc_linkcb *linkp, struct mbuf *m)
 	splx(i);
 }
 
+/*
+ * llc_start() --- We try to subsequently dequeue all the frames available and
+ *                 send them out.
+ */
 void
 llc_start(struct llc_linkcb *linkp)
 {
@@ -78,8 +88,8 @@ llc_start(struct llc_linkcb *linkp)
 	register struct mbuf *m;
 	int action;
 
-	while ((LLC_STATEEQ(linkp, NORMAL) || LLC_STATEEQ(linkp, BUSY)
-			|| LLC_STATEEQ(linkp, REJECT)) && (linkp->llcl_slotsfree > 0)
+	while ((LLC_STATEEQ(linkp, normal) || LLC_STATEEQ(linkp, busy)
+			|| LLC_STATEEQ(linkp, reject)) && (linkp->llcl_slotsfree > 0)
 			&& (LLC_GETFLAG(linkp, REMOTE_BUSY) == 0)) {
 		LLC_DEQUEUE(linkp, m);
 		if (m == NULL) {
@@ -90,6 +100,11 @@ llc_start(struct llc_linkcb *linkp)
 	}
 }
 
+/*
+ * llc_send() --- Handles single frames. If dealing with INFO frames we need to
+ *                prepend the LLC header, otherwise we just allocate an mbuf.
+ *                In both cases the actual send is done by llc_rawsend().
+ */
 int
 llc_send(struct llc_linkcb *linkp, int frame_kind, int cmdrsp, int pollfinal)
 {
@@ -112,6 +127,53 @@ llc_send(struct llc_linkcb *linkp, int frame_kind, int cmdrsp, int pollfinal)
 	return (0);
 }
 
+/*
+ * llc_resend() --- llc_resend() retransmits all unacknowledged INFO frames.
+ */
+int
+llc_resend(struct llc_linkcb *linkp, int cmdrsp, int pollfinal)
+{
+	register struct llc *frame;
+	register struct mbuf *m;
+	register int seq, slot;
+
+	if (linkp->llcl_slotsfree < linkp->llcl_window) {
+		/* assert lock between nr_received & V(S) */
+		if (linkp->llcl_nr_received != linkp->llcl_vs) {
+			panic("llc: V(S) != N(R) received\n");
+		}
+		for (slot = llc_seq2slot(linkp, linkp->llcl_vs);
+				slot != linkp->llcl_freeslot;
+				LLC_INC(linkp->llcl_vs), slot = llc_seq2slot(linkp,
+						linkp->llcl_vs)) {
+			m = linkp->llcl_output_buffers[slot];
+			LLC_GETHDR(frame, m);
+			llc_rawsend(linkp, m, frame, LLCFT_INFO, linkp->llcl_vs, cmdrsp,
+					pollfinal);
+			pollfinal = 0;
+		}
+	}
+	return (0);
+}
+
+/*
+ * llc_rawsend() --- constructs an LLC frame and sends it out via the
+ *                   associated interface of the link control block.
+ *
+ * We need to make sure that outgoing frames have the correct length,
+ * in particular the 4 byte ones (RR, RNR, REJ) as LLC_GETHDR() will
+ * set the mbuf len to 3 as default len for non INFO frames ...
+ *
+ * Frame kind             Length (w/o MAC header, {D,S}SAP incl.)
+ * --------------------------------------------------------------
+ * DISC, SABME, UA, DM    3 bytes  ({D,S}SAP + CONTROL)
+ * RR, RNR, REJ           4 bytes  ({D,S}SAP + CONTROL0 + CONTROL1)
+ * XID                    6 bytes  ({D,S}SAP + CONTROL0 + FI,CLASS,WINDOW)
+ * FRMR                   7 bytes  ({D,S}SAP + CONTROL0 + REJ CONTROL,V(S),V(R),CAUSE)
+ * INFO                   4 -- MTU
+ * UI, TEST               3 -- MTU
+ *
+ */
 #define LLC_SETLEN(m, l) ((m)->m_pkthdr.len = (m)->m_len = (l))
 
 void

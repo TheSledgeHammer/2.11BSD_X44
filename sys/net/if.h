@@ -194,6 +194,7 @@ struct ifnet {							/* and the entries */
 	int		if_pcount;			/* number of promiscuous listeners */
 	caddr_t	if_bpf;				/* packet filter structure */
 	u_short	if_index;			/* numeric abbreviation for this if */
+	short	if_unit;			/* sub-unit for lower level driver */
 	short	if_timer;			/* time 'til if_watchdog called */
 	short	if_flags;			/* up/down, broadcast, etc. */
 	short	if__pad1;			/* be nice to m68k ports */

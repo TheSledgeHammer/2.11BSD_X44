@@ -1120,8 +1120,9 @@ if_down(ifp)
 	ifp->if_flags &= ~IFF_UP;
 	microtime(&ifp->if_lastchange);
 	for (ifa = TAILQ_FIRST(&ifp->if_addrlist); ifa != NULL;
-	     ifa = TAILQ_NEXT(ifa, ifa_list))
+	     ifa = TAILQ_NEXT(ifa, ifa_list)) {
 		pfctlinput(PRC_IFDOWN, ifa->ifa_addr);
+	}
 	IFQ_PURGE(&ifp->if_snd);
 #if NCARP > 0
 	if (ifp->if_carp) {
@@ -1149,8 +1150,9 @@ if_up(ifp)
 #ifdef notyet
 	/* this has no effect on IP, and will kill all ISO connections XXX */
 	for (ifa = TAILQ_FIRST(&ifp->if_addrlist); ifa != NULL;
-	     ifa = TAILQ_NEXT(ifa, ifa_list))
+	     ifa = TAILQ_NEXT(ifa, ifa_list)) {
 		pfctlinput(PRC_IFUP, ifa->ifa_addr);
+	}
 #endif
 #if NCARP > 0
 	if (ifp->if_carp) {
@@ -1461,7 +1463,7 @@ ifioctl(so, cmd, data, p)
 	{
 		u_long oldmtu = ifp->if_mtu;
 
-		error = suser(p->p_ucred, &p->p_acflag);
+		error = suser1(p->p_ucred, &p->p_acflag);
 		if (error)
 			return (error);
 		if (ifp->if_ioctl == NULL)

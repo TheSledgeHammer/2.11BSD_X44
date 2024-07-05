@@ -80,6 +80,20 @@ struct bitslice llc_bitslice[] = {
 };
 
 /*
+ * Various timer values.  They can be adjusted
+ * by patching the binary with adb if necessary.
+ */
+/* ISO 8802-2 timers */
+int llc_n2 = LLC_N2_VALUE;
+int llc_ACK_timer = LLC_ACK_TIMER;
+int llc_P_timer = LLC_P_TIMER;
+int llc_BUSY_timer = LLC_BUSY_TIMER;
+int llc_REJ_timer = LLC_REJ_TIMER;
+/* Implementation specific timers */
+int llc_AGE_timer = LLC_AGE_TIMER;
+int llc_DACTION_timer = LLC_DACTION_TIMER;
+
+/*
  * We keep the link control blocks on a doubly linked list -
  * primarily for checking in llc_time()
  */
@@ -230,7 +244,7 @@ llc_alloc(void)
 	struct llc_linkcb *nlinkp;
 
 	/* allocate memory for link control block */
-	MALLOC(nlinkp, struct llc_linkcb *, sizeof(struct llc_linkcb), M_PCB, M_DONTWAIT);
+	nlinkp = (struct llc_linkcb *)malloc(sizeof(struct llc_linkcb), M_PCB, M_DONTWAIT);
 	if (nlinkp == NULL) {
 		return (NULL);
 	}
@@ -243,7 +257,7 @@ llc_free(struct llc_linkcb *nlinkp)
 	if (nlinkp == NULL) {
 		return;
 	}
-	FREE(nlinkp, M_PCB);
+	free(nlinkp, M_PCB);
 }
 
 struct llc_linkcb *
@@ -275,6 +289,9 @@ llc_newlink(struct sockaddr_dl *dst, struct ifnet *ifp, struct rtentry *nlrt, ca
 	/* reset writeq */
 	nlinkp->llcl_wqhead = nlinkp->llcl_wqtail = NULL;
 
+	/* setup initial state handler function */
+	nlinkp->llcl_statehandler = llc_state_adm;
+
 	/* hold on to interface pointer */
 	nlinkp->llcl_if = ifp;
 
@@ -288,7 +305,7 @@ llc_newlink(struct sockaddr_dl *dst, struct ifnet *ifp, struct rtentry *nlrt, ca
 	}
 
 	/* allocate memory for window buffer */
-	MALLOC(nlinkp->llcl_output_buffers, struct mbuf **, llcwindow*sizeof(struct mbuf *), M_PCB, M_DONTWAIT);
+	nlinkp->llcl_output_buffers = (struct mbuf **)calloc(llcwindow, sizeof(struct mbuf *), M_PCB, M_DONTWAIT);
 	if (nlinkp->llcl_output_buffers == 0) {
 		llc_free(nlinkp);
 		return (NULL);
@@ -318,7 +335,7 @@ llc_dellink(struct llc_linkcb *linkp)
 
 	/* notify upper layer of imminent death */
 	if (linkp->llcl_nlnext && sapinfo->si_ctlinput) {
-		(*sapinfo->si_ctlinput)(PRC_DISCONNECT_INDICATION, (struct sockaddr *)&linkp->llcl_addr, linkp->llcl_nlnext);
+		llc_sapinfo_ctlinput(linkp, PRC_DISCONNECT_INDICATION, &linkp->llcl_addr, linkp->llcl_nlnext);
 	}
 
 	/* pull the plug */
@@ -344,251 +361,127 @@ llc_dellink(struct llc_linkcb *linkp)
 	}
 
 	/* return the window space */
-	FREE((caddr_t)linkp->llcl_output_buffers, M_PCB);
+	free((caddr_t)linkp->llcl_output_buffers, M_PCB);
 
 	/* return the control block space --- now it's gone ... */
 	llc_free(linkp);
 }
 
+/*
+ * llc_anytimersup() --- Checks if at least one timer is still up and running.
+ */
 int
-llc_decode(struct llc* frame, struct llc_linkcb * linkp)
-{
-	register int ft;
-
-	ft = LLC_BAD_PDU;
-	if ((frame->llc_control & 01) == 0) {
-		ft = LLCFT_INFO;
-	} else {
-		switch (frame->llc_control) {
-		/* U frames */
-		case LLC_UI:
-		case LLC_UI_P:
-			ft = LLC_UI;
-			break;
-		case LLC_DM:
-		case LLC_DM_P:
-			ft = LLCFT_DM;
-			break;
-		case LLC_DISC:
-		case LLC_DISC_P:
-			ft = LLCFT_DISC;
-			break;
-		case LLC_UA:
-		case LLC_UA_P:
-			ft = LLCFT_UA;
-			break;
-		case LLC_SABME:
-		case LLC_SABME_P:
-			ft = LLCFT_SABME;
-			break;
-		case LLC_FRMR:
-		case LLC_FRMR_P:
-			ft = LLCFT_FRMR;
-			break;
-		case LLC_XID:
-		case LLC_XID_P:
-			ft = LLCFT_XID;
-			break;
-		case LLC_TEST:
-		case LLC_TEST_P:
-			ft = LLCFT_TEST;
-			break;
-
-		/* S frames */
-		case LLC_RR:
-			ft = LLCFT_RR;
-			break;
-		case LLC_RNR:
-			ft = LLCFT_RNR;
-			break;
-		case LLC_REJ:
-			ft = LLCFT_REJ;
-			break;
-		}
-	}
-	if (linkp) {
-		switch (ft) {
-		case LLCFT_INFO:
-			if (LLCGBITS(frame->llc_control, i_ns) != linkp->llcl_vr) {
-				ft = LLC_INVALID_NS;
-				break;
-			}
-			/* fall thru --- yeeeeeee */
-		case LLCFT_RR:
-		case LLCFT_RNR:
-		case LLCFT_REJ:
-			/* splash! */
-			if (LLC_NR_VALID(linkp, LLCGBITS(frame->llc_control_ext, s_nr))	== 0) {
-				ft = LLC_INVALID_NR;
-			}
-			break;
-		}
-	}
-	return (ft);
-}
-
-int
-llc_statehandler(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
-{
-	register int action = 0;
-
-once_more_and_again:
-	switch (action) {
-	case LLC_CONNECT_INDICATION: {
-		int naction;
-
-		LLC_TRACE(linkp, LLCTR_INTERESTING, "CONNECT INDICATION");
-		linkp->llcl_nlnext = llc_sapinfo_ctlinput(linkp, PRC_CONNECT_INDICATION, (struct sockaddr *) &linkp->llcl_addr, (caddr_t) linkp);
-		if (linkp->llcl_nlnext == 0) {
-			naction = NL_DISCONNECT_REQUEST;
-		} else {
-			naction = NL_CONNECT_RESPONSE;
-		}
-		action = (*linkp->llcl_statehandler)(linkp, frame, naction, 0, 0);
-		goto once_more_and_again;
-	}
-	case LLC_CONNECT_CONFIRM:
-		/* llc_resend(linkp, LLC_CMD, 0); */
-		llc_start(linkp);
-		break;
-	case LLC_DISCONNECT_INDICATION:
-		LLC_TRACE(linkp, LLCTR_INTERESTING, "DISCONNECT INDICATION");
-		llc_sapinfo_ctlinput(linkp, PRC_DISCONNECT_INDICATION,(struct sockaddr *) &linkp->llcl_addr, linkp->llcl_nlnext);
-		break;
-	case LLC_RESET_CONFIRM:
-	case LLC_RESET_INDICATION_LOCAL:
-		break;
-	case LLC_RESET_INDICATION_REMOTE:
-		LLC_TRACE(linkp, LLCTR_SHOULDKNOW, "RESET INDICATION (REMOTE)");
-		action = (*linkp->llcl_statehandler)(linkp, frame, NL_RESET_RESPONSE, 0, 0);
-		goto once_more_and_again;
-	case LLC_FRMR_SENT:
-		LLC_TRACE(linkp, LLCTR_URGENT, "FRMR SENT");
-		break;
-	case LLC_FRMR_RECEIVED:
-		LLC_TRACE(linkp, LLCTR_URGEN, "FRMR RECEIVED");
-		action = (*linkp->llcl_statehandler)(linkp, frame, NL_RESET_REQUEST, 0, 0);
-		goto once_more_and_again;
-	case LLC_REMOTE_BUSY:
-		LLC_TRACE(linkp, LLCTR_SHOULDKNOW, "REMOTE BUSY");
-		break;
-	case LLC_REMOTE_NOT_BUSY:
-		LLC_TRACE(linkp, LLCTR_SHOULDKNOW, "REMOTE BUSY CLEARED");
-		llc_start(linkp);
-		break;
-	}
-	return (action);
-}
-
-#define SAL(s) ((struct sockaddr_dl *)&(s)->llcl_addr)
-
-void
-llc_link_dump(struct llc_linkcb* linkp, const char *message)
+llc_anytimersup(struct llc_linkcb * linkp)
 {
 	register int i;
-	register char *state;
 
-	/* print interface */
-	printf("if %s\n", linkp->llcl_if->if_xname);
-
-	/* print message */
-	printf(">> %s <<\n", message);
-
-	/* print MAC and LSAP */
-	printf("llc addr ");
-	for (i = 0; i < (SAL(linkp)->sdl_alen)-2; i++) {
-		printf("%x:", (char)*(LLADDR(SAL(linkp))+i) & 0xff);
-	}
-	printf("%x,", (char)*(LLADDR(SAL(linkp))+i) & 0xff);
-	printf("%x\n", (char)*(LLADDR(SAL(linkp))+i+1) & 0xff);
-
-	/* print send and receive state variables, ack, and window */
-	printf("V(R) %d/V(S) %d/N(R) received %d/window %d/freeslot %d\n",
-	       linkp->llcl_vs, linkp->llcl_vr, linkp->llcl_nr_received,
-	       linkp->llcl_window, linkp->llcl_freeslot);
-}
-
-void
-llc_trace(struct llc_linkcb *linkp, int level, const char *message)
-{
-	if (linkp->llcl_sapinfo->si_trace && level > llc_tracelevel) {
-		llc_link_dump(linkp, message);
-	}
-	return;
-}
-
-struct sockaddr_dl npdl_netmask = {
-		.sdl_len = 		sizeof(struct sockaddr_dl),	/* _len */
-		.sdl_family = 	0,			/* _family */
-		.sdl_index = 	0,			/* _index */
-		.sdl_type = 	0,			/* _type */
-		.sdl_nlen = 	-1,			/* _nlen */
-		.sdl_alen = 	-1,			/* _alen */
-		.sdl_slen = 	-1,			/* _slen */
-		.sdl_data = {
-				-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
-		},							/* _data */
-};
-struct sockaddr npdl_dummy;
-
-struct rtentry *
-llc_sapinfo_enter(struct sockaddr_dl *key, struct sockaddr *value, struct rtentry *rt, struct llc_linkcb *link)
-{
-	struct rtentry *nprt;
-	int    i;
-
-	nprt = rtalloc1((struct sockaddr *)key, 0);
-	if (nprt == NULL) {
-		u_int  size = sizeof(struct llc_sapinfo);
-		u_char saploc = LLSAPLOC(key, rt->rt_ifp);
-		int npdl_datasize = sizeof(struct sockaddr_dl) - ((int) ((unsigned long)&((struct sockaddr_dl *) 0)->sdl_data[0]));
-
-		npdl_netmask.sdl_data[saploc] = NPDL_SAPNETMASK;
-		bzero((caddr_t)&npdl_netmask.sdl_data[saploc + 1], npdl_datasize - saploc - 1);
-		if (value == 0) {
-			value = &npdl_dummy;
-		}
-
-		/* now enter it */
-		rtrequest(RTM_ADD, SA(key), SA(value), SA(&npdl_netmask), 0, &nprt);
-
-		/* and reset npdl_netmask */
-		for (i = saploc; i < npdl_datasize; i++) {
-			npdl_netmask.sdl_data[i] = -1;
-		}
-
-		nprt->rt_llinfo = malloc(size, M_PCB, M_WAITOK|M_ZERO);
-		if (nprt->rt_llinfo) {
-			((struct llc_sapinfo *) (nprt->rt_llinfo))->np_rt = rt;
-		}
-	} else {
-		nprt->rt_refcnt--;
-	}
-	return (nprt);
-}
-
-struct rtentry *
-llc_sapinfo_enrich(short type, caddr_t info, struct sockaddr_dl *sdl)
-{
-	struct rtentry *rt;
-	rt = rtalloc1((struct sockaddr *) sdl, 0);
-	if (rt != NULL) {
-		rt->rt_refcnt--;
-		switch (type) {
-		case 0:
-			((struct llc_sapinfo *) (rt->rt_llinfo))->np_link = (struct llc_linkcb *) info;
+	FOR_ALL_LLC_TIMERS(i) {
+		if (linkp->llcl_timers[i] > 0) {
 			break;
 		}
-		return (rt);
 	}
-	return (NULL);
+	if (i == LLC_AGE_SHIFT) {
+		return (0);
+	} else {
+		return (1);
+	}
 }
 
-int
-llc_sapinfo_destroy(struct rtentry *rt)
+/*
+ * The timer routine. We are called every 500ms by the kernel.
+ * Handle the various virtual timers.
+ */
+void
+llc_slowtimo(void)
 {
-	if (rt->rt_llinfo) {
-		free((caddr_t) rt->rt_llinfo, M_PCB);
+	register struct llc_linkcb *linkp;
+	register struct llc_linkcb *nlinkp;
+	register int timer;
+	register int action;
+	register int s;
+
+	s = splimp();
+
+	if (!TAILQ_EMPTY(&llccb_q)) {
+		linkp = TAILQ_FIRST(&llccb_q);
+		while (linkp != NULL) {
+			nlinkp = TAILQ_NEXT(linkp, llcl_q);
+
+			/* The delayed action/acknowledge idle timer */
+			switch (LLC_TIMERXPIRED(linkp, DACTION)) {
+			case LLC_TIMER_RUNNING:
+				LLC_AGETIMER(linkp, DACTION);
+				break;
+			case LLC_TIMER_EXPIRED:
+				register int cmdrsp;
+				register int pollfinal;
+
+				switch (LLC_GETFLAG(linkp, DACTION)) {
+				case LLC_DACKCMD:
+					cmdrsp = LLC_CMD;
+					pollfinal = 0;
+					break;
+				case LLC_DACKCMDPOLL:
+					cmdrsp = LLC_CMD;
+					pollfinal = 1;
+					break;
+				case LLC_DACKRSP:
+					cmdrsp = LLC_RSP;
+					pollfinal = 0;
+					break;
+				case LLC_DACKRSPFINAL:
+					cmdrsp = LLC_RSP;
+					pollfinal = 1;
+					break;
+				}
+				llc_send(linkp, LLCFT_RR, cmdrsp, pollfinal);
+				LLC_STOPTIMER(linkp, DACTION);
+				break;
+			}
+			/* The link idle timer */
+			switch (LLC_TIMERXPIRED(linkp, AGE)) {
+			case LLC_TIMER_RUNNING:
+				LLC_AGETIMER(linkp, AGE);
+				break;
+			case LLC_TIMER_EXPIRED:
+				if (llc_anytimersup(linkp) == 0) {
+					llc_dellink(linkp);
+					LLC_STOPTIMER(linkp, AGE);
+					goto gone;
+				} else {
+					LLC_STARTTIMER(linkp, AGE);
+				}
+				break;
+			}
+			/*
+			 * Now, check all the ISO 8802-2 timers
+			 */
+			FOR_ALL_LLC_TIMERS(timer) {
+				if ((linkp->llcl_timerflags & (1<<timer)) &&
+						(linkp->llcl_timers[timer] == 0)) {
+					switch (timer) {
+					case LLC_ACK_SHIFT:
+						action = LLC_ACK_TIMER_EXPIRED;
+						break;
+					case LLC_P_SHIFT:
+						action = LLC_P_TIMER_EXPIRED;
+						break;
+					case LLC_BUSY_SHIFT:
+						action = LLC_BUSY_TIMER_EXPIRED;
+						break;
+					case LLC_REJ_SHIFT:
+						action = LLC_REJ_TIMER_EXPIRED;
+						break;
+					}
+					linkp->llcl_timerflags &= ~(1<<timer);
+					(void)llc_statehandler(linkp, (struct llc *)0, action, 0, 1);
+				} else if (linkp->llcl_timers[timer] > 0) {
+					linkp->llcl_timers[timer]--;
+				}
+			}
+gone:
+			linkp = nlinkp;
+		}
 	}
-	return (rtrequest(RTM_DELETE, rt_key(rt), rt->rt_gateway, rt_mask(rt), 0, 0));
+	splx(s);
 }

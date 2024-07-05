@@ -69,7 +69,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_mpls.c,v 1.8.22.1 2013/07/30 03:06:42 msaitoh Exp
 void ifmplsattach(int);
 
 static int mpls_clone_create(struct if_clone *, int);
-static int mpls_clone_destroy(struct ifnet *);
+static void mpls_clone_destroy(struct ifnet *);
 
 static struct if_clone mpls_if_cloner =
 	IF_CLONE_INITIALIZER("mpls", mpls_clone_create, mpls_clone_destroy);
@@ -129,7 +129,7 @@ mpls_clone_create(struct if_clone *ifc, int unit)
 	return 0;
 }
 
-static int
+static void
 mpls_clone_destroy(struct ifnet *ifp)
 {
 	int s;
@@ -141,7 +141,6 @@ mpls_clone_destroy(struct ifnet *ifp)
 	splx(s);
 
 	free(ifp->if_softc, M_DEVBUF);
-	return 0;
 }
 
 static void
@@ -264,6 +263,7 @@ mpls_ioctl(struct ifnet *ifp, u_long cmd, void *data)
 {
 	int error = 0, s = splnet();
 	struct ifreq *ifr = data;
+	struct proc *p = curproc;
 
 	switch(cmd) {
 	case SIOCINITIFADDR:
@@ -276,17 +276,18 @@ mpls_ioctl(struct ifnet *ifp, u_long cmd, void *data)
 		}
 		/* FALLTHROUGH */
 	case SIOCGIFMTU:
-		if ((error = ifioctl_common(ifp, cmd, data)) == ENETRESET)
+		if ((error = ifioctl(ifp, cmd, data, p)) == ENETRESET)
 			error = 0;
 		break;
 	case SIOCSIFFLAGS:
-		if ((error = ifioctl_common(ifp, cmd, data)) != 0)
+		if ((error = ifioctl(ifp, cmd, data, p)) != 0)
 			break;
-		if (ifp->if_flags & IFF_UP)
+		if (ifp->if_flags & IFF_UP) {
 			ifp->if_flags |= IFF_RUNNING;
+		}
 		break;
 	default:
-		error = ifioctl_common(ifp, cmd, data);
+		error = ifioctl(ifp, cmd, data, p);
 		break;
 	}
 	splx(s);

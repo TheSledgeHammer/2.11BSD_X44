@@ -47,6 +47,7 @@ __KERNEL_RCSID(0, "$NetBSD: ns_input.c,v 1.20 2003/09/30 00:01:18 christos Exp $
 #include <sys/kernel.h>
 
 #include <net/if.h>
+#include <net/radix.h>
 #include <net/route.h>
 #include <net/raw_cb.h>
 
@@ -86,7 +87,7 @@ int	idpcksum = 1;
 long	ns_pexseq;
 
 void
-ns_init()
+ns_init(void)
 {
 	ns_broadhost = * (union ns_host *) allones;
 	ns_broadnet = * (union ns_net *) allones;
@@ -100,6 +101,10 @@ ns_init()
 	ns_hostmask.sns_len = 12;
 	ns_hostmask.sns_addr.x_net = ns_broadnet;
 	ns_hostmask.sns_addr.x_host = ns_broadhost;
+
+#ifdef RADIX_ART
+	rtable_art_init(AF_NS, sizeof(struct ns_addr));
+#endif
 }
 
 /*
@@ -107,8 +112,9 @@ ns_init()
  */
 int nsintr_getpck = 0;
 int nsintr_swtch = 0;
+
 void
-nsintr()
+nsintr(void)
 {
 	struct idp *idp;
 	struct mbuf *m;

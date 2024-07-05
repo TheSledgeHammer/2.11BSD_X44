@@ -945,19 +945,6 @@ rnh_inithead(head, off)
 	return rn_inithead0(rnh, off);
 }
 
-/* For protocols that don't support multipath and/or art */
-#ifdef NS
-
-int
-rn_inithead(head, off)
-	void **head;
-	int off;
-{
-	return (rnh_inithead(head, off));
-}
-
-#else
-
 int
 rn_inithead(head, off)
 	void **head;
@@ -971,7 +958,6 @@ rn_inithead(head, off)
 	return (rnh_inithead(head, off));
 #endif
 }
-#endif
 
 int
 rn_inithead0(rnh, off)
