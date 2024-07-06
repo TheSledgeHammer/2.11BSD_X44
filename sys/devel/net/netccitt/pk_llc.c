@@ -46,7 +46,9 @@
 #include <net/route.h>
 
 #include <netccitt/dll.h>
-
+#include <netccitt/x25.h>
+#include <netccitt/pk.h>
+#include <netccitt/pk_var.h>
 #include <netccitt/llc_var.h>
 
 struct sockaddr_dl npdl_netmask = {

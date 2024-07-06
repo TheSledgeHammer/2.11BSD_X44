@@ -37,7 +37,7 @@
 #define _NETISO_TUBA_TABLE_H_
 
 struct tuba_cache {
-    struct	radix_node      tc_nodes[2];/* convenient lookup */
+    struct radix_node      	tc_nodes[2];/* convenient lookup */
     int	                    tc_refcnt;
 	int	                    tc_time;	/* last looked up */
 	int	                    tc_flags;

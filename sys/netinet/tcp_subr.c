@@ -448,6 +448,8 @@ tcp_template(tp)
 		mtod(m, struct ip *)->ip_v = 4;
 		mtod(m, struct ip *)->ip_hl = hlen >> 2;
 		ipov = mtod(m, struct ipovly *);
+		//ipov->ih_next = ipov->ih_prev = 0;
+		ipov->ih_x1 = 0;
 		ipov->ih_pr = IPPROTO_TCP;
 		ipov->ih_len = htons(sizeof(struct tcphdr));
 		if (inp) {

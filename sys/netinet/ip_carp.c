@@ -1603,17 +1603,6 @@ carp_set_ifp(struct carp_softc *sc, struct ifnet *ifp)
 }
 
 void
-carp_set_sadl(struct ifnet *ifp, void *addr, u_char addrlen)
-{
-	struct sockaddr_dl *sdl;
-
-    ifp->if_addrlen = addrlen;
-    if_alloc_sadl(ifp);
-    sdl = ifp->if_sadl;
-    sockaddr_dl_setaddrif(ifp, addr, LLC_8021_LSAP, addrlen, sdl, (AF_INET|AF_INET6|AF_LINK));
-}
-
-void
 carp_set_enaddr(struct carp_softc *sc)
 {
 	uint8_t enaddr[ETHER_ADDR_LEN];
@@ -1632,7 +1621,7 @@ carp_set_enaddr(struct carp_softc *sc)
 		enaddr[4] = 1;
 		enaddr[5] = sc->sc_vhid;
 	}
-	carp_set_sadl(&sc->sc_if, enaddr, sizeof(enaddr));
+	if_set_sadl(&sc->sc_if, enaddr, LLC_NULL_LSAP, sizeof(enaddr));
 }
 
 void

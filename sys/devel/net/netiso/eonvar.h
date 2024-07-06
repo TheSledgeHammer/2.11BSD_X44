@@ -112,16 +112,16 @@ struct sockaddr_eon {
 
 #ifdef EON_TEMPLATE
 struct sockaddr_eon eon_template = {
-		sizeof(eon_template),
-		AF_ISO,
-		0,
-		0,
-		0x14,
-		0x47,
-		0x0,
-		0x6,
-		0x3,
-		0
+		.seon_len = sizeof(eon_template),
+		.seon_family = AF_ISO,
+		.seon_status = 0,
+		.seon_pad1 = 0,
+		.seon_adrlen = 0x14,
+		.seon_afi = 0x47,
+		.seon_idi[0] = 0x0,
+		.seon_idi[1] = 0x6,
+		.seon_vers = 0x3,
+		.seon_glbnum = 0,
 };
 #endif
 
@@ -176,8 +176,8 @@ struct eon_llinfo {
 	struct route    el_iproute;	/* if direct route cache IP info */
 	/* if gateway, cache secondary route */
 };
-#define el_iphdr el_ei.ei_ip
-#define el_eonhdr el_ei.ei_eh
+#define el_iphdr 	el_ei.ei_ip
+#define el_eonhdr 	el_ei.ei_eh
 
 #ifdef _KERNEL
 void eonprotoinit(void);

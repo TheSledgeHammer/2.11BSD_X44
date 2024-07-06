@@ -39,13 +39,13 @@
 /*
  * Protocols
  */
-#define NSPROTO_RI	1		/* Routing Information */
+#define NSPROTO_RI		1		/* Routing Information */
 #define NSPROTO_ECHO	2		/* Echo Protocol */
 #define NSPROTO_ERROR	3		/* Error Protocol */
-#define NSPROTO_PE	4		/* Packet Exchange */
-#define NSPROTO_SPP	5		/* Sequenced Packet */
-#define NSPROTO_RAW	255		/* Placemarker*/
-#define NSPROTO_MAX	256		/* Placemarker*/
+#define NSPROTO_PE		4		/* Packet Exchange */
+#define NSPROTO_SPP		5		/* Sequenced Packet */
+#define NSPROTO_RAW		255		/* Placemarker*/
+#define NSPROTO_MAX		256		/* Placemarker*/
 
 
 /*

@@ -91,11 +91,18 @@ struct finfo {
 	ufs1_daddr_t 	fi_blocks[1];	/* array of logical block numbers */
 };
 
+#define	LFS_MAGIC		0x070162
+#define	LFS_VERSION		1
+
+#define	LFS1_MAGIC		LFS_MAGIC
+#define	LFS1_VERSION	LFS_VERSION
+
+#define	LFS2_MAGIC		0x19620701
+#define	LFS2_VERSION	2
+
 /* On-disk and in-memory super block. */
 struct lfs {
-#define	LFS_MAGIC	0x070162
 	u_int32_t 		lfs_magic;		/* magic number */
-#define	LFS_VERSION	1
 	u_int32_t 		lfs_version;	/* version number */
 
 	u_int32_t 		lfs_size;		/* number of blocks in fs */

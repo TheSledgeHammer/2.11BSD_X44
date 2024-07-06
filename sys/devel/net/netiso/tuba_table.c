@@ -125,7 +125,6 @@ done:
 	siso->siso_nlen--;
 	tc->tc_siso.siso_addr = siso->siso_addr;
 	rn_insert(&tc->tc_addr, tuba_tree, &dupentry, tc->tc_nodes);
-	//rnh->rnh_addaddr(&tc->tc_addr, &dupentry, tuba_tree, tc->tc_nodes);
 	if (dupentry) {
 		panic("tuba_lookup 1");
 	}
@@ -156,7 +155,6 @@ done:
 	if (new == 0) {
 		tuba_table_size = old_size;
 		rn_delete(&tc->tc_addr, NULL, tuba_tree);
-		//rnh->rnh_deladdr(&tc->tc_addr, NULL, tuba_tree);
 		Free(tc);
 		return (0);
 	}

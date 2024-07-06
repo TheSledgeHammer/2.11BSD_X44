@@ -252,6 +252,17 @@ size_t if_indexlim = 0;
 struct ifaddr **ifnet_addrs = NULL;
 struct ifnet **ifindex2ifnet = NULL;
 
+void
+if_set_sadl(struct ifnet *ifp, void *addr, u_char lsap, u_char addrlen)
+{
+	struct sockaddr_dl *sdl;
+
+    ifp->if_addrlen = addrlen;
+    if_alloc_sadl(ifp);
+    sdl = ifp->if_sadl;
+    (void)sockaddr_dl_setaddrif(ifp, addr, lsap, addrlen, sdl, sdl->sdl_family);
+}
+
 /*
  * Allocate the link level name for the specified interface.  This
  * is an attachment helper.  It must be called after ifp->if_addrlen
@@ -266,20 +277,23 @@ if_alloc_sadl(struct ifnet *ifp)
 	struct sockaddr_dl *sdl;
 	struct ifaddr *ifa;
 
+#define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
+
 	/*
 	 * If the interface already has a link name, release it
 	 * now.  This is useful for interfaces that can change
 	 * link types, and thus switch link names often.
 	 */
-	if (ifp->if_sadl != NULL)
+	if (ifp->if_sadl != NULL) {
 		if_free_sadl(ifp);
+	}
 
 	namelen = strlen(ifp->if_xname);
 	masklen = offsetof(struct sockaddr_dl, sdl_data[0]) + namelen;
 	socksize = masklen + ifp->if_addrlen;
-#define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
-	if (socksize < sizeof(*sdl))
+	if (socksize < sizeof(*sdl)) {
 		socksize = sizeof(*sdl);
+	}
 	socksize = ROUNDUP(socksize);
 	ifasize = sizeof(*ifa) + 2 * socksize;
 	ifa = (struct ifaddr *)malloc(ifasize, M_IFADDR, M_WAITOK);
@@ -303,8 +317,9 @@ if_alloc_sadl(struct ifnet *ifp)
 	sdl = (struct sockaddr_dl *)(socksize + (caddr_t)sdl);
 	ifa->ifa_netmask = (struct sockaddr *)sdl;
 	sdl->sdl_len = masklen;
-	while (namelen != 0)
+	while (namelen != 0) {
 		sdl->sdl_data[--namelen] = 0xff;
+	}
 }
 
 /*

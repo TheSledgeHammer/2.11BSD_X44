@@ -519,7 +519,7 @@ struct ifnet loif[];
 extern size_t if_indexlim;
 
 char	*ether_sprintf(const u_char *);
-
+void	if_set_sadl(struct ifnet *, void *, u_char, u_char);
 void	if_alloc_sadl(struct ifnet *);
 void	if_free_sadl(struct ifnet *);
 void	if_attach(struct ifnet *);

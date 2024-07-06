@@ -261,6 +261,9 @@ struct tcpcb {
 	int	t_inoff;		/* data offset in previous mbuf */
 	int	t_lastoff;		/* last data address in mbuf chain */
 	int	t_lastlen;		/* last length read from mbuf chain */
+
+/* TUBA stuff */
+	caddr_t	t_tuba_pcb;		/* next level down pcb for TCP over z */
 };
 
 #ifdef _KERNEL

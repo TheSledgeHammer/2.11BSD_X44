@@ -851,12 +851,7 @@ badcsum:
  * protocol specification dated September, 1981 very closely.
  */
 void
-#if __STDC__
 tcp_input(struct mbuf *m, ...)
-#else
-tcp_input(m, va_alist)
-	struct mbuf *m;
-#endif
 {
 	struct tcphdr *th;
 	struct ip *ip;

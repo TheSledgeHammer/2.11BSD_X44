@@ -62,6 +62,9 @@ SOFTWARE.
 #define _NETISO_ISO_PCB_H_
 
 #include <net/route.h>
+#include <sys/queue.h>
+
+#include <netiso/iso_pcb_hdr.h>
 
 #define	MAXX25CRUDLEN	16	/* 16 bytes of call request user data */
 
@@ -73,6 +76,38 @@ struct route_iso {
 	struct rtentry 		*ro_rt;
 	struct sockaddr_iso ro_dst;
 };
+
+#ifdef notyet
+
+struct isopcb {
+	struct isopcb_hdr	isop_head;
+#define isop_hash		isop_head.isoph_hash
+#define isop_queue		isop_head.isoph_queue
+#define isop_af			isop_head.isoph_af
+#define isop_socket		isop_head.isoph_socket
+#define isop_table		isop_head.isoph_table
+
+	struct sockaddr_iso *isop_laddr;
+	struct sockaddr_iso *isop_faddr;
+	struct route_iso 	isop_route;			/* CLNP routing entry */
+	struct mbuf    		*isop_options;		/* CLNP options */
+	struct mbuf    		*isop_optindex;		/* CLNP options index */
+	struct mbuf    		*isop_clnpcache;	/* CLNP cached hdr */
+	caddr_t         	isop_chan;			/* actually struct pklcb * */
+	u_short         	isop_refcnt;		/* mult TP4 tpcb's -> here */
+	u_short         	isop_lport;			/* MISLEADLING work var */
+	u_short         	isop_tuba_cached;	/* for tuba address ref cnts */
+	int             	isop_x25crud_len;	/* x25 call request ud */
+	char            	isop_x25crud[MAXX25CRUDLEN];
+	struct ifaddr  		*isop_ifa;			/* ESIS interface assoc w/sock */
+	struct ifaddr  		*isop_ifa;			/* ESIS interface assoc w/sock */
+	struct mbuf    		*isop_mladdr;		/* dynamically allocated laddr */
+	struct mbuf    		*isop_mfaddr;		/* dynamically allocated faddr */
+	struct sockaddr_iso isop_sladdr;		/* preallocated laddr */
+	struct sockaddr_iso isop_sfaddr;		/* preallocated faddr */
+};
+
+#endif /*notyet */
 
 struct isopcb {
 	struct isopcb  		*isop_next, *isop_prev;	/* pointers to other pcb's */
@@ -97,6 +132,7 @@ struct isopcb {
 	struct sockaddr_iso isop_sfaddr;		/* preallocated faddr */
 };
 
+
 #ifdef sotorawcb
 /*
  * Common structure pcb for raw clnp protocol access.
@@ -113,20 +149,22 @@ struct rawisopcb {
 #define	sotoisopcb(so)		((struct isopcb *)(so)->so_pcb)
 #define	sotorawisopcb(so)	((struct rawisopcb *)(so)->so_pcb)
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 struct socket;
+struct isopcbtable;
 struct isopcb;
-struct inpcb;
+//struct inpcb;
 struct mbuf;
 struct sockaddr_iso;
 
-int iso_pcballoc(struct socket *, void *));
-int iso_pcbbind(void *, struct mbuf *, struct proc *));
-int iso_pcbconnect(void *, struct mbuf *));
-void iso_pcbdisconnect(void *));
-void iso_pcbdetach(void *));
-void iso_pcbnotify(struct isopcb *, struct sockaddr_iso *, int, void (*) (struct isopcb *));
-struct isopcb  *iso_pcblookup(struct isopcb *, int, caddr_t, struct sockaddr_iso *);
+int iso_pcballoc(struct socket *, void *);
+int iso_pcbbind(void *, struct mbuf *, struct proc *);
+int iso_pcbconnect(void *, struct mbuf *);
+void iso_pcbdisconnect(void *);
+void iso_pcbdetach(void *);
+void iso_pcbnotify(struct isopcbtable *, struct sockaddr_iso *, int, void (*) (struct isopcb *));
+struct isopcb  *iso_pcblookup(struct isopcbtable *, int, caddr_t, struct sockaddr_iso *);
+void			iso_rtchange(struct isopcb *, int);
 #endif
 
 #endif /* !_NETISO_ISO_PCB_H_ */

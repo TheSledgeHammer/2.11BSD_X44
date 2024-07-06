@@ -173,12 +173,7 @@ struct mbuf *nsip_lastin;
 int nsip_hold_input;
 
 void
-#if __STDC__
 idpip_input(struct mbuf *m, ...)
-#else
-idpip_input(va_alist)
-	va_dcl
-#endif
 {
 	struct ifnet *ifp;
 	struct ip *ip;
@@ -186,14 +181,9 @@ idpip_input(va_alist)
 	struct ifqueue *ifq = &nsintrq;
 	int len, s;
 	va_list ap;
-#if __STDC__
-	va_start(ap, m);
-#else
-	struct mbuf *m;
 
-	va_start(ap);
-	m = va_arg(ap, struct mbuf *);
-#endif
+	va_start(ap, m);
+
 	ifp = va_arg(ap, struct ifnet *);
 	va_end(ap);
 
