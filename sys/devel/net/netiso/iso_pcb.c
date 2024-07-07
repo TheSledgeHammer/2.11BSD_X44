@@ -66,7 +66,7 @@ __KERNEL_RCSID(0, "$NetBSD: iso_pcb.c,v 1.25 2003/10/30 01:43:10 simonb Exp $");
 
 #include "opt_iso.h"
 
-#ifdef ISO
+//#ifdef ISO
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -124,8 +124,9 @@ iso_pcballoc(so, v)
 	}
 #endif
 	MALLOC(isop, struct isopcb *, sizeof(*isop), M_PCB, M_NOWAIT);
-	if (isop == NULL)
+	if (isop == NULL) {
 		return ENOBUFS;
+	}
 	bzero(isop, sizeof(*isop));
 	isop->isop_head = head;
 	isop->isop_socket = so;

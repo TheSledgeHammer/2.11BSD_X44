@@ -32,3 +32,74 @@
  *
  *	@(#)tuba_usrreq.c	8.1 (Berkeley) 6/10/93
  */
+
+int
+tuba_usrreq(so, req, m, nam, control, p)
+	struct socket *so;
+	int req;
+	struct mbuf *m, *nam, *control;
+	struct proc *p;
+{
+	register struct inpcb *inp;
+	register struct isopcb *isop;
+	register struct tcpcb *tp;
+	int s;
+	int error = 0;
+	int ostate;
+	struct sockaddr_iso *siso;
+
+	if (req == PRU_CONTROL) {
+		return (iso_control(so, (int) m, (caddr_t) nam, (struct ifnet*) control, p));
+	}
+
+	s = splnet();
+	inp = sotoinpcb(so);
+	/*
+	 * When a TCP is attached to a socket, then there will be
+	 * a (struct inpcb) pointed at by the socket, and this
+	 * structure will point at a subsidary (struct tcpcb).
+	 */
+	if (inp == 0  && req != PRU_ATTACH) {
+		splx(s);
+		return (EINVAL);		/* XXX */
+	}
+	if (inp) {
+		tp = intotcpcb(inp);
+		if (tp == 0) {
+			panic("tuba_usrreq");
+		}
+		ostate = tp->t_state;
+		isop = (struct isopcb *)tp->t_tuba_pcb;
+		if (isop == 0) {
+			panic("tuba_usrreq 2");
+		}
+	} else {
+		ostate = 0;
+	}
+
+	switch (req) {
+	/*
+	 * TCP attaches to socket via PRU_ATTACH, reserving space,
+	 * and an internet control block.  We also need to
+	 * allocate an isopcb and separate the control block from
+	 * tcp/ip ones.
+	 */
+
+	}
+
+notrace:
+	splx(s);
+	return (error);
+}
+
+int
+tuba_ctloutput(op, so, level, optname, mp)
+	int op;
+	struct socket *so;
+	int level, optname;
+	struct mbuf **mp;
+{
+
+	return ((level != IPPROTO_TCP ? clnp_ctloutput : tcp_ctloutput)(op, so,
+			level, optname, mp));
+}

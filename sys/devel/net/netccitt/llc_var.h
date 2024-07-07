@@ -136,6 +136,9 @@ llc_sapinfo_ctlinput(struct llc_linkcb *linkp, int level, struct sockaddr *sa, v
 #define NL_INITIATE_PF_CYCLE            LLC_CMDRSP(27)
 #define NL_LOCAL_BUSY_DETECTED          LLC_CMDRSP(28)
 
+/* number of commands */
+#define LLC_NCMDS 						(LLC_CMDRSP(29)-1)
+
 #define LLCFT_NONE                      255
 
 /* return message from state handlers */
@@ -237,15 +240,48 @@ extern int llc_DACTION_timer;
 
 struct ifqueue llcintrq;
 extern struct llccb_q llccb_q;
+extern char *timer_names[];
+extern char *frame_names[];
 extern struct bitslice llc_bitslice[];
 
 struct llc_sapinfo 	*llc_setsapinfo(struct ifnet *, sa_family_t, u_char, struct dllconfig *, u_char);
 struct llc_sapinfo 	*llc_getsapinfo(u_char, struct ifnet *);
 short				llc_seq2slot(struct llc_linkcb *, short);
-void				llc_init(void);
-struct llc_linkcb 	*llc_newlink(struct sockaddr_dl *, struct ifnet *, struct rtentry *, caddr_t, struct rtentry *);
-void				llc_dellink(struct llc_linkcb *);
-int					llc_anytimersup(struct llc_linkcb *);
-void				llc_slowtimo(void);
+
+int llc_state_adm(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_conn(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_reset_wait(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_reset_check(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_setup(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_reset(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_d_conn(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_error(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_core(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_normal(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_busy(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_reject(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_await(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_await_busy(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_state_await_reject(struct llc_linkcb *, struct llc *, int, int, int);
+int llc_statehandler(struct llc_linkcb *, struct llc *, int, int, int);
+void llc_init(void);
+struct llc_linkcb *llc_newlink(struct sockaddr_dl *, struct ifnet *, struct rtentry *, caddr_t, struct rtentry *);
+void llc_dellink(struct llc_linkcb *);
+int	llc_anytimersup(struct llc_linkcb *);
+char *llc_getstatename(struct llc_linkcb *);
+void llc_link_dump(struct llc_linkcb *, const char *);
+void llc_trace(struct llc_linkcb *, int, const char *);
+void llc_resetwindow(struct llc_linkcb *);
+int llc_decode(struct llc *, struct llc_linkcb *);
+void llc_slowtimo(void);
+void llcintr(void);
+int llc_input(struct llc_linkcb *, struct mbuf *, u_char);
+caddr_t llc_ctlinput(int, struct sockaddr *, caddr_t);
+int llc_output(struct llc_linkcb *, struct mbuf *);
+void llc_start(struct llc_linkcb *);
+int llc_send(struct llc_linkcb *, int, int, int);
+int llc_resend(struct llc_linkcb *, int, int);
+int llc_rawsend(struct llc_linkcb *, struct mbuf *, struct llc *, int, int, int, int);
+int x25_llc(int, struct sockaddr *);
 
 #endif /* _NETCCITT_LLC_VAR_H_ */

@@ -61,11 +61,6 @@
 #include <netccitt/llc_var.h>
 
 /*
- * Trace level
- */
-int llc_tracelevel = LLCTR_URGENT;
-
-/*
  * Values for accessing various bitfields
  */
 struct bitslice llc_bitslice[] = {
@@ -258,6 +253,57 @@ llc_free(struct llc_linkcb *nlinkp)
 		return;
 	}
 	free(nlinkp, M_PCB);
+}
+
+
+/*
+ * In case of a link reset we need to shuffle the frames queued inside the
+ * LLC2 window.
+ */
+
+void
+llc_resetwindow(struct llc_linkcb *linkp)
+{
+	register struct mbuf *mptr = (struct mbuf *) 0;
+	register struct mbuf *anchor = (struct mbuf *)0;
+	register short i;
+
+	/* Pick up all queued frames and collect them in a linked mbuf list */
+	if (linkp->llcl_slotsfree != linkp->llcl_window) {
+		i = llc_seq2slot(linkp, linkp->llcl_nr_received);
+		anchor = mptr = linkp->llcl_output_buffers[i];
+		for (; i != linkp->llcl_freeslot; i = llc_seq2slot(linkp, i + 1)) {
+			if (linkp->llcl_output_buffers[i]) {
+				mptr->m_nextpkt = linkp->llcl_output_buffers[i];
+				mptr = mptr->m_nextpkt;
+			} else {
+				panic("LLC2 window broken");
+			}
+		}
+	}
+	/* clean closure */
+	if (mptr)
+		mptr->m_nextpkt = (struct mbuf*) 0;
+
+	/* Now --- plug 'em in again */
+	if (anchor != (struct mbuf*) 0) {
+		for (i = 0, mptr = anchor; mptr != (struct mbuf*) 0; i++) {
+			linkp->llcl_output_buffers[i] = mptr;
+			mptr = mptr->m_nextpkt;
+			linkp->llcl_output_buffers[i]->m_nextpkt = (struct mbuf*) 0;
+		}
+		linkp->llcl_freeslot = i;
+	} else {
+		linkp->llcl_freeslot = 0;
+	}
+
+	/* We're resetting the link, the next frame to be acknowledged is 0 */
+	linkp->llcl_nr_received = 0;
+
+	/* set distance between LLC2 sequence number and the top of window to 0 */
+	linkp->llcl_projvs = linkp->llcl_freeslot;
+
+	return;
 }
 
 struct llc_linkcb *

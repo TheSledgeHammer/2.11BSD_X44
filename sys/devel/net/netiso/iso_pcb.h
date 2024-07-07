@@ -64,7 +64,7 @@ SOFTWARE.
 #include <net/route.h>
 #include <sys/queue.h>
 
-#include <netiso/iso_pcb_hdr.h>
+//#include <netiso/iso_pcb_hdr.h>
 
 #define	MAXX25CRUDLEN	16	/* 16 bytes of call request user data */
 
@@ -77,42 +77,13 @@ struct route_iso {
 	struct sockaddr_iso ro_dst;
 };
 
-#ifdef notyet
-
 struct isopcb {
-	struct isopcb_hdr	isop_head;
-#define isop_hash		isop_head.isoph_hash
-#define isop_queue		isop_head.isoph_queue
-#define isop_af			isop_head.isoph_af
-#define isop_socket		isop_head.isoph_socket
-#define isop_table		isop_head.isoph_table
-
-	struct sockaddr_iso *isop_laddr;
-	struct sockaddr_iso *isop_faddr;
-	struct route_iso 	isop_route;			/* CLNP routing entry */
-	struct mbuf    		*isop_options;		/* CLNP options */
-	struct mbuf    		*isop_optindex;		/* CLNP options index */
-	struct mbuf    		*isop_clnpcache;	/* CLNP cached hdr */
-	caddr_t         	isop_chan;			/* actually struct pklcb * */
-	u_short         	isop_refcnt;		/* mult TP4 tpcb's -> here */
-	u_short         	isop_lport;			/* MISLEADLING work var */
-	u_short         	isop_tuba_cached;	/* for tuba address ref cnts */
-	int             	isop_x25crud_len;	/* x25 call request ud */
-	char            	isop_x25crud[MAXX25CRUDLEN];
-	struct ifaddr  		*isop_ifa;			/* ESIS interface assoc w/sock */
-	struct ifaddr  		*isop_ifa;			/* ESIS interface assoc w/sock */
-	struct mbuf    		*isop_mladdr;		/* dynamically allocated laddr */
-	struct mbuf    		*isop_mfaddr;		/* dynamically allocated faddr */
-	struct sockaddr_iso isop_sladdr;		/* preallocated laddr */
-	struct sockaddr_iso isop_sfaddr;		/* preallocated faddr */
-};
-
-#endif /*notyet */
-
-struct isopcb {
-	struct isopcb  		*isop_next, *isop_prev;	/* pointers to other pcb's */
-	struct isopcb  		*isop_head;				/* pointer back to chain of pcbs for this protocol */
-	struct socket  		*isop_socket;			/* back pointer to socket */
+	LIST_ENTRY(isopcb) 		isop_hash;
+	CIRCLEQ_ENTRY(isopcb) 	isop_queue;
+	struct isopcb  		*isop_next;			/* pointers to other pcb's */
+	struct isopcb  		*isop_prev;
+	struct isopcb  		*isop_head;			/* pointer back to chain of pcbs for this protocol */
+	struct socket  		*isop_socket;		/* back pointer to socket */
 	struct sockaddr_iso *isop_laddr;
 	struct sockaddr_iso *isop_faddr;
 	struct route_iso 	isop_route;			/* CLNP routing entry */
@@ -130,8 +101,22 @@ struct isopcb {
 	struct mbuf    		*isop_mfaddr;		/* dynamically allocated faddr */
 	struct sockaddr_iso isop_sladdr;		/* preallocated laddr */
 	struct sockaddr_iso isop_sfaddr;		/* preallocated faddr */
+	struct isopcbtable	*isop_table;
 };
 
+LIST_HEAD(isopcbhead, isopcb);
+
+CIRCLEQ_HEAD(isopcbqueue, isopcb);
+
+struct isopcbtable {
+	CIRCLEQ_HEAD(isopcbqueue, isopcb) 	isopt_queue;
+	struct isopcbtable 	*isopt_porthashtbl;
+	//struct isopcbtable 	*isopt_bindhashtbl;
+	//struct isopcbtable 	*isopt_connecthashtbl;
+	u_long	  		isopt_porthash;
+	//u_long	  isopt_bindhash;
+	//u_long	  isopt_connecthash;
+};
 
 #ifdef sotorawcb
 /*
@@ -149,11 +134,10 @@ struct rawisopcb {
 #define	sotoisopcb(so)		((struct isopcb *)(so)->so_pcb)
 #define	sotorawisopcb(so)	((struct rawisopcb *)(so)->so_pcb)
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 struct socket;
 struct isopcbtable;
 struct isopcb;
-//struct inpcb;
 struct mbuf;
 struct sockaddr_iso;
 

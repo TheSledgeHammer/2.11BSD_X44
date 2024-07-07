@@ -39,7 +39,13 @@
  *	@(#)llc_subr.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/time.h>
 #include <sys/queue.h>
 #include <sys/types.h>
 
@@ -49,86 +55,21 @@
 #include <netccitt/dll.h>
 #include <netccitt/llc_var.h>
 
-#define LLC_CMDMASK(frame_kind, cmdrsp) (((frame_kind) + (cmdrsp)) - (cmdrsp))
+/*
+ * Trace level
+ */
+int llc_tracelevel = LLCTR_URGENT;
 
-int
-llc_command(int frame_kind, int cmdrsp)
-{
-	int cmdmask;
-
-	cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-	switch (cmdrsp) {
-	case LLC_CMD:
-		switch (frame_kind) {
-		case LLCFT_INFO:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_RR:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_RNR:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_REJ:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_SABME:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_DISC:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLC_INVALID_NR:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLC_INVALID_NS:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		}
-		break;
-	case LLC_RSP:
-		switch (frame_kind) {
-		case LLCFT_INFO:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_RR:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_RNR:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_REJ:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_DM:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_UA:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLCFT_FRMR:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLC_INVALID_NR:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		case LLC_INVALID_NS:
-			cmdmask = LLC_CMDMASK(frame_kind, cmdrsp);
-			break;
-		}
-		break;
-	}
-	return (cmdmask);
-}
+#define LLC_COMMAND(frame_kind, cmdrsp) ((frame_kind) + (cmdrsp))
 
 int
 llc_state_adm(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case NL_CONNECT_REQUEST:
 		llc_send(linkp, LLCFT_SABME, LLC_CMD, pollfinal);
 		LLC_SETFLAG(linkp, P, pollfinal);
@@ -136,7 +77,7 @@ llc_state_adm(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int c
 		linkp->llcl_retry = 0;
 		LLC_NEWSTATE(linkp, setup);
 		break;
-	case LLCFT_SABME:
+	case LLCFT_SABME + LLC_CMD:
 		/*
 		 * ISO 8802-2, table 7-1, ADM state says to set
 		 * the P flag, yet this will cause an SABME [P] to be
@@ -147,7 +88,7 @@ llc_state_adm(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int c
 		LLC_NEWSTATE(linkp, conn);
 		action = LLC_CONNECT_INDICATION;
 		break;
-	case LLCFT_DISC:
+	case LLCFT_DISC + LLC_CMD:
 		llc_send(linkp, LLCFT_DM, LLC_RSP, pollfinal);
 		break;
 	default:
@@ -163,11 +104,11 @@ llc_state_adm(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int c
 int
 llc_state_conn(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case NL_CONNECT_RESPONSE:
 		llc_send(linkp, LLCFT_UA, LLC_RSP, LLC_GETFLAG(linkp, F));
 		LLC_RESETCOUNTER(linkp);
@@ -179,10 +120,10 @@ llc_state_conn(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int 
 		llc_send(linkp, LLCFT_DM, LLC_RSP, LLC_GETFLAG(linkp, F));
 		LLC_NEWSTATE(linkp, adm);
 		break;
-	case LLCFT_SABME:
+	case LLCFT_SABME + LLC_CMD:
 		LLC_SETFLAG(linkp, F, pollfinal);
 		break;
-	case LLCFT_DM:
+	case LLCFT_DM + LLC_RSP:
 		LLC_NEWSTATE(linkp, adm);
 		action = LLC_DISCONNECT_INDICATION;
 		break;
@@ -195,16 +136,54 @@ llc_state_conn(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int 
 int
 llc_state_reset_wait(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case NL_RESET_REQUEST:
+		if (LLC_GETFLAG(linkp, S) == 0) {
+			llc_send(linkp, LLCFT_SABME, LLC_CMD, pollfinal);
+			LLC_SETFLAG(linkp, P, pollfinal);
+			LLC_START_ACK_TIMER(linkp);
+			linkp->llcl_retry = 0;
+			LLC_NEWSTATE(linkp, reset);
+		} else {
+			llc_send(linkp, LLCFT_UA, LLC_RSP,
+				      LLC_GETFLAG(linkp, F));
+			LLC_RESETCOUNTER(linkp);
+			LLC_SETFLAG(linkp, P, 0);
+			LLC_SETFLAG(linkp, REMOTE_BUSY, 0);
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_RESET_CONFIRM;
+		}
+		break;
 	case NL_DISCONNECT_REQUEST:
-	case LLCFT_DM:
-	case LLCFT_SABME:
-	case LLCFT_DISC:
+		if (LLC_GETFLAG(linkp, S) == 0) {
+			llc_send(linkp, LLCFT_DISC, LLC_CMD, pollfinal);
+			LLC_SETFLAG(linkp, P, pollfinal);
+			LLC_START_ACK_TIMER(linkp);
+			linkp->llcl_retry = 0;
+			LLC_NEWSTATE(linkp, d_conn);
+		} else {
+			llc_send(linkp, LLCFT_DM, LLC_RSP,
+				      LLC_GETFLAG(linkp, F));
+			LLC_NEWSTATE(linkp, adm);
+		}
+		break;
+	case LLCFT_DM + LLC_RSP:
+		LLC_NEWSTATE(linkp, adm);
+		action = LLC_DISCONNECT_INDICATION;
+		break;
+	case LLCFT_SABME + LLC_CMD:
+		LLC_SETFLAG(linkp, S, 1);
+		LLC_SETFLAG(linkp, F, pollfinal);
+		break;
+	case LLCFT_DISC + LLC_CMD:
+		llc_send(linkp, LLCFT_DM, LLC_RSP, pollfinal);
+		LLC_NEWSTATE(linkp, adm);
+		action = LLC_DISCONNECT_INDICATION;
+		break;
 	}
 
 	return (action);
@@ -213,16 +192,33 @@ llc_state_reset_wait(struct llc_linkcb *linkp, struct llc *frame, int frame_kind
 int
 llc_state_reset_check(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case NL_RESET_RESPONSE:
+		llc_send(linkp, LLCFT_UA, LLC_RSP, LLC_GETFLAG(linkp, F));
+		LLC_RESETCOUNTER(linkp);
+		LLC_SETFLAG(linkp, P, 0);
+		LLC_SETFLAG(linkp, REMOTE_BUSY, 0);
+		LLC_NEWSTATE(linkp, normal);
+		break;
 	case NL_DISCONNECT_REQUEST:
-	case LLCFT_DM:
-	case LLCFT_SABME:
-	case LLCFT_DISC:
+		llc_send(linkp, LLCFT_DM, LLC_RSP, LLC_GETFLAG(linkp, F));
+		LLC_NEWSTATE(linkp, adm);
+		break;
+	case LLCFT_DM + LLC_RSP:
+		action = LLC_DISCONNECT_INDICATION;
+		break;
+	case LLCFT_SABME + LLC_CMD:
+		LLC_SETFLAG(linkp, F, pollfinal);
+		break;
+	case LLCFT_DISC + LLC_CMD:
+		llc_send(linkp, LLCFT_DM, LLC_RSP, pollfinal);
+		LLC_NEWSTATE(linkp, adm);
+		action = LLC_DISCONNECT_INDICATION;
+		break;
 	}
 	return (action);
 }
@@ -230,16 +226,53 @@ llc_state_reset_check(struct llc_linkcb *linkp, struct llc *frame, int frame_kin
 int
 llc_state_setup(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
-	case LLCFT_SABME:
-	case LLCFT_UA:
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
+	case LLCFT_SABME + LLC_CMD:
+		LLC_RESETCOUNTER(linkp);
+		llc_send(linkp, LLCFT_UA, LLC_RSP, pollfinal);
+		LLC_SETFLAG(linkp, S, 1);
+		break;
+	case LLCFT_UA + LLC_RSP:
+		if (LLC_GETFLAG(linkp, P) == pollfinal) {
+			LLC_STOP_ACK_TIMER(linkp);
+			LLC_RESETCOUNTER(linkp);
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			LLC_SETFLAG(linkp, REMOTE_BUSY, 0);
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_CONNECT_CONFIRM;
+		}
+		break;
 	case LLC_ACK_TIMER_EXPIRED:
-	case LLCFT_DISC:
-	case LLCFT_DM:
+		if (LLC_GETFLAG(linkp, S) == 1) {
+			LLC_SETFLAG(linkp, P, 0);
+			LLC_SETFLAG(linkp, REMOTE_BUSY, 0),
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_CONNECT_CONFIRM;
+		} else if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_SABME, LLC_CMD, pollfinal);
+			LLC_SETFLAG(linkp, P, pollfinal);
+			LLC_START_ACK_TIMER(linkp);
+			linkp->llcl_retry++;
+		} else {
+			LLC_NEWSTATE(linkp, adm);
+			action = LLC_DISCONNECT_INDICATION;
+		}
+		break;
+	case LLCFT_DISC + LLC_CMD:
+		llc_send(linkp, LLCFT_DM, LLC_RSP, pollfinal);
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_NEWSTATE(linkp, adm);
+		action = LLC_DISCONNECT_INDICATION;
+		break;
+	case LLCFT_DM + LLC_RSP:
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_NEWSTATE(linkp, adm);
+		action = LLC_DISCONNECT_INDICATION;
+		break;
 	}
 	return (action);
 }
@@ -247,33 +280,91 @@ llc_state_setup(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int
 int
 llc_state_reset(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
-	case LLCFT_SABME:
-	case LLCFT_UA:
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
+	case LLCFT_SABME + LLC_CMD:
+		LLC_RESETCOUNTER(linkp);
+		LLC_SETFLAG(linkp, S, 1);
+		llc_send(linkp, LLCFT_UA, LLC_RSP, pollfinal);
+		break;
+	case LLCFT_UA + LLC_RSP:
+		if (LLC_GETFLAG(linkp, P) == pollfinal) {
+			LLC_STOP_ACK_TIMER(linkp);
+			LLC_RESETCOUNTER(linkp);
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			LLC_SETFLAG(linkp, REMOTE_BUSY, 0);
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_RESET_CONFIRM;
+		}
+		break;
 	case LLC_ACK_TIMER_EXPIRED:
-	case LLCFT_DISC:
-	case LLCFT_DM:
+		if (LLC_GETFLAG(linkp, S) == 1) {
+			LLC_SETFLAG(linkp, P, 0);
+			LLC_SETFLAG(linkp, REMOTE_BUSY, 0);
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_RESET_CONFIRM;
+		} else if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_SABME, LLC_CMD, pollfinal);
+			LLC_SETFLAG(linkp, P, pollfinal);
+			LLC_START_ACK_TIMER(linkp);
+			linkp->llcl_retry++;
+		} else {
+			LLC_NEWSTATE(linkp, adm);
+			action = LLC_DISCONNECT_INDICATION;
+		}
+		break;
+	case LLCFT_DISC + LLC_CMD:
+		llc_send(linkp, LLCFT_DM, LLC_RSP, pollfinal);
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_NEWSTATE(linkp, adm);
+		action = LLC_DISCONNECT_INDICATION;
+		break;
+	case LLCFT_DM + LLC_RSP:
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_NEWSTATE(linkp, adm);
+		action = LLC_DISCONNECT_INDICATION;
+		break;
 	}
 	return (action);
 }
 
 int
-llc_state_dconn(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
+llc_state_d_conn(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
-	case LLCFT_SABME:
-	case LLCFT_UA:
-	case LLCFT_DISC:
-	case LLCFT_DM:
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
+	case LLCFT_SABME + LLC_CMD:
+		llc_send(linkp, LLCFT_DM, LLC_RSP, pollfinal);
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_NEWSTATE(linkp, adm);
+		break;
+	case LLCFT_UA + LLC_RSP:
+		if (LLC_GETFLAG(linkp, P) == pollfinal) {
+			LLC_STOP_ACK_TIMER(linkp);
+			LLC_NEWSTATE(linkp, adm);
+		}
+		break;
+	case LLCFT_DISC + LLC_CMD:
+		llc_send(linkp, LLCFT_UA, LLC_RSP, pollfinal);
+		break;
+	case LLCFT_DM + LLC_RSP:
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_NEWSTATE(linkp, adm);
+		break;
 	case LLC_ACK_TIMER_EXPIRED:
+		if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_DISC, LLC_CMD, pollfinal);
+			LLC_SETFLAG(linkp, P, pollfinal);
+			LLC_START_ACK_TIMER(linkp);
+			linkp->llcl_retry++;
+		} else LLC_NEWSTATE(linkp, adm);
+		break;
 	}
 	return (action);
 }
@@ -281,17 +372,50 @@ llc_state_dconn(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int
 int
 llc_state_error(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
-	case LLCFT_SABME:
-	case LLCFT_DISC:
-	case LLCFT_DM:
-	case LLCFT_FRMR:
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
+	case LLCFT_SABME + LLC_CMD:
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_NEWSTATE(linkp, reset_check);
+		action = LLC_RESET_INDICATION_REMOTE;
+		break;
+	case LLCFT_DISC + LLC_CMD:
+		llc_send(linkp, LLCFT_UA, LLC_RSP, pollfinal);
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_NEWSTATE(linkp, adm);
+		action = LLC_DISCONNECT_INDICATION;
+		break;
+	case LLCFT_DM + LLC_RSP:
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_NEWSTATE(linkp, adm);
+		action = LLC_DISCONNECT_INDICATION;
+		break;
+	case LLCFT_FRMR + LLC_RSP:
+		LLC_STOP_ACK_TIMER(linkp);
+		LLC_SETFLAG(linkp, S, 0);
+		LLC_NEWSTATE(linkp, reset_wait);
+		action = LLC_FRMR_RECEIVED;
+		break;
 	case LLC_ACK_TIMER_EXPIRED:
+		if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_FRMR, LLC_RSP, 0);
+			LLC_START_ACK_TIMER(linkp);
+			linkp->llcl_retry++;
+		} else {
+			LLC_SETFLAG(linkp, S, 0);
+			LLC_NEWSTATE(linkp, reset_wait);
+			action = LLC_RESET_INDICATION_LOCAL;
+		}
+		break;
 	default:
+		if (cmdrsp == LLC_CMD){
+			llc_send(linkp, LLCFT_FRMR, LLC_RSP, pollfinal);
+			LLC_START_ACK_TIMER(linkp);
+		}
+		break;
 	}
 	return (action);
 }
@@ -299,27 +423,53 @@ llc_state_error(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int
 int
 llc_state_core(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case NL_DISCONNECT_REQUEST:
+		llc_send(linkp, LLCFT_DISC, LLC_CMD, pollfinal);
+		LLC_SETFLAG(linkp, P, pollfinal);
+		LLC_STOP_ALL_TIMERS(linkp);
+		LLC_START_ACK_TIMER(linkp);
+		linkp->llcl_retry = 0;
+		LLC_NEWSTATE(linkp, d_conn);
+		break;
 	case NL_RESET_REQUEST:
-	case LLCFT_SABME:
+		llc_send(linkp, LLCFT_SABME, LLC_CMD, pollfinal);
+		LLC_SETFLAG(linkp, P, pollfinal);
+		LLC_STOP_ALL_TIMERS(linkp);
+		LLC_START_ACK_TIMER(linkp);
+		linkp->llcl_retry = 0;
+		LLC_SETFLAG(linkp, S, 0);
+		LLC_NEWSTATE(linkp, reset);
+		break;
+	case LLCFT_SABME + LLC_CMD:
+		LLC_SETFLAG(linkp, F, pollfinal);
+		LLC_STOP_ALL_TIMERS(linkp);
+		LLC_NEWSTATE(linkp, reset_check);
 		action = LLC_RESET_INDICATION_REMOTE;
 		break;
-	case LLCFT_DISC:
+	case LLCFT_DISC + LLC_CMD:
+		llc_send(linkp, LLCFT_UA, LLC_RSP, pollfinal);
+		LLC_STOP_ALL_TIMERS(linkp);
+		LLC_NEWSTATE(linkp, adm);
 		action = LLC_DISCONNECT_INDICATION;
 		break;
-	case LLCFT_FRMR:
+	case LLCFT_FRMR + LLC_RSP:
+		LLC_STOP_ALL_TIMERS(linkp);
+		LLC_SETFLAG(linkp, S, 0);
+		LLC_NEWSTATE(linkp, reset_wait);
 		action =  LLC_FRMR_RECEIVED;
 		break;
-	case LLCFT_DM:
+	case LLCFT_DM + LLC_RSP:
+		LLC_STOP_ALL_TIMERS(linkp);
+		LLC_NEWSTATE(linkp, adm);
 		action = LLC_DISCONNECT_INDICATION;
 		break;
-	case LLC_INVALID_NR:
-	case LLC_INVALID_NS:
+	case LLC_INVALID_NR + LLC_CMD:
+	case LLC_INVALID_NS + LLC_CMD:
 		LLC_SETFRMR(linkp, frame, cmdrsp,
 			 (frame_kind == LLC_INVALID_NR ? LLC_FRMR_Z :
 			  (LLC_FRMR_V | LLC_FRMR_W)));
@@ -330,16 +480,52 @@ llc_state_core(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int 
 		LLC_NEWSTATE(linkp, error);
 		action = LLC_FRMR_SENT;
 		break;
-	case LLCFT_UA:
-	case LLC_BAD_PDU:
+	case LLC_INVALID_NR + LLC_RSP:
+	case LLC_INVALID_NS + LLC_RSP:
+	case LLCFT_UA + LLC_RSP:
+	case LLC_BAD_PDU: {
+		char frmrcause = 0;
+
+		switch (frame_kind) {
+		case LLC_INVALID_NR:
+			frmrcause = LLC_FRMR_Z;
+			break;
+		case LLC_INVALID_NS:
+			frmrcause = LLC_FRMR_V | LLC_FRMR_W;
+			break;
+		default:
+			frmrcause = LLC_FRMR_W;
+		}
+		LLC_SETFRMR(linkp, frame, cmdrsp, frmrcause);
+		llc_send(linkp, LLCFT_FRMR, LLC_RSP, 0);
+		LLC_STOP_ALL_TIMERS(linkp);
+		LLC_START_ACK_TIMER(linkp);
+		linkp->llcl_retry = 0;
+		LLC_NEWSTATE(linkp, error);
 		action = LLC_FRMR_SENT;
+		break;
+	}
+	default:
+		if (cmdrsp == LLC_RSP && pollfinal == 1 &&
+		    LLC_GETFLAG(linkp, P) == 0) {
+			LLC_SETFRMR(linkp, frame, cmdrsp, LLC_FRMR_W);
+			LLC_STOP_ALL_TIMERS(linkp);
+			LLC_START_ACK_TIMER(linkp);
+			linkp->llcl_retry = 0;
+			LLC_NEWSTATE(linkp, error);
+			action = LLC_FRMR_SENT;
+		}
 		break;
 	case LLC_P_TIMER_EXPIRED:
 	case LLC_ACK_TIMER_EXPIRED:
 	case LLC_REJ_TIMER_EXPIRED:
 	case LLC_BUSY_TIMER_EXPIRED:
-	default:
-		action = LLC_FRMR_SENT;
+		if (linkp->llcl_retry >= llc_n2) {
+			LLC_STOP_ALL_TIMERS(linkp);
+			LLC_SETFLAG(linkp, S, 0);
+			LLC_NEWSTATE(linkp, reset_wait);
+			action = LLC_RESET_INDICATION_LOCAL;
+		}
 		break;
 	}
 	return (action);
@@ -348,22 +534,181 @@ llc_state_core(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int 
 int
 llc_state_normal(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = LLC_PASSITON;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case NL_DATA_REQUEST:
-	case NL_INITIATE_PF_CYCLE:
+		if (LLC_GETFLAG(linkp, REMOTE_BUSY) == 0) {
+			/* multiple possibilities */
+			llc_send(linkp, LLCFT_INFO, LLC_CMD, 0);
+			if (LLC_TIMERXPIRED(linkp, ACK) != LLC_TIMER_RUNNING) {
+				LLC_START_ACK_TIMER(linkp);
+			}
+		}
+		action = 0;
+		break;
 	case LLC_LOCAL_BUSY_DETECTED:
-	case LLC_INVALID_NS:
-	case LLCFT_INFO:
-	case LLCFT_RR:
-	case LLCFT_RNR:
-	case LLCFT_REJ:
+		if (LLC_GETFLAG(linkp, P) == 0) {
+			/* multiple possibilities --- action-wise */
+			/* multiple possibilities --- CMD/RSP-wise */
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+			LLC_START_P_TIMER(linkp);
+			LLC_SETFLAG(linkp, DATA, 0);
+			LLC_NEWSTATE(linkp, busy);
+			action = 0;
+		} else {
+			/* multiple possibilities --- CMD/RSP-wise */
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+			LLC_SETFLAG(linkp, DATA, 0);
+			LLC_NEWSTATE(linkp, busy);
+			action = 0;
+		}
+		break;
+	case LLC_INVALID_NS + LLC_CMD:
+	case LLC_INVALID_NS + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_REJ, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_START_REJ_TIMER(linkp);
+			LLC_NEWSTATE(linkp, reject);
+			action = 0;
+		} else if (pollfinal == 0 && p == 1) {
+			llc_send(linkp, LLCFT_REJ, LLC_CMD, 0);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_START_REJ_TIMER(linkp);
+			LLC_NEWSTATE(linkp, reject);
+			action = 0;
+		} else if ((pollfinal == 0 && p == 0) ||
+			   (pollfinal == 1 && p == 1 && cmdrsp == LLC_RSP)) {
+			llc_send(linkp, LLCFT_REJ, LLC_CMD, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_START_P_TIMER(linkp);
+			LLC_START_REJ_TIMER(linkp);
+			if (cmdrsp == LLC_RSP && pollfinal == 1) {
+				LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			} else action = 0;
+			LLC_NEWSTATE(linkp, reject);
+		}
+		break;
+	}
+	case LLCFT_INFO + LLC_CMD:
+	case LLCFT_INFO + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			LLC_INC(linkp->llcl_vr);
+			LLC_SENDACKNOWLEDGE(linkp, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			action = LLC_DATA_INDICATION;
+		} else if (pollfinal == 0 && p == 1) {
+			LLC_INC(linkp->llcl_vr);
+			LLC_SENDACKNOWLEDGE(linkp, LLC_CMD, 0);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			action = LLC_DATA_INDICATION;
+		} else if ((pollfinal == 0 && p == 0 && cmdrsp == LLC_CMD) ||
+			   (pollfinal == p && cmdrsp == LLC_RSP)) {
+			LLC_INC(linkp->llcl_vr);
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			LLC_SENDACKNOWLEDGE(linkp, LLC_CMD, 0);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (cmdrsp == LLC_RSP && pollfinal == 1)
+				LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			action = LLC_DATA_INDICATION;
+		}
+		break;
+	}
+	case LLCFT_RR + LLC_CMD:
+	case LLCFT_RR + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			LLC_SENDACKNOWLEDGE(linkp, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if ((pollfinal == 0) ||
+			   (cmdrsp == LLC_RSP && pollfinal == 1 && p == 1)) {
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
+	case LLCFT_RNR + LLC_CMD:
+	case LLCFT_RNR + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+		} else if ((pollfinal == 0) ||
+			   (cmdrsp == LLC_RSP && pollfinal == 1 && p == 1)) {
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
+	case LLCFT_REJ + LLC_CMD:
+	case LLCFT_REJ + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			linkp->llcl_vs = nr;
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			llc_resend(linkp, LLC_RSP, 1);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if (pollfinal == 0 && p == 1) {
+			linkp->llcl_vs = nr;
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if ((pollfinal == 0 && p == 0 && cmdrsp == LLC_CMD) ||
+			   (pollfinal == p && cmdrsp == LLC_RSP)) {
+			linkp->llcl_vs = nr;
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_START_P_TIMER(linkp);
+			llc_resend(linkp, LLC_CMD, 1);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
+	case NL_INITIATE_PF_CYCLE:
+		if (LLC_GETFLAG(linkp, P) == 0) {
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			action = 0;
+		}
+		break;
 	case LLC_P_TIMER_EXPIRED:
+		if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			linkp->llcl_retry++;
+			LLC_NEWSTATE(linkp, await);
+			action = 0;
+		}
+		break;
 	case LLC_ACK_TIMER_EXPIRED:
 	case LLC_BUSY_TIMER_EXPIRED:
+		if ((LLC_GETFLAG(linkp, P) == 0)
+		    && (linkp->llcl_retry < llc_n2)) {
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			linkp->llcl_retry++;
+			LLC_NEWSTATE(linkp, await);
+			action = 0;
+		}
+		break;
 	}
 	if (action == LLC_PASSITON) {
 		action = llc_state_core(linkp, frame, frame_kind, cmdrsp, pollfinal);
@@ -374,23 +719,237 @@ llc_state_normal(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, in
 int
 llc_state_busy(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = LLC_PASSITON;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case NL_DATA_REQUEST:
-	case LLC_LOCAL_BUSY_CLEARED:
-	case LLC_INVALID_NS:
-	case LLCFT_INFO:
-	case LLCFT_RR:
-	case LLCFT_RNR:
-	case LLCFT_REJ:
+		if (LLC_GETFLAG(linkp, REMOTE_BUSY) == 0)
+			if (LLC_GETFLAG(linkp, P) == 0) {
+				llc_send(linkp, LLCFT_INFO, LLC_CMD, 1);
+				LLC_START_P_TIMER(linkp);
+				if (LLC_TIMERXPIRED(linkp, ACK) != LLC_TIMER_RUNNING)
+					LLC_START_ACK_TIMER(linkp);
+				action = 0;
+			} else {
+				llc_send(linkp, LLCFT_INFO, LLC_CMD, 0);
+				if (LLC_TIMERXPIRED(linkp, ACK) != LLC_TIMER_RUNNING)
+					LLC_START_ACK_TIMER(linkp);
+				action = 0;
+			}
+		break;
+	case LLC_LOCAL_BUSY_CLEARED: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int df = LLC_GETFLAG(linkp, DATA);
+
+		switch (df) {
+		case 1:
+			if (p == 0) {
+				/* multiple possibilities */
+				llc_send(linkp, LLCFT_REJ, LLC_CMD, 1);
+				LLC_START_REJ_TIMER(linkp);
+				LLC_START_P_TIMER(linkp);
+				LLC_NEWSTATE(linkp, reject);
+				action = 0;
+			} else {
+				llc_send(linkp, LLCFT_REJ, LLC_CMD, 0);
+				LLC_START_REJ_TIMER(linkp);
+				LLC_NEWSTATE(linkp, reject);
+				action = 0;
+			}
+			break;
+		case 0:
+			if (p == 0) {
+				/* multiple possibilities */
+				llc_send(linkp, LLCFT_RR, LLC_CMD, 1);
+				LLC_START_P_TIMER(linkp);
+				LLC_NEWSTATE(linkp, normal);
+				action = 0;
+			} else {
+				llc_send(linkp, LLCFT_RR, LLC_CMD, 0);
+				LLC_NEWSTATE(linkp, normal);
+				action = 0;
+			}
+			break;
+		case 2:
+			if (p == 0) {
+				/* multiple possibilities */
+				llc_send(linkp, LLCFT_RR, LLC_CMD, 1);
+				LLC_START_P_TIMER(linkp);
+				LLC_NEWSTATE(linkp, reject);
+				action = 0;
+			} else {
+				llc_send(linkp, LLCFT_RR, LLC_CMD, 0);
+				LLC_NEWSTATE(linkp, reject);
+				action = 0;
+			}
+			break;
+		}
+		break;
+	}
+	case LLC_INVALID_NS + LLC_CMD:
+	case LLC_INVALID_NS + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RNR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (LLC_GETFLAG(linkp, DATA) == 0)
+				LLC_SETFLAG(linkp, DATA, 1);
+			action = 0;
+		} else if ((cmdrsp == LLC_CMD && pollfinal == 0 && p == 0)
+				|| (cmdrsp == LLC_RSP && pollfinal == p)) {
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (LLC_GETFLAG(linkp, DATA) == 0)
+				LLC_SETFLAG(linkp, DATA, 1);
+			if (cmdrsp == LLC_RSP && pollfinal == 1) {
+				LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			} else
+				action = 0;
+		} else if (pollfinal == 0 && p == 1) {
+			llc_send(linkp, LLCFT_RNR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (LLC_GETFLAG(linkp, DATA) == 0)
+				LLC_SETFLAG(linkp, DATA, 1);
+			action = 0;
+		}
+		break;
+	}
+	case LLCFT_INFO + LLC_CMD:
+	case LLCFT_INFO + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			LLC_INC(linkp->llcl_vr);
+			llc_send(linkp, LLCFT_RNR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (LLC_GETFLAG(linkp, DATA) == 2)
+				LLC_STOP_REJ_TIMER(linkp);
+			LLC_SETFLAG(linkp, DATA, 0);
+			action = LLC_DATA_INDICATION;
+		} else if ((cmdrsp == LLC_CMD && pollfinal == 0 && p == 0)
+				|| (cmdrsp == LLC_RSP && pollfinal == p)) {
+			LLC_INC(linkp->llcl_vr);
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (LLC_GETFLAG(linkp, DATA) == 2)
+				LLC_STOP_REJ_TIMER(linkp);
+			if (cmdrsp == LLC_RSP && pollfinal == 1)
+				LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			action = LLC_DATA_INDICATION;
+		} else if (pollfinal == 0 && p == 1) {
+			LLC_INC(linkp->llcl_vr);
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (LLC_GETFLAG(linkp, DATA) == 2)
+				LLC_STOP_REJ_TIMER(linkp);
+			LLC_SETFLAG(linkp, DATA, 0);
+			action = LLC_DATA_INDICATION;
+		}
+		break;
+	}
+	case LLCFT_RR + LLC_CMD:
+	case LLCFT_RR + LLC_RSP:
+	case LLCFT_RNR + LLC_CMD:
+	case LLCFT_RNR + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RNR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (frame_kind == LLCFT_RR) {
+				LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			} else {
+				LLC_SET_REMOTE_BUSY(linkp, action);
+			}
+		} else if (pollfinal == 0 || (cmdrsp == LLC_RSP && pollfinal == 1)) {
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (frame_kind == LLCFT_RR) {
+				LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			} else {
+				LLC_SET_REMOTE_BUSY(linkp, action);
+			}
+		}
+		break;
+	}
+	case LLCFT_REJ + LLC_CMD:
+	case LLCFT_REJ + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			linkp->llcl_vs = nr;
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			llc_send(linkp, LLCFT_RNR, LLC_RSP, 1);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if ((cmdrsp == LLC_CMD && pollfinal == 0 && p == 0)
+				|| (cmdrsp == LLC_RSP && pollfinal == p)) {
+			linkp->llcl_vs = nr;
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if (pollfinal == 0 && p == 1) {
+			linkp->llcl_vs = nr;
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
 	case NL_INITIATE_PF_CYCLE:
+		if (LLC_GETFLAG(linkp, P) == 0) {
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			action = 0;
+		}
+		break;
 	case LLC_P_TIMER_EXPIRED:
+		/* multiple possibilities */
+		if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			linkp->llcl_retry++;
+			LLC_NEWSTATE(linkp, await_busy);
+			action = 0;
+		}
+		break;
 	case LLC_ACK_TIMER_EXPIRED:
 	case LLC_BUSY_TIMER_EXPIRED:
+		if (LLC_GETFLAG(linkp, P) == 0 && linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			linkp->llcl_retry++;
+			LLC_NEWSTATE(linkp, await_busy);
+			action = 0;
+		}
+		break;
 	case LLC_REJ_TIMER_EXPIRED:
+		if (linkp->llcl_retry < llc_n2)
+			if (LLC_GETFLAG(linkp, P) == 0) {
+				/* multiple possibilities */
+				llc_send(linkp, LLCFT_RNR, LLC_CMD, 1);
+				LLC_START_P_TIMER(linkp);
+				linkp->llcl_retry++;
+				LLC_SETFLAG(linkp, DATA, 1);
+				LLC_NEWSTATE(linkp, await_busy);
+				action = 0;
+			} else {
+				LLC_SETFLAG(linkp, DATA, 1);
+				LLC_NEWSTATE(linkp, busy);
+				action = 0;
+			}
+
+		break;
 	}
 	if (action == LLC_PASSITON) {
 		action = llc_state_core(linkp, frame, frame_kind, cmdrsp, pollfinal);
@@ -401,22 +960,198 @@ llc_state_busy(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int 
 int
 llc_state_reject(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
-	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	action = LLC_PASSITON;
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case NL_DATA_REQUEST:
+		if (LLC_GETFLAG(linkp, P) == 0) {
+			llc_send(linkp, LLCFT_INFO, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			if (LLC_TIMERXPIRED(linkp, ACK) != LLC_TIMER_RUNNING)
+				LLC_START_ACK_TIMER(linkp);
+			LLC_NEWSTATE(linkp, reject);
+			action = 0;
+		} else {
+			llc_send(linkp, LLCFT_INFO, LLC_CMD, 0);
+			if (LLC_TIMERXPIRED(linkp, ACK) != LLC_TIMER_RUNNING)
+				LLC_START_ACK_TIMER(linkp);
+			LLC_NEWSTATE(linkp, reject);
+			action = 0;
+		}
+		break;
 	case NL_LOCAL_BUSY_DETECTED:
-	case LLC_INVALID_NS:
-	case LLCFT_INFO:
-	case LLCFT_RR:
-	case LLCFT_RNR:
-	case LLCFT_REJ:
+		if (LLC_GETFLAG(linkp, P) == 0) {
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			LLC_SETFLAG(linkp, DATA, 2);
+			LLC_NEWSTATE(linkp, busy);
+			action = 0;
+		} else {
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+			LLC_SETFLAG(linkp, DATA, 2);
+			LLC_NEWSTATE(linkp, busy);
+			action = 0;
+		}
+		break;
+	case LLC_INVALID_NS + LLC_CMD:
+	case LLC_INVALID_NS + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			action = 0;
+		} else if (pollfinal == 0
+				|| (cmdrsp == LLC_RSP && pollfinal == 1 && p == 1)) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			if (cmdrsp == LLC_RSP && pollfinal == 1) {
+				LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			} else
+				action = 0;
+		}
+		break;
+	}
+	case LLCFT_INFO + LLC_CMD:
+	case LLCFT_INFO + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			LLC_INC(linkp->llcl_vr);
+			LLC_SENDACKNOWLEDGE(linkp, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_STOP_REJ_TIMER(linkp);
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_DATA_INDICATION;
+		} else if ((cmdrsp = LLC_RSP && pollfinal == p)
+				|| (cmdrsp == LLC_CMD && pollfinal == 0 && p == 0)) {
+			LLC_INC(linkp->llcl_vr);
+			LLC_SENDACKNOWLEDGE(linkp, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			if (cmdrsp == LLC_RSP && pollfinal == 1)
+				LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			LLC_STOP_REJ_TIMER(linkp);
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_DATA_INDICATION;
+		} else if (pollfinal == 0 && p == 1) {
+			LLC_INC(linkp->llcl_vr);
+			LLC_SENDACKNOWLEDGE(linkp, LLC_CMD, 0);
+			LLC_STOP_REJ_TIMER(linkp);
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_DATA_INDICATION;
+		}
+		break;
+	}
+	case LLCFT_RR + LLC_CMD:
+	case LLCFT_RR + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			LLC_SENDACKNOWLEDGE(linkp, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if (pollfinal == 0
+				|| (cmdrsp == LLC_RSP && pollfinal == 1 && p == 1)) {
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
+	case LLCFT_RNR + LLC_CMD:
+	case LLCFT_RNR + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+		} else if (pollfinal == 0
+				|| (cmdrsp == LLC_RSP && pollfinal == 1 && p == 1)) {
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			action = 0;
+		}
+		break;
+	}
+	case LLCFT_REJ + LLC_CMD:
+	case LLCFT_REJ + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			linkp->llcl_vs = nr;
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			llc_resend(linkp, LLC_RSP, 1);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if ((cmdrsp == LLC_CMD && pollfinal == 0 && p == 0)
+				|| (cmdrsp == LLC_RSP && pollfinal == p)) {
+			linkp->llcl_vs = nr;
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_UPDATE_P_FLAG(linkp, cmdrsp, pollfinal);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if (pollfinal == 0 && p == 1) {
+			linkp->llcl_vs = nr;
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
 	case NL_INITIATE_PF_CYCLE:
+		if (LLC_GETFLAG(linkp, P) == 0) {
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			action = 0;
+		}
+		break;
 	case LLC_REJ_TIMER_EXPIRED:
+		if (LLC_GETFLAG(linkp, P) == 0 && linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_REJ, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			LLC_START_REJ_TIMER(linkp);
+			linkp->llcl_retry++;
+			action = 0;
+		}
+	case LLC_P_TIMER_EXPIRED:
+		if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			LLC_START_REJ_TIMER(linkp);
+			linkp->llcl_retry++;
+			LLC_NEWSTATE(linkp, await_reject);
+			action = 0;
+		}
+		break;
 	case LLC_ACK_TIMER_EXPIRED:
 	case LLC_BUSY_TIMER_EXPIRED:
+		if (LLC_GETFLAG(linkp, P) == 0 && linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			LLC_START_REJ_TIMER(linkp);
+			linkp->llcl_retry++;
+			/*
+			 * I cannot locate the description of RESET_V(S)
+			 * in ISO 8802-2, table 7-1, state REJECT, last event,
+			 * and  assume they meant to set V(S) to 0 ...
+			 */
+			linkp->llcl_vs = 0; /* XXX */
+			LLC_NEWSTATE(linkp, await_reject);
+			action = 0;
+		}
+
+		break;
+	}
+	if (action == LLC_PASSITON) {
+		action = llc_state_core(linkp, frame, frame_kind, cmdrsp, pollfinal);
 	}
 	return (action);
 }
@@ -424,18 +1159,127 @@ llc_state_reject(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, in
 int
 llc_state_await(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case LLC_LOCAL_BUSY_DETECTED:
-	case LLC_INVALID_NS:
-	case LLCFT_INFO:
-	case LLCFT_RR:
-	case LLCFT_REJ:
-	case LLCFT_RNR:
+		llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+		LLC_SETFLAG(linkp, DATA, 0);
+		LLC_NEWSTATE(linkp, await_busy);
+		action = 0;
+		break;
+	case LLC_INVALID_NS + LLC_CMD:
+	case LLC_INVALID_NS + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_REJ, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_START_REJ_TIMER(linkp);
+			LLC_NEWSTATE(linkp, await_reject);
+			action = 0;
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			llc_send(linkp, LLCFT_REJ, LLC_CMD, 0);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			LLC_STOP_P_TIMER(linkp);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_START_REJ_TIMER(linkp);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, reject);
+		} else if (pollfinal == 0) {
+			llc_send(linkp, LLCFT_REJ, LLC_CMD, 0);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_START_REJ_TIMER(linkp);
+			LLC_NEWSTATE(linkp, await_reject);
+			action = 0;
+		}
+		break;
+	}
+	case LLCFT_INFO + LLC_RSP:
+	case LLCFT_INFO + LLC_CMD: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		LLC_INC(linkp->llcl_vr);
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			action = LLC_DATA_INDICATION;
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			llc_resend(linkp, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_DATA_INDICATION;
+		} else if (pollfinal == 0) {
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 0);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			action = LLC_DATA_INDICATION;
+		}
+		break;
+	}
+	case LLCFT_RR + LLC_CMD:
+	case LLCFT_RR + LLC_RSP:
+	case LLCFT_REJ + LLC_CMD:
+	case LLCFT_REJ + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			LLC_STOP_P_TIMER(linkp);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, normal);
+		} else if (pollfinal == 0) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
+	case LLCFT_RNR + LLC_CMD:
+	case LLCFT_RNR + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (pollfinal == 1 && cmdrsp == LLC_CMD) {
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+		} else if (pollfinal == 1 && cmdrsp == LLC_RSP) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			LLC_STOP_P_TIMER(linkp);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, normal);
+		} else if (pollfinal == 0) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
 	case LLC_P_TIMER_EXPIRED:
+		if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			linkp->llcl_retry++;
+			action = 0;
+		}
+		break;
+	}
+	if (action == LLC_PASSITON) {
+		action = llc_state_core(linkp, frame, frame_kind, cmdrsp, pollfinal);
 	}
 	return (action);
 }
@@ -443,18 +1287,150 @@ llc_state_await(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int
 int
 llc_state_await_busy(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = 0;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case LLC_LOCAL_BUSY_CLEARED:
-	case LLC_INVALID_NS:
-	case LLCFT_INFO:
-	case LLCFT_RR:
-	case LLCFT_REJ:
-	case LLCFT_RNR:
+		switch (LLC_GETFLAG(linkp, DATA)) {
+		case 1:
+			llc_send(linkp, LLCFT_REJ, LLC_CMD, 0);
+			LLC_START_REJ_TIMER(linkp)
+			;
+			LLC_NEWSTATE(linkp, await_reject);
+			action = 0;
+			break;
+		case 0:
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 0);
+			LLC_NEWSTATE(linkp, await);
+			action = 0;
+			break;
+		case 2:
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 0);
+			LLC_NEWSTATE(linkp, await_reject);
+			action = 0;
+			break;
+		}
+		break;
+	case LLC_INVALID_NS + LLC_CMD:
+	case LLC_INVALID_NS + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RNR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SETFLAG(linkp, DATA, 1);
+			action = 0;
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			/* optionally */
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			LLC_STOP_P_TIMER(linkp);
+			LLC_SETFLAG(linkp, DATA, 1);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_NEWSTATE(linkp, busy);
+		} else if (pollfinal == 0) {
+			/* optionally */
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SETFLAG(linkp, DATA, 1);
+			action = 0;
+		}
+	}
+	case LLCFT_INFO + LLC_CMD:
+	case LLCFT_INFO + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RNR, LLC_RSP, 1);
+			LLC_INC(linkp->llcl_vr);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SETFLAG(linkp, DATA, 0);
+			action = LLC_DATA_INDICATION;
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 1);
+			LLC_INC(linkp->llcl_vr);
+			LLC_START_P_TIMER(linkp);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			LLC_SETFLAG(linkp, DATA, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_NEWSTATE(linkp, busy);
+			action = LLC_DATA_INDICATION;
+		} else if (pollfinal == 0) {
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+			LLC_INC(linkp->llcl_vr);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SETFLAG(linkp, DATA, 0);
+			action = LLC_DATA_INDICATION;
+		}
+		break;
+	}
+	case LLCFT_RR + LLC_CMD:
+	case LLCFT_REJ + LLC_CMD:
+	case LLCFT_RR + LLC_RSP:
+	case LLCFT_REJ + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RNR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			LLC_STOP_P_TIMER(linkp);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, busy);
+		} else if (pollfinal == 0) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			LLC_STOP_P_TIMER(linkp);
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
+	case LLCFT_RNR + LLC_CMD:
+	case LLCFT_RNR + LLC_RSP: {
+		register int p = LLC_GETFLAG(linkp, P);
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RNR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			LLC_STOP_P_TIMER(linkp);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, busy);
+		} else if (pollfinal == 0) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
 	case LLC_P_TIMER_EXPIRED:
+		if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_RNR, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			linkp->llcl_retry++;
+			action = 0;
+		}
+		break;
+	}
+	if (action == LLC_PASSITON) {
+		action = llc_state_core(linkp, frame, frame_kind, cmdrsp, pollfinal);
 	}
 	return (action);
 }
@@ -462,18 +1438,120 @@ llc_state_await_busy(struct llc_linkcb *linkp, struct llc *frame, int frame_kind
 int
 llc_state_await_reject(struct llc_linkcb *linkp, struct llc *frame, int frame_kind, int cmdrsp, int pollfinal)
 {
-	int action, cmdmask;
+	int action, command;
 
 	action = LLC_PASSITON;
-	cmdmask = llc_command(frame_kind, cmdrsp);
-	switch (cmdmask) {
+	command = LLC_COMMAND(frame_kind, cmdrsp);
+	switch (command) {
 	case LLC_LOCAL_BUSY_DETECTED:
-	case LLC_INVALID_NS:
-	case LLCFT_INFO:
-	case LLCFT_RR:
-	case LLCFT_REJ:
-	case LLCFT_RNR:
+		llc_send(linkp, LLCFT_RNR, LLC_CMD, 0);
+		LLC_SETFLAG(linkp, DATA, 2);
+		LLC_NEWSTATE(linkp, await_busy);
+		action = 0;
+		break;
+	case LLC_INVALID_NS + LLC_CMD:
+	case LLC_INVALID_NS + LLC_RSP: {
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			action = 0;
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			llc_resend(linkp, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, reject);
+		} else if (pollfinal == 0) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			action = 0;
+		}
+		break;
+	}
+	case LLCFT_INFO + LLC_CMD:
+	case LLCFT_INFO + LLC_RSP: {
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			LLC_INC(linkp->llcl_vr);
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_STOP_REJ_TIMER(linkp);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_NEWSTATE(linkp, await);
+			action = LLC_DATA_INDICATION;
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			LLC_INC(linkp->llcl_vr);
+			LLC_STOP_P_TIMER(linkp);
+			LLC_STOP_REJ_TIMER(linkp);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			llc_resend(linkp, LLC_CMD, 0);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, normal);
+			action = LLC_DATA_INDICATION;
+		} else if (pollfinal == 0) {
+			LLC_INC(linkp->llcl_vr);
+			llc_send(linkp, LLCFT_RR, LLC_CMD, 0);
+			LLC_STOP_REJ_TIMER(linkp);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_NEWSTATE(linkp, await);
+			action = LLC_DATA_INDICATION;
+		}
+		break;
+	}
+	case LLCFT_RR + LLC_CMD:
+	case LLCFT_REJ + LLC_CMD:
+	case LLCFT_RR + LLC_RSP:
+	case LLCFT_REJ + LLC_RSP: {
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			llc_resend(linkp, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, reject);
+		} else if (pollfinal == 0) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_CLEAR_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
+	case LLCFT_RNR + LLC_CMD:
+	case LLCFT_RNR + LLC_RSP: {
+		register int nr = LLCGBITS(frame->llc_control_ext, s_nr);
+
+		if (cmdrsp == LLC_CMD && pollfinal == 1) {
+			llc_send(linkp, LLCFT_RR, LLC_RSP, 1);
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+		} else if (cmdrsp == LLC_RSP && pollfinal == 1) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			linkp->llcl_vs = nr;
+			LLC_STOP_P_TIMER(linkp);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+			LLC_NEWSTATE(linkp, reject);
+		} else if (pollfinal == 0) {
+			LLC_UPDATE_NR_RECEIVED(linkp, nr);
+			LLC_SET_REMOTE_BUSY(linkp, action);
+		}
+		break;
+	}
 	case LLC_P_TIMER_EXPIRED:
+		if (linkp->llcl_retry < llc_n2) {
+			llc_send(linkp, LLCFT_REJ, LLC_CMD, 1);
+			LLC_START_P_TIMER(linkp);
+			linkp->llcl_retry++;
+			action = 0;
+		}
+		break;
 	}
 	if (action == LLC_PASSITON) {
 		action = llc_state_core(linkp, frame, frame_kind, cmdrsp, pollfinal);
@@ -620,7 +1698,7 @@ llc_decode(struct llc* frame, struct llc_linkcb * linkp)
 		return (#s);			\
 	}							\
 
-char *timer_names[] = {"ACK", "P", "BUSY", "REJ", "AGE"};
+char *timer_names[] = { "ACK", "P", "BUSY", "REJ", "AGE" };
 
 char *
 llc_getstatename(struct llc_linkcb *linkp)
@@ -633,7 +1711,7 @@ llc_getstatename(struct llc_linkcb *linkp)
 	CHECK(linkp, reset_check);
 	CHECK(linkp, setup);
 	CHECK(linkp, reset);
-	CHECK(linkp, dconn);
+	CHECK(linkp, d_conn);
 	CHECK(linkp, error);
 	CHECK(linkp, normal);
 	CHECK(linkp, busy);

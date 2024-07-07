@@ -420,7 +420,7 @@ tuba_tcp_input(m, src, dst)
 		ti->ti_src.s_addr = tuba_table[findex]->tc_sum;
 	else
 		ti->ti_src.s_addr = tuba_table[findex]->tc_ssum;
-	ti->ti_prev = ti->ti_next = 0;
+	//ti->ti_prev = ti->ti_next = 0;
 	ti->ti_x1 = 0;
 	ti->ti_pr = ISOPROTO_TCP;
 	ti->ti_len = htons((u_short)tlen);

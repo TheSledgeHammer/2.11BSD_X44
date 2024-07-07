@@ -54,8 +54,8 @@ struct nspcb {
 /* possible flags */
 
 #define NSP_IN_ABORT	0x1		/* calling abort through socket */
-#define NSP_RAWIN	0x2		/* show headers on input */
-#define NSP_RAWOUT	0x4		/* show header on output */
+#define NSP_RAWIN		0x2		/* show headers on input */
+#define NSP_RAWOUT		0x4		/* show header on output */
 #define NSP_ALL_PACKETS	0x8		/* Turn off higher proto processing */
 
 #define	NS_WILDCARD	1

@@ -238,7 +238,6 @@ struct bitslice {
 	} 																	\
 }
 
-
 #define LLC_SET_REMOTE_BUSY(l,a) { 										\
 	if (LLC_GETFLAG((l), REMOTE_BUSY) == 0) { 							\
 		LLC_SETFLAG((l), REMOTE_BUSY, 1); 								\
@@ -253,9 +252,9 @@ struct bitslice {
 	if (LLC_GETFLAG((l), REMOTE_BUSY) == 1) { 							\
 		LLC_SETFLAG((l), REMOTE_BUSY, 1); 								\
 		LLC_STOPTIMER((l), BUSY); 										\
-		if (LLC_STATEEQ((l), NORMAL) || 								\
-				LLC_STATEEQ((l), REJECT) || 							\
-				LLC_STATEEQ((l), BUSY)) { 								\
+		if (LLC_STATEEQ((l), normal) || 								\
+				LLC_STATEEQ((l), reject) || 							\
+				LLC_STATEEQ((l), busy)) { 								\
 			llc_resend((l), LLC_CMD, 0); 								\
 		} 																\
 		(a) = LLC_REMOTE_NOT_BUSY; 										\
