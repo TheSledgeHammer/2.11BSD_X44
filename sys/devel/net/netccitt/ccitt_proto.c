@@ -96,7 +96,7 @@ extern	struct domain ccittdomain;
 struct protosw ccittsw[] = {
 		{
 				.pr_type		= 0,
-				.pr_domain		= &inetdomain,
+				.pr_domain		= &ccittdomain,
 				.pr_protocol 	= IEEEPROTO_802LLC,
 				.pr_flags		= 0,
 				.pr_input 		= llc_input,
