@@ -54,6 +54,7 @@ static char sccsid[] = "@(#)newfs.c	8.5 (Berkeley) 5/24/95";
 
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/dinode.h>
+#include <ufs/lfs/lfs.h>
 
 #include <errno.h>
 #include <unistd.h>
@@ -101,11 +102,11 @@ int	sbsize = SBSIZE;	/* superblock size */
 int	mntflags;		/* flags to be passed to mount */
 u_long	memleft;		/* virtual memory available */
 caddr_t	membase;		/* start address of memory based filesystem */
+int version = 0; 		/* lfs version */
 #ifdef COMPAT
 char	*disktype;
 int	unlabeled;
 #endif
-
 char	device[MAXPATHLEN];
 char	*progname, *special;
 
@@ -138,7 +139,7 @@ main(argc, argv)
 	}
 
 	/* -F is mfs only and MUST come first! */
-	opstring = "F:B:DLNS:T:a:b:c:d:e:f:i:k:l:m:n:o:p:r:s:t:u:x:";
+	opstring = "F:B:DLNS:T:a:b:c:d:e:f:i:k:l:m:n:o:p:r:s:t:u:x:v:";
 	if (!mfs)
 		opstring += 2;
 
@@ -254,6 +255,13 @@ main(argc, argv)
 				fatal("%s: bad spare sectors per cylinder",
 				    optarg);
 			break;
+		case 'v':
+			if ((version = atoi(optarg)) == 1) {
+				version = LFS1_VERSION;
+			} else {
+				version = LFS2_VERSION;
+			}
+			break;
 		case '?':
 		default:
 			usage();
@@ -276,12 +284,12 @@ main(argc, argv)
 		special = device;
 	}
 	if (!Nflag) {
-		fso = open(special,
-		    (debug ? O_CREAT : 0) | O_WRONLY, DEFFILEMODE);
+		fso = open(special, (debug ? O_CREAT : 0) | O_WRONLY, DEFFILEMODE);
 		if (fso < 0)
 			fatal("%s: %s", special, strerror(errno));
-	} else
+	} else {
 		fso = -1;
+	}
 
 	/* Open the input file. */
 	fsi = open(special, O_RDONLY);
@@ -314,7 +322,7 @@ main(argc, argv)
 		fatal("%s: `%c' partition is unavailable", argv[0], *cp);
 
 	/* If we're making a LFS, we break out here */
-	exit(make_lfs1(fso, lp, pp, minfree, bsize, fsize, segsize));
+	exit(make_lfs(fso, lp, pp, minfree, bsize, fsize, segsize, version));
 }
 
 #ifdef COMPAT
@@ -333,7 +341,7 @@ getdisklabel(s, fd)
 	if (ioctl(fd, DIOCGDINFO, (char *)&lab) < 0) {
 #ifdef COMPAT
 		if (disktype) {
-			struct disklabel *lp, *getdiskbyname();
+			struct disklabel *lp;//, *getdiskbyname();
 
 			unlabeled++;
 			lp = getdiskbyname(disktype);
@@ -348,7 +356,6 @@ getdisklabel(s, fd)
 	}
 	return (&lab);
 }
-
 
 static struct disklabel *
 debug_readlabel(fd)
@@ -462,5 +469,6 @@ usage()
 	fprintf(stderr, "\t-t tracks/cylinder\n");
 	fprintf(stderr, "\t-u sectors/track\n");
 	fprintf(stderr, "\t-x spare sectors per cylinder\n");
+	fprintf(stderr, "\t-v version\n");
 	exit(1);
 }

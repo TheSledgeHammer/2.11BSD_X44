@@ -37,9 +37,8 @@ u_long	cksum(void *, size_t);
 u_short	dkcksum(struct disklabel *);
 void	fatal(const char *fmt, ...);
 u_int	log2(u_int);
-int	make_lfs1(int, struct disklabel *, struct partition *, int, int, int, int);
-int	make_lfs2(int, struct disklabel *, struct partition *, int, int, int, int);
-int	mkfs(struct partition *, char *, int, int);
+int		make_lfs(int, struct disklabel *, struct partition *, int, int, int, int, int);
+int		mkfs(struct partition *, char *, int, int);
 
 extern char	*progname;
 extern char	*special;

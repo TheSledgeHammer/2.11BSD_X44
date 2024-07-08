@@ -99,7 +99,6 @@ tuba_ctloutput(op, so, level, optname, mp)
 	int level, optname;
 	struct mbuf **mp;
 {
-
 	return ((level != IPPROTO_TCP ? clnp_ctloutput : tcp_ctloutput)(op, so,
 			level, optname, mp));
 }

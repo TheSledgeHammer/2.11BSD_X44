@@ -114,7 +114,8 @@ void	fatal(const char *fmt, ...);
  * placed in a single cylinder group. The default is one indirect
  * block worth of data blocks.
  */
-#define MAXBLKPG(bsize)	((bsize) / sizeof(daddr_t))
+#define	MAXBLKPG_UFS1(bsize)	((bsize) / sizeof(int32_t))
+#define	MAXBLKPG_UFS2(bsize)	((bsize) / sizeof(int64_t))
 
 /*
  * Each file system has a number of inodes statically allocated.
@@ -492,8 +493,14 @@ main(argc, argv)
 		fprintf(stderr, "%s (%d) %s (%lu)\n",
 			"Warning: calculated sectors per cylinder", secpercyl,
 			"disagrees with disk label", lp->d_secpercyl);
-	if (maxbpg == 0)
-		maxbpg = MAXBLKPG(bsize);
+	if (maxbpg == 0) {
+		if (Oflag <= 1) {
+			maxbpg = MAXBLKPG_UFS1(bsize);
+		} else {
+			maxbpg = MAXBLKPG_UFS2(bsize);
+		}
+	}
+
 	headswitch = lp->d_headswitch;
 	trackseek = lp->d_trkseek;
 #ifdef notdef /* label may be 0 if faked up by kernel */
@@ -561,7 +568,7 @@ getdisklabel(s, fd)
 	if (ioctl(fd, DIOCGDINFO, (char *)&lab) < 0) {
 #ifdef COMPAT
 		if (disktype) {
-			struct disklabel *lp, *getdiskbyname();
+			struct disklabel *lp;//, *getdiskbyname();
 
 			unlabeled++;
 			lp = getdiskbyname(disktype);

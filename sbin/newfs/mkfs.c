@@ -97,7 +97,7 @@ union {
 
 #define DIP(dp, field) \
 	((sblock.fs_magic == FS_UFS1_MAGIC) ? \
-	(dp)->dp1.di_##field : (dp)->dp2.di_##field)
+			(dp)->dp1.di_##field : (dp)->dp2.di_##field)
 
 int	fsi, fso;
 
@@ -133,8 +133,6 @@ mkfs(pp, fsys, fi, fo, mfsmode, mfsuid, mfsgid)
 #ifndef STANDALONE
 	time(&utime);
 #endif
-
-	powerof2();
 	if (mfs) {
 		ppid = getpid();
 		(void) signal(SIGUSR1, started);

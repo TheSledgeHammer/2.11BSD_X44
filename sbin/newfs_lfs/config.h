@@ -99,7 +99,9 @@
  * placed in a single cylinder group. The default is one indirect
  * block worth of data blocks.
  */
-#define MAXBLKPG(bsize)	((bsize) / sizeof(daddr_t))
+//#define MAXBLKPG(bsize)	((bsize) / sizeof(daddr_t))
+#define	MAXBLKPG_UFS1(bsize)	((bsize) / sizeof(int32_t))
+#define	MAXBLKPG_UFS2(bsize)	((bsize) / sizeof(int64_t))
 
 /*
  * Each file system has a number of inodes statically allocated.
