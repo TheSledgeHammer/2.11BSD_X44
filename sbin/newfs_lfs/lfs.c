@@ -53,11 +53,6 @@ static char sccsid[] = "@(#)lfs.c	8.5 (Berkeley) 5/24/95";
 #include "config.h"
 #include "extern.h"
 
-union {
-	struct lfs sblk;
-} lfs;
-#define	sblock	lfs.sblk
-
 int is_ufs2;
 
 union dinode {
