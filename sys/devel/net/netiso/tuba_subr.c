@@ -431,11 +431,19 @@ tuba_tcp_input(m, src, dst)
 	ti->ti_src.s_addr = findex;
 	ti->ti_dst.s_addr = lindex;
 
+#ifdef notyet
 #define TUBA_INCLUDE
 #define	in_pcbconnect	tuba_pcbconnect
+#define	tcb				tuba_inpcb
 
 #include <netinet/tcp_input.c>
 }
+
+#define tcp_slowtimo	tuba_slowtimo
+#define tcp_fasttimo	tuba_fasttimo
+
+#include <netinet/tcp_timer.c>
+#endif
 
 void
 tuba_udp_input(m, src, dst)

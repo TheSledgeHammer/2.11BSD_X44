@@ -62,7 +62,6 @@ SOFTWARE.
 #define _NETISO_ISO_PCB_H_
 
 #include <net/route.h>
-#include <sys/queue.h>
 
 //#include <netiso/iso_pcb_hdr.h>
 
@@ -78,8 +77,6 @@ struct route_iso {
 };
 
 struct isopcb {
-	LIST_ENTRY(isopcb) 		isop_hash;
-	CIRCLEQ_ENTRY(isopcb) 	isop_queue;
 	struct isopcb  		*isop_next;			/* pointers to other pcb's */
 	struct isopcb  		*isop_prev;
 	struct isopcb  		*isop_head;			/* pointer back to chain of pcbs for this protocol */
@@ -102,20 +99,6 @@ struct isopcb {
 	struct sockaddr_iso isop_sladdr;		/* preallocated laddr */
 	struct sockaddr_iso isop_sfaddr;		/* preallocated faddr */
 	struct isopcbtable	*isop_table;
-};
-
-LIST_HEAD(isopcbhead, isopcb);
-
-CIRCLEQ_HEAD(isopcbqueue, isopcb);
-
-struct isopcbtable {
-	CIRCLEQ_HEAD(isopcbqueue, isopcb) 	isopt_queue;
-	struct isopcbtable 	*isopt_porthashtbl;
-	//struct isopcbtable 	*isopt_bindhashtbl;
-	//struct isopcbtable 	*isopt_connecthashtbl;
-	u_long	  		isopt_porthash;
-	//u_long	  isopt_bindhash;
-	//u_long	  isopt_connecthash;
 };
 
 #ifdef sotorawcb
@@ -141,14 +124,7 @@ struct isopcb;
 struct mbuf;
 struct sockaddr_iso;
 
-int iso_pcballoc(struct socket *, void *);
-int iso_pcbbind(void *, struct mbuf *, struct proc *);
-int iso_pcbconnect(void *, struct mbuf *);
-void iso_pcbdisconnect(void *);
-void iso_pcbdetach(void *);
-void iso_pcbnotify(struct isopcbtable *, struct sockaddr_iso *, int, void (*) (struct isopcb *));
-struct isopcb  *iso_pcblookup(struct isopcbtable *, int, caddr_t, struct sockaddr_iso *);
-void			iso_rtchange(struct isopcb *, int);
+
 #endif
 
 #endif /* !_NETISO_ISO_PCB_H_ */

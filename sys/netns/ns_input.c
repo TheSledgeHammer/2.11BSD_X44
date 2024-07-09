@@ -145,7 +145,9 @@ next:
 	 */
 	for (nsp = nsrawpcb.nsp_next; nsp != &nsrawpcb; nsp = nsp->nsp_next) {
 		struct mbuf *m1 = m_copy(m, 0, (int)M_COPYALL);
-		if (m1) idp_input(m1, nsp);
+		if (m1) {
+			idp_input(m1, nsp);
+		}
 	}
 
 	idp = mtod(m, struct idp *);

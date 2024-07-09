@@ -63,10 +63,6 @@ SOFTWARE.
 
 #include <sys/ansi.h>
 
-#ifndef IN_CLASSA_NET
-#include <netinet/in.h>
-#endif /* IN_CLASSA_NET */
-
 /*
  * The following looks like a sockaddr to facilitate using tree lookup
  * routines
@@ -75,33 +71,5 @@ struct iso_addr {
 	u_char          isoa_len;			/* length (in bytes) */
 	char            isoa_genaddr[20];	/* general opaque address */
 };
-
-struct sockaddr_iso {
-	u_char          siso_len;			/* length */
-	sa_family_t     siso_family;		/* family */
-	u_char          siso_plen;			/* presentation selector length */
-	u_char          siso_slen;			/* session selector length */
-	u_char          siso_tlen;			/* transport selector length */
-	struct iso_addr siso_addr;			/* network address */
-	u_char          siso_pad[6];		/* space for gosip v2 sels */
-	/* makes struct 32 bytes long */
-};
-#define siso_nlen siso_addr.isoa_len
-#define siso_data siso_addr.isoa_genaddr
-
-#define TSEL(s) ((caddr_t)((s)->siso_data + (s)->siso_nlen))
-
-#define SAME_ISOADDR(a, b) 		\
-	(bcmp((a)->siso_data, (b)->siso_data, (unsigned)(a)->siso_nlen) == 0)
-#define SAME_ISOIFADDR(a, b) 	\
-	(bcmp((a)->siso_data, (b)->siso_data, (unsigned)((b)->siso_nlen - (b)->siso_tlen)) == 0)
-
-#ifdef _KERNEL
-
-#define	satosiso(sa)	((struct sockaddr_iso *)(sa))
-#define	satocsiso(sa)	((const struct sockaddr_iso *)(sa))
-#define	sisotosa(siso)	((struct sockaddr *)(siso))
-
-#endif /* _KERNEL */
 
 #endif /* _NETISO_ISO_H_ */

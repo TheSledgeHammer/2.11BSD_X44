@@ -59,13 +59,7 @@ int ns_output_cnt = 0;
 struct mbuf *ns_lastout;
 
 int
-#if __STDC__
 ns_output(struct mbuf *m0, ...)
-#else
-ns_output(m0, va_alist)
-	struct mbuf *m0;
-	va_dcl
-#endif
 {
 	struct route *ro;
 	int flags;

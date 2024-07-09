@@ -317,7 +317,7 @@ nstime()
 
 int
 ns_echo(m)
-struct mbuf *m;
+	struct mbuf *m;
 {
 	struct idp *idp = mtod(m, struct idp *);
 	struct echo {

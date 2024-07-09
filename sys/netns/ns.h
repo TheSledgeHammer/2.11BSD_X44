@@ -102,17 +102,17 @@ union ns_net_u {
 struct ns_addr {
 	union ns_net	x_net;
 	union ns_host	x_host;
-	u_int16_t	x_port;
+	uint16_t		x_port;
 };
 
 /*
  * Socket address, Xerox style
  */
 struct sockaddr_ns {
-	u_char		sns_len;
-	u_char		sns_family;
+	u_char			sns_len;
+	u_char			sns_family;
 	struct ns_addr	sns_addr;
-	char		sns_zero[2];
+	char			sns_zero[2];
 };
 #define sns_port sns_addr.x_port
 

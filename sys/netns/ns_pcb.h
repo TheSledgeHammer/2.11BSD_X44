@@ -39,17 +39,18 @@ struct nspcb {
 	struct	nspcb *nsp_prev;
 	struct	nspcb *nsp_head;
 	struct	socket *nsp_socket;	/* back pointer to socket */
-	struct	ns_addr nsp_faddr;	/* destination address */
-	struct	ns_addr nsp_laddr;	/* socket's address */
-	caddr_t	nsp_pcb;		/* protocol specific stuff */
-	struct	route nsp_route;	/* routing information */
+	struct	ns_addr nsp_faddr;		/* destination address */
+	struct	ns_addr nsp_laddr;		/* socket's address */
+	caddr_t	nsp_pcb;				/* protocol specific stuff */
+	struct	route nsp_route;		/* routing information */
 	struct	ns_addr nsp_lastdst;	/* validate cached route for dg socks*/
-	long	nsp_notify_param;	/* extra info passed via ns_pcbnotify*/
+	long	nsp_notify_param;		/* extra info passed via ns_pcbnotify*/
 	short	nsp_flags;
-	u_int8_t nsp_dpt;		/* default packet type for idp_output*/
-	u_int8_t nsp_rpt;		/* last received packet type by
-								idp_input() */
+	u_int8_t nsp_dpt;				/* default packet type for idp_output*/
+	u_int8_t nsp_rpt;				/* last received packet type by idp_input() */
 };
+#define nsp_lport nsp_laddr.x_port
+#define nsp_fport nsp_faddr.x_port
 
 /* possible flags */
 
@@ -60,9 +61,6 @@ struct nspcb {
 
 #define	NS_WILDCARD	1
 
-#define nsp_lport nsp_laddr.x_port
-#define nsp_fport nsp_faddr.x_port
-
 #define	sotonspcb(so)		((struct nspcb *)((so)->so_pcb))
 
 /*
@@ -70,7 +68,6 @@ struct nspcb {
  */
 #define	NSSNDQ		2048
 #define	NSRCVQ		2048
-
 
 #ifdef _KERNEL
 extern	struct	nspcb nspcb;			/* head of list */

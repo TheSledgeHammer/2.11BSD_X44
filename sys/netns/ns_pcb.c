@@ -61,8 +61,9 @@ ns_pcballoc(so, head)
 	struct nspcb *nsp;
 
 	nsp = malloc(sizeof(*nsp), M_PCB, M_NOWAIT);
-	if (nsp == 0)
+	if (nsp == 0) {
 		return (ENOBUFS);
+	}
 	bzero((caddr_t)nsp, sizeof(*nsp));
 	nsp->nsp_socket = so;
 	insque(nsp, head);
