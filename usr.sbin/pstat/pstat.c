@@ -202,20 +202,6 @@ struct {
 		{ 0,	       '\0'},
 };
 
-struct {
-	int flag;
-	char val;
-} textstates[] = {
-		{ XPAGV, 'P'},
-		{ XTRC, 'T'},
-		{ XWRIT, 'W'},
-		{ XLOAD, 'L'},
-		{ XLOCK, 'K'},
-		{ XWANT, 'w'},
-		{ XUNUSED, 'u'},
-};
-
-
 void	filemode(void);
 int	getfiles(char **, int *);
 struct mount *getmnt(struct mount *);

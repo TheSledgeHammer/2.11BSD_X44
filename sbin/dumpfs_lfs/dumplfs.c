@@ -59,6 +59,8 @@ static char sccsid[] = "@(#)dumplfs.c	8.5 (Berkeley) 5/24/95";
 #include <unistd.h>
 #include "extern.h"
 
+int is_ufs2;
+
 union dinode {
 	struct ufs1_dinode dp1;
 	struct ufs2_dinode dp2;
@@ -110,6 +112,7 @@ char *special;
 	else \
 		(void)printf("%d\tINUSE\t%d\t%8X    \n", \
 		    i, ip->if_version, ip->if_daddr)
+
 int
 main(argc, argv)
 	int argc;
@@ -153,12 +156,21 @@ main(argc, argv)
 	 * Read the second superblock and figure out which check point is
 	 * most up to date.
 	 */
-	get(fd,
-	    lfs_sb1.lfs_sboffs[1] << daddr_shift, &lfs_sb2, sizeof(struct lfs));
+	get(fd, lfs_sb1.lfs_sboffs[1] << daddr_shift, &lfs_sb2, sizeof(struct lfs));
 
 	lfs_master = &lfs_sb1;
 	if (lfs_sb1.lfs_tstamp < lfs_sb2.lfs_tstamp)
 		lfs_master = &lfs_sb2;
+
+	/* determine if using lfs1 or lfs2 */
+	switch (lfs_master->lfs_magic) {
+	case LFS2_MAGIC:
+		is_ufs2 = 1;
+		break;
+	case LFS1_MAGIC:
+		is_ufs2 = 0;
+		break;
+	}
 
 	(void)printf("Master Superblock:\n");
 	dump_super(lfs_master);

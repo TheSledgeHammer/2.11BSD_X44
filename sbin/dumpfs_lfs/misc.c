@@ -56,7 +56,8 @@ get(fd, off, p, len)
 
 	if (lseek(fd, off, SEEK_SET) < 0)
 		err(1, "%s", special);
-	if ((rbytes = read(fd, p, len)) < 0)
+	rbytes = read(fd, p, len);
+	if (rbytes < 0)
 		err(1, "%s", special);
 	if (rbytes != len)
 		errx(1, "%s: short read (%d, not %d)", special, rbytes, len);
