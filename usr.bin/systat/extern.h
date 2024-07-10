@@ -37,6 +37,8 @@
 #include <fcntl.h>
 #include <kvm.h>
 
+#define ADJINETCTR(c, o, n, e)	(c.e = n.e - o.e)
+
 extern struct	cmdtab *curcmd;
 extern struct	cmdtab cmdtab[];
 extern struct	text *xtext;
@@ -62,6 +64,7 @@ struct inpcb;
 struct in6pcb;
 #endif
 
+/* misc */
 int	 checkhost(struct inpcb *);
 int	 checkport(struct inpcb *);
 #ifdef INET6
@@ -69,12 +72,6 @@ int	 checkhost6(struct in6pcb *);
 int	 checkport6(struct in6pcb *);
 #endif
 
-void	closeiostat(WINDOW *);
-void	closekre(WINDOW *);
-void	closembufs(WINDOW *);
-void	closenetstat(WINDOW *);
-void	closepigs(WINDOW *);
-void	closeswap(WINDOW *);
 int	 	cmdiostat(char *, char *);
 int	 	cmdkre(char *, char *);
 int	 	cmdnetstat(char *, char *);
@@ -85,42 +82,116 @@ void	display(int);
 int	 	dkinit(void);
 int	 	dkcmd(char *, char *);
 void	error(const char *fmt, ...);
-void	fetchiostat(void);
-void	fetchkre(void);
-void	fetchmbufs(void);
-void	fetchnetstat(void);
-void	fetchpigs(void);
-void	fetchswap(void);
-int	 	initiostat(void);
-int	 	initkre(void);
-int	 	initmbufs(void);
-int	 	initnetstat(void);
-int	 	initpigs(void);
-int	 	initswap(void);
 int	 	keyboard(void);
 int	 	kvm_ckread(void *, void *, int);
-void	labeliostat(void);
-void	labelkre(void);
-void	labelmbufs(void);
-void	labelnetstat(void);
-void	labelpigs(void);
 void	labels(void);
-void	labelswap(void);
 void	load(void);
 int	 	netcmd(char *, char *);
 void	nlisterr(struct nlist []);
+int	 	prefix(char *, char *);
+void	status(void);
+void	suspend(int);
+
+/* open */
+WINDOW	*openicmp(void);
 WINDOW	*openiostat(void);
+WINDOW	*openip(void);
+#ifdef INET6
+WINDOW	*openip6(void);
+#endif
+#ifdef IPSEC
+WINDOW *openipsec(void);
+#endif
 WINDOW	*openkre(void);
 WINDOW	*openmbufs(void);
 WINDOW	*opennetstat(void);
 WINDOW	*openpigs(void);
 WINDOW	*openswap(void);
-int	 	prefix(char *, char *);
+WINDOW 	*opentcp(void);
+
+/* close */
+void	closeicmp(WINDOW *);
+void	closeiostat(WINDOW *);
+void	closeip(WINDOW *);
+#ifdef INET6
+void	closeip6(WINDOW *);
+#endif
+#ifdef IPSEC
+void	closeipsec(WINDOW *);
+#endif
+void	closekre(WINDOW *);
+void	closembufs(WINDOW *);
+void	closenetstat(WINDOW *);
+void	closepigs(WINDOW *);
+void	closeswap(WINDOW *);
+void	closetcp(WINDOW *);
+
+/* show */
+void	showicmp(void);
 void	showiostat(void);
+void	showip(void);
+#ifdef INET6
+void	showip6(void);
+#endif
+#ifdef IPSEC
+void	showipsec(void);
+#endif
 void	showkre(void);
 void	showmbufs(void);
 void	shownetstat(void);
 void	showpigs(void);
 void	showswap(void);
-void	status(void);
-void	suspend(int);
+void	showtcp(void);
+void	showtcpsyn(void);
+
+/* fetch */
+void	fetchicmp(void);
+void	fetchiostat(void);
+void	fetchip(void);
+#ifdef INET6
+void	fetchip6(void);
+#endif
+#ifdef IPSEC
+void	fetchipsec(void);
+#endif
+void	fetchkre(void);
+void	fetchmbufs(void);
+void	fetchnetstat(void);
+void	fetchpigs(void);
+void	fetchswap(void);
+void	fetchtcp(void);
+
+/* label */
+void	labelicmp(void);
+void	labeliostat(void);
+void	labelip(void);
+#ifdef INET6
+void	labelip6(void);
+#endif
+#ifdef IPSEC
+void	labelipsec(void);
+#endif
+void	labelkre(void);
+void	labelmbufs(void);
+void	labelnetstat(void);
+void	labelpigs(void);
+void	labelswap(void);
+void	labeltcp(void);
+void	labeltcpsyn(void);
+
+/* init */
+int	 	initicmp(void);
+int	 	initiostat(void);
+int		initip(void);
+#ifdef INET6
+int		initip6(void);
+#endif
+#ifdef IPSEC
+int		initipsec(void);
+#endif
+int	 	initkre(void);
+int	 	initmbufs(void);
+int	 	initnetstat(void);
+int	 	initpigs(void);
+int	 	initswap(void);
+int		inittcp(void);
