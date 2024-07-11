@@ -87,11 +87,8 @@ enum objflags {
 #endif
 
 /* Global configuration information for the vinum subsystem */
-#ifdef _KERNEL
+
 struct _vinum_conf
-#else
-struct __vinum_conf
-#endif
 {
     int version;					    /* version of structures */
 #ifdef _KERNEL
@@ -134,11 +131,11 @@ struct __vinum_conf
 };
 
 /* Use these defines to simplify code */
-#define DRIVE vinum_conf.drive
-#define SD vinum_conf.sd
-#define PLEX vinum_conf.plex
-#define VOL vinum_conf.volume
-#define VFLAGS vinum_conf.flags
+#define DRIVE 	vinum_conf.drive
+#define SD 		vinum_conf.sd
+#define PLEX 	vinum_conf.plex
+#define VOL 	vinum_conf.volume
+#define VFLAGS 	vinum_conf.flags
 
 /*
  * A drive corresponds to a disk slice.  We use a different term to show
@@ -146,12 +143,7 @@ struct __vinum_conf
  * theoretically be a complete, unpartitioned disk
  */
 
-#ifdef _KERNEL
-struct drive
-#else
-struct _drive
-#endif
-{
+struct drive {
     char devicename[MAXDRIVENAME];			    /* name of the slice it's on */
     struct vinum_label label;				    /* and the label information */
     enum drivestate state;				    /* current state */
@@ -182,17 +174,12 @@ struct _drive
     char lockfilename[16];				    /* name of file from which we were locked */
     int lockline;					    /* and the line number */
 #endif
-    struct vnode *vp;
-    struct proc *p;
+    struct vnode 	*vp;
+    struct proc 	*p;
 #endif
 };
 
-#ifdef _KERNEL
-struct sd
-#else
-struct _sd
-#endif
-{
+struct sd {
     char name[MAXSDNAME];				    /* name of subdisk */
     enum sdstate state;					    /* state */
     int flags;
@@ -231,12 +218,7 @@ struct _sd
 #endif
 };
 
-#ifdef _KERNEL
-struct plex
-#else
-struct _plex
-#endif
-{
+struct plex {
     enum plexorg organization;				    /* Plex organization */
     enum plexstate state;				    /* and current state */
     u_int64_t length;					    /* total length of plex (sectors) */
@@ -269,12 +251,8 @@ struct _plex
 #endif
 };
 
-#ifdef _KERNEL
-struct volume
-#else
-struct _volume
-#endif
-{
+
+struct volume {
     char name[MAXVOLNAME];				    /* name of volume */
     enum volumestate state;				    /* current state */
     int plexes;						    /* number of plexes */

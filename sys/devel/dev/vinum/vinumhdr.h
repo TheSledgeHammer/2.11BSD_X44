@@ -60,6 +60,7 @@
 #include <sys/syslog.h>
 #include <sys/fcntl.h>
 #include <sys/queue.h>
+#include <sys/dk.h>
 #ifdef _KERNEL
 #include <machine/setjmp.h>
 #include <machine/stdarg.h>
@@ -67,11 +68,13 @@
 #include <setjmp.h>
 #include <stdarg.h>
 #endif
-#include <sys/dkio.h>
+
 #include <ufs/ufs/dinode.h>
+
 #include <dev/vinum/vinumvar.h>
 #include <dev/vinum/vinumio.h>
 #include <dev/vinum/vinumkw.h>
 #include <dev/vinum/vinumext.h>
 #include <dev/vinum/vinumutil.h>
+
 #include <machine/cpu.h>

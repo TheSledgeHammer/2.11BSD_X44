@@ -11,7 +11,7 @@ SUBDIR=	ac accton arp authpf 						\
 		link                                        \
         makefs mdconfig mrouted mtree moused        \
         netgroup_mkdb								\
-		pcictl portmap pwd_mkdb 					\
+		pcictl portmap pstat pwd_mkdb 					\
         rmt                                         \
 		sa service services_mkdb sliplogin			\
         traceroute 									\

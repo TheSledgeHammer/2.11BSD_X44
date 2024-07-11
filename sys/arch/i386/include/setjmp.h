@@ -39,12 +39,18 @@
 #define	_JBLEN	12				/* Size of the jmp_buf on AMD64. */
 
 #if _BSD_VISIBLE || __POSIX_VISIBLE
-typedef	struct _sigjmp_buf { long _sjb[_JBLEN]; } sigjmp_buf[1];
+typedef	struct _sigjmp_buf {
+	long _sjb[_JBLEN];
+} sigjmp_buf[1];
+
 int     setjmp();
 void    longjmp();
+
 #endif
 
-typedef	struct _jmp_buf { long _jb[_JBLEN]; } jmp_buf[1];
+typedef	struct _jmp_buf {
+	long _jb[_JBLEN];
+} jmp_buf[1];
 
 int     setjmp();
 void    longjmp();

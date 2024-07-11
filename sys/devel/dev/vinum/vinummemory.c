@@ -61,10 +61,10 @@ basename(char *file)
 {
     char *f = strrchr(file, '/');			    /* chop off dirname if present */
 
-    if (f == NULL)
-	return file;
-    else
-	return ++f;					    /* skip the / */
+	if (f == NULL)
+		return file;
+	else
+		return ++f; /* skip the / */
 }
 
 void
@@ -74,17 +74,17 @@ expand_table(void **table, int oldsize, int newsize)
 	int *temp;
 	int s;
 
-	s = splhigh();
-	temp = (int *) Malloc(newsize);			    /* allocate a new table */
-	CHECKALLOC(temp, "vinum: Can't expand table\n");
-	bzero((char *) temp, newsize);			    /* clean it all out */
-	if (*table != NULL) {				    /* already something there, */
-	    bcopy((char *) *table, (char *) temp, oldsize); /* copy it to the old table */
-	    Free(*table);
+		s = splhigh();
+		temp = (int*) Malloc(newsize); /* allocate a new table */
+		CHECKALLOC(temp, "vinum: Can't expand table\n");
+		bzero((char*) temp, newsize); /* clean it all out */
+		if (*table != NULL) { /* already something there, */
+			bcopy((char*) *table, (char*) temp, oldsize); /* copy it to the old table */
+			Free(*table);
+		}
+		*table = temp;
+		splx(s);
 	}
-	*table = temp;
-	splx(s);
-    }
 }
 
 #ifdef VINUMDEBUG					    /* XXX debug */
@@ -108,42 +108,44 @@ MMalloc(int size, char *file, int line)
     caddr_t result;
     int i;
 
-    if (malloccount >= MALLOCENTRIES) {			    /* too many */
-	log(LOG_ERR, "vinum: can't allocate table space to trace memory allocation");
-	return 0;					    /* can't continue */
-    }
-    /* Wait for malloc if we can */
-    /*
-     * XXX We can wait if we're in process context.  How do we tell?
-     */
-    result = malloc(size, M_DEVBUF, M_NOWAIT);
-    if (result == NULL)
-	log(LOG_ERR, "vinum: can't allocate %d bytes from %s:%d\n", size, file, line);
-    else {
-	s = splhigh();
-	for (i = 0; i < malloccount; i++) {
-	    if (((result + size) > malloced[i].address)
-		&& (result < malloced[i].address + malloced[i].size)) /* overlap */
-		panic("Malloc overlap");
+	if (malloccount >= MALLOCENTRIES) { /* too many */
+		log(LOG_ERR,
+				"vinum: can't allocate table space to trace memory allocation");
+		return 0; /* can't continue */
 	}
-	if (result) {
-	    char *f = basename(file);
+	/* Wait for malloc if we can */
+	/*
+	 * XXX We can wait if we're in process context.  How do we tell?
+	 */
+	result = malloc(size, M_DEVBUF, M_NOWAIT);
+	if (result == NULL)
+		log(LOG_ERR, "vinum: can't allocate %d bytes from %s:%d\n", size, file,
+				line);
+	else {
+		s = splhigh();
+		for (i = 0; i < malloccount; i++) {
+			if (((result + size) > malloced[i].address)
+					&& (result < malloced[i].address + malloced[i].size)) /* overlap */
+				panic("Malloc overlap");
+		}
+		if (result) {
+			char *f = basename(file);
 
-	    i = malloccount++;
-	    total_malloced += size;
-	    microtime(&malloced[i].time);
-	    malloced[i].seq = mallocseq++;
-	    malloced[i].size = size;
-	    malloced[i].line = line;
-	    malloced[i].address = result;
-	    bcopy(f, malloced[i].file, min(strlen(f), MCFILENAMELEN - 1));
-	    malloced[i].file[MCFILENAMELEN - 1] = '\0';
+			i = malloccount++;
+			total_malloced += size;
+			microtime(&malloced[i].time);
+			malloced[i].seq = mallocseq++;
+			malloced[i].size = size;
+			malloced[i].line = line;
+			malloced[i].address = result;
+			bcopy(f, malloced[i].file, min(strlen(f), MCFILENAMELEN - 1));
+			malloced[i].file[MCFILENAMELEN - 1] = '\0';
+		}
+		if (malloccount > highwater)
+			highwater = malloccount;
+		splx(s);
 	}
-	if (malloccount > highwater)
-	    highwater = malloccount;
-	splx(s);
-    }
-    return result;
+	return result;
 }
 
 void
@@ -153,43 +155,42 @@ FFree(void *mem, char *file, int line)
     int i;
 
     s = splhigh();
-    for (i = 0; i < malloccount; i++) {
-	if ((caddr_t) mem == malloced[i].address) {	    /* found it */
-	    bzero(mem, malloced[i].size);		    /* XXX */
-	    free(mem, M_DEVBUF);
-	    malloccount--;
-	    total_malloced -= malloced[i].size;
-	    if (debug & DEBUG_MEMFREE) {		    /* keep track of recent frees */
-		char *f = strrchr(file, '/');		    /* chop off dirname if present */
+	for (i = 0; i < malloccount; i++) {
+		if ((caddr_t) mem == malloced[i].address) { /* found it */
+			bzero(mem, malloced[i].size); /* XXX */
+			free(mem, M_DEVBUF);
+			malloccount--;
+			total_malloced -= malloced[i].size;
+			if (debug & DEBUG_MEMFREE) { /* keep track of recent frees */
+				char *f = strrchr(file, '/'); /* chop off dirname if present */
 
-		if (f == NULL)
-		    f = file;
-		else
-		    f++;				    /* skip the / */
+				if (f == NULL)
+					f = file;
+				else
+					f++; /* skip the / */
 
-		microtime(&freeinfo[lastfree].time);
-		freeinfo[lastfree].seq = malloced[i].seq;
-		freeinfo[lastfree].size = malloced[i].size;
-		freeinfo[lastfree].line = line;
-		freeinfo[lastfree].address = mem;
-		bcopy(f, freeinfo[lastfree].file, min(strlen(f), MCFILENAMELEN - 1));
-		freeinfo[lastfree].file[MCFILENAMELEN - 1] = '\0';
-		if (++lastfree == FREECOUNT)
-		    lastfree = 0;
-	    }
-	    if (i < malloccount)			    /* more coming after */
-		bcopy(&malloced[i + 1], &malloced[i], (malloccount - i) * sizeof(struct mc));
-	    splx(s);
-	    return;
+				microtime(&freeinfo[lastfree].time);
+				freeinfo[lastfree].seq = malloced[i].seq;
+				freeinfo[lastfree].size = malloced[i].size;
+				freeinfo[lastfree].line = line;
+				freeinfo[lastfree].address = mem;
+				bcopy(f, freeinfo[lastfree].file,
+						min(strlen(f), MCFILENAMELEN - 1));
+				freeinfo[lastfree].file[MCFILENAMELEN - 1] = '\0';
+				if (++lastfree == FREECOUNT)
+					lastfree = 0;
+			}
+			if (i < malloccount) /* more coming after */
+				bcopy(&malloced[i + 1], &malloced[i],
+						(malloccount - i) * sizeof(struct mc));
+			splx(s);
+			return;
+		}
 	}
-    }
-    splx(s);
-    log(LOG_ERR,
-	"Freeing unallocated data at 0x%p from %s, line %d\n",
-	mem,
-	file,
-	line);
-    panic("Free");
+	splx(s);
+	log(LOG_ERR, "Freeing unallocated data at 0x%p from %s, line %d\n", mem,
+			file, line);
+	panic("Free");
 }
 
 void
@@ -209,14 +210,14 @@ vinum_mallocinfo(caddr_t data)
     struct mc *m = (struct mc *) data;
     unsigned int ent = m->seq;				    /* index of entry to return */
 
-    if (ent >= malloccount)
-	return ENOENT;
-    m->address = malloced[ent].address;
-    m->size = malloced[ent].size;
-    m->line = malloced[ent].line;
-    m->seq = malloced[ent].seq;
-    bcopy(malloced[ent].file, m->file, MCFILENAMELEN);
-    return 0;
+	if (ent >= malloccount)
+		return ENOENT;
+	m->address = malloced[ent].address;
+	m->size = malloced[ent].size;
+	m->line = malloced[ent].line;
+	m->seq = malloced[ent].seq;
+	bcopy(malloced[ent].file, m->file, MCFILENAMELEN);
+	return 0;
 }
 
 /*
@@ -231,11 +232,11 @@ vinum_rqinfo(caddr_t data)
     int ent = *(int *) data;				    /* 1st word is index */
     int lastent = rqip - rqinfo;			    /* entry number of current entry */
 
-    if (ent >= RQINFO_SIZE)				    /* out of the table */
-	return ENOENT;
-    if ((ent = lastent - ent - 1) < 0)
-	ent += RQINFO_SIZE;				    /* roll over backwards */
-    bcopy(&rqinfo[ent], rq, sizeof(struct rqinfo));
-    return 0;
+	if (ent >= RQINFO_SIZE) /* out of the table */
+		return ENOENT;
+	if ((ent = lastent - ent - 1) < 0)
+		ent += RQINFO_SIZE; /* roll over backwards */
+	bcopy(&rqinfo[ent], rq, sizeof(struct rqinfo));
+	return 0;
 }
 #endif

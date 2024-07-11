@@ -82,95 +82,95 @@
 
 /* enum keyword is defined in vinumvar.h */
 
-#define keypair(x) { #x, kw_##x }			    /* create pair "foo", kw_foo */
+#define keypair(x) 		{ #x, kw_##x }			    /* create pair "foo", kw_foo */
 #define flagkeypair(x) { "-"#x, kw_##x }		    /* create pair "-foo", kw_foo */
-#define KEYWORDSET(x) {sizeof (x) / sizeof (struct _keywords), x}
+#define KEYWORDSET(x) 	{sizeof (x) / sizeof (struct _keywords), x}
 
 /* Normal keywords.  These are all the words that vinum knows. */
-struct _keywords keywords[] =
-{keypair(drive),
-    keypair(partition),
-    keypair(sd),
-    keypair(subdisk),
-    keypair(plex),
-    keypair(volume),
-    keypair(vol),
-    keypair(setupstate),
-    keypair(readpol),
-    keypair(org),
-    keypair(name),
-    keypair(writethrough),
-    keypair(writeback),
-    keypair(raw),
-    keypair(device),
-    keypair(concat),
-    keypair(raid4),
-    keypair(raid5),
-    keypair(striped),
-    keypair(plexoffset),
-    keypair(driveoffset),
-    keypair(length),
-    keypair(len),
-    keypair(size),
-    keypair(state),
-    keypair(round),
-    keypair(prefer),
-    keypair(rename),
-    keypair(detached),
+struct _keywords keywords[] ={
+		keypair(drive),
+		keypair(partition),
+		keypair(sd),
+		keypair(subdisk),
+		keypair(plex),
+		keypair(volume),
+		keypair(vol),
+		keypair(setupstate),
+		keypair(readpol),
+		keypair(org),
+		keypair(name),
+		keypair(writethrough),
+		keypair(writeback),
+		keypair(raw),
+		keypair(device),
+		keypair(concat),
+		keypair(raid4),
+		keypair(raid5),
+		keypair(striped),
+		keypair(plexoffset),
+		keypair(driveoffset),
+		keypair(length),
+		keypair(len),
+		keypair(size),
+		keypair(state),
+		keypair(round),
+		keypair(prefer),
+		keypair(rename),
+		keypair(detached),
 #ifndef _KERNEL						    /* for vinum(8) only */
-    keypair(debug),
-    keypair(stripe),
-    keypair(mirror),
+		keypair(debug),
+		keypair(stripe),
+		keypair(mirror),
 #endif
-    keypair(attach),
-    keypair(detach),
-    keypair(printconfig),
-    keypair(saveconfig),
-    keypair(replace),
-    keypair(create),
-    keypair(read),
-    keypair(modify),
-    keypair(list),
-    keypair(l),
-    keypair(ld),
-    keypair(ls),
-    keypair(lp),
-    keypair(lv),
-    keypair(info),
-    keypair(set),
-    keypair(rm),
-    keypair(mv),
-    keypair(move),
-    keypair(init),
-    keypair(label),
-    keypair(resetconfig),
-    keypair(start),
-    keypair(stop),
-    keypair(makedev),
-    keypair(help),
-    keypair(quit),
-    keypair(setdaemon),
-    keypair(getdaemon),
-    keypair(max),
-    keypair(replace),
-    keypair(readpol),
-    keypair(resetstats),
-    keypair(setstate),
-    keypair(checkparity),
-    keypair(rebuildparity),
-    keypair(dumpconfig),
-    keypair(retryerrors)
+		keypair(attach),
+		keypair(detach),
+    	keypair(printconfig),
+    	keypair(saveconfig),
+    	keypair(replace),
+    	keypair(create),
+    	keypair(read),
+    	keypair(modify),
+    	keypair(list),
+    	keypair(l),
+    	keypair(ld),
+    	keypair(ls),
+    	keypair(lp),
+    	keypair(lv),
+    	keypair(info),
+    	keypair(set),
+    	keypair(rm),
+    	keypair(mv),
+    	keypair(move),
+    	keypair(init),
+    	keypair(label),
+    	keypair(resetconfig),
+    	keypair(start),
+    	keypair(stop),
+    	keypair(makedev),
+    	keypair(help),
+    	keypair(quit),
+    	keypair(setdaemon),
+    	keypair(getdaemon),
+    	keypair(max),
+    	keypair(replace),
+    	keypair(readpol),
+    	keypair(resetstats),
+    	keypair(setstate),
+    	keypair(checkparity),
+    	keypair(rebuildparity),
+    	keypair(dumpconfig),
+		keypair(retryerrors)
 };
 struct keywordset keyword_set = KEYWORDSET(keywords);
 
 #ifndef _KERNEL
-struct _keywords flag_keywords[] =
-{flagkeypair(f),
-    flagkeypair(d),
-    flagkeypair(v),
-    flagkeypair(s),
-    flagkeypair(r),
-    flagkeypair(w)
+struct _keywords flag_keywords[] ={
+		flagkeypair(f),
+		flagkeypair(d),
+		flagkeypair(v),
+		flagkeypair(s),
+		flagkeypair(r),
+		flagkeypair(w)
 };
 struct keywordset flag_set = KEYWORDSET(flag_keywords);
 
@@ -189,35 +189,35 @@ tokenize(char *cptr, char *token[], int maxtoken)
     char delim;						    /* delimiter for searching for the partner */
     int tokennr;					    /* index of this token */
 
-    for (tokennr = 0; tokennr < maxtoken;) {
-	while (iswhite(*cptr))
-	    cptr++;					    /* skip initial white space */
-	if ((*cptr == '\0') || (*cptr == '\n') || (*cptr == '#')) /* end of line */
-	    return tokennr;				    /* return number of tokens found */
-	delim = *cptr;
-	token[tokennr] = cptr;				    /* point to it */
-	tokennr++;					    /* one more */
-	if (tokennr == maxtoken)			    /* run off the end? */
-	    return tokennr;
-	if ((delim == '\'') || (delim == '"')) {	    /* delimitered */
-	    for (;;) {
-		cptr++;
-		if ((*cptr == delim) && (cptr[-1] != '\\')) { /* found the partner */
-		    cptr++;				    /* move on past */
-		    if (!iswhite(*cptr))		    /* error, no space after closing quote */
-			return -1;
-		    *cptr++ = '\0';			    /* delimit */
-		} else if ((*cptr == '\0') || (*cptr == '\n')) /* end of line */
-		    return -1;
-	    }
-	} else {					    /* not quoted */
-	    while ((*cptr != '\0') && (!iswhite(*cptr)) && (*cptr != '\n'))
-		cptr++;
-	    if (*cptr != '\0')				    /* not end of the line, */
-		*cptr++ = '\0';				    /* delimit and move to the next */
+	for (tokennr = 0; tokennr < maxtoken;) {
+		while (iswhite(*cptr))
+			cptr++; /* skip initial white space */
+		if ((*cptr == '\0') || (*cptr == '\n') || (*cptr == '#')) /* end of line */
+			return tokennr; /* return number of tokens found */
+		delim = *cptr;
+		token[tokennr] = cptr; /* point to it */
+		tokennr++; /* one more */
+		if (tokennr == maxtoken) /* run off the end? */
+			return tokennr;
+		if ((delim == '\'') || (delim == '"')) { /* delimitered */
+			for (;;) {
+				cptr++;
+				if ((*cptr == delim) && (cptr[-1] != '\\')) { /* found the partner */
+					cptr++; /* move on past */
+					if (!iswhite(*cptr)) /* error, no space after closing quote */
+						return -1;
+					*cptr++ = '\0'; /* delimit */
+				} else if ((*cptr == '\0') || (*cptr == '\n')) /* end of line */
+					return -1;
+			}
+		} else { /* not quoted */
+			while ((*cptr != '\0') && (!iswhite(*cptr)) && (*cptr != '\n'))
+				cptr++;
+			if (*cptr != '\0') /* not end of the line, */
+				*cptr++ = '\0'; /* delimit and move to the next */
+		}
 	}
-    }
-    return maxtoken;					    /* can't get here */
+	return maxtoken; /* can't get here */
 }
 
 /* Find a keyword and return an index */
@@ -226,10 +226,10 @@ get_keyword(char *name, struct keywordset *keywordset)
 {
     int i;
     struct _keywords *keywords = keywordset->k;		    /* point to the keywords */
-    if (name != NULL) {					    /* parameter exists */
-	for (i = 0; i < keywordset->size; i++)
-	    if (!strcmp(name, keywords[i].name))
-		return (enum keyword) keywords[i].keyword;
-    }
-    return kw_invalid_keyword;
+	if (name != NULL) { /* parameter exists */
+		for (i = 0; i < keywordset->size; i++)
+			if (!strcmp(name, keywords[i].name))
+				return (enum keyword) keywords[i].keyword;
+	}
+	return kw_invalid_keyword;
 }

@@ -57,7 +57,7 @@ struct advvm_volume {
 
     /* device or drive fields */
     struct advvm_label              *vol_label;                 /* label information */
-    struct advvm_block             	*vol_block;                 /* block information (deprecation pending!!) */
+    //struct advvm_block             	*vol_block;                 /* block information (deprecation pending!!) */
 
     /* domain-related fields */
     advvm_domain_t             		*vol_domain;                /* domain this volume belongs too */

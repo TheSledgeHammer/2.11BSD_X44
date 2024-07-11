@@ -113,9 +113,9 @@ struct vinum_rename_msg {
 #define VINUM_GETFREELIST	_IOWR(L, 71, struct drive_freelist) /* get freelist element (drive, fe) */
 #define VINUM_SAVECONFIG	_IOW(L, 72, int)	    /* write config to disk */
 #define VINUM_RESETCONFIG	_IOC(0, L, 73, 0)	    /* trash config on disk */
-#define VINUM_INIT		_IOC(0, L, 74, 0)	    /* read config from disk */
+#define VINUM_INIT			_IOC(0, L, 74, 0)	    /* read config from disk */
 #ifdef VINUMDEBUG
-#define VINUM_DEBUG		_IOWR(L, 75, struct debuginfo) /* call the debugger from ioctl () */
+#define VINUM_DEBUG			_IOWR(L, 75, struct debuginfo) /* call the debugger from ioctl () */
 #endif
 
 /*
@@ -151,7 +151,7 @@ struct vinum_rename_msg {
 #define VINUM_SETDAEMON		_IOW(L, 94, int)	    /* set daemon flags */
 #define VINUM_GETDAEMON		_IOR(L, 95, int)	    /* get daemon flags */
 #define VINUM_PARITYOP   	_IOWR(L, 96, struct _ioctl_reply) /* check/rebuild RAID-4/5 parity */
-#define VINUM_MOVE		_IOWR(L, 98, struct _ioctl_reply) /* move an object */
+#define VINUM_MOVE			_IOWR(L, 98, struct _ioctl_reply) /* move an object */
 
 /*
  * These defines mirror FreeBSD definitions for conventional partition

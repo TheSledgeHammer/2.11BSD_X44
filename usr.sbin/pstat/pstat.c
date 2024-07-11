@@ -55,6 +55,7 @@ static char sccsid[] = "@(#)pstat.c	8.16 (Berkeley) 5/9/95";
 #undef NFS
 #include <sys/uio.h>
 #include <sys/namei.h>
+#include <miscfs/lofs/lofs.h>
 #include <miscfs/union/union.h>
 #undef _KERNEL
 #include <sys/stat.h>
@@ -222,6 +223,8 @@ void	usage(void);
 void	vnode_header(void);
 void	vnode_print(struct vnode *, struct vnode *);
 void	vnodemode(void);
+void	textmode(void);
+void	putf(long, char);
 
 int
 main(argc, argv)
@@ -231,7 +234,7 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch, i, quit, ret;
-	int fileflag, swapflag, ttyflag, vnodeflag;
+	int fileflag, swapflag, ttyflag, vnodeflag, textflag;
 	char buf[_POSIX2_LINE_MAX];
 
 	fileflag = swapflag = ttyflag = vnodeflag = 0;
@@ -262,6 +265,9 @@ main(argc, argv)
 		case 'i':		/* Backward compatibility. */
 			vnodeflag = 1;
 			break;
+		case 'x':
+			textflag = 1;
+			break;
 		default:
 			usage();
 		}
@@ -288,12 +294,14 @@ main(argc, argv)
 		if (quit)
 			exit(1);
 	}
-	if (!(fileflag | vnodeflag | ttyflag | swapflag | totalflag))
+	if (!(fileflag | vnodeflag | ttyflag | swapflag | textflag | totalflag))
 		usage();
 	if (fileflag || totalflag)
 		filemode();
 	if (vnodeflag || totalflag)
 		vnodemode();
+	if (textflag || totalflag)
+		textmode();
 	if (ttyflag)
 		ttymode();
 	if (swapflag || totalflag)
@@ -302,7 +310,7 @@ main(argc, argv)
 }
 
 void
-vnodemode()
+vnodemode(void)
 {
 	struct e_vnode *e_vnodebase, *endvnode, *evp;
 	struct vnode *vp;
@@ -317,8 +325,8 @@ vnodemode()
 	endvnode = e_vnodebase + numvnodes;
 	(void)printf("%d active vnodes\n", numvnodes);
 
+#define FSTYPE_IS(mp, name)	(strcmp(mp->mnt_stat.f_fstypename, (name)))
 
-#define ST	mp->mnt_stat
 	maddr = NULL;
 	for (evp = e_vnodebase; evp < endvnode; evp++) {
 		vp = &evp->vnode;
@@ -331,30 +339,36 @@ vnodemode()
 			maddr = vp->v_mount;
 			mount_print(mp);
 			vnode_header();
-			if (!strcmp(ST.f_fstypename, "ufs") ||
-			    !strcmp(ST.f_fstypename, "mfs"))
+			if (!FSTYPE_IS(mp, MOUNT_UFS) ||
+					!FSTYPE_IS(mp, MOUNT_FFS) ||
+					!FSTYPE_IS(mp, MOUNT_MFS))
 				ufs_header();
-			else if (!strcmp(ST.f_fstypename, "nfs"))
+			else if (!FSTYPE_IS(mp, MOUNT_NFS))
 				nfs_header();
-			else if (!strcmp(ST.f_fstypename, "union"))
+			else if (!FSTYPE_IS(mp, MOUNT_UNION))
 				union_header();
+			else if (!FSTYPE_IS(mp, MOUNT_LOFS))
+				lofs_header();
 			(void)printf("\n");
 		}
 		vnode_print(evp->avnode, vp);
-		if (!strcmp(ST.f_fstypename, "ufs") ||
-		    !strcmp(ST.f_fstypename, "mfs"))
+		if (!FSTYPE_IS(mp, MOUNT_UFS) ||
+				!FSTYPE_IS(mp, MOUNT_FFS) ||
+				!FSTYPE_IS(mp, MOUNT_MFS))
 			ufs_print(vp);
-		else if (!strcmp(ST.f_fstypename, "nfs"))
+		else if (!FSTYPE_IS(mp, MOUNT_NFS))
 			nfs_print(vp);
-		else if (!strcmp(ST.f_fstypename, "union"))
+		else if (!FSTYPE_IS(mp, MOUNT_UNION))
 			union_print(vp);
+		else if (!FSTYPE_IS(mp, MOUNT_LOFS))
+			lofs_print(vp);
 		(void)printf("\n");
 	}
 	free(e_vnodebase);
 }
 
 void
-vnode_header()
+vnode_header(void)
 {
 	(void)printf("ADDR     TYP VFLAG  USE HOLD");
 }
@@ -419,7 +433,7 @@ vnode_print(avnode, vp)
 }
 
 void
-ufs_header() 
+ufs_header(void)
 {
 	(void)printf(" FILEID IFLAG RDEV|SZ");
 }
@@ -430,11 +444,23 @@ ufs_print(vp)
 {
 	int flag;
 	struct inode inode, *ip = &inode;
+	union dinode {
+		struct ufs1_dinode dp1;
+		struct ufs2_dinode dp2;
+	} dip;
 	char flagbuf[16], *flags = flagbuf;
 	char *name;
 	mode_t type;
+	dev_t rdev;
 
 	KGETRET(VTOI(vp), &inode, sizeof(struct inode), "vnode's inode");
+	KGETRET(ip->i_din.ffs1_din, &dip, sizeof(struct ufs1_dinode), "inode's dinode");
+	if (ip->i_size == dip.dp1.di_size) {
+		rdev = dip.dp1.di_rdev;
+	} else {
+		KGETRET(ip->i_din.ffs1_din, &dip, sizeof(struct ufs2_dinode), "inode's UFS2 dinode");
+		rdev = dip.dp2.di_rdev;
+	}
 	flag = ip->i_flag;
 	if (flag & IN_LOCKED)
 		*flags++ = 'L';
@@ -463,18 +489,17 @@ ufs_print(vp)
 	(void)printf(" %6d %5s", ip->i_number, flagbuf);
 	type = ip->i_mode & S_IFMT;
 	if (S_ISCHR(ip->i_mode) || S_ISBLK(ip->i_mode))
-		if (usenumflag || ((name = devname(ip->i_rdev, type)) == NULL))
-			(void)printf("   %2d,%-2d", 
-			    major(ip->i_rdev), minor(ip->i_rdev));
+		if (usenumflag || ((name = devname(rdev, type)) == NULL))
+			(void) printf("   %2d,%-2d", major(rdev), minor(rdev));
 		else
-			(void)printf(" %7s", name);
+			(void) printf(" %7s", name);
 	else
-		(void)printf(" %7qd", ip->i_size);
+		(void) printf(" %7qd", ip->i_size);
 	return (0);
 }
 
 void
-nfs_header() 
+nfs_header(void)
 {
 	(void)printf(" FILEID NFLAG RDEV|SZ");
 }
@@ -514,17 +539,16 @@ nfs_print(vp)
 	type = VT.va_mode & S_IFMT;
 	if (S_ISCHR(VT.va_mode) || S_ISBLK(VT.va_mode))
 		if (usenumflag || ((name = devname(VT.va_rdev, type)) == NULL))
-			(void)printf("   %2d,%-2d", 
-			    major(VT.va_rdev), minor(VT.va_rdev));
+			(void) printf("   %2d,%-2d", major(VT.va_rdev), minor(VT.va_rdev));
 		else
-			(void)printf(" %7s", name);
+			(void) printf(" %7s", name);
 	else
-		(void)printf(" %7qd", np->n_size);
+		(void) printf(" %7qd", np->n_size);
 	return (0);
 }
 
 void
-union_header() 
+union_header(void)
 {
 	(void)printf("    UPPER    LOWER");
 }
@@ -538,6 +562,24 @@ union_print(vp)
 	KGETRET(VTOUNION(vp), &unode, sizeof(unode), "vnode's unode");
 
 	(void)printf(" %8x %8x", up->un_uppervp, up->un_lowervp);
+	return (0);
+}
+
+void
+lofs_header(void)
+{
+	(void)printf("   LOWER");
+}
+
+int
+lofs_print(vp)
+	struct vnode *vp;
+{
+	struct lofsnode lnode, *lp = &lnode;
+
+	KGETRET(VTOLOFS(vp), &lnode, sizeof(lnode), "lofs vnode");
+
+	(void)printf(" %8x", lp->a_lofsvp);
 	return (0);
 }
 	
@@ -669,12 +711,12 @@ kinfo_vnodes(avnodes)
 	*avnodes = num;
 	return ((struct e_vnode *)vbuf);
 }
-	
+
 char hdr[]="  LINE RAW CAN OUT  HWT LWT     COL STATE  SESS      PGID DISC\n";
 int ttyspace = 128;
 
 void
-ttymode()
+ttymode(void)
 {
 	struct tty *tty;
 
@@ -728,10 +770,9 @@ ttyprt(tp, line)
 	else
 		(void)printf("%7s ", name);
 	(void)printf("%2d %3d ", tp->t_rawq.c_cc, tp->t_canq.c_cc);
-	(void)printf("%3d %4d %3d %7d ", tp->t_outq.c_cc, 
-		tp->t_hiwat, tp->t_lowat, tp->t_col);
+	(void)printf("%3d %4d %3d %7d ", tp->t_outq.c_cc, tp->t_hiwat, tp->t_lowat, tp->t_col);
 	for (i = j = 0; ttystates[i].flag; i++)
-		if (tp->t_state&ttystates[i].flag)
+		if (tp->t_state & ttystates[i].flag)
 			state[j++] = ttystates[i].val;
 	if (j == 0)
 		state[j++] = '-';
@@ -760,6 +801,59 @@ ttyprt(tp, line)
 	default:
 		(void)printf("%d\n", tp->t_line);
 		break;
+	}
+}
+
+void
+textmode(void)
+{
+	struct txtlist textlist;
+	struct vm_text *xp, *xtext;
+	int ntext;
+	u_int ntx, ntxca;
+
+	KGET(VM_NTEXT, ntext);
+	xtext = calloc(ntext, sizeof(*xtext));
+	if (ntext < 0 || ntext > 10000) {
+		fprintf(stderr, "number of texts is preposterous (%d)\n",
+			ntext);
+		return;
+	}
+	KGET(VM_TEXT, textlist);
+	for (xp = TAILQ_FIRST(&textlist);; xp = TAILQ_NEXT(xp, psx_list)) {
+		if (xp->psx_vptr != NULL) {
+			ntxca++;
+		}
+		if (xp->psx_count != 0) {
+			ntx++;
+		}
+	}
+	if (totalflag) {
+		printf("%3d/%3d texts active, %3d used\n", ntx, ntext, ntxca);
+		return;
+	}
+	printf("%d/%d active texts, %d used\n", ntx, ntext, ntxca);
+	printf("\
+   LOC   FLAGS   DADDR   CADDR    SIZE   VPTR   CNT CCNT   FORW     BACK\n");
+	for (xp = TAILQ_FIRST(&textlist);; xp = TAILQ_NEXT(xp, psx_list)) {
+		if (xp->psx_vptr == NULL) {
+			continue;
+		}
+		putf((long) xp->psx_flag & XPAGV, 'P');
+		putf((long) xp->psx_flag & XTRC, 'T');
+		putf((long) xp->psx_flag & XWRIT, 'W');
+		putf((long) xp->psx_flag & XLOAD, 'L');
+		putf((long) xp->psx_flag & XLOCK, 'K');
+		putf((long) xp->psx_flag & XWANT, 'w');
+		putf((long) xp->psx_flag & XUNUSED, 'u');
+		printf("%7.1o ", xp->psx_daddr);
+		printf("%7.1o ", xp->psx_caddr);
+		printf("%7.1o ", xp->psx_size);
+		printf("%7.1o", xp->psx_vptr);
+		printf("%4u ", xp->psx_count);
+		printf("%4u ", xp->psx_ccount);
+		printf("%7.1o ", TAILQ_NEXT(xp, psx_list));
+		printf("%7.1o\n", TAILQ_PREV(xp, txtlist, psx_list));
 	}
 }
 
@@ -861,7 +955,7 @@ getfiles(abuf, alen)
  * by Kevin Lahey <kml@rokkaku.atl.ga.us>.
  */
 void
-swapmode()
+swapmode(void)
 {
 	char *header, *p;
 	int hlen, nswap, nswdev, dmmax, nswapmap, niswap, niswdev;
@@ -1024,9 +1118,79 @@ putf(v, n)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr,
 	    "usage: pstat -Tfnstv [system] [-M core] [-N system]\n");
 	exit(1);
 }
+
+void
+procmode(void)
+{
+
+}
+
+void
+usrmode(void)
+{
+
+}
+
+#ifdef notyet
+void
+texttype(xtext, type, number)
+	struct vm_text *xtext;
+	int type, number;
+{
+	struct vm_text *xp;
+	int ntext;
+	u_int ntx, ntxca;
+
+	if (xtext == NULL) {
+		return;
+	}
+	KGET(number, ntext);
+	if (ntext < 0 || ntext > 10000) {
+		fprintf(stderr, "number of texts is preposterous (%d)\n",
+			ntext);
+		return;
+	}
+	KGET1(type, xtext, ntext * sizeof(struct vm_text), "vm_text struct");
+	for (xp = xtext; xp < &xtext[ntext]; xp++) {
+		if (xp->psx_vptr != NULL) {
+			ntxca++;
+		}
+		if (xp->psx_count != 0) {
+			ntx++;
+		}
+	}
+	if (totalflag) {
+		printf("%3d/%3d texts active, %3d used\n", ntx, ntext, ntxca);
+		return;
+	}
+	printf("%d/%d active texts, %d used\n", ntx, ntext, ntxca);
+	printf("\
+   LOC   FLAGS   DADDR   CADDR    SIZE   VPTR   CNT CCNT   FORW     BACK\n");
+	for (xp = xtext; xp < &xtext[ntext]; xp++) {
+		if (xp->psx_vptr == NULL) {
+			continue;
+		}
+		putf((long) xp->psx_flag & XPAGV, 'P');
+		putf((long) xp->psx_flag & XTRC, 'T');
+		putf((long) xp->psx_flag & XWRIT, 'W');
+		putf((long) xp->psx_flag & XLOAD, 'L');
+		putf((long) xp->psx_flag & XLOCK, 'K');
+		putf((long) xp->psx_flag & XWANT, 'w');
+		putf((long) xp->psx_flag & XUNUSED, 'u');
+		printf("%7.1o ", xp->psx_daddr);
+		printf("%7.1o ", xp->psx_caddr);
+		printf("%7.1o ", xp->psx_size);
+		printf("%7.1o", xp->psx_vptr);
+		printf("%4u ", xp->psx_count);
+		printf("%4u ", xp->psx_ccount);
+		printf("%7.1o ", TAILQ_NEXT(xp, psx_list));
+		printf("%7.1o\n", TAILQ_PREV(xp, txtlist, psx_list));
+	}
+}
+#endif

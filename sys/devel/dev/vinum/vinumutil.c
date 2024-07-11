@@ -43,8 +43,10 @@
 
 #include <dev/vinum/vinumhdr.h>
 #include <dev/vinum/statetexts.h>
+
 #ifndef _KERNEL
-#include <stdio.h>
+#include <i386/include/setjmp.h>
+//#include <stdio.h>
 extern jmp_buf command_fail;				    /* return on a failed command */
 #endif
 
@@ -54,74 +56,74 @@ static char numeric_state[32];				    /* temporary buffer for ASCII conversions 
 char *
 drive_state(enum drivestate state)
 {
-    if (((unsigned) state) >= STATECOUNT(drive)) {
-	sprintf(numeric_state, "Invalid state %d", (int) state);
-	return numeric_state;
-    } else
-	return drivestatetext[state];
+	if (((unsigned) state) >= STATECOUNT(drive)) {
+		sprintf(numeric_state, "Invalid state %d", (int) state);
+		return numeric_state;
+	} else
+		return drivestatetext[state];
 }
 
 /* Return volume state as a string */
 char *
 volume_state(enum volumestate state)
 {
-    if (((unsigned) state) >= STATECOUNT(vol)) {
-	sprintf(numeric_state, "Invalid state %d", (int) state);
-	return numeric_state;
-    } else
-	return volstatetext[state];
+	if (((unsigned) state) >= STATECOUNT(vol)) {
+		sprintf(numeric_state, "Invalid state %d", (int) state);
+		return numeric_state;
+	} else
+		return volstatetext[state];
 }
 
 /* Return plex state as a string */
 char *
 plex_state(enum plexstate state)
 {
-    if (((unsigned) state) >= STATECOUNT(plex)) {
-	sprintf(numeric_state, "Invalid state %d", (int) state);
-	return numeric_state;
-    } else
-	return plexstatetext[state];
+	if (((unsigned) state) >= STATECOUNT(plex)) {
+		sprintf(numeric_state, "Invalid state %d", (int) state);
+		return numeric_state;
+	} else
+		return plexstatetext[state];
 }
 
 /* Return plex organization as a string */
 char *
 plex_org(enum plexorg org)
 {
-    switch (org) {
-    case plex_disorg:					    /* disorganized */
-	return "disorg";
-	break;
+	switch (org) {
+	case plex_disorg: /* disorganized */
+		return "disorg";
+		break;
 
-    case plex_concat:					    /* concatenated plex */
-	return "concat";
-	break;
+	case plex_concat: /* concatenated plex */
+		return "concat";
+		break;
 
-    case plex_striped:					    /* striped plex */
-	return "striped";
-	break;
+	case plex_striped: /* striped plex */
+		return "striped";
+		break;
 
-    case plex_raid4:					    /* RAID-4 plex */
-	return "raid4";
+	case plex_raid4: /* RAID-4 plex */
+		return "raid4";
 
-    case plex_raid5:					    /* RAID-5 plex */
-	return "raid5";
-	break;
+	case plex_raid5: /* RAID-5 plex */
+		return "raid5";
+		break;
 
-    default:
-	sprintf(numeric_state, "Invalid org %d", (int) org);
-	return numeric_state;
-    }
+	default:
+		sprintf(numeric_state, "Invalid org %d", (int) org);
+		return numeric_state;
+	}
 }
 
 /* Return sd state as a string */
 char *
 sd_state(enum sdstate state)
 {
-    if (((unsigned) state) >= STATECOUNT(sd)) {
-	sprintf(numeric_state, "Invalid state %d", (int) state);
-	return numeric_state;
-    } else
-	return sdstatetext[state];
+	if (((unsigned) state) >= STATECOUNT(sd)) {
+		sprintf(numeric_state, "Invalid state %d", (int) state);
+		return numeric_state;
+	} else
+		return sdstatetext[state];
 }
 
 /* Now convert in the other direction */
@@ -132,41 +134,41 @@ sd_state(enum sdstate state)
 enum drivestate
 DriveState(char *text)
 {
-    int i;
-    for (i = 0; i < STATECOUNT(drive); i++)
-	if (strcmp(text, drivestatetext[i]) == 0)	    /* found it */
-	    return (enum drivestate) i;
-    return -1;
+	int i;
+	for (i = 0; i < STATECOUNT(drive); i++)
+		if (strcmp(text, drivestatetext[i]) == 0) /* found it */
+			return (enum drivestate) i;
+	return -1;
 }
 
 enum sdstate
 SdState(char *text)
 {
-    int i;
-    for (i = 0; i < STATECOUNT(sd); i++)
-	if (strcmp(text, sdstatetext[i]) == 0)		    /* found it */
-	    return (enum sdstate) i;
-    return -1;
+	int i;
+	for (i = 0; i < STATECOUNT(sd); i++)
+		if (strcmp(text, sdstatetext[i]) == 0) /* found it */
+			return (enum sdstate) i;
+	return -1;
 }
 
 enum plexstate
 PlexState(char *text)
 {
-    int i;
-    for (i = 0; i < STATECOUNT(plex); i++)
-	if (strcmp(text, plexstatetext[i]) == 0)	    /* found it */
-	    return (enum plexstate) i;
-    return -1;
+	int i;
+	for (i = 0; i < STATECOUNT(plex); i++)
+		if (strcmp(text, plexstatetext[i]) == 0) /* found it */
+			return (enum plexstate) i;
+	return -1;
 }
 
 enum volumestate
 VolState(char *text)
 {
-    int i;
-    for (i = 0; i < STATECOUNT(vol); i++)
-	if (strcmp(text, volstatetext[i]) == 0)		    /* found it */
-	    return (enum volumestate) i;
-    return -1;
+	int i;
+	for (i = 0; i < STATECOUNT(vol); i++)
+		if (strcmp(text, volstatetext[i]) == 0) /* found it */
+			return (enum volumestate) i;
+	return -1;
 }
 
 /*
@@ -190,54 +192,54 @@ sizespec(char *spec)
     char *s;
     int sign = 1;					    /* -1 if negative */
 
-    size = 0;
-    if (spec != NULL) {					    /* we have a parameter */
-	s = spec;
-	if (*s == '-') {				    /* negative, */
-	    sign = -1;
-	    s++;					    /* skip */
-	}
-	if ((*s >= '0') && (*s <= '9')) {		    /* it's numeric */
-	    while ((*s >= '0') && (*s <= '9'))		    /* it's numeric */
-		size = size * 10 + *s++ - '0';		    /* convert it */
-	    switch (*s) {
-	    case '\0':
-		return size * sign;
+	size = 0;
+	if (spec != NULL) { /* we have a parameter */
+		s = spec;
+		if (*s == '-') { /* negative, */
+			sign = -1;
+			s++; /* skip */
+		}
+		if ((*s >= '0') && (*s <= '9')) { /* it's numeric */
+			while ((*s >= '0') && (*s <= '9')) /* it's numeric */
+				size = size * 10 + *s++ - '0'; /* convert it */
+			switch (*s) {
+			case '\0':
+				return size * sign;
 
-	    case 'B':
-	    case 'b':
-	    case 'S':
-	    case 's':
-		return size * sign * 512;
+			case 'B':
+			case 'b':
+			case 'S':
+			case 's':
+				return size * sign * 512;
 
-	    case 'K':
-	    case 'k':
-		return size * sign * 1024;
+			case 'K':
+			case 'k':
+				return size * sign * 1024;
 
-	    case 'M':
-	    case 'm':
-		return size * sign * 1024 * 1024;
+			case 'M':
+			case 'm':
+				return size * sign * 1024 * 1024;
 
-	    case 'G':
-	    case 'g':
-		return size * sign * 1024 * 1024 * 1024;
-	    }
-	}
+			case 'G':
+			case 'g':
+				return size * sign * 1024 * 1024 * 1024;
+			}
+		}
 #ifdef _KERNEL
 	throw_rude_remark(EINVAL, "Invalid length specification: %s", spec);
 #else
-	fprintf(stderr, "Invalid length specification: %s", spec);
-	longjmp(command_fail, 1);
+		fprintf(stderr, "Invalid length specification: %s", spec);
+		longjmp(command_fail, 1);
 #endif
-    }
+	}
 #ifdef _KERNEL
     throw_rude_remark(EINVAL, "Missing length specification");
 #else
-    fprintf(stderr, "Missing length specification");
-    longjmp(command_fail, 1);
+	fprintf(stderr, "Missing length specification");
+	longjmp(command_fail, 1);
 #endif
-    /* NOTREACHED */
-    return -1;
+	/* NOTREACHED */
+	return -1;
 }
 
 /*
@@ -249,15 +251,14 @@ Volno(dev_t dev)
 {
     int volno = minor(dev);
 
-    if (OBJTYPE(dev) != VINUM_VOLUME_TYPE)
-	return -1;
-    else
-	volno &= 0x3ffff;
-    if ((volno == VINUM_SUPERDEV_VOL)
-	|| (volno == VINUM_DAEMON_VOL))
-	return -1;
-    else
-	return volno;
+	if (OBJTYPE(dev) != VINUM_VOLUME_TYPE)
+		return -1;
+	else
+		volno &= 0x3ffff;
+	if ((volno == VINUM_SUPERDEV_VOL) || (volno == VINUM_DAEMON_VOL))
+		return -1;
+	else
+		return volno;
 }
 
 /*
@@ -270,10 +271,10 @@ Plexno(dev_t dev)
 {
     int plexno = minor(dev);
 
-    if (OBJTYPE(dev) != VINUM_PLEX_TYPE)
-	return -1;
-    else
-	return plexno & 0x3ffff;
+	if (OBJTYPE(dev) != VINUM_PLEX_TYPE)
+		return -1;
+	else
+		return plexno & 0x3ffff;
 }
 
 /*
@@ -286,18 +287,19 @@ Sdno(dev_t dev)
 {
     int sdno = minor(dev);
 
-    /*
-     * Care: VINUM_SD_TYPE is 2 or 3, which is why we use < instead of
-     * !=.  It's not clear that this makes any sense abstracting it to
-     * this level.
-     */
-    if (OBJTYPE(dev) < VINUM_SD_TYPE)
-	return -1;
-    else
-/*
- * Note that the number we return includes the low-order bit of the
- * type field.  This gives us twice as many potential subdisks as
- * plexes or volumes.
- */
-	return sdno & 0x7ffff;
+	/*
+	 * Care: VINUM_SD_TYPE is 2 or 3, which is why we use < instead of
+	 * !=.  It's not clear that this makes any sense abstracting it to
+	 * this level.
+	 */
+	if (OBJTYPE(dev) < VINUM_SD_TYPE) {
+		return -1;
+	} else {
+		/*
+		 * Note that the number we return includes the low-order bit of the
+		 * type field.  This gives us twice as many potential subdisks as
+		 * plexes or volumes.
+		 */
+		return sdno & 0x7ffff;
+	}
 }

@@ -55,46 +55,39 @@ lockdrive(struct drive *drive)
 {
     int error;
 
-    /* XXX get rid of     drive->flags |= VF_LOCKING; */
-    if ((drive->flags & VF_LOCKED)			    /* it's locked */
-    &&(drive->pid == curproc->p_pid)) {			    /* by us! */
+	/* XXX get rid of     drive->flags |= VF_LOCKING; */
+	if ((drive->flags & VF_LOCKED) /* it's locked */
+	&& (drive->pid == curproc->p_pid)) { /* by us! */
 #ifdef VINUMDEBUG
-	log(LOG_WARNING,
-	    "vinum lockdrive: already locking %s from %s:%d, called from %s:%d\n",
-	    drive->label.name,
-	    drive->lockfilename,
-	    drive->lockline,
-	    basename(file),
-	    line);
+		log(LOG_WARNING,
+				"vinum lockdrive: already locking %s from %s:%d, called from %s:%d\n",
+				drive->label.name, drive->lockfilename, drive->lockline,
+				basename(file), line);
 #else
-	log(LOG_WARNING,
-	    "vinum lockdrive: already locking %s\n",
-	    drive->label.name);
+		log(LOG_WARNING, "vinum lockdrive: already locking %s\n",
+				drive->label.name);
 #endif
-	return 0;
-    }
-    while ((drive->flags & VF_LOCKED) != 0) {
-	/*
-	 * There are problems sleeping on a unique identifier,
-	 * since the drive structure can move, and the unlock
-	 * function can be called after killing the drive.
-	 * Solve this by waiting on this function; the number
-	 * of conflicts is negligible.
-	 */
-	if ((error = tsleep(&lockdrive,
-		    PRIBIO,
-		    "vindrv",
-		    0)) != 0)
-	    return error;
-    }
-    drive->flags |= VF_LOCKED;
-    drive->pid = curproc->p_pid;			    /* it's a panic error if curproc is null */
+		return 0;
+	}
+	while ((drive->flags & VF_LOCKED) != 0) {
+		/*
+		 * There are problems sleeping on a unique identifier,
+		 * since the drive structure can move, and the unlock
+		 * function can be called after killing the drive.
+		 * Solve this by waiting on this function; the number
+		 * of conflicts is negligible.
+		 */
+		if ((error = tsleep(&lockdrive, PRIBIO, "vindrv", 0)) != 0)
+			return error;
+	}
+	drive->flags |= VF_LOCKED;
+	drive->pid = curproc->p_pid; /* it's a panic error if curproc is null */
 #ifdef VINUMDEBUG
     bcopy(basename(file), drive->lockfilename, 15);
     drive->lockfilename[15] = '\0';			    /* truncate if necessary */
     drive->lockline = line;
 #endif
-    return 0;
+	return 0;
 }
 
 /* Unlock a drive and let the next one at it */
@@ -125,86 +118,85 @@ lockrange(daddr_t stripe, struct buf *bp, struct plex *plex)
      * instead of the end, though it requires an
      * extra test.
      */
-    pos = NULL;
-    foundlocks = 0;
+	pos = NULL;
+	foundlocks = 0;
 
-    /*
-     * we can't use 0 as a valid address, so
-     * increment all addresses by 1.
-     */
-    stripe++;
-    /*
-     * We give the locks back from an interrupt
-     * context, so we need to raise the spl here.
-     */
-    s = splbio();
+	/*
+	 * we can't use 0 as a valid address, so
+	 * increment all addresses by 1.
+	 */
+	stripe++;
+	/*
+	 * We give the locks back from an interrupt
+	 * context, so we need to raise the spl here.
+	 */
+	s = splbio();
 
-    /* Wait here if the table is full */
-    while (plex->usedlocks == PLEX_LOCKS)		    /* all in use */
-	tsleep(&plex->usedlocks, PRIBIO, "vlock", 0);
+	/* Wait here if the table is full */
+	while (plex->usedlocks == PLEX_LOCKS) /* all in use */
+		tsleep(&plex->usedlocks, PRIBIO, "vlock", 0);
 
 #ifdef DIAGNOSTIC
-    if (plex->usedlocks >= PLEX_LOCKS)
-	panic("lockrange: Too many locks in use");
+	if (plex->usedlocks >= PLEX_LOCKS)
+		panic("lockrange: Too many locks in use");
 #endif
 
-    lock = plex->lock;					    /* pointer in lock table */
-    if (plex->usedlocks > 0)				    /* something locked, */
-	/* Search the lock table for our stripe */
-	for (; lock < &plex->lock[PLEX_LOCKS]
-	    && foundlocks < plex->usedlocks;
-	    lock++) {
-	    if (lock->stripe) {				    /* in use */
-		foundlocks++;				    /* found another one in use */
-		if ((lock->stripe == stripe)		    /* it's our stripe */
-		&&(lock->bp != bp)) {			    /* but not our request */
+	lock = plex->lock; /* pointer in lock table */
+	if (plex->usedlocks > 0) /* something locked, */
+		/* Search the lock table for our stripe */
+		for (; lock < &plex->lock[PLEX_LOCKS] && foundlocks < plex->usedlocks;
+				lock++) {
+			if (lock->stripe) { /* in use */
+				foundlocks++; /* found another one in use */
+				if ((lock->stripe == stripe) /* it's our stripe */
+				&& (lock->bp != bp)) { /* but not our request */
 #ifdef VINUMDEBUG
-		    if (debug & DEBUG_LOCKREQS) {
-			struct rangelockinfo lockinfo;
+					if (debug & DEBUG_LOCKREQS) {
+						struct rangelockinfo lockinfo;
 
-			lockinfo.stripe = stripe;
-			lockinfo.bp = bp;
-			lockinfo.plexno = plex->plexno;
-			logrq(loginfo_lockwait, (union rqinfou) &lockinfo, bp);
-		    }
+						lockinfo.stripe = stripe;
+						lockinfo.bp = bp;
+						lockinfo.plexno = plex->plexno;
+						logrq(loginfo_lockwait, (union rqinfou) &lockinfo, bp);
+					}
 #endif
-		    plex->lockwaits++;			    /* waited one more time */
-		    tsleep(lock, PRIBIO, "vrlock", 0);
-		    lock = &plex->lock[-1];		    /* start again */
-		    foundlocks = 0;
-		    pos = NULL;
+					plex->lockwaits++; /* waited one more time */
+					tsleep(lock, PRIBIO, "vrlock", 0);
+					lock = &plex->lock[-1]; /* start again */
+					foundlocks = 0;
+					pos = NULL;
+				}
+			} else if (pos == NULL) /* still looking for somewhere? */
+				pos = lock; /* a place to put this one */
 		}
-	    } else if (pos == NULL)			    /* still looking for somewhere? */
-		pos = lock;				    /* a place to put this one */
-	}
-    /*
-     * This untidy looking code ensures that we'll
-     * always end up pointing to the first free lock
-     * entry, thus minimizing the number of
-     * iterations necessary.
-     */
-    if (pos == NULL)					    /* didn't find one on the way, */
-	pos = lock;					    /* use the one we're pointing to */
+	/*
+	 * This untidy looking code ensures that we'll
+	 * always end up pointing to the first free lock
+	 * entry, thus minimizing the number of
+	 * iterations necessary.
+	 */
+	if (pos == NULL) /* didn't find one on the way, */
+		pos = lock; /* use the one we're pointing to */
 
-    /*
-     * The address range is free, and we're pointing
-     * to the first unused entry.  Make it ours.
-     */
-    pos->stripe = stripe;
-    pos->bp = bp;
-    plex->usedlocks++;					    /* one more lock */
-    splx(s);
+	/*
+	 * The address range is free, and we're pointing
+	 * to the first unused entry.  Make it ours.
+	 */
+	pos->stripe = stripe;
+	pos->bp = bp;
+	plex->usedlocks++; /* one more lock */
+	splx(s);
 #ifdef VINUMDEBUG
-    if (debug & DEBUG_LOCKREQS) {
-	struct rangelockinfo lockinfo;
+	if (debug & DEBUG_LOCKREQS) {
+		struct rangelockinfo lockinfo;
 
-	lockinfo.stripe = stripe;
-	lockinfo.bp = bp;
-	lockinfo.plexno = plex->plexno;
-	logrq(loginfo_lock, (union rqinfou) &lockinfo, bp);
-    }
+		lockinfo.stripe = stripe;
+		lockinfo.bp = bp;
+		lockinfo.plexno = plex->plexno;
+		logrq(loginfo_lock, (union rqinfou) &lockinfo, bp);
+	}
 #endif
-    return pos;
+	return pos;
 }
 
 /* Unlock a volume and let the next one at it */
@@ -213,30 +205,27 @@ unlockrange(int plexno, struct rangelock *lock)
 {
     struct plex *plex;
 
-    plex = &PLEX[plexno];
+	plex = &PLEX[plexno];
 #ifdef DIAGNOSTIC
-    if (lock < &plex->lock[0] || lock >= &plex->lock[PLEX_LOCKS])
-	panic("vinum: rangelock %p on plex %d invalid, not between %p and %p",
-	    lock,
-	    plexno,
-	    &plex->lock[0],
-	    &plex->lock[PLEX_LOCKS]);
+	if (lock < &plex->lock[0] || lock >= &plex->lock[PLEX_LOCKS])
+		panic("vinum: rangelock %p on plex %d invalid, not between %p and %p",
+				lock, plexno, &plex->lock[0], &plex->lock[PLEX_LOCKS]);
 #endif
 #ifdef VINUMDEBUG
-    if (debug & DEBUG_LOCKREQS) {
-	struct rangelockinfo lockinfo;
+	if (debug & DEBUG_LOCKREQS) {
+		struct rangelockinfo lockinfo;
 
-	lockinfo.stripe = lock->stripe;
-	lockinfo.bp = lock->bp;
-	lockinfo.plexno = plex->plexno;
-	logrq(loginfo_lockwait, (union rqinfou) &lockinfo, lock->bp);
-    }
+		lockinfo.stripe = lock->stripe;
+		lockinfo.bp = lock->bp;
+		lockinfo.plexno = plex->plexno;
+		logrq(loginfo_lockwait, (union rqinfou) &lockinfo, lock->bp);
+	}
 #endif
-    lock->stripe = 0;					    /* no longer used */
-    plex->usedlocks--;					    /* one less lock */
-    if (plex->usedlocks == PLEX_LOCKS - 1)		    /* we were full, */
-	wakeup(&plex->usedlocks);			    /* get a waiter if one's there */
-    wakeup((void *) lock);
+	lock->stripe = 0; /* no longer used */
+	plex->usedlocks--; /* one less lock */
+	if (plex->usedlocks == PLEX_LOCKS - 1) /* we were full, */
+		wakeup(&plex->usedlocks); /* get a waiter if one's there */
+	wakeup((void*) lock);
 }
 
 /* Get a lock for the global config, wait if it's not available */
@@ -245,24 +234,24 @@ lock_config(void)
 {
     int error;
 
-    while ((vinum_conf.flags & VF_LOCKED) != 0) {
-	vinum_conf.flags |= VF_LOCKING;
-	if ((error = tsleep(&vinum_conf, PRIBIO, "vincfg", 0)) != 0)
-	    return error;
-    }
-    vinum_conf.flags |= VF_LOCKED;
-    return 0;
+	while ((vinum_conf.flags & VF_LOCKED) != 0) {
+		vinum_conf.flags |= VF_LOCKING;
+		if ((error = tsleep(&vinum_conf, PRIBIO, "vincfg", 0)) != 0)
+			return error;
+	}
+	vinum_conf.flags |= VF_LOCKED;
+	return 0;
 }
 
 /* Unlock and wake up any waiters  */
 void
 unlock_config(void)
 {
-    vinum_conf.flags &= ~VF_LOCKED;
-    if ((vinum_conf.flags & VF_LOCKING) != 0) {
-	vinum_conf.flags &= ~VF_LOCKING;
-	wakeup(&vinum_conf);
-    }
+	vinum_conf.flags &= ~VF_LOCKED;
+	if ((vinum_conf.flags & VF_LOCKING) != 0) {
+		vinum_conf.flags &= ~VF_LOCKING;
+		wakeup(&vinum_conf);
+	}
 }
 /* Local Variables: */
 /* fill-column: 50 */

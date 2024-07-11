@@ -290,13 +290,11 @@ struct drive_freelist {					    /* sorted list of free space on drive */
  * entries of type element, by increment entries, and change
  * oldcount accordingly
  */
-#define EXPAND(table, element, oldcount, increment)         \
-{							    \
-  expand_table ((void **) &table,			    \
-		oldcount * sizeof (element),		    \
-		(oldcount + increment) * sizeof (element) ); \
-  oldcount += increment;				    \
-  }
+#define EXPAND(table, element, oldcount, increment) {				\
+	expand_table ((void **) &table, oldcount * sizeof (element),	\
+			(oldcount + increment) * sizeof (element) ); 			\
+			oldcount += increment;				    				\
+	}
 
 /* Information on vinum's memory usage */
 struct meminfo {

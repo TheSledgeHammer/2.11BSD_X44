@@ -63,7 +63,9 @@ struct lofsnode {
 extern int make_lofs(struct mount *mp, struct vnode **vpp);
 
 #define	VFSTOLOFS(mp) 	((struct lofsmount *)((mp)->mnt_data))
-#define	LOFSP(vp) 		((struct lofsnode *)(vp)->v_data)
+#define	VTOLOFS(vp) 	((struct lofsnode *)(vp)->v_data)
+#define LOFSTOV(a)		((a)->a_vnode)
+#define	LOFSP(vp) 		VTOLOFS(vp)
 #ifdef LOFS_DIAGNOSTIC
 extern struct vnode 	*lofs_checkvp (struct vnode *vp, char *fil, int lno);
 #define	LOFSVP(vp) 		lofs_checkvp(vp, __FILE__, __LINE__)
