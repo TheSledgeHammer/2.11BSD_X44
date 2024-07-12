@@ -81,14 +81,14 @@ union wait	{
 __BEGIN_DECLS
 
 struct rusage;	/* forward declaration */
-/*
+
 pid_t	wait (int *);
 pid_t	waitpid (pid_t, int *, int);
 #ifndef _POSIX_SOURCE
 pid_t	wait3 (int *, int, struct rusage *);
 pid_t	wait4 (pid_t, int *, int, struct rusage *);
 #endif
-*/
+
 __END_DECLS
 #endif
 
