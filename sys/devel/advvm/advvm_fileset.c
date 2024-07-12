@@ -32,14 +32,13 @@
 #include <sys/tree.h>
 #include <lib/libkern/libkern.h>
 
-#include <devel/advvm/dm/dm.h>
+//#include <devel/advvm/dm/dm.h>
 
 #include <devel/sys/malloctypes.h>
 #include <devel/advvm/advvm_var.h>
-#include <devel/advvm/advvm_fileset.h>
 #include <devel/advvm/advvm_mcell.h>
+#include <devel/advvm/advvm_fileset.h>
 
-#define HASH_MASK 		32							/* hash mask */
 struct advdomain_list 	domain_list[MAXDOMAIN];
 
 void
@@ -60,67 +59,6 @@ advvm_fileset_set_domain(adom, adfst)
 	adfst->fst_domain = adom;
 	adfst->fst_domain_name = adom->dom_name;
 	adfst->fst_domain_id = adom->dom_id;
-}
-
-/*
- * tag directory hash: from tag name & tag id pair
- */
-uint32_t
-advvm_tag_hash(tag_name, tag_id)
-	const char  *tag_name;
-	uint32_t    tag_id;
-{
-	uint32_t hash1 = triple32(strlen(tag_name) + sizeof(tag_name)) % HASH_MASK;
-	uint32_t hash2 = triple32(tag_id) % HASH_MASK;
-	return (hash1 ^ hash2);
-}
-
-/*
- * file directory hash: from tag & file directory name pair
- */
-uint32_t
-advvm_fdir_hash(tag_dir, fdr_name)
-	advvm_tag_dir_t   *tag_dir;
-	const char        *fdr_name;
-{
-	uint32_t hash1 = advvm_tag_hash(tag_dir->tag_name, tag_dir->tag_id);
-	uint32_t hash2 = triple32(strlen(fdr_name) + sizeof(fdr_name)) % HASH_MASK;
-	return (hash1 ^ hash2);
-}
-
-/*
- * set fileset's tag directory name and id.
- */
-advvm_tag_dir_t *
-advvm_filset_allocate_tag_directory(name, id)
-	char            *name;
-	uint32_t        id;
-{
-	advvm_tag_dir_t *tag;
-
-	tag = (struct advvm_tag_directory *)malloc(sizeof(struct advvm_tag_directory *), M_ADVVM, M_WAITOK);
-	tag->tag_name = name;
-	tag->tag_id = id;
-
-	return (tag[advvm_tag_hash(name, id)]);
-}
-
-/*
- * set fileset's file directory: from the fileset's tag directory and file directory
- * name.
- */
-advvm_file_dir_t *
-advvm_filset_allocate_file_directory(tag, name)
-	advvm_tag_dir_t *tag;
-	char            *name;
-{
-	advvm_file_dir_t *fdir;
-
-	fdir = (struct advvm_file_dir_t *)malloc(sizeof(struct advvm_file_dir_t *), M_ADVVM, M_WAITOK);
-	fdir->fdr_tag = tag;
-	fdir->fdr_name = name;
-
-	return (fdir[advvm_fdir_hash(tag, name)]);
 }
 
 void
@@ -164,10 +102,11 @@ advvm_filset_insert(adom, adfst)
 		return;
 	}
 
-	advvm_fileset_set_domain(adfst, adom);
 	advvm_fileset_create(adom, adfst);
 
 	bucket = &domain_list[advvm_hash(adom)];
+
+	advvm_mcell_add(adfst);
 
 	TAILQ_INSERT_HEAD(bucket, adfst, fst_entries);
 }

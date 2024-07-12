@@ -38,34 +38,18 @@
 
 #include <advvm_volume.h>
 
-struct advvm_tag_directory {
-    const char                      *tag_name;
-    uint32_t                        tag_id;
-};
-typedef struct advvm_tag_directory  advvm_tag_dir_t;
-
-struct advvm_file_directory {
-    advvm_tag_dir_t                 fdr_tag;
-    const char                      *fdr_name;
-
-    //struct device					*fdr_dev;						/* pointer to autoconf device structure */
-    //struct dkdevice	                *fdr_disk;
-
-    dm_dev_t 						*fdr_dmv;						/* device mapper */
-};
-typedef struct advvm_file_directory advvm_file_dir_t;
-
 struct advvm_fileset {
     TAILQ_ENTRY(advvm_fileset)      fst_entries;                    /* list of fileset entries per domain */
     char                            fst_name[ADVVM_NAME_LEN];       /* fileset name */
     uint32_t                        fst_id[ADVVM_UUID_LEN];         /* fileset uid */
     uint32_t						fst_hash;						/* tag/file directory hash */
 
+    /* fileset mcell information */
+    advvm_cell_t 					*fst_mcell;						/* mcell */
     /* fileset tag information */
-    advvm_tag_dir_t                 fst_tags;						/* tags */
+    advvm_tag_dir_t                 fst_tag;						/* tag directory */
     /* fileset directory information */
-    //advvm_file_dir_t		   		fst_file;						/* file directory */
-
+    advvm_file_dir_t		   		fst_fdir;						/* file directory */
     /* fileset allocation */
     advvm_storage_t 		    	*fst_storage;					/* deprecation pending!! */
 
@@ -84,8 +68,6 @@ typedef struct advvm_fileset        advvm_fileset_t;
 
 void				advvm_fileset_init(advvm_fileset_t *, char *, uint32_t);
 void				advvm_fileset_set_domain(advvm_domain_t *, advvm_fileset_t *);
-advvm_tag_dir_t 	*advvm_filset_allocate_tag_directory(char *, uint32_t);
-advvm_file_dir_t 	*advvm_filset_allocate_file_directory(advvm_tag_dir_t *, char *);
 void				advvm_fileset_create(advvm_domain_t *, advvm_fileset_t *);
 advvm_volume_t 		*advvm_filset_find(advvm_domain_t *, char *, uint32_t);
 void				advvm_filset_insert(advvm_domain_t *, advvm_fileset_t *, char *, uint32_t);

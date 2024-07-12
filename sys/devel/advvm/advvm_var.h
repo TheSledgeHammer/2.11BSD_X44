@@ -124,6 +124,7 @@ struct advvm_label {
     off_t             		alb_drive_size;
 };
 
+/* deprecated - see below */
 struct advvm_block {
     uint64_t            	ablk_start;
     uint64_t            	ablk_end;
@@ -131,6 +132,27 @@ struct advvm_block {
     caddr_t					ablk_addr;
     int						ablk_flags;
 };
+
+struct advvm_drivefreelist {
+    u_int64_t 				offset;					/* offset of entry */
+    u_int64_t 				sectors;				/* and length in sectors */
+};
+
+struct advvm_drive {
+	char					name[MAXDRIVENAME];	  	/* name of the slice/partition it's on */
+	struct advvm_label		label;					/* the label information */
+	int 					flags;
+	int						bsize;					/* blocksize */
+	int 					volumes_used;
+	int 					volumes_allocated;
+	int 					opencount;
+
+	struct advvm_drivefreelist *freelist;
+	struct partinfo 		partinfo;			 	/* partition information */
+	struct vnode 			*vp;
+	dev_t					dev;					/* device information */
+};
+
 
 struct advvm_header {
 	long					ahd_magic;

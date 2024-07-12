@@ -88,22 +88,15 @@ enum objflags {
 
 /* Global configuration information for the vinum subsystem */
 
-struct _vinum_conf
-{
+struct _vinum_conf {
     int version;					    /* version of structures */
-#ifdef _KERNEL
+
     /* Pointers to vinum structures */
     struct drive *drive;
     struct sd *sd;
     struct plex *plex;
     struct volume *volume;
-#else
-    /* Pointers to vinum structures */
-    struct _drive *drive;
-    struct _sd *sd;
-    struct _plex *plex;
-    struct _volume *volume;
-#endif
+
 
     /* the number allocated */
     int drives_allocated;

@@ -36,6 +36,23 @@
 
 #include <devel/advvm/advvm_fileset.h>
 
+struct advvm_tag_directory {
+    const char                      *tag_name;
+    uint32_t                        tag_id;
+};
+typedef struct advvm_tag_directory  advvm_tag_dir_t;
+
+struct advvm_file_directory {
+    advvm_tag_dir_t                 fdr_tag;
+    const char                      *fdr_name;
+
+    //struct device					*fdr_dev;						/* pointer to autoconf device structure */
+    //struct dkdevice	                *fdr_disk;
+
+    //dm_dev_t 						*fdr_dmv;						/* device mapper */
+};
+typedef struct advvm_file_directory advvm_file_dir_t;
+
 /*
  * mcell functions:
  * used to location advvm file directory from fileset id and tag
@@ -53,6 +70,12 @@ void 				advvm_mcell_init(advvm_fileset_t *);
 void				advvm_mcell_add(advvm_fileset_t *);
 advvm_cell_t 		*advvm_mcell_find(advvm_fileset_t *);
 void				advvm_mcell_remove(advvm_fileset_t *);
+struct advcell_list  *advvm_mcell_table(advvm_fileset_t *);
+
+/* tag and file directory */
+advvm_tag_dir_t 	*advvm_mcell_get_tag(advvm_fileset_t *);
 advvm_file_dir_t 	*advvm_mcell_get_fdir(advvm_fileset_t *);
+advvm_tag_dir_t 	*advvm_mcell_allocate_tag_directory(char *, uint32_t);
+advvm_file_dir_t 	*advvm_mcell_allocate_file_directory(advvm_tag_dir_t *, char *);
 
 #endif /* _ADVVM_MCELL_H_ */
