@@ -267,7 +267,6 @@ struct export_args {
  * type of filesystem supported by the kernel. These are searched at
  * mount time to identify the requested filesystem.
  */
-typedef int (*mountroot_t)(void);
 
 struct vfs_list;
 LIST_HEAD(vfs_list, vfsconf);
@@ -367,7 +366,7 @@ void			vfs_unmountall(void);
 
 /* vfsconf */
 void			vfsconf_fs_init(void);
-void			vfsconf_fs_create(struct vfsops *, const char *, int, int, int, mountroot_t);
+void			vfsconf_fs_create(struct vfsops *, const char *, int, int, int, int (*)(void));
 struct vfsconf 	*vfsconf_find_by_name(const char *);
 struct vfsconf 	*vfsconf_find_by_typenum(int);
 void			vfsconf_attach(struct vfsconf *);
