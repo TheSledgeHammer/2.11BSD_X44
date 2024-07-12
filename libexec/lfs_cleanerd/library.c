@@ -53,13 +53,23 @@ static char sccsid[] = "@(#)library.c	8.3 (Berkeley) 5/24/95";
 
 #include "clean.h"
 
-void	add_blocks __P((FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t, daddr_t, daddr_t));
-void	add_inodes __P((FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t, daddr_t));
-int	 	bi_compare __P((const void *, const void *));
-int	 	bi_toss __P((const void *, const void *, const void *));
-void	get_ifile __P((FS_INFO *, int));
-int	 	get_superblock __P((FS_INFO *, struct lfs *));
-int	 	pseg_valid __P((FS_INFO *, SEGSUM *));
+int is_ufs2;
+
+union dinode {
+	struct ufs1_dinode dp1;
+	struct ufs2_dinode dp2;
+};
+
+#define DIP(dp, field) \
+	(is_ufs2 ? (dp)->dp2.di_##field : (dp)->dp1.di_##field)
+
+void	add_blocks(FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t, daddr_t, daddr_t);
+void	add_inodes(FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t, daddr_t);
+int	 	bi_compare(const void *, const void *);
+int	 	bi_toss(const void *, const void *, const void *);
+void	get_ifile(FS_INFO *, int);
+int	 	get_superblock(FS_INFO *, struct lfs *);
+int	 	pseg_valid(FS_INFO *, SEGSUM *);
 
 /*
  * This function will get information on a a filesystem which matches
@@ -100,7 +110,7 @@ fs_getmntinfo(buf, name, type)
  * Returns an pointer to an FS_INFO structure, NULL on error.
  */
 FS_INFO *
-get_fs_info (lstatfsp, use_mmap)
+get_fs_info(lstatfsp, use_mmap)
 	struct statfs *lstatfsp;	/* IN: pointer to statfs struct */
 	int use_mmap;			/* IN: mmap or read */
 {
@@ -142,7 +152,7 @@ reread_fs_info(fsp, use_mmap)
  * Gets the superblock from disk (possibly in face of errors) 
  */
 int
-get_superblock (fsp, sbp)
+get_superblock(fsp, sbp)
 	FS_INFO *fsp;		/* local file system info structure */
 	struct lfs *sbp;
 {
@@ -168,7 +178,7 @@ get_superblock (fsp, sbp)
  * fatal error on failure.
  */
 void
-get_ifile (fsp, use_mmap)
+get_ifile(fsp, use_mmap)
 	FS_INFO	*fsp;
 	int use_mmap;
 
@@ -355,7 +365,7 @@ err0:	*bcount = 0;
  * blocks or inodes from files with new version numbers.  
  */
 void
-add_blocks (fsp, bip, countp, sp, seg_buf, segaddr, psegaddr)
+add_blocks(fsp, bip, countp, sp, seg_buf, segaddr, psegaddr)
 	FS_INFO *fsp;		/* pointer to super block */
 	BLOCK_INFO *bip;	/* Block info array */
 	int *countp;		/* IN/OUT: number of blocks in array */
@@ -433,7 +443,7 @@ long *lp;
  * actually added.
  */
 void
-add_inodes (fsp, bip, countp, sp, seg_buf, seg_addr)
+add_inodes(fsp, bip, countp, sp, seg_buf, seg_addr)
 	FS_INFO *fsp;		/* pointer to super block */
 	BLOCK_INFO *bip;	/* block info array */
 	int *countp;		/* pointer to current number of inodes */
@@ -441,7 +451,7 @@ add_inodes (fsp, bip, countp, sp, seg_buf, seg_addr)
 	caddr_t	seg_buf;	/* the buffer containing the segment's data */
 	daddr_t	seg_addr;	/* disk address of seg_buf */
 {
-	struct dinode *di;
+	union dinode *di;
 	struct lfs *lfsp;
 	IFILE *ifp;
 	BLOCK_INFO *bp;
@@ -457,20 +467,37 @@ add_inodes (fsp, bip, countp, sp, seg_buf, seg_addr)
 #ifdef VERBOSE
 	(void) printf("INODES:\n");
 #endif
+
+	switch (lfsp->lfs_magic) {
+	case LFS2_MAGIC:
+		is_ufs2 = 1;
+		break;
+	case LFS_MAGIC:
+		is_ufs2 = 0;
+		break;
+	}
 	daddrp = (daddr_t *)((caddr_t)sp + LFS_SUMMARY_SIZE);
 	for (i = 0; i < sp->ss_ninos; ++i) {
 		if (i % INOPB(lfsp) == 0) {
 			--daddrp;
-			di = (struct dinode *)(seg_buf +
-			    ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
-		} else 
+			if (is_ufs2) {
+				di->dp2 =  (struct ufs2_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+			} else {
+				di->dp1 =  (struct ufs1_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+			}
+		} else {
 			++di;
+		}
 		
-		inum = di->di_inumber;
+		inum = DIP(di, inumber);
 		bp->bi_lbn = LFS_UNUSED_LBN;
 		bp->bi_inode = inum;
 		bp->bi_daddr = *daddrp;
-		bp->bi_bp = di;
+		if (is_ufs2) {
+			bp->bi_bp = di->dp2;
+		} else {
+			bp->bi_bp = di->dp1;
+		}
 		bp->bi_segcreate = sp->ss_create;
 
 		if (inum == LFS_IFILE_INUM) {
@@ -497,7 +524,7 @@ add_inodes (fsp, bip, countp, sp, seg_buf, seg_addr)
  * the partial as well as whether or not the checksum is valid.
  */	 
 int
-pseg_valid (fsp, ssp)
+pseg_valid(fsp, ssp)
 	FS_INFO *fsp;   /* pointer to file system info */
 	SEGSUM *ssp;	/* pointer to segment summary block */
 {
@@ -531,7 +558,7 @@ pseg_valid (fsp, ssp)
  * read a segment into a memory buffer
  */
 int
-mmap_segment (fsp, segment, segbuf, use_mmap)
+mmap_segment(fsp, segment, segbuf, use_mmap)
 	FS_INFO *fsp;		/* file system information */
 	int segment;		/* segment number */
 	caddr_t *segbuf;	/* pointer to buffer area */
@@ -673,7 +700,7 @@ toss(p, nump, size, dotoss, client)
 	void *p;
 	int *nump;
 	size_t size;
-	int (*dotoss) __P((const void *, const void *, const void *));
+	int (*dotoss)(const void *, const void *, const void *);
 	void *client;
 {
 	int i;

@@ -1,7 +1,7 @@
-/*	$NetBSD: ns_pcb.h,v 1.10 2003/08/07 16:33:46 agc Exp $	*/
+/*	$NetBSD: if_x25subr.c,v 1.33 2003/11/11 20:25:26 jonathan Exp $	*/
 
 /*
- * Copyright (c) 1984, 1985, 1986, 1987, 1993
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,47 +28,64 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ns_pcb.h	8.1 (Berkeley) 6/10/93
+ *	@(#)if_x25subr.c	8.1 (Berkeley) 6/10/93
  */
+
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: if_x25subr.c,v 1.33 2003/11/11 20:25:26 jonathan Exp $");
+
+#include "opt_inet.h"
+#include "opt_iso.h"
+#include "opt_ns.h"
+
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
+#include <sys/syslog.h>
+
+#include <machine/cpu.h>	/* XXX for setsoftnet().  This must die. */
+
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/netisr.h>
+#include <net/route.h>
+
+#include <netccitt/x25.h>
+
+#include <netccitt/pk.h>
+#include <netccitt/pk_var.h>
+//#include <netccitt/pk_extern.h>
 
 /*
- * Ns protocol interface control block.
+ * Ancillary routines
  */
-struct nspcb {
-	struct	nspcb *nsp_next;		/* doubly linked list */
-	struct	nspcb *nsp_prev;
-	struct	nspcb *nsp_head;
-	struct	socket *nsp_socket;		/* back pointer to socket */
-	struct	ns_addr nsp_faddr;		/* destination address */
-	struct	ns_addr nsp_laddr;		/* socket's address */
-	caddr_t	nsp_pcb;				/* protocol specific stuff */
-	struct	route nsp_route;		/* routing information */
-	struct	ns_addr nsp_lastdst;	/* validate cached route for dg socks*/
-	long	nsp_notify_param;		/* extra info passed via ns_pcbnotify*/
-	short	nsp_flags;
-	u_int8_t nsp_dpt;				/* default packet type for idp_output*/
-	u_int8_t nsp_rpt;				/* last received packet type by idp_input() */
-};
-#define nsp_lport nsp_laddr.x_port
-#define nsp_fport nsp_faddr.x_port
+static struct llinfo_x25 *
+x25_lxalloc(rt)
+	struct rtentry *rt;
+{
 
-/* possible flags */
+}
 
-#define NSP_IN_ABORT	0x1		/* calling abort through socket */
-#define NSP_RAWIN		0x2		/* show headers on input */
-#define NSP_RAWOUT		0x4		/* show header on output */
-#define NSP_ALL_PACKETS	0x8		/* Turn off higher proto processing */
+void
+x25_lxfree(lx)
+	struct llinfo_x25 *lx;
+{
 
-#define	NS_WILDCARD	1
-
-#define	sotonspcb(so)		((struct nspcb *)((so)->so_pcb))
+}
 
 /*
- * Nominal space allocated to a ns socket.
+ * Process a x25 packet as datagram;
  */
-#define	NSSNDQ		2048
-#define	NSRCVQ		2048
+int
+x25_ifinput(m, v)
+	struct mbuf *m;
+	void *v;
+{
 
-#ifdef _KERNEL
-extern	struct	nspcb nspcb;			/* head of list */
-#endif
+}

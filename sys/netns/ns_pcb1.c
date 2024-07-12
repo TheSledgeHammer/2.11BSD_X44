@@ -92,8 +92,8 @@ struct nspcb {
 	u_int8_t 			nsp_dpt;				/* default packet type for idp_output*/
 	u_int8_t 			nsp_rpt;				/* last received packet type by idp_input() */
 };
-#define nsp_lport nsp_laddr.x_port
-#define nsp_fport nsp_faddr.x_port
+#define nsp_lport 		nsp_laddr.x_port
+#define nsp_fport 		nsp_faddr.x_port
 
 /* states in nsp_state: */
 #define	NSP_ATTACHED	0

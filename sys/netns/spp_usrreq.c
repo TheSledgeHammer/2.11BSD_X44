@@ -160,7 +160,7 @@ spp_input(struct mbuf *m, ...)
 
 	switch (cb->s_state) {
 
-	case TCPS_LISTEN:{
+	case TCPS_LISTEN: {
 		struct mbuf *am;
 		struct sockaddr_ns *sns;
 		struct ns_addr laddr;
@@ -177,8 +177,8 @@ spp_input(struct mbuf *m, ...)
 		am = m_get(M_DONTWAIT, MT_SONAME);
 		if (am == NULL)
 			goto drop;
-		am->m_len = sizeof (struct sockaddr_ns);
-		sns = mtod(am, struct sockaddr_ns *);
+		am->m_len = sizeof(struct sockaddr_ns);
+		sns = mtod(am, struct sockaddr_ns*);
 		sns->sns_len = sizeof(*sns);
 		sns->sns_family = AF_NS;
 		sns->sns_addr = si->si_sna;
@@ -193,7 +193,7 @@ spp_input(struct mbuf *m, ...)
 		}
 		(void) m_free(am);
 		spp_template(cb);
-		dropsocket = 0;		/* committed to socket */
+		dropsocket = 0; /* committed to socket */
 		cb->s_did = si->si_sid;
 		cb->s_rack = si->si_ack;
 		cb->s_ralo = si->si_alo;
@@ -203,40 +203,40 @@ spp_input(struct mbuf *m, ...)
 		cb->s_force = 1 + SPPT_KEEP;
 		sppstat.spps_accepts++;
 		cb->s_timer[SPPT_KEEP] = SPPTV_KEEP;
-		}
+	}
 		break;
-	/*
-	 * This state means that we have heard a response
-	 * to our acceptance of their connection
-	 * It is probably logically unnecessary in this
-	 * implementation.
-	 */
-	 case TCPS_SYN_RECEIVED: {
-		if (si->si_did!=cb->s_sid) {
+		/*
+		 * This state means that we have heard a response
+		 * to our acceptance of their connection
+		 * It is probably logically unnecessary in this
+		 * implementation.
+		 */
+	case TCPS_SYN_RECEIVED: {
+		if (si->si_did != cb->s_sid) {
 			spp_istat.wrncon++;
 			goto drop;
 		}
 #endif
-		nsp->nsp_fport =  si->si_sport;
+		nsp->nsp_fport = si->si_sport;
 		cb->s_timer[SPPT_REXMT] = 0;
 		cb->s_timer[SPPT_KEEP] = SPPTV_KEEP;
 		soisconnected(so);
 		cb->s_state = TCPS_ESTABLISHED;
 		sppstat.spps_accepts++;
-		}
+	}
 		break;
 
-	/*
-	 * This state means that we have gotten a response
-	 * to our attempt to establish a connection.
-	 * We fill in the data from the other side,
-	 * telling us which port to respond to, instead of the well-
-	 * known one we might have sent to in the first place.
-	 * We also require that this is a response to our
-	 * connection id.
-	 */
+		/*
+		 * This state means that we have gotten a response
+		 * to our attempt to establish a connection.
+		 * We fill in the data from the other side,
+		 * telling us which port to respond to, instead of the well-
+		 * known one we might have sent to in the first place.
+		 * We also require that this is a response to our
+		 * connection id.
+		 */
 	case TCPS_SYN_SENT:
-		if (si->si_did!=cb->s_sid) {
+		if (si->si_did != cb->s_sid) {
 			spp_istat.notme++;
 			goto drop;
 		}
@@ -244,7 +244,7 @@ spp_input(struct mbuf *m, ...)
 		cb->s_did = si->si_sid;
 		cb->s_rack = si->si_ack;
 		cb->s_ralo = si->si_alo;
-		cb->s_dport = nsp->nsp_fport =  si->si_sport;
+		cb->s_dport = nsp->nsp_fport = si->si_sport;
 		cb->s_timer[SPPT_REXMT] = 0;
 		cb->s_flags |= SF_ACKNOW;
 		soisconnected(so);
@@ -253,10 +253,9 @@ spp_input(struct mbuf *m, ...)
 		if (cb->s_rtt) {
 			cb->s_srtt = cb->s_rtt << 3;
 			cb->s_rttvar = cb->s_rtt << 1;
-			SPPT_RANGESET(cb->s_rxtcur,
-			    ((cb->s_srtt >> 2) + cb->s_rttvar) >> 1,
-			    SPPTV_MIN, SPPTV_REXMTMAX);
-			    cb->s_rtt = 0;
+			SPPT_RANGESET(cb->s_rxtcur, ((cb->s_srtt >> 2) + cb->s_rttvar) >> 1,
+					SPPTV_MIN, SPPTV_REXMTMAX);
+			cb->s_rtt = 0;
 		}
 	}
 	if ((so->so_options & SO_DEBUG) || traceallspps)
@@ -282,13 +281,13 @@ dropwithreset:
 	HTONS(si->si_ack);
 	HTONS(si->si_alo);
 	ns_error(m, NS_ERR_NOSOCK, 0);
-	if (cb->s_nspcb->nsp_socket->so_options & SO_DEBUG || traceallspps)
+	if ((cb->s_nspcb->nsp_socket->so_options & SO_DEBUG) || traceallspps)
 		spp_trace(SA_DROP, (u_char)ostate, cb, &spp_savesi, 0);
 	return;
 
 drop:
 bad:
-	if (cb == 0 || cb->s_nspcb->nsp_socket->so_options & SO_DEBUG ||
+	if (cb == 0 || (cb->s_nspcb->nsp_socket->so_options & SO_DEBUG) ||
             traceallspps)
 		spp_trace(SA_DROP, (u_char)ostate, cb, &spp_savesi, 0);
 	m_freem(m);
@@ -496,8 +495,7 @@ update_window:
 	 * Loop through all packets queued up to insert in
 	 * appropriate sequence.
 	 */
-	for (p = NULL, q = cb->s_q.lh_first; q != NULL;
-	    p = q, q = q->si_q.le_next) {
+	for (p = NULL, q = LIST_FIRST(cb->s_q); q != NULL; p = q, q = LIST_NEXT(q, si_q)) {
 		if (si->si_seq == q->si_spidp->si_seq) {
 			sppstat.spps_rcvduppack++;
 			return (1);
@@ -536,8 +534,8 @@ present:
 	 * number, and present all acknowledged data to user;
 	 * If in packet interface mode, show packet headers.
 	 */
-	for (q = cb->s_q.lh_first; q != NULL; q = p) {
-		  if (q->si_spidp->si_seq == cb->s_ack) {
+	for (q = LIST_FIRST(cb->s_q); q != NULL; q = p) {
+		if (q->si_spidp->si_seq == cb->s_ack) {
 			cb->s_ack++;
 			m = q->si_m;
 			if (q->si_spidp->si_cc & SP_OB) {
@@ -547,26 +545,24 @@ present:
 				else
 					so->so_state |= SS_RCVATMARK;
 			}
-			p = q->si_q.le_next;
+			p = LIST_NEXT(q, si_q);
 			LIST_REMOVE(q, si_q);
 			FREE(q, M_SPIDPQ);
 			wakeup = 1;
 			sppstat.spps_rcvpack++;
 #ifdef SF_NEWCALL
 			if (cb->s_flags2 & SF_NEWCALL) {
-				struct sphdr *sp = mtod(m, struct sphdr *);
+				struct sphdr *sp = mtod(m, struct sphdr*);
 				u_char dt = sp->sp_dt;
 				if (dt != cb->s_rhdr.sp_dt) {
-					struct mbuf *mm =
-					   m_getclr(M_DONTWAIT, MT_CONTROL);
+					struct mbuf *mm = m_getclr(M_DONTWAIT, MT_CONTROL);
 					if (mm != NULL) {
-						u_short *s =
-							mtod(mm, u_short *);
+						u_short *s = mtod(mm, u_short*);
 						cb->s_rhdr.sp_dt = dt;
 						mm->m_len = 5; /*XXX*/
 						s[0] = 5;
 						s[1] = 1;
-						*(u_char *)(&s[2]) = dt;
+						*(u_char*) (&s[2]) = dt;
 						sbappend(&so->so_rcv, mm);
 					}
 				}
@@ -589,16 +585,17 @@ present:
 			if (packetp) {
 				sbappendrecord(&so->so_rcv, m);
 			} else {
-				cb->s_rhdr = *mtod(m, struct sphdr *);
+				cb->s_rhdr = *mtod(m, struct sphdr*);
 				m->m_data += SPINC;
 				m->m_len -= SPINC;
 				m->m_pkthdr.len -= SPINC;
 				sbappend(&so->so_rcv, m);
 			}
-		  } else
+		} else
 			break;
 	}
-	if (wakeup) sorwakeup(so);
+	if (wakeup)
+		sorwakeup(so);
 	return (0);
 }
 
@@ -1043,7 +1040,7 @@ send:
 			sppstat.spps_sndrexmitpack++;
 		else
 			sppstat.spps_sndpack++;
-	} else if (cb->s_force || cb->s_flags & SF_ACKNOW) {
+	} else if (cb->s_force || (cb->s_flags & SF_ACKNOW)) {
 		/*
 		 * Must send an acknowledgement or a probe
 		 */
@@ -1069,7 +1066,7 @@ send:
 		si->si_cc |= SP_SP;
 	} else {
 		cb->s_outx = 3;
-		if (so->so_options & SO_DEBUG || traceallspps)
+		if ((so->so_options & SO_DEBUG) || traceallspps)
 			spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
 		return (0);
 	}
@@ -1136,7 +1133,7 @@ send:
 			si->si_sum = 0xffff;
 
 		cb->s_outx = 4;
-		if (so->so_options & SO_DEBUG || traceallspps)
+		if ((so->so_options & SO_DEBUG) || traceallspps)
 			spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
 
 		if (so->so_options & SO_DONTROUTE)
@@ -1178,9 +1175,8 @@ spp_setpersist(cb)
 	/*
 	 * Start/restart persistance timer.
 	 */
-	SPPT_RANGESET(cb->s_timer[SPPT_PERSIST],
-	    t*spp_backoff[cb->s_rxtshift],
-	    SPPTV_PERSMIN, SPPTV_PERSMAX);
+	SPPT_RANGESET(cb->s_timer[SPPT_PERSIST], t * spp_backoff[cb->s_rxtshift],
+			SPPTV_PERSMIN, SPPTV_PERSMAX);
 	if (cb->s_rxtshift < SPP_MAXRXTSHIFT)
 		cb->s_rxtshift++;
 }
@@ -1534,7 +1530,7 @@ spp_usrreq(so, req, m, nam, control, p)
 	default:
 		panic("sp_usrreq");
 	}
-	if (cb && (so->so_options & SO_DEBUG || traceallspps))
+	if (cb && ((so->so_options & SO_DEBUG) || traceallspps))
 		spp_trace(SA_USER, (u_char)ostate, cb, (struct spidp *)0, req);
 release:
 	splx(s);
@@ -1552,8 +1548,7 @@ spp_usrreq_sp(so, req, m, nam, control, p)
 
 	if (req == PRU_ATTACH && error == 0) {
 		struct nspcb *nsp = sotonspcb(so);
-		((struct sppcb *)nsp->nsp_pcb)->s_flags |=
-					(SF_HI | SF_HO | SF_PI);
+		((struct sppcb*) nsp->nsp_pcb)->s_flags |= (SF_HI | SF_HO | SF_PI);
 	}
 	return (error);
 }
@@ -1601,8 +1596,8 @@ spp_close(cb)
 	struct socket *so = nsp->nsp_socket;
 	struct mbuf *m;
 
-	for (s = cb->s_q.lh_first; s != NULL; s = n) {
-		n = s->si_q.le_next;
+	for (s = LIST_FIRST(cb->s_q); s != NULL; s = n) {
+		n = LIST_NEXT(s, si_q);
 		m = s->si_m;
 		LIST_REMOVE(s, si_q);
 		FREE(s, M_SPIDPQ);
@@ -1681,14 +1676,14 @@ spp_fasttimo()
 
 	nsp = nspcb.nsp_next;
 	if (nsp)
-	for (; nsp != &nspcb; nsp = nsp->nsp_next)
-		if ((cb = (struct sppcb *)nsp->nsp_pcb) &&
-		    (cb->s_flags & SF_DELACK)) {
-			cb->s_flags &= ~SF_DELACK;
-			cb->s_flags |= SF_ACKNOW;
-			sppstat.spps_delack++;
-			(void) spp_output(NULL, cb);
-		}
+		for (; nsp != &nspcb; nsp = nsp->nsp_next)
+			if ((cb = (struct sppcb*) nsp->nsp_pcb)
+					&& (cb->s_flags & SF_DELACK)) {
+				cb->s_flags &= ~SF_DELACK;
+				cb->s_flags |= SF_ACKNOW;
+				sppstat.spps_delack++;
+				(void) spp_output(NULL, cb);
+			}
 	splx(s);
 }
 

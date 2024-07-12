@@ -247,10 +247,10 @@ idp_ctloutput(req, so, level, name, value)
 	switch (req) {
 
 	case PRCO_GETOPT:
-		if (value==NULL)
+		if (value == NULL)
 			return (EINVAL);
 		m = m_get(M_DONTWAIT, MT_DATA);
-		if (m==NULL)
+		if (m == NULL)
 			return (ENOBUFS);
 		switch (name) {
 
@@ -356,8 +356,8 @@ idp_usrreq(so, req, m, nam, control, p)
 	int error = 0;
 
 	if (req == PRU_CONTROL)
-                return (ns_control(so, (u_long)m, (caddr_t)nam,
-		    (struct ifnet *)control, p));
+		return (ns_control(so, (u_long) m, (caddr_t) nam,
+				(struct ifnet*) control, p));
 
 	if (req == PRU_PURGEIF) {
 		ns_purgeif((struct ifnet *)control);
@@ -500,12 +500,12 @@ idp_raw_usrreq(so, req, m, nam, control, p)
 			error = EISCONN;
 			break;
 		}
-		if (p == 0 || (error = suser(p->p_ucred, &p->p_acflag))) {
+		if (p == 0 || (error = suser1(p->p_ucred, &p->p_acflag))) {
 			error = EACCES;
 			break;
 		}
-		if ((error = soreserve(so, idp_sendspace, idp_recvspace)) ||
-		    (error = ns_pcballoc(so, &nspcb)))
+		if ((error = soreserve(so, idp_sendspace, idp_recvspace)) || (error =
+				ns_pcballoc(so, &nspcb)))
 			break;
 		nsp = sotonspcb(so);
 		nsp->nsp_faddr.x_host = ns_broadhost;
