@@ -52,18 +52,18 @@ struct vnode *rootvnode;
  * Set up the initial array of known filesystem types.
  */
 extern	struct vfsops ufs_vfsops;
-extern	int ffs_mountroot();
+extern	int ffs_mountroot(void);
 extern	struct vfsops lfs_vfsops;
-extern	int lfs_mountroot();
+extern	int lfs_mountroot(void);
 extern	struct vfsops mfs_vfsops;
 extern	struct vfsops ufs211_vfsops;
-extern	int mfs_mountroot();
+extern	int mfs_mountroot(void);
 extern	struct vfsops cd9660_vfsops;
-extern	int cd9660_mountroot();
+extern	int cd9660_mountroot(void);
 extern	struct vfsops msdosfs_vfsops;
 extern	struct vfsops lofs_vfsops;
 extern	struct vfsops nfs_vfsops;
-extern	int nfs_mountroot();
+extern	int nfs_mountroot(void);
 extern	struct vfsops ufml_vfsops;
 extern	struct vfsops union_vfsops;
 
@@ -142,7 +142,7 @@ vfsconf_fs_create(vfsop, name, index, typenum, flags, mountroot)
     struct vfsops *vfsop;
     const char *name;
     int index, typenum, flags;
-    mountroot_t mountroot;
+    int (*mountroot)(void);
 {   	
     register struct vfsconf *vfsp;
 	
