@@ -87,12 +87,11 @@ struct inpcb {
 	u_int16_t inp_fport;		/* foreign port */
 	u_int16_t inp_lport;		/* local port */
 	int	  inp_flags;		/* generic IP/datagram flags */
-	struct	  ip inp_ip;		/* header prototype; should have more */
-	struct	  mbuf *inp_options;	/* IP options */
-	struct	  ip_moptions *inp_moptions; /* IP multicast options */
+	struct ip inp_ip;		/* header prototype; should have more */
+	struct mbuf *inp_options;	/* IP options */
+	struct ip_moptions *inp_moptions; /* IP multicast options */
 	int	  inp_errormtu;		/* MTU of last xmit status = EMSGSIZE */
 };
-
 #define	inp_faddr	inp_ip.ip_dst
 #define	inp_laddr	inp_ip.ip_src
 

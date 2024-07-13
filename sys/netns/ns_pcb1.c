@@ -64,9 +64,10 @@ struct nspcb_hdr {
 #define	sotonspcb_hdr(so)	((struct nspcb_hdr *)(so)->so_pcb)
 
 LIST_HEAD(nspcbhead, nspcb_hdr);
+CIRCLEQ_HEAD(nspcbqueue, nspcb_hdr);
 
 struct nspcbtable {
-	CIRCLEQ_HEAD(, nspcb_hdr) nspt_queue;
+	struct nspcbqueue 	nspt_queue;
 	struct nspcbhead 	*nspt_porthashtbl;
 	struct nspcbhead 	*nspt_bindhashtbl;
 	struct nspcbhead 	*nspt_connecthashtbl;

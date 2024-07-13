@@ -79,17 +79,16 @@ struct inpcb_hdr {
 	int	  inph_state;		/* bind/connect state */
 	struct	  socket *inph_socket;	/* back pointer to socket */
 	struct	  inpcbtable *inph_table;
-#if 1 /* IPSEC */
 	struct	  inpcbpolicy *inph_sp;	/* security policy */
-#endif
 };
 
 #define	sotoinpcb_hdr(so)	((struct inpcb_hdr *)(so)->so_pcb)
 
 LIST_HEAD(inpcbhead, inpcb_hdr);
+CIRCLEQ_HEAD(inpcbqueue, inpcb_hdr);
 
 struct inpcbtable {
-	CIRCLEQ_HEAD(, inpcb_hdr) inpt_queue;
+	struct 	  inpcbqueue inpt_queue;
 	struct	  inpcbhead *inpt_porthashtbl;
 	struct	  inpcbhead *inpt_bindhashtbl;
 	struct	  inpcbhead *inpt_connecthashtbl;
@@ -99,11 +98,12 @@ struct inpcbtable {
 	u_int16_t inpt_lastport;
 	u_int16_t inpt_lastlow;
 };
+
 #define inpt_lasthi inpt_lastport
 
 /* states in inp_state: */
 #define	INP_ATTACHED		0
-#define	INP_BOUND		1
+#define	INP_BOUND			1
 #define	INP_CONNECTED		2
 
 #endif /* _NETINET_IN_PCB_HDR_H_ */

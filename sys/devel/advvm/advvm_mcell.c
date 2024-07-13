@@ -75,16 +75,20 @@ advvm_mcell_add(adfst)
 {
 	struct advcell_list  *cell;
 	advvm_cell_t		*admc;
+	advvm_tag_dir_t 	*tag;
+	advvm_file_dir_t 	*fdir;
 
 	KASSERT(adfst != NULL);
+
 	cell = advvm_mcell_table(adfst);
 	admc = (struct advvm_cell *)malloc(sizeof(struct advvm_cell), M_ADVVM, M_WAITOK);
-	admc->ac_tag = advvm_mcell_allocate_tag_directory(adfst->fst_name, adfst->fst_id);
-	admc->ac_fdir = advvm_mcell_allocate_file_directory(admc->ac_tag, admc->ac_tag->tag_name);
+	tag = advvm_mcell_set_tag_directory(adfst->fst_name, adfst->fst_id);
+	fdir = advvm_mcell_set_file_directory(admc->ac_tag, admc->ac_tag->tag_name);
 
 	adfst->fst_mcell = cell;
-	adfst->fst_tag = admc->ac_tag;
-	adfst->fst_fdir = admc->ac_fdir;
+	adfst->fst_tag = admc->ac_tag = tag;
+	adfst->fst_fdir = admc->ac_fdir = fdir;
+
 	LIST_INSERT_HEAD(cell, admc, ac_next);
 }
 
@@ -121,35 +125,6 @@ advvm_mcell_remove(adfst)
 	}
 }
 
-advvm_tag_dir_t *
-advvm_mcell_get_tag(adfst)
-	advvm_fileset_t 	*adfst;
-{
-	advvm_cell_t *admc;
-	admc = advvm_mcell_find(adfst);
-	if (admc != NULL) {
-		if (admc->ac_tag == adfst->fst_tag) {
-			return (admc->ac_tag);
-		}
-	}
-	return (NULL);
-}
-
-advvm_file_dir_t *
-advvm_mcell_get_fdir(adfst)
-	advvm_fileset_t 	*adfst;
-{
-	advvm_cell_t *admc;
-
-	admc = advvm_mcell_find(adfst);
-	if (admc != NULL) {
-		if (admc->ac_fdir == adfst->fst_fdir) {
-			return (admc->ac_fdir);
-		}
-	}
-	return (NULL);
-}
-
 /*
  * tag directory hash: from tag name & tag id pair
  */
@@ -180,8 +155,8 @@ advvm_mcell_fdir_hash(tag_dir, fdr_name)
  * set fileset's tag directory name and id.
  */
 advvm_tag_dir_t *
-advvm_mcell_allocate_tag_directory(name, id)
-	char            *name;
+advvm_mcell_set_tag_directory(name, id)
+	const char            *name;
 	uint32_t        id;
 {
 	advvm_tag_dir_t *tag;
@@ -194,13 +169,12 @@ advvm_mcell_allocate_tag_directory(name, id)
 }
 
 /*
- * set fileset's file directory: from the fileset's tag directory and file directory
- * name.
+ * set file directory: tag and name.
  */
 advvm_file_dir_t *
-advvm_mcell_allocate_file_directory(tag, name)
+advvm_mcell_set_file_directory(tag, name)
 	advvm_tag_dir_t *tag;
-	char            *name;
+	const char            *name;
 {
 	advvm_file_dir_t *fdir;
 
@@ -209,4 +183,33 @@ advvm_mcell_allocate_file_directory(tag, name)
 	fdir->fdr_name = name;
 
 	return (fdir[advvm_mcell_fdir_hash(tag, name)]);
+}
+
+advvm_tag_dir_t *
+advvm_mcell_get_tag_directory(adfst)
+	advvm_fileset_t 	*adfst;
+{
+	advvm_cell_t *admc;
+	admc = advvm_mcell_find(adfst);
+	if (admc != NULL) {
+		if (admc->ac_tag == adfst->fst_tag) {
+			return (admc->ac_tag);
+		}
+	}
+	return (NULL);
+}
+
+advvm_file_dir_t *
+advvm_mcell_get_file_directory(adfst)
+	advvm_fileset_t 	*adfst;
+{
+	advvm_cell_t *admc;
+
+	admc = advvm_mcell_find(adfst);
+	if (admc != NULL) {
+		if (admc->ac_fdir == adfst->fst_fdir) {
+			return (admc->ac_fdir);
+		}
+	}
+	return (NULL);
 }

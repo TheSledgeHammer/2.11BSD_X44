@@ -248,11 +248,23 @@ lfs_vfree(ap)
 	if (old_iaddr != LFS_UNUSED_DADDR) {
 		LFS_SEGENTRY(sup, fs, datosn(fs, old_iaddr), bp);
 #ifdef DIAGNOSTIC
-		if (sup->su_nbytes < sizeof(struct ufs1_dinode))
-			panic("lfs_vfree: negative byte count (segment %d)\n",
-			    datosn(fs, old_iaddr));
+		if (I_IS_UFS1(ip)) {
+			if (sup->su_nbytes < sizeof(struct ufs1_dinode))
+				panic("lfs_vfree: negative byte count (segment %d)\n",
+				    datosn(fs, old_iaddr));
+		} else {
+			if (sup->su_nbytes < sizeof(struct ufs2_dinode))
+				panic("lfs_vfree: negative byte count (segment %d)\n",
+						datosn(fs, old_iaddr));
+		}
+
 #endif
-		sup->su_nbytes -= sizeof(struct ufs1_dinode);
+		if (I_IS_UFS1(ip)) {
+			sup->su_nbytes -= sizeof(struct ufs1_dinode);
+		} else {
+			sup->su_nbytes -= sizeof(struct ufs2_dinode);
+		}
+
 		(void) VOP_BWRITE(bp);
 	}
 

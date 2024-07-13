@@ -70,20 +70,20 @@ extern int count_lock_queue (void);
 	((fs)->lfs_dbpseg - ((fs)->lfs_offset - (fs)->lfs_curseg) > \
 	1 << (fs)->lfs_fsbtodb)
 
-void	lfs_callback (struct buf *);
-void	lfs_gather (struct lfs *, struct segment *, struct vnode *, int (*) (struct lfs *, struct buf *));
-void	lfs_iset (struct inode *, ufs1_daddr_t, time_t);
-int	 	lfs_match_data (struct lfs *, struct buf *);
-int	 	lfs_match_dindir (struct lfs *, struct buf *);
-int	 	lfs_match_indir (struct lfs *, struct buf *);
-int	 	lfs_match_tindir (struct lfs *, struct buf *);
-void	lfs_newseg (struct lfs *);
-void	lfs_shellsort (struct buf **, ufs1_daddr_t *, register int);
-void	lfs_supercallback (struct buf *);
-int	 	lfs_vref (struct vnode *);
-void	lfs_vunref (struct vnode *);
-void	lfs_writefile (struct lfs *, struct segment *, struct vnode *);
-void	lfs_writevnodes (struct lfs *fs, struct mount *mp, struct segment *sp, int dirops);
+void	lfs_callback(struct buf *);
+void	lfs_gather(struct lfs *, struct segment *, struct vnode *, int (*) (struct lfs *, struct buf *));
+void	lfs_iset(struct inode *, ufs1_daddr_t, time_t);
+int	 	lfs_match_data(struct lfs *, struct buf *);
+int	 	lfs_match_dindir(struct lfs *, struct buf *);
+int	 	lfs_match_indir(struct lfs *, struct buf *);
+int	 	lfs_match_tindir(struct lfs *, struct buf *);
+void	lfs_newseg(struct lfs *);
+void	lfs_shellsort(struct buf **, ufs1_daddr_t *, register int);
+void	lfs_supercallback(struct buf *);
+int	 	lfs_vref(struct vnode *);
+void	lfs_vunref(struct vnode *);
+void	lfs_writefile(struct lfs *, struct segment *, struct vnode *);
+void	lfs_writevnodes(struct lfs *, struct mount *, struct segment *, int);
 
 //int	lfs_allclean_wakeup;		/* Cleaner wakeup address. */
 
@@ -383,7 +383,8 @@ lfs_writeinode(fs, sp, ip)
 	struct inode *ip;
 {
 	struct buf *bp, *ibp;
-	struct ufs1_dinode *cdp;
+	struct ufs1_dinode *cdp1;
+	struct ufs2_dinode *cdp2;
 	IFILE *ifp;
 	SEGUSE *sup;
 	ufs1_daddr_t daddr;
@@ -408,8 +409,14 @@ lfs_writeinode(fs, sp, ip)
 		    lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp, daddr,
 		    fs->lfs_bsize);
 		/* Zero out inode numbers */
-		for (i = 0; i < INOPB(fs); ++i)
-			((struct ufs1_dinode *)sp->ibp->b_data)[i].di_inumber = 0;
+		for (i = 0; i < INOPB(fs); ++i) {
+			if (I_IS_UFS1(ip)) {
+				((struct ufs1_dinode *)sp->ibp->b_data)[i].di_inumber = 0;
+			} else {
+				((struct ufs2_dinode *)sp->ibp->b_data)[i].di_inumber = 0;
+			}
+		}
+
 		++sp->start_bpp;
 		fs->lfs_avail -= fsbtodb(fs, 1);
 		/* Set remaining space counters. */
@@ -426,8 +433,13 @@ lfs_writeinode(fs, sp, ip)
 	ITIMES(ip, &time, &time);
 	ip->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE);
 	bp = sp->ibp;
-	cdp = ((struct ufs1_dinode *)bp->b_data) + (sp->ninodes % INOPB(fs));
-	*cdp = *ip->i_din.ffs1_din;
+	if (I_IS_UFS1(ip)) {
+		cdp1 = ((struct ufs1_dinode *)bp->b_data) + (sp->ninodes % INOPB(fs));
+		*cdp1 = *ip->i_din.ffs1_din;
+	} else {
+		cdp2 = ((struct ufs2_dinode *)bp->b_data) + (sp->ninodes % INOPB(fs));
+		*cdp2 = *ip->i_din.ffs2_din;
+	}
 	
 	/* Increment inode count in segment summary block. */
 	++((SEGSUM *)(sp->segsum))->ss_ninos;
@@ -459,14 +471,29 @@ lfs_writeinode(fs, sp, ip)
 	    !(daddr >= fs->lfs_lastpseg && daddr <= bp->b_blkno)) {
 		LFS_SEGENTRY(sup, fs, datosn(fs, daddr), bp);
 #ifdef DIAGNOSTIC
-		if (sup->su_nbytes < sizeof(struct ufs1_dinode)) {
-			/* XXX -- Change to a panic. */
-			printf("lfs: negative bytes (segment %d)\n",
-			    datosn(fs, daddr));
-			panic("negative bytes");
+		if (I_IS_UFS1(ip)) {
+			if (sup->su_nbytes < sizeof(struct ufs1_dinode)) {
+				/* XXX -- Change to a panic. */
+				printf("lfs: negative bytes (segment %d)\n",
+				    datosn(fs, daddr));
+				panic("negative bytes");
+			}
+		} else {
+			if (sup->su_nbytes < sizeof(struct ufs2_dinode)) {
+				/* XXX -- Change to a panic. */
+				printf("lfs: negative bytes (segment %d)\n",
+				    datosn(fs, daddr));
+				panic("negative bytes");
+			}
 		}
+
 #endif
-		sup->su_nbytes -= sizeof(struct ufs1_dinode);
+		if (I_IS_UFS1(ip)) {
+			sup->su_nbytes -= sizeof(struct ufs1_dinode);
+		} else {
+			sup->su_nbytes -= sizeof(struct ufs2_dinode);
+		}
+
 		redo_ifile =
 		    (ino == LFS_IFILE_INUM && !(bp->b_flags & B_GATHERED));
 		error = VOP_BWRITE(bp);
@@ -823,7 +850,11 @@ lfs_writeseg(fs, sp)
 	ssp = (SEGSUM *)sp->segsum;
 
 	ninos = (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs);
-	sup->su_nbytes += ssp->ss_ninos * sizeof(struct ufs1_dinode);
+	if (I_IS_UFS1(ip)) {
+		sup->su_nbytes += ssp->ss_ninos * sizeof(struct ufs1_dinode);
+	} else {
+		sup->su_nbytes += ssp->ss_ninos * sizeof(struct ufs2_dinode);
+	}
 	sup->su_nbytes += LFS_SUMMARY_SIZE;
 	sup->su_lastmod = time.tv_sec;
 	sup->su_ninos += ninos;

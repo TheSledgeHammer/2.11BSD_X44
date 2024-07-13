@@ -83,6 +83,8 @@ SOFTWARE.
 //#include <netiso/iso_pcb.h>
 #include <netiso/iso_var.h>
 
+
+
 struct isopcb {
 	LIST_ENTRY(isopcb) 		isop_hash;
 	CIRCLEQ_ENTRY(isopcb) 	isop_queue;
@@ -112,13 +114,13 @@ LIST_HEAD(isopcbhead, isopcb);
 CIRCLEQ_HEAD(isopcbqueue, isopcb);
 
 struct isopcbtable {
-	CIRCLEQ_HEAD(isopcbqueue, isopcb) 	isopt_queue;
-	struct isopcbtable 					*isopt_porthashtbl;
+	struct isopcbqueue 	isopt_queue;
+	struct isopcbtable 	*isopt_porthashtbl;
 	//struct isopcbtable 	*isopt_bindhashtbl;
 	//struct isopcbtable 	*isopt_connecthashtbl;
-	u_long	  							isopt_porthash;
-	//u_long	  isopt_bindhash;
-	//u_long	  isopt_connecthash;
+	u_long	  			isopt_porthash;
+	u_long	  			isopt_bindhash;
+	u_long	  			isopt_connecthash;
 };
 
 struct iso_addr zeroiso_addr;

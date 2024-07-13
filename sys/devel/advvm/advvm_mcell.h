@@ -73,9 +73,9 @@ void				advvm_mcell_remove(advvm_fileset_t *);
 struct advcell_list  *advvm_mcell_table(advvm_fileset_t *);
 
 /* tag and file directory */
-advvm_tag_dir_t 	*advvm_mcell_get_tag(advvm_fileset_t *);
-advvm_file_dir_t 	*advvm_mcell_get_fdir(advvm_fileset_t *);
-advvm_tag_dir_t 	*advvm_mcell_allocate_tag_directory(char *, uint32_t);
-advvm_file_dir_t 	*advvm_mcell_allocate_file_directory(advvm_tag_dir_t *, char *);
+advvm_tag_dir_t 	*advvm_mcell_get_tag_directory(advvm_fileset_t *);
+advvm_file_dir_t 	*advvm_mcell_get_file_directory(advvm_fileset_t *);
+advvm_tag_dir_t 	*advvm_mcell_set_tag_directory(const char *, uint32_t);
+advvm_file_dir_t 	*advvm_mcell_set_file_directory(advvm_tag_dir_t *, const char *);
 
 #endif /* _ADVVM_MCELL_H_ */
