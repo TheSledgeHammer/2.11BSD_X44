@@ -132,13 +132,11 @@ Cross-Compiler Compatability Table:
 ---------------
 | Compiler | Toolchain | Arch's | Kernel | VM |
 | -------- | --------- | ------ | ------ | -- |
-|  GCC  | Yes   |  i386  | Yes ** | Yes | 
-|  CLANG  | Partial *** |  i386  | No | No | 
+|  GCC  | Yes   |  i386  | Yes | Yes | 
+|  CLANG  | Partial ** |  i386  | No | No | 
 |  PCC  | No   |  i386  | No | No | 
 
-** GCC: No NPF
-
-*** Clang: Library needs updating and fixing along with the relevent toolchain components.
+** Clang: Library needs updating and fixing along with the relevent toolchain components.
 
 ### Known OS's Supported:
 - Ubuntu (20.04 to 23.04)

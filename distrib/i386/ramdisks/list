@@ -44,9 +44,9 @@ LINK	ramdiskbin				sbin/newfs
 #LINK	ramdiskbin				sbin/nfs
 LINK	ramdiskbin				sbin/ping
 LINK	ramdiskbin				sbin/reboot
-#LINK	ramdiskbin				sbin/restore
+LINK	ramdiskbin				sbin/restore
 LINK	ramdiskbin				sbin/route
-#LINK	ramdiskbin				sbin/rrestore
+LINK	ramdiskbin				sbin/rrestore
 LINK	ramdiskbin				sbin/shutdown
 LINK	ramdiskbin				sbin/slattach
 LINK	ramdiskbin				sbin/swapctl

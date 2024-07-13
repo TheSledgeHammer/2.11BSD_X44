@@ -466,17 +466,17 @@ showkre(void)
 	putint(pgtokb(cnt.v_page_active_count), VMSTATROW + 8, VMSTATCOL, 9);
 	putint(pgtokb(cnt.v_page_inactive_count), VMSTATROW + 9, VMSTATCOL, 9);
 	putint(pgtokb(cnt.v_page_free_count), VMSTATROW + 10, VMSTATCOL, 9);
-	putint(sgtomb(cnt.v_segment_in_kernel), VMSTATROW + 6, VMSTATCOL, 9);
-	putint(sgtomb(cnt.v_segment_active_count), VMSTATROW + 8, VMSTATCOL, 9);
-	putint(sgtomb(cnt.v_segment_inactive_count), VMSTATROW + 9, VMSTATCOL, 9);
-	putint(sgtomb(cnt.v_segment_free_count), VMSTATROW + 10, VMSTATCOL, 9);
-	PUTRATE(Cnt.v_dfree, VMSTATROW + 11, VMSTATCOL, 9);
-	PUTRATE(Cnt.v_pfree, VMSTATROW + 12, VMSTATCOL, 9);
-	PUTRATE(Cnt.v_reactivated, VMSTATROW + 13, VMSTATCOL, 9);
-	PUTRATE(Cnt.v_scan, VMSTATROW + 14, VMSTATCOL, 9);
-	PUTRATE(Cnt.v_rev, VMSTATROW + 15, VMSTATCOL, 9);
-	if (LINES - 1 > VMSTATROW + 16)
-		PUTRATE(Cnt.v_intrans, VMSTATROW + 16, VMSTATCOL, 9);
+	putint(sgtomb(cnt.v_segment_in_kernel), VMSTATROW + 11, VMSTATCOL, 9);
+	putint(sgtomb(cnt.v_segment_active_count), VMSTATROW + 12, VMSTATCOL, 9);
+	putint(sgtomb(cnt.v_segment_inactive_count), VMSTATROW + 13, VMSTATCOL, 9);
+	putint(sgtomb(cnt.v_segment_free_count), VMSTATROW + 14, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_dfree, VMSTATROW + 15, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_pfree, VMSTATROW + 16, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_reactivated, VMSTATROW + 17, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_scan, VMSTATROW + 18, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_rev, VMSTATROW + 19, VMSTATCOL, 9);
+	if (LINES - 1 > VMSTATROW + 20)
+		PUTRATE(Cnt.v_intrans, VMSTATROW + 20, VMSTATCOL, 9);
 	PUTRATE(Cnt.v_pageins, PAGEROW + 2, PAGECOL + 5, 5);
 	PUTRATE(Cnt.v_pageouts, PAGEROW + 2, PAGECOL + 10, 5);
 	PUTRATE(Cnt.v_swpin, PAGEROW + 2, PAGECOL + 15, 5);	/* - */

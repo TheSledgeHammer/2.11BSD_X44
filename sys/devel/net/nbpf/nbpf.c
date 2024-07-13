@@ -214,7 +214,7 @@ nbpfioctl(dev, cmd, addr, flag, p)
 		if (tset == NULL) {
 			nbpf_table_init(d);
 		}
-		error = nbpf_table_ioctl1(nbiot, tset);
+		error = nbpf_table_ioctl(nbiot, tset);
 		break;
 	}
 	return (error);

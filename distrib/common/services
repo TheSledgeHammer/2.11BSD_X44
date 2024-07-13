@@ -1,16 +1,16 @@
 # $NetBSD: services,v 1.3 2008/04/11 12:54:35 rafal Exp $
 # A minimal /etc/services file for install floppies.
-ftp-data         20/tcp
-ftp-data         20/udp
-ftp              21/tcp
-ftp              21/udp
-bootps           67/tcp
-bootps           67/udp
-bootpc           68/tcp
-bootpc           68/udp
-tftp             69/tcp
-tftp             69/udp
-http		 80/tcp
+ftp-data        20/tcp
+ftp-data        20/udp
+ftp             21/tcp
+ftp             21/udp
+bootps          67/tcp
+bootps          67/udp
+bootpc          68/tcp
+bootpc          68/udp
+tftp            69/tcp
+tftp            69/udp
+http		 	80/tcp
 sunrpc          111/tcp
 sunrpc          111/udp
 sftp            115/tcp

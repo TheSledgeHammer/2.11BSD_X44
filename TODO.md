@@ -41,8 +41,6 @@ A General todo list. Don't hesitate to add to this list. :)
 		- needs acpica.
 
 ## usr.bin:
-- Systat:
-	- add: ifcmds, ifstat, icmp, ip, ip6, tcp
 - Add: More critical software
 	- Generic:
 		- calendar, tr
@@ -57,9 +55,10 @@ A General todo list. Don't hesitate to add to this list. :)
 		- libtelnet
 
 ## usr.sbin:
+- pstat: add proc and usr stats
 - add: More critical software
 	- Generic:
-		- amd, eeprom, kgmon, pstat, syslog
+		- amd, eeprom, kgmon, syslog
 	- Filesystem:
 		- edquota, quot, quotaon, repquota
 	- Network:
@@ -72,6 +71,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## ddb:
 
 ## kern:
+- Implement Access Control Lists
+- Implement Extended Attributes
+
 - subr_hints.c: It's usefulness is in question...
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
 - RLimit (Minor Issue)
@@ -82,16 +84,19 @@ A General todo list. Don't hesitate to add to this list. :)
 - create seperate options file for each arch
 - i386/x86: (Merged under i386)
 	- pnpbios: add devices
-	- softintr: add feature to smart select soft-interrupts over hardware based interrupts instead of using 		"__HAVE_GENERIC_SOFT_INTERRUPTS"
+	- softintr: add feature to smart select soft-interrupts over hardware based interrupts instead of using "__HAVE_GENERIC_SOFT_INTERRUPTS"
 
 ## devel: (planned)
 - Code planned for future integration
 - update copyright headers
 - See devel folder: README.md
-	- AdvVM: add a device mapper, use NetBSD's dm as reference.
+	- AdvVM: 
+		- add a device mapper, use NetBSD's dm as reference.
+	- HTBC: 
+		- Redo: implements only the blockchain and caching.
+		- Logging/Journal functions are filesystem dependent
 	- Overlays: pmap's and map improvements
 	- Threads: add workqueues and threadpools into kernel
-	- MPX: mpx subroutines need improving, if mpx styled threads are to work!?
 
 ## dev:
 - usb (Disabled): Has several compiler errors.

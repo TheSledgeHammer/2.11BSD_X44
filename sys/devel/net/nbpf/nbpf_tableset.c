@@ -634,49 +634,8 @@ nbpf_mktable(tset, tbl, tid, type, hsize)
 	return (0);
 }
 
-#define	NBPF_CMD_TABLE_LOOKUP	1
-#define	NBPF_CMD_TABLE_ADD		2
-#define	NBPF_CMD_TABLE_REMOVE	3
-
-struct nbpf_ioctl_table {
-	int					nct_cmd;
-	u_int				nct_tid;
-	int					nct_alen;
-	nbpf_addr_t			nct_addr;
-	nbpf_netmask_t		nct_mask;
-	int 				nct_type;
-};
-
 int
-nbpf_table_ioctl(tblset, cmd, tid, alen, addr, mask)
-	nbpf_tableset_t *tblset;
-	int cmd;
-	u_int tid;
-	int alen;
-	nbpf_addr_t addr;
-	nbpf_netmask_t mask;
-{
-	int error;
-
-	switch (cmd) {
-	case NBPF_CMD_TABLE_LOOKUP:
-		error = nbpf_table_lookup(tblset, tid, alen, addr);
-		break;
-	case NBPF_CMD_TABLE_ADD:
-		error = nbpf_table_insert(tblset, tid, alen, addr, mask);
-		break;
-	case NBPF_CMD_TABLE_REMOVE:
-		error = nbpf_table_remove(tblset, tid, alen, addr, mask);
-		break;
-	default:
-		error = EINVAL;
-		break;
-	}
-	return (error);
-}
-
-int
-nbpf_table_ioctl1(nbiot, tblset)
+nbpf_table_ioctl(nbiot, tblset)
 	struct nbpf_ioctl_table *nbiot;
 	nbpf_tableset_t *tblset;
 {

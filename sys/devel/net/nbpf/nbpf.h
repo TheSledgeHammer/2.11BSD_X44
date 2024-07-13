@@ -188,6 +188,19 @@ nbpf_free(cache, type)
 	free(cache, type);
 }
 
+#define	NBPF_CMD_TABLE_LOOKUP	1
+#define	NBPF_CMD_TABLE_ADD		2
+#define	NBPF_CMD_TABLE_REMOVE	3
+
+struct nbpf_ioctl_table {
+	int					nct_cmd;
+	u_int				nct_tid;
+	int					nct_alen;
+	nbpf_addr_t			nct_addr;
+	nbpf_netmask_t		nct_mask;
+	int 				nct_type;
+};
+
 /* Table types. */
 #define	NBPF_TABLE_LPM			1
 #define	NBPF_TABLE_HASH			2

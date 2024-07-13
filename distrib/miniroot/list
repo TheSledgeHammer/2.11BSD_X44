@@ -8,7 +8,7 @@ LINK	instbin				bin/cat
 LINK	instbin				bin/chflags
 LINK	instbin				bin/chmod
 LINK	instbin				bin/cp
-LINK	instbin				bin/x_dd bin/dd
+LINK	instbin				bin/x_dd 		bin/dd
 LINK	instbin				bin/df
 LINK	instbin				bin/ed
 LINK	instbin				bin/expr
@@ -20,23 +20,23 @@ LINK	instbin				bin/mkdir
 LINK	instbin				bin/mt
 LINK	instbin				bin/mv
 LINK	instbin				bin/pwd
-LINK	instbin				bin/pax usr/bin/tar usr/bin/cpio
+LINK	instbin				bin/pax 		usr/bin/tar 	usr/bin/cpio
 LINK	instbin				bin/rm
 LINK	instbin				bin/sh
 LINK	instbin				bin/stty
 LINK	instbin				bin/sleep
 LINK	instbin				bin/sync
-LINK	instbin				bin/test bin/[
+LINK	instbin				bin/test 		bin/[
 
-LINK	instbin				sbin/fsck_ffs sbin/fsck
-LINK	instbin				sbin/reboot sbin/halt
+LINK	instbin				sbin/fsck_ffs 	sbin/fsck
+LINK	instbin				sbin/reboot 	sbin/halt
 LINK	instbin				sbin/x_ifconfig sbin/ifconfig
-LINK	instbin				sbin/init_s sbin/init
+LINK	instbin				sbin/init_s 	sbin/init
 LINK	instbin				sbin/mknod
 LINK	instbin				sbin/mount
 LINK	instbin				sbin/mount_cd9660
 LINK	instbin				sbin/mount_ffs
-LINK	instbin				sbin/newfs sbin/mount_mfs
+LINK	instbin				sbin/newfs 		sbin/mount_mfs
 LINK	instbin				sbin/ping
 LINK	instbin				sbin/route
 LINK	instbin				sbin/shutdown
@@ -44,12 +44,12 @@ LINK	instbin				sbin/slattach
 LINK	instbin				sbin/umount
 
 LINK	instbin				usr/bin/ftp
-LINK	instbin				usr/bin/gzip usr/bin/gunzip usr/bin/gzcat
+LINK	instbin				usr/bin/gzip 	usr/bin/gunzip 	usr/bin/gzcat
 LINK	instbin				usr/bin/sed
 LINK	instbin				usr/bin/sort
 LINK	instbin				usr/bin/tip
 
-LINK	instbin				usr/sbin/chown usr/bin/chgrp
+LINK	instbin				usr/sbin/chown 	usr/bin/chgrp
 LINK	instbin				usr/sbin/chroot
 LINK	instbin				usr/sbin/update
 

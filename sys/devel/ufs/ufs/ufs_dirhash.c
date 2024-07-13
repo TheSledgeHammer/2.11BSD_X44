@@ -92,6 +92,8 @@ static TAILQ_HEAD(, dirhash) ufsdirhash_list;
 /* Protects: ufsdirhash_list, `dh_list' field, ufs_dirhashmem. */
 static struct lock_object	ufsdirhash_lock;
 
+
+
 /*
  * Free any hash table associated with inode 'ip'.
  */
@@ -128,6 +130,7 @@ ufsdirhash_free(struct inode *ip)
 	}
 	//mutex_destroy(&dh->dh_lock);
 	pool_cache_put(ufsdirhash_cache, dh);
+
 
 	atomic_add_int(&ufs_dirhashmem, -mem);
 }
