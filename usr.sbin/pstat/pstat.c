@@ -92,9 +92,9 @@ struct nlist nl[] = {
 #define VM_DMMAX	5
 	{ .n_name = "_dmmax" },		/* maximum size of a swap block */
 #define VM_TEXT		6
-	{ .n_name = "_text" },
+	{ .n_name = "_text" },		/* list of free text */
 #define VM_NTEXT	7
-	{ .n_name = "_ntext"},
+	{ .n_name = "_ntext"},		/* number of text */
 #define	V_MOUNTLIST	8
 	{ .n_name = "_mountlist" },	/* address of head of mount list. */
 #define V_NUMV		9
@@ -175,6 +175,18 @@ struct {
 		return (0);						\
 	}
 
+#define KGETPROC(kp, op, arg, cnt, msg) 	\
+	if (((kp) = kvm_getprocs(kd, op, arg, cnt)) == 0) { \
+		warnx("cannot read %s: %s", msg, kvm_geterr(kd));	\
+	}
+
+
+struct e_proc {
+	struct kinfo_proc 	*kinfo;
+	struct proc 		*aproc;
+	struct proc			proc;
+};
+
 struct e_vnode {
 	struct vnode *avnode;
 	struct vnode vnode;
@@ -223,6 +235,10 @@ void	usage(void);
 void	vnode_header(void);
 void	vnode_print(struct vnode *, struct vnode *);
 void	vnodemode(void);
+void 	procmode(void);
+void 	proc_print(struct proc *, struct proc *, int);
+struct e_proc *loadprocs(int *);
+struct e_proc *kinfo_procs(int *);
 void	textmode(void);
 void	putf(long, char);
 
@@ -234,11 +250,11 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch, i, quit, ret;
-	int fileflag, swapflag, ttyflag, vnodeflag, textflag;
+	int fileflag, swapflag, ttyflag, vnodeflag, procflag, textflag;
 	char buf[_POSIX2_LINE_MAX];
 
-	fileflag = swapflag = ttyflag = vnodeflag = 0;
-	while ((ch = getopt(argc, argv, "TM:N:finstv")) != EOF)
+	fileflag = swapflag = ttyflag = vnodeflag = procflag = textflag = 0;
+	while ((ch = getopt(argc, argv, "TM:N:finpstvx")) != EOF)
 		switch (ch) {
 		case 'f':
 			fileflag = 1;
@@ -251,6 +267,9 @@ main(argc, argv)
 			break;
 		case 'n':
 			usenumflag = 1;
+			break;
+		case 'p':
+			procflag = 1;
 			break;
 		case 's':
 			swapflag = 1;
@@ -294,12 +313,14 @@ main(argc, argv)
 		if (quit)
 			exit(1);
 	}
-	if (!(fileflag | vnodeflag | ttyflag | swapflag | textflag | totalflag))
+	if (!(fileflag | vnodeflag | ttyflag | procflag | swapflag | textflag | totalflag))
 		usage();
 	if (fileflag || totalflag)
 		filemode();
 	if (vnodeflag || totalflag)
 		vnodemode();
+	if (procflag ||totalflag)
+		procmode();
 	if (textflag || totalflag)
 		textmode();
 	if (ttyflag)
@@ -805,21 +826,142 @@ ttyprt(tp, line)
 }
 
 void
+procmode(void)
+{
+	struct e_proc *e_proc;
+	struct proc *pp, *xproc;
+	int nproc, np;
+
+	e_proc = loadprocs(&nproc);
+	if (totalflag) {
+		printf("%3d processes\n", nproc);
+		return;
+	}
+	KGET2(&e_proc->proc, xproc, nproc * sizeof(xproc), "proc");
+	if (xproc == NULL) {
+		err(1, NULL);
+	}
+	np = 0;
+	for (pp = xproc; pp < &xproc[nproc]; pp++) {
+		if (pp->p_stat) {
+			np++;
+		}
+	}
+	if (totalflag) {
+		printf("%3d/%3d processes\n", np, nproc);
+		return;
+	}
+	printf("%d/%d processes\n", np, nproc);
+	proc_print(xproc, pp, nproc);
+	free(e_proc);
+}
+
+void
+proc_print(pp, xproc, nproc)
+	struct proc *pp, *xproc;
+	int nproc;
+{
+	printf("   LOC   S       F PRI      SIG   UID SLP TIM  CPU  NI   PGRP    PID   PPID    ADDR   SADDR   DADDR    SIZE   WCHAN    LINK   TEXTP SIGM\n");
+	for (pp = xproc; pp < &xproc[nproc]; pp++) {
+		if (pp->p_stat == 0) {
+			continue;
+		}
+		printf("%7.1o", nproc + (pp - xproc) * sizeof(*pp));
+		printf(" %2d", pp->p_stat);
+		printf(" %7.1x", pp->p_flag);
+		printf(" %3d", pp->p_pri);
+		printf(" %8.1lx", pp->p_sig);
+		printf(" %5u", pp->p_uid);
+		printf(" %3d", pp->p_slptime);
+		printf(" %3d", pp->p_time);
+		printf(" %4d", pp->p_cpu & 0377);
+		printf(" %3d", pp->p_nice);
+		printf(" %6d", pp->p_pgrp);
+		printf(" %6d", pp->p_pid);
+		printf(" %6d", pp->p_ppid);
+		printf(" %7.1o", pp->p_addr);
+		printf(" %7.1o", pp->p_saddr);
+		printf(" %7.1o", pp->p_daddr);
+		printf(" %7.1o", pp->p_dsize+pp->p_ssize);
+		printf(" %7.1o", pp->p_wchan);
+		printf(" %7.1o", pp->p_link);
+		printf(" %7.1o", pp->p_textp);
+		printf(" %8.1lx", pp->p_sigmask);
+		printf("\n");
+	}
+}
+
+struct e_proc *
+loadprocs(nprocs)
+	int *nprocs;
+{
+	int mib[2];
+	size_t copysize;
+	struct e_proc *eproc;
+
+	if (memf != NULL) {
+		/*
+		 * do it by hand
+		 */
+		return (kinfo_procs(nprocs));
+	}
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	if (sysctl(mib, 2, NULL, &copysize, NULL, 0) == -1) {
+		err(1, "sysctl: KERN_PROC");
+	}
+	if ((eproc = malloc(copysize)) == NULL) {
+		err(1, NULL);
+	}
+	if (sysctl(mib, 2, eproc, &copysize, NULL, 0) == -1) {
+		err(1, "sysctl: KERN_PROC");
+	}
+	if (copysize % sizeof(struct e_proc)) {
+		errx(1, "proc size mismatch");
+	}
+	*nprocs = copysize / sizeof(struct e_proc);
+	return (eproc);
+}
+
+struct e_proc *
+kinfo_procs(nprocs)
+	int *nprocs;
+{
+	struct kinfo_proc *kp;
+	struct e_proc *eproc;
+	u_int nproc;
+	int i;
+
+	KGETPROC(kp, KERN_PROC_ALL, 0, &nprocs, "kinfo proc");
+	if ((eproc = malloc(nprocs * sizeof(*eproc))) == NULL) {
+		err(1, NULL);
+	}
+	for (i = nprocs; --i >= 0; ++kp) {
+		eproc[i].kinfo = kp;
+		if (eproc[i].kinfo == NULL) {
+			errx(1, "kinfo empty");
+		}
+		eproc[i].proc = eproc[i].kinfo->kp_proc;
+	}
+	*nprocs = nproc;
+	return (eproc);
+}
+
+void
 textmode(void)
 {
 	struct txtlist textlist;
-	struct vm_text *xp, *xtext;
+	struct vm_text *xp;
 	int ntext;
 	u_int ntx, ntxca;
 
 	KGET(VM_NTEXT, ntext);
-	xtext = calloc(ntext, sizeof(*xtext));
 	if (ntext < 0 || ntext > 10000) {
 		fprintf(stderr, "number of texts is preposterous (%d)\n",
 			ntext);
 		return;
 	}
-	KGET(VM_TEXT, textlist);
+	KGET1(VM_TEXT, textlist, sizeof(struct txtlist), "vm_text lists");
 	for (xp = TAILQ_FIRST(&textlist);; xp = TAILQ_NEXT(xp, psx_list)) {
 		if (xp->psx_vptr != NULL) {
 			ntxca++;
@@ -1121,21 +1263,186 @@ void
 usage(void)
 {
 	(void)fprintf(stderr,
-	    "usage: pstat -Tfnstv [system] [-M core] [-N system]\n");
+	    "usage: pstat -Tfnpstvx [system] [-M core] [-N system]\n");
 	exit(1);
 }
 
-void
-procmode(void)
-{
-
-}
-
+#ifdef notyet
 void
 usrmode(void)
 {
+	struct user U;
+	long	*ip;
+	int i, j;
 
+	printf("pcb\t%.1o\n", U.u_pcb.pcb_sigc);
+	printf("fps\t%.1o %g %g %g %g %g %g\n", U.u_fps.u_fpsr, U.u_fps.u_fpregs[0],
+			U.u_fps.u_fpregs[1], U.u_fps.u_fpregs[2], U.u_fps.u_fpregs[3],
+			U.u_fps.u_fpregs[4], U.u_fps.u_fpregs[5]);
+	printf("fpsaved\t%d\n", U.u_fpsaved);
+	printf("fperr\t%.1o %.1o\n", U.u_fperr.f_fec, U.u_fperr.f_fea);
+	printf("procp\t%.1o\n", U.u_procp);
+	printf("ar0\t%.1o\n", U.u_ar0);
+	printf("comm\t%s\n", U.u_comm);
+	printf("arg\t%.1o %.1o %.1o %.1o %.1o %.1o\n", U.u_arg[0], U.u_arg[1],
+			U.u_arg[2], U.u_arg[3], U.u_arg[4], U.u_arg[5]);
+	printf("ap\t%.1o\n", U.u_ap);
+	printf("qsave\t");
+	for (i = 0; i < sizeof(label_t) / sizeof(int); i++)
+		printf("%.1o ", U.u_qsave.val[i]);
+	printf("\n");
+	printf("r_val1\t%.1o\n", U.u_r.r_val1);
+	printf("r_val2\t%.1o\n", U.u_r.r_val2);
+	printf("error\t%d\n", U.u_error);
+	printf("uids\t%d,%d,%d,%d,%d\n", U.u_uid, U.u_pcred->p_svuid, U.u_pcred->p_ruid, U.u_pcred->p_svgid,
+			U.u_pcred->p_rgid);
+	printf("groups");
+	for (i = 0; (i < NGROUPS) && (U.u_groups[i] != NOGROUP); i++) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("%u ", U.u_groups[i]);
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("tsize\t%.1o\n", U.u_tsize);
+	printf("dsize\t%.1o\n", U.u_dsize);
+	printf("ssize\t%.1o\n", U.u_ssize);
+	printf("ssave\t");
+	for (i = 0; i < sizeof(label_t) / sizeof(int); i++)
+		printf("%.1o ", U.u_ssave.val[i]);
+	printf("\n");
+	printf("rsave\t");
+	for (i = 0; i < sizeof(label_t) / sizeof(int); i++)
+		printf("%.1o ", U.u_rsave.val[i]);
+	printf("\n");
+	printf("uisa");
+	for (i = 0; i < sizeof(U.u_uisa) / sizeof(short); i++) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("%.1o ", U.u_uisa[i]);
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("uisd");
+	for (i = 0; i < sizeof(U.u_uisd) / sizeof(short); i++) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("%.1o ", U.u_uisd[i]);
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("sep\t%d\n", U.u_sep);
+	printf("ovdata\t%d %d %.1o %d\n", U.u_ovdata.uo_curov, U.u_ovdata.uo_ovbase,
+			U.u_ovdata.uo_dbase, U.u_ovdata.uo_nseg);
+	printf("ov_offst");
+	for (i = 0; i < NOVL; i++) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("%.1o ", U.u_ovdata.uo_ov_offst[i]);
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("signal");
+	for (i = 0; i < NSIG; i++) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("%.1o ", U.u_signal[i]);
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("sigmask");
+	for (i = 0; i < NSIG; i++) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("%.1lo ", U.u_sigmask[i]);
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("sigonstack\t%.1lo\n", U.u_sigonstack);
+	printf("sigintr\t%.1lo\n", U.u_sigintr);
+	printf("oldmask\t%.1lo\n", U.u_oldmask);
+	printf("code\t%u\n", U.u_code);
+	printf("psflags\t%d\n", U.u_psflags);
+	printf("ss_base\t%.1o ss_size %.1o ss_flags %.1o\n", U.u_sigstk.ss_base,
+			U.u_sigstk.ss_size, U.u_sigstk.ss_flags);
+	printf("ofile");
+	for (i = 0; i < NOFILE; i++) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("%.1o ", U.u_ofile[i]);
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("pofile");
+	for (i = 0; i < NOFILE; i++) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("%.1o ", U.u_pofile[i]);
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("lastfile\t%d\n", U.u_lastfile);
+	printf("cdir\t%.1o\n", U.u_cdir);
+	printf("rdir\t%.1o\n", U.u_rdir);
+	printf("ttyp\t%.1o\n", U.u_ttyp);
+	printf("ttyd\t%d,%d\n", major(U.u_ttyd), minor(U.u_ttyd));
+	printf("cmask\t%.1o\n", U.u_cmask);
+	printf("ru\t");
+	ip = (long*) &U.u_ru;
+	for (i = 0; i < sizeof(U.u_ru) / sizeof(long); i++)
+		printf("%ld ", ip[i]);
+	printf("\n");
+	printf("cru\t");
+	ip = (long*) &U.u_cru;
+	for (i = 0; i < sizeof(U.u_cru) / sizeof(long); i++)
+		printf("%ld ", ip[i]);
+	printf("\n");
+	printf("timer\t%ld %ld %ld %ld\n", U.u_timer[0].it_interval,
+			U.u_timer[0].it_value, U.u_timer[1].it_interval,
+			U.u_timer[1].it_value);
+	printf("start\t%ld\n", U.u_start);
+	printf("acflag\t%d\n", U.u_acflag);
+	printf("prof\t%.1o %u %u %u\n", U.u_prof.pr_base, U.u_prof.pr_size,
+			U.u_prof.pr_off, U.u_prof.pr_scale);
+	printf("rlimit cur\t");
+	for (i = 0; i < RLIM_NLIMITS; i++) {
+		if (U.u_rlimit[i].rlim_cur == RLIM_INFINITY)
+			printf("infinite ");
+		else
+			printf("%ld ", U.u_rlimit[i].rlim_cur);
+	}
+	printf("\n");
+	printf("rlimit max\t");
+	for (i = 0; i < RLIM_NLIMITS; i++) {
+		if (U.u_rlimit[i].rlim_max == RLIM_INFINITY)
+			printf("infinite ");
+		else
+			printf("%ld ", U.u_rlimit[i].rlim_max);
+	}
+	printf("\n");
+	printf("quota\t%.1o\n", U.u_quota);
+	printf("ncache\t%ld %u %d,%d\n", U.u_ncache.nc_prevoffset,
+			U.u_ncache.nc_inumber, major(U.u_ncache.nc_dev),
+			minor(U.u_ncache.nc_dev));
+	printf("login\t%*s\n", MAXLOGNAME, U.u_login);
 }
+#endif
 
 #ifdef notyet
 void

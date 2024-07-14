@@ -360,7 +360,7 @@ scanvars()
 
 static char *
 fmt(fn, ki, comm, maxlen)
-	char **(*fn) __P((kvm_t *, const struct kinfo_proc *, int));
+	char **(*fn)(kvm_t *, const struct kinfo_proc *, int);
 	KINFO *ki;
 	char *comm;
 	int maxlen;
