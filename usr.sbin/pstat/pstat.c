@@ -319,7 +319,7 @@ main(argc, argv)
 		filemode();
 	if (vnodeflag || totalflag)
 		vnodemode();
-	if (procflag ||totalflag)
+	if (procflag || totalflag)
 		procmode();
 	if (textflag || totalflag)
 		textmode();
