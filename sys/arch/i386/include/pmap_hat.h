@@ -62,13 +62,16 @@ extern vm_offset_t 				ovl_last_phys;
 #endif
 
 __BEGIN_DECLS
+void			*pmap_hat_alloc(pmap_hat_t, vm_size_t, int);
+void			pmap_hat_free(pmap_hat_t, vm_offset_t, vm_size_t, int);
 void 			pmap_hat_attach(pmap_hat_list_t, pmap_hat_t, pmap_hat_map_t, pmap_hat_object_t, int);
 void			pmap_hat_detach(pmap_hat_list_t, pmap_hat_t, pmap_hat_map_t, pmap_hat_object_t, int);
 pmap_hat_t		pmap_hat_find(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
 void			pmap_hat_copy(pmap_hat_list_t, pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
+void			pmap_hat_mapout(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
+void			pmap_hat_mapin(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
 vm_offset_t     pmap_hat_pa_index(vm_offset_t, int);
 pv_entry_t      pmap_hat_pa_to_pvh(vm_offset_t, int);
-
 void			pmap_hat_remove_pv(pmap_t, vm_offset_t, vm_offset_t, int, int, vm_offset_t, vm_offset_t);
 void			pmap_hat_enter_pv(pmap_t, vm_offset_t, vm_offset_t, int, vm_offset_t, vm_offset_t);
 

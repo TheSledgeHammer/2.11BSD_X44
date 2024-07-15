@@ -72,6 +72,47 @@ static pv_entry_t	   	ovl_hat_to_pvh(pmap_hat_list_t, vm_offset_t);
 #endif
 
 /* PMAP HAT */
+void *
+pmap_hat_alloc(map, size, flags)
+	pmap_hat_map_t map;
+	vm_size_t size;
+	int flags;
+{
+	void *va;
+
+	va = NULL;
+	switch (flags) {
+	case PMAP_HAT_VM:
+		va = kmem_alloc((vm_map_t)map, size);
+		break;
+#ifdef OVERLAY
+	case PMAP_HAT_OVL:
+		va = omem_alloc((ovl_map_t)map, size);
+		break;
+#endif
+	}
+	return (va);
+}
+
+void
+pmap_hat_free(map, addr, size, flags)
+	pmap_hat_map_t map;
+	vm_offset_t	addr;
+	vm_size_t size;
+	int flags;
+{
+	switch (flags) {
+	case PMAP_HAT_VM:
+		kmem_free((vm_map_t)map, addr, size);
+		break;
+#ifdef OVERLAY
+	case PMAP_HAT_OVL:
+		omem_free((ovl_map_t)map, addr, size);
+		break;
+#endif
+	}
+}
+
 void
 pmap_hat_attach(hatlist, hat, map, object, flags)
 	pmap_hat_list_t hatlist;
@@ -122,38 +163,84 @@ pmap_hat_find(hatlist, map, object, flags)
 }
 
 /*
- * Create a copy of pmap hatlist and the specified hat's contents.
+ * Copy source list contents from the specified target map/object,
+ * to the destination list.
  */
 void
-pmap_hat_copy(from, to, map, object, flags)
-	pmap_hat_list_t from, to;
-	pmap_hat_map_t map;
-	pmap_hat_object_t object;
+pmap_hat_copy(dst_list, src_list, target_map, target_object, flags)
+	pmap_hat_list_t dst_list, src_list;
+	pmap_hat_map_t target_map;
+	pmap_hat_object_t target_object;
 	int flags;
 {
-	register pmap_hat_t src, dst;
+	register pmap_hat_t src_hat, dst_hat;
 
-	if (LIST_EMPTY(from)) {
+	if (LIST_EMPTY(src_list)) {
 		return;
 	}
 
-	src = pmap_hat_find(from, map, object, flags);
-	if (src == NULL) {
+	src_hat = pmap_hat_find(src_list, target_map, target_object, flags);
+	if (src_hat == NULL) {
+		return;
+	}
+	LIST_INIT(dst_list);
+	dst_hat = (pmap_hat_t)pmap_hat_alloc(target_map, sizeof(src_hat), flags);
+	if (dst_hat == NULL) {
 		return;
 	}
 
-	LIST_INIT(to);
-
-	LIST_FOREACH(src, from, ph_next) {
-		LIST_INSERT_HEAD(to, dst, ph_next);
+	LIST_FOREACH(src_hat, src_list, ph_next) {
+		if ((src_hat->ph_map == target_map) && (src_hat->ph_object == target_object)) {
+			pmap_hat_attach(dst_list, dst_hat, target_map, target_object, flags);
+		}
 	}
 
-	if (dst != src) {
-		pmap_hat_detach(to, dst, map, object, flags);
-		return;
+	if (dst_hat != src_hat) {
+		pmap_hat_detach(dst_list, dst_hat, target_map, target_object, flags);
+		pmap_hat_free(target_map, (vm_offset_t)dst_hat, sizeof(dst_hat));
 	}
+}
 
-	pmap_hat_attach(to, dst, map, object, flags);
+/*
+ * Map contents out of the source list
+ */
+void
+pmap_hat_mapout(dst_list, target_map, target_object, flags)
+	pmap_hat_list_t dst_list;
+	pmap_hat_map_t target_map;
+	pmap_hat_object_t target_object;
+{
+	switch (flags) {
+	case PMAP_HAT_VM:
+		pmap_hat_copy(dst_list, &vmhat_list, target_map, target_object, PMAP_HAT_VM);
+		break;
+#ifdef OVERLAY
+	case PMAP_HAT_OVL:
+		pmap_hat_copy(dst_list, &ovlhat_list, target_map, target_object, PMAP_HAT_OVL);
+		break;
+#endif
+	}
+}
+
+/*
+ * Map contents into the source list
+ */
+void
+pmap_hat_mapin(src_list, target_map, target_object, flags)
+	pmap_hat_list_t src_list;
+	pmap_hat_map_t target_map;
+	pmap_hat_object_t target_object;
+{
+	switch (flags) {
+	case PMAP_HAT_VM:
+		pmap_hat_copy(&vmhat_list, src_list, target_map, target_object, PMAP_HAT_VM);
+		break;
+#ifdef OVERLAY
+	case PMAP_HAT_OVL:
+		pmap_hat_copy(&ovlhat_list, src_list, target_map, target_object, PMAP_HAT_OVL);
+		break;
+#endif
+	}
 }
 
 /* PMAP HAT PV's */
@@ -193,7 +280,6 @@ pmap_hat_pa_index(pa, flags)
 	case PMAP_HAT_VM:
 		index = vm_hat_pa_index(pa);
 		break;
-
 #ifdef OVERLAY
 	case PMAP_HAT_OVL:
 		index = ovl_hat_pa_index(pa);
@@ -214,7 +300,6 @@ pmap_hat_pa_to_pvh(pa, flags)
 	case PMAP_HAT_VM:
 		pvh = vm_hat_to_pvh(&vmhat_list, pa);
 		break;
-
 #ifdef OVERLAY
 	case PMAP_HAT_OVL:
 		pvh = ovl_hat_to_pvh(&ovlhat_list, pa);
@@ -351,8 +436,8 @@ vm_hat_init(hatlist, phys_start, phys_end, addr)
 	size = round_page(size);
 
 	LIST_INIT(hatlist);
-	hat = (struct pmap_hat *)kmem_alloc(kernel_map, sizeof(struct pmap_hat));
-	hat->ph_pvtable = (struct pv_entry *)kmem_alloc(kernel_map, size);
+	hat = (struct pmap_hat *)pmap_hat_alloc(kernel_map, sizeof(struct pmap_hat), PMAP_HAT_VM);
+	hat->ph_pvtable = (struct pv_entry *)pmap_hat_alloc(kernel_map, size, PMAP_HAT_VM);
 	hat->ph_pvtable->pv_attr = (char)addr;
 	pmap_hat_attach(hatlist, hat, kernel_map, kernel_object, PMAP_HAT_VM);
 }
@@ -391,8 +476,9 @@ ovl_hat_init(hatlist, phys_start, phys_end, addr)
 	size = round_page(size);
 
 	LIST_INIT(hatlist);
-	hat = (struct pmap_hat *)omem_alloc(overlay_map, sizeof(struct pmap_hat));
-	hat->ph_pvtable = (struct pv_entry *)omem_alloc(overlay_map, size);
+	hat = (struct pmap_hat *)pmap_hat_alloc(overlay_map, sizeof(struct pmap_hat), PMAP_HAT_OVL);
+	hat->ph_pvtable = (struct pv_entry *)pmap_hat_alloc(overlay_map, size, PMAP_HAT_OVL);
+	hat->ph_pvtable->pv_attr = (char)addr;
 	pmap_hat_attach(hatlist, hat, overlay_map, overlay_object, PMAP_HAT_OVL);
 }
 

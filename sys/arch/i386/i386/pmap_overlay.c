@@ -41,29 +41,6 @@
 #include <machine/pmap_hat.h>
 
 #ifdef OVERLAY
-#ifdef deprecated
-void
-pmap_overlay_bootstrap(firstaddr, res)
-	vm_offset_t firstaddr;
-	u_long res;
-{
-    extern vm_offset_t avail_start, virtual_avail, virtual_end;
-      
-	overlay_avail = (vm_offset_t)firstaddr;
-	overlay_end = OVL_MAX_ADDRESS;
-
-	/*
-	 * Set first available physical page to the end
-	 * of the overlay address space.
-	 */
-	res = atop(overlay_end - (vm_offset_t)KERNLOAD);
-
-	avail_start = overlay_end;
-	virtual_avail = (vm_offset_t)overlay_end;
-	virtual_end = VM_MAX_KERNEL_ADDRESS;
-}
-#endif
-
 void
 pmap_overlay_bootstrap(firstaddr)
 	vm_offset_t firstaddr;
@@ -189,28 +166,27 @@ pmap_overlay_enter(pmap, va, pa)
 
 #ifdef notyet
 
+static struct pmap_hat_list temphat_list;
+
 /* mapout ovlhat_list to list (temp) */
 void
-pmap_overlay_mapout(list, map, object)
-	pmap_hat_list_t list;
-	ovl_map_t 	map;
-	ovl_object_t object;
+pmap_overlay_mapout(target_map, target_object)
+	//pmap_hat_list_t dst_list;
+	ovl_map_t 	target_map;
+	ovl_object_t target_object;
 {
-	pmap_hat_copy(ovlhat_list, list, map, object, PMAP_HAT_OVL);
-	pmap_hat_detach(ovlhat_list, map, object, PMAP_HAT_OVL);
+	pmap_hat_mapout(&temphat_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
 }
 
 /* mapin ovlhat_list from list (temp) */
 void
-pmap_overlay_mapin(list, map, object)
-	pmap_hat_list_t list;
-	ovl_map_t 	map;
-	ovl_object_t object;
+pmap_overlay_mapin(target_map, target_object)
+	//pmap_hat_list_t src_list;
+	ovl_map_t 	target_map;
+	ovl_object_t target_object;
 {
-	pmap_hat_copy(list, ovlhat_list, map, object, PMAP_HAT_OVL);
-	pmap_hat_detach(list, map, object, PMAP_HAT_OVL);
+	pmap_hat_mapin(&temphat_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
 }
 
 #endif
-
 #endif
