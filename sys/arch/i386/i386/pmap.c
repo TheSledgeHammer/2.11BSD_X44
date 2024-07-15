@@ -574,7 +574,6 @@ pmap_bootstrap(firstaddr)
 	kernel_pmap->pm_ovltab = (ovl_entry_t *)(KERNBASE + IdleOVL);
 #endif
 	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
-	//kernel_pmap->pm_pdirpa = (vm_offset_t *)IdlePTD;
 #ifdef PMAP_PAE_COMP
 	for (i = 0; i < NPGPTD; i++) {
 		kernel_pmap->pm_pdirpa[i] = (vm_offset_t *)IdlePTD + PAGE_SIZE * i;
@@ -850,23 +849,45 @@ pmap_init(phys_start, phys_end)
 
 	addr = (vm_offset_t) KERNBASE + KPTphys;
 	vm_hat_init(&vmhat_list, phys_start, phys_end, addr);
-
 	pmap_pj_page_init();
+#ifdef OVERLAY
+	/* addr should change to OVLphys */
+	ovl_hat_init(&ovlhat_list, phys_start, phys_end, addr);
+#endif
 
 	/*
 	 * Now it is safe to enable pv_table recording.
 	 */
 	vm_first_phys = phys_start;
 	vm_last_phys = phys_end;
-
 #ifdef OVERLAY
-	ovl_hat_init(&ovlhat_list, phys_start, phys_end, addr);
 	ovl_first_phys = phys_start; 	/* not correct */
 	ovl_last_phys = phys_end;		/* not correct */
 #endif
 
 	pmap_initialized = TRUE;
 }
+
+#ifdef notyet
+/* TODO: Work out actual addresses */
+void
+pmap_init_phys(phys_start, phys_end)
+	vm_offset_t	phys_start, phys_end;
+{
+	/*
+	 * Now it is safe to enable pv_table recording.
+	 */
+#ifdef OVERLAY
+	ovl_first_phys = phys_start;
+	ovl_last_phys = ptoa(NPGOVL)
+	vm_first_phys = ovl_last_phys;
+	vm_last_phys = phys_end;
+#else
+	vm_first_phys = phys_start;
+	vm_last_phys = phys_end;
+#endif
+}
+#endif
 
 /*
  *	Used to map a range of physical addresses into kernel

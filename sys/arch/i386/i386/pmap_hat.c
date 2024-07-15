@@ -416,6 +416,19 @@ pmap_hat_enter_pv(pmap, va, pa, flags, first_phys, last_phys)
 	}
 }
 
+vm_size_t
+pmap_hat_pv_alloc(phys_start, phys_end)
+	vm_offset_t phys_start, phys_end;
+{
+    vm_size_t pvsize, size, npg;
+
+    pvsize = (vm_size_t)sizeof(struct pv_entry);
+    npg = atop(phys_end - phys_start);
+    size = (pvsize * npg + npg);
+    size = round_page(size);
+    return (size);
+}
+
 /* PMAP HAT's Initialization */
 
 /* VM HAT */
@@ -425,15 +438,12 @@ vm_hat_init(hatlist, phys_start, phys_end, addr)
 	vm_offset_t phys_start, phys_end, addr;
 {
 	pmap_hat_t hat;
-	vm_size_t pvsize, size, npg;
+	vm_size_t size;
 
     vm_object_reference(kernel_object);
     vm_map_find(kernel_map, kernel_object, addr, &addr, 2*NBPG, FALSE);
 
-	pvsize = (vm_size_t)(sizeof(struct pv_entry));
-	npg = atop(phys_end - phys_start);
-	size = (pvsize * npg + npg);
-	size = round_page(size);
+	size = pmap_hat_pv_alloc(phys_start, phys_end);
 
 	LIST_INIT(hatlist);
 	hat = (struct pmap_hat *)pmap_hat_alloc(kernel_map, sizeof(struct pmap_hat), PMAP_HAT_VM);
@@ -465,15 +475,12 @@ ovl_hat_init(hatlist, phys_start, phys_end, addr)
 	vm_offset_t phys_start, phys_end, addr;
 {
 	pmap_hat_t hat;
-	vm_size_t pvsize, size, npg;
+	vm_size_t size;
 
 	ovl_object_reference(overlay_object);
 	ovl_map_find(overlay_map, overlay_object, addr, &addr, 2*NBPG, FALSE);
 
-	pvsize = (vm_size_t)(sizeof(struct pv_entry));
-	npg = atop(phys_end - phys_start);
-	size = (pvsize * npg + npg);
-	size = round_page(size);
+	size = pmap_hat_pv_alloc(phys_start, phys_end);
 
 	LIST_INIT(hatlist);
 	hat = (struct pmap_hat *)pmap_hat_alloc(overlay_map, sizeof(struct pmap_hat), PMAP_HAT_OVL);
