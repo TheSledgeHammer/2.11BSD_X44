@@ -164,7 +164,7 @@ pmap_overlay_enter(pmap, va, pa)
 	pmap_hat_enter_pv(pmap, va, pa, PMAP_HAT_OVL, ovl_first_phys, ovl_last_phys);
 }
 
-//#ifdef notyet
+#ifdef notyet
 
 static struct pmap_hat_list temphat_list;
 
