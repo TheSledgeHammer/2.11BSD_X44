@@ -1152,6 +1152,56 @@ ovl_map_remove(map, start, end)
 	return (result);
 }
 
+#ifdef notyet
+
+int
+vm_fork(p1, p2, isvfork)
+	register struct proc *p1, *p2;
+	int isvfork;
+{
+	ovlspace_mapout(p1->p_ovlspace);
+
+	p2->p_vmspace = vmspace_fork(p1->p_vmspace);
+
+	ovlspace_mapin(p2->p_ovlspace);
+}
+
+static struct pmap_hat_list tmplist;
+
+void
+ovlspace_mapout(ovl)
+	struct ovlspace *ovl;
+{
+	ovl_map_t 		old_map;
+	ovl_map_entry_t	old_entry;
+	ovl_object_t 	old_object;
+
+	old_map = ovl->ovl_map;
+	ovl_map_lock(old_map);
+	CIRCLEQ_FOREACH(old_entry, &old_map->cl_header, cl_entry) {
+		old_object = old_entry->object;
+		pmap_hat_mapout(&tmplist, old_map, old_object, PMAP_HAT_OVL);
+	}
+	ovl_map_unlock(old_map);
+}
+
+void
+ovlspace_mapin(ovl)
+	struct ovlspace *ovl;
+{
+	ovl_map_t 		new_map;
+	ovl_map_entry_t	new_entry;
+	ovl_object_t 	new_object;
+
+	new_map = ovl->ovl_map;
+	ovl_map_lock(new_map);
+	CIRCLEQ_FOREACH(new_entry, &new_map->cl_header, cl_entry) {
+		new_object = new_entry->object;
+		pmap_hat_mapin(&tmplist, new_map, new_object, PMAP_HAT_OVL);
+	}
+	ovl_map_unlock(new_map);
+}
+
 /*
  * This won't work in it's current form, if at all.
  * The ovlspace pmap is directly linked to the kernel_pmap just like the vmspace. Thus
@@ -1163,7 +1213,6 @@ ovl_map_remove(map, start, end)
  * creation of the new vmspace.
  *
  */
-#ifdef notyet
 struct ovlspace *
 ovlspace_fork(ovl1)
 	struct ovlspace *ovl1;

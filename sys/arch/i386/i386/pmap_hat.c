@@ -416,7 +416,7 @@ pmap_hat_enter_pv(pmap, va, pa, flags, first_phys, last_phys)
 	}
 }
 
-vm_size_t
+static vm_size_t
 pmap_hat_pv_alloc(phys_start, phys_end)
 	vm_offset_t phys_start, phys_end;
 {

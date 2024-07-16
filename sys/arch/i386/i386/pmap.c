@@ -177,7 +177,7 @@ vm_offset_t		vm_last_phys;		/* PA just past last managed page */
 struct pmap_hat_list 	vmhat_list;
 
 #ifdef OVERLAY
-u_long			OVLphys;
+u_long			OVLphys;			/* phys addr of overlay tables */
 ovl_entry_t		*IdleOVL;
 
 vm_offset_t		overlay_avail;  	/* VA of first avail page (after kernel bss)*/
@@ -843,51 +843,30 @@ void
 pmap_init(phys_start, phys_end)
 	vm_offset_t	phys_start, phys_end;
 {
-	vm_offset_t addr;
+	vm_offset_t addr1, addr2;
 	vm_size_t npg, s;
 	int i;
 
-	addr = (vm_offset_t) KERNBASE + KPTphys;
-	vm_hat_init(&vmhat_list, phys_start, phys_end, addr);
+	addr1 = (vm_offset_t)(KERNBASE + KPTphys);
+	vm_hat_init(&vmhat_list, phys_start, phys_end, addr1);
 	pmap_pj_page_init();
 #ifdef OVERLAY
-	/* addr should change to OVLphys */
-	ovl_hat_init(&ovlhat_list, phys_start, phys_end, addr);
+	addr2 = (vm_offset_t)(KERNBASE + OVLphys);
+	ovl_hat_init(&ovlhat_list, phys_start, phys_end, addr2);
 #endif
 
 	/*
 	 * Now it is safe to enable pv_table recording.
 	 */
-	vm_first_phys = phys_start;
-	vm_last_phys = phys_end;
 #ifdef OVERLAY
-	ovl_first_phys = phys_start; 	/* not correct */
-	ovl_last_phys = phys_end;		/* not correct */
-#endif
-
-	pmap_initialized = TRUE;
-}
-
-#ifdef notyet
-/* TODO: Work out actual addresses */
-void
-pmap_init_phys(phys_start, phys_end)
-	vm_offset_t	phys_start, phys_end;
-{
-	/*
-	 * Now it is safe to enable pv_table recording.
-	 */
-#ifdef OVERLAY
-	ovl_first_phys = phys_start;
-	ovl_last_phys = ptoa(NPGOVL)
-	vm_first_phys = ovl_last_phys;
-	vm_last_phys = phys_end;
+	vm_first_phys = ovl_first_phys = phys_start;
+	vm_last_phys = ovl_last_phys = phys_end;
 #else
 	vm_first_phys = phys_start;
 	vm_last_phys = phys_end;
 #endif
+	pmap_initialized = TRUE;
 }
-#endif
 
 /*
  *	Used to map a range of physical addresses into kernel
@@ -2138,52 +2117,21 @@ pmap_pvdump(pa)
 	printf(" ");
 }
 
-#ifdef notyet
-void
-pmap_check_wiring(str, va)
-	char *str;
-	vm_offset_t va;
-{
-	vm_map_entry_t entry;
-	register int count, *pte;
-
-	va = trunc_page(va);
-	if (!pmap_pde_v(pmap_map_pde(kernel_pmap, va))
-			|| !pmap_pte_v(pmap_pte(kernel_pmap, va))) {
-		return;
-	}
-
-	if (!vm_map_lookup_entry(pt_map, va, &entry)) {
-		printf("wired_check: entry for %x not found\n", va);
-		return;
-	}
-	count = 0;
-	for (pte = (int*) va; pte < (int*) (va + PAGE_SIZE); pte++) {
-		if (*pte) {
-			count++;
-		}
-	}
-	if (entry->wired_count != count) {
-		printf("*%s*: %x: w%d/a%d\n", str, va, entry->wired_count, count);
-	}
-}
-#endif
-
 /* print address space of pmap*/
 void
 pmap_pads(pm)
 	pmap_t pm;
 {
-	unsigned va, i, j;
+	unsigned int va, i, j;
 	register int *ptep;
 
 	if (pm == kernel_pmap) {
 		return;
 	}
-	for (i = 0; i < 1024; i++) {
+	for (i = 0; i < NBPTD; i++) {
 		if (pmap_pde_v(pm->pm_pdir[i])) {
-			for (j = 0; j < 1024; j++) {
-				va = (i << 22) + (j << 12);
+			for (j = 0; j < NBPTD; j++) {
+				va = (i << L2_SHIFT) + (j << L1_SHIFT);
 				if (pm == kernel_pmap && va < KERNBASE) {
 					continue;
 				}

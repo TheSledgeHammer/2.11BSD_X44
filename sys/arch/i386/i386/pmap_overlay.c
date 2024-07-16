@@ -40,7 +40,7 @@
 #include <machine/pmap.h>
 #include <machine/pmap_hat.h>
 
-#ifdef OVERLAY
+//#ifdef OVERLAY
 void
 pmap_overlay_bootstrap(firstaddr)
 	vm_offset_t firstaddr;
@@ -164,28 +164,28 @@ pmap_overlay_enter(pmap, va, pa)
 	pmap_hat_enter_pv(pmap, va, pa, PMAP_HAT_OVL, ovl_first_phys, ovl_last_phys);
 }
 
-#ifdef notyet
+//#ifdef notyet
 
 static struct pmap_hat_list temphat_list;
 
 /* mapout ovlhat_list to list (temp) */
 void
-pmap_overlay_mapout(target_map, target_object)
-	//pmap_hat_list_t dst_list;
+pmap_overlay_mapout(dst_list, target_map, target_object)
+	pmap_hat_list_t dst_list;
 	ovl_map_t 	target_map;
 	ovl_object_t target_object;
 {
-	pmap_hat_mapout(&temphat_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
+	pmap_hat_mapout(dst_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
 }
 
 /* mapin ovlhat_list from list (temp) */
 void
-pmap_overlay_mapin(target_map, target_object)
-	//pmap_hat_list_t src_list;
+pmap_overlay_mapin(src_list, target_map, target_object)
+	pmap_hat_list_t src_list;
 	ovl_map_t 	target_map;
 	ovl_object_t target_object;
 {
-	pmap_hat_mapin(&temphat_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
+	pmap_hat_mapin(src_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
 }
 
 #endif
