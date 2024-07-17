@@ -40,7 +40,7 @@
 #include <machine/pmap.h>
 #include <machine/pmap_hat.h>
 
-//#ifdef OVERLAY
+#ifdef OVERLAY
 void
 pmap_overlay_bootstrap(firstaddr)
 	vm_offset_t firstaddr;
