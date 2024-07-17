@@ -51,6 +51,12 @@ struct efs {
 	u_int32_t 		efs_fsize;		/* frag size */
 	u_int32_t 		efs_frags;		/* number of frags */
 
+	u_int32_t		efs_bfree;		/* number of free disk blocks */
+	u_int32_t		efs_bmask;
+	u_int32_t		efs_bshift;
+	u_int32_t		efs_fshift;
+
+
 	struct vnode	*efs_vnode;
 };
 

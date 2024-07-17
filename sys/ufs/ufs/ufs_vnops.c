@@ -65,8 +65,8 @@
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
 
-static int ufs_chmod (struct vnode *, int, struct ucred *, struct proc *);
-static int ufs_chown (struct vnode *, uid_t, gid_t, struct ucred *, struct proc *);
+static int ufs_chmod(struct vnode *, int, struct ucred *, struct proc *);
+static int ufs_chown(struct vnode *, uid_t, gid_t, struct ucred *, struct proc *);
 
 void
 ufs_itimes(vp)

@@ -34,12 +34,18 @@
 #include <sys/queue.h>
 #include <sys/tree.h>
 
+/* Red-Black HashTree */
+
+/* hashtree entries  */
 struct hashtree_entry {
 	RB_ENTRY(hashtree_entry) 	h_node;
 	uint32_t 			 		h_hash;
-	uint32_t 					h_blk;
+	uint32_t 					h_block;
+	uint16_t					h_max;
+	uint16_t					h_num;
 };
 
+/* hashtree root */
 struct hashtree_rbtree;
 RB_HEAD(hashtree_rbtree, hashtree_entry);
 struct hashtree_root {
@@ -47,28 +53,41 @@ struct hashtree_root {
 
 };
 
+/* hashtree node:  */
 struct hashtree_node {
-	struct hashtree_rbtree 		h_entries[0];
+	struct hashtree_entry 		h_entries[0];
 };
 
+/* Blockchain: */
 struct hashhead;
 CIRCLEQ_HEAD(hashhead, hashchain);
 struct hashchain {
 	CIRCLEQ_ENTRY(hashchain)	hc_entry;			/* a list of chain entries */
 	struct htree_root			*hc_hroot;			/* htree root per block */
 	const char					*hc_name;			/* name of chain entry */
-	int							hc_len;
+	int							hc_length;
 	int							hc_refcnt;
 };
 
+/* VFS and Filesystem Access */
+
+/* represents as vfs for filesystem purposes */
+struct hashnode {
+	struct vnode 				*hn_vnode;
+	struct mount				*hn_mount;
+};
+
+/* Block level Manipulation */
+struct hashblock {
+
+	void 						*hb_data;
+};
+
+/* File level Manipulation */
 struct hashfile {
 
 };
 
-struct hashblock {
-	void 						*hb_data;
-
-};
-
 extern struct hashhead *blockchain;
+
 #endif /* SYS_DEVEL_HTBC_HTREE_H_ */

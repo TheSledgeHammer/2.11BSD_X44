@@ -328,8 +328,11 @@ lfs_open(path, f)
 	if (rc)
 		goto out;
 
-	if (buf_size != LFS_SBPAD || fs->lfs_magic != LFS_MAGIC ||
-	    fs->lfs_bsize > MAXBSIZE || fs->lfs_bsize < sizeof(struct lfs)) {
+	if (fs->lfs_magic != LFS1_MAGIC || fs->lfs_magic != LFS2_MAGIC) {
+		if (buf_size != LFS_SBPAD || fs->lfs_bsize > MAXBSIZE || fs->lfs_bsize < sizeof(struct lfs)) {
+			rc = EINVAL;
+			goto out;
+		}
 		rc = EINVAL;
 		goto out;
 	}

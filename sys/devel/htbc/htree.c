@@ -98,29 +98,31 @@ htbc_start(htp, mp, vp, off, count, blksize)
 		struct hashchain *hc;
 		size_t len = 1 << ht->ht_log_dev_bshift;
 		hc = htbc_calloc(1, len);
-		hc->hc_len = len;
+		hc->hc_length = len;
 		CIRCLEQ_FIRST(&ht->ht_hashhead) = hc;
 	}
 
 	return (0);
 }
 
+/* Hashchain */
+
 int
-hashchain_hash(const char *name, int len)
+hashchain_hash(const char *name, int length)
 {
 	return (0);
 }
 
 struct hashchain *
-hashchain_lookup(const char *name, int len)
+hashchain_lookup(const char *name, int length)
 {
 	struct hashhead *bucket;
 	register struct hashchain 	*entry;
 
-	bucket = &blockchain[hashchain_hash(name, len)];
+	bucket = &blockchain[hashchain_hash(name, length)];
 	hashchain_lock(entry);
 	CIRCLEQ_FOREACH(entry, bucket, hc_entry) {
-		if ((entry->hc_name == name) && (entry->hc_len == len)) {
+		if ((entry->hc_name == name) && (entry->hc_length == length)) {
 			hashchain_unlock(entry);
 			return (entry);
 		}
@@ -130,16 +132,16 @@ hashchain_lookup(const char *name, int len)
 }
 
 void
-hashchain_insert(const char *name, int len)
+hashchain_insert(const char *name, int length)
 {
 	struct hashhead *bucket;
 	register struct hashchain *entry;
 
-	bucket = &blockchain[hashchain_hash(name, len)];
+	bucket = &blockchain[hashchain_hash(name, length)];
 	entry = (struct hashchain *)malloc(sizeof(*entry), M_HCHAIN, M_WAITOK);
 	entry->hc_hroot = (struct hashtree_root *)malloc(sizeof(struct hashtree_root *), M_HTREE, M_WAITOK);
 	entry->hc_name = name;
-	entry->hc_len = len;
+	entry->hc_length = length;
 
 	hashchain_lock(entry);
 	CIRCLEQ_INSERT_HEAD(bucket, entry, hc_entry);
@@ -149,15 +151,15 @@ hashchain_insert(const char *name, int len)
 }
 
 void
-hashchain_remove(const char *name, int len)
+hashchain_remove(const char *name, int length)
 {
 	struct hashhead *bucket;
 	register struct hashchain 	*entry;
 
-	bucket = &blockchain[hashchain_hash(name, len)];
+	bucket = &blockchain[hashchain_hash(name, length)];
 	hashchain_lock(entry);
 	CIRCLEQ_FOREACH(entry, bucket, hc_entry) {
-		if ((entry->hc_name == name) && (entry->hc_len == len)) {
+		if ((entry->hc_name == name) && (entry->hc_length == length)) {
 			CIRCLEQ_REMOVE(bucket, entry, hc_entry);
 			hashchain_unlock(entry);
 			entry->hc_refcnt--;
@@ -172,7 +174,7 @@ hashchain_lookup_hashtree_root(struct hashchain *chain)
 	struct hashchain *look;
 	struct hashtree_root *root;
 
-	look = hashchain_lookup(chain->hc_name, chain->hc_len);
+	look = hashchain_lookup(chain->hc_name, chain->hc_length);
 	if (look != NULL) {
 		root = look->hc_hroot;
 		return (root);
@@ -180,8 +182,58 @@ hashchain_lookup_hashtree_root(struct hashchain *chain)
 	return (NULL);
 }
 
-int
-hashtree_rb_compare(struct htree_entry *a, struct htree_entry *b)
+/* Red-Black Hash Tree */
+
+void
+hashtree_setcount(struct hashtree_entry *entry, uint16_t count)
+{
+	entry->h_num = count;
+}
+
+void
+hashtree_setlimit(struct hashtree_entry *entry, uint16_t limit)
+{
+	entry->h_max = limit;
+}
+
+void
+hashtree_sethash(struct hashtree_entry *entry, uint32_t hash)
+{
+	entry->h_hash = hash;
+}
+
+void
+hashtree_setblock(struct hashtree_entry *entry, uint32_t block)
+{
+	entry->h_block = block;
+}
+
+uint16_t
+hashtree_getcount(struct hashtree_entry *entry)
+{
+	return (entry->h_num);
+}
+
+uint16_t
+hashtree_getlimit(struct hashtree_entry *entry)
+{
+	return (entry->h_max);
+}
+
+uint32_t
+hashtree_gethash(struct hashtree_entry *entry)
+{
+	return (entry->h_hash);
+}
+
+uint32_t
+hashtree_getblock(struct hashtree_entry *entry)
+{
+	return (entry->h_block);
+}
+
+static int
+hashtree_rb_hash_compare(struct htree_entry *a, struct htree_entry *b)
 {
 	if (a->h_hash < b->h_hash) {
 		return (-1);
@@ -191,34 +243,47 @@ hashtree_rb_compare(struct htree_entry *a, struct htree_entry *b)
 	return (0);
 }
 
+int
+hashtree_rb_compare(struct htree_entry *a, struct htree_entry *b)
+{
+	if (a < b) {
+		return (-1);
+	} else if (a > b) {
+		return (1);
+	}
+	return (hashtree_rb_hash_compare(a, b));
+}
+
 RB_PROTOTYPE(hashtree_rbtree, hashtree_entry, h_node, hashtree_rb_compare);
 RB_GENERATE(hashtree_rbtree, hashtree_entry, h_node, hashtree_rb_compare);
 
 void
-hashtree_rb_insert(struct htree_rbtree *root, struct hashtree_entry *entry)
+hashtree_rb_insert(struct hashtree_rbtree *root, struct hashtree_entry *entry, uint32_t hash, uint32_t block)
 {
-
-	RB_INSERT(htree_rbt, root, entry);
+	hashtree_sethash(entry, hash);
+	hashtree_setblock(entry, block);
+	RB_INSERT(hashtree_rbtree, root, entry);
 }
 
 void
-hashtree_rb_remove(struct htree_rbtree *root, struct hashtree_entry *entry)
+hashtree_rb_remove(struct hashtree_rbtree *root, uint32_t hash, uint32_t block)
 {
-	RB_REMOVE(htree_rbt, root, entry);
+	struct hashtree_entry *entry;
+
+	entry = hashtree_rb_lookup(root, hash, block);
+	if (entry != NULL) {
+		RB_REMOVE(hashtree_rbtree, root, entry);
+	}
 }
 
 struct hashtree_entry *
-hashtree_rb_lookup(struct htree_rbtree *root, uint32_t hash, uint32_t blk)
+hashtree_rb_lookup(struct hashtree_rbtree *root, uint32_t hash, uint32_t block)
 {
 	struct hashtree_entry *entry;
-	RB_FOREACH(entry, htree_rbt, root) {
-		if ((entry->h_hash == hash) && (entry->h_blk == blk)) {
+	RB_FOREACH(entry, hashtree_rbtree, root) {
+		if ((entry->h_hash == hash) && (entry->h_block == block)) {
 			return (entry);
 		}
 	}
 	return (NULL);
 }
-
-
-
-

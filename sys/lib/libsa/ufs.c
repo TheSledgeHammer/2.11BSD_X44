@@ -398,8 +398,11 @@ ufs_open(path, f)
 	if (rc)
 		goto out;
 
-	if (buf_size != SBSIZE || fs->fs_magic != FS_MAGIC ||
-	    fs->fs_bsize > MAXBSIZE || fs->fs_bsize < sizeof(struct fs)) {
+	if (fs->fs_magic != FS_UFS1_MAGIC || fs->fs_magic != FS_UFS2_MAGIC) {
+		if (buf_size != SBSIZE || fs->fs_bsize > MAXBSIZE || fs->fs_bsize < sizeof(struct fs)) {
+			rc = EINVAL;
+			goto out;
+		}
 		rc = EINVAL;
 		goto out;
 	}
