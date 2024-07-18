@@ -188,7 +188,7 @@ struct e_vnode {
 struct e_proc {
 	struct kinfo_proc *kinfo;
 	struct proc 	*aproc;
-	struct proc		proc;
+	struct proc	proc;
 };
 
 struct e_text {
