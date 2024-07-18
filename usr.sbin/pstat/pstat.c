@@ -953,6 +953,46 @@ kinfo_procs(nprocs)
 	return (eproc);
 }
 
+void
+textmode(void)
+{
+	struct e_text *etext, *endtext, *xtp;
+	struct vm_text *xp;
+	int numtexts;
+	u_int ntx, ntxca;
+
+	etext = loadtexts(&numtexts);
+	if (totalflag) {
+		printf("%3d texts\n", numtexts);
+		return;
+	}
+	endtext = etext + numtexts;
+	for (xtp = etext; xtp < endtext; xtp++) {
+		xp = &xtp->text;
+		if (xp->psx_vptr != NULL) {
+			ntxca++;
+		}
+		if (xp->psx_count != 0) {
+			ntx++;
+		}
+	}
+	if (totalflag) {
+		printf("%3d/%3d texts active, %3d used\n", ntx, numtexts, ntxca);
+		return;
+	}
+	printf("%d/%d active texts, %d used\n", ntx, numtexts, ntxca);
+	printf("\
+   LOC   FLAGS   DADDR   CADDR    SIZE   VPTR   CNT CCNT   FORW     BACK\n");
+	for (xtp = etext; xtp < endtext; xtp++) {
+		xp = &xtp->text;
+		if (xp->psx_vptr == NULL) {
+			continue;
+		}
+		text_print(xtp->atext, xp);
+	}
+	free(etext);
+}
+
 struct e_text *
 loadtexts(atexts)
 	int *atexts;
@@ -1017,46 +1057,6 @@ vminfo_texts(atexts)
 	}
 	*atexts = num;
 	return ((struct e_text *)xbuf);
-}
-
-void
-textmode(void)
-{
-	struct e_text *etext, *endtext, *xtp;
-	struct vm_text *xp;
-	int numtexts;
-	u_int ntx, ntxca;
-
-	etext = loadtexts(&numtexts);
-	if (totalflag) {
-		printf("%3d texts\n", numtexts);
-		return;
-	}
-	endtext = etext + numtexts;
-	for (xtp = etext; xtp < endtext; xtp++) {
-		xp = &xtp->text;
-		if (xp->psx_vptr != NULL) {
-			ntxca++;
-		}
-		if (xp->psx_count != 0) {
-			ntx++;
-		}
-	}
-	if (totalflag) {
-		printf("%3d/%3d texts active, %3d used\n", ntx, numtexts, ntxca);
-		return;
-	}
-	printf("%d/%d active texts, %d used\n", ntx, numtexts, ntxca);
-	printf("\
-   LOC   FLAGS   DADDR   CADDR    SIZE   VPTR   CNT CCNT   FORW     BACK\n");
-	for (xtp = etext; xtp < endtext; xtp++) {
-		xp = &xtp->text;
-		if (xp->psx_vptr == NULL) {
-			continue;
-		}
-		text_print(xtp->atext, xp);
-	}
-	free(etext);
 }
 
 void
