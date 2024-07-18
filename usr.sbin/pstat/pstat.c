@@ -180,16 +180,20 @@ struct {
 		warnx("cannot read %s: %s", msg, kvm_geterr(kd));	\
 	}
 
-
-struct e_proc {
-	struct kinfo_proc 	*kinfo;
-	struct proc 		*aproc;
-	struct proc			proc;
-};
-
 struct e_vnode {
 	struct vnode *avnode;
 	struct vnode vnode;
+};
+
+struct e_proc {
+	struct kinfo_proc *kinfo;
+	struct proc 	*aproc;
+	struct proc		proc;
+};
+
+struct e_text {
+	struct vm_text atext;
+	struct vm_text *text;
 };
 
 struct {
@@ -239,6 +243,8 @@ void 	procmode(void);
 void 	proc_print(struct proc *, struct proc *, int);
 struct e_proc *loadprocs(int *);
 struct e_proc *kinfo_procs(int *);
+struct e_text *loadtexts(int *);
+struct e_text *vminfo_texts(int *);
 void	textmode(void);
 void	putf(long, char);
 
@@ -828,67 +834,67 @@ ttyprt(tp, line)
 void
 procmode(void)
 {
-	struct e_proc *e_proc;
-	struct proc *pp, *xproc;
-	int nproc, np;
+	struct e_proc *eproc, *endproc, *epp;
+	struct proc *pp;
+	int numprocs, np;
 
-	e_proc = loadprocs(&nproc);
+	eproc = loadprocs(&numprocs);
 	if (totalflag) {
-		printf("%3d processes\n", nproc);
+		printf("%3d processes\n", numprocs);
 		return;
 	}
-	KGET2(&e_proc->proc, xproc, nproc * sizeof(xproc), "proc");
-	if (xproc == NULL) {
-		err(1, NULL);
-	}
 	np = 0;
-	for (pp = xproc; pp < &xproc[nproc]; pp++) {
+	endproc = eproc + numprocs;
+	for (epp = eproc; epp < endproc; epp++) {
+		pp = &epp->proc;
 		if (pp->p_stat) {
 			np++;
 		}
 	}
 	if (totalflag) {
-		printf("%3d/%3d processes\n", np, nproc);
+		printf("%3d/%3d processes\n", np, numprocs);
 		return;
 	}
-	printf("%d/%d processes\n", np, nproc);
-	proc_print(xproc, pp, nproc);
-	free(e_proc);
-}
-
-void
-proc_print(pp, xproc, nproc)
-	struct proc *pp, *xproc;
-	int nproc;
-{
+	printf("%d/%d processes\n", np, numprocs);
 	printf("   LOC   S       F PRI      SIG   UID SLP TIM  CPU  NI   PGRP    PID   PPID    ADDR   SADDR   DADDR    SIZE   WCHAN    LINK   TEXTP SIGM\n");
-	for (pp = xproc; pp < &xproc[nproc]; pp++) {
+	for (epp = eproc; epp < endproc; epp++) {
+		pp = &epp->proc;
 		if (pp->p_stat == 0) {
 			continue;
 		}
-		printf("%7.1o", nproc + (pp - xproc) * sizeof(*pp));
-		printf(" %2d", pp->p_stat);
-		printf(" %7.1x", pp->p_flag);
-		printf(" %3d", pp->p_pri);
-		printf(" %8.1lx", pp->p_sig);
-		printf(" %5u", pp->p_uid);
-		printf(" %3d", pp->p_slptime);
-		printf(" %3d", pp->p_time);
-		printf(" %4d", pp->p_cpu & 0377);
-		printf(" %3d", pp->p_nice);
-		printf(" %6d", pp->p_pgrp);
-		printf(" %6d", pp->p_pid);
-		printf(" %6d", pp->p_ppid);
-		printf(" %7.1o", pp->p_addr);
-		printf(" %7.1o", pp->p_saddr);
-		printf(" %7.1o", pp->p_daddr);
-		printf(" %7.1o", pp->p_dsize+pp->p_ssize);
-		printf(" %7.1o", pp->p_wchan);
-		printf(" %7.1o", pp->p_link);
-		printf(" %7.1o", pp->p_textp);
-		printf(" %8.1lx", pp->p_sigmask);
-		printf("\n");
+		proc_print(epp->aproc, pp, numprocs);
 	}
+	free(eproc);
+}
+
+void
+proc_print(aproc, pp, numprocs)
+	struct proc *aproc;
+	struct proc *pp;
+	int numprocs;
+{
+	printf("%7.1o", numprocs + (pp - aproc) * sizeof(*pp));
+	printf(" %2d", pp->p_stat);
+	printf(" %7.1x", pp->p_flag);
+	printf(" %3d", pp->p_pri);
+	printf(" %8.1lx", pp->p_sig);
+	printf(" %5u", pp->p_uid);
+	printf(" %3d", pp->p_slptime);
+	printf(" %3d", pp->p_time);
+	printf(" %4d", pp->p_cpu & 0377);
+	printf(" %3d", pp->p_nice);
+	printf(" %6d", pp->p_pgrp);
+	printf(" %6d", pp->p_pid);
+	printf(" %6d", pp->p_ppid);
+	printf(" %7.1o", pp->p_addr);
+	printf(" %7.1o", pp->p_saddr);
+	printf(" %7.1o", pp->p_daddr);
+	printf(" %7.1o", pp->p_dsize+pp->p_ssize);
+	printf(" %7.1o", pp->p_wchan);
+	printf(" %7.1o", pp->p_link);
+	printf(" %7.1o", pp->p_textp);
+	printf(" %8.1lx", pp->p_sigmask);
+	printf("\n");
 }
 
 struct e_proc *
@@ -947,22 +953,88 @@ kinfo_procs(nprocs)
 	return (eproc);
 }
 
+struct e_text *
+loadtexts(atexts)
+	int *atexts;
+{
+	int mib[2];
+	size_t copysize;
+	struct e_text *etext;
+
+	mib[0] = CTL_VM;
+	mib[1] = VM_TEXT;
+		if (memf != NULL) {
+		/*
+		 * do it by hand
+		 */
+		return (vminfo_texts(atexts));
+	}
+	if (sysctl(mib, 2, NULL, &copysize, NULL, 0) == -1) {
+		err(1, "sysctl: VM_TEXT");
+	}
+	if ((etext = malloc(copysize)) == NULL) {
+		err(1, NULL);
+	}
+	if (sysctl(mib, 2, etext, &copysize, NULL, 0) == -1) {
+		err(1, "sysctl: VM_TEXT");
+	}
+	if (copysize % sizeof(struct e_text)) {
+		errx(1, "vm text size mismatch");
+	}
+	*atexts = copysize / sizeof(struct e_text);
+	return (etext);
+}
+
+struct e_text *
+vminfo_texts(atexts)
+	int *atexts;
+{
+	struct txtlist textlist;
+	struct vm_text *xp, text;
+	char *xbuf, *exbuf, *bp;
+	int num, numtexts;
+
+#define	TPTRSZ	sizeof(struct vm_text *)
+#define	TEXTSZ	sizeof(struct vm_text)
+
+	KGET(VM_NTEXT, numtexts);
+	if ((xbuf = malloc((numtexts + 20) * (TPTRSZ + TEXTSZ))) == NULL) {
+		err(1, NULL);
+	}
+	bp = xbuf;
+	exbuf = xbuf + (numtexts + 20) * (TPTRSZ + TEXTSZ);
+	KGET(VM_TEXT, textlist);
+	for (num = 0, xp = TAILQ_FIRST(&textlist); ; xp = TAILQ_NEXT(xp, psx_list)) {
+		KGET2(xp, &text, sizeof(text), "vm_text entry");
+		if ((bp + TPTRSZ + TEXTSZ) > exbuf) {
+			errx(1, "no more room for vm_texts");
+		}
+		memmove(bp, &xp, TPTRSZ);
+		bp += TPTRSZ;
+		memmove(bp, &text, TEXTSZ);
+		bp += TEXTSZ;
+		num++;
+	}
+	*atexts = num;
+	return ((struct e_text *)xbuf);
+}
+
 void
 textmode(void)
 {
-	struct txtlist textlist;
+	struct e_text *etext, *endtext, *xtp;
 	struct vm_text *xp;
-	int ntext;
+	int numtexts;
 	u_int ntx, ntxca;
 
-	KGET(VM_NTEXT, ntext);
-	if (ntext < 0 || ntext > 10000) {
-		fprintf(stderr, "number of texts is preposterous (%d)\n",
-			ntext);
+	etext = loadtexts(&numtexts);
+	if (totalflag) {
+		printf("%3d texts\n", numtexts);
 		return;
 	}
-	KGET1(VM_TEXT, textlist, sizeof(struct txtlist), "vm_text lists");
-	for (xp = TAILQ_FIRST(&textlist);; xp = TAILQ_NEXT(xp, psx_list)) {
+	endtext = etext + numtexts;
+	for (xtp = etext; xtp < endtext; xtp++) {
+		xp = &xtp->text;
 		if (xp->psx_vptr != NULL) {
 			ntxca++;
 		}
@@ -971,16 +1043,27 @@ textmode(void)
 		}
 	}
 	if (totalflag) {
-		printf("%3d/%3d texts active, %3d used\n", ntx, ntext, ntxca);
+		printf("%3d/%3d texts active, %3d used\n", ntx, numtexts, ntxca);
 		return;
 	}
-	printf("%d/%d active texts, %d used\n", ntx, ntext, ntxca);
+	printf("%d/%d active texts, %d used\n", ntx, numtexts, ntxca);
 	printf("\
    LOC   FLAGS   DADDR   CADDR    SIZE   VPTR   CNT CCNT   FORW     BACK\n");
-	for (xp = TAILQ_FIRST(&textlist);; xp = TAILQ_NEXT(xp, psx_list)) {
+	for (xtp = etext; xtp < endtext; xtp++) {
+		xp = &xtp->text;
 		if (xp->psx_vptr == NULL) {
 			continue;
 		}
+		text_print(xtp->atext, xp);
+	}
+	free(etext);
+}
+
+void
+text_print(atext, xp)
+	struct vm_text *atext;
+	struct vm_text *xp;
+{
 		putf((long) xp->psx_flag & XPAGV, 'P');
 		putf((long) xp->psx_flag & XTRC, 'T');
 		putf((long) xp->psx_flag & XWRIT, 'W');
@@ -996,7 +1079,6 @@ textmode(void)
 		printf("%4u ", xp->psx_ccount);
 		printf("%7.1o ", TAILQ_NEXT(xp, psx_list));
 		printf("%7.1o\n", TAILQ_PREV(xp, txtlist, psx_list));
-	}
 }
 
 void
@@ -1267,6 +1349,8 @@ usage(void)
 	exit(1);
 }
 
+
+
 #ifdef notyet
 void
 usrmode(void)
@@ -1441,63 +1525,5 @@ usrmode(void)
 			U.u_ncache.nc_inumber, major(U.u_ncache.nc_dev),
 			minor(U.u_ncache.nc_dev));
 	printf("login\t%*s\n", MAXLOGNAME, U.u_login);
-}
-#endif
-
-#ifdef notyet
-void
-texttype(xtext, type, number)
-	struct vm_text *xtext;
-	int type, number;
-{
-	struct vm_text *xp;
-	int ntext;
-	u_int ntx, ntxca;
-
-	if (xtext == NULL) {
-		return;
-	}
-	KGET(number, ntext);
-	if (ntext < 0 || ntext > 10000) {
-		fprintf(stderr, "number of texts is preposterous (%d)\n",
-			ntext);
-		return;
-	}
-	KGET1(type, xtext, ntext * sizeof(struct vm_text), "vm_text struct");
-	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->psx_vptr != NULL) {
-			ntxca++;
-		}
-		if (xp->psx_count != 0) {
-			ntx++;
-		}
-	}
-	if (totalflag) {
-		printf("%3d/%3d texts active, %3d used\n", ntx, ntext, ntxca);
-		return;
-	}
-	printf("%d/%d active texts, %d used\n", ntx, ntext, ntxca);
-	printf("\
-   LOC   FLAGS   DADDR   CADDR    SIZE   VPTR   CNT CCNT   FORW     BACK\n");
-	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->psx_vptr == NULL) {
-			continue;
-		}
-		putf((long) xp->psx_flag & XPAGV, 'P');
-		putf((long) xp->psx_flag & XTRC, 'T');
-		putf((long) xp->psx_flag & XWRIT, 'W');
-		putf((long) xp->psx_flag & XLOAD, 'L');
-		putf((long) xp->psx_flag & XLOCK, 'K');
-		putf((long) xp->psx_flag & XWANT, 'w');
-		putf((long) xp->psx_flag & XUNUSED, 'u');
-		printf("%7.1o ", xp->psx_daddr);
-		printf("%7.1o ", xp->psx_caddr);
-		printf("%7.1o ", xp->psx_size);
-		printf("%7.1o", xp->psx_vptr);
-		printf("%4u ", xp->psx_count);
-		printf("%4u ", xp->psx_ccount);
-		printf("%7.1o ", TAILQ_NEXT(xp, psx_list));
-		printf("%7.1o\n", TAILQ_PREV(xp, txtlist, psx_list));
-	}
 }
 #endif
