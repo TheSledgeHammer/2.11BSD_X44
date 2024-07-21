@@ -33,12 +33,14 @@
  *	@(#)fifo.h	8.6 (Berkeley) 5/21/95
  */
 
-//#ifdef FIFO
+#ifndef _MISCFS_FIFOFS_FIFO_H_
+#define _MISCFS_FIFOFS_FIFO_H_
+
 /*
  * Prototypes for fifo operations on vnodes.
  */
 int	fifo_badop(void *);
-int 	fifo_ebadf(void);
+int fifo_ebadf(void);
 int	fifo_printinfo(struct vnode *);
 int	fifo_lookup(struct vop_lookup_args *);
 int	fifo_open(struct vop_open_args *);
@@ -85,4 +87,5 @@ int	fifo_advlock(struct vop_advlock_args *);
 #define fifo_truncate 		((int (*) (struct  vop_truncate_args *))nullop)
 #define fifo_update 		((int (*) (struct  vop_update_args *))nullop)
 #define fifo_bwrite 		((int (*) (struct  vop_bwrite_args *))nullop)
-//#endif /* FIFO */
+
+#endif /* _MISCFS_FIFOFS_FIFO_H_  */

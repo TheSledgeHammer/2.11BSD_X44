@@ -108,6 +108,15 @@ ufml_check_filesystem(meta, fs)
 		meta->ufml_filesystem = UFML_LFS;
 		break;
 
+	case UFML_HAMMER:
+		meta->ufml_filesystem = UFML_HAMMER;
+		break;
+
+	case UFML_FUSE1:
+	case UFML_FUSE2:
+		meta->ufml_filesystem = (UFML_FUSE1 | UFML_FUSE2);
+		break;
+
 	default:
 		meta->ufml_filesystem = -1;
 		break;

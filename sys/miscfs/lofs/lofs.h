@@ -39,6 +39,9 @@
  * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
  */
 
+#ifndef _LOFS_H_
+#define _LOFS_H_
+
 #include <sys/queue.h>
 
 struct lofs_args {
@@ -76,4 +79,6 @@ extern struct vnode 	*lofs_checkvp (struct vnode *vp, char *fil, int lno);
 
 extern struct vnodeops 	lofs_vnodeops;
 extern struct vfsops 	lofs_vfsops;
+
 #endif /* KERNEL */
+#endif /* _LOFS_H_ */

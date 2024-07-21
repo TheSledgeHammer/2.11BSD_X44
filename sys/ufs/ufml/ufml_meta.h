@@ -36,7 +36,14 @@ enum ufml_fstype {
 	UFML_UFS,
 	UFML_FFS,
 	UFML_MFS,
-	UFML_LFS
+	UFML_LFS,
+	UFML_HAMMER,
+	/*
+	 * FUSE/PUFFS Support:
+	 * - Allows for mounting two fuse/puffs layer filesystems.
+	 */
+	UFML_FUSE1,
+	UFML_FUSE2,
 };
 
 /* UFML Supported Archive Formats */

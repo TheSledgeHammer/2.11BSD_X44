@@ -63,7 +63,7 @@ struct ufml_node {
 	struct vnode	        	*ufml_lowervp;	/* underlying object */
 };
 
-extern int 						ufml_node_create (struct mount *mp, struct vnode *target, struct vnode **vpp);
+extern int 						ufml_node_create(struct mount *mp, struct vnode *target, struct vnode **vpp);
 
 #define	MOUNTTOUFMLMOUNT(mp) 	((struct ufml_mount *)((mp)->mnt_data))
 #define	VTOUFML(vp) 			((struct ufml_node *)(vp)->v_data)
