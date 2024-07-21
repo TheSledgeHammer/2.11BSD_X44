@@ -333,7 +333,7 @@ vm_xpurge(void)
 
 	xstats->psxs_purge++;
 	TAILQ_FOREACH(xp, &vm_text_list, psx_list) {
-		if (xp->psx_vptr && (xp->psx_flag & (XLOCK|XCACHED)) == XCACHED) {
+		if (xp->psx_vptr && (xp->psx_flag & (XLOCK | XCACHED)) == XCACHED) {
 			vm_xuntext(xp);
 			if (xp->psx_vptr == NULL) {
 				found++;
@@ -373,7 +373,7 @@ vm_xswap(blkno, coreaddr, count, vp, rdflg)
 	}
 
 	while (count) {
-		bp->b_flags = B_BUSY | B_PHYS | B_INVAL | rdflg;
+		bp->b_flags = (B_BUSY | B_PHYS | B_INVAL | rdflg);
 		tcount = count;
 		if (tcount >= 01700) {				/* prevent byte-count wrap */
 			tcount = 01700;

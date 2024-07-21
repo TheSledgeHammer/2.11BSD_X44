@@ -194,7 +194,7 @@ int	quotaoff(struct proc *, struct mount *, int);
 int	quotaon(struct proc *, struct mount *, int, caddr_t);
 int	setquota(struct mount *, u_long, int, caddr_t);
 int	setuse(struct mount *, u_long, int, caddr_t);
-int	ufs_quotactl(struct mount *, int, uid_t, caddr_t, struct proc *);
+int	ufs211_quotactl(struct mount *, int, uid_t, caddr_t, struct proc *);
 __END_DECLS
 
 #ifdef DIAGNOSTIC

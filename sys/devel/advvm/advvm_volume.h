@@ -64,19 +64,23 @@ struct advvm_volume {
 };
 typedef struct advvm_volume         advvm_volume_t;
 
+/* volume storage type: fixed or dynamic extents */
+#define ADVOL_FIXED_STORAGE 	0
+#define ADVOL_DYNAMIC_STORAGE 	1
+
 void			advvm_volume_init(advvm_volume_t *);
 void			advvm_volume_set_domain(advvm_domain_t *, advvm_volume_t *);
 #ifdef notyet
 void			advvm_volume_set_label(struct advvm_label *, char *, char *, struct timeval, struct timeval, off_t);
 void 			advvm_volume_set_block(struct advvm_block *, uint64_t, uint64_t, uint32_t, caddr_t, int);
 #endif
-void			advvm_volume_create(advvm_domain_t *, advvm_volume_t *, uint64_t, uint64_t);
+void			advvm_volume_create(advvm_domain_t *, advvm_volume_t *, uint64_t, uint64_t, int);
 advvm_volume_t 	*advvm_volume_find(advvm_volume_t *, char *, uint32_t);
 void			advvm_volume_insert(advvm_domain_t *, advvm_volume_t *, char *, uint32_t, int);
 void			advvm_volume_remove(advvm_domain_t *, char *, uint32_t);
 void			advvm_volume_destroy(advvm_domain_t *);
 
-void			advvm_volume_init_storage(advvm_volume_t *, uint64_t, uint64_t, uint64_t, caddr_t, int);
+//void			advvm_volume_init_storage(adom, advol, start, end, storetype);
 int				advvm_volume_allocate_region(advvm_volume_t *, uint64_t, uint64_t, int);
 int				advvm_volume_allocate_subregion(advvm_volume_t *, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, int);
 #endif /* _DEV_ADVVM_VOLUME_H_ */

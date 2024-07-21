@@ -122,6 +122,7 @@ slabmeta(slab, size)
 	u_long indx;
 	u_long bsize;
 
+	/* bucket's index and size */
 	indx = BUCKETINDX(size);
 	bsize = BUCKETSIZE(indx);
 
@@ -129,7 +130,7 @@ slabmeta(slab, size)
 	meta = &slab->ksl_meta;
 	meta->ksm_bsize = bsize;
 	meta->ksm_bindx = indx;
-	meta->ksm_bslots = BUCKET_SLOTS(meta->ksm_bsize);
+	meta->ksm_bslots = BUCKET_SLOTS(bsize);
 	meta->ksm_aslots = ALLOCATED_SLOTS(size);
 	meta->ksm_fslots = SLOTSFREE(bsize, size);
 	if (meta->ksm_fslots < 0) {
@@ -158,7 +159,6 @@ slab_get_by_size(cache, size, mtype)
 {
     register struct kmemslabs *slab;
 
-    //slab = &slabbucket[BUCKETINDX(size)];
     simple_lock(&malloc_slock);
     if (LARGE_OBJECT(size)) {
     	CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_head, ksl_list) {
@@ -191,7 +191,6 @@ slab_get_by_index(cache, index, mtype)
 {
     register struct kmemslabs *slab;
 
-    //slab = &slabbucket[index];
     simple_lock(&malloc_slock);
     if (index >= 10) {
     	CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_head, ksl_list) {
@@ -319,7 +318,7 @@ kmembucket_search(cache, meta, size, mtype)
 
 	case SLAB_PARTIAL:
 partial:
-		if (bsize > meta->ksm_bsize && bslots > meta->ksm_bslots && fslots > meta->ksm_fslots) {
+		if ((bsize > meta->ksm_bsize) && (bslots > meta->ksm_bslots) && (fslots > meta->ksm_fslots)) {
 			kbp = slab_kmembucket(slab);
 			slabmeta(slab, slab->ksl_size);
 			return (kbp);
@@ -520,7 +519,11 @@ free(addr, type)
 	kup = btokup(addr);
 	size = 1 << kup->ku_indx;
 	slab = slab_get_by_index(&slabCache, kup->ku_indx, type);
-	kbp = kmembucket_search(&slabCache, slab->ksl_meta, size, type);
+	if (BUCKETINDX(size) != kup->ku_indx) {
+		kbp = kmembucket_search(&slabCache, slab->ksl_meta, BUCKETSIZE(kup->ku_indx), type);
+	} else {
+		kbp = kmembucket_search(&slabCache, slab->ksl_meta, size, type);
+	}
 	s = splimp();
 	simple_lock(&malloc_slock);
 #ifdef DIAGNOSTIC

@@ -108,8 +108,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 		/* May need to allocate indirect blocks */
 		for (i = 1; i < num; ++i)
 			if (!indirs[i].in_exists) {
-				ibp = getblk(vp, indirs[i].in_lbn, fs->lfs_bsize,
-				    0, 0);
+				ibp = getblk(vp, indirs[i].in_lbn, fs->lfs_bsize, 0, 0);
 				if ((ibp->b_flags & (B_DONE | B_DELWRI))) 
 					panic ("Indirect block should not exist");
 

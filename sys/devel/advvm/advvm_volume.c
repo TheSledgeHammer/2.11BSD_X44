@@ -39,9 +39,12 @@
 #include <devel/advvm/advvm_extent.h>
 #include <devel/advvm/advvm_volume.h>
 
-static long fixed_volume_extent[EXTENT_FIXED_STORAGE_SIZE(128)/sizeof(long)];
+/* Extents Maps to manage AdvVM memory. Allocate storage for 32 regions in each, initially. */
+static long advvm_volume_fixed_extent[EXTENT_FIXED_STORAGE_SIZE(32)/sizeof(long)];
 
 struct advdomain_list 	domain_list[MAXDOMAIN];
+
+static void			advvm_volume_alloc_storage(advvm_volume_t *, uint64_t, uint64_t, uint64_t, caddr_t, int);
 
 void
 advvm_volume_init(advol, name, id)
@@ -107,14 +110,14 @@ advvm_volume_create_block(storage, start, end, size, addr, flags)
 #endif
 
 void
-advvm_volume_create(adom, advol, start, end)
+advvm_volume_create(adom, advol, start, end, storetype)
 	advvm_domain_t *adom;
 	advvm_volume_t 	*advol;
 	uint64_t 		start, end;
+	int 			storetype;
 {
 	advvm_volume_set_domain(adom, advol);
-	/* Fixed Regions Currently Disabled */
-	advvm_volume_init_storage(advol, start, end, NULL, 0, EX_WAITOK | EX_MALLOCOK);
+	advvm_volume_init_storage(advol, start, end, storetype);
 }
 
 advvm_volume_t *
@@ -189,7 +192,23 @@ advvm_volume_destroy(advol)
  * Volume Storage Allocator
  */
 void
-advvm_volume_init_storage(advol, start, end, storage, storagesize, flags)
+advvm_volume_init_storage(advol, start, end, storetype)
+	advvm_volume_t 		*advol;
+	uint64_t 			start, end;
+	int 				storetype;
+{
+	switch (storetype) {
+	case ADVOL_FIXED_STORAGE:
+		advvm_volume_alloc_storage(advol, start, end,  advvm_volume_fixed_extent, sizeof(advvm_volume_fixed_extent), (EX_WAITOK | EX_NOCOALESCE));
+		break;
+	case ADVOL_DYNAMIC_STORAGE:
+		advvm_volume_alloc_storage(advol, start, end, NULL, 0, (EX_WAITOK | EX_MALLOCOK));
+		break;
+	}
+}
+
+static void
+advvm_volume_alloc_storage(advol, start, end, storage, storagesize, flags)
 	advvm_volume_t 		*advol;
 	uint64_t 			start, end, storagesize;
 	caddr_t 			storage;
@@ -253,8 +272,5 @@ advvm_volume_allocate_subregion(advol, substart, subend, size, alignment, bounda
 		error = advvm_extent_free(advol->vol_extent, start, size, flags);
 		return (error);
 	}
-
-	//advol->vol_alignment = alignment;
-	//advol->vol_boundary = boundary;
 	return (0);
 }

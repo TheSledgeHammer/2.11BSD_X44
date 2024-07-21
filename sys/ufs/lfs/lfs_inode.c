@@ -398,7 +398,6 @@ lfs_truncate(ap)
 #endif
 	fs->lfs_bfree += fragstodb(fs, fragsreleased);
 	DIP_SET(ip, blocks, DIP(ip, blocks) - fragstodb(fs, fragsreleased));
-	//ip->i_ffs1_blocks -= fragstodb(fs, fragsreleased);
 #ifdef DIAGNOSTIC
 	if (length == 0 && DIP(ip, blocks) != 0) {
 		printf("lfs_inode: Warning! %s%d%s\n",

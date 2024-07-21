@@ -16,58 +16,43 @@ an offical release is made.)
 	- USB
 
 - ADVVM (AdvVM): Logical Volume Manager
-  - A Volume Manager for BSD.
-  - Based on the ideas from Tru64 UNIX's AdvFS and incorporating concepts from Vinum and LVM2
+	- A Volume Manager for BSD.
+	- Based on the ideas from Tru64 UNIX's AdvFS and incorporating concepts from Vinum and LVM2
 
 - HTBC: A HTree Based Blockchain (WAPBL from NetBSD 5.2)
-  - Provide a VFS-Layer Blockchain that can augment/improve existing filesystem/s
-    - Augment BSD's Filesystems & other Filesystems including:
-      - LFS: Augment the Log-Structure
-      - UFS: Augment Journaling
+	- Provide a VFS-Layer Blockchain that can augment/improve existing filesystem/s
+		- Augment BSD's Filesystems & other Filesystems including:
+			- LFS: Augment the Log-Structure
+			- UFS: Augment Journaling
 
-- MPX: A reimplementation of the Multiplexor.
- Changes from Original:
-  - Replaces the pipe equivalent in FreeBSD, NetBSD, OpenBSD & DragonflyBSD
-  - Does not implement or use the line output.
-  - Interacts with the vfs layer rather than the filesystem.
-  - Meant to be interoperate with sockets
-
+- UFS:
+	- EFS: Extent-Based Filesystem: UFS-Backend
+		- Update/improve on IRIX's EFS-based extents
+		- Converting/Mapping between extents and blocks
+		- Implement vnops and vfsops
+	- UFS:
+		- Add Journaling and Soft Updates
+		- Implement Dirhash
+		
 - Kern & Sys:
-  - Malloc: A Tertiary Buddy System Allocator (Needs a home!). (subr_tbree.c & tbtree.h)
-    - Designed to work with the existing kern_malloc.c
-  - Threading (Hybrid N:M Model): kernel & user threads
-    - Implements a new concept: Inter-Threadpool Proccess Communication (ITPC)
-    - For User Threads, goto: (devel/libuthread)
-      - implement pthreads
+	- Malloc: A Tertiary Buddy System Allocator (Needs a home!). (subr_tbree.c & tbtree.h)
+    	- Designed to work with the existing kern_malloc.c
+  	- Threading (Hybrid N:M Model): kernel & user threads
+    	- Implements a new concept: Inter-Threadpool Proccess Communication (ITPC)
+    	- For User Threads, goto: (devel/libuthread)
+    	- implement pthreads
 
-- VM: Updates & Changes (See: "/devel/vm")
-	- Planned:
-  		- Ovl and Vm interactions
-    		- Allowing vm to make use of the ovl
-    	- Ports the anonymous virtual memory from NetBSD's UVM
-      		- uvm_anon: aka vm_anon: working as is. Minor changes needed
-      		- uvm_amap: aka vm_amap: working as is. Minor changes needed
-      		- uvm_aobj: aka vm_aobject: following changes needed:.
-        	- Interactions with swap.
-          		- Either:
-       				a) modify swap to make use of these changes.
-       				b) modify aobject
+- VM: Todo (See: "/devel/vm")
+	- Optional 
+		- support for seperate Instruction & Data space
+		- support for psuedo-segments (stack, code, text)
 
-  		- Virtual Segments: Logical Address
-    		- Improve internal VM operations.
-     	 	- Most noteably when used in conjunction with overlays (see below)
-      	- Optional support for seperate Instruction & Data space
-      	- Optional support for psuedo-segments (stack, code, text)
-
-- OVL: Overlay Space: A re-implementation of Overlays from 2.11BSD (See: "/devel/ovl")
-  - OVLSpace: A portion of physical memory with vm-like features
-  - Supports vm objects, pages & segments.
-  - Planned:
-    - Optional:
-      - Support for seperate Instruction & Data space
-      - Support for psuedo-segments (stack, code, text)
-    - Configurable:
-      - Overlay Space Size: Current Default = 10% of VM Size
-      - Number of Overlays: Current Default = 64
-    - Swap support when OVL memory is full
-    - Support overlaying executeables
+- OVL: Todo (See: "/devel/ovl")
+	- Optional:
+		- Support for seperate Instruction & Data space
+		- Support for psuedo-segments (stack, code, text)
+	- Configurable:
+		- Overlay Space Size: Current Default = 10% of VM Size
+      		- Number of Overlays: Current Default = 64
+	- Swap support when OVL memory is full
+    	- Support overlaying executeables

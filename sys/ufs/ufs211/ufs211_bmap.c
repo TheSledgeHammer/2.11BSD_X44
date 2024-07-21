@@ -23,7 +23,6 @@
 #include <ufs/ufs211/ufs211_extern.h>
 #include <miscfs/specfs/specdev.h>
 
-
 daddr_t ufs211_rablock;
 
 /*

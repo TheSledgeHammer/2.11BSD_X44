@@ -62,7 +62,8 @@ advvm_domain_create(adom, name, id, start, end, flags)
 	adom->dom_end = end;
 	adom->dom_flags = flags;
 	adom->dom_refcnt = 0;
-	advvm_storage_create(adom->dom_storage, adom->dom_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags);
+
+	//advvm_storage_create(adom->dom_storage, adom->dom_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags);
 }
 
 uint32_t

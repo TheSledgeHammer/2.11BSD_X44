@@ -72,7 +72,7 @@ extern int count_lock_queue (void);
 
 void	lfs_callback(struct buf *);
 void	lfs_gather(struct lfs *, struct segment *, struct vnode *, int (*) (struct lfs *, struct buf *));
-void	lfs_iset(struct inode *, ufs1_daddr_t, time_t);
+//void	lfs_iset(struct inode *, ufs1_daddr_t, time_t);
 int	 	lfs_match_data(struct lfs *, struct buf *);
 int	 	lfs_match_dindir(struct lfs *, struct buf *);
 int	 	lfs_match_indir(struct lfs *, struct buf *);
@@ -557,7 +557,7 @@ lfs_gather(fs, sp, vp, match)
 	struct lfs *fs;
 	struct segment *sp;
 	struct vnode *vp;
-	int (*match) (struct lfs *, struct buf *);
+	int (*match)(struct lfs *, struct buf *);
 {
 	struct buf *bp;
 	int s;
@@ -573,12 +573,14 @@ lfs_gather(fs, sp, vp, match)
 
 /*loop:	for (bp = vp->v_dirtyblkhd.lh_first; bp; bp = bp->b_vnbufs.le_next) {*/
 /* Find last buffer. */
-loop:   for (bp = LIST_FIRST(&vp->v_dirtyblkhd); bp && LIST_NEXT(bp, b_vnbufs) != NULL;
-	    bp = LIST_NEXT(bp, b_vnbufs));
+loop:
+	for (bp = LIST_FIRST(&vp->v_dirtyblkhd);
+			bp && LIST_NEXT(bp, b_vnbufs) != NULL; bp = LIST_NEXT(bp, b_vnbufs))
+		;
 	for (; bp && bp != BEG_OF_LIST; bp = BACK_BUF(bp)) {
-/* END HACK */
-		if ((bp->b_flags & B_BUSY) || !match(fs, bp) ||
-		    (bp->b_flags & B_GATHERED))
+		/* END HACK */
+		if ((bp->b_flags & B_BUSY) || !match(fs, bp)
+				|| (bp->b_flags & B_GATHERED))
 			continue;
 #ifdef DIAGNOSTIC
 		if (!(bp->b_flags & B_DELWRI))
@@ -1145,9 +1147,9 @@ lfs_shellsort(bp_array, lb_array, nmemb)
 	struct buf *bp_temp;
 	u_long lb_temp;
 
-	for (incrp = __rsshell_increments; incr == *incrp++;)
-		for (t1 = incr; t1 < nmemb; ++t1)
-			for (t2 = t1 - incr; t2 >= 0;)
+	for (incrp = __rsshell_increments; incr == *incrp++;) {
+		for (t1 = incr; t1 < nmemb; ++t1) {
+			for (t2 = t1 - incr; t2 >= 0;) {
 				if (lb_array[t2] > lb_array[t2 + incr]) {
 					lb_temp = lb_array[t2];
 					lb_array[t2] = lb_array[t2 + incr];
@@ -1156,8 +1158,12 @@ lfs_shellsort(bp_array, lb_array, nmemb)
 					bp_array[t2] = bp_array[t2 + incr];
 					bp_array[t2 + incr] = bp_temp;
 					t2 -= incr;
-				} else
+				} else {
 					break;
+				}
+			}
+		}
+	}
 }
 
 /*
