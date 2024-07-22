@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)errlst.c	8.2 (Berkeley) 11/16/93";
 
 #include <stdio.h>
 
-const char *const sys_errlist[] = {
+const char *sys_errlist[] = {
 	"Undefined error: 0",					/*  0 - ENOERROR */
 	"Operation not permitted",				/*  1 - EPERM */
 	"No such file or directory",			/*  2 - ENOENT */
@@ -140,5 +140,6 @@ const char *const sys_errlist[] = {
 	"Authentication error",					/* 80 - EAUTH */
 	"Need authenticator",					/* 81 - ENEEDAUTH */
 };
+
 int errno;
-const int sys_nerr = sizeof(sys_errlist) / sizeof(sys_errlist[0]);
+const int sys_nerr = (sizeof(sys_errlist) / sizeof(sys_errlist[0]));

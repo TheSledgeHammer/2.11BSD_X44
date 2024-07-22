@@ -3,6 +3,7 @@
 static char sccsid[] = "@(#)strcpy.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
+#include <sys/cdefs.h>
 #include <string.h>
 
 /*
@@ -12,7 +13,7 @@ static char sccsid[] = "@(#)strcpy.c	5.2 (Berkeley) 3/9/86";
 
 char *
 strcpy(s1, s2)
-register char *s1, *s2;
+	register char *s1, *s2;
 {
 	register char *os1;
 

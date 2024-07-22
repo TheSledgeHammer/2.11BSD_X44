@@ -35,15 +35,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#include <sys/cdefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)siglist.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
-#include <sys/cdefs.h>
 #include <signal.h>
 
-const char *const sys_signame[NSIG] = {
+const char *sys_signame[NSIG] = {
 		"Signal 0",
 		"hup",						/* SIGHUP */
 		"int",						/* SIGINT */
@@ -112,3 +112,6 @@ const char *sys_siglist[NSIG] = {
 		"User defined signal 1",	/* SIGUSR1 */
 		"User defined signal 2"		/* SIGUSR2 */
 };
+
+const int sys_nsigname = (sizeof(sys_signame) / sizeof(sys_signame[0]));
+const int sys_nsiglist = (sizeof(sys_siglist) / sizeof(sys_siglist[0]));

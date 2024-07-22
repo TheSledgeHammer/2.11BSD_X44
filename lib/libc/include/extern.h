@@ -31,16 +31,16 @@
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-extern char *__minbrk;
-int 		__getcwd(char *, size_t);
-int 		__getlogin(char *, size_t);
-int 		__setlogin(const char *);
 void 		_resumecontext(void);
-const char 	*__strerror(int , char *, size_t);
-const char 	*__strsignal(int , char *, size_t);
+const char 	*__strerror(int , char *, size_t);	/* TODO: Resolve  */
+const char 	*__strsignal(int , char *, size_t); /* TODO: Resolve  */
 char 		*__dtoa(double, int, int, int *, int *, char **);
 int 		__sysctl(int *, unsigned int, void *, size_t *, void *, size_t);
 
-struct sigaction;
-int 		__sigaction_sigtramp(int, const struct sigaction *, struct sigaction *, const void *, int);
+//extern char *__minbrk;
+//int 		__getcwd(char *, size_t);
+//int 		__getlogin(char *, size_t);
+//int 		__setlogin(const char *);
+//struct sigaction;
+//int 		__sigaction_sigtramp(int, const struct sigaction *, struct sigaction *, const void *, int);
 __END_DECLS

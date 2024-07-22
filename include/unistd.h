@@ -108,7 +108,11 @@ char			*ttyname(int);
 int	 			unlink(const char *);
 ssize_t			write(int, const void *, size_t);
 
-extern	char *sys_siglist[];
+#ifndef __SYS_SIGLIST_DECLARED
+#define __SYS_SIGLIST_DECLARED
+/* also in signal.h */
+extern const char *sys_siglist;
+#endif /* __SYS_SIGLIST_DECLARED */
 extern	char	*optarg;		/* getopt(3) external variables */
 extern	int	    opterr, optind, optopt;
 int	 			getopt(int, char * const [], const char *);
@@ -123,7 +127,7 @@ char			*brk(const char *);
 int	 			chroot(const char *);
 char			*crypt(char *, char *);
 int	 			des_cipher(const char *, char *, long, int);
-int	 			des_setkey(const char *key);
+int	 			des_setkey(const char *);
 int	 			encrypt(char *, int);
 void	 		endusershell(void);
 int	 			exect(const char *, char * const *, char * const *);
@@ -153,7 +157,7 @@ unsigned long	sethostid(unsigned long);
 int	 			setkey(const char *);
 int	 			setlogin(const char *);
 void			*setmode(const char *);
-int	 			setpgrp(pid_t pid, pid_t pgrp);	/* obsoleted by setpgid() */
+int	 			setpgrp(pid_t, pid_t);	/* obsoleted by setpgid() */
 int	 			setregid(gid_t, gid_t);
 int	 			setreuid(uid_t, uid_t);
 int	 			setrgid(gid_t);

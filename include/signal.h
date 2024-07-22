@@ -25,6 +25,17 @@ extern long	sigblock(int), sigsetmask(int);
 #endif
 #endif
 
+#if defined(__BSD_VISIBLE)
+extern const char *sys_signame;
+#ifndef __SYS_SIGLIST_DECLARED
+#define __SYS_SIGLIST_DECLARED
+/* also in unistd.h */
+extern const char *sys_siglist;
+#endif /* __SYS_SIGLIST_DECLARED */
+extern const int sys_nsigname;
+extern const int sys_nsiglist;
+#endif
+
 __BEGIN_DECLS
 int		raise(int);
 #ifndef	_ANSI_SOURCE

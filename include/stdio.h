@@ -262,8 +262,8 @@ int	 	getc(FILE *);
 int	 	getchar(void);
 char 	*gets(char *);
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
-extern int sys_nerr;			/* perror(3) external variables */
-extern __const char *__const sys_errlist[];
+extern const int sys_nerr;			/* perror(3) external variables */
+extern const char *sys_errlist[];
 #endif
 void 	perror(const char *);
 int	 	printf(const char * __restrict, ...);

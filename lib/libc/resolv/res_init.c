@@ -60,12 +60,6 @@ res_init(void)
     register FILE *fp;
     register char *cp, **pp;
     char buf[BUFSIZ];
-    /*
-    extern u_long inet_addr();
-    extern char *index();
-    extern char *strcpy(), *strncpy();
-    extern char *getenv();
-    */
     int n = 0;    /* number of nameserver records read from file */
 
     _res.nsaddr.sin_addr.s_addr = INADDR_ANY;

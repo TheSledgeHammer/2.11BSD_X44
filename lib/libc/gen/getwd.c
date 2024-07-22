@@ -16,10 +16,13 @@ static char sccsid[] = "@(#)getwd.c	5.2 (Berkeley) 3/9/86";
 #include <sys/stat.h>
 #include <sys/user.h>
 
+#include <string.h>
+
 #define GETWDERR(s)	strcpy(pathname, (s));
 
-char *strcpy();
+//char *strcpy();
 static int pathsize;			/* pathname length */
+static char *prepend(char *, char *); /* prepend dirname to pathname */
 
 char *
 getwd(pathname)
@@ -29,7 +32,6 @@ getwd(pathname)
 	char *pnptr = &pathbuf[(sizeof pathbuf)-1]; /* pathname pointer */
 	char curdir[MAXPATHLEN];	/* current directory buffer */
 	char *dptr = curdir;		/* directory pointer */
-	char *prepend();		/* prepend dirname to pathname */
 	dev_t cdev, rdev;		/* current & root device number */
 	ino_t cino, rino;		/* current & root inode number */
 	DIR *dirp;			/* directory stream */

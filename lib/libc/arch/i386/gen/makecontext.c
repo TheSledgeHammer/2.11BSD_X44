@@ -37,6 +37,7 @@ __RCSID("$NetBSD: makecontext.c,v 1.4 2008/04/28 20:22:56 martin Exp $");
 #include <inttypes.h>
 #include <stddef.h>
 #include <ucontext.h>
+
 #include "extern.h"
 
 #if __STDC__
@@ -44,7 +45,6 @@ __RCSID("$NetBSD: makecontext.c,v 1.4 2008/04/28 20:22:56 martin Exp $");
 #else
 #include <varargs.h>
 #endif
-
 
 void
 #if __STDC__
