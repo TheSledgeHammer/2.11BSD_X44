@@ -78,7 +78,7 @@ pmap_hat_alloc(map, size, flags)
 	vm_size_t size;
 	int flags;
 {
-	void *va;
+	vm_offset_t va;
 
 	va = NULL;
 	switch (flags) {
@@ -91,7 +91,7 @@ pmap_hat_alloc(map, size, flags)
 		break;
 #endif
 	}
-	return (va);
+	return ((void *)va);
 }
 
 void
@@ -197,7 +197,7 @@ pmap_hat_copy(dst_list, src_list, target_map, target_object, flags)
 
 	if (dst_hat != src_hat) {
 		pmap_hat_detach(dst_list, dst_hat, target_map, target_object, flags);
-		pmap_hat_free(target_map, (vm_offset_t)dst_hat, sizeof(dst_hat));
+		pmap_hat_free(target_map, (vm_offset_t)dst_hat, sizeof(dst_hat), flags);
 	}
 }
 
@@ -209,6 +209,7 @@ pmap_hat_mapout(dst_list, target_map, target_object, flags)
 	pmap_hat_list_t dst_list;
 	pmap_hat_map_t target_map;
 	pmap_hat_object_t target_object;
+	int flags;
 {
 	switch (flags) {
 	case PMAP_HAT_VM:
@@ -230,6 +231,7 @@ pmap_hat_mapin(src_list, target_map, target_object, flags)
 	pmap_hat_list_t src_list;
 	pmap_hat_map_t target_map;
 	pmap_hat_object_t target_object;
+	int flags;
 {
 	switch (flags) {
 	case PMAP_HAT_VM:
