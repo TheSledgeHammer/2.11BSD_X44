@@ -51,7 +51,7 @@
 #include <netccitt/pk_var.h>
 #include <netccitt/llc_var.h>
 
-struct sockaddr_dl npdl_netmask = {
+struct sockaddr_dl llc_netmask = {
 		.sdl_len = 		sizeof(struct sockaddr_dl),	/* _len */
 		.sdl_family = 	0,			/* _family */
 		.sdl_index = 	0,			/* _index */
@@ -77,18 +77,18 @@ llc_sapinfo_enter(struct sockaddr_dl *key, struct sockaddr *value, struct rtentr
 		u_char saploc = LLSAPLOC(key, rt->rt_ifp);
 		int npdl_datasize = sizeof(struct sockaddr_dl) - ((int) ((unsigned long)&((struct sockaddr_dl *) 0)->sdl_data[0]));
 
-		npdl_netmask.sdl_data[saploc] = NPDL_SAPNETMASK;
-		bzero((caddr_t)&npdl_netmask.sdl_data[saploc + 1], npdl_datasize - saploc - 1);
+		llc_netmask.sdl_data[saploc] = NPDL_SAPNETMASK;
+		bzero((caddr_t)&llc_netmask.sdl_data[saploc + 1], npdl_datasize - saploc - 1);
 		if (value == 0) {
 			value = &npdl_dummy;
 		}
 
 		/* now enter it */
-		rtrequest(RTM_ADD, SA(key), SA(value), SA(&npdl_netmask), 0, &nprt);
+		rtrequest(RTM_ADD, SA(key), SA(value), SA(&llc_netmask), 0, &nprt);
 
 		/* and reset npdl_netmask */
 		for (i = saploc; i < npdl_datasize; i++) {
-			npdl_netmask.sdl_data[i] = -1;
+			llc_netmask.sdl_data[i] = -1;
 		}
 
 		nprt->rt_llinfo = malloc(size, M_PCB, M_WAITOK|M_ZERO);

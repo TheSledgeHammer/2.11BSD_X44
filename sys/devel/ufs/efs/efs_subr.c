@@ -100,7 +100,11 @@ efs_locate_inode(ino, fs, ip, bboff, index)
 }
 
 int
-efs_read_inode(struct ufsmount *ump, ino_t ino, struct proc *p, struct inode *ip)
+efs_read_inode(ump, ino, p, ip)
+	struct ufsmount *ump;
+	ino_t ino;
+	struct proc *p;
+	struct inode *ip;
 {
 	struct efs *fs;
 	struct buf *bp;
@@ -129,7 +133,11 @@ efs_read_inode(struct ufsmount *ump, ino_t ino, struct proc *p, struct inode *ip
 }
 
 int
-efs_bread(struct ufsmount *ump, uint32_t bboff, struct proc *p, struct buf **bp)
+efs_bread(ump, bboff, p, bp)
+	struct ufsmount *ump;
+	uint32_t bboff;
+	struct proc *p;
+	struct buf **bp;
 {
 	KASSERT(bboff < EFS_SIZE_MAX);
 

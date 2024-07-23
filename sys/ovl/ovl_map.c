@@ -811,12 +811,13 @@ ovl_map_findspace(map, start, length, addr)
 		 * win.
 		 */
 		end = start + length;
-		if (end > map->max_offset || end < start)
+		if (end > map->max_offset || end < start) {
 			return (1);
-                next = CIRCLEQ_NEXT(entry, cl_entry);
-                if (next == CIRCLEQ_FIRST(&map->cl_header) || next->start >= end) {
-                        break;
-                }
+		}
+		next = CIRCLEQ_NEXT(entry, cl_entry);
+		if (next == CIRCLEQ_FIRST(&map->cl_header) || next->start >= end) {
+			break;
+		}
 	}
 	OVL_SAVE_HINT(map, entry);
 	*addr = start;

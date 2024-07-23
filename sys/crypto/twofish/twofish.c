@@ -35,8 +35,8 @@
 #endif
 
 #ifndef rotl
-#define rotr(x,n) (((x)>>(n))|((x)<<(32-(n))))
-#define rotl(x,n) (((x)<<(n))|((x)>>(32-(n))))
+#define rotr(x,n) 	(((x) >> (n)) | ((x) << (32 - (n))))
+#define rotl(x,n) 	(((x) << (n)) | ((x) >> (32 - (n))))
 #endif
 
 

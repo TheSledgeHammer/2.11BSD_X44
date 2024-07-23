@@ -48,23 +48,23 @@
 
 /* BSD EFS: An Extent-Based Filesystem */
 
-#define EFS_SBSIZE				8192		/* superblock size */
+#define EFS_SBSIZE			8192			/* superblock size */
 #define EFS_CHECKSUM_SIZE		(EFS_SBSIZE - 4)
 
-#define EFS_BB_SHFT	            9
-#define EFS_BB_SIZE	            (1 << EFS_BB_SHFT)
+#define EFS_BB_SHFT	            	9
+#define EFS_BB_SIZE	            	(1 << EFS_BB_SHFT)
 
 #define EFS_DIRECTEXTENTS 		12
 
 /* 32-Bit */
-#define	EFS1_MAGIC
+#define	EFS1_MAGIC			0x00072959		/* original Irix EFS magic number */
 #define	EFS1_VERSION  			1
 
 #define EFS1_DINODE_SIZE		sizeof(struct ufs1_dinode)
 #define EFS1_DINODES_PER_BB		(EFS_BB_SIZE / EFS1_DINODE_SIZE)
 
 /* 64-Bit */
-#define	EFS2_MAGIC
+#define	EFS2_MAGIC			0x0007295A		/* Irix EFS new magic number */
 #define	EFS2_VERSION  			2
 
 #define EFS2_DINODE_SIZE		sizeof(struct ufs2_dinode)
@@ -72,17 +72,17 @@
 
 /* efs superblock */
 struct efs {
-	u_int32_t 			efs_magic;		/* magic number */
+	u_int32_t 			efs_magic;	/* magic number */
 	u_int32_t 			efs_version;	/* version number */
 
-	u_int32_t 			efs_size;		/* number of blocks */
-	u_int32_t 			efs_esize;		/* number of blocks per extent */
-	u_int32_t 			efs_dsize;		/* number of disk blocks in fs */
-	u_int32_t 			efs_bsize;		/* block size */
-	u_int32_t 			efs_fsize;		/* frag size */
-	u_int32_t 			efs_frags;		/* number of frags */
+	u_int32_t 			efs_size;	/* number of blocks */
+	u_int32_t 			efs_esize;	/* number of blocks per extent */
+	u_int32_t 			efs_dsize;	/* number of disk blocks in fs */
+	u_int32_t 			efs_bsize;	/* block size */
+	u_int32_t 			efs_fsize;	/* frag size */
+	u_int32_t 			efs_frags;	/* number of frags */
 
-	u_int32_t			efs_bfree;		/* number of free disk blocks */
+	u_int32_t			efs_bfree;	/* number of free disk blocks */
 	u_int32_t			efs_bmask;
 	u_int32_t			efs_bshift;
 	u_int32_t			efs_fshift;
@@ -92,18 +92,20 @@ struct efs {
 	int32_t				efs_cgfsize;	/* cg size (in bb) */
 	int16_t				efs_cgisize;	/* inodes/cg (in bb) */
 	int16_t				efs_sectors;	/* geom: sectors/track */
-	int16_t				efs_heads;		/* geom: heads/cylinder (unused) */
-	int16_t				efs_ncg;		/* num of cg's in the filesystem */
+	int16_t				efs_heads;	/* geom: heads/cylinder (unused) */
+	int16_t				efs_ncg;	/* num of cg's in the filesystem */
 
-	u_int32_t 		 	efs_inopb;		/* inodes per block */
+	u_int32_t 		 	efs_inopb;	/* inodes per block */
 
-	u_int32_t 			efs_nindir;		/* indirect pointers per block */
+	u_int32_t 			efs_nindir;	/* indirect pointers per block */
 
-	struct vnode	  	*efs_vnode;
+	struct vnode	  		*efs_vnode;
 
-	struct efs_bitmap	efs_extents[EFS_DIRECTEXTENTS];
-	int32_t				efs_bmsize;		/* bitmap size (in bytes) */
+	struct efs_bitmap		efs_extents[EFS_DIRECTEXTENTS];
+	int32_t				efs_bmsize;	/* bitmap size (in bytes) */
 	int32_t				efs_bmblock;	/* bitmap offset (grown fs) [1] */
+
+	int32_t				efs_checksum;	/* checksum (all above) [3] */
 };
 
 /* NINDIR is the number of indirects in a file system block. */

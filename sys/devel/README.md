@@ -28,6 +28,7 @@ an offical release is made.)
 - UFS:
 	- EFS: Extent-Based Filesystem: UFS-Backend
 		- Update/improve on IRIX's EFS-based extents
+			- Increase Extent Max Size and 24-bit limits
 		- Converting/Mapping between extents and blocks
 		- Implement vnops and vfsops
 	- UFS:
