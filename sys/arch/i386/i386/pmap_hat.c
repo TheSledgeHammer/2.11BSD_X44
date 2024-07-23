@@ -196,13 +196,17 @@ pmap_hat_copy(dst_list, src_list, target_map, target_object, flags)
 	}
 
 	if (dst_hat != src_hat) {
+		/* Hat Copy failed, Detach and free dst_hat */
 		pmap_hat_detach(dst_list, dst_hat, target_map, target_object, flags);
 		pmap_hat_free(target_map, (vm_offset_t)dst_hat, sizeof(dst_hat), flags);
+	} else {
+		/* Hat Copy succeeded, Detach src_hat */
+		pmap_hat_detach(src_list, src_hat, target_map, target_object, flags);
 	}
 }
 
 /*
- * Map contents out of the source list
+ * Map contents from the source list into the destination list
  */
 void
 pmap_hat_mapout(dst_list, target_map, target_object, flags)
@@ -224,7 +228,7 @@ pmap_hat_mapout(dst_list, target_map, target_object, flags)
 }
 
 /*
- * Map contents into the source list
+ * Map contents into the source list from the destination list
  */
 void
 pmap_hat_mapin(src_list, target_map, target_object, flags)

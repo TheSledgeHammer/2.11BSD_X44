@@ -120,7 +120,6 @@ pmap_overlay_destroy(pmap)
 	pmap_unlock(pmap);
 	if (count == 0) {
 		pmap_overlay_release(pmap);
-		//overlay_free((caddr_t)pmap, M_VMPMAP);
 	}
 }
 
@@ -165,26 +164,31 @@ pmap_overlay_enter(pmap, va, pa)
 }
 
 #ifdef notyet
+struct pmap_hat_list tmphat_list;
 
-static struct pmap_hat_list temphat_list;
-
-/* mapout ovlhat_list to list (temp) */
+/* mapout source list(ovlhat_list) to destination list(tmphat_list) */
 void
-pmap_overlay_mapout(dst_list, target_map, target_object)
-	pmap_hat_list_t dst_list;
+pmap_overlay_mapout(/*dst_list,*/ target_map, target_object)
+	//pmap_hat_list_t dst_list;
 	ovl_map_t 	target_map;
 	ovl_object_t target_object;
 {
+	pmap_hat_list_t dst_list;
+
+	dst_list = &tmphat_list;
 	pmap_hat_mapout(dst_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
 }
 
-/* mapin ovlhat_list from list (temp) */
+/* mapin destination list(ovlhat_list) from source list(tmphat_list) */
 void
-pmap_overlay_mapin(src_list, target_map, target_object)
-	pmap_hat_list_t src_list;
+pmap_overlay_mapin(/*src_list,*/ target_map, target_object)
+	//pmap_hat_list_t src_list;
 	ovl_map_t 	target_map;
 	ovl_object_t target_object;
 {
+	pmap_hat_list_t src_list;
+
+	src_list = &tmphat_list;
 	pmap_hat_mapin(src_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
 }
 

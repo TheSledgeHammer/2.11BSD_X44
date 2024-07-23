@@ -38,9 +38,9 @@ struct pmap_hat_list;
 LIST_HEAD(pmap_hat_list, pmap_hat);
 struct pmap_hat {
 	LIST_ENTRY(pmap_hat)		ph_next;
-    pv_entry_t					ph_pvtable;
-    pmap_hat_map_t				ph_map;
-    pmap_hat_object_t			ph_object;
+    pv_entry_t					ph_pvtable;		/* pv_entry */
+    pmap_hat_map_t				ph_map;			/* vm/ovl map */
+    pmap_hat_object_t			ph_object;		/* vm/ovl object */
     int 						ph_flags;
 };
 typedef struct pmap_hat     	*pmap_hat_t;
@@ -51,11 +51,16 @@ typedef struct pmap_hat_list	*pmap_hat_list_t;
 #define PMAP_HAT_OVL			0x02	/* ovlspace */
 
 #ifdef _KERNEL
+/* temporary hat list for hat_mapin's and hat_mapout's */
+extern struct pmap_hat_list		tmphat_list;
+
+/* VM Hat's */
 extern struct pmap_hat_list 	vmhat_list;
 extern vm_offset_t 				vm_first_phys;
 extern vm_offset_t 				vm_last_phys;
 
 #ifdef OVERLAY
+/* Ovl Hat's */
 extern struct pmap_hat_list		ovlhat_list;
 extern vm_offset_t 				ovl_first_phys;
 extern vm_offset_t 				ovl_last_phys;

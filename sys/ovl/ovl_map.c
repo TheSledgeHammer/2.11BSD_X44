@@ -1166,21 +1166,53 @@ vm_fork(p1, p2, isvfork)
 	ovlspace_mapin(p2->p_ovlspace);
 }
 
-static struct pmap_hat_list tmplist;
+static void	ovlmap_mapout(ovl_map_t, ovl_map_entry_t);
+static void	ovlmap_mapin(ovl_map_t, ovl_map_entry_t);
+
+static void
+ovlmap_mapin(map, entry)
+	ovl_map_t 		map;
+	ovl_map_entry_t entry;
+{
+	if (map == NULL || entry == NULL) {
+		return;
+	}
+
+	if (entry->object != NULL) {
+		/* mapin the map and the map entry object. */
+		pmap_overlay_mapin(map, entry->object);
+	}
+}
+
+static void
+ovlmap_mapout(map, entry)
+	ovl_map_t 		map;
+	ovl_map_entry_t entry;
+{
+	if (map == NULL || entry == NULL) {
+		return;
+	}
+
+	if (entry->object != NULL) {
+		/* mapout the map and the map entry object. Hope we return alive! */
+		pmap_overlay_mapout(map, entry->object);
+	}
+}
 
 void
 ovlspace_mapout(ovl)
 	struct ovlspace *ovl;
 {
 	ovl_map_t 		old_map;
-	ovl_map_entry_t	old_entry;
-	ovl_object_t 	old_object;
+	ovl_map_entry_t old_entry;
 
 	old_map = ovl->ovl_map;
+
 	ovl_map_lock(old_map);
-	CIRCLEQ_FOREACH(old_entry, &old_map->cl_header, cl_entry) {
-		old_object = old_entry->object;
-		pmap_hat_mapout(&tmplist, old_map, old_object, PMAP_HAT_OVL);
+	if (!CIRCLEQ_EMTPY(&old_map->cl_header)) {
+		CIRCLEQ_FOREACH(old_entry, &old_map->cl_header, cl_entry) {
+			ovlmap_mapout(old_map, old_entry);
+		}
 	}
 	ovl_map_unlock(old_map);
 }
@@ -1189,17 +1221,33 @@ void
 ovlspace_mapin(ovl)
 	struct ovlspace *ovl;
 {
-	ovl_map_t 		new_map;
-	ovl_map_entry_t	new_entry;
-	ovl_object_t 	new_object;
+	struct ovl_map 			old_map;
+	struct ovl_map_entry 	old_entry;
+	ovl_map_t 				new_map;
+	ovl_map_entry_t 		new_entry;
 
-	new_map = ovl->ovl_map;
-	ovl_map_lock(new_map);
-	CIRCLEQ_FOREACH(new_entry, &new_map->cl_header, cl_entry) {
-		new_object = new_entry->object;
-		pmap_hat_mapin(&tmplist, new_map, new_object, PMAP_HAT_OVL);
+	/* Retrieve old map from it's temporary holding */
+	ovlmap_mapin(&old_map, &old_entry);
+
+	new_map = &old_map;
+	if ((new_map != NULL) && (*old_entry != NULL)) {
+		ovl_map_lock(new_map);
+		/* sanity check */
+		if (!CIRCLEQ_EMTPY(&new_map->cl_header)) {
+			CIRCLEQ_FOREACH(new_entry, &new_map->cl_header, cl_entry) {
+				if (new_entry == &old_entry) {
+					/* success: we have reloaded the map and map entries */
+					break;
+				}
+			}
+		}
+		ovl_map_unlock(new_map);
+		ovl->ovl_map = new_map;
 	}
-	ovl_map_unlock(new_map);
+	/*
+	 * TODO: Implement A fallback
+	 *	- Something probably like vmspace_fork
+	 */
 }
 
 /*
