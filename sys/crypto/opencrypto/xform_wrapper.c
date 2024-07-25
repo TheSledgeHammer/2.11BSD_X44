@@ -58,6 +58,7 @@
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
 #include <crypto/aes/aes.h>
+#include <crypto/mars/mars.h>
 #include <crypto/camellia/camellia.h>
 #include <crypto/twofish/twofish.h>
 #include <crypto/serpent/serpent.h>
@@ -67,7 +68,6 @@
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
 #include <crypto/opencrypto/xform_wrapper.h>
-#include "../mars/mars.h"
 
 #define AESCTR_NONCESIZE		4
 #define AESCTR_IVSIZE			8
