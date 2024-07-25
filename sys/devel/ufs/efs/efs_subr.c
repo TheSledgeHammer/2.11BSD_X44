@@ -114,7 +114,7 @@ efs_read_inode(ump, ino, p, ip)
 	fs = &ump->um_efs;
 	efs_locate_inode(ino, fs, ip, &bboff, &index);
 
-	err = efs_bread(ump, bboff, p, &bp);
+	err = efs_bread(ump->um_devvp, bboff, NOCRED, &bp);
 	if (err) {
 		return (err);
 	}
@@ -133,13 +133,13 @@ efs_read_inode(ump, ino, p, ip)
 }
 
 int
-efs_bread(ump, bboff, p, bp)
-	struct ufsmount *ump;
+efs_bread(vp, bboff, cred, bp)
+	struct vnode *vp;
 	uint32_t bboff;
-	struct proc *p;
+	struct ucred *cred;
 	struct buf **bp;
 {
 	KASSERT(bboff < EFS_SIZE_MAX);
 
-	return (bread(ump->um_devvp, (daddr_t)bboff * (EFS_BB_SIZE / DEV_BSIZE), EFS_BB_SIZE, 0, bp));
+	return (bread(vp, (daddr_t)bboff * (EFS_BB_SIZE / DEV_BSIZE), EFS_BB_SIZE, cred, bp));
 }

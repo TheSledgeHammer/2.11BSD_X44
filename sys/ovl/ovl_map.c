@@ -1175,13 +1175,13 @@ ovlmap_mapin(map, entry)
 	ovl_map_t 		map;
 	ovl_map_entry_t entry;
 {
-	if (map == NULL || entry == NULL) {
-		return;
-	}
+	ovl_object_t object;
 
-	if (entry->object != NULL) {
+	object = entry->object.ovl_object;
+	/* check object */
+	if (object != NULL) {
 		/* mapin the map and the map entry object. */
-		pmap_overlay_mapin(map, entry->object);
+		pmap_overlay_mapin(map, object);
 	}
 }
 
@@ -1190,13 +1190,16 @@ ovlmap_mapout(map, entry)
 	ovl_map_t 		map;
 	ovl_map_entry_t entry;
 {
+	ovl_object_t object;
+
 	if (map == NULL || entry == NULL) {
 		return;
 	}
 
-	if (entry->object != NULL) {
+	object = entry->object.ovl_object;
+	if (object != NULL) {
 		/* mapout the map and the map entry object. Hope we return alive! */
-		pmap_overlay_mapout(map, entry->object);
+		pmap_overlay_mapout(map, object);
 	}
 }
 
@@ -1237,6 +1240,7 @@ ovlspace_mapin(ovl)
 		if (!CIRCLEQ_EMTPY(&new_map->cl_header)) {
 			CIRCLEQ_FOREACH(new_entry, &new_map->cl_header, cl_entry) {
 				if (new_entry == &old_entry) {
+					new_entry = &old_entry;
 					/* success: we have reloaded the map and map entries */
 					break;
 				}

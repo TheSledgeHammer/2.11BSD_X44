@@ -34,103 +34,6 @@
 #include <ufs/efs/efs.h>
 #include <ufs/efs/efs_extent.h>
 
-struct efs_dirblk {
-	uint8_t		db_slots;
-	uint8_t		db_space[EFS_DIRBLK_SPACE_SIZE];
-};
-
-/*
- * Given an efs_dirblk structure and a componentname to search for, return the
- * corresponding inode if it is found.
- *
- * Returns 0 on success.
- */
-static int
-efs_dirblk_lookup(dir, cn, inode)
-	struct efs_dirblk *dir;
-	struct componentname *cn;
-	ino_t *inode;
-{
-	struct direct *ep;
-	int i;
-
-	for (i = 0; i < dir->db_slots; i++) {
-		if (ep->d_namlen == cn->cn_namelen && (strncmp(cn->cn_nameptr, ep->d_name, cn->cn_namelen) == 0)) {
-
-		}
-	}
-	*inode = be32toh(ep->d_number);
-	return (0);
-}
-
-/*
- * Given an extent descriptor that represents a directory, look up
- * componentname within its efs_dirblk's. If it is found, return the
- * corresponding inode in 'ino'.
- *
- * Returns 0 on success.
- */
-static int
-efs_extent_lookup(ump, ex, cn, ino)
-	struct ufsmount *ump;
-	struct efs_extent *ex;
-	struct componentname *cn;
-	ino_t *ino;
-{
-	struct efs_dirblk *db;
-	struct buf *bp;
-	int i, err;
-
-	for (i = 0; i < ex->ex_length; i++) {
-		err = efs_bread(ump, ex->ex_bn + i, NULL, &bp);
-		if (err) {
-			printf("efs: warning: invalid extent descriptor\n");
-			return (err);
-		}
-
-		db = (struct efs_dirblk *)bp->b_data;
-		if (efs_dirblk_lookup(db, cn, ino) == 0) {
-			brelse(bp, 0);
-			return (0);
-		}
-		brelse(bp, 0);
-	}
-
-	return (ENOENT);
-}
-
-/*
- * Given the provided in-core inode, look up the pathname requested. If
- * we find it, 'ino' reflects its corresponding on-disk inode number.
- *
- * Returns 0 on success.
- */
-int
-efs_inode_lookup(ump, ip, cn, ino)
-	struct ufsmount *ump;
-	struct inode *ip;
-	struct componentname *cn;
-	ino_t *ino;
-{
-	struct efs_extent *ex;
-	struct efs_extent_iterator exi;
-	int ret, error;
-
-	KASSERT(VOP_ISLOCKED(ip->i_vnode));
-
-	KASSERT((ip->i_mode & S_IFMT) == S_IFDIR);
-
-	efs_extent_iterator_init(&exi, ip, 0);
-	ret = efs_extent_iterator_next(&exi, ex, ip);
-	while (ret == 0) {
-		if (efs_extent_lookup(ump, ex, ino) == 0) {
-			return (0);
-		}
-	}
-	error = ((ret == -1) ? ENOENT : ret);
-	return (error);
-}
-
 void
 efs_extent_to_bitmap(ex, eb)
 	struct efs_extent *ex;
@@ -169,7 +72,7 @@ efs_bitmap_to_extent(eb, ex)
  * to start from the beginning.
  */
 void
-extent_iterator_init(struct efs_extent_iterator *exi, struct inode *ip, off_t start_hint)
+efs_extent_iterator_init(struct efs_extent_iterator *exi, struct inode *ip, off_t start_hint)
 {
 	struct efs *fs;
 	struct efs_extent ex, ex2;
@@ -245,7 +148,7 @@ extent_iterator_init(struct efs_extent_iterator *exi, struct inode *ip, off_t st
 	for (i = 0; i < numinextents; i++) {
 		efs_bitmap_to_extent(&fs->efs_extents[i], &ex);
 
-		err = efs_bread(ump, ex.ex_bn, NULL, &bp);
+		err = efs_bread(ump->um_devvp, ex.ex_bn, NOCRED, &bp);
 		if (err) {
 			return;
 		}
@@ -290,7 +193,7 @@ extent_iterator_init(struct efs_extent_iterator *exi, struct inode *ip, off_t st
 		bboff = mid / EFS_EXTENTS_PER_BB;
 		index = mid % EFS_EXTENTS_PER_BB;
 
-		err = efs_bread(ump, ex.ex_bn + bboff, NULL, &bp);
+		err = efs_bread(ump->um_devvp, ex.ex_bn + bboff, NULL, &bp);
 		if (err) {
 			EFS_DPRINTF(("efs_extent_iterator_init: bsrch read\n"));
 			return;
@@ -357,7 +260,7 @@ efs_extent_iterator_next(struct efs_extent_iterator *exi, struct efs_extent *exp
 		bboff	= exi->exi_indirect / EFS_EXTENTS_PER_BB;
 		index	= exi->exi_indirect % EFS_EXTENTS_PER_BB;
 
-		err = efs_bread(ump, ex.ex_bn + bboff, NULL, &bp);
+		err = efs_bread(ump->um_devvp, ex.ex_bn + bboff, NOCRED, &bp);
 		if (err) {
 			EFS_DPRINTF(("efs_extent_iterator_next: "
 			    "efs_bread failed: %d\n", err));
