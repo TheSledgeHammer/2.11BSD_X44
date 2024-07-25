@@ -67,6 +67,7 @@
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
 #include <crypto/opencrypto/xform_wrapper.h>
+#include "../mars/mars.h"
 
 #define AESCTR_NONCESIZE		4
 #define AESCTR_IVSIZE			8
@@ -686,6 +687,45 @@ void
 serpent128_zerokey(u_int8_t **sched)
 {
 	bzero(*sched, sizeof(serpent_ctx));
+	FREE(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+void
+mars128_encrypt(caddr_t key, u_int8_t *blk)
+{
+	mars_encrypt((mars_ctx *)key, blk, blk);
+}
+
+void
+mars128_decrypt(caddr_t key, u_int8_t *blk)
+{
+	mars_decrypt((mars_ctx *) key, blk, blk);
+}
+
+int
+mars128_setkey(u_int8_t **sched, const u_int8_t *key, int len)
+{
+	int err;
+
+	if (len != 16 && len != 24 && len != 32) {
+		return (EINVAL);
+	}
+
+	MALLOC(*sched, u_int8_t *, sizeof(mars_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
+	if (*sched != NULL) {
+		mars_set_key((mars_ctx *) *sched, key, len * 8);
+		err = 0;
+	} else {
+		err = ENOMEM;
+	}
+	return err;
+}
+
+void
+mars128_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(mars_ctx));
 	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
 }

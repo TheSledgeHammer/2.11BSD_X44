@@ -122,6 +122,11 @@ void 	serpent_xts_decrypt(caddr_t, u_int8_t *);
 void 	serpent_xts_zerokey(u_int8_t **);
 void	serpent_xts_reinit(void *, const u_int8_t *, u_int8_t *);
 
+int 	mars128_setkey(u_int8_t **, const u_int8_t *, int);
+void 	mars128_encrypt(caddr_t, u_int8_t *);
+void 	mars128_decrypt(caddr_t, u_int8_t *);
+void 	mars128_zerokey(u_int8_t **);
+
 void 	null_init(void *);
 int 	null_update(void *, const u_int8_t *, u_int16_t);
 void 	null_final(u_int8_t *, void *);

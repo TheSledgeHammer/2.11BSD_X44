@@ -14,7 +14,7 @@
 /* The header above modified on June 6th 1999.                          */
 /* Dr Brian Gladman (gladman@seven77.demon.co.uk) 14th January 1999     */
 
-#include "../crypto/mars/mars.h"
+#include "../../../crypto/mars/mars.h"
 
 #include <sys/cdefs.h>
 

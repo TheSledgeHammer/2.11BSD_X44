@@ -61,6 +61,7 @@ struct fps {
 struct user {
 	struct trapframe	*u_frame;
 	struct pcb 			u_pcb;
+	//struct upcb			u_upcb;
 	struct fps 			u_fps;
 	short				u_fpsaved;				/* FP regs saved for this proc */
 	struct fperr 		u_fperr;				/* floating point error save */
@@ -92,6 +93,7 @@ struct user {
 	struct pcred		*u_pcred;				/* Process owner's identity. */
 	struct ucred		*u_ucred;				/* Credentials */
 
+#define u_groups		u_ucred->cr_groups		/* groups */
 #define u_uid			u_ucred->cr_uid			/* effective user id */
 
 /* 1.2 - memory management */
@@ -134,9 +136,9 @@ struct user {
 	int                	u_nfiles;               /* number of open files allocated */
 	int					u_lastfile;				/* high-water mark of u_ofile */
 	int					u_freefile;				/* approx. next free file */
-	//struct vnode 		*u_cdir;				/* current directory */
-	//struct vnode 		*u_rdir;				/* root directory of current process */
-	//short				u_cmask;				/* mask for file creation */
+#define u_cdir			u_fd->fd_cdir			/* current directory */
+#define u_rdir			u_fd->fd_rdir			/* root directory of current process */
+#define u_cmask			u_fd->fd_cmask			/* mask for file creation */
 
 	struct tty 			*u_ttyp;				/* controlling tty pointer */
 	dev_t				u_ttyd;					/* controlling tty dev */

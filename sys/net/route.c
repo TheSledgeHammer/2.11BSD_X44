@@ -923,7 +923,7 @@ static int rt_init_done = 0;
  */
 
 void	 
-rt_timer_init()
+rt_timer_init(void)
 {
 	assert(rt_init_done == 0);
 

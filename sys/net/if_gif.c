@@ -260,7 +260,7 @@ gif_output(ifp, m, dst, rt)
 	struct sockaddr *dst;
 	struct rtentry *rt;	/* added in net2 */
 {
-	struct gif_softc *sc = (struct gif_softc*)ifp;
+	struct gif_softc *sc = ifp->if_softc;
 	int error = 0;
 	static int called = 0;	/* XXX: MUTEX */
 	ALTQ_DECL(struct altq_pktattr pktattr;)
@@ -509,7 +509,7 @@ gif_ioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	struct proc *p = curproc;	/* XXX */
-	struct gif_softc *sc  = (struct gif_softc*)ifp;
+	struct gif_softc *sc  = ifp->if_softc;
 	struct ifreq     *ifr = (struct ifreq*)data;
 	int error = 0, size;
 	struct sockaddr *dst, *src;
@@ -765,7 +765,7 @@ gif_set_tunnel(ifp, src, dst)
 	struct sockaddr *src;
 	struct sockaddr *dst;
 {
-	struct gif_softc *sc = (struct gif_softc *)ifp;
+	struct gif_softc *sc = ifp->if_softc;
 	struct gif_softc *sc2;
 	struct sockaddr *osrc, *odst, *sa;
 	int s;
@@ -884,7 +884,7 @@ void
 gif_delete_tunnel(ifp)
 	struct ifnet *ifp;
 {
-	struct gif_softc *sc = (struct gif_softc *)ifp;
+	struct gif_softc *sc = ifp->if_softc;
 	int s;
 
 	s = splsoftnet();

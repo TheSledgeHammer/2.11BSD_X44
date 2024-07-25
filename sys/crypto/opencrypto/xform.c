@@ -52,6 +52,7 @@
 #include <crypto/cast128/cast128.h>
 #include <crypto/aes/aes.h>
 #include <crypto/des/des.h>
+#include <crypto/mars/mars.h>
 #include <crypto/rijndael/rijndael.h>
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
@@ -356,6 +357,20 @@ const struct enc_xform enc_xform_serpent_xts  = {
 	.zerokey	= serpent_xts_zerokey,
 	.reinit		= serpent_xts_reinit,
 };
+
+const struct enc_xform enc_xform_mars = {
+	.type		= CRYPTO_MARS_CBC,
+	.name		= "Mars",
+	.blocksize	= 16,
+	.ivsize		= 16,
+	.minkey		= 8,
+	.maxkey		= 32,
+	.encrypt	= mars128_encrypt,
+	.decrypt	= mars128_decrypt,
+	.setkey		= mars128_setkey,
+	.zerokey	= mars128_zerokey,
+	.reinit		= NULL,
+}
 
 /* Authentication instances */
 const struct auth_hash auth_hash_null = {

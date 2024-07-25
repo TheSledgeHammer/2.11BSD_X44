@@ -84,6 +84,7 @@ extern const struct enc_xform enc_xform_twofish;
 extern const struct enc_xform enc_xform_twofish_xts;
 extern const struct enc_xform enc_xform_serpent;
 extern const struct enc_xform enc_xform_serpent_xts;
+extern const struct enc_xform enc_xform_mars;
 extern const struct enc_xform enc_xform_aes_ctr;
 extern const struct enc_xform enc_xform_aes_xts;
 extern const struct enc_xform enc_xform_aes_gcm;

@@ -116,9 +116,10 @@
 #define CRYPTO_CAMELLIA_CBC			33
 #define CRYPTO_TWOFISH_CBC			34
 #define CRYPTO_SERPENT_CBC			35
-#define CRYPTO_TWOFISH_XTS			36
-#define CRYPTO_SERPENT_XTS			37
-#define CRYPTO_ALGORITHM_MAX		37 /* Keep updated - see below */
+#define CRYPTO_MARS_CBC				36
+#define CRYPTO_TWOFISH_XTS			37
+#define CRYPTO_SERPENT_XTS			38
+#define CRYPTO_ALGORITHM_MAX		38 /* Keep updated - see below */
 
 /* Algorithm flags */
 #define	CRYPTO_ALG_FLAG_SUPPORTED	0x01 /* Algorithm is supported */

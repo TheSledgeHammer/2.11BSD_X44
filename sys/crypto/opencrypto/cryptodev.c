@@ -208,6 +208,9 @@ cryptof_ioctl(struct file *fp, u_long cmd, void *data, struct proc *p)
 		case CRYPTO_SERPENT_CBC:
 			txform = &enc_xform_serpent;
 			break;
+		case CRYPTO_MARS_CBC:
+			txform = &enc_xform_mars;
+			break;
 		case CRYPTO_TWOFISH_XTS:
 			txform = &enc_xform_twofish_xts;
 			break;

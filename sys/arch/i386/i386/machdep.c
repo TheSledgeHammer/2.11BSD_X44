@@ -117,7 +117,7 @@ void cpu_dumpconf(void);
 int	 cpu_dump(void);
 void dumpsys(void);
 void init386_bootinfo(struct bootinfo *);
-int	bootinfo_check(struct bootinfo *);
+struct bootinfo *bootinfo_check(struct bootinfo *);
 void cpu_reset(void);
 void cpu_halt(void);
 void identify_cpu(void);
@@ -1264,12 +1264,9 @@ setmemsize(boot, basemem, extmem)
 	struct bootinfo *boot;
 	int *basemem, *extmem;
 {
-	int error;
-
 	vm86_initial_bioscalls(basemem, extmem);
 
-	error = bootinfo_check(boot);
-	if (boot != NULL && error) {
+	if (bootinfo_check(boot) != NULL) {
 		setmemsize_common(boot->bi_basemem, boot->bi_extmem);
 	} else {
 		setmemsize_common(basemem, extmem);
@@ -1418,23 +1415,25 @@ init386_bootinfo(boot)
 	identify_cpu();
 }
 
-int
+struct bootinfo *
 bootinfo_check(boot)
 	struct bootinfo *boot;
 {
-	if(boot->bi_version != BOOTINFO_VERSION) {
-		printf("Bootinfo Check: Boot version does not match!\n");
-		return (1);
+	if (boot != NULL) {
+		if(boot->bi_version != BOOTINFO_VERSION) {
+			printf("bootinfo_check: Boot version does not match!\n");
+			return (NULL);
+		}
+		if(boot->bi_memsizes_valid == 0) {
+			printf("bootinfo_check: Boot is not valid!\n");
+			return (NULL);
+		}
+		if(boot->bi_size > BOOTINFO_MAXSIZE || boot->bi_size != sizeof(struct bootinfo *)) {
+			printf("bootinfo_check: Boot size is too big!\n");
+			return (NULL);
+		}
 	}
-	if(boot->bi_memsizes_valid == 0) {
-		printf("Bootinfo Check: Boot is not valid!\n");
-		return (1);
-	}
-	if(boot->bi_size > BOOTINFO_MAXSIZE || boot->bi_size != sizeof(struct bootinfo *)) {
-		printf("Bootinfo Check: Boot size is too big!\n");
-		return (1);
-	}
-	return (0);
+	return (boot);
 }
 
 void
