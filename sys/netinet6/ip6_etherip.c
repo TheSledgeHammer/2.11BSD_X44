@@ -262,7 +262,7 @@ ip6_etherip_input(mp, offp, proto)
 	m->m_pkthdr.rcvif = ifp;
 	m->m_flags &= ~(M_BCAST | M_MCAST);
 
-	bpf_mtap(ifp, m);
+	bpf_mtap(ifp->if_bpf, m);
 
 	ifp->if_ipackets++;
 
