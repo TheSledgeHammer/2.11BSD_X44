@@ -70,6 +70,12 @@
 #define EFS2_DINODE_SIZE		sizeof(struct ufs2_dinode)
 #define EFS2_DINODES_PER_BB		(EFS_BB_SIZE / EFS2_DINODE_SIZE)
 
+/*
+ * basic block <-> byte conversions
+ */
+#define EFS_BB2BY(x)		((x) << EFS_BB_SHFT)
+#define EFS_BY2BB(x)		(((x) + EFS_BB_SIZE - 1) >> EFS_BB_SHFT)
+
 /* efs superblock */
 struct efs {
 	u_int32_t 			efs_magic;	/* magic number */
@@ -81,6 +87,9 @@ struct efs {
 	u_int32_t 			efs_bsize;	/* block size */
 	u_int32_t 			efs_fsize;	/* frag size */
 	u_int32_t 			efs_frags;	/* number of frags */
+
+	/* These are configuration parameters. */
+	u_int32_t 			efs_minfree;	/* minimum percentage of free blocks */
 
 	u_int32_t			efs_bfree;	/* number of free disk blocks */
 	u_int32_t			efs_bmask;
@@ -99,9 +108,9 @@ struct efs {
 
 	u_int32_t 			efs_nindir;	/* indirect pointers per block */
 
-	struct vnode	  		*efs_vnode;
+	struct vnode	  	*efs_vnode;
 
-	struct efs_bitmap		efs_extents[EFS_DIRECTEXTENTS];
+	struct efs_bitmap	efs_extents[EFS_DIRECTEXTENTS];
 	int32_t				efs_bmsize;	/* bitmap size (in bytes) */
 	int32_t				efs_bmblock;	/* bitmap offset (grown fs) [1] */
 
@@ -113,6 +122,13 @@ struct efs {
 
 /* INOPB is the number of inodes in a secondary storage block. */
 #define	INOPB(fs)	((fs)->efs_inopb)
+
+#define ISSPACE(F, BB, C)														\
+	(((C)->cr_uid == 0 && (F)->efs_bfree >= (BB)) ||							\
+	((C)->cr_uid != 0 && IS_FREESPACE(F, BB)))
+
+#define IS_FREESPACE(F, BB)														\
+	((F)->efs_bfree > ((F)->efs_dsize * (F)->efs_minfree / 100 + (BB)))
 
 #ifdef notyet
 /* ufs */

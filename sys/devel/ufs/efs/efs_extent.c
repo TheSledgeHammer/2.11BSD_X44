@@ -148,7 +148,7 @@ efs_extent_iterator_init(struct efs_extent_iterator *exi, struct inode *ip, off_
 	for (i = 0; i < numinextents; i++) {
 		efs_bitmap_to_extent(&fs->efs_extents[i], &ex);
 
-		err = efs_bread(ump->um_devvp, ex.ex_bn, NOCRED, &bp);
+		err = efs_bread(ump->um_devvp, ex.ex_bn, EFS_BB_SIZE, NOCRED, &bp);
 		if (err) {
 			return;
 		}
@@ -193,7 +193,7 @@ efs_extent_iterator_init(struct efs_extent_iterator *exi, struct inode *ip, off_
 		bboff = mid / EFS_EXTENTS_PER_BB;
 		index = mid % EFS_EXTENTS_PER_BB;
 
-		err = efs_bread(ump->um_devvp, ex.ex_bn + bboff, NULL, &bp);
+		err = efs_bread(ump->um_devvp, ex.ex_bn + bboff, EFS_BB_SIZE, NOCRED, &bp);
 		if (err) {
 			EFS_DPRINTF(("efs_extent_iterator_init: bsrch read\n"));
 			return;
@@ -260,7 +260,7 @@ efs_extent_iterator_next(struct efs_extent_iterator *exi, struct efs_extent *exp
 		bboff	= exi->exi_indirect / EFS_EXTENTS_PER_BB;
 		index	= exi->exi_indirect % EFS_EXTENTS_PER_BB;
 
-		err = efs_bread(ump->um_devvp, ex.ex_bn + bboff, NOCRED, &bp);
+		err = efs_bread(ump->um_devvp, ex.ex_bn + bboff, EFS_BB_SIZE, NOCRED, &bp);
 		if (err) {
 			EFS_DPRINTF(("efs_extent_iterator_next: "
 			    "efs_bread failed: %d\n", err));

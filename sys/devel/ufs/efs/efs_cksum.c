@@ -93,7 +93,7 @@ efs_validate(struct efs *fs, const char **why)
 	ocksum = htobe32(efs_checksum(fs, 0));
 	ncksum = htobe32(efs_checksum(fs, 1));
 	if (fs->efs_checksum != ocksum && fs->efs_checksum != ncksum) {
-		*why = "sb_checksum invalid";
+		*why = "efs_checksum invalid";
 		return (1);
 	}
 

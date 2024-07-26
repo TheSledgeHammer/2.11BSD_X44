@@ -244,8 +244,7 @@ WRITE(ap)
 		else
 			flags &= ~B_CLRBUF;
 
-		error = ffs_balloc(ip,
-		    lbn, blkoffset + xfersize, ap->a_cred, &bp, flags);
+		error = ffs_balloc(ip, lbn, blkoffset + xfersize, ap->a_cred, &bp, flags);
 #endif
 		if (error)
 			break;
