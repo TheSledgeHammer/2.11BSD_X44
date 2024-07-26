@@ -163,7 +163,7 @@ ip_etherip_output(ifp, m)
 	}
 
 	if (sc->sc_ro.ro_rt == NULL) {
-		rtalloc(sc->sc_ro);
+		rtalloc(&sc->sc_ro);
 		if (sc->sc_ro.ro_rt == NULL) {
 			m_freem(m);
 			return ENETUNREACH;
@@ -255,7 +255,7 @@ ip_etherip_input(struct mbuf *m, ...)
 	m->m_pkthdr.rcvif = ifp;
 	m->m_flags &= ~(M_BCAST|M_MCAST);
 
-	bpf_mtap(ifp, m);
+	bpf_mtap(ifp->if_bpf, m);
 
 	ifp->if_ipackets++;
 
