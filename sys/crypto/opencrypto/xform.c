@@ -370,7 +370,7 @@ const struct enc_xform enc_xform_mars = {
 	.setkey		= mars128_setkey,
 	.zerokey	= mars128_zerokey,
 	.reinit		= NULL,
-}
+};
 
 /* Authentication instances */
 const struct auth_hash auth_hash_null = {
