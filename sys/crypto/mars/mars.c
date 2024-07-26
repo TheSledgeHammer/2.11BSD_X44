@@ -263,22 +263,22 @@ static u_int32_t gen_mask(u_int32_t x)
     return (m & 0xfffffffc);
 };
 
-void mars_set_key(mars_ctx *ctx, const u_int8_t in_key[], const u_int8_t key_len)
+void mars_set_key(mars_ctx *ctx, const u_int8_t in_key[], u_int8_t key_len)
 {
 	u_int32_t  i, j, m, w;
 	u_int32_t *l_key;
 
 	l_key = ctx->l_key;
 
-    m = ((const u_int32_t *)key_len) / 32 - 1;
+    m = ((const u_int32_t)key_len) / 32 - 1;
 
     for(i = j = 0; i < 39; ++i) {
-      vk[i + 7] = rotl(vk[i] ^ vk[i + 5], 3) ^ ((const u_int32_t *)in_key[j]) ^ i;
+      vk[i + 7] = rotl(vk[i] ^ vk[i + 5], 3) ^ ((const u_int32_t)in_key[j]) ^ i;
 
       j = (j == m ? 0 : j + 1);
     }
 
-    vk[46] = ((const u_int32_t *)key_len) / 32;
+    vk[46] = ((const u_int32_t)key_len) / 32;
 
     for(j = 0; j < 7; ++j)
     {
@@ -315,10 +315,10 @@ void mars_encrypt(mars_ctx *ctx, const u_int8_t in_blk[4], u_int8_t out_blk[4])
 
 	l_key = ctx->l_key;
 
-    a = ((const u_int32_t *)in_blk[0]) + l_key[0];
-    b = ((const u_int32_t *)in_blk[1]) + l_key[1];
-    c = ((const u_int32_t *)in_blk[2]) + l_key[2];
-    d = ((const u_int32_t *)in_blk[3]) + l_key[3];
+    a = (((const u_int32_t *)in_blk)[0]) + l_key[0];
+    b = (((const u_int32_t *)in_blk)[1]) + l_key[1];
+    c = (((const u_int32_t *)in_blk)[2]) + l_key[2];
+    d = (((const u_int32_t *)in_blk)[3]) + l_key[3];
 
     f_mix(a,b,c,d); a += d;
     f_mix(b,c,d,a); b += c;
@@ -343,10 +343,10 @@ void mars_encrypt(mars_ctx *ctx, const u_int8_t in_blk[4], u_int8_t out_blk[4])
     b_mix(c,d,a,b); d -= a;
     b_mix(d,a,b,c);
 
-    ((const u_int32_t *)out_blk[0]) = a - l_key[36];
-    ((const u_int32_t *)out_blk[1]) = b - l_key[37];
-    ((const u_int32_t *)out_blk[2]) = c - l_key[38];
-    ((const u_int32_t *)out_blk[3]) = d - l_key[39];
+    (((u_int32_t *)out_blk)[0]) = a - l_key[36];
+    (((u_int32_t *)out_blk)[1]) = b - l_key[37];
+    (((u_int32_t *)out_blk)[2]) = c - l_key[38];
+    (((u_int32_t *)out_blk)[3]) = d - l_key[39];
 }
 
 void mars_decrypt(mars_ctx *ctx, const u_int8_t in_blk[4], u_int8_t out_blk[4])
@@ -356,10 +356,10 @@ void mars_decrypt(mars_ctx *ctx, const u_int8_t in_blk[4], u_int8_t out_blk[4])
 
 	l_key = ctx->l_key;
 
-    d = ((const u_int32_t *)in_blk[0]) + l_key[36];
-    c = ((const u_int32_t *)in_blk[1]) + l_key[37];
-    b = ((const u_int32_t *)in_blk[2]) + l_key[38];
-    a = ((const u_int32_t *)in_blk[3]) + l_key[39];
+    d = (((const u_int32_t *)in_blk)[0]) + l_key[36];
+    c = (((const u_int32_t *)in_blk)[1]) + l_key[37];
+    b = (((const u_int32_t *)in_blk)[2]) + l_key[38];
+    a = (((const u_int32_t *)in_blk)[3]) + l_key[39];
 
     f_mix(a,b,c,d); a += d;
     f_mix(b,c,d,a); b += c;
@@ -384,8 +384,8 @@ void mars_decrypt(mars_ctx *ctx, const u_int8_t in_blk[4], u_int8_t out_blk[4])
     b_mix(c,d,a,b); d -= a;
     b_mix(d,a,b,c);
 
-    ((const u_int32_t *)out_blk[0]) = d - l_key[0];
-    ((const u_int32_t *)out_blk[1]) = c - l_key[1];
-    ((const u_int32_t *)out_blk[2]) = b - l_key[2];
-    ((const u_int32_t *)out_blk[3]) = a - l_key[3];
+    (((u_int32_t *)out_blk)[0]) = d - l_key[0];
+    (((u_int32_t *)out_blk)[1]) = c - l_key[1];
+    (((u_int32_t *)out_blk)[2]) = b - l_key[2];
+    (((u_int32_t *)out_blk)[3]) = a - l_key[3];
 }
