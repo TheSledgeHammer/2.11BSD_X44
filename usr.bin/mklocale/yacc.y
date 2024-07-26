@@ -67,6 +67,9 @@ rune_map	types = { { 0, }, };
 
 _FileRuneLocale new_locale = { { 0, }, };
 
+size_t variable_len = (size_t)0; 
+void *variable = NULL;
+
 rune_t	charsetbits = (rune_t)0x00000000;
 #if 0
 rune_t	charsetmask = (rune_t)0x0000007f;
@@ -128,9 +131,9 @@ table		:	entry
 entry		:	ENCODING STRING
 			{ strncpy(new_locale.encoding, $2, sizeof(new_locale.encoding)); }
 		|	VARIABLE
-			{ new_locale.variable_len = strlen($1) + 1;
-			  new_locale.variable_len = malloc(new_locale.variable_len);
-		  		strcpy((char *)new_locale.variable_len, $1);
+			{ variable_len = strlen($1) + 1;
+              variable = strdup($1);
+			  new_locale.variable_len = htonl((u_int32_t)variable_len);
 			}
 		|	CHARSET RUNE
 			{ charsetbits = $2; charsetmask = 0x0000007f; }
@@ -169,7 +172,7 @@ entry		:	ENCODING STRING
 			  }
 			}
 		|	INVALID RUNE
-			{ new_locale.invalid_rune = $2; }
+			{ new_locale.invalid_rune = htonl((u_int32_t)$2); }
 		|	LIST list
 			{ set_map(&types, $2, $1); }
 		|	MAPLOWER map
@@ -293,7 +296,7 @@ main(ac, av)
 		mapupper.map[x] = x;
 		maplower.map[x] = x;
     }
-    new_locale.invalid_rune = _INVALID_RUNE;
+    new_locale.invalid_rune = htonl((u_int32_t)_INVALID_RUNE);
     memcpy(new_locale.magic, _FILE_RUNE_MAGIC_1, sizeof(new_locale.magic));
 
     yyparse();
@@ -830,7 +833,7 @@ dump_tables()
 		if (list->map && list->min + 3 < list->max) {
 	    	u_long r = list->map;
 
-	    	fprintf(stderr, "%04x: %2d", list->min, r & 0xff);
+	    	fprintf(stderr, "%04x: %2d", list->min, (int)(r & 0xff));
 	    
 	 	fprintf(stderr, " %4s", (r & _RUNETYPE_A) ? "alph" : "");
 	    	fprintf(stderr, " %4s", (r & _RUNETYPE_C) ? "ctrl" : "");
@@ -848,7 +851,7 @@ dump_tables()
 	    	fprintf(stderr, " %4s", (r & _RUNETYPE_Q) ? "phon" : "");
 	    	fprintf(stderr, "\n...\n");
 
-	    	fprintf(stderr, "%04x:%2d", list->max, r & 0xff);
+	    	fprintf(stderr, "%04x:%2d", list->max, (int)(r & 0xff));
 
 	    	fprintf(stderr, " %4s", (r & _RUNETYPE_A) ? "alph" : "");
 	    	fprintf(stderr, " %4s", (r & _RUNETYPE_C) ? "ctrl" : "");
@@ -872,7 +875,7 @@ dump_tables()
 	    	u_long r = ntohl(list->types[x - list->min]);
 
 	    	if (r) {
-			fprintf(stderr, "%04x: %2d", x, r & 0xff);	
+			fprintf(stderr, "%04x: %2d", x, (int)(r & 0xff));	
 
 			fprintf(stderr, " %4s", (r & _RUNETYPE_A) ? "alph" : "");
 			fprintf(stderr, " %4s", (r & _RUNETYPE_C) ? "ctrl" : "");
