@@ -63,7 +63,8 @@ struct etherip_softc {
 #define sc_ro6  sc_scr.scr_ro6
 #endif
 
-LIST_HEAD(, etherip_softc) etherip_softc_list;
+LIST_HEAD(etherip_softc_head, etherip_softc);
+extern struct etherip_softc_head etherip_softc_list;
 
 struct etherip_header {
 	uint8_t eip_ver;       /* version/reserved */
