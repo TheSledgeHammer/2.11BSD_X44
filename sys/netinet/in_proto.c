@@ -137,6 +137,11 @@ __KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $")
 #include <netinet/ip_carp.h>
 #endif
 
+#include "etherip.h"
+#if NETHERIP > 0
+#include <netinet/ip_etherip.h>
+#endif
+
 extern	struct domain inetdomain;
 
 struct protosw inetsw[] = {
@@ -406,6 +411,24 @@ struct protosw inetsw[] = {
 				.pr_drain		= 0,
 				.pr_sysctl		= NULL,
 		},
+#if NETHERIP > 0
+		{
+				.pr_type		= SOCK_RAW,
+				.pr_domain		= &inetdomain,
+				.pr_protocol 	= IPPROTO_ETHERIP,
+				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+				.pr_input 		= ip_etherip_input,
+				.pr_output		= rip_output,
+				.pr_ctlinput 	= rip_ctlinput,
+				.pr_ctloutput	= rip_ctloutput,
+				.pr_usrreq		= rip_usrreq,
+				.pr_init		= 0,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
+				.pr_sysctl		= NULL,
+		},
+#endif /* NETHERIP > 0 */
 #if NCARP > 0
 		{
 				.pr_type		= SOCK_RAW,
@@ -413,7 +436,7 @@ struct protosw inetsw[] = {
 				.pr_protocol 	= IPPROTO_CARP,
 				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_LASTHDR,
 				.pr_input 		= carp_proto_input,
-				.pr_output		= 0,
+				.pr_output		= rip_output,
 				.pr_ctlinput 	= 0,
 				.pr_ctloutput	= rip_ctloutput,
 				.pr_usrreq		= rip_usrreq,
