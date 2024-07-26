@@ -108,7 +108,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_etherip.c,v 1.31 2011/10/28 16:10:12 dyoung Exp $
 #include <net/if_ether.h>
 #include <net/if_media.h>
 #include <net/route.h>
-#include "../devel/net/if_etherip.h"
+#include <net/if_etherip.h>
 #include <net/bpf.h>
 
 #include <netinet/in.h>
@@ -132,7 +132,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_etherip.c,v 1.31 2011/10/28 16:10:12 dyoung Exp $
 #endif /* INET6 */
 
 void etheripattach(int);
-void etheripattch0(struct etherip_softc *, struct ifnet *, struct if_clone *, int);
+void etheripattach0(struct etherip_softc *, struct ifnet *, struct if_clone *, int);
 
 static void etherip_start(struct ifnet *);
 static void etherip_stop(struct ifnet *, int);
@@ -175,7 +175,7 @@ etherip_clone_create(ifc, unit)
 	memset(sc, 0, sizeof(struct etherip_softc));
 
 	ifp = sc->sc_ec.ec_if;
-	etheripattch0(sc, ifp, ifc, unit);
+	etheripattach0(sc, ifp, ifc, unit);
 
 	/* insert into etherip_softc_list */
 	LIST_INSERT_HEAD(&etherip_softc_list, sc, etherip_list);
@@ -183,7 +183,7 @@ etherip_clone_create(ifc, unit)
 }
 
 void
-etheripattch0(sc, ifp, ifc, unit)
+etheripattach0(sc, ifp, ifc, unit)
 	struct etherip_softc *sc;
 	struct ifnet *ifp;
 	struct if_clone *ifc;
@@ -243,7 +243,7 @@ etherip_clone_destroy(ifp)
 	struct etherip_softc *sc;
 	int s;
 
-	sc = ifp->if_softc;
+	sc = (struct etherip_softc*)ifp->if_softc;
 
 	s = splnet();
 	etherip_stop(ifp, 1);
@@ -261,7 +261,7 @@ etherip_clone_destroy(ifp)
 static int
 etherip_init(struct ifnet *ifp)
 {
-	struct etherip_softc *sc = ifp->if_softc;
+	struct etherip_softc *sc = (struct etherip_softc*)ifp->if_softc;
 
 #ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 	if (sc->sc_si == NULL) {
@@ -303,7 +303,7 @@ etherip_mediachange(struct ifnet *ifp)
 static void
 etherip_mediastatus(struct ifnet *ifp, struct ifmediareq *imr)
 {
-	struct etherip_softc *sc = ifp->if_softc;
+	struct etherip_softc *sc = (struct etherip_softc*)ifp->if_softc;
 
 	imr->ifm_active = sc->sc_im.ifm_cur->ifm_media;
 }
@@ -311,7 +311,7 @@ etherip_mediastatus(struct ifnet *ifp, struct ifmediareq *imr)
 static void
 etherip_start(struct ifnet *ifp)
 {
-	struct etherip_softc *sc = ifp->if_softc;
+	struct etherip_softc *sc = (struct etherip_softc*)ifp->if_softc;
 
 #ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 	if (sc->sc_si) {
@@ -386,7 +386,7 @@ etherip_ioctl(ifp, cmd, data)
 	u_long cmd;
 	caddr_t data;
 {
-	struct etherip_softc *sc = ifp->if_softc;
+	struct etherip_softc *sc = (struct etherip_softc*)ifp->if_softc;
 	struct ifreq *ifr = data;
 	struct sockaddr *src, *dst;
 	int s, error;
@@ -476,7 +476,7 @@ etherip_set_tunnel(struct ifnet *ifp,
 		   struct sockaddr *src,
 		   struct sockaddr *dst)
 {
-	struct etherip_softc *sc = ifp->if_softc;
+	struct etherip_softc *sc = (struct etherip_softc*)ifp->if_softc;
 	struct etherip_softc *sc2;
 	struct sockaddr *osrc, *odst, *sa;
 	int s, error = 0;
@@ -547,7 +547,7 @@ out:
 static void
 etherip_delete_tunnel(struct ifnet *ifp)
 {
-	struct etherip_softc *sc = ifp->if_softc;
+	struct etherip_softc *sc = (struct etherip_softc*)ifp->if_softc;
 	int s;
 
 	s = splsoftnet();

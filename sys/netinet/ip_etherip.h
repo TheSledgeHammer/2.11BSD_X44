@@ -1,4 +1,4 @@
-/*      $NetBSD: if_etherip.h,v 1.10 2008/11/12 12:36:28 ad Exp $        */
+/*      $NetBSD: ip_etherip.h,v 1.1 2006/11/23 04:07:07 rpaulo Exp $        */
 
 /*
  *  Copyright (c) 2006, Hans Rosenfeld <rosenfeld@grumpf.hope-2000.org>
@@ -29,40 +29,10 @@
  *  SUCH DAMAGE.
  */
 
-#ifndef _NET_IF_ETHERIP_H_
-#define _NET_IF_ETHERIP_H_
+#ifndef _NETINET_IP_ETHERIP_H_
+#define _NETINET_IP_ETHERIP_H_
 
-#include <sys/queue.h>
+int  ip_etherip_output(struct ifnet *, struct mbuf *);
+void ip_etherip_input(struct mbuf *, ...);
 
-#ifdef _KERNEL_OPT
-#include "opt_inet.h"
-#endif
-
-#include <netinet/in.h>
-
-struct etherip_softc {
-	struct ifmedia  sc_im;
-	device_t		sc_dev;
-	struct ethercom sc_ec;
-	struct sockaddr *sc_src;                /* tunnel source address      */
-	struct sockaddr *sc_dst;                /* tunnel destination address */
-	struct route     sc_ro;					/* cached inet route          */
-	void *sc_si;                            /* softintr handle            */
-	LIST_ENTRY(etherip_softc) etherip_list; /* list of etherip tunnels    */
-};
-
-LIST_HEAD(, etherip_softc) etherip_softc_list;
-
-struct etherip_header {
-	uint8_t eip_ver;       /* version/reserved */
-	uint8_t eip_pad;       /* required padding byte */
-};
-
-#define ETHERIP_VER_VERS_MASK   0x0f
-#define ETHERIP_VER_RSVD_MASK   0xf0
-#define ETHERIP_VERSION         0x03
-
-#define ETHERIP_TTL 30
-#define ETHERIP_ROUTE_TTL 10
-
-#endif /* !_NET_IF_ETHERIP_H_ */
+#endif /* !_NETINET_IP_ETHERIP_H_ */

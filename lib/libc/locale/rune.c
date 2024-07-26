@@ -53,15 +53,6 @@ static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 #include "runefile.h"
 #include "setlocale.h"
 
-#ifdef notyet
-extern int			_none_init(_RuneLocale *);
-extern int			_UES_init(_RuneLocale *);
-extern int			_UTF1632_init(_RuneLocale *);
-extern int			_UTF2_init(_RuneLocale *);
-extern int			_UTF8_init(_RuneLocale *);
-extern int			_EUC_init(_RuneLocale *);
-extern int			_ISO2022_init(_RuneLocale *);
-#endif notyet
 static _RuneLocale	*_Read_RuneMagi(FILE *);
 
 static char *PathLocale = 0;
@@ -87,31 +78,6 @@ wctrans_init(rl)
 	rl->wctrans[_WCTRANS_INDEX_UPPER].extmap = &rl->mapupper_ext;
 }
 
-#ifdef notyet
-int
-initrunelocale(rl)
-	_RuneLocale *rl;
-{
-	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF-8")) {
-		return (_UTF8_init(rl));
-	} else if (!strcmp(rl->encoding, "UTF-1632")) {
-		return (_UTF1632_init(rl));
-	} else if (!strcmp(rl->encoding, "UES")) {
-		return (_UES_init(rl));
-	} else if (!strcmp(rl->encoding, "UTF-2")) {
-		return (_UTF2_init(rl));
-	} else if (!strcmp(rl->encoding, "ISO2022")) {
-		return (_ISO2022_init(rl));
-	} else if (!strcmp(rl->encoding, "NONE")) {
-		return (_none_init(rl));
-	} else if (!strcmp(rl->encoding, "EUC")) {
-		return (_EUC_init(rl));
-	} else {
-		return (EINVAL);
-	}
-}
-#endif notyet
-
 int
 setrunelocale(encoding)
 	char *encoding;
@@ -126,7 +92,7 @@ setrunelocale(encoding)
 	/*
 	 * The "C" and "POSIX" locale are always here.
 	 */
-	if (!strcmp(encoding, "C") || !strcmp(encoding, "POSIX")) {
+	if (!strcmp(encoding, _C_LOCALE) || !strcmp(encoding, _POSIX_LOCALE)) {
 		_CurrentRuneLocale = &_DefaultRuneLocale;
 		return (0);
 	}
@@ -151,7 +117,6 @@ setrunelocale(encoding)
 	wctype_init(rl);
 	wctrans_init(rl);
 
-	//return (initrunelocale(rl));
 	return (newrunelocale(rl));
 }
 

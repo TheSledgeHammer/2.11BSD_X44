@@ -98,9 +98,6 @@
 struct disklist_head 	disklist = TAILQ_HEAD_INITIALIZER(disklist);	/* TAILQ_HEAD */
 int						disk_count = 0;	/* number of drives in global disklist */
 
-static dev_t disk_pdev(dev_t);
-static void  disk_bufio(struct dkdevice *, struct buf *);
-
 /*
  * Searches the disklist for the disk corresponding to the
  * name provided.
@@ -656,6 +653,9 @@ sysctl_disknames(where, sizep)
 }
 
 /* dkdriver */
+static dev_t disk_pdev(dev_t);
+static void  disk_bufio(struct dkdevice *, struct buf *);
+
 void
 dkdriver_strategy(diskp, bp)
 	struct dkdevice *diskp;
@@ -836,3 +836,5 @@ disk_bufio(diskp, bp)
 #endif
 	biodone(bp);
 }
+
+

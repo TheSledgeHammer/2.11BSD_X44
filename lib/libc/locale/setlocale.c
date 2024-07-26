@@ -133,7 +133,7 @@ __setlocale(category, locale)
 			env = getenv("LANG");
 
 		if (!env)
-			env = "C";
+			env = _C_LOCALE;
 
 		(void) strncpy(new_categories[category], env, 31);
 		new_categories[category][31] = 0;
@@ -240,7 +240,7 @@ loadlocale(category)
 		(void)strcpy(curcat, newcat);
 		return (curcat);
 	}
-	if (!strcmp(newcat, "C") || !strcmp(newcat, "POSIX")) {
+	if (!strcmp(newcat, _C_LOCALE) || !strcmp(newcat, _POSIX_LOCALE)) {
 		/*
 		 * Some day this will need to reset the locale to the default
 		 * C locale.  Since we have no way to change them as of yet,
@@ -279,7 +279,7 @@ loadlocale(category)
 
 	if (func(newcat) != _LDP_ERROR) {
 		(void)strcpy(curcat, newcat);
-		(void)strcpy(locale->part_category[category], newcat); /* Fix */
+		(void)strcpy(locale->part_category[category], newcat);
 		return (curcat);
 	}
 
@@ -317,7 +317,7 @@ __get_locale_env(category)
 
         /* 4. if none is set, fall to "C" */
         if (env == NULL || !*env) {
-            env = "C";
+            env = _C_LOCALE;
         }
 
         return (env);

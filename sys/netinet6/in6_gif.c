@@ -233,7 +233,8 @@ in6_gif_output(ifp, family, m)
 	return (error);
 }
 
-int in6_gif_input(mp, offp, proto)
+int
+in6_gif_input(mp, offp, proto)
 	struct mbuf **mp;
 	int *offp, proto;
 {

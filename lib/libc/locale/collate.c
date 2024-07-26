@@ -62,7 +62,7 @@ __collate_load_tables(const char *encoding)
 	static char collate_encoding[32];
 
 	/* 'encoding' must be already checked. */
-	if (strcmp(encoding, "C") == 0 || strcmp(encoding, "POSIX") == 0) {
+	if (strcmp(encoding, _C_LOCALE) == 0 || strcmp(encoding, _POSIX_LOCALE) == 0) {
 		__collate_load_error = 1;
 		return (_LDP_CACHE);
 	}

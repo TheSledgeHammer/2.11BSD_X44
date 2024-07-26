@@ -64,7 +64,7 @@ __part_load_locale(const char *name,
 	size_t		namesize, bufsize;
 
 	/* 'name' must be already checked. */
-	if (strcmp(name, "C") == 0 || strcmp(name, "POSIX") == 0) {
+	if (strcmp(name, _C_LOCALE) == 0 || strcmp(name, _POSIX_LOCALE) == 0) {
 		*using_locale = 0;
 		return (_LDP_CACHE);
 	}

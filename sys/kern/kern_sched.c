@@ -235,13 +235,47 @@ sched_thread_weight(val)
     return (-1);
 }
 
-#define sched_thread_utilization_rate(sc)		((sc)->sc_utilrate = sched_thread_rate((sc)->sc_utilization))
-#define sched_thread_demand_rate(sc)			((sc)->sc_demandrate = sched_thread_rate((sc)->sc_demand))
-#define sched_thread_workload_rate(sc)			((sc)->sc_workrate = sched_thread_rate((sc)->sc_workload))
+void
+sched_thread_utilization_rate(sc)
+	struct sched *sc;
+{
+	sc->sc_utilrate = sched_thread_rate(sc->sc_utilization);
+}
 
-#define sched_thread_utilization_weight(sc)		((sc)->sc_utilweight = sched_thread_weight((sc)->sc_utilization))
-#define sched_thread_demand_weight(sc)			((sc)->sc_demandweight = sched_thread_weight((sc)->sc_demand))
-#define sched_thread_workload_weight(sc)		((sc)->sc_workweight = sched_thread_weight((sc)->sc_workload))
+void
+sched_thread_demand_rate(sc)
+	struct sched *sc;
+{
+	sc->sc_demandrate = sched_thread_rate(sc->sc_demand);
+}
+
+void
+sched_thread_workload_rate(sc)
+	struct sched *sc;
+{
+	sc->sc_workrate = sched_thread_rate(sc->sc_workload);
+}
+
+void
+sched_thread_utilization_weight(sc)
+	struct sched *sc;
+{
+	sc->sc_utilweight = sched_thread_weight(sc->sc_utilization);
+}
+
+void
+sched_thread_demand_weight(sc)
+	struct sched *sc;
+{
+	sc->sc_demandweight = sched_thread_weight(sc->sc_demand);
+}
+
+void
+sched_thread_workload_weight(sc)
+	struct sched *sc;
+{
+	sc->sc_workweight = sched_thread_weight(sc->sc_workload);
+}
 
 void
 sched_thread_avg_rate(sc)
@@ -313,7 +347,7 @@ proc_create_nthreads(p)
 	int nthreads, error, i;
 
 	if ((p->p_flag & P_TDCREATE) == 0) {
-		nthreads = p->p_sched->sc_optnthreads - p->p_nthreads;
+		nthreads = p->p_sched->sc_optnthreads;
 		for (i = 0; i < nthreads; i++) {
 			error = newthread(&td, NULL, THREAD_STACK, FALSE);
 			if (error != 0) {
@@ -339,7 +373,7 @@ proc_destroy_nthreads(p, ecode)
 	int nthreads, i;
 
 	if ((p->p_flag & P_TDDESTROY) == 0) {
-		nthreads = p->p_nthreads - p->p_sched->sc_optnthreads;
+		nthreads = p->p_sched->sc_optnthreads;
 		for (i = 0; i < nthreads; i++) {
 			thread_exit(W_EXITCODE(ecode, 0));
 		}

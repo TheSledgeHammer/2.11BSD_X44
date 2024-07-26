@@ -78,13 +78,13 @@ locale_loader(locale, name, category)
 	case LC_CTYPE:
 		return ((locale_part_t)_CurrentRuneLocale);
 	case LC_MONETARY:
-		return (locale_part_loader(locale, name, category, __monetary_load_locale));
+		return (locale_part_loader(locale, name, LC_MONETARY, __monetary_load_locale));
 	case LC_NUMERIC:
-		return (locale_part_loader(locale, name, category, __numeric_load_locale));
+		return (locale_part_loader(locale, name, LC_NUMERIC, __numeric_load_locale));
 	case LC_TIME:
-		return (locale_part_loader(locale, name, category, __time_load_locale));
+		return (locale_part_loader(locale, name, LC_TIME, __time_load_locale));
 	case LC_MESSAGES:
-		return (locale_part_loader(locale, name, category, __messages_load_locale));
+		return (locale_part_loader(locale, name, LC_MESSAGES, __messages_load_locale));
 	}
 	return (NULL);
 }
@@ -136,7 +136,7 @@ newlocale(mask, name, src)
 	realname = name;
 
 	if (name == NULL) {
-		realname = "C";
+		realname = _C_LOCALE;
 	} else if ('\0' == name[0]) {
 		useenv = 1;
 	}
@@ -158,8 +158,11 @@ newlocale(mask, name, src)
 			}
 			dst->part_impl[i] = find_part(dst, realname, i);
 			if (dst->part_impl[i]) {
-				if (strcmp(realname, "C") != 0) {
+				if (strcmp(realname, _C_LOCALE) != 0) {
 					strncpy(dst->part_category[i], realname, ENCODING_LEN);
+				}
+				if (strcmp(realname, _C_LOCALE) == 0) {
+					strncpy(dst->part_name[i], realname, ENCODING_LEN);
 				}
 			}
 		} else {
