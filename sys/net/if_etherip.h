@@ -42,7 +42,6 @@
 
 struct etherip_softc {
 	struct ifmedia  sc_im;
-	device_t		sc_dev;
 	struct ethercom sc_ec;
 	struct sockaddr *sc_src;                /* tunnel source address      */
 	struct sockaddr *sc_dst;                /* tunnel destination address */
