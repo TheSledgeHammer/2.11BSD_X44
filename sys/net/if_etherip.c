@@ -155,6 +155,8 @@ void	etheripnetisr(void);
 #endif
 static void etheripintr(void *);
 
+struct etherip_softc_head etherip_softc_list;
+
 void
 etheripattach(count)
 	int count;
