@@ -143,14 +143,14 @@ static int  etherip_mediachange(struct ifnet *);
 static void etherip_mediastatus(struct ifnet *, struct ifmediareq *);
 
 static int  etherip_clone_create(struct if_clone *, int);
-static int  etherip_clone_destroy(struct ifnet *);
+static void  etherip_clone_destroy(struct ifnet *);
 
 static struct if_clone etherip_cloners = IF_CLONE_INITIALIZER(
 	"etherip", etherip_clone_create, etherip_clone_destroy);
 
 static int  etherip_set_tunnel(struct ifnet *, struct sockaddr *, struct sockaddr *);
 static void etherip_delete_tunnel(struct ifnet *);
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+#ifndef __HAVE_GENERIC_SOFT_INTERRUPTS
 void	etheripnetisr(void);
 #endif
 static void etheripintr(void *);
@@ -174,7 +174,7 @@ etherip_clone_create(ifc, unit)
 	sc = malloc(sizeof(struct etherip_softc), M_DEVBUF, M_WAIT);
 	memset(sc, 0, sizeof(struct etherip_softc));
 
-	ifp = sc->sc_ec.ec_if;
+	ifp = &sc->sc_ec.ec_if;
 	etheripattach0(sc, ifp, ifc, unit);
 
 	/* insert into etherip_softc_list */
@@ -192,6 +192,7 @@ etheripattach0(sc, ifp, ifc, unit)
 	uint8_t enaddr[ETHER_ADDR_LEN] = { 0xf2, 0x0b, 0xa5, 0xff, 0xff, 0xff };
 	char enaddrstr[3 * ETHER_ADDR_LEN];
 	struct timeval tv;
+    uint32_t ui;
 
 	/*
 	 * In order to obtain unique initial Ethernet address on a host,
@@ -220,7 +221,7 @@ etheripattach0(sc, ifp, ifc, unit)
 	ifmedia_add(&sc->sc_im, IFM_ETHER|IFM_AUTO, 0, NULL);
 	ifmedia_set(&sc->sc_im, IFM_ETHER|IFM_AUTO);
 
-	ifp = sc->sc_ec.ec_if;
+	//ifp = &sc->sc_ec.ec_if;
 	sprintf(ifp->if_xname, "%s%d", ifc->ifc_name, unit);
 	ifp->if_softc = sc;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
@@ -254,7 +255,7 @@ etherip_clone_destroy(ifp)
 	etherip_delete_tunnel(ifp);
 	ether_ifdetach(ifp);
 	if_detach(ifp);
-	rtfree(&sc->sc_ro);
+	rtfree(sc->sc_ro.ro_rt);
 	ifmedia_delete_instance(&sc->sc_im, IFM_INST_ANY);
 }
 
@@ -284,7 +285,6 @@ etherip_stop(struct ifnet *ifp, int disable)
 {
 	ifp->if_flags &= ~IFF_RUNNING;
 }
-
 
 /*
  * This function is called by the ifmedia layer to notify the driver
@@ -342,9 +342,6 @@ etheripintr(void *arg)
 	struct mbuf *m;
 	int s, error;
 
-
-	sc = (struct etherip_softc *)arg;
-	ifp = &sc->sc_ec.ec_if;
 	//mutex_enter(softnet_lock);
 	for (;;) {
 		s = splnet();
@@ -353,7 +350,7 @@ etheripintr(void *arg)
 		if (m == NULL)
 			break;
 
-		bpf_mtap(ifp, m);
+		bpf_mtap(ifp->if_bpf, m);
 
 		ifp->if_opackets++;
 		if (sc->sc_src && sc->sc_dst) {
@@ -387,7 +384,7 @@ etherip_ioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	struct etherip_softc *sc = (struct etherip_softc*)ifp->if_softc;
-	struct ifreq *ifr = data;
+	struct ifreq *ifr = (struct ifreq *)data;
 	struct sockaddr *src, *dst;
 	int s, error;
 

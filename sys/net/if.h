@@ -518,6 +518,7 @@ struct ifnet loif[];
 #endif
 extern size_t if_indexlim;
 
+char    *ether_snprintf(char *, size_t, const u_char *);
 char	*ether_sprintf(const u_char *);
 void	if_set_sadl(struct ifnet *, void *, u_char, u_char);
 void	if_alloc_sadl(struct ifnet *);
