@@ -1172,7 +1172,7 @@ static void	ovlmap_mapin(ovl_map_t, ovl_map_entry_t);
 
 static void
 ovlmap_mapin(map, entry)
-	ovl_map_t 		map;
+	ovl_map_t 	map;
 	ovl_map_entry_t entry;
 {
 	ovl_object_t object;
@@ -1187,7 +1187,7 @@ ovlmap_mapin(map, entry)
 
 static void
 ovlmap_mapout(map, entry)
-	ovl_map_t 		map;
+	ovl_map_t 	map;
 	ovl_map_entry_t entry;
 {
 	ovl_object_t object;
@@ -1207,7 +1207,7 @@ void
 ovlspace_mapout(ovl)
 	struct ovlspace *ovl;
 {
-	ovl_map_t 		old_map;
+	ovl_map_t 	old_map;
 	ovl_map_entry_t old_entry;
 
 	old_map = ovl->ovl_map;
@@ -1225,11 +1225,13 @@ void
 ovlspace_mapin(ovl)
 	struct ovlspace *ovl;
 {
-	struct ovl_map 			old_map;
+	struct ovl_map 		old_map;
 	struct ovl_map_entry 	old_entry;
-	ovl_map_t 				new_map;
-	ovl_map_entry_t 		new_entry;
+	ovl_map_t 		new_map;
+	ovl_map_entry_t 	new_entry;
+	int 			found;
 
+	found = 1;
 	/* Retrieve old map from it's temporary holding */
 	ovlmap_mapin(&old_map, &old_entry);
 
@@ -1241,13 +1243,16 @@ ovlspace_mapin(ovl)
 			CIRCLEQ_FOREACH(new_entry, &new_map->cl_header, cl_entry) {
 				if (new_entry == &old_entry) {
 					new_entry = &old_entry;
+					found = 0;
 					/* success: we have reloaded the map and map entries */
 					break;
 				}
 			}
 		}
 		ovl_map_unlock(new_map);
-		ovl->ovl_map = new_map;
+		if (found) {
+			ovl->ovl_map = new_map;
+		}
 	}
 	/*
 	 * TODO: Implement A fallback
