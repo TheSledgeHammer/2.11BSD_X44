@@ -66,7 +66,7 @@ char	*strchr(const char *, int);
 int	 	strcmp(const char *, const char *);
 int	 	strcoll(const char *, const char *);
 char	*strcpy(char * __restrict, const char * __restrict);
-size_t	 strcspn(const char *, const char *);
+size_t	strcspn(const char *, const char *);
 char 	*strerror(int);
 size_t	strlen(const char *);
 char	*strncat(char * __restrict, const char * __restrict, size_t);
@@ -92,6 +92,11 @@ char	*strdup(const char *);
 #if (_POSIX_C_SOURCE - 0 >= 200809L) || (_XOPEN_SOURCE - 0 >= 700) || defined(__BSD_VISIBLE)
 char	*strndup(const char *, size_t);
 size_t	strnlen(const char *, size_t);
+#ifndef __STRSIGNAL_DECLARED
+#define __STRSIGNAL_DECLARED
+/* also in unistd.h */
+char 	*strsignal(int);
+#endif /* __STRSIGNAL_DECLARED */
 #endif
 
 #if defined(__BSD_VISIBLE)

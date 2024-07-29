@@ -104,6 +104,8 @@ pid_t		 	setsid(void);
 int	 			setuid(uid_t);
 unsigned int	sleep(unsigned int);
 long	 		sysconf(int);
+pid_t		 	tcgetpgrp(int);
+int	 			tcsetpgrp(int, pid_t);
 char			*ttyname(int);
 int	 			unlink(const char *);
 ssize_t			write(int, const void *, size_t);
@@ -113,9 +115,34 @@ ssize_t			write(int, const void *, size_t);
 /* also in signal.h */
 extern const char *sys_siglist;
 #endif /* __SYS_SIGLIST_DECLARED */
+/*
+ * IEEE Std 1003.2-92, adopted in X/Open Portability Guide Issue 4 and later
+ */
+#if (_POSIX_C_SOURCE - 0) >= 2 || defined(_XOPEN_SOURCE) || \
+    defined(__BSD_VISIBLE)
 extern	char	*optarg;		/* getopt(3) external variables */
 extern	int	    opterr, optind, optopt;
 int	 			getopt(int, char * const [], const char *);
+#endif
+
+/*
+ * The Open Group Base Specifications, Issue 5; IEEE Std 1003.1-2001 (POSIX)
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
+#if __SSP_FORTIFY_LEVEL == 0
+ssize_t	 		readlink(const char * __restrict, char * __restrict, size_t);
+#endif
+#endif
+
+/*
+ * The Open Group Base Specifications, Issue 6; IEEE Std 1003.1-2001 (POSIX)
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 600 || \
+    defined(__BSD_VISIBLE)
+int	 			setegid(gid_t);
+int	 			seteuid(uid_t);
+#endif
 
 #ifndef	_POSIX_SOURCE
 #ifdef	__STDC__
@@ -135,6 +162,7 @@ int	 			fchdir(int);
 int	 			fchown(int, int, int);
 int	 			fsync(int);
 int	 			ftruncate(int, off_t);
+int	 			getdomainname(char *, size_t);
 int	 			getdtablesize(void);
 unsigned long	gethostid(void);
 int	 			gethostname(char *, size_t);
@@ -145,6 +173,8 @@ char			*getusershell(void);
 char			*getwd(char *);
 int	 			initgroups(const char *, int);
 int	 			iruserok(unsigned long, int, const char *, const char *);
+//int	 			lchown(const char *, uid_t, gid_t);
+int	 			lockf(int, int, off_t);
 int	 			mknod(const char *, mode_t, dev_t);
 char			*mktemp(char *);
 int	 			nice(int);
@@ -153,16 +183,29 @@ int		 		rcmd(char **, int, const char *, const char *, const char *, int *);
 char			*re_comp(char *);
 int 			re_exec(char *);
 char			*sbrk(int);
+int	 			reboot(int, char *);
+int	 			revoke(const char *);
+int	 			rresvport(int *);
+int	 			ruserok(const char *, int, const char *, const char *);
+int	 			setdomainname(const char *, size_t);
+int	 			setgroups(int, const gid_t *);
 unsigned long	sethostid(unsigned long);
+int	 			sethostname(const char *, size_t);
 int	 			setkey(const char *);
 int	 			setlogin(const char *);
 void			*setmode(const char *);
+#ifndef __STRSIGNAL_DECLARED
+#define __STRSIGNAL_DECLARED
+/* backwards-compatibility; also in string.h */
+char 			*strsignal(int);
+#endif /* __STRSIGNAL_DECLARED */
 int	 			setpgrp(pid_t, pid_t);	/* obsoleted by setpgid() */
 int	 			setregid(gid_t, gid_t);
 int	 			setreuid(uid_t, uid_t);
 int	 			setrgid(gid_t);
 int	 			setruid(uid_t);
 void	 		setusershell(void);
+void	 		swab(const void * __restrict, void * __restrict, ssize_t);
 int	 			symlink(const char *, const char *);
 void	 		sync(void);
 int	 			swapctl(int, void *, int);
@@ -170,9 +213,19 @@ int	 			syscall(int, ...);
 quad_t	 		__syscall(quad_t, ...);
 int	 			truncate(const char *, off_t);
 int	 			ttyslot(void);
+int	 			undelete(const char *);
 unsigned int	ualarm(unsigned int, unsigned int);
 void	 		usleep(long);
 pid_t	 		vfork(void);
+
+/*
+ * X/Open CAE Specification Issue 5 Version 2
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
+ssize_t	 pread(int, void *, size_t, off_t);
+ssize_t	 pwrite(int, const void *, size_t, off_t);
+#endif /* (_POSIX_C_SOURCE - 0) >= 200112L || ... */
 #endif /* !_POSIX_SOURCE */
 
 /*

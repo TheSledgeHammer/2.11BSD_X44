@@ -21,16 +21,22 @@ static char sccsid[] = "@(#)strdup.c	5.1 (Berkeley) 12/12/88";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+
+#ifdef __weak_alias
+__weak_alias(strdup,_strdup)
+#endif
 
 char *
 strdup(str)
 	char *str;
 {
 	int len;
-	char *copy, *malloc();
+	char *copy;
 
 	len = strlen(str) + 1;
 	if (!(copy = malloc((u_int)len)))

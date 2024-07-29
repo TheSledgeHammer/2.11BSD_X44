@@ -295,6 +295,11 @@ __END_DECLS
 
 __BEGIN_DECLS
 char	*ctermid(char *);
+#ifndef __CUSERID_DECLARED
+#define __CUSERID_DECLARED
+/* also declared in unistd.h */
+char	*cuserid(char *);
+#endif /* __CUSERID_DECLARED */
 FILE	*fdopen(int, const char *);
 int	 	fileno(FILE *);
 

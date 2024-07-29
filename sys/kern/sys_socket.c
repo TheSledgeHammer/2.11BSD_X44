@@ -96,7 +96,7 @@ soo_ioctl(fp, cmd, data, p)
 	if (IOCGROUP(cmd) == 'i')
 		return (u.u_error = ifioctl(so, cmd, data));
 	if (IOCGROUP(cmd) == 'r')
-		return (u.u_error = rtioctl(cmd, data));
+		return (u.u_error = rtioctl(cmd, data, p));
 #endif
 	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,(struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0, p));
 }

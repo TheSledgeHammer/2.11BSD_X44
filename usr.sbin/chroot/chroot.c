@@ -1,3 +1,4 @@
+/*	$NetBSD: chroot.c,v 1.19 2011/09/20 14:28:52 christos Exp $	*/
 /*
  * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -31,6 +32,8 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright (c) 1988, 1993\n\
@@ -41,28 +44,110 @@ static char copyright[] =
 static char sccsid[] = "@(#)chroot.c	8.1 (Berkeley) 6/9/93";
 #endif /* not lint */
 
+#include <sys/param.h>
 #include <sys/types.h>
 
 #include <err.h>
 #include <errno.h>
+#include <grp.h>
 #include <paths.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 #include <unistd.h>
 
-void usage __P((void));
+void usage(void);
+
+static int
+getnum(const char *str, uintmax_t *num)
+{
+	char *ep;
+
+	errno = 0;
+
+	*num = strtoumax(str, &ep, 0);
+	if (str[0] == '\0' || *ep != '\0') {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (errno == ERANGE && *num == UINTMAX_MAX)
+		return -1;
+
+	return 0;
+}
+
+
+static gid_t
+getgroup(const char *group)
+{
+	uintmax_t	num;
+	struct group	*gp;
+
+	if ((gp = getgrnam(group)) != NULL)
+		return gp->gr_gid;
+
+	if (getnum(group, &num) == -1)
+	    errx(1, "no such group `%s'", group);
+
+	return (gid_t)num;
+}
+
+static uid_t
+getuser(const char *user)
+{
+	uintmax_t	num;
+	struct passwd	*pw;
+
+	if ((pw = getpwnam(user)) != NULL)
+		return pw->pw_uid;
+
+	if (getnum(user, &num) == -1)
+		errx(1, "no such user `%s'", user);
+
+	return (uid_t)num;
+}
 
 int
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
+	char	*user;		/* user to switch to before running program */
+	char	*group;		/* group to switch to ... */
+	char	*grouplist;	/* group list to switch to ... */
+	char *p;
 	int ch;
 	char *shell;
+	gid_t	gid, gidlist[NGROUPS_MAX];
+	uid_t	uid;
+	int		gids;
 
+	user = NULL;
+	group = NULL;
+	grouplist = NULL;
+	gid = 0;
+	uid = 0;
+	gids = 0;
 	while ((ch = getopt(argc, argv, "")) != EOF)
 		switch(ch) {
+		case 'u':
+			user = optarg;
+			if (*user == '\0')
+				usage();
+			break;
+		case 'g':
+			group = optarg;
+			if (*group == '\0')
+				usage();
+			break;
+		case 'G':
+			grouplist = optarg;
+			if (*grouplist == '\0')
+				usage();
+			break;
 		case '?':
 		default:
 			usage();
@@ -73,8 +158,34 @@ main(argc, argv)
 	if (argc < 1)
 		usage();
 
+	if (user != NULL)
+		uid = getuser(user);
+
+	if (group != NULL)
+		gid = getgroup(group);
+
+	if (grouplist != NULL) {
+		while ((p = strsep(&grouplist, ",")) != NULL) {
+			if (*p == '\0')
+				continue;
+
+			if (gids == NGROUPS_MAX)
+				errx(1,
+				    "too many supplementary groups provided");
+
+			gidlist[gids++] = getgroup(p);
+		}
+	}
+
 	if (chdir(argv[0]) || chroot("."))
 		err(1, "%s", argv[0]);
+
+	if (gids && setgroups(gids, gidlist) == -1)
+		err(1, "setgroups");
+	if (group && setgid(gid) == -1)
+		err(1, "setgid");
+	if (user && setuid(uid) == -1)
+		err(1, "setuid");
 
 	if (argv[1]) {
 		execvp(argv[1], &argv[1]);
@@ -91,6 +202,7 @@ main(argc, argv)
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: chroot newroot [command]\n");
+	(void)fprintf(stderr, "usage: %s [-G group,group,...] [-g group] "
+	    "[-u user]chroot newroot [command]\n");
 	exit(1);
 }

@@ -452,13 +452,26 @@ rtflushclone(rnh, parent)
 /*
  * Routing table ioctl interface.
  */
+
 int
 rtioctl(req, data, p)
 	u_long req;
 	caddr_t data;
 	struct proc *p;
 {
-	return (EOPNOTSUPP);
+	struct rtentry *rt;
+	struct sockaddr *dst, *gateway, *netmask;
+	int error, flags;
+
+	rt = (struct rtentry *)data;
+	dst = rt_key(rt);
+	gateway = rt->rt_gateway;
+	netmask = rt_mask(rt);
+	flags = rt->rt_flags;
+
+	error = rtrequest(req, dst, gateway, netmask, flags, &rt);
+	return (error);
+	//return (EOPNOTSUPP);
 }
 
 struct ifaddr *
@@ -588,7 +601,10 @@ rtrequest1(req, info, ret_nrt)
 	struct ifaddr *ifa;
 	struct sockaddr *ndst;
 
-#define senderr(x) { error = x ; goto bad; }
+#define senderr(x) { 	\
+	error = x; 			\
+	goto bad; 			\
+	}
 
 	if ((rnh = rt_tables[dst->sa_family]) == 0)
 		senderr(ESRCH);

@@ -153,7 +153,9 @@ void thread_setrun(struct proc *, struct thread *);
 void thread_schedule(struct proc *, struct thread *);
 void thread_schedcpu(struct proc *);
 int	 newthread(struct thread **, char *, size_t, bool_t);
-void thread_exit(int);
+void thread_exit(int, int);
+void thread_psignal(struct proc *, int, int);
+int  thread_kill(struct proc *, int, pid_t);
 
 int thread_ltsleep(void *, int, char *, u_short, __volatile struct lock_object *);
 int thread_tsleep(void *, int, char *, u_short);

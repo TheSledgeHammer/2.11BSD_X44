@@ -333,7 +333,7 @@ void		bufinit(void);
 void		bremfree(struct buf *);
 int			bread(struct vnode *, daddr_t, int, struct ucred *, struct buf **);
 int			breadn(struct vnode *, daddr_t, int, daddr_t *, int *, int, struct ucred *, struct buf **);
-int			breada(struct vnode *, daddr_t, daddr_t, int, struct ucred *);
+int			breada(struct vnode *, daddr_t, daddr_t, int, struct ucred *, struct buf **);
 int			bwrite(struct buf *);
 void		bdwrite(struct buf *);
 void		bawrite(struct buf *);

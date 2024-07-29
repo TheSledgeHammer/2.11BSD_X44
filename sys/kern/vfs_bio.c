@@ -234,7 +234,7 @@ breadn(vp, blkno, size, rablks, rasizes, nrablks, cred, bpp)
 	 * valid contents. Also, B_ERROR is not set, otherwise
 	 * getblk() would not have returned them.
 	 */
-	if (ISSET(bp->b_flags, B_DONE|B_DELWRI))
+	if (ISSET(bp->b_flags, B_DONE | B_DELWRI))
 		return (0);
 
 	/*
@@ -250,26 +250,26 @@ breadn(vp, blkno, size, rablks, rasizes, nrablks, cred, bpp)
  * read-ahead block (which is not allocated to the caller)
  */
 int
-breada(vp, blkno, rablkno, size, cred)
+breada(vp, blkno, rablkno, size, cred, bpp)
 	struct vnode *vp;
 	daddr_t blkno;
 	daddr_t rablkno;
 	int size;
 	struct ucred *cred;
+	struct buf **bpp;
 {
 	struct buf *bp, *rabp;
 	const struct bdevsw *bdev;
 
-	bp = NULL;
 	/*
 	 * If the block isn't in core, then allocate
 	 * a buffer and initiate i/o (getblk checks
 	 * for a cache hit).
 	 */
 	if (!incore(vp, blkno)) {
-		bp = bio_doread(vp, blkno, size, cred, 0);
+		bp = *bpp = bio_doread(vp, blkno, size, cred, 0);
 		bdev = bdevsw_lookup(bp->b_dev);
-		if ((bp->b_flags & (B_DONE | B_DELWRI)) == 0) {
+		if (ISSET(bp->b_flags, B_DONE | B_DELWRI)) {
 			bp->b_flags |= B_READ;
 			bp->b_bcount = DEV_BSIZE; /* XXX? KB */
 			(*bdev->d_strategy)(bp);
@@ -286,9 +286,9 @@ breada(vp, blkno, rablkno, size, cred)
 	 */
 	if (rablkno) {
 		if (!incore(vp, rablkno)) {
-			rabp = bio_doread(vp, rablkno, size, cred, 0);
+			rabp = *bpp = bio_doread(vp, rablkno, size, cred, 0);
 			bdev = bdevsw_lookup(rabp->b_dev);
-			if (rabp->b_flags & (B_DONE | B_DELWRI)) {
+			if (ISSET(rabp->b_flags, B_DONE | B_DELWRI)) {
 				brelse(rabp);
 				trace1(TR_BREADHITRA);
 			} else {
@@ -308,8 +308,9 @@ breada(vp, blkno, rablkno, size, cred)
 	 * If block wasn't in core, then the read was started
 	 * above, and just wait for it.
 	 */
-	if (bp == NULL)
+	if (bp == NULL) {
 		return (bread(vp, blkno, size, cred, &bp));
+	}
 	return (biowait(bp));
 }
 

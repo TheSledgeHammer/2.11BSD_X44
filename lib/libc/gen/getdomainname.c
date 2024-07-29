@@ -1,3 +1,5 @@
+/*	$NetBSD: getdomainname.c,v 1.13 2012/06/25 22:32:43 abs Exp $	*/
+
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -32,11 +30,15 @@
  */
 
 #include <sys/cdefs.h>
-
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostname.c	8.1.1 (2.11BSD) 1997/11/30";
+#if 0
+static char sccsid[] = "@(#)gethostname.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: getdomainname.c,v 1.13 2012/06/25 22:32:43 abs Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/param.h>
 #include <sys/sysctl.h>
 
@@ -45,21 +47,31 @@ static char sccsid[] = "@(#)gethostname.c	8.1.1 (2.11BSD) 1997/11/30";
 #include <unistd.h>
 
 #ifdef __weak_alias
-__weak_alias(gethostname,_gethostname)
+__weak_alias(getdomainname,_getdomainname)
 #endif
 
-long
-gethostname(name, namelen)
+int
+getdomainname(name, namelen)
 	char *name;
 	int namelen;
 {
 	int mib[2];
 	size_t size;
+	int olderrno;
+
+	_DIAGASSERT(name != NULL);
 
 	mib[0] = CTL_KERN;
-	mib[1] = KERN_HOSTNAME;
+	mib[1] = KERN_DOMAINNAME;
 	size = namelen;
-	if (sysctl(mib, 2, name, &size, NULL, 0) == -1)
+	olderrno = errno;
+	if (sysctl(mib, 2, name, &size, NULL, 0) == -1) {
+		if (errno == ENOMEM) {
+			errno = olderrno;
+			return (0);
+		}
 		return (-1);
+	}
+
 	return (0);
 }

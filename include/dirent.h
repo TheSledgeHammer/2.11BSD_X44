@@ -86,12 +86,12 @@ typedef struct _dirdesc {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-DIR *opendir (const char *);
+DIR *opendir(const char *);
 struct dirent *readdir(DIR *);
 void rewinddir(DIR *);
 int closedir(DIR *);
 #ifndef _POSIX_SOURCE
-DIR *__opendir2 (const char *, int);
+DIR *__opendir2(const char *, int);
 long telldir(const DIR *);
 void __seekdir(DIR *, long);
 void seekdir(DIR *, long);

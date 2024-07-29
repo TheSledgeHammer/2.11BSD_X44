@@ -63,22 +63,22 @@ struct ypall_callback {
 };
 
 __BEGIN_DECLS
-int	yp_bind		(const char *);
+int	yp_bind(const char *);
 struct dom_binding;
-int	_yp_dobind	(const char *, struct dom_binding **);
-int	_yp_check	(char **);
-void	yp_unbind	(const char *);
+int	_yp_dobind(const char *, struct dom_binding **);
+int	_yp_check(char **);
+void	yp_unbind(const char *);
 int	yp_get_default_domain(char **);
 struct ypmaplist;
-int	yp_maplist	(const char *, struct ypmaplist **);
-int	yp_match 	(const char *, const char *, const char *, int , char **, int *);
-int	yp_first 	(const char *, const char *, char **, int *, char **, int *);
-int	yp_next		(const char *, const char *, const char *, int, char **, int *, char **, int *);
-int	yp_master	(const char *, const char *, char **);
-int	yp_order	(const char *, const char *, int *);
-int	yp_all		(const char *, const char *, struct ypall_callback *);
-char *	yperr_string	(int);
-int	ypprot_err	(unsigned int);
+int	yp_maplist(const char *, struct ypmaplist **);
+int	yp_match(const char *, const char *, const char *, int , char **, int *);
+int	yp_first(const char *, const char *, char **, int *, char **, int *);
+int	yp_next(const char *, const char *, const char *, int, char **, int *, char **, int *);
+int	yp_master(const char *, const char *, char **);
+int	yp_order(const char *, const char *, int *);
+int	yp_all(const char *, const char *, struct ypall_callback *);
+char *yperr_string	(int);
+int	ypprot_err(unsigned int);
 int	yp_setbindtries	(int);
 __END_DECLS
 

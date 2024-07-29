@@ -10,6 +10,12 @@ A General todo list. Don't hesitate to add to this list. :)
 		- Linker: None atm, Yay! :)
 		- Compiler: None atm, Yay! :)
 
+### Documentation:
+- Manpages:
+	- Severely lacking current information
+	OR
+	- Missing entirely
+
 # usr/ (User & OS Libraries):
 ## Contrib:
 	

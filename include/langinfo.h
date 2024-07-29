@@ -90,7 +90,7 @@ __END_DECLS
 
 #if defined(__BSD_VISIBLE)
 #  ifndef __LOCALE_T_DECLARED
-typedef void		*locale_t;
+typedef struct _locale *locale_t;
 #  define __LOCALE_T_DECLARED
 #  endif
 __BEGIN_DECLS

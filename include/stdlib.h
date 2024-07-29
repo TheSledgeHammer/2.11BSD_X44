@@ -123,6 +123,7 @@ void	*malloc(size_t);
 void	qsort(void *, size_t, size_t, int (*)(const void *, const void *));
 int	 	rand(void);
 void	*realloc(void *, size_t);
+void	*reallocarray(void *, size_t, size_t);
 void	srand(unsigned);
 double	strtod(const char * __restrict, char ** __restrict);
 long	strtol(const char * __restrict, char ** __restrict, int);
@@ -287,7 +288,6 @@ void	 	arc4random_addrandom(u_char *, int);
 
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #  ifndef __LOCALE_T_DECLARED
-//typedef void		*locale_t;
 typedef struct _locale *locale_t;
 #  define __LOCALE_T_DECLARED
 #  endif

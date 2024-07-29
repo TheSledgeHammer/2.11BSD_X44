@@ -15,6 +15,8 @@
 extern long						hostid;
 extern char						hostname[MAXHOSTNAMELEN];
 extern int 						hostnamelen;
+extern char						domainname[MAXHOSTNAMELEN];
+extern int 						domainnamelen;
 
 /* 1.2 */
 extern volatile struct timeval 	mono_time;

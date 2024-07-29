@@ -12,7 +12,7 @@ static char sccsid[] = "@(#)strcat.c	5.2 (Berkeley) 3/9/86";
 
 char *
 strcat(s1, s2)
-register char *s1, *s2;
+	register char *s1, *s2;
 {
 	register char *os1;
 

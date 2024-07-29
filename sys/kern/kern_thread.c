@@ -615,11 +615,11 @@ thread_schedule(p, td)
 				(td->td_flag & TD_INMEM) &&
 				(td->td_pri != (p->p_usrpri + p->p_nthreads))) {
 		thread_remrq(p, td);
-		td->td_pri = thread_usrprimask(p); //p->p_usrpri + p->p_nthreads;
+		td->td_pri = thread_usrprimask(p);
 		thread_setpri(p, td);
 		thread_setrq(p, td);
 	} else {
-		td->td_pri = thread_usrprimask(p);//p->p_usrpri + p->p_nthreads;
+		td->td_pri = thread_usrprimask(p);
 		thread_setpri(p, td);
 	}
 }
@@ -711,8 +711,8 @@ newthread(newtd, name, stack, forkproc)
 }
 
 void
-thread_exit(ecode)
-	int ecode;
+thread_exit(ecode, all)
+	int ecode, all;
 {
 	struct proc *p;
 	struct thread *td;
@@ -729,7 +729,8 @@ thread_exit(ecode)
 		thread_free(p, td);
 	}
 
-	psignal(td->td_procp, SIGCHLD);
+	thread_psignal(td->td_procp, SIGTHD, all);
+	//psignal(td->td_procp, SIGTHD);
 	wakeup((caddr_t)td->td_procp);
 
 	p->p_curthread = NULL;
@@ -905,8 +906,6 @@ restart:
 	}
 }
 
-#ifdef notyet
-
 /*
  * signal a specified thread on that process.
  */
@@ -1072,4 +1071,4 @@ thread_kill(p, signo, tid)
 out:
 	return (error);
 }
-#endif
+

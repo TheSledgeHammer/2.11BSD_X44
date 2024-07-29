@@ -375,7 +375,7 @@ proc_destroy_nthreads(p, ecode)
 	if ((p->p_flag & P_TDDESTROY) == 0) {
 		nthreads = p->p_sched->sc_optnthreads;
 		for (i = 0; i < nthreads; i++) {
-			thread_exit(W_EXITCODE(ecode, 0));
+			thread_exit(W_EXITCODE(ecode, 0), 1);
 		}
 		p->p_flag &= ~P_TDDESTROY;
 	}

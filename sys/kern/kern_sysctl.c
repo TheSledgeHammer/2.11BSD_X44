@@ -170,6 +170,8 @@ __sysctl()
  */
 char hostname[MAXHOSTNAMELEN];
 int hostnamelen;
+char domainname[MAXHOSTNAMELEN];
+int domainnamelen;
 long hostid;
 //int securelevel;
 char kernelname[MAXPATHLEN] = PATH_KERNEL;	/* XXX bloat */
@@ -229,8 +231,9 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (0);
 	case KERN_HOSTNAME:
 		error = sysctl_string(oldp, oldlenp, newp, newlen, hostname, sizeof(hostname));
-		if (newp && !error)
+		if (newp && !error) {
 			hostnamelen = newlen;
+		}
 		return (error);
 	case KERN_HOSTID:
 		longhostid = hostid;
@@ -267,6 +270,12 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, raw_part));
 	case KERN_TIMECOUNTER:
 		return (sysctl_timecounter(name + 1, namelen - 1, oldp, oldlenp, newp, newlen));
+	case KERN_DOMAINNAME:
+		error = sysctl_string(oldp, oldlenp, newp, newlen, domainname, sizeof(domainname));
+		if (newp && !error) {
+			domainnamelen = newlen;
+		}
+		return (error);
 	default:
 		return (EOPNOTSUPP);
 	}

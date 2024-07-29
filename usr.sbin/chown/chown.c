@@ -77,7 +77,7 @@ main(argc, argv)
 	int Hflag, Lflag, Pflag, ch, fts_options, hflag, rval;
 	char *cp;
 	
-	myname = (cp = rindex(*argv, '/')) ? cp + 1 : *argv;
+	myname = (cp == rindex(*argv, '/')) ? cp + 1 : *argv;
 	ischown = myname[2] == 'o';
 	
 	Hflag = Lflag = Pflag = hflag = 0;
@@ -242,7 +242,7 @@ chownerr(file)
 
 	/* Check for chown without being root. */
 	if (errno != EPERM ||
-	    uid != -1 && euid == -1 && (euid = geteuid()) != 0) {
+	    (uid != -1 && euid == -1 && (euid = geteuid()) != 0)) {
 		if (fflag)
 			exit(0);
 		err(1, "%s", file);

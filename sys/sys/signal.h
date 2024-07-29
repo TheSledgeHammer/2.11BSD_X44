@@ -87,12 +87,15 @@
 #define	SIGVTALRM 	26		/* virtual time alarm */
 #define	SIGPROF		27		/* profiling time alarm */
 #define SIGWINCH 	28		/* window size changes */
+#define	SIGINFO		29		/* information request */
 #define SIGUSR1 	30		/* user defined signal 1 */
 #define SIGUSR2 	31		/* user defined signal 2 */
+#define SIGTHD		32		/* to parent on thread stop or exit */
 
-#define	SIG_ERR		((void (*) (int)) -1)
 #define	SIG_DFL		((void (*) (int))  0)
+#define	SIG_ERR		((void (*) (int)) -1)
 #define	SIG_IGN		((void (*) (int))  1)
+#define	SIG_HOLD	((void (*) (int))  3)
 
 typedef unsigned long 	sigset_t;
 
@@ -192,7 +195,7 @@ struct osigcontext {
 extern long	sigblock(int);
 extern long	sigsetmask(int);
 //void	(*signal (int, void (*) (int))) (int);
-int		(*signal (int, void (*) (int))) (int);
+int		(*signal(int, void (*) (int))) (int);
 #define	BADSIG		SIG_ERR
 #endif
 
