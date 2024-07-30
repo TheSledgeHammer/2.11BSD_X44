@@ -164,7 +164,7 @@ void thread_unsleep(struct proc *, struct thread *);
 void thread_endtsleep(struct proc *, struct thread *);
 void thread_wakeup(struct proc *, const void *);
 
-pid_t thread_tidmask(struct proc *);					/* thread tidmask */
+//pid_t thread_tidmask(struct proc *);					/* thread tidmask */
 int thread_primask(struct proc *);						/* thread primask */
 int	thread_usrprimask(struct proc *);					/* thread usrprimask */
 

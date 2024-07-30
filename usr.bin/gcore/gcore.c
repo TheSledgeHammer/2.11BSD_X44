@@ -73,15 +73,15 @@ static char sccsid[] = "@(#)gcore.c	8.2 (Berkeley) 9/23/93";
 #include <unistd.h>
 #include <errno.h>
 
-#ifdef EXEC_ELF32 && BOOT_ELF32
+#ifdef EXEC_ELF32
 #include <sys/exec_elf.h>
 #define GCORE_ELF32
 #endif
-#ifdef EXEC_ELF64 && BOOT_ELF64
+#ifdef EXEC_ELF64
 #include <sys/exec_elf.h>
 #define GCORE_ELF64
 #endif
-#ifdef EXEC_AOUT && BOOT_AOUT
+#ifdef EXEC_AOUT
 #include <a.out.h>
 #define GCORE_AOUT
 #endif

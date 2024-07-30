@@ -79,7 +79,7 @@ void            stop(struct proc *);
  * 1) either the real or effective user ids match OR 2) if the signal is 
  * SIGCONT and the target process is a descendant of the current process
 */
-static int
+int
 cansignal(q, signum)
 	register struct proc *q;
 	int	signum;

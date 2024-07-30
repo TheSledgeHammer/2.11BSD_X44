@@ -153,6 +153,7 @@ char sigprop[NSIG + 1] = {
  */
 int		coredump(struct proc *);
 void	execsigs(struct proc *);
+int		cansignal(struct proc *, int);
 void	gsignal(int, int);
 int		issig(struct proc *);
 void	pgsignal(struct pgrp *, int, int);

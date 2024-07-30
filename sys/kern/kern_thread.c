@@ -132,30 +132,46 @@ thread_remove(p, td)
 	p->p_nthreads--;
 }
 
+/* Deprecated: thread tid's no longer tied to there process */
 pid_t
 thread_tidmask(p)
 	register struct proc *p;
 {
-	int tid = (p->p_pid + p->p_nthreads + TID_MIN);
+	int tid = -1;
+
+	if (p->p_pid != -1) {
+		tid = (p->p_pid + p->p_nthreads + TID_MIN);
+	}
 	if (tid >= TID_MAX) {
 		printf("thread_tidmask: tid max reached");
 		tid = NO_PID;
 	}
+
 	return ((pid_t)tid);
 }
 
 struct thread *
-tdfind(p)
-	register struct proc *p;
+tdfind(tid)
+	pid_t tid;
 {
 	register struct thread *td;
-	register pid_t tid;
 
-	tid = thread_tidmask(p);
-	LIST_FOREACH(td, TIDHASH(tid), td_hash) {
+	for (td = LIST_FIRST(TIDHASH(tid)); td != 0; td = LIST_NEXT(td, td_hash)) {
 		if (td->td_tid == tid) {
 			return (td);
 		}
+	}
+	return (NULL);
+}
+
+struct thread *
+proc_tdfind(p, tid)
+	struct proc *p;
+	pid_t tid;
+{
+	p->p_threado = tdfind(tid);
+	if (p->p_threado != NULL) {
+		return (p->p_threado);
 	}
 	return (NULL);
 }
@@ -190,23 +206,21 @@ thread_reparent(from, to, td)
 		thread_remove(from, td);
 		td->td_procp = to;
     	td->td_flag = 0;
-    	td->td_tid = thread_tidmask(to);
     	td->td_ptid = to->p_pid;
     	td->td_pgrp = to->p_pgrp;
 		thread_add(to, td);
 
 		if (isrq == 1) {
-//			thread_setrq(to, td);
+			thread_setrq(to, td);
 			isrq = 0;
 		}
 		if (issq == 1) {
-//			thread_setsq(to, td);
+			thread_setsq(to, td);
 			issq = 0;
 		}
 	}
 }
 
-/* TODO: add time counter feature */
 /*
  * Like thread_reparent, except all thread siblings are
  * reparented to the new proc, if the current parent state is a zombie.
@@ -219,7 +233,7 @@ thread_steal(to, td)
 	register struct proc *from;
 
 	LIST_FOREACH(from->p_threado, &from->p_allthread, td_sibling) {
-		if ((from != to) && (from->p_threado == td) && (td->td_tid == thread_tidmask(from))) {
+		if ((from != to) && (from->p_threado == td) && (td->td_ptid == from->p_pid)) {
 			if ((from->p_stat == SZOMB) && (to->p_stat != (SZOMB | SRUN))) {
 				thread_reparent(from, to, td);
 				td->td_flag &= ~TD_STEALABLE;
@@ -241,7 +255,7 @@ thread_alloc(p, stack)
     td->td_stacksize = stack;
     td->td_stat = SIDL;
     td->td_flag = 0;
-    td->td_tid = thread_tidmask(p);
+    td->td_tid = 0;
     td->td_ptid = p->p_pid;
     td->td_pgrp = p->p_pgrp;
     td->td_pri = thread_primask(p);
@@ -730,7 +744,6 @@ thread_exit(ecode, all)
 	}
 
 	thread_psignal(td->td_procp, SIGTHD, all);
-	//psignal(td->td_procp, SIGTHD);
 	wakeup((caddr_t)td->td_procp);
 
 	p->p_curthread = NULL;
@@ -991,6 +1004,7 @@ thread_psignal(p, sig, all)
 	}
 }
 
+#ifdef notyet
 static int
 thread_killpg1(p, signo, pgrp, all)
 	struct proc *p;
@@ -1043,7 +1057,8 @@ thread_kill(p, signo, tid)
 	}
 
 	if (tid > 0) {
-		td = tdfind(p);
+		/* kill single thread */
+		td = tdfind(tid);
 		if (td == 0) {
 			error = ESRCH;
 			goto out;
@@ -1051,14 +1066,14 @@ thread_kill(p, signo, tid)
 		if (!cansignal(p, signo)) {
 			error = EPERM;
 		} else if (signo) {
-			thread_psignal(p, signo, 1);
+			thread_psignal(p, signo, 0);
 		}
 		goto out;
 	}
 
-	switch (tid) {
+	switch () {
 	case -1:		/* broadcast signal */
-		error = thread_killpg1(p, signo, 0, 1);
+		error = thread_killpg1(p, signo, 0, all);
 		break;
 	case 0:			/* signal own thread group */
 		error = thread_killpg1(p, signo, 0, 0);
@@ -1071,4 +1086,4 @@ thread_kill(p, signo, tid)
 out:
 	return (error);
 }
-
+#endif
