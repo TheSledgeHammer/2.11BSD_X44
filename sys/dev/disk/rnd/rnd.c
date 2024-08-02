@@ -92,7 +92,7 @@
 #include <crypto/chacha/chacha.h>
 #include <crypto/sha2/sha2.h>
 
-#include <dev/misc/rnd/rnd.h>
+#include <dev/disk/rnd/rnd.h>
 
 #ifdef RND_DEBUG
 #define	DPRINTF(l,x)      if (rnd_debug & (l)) printf x

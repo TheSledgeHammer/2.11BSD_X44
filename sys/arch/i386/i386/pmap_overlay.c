@@ -163,34 +163,22 @@ pmap_overlay_enter(pmap, va, pa)
 	pmap_hat_enter_pv(pmap, va, pa, PMAP_HAT_OVL, ovl_first_phys, ovl_last_phys);
 }
 
-#ifdef notyet
-struct pmap_hat_list tmphat_list;
-
 /* mapout source list(ovlhat_list) to destination list(tmphat_list) */
 void
-pmap_overlay_mapout(/*dst_list,*/ target_map, target_object)
-	//pmap_hat_list_t dst_list;
+pmap_overlay_mapout(target_map, target_object)
 	ovl_map_t 	target_map;
 	ovl_object_t target_object;
 {
-	pmap_hat_list_t dst_list;
-
-	dst_list = &tmphat_list;
-	pmap_hat_mapout(dst_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
+	pmap_hat_mapout((ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
 }
 
 /* mapin destination list(ovlhat_list) from source list(tmphat_list) */
 void
-pmap_overlay_mapin(/*src_list,*/ target_map, target_object)
-	//pmap_hat_list_t src_list;
+pmap_overlay_mapin(target_map, target_object)
 	ovl_map_t 	target_map;
 	ovl_object_t target_object;
 {
-	pmap_hat_list_t src_list;
-
-	src_list = &tmphat_list;
-	pmap_hat_mapin(src_list, (ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
+	pmap_hat_mapin((ovl_map_t)target_map, (ovl_object_t)target_object, PMAP_HAT_OVL);
 }
 
-#endif
 #endif

@@ -63,6 +63,8 @@
  * pmap_collect: N/A (overlay does not use)
  * pmap_pageable: N/A (overlay does not use)
  */
+struct pmap_hat_list 	tmphat_list;
+
 static vm_offset_t     	vm_hat_pa_index(vm_offset_t);
 static pv_entry_t		vm_hat_to_pvh(pmap_hat_list_t, vm_offset_t);
 
@@ -209,19 +211,18 @@ pmap_hat_copy(dst_list, src_list, target_map, target_object, flags)
  * Map contents from the source list into the destination list
  */
 void
-pmap_hat_mapout(dst_list, target_map, target_object, flags)
-	pmap_hat_list_t dst_list;
+pmap_hat_mapout(target_map, target_object, flags)
 	pmap_hat_map_t target_map;
 	pmap_hat_object_t target_object;
 	int flags;
 {
 	switch (flags) {
 	case PMAP_HAT_VM:
-		pmap_hat_copy(dst_list, &vmhat_list, target_map, target_object, PMAP_HAT_VM);
+		pmap_hat_copy(&tmphat_list, &vmhat_list, target_map, target_object, PMAP_HAT_VM);
 		break;
 #ifdef OVERLAY
 	case PMAP_HAT_OVL:
-		pmap_hat_copy(dst_list, &ovlhat_list, target_map, target_object, PMAP_HAT_OVL);
+		pmap_hat_copy(&tmphat_list, &ovlhat_list, target_map, target_object, PMAP_HAT_OVL);
 		break;
 #endif
 	}
@@ -231,19 +232,18 @@ pmap_hat_mapout(dst_list, target_map, target_object, flags)
  * Map contents into the source list from the destination list
  */
 void
-pmap_hat_mapin(src_list, target_map, target_object, flags)
-	pmap_hat_list_t src_list;
+pmap_hat_mapin(target_map, target_object, flags)
 	pmap_hat_map_t target_map;
 	pmap_hat_object_t target_object;
 	int flags;
 {
 	switch (flags) {
 	case PMAP_HAT_VM:
-		pmap_hat_copy(&vmhat_list, src_list, target_map, target_object, PMAP_HAT_VM);
+		pmap_hat_copy(&vmhat_list, &tmphat_list, target_map, target_object, PMAP_HAT_VM);
 		break;
 #ifdef OVERLAY
 	case PMAP_HAT_OVL:
-		pmap_hat_copy(&ovlhat_list, src_list, target_map, target_object, PMAP_HAT_OVL);
+		pmap_hat_copy(&ovlhat_list, &tmphat_list, target_map, target_object, PMAP_HAT_OVL);
 		break;
 #endif
 	}

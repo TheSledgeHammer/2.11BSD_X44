@@ -37,7 +37,7 @@
 #include <crypto/chacha/chacha.h>
 #include <crypto/sha2/sha2.h>
 
-#include <dev/misc/rnd/rnd.h>
+#include <dev/disk/rnd/rnd.h>
 
 /*
  * The random pool "taps"

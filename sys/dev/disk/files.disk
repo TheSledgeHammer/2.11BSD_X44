@@ -6,6 +6,7 @@
 include		"dev/disk/ata/files.ata"
 include		"dev/disk/fd/files.fd"
 include		"dev/disk/md/files.mmd"
+include 	"dev/disk/rnd/files.rnd"
 include		"dev/disk/scsi/files.scsi"
 
 # pseudo disks

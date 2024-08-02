@@ -73,7 +73,7 @@
 
 #include <net/if_ether.h>
 
-#include <dev/misc/rnd/rnd.h>
+#include <dev/disk/rnd/rnd.h>
 
 #include <net/pf/pfvar.h>
 #include <net/pf/if_pflog.h>

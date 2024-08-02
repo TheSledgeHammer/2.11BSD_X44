@@ -48,7 +48,7 @@
 #include <net/route.h>
 
 #ifdef NRND > 0
-#include <dev/misc/rnd/rnd.h>
+#include <dev/disk/rnd/rnd.h>
 #endif
 
 /*

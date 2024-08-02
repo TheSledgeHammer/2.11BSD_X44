@@ -88,7 +88,7 @@
 #endif /* __FreeBSD__ */
 
 #ifdef	__NetBSD__
-#include <dev/misc/rnd/rnd.h>
+#include <dev/disk/rnd/rnd.h>
 static __inline u_int read_random(void *p, u_int len);
 
 static __inline u_int

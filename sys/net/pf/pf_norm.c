@@ -40,7 +40,7 @@
 #include <sys/time.h>
 #include <sys/malloc.h>
 
-#include <dev/misc/rnd/rnd.h>
+#include <dev/disk/rnd/rnd.h>
 
 #include <net/if.h>
 #include <net/if_types.h>

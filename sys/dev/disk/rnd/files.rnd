@@ -1,0 +1,6 @@
+# $211BSD:
+#
+# Random device
+
+file	dev/disk/rnd/rnd.c		rnd		needs-flag
+file	dev/disk/rnd/rndpool.c	rnd		needs-flag

@@ -117,7 +117,7 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_subr.c,v 1.160.2.5 2004/09/19 15:38:01 he Exp $"
 #include <sys/kernel.h>
 #if NRND > 0
 #include <sys/md5.h>
-#include <dev/misc/rnd/rnd.h>
+#include <dev/disk/rnd/rnd.h>
 #endif
 
 #include <net/route.h>

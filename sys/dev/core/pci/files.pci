@@ -29,17 +29,4 @@ device	pciide {[channel = -1]}: ata, pciide_common
 attach	pciide at pci
 file	dev/core/pci/pciide.c			pciide
 
-# PCI USB controllers
-# UHCI USB controller
-#attach	uhci at pci with uhci_pci
-#file	dev/core/pci/uhci_pci.c		uhci_pci
 
-# OHCI USB controller
-#attach	ohci at pci with ohci_pci
-#file	dev/core/pci/ohci_pci.c		ohci_pci
-
-# EHCI USB controller
-#attach	ehci at pci with ehci_pci
-#file	dev/core/pci/ehci_pci.c		ehci_pci
-
-#file	dev/core/pci/usb_pci.c		ehci_pci | ehci_cardbus

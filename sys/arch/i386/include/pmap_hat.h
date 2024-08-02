@@ -73,8 +73,8 @@ void 			pmap_hat_attach(pmap_hat_list_t, pmap_hat_t, pmap_hat_map_t, pmap_hat_ob
 void			pmap_hat_detach(pmap_hat_list_t, pmap_hat_t, pmap_hat_map_t, pmap_hat_object_t, int);
 pmap_hat_t		pmap_hat_find(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
 void			pmap_hat_copy(pmap_hat_list_t, pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
-void			pmap_hat_mapout(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
-void			pmap_hat_mapin(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
+void			pmap_hat_mapout(pmap_hat_map_t, pmap_hat_object_t, int);
+void			pmap_hat_mapin(pmap_hat_map_t, pmap_hat_object_t, int);
 vm_offset_t     pmap_hat_pa_index(vm_offset_t, int);
 pv_entry_t      pmap_hat_pa_to_pvh(vm_offset_t, int);
 void			pmap_hat_remove_pv(pmap_t, vm_offset_t, vm_offset_t, int, int, vm_offset_t, vm_offset_t);

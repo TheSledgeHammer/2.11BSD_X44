@@ -81,6 +81,9 @@ void 			pmap_overlay_remove(pmap_t, vm_offset_t, vm_offset_t);
 void 			pmap_overlay_enter(pmap_t, vm_offset_t, vm_offset_t);
 void        	pmap_overlay_destroy(pmap_t);
 void        	pmap_overlay_release(pmap_t);
+
+void			pmap_overlay_mapout(ovl_map_t, ovl_object_t);
+void			pmap_overlay_mapin(ovl_map_t, ovl_object_t);
 __END_DECLS
 #endif
 #endif /* _PMAP_OVL_H_ */

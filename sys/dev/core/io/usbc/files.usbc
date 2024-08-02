@@ -1,0 +1,20 @@
+#	$NetBSD: files.pci,v 1.16 1996/05/16 03:44:16 mycroft Exp $
+#
+# Config.new file and device description for machine-independent PCI code.
+# Included by ports that need it.  Requires that the SCSI files be
+# defined first.
+
+# PCI USB controllers
+# UHCI USB controller
+#attach	uhci at pci with uhci_pci
+#file	dev/core/io/usbc/uhci_pci.c		uhci_pci
+
+# OHCI USB controller
+#attach	ohci at pci with ohci_pci
+#file	dev/core/io/usbc/ohci_pci.c		ohci_pci
+
+# EHCI USB controller
+#attach	ehci at pci with ehci_pci
+#file	dev/core/io/usbc/ehci_pci.c		ehci_pci
+
+#file	dev/core/io/usbc/usb_pci.c		ehci_pci | ehci_cardbus

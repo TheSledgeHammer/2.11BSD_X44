@@ -99,7 +99,7 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.113.2.1 2004/05/11 14:54:52 tron Exp $");
 
 #include "rnd.h"
 #if NRND > 0
-#include <dev/misc/rnd/rnd.h>
+#include <dev/disk/rnd/rnd.h>
 #endif
 
 #include <net/net_osdep.h>

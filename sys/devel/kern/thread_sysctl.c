@@ -120,9 +120,6 @@ sysctl_dothread(name, namelen, where, sizep)
 			break;
 
 		case KERN_THREAD_TTY:
-			if ((p->p_flag & P_CONTROLT) == 0 || p->p_session->s_ttyp == NULL
-					|| p->p_session->s_ttyp->t_dev != (dev_t) name[1])
-				continue;
 			break;
 
 		case KERN_THREAD_UID:

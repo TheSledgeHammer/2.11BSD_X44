@@ -110,7 +110,6 @@ struct isopcb {
 };
 
 LIST_HEAD(isopcbhead, isopcb);
-
 CIRCLEQ_HEAD(isopcbqueue, isopcb);
 
 struct isopcbtable {

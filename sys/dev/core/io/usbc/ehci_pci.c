@@ -49,7 +49,8 @@ __KERNEL_RCSID(0, "$NetBSD: ehci_pci.c,v 1.13 2003/01/31 00:07:41 thorpej Exp $"
 #include <machine/bus.h>
 
 #include <dev/core/pci/pcivar.h>
-#include <dev/core/pci/usb_pci.h>
+
+#include <dev/core/io/usbc/usb_pci.h>
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>
