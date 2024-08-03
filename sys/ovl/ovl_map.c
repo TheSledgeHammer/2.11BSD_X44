@@ -112,11 +112,14 @@ static void 		ovl_cl_insert(ovl_map_t, ovl_map_entry_t);
 static void 		ovl_cl_remove(ovl_map_t, ovl_map_entry_t);
 static bool_t 		ovl_map_search_next_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t);
 static bool_t 		ovl_map_search_prev_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t);
-static void			_ovl_map_clip_end(ovl_map_t, ovl_map_entry_t, vm_offset_t);
-static void			_ovl_map_clip_start(ovl_map_t, ovl_map_entry_t, vm_offset_t);
+static void		_ovl_map_clip_end(ovl_map_t, ovl_map_entry_t, vm_offset_t);
+static void		_ovl_map_clip_start(ovl_map_t, ovl_map_entry_t, vm_offset_t);
 
 RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, rb_entry, ovl_rb_compare);
 RB_GENERATE(ovl_map_rb_tree, ovl_map_entry, rb_entry, ovl_rb_compare);
+
+static void	        ovlmap_mapout(ovl_map_t, ovl_map_entry_t);
+static void	        ovlmap_mapin(ovl_map_t, ovl_map_entry_t);
 
 ovl_map_t 						omap_free;
 ovl_map_entry_t 				oentry_free;
@@ -1167,8 +1170,7 @@ vm_fork(p1, p2, isvfork)
 	ovlspace_mapin(p2->p_ovlspace);
 }
 
-static void	ovlmap_mapout(ovl_map_t, ovl_map_entry_t);
-static void	ovlmap_mapin(ovl_map_t, ovl_map_entry_t);
+#endif
 
 static void
 ovlmap_mapin(map, entry)
@@ -1210,10 +1212,10 @@ ovlspace_mapout(ovl)
 	ovl_map_t 	old_map;
 	ovl_map_entry_t old_entry;
 
-	old_map = ovl->ovl_map;
+	old_map = &ovl->ovl_map;
 
 	ovl_map_lock(old_map);
-	if (!CIRCLEQ_EMTPY(&old_map->cl_header)) {
+	if (!CIRCLEQ_EMPTY(&old_map->cl_header)) {
 		CIRCLEQ_FOREACH(old_entry, &old_map->cl_header, cl_entry) {
 			ovlmap_mapout(old_map, old_entry);
 		}
@@ -1232,14 +1234,15 @@ ovlspace_mapin(ovl)
 	int 			found;
 
 	found = 1;
+	
 	/* Retrieve old map from it's temporary holding */
 	ovlmap_mapin(&old_map, &old_entry);
 
 	new_map = &old_map;
-	if ((new_map != NULL) && (*old_entry != NULL)) {
+	if ((new_map != NULL) && (&old_entry != NULL)) {
 		ovl_map_lock(new_map);
 		/* sanity check */
-		if (!CIRCLEQ_EMTPY(&new_map->cl_header)) {
+		if (!CIRCLEQ_EMPTY(&new_map->cl_header)) {
 			CIRCLEQ_FOREACH(new_entry, &new_map->cl_header, cl_entry) {
 				if (new_entry == &old_entry) {
 					new_entry = &old_entry;
@@ -1251,7 +1254,7 @@ ovlspace_mapin(ovl)
 		}
 		ovl_map_unlock(new_map);
 		if (found) {
-			ovl->ovl_map = new_map;
+			ovl->ovl_map = *new_map;
 		}
 	}
 	/*
@@ -1259,80 +1262,3 @@ ovlspace_mapin(ovl)
 	 *	- Something probably like vmspace_fork
 	 */
 }
-
-/*
- * This won't work in it's current form, if at all.
- * The ovlspace pmap is directly linked to the kernel_pmap just like the vmspace. Thus
- * forking the ovlspace would likely also corrupt/destroy the vmspace.
- *
- * The ovlspace may work better, where it's state is continuous.
- * Using something similar to copyin/copyout or initialize/uninitialize.
- * Where the ovlspace is disconnected from the current vmspace and reconnected after the fork or
- * creation of the new vmspace.
- *
- */
-struct ovlspace *
-ovlspace_fork(ovl1)
-	struct ovlspace *ovl1;
-{
-	register struct ovlspace *ovl2;
-	ovl_map_t		old_map = &ovl1->ovl_map;
-	ovl_map_t		new_map;
-	ovl_map_entry_t	old_entry;
-	ovl_map_entry_t	new_entry;
-	pmap_t			new_pmap;
-
-	ovl_map_lock(old_map);
-
-	ovl2 = ovlspace_alloc(old_map->min_offset, old_map->max_offset);
-	bcopy(&ovl1->ovl_startcopy, &ovl2->ovl_startcopy, (caddr_t)(ovl1 + 1) - (caddr_t) &ovl1->ovl_startcopy);
-	new_pmap = &ovl2->ovl_pmap;		/* XXX */
-	new_map = &ovl2->ovl_map;		/* XXX */
-
-	old_entry = CIRCLEQ_FIRST(&old_map->cl_header)->cl_entry.cqe_next;
-	while (old_entry != CIRCLEQ_FIRST(&old_map->cl_header)) {
-		if (old_entry->is_sub_map) {
-			panic("ovl_map_fork: encountered a submap");
-		}
-		switch (old_entry->inheritance) {
-		case VM_INHERIT_NONE:
-			break;
-		case VM_INHERIT_SHARE:
-			if (!old_entry->is_a_map) {
-			 	ovl_map_t	new_share_map;
-				ovl_map_entry_t	new_share_entry;
-
-				new_share_map = vm_map_create(NULL, old_entry->start, old_entry->end, TRUE);
-				new_share_map->is_main_map = FALSE;
-
-				new_share_entry = ovl_map_entry_create(new_share_map);
-				*new_share_entry = *old_entry;
-				//new_share_entry->wired_count = 0;
-
-				ovl_map_entry_link(new_share_map, CIRCLEQ_FIRST(&new_share_map->cl_header)->cl_entry.cqe_prev, new_share_entry);
-
-				old_entry->is_a_map = TRUE;
-				old_entry->object.share_map = new_share_map;
-				old_entry->offset = old_entry->start;
-			}
-			new_entry = ovl_map_entry_create(new_map);
-			*new_entry = *old_entry;
-			//new_entry->wired_count = 0;
-			ovl_map_reference(new_entry->object.share_map);
-
-			ovl_map_entry_link(new_map, CIRCLEQ_FIRST(&new_map->cl_header)->cl_entry.cqe_prev, new_entry);
-			pmap_copy(new_map->pmap, old_map->pmap,
-					new_entry->start,
-					(old_entry->end - old_entry->start),
-					old_entry->start);
-			break;
-		case VM_INHERIT_COPY:
-			break;
-		}
-		old_entry = CIRCLEQ_NEXT(old_entry, cl_entry);
-	}
-	new_map->size = old_map->size;
-	ovl_map_unlock(old_map);
-	return (ovl2);
-}
-#endif
