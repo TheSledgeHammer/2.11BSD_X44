@@ -74,6 +74,11 @@
 #include <vm/include/vm_pageout.h>
 #include <vm/include/vm_text.h>
 
+#ifdef OVERLAY
+#include <ovl/include/ovl.h>
+#include <ovl/include/ovl_extern.h>
+#endif
+
 #include <machine/cpu.h>
 
 unsigned maxdmap = MAXDSIZ;	/* XXX */
@@ -202,11 +207,14 @@ vm_fork(p1, p2, isvfork)
 	 */
 	(void)vm_map_inherit(&p1->p_vmspace->vm_map, UPT_MIN_ADDRESS-UPAGES*NBPG, VM_MAX_ADDRESS, VM_INHERIT_NONE);
 
+#ifdef OVERLAY
+	ovlspace_mapout(p1->p_ovlspace);
+#endif
+
 	p2->p_vmspace = vmspace_fork(p1->p_vmspace);
 
-#ifdef SYSVSHM
-	if (p1->p_vmspace->vm_shm)
-		shmfork(p1, p2, isvfork);
+#ifdef OVERLAY
+	ovlspace_mapin(p2->p_ovlspace);
 #endif
 
 	/*

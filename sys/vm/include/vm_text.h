@@ -184,6 +184,10 @@ void	vm_xrele(struct vnode *);
 void	vm_xswapin(struct proc *, vm_offset_t);
 void	vm_xswapout(struct proc *, vm_offset_t, vm_size_t, int, u_int, u_int);
 
+/* vm_glue.c */
+void	xswapin(struct proc *);
+void    xswapout(struct proc *, int, u_int, u_int);
+
 /* vm_unix */
 void	vm_sureg(void);
 void 	vm_expand(struct proc *, vm_size_t, int);

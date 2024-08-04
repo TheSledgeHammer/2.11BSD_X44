@@ -533,7 +533,7 @@ fakeintr(spic, fakehand, level)
 		break;
 
 	default:
-		panic("fakeintr");
+		panic("fakeintr: no interrupt");
 	}
 
 	fakehand->ih_pic = softpic_handle_pic(spic);

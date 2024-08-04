@@ -117,7 +117,4 @@ bool_t	 		vnode_pager_uncache(struct vnode *);
 void		 	vslock(caddr_t, u_int);
 void		 	vsunlock(caddr_t, u_int, int);
 
-void			xswapin(struct proc *);
-void    		xswapout(struct proc *, int, u_int, u_int);
-
 #endif

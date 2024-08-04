@@ -1031,11 +1031,11 @@ stripinput(c, tp)
 #ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 	softintr_schedule(sc->sc_si);
 #else
-    {
-	int s = splhigh();
-	schednetisr(NETISR_STRIP);
-	splx(s);
-    }
+	{
+		int s = splhigh();
+		schednetisr(NETISR_STRIP);
+		splx(s);
+	}
 #endif
 	goto newpack;
 
@@ -1335,9 +1335,9 @@ stripioctl(ifp, cmd, data)
 
 	case SIOCADDMULTI:
 	case SIOCDELMULTI:
-		ifr = (struct ifreq *)data;
+		ifr = (struct ifreq*) data;
 		if (ifr == 0) {
-			error = EAFNOSUPPORT;		/* XXX */
+			error = EAFNOSUPPORT; /* XXX */
 			break;
 		}
 		switch (ifr->ifr_addr.sa_family) {
@@ -1431,17 +1431,16 @@ strip_proberadio(sc, tp)
 	if (sc->sc_if.if_flags & IFF_DEBUG)
 		addlog("%s: attempting to probe radio\n", sc->sc_if.if_xname);
 
-	overflow = b_to_q((ttychar_t *)&strip_probestr, 2, &tp->t_outq);
+	overflow = b_to_q((ttychar_t*) &strip_probestr, 2, &tp->t_outq);
 	if (overflow == 0) {
 		if (sc->sc_if.if_flags & IFF_DEBUG)
-			addlog("%s:: sent probe  to radio\n",
-			       sc->sc_if.if_xname);
+			addlog("%s:: sent probe  to radio\n", sc->sc_if.if_xname);
 		/* Go to probe-sent state, set timeout accordingly. */
 		sc->sc_state = ST_PROBE_SENT;
 		sc->sc_statetimo = time.tv_sec + ST_PROBERESPONSE_INTERVAL;
 	} else {
 		addlog("%s: incomplete probe, tty queue %d bytes overfull\n",
-			sc->sc_if.if_xname, overflow);
+				sc->sc_if.if_xname, overflow);
 	}
 }
 
@@ -1520,7 +1519,7 @@ strip_watchdog(ifp)
 	/*
 	 * If time in this state hasn't yet expired, return.
 	 */
-	if ((ifp->if_flags & IFF_UP) ==  0 || sc->sc_statetimo > time.tv_sec) {
+	if ((ifp->if_flags & IFF_UP) == 0 || sc->sc_statetimo > time.tv_sec) {
 		goto done;
 	}
 
@@ -1529,7 +1528,7 @@ strip_watchdog(ifp)
 	 * Take appropriate action and advance FSA to the next state.
 	 */
 	switch (sc->sc_state) {
-	      case ST_ALIVE:
+	case ST_ALIVE:
 		/*
 		 * A probe is due but we haven't piggybacked one on a packet.
 		 * Send a probe now.
@@ -1538,41 +1537,38 @@ strip_watchdog(ifp)
 		(*tp->t_oproc)(tp);
 		break;
 
-	      case ST_PROBE_SENT:
+	case ST_PROBE_SENT:
 		/*
 		 * Probe sent but no response within timeout. Reset.
 		 */
-		addlog("%s: no answer to probe, resetting radio\n",
-		       ifp->if_xname);
+		addlog("%s: no answer to probe, resetting radio\n", ifp->if_xname);
 		strip_resetradio(sc, sc->sc_ttyp);
 		ifp->if_oerrors++;
 		break;
 
-	      case ST_DEAD:
+	case ST_DEAD:
 		/*
 		 * The radio has been sent a reset but didn't respond.
 		 * XXX warn user to remove AC adaptor and battery,
 		 * wait  5 secs, and replace.
 		 */
 		addlog("%s: radio reset but not responding, Trying again\n",
-		       ifp->if_xname);
+				ifp->if_xname);
 		strip_resetradio(sc, sc->sc_ttyp);
 		ifp->if_oerrors++;
 		break;
 
-	      default:
+	default:
 		/* Cannot happen. To be safe, do  a reset. */
-		addlog("%s: %s %d, resetting\n",
-		       sc->sc_if.if_xname,
-		       "radio-reset finite-state machine in invalid state",
-		       sc->sc_state);
+		addlog("%s: %s %d, resetting\n", sc->sc_if.if_xname,
+				"radio-reset finite-state machine in invalid state",
+				sc->sc_state);
 		strip_resetradio(sc, sc->sc_ttyp);
 		sc->sc_state = ST_DEAD;
 		break;
 	}
 
-      done:
-	ifp->if_timer = STRIP_WATCHDOG_INTERVAL;
+	done: ifp->if_timer = STRIP_WATCHDOG_INTERVAL;
 	return;
 }
 
@@ -1599,26 +1595,27 @@ strip_newpacket(sc, ptr, end)
 	u_int packetlen;
 
 	/* Ignore empty lines */
-	if (len == 0) return 0;
+	if (len == 0)
+		return 0;
 
 	/* Catch 'OK' responses which show radio has fallen out of starmode */
 	if (len >= 2 && ptr[0] == 'O' && ptr[1] == 'K') {
 		printf("%s: Radio is back in AT command mode: will reset\n",
-		    sc->sc_if.if_xname);
-		FORCE_RESET(sc);		/* Do reset ASAP */
-	return 0;
+				sc->sc_if.if_xname);
+		FORCE_RESET(sc); /* Do reset ASAP */
+		return 0;
 	}
 
 	/* Check for start of address marker, and then skip over it */
 	if (*ptr != '*') {
 		/* Catch other error messages */
 		if (ptr[0] == 'E' && ptr[1] == 'R' && ptr[2] == 'R' && ptr[3] == '_')
-			RecvErr_Message(sc, NULL, ptr+4);
-			 /* XXX what should the message above be? */
+			RecvErr_Message(sc, NULL, ptr + 4);
+		/* XXX what should the message above be? */
 		else {
 			RecvErr("No initial *", sc);
 			addlog("(len = %d)\n", len);
-		     }
+		}
 		return 0;
 	}
 
@@ -1639,12 +1636,11 @@ strip_newpacket(sc, ptr, end)
 
 	/* Check for SRIP key, and skip over it */
 	if (ptr[0] != 'S' || ptr[1] != 'I' || ptr[2] != 'P' || ptr[3] != '0') {
-		if (ptr[0] == 'E' && ptr[1] == 'R' && ptr[2] == 'R' &&
-		    ptr[3] == '_') { 
+		if (ptr[0] == 'E' && ptr[1] == 'R' && ptr[2] == 'R' && ptr[3] == '_') {
 			*name_end = 0;
-			RecvErr_Message(sc, name, ptr+4);
-		 }
-		else RecvErr("No SRIP key", sc);
+			RecvErr_Message(sc, name, ptr + 4);
+		} else
+			RecvErr("No SRIP key", sc);
 		return 0;
 	}
 	ptr += 4;
@@ -1661,7 +1657,7 @@ strip_newpacket(sc, ptr, end)
 	 * of the decoded packet.  Decode start of IP header, get the
 	 * IP header length and decode that many bytes in total.
 	 */
-	packetlen = ((u_int16_t)sc->sc_rxbuf[2] << 8) | sc->sc_rxbuf[3];
+	packetlen = ((u_int16_t) sc->sc_rxbuf[2] << 8) | sc->sc_rxbuf[3];
 
 #ifdef DIAGNOSTIC
 #if 0
@@ -1673,14 +1669,14 @@ strip_newpacket(sc, ptr, end)
 #endif
 
 	/* Decode remainder of the IP packer */
-	ptr = UnStuffData(ptr, end, sc->sc_rxbuf+4, packetlen-4);
+	ptr = UnStuffData(ptr, end, sc->sc_rxbuf + 4, packetlen - 4);
 	if (ptr == 0) {
 		RecvErr("Short packet", sc);
 		return 0;
 	}
 
 	/* XXX redundant copy */
-	bcopy(sc->sc_rxbuf, sc->sc_pktstart, packetlen );
+	bcopy(sc->sc_rxbuf, sc->sc_pktstart, packetlen);
 	return (packetlen);
 }
 
@@ -1863,65 +1859,54 @@ UnStuffData(u_char *src, u_char *end, u_char *dst, u_long dst_length)
 	if (!src || !end || !dst || !dst_length)
 		return (NULL);
 
-	while (src < end && dst < dst_end)
-	{
+	while (src < end && dst < dst_end) {
 		int count = (*src ^ Stuff_Magic) & Stuff_CountMask;
-		switch ((*src ^ Stuff_Magic) & Stuff_CodeMask)
-			{
-			case Stuff_Diff:
-				if (src+1+count >= end)
-					return (NULL);
-				do
-				{
-					*dst++ = *++src ^ Stuff_Magic;
-				}
-				while(--count >= 0 && dst < dst_end);
-				if (count < 0)
-					src += 1;
-				else
-				 if (count == 0)
-					*src = Stuff_Same ^ Stuff_Magic;
-				else
-					*src = (Stuff_Diff + count) ^ Stuff_Magic;
-				break;
-			case Stuff_DiffZero:
-				if (src+1+count >= end)
-					return (NULL);
-				do
-				{
-					*dst++ = *++src ^ Stuff_Magic;
-				}
-				while(--count >= 0 && dst < dst_end);
-				if (count < 0)
-					*src = Stuff_Zero ^ Stuff_Magic;
-				else
-					*src = (Stuff_DiffZero + count) ^ Stuff_Magic;
-				break;
-			case Stuff_Same:
-				if (src+1 >= end)
-					return (NULL);
-				do
-				{
-					*dst++ = src[1] ^ Stuff_Magic;
-				}
-				while(--count >= 0 && dst < dst_end);
-				if (count < 0)
-					src += 2;
-				else
-					*src = (Stuff_Same + count) ^ Stuff_Magic;
-				break;
-			case Stuff_Zero:
-				do
-				{
-					*dst++ = 0;
-				}
-				while(--count >= 0 && dst < dst_end);
-				if (count < 0)
-					src += 1;
-				else
-					*src = (Stuff_Zero + count) ^ Stuff_Magic;
-				break;
-			}
+		switch ((*src ^ Stuff_Magic) & Stuff_CodeMask) {
+		case Stuff_Diff:
+			if (src + 1 + count >= end)
+				return (NULL);
+			do {
+				*dst++ = *++src ^ Stuff_Magic;
+			} while (--count >= 0 && dst < dst_end);
+			if (count < 0)
+				src += 1;
+			else if (count == 0)
+				*src = Stuff_Same ^ Stuff_Magic;
+			else
+				*src = (Stuff_Diff + count) ^ Stuff_Magic;
+			break;
+		case Stuff_DiffZero:
+			if (src + 1 + count >= end)
+				return (NULL);
+			do {
+				*dst++ = *++src ^ Stuff_Magic;
+			} while (--count >= 0 && dst < dst_end);
+			if (count < 0)
+				*src = Stuff_Zero ^ Stuff_Magic;
+			else
+				*src = (Stuff_DiffZero + count) ^ Stuff_Magic;
+			break;
+		case Stuff_Same:
+			if (src + 1 >= end)
+				return (NULL);
+			do {
+				*dst++ = src[1] ^ Stuff_Magic;
+			} while (--count >= 0 && dst < dst_end);
+			if (count < 0)
+				src += 2;
+			else
+				*src = (Stuff_Same + count) ^ Stuff_Magic;
+			break;
+		case Stuff_Zero:
+			do {
+				*dst++ = 0;
+			} while (--count >= 0 && dst < dst_end);
+			if (count < 0)
+				src += 1;
+			else
+				*src = (Stuff_Zero + count) ^ Stuff_Magic;
+			break;
+		}
 	}
 
 	if (dst < dst_end)
@@ -1946,7 +1931,7 @@ RecvErr(msg, sc)
 	u_char *end = sc->sc_mp;
 	u_char pkt_text[MAX_RecErr], *p = pkt_text;
 	*p++ = '\"';
-	while (ptr < end && p < &pkt_text[MAX_RecErr-4]) {
+	while (ptr < end && p < &pkt_text[MAX_RecErr - 4]) {
 		if (*ptr == '\\') {
 			*p++ = '\\';
 			*p++ = '\\';
@@ -1954,12 +1939,13 @@ RecvErr(msg, sc)
 			*p++ = *ptr;
 		else {
 			sprintf(p, "\\%02x", *ptr);
-			p+= 3;
+			p += 3;
 		}
 		ptr++;
 	}
 
-	if (ptr == end) *p++ = '\"';
+	if (ptr == end)
+		*p++ = '\"';
 	*p++ = 0;
 	addlog("%s: %13s : %s\n", sc->sc_if.if_xname, msg, pkt_text);
 
@@ -1990,29 +1976,22 @@ RecvErr_Message(strip_info, sendername, msg)
 
 	if_name = strip_info->sc_if.if_xname;
 
-	if (!strncmp(msg, ERR_001, sizeof(ERR_001)-1))
-	{
+	if (!strncmp(msg, ERR_001, sizeof(ERR_001) - 1)) {
 		RecvErr("radio error message:", strip_info);
-		addlog("%s: Radio %s is not in StarMode\n",
-			if_name, sendername);
-	}
-	else if (!strncmp(msg, ERR_002, sizeof(ERR_002)-1))
-	{
+		addlog("%s: Radio %s is not in StarMode\n", if_name, sendername);
+	} else if (!strncmp(msg, ERR_002, sizeof(ERR_002) - 1)) {
 		RecvErr("radio error message:", strip_info);
 #ifdef notyet		/*Kernel doesn't have scanf!*/
 		int handle;
 		u_char newname[64];
 		sscanf(msg, "ERR_002 Remap handle &%d to name %s", &handle, newname);
-		addlog("%s: Radio name %s is handle %d\n",
-			if_name, newname, handle);
+		addlog("%s: Radio name %s is handle %d\n", if_name, newname, handle);
 #endif
 	}
-	else if (!strncmp(msg, ERR_003, sizeof(ERR_003)-1))
-	{
+	else if (!strncmp(msg, ERR_003, sizeof(ERR_003) - 1)) {
 		RecvErr("radio error message:", strip_info);
 		addlog("%s: Destination radio name is unknown\n", if_name);
-	}
-	else if (!strncmp(msg, ERR_004, sizeof(ERR_004)-1)) {
+	} else if (!strncmp(msg, ERR_004, sizeof(ERR_004) - 1)) {
 		/*
 		 * The radio reports it got a badly-framed starmode packet
 		 * from us; so it must me in starmode.
@@ -2024,30 +2003,23 @@ RecvErr_Message(strip_info, sendername, msg)
 			addlog("%s: Radio back in starmode\n", if_name);
 		}
 		CLEAR_RESET_TIMER(strip_info);
-	}
-	else if (!strncmp(msg, ERR_005, sizeof(ERR_005)-1))
-        	RecvErr("radio error message:", strip_info);
-	else if (!strncmp(msg, ERR_006, sizeof(ERR_006)-1))
-        	RecvErr("radio error message:", strip_info);
-	else if (!strncmp(msg, ERR_007, sizeof(ERR_007)-1))
-	 {
+	} else if (!strncmp(msg, ERR_005, sizeof(ERR_005) - 1))
+		RecvErr("radio error message:", strip_info);
+	else if (!strncmp(msg, ERR_006, sizeof(ERR_006) - 1))
+		RecvErr("radio error message:", strip_info);
+	else if (!strncmp(msg, ERR_007, sizeof(ERR_007) - 1)) {
 		/*
 		 *	Note: This error knocks the radio back into
 		 *	command mode.
 		 */
 		RecvErr("radio error message:", strip_info);
-		printf("%s: Error! Packet size too big for radio.",
-		    if_name);
+		printf("%s: Error! Packet size too big for radio.", if_name);
 		FORCE_RESET(strip_info);
-	}
-	else if (!strncmp(msg, ERR_008, sizeof(ERR_008)-1))
-	{
+	} else if (!strncmp(msg, ERR_008, sizeof(ERR_008) - 1)) {
 		RecvErr("radio error message:", strip_info);
-		printf("%s: Radio name contains illegal character\n",
-		    if_name);
-	}
-	else if (!strncmp(msg, ERR_009, sizeof(ERR_009)-1))
-        	RecvErr("radio error message:", strip_info);
+		printf("%s: Radio name contains illegal character\n", if_name);
+	} else if (!strncmp(msg, ERR_009, sizeof(ERR_009) - 1))
+		RecvErr("radio error message:", strip_info);
 	else {
 		addlog("failed to parse ]%3s[\n", msg);
 		RecvErr("unparsed radio error message:", strip_info);
