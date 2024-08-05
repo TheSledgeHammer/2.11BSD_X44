@@ -65,7 +65,7 @@ LIBCRTI=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o
 #
 
 USRSLASHLIB=	${DESTDIR}/usr/lib # Modern BSD's (i.e. 4.4 and above)
-USRDOTLIB=		${DESTDIR}/usr.lib # Older BSD's (i.e. 4.3 and below)
+USRDOTLIB=		${DESTDIR}/usr/lib # Older BSD's (i.e. 4.3 and below)
 
 _USRSLASHLIBLIST= \
             ARCHIVE \
