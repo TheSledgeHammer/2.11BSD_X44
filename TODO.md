@@ -9,6 +9,12 @@ A General todo list. Don't hesitate to add to this list. :)
 	- Compile Issues/Errors:
 		- Linker: None atm, Yay! :)
 		- Compiler: None atm, Yay! :)
+- Fix:
+- Stand includes: Not being placed in correct destination directory
+  during build process (should be in usr/includes not the root of
+  the destination directory
+- libgcc: linker ln unwind.h symbolic link failed
+- lib/csu: potentially unresolved issues
 
 ### Documentation:
 - Manpages:
