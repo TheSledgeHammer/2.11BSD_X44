@@ -1,6 +1,3 @@
-# 2.11BSD_X44: Responsible for generating the destdir.i386
-# THIS IS STATICALLY GENERATED DO NOT EDIT!!
-
 altroot
 bin
 dev
