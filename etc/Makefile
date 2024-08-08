@@ -298,7 +298,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 #	Populate $DESTDIR with directories needed by 211BSD.
 # Notes:
 # 	etc.${MACHINE}/${MACHINE}.dlist (THIS IS STATICALLY GENERATED!)
-# 	Only edit this file when:
+# 	Only edit this file when: (Incorrectly editing this will prevent compilation!)
 # 	a) Adding new folders that contain headers required to compile.
 # 	b) Removing folders that contained headers required to compile.
 distrib-dirs: .PHONY check_DESTDIR
