@@ -300,7 +300,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 
 distrib-dirs: .PHONY check_DESTDIR
 	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
-	cat ${NETBSDSRCDIR}/etc.${MACHINE}/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
+	cat ${NETBSDSRCDIR}/etc/etc.${MACHINE}/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
 
 # release, snapshot --
 #	Build a full distribution including kernels & install media.
