@@ -64,10 +64,10 @@ _CURDIR:=	${.CURDIR}
 
 SRCS:=		${SRCS:M*.c}
 
-CONFIGURE_ARGS=	--cache-file=config.cache
-.if ${MAKEVERBOSE} == 0
-CONFIGURE_ARGS+=--silent
-.endif
+#CONFIGURE_ARGS=	--cache-file=config.cache
+#.if ${MAKEVERBOSE} == 0
+#CONFIGURE_ARGS+=--silent
+#.endif
 
 config.cache: include/.stamp configure nbtool_config.h.in defs.mk.in
 	rm -f ${.TARGET}
