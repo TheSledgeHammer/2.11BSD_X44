@@ -295,12 +295,12 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 	${MAKEDIRTARGET} ${NETBSDSRCDIR}/crypto/openssh/bin configinstall
 
 # distrib-dirs --
-#	Populate $DESTDIR with directories needed by 211BSD
+#	Populate $DESTDIR with directories needed by 211BSD.
 # Notes:
 # 	etc.${MACHINE}/${MACHINE}.dlist (THIS IS STATICALLY GENERATED!)
 # 	Only edit this file when:
-# 	a) Adding new folders that contain headers required to compile
-# 	b) Removing folders that contained headers
+# 	a) Adding new folders that contain headers required to compile.
+# 	b) Removing folders that contained headers required to compile.
 distrib-dirs: .PHONY check_DESTDIR
 	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
 	cat ${NETBSDSRCDIR}/etc/etc.${MACHINE}/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
