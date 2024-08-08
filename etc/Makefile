@@ -32,12 +32,6 @@
 #    release: a synonym for `snapshot'
 #
 
-# Note:
-# etc.${MACHINE}/${MACHINE}.dlist (THIS IS STATICALLY GENERATED!)
-# Only edit this file when:
-# a) Adding new folders that contain headers required to compile
-# b) Removing folders that contained headers
-
 # For MK* vars
 .include <bsd.own.mk>
 
@@ -302,8 +296,11 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 
 # distrib-dirs --
 #	Populate $DESTDIR with directories needed by 211BSD
-#
-
+# Notes:
+# 	etc.${MACHINE}/${MACHINE}.dlist (THIS IS STATICALLY GENERATED!)
+# 	Only edit this file when:
+# 	a) Adding new folders that contain headers required to compile
+# 	b) Removing folders that contained headers
 distrib-dirs: .PHONY check_DESTDIR
 	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
 	cat ${NETBSDSRCDIR}/etc/etc.${MACHINE}/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
