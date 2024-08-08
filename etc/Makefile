@@ -32,6 +32,12 @@
 #    release: a synonym for `snapshot'
 #
 
+# Note:
+# etc.${MACHINE}/${MACHINE}.dlist (THIS IS STATICALLY GENERATED!)
+# Only edit this file when:
+# a) Adding new folders that contain headers required to compile
+# b) Removing folders that contained headers
+
 # For MK* vars
 .include <bsd.own.mk>
 
