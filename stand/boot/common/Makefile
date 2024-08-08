@@ -2,6 +2,8 @@
 
 .include <bsd.loader.mk>
 
+INCSDIR=    /usr/include
+
 SRCS+=		boot.c commands.c console.c devopen.c environment.c 	\
 			fileload.c getopt.c install.c interp_backslash.c 		\
 			interp_parse.c interp.c load_exec.c load_ksyms.c ls.c 	\
@@ -35,4 +37,4 @@ SRCS+=	pnp.c
 
 INCS=		boot2.h bootstrap.h commands.h paths.h rbx.h smbios.h
 
-.include <bsd.kinc.mk>
+.include <bsd.inc.mk>
