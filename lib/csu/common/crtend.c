@@ -22,16 +22,14 @@
  */
 
 #include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD$"); */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/exec.h>
 #include <sys/exec_elf.h>
 #include <stdlib.h>
 
+#include "csu_common.h"
 #include "crt.h"
-
-typedef void (*fptr)(void);
 
 static void (*__CTOR_LIST__[])(void)
     __attribute__((section(".ctors"))) = { (void *)-1 };	/* XXX */

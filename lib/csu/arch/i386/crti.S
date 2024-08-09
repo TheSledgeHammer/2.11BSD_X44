@@ -37,7 +37,7 @@
 
 /* RCSID("$NetBSD: crti.S,v 1.1 2010/08/07 18:01:33 joerg Exp $") */
 
-#include "init_note.S"
+#include "elf_note.S"
 
 		.section ".init", "ax", @progbits
 		.align 16

@@ -30,12 +30,12 @@
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
+#include <sys/exec.h>
 #include <sys/exec_elf.h>
 #include <stdlib.h>
 
+#include "csu_common.h"
 #include "crt.h"
-
-typedef void (*fptr)(void);
 
 static void (*__DTOR_LIST__[])(void)
     __attribute__((section(".dtors"))) = { (void *)-1 };	/* XXX */
