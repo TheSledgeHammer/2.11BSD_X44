@@ -42,7 +42,7 @@
 #include <sys/cdefs.h>
 
 #include <time.h>	/* For timespec */
-#include <sched.h>
+//#include <sched.h>
 
 #include <pthread_types.h>
 
