@@ -74,7 +74,9 @@ typedef struct {
 	long rem;		/* remainder */
 } ldiv_t;
 
-#if !defined(_ANSI_SOURCE) && (defined(_ISOC99_SOURCE))
+#if !defined(_ANSI_SOURCE) && \
+    (defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) >= 199901L || \
+     (__cplusplus - 0) >= 201103L || defined(__BSD_VISIBLE))
 typedef struct {
 	/* LONGLONG */
 	long long int quot;	/* quotient */
@@ -194,9 +196,9 @@ int	 	mkstemp(char *);
 
 int	 	setkey(const char *);
 
-char	*realpath(const char *, char *));
+char	*realpath(const char *, char *);
 
-int	 	ttyslot(void));
+int	 	ttyslot(void);
 
 void	*valloc(size_t);		/* obsoleted by malloc() */
 #endif

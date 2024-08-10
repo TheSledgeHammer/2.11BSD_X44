@@ -54,6 +54,11 @@ typedef	_BSD_SIZE_T_	size_t;
 #undef	_BSD_SIZE_T_
 #endif
 
+#ifdef	_BSD_SSIZE_T_
+typedef	_BSD_SSIZE_T_	ssize_t;
+#undef	_BSD_SSIZE_T_
+#endif
+
 #include <sys/null.h>
 /*
  * This is fairly grotesque, but pure ANSI code must not inspect the

@@ -39,13 +39,6 @@ typedef	_BSD_TIMER_T_	timer_t;
 #undef	_BSD_TIMER_T_
 #endif
 
-#if (_POSIX_C_SOURCE - 0) >= 200809L
-#ifndef	__LOCALE_T_DECLARED
-typedef void 		*locale_t;
-#define	__LOCALE_T_DECLARED
-#endif
-#endif /* __POSIX_VISIBLE >= 200809 */
-
 #define CLOCKS_PER_SEC	100
 
 /*
@@ -103,7 +96,7 @@ long 		__sysconf(int);
 typedef struct _locale		*locale_t;
 #  define __LOCALE_T_DECLARED
 #  endif
-size_t strftime_l(char * __restrict, size_t, const char * __restrict, const struct tm * __restrict, locale_t)
+size_t strftime_l(char * __restrict, size_t, const char * __restrict, const struct tm * __restrict, locale_t);
 #endif
 
 #if defined(__BSD_VISIBLE)
