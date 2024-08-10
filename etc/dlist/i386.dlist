@@ -1,0 +1,6 @@
+./usr/include/i386
+./usr/include/i386/apic
+./usr/include/i386/eisa
+./usr/include/i386/isa
+./usr/include/i386/mca
+./usr/include/i386/pci

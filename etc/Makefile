@@ -286,7 +286,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 			/dev/null ${DESTDIR}${file}; \
 	else true; fi
 .endfor
-.for subdir in . defaults mtree namedb rc.d root skel ssh
+.for subdir in . defaults dlist mtree namedb rc.d root skel ssh
 	${MAKEDIRTARGET} ${subdir} configinstall
 .endfor
 .if (${MKPF} != "no")
@@ -297,13 +297,14 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 # distrib-dirs --
 #	Populate $DESTDIR with directories needed by 211BSD.
 # Notes:
-# 	etc.${MACHINE}/${MACHINE}.dlist (THIS IS STATICALLY GENERATED!)
+# 	files in etc.dlist (THIS IS STATICALLY GENERATED!)
 # 	Only edit this file when: (Incorrectly editing this file will prevent compilation!)
 # 	a) Adding new folders that contain headers required to compile.
 # 	b) Removing folders that contained headers required to compile.
 distrib-dirs: .PHONY check_DESTDIR
 	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
-	cat ${NETBSDSRCDIR}/etc/etc.${MACHINE}/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
+	cat ${NETBSDSRCDIR}/etc/dlist/bsd.dlist ${NETBSDSRCDIR}/etc/dlist/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
+#	cat ${NETBSDSRCDIR}/etc/etc.${MACHINE}/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
 
 # release, snapshot --
 #	Build a full distribution including kernels & install media.
@@ -346,7 +347,7 @@ snap_md_post: .PHONY check_DESTDIR check_RELEASEDIR snap_post
 #	(empty -- look in the machine-dependent Makefile.inc)
 
 
-SUBDIR=	defaults periodic rc.d mtree
+SUBDIR=	defaults periodic rc.d mtree dlist
 
 .include <bsd.prog.mk>
 .include <bsd.subdir.mk>
