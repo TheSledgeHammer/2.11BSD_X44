@@ -64,93 +64,39 @@ LIBCRTI=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o
 #     etc..
 #
 
-USRSLASHLIB=	${DESTDIR}/usr/lib # Modern BSD's (i.e. 4.4 and above)
-USRDOTLIB=		${DESTDIR}/usr/lib # Older BSD's (i.e. 4.3 and below)
-
-_USRSLASHLIBLIST= \
+_LIBLIST= \
             ARCHIVE \
-			C \
-			C_PIC \
-			COMPAT \
-            CRYPTO \
-            CXX \
-            DES \
-            EVENT \
-            EVENT_OPENSSL \
-            EVENT_PTHREADS \
-			EXPAT \
-			FETCH \
-            FL \
-            G2C \
-			GCC \
-			GNUCTF \
-			GNUMALLOC \
-			L \
-			LUA \
-			MAGIC \
-            NS \
-            OBJC \
-            SQLITE3 \
-            SSH \
-            SSL \
-            SSP \
-            STDC++ \
-            SUPC++ \
-            WIND
-			
-.for _var in ${_USRSLASHLIBLIST}
-.ifndef LIB${_var}
-LIB${_var}:=	 ${USRSLASHLIB}/lib${_var:tl}.a
-.MADE: ${LIB${_var:tu}}
-.endif
-.endfor
-
-_USRDOTLIBLIST=	\
-			BZ2 \
-			CRYPT \
-			CURSES \
-			DBM \
-			EDIT \
-			EXECINFO \
-			FORM \
-			FORTRAN \
-			INTL \
-			IPSEC \
+            BZ2 \
+			C C_PIC COMPAT CRYPTO CRYPT CURSES CXX \
+            DBM DES \
+            EDIT EXECINFO EVENT EVENT_OPENSSL EVENT_PTHREADS EXPAT \
+			FETCH FL FORM FORTRAN \
+            G2C GCC GNUCTF GNUMALLOC \
+			INTL IPSEC \
+			L LUA \
 			KVM \
-			M \
-			MENU \
-			MP \
-			MPX \
-			OM \
-			PANEL \
-			PCAP \
-			PCI \
-			PTHREAD \
-			RESOLV \
-			RPCSVC \
-			SKEY \
-			STUBS \
-			TERMINFO \
+			M MAGIC MENU MP MPX \
+            NS \
+            OBJC OM \
+			PANEL PCAP PCI PTHREAD \
+            RESOLV RPCSVC \
+            SKEY SQLITE3 SSH SSL SSP STDC++ STUBS SUPC++ \
+            TERMINFO \
 			UTIL \
 			VMF \
-            WRAP \
+            WIND WRAP \
 			Y \
 			Z
-
-.for _var in ${_USRDOTLIBLIST}
+			
+.for _var in ${_LIBLIST}
 .ifndef LIB${_var}
-LIB${_var}:=	 ${USRDOTLIB}/lib${_var:tl}.a
+LIB${_var}:=	 ${DESTDIR}/usr/lib/lib${_var:tl}.a
 .MADE: ${LIB${_var:tu}}
 .endif
 .endfor
 
-#.ifndef LIBTERMCAP
-#LIBTERMCAP = ${USRDOTLIB}/libterminfo.a
-#.MADE: 		${LIBTERMCAP}
-#.endif
-
 .ifndef LIBSTDCXX
-LIBSTDCXX=	${USRSLASHLIB}/libstdc++.a
+LIBSTDCXX=	${DESTDIR}/usr/lib/libstdc++.a
 .MADE: 		${LIBSTDCXX}
 .endif
 

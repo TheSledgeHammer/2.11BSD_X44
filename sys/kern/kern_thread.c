@@ -740,7 +740,10 @@ thread_exit(ecode, all)
 	td->td_stat = SZOMB;
 	thread_remove(p, td);
 	if ((p->p_stat == SZOMB) && ((td->td_flag & TD_STEALABLE) != 0)) {
+		thread_psignal(td->td_procp, SIGTHD, all);
+		wakeup((caddr_t)td->td_procp);
 		thread_free(p, td);
+		return;
 	}
 
 	thread_psignal(td->td_procp, SIGTHD, all);
