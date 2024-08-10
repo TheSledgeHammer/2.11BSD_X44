@@ -20,6 +20,7 @@ int *__errno(void);
 
 #ifndef errno
 #define errno (*__errno())
+#endif
 __END_DECLS
 
 #endif /* !_ERRNO_H_ */
