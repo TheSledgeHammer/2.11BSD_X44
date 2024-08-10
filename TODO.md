@@ -15,6 +15,7 @@ A General todo list. Don't hesitate to add to this list. :)
   during build process (should be
   in usr/includes not the root of
   the destination directory
+- libpthread needs updating
 
 ### Documentation:
 - Manpages:
