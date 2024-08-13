@@ -48,7 +48,7 @@ typedef void Obj_Entry;
 typedef void (*fptr)(void);
 
 extern int				__syscall(quad_t, ...);
-#define	_exit(v)		__syscall(SYS_exit, (v))
+#define	_exit(v)		__syscall(SYS_rexit, (v))
 #define	write(fd, s, n)	__syscall(SYS_write, (fd), (s), (n))
 
 #define	_FATAL(str)				\
