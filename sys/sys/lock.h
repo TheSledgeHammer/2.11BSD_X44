@@ -47,12 +47,12 @@
  * array based queuing lock (ABQL)
  */
 struct lock_object_cpu {
-	volatile u_int				loc_my_ticket;
+	__cpu_simple_lock_t			loc_my_ticket;
 };
 
 struct lock_object {
 	struct lock_object_cpu	 	lo_cpus[NCPUS];
-	volatile u_int				lo_nxt_ticket;
+	__cpu_simple_lock_t			lo_nxt_ticket;
 	int							lo_can_serve[NCPUS];
 
 	const struct lock_type		*lo_type;			/* unused */
