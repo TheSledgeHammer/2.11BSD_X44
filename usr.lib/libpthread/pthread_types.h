@@ -43,7 +43,6 @@
  * We use the "pthread_spin_t" name internally; "pthread_spinlock_t" is the
  * POSIX spinlock object. 
  */
-typedef	_simple_lock_t		__cpu_simple_lock_t
 typedef __cpu_simple_lock_t	pthread_spin_t;
 
 /*
