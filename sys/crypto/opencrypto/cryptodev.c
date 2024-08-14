@@ -217,6 +217,9 @@ cryptof_ioctl(struct file *fp, u_long cmd, void *data, struct proc *p)
 		case CRYPTO_SERPENT_XTS:
 			txform = &enc_xform_serpent_xts;
 			break;
+		case CRYPTO_MARS_XTS:
+			txform = &enc_xform_mars_xts;
+			break;
 		default:
 			return (EINVAL);
 		}

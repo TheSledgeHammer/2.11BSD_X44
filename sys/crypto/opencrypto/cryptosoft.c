@@ -881,6 +881,9 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		case CRYPTO_SERPENT_XTS:
 			txf = &enc_xform_serpent_xts;
 			goto enccommon;
+		case CRYPTO_MARS_XTS:
+			txf = &enc_xform_mars_xts;
+			goto enccommon;
 		case CRYPTO_NULL_CBC:
 			txf = &enc_xform_null;
 			goto enccommon;
@@ -1076,6 +1079,7 @@ swcr_freesession(void *arg, u_int64_t tid)
 		case CRYPTO_MARS_CBC:
 		case CRYPTO_TWOFISH_XTS:
 		case CRYPTO_SERPENT_XTS:
+		case CRYPTO_MARS_XTS:
 		case CRYPTO_NULL_CBC:
 			txf = swd->sw_exf;
 
@@ -1215,6 +1219,7 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case CRYPTO_MARS_CBC:
 		case CRYPTO_TWOFISH_XTS:
 		case CRYPTO_SERPENT_XTS:
+		case CRYPTO_MARS_XTS:
 			if ((crp->crp_etype = swcr_encdec(crd, sw, crp->crp_buf, type))
 					!= 0)
 				goto done;
@@ -1321,6 +1326,7 @@ swcr_init(void)
 	REGISTER(CRYPTO_MARS_CBC);
 	REGISTER(CRYPTO_TWOFISH_XTS);
 	REGISTER(CRYPTO_SERPENT_XTS);
+	REGISTER(CRYPTO_MARS_XTS);
 	REGISTER(CRYPTO_DEFLATE_COMP);
 #undef REGISTER
 }

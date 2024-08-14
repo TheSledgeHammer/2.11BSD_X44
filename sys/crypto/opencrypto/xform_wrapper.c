@@ -83,6 +83,9 @@
 #define SERPENT_XTS_BLOCKSIZE	16
 #define SERPENT_XTS_IVSIZE		8
 
+#define MARS_XTS_BLOCKSIZE		16
+#define MARS_XTS_IVSIZE			8
+
 struct aes_ctr_ctx {
 	aes_ctx			ac_key;
 	u_int8_t		ac_block[AESCTR_BLOCKSIZE];
@@ -104,6 +107,12 @@ struct serpent_xts_ctx {
 	serpent_ctx   	key1;
 	serpent_ctx   	key2;
 	u_int8_t      	tweak[SERPENT_XTS_BLOCKSIZE];
+};
+
+struct mars_xts_ctx {
+	mars_ctx   		key1;
+	mars_ctx   		key2;
+	u_int8_t      	tweak[MARS_XTS_BLOCKSIZE];
 };
 
 /*
@@ -905,6 +914,95 @@ void
 serpent_xts_zerokey(u_int8_t **sched)
 {
 	bzero(*sched, sizeof(struct serpent_xts_ctx));
+	FREE(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+void
+mars_xts_reinit(void *key, const u_int8_t *iv, u_int8_t *ivout)
+{
+	struct mars_xts_ctx *ctx;
+	u_int64_t blocknum;
+	u_int i;
+
+	ctx = (struct mars_xts_ctx *)key;
+	bcopy(iv, &blocknum, MARS_XTS_IVSIZE);
+	for (i = 0; i < MARS_XTS_IVSIZE; i++) {
+		ctx->tweak[i] = blocknum & 0xff;
+		blocknum >>= 8;
+	}
+
+	/* Last 64 bits of IV are always zero */
+	bzero(ctx->tweak + MARS_XTS_IVSIZE, MARS_XTS_IVSIZE);
+
+	mars_encrypt(&ctx->key2, ctx->tweak, ctx->tweak);
+}
+
+void
+mars_xts_crypt(struct mars_xts_ctx *ctx, u_int8_t *data, u_int do_encrypt)
+{
+	u_int8_t block[MARS_XTS_BLOCKSIZE];
+	u_int i, carry_in, carry_out;
+
+	for (i = 0; i < MARS_XTS_BLOCKSIZE; i++)
+		block[i] = data[i] ^ ctx->tweak[i];
+
+	if (do_encrypt) {
+		mars_encrypt(&ctx->key1, block, data);
+	} else {
+		mars_decrypt(&ctx->key1, block, data);
+	}
+
+	for (i = 0; i < MARS_XTS_BLOCKSIZE; i++) {
+		data[i] ^= ctx->tweak[i];
+	}
+
+	/* Exponentiate tweak */
+	carry_in = 0;
+	for (i = 0; i < MARS_XTS_BLOCKSIZE; i++) {
+		carry_out = ctx->tweak[i] & 0x80;
+		ctx->tweak[i] = (ctx->tweak[i] << 1) | (carry_in ? 1 : 0);
+		carry_in = carry_out;
+	}
+	if (carry_in) {
+		ctx->tweak[0] ^= AES_XTS_ALPHA;
+	}
+	bzero(block, sizeof(block));
+}
+
+void
+mars_xts_encrypt(caddr_t key, u_int8_t *data)
+{
+	mars_xts_crypt((struct mars_xts_ctx *)key, data, 1);
+}
+
+void
+mars_xts_decrypt(caddr_t key, u_int8_t *data)
+{
+	mars_xts_crypt((struct mars_xts_ctx *)key, data, 0);
+}
+
+int
+mars_xts_setkey(u_int8_t **sched, const u_int8_t *key, int len)
+{
+	struct mars_xts_ctx *ctx;
+
+	if (len != 32 && len != 64) {
+		return -1;
+	}
+	MALLOC(*sched, u_int8_t *, sizeof(struct mars_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
+	ctx = (struct mars_xts_ctx *)*sched;
+
+	mars_set_key(&ctx->key1, key, len * 4);
+	mars_set_key(&ctx->key2, key + (len / 2), len * 4);
+
+	return 0;
+}
+
+void
+mars_xts_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(struct mars_xts_ctx));
 	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
 }

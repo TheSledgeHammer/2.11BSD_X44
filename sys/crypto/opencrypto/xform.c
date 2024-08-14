@@ -372,6 +372,20 @@ const struct enc_xform enc_xform_mars = {
 	.reinit		= NULL,
 };
 
+const struct enc_xform enc_xform_mars_xts  = {
+	.type		= CRYPTO_MARS_XTS,
+	.name		= "MARS-XTS",
+	.blocksize	= 16,
+	.ivsize		= 8,
+	.minkey		= 32,
+	.maxkey		= 64,
+	.encrypt	= mars_xts_encrypt,
+	.decrypt	= mars_xts_decrypt,
+	.setkey		= mars_xts_setkey,
+	.zerokey	= mars_xts_zerokey,
+	.reinit		= mars_xts_reinit,
+};
+
 /* Authentication instances */
 const struct auth_hash auth_hash_null = {
 	.type		= CRYPTO_NULL_HMAC,

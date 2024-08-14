@@ -119,7 +119,8 @@
 #define CRYPTO_MARS_CBC				36
 #define CRYPTO_TWOFISH_XTS			37
 #define CRYPTO_SERPENT_XTS			38
-#define CRYPTO_ALGORITHM_MAX		38 /* Keep updated - see below */
+#define CRYPTO_MARS_XTS				39
+#define CRYPTO_ALGORITHM_MAX		39 /* Keep updated - see below */
 
 /* Algorithm flags */
 #define	CRYPTO_ALG_FLAG_SUPPORTED	0x01 /* Algorithm is supported */

@@ -1133,10 +1133,10 @@ loop:
 #endif
 	tdp = NULL;
 	tq = NULL;
-	n = p->p_nthreads;	/* single run queue per process */
+	n = 128;
 
 	/*
-	 * search for highest-priority runnable process
+	 * search for highest-priority runnable thread
 	 */
 	for (tp = TAILQ_FIRST(tqs); tp; tp = TAILQ_NEXT(tp, td_link)) {
 		if ((tp->td_flag & TD_INMEM) && tp->td_pri < n) {
@@ -1148,11 +1148,11 @@ loop:
 	}
 
 	/*
-	 * if no process is runnable, idle.
+	 * if no thread is runnable, idle.
 	 */
 	tp = tdp;
 	if (tp == NULL) {
-
+		/* */
 		goto loop;
 	}
 	if (tdq) {
@@ -1161,7 +1161,7 @@ loop:
 		TAILQ_INSERT_HEAD(tqs, tp, td_link);
 	}
 	pri = n;
-	thread_setpri(p, tp);
+//	thread_setpri(p, tp);
 }
 
 void

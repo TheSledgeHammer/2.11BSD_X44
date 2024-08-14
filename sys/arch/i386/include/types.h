@@ -60,7 +60,11 @@ typedef unsigned long					__psize_t;
 typedef unsigned long					__vaddr_t;
 typedef unsigned long					__vsize_t;
 
+/* Lock Machdep */
 typedef	__volatile unsigned int		    		__cpu_simple_lock_t;
+
+#define __SIMPLELOCK_LOCKED		1
+#define __SIMPLELOCK_UNLOCKED	0
 
 /*
  * Basic integral types.  Omit the typedef if
