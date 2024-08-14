@@ -48,12 +48,12 @@
 #include <sys/mount.h>
 #include <sys/ktrace.h>
 #include <sys/user.h>
-
+#include <sys/ucontext.h>
 #include <vm/include/vm_extern.h>
 
 #include <devel/sys/sa.h>
 #include <devel/sys/savar.h>
-#include <sys/ucontext.h>
+
 #include <devel/sys/malloctypes.h>
 
 static struct sadata_vp 		*sa_newsavp(struct sadata *);
@@ -143,7 +143,7 @@ sa_newsavp(struct sadata *sa)
 	/* Initialize. */
 	bzero(vp, sizeof(*vp));
 	simple_lock_init(&vp->savp_lock);
-	vp->savp_proc = NULL;
+	vp->savp_thread = NULL;
 	vp->savp_wokenq_head = NULL;
 	vp->savp_faultaddr = 0;
 	vp->savp_ofaultaddr = 0;
@@ -183,7 +183,7 @@ sys_sa_register(struct lwp *l, void *v, register_t *retval)
 	} *uap = (struct sa_register_args *)u.u_ap;
 
 	struct proc *p = u.u_procp;
-	struct kthread *kt = p->p_kthreado;
+	struct thread *td = u.u_threado;
 	struct sadata *sa;
 	sa_upcall_t prev;
 	int error;
@@ -206,10 +206,10 @@ sys_sa_register(struct lwp *l, void *v, register_t *retval)
 		sa->sa_nstacks = 0;
 		SLIST_INIT(&sa->sa_vps);
 		p->p_sa = sa;
-		KASSERT(kt->kt_savp == NULL);
+		KASSERT(td->td_savp == NULL);
 	}
-	if (kt->kt_savp == NULL) {
-		kt->kt_savp = sa_newsavp(p->p_sa);
+	if (td->td_savp == NULL) {
+		td->td_savp = sa_newsavp(p->p_sa);
 		sa_newcachelwp(l);
 	}
 
@@ -224,6 +224,9 @@ sys_sa_register(struct lwp *l, void *v, register_t *retval)
 
 	return (0);
 }
+#include <sys/queue.h>
+#include <sys/null.h>
+#include <sys/thread.h>
 
 void
 sa_release(struct proc *p)
@@ -231,11 +234,11 @@ sa_release(struct proc *p)
 	struct sadata *sa;
 	struct sastack *sast, *next;
 	struct sadata_vp *vp;
-	struct kthread *l;
+	struct thread *l;
 
 	sa = p->p_sa;
 	KDASSERT(sa != NULL);
-	KASSERT(p->p_nlwps <= 1);
+	KASSERT(p->p_nthreads <= 1);
 
 	SPLAY_FOREACH(sast, sasttree, &sa->sa_stackstree){
 		SPLAY_REMOVE(sasttree, &sa->sa_stackstree, sast);
@@ -250,10 +253,10 @@ sa_release(struct proc *p)
 	}
 	free(sa, M_SA);
 	p->p_sa = NULL;
-	l = LIST_FIRST(&p->p_ktds);
+	l = LIST_FIRST(&p->p_allthread);
 	if (l) {
-		KASSERT(LIST_NEXT(l, l_sibling) == NULL);
-		l->l_savp = NULL;
+		KASSERT(LIST_NEXT(l, td_sibling) == NULL);
+		l->td_savp = NULL;
 	}
 }
 

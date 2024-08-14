@@ -88,15 +88,20 @@ struct sadata_vp {
 	int								savp_id;				/* "virtual processor" identifier */
 	SLIST_ENTRY(sadata_vp)			savp_next; 				/* link to next sadata_vp */
 	struct lock_object				savp_lock; 				/* lock on these fields */
-	struct proc						*savp_proc;				/* proc on "virtual processor" */
-	struct proc						*savp_blocker;			/* recently blocked proc */
-	struct proc						*savp_wokenq_head; 		/* list of woken procs */
-	struct proc						**savp_wokenq_tailp; 	/* list of woken procs */
+	//struct proc						*savp_proc;				/* proc on "virtual processor" */
+	//struct proc						*savp_blocker;			/* recently blocked proc */
+	//struct proc						*savp_wokenq_head; 		/* list of woken procs */
+	//struct proc						**savp_wokenq_tailp; 	/* list of woken procs */
 	vm_offset_t						savp_faultaddr;			/* page fault address */
 	vm_offset_t						savp_ofaultaddr;		/* old page fault address */
 	LIST_HEAD(, proc)				savp_proccache; 		/* list of available procs */
 	int								savp_ncached;			/* list length */
 	SIMPLEQ_HEAD(, sadata_upcall)	savp_upcalls; 			/* pending upcalls */
+
+	struct thread					*savp_thread;			/* thread on "virtual processor" */
+	struct thread					*savp_blocker;			/* recently blocked thread */
+	struct thread					*savp_wokenq_head; 		/* list of woken thread */
+	struct thread					**savp_wokenq_tailp; 	/* list of woken thread */
 };
 
 struct sadata {
@@ -120,17 +125,17 @@ struct sadata_upcall *sadata_upcall_alloc(int);
 void				sadata_upcall_free(struct sadata_upcall *);
 
 void		sa_release(struct proc *);
-void		sa_switch(struct lwp *, int);
-void		sa_preempt(struct lwp *);
-void		sa_yield(struct lwp *);
-int			sa_upcall(struct lwp *, int, struct lwp *, struct lwp *, size_t, void *);
+void		sa_switch(struct proc *, int);
+void		sa_preempt(struct proc *);
+void		sa_yield(struct proc *);
+int			sa_upcall(struct proc *, int, struct proc *, struct proc *, size_t, void *);
 
 void		sa_putcachelwp(struct proc *, struct lwp *);
 struct lwp 	*sa_getcachelwp(struct sadata_vp *);
 
 
-void		sa_unblock_userret(struct lwp *);
-void		sa_upcall_userret(struct lwp *);
-void		cpu_upcall(struct lwp *, int, int, int, void *, void *, void *, sa_upcall_t);
+void		sa_unblock_userret(struct proc *);
+void		sa_upcall_userret(struct proc *);
+void		cpu_upcall(struct proc *, int, int, int, void *, void *, void *, sa_upcall_t);
 
 #endif /* !_SYS_SAVAR_H_ */

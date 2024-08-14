@@ -809,6 +809,8 @@ thread_ltsleep(chan, pri, wmesg, timo, interlock)
 			}
 		}
 		td->td_stat = SSLEEP;
+		//u.u_ru.ru_nvcsw++;
+		//thread_swtch(p);
 		/* switch counter? */
 resume:
 		td->td_flag &= ~TD_SINTR;
@@ -1088,5 +1090,103 @@ thread_kill(p, signo, tid)
 
 out:
 	return (error);
+}
+
+
+void
+thread_idle_check(p)
+	struct proc *p;
+{
+	if (u.u_procp != curproc) {
+		idle_check();
+	} else {
+		u.u_procp = curproc;
+	}
+	p = u.u_procp;
+}
+
+void
+thread_swtch(p)
+	struct proc *p;
+{
+	register struct thread *tp, *tq;
+	register int n;
+	struct thread *tdp, *tdq;
+	struct threadhd *tqs;
+	char pri;
+
+	tqs = &p->p_threadrq;
+
+	if (u.u_threado != p->p_curthread) {
+		thread_idle_check(p);
+	} else {
+		u.u_threado = p->p_curthread;
+	}
+
+loop:
+#ifdef DIAGNOSTIC
+	for(tp = TAILQ_FIRST(tqs); tp; tp = TAILQ_NEXT(tp, td_link)) {
+		if (tp->td_stat != SRUN) {
+			panic("thread_swtch SRUN");
+		}
+	}
+#endif
+	tdp = NULL;
+	tq = NULL;
+	n = p->p_nthreads;	/* single run queue per process */
+
+	/*
+	 * search for highest-priority runnable process
+	 */
+	for (tp = TAILQ_FIRST(tqs); tp; tp = TAILQ_NEXT(tp, td_link)) {
+		if ((tp->td_flag & TD_INMEM) && tp->td_pri < n) {
+			tdp = tp;
+			tdq = tq;
+			n = tp->td_pri;
+		}
+		tq = tp;
+	}
+
+	/*
+	 * if no process is runnable, idle.
+	 */
+	tp = tdp;
+	if (tp == NULL) {
+
+		goto loop;
+	}
+	if (tdq) {
+		TAILQ_INSERT_AFTER(tqs, tdq, tp, td_link);
+	} else {
+		TAILQ_INSERT_HEAD(tqs, tp, td_link);
+	}
+	pri = n;
+	thread_setpri(p, tp);
+}
+
+void
+thread_yield(p)
+	struct proc *p;
+{
+	struct thread *td;
+
+	td = p->p_curthread;
+	td->td_pri = thread_usrprimask(p);
+	td->td_stat = SRUN;
+	thread_setrq(p, td);
+	td->td_procp->p_stats->p_ru.ru_nvcsw++;
+	thread_swtch(p);
+}
+
+void
+thread_preempt(p, td)
+	struct proc *p;
+	struct thread *td;
+{
+	td->td_pri = thread_usrprimask(p);
+	td->td_stat = SRUN;
+	thread_setrq(p, td);
+	td->td_procp->p_stats->p_ru.ru_nvcsw++;
+	thread_swtch(p);
 }
 #endif

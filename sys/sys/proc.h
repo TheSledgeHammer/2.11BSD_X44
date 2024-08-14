@@ -367,6 +367,7 @@ void		reschedule(struct proc *);
 void		procinit(struct proc *);
 void		rqinit(void);
 void		sqinit(void);
+void		idle_check(void);
 int 		chgproccnt(uid_t, int);
 void		pgdelete(struct pgrp *);
 int			leavepgrp(struct proc *);
