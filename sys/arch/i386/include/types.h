@@ -60,6 +60,8 @@ typedef unsigned long					__psize_t;
 typedef unsigned long					__vaddr_t;
 typedef unsigned long					__vsize_t;
 
+typedef	__volatile unsigned int		    		__cpu_simple_lock_t;
+
 /*
  * Basic integral types.  Omit the typedef if
  * not possible for a machine/compiler combination.
@@ -70,29 +72,29 @@ typedef unsigned long					__vsize_t;
 
 /* 7.18.1.1 Exact-width integer types */
 
-typedef	signed char			 			__int8_t;
+typedef	signed char			 		__int8_t;
 typedef	unsigned char					__uint8_t;
-typedef	short int						__int16_t;
-typedef	unsigned short int     			__uint16_t;
-typedef	int								__int32_t;
-typedef	unsigned int	       			__uint32_t;
+typedef	short int					__int16_t;
+typedef	unsigned short int     				__uint16_t;
+typedef	int						__int32_t;
+typedef	unsigned int	       				__uint32_t;
 #ifdef __LP64__
 typedef	__COMPILER_INT64__				__int64_t;
-typedef	__COMPILER_UINT64__    			__uint64_t;
+typedef	__COMPILER_UINT64__    				__uint64_t;
 #else
 /* LONGLONG */
 typedef	long long int					__int64_t;
 /* LONGLONG */
-typedef	unsigned long long int 			__uint64_t;
+typedef	unsigned long long int 				__uint64_t;
 #endif
 
 /* 7.18.1.2 Minimum-width integer types */
 
-typedef	signed char		  				int_least8_t;
+typedef	signed char		  			int_least8_t;
 typedef	unsigned char		 			uint_least8_t;
-typedef	short int		 				int_least16_t;
+typedef	short int		 			int_least16_t;
 typedef	unsigned short int				uint_least16_t;
-typedef	int			 					int_least32_t;
+typedef	int			 			int_least32_t;
 typedef	unsigned int					uint_least32_t;
 #ifdef __LP64__
 typedef	__COMPILER_INT64__	 			int_least64_t;
@@ -101,16 +103,16 @@ typedef	__COMPILER_UINT64__				uint_least64_t;
 /* LONGLONG */
 typedef	long long int		 			int_least64_t;
 /* LONGLONG */
-typedef	unsigned long long int			uint_least64_t;
+typedef	unsigned long long int				uint_least64_t;
 #endif
 
 /* 7.18.1.3 Fastest minimum-width integer types */
 
-typedef	int			   					int_fast8_t;
+typedef	int			   			int_fast8_t;
 typedef	unsigned int		 	 		uint_fast8_t;
-typedef	int			  					int_fast16_t;
+typedef	int			  			int_fast16_t;
 typedef	unsigned int		 			uint_fast16_t;
-typedef	int			  					int_fast32_t;
+typedef	int			  			int_fast32_t;
 typedef	unsigned int		 			uint_fast32_t;
 #ifdef __LP64__
 typedef	__COMPILER_INT64__	  			int_fast64_t;
@@ -119,54 +121,54 @@ typedef	__COMPILER_UINT64__	 			uint_fast64_t;
 /* LONGLONG */
 typedef	long long int		  			int_fast64_t;
 /* LONGLONG */
-typedef	unsigned long long int	 		uint_fast64_t;
+typedef	unsigned long long int	 			uint_fast64_t;
 #endif
 
 /* 7.18.1.4 Integer types capable of holding object pointers */
 
-typedef	long							__intptr_t;
+typedef	long						__intptr_t;
 typedef	unsigned long					__uintptr_t;
 
 /* 7.18.1.5 Greatest-width integer types */
 
 #ifdef __LP64__
-typedef	__COMPILER_INT64__	      		intmax_t;
-typedef	unsigned __COMPILER_INT64__ 	uintmax_t;
+typedef	__COMPILER_INT64__	      			intmax_t;
+typedef	unsigned __COMPILER_INT64__ 			uintmax_t;
 #else
 /* LONGLONG */
-typedef	long long int		      		intmax_t;
+typedef	long long int		      			intmax_t;
 /* LONGLONG */
-typedef	unsigned long long int	  		uintmax_t;
+typedef	unsigned long long int	  			uintmax_t;
 #endif
 
 #define	__BIT_TYPES_DEFINED__
 
 #ifdef __LP64__
 /* 64-bit */
-typedef	__int64_t						__ptrdiff_t;
-typedef	__int64_t						__segsz_t;
-typedef	__uint64_t						__size_t;
-typedef	__int64_t						__ssize_t;
-typedef	__int64_t						__time_t;
+typedef	__int64_t					__ptrdiff_t;
+typedef	__int64_t					__segsz_t;
+typedef	__uint64_t					__size_t;
+typedef	__int64_t					__ssize_t;
+typedef	__int64_t					__time_t;
 #else
 /* 32-bit */
-typedef	__int32_t						__ptrdiff_t;
-typedef	__int32_t						__segsz_t;
-typedef	__uint32_t						__size_t;
-typedef	__int32_t						__ssize_t;
-typedef	__int32_t						__time_t;
+typedef	__int32_t					__ptrdiff_t;
+typedef	__int32_t					__segsz_t;
+typedef	__uint32_t					__size_t;
+typedef	__int32_t					__ssize_t;
+typedef	__int32_t					__time_t;
 #endif
 
 /* Register size */
-typedef long							__register_t;
+typedef long						__register_t;
 typedef	unsigned long					__uregister_t;
 
 /* Wide character support types */
-typedef	__uint32_t						__wchar_t;
-typedef __uint32_t						__wint_t;
-typedef	__uint32_t						__rune_t;
-typedef	void 							*__wctrans_t;
-typedef	void 							*__wctype_t;
+typedef	__uint32_t					__wchar_t;
+typedef __uint32_t					__wint_t;
+typedef	__uint32_t					__rune_t;
+typedef	void 						*__wctrans_t;
+typedef	void 						*__wctype_t;
 
 /*
  * 7.18.2 Limits of specified-width integer types.
@@ -252,8 +254,8 @@ typedef	void 							*__wctype_t;
 #define	PTRDIFF_MAX			INTPTR_MAX
 
 /* Limits of sig_atomic_t */
-#define	SIG_ATOMIC_MIN		INT32_MIN
-#define	SIG_ATOMIC_MAX		INT32_MAX
+#define	SIG_ATOMIC_MIN			INT32_MIN
+#define	SIG_ATOMIC_MAX			INT32_MAX
 
 /* Limit of size_t */
 #ifndef	SIZE_MAX
