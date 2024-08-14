@@ -1115,13 +1115,13 @@ thread_swtch(p)
 	struct threadhd *tqs;
 	char pri;
 
-	tqs = &p->p_threadrq;
-
 	if (u.u_threado != p->p_curthread) {
 		thread_idle_check(p);
 	} else {
 		u.u_threado = p->p_curthread;
 	}
+	
+	tqs = &p->p_threadrq;
 
 loop:
 #ifdef DIAGNOSTIC
