@@ -45,14 +45,13 @@ __RCSID("$NetBSD: pthread_cond.c,v 1.14.2.2.2.1 2005/04/08 21:57:47 tron Exp $")
 
 #include "pthread.h"
 #include "pthread_int.h"
+#include "pthread_sys.h"
 
 #ifdef PTHREAD_COND_DEBUG
 #define SDPRINTF(x) DPRINTF(x)
 #else
 #define SDPRINTF(x)
 #endif
-
-int	_sys_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 
 extern int pthread__started;
 
@@ -385,7 +384,7 @@ pthread_cond_wait_nothread(pthread_t self, pthread_mutex_t *mutex,
 	 */
 	pthread__testcancel(self);
 	pthread_mutex_unlock(mutex);
-	retval = _sys_select(0, NULL, NULL, NULL, tvp);
+	retval = pthread_sys_select(0, NULL, NULL, NULL, tvp);
 	pthread_mutex_lock(mutex);
 	pthread__testcancel(self);
 

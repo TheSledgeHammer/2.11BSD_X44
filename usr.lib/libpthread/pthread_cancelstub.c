@@ -39,6 +39,10 @@
 #include <sys/cdefs.h>
 __RCSID("$NetBSD: pthread_cancelstub.c,v 1.8 2003/11/24 23:23:17 cl Exp $");
 
+
+#include "pthread_sys.c"
+
+#ifdef notyet
 /*
  * This is necessary because the fsync_range() name is always weak (it is
  * not a POSIX function).
@@ -387,3 +391,4 @@ __strong_alias(_select, select)
 __strong_alias(_wait4, wait4)
 __strong_alias(_write, write)
 __strong_alias(_writev, writev)
+#endif
