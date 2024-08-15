@@ -58,10 +58,10 @@ int	pthread__cancel_stub_binder;
 #include "pthread_int.h"
 #include "pthread_sys.h"
 
-#define TESTCANCEL(id) 	do {					\
-	if (__predict_false((id)->pt_cancel)) {		\
-		pthread_exit(PTHREAD_CANCELED);			\
-	} 											\
+#define TESTCANCEL(id) 	do {			\
+	if (__predict_false((id)->pt_cancel)) {	\
+		pthread_exit(PTHREAD_CANCELED);	\
+	} 					\
 } while (/*CONSTCOND*/0)
 
 int
@@ -143,10 +143,10 @@ pthread_sys_msync(void *addr, size_t len, int flags)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __syscall(SYS_msync, addr, len, flags);
-    TESTCANCEL(self);
-
-    return retval;
+	retval = __syscall(SYS_msync, addr, len, flags);
+	TESTCANCEL(self);
+	
+	return retval;
 }
 
 int
@@ -158,10 +158,10 @@ pthread_sys_open(const char *path, int flags, ...)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __syscall(SYS_open, path, flags, va_arg(ap, mode_t));
-    TESTCANCEL(self);
-
-    return retval;
+    	retval = __syscall(SYS_open, path, flags, va_arg(ap, mode_t));
+    	TESTCANCEL(self);
+	
+	return retval;
 }
 
 int
@@ -172,10 +172,10 @@ pthread_sys_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = ENOSYS;
-    TESTCANCEL(self);
-
-    return retval;
+	retval = ENOSYS;
+	TESTCANCEL(self);
+	
+	return retval;
 }
 
 ssize_t
@@ -186,10 +186,10 @@ pthread_sys_pread(int d, void *buf, size_t nbytes, off_t offset)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = pread(d, buf, nbytes, offset);
-    TESTCANCEL(self);
-
-    return retval;
+	retval = pread(d, buf, nbytes, offset);
+	TESTCANCEL(self);
+	
+	return retval;
 }
 
 ssize_t
@@ -200,10 +200,10 @@ pthread_sys_pwrite(int d, const void *buf, size_t nbytes, off_t offset)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = pwrite(d, buf, nbytes, offset);
-    TESTCANCEL(self);
-
-    return retval;
+	retval = pwrite(d, buf, nbytes, offset);
+	TESTCANCEL(self);
+	
+	return retval;
 }
 
 int
@@ -214,10 +214,10 @@ pthread_sys_read(int d, void *buf, size_t nbytes)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __syscall(SYS_read, d, buf, nbytes);
-    TESTCANCEL(self);
-
-    return retval;
+	retval = __syscall(SYS_read, d, buf, nbytes);
+	TESTCANCEL(self);
+	
+	return retval;
 }
 
 int
@@ -228,10 +228,10 @@ pthread_sys_readv(int d, const struct iovec *iov, int iovcnt)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __syscall(SYS_readv, d, iov, iovcnt);
-    TESTCANCEL(self);
-
-    return retval;
+	retval = __syscall(SYS_readv, d, iov, iovcnt);
+	TESTCANCEL(self);
+	
+	return retval;
 }
 
 int
@@ -242,10 +242,10 @@ pthread_sys_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfd
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __syscall(SYS_select, nfds, readfds, writefds, exceptfds, timeout);
-    TESTCANCEL(self);
-
-    return retval;
+	retval = __syscall(SYS_select, nfds, readfds, writefds, exceptfds, timeout);
+	TESTCANCEL(self);
+	
+	return retval;
 }
 
 int
@@ -255,8 +255,9 @@ pthread_sys_wait4(pid_t wpid, int *status, int options, struct rusage *rusage)
 	pthread_t self;
 
 	self = pthread__self();
-    retval = __syscall(SYS_wait4, wpid, status, options, rusage);
-    TESTCANCEL(self);
+	TESTCANCEL(self);
+	retval = __syscall(SYS_wait4, wpid, status, options, rusage);
+	TESTCANCEL(self);
 
 	return retval;
 }
@@ -269,8 +270,8 @@ pthread_sys_write(int d, const void *buf, size_t nbytes)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __syscall(SYS_write, d, buf, nbytes);
-    TESTCANCEL(self);
+	retval = __syscall(SYS_write, d, buf, nbytes);
+	TESTCANCEL(self);
 
 	return retval;
 }
@@ -283,8 +284,8 @@ pthread_sys_writev(int d, const struct iovec *iov, int iovcnt)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __syscall(SYS_writev, d, iov, iovcnt);
-    TESTCANCEL(self);
+	retval = __syscall(SYS_writev, d, iov, iovcnt);
+	TESTCANCEL(self);
 
 	return retval;
 }
