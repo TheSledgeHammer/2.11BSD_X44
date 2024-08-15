@@ -48,8 +48,7 @@
 
 __BEGIN_DECLS
 int	pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
-int	pthread_create(pthread_t *, const pthread_attr_t *, 
-	    void *(*)(void *), void *);
+int	pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *);
 void	pthread_exit(void *) __attribute__((__noreturn__));
 int	pthread_join(pthread_t, void **);
 int	pthread_equal(pthread_t, pthread_t);
@@ -66,10 +65,8 @@ int	pthread_attr_getguardsize(const pthread_attr_t *, size_t *);
 int	pthread_attr_setguardsize(pthread_attr_t *, size_t);
 int	pthread_attr_getinheritsched(const pthread_attr_t *, int *);
 int	pthread_attr_setinheritsched(pthread_attr_t *, int);
-int	pthread_attr_getschedparam(const pthread_attr_t *,
-    struct sched_param *);
-int	pthread_attr_setschedparam(pthread_attr_t *,
-    const struct sched_param *);
+int	pthread_attr_getschedparam(const pthread_attr_t *, struct sched_param *);
+int	pthread_attr_setschedparam(pthread_attr_t *, const struct sched_param *);
 int	pthread_attr_getscope(const pthread_attr_t *, int *);
 int	pthread_attr_setscope(pthread_attr_t *, int);
 int	pthread_attr_getstack(const pthread_attr_t *, void **, size_t *);
@@ -80,8 +77,7 @@ int	pthread_attr_getstackaddr(const pthread_attr_t *, void **);
 int	pthread_attr_setstackaddr(pthread_attr_t *, void *);
 int	pthread_attr_getdetachstate(const pthread_attr_t *, int *);
 int	pthread_attr_setdetachstate(pthread_attr_t *, int);
-int	pthread_attr_getname_np(const pthread_attr_t *, char *,
-	    size_t, void **);
+int	pthread_attr_getname_np(const pthread_attr_t *, char *, size_t, void **);
 int	pthread_attr_setname_np(pthread_attr_t *, const char *, void *);
 
 int	pthread_mutex_init(pthread_mutex_t *, const pthread_mutexattr_t *);
@@ -97,8 +93,7 @@ int	pthread_mutexattr_settype(pthread_mutexattr_t *attr, int);
 int	pthread_cond_init(pthread_cond_t *, const pthread_condattr_t *);
 int	pthread_cond_destroy(pthread_cond_t *);
 int	pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
-int	pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *,
-	    const struct timespec *);
+int	pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, const struct timespec *);
 int	pthread_cond_signal(pthread_cond_t *);
 int	pthread_cond_broadcast(pthread_cond_t *);
 int	pthread_condattr_init(pthread_condattr_t *);
@@ -145,23 +140,19 @@ int	pthread_spin_lock(pthread_spinlock_t *);
 int	pthread_spin_trylock(pthread_spinlock_t *);
 int	pthread_spin_unlock(pthread_spinlock_t *);
 
-int	pthread_rwlock_init(pthread_rwlock_t *,
-	    const pthread_rwlockattr_t *);
+int	pthread_rwlock_init(pthread_rwlock_t *, const pthread_rwlockattr_t *);
 int	pthread_rwlock_destroy(pthread_rwlock_t *);
 int	pthread_rwlock_rdlock(pthread_rwlock_t *);
 int	pthread_rwlock_tryrdlock(pthread_rwlock_t *);
 int	pthread_rwlock_wrlock(pthread_rwlock_t *);
 int	pthread_rwlock_trywrlock(pthread_rwlock_t *);
-int	pthread_rwlock_timedrdlock(pthread_rwlock_t *,
-	    const struct timespec *);
-int	pthread_rwlock_timedwrlock(pthread_rwlock_t *,
-	    const struct timespec *);
+int	pthread_rwlock_timedrdlock(pthread_rwlock_t *, const struct timespec *);
+int	pthread_rwlock_timedwrlock(pthread_rwlock_t *, const struct timespec *);
 int	pthread_rwlock_unlock(pthread_rwlock_t *);
 int	pthread_rwlockattr_init(pthread_rwlockattr_t *);
 int	pthread_rwlockattr_destroy(pthread_rwlockattr_t *);
 
-int	pthread_barrier_init(pthread_barrier_t *,
-	    const pthread_barrierattr_t *, unsigned int);
+int	pthread_barrier_init(pthread_barrier_t *, const pthread_barrierattr_t *, unsigned int);
 int	pthread_barrier_wait(pthread_barrier_t *);
 int	pthread_barrier_destroy(pthread_barrier_t *);
 int	pthread_barrierattr_init(pthread_barrierattr_t *);
@@ -204,20 +195,20 @@ __END_DECLS
 /*
  * Maximum length of a thread's name, including the terminating NUL.
  */
-#define	PTHREAD_MAX_NAMELEN_NP	32
+#define	PTHREAD_MAX_NAMELEN_NP			32
 
 /*
  * Mutex attributes.
  */
-#define	PTHREAD_MUTEX_NORMAL		0
-#define	PTHREAD_MUTEX_ERRORCHECK	1
-#define	PTHREAD_MUTEX_RECURSIVE		2
-#define	PTHREAD_MUTEX_DEFAULT		PTHREAD_MUTEX_NORMAL
+#define	PTHREAD_MUTEX_NORMAL			0
+#define	PTHREAD_MUTEX_ERRORCHECK		1
+#define	PTHREAD_MUTEX_RECURSIVE			2
+#define	PTHREAD_MUTEX_DEFAULT			PTHREAD_MUTEX_NORMAL
 
-#define PTHREAD_COND_INITIALIZER	_PTHREAD_COND_INITIALIZER
-#define PTHREAD_MUTEX_INITIALIZER	_PTHREAD_MUTEX_INITIALIZER
-#define PTHREAD_ONCE_INIT		_PTHREAD_ONCE_INIT
-#define PTHREAD_RWLOCK_INITIALIZER	_PTHREAD_RWLOCK_INITIALIZER
+#define PTHREAD_COND_INITIALIZER		_PTHREAD_COND_INITIALIZER
+#define PTHREAD_MUTEX_INITIALIZER		_PTHREAD_MUTEX_INITIALIZER
+#define PTHREAD_ONCE_INIT				_PTHREAD_ONCE_INIT
+#define PTHREAD_RWLOCK_INITIALIZER		_PTHREAD_RWLOCK_INITIALIZER
 #define PTHREAD_SPINLOCK_INITIALIZER	_PTHREAD_SPINLOCK_INITIALIZER
 
 #endif /* _LIB_PTHREAD_H */

@@ -48,9 +48,9 @@ typedef __cpu_simple_lock_t	pthread_spin_t;
 /*
  * Copied from PTQ_HEAD in pthread_queue.h
  */
-#define _PTQ_HEAD(name, type)	       					\
-struct name {								\
-	struct type *ptqh_first;/* first element */			\
+#define _PTQ_HEAD(name, type)	       							\
+struct name {													\
+	struct type *ptqh_first;/* first element */					\
 	struct type **ptqh_last;/* addr of last next element */		\
 }
 
@@ -111,18 +111,18 @@ struct	__pthread_mutex_st {
 #define	_PT_MUTEX_MAGIC	0x33330003
 #define	_PT_MUTEX_DEAD	0xDEAD0003
 
-#define _PTHREAD_MUTEX_INITIALIZER { _PT_MUTEX_MAGIC, 			\
-				    __SIMPLELOCK_UNLOCKED,		\
-				    __SIMPLELOCK_UNLOCKED,		\
-				    NULL,				\
-				    {NULL, NULL},			\
-				    NULL				\
-				  }
-	
+#define _PTHREAD_MUTEX_INITIALIZER { \
+	_PT_MUTEX_MAGIC, 				\
+	__SIMPLELOCK_UNLOCKED,			\
+	__SIMPLELOCK_UNLOCKED,			\
+	NULL,							\
+	{NULL, NULL},					\
+	NULL							\
+}
 
 struct	__pthread_mutexattr_st {
 	unsigned int	ptma_magic;
-	void	*ptma_private;
+	void			*ptma_private;
 };
 
 #define _PT_MUTEXATTR_MAGIC	0x44440004
@@ -137,22 +137,23 @@ struct	__pthread_cond_st {
 	struct pthread_queue_t	ptc_waiters;
 
 	pthread_mutex_t	*ptc_mutex;	/* Current mutex */
-	void	*ptc_private;
+	void			*ptc_private;
 };
 
 #define	_PT_COND_MAGIC	0x55550005
 #define	_PT_COND_DEAD	0xDEAD0005
 
-#define _PTHREAD_COND_INITIALIZER { _PT_COND_MAGIC,			\
-				   __SIMPLELOCK_UNLOCKED,		\
-				   {NULL, NULL},			\
-				   NULL,				\
-				   NULL  				\
-				 }
+#define _PTHREAD_COND_INITIALIZER { \
+	_PT_COND_MAGIC, 				\
+	__SIMPLELOCK_UNLOCKED,			\
+	{NULL, NULL},					\
+	NULL,							\
+	NULL							\
+}
 
 struct	__pthread_condattr_st {
 	unsigned int	ptca_magic;
-	void	*ptca_private;
+	void			*ptca_private;
 };
 
 #define	_PT_CONDATTR_MAGIC	0x66660006
@@ -160,7 +161,7 @@ struct	__pthread_condattr_st {
 
 struct	__pthread_once_st {
 	pthread_mutex_t	pto_mutex;
-	int	pto_done;
+	int				pto_done;
 };
 
 #define _PTHREAD_ONCE_INIT	{ PTHREAD_MUTEX_INITIALIZER, 0 }
@@ -168,7 +169,7 @@ struct	__pthread_once_st {
 struct	__pthread_spinlock_st {
 	unsigned int	pts_magic;
 	pthread_spin_t	pts_spin;
-	int		pts_flags;
+	int				pts_flags;
 };
 	
 #define	_PT_SPINLOCK_MAGIC	0x77770007
@@ -176,10 +177,11 @@ struct	__pthread_spinlock_st {
 #define _PT_SPINLOCK_PSHARED	0x00000001
 
 /* PTHREAD_SPINLOCK_INITIALIZER is an extension not specified by POSIX. */
-#define _PTHREAD_SPINLOCK_INITIALIZER { _PT_SPINLOCK_MAGIC,		\
-				       __SIMPLELOCK_UNLOCKED,		\
-				       0				\
-				     }
+#define _PTHREAD_SPINLOCK_INITIALIZER { \
+	_PT_SPINLOCK_MAGIC,					\
+	__SIMPLELOCK_UNLOCKED,				\
+	0									\
+}
 
 struct	__pthread_rwlock_st {
 	unsigned int	ptr_magic;
@@ -197,14 +199,15 @@ struct	__pthread_rwlock_st {
 #define	_PT_RWLOCK_MAGIC	0x99990009
 #define	_PT_RWLOCK_DEAD		0xDEAD0009
 
-#define _PTHREAD_RWLOCK_INITIALIZER { _PT_RWLOCK_MAGIC,			\
-				     __SIMPLELOCK_UNLOCKED,		\
-				     {NULL, NULL},			\
-				     {NULL, NULL},			\
-				     0,					\
-				     NULL,				\
-				     NULL,				\
-				   }
+#define _PTHREAD_RWLOCK_INITIALIZER { 	\
+	_PT_RWLOCK_MAGIC,					\
+	__SIMPLELOCK_UNLOCKED,				\
+	{NULL, NULL},						\
+	{NULL, NULL},						\
+	0,									\
+	NULL,								\
+	NULL,								\
+}
 
 struct	__pthread_rwlockattr_st {
 	unsigned int	ptra_magic;

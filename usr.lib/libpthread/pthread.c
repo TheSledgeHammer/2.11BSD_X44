@@ -41,7 +41,7 @@ __RCSID("$NetBSD: pthread.c,v 1.33.2.1 2004/08/30 10:01:22 tron Exp $");
 
 #include <err.h>
 #include <errno.h>
-#include <lwp.h>
+#include <proc.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>

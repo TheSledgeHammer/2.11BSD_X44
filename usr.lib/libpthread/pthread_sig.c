@@ -45,7 +45,7 @@ __RCSID("$NetBSD: pthread_sig.c,v 1.34 2004/03/24 20:01:37 lha Exp $");
 #define	__PTHREAD_SIGNAL_PRIVATE
 
 #include <errno.h>
-#include <lwp.h>
+#include <proc.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
