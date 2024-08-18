@@ -41,7 +41,7 @@ __RCSID("$NetBSD: pthread_lock.c,v 1.12 2004/03/14 12:49:31 he Exp $");
 
 #include <sys/types.h>
 #include <sys/lock.h>
-#include <sys/ras.h>
+#include <sys/atomic.h>
 
 #include <errno.h>
 #include <unistd.h>
@@ -60,45 +60,9 @@ __RCSID("$NetBSD: pthread_lock.c,v 1.12 2004/03/14 12:49:31 he Exp $");
 
 static int nspins = NSPINS;
 
-RAS_DECL(pthread__lock);
-
-static void
-pthread__ras_simple_lock_init(__cpu_simple_lock_t *alp)
-{
-
-	*alp = __SIMPLELOCK_UNLOCKED;
-}
-
-static int
-pthread__ras_simple_lock_try(__cpu_simple_lock_t *alp)
-{
-	__cpu_simple_lock_t old;
-
-	RAS_START(pthread__lock);
-	old = *alp;
-	*alp = __SIMPLELOCK_LOCKED;
-	RAS_END(pthread__lock);
-
-	return (old == __SIMPLELOCK_UNLOCKED);
-}
-
-static void
-pthread__ras_simple_unlock(__cpu_simple_lock_t *alp)
-{
-
-	*alp = __SIMPLELOCK_UNLOCKED;
-}
-
-static const struct pthread_lock_ops pthread__lock_ops_ras = {
-	pthread__ras_simple_lock_init,
-	pthread__ras_simple_lock_try,
-	pthread__ras_simple_unlock,
-};
-
 static void
 pthread__atomic_simple_lock_init(__cpu_simple_lock_t *alp)
 {
-
 	__cpu_simple_lock_init(alp);
 }
 
@@ -117,18 +81,12 @@ pthread__atomic_simple_unlock(__cpu_simple_lock_t *alp)
 }
 
 static const struct pthread_lock_ops pthread__lock_ops_atomic = {
-	pthread__atomic_simple_lock_init,
-	pthread__atomic_simple_lock_try,
-	pthread__atomic_simple_unlock,
+		.plo_init = pthread__atomic_simple_lock_init,
+		.plo_try = pthread__atomic_simple_lock_try,
+		.plo_unlock = pthread__atomic_simple_unlock,
 };
 
-/*
- * We default to pointing to the RAS primitives; we might need to use
- * locks early, but before main() starts.  This is safe, since no other
- * threads will be active for the process, so atomicity will not be
- * required.
- */
-const struct pthread_lock_ops *pthread__lock_ops = &pthread__lock_ops_ras;
+const struct pthread_lock_ops *pthread__lock_ops = &pthread__lock_ops_atomic;
 
 /*
  * Initialize the locking primitives.  On uniprocessors, we always
@@ -139,10 +97,8 @@ void
 pthread__lockprim_init(int ncpu)
 {
  
-	if (ncpu == 1 && rasctl(RAS_ADDR(pthread__lock),
-				RAS_SIZE(pthread__lock), RAS_INSTALL) == 0) {
-		pthread__lock_ops = &pthread__lock_ops_ras;
-		return;
+	if (ncpu == 1) {
+		/* do nothing currently */
 	}
 
 	pthread__lock_ops = &pthread__lock_ops_atomic;

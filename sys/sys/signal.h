@@ -49,9 +49,10 @@
 #define _SYS_SIGNAL_H_
 
 #include <machine/signal.h>
+#define _NSIG		32
 
 #ifndef	NSIG
-#define NSIG		32
+#define NSIG		_NSIG
 
 #define	SIGHUP		1		/* hangup */
 #define	SIGINT		2		/* interrupt */

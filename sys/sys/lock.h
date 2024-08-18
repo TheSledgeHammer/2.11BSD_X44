@@ -41,6 +41,7 @@
 #define	_SYS_LOCK_H_
 
 #include <machine/param.h>
+#include <machine/lock_machdep.h>
 
 /*
  * common lock object:
@@ -198,6 +199,7 @@ typedef struct lock       	*lock_t;
 //#define LOCKHOLDER_KTHREAD(h) 	((struct kthread *)LOCKHOLDER_DATA(h))
 //#define LOCKHOLDER_UTHREAD(h) 	((struct uthread *)LOCKHOLDER_DATA(h))
 
+#ifdef _KERNEL
 struct pgrp;
 
 void				lockinit(struct lock *, int, char *, int, int);
@@ -214,4 +216,6 @@ void				lockholder_init(struct lock_holder *);
 struct lock_holder 		*lockholder_create(void *, pid_t, struct pgrp *);
 void				lockholder_set(struct lock_holder *, void *, pid_t, struct pgrp *);
 struct lock_holder		*lockholder_get(struct lock_holder *);
+
+#endif /* _KERNEL */
 #endif /* !_SYS_LOCK_H_ */

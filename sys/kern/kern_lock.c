@@ -48,6 +48,7 @@
 
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
+#include <machine/lock_machdep.h>
 
 void	lock_pause(__volatile struct lock *, int);
 void	lock_acquire(__volatile struct lock *, int, int, int);
@@ -474,7 +475,7 @@ lock_object_acquire(lock)
 
 	s = intr_disable();
 	cpu->loc_my_ticket = atomic_inc_int_nv(&lock->lo_nxt_ticket);
-	while(lock->lo_can_serve[cpu->loc_my_ticket] != 1);
+	while (lock->lo_can_serve[cpu->loc_my_ticket] != 1);
 	intr_restore(s);
 }
 

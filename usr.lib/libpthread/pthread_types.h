@@ -57,6 +57,7 @@ struct name {													\
 _PTQ_HEAD(pthread_queue_t, __pthread_st);
 
 struct	__pthread_st;
+struct  __pthread_siginfo_st;
 struct	__pthread_attr_st;
 struct	__pthread_mutex_st;
 struct	__pthread_mutexattr_st;
@@ -68,7 +69,9 @@ struct	__pthread_rwlockattr_st;
 struct	__pthread_barrier_st;
 struct	__pthread_barrierattr_st;
 
+
 typedef struct __pthread_st *pthread_t;
+typedef struct __pthread_siginfo_st pthread_siginfo_t;
 typedef struct __pthread_attr_st pthread_attr_t;
 typedef struct __pthread_mutex_st pthread_mutex_t;
 typedef struct __pthread_mutexattr_st pthread_mutexattr_t;
@@ -81,6 +84,24 @@ typedef struct __pthread_rwlockattr_st pthread_rwlockattr_t;
 typedef struct __pthread_barrier_st pthread_barrier_t;
 typedef struct __pthread_barrierattr_st pthread_barrierattr_t;
 typedef int pthread_key_t;
+
+typedef pthread_siginfo_t siginfo_t;
+
+struct __pthread_siginfo_st {
+	int 			ptsi_signo;
+	int 			ptsi_code;
+	int				ptsi_errno;
+	union {
+		char		pad[128];
+		struct {
+			uid_t 	uid;
+			pid_t 	pid;
+		} proc;
+	} ptsi_data;
+#define ptsi_pad	ptsi_data.pad
+#define ptsi_uid	ptsi_data.proc.uid
+#define ptsi_pid	ptsi_data.proc.pid
+};
 
 struct	__pthread_attr_st {
 	unsigned int	pta_magic;
