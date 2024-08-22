@@ -468,8 +468,8 @@ lock_object_init(lock, slot, type, name, flags)
 	struct lock_object *lock;
 	int 					slot;
 	const struct lock_type 	*type;
-    const char				*name;
-    u_int					flags;
+	const char				*name;
+	u_int					flags;
 {
 	struct lock_object_cpu *node;
 	int i;
@@ -478,15 +478,15 @@ lock_object_init(lock, slot, type, name, flags)
 	node = lock_object_cpu_create(lock, slot, 0);
 	lock->lo_prev = NULL;
 	lock->lo_next = node;
-    lock->lo_prev_ticket = 0;
-    lock->lo_next_ticket = 0;
-    for (i = 1; i < slot; i++) {
-        lock->lo_can_serve[i] = 0;
-    }
-    lock->lo_can_serve[0] = 1;
+	lock->lo_prev_ticket = 0;
+	lock->lo_next_ticket = 0;
+	for (i = 1; i < slot; i++) {
+		lock->lo_can_serve[i] = 0;
+	}
+	lock->lo_can_serve[0] = 1;
 	lock->lo_name = name;
 	lock->lo_flags = flags;
-    atomic_store_relaxed(&lock->lo_prev, node);
+	atomic_store_relaxed(&lock->lo_prev, node);
 }
 
 /*
@@ -531,8 +531,8 @@ lock_object_release(lock, slot)
 		return;
 	}
 	atomic_store_release(&node->loc_my_ticket, 0);
-    lock->lo_can_serve[node->loc_my_ticket + 1] = 1;
-    lock->lo_can_serve[node->loc_my_ticket] = 0;
+	lock->lo_can_serve[node->loc_my_ticket + 1] = 1;
+	lock->lo_can_serve[node->loc_my_ticket] = 0;
 }
 
 /*
@@ -562,12 +562,12 @@ lock_object_lock_next(lock, node)
 	struct lock_object_cpu *next;
 
 	next = atomic_swap_ptr(&lock->lo_next, node);
-    lock->lo_next_ticket = atomic_load_relaxed(&next->loc_my_ticket);
-    while (lock->lo_can_serve[lock->lo_next_ticket]) {
-        lock->lo_next_ticket = atomic_load_aquire(&next->loc_my_ticket);
-    }
-    lock->lo_next = next;
-    lock->lo_prev = node;
+	lock->lo_next_ticket = atomic_load_relaxed(&next->loc_my_ticket);
+	while (lock->lo_can_serve[lock->lo_next_ticket]) {
+		lock->lo_next_ticket = atomic_load_aquire(&next->loc_my_ticket);
+	}
+	lock->lo_next = next;
+	lock->lo_prev = node;
 }
 
 /*
@@ -582,12 +582,12 @@ lock_object_lock_prev(lock, node)
 	struct lock_object_cpu *prev;
 
 	prev = atomic_swap_ptr(&lock->lo_prev, node);
-    lock->lo_prev_ticket = atomic_load_relaxed(&prev->loc_my_ticket);
-    while (lock->lo_can_serve[lock->lo_prev_ticket]) {
-        lock->lo_prev_ticket = atomic_load_aquire(&prev->loc_my_ticket);
-    }
-    lock->lo_prev = prev;
-    lock->lo_next = node;
+	lock->lo_prev_ticket = atomic_load_relaxed(&prev->loc_my_ticket);
+	while (lock->lo_can_serve[lock->lo_prev_ticket]) {
+		lock->lo_prev_ticket = atomic_load_aquire(&prev->loc_my_ticket);
+	}
+	lock->lo_prev = prev;
+	lock->lo_next = node;
 }
 
 /*
@@ -598,8 +598,8 @@ lock_object_lock_prev(lock, node)
 /* simple_lock_init */
 void
 simple_lock_init(lock, name)
-	struct lock_object 		*lock;
-	const char				*name;
+	struct lock_object *lock;
+	const char	*name;
 {
 	lock_object_init(lock, cpu_number(), NULL, name, NULL);
 }
