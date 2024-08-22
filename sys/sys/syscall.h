@@ -136,6 +136,7 @@
 #define	SYS_truncate	129
 #define	SYS_ftruncate	130
 #define	SYS_flock	131
+#define	SYS_sigtimedwait	132
 #define	SYS_sendto	133
 #define	SYS_shutdown	134
 #define	SYS_socketpair	135

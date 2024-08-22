@@ -91,7 +91,7 @@ struct	__pthread_st {
 	pthread_spin_t pt_flaglock;	/* lock on pt_flag */
 	int	pt_cancel;	/* Deferred cancellation */
 	int	pt_spinlocks;	/* Number of spinlocks held. */
-	int	pt_blockedlwp;	/* LWP/SA number when blocked */
+	int	pt_blockedp;		/* P/SA number when blocked */
 	int	pt_vpid;	/* VP number */
 	int	pt_blockgen;	/* SA_UPCALL_BLOCKED counter */
 	int	pt_unblockgen;	/* SA_UPCALL_UNBLOCKED counter */
@@ -142,7 +142,7 @@ struct	__pthread_st {
 	 * ourselves. Will be used by the upcall that's continuing us.
 	 */
 	pthread_t	pt_switchto;
-	ucontext_t*	pt_switchtouc;
+	ucontext_t	*pt_switchtouc;
 
 	/* Threads that are preempted with spinlocks held will be
 	 * continued until they unlock their spinlock. When they do

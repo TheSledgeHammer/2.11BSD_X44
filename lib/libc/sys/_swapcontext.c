@@ -1,7 +1,7 @@
-/*	$NetBSD: extern.h,v 1.9 2003/09/27 03:14:59 matt Exp $	*/
+/*	$NetBSD: _getcontext.c,v 1.3 2003/01/21 19:15:05 kleink Exp $	*/
 
 /*
- * Copyright (c) 1997 Christos Zoulas.  All rights reserved.
+ * Copyright (c) 1996 Christos Zoulas.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,20 +28,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <sys/cdefs.h>
+
 #include <ucontext.h>
 
-__BEGIN_DECLS
-void 		_resumecontext(void);
-const char 	*__strerror(int , char *, size_t);	/* TODO: Resolve  */
-const char 	*__strsignal(int , char *, size_t); /* TODO: Resolve  */
-char 		*__dtoa(double, int, int, int *, int *, char **);
-int 		__sysctl(int *, unsigned int, void *, size_t *, void *, size_t);
-
-//extern char *__minbrk;
-//int 		__getcwd(char *, size_t);
-//int 		__getlogin(char *, size_t);
-//int 		__setlogin(const char *);
-//struct sigaction;
-//int 		__sigaction_sigtramp(int, const struct sigaction *, struct sigaction *, const void *, int);
-__END_DECLS
+/*ARGSUSED*/
+int
+_swapcontext(oucp, ucp)
+	ucontext_t *oucp;
+	const ucontext_t *ucp;
+{
+	return (0);
+}

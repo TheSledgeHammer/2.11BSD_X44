@@ -111,6 +111,7 @@ assym.h: ${ARCHDIR}/genassym.cf
 .include "${.CURDIR}/string/Makefile.inc"
 .include "${.CURDIR}/sys/Makefile.inc"
 .include "${.CURDIR}/termios/Makefile.inc"
+.include "${.CURDIR}/thread/Makefile.inc"
 .include "${.CURDIR}/time/Makefile.inc"
 .include "${.CURDIR}/uuid/Makefile.inc"
 

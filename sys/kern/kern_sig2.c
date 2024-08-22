@@ -380,6 +380,103 @@ out:
 	return (u.u_error = error);
 }
 
+int
+sigtimedwait()
+{
+	register struct sigtimedwait_args {
+		syscallarg(sigset_t *) set;
+		syscallarg(int *) sig;
+		syscallarg(struct timespec *) timeout;
+	} *uap = (struct sigtimedwait_args *)u.u_ap;
+	sigset_t wanted, sigsavail;
+	register struct proc *p = u.u_procp;
+	struct timespec ts;
+	struct timeval tv;
+	int signo, error, s;
+	int timo = 0;
+
+	if (SCARG(uap, set) == 0 || SCARG(uap, sig) == 0) {
+		error = EINVAL;
+		goto out;
+	}
+	if (error == copyin(SCARG(uap, set), &wanted, sizeof(sigset_t))) {
+		goto out;
+	}
+
+	if (SCARG(uap, timeout)) {
+		long ms;
+
+		if ((error = copyin(SCARG(uap, timeout), &ts, sizeof(ts)))) {
+			goto out;
+		}
+
+		ms = (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
+		timo = mstohz(ms);
+		if (timo == 0 && ts.tv_sec == 0 && ts.tv_nsec > 0) {
+			timo = 1;
+		}
+		if (timo <= 0) {
+			error = EAGAIN;
+			goto out;
+		}
+
+		/*
+		 * Remember current mono_time, it would be used in
+		 * ECANCELED/ERESTART case.
+		 */
+		s = splclock();
+		tv = mono_time;
+		splx(s);
+	}
+
+	wanted |= sigcantmask;
+	while ((sigsavail = (wanted & p->p_sig)) == 0) {
+		error = tsleep(&u.u_signal[0], PPAUSE | PCATCH, "sigtimedwait", timo);
+	}
+
+	if (sigsavail & sigcantmask) {
+		error = EINTR;
+		goto out;
+	}
+
+	if (error) {
+		if (timo && error) {
+			struct timeval tvnow, tvtimo;
+			int err;
+
+			s = splclock();
+			tvnow = mono_time;
+			splx(s);
+
+			TIMESPEC_TO_TIMEVAL(&tvtimo, &ts);
+
+			/* compute how much time has passed since start */
+			timersub(&tvnow, &tv, &tvnow);
+			/* substract passed time from timeout */
+			timersub(&tvtimo, &tvnow, &tvtimo);
+
+			if (tvtimo.tv_sec < 0) {
+				error = EAGAIN;
+				goto out;
+			}
+
+			TIMEVAL_TO_TIMESPEC(&tvtimo, &ts);
+
+			if ((err = copyout(&ts, SCARG(uap, timeout), sizeof(ts)))) {
+				error = err;
+				goto out;
+			}
+		}
+		goto out;
+	}
+
+	signo = ffs(sigsavail);
+	p->p_sig &= ~sigmask(signo);
+	error = copyout(&signo, SCARG(uap, sig), sizeof(int));
+out:
+	return (u.u_error = error);
+}
+
 static int
 filt_sigattach(kn)
 	struct knote *kn;

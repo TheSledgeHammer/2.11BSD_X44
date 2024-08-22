@@ -48,18 +48,21 @@
  * array based queuing lock (ABQL)
  */
 struct lock_object_cpu {
-	__cpu_simple_lock_t			loc_my_ticket;
+	__cpu_simple_lock_t			loc_my_ticket;			/* current ticket */
 };
 
 struct lock_object {
-	struct lock_object_cpu	 	lo_cpus[NCPUS];
-	__cpu_simple_lock_t			lo_nxt_ticket;
-	int							lo_can_serve[NCPUS];
+	struct lock_object_cpu	 	lo_cpu_data[NCPUS];		/* lock array */
+	struct lock_object_cpu		*lo_next;				/* next lock in array */
+	struct lock_object_cpu		*lo_prev;				/* previous lock in array */
+	__cpu_simple_lock_t			lo_next_ticket;			/* next ticket */
+	__cpu_simple_lock_t			lo_prev_ticket;			/* previous ticket */
+	int							lo_can_serve[NCPUS];	/* can serve */
 
-	const struct lock_type		*lo_type;			/* unused */
-	const char 					*lo_name;			/* individual lock name. */
-	u_int						lo_flags;			/* flags. Unused */
-	//struct witness 				*lo_witness;	/* data for witness. Unused */
+	const struct lock_type		*lo_type;				/* type. unused */
+	const char 					*lo_name;				/* individual lock name. */
+	u_int						lo_flags;				/* flags. Unused */
+	//struct witness 				*lo_witness;		/* data for witness. Unused */
 };
 
 struct lock_type {

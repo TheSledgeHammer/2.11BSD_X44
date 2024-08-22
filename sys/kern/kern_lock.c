@@ -50,6 +50,8 @@
 #include <machine/cpufunc.h>
 #include <machine/lock_machdep.h>
 
+void 	lock_object_lock_next(struct lock_object *, struct lock_object_cpu *);
+void 	lock_object_lock_prev(struct lock_object *, struct lock_object_cpu *);
 void	lock_pause(__volatile struct lock *, int);
 void	lock_acquire(__volatile struct lock *, int, int, int);
 void	lkp_lock(__volatile struct lock *);
@@ -439,74 +441,153 @@ lock_acquire(lkp, error, extflags, wanted)
 /*
  * Lock-Object Implementation: Array-Based-Queuing-Lock.
  */
+
 /*
  * [Internal Use Only]:
- * Initialize Lock-Object
+ * Create a lock_object_cpu
+ */
+struct lock_object_cpu *
+lock_object_cpu_create(lock, slot, islocked)
+	struct lock_object *lock;
+	int slot, islocked;
+{
+	struct lock_object_cpu *node;
+
+	node = &lock->lo_cpu_data[slot];
+	bzero(node, sizeof(struct lock_object_cpu));
+	atomic_store_relaxed(&node->loc_my_ticket, islocked);
+	return (node);
+}
+
+/*
+ * [Internal Use Only]:
+ * Initialize lock_object
  */
 void
-lock_object_init(lock, type, name, flags)
-	struct lock_object 		*lock;
+lock_object_init(lock, slot, type, name, flags)
+	struct lock_object *lock;
+	int 					slot;
 	const struct lock_type 	*type;
     const char				*name;
     u_int					flags;
 {
-    bzero(lock->lo_cpus, sizeof(lock->lo_cpus));
+	struct lock_object_cpu *node;
+	int i;
 
-    lock->lo_nxt_ticket = 0;
-    for (int i = 1; i < cpu_number(); i++) {
-    	lock->lo_can_serve[i] = 0;
+	bzero(&lock->lo_cpu_data, sizeof(struct lock_object_cpu));
+	node = lock_object_cpu_create(lock, slot, 0);
+	lock->lo_prev = NULL;
+	lock->lo_next = node;
+    lock->lo_prev_ticket = 0;
+    lock->lo_next_ticket = 0;
+    for (i = 1; i < slot; i++) {
+        lock->lo_can_serve[i] = 0;
     }
     lock->lo_can_serve[0] = 1;
-
 	lock->lo_name = name;
 	lock->lo_flags = flags;
+    atomic_store_relaxed(&lock->lo_prev, node);
 }
 
 /*
  * [Internal Use Only]:
- * Acquire the lock
+ * Acquire the lock_object
  */
 void
-lock_object_acquire(lock)
-	struct lock_object 	*lock;
+lock_object_acquire(lock, slot)
+	struct lock_object *lock;
+	int slot;
 {
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
-	unsigned long s;
+	struct lock_object_cpu *node;
 
-	s = intr_disable();
-	cpu->loc_my_ticket = atomic_inc_int_nv(&lock->lo_nxt_ticket);
-	while (lock->lo_can_serve[cpu->loc_my_ticket] != 1);
-	intr_restore(s);
+	node = lock_object_cpu_create(lock, slot, 1);
+	if (lock->lo_can_serve[lock->lo_next_ticket] != 1) {
+		if (lock->lo_next == node) {
+			lock_object_lock_next(lock, node);
+		}
+		return;
+	}
+	if (lock->lo_can_serve[lock->lo_prev_ticket] != 1) {
+		if (lock->lo_prev == node) {
+			lock_object_lock_prev(lock, node);
+		}
+		return;
+	}
 }
 
 /*
  * [Internal Use Only]:
- * Release the lock
+ * Release the lock_object
  */
 void
-lock_object_release(lock)
-	struct lock_object 	*lock;
+lock_object_release(lock, slot)
+	struct lock_object *lock;
+	int slot;
 {
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
-	unsigned long s;
+	struct lock_object_cpu *node;
 
-	s = intr_disable();
-	lock->lo_can_serve[cpu->loc_my_ticket + 1] = 1;
-	lock->lo_can_serve[cpu->loc_my_ticket] = 0;
-	intr_restore(s);
+	node = &lock->lo_cpu_data[slot];
+	if (node == NULL) {
+		return;
+	}
+	atomic_store_release(&node->loc_my_ticket, 0);
+    lock->lo_can_serve[node->loc_my_ticket + 1] = 1;
+    lock->lo_can_serve[node->loc_my_ticket] = 0;
 }
 
 /*
  * [Internal Use Only]:
- * Try to obtain the lock
+ * Try to obtain the lock_object
  */
 int
-lock_object_try(lock)
+lock_object_try(lock, slot)
 	struct lock_object 	*lock;
+	int slot;
 {
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
+	struct lock_object_cpu *node;
 
-	return (!lock->lo_can_serve[cpu->loc_my_ticket]);
+	node = lock_object_cpu_create(lock, slot, 1);
+	return (!lock->lo_can_serve[node->loc_my_ticket]);
+}
+
+/*
+ * [Internal Use Only]:
+ * Acquire the next lock_object
+ */
+void
+lock_object_lock_next(lock, node)
+	struct lock_object *lock;
+	struct lock_object_cpu *node;
+{
+	struct lock_object_cpu *next;
+
+	next = atomic_swap_ptr(&lock->lo_next, node);
+    lock->lo_next_ticket = atomic_load_relaxed(&next->loc_my_ticket);
+    while (lock->lo_can_serve[lock->lo_next_ticket]) {
+        lock->lo_next_ticket = atomic_load_aquire(&next->loc_my_ticket);
+    }
+    lock->lo_next = next;
+    lock->lo_prev = node;
+}
+
+/*
+ * [Internal Use Only]:
+ * Acquire the prev lock_object
+ */
+void
+lock_object_lock_prev(lock, node)
+	struct lock_object *lock;
+	struct lock_object_cpu *node;
+{
+	struct lock_object_cpu *prev;
+
+	prev = atomic_swap_ptr(&lock->lo_prev, node);
+    lock->lo_prev_ticket = atomic_load_relaxed(&prev->loc_my_ticket);
+    while (lock->lo_can_serve[lock->lo_prev_ticket]) {
+        lock->lo_prev_ticket = atomic_load_aquire(&prev->loc_my_ticket);
+    }
+    lock->lo_prev = prev;
+    lock->lo_next = node;
 }
 
 /*
@@ -520,7 +601,7 @@ simple_lock_init(lock, name)
 	struct lock_object 		*lock;
 	const char				*name;
 {
-	lock_object_init(lock, NULL, name, NULL);
+	lock_object_init(lock, cpu_number(), NULL, name, NULL);
 }
 
 /*
@@ -531,7 +612,7 @@ void
 simple_lock(lock)
 	__volatile struct lock_object 	*lock;
 {
-	lock_object_acquire(lock);
+	lock_object_acquire(lock, cpu_number());
 }
 
 /*
@@ -542,7 +623,7 @@ void
 simple_unlock(lock)
 	__volatile struct lock_object 	*lock;
 {
-	lock_object_release(lock);
+	lock_object_release(lock, cpu_number());
 }
 
 /* simple_lock_try */
@@ -550,7 +631,7 @@ int
 simple_lock_try(lock)
 	__volatile struct lock_object 	*lock;
 {
-	return (lock_object_try(lock));
+	return (lock_object_try(lock, cpu_number()));
 }
 
 /* internal simple_lock */

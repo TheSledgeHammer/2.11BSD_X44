@@ -109,15 +109,15 @@ extern int pthread__sched_binder;
 extern struct pthread_queue_t pthread__nanosleeping;
 
 void *pthread__static_lib_binder[] = {
-	&pthread__cancel_stub_binder,
-	pthread_cond_init,
-	pthread_mutex_init,
-	pthread_rwlock_init,
-	pthread_barrier_init,
-	pthread_key_create,
-	pthread_setspecific,
-	&pthread__sched_binder,
-	&pthread__nanosleeping
+		&pthread__cancel_stub_binder,
+		pthread_cond_init,
+		pthread_mutex_init,
+		pthread_rwlock_init,
+		pthread_barrier_init,
+		pthread_key_create,
+		pthread_setspecific,
+		&pthread__sched_binder,
+		&pthread__nanosleeping
 };
 
 /*

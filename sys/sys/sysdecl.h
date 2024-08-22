@@ -132,6 +132,7 @@ extern int	rename();
 extern int	truncate();
 extern int	ftruncate();
 extern int	flock();
+extern int	sigtimedwait();
 extern int	sendto();
 extern int	shutdown();
 extern int	socketpair();

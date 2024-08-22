@@ -136,6 +136,7 @@ int	rename();
 int	truncate();
 int	ftruncate();
 int	flock();
+int	sigtimedwait();
 int	sendto();
 int	shutdown();
 int	socketpair();
@@ -437,7 +438,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    flock },				/* 131 = flock */
 	{ 0, 0,
-	    nosys },				/* 132 = unused */
+	    sigtimedwait },			/* 132 = sigtimedwait */
 	{ 0, 0,
 	    sendto },				/* 133 = sendto */
 	{ 0, 0,

@@ -112,6 +112,7 @@ struct sigaction {
 #define SA_RESTART		0x0002	/* restart system on signal return */
 #define	SA_DISABLE		0x0004	/* disable taking signals on alternate stack */
 #define SA_NOCLDSTOP	0x0008	/* do not generate SIGCHLD on child stop */
+#define SA_SIGINFO		0x0040	/* take sa_sigaction handler */
 
 /*
  * Flags for sigprocmask:

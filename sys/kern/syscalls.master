@@ -173,7 +173,7 @@
 129	STD			{ int truncate(); }
 130	STD			{ int ftruncate(); }
 131 STD     	{ int flock(); }
-132 UNIMPL
+132 STD		{ int sigtimedwait(); }
 133 STD     	{ int sendto(); }
 134 STD     	{ int shutdown(); }
 135 STD     	{ int socketpair(); }
