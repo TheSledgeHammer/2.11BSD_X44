@@ -40,11 +40,6 @@
 #ifndef _LIB_PTHREAD_SYS_H
 #define _LIB_PTHREAD_SYS_H
 
-#include <sys/syscall.h>
-
-extern int	__syscall(quad_t, ...);
-
-/* pthread syscall prototypes */
 __BEGIN_DECLS
 int		pthread_sys_accept(int, struct sockaddr *, socklen_t *);
 int		pthread_sys_close(int);

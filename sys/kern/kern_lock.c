@@ -525,14 +525,17 @@ lock_object_release(lock, slot)
 	int slot;
 {
 	struct lock_object_cpu *node;
+	int s;
 
 	node = &lock->lo_cpu_data[slot];
 	if (node == NULL) {
 		return;
 	}
 	atomic_store_release(&node->loc_my_ticket, 0);
+	s = intr_disable();
 	lock->lo_can_serve[node->loc_my_ticket + 1] = 1;
 	lock->lo_can_serve[node->loc_my_ticket] = 0;
+	intr_restore(s);
 }
 
 /*

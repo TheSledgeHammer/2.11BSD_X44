@@ -37,15 +37,19 @@
  *
  */
 
-#include <sys/cdefs.h>
+#ifdef _REENTRANT
+
+#include "namespace.h"
+#include "reentrant.h"
 
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/errno.h>
+#include <sys/syscall.h>
 
 #include <fcntl.h>
 
-#include "thread_libc.h"
+extern int	__syscall(quad_t, ...);
 
 int
 __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
@@ -229,4 +233,4 @@ __strong_alias(_wait4, __libc_wait4)
 __strong_alias(_write, __libc_write)
 __strong_alias(_writev, __libc_writev)
 
-
+#endif /* _REENTRANT */
