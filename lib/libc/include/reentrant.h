@@ -316,6 +316,7 @@ __END_DECLS
 #define	thr_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg)
 #define	thr_msgsnd(msgid, msgp, msgsz, msgflg)
 #define	thr_msync(addr, len, flags)
+#define thr_nanosleep(rqtp, rmtp)
 #define	thr_open(path, flags, ap)
 #define	thr_poll(fds, nfds, timeout)
 #define	thr_pread(d, buf, nbytes, offset)
