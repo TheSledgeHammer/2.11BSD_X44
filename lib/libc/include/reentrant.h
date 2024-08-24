@@ -227,6 +227,7 @@ int 	__libc_fsync_range(int, int, off_t, off_t);
 ssize_t __libc_msgrcv(int, void *, size_t, long, int);
 int 	__libc_msgsnd(int, const void *, size_t, int);
 int 	__libc_msync(void *, size_t, int);
+int		__libc_nanosleep(const struct timespec *, struct timespec *);
 int 	__libc_open(const char *, int, va_list);
 int 	__libc_poll(struct pollfd *, nfds_t, int);
 ssize_t __libc_pread(int, void *, size_t, off_t);
@@ -253,6 +254,7 @@ __END_DECLS
 #define	thr_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg) 	__libc_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg)
 #define	thr_msgsnd(msgid, msgp, msgsz, msgflg)			__libc_msgsnd(msgid, msgp, msgsz, msgflg)
 #define	thr_msync(addr, len, flags)						__libc_msync(addr, len, flags)
+#define thr_nanosleep(rqtp, rmtp)						__libc_nanosleep(rqtp, rmtp)
 #define	thr_open(path, flags, ap)						__libc_open(path, flags, ap)
 #define	thr_poll(fds, nfds, timeout)					__libc_poll(fds, nfds, timeout)
 #define	thr_pread(d, buf, nbytes, offset)				__libc_pread(d, buf, nbytes, offset)

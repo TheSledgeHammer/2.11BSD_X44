@@ -37,13 +37,14 @@
  *
  */
 
-#ifndef _LIB_PTHREAD_SYS_H
-#define _LIB_PTHREAD_SYS_H
+#ifndef _LIB_PTHREAD_SYSCALLS_H
+#define _LIB_PTHREAD_SYSCALLS_H
 
 __BEGIN_DECLS
 int		pthread_sys_accept(int, struct sockaddr *, socklen_t *);
 int		pthread_sys_close(int);
 int		pthread_sys_connect(int, const struct sockaddr *, socklen_t);
+int		pthread_sys_execve(const char *, char *const *, char *const *);
 int		pthread_sys_fcntl(int, int, ...);
 int		pthread_sys_fsync(int);
 int		pthread_sys_fsync_range(int, int, off_t, off_t);
@@ -51,15 +52,20 @@ ssize_t	pthread_sys_msgrcv(int, void *, size_t, long, int);
 int		pthread_sys_msgsnd(int, const void *, size_t, int);
 int		pthread_sys_msync(void *, size_t, int);
 int		pthread_sys_open(const char *, int, ...);
+int		pthread_sys_nanosleep(const struct timespec *, struct timespec *);
 int		pthread_sys_poll(struct pollfd *, nfds_t, int);
 ssize_t	pthread_sys_pread(int, void *, size_t, off_t);
 ssize_t	pthread_sys_pwrite(int, const void *, size_t, off_t);
 int		pthread_sys_read(int, void *, size_t);
 int		pthread_sys_readv(int, const struct iovec *, int);
 int		pthread_sys_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+int		pthread_sys_sigaction(int, const struct sigaction *, struct sigaction *);
+int		pthread_sys_sigmask(int how, const sigset_t *, sigset_t *);
+int		pthread_sys_sigsuspend(const sigset_t *);
+int		pthread_sys_timedwait(const sigset_t * __restrict, siginfo_t * __restrict, const struct timespec * __restrict);
 int		pthread_sys_wait4(pid_t, int *, int, struct rusage *);
 int		pthread_sys_write(int, const void *, size_t);
 int		pthread_sys_writev(int, const struct iovec *, int);
 __END_DECLS
 
-#endif /* _LIB_PTHREAD_SYS_H */
+#endif /* _LIB_PTHREAD_SYSCALLS_H */

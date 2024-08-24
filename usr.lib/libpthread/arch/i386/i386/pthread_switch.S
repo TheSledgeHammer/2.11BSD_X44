@@ -240,7 +240,7 @@ ENTRY(pthread__locked_switch)
 	 * its queue lock.
 	 */
 	cmpl	$0, PT_NEXT(%eax)
-	je	locked_no_old_preempt
+	je		locked_no_old_preempt
 
 	/*
 	 * Yes, it was. Stash the thread we were going to
@@ -261,7 +261,7 @@ ENTRY(pthread__locked_switch)
 	movl	%ecx, %eax
 	movl	%edx, %ecx
 	movl	$1, %edx
-	jmp	pthread__switch_away
+	jmp		pthread__switch_away
 	NOTREACHED
 
 locked_no_old_preempt:		
@@ -283,7 +283,7 @@ locked_no_old_preempt:
 	movl	%ecx, %eax
 	movl	PT_NEXT(%ecx), %ecx
 	movl	$-2, %edx
-	jmp	pthread__switch_away
+	jmp		pthread__switch_away
 	NOTREACHED
 	
 locked_no_new_preempt:		
@@ -299,64 +299,3 @@ locked_return_point:
 	popl	%ebp
 	ret
 
-	
-	
-/*
- * void	pthread__upcall_switch(pthread_t self, pthread_t next);
- *
- * Quit an upcall, recycle it, and jump to the selected thread.
- */
-ENTRY(pthread__upcall_switch)
-	/* Save args into registers so we can stop using the old stack. */
-	pushl	%ebp
-	movl	%esp, %ebp
-	/* No need to save %esi, %edi;  this function never returns */
-	PIC_PROLOGUE
-	movl	8(%ebp), %eax		/* eax holds the upcall thread       */
-	movl	12(%ebp), %ecx		/* ecx holds the thread to switch to */
-	incl	PT_SPINLOCKS(%ecx)
-	
-	STACK_SWITCH
-	
-	/* Check if the upcall was preempted and continued. */
-	cmpl	$0, PT_NEXT(%eax)
-	je	upcall_no_old_preempt
-	/*
-	 * Yes, it was. Stash the thread we were going to
-	 * switch to, and go to the next thread in the chain.
-	 */
-	movl	%esi, PT_SWITCHTOUC(%eax)
-	movl	%ecx, PT_SWITCHTO(%eax)
-	movl	PT_NEXT(%eax), %edx
-	movl	%ecx, %eax
-	movl	%edx, %ecx
-	movl	$1, %edx
-	jmp	pthread__switch_away
-	NOTREACHED
-	
-upcall_no_old_preempt:		
-	pushl	%eax			/* caller save */
-	pushl	%ecx			/* caller save */
-	pushl   %ecx			/* pthread_t new */
-	pushl   %eax			/* pthread_t old */
-	call    PIC_PLT(_C_LABEL(pthread__sa_recycle))
-	addl	$8, %esp
-	popl	%ecx
-	popl	%eax
-	decl	PT_SPINLOCKS(%ecx)
-	/* Check if we were preempted while holding the fake lock. */
-	cmpl	$0, PT_NEXT(%ecx)
-	je	upcall_no_new_preempt
-	/* Yes, we were. Bummer. Go to the next element in the chain. */
-	movl	%esi, PT_SWITCHTOUC(%ecx)
-	movl	%ecx, PT_SWITCHTO(%ecx)
-	movl	%ecx, %eax
-	movl	PT_NEXT(%ecx), %ecx
-	movl	$-1, %edx
-	jmp	pthread__switch_away
-	NOTREACHED
-	
-upcall_no_new_preempt:		
-	pushl	%esi
-	call	*PIC_GOTOFF(_C_LABEL(_md_setcontext_u))
-	NOTREACHED

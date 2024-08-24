@@ -49,14 +49,11 @@
 __BEGIN_DECLS
 int	pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
 int	pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *);
-void	pthread_exit(void *) __attribute__((__noreturn__));
+void pthread_exit(void *) __attribute__((__noreturn__));
 int	pthread_join(pthread_t, void **);
 int	pthread_equal(pthread_t, pthread_t);
-pthread_t	pthread_self(void);
+pthread_t pthread_self(void);
 int	pthread_detach(pthread_t);
-
-int	pthread_getrrtimer_np(void);
-int	pthread_setrrtimer_np(int);
 
 int	pthread_attr_init(pthread_attr_t *);
 int	pthread_attr_destroy(pthread_attr_t *);
@@ -104,17 +101,17 @@ int	pthread_once(pthread_once_t *, void (*)(void));
 int	pthread_key_create(pthread_key_t *, void (*)(void *));
 int	pthread_key_delete(pthread_key_t);
 int	pthread_setspecific(pthread_key_t, const void *);
-void*	pthread_getspecific(pthread_key_t);
+void *pthread_getspecific(pthread_key_t);
 
 int	pthread_cancel(pthread_t);
 int	pthread_setcancelstate(int, int *);
 int	pthread_setcanceltype(int, int *);
-void	pthread_testcancel(void);
+void pthread_testcancel(void);
 
 int	pthread_getname_np(pthread_t, char *, size_t);
 int	pthread_setname_np(pthread_t, const char *, void *);
 
-int 	pthread_attr_setcreatesuspend_np(pthread_attr_t *);
+int pthread_attr_setcreatesuspend_np(pthread_attr_t *);
 int	pthread_suspend_np(pthread_t);
 int	pthread_resume_np(pthread_t);
 
@@ -161,7 +158,7 @@ int	pthread_barrierattr_destroy(pthread_barrierattr_t *);
 int	pthread_getschedparam(pthread_t, int *, struct sched_param *);
 int	pthread_setschedparam(pthread_t, int, const struct sched_param *);
 
-int 	*pthread__errno(void);
+int *pthread__errno(void);
 __END_DECLS
 
 #define	PTHREAD_CREATE_JOINABLE	0

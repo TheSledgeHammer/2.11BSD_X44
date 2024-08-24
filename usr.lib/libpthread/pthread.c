@@ -55,6 +55,7 @@ __RCSID("$NetBSD: pthread.c,v 1.33.2.1 2004/08/30 10:01:22 tron Exp $");
 #include <sched.h>
 #include "pthread.h"
 #include "pthread_int.h"
+#include "pthread_syscalls.h"
 
 #ifdef PTHREAD_MAIN_DEBUG
 #define SDPRINTF(x) DPRINTF(x)
@@ -261,7 +262,7 @@ pthread__start(void)
 	}
 
 	/* Start up the SA subsystem */
-	pthread__sa_start();
+	//pthread__sa_start();
 	SDPRINTF(("(pthread__start %p) Started.\n", self));
 }
 
@@ -515,7 +516,7 @@ pthread__idle(void)
 	 * PT_FLAG_IDLED set), and so we can yield the processor safely.
 	 */
 	SDPRINTF(("(pthread__idle %p) yielding.\n", self));
-	sa_yield();
+	//sa_yield();
 
 	/* NOTREACHED */
 	self->pt_spinlocks++; /* XXX make sure we get to finish the assert! */
@@ -835,7 +836,35 @@ pthread_setname_np(pthread_t thread, const char *name, void *arg)
 	return 0;
 }
 
+void
+pthread__setconcurrency(int concurrency)
+{
+	pthread_t self;
+	int ret;
 
+	self = pthread__self();
+	SDPRINTF(("(setconcurrency %p) requested delta %d, current %d\n",
+		     self, concurrency, pthread__concurrency));
+
+	concurrency += pthread__concurrency;
+	if (concurrency > pthread__maxconcurrency)
+		concurrency = pthread__maxconcurrency;
+
+	if (concurrency > pthread__concurrency) {
+		pthread__concurrency = concurrency;
+
+		SDPRINTF(("(setconcurrency %p) requested %d, now %d, ret %d\n",
+			     self, concurrency, pthread__concurrency, ret));
+	}
+	SDPRINTF(("(set %p concurrency) now %d\n",
+		     self, pthread__concurrency));
+}
+
+int
+pthread__getconcurrency(void)
+{
+	return (pthread__concurrency);
+}
 
 /*
  * XXX There should be a way for applications to use the efficent
@@ -876,7 +905,7 @@ pthread_cancel(pthread_t thread)
 			 * uninterruptably in the kernel, and there's
 			 * not much to be done about it.
 			 */
-			_lwp_wakeup(thread->pt_blockedlwp);
+			_lwp_wakeup(thread->pt_blockedp);
 		} else if (thread->pt_state == PT_STATE_BLOCKED_QUEUE) {
 			/*
 			 * We're blocked somewhere (pthread__block()
@@ -1068,8 +1097,6 @@ pthread__errno(void)
 	return &(self->pt_errno);
 }
 
-ssize_t	_sys_write(int, const void *, size_t);
-
 void
 pthread__assertfunc(char *file, int line, char *function, char *expr)
 {
@@ -1087,7 +1114,7 @@ pthread__assertfunc(char *file, int line, char *function, char *expr)
 	    function ? function : "",
 	    function ? "\"" : "");
 
-	_sys_write(STDERR_FILENO, buf, (size_t)len);
+	pthread_sys_write(STDERR_FILENO, buf, (size_t)len);
 	(void)kill(getpid(), SIGABRT);
 
 	_exit(1);
@@ -1117,7 +1144,7 @@ pthread__errorfunc(char *file, int line, char *function, char *msg)
 	    function ? "\"" : "");
 
 	if (pthread__diagassert & DIAGASSERT_STDERR)
-		_sys_write(STDERR_FILENO, buf, len);
+		pthread_sys_write(STDERR_FILENO, buf, len);
 
 	if (pthread__diagassert & DIAGASSERT_SYSLOG)
 		syslog(LOG_DEBUG | LOG_USER, "%s", buf);

@@ -170,7 +170,6 @@ struct pcb *curpcb;			/* our current running pcb */
 int	i386_fpu_present;
 int	i386_fpu_exception;
 int	i386_fpu_fdivbug;
-
 int	i386_use_fxsave;
 
 union descriptor 		gdt[NGDT];
@@ -1016,6 +1015,9 @@ setregs(p, elp, stack)
 	tf->tf_ss = LSEL(LUDATA_SEL, SEL_UPL);
 }
 
+int	i386_fpu_exception;
+int	i386_fpu_fdivbug;
+
 /*
  * machine dependent system variables.
  */
@@ -1047,7 +1049,10 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 		return (sysctl_rdint(oldp, oldlenp, newp, biosbasemem));
 	case CPU_BIOSEXTMEM:
 		return (sysctl_rdint(oldp, oldlenp, newp, biosextmem));
-
+	case CPU_FPU_PRESENT:
+		return (sysctl_rdint(oldp, oldlenp, newp, i386_fpu_present));
+	case CPU_OSFXSR:
+		return (sysctl_rdint(oldp, oldlenp, newp, i386_use_fxsave));
 	default:
 		return (EOPNOTSUPP);
 	}

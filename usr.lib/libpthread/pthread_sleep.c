@@ -45,8 +45,7 @@ __RCSID("$NetBSD: pthread_sleep.c,v 1.2.4.1 2005/05/12 02:31:53 riz Exp $");
 
 #include "pthread.h"
 #include "pthread_int.h"
-
-int	_sys_nanosleep(const struct timespec *, struct timespec *);
+#include "pthread_syscalls.h"
 
 extern int pthread__started;
 
@@ -71,7 +70,7 @@ static void pthread__nanosleep_callback(void *);
 
 
 int
-nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
+pthread_sys_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
 	int retval;
 	pthread_t self;
@@ -89,7 +88,7 @@ nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 
 	if (pthread__started == 0) {
 		pthread__testcancel(self);
-		retval = _sys_nanosleep(rqtp, rmtp);
+		retval = thr_nanosleep(rqtp, rmtp);
 		pthread__testcancel(self);
 		return retval;
 	}
@@ -168,4 +167,4 @@ pthread__nanosleep_callback(void *arg)
 	pthread_spinunlock(self, &pt_nanosleep_lock);
 }
 
-__strong_alias(_nanosleep, nanosleep)
+__strong_alias(thr_nanosleep, pthread_sys_nanosleep)

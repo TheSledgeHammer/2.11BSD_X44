@@ -45,7 +45,7 @@ __RCSID("$NetBSD: pthread_cond.c,v 1.14.2.2.2.1 2005/04/08 21:57:47 tron Exp $")
 
 #include "pthread.h"
 #include "pthread_int.h"
-#include "pthread_sys.h"
+#include "pthread_syscalls.h"
 
 #ifdef PTHREAD_COND_DEBUG
 #define SDPRINTF(x) DPRINTF(x)

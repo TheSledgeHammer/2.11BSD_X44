@@ -39,6 +39,8 @@
 #include <sys/cdefs.h>
 __RCSID("$NetBSD: pthread_cancelstub.c,v 1.8 2003/11/24 23:23:17 cl Exp $");
 
+#define	pthread_sys_fsync_range	_fsync_range
+
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/wait.h>
@@ -52,11 +54,12 @@ int	pthread__cancel_stub_binder;
 
 #include <signal.h>
 #include <sys/mman.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 
-#include "thread_libc.h"
-
-#include <pthread.h>
+#include "pthread.h"
+#include "pthread_int.h"
+#include "pthread_syscalls.h"
 
 #define TESTCANCEL(id) 	do {			\
 	if (__predict_false((id)->pt_cancel)) {	\
@@ -72,7 +75,7 @@ pthread_sys_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_accept(s, addr, addrlen);
+	retval = thr_accept(s, addr, addrlen);
 	TESTCANCEL(self);
 
 	return retval;
@@ -86,7 +89,7 @@ pthread_sys_close(int d)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_close(d);
+	retval = thr_close(d);
 	TESTCANCEL(self);
 
 	return retval;
@@ -100,7 +103,7 @@ pthread_sys_connect(int s, const struct sockaddr *addr, socklen_t namelen)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_connect(s, addr, namelen);
+	retval = thr_connect(s, addr, namelen);
 	TESTCANCEL(self);
 
 	return retval;
@@ -115,7 +118,7 @@ pthread_sys_fcntl(int fd, int cmd, ...)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_fcntl(fd, cmd, va_arg(ap, void *));
+	retval = thr_fcntl(fd, cmd, va_arg(ap, void *));
 	TESTCANCEL(self);
 
 	return retval;
@@ -129,7 +132,7 @@ pthread_sys_fsync(int d)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_fsync(d);
+	retval = thr_fsync(d);
 	TESTCANCEL(self);
 
 	return retval;
@@ -143,7 +146,7 @@ pthread_sys_fsync_range(int d, int f, off_t s, off_t e)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_fsync_range(d, f, s, e);
+	retval = thr_fsync_range(d, f, s, e);
 	TESTCANCEL(self);
 
 	return ENOSYS;
@@ -157,7 +160,7 @@ pthread_sys_msgrcv(int msgid, void *msgp, size_t msgsz, long msgtyp, int msgflg)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg);
+	retval = thr_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg);
 	TESTCANCEL(self);
 
 	return retval;
@@ -171,7 +174,7 @@ pthread_sys_msgsnd(int msgid, const void *msgp, size_t msgsz, int msgflg)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_msgsnd(msgid, msgp, msgsz, msgflg);
+	retval = thr_msgsnd(msgid, msgp, msgsz, msgflg);
 	TESTCANCEL(self);
 
 	return retval;
@@ -185,7 +188,7 @@ pthread_sys_msync(void *addr, size_t len, int flags)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_msync(addr, len, flags);
+	retval = thr_msync(addr, len, flags);
 	TESTCANCEL(self);
 
 	return retval;
@@ -200,7 +203,7 @@ pthread_sys_open(const char *path, int flags, ...)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_open(SYS_open, path, flags, va_arg(ap, mode_t));
+	retval = thr_open(SYS_open, path, flags, va_arg(ap, mode_t));
 	TESTCANCEL(self);
 
 	return retval;
@@ -214,7 +217,7 @@ pthread_sys_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_poll(fds, nfds, timeout);
+	retval = thr_poll(fds, nfds, timeout);
 	TESTCANCEL(self);
 
 	return retval;
@@ -228,7 +231,7 @@ pthread_sys_pread(int d, void *buf, size_t nbytes, off_t offset)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_pread(d, buf, nbytes, offset);
+	retval = thr_pread(d, buf, nbytes, offset);
 	TESTCANCEL(self);
 
 	return retval;
@@ -242,7 +245,7 @@ pthread_sys_pwrite(int d, const void *buf, size_t nbytes, off_t offset)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_pwrite(d, buf, nbytes, offset);
+	retval = thr_pwrite(d, buf, nbytes, offset);
 	TESTCANCEL(self);
 
 	return retval;
@@ -256,7 +259,7 @@ pthread_sys_read(int d, void *buf, size_t nbytes)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_read(d, buf, nbytes);
+	retval = thr_read(d, buf, nbytes);
 	TESTCANCEL(self);
 
 	return retval;
@@ -270,7 +273,7 @@ pthread_sys_readv(int d, const struct iovec *iov, int iovcnt)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_readv(d, iov, iovcnt);
+	retval = thr_readv(d, iov, iovcnt);
 	TESTCANCEL(self);
 
 	return retval;
@@ -284,7 +287,7 @@ pthread_sys_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfd
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_select(nfds, readfds, writefds, exceptfds, timeout);
+	retval = thr_select(nfds, readfds, writefds, exceptfds, timeout);
 	TESTCANCEL(self);
 
 	return retval;
@@ -298,7 +301,7 @@ pthread_sys_wait4(pid_t wpid, int *status, int options, struct rusage *rusage)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_wait4(wpid, status, options, rusage);
+	retval = thr_wait4(wpid, status, options, rusage);
 	TESTCANCEL(self);
 
 	return retval;
@@ -312,7 +315,7 @@ pthread_sys_write(int d, const void *buf, size_t nbytes)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_write(d, buf, nbytes);
+	retval = thr_write(d, buf, nbytes);
 	TESTCANCEL(self);
 
 	return retval;
@@ -326,27 +329,27 @@ pthread_sys_writev(int d, const struct iovec *iov, int iovcnt)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_writev(d, iov, iovcnt);
+	retval = thr_writev(d, iov, iovcnt);
 	TESTCANCEL(self);
 
 	return retval;
 }
 
-__strong_alias(__libc_accept, pthread_sys_accept)
-__strong_alias(__libc_close, pthread_sys_close)
-__strong_alias(__libc_fcntl, pthread_sys_fcntl)
-__strong_alias(__libc_fsync, pthread_sys_fsync)
-__weak_alias(pthread_sys_fsync_range, __libc_fsync_range)
-__strong_alias(__libc_msgrcv, pthread_sys_msgrcv)
-__strong_alias(__libc_msgsnd, pthread_sys_msgsnd)
-__strong_alias(__libc_msync, pthread_sys_msync)
-__strong_alias(__libc_open, pthread_sys_open)
-__strong_alias(__libc_poll, pthread_sys_poll)
-__strong_alias(__libc_pread, pthread_sys_pread)
-__strong_alias(__libc_pwrite, pthread_sys_pwrite)
-__strong_alias(__libc_read, pthread_sys_read)
-__strong_alias(__libc_readv, pthread_sys_readv)
-__strong_alias(__libc_select, pthread_sys_select)
-__strong_alias(__libc_wait4, pthread_sys_wait4)
-__strong_alias(__libc_write, pthread_sys_write)
-__strong_alias(__libc_writev, pthread_sys_writev)
+__strong_alias(thr_accept, pthread_sys_accept)
+__strong_alias(thr_close, pthread_sys_close)
+__strong_alias(thr_fcntl, pthread_sys_fcntl)
+__strong_alias(thr_fsync, pthread_sys_fsync)
+__weak_alias(pthread_sys_fsync_range, thr_fsync_range)
+__strong_alias(thr_msgrcv, pthread_sys_msgrcv)
+__strong_alias(thr_msgsnd, pthread_sys_msgsnd)
+__strong_alias(thr_msync, pthread_sys_msync)
+__strong_alias(thr_open, pthread_sys_open)
+__strong_alias(thr_poll, pthread_sys_poll)
+__strong_alias(thr_pread, pthread_sys_pread)
+__strong_alias(thr_pwrite, pthread_sys_pwrite)
+__strong_alias(thr_read, pthread_sys_read)
+__strong_alias(thr_readv, pthread_sys_readv)
+__strong_alias(thr_select, pthread_sys_select)
+__strong_alias(thr_wait4, pthread_sys_wait4)
+__strong_alias(thr_write, pthread_sys_write)
+__strong_alias(thr_writev, pthread_sys_writev)

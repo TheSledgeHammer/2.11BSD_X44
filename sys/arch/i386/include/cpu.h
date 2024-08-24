@@ -173,6 +173,7 @@ void	i386_proc0_tss_ldt_init(void);
 int		add_mem_cluster(u_int64_t, u_int64_t);
 
 /* npx.c */
+extern int	i386_fpu_present;
 extern int	i386_use_fxsave;
 struct proc *npxproc(void);
 void		npxsave(void);
@@ -203,14 +204,18 @@ int		i386_set_ldt(struct proc *, char *, register_t *);
 #define	CPU_CONSDEV		1	/* dev_t: console terminal device */
 #define	CPU_BIOSBASEMEM	2	/* int: bios-reported base mem (K) */
 #define	CPU_BIOSEXTMEM	3	/* int: bios-reported ext. mem (K) */
+#define CPU_FPU_PRESENT 4	/* int: FPU is present */
+#define	CPU_OSFXSR		5	/* int: OS uses FXSAVE/FXRSTOR */
 
-#define	CPU_MAXID		4	/* number of valid machdep ids */
+#define	CPU_MAXID		6	/* number of valid machdep ids */
 
 #define CTL_MACHDEP_NAMES { 				\
 	{ 0, 0 }, 								\
 	{ "console_device", CTLTYPE_STRUCT }, 	\
 	{ "biosbasemem", CTLTYPE_INT }, 		\
 	{ "biosextmem", CTLTYPE_INT }, 			\
+	{ "fpu_present", CTLTYPE_INT },			\
+	{ "osfxsr", CTLTYPE_INT },				\
 }
 
 #endif /* !_LOCORE */

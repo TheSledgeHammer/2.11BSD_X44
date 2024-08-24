@@ -45,9 +45,9 @@ extern int (*_md_getcontext_u)(ucontext_t *);
 extern int (*_md_setcontext_u)(const ucontext_t *);
 extern int (*_md_swapcontext_u)(ucontext_t *, const ucontext_t *);
 
-#define _getcontext_u(uc) (*_md_getcontext_u)((uc))
-#define _setcontext_u(uc) (*_md_setcontext_u)((uc))
-#define _swapcontext_u(ouc, nuc) (*_md_swapcontext_u)((ouc), (nuc))
+#define _getcontext_u(uc) 			(*_md_getcontext_u)((uc))
+#define _setcontext_u(uc) 			(*_md_setcontext_u)((uc))
+#define _swapcontext_u(ouc, nuc) 	(*_md_swapcontext_u)((ouc), (nuc))
 
 int _getcontext_u_s87(ucontext_t *);
 int _setcontext_u_s87(const ucontext_t *);
@@ -119,7 +119,7 @@ pthread__sp(void)
 	} while (/*CONSTCOND*/0)
 
 #define PTHREAD_REG_TO_UCONTEXT(uc, reg) do {				\
-	(uc)->uc_mcontext.mc_gregs.mc_gs = (reg)->r_gs;		\
+	(uc)->uc_mcontext.mc_gregs.mc_gs = (reg)->r_gs;			\
 	(uc)->uc_mcontext.mc_gregs.mc_fs = (reg)->r_fs; 		\
 	(uc)->uc_mcontext.mc_gregs.mc_es = (reg)->r_es; 		\
 	(uc)->uc_mcontext.mc_gregs.mc_ds = (reg)->r_ds; 		\
@@ -132,16 +132,16 @@ pthread__sp(void)
 	(uc)->uc_mcontext.mc_gregs.mc_eax = (reg)->r_eax; 		\
 	(uc)->uc_mcontext.mc_gregs.mc_eip = (reg)->r_eip; 		\
 	(uc)->uc_mcontext.mc_gregs.mc_cs = (reg)->r_cs; 		\
-	(uc)->uc_mcontext.mc_gregs.mc_eflags = (reg)->r_eflags; 		\
+	(uc)->uc_mcontext.mc_gregs.mc_eflags = (reg)->r_eflags; \
 	(uc)->uc_mcontext.mc_gregs.mc_esp = (reg)->r_esp;		\
 	(uc)->uc_mcontext.mc_gregs.mc_ss = (reg)->r_ss; 		\
-	/*LINTED precision loss */					\
+	/*LINTED precision loss */								\
 	(uc)->uc_flags = ((uc)->uc_flags | _UC_CPU) & ~_UC_USER; 	\
 	} while (/*CONSTCOND*/0)
 
 
 #define PTHREAD_UCONTEXT_TO_FPREG(freg, uc)		       		\
-	(void)memcpy((freg)->__data,					\
+	(void)memcpy((freg)->__data,							\
         (uc)->uc_mcontext.mc_fpregs.mc_fp_reg_set.mc_fpchip_state.fp_state, \
 	sizeof(struct fpreg))
 

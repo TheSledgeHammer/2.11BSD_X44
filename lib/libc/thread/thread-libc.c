@@ -112,6 +112,12 @@ __libc_msync(void *addr, size_t len, int flags)
 }
 
 int
+__libc_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
+{
+	return (ENOSYS);
+}
+
+int
 __libc_open(const char *path, int flags, va_list ap)
 {
 	return (__syscall(SYS_open, path, flags, ap));
@@ -218,6 +224,7 @@ __weak_alias(__libc_fsync_range, _fsync_range)
 __strong_alias(_msgrcv, __libc_msgrcv)
 __strong_alias(_msgsnd, __libc_msgsnd)
 __strong_alias(_msync, __libc_msync)
+__strong_alias(_nanosleep, __libc_nanosleep)
 __strong_alias(_open, __libc_open)
 __strong_alias(_poll, __libc_poll)
 __strong_alias(_pread, __libc_pread)
