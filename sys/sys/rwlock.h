@@ -80,13 +80,13 @@ void 			rwlock_init(struct rwlock *, int, char *, int, u_int);
 int 			rwlockmgr(__volatile struct rwlock *, u_int, struct lock_object *, pid_t);
 int 			rwlockstatus(struct rwlock *);
 
-void			rwlock_simple_init(struct rwlock *, const char *);
-void			rwlock_lock(__volatile struct rwlock *);
-void			rwlock_unlock(__volatile struct rwlock *);
-int				rwlock_lock_try(__volatile struct rwlock *);
-int				rwlock_read_held(struct rwlock *);
-int				rwlock_write_held(struct rwlock *);
-int				rwlock_lock_held(struct rwlock *);
+void			simple_rwlock_init(struct rwlock *, const char *);
+void			simple_rwlock_lock(__volatile struct rwlock *);
+void			simple_rwlock_unlock(__volatile struct rwlock *);
+int				simple_rwlock_try(__volatile struct rwlock *);
+int				simple_rwlock_read_held(__volatile struct rwlock *);
+int				simple_rwlock_write_held(__volatile struct rwlock *);
+int				simple_rwlock_held(__volatile struct rwlock *);
 
 #endif /* SYS_RWLOCK_H_ */
 

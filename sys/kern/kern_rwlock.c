@@ -31,15 +31,20 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-#include <sys/user.h>
+#include <sys/atomic.h>
 #include <sys/lock.h>
 #include <sys/rwlock.h>
+#include <sys/user.h>
 
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
+#include <machine/lock_machdep.h>
 
-void		rwlock_pause(__volatile struct rwlock *, int);
-void		rwlock_acquire(__volatile struct rwlock *, int, int, int);
+void	rwlock_pause(__volatile struct rwlock *, int);
+void	rwlock_acquire(__volatile struct rwlock *, int, int, int);
+void	rwlkp_lock(__volatile struct rwlock *);
+void	rwlkp_unlock(__volatile struct rwlock *);
+int		rwlkp_lock_try(__volatile struct rwlock *);
 
 #if NCPUS > 1
 #define PAUSE(rwl, wanted)						\
@@ -76,13 +81,13 @@ rwlockstatus(rwl)
 	struct rwlock *rwl;
 {
     int lock_type = 0;
-    rwlock_lock(rwl);
+    rwlkp_lock(rwl);
     if(rwl->rwl_writercount >= 1) {
         lock_type = RW_WRITER;
     } else if(rwl->rwl_readercount >= 0) {
         lock_type = RW_READER;
     }
-    rwlock_unlock(rwl);
+    rwlkp_unlock(rwl);
     return (lock_type);
 }
 
@@ -101,7 +106,7 @@ rwlockmgr(rwl, flags, interlkp, pid)
 		pid = RW_KERNPROC;
 	}
 	LOCKHOLDER_PID(rwl->rwl_lockholder) = pid;
-	rwlock_lock(rwl);
+	rwlkp_lock(rwl);
 	if (flags & RW_INTERLOCK) {
 		simple_unlock(interlkp);
 	}
@@ -160,12 +165,12 @@ rwlockmgr(rwl, flags, interlkp, pid)
 		break;
 
 	default:
-		rwlock_unlock(rwl);
+		rwlkp_unlock(rwl);
 		printf("rwlockmgr: unknown locktype request %d", flags & RW_TYPE_MASK); /* panic */
 		break;
 	}
 
-	rwlock_unlock(rwl);
+	rwlkp_unlock(rwl);
 	return (error);
 }
 
@@ -183,63 +188,6 @@ rwlockmgr_printinfo(rwl)
 		printf(" lock type %s: RW_READER (count %d)", rwl->rwl_wmesg, rwl->rwl_readercount);
 }
 
-/*
- * rw_read_held:
- *
- *	Returns true if the rwlock is held for reading.  Must only be
- *	used for diagnostic assertions, and never be used to make
- * 	decisions about how to use a rwlock.
- */
-int
-rwlock_read_held(rwl)
-	struct rwlock *rwl;
-{
-	register struct lock_object *lock = &rwl->rwl_lnterlock;
-	register struct lock_object_cpu *cpu = &lock->lo_cpu_data[cpu_number()];
-	if (rwl == NULL) {
-		return (0);
-	}
-	return ((cpu->loc_my_ticket & RW_HAVE_WRITE) == 0 && (cpu->loc_my_ticket & RW_KERNPROC) != 0);
-}
-
-/*
- * rw_write_held:
- *
- *	Returns true if the rwlock is held for writing.  Must only be
- *	used for diagnostic assertions, and never be used to make
- *	decisions about how to use a rwlock.
- */
-int
-rwlock_write_held(rwl)
-	struct rwlock *rwl;
-{
-	struct lock_object *lock = &rwl->rwl_lnterlock;
-	register struct lock_object_cpu *cpu = &lock->lo_cpu_data[cpu_number()];
-	if (rwl == NULL) {
-		return (0);
-	}
-	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC) == (RW_HAVE_WRITE | (uintptr_t)curproc));
-}
-
-/*
- * rw_lock_held:
- *
- *	Returns true if the rwlock is held for reading or writing.  Must
- *	only be used for diagnostic assertions, and never be used to make
- *	decisions about how to use a rwlock.
- */
-int
-rwlock_lock_held(rwl)
-	struct rwlock *rwl;
-{
-	struct lock_object *lock = &rwl->rwl_lnterlock;
-	struct lock_object_cpu *cpu = &lock->lo_cpu_data[cpu_number()];
-	if (rwl == NULL) {
-		return (0);
-	}
-	return ((cpu->loc_my_ticket & RW_KERNPROC) != 0);
-}
-
 int rwlock_wait_time = 100;
 
 void
@@ -249,13 +197,13 @@ rwlock_pause(rwl, wanted)
 {
 	if (rwlock_wait_time > 0) {
 		int i;
-		rwlock_unlock(rwl);
+		rwlkp_unlock(rwl);
 		for(i = rwlock_wait_time; i > 0; i--) {
 			if (!(wanted)) {
 				break;
 			}
 		}
-		rwlock_lock(rwl);
+		rwlkp_lock(rwl);
 	}
 
 	if (!(wanted)) {
@@ -271,9 +219,9 @@ rwlock_acquire(rwl, error, extflags, wanted)
 	rwlock_pause(rwl, wanted);
 	for (error = 0; wanted; ) {
 		rwl->rwl_waitcount++;
-		rwlock_unlock(rwl);
+		rwlkp_unlock(rwl);
 		error = tsleep((void *)rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo);
-		rwlock_lock(rwl);
+		rwlkp_lock(rwl);
 		rwl->rwl_waitcount--;
 		if (error) {
 			break;
@@ -285,30 +233,101 @@ rwlock_acquire(rwl, error, extflags, wanted)
 	}
 }
 
-void
-rwlock_simple_init(rwl, name)
-	struct rwlock *rwl;
-	const char				*name;
+/*
+ * rw_read_held:
+ *
+ *	Returns true if the rwlock is held for reading.  Must only be
+ *	used for diagnostic assertions, and never be used to make
+ * 	decisions about how to use a rwlock.
+ */
+int
+simple_rwlock_read_held(rwl)
+	__volatile struct rwlock *rwl;
 {
-	simple_lock_init(&rwl->rwl_lnterlock, name);
+	struct lock_object *lock = &rwl->rwl_lnterlock;
+	return ((simple_lock_try(lock) & RW_HAVE_WRITE) == 0 && (rwlock_lock_held(rwl)));
+}
+
+/*
+ * rw_write_held:
+ *
+ *	Returns true if the rwlock is held for writing.  Must only be
+ *	used for diagnostic assertions, and never be used to make
+ *	decisions about how to use a rwlock.
+ */
+int
+simple_rwlock_write_held(rwl)
+	__volatile struct rwlock *rwl;
+{
+	struct lock_object *lock = &rwl->rwl_lnterlock;
+	return ((simple_lock_try(lock) & (RW_HAVE_WRITE | RW_KERNPROC)) == (RW_HAVE_WRITE | (uintptr_t)curproc));
+}
+
+/*
+ * rw_lock_held:
+ *
+ *	Returns true if the rwlock is held for reading or writing.  Must
+ *	only be used for diagnostic assertions, and never be used to make
+ *	decisions about how to use a rwlock.
+ */
+int
+simple_rwlock_held(rwl)
+	__volatile struct rwlock *rwl;
+{
+	struct lock_object *lock = &rwl->rwl_lnterlock;
+	return ((simple_lock_try(lock) & RW_KERNPROC) != 0);
 }
 
 void
-rwlock_lock(rwl)
+simple_rwlock_init(rwl, name)
+	struct rwlock *rwl;
+	const char	*name;
+{
+	struct lock_object *lock = &rwl->rwl_lnterlock;
+	simple_lock_init(lock, name);
+}
+
+void
+simple_rwlock_lock(rwl)
+	__volatile struct rwlock *rwl;
+{
+	struct lock_object *lock = &rwl->rwl_lnterlock;
+	simple_lock(lock);
+}
+
+void
+simple_rwlock_unlock(rwl)
+	__volatile struct rwlock *rwl;
+{
+	struct lock_object *lock = &rwl->rwl_lnterlock;
+	simple_unlock(lock);
+}
+
+int
+simple_rwlock_try(rwl)
+	__volatile struct rwlock *rwl;
+{
+	struct lock_object *lock = &rwl->rwl_lnterlock;
+	return (simple_lock_try(lock));
+}
+
+/* internal simple_rwlock */
+void
+rwlkp_lock(rwl)
     __volatile struct rwlock *rwl;
 {
 	simple_lock(&rwl->rwl_lnterlock);
 }
 
 void
-rwlock_unlock(rwl)
+rwlkp_unlock(rwl)
     __volatile struct rwlock *rwl;
 {
 	simple_unlock(&rwl->rwl_lnterlock);
 }
 
 int
-rwlock_lock_try(rwl)
+rwlkp_lock_try(rwl)
 	__volatile struct rwlock *rwl;
 {
 	return (simple_lock_try(&rwl->rwl_lnterlock));
