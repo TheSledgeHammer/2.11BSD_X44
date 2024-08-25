@@ -567,7 +567,7 @@ lock_object_lock_next(lock, node)
 	next = atomic_swap_ptr(&lock->lo_next, node);
 	lock->lo_next_ticket = atomic_load_relaxed(&next->loc_my_ticket);
 	while (lock->lo_can_serve[lock->lo_next_ticket]) {
-		lock->lo_next_ticket = atomic_load_aquire(&next->loc_my_ticket);
+		lock->lo_next_ticket = atomic_load_acquire(&next->loc_my_ticket);
 	}
 	lock->lo_next = next;
 	lock->lo_prev = node;
@@ -587,7 +587,7 @@ lock_object_lock_prev(lock, node)
 	prev = atomic_swap_ptr(&lock->lo_prev, node);
 	lock->lo_prev_ticket = atomic_load_relaxed(&prev->loc_my_ticket);
 	while (lock->lo_can_serve[lock->lo_prev_ticket]) {
-		lock->lo_prev_ticket = atomic_load_aquire(&prev->loc_my_ticket);
+		lock->lo_prev_ticket = atomic_load_acquire(&prev->loc_my_ticket);
 	}
 	lock->lo_prev = prev;
 	lock->lo_next = node;
