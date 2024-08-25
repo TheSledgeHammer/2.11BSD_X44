@@ -195,7 +195,7 @@ rwlock_read_held(rwl)
 	struct rwlock *rwl;
 {
 	register struct lock_object *lock = &rwl->rwl_lnterlock;
-	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
+	register struct lock_object_cpu *cpu = &lock->lo_cpu_data[cpu_number()];
 	if (rwl == NULL) {
 		return (0);
 	}
@@ -214,7 +214,7 @@ rwlock_write_held(rwl)
 	struct rwlock *rwl;
 {
 	struct lock_object *lock = &rwl->rwl_lnterlock;
-	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
+	register struct lock_object_cpu *cpu = &lock->lo_cpu_data[cpu_number()];
 	if (rwl == NULL) {
 		return (0);
 	}
@@ -233,7 +233,7 @@ rwlock_lock_held(rwl)
 	struct rwlock *rwl;
 {
 	struct lock_object *lock = &rwl->rwl_lnterlock;
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
+	struct lock_object_cpu *cpu = &lock->lo_cpu_data[cpu_number()];
 	if (rwl == NULL) {
 		return (0);
 	}
