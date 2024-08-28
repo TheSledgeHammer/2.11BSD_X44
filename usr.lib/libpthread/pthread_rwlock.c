@@ -274,8 +274,7 @@ pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 		wait.ptw_thread = self;
 		wait.ptw_rwlock = rwlock;
 		wait.ptw_queue = &rwlock->ptr_rblocked;
-		pthread__alarm_add(self, &alarm, abs_timeout,
-		    pthread_rwlock__callback, &wait);
+		pthread__alarm_add(self, &alarm, abs_timeout, pthread_rwlock__callback, &wait);
 		PTQ_INSERT_TAIL(&rwlock->ptr_rblocked, self, pt_sleep);
 		/* Locking a rwlock is not a cancellation point; don't check */
 		pthread_spinlock(self, &self->pt_statelock);

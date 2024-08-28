@@ -44,6 +44,7 @@
 
 #include <sys/types.h>
 #include <sys/signal.h>
+#include <sys/time.h>
 #include <sys/errno.h>
 #include <sys/syscall.h>
 
@@ -91,6 +92,12 @@ int
 __libc_fsync_range(int d, int f, off_t s, off_t e)
 {
 	return (ENOSYS);
+}
+
+int
+__libc_getitimer(unsigned int which, struct itimerval *itv)
+{
+	return (__syscall(SYS_setitimer, which, itv));
 }
 
 ssize_t
@@ -160,6 +167,12 @@ __libc_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, st
 }
 
 int
+__libc_setitimer(unsigned int which, struct itimerval *itv, struct itimerval *oitv)
+{
+	return (__syscall(SYS_setitimer, which, itv, oitv));
+}
+
+int
 __libc_sigaction(int sig, struct sigaction *act, struct sigaction *oact)
 {
 	if (act == NULL) {
@@ -221,6 +234,7 @@ __strong_alias(__exeve, __libc_execve)
 __strong_alias(_fcntl, __libc_fcntl)
 __strong_alias(_fsync, __libc_fsync)
 __weak_alias(__libc_fsync_range, _fsync_range)
+__strong_alias(_getitimer, __libc_getitimer)
 __strong_alias(_msgrcv, __libc_msgrcv)
 __strong_alias(_msgsnd, __libc_msgsnd)
 __strong_alias(_msync, __libc_msync)
@@ -232,6 +246,7 @@ __strong_alias(_pwrite, __libc_pwrite)
 __strong_alias(_read, __libc_read)
 __strong_alias(_readv, __libc_readv)
 __strong_alias(_select, __libc_select)
+__strong_alias(_setitimer, __libc_setitimer)
 __strong_alias(_sigaction, __libc_sigaction)
 __strong_alias(_sigsuspend, __libc_sigsuspend)
 __strong_alias(_sigprocmask, __libc_sigprocmask)

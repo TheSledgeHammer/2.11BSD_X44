@@ -224,6 +224,7 @@ int 	__libc_execve(const char *path, char *const *, char *const *);
 int 	__libc_fcntl(int, int, va_list);
 int 	__libc_fsync(int);
 int 	__libc_fsync_range(int, int, off_t, off_t);
+int	__libc_getitimer(unsigned int, struct itimerval *);
 ssize_t __libc_msgrcv(int, void *, size_t, long, int);
 int 	__libc_msgsnd(int, const void *, size_t, int);
 int 	__libc_msync(void *, size_t, int);
@@ -235,6 +236,7 @@ ssize_t __libc_pwrite(int, const void *, size_t, off_t);
 int 	__libc_read(int, void *, size_t);
 int 	__libc_readv(int, const struct iovec *, int);
 int 	__libc_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+int	__libc_setitimer(unsigned int, struct itimerval *, struct itimerval *);
 int 	__libc_sigaction(int, struct sigaction *, struct sigaction *);
 int 	__libc_sigsuspend(const sigset_t *);
 int 	__libc_sigprocmask(int, sigset_t *, sigset_t *);
@@ -251,6 +253,7 @@ __END_DECLS
 #define	thr_fcntl(fd, cmd, ap)							__libc_fcntl(fd, cmd, ap)
 #define	thr_fsync(d)									__libc_fsync(d)
 #define	thr_fsync_range(d, f, s, e)						__libc_fsync_range(d, f, s, e)
+#define thr_getitimer(which, itv)						__libc_getitimer(which, itv)
 #define	thr_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg) 	__libc_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg)
 #define	thr_msgsnd(msgid, msgp, msgsz, msgflg)			__libc_msgsnd(msgid, msgp, msgsz, msgflg)
 #define	thr_msync(addr, len, flags)						__libc_msync(addr, len, flags)
@@ -262,6 +265,7 @@ __END_DECLS
 #define	thr_read(d, buf, nbytes)						__libc_read(d, buf, nbytes)
 #define	thr_readv(d, iov, iovcnt)						__libc_readv(d, iov, iovcnt)
 #define	thr_select(nfds, readfds, writefds, exceptfds, timeout) __libc_select(nfds, readfds, writefds, exceptfds, timeout)
+#define thr_setitimer(which, itv, oitv)					__libc_setitimer(which, itv, oitv)
 #define	thr_sigaction(sig, act, oact) 					__libc_sigaction(sig, act, oact)
 #define	thr_sigmask(how, set, oset) 					__libc_sigprocmask(how, set, oset)
 #define	thr_sigsuspend(sigmask) 						__libc_sigsuspend(sigmask)
@@ -313,6 +317,7 @@ __END_DECLS
 #define	thr_fcntl(fd, cmd, ap)
 #define	thr_fsync(d)
 #define	thr_fsync_range(d, f, s, e)
+#define thr_getitimer(which, itv)
 #define	thr_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg)
 #define	thr_msgsnd(msgid, msgp, msgsz, msgflg)
 #define	thr_msync(addr, len, flags)
@@ -324,6 +329,7 @@ __END_DECLS
 #define	thr_read(d, buf, nbytes)
 #define	thr_readv(d, iov, iovcnt)
 #define	thr_select(nfds, readfds, writefds, exceptfds, timeout)
+#define thr_setitimer(which, itv, oitv)
 #define	thr_sigaction(sig, act, oact)
 #define	thr_sigmask(how, set, oset)
 #define	thr_sigsuspend(sigmask)

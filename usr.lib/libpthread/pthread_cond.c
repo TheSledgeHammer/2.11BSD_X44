@@ -211,8 +211,7 @@ pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struc
 		    cond->ptc_mutex == mutex);
 #endif
 	
-	pthread__alarm_add(self, &alarm, abstime, pthread_cond_wait__callback,
-	    &wait);
+	pthread__alarm_add(self, &alarm, abstime, pthread_cond_wait__callback, &wait);
 	self->pt_state = PT_STATE_BLOCKED_QUEUE;
 	self->pt_sleepobj = cond;
 	self->pt_sleepq = &cond->ptc_waiters;
@@ -229,8 +228,7 @@ pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struc
 	pthread__alarm_del(self, &alarm);
 	if (pthread__alarm_fired(&alarm))
 		retval = ETIMEDOUT;
-	SDPRINTF(("(cond timed wait %p) %s\n",
-	    self, (retval == ETIMEDOUT) ? "(timed out)" : ""));
+	SDPRINTF(("(cond timed wait %p) %s\n", self, (retval == ETIMEDOUT) ? "(timed out)" : ""));
 	pthread_mutex_lock(mutex);
 #ifdef ERRORCHECK
 	pthread_spinlock(self, &cond->ptc_lock);
@@ -329,7 +327,6 @@ pthread_cond_broadcast(pthread_cond_t *cond)
 	}
 
 	return 0;
-
 }
 
 

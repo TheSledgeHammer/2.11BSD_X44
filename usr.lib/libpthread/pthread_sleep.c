@@ -117,8 +117,7 @@ pthread_sys_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 		pthread_spinunlock(self, &pt_nanosleep_lock);
 		pthread_exit(PTHREAD_CANCELED);
 	}
-	pthread__alarm_add(self, &alarm, &sleeptime,
-	    pthread__nanosleep_callback, self);
+	pthread__alarm_add(self, &alarm, &sleeptime, pthread__nanosleep_callback, self);
 	    
 	self->pt_state = PT_STATE_BLOCKED_QUEUE;
 	self->pt_sleepobj = &pt_nanosleep_cond;

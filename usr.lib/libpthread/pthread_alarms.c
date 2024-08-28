@@ -45,6 +45,7 @@ __RCSID("$NetBSD: pthread_alarms.c,v 1.9.4.1 2005/04/08 21:56:12 tron Exp $");
 
 #include "pthread.h"
 #include "pthread_int.h"
+#include "pthread_syscalls.h"
 
 timer_t pthread_alarmtimer;
 PTQ_HEAD(, pt_alarm_t) pthread_alarmqueue = PTQ_HEAD_INITIALIZER;
@@ -59,15 +60,16 @@ pthread_spin_t pthread_alarmqlock;
 void
 pthread__alarm_init(void)
 {
-	struct sigevent ev;
+
+	//sigevent_t ev;
 	int retval;
-
-	ev.sigev_notify = SIGEV_SA;
-	ev.sigev_signo = 0;
-	ev.sigev_value.sival_int = (int)PT_ALARMTIMER_MAGIC;
-	retval = timer_create(CLOCK_REALTIME, &ev, &pthread_alarmtimer);
+/*
+	ev.ptev_notify = SIGEV_SA;
+	ev.ptev_signo = 0;
+	ev.ptev_value.ptval_int = (int)PT_ALARMTIMER_MAGIC;
+*/
+	retval = pthread_sys_timer_create(CLOCK_REALTIME, 0, &pthread_alarmtimer);
 	pthread__assert(retval == 0);
-
 }
 
 void
@@ -112,8 +114,8 @@ pthread__alarm_add(pthread_t self, struct pt_alarm_t *alarm,
  		}
 		SDPRINTF(("(add %p) resetting alarm timer to %d.%06d\n",
 		    self, it.it_value.tv_sec, it.it_value.tv_nsec/1000));
-		retval = timer_settime(pthread_alarmtimer, TIMER_ABSTIME, 
-		    &it, NULL);
+		retval = pthread_sys_timer_settime(pthread_alarmtimer, TIMER_ABSTIME, &it, NULL);
+
 		pthread__assert(retval == 0);
 			
 	} else {
@@ -150,8 +152,7 @@ pthread__alarm_del(pthread_t self, struct pt_alarm_t *alarm)
 				timespecclear(&it.it_value);
 			SDPRINTF(("(del %p) resetting alarm timer to %d.%06d\n",
 			    self, it.it_value.tv_sec, it.it_value.tv_nsec/1000));
-			retval = timer_settime(pthread_alarmtimer, TIMER_ABSTIME, &it, 
-			    NULL);
+			retval = pthread_sys_timer_settime(pthread_alarmtimer, TIMER_ABSTIME, &it, NULL);
 			pthread__assert(retval == 0);
 		}
 		PTQ_REMOVE(&pthread_alarmqueue, alarm, pta_next);
@@ -212,7 +213,7 @@ pthread__alarm_process(pthread_t self, void *arg)
 		}
 		SDPRINTF(("(pro %p) resetting alarm timer to %d.%09d\n", self,
 		    it.it_value.tv_sec, it.it_value.tv_nsec));
-		retval = timer_settime(pthread_alarmtimer, TIMER_ABSTIME, &it, NULL);
+		retval = pthread_sys_timer_settime(pthread_alarmtimer, TIMER_ABSTIME, &it, NULL);
 		pthread__assert(retval == 0);
 	}
 	pthread_spinunlock(self, &pthread_alarmqlock);
@@ -229,3 +230,100 @@ pthread__alarm_process(pthread_t self, void *arg)
 	}
 	SDPRINTF(("(pro %p) done\n", self, iterator));
 }
+
+int
+pthread_sys_timer_create(int clockid, int signo, int *timerid)
+{
+	int timer_id;
+
+	if (clockid < CLOCK_REALTIME || clockid > CLOCK_PROF) {
+		return (EINVAL);
+	}
+	/* Find a free timer slot, skipping those reserved for setitimer(). */
+	for (timer_id = 3; timer_id < TIMER_MAX; timer_id++) {
+		if (timer_id == *timerid) {
+			break;
+		}
+	}
+
+	if (timer_id == TIMER_MAX) {
+		return (EAGAIN);
+	}
+
+	switch (clockid) {
+	case CLOCK_REALTIME:
+		signo = SIGALRM;
+		break;
+	case CLOCK_VIRTUAL:
+		signo = SIGVTALRM;
+		break;
+	case CLOCK_PROF:
+		signo = SIGPROF;
+		break;
+	}
+	timer_id = *timerid;
+	return (0);
+}
+
+int
+pthread_sys_timer_delete(int timerid)
+{
+	if (timerid < 2 || timerid >= TIMER_MAX) {
+		return (EINVAL);
+	}
+	return (0);
+}
+
+int
+pthread_sys_timer_settime(int timerid, int flags, const struct itimerspec *value, struct itimerspec *ovalue)
+{
+	struct itimerval val, oval;
+	int error;
+
+	error = pthread_sys_timer_delete(timerid);
+	if (error != 0) {
+		return (error);
+	}
+
+	error = thr_setitimer(timerid, &val, &oval);
+	if (error != 0) {
+		return (error);
+	}
+
+	TIMESPEC_TO_TIMEVAL(&val.it_value, &value.it_value);
+	TIMESPEC_TO_TIMEVAL(&val.it_interval, &value.it_interval);
+	if (itimerfix(&val.it_value) || itimerfix(&val.it_interval)) {
+		return (EINVAL);
+	}
+
+	if (ovalue) {
+		TIMEVAL_TO_TIMESPEC(&oval->it_value, &ovalue.it_value);
+		TIMEVAL_TO_TIMESPEC(&oval->it_interval, &ovalue.it_interval);
+	}
+
+	return (0);
+}
+
+int
+pthread_sys_timer_gettime(int timerid, struct itimerspec *value)
+{
+	struct itimerval aitv;
+	struct itimerspec its;
+	int error;
+
+	error = pthread_sys_timer_delete(timerid);
+	if (error != 0) {
+		return (error);
+	}
+
+	error = thr_getitimer(timerid, &aitv);
+	if (error != 0) {
+		return (error);
+	}
+	TIMEVAL_TO_TIMESPEC(&aitv.it_interval, &its.it_interval);
+	TIMEVAL_TO_TIMESPEC(&aitv.it_value, &its.it_value);
+	return (0);
+}
+
+__strong_alias(thr_getitimer, pthread_sys_timer_gettime)
+__strong_alias(thr_setitimer, pthread_sys_timer_settime)

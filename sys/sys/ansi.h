@@ -68,6 +68,7 @@ struct __tag_wctrans_t;
  *	#endif
  */
 #define	_BSD_CLOCK_T_		unsigned long	/* clock() */
+#define	_BSD_CLOCKID_T_		int				/* clockid_t */
 #define	_BSD_PTRDIFF_T_		int				/* ptr1 - ptr2 */
 #define	_BSD_SIZE_T_		unsigned int	/* sizeof() */
 #define	_BSD_SSIZE_T_		int				/* byte count or error */

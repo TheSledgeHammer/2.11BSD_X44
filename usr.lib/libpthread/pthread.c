@@ -242,7 +242,7 @@ pthread__start(void)
 	 * various restrictions on fork() and threads, it's legal to
 	 * fork() before creating any threads. 
 	 */
-	pthread__alarm_init();
+	//pthread__alarm_init();
 
 	pthread_atfork(NULL, NULL, pthread__child_callback);
 
