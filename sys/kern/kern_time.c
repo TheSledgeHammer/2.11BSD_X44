@@ -498,10 +498,12 @@ settime(tv)
     if (tv->tv_sec > UINT_MAX - 365*24*60*60) {
         return (EPERM);
     }
+/*
     if (securelevel > 1 && timercmp(&tv, &time, <)) {
         return (EPERM);
     }
-    setthetime(tv);
+*/
+    setthetime(*tv);
     return (0);
 }
 
