@@ -490,6 +490,21 @@ tvtohz(tv)
 	return ((int)ticks);
 }
 
+/* TODO: Merge settime and setthetime */
+static int
+settime(tv)
+    struct timeval *tv;
+{
+    if (tv->tv_sec > UINT_MAX - 365*24*60*60) {
+        return (EPERM);
+    }
+    if (securelevel > 1 && timercmp(&tv, &time, <)) {
+        return (EPERM);
+    }
+    setthetime(tv);
+    return (0);
+}
+
 int
 clock_gettime()
 {
