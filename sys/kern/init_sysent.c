@@ -116,6 +116,10 @@ int	bind();
 int	setsockopt();
 int	listen();
 int	sigsuspend();
+int	nanosleep();
+int	clock_gettime();
+int	clock_settime();
+int	poll();
 int	sigstack();
 int	recvmsg();
 int	sendmsg();
@@ -390,13 +394,13 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    sigsuspend },			/* 107 = sigsuspend */
 	{ 0, 0,
-	    nosys },				/* 108 = obsolete old sigvec */
+	    nanosleep },			/* 108 = nanosleep */
 	{ 0, 0,
-	    nosys },				/* 109 = obsolete old sigblock */
+	    clock_gettime },			/* 109 = clock_gettime */
 	{ 0, 0,
-	    nosys },				/* 110 = obsolete old sigsetmask */
+	    clock_settime },			/* 110 = clock_settime */
 	{ 0, 0,
-	    nosys },				/* 111 = obsolete old sigpause */
+	    poll },				/* 111 = poll */
 	{ 0, 0,
 	    sigstack },				/* 112 = sigstack */
 	{ 0, 0,

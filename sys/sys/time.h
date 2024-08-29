@@ -165,6 +165,13 @@ struct	itimerspec {
 	struct timespec it_value;
 };
 
+#define	CLOCK_REALTIME	0
+#define	CLOCK_VIRTUAL	1
+#define	CLOCK_PROF	2
+#define	CLOCK_MONOTONIC	3
+
+#define	TIMER_MAX	32
+
 /*
  * Getkerninfo clock information structure
  */
@@ -174,13 +181,6 @@ struct clockinfo {
 	int	stathz;		/* statistics clock frequency */
 	int	profhz;		/* profiling clock frequency */
 };
-
-#define	CLOCK_REALTIME	0
-#define	CLOCK_VIRTUAL	1
-#define	CLOCK_PROF	2
-#define	CLOCK_MONOTONIC	3
-
-#define	TIMER_MAX	32
 
 /*
  * hide bintime for _STANDALONE because this header is used for hpcboot.exe,

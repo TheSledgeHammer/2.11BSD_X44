@@ -489,3 +489,134 @@ tvtohz(tv)
 
 	return ((int)ticks);
 }
+
+int
+clock_gettime()
+{
+	register struct clock_gettime_args {
+		syscallarg(clockid_t) clock_id;
+		syscallarg(struct timespec *) tp;
+	} *uap = (struct clock_gettime_args *)u.u_ap;
+	struct timeval atv;
+	struct timespec ats;
+	int s;
+
+	switch (SCARG(uap, clock_id)) {
+	case CLOCK_REALTIME:
+		microtime(&atv);
+		TIMEVAL_TO_TIMESPEC(&atv, &ats);
+		break;
+	case CLOCK_MONOTONIC:
+		s = splclock();
+		atv = mono_time;
+		splx(s);
+		TIMEVAL_TO_TIMESPEC(&atv, &ats);
+		break;
+	default:
+		u.u_error = EINVAL;
+		return (EINVAL);
+	}
+
+	u.u_error = copyout(&ats, SCARG(uap, tp), sizeof(ats));
+	return (u.u_error);
+}
+
+int
+clock_settime()
+{
+	register struct clock_settime_args {
+		syscallarg(clockid_t) clock_id;
+		syscallarg(const struct timespec *) tp;
+	} *uap = (struct clock_settime_args *)u.u_ap;
+	struct timespec ats;
+	struct timeval atv;
+
+	u.u_error = suser();
+	if (u.u_error != 0) {
+		return (u.u_error);
+	}
+
+	u.u_error = copyin((caddr_t)SCARG(uap, tp), (caddr_t)&ats, sizeof(struct timespec));
+	if (u.u_error != 0) {
+		return (u.u_error);
+	}
+	switch (SCARG(uap, clock_id)) {
+	case CLOCK_REALTIME:
+		TIMESPEC_TO_TIMEVAL(&atv, &ats);
+		u.u_error = settime(&atv);
+		if (u.u_error != 0) {
+			return (u.u_error);
+		}
+		break;
+	case CLOCK_MONOTONIC:
+		u.u_error = EINVAL;
+		return (EINVAL);
+	default:
+		u.u_error = EINVAL;
+		return (EINVAL);
+	}
+
+	return (0);
+}
+
+int
+nanosleep()
+{
+	register struct nanosleep_args {
+		syscallarg(struct timespec *) rqtp;
+		syscallarg(struct timespec *) rmtp;
+	} *uap = (struct nanosleep_args*) u.u_ap;
+	int nanowait;
+	struct timespec rqt;
+	struct timespec rmt;
+	struct timeval atv, utv;
+	int s, timo;
+
+	u.u_error = copyin((caddr_t)SCARG(uap, rqtp), (caddr_t)&rqt, sizeof(struct timespec));
+	if (u.u_error) {
+		return (u.u_error);
+	}
+	TIMESPEC_TO_TIMEVAL(&atv, &rqt);
+	if (itimerfix(&atv)) {
+		u.u_error = EINVAL;
+		return (u.u_error);
+	}
+
+	s = splclock();
+	timeradd(&atv, &time, &atv);
+	timo = hzto(&atv);
+	/*
+	 * Avoid inadvertantly sleeping forever
+	 */
+	if (timo == 0) {
+		timo = 1;
+	}
+	splx(s);
+
+	u.u_error = tsleep(&nanowait, PWAIT | PCATCH, "nanosleep", timo);
+	if (u.u_error == ERESTART) {
+		u.u_error = EINTR;
+	}
+	if (u.u_error == EWOULDBLOCK) {
+		u.u_error = 0;
+	}
+
+	if (SCARG(uap, rmtp)) {
+		s = splclock();
+		utv = time;
+		splx(s);
+
+		timersub(&atv, &utv, &utv);
+		if (utv.tv_sec < 0) {
+			timerclear(&utv);
+		}
+
+		TIMEVAL_TO_TIMESPEC(&utv, &rmt);
+		u.u_error = copyout((caddr_t)&rmt, (caddr_t)SCARG(uap, rmtp), sizeof(rmt));
+		if (u.u_error) {
+			return (u.u_error);
+		}
+	}
+
+	return (u.u_error);
+}

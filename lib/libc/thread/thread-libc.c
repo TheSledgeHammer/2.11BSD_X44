@@ -58,6 +58,19 @@ __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 	return (__syscall(SYS_accept, s, addr, addrlen));
 }
 
+
+int
+__libc_clock_gettime(clockid_t clock_id, struct timespec *tp)
+{
+	return (__syscall(SYS_clock_gettime, clock_id, tp));
+}
+
+int
+__libc_clock_settime(clockid_t clock_id, const struct timespec *tp)
+{
+	return (__syscall(SYS_clock_settime, clock_id, tp));
+}
+
 int
 __libc_close(int d)
 {
@@ -121,7 +134,7 @@ __libc_msync(void *addr, size_t len, int flags)
 int
 __libc_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
-	return (ENOSYS);
+	return (__syscall(SYS_nanosleep, rqtp, rmtp));
 }
 
 int
@@ -133,7 +146,7 @@ __libc_open(const char *path, int flags, va_list ap)
 int
 __libc_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 {
-	return (ENOSYS);
+	return (__syscall(SYS_poll, fds, nfds, timeout));
 }
 
 ssize_t
@@ -228,6 +241,8 @@ __libc_writev(int d, const struct iovec *iov, int iovcnt)
 }
 
 __strong_alias(_accept, __libc_accept)
+__strong_alias(_clock_gettime, __libc_clock_gettime)
+__strong_alias(_clock_settime, __libc_clock_settime)
 __strong_alias(_close, __libc_close)
 __strong_alias(_connect, __libc_connect)
 __strong_alias(__exeve, __libc_execve)

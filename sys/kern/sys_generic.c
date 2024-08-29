@@ -419,7 +419,8 @@ select1(uap, is_pselect)
 	int ncoll, s;
 
 	bzero((caddr_t)ibits, sizeof(ibits));
-	bzero((caddr_t) obits, sizeof(obits));
+	bzero((caddr_t)obits, sizeof(obits));
+
 	if (SCARG(uap, nd) > NOFILE)
 		SCARG(uap, nd) = NOFILE; /* forgiving, if slightly wrong */
 	ni = howmany(SCARG(uap, nd), NFDBITS);
@@ -434,6 +435,7 @@ select1(uap, is_pselect)
 	getbits(in, 0);
 	getbits(ou, 1);
 	getbits(ex, 2);
+
 #undef	getbits
 
 	if (SCARG(uap, maskp)) {
@@ -561,12 +563,135 @@ selscan(ibits, obits, nfd, retval)
 			while ((j = ffs(bits)) && i + --j < nfd) {
 				bits &= ~(1L << j);
 				fp = u.u_ofile[i + j];
-				if (fp == NULL)
+				if (fp == NULL) {
 					return (EBADF);
+				}
 				if ((*fp->f_ops->fo_poll)(fp, flag, u.u_procp)) {
 					FD_SET(i + j, &obits[which]);
 					n++;
 				}
+			}
+		}
+	}
+	*retval = n;
+	return (0);
+}
+
+int
+poll()
+{
+	register struct poll_args {
+		syscallarg(struct pollfd *)	fds;
+		syscallarg(u_int) nfds;
+		syscallarg(int) timeout;
+	} *uap = (struct poll_args *)u.u_ap;
+	struct timeval atv;
+	struct timeval time;
+	sigset_t sigmsk;
+	caddr_t		bits;
+	unsigned int timo = 0;
+	register int error, ni;
+	int ncoll, s;
+
+	ni = howmany(SCARG(uap, nfds), sizeof(struct pollfd));
+	bits = NFDSBITS;
+
+	error = copyin(SCARG(uap, fds), bits, ni);
+    if (error) {
+        goto done;
+    }
+
+    if (SCARG(uap, timeout) != INFTIM) {
+		struct timespec *ts = (struct timespec*) &atv;
+
+		if (ts->tv_sec == 0 && ts->tv_nsec < 1000) {
+			atv.tv_usec = 1;
+		} else {
+			atv.tv_usec = ts->tv_nsec / 1000;
+		}
+
+		if (itimerfix(&atv)) {
+			error = EINVAL;
+			goto done;
+		}
+		s = splhigh();
+		time.tv_usec = lbolt * mshz;
+		timevaladd(&atv, &time);
+		splx(s);
+	}
+retry:
+	ncoll = nselcoll;
+	u.u_procp->p_flag |= P_SELECT;
+    error = pollscan((struct pollfd *)bits, SCARG(uap, nfds), &u.u_r.r_val1);
+	if (error || u.u_r.r_val1)
+		goto done;
+	s = splhigh();
+	if (SCARG(uap, timeout) != INFTIM) {
+		/* this should be timercmp(&time, &atv, >=) */
+		if ((time.tv_sec > atv.tv_sec
+				|| (time.tv_sec == atv.tv_sec && lbolt * mshz >= atv.tv_usec))) {
+			splx(s);
+			goto done;
+		}
+		timo = hzto(&atv);
+		if (timo == 0)
+			timo = 1;
+	}
+	if ((u.u_procp->p_flag & P_SELECT) == 0 || nselcoll != ncoll) {
+		u.u_procp->p_flag &= ~P_SELECT;
+		splx(s);
+		goto retry;
+	}
+	u.u_procp->p_flag &= ~P_SELECT;
+	error = tsleep(&selwait, PSOCK | PCATCH, "poll", timo);
+	splx(s);
+	if (error == 0)
+		goto retry;
+
+done:
+	u.u_procp->p_flag &= ~P_SELECT;
+	/* poll is not restarted after signals... */
+	if (error == ERESTART)
+		error = EINTR;
+	if (error == EWOULDBLOCK)
+		error = 0;
+	if (error == 0) {
+		error = copyout(bits, SCARG(uap, fds), ni);
+		if (error == 0) {
+			return (error);
+		}
+	}
+	return (error);
+}
+
+int
+pollscan(fds, nfd, retval)
+	struct pollfd *fds;
+	int nfd, *retval;
+{
+	int i, n;
+	struct filedesc	*fdp;
+	struct file	*fp;
+
+	fdp = u.u_fd;
+	for (i = 0; i < nfd; i++, fds++) {
+		if (fds->fd >= fdp->fd_nfiles) {
+			fds->revents = POLLNVAL;
+			n++;
+		} else if (fds->fd < 0) {
+			fds->revents = 0;
+		} else {
+			fp = fd_getfile(fds->fd);
+			if (fp == NULL) {
+				fds->revents = POLLNVAL;
+				n++;
+			} else {
+				FILE_USE(fp);
+				fds->revents = (*fp->f_ops->fo_poll)(fp, fds->events | POLLERR | POLLHUP, u.u_procp);
+				if (fds->revents != 0) {
+					n++;
+				}
+				FILE_UNUSE(fp, u.u_procp);
 			}
 		}
 	}

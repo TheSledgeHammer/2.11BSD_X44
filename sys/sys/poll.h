@@ -40,6 +40,8 @@ struct pollfd {
 	short	revents;	/* events returned */
 };
 
+#define NFDSBITS	(32 * sizeof(struct pollfd))
+
 /*
  * Testable events (may be specified in events field).
  */

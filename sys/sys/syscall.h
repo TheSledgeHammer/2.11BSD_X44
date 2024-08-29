@@ -112,10 +112,10 @@
 #define	SYS_setsockopt	105
 #define	SYS_listen	106
 #define	SYS_sigsuspend	107
-				/* 108 is obsolete old sigvec */
-				/* 109 is obsolete old sigblock */
-				/* 110 is obsolete old sigsetmask */
-				/* 111 is obsolete old sigpause */
+#define	SYS_nanosleep	108
+#define	SYS_clock_gettime	109
+#define	SYS_clock_settime	110
+#define	SYS_poll	111
 #define	SYS_sigstack	112
 #define	SYS_recvmsg	113
 #define	SYS_sendmsg	114

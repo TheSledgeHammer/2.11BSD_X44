@@ -299,8 +299,8 @@ pthread_sys_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict in
 		 * Get current time. We need it if we would become master.
 		 */
 		if (timeout) {
-			//clock_gettime(CLOCK_MONOTONIC, &etimo);
-			//timespecadd(&etimo, timeout, &etimo);
+			thr_clock_gettime(CLOCK_MONOTONIC, &etimo);
+			timespecadd(&etimo, timeout, &etimo);
 		}
 
 		/*
@@ -383,11 +383,11 @@ pthread_sys_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict in
 		if (timeout) {
 			struct timespec tnow;
 
-			//clock_gettime(CLOCK_MONOTONIC, &tnow);
+			thr_clock_gettime(CLOCK_MONOTONIC, &tnow);
 			/* compute difference to end time */
-			//timespecsub(&tnow, &etimo, &tnow);
+			timespecsub(&tnow, &etimo, &tnow);
 			/* substract the difference from timeout */
-			//timespecsub(&timo, &tnow, &timo);
+			timespecsub(&timo, &tnow, &timo);
 		}
 	}
 
@@ -696,8 +696,6 @@ pthread__kill_self(pthread_t self, siginfo_t *si)
 	sigset_t oldmask;
 	struct sigaction act;
 	ucontext_t uc;	/* XXX: we don't pass the right context here */
-
-
 
 	pthread_spinlock(self, &pt_sigacts_lock);
 	act = pt_sigacts[si->ptsi_signo];

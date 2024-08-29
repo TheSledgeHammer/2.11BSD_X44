@@ -149,10 +149,10 @@
 105 STD     	{ int setsockopt(); }
 106 STD     	{ int listen(); }
 107 STD     	{ int sigsuspend(); }
-108 OBSOL   	old sigvec
-109 OBSOL   	old sigblock
-110 OBSOL   	old sigsetmask
-111 OBSOL   	old sigpause
+108 STD 	{ int nanosleep(); }
+109 STD   	{ int clock_gettime(); }
+110 STD   	{ int clock_settime(); }
+111 STD   	{ int poll(); }
 112 STD		{ int sigstack(); }
 113 STD     	{ int recvmsg(); }
 114 STD     	{ int sendmsg(); }

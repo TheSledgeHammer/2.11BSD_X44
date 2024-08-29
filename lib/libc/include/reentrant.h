@@ -218,6 +218,8 @@ __END_DECLS
 
 __BEGIN_DECLS
 int 	__libc_accept(int, struct sockaddr *, socklen_t *);
+int	__libc_clock_gettime(clockid_t clock_id, struct timespec *tp);
+int	__libc_clock_settime(clockid_t clock_id, const struct timespec *tp);
 int 	__libc_close(int);
 int 	__libc_connect(int, const struct sockaddr *, socklen_t);
 int 	__libc_execve(const char *path, char *const *, char *const *);
@@ -247,6 +249,8 @@ int 	__libc_writev(int, const struct iovec *, int);
 __END_DECLS
 
 #define	thr_accept(s, addr, addrlen)					__libc_accept(s, addr, addrlen)
+#define	thr_clock_gettime(clock_id, tp)					__libc_clock_gettime(clock_id, tp)
+#define	thr_clock_settime(clock_id, tp)					__libc_clock_settime(clock_id, tp)
 #define	thr_close(d)									__libc_close(d)
 #define	thr_connect(s, addr, namelen)					__libc_connect(s, addr, namelen)
 #define	thr_execve(fname, argp, envp)					__libc_execve(fname, argp, envp)
@@ -311,6 +315,8 @@ __END_DECLS
 #define	thr_errno()
 
 #define	thr_accept(s, addr, addrlen)
+#define	thr_clock_gettime(clock_id, tp)
+#define	thr_clock_settime(clock_id, tp)
 #define	thr_close(d)
 #define	thr_connect(s, addr, namelen)
 #define	thr_execve(fname, argp, envp)
