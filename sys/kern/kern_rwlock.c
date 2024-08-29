@@ -245,7 +245,7 @@ simple_rwlock_read_held(rwl)
 	__volatile struct rwlock *rwl;
 {
 	struct lock_object *lock = &rwl->rwl_lnterlock;
-	return ((simple_lock_try(lock) & RW_HAVE_WRITE) == 0 && (rwlock_lock_held(rwl)));
+	return ((simple_lock_try(lock) & RW_HAVE_WRITE) == 0 && (simple_rwlock_held(rwl)));
 }
 
 /*
