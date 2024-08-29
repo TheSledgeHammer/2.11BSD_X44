@@ -91,6 +91,14 @@ void 		tzsetwall(void);
  */
 long 		__sysconf(int);
 
+#if (_POSIX_C_SOURCE - 0) >= 199309L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
+#include <sys/time.h>
+int clock_gettime(clockid_t, struct timespec *);
+int clock_settime(clockid_t, const struct timespec *);
+int nanosleep(const struct timespec *, struct timespec *);
+#endif
+
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #  ifndef __LOCALE_T_DECLARED
 typedef struct _locale		*locale_t;

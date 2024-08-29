@@ -147,6 +147,16 @@ highpartoffset=524280	# offset for partition 9 to 16
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 umask 77
 
+# Check if we have fdesc mounted
+if [ -d fd ]; then
+	case "`df fd`" in
+	*fdesc*) nofdesc=false;;
+	*) nofdesc=true;;
+	esac
+else
+	nofdesc=true
+fi
+
 makedev()
 {
 
