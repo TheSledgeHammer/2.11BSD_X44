@@ -100,10 +100,10 @@ extern int 				nfiles;		/* actual number of open files */
 /*
  * Access call.
  */
-#define	F_OK		0	/* does file exist */
-#define	X_OK		1	/* is it executable by caller */
-#define	W_OK		2	/* writable by caller */
-#define	R_OK		4	/* readable by caller */
+//#define	F_OK		0	/* does file exist */
+//#define	X_OK		1	/* is it executable by caller */
+//#define	W_OK		2	/* writable by caller */
+//#define	R_OK		4	/* readable by caller */
 
 #ifndef _POSIX_SOURCE
 /* whence values for lseek(2); renamed by POSIX 1003.1 */
