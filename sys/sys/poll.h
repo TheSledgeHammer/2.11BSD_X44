@@ -74,10 +74,9 @@ struct pollfd {
 struct proc;
 struct timespec;
 
-int	pollcommon(register_t *, struct pollfd *, u_int, struct timespec *, sigset_t *);
-
 __BEGIN_DECLS
 int	poll(struct pollfd *, nfds_t, int);
+int pollscan(struct pollfd *, int, int *);
 #if __BSD_VISIBLE
 int ppoll(struct pollfd[], nfds_t, const struct timespec *, const sigset_t *);
 #endif /* __BSD_VISIBLE */

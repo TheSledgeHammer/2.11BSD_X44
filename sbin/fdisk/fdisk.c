@@ -84,16 +84,6 @@ struct disklabel disklabel;		/* disk parameters */
 
 static int cyls, sectors, heads, cylsecs, disksecs;
 
-#ifdef obsolete
-struct mboot {
-	unsigned char padding[2]; /* force the longs to be long aligned */
-	unsigned char *bootinst;  /* boot code */
-	off_t bootinst_size;
-	struct	dos_partition parts[NDOSPART];
-};
-static struct mboot mboot;
-#endif
-
 static struct mbr_sector mboot;
 static int fd;
 

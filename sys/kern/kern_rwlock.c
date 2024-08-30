@@ -244,7 +244,6 @@ int
 simple_rwlock_read_held(rwl)
 	__volatile struct rwlock *rwl;
 {
-	//struct lock_object *lock = &rwl->rwl_lnterlock;
 	return ((simple_lock_try(&rwl->rwl_lnterlock) & RW_HAVE_WRITE) == 0 && (simple_lock_try(&rwl->rwl_lnterlock) & RW_KERNPROC) != 0);
 }
 
@@ -259,7 +258,6 @@ int
 simple_rwlock_write_held(rwl)
 	__volatile struct rwlock *rwl;
 {
-	//struct lock_object *lock = &rwl->rwl_lnterlock;
 	return ((simple_lock_try(&rwl->rwl_lnterlock) & (RW_HAVE_WRITE | RW_KERNPROC)) == (RW_HAVE_WRITE | (uintptr_t)curproc));
 }
 
@@ -274,7 +272,6 @@ int
 simple_rwlock_held(rwl)
 	__volatile struct rwlock *rwl;
 {
-	//struct lock_object *lock = &rwl->rwl_lnterlock;
 	return ((simple_lock_try(&rwl->rwl_lnterlock) & RW_KERNPROC) != 0);
 }
 
@@ -283,7 +280,6 @@ simple_rwlock_init(rwl, name)
 	struct rwlock *rwl;
 	const char	*name;
 {
-	//struct lock_object *lock = &rwl->rwl_lnterlock;
 	simple_lock_init(&rwl->rwl_lnterlock, name);
 }
 
@@ -291,7 +287,6 @@ void
 simple_rwlock_lock(rwl)
 	__volatile struct rwlock *rwl;
 {
-	//struct lock_object *lock = &rwl->rwl_lnterlock;
 	simple_lock(&rwl->rwl_lnterlock);
 }
 
@@ -299,7 +294,6 @@ void
 simple_rwlock_unlock(rwl)
 	__volatile struct rwlock *rwl;
 {
-	//struct lock_object *lock = &rwl->rwl_lnterlock;
 	simple_unlock(&rwl->rwl_lnterlock);
 }
 
@@ -307,7 +301,6 @@ int
 simple_rwlock_try(rwl)
 	__volatile struct rwlock *rwl;
 {
-	//struct lock_object *lock = &rwl->rwl_lnterlock;
 	return (simple_lock_try(&rwl->rwl_lnterlock));
 }
 

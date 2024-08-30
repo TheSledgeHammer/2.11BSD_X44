@@ -588,13 +588,14 @@ poll()
 	struct timeval atv;
 	struct timeval time;
 	sigset_t sigmsk;
-	caddr_t		bits;
+	caddr_t	bits;
+	char smallbits[NFDSBITS];
 	unsigned int timo = 0;
 	register int error, ni;
 	int ncoll, s;
 
 	ni = howmany(SCARG(uap, nfds), sizeof(struct pollfd));
-	bits = NFDSBITS;
+	bits = smallbits;
 
 	error = copyin(SCARG(uap, fds), bits, ni);
     if (error) {
@@ -647,7 +648,6 @@ retry:
 	splx(s);
 	if (error == 0)
 		goto retry;
-
 done:
 	u.u_procp->p_flag &= ~P_SELECT;
 	/* poll is not restarted after signals... */
