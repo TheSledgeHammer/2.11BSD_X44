@@ -229,9 +229,9 @@ __END_DECLS
 #define	SEEK_END	2		/* set file offset to EOF plus offset */
 #endif
 
-#define	stdin		(&_iob[0])
-#define	stdout		(&_iob[1])
-#define	stderr		(&_iob[2])
+#define	stdin		(&__iob[0])
+#define	stdout		(&__iob[1])
+#define	stderr		(&__iob[2])
 
 
 #define	FPARSELN_UNESCESC	0x01
