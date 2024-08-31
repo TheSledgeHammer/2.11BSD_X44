@@ -34,7 +34,7 @@ __FBSDID("$FreeBSD$");
 #include <eficonsctl.h>
 #include <efichar.h>
 
-#include "paths.h"
+#include "bootpaths.h"
 #include "proto.h"
 //#include "gpt.h"		/* FreeBSD: libsa/gpt.h & gpt.c */
 

@@ -1,6 +1,6 @@
 #	$211BSD: Makefile,v 1.0 2021/05/25 23:59:27 Exp $
 
-INCSDIR= 	/usr/include/vm/include
+INCSDIR= 	/usr/include/vm
 
 INCS+= 		device_pager.h pmap.h swap_pager.h vm_extern.h 	\
 			vm_inherit.h vm_kern.h vm_mac.h vm_map.h		\

@@ -2,7 +2,7 @@
 
 .include <bsd.loader.mk>
 
-INCSDIR=    /usr/include
+INCSDIR=    /usr/include/mdec
 
 SRCS+=		boot.c commands.c console.c devopen.c environment.c 	\
 			fileload.c getopt.c install.c interp_backslash.c 		\
@@ -18,7 +18,7 @@ SRCS+=	interp_dloader.c
 
 .if ${LOADER_NET_SUPPORT} == "yes"
 SRCS+= 	dev_net.c
-#INCS+=	dev_net.h
+INCS+=	dev_net.h
 .endif
 
 .if ${HAVE_BCACHE} == "yes"
@@ -28,13 +28,13 @@ SRCS+=  bcache.c
 # Machine-independant ISA PnP
 .if ${HAVE_ISABUS} == "yes"
 SRCS+=	isapnp.c
-#INCS+= 	isapnp.h
+INCS+= 	isapnp.h
 .endif
 
 .if ${HAVE_PNP} == "yes"
 SRCS+=	pnp.c
 .endif
 
-#INCS=		boot2.h bootstrap.h commands.h paths.h rbx.h smbios.h
+INCS=		boot2.h bootpaths.h bootstrap.h commands.h rbx.h smbios.h
 
-#.include <bsd.inc.mk>
+.include <bsd.inc.mk>

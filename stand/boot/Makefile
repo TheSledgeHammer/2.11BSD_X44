@@ -16,5 +16,5 @@ SUBDIR+=	fdt
 
 SUBDIR+=	arch
 
-#.include <bsd.kinc.mk>
+.include <bsd.inc.mk>
 		

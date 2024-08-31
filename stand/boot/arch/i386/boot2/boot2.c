@@ -35,7 +35,7 @@
 #include <btxv86.h>
 
 #include "boot2.h"
-#include "paths.h"
+#include "bootpaths.h"
 #include "lib.h"
 
 #define IO_KEYBOARD		1

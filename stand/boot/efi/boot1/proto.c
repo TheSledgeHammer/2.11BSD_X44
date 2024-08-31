@@ -32,7 +32,7 @@
 //#include <efichar.h>
 
 #include "boot_module.h"
-#include "paths.h"
+#include "bootpaths.h"
 #include "proto.h"
 
 static EFI_GUID BlockIoProtocolGUID = BLOCK_IO_PROTOCOL;

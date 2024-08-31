@@ -32,7 +32,7 @@
 //#include <efichar.h>
 
 #include "boot_module.h"
-#include "paths.h"
+#include "bootpaths.h"
 #include "proto.h"
 
 static void efi_panic(EFI_STATUS s, const char *fmt, ...);// __dead2 __printflike(2, 3);
