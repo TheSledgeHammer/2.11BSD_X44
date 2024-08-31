@@ -53,7 +53,6 @@
 #include <machine/types.h>
 
 #include <sys/ansi.h>
-//#include <sys/stdint.h>
 
 #ifndef	_BSD_INT8_T_
 typedef	__int8_t			int8_t;
@@ -156,6 +155,11 @@ typedef char				bool_t;		/* boolean */
 typedef long				memaddr_t;	/* core & swap address */
 
 typedef u_char 				pri_t;		/* priority */
+
+#if defined(_KERNEL) || defined(_LIBC)
+#include <sys/stdint.h>
+typedef intptr_t 			semid_t;
+#endif /* _KERNEL || _LIBC */
 
 #include <sys/select.h>
 

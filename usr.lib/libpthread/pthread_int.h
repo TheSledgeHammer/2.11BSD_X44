@@ -44,7 +44,7 @@
 
 #include "pthread_types.h"
 #include "pthread_queue.h"
-#include "pthread_debug.h"
+//#include "pthread_debug.h"
 #include "pthread_md.h"
 
 #include <signal.h>

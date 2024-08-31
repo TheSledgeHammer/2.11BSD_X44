@@ -216,17 +216,29 @@ __END_DECLS
 
 #endif /* __LIBC_THREAD_STUBS */
 
+
 __BEGIN_DECLS
 int 	__libc_accept(int, struct sockaddr *, socklen_t *);
-int	__libc_clock_gettime(clockid_t clock_id, struct timespec *tp);
-int	__libc_clock_settime(clockid_t clock_id, const struct timespec *tp);
+int 	__libc_atfork(void (*)(void), void (*)(void), void (*)(void));
+int		__libc_clock_gettime(clockid_t clock_id, struct timespec *tp);
+int		__libc_clock_settime(clockid_t clock_id, const struct timespec *tp);
 int 	__libc_close(int);
 int 	__libc_connect(int, const struct sockaddr *, socklen_t);
 int 	__libc_execve(const char *path, char *const *, char *const *);
 int 	__libc_fcntl(int, int, va_list);
+pid_t	__libc_fork(void);
 int 	__libc_fsync(int);
 int 	__libc_fsync_range(int, int, off_t, off_t);
-int	__libc_getitimer(unsigned int, struct itimerval *);
+int		__libc_getitimer(unsigned int, struct itimerval *);
+int 	__libc_ksem_close(semid_t id);
+int 	__libc_ksem_destroy(semid_t id);
+int 	__libc_ksem_getvalue(semid_t id, unsigned int *value);
+int 	__libc_ksem_init(unsigned int value, semid_t *idp);
+int 	__libc_ksem_open(const char *name, int oflag, mode_t mode, unsigned int value, semid_t *idp);
+int 	__libc_ksem_post(semid_t id);
+int 	__libc_ksem_trywait(semid_t id);
+int 	__libc_ksem_unlink(const char *name);
+int 	__libc_ksem_wait(semid_t id);
 ssize_t __libc_msgrcv(int, void *, size_t, long, int);
 int 	__libc_msgsnd(int, const void *, size_t, int);
 int 	__libc_msync(void *, size_t, int);
@@ -249,15 +261,26 @@ int 	__libc_writev(int, const struct iovec *, int);
 __END_DECLS
 
 #define	thr_accept(s, addr, addrlen)					__libc_accept(s, addr, addrlen)
+#define	thr_atfork(prepare, parent, child)				__libc_atfork(prepare, parent, child)
 #define	thr_clock_gettime(clock_id, tp)					__libc_clock_gettime(clock_id, tp)
 #define	thr_clock_settime(clock_id, tp)					__libc_clock_settime(clock_id, tp)
 #define	thr_close(d)									__libc_close(d)
 #define	thr_connect(s, addr, namelen)					__libc_connect(s, addr, namelen)
 #define	thr_execve(fname, argp, envp)					__libc_execve(fname, argp, envp)
 #define	thr_fcntl(fd, cmd, ap)							__libc_fcntl(fd, cmd, ap)
+#define thr_fork()										__libc_fork()
 #define	thr_fsync(d)									__libc_fsync(d)
 #define	thr_fsync_range(d, f, s, e)						__libc_fsync_range(d, f, s, e)
 #define thr_getitimer(which, itv)						__libc_getitimer(which, itv)
+#define thr_ksem_close(id)								__libc_ksem_close(id)
+#define thr_ksem_destroy(id)							__libc_ksem_destroy(id)
+#define thr_ksem_getvalue(id, value)					__libc_ksem_getvalue(id, value)
+#define thr_ksem_init(value, idp)						__libc_ksem_init(value, idp)
+#define thr_ksem_open(name, oflag, mode, value, idp)	__libc_ksem_open(name, oflag, mode, value, idp)
+#define thr_ksem_post(id) 								__libc_ksem_post(id)
+#define thr_ksem_trywait(id)							__libc_ksem_trywait(id)
+#define thr_ksem_unlink(name) 							__libc_ksem_unlink(name)
+#define thr_ksem_wait(id) 								__libc_ksem_wait(id)
 #define	thr_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg) 	__libc_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg)
 #define	thr_msgsnd(msgid, msgp, msgsz, msgflg)			__libc_msgsnd(msgid, msgp, msgsz, msgflg)
 #define	thr_msync(addr, len, flags)						__libc_msync(addr, len, flags)
@@ -315,15 +338,26 @@ __END_DECLS
 #define	thr_errno()
 
 #define	thr_accept(s, addr, addrlen)
+#define	thr_atfork(prepare, parent, child)
 #define	thr_clock_gettime(clock_id, tp)
 #define	thr_clock_settime(clock_id, tp)
 #define	thr_close(d)
 #define	thr_connect(s, addr, namelen)
 #define	thr_execve(fname, argp, envp)
 #define	thr_fcntl(fd, cmd, ap)
+#define thr_fork()
 #define	thr_fsync(d)
 #define	thr_fsync_range(d, f, s, e)
 #define thr_getitimer(which, itv)
+#define thr_ksem_close(id)
+#define thr_ksem_destroy(id)
+#define thr_ksem_getvalue(id, value)
+#define thr_ksem_init(value, idp)
+#define thr_ksem_open(name, oflag, mode, value, idp)
+#define thr_ksem_post(id)
+#define thr_ksem_trywait(id)
+#define thr_ksem_unlink(name)
+#define thr_ksem_wait(id)
 #define	thr_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg)
 #define	thr_msgsnd(msgid, msgp, msgsz, msgflg)
 #define	thr_msync(addr, len, flags)

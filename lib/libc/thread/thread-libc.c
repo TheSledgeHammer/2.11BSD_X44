@@ -58,7 +58,6 @@ __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 	return (__syscall(SYS_accept, s, addr, addrlen));
 }
 
-
 int
 __libc_clock_gettime(clockid_t clock_id, struct timespec *tp)
 {
@@ -111,6 +110,60 @@ int
 __libc_getitimer(unsigned int which, struct itimerval *itv)
 {
 	return (__syscall(SYS_setitimer, which, itv));
+}
+
+int
+__libc_ksem_close(semid_t id)
+{
+	return (ENOSYS);
+}
+
+int
+__libc_ksem_destroy(semid_t id)
+{
+	return (ENOSYS);
+}
+
+int
+__libc_ksem_getvalue(semid_t id, unsigned int *value)
+{
+	return (ENOSYS);
+}
+
+int
+__libc_ksem_init(unsigned int value, semid_t *idp)
+{
+	return (ENOSYS);
+}
+
+int
+__libc_ksem_open(const char *name, int oflag, mode_t mode, unsigned int value, semid_t *idp)
+{
+	return (ENOSYS);
+}
+
+int
+__libc_ksem_post(semid_t id)
+{
+	return (ENOSYS);
+}
+
+int
+__libc_ksem_trywait(semid_t id)
+{
+	return (ENOSYS);
+}
+
+int
+__libc_ksem_unlink(const char *name)
+{
+	return (ENOSYS);
+}
+
+int
+__libc_ksem_wait(semid_t id)
+{
+	return (ENOSYS);
 }
 
 ssize_t
@@ -250,6 +303,15 @@ __strong_alias(_fcntl, __libc_fcntl)
 __strong_alias(_fsync, __libc_fsync)
 __weak_alias(__libc_fsync_range, _fsync_range)
 __strong_alias(_getitimer, __libc_getitimer)
+__strong_alias(_ksem_close, __libc_ksem_close)
+__strong_alias(_ksem_destroy, __libc_ksem_destroy)
+__strong_alias(_ksem_getvalue, __libc_ksem_getvalue)
+__strong_alias(_ksem_init, __libc_ksem_init)
+__strong_alias(_ksem_open, __libc_ksem_open)
+__strong_alias(_ksem_post, __libc_ksem_post)
+__strong_alias(_ksem_trywait, __libc_ksem_trywait)
+__strong_alias(_ksem_unlink, __libc_ksem_unlink)
+__strong_alias(_ksem_wait, __libc_ksem_wait)
 __strong_alias(_msgrcv, __libc_msgrcv)
 __strong_alias(_msgsnd, __libc_msgsnd)
 __strong_alias(_msync, __libc_msync)

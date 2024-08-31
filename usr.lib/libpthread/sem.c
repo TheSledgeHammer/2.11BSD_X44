@@ -69,7 +69,7 @@
 __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 
 #include <sys/types.h>
-#include <sys/ksem.h>
+//#include <sys/ksem.h>
 #include <sys/queue.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -139,12 +139,12 @@ sem_init(sem_t *sem, int pshared, unsigned int value)
 
 	semid = USEM_USER;
 
-	if (pshared && _ksem_init(value, &semid) == -1)
+	if (pshared && thr_ksem_init(value, &semid) == -1)
 		return (-1);
 
 	if ((error = sem_alloc(value, semid, sem)) != 0) {
 		if (semid != USEM_USER)
-			_ksem_destroy(semid);
+			thr_ksem_destroy(semid);
 		errno = error;
 		return (-1);
 	}
@@ -165,7 +165,7 @@ sem_destroy(sem_t *sem)
 #endif
 
 	if ((*sem)->usem_semid != USEM_USER) {
-		if (_ksem_destroy((*sem)->usem_semid))
+		if (thr_ksem_destroy((*sem)->usem_semid))
 			return (-1);
 	} else {
 		self = pthread__self();
@@ -207,7 +207,7 @@ sem_open(const char *name, int oflag, ...)
 	 * We can be lazy and let the kernel handle the oflag,
 	 * we'll just merge duplicate IDs into our list.
 	 */
-	if (_ksem_open(name, oflag, mode, value, &semid) == -1)
+	if (thr_ksem_open(name, oflag, mode, value, &semid) == -1)
 		return (SEM_FAILED);
 
 	/*
@@ -237,7 +237,7 @@ sem_open(const char *name, int oflag, ...)
 
  bad:
 	pthread_mutex_unlock(&named_sems_mtx);
-	_ksem_close(semid);
+	thr_ksem_close(semid);
 	if (sem != NULL) {
 		if (*sem != NULL)
 			sem_free(*sem);
@@ -264,7 +264,7 @@ sem_close(sem_t *sem)
 	}
 
 	pthread_mutex_lock(&named_sems_mtx);
-	if (_ksem_close((*sem)->usem_semid) == -1) {
+	if (thr_ksem_close((*sem)->usem_semid) == -1) {
 		pthread_mutex_unlock(&named_sems_mtx);
 		return (-1);
 	}
@@ -279,7 +279,7 @@ int
 sem_unlink(const char *name)
 {
 
-	return (_ksem_unlink(name));
+	return (thr_ksem_unlink(name));
 }
 
 int
@@ -298,7 +298,7 @@ sem_wait(sem_t *sem)
 
 	if ((*sem)->usem_semid != USEM_USER) {
 		pthread__testcancel(self);
-		return (_ksem_wait((*sem)->usem_semid));
+		return (thr_ksem_wait((*sem)->usem_semid));
 	}
 
 	for (;;) {
@@ -348,7 +348,7 @@ sem_trywait(sem_t *sem)
 #endif
 
 	if ((*sem)->usem_semid != USEM_USER)
-		return (_ksem_trywait((*sem)->usem_semid));
+		return (thr_ksem_trywait((*sem)->usem_semid));
 
 	self = pthread__self();
 
@@ -380,7 +380,7 @@ sem_post(sem_t *sem)
 #endif
 
 	if ((*sem)->usem_semid != USEM_USER)
-		return (_ksem_post((*sem)->usem_semid));
+		return (thr_ksem_post((*sem)->usem_semid));
 
 	self = pthread__self();
 
@@ -409,7 +409,7 @@ sem_getvalue(sem_t * __restrict sem, int * __restrict sval)
 	}
 #endif
 	if ((*sem)->usem_semid != USEM_USER)
-		return (_ksem_getvalue((*sem)->usem_semid, sval));
+		return (thr_ksem_getvalue((*sem)->usem_semid, sval));
 
 	self = pthread__self();
 

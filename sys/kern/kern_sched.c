@@ -349,9 +349,13 @@ proc_create_nthreads(p)
 	if ((p->p_flag & P_TDCREATE) == 0) {
 		nthreads = p->p_sched->sc_optnthreads;
 		for (i = 0; i < nthreads; i++) {
-			error = newthread(&td, NULL, THREAD_STACK, FALSE);
-			if (error != 0) {
-				return (error);
+			if ((td->td_flag & TD_STEALABLE) == 0) {
+				thread_steal(p, td);
+			} else {
+				error = newthread(&td, NULL, THREAD_STACK, FALSE);
+				if (error != 0) {
+					return (error);
+				}
 			}
 		}
 		p->p_flag &= ~P_TDCREATE;

@@ -100,6 +100,9 @@ __strong_alias(__libc_thr_create,pthread_create)
 __strong_alias(__libc_thr_exit,pthread_exit)
 __strong_alias(__libc_thr_errno,pthread__errno)
 __strong_alias(__libc_thr_setcancelstate,pthread_setcancelstate)
+#ifdef __weak_alias
+__weak_alias(pthread_atfork, thr_atfork)
+#endif /* __weak_alias */
 
 /*
  * Static library kludge.  Place a reference to a symbol any library
@@ -242,7 +245,7 @@ pthread__start(void)
 	 * various restrictions on fork() and threads, it's legal to
 	 * fork() before creating any threads. 
 	 */
-	//pthread__alarm_init();
+	pthread__alarm_init();
 
 	pthread_atfork(NULL, NULL, pthread__child_callback);
 
@@ -1153,4 +1156,14 @@ pthread__errorfunc(char *file, int line, char *function, char *msg)
 		(void)kill(getpid(), SIGABRT);
 		_exit(1);
 	}
+}
+
+int
+pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void))
+{
+	int ret;
+
+	ret = thr_atfork(prepare, parent, child);
+
+	return (ret);
 }

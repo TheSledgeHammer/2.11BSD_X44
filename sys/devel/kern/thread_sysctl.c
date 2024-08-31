@@ -68,13 +68,27 @@
 struct kinfo_thread {
 	struct thread 		kt_thread;				/* thread structure */
 	struct ethread {
-		struct	thread	*e_tdaddr;				/* address of thread */
+		struct	thread	*e_taddr;				/* address of thread */
+		struct	session *e_sess;				/* session pointer */
+
 		struct	pcred 	e_pcred;				/* thread credentials */
 		struct	ucred 	e_ucred;				/* current credentials */
 
 		pid_t			e_ptid;					/* parent process id */
 		pid_t			e_pgid;					/* process group id */
 		short			e_jobc;					/* job control counter */
+		dev_t			e_tdev;					/* controlling tty dev */
+		pid_t			e_tpgid;				/* tty process group id */
+
+		struct	session *e_tsess;				/* tty session pointer */
+
+#define	WMESGLEN		7
+		char			e_wmesg[WMESGLEN+1];	/* wchan message */
+		segsz_t 		e_xsize;				/* text size */
+		short			e_xrssize;				/* text rss */
+		short			e_xccount;				/* text references */
+		short			e_xswrss;
+		long			e_flag;
 	} kt_ethread;
 };
 
@@ -120,6 +134,12 @@ sysctl_dothread(name, namelen, where, sizep)
 			break;
 
 		case KERN_THREAD_TTY:
+			if ((td->td_procp->p_flag & P_CONTROLT) == 0
+					|| td->td_procp->p_session->s_ttyp == NULL
+					|| td->td_procp->p_session->s_ttyp->t_dev
+							!= (dev_t) name[1]) {
+				continue;
+			}
 			break;
 
 		case KERN_THREAD_UID:
@@ -158,4 +178,46 @@ sysctl_dothread(name, namelen, where, sizep)
 		*sizep = needed;
 	}
 	return (0);
+}
+
+void
+fill_ethread(p, td, etd)
+	register struct thread *td;
+	register struct ethread *etd;
+{
+	register struct proc *p = td->td_procp;
+	struct	tty	*ttyp;
+
+	etd->e_taddr = td;
+	etd->e_sess = td->td_pgrp->pg_session;
+	etd->e_pcred = *td->td_cred;
+	etd->e_ucred = *td->td_ucred;
+	if (td->td_stat == SIDL || td->td_stat == SZOMB) {
+
+	} else {
+
+	}
+	if (td->td_procp) {
+		etd->e_ptid = td->td_procp->p_pid;
+	} else {
+		etd->e_ptid = 0;
+	}
+	etd->e_pgid = td->td_pgrp->pg_id;
+	etd->e_jobc = p->p_pgrp->pg_jobc;
+	if ((td->td_procp->p_flag & P_CONTROLT) && (ttyp = etd->e_sess->s_ttyp)) {
+		etd->e_tdev = ttyp->t_dev;
+		etd->e_tpgid = ttyp->t_pgrp ? ttyp->t_pgrp->pg_id : NO_PID;
+		etd->e_tsess = ttyp->t_session;
+	} else {
+		etd->e_tdev = NODEV;
+	}
+	etd->e_flag = etd->e_sess->s_ttyvp ? EPROC_CTTY : 0;
+	if (SESS_LEADER(td->td_procp)) {
+		etd->e_flag |= EPROC_SLEADER;
+	}
+	if (p->p_wmesg) {
+		strncpy(etd->e_wmesg, td->td_wmesg, WMESGLEN);
+	}
+	etd->e_xsize = etd->e_xrssize = 0;
+	etd->e_xccount = etd->e_xswrss = 0;
 }
