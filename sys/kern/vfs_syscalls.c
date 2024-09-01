@@ -55,6 +55,7 @@
 #include <sys/dirent.h>
 #include <sys/sysdecl.h>
 #include <sys/sysctl.h>
+#include <sys/unistd.h>
 
 #include <vm/include/vm.h>
 
