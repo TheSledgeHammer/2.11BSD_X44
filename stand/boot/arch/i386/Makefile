@@ -20,4 +20,4 @@ SUBDIR+= gptboot
 
 SUBDIR+= loader
 
-#.include <bsd.inc.mk>
+.include <bsd.kinc.mk>
