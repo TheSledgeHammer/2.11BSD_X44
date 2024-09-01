@@ -5,4 +5,4 @@
 # Our sources
 .PATH: ${.CURDIR}/thread
 
-SRCS+=	__isthreaded.c thread_atfork.c thread-libc.c thread-stub.c
+SRCS+=	__isthreaded.c thread-atfork.c thread-libc.c thread-stub.c
