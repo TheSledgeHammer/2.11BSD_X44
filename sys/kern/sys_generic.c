@@ -667,7 +667,8 @@ done:
 int
 pollscan(fds, nfd, retval)
 	struct pollfd *fds;
-	int nfd, *retval;
+	u_int nfd;
+	int *retval;
 {
 	int i, n;
 	struct filedesc	*fdp;
