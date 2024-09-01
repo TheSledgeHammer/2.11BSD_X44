@@ -115,6 +115,7 @@
 ./usr/include/gcc-10
 ./usr/include/gcc-10/sanitizer
 ./usr/include/lzma
+./usr/include/mdec
 ./usr/include/miscfs
 ./usr/include/miscfs/deadfs
 ./usr/include/miscfs/fdesc
