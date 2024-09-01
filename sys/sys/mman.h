@@ -37,6 +37,21 @@
 #ifndef _SYS_MMAN_H_
 #define _SYS_MMAN_H_
 
+#include <machine/ansi.h>
+
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
+#endif
+
+#include <sys/ansi.h>
+#include <sys/types.h>
+
+#ifndef	off_t
+typedef	__off_t		off_t;		/* file offset */
+#define	off_t		__off_t
+#endif
+
 /*
  * Protections are chosen from these bits, or-ed together
  */
@@ -97,7 +112,7 @@
 
 __BEGIN_DECLS
 /* Some of these int's should probably be size_t's */
-caddr_t	mmap(caddr_t, size_t, int, int, int, off_t);
+caddr_t	mmap(caddr_t, size_t, int, int, int, long, off_t);
 int	mprotect(caddr_t, size_t, int);
 int	munmap(caddr_t, size_t);
 int	msync(caddr_t, size_t, int);
