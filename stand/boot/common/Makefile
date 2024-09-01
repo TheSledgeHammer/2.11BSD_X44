@@ -37,4 +37,4 @@ SRCS+=	pnp.c
 
 INCS=		boot2.h bootpaths.h bootstrap.h commands.h rbx.h smbios.h
 
-.include <bsd.inc.mk>
+.include <bsd.kinc.mk>
