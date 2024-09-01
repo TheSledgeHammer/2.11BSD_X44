@@ -2,4 +2,4 @@
 
 SUBDIR= 	boot
 
-.include <bsd.inc.mk>
+.include <bsd.kinc.mk>
