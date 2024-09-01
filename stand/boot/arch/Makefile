@@ -12,4 +12,4 @@ SUBDIR+= ${ARCHSUBDIR}
 .endif
 .endif
 
-.include <bsd.inc.mk>
+.include <bsd.kinc.mk>
