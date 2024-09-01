@@ -68,15 +68,14 @@ struct pollfd {
  */
 #define	INFTIM		(-1)
 
-#ifndef _KERNEL
+#ifdef _KERNEL
 #include <sys/cdefs.h>
-
 struct proc;
 struct timespec;
 
+int pollscan(struct pollfd *, u_int, int *);
+#else
 __BEGIN_DECLS
-int	poll(struct pollfd *, nfds_t, int);
-int pollscan(struct pollfd *, int, int *);
 #if __BSD_VISIBLE
 int ppoll(struct pollfd[], nfds_t, const struct timespec *, const sigset_t *);
 #endif /* __BSD_VISIBLE */
