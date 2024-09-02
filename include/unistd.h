@@ -225,18 +225,6 @@ ssize_t	 pread(int, void *, size_t, off_t);
 ssize_t	 pwrite(int, const void *, size_t, off_t);
 #endif /* (_POSIX_C_SOURCE - 0) >= 200112L || ... */
 #endif /* !_POSIX_SOURCE */
-
-/*
- * see libmpx
- * mpx (multiplexor is a non-standard system call unique to 2.11BSD_X44);
- */
-struct mpx;
-/* int 			mpx(int, struct mpx *, int, void *); */
-int				mpx_create(struct mpx *, int, void *);
-int				mpx_put(struct mpx *, int, void *);
-int				mpx_get(struct mpx *, int, void *);
-int				mpx_destroy(struct mpx *, int, void *);
-int				mpx_remove(struct mpx *, int, void *);
 __END_DECLS
 
 #endif /* !_UNISTD_H_ */

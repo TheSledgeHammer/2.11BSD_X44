@@ -492,7 +492,7 @@ vndthread(void *arg)
 
 	s = splbio();
 	vnd->sc_flags |= VNF_KTHREAD;
-	wakeup(&vnd->sc_kthread);
+	kthread_wakeup(&vnd->sc_kthread);
 
 	/*
 	 * Dequeue requests, break them into bsize pieces and submit using
@@ -501,7 +501,7 @@ vndthread(void *arg)
 	while ((vnd->sc_flags & VNF_VUNCONF) == 0) {
 		bp = BUFQ_GET(&vnd->sc_tab);
 		if (bp == NULL) {
-			tsleep(&vnd->sc_tab, PRIBIO, "vndbp", 0);
+			kthread_tsleep(&vnd->sc_tab, PRIBIO, "vndbp", 0);
 			continue;
 		};
 		splx(s);
@@ -609,7 +609,7 @@ vndthread(void *arg)
 
 			s = splbio();
 			while (vnd->sc_active >= vnd->sc_maxactive) {
-				tsleep(&vnd->sc_tab, PRIBIO, "vndac", 0);
+				kthread_tsleep(&vnd->sc_tab, PRIBIO, "vndac", 0);
 			}
 			vnd->sc_active++;
 			nbp = VND_GETBUF();
@@ -686,7 +686,7 @@ done:
 	}
 
 	vnd->sc_flags &= (~VNF_KTHREAD | VNF_VUNCONF);
-	wakeup(&vnd->sc_kthread);
+	kthread_wakeup(&vnd->sc_kthread);
 	splx(s);
 	kthread_exit(0);
 }

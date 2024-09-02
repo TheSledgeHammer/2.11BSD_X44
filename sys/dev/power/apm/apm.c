@@ -723,7 +723,7 @@ apm_thread(void *arg)
 		APM_LOCK(apmsc);
 		apm_periodic_check(apmsc);
 		APM_UNLOCK(apmsc);
-		(void) tsleep(apmsc, PWAIT, "apmev",  (8 * hz) / 7);
+		(void) kthread_tsleep(apmsc, PWAIT, "apmev",  (8 * hz) / 7);
 	}
 }
 

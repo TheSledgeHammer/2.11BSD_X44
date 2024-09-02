@@ -1133,7 +1133,7 @@ cryptoret(void *arg)
 				krp->krp_callback(krp);
 			s  = splcrypto();
 		} else {
-			(void) tsleep(&crp_ret_q, PLOCK, "crypto_wait", 0);
+			(void) kthread_tsleep(&crp_ret_q, PLOCK, "crypto_wait", 0);
 			cryptostats.cs_rets++;
 		}
 	}

@@ -133,7 +133,7 @@ atabus_thread(void *arg)
 		    ((chp->ch_flags & WDCF_ACTIVE) == 0 ||
 		     chp->ch_queue->queue_freeze == 0)) {
 			chp->ch_flags &= ~WDCF_TH_RUN;
-			(void) tsleep(&chp->ch_thread, PRIBIO, "atath", 0);
+			(void) kthread_tsleep(&chp->ch_thread, PRIBIO, "atath", 0);
 			chp->ch_flags |= WDCF_TH_RUN;
 		}
 		if (chp->ch_flags & WDCF_SHUTDOWN)
@@ -161,7 +161,7 @@ atabus_thread(void *arg)
 	}
 	splx(s);
 	chp->ch_thread = NULL;
-	wakeup((void *)&chp->ch_flags);
+	kthread_wakeup((void *)&chp->ch_flags);
 	kthread_exit(0);
 }
 

@@ -52,6 +52,24 @@
 
 int	kthread_create_now;
 
+/*
+ * New kthread_create routine: (proc_create_nthreads)
+ * - check if process thread queues exist
+ * - check if threads ready on process
+ * 		- check scheduler for optimal number of threads
+ * 			- less than optimal look for threads flagged as stealable
+ * 		- else create optimal number of threads
+ * - if process contains no thread queues
+ * 		- check scheduler for optimal number of threads
+ *  		- create optimal number of threads
+ * - if no threads ready on process
+ * 		- check scheduler for optimal number of threads
+ * 			- fork process and create new process with optimal number of threads
+ *
+ * New kthread_exit routine: (proc_destroy_nthreads)
+ * -
+ */
+
 #ifdef notyet
 /*
  * Fork a kernel thread.  Any process can request this to be done.
@@ -70,6 +88,8 @@ kthread_create(func, arg, newtd, name, forkproc)
 	if (__predict_false(error != 0)) {
 		return (error);
 	}
+
+
 	return (0);
 }
 
@@ -93,6 +113,7 @@ kthread_exit(ecode)
 	for (;;);
 }
 #endif
+
 /*
  * Fork a kernel thread.  Any process can request this to be done.
  * The VM space and limits, etc. will be shared with proc0.
@@ -147,6 +168,31 @@ kthread_exit(ecode)
 	exit(W_EXITCODE(ecode, 0));
 
 	for (;;);
+}
+
+/*
+ * kernel thread wakeup
+ */
+void
+kthread_wakeup(chan)
+	const void *chan;
+{
+	wakeup(chan);
+}
+
+/*
+ * kernel thread sleep
+ */
+int
+kthread_tsleep(ident, priority, wmesg, timo)
+	void 		*ident;
+	int			priority;
+	char		*wmesg;
+	u_short		timo;
+{
+	int error;
+	error = tsleep(ident, priority, wmesg, timo);
+	return (error);
 }
 
 struct kthread_queue {

@@ -541,12 +541,12 @@ pcic_event_thread(arg)
 			 * No events to process; release the PCIC lock.
 			 */
 			(void) lockmgr(&sc->sc_pcic_lock, LK_RELEASE, &sc->sc_pcic_lock.lk_lnterlock, LOCKHOLDER_PID(&sc->sc_pcic_lock.lk_lockholder));
-			(void) tsleep(&h->events, PWAIT, "pcicev", 0);
+			(void) kthread_tsleep(&h->events, PWAIT, "pcicev", 0);
 			continue;
 		} else {
 			splx(s);
 			/* sleep .25s to be enqueued chatterling interrupts */
-			(void) tsleep((caddr_t)pcic_event_thread, PWAIT, "pcicss", hz/4);
+			(void) kthread_tsleep((caddr_t)pcic_event_thread, PWAIT, "pcicss", hz/4);
 		}
 		s = splhigh();
 		SIMPLEQ_REMOVE_HEAD(&h->events, pe_q);
@@ -615,7 +615,7 @@ pcic_event_thread(arg)
 	h->event_thread = NULL;
 
 	/* In case parent is waiting for us to exit. */
-	wakeup(sc);
+	kthread_wakeup(sc);
 
 	kthread_exit(0);
 }

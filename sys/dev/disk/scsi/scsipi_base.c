@@ -2153,7 +2153,7 @@ scsipi_completion_thread(arg)
 		xs = TAILQ_FIRST(&chan->chan_complete);
 		if (xs == NULL && chan->chan_tflags  == 0) {
 			/* nothing to do; wait */
-			(void) tsleep(&chan->chan_complete, PRIBIO,
+			(void) kthread_tsleep(&chan->chan_complete, PRIBIO,
 			    "sccomp", 0);
 			splx(s);
 			continue;
@@ -2207,7 +2207,7 @@ scsipi_completion_thread(arg)
 	chan->chan_thread = NULL;
 
 	/* In case parent is waiting for us to exit. */
-	wakeup(&chan->chan_thread);
+	kthread_wakeup(&chan->chan_thread);
 
 	kthread_exit(0);
 }
@@ -2259,7 +2259,7 @@ scsipi_thread_call_callback(chan, callback, arg)
 	chan->chan_callback = callback;
 	chan->chan_callback_arg = arg;
 	chan->chan_tflags |= SCSIPI_CHANT_CALLBACK;
-	wakeup(&chan->chan_complete);
+	kthread_wakeup(&chan->chan_complete);
 	splx(s);
 	return(0);
 }

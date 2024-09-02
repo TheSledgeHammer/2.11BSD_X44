@@ -49,8 +49,10 @@
 #include <sys/thread.h>
 
 //int 	kthread_create(void (*)(void *), void *, struct thread **, char *, bool_t);
-int	  kthread_create(void (*)(void *), void *, struct proc **, char *);
+int	  	kthread_create(void (*)(void *), void *, struct proc **, char *);
 void	kthread_exit(int) __attribute__((__noreturn__));
+void	kthread_wakeup(const void *);
+int		kthread_tsleep(void *, int, char *, u_short);
 void	kthread_create_deferred(void (*)(void *), void *);
 void	kthread_run_deferred_queue(void);
 #endif /* _KERNEL */
