@@ -6,16 +6,16 @@
 
 COMMON_DIR:= ${.CURDIR}/../common
 
-PICFLAGS=	-fPIC
+PICFLAGS?=	-fPIC
 CPPFLAGS+=	-DDYNAMIC
 CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
-CPPFLAGS+=	-I${COMMON_DIR}
+CPPFLAGS+=	-I${COMMON_DIR} -I.
 CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
-
 
 .PATH:		${COMMON_DIR}
 
-OBJS+=	crt0.o gcrt0.o crtbegin.o crtend.o crti.o crtn.o elf_note.o
+OBJS+=	crt0.o gcrt0.o crti.o crtn.o
+OBJS+=	crtbegin.o crtend.o elf_note.o
 
 all: ${OBJS}
 
@@ -66,14 +66,32 @@ gcrt0.o: crt0.c crt0_common.c
 		${OBJCOPY} -R .ident ${.TARGET}
 .endif
 
-elf_note.o: elf_note.S
+crti.o: crti.c
+		${_MKTARGET_COMPILE}
+		${COMPILE.c} ${MY_PICFLAGS} ${COMMON_DIR}/crti.c -o ${.TARGET}.o
+		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
+		rm -f ${.TARGET}.o
+.if ${MKSTRIPIDENT} != "no"
+		${OBJCOPY} -R .ident ${.TARGET}
+.endif
+
+crtn.o: crtn.c
+		${_MKTARGET_COMPILE}
+		${COMPILE.c} ${MY_PICFLAGS} ${COMMON_DIR}/crtn.c -o ${.TARGET}.o
+		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
+		rm -f ${.TARGET}.o
+.if ${MKSTRIPIDENT} != "no"
+		${OBJCOPY} -R .ident ${.TARGET}
+.endif
+
+elf_note.o: elf_note.S elf_note.h
 		${_MKTARGET_COMPILE}
 		${COMPILE.S} elf_note.S -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
 
-crti.o: crti.S
-crtn.o: crtn.S
 elf_note.o: elf_note.S elf_note.h
 
 FILES=${OBJS}

@@ -23,10 +23,10 @@
  * $FreeBSD$
  */
 
-#ifndef _CRT_H_
-#define	_CRT_H_
+#ifndef _I386_CRT_H_
+#define	_I386_CRT_H_
 
 #define	HAVE_CTORS
 #define	INIT_CALL_SEQ(func)	"call " __STRING(func)
 
-#endif
+#endif /* _I386_CRT_H_ */
