@@ -54,6 +54,9 @@ unconfig:
 	-/bin/rm -f ${IMAGE}
 
 .include "${DISTRIBDIR}/common/Makefile.crunch"
+.if defined(MAKEDEVTARGETS)
+.include "${DISTRIBDIR}/common/Makefile.makedev"
+.endif
 
 release: $(IMAGE)
 	gzip -c -9 < $(.OBJDIR)/${IMAGE} \
