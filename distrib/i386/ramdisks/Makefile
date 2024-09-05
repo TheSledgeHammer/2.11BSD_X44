@@ -70,6 +70,7 @@ HACKSRC=	${DISTRIBDIR}/utils/libhack
 ${CRUNCHBIN}:	libhack.o
 
 .include "${DISTRIBDIR}/common/Makefile.crunch"
+.include "${DISTRIBDIR}/common/Makefile.makedev"
 
 release: ${IMAGE}
 	${HOST_INSTALL_FILE} -m ${NONBINMODE} ${IMAGE} \
