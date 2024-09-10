@@ -15,7 +15,8 @@ CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
 .PATH:		${COMMON_DIR}
 
 OBJS+=	crt0.o gcrt0.o crti.o crtn.o
-OBJS+=	crtbegin.o crtend.o elf_note.o
+OBJS+=	crtbegin.o crtend.o crtbeginS.o crtendS.o
+OBJS+=	elf_note.o
 
 all: ${OBJS}
 
@@ -31,6 +32,24 @@ crtbegin.o: crtbegin.c crtbegin.h
 crtend.o: crtend.c crtend.h
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${CFLAGS.crtend.c} ${COMMON_DIR}/crtend.c -o ${.TARGET}.o
+		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
+		rm -f ${.TARGET}.o
+.if ${MKSTRIPIDENT} != "no"
+		${OBJCOPY} -R .ident ${.TARGET}
+.endif
+
+crtbeginS.o: crtbegin.c crtbegin.h
+		${_MKTARGET_COMPILE}
+		${COMPILE.c} ${CFLAGS.crtbeginS.c} ${PICFLAGS} -DSHARED ${COMMON_DIR}/crtbegin.c -o ${.TARGET}.o
+		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
+		rm -f ${.TARGET}.o
+.if ${MKSTRIPIDENT} != "no"
+		${OBJCOPY} -R .ident ${.TARGET}
+.endif
+
+crtendS.o: crtend.c crtend.h
+		${_MKTARGET_COMPILE}
+		${COMPILE.c} ${CFLAGS.crtendS.c} ${PICFLAGS} -DSHARED ${COMMON_DIR}/crtend.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
 .if ${MKSTRIPIDENT} != "no"
@@ -92,10 +111,17 @@ elf_note.o: elf_note.S elf_note.h
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
 
+crti.o: crti.c
+crtn.o: crtn.c
 elf_note.o: elf_note.S elf_note.h
 
 FILES=${OBJS}
 FILESDIR=${LIBDIR}
 CLEANFILES+=${OBJS}
+
+.if ${MKPIC} == "yes"
+SYMLINKS+= crtbegin.o ${LIBDIR}/crtbeginS.o
+SYMLINKS+= crtend.o ${LIBDIR}/crtendS.o
+.endif
 
 .include <bsd.prog.mk>
