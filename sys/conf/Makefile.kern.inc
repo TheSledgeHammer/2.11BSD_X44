@@ -131,16 +131,16 @@ COPTS.debugsyms.c+=	-g
 # NOPROF and SUFFIX is the file suffix, capitalized (e.g. C for a .c file).
 NORMAL_C?=	@${_MKSHMSG} "compile  ${.CURDIR:T}/${.TARGET}"; \
 		${_MKSHECHO}\
-		${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} -c $<; \
-		${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} -c $<
+		${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} -c $< -o $@; \
+		${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} -c $< -o $@
 NOPROF_C?=	@${_MKSHMSG} "compile  ${.CURDIR:T}/${.TARGET}"; \
 		${_MKSHECHO}\
-		${CC} ${CFLAGS} ${CPPFLAGS} -c $<; \
-		${CC} ${CFLAGS} ${CPPFLAGS} -c $<
+		${CC} ${CFLAGS} ${CPPFLAGS} -c $< -o $@; \
+		${CC} ${CFLAGS} ${CPPFLAGS} -c $< -o $@
 NORMAL_S?=	@${_MKSHMSG} "compile  ${.CURDIR:T}/${.TARGET}"; \
 		${_MKSHECHO}\
-		${CC} ${AFLAGS} ${CPPFLAGS} -c $<; \
-		${CC} ${AFLAGS} ${CPPFLAGS} -c $<
+		${CC} ${AFLAGS} ${CPPFLAGS} -c $< -o $@; \
+		${CC} ${AFLAGS} ${CPPFLAGS} -c $< -o $@
 
 ##
 ## (3) libkern and compat 
