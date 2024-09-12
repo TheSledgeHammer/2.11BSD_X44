@@ -266,6 +266,8 @@ int		seltrue_kqfilter(dev_t, struct knote *);
 
 #include <sys/cdefs.h>
 
+struct timespec;
+
 __BEGIN_DECLS
 int     kqueue(void);
 int     kevent(int, const struct kevent *, int, struct kevent *, int, const struct timespec *);
