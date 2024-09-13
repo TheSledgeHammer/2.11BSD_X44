@@ -27,13 +27,30 @@
 
 #include <sys/cdefs.h>
 
+#include <sys/types.h>
 #include <sys/exec.h>
-#include <sys/syscall.h>
+#include <sys/exec_elf.h>
 #include <machine/profile.h>
-#include <unistd.h>
+#include <stdlib.h>
 
-#include "csu_common.h"
-#include "crt.h"
+static char	        empty_string[] = "";
+char 				**environ;
+const char 			*__progname = empty_string;
+struct ps_strings 	*__ps_strings = 0;
+
+extern int   main(int argc, char **argv, char **env);
+
+extern void (*__preinit_array_start[])(int, char **, char **);
+extern void (*__preinit_array_end[])(int, char **, char **);
+extern void (*__init_array_start[])(int, char **, char **);
+extern void (*__init_array_end[])(int, char **, char **);
+extern void (*__fini_array_start[])(void);
+extern void (*__fini_array_end[])(void);
+extern void	_init(void);
+extern void	_fini(void);
+
+extern int _DYNAMIC;
+#pragma weak _DYNAMIC
 
 static void
 finalizer(void)
@@ -50,7 +67,7 @@ finalizer(void)
 	_fini();
 }
 
-void
+static inline void
 handle_static_init(int argc, char **argv, char **env)
 {
 	void (*fn)(int, char **, char **);
@@ -76,7 +93,7 @@ handle_static_init(int argc, char **argv, char **env)
 	}
 }
 
-void
+static inline void
 handle_argv(int argc, char *argv[], char **env)
 {
 	const char *s;
@@ -89,7 +106,9 @@ handle_argv(int argc, char *argv[], char **env)
 			if (*s == '/')
 				__progname = s + 1;
 		}
-	}
+	} else {
+        __progname = empty_string;
+    }
 }
 
 #if defined(HAS_IPLTA)
@@ -146,7 +165,7 @@ fix_iplt(void)
 }
 #endif
 
-void
+static inline void
 process_irelocs(void)
 {
 #ifdef HAS_IPLTA

@@ -28,14 +28,13 @@
 #include <sys/exec_elf.h>
 #include <stdlib.h>
 
-#include "csu_common.h"
-#include "crt.h"
+#include <dot_init.h>
 
-static void (*__CTOR_LIST__[])(void)
-    __attribute__((section(".ctors"))) = { (void *)-1 };	/* XXX */
+typedef void (*fptr_t)(void);
 
-static void (*__CTOR_END__[])(void)
-    __attribute__((section(".ctors"))) = { (void *)0 };		/* XXX */
+static fptr_t __CTOR_LIST__[] __section(".ctors") = { (fptr_t)-1 };
+
+static fptr_t __CTOR_END__[] __section(".ctors") = { (fptr_t)0 };
 
 /*
  * On some architectures and toolchains we may need to call the .dtors.

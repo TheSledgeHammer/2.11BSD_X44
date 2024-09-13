@@ -34,20 +34,24 @@
 #include <sys/exec_elf.h>
 #include <stdlib.h>
 
-#include "csu_common.h"
-#include "crt.h"
+#include <dot_init.h>
 
-static void (*__DTOR_LIST__[])(void)
-    __attribute__((section(".dtors"))) = { (void *)-1 };	/* XXX */
+typedef void (*fptr_t)(void);
 
-static void (*__DTOR_END__[])(void)
-    __attribute__((section(".dtors"))) = { (void *)0 };		/* XXX */
+static fptr_t __DTOR_LIST__[] __section(".dtors") = { (fptr_t)-1 };
 
-#ifndef SHARED
-void *__dso_handle = 0;
-#else
+static fptr_t __DTOR_END__[] __section(".dtors") = { (fptr_t)0 };
+
+static fptr_t __JCR_LIST__[] __section(".jcr") = { };
+
+#ifdef SHARED
 void *__dso_handle = &__dso_handle;
-void __cxa_finalize(void *) __weak_symbol;
+extern void __cxa_finalize(void *);
+#else
+void *__dso_handle = NULL;
+#endif
+
+#ifdef SHARED
 
 /*
  * Call __cxa_finalize with the dso handle in shared objects.
@@ -57,6 +61,7 @@ void __cxa_finalize(void *) __weak_symbol;
 #ifndef HAVE_CTORS
 __attribute__((destructor))
 #endif
+
 static void
 run_cxa_finalize(void)
 {
@@ -108,6 +113,7 @@ asm (
 );
 #endif
 
+
 /*
  * Handler for gcj. These provide a _Jv_RegisterClasses function and fill
  * out the .jcr section. We just need to call this function with a pointer
@@ -116,9 +122,6 @@ asm (
 extern void _Jv_RegisterClasses(void *);
 static void register_classes(void);
 
-static void *__JCR_LIST__[]
-    __attribute__((section(".jcr"))) = { };
-
 #ifndef CTORS_CONSTRUCTORS
 __attribute__((constructor))
 #endif
@@ -126,14 +129,16 @@ static void
 register_classes(void)
 {
 
-	if (_Jv_RegisterClasses != NULL && __JCR_LIST__[0] != 0)
+	if (/*_Jv_RegisterClasses != NULL && */ __JCR_LIST__[0] != 0) {
 		_Jv_RegisterClasses(__JCR_LIST__);
+    }
 }
 
 /*
  * We can't use constructors when they use the .ctors section as they may be
  * placed before __CTOR_LIST__.
  */
+
 #ifdef CTORS_CONSTRUCTORS
 asm (
     ".pushsection .init		\n"
@@ -141,3 +146,4 @@ asm (
     ".popsection		\n"
 );
 #endif
+

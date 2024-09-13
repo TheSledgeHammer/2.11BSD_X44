@@ -26,11 +26,11 @@
  * $FreeBSD$
  */
 
-#define HAS_IPLT
+#include "crt0_common.c"
 
-#include "csu_common.h"
+typedef void (*fptr_t)(void);
 
-void ___start(fptr, const Obj_Entry *, struct ps_strings *, int, char *[]);
+void ___start(fptr_t, struct ps_strings *);
 
 __asm(
 		"	.text							\n"
@@ -40,36 +40,23 @@ __asm(
 		"_start:							\n"
 		"__start:							\n"
 		"	pushl	%ebx					# ps_strings	\n"
-		"	pushl	%ecx					# obj			\n"
 		"	pushl	%edx					# cleanup		\n"
-		"	movl	12(%esp),%eax			\n"
-		"	leal	20(%esp,%eax,4),%ecx	\n"
-		"	leal	16(%esp),%edx			\n"
-		"	pushl	%ecx					\n"
-		"	pushl	%edx					\n"
-		"	pushl	%eax					\n"
 		"	call	___start"
 );
 
-/* The entry function, C part. */
-void
-___start(cleanup, obj, ps_strings, argc, argv)
-	fptr cleanup;
-	const Obj_Entry *obj;
-	struct ps_strings *ps_strings;
-	int argc;
-	char *argv[];
+#ifdef MCRT0
+extern void _mcleanup(void);
+extern void monstartup(void *, void *);
+extern int 	eprol;
+extern int 	etext;
+#endif
+
+static inline void
+crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
 {
-	char **env;
-
-	env = argv + argc + 1;
-	handle_argv(argc, argv, env);
-
-	if (ps_strings != (struct ps_strings *)0)
-		__ps_strings = ps_strings;
-
+    env = (argc + argv + 1);
+    handle_argv(argc, argv, env);
 	if (&_DYNAMIC != NULL) {
-		_rtld_setup(cleanup, obj);
 		atexit(cleanup);
 	} else {
 		process_irelocs();
@@ -78,11 +65,21 @@ ___start(cleanup, obj, ps_strings, argc, argv)
 #ifdef MCRT0
 	atexit(_mcleanup);
 	monstartup(&eprol, &etext);
-__asm__("eprol:");
+    __asm__("eprol:");
 #endif
 
-	handle_static_init(argc, argv, env);
-	exit(main(argc, argv, env));
+    handle_static_init(argc, argv, env);
+    exit(main(argc, argv, env));
 }
 
-#include "csu_common.c"
+/* The entry function, C part. */
+void
+___start(fptr_t cleanup, struct ps_strings *ps_strings)
+{
+	if (ps_strings != (struct ps_strings *)0) {
+		__ps_strings = ps_strings;
+    }
+    environ = &ps_strings->ps_envstr;
+    crt0_start(cleanup, ps_strings->ps_nargvstr, &ps_strings->ps_argvstr, environ);
+}
+

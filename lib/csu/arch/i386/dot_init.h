@@ -38,10 +38,13 @@
 
 #include <sys/cdefs.h>
 
+#define	HAVE_CTORS
+#define HAS_IPLT
+
 #define	MD_SECTION_PROLOGUE(sect, entry_pt)			\
 	__asm (											\
 			".section "#sect",\"ax\",@progbits	 	\n"\
-			".global "#entry_pt" 					\n"\
+			".globl "#entry_pt" 					\n"\
 			"	.align	16							\n"\
 			#entry_pt":								\n"\
 			"	pushl	%ebp						\n"\
@@ -64,7 +67,6 @@
 #define	MD_INIT_SECTION_EPILOGUE MD_SECTION_EPILOGUE(.init)
 #define	MD_FINI_SECTION_EPILOGUE MD_SECTION_EPILOGUE(.fini)
 
-#define MD_CALL_STATIC_FUNCTION(section, func) \
-	__asm(".section " #section "; call " #func "; .previous");
+#define	INIT_CALL_SEQ(func)	"call " __STRING(func)
 
 #endif /* _I386_DOT_INIT_H_ */
