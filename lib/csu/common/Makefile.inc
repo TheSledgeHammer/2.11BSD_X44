@@ -1,4 +1,4 @@
-
+#	$NetBSD: Makefile.inc,v 1.1.2.2 1999/04/04 07:28:05 tsubai Exp $
 #TODO: Fix crtbegin.c and crtend.c
 .include <bsd.own.mk>
 
