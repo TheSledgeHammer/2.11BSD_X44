@@ -22,19 +22,17 @@
  */
 
 #include <sys/cdefs.h>
-
 #include <sys/param.h>
-#include <sys/exec.h>
-#include <sys/exec_elf.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 
 #include <dot_init.h>
 
 typedef void (*fptr_t)(void);
 
-static fptr_t __CTOR_LIST__[] __section(".ctors") = { (fptr_t)-1 };
-
-static fptr_t __CTOR_END__[] __section(".ctors") = { (fptr_t)0 };
+#ifdef HAVE_CTORS
+static fptr_t __CTOR_LIST__[1] __section(".ctors") __used = { (fptr_t)-1 };
+static fptr_t __CTOR_END__[] __section(".ctors") __used = { (fptr_t)0 };
+#endif
 
 /*
  * On some architectures and toolchains we may need to call the .dtors.
@@ -44,7 +42,7 @@ static fptr_t __CTOR_END__[] __section(".ctors") = { (fptr_t)0 };
 static void
 __ctors(void)
 {
-	void (**p)(void);
+	fptr_t *p;
 	for (p = __CTOR_END__; p > __CTOR_LIST__ + 1; ) {
 		(*(*--p))();
 	}
@@ -57,19 +55,16 @@ __do_global_ctors_aux(void)
 {
 	static int initialized;
 
-	if (!initialized) {
-		initialized = 1;
+	if (initialized) {
+		return;
 	}
+
+    __initialized = 1;
 
 	/*
 	 * Call global constructors.
 	 */
 	__ctors();
 }
-
-asm (
-    ".pushsection .init		\n"
-    "\t" INIT_CALL_SEQ(__do_global_ctors_aux) "\n"
-    ".popsection		\n"
-);
+MD_CALL_STATIC_FUNCTION(.init, __do_global_ctors_aux)
 #endif

@@ -28,30 +28,26 @@
  */
 
 #include <sys/cdefs.h>
-
 #include <sys/param.h>
-#include <sys/exec.h>
-#include <sys/exec_elf.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 
 #include <dot_init.h>
 
 typedef void (*fptr_t)(void);
 
-static fptr_t __DTOR_LIST__[] __section(".dtors") = { (fptr_t)-1 };
+extern void *__dso_handle;
+__asm(".hidden  __dso_handle");
 
-static fptr_t __DTOR_END__[] __section(".dtors") = { (fptr_t)0 };
-
-static fptr_t __JCR_LIST__[] __section(".jcr") = { };
-
-#ifdef SHARED
-void *__dso_handle = &__dso_handle;
-extern void __cxa_finalize(void *);
-#else
-void *__dso_handle = NULL;
+#ifdef HAVE_CTORS
+static fptr_t __DTOR_LIST__[1] __section(".dtors") __used = { (fptr_t)-1 };
+static fptr_t __DTOR_END__[] __section(".dtors") __used = { (fptr_t)0 };
 #endif
 
-#ifdef SHARED
+#ifndef SHARED
+void *__dso_handle = NULL;
+#else
+void *__dso_handle = &__dso_handle;
+void __cxa_finalize(void *)  __attribute__((weak));
 
 /*
  * Call __cxa_finalize with the dso handle in shared objects.
@@ -61,7 +57,6 @@ void *__dso_handle = NULL;
 #ifndef HAVE_CTORS
 __attribute__((destructor))
 #endif
-
 static void
 run_cxa_finalize(void)
 {
@@ -80,7 +75,7 @@ run_cxa_finalize(void)
 static void
 __dtors(void)
 {
-	void (**p)(void);
+    fptr_t *p;
 	for (p = __DTOR_LIST__ + 1; p < __DTOR_END__; ) {
 		(*(*--p))();
 	}
@@ -93,8 +88,11 @@ __do_global_dtors_aux(void)
 {
 	static int finished;
 
-	if (finished)
+	if (finished) {
 		return;
+    }
+
+    __finished = 1;
 
 #ifdef SHARED
 	run_cxa_finalize();
@@ -106,21 +104,19 @@ __do_global_dtors_aux(void)
 	__dtors();
 }
 
-asm (
-    ".pushsection .fini		\n"
-    "\t" INIT_CALL_SEQ(__do_global_dtors_aux) "\n"
-    ".popsection		\n"
-);
+MD_CALL_STATIC_FUNCTION(.fini, __do_global_dtors_aux)
 #endif
-
 
 /*
  * Handler for gcj. These provide a _Jv_RegisterClasses function and fill
  * out the .jcr section. We just need to call this function with a pointer
  * to the appropriate section.
  */
-extern void _Jv_RegisterClasses(void *);
-static void register_classes(void);
+extern void _Jv_RegisterClasses(void *) __attribute__((weak));
+static void register_classes(void) __used;
+
+static fptr_t __JCR_LIST__[] __section(".jcr") __used = {  };
+static fptr_t __JCR_END__[] __section(".jcr") __used = { (fptr_t)0 };
 
 #ifndef CTORS_CONSTRUCTORS
 __attribute__((constructor))
@@ -128,10 +124,11 @@ __attribute__((constructor))
 static void
 register_classes(void)
 {
-
-	if (/*_Jv_RegisterClasses != NULL && */ __JCR_LIST__[0] != 0) {
+/*
+	if (_Jv_RegisterClasses && __JCR_LIST__[0]) {
 		_Jv_RegisterClasses(__JCR_LIST__);
     }
+*/
 }
 
 /*
@@ -140,10 +137,5 @@ register_classes(void)
  */
 
 #ifdef CTORS_CONSTRUCTORS
-asm (
-    ".pushsection .init		\n"
-    "\t" INIT_CALL_SEQ(register_classes) "\n"
-    ".popsection		\n"
-);
+MD_CALL_STATIC_FUNCTION(.init, register_classes)
 #endif
-
