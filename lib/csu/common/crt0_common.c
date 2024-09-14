@@ -33,6 +33,8 @@
 #include <machine/profile.h>
 #include <stdlib.h>
 
+typedef void (*fptr_t)(void);
+
 static char	        empty_string[] = "";
 char 				**environ;
 const char 			*__progname = empty_string;
@@ -174,4 +176,32 @@ process_irelocs(void)
 #ifdef HAS_IPLT
 		fix_iplt();
 #endif
+}
+
+#ifdef MCRT0
+extern void _mcleanup(void);
+extern void monstartup(void *, void *);
+extern int 	eprol;
+extern int 	etext;
+#endif
+
+static inline void
+crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
+{
+    env = (argc + argv + 1);
+    handle_argv(argc, argv, env);
+	if (&_DYNAMIC != NULL) {
+		atexit(cleanup);
+	} else {
+		process_irelocs();
+	}
+
+#ifdef MCRT0
+	atexit(_mcleanup);
+	monstartup(&eprol, &etext);
+    __asm__("eprol:");
+#endif
+
+    handle_static_init(argc, argv, env);
+    exit(main(argc, argv, env));
 }
