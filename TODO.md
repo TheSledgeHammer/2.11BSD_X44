@@ -27,6 +27,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## Contrib:
 	
 ## lib:
+- csu:
+	- crtbegin.c: jcr and jv_RegisterClasses does not work correctly.
+ 	- elf_note: unused
 - libc:
 
 ## libexec:
