@@ -1,5 +1,5 @@
 #	$NetBSD: Makefile.inc,v 1.1.2.2 1999/04/04 07:28:05 tsubai Exp $
-#TODO: Fix crtbegin.c and crtend.c
+
 .include <bsd.own.mk>
 
 COMMON_DIR:=	${.CURDIR}/common
@@ -12,8 +12,8 @@ CPPFLAGS+=	-I${COMMON_DIR} -I.
 CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
 
 OBJS+= crt0.o gcrt0.o
-#OBJS+= crtbegin.o crtend.o
-#OBJS+= crtbeginS.o crtendS.o
+OBJS+= crtbegin.o crtend.o
+OBJS+= crtbeginS.o crtendS.o
 OBJS+= crti.o crtn.o
 #OBJS+= elf_note.o
 
