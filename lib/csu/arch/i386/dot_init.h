@@ -50,7 +50,8 @@
 			"	pushl	%ebp						\n"\
 			"	movl	%esp, %ebp					\n"\
 			"	/* fall thru */						\n"\
-			".previous")
+			".previous                              \n"\
+          )
 
 		/* placement of the .align _after_ the label is intentional */
 
@@ -59,7 +60,8 @@
 			".section "#sect",\"ax\",@progbits		\n"\
 			"	leave								\n"\
 			"	ret									\n"\
-			".previous")
+			".previous                              \n"\
+          )
 
 #define	MD_INIT_SECTION_PROLOGUE MD_SECTION_PROLOGUE(.init, _init)
 #define	MD_FINI_SECTION_PROLOGUE MD_SECTION_PROLOGUE(.fini, _fini)
@@ -67,6 +69,11 @@
 #define	MD_INIT_SECTION_EPILOGUE MD_SECTION_EPILOGUE(.init)
 #define	MD_FINI_SECTION_EPILOGUE MD_SECTION_EPILOGUE(.fini)
 
-#define	INIT_CALL_SEQ(func)	"call " __STRING(func)
+#define	MD_CALL_STATIC_FUNCTION(section, func)	    \
+    asm (                                           \
+            ".section " #section "		            \n"\
+            "\t" call " #func "                     \n"\
+            ".previous		                        \n"\
+        )
 
 #endif /* _I386_DOT_INIT_H_ */
