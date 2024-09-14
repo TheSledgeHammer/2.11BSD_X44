@@ -28,8 +28,6 @@
 
 #include "crt0_common.c"
 
-typedef void (*fptr_t)(void);
-
 void ___start(fptr_t, struct ps_strings *);
 
 __asm(
@@ -43,34 +41,6 @@ __asm(
 		"	pushl	%edx					# cleanup		\n"
 		"	call	___start"
 );
-
-#ifdef MCRT0
-extern void _mcleanup(void);
-extern void monstartup(void *, void *);
-extern int 	eprol;
-extern int 	etext;
-#endif
-
-static inline void
-crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
-{
-    env = (argc + argv + 1);
-    handle_argv(argc, argv, env);
-	if (&_DYNAMIC != NULL) {
-		atexit(cleanup);
-	} else {
-		process_irelocs();
-	}
-
-#ifdef MCRT0
-	atexit(_mcleanup);
-	monstartup(&eprol, &etext);
-    __asm__("eprol:");
-#endif
-
-    handle_static_init(argc, argv, env);
-    exit(main(argc, argv, env));
-}
 
 /* The entry function, C part. */
 void
