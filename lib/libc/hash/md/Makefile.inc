@@ -3,7 +3,7 @@
 .include <bsd.own.mk>
 
 # MD2/MD4/MD5 sources
-.PATH: ${ARCHDIR}/md ${.CURDIR}/md
+.PATH: ${ARCHDIR}/md ${.CURDIR}/hash/md
 
 SRCS+=	md2.c md2hl.c md4c.c md5c.c md4hl.c md5hl.c
 
