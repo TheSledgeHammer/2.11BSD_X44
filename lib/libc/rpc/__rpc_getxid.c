@@ -36,14 +36,15 @@ __RCSID("$NetBSD: __rpc_getxid.c,v 1.3 2003/09/13 21:27:46 itojun Exp $");
 #endif
 
 #include <sys/types.h>
+#include <sys/time.h>
 
 #include "namespace.h"
 
 #include <stdlib.h>
-#include <randomid.h>
+//#include <randomid.h>
 #include <rpc/rpc.h>
 #include "rpc_internal.h"
-
+/*
 u_int32_t
 __rpc_getxid(void)
 {
@@ -56,4 +57,15 @@ __rpc_getxid(void)
 	}
 
 	return randomid(ctx);
+}
+*/
+u_int32_t
+__rpc_getxid(void)
+{
+    struct timeval now;
+    u_int32_t xid;
+
+    gettimeofday(&now, NULL);
+    xid = (u_int32_t)getpid() ^ (u_int32_t)tv.tv_sec ^ (u_int32_t)tv.tv_usec;
+    return (xid);
 }
