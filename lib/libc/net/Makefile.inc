@@ -31,7 +31,7 @@ SRCS+=	hesiod.c
 
 SRCS+=	getaddrinfo.c getnameinfo.c
 .if (${USE_INET6} != "no")
-SRCS+=	ip6opt.c rthdr.c inet6_scopeid.c
+SRCS+=	ip6opt.c rthdr.c #inet6_scopeid.c
 .endif
 SRCS+=	vars6.c
 
