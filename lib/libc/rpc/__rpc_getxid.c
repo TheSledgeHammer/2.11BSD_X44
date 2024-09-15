@@ -66,6 +66,6 @@ __rpc_getxid(void)
     u_int32_t xid;
 
     gettimeofday(&now, NULL);
-    xid = (u_int32_t)getpid() ^ (u_int32_t)tv.tv_sec ^ (u_int32_t)tv.tv_usec;
+    xid = (u_int32_t)getpid() ^ (u_int32_t)now.tv_sec ^ (u_int32_t)now.tv_usec;
     return (xid);
 }
