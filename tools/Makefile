@@ -70,14 +70,16 @@ LINT_BITS= lint lint2
 # XXX .ORDER does not work when multiple targets are passed on the
 # make command line without "-j", so use dependencies in addition to .ORDER.
 #
-.ORDER: dependall-host-mkdep dependall-compat dependall-binstall
+.ORDER: dependall-host-mkdep dependall-compat dependall-binstall dependall-date
 .if make(dependall-host-mkdep) && make(dependall-compat)
 dependall-compat: dependall-host-mkdep
 .endif
 .if make(dependall-compat) && make(dependall-binstall)
 dependall-binstall: dependall-compat
 .endif
-
+.if make(dependall-date)
+dependall-date: dependall-host-mkdep dependall-compat
+.endif
 # Dependencies in SUBDIR below ordered to maximize parallel ability.
 # See above for special treatment for host-mkdep, compat, and binstall.
 #
@@ -86,7 +88,7 @@ SUBDIR=	host-mkdep compat binstall date .WAIT mktemp .WAIT sed .WAIT genassym 		
 		${LINT_BITS} 															\
 		makewhatis mtree nbperf .WAIT uudecode 										\
 		cat rpcgen join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
-		xz-include .WAIT grep pax xz-lib									\
+		xz-include .WAIT grep xz-lib pax									\
 		.WAIT texinfo 															\
 		.WAIT tic																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
