@@ -1,4 +1,8 @@
+#	$NetBSD: Makefile.inc,v 1.5 2022/04/09 23:32:52 riastradh Exp $
+#	from: @(#)Makefile.inc	8.6 (Berkeley) 5/4/95
 
+# gen sources
+.PATH:	${.CURDIR}/atomic
 
 SRCS=   atomic_add_16_cas.c atomic_add_32_cas.c atomic_add_32_nv_cas.c atomic_add_64_cas.c      \
         atomic_add_64_nv_cas.c atomic_add_8_cas.c atomic_and_16_cas.c atomic_and_16_nv_cas.c    \
