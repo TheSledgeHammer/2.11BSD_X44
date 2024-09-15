@@ -29,8 +29,6 @@
 #ifndef _ALTQ_IF_ALTQ_H_
 #define	_ALTQ_IF_ALTQ_H_
 
-#include "opt_altq_enabled.h"
-
 struct altq_pktattr;
 struct tb_regulator;
 struct top_cdnr;
