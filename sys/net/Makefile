@@ -1,5 +1,7 @@
 #	$NetBSD: Makefile,v 1.14 2003/10/13 08:34:15 dyoung Exp $
 
+SUBDIR= altq npf pf
+
 INCSDIR= /usr/include/net
 
 INCS=	bpf.h bpfdesc.h dlt.h ethertypes.h if.h ifq.h if_arc.h      \
