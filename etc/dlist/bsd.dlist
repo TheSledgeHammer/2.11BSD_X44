@@ -136,7 +136,7 @@
 ./usr/include/netns
 ./usr/include/objc
 ./usr/include/openssl
-./usr/include/ovl
+./usr/include/ovl/include
 ./usr/include/readline
 ./usr/include/sys
 ./usr/include/ufs
@@ -146,7 +146,7 @@
 ./usr/include/ufs/ufml
 ./usr/include/ufs/ufs
 ./usr/include/ufs/ufs211
-./usr/include/vm
+./usr/include/vm/include
 ./usr/lib
 ./usr/share
 ./usr/share/tmac
