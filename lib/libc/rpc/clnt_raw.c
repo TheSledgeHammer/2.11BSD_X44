@@ -58,7 +58,8 @@ __RCSID("$NetBSD: clnt_raw.c,v 1.24 2003/01/18 11:29:04 thorpej Exp $");
 #include <stdlib.h>
 
 #include <rpc/rpc.h>
-#include <rpc/raw.h>
+//#include <rpc/raw.h>
+#include <rpc/types.h>
 
 #ifdef __weak_alias
 __weak_alias(clntraw_create,_clntraw_create)
