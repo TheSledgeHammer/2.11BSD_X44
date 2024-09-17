@@ -29,10 +29,6 @@
 #ifndef _MULTIBYTE_H_
 #define _MULTIBYTE_H_
 
-#include <stdalign.h>
-
-//#include <locale.h>
-
 /* mbstate_t private */
 
 #ifdef _BSD_MBSTATE_T_
