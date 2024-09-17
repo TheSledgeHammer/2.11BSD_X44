@@ -55,7 +55,7 @@ _FUNCNAME(const char * __restrict nptr, char ** __restrict endptr, int base,
           __TYPE lo, __TYPE hi, int * rstatus)
 #else
 #include <locale.h>
-#include "setlocale_local.h"
+#include "locale/setlocale.h"
 #define INT_FUNCNAME_(pre, name, post)	pre ## name ## post
 #define INT_FUNCNAME(pre, name, post)	INT_FUNCNAME_(pre, name, post)
 
