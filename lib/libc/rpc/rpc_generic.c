@@ -59,7 +59,7 @@ __RCSID("$NetBSD: rpc_generic.c,v 1.16 2003/10/21 00:03:47 fvdl Exp $");
 #include <stdio.h>
 #include <netdb.h>
 #include <netconfig.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include <string.h>
 #include <syslog.h>
 #include <rpc/nettype.h>
