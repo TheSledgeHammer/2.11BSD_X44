@@ -29,24 +29,25 @@
  * documentation and/or software.
  */
 
-#if defined(_KERNEL) || defined(_STANDALONE)
-#include <sys/param.h>
-#include <sys/md5.h>
-#include <lib/libkern/libkern.h>
-#else
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 __RCSID("$NetBSD: md5c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
 #endif /* LIBC_SCCS and not lint */
+
 #include "namespace.h"
+
 #include <sys/types.h>
 #include <assert.h>
 #include <string.h>
-#include <md5.h>
-#endif /* _KERNEL || _STANDALONE */
 
 #if HAVE_NBTOOL_CONFIG_H
-#include "nbtool_config.h"
+#include <md5.h>
+#else
+#include <hash/md5.h>
 #endif
 
 #if !HAVE_MD5_H

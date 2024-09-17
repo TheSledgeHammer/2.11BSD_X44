@@ -28,7 +28,10 @@
  * documentation and/or software.
  */
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 __RCSID("$NetBSD: md4c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
@@ -37,22 +40,14 @@ __RCSID("$NetBSD: md4c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
 #include "namespace.h"
 
 #include <sys/types.h>
-
 #include <assert.h>
-#include <md4.h>
 #include <string.h>
 
 #if HAVE_NBTOOL_CONFIG_H
-#include "nbtool_config.h"
-#endif
-
+#include <md4.h>
 #else
-
-#include <sys/param.h>
-#include <sys/md4.h>
-#include <lib/libkern/libkern.h>
-
-#endif /* !_KERNEL && !_STANDALONE */
+#include <hash/md4.h>
+#endif
 
 #if !HAVE_MD4_H
 

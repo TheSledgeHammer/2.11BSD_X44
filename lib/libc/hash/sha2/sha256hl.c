@@ -12,10 +12,20 @@ __RCSID("$NetBSD: sha256hl.c,v 1.8 2008/04/13 02:04:32 dholland Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
+#if HAVE_NBTOOL_CONFIG_H
 #include <sha2.h>
+#else
+#include <hash/sha2.h>
+#endif
 
 #define	HASH_ALGORITHM	SHA256
 #define	HASH_FNPREFIX	SHA256_
-#define HASH_INCLUDE	<sha2.h>
+
+#if HAVE_NBTOOL_CONFIG_H
+#define HASH_INCLUDE    <sha2.h>
+#else
+#define HASH_INCLUDE    <hash/sha2.h>
+#endif
 
 #include "../hashhl.c"

@@ -15,16 +15,13 @@
  *   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #define SHA1HANDSOFF		/* Copies data before messing with it. */
 
 #include <sys/cdefs.h>
-
-#if defined(_KERNEL) || defined(_STANDALONE)
-__KERNEL_RCSID(0, "$NetBSD: sha1.c,v 1.6 2009/11/06 20:31:18 joerg Exp $");
-
-#include <lib/libkern/libkern.h>
-
-#else
 
 #if defined(LIBC_SCCS) && !defined(lint)
 __RCSID("$NetBSD: sha1.c,v 1.6 2009/11/06 20:31:18 joerg Exp $");
@@ -34,14 +31,11 @@ __RCSID("$NetBSD: sha1.c,v 1.6 2009/11/06 20:31:18 joerg Exp $");
 #include <assert.h>
 #include <string.h>
 
-#endif
-
 #include <sys/types.h>
-#include <sys/sha1.h>
-
-
 #if HAVE_NBTOOL_CONFIG_H
-#include "nbtool_config.h"
+#include <sha1.h>
+#else
+#include <hash/sha1.h>
 #endif
 
 #if !HAVE_SHA1_H

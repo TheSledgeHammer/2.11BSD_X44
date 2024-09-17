@@ -31,29 +31,24 @@
  */
 
 #include <sys/cdefs.h>
-
-#if defined(_KERNEL) || defined(_STANDALONE)
-__KERNEL_RCSID(0, "$NetBSD: rmd160.c,v 1.7 2015/04/21 12:47:33 riastradh Exp $");
-
-#include <lib/libkern/libkern.h>
-
-#else
-
 #if defined(LIBC_SCCS) && !defined(lint)
 __RCSID("$NetBSD: rmd160.c,v 1.7 2015/04/21 12:47:33 riastradh Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <assert.h>
 #include <string.h>
-
-#endif
 
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/endian.h>
-#include <sys/rmd160.h>
 
+#if HAVE_NBTOOL_CONFIG_H
+#include <rmd160.h>
+#else
+#include <hash/rmd160.h>
+#endif
 
 #define PUT_64BIT_LE(cp, value) do { \
 	(cp)[7] = (u_char)((value) >> 56); \
@@ -112,13 +107,11 @@ static const u_char PADDING[64] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 #if defined(__weak_alias)
 __weak_alias(RMD160Init,_RMD160Init) 
 __weak_alias(RMD160Update,_RMD160Update)
 __weak_alias(RMD160Final,_RMD160Final)
 __weak_alias(RMD160Transform,_RMD160Transform)
-#endif
 #endif
 
 void

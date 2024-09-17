@@ -34,12 +34,12 @@ __RCSID("$NetBSD: hmac.c,v 1.5 2017/10/05 09:59:04 roy Exp $");
 #include <string.h>
 #include <stdlib.h>
 
-#include <md2.h>
-#include <md4.h>
-#include <md5.h>
-#include <rmd160.h>
-#include <sha1.h>
-#include <sha2.h>
+#include <hash/md2.h>
+#include <hash/md4.h>
+#include <hash/md5.h>
+#include <hash/rmd160.h>
+#include <hash/sha1.h>
+#include <hash/sha2.h>
 
 #define HMAC_SIZE	128
 #define HMAC_IPAD	0x36

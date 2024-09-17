@@ -42,26 +42,21 @@
 
 #include <sys/cdefs.h>
 
-#if defined(_KERNEL) || defined(_STANDALONE)
-__KERNEL_RCSID(0, "$NetBSD: sha2.c,v 1.24 2013/06/09 19:46:56 christos Exp $");
-
-#include <sys/param.h>	/* XXX: to pull <machine/macros.h> for vax memset(9) */
-#include <lib/libkern/libkern.h>
-
-#else
-
 #if defined(LIBC_SCCS) && !defined(lint)
 __RCSID("$NetBSD: sha2.c,v 1.24 2013/06/09 19:46:56 christos Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <string.h>
 #include <stdint.h>
 
-#endif
-
 #include <sys/types.h>
-#include <sys/sha2.h>
+#if HAVE_NBTOOL_CONFIG_H
+#include <sha2.h>
+#else
+#include <hash/sha2.h>
+#endif
 
 #if HAVE_SYS_ENDIAN_H
 # include <sys/endian.h>
@@ -242,7 +237,6 @@ static const u_int64_t sha512_initial_hash_value[8] = {
 	0x5be0cd19137e2179ULL
 };
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 #if defined(__weak_alias)
 __weak_alias(SHA224_Init,_SHA224_Init) 
 __weak_alias(SHA224_Update,_SHA224_Update)
@@ -263,7 +257,6 @@ __weak_alias(SHA512_Init,_SHA512_Init)
 __weak_alias(SHA512_Update,_SHA512_Update)
 __weak_alias(SHA512_Final,_SHA512_Final)
 __weak_alias(SHA512_Transform,_SHA512_Transform)
-#endif
 #endif
 
 /*** SHA-256: *********************************************************/
