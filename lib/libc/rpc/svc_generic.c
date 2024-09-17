@@ -58,7 +58,7 @@ __RCSID("$NetBSD: svc_generic.c,v 1.7 2003/09/09 03:56:40 itojun Exp $");
 #include <rpc/nettype.h>
 #include <stdio.h>
 #include <errno.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include <string.h>
 #include <unistd.h>
 #include <err.h>
