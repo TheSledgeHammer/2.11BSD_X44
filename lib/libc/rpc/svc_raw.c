@@ -55,7 +55,7 @@ __RCSID("$NetBSD: svc_raw.c,v 1.17 2003/09/09 03:56:40 itojun Exp $");
 #include "reentrant.h"
 #include <rpc/rpc.h>
 #include <sys/types.h>
-#include <rpc/raw.h>
+//#include <rpc/raw.h>
 #include <assert.h>
 #include <stdlib.h>
 
