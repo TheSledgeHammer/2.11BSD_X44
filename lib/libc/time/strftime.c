@@ -16,7 +16,7 @@ __RCSID("$NetBSD: strftime.c,v 1.14.2.2 2004/05/17 10:38:03 tron Exp $");
 ** This is ANSIish only when "multibyte character == plain character".
 */
 
-#include "private.h"
+//#include "private.h"
 
 /*
 ** We don't use these extensions in strftime operation even when
