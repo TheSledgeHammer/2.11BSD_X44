@@ -30,9 +30,6 @@
 #ifndef _CITRUS_CTYPE_H_
 #define _CITRUS_CTYPE_H_
 
-#include <encoding.h>
-#include <rune.h>
-
 typedef int (*module_init_t)(_ENCODING_INFO * __restrict , const void * __restrict, size_t);
 
 /* prototypes */
