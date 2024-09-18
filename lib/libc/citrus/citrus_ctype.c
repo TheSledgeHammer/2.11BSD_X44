@@ -61,6 +61,10 @@
 #include <sys/null.h>
 #include <errno.h>
 
+#include <encoding.h>
+#include <rune.h>
+#include <runetype.h>
+
 #include "citrus_ctype.h"
 
 /* internal routines */
