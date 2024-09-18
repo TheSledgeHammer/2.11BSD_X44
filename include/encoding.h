@@ -65,6 +65,11 @@ typedef struct {
 } _Encoding_State;
 
 typedef struct {
+	size_t				state_size;
+	size_t				mb_cur_max;
+} _Encoding_Traits;
+
+typedef struct {
 	unsigned int			count[4];
 	wchar_t				bits[4];
 	wchar_t				mask;
@@ -118,11 +123,6 @@ typedef struct {
 
 #define _MODE_UTF32							0x00000001U
 #define _MODE_FORCE_ENDIAN					0x00000002U
-
-typedef struct {
-	size_t				state_size;
-	size_t				mb_cur_max;
-} _Encoding_Traits;
 
 /*
  * macros
