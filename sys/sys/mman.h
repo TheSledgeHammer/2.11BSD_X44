@@ -112,7 +112,7 @@ typedef	__off_t		off_t;		/* file offset */
 
 __BEGIN_DECLS
 /* Some of these int's should probably be size_t's */
-caddr_t	mmap(caddr_t, size_t, int, int, int, long, off_t);
+caddr_t	mmap(caddr_t, size_t, int, int, int, off_t);
 int	mprotect(caddr_t, size_t, int);
 int	munmap(caddr_t, size_t);
 int	msync(caddr_t, size_t, int);
