@@ -37,6 +37,10 @@
 #include <sys/null.h>
 #include <errno.h>
 
+#include <encoding.h>
+#include <rune.h>
+#include <runetype.h>
+
 #include "citrus_ctype.h"
 #include "citrus_types.h"
 #include "citrus_stdenc.h"
