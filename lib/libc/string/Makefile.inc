@@ -26,7 +26,7 @@ SRCS+=	wcscat.c wcschr.c wcscmp.c wcscpy.c wcscspn.c wcslcat.c wcslcpy.c \
 
 MAN+= 	bcmp.3 bcopy.3 bzero.3 ffs.3 rindex.3 strcasecmp.3 strcat.3 		\
 		strcmp.3 strcoll.3 strcpy.3 strcspn.3 strdup.3 strerror.3 strlcpy.3 \
-		strlen.3 strmode.3 strpbrk.3 stsep.3 strsignal.3 strspn.3 strstr.3 	\
+		strlen.3 strmode.3 strpbrk.3 strsep.3 strsignal.3 strspn.3 strstr.3 	\
 		strtok.3 strxfrm.3 swab.3 wcstok.3 wmemchr.3
 
 MLINKS+=strcasecmp.3 strncasecmp.3
