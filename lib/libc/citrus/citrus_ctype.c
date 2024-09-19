@@ -58,12 +58,15 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/null.h>
-#include <errno.h>
+#include <sys/types.h>
 
-#include <encoding.h>
+#include <assert.h>
+#include <errno.h>
+#include <limits.h>
 #include <rune.h>
-#include <runetype.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "citrus_ctype.h"
 
@@ -81,7 +84,7 @@ _citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict ei, char * __restrict s, 
 	return (sputmbrune(ei, s, n, pwc, psenc, nresult));
 }
 
-static __inline int
+static int
 _citrus_ctype_mbtowc_priv(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwc,  const char * __restrict s, size_t n, _ENCODING_STATE * __restrict psenc, int * __restrict nresult)
 {
 	_ENCODING_STATE state;
