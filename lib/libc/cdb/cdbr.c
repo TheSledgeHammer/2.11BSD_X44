@@ -38,6 +38,7 @@
 #include <sys/cdefs.h>
 __RCSID("$NetBSD: cdbr.c,v 1.2 2017/01/10 23:06:06 christos Exp $");
 
+#include "namespace.h"
 
 #if !HAVE_NBTOOL_CONFIG_H || HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
@@ -45,14 +46,14 @@ __RCSID("$NetBSD: cdbr.c,v 1.2 2017/01/10 23:06:06 christos Exp $");
 
 #include <sys/mman.h>
 #include <sys/stat.h>
+
 #include <cdbr.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <inttypes.h>
-#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #define SET_ERRNO(val) errno = (val)
 
 #include "bitops.h"
