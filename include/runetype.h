@@ -139,7 +139,7 @@ typedef struct _WCTypeEntry {
 #define _WCTYPE_INDEX_XDIGIT		11
 #define _WCTYPE_NINDEXES		12
 
-typedef struct {
+typedef struct _RuneOps {
 	/* legacy */
 	rune_t						(*ro_sgetrune)(const char *, size_t, char const **);
 	int						(*ro_sputrune)(rune_t, char *, size_t, char **);
