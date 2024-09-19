@@ -44,7 +44,6 @@
 
 #include <sys/ansi.h>
 #include <machine/ansi.h>
-#include <encoding.h>
 
 #ifdef  _BSD_RUNE_T_
 typedef _BSD_RUNE_T_	rune_t;
