@@ -40,6 +40,7 @@
 #define _RUNE_H_
 
 #include <stdio.h>
+#include <encoding.h>
 #include <runetype.h>
 
 #define	_PATH_LOCALE						"/usr/share/locale"
