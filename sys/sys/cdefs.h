@@ -265,6 +265,30 @@
 #endif
 
 /*
+ * To be used when an empty body is required like:
+ *
+ * #ifdef DEBUG
+ * # define dprintf(a) printf(a)
+ * #else
+ * # define dprintf(a) __nothing
+ * #endif
+ *
+ * We use ((void)0) instead of do {} while (0) so that it
+ * works on , expressions.
+ */
+#define __nothing	(/*LINTED*/(void)0)
+
+#if defined(__cplusplus)
+#define	__BEGIN_EXTERN_C	extern "C" {
+#define	__END_EXTERN_C		}
+#define	__static_cast(x,y)	static_cast<x>(y)
+#else
+#define	__BEGIN_EXTERN_C
+#define	__END_EXTERN_C
+#define	__static_cast(x,y)	(x)y
+#endif
+
+/*
  * Non-static C99 inline functions are optional bodies.  They don't
  * create global symbols if not used, but can be replaced if desirable.
  * This differs from the behavior of GCC before version 4.3.  The nearest
