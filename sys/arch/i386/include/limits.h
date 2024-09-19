@@ -37,8 +37,7 @@
 #define _I386_LIMITS_H_
 
 #define	CHAR_BIT	8							/* number of bits in a char */
-#define	MB_LEN_MAX	6							/* Allow 31 bit UTF2 */
-
+//#define	MB_LEN_MAX	6							/* Allow 31 bit UTF2 */
 
 #define	CLK_TCK		60							/* ticks per second */
 
@@ -56,8 +55,8 @@
 #define	SCHAR_MIN	(-128)						/* max value for a signed char */
 
 #define	UCHAR_MAX	255							/* max value for an unsigned char */
-#define	CHAR_MAX	127							/* max value for a char */
-#define	CHAR_MIN	(-128)						/* min value for a char */
+//#define	CHAR_MAX	127							/* max value for a char */
+//#define	CHAR_MIN	(-128)						/* min value for a char */
 
 #define	USHRT_MAX	65535						/* max value for an unsigned short */
 #define	SHRT_MAX	32767						/* max value for a short */
