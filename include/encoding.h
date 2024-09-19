@@ -30,7 +30,18 @@
 #ifndef _ENCODING_H_
 #define _ENCODING_H_
 
-#include <rune.h>
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
+#endif
+
+#ifdef  _BSD_WCHAR_T_
+typedef _BSD_WCHAR_T_	wchar_t;
+#undef  _BSD_WCHAR_T_
+#endif
 
 /* Stdenc types */
 typedef uint32_t	_wc_t;
