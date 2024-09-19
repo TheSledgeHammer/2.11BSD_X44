@@ -14,7 +14,8 @@ static char sccsid[] = "@(#)index.c	5.2 (Berkeley) 3/9/86";
 
 char *
 index(sp, c)
-	register char *sp, c;
+	register char *sp
+	int c;
 {
 	do {
 		if (*sp == c)
