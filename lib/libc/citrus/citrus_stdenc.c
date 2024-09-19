@@ -32,14 +32,16 @@
  * function templates of iconv standard encoding handler for each encodings.
  *
  */
-
 #include <sys/cdefs.h>
-#include <sys/null.h>
-#include <errno.h>
+#include <sys/types.h>
 
-#include <encoding.h>
+#include <assert.h>
+#include <errno.h>
+#include <limits.h>
 #include <rune.h>
-#include <runetype.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "citrus_ctype.h"
 #include "citrus_types.h"
