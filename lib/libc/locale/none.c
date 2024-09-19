@@ -81,7 +81,7 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 rune_t		_none_sgetrune(const char *, size_t, char const **);
 int			_none_sputrune(rune_t, char *, size_t, char **);
 int			_none_sgetmbrune(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
-int 		_none_sputmbrune(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
+int 		_none_sputmbrune(void * __restrict, char * __restrict, size_t, wchar_t, void * __restrict, size_t * __restrict);
 int			_none_sgetcsrune(void * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int			_none_sputcsrune(void * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
@@ -130,7 +130,7 @@ _none_sgetmbrune(void * __restrict cl, wchar_t * __restrict pwc, const char * __
 }
 
 int
-_none_sputmbrune(void * __restrict cl, char * __restrict s, wchar_t wc, void * __restrict pspriv, size_t * __restrict nresult)
+_none_sputmbrune(void * __restrict cl, char * __restrict s, size_t n, wchar_t wc, void * __restrict pspriv, size_t * __restrict nresult)
 {
 	if ((wc & ~0xFFU) != 0) {
 		*nresult = (size_t) - 1;

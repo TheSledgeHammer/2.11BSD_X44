@@ -57,8 +57,8 @@ typedef _Encoding_State				_UTF2State;
 
 rune_t	_UTF2_sgetrune(const char *, size_t, char const **);
 int		_UTF2_sputrune(rune_t, char *, size_t, char **);
-int		_UTF2_sgetmbrune(_UTF2EncodingInfo *, wchar_t *, const char **, size_t, _UTF2State *, size_t *);
-int 	_UTF2_sputmbrune(_UTF2EncodingInfo *, char *, wchar_t, _UTF2State *, size_t *);
+int		_UTF2_sgetmbrune(_UTF2EncodingInfo * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _UTF2State * __restrict, size_t * __restrict);
+int 	_UTF2_sputmbrune(_UTF2EncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _UTF2State * __restrict, size_t * __restrict);
 int		_UTF2_sgetcsrune(_UTF2EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF2_sputcsrune(_UTF2EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
@@ -100,7 +100,7 @@ _UTF2_init(rl)
 }
 
 int
-_UTF2_sgetmbrune(_UTF2EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _UTF2State *psenc, size_t *nresult)
+_UTF2_sgetmbrune(_UTF2EncodingInfo * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _UTF2State * __restrict psenc, size_t * __restrict nresult)
 {
 	wchar_t wchar;
 	const char *s0;
@@ -130,7 +130,7 @@ _UTF2_sgetmbrune(_UTF2EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, 
 }
 
 int
-_UTF2_sputmbrune(_UTF2EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF2State *psenc, size_t *nresult)
+_UTF2_sputmbrune(_UTF2EncodingInfo * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _UTF2State * __restrict psenc, size_t * __restrict nresult)
 {
 	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(nresult != 0);

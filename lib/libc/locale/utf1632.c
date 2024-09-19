@@ -53,8 +53,8 @@ typedef _Encoding_State				_UTF1632State;
 
 rune_t	_UTF1632_sgetrune(const char *, size_t, char const **);
 int		_UTF1632_sputrune(rune_t, char *, size_t, char **);
-int		_UTF1632_sgetmbrune(_UTF1632EncodingInfo *, wchar_t *, const char **, size_t, _UTF1632State *, size_t *);
-int 	_UTF1632_sputmbrune(_UTF1632EncodingInfo *, char *, wchar_t, _UTF1632State *, size_t *);
+int		_UTF1632_sgetmbrune(_UTF1632EncodingInfo * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _UTF1632State * __restrict, size_t * __restrict);
+int 	_UTF1632_sputmbrune(_UTF1632EncodingInfo * __restrict , char * __restrict, size_t, wchar_t, _UTF1632State * __restrict, size_t * __restrict);
 int		_UTF1632_sgetcsrune(_UTF1632EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF1632_sputcsrune(_UTF1632EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
@@ -91,7 +91,7 @@ _UTF1632_init(rl)
 }
 
 int
-_UTF1632_sgetmbrune(_UTF1632EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _UTF1632State *psenc, size_t *nresult)
+_UTF1632_sgetmbrune(_UTF1632EncodingInfo * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _UTF1632State * __restrict psenc, size_t * __restrict nresult)
 {
 	int chlenbak, endian, needlen;
 	wchar_t wc;
@@ -237,7 +237,7 @@ restart:
 }
 
 int
-_UTF1632_sputmbrune(_UTF1632EncodingInfo *ei, char *s, size_t n, wchar_t wc, _UTF1632State *psenc, size_t *nresult)
+_UTF1632_sputmbrune(_UTF1632EncodingInfo * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _UTF1632State * __restrict psenc, size_t * __restrict nresult)
 {
 	int ret;
 	wchar_t wc2;

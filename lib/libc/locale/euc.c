@@ -120,8 +120,8 @@ typedef _Encoding_State				_EUCState;
 
 rune_t	_EUC_sgetrune(const char *, size_t, char const **);
 int		_EUC_sputrune(rune_t, char *, size_t, char **);
-int		_EUC_sgetmbrune(_EUCEncodingInfo *, wchar_t *, const char **, size_t, _EUCState *, size_t *);
-int 	_EUC_sputmbrune(_EUCEncodingInfo *, char *, wchar_t, _EUCState *, size_t *);
+int		_EUC_sgetmbrune(_EUCEncodingInfo * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _EUCState * __restrict, size_t * __restrict);
+int 	_EUC_sputmbrune(_EUCEncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _EUCState * __restrict, size_t * __restrict);
 int		_EUC_sgetcsrune(_EUCEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_EUC_sputcsrune(_EUCEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
@@ -159,7 +159,7 @@ _EUC_init(rl)
 }
 
 int
-_EUC_sgetmbrune(_EUCEncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
+_EUC_sgetmbrune(_EUCEncodingInfo * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _EUCState * __restrict psenc, size_t *__restrict nresult)
 {
 	wchar_t wchar;
 	int c, cs, len;
@@ -259,7 +259,7 @@ restart:
 }
 
 int
-_EUC_sputmbrune(_EUCEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
+_EUC_sputmbrune(_EUCEncodingInfo * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _EUCState * __restrict psenc, size_t *__restrict nresult)
 {
 	wchar_t m, nm;
 	int cs, i, ret;

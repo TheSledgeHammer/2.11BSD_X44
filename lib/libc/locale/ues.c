@@ -55,8 +55,8 @@ typedef _Encoding_State				_UESState;
 
 rune_t	_UES_sgetrune(const char *, size_t, char const **);
 int		_UES_sputrune(rune_t, char *, size_t, char **);
-int		_UES_sgetmbrune(_UESEncodingInfo *, wchar_t *, const char **, size_t, _UESState *, size_t *);
-int 	_UES_sputmbrune(_UESEncodingInfo *, char *, wchar_t, _UESState *, size_t *);
+int		_UES_sgetmbrune(_UESEncodingInfo * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _UESState * __restrict, size_t * __restrict);
+int 	_UES_sputmbrune(_UESEncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _UESState * __restrict, size_t * __restrict);
 int		_UES_sgetcsrune(_UESEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UES_sputcsrune(_UESEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
@@ -181,7 +181,7 @@ _UES_init(rl)
 }
 
 int
-_UES_sgetmbrune(_UESEncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _UESState *psenc, size_t *nresult)
+_UES_sgetmbrune(_UESEncodingInfo * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _UESState * __restrict psenc, size_t * __restrict nresult)
 {
 	const char *s0;
 	int ch, head, tail, num;
@@ -296,7 +296,7 @@ done:
 }
 
 int
-_UES_sputmbrune(_UESEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UESState *psenc, size_t *nresult)
+_UES_sputmbrune(_UESEncodingInfo * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _UESState * __restrict psenc, size_t * __restrict nresult)
 {
 	wchar_t hi, lo;
 
