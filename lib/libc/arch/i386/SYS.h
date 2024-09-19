@@ -36,8 +36,8 @@
  *	@(#)SYS.h	8.1 (Berkeley) 6/4/93
  */
 
-#include <sys/syscall.h>
 #include <machine/asm.h>
+#include <sys/syscall.h>
 
 #ifdef PROF
 #define	ENTRY(x)		.globl _/**/x; \
@@ -45,7 +45,7 @@
 						movl $1b,%eax; call mcount
 #else
 #define	ENTRY(x)		.globl _/**/x; .text; .align 2; _/**/x:
-#endif PROF
+#endif /* PROF */
 #define	SYSCALL(x)		2: jmp cerror; ENTRY(x); lea SYS_/**/x,%eax; LCALL(7,0); jb 2b
 #define	RSYSCALL(x)		SYSCALL(x); ret
 #define	PSEUDO(x,y)		ENTRY(x); lea SYS_/**/y, %eax; ; LCALL(7,0); ret
