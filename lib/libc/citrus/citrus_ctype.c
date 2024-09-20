@@ -63,11 +63,11 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
-#include <rune.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "citrus_rune.h"
 #include "citrus_ctype.h"
 
 /* internal routines */
@@ -75,13 +75,13 @@
 static int
 _citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
 {
-	return (sgetmbrune(ei, pwc, s, n, psenc, nresult));
+	return (_citrus_rune_sgetmbrune(_CurrentRuneLocale, ei, pwc, s, n, psenc, nresult));
 }
 
 static int
 _citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict ei, char * __restrict s, size_t n, wchar_t pwc, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
 {
-	return (sputmbrune(ei, s, n, pwc, psenc, nresult));
+	return (_citrus_rune_sputmbrune(_CurrentRuneLocale, ei, s, n, pwc, psenc, nresult));
 }
 
 static int
