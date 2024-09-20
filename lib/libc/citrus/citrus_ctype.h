@@ -30,10 +30,9 @@
 #ifndef _CITRUS_CTYPE_H_
 #define _CITRUS_CTYPE_H_
 
-typedef int (*module_init_t)(_ENCODING_INFO * __restrict , const void * __restrict, size_t);
+#include "citrus_rune.h"
 
-/* prototypes */
-__BEGIN_DECLS
+typedef int (*module_init_t)(_ENCODING_INFO * __restrict , const void * __restrict, size_t);
 
 /*
  * standard form of mbrtowc_priv.
@@ -48,7 +47,11 @@ __BEGIN_DECLS
  *     the return value in the real mbrtowc context.
  *   - return value means "errno" in the real mbrtowc context.
  */
-static int	_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+static __inline int
+_citrus_ctype_mbrtowc_priv(_ENCODING_INFO *ei, wchar_t *wc, const char **s, size_t n, _ENCODING_STATE *es, size_t *r)
+{
+	return (_citrus_rune_sgetmbrune(_CurrentRuneLocale, ei, wc, s, n, es, r));
+}
 
 /*
  * standard form of wcrtomb_priv.
@@ -62,7 +65,14 @@ static int	_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict, wchar_t * __r
  *   - caller should ensure that 2nd parameter isn't NULL.
  *     (XXX inconsist with mbrtowc_priv)
  */
-static int	_citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+static __inline int
+_citrus_ctype_wcrtomb_priv( _ENCODING_INFO *ei, char *s, size_t n, wchar_t wc, _ENCODING_STATE *es, size_t *r)
+{
+	return (_citrus_rune_sputmbrune(_CurrentRuneLocale, ei, s, n, wc, es, r));
+}
+
+/* prototypes */
+__BEGIN_DECLS
 
 /* public template */
 void		_citrus_ctype_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);
