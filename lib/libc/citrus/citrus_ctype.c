@@ -714,11 +714,8 @@ _citrus_ctype_wctomb(void *cl, char *s, wchar_t wc, int *nresult)
 	size_t nr, sz;
 #if _ENCODING_IS_STATE_DEPENDENT
 	size_t rsz = 0;
-    int err = 0;
-#else
-    int err;
 #endif
-//	int err = 0;
+	int err = 0;
 
 	_DIAGASSERT(cl != NULL);
 

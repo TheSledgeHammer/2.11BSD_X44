@@ -105,19 +105,19 @@ _citrus_stdenc_init_state(_ENCODING_INFO * __restrict ei, _ENCODING_STATE * __re
 }
 
 int
-_citrus_stdenc_cstowc(_ENCODING_INFO * __restrict ei,  wchar_t * __restrict wc, _csid_t csid, _index_t idx)
+_citrus_stdenc_cstowc(_ENCODING_INFO *ei,  wchar_t *wc, _csid_t csid, _index_t idx)
 {
-	return (sgetcsrune(ei, wc, csid, idx));
+	return (_citrus_stdenc_cstowc_priv(ei, wc, csid, idx));
 }
 
 int
-_citrus_stdenc_wctocs(_ENCODING_INFO * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+_citrus_stdenc_wctocs(_ENCODING_INFO *ei, _csid_t *csid, _index_t *idx, wchar_t wc)
 {
-	return (sputcsrune(ei, csid, idx, wc));
+	return (_citrus_stdenc_wctocs_priv(ei, csid, idx, wc));
 }
 
 int
-_citrus_stdenc_mbtocs(_ENCODING_INFO * __restrict ei, _citrus_csid_t * __restrict csid, _citrus_index_t * __restrict idx, const char ** __restrict s, size_t n, _ENCODING_STATE * __restrict ps, size_t * __restrict nresult)
+_citrus_stdenc_mbtocs(_ENCODING_INFO *ei, _citrus_csid_t *csid, _citrus_index_t *idx, const char **s, size_t n, _ENCODING_STATE *ps, size_t *nresult)
 {
 	int ret;
 	wchar_t wc;
@@ -132,7 +132,7 @@ _citrus_stdenc_mbtocs(_ENCODING_INFO * __restrict ei, _citrus_csid_t * __restric
 }
 
 int
-_citrus_stdenc_cstomb(_ENCODING_INFO * __restrict ei, char * __restrict s, size_t n, _citrus_csid_t csid, _citrus_index_t idx, _ENCODING_STATE * __restrict ps, size_t * __restrict nresult)
+_citrus_stdenc_cstomb(_ENCODING_INFO *ei, char *s, size_t n, _citrus_csid_t csid, _citrus_index_t idx, _ENCODING_STATE *ps, size_t *nresult)
 {
 	int ret;
 	wchar_t wc;
@@ -151,13 +151,13 @@ _citrus_stdenc_cstomb(_ENCODING_INFO * __restrict ei, char * __restrict s, size_
 }
 
 int
-_citrus_stdenc_mbtowc(_ENCODING_INFO * __restrict ei, _citrus_wc_t * __restrict wc, const char ** __restrict s, size_t n, _ENCODING_STATE * __restrict ps, size_t * __restrict nresult)
+_citrus_stdenc_mbtowc(_ENCODING_INFO *ei, _citrus_wc_t *wc, const char **s, size_t n, _ENCODING_STATE *ps, size_t *nresult)
 {
 	return (_citrus_ctype_mbrtowc_priv(ei, wc, s, n, ps, nresult));
 }
 
 int
-_citrus_stdenc_wctomb(_ENCODING_INFO * __restrict ei, char * __restrict s, size_t n, _citrus_wc_t wc, _ENCODING_STATE * __restrict ps, size_t * __restrict nresult)
+_citrus_stdenc_wctomb(_ENCODING_INFO *ei, char *s, size_t n, _citrus_wc_t wc, _ENCODING_STATE *ps, size_t *nresult)
 {
 	return (_citrus_ctype_wcrtomb_priv(ei, s, n, wc, ps, nresult));
 }

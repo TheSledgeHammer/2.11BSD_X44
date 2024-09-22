@@ -30,6 +30,8 @@
 #ifndef _CITRUS_STDENC_H_
 #define _CITRUS_STDENC_H_
 
+#include "citrus_rune.h"
+
 /* get_state_desc id */
 #define _CITRUS_STDENC_SDID_GENERIC				0
 /* get_state_desc rstate */
@@ -38,6 +40,18 @@
 #define _CITRUS_STDENC_SDGEN_STABLE				2
 #define _CITRUS_STDENC_SDGEN_INCOMPLETE_CHAR	3
 #define _CITRUS_STDENC_SDGEN_INCOMPLETE_SHIFT	4
+
+static __inline int
+_citrus_stdenc_cstowc_priv(_ENCODING_INFO *ei,  wchar_t *wc, _csid_t csid, _index_t idx)
+{
+	return (_citrus_rune_sgetcsrune(_CurrentRuneLocale, ei, wc, csid, idx));
+}
+
+static __inline int
+_citrus_stdenc_wctocs_priv(_ENCODING_INFO *ei, _csid_t *csid, _index_t *idx, wchar_t wc)
+{
+	return (_citrus_rune_sputcsrune(_CurrentRuneLocale, ei, csid, idx, wc));
+}
 
 __BEGIN_DECLS
 int		_citrus_stdenc_init(void ** __restrict, void * __restrict, size_t, module_init_t);
