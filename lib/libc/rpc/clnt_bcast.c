@@ -54,6 +54,7 @@ __RCSID("$NetBSD: clnt_bcast.c,v 1.12 2003/09/09 03:56:39 itojun Exp $");
  */
 
 #include "namespace.h"
+#include "reentrant.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/queue.h>
