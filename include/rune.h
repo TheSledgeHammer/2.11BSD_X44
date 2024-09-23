@@ -81,9 +81,9 @@ long			fgetrune(FILE *);
 int	 			fputrune(rune_t, FILE *);
 int	 			fungetrune(rune_t, FILE *);
 
-int				fgetmbrune(FILE *, _ENCODING_INFO *, wchar_t *, _ENCODING_STATE *);
-int				fungetmbrune(FILE *, _ENCODING_INFO *, wchar_t *, _ENCODING_STATE *);
-int				fputmbrune(FILE *, _ENCODING_INFO *, wchar_t *, _ENCODING_STATE *);
+int				fgetmbrune(FILE *, _ENCODING_INFO *, _ENCODING_STATE *);
+int				fungetmbrune(FILE *, _ENCODING_INFO *, _ENCODING_STATE *);
+int				fputmbrune(FILE *, _ENCODING_INFO *, _ENCODING_STATE *);
 
 /* emulated 4.4BSD's sgetrune & sputrune */
 rune_t			emulated_sgetrune(const char *, size_t, char const **);

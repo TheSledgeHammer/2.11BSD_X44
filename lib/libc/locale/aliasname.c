@@ -37,10 +37,100 @@ __RCSID("$NetBSD: aliasname.c,v 1.1 2002/02/13 07:45:52 yamt Exp $");
 
 #include "aliasname_local.h"
 
-__inline int __is_ws(char);
+/*
+ * skip white space characters.
+ */
+const char *
+_bcs_skip_ws(const char *p)
+{
+	while (*p && isspace(*p)) {
+		p++;
+	}
 
-__inline int 
-__is_ws(char ch)
+	return (p);
+}
+
+/*
+ * skip non white space characters.
+ */
+const char *
+_bcs_skip_nonws(const char *p)
+{
+
+	while (*p && !isspace(*p)) {
+		p++;
+	}
+
+	return (p);
+}
+
+/*
+ * skip white space characters with limitation of length.
+ */
+const char *
+_bcs_skip_ws_len(const char *p, size_t *len)
+{
+
+	while (*p && *len > 0 && isspace(*p)) {
+		p++;
+		(*len)--;
+	}
+
+	return (p);
+}
+
+/*
+ * skip non white space characters with limitation of length.
+ */
+const char *
+_bcs_skip_nonws_len(const char *p, size_t *len)
+{
+
+	while (*p && *len > 0 && !isspace(*p)) {
+		p++;
+		(*len)--;
+	}
+
+	return (p);
+}
+
+/*
+ * truncate trailing white space characters.
+ */
+void
+_bcs_trunc_rws_len(const char *p, size_t *len)
+{
+
+	while (*len > 0 && isspace(p[*len - 1]))
+		(*len)--;
+}
+
+/*
+ * destructive transliterate to lowercase.
+ */
+void
+_bcs_convert_to_lower(char *s)
+{
+	while (*s) {
+		*s = tolower(*s);
+		s++;
+	}
+}
+
+/*
+ * destructive transliterate to uppercase.
+ */
+void
+_bcs_convert_to_upper(char *s)
+{
+	while (*s) {
+		*s = toupper(*s);
+		s++;
+	}
+}
+
+int
+_bcs_is_ws(const char ch)
 {
 	return (ch == ' ' || ch == '\t');
 }
@@ -94,7 +184,7 @@ __unaliasname(const char *dbname, const char *alias, void *buf, size_t bufsize)
 		p += aliaslen;
 		len -= aliaslen;
 
-		if (len == 0 || !__is_ws(*p)) {
+		if (len == 0 || !_bcs_is_ws(*p)) {
 			continue;
 		}
 
@@ -108,7 +198,7 @@ __unaliasname(const char *dbname, const char *alias, void *buf, size_t bufsize)
 	do {
 		p++;
 		len--;
-	} while (len != 0 && __is_ws(*p));
+	} while (len != 0 && _bcs_is_ws(*p));
 
 	if (len == 0) {
 		goto quit;
@@ -116,7 +206,7 @@ __unaliasname(const char *dbname, const char *alias, void *buf, size_t bufsize)
 
 	/* count length of result */
 	resultlen = 0;
-	while (resultlen < len && !__is_ws(*p)) {
+	while (resultlen < len && !_bcs_is_ws(*p)) {
 		resultlen++;
 	}
 

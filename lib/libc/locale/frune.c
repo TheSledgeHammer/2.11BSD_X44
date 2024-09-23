@@ -46,30 +46,28 @@ static char sccsid[] = "@(#)frune.c	8.1 (Berkeley) 6/4/93";
 #include <stdio.h>
 
 int
-fgetmbrune(fp, ei, pwc, psenc)
-    FILE            *fp;
-    _ENCODING_INFO  *ei;
-    wchar_t         *pwc;
-    _ENCODING_STATE *psenc;
+fgetmbrune(fp, ei, es)
+	FILE *fp;
+	_ENCODING_INFO  *ei;
+	_ENCODING_STATE *es;
 {
-	int r, c;
-	size_t len;
+	wchar_t wc;
 	const char buf[MB_LEN_MAX];
-	size_t nresult;
+	size_t len, nresult;
+	int ret;
 
 	len = _ENCODING_MB_CUR_MAX(ei);
 	do {
-		c = getc(fp);
-		if (c == EOF) {
+		wc = (wchar_t)getc(fp);
+		if (wc == EOF) {
 			if (len) {
 				break;
 			}
 			return (EOF);
 		}
-		buf[len++] = c;
-
-		r = sgetmbrune(ei, pwc, &buf, len, psenc, &nresult);
-		if (r) {
+		buf[len++] = wc;
+		ret = sgetmbrune(ei, &wc, &buf, len, es, &nresult);
+		if (ret != _INVALID_RUNE) {
 			return (0);
 		}
 	} while (nresult == buf && len < MB_LEN_MAX);
@@ -77,27 +75,26 @@ fgetmbrune(fp, ei, pwc, psenc)
 	while (--len > 0) {
 		ungetc(buf[len], fp);
 	}
-    return (_INVALID_RUNE);
+	return (_INVALID_RUNE);
 }
 
 int
-fungetmbrune(fp, ei, pwc, psenc)
-    FILE            *fp;
-    _ENCODING_INFO  *ei;
-    wchar_t         *pwc;
-    _ENCODING_STATE *psenc;
+fungetmbrune(fp, ei, es)
+	FILE *fp;
+	_ENCODING_INFO  *ei;
+	_ENCODING_STATE *es;
 {
-	int r, c;
-	size_t len;
+	wchar_t wc;
 	const char buf[MB_LEN_MAX];
-	size_t nresult;
+	size_t len, nresult;
+	int ret;
 
 	len = _ENCODING_MB_CUR_MAX(ei);
-	r = sputmbrune(ei, &buf, len, pwc, psenc, &nresult);
-	if (r) {
+	ret = sputmbrune(ei, &buf, len, &wc, es, &nresult);
+	if (ret) {
 		while (len-- > 0) {
-			c = ungetc(buf[len], fp);
-			if (c == EOF) {
+			wc = (wchar_t)ungetc(buf[len], fp);
+			if (wc == EOF) {
 				return (EOF);
 			}
 		}
@@ -106,27 +103,26 @@ fungetmbrune(fp, ei, pwc, psenc)
 }
 
 int
-fputmbrune(fp, ei, pwc, psenc)
-	FILE 			*fp;
-    _ENCODING_INFO  *ei;
-    wchar_t         *pwc;
-    _ENCODING_STATE *psenc;
+fputmbrune(fp, ei, es)
+	FILE *fp;
+	_ENCODING_INFO  *ei;
+	_ENCODING_STATE *es;
 {
-	int r, i, c;
-    size_t len;
-	char buf[MB_LEN_MAX];
-	size_t nresult;
+	wchar_t wc;
+	const char buf[MB_LEN_MAX];
+	size_t len, nresult;
+	int i, ret;
 
     len = _ENCODING_MB_CUR_MAX(ei);
-	r = sputmbrune(ei, &buf, len, pwc, psenc, &nresult);
-    if (r) {
-	    for (i = 0; i < len; ++i) {
-            c = putc(buf[i], fp);
-		    if (c == EOF) {
-			    return (EOF);
-            }
-        }
-    }
+	ret = sputmbrune(ei, &buf, len, &wc, es, &nresult);
+	if (ret) {
+		  for (i = 0; i < len; ++i) {
+			  wc = (wchar_t)putc(buf[i], fp);
+			  if (wc == EOF) {
+				  return (EOF);
+			  }
+		  }
+	}
 	return (0);
 }
 
@@ -141,19 +137,23 @@ fgetrune(fp)
 
 	len = 0;
 	do {
-		if ((c = getc(fp)) == EOF) {
-			if (len)
+		c = getc(fp);
+		if (c == EOF) {
+			if (len) {
 				break;
+			}
 			return (EOF);
 		}
 		buf[len++] = c;
-
-		if ((r = sgetrune(buf, len, &result)) != _INVALID_RUNE)
+		r = sgetrune(buf, len, &result);
+		if (r != _INVALID_RUNE) {
 			return (r);
+		}
 	} while (result == buf && len < MB_LEN_MAX);
 
-	while (--len > 0)
+	while (--len > 0) {
 		ungetc(buf[len], fp);
+	}
 	return (_INVALID_RUNE);
 }
 
@@ -162,13 +162,16 @@ fungetrune(r, fp)
 	rune_t r;
 	FILE* fp;
 {
-	int len;
+	int len, c;
 	char buf[MB_LEN_MAX];
 
 	len = sputrune(r, buf, MB_LEN_MAX, 0);
-	while (len-- > 0)
-		if (ungetc(buf[len], fp) == EOF)
+	while (len-- > 0) {
+		c = ungetc(buf[len], fp);
+		if (c == EOF) {
 			return (EOF);
+		}
+	}
 	return (0);
 }
 
@@ -177,13 +180,15 @@ fputrune(r, fp)
 	rune_t r;
 	FILE *fp;
 {
-	int i, len;
+	int i, c, len;
 	char buf[MB_LEN_MAX];
 
 	len = sputrune(r, buf, MB_LEN_MAX, 0);
-	for (i = 0; i < len; ++i)
-		if (putc(buf[i], fp) == EOF)
+	for (i = 0; i < len; ++i) {
+		c = putc(buf[i], fp);
+		if (c == EOF) {
 			return (EOF);
-
+		}
+	}
 	return (0);
 }
