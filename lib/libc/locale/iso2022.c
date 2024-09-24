@@ -596,7 +596,7 @@ _ISO2022_module_init(_ISO2022EncodingInfo * __restrict ei, const void * __restri
 }
 
 void
-_ISO2022_module_uninit(_ISO2022EncodingInfo *)
+_ISO2022_module_uninit(_ISO2022EncodingInfo *ei)
 {
 
 }
