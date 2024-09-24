@@ -52,7 +52,7 @@
  */
 
 int
-_citrus_stdenc_init(void ** __restrict cl, void * __restrict var, size_t lenvar, module_init_t module)
+_citrus_stdenc_init(void ** __restrict cl, void * __restrict var, size_t lenvar)
 {
 	_ENCODING_INFO 		*ei;
 	_ENCODING_TRAITS 	*et;
@@ -68,7 +68,7 @@ _citrus_stdenc_init(void ** __restrict cl, void * __restrict var, size_t lenvar,
 		}
 	}
 
-	ret = (*module)(ei, var, lenvar);
+	ret = _citrus_ctype_module_init(ei, var, lenvar);
 	if (ret) {
 		free((void *)ei);
 		return (ret);
@@ -92,7 +92,7 @@ void
 _citrus_stdenc_uninit(_ENCODING_INFO * __restrict ei)
 {
 	if (ei) {
-		_citrus_ctype_encoding_uninit(ei);
+		_citrus_ctype_module_uninit(ei);
 		free(ei);
 	}
 }

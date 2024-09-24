@@ -151,6 +151,9 @@ typedef struct _RuneOps {
 	/* stdenc */
 	int 						(*ro_sgetcsrune)(_Encoding_Info * __restrict, wchar_t * __restrict, uint32_t, uint32_t);
 	int 						(*ro_sputcsrune)(_Encoding_Info * __restrict, uint32_t * __restrict, uint32_t * __restrict, wchar_t);
+	/* init/uninit */
+	int 						(*ro_module_init)(_ENCODING_INFO * __restrict, const void * __restrict, size_t);
+	void						(*ro_module_uninit)(_ENCODING_INFO *);
 } _RuneOps;
 
 /*

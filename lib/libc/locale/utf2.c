@@ -61,8 +61,8 @@ int		_UTF2_sgetmbrune(_UTF2EncodingInfo * __restrict, wchar_t * __restrict, cons
 int 	_UTF2_sputmbrune(_UTF2EncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _UTF2State * __restrict, size_t * __restrict);
 int		_UTF2_sgetcsrune(_UTF2EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF2_sputcsrune(_UTF2EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
-
-static int _UTF2_encoding_module_init(_UTF2EncodingInfo * __restrict, const void * __restrict, size_t);
+int 	_UTF2_module_init(_UTF2EncodingInfo * __restrict, const void * __restrict, size_t);
+void	_UTF2_module_uninit(_UTF2EncodingInfo *);
 
 _RuneOps _utf2_runeops = {
 		.ro_sgetrune 	=  	_UTF2_sgetrune,
@@ -71,6 +71,8 @@ _RuneOps _utf2_runeops = {
 		.ro_sputmbrune 	=  	_UTF2_sputmbrune,
 		.ro_sgetcsrune  =	_UTF2_sgetcsrune,
 		.ro_sputcsrune	= 	_UTF2_sputcsrune,
+		.ro_module_init = 	_UTF2_module_init,
+		.ro_module_uninit = 	_UTF2_module_uninit,
 };
 
 static _utf_count[16] = {
@@ -85,11 +87,11 @@ _UTF2_init(rl)
 	int ret;
 
 	rl->ops = &_utf2_runeops;
-	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len, _UTF2_encoding_module_init);
+	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len, _UTF2_encoding_module_init);
+	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
@@ -232,8 +234,14 @@ _UTF2_sputcsrune(_UTF2EncodingInfo * __restrict ei, _csid_t * __restrict csid, _
 	return (0);
 }
 
-static int
-_UTF2_encoding_module_init(_UTF2EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+int
+_UTF2_module_init(_UTF2EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	return (0);
+}
+
+void
+_UTF2_module_uninit(_UTF2EncodingInfo *ei)
+{
+
 }

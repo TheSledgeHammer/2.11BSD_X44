@@ -79,4 +79,18 @@ _citrus_rune_sputcsrune(_RuneLocale *rl, _ENCODING_INFO *ei, _csid_t *csid, _ind
     return ((*rl->ops->ro_sputcsrune)(ei, csid, idx, wc));
 }
 
+static __inline int
+_citrus_rune_module_init(_RuneLocale *rl, _ENCODING_INFO *ei, const void *var, size_t lenvar)
+{
+	_DIAGASSERT(rl && rl->ops && rl->ops->ro_module_init);
+	return ((*rl->ops->ro_module_init)(ei, var, lenvar));
+}
+
+static __inline void
+_citrus_rune_module_uninit(_RuneLocale *rl, _ENCODING_INFO *ei)
+{
+	_DIAGASSERT(rl && rl->ops && rl->ops->ro_module_uninit);
+	(*rl->ops->ro_module_uninit)(ei);
+}
+
 #endif

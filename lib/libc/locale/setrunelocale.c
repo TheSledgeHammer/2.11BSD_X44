@@ -140,6 +140,7 @@ delrunelocale(encoding)
 	}
 }
 
+/* initializes all runes in table */
 int
 initrunelocale(rl)
 	_RuneLocale *rl;
@@ -163,7 +164,7 @@ initrunelocale(rl)
 	}
 }
 
-/* initializes all runes in table */
+/* create new rune's table */
 int
 newrunelocale(rl)
 	_RuneLocale *rl;
@@ -199,4 +200,32 @@ findrunelocale(encoding)
 		return (NULL);
 	}
 	return (rl);
+}
+
+/* validate rune is not empty */
+int
+validrunelocale(encoding)
+	char *encoding;
+{
+	_RuneLocale *rl;
+	int ret;
+
+	ret = -1;
+	rl = findrunelocale(encoding);
+	if (rl != NULL) {
+		if (rl->ops != NULL) {
+			if (rl->ops->ro_sgetrune != NULL
+					|| rl->ops->ro_sputrune != NULL
+					|| rl->ops->ro_sgetmbrune != NULL
+					|| rl->ops->ro_sputmbrune != NULL
+					|| rl->ops->ro_sgetcsrune != NULL
+					|| rl->ops->ro_sputcsrune != NULL
+					|| rl->ops->ro_module_init != NULL
+					|| rl->ops->ro_module_uninit != NULL
+					) {
+				ret = 0;
+			}
+		}
+	}
+	return (ret);
 }

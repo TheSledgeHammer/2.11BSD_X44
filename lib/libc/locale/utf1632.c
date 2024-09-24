@@ -57,8 +57,8 @@ int		_UTF1632_sgetmbrune(_UTF1632EncodingInfo * __restrict, wchar_t * __restrict
 int 	_UTF1632_sputmbrune(_UTF1632EncodingInfo * __restrict , char * __restrict, size_t, wchar_t, _UTF1632State * __restrict, size_t * __restrict);
 int		_UTF1632_sgetcsrune(_UTF1632EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF1632_sputcsrune(_UTF1632EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
-
-static int _UTF1632_encoding_module_init(_UTF1632EncodingInfo * __restrict, const void * __restrict, size_t);
+int 	_UTF1632_module_init(_UTF1632EncodingInfo * __restrict, const void * __restrict, size_t);
+void	_UTF1632_module_uninit(_UTF1632EncodingInfo *);
 
 _RuneOps _utf1632_runeops = {
 		.ro_sgetrune 	=  	_UTF1632_sgetrune,
@@ -67,6 +67,8 @@ _RuneOps _utf1632_runeops = {
 		.ro_sputmbrune 	=  	_UTF1632_sputmbrune,
 		.ro_sgetcsrune  =	_UTF1632_sgetcsrune,
 		.ro_sputcsrune	= 	_UTF1632_sputcsrune,
+		.ro_module_init = 	_UTF1632_module_init,
+		.ro_module_uninit = 	_UTF1632_module_uninit,
 };
 
 int
@@ -76,11 +78,11 @@ _UTF1632_init(rl)
 	int ret;
 
 	rl->ops = &_utf1632_runeops;
-	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len, _UTF1632_encoding_module_init);
+	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len, _UTF1632_encoding_module_init);
+	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
@@ -395,8 +397,8 @@ parse_variable(_UTF1632EncodingInfo * __restrict ei, const void * __restrict var
 	}
 }
 
-static int
-_UTF1632_encoding_module_init(_UTF1632EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+int
+_UTF1632_module_init(_UTF1632EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	_DIAGASSERT(ei != NULL);
 
@@ -416,4 +418,10 @@ _UTF1632_encoding_module_init(_UTF1632EncodingInfo * __restrict ei, const void *
 #endif
 	}
 	return (0);
+}
+
+void
+_UTF1632_module_uninit(_UTF1632EncodingInfo *ei)
+{
+
 }

@@ -56,19 +56,25 @@
 #define __sgetcsrune      					_CurrentRuneLocale->ops->ro_sgetcsrune
 #define __sputcsrune     					_CurrentRuneLocale->ops->ro_sputcsrune
 
-#define sgetrune(s, n, r)       			(*__sgetrune)((s), (n), (r))
-#define sputrune(c, s, n, r)    			(*__sputrune)((c), (s), (n), (r))
+#define __module_init						_CurrentRuneLocale->ops->ro_module_init
+#define __module_uninit						_CurrentRuneLocale->ops->ro_module_uninit
 
-#define sgetmbrune(ei, wc, s, n, es, r)    	(*__sgetmbrune)((ei), (wc), (s), (n), (es), (r))
-#define sputmbrune(ei, s, n, wc, es, r)    	(*__sputmbrune)((ei), (s), (n), (wc), (es), (r))
+#define sgetrune(s, n, r)       				(*__sgetrune)((s), (n), (r))
+#define sputrune(c, s, n, r)    				(*__sputrune)((c), (s), (n), (r))
 
-#define sgetcsrune(ei, wc, csid, idx) 		(*__sgetcsrune)((ei), (wc), (csid), (idx))
-#define sputcsrune(ei, csid, idx, wc)  		(*__sputcsrune)((ei), (csid), (idx), (wc))
+#define sgetmbrune(ei, wc, s, n, es, r)    			(*__sgetmbrune)((ei), (wc), (s), (n), (es), (r))
+#define sputmbrune(ei, s, n, wc, es, r)    			(*__sputmbrune)((ei), (s), (n), (wc), (es), (r))
+
+#define sgetcsrune(ei, wc, csid, idx) 				(*__sgetcsrune)((ei), (wc), (csid), (idx))
+#define sputcsrune(ei, csid, idx, wc)  				(*__sputcsrune)((ei), (csid), (idx), (wc))
+
+#define module_init(ei, var, lenvar)				(*__module_init)((ei), (var), (lenvar));
+#define module_uninit(ei)					(*__module_uninit)((ei));
 
 /*
  * Other namespace conversion.
  */
-extern size_t 					__mb_len_max_runtime;
+extern size_t 			__mb_len_max_runtime;
 #define __MB_LEN_MAX_RUNTIME	__mb_len_max_runtime
 
 __BEGIN_DECLS
@@ -80,7 +86,6 @@ void			setinvalidrune(rune_t);
 long			fgetrune(FILE *);
 int	 			fputrune(rune_t, FILE *);
 int	 			fungetrune(rune_t, FILE *);
-
 int				fgetmbrune(FILE *, _ENCODING_INFO *, _ENCODING_STATE *);
 int				fungetmbrune(FILE *, _ENCODING_INFO *, _ENCODING_STATE *);
 int				fputmbrune(FILE *, _ENCODING_INFO *, _ENCODING_STATE *);

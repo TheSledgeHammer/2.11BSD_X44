@@ -84,6 +84,8 @@ int			_none_sgetmbrune(void * __restrict, wchar_t * __restrict, const char * __r
 int 		_none_sputmbrune(void * __restrict, char * __restrict, size_t, wchar_t, void * __restrict, size_t * __restrict);
 int			_none_sgetcsrune(void * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int			_none_sputcsrune(void * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+int			_none_module_init(void * __restrict, const void * __restrict, size_t);
+void		_none_module_uninit(void *);
 
 _RuneOps _none_runeops = {
 		.ro_sgetrune 	=  	_none_sgetrune,
@@ -92,6 +94,8 @@ _RuneOps _none_runeops = {
 		.ro_sputmbrune 	=  	_none_sputmbrune,
 		.ro_sgetcsrune  =	_none_sgetcsrune,
 		.ro_sputcsrune	= 	_none_sputcsrune,
+		.ro_module_init = 	_none_module_init,
+		.ro_module_uninit = 	_none_module_uninit,
 };
 
 int
@@ -167,4 +171,16 @@ int
 _none_sputcsrune(void * __restrict cl, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
 {
 	return (0);
+}
+
+int
+_none_module_init(void * __restrict cl, const void * __restrict var, size_t lenvar)
+{
+	return (0);
+}
+
+void
+_none_module_uninit(void *cl)
+{
+
 }

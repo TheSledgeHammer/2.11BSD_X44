@@ -83,8 +83,8 @@ int		_UTF8_sgetmbrune(_UTF8EncodingInfo * __restrict, wchar_t * __restrict, cons
 int 	_UTF8_sputmbrune(_UTF8EncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _UTF8State * __restrict, size_t * __restrict);
 int		_UTF8_sgetcsrune(_UTF8EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF8_sputcsrune(_UTF8EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
-
-static int _UTF8_encoding_module_init(_UTF8EncodingInfo * __restrict, const void * __restrict, size_t);
+int 	_UTF8_module_init(_UTF8EncodingInfo * __restrict, const void * __restrict, size_t);
+void	_UTF8_module_uninit(_UTF8EncodingInfo *);
 
 static int _UTF8_count_array[256];
 static int const *_UTF8_count = NULL;
@@ -96,6 +96,8 @@ _RuneOps _utf8_runeops = {
 		.ro_sputmbrune 	=  	_UTF8_sputmbrune,
 		.ro_sgetcsrune  =	_UTF8_sgetcsrune,
 		.ro_sputcsrune	= 	_UTF8_sputcsrune,
+		.ro_module_init = 	_UTF8_module_init,
+		.ro_module_uninit = 	_UTF8_module_uninit,
 };
 
 static u_int32_t _UTF8_range[] = {
@@ -148,11 +150,11 @@ _UTF8_init(_RuneLocale *rl)
 	int ret;
 
 	rl->ops = &_utf8_runeops;
-	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len, _UTF8_encoding_module_init);
+	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len, _UTF8_encoding_module_init);
+	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
@@ -352,10 +354,16 @@ _UTF8_sputcsrune(_UTF8EncodingInfo * __restrict ei, _csid_t * __restrict csid, _
 	return (0);
 }
 
-static int
-_UTF8_encoding_module_init(_UTF8EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+int
+_UTF8_module_init(_UTF8EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	_UTF8_init_count();
 
 	return (0);
+}
+
+void
+_UTF8_module_uninit(_UTF8EncodingInfo *ei)
+{
+
 }

@@ -4,8 +4,8 @@
 .PATH: ${ARCHDIR}/sys ${.CURDIR}/sys
 
 # modules with non-default implementations on at least one architecture:
-SRCS+=	Ovfork.S brk.S cerror.S exect.S fork.S pipe.S ptrace.S reboot.S \
-		sbrk.S setlogin.S sigpending.S sigprocmask.S sigreturn.S \
+SRCS+=	Ovfork.S brk.S cerror.S exect.S fork.S getcontext.S pipe.S ptrace.S \
+		reboot.S sbrk.S setlogin.S sigpending.S sigprocmask.S sigreturn.S \
 		sigsuspend.S syscall.S #getcontext.S
 
 # glue to provide compatibility between GCC 1.X and 2.X

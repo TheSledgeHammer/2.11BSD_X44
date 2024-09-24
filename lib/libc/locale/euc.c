@@ -124,9 +124,10 @@ int		_EUC_sgetmbrune(_EUCEncodingInfo * __restrict, wchar_t * __restrict, const 
 int 	_EUC_sputmbrune(_EUCEncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _EUCState * __restrict, size_t * __restrict);
 int		_EUC_sgetcsrune(_EUCEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_EUC_sputcsrune(_EUCEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+int 	_EUC_module_init(_EUCEncodingInfo * __restrict, const void * __restrict, size_t);
+void	_EUC_module_uninit(_EUCEncodingInfo *);
 
 static int _EUC_set(u_int);
-static int _EUC_encoding_module_init(_EUCEncodingInfo * __restrict, const void * __restrict, size_t);
 
 _RuneOps _euc_runeops = {
 		.ro_sgetrune 	=  	_EUC_sgetrune,
@@ -135,6 +136,8 @@ _RuneOps _euc_runeops = {
 		.ro_sputmbrune 	=  	_EUC_sputmbrune,
 		.ro_sgetcsrune  =	_EUC_sgetcsrune,
 		.ro_sputcsrune	= 	_EUC_sputcsrune,
+		.ro_module_init = 	_EUC_module_init,
+		.ro_module_uninit = 	_EUC_module_uninit,
 };
 
 int
@@ -145,11 +148,11 @@ _EUC_init(rl)
 
 	rl->ops = &_euc_runeops;
 
-	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len, _EUC_encoding_module_init);
+	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len, _EUC_encoding_module_init);
+	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
@@ -406,10 +409,16 @@ parse_variable(_EUCEncodingInfo *ei, const void *var, size_t lenvar)
 	return 0;
 }
 
-static int
-_EUC_encoding_module_init(_EUCEncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+int
+_EUC_module_init(_EUCEncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	_DIAGASSERT(ei != NULL);
 
 	return (parse_variable(ei, var, lenvar));
+}
+
+void
+_EUC_module_uninit(_EUCEncodingInfo *)
+{
+
 }

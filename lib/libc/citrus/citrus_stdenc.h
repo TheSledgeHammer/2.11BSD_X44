@@ -54,7 +54,7 @@ _citrus_stdenc_wctocs_priv(_ENCODING_INFO *ei, _csid_t *csid, _index_t *idx, wch
 }
 
 __BEGIN_DECLS
-int		_citrus_stdenc_init(void ** __restrict, void * __restrict, size_t, module_init_t);
+int		_citrus_stdenc_init(void ** __restrict, void * __restrict, size_t);
 void	_citrus_stdenc_uninit(_ENCODING_INFO * __restrict);
 int		_citrus_stdenc_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);
 int 	_citrus_stdenc_cstowc(_ENCODING_INFO * __restrict,  wchar_t * __restrict, _csid_t, _index_t);

@@ -77,8 +77,8 @@ int		_ISO2022_sgetmbrune(_ISO2022EncodingInfo *, wchar_t *, const char **, size_
 int 	_ISO2022_sputmbrune(_ISO2022EncodingInfo *, char *, wchar_t, _ISO2022State *, size_t *);
 int		_ISO2022_sgetcsrune(_ISO2022EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_ISO2022_sputcsrune(_ISO2022EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
-
-static int _ISO2022_encoding_module_init(_ISO2022EncodingInfo * __restrict, const void * __restrict, size_t);
+int 	_ISO2022_module_init(_ISO2022EncodingInfo * __restrict, const void * __restrict, size_t);
+void	_ISO2022_module_uninit(_ISO2022EncodingInfo *);
 
 static wchar_t _ISO2022_sgetwchar(_ISO2022EncodingInfo * __restrict, const char * __restrict, size_t, const char ** __restrict, _ISO2022State * __restrict);
 static int _ISO2022_sputwchar(_ISO2022EncodingInfo * __restrict, wchar_t,  char * __restrict, size_t, char ** __restrict, _ISO2022State * __restrict);
@@ -90,6 +90,8 @@ _RuneOps _iso2022_runeops = {
 		.ro_sputmbrune 	=  	_ISO2022_sputmbrune,
 		.ro_sgetcsrune  =	_ISO2022_sgetcsrune,
 		.ro_sputcsrune	= 	_ISO2022_sputcsrune,
+		.ro_module_init = 	_ISO2022_module_init,
+		.ro_module_uninit = 	_ISO2022_module_uninit,
 };
 
 static __inline int
@@ -309,7 +311,6 @@ get_flags(_ISO2022EncodingInfo * __restrict ei, const char * __restrict token)
 	return (_NOTMATCH);
 }
 
-
 int
 /*ARGSUSED*/
 _ISO2022_init(_RuneLocale *rl)
@@ -317,11 +318,11 @@ _ISO2022_init(_RuneLocale *rl)
 	int ret;
 
 	rl->ops = &_iso2022_runeops;
-	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len, _ISO2022_encoding_module_init);
+	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len, _ISO2022_encoding_module_init);
+	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
@@ -586,12 +587,18 @@ parsefail:
 	return (EFTYPE);
 }
 
-static int
-_ISO2022_encoding_module_init(_ISO2022EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+int
+_ISO2022_module_init(_ISO2022EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	_DIAGASSERT(ei != NULL);
 
 	return (parse_variable(ei, var, lenvar));
+}
+
+void
+_ISO2022_module_uninit(_ISO2022EncodingInfo *)
+{
+
 }
 
 #define	ESC	'\033'

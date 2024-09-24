@@ -32,7 +32,19 @@
 
 #include "citrus_rune.h"
 
-typedef int (*module_init_t)(_ENCODING_INFO * __restrict , const void * __restrict, size_t);
+/* Initialize ctype module */
+static __inline int
+_citrus_ctype_module_init(_ENCODING_INFO *ei, const void *var, size_t lenvar)
+{
+	return (_citrus_rune_module_init(_CurrentRuneLocale, ei, var, lenvar));
+}
+
+/* Uninitialized ctype module */
+static __inline void
+_citrus_ctype_module_uninit(_ENCODING_INFO *ei)
+{
+	_citrus_rune_module_uninit(_CurrentRuneLocale, ei);
+}
 
 /*
  * standard form of mbrtowc_priv.
@@ -81,7 +93,7 @@ void		_citrus_ctype_unpack_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * 
 unsigned 	_citrus_ctype_get_mb_cur_max(void * );
 void		_citrus_ctype_encoding_init(_ENCODING_INFO * __restrict);
 void		_citrus_ctype_encoding_uninit(_ENCODING_INFO * __restrict);
-int		_citrus_ctype_init(void ** __restrict, void * __restrict, size_t, module_init_t);
+int		_citrus_ctype_init(void ** __restrict, void * __restrict, size_t);
 void		_citrus_ctype_uninit(void * __restrict);
 int		_citrus_ctype_put_state_reset(void * __restrict, char * __restrict, size_t, void * __restrict, size_t * __restrict);
 int 		_citrus_ctype_mblen(void * __restrict, const char * __restrict, size_t, int * __restrict);
