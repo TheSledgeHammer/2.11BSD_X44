@@ -418,7 +418,7 @@ _EUC_module_init(_EUCEncodingInfo * __restrict ei, const void * __restrict var, 
 }
 
 void
-_EUC_module_uninit(_EUCEncodingInfo *)
+_EUC_module_uninit(_EUCEncodingInfo *ei)
 {
 
 }
