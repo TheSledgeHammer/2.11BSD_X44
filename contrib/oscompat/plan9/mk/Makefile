@@ -62,5 +62,5 @@ include ../Make.clib
 include ../unix/Make.package
 
 $(TARG): $(OFILES)
-	$(CC) -o $(TARG) $(OFILES) -L$(PREFIX)/lib -L../libutf -L../libfmt -L../libbio -L../libregexp -L../lib9 -lregexp9 -lbio -lfmt -lutf
+	$(CC) -o $(TARG) $(OFILES) -L$(PREFIX)/lib -L../libutf -L../libfmt -L../libbio -L../libregexp -lregexp9 -lbio -lfmt -lutf
 
