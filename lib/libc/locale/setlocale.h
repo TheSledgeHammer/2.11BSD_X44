@@ -69,7 +69,8 @@ void 		addrunelocale(_RuneLocale *, char *, int (*)(_RuneLocale *));
 void 		delrunelocale(char *);
 int			newrunelocale(_RuneLocale *);
 _RuneLocale *findrunelocale(char *);
-int			validrunelocale(char *);
+int			validrunelocale(_RuneLocale *, char *, void *, int);
+int			convertrunelocale(_RuneLocale *, char *, _RuneLocale *, char *);
 __END_DECLS
 
 #endif /* !_SETLOCALE_H_ */

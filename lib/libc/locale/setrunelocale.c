@@ -204,28 +204,71 @@ findrunelocale(encoding)
 
 /* validate rune is not empty */
 int
-validrunelocale(encoding)
-	char *encoding;
-{
+validrunelocale(rl, encoding, variable, variable_len)
 	_RuneLocale *rl;
+	char *encoding;
+	void *variable;
+	int variable_len;
+{
 	int ret;
 
 	ret = -1;
-	rl = findrunelocale(encoding);
 	if (rl != NULL) {
+		if ((strcmp(rl->encoding, encoding) == 0)
+				&& (rl->variable == variable)
+				&& (rl->variable_len == variable_len)) {
+			ret = 0;
+		}
 		if (rl->ops != NULL) {
-			if (rl->ops->ro_sgetrune != NULL
-					|| rl->ops->ro_sputrune != NULL
-					|| rl->ops->ro_sgetmbrune != NULL
-					|| rl->ops->ro_sputmbrune != NULL
-					|| rl->ops->ro_sgetcsrune != NULL
-					|| rl->ops->ro_sputcsrune != NULL
-					|| rl->ops->ro_module_init != NULL
-					|| rl->ops->ro_module_uninit != NULL
+			if ((rl->ops->ro_sgetrune != NULL)
+					|| (rl->ops->ro_sputrune != NULL)
+					|| (rl->ops->ro_sgetmbrune != NULL)
+					|| (rl->ops->ro_sputmbrune != NULL)
+					|| (rl->ops->ro_sgetcsrune != NULL)
+					|| (rl->ops->ro_sputcsrune != NULL)
+					|| (rl->ops->ro_module_init != NULL)
+					|| (rl->ops->ro_module_uninit != NULL)
 					) {
 				ret = 0;
 			}
 		}
 	}
 	return (ret);
+}
+
+/*
+ * Convert source rune to destination rune.
+ * - Source rune must match the _CurrentRuneLocale.
+ */
+int
+convertrunelocale(src, srcname, dst, dstname)
+	_RuneLocale *src, *dst;
+	char *srcname, *dstname;
+{
+	_RuneLocale *cur;
+
+	cur = _CurrentRuneLocale;
+	src = findrunelocale(srcname);
+	if (src != NULL) {
+		if (src != cur) {
+			printf("encoding %s does not match current encoding %s\n", srcname, cur->encoding);
+			return (-1);
+		}
+	} else {
+		printf("encoding %s does not exist\n", srcname);
+		return (-1);
+	}
+	dst = findrunelocale(dstname);
+	if (dst != NULL) {
+		if (dst == src) {
+			printf("encoding selected %s is already set to current encoding %s\n", dstname, srcname);
+			return (-1);
+		}
+		printf("encoding selected %s is now set as the current encoding\n", dstname);
+		(void)setrunelocale(dstname);
+	} else {
+		printf("encoding %s does not exist\n", dstname);
+		return (-1);
+	}
+	return (0);
 }
