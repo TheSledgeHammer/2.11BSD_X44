@@ -90,7 +90,7 @@ __do_global_dtors_aux(void)
 
 	if (finished) {
 		return;
-    }
+	}
 
 #ifdef SHARED
 	run_cxa_finalize();
