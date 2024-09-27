@@ -92,8 +92,6 @@ __do_global_dtors_aux(void)
 		return;
     }
 
-    __finished = 1;
-
 #ifdef SHARED
 	run_cxa_finalize();
 #endif
@@ -102,11 +100,13 @@ __do_global_dtors_aux(void)
 	 * Call global destructors.
 	 */
 	__dtors();
+	__finished = 1;
 }
 
 MD_CALL_STATIC_FUNCTION(.fini, __do_global_dtors_aux)
 #endif
 
+#if defined(JCR) && defined(__GNUC__)
 /*
  * Handler for gcj. These provide a _Jv_RegisterClasses function and fill
  * out the .jcr section. We just need to call this function with a pointer
@@ -124,11 +124,9 @@ __attribute__((constructor))
 static void
 register_classes(void)
 {
-/*
 	if (_Jv_RegisterClasses && __JCR_LIST__[0]) {
 		_Jv_RegisterClasses(__JCR_LIST__);
-    }
-*/
+	}
 }
 
 /*
@@ -139,3 +137,6 @@ register_classes(void)
 #ifdef CTORS_CONSTRUCTORS
 MD_CALL_STATIC_FUNCTION(.init, register_classes)
 #endif
+
+#endif /* JCR && __GNUC__ */
+
