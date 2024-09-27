@@ -10,6 +10,8 @@ CPPFLAGS+=	-DDYNAMIC
 CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
 CPPFLAGS+=	-I${COMMON_DIR} -I.
 CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
+# Do not enable! Need to fix jcr register first
+#CPPFLAGS+=  	-DJCR
 
 OBJS+= crt0.o gcrt0.o
 OBJS+= crtbegin.o crtend.o
