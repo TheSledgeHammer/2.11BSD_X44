@@ -8,9 +8,9 @@ $(LIB): $(OFILES)
 
 NUKEFILES+=$(LIB)
 .c.$O:
-	$(CC) $(CFLAGS) -I../libutf -I../libfmt -I../libbio -I../libregexp -I../lib9 -I../libmach -I../cc -I$(PREFIX)/include $*.c
+	$(CC) $(CFLAGS) -I../libutf -I../libfmt -I../libbio -I../libregexp -I$(PREFIX)/include $*.c
 
 %.$O: %.c
-	$(CC) $(CFLAGS) -I../libutf -I../libfmt -I../libbio -I../libregexp -I../lib9 -I../libmach -I../cc -I$(PREFIX)/include $*.c
+	$(CC) $(CFLAGS) -I../libutf -I../libfmt -I../libbio -I../libregexp -I$(PREFIX)/include $*.c
 
 $(OFILES): $(HFILES)

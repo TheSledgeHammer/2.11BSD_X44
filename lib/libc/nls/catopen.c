@@ -52,7 +52,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../locale/aliasname_local.h"
+#include "locale/aliasname_local.h"
+
 #define NLS_ALIAS_DB 		"/usr/share/nls/nls.alias"
 
 #define NLS_DEFAULT_PATH 	"/usr/share/nls/%L/%N.cat:/usr/share/nls/%N/%L"

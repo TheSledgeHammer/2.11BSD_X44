@@ -129,6 +129,14 @@ _bcs_convert_to_upper(char *s)
 	}
 }
 
+void
+_bcs_ignore_case(int ignore_case, char *s)
+{
+	if (ignore_case) {
+		_bcs_convert_to_lower(s);
+	}
+}
+
 int
 _bcs_is_ws(const char ch)
 {

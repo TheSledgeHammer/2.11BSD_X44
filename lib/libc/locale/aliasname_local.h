@@ -29,6 +29,16 @@
 #ifndef _ALIASNAME_LOCAL_H_
 #define _ALIASNAME_LOCAL_H_
 
+/* citrus_bcs */
+const char 	*_bcs_skip_ws(const char *);
+const char 	*_bcs_skip_nonws(const char *);
+const char 	*_bcs_skip_ws_len(const char *, size_t *);
+const char 	*_bcs_skip_nonws_len(const char *, size_t *);
+void 	 	_bcs_trunc_rws_len(const char *, size_t *);
+void		_bcs_convert_to_lower(char *);
+void		_bcs_convert_to_upper(char *);
+void		_bcs_ignore_case(int, char *);
+
 const char 	*__unaliasname(const char *, const char *, void *, size_t);
 int 		__isforcemapping(const char *);
 
