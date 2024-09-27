@@ -92,6 +92,8 @@ __do_global_dtors_aux(void)
 		return;
 	}
 
+	__finished = 1;
+
 #ifdef SHARED
 	run_cxa_finalize();
 #endif
@@ -100,7 +102,6 @@ __do_global_dtors_aux(void)
 	 * Call global destructors.
 	 */
 	__dtors();
-	__finished = 1;
 }
 
 MD_CALL_STATIC_FUNCTION(.fini, __do_global_dtors_aux)
