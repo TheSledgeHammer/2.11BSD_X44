@@ -139,8 +139,8 @@ LSRCS := ${LSRCS} ${unwanted_file}
 .endif
 .endfor
 
-#NLS=	C.msg Pig.msg ca.msg cs.msg de.msg es.msg fi.msg fr.msg nl.msg \
-#		no.msg pl.msg sk.msg sv.msg
+NLS=	C.msg Pig.msg ca.msg cs.msg de.msg es.msg fi.msg fr.msg nl.msg \
+	no.msg pl.msg sk.msg sv.msg
 
 .if ${MKREPRO:Uno} == "yes"
 REGEX_SPECIALS=[][)(^$$.?*\\;]
