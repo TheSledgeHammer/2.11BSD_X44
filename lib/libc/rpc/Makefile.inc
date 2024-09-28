@@ -21,7 +21,7 @@ CPPFLAGS+=	-DPORTMAP
 MAN+=	bindresvport.3 getnetconfig.3 getnetpath.3 getrpcent.3 getrpcport.3 \
 	rpc.3 rpc_soc.3 rpc_clnt_auth.3 rpc_clnt_calls.3 rpc_clnt_create.3 \
 	rpc_svc_calls.3 rpc_svc_create.3 rpc_svc_err.3 rpc_svc_reg.3 \
-	rpc_xdr.3 rpcbind.3 xdr.3
+	rpc_xdr.3 rpcbind.3 #xdr.3
 MLINKS+=	bindresvport.3 bindresvport_sa.3 \
 		getnetconfig.3 setnetconfig.3 \
 		getnetconfig.3 getnetconfigent.3 \
@@ -134,35 +134,35 @@ MLINKS+=	bindresvport.3 bindresvport_sa.3 \
 		rpc_soc.3 svcudp_bufcreate.3 \
 		rpc_soc.3 xdr_pmap.3 \
 		rpc_soc.3 xdr_pmaplist.3 \
-		xdr.3 xdr_array.3 \
-		xdr.3 xdr_bool.3 \
-		xdr.3 xdr_bytes.3 \
-		xdr.3 xdr_char.3 \
-		xdr.3 xdr_destroy.3 \
-		xdr.3 xdr_double.3 \
-		xdr.3 xdr_enum.3 \
-		xdr.3 xdr_float.3 \
-		xdr.3 xdr_free.3 \
-		xdr.3 xdr_getpos.3 \
-		xdr.3 xdr_inline.3 \
-		xdr.3 xdr_int.3 \
-		xdr.3 xdr_long.3 \
-		xdr.3 xdrmem_create.3 \
-		xdr.3 xdr_opaque.3 \
-		xdr.3 xdr_pointer.3 \
-		xdr.3 xdrrec_create.3 \
-		xdr.3 xdrrec_endofrecord.3 \
-		xdr.3 xdrrec_eof.3 \
-		xdr.3 xdrrec_skiprecord.3 \
-		xdr.3 xdr_reference.3 \
-		xdr.3 xdr_setpos.3 \
-		xdr.3 xdr_short.3 \
-		xdr.3 xdrstdio_create.3 \
-		xdr.3 xdr_string.3 \
-		xdr.3 xdr_u_char.3 \
-		xdr.3 xdr_u_long.3 \
-		xdr.3 xdr_u_short.3 \
-		xdr.3 xdr_union.3 \
-		xdr.3 xdr_vector.3 \
-		xdr.3 xdr_void.3 \
-		xdr.3 xdr_wrapstring.3
+#		xdr.3 xdr_array.3 \
+#		xdr.3 xdr_bool.3 \
+#		xdr.3 xdr_bytes.3 \
+#		xdr.3 xdr_char.3 \
+#		xdr.3 xdr_destroy.3 \
+#		xdr.3 xdr_double.3 \
+#		xdr.3 xdr_enum.3 \
+#		xdr.3 xdr_float.3 \
+#		xdr.3 xdr_free.3 \
+#		xdr.3 xdr_getpos.3 \
+#		xdr.3 xdr_inline.3 \
+#		xdr.3 xdr_int.3 \
+#		xdr.3 xdr_long.3 \
+#		xdr.3 xdrmem_create.3 \
+#		xdr.3 xdr_opaque.3 \
+#		xdr.3 xdr_pointer.3 \
+#		xdr.3 xdrrec_create.3 \
+#		xdr.3 xdrrec_endofrecord.3 \
+#		xdr.3 xdrrec_eof.3 \
+#		xdr.3 xdrrec_skiprecord.3 \
+#		xdr.3 xdr_reference.3 \
+#		xdr.3 xdr_setpos.3 \
+#		xdr.3 xdr_short.3 \
+#		xdr.3 xdrstdio_create.3 \
+#		xdr.3 xdr_string.3 \
+#		xdr.3 xdr_u_char.3 \
+#		xdr.3 xdr_u_long.3 \
+#		xdr.3 xdr_u_short.3 \
+#		xdr.3 xdr_union.3 \
+#		xdr.3 xdr_vector.3 \
+#		xdr.3 xdr_void.3 \
+#		xdr.3 xdr_wrapstring.3
