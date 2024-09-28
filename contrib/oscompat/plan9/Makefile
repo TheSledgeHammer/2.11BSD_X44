@@ -6,7 +6,3 @@ clean:
 
 install:
 	for i in libutf libfmt libbio libregexp mk; do (cd $$i; make install); done
-
-
-
-# TODO: - libmach: add missing a, c, l
