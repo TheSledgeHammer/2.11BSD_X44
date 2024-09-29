@@ -38,17 +38,23 @@ static char sccsid[] = "@(#)setregid.c	8.1.1 (2.11BSD) 1997/11/26";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <errno.h>
 #include <unistd.h>
 
 int
+#if __STDC__
+setregid(gid_t rgid, gid_t egid)
+#else
 setregid(rgid, egid)
-	register gid_t rgid, egid;
+	gid_t rgid, egid;
+#endif
 {
 	static gid_t savedgid = -1;
 	
-	if (savedgid == -1)
+	if (savedgid == (gid_t)-1)
 		savedgid = getegid();
 	/*
 	 * we assume that the intent here is to be able to
@@ -56,11 +62,11 @@ setregid(rgid, egid)
 	 * we will be able to do so, but do not actually
 	 * set the rgid.
 	 */
-	if (rgid != -1 && rgid != getgid() && rgid != savedgid) {
+	if (rgid != (gid_t)-1 && rgid != (gid_t)getgid() && rgid != savedgid) {
 		errno = EPERM;
 		return (-1);
 	}
-	if (egid != -1 && setegid(egid) < 0)
+	if (egid != (gid_t)-1 && setegid(egid) < (gid_t)0)
 		return (-1);
 	return (0);
 }

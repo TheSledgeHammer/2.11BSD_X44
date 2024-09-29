@@ -43,9 +43,13 @@ static char sccsid[] = "@(#)sigcompat.c	8.1.1 (2.11BSD) 1997/8/28";
 #include <sys/signal.h>
 
 int
+#if __STDC__
+sigvec(int signo, register struct sigvec *sv, register struct sigvec *osv)
+#else
 sigvec(signo, sv, osv)
 	int signo;
 	register struct sigvec *sv, *osv;
+#endif
 {
 	int ret;
 
@@ -57,35 +61,47 @@ sigvec(signo, sv, osv)
 	return(ret);
 }
 
-long
+int
+#if __STDC__
+sigsetmask(int mask)
+#else
 sigsetmask(mask)
-	long mask;
+	int mask;
+#endif
 {
-	long omask;
+	int omask;
 	int n;
 
 	n = sigprocmask(SIG_SETMASK, (sigset_t *) &mask, (sigset_t *) &omask);
 	if (n)
-		return((long)n);
-	return(omask);
-}
-
-long
-sigblock(mask)
-	long mask;
-{
-	long omask;
-	int n;
-
-	n = sigprocmask(SIG_BLOCK, (sigset_t *) &mask, (sigset_t *) &omask);
-	if (n)
-		return((long)n);
+		return(n);
 	return(omask);
 }
 
 int
+#if __STDC__
+sigblock(int mask)
+#else
+sigblock(mask)
+	int mask;
+#endif
+{
+	int omask;
+	int n;
+
+	n = sigprocmask(SIG_BLOCK, (sigset_t *) &mask, (sigset_t *) &omask);
+	if (n)
+		return(n);
+	return(omask);
+}
+
+int
+#if __STDC__
+sigpause(int mask)
+#else
 sigpause(mask)
-	long mask;
+	int mask;
+#endif
 {
 	return(sigsuspend((sigset_t *)&mask));
 }
