@@ -185,20 +185,26 @@ struct osigcontext {
  * sigblock().
  */
 #define sigmask(m)				(1L << ((m)-1))
+
+#ifdef _KERNEL
 #define sigaddset(set, signo)	(*(set) |= 1L << ((signo) - 1), 0)
 #define sigdelset(set, signo)	(*(set) &= ~(1L << ((signo) - 1)), 0)
-#define sigemptyset(set)		(*(set) = (sigset_t)0, (int)0)
+#define sigemptyset(set)	(*(set) = (sigset_t)0, (int)0)
 #define sigfillset(set)         (*(set) = ~(sigset_t)0, (int)0)
 #define sigismember(set, signo) ((*(set) & (1L << ((signo) - 1))) != 0)
 
-#ifndef _KERNEL
-#include <sys/cdefs.h>
 extern long	sigblock(int);
 extern long	sigsetmask(int);
+#else
+#include <sys/cdefs.h>
+
+struct sigcontext;
+
+__BEGIN_DECLS
 //void	(*signal (int, void (*) (int))) (int);
 int		(*signal(int, void (*) (int))) (int);
 #define	BADSIG		SIG_ERR
-#endif
-
+__END_DECLS
+#endif /* !_KERNEL */
 #endif /* NSIG */
 #endif /* _SYS_SIGNAL_H_ */
