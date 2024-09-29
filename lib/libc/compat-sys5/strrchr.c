@@ -1,6 +1,8 @@
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)strrchr.c	5.2 (berkeley) 86/03/09";
+#endif
 #endif LIBC_SCCS and not lint
 
 #include <string.h>

@@ -1,6 +1,8 @@
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)strchr.c	5.2 (Berkeley) 86/03/09";
+#endif
 #endif LIBC_SCCS and not lint
 
 #include <string.h>
@@ -14,7 +16,7 @@ static char sccsid[] = "@(#)strchr.c	5.2 (Berkeley) 86/03/09";
 
 char *
 strchr(sp, c)
-register char *sp, c;
+    register char *sp, c;
 {
 	do {
 		if (*sp == c)

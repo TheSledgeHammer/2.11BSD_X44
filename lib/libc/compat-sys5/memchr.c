@@ -9,7 +9,9 @@
  */
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)memchr.c	5.2 (Berkeley) 86/03/09";
+#endif
 #endif
 
 #if !defined(_KERNEL) && !defined(_STANDALONE)
