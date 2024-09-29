@@ -33,11 +33,14 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)setreuid.c	8.1.1 (2.11BSD) 1997/11/26";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <errno.h>
+#include <unistd.h>
 
 int
 setreuid(ruid, euid)

@@ -33,15 +33,23 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)sethostid.c	8.1.1 (2.11BSD) 1997/8/28";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/param.h>
 #include <sys/sysctl.h>
+#include <unistd.h>
 
 u_long
+#if __STDC__
+sethostid(u_long hostid)
+#else
 sethostid(hostid)
 	u_long hostid;
+#endif
 {
 	int mib[2];
 

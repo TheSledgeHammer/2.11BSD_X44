@@ -33,15 +33,21 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)creat.c	8.1.1 (2.11BSD) 1997/8/28";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <fcntl.h>
 
 int
+#if __STDC__
+creat(const char *path, mode_t mode)
+#else
 creat(path, mode)
-	char *path;
+	const char *path;
 	mode_t mode;
+#endif
 {
 	return (open(path, O_WRONLY|O_CREAT|O_TRUNC, mode));
 }

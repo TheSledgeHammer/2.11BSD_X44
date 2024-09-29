@@ -33,10 +33,13 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)sigcompat.c	8.1.1 (2.11BSD) 1997/8/28";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
+#include <signal.h>
 #include <sys/signal.h>
 
 int

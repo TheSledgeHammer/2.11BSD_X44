@@ -33,14 +33,20 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)setrgid.c	8.1.1 (2.11BSD) 1997/11/26";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
 
 int
+#if __STDC__
+setrgid(gid_t rgid)
+#else
 setrgid(rgid)
-	int rgid;
+	gid_t rgid;
+#endif
 {
-	return (setregid(rgid, -1));
+	return (setregid(rgid, (gid_t)-1));
 }
