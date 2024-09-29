@@ -6,8 +6,10 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)times.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
@@ -18,11 +20,17 @@ static char sccsid[] = "@(#)times.c	5.2 (Berkeley) 3/9/86";
 #include <errno.h>
 #include <time.h>
 
-long scale60(struct timeval *tvp);
+#include "compat_41.h"
+
+static long scale60(register struct timeval *tvp);
 
 clock_t
+#if __STDC__
+times(register struct tms *tmsp)
+#else
 times(tmsp)
 	register struct tms *tmsp;
+#endif
 {
 	struct rusage ru;
 	struct timeval t;
@@ -41,8 +49,12 @@ times(tmsp)
 }
 
 static long
+#if __STDC__
+scale60(register struct timeval *tvp)
+#else
 scale60(tvp)
 	register struct timeval *tvp;
+#endif
 {
 	return (tvp->tv_sec * 60 + tvp->tv_usec / 16667);
 }

@@ -6,18 +6,26 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)nice.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/time.h>
 #include <sys/resource.h>
+
+#include "compat_41.h"
 
 /*
  * Backwards compatible nice.
  */
 int
+#if __STDC__
+nice(int incr)
+#else
 nice(incr)
 	int incr;
+#endif
 {
 	int prio;
 	extern int errno;

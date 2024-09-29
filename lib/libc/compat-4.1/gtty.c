@@ -6,19 +6,24 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)gtty.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 /*
  * Writearound to old gtty system call.
  */
-
 #include <sgtty.h>
 
 int
+#if __STDC__
+gtty(int fd, struct sgttyb *ap)
+#else
 gtty(fd, ap)
 	int fd;
-	struct sgtty *ap;
+	struct sgttyb *ap;
+#endif
 {
 	return(ioctl(fd, TIOCGETP, ap));
 }

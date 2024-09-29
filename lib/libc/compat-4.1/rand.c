@@ -6,8 +6,10 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)rand.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -15,14 +17,22 @@ static char sccsid[] = "@(#)rand.c	5.2 (Berkeley) 3/9/86";
 static	long	randx = 1;
 
 void
+#if __STDC__
+srand(unsigned x)
+#else
 srand(x)
 	unsigned x;
+#endif
 {
 	randx = x;
 }
 
 int
+#if __STDC__
+rand(void)
+#else
 rand()
+#endif
 {
 #ifdef pdp11
 	return(((randx = randx * 1103515245 + 12345)>>16) & 0x7fff);

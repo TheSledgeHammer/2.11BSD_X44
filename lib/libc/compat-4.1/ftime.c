@@ -6,27 +6,37 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-//static char sccsid[] = "@(#)ftime.c	5.2 (Berkeley) 3/9/86";
+#if 0
+static char sccsid[] = "@(#)ftime.c	5.2 (Berkeley) 3/9/86";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <sys/time.h>
+#include <sys/timeb.h>
+
+#include "compat_41.h"
 
 /*
  * Backwards compatible ftime.
  */
 
 /* from old timeb.h */
+/*
 struct timeb {
 	time_t	time;
 	u_short	millitm;
 	short	timezone;
 	short	dstflag;
 };
+*/
 
 int
+#if __STDC__
+ftime(register struct timeb *tp)
+#else
 ftime(tp)
 	register struct timeb *tp;
+#endif
 {
 	struct timeval t;
 	struct timezone tz;

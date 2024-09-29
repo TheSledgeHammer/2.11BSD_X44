@@ -5,8 +5,10 @@
  */
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)utime.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/time.h>
 
@@ -14,17 +16,22 @@ static char sccsid[] = "@(#)utime.c	5.2 (Berkeley) 3/9/86";
 #include <errno.h>
 #include <stddef.h>
 #include <utime.h>
+
 /*
  * Backwards compatible utime.
  */
 int
+#if __STDC__
+utime(const char *name, const struct utimbuf *otv)
+#else
 utime(name, otv)
 	const char *name;
 	const struct utimbuf *otv;
+#endif
 {
 	struct timeval tv[2], *tvp;
 
-	if (times == (struct utimbuf *) NULL) {
+	if (otv == (struct utimbuf *) NULL) {
 		tvp = NULL;
 	} else {
 		tv[0].tv_sec = otv->actime;
