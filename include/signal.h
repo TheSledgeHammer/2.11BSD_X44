@@ -13,18 +13,6 @@
 #include <sys/cdefs.h>
 #include <sys/signal.h>
 
-#ifdef notyet
-/*
- * Macro for converting signal number to a mask suitable for
- * sigblock().
- */
-#define sigmask(m)	((long)1 << ((m)-1))
-
-#ifndef KERNEL
-extern long	sigblock(int), sigsetmask(int);
-#endif
-#endif
-
 #if defined(__BSD_VISIBLE)
 extern const char *sys_signame;
 #ifndef __SYS_SIGLIST_DECLARED
