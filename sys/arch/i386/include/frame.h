@@ -130,6 +130,8 @@ struct intrframe {
 	int	if_ss;
 };
 
+#ifdef _KERNEL
+
 struct sigframe {
 	int					sf_signum;
 	int					sf_code;
@@ -141,4 +143,5 @@ struct sigframe {
 	struct	sigcontext 	sf_sc;
 };
 
+#endif
 #endif /* _I386_FRAME_H_ */
