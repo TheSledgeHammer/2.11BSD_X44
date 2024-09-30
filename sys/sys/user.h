@@ -9,7 +9,11 @@
 #ifndef _SYS_USER_H_
 #define _SYS_USER_H_
 
+#include <machine/param.h>
+#include <machine/pcb.h>
+
 #ifdef _KERNEL
+/*
 #include <sys/fperr.h>
 #include <sys/exec.h>
 #include <sys/exec_aout.h>
@@ -17,6 +21,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/resourcevar.h>
+*/
 #include <sys/ucred.h>
 #include <sys/uio.h>
 #endif
@@ -37,9 +42,6 @@
 #ifdef OVERLAY
 #include <ovl/include/ovl.h>
 #endif
-
-#include <machine/param.h>
-#include <machine/pcb.h>
 
 /*
  * data that doesn't need to be referenced while the process is swapped.
@@ -174,7 +176,7 @@ struct user {
 	int					u_uspace;				/* (a) Size of the u-area (UPAGES * PGSIZE) */
 
 /* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
-	struct kinfo_proc 	u_kproc;				/* proc + eproc */
+	struct kinfo_proc 	*u_kproc;				/* proc + eproc */
 
 /* 1.8 User Threads */
 	//struct uthread		*u_uthread;			/* ptr to uthread */
