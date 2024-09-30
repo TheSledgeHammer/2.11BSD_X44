@@ -97,9 +97,9 @@ tdqinit(p, td)
 	register struct proc *p;
 	register struct thread *td;
 {
-	LIST_INIT(&p->p_allthread);
+	LIST_INIT(p->p_allthread);
 
-	LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+	LIST_INSERT_HEAD(p->p_allthread, td, td_list);
 }
 
 void
@@ -109,10 +109,10 @@ thread_add(p, td)
 {
 	THREAD_LOCK(td);
     if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-        LIST_INSERT_HEAD(&p->p_allthread, td, td_sibling);
+        LIST_INSERT_HEAD(p->p_allthread, td, td_sibling);
     }
     LIST_INSERT_HEAD(TIDHASH(td->td_tid), td , td_hash);
-    LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+    LIST_INSERT_HEAD(p->p_allthread, td, td_list);
     THREAD_UNLOCK(td);
     p->p_nthreads++;
 }
@@ -189,16 +189,16 @@ thread_reparent(from, to, td)
 {
 	int isrq, issq;
 
-	if (LIST_EMPTY(&from->p_allthread) || from == NULL || to == NULL || td == NULL) {
+	if (LIST_EMPTY(from->p_allthread) || from == NULL || to == NULL || td == NULL) {
 		return;
 	}
 
 	if (td->td_stat != (SZOMB | SRUN)) {
-		if (!TAILQ_EMPTY(&from->p_threadrq)) {
+		if (!TAILQ_EMPTY(from->p_threadrq)) {
 			thread_remrq(from, td);
 			isrq = 1;
 		}
-		if (!TAILQ_EMPTY(&from->p_threadsq)) {
+		if (!TAILQ_EMPTY(from->p_threadsq)) {
 			thread_remsq(from, td);
 			issq = 1;
 		}
@@ -232,7 +232,7 @@ thread_steal(to, td)
 {
 	register struct proc *from;
 
-	LIST_FOREACH(from->p_threado, &from->p_allthread, td_sibling) {
+	LIST_FOREACH(from->p_threado, from->p_allthread, td_sibling) {
 		if ((from != to) && (from->p_threado == td) && (td->td_ptid == from->p_pid)) {
 			if ((from->p_stat == SZOMB) && (to->p_stat != (SZOMB | SRUN))) {
 				thread_reparent(from, to, td);
@@ -262,8 +262,8 @@ thread_alloc(p, stack)
     td->td_ppri = p->p_pri;
     td->td_steal = 0;
 
-    if (!LIST_EMPTY(&p->p_allthread)) {
-        p->p_threado = LIST_FIRST(&p->p_allthread);
+    if (!LIST_EMPTY(p->p_allthread)) {
+        p->p_threado = LIST_FIRST(p->p_allthread);
     } else {
         p->p_threado = td;
     }
@@ -387,13 +387,13 @@ thread_setrq(p, td)
 #ifdef DIAGNOSTIC
 	register struct thread *tq;
 
-	for (tq = TAILQ_FIRST(&p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+	for (tq = TAILQ_FIRST(p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
 		if (tq == td) {
 			panic("thread_setrq");
 		}
 	}
 #endif
-	TAILQ_INSERT_HEAD(&p->p_threadrq, td, td_link);
+	TAILQ_INSERT_HEAD(p->p_threadrq, td, td_link);
 	p->p_tqsready++;
 }
 
@@ -405,13 +405,13 @@ thread_remrq(p, td)
 {
 	register struct thread *tq;
 
-	if (td == TAILQ_FIRST(&p->p_threadrq)) {
-		TAILQ_REMOVE(&p->p_threadrq, td, td_link);
+	if (td == TAILQ_FIRST(p->p_threadrq)) {
+		TAILQ_REMOVE(p->p_threadrq, td, td_link);
 		p->p_tqsready--;
 	} else {
-		for (tq = TAILQ_FIRST(&p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+		for (tq = TAILQ_FIRST(p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
 			if (tq == td) {
-				TAILQ_REMOVE(&p->p_threadrq, tq, td_link);
+				TAILQ_REMOVE(p->p_threadrq, tq, td_link);
 				p->p_tqsready--;
 				return;
 			}
@@ -428,10 +428,10 @@ thread_getrq(p, td)
 {
 	register struct thread *tq;
 
-	if (td == TAILQ_FIRST(&p->p_threadrq)) {
+	if (td == TAILQ_FIRST(p->p_threadrq)) {
 		return (td);
 	} else {
-		for (tq = TAILQ_FIRST(&p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+		for (tq = TAILQ_FIRST(p->p_threadrq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
 			if (tq == td) {
 				return (tq);
 			} else {
@@ -454,13 +454,13 @@ thread_setsq(p, td)
 #ifdef DIAGNOSTIC
 	register struct thread *tq;
 
-	for (tq = TAILQ_FIRST(&p->p_threadsq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+	for (tq = TAILQ_FIRST(p->p_threadsq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
 		if (tq == td) {
 			panic("thread_setsq");
 		}
 	}
 #endif
-	TAILQ_INSERT_TAIL(&p->p_threadsq, td, td_link);
+	TAILQ_INSERT_TAIL(p->p_threadsq, td, td_link);
 	p->p_tqssleep++;
 }
 
@@ -470,7 +470,7 @@ thread_remsq(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-	TAILQ_REMOVE(&p->p_threadsq, td, td_link);
+	TAILQ_REMOVE(p->p_threadsq, td, td_link);
 	p->p_tqssleep--;
 }
 
@@ -482,10 +482,10 @@ thread_getsq(p, td)
 {
 	register struct thread *tq;
 
-	if (td == TAILQ_FIRST(&p->p_threadsq)) {
+	if (td == TAILQ_FIRST(p->p_threadsq)) {
 		return (td);
 	} else {
-		for (tq = TAILQ_FIRST(&p->p_threadsq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
+		for (tq = TAILQ_FIRST(p->p_threadsq); tq != NULL; tq = TAILQ_NEXT(tq, td_link)) {
 			if (tq == td ) {
 				return (tq);
 			} else {
@@ -507,7 +507,7 @@ void
 thread_rqinit(p)
 	struct proc *p;
 {
-	TAILQ_INIT(&p->p_threadrq);
+	TAILQ_INIT(p->p_threadrq);
 	p->p_tqsready = 0;
 }
 
@@ -519,7 +519,7 @@ void
 thread_sqinit(p)
 	struct proc *p;
 {
-	TAILQ_INIT(&p->p_threadsq);
+	TAILQ_INIT(p->p_threadsq);
 	p->p_tqssleep = 0;
 }
 
@@ -545,18 +545,18 @@ thread_setrun(p, td)
 	case SWAIT:
 	case SRUN:
 	case SIDL:
-		if (TAILQ_EMPTY(&p->p_threadrq)) {
+		if (TAILQ_EMPTY(p->p_threadrq)) {
 			thread_setrq(p, td);
 		}
 		break;
 	case SZOMB:
-		if (!TAILQ_EMPTY(&p->p_threadrq)) {
+		if (!TAILQ_EMPTY(p->p_threadrq)) {
 			thread_remrq(p, td);
 		}
 		break;
 	case SSTOP:
 	case SSLEEP:
-		if (!TAILQ_EMPTY(&p->p_threadsq)) {
+		if (!TAILQ_EMPTY(p->p_threadsq)) {
 			thread_unsleep(p, td);
 		}
 		break;
@@ -645,8 +645,8 @@ thread_schedcpu(p)
 {
 	register struct thread *td;
 
-	if (!LIST_EMPTY(&p->p_allthread)) {
-		LIST_FOREACH(td, &p->p_allthread, td_list) {
+	if (!LIST_EMPTY(p->p_allthread)) {
+		LIST_FOREACH(td, p->p_allthread, td_list) {
 			thread_schedule(p, td);
 		}
 	}
@@ -901,7 +901,7 @@ thread_wakeup(p, chan)
 	register struct thread *td, *tq;
     struct threadhd *qt;
 
-    qt = &p->p_threadsq;
+    qt = p->p_threadsq;
 restart:
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 		for (tq = TAILQ_FIRST(qt); tq != NULL; td = tq) {
@@ -968,7 +968,7 @@ thread_signal_all(p, sig)
 {
 	register struct thread *td;
 
-	LIST_FOREACH(td, &p->p_allthread, td_list) {
+	LIST_FOREACH(td, p->p_allthread, td_list) {
 		if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 			thread_signal(p, td, sig);
 		}
@@ -1026,7 +1026,7 @@ thread_killpg1(p, signo, pgrp, all)
 		if (pgrp == 0)
 			return (ESRCH);
 	}
-	for (f = 0, td = LIST_FIRST(&p->p_allthread); td != NULL; td = LIST_NEXT(td, td_list)) {
+	for (f = 0, td = LIST_FIRST(p->p_allthread); td != NULL; td = LIST_NEXT(td, td_list)) {
 		if ((td->td_pgrp->pg_id != pgrp && !all) || td->td_ptid == 0 ||
 		    (td->td_flag & TD_SYSTEM) || (all && td == u.u_threado))
 			continue;
@@ -1121,7 +1121,7 @@ thread_swtch(p)
 		u.u_threado = p->p_curthread;
 	}
 	
-	tqs = &p->p_threadrq;
+	tqs = p->p_threadrq;
 
 loop:
 #ifdef DIAGNOSTIC

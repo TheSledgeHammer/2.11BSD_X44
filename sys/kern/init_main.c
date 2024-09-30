@@ -58,8 +58,8 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/proc.h>
-#include <sys/kthread.h>
 #include <sys/thread.h>
+#include <sys/kthread.h>
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
 #include <sys/vnode.h>
@@ -218,7 +218,7 @@ main(framep)
 	p->p_pgrp = &pgrp0;
 
 	/* set up kernel thread 0 */
-	LIST_INSERT_HEAD(&p->p_allthread, td, td_list);
+	LIST_INSERT_HEAD(p->p_allthread, td, td_list);
 	td->td_pgrp = &pgrp0;
 
 	LIST_INSERT_HEAD(PGRPHASH(0), &pgrp0, pg_hash);
