@@ -192,8 +192,8 @@ struct e_proc {
 };
 
 struct e_text {
-	struct vm_text atext;
-	struct vm_text *text;
+	struct vm_text *atext;
+	struct vm_text text;
 };
 
 struct {
@@ -988,7 +988,7 @@ textmode(void)
 		if (xp->psx_vptr == NULL) {
 			continue;
 		}
-		text_print(xtp->atext, xp);
+		text_print(&xtp->atext, xp);
 	}
 	free(etext);
 }
