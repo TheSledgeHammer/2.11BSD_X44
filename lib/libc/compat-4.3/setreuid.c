@@ -43,6 +43,7 @@ static char sccsid[] = "@(#)setreuid.c	8.1.1 (2.11BSD) 1997/11/26";
 #include <sys/types.h>
 #include <errno.h>
 #include <unistd.h>
+
 int
 #if __STDC__
 setregid(gid_t rgid, gid_t egid)
