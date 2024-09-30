@@ -241,7 +241,7 @@ core(efd, fd, ki)
 	 * Fill in the eproc vm parameters, since these are garbage unless
 	 * the kernel is dumping core or something.
 	 */
-	uarea.user.u_kproc = *ki;
+	uarea.user->u_kproc = ki;
 
 	/* Dump user area */
 	cnt = write(fd, &uarea, sizeof(uarea));
