@@ -791,8 +791,8 @@ core(void)
 	VOP_SETATTR(vp, &vattr, cred, p);
 	p->p_acflag |= ACORE;
 	u.u_acflag |= ACORE;
-	bcopy(p, &p->p_addr->u_kproc.kp_eproc, sizeof(struct proc));
-	fill_eproc(p, &p->p_addr->u_kproc.kp_eproc);
+	bcopy(p, &p->p_addr->u_kproc->kp_eproc, sizeof(struct proc));
+	fill_eproc(p, &p->p_addr->u_kproc->kp_eproc);
 
 	vm_estabur(p, 0, u.u_dsize, u.u_ssize, 0, SEG_RO);
 	u.u_error = error;
