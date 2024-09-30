@@ -88,9 +88,9 @@ struct	proc {
 
     /* Thread Structure: */
     union {
-    	struct threadlist 	allthread;	/* list of all threads */
-    	struct threadhd	 	threadrq; 	/* Linked list of running threads. */
-    	struct threadhd		threadsq;	/* Linked list of sleeping threads. */
+    	struct threadlist 	*allthread;	/* list of all threads */
+    	struct threadhd	 	*threadrq; 	/* Linked list of running threads. */
+    	struct threadhd		*threadsq;	/* Linked list of sleeping threads. */
     } p_threads;
 #define p_allthread		p_threads.allthread
 #define p_threadrq		p_threads.threadrq
