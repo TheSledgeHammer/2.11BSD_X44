@@ -91,13 +91,16 @@
 #include <sys/lock.h>
 #include <sys/queue.h>
 
+struct sched_factor;
+
 /* Schedulers & Common Information used across schedulers */
 /* global scheduler */
 struct sched {
 	struct proc 			*sc_procp;		/* pointer to proc */
 	struct thread			*sc_threado;	/* pointer to thread */
 
-	/* schedulers */
+	struct sched_factor 	*sc_factor;		/* schedule factor */
+
     union {
     	struct sched_edf	*u_edf;			/* earliest deadline first scheduler */
     	struct sched_cfs 	*u_cfs;			/* completely fair scheduler */
@@ -105,28 +108,44 @@ struct sched {
 #define sc_edf				sc_u.u_edf
 #define sc_cfs				sc_u.u_cfs
 
-	/* scheduling proc / thread variables*/
+    /* schedule base factors */
     u_char  				sc_priweight;	/* priority weighting: see below. */
     u_char					sc_slack;		/* slack / laxity time */
+    u_char					sc_utilization;	/* utilization */
+    u_char					sc_demand;		/* demand */
+    u_char					sc_workload;	/* workload */
+};
 
-    /* schedulability factors */
-    u_char					sc_utilization;	/* utilization per task */
-    u_char					sc_demand;		/* demand per task */
-    u_char					sc_workload;	/* workload per task */
+/* schedule factors */
+struct sched_factor {
+    union {
+        u_char  factor;						/* utilization factor */
+        int 	rate;						/* utilization rate */
+        int		weight; 					/* utilization weight */
+    } sf_utilization;
+#define sfu_utilization    	sf_utilization.factor
+#define sfu_rate           	sf_utilization.rate
+#define sfu_weight         	sf_utilization.weight
+    union {
+        u_char  factor;						/* demand factor */
+        int 	rate;						/* demand rate */
+        int		weight;						/* demand weight */
+    } sf_demand;
+#define sfd_demand         	sf_demand.factor
+#define sfd_rate           	sf_demand.rate
+#define sfd_weight         	sf_demand.weight
+    union {
+        u_char  factor;						/* workload factor */
+        int 	rate;						/* workload rate */
+        int		weight;						/* workload weight */
+    } sf_workload;
+#define sfw_workload       	sf_workload.factor
+#define sfw_rate           	sf_workload.rate
+#define sfw_weight         	sf_workload.weight
 
-    /* schedulability rate */
-	int						sc_utilrate;	/* utilization rate */
-	int						sc_demandrate;	/* demand rate */
-	int						sc_workrate;	/* workload rate */
-	int						sc_avgrate;		/* average rate (determined from the above rates) */
-
-    /* schedulability weight */
-	int						sc_utilweight;	/* utilization weight */
-	int						sc_demandweight;/* demand weight */
-	int						sc_workweight;	/* workload weight */
-	int						sc_avgweight;	/* average weight (determined from the above weights) */
-
-	int 					sc_optnthreads;/* optimal number of threads for process */
+    int 					sf_avgrate;		/* average rate */
+    int 					sf_avgweight;	/* average weight */
+    int 					sf_optnthreads;	/* optimal number of threads */
 };
 
 /* Priority Weighting Factors */
@@ -151,6 +170,8 @@ struct sched {
 #define DEMAND(t, d, r, c)      ((((t) - (d) + (r)) * (c)) / (r))
 #define WORKLOAD(t, r, c)       (((t) / (r)) * (c))
 
+/* Schedule Factors */
+
 /* Schedule Rating Range */
 static __inline int
 sched_rate_range(val, min, max)
@@ -167,10 +188,42 @@ sched_rate_range(val, min, max)
 #define SCHED_RATE_MEDIUM(val)   	(sched_rate_range(val, 34, 66) == 0)
 #define SCHED_RATE_HIGH(val)       	(sched_rate_range(val, 67, 100) == 0)
 
+static __inline int
+sched_rating(val)
+	u_char val;
+{
+    if (SCHED_RATE_LOW(val)) {
+    	return (val);
+    }
+    if (SCHED_RATE_MEDIUM(val)) {
+    	return (val);
+    }
+    if (SCHED_RATE_HIGH(val)) {
+    	return (val);
+    }
+    return (-1);
+}
+
 /* Schedule Weighting */
 #define SCHED_WEIGHT_HIGH			9
 #define SCHED_WEIGHT_MEDIUM			6
 #define SCHED_WEIGHT_LOW 			3
+
+static __inline int
+sched_weighting(val)
+	u_char val;
+{
+    if (SCHED_RATE_LOW(val)) {
+        return (SCHED_WEIGHT_HIGH);
+    }
+    if (SCHED_RATE_MEDIUM(val)) {
+        return (SCHED_WEIGHT_MEDIUM);
+    }
+    if (SCHED_RATE_HIGH(val)) {
+        return (SCHED_WEIGHT_LOW);
+    }
+    return (-1);
+}
 
 #ifdef notyet
 /* Scheduler Domains: Hyperthreading, multi-cpu */
