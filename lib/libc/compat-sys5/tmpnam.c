@@ -118,11 +118,11 @@ tmpnam(s)
 	static u_long tmpcount;
 	static char buf[L_tmpnam];
 
-    if (s == NULL) {
-        s = buf;
-    }
+    	if (s == NULL) {
+		s = buf;
+    	}
 	(void)snprintf(s, L_tmpnam, "%stmp.%lu.XXXXXX", P_tmpdir, tmpcount);
-    ++tmpcount;
+    	++tmpcount;
 	return (mktemp(s));
 }
 
@@ -136,9 +136,9 @@ gentemp(name, len, tmp, pfx)
     const char *tmp, *pfx;
 #endif
 {
-    const char *ftmp = *(tmp + strlen(tmp) - 1) == '/'? "": "/";
-    (void)snprintf(name, len, "%s%s%sXXXXXX", tmp, ftmp, pfx);
-    return (mktemp(name));
+	const char *ftmp = *(tmp + strlen(tmp) - 1) == '/'? "": "/";
+    	(void)snprintf(name, len, "%s%s%sXXXXXX", tmp, ftmp, pfx);
+    	return (mktemp(name));
 }
 
 char *
@@ -151,7 +151,7 @@ tempnam(dir, pfx)
 {
 	int sverrno;
 	char *f, *name;
-    const char *tmp;
+    	const char *tmp;
 
 	if (!(name = malloc(MAXPATHLEN)))
 		return (NULL);
@@ -160,28 +160,28 @@ tempnam(dir, pfx)
 		pfx = "tmp.";
 
 	if ((tmp = getenv("TMPDIR")))  {
-        f = gentemp(name, (size_t)MAXPATHLEN, tmp, pfx);
-        if (f != NULL) {
-            return (f);
-        }
+		f = gentemp(name, (size_t)MAXPATHLEN, tmp, pfx);
+		if (f != NULL) {
+			return (f);
+		}
 	}
 
 	if (dir != NULL) {
-        f = gentemp(name, (size_t)MAXPATHLEN, dir, pfx);
-        if (f != NULL) {
-            return (f);
-        }
+		f = gentemp(name, (size_t)MAXPATHLEN, dir, pfx);
+		if (f != NULL) {
+			return (f);
+		}
 	}
-
-    f = gentemp(name, (size_t)MAXPATHLEN, P_tmpdir, pfx);
-    if (f != NULL) {
-        return (f);
-    }
-
-    f = gentemp(name, (size_t)MAXPATHLEN, _PATH_TMP, pfx);
-    if (f != NULL) {
-        return (f);
-    }
+	
+	f = gentemp(name, (size_t)MAXPATHLEN, P_tmpdir, pfx);
+	if (f != NULL) {
+		return (f);
+	}
+	
+	f = gentemp(name, (size_t)MAXPATHLEN, _PATH_TMP, pfx);
+	if (f != NULL) {
+		return (f);
+	}
 
 	sverrno = errno;
 	free(name);
