@@ -3,8 +3,10 @@
 #if 0
 static char sccsid[] = "@(#)strchr.c	5.2 (Berkeley) 86/03/09";
 #endif
-#endif LIBC_SCCS and not lint
+#endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+#include <assert.h>
 #include <string.h>
 
 /*
@@ -13,14 +15,20 @@ static char sccsid[] = "@(#)strchr.c	5.2 (Berkeley) 86/03/09";
  *
  * this routine is just "index" renamed.
  */
-
+__strong_alias(index, strchr)
 char *
+#if __STDC__
+strchr(const char *sp, int c)
+#else
 strchr(sp, c)
-    register char *sp, c;
+    register const char *sp;
+    int c;
+#endif
 {
 	do {
-		if (*sp == c)
-			return(sp);
+		if (*sp == c) {
+			return (__UNCONST(sp));
+        }
 	} while (*sp++);
 	return (NULL);
 }

@@ -3,7 +3,7 @@
 #if 0
 static char sccsid[] = "@(#)strrchr.c	5.2 (berkeley) 86/03/09";
 #endif
-#endif LIBC_SCCS and not lint
+#endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
 
@@ -13,17 +13,23 @@ static char sccsid[] = "@(#)strrchr.c	5.2 (berkeley) 86/03/09";
  *
  * This routine is just "rindex" renamed.
  */
-
+__strong_alias(rindex, strrchr)
 char *
+#if __STDC__
+strrchr(const char *sp, int c)
+#else
 strrchr(sp, c)
-	register char *sp, c;
+	register const char *sp;
+    int c;
+#endif
 {
 	register char *r;
 
 	r = NULL;
 	do {
-		if (*sp == c)
-			r = sp;
+		if (*sp == c) {
+			r = __UNCONST(sp);
+        }
 	} while (*sp++);
 	return(r);
 }

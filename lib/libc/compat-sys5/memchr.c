@@ -14,22 +14,25 @@ static char sccsid[] = "@(#)memchr.c	5.2 (Berkeley) 86/03/09";
 #endif
 #endif
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
-#include <assert.h>
 #include <string.h>
-#else
-#include <lib/libkern/libkern.h>
-#define	NULL		((char *)0)
-#endif
 
 void *
+#if __STDC__
+memchr(const void *s, int c, size_t n)
+#else
 memchr(s, c, n)
 	const void *s;
-	register unsigned char c;
+	register int c;
 	register size_t n;
+#endif
 {
-	while (--n >= 0)
-		if (*s++ == c)
-			return (--s);
-	return (0);
+    const unsigned char *p;
+
+    p = s;
+	while (--n >= 0) {
+		if (*p++ == c) {
+			return (__UNCONST(p--));
+        }
+    }
+	return (NULL);
 }

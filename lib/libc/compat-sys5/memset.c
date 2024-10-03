@@ -16,25 +16,27 @@ static char sccsid[] = "@(#)memset.c	5.2 (Berkeley) 86/03/09";
 
 #include <sys/types.h>
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
-#else
-#include <lib/libkern/libkern.h>
-#include <machine/limits.h>
-#endif
+
+#undef memset
 
 void *
+#if __STDC__
+memset(void *s, int c, size_t n)
+#else
 memset(s, c, n)
 	void  *s;
 	int c;
 	size_t n;
+#endif
 {
-	u_char *p = s;
+	unsigned char *p;
 
-	while (--n >= 0)
-		*s++ = c;
-
-	return (p);
+    p = s;
+	while (--n >= 0) {
+		*p++ = c;
+    }
+	return (s);
 }

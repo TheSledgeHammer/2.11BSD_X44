@@ -14,17 +14,30 @@ static char sccsid[] = "@(#)memcpy.c	5.2 (Berkeley) 86/03/09";
 #endif
 #endif
 
+#include <assert.h>
 #include <string.h>
 
-char *
+#if defined(_FORTIFY_SOURCE)
+#undef memcpy
+#endif
+
+void *
+#if __STDC__
+memcpy(void *t, const void *f, size_t n)
+#else
 memcpy(t, f, n)
-	register char *t, *f;
-	register n;
+	register void *t;
+    register const void *f;
+	register size_t n;
+#endif
 {
-	register char *p = t;
+    const char *ff;
+    char *tt;
 
-	while (--n >= 0)
-		*t++ = *f++;
-
-	return (p);
+    tt = t;
+    ff = f;
+	while (--n >= 0) {
+		*tt++ = *ff++;
+    }
+	return (t);
 }
