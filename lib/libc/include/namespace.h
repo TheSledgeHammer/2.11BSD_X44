@@ -45,9 +45,6 @@
 #define daylight			_daylight
 #define err					_err
 #define errx				_errx
-#ifdef _REENTRANT
-#define fileno				_fileno
-#endif
 #define fork				_fork
 #define fseeko				_fseeko
 #define ftello				_ftello
