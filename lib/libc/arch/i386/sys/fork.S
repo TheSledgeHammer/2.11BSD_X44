@@ -40,6 +40,10 @@
 
 #include "SYS.h"
 
+#ifdef WEAK_ALIAS
+WEAK_ALIAS(fork, _fork)
+#endif
+
 SYSCALL(fork)
 	cmpl	$0,%edx	/* parent, since %edx == 0 in parent, 1 in child */
 	je		1f
