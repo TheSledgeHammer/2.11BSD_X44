@@ -36,6 +36,7 @@
  *	@(#)DEFS.h	8.1 (Berkeley) 6/4/93
  */
 
+#ifndef ENTRY
 #ifdef PROF
 #define	ENTRY(x)	.globl _/**/x; _/**/x:  \
 			.data; 1:; .long 0; .text; lea 1b,%eax ; call mcount
@@ -44,4 +45,5 @@
 #else
 #define	ENTRY(x)	.globl _/**/x; _/**/x: 
 #define	ASENTRY(x)	.globl x; x: 
-#endif
+#endif /* PROF */
+#endif /* ENTRY */
