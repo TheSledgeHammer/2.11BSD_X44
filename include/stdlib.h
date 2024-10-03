@@ -118,7 +118,7 @@ void	*calloc(size_t, size_t);
 div_t	div(int, int);
 void 	exit(int) __attribute__((__noreturn__));
 void	free(void *);
-char 	*getenv(const char *);
+__aconst char 	*getenv(const char *);
 long 	labs(long);
 ldiv_t	ldiv(long, long);
 void	*malloc(size_t);
