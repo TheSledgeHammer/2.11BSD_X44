@@ -5,11 +5,11 @@
 
 # modules with non-default implementations on at least one architecture:
 SRCS+=	Ovfork.S brk.S cerror.S exect.S fork.S getcontext.S pipe.S ptrace.S \
-		reboot.S sbrk.S setlogin.S sigpending.S sigprocmask.S sigreturn.S \
+        reboot.S sbrk.S setlogin.S sigpending.S sigprocmask.S sigreturn.S \
 		sigsuspend.S syscall.S
 
 # glue to provide compatibility between GCC 1.X and 2.X
-SRCS+=	_getcontext.c ftruncate.c lseek.c mmap.c _resumecontext.c _swapcontext.c truncate.c
+SRCS+=	_getcontext.c _fork.c ftruncate.c lseek.c mmap.c _resumecontext.c _swapcontext.c truncate.c
 
 # modules with default implementations on all architectures:
 ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \
