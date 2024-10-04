@@ -31,7 +31,6 @@ char *
 getwd(pathname)
 	char *pathname;
 {
-	getcwd();
 	char pathbuf[MAXPATHLEN];		/* temporary pathname buffer */
 	char *pnptr = &pathbuf[(sizeof pathbuf)-1]; /* pathname pointer */
 	char curdir[MAXPATHLEN];	/* current directory buffer */
