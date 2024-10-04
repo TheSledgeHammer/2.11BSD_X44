@@ -24,7 +24,9 @@ USE_SHLIBDIR=	yes
 
 .include <bsd.own.mk>
 
-WARNS=5
+#WARNS=5
+# Stops GCC from complaining about old-style-definition
+WARNS=3
 CPPFLAGS+=	-D_LIBC -DLIBC_SCCS -DSYSLIBC_SCCS -D_REENTRANT
 #CPPFLAGS+=	-D_DIAGNOSTIC
 .if defined(MLIBDIR)
