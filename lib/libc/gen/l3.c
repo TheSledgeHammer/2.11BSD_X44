@@ -4,9 +4,12 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)l3.c	2.3 (Berkeley) 1/25/87";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 /*
  * Convert longs to 3-byte disk addresses
@@ -17,7 +20,7 @@ ltol3(cp, lp, n)
 	long *lp;
 	int n;
 {
-	register i;
+	register int i;
 	register char *a, *b;
 
 	a = cp;
@@ -46,7 +49,7 @@ l3tol(lp, cp, n)
 	char *cp;
 	int n;
 {
-	register i;
+	register int i;
 	register char *a, *b;
 
 	a = (char *)lp;

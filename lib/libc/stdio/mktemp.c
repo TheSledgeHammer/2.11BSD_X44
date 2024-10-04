@@ -41,7 +41,7 @@
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) 9/14/87";
-#endif LIBC_SCCS and not lint
+#endif /* LIBC_SCCS and not lint */
 
 #ifdef __weak_alias
 __weak_alias(mkdtemp,_mkdtemp)

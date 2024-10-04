@@ -6,8 +6,10 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)getenv.c	5.4 (Berkeley) 3/13/87";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
 #include <stddef.h>

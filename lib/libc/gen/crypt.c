@@ -1,6 +1,10 @@
+
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)crypt.c	5.3.1.1 (Berkeley) 10/21/90";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 /*
  * This program implements the
@@ -112,9 +116,9 @@ static	char	e[] = {
 /*
  * Set up the key schedule from the key.
  */
-
+void
 setkey(key)
-char *key;
+	char *key;
 {
 	register i, j, k;
 	int t;
@@ -238,9 +242,9 @@ static	char	preS[48];
 /*
  * The payoff: encrypt a block.
  */
-
+void
 encrypt(block, edflag)
-char *block;
+	char *block;
 {
 	int i, ii;
 	register t, j, k;

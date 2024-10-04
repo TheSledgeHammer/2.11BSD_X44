@@ -38,13 +38,11 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
 static char sccsid[] = "@(#)inet_makeaddr.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)inet_makeaddr.c	5.1 (Berkeley) 3/11/86";
 #else
 __RCSID("$NetBSD: inet_makeaddr.c,v 1.15 2003/08/07 16:43:11 agc Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_makeaddr.c	5.1 (Berkeley) 3/11/86";
-#endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
 #include <netinet/in.h>

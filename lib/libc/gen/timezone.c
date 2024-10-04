@@ -4,9 +4,12 @@
  * notice remains attached.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)timezone.c	1.2 (2.11BSD) 1996/11/27";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
 #include <stdlib.h>

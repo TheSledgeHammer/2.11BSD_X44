@@ -33,9 +33,11 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)calloc.c	5.2 (Berkeley) 3/9/86";
 static char sccsid[] = "@(#)calloc.c	8.1 (Berkeley) 6/4/93";
-#endif LIBC_SCCS and not lint
+#endif
+#endif /* LIBC_SCCS and not lint */
 
 #include <stdlib.h>
 #include <string.h>
