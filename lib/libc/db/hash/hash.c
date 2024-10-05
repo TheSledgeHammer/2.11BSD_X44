@@ -548,7 +548,7 @@ hash_get(dbp, key, data, flag)
 		return (ERROR);
 	}
 	/* LINTED const castaway */
-	return (hash_access(hashp, HASH_GET, (DBT *)key, data));
+	return (hash_access(hashp, HASH_GET, __UNCONST(key), data));
 }
 
 static int
@@ -571,7 +571,7 @@ hash_put(dbp, key, data, flag)
 	}
 	/* LINTED const castaway */
 	return (hash_access(hashp, flag == R_NOOVERWRITE ?
-	    HASH_PUTNEW : HASH_PUT, (DBT *)key, (DBT *)data));
+	    HASH_PUTNEW : HASH_PUT, __UNCONST(key), __UNCONST(data)));
 }
 
 static int
@@ -592,7 +592,7 @@ hash_delete(dbp, key, flag)
 		return (ERROR);
 	}
 	/* LINTED const castaway */
-	return (hash_access(hashp, HASH_DELETE, (DBT *)key, NULL));
+	return (hash_access(hashp, HASH_DELETE, __UNCONST(key), NULL));
 }
 
 /*
