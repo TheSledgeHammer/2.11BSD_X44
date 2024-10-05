@@ -36,8 +36,8 @@
 #define	_PATH_BSHELL	"/bin/sh"
 #define	_PATH_CSHELL	"/bin/csh"
 #define	_PATH_CP		"/bin/cp"
-#define	_PATH_RSH		"/usr/ucb/rsh"
-#define	_PATH_VI		"/usr/ucb/vi"
+//#define	_PATH_RSH		"/usr/ucb/rsh"
+//#define	_PATH_VI		"/usr/ucb/vi"
 
 #define	_PATH_AUDIO		"/dev/audio"
 #define	_PATH_AUDIO0	"/dev/audio0"
