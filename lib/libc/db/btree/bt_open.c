@@ -397,10 +397,11 @@ tmp()
 	int fd;
 	char *envtmp;
 	char path[PATH_MAX];
-
+/*
 	if (issetugid())
 		envtmp = NULL;
 	else
+    */
 		envtmp = getenv("TMPDIR");
 
 	len = snprintf(path,
