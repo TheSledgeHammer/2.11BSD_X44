@@ -38,6 +38,8 @@ static char sccsid[] = "@(#)setrgid.c	8.1.1 (2.11BSD) 1997/11/26";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <unistd.h>
 
 int
