@@ -61,7 +61,7 @@ static void softintr_register_pic(struct pic *, struct apic *);
 /*
  * Generic software interrupt support.
  */
-struct pic softintr_template = {
+struct pic softintr_pic_template = {
 		.pic_type = PIC_SOFT,
 		.pic_hwmask = NULL,
 		.pic_hwunmask = NULL,
@@ -70,7 +70,7 @@ struct pic softintr_template = {
 		.pic_register = softintr_register_pic
 };
 
-struct apic softintr_intrmap = {
+struct apic softintr_apic_template = {
 		.apic_pic_type = PIC_SOFT,
 		.apic_edge = NULL,
 		.apic_level = NULL
@@ -81,8 +81,8 @@ softintr_register_pic(pic, apic)
 	struct pic *pic;
 	struct apic *apic;
 {
-	pic = &softintr_template;
-	apic = &softintr_intrmap;
+	pic = &softintr_pic_template;
+	apic = &softintr_apic_template;
 	softpic_register(pic, apic);
 }
 

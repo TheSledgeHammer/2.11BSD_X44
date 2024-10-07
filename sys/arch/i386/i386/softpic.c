@@ -180,25 +180,25 @@ softpic_handle_pic(spic)
 	switch(spic->sp_template) {
 	case PIC_I8259:
 		pic = softpic_lookup_pic(PIC_I8259);
-		if(pic == &i8259_template && spic->sp_template == pic->pic_type) {
+		if(pic == &i8259_pic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_IOAPIC:
 		pic = softpic_lookup_pic(PIC_IOAPIC);
-		if(pic == &ioapic_template && spic->sp_template == pic->pic_type) {
+		if(pic == &ioapic_pic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_LAPIC:
 		pic = softpic_lookup_pic(PIC_LAPIC);
-		if(pic == &lapic_template && spic->sp_template == pic->pic_type) {
+		if(pic == &lapic_pic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_SOFT:
 		pic = softpic_lookup_pic(PIC_SOFT);
-		if(pic == &softintr_template && spic->sp_template == pic->pic_type) {
+		if(pic == &softintr_pic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
@@ -321,25 +321,25 @@ softpic_handle_apic(spic)
     switch(spic->sp_template) {
         case PIC_I8259:
             apic = softpic_lookup_apic(PIC_I8259);
-            if(apic == &i8259_intrmap && spic->sp_template == apic->apic_pic_type) {
+            if(apic == &i8259_apic_template && spic->sp_template == apic->apic_pic_type) {
                 return (apic);
             }
             break;
         case PIC_IOAPIC:
             apic = softpic_lookup_apic(PIC_IOAPIC);
-            if(apic == &ioapic_intrmap && spic->sp_template == apic->apic_pic_type) {
+            if(apic == &ioapic_apic_template && spic->sp_template == apic->apic_pic_type) {
                 return (apic);
             }
             break;
         case PIC_LAPIC:
             apic = softpic_lookup_apic(PIC_LAPIC);
-            if(apic == &lapic_intrmap && spic->sp_template == apic->apic_pic_type) {
+            if(apic == &lapic_apic_template && spic->sp_template == apic->apic_pic_type) {
                 return (apic);
             }
             break;
     	case PIC_SOFT:
     		apic = softpic_lookup_apic(PIC_SOFT);
-    		if(apic == &softintr_intrmap && spic->sp_template == apic->apic_pic_type) {
+    		if(apic == &softintr_apic_template && spic->sp_template == apic->apic_pic_type) {
     			return (apic);
     		}
     		break;

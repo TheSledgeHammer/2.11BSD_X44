@@ -96,7 +96,7 @@ static void 	i8259_setup(struct softpic *, struct cpu_info *, int, int, int);
 static void		i8259_reinit_irqs(void);
 static void		i8259_register_pic(struct pic *, struct apic *);
 
-struct pic i8259_template = {
+struct pic i8259_pic_template = {
 		.pic_type = PIC_I8259,
 		.pic_hwmask = i8259_hwmask,
 		.pic_hwunmask = i8259_hwunmask,
@@ -105,7 +105,7 @@ struct pic i8259_template = {
 		.pic_register = i8259_register_pic
 };
 
-struct apic i8259_intrmap = {
+struct apic i8259_apic_template = {
 		.apic_pic_type = PIC_I8259,
 		.apic_edge = legacy_stubs,
 		.apic_level = legacy_stubs
@@ -204,8 +204,8 @@ i8259_register_pic(pic, apic)
 	struct pic *pic;
 	struct apic *apic;
 {
-	pic = &i8259_template;
-	apic = &i8259_intrmap;
+	pic = &i8259_pic_template;
+	apic = &i8259_apic_template;
 	softpic_register(pic, apic);
 }
 

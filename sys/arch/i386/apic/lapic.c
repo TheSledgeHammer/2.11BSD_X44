@@ -88,7 +88,7 @@ void			lapic_dump(void);
 
 static void		x2apic_write_icr(uint32_t hi, uint32_t lo);
 
-struct pic lapic_template = {
+struct pic lapic_pic_template = {
 		.pic_type = PIC_LAPIC,
 		.pic_hwmask = lapic_hwmask,
 		.pic_hwunmask = lapic_hwunmask,
@@ -97,7 +97,7 @@ struct pic lapic_template = {
 		.pic_register = lapic_register_pic
 };
 
-struct apic lapic_intrmap = {
+struct apic lapic_apic_template = {
 		.apic_pic_type = PIC_LAPIC,
 		.apic_edge = NULL,
 		.apic_level = NULL
@@ -246,9 +246,9 @@ lapic_map(vm_offset_t lapic_base)
 #if NIOAPIC > 0
 		struct ioapic_softc *ioapic;
 		SIMPLEQ_FOREACH(ioapic, &ioapics, sc_next) {
-			lapic_intrmap.apic_edge = x2apic_edge_stubs;
-			lapic_intrmap.apic_level = x2apic_level_stubs;
-			ioapic->sc_apic = &lapic_intrmap;
+			lapic_apic_template.apic_edge = x2apic_edge_stubs;
+			lapic_apic_template.apic_level = x2apic_level_stubs;
+			ioapic->sc_apic = &lapic_apic_template;
 		}
 #endif
 	}
@@ -585,8 +585,8 @@ lapic_register_pic(pic, apic)
 	struct pic *pic;
 	struct apic *apic;
 {
-	pic = &lapic_template;
-	apic = &lapic_intrmap;
+	pic = &lapic_pic_template;
+	apic = &lapic_apic_template;
 	softpic_register(pic, apic);
 }
 

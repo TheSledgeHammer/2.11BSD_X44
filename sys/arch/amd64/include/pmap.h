@@ -160,7 +160,7 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define l4tol5(idx)     ((idx) >> (L5_SHIFT - L4_SHIFT))
 #define l4tol4(idx)     ((idx) & (L4_REALMASK >> L4_SHIFT))
 
-#define L4ETOL5E_SHIFT  (PTP_SHIFT * 2)- 3)
+#define L4ETOL5E_SHIFT  ((PTP_SHIFT * 2)- 3)
 #define l4etol4e(idx)   (l4tol4(idx) & (L4_REALMASK >> L4_SHIFT))
 #define l4etol5e(idx)   (((l4tol4(idx) + l4tol5(idx)) + L4ETOL5E_SHIFT) & ((1UL << PTP_SHIFT)-1))
 

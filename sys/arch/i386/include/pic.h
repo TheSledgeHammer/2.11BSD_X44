@@ -47,12 +47,12 @@
  * the apic, x2apic and legacy interrupt sources.
  */
 struct apic {
-    int                     apic_pic_type;
-    struct intrstub         *apic_edge;
-    struct intrstub         *apic_level;
-    void 					*apic_resume;
-    void 					*apic_recurse;
-    TAILQ_ENTRY(apic)       apic_entry;
+    int                     	apic_pic_type;
+    struct intrstub         	*apic_edge;
+    struct intrstub         	*apic_level;
+    void 			*apic_resume;
+    void 			*apic_recurse;
+    TAILQ_ENTRY(apic)       	apic_entry;
 };
 
 /*
@@ -61,22 +61,22 @@ struct apic {
  * return the vector associated with this source.
  */
 struct pic {
-	int 					pic_type;
-	void					(*pic_hwmask)(struct softpic *, int);
-	void 					(*pic_hwunmask)(struct softpic *, int);
-	void 					(*pic_addroute)(struct softpic *, struct cpu_info *, int, int, int);
-	void 					(*pic_delroute)(struct softpic *, struct cpu_info *, int, int, int);
-	void					(*pic_register)(struct pic *, struct apic *);
-	TAILQ_ENTRY(pic) 		pic_entry;
+	int 			pic_type;
+	void			(*pic_hwmask)(struct softpic *, int);
+	void 			(*pic_hwunmask)(struct softpic *, int);
+	void 			(*pic_addroute)(struct softpic *, struct cpu_info *, int, int, int);
+	void 			(*pic_delroute)(struct softpic *, struct cpu_info *, int, int, int);
+	void			(*pic_register)(struct pic *, struct apic *);
+	TAILQ_ENTRY(pic) 	pic_entry;
 };
 
 /*
  * PIC types.
  */
-#define PIC_I8259			0
-#define PIC_IOAPIC			1
-#define PIC_LAPIC			2
-#define PIC_SOFT			3
+#define PIC_I8259		0
+#define PIC_IOAPIC		1
+#define PIC_LAPIC		2
+#define PIC_SOFT		3
 
 /*
  * An interrupt source.  The upper-layer code uses the PIC methods to
@@ -85,16 +85,16 @@ struct pic {
  * or an I/O APIC pointer.
  */
 struct intrsource {
-	struct pic 				*is_pic;
-	struct apic 			*is_apic;
+	struct pic 		*is_pic;
+	struct apic 		*is_apic;
     struct intrhand     	*is_handlers;	/* handler chain */
-	u_long 					*is_count;
-	//u_long 					*is_straycount;
-	u_int 					is_index;
-	int						is_type;
-	int 					is_pin;
-	int  					is_minlevel;
-	int 					is_maxlevel;
+	u_long 			*is_count;
+	//u_long 		*is_straycount;
+	u_int 			is_index;
+	int			is_type;
+	int 			is_pin;
+	int  			is_minlevel;
+	int 			is_maxlevel;
 };
 
 /*
@@ -103,15 +103,15 @@ struct intrsource {
  */
 struct intrhand {
     struct pic          	*ih_pic;
-    struct apic 			*ih_apic;
-	int						(*ih_fun)(void *);
-	void					*ih_arg;
-	u_long					ih_count;
-	struct intrhand 		*ih_next;
+    struct apic 		*ih_apic;
+	int			(*ih_fun)(void *);
+	void			*ih_arg;
+	u_long			ih_count;
+	struct intrhand 	*ih_next;
     struct intrhand 		*ih_prev;
-	int						ih_level;
-	int						ih_irq;
-	int 					ih_slot;
+	int			ih_level;
+	int			ih_irq;
+	int 			ih_slot;
 };
 
 /*
@@ -132,9 +132,9 @@ struct intrhand {
  * overlap if they were to be sent to the same CPU.
  */
 struct intrstub {
-	void 					*ist_entry;
-	void 					*ist_recurse;
-	void 					*ist_resume;
+	void 			*ist_entry;
+	void 			*ist_recurse;
+	void 			*ist_resume;
 };
 
 struct pcibus_attach_args;
@@ -147,16 +147,16 @@ extern struct intrstub		x2apic_edge_stubs[];
 extern struct intrstub		x2apic_level_stubs[];
 
 /* pic templates */
-extern struct pic			i8259_template;
-extern struct pic			ioapic_template;
-extern struct pic			lapic_template;
-extern struct pic			softintr_template;
+extern struct pic		i8259_pic_template;
+extern struct pic		ioapic_pic_template;
+extern struct pic		lapic_pic_template;
+extern struct pic		softintr_pic_template;
 
-/* apic intrmaps */
-extern struct apic          	i8259_intrmap;
-extern struct apic          	ioapic_intrmap;
-extern struct apic          	lapic_intrmap;
-extern struct apic 	 	softintr_intrmap;
+/* apic templates */
+extern struct apic          	i8259_apic_template;
+extern struct apic          	ioapic_apic_template;
+extern struct apic          	lapic_apic_template;
+extern struct apic 	 	softintr_apic_template;
 
 /* intr.c */
 void 			*intr_establish(int, int, int, int (*)(void *), void *, bool_t, int);
@@ -165,7 +165,7 @@ void			fakeintr(struct softpic *, struct intrhand *, u_int);
 void			intr_default_setup(void);
 void			intr_calculatemasks(void);
 void 			intr_add_pcibus(struct pcibus_attach_args *);
-int	 			intr_find_mpmapping(int, int, int *);
+int	 		intr_find_mpmapping(int, int, int *);
 void			apic_intr_string(char *, void *, int);
 char 			*intr_typename(int);
 #endif /* _I386_PIC_H_ */

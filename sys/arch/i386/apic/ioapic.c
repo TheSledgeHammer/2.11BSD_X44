@@ -122,7 +122,7 @@ struct ioapic_head ioapics = SIMPLEQ_HEAD_INITIALIZER(ioapics);
 int nioapics = 0;	   	 	/* number attached */
 static int ioapic_vecbase;
 
-struct pic ioapic_template = {
+struct pic ioapic_pic_template = {
 		.pic_type = PIC_IOAPIC,
 		.pic_hwmask = ioapic_hwmask,
 		.pic_hwunmask = ioapic_hwunmask,
@@ -131,7 +131,7 @@ struct pic ioapic_template = {
 		.pic_register = ioapic_register_pic
 };
 
-struct apic ioapic_intrmap = {
+struct apic ioapic_apic_template = {
 		.apic_pic_type = PIC_IOAPIC,
 		.apic_edge = apic_edge_stubs,
 		.apic_level = apic_level_stubs
@@ -274,8 +274,8 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_reg = (volatile u_int32_t *)(bh + IOAPIC_REG);
 	sc->sc_data = (volatile u_int32_t *)(bh + IOAPIC_DATA);
 
-	sc->sc_pic = &ioapic_template;
-	sc->sc_apic = &ioapic_intrmap;
+	sc->sc_pic = &ioapic_pic_template;
+	sc->sc_apic = &ioapic_apic_template;
 	ioapic_lock_init(&icu_lock);
 
 	/* add others here */
@@ -543,8 +543,8 @@ ioapic_register_pic(pic, apic)
 	struct pic *pic;
 	struct apic *apic;
 {
-	pic = &ioapic_template;
-	apic = &ioapic_intrmap;
+	pic = &ioapic_pic_template;
+	apic = &ioapic_apic_template;
 	softpic_register(pic, apic);
 }
 
