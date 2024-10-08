@@ -71,7 +71,7 @@ __weak_alias(svc_tp_create,_svc_tp_create)
 __weak_alias(svc_tli_create,_svc_tli_create)
 #endif
 
-extern int __svc_vc_setflag __P((SVCXPRT *, int));
+extern int __svc_vc_setflag(SVCXPRT *, int);
 
 /*
  * The highest level interface for server creation.
@@ -84,7 +84,7 @@ extern int __svc_vc_setflag __P((SVCXPRT *, int));
  */
 int
 svc_create(dispatch, prognum, versnum, nettype)
-	void (*dispatch) __P((struct svc_req *, SVCXPRT *));
+	void (*dispatch)(struct svc_req *, SVCXPRT *);
 	rpcprog_t prognum;		/* Program number */
 	rpcvers_t versnum;		/* Version number */
 	const char *nettype;		/* Networktype token */
@@ -158,7 +158,7 @@ svc_create(dispatch, prognum, versnum, nettype)
  */
 SVCXPRT *
 svc_tp_create(dispatch, prognum, versnum, nconf)
-	void (*dispatch) __P((struct svc_req *, SVCXPRT *));
+	void (*dispatch)(struct svc_req *, SVCXPRT *);
 	rpcprog_t prognum;		/* Program number */
 	rpcvers_t versnum;		/* Version number */
 	const struct netconfig *nconf; /* Netconfig structure for the network */

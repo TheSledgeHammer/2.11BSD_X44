@@ -69,8 +69,8 @@ __weak_alias(xdr_rejected_reply,_xdr_rejected_reply)
 __weak_alias(xdr_replymsg,_xdr_replymsg)
 #endif
 
-static void accepted __P((enum accept_stat, struct rpc_err *));
-static void rejected __P((enum reject_stat, struct rpc_err *));
+static void accepted(enum accept_stat, struct rpc_err *);
+static void rejected(enum reject_stat, struct rpc_err *);
 
 /* * * * * * * * * * * * * * XDR Authentication * * * * * * * * * * * */
 

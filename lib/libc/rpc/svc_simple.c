@@ -68,10 +68,10 @@ __RCSID("$NetBSD: svc_simple.c,v 1.26 2003/09/09 03:56:40 itojun Exp $");
 __weak_alias(rpc_reg,_rpc_reg)
 #endif
 
-static void universal __P((struct svc_req *, SVCXPRT *));
+static void universal(struct svc_req *, SVCXPRT *);
 
 static struct proglst {
-	char *(*p_progname) __P((char *));
+	char *(*p_progname)(char *);
 	rpcprog_t p_prognum;
 	rpcvers_t p_versnum;
 	rpcproc_t p_procnum;
@@ -106,7 +106,7 @@ rpc_reg(prognum, versnum, procnum, progname, inproc, outproc, nettype)
 	rpcprog_t prognum;			/* program number */
 	rpcvers_t versnum;			/* version number */
 	rpcproc_t procnum;			/* procedure number */
-	char *(*progname) __P((char *)); /* Server routine */
+	char *(*progname)(char *); /* Server routine */
 	xdrproc_t inproc, outproc;	/* in/out XDR procedures */
 	char *nettype;			/* nettype */
 {

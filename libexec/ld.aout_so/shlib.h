@@ -35,16 +35,16 @@
 extern char	**search_dirs;	/* Directories to search for libraries. */
 extern int	n_search_dirs;	/* Length of above. */
 
-char		*findshlib __P((char *, int *, int *, int));
-void		add_search_dir __P((const char *));
-void		add_search_path __P((char *));
-void		std_search_path __P((void));
-void		remove_search_dir __P((char *));
-void		remove_search_path __P((char *));
-int		getdewey __P((int[], char *));
-int		cmpndewey __P((int[], int, int[], int));
+char		*findshlib(char *, int *, int *, int);
+void		add_search_dir(const char *);
+void		add_search_path(char *);
+void		std_search_path(void);
+void		remove_search_dir(char *);
+void		remove_search_path(char *);
+int		getdewey(int[], char *);
+int		cmpndewey(int[], int, int[], int);
 
 /* XXX - Common Utility functions currently also in shlib.c */
-void		*xmalloc __P((size_t));
-void		*xrealloc __P((void *, size_t));
-char		*concat __P((const char *, const char *, const char *));
+void		*xmalloc(size_t);
+void		*xrealloc(void *, size_t);
+char		*concat(const char *, const char *, const char *);

@@ -107,9 +107,9 @@ union	overhead {
  */
 #define	NPOOLPAGES	(32*1024/pagesz)
 static caddr_t		pagepool_start, pagepool_end;
-static int		morepages __P((int));
-static void		morecore __P((int));
-static int		findbucket __P((union overhead *, int));
+static int		morepages(int);
+static void		morecore(int);
+static int		findbucket(union overhead *, int);
 
 /*
  * nextf[i] is the pointer to the next free block of size 2^(i+3).  The
@@ -134,7 +134,7 @@ static	u_int nmalloc[NBUCKETS];
 #if defined(DEBUG) || defined(RCHECK)
 #define	ASSERT(p)   if (!(p)) botch("p")
 #include <stdio.h>
-static void botch __P((char *));
+static void botch(char *);
 static void
 botch(s)
 	char *s;

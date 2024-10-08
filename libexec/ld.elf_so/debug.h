@@ -41,7 +41,7 @@
 
 #ifdef DEBUG
 
-extern void debug_printf __P((const char *, ...))
+extern void debug_printf(const char *, ...)
     __attribute__((__format__(__printf__, 1, 2)));
 extern int debug;
 

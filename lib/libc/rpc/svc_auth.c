@@ -77,7 +77,7 @@ __weak_alias(svc_auth_reg,_svc_auth_reg)
 /* declarations to allow servers to specify new authentication flavors */
 struct authsvc {
 	int	flavor;
-	enum	auth_stat (*handler) __P((struct svc_req *, struct rpc_msg *));
+	enum	auth_stat (*handler)(struct svc_req *, struct rpc_msg *);
 	struct	authsvc	  *next;
 };
 static struct authsvc *Auths = NULL;
@@ -182,7 +182,7 @@ _svcauth_null(rqst, msg)
 int
 svc_auth_reg(cred_flavor, handler)
 	int cred_flavor;
-	enum auth_stat (*handler) __P((struct svc_req *, struct rpc_msg *));
+	enum auth_stat (*handler)(struct svc_req *, struct rpc_msg *);
 {
 	struct authsvc *asp;
 #ifdef _REENTRANT

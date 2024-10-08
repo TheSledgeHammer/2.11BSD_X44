@@ -97,10 +97,10 @@ __weak_alias(clnt_broadcast,_clnt_broadcast)
 extern mutex_t	rpcsoc_lock;
 #endif
 
-static CLIENT *clnt_com_create __P((struct sockaddr_in *, rpcprog_t, rpcvers_t,
-				    int *, u_int, u_int, char *));
-static SVCXPRT *svc_com_create __P((int, u_int, u_int, char *));
-static bool_t rpc_wrap_bcast __P((char *, struct netbuf *, struct netconfig *));
+static CLIENT *clnt_com_create(struct sockaddr_in *, rpcprog_t, rpcvers_t,
+				    int *, u_int, u_int, char *);
+static SVCXPRT *svc_com_create(int, u_int, u_int, char *);
+static bool_t rpc_wrap_bcast(char *, struct netbuf *, struct netconfig *);
 
 /*
  * A common clnt create routine
@@ -367,7 +367,7 @@ callrpc(host, prognum, versnum, procnum, inproc, in, outproc, out)
 int
 registerrpc(prognum, versnum, procnum, progname, inproc, outproc)
 	int prognum, versnum, procnum;
-	char *(*progname) __P((char [UDPMSGSIZE]));
+	char *(*progname)(char [UDPMSGSIZE]);
 	xdrproc_t inproc, outproc;
 {
 	return rpc_reg((rpcprog_t)prognum, (rpcvers_t)versnum,

@@ -80,23 +80,23 @@ __weak_alias(svc_vc_create,_svc_vc_create)
 extern rwlock_t svc_fd_lock;
 #endif
 
-static SVCXPRT *makefd_xprt __P((int, u_int, u_int));
-static bool_t rendezvous_request __P((SVCXPRT *, struct rpc_msg *));
-static enum xprt_stat rendezvous_stat __P((SVCXPRT *));
-static void svc_vc_destroy __P((SVCXPRT *));
-static void __svc_vc_dodestroy __P((SVCXPRT *));
-static int read_vc __P((caddr_t, caddr_t, int));
-static int write_vc __P((caddr_t, caddr_t, int));
-static enum xprt_stat svc_vc_stat __P((SVCXPRT *));
-static bool_t svc_vc_recv __P((SVCXPRT *, struct rpc_msg *));
-static bool_t svc_vc_getargs __P((SVCXPRT *, xdrproc_t, caddr_t));
-static bool_t svc_vc_freeargs __P((SVCXPRT *, xdrproc_t, caddr_t));
-static bool_t svc_vc_reply __P((SVCXPRT *, struct rpc_msg *));
-static void svc_vc_rendezvous_ops __P((SVCXPRT *));
-static void svc_vc_ops __P((SVCXPRT *));
-static bool_t svc_vc_control __P((SVCXPRT *xprt, const u_int rq, void *in));
-static bool_t svc_vc_rendezvous_control __P((SVCXPRT *xprt, const u_int rq,
-					     void *in));
+static SVCXPRT *makefd_xprt(int, u_int, u_int);
+static bool_t rendezvous_request(SVCXPRT *, struct rpc_msg *);
+static enum xprt_stat rendezvous_stat(SVCXPRT *);
+static void svc_vc_destroy(SVCXPRT *);
+static void __svc_vc_dodestroy(SVCXPRT *);
+static int read_vc(caddr_t, caddr_t, int);
+static int write_vc(caddr_t, caddr_t, int);
+static enum xprt_stat svc_vc_stat(SVCXPRT *);
+static bool_t svc_vc_recv(SVCXPRT *, struct rpc_msg *);
+static bool_t svc_vc_getargs(SVCXPRT *, xdrproc_t, caddr_t);
+static bool_t svc_vc_freeargs(SVCXPRT *, xdrproc_t, caddr_t);
+static bool_t svc_vc_reply(SVCXPRT *, struct rpc_msg *);
+static void svc_vc_rendezvous_ops(SVCXPRT *);
+static void svc_vc_ops(SVCXPRT *);
+static bool_t svc_vc_control(SVCXPRT *xprt, const u_int rq, void *in);
+static bool_t svc_vc_rendezvous_control(SVCXPRT *xprt, const u_int rq,
+					     void *in);
 
 struct cf_rendezvous { /* kept in xprt->xp_p1 for rendezvouser */
 	u_int sendsize;
@@ -768,11 +768,11 @@ svc_vc_rendezvous_ops(xprt)
 		ops.xp_recv = rendezvous_request;
 		ops.xp_stat = rendezvous_stat;
 		ops.xp_getargs =
-		    (bool_t (*) __P((SVCXPRT *, xdrproc_t, caddr_t)))abort;
+		    (bool_t (*)(SVCXPRT *, xdrproc_t, caddr_t))abort;
 		ops.xp_reply =
-		    (bool_t (*) __P((SVCXPRT *, struct rpc_msg *)))abort;
+		    (bool_t (*)(SVCXPRT *, struct rpc_msg *))abort;
 		ops.xp_freeargs =
-		    (bool_t (*) __P((SVCXPRT *, xdrproc_t, caddr_t)))abort,
+		    (bool_t (*)(SVCXPRT *, xdrproc_t, caddr_t))abort,
 		ops.xp_destroy = svc_vc_destroy;
 		ops2.xp_control = svc_vc_rendezvous_control;
 	}

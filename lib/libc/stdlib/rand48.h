@@ -19,7 +19,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-extern void		__dorand48 __P((unsigned short[3]));
+extern void		__dorand48(unsigned short[3]);
 extern unsigned short	__rand48_seed[3];
 extern unsigned short	__rand48_mult[3];
 extern unsigned short	__rand48_add;

@@ -42,6 +42,7 @@
 #if defined(_KERNEL) || defined(_STANDALONE)
 #include <sys/types.h>
 #else
+#include <inttypes.h>
 #include <stddef.h>
 #endif /* _KERNEL || _STANDALONE */
 

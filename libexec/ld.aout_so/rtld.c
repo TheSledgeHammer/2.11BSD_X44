@@ -168,51 +168,51 @@ static int		ld_warn_non_pure_code;
 
 static int		ld_tracing;
 
-static void		*__dlopen __P((const char *, int));
-static int		__dlclose __P((void *));
-static void		*__dlsym __P((void *, const char *));
-static int		__dlctl __P((void *, int, void *));
-static void		__dlexit __P((void));
-static int		__dladdr __P((const void *, Dl_info *));
+static void		*__dlopen(const char *, int);
+static int		__dlclose(void *);
+static void		*__dlsym(void *, const char *);
+static int		__dlctl(void *, int, void *);
+static void		__dlexit(void);
+static int		__dladdr(const void *, Dl_info *);
 
 static struct ld_entry	ld_entry = {
 	__dlopen, __dlclose, __dlsym, __dlctl, __dlexit, __dladdr
 };
 
-       void		xprintf __P((char *, ...));
-       int		rtld __P((int, struct crt_ldso *, struct _dynamic *));
-       void		binder_entry __P((void));
-       long		binder __P((jmpslot_t *));
-static int		load_subs __P((struct so_map *));
-static struct so_map	*map_object __P((struct sod *, struct so_map *));
-static void		unmap_object __P((struct so_map *));
-static struct so_map	*alloc_link_map __P((	char *, struct sod *,
+       void		xprintf(char *, ...);
+       int		rtld(int, struct crt_ldso *, struct _dynamic *);
+       void		binder_entry(void);
+       long		binder(jmpslot_t *);
+static int		load_subs(struct so_map *);
+static struct so_map	*map_object(struct sod *, struct so_map *);
+static void		unmap_object(struct so_map *);
+static struct so_map	*alloc_link_map(	char *, struct sod *,
 						struct so_map *, caddr_t,
-						size_t, struct _dynamic *));
-static void		free_link_map __P((struct so_map *));
-static inline void	check_text_reloc __P((	struct relocation_info *,
+						size_t, struct _dynamic *);
+static void		free_link_map(struct so_map *);
+static inline void	check_text_reloc(	struct relocation_info *,
 						struct so_map *,
-						caddr_t));
-static void		init_maps __P((struct so_map *));
-static void		reloc_map __P((struct so_map *));
-static void		reloc_copy __P((struct so_map *));
-static void		call_map __P((struct so_map *, char *));
-static char		*rtfindlib __P((char *, int, int, int *, char *));
-static struct nzlist	*lookup __P((	const char *, struct so_map *,
-					struct so_map **, int));
-static inline struct rt_symbol	*lookup_rts __P((const char *));
-static struct rt_symbol	*enter_rts __P((const char *, long, int, caddr_t,
-						long, struct so_map *));
-static void 		clear_rts __P((struct rt_symbol *));
-static void		maphints __P((void));
-static void		unmaphints __P((void));
-static int		hash_string __P((const char *));
-static int		hinthash __P((char *, int, int));
-static char		*findhint __P((char *, int, int, char *));
+						caddr_t);
+static void		init_maps(struct so_map *);
+static void		reloc_map(struct so_map *);
+static void		reloc_copy(struct so_map *);
+static void		call_map(struct so_map *, char *);
+static char		*rtfindlib(char *, int, int, int *, char *);
+static struct nzlist	*lookup(	const char *, struct so_map *,
+					struct so_map **, int);
+static inline struct rt_symbol	*lookup_rts(const char *);
+static struct rt_symbol	*enter_rts(const char *, long, int, caddr_t,
+						long, struct so_map *);
+static void 		clear_rts(struct rt_symbol *);
+static void		maphints(void);
+static void		unmaphints(void);
+static int		hash_string(const char *);
+static int		hinthash(char *, int, int);
+static char		*findhint(char *, int, int, char *);
 
-static void		preload __P((char *));
-static void		ld_trace __P((struct so_map *));
-static void		build_sod __P((const char *, struct sod *));
+static void		preload(char *);
+static void		ld_trace(struct so_map *);
+static void		build_sod(const char *, struct sod *);
 
 static inline int
 strcmp (register const char *s1, register const char *s2)
@@ -224,8 +224,7 @@ strcmp (register const char *s1, register const char *s2)
 }
 
 /* `md-static-funcs.c' implements these functions: */
-static void	md_relocate_simple __P((struct relocation_info *,
-					long, char *));
+static void	md_relocate_simple(struct relocation_info *, long, char *);
 
 #include "md-static-funcs.c"
 
@@ -972,9 +971,9 @@ call_map(smp, sym)
 xprintf("call_map: %s at %#x+%#x enter\n", sym, src_map->som_addr, np->nz_value);
 #endif
 #if defined(__arm32__) && 1 /* XXX MAGIC! */
-	(*(void (*) __P((u_int)))(src_map->som_addr + np->nz_value))((u_int)src_map->som_addr);
+	(*(void (*)(u_int))(src_map->som_addr + np->nz_value))((u_int)src_map->som_addr);
 #else
-		(*(void (*) __P((void)))(src_map->som_addr + np->nz_value))();
+		(*(void (*)(void))(src_map->som_addr + np->nz_value))();
 #endif
 #if DEBUG
 xprintf("call_map: %s at %#x+%#x exit\n", sym, src_map->som_addr, np->nz_value);

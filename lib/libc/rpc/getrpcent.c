@@ -78,11 +78,11 @@ static struct rpcdata {
 	char	line[BUFSIZ+1];
 } *rpcdata;
 
-static	struct rpcent *interpret __P((char *val, size_t len));
+static	struct rpcent *interpret(char *val, size_t len);
 
 #define	RPCDB	"/etc/rpc"
 
-static struct rpcdata *_rpcdata __P((void));
+static struct rpcdata *_rpcdata(void);
 
 static struct rpcdata *
 _rpcdata()

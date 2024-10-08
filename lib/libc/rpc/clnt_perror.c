@@ -69,8 +69,8 @@ __weak_alias(clnt_sperror,_clnt_sperror)
 static char *buf;
 static size_t buflen;
 
-static char *_buf __P((void));
-static char *auth_errmsg __P((enum auth_stat));
+static char *_buf(void);
+static char *auth_errmsg(enum auth_stat);
 
 static char *
 _buf()
