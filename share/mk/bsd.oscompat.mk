@@ -12,6 +12,7 @@ MKFREEBSD=	no
 MKNETBSD=	no
 MKOPENBSD=	no
 MKPLAN9= 	no
+MKLINUX=	no
 MKSOLARIS=	no	
 
 .include <bsd.sys.mk>
