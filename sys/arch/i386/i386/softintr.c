@@ -168,7 +168,6 @@ softintr_establish(level, func, arg)
 		sih->sih_fn = func;
 		sih->sih_arg = arg;
 		sih->sih_pending = 0;
-		softintr_set(si, which);
 	}
 	return (sih);
 }
@@ -229,9 +228,28 @@ softintr_set(arg, which)
 			panic("softintr_set: no software interrupt");
 		}
 	} else {
-		si = &i386_soft_intrs[which];
-		sir = si->softintr_ssir;
+		sir = which;
 	}
 	softintr(sir);
 }
 
+/*
+void
+softintr_schedule(arg)
+	void *arg;
+{
+	struct i386_soft_intrhand *sih;
+	struct i386_soft_intr *si;
+	int s;
+
+	sih = (struct i386_soft_intrhand *)arg;
+	si = sih->sih_intrhead;
+	i386_softintr_lock(si, s);
+	if (sih->sih_pending == 0) {
+		TAILQ_INSERT_TAIL(&si->softintr_q, sih, sih_q);
+		sih->sih_pending = 1;
+		softintr_set(si, si->softintr_ssir);
+	}
+	i386_softintr_unlock(si, s);
+}
+*/
