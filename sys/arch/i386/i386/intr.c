@@ -497,6 +497,33 @@ intr_allocate_slot(spic, cip, pin, level, index, idtslot, isapic)
     return (0);
 }
 
+u_int
+intrselect(level)
+	u_int level;
+{
+	u_int which;
+
+	switch (level) {
+	case IPL_SOFTBIO:
+		which = I386_SOFTINTR_SOFTBIO;
+		break;
+	case IPL_SOFTCLOCK:
+		which = I386_SOFTINTR_SOFTCLOCK;
+		break;
+	case IPL_SOFTNET:
+		which = I386_SOFTINTR_SOFTNET;
+		break;
+	case IPL_SOFTSERIAL:
+		which = I386_SOFTINTR_SOFTSERIAL;
+		break;
+	default:
+		which = I386_NOINTERRUPT;
+		break;
+	}
+
+	return (which);
+}
+
 void
 fakeintr(spic, fakehand, level)
 	struct softpic *spic;
@@ -506,37 +533,19 @@ fakeintr(spic, fakehand, level)
 	void *si;
 	u_int which;
 
-	switch (level) {
-	case IPL_SOFTBIO:
-		which = I386_SOFTINTR_SOFTBIO;
-		break;
-
-	case IPL_SOFTCLOCK:
-		which = I386_SOFTINTR_SOFTCLOCK;
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
-		softintr_distpatch(which);
-#endif
-		break;
-
-	case IPL_SOFTNET:
-		which = I386_SOFTINTR_SOFTNET;
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
-		softintr_distpatch(which);
-#endif
-		break;
-
-	case IPL_SOFTSERIAL:
-		which = I386_SOFTINTR_SOFTSERIAL;
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
-		softintr_distpatch(which);
-#endif
-		break;
-
-	default:
+	which = intrselect(level);
+	if (which == I386_NOINTERRUPT) {
 		panic("fakeintr: no interrupt");
 	}
 
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+	if (spic->sp_template == PIC_SOFT) {
+		softintr_dispatch(which);
+	}
+#endif
+
 	fakehand->ih_pic = softpic_handle_pic(spic);
+	fakehand->ih_apic = softpic_handle_apic(spic);
 	fakehand->ih_level = which;
 }
 

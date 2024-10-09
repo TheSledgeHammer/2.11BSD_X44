@@ -162,6 +162,7 @@ extern struct apic 	 	softintr_apic_template;
 void 			*intr_establish(int, int, int, int (*)(void *), void *, bool_t, int);
 void			intr_disestablish(int, bool_t, int);
 void			fakeintr(struct softpic *, struct intrhand *, u_int);
+u_int			intrselect(u_int);
 void			intr_default_setup(void);
 void			intr_calculatemasks(void);
 void 			intr_add_pcibus(struct pcibus_attach_args *);

@@ -207,11 +207,14 @@ extern void softintr(int);
 #define	spl0()				spllower(0)
 #define spllock() 			splhigh()
 
+/* set software interrupts: compatibility */
+#define setsoftintr(mask)   (softintr_set(NULL, (mask)))
+
 #define	setsoftast(p)		aston(p)
-#define	setsoftclock()		softintr(SIR_CLOCK)
-#define	setsoftnet()		softintr(SIR_NET)
-#define	setsoftserial()		softintr(SIR_SERIAL)
-#define setsoftbio()		softintr(SIR_BIO)
+#define	setsoftclock()		setsoftintr(I386_SOFTINTR_SOFTCLOCK) 	/* SIR_CLOCK */
+#define	setsoftnet()		setsoftintr(I386_SOFTINTR_SOFTNET)		/* SIR_NET */
+#define	setsoftserial()		setsoftintr(I386_SOFTINTR_SOFTSERIAL)	/* SIR_SERIAL */
+#define setsoftbio()		setsoftintr(I386_SOFTINTR_SOFTBIO)		/* SIR_BIO */
 
 #define I386_IPI_HALT		0x00000001
 #define I386_IPI_MICROSET	0x00000002
@@ -248,6 +251,7 @@ extern void (*ipifunc[I386_NIPI])(struct cpu_info *);
 #define	I386_SOFTINTR_SOFTNET		2
 #define	I386_SOFTINTR_SOFTSERIAL	3
 #define	I386_NSOFTINTR			4
+#define I386_NOINTERRUPT 			-1
 
 #ifndef _LOCORE
 #include <sys/queue.h>
@@ -282,6 +286,7 @@ void	*softintr_establish(int, void (*)(void *), void *);
 void	softintr_disestablish(void *);
 void	softintr_init(void);
 void	softintr_dispatch(int);
+void 	softintr_set(void *, int);
 
 #define	softintr_schedule(arg)								\
 do {														\

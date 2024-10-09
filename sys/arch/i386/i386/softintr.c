@@ -86,7 +86,6 @@ softintr_register_pic(pic, apic)
 	softpic_register(pic, apic);
 }
 
-//#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 struct i386_soft_intr i386_soft_intrs[I386_NSOFTINTR];
 const int i386_soft_intr_to_ssir[I386_NSOFTINTR] = {
 		SIR_CLOCK,
@@ -120,7 +119,7 @@ softintr_init(void)
  *	Process pending software interrupts.
  */
 void
-softintr_distpatch(which)
+softintr_dispatch(which)
 	int which;
 {
 	struct i386_soft_intr 		*si;
@@ -158,25 +157,9 @@ softintr_establish(level, func, arg)
 	struct i386_soft_intrhand 	*sih;
 	int which;
 
-	switch (level) {
-	case IPL_SOFTBIO:
-		which = I386_SOFTINTR_SOFTBIO;
-		break;
-		
-	case IPL_SOFTCLOCK:
-		which = I386_SOFTINTR_SOFTCLOCK;
-		break;
-
-	case IPL_SOFTNET:
-		which = I386_SOFTINTR_SOFTNET;
-		break;
-
-	case IPL_SOFTSERIAL:
-		which = I386_SOFTINTR_SOFTSERIAL;
-		break;
-		
-	default:
-		panic("softintr_establish");
+	which = (int)intrselect(level);
+	if (which == I386_NOINTERRUPT) {
+		panic("softintr_establish: no interrupt");
 	}
 	si = &i386_soft_intrs[which];
 	sih = malloc(sizeof(*sih), M_DEVBUF, M_NOWAIT);
@@ -185,6 +168,7 @@ softintr_establish(level, func, arg)
 		sih->sih_fn = func;
 		sih->sih_arg = arg;
 		sih->sih_pending = 0;
+		softintr_set(si, which);
 	}
 	return (sih);
 }
@@ -212,4 +196,42 @@ softintr_disestablish(void *arg)
 
 	free(sih, M_DEVBUF);
 }
-//#endif
+
+/*
+ * softintr_set:	[interface]
+ *  Software interrupt update.
+ */
+void
+softintr_set(arg, which)
+	void *arg;
+	int which;
+{
+	struct i386_soft_intr *si;
+	int sir;
+
+	si = (struct i386_soft_intr *)arg;
+	if (si == NULL) {
+		switch (which) {
+		case I386_SOFTINTR_SOFTBIO:
+			sir = SIR_BIO;
+			break;
+		case I386_SOFTINTR_SOFTCLOCK:
+			sir = SIR_CLOCK;
+			break;
+		case I386_SOFTINTR_SOFTSERIAL:
+			sir = SIR_SERIAL;
+			break;
+		case I386_SOFTINTR_SOFTNET:
+			sir = SIR_NET;
+			break;
+		default:
+			sir = I386_NOINTERRUPT;
+			panic("softintr_set: no software interrupt");
+		}
+	} else {
+		si = &i386_soft_intrs[which];
+		sir = si->softintr_ssir;
+	}
+	softintr(sir);
+}
+
