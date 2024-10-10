@@ -268,40 +268,18 @@ struct i386_soft_intr {
 	TAILQ_HEAD(, i386_soft_intrhand) 	softintr_q;
 	int 								softintr_ssir;
 	struct lock_object					*softintr_slock;
+	//struct softpic 						*softintr_softpic;
 };
 
-#define	i386_softintr_lock(si, s)			\
-do {										\
-	(s) = splhigh();						\
-	simple_lock(si->softintr_slock);		\
-} while (/*CONSTCOND*/ 0)
-
-#define	i386_softintr_unlock(si, s)			\
-do {										\
-	simple_unlock(si->softintr_slock);		\
-	splx((s));								\
-} while (/*CONSTCOND*/ 0)
+void	i386_softintr_lock(struct i386_soft_intr *, int);
+void	i386_softintr_unlock(struct i386_soft_intr *, int);
 
 void	*softintr_establish(int, void (*)(void *), void *);
 void	softintr_disestablish(void *);
 void	softintr_init(void);
 void	softintr_dispatch(int);
+void	softintr_schedule(void *);
 void 	softintr_set(void *, int);
-
-#define	softintr_schedule(arg)								\
-do {														\
-	struct i386_soft_intrhand *__sih = (arg);				\
-	struct i386_soft_intr *__si = __sih->sih_intrhead;		\
-	int __s;												\
-															\
-	i386_softintr_lock(__si, __s);							\
-	if (__sih->sih_pending == 0) {							\
-		TAILQ_INSERT_TAIL(&__si->softintr_q, __sih, sih_q);	\
-		__sih->sih_pending = 1;								\
-		softintr(__si->softintr_ssir);						\
-	}														\
-	i386_softintr_unlock(__si, __s);						\
-} while (/*CONSTCOND*/ 0)
 
 #endif /* _LOCORE */
 #endif /* !_I386_INTR_H_ */
