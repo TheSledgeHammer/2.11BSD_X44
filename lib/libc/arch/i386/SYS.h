@@ -40,25 +40,48 @@
 #include <sys/syscall.h>
 
 #ifdef __STDC__
-#define _SYSNAM(x)	$(SYS_ ## x)
-#define _CALLNAM(y)	$(call _## y)
+#define _SYSNAM(x)	SYS_ ## x
+#define _CALLNAM(x)	call _## x
+#define _GLOBL(x)   .globl _## x
 #else
-#define	_SYSNAM(x)	$(SYS_/**/x)
-#define _CALLNAM(y)	$(call _/**/y)
+#define	_SYSNAM(x)	SYS_/**/x
+#define _CALLNAM(x)	call _/**/x
+#define _GLOBL(x)   .globl _/**/x
 #endif
 
-#define	CALL(x, y)				\
-	_CALLNAM(y)					;\
-	addl	$4*x, %esp
+#ifdef __ELF__
+#define ALIGNTEXT .align 4
+#else
+#define ALIGNTEXT .align 2
+#endif
 
-#define LCALL(x, y)				\
-	.byte	0x9a				;\
-	.long 	y					;\
-	.word	x
+#ifdef ENTRY
+#undef ENTRY
+#define	ENTRY(x)	            \
+    _GLOBL(x)                   ;\
+    .data                       ;\
+1:  .long   0                   ;\
+    .text                       ;\
+    ALIGNTEXT                   ;\
+    _C_LABEL(x):                \
+    movl    $1b, %eax           ;\
+    _PROF_PROLOGUE
+#endif
 
-#define SYSCALL(x)				\
-2:	jmp		cerror				;\
-	ENTRY(x)					;\
+#ifdef PIC
+#define SYSCALL_ERR             \
+    PIC_PROLOGUE                ;\
+    mov PIC_GOT(cerror), %eax   ;\
+    PIC_EPILOGUE                ;\
+    jmp     *%eax
+#else
+#define SYSCALL_ERR             \
+    jmp		cerror
+#endif
+
+#define SYSCALL(x)              \
+2:  SYSCALL_ERR                 ;\
+   	ENTRY(x)					;\
 	lea		_SYSNAM(x), %eax	;\
 	LCALL(7, 0)					;\
 	jb		2b
@@ -69,9 +92,18 @@
 
 #define	PSEUDO(x,y)				\
 	ENTRY(x)					;\
-	lea 	_SYSNAM(x), %eax	;\
+	lea 	_SYSNAM(y), %eax;   ;\
 	LCALL(7,0)					;\
 	ret
+
+#define	CALL(x, y)				\
+	_CALLNAM(y)					;\
+	addl	$4*x, %esp
+
+#define LCALL(x, y)				\
+	.byte	0x9a				;\
+	.long 	y					;\
+	.word	x
 
 #define	ASMSTR	.asciz
 

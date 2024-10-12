@@ -38,16 +38,20 @@
 
 #include <machine/asm.h>
 
-#ifdef notyet
-#ifndef ENTRY
-#ifdef PROF
-#define	ENTRY(x)	.globl _/**/x; _/**/x:  \
-			.data; 1:; .long 0; .text; lea 1b,%eax ; call mcount
-#define	ASENTRY(x)	.globl x; x: \
-			.data; 1:; .long 0; .text; lea 1b,%eax ; call mcount
+#ifdef __STDC__
+#define _GLOBL(x)   .globl _## x
 #else
-#define	ENTRY(x)	.globl _/**/x; _/**/x: 
-#define	ASENTRY(x)	.globl x; x: 
-#endif /* PROF */
-#endif /* ENTRY */
+#define _GLOBL(x)   .globl _/**/x
+#endif
+
+#ifdef ENTRY
+#undef ENTRY
+#define ENTRY(x)        \
+    _GLOBL(x)           ;\
+    _C_LABEL(x):        \
+    .data               ;\
+1:  .long   0           ;\
+    .text               ;\
+    lea     1b, %eax    ;\
+    _PROF_PROLOGUE
 #endif
