@@ -36,6 +36,9 @@
  *	@(#)DEFS.h	8.1 (Berkeley) 6/4/93
  */
 
+#include <machine/asm.h>
+
+#ifdef notyet
 #ifndef ENTRY
 #ifdef PROF
 #define	ENTRY(x)	.globl _/**/x; _/**/x:  \
@@ -47,3 +50,4 @@
 #define	ASENTRY(x)	.globl x; x: 
 #endif /* PROF */
 #endif /* ENTRY */
+#endif

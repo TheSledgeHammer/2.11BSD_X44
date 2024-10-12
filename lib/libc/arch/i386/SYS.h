@@ -39,20 +39,40 @@
 #include <machine/asm.h>
 #include <sys/syscall.h>
 
-#ifdef PROF
-#define	ENTRY(x)		.globl _/**/x; \
-						.data; 1:; .long 0; .text; .align 2; _/**/x: \
-						movl $1b,%eax; call mcount
+#ifdef __STDC__
+#define _SYSNAM(x)	$(SYS_ ## x)
+#define _CALLNAM(y)	$(call _## y)
 #else
-#define	ENTRY(x)		.globl _/**/x; .text; .align 2; _/**/x:
-#endif /* PROF */
-#define	SYSCALL(x)		2: jmp cerror; ENTRY(x); lea SYS_/**/x,%eax; LCALL(7,0); jb 2b
-#define	RSYSCALL(x)		SYSCALL(x); ret
-#define	PSEUDO(x,y)		ENTRY(x); lea SYS_/**/y, %eax; ; LCALL(7,0); ret
-#define	CALL(x,y)		call _/**/y; addl $4*x,%esp
-/* gas fucks up offset -- although we don't currently need it, do for BCS */
-#define	LCALL(x,y)		.byte 0x9a ; .long y; .word x
+#define	_SYSNAM(x)	$(SYS_/**/x)
+#define _CALLNAM(y)	$(call _/**/y)
+#endif
 
-#define	ASMSTR			.asciz
+#define	CALL(x, y)				\
+	_CALLNAM(y)					;\
+	addl	$4*x, %esp
 
-						.globl	cerror
+#define LCALL(x, y)				\
+	.byte	0x9a				;\
+	.long 	y					;\
+	.word	x
+
+#define SYSCALL(x)				\
+2:	jmp		cerror				;\
+	ENTRY(x)					;\
+	lea		_SYSNAM(x), %eax	;\
+	LCALL(7, 0)					;\
+	jb		2b
+
+#define	RSYSCALL(x)				\
+	SYSCALL(x)					;\
+	ret
+
+#define	PSEUDO(x,y)				\
+	ENTRY(x)					;\
+	lea 	_SYSNAM(x), %eax	;\
+	LCALL(7,0)					;\
+	ret
+
+#define	ASMSTR	.asciz
+
+	.globl	cerror
