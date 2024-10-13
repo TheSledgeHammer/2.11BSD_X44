@@ -125,8 +125,8 @@ nbpf_match_table(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int sd
 	nbpf_tableset_t *tblset;
 	nbpf_ipv4_t *nb4 = &state->nbs_ip4;
 	nbpf_ipv6_t *nb6 = &state->nbs_ip6;
-	const nbpf_addr_t *addr, *addr4, addr6;
-	const int alen;
+	const nbpf_addr_t *addr, *addr4, *addr6;
+	int alen;
 
 	if (!nbpf_iscached(state, NBPC_IP46)) {
 		/* Match an address against IPv4 */
@@ -139,6 +139,7 @@ nbpf_match_table(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int sd
 		}
 		KASSERT(nbpf_iscached(state, NBPC_IP46));
 	}
+    
 	addr4 = (sd ? nb4->nb4_srcip : nb4->nb4_dstip);
 	addr6 = (sd ? nb6->nb6_srcip : nb6->nb6_dstip);
 	addr = (sd ? addr4 : addr6);

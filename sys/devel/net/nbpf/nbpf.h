@@ -60,6 +60,8 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp6.h>
 
+#include "ptree.h"
+
 /* Storage of address (both for IPv4 and IPv6) and netmask */
 typedef struct in6_addr		nbpf_addr_t;
 typedef uint8_t				nbpf_netmask_t;
@@ -69,6 +71,8 @@ typedef union nbpf_ipv6 	nbpf_ipv6_t;
 typedef union nbpf_port 	nbpf_port_t;
 typedef union nbpf_icmp 	nbpf_icmp_t;
 
+struct nbpf_table;
+struct nbpf_tblent;
 typedef struct nbpf_table	nbpf_table_t;
 typedef struct nbpf_tblent 	nbpf_tblent_t;
 typedef nbpf_table_t 		*nbpf_tableset_t;
@@ -160,7 +164,7 @@ nbpf_cache_hlen(const nbpf_state_t *state)
 }
 
 static inline void
-nbpf_set_tag(const nbpf_state_t *state, int tag)
+nbpf_set_tag(nbpf_state_t *state, int tag)
 {
 	state->nbs_tag = tag;
 }
@@ -216,7 +220,6 @@ struct nbpf_ioctl_table {
 #ifndef NBPF_TABLE_TID
 #define NBPF_TABLE_TID 				NBPF_TABLE_TID_DEFAULT
 #endif
-
 #ifndef NBPF_TABLE_TYPE
 #define NBPF_TABLE_TYPE 			NBPF_TABLE_TYPE_DEFAULT
 #endif
@@ -269,18 +272,19 @@ void	nbpf_tableset_fini(void);
 extern const pt_tree_ops_t nbpf_table_ptree_ops;
 
 nbpf_tableset_t *nbpf_tableset_create(void);
-void			nbpf_tableset_destroy(nbpf_tableset_t *);
-int				nbpf_tableset_insert(nbpf_tableset_t *, nbpf_table_t *);
-void			nbpf_tableset_reload(nbpf_tableset_t *, nbpf_tableset_t *);
+void	nbpf_tableset_destroy(nbpf_tableset_t *);
+int		nbpf_tableset_insert(nbpf_tableset_t *, nbpf_table_t *);
+void	nbpf_tableset_reload(nbpf_tableset_t *, nbpf_tableset_t *);
 
 nbpf_table_t 	*nbpf_table_create(u_int, int, size_t);
-void			nbpf_table_destroy(nbpf_table_t *);
+void	nbpf_table_destroy(nbpf_table_t *);
 
-int				nbpf_table_check(const nbpf_tableset_t *, u_int, int);
-int				nbpf_table_insert(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
-int				nbpf_table_remove(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
-int				nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *);
+int		nbpf_table_check(const nbpf_tableset_t *, u_int, int);
+int		nbpf_table_insert(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
+int		nbpf_table_remove(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
+int		nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *);
 
-int				nbpf_mktable(nbpf_tableset_t *, nbpf_table_t *, u_int, int, size_t);
+int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **, u_int, int, size_t);
+int     nbpf_table_ioctl(struct nbpf_ioctl_table *, nbpf_tableset_t *);
 
 #endif /* _NET_NBPF_H_ */

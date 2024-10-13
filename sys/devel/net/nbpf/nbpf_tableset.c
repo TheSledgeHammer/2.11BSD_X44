@@ -54,7 +54,6 @@ __KERNEL_RCSID(0, "$NetBSD: npf_tableset.c,v 1.9.2.8 2013/02/11 21:49:48 riz Exp
 #include <sys/systm.h>
 #include <sys/types.h>
 
-
 #include <sys/tree.h>
 #include <sys/rwlock.h>
 #include <sys/mutex.h>
@@ -81,7 +80,6 @@ struct nbpf_tblent {
 };
 
 LIST_HEAD(nbpf_hashl, nbpf_tblent);
-
 struct nbpf_table {
 	char				t_name[16];
 	/* Lock and reference count. */
@@ -109,6 +107,8 @@ static nbpf_tblent_t		tblent_cache;
 
 #define nbpf_tableset_malloc(size)		(nbpf_malloc(size, M_NBPF, M_NOWAIT))
 #define nbpf_tableset_free(addr)		(nbpf_free(addr, M_NBPF))
+
+#define M_NBPF  M_PF
 
 void
 nbpf_tableset_init(void)
@@ -607,30 +607,34 @@ nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 
 int
 nbpf_mktable(tset, tbl, tid, type, hsize)
-	nbpf_tableset_t *tset;
-	nbpf_table_t *tbl;
+	nbpf_tableset_t **tset;
+	nbpf_table_t **tbl;
 	u_int tid;
 	int type;
 	size_t hsize;
 {
+    nbpf_tableset_t *ts;
+    nbpf_table_t    *tb;
 	int error;
 
-	tset = nbpf_tableset_create();
-	if (tset == NULL) {
+	ts = nbpf_tableset_create();
+	if (ts == NULL) {
 		return (ENOMEM);
 	}
-	error = nbpf_table_check(tset, tid, type);
+	error = nbpf_table_check(ts, tid, type);
 	if (error != 0) {
 		return (error);
 	}
-	tbl = nbpf_table_create(tid, type, hsize);
-	if (tbl == NULL) {
+	tb = nbpf_table_create(tid, type, hsize);
+	if (tb == NULL) {
 		return (ENOMEM);
 	}
-	error = nbpf_tableset_insert(tset, tbl);
+	error = nbpf_tableset_insert(ts, tb);
 	if (error != 0) {
 		return (error);
 	}
+    *tset = ts;
+    *tbl = tb
 	return (0);
 }
 

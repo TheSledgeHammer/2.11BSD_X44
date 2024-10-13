@@ -43,6 +43,7 @@ __KERNEL_RCSID(0, "$NetBSD: lpm.c,v 1.6 2019/06/12 14:36:32 christos Exp $");
 #include <sys/types.h>
 #include <sys/malloc.h>
 #include <sys/fnv_hash.h>
+#include <sys/systm.h>
 
 #include "lpm.h"
 
@@ -112,7 +113,7 @@ lpm_clear(lpm_t *lpm, lpm_dtor_t dtor, void *arg)
 				entry = next;
 			}
 		}
-		free(hmap->bucket);
+		free(hmap->bucket, M_DEVBUF);
 		hmap->bucket = NULL;
 		hmap->hashsize = 0;
 		hmap->nitems = 0;
@@ -248,7 +249,7 @@ hashmap_remove(lpm_hmap_t *hmap, const void *key, size_t len)
 			} else {
 				hmap->bucket[i] = entry->next;
 			}
-			free(entry);
+			free(entry, M_DEVBUF);
 			return 0;
 		}
 		prev = entry;

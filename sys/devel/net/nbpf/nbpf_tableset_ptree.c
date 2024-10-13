@@ -156,7 +156,7 @@ nbpf_ptree_matchnode(const void *vleft, const void *vright, pt_bitoff_t maxbitof
 				*slotp = PT_SLOT_RIGHT;
 			}
 
-			KASSERT(npf_ptree_testkey(vleft, bitoff, 1, ctx)
+			KASSERT(nbpf_ptree_testkey(vleft, bitoff, 1, ctx)
 			    == *slotp);
 			return false;
 		}

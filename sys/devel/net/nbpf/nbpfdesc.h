@@ -55,6 +55,6 @@ void	nbpf_d_free(struct nbpf_d *);
 void	nbpf_attachd(struct nbpf_d *);
 void	nbpf_detachd(struct nbpf_d *);
 int		nbpfioctl(struct nbpf_d *, dev_t, u_long, caddr_t, int, struct proc *);
-void	nbpf_filtncatch(struct nbpf_d *, u_char *, u_int, u_int, void *(*)(void *, const void *, size_t));
+void	nbpf_filtncatch(struct bpf_d *, struct nbpf_d *, u_char *, u_int, u_int, void *(*)(void *, const void *, size_t));
 
 #endif /* _NBPF_NBPFDESC_H_ */
