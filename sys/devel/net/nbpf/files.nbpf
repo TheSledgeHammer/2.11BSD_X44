@@ -14,3 +14,10 @@ file	net/nbpf/nbpf_ncode.c           nbpf
 file	net/nbpf/lpm.c                  nbpf
 file	net/nbpf/nbpf_tableset.c        nbpf
 file	net/nbpf/nbpf_tableset_ptree.c  nbpf
+
+# To be placed in GENERIC.arch
+#options         NBPF                   # Enable NBPF, BPF will use the NBPF instruction set
+# NBPF Table options will uses default if not set (Recommended: Unless you know what you are doing)
+#options        NBPF_TABLE_TID   0      # Set NBPF table starting tid (0 or higher)
+#options        NBPF_TABLE_TYPE  3      # Set NBPF table type (LPM: 1, HASH: 2, TREE: 3)
+#options        NBPF_TABLE_HSIZE 1024   # Set NBPF table hash size (default is 1024)
