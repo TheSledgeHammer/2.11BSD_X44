@@ -39,66 +39,37 @@ __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.3 2013/02/08 19:18:10 riz Exp $"
 #include <net/bpfdesc.h>
 
 #include "nbpf.h"
+#include "nbpfdesc.h"
 
-/* TODO:
- * - catchpacket??
- */
+struct bpf_d {
+	struct bpf_d		*bd_next;	/* Linked list of descriptors */
+	struct nbpf_d		*bd_nbpf; 	/* nbpf extensions */
 
-struct nbpf_program {
-	u_int 				nbf_len;
-	struct nbpf_insn 	*nbf_insns; /* ncode */
+	u_long				bd_rcount;	/* number of packets received */
+	u_long				bd_dcount;	/* number of packets dropped */
+	u_long				bd_ccount;	/* number of packets captured */
 };
 
-struct nbpf_d {
-	struct nbpf_d		*nbd_next;			/* Linked list of descriptors */
+struct nbpf_d *
+nbpf_d_alloc(size)
+	size_t size;
+{
+	struct nbpf_d *nd;
 
-	/* nbpf tables */
-	nbpf_tableset_t		*nbd_tableset;
-	nbpf_table_t 		*nbd_table;
-
-	u_long				nbd_rcount;			/* number of packets received */
-	int					nbd_seesent;		/* true if bpf should see sent packets */
-	/* nbpf ncode */
-	nbpf_state_t		*nbd_state;
-	struct nbpf_insn 	*nbd_filter;
-	int 				nbd_layer;
-};
-
-struct nbpf_if {
-	struct nbpf_if		*nbif_next;			/* list of all interfaces */
-	struct nbpf_d 		*nbif_dlist;		/* descriptor list */
-	struct nbpf_if 		**nbif_driverp;		/* pointer into softc */
-	u_int 				nbif_dlt;			/* link layer type */
-	u_int 				nbif_hdrlen;		/* length of header (with padding) */
-	struct ifnet 		*nbif_ifp;			/* correspoding interface */
-};
-
-struct nbpf_d	nbpf_dtab[NNBPFILTER];
-
-dev_type_open(nbpfopen);
-dev_type_close(nbpfclose);
-dev_type_read(nbpfread);
-dev_type_write(nbpfwrite);
-dev_type_ioctl(nbpfioctl);
-dev_type_poll(nbpfpoll);
-dev_type_kqfilter(nbpfkqfilter);
-
-const struct cdevsw nbpf_cdevsw = {
-		.d_open = nbpfopen,
-		.d_close = nbpfclose,
-		.d_read = nbpfread,
-		.d_write = nbpfwrite,
-		.d_ioctl = nbpfioctl,
-		.d_stop = nostop,
-		.d_tty = notty,
-		.d_poll = nbpfpoll,
-		.d_mmap = nommap,
-		.d_kqfilter = nbpfkqfilter,
-		.d_discard = nodiscard,
-		.d_type = D_OTHER
-};
+	nd = (struct nbpf_d *)malloc(size, M_DEVBUF, M_DONTWAIT);
+	return (nd);
+}
 
 void
+nbpf_d_free(nd)
+	struct nbpf_d *nd;
+{
+	if (nd != NULL) {
+		free(nd, M_DEVBUF);
+	}
+}
+
+static void
 nbpf_table_init(nd)
 	struct nbpf_d *nd;
 {
@@ -116,7 +87,7 @@ nbpf_table_init(nd)
 	nd->nbd_table = &t;
 }
 
-void
+static void
 nbpf_init(nd, layer, tag)
 	struct nbpf_d *nd;
 	int layer, tag;
@@ -129,87 +100,45 @@ nbpf_init(nd, layer, tag)
 	nd->nbd_layer = layer;
 }
 
-static void
+void
 nbpf_attachd(nd)
 	struct nbpf_d *nd;
 {
 	nbpf_init(nd, NBPC_LAYER4, PACKET_TAG_NONE);
+	nbpf_table_init(nd);
 }
 
-static void
+void
 nbpf_detachd(nd)
 	struct nbpf_d *nd;
 {
-	free(nd->nbd_state, M_DEVBUF);
+	if (nd->nbd_state != NULL) {
+		free(nd->nbd_state, M_DEVBUF);
+	}
 }
 
 int
-nbpfopen(dev, flag, mode, p)
-	dev_t dev;
-	int flag;
-	int mode;
-	struct proc *p;
-{
-	return (0);
-}
-
-int
-nbpfclose(dev, flag, mode, p)
-	dev_t dev;
-	int flag;
-	int mode;
-	struct proc *p;
-{
-	int error;
-	return (error);
-}
-
-int
-nbpfread(dev, uio, ioflag)
-	dev_t dev;
-	struct uio *uio;
-	int ioflag;
-{
-	int error;
-	return (error);
-}
-
-int
-nbpfwrite(dev, uio, ioflag)
-	dev_t dev;
-	struct uio *uio;
-	int ioflag;
-{
-	int error;
-	return (error);
-}
-
-#define BIOCSTBLF	_IOW('B', 115, struct nbpf_program) /* nbpf tblset */
-
-int
-nbpfioctl(dev, cmd, addr, flag, p)
+nbpfioctl(d, dev, cmd, addr, flag, p)
+	struct nbpf_d *d;
 	dev_t dev;
 	u_long cmd;
 	caddr_t addr;
 	int flag;
 	struct proc *p;
 {
-	struct nbpf_d *d;
 	int error;
-
-	d = &nbpf_dtab[minor(dev)];
 
 	switch (cmd) {
 	case BIOCSETF:
 		int ret = 0;
-		error = nbpf_setf(d, (struct nbpf_program *)addr, &ret);
+		error = nbpf_setf(d, (struct nbpf_program *) addr, &ret);
 		if (ret != 0) {
 			error = ret;
 		}
 		break;
 
 	case BIOCSTBLF:
-		struct nbpf_ioctl_table *nbiot = (struct nbpf_ioctl_table *)arg;
+		struct nbpf_ioctl_table *nbiot = (struct nbpf_ioctl_table*) arg;
 		nbpf_tableset_t *tset = d->nbd_tableset;
 		if (tset == NULL) {
 			nbpf_table_init(d);
@@ -218,20 +147,6 @@ nbpfioctl(dev, cmd, addr, flag, p)
 		break;
 	}
 	return (error);
-}
-
-int
-nbpfpoll(dev, events, p)
-{
-	int revents;
-
-	return (revents);
-}
-
-int
-nbpfkqfilter(dev, kn)
-{
-	return (0);
 }
 
 int
@@ -287,59 +202,6 @@ nbpf_filtncatch(d, pkt, pktlen, slen, cpfn)
 	slen = nbpf_filter(d->nbd_state, d->nbd_filter, pktlen, d->nbd_layer);
 	if (slen != 0) {
 		catchpacket(d, pkt, pktlen, slen, cpfn);
-	}
-}
-
-void
-nbpf_tap(arg, pkt, pktlen)
-	caddr_t arg;
-	u_char *pkt;
-	u_int pktlen;
-{
-	struct nbpf_if *bp;
-	struct nbpf_d *d;
-	u_int slen;
-
-	bp = (struct nbpf_if *)arg;
-	for (d = bp->nbif_dlist; d != 0; d = d->nbd_next) {
-		++d->nbd_rcount;
-
-		nbpf_filtncatch(d, pkt, pktlen, memcpy);
-	}
-}
-
-void
-nbpf_mtap(arg, m)
-	caddr_t arg;
-	struct mbuf *m;
-{
-	void *(*cpfn)(void *, const void *, size_t);
-	struct nbpf_if *bp = (struct nbpf_if *)arg;
-	struct nbpf_d *d;
-	u_int pktlen, slen, buflen;
-	struct mbuf *m0;
-	void *marg;
-
-	pktlen = 0;
-	for (m0 = m; m0 != 0; m0 = m0->m_next)
-		pktlen += m0->m_len;
-
-	if (pktlen == m->m_len) {
-		cpfn = memcpy;
-		marg = mtod(m, void *);
-		buflen = pktlen;
-	} else {
-		cpfn = bpf_mcpy;
-		marg = m;
-		buflen = 0;
-	}
-
-	for (d = bp->nbif_dlist; d != 0; d = d->nbd_next) {
-		if (!d->nbd_seesent && (m->m_pkthdr.rcvif == NULL))
-			continue;
-		++d->nbd_rcount;
-
-		nbpf_filtncatch(d, marg, pktlen, slen, cpfn);
 	}
 }
 

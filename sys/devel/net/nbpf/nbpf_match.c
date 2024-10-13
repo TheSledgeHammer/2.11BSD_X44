@@ -30,7 +30,7 @@
  */
 
 /*
- * NPF complex instructions.
+ * NBPF complex instructions.
  */
 
 #include <sys/cdefs.h>
