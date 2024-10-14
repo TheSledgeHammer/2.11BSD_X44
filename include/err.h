@@ -51,7 +51,7 @@
 
 __BEGIN_DECLS
 __dead void	err(int, const char *, ...)  __attribute__((__noreturn__, __format__(__printf__, 2, 3)));
-__dead void	errc(int, int, const char *, ...)  __attribute__((__noreturn__, __format__(__printf__, 2, 0)));
+__dead void	errc(int, int, const char *, ...)  __attribute__((__noreturn__, __format__(__printf__, 3, 4)));
 __dead void	errx(int, const char *, ...)  __attribute__((__noreturn__, __format__(__printf__, 2, 3)));
 
 __dead void	verr(int, const char *, va_list)  __attribute__((__noreturn__, __format__(__printf__, 2, 0)));
