@@ -76,8 +76,8 @@ static inline void *
 _atomic_cas_ptr(volatile void *p, void *e, void *n)
 {
 	__asm volatile(_LOCK " cmpxchgl %2, %1"
-	    : "=a" (n), "=m" (*(unsigned long *)p)
-	    : "r" (n), "a" (e), "m" (*(unsigned long *)p));
+	    : "=a" (n), "=m" (*(volatile unsigned long *)p)
+	    : "r" (n), "a" (e), "m" (*(volatile unsigned long *)p));
 
 	return (n);
 }
@@ -110,8 +110,8 @@ static inline void *
 _atomic_swap_ptr(volatile void *p, void *n)
 {
 	__asm volatile("xchgl %0, %1"
-	    : "=a" (n), "=m" (*(unsigned long *)p)
-	    : "0" (n), "m" (*(unsigned long *)p));
+	    : "=a" (n), "=m" (*(volatile unsigned long *)p)
+	    : "0" (n), "m" (*(volatile unsigned long *)p));
 
 	return (n);
 }
