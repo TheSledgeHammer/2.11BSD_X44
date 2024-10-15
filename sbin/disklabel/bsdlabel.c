@@ -854,28 +854,28 @@ word(cp)
 	return ((char*) NULL);
 }
 
-#define NXTNUM(n) do { 		\
-	if (tp == NULL) { 		\
-		fprintf(stderr, "line %d: too few numeric fields\n", lineno); \
-		return (1); 		\
-	} else { 				\
-		cp = tp, tp = word(cp); \
-		(n) = atoi(cp); \
-	} 						\
+#define NXTNUM(n) do { 		                                            \
+	if (tp == NULL) { 		                                            \
+		fprintf(stderr, "line %d: too few numeric fields\n", lineno);   \
+		return (1); 		                                            \
+	} else { 				                                            \
+		cp = tp, tp = word(cp);                                         \
+		(n) = atoi(cp);                                                 \
+	} 						                                            \
 } while (0)
 
 
 /* retain 1 character following number */
-#define NXTWORD(w,n) do { \
-	if (tp == NULL) { \
-		fprintf(stderr, "line %d: too few numeric fields\n", lineno); \
-		return (1); \
-	} else { \
-		char *tmp; \
-		cp = tp, tp = word(cp); \
-		(n) = atoi(cp); \
-		if (tmp) (w) = *tmp; \
-	} \
+#define NXTWORD(w,n) do {                                               \
+	if (tp == NULL) {                                                   \
+		fprintf(stderr, "line %d: too few numeric fields\n", lineno);   \
+		return (1);                                                     \
+	} else {                                                            \
+		char *tmp;                                                      \
+		cp = tp, tp = word(cp);                                         \
+		(n) = atoi(cp);                                                 \
+		if (tmp) (w) = *tmp;                                            \
+	}                                                                   \
 } while (0)
 
 /*
@@ -888,9 +888,10 @@ getasciilabel(f, lp)
 	FILE	*f;
 	register struct disklabel *lp;
 {
-	register char **cpp, *cp;
+	const char *const *cpp, *s; 
+    register char *cp;
 	register struct partition *pp;
-	char *tp, *s, line[BUFSIZ];
+	char *tp, line[BUFSIZ];
 	int v, lineno = 0, errors = 0;
 	u_int part;
 
@@ -1107,7 +1108,7 @@ getasciipartspec(tp, lp, part, lineno)
 {
 	struct partition *pp;
 	char *cp, *endp;
-	char **cpp;
+	const char *const *cpp;
 	u_long v;
 
 	pp = &lp->d_partitions[part];
