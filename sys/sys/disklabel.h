@@ -272,7 +272,7 @@ struct disklabel {
 #define DSTYPE_GEOMETRY		0x10		/* drive params in label */
 
 #ifdef DKTYPENAMES
-static char *dktypenames[] = {
+static const char *const dktypenames[] = {
 		"unknown",
 		"SMD",
 		"MSCP",
@@ -336,7 +336,7 @@ static char *dktypenames[] = {
 #define	FS_NANDFS			30		/* FreeBSD nandfs (NiLFS derived) */
 
 #ifdef	FSTYPENAMES
-static char *fstypenames[] = {
+static const char *const fstypenames[] = {
 	"unused",
 	"swap",
 	"Version 6",
