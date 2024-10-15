@@ -62,12 +62,15 @@
 #define	_CTYPE_I		0x00080000L		/* Ideogram */
 #define	_CTYPE_T		0x00100000L		/* Special */
 #define	_CTYPE_Q		0x00200000L		/* Phonogram */
+#define	_CTYPE_N 	    0x00400000L		/* Number (superset of digit) */
 #define	_CTYPE_SWM		0xc0000000L		/* Mask to get screen width data */
 #define	_CTYPE_SWS		30				/* Bits to shift to get width */
 #define	_CTYPE_SW0		0x20000000L		/* 0 width character */
 #define	_CTYPE_SW1		0x40000000L		/* 1 width character */
 #define	_CTYPE_SW2		0x80000000L		/* 2 width character */
 #define	_CTYPE_SW3		0xc0000000L		/* 3 width character */
+
+#define _CTYPE_N
 
 __BEGIN_DECLS
 int	isalnum(int);
@@ -117,8 +120,8 @@ extern	char			_ctype_[];
 #define toascii(c)		((c)&0177)
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
-#define	isascii(c)		((c & ~0x7F) == 0)
-#define toascii(c)		((c) & 0x7F)
+//#define	isascii(c)		((c & ~0x7F) == 0)
+//#define toascii(c)		((c) & 0x7F)
 #define	digittoint(c)	__istype((c), 0xFF)
 #define	isideogram(c)	__istype((c), _CTYPE_I)
 #define	isphonogram(c)	__istype((c), _CTYPE_T)
@@ -152,13 +155,13 @@ __END_DECLS
 static __inline int
 __istype(rune_t c, unsigned long f)
 {
-	return((((_RUNE_ISCACHED(c) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
+	return (((_RUNE_ISCACHED(c) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
 }
 
 static __inline int
 __isctype(rune_t c, unsigned long f)
 {
-	return((((_RUNE_ISCACHED(c) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
+	return (((_RUNE_ISCACHED(c) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
 }
 
 /* _ANSI_LIBRARY is defined by lib/libc/locale/isctype.c. */
@@ -166,25 +169,25 @@ __isctype(rune_t c, unsigned long f)
 static __inline rune_t
 __toupper(rune_t c)
 {
-	return((_RUNE_ISCACHED(c) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+	return (_RUNE_ISCACHED(c) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 static __inline rune_t
 __tolower(rune_t c)
 {
-	return((_RUNE_ISCACHED(c) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
+	return (_RUNE_ISCACHED(c) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
 
 static __inline wint_t
 __toupper_mb(wint_t c)
 {
-	return((_RUNE_ISCACHED(c) ? ___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
+	return (_RUNE_ISCACHED(c) ? ___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 static __inline wint_t
 __tolower_mb(wint_t c)
 {
-	return((_RUNE_ISCACHED(c) ? ___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
+	return (_RUNE_ISCACHED(c) ? ___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
 }
 #endif /* !_ANSI_LIBRARY */
 

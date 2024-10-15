@@ -136,24 +136,31 @@ typedef struct _WCTypeEntry {
 #define _WCTYPE_INDEX_PUNCT		8
 #define _WCTYPE_INDEX_SPACE		9
 #define _WCTYPE_INDEX_UPPER		10
-#define _WCTYPE_INDEX_XDIGIT		11
+#define _WCTYPE_INDEX_XDIGIT	11
 #define _WCTYPE_NINDEXES		12
+
+struct _Encoding_Info;
+struct _Encoding_State;
+
+typedef rune_t  (*sgetrune_t)(const char *, size_t, char const **);
+typedef int     (*sputrune_t)(rune_t, char *, size_t, char **);
+typedef int     (*sgetmbrune_t)(struct _Encoding_Info *, wchar_t *, const char **, size_t, struct _Encoding_State *, size_t *);
+typedef int     (*sputmbrune_t)(struct _Encoding_Info *, char *, size_t, wchar_t, struct _Encoding_State *, size_t *);
+typedef int     (*sgetcsrune_t)(struct _Encoding_Info *, wchar_t *, uint32_t, uint32_t);
+typedef int     (*sputcsrune_t)(struct _Encoding_Info *, uint32_t *, uint32_t *, wchar_t);
 
 typedef struct _RuneOps {
 	/* legacy */
-	rune_t						(*ro_sgetrune)(const char *, size_t, char const **);
-	int						(*ro_sputrune)(rune_t, char *, size_t, char **);
+    sgetrune_t ro_sgetrune;
+    sputrune_t ro_sputrune;
 
 	/* ctype: */
-	int 						(*ro_sgetmbrune)(_Encoding_Info * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _Encoding_State * __restrict, size_t * __restrict);
-	int						(*ro_sputmbrune)(_Encoding_Info * __restrict, char * __restrict, size_t, wchar_t, _Encoding_State * __restrict, size_t * __restrict);
+    sgetmbrune_t ro_sgetmbrune;
+    sputmbrune_t ro_sputmbrune;
 
 	/* stdenc */
-	int 						(*ro_sgetcsrune)(_Encoding_Info * __restrict, wchar_t * __restrict, uint32_t, uint32_t);
-	int 						(*ro_sputcsrune)(_Encoding_Info * __restrict, uint32_t * __restrict, uint32_t * __restrict, wchar_t);
-	/* init/uninit */
-	int 						(*ro_module_init)(_ENCODING_INFO * __restrict, const void * __restrict, size_t);
-	void						(*ro_module_uninit)(_ENCODING_INFO *);
+    sgetcsrune_t ro_sgetcsrune;
+    sputcsrune_t ro_sputcsrune;
 } _RuneOps;
 
 /*
