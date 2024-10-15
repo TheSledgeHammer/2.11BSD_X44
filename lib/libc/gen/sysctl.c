@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)sysctl.c	8.2.2 (2.11BSD GTE) 1996/11/27";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>

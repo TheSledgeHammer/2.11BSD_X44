@@ -33,7 +33,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)getloadavg.c   8.1.1 (2.11BSD GTE) 1/15/95";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>

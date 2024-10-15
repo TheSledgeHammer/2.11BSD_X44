@@ -31,6 +31,7 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,9 +45,9 @@
 #include <limits.h>
 #include <fstab.h>
 
-static void finddevlabel(char **pathp, const char *devname);
-static int xlatedevpath(char **pathp, struct stat *st);
-static char *dodequote(char *base);
+static void finddevlabel(char **, const char *);
+static int 	xlatedevpath(char **, struct stat *);
+static char *dodequote(char *);
 
 /*
  * Acquire device path.

@@ -35,7 +35,9 @@
  */
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)popen.c	5.15.1 (2.11BSD) 1999/10/24";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>

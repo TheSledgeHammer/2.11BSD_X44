@@ -37,7 +37,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)err.c	8.1.1 (2.11BSD GTE) 2/3/95";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"

@@ -36,7 +36,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)glob.c	8.3 (Berkeley) 10/13/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 /*

@@ -32,7 +32,9 @@
  */
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)rewinddir.c	8.1 (Berkeley) 6/8/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -42,7 +44,6 @@ void
 rewinddir(dirp)
 	DIR *dirp;
 {
-
 	_seekdir(dirp, dirp->dd_rewind);
 	dirp->dd_rewind = telldir(dirp);
 }

@@ -34,12 +34,15 @@
  * <<Id: LICENSE,v 1.2 2000/06/14 15:57:33 cgd Exp>>
  */
 
+#include <sys/cdefs.h>
+
 /* If not included by nlist_elf64.c, ELFSIZE won't be defined. */
 #ifndef ELFSIZE
 #define	ELFSIZE		32
 #endif
 
 #include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

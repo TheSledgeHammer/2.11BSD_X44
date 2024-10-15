@@ -22,6 +22,7 @@ struct vaxque {		/* queue format expected by VAX queue instructions */
 	struct vaxque	*vq_prev;
 };
 
+void
 remque(e)
 	register struct vaxque *e;
 {

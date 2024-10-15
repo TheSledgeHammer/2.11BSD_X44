@@ -40,35 +40,63 @@ static char sccsid[] = "@(#)devname.c	8.1.1 (2.11BSD GTE) 2/3/95";
 
 #include <sys/types.h>
 
+#define USE_NDBM = 1
+
+#if define(USE_NDBM) && (USE_NDBM == 0)
 #include <ndbm.h>
+#else
+#include <db.h>
+#endif
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <paths.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+struct bkey {
+	mode_t type;
+	dev_t  dev;
+};
+
+#if define(USE_NDBM) && (USE_NDBM == 0)
+static char *devname_ndbm(char *, dev_t, mode_t);
+#else
+static char *devname_db(char *, dev_t, mode_t);
+#endif
 
 char *
 devname(dev, type)
 	dev_t dev;
 	mode_t type;
 {
-	struct {
-		mode_t type;
-		dev_t dev;
-	} bkey;
-	char *devdb = _PATH_DEVDB;
+#if define(USE_NDBM) && (USE_NDBM == 0)
+	return (devname_ndbm(_PATH_DEVDB, dev, type));
+#else
+	return (devname_db(_PATH_DEVDB, dev, type));
+#endif
+}
+
+#if define(USE_NDBM) && (USE_NDBM == 0)
+static char *
+devname_ndbm(devdb, dev, type)
+	char *devdb;
+	dev_t dev;
+	mode_t type;
+{
+	struct bkey bkey;
 	static DBM *db;
 	static int failure;
 	datum data, key;
 
-	if (!db && !failure &&
-	    !(db = dbm_open(devdb, O_RDONLY, 0))) {
+	if (!db && !failure && !(db = dbm_open(devdb, O_RDONLY, 0))) {
 		warn("warning: %s", devdb);
 		failure = 1;
 	}
-	if (failure)
+	if (failure) {
 		return (NULL);
+	}
 
 	/*
 	 * Keys are a mode_t followed by a dev_t.  The former is the type of
@@ -81,6 +109,43 @@ devname(dev, type)
 	key.dptr = (char *)&bkey;
 	key.dsize = sizeof(bkey);
 	data = dbm_fetch(db, key);
-
-	return (data.dptr == NULL ? "??" : (const char *)data.dptr);
+	if (data.dptr == NULL) {
+		return (NULL);
+	}
+	return ((char *)data.dptr);
 }
+
+#else
+
+static char *
+devname_db(devdb, dev, type)
+	char *devdb;
+	dev_t dev;
+	mode_t type;
+{
+	struct bkey bkey;
+	static DB *db;
+	static int failure;
+	DBT data, key;
+
+	if (!db && !failure && !(db = dbopen(devdb, O_RDONLY, 0, DB_HASH, NULL))) {
+		warn("warning: %s", devdb);
+		failure = 1;
+	}
+	if (failure) {
+		return (NULL);
+	}
+
+	/*
+	 * Keys are a mode_t followed by a dev_t.  The former is the type of
+	 * the file (mode & S_IFMT), the latter is the st_rdev field.  Be
+	 * sure to clear any padding that may be found in bkey.
+	 */
+	memset(&bkey, 0, sizeof(bkey));
+	bkey.dev = dev;
+	bkey.type = type;
+	key.data = &bkey;
+	key.size = sizeof(bkey);
+	return ((db->get)(db, &key, &data, 0) ? NULL : (char *)data.data);
+}
+#endif

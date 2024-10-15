@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)siginterrupt.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <signal.h>
@@ -41,6 +44,7 @@ static char sccsid[] = "@(#)siginterrupt.c	8.1 (Berkeley) 6/4/93";
  * Set signal state to prevent restart of system calls
  * after an instance of the indicated signal.
  */
+int
 siginterrupt(sig, flag)
 	int sig, flag;
 {

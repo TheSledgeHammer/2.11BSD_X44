@@ -29,7 +29,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <sys/cdefs.h>
-
 #if defined(LIBC_SCCS) && !defined(lint)
 __RCSID("$NetBSD: utmp.c,v 1.10 2011/10/15 23:00:02 christos Exp $");
 #endif /* LIBC_SCCS and not lint */

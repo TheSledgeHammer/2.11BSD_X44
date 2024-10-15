@@ -7,6 +7,8 @@
  *     1.0  1997/9/25	1. Initial release.
 */
 
+#include <sys/cdefs.h>
+
 #include <stdio.h>	/* For NULL */
 #include <sys/types.h>
 #include <sys/time.h>
