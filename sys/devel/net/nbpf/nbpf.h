@@ -60,8 +60,6 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp6.h>
 
-#include "ptree.h"
-
 /* Storage of address (both for IPv4 and IPv6) and netmask */
 typedef struct in6_addr		nbpf_addr_t;
 typedef uint8_t				nbpf_netmask_t;
@@ -249,8 +247,6 @@ int		nbpf_match_icmp6(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 int		nbpf_match_tcpfl(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 
 /* Tableset interface. */
-extern const pt_tree_ops_t nbpf_table_ptree_ops;
-
 void	nbpf_tableset_init(void);
 void	nbpf_tableset_fini(void);
 

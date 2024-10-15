@@ -38,7 +38,6 @@ __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.3 2013/02/08 19:18:10 riz Exp $"
 #include <net/bpf.h>
 #include <net/bpfdesc.h>
 
-
 #include "nbpf.h"
 #include "nbpf_ncode.h"
 #include "nbpfdesc.h"

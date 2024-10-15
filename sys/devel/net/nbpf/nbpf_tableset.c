@@ -60,8 +60,8 @@ __KERNEL_RCSID(0, "$NetBSD: npf_tableset.c,v 1.9.2.8 2013/02/11 21:49:48 riz Exp
 #include <sys/stdbool.h>
 #include <net/if.h>
 
-#include "lpm.h"
 #include "ptree.h"
+#include "lpm.h"
 #include "nbpf.h"
 
 /*
@@ -79,6 +79,7 @@ struct nbpf_tblent {
 	nbpf_addr_t				te_addr;
 };
 
+struct nbpf_hashl;
 LIST_HEAD(nbpf_hashl, nbpf_tblent);
 struct nbpf_table {
 	char				t_name[16];
@@ -96,7 +97,7 @@ struct nbpf_table {
 	/* Separate trees for IPv4 and IPv6. */
 	pt_tree_t			t_tree[2];
 
-	struct nbpf_hashl 	t_list;
+	struct nbpf_hashl 	*t_list;
 	lpm_t 				*t_lpm;
 };
 
@@ -104,16 +105,18 @@ struct nbpf_table {
 
 static size_t hashsize;
 static nbpf_tblent_t tblent_cache;
+extern const pt_tree_ops_t nbpf_table_ptree_ops;
+
 #define M_NBPF 	M_DEVBUF
 
-static nbpf_tblent_t *
+static void *
 nbpf_tableset_malloc(size)
 	size_t size;
 {
-	nbpf_tblent_t *ent;
+	void *arg;
 
-	ent = (nbpf_tblent_t *)malloc(size, M_NBPF, M_NOWAIT);
-	return (ent);
+	arg = malloc(size, M_NBPF, M_NOWAIT);
+	return (arg);
 }
 
 static void
@@ -231,7 +234,7 @@ static nbpf_tblent_t *
 table_hash_lookup(const nbpf_table_t *t, const nbpf_addr_t *addr, const int alen, struct nbpf_hashl **rhtbl)
 {
 	uint32_t hidx;
-	const struct nbpf_hashl *htbl;
+	struct nbpf_hashl *htbl;
 	nbpf_tblent_t *ent;
 
 	hidx = fnva_32_buf(addr, alen, FNV1_32_INIT);
@@ -256,11 +259,12 @@ table_hash_lookup(const nbpf_table_t *t, const nbpf_addr_t *addr, const int alen
 static nbpf_tblent_t *
 table_lpm_lookup(const nbpf_table_t *t, const nbpf_addr_t *addr, const int alen, struct nbpf_hashl **rlist)
 {
-	struct nbpf_hashl *list = &t->t_list;
+	struct nbpf_hashl *list;
 	nbpf_tblent_t *ent;
 
+    list = t->t_list;
 	LIST_FOREACH(ent, list, te_entry.listent) {
-		if ((ent->te_addr == addr) && (ent->te_alen == alen)) {
+		if ((&ent->te_addr == addr) && (ent->te_alen == alen)) {
 			if (lpm_lookup(t->t_lpm, addr, alen) != NULL) {
 				break;
 			}
@@ -290,7 +294,7 @@ table_lpm_destroy(nbpf_table_t *t)
 {
 	nbpf_tblent_t *ent;
 
-	while ((ent = LIST_FIRST(&t->t_list)) != NULL) {
+	while ((ent = LIST_FIRST(t->t_list)) != NULL) {
 		LIST_REMOVE(ent, te_entry.listent);
 		nbpf_tableset_free(ent);
 	}
@@ -316,7 +320,7 @@ nbpf_table_create(u_int tid, int type, size_t hsize)
 			nbpf_tableset_free(t);
 			return (NULL);
 		}
-		LIST_INIT(&t->t_list);
+		LIST_INIT(t->t_list);
 		break;
 	case NBPF_TABLE_TREE:
 		ptree_init(&t->t_tree[0], &nbpf_table_ptree_ops,
@@ -450,7 +454,7 @@ nbpf_table_insert(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	/*
 	 * Insert the entry.  Return an error on duplicate.
 	 */
-	simple_rwlock_lock(&t->t_lock, RW_WRITER);
+	simple_rwlock_lock(&t->t_lock);
 	switch (t->t_type) {
 	case NBPF_TABLE_LPM: {
 		const unsigned preflen = (mask == NBPF_NO_NETMASK) ? (alen * 8) : mask;
@@ -458,7 +462,7 @@ nbpf_table_insert(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 
 		if (lpm_lookup(t->t_lpm, addr, alen) == NULL
 				&& lpm_insert(t->t_lpm, addr, alen, preflen, ent) == 0) {
-			LIST_INSERT_HEAD(&t->t_list, ent, te_entry.listent);
+			LIST_INSERT_HEAD(t->t_list, ent, te_entry.listent);
 			t->t_nitems++;
 			error = 0;
 		} else {
@@ -651,7 +655,7 @@ nbpf_mktable(tset, tbl, tid, type, hsize)
 		return (error);
 	}
     *tset = ts;
-    *tbl = tb
+    *tbl = tb;
 	return (0);
 }
 
