@@ -11,9 +11,10 @@ file	net/nbpf/nbpf_fetch.c           nbpf
 file	net/nbpf/nbpf_match.c           nbpf
 file	net/nbpf/nbpf_ncode.c           nbpf
 
-file	net/nbpf/lpm.c                  nbpf
 file	net/nbpf/nbpf_tableset.c        nbpf
 file	net/nbpf/nbpf_tableset_ptree.c  nbpf
+file	net/nbpf/lpm.c                  nbpf
+file	net/nbpf/ptree.c                nbpf
 
 # To be placed in GENERIC.arch
 #options         NBPF                   # Enable NBPF, BPF will use the NBPF instruction set
