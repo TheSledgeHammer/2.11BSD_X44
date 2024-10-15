@@ -43,6 +43,8 @@ static char sccsid[] = "@(#)closedir.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdlib.h>
@@ -51,14 +53,15 @@ static char sccsid[] = "@(#)closedir.c	5.2 (Berkeley) 3/9/86";
 /*
  * close a directory.
  */
-void
+int
 closedir(dirp)
 	register DIR *dirp;
 {
 	seekdir(dirp, dirp->dd_rewind);	/* free seekdir storage */
-	close(dirp->dd_fd);
+	//close(dirp->dd_fd);
 	dirp->dd_fd = -1;
 	dirp->dd_loc = 0;
 	(void)free((void *)dirp->dd_buf);
 	(void)free((void *)dirp);
+    return (close(dirp->dd_fd));
 }

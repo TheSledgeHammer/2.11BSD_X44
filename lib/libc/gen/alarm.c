@@ -43,6 +43,8 @@ static char sccsid[] = "@(#)alarm.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 /*
  * Backwards compatible alarm.
  */

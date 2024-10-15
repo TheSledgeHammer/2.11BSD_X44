@@ -33,14 +33,20 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)devname.c	8.1.1 (2.11BSD GTE) 2/3/95";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+
 #include <ndbm.h>
+#include <err.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <paths.h>
 #include <stdio.h>
+#include <string.h>
 
 char *
 devname(dev, type)
@@ -51,7 +57,7 @@ devname(dev, type)
 		mode_t type;
 		dev_t dev;
 	} bkey;
-	char	*devdb = _PATH_DEVDB;
+	char *devdb = _PATH_DEVDB;
 	static DBM *db;
 	static int failure;
 	datum data, key;
@@ -62,7 +68,7 @@ devname(dev, type)
 		failure = 1;
 	}
 	if (failure)
-		return("??");
+		return (NULL);
 
 	/*
 	 * Keys are a mode_t followed by a dev_t.  The former is the type of
@@ -75,5 +81,6 @@ devname(dev, type)
 	key.dptr = (char *)&bkey;
 	key.dsize = sizeof(bkey);
 	data = dbm_fetch(db, key);
-	return(data.dptr == NULL ? "??" : (char *)data.dptr);
+
+	return (data.dptr == NULL ? "??" : (const char *)data.dptr);
 }

@@ -25,6 +25,8 @@
  * RC4 is a registered trademark of RSA Laboratories.
  */
 
+#include "namespace.h"
+
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>

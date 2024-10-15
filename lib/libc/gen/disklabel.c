@@ -43,13 +43,19 @@ __RCSID("$NetBSD: disklabel.c,v 1.37 2012/06/25 22:32:43 abs Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <sys/param.h>
 #define DKTYPENAMES
 #define FSTYPENAMES
+
+#if HAVE_NBTOOL_CONFIG_H
+#include <nbinclude/sys/disklabel.h>
+#else
+#include <sys/disklabel.h>
+#endif
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
-
-#include <sys/disklabel.h>
 
 #include <assert.h>
 #include <ctype.h>
@@ -67,32 +73,21 @@ __weak_alias(getdiskbyname,_getdiskbyname)
 #if 0
 static void	error(int);
 #endif
-static int	gettype(char *, char **);
+static int	gettype(char *, const char *const *);
 
-#define getnumdflt(field, dname, dflt) {                                    \
-    long f;                                                                 \
-    (field) = ((cgetnum(buf, dname, &f) == -1) ? (dflt) : (u_int32_t)f);    \
-}
-
-#define	getnum(field, dname)  {             \
-    long f;                                 \
-    if (cgetnum(buf, dname, &f) != -1) {    \
-        (field) = (u_int32_t)f;             \
-    }                                       \
-}
-
-static const char *db_array[2] = { _PATH_DISKTAB, 0 };
+static char *db_array[2] = { _PATH_DISKTAB, 0 };
 
 struct disklabel *
 getdiskbyname(const char *name)
 {
     static struct disklabel disk;
-    register struct	disklabel *dp;
-    register struct partition *pp;
+    struct disklabel *dp;
+    struct partition *pp;
     char	*buf;
 	char	*cp, *cq;	/* can't be register */
 	char	p, max, psize[3], pbsize[3], pfsize[3], poffset[3], ptype[3];
 	u_int32_t *dx;
+    long f;
 
     dp = &disk;
 
@@ -129,6 +124,11 @@ getdiskbyname(const char *name)
     if (cgetcap(buf, "sf", ':') != NULL) {
         dp->d_flags |= D_BADSECT;
     }
+
+#define getnumdflt(field, dname, dflt) \
+    (field) = ((cgetnum(buf, dname, &f) == -1) ? (dflt) : (u_int32_t) f)
+#define	getnum(field, dname) \
+	if (cgetnum(buf, dname, &f) != -1) field = (u_int32_t)f
 
     getnumdflt(dp->d_secsize, "se", DEV_BSIZE);
 	getnum(dp->d_ntracks, "nt");
@@ -200,9 +200,11 @@ getdiskbyname(const char *name)
 }
 
 static int
-gettype(char *t, char **names)
+gettype(t, names)
+	char *t;
+	const char *const *names;
 {
-	register char **nm;
+	const char *const *nm;
 	
 	_DIAGASSERT(t != NULL);
 	_DIAGASSERT(names != NULL);

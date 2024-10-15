@@ -33,12 +33,19 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)daemon.c	8.1.1 (2.11BSD GTE) 2/3/95";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <fcntl.h>
+#include "namespace.h"
+
 #include <sys/ioctl.h>
+
+#include <fcntl.h>
 #include <paths.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 int
 daemon(nochdir, noclose)
@@ -47,8 +54,8 @@ daemon(nochdir, noclose)
 	register int fd;
 
 	switch (fork()) {
-	case -1:
-		return (-1);
+//	case -1:
+//		return (-1);
 	case 0:
 		break;
 	default:
