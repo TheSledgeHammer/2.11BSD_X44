@@ -70,8 +70,6 @@
 #define	_CTYPE_SW2		0x80000000L		/* 2 width character */
 #define	_CTYPE_SW3		0xc0000000L		/* 3 width character */
 
-#define _CTYPE_N
-
 __BEGIN_DECLS
 int	isalnum(int);
 int	isalpha(int);
