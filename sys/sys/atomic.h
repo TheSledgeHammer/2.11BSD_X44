@@ -33,7 +33,7 @@
 static inline unsigned int
 atomic_cas_uint(volatile unsigned int *p, unsigned int o, unsigned int n)
 {
-	return __sync_val_compare_and_swap(p, o, n);
+	return (__sync_val_compare_and_swap(p, o, n));
 }
 #endif
 
@@ -41,7 +41,7 @@ atomic_cas_uint(volatile unsigned int *p, unsigned int o, unsigned int n)
 static inline unsigned long
 atomic_cas_ulong(volatile unsigned long *p, unsigned long o, unsigned long n)
 {
-	return __sync_val_compare_and_swap(p, o, n);
+	return (__sync_val_compare_and_swap(p, o, n));
 }
 #endif
 
@@ -50,7 +50,7 @@ static inline void *
 atomic_cas_ptr(volatile void *pp, void *o, void *n)
 {
 	void * volatile *p = (void * volatile *)pp;
-	return __sync_val_compare_and_swap(p, o, n);
+	return (__sync_val_compare_and_swap(p, o, n));
 }
 #endif
 
@@ -62,7 +62,7 @@ atomic_cas_ptr(volatile void *pp, void *o, void *n)
 static inline unsigned int
 atomic_swap_uint(volatile unsigned int *p, unsigned int v)
 {
-	return __sync_lock_test_and_set(p, v);
+	return (__sync_lock_test_and_set(p, v));
 }
 #endif
 
@@ -70,7 +70,7 @@ atomic_swap_uint(volatile unsigned int *p, unsigned int v)
 static inline unsigned long
 atomic_swap_ulong(volatile unsigned long *p, unsigned long v)
 {
-	return __sync_lock_test_and_set(p, v);
+	return (__sync_lock_test_and_set(p, v));
 }
 #endif
 
@@ -79,7 +79,7 @@ static inline void *
 atomic_swap_ptr(volatile void *pp, void *v)
 {
 	void * volatile *p = (void * volatile *)pp;
-	return __sync_lock_test_and_set(p, v);
+	return (__sync_lock_test_and_set(p, v));
 }
 #endif
 
@@ -91,7 +91,7 @@ atomic_swap_ptr(volatile void *pp, void *v)
 static inline unsigned int
 atomic_add_int_nv(volatile unsigned int *p, unsigned int v)
 {
-	return __sync_add_and_fetch(p, v);
+	return (__sync_add_and_fetch(p, v));
 }
 #endif
 
@@ -99,7 +99,7 @@ atomic_add_int_nv(volatile unsigned int *p, unsigned int v)
 static inline unsigned long
 atomic_add_long_nv(volatile unsigned long *p, unsigned long v)
 {
-	return __sync_add_and_fetch(p, v);
+	return (__sync_add_and_fetch(p, v));
 }
 #endif
 
@@ -147,7 +147,7 @@ atomic_add_long_nv(volatile unsigned long *p, unsigned long v)
 static inline unsigned int
 atomic_sub_int_nv(volatile unsigned int *p, unsigned int v)
 {
-	return __sync_sub_and_fetch(p, v);
+	return (__sync_sub_and_fetch(p, v));
 }
 #endif
 
@@ -155,7 +155,7 @@ atomic_sub_int_nv(volatile unsigned int *p, unsigned int v)
 static inline unsigned long
 atomic_sub_long_nv(volatile unsigned long *p, unsigned long v)
 {
-	return __sync_sub_and_fetch(p, v);
+	return (__sync_sub_and_fetch(p, v));
 }
 #endif
 

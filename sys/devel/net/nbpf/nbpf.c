@@ -110,6 +110,8 @@ void
 nbpf_detachd(nd)
 	struct nbpf_d *nd;
 {
+	nbpf_tableset_fini();
+
 	if (nd->nbd_state != NULL) {
 		free(nd->nbd_state, M_DEVBUF);
 	}

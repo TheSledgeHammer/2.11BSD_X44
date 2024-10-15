@@ -175,23 +175,6 @@ nbpf_get_tag(const nbpf_state_t *state)
 	return (state->nbs_tag);
 }
 
-static __inline void
-nbpf_malloc(cache, size, type, flags)
-	void *cache;
-	u_long size;
-	int type, flags;
-{
-	cache = malloc(size, type, flags);
-}
-
-static __inline void
-nbpf_free(cache, type)
-	void *cache;
-	int type;
-{
-	free(cache, type);
-}
-
 #define	NBPF_CMD_TABLE_LOOKUP	1
 #define	NBPF_CMD_TABLE_ADD		2
 #define	NBPF_CMD_TABLE_REMOVE	3
@@ -206,11 +189,11 @@ struct nbpf_ioctl_table {
 };
 
 /* Table types. */
-#define	NBPF_TABLE_LPM			1
-#define	NBPF_TABLE_HASH			2
-#define	NBPF_TABLE_TREE			3
+#define	NBPF_TABLE_LPM				1
+#define	NBPF_TABLE_HASH				2
+#define	NBPF_TABLE_TREE				3
 
-#define	NBPF_TABLE_SLOTS		32
+#define	NBPF_TABLE_SLOTS			32
 
 /* Table Defaults */
 #define NBPF_TABLE_TID_DEFAULT 		0					/* default starting tid*/
@@ -266,10 +249,10 @@ int		nbpf_match_icmp6(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 int		nbpf_match_tcpfl(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 
 /* Tableset interface. */
+extern const pt_tree_ops_t nbpf_table_ptree_ops;
+
 void	nbpf_tableset_init(void);
 void	nbpf_tableset_fini(void);
-
-extern const pt_tree_ops_t nbpf_table_ptree_ops;
 
 nbpf_tableset_t *nbpf_tableset_create(void);
 void	nbpf_tableset_destroy(nbpf_tableset_t *);
