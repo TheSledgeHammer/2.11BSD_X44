@@ -9,13 +9,13 @@
 # machine-independent gen sources
 .PATH: ${ARCHDIR}/gen ${.CURDIR}/gen
 
-SRCS+=	alarm.c arc4random.c assert.c basename.c closedir.c confstr.c crypt.c ctermid.c daemon.c	\
-		devname.c dirname.c disklabel.c err.c errlst.c execvp.c fabs.c fakcu.c frexp.c fstab.c 		\
-		fts.c gcvt.c getbsize.c getcap.c getcwd.c getdevpath.c getdomainname.c getgrent.c 			\
-		getlogin.c getgrouplist.c gethostname.c getpagesize.c getpass.c getpwent.c getloadavg.c 	\
-		getmntinfo.c getnetgrent.c getttyent.c getttynam.c getusershell.c getvfsbyname.c getwd.c 	\
-		glob.c initgroups.c insque.c isatty.c l3.c nlist.c nlist_aout.c nlist_coff.c nlist_ecoff.c 	\
-		nlist_elf32.c nlist_elf64.c nlist_xcoff32.c nlist_xcoff64.c opendir.c popen.c psignal.c 	\
+SRCS+=	alarm.c arc4random.c assert.c basename.c closedir.c confstr.c ctermid.c daemon.c devname.c  \
+        dirname.c disklabel.c err.c errlst.c execvp.c fabs.c fakcu.c frexp.c fstab.c fts.c gcvt.c   \
+        getbsize.c getcap.c getcwd.c getdevpath.c getdomainname.c getgrent.c getlogin.c             \
+        getgrouplist.c gethostname.c getpagesize.c getpass.c getpwent.c getloadavg.c getmntinfo.c   \
+        getnetgrent.c getttyent.c getttynam.c getusershell.c getvfsbyname.c getwd.c glob.c          \
+        initgroups.c insque.c isatty.c l3.c nlist.c nlist_aout.c nlist_coff.c nlist_ecoff.c         \
+        nlist_elf32.c nlist_elf64.c nlist_xcoff32.c nlist_xcoff64.c opendir.c popen.c psignal.c 	\
 		pw_scan.c pwcache.c raise.c readdir.c rewinddir.c regex.c remque.c scandir.c seekdir.c 		\
 		setdomainname.c sethostname.c setjmperr.c setmode.c setproctitle.c shquote.c siginterrupt.c \
 		siglist.c signal.c sigsetops.c sleep.c stringlist.c sysconf.c sysctl.c syserrlst.c syslog.c \
