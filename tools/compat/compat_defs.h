@@ -747,16 +747,16 @@ char *alloca ();
 #define cgetstr __nbcompat_cgetstr
 #define cgetustr __nbcompat_cgetustr
 
-char	*cgetcap(char *, const char *, int);
-int	 	cgetclose(void);
-int	 	cgetent(char **, const char * const *, const char *);
-int	 	cgetfirst(char **, const char * const *);
-int	 	cgetmatch(const char *, const char *);
-int	 	cgetnext(char **, const char * const *);
-int	 	cgetnum(char *, const char *, long *);
-int	 	cgetset(const char *);
-int	 	cgetstr(char *, const char *, char **);
-int	 	cgetustr(char *, const char *, char **);
+char	 *cgetcap(char *, const char *, int);
+int	 cgetclose(void);
+int	 cgetent(char **, char **, const char *);
+int	 cgetfirst(char **, char **);
+int	 cgetmatch(const char *, const char *);
+int	 cgetnext(char **, char **);
+int	 cgetnum(char *, const char *, long *);
+int	 cgetset(const char *);
+int	 cgetstr(char *, const char *, char **);
+int	 cgetustr(char *, const char *, char **);
 
 /* <sys/endian.h> */
 #if WORDS_BIGENDIAN
