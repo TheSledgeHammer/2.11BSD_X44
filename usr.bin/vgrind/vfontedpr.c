@@ -97,7 +97,7 @@ static bool	pass = false;	/*
 
 static int	blklevel;	/* current nesting level */
 static int	comtype;	/* type of comment */
-static const char *defsfile[2] = { _PATH_VGRINDEFS, 0 };
+static char 	*defsfile[2] = { _PATH_VGRINDEFS, 0 };
 				/* name of language definitions file */
 static int	margin;
 static int	plstack[PSMAX];	/* the procedure nesting level stack */
