@@ -61,9 +61,9 @@ struct bkey {
 };
 
 #if defined(USE_NDBM) && (USE_NDBM == 0)
-static char *devname_ndbm(char *, dev_t, mode_t);
+static char *devname_ndbm(const char *, dev_t, mode_t);
 #else
-static char *devname_db(char *, dev_t, mode_t);
+static char *devname_db(const char *, dev_t, mode_t);
 #endif
 
 char *
@@ -81,7 +81,7 @@ devname(dev, type)
 #if defined(USE_NDBM) && (USE_NDBM == 0)
 static char *
 devname_ndbm(devdb, dev, type)
-	char *devdb;
+	const char *devdb;
 	dev_t dev;
 	mode_t type;
 {
@@ -119,7 +119,7 @@ devname_ndbm(devdb, dev, type)
 
 static char *
 devname_db(devdb, dev, type)
-	char *devdb;
+	const char *devdb;
 	dev_t dev;
 	mode_t type;
 {
