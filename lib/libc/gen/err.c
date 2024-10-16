@@ -51,9 +51,8 @@ static char sccsid[] = "@(#)err.c	8.1.1 (2.11BSD GTE) 2/3/95";
 #include <string.h>
 #include <stdarg.h>
 
-extern	int	errno;
 extern	char *__progname;		/* Program name, from crt0. */
-static	void	putprog(), putcolsp();
+static	void putprog(void), putcolsp(void);
 
 #ifdef __weak_alias
 __weak_alias(err, _err)
@@ -139,10 +138,7 @@ verrc(int eval, int code, const char *fmt, va_list ap)
 
 #if !HAVE_DECL_VERRX
 void
-verrx(eval, fmt, ap)
-	int eval;
-	char *fmt;
-	va_list ap;
+verrx(int eval, const char *fmt, va_list ap)
 {
 	putprog();
 	if (fmt != NULL)
@@ -237,14 +233,14 @@ warnx(const char *fmt, ...)
 */
 
 static void
-putprog()
+putprog(void)
 {
 	fputs(__progname, stderr);
 	putcolsp();
 }
 
 static void
-putcolsp()
+putcolsp(void)
 {
 	fputc(':', stderr);
 	fputc(' ', stderr);
