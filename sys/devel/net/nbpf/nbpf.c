@@ -67,25 +67,7 @@ nbpf_d_free(nd)
 }
 
 static void
-nbpf_table_init(nd)
-	struct nbpf_d *nd;
-{
-	nbpf_tableset_t *tset;
-	nbpf_table_t *t;
-	int error;
-
-	nbpf_tableset_init();
-
-	error = nbpf_mktable(&tset, &t, NBPF_TABLE_TID, NBPF_TABLE_TYPE, NBPF_TABLE_HSIZE);
-	if (error != 0) {
-		return;
-	}
-	nd->nbd_tableset = tset;
-	nd->nbd_table = t;
-}
-
-static void
-nbpf_init(nd, layer, tag)
+nbpf_state_init(nd, layer, tag)
 	struct nbpf_d *nd;
 	int layer, tag;
 {
@@ -97,11 +79,31 @@ nbpf_init(nd, layer, tag)
 	nd->nbd_layer = layer;
 }
 
+static void
+nbpf_table_init(nd)
+	struct nbpf_d *nd;
+{
+	nbpf_tableset_t *tset;
+	nbpf_table_t *t;
+	int error;
+
+	error = nbpf_mktable(&tset, &t, NBPF_TABLE_TID, NBPF_TABLE_TYPE, NBPF_TABLE_HSIZE);
+	if (error != 0) {
+		return;
+	}
+	nd->nbd_tableset = tset;
+	nd->nbd_table = t;
+}
+
 void
 nbpf_attachd(nd)
 	struct nbpf_d *nd;
 {
-	nbpf_init(nd, NBPC_LAYER4, PACKET_TAG_NONE);
+	if (nd == NULL) {
+		nd = nbpf_d_alloc(sizeof(*nd));
+	}
+	nbpf_state_init(nd, NBPC_LAYER4, PACKET_TAG_NONE);
+	nbpf_tableset_init();
 	nbpf_table_init(nd);
 }
 
@@ -110,9 +112,11 @@ nbpf_detachd(nd)
 	struct nbpf_d *nd;
 {
 	nbpf_tableset_fini();
-
 	if (nd->nbd_state != NULL) {
 		free(nd->nbd_state, M_DEVBUF);
+	}
+	if (nd != NULL) {
+		nbpf_d_free(nd);
 	}
 }
 
@@ -193,7 +197,7 @@ nbpf_setf(nd, fp, error)
 
 void
 nbpf_filtncatch(d, nd, pkt, pktlen, slen, cpfn)
-    struct bpf_d *d;
+	struct bpf_d *d;
 	struct nbpf_d *nd;
 	u_char *pkt;
 	u_int pktlen;

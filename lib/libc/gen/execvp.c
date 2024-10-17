@@ -59,7 +59,7 @@ static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
  */
 
 extern char **environ;
-static char *execat(char **, const char *, const char *, char *, char **);
+static char *execat(char **, const char *, char *, char **);
 static char **buildargv(va_list, const char *, char ***);
 
 int
@@ -71,8 +71,9 @@ execl(const char *name, const char *arg, ...)
 
 	va_start(ap, arg);
 
-	if (argv == buildargv(ap, arg, NULL))
+	if (argv == buildargv(ap, arg, NULL)) {
 		(void)execve(name, argv, environ);
+	}
 	va_end(ap);
 	sverrno = errno;
 	free(argv);
@@ -100,15 +101,15 @@ execle(const char *name, const char *arg, ...)
 
 int
 execlp(const char *name, const char *arg, ...)
-	char *name, *argv;
 {
 	va_list ap;
 	int sverrno;
 	char **argv;
 	
 	va_start(ap, arg);
-	if (argv = buildargv(ap, arg, NULL))
+	if (argv == buildargv(ap, arg, NULL)) {
 		(void)execvp(name, argv);
+	}
 	va_end(ap);
 	sverrno = errno;
 	free(argv);
@@ -117,125 +118,117 @@ execlp(const char *name, const char *arg, ...)
 }
 
 int
-execv(name, argv)
-	const char *name;
-	char * const *argv;
+execv(const char *name, char * const *argv)
 {
 	(void)execve(name, argv, environ);
 	return (-1);
 }
 
 int
-execvp(name, argv)
-    const char *name;
-    char * const *argv;
+execvp(const char *name, char * const *argv)
 {
-	char *fname, *cur, *pathstr, *buf[MAXPATHLEN];
-	register char *cp;
-	register int cnt;
-	static char **newargs;
 	static int memsize;
+	static char **newargs;
+	register int cnt;
+	register char *cp, *p;
 	int eacces, etxtbsy;
-	
-	etxtbsy = 1;
-	eacces = 0;
-	
+	char *fname, *cur, *pathstr, buf[MAXPATHLEN];
+
 	/* If it's an absolute or relative path name, it's easy. */
 	if (index(name, '/')) {
-	   fname = (char *)name;
-	   cur = pathstr = NULL;
-	   goto retry;
+		fname = (char *)name;
+		cur = pathstr = NULL;
+		goto retry;
 	}
 	fname = buf;
-	
-	/* Get the path we're searching. */
-	if (!(pathstr = getenv("PATH")))
-		pathstr = _PATH_DEFPATH;
-	cur = pathstr = strdup(pathstr);
-	
-	do {
-	      cp = execat(&cur, ":", name, cp, buf);
 
-retry: 	(void)execve(fname, argv, environ);
-	      switch (errno) {
+	/* Get the path we're searching. */
+	if (!(pathstr = getenv("PATH"))) {
+		pathstr = _PATH_DEFPATH;
+	}
+	cur = pathstr = strdup(pathstr);
+
+	etxtbsy = 1;
+	eacces = 0;
+	while (cp == strsep(&cur, ":")) {
+		p = execat(&cur, name, cp, buf);
+		cp = p;
+retry:
+		(void) execve(fname, argv, environ);
+		switch (errno) {
 		case ENOEXEC:
-		        for (cnt = 0; argv[cnt]; ++cnt);
-		        if ((cnt + 2) * sizeof(char *) > memsize) {
-		            memsize = (cnt + 2) * sizeof(char *);
-		            if ((newargs = realloc(newargs, memsize)) == NULL) {
-		                memsize = 0;
-		                goto done;
-		            }
-		        }
+			for (cnt = 0; argv[cnt]; ++cnt);
+			if ((cnt + 2) * sizeof(char *) > memsize) {
+				memsize = (cnt + 2) * sizeof(char *);
+				if ((newargs = realloc(newargs, memsize)) == NULL) {
+					memsize = 0;
+					goto done;
+				}
+			}
 			newargs[0] = "sh";
 			newargs[1] = fname;
 			bcopy(argv + 1, newargs + 2, cnt * sizeof(char *));
-			(void)execve(_PATH_BSHELL, newargs, environ);
+			(void) execve(_PATH_BSHELL, newargs, environ);
 			return (-1);
 		case ETXTBSY:
-			if (++etxtbsy > 5)
+			if (++etxtbsy > 5) {
 				return (-1);
+			}
 			sleep(etxtbsy);
 			goto retry;
 		case EACCES:
 			eacces++;
 			break;
 		case ENOENT:
-		        break;
+			break;
 		case ENOMEM:
 		case E2BIG:
-			return (-1);
+			goto done;
 		default:
-		    goto done;
+			goto done;
 		}
-	} while (cp);
-	
+	}
 	if (eacces) {
 		errno = EACCES;
 	} else if (!errno) {
-	       errno = ENOENT;
+		errno = ENOENT;
 	}
-done:	if (pathstr)
-        	free(pathstr);
+done:
+	if (pathstr) {
+		free(pathstr);
+	}
 	return (-1);
 }
 
 static char *
-execat(s1, s2, s3, si, buf)
-	register char **s1;
-	register const char *s2, *s3;
-	char *si, **buf;
+execat(char **s1, const char *s2, char *si, char **buf)
 {
-        register int lp, ln;
-        
-        si = strsep(s1, s2);
-        if (!*si) {
-            si = ".";
-            lp = 1;
-        } else {
-          lp = strlen(si);
-        }
-        ln = strlen(s3);
-        
-        if (lp + ln + 2 > sizeof(buf)) {
-          (void)write(STDERR_FILENO, "execvp: ", 8);
-	  (void)write(STDERR_FILENO, si, lp);
-	  (void)write(STDERR_FILENO, ": path too long\n", 16);
-        }
-        
-        bcopy(si, buf, lp);
+	register int lp, ln;
+
+	if (!*si) {
+		si = ".";
+		lp = 1;
+	} else {
+		lp = strlen(si);
+	}
+	ln = strlen(s2);
+
+	if (lp + ln + 2 > sizeof(buf)) {
+		(void) write(STDERR_FILENO, "execvp: ", 8);
+		(void) write(STDERR_FILENO, si, lp);
+		(void) write(STDERR_FILENO, ": path too long\n", 16);
+	}
+
+	bcopy(si, buf, lp);
 	buf[lp] = '/';
-	bcopy(s3, buf + lp + 1, ln);
+	bcopy(s2, buf + lp + 1, ln);
 	buf[lp + ln + 1] = '\0';
-	
+
 	return (si);
 }
 
 static char **
-buildargv(ap, arg, envpp)
-	va_list ap;
-	const char *arg;
-	char ***envpp;
+buildargv(va_list ap, const char *arg, char ***envpp)
 {
 	static int memsize;
 	static char **argv;
@@ -255,11 +248,13 @@ buildargv(ap, arg, envpp)
 				off = 1;
 			}
 		}
-		if (!(argv[off] = va_arg(ap, char *)))
+		if (!(argv[off] = va_arg(ap, char *))) {
 			break;
+		}
 	}
 	/* Get environment pointer if user supposed to provide one. */
-	if (envpp)
+	if (envpp) {
 		*envpp = va_arg(ap, char **);
+	}
 	return (argv);
 }
