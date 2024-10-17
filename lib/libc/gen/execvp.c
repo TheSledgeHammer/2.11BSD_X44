@@ -90,8 +90,9 @@ execle(const char *name, const char *arg, ...)
 
 	va_start(ap, arg);
 
-	if (argv == buildargv(ap, arg, &envp))
+	if (argv == buildargv(ap, arg, &envp)) {
 		(void)execve(name, argv, envp);
+	}
 	va_end(ap);
 	sverrno = errno;
 	free(argv);
