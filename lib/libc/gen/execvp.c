@@ -38,6 +38,8 @@ static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/types.h>
 #include <errno.h>
@@ -59,7 +61,7 @@ static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
  */
 
 extern char **environ;
-static char *execat(char **, const char *, char *, char **);
+static char *execat(const char *, char *, char *);
 static char **buildargv(va_list, const char *, char ***);
 
 int
@@ -71,7 +73,7 @@ execl(const char *name, const char *arg, ...)
 
 	va_start(ap, arg);
 
-	if (argv == buildargv(ap, arg, NULL)) {
+	if ((argv = buildargv(ap, arg, NULL))) {
 		(void)execve(name, argv, environ);
 	}
 	va_end(ap);
@@ -90,7 +92,7 @@ execle(const char *name, const char *arg, ...)
 
 	va_start(ap, arg);
 
-	if (argv == buildargv(ap, arg, &envp)) {
+	if ((argv = buildargv(ap, arg, &envp))) {
 		(void)execve(name, argv, envp);
 	}
 	va_end(ap);
@@ -108,7 +110,7 @@ execlp(const char *name, const char *arg, ...)
 	char **argv;
 	
 	va_start(ap, arg);
-	if (argv == buildargv(ap, arg, NULL)) {
+	if ((argv = buildargv(ap, arg, NULL))) {
 		(void)execvp(name, argv);
 	}
 	va_end(ap);
@@ -135,9 +137,12 @@ execvp(const char *name, char * const *argv)
 	int eacces, etxtbsy;
 	char *fname, *cur, *pathstr, buf[MAXPATHLEN];
 
+	etxtbsy = 1;
+	eacces = 0;
+
 	/* If it's an absolute or relative path name, it's easy. */
 	if (index(name, '/')) {
-		fname = (char *)name;
+		fname = (char *)&name;
 		cur = pathstr = NULL;
 		goto retry;
 	}
@@ -145,14 +150,12 @@ execvp(const char *name, char * const *argv)
 
 	/* Get the path we're searching. */
 	if (!(pathstr = getenv("PATH"))) {
-		pathstr = _PATH_DEFPATH;
+		pathstr = (char *)&_PATH_DEFPATH;
 	}
 	cur = pathstr = strdup(pathstr);
 
-	etxtbsy = 1;
-	eacces = 0;
 	while (cp == strsep(&cur, ":")) {
-		p = execat(&cur, name, cp, buf);
+		p = execat(name, cp, buf);
 		cp = p;
 retry:
 		(void) execve(fname, argv, environ);
@@ -166,7 +169,7 @@ retry:
 					goto done;
 				}
 			}
-			newargs[0] = "sh";
+			newargs[0] = __UNCONST("sh");
 			newargs[1] = fname;
 			bcopy(argv + 1, newargs + 2, cnt * sizeof(char *));
 			(void) execve(_PATH_BSHELL, newargs, environ);
@@ -202,30 +205,30 @@ done:
 }
 
 static char *
-execat(char **s1, const char *s2, char *si, char **buf)
+execat(const char *s1, char *si, char *buf)
 {
-	register int lp, ln;
+    register int lp, ln;
 
 	if (!*si) {
-		si = ".";
+		si = __UNCONST(".");
 		lp = 1;
 	} else {
 		lp = strlen(si);
 	}
-	ln = strlen(s2);
+    ln = strlen(s1);
 
-	if (lp + ln + 2 > sizeof(buf)) {
+    if (lp + ln + 2 > sizeof(buf)) {
 		(void) write(STDERR_FILENO, "execvp: ", 8);
 		(void) write(STDERR_FILENO, si, lp);
 		(void) write(STDERR_FILENO, ": path too long\n", 16);
-	}
+    }
 
 	bcopy(si, buf, lp);
 	buf[lp] = '/';
-	bcopy(s2, buf + lp + 1, ln);
+	bcopy(s1, buf + lp + 1, ln);
 	buf[lp + ln + 1] = '\0';
 
-	return (si);
+    return (si);
 }
 
 static char **
@@ -245,7 +248,7 @@ buildargv(va_list ap, const char *arg, char ***envpp)
 				return (NULL);
 			}
 			if (off == 0) {
-				argv[0] = (char *)arg;
+				argv[0] = (char *)&arg;
 				off = 1;
 			}
 		}
