@@ -84,7 +84,7 @@ typedef struct __pthread_rwlockattr_st pthread_rwlockattr_t;
 typedef struct __pthread_barrier_st pthread_barrier_t;
 typedef struct __pthread_barrierattr_st pthread_barrierattr_t;
 typedef int pthread_key_t;
-
+typedef pthread_siginfo_t siginfo_t; /* Compatibility */
 
 
 struct __pthread_siginfo_st {
@@ -102,7 +102,6 @@ struct __pthread_siginfo_st {
 #define ptsi_uid	ptsi_data.proc.uid
 #define ptsi_pid	ptsi_data.proc.pid
 };
-typedef pthread_siginfo_t siginfo_t; /* Compatibility */
 
 struct	__pthread_attr_st {
 	unsigned int	pta_magic;

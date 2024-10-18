@@ -46,7 +46,6 @@ static char sccsid[] = "@(#)fstab.c	8.1.1 (2.11BSD) 1996/1/15";
 #include <unistd.h>
 #include <sys/uio.h>
 
-//extern	char	*__progname;
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
 static char *path_fstab;
