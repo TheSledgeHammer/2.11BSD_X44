@@ -37,10 +37,16 @@ static char sccsid[] = "@(#)getbsize.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef __weak_alias
+__weak_alias(getbsize,_getbsize)
+#endif
 
 char *
 getbsize(headerlenp, blocksizep)
@@ -49,7 +55,8 @@ getbsize(headerlenp, blocksizep)
 {
 	static char header[20];
 	long n, max, mul, blocksize;
-	char *ep, *p, *form;
+	char *ep, *p;
+    const char *form;
 
 #define	KB	(1024L)
 #define	MB	(1024L * 1024L)
@@ -87,10 +94,11 @@ getbsize(headerlenp, blocksizep)
 fmterr:			warnx("%s: unknown blocksize", p);
 			n = 512;
 			mul = 1;
+            max = 0;
 			break;
 		}
 		if (n > max) {
-			warnx("maximum blocksize is %dG", MAXB / GB);
+			warnx("maximum blocksize is %ldG", MAXB / GB);
 			n = max;
 		}
 		if ((blocksize = n * mul) < 512) {
@@ -101,7 +109,7 @@ underflow:		warnx("minimum blocksize is 512");
 	} else
 		blocksize = n = 512;
 
-	(void)snprintf(header, sizeof(header), "%d%s-blocks", n, form);
+	(void)snprintf(header, sizeof(header), "%ld%s-blocks", n, form);
 	*headerlenp = strlen(header);
 	*blocksizep = blocksize;
 	return (header);

@@ -42,6 +42,7 @@ __RCSID("$NetBSD: getcwd.c,v 1.32 2003/08/07 16:42:49 agc Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/stat.h>
 
@@ -53,8 +54,9 @@ __RCSID("$NetBSD: getcwd.c,v 1.32 2003/08/07 16:42:49 agc Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ssp/ssp.h>
 
-//#include "extern.h"
+#include "extern.h" /* needed for __getcwd */
 
 #ifdef __weak_alias
 __weak_alias(getcwd,_getcwd)
@@ -73,9 +75,15 @@ static char *getcwd_physical(char *, size_t);
 #endif
 
 char *
+#if __SSP_FORTIFY_LEVEL > 0
+__getcwd(pt, size)
+	char *pt;
+	size_t size;
+#else
 getcwd(pt, size)
 	char *pt;
 	size_t size;
+#endif
 {
 	char *pwd;
 	size_t pwdlen;
@@ -118,7 +126,8 @@ realpath(path, resolved)
 {
 	struct stat sb;
 	int fd, n, rootd, serrno, nlnk = 0;
-	char *p, *q, wbuf[MAXPATHLEN];
+    const char *p;
+	char *q, wbuf[MAXPATHLEN];
 
 	_DIAGASSERT(path != NULL);
 	_DIAGASSERT(resolved != NULL);
@@ -146,7 +155,7 @@ loop:
 	if (q != NULL) {
 		p = q + 1;
 		if (q == resolved)
-			q = "/";
+			q = __UNCONST("/");
 		else {
 			do {
 				--q;
@@ -239,6 +248,45 @@ err2:
 	errno = serrno;
 	return (NULL);
 }
+
+#if __SSP_FORTIFY_LEVEL > 0
+char *
+__ssp_real(getcwd)(pt, size)
+    char *pt;
+    size_t size;
+{
+	char *npt;
+
+	/*
+	 * If a buffer is specified, the size has to be non-zero.
+	 */
+	if (pt != NULL) {
+		if (size == 0) {
+			/* __getcwd(pt, 0) results ERANGE. */
+			errno = EINVAL;
+			return (NULL);
+		}
+		if (__getcwd(pt, size) >= 0)
+			return (pt);
+		return (NULL);
+	}
+
+	/*
+	 * If no buffer specified by the user, allocate one as necessary.
+	 */
+	size = 1024 >> 1;
+	do {
+		if ((npt = realloc(pt, size <<= 1)) == NULL)
+			break;
+		pt = npt;
+		if (__getcwd(pt, size) >= 0)
+			return (pt);
+	} while (size <= MAXPATHLEN * 4 && errno == ERANGE);
+
+	free(pt);
+	return (NULL);
+}
+#endif
 
 static char *
 getcwd_physical(pt, size)

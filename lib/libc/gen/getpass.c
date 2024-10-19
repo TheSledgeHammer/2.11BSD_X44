@@ -5,6 +5,8 @@ static char sccsid[] = "@(#)getpass.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/termios.h>
 #include <sys/signal.h>
 
@@ -23,8 +25,8 @@ getpass(prompt)
 	register c;
 	FILE *fi;
 	static char pbuf[9];
-	int (*signal())();
-	int (*sig)();
+//	int (*signal())();
+//	int (*sig)();
 
 	if ((fi = fdopen(open("/dev/tty", 2), "r")) == NULL)
 		fi = stdin;

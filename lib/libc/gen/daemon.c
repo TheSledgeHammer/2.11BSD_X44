@@ -47,6 +47,10 @@ static char sccsid[] = "@(#)daemon.c	8.1.1 (2.11BSD GTE) 2/3/95";
 #include <stdlib.h>
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(daemon,_daemon)
+#endif
+
 int
 daemon(nochdir, noclose)
 	int nochdir, noclose;

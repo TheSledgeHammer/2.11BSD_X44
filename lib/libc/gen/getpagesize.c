@@ -38,11 +38,18 @@ static char sccsid[] = "@(#)getpagesize.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/sysctl.h>
+#include <unistd.h>
+
+#ifdef __weak_alias
+__weak_alias(getpagesize,_getpagesize)
+#endif
 
 int
-getpagesize()
+getpagesize(void)
 {
 	size_t size;
 	int mib[2], value;

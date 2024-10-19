@@ -38,7 +38,11 @@ static char sccsid[] = "@(#)fstab.c	8.1.1 (2.11BSD) 1996/1/15";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/errno.h>
+#include "namespace.h"
+#include <sys/types.h>
+
+#include <err.h>
+#include <errno.h>
 #include <fstab.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,9 +50,19 @@ static char sccsid[] = "@(#)fstab.c	8.1.1 (2.11BSD) 1996/1/15";
 #include <unistd.h>
 #include <sys/uio.h>
 
+#ifdef __weak_alias
+__weak_alias(endfsent,_endfsent)
+__weak_alias(getfsent,_getfsent)
+__weak_alias(getfsfile,_getfsfile)
+__weak_alias(getfsspec,_getfsspec)
+__weak_alias(setfsent,_setfsent)
+#endif
+
+//extern	char	*__progname;
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
-static char *path_fstab;
+
+static const char *path_fstab;
 static char fstab_path[PATH_MAX];
 static int fsp_set = 0;
 
@@ -84,9 +98,10 @@ fstabscan(void)
 {
 	char *cp;
 	register char *bp;
-#define	MAXLINELENGTH	256
+#define	MAXLINELENGTH	1024
 	static char line[MAXLINELENGTH];
-	char subline[MAXLINELENGTH], *colon = ":";
+	char subline[MAXLINELENGTH];
+    const char *colon = ":";
 	int typexx;
 
 	for (;;) {
@@ -106,9 +121,9 @@ fstabscan(void)
 				if (!strcmp(_fs_fstab.fs_type, FSTAB_XX))
 					continue;
 				_fs_fstab.fs_mntops = _fs_fstab.fs_type;
-				_fs_fstab.fs_vfstype =
+				_fs_fstab.fs_vfstype = __UNCONST(
 				    strcmp(_fs_fstab.fs_type, FSTAB_SW) ?
-				    "ufs" : "swap";
+				    "ufs" : "swap");
 				if (bp == strsep(&cp, colon)) {
 					_fs_fstab.fs_freq = atoi(bp);
 					if (bp == strsep(&cp, colon)) {
@@ -141,23 +156,23 @@ fstabscan(void)
 			if (strlen(cp) != 2)
 				continue;
 			if (!strcmp(cp, FSTAB_RW)) {
-				_fs_fstab.fs_type = FSTAB_RW;
+				_fs_fstab.fs_type = (char *)&FSTAB_RW;
 				break;
 			}
 			if (!strcmp(cp, FSTAB_RQ)) {
-				_fs_fstab.fs_type = FSTAB_RQ;
+				_fs_fstab.fs_type = (char *)&FSTAB_RQ;
 				break;
 			}
 			if (!strcmp(cp, FSTAB_RO)) {
-				_fs_fstab.fs_type = FSTAB_RO;
+				_fs_fstab.fs_type = (char *)&FSTAB_RO;
 				break;
 			}
 			if (!strcmp(cp, FSTAB_SW)) {
-				_fs_fstab.fs_type = FSTAB_SW;
+				_fs_fstab.fs_type = (char *)&FSTAB_SW;
 				break;
 			}
 			if (!strcmp(cp, FSTAB_XX)) {
-				_fs_fstab.fs_type = FSTAB_XX;
+				_fs_fstab.fs_type = (char *)&FSTAB_XX;
 				typexx++;
 				break;
 			}
@@ -174,7 +189,7 @@ bad:		/* no way to distinguish between EOF and syntax error */
 }
 
 struct fstab *
-getfsent()
+getfsent(void)
 {
 	if ((!_fs_fp && !setfsent()) || !fstabscan())
 		return((struct fstab *)NULL);
@@ -204,7 +219,7 @@ getfsfile(name)
 }
 
 int
-setfsent()
+setfsent(void)
 {
 	if (_fs_fp) {
 		rewind(_fs_fp);
@@ -217,7 +232,7 @@ setfsent()
 }
 
 void
-endfsent()
+endfsent(void)
 {
 	if (_fs_fp) {
 		(void)fclose(_fs_fp);

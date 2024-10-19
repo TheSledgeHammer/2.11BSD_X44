@@ -46,6 +46,7 @@ __RCSID("$NetBSD: getcap.c,v 1.39 2003/10/27 00:12:42 lukem Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/param.h>
 
@@ -55,6 +56,7 @@ __RCSID("$NetBSD: getcap.c,v 1.39 2003/10/27 00:12:42 lukem Exp $");
 #include <errno.h>	
 #include <fcntl.h>
 #include <limits.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -672,7 +674,7 @@ cdbget(capdbp, bp, name)
 	_DIAGASSERT(name != NULL);
 
 	/* LINTED key is not modified */
-	key.data = (char*) name;
+	key.data = (char *)&name;
 	key.size = strlen(name);
 
 	for (;;) {

@@ -14,19 +14,17 @@ static char sccsid[] = "@(#)getgrent.c	5.2 (Berkeley) 3/9/86";
 #include <grp.h>
 
 #define	MAXGRP	200
-static char *members[MAXGRP];
 #define	MAXLINELENGTH	1024
-static char line[MAXLINELENGTH];
 
 static FILE *grf = NULL;
-static char line[256+1];
+static char line[MAXLINELENGTH];
 static struct group group;
 static int _gr_stayopen;
 static char *gr_mem[MAXGRP];
 
 static char *grskip(char *, char);
 static int	start_gr(void);
-static int 	grscan(int, int, char *);
+static int 	grscan(int, int, const char *);
 
 void
 setgrent(void)
@@ -69,7 +67,7 @@ grskip(p,c)
 }
 
 struct group *
-getgrent()
+getgrent(void)
 {
 	register char *p, **q;
 
@@ -134,7 +132,7 @@ start_gr(void)
 static int
 grscan(search, gid, name)
 	register int search, gid;
-	register char *name;
+	register const char *name;
 {
 	register char *cp, **m;
 	char *bp;
@@ -152,6 +150,7 @@ grscan(search, gid, name)
 				;
 			continue;
 		}
+        
 		group.gr_name = strsep(&bp, ":\n");
 		if (search && name && strcmp(group.gr_name, name))
 			continue;
@@ -162,8 +161,8 @@ grscan(search, gid, name)
 		if (search && name == NULL && group.gr_gid != gid)
 			continue;
 		cp = NULL;
-		for (m = group.gr_mem = members;; bp++) {
-			if (m == &members[MAXGRP - 1])
+		for (m = group.gr_mem = gr_mem;; bp++) {
+			if (m == &gr_mem[MAXGRP - 1])
 				break;
 			if (*bp == ',') {
 				if (cp) {

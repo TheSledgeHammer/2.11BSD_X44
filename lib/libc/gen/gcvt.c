@@ -21,7 +21,7 @@ gcvt(number, ndigit, buf)
 {
 	int sign, decpt;
 	register char *p1, *p2;
-	register i;
+	register int i;
 
 	p1 = ecvt(number, ndigit, &decpt, &sign);
 	p2 = buf;

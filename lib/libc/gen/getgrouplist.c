@@ -38,12 +38,19 @@ static char sccsid[] = "@(#)getgrouplist.c	8.2.1 (2.11BSD) 1997/6/25";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 /*
  * get credential
  */
 #include <sys/types.h>
 #include <string.h>
 #include <grp.h>
+#include <unistd.h>
+
+#ifdef __weak_alias
+__weak_alias(getgrouplist,_getgrouplist)
+#endif
 
 int
 getgrouplist(uname, agroup, groups, grpcnt)
@@ -54,7 +61,8 @@ getgrouplist(uname, agroup, groups, grpcnt)
 {
 	register struct group *grp;
 	int i, ngroups, ret, maxgroups;
-
+    
+    grp = NULL;
 	ret = 0;
 	ngroups = 0;
 	maxgroups = *grpcnt;

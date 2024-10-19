@@ -38,6 +38,8 @@ static char sccsid[] = "@(#)getlogin.c	8.1.1 (2.11BSD) 1997.9.23";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <pwd.h>
 #include <utmp.h>
@@ -45,10 +47,12 @@ static char sccsid[] = "@(#)getlogin.c	8.1.1 (2.11BSD) 1997.9.23";
 #include <string.h>
 #include <unistd.h>
 
+extern int _getlogin(char *, u_int);
+
 int	_logname_valid;		/* known to setlogin() */
 
 char *
-getlogin()
+getlogin(void)
 {
 	static char logname[MAXLOGNAME + 1];
 

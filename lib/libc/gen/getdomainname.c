@@ -39,6 +39,7 @@ __RCSID("$NetBSD: getdomainname.c,v 1.13 2012/06/25 22:32:43 abs Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/sysctl.h>
 
@@ -53,7 +54,7 @@ __weak_alias(getdomainname,_getdomainname)
 int
 getdomainname(name, namelen)
 	char *name;
-	int namelen;
+	size_t namelen;
 {
 	int mib[2];
 	size_t size;

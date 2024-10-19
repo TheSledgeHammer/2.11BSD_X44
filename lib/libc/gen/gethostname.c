@@ -38,6 +38,8 @@ static char sccsid[] = "@(#)gethostname.c	8.1.1 (2.11BSD) 1997/11/30";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/sysctl.h>
 
@@ -49,10 +51,10 @@ static char sccsid[] = "@(#)gethostname.c	8.1.1 (2.11BSD) 1997/11/30";
 __weak_alias(gethostname,_gethostname)
 #endif
 
-long
+int
 gethostname(name, namelen)
 	char *name;
-	int namelen;
+	size_t namelen;
 {
 	int mib[2];
 	size_t size;
