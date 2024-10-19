@@ -45,6 +45,9 @@
 #define daylight			_daylight
 #define err					_err
 #define errx				_errx
+//#ifdef _REENTRANT
+//#define fileno				_fileno
+//#endif
 #define fork				_fork
 #define fseeko				_fseeko
 #define ftello				_ftello
@@ -221,7 +224,7 @@
 #define get_myaddress		_get_myaddress
 #define getaddrinfo			_getaddrinfo
 #define getbsize			_getbsize
-#define getcwd				_getcwd
+//#define getcwd				_getcwd
 #define getdiskbyname		_getdiskbyname
 #define getdomainname		_getdomainname
 #define getfsent			_getfsent
@@ -237,7 +240,7 @@
 #define gethostname			_gethostname
 #define getifaddrs			_getifaddrs
 #define getloadavg			_getloadavg
-#define getlogin			_getlogin
+//#define getlogin			_getlogin
 #define getmntinfo			_getmntinfo
 #define getmode				_getmode
 #define getnameinfo			_getnameinfo
@@ -507,7 +510,7 @@
 #define svcudp_enablecache	_svcudp_enablecache
 #define svis				_svis
 #define sysarch				_sys_sysarch
-#define sysctl				_sysctl
+//#define sysctl				_sysctl
 #define sysctlbyname		_sysctlbyname
 #define sysctlgetmibinfo	_sysctlgetmibinfo
 #define sysctlnametomib		_sysctlnametomib
