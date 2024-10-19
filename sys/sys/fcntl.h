@@ -93,6 +93,8 @@
 #define	FHASLOCK	0x4000		/* descriptor holds advisory lock */
 #endif
 
+#define	O_CLOEXEC	0x8000	    	/* set close on exec */
+
 /* defined by POSIX 1003.1; BSD default, so no bit required */
 #define	O_NOCTTY	0		/* don't assign controlling terminal */
 
