@@ -249,6 +249,7 @@ int	 	cgetnum(char *, const char *, long *);
 int	 	cgetset(const char *);
 int	 	cgetstr(char *, const char *, char **);
 int	 	cgetustr(char *, const char *, char **);
+void    csetexpandtc(int);
 
 int	 	daemon(int, int);
 char 	*devname(dev_t, mode_t);

@@ -52,9 +52,11 @@ struct	fstab 	*getfsent(void);
 struct	fstab 	*getfsspec(char *name);
 struct	fstab 	*getfsfile(char *name);
 struct	fstab 	*getfstype(void);
-int				setfsent(void);
-int				endfsent(void);
 char			*getdevpath(const char *devname, int flags);
+const char      *getfstab(void);
+void            setfstab(const char *file);
+int				setfsent(void);
+void			endfsent(void);
 __END_DECLS
 
 #endif /* !_FSTAB_H_ */

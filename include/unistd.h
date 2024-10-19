@@ -70,15 +70,17 @@ int	 			close(int);
 size_t			confstr(int, char *, size_t);
 int	 			dup(int);
 int	 			dup2(int, int);
-int	            execl(const char *, const char *, ...);
+int	            execl(const char *, const char *, ...);// __attribute__((__null_sentinel));
 int	            execle(const char *, const char *, ...);
-int	            execlp(const char *, const char *, ...);
+int	            execlp(const char *, const char *, ...);// __attribute__((__null_sentinel));
 int	            execv(const char *, char * const *);
 int	            execve(const char *, char * const *, char * const *);
 int	            execvp(const char *, char * const *);
-pid_t	 		fork(void);
+pid_t 		    fork(void);
 long	 		fpathconf(int, int);
+#if __SSP_FORTIFY_LEVEL == 0
 char			*getcwd(char *, size_t);
+#endif
 gid_t	 		getegid(void);
 uid_t			geteuid(void);
 gid_t	 		getgid(void);
@@ -94,7 +96,9 @@ off_t	 		lseek(int, off_t, int);
 long	 		pathconf(const char *, int);
 int	 			pause(void);
 int	 			pipe(int *);
+#if __SSP_FORTIFY_LEVEL == 0
 ssize_t	 		read(int, void *, size_t);
+#endif
 int	 			rmdir(const char *);
 int	 			setgid(gid_t);
 int	 			setpgid(pid_t, pid_t);
@@ -138,6 +142,7 @@ ssize_t	 		readlink(const char * __restrict, char * __restrict, size_t);
  */
 #if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 600 || \
     defined(__BSD_VISIBLE)
+int	 			gethostname(char *, size_t);
 int	 			setegid(gid_t);
 int	 			seteuid(uid_t);
 #endif
@@ -146,6 +151,12 @@ int	 			seteuid(uid_t);
 #ifdef	__STDC__
 struct timeval;				/* select(2) */
 #endif
+
+/*
+ * X/Open Portability Guide >= Issue 4 Version 2
+ */
+#if (defined(_XOPEN_SOURCE) && defined(_XOPEN_SOURCE_EXTENDED)) || \
+    (_XOPEN_SOURCE - 0) >= 500 || defined(__BSD_VISIBLE)
 
 int	 			acct(const char *, pid_t);
 char			*brk(const char *);
@@ -161,9 +172,9 @@ int	 			fchown(int, int, int);
 int	 			fsync(int);
 int	 			ftruncate(int, off_t);
 int	 			getdomainname(char *, size_t);
+int	            getgrouplist(char *, gid_t, gid_t *, int *);
 int	 			getdtablesize(void);
 unsigned long	gethostid(void);
-int	 			gethostname(char *, size_t);
 mode_t	 		getmode(const void *, mode_t);
 int	 	        getpagesize(void) __attribute__((__pure__));
 char			*getpass(char *);
@@ -215,6 +226,8 @@ int	 			undelete(const char *);
 unsigned int	ualarm(unsigned int, unsigned int);
 void	 		usleep(long);
 pid_t	 		vfork(void);
+
+#endif /* _XOPEN_SOURCE_EXTENDED || _XOPEN_SOURCE >= 500 || __BSD_VISIBLE */
 
 /*
  * X/Open CAE Specification Issue 5 Version 2
