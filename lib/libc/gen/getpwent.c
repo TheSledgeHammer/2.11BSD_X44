@@ -492,10 +492,7 @@ static int
 init_db(void)
 {
 	register char *p;
-	if (_pw_db) {
-		_pw_rewind = 1;
-		return (1);
-	}
+	
 	if (geteuid()) {
 		return (1);
 	}
@@ -504,6 +501,7 @@ init_db(void)
 		return (1);
 	}
 	p = strcmp(_pw_file, _PATH_MP_DB) ? _pw_file : _PATH_SMP_DB;
+	_pw_db = dbopen(p, O_RDONLY, 0, DB_HASH, NULL);
 	if (_pw_db) {
 		return (1);
 	}
@@ -525,8 +523,8 @@ fetch_pw(key)
 	if (data.size > max && !(line = realloc(line, max += 1024))) {
 		return(0);
 	}
-    t = line;
-    return (hashpw(p, t));
+    	t = line;
+    	return (hashpw(p, t));
 }
 
 #endif
