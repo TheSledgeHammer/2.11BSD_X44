@@ -32,17 +32,17 @@
 #include <ucontext.h>
 
 __BEGIN_DECLS
+#if __SSP_FORTIFY_LEVEL > 0
+char 		*__getcwd(char *, size_t);
+#endif
+int 		_getlogin(char *, u_int);
 void 		_resumecontext(void);
 const char 	*__strerror(int , char *, size_t);	/* TODO: Resolve  */
 const char 	*__strsignal(int , char *, size_t); /* TODO: Resolve  */
 char 		*__dtoa(double, int, int, int *, int *, char **);
 int 		__sysctl(int *, unsigned int, void *, size_t *, void *, size_t);
 
-#if __SSP_FORTIFY_LEVEL > 0
-char 		*__getcwd(char *, size_t);
-#endif
 //extern char *__minbrk;
-//int 		_getlogin(char *, size_t);
 //int 		__setlogin(const char *);
 //struct sigaction;
 //int 		__sigaction_sigtramp(int, const struct sigaction *, struct sigaction *, const void *, int);
