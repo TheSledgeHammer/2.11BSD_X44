@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2024
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 2024 Martin Kelly.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +37,7 @@ int
 _exit(code)
     int code;
 {
-    return(__syscall((quad_t)SYS_rexit, code));
+    return (__syscall((quad_t)SYS_rexit, code));
 }
 
 

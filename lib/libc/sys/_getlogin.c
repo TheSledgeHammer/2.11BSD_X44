@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2024
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 2024 Martin Kelly.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,7 +40,7 @@ _getlogin(namebuf, namelen)
     char *namebuf;
     u_int namelen;
 {
-   return(__syscall((quad_t)SYS_getlogin, namebuf, namelen));
+   return (__syscall((quad_t)SYS_getlogin, namebuf, namelen));
 }
 
 

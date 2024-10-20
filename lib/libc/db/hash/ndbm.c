@@ -241,5 +241,5 @@ extern int
 dbm_dirfno(db)
 	DBM *db;
 {
-	return(((HTAB *)db->internal)->fp);
+	return (((HTAB *)db->internal)->fp);
 }

@@ -9,8 +9,15 @@
 # machine-independent gen sources
 .PATH: ${ARCHDIR}/gen ${.CURDIR}/gen
 
-USE_NDBM?=  1   # devname.c will use ndbm instead of db     (0 = yes, 1 = no)
-USE_SGTTY?= 1   # getpass.c will use sgtty instead of termios   (0 = yes, 1 = no)
+# use ndbm instead of db (0 = yes, 1 = no)
+USE_NDBM?=  1
+# This changes the following files:
+# devname.c getpwent.c
+
+# use sgtty instead of termios   (0 = yes, 1 = no)
+USE_SGTTY?= 1
+# This changes the following files:
+# getpass.c
 
 SRCS+=	alarm.c arc4random.c assert.c basename.c closedir.c confstr.c ctermid.c daemon.c devname.c  	\
         dirname.c disklabel.c err.c errlst.c execvp.c fabs.c frexp.c fstab.c fts.c gcvt.c 		\
