@@ -521,7 +521,7 @@ fetch_pw(key)
 	}
 	p = (char *)data.data;
 	if (data.size > max && !(line = realloc(line, max += 1024))) {
-		return(0);
+		return (0);
 	}
     	t = line;
     	return (hashpw(p, t));
