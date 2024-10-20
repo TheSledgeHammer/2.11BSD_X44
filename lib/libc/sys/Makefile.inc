@@ -9,7 +9,7 @@ SRCS+=	Ovfork.S brk.S cerror.S exect.S fork.S getcontext.S pipe.S ptrace.S \
 		sigsuspend.S syscall.S
 
 # glue to provide compatibility between GCC 1.X and 2.X
-SRCS+=	_getcontext.c _fork.c ftruncate.c lseek.c mmap.c _resumecontext.c _swapcontext.c truncate.c
+SRCS+= _getcontext.c _getlogin.c _fork.c ftruncate.c lseek.c mmap.c _resumecontext.c _swapcontext.c truncate.c
 
 # modules with default implementations on all architectures:
 ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \
@@ -61,28 +61,6 @@ ${PPSEUDO}: ${ASMDEPS}
 ${SPSEUDO}: ${ASMDEPS}
 	${_MKTARGET_CREATE}
 	printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' >${.TARGET}
-
-#${ASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
-#	@echo creating ${.PREFIX}.o ${.PREFIX}.po
-#	@printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' | \
-#	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
-#	@${LD} -x -r ${.PREFIX}.o
-#	@mv a.out ${.PREFIX}.o
-#	@printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' | \
-#	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
-#	@${LD} -x -r ${.PREFIX}.po
-#	@mv a.out ${.PREFIX}.po
-
-#${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
-#	@echo creating ${.PREFIX}.o ${.PREFIX}.po
-#	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
-#	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
-#	@${LD} -x -r ${.PREFIX}.o
-#	@mv a.out ${.PREFIX}.o
-#	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
-#	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
-#	@${LD} -x -r ${.PREFIX}.po
-#	@mv a.out ${.PREFIX}.po
 
 MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 chdir.0 chflags.0 \
 		chmod.0 chown.0 chroot.0 close.0 connect.0 dup.0 execve.0 _exit.0 \
