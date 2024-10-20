@@ -105,7 +105,7 @@ getpwent(void)
 		} else { /* _pw_fp */
 			rval = scanpw();
 		}
-	} while (rval && _pw_flag != _PW_KEYBYNAME);
+	} while (rval && _pw_flag != _PW_KEYBYNUM);
 	if (rval) {
 		getpw();
 	}
