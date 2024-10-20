@@ -41,8 +41,6 @@ static char sccsid[] = "@(#)getpass.c	8.1 (Berkeley) 6/4/93";
 
 #include "namespace.h"
 
-#define USE_SGTTY 0
-
 #include <sys/types.h>
 #include <sys/signal.h>
 
