@@ -40,8 +40,6 @@ static char sccsid[] = "@(#)devname.c	8.1.1 (2.11BSD GTE) 2/3/95";
 
 #include <sys/types.h>
 
-#define USE_NDBM 1
-
 #if defined(USE_NDBM) && (USE_NDBM == 0)
 #include <ndbm.h>
 #else
