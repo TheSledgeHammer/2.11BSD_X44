@@ -33,8 +33,8 @@
 
 #include <ucontext.h>
 
-#ifdef __indr_reference
-__indr_reference(_getcontext, getcontext)
+#ifdef __weak_alias
+__weak_alias(_getcontext, getcontext)
 #else
 #error requires either weak aliases or indirect references!
 #endif
