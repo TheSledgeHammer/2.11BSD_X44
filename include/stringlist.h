@@ -38,11 +38,12 @@
 /*
  * Simple string list
  */
-typedef struct _stringlist {
+struct stringlist {
 	char		**sl_str;
 	size_t	  	sl_max;
 	size_t	  	sl_cur;
-} StringList;
+};
+typedef struct stringlist StringList;
 
 __BEGIN_DECLS
 StringList 	*sl_init(void);
