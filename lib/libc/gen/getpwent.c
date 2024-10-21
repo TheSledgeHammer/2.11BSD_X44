@@ -306,7 +306,6 @@ endpwent(void)
 		_pw_db = (DB *)NULL;
 	}
 #endif
-
 }
 
 void

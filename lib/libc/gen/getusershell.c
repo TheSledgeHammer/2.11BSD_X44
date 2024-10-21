@@ -44,7 +44,7 @@ extern char **initshells(void);
  * Get a list of shells from SHELLS, if it exists.
  */
 char *
-getusershell()
+getusershell(void)
 {
 	char *ret;
 
@@ -57,7 +57,7 @@ getusershell()
 }
 
 void
-endusershell()
+endusershell(void)
 {
 	
 	if (shells != NULL)
@@ -70,7 +70,7 @@ endusershell()
 }
 
 void
-setusershell()
+setusershell(void)
 {
 
 	curshell = initshells();
