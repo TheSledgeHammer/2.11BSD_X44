@@ -70,7 +70,7 @@ static struct passwd _pw_passwd;	/* password structure */
 static int _pw_keynum;			/* key counter */
 static int _pw_stayopen;		/* keep fd's open */
 static char _pw_flag;
-static char line[MAXLINELENGTH];
+static char *line;
 
 static int start_pw(void);
 static int hashpw(char *, char *);
@@ -95,6 +95,7 @@ getpwent(void)
 	if (!_pw_db && !_pw_fp && !start_pw()) {
 		return ((struct passwd *) NULL);
 	}
+    rval = 0;
 	do {
 		if (_pw_db) {
 			++_pw_keynum;
@@ -124,6 +125,7 @@ getpwnam(nam)
 	if (!_pw_db && !start_pw()) {
 		return ((struct passwd *) NULL);
 	}
+    rval = 0;
 	if (_pw_db) {
 		bf[0] = _PW_KEYBYNAME;
 		len = strlen(nam);
@@ -159,6 +161,7 @@ getpwuid(uid)
 	if (!_pw_db && !start_pw()) {
 		return ((struct passwd *) NULL);
 	}
+    rval = 0;
 	if (_pw_db) {
 		bf[0] = _PW_KEYBYUID;
 		keyuid = uid;
@@ -195,14 +198,12 @@ getpwent(void)
 	if (!_pw_db && !start_pw()) {
 		return ((struct passwd *) NULL);
 	}
-	if (_pw_db) {
-		++_pw_keynum;
-		bf[0] = _PW_KEYBYNUM;
-		bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
-		key.data = (u_char *)bf;
-		key.size = sizeof(_pw_keynum) + 1;
-		rval = fetch_pw(&key);
-	}
+	++_pw_keynum;
+	bf[0] = _PW_KEYBYNUM;
+	bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
+	key.data = (u_char *)bf;
+	key.size = sizeof(_pw_keynum) + 1;
+	rval = fetch_pw(&key);
 	return (rval ? &_pw_passwd : (struct passwd *) NULL);
 }
 
@@ -217,14 +218,12 @@ getpwnam(nam)
 	if (!_pw_db && !start_pw()) {
 		return ((struct passwd *) NULL);
 	}
-	if (_pw_db) {
-		bf[0] = _PW_KEYBYNAME;
-		len = strlen(nam);
-		bcopy(nam, bf + 1, MIN(len, UT_NAMESIZE));
-		key.data = (u_char *)bf;
-		key.size = len + 1;
-		rval = fetch_pw(&key);
-	}
+	bf[0] = _PW_KEYBYNAME;
+	len = strlen(nam);
+	bcopy(nam, bf + 1, MIN(len, UT_NAMESIZE));
+	key.data = (u_char *)bf;
+	key.size = len + 1;
+	rval = fetch_pw(&key);
 	if (!_pw_stayopen) {
 		endpwent();
 	}
@@ -242,14 +241,12 @@ getpwuid(uid)
 	if (!_pw_db && !start_pw()) {
 		return ((struct passwd *) NULL);
 	}
-	if (_pw_db) {
-		bf[0] = _PW_KEYBYUID;
-		keyuid = uid;
-		bcopy(&keyuid, bf + 1, sizeof(keyuid));
-		key.data = (u_char *)bf;
-		key.size = sizeof(keyuid) + 1;
-		rval = fetch_pw(&key);
-	}
+	bf[0] = _PW_KEYBYUID;
+	keyuid = uid;
+	bcopy(&keyuid, bf + 1, sizeof(keyuid));
+	key.data = (u_char *)bf;
+	key.size = sizeof(keyuid) + 1;
+	rval = fetch_pw(&key);
 	if (!_pw_stayopen) {
 		endpwent();
 	}
@@ -513,7 +510,6 @@ fetch_pw(key)
 	DBT *key;
 {
 	register char *p, *t;
-    static void *aline;
 	static u_int max;
 	DBT data;
 
@@ -521,8 +517,7 @@ fetch_pw(key)
 		return (0);
 	}
 	p = (char *)data.data;
-    aline = (void *)realloc(line, max += 1024);
-	if (data.size > max && !(line = aline)) {
+	if (data.size > max && !(line = realloc(line, max += 1024))) {
 		return (0);
 	}
     t = line;
