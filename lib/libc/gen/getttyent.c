@@ -144,7 +144,7 @@ getttyent(void)
 		}
 	}
 	do {
-		p = fgets(line, LINE, tf);
+		p = fgets(line, sizeof(line), tf);
 		if (p == NULL) {
 			return (NULL);
 		}
