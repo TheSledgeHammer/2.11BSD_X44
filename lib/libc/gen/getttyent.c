@@ -63,25 +63,25 @@ setttyent(void)
 {
 	if (tf == NULL) {
 		tf = fopen(_PATH_TTYS, "r");
-        return (1);
+        	return (1);
 	} else {
 		rewind(tf);
-        return (1);
+        	return (1);
 	}
-    return (0);
+    	return (0);
 }
 
 int
 endttyent(void)
 {
-    int rval;
+    	int rval;
 
 	if (tf != NULL) {
 		rval = !(fclose(tf) == EOF);
 		tf = NULL;
-        return (rval);
+        	return (rval);
 	}
-    return (1);
+    	return (1);
 }
 
 #define QUOTED	1
@@ -154,7 +154,7 @@ getttyent(void)
 	for (;;) {
 		if (!fgets(p = line, sizeof(line), tf)) {
 			return (NULL);
-        }
+        	}
 		/* skip lines that are too big */
 		if (!index(p, '\n')) {
 			while ((c = getc(tf)) != '\n' && c != EOF);
@@ -162,10 +162,10 @@ getttyent(void)
 		}
 		while (isspace(*p)) {
 			++p;
-        }
+        	}
 		if (*p && *p != '#') {
 			break;
-        }
+        	}
 	}
 
 	zapchar = 0;
@@ -179,7 +179,7 @@ getttyent(void)
 			tty.ty_type = NULL;
 		} else {
 			p = skip(p);
-        }
+        	}
 	}
 	tty.ty_status = 0;
 	tty.ty_window = NULL;
