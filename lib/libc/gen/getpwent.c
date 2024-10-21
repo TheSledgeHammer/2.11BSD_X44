@@ -53,21 +53,22 @@ __weak_alias(getpwuid,_getpwuid)
 __weak_alias(setpwent,_setpwent)
 __weak_alias(setpassent,_setpassent)
 __weak_alias(endpwent,_endpwent)
+__weak_alias(setpwfile,_setpwfile)
 #endif
 
 #define	MAXLINELENGTH	256
 #if defined(USE_NDBM) && (USE_NDBM == 0)
 static DBM *_pw_db;			/* password database */
-static char *_pw_file = _PATH_PASSWD;	/* password path */
+static const char *_pw_file = _PATH_PASSWD;	/* password path */
 static FILE *_pw_fp;			/* password file */
+static int _pw_rewind = 1;
 #else
 static DB *_pw_db;			/* password database */
-static char *_pw_file = _PATH_MP_DB;	/* password path */
+static const char *_pw_file = _PATH_MP_DB;	/* password path */
 #endif
 static struct passwd _pw_passwd;	/* password structure */
 static int _pw_keynum;			/* key counter */
 static int _pw_stayopen;		/* keep fd's open */
-static int _pw_rewind = 1;
 static char _pw_flag;
 static char line[MAXLINELENGTH];
 
@@ -191,7 +192,7 @@ getpwent(void)
 	int rval;
 	char bf[sizeof(_pw_keynum) + 1];
 
-	if (!_pw_db && !_pw_fp && !start_pw()) {
+	if (!_pw_db && !start_pw()) {
 		return ((struct passwd *) NULL);
 	}
 	if (_pw_db) {
@@ -270,10 +271,10 @@ start_pw(void)
 	return (ret);
 }
 
-int
+void
 setpwent(void)
 {
-	return (setpassent(0));
+	(void)setpassent(0);
 }
 
 int
@@ -310,7 +311,7 @@ endpwent(void)
 
 void
 setpwfile(file)
-	char *file;
+	const char *file;
 {
 	_pw_file = file;
 }
@@ -490,7 +491,7 @@ bad:
 static int
 init_db(void)
 {
-	register char *p;
+	register const char *p;
 	
 	if (geteuid()) {
 		return (1);
@@ -512,6 +513,7 @@ fetch_pw(key)
 	DBT *key;
 {
 	register char *p, *t;
+    static void *aline;
 	static u_int max;
 	DBT data;
 
@@ -519,11 +521,12 @@ fetch_pw(key)
 		return (0);
 	}
 	p = (char *)data.data;
-	if (data.size > max && !(line = realloc(line, max += 1024))) {
+    aline = (void *)realloc(line, max += 1024);
+	if (data.size > max && !(line = aline)) {
 		return (0);
 	}
-    	t = line;
-    	return (hashpw(p, t));
+    t = line;
+    return (hashpw(p, t));
 }
 
 #endif
