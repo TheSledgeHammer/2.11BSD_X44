@@ -29,15 +29,32 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#include <sys/cdefs.h>
+
+#include "namespace.h"
 
 #include <sys/types.h>
 #include <sys/syscall.h>
 
+#ifdef __weak_alias
+__weak_alias(__exit, _exit)
+#endif
+
+#include <unistd.h>
+int __exit(int);
+
 int
-_exit(code)
+__exit(code)
     int code;
 {
     return (__syscall((quad_t)SYS_rexit, code));
+}
+
+void
+_exit(code)
+    int code;
+{
+    (void)__exit(code);
 }
 
 
