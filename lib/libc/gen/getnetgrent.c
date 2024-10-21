@@ -45,13 +45,13 @@ __RCSID("$NetBSD: getnetgrent.c,v 1.29 2002/05/26 14:03:20 wiz Exp $");
 #include <err.h>
 #include <fcntl.h>
 #define _NETGROUP_PRIVATE
-#include <netgroup.h>
-#include <nsswitch.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stringlist.h>
+#include <netgroup.h>
+#include <nsswitch.h>
 
 #ifdef YP
 #include <rpc/rpc.h>
