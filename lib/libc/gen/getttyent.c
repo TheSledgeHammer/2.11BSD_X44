@@ -160,7 +160,7 @@ getttyent(void)
 			while ((c = getc(tf)) != '\n' && c != EOF);
 			continue;
 		}
-		while (isspace(*p)) {
+		while (isspace((unsigned char)*p)) {
 			++p;
         	}
 		if (*p && *p != '#') {
