@@ -44,10 +44,10 @@ static char sccsid[] = "@(#)getttyent.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <ttyent.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-#include <ttyent.h>
 
 static char zapchar;
 static FILE *tf = NULL;
@@ -58,23 +58,30 @@ static struct ttyent tty;
 static char *skip(char *);
 static char *value(char *);
 
-void
+int
 setttyent(void)
 {
 	if (tf == NULL) {
 		tf = fopen(_PATH_TTYS, "r");
+        return (1);
 	} else {
 		rewind(tf);
+        return (1);
 	}
+    return (0);
 }
 
-void
+int
 endttyent(void)
 {
+    int rval;
+
 	if (tf != NULL) {
-		(void) fclose(tf);
+		rval = !(fclose(tf) == EOF);
 		tf = NULL;
+        return (rval);
 	}
+    return (1);
 }
 
 #define QUOTED	1
@@ -143,29 +150,43 @@ getttyent(void)
 			return (NULL);
 		}
 	}
-	do {
-		p = fgets(line, sizeof(line), tf);
-		if (p == NULL) {
+
+	for (;;) {
+		if (!fgets(p = line, sizeof(line), tf)) {
 			return (NULL);
+        }
+		/* skip lines that are too big */
+		if (!index(p, '\n')) {
+			while ((c = getc(tf)) != '\n' && c != EOF);
+			continue;
 		}
-		while ((c = *p) == '\t' || c == ' ' || c == '\n') {
-			p++;
-		}
-	} while (c == '\0' || c == '#');
+		while (isspace(*p)) {
+			++p;
+        }
+		if (*p && *p != '#') {
+			break;
+        }
+	}
+
 	zapchar = 0;
 	tty.ty_name = p;
 	p = skip(p);
-	tty.ty_getty = p;
-	p = skip(p);
-	tty.ty_type = p;
-	p = skip(p);
+	if (!*(tty.ty_getty = p)) {
+		tty.ty_getty = tty.ty_type = NULL;
+	} else {
+		p = skip(p);
+		if (!*(tty.ty_type = p)) {
+			tty.ty_type = NULL;
+		} else {
+			p = skip(p);
+        }
+	}
 	tty.ty_status = 0;
 	tty.ty_window = NULL;
 	tty.ty_class = NULL;
 
-#define	scmp(e)	!strncmp(p, e, sizeof(e) - 1) && isspace(p[sizeof(e) - 1])
+#define	scmp(e)	!strncmp(p, e, sizeof(e) - 1) && isspace((unsigned char)p[sizeof(e) - 1])
 #define	vcmp(e)	!strncmp(p, e, sizeof(e) - 1) && p[sizeof(e) - 1] == '='
-
 	for (; *p; p = skip(p)) {
 		if (scmp(_TTYS_ON)) {
 			tty.ty_status |= TTY_ON;
