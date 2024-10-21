@@ -26,14 +26,14 @@
 #define	_PATH_PASSWD		"/etc/passwd"
 #define	_PATH_MASTERPASSWD	"/etc/master.passwd"
 #define	_PATH_MKPASSWD		"/etc/mkpasswd"
-#define	_PATH_PTMP			"/etc/ptmp"
+#define	_PATH_PTMP		"/etc/ptmp"
 #define	_PATH_MASTERPASSWD_LOCK	_PATH_PTMP
 
 #define	_PATH_PASSWD_CONF	"/etc/passwd.conf"
 #define	_PATH_PASSWDCONF	_PATH_PASSWD_CONF	/* XXX: compat */
 #define	_PATH_USERMGMT_CONF	"/etc/usermgmt.conf"
 
-#define	_PATH_MP_DB			"/etc/pwd.db"
+#define	_PATH_MP_DB		"/etc/pwd.db"
 #define	_PATH_SMP_DB		"/etc/spwd.db"
 
 #define	_PATH_PWD_MKDB		"/usr/sbin/pwd_mkdb"
@@ -47,13 +47,13 @@
 
 #define	_PASSWORD_LEN		128		/* max length, not counting NUL */
 
-#define _PASSWORD_NOUID		0x01	/* flag for no specified uid. */
-#define _PASSWORD_NOGID		0x02	/* flag for no specified gid. */
-#define _PASSWORD_NOCHG		0x04	/* flag for no specified change. */
-#define _PASSWORD_NOEXP		0x08	/* flag for no specified expire. */
+#define _PASSWORD_NOUID		0x01		/* flag for no specified uid. */
+#define _PASSWORD_NOGID		0x02		/* flag for no specified gid. */
+#define _PASSWORD_NOCHG		0x04		/* flag for no specified change. */
+#define _PASSWORD_NOEXP		0x08		/* flag for no specified expire. */
 
-#define _PASSWORD_OLDFMT	0x10	/* flag to expect an old style entry */
-#define _PASSWORD_NOWARN	0x20	/* no warnings for bad entries */
+#define _PASSWORD_OLDFMT	0x10		/* flag to expect an old style entry */
+#define _PASSWORD_NOWARN	0x20		/* no warnings for bad entries */
 
 #define _PASSWORD_WARNDAYS	14		/* days to warn about expiry */
 #define _PASSWORD_CHGNOW	-1		/* special day to force password change at next login */
@@ -61,8 +61,8 @@
 struct passwd {
 	char	*pw_name;			/* user name */
 	char	*pw_passwd;			/* encrypted password */
-	int		pw_uid;				/* user uid */
-	int		pw_gid;				/* user gid */
+	int	pw_uid;				/* user uid */
+	int	pw_gid;				/* user gid */
 	long	pw_change;			/* password change time */
 	char	*pw_class;			/* user access class */
 	char	*pw_gecos;			/* Honeywell login info */
@@ -75,14 +75,14 @@ __BEGIN_DECLS
 struct passwd 	*getpwent(void);
 struct passwd 	*getpwuid(uid_t);
 struct passwd 	*getpwnam(char *);
-void			setpwent(void);
-void	 		endpwent(void);
-int 			setpassent(int);
-
-int		 		pw_gensalt(char *, size_t, const char *, const char *);
-int		 		pw_scan(char *, struct passwd *, int *);
-const char		*user_from_uid(uid_t, int);
-int		 		uid_from_user(const char *, uid_t *);
-int		 		pwcache_userdb(int (*)(int), void (*)(void), struct passwd * (*)(const char *), struct passwd * (*)(uid_t));
+void		setpwent(void);
+void	 	endpwent(void);
+int 		setpassent(int);
+void            setpwfile(const char *);
+int		pw_gensalt(char *, size_t, const char *, const char *);
+int		pw_scan(char *, struct passwd *, int *);
+const char	*user_from_uid(uid_t, int);
+int		uid_from_user(const char *, uid_t *);
+int		pwcache_userdb(int (*)(int), void (*)(void), struct passwd * (*)(const char *), struct passwd * (*)(uid_t));
 __END_DECLS
 #endif /* !_PWD_H_ */
