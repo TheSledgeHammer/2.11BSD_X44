@@ -31,8 +31,8 @@
 
 #include <sys/cdefs.h>
 
-#ifdef __indr_reference
-__indr_reference(_fork, fork)
+#ifdef __weak_alias
+__weak_alias(_fork, fork)
 #endif
 
 #include <unistd.h>
