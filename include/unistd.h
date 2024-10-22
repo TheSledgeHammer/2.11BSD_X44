@@ -180,7 +180,7 @@ int	 	        getpagesize(void) __attribute__((__pure__));
 char			*getpass(char *);
 char			*getusershell(void);
 char			*getwd(char *);
-int	 			initgroups(const char *, int);
+int	 			initgroups(const char *, gid_t);
 int	 			iruserok(unsigned long, int, const char *, const char *);
 int	 			lchown(const char *, uid_t, gid_t);
 int	 			lockf(int, int, off_t);
