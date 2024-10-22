@@ -22,6 +22,8 @@ static char sccsid[] = "@(#)getusershell.c	5.5 (Berkeley) 7/21/88";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -34,11 +36,11 @@ static char sccsid[] = "@(#)getusershell.c	5.5 (Berkeley) 7/21/88";
 /*
  * Do not add local shells here.  They should be added in /etc/shells
  */
-static char *okshells[] = { _PATH_BSHELL, _PATH_CSHELL, NULL };
+static const char *okshells[] = { _PATH_BSHELL, _PATH_CSHELL, NULL };
 
 static char **shells, *strings;
 static char **curshell = NULL;
-extern char **initshells(void);
+static char **initshells(void);
 
 /*
  * Get a list of shells from SHELLS, if it exists.
@@ -72,40 +74,38 @@ endusershell(void)
 void
 setusershell(void)
 {
-
 	curshell = initshells();
 }
 
 static char **
-initshells()
+initshells(void)
 {
 	register char **sp, *cp;
 	register FILE *fp;
 	struct stat statb;
-	extern char *malloc(), *calloc();
 
 	if (shells != NULL)
-		free((char*) shells);
+		free((char *)shells);
 	shells = NULL;
 	if (strings != NULL)
 		free(strings);
 	strings = NULL;
 	if ((fp = fopen(_PATH_SHELLS, "r")) == (FILE*) 0)
-		return (okshells);
+		return (__UNCONST(okshells));
 	if (fstat(fileno(fp), &statb) == -1) {
-		(void) fclose(fp);
-		return (okshells);
+		(void)fclose(fp);
+		return (__UNCONST(okshells));
 	}
-	if ((strings = malloc((unsigned) statb.st_size)) == NULL) {
-		(void) fclose(fp);
-		return (okshells);
+	if ((strings = malloc((unsigned int) statb.st_size)) == NULL) {
+		(void)fclose(fp);
+		return (__UNCONST(okshells));
 	}
-	shells = (char**) calloc((unsigned) statb.st_size / 3, sizeof(char*));
+	shells = (char **)calloc((unsigned int) statb.st_size / 3, sizeof(char *));
 	if (shells == NULL) {
-		(void) fclose(fp);
+		(void)fclose(fp);
 		free(strings);
 		strings = NULL;
-		return (okshells);
+		return (__UNCONST(okshells));
 	}
 	sp = shells;
 	cp = strings;
@@ -115,11 +115,11 @@ initshells()
 		if (*cp == '#' || *cp == '\0')
 			continue;
 		*sp++ = cp;
-		while (!isspace(*cp) && *cp != '#' && *cp != '\0')
+		while (!isspace((unsigned char)*cp) && *cp != '#' && *cp != '\0')
 			cp++;
 		*cp++ = '\0';
 	}
-	*sp = (char*) 0;
-	(void) fclose(fp);
+	*sp = NULL;
+	(void)fclose(fp);
 	return (shells);
 }

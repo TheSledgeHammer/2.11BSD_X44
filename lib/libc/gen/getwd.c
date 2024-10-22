@@ -18,28 +18,29 @@ static char sccsid[] = "@(#)getwd.c	5.2 (Berkeley) 3/9/86";
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/user.h>
-
+#include <dirent.h>
 #include <string.h>
+
+char *getwd(char *);
 
 #define GETWDERR(s)	strcpy(pathname, (s));
 
-//char *strcpy();
-static int pathsize;			/* pathname length */
-static char *prepend(char *, char *); /* prepend dirname to pathname */
+static int pathsize;			                /* pathname length */
+static char *prepend(const char *, char *);     /* prepend dirname to pathname */
 
 char *
 getwd(pathname)
 	char *pathname;
 {
-	char pathbuf[MAXPATHLEN];		/* temporary pathname buffer */
+	char pathbuf[MAXPATHLEN];		            /* temporary pathname buffer */
 	char *pnptr = &pathbuf[(sizeof pathbuf)-1]; /* pathname pointer */
-	char curdir[MAXPATHLEN];	/* current directory buffer */
-	char *dptr = curdir;		/* directory pointer */
-	dev_t cdev, rdev;		/* current & root device number */
-	ino_t cino, rino;		/* current & root inode number */
-	DIR *dirp;			/* directory stream */
-	struct direct *dir;		/* directory entry struct */
-	struct stat d, dd;		/* file status struct */
+	const char curdir[MAXPATHLEN];	            /* current directory buffer */
+	char *dptr = (char *)&curdir;		        /* directory pointer */
+	dev_t cdev, rdev;		                    /* current & root device number */
+	ino_t cino, rino;		                    /* current & root inode number */
+	DIR *dirp;			                        /* directory stream */
+	struct dirent *dir;		                    /* directory entry struct */
+	struct stat d, dd;		                    /* file status struct */
 
 	pathsize = 0;
 	*pnptr = '\0';
@@ -105,7 +106,7 @@ getwd(pathname)
  */
 static char *
 prepend(dirname, pathname)
-	register char *dirname;
+	register const char *dirname;
 	register char *pathname;
 {
 	register int i;			/* directory name size counter */

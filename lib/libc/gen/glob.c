@@ -66,6 +66,8 @@ static char sccsid[] = "@(#)glob.c	8.3 (Berkeley) 10/13/93";
  *	Number of matches in the current invocation of glob.
  */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/stat.h>
 
@@ -75,21 +77,22 @@ static char sccsid[] = "@(#)glob.c	8.3 (Berkeley) 10/13/93";
 #include <glob.h>
 #include <pwd.h>
 #include <stddef.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #define	DOLLAR		'$'
-#define	DOT		'.'
-#define	EOS		'\0'
+#define	DOT		    '.'
+#define	EOS		    '\0'
 #define	LBRACKET	'['
-#define	NOT		'!'
+#define	NOT		    '!'
 #define	QUESTION	'?'
 #define	QUOTE		'\\'
 #define	RANGE		'-'
 #define	RBRACKET	']'
-#define	SEP		'/'
+#define	SEP		    '/'
 #define	STAR		'*'
 #define	TILDE		'~'
 #define	UNDERSCORE	'_'
@@ -130,39 +133,39 @@ typedef char Char;
 #define	ismeta(c)	(((c)&M_QUOTE) != 0)
 
 
-static int	 compare (const void *, const void *);
-static void	 g_Ctoc (const Char *, char *);
-static int	 g_lstat (Char *, struct stat *, glob_t *);
-static DIR	*g_opendir (Char *, glob_t *);
-static Char	*g_strchr (Char *, int);
+static int	 compare(const void *, const void *);
+static void	 g_Ctoc(const Char *, char *);
+static int	 g_lstat(Char *, struct stat *, glob_t *);
+static DIR	*g_opendir(Char *, glob_t *);
+static Char	*g_strchr(const Char *, int);
 #ifdef notdef
-static Char	*g_strcat (Char *, const Char *);
+static Char	*g_strcat(Char *, const Char *);
 #endif
-static int	 g_stat (Char *, struct stat *, glob_t *);
-static int	 glob0 (const Char *, glob_t *);
-static int	 glob1 (Char *, glob_t *);
-static int	 glob2 (Char *, Char *, Char *, glob_t *);
-static int	 glob3 (Char *, Char *, Char *, Char *, glob_t *);
-static int	 globextend (const Char *, glob_t *);
-static const Char *	 globtilde (const Char *, Char *, glob_t *);
-static int	 globexp1 (const Char *, glob_t *);
-static int	 globexp2 (const Char *, const Char *, glob_t *, int *);
-static int	 match (Char *, Char *, Char *);
+static int	 g_stat(Char *, struct stat *, glob_t *);
+static int	 glob0(const Char *, glob_t *);
+static int	 glob1(Char *, glob_t *);
+static int	 glob2(Char *, Char *, Char *, glob_t *);
+static int	 glob3(Char *, Char *, Char *, Char *, glob_t *);
+static int	 globextend(const Char *, glob_t *);
+static const Char *globtilde(const Char *, Char *, glob_t *);
+static int	 globexp1(const Char *, glob_t *);
+static int	 globexp2(const Char *, const Char *, glob_t *, int *);
+static int	 match(Char *, Char *, Char *);
 #ifdef DEBUG
-static void	 qprintf (const char *, Char *);
+static void	 qprintf(const char *, Char *);
 #endif
 
 int
 glob(pattern, flags, errfunc, pglob)
 	const char *pattern;
-	int flags, (*errfunc) (const char *, int);
+	int flags, (*errfunc)(const char *, int);
 	glob_t *pglob;
 {
 	const u_char *patnext;
 	int c;
 	Char *bufnext, *bufend, patbuf[MAXPATHLEN+1];
 
-	patnext = (u_char *) pattern;
+	patnext = (const u_char *)pattern;
 	if (!(flags & GLOB_APPEND)) {
 		pglob->gl_pathc = 0;
 		pglob->gl_pathv = NULL;
@@ -204,7 +207,8 @@ glob(pattern, flags, errfunc, pglob)
  * invoke the standard globbing routine to glob the rest of the magic
  * characters
  */
-static int globexp1(pattern, pglob)
+static int
+globexp1(pattern, pglob)
 	const Char *pattern;
 	glob_t *pglob;
 {
@@ -215,7 +219,7 @@ static int globexp1(pattern, pglob)
 	if (pattern[0] == LBRACE && pattern[1] == RBRACE && pattern[2] == EOS)
 		return glob0(pattern, pglob);
 
-	while ((ptr = (const Char *) g_strchr((Char *) ptr, LBRACE)) != NULL)
+	while ((ptr = (Char *) g_strchr(ptr, LBRACE)) != NULL)
 		if (!globexp2(ptr, pattern, pglob, &rv))
 			return rv;
 
@@ -228,7 +232,8 @@ static int globexp1(pattern, pglob)
  * If it succeeds then it invokes globexp1 with the new pattern.
  * If it fails then it tries to glob the rest of the pattern and returns.
  */
-static int globexp2(ptr, pattern, pglob, rv)
+static int
+globexp2(ptr, pattern, pglob, rv)
 	const Char *ptr, *pattern;
 	glob_t *pglob;
 	int *rv;
@@ -370,7 +375,7 @@ globtilde(pattern, patbuf, pglob)
 		/*
 		 * Expand a ~user
 		 */
-		if ((pwd = getpwnam((char*) patbuf)) == NULL)
+		if ((pwd = getpwnam((char *) patbuf)) == NULL)
 			return pattern;
 		else
 			h = pwd->pw_dir;
@@ -416,7 +421,7 @@ glob0(pattern, pglob)
 			if (c == NOT)
 				++qpatnext;
 			if (*qpatnext == EOS ||
-			    g_strchr((Char *) qpatnext+1, RBRACKET) == NULL) {
+			    g_strchr(qpatnext+1, RBRACKET) == NULL) {
 				*bufnext++ = LBRACKET;
 				if (c == NOT)
 					--qpatnext;
@@ -484,7 +489,7 @@ static int
 compare(p, q)
 	const void *p, *q;
 {
-	return(strcmp(*(char **)p, *(char **)q));
+    return (strcmp(*(const char * const *)p, *(const char * const *)q));
 }
 
 static int
@@ -572,7 +577,7 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 	 * and dirent.h as taking pointers to differently typed opaque
 	 * structures.
 	 */
-	struct dirent *(*readdirfunc)();
+	struct dirent *(*readdirfunc)(void *);
 
 	*pathend = EOS;
 	errno = 0;
@@ -594,7 +599,7 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
 		readdirfunc = pglob->gl_readdir;
 	else
-		readdirfunc = readdir;
+		readdirfunc = (struct dirent *(*)(void *))readdir;
 	while ((dp = (*readdirfunc)(dirp))) {
 		register u_char *sc;
 		register Char *dc;
@@ -789,12 +794,12 @@ g_stat(fn, sb, pglob)
 
 static Char *
 g_strchr(str, ch)
-	Char *str;
+	const Char *str;
 	int ch;
 {
 	do {
 		if (*str == ch)
-			return (str);
+			return (__UNCONST(str));
 	} while (*str++);
 	return (NULL);
 }
