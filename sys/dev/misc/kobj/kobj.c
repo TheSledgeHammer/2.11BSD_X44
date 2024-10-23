@@ -68,6 +68,7 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/exec_elf.h>
+#define _KSYMS_PRIVATE
 #include <sys/ksyms.h>
 #include <vm/include/vm_extern.h>
 
