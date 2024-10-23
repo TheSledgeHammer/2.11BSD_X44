@@ -11,6 +11,8 @@ static char sccsid[] = "@(#)l3.c	2.3 (Berkeley) 1/25/87";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <stdlib.h>
+
 /*
  * Convert longs to 3-byte disk addresses
  */

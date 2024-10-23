@@ -81,13 +81,7 @@ __RCSID("$NetBSD: nlist.c,v 1.21 2003/08/07 16:42:54 agc Exp $");
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <a.out.h>			/* for 'struct nlist' declaration */
-
-#if 0
-#ifdef __weak_alias
-__weak_alias(nlist,_nlist)
-#endif
-#endif
+#include <nlist.h>			/* for 'struct nlist' declaration */
 
 #include "nlist_private.h"
 

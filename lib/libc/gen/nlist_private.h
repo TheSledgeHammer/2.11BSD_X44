@@ -41,9 +41,11 @@
 #  define	NLIST_ELF64
 #  define	NLIST_ELF32
 #elif defined(__mips__)
-#  define	NLIST_AOUT
 #  define	NLIST_ECOFF
 #  define	NLIST_ELF32
+#  ifndef __mips_o32
+#    define	NLIST_ELF64
+#  endif
 #elif defined(__arm__) || defined(__i386__) || defined (__m68k__) || \
     defined(__powerpc__) || defined(__vax__)
 #  define	NLIST_AOUT
@@ -52,43 +54,48 @@
 #  define	NLIST_AOUT
 #  define	NLIST_ELF32
 #  define	NLIST_ELF64
-#elif defined(__SH5__)
-#  define	NLIST_ELF32
-#  define	NLIST_ELF64
 #elif defined(__sh__)
 #  define	NLIST_COFF
 #  define	NLIST_ELF32
 #elif defined(__hppa__)
 #  define	NLIST_ELF32
+#elif defined(__riscv__)
+#  define	NLIST_ELF32
+#  ifdef _LP64
+#    define	NLIST_ELF64
+#  endif
+#elif defined(__aarch64__)
+#  define	NLIST_ELF64
+#elif defined(__ia64__)
+#  define	NLIST_ELF64
+#elif defined(__or1k__)
+#  define	NLIST_ELF32
 #else
-#  define	NLIST_AOUT
-/* #define	NLIST_ECOFF */
-/* #define	NLIST_ELF32 */
-/* #define	NLIST_ELF64 */
-/* #define	NLIST_XCOFF32 */
-/* #define	NLIST_XCOFF64 */
+#  error	"Add your architecture here"
 #endif
 
-#define	ISLAST(p)	(p->n_un.n_name == 0 || p->n_un.n_name[0] == 0)
+#define	ISLAST(p)	(N_NAME(p) == 0 || N_NAME(p)[0] == 0)
+
+struct nlist;
 
 #ifdef NLIST_AOUT
-int	__fdnlist_aout (int, struct nlist *);
+int	__fdnlist_aout(int, struct nlist *);
 #endif
 #ifdef NLIST_COFF
-int	__fdnlist_coff (int, struct nlist *);
+int	__fdnlist_coff(int, struct nlist *);
 #endif
 #ifdef NLIST_ECOFF
-int	__fdnlist_ecoff (int, struct nlist *);
+int	__fdnlist_ecoff(int, struct nlist *);
 #endif
 #ifdef NLIST_ELF32
-int	__fdnlist_elf32 (int, struct nlist *);
+int	__fdnlist_elf32(int, struct nlist *);
 #endif
 #ifdef NLIST_ELF64
-int	__fdnlist_elf64 (int, struct nlist *);
+int	__fdnlist_elf64(int, struct nlist *);
 #endif
 #ifdef NLIST_XCOFF32
-int	__fdnlist_xcoff32 (int, struct nlist *);
+int	__fdnlist_xcoff32(int, struct nlist *);
 #endif
 #ifdef NLIST_XCOFF64
-int	__fdnlist_xcoff64 (int, struct nlist *);
+int	__fdnlist_xcoff64(int, struct nlist *);
 #endif

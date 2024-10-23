@@ -50,7 +50,7 @@ __RCSID("$NetBSD: nlist_coff.c,v 1.5 2003/07/26 19:24:43 salo Exp $");
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <a.out.h>			/* for 'struct nlist' declaration */
+#include <nlist.h>			/* for 'struct nlist' declaration */
 
 #include "nlist_private.h"
 #ifdef NLIST_COFF

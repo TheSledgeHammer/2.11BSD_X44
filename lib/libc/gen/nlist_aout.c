@@ -82,11 +82,14 @@ __RCSID("$NetBSD: nlist_aout.c,v 1.15 2003/08/07 16:42:54 agc Exp $");
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <a.out.h>			/* for 'struct nlist' declaration */
 
+struct nlist;
 #include "nlist_private.h"
 
 #ifdef NLIST_AOUT
+#include <a.out.h>			/* for 'struct nlist' declaration */
+#include <sys/exec_aout.h>
+
 int
 __fdnlist_aout(fd, list)
 	int fd;
@@ -110,9 +113,9 @@ __fdnlist_aout(fd, list)
 		return (-1);
 	}
 
-	symoff = N_SYMOFF(ebuf);
+	symoff = N_SYMOFF(ebuf.e);
 	symsize = (size_t)ebuf.e.a_syms;
-	stroff = symoff + symsize; //N_STROFF(ebuf);
+	stroff = symoff + symsize;
 
 	/* Check for files too large to mmap. */
 	if (st.st_size - stroff > SIZE_T_MAX) {
@@ -151,7 +154,12 @@ __fdnlist_aout(fd, list)
 	}
 	if (lseek(fd, symoff, SEEK_SET) == -1)
 		return (-1);
-	if ((scoreboard = alloca((size_t)nent)) == NULL)
+#if defined(__SSP__) || defined(__SSP_ALL__)
+    scoreboard = malloc((size_t)nent);
+#else
+    scoreboard = alloca((size_t)nent);
+#endif
+	if (scoreboard == NULL)
 		return (-1);
 	(void)memset(scoreboard, 0, (size_t)nent);
 
@@ -181,6 +189,9 @@ __fdnlist_aout(fd, list)
 		}
 	}
 	munmap(strtab, strsize);
+#if defined(__SSP__) || defined(__SSP_ALL__)
+	free(scoreboard);
+#endif
 	return (nent);
 }
 #endif /* NLIST_AOUT */
