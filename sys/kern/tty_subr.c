@@ -60,7 +60,7 @@ cinit(void)
  * to it.
  */
 struct cblock *
-cblock_alloc()
+cblock_alloc(void)
 {
 	struct cblock *cblockp;
 

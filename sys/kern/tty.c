@@ -2369,7 +2369,7 @@ ttysleep(tp, chan, pri, wmesg, timo)
  * ttyopen().
  */
 struct tty *
-ttymalloc()
+ttymalloc(void)
 {
 	struct tty *tp;
 	tp = malloc(sizeof(*tp), M_TTY, M_WAITOK);

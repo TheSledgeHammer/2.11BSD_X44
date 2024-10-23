@@ -7,13 +7,13 @@
 
 #include <sys/cdefs.h>
 
-#ifdef __indr_reference
-__indr_reference(_inet_pton,inet_pton)
-#else
-
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#ifdef __weak_alias
+__weak_alias(_inet_pton,inet_pton)
+#else
 
 extern int	_inet_pton(int, const char *, void *);
 

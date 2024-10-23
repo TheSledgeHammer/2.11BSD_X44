@@ -7,13 +7,13 @@
 
 #include <sys/cdefs.h>
 
-#ifdef __indr_reference
-__indr_reference(_inet_aton,inet_aton)
-#else
-
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#ifdef __weak_alias
+__weak_alias(_inet_aton,inet_aton)
+#else
 
 extern int	_inet_aton(const char *, struct in_addr *);
 

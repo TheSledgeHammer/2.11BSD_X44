@@ -58,7 +58,6 @@ __weak_alias(getfsspec,_getfsspec)
 __weak_alias(setfsent,_setfsent)
 #endif
 
-//extern	char	*__progname;
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
 
@@ -106,10 +105,10 @@ fstabscan(void)
 
 	for (;;) {
 		if (!fgets(line, sizeof(line), _fs_fp))
-			return(0);
+			return (0);
 		bp = index(line, '\n');
 		if (!bp)
-			return(0);
+			return (0);
 		*bp = '\0';
 		cp = line;
 /* OLD_STYLE_FSTAB */
@@ -128,7 +127,7 @@ fstabscan(void)
 					_fs_fstab.fs_freq = atoi(bp);
 					if (bp == strsep(&cp, colon)) {
 						_fs_fstab.fs_passno = atoi(bp);
-						return(1);
+						return (1);
 					}
 				}
 			}
@@ -180,7 +179,7 @@ fstabscan(void)
 		if (typexx)
 			continue;
 		if (cp != NULL)
-			return(1);
+			return (1);
 
 bad:		/* no way to distinguish between EOF and syntax error */
 		error(EFTYPE);
@@ -191,9 +190,10 @@ bad:		/* no way to distinguish between EOF and syntax error */
 struct fstab *
 getfsent(void)
 {
-	if ((!_fs_fp && !setfsent()) || !fstabscan())
-		return((struct fstab *)NULL);
-	return(&_fs_fstab);
+	if ((!_fs_fp && !setfsent()) || !fstabscan()) {
+		return ((struct fstab *)NULL);
+	}
+	return (&_fs_fstab);
 }
 
 struct fstab *
@@ -203,8 +203,8 @@ getfsspec(name)
 	if (setfsent())
 		while (fstabscan())
 			if (!strcmp(_fs_fstab.fs_spec, name))
-				return(&_fs_fstab);
-	return((struct fstab *)NULL);
+				return (&_fs_fstab);
+	return ((struct fstab *)NULL);
 }
 
 struct fstab *
@@ -215,7 +215,7 @@ getfsfile(name)
 		while (fstabscan())
 			if (!strcmp(_fs_fstab.fs_file, name))
 				return(&_fs_fstab);
-	return((struct fstab *)NULL);
+	return ((struct fstab *)NULL);
 }
 
 int
