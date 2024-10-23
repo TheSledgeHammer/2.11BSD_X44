@@ -36,6 +36,7 @@
 
 #include <sys/exec_elf.h>
 
+#ifdef _KSYMS_PRIVATE
 #include <sys/ioccom.h>
 #include <sys/queue.h>
 #include <sys/stdint.h>
@@ -100,7 +101,7 @@ extern int 			ksyms_ctfsz;	/* this is not currently used by savecore(8) */
 extern struct ksyms_symhead 	ksyms_symtabs;
 
 static void ksyms_sizes_calc(void);
-
+#endif	/* _KSYMS_PRIVATE */
 #if defined(_KERNEL)
 /*
  * Definitions used in ksyms_getname() and ksyms_getval().
