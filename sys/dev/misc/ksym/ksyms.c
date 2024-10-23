@@ -71,6 +71,7 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 #include <sys/lock.h>
+#define _KSYMS_PRIVATE
 #include <sys/ksyms.h>
 
 dev_type_open(ksymsopen);
