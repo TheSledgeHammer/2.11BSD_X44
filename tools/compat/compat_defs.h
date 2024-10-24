@@ -460,7 +460,7 @@ int heapsort (void *, size_t, size_t, int (*)(const void *, const void *));
 
 #if !HAVE_PWCACHE_USERDB
 int uid_from_user(const char *, uid_t *);
-int pwcache_userdb(int (*)(int), void (*)(void), struct passwd * (*)(const char *), struct passwd * (*)(uid_t));
+int pwcache_userdb(int (*)(int), void (*)(void), struct passwd * (*)(char *), struct passwd * (*)(uid_t));
 int gid_from_group(const char *, gid_t *);
 int pwcache_groupdb(int (*)(int), void (*)(void), struct group * (*)(const char *), struct group * (*)(gid_t));
 #endif
