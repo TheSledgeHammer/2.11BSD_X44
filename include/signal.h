@@ -18,7 +18,7 @@ extern const char *sys_signame;
 #ifndef __SYS_SIGLIST_DECLARED
 #define __SYS_SIGLIST_DECLARED
 /* also in unistd.h */
-extern const char *sys_siglist;
+extern const char *sys_siglist[];
 #endif /* __SYS_SIGLIST_DECLARED */
 extern const int sys_nsigname;
 extern const int sys_nsiglist;
