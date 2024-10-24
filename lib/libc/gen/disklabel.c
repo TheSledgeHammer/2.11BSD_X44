@@ -74,7 +74,6 @@ __weak_alias(getdiskbyname,_getdiskbyname)
 static void	error(int);
 #endif
 static int	gettype(char *, const char *const *);
-static char *setdisktab(const char *);
 
 struct disklabel *
 getdiskbyname(const char *name)
@@ -83,7 +82,7 @@ getdiskbyname(const char *name)
     struct disklabel *dp;
     struct partition *pp;
     char	*buf;
-    char    *db_array[2] = { setdisktab(_PATH_DISKTAB), 0 };
+    const char    *db_array[2] = { _PATH_DISKTAB, 0 };
 	char	*cp, *cq;	/* can't be register */
 	char	p, max, psize[3], pbsize[3], pfsize[3], poffset[3], ptype[3];
 	u_int32_t *dx;
@@ -92,7 +91,7 @@ getdiskbyname(const char *name)
     dp = &disk;
 
     _DIAGASSERT(name != NULL);
-    if (cgetent(&buf, db_array, name) < 0) {
+    if (cgetent(&buf, __UNCONST(db_array), name) < 0) {
         return (NULL);
     }
 
@@ -218,13 +217,6 @@ gettype(t, names)
 		return (atoi(t));
 	}
 	return (0);
-}
-
-static char *
-setdisktab(const char *tab)
-{
-    char *path = (char *)&tab;
-    return (path);
 }
 
 #if 0
