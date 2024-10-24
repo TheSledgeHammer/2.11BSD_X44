@@ -11,9 +11,12 @@ static char sccsid[] = "@(#)setjmperr.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <setjmp.h>			/* include any machine defines */
+#include "namespace.h"
 
-#define ERRMSG	"longjmp botch\n"
+#include <setjmp.h>			/* include any machine defines */
+#include <unistd.h>
+
+#define ERRMSG	"longjmp botch.\n"
 
 /*
  * This routine is called from longjmp() when an error occurs.
@@ -24,6 +27,5 @@ static char sccsid[] = "@(#)setjmperr.c	5.2 (Berkeley) 3/9/86";
 void
 longjmperror(void)
 {
-
-	write(2, ERRMSG, sizeof(ERRMSG));
+	(void)write(STDERR_FILENO, ERRMSG, sizeof(ERRMSG)-1);
 }

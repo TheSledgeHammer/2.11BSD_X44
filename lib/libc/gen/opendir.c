@@ -11,6 +11,8 @@ static char sccsid[] = "@(#)opendir.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <stddef.h>
@@ -27,16 +29,15 @@ static char sccsid[] = "@(#)opendir.c	5.2 (Berkeley) 3/9/86";
  */
 DIR *
 opendir(name)
-	char *name;
+	const char *name;
 {
 	register DIR *dirp;
 	register int fd;
-	char	*malloc();
 
 	if ((fd = open(name, 0)) == -1)
 		return NULL;
 	if ((dirp = (DIR *)malloc(sizeof(DIR))) == NULL) {
-		close (fd);
+		close(fd);
 		return NULL;
 	}
 	dirp->dd_fd = fd;

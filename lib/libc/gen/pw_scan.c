@@ -122,7 +122,7 @@ pw_scan(bp, pw, flags)
 		*flags |= _PASSWORD_NOGID;
 
 	if (inflags & _PASSWORD_OLDFMT) {
-		pw->pw_class = "";
+		pw->pw_class = __UNCONST("");
 		pw->pw_change = 0;
 		pw->pw_expire = 0;
 		*flags |= (_PASSWORD_NOCHG | _PASSWORD_NOEXP);

@@ -33,7 +33,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)sethostname.c	8.1.1 (2.11BSD) 1997/11/30";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
@@ -50,14 +52,14 @@ __weak_alias(sethostname,_sethostname)
 
 int
 sethostname(name, namelen)
-	char *name;
-	int namelen;
+	const char *name;
+	size_t namelen;
 {
 	int mib[2];
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_HOSTNAME;
-	if (sysctl(mib, 2, NULL, NULL, (void *)name, namelen) == -1)
+	if (sysctl(mib, 2, NULL, NULL, (void *)&name, namelen) == -1)
 		return (-1);
 	return (0);
 }

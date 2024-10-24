@@ -11,23 +11,29 @@ static char sccsid[] = "@(#)psignal.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
+#include <sys/types.h>
+#include <sys/uio.h>
 /*
  * Print the name of the signal indicated
  * along with the supplied message.
  */
-#include <sys/signal.h>
+#include <signal.h>
 #include <string.h>
 #include <unistd.h>
 
-extern	char *sys_siglist[];
+#ifdef __weak_alias
+__weak_alias(psignal,_psignal)
+#endif
 
 void
 psignal(sig, s)
-	unsigned sig;
-	char *s;
+	unsigned int sig;
+	const char *s;
 {
-	register char *c;
-	register n;
+	register const char *c;
+	register int n;
 
 	c = "Unknown signal";
 	if (sig < NSIG)
@@ -36,9 +42,9 @@ psignal(sig, s)
 		c = "Unknown signal";
 	n = strlen(s);
 	if (n) {
-		write(2, s, n);
-		write(2, ": ", 2);
+		write(STDERR_FILENO, s, n);
+		write(STDERR_FILENO, ": ", 2);
 	}
-	write(2, c, strlen(c));
-	write(2, "\n", 1);
+	write(STDERR_FILENO, c, strlen(c));
+	write(STDERR_FILENO, "\n", 1);
 }

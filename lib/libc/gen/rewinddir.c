@@ -44,6 +44,6 @@ void
 rewinddir(dirp)
 	DIR *dirp;
 {
-	_seekdir(dirp, dirp->dd_rewind);
+	seekdir(dirp, dirp->dd_rewind);
 	dirp->dd_rewind = telldir(dirp);
 }

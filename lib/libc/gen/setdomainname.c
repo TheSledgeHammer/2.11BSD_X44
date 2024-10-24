@@ -52,14 +52,14 @@ __weak_alias(setdomainname,_setdomainname)
 
 int
 setdomainname(name, namelen)
-	char *name;
-	int namelen;
+	const char *name;
+	size_t namelen;
 {
 	int mib[2];
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_DOMAINNAME;
-	if (sysctl(mib, 2, NULL, NULL, (void *)name, namelen) == -1)
+	if (sysctl(mib, 2, NULL, NULL, (void *)&name, namelen) == -1)
 		return (-1);
 	return (0);
 }

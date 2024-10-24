@@ -155,7 +155,7 @@ __fdnlist_ecoff(fd, list)
 			char *symtabname;
 
 			/* This may be incorrect */
-			nlistname = p->n_un.n_name;
+			nlistname = N_NAME(p);
 			if (*nlistname == '_')
 				nlistname++;
 

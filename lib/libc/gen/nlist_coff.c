@@ -172,7 +172,7 @@ __fdnlist_coff(fd, list)
 			continue;
 
 		for (p = list; !ISLAST(p); p++) {
-			nlistname = p->n_un.n_name;
+			nlistname = N_NAME(p);
 			if (!strcmp(symtabname, nlistname)) {
 				/*
 				 * Translate (roughly) from COFF to nlist

@@ -11,6 +11,8 @@ static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <stddef.h>
 
@@ -106,8 +108,10 @@ static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
 
 static int advance(char *, char *);
 int backref(int, char *);
-int cclass(char *, char *, int);
+int cclass(char *, char, int);
 
+static  const char *retnoprev = "No previous regular expression";
+static	const char *retoolong = "Regular expression too long";
 static	char	expbuf[ESIZE], *braslist[NBRA], *braelist[NBRA];
 static	char	circf;
 
@@ -124,13 +128,16 @@ re_comp(sp)
 	char	*lastep = 0;
 	char	bracket[NBRA];
 	char	*bracketp = &bracket[0];
-	static	char	*retoolong = "Regular expression too long";
 
-#define	comerr(msg) {expbuf[0] = 0; numbra = 0; return(msg); }
+#define	comerr(msg) {           \
+    expbuf[0] = 0;              \
+    numbra = 0;                 \
+    return (__UNCONST(msg));    \
+}
 
 	if (sp == 0 || *sp == '\0') {
 		if (*ep == 0)
-			return("No previous regular expression");
+			return (__UNCONST(retnoprev));
 		return(0);
 	}
 	if (*sp == '^') {
@@ -244,7 +251,7 @@ re_exec(p1)
 {
 	register char	*p2 = expbuf;
 	register int	c;
-	int	rv;
+	register int	rv = 0;
 
 	for (c = 0; c < NBRA; c++) {
 		braslist[c] = 0;
@@ -270,9 +277,9 @@ re_exec(p1)
 	 */
 	do
 		if (rv == advance(p1, p2))
-			return(rv);
+			return (rv);
 	while (*p1++);
-	return(0);
+	return (0);
 }
 
 /* 
@@ -280,11 +287,11 @@ re_exec(p1)
  */
 static	int
 advance(lp, ep)
-	register char	*lp, *ep;
+	register char *lp, *ep;
 {
-	register char	*curlp;
+	register char *curlp;
 	int	ct, i;
-	int	rv;
+	register int	rv = 0;
 
 	for (;;)
 		switch (*ep++) {
@@ -322,11 +329,12 @@ advance(lp, ep)
 			return(0);
 
 		case CBRA:
-			braslist[*ep++] = lp;
+
+			braslist[(unsigned char)*ep++] = lp;
 			continue;
 
 		case CKET:
-			braelist[*ep++] = lp;
+			braelist[(unsigned char)*ep++] = lp;
 			continue;
 
 		case CBACK:
@@ -402,7 +410,7 @@ backref(i, lp)
 
 int
 cclass(set, c, af)
-	register char	*set, c;
+	register char *set, c;
 	int	af;
 {
 	register int	n;
@@ -413,5 +421,5 @@ cclass(set, c, af)
 	while (--n)
 		if (*set++ == c)
 			return(af);
-	return(! af);
+	return(!af);
 }

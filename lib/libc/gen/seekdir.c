@@ -11,9 +11,12 @@ static char sccsid[] = "@(#)seekdir.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <dirent.h>
 #include <stddef.h>
+#include <unistd.h>
 
 /*
  * seek to an entry in a directory.
@@ -25,8 +28,7 @@ seekdir(dirp, loc)
 	long loc;
 {
 	long curloc, base, offset;
-	struct direct *dp;
-	extern long lseek();
+	struct dirent *dp;
 
 	curloc = telldir(dirp);
 	if (loc == curloc)

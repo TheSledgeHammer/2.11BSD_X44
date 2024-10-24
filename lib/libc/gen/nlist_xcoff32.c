@@ -54,7 +54,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <a.out.h>			/* for 'struct nlist' declaration */
+#include <nlist.h>			/* for 'struct nlist' declaration */
 
 #include "nlist_private.h"
 #if defined(NLIST_XCOFF32) || defined(NLIST_XCOFF64)
@@ -160,7 +160,7 @@ XCOFFNAMEEND(__fdnlist)(fd, list)
 			char *symtabname;
 
 			/* This may be incorrect */
-			nlistname = p->n_un.n_name;
+			nlistname = N_NAME(p);
 			if (*nlistname == '_')
 				nlistname++;
 

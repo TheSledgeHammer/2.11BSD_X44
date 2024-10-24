@@ -40,18 +40,25 @@ static char sccsid[] = "@(#)popen.c	5.15.1 (2.11BSD) 1999/10/24";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
-#include <sys/signal.h>
 #include <sys/types.h>
 
+#include <signal.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <paths.h>
+
+#ifdef __weak_alias
+__weak_alias(popen,_popen)
+__weak_alias(pclose,_pclose)
+#endif
 
 static int *pids;
 
