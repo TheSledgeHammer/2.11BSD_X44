@@ -43,24 +43,9 @@
 #ifndef _SETJMP_H_
 #define _SETJMP_H_
 
-#include <machine/setjmp.h>
-
-#ifndef _JB_ATTRIBUTES
-#define _JB_ATTRIBUTES	/**/
-#endif
-#ifndef _BSD_JBSLOT_T_
-#define	_BSD_JBSLOT_T_	long
-#endif
-
-#ifndef _ANSI_SOURCE
-typedef long sigjmp_buf[_JBLEN + 1];
-#endif /* not ANSI */
-
-typedef _BSD_JBSLOT_T_ jmp_buf[_JBLEN] _JB_ATTRIBUTES;
-
-typedef long jmp_buf[_JBLEN];
-
 #include <sys/cdefs.h>
+/* The size of the jmp_buf is machine dependent: */
+#include <machine/setjmp.h>
 
 __BEGIN_DECLS
 int		setjmp(jmp_buf);
