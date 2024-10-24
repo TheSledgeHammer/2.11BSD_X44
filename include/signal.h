@@ -14,7 +14,7 @@
 #include <sys/signal.h>
 
 #if defined(__BSD_VISIBLE)
-extern const char *sys_signame;
+extern const char *sys_signame[];
 #ifndef __SYS_SIGLIST_DECLARED
 #define __SYS_SIGLIST_DECLARED
 /* also in unistd.h */
