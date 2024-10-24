@@ -115,7 +115,7 @@ ssize_t			write(int, const void *, size_t);
 #ifndef __SYS_SIGLIST_DECLARED
 #define __SYS_SIGLIST_DECLARED
 /* also in signal.h */
-extern const char *sys_siglist;
+extern const char *sys_siglist[];
 #endif /* __SYS_SIGLIST_DECLARED */
 /*
  * IEEE Std 1003.2-92, adopted in X/Open Portability Guide Issue 4 and later
