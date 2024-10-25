@@ -148,20 +148,26 @@ typedef int     (*sgetmbrune_t)(struct _Encoding_Info *, wchar_t *, const char *
 typedef int     (*sputmbrune_t)(struct _Encoding_Info *, char *, size_t, wchar_t, struct _Encoding_State *, size_t *);
 typedef int     (*sgetcsrune_t)(struct _Encoding_Info *, wchar_t *, uint32_t, uint32_t);
 typedef int     (*sputcsrune_t)(struct _Encoding_Info *, uint32_t *, uint32_t *, wchar_t);
+typedef int     (*module_init_t)(struct _Encoding_Info *, const void *, size_t);
+typedef void    (*module_uninit_t)(struct _Encoding_Info *);
 
 typedef struct _RuneOps {
 	/* legacy */
-    sgetrune_t ro_sgetrune;
-    sputrune_t ro_sputrune;
+    sgetrune_t      ro_sgetrune;
+    sputrune_t      ro_sputrune;
 
 	/* ctype: */
-    sgetmbrune_t ro_sgetmbrune;
-    sputmbrune_t ro_sputmbrune;
+    sgetmbrune_t    ro_sgetmbrune;
+    sputmbrune_t    ro_sputmbrune;
 
 	/* stdenc */
-    sgetcsrune_t ro_sgetcsrune;
-    sputcsrune_t ro_sputcsrune;
-} _RuneOps;
+    sgetcsrune_t    ro_sgetcsrune;
+    sputcsrune_t    ro_sputcsrune;
+
+    /* module */
+    module_init_t   ro_module_init;
+    module_uninit_t ro_module_uninit;
+} _RuneOps;;
 
 /*
  * ctype stuffs
