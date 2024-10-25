@@ -11,6 +11,8 @@
 #ifndef _ERRLST_H_
 #define	_ERRLST_H_
 
+#include <sys/cdefs.h>
+
 /*
  * Definitions used by the 'mkerrlst' program which creates error message 
  * files.
@@ -43,4 +45,7 @@ struct	ERRLST {
 #define	ERRMAGIC		012345
 #define	_PATH_SYSERRLST	"/etc/syserrlst"
 
+__BEGIN_DECLS
+char *syserrlst(int);
+__END_DECLS
 #endif /* !_ERRLST_H_ */
