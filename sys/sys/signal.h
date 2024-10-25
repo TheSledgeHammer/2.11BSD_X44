@@ -202,7 +202,8 @@ struct sigcontext;
 
 __BEGIN_DECLS
 //void	(*signal (int, void (*) (int))) (int);
-int		(*signal(int, void (*) (int))) (int);
+//int	(*signal(int, void (*) (int))) (int);
+int     (*signal(int, sig_t));
 #define	BADSIG		SIG_ERR
 __END_DECLS
 #endif /* !_KERNEL */
