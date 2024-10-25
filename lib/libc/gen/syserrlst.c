@@ -23,19 +23,24 @@
 
 #include <sys/cdefs.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "namespace.h"
+
 #include <sys/types.h>
-#include <sys/file.h>
-#include <sys/uio.h>
-#include <fcntl.h>
+
 #include <errno.h>
 #include <errlst.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-static	char	msgstr[64];
-char	*__errlst(int, char *);
-char 	*syserrlst_default(int, char *);
-char 	*__errlst_default(int, char *, char **);
+#define MSGSTRLEN 128
+
+static char msgstr[MSGSTRLEN];
+char	*__errlst(int, const char *);
+char 	*syserrlst_default(int, const char *);
+char 	*__errlst_default(int, const char *, const char **);
 
 char *
 syserrlst(err)
@@ -52,15 +57,14 @@ syserrlst(err)
 char *
 __errlst(err, path)
 	int	err;
-	char	*path;
+	const char	*path;
 {
-	register int	f;
-	register char	*retval = NULL;
+	register int f;
+	register char *retval = NULL;
 	int	saverrno;
-	struct	iovec	iov[2];
-	off_t	off;
-	struct	ERRLST	emsg;
-	struct	ERRLSTHDR ehdr;
+	off_t off;
+	struct ERRLST	emsg;
+	struct ERRLSTHDR ehdr;
 
 	saverrno = errno;
 	f = open(path, O_RDONLY);
@@ -74,7 +78,7 @@ __errlst(err, path)
 		goto oops;
 
 	off = sizeof(ehdr) + ((off_t) sizeof(struct ERRLST) * err);
-	if (lseek(f, off, L_SET) == (off_t) -1)
+	if (lseek(f, off, SEEK_SET) == (off_t) -1)
 		goto oops;
 
 	if (read(f, &emsg, sizeof(emsg)) != sizeof(emsg))
@@ -83,7 +87,7 @@ __errlst(err, path)
 	if (emsg.lenmsg >= sizeof(msgstr))
 		emsg.lenmsg = sizeof(msgstr) - 1;
 
-	if (lseek(f, emsg.offmsg, L_SET) == (off_t) -1)
+	if (lseek(f, emsg.offmsg, SEEK_SET) == (off_t) -1)
 		goto oops;
 
 	if (read(f, msgstr, emsg.lenmsg) != emsg.lenmsg)
@@ -101,10 +105,8 @@ oops:
 char *
 syserrlst_default(err, path)
 	int 	err;
-	char 	*path;
+	const char 	*path;
 {
-	extern char *sys_errlist[];
-
 	return (__errlst_default(err, path, sys_errlist));
 }
 
@@ -114,12 +116,12 @@ syserrlst_default(err, path)
 char *
 __errlst_default(err, path, list)
 	int err;
-	char	*path;
-	char **list;
+	const char	*path;
+	const char **list;
 {
-	char *msg = NULL;
+	const char *msg = NULL;
 
 	msg = list[err];
-	strncpy(msgstr, msg, 64);
+	(void)strncpy(msgstr, msg, sizeof(msgstr)-1);
 	return (__errlst(err, path));
 }

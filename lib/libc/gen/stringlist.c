@@ -55,6 +55,7 @@ __weak_alias(sl_add,_sl_add)
 __weak_alias(sl_find,_sl_find)
 __weak_alias(sl_free,_sl_free)
 __weak_alias(sl_init,_sl_init)
+__weak_alias(sl_delete,_sl_delete)
 #endif
 
 #define _SL_CHUNKSIZE	20
@@ -63,7 +64,7 @@ __weak_alias(sl_init,_sl_init)
  * sl_init(): Initialize a string list
  */
 StringList *
-sl_init()
+sl_init(void)
 {
 	StringList *sl;
 
@@ -136,7 +137,7 @@ sl_free(sl, all)
 char *
 sl_find(sl, name)
 	StringList *sl;
-	char *name;
+	const char *name;
 {
 	size_t i;
 
@@ -150,4 +151,24 @@ sl_find(sl, name)
 			return (sl->sl_str[i]);
 
 	return (NULL);
+}
+
+int
+sl_delete(sl, name, all)
+    StringList *sl;
+    const char *name;
+    int all;
+{
+	size_t i, j;
+
+	for (i = 0; i < sl->sl_cur; i++)
+		if (strcmp(sl->sl_str[i], name) == 0) {
+			if (all)
+				free(sl->sl_str[i]);
+			for (j = i + 1; j < sl->sl_cur; j++)
+				sl->sl_str[j - 1] = sl->sl_str[j];
+			sl->sl_str[--sl->sl_cur] = NULL;
+			return 0;
+		}
+	return -1;
 }

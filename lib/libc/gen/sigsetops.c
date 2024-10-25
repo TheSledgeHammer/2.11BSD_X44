@@ -82,7 +82,7 @@ sigdelset(set, signo)
 
 int
 sigismember(set, signo)
-	sigset_t *set;
+	const sigset_t *set;
 	int signo;
 {
 	return ((*set & ~sigmask(signo)) != 0);

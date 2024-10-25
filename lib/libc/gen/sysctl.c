@@ -38,14 +38,20 @@ static char sccsid[] = "@(#)sysctl.c	8.2.2 (2.11BSD GTE) 1996/11/27";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/sysctl.h>
+
 #include <errno.h>
 #include <paths.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
-extern	int	errno;
+#include "extern.h"
+
+//extern	int	errno;
 //static char _PATH_STDPATH[]="/usr/bin:/bin:/usr/ucb:/sbin:/usr/sbin:/usr/local:/usr/new";
 
 
@@ -118,7 +124,6 @@ sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case USER_RE_DUP_MAX:
 		*(int *)oldp = RE_DUP_MAX;
 		return (0);
-	case USER_COLL_WEIGHTS_MAX:
 	case USER_POSIX2_VERSION:
 	case USER_POSIX2_C_BIND:
 	case USER_POSIX2_C_DEV:

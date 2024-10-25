@@ -9,11 +9,18 @@
 
 #include <sys/cdefs.h>
 
-#include <stdio.h>	/* For NULL */
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/signal.h>
+
+#include <stdio.h>	        /* For NULL */
 #include <unistd.h>
+
+#ifdef __weak_alias
+__weak_alias(sleep,_sleep)
+#endif
 
 /*
  * This implements the sleep(3) function using only 3 system calls instead of 
@@ -27,6 +34,29 @@
  * or is interrupted - no errors to be checked for.
 */
 
+u_int
+sleep(seconds)
+    u_int seconds;
+{
+    struct timespec f, s;
+
+    if (seconds) {
+        s.tv_sec = seconds;
+		s.tv_nsec = 0;
+        nanosleep(&f, &s);
+        seconds -= (s.tv_sec - f.tv_sec);
+		/*
+		 * ONLY way this can happen is if the system time gets set back while we're
+		 * in the nanosleep() call.  In this case return 0 instead of a bogus number.
+		 */
+        if (seconds < 0) {
+            seconds = 0;
+        }
+    }
+   	return (seconds);
+}
+
+#ifdef notyet
 u_int
 sleep(seconds)
 	u_int seconds;
@@ -49,3 +79,4 @@ sleep(seconds)
 	}
 	return (seconds);
 }
+#endif

@@ -38,10 +38,13 @@ static char sccsid[] = "@(#)syslog.c	8.4.3 (2.11BSD) 1995/07/15";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <syslog.h>
+#include <sys/syslog.h>
 #include <sys/uio.h>
+#include <sys/wait.h>
 #include <netdb.h>
 
 #include <errno.h>
@@ -50,57 +53,56 @@ static char sccsid[] = "@(#)syslog.c	8.4.3 (2.11BSD) 1995/07/15";
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <stdarg.h>
 
-#define	STDERR_FILENO	2
+#ifdef __weak_alias
+__weak_alias(syslog,_syslog)
+__weak_alias(vsyslog,_vsyslog)
+__weak_alias(closelog,_closelog)
+__weak_alias(openlog,_openlog)
+__weak_alias(setlogmask,_setlogmask)
+#endif
 
-static	int	LogFile = -1;		/* fd for log */
-static	char	connected;		/* have done connect */
 #ifdef	pdp11
 static	char	ToFile = 0;		/* set if logfile is used */
-#endif
-static	int	LogStat = 0;		/* status bits, set by openlog() */
-static	char	*LogTag = NULL;		/* string to tag the entry with */
-static	int	LogFacility = LOG_USER;	/* default facility code */
-static	int	LogMask = 0xff;		/* mask of priorities to be logged */
-#ifdef	pdp11
 static	char	logfile[] = "/usr/adm/messages";
 #endif
 
+static	int	LogFile = -1;		/* fd for log */
+static	char connected;		/* have done connect */
+static	int	LogStat = 0;		/* status bits, set by openlog() */
+static	const char *LogTag = NULL;		/* string to tag the entry with */
+static	int	LogFacility = LOG_USER;	/* default facility code */
+static	int	LogMask = 0xff;		/* mask of priorities to be logged */
+
 extern	char	*__progname;		/* Program name, from crt0. */
-extern	int	errno;			/* error number */
 
 /*
  * syslog, vsyslog --
  *	print message on log file; output is intended for syslogd(8).
  */
 void
-syslog(pri, fmt, va_alist)
-	int pri;
-	char *fmt;
-	va_dcl;
+syslog(int pri, const char *fmt, ...)
 {
-	va_list ap;
+    va_list ap;
 
-	va_start(ap);
+	va_start(ap, fmt);
 	vsyslog(pri, fmt, ap);
 	va_end(ap);
 }
 
 void
-vsyslog(pri, fmt, ap)
-	int pri;
-	register char *fmt;
-	va_list ap;
+vsyslog(int pri, const char *fmt, va_list ap)
 {
-	int cnt;
-	char ch;
-	register char *p, *t;
+	register int cnt;
+	register char ch, *p, *t;
 	time_t now;
 	int fd, saved_errno;
-	char *stdp, tbuf[640], fmt_cpy[512];
-	pid_t	pid;
+	char tbuf[2048], fmt_cpy[1024];
+    char *stdp = NULL;
+	pid_t	pid = 0;
 
 #define	INTERNALLOG	LOG_ERR|LOG_CONS|LOG_PERROR|LOG_PID
 	/* Check for invalid bits. */
@@ -111,8 +113,9 @@ vsyslog(pri, fmt, ap)
 	}
 
 	/* Check priority against setlogmask values. */
-	if (!LOG_MASK(LOG_PRI(pri)) & LogMask)
+	if (!(LOG_MASK(LOG_PRI(pri)) & LogMask)) {
 		return;
+    }
 
 	saved_errno = errno;
 
@@ -139,7 +142,7 @@ vsyslog(pri, fmt, ap)
 	}
 
 	/* Substitute error message for %m. */
-	for (t = fmt_cpy; ch == *fmt; ++fmt)
+	for (t = fmt_cpy; (ch = *fmt); ++fmt)
 		if (ch == '%' && fmt[1] == 'm') {
 			++fmt;
 			t += sprintf(t, "%s", strerror(saved_errno));
@@ -158,7 +161,7 @@ vsyslog(pri, fmt, ap)
 		v->iov_base = stdp;
 		v->iov_len = cnt - (stdp - tbuf);
 		++v;
-		v->iov_base = "\n";
+		v->iov_base = __UNCONST("\n");
 		v->iov_len = 1;
 		(void)writev(STDERR_FILENO, iov, 2);
 	}
@@ -170,8 +173,7 @@ vsyslog(pri, fmt, ap)
 	if (ToFile) {
 		if (write(LogFile, tbuf, cnt) == cnt)
 			return;
-	}
-	else
+	} else
 #endif
 	if (send(LogFile, tbuf, cnt, 0) >= 0)
 		return;
@@ -200,8 +202,7 @@ vsyslog(pri, fmt, ap)
 			(void)close(fd);
 			_exit(0);
 		}
-		while (waitpid(pid, NULL, NULL) == -1 && (errno == EINTR))
-			;
+		while (waitpid(pid, NULL, 0) == -1 && (errno == EINTR));
 	}
 }
 
@@ -209,7 +210,7 @@ static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
 
 void
 openlog(ident, logstat, logfac)
-	char *ident;
+	const char *ident;
 	int logstat;
 	register int logfac;
 {
@@ -230,8 +231,7 @@ openlog(ident, logstat, logfac)
 				LogFile = open(logfile, O_WRONLY|O_APPEND);
 				ToFile = 1;
 				connected = 1;
-			}
-			else
+			} else
 				ToFile = 0;
 #endif
 			if (LogFile == -1)
@@ -239,16 +239,18 @@ openlog(ident, logstat, logfac)
 			(void)fcntl(LogFile, F_SETFD, 1);
 		}
 	}
-	if (LogFile != -1 && !connected)
+	if ((LogFile != -1) && !connected) {
 		if (connect(LogFile, &SyslogAddr, sizeof(SyslogAddr)) == -1) {
 			(void)close(LogFile);
 			LogFile = -1;
-		} else
+		} else {
 			connected = 1;
+        }
+    }
 }
 
 void
-closelog()
+closelog(void)
 {
 	(void)close(LogFile);
 	LogFile = -1;

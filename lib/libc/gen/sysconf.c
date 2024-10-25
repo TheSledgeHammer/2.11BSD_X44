@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)sysconf.c	8.2 (Berkeley) 3/20/94";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/time.h>
@@ -70,7 +72,7 @@ long
 sysconf(name)
 	int name;
 {
-	struct clockinfo clk;
+//	struct clockinfo clk;
 	struct rlimit rl;
 	size_t len;
 	int mib[2], value;
@@ -86,7 +88,10 @@ sysconf(name)
 	case _SC_CHILD_MAX:
 		return (getrlimit(RLIMIT_NPROC, &rl) ? -1 : rl.rlim_cur);
 	case _SC_CLK_TCK:
-		return (CLK_TCK);
+        mib[0] = CTL_KERN;
+		mib[1] = KERN_CLOCKRATE;
+        goto yesno;
+//		return (CLK_TCK);
 	case _SC_JOB_CONTROL:
 		mib[0] = CTL_KERN;
 		mib[1] = KERN_JOB_CONTROL;
@@ -182,7 +187,8 @@ sysconf(name)
 	case _SC_2_UPE:
 		mib[0] = CTL_USER;
 		mib[1] = USER_POSIX2_UPE;
-yesno:		if (sysctl(mib, 2, &value, &len, NULL, 0) == -1)
+yesno:	
+        if (sysctl(mib, 2, &value, &len, NULL, 0) == -1)
 			return (-1);
 		if (value == 0)
 			return (-1);

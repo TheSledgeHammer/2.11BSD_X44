@@ -42,7 +42,6 @@ static char sccsid[] = "@(#)signal.c	8.1 (Berkeley) 6/4/93";
  * Almost backwards compatible signal.
  */
 #include "namespace.h"
-#include "extern.h"
 #include <signal.h>
 
 #ifdef __weak_alias

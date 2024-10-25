@@ -54,6 +54,8 @@ __weak_alias(setproctitle,_setproctitle)
 
 #define	MAX_PROCTITLE	2048
 
+static void setproctitle_internal(struct ps_strings **, int *, char **, char *);
+
 /*
  * For compatibility with old versions of crt0 that didn't define __ps_strings,
  * define it as a common here.
@@ -78,7 +80,7 @@ setproctitle(const char *fmt, ...)
 	va_end(ap);
 
 	bufp = buf;
-
+#ifdef notyet
 #ifdef	USRSTACK
 	/*
 	 * For compatibility with old versions of crt0 and old kernels, set
@@ -92,6 +94,29 @@ setproctitle(const char *fmt, ...)
 
 	if (__ps_strings != 0) {
 		__ps_strings->ps_nargvstr = 1;
-		__ps_strings->ps_argvstr = &bufp;
+		__ps_strings->ps_argvstr = bufp;
 	}
+#endif
+
+    setproctitle_internal(&__ps_strings, &__ps_strings->ps_nargvstr, &__ps_strings->ps_argvstr, bufp);
+}
+
+static void
+setproctitle_internal(struct ps_strings **ps, int *nargv, char **argv, char *bufp)
+{
+#ifdef	USRSTACK
+	/*
+	 * For compatibility with old versions of crt0 and old kernels, set
+	 * __ps_strings to a default value if it's null.
+	 * But only if USRSTACK is defined.  It might not be defined if
+	 * user-level code can not assume it's a constant (i.e. m68k).
+	 */
+    if (*ps == NULL) {
+        *ps = PS_STRINGS;
+    }
+#endif /* USRSTACK */
+    if (*ps != NULL) {
+        *nargv = 1;
+        argv = &bufp;
+    }
 }
