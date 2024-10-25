@@ -380,4 +380,29 @@ struct cmsghdr {
 #define	SCM_TIMESTAMP	0x08		/* timestamp (struct timeval) */
 #define	SCM_CREDS		0x10		/* credentials (struct sockcred) */
 
+#ifndef	_KERNEL
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	accept(int, struct sockaddr *, int *);
+int	bind(int, const struct sockaddr *, u_int);
+int	connect(int, const struct sockaddr *, int);
+int	getpeername(int, struct sockaddr *, int *);
+int	getsockname(int, struct sockaddr *, int *);
+int	getsockopt(int, int, int, void *, int *);
+int	listen(int, int);
+ssize_t	recv(int, void *, size_t, int);
+ssize_t	recvfrom(int, void *, size_t, int, struct sockaddr *, int *);
+ssize_t	recvmsg(int, struct msghdr *, int);
+ssize_t	send(int, const void *, size_t, int);
+ssize_t	sendto(int, const void *, size_t, int, const struct sockaddr *, int);
+ssize_t	sendmsg(int, const struct msghdr *, int);
+int	setsockopt(int, int, int, const void *, int);
+int	shutdown(int, int);
+int	socket(int, int, int);
+int	socketpair(int, int, int, int *);
+__END_DECLS
+
+#endif /* !_KERNEL */
 #endif	/* _SYS_SOCKET_H_ */
