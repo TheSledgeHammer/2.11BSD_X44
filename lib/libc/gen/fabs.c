@@ -11,6 +11,9 @@ static char sccsid[] = "@(#)fabs.c	2.2 (Berkeley) 1/25/87";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+/* Already defined in libc/arch/"arch"/gen */
+double fabs(double);
+
 double
 fabs(arg)
 	double arg;
