@@ -46,6 +46,7 @@ static char sccsid[] = "@(#)fseek.c	5.3 (Berkeley) 3/9/86";
  * Seek for standard library.  Coordinates with buffering.
  */
 
+#include "namespace.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -55,12 +56,25 @@ static char sccsid[] = "@(#)fseek.c	5.3 (Berkeley) 3/9/86";
 #include <errno.h>
 #include "local.h"
 
+#ifdef __weak_alias
+__weak_alias(fseeko, _fseeko)
+#endif
+
 #define	POS_ERR	(-(fpos_t)1)
 
 /*
  * Seek the given file to the given offset.
  * `Whence' must be one of the three SEEK_* macros.
  */
+int
+fseek(fp, offset, whence)
+	register FILE *fp;
+	long offset;
+	int whence;
+{
+    return (fseeko(fp, offset, whence));
+}
+
 int
 fseek(fp, offset, whence)
 	register FILE *fp;
