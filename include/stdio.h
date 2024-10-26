@@ -346,6 +346,22 @@ ssize_t	 getline(char ** __restrict, size_t * __restrict, FILE * __restrict);
 __END_DECLS
 
 /*
+ * X/Open CAE Specification Issue 5 Version 2
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
+#ifndef	off_t
+typedef	__off_t		off_t;
+#define	off_t		__off_t
+#endif /* off_t */
+
+__BEGIN_DECLS
+int	  fseeko(FILE *, long, int);
+off_t 	ftello(FILE *);
+__END_DECLS
+#endif /* (_POSIX_C_SOURCE - 0) >= 200112L || _XOPEN_SOURCE >= 500 || ... */
+
+/*
  * This is a #define because the function is used internally and
  * (unlike vfscanf) the name __svfscanf is guaranteed not to collide
  * with a user function when _ANSI_SOURCE or _POSIX_SOURCE is defined.
