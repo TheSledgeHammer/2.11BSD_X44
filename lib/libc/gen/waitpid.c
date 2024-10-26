@@ -38,10 +38,15 @@ static char sccsid[] = "@(#)waitpid.c	5.4 (Berkeley) 2/23/91";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
+
+#ifdef __weak_alias
+__weak_alias(waitpid,_waitpid)
+#endif
 
 pid_t
 waitpid(pid, istat, options)

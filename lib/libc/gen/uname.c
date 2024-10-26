@@ -38,9 +38,14 @@ static char sccsid[] = "@(#)uname.c	8.1.1 (2.11BSD GTE) 2/4/95";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/utsname.h>
+
+#ifdef __weak_alias
+__weak_alias(uname,_uname)
+#endif
 
 int
 uname(name)
