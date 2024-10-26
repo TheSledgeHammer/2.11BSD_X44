@@ -24,6 +24,10 @@ extern	double	j0(double), j1(double), jn(int, double), y0(double), y1(double), y
 #define	HUGE	1.701411733192644270e38
 #define	LOGHUGE	39
 
+/* libc/gen/arch/"arch" */
+double frexp(double, int *);
+int    isnan(double);
+int    isinf(double);
 __END_DECLS
 
 #endif /* _MATH_H_ */
