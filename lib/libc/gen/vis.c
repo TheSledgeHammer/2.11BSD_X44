@@ -238,7 +238,7 @@ svis(dst, c, flag, nextc, extra)
 	else
 		SVIS(dst, c, flag, nextc, nextra);
 	*dst = '\0';
-	return(dst);
+	return (dst);
 }
 
 
