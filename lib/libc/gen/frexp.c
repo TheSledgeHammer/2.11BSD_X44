@@ -5,6 +5,9 @@ static char sccsid[] = "@(#)frexp.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+/* Already defined in libc/arch/"arch"/gen */
+double frexp(double, int *);
+
 /*
  *	the call
  *		x = frexp(arg,&exp);
