@@ -82,7 +82,7 @@ static char sccsid[] = "@(#)unvis.c	8.1 (Berkeley) 6/4/93";
 __weak_alias(strnunvisx,_strnunvisx)
 #endif
 
-#if !HAVE_DECL_VIS
+#if !HAVE_VIS
 
 /*
  * decode driven by state machine
@@ -217,6 +217,8 @@ static const struct nv {
 	{ "yuml",	255 }, /* small y, dieresis or umlaut mark  */
 };
 
+#define nvsize  (sizeof(nv)/sizeof(nv[0]))
+
 /*
  * unvis - decode characters previously encoded by vis
  */
@@ -235,15 +237,25 @@ unvis(cp, c, astate, flag)
 #define SS(a, b)	(((uint32_t)(a) << 24) | (b))
 #define GI(a)		((uint32_t)(a) >> 24)
 
+	_DIAGASSERT(cp != NULL);
+	_DIAGASSERT(astate != NULL);
+	st = GS(*astate);
+
 	if (flag & UNVIS_END) {
-		if (*astate == S_OCTAL2 || *astate == S_OCTAL3) {
-			*astate = S_GROUND;
-			return (UNVIS_VALID);
-		} 
-		return (*astate == S_GROUND ? UNVIS_NOCHAR : UNVIS_SYNBAD);
+        switch (st) {
+		case S_OCTAL2:
+		case S_OCTAL3:
+		case S_HEX2:
+			*astate = SS(0, S_GROUND);
+			return UNVIS_VALID;
+        case S_GROUND:
+            return UNVIS_NOCHAR;
+        default:
+            return UNVIS_SYNBAD;
+        }
 	}
 
-	switch (*astate) {
+	switch (st) {
 
 	case S_GROUND:
 		*cp = 0;
@@ -449,14 +461,14 @@ unvis(cp, c, astate, flag)
 		if (uc == ';')
 			uc = '\0';
 
-		for (; ia < __arraycount(nv); ia++) {
+		for (; ia < nvsize; ia++) {
 			if (is != 0 && nv[ia].name[is - 1] != lc)
 				goto bad;
 			if (nv[ia].name[is] == uc)
 				break;
 		}
 
-		if (ia == __arraycount(nv))
+		if (ia == nvsize)
 			goto bad;
 
 		if (uc != 0) {

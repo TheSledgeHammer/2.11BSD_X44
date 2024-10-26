@@ -79,16 +79,19 @@ uname(name)
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_VERSION;
 	len = sizeof(name->version);
-	if (sysctl(mib, 2, &name->version, &len, NULL, 0) == -1)
+	if (sysctl(mib, 2, &name->version, &len, NULL, 0) == -1) {
 		rval = -1;
-	else
-		for (p = name->version; len--; ++p)
-			if (*p == '\n' || *p == '\t')
-				if (len > 1)
+ 	} else {
+		for (p = name->version; len--; ++p) {
+			if (*p == '\n' || *p == '\t') {
+				if (len > 1) {
 					*p = ' ';
-				else
+				} else {
 					*p = '\0';
-
+                }
+            }
+        }
+    }
 	mib[0] = CTL_HW;
 	mib[1] = HW_MACHINE;
 	len = sizeof(name->machine);
