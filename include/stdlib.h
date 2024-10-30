@@ -255,6 +255,8 @@ int	 	daemon(int, int);
 char 	*devname(dev_t, mode_t);
 int	 	getloadavg(double [], int);
 
+ssize_t	 hmac(const char *, const void *, size_t, const void *, size_t, void *, size_t);
+
 void	cfree(void *);
 
 int	 	heapsort(void *, size_t, size_t, int (*)(const void *, const void *));
