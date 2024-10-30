@@ -104,7 +104,8 @@ static const struct hmac {
 static const struct hmac *
 hmac_find(const char *name)
 {
-	for (size_t i = 0; i < __arraycount(hmacs); i++) {
+	size_t length = (sizeof(hmacs)/sizeof(hmacs[0]));
+	for (size_t i = 0; i < length; i++) {
 		if (strcmp(hmacs[i].name, name) != 0)
 			continue;
 		return &hmacs[i];
