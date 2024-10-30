@@ -16,13 +16,26 @@ static char sccsid[] = "@(#)bzero.c	1.1 (Berkeley) 1/19/87";
 /*
  * bzero -- vax movc5 instruction
  */
-bzero(b, length)
+int
+__bzero(b, length)
 	register char *b;
 	register unsigned int length;
 {
-	if (length)
-		do
+	if (length) {
+		do {
 			*b++ = '\0';
-		while (--length);
-	return(length);
+		} while (--length);
+	}
+	return (length);
+}
+
+void
+bzero(b, length)
+	void *b;
+	size_t length;
+{
+	char *p;
+
+	p = (char *)b;
+	(void)__bzero(p, length);
 }

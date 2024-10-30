@@ -16,21 +16,37 @@ static char sccsid[] = "@(#)bcopy.c	1.1 (Berkeley) 1/19/87";
 /*
  * bcopy -- vax movc3 instruction
  */
-bcopy(src, dst, length)
+int
+__bcopy(src, dst, length)
 	register char *src, *dst;
 	register unsigned int length;
 {
-	if (length && src != dst)
-		if (dst < src)
-			do
+	if (length && src != dst) {
+		if (dst < src) {
+			do {
 				*dst++ = *src++;
-			while (--length);
-		else {			/* copy backwards */
+			} while (--length);
+		} else {			/* copy backwards */
 			src += length;
 			dst += length;
-			do
+			do {
 				*--dst = *--src;
-			while (--length);
+			} while (--length);
 		}
+	}
 	return (0);
+}
+
+void
+bcopy(src0, dst0, length)
+	const void *src0;
+	void *dst0;
+	size_t length;
+{
+	const char *src;
+	char *dst;
+
+	src = (const char *)src0;
+	dst = (char *)dst0;
+	(void)__bcopy(src, dst, length);
 }

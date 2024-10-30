@@ -108,6 +108,7 @@ size_t	strlcat(char *, const char *, size_t);
 size_t	strlcpy(char *, const char *, size_t);
 char	*strsep(char **, const char *);
 void	*explicit_memset(void *, int, size_t);
+void	explicit_bzero(void *, size_t);
 #endif
 __END_DECLS
 

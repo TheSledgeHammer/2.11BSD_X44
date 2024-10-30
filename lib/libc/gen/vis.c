@@ -115,35 +115,34 @@ static int  istrnvisx(char *, size_t *, const char *, size_t, int);
 
 #define MAXEXTRAS   5
 
-#define MAKEEXTRALIST(flag, extra, orig_str)				\
-do {									                    \
-	const char *orig = orig_str;					        \
-	const char *o = orig;						            \
-	char *e;							                    \
-	while (*o++) {							                \
-		continue;						                    \
-    }                                                       \
-	extra = malloc((size_t)((o - orig) + MAXEXTRAS));		\
+#define MAKEEXTRALIST(flag, extra, orig_str) do {           	\
+	const char *orig = orig_str;				\
+	const char *o = orig;					\
+	char *e;						\
+	while (*o++) {						\
+		continue;					\
+	}                                                       \
+	extra = malloc((size_t)((o - orig) + MAXEXTRAS));	\
 	if (!extra) {                                           \
-        break;                                              \
-    }						                                \
-	for (o = orig, e = extra; (*e++ = *o++) != '\0';) {		\
-		continue;						                    \
-    }                                                       \
-	e--;								                    \
+		break;                                          \
+	}						        \
+	for (o = orig, e = extra; (*e++ = *o++) != '\0';) {	\
+		continue;					\
+	}                                                       \
+	e--;							\
 	if (flag & VIS_SP) {                                    \
-        *e++ = ' ';					                        \
-    }                                                       \
+		*e++ = ' ';					\
+	}                                                       \
 	if (flag & VIS_TAB) {                                   \
-        *e++ = '\t';				                        \
-    }                                                       \
+		*e++ = '\t';				        \
+	}                                                       \
 	if (flag & VIS_NL) {                                    \
-        *e++ = '\n';					                    \
-    }                                                       \
+		*e++ = '\n';					\
+	}                                                       \
 	if ((flag & VIS_NOSLASH) == 0) {                        \
-        *e++ = '\\';			                            \
-    }                                                       \
-	*e = '\0';							                    \
+		*e++ = '\\';			                \
+	}                                                       \
+	*e = '\0';						\
 } while (/*CONSTCOND*/0)
 
 static char *
@@ -154,33 +153,35 @@ makevis(dst, dlen, c, flag, nextc, extra)
 	const char *extra;
 {
 	int isextra;
-	size_t odlen = dlen ? *dlen : 0;
+	size_t odlen;
 
-    isextra = strchr(extra, c) != NULL;
-    if (((u_int)c <= UCHAR_MAX && isgraph(c)) ||
-	   ((flag & VIS_SP) == 0 && c == ' ') ||
-	   ((flag & VIS_TAB) == 0 && c == '\t') ||
-	   ((flag & VIS_NL) == 0 && c == '\n') ||
-	   ((flag & VIS_SAFE) && (c == '\b' || c == '\007' || c == '\r'))) {
+	odlen = dlen ? *dlen : 0;
+	isextra = strchr(extra, c) != NULL;
+	if (((u_int) c <= UCHAR_MAX && isgraph(c))
+			|| ((flag & VIS_SP) == 0 && c == ' ')
+			|| ((flag & VIS_TAB) == 0 && c == '\t')
+			|| ((flag & VIS_NL) == 0 && c == '\n')
+			|| ((flag & VIS_SAFE) && (c == '\b' || c == '\007' || c == '\r'))) {
 		*dst++ = c;
 		if (c == '\\' && (flag & VIS_NOSLASH) == 0) {
 			*dst++ = '\\';
 		}
-        *dst = '\0';
-	    return (dst);
+		*dst = '\0';
+		return (dst);
 	}
-#define HAVE(x) do { 		\
+#define HAVE(x) do { 			\
 	if (dlen) { 			\
 		if (*dlen < (x)) { 	\
-			goto out; 		\
-		} 					\
+			goto out; 	\
+		} 			\
 		*dlen -= (x); 		\
-	} 						\
+	}				\
 } while (/*CONSTCOND*/0)
-	if (!isextra && isascii(c) && (isgraph(c) || iswhite(c) || ((flag & VIS_SAFE) && issafe(c)))) {
+	if (!isextra && isascii(c)
+			&& (isgraph(c) || iswhite(c) || ((flag & VIS_SAFE) && issafe(c)))) {
 		HAVE(1);
 		*dst++ = c;
-        return (dst);
+		return (dst);
 	}
 	if (flag & VIS_HTTPSTYLE) {
 		if (!isascii(c) || !isalnum(c) || strchr(char_hvis, c) != NULL) {
@@ -192,23 +193,23 @@ makevis(dst, dlen, c, flag, nextc, extra)
 		}
 	}
 	if (flag & VIS_MIMESTYLE) {
-		 if ((c != '\n') &&
-				 /* Space at the end of the line */
-			    ((isspace(c) && (nextc == '\r' || nextc == '\n')) ||
-			    /* Out of range */
-			    (!isspace(c) && (c < 33 || (c > 60 && c < 62) || c > 126)) ||
-			    /* Specific char to be escaped */
-			    strchr(char_mvis, c) != NULL)) {
-			 HAVE(3);
+		if ((c != '\n') &&
+		/* Space at the end of the line */
+		((isspace(c) && (nextc == '\r' || nextc == '\n')) ||
+		/* Out of range */
+		(!isspace(c) && (c < 33 || (c > 60 && c < 62) || c > 126)) ||
+		/* Specific char to be escaped */
+		strchr(char_mvis, c) != NULL)) {
+			HAVE(3);
 			*dst++ = '=';
 			*dst++ = XTOA(((unsigned int )c >> 4) & 0xf);
 			*dst++ = XTOA((unsigned int )c & 0xf);
 			goto done;
-		 }
+		}
 	}
 	if (flag & VIS_CSTYLE) {
 		HAVE(2);
-		switch(c) {
+		switch (c) {
 		case '\n':
 			*dst++ = '\\';
 			*dst++ = 'n';
@@ -245,20 +246,20 @@ makevis(dst, dlen, c, flag, nextc, extra)
 			*dst++ = '\\';
 			*dst++ = '0';
 			if (isoctal(nextc)) {
-                HAVE(2);
+				HAVE(2);
 				*dst++ = '0';
 				*dst++ = '0';
 			}
 			goto done;
-        default:
-            if (isgraph(c)) {
-                *dst++ = '\\';
-                *dst++ = c;
-            }
-            if (dlen) {
-                *dlen = odlen;
-            }
-            goto done;
+		default:
+			if (isgraph(c)) {
+				*dst++ = '\\';
+				*dst++ = c;
+			}
+			if (dlen) {
+				*dlen = odlen;
+			}
+			goto done;
 		}
 	}
 	if (isextra || ((c & 0177) == ' ') || (flag & VIS_OCTAL)) {
@@ -314,21 +315,21 @@ isnvis(dst, dlen, c, flag, nextc, extra)
 
 	_DIAGASSERT(dst != NULL);
 	_DIAGASSERT(extra != NULL);
-    MAKEEXTRALIST(flag, nextra, extra);
+	MAKEEXTRALIST(flag, nextra, extra);
 	if (!nextra) {
-        if (dlen && *dlen == 0) {
-            return (NULL);
-        }
+		if (dlen && *dlen == 0) {
+			return (NULL);
+		}
 		*dst = '\0';
-        return (dst);
+		return (dst);
 	}
 	dst = makevis(dst, dlen, c, flag, nextc, nextra);
 	free(nextra);
-    if (dst == NULL || (dlen && *dlen == 0)) {
-        return (NULL);
-    }
-    *dst = '\0';
-    return (dst);
+	if (dst == NULL || (dlen && *dlen == 0)) {
+		return (NULL);
+	}
+	*dst = '\0';
+	return (dst);
 }
 
 char *
@@ -337,7 +338,7 @@ svis(dst, c, flag, nextc, extra)
 	int c, flag, nextc;
 	const char *extra;
 {
-    return (isnvis(dst, NULL, c, flag, nextc, extra));
+	return (isnvis(dst, NULL, c, flag, nextc, extra));
 }
 
 char *
@@ -380,23 +381,23 @@ istrsnvis(dst, dlen, src, flag, extra)
 	_DIAGASSERT(dst != NULL);
 	_DIAGASSERT(src != NULL);
 	_DIAGASSERT(extra != NULL);
-    MAKEEXTRALIST(flag, nextra, extra);
+	MAKEEXTRALIST(flag, nextra, extra);
 	if (!nextra) {
 		*dst = '\0';
-        return (0);
+		return (0);
 	}
 	for (start = dst; (c = *src++) != '\0';) {
 		dst = makevis(dst, dlen, c, flag, *src++, nextra);
-        if (dst == NULL) {
-            return (-1);
-        }
+		if (dst == NULL) {
+			return (-1);
+		}
 	}
 	free(nextra);
 	if (dlen && *dlen == 0) {
 		return (-1);
 	}
 	*dst = '\0';
-	return ((int)(dst - start));
+	return ((int) (dst - start));
 }
 
 int
@@ -436,27 +437,27 @@ istrsnvisx(dst, dlen, src, len, flag, extra)
 	_DIAGASSERT(dst != NULL);
 	_DIAGASSERT(src != NULL);
 	_DIAGASSERT(extra != NULL);
-    MAKEEXTRALIST(flag, nextra, extra);
+	MAKEEXTRALIST(flag, nextra, extra);
 	if (!nextra) {
-	    if (dlen && *dlen == 0) {
-		    return (-1);
-	    }
-        *dst = '\0';
+		if (dlen && *dlen == 0) {
+			return (-1);
+		}
+		*dst = '\0';
 		return (0);
 	}
 	for (start = dst; len > 0; len--) {
 		c = *src++;
 		dst = makevis(dst, dlen, c, flag, len > 1 ? *src : '\0', nextra);
-        if (dst == NULL) {
-            return (-1);
-        }
+		if (dst == NULL) {
+			return (-1);
+		}
 	}
 	free(nextra);
 	if (dlen && *dlen == 0) {
 		return (-1);
 	}
 	*dst = '\0';
-	return ((int)(dst - start));
+	return ((int) (dst - start));
 }
 
 int
@@ -496,21 +497,21 @@ invis(dst, dlen, c, flag, nextc)
 	char *extra = NULL;
 
 	_DIAGASSERT(dst != NULL);
-    MAKEEXTRALIST(flag, extra, "");
+	MAKEEXTRALIST(flag, extra, "");
 	if (!extra) {
-        if (dlen && *dlen == 0) {
-            return (NULL);
-        }
+		if (dlen && *dlen == 0) {
+			return (NULL);
+		}
 		*dst = '\0';
-        return (dst);
+		return (dst);
 	}
 	dst = makevis(dst, dlen, c, flag, c, extra);
 	free(extra);
 	if (dst == NULL || (dlen && *dlen == 0)) {
 		return (NULL);
 	}
-    *dst = '\0';
-    return (dst);
+	*dst = '\0';
+	return (dst);
 }
 
 char *
@@ -554,26 +555,26 @@ istrnvis(dst, dlen, src, flag)
 
 	_DIAGASSERT(dst != NULL);
 	_DIAGASSERT(src != NULL);
-    MAKEEXTRALIST(flag, extra, "");
+	MAKEEXTRALIST(flag, extra, "");
 	if (!extra) {
-        if (dlen && *dlen == 0) {
-            return (-1);
-        }
+		if (dlen && *dlen == 0) {
+			return (-1);
+		}
 		*dst = '\0';
-        return (0);
+		return (0);
 	}
 	for (start = dst; (c = *src++) != '\0';) {
 		dst = makevis(dst, dlen, c, flag, *src, extra);
-        if (dst == NULL) {
-            return (-1);
-        }
+		if (dst == NULL) {
+			return (-1);
+		}
 	}
 	free(extra);
 	if ((dlen && *dlen == 0)) {
 		return (-1);
 	}
 	*dst = '\0';
-	return ((int)(dst - start));
+	return ((int) (dst - start));
 }
 
 int
@@ -609,27 +610,27 @@ istrnvisx(dst, dlen, src, len, flag)
 
 	_DIAGASSERT(dst != NULL);
 	_DIAGASSERT(src != NULL);
-    MAKEEXTRALIST(flag, extra, "");
+	MAKEEXTRALIST(flag, extra, "");
 	if (!extra) {
-        if (dlen && *dlen == 0) {
-            return (-1);
-        }
-        *dst = '\0';
+		if (dlen && *dlen == 0) {
+			return (-1);
+		}
+		*dst = '\0';
 		return (0);
 	}
 	for (start = dst; len > 0; len--) {
 		c = *src++;
 		dst = makevis(dst, dlen, c, flag, len > 1 ? *src : '\0', extra);
-        if (dst == NULL) {
-            return (-1);
-        }
+		if (dst == NULL) {
+			return (-1);
+		}
 	}
 	free(extra);
 	if (dlen && *dlen == 0) {
 		return (-1);
 	}
 	*dst = '\0';
-	return ((int)(dst - start));
+	return ((int) (dst - start));
 }
 
 int

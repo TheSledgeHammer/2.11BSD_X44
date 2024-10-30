@@ -17,14 +17,29 @@ static char sccsid[] = "@(#)bcmp.c	1.1 (Berkeley) 1/19/87";
  * bcmp -- vax cmpc3 instruction
  */
 int
-bcmp(b1, b2, length)
+__bcmp(b1, b2, length)
 	register char *b1, *b2;
 	register unsigned int length;
 {
-	if (length)
-		do
-			if (*b1++ != *b2++)
+	if (length) {
+		do {
+			if (*b1++ != *b2++) {
 				break;
-		while (--length);
-	return(length);
+			}
+		} while (--length);
+	}
+	return (length);
+}
+
+int
+bcmp(b1, b2, length)
+	const void *b1;
+	const void *b2;
+	size_t length;
+{
+	 char *p1, *p2;
+
+	 p1 = (char *)b1;
+	 p2 = (char *)b2;
+	 return (__bcmp(p1, p2, length));
 }

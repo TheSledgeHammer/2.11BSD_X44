@@ -8,12 +8,12 @@
 # string sources
 .PATH: ${ARCHDIR}/string ${.CURDIR}/string
 
-SRCS+=	bcmp.c bcopy.c bzero.c ffs.c index.c rindex.c strcasestr.c			\
-		strcasecmp.c strcat.c strcmp.c strcoll.c strcpy.c strcspn.c 		\
-		strdup.c strerror.c strlcat.c strlcpy.c strlen.c strmode.c 			\
-		strncat.c strncmp.c strncpy.c strndup.c	strnlen.c strpbrk.c 		\
-		strsep.c strsignal.c strspn.c strstr.c strtok.c strxfrm.c swab.c 	\
-		strchrnul.c
+SRCS+=	bcmp.c bcopy.c bzero.c explicit_bzero.c ffs.c index.c rindex.c 		\
+		strcasestr.c strcasecmp.c strcat.c strcmp.c strcoll.c strcpy.c 		\
+		strcspn.c strdup.c strerror.c strlcat.c strlcpy.c strlen.c 			\
+		strmode.c strncat.c strncmp.c strncpy.c strndup.c strnlen.c 		\
+		strpbrk.c strsep.c strsignal.c strspn.c strstr.c strtok.c strxfrm.c \
+		swab.c strchrnul.c
 
 # wide char
 SRCS+=	wcscat.c wcschr.c wcscmp.c wcscpy.c wcscspn.c wcslcat.c wcslcpy.c \
