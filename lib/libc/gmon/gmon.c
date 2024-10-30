@@ -31,9 +31,14 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if !defined(lint) && defined(LIBC_SCCS)
+#if 0
 static char sccsid[] = "@(#)gmon.c	8.1 (Berkeley) 6/4/93";
 #endif
+#endif
+
+#include "namespace.h"
 
 #include <sys/param.h>
 #include <sys/time.h>
@@ -54,7 +59,9 @@ static int	s_scale;
 
 #define ERR(s) write(2, s, sizeof(s))
 
-void	moncontrol (int);
+void	moncontrol(int);
+void	monstartup(u_long, u_long);
+void	_mcleanup(void);
 static int hertz (void);
 
 void
@@ -123,7 +130,7 @@ monstartup(lowpc, highpc)
 }
 
 void
-_mcleanup()
+_mcleanup(void)
 {
 	int fd;
 	int fromindex;
@@ -236,7 +243,7 @@ moncontrol(mode)
  * if something goes wrong, we return 0, an impossible hertz.
  */
 static int
-hertz()
+hertz(void)
 {
 	struct itimerval tim;
 	

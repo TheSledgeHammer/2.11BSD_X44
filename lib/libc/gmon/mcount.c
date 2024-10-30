@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  */
 
-#if !defined(lint) && !defined(KERNEL) && defined(LIBC_SCCS)
+#include <sys/cdefs.h>
+#if !defined(lint) && !defined(_KERNEL) && defined(LIBC_SCCS)
+#if 0
 static char sccsid[] = "@(#)mcount.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif
 
 #include <sys/param.h>
@@ -53,6 +56,7 @@ static char sccsid[] = "@(#)mcount.c	8.1 (Berkeley) 6/4/93";
  * both frompcindex and frompc.  Any reasonable, modern compiler will
  * perform this optimization.
  */
+_MCOUNT_DECL(u_long frompc, u_long selfpc) __used;
 _MCOUNT_DECL(frompc, selfpc)	/* _mcount; may be static, inline, etc */
 	register u_long frompc, selfpc;
 {
@@ -60,7 +64,7 @@ _MCOUNT_DECL(frompc, selfpc)	/* _mcount; may be static, inline, etc */
 	register struct tostruct *top, *prevtop;
 	register struct gmonparam *p;
 	register long toindex;
-#ifdef KERNEL
+#ifdef _KERNEL
 	register int s;
 #endif
 
@@ -71,7 +75,7 @@ _MCOUNT_DECL(frompc, selfpc)	/* _mcount; may be static, inline, etc */
 	 */
 	if (p->state != GMON_PROF_ON)
 		return;
-#ifdef KERNEL
+#ifdef _KERNEL
 	MCOUNT_ENTER;
 #else
 	p->state = GMON_PROF_BUSY;
@@ -157,7 +161,7 @@ _MCOUNT_DECL(frompc, selfpc)	/* _mcount; may be static, inline, etc */
 		
 	}
 done:
-#ifdef KERNEL
+#ifdef _KERNEL
 	MCOUNT_EXIT;
 #else
 	p->state = GMON_PROF_ON;
@@ -165,7 +169,7 @@ done:
 	return;
 overflow:
 	p->state = GMON_PROF_ERROR;
-#ifdef KERNEL
+#ifdef _KERNEL
 	MCOUNT_EXIT;
 #endif
 	return;
