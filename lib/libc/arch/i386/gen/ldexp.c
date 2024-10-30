@@ -40,6 +40,8 @@ static char sccsid[] = "@(#)ldexp.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <math.h>
+
 /*
  * ldexp(value, exp): return value * (2 ** exp).
  *
@@ -53,12 +55,11 @@ static char sccsid[] = "@(#)ldexp.c	8.1 (Berkeley) 6/4/93";
  * (stupid 8087!).
  */
 double
-ldexp (double value, int exp)
+ldexp(double value, int exp)
 {
-	double temp, texp, temp2;
-	texp = exp;
-	asm ("fscale ; fxch %%st(1) ; fstp%L1 %1 "
-		: "=f" (temp), "=0" (temp2)
-		: "0" (texp), "f" (value));
+	double temp;
+	__asm ("fscale"
+		: "=t" (temp)
+		: "0" (value), "u" ((double)exp));
 	return (temp);
 }

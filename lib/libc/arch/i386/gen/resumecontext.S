@@ -29,11 +29,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/asm.h>
+//#include <machine/asm.h>
 #include "SYS.h"
-
 #if defined(LIBC_SCCS) && !defined(lint)
-	RCSID("$NetBSD: resumecontext.S,v 1.6 2008/04/28 20:22:56 martin Exp $")
+//RCSID("$NetBSD: resumecontext.S,v 1.6 2008/04/28 20:22:56 martin Exp $")
 #endif /* LIBC_SCCS && !lint */
 
 /*
@@ -42,7 +41,7 @@
  * function's return address (us), which is the point of the exercise.
  */
 
-NENTRY(_resumecontext)	/* profiling prologue would clobber TOS */
+ENTRY(_resumecontext)	/* profiling prologue would clobber TOS */
 	leal	-(4 + 776)(%esp),%ecx	/* retaddr + sizeof (ucontext_t) */
 	andl	$~(0xf),%ecx		/* align on _UC_UCONTEXT_ALIGN */
 	movl	%ecx,%esp

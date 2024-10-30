@@ -57,12 +57,12 @@ makecontext(ucp, func, argc, va_alist)
 	va_dcl
 #endif
 {
-	gregset_t *gr = ucp->uc_mcontext.mc_gregs;
+	gregset_t *gr = &ucp->uc_mcontext.mc_gregs;
 	unsigned int *sp;
 	va_list ap;
 
 	/* LINTED __greg_t is safe */
-	gr->mc_eip = (gregset_t)func;
+	gr->mc_eip = (long)func;
 
 	/* LINTED uintptr_t is safe */
 	sp  = (unsigned int *)((uintptr_t)ucp->uc_stack.ss_sp +
@@ -72,8 +72,8 @@ makecontext(ucp, func, argc, va_alist)
 	sp  = (unsigned int *)((uintptr_t)sp & ~0x3);
 	sp -= argc + 1;			/* Make room for ret and args. */
 	/* LINTED __greg_t is safe */
-	gr->mc_esp = (gregset_t)sp;
-	gr->mc_ebp = (gregset_t)0;	/* Wipe out frame pointer. */
+	gr->mc_esp = (long)sp;
+	gr->mc_ebp = (long)0;	/* Wipe out frame pointer. */
 
 	/* Put return address on top of stack. */
 	/* LINTED uintptr_t is safe */
