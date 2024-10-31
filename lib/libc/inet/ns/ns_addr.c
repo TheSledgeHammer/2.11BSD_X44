@@ -22,19 +22,20 @@ static char sccsid[] = "@(#)ns_addr.c	6.2 (Berkeley) 3/9/86";
 
 static struct ns_addr addr, zero_addr;
 
+static void Field(char *, u_char *, int);
+static void cvtbase(long, int, int *, int, unsigned char *, int);
+
 struct ns_addr 
 ns_addr(name)
-	char *name;
+	const char *name;
 {
-	u_long net;
-	u_short socket;
 	char separator = '.';
 	char *hostname, *socketname, *cp;
 	char buf[50];
-	extern char *index();
 
 	addr = zero_addr;
-	strncpy(buf, name, 49);
+	strncpy(buf, name, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
 
 	/*
 	 * First, figure out what he intends as a field separtor.
@@ -42,11 +43,11 @@ ns_addr(name)
 	 * form  2-272.AA001234H.01777, i.e. XDE standard.
 	 * Great efforts are made to insure backward compatability.
 	 */
-	if (hostname == index(buf, '#'))
+	if ((hostname = strchr(buf, '#')))
 		separator = '#';
 	else {
-		hostname = index(buf, '.');
-		if ((cp = index(buf, ':')) &&
+		hostname = strchr(buf, '.');
+		if ((cp = strchr(buf, ':')) &&
 		    ( (hostname && cp < hostname) || (hostname == 0))) {
 			hostname = cp;
 			separator = ':';
@@ -54,22 +55,23 @@ ns_addr(name)
 	}
 	if (hostname)
 		*hostname++ = 0;
-	Field(buf, addr.x_net.c_net, 4);
+
+	Field(buf, (u_char *)addr.x_net.c_net, 4);
 	if (hostname == 0)
 		return (addr);  /* No separator means net only */
 
-	socketname = index(hostname, separator);
+	socketname = strchr(hostname, separator);
 	if (socketname) {
 		*socketname++ = 0;
-		Field(socketname, &addr.x_port, 2);
+		Field(socketname, (u_char *)&addr.x_port, 2);
 	}
 
-	Field(hostname, addr.x_host.c_host, 6);
+	Field(hostname, (u_char *)addr.x_host.c_host, 6);
 
 	return (addr);
 }
 
-static
+static void
 Field(buf, out, len)
 	char *buf;
 	u_char *out;
@@ -78,7 +80,7 @@ Field(buf, out, len)
 	register char *bp = buf;
 	int i, ibase, base16 = 0, base10 = 0, clen = 0;
 	int hb[6], *hp;
-	char *fmt;
+	const char *fmt;
 
 	/*
 	 * first try 2-273#2-852-151-014#socket
@@ -173,7 +175,7 @@ Field(buf, out, len)
 	cvtbase(ibase, 256, hb, i, out, len);
 }
 
-static
+static void
 cvtbase(oldbase,newbase,input,inlen,result,reslen)
 	long oldbase;
 	int newbase;

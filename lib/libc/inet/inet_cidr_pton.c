@@ -35,7 +35,7 @@ __RCSID("$NetBSD: inet_cidr_pton.c,v 1.9 2018/12/13 08:42:26 maya Exp $");
 #include <arpa/nameser.h>
 #include <arpa/inet.h>
 
-
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -73,7 +73,8 @@ static int	getbits(const char *, int ipv6);
  *	Paul Vixie (ISC), October 1998
  */
 int
-inet_cidr_pton(int af, const char *src, void *dst, int *bits) {
+inet_cidr_pton(int af, const char *src, void *dst, int *bits)
+{
 	switch (af) {
 	case AF_INET:
 		return (inet_cidr_pton_ipv4(src, dst, bits, 0));
@@ -88,7 +89,8 @@ inet_cidr_pton(int af, const char *src, void *dst, int *bits) {
 static const char digits[] = "0123456789";
 
 static int
-inet_cidr_pton_ipv4(const char *src, u_char *dst, int *pbits, int ipv6) {
+inet_cidr_pton_ipv4(const char *src, u_char *dst, int *pbits, int ipv6) 
+{
 	const u_char *odst = dst;
 	int ch, bits;
 	ptrdiff_t n, tmp;
@@ -99,7 +101,7 @@ inet_cidr_pton_ipv4(const char *src, u_char *dst, int *pbits, int ipv6) {
 		tmp = 0;
 		do {
 			n = strchr(digits, ch) - digits;
-			INSIST(n >= 0 && n <= 9);
+			assert(n >= 0 && n <= 9);
 			tmp *= 10;
 			tmp += n;
 			if (tmp > 255)
@@ -156,7 +158,8 @@ inet_cidr_pton_ipv4(const char *src, u_char *dst, int *pbits, int ipv6) {
 }
 
 static int
-inet_cidr_pton_ipv6(const char *src, u_char *dst, int *pbits) {
+inet_cidr_pton_ipv6(const char *src, u_char *dst, int *pbits) 
+{
 	static const char xdigits_l[] = "0123456789abcdef",
 			  xdigits_u[] = "0123456789ABCDEF";
 	u_char tmp[IN6ADDRSZ], *tp, *endp, *colonp;

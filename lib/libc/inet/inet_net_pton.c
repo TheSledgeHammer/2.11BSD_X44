@@ -102,7 +102,7 @@ inet_net_pton_ipv4(const char *src, u_char *dst, size_t size)
 	static const char
 		xdigits[] = "0123456789abcdef",
 		digits[] = "0123456789";
-	int n, ch, tmp, dirty, bits;
+	int n, ch, tmp = 0, dirty, bits;
 	const u_char *odst = dst;
 
 	_DIAGASSERT(src != NULL);

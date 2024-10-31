@@ -72,4 +72,9 @@ struct iso_addr {
 	char            isoa_genaddr[20];	/* general opaque address */
 };
 
+__BEGIN_DECLS
+struct iso_addr *iso_addr(const char *);
+char *iso_ntoa(const struct iso_addr *);
+__END_DECLS
+
 #endif /* _NETISO_ISO_H_ */

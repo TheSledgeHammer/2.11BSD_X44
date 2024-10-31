@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)inet_network.c	5.2 (Berkeley) 3/9/86";
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 /*
  * Internet network address interpretation routine.
@@ -35,14 +36,14 @@ again:
 		base = 8, cp++;
 	if (*cp == 'x' || *cp == 'X')
 		base = 16, cp++;
-	while (c == *cp) {
-		if (isdigit(c)) {
+	while ((c = *cp)) {
+		if (isdigit((unsigned char)c)) {
 			val = (val * base) + (c - '0');
 			cp++;
 			continue;
 		}
-		if (base == 16 && isxdigit(c)) {
-			val = (val << 4) + (c + 10 - (islower(c) ? 'a' : 'A'));
+		if (base == 16 && isxdigit((unsigned char)c)) {
+			val = (val << 4) + (c + 10 - (islower((unsigned char)c) ? 'a' : 'A'));
 			cp++;
 			continue;
 		}
@@ -54,7 +55,7 @@ again:
 		*pp++ = val, cp++;
 		goto again;
 	}
-	if (*cp && !isspace(*cp))
+	if (*cp && !isspace((unsigned char)*cp))
 		return (-1);
 	*pp++ = val;
 	n = pp - parts;

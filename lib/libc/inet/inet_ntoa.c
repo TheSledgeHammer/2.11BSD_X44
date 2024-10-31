@@ -17,6 +17,8 @@ static char sccsid[] = "@(#)inet_ntoa.c	5.2 (Berkeley) 3/9/86";
  */
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
 
 char *
 inet_ntoa(in)

@@ -40,7 +40,6 @@ __RCSID("$NetBSD: inet_pton.c,v 1.19 2003/05/05 21:35:42 bjh21 Exp $");
 #include <string.h>
 
 #ifdef __weak_alias
-__weak_alias(inet_aton,_inet_aton)
 __weak_alias(inet_pton,_inet_pton)
 #endif
 
@@ -305,6 +304,7 @@ inet_pton6(const char *src, u_char *dst)
 	return (1);
 }
 
+#ifdef notyet
 /*
  * Ascii internet address interpretation routine.
  * The value returned is in network order.
@@ -337,3 +337,4 @@ inet_aton(const char *cp, struct in_addr *addr)
 
 	return inet_pton4(cp, (u_char *)(void *)&addr->s_addr, 0);
 }
+#endif

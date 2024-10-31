@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)inet_lnaof.c	5.2 (Berkeley) 3/9/86";
 
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 /*
  * Return the local network address portion of an

@@ -4,8 +4,8 @@
  * specifies the terms and conditions for redistribution.
  *
  */
-#include <sys/cdefs.h>
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
 static char sccsid[] = "@(#)ns_ntoa.c	6.3 (Berkeley) 3/9/86";
@@ -31,7 +31,7 @@ ns_ntoa(addr)
 	u_char *uplim = up + 6;
 
 	net.net_e = addr.x_net;
-	sprintf(obuf, "%lx", ntohl(net.long_e));
+	sprintf(obuf, "%x", ntohl(net.long_e));
 	cp = spectHex(obuf);
 	cp2 = cp + 1;
 	while (*up==0 && up < uplim) up++;
