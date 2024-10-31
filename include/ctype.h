@@ -100,7 +100,6 @@ int	isspecial(int);
 #endif
 __END_DECLS
 
-extern	char			_ctype_[];
 #define	isalpha(c)		((_ctype_+ 1)[c]&(_CTYPE_U|_CTYPE_L))
 #define	isupper(c)		((_ctype_+ 1)[c]&_CTYPE_U)
 #define	islower(c)		((_ctype_+ 1)[c]&_CTYPE_L)
@@ -132,7 +131,8 @@ extern	char			_ctype_[];
 
 /* See comments in <machine/ansi.h> about _BSD_RUNE_T_. */
 __BEGIN_DECLS
-unsigned long	___runetype(rune_t);
+extern	char		*_ctype_;
+unsigned long		___runetype(rune_t);
 _RuneType 		___runetype_mb(wint_t);
 rune_t			___tolower(rune_t);
 wint_t			___tolower_mb(wint_t);
