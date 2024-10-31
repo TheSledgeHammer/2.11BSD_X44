@@ -56,7 +56,7 @@
 #define QUERY		0x0		/* standard query */
 #define IQUERY		0x1		/* inverse query */
 #define STATUS		0x2		/* nameserver status query */
-/*#define xxx		0x3		/* 0x3 reserved */
+/*#define xxx		0x3	*/	/* 0x3 reserved */
 #define NS_NOTIFY_OP 0x4	/* notify secondary of SOA change */
 	/* non standard */
 #define UPDATEA		0x9		/* add resource record */
