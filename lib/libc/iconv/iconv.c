@@ -82,7 +82,7 @@ iconv_close(handle)
 size_t
 iconv(handle, in, szin, out, szout)
     iconv_t handle;
-    char **in;
+    const char **in;
     size_t *szin;
     char **out;
     size_t *szout;
@@ -107,7 +107,7 @@ iconv(handle, in, szin, out, szout)
 size_t
 __iconv(handle, in, szin, out, szout, flags, invalids)
     iconv_t handle;
-    char **in;
+    const char **in;
     size_t *szin;
     char **out;
     size_t *szout;
@@ -154,19 +154,20 @@ iconv_close(handle)
 size_t
 iconv(handle, in, szin, out, szout)
     iconv_t handle;
-    char **in;
+    const char **in;
     size_t *szin;
     char **out;
     size_t *szout;
 {
     errno = EBADF;
-    return ((size_t) - 1);
+    return ((size_t)-1);
 }
 
+/*
 size_t
 __iconv(handle, in, szin, out, szout, flags, invalids)
     iconv_t handle;
-    char **in;
+    const char **in;
     size_t *szin;
     char **out;
     size_t *szout;
@@ -174,16 +175,18 @@ __iconv(handle, in, szin, out, szout, flags, invalids)
     size_t *invalids;
 {
 	errno = EBADF;
-	return ((size_t) - 1);
+	return ((size_t)-1);
 }
+*/
 
 int
 /*ARGSUSED*/
 __iconv_get_list(char ***rlist, size_t *rsz)
 {
 	errno = EINVAL;
-	return -1;
+	return (-1);
 }
+
 void
 /*ARGSUSED*/
 __iconv_free_list(char **list, size_t sz)
