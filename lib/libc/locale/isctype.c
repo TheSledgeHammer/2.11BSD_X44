@@ -41,7 +41,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)isctype.c	8.3 (Berkeley) 2/24/94";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #define _ANSI_LIBRARY

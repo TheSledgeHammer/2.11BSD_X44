@@ -25,7 +25,9 @@
  */
 
 #include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
 __FBSDID("$FreeBSD$");
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>

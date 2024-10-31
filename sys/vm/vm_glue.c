@@ -81,6 +81,10 @@
 
 #include <machine/cpu.h>
 
+#ifdef i386
+static void i386_vm_fork(struct proc *);
+#endif
+
 unsigned maxdmap = MAXDSIZ;	/* XXX */
 int	readbuffers = 0;		/* XXX allow kgdb to read kernel buffer pool */
 
@@ -253,13 +257,7 @@ vm_fork(p1, p2, isvfork)
 
 #ifdef i386
 	{
-		vm_offset_t addr = UPT_MIN_ADDRESS - UPAGES * NBPG;
-		struct vm_map *vp;
-
-		vp = &p2->p_vmspace->vm_map;
-		(void) vm_deallocate(vp, addr, UPT_MAX_ADDRESS - addr);
-		(void) vm_allocate(vp, &addr, UPT_MAX_ADDRESS - addr, FALSE);
-		(void) vm_map_inherit(vp, addr, UPT_MAX_ADDRESS, VM_INHERIT_NONE);
+		i386_vm_fork(p2);
 	}
 #endif
 	/*
@@ -271,6 +269,23 @@ vm_fork(p1, p2, isvfork)
 	 */
 	return (cpu_fork(p1, p2));
 }
+
+#ifdef i386
+/* i386 vm_fork fix: see vm_fork for usage */
+static void
+i386_vm_fork(p2)
+	register struct proc *p2;
+{
+	vm_offset_t addr;
+	struct vm_map *vp;
+
+	addr = UPT_MIN_ADDRESS - UPAGES * NBPG;
+	vp = &p2->p_vmspace->vm_map;
+	(void)vm_deallocate(vp, addr, UPT_MAX_ADDRESS - addr);
+	(void)vm_allocate(vp, &addr, UPT_MAX_ADDRESS - addr, FALSE);
+	(void)vm_map_inherit(vp, addr, UPT_MAX_ADDRESS, VM_INHERIT_NONE);
+}
+#endif
 
 /*
  * Set default limits for VM system.

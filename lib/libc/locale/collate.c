@@ -26,7 +26,9 @@
  */
 
 #include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
 __FBSDID("$FreeBSD$");
+#endif
 
 #include "namespace.h"
 #include <arpa/inet.h>

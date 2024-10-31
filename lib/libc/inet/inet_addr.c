@@ -147,6 +147,6 @@ again:
 	default:
 		return (-1);
 	}
-    val = htonl(val);
+	val = htonl(val);
 	return (val);
 }

@@ -25,7 +25,9 @@
  */
 
 #include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD$"); */
+#if defined(LIBC_SCCS) && !defined(lint)
+__FBSDID("$FreeBSD$");
+#endif
 
 #include <limits.h>
 #include <rune.h>

@@ -304,37 +304,3 @@ inet_pton6(const char *src, u_char *dst)
 	return (1);
 }
 
-#ifdef notyet
-/*
- * Ascii internet address interpretation routine.
- * The value returned is in network order.
- */
-in_addr_t
-inet_addr(const char *cp)
-{
-	struct in_addr val;
-
-	_DIAGASSERT(cp != NULL);
-
-	if (inet_pton4(cp, (u_char *)(void *)&val.s_addr, 0))
-		return (val.s_addr);
-	return (INADDR_NONE);
-}
-
-/* 
- * Check whether "cp" is a valid ascii representation
- * of an Internet address and convert to a binary address.
- * Returns 1 if the address is valid, 0 if not.
- * This replaces inet_addr, the return value from which
- * cannot distinguish between failure and a local broadcast address.
- */
-int
-inet_aton(const char *cp, struct in_addr *addr)
-{
-
-	_DIAGASSERT(cp != NULL);
-	_DIAGASSERT(addr != NULL);
-
-	return inet_pton4(cp, (u_char *)(void *)&addr->s_addr, 0);
-}
-#endif

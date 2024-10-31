@@ -80,7 +80,8 @@ iso_addr(addr)
 		addr++;
 		switch (state /* | INPUT */) {
 		case GOTTWO | DIGIT:
-			*cp++ = byte; /*FALLTHROUGH*/
+			*cp++ = byte;
+			/*FALLTHROUGH*/
 		case VIRGIN | DIGIT:
 			state = GOTONE; byte = newaddr; continue;
 		case GOTONE | DIGIT:
@@ -89,7 +90,8 @@ iso_addr(addr)
 			state = VIRGIN; *cp++ = byte; byte = 0; continue;
 		case GOTONE | END:
 		case GOTTWO | END:
-			*cp++ = byte; /* FALLTHROUGH */
+			*cp++ = byte;
+			/* FALLTHROUGH */
 		case VIRGIN | END:
 			break;
 		}
