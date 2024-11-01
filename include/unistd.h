@@ -158,6 +158,11 @@ struct timeval;				/* select(2) */
 #if (defined(_XOPEN_SOURCE) && defined(_XOPEN_SOURCE_EXTENDED)) || \
     (_XOPEN_SOURCE - 0) >= 500 || defined(__BSD_VISIBLE)
 
+#define F_ULOCK		0
+#define F_LOCK		1
+#define F_TLOCK		2
+#define F_TEST		3
+
 int	 			acct(const char *, pid_t);
 char			*brk(const char *);
 int	 			chroot(const char *);
