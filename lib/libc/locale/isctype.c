@@ -214,7 +214,7 @@ int
 tolower(c)
 	int c;
 {
-	return (__tolower(c));
+	return (_CRMASK(c) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
 
 #undef toupper
@@ -222,5 +222,5 @@ int
 toupper(c)
 	int c;
 {
-	return (__toupper(c));
+	return (_CRMASK(c) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
