@@ -33,6 +33,7 @@
 #ifndef _CITRUS_RUNE_H_
 #define _CITRUS_RUNE_H_
 
+#include <assert.h>
 #include <rune.h>
 #include <runetype.h>
 #include <encoding.h>
