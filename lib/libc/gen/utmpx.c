@@ -61,6 +61,8 @@ static int version = 1;
 static struct utmpx ut;
 static char utfile[MAXPATHLEN] = _PATH_UTMPX;
 
+static void old2new(struct utmpx *);
+static void new2old(struct utmpx *);
 static struct utmpx *utmp_update(const struct utmpx *);
 
 static const char vers[] = "utmpx-2.00";
@@ -78,7 +80,7 @@ old2new(utx)
 	struct timeval *tv = &utx->ut_tv;
 	(void)memcpy(&otv, tv, sizeof(otv));
 	tv->tv_sec = otv.tv_sec;
-	tv->tv_usec = (suseconds_t)otv.tv_usec;
+	tv->tv_usec = otv.tv_usec;
 }
 
 static void
@@ -314,7 +316,7 @@ utmp_update(utx)
 {
 	char buf[sizeof(*utx) * 4 + 1];
 	pid_t pid;
-	int status;
+	union wait w;
 
 	_DIAGASSERT(utx != NULL);
 
@@ -326,16 +328,15 @@ utmp_update(utx)
 		    strrchr(_PATH_UTMP_UPDATE, '/') + 1, buf, NULL);
 		_exit(1);
 		/*NOTREACHED*/
-	case -1:
-		return NULL;
+//	case -1:
+//		return NULL;
 	default:
-		if (waitpid(pid, &status, 0) == -1)
+		if (waitpid(pid, (int *)&w, 0) == (-1 ? -1 : w.w_status))
 			return NULL;
-		if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+		if (WIFEXITED(w) && WEXITSTATUS(w) == 0)
 			return memcpy(&ut, utx, sizeof(ut));
 		return NULL;
 	}
-
 }
 
 /*
