@@ -140,7 +140,7 @@ _SUBDIR=	tools .WAIT lib
 _SUBDIR+=	include contrib crypto bin 
 _SUBDIR+=	games libexec sbin usr.bin #usr.lib
 _SUBDIR+=	usr.sbin share sys stand etc #tests
-#_SUBDIR+=	.WAIT distrib
+_SUBDIR+=	.WAIT distrib
 
 .for dir in ${_SUBDIR}
 .if "${dir}" == ".WAIT" \
