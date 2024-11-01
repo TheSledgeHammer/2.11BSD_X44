@@ -36,24 +36,39 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 
-#define	_PATH_UTMPX			"/var/run/utmpx"
-#define	_PATH_WTMPX			"/var/log/wtmpx"
+#define	_PATH_UTMPX		"/var/run/utmpx"
+#define	_PATH_WTMPX		"/var/log/wtmpx"
 #define	_PATH_UTMP_UPDATE	"/usr/libexec/utmp_update"
 
 #define _UTX_USERSIZE	32
 #define _UTX_LINESIZE	32
-#define	_UTX_IDSIZE		4
+#define	_UTX_IDSIZE	4
 #define _UTX_HOSTSIZE	256
 
-#define EMPTY			0
-#define RUN_LVL			1
-#define BOOT_TIME		2
-#define OLD_TIME		3
-#define NEW_TIME		4
+#define EMPTY		0
+#define RUN_LVL		1
+#define BOOT_TIME	2
+#define OLD_TIME	3
+#define NEW_TIME	4
 #define INIT_PROCESS	5
 #define LOGIN_PROCESS	6
 #define USER_PROCESS	7
 #define DEAD_PROCESS	8
+
+#if defined(__BSD_VISIBLE)
+#define ACCOUNTING	9
+#define SIGNATURE	10
+#define DOWN_TIME	11
+
+/*
+ * Strings placed in the ut_line field to indicate special type entries
+ */
+#define	RUNLVL_MSG	"run-level %c"
+#define	BOOT_MSG	"system boot"
+#define	OTIME_MSG	"old time"
+#define	NTIME_MSG	"new time"
+#define	DOWN_MSG	"system down"
+#endif
 
 /*
  * The following structure describes the fields of the utmpx entries
@@ -103,6 +118,7 @@ struct utmpx *getutxent(void);
 struct utmpx *getutxid(const struct utmpx *);
 struct utmpx *getutxline(const struct utmpx *);
 struct utmpx *pututxline(const struct utmpx *);
+int  updwtmpx(const char *, const struct utmpx *);
 void getutmp(const struct utmpx *, struct utmp *);
 void getutmpx(const struct utmp *, struct utmpx *);
 int  utmpxname(const char *);
