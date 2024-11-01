@@ -9,6 +9,8 @@
 #ifndef SYS_FPERR_H_
 #define SYS_FPERR_H_
 
+#include <sys/types.h>
+
 /*
  * Structure of the floating point error register save/return
  */
