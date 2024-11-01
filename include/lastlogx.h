@@ -44,7 +44,7 @@ struct lastlogx {
 };
 
 __BEGIN_DECLS
-struct lastlogx *getlastlogx(uid_t, struct lastlogx *);
+struct lastlogx *getlastlogx(const char *, uid_t, struct lastlogx *);
 int updlastlogx(const char *, uid_t, struct lastlogx *);
 __END_DECLS
 
