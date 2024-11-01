@@ -3,7 +3,7 @@
 .include <bsd.own.mk>
 
 .if ${MKGROFF} != "no"
-SUBDIR=	notes .WAIT
+#SUBDIR=	notes .WAIT
 .endif
 
 SUBDIR+= utils
