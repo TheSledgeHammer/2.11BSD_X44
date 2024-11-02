@@ -102,7 +102,7 @@ extern struct _locale 	global_locale;
 extern const struct 	_locale c_locale;
 
 struct lconv 	*localeconv_l(locale_t);
-locale_t		newlocale(int, const char *, name, locale_t);
+locale_t		newlocale(int, const char *, locale_t);
 void 			freelocale(locale_t);
 locale_t		duplocale(locale_t);
 #endif /* __POSIX_VISIBLE >= 200809 || __BSD_VISIBLE */
