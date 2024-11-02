@@ -61,6 +61,15 @@ __get_locale(void)
 }
 
 __BEGIN_DECLS
+#include <runetype.h>
+int			_none_init(_RuneLocale *);
+int			_UES_init(_RuneLocale *);
+int			_UTF1632_init(_RuneLocale *);
+int			_UTF2_init(_RuneLocale *);
+int			_UTF8_init(_RuneLocale *);
+int			_EUC_init(_RuneLocale *);
+int			_ISO2022_init(_RuneLocale *);
+
 /* setlocale.c */
 const char *__get_locale_env(int);
 

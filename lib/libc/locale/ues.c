@@ -55,7 +55,6 @@ typedef _Encoding_TypeInfo 			_UESCTypeInfo;
 typedef _Encoding_State				_UESState;
 
 #define _FUNCNAME(m)				_UES_##m
-#define _ENCODING_MB_CUR_MAX(_ei_)	((_ei_)->cur_max)
 
 rune_t	_UES_sgetrune(const char *, size_t, char const **);
 int		_UES_sputrune(rune_t, char *, size_t, char **);

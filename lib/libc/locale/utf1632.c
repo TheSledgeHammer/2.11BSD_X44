@@ -55,7 +55,6 @@ typedef _Encoding_TypeInfo 			_UTF1632CTypeInfo;
 typedef _Encoding_State				_UTF1632State;
 
 #define _FUNCNAME(m)				_UTF1632_##m
-#define _ENCODING_MB_CUR_MAX(_ei_)	((_ei_)->cur_max)
 
 rune_t	_UTF1632_sgetrune(const char *, size_t, char const **);
 int		_UTF1632_sputrune(rune_t, char *, size_t, char **);

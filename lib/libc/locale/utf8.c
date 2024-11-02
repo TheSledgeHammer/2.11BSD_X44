@@ -72,6 +72,8 @@
 #include <wchar.h>
 #include <limits.h>
 
+#undef _ENCODING_MB_CUR_MAX
+
 #include <citrus/citrus_types.h>
 #include <citrus/citrus_ctype.h>
 #include <citrus/citrus_stdenc.h>

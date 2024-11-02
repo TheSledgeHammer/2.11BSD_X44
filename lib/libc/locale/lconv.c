@@ -56,7 +56,7 @@ static char empty[] = "";
  * Default (C) locale conversion.
  */
 static struct lconv C_lconv = {
-		".",			/* decimal_point */
+		__UNCONST("."),	/* decimal_point */
 		empty,			/* thousands_sep */
 		empty,			/* grouping */
 		empty,			/* int_curr_symbol */
@@ -113,7 +113,7 @@ const struct _locale c_locale = {
 	.part_impl = {
         	[LC_ALL     ] = (locale_part_t)NULL,
                 [LC_COLLATE ] = (locale_part_t)NULL,
-                [LC_CTYPE   ] = (locale_part_t)_CurrentRuneLocale,
+                [LC_CTYPE   ] = (locale_part_t)&_CurrentRuneLocale,
                 [LC_MONETARY] = (locale_part_t)__monetary_load_locale,
                 [LC_NUMERIC ] = (locale_part_t)__numeric_load_locale,
                 [LC_TIME    ] = (locale_part_t)__time_load_locale,
@@ -145,7 +145,7 @@ struct _locale global_locale = {
 	.part_impl = {
         	[LC_ALL     ] = (locale_part_t)NULL,
                 [LC_COLLATE ] = (locale_part_t)NULL,
-                [LC_CTYPE   ] = (locale_part_t)_CurrentRuneLocale,
+                [LC_CTYPE   ] = (locale_part_t)&_CurrentRuneLocale,
                 [LC_MONETARY] = (locale_part_t)__monetary_load_locale,
                 [LC_NUMERIC ] = (locale_part_t)__numeric_load_locale,
                 [LC_TIME    ] = (locale_part_t)__time_load_locale,

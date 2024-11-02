@@ -125,7 +125,6 @@ typedef _Encoding_State				_EUCState;
 #define	_SS3						0x008f
 
 #define _FUNCNAME(m)				_EUC_##m
-#define _ENCODING_MB_CUR_MAX(_ei_)	3
 
 rune_t	_EUC_sgetrune(const char *, size_t, char const **);
 int		_EUC_sputrune(rune_t, char *, size_t, char **);
@@ -390,7 +389,7 @@ parse_variable(_EUCEncodingInfo *ei, const void *var, size_t lenvar)
 
 	ei->mb_cur_max = 1;
 	for (x = 0; x < 4; ++x) {
-		ei->count[x] = (int)strtol(v, (char **)&e, 0);
+		ei->count[x] = (int)strtol(v, __UNCONST(&e), 0);
 		if (v == e || !(v = e) || ei->count[x] < 1 || ei->count[x] > 4) {
 			return (EFTYPE);
 		}
@@ -399,7 +398,7 @@ parse_variable(_EUCEncodingInfo *ei, const void *var, size_t lenvar)
 		while (*v == ' ' || *v == '\t') {
 			++v;
 		}
-		ei->bits[x] = (int)strtol(v, (char **)&e, 0);
+		ei->bits[x] = (int)strtol(v, __UNCONST(&e), 0);
 		if (v == e || !(v = e)) {
 			return (EFTYPE);
 		}
@@ -407,7 +406,7 @@ parse_variable(_EUCEncodingInfo *ei, const void *var, size_t lenvar)
 			++v;
 		}
 	}
-	ei->mask = (int)strtol(v, (char **)&e, 0);
+	ei->mask = (int)strtol(v, __UNCONST(&e), 0);
 	if (v == e || !(v = e)) {
 		return (EFTYPE);
 	}

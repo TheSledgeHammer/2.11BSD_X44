@@ -53,6 +53,8 @@ static char sccsid[] = "@(#)utf2.c	8.1 (Berkeley) 6/4/93";
 #include <wchar.h>
 #include <limits.h>
 
+#undef _ENCODING_MB_CUR_MAX
+
 #include <citrus/citrus_types.h>
 #include <citrus/citrus_ctype.h>
 #include <citrus/citrus_stdenc.h>

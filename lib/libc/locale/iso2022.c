@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <rune.h>
 #include <string.h>
@@ -40,6 +41,11 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <limits.h>
+
+#undef _ENCODING_MB_CUR_MAX
+#undef _ENCODING_IS_STATE_DEPENDENT
+#undef _STATE_NEEDS_EXPLICIT_INIT
+#undef _STATE_FLAG_INITIALIZED
 
 #include <citrus/citrus_types.h>
 #include <citrus/citrus_ctype.h>
@@ -79,8 +85,8 @@ typedef _Encoding_State				_ISO2022State;
 
 rune_t	_ISO2022_sgetrune(const char *, size_t, char const **);
 int		_ISO2022_sputrune(rune_t, char *, size_t, char **);
-int		_ISO2022_sgetmbrune(_ISO2022EncodingInfo *, wchar_t *, const char **, size_t, _ISO2022State *, size_t *);
-int 	_ISO2022_sputmbrune(_ISO2022EncodingInfo *, char *, wchar_t, _ISO2022State *, size_t *);
+int		_ISO2022_sgetmbrune(_ISO2022EncodingInfo * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ISO2022State * __restrict, size_t * __restrict);
+int 	_ISO2022_sputmbrune(_ISO2022EncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _ISO2022State * __restrict, size_t * __restrict);
 int		_ISO2022_sgetcsrune(_ISO2022EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_ISO2022_sputcsrune(_ISO2022EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 int 	_ISO2022_module_init(_ISO2022EncodingInfo * __restrict, const void * __restrict, size_t);
@@ -319,7 +325,8 @@ get_flags(_ISO2022EncodingInfo * __restrict ei, const char * __restrict token)
 
 int
 /*ARGSUSED*/
-_ISO2022_init(_RuneLocale *rl)
+_ISO2022_init(rl)
+    _RuneLocale *rl;
 {
 	int ret;
 
@@ -339,7 +346,7 @@ _ISO2022_init(_RuneLocale *rl)
 }
 
 int
-_ISO2022_sgetmbrune(_ISO2022EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _ISO2022State *psenc, size_t *nresult)
+_ISO2022_sgetmbrune(_ISO2022EncodingInfo * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _ISO2022State * __restrict psenc, size_t * __restrict nresult)
 {
 	wchar_t wchar;
 	const char *s0, *p, *result;
@@ -368,14 +375,14 @@ _ISO2022_sgetmbrune(_ISO2022EncodingInfo *ei, wchar_t *pwc, const char **s, size
 		goto emptybuf;
 
 	/* buffer is not empty */
-	p = psenc->ch;
+	p = (const char *)psenc->ch;
 	while (psenc->chlen < sizeof(psenc->ch) && n >= 0) {
 		if (n > 0) {
 			psenc->ch[psenc->chlen++] = *s0++;
 			n--;
 		}
 
-		wchar = _ISO2022_sgetwchar(ei, p, psenc->chlen - (p - psenc->ch), &result, psenc);
+		wchar = _ISO2022_sgetwchar(ei, p, psenc->chlen - (p - (const char *)psenc->ch), &result, psenc);
 		if (wchar != _ISO2022INVALID) {
 			c += result - p;
 			if (psenc->chlen > c)
@@ -446,7 +453,7 @@ restart:
 }
 
 int
-_ISO2022_sputmbrune(_ISO2022EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _ISO2022State *psenc, size_t *nresult)
+_ISO2022_sputmbrune(_ISO2022EncodingInfo * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _ISO2022State * __restrict psenc, size_t * __restrict nresult)
 {
 	char buf[MB_LEN_MAX];
 	char *result;
@@ -707,7 +714,7 @@ _ISO2022_sgetwchar(_ISO2022EncodingInfo * __restrict ei, const char * __restrict
 	int cur;
 	struct seqtable *sp;
 	int nmatch;
-	int i;
+	int i = 0;
 
 	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(psenc != NULL);

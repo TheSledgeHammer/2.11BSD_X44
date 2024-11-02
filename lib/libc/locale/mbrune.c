@@ -56,11 +56,11 @@ mbrune(string, c)
 
 	while ((r = sgetrune(string, MB_LEN_MAX, &result))) {
 		if (r == c)
-			return ((char *)string);
+			return (__UNCONST(string));
 		string = result == string ? string + 1 : result;
 	}
 
-	return (c == *string ? (char *)string : NULL);
+	return (c == *string ? __UNCONST(string) : NULL);
 }
 
 char *
@@ -77,7 +77,7 @@ mbrrune(string, c)
 			last = string;
 		string = result == string ? string + 1 : result;
 	}
-	return (c == *string ? (char *)string : (char *)last);
+	return (c == *string ? __UNCONST(string) : __UNCONST(last));
 }
 
 char *
@@ -101,7 +101,7 @@ mbmb(string, pattern)
 	while (slen >= plen && (r = sgetrune(string, slen, &result))) {
 		if (r == first) {
 			if (strncmp(string, pattern, slen) == 0)
-				return ((char *) string);
+				return (__UNCONST(string));
 		}
 		if (result == string) {
 			--slen;
