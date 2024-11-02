@@ -80,12 +80,12 @@ void	    		wctrans_init(_RuneLocale *);
 const char 		*__get_locale_env(int);
 
 /* setrunelocale.c */
-void 			addrunelocale(_RuneLocale *, char *, int (*)(_RuneLocale *));
-void 			delrunelocale(char *);
+void 			addrunelocale(_RuneLocale *, const char *, int (*)(_RuneLocale *));
+void 			delrunelocale(const char *);
 int			newrunelocale(_RuneLocale *);
-_RuneLocale 		*findrunelocale(char *);
-int			validrunelocale(_RuneLocale *, char *, void *, int);
-int			convertrunelocale(_RuneLocale *, char *, _RuneLocale *, char *);
+_RuneLocale 		*findrunelocale(const char *);
+int			validrunelocale(_RuneLocale *, const char *, void *, int);
+int			convertrunelocale(_RuneLocale *, const char *, _RuneLocale *, const char *);
 __END_DECLS
 
 #endif /* !_SETLOCALE_H_ */
