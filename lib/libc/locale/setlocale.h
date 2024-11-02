@@ -38,20 +38,20 @@
 #define ENCODING_NONE 		"NONE"
 #define ENCODING_EUC 		"EUC"
 
-#define _C_LOCALE			"C"
+#define _C_LOCALE		"C"
 #define _POSIX_LOCALE		"POSIX"
 
 #define ENCODING_LEN 		31
 
-extern char *PathLocale;
+extern const char 		*PathLocale;
 
-typedef void 				*locale_part_t;
+typedef void 			*locale_part_t;
 
 struct _locale {
-    struct lconv 		    *part_lconv;
-    const char 				*part_name[_LC_LAST];
-    char 					part_category[_LC_LAST][ENCODING_LEN+1];
-    locale_part_t 			part_impl[_LC_LAST];
+    struct lconv 		*part_lconv;
+    const char 			*part_name[_LC_LAST];
+    char 			part_category[_LC_LAST][ENCODING_LEN+1];
+    locale_part_t 		part_impl[_LC_LAST];
 };
 
 static __inline struct _locale *
@@ -61,7 +61,9 @@ __get_locale(void)
 }
 
 __BEGIN_DECLS
+
 #include <runetype.h>
+
 int			_none_init(_RuneLocale *);
 int			_UES_init(_RuneLocale *);
 int			_UTF1632_init(_RuneLocale *);
@@ -70,14 +72,18 @@ int			_UTF8_init(_RuneLocale *);
 int			_EUC_init(_RuneLocale *);
 int			_ISO2022_init(_RuneLocale *);
 
+/* rune.c */
+void        		wctype_init(_RuneLocale *);
+void	    		wctrans_init(_RuneLocale *);
+
 /* setlocale.c */
-const char *__get_locale_env(int);
+const char 		*__get_locale_env(int);
 
 /* setrunelocale.c */
-void 		addrunelocale(_RuneLocale *, char *, int (*)(_RuneLocale *));
-void 		delrunelocale(char *);
+void 			addrunelocale(_RuneLocale *, char *, int (*)(_RuneLocale *));
+void 			delrunelocale(char *);
 int			newrunelocale(_RuneLocale *);
-_RuneLocale *findrunelocale(char *);
+_RuneLocale 		*findrunelocale(char *);
 int			validrunelocale(_RuneLocale *, char *, void *, int);
 int			convertrunelocale(_RuneLocale *, char *, _RuneLocale *, char *);
 __END_DECLS
