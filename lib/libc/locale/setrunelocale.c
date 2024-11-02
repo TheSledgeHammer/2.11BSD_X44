@@ -35,35 +35,38 @@
  */
 
 #include <sys/cdefs.h>
+
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/errno.h>
 #include <sys/queue.h>
 
-#include <ctype.h>
+#include <errno.h>
 #include <rune.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "runefile.h"
 #include "setlocale.h"
 
-struct localetable_head;
-LIST_HEAD(localetable_head, localetable);
 struct localetable {
-	char 		encoding[32];
+	const char 		*encoding;
 	int 		(*init)(_RuneLocale *);
 	_RuneLocale *runelocale;
 	LIST_ENTRY(localetable) next;
 };
 
-struct localetable_head lthead;// = LIST_HEAD_INITIALIZER(lthead);
+LIST_HEAD(localetable_head, localetable) lthead = LIST_HEAD_INITIALIZER(lthead);
+
+struct localetable *lookuplocaletable(const char *);
+int         initlocaletable(const char *);
+void        loadlocaletable(_RuneLocale *);
+int         initrunelocale(_RuneLocale *);
+
 
 struct localetable *
 lookuplocaletable(encoding)
-	char *encoding;
+    const char *encoding;
 {
-    struct localetable *lt = NULL;
+    struct localetable *lt;
 
     LIST_FOREACH(lt, &lthead, next) {
         if ((!strcmp(encoding, lt->encoding))) {
@@ -75,7 +78,7 @@ lookuplocaletable(encoding)
 
 int
 initlocaletable(encoding)
-	char *encoding;
+    const char *encoding;
 {
 	struct localetable *lt;
 	int ret;
@@ -86,13 +89,12 @@ initlocaletable(encoding)
 	} else {
 		ret = (*lt->init)(lt->runelocale);
 	}
-
 	return (ret);
 }
 
 void
 loadlocaletable(rl)
-	_RuneLocale *rl;
+    _RuneLocale *rl;
 {
 	addrunelocale(rl, ENCODING_UTF8, _UTF8_init);
 	addrunelocale(rl, ENCODING_UTF1632, _UTF1632_init);
@@ -106,9 +108,9 @@ loadlocaletable(rl)
 /* add rune to table */
 void
 addrunelocale(rl, encoding, init)
-	_RuneLocale *rl;
-	char *encoding;
-	int (*init)(_RuneLocale *);
+    _RuneLocale *rl;
+    const char *encoding;
+    int (*init)(_RuneLocale *);
 {
 	struct localetable *lt;
 
@@ -121,8 +123,8 @@ addrunelocale(rl, encoding, init)
 
 /* delete rune from table */
 void
-delrunelocale(encoding)
-	char *encoding;
+delrunelocale()
+    const char *encoding;
 {
 	struct localetable *lt;
 
@@ -136,7 +138,7 @@ delrunelocale(encoding)
 /* initializes all runes in table */
 int
 initrunelocale(rl)
-	_RuneLocale *rl;
+    _RuneLocale *rl;
 {
 	if (!rl->encoding[0] || !strcmp(rl->encoding, ENCODING_UTF8)) {
 		return (initlocaletable(ENCODING_UTF8));
@@ -160,11 +162,9 @@ initrunelocale(rl)
 /* create new rune's table */
 int
 newrunelocale(rl)
-	_RuneLocale *rl;
+    _RuneLocale *rl;
 {
 	int ret;
-
-	LIST_INIT(&lthead);
 
 	/* load table */
 	loadlocaletable(rl);
@@ -179,7 +179,7 @@ newrunelocale(rl)
 /* search table for rune */
 _RuneLocale *
 findrunelocale(encoding)
-	char *encoding;
+    const char *encoding;
 {
 	struct localetable *lt;
 	_RuneLocale *rl;
@@ -199,7 +199,7 @@ findrunelocale(encoding)
 int
 validrunelocale(rl, encoding, variable, variable_len)
 	_RuneLocale *rl;
-	char *encoding;
+	const char *encoding;
 	void *variable;
 	int variable_len;
 {
@@ -236,7 +236,7 @@ validrunelocale(rl, encoding, variable, variable_len)
 int
 convertrunelocale(src, srcname, dst, dstname)
 	_RuneLocale *src, *dst;
-	char *srcname, *dstname;
+	const char *srcname, *dstname;
 {
 	_RuneLocale *cur;
 
@@ -258,7 +258,7 @@ convertrunelocale(src, srcname, dst, dstname)
 			return (-1);
 		}
 		printf("encoding selected %s is now set as the current encoding\n", dstname);
-		(void)setrunelocale(dstname);
+		(void)setrunelocale(__UNCONST(dstname));
 	} else {
 		printf("encoding %s does not exist\n", dstname);
 		return (-1);

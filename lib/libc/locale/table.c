@@ -41,17 +41,18 @@ static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdlib.h>
-#include <stddef.h>
 #include <ctype.h>
 #include <locale.h>
-#include <assert.h>
-#include <wchar.h>
 #include <rune.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <wchar.h>
 
-#include "runefile.h"
+#include <citrus/citrus_types.h>
 #include <citrus/citrus_ctype.h>
 #include <citrus/citrus_stdenc.h>
+
+#include "runefile.h"
 
 extern struct _RuneOps _none_runeops;
 
@@ -258,18 +259,20 @@ _RuneLocale _DefaultRuneLocale = {
 	{ 0, NULL },
 	{ 0, NULL },
 	NULL, 0,
-	"646",
 	&_none_runeops,
     {
-    		{   "towlower",
-    				__UNCONST(&_DefaultRuneLocale.maplower[0]),
-					__UNCONST(&_DefaultRuneLocale.maplower_ext)
+    		{   
+                    __UNCONST("towlower"),
+    				&_DefaultRuneLocale.maplower[0],
+					&_DefaultRuneLocale.maplower_ext,
     		},
 
-			{   "towupper",
-					__UNCONST(&_DefaultRuneLocale.mapupper[0]),
-					__UNCONST(&_DefaultRuneLocale.mapupper_ext)
+			{       
+                    __UNCONST("towupper"),
+					&_DefaultRuneLocale.mapupper[0],
+					&_DefaultRuneLocale.mapupper_ext,
 			},
     }
 };
+
 _RuneLocale *_CurrentRuneLocale = &_DefaultRuneLocale;
