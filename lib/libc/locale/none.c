@@ -68,26 +68,41 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/types.h>
+
+#include <assert.h>
+#include <errno.h>
+#include <rune.h>
+#include <string.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <rune.h>
-#include <errno.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <limits.h>
 
+#undef _ENCODING_MB_CUR_MAX
+
+#include <citrus/citrus_types.h>
 #include <citrus/citrus_ctype.h>
 #include <citrus/citrus_stdenc.h>
+
+#include "setlocale.h"
+
+typedef _Encoding_Info				_NONEEncodingInfo;
+typedef _Encoding_TypeInfo 			_NONECTypeInfo;
+typedef _Encoding_State				_NONEState;
 
 #define _FUNCNAME(m)				_none_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	1
 
 rune_t		_none_sgetrune(const char *, size_t, char const **);
 int			_none_sputrune(rune_t, char *, size_t, char **);
-int			_none_sgetmbrune(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
-int 		_none_sputmbrune(void * __restrict, char * __restrict, size_t, wchar_t, void * __restrict, size_t * __restrict);
-int			_none_sgetcsrune(void * __restrict, wchar_t * __restrict, _csid_t, _index_t);
-int			_none_sputcsrune(void * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
-int			_none_module_init(void * __restrict, const void * __restrict, size_t);
-void		_none_module_uninit(void *);
+int		    _none_sgetmbrune(_NONEEncodingInfo * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _NONEState * __restrict, size_t * __restrict);
+int 		_none_sputmbrune(_NONEEncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _NONEState * __restrict, size_t * __restrict);
+int			_none_sgetcsrune(_NONEEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
+int			_none_sputcsrune(_NONEEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+int			_none_module_init(_NONEEncodingInfo * __restrict, const void * __restrict, size_t);
+void		_none_module_uninit(_NONEEncodingInfo *);
 
 _RuneOps _none_runeops = {
 		.ro_sgetrune 	=  	_none_sgetrune,
@@ -111,32 +126,29 @@ _none_init(rl)
 }
 
 int
-_none_sgetmbrune(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult)
+_none_sgetmbrune(_NONEEncodingInfo * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _NONEState * __restrict psenc, size_t * __restrict nresult)
 {
-	if (s == NULL) {
+    const char *s0;
+
+    s0 = *s;
+	if (s0 == NULL) {
 		*nresult = 0; /* state independent */
 		return (0);
 	}
 	if (n == 0) {
-		return (EILSEQ);
-	}
-	if (pwc == NULL) {
-		if (*s == '\0') {
-			*nresult = 0;
-		} else {
-			*nresult = 1;
-		}
+        *nresult = (size_t)-2;
 		return (0);
 	}
-
-	*pwc = (wchar_t) (unsigned char) *s;
-	*nresult = *s == '\0' ? 0 : 1;
-
+    if (pwc != NULL) {
+        *pwc = (wchar_t)s0;
+    }
+	*nresult = *s0 == '\0' ? 0 : 1;
+    *s = s0;
 	return (0);
 }
 
 int
-_none_sputmbrune(void * __restrict cl, char * __restrict s, size_t n, wchar_t wc, void * __restrict pspriv, size_t * __restrict nresult)
+_none_sputmbrune(_NONEEncodingInfo * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _NONEState * __restrict psenc, size_t * __restrict nresult)
 {
 	if ((wc & ~0xFFU) != 0) {
 		*nresult = (size_t) - 1;
@@ -145,7 +157,7 @@ _none_sputmbrune(void * __restrict cl, char * __restrict s, size_t n, wchar_t wc
 
 	*nresult = 1;
 	if (s != NULL) {
-		*s = (char) wc;
+		*s = (wchar_t) wc;
 	}
 
 	return (0);
@@ -164,25 +176,25 @@ _none_sputrune(rune_t c, char *string, size_t n, char **result)
 }
 
 int
-_none_sgetcsrune(void * __restrict cl, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
+_none_sgetcsrune(_NONEEncodingInfo * __restrict cl, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
 {
 	return (0);
 }
 
 int
-_none_sputcsrune(void * __restrict cl, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+_none_sputcsrune(_NONEEncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
 {
 	return (0);
 }
 
 int
-_none_module_init(void * __restrict cl, const void * __restrict var, size_t lenvar)
+_none_module_init(_NONEEncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	return (0);
 }
 
 void
-_none_module_uninit(void *cl)
+_none_module_uninit(_NONEEncodingInfo *ei)
 {
 
 }

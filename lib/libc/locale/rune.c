@@ -43,21 +43,23 @@ static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
 
+#include <errno.h>
 #include <ctype.h>
 #include <limits.h>
-#include <wctype.h>
 #include <rune.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #include "runefile.h"
 #include "setlocale.h"
 
 static _RuneLocale	*_Read_RuneMagi(FILE *);
 
-static char *PathLocale = 0;
+const char *PathLocale = NULL;
 
 /* wctype_init: */
 void
@@ -72,10 +74,10 @@ void
 wctrans_init(rl)
 	_RuneLocale *rl;
 {
-	rl->wctrans[_WCTRANS_INDEX_LOWER].name = "tolower";
+	rl->wctrans[_WCTRANS_INDEX_LOWER].name = __UNCONST("tolower");
 	rl->wctrans[_WCTRANS_INDEX_LOWER].cached = rl->maplower;
 	rl->wctrans[_WCTRANS_INDEX_LOWER].extmap = &rl->maplower_ext;
-	rl->wctrans[_WCTRANS_INDEX_UPPER].name = "toupper";
+	rl->wctrans[_WCTRANS_INDEX_UPPER].name = __UNCONST("toupper");
 	rl->wctrans[_WCTRANS_INDEX_UPPER].cached = rl->mapupper;
 	rl->wctrans[_WCTRANS_INDEX_UPPER].extmap = &rl->mapupper_ext;
 }

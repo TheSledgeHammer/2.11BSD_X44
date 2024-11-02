@@ -41,8 +41,11 @@ static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #include <errno.h>
 #include <limits.h>
 #include <locale.h>
@@ -51,6 +54,7 @@ static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
 #include <string.h>
 #include <unistd.h>
 
+#include "collate.h"    /* for __collate_load_locale() */
 #include "lmonetary.h"	/* for __monetary_load_locale() */
 #include "lnumeric.h"	/* for __numeric_load_locale() */
 #include "lmessages.h"	/* for __messages_load_locale() */
@@ -61,7 +65,7 @@ static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
 /*
  * Category names for getenv()
  */
-static char *categories[_LC_LAST] = {
+static const char *categories[_LC_LAST] = {
 		"LC_ALL",
 		"LC_COLLATE",
 		"LC_CTYPE",
@@ -74,7 +78,7 @@ static char *categories[_LC_LAST] = {
 /*
  * Current locales for each category
  */
-static char current_categories[_LC_LAST][32] = {
+static const char current_categories[_LC_LAST][32] = {
 		"C",
 		"C",
 		"C",
@@ -89,18 +93,19 @@ static char current_categories[_LC_LAST][32] = {
  */
 static char new_categories[_LC_LAST][32];
 static char current_locale_string[_LC_LAST * 33];
-
+static char *__setlocale(int, const char *);
 static char	*currentlocale(void);
 static char	*loadlocale(int);
-static void	showpathlocale(char *, int);
+static void	showpathlocale(const char *, int);
 
-char *
+static char *
 __setlocale(category, locale)
 	int category;
 	const char *locale;
 {
 	int found, i, len;
-	char *env, *r;
+	const char *env;
+    char *r;
 
 	if (category < LC_ALL || category >= _LC_LAST) {
 		errno = EINVAL;
@@ -114,7 +119,7 @@ __setlocale(category, locale)
 		return (NULL);
 
 	if (!locale)
-		return (category ? current_categories[category] : currentlocale());
+		return (category ? __UNCONST(current_categories[category]) : currentlocale());
 
 	/*
 	 * Default to the current locale for everything.
@@ -229,7 +234,8 @@ loadlocale(category)
 
 	locale = &global_locale;
 	newcat = new_categories[category];
-	curcat = current_categories[category];
+	curcat = __UNCONST(current_categories[category]);
+    func = NULL;
 
 	if (strcmp(newcat, curcat) == 0) {
 		return (curcat);
@@ -290,7 +296,7 @@ loadlocale(category)
 
 static void
 showpathlocale(path, category)
-	char *path;
+	const char *path;
 	int category;
 {
 	char name[PATH_MAX];
