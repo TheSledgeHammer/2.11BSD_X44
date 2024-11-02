@@ -123,7 +123,7 @@ addrunelocale(rl, encoding, init)
 
 /* delete rune from table */
 void
-delrunelocale()
+delrunelocale(encoding)
     const char *encoding;
 {
 	struct localetable *lt;
