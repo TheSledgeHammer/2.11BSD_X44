@@ -100,15 +100,22 @@ static char sccsid[] = "@(#)euc.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <sys/errno.h>
 
+#include <assert.h>
+#include <errno.h>
 #include <rune.h>
+#include <string.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <limits.h>
 
+#include <citrus/citrus_types.h>
 #include <citrus/citrus_ctype.h>
 #include <citrus/citrus_stdenc.h>
+
+#include "setlocale.h"
 
 typedef _Encoding_Info				_EUCEncodingInfo;
 typedef _Encoding_TypeInfo 			_EUCCTypeInfo;
@@ -139,7 +146,7 @@ _RuneOps _euc_runeops = {
 		.ro_sgetcsrune  =	_EUC_sgetcsrune,
 		.ro_sputcsrune	= 	_EUC_sputcsrune,
 		.ro_module_init = 	_EUC_module_init,
-		.ro_module_uninit = 	_EUC_module_uninit,
+		.ro_module_uninit = _EUC_module_uninit,
 };
 
 int
@@ -150,11 +157,11 @@ _EUC_init(rl)
 
 	rl->ops = &_euc_runeops;
 
-	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len);
+	ret = _citrus_ctype_init((void **)&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len);
+	ret = _citrus_stdenc_init((void **)&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
@@ -223,12 +230,12 @@ _EUC_sgetmbrune(_EUCEncodingInfo * __restrict ei, wchar_t * __restrict pwc, cons
 	case 2:
 		/* skip SS2/SS3 */
 		len = c - 1;
-		s1 = &psenc->ch[1];
+		s1 = (const char *)&psenc->ch[1];
 		break;
 	case 1:
 	case 0:
 		len = c;
-		s1 = &psenc->ch[0];
+		s1 = (const char *)&psenc->ch[0];
 		break;
 	default:
 		goto encoding_error;
@@ -369,7 +376,6 @@ static int
 parse_variable(_EUCEncodingInfo *ei, const void *var, size_t lenvar)
 {
 	const char *v, *e;
-	//size_t lenvar;
 	int x;
 
 	/* parse variable string */
@@ -378,15 +384,13 @@ parse_variable(_EUCEncodingInfo *ei, const void *var, size_t lenvar)
 	}
 
 	v = (const char *)var;
-	//lenvar = rl->variable_len;
-
 	while (*v == ' ' || *v == '\t') {
 		++v;
 	}
 
 	ei->mb_cur_max = 1;
 	for (x = 0; x < 4; ++x) {
-		ei->count[x] = (int)strtol(v, (char**) &e, 0);
+		ei->count[x] = (int)strtol(v, (char **)&e, 0);
 		if (v == e || !(v = e) || ei->count[x] < 1 || ei->count[x] > 4) {
 			return (EFTYPE);
 		}
@@ -395,7 +399,7 @@ parse_variable(_EUCEncodingInfo *ei, const void *var, size_t lenvar)
 		while (*v == ' ' || *v == '\t') {
 			++v;
 		}
-		ei->bits[x] = (int)strtol(v, (char**) &e, 0);
+		ei->bits[x] = (int)strtol(v, (char **)&e, 0);
 		if (v == e || !(v = e)) {
 			return (EFTYPE);
 		}
@@ -403,7 +407,7 @@ parse_variable(_EUCEncodingInfo *ei, const void *var, size_t lenvar)
 			++v;
 		}
 	}
-	ei->mask = (int)strtol(v, (char**) &e, 0);
+	ei->mask = (int)strtol(v, (char **)&e, 0);
 	if (v == e || !(v = e)) {
 		return (EFTYPE);
 	}

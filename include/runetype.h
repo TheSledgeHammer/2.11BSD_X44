@@ -82,9 +82,8 @@ typedef	_BSD_WCTYPE_T_	wctype_t;
 typedef uint32_t 		_RuneType;
 typedef uint64_t		_runepad_t;
 
-#define	_CACHED_RUNES			(1 << 8 )	/* Must be a power of 2 */
-#define _CRMASK(c)              ((c) & (~(_CACHED_RUNES - 1)))
-#define _RUNE_ISCACHED(c)		((c) >= 0 && (c) < (_CACHED_RUNES))
+#define	_CACHED_RUNES			(1 << 8)	/* Must be a power of 2 */
+#define _CRMASK(c)            	((c) & (~(_CACHED_RUNES - 1)))
 #define _DEFAULT_INVALID_RUNE	((rune_t)-3)
 
 /*

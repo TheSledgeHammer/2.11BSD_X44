@@ -145,13 +145,25 @@ typedef struct _Encoding_TypeInfo {
 #define _TO_STATE(_ps_)				((_ENCODING_STATE*)(_ps_))
 
 #define _ENCODING_INFO				_Encoding_Info
-#define _CTYPE_INFO				_Encoding_TypeInfo
-#define _ENCODING_CHARSET                   	_Encoding_Charset
+#define _CTYPE_INFO					_Encoding_TypeInfo
+#define _ENCODING_CHARSET           _Encoding_Charset
 #define _ENCODING_STATE				_Encoding_State
 #define _ENCODING_TRAITS			_Encoding_Traits
-#define _ENCODING_MB_CUR_MAX(_ei_)		(_ei_)->mb_cur_max
+
+#ifndef _ENCODING_MB_CUR_MAX
+#define _ENCODING_MB_CUR_MAX(_ei_)			(_ei_)->mb_cur_max
+#endif
+
+#ifndef _ENCODING_IS_STATE_DEPENDENT
 #define _ENCODING_IS_STATE_DEPENDENT		0
+#endif
+
+#ifndef _STATE_NEEDS_EXPLICIT_INIT
 #define _STATE_NEEDS_EXPLICIT_INIT(_ps_)	0
-#define _STATE_FLAG_INITIALIZED			0
+#endif
+
+#ifndef _STATE_FLAG_INITIALIZED
+#define _STATE_FLAG_INITIALIZED				0
+#endif
 
 #endif /* _ENCODING_H_ */

@@ -373,7 +373,7 @@ ___toupper(c)
 	_RuneRange *rr = &_CurrentRuneLocale->mapupper_ext;
 	_RuneEntry *re = rr->ranges;
 
-	if (c == EOF)
+	if (c < 0 || c == EOF)
 		return (EOF);
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		if (c < re->min)
@@ -394,7 +394,6 @@ ___toupper_mb(c)
 
 	if (c < 0 || c == WEOF)
 		return (c);
-
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		if (c < re->min)
 			return (c);
@@ -412,7 +411,7 @@ ___tolower(c)
 	_RuneRange *rr = &_CurrentRuneLocale->maplower_ext;
 	_RuneEntry *re = rr->ranges;
 
-	if (c == EOF)
+	if (c < 0 || c == EOF)
 		return (EOF);
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		if (c < re->min)
@@ -433,7 +432,6 @@ ___tolower_mb(c)
 
 	if (c < 0 || c == WEOF)
 		return (c);
-
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		if (c < re->min)
 			return (c);
@@ -452,7 +450,7 @@ __istype(c, f)
 	rune_t c;
 	unsigned long f;
 {
-	return ((((_RUNE_ISCACHED(c)) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
+	return ((((_CRMASK(c)) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
 }
 
 int
@@ -460,34 +458,34 @@ __isctype(c, f)
 	rune_t c;
 	unsigned long f;
 {
-	return ((((_RUNE_ISCACHED(c)) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
+	return ((((_CRMASK(c)) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
 }
 
 rune_t
 toupper(c)
 	rune_t c;
 {
-	return ((_RUNE_ISCACHED(c)) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+	return ((_CRMASK(c)) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 rune_t
 tolower(c)
 	rune_t c;
 {
-	return ((_RUNE_ISCACHED(c)) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
+	return ((_CRMASK(c)) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
 
 wint_t
 toupper_mb(c)
 	wint_t c;
 {
-	return ((_RUNE_ISCACHED(c)) ? ___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
+	return ((_CRMASK(c)) ? ___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 wint_t
 tolower_mb(c)
 	wint_t c;
 {
-	return ((_RUNE_ISCACHED(c)) ? ___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
+	return ((_CRMASK(c)) ? ___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
 }
 #endif

@@ -31,18 +31,24 @@
 __RCSID("$NetBSD: citrus_utf1632.c,v 1.3 2003/06/27 12:55:13 yamt Exp $");
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/types.h>
+#include <sys/endian.h>
+
+#include <assert.h>
 #include <errno.h>
 #include <rune.h>
+#include <string.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include <limits.h>
 
-#include <sys/types.h>
-#include <sys/endian.h>
-
+#include <citrus/citrus_types.h>
 #include <citrus/citrus_ctype.h>
 #include <citrus/citrus_stdenc.h>
+
+#include "setlocale.h"
 
 typedef _Encoding_Info				_UTF1632EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF1632CTypeInfo;
@@ -78,11 +84,11 @@ _UTF1632_init(rl)
 	int ret;
 
 	rl->ops = &_utf1632_runeops;
-	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len);
+	ret = _citrus_ctype_init((void **)&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len);
+	ret = _citrus_stdenc_init((void **)&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}

@@ -46,7 +46,7 @@ __runetype_wl(c, locale)
 	locale_t locale;
 {
 	_RuneLocale *rl = _RUNE_LOCALE(locale);
-	return (_RUNE_ISCACHED(c) ? ___runetype_mb(c) : rl->runetype[c]);
+	return (_CRMASK(c) ? ___runetype_mb(c) : rl->runetype[c]);
 }
 
 static __inline int

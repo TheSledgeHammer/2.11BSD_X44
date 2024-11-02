@@ -71,7 +71,6 @@
 #define	_CTYPE_SW3		0xc0000000L		/* 3 width character */
 
 __BEGIN_DECLS
-extern	char	*_ctype_;
 int	isalnum(int);
 int	isalpha(int);
 int	iscntrl(int);

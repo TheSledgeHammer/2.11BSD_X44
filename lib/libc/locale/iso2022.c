@@ -30,15 +30,22 @@
 
 #include <sys/cdefs.h>
 
+#include <sys/types.h>
+
 #include <errno.h>
 #include <rune.h>
+#include <string.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include <limits.h>
 
+#include <citrus/citrus_types.h>
 #include <citrus/citrus_ctype.h>
 #include <citrus/citrus_stdenc.h>
+
+#include "setlocale.h"
 
 typedef _Encoding_Charset			_ISO2022Charset;
 typedef _Encoding_Info				_ISO2022EncodingInfo;
@@ -66,7 +73,6 @@ typedef _Encoding_State				_ISO2022State;
 #define _STATE_FLAG_INITIALIZED				1
 
 #define _FUNCNAME(m)						_ISO2022_##m
-
 #define _ENCODING_MB_CUR_MAX(_ei_)			MB_LEN_MAX
 #define _ENCODING_IS_STATE_DEPENDENT		1
 #define _STATE_NEEDS_EXPLICIT_INIT(_ps_) 	(!((_ps_)->flags & _STATE_FLAG_INITIALIZED))
@@ -318,11 +324,11 @@ _ISO2022_init(_RuneLocale *rl)
 	int ret;
 
 	rl->ops = &_iso2022_runeops;
-	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len);
+	ret = _citrus_ctype_init((void **)&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len);
+	ret = _citrus_stdenc_init((void **)&rl, rl->variable, rl->variable_len);
 	if (ret != 0) {
 		return (ret);
 	}

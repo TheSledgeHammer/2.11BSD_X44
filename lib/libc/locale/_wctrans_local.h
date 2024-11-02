@@ -36,7 +36,7 @@ wint_t	_towctrans_ext(wint_t, _WCTransEntry *);
 static __inline wint_t
 _towctrans(wint_t c, _WCTransEntry *te)
 {
-	return (_RUNE_ISCACHED(c) ? te->cached[(rune_t)c]:_towctrans_ext(c, te));
+	return (_CRMASK(c) ? te->cached[(rune_t)c]:_towctrans_ext(c, te));
 }
 
 static __inline struct _WCTransEntry *
