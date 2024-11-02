@@ -48,14 +48,6 @@
 #include "runefile.h"
 #include "setlocale.h"
 
-extern int			_none_init(_RuneLocale *);
-extern int			_UES_init(_RuneLocale *);
-extern int			_UTF1632_init(_RuneLocale *);
-extern int			_UTF2_init(_RuneLocale *);
-extern int			_UTF8_init(_RuneLocale *);
-extern int			_EUC_init(_RuneLocale *);
-extern int			_ISO2022_init(_RuneLocale *);
-
 struct localetable_head;
 LIST_HEAD(localetable_head, localetable);
 struct localetable {
