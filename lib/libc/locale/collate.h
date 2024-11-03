@@ -43,24 +43,24 @@ struct __collate_st_char_pri {
 	int prim, sec;
 };
 struct __collate_st_chain_pri {
-	u_char str[STR_LEN];
+	char str[STR_LEN];
 	int prim, sec;
 };
 
 extern int __collate_load_error;
 extern int __collate_substitute_nontrivial;
+extern char __collate_version[STR_LEN];
 #define __collate_substitute_table (*__collate_substitute_table_ptr)
-extern u_char __collate_substitute_table[UCHAR_MAX + 1][STR_LEN];
+extern char __collate_substitute_table[UCHAR_MAX + 1][STR_LEN];
 #define __collate_char_pri_table (*__collate_char_pri_table_ptr)
 extern struct __collate_st_char_pri __collate_char_pri_table[UCHAR_MAX + 1];
 extern struct __collate_st_chain_pri *__collate_chain_pri_table;
 
 __BEGIN_DECLS
-u_char	*__collate_strdup(u_char *);
-u_char	*__collate_substitute(const u_char *);
+char	*__collate_strdup(const char *);
+char	*__collate_substitute(const char *);
 int		__collate_load_tables(const char *);
-void	__collate_lookup(const u_char *, int *, int *, int *);
-int		__collate_range_cmp(int, int);
+void	__collate_lookup(const char *, int *, int *, int *);
 #ifdef COLLATE_DEBUG
 void	__collate_print_tables(void);
 #endif

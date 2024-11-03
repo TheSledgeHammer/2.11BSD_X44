@@ -42,45 +42,34 @@ extern int __monetary_locale_changed;
 #define LCMONETARY_SIZE_MIN  (offsetof(monetary_locale_t, int_p_cs_precedes) / sizeof(char *))
 
 static char	empty[] = "";
-static char	numempty[] = { CHAR_MAX, '\0'};
 
 static const monetary_locale_t _C_monetary_locale = {
 		empty,		/* int_curr_symbol */
 		empty,		/* currency_symbol */
 		empty,		/* mon_decimal_point */
 		empty,		/* mon_thousands_sep */
-		numempty,	/* mon_grouping */
+		empty,	    /* mon_grouping */
 		empty,		/* positive_sign */
 		empty,		/* negative_sign */
-		numempty,	/* int_frac_digits */
-		numempty,	/* frac_digits */
-		numempty,	/* p_cs_precedes */
-		numempty,	/* p_sep_by_space */
-		numempty,	/* n_cs_precedes */
-		numempty,	/* n_sep_by_space */
-		numempty,	/* p_sign_posn */
-		numempty,	/* n_sign_posn */
-		numempty,	/* int_p_cs_precedes */
-		numempty,	/* int_n_cs_precedes */
-		numempty,	/* int_p_sep_by_space */
-		numempty,	/* int_n_sep_by_space */
-		numempty,	/* int_p_sign_posn */
-		numempty	/* int_n_sign_posn */
+		CHAR_MAX,	/* int_frac_digits */
+		CHAR_MAX,	/* frac_digits */
+		CHAR_MAX,	/* p_cs_precedes */
+		CHAR_MAX,	/* p_sep_by_space */
+		CHAR_MAX,	/* n_cs_precedes */
+		CHAR_MAX,	/* n_sep_by_space */
+		CHAR_MAX,	/* p_sign_posn */
+		CHAR_MAX,	/* n_sign_posn */
+		CHAR_MAX,	/* int_p_cs_precedes */
+		CHAR_MAX,	/* int_n_cs_precedes */
+		CHAR_MAX,	/* int_p_sep_by_space */
+		CHAR_MAX,	/* int_n_sep_by_space */
+		CHAR_MAX,	/* int_p_sign_posn */
+		CHAR_MAX	/* int_n_sign_posn */
 };
 
 static monetary_locale_t _monetary_locale;
 static int	_monetary_using_locale;
 static char	*_monetary_locale_buf;
-
-static char
-cnv(const char *str)
-{
-	int i = strtol(str, NULL, 10);
-
-	if (i == -1)
-		i = CHAR_MAX;
-	return ((char)i);
-}
 
 int
 __monetary_load_locale(const char *name)
@@ -88,7 +77,7 @@ __monetary_load_locale(const char *name)
 	int ret;
 
 	ret = __part_load_locale(name, &_monetary_using_locale,
-		_monetary_locale_buf, "LC_MONETARY",
+		&_monetary_locale_buf, "LC_MONETARY",
 		LCMONETARY_SIZE_FULL, LCMONETARY_SIZE_MIN,
 		(const char **)&_monetary_locale);
 	if (ret != _LDP_ERROR)
@@ -96,7 +85,7 @@ __monetary_load_locale(const char *name)
 	if (ret == _LDP_LOADED) {
 		_monetary_locale.mon_grouping =
 		     __fix_locale_grouping_str(_monetary_locale.mon_grouping);
-
+#ifdef notyet
 #define M_ASSIGN_CHAR(NAME) (((char *)_monetary_locale.NAME)[0] = \
 			     cnv(_monetary_locale.NAME))
 
@@ -129,6 +118,7 @@ __monetary_load_locale(const char *name)
 		M_ASSIGN_ICHAR(n_sep_by_space);
 		M_ASSIGN_ICHAR(p_sign_posn);
 		M_ASSIGN_ICHAR(n_sign_posn);
+#endif
 	}
 	return (ret);
 }
@@ -136,9 +126,8 @@ __monetary_load_locale(const char *name)
 monetary_locale_t *
 __get_current_monetary_locale(void)
 {
-	return (_monetary_using_locale
-		? &_monetary_locale
-		: (monetary_locale_t *)&_C_monetary_locale);
+	return (__UNCONST(_monetary_using_locale
+		? &_monetary_locale : &_C_monetary_locale));
 }
 
 #ifdef LOCALE_DEBUG
@@ -172,20 +161,20 @@ monetdebug() {
 			_monetary_locale.mon_grouping,
 			_monetary_locale.positive_sign,
 			_monetary_locale.negative_sign,
-			_monetary_locale.int_frac_digits[0],
-			_monetary_locale.frac_digits[0],
-			_monetary_locale.p_cs_precedes[0],
-			_monetary_locale.p_sep_by_space[0],
-			_monetary_locale.n_cs_precedes[0],
-			_monetary_locale.n_sep_by_space[0],
-			_monetary_locale.p_sign_posn[0],
-			_monetary_locale.n_sign_posn[0],
-			_monetary_locale.int_p_cs_precedes[0],
-			_monetary_locale.int_p_sep_by_space[0],
-			_monetary_locale.int_n_cs_precedes[0],
-			_monetary_locale.int_n_sep_by_space[0],
-			_monetary_locale.int_p_sign_posn[0],
-			_monetary_locale.int_n_sign_posn[0]
+			_monetary_locale.int_frac_digits,
+			_monetary_locale.frac_digits,
+			_monetary_locale.p_cs_precedes,
+			_monetary_locale.p_sep_by_space,
+			_monetary_locale.n_cs_precedes,
+			_monetary_locale.n_sep_by_space,
+			_monetary_locale.p_sign_posn,
+			_monetary_locale.n_sign_posn,
+			_monetary_locale.int_p_cs_precedes,
+			_monetary_locale.int_p_sep_by_space,
+			_monetary_locale.int_n_cs_precedes,
+			_monetary_locale.int_n_sep_by_space,
+			_monetary_locale.int_p_sign_posn,
+			_monetary_locale.int_n_sign_posn
 											 );
 }
 #endif /* LOCALE_DEBUG */

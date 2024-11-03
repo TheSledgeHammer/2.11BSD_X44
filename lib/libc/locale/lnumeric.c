@@ -37,12 +37,13 @@ extern int __numeric_locale_changed;
 
 #define LCNUMERIC_SIZE (sizeof(numeric_locale_t) / sizeof(char *))
 
-static char	numempty[] = { CHAR_MAX, '\0' };
+static char	empty[] = "";
+//static char	numempty[] = { CHAR_MAX, '\0' };
 
 static const numeric_locale_t _C_numeric_locale = {
 		".",     	/* decimal_point */
-		"",     	/* thousands_sep */
-		numempty	/* grouping */
+		empty,     	/* thousands_sep */
+		empty	    /* grouping */
 };
 
 static numeric_locale_t _numeric_locale;
@@ -55,7 +56,7 @@ __numeric_load_locale(const char *name)
 	int ret;
 
 	ret = __part_load_locale(name, &_numeric_using_locale,
-		_numeric_locale_buf, "LC_NUMERIC",
+		&_numeric_locale_buf, "LC_NUMERIC",
 		LCNUMERIC_SIZE, LCNUMERIC_SIZE,
 		(const char **)&_numeric_locale);
 	if (ret != _LDP_ERROR)
@@ -69,9 +70,8 @@ __numeric_load_locale(const char *name)
 numeric_locale_t *
 __get_current_numeric_locale(void)
 {
-	return (_numeric_using_locale
-		? &_numeric_locale
-		: (numeric_locale_t *)&_C_numeric_locale);
+	return (__UNCONST(_numeric_using_locale
+		? &_numeric_locale : &_C_numeric_locale));
 }
 
 #ifdef LOCALE_DEBUG

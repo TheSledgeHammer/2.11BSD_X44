@@ -50,6 +50,7 @@ __FBSDID("$FreeBSD$");
 static const char nogrouping[] = { '\0' };
 
 static int split_lines(char *, const char *);
+static void set_from_buf(const char *, int, const char **);
 
 int
 __part_load_locale(const char *name,
@@ -60,12 +61,15 @@ __part_load_locale(const char *name,
 		int locale_buf_size_min,
 		const char **dst_localebuf)
 {
-	int		saverr, fd, i, num_lines;
-	char		*lbuf, *p;
-	const char	*plim;
-	char		filename[PATH_MAX];
+    static int num_lines;
+	int			saverr, fd;
+	char		*lbuf;
+	char		*p;
+	const char 	*plim;
+	char 		filename[PATH_MAX];
 	struct stat	st;
-	size_t		namesize, bufsize;
+	size_t		namesize;
+	size_t		bufsize;
 
 	/* 'name' must be already checked. */
 	if (strcmp(name, _C_LOCALE) == 0 || strcmp(name, _POSIX_LOCALE) == 0) {
@@ -76,7 +80,9 @@ __part_load_locale(const char *name,
 	/*
 	 * If the locale name is the same as our cache, use the cache.
 	 */
-	if (*locale_buf != NULL && strcmp(name, *locale_buf) == 0) {
+    lbuf = *locale_buf;
+	if (lbuf != NULL && strcmp(name, lbuf) == 0) {
+		set_from_buf(lbuf, num_lines, dst_localebuf);
 		*using_locale = 1;
 		return (_LDP_CACHE);
 	}
@@ -86,31 +92,32 @@ __part_load_locale(const char *name,
 	 */
 	namesize = strlen(name) + 1;
 
-	/* 'PathLocale' must be already set & checked. */
-	/* Range checking not needed, 'name' size is limited */
 	strcpy(filename, PathLocale);
 	strcat(filename, "/");
 	strcat(filename, name);
 	strcat(filename, "/");
 	strcat(filename, category_filename);
-	if ((fd = open(filename, O_RDONLY)) < 0)
+	fd = open(filename, O_RDONLY);
+	if (fd < 0) {
 		return (_LDP_ERROR);
+	}
 	if (fstat(fd, &st) != 0)
 		goto bad_locale;
 	if (st.st_size <= 0) {
 		errno = EFTYPE;
-		goto bad_locale;
 	}
 	bufsize = namesize + st.st_size;
+    *locale_buf = NULL;
 	if ((lbuf = malloc(bufsize)) == NULL) {
 		errno = ENOMEM;
 		goto bad_locale;
 	}
-	(void)strcpy(lbuf, name);
+	(void) strcpy(lbuf, name);
 	p = lbuf + namesize;
 	plim = p + st.st_size;
-	if (read(fd, p, (size_t) st.st_size) != st.st_size)
+	if (read(fd, p, (size_t) st.st_size) != st.st_size) {
 		goto bad_lbuf;
+	}
 	/*
 	 * Parse the locale file into localebuf.
 	 */
@@ -118,28 +125,28 @@ __part_load_locale(const char *name,
 		errno = EFTYPE;
 		goto bad_lbuf;
 	}
+
 	num_lines = split_lines(p, plim);
-	if (num_lines >= locale_buf_size_max)
+	if (num_lines >= locale_buf_size_max) {
 		num_lines = locale_buf_size_max;
-	else if (num_lines >= locale_buf_size_min)
+	} else if (num_lines >= locale_buf_size_min) {
 		num_lines = locale_buf_size_min;
-	else {
+	} else {
 		errno = EFTYPE;
 		goto bad_lbuf;
 	}
 	(void)close(fd);
+	set_from_buf(lbuf, num_lines, dst_localebuf);
+
 	/*
 	 * Record the successful parse in the cache.
 	 */
-	if (*locale_buf != NULL)
+	if (*locale_buf != NULL) {
 		free(*locale_buf);
+	}
 	*locale_buf = lbuf;
-	for (p = *locale_buf, i = 0; i < num_lines; i++)
-		dst_localebuf[i] = (p += strlen(p) + 1);
-	for (i = num_lines; i < locale_buf_size_max; i++)
-		dst_localebuf[i] = NULL;
-	*using_locale = 1;
 
+	*using_locale = 1;
 	return (_LDP_LOADED);
 
 bad_lbuf:
@@ -159,15 +166,22 @@ split_lines(char *p, const char *plim)
 {
 	int i;
 
-	i = 0;
-	while (p < plim) {
-		if (*p == '\n') {
-			*p = '\0';
-			i++;
-		}
-		p++;
+	for (i = 0; p < plim; i++) {
+		p = strchr(p, '\n');
+		*p++ = '\0';
 	}
 	return (i);
+}
+
+static void
+set_from_buf(const char *p, int num_lines, const char **dst_localebuf)
+{
+	const char **ap;
+	int i;
+
+	for (ap = dst_localebuf, i = 0; i < num_lines; ++ap, ++i) {
+		*ap = p += strlen(p) + 1;
+	}
 }
 
 /*

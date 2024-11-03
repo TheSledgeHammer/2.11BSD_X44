@@ -116,7 +116,7 @@ __time_load_locale(const char *name)
 {
 	int ret;
 
-	ret = __part_load_locale(name, &_time_using_locale, _time_locale_buf,
+	ret = __part_load_locale(name, &_time_using_locale, &_time_locale_buf,
 			"LC_TIME", LCTIME_SIZE, LCTIME_SIZE,
 			(const char**) &_time_locale);
 	return (ret);
@@ -125,5 +125,5 @@ __time_load_locale(const char *name)
 time_locale_t *
 __get_current_time_locale(void)
 {
-	return (_time_locale ? &_time_locale : (time_locale_t *)&_C_time_locale);
+	return (__UNCONST(_time_using_locale ? &_time_locale : &_C_time_locale));
 }
