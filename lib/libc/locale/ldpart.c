@@ -29,6 +29,8 @@
 __FBSDID("$FreeBSD$");
 #endif
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/syslimits.h>
@@ -91,9 +93,9 @@ __part_load_locale(const char *name,
 	strcat(filename, name);
 	strcat(filename, "/");
 	strcat(filename, category_filename);
-	if ((fd = _open(filename, O_RDONLY)) < 0)
+	if ((fd = open(filename, O_RDONLY)) < 0)
 		return (_LDP_ERROR);
-	if (_fstat(fd, &st) != 0)
+	if (fstat(fd, &st) != 0)
 		goto bad_locale;
 	if (st.st_size <= 0) {
 		errno = EFTYPE;
@@ -107,7 +109,7 @@ __part_load_locale(const char *name,
 	(void)strcpy(lbuf, name);
 	p = lbuf + namesize;
 	plim = p + st.st_size;
-	if (_read(fd, p, (size_t) st.st_size) != st.st_size)
+	if (read(fd, p, (size_t) st.st_size) != st.st_size)
 		goto bad_lbuf;
 	/*
 	 * Parse the locale file into localebuf.
@@ -125,7 +127,7 @@ __part_load_locale(const char *name,
 		errno = EFTYPE;
 		goto bad_lbuf;
 	}
-	(void)_close(fd);
+	(void)close(fd);
 	/*
 	 * Record the successful parse in the cache.
 	 */
@@ -146,7 +148,7 @@ bad_lbuf:
 	errno = saverr;
 bad_locale:
 	saverr = errno;
-	(void)_close(fd);
+	(void)close(fd);
 	errno = saverr;
 
 	return (_LDP_ERROR);
@@ -185,7 +187,7 @@ __fix_locale_grouping_str(const char *str)
 		return nogrouping;
 	}
 
-	for (src = (char*)str, dst = (char*)str; *src != '\0'; src++) {
+	for (src = (char *)&str, dst = (char *)&str; *src != '\0'; src++) {
 
 		/* input string examples: "3;3", "3;2;-1" */
 		if (*src == ';')
@@ -213,7 +215,7 @@ __fix_locale_grouping_str(const char *str)
 		*dst = n;
 		/* NOTE: assume all input started with "0" as 'no grouping' */
 		if (*dst == '\0')
-			return (dst == (char*)str) ? nogrouping : str;
+			return (dst == (char *)&str) ? nogrouping : str;
 		dst++;
 	}
 	*dst = '\0';
