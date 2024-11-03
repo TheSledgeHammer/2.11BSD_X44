@@ -29,6 +29,7 @@
  */
 
 #include <sys/cdefs.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -36,8 +37,8 @@
 #include <wchar.h>
 #include <wctype.h>
 
-#define _L(x) __CONCAT(L,x)
-#define _LC(x) __CONCAT(L,x)
+#define _L(x)   ((const wchar_t *)__CONCAT(L,x))
+#define _LC(x)  (*(const wchar_t *)__CONCAT(L,x))
 
 double
 wcstod(const wchar_t *nptr, wchar_t **endptr)
@@ -119,14 +120,14 @@ wcstod(const wchar_t *nptr, wchar_t **endptr)
 
 		if (endptr)
 			/* LINTED bad interface */
-			*endptr = (wchar_t*)start + (end - buf);
+			*endptr = __UNCONST(start + (end - buf));
 
 		return result;
 	}
 
 	if (endptr)
 		/* LINTED bad interface */
-		*endptr = (wchar_t*)start;
+		*endptr = __UNCONST(start);
 
 	return 0;
 }

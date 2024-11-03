@@ -32,13 +32,14 @@ __RCSID("$NetBSD: citrus_ues.c,v 1.5 2022/04/19 20:32:14 rillig Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <sys/endian.h>
+//#include <sys/endian.h>
 
 #include <assert.h>
 #include <errno.h>
+#include <ctype.h>
 #include <rune.h>
 #include <string.h>
-#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
@@ -308,24 +309,24 @@ _UES_sputmbrune(_UESEncodingInfo * __restrict ei, char * __restrict s, size_t n,
 	if (psenc->chlen != 0)
 		return EINVAL;
 
-	if ((ei->mode & MODE_C99) ? is_basic(wc) : (uint32_t) wc <= 0x7F) {
+	if ((ei->mode & _MODE_C99) ? is_basic(wc) : (uint32_t) wc <= 0x7F) {
 		if (n-- < 1)
 			goto e2big;
 		psenc->ch[psenc->chlen++] = (char) wc;
 	} else if ((uint32_t) wc <= BMP_MAX) {
 		if (n < 6)
 			goto e2big;
-		psenc->chlen = to_str(&psenc->ch[0], wc, UCS2_BIT);
-	} else if ((ei->mode & MODE_C99) == 0 && (uint32_t) wc <= UCS2_MAX) {
+		psenc->chlen = to_str((char *)&psenc->ch[0], wc, UCS2_BIT);
+	} else if ((ei->mode & _MODE_C99) == 0 && (uint32_t) wc <= UCS2_MAX) {
 		if (n < 12)
 			goto e2big;
 		ucs_to_surrogate(wc, &hi, &lo);
-		psenc->chlen += to_str(&psenc->ch[0], hi, UCS2_BIT);
-		psenc->chlen += to_str(&psenc->ch[6], lo, UCS2_BIT);
-	} else if ((ei->mode & MODE_C99) && (uint32_t) wc <= UCS4_MAX) {
+		psenc->chlen += to_str((char *)&psenc->ch[0], hi, UCS2_BIT);
+		psenc->chlen += to_str((char *)&psenc->ch[6], lo, UCS2_BIT);
+	} else if ((ei->mode & _MODE_C99) && (uint32_t) wc <= UCS4_MAX) {
 		if (n < 10)
 			goto e2big;
-		psenc->chlen = to_str(&psenc->ch[0], wc, UCS4_BIT);
+		psenc->chlen = to_str((char *)&psenc->ch[0], wc, UCS4_BIT);
 	} else {
 		*nresult = (size_t) - 1;
 		return EILSEQ;

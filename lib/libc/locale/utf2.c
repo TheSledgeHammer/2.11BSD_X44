@@ -88,7 +88,7 @@ _RuneOps _utf2_runeops = {
 		.ro_module_uninit = 	_UTF2_module_uninit,
 };
 
-static _utf_count[16] = {
+static int _utf_count[16] = {
 	1, 1, 1, 1, 1, 1, 1, 1,
 	0, 0, 0, 0, 2, 2, 3, 0,
 };
@@ -119,6 +119,7 @@ _UTF2_sgetmbrune(_UTF2EncodingInfo * __restrict ei, wchar_t * __restrict pwc, co
 {
 	wchar_t wchar;
 	const char *s0;
+    char const *result;
 
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(ei != NULL);
@@ -126,32 +127,36 @@ _UTF2_sgetmbrune(_UTF2EncodingInfo * __restrict ei, wchar_t * __restrict pwc, co
 	_DIAGASSERT(s != NULL);
 
 	s0 = *s;
-
+    
 	if (s0 == NULL) {
 		_citrus_ctype_init_state(ei, psenc);
 		*nresult = 0; /* state independent */
 		return 0;
 	}
 
-	wchar = (wchar_t) _UTF2_sgetrune(s, n, nresult);
+    result = (char const *)nresult;
+	wchar = (wchar_t)_UTF2_sgetrune(s0, n, &result);
 
 	if (pwc != NULL) {
 		*pwc = wchar;
 	}
-	*nresult = (wchar == 0) ? 0 : s0 - *s;
+	result = (char const *)((wchar == 0) ? 0 : s0 - *s);
 	*s = s0;
-
+    *nresult = (size_t)result;
 	return (0);
 }
 
 int
 _UTF2_sputmbrune(_UTF2EncodingInfo * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _UTF2State * __restrict psenc, size_t * __restrict nresult)
 {
+    char *result;
+
 	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(s != NULL);
 
-	return (_UTF2_sputrune(wc, s, n, nresult));
+    result = (char *)nresult;
+	return (_UTF2_sputrune(wc, s, n, &result));
 }
 
 rune_t

@@ -38,7 +38,7 @@ void 	 	_bcs_trunc_rws_len(const char *, size_t *);
 void		_bcs_convert_to_lower(char *);
 void		_bcs_convert_to_upper(char *);
 void		_bcs_ignore_case(int, char *);
-
+int         _bcs_is_ws(const char);
 const char 	*__unaliasname(const char *, const char *, void *, size_t);
 int 		__isforcemapping(const char *);
 

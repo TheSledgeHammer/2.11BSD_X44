@@ -132,6 +132,12 @@ _UTF8_findlen(wchar_t v)
 	return (-1);	/* out of range */
 }
 
+static __inline int
+_UTF8_surrogate(wchar_t wc)
+{
+	return (wc >= 0xd800 && wc <= 0xdfff);
+}
+
 static __inline void
 _UTF8_init_count(void)
 {
@@ -181,7 +187,6 @@ _UTF8_sgetmbrune(_UTF8EncodingInfo * __restrict ei, wchar_t * __restrict pwc, co
 	const char *s0;
 	int c;
 	int i;
-	int chlenbak;
 
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(ei != NULL);
@@ -193,86 +198,46 @@ _UTF8_sgetmbrune(_UTF8EncodingInfo * __restrict ei, wchar_t * __restrict pwc, co
 	if (s0 == NULL) {
 		_citrus_ctype_init_state(ei, psenc);
 		*nresult = 0; /* state independent */
-		return 0;
+		return (0);
 	}
 
-	chlenbak = psenc->chlen;
-
-	/* make sure we have the first byte in the buffer */
-	switch (psenc->chlen) {
-	case 0:
-		if (n < 1) {
+    if (psenc->chlen == 0) {
+		if (n-- < 1)
 			goto restart;
-		}
-		psenc->ch[0] = *s0++;
-		psenc->chlen = 1;
-		n--;
-		break;
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-	case 5:
-		break;
-	default:
-		/* illegal state */
-		goto ilseq;
+		psenc->ch[psenc->chlen++] = *s0++;
 	}
 
-	c = _UTF8_count[psenc->ch[0] & 0xff];
-	if (c == 0) {
+    c = _UTF8_count[psenc->ch[0] & 0xff];
+	if (c < 1 || c < psenc->chlen)
 		goto ilseq;
-	}
-	while (psenc->chlen < c) {
-		if (n < 1) {
-			goto restart;
-		}
-		psenc->ch[psenc->chlen] = *s0++;
-		psenc->chlen++;
-		n--;
-	}
 
-	switch (c) {
-	case 1:
+	if (c == 1)
 		wchar = psenc->ch[0] & 0xff;
-		break;
-	case 2:
-	case 3:
-	case 4:
-	case 5:
-	case 6:
+	else {
+		while (psenc->chlen < c) {
+			if (n-- < 1)
+				goto restart;
+			psenc->ch[psenc->chlen++] = *s0++;
+		}
 		wchar = psenc->ch[0] & (0x7f >> c);
 		for (i = 1; i < c; i++) {
-			if ((psenc->ch[i] & 0xc0) != 0x80) {
+			if ((psenc->ch[i] & 0xc0) != 0x80)
 				goto ilseq;
-			}
 			wchar <<= 6;
 			wchar |= (psenc->ch[i] & 0x3f);
 		}
-
-		_DIAGASSERT(findlen(wchar) == c);
-
-		break;
+		if (_UTF8_surrogate(wchar) || _UTF8_findlen(wchar) != c)
+			goto ilseq;
 	}
-
-	*s = s0;
-
-	psenc->chlen = 0;
-
-	if (pwc) {
+	if (pwc != NULL)
 		*pwc = wchar;
-	}
-
-	if (!wchar) {
-		*nresult = 0;
-	} else {
-		*nresult = c - chlenbak;
-	}
+	*nresult = (wchar == 0) ? 0 : s0 - *s;
+	*s = s0;
+	psenc->chlen = 0;
 
 	return (0);
 
 ilseq:
-	psenc->chlen = 0;
 	*nresult = (size_t)-1;
 	return (EILSEQ);
 
