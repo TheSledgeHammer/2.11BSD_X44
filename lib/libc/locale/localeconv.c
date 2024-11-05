@@ -50,8 +50,6 @@ static void	monetary_lconv(struct lconv *);
 extern int __monetary_locale_changed;
 extern int __numeric_locale_changed;
 
-
-
 /*
  * Return the current locale conversion.
  */
