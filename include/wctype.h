@@ -74,13 +74,13 @@ wctrans_t 	wctrans(const char *);
 wctype_t 	wctype(const char *);
 
 #if __BSD_VISIBLE
-wint_t		iswascii(wint_t);
-wint_t		iswhexnumber(wint_t);
-wint_t		iswideogram(wint_t);
-wint_t		iswnumber(wint_t);
-wint_t		iswphonogram(wint_t);
-wint_t		iswrune(wint_t);
-wint_t		iswspecial(wint_t);
+int		  iswascii(wint_t);
+int		  iswhexnumber(wint_t);
+int		  iswideogram(wint_t);
+int		  iswnumber(wint_t);
+int		  iswphonogram(wint_t);
+int		  iswrune(wint_t);
+int		  iswspecial(wint_t);
 #endif
 
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
@@ -109,13 +109,13 @@ wctrans_t 	wctrans_l(const char *, locale_t);
 wctype_t 	wctype_l(const char *, locale_t);
 
 #if __BSD_VISIBLE
-wint_t		iswascii_l(wint_t, locale_t);
-wint_t		iswhexnumber_l(wint_t, locale_t);
-wint_t		iswideogram_l(wint_t, locale_t);
-wint_t		iswnumber_l(wint_t, locale_t);
-wint_t		iswphonogram_l(wint_t, locale_t);
-wint_t		iswrune_l(wint_t, locale_t);
-wint_t		iswspecial_l(wint_t, locale_t);
+int		  iswascii_l(wint_t, locale_t);
+int		  iswhexnumber_l(wint_t, locale_t);
+int		  iswideogram_l(wint_t, locale_t);
+int		  iswnumber_l(wint_t, locale_t);
+int		  iswphonogram_l(wint_t, locale_t);
+int		  iswrune_l(wint_t, locale_t);
+int		  iswspecial_l(wint_t, locale_t);
 #endif
 #endif /* __POSIX_VISIBLE >= 200809 */
 __END_DECLS
