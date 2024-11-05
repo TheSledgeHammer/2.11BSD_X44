@@ -88,7 +88,6 @@ wint_t		iswspecial(wint_t);
 typedef struct _locale 	*locale_t;
 #define	__LOCALE_T_DECLARED
 #endif
-#endif /* __POSIX_VISIBLE >= 200809 */
 
 int			iswalnum_l(wint_t, locale_t);
 int			iswalpha_l(wint_t, locale_t);
@@ -118,7 +117,7 @@ wint_t		iswphonogram_l(wint_t, locale_t);
 wint_t		iswrune_l(wint_t, locale_t);
 wint_t		iswspecial_l(wint_t, locale_t);
 #endif
-
+#endif /* __POSIX_VISIBLE >= 200809 */
 __END_DECLS
 
 #endif		/* _WCTYPE_H_ */
