@@ -119,22 +119,7 @@ monetary_lconv(lconv)
         LCONV_ASSIGN(lconv, mptr, int_n_sep_by_space);
         LCONV_ASSIGN(lconv, mptr, int_p_sign_posn);
         LCONV_ASSIGN(lconv, mptr, int_n_sign_posn);
-/*
-		lconv->int_frac_digits = mptr->int_frac_digits;
-		lconv->frac_digits = mptr->frac_digits;
-		lconv->p_cs_precedes = mptr->p_cs_precedes;
-		lconv->p_sep_by_space = mptr->p_sep_by_space;
-		lconv->n_cs_precedes = mptr->n_cs_precedes;
-		lconv->n_sep_by_space = mptr->n_sep_by_space;
-		lconv->p_sign_posn = mptr->p_sign_posn;
-		lconv->n_sign_posn = mptr->n_sign_posn;
-		lconv->int_p_cs_precedes = mptr->int_p_cs_precedes;
-		lconv->int_n_cs_precedes = mptr->int_n_cs_precedes;
-		lconv->int_p_sep_by_space = mptr->int_p_sep_by_space;
-		lconv->int_n_sep_by_space = mptr->int_n_sep_by_space;
-		lconv->int_p_sign_posn = mptr->int_p_sign_posn;
-		lconv->int_n_sign_posn = mptr->int_n_sign_posn;
-*/
+		
 		__monetary_locale_changed = 0;
 	}
 }
