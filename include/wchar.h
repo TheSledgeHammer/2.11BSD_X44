@@ -127,7 +127,7 @@ wchar_t *wcstok(wchar_t * __restrict, const wchar_t * __restrict, wchar_t ** __r
 size_t	wcsxfrm(wchar_t *, const wchar_t *, size_t);
 wchar_t	*wcswcs(const wchar_t *, const wchar_t *);
 wchar_t	*wmemchr(const wchar_t *, wchar_t, size_t);
-int		wmemcmp(const wchar_t *, const wchar_t *, size_t);
+int		  wmemcmp(const wchar_t *, const wchar_t *, size_t);
 wchar_t	*wmemcpy(wchar_t * __restrict, const wchar_t * __restrict, size_t);
 wchar_t	*wmemmove(wchar_t *, const wchar_t *, size_t);
 wchar_t	*wmemset(wchar_t *, wchar_t, size_t);
@@ -160,10 +160,10 @@ wchar_t *fgetws(wchar_t * __restrict, int, FILE * __restrict);
 wint_t 	getwc(FILE *);
 //wint_t 	getwchar(void);
 wint_t 	fputwc(wchar_t, FILE *);
-int 	fputws(const wchar_t * __restrict, FILE * __restrict);
+int 	  fputws(const wchar_t * __restrict, FILE * __restrict);
 //wint_t 	putwc(wchar_t, FILE *);
 //wint_t 	putwchar(wchar_t);
-int 	fwide (FILE *, int);
+int 	  fwide (FILE *, int);
 
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #  ifndef __LOCALE_T_DECLARED
@@ -172,6 +172,7 @@ typedef struct _locale *locale_t;
 #  define __LOCALE_T_DECLARED
 #  endif
 
+int	    wcwidth_l(wchar_t, locale_t);
 #endif /* _POSIX_C_SOURCE >= 200809 || __BSD_VISIBLE */
 
 #if defined(__BSD_VISIBLE)
@@ -179,12 +180,12 @@ typedef struct _locale *locale_t;
 wint_t	btowc_l(int, locale_t);
 size_t	mbrlen_l(const char * __restrict, size_t, mbstate_t * __restrict, locale_t);
 size_t	mbrtowc_l(wchar_t * __restrict, const char * __restrict, size_t, mbstate_t * __restrict, locale_t);
-int		mbsinit_l(const mbstate_t *, locale_t);
+int		  mbsinit_l(const mbstate_t *, locale_t);
 size_t	mbsrtowcs_l(wchar_t * __restrict, const char ** __restrict, size_t, mbstate_t * __restrict, locale_t);
 size_t	mbsnrtowcs_l(wchar_t * __restrict, const char ** __restrict, size_t, size_t, mbstate_t * __restrict, locale_t);
 size_t	wcrtomb_l(char * __restrict, wchar_t, mbstate_t * __restrict, locale_t);
 size_t	wcsrtombs_l(char * __restrict, const wchar_t ** __restrict, size_t, mbstate_t * __restrict, locale_t);
-int		wctob_l(wint_t, locale_t);
+int		  wctob_l(wint_t, locale_t);
 #endif /* __BSD_VISIBLE */
 __END_DECLS
 
