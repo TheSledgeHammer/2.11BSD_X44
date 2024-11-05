@@ -32,19 +32,76 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _WCTYPE_LOCAL_H_
-#define _WCTYPE_LOCAL_H_
+#include <sys/cdefs.h>
 
-#define _RUNE_LOCALE(loc) ((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))
+#include <ctype.h>
+#include <rune.h>
 
-__BEGIN_DECLS
-_RuneType   __runetype_wl(wint_t, locale_t);
-int         __isctype_wl(wint_t, _RuneType, locale_t);
-wint_t      __toupper_wl(wint_t, locale_t);
-wint_t      __tolower_wl(wint_t, locale_t);
-_RuneType   __runetype_w(wint_t);
-int         __isctype_w(wint_t, _RuneType);
-wint_t      __toupper_w(wint_t);
-wint_t      __tolower_w(wint_t);
-__END_DECLS
-#endif /* _WCTYPE_LOCAL_H_ */
+#include "setlocale.h"
+#include "_wctrans_local.h"
+#include "_wctype_local.h"
+
+_RuneType
+__runetype_wl(c, locale)
+	wint_t c;
+	locale_t locale;
+{
+	_RuneLocale *rl = _RUNE_LOCALE(locale);
+	return (_CRMASK(c) ? ___runetype_mb(c) : rl->runetype[c]);
+}
+
+int
+__isctype_wl(c, f, locale)
+	wint_t c;
+	_RuneType f;
+	locale_t locale;
+{
+	return (!!(__runetype_wl(c, locale) & f));
+}
+
+wint_t
+__toupper_wl(c, locale)
+	wint_t c;
+	locale_t locale;
+{
+	_RuneLocale *rl = _RUNE_LOCALE(locale);
+	return (_towctrans(c, _wctrans_upper(rl)));
+}
+
+wint_t
+__tolower_wl(c, locale)
+	wint_t c;
+	locale_t locale;
+{
+	_RuneLocale *rl = _RUNE_LOCALE(locale);
+	return (_towctrans(c, _wctrans_lower(rl)));
+}
+
+_RuneType
+__runetype_w(c)
+	wint_t c;
+{
+	return (__runetype_wl(c, __get_locale()));
+}
+
+int
+__isctype_w(c, f)
+	wint_t c;
+	_RuneType f;
+{
+	return (__isctype_wl(c, f, __get_locale()));
+}
+
+wint_t
+__toupper_w(c)
+	wint_t c;
+{
+	return (__toupper_wl(c, __get_locale()));
+}
+
+wint_t
+__tolower_w(c)
+	wint_t c;
+{
+	return (__tolower_wl(c, __get_locale()));
+}

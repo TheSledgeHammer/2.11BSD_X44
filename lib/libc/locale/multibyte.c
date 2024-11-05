@@ -261,7 +261,7 @@ wcsrtombs_l(char *s, const wchar_t **ppwcs, size_t n, mbstate_t *ps, locale_t lo
 
 	_fixup_ps(_RUNE_LOCALE(locale), ps, s == NULL);
 
-	err0 = _citrus_ctype_wcsrtombs(_ps_to_ctype(ps), s, ppwcs, n, _ps_to_private(ps), &ret);
+	err0 = _citrus_ctype_wcsrtombs(_ps_to_ctype(ps, locale), s, ppwcs, n, _ps_to_private(ps), &ret);
 	if (err0)
 		errno = err0;
 

@@ -47,6 +47,11 @@ static char sccsid[] = "@(#)localeconv.c	8.1 (Berkeley) 6/4/93";
 static void numeric_lconv(struct lconv *);
 static void	monetary_lconv(struct lconv *);
 
+extern int __monetary_locale_changed;
+extern int __numeric_locale_changed;
+
+
+
 /*
  * Return the current locale conversion.
  */
@@ -66,6 +71,9 @@ localeconv_l(locale)
 	return (locale->part_lconv);
 }
 
+#define LCONV_ASSIGNC(lc, ptr, name)   ((lc)->name = __UNCONST((ptr)->name))
+#define LCONV_ASSIGN(lc, ptr, name)   ((lc)->name = (ptr)->name)
+
 static void
 numeric_lconv(lconv)
 	struct lconv *lconv;
@@ -75,9 +83,9 @@ numeric_lconv(lconv)
 
 		nptr = __get_current_numeric_locale();
 
-		lconv->decimal_point = nptr->decimal_point;
-		lconv->thousands_sep = nptr->thousands_sep;
-		lconv->grouping = nptr->grouping;
+        LCONV_ASSIGNC(lconv, nptr, decimal_point);
+        LCONV_ASSIGNC(lconv, nptr, thousands_sep);
+        LCONV_ASSIGNC(lconv, nptr, grouping);
 
 		__numeric_locale_changed = 0;
 	}
@@ -92,13 +100,28 @@ monetary_lconv(lconv)
 
 		mptr = __get_current_monetary_locale();
 
-		lconv->int_curr_symbol = mptr->int_curr_symbol;
-		lconv->currency_symbol = mptr->currency_symbol;
-		lconv->mon_decimal_point = mptr->mon_decimal_point;
-		lconv->mon_thousands_sep = mptr->mon_thousands_sep;
-		lconv->mon_grouping = mptr->mon_grouping;
-		lconv->positive_sign = mptr->positive_sign;
-		lconv->negative_sign = mptr->negative_sign;
+        LCONV_ASSIGNC(lconv, mptr, int_curr_symbol);
+        LCONV_ASSIGNC(lconv, mptr, currency_symbol);
+        LCONV_ASSIGNC(lconv, mptr, mon_decimal_point);
+        LCONV_ASSIGNC(lconv, mptr, mon_thousands_sep);
+        LCONV_ASSIGNC(lconv, mptr, mon_grouping);
+        LCONV_ASSIGNC(lconv, mptr, positive_sign);
+        LCONV_ASSIGNC(lconv, mptr, negative_sign);
+        LCONV_ASSIGN(lconv, mptr, int_frac_digits);
+        LCONV_ASSIGN(lconv, mptr, frac_digits);
+        LCONV_ASSIGN(lconv, mptr, p_cs_precedes);
+        LCONV_ASSIGN(lconv, mptr, p_sep_by_space);
+        LCONV_ASSIGN(lconv, mptr, n_cs_precedes);
+        LCONV_ASSIGN(lconv, mptr, n_sep_by_space);
+        LCONV_ASSIGN(lconv, mptr, p_sign_posn);
+        LCONV_ASSIGN(lconv, mptr, n_sign_posn);
+        LCONV_ASSIGN(lconv, mptr, int_p_cs_precedes);
+        LCONV_ASSIGN(lconv, mptr, int_n_cs_precedes);
+        LCONV_ASSIGN(lconv, mptr, int_p_sep_by_space);
+        LCONV_ASSIGN(lconv, mptr, int_n_sep_by_space);
+        LCONV_ASSIGN(lconv, mptr, int_p_sign_posn);
+        LCONV_ASSIGN(lconv, mptr, int_n_sign_posn);
+/*
 		lconv->int_frac_digits = mptr->int_frac_digits;
 		lconv->frac_digits = mptr->frac_digits;
 		lconv->p_cs_precedes = mptr->p_cs_precedes;
@@ -113,7 +136,7 @@ monetary_lconv(lconv)
 		lconv->int_n_sep_by_space = mptr->int_n_sep_by_space;
 		lconv->int_p_sign_posn = mptr->int_p_sign_posn;
 		lconv->int_n_sign_posn = mptr->int_n_sign_posn;
-
+*/
 		__monetary_locale_changed = 0;
 	}
 }

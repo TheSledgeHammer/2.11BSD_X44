@@ -45,6 +45,11 @@
 #include "ltime.h"
 #include "setlocale.h"
 
+static locale_part_t locale_part_loader(locale_t, const char *, int, int (*)(const char *));
+static locale_part_t locale_loader(locale_t, const char *, int);
+static locale_part_t find_part(locale_t, const char *, int);
+static int  duppart(int, locale_t, locale_t);
+
 static locale_part_t
 locale_part_loader(locale, name, category, func)
 	locale_t locale;
@@ -95,7 +100,7 @@ find_part(locale, name, category)
 	const char *name;
 	int category;
 {
-    if (category >= LC_ALL && category < LC_LAST) {
+    if (category >= LC_ALL && category < _LC_LAST) {
         if (strcmp(locale->part_category[category], name) == 0) {
             return (locale_loader(locale, name, category));
         }
@@ -109,7 +114,7 @@ duppart(category, src, dst)
 	locale_t src, dst;
 {
 	if (&global_locale == src) {
-		dst->part_impl[category] = find_part(locale, src->part_category[category], category);
+		dst->part_impl[category] = find_part(src, src->part_category[category], category);
 		if (dst->part_impl[category]) {
 			strncpy(dst->part_category[category], src->part_category[category], ENCODING_LEN);
 		}
@@ -162,7 +167,7 @@ newlocale(mask, name, src)
 					strncpy(dst->part_category[i], realname, ENCODING_LEN);
 				}
 				if (strcmp(realname, _C_LOCALE) == 0) {
-					strncpy(dst->part_name[i], realname, ENCODING_LEN);
+					strncpy(__UNCONST(dst->part_name[i]), realname, ENCODING_LEN);
 				}
 			}
 		} else {

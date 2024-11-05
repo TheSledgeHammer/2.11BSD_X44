@@ -37,20 +37,21 @@
 
 #include "namespace.h"
 
-#include <wchar.h>
-#include <wctype.h>
+#include <sys/types.h>
+
 #include <ctype.h>
 #include <errno.h>
-#include <string.h>
-#include <rune.h>
 #include <locale.h>
+#include <rune.h>
+#include <string.h>
+#include <wchar.h>
+#include <wctype.h>
 
+#include "setlocale.h"
+#include "_wctrans_local.h"
 #include "_wctype_local.h"
 
-#ifdef lint
-#define __inline
-#endif
-
+#undef iswalnum_l
 int
 iswalnum_l(c, locale)
 	wint_t c;
@@ -59,6 +60,7 @@ iswalnum_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_A|_CTYPE_D, locale));
 }
 
+#undef iswalpha_l
 int
 iswalpha_l(c, locale)
 	wint_t c;
@@ -67,6 +69,7 @@ iswalpha_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_A, locale));
 }
 
+#undef iswblank_l
 int
 iswblank_l(c, locale)
 	wint_t c;
@@ -75,6 +78,7 @@ iswblank_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_B, locale));
 }
 
+#undef iswascii_l
 int
 iswascii_l(c, locale)
 	wint_t c;
@@ -83,6 +87,7 @@ iswascii_l(c, locale)
 	return ((c & ~0x7F) == 0);
 }
 
+#undef iswcntrl_l
 int
 iswcntrl_l(c, locale)
 	wint_t c;
@@ -91,6 +96,7 @@ iswcntrl_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_C, locale));
 }
 
+#undef iswdigit_l
 int
 iswdigit_l(c, locale)
 	wint_t c;
@@ -99,6 +105,7 @@ iswdigit_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_D, locale));
 }
 
+#undef iswgraph_l
 int
 iswgraph_l(c, locale)
 	wint_t c;
@@ -107,6 +114,7 @@ iswgraph_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_G, locale));
 }
 
+#undef iswhexnumber_l
 int
 iswhexnumber_l(c, locale)
 	wint_t c;
@@ -115,6 +123,7 @@ iswhexnumber_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_X, locale));
 }
 
+#undef iswideogram_l
 int
 iswideogram_l(c, locale)
 	wint_t c;
@@ -123,6 +132,7 @@ iswideogram_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_I, locale));
 }
 
+#undef iswlower_l
 int
 iswlower_l(c, locale)
 	wint_t c;
@@ -131,6 +141,7 @@ iswlower_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_L, locale));
 }
 
+#undef iswnumber_l
 int
 iswnumber_l(c, locale)
 	wint_t c;
@@ -139,6 +150,7 @@ iswnumber_l(c, locale)
 	return (__isctype_wl(c, _CTYPE_N, locale));
 }
 
+#undef iswphonogram_l
 int
 iswphonogram_l(c, locale)
 	wint_t c;
@@ -147,6 +159,7 @@ iswphonogram_l(c, locale)
 	return (__isctype_wl(c, _CTYPE_Q, locale));
 }
 
+#undef iswprint_l
 int
 iswprint_l(c, locale)
 	wint_t c;
@@ -155,6 +168,7 @@ iswprint_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_R, locale));
 }
 
+#undef iswpunct_l
 int
 iswpunct_l(c, locale)
 	wint_t c;
@@ -163,6 +177,7 @@ iswpunct_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_P, locale));
 }
 
+#undef iswrune_l
 int
 iswrune_l(c, locale)
 	wint_t c;
@@ -171,6 +186,7 @@ iswrune_l(c, locale)
 	return (__isctype_wl(c, 0xFFFFFF00L, locale));
 }
 
+#undef iswspace_l
 int
 iswspace_l(c, locale)
 	wint_t c;
@@ -179,6 +195,7 @@ iswspace_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_S, locale));
 }
 
+#undef iswupper_l
 int
 iswupper_l(c, locale)
 	wint_t c;
@@ -187,6 +204,7 @@ iswupper_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_U, locale));
 }
 
+#undef iswxdigit_l
 int
 iswxdigit_l(c, locale)
 	wint_t c;
@@ -195,6 +213,7 @@ iswxdigit_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_X, locale));
 }
 
+#undef iswspecial_l
 int
 iswspecial_l(c, locale)
 	wint_t c;
@@ -203,6 +222,7 @@ iswspecial_l(c, locale)
 	return (__isctype_wl((c), _CTYPE_T, locale));
 }
 
+#undef towupper_l
 wint_t
 towupper_l(c, locale)
 	wint_t c;
@@ -211,6 +231,7 @@ towupper_l(c, locale)
 	return (__toupper_wl(c, locale));
 }
 
+#undef towlower_l
 wint_t
 towlower_l(c, locale)
 	wint_t c;
@@ -240,7 +261,7 @@ wctrans_l(charclass, locale)
 
 	rl = _RUNE_LOCALE(locale);
 	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name == NULL) {
-		_wctrans_init(rl);
+		wctrans_init(rl);
 	}
 
 	for (i = 0; i < _WCTRANS_NINDEXES; i++) {

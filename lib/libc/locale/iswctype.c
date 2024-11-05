@@ -41,25 +41,25 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 
 #include "namespace.h"
 
-#include <wchar.h>
-#include <wctype.h>
+#include <sys/types.h>
+
 #include <ctype.h>
 #include <errno.h>
-#include <string.h>
 #include <rune.h>
+#include <string.h>
+#include <wchar.h>
+#include <wctype.h>
 
+#include "setlocale.h"
+#include "_wctrans_local.h"
 #include "_wctype_local.h"
-
-#ifdef lint
-#define __inline
-#endif
 
 #undef iswalnum
 int
 iswalnum(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_A|_CTYPE_D));
+	return (__isctype_w(c, _CTYPE_A|_CTYPE_D));
 }
 
 #undef iswalpha
@@ -67,7 +67,7 @@ int
 iswalpha(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_A));
+	return (__isctype_w(c, _CTYPE_A));
 }
 
 #undef iswblank
@@ -75,7 +75,7 @@ int
 iswblank(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_B));
+	return (__isctype_w(c, _CTYPE_B));
 }
 
 #undef iswascii
@@ -91,7 +91,7 @@ int
 iswcntrl(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_C));
+	return (__isctype_w(c, _CTYPE_C));
 }
 
 #undef iswdigit
@@ -99,7 +99,7 @@ int
 iswdigit(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_D));
+	return (__isctype_w(c, _CTYPE_D));
 }
 
 #undef iswgraph
@@ -107,7 +107,7 @@ int
 iswgraph(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_G));
+	return (__isctype_w(c, _CTYPE_G));
 }
 
 #undef iswhexnumber
@@ -115,7 +115,7 @@ int
 iswhexnumber(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_X));
+	return (__isctype_w(c, _CTYPE_X));
 }
 
 #undef iswideogram
@@ -123,7 +123,7 @@ int
 iswideogram(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_I));
+	return (__isctype_w(c, _CTYPE_I));
 }
 
 #undef iswlower
@@ -131,7 +131,7 @@ int
 iswlower(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_L));
+	return (__isctype_w(c, _CTYPE_L));
 }
 
 #undef iswnumber
@@ -155,7 +155,7 @@ int
 iswprint(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_R));
+	return (__isctype_w(c, _CTYPE_R));
 }
 
 #undef iswpunct
@@ -163,7 +163,7 @@ int
 iswpunct(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_P));
+	return (__isctype_w(c, _CTYPE_P));
 }
 
 #undef iswrune
@@ -179,7 +179,7 @@ int
 iswspace(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_S));
+	return (__isctype_w(c, _CTYPE_S));
 }
 
 #undef iswupper
@@ -187,7 +187,7 @@ int
 iswupper(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_U));
+	return (__isctype_w(c, _CTYPE_U));
 }
 
 #undef iswxdigit
@@ -195,7 +195,7 @@ int
 iswxdigit(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_X));
+	return (__isctype_w(c, _CTYPE_X));
 }
 
 #undef iswspecial
@@ -203,7 +203,7 @@ int
 iswspecial(c)
 	wint_t c;
 {
-	return (__isctype_w((c), _CTYPE_T));
+	return (__isctype_w(c, _CTYPE_T));
 }
 
 #undef towupper
@@ -240,7 +240,7 @@ wctrans(charclass)
 	_RuneLocale *rl = _RUNE_LOCALE(__get_locale());
 
 	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name == NULL) {
-		_wctrans_init(rl);
+		wctrans_init(rl);
 	}
 
 	for (i = 0; i < _WCTRANS_NINDEXES; i++) {
