@@ -26,7 +26,11 @@ static char sccsid[] = "@(#)rcmd.c	5.20.1 (2.11BSD) 1999/10/24";
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#ifdef _SELECT_DECLARED
+#include <sys/select.h>
+#else
 #include <sys/poll.h>
+#endif
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -39,6 +43,62 @@ static char sccsid[] = "@(#)rcmd.c	5.20.1 (2.11BSD) 1999/10/24";
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
+#ifdef _SELECT_DECLARED
+int rcmd_select(int, int);
+#else
+int rcmd_poll(int, int);
+#endif
+
+#ifdef _SELECT_DECLARED
+int
+rcmd_select(s, s2)
+	int s, s2;
+{
+	fd_set reads;
+
+	FD_ZERO(&reads);
+	FD_SET(s, &reads);
+	FD_SET(s2, &reads);
+	errno = 0;
+	if (select(32, &reads, 0, 0, 0) < 1 || !FD_ISSET(s2, &reads)) {
+		if (errno != 0) {
+			perror("select: setting up stderr");
+		} else {
+			fprintf(stderr, "select: protocol failure in circuit setup.\n");
+		}
+		(void) close(s2);
+		return (-1);
+	}
+	return (0);
+}
+
+#else
+
+int
+rcmd_poll(s, s2)
+	int s, s2;
+{
+	struct pollfd reads[2];
+
+	reads[0].fd = s;
+	reads[0].events = POLLIN;
+	reads[1].fd = s2;
+	reads[1].events = POLLIN;
+	errno = 0;
+	if (poll(reads, 2, INFTIM) < 1 || (reads[1].revents & POLLIN) == 0) {
+		if (errno != 0) {
+			perror("select: setting up stderr");
+		} else {
+			fprintf(stderr, "select: protocol failure in circuit setup.\n");
+		}
+		(void) close(s2);
+		return (-1);
+	}
+	return (0);
+}
+#endif
 
 int
 rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
@@ -53,8 +113,6 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	char c;
 	int lport = IPPORT_RESERVED - 1;
 	struct hostent *hp;
-	//fd_set reads;
-    struct pollfd reads[2];
 
 	pid = getpid();
 	hp = gethostbyname(*ahost);
@@ -129,20 +187,15 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 			(void) close(s2);
 			goto bad;
 		}
-		reads[0].fd = s;
-		reads[0].events = POLLIN;
-		reads[1].fd = s2;
-		reads[1].events = POLLIN;
-		errno = 0;
-		if (poll(reads, 2, INFTIM) < 1 || (reads[1].revents & POLLIN) == 0) {
-			if (errno != 0)
-				perror("select: setting up stderr");
-			else
-			    fprintf(stderr,
-				"select: protocol failure in circuit setup.\n");
-			(void) close(s2);
+#ifdef _SELECT_DECLARED
+		if (rcmd_select(s, s2) != 0) {
 			goto bad;
 		}
+#else
+		if (rcmd_poll(s, s2) != 0) {
+			goto bad;
+		}
+#endif
 		s3 = accept(s2, (struct sockaddr *)&from, &len);
 		(void) close(s2);
 		if (s3 < 0) {
