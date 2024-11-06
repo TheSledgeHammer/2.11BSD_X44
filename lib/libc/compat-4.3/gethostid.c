@@ -39,9 +39,11 @@ static char sccsid[] = "@(#)gethostid.c	8.1.1 (2.11BSD) 1997/8/28";
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
-#include <unistd.h>
+
 #include <sys/param.h>
 #include <sys/sysctl.h>
+
+#include <unistd.h>
 
 u_long
 #if __STDC__
@@ -56,7 +58,7 @@ gethostid()
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_HOSTID;
-	size = sizeof value;
+	size = sizeof(value);
 	if (sysctl(mib, 2, &value, &size, NULL, 0) == -1)
 		return (-1);
 	return (value);

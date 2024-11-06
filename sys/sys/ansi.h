@@ -43,7 +43,7 @@
 //#include <machine/ansi.h>
 #include <machine/types.h>
 
-typedef char *				__caddr_t;		/* core address */
+typedef char 				*__caddr_t;		/* core address */
 typedef __uint32_t			__gid_t;		/* group id */
 typedef __uint32_t			__in_addr_t;	/* IP(v4) address */
 typedef __uint16_t			__in_port_t;	/* "Internet" port number */

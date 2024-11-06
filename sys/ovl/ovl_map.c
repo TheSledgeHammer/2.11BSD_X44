@@ -1156,22 +1156,6 @@ ovl_map_remove(map, start, end)
 	return (result);
 }
 
-#ifdef notyet
-
-int
-vm_fork(p1, p2, isvfork)
-	register struct proc *p1, *p2;
-	int isvfork;
-{
-	ovlspace_mapout(p1->p_ovlspace);
-
-	p2->p_vmspace = vmspace_fork(p1->p_vmspace);
-
-	ovlspace_mapin(p2->p_ovlspace);
-}
-
-#endif
-
 static void
 ovlmap_mapin(map, entry)
 	ovl_map_t 	map;
@@ -1217,6 +1201,7 @@ ovlspace_mapout(ovl)
 	ovl_map_lock(old_map);
 	if (!CIRCLEQ_EMPTY(&old_map->cl_header)) {
 		CIRCLEQ_FOREACH(old_entry, &old_map->cl_header, cl_entry) {
+			/* place old map into a temporary holding */
 			ovlmap_mapout(old_map, old_entry);
 		}
 	}

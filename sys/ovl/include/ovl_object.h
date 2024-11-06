@@ -76,7 +76,7 @@
 struct ovl_object {
 	struct ovl_seglist					seglist;			/* list of segments */
 
-	RB_ENTRY(ovl_object)				object_tree;		/* list of all objects */
+	RB_ENTRY(ovl_object)				object_tree;		/* tree of all objects */
 
 	vm_pager_t							pager;				/* where to get data */
 	vm_offset_t							paging_offset;		/* Offset into paging space */
@@ -95,11 +95,11 @@ struct ovl_object {
 };
 
 /* Flags */
-#define OVL_OBJ_VM_OBJ					0x01	/* overlay object holds vm_object */
+#define OVL_OBJ_VM_OBJ					0x01				/* overlay object holds vm_object */
 
 RB_HEAD(ovl_object_hash_head, ovl_object_hash_entry);
 struct ovl_object_hash_entry {
-	RB_ENTRY(ovl_object_hash_entry)  	hlinks;			/* hash chain links */
+	RB_ENTRY(ovl_object_hash_entry)  	hlinks;				/* hash chain links */
 	ovl_object_t						object;
 };
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
@@ -122,7 +122,7 @@ extern
 simple_lock_data_t			ovl_vm_object_hash_lock;
 
 extern
-ovl_object_t				overlay_object;				/* single overlay object */
+ovl_object_t				overlay_object;					/* single overlay object */
 extern
 ovl_object_t				omem_object;
 
@@ -149,6 +149,5 @@ void			ovl_object_deallocate(ovl_object_t);
 void			ovl_object_terminate(ovl_object_t);
 void			ovl_object_remove(vm_pager_t);
 void		 	ovl_object_setpager(ovl_object_t, vm_pager_t, vm_offset_t, bool_t);
-
 #endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

@@ -54,7 +54,7 @@ struct ovl_segment {
 };
 
 /* flags */
-#define OVL_SEG_VM_SEG				0x16	/* overlay segment holds vm_segment */
+#define OVL_SEG_VM_SEG				0x16					/* overlay segment holds vm_segment */
 
 #ifdef _KERNEL
 

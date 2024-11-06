@@ -113,7 +113,7 @@ struct ovl_page {
 };
 
 /* flags */
-#define OVL_PG_VM_PG			0x16	/* overlay page holds vm_page */
+#define OVL_PG_VM_PG			0x16				/* overlay page holds vm_page */
 
 #ifdef _KERNEL
 

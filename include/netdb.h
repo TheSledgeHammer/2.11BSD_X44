@@ -16,13 +16,17 @@
 #define	_NETDB_H_
 
 #include <sys/cdefs.h>
-#include <machine/endian.h>
 #include <sys/ansi.h>
+#include <machine/endian.h>
 #include <inttypes.h>
 
 /*
  * Data types
  */
+#ifndef socklen_t
+typedef __socklen_t	socklen_t;
+#define	socklen_t	__socklen_t
+#endif
 
 #ifdef  _BSD_SIZE_T_
 typedef _BSD_SIZE_T_	size_t;
@@ -49,7 +53,7 @@ __END_DECLS
  * returned in network order (suitable
  * for use in system calls).
  */
-struct	hostent {
+struct hostent {
 	char		*h_name;			/* official name of host */
 	char		**h_aliases;		/* alias list */
 	int			h_addrtype;			/* host address type */
@@ -62,21 +66,21 @@ struct	hostent {
  * Assumption here is that a network number
  * fits in 32 bits -- probably a poor one.
  */
-struct	netent {
+struct netent {
 	char			*n_name;		/* official name of net */
 	char			**n_aliases;	/* alias list */
 	int				n_addrtype;		/* net address type */
 	unsigned long	n_net;			/* network # */
 };
 
-struct	servent {
+struct servent {
 	char		*s_name;		/* official service name */
 	char		**s_aliases;	/* alias list */
 	int			s_port;			/* port # */
 	char		*s_proto;		/* protocol to use */
 };
 
-struct	protoent {
+struct protoent {
 	char		*p_name;		/* official protocol name */
 	char		**p_aliases;	/* alias list */
 	int			p_proto;		/* protocol # */
@@ -186,7 +190,7 @@ struct addrinfo {
 #endif
 #endif /* (_POSIX_C_SOURCE - 0) >= 200112L || ... */
 
-unsigned long	gethostid();
+//unsigned long	gethostid(void);
 
 __BEGIN_DECLS
 void			endhostent(void);

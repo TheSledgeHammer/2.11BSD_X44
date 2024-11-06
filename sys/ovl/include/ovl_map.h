@@ -121,9 +121,9 @@ struct ovl_map {
 #define	ovl_map_pmap(ovl)	((ovl)->pmap)
 
 /* XXX: number of overlay maps and entries to statically allocate */
-#define MAX_OMAP		64
-#define	MAX_OMAPENT		128
-#define	MAX_NOVL		(32)			/* number of overlay entries */
+#define MAX_OMAP			64
+#define	MAX_OMAPENT			128
+#define	MAX_NOVL			(32)			/* number of overlay entries */
 
 #ifdef _KERNEL
 struct pmap;
@@ -142,8 +142,5 @@ void			ovl_map_reference(ovl_map_t);
 int		 		ovl_map_remove(ovl_map_t, vm_offset_t, vm_offset_t);
 void			ovl_map_startup(void);
 int				ovl_map_submap(ovl_map_t, vm_offset_t, vm_offset_t, ovl_map_t);
-
-void 			ovl_map_swapin(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
-void 			ovl_map_swapout(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
 #endif
 #endif /* _OVL_MAP_ */

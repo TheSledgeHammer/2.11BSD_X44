@@ -81,9 +81,9 @@ numeric_lconv(lconv)
 
 		nptr = __get_current_numeric_locale();
 
-        LCONV_ASSIGNC(lconv, nptr, decimal_point);
-        LCONV_ASSIGNC(lconv, nptr, thousands_sep);
-        LCONV_ASSIGNC(lconv, nptr, grouping);
+		LCONV_ASSIGNC(lconv, nptr, decimal_point);
+		LCONV_ASSIGNC(lconv, nptr, thousands_sep);
+		LCONV_ASSIGNC(lconv, nptr, grouping);
 
 		__numeric_locale_changed = 0;
 	}
@@ -98,28 +98,28 @@ monetary_lconv(lconv)
 
 		mptr = __get_current_monetary_locale();
 
-        LCONV_ASSIGNC(lconv, mptr, int_curr_symbol);
-        LCONV_ASSIGNC(lconv, mptr, currency_symbol);
-        LCONV_ASSIGNC(lconv, mptr, mon_decimal_point);
-        LCONV_ASSIGNC(lconv, mptr, mon_thousands_sep);
-        LCONV_ASSIGNC(lconv, mptr, mon_grouping);
-        LCONV_ASSIGNC(lconv, mptr, positive_sign);
-        LCONV_ASSIGNC(lconv, mptr, negative_sign);
-        LCONV_ASSIGN(lconv, mptr, int_frac_digits);
-        LCONV_ASSIGN(lconv, mptr, frac_digits);
-        LCONV_ASSIGN(lconv, mptr, p_cs_precedes);
-        LCONV_ASSIGN(lconv, mptr, p_sep_by_space);
-        LCONV_ASSIGN(lconv, mptr, n_cs_precedes);
-        LCONV_ASSIGN(lconv, mptr, n_sep_by_space);
-        LCONV_ASSIGN(lconv, mptr, p_sign_posn);
-        LCONV_ASSIGN(lconv, mptr, n_sign_posn);
-        LCONV_ASSIGN(lconv, mptr, int_p_cs_precedes);
-        LCONV_ASSIGN(lconv, mptr, int_n_cs_precedes);
-        LCONV_ASSIGN(lconv, mptr, int_p_sep_by_space);
-        LCONV_ASSIGN(lconv, mptr, int_n_sep_by_space);
-        LCONV_ASSIGN(lconv, mptr, int_p_sign_posn);
-        LCONV_ASSIGN(lconv, mptr, int_n_sign_posn);
-		
+		LCONV_ASSIGNC(lconv, mptr, int_curr_symbol);
+		LCONV_ASSIGNC(lconv, mptr, currency_symbol);
+		LCONV_ASSIGNC(lconv, mptr, mon_decimal_point);
+		LCONV_ASSIGNC(lconv, mptr, mon_thousands_sep);
+		LCONV_ASSIGNC(lconv, mptr, mon_grouping);
+		LCONV_ASSIGNC(lconv, mptr, positive_sign);
+		LCONV_ASSIGNC(lconv, mptr, negative_sign);
+		LCONV_ASSIGN(lconv, mptr, int_frac_digits);
+		LCONV_ASSIGN(lconv, mptr, frac_digits);
+		LCONV_ASSIGN(lconv, mptr, p_cs_precedes);
+		LCONV_ASSIGN(lconv, mptr, p_sep_by_space);
+		LCONV_ASSIGN(lconv, mptr, n_cs_precedes);
+		LCONV_ASSIGN(lconv, mptr, n_sep_by_space);
+		LCONV_ASSIGN(lconv, mptr, p_sign_posn);
+		LCONV_ASSIGN(lconv, mptr, n_sign_posn);
+		LCONV_ASSIGN(lconv, mptr, int_p_cs_precedes);
+		LCONV_ASSIGN(lconv, mptr, int_n_cs_precedes);
+		LCONV_ASSIGN(lconv, mptr, int_p_sep_by_space);
+		LCONV_ASSIGN(lconv, mptr, int_n_sep_by_space);
+		LCONV_ASSIGN(lconv, mptr, int_p_sign_posn);
+		LCONV_ASSIGN(lconv, mptr, int_n_sign_posn);
+
 		__monetary_locale_changed = 0;
 	}
 }
