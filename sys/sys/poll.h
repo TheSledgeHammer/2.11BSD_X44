@@ -79,6 +79,7 @@ __BEGIN_DECLS
 #if __BSD_VISIBLE
 int ppoll(struct pollfd[], nfds_t, const struct timespec *, const sigset_t *);
 #endif /* __BSD_VISIBLE */
+int poll(struct pollfd *, u_int, int);
 __END_DECLS
 #endif /* _KERNEL */
 #endif /* _SYS_POLL_H_ */
