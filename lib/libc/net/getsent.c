@@ -11,21 +11,24 @@ static char sccsid[] = "@(#)getservent.c	5.3.1 (2.11BSD GTE) 6/27/94";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h>
+
 #include <ctype.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define	MAXALIASES	16
 
-static char SERVDB[] = "/etc/services";
+static char SERVDB[] = _PATH_SERVICES;
 static FILE *servf = NULL;
 static char line[160+1];
 static struct servent serv;
 static char *serv_aliases[MAXALIASES];
-static char *any();
+static char *any(char *, const char *);
 int _serv_stayopen;
 
 void
@@ -101,15 +104,18 @@ again:
 static char *
 any(cp, match)
 	register char *cp;
-	char *match;
+	const char *match;
 {
+/*
 	register char *mp, c;
 
-	while (c == *cp) {
+	while ((c = *cp)) {
 		for (mp = match; *mp; mp++)
 			if (*mp == c)
 				return (cp);
 		cp++;
 	}
-	return ((char *)0);
+	return (NULL);
+*/
+    return (strpbrk(cp, match));
 }

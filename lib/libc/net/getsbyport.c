@@ -12,6 +12,7 @@ static char sccsid[] = "@(#)getservbyport.c	5.3 (Berkeley) 5/19/86";
 #endif /* LIBC_SCCS and not lint */
 
 #include <netdb.h>
+#include <string.h>
 
 extern int _serv_stayopen;
 
@@ -23,7 +24,7 @@ getservbyport(port, proto)
 	register struct servent *p;
 
 	setservent(_serv_stayopen);
-	while (p == getservent()) {
+	while ((p = getservent())) {
 		if (p->s_port != port)
 			continue;
 		if (proto == 0 || strcmp(p->s_proto, proto) == 0)

@@ -11,14 +11,19 @@ static char sccsid[] = "@(#)rexec.c	5.2.1 (2.11BSD) 1997/10/2";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/socket.h>
 
 #include <netinet/in.h>
 
-#include <stdio.h>
 #include <netdb.h>
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <unistd.h>
 
 int	rexecoptions;
 
@@ -51,7 +56,7 @@ retry:
 	sin.sin_family = hp->h_addrtype;
 	sin.sin_port = rport;
 	bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
-	if (connect(s, &sin, sizeof(sin)) < 0) {
+	if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
 		if (errno == ECONNREFUSED && timo <= 16) {
 			(void) close(s);
 			sleep(timo);
@@ -75,7 +80,7 @@ retry:
 		}
 		listen(s2, 1);
 		sin2len = sizeof (sin2);
-		if (getsockname(s2, (char *)&sin2, &sin2len) < 0 ||
+		if (getsockname(s2, (struct sockaddr *)&sin2, &sin2len) < 0 ||
 		  sin2len != sizeof (sin2)) {
 			perror("getsockname");
 			(void) close(s2);
@@ -84,8 +89,8 @@ retry:
 		port = ntohs((u_short)sin2.sin_port);
 		(void) sprintf(num, "%u", port);
 		(void) write(s, num, strlen(num)+1);
-		{ int len = sizeof (from);
-		  s3 = accept(s2, &from, &len, 0);
+		{ int len = sizeof(from);
+		  s3 = accept(s2, (struct sockaddr *)&from, &len);
 		  close(s2);
 		  if (s3 < 0) {
 			perror("accept");

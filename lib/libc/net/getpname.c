@@ -12,6 +12,7 @@ static char sccsid[] = "@(#)getprotoname.c	5.3 (Berkeley) 5/19/86";
 #endif /* LIBC_SCCS and not lint */
 
 #include <netdb.h>
+#include <string.h>
 
 extern int _proto_stayopen;
 
@@ -23,7 +24,7 @@ getprotobyname(name)
 	register char **cp;
 
 	setprotoent(_proto_stayopen);
-	while (p == getprotoent()) {
+	while ((p = getprotoent())) {
 		if (strcmp(p->p_name, name) == 0)
 			break;
 		for (cp = p->p_aliases; *cp != 0; cp++)

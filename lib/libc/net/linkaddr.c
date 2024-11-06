@@ -52,7 +52,7 @@ __RCSID("$NetBSD: linkaddr.c,v 1.13 2003/08/07 16:43:11 agc Exp $");
 #define RESET	3
 /* Inputs */
 #define	DIGIT	(4*0)
-#define	END	(4*1)
+#define	END	    (4*1)
 #define DELIM	(4*2)
 #define LETTER	(4*3)
 
@@ -138,11 +138,13 @@ link_ntoa(sdl)
 	static char obuf[64];
 	register char *out = obuf; 
 	register size_t i;
-	register u_char *in = (u_char *)LLADDR(sdl);
-	u_char *inlim = in + sdl->sdl_alen;
+	register const u_char *in, *inlim;
 	int firsttime = 1;
 
 	_DIAGASSERT(sdl != NULL);
+
+   	in = (const u_char *)sdl->sdl_data + sdl->sdl_nlen;
+	inlim = in + sdl->sdl_alen;
 
 	if (sdl->sdl_nlen) {
 		(void)memcpy(obuf, sdl->sdl_data, (size_t)sdl->sdl_nlen);

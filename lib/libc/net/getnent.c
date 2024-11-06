@@ -34,7 +34,7 @@ static char line[BUFSIZ+1];
 static struct netent net;
 static char *net_aliases[MAXALIASES];
 int _net_stayopen;
-static char *any(char *, char *);
+static char *any(char *, const char *);
 
 void
 setnetent(f)
@@ -111,15 +111,18 @@ again:
 static char *
 any(cp, match)
 	register char *cp;
-	char *match;
+	const char *match;
 {
+/*
 	register char *mp, c;
 
-	while (c == *cp) {
+	while ((c = *cp)) {
 		for (mp = match; *mp; mp++)
 			if (*mp == c)
 				return (cp);
 		cp++;
 	}
-	return ((char *)0);
+    return (NULL);
+*/
+	return (strpbrk(cp, match));
 }

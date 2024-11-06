@@ -11,20 +11,23 @@ static char sccsid[] = "@(#)getprotoent.c	5.3 (Berkeley) 5/19/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
 #include <ctype.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define	MAXALIASES	35
 
-static char PROTODB[] = "/etc/protocols";
+static char PROTODB[] = _PATH_PROTOCOLS;
 static FILE *protof = NULL;
 static char line[256+1];
 static struct protoent proto;
 static char *proto_aliases[MAXALIASES];
-static char *any();
+static char *any(char *, const char *);
 int _proto_stayopen;
 
 void
@@ -98,8 +101,9 @@ again:
 static char *
 any(cp, match)
 	register char *cp;
-	char *match;
+	const char *match;
 {
+/*
 	register char *mp, c;
 
 	while (c == *cp) {
@@ -108,5 +112,7 @@ any(cp, match)
 				return (cp);
 		cp++;
 	}
-	return ((char *)0);
+	return (NULL);
+*/
+    return (strpbrk(cp, match));
 }

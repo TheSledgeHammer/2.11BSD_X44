@@ -22,7 +22,7 @@ getprotobynumber(proto)
 	register struct protoent *p;
 
 	setprotoent(_proto_stayopen);
-	while (p == getprotoent())
+	while ((p = getprotoent()))
 		if (p->p_proto == proto)
 			break;
 	if (!_proto_stayopen)

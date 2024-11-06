@@ -12,6 +12,7 @@ static char sccsid[] = "@(#)getservbyname.c	5.3 (Berkeley) 5/19/86";
 #endif /* LIBC_SCCS and not lint */
 
 #include <netdb.h>
+#include <string.h>
 
 extern int _serv_stayopen;
 
@@ -23,7 +24,7 @@ getservbyname(name, proto)
 	register char **cp;
 
 	setservent(_serv_stayopen);
-	while (p == getservent()) {
+	while ((p = getservent())) {
 		if (strcmp(name, p->s_name) == 0)
 			goto gotname;
 		for (cp = p->s_aliases; *cp; cp++)

@@ -15,24 +15,30 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)rcmd.c	5.20.1 (2.11BSD) 1999/10/24";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <pwd.h>
-#include <string.h>
 #include <sys/param.h>
 #include <sys/file.h>
-#include <sys/signal.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/poll.h>
 
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
-#include <netdb.h>
+#include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <pwd.h>
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
 
 int
 rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
@@ -47,7 +53,8 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	char c;
 	int lport = IPPORT_RESERVED - 1;
 	struct hostent *hp;
-	fd_set reads;
+	//fd_set reads;
+    struct pollfd reads[2];
 
 	pid = getpid();
 	hp = gethostbyname(*ahost);
@@ -74,7 +81,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 		sin.sin_family = hp->h_addrtype;
 		bcopy(hp->h_addr_list[0], (caddr_t)&sin.sin_addr, hp->h_length);
 		sin.sin_port = rport;
-		if (connect(s, (caddr_t)&sin, sizeof (sin), 0) >= 0)
+		if (connect(s, (struct sockaddr *)&sin, sizeof (sin), 0) >= 0)
 			break;
 		(void) close(s);
 		if (errno == EADDRINUSE) {
@@ -122,12 +129,12 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 			(void) close(s2);
 			goto bad;
 		}
-		FD_ZERO(&reads);
-		FD_SET(s, &reads);
-		FD_SET(s2, &reads);
+		reads[0].fd = s;
+		reads[0].events = POLLIN;
+		reads[1].fd = s2;
+		reads[1].events = POLLIN;
 		errno = 0;
-		if (select(32, &reads, 0, 0, 0) < 1 ||
-		    !FD_ISSET(s2, &reads)) {
+		if (poll(reads, 2, INFTIM) < 1 || (reads[1].revents & POLLIN) == 0) {
 			if (errno != 0)
 				perror("select: setting up stderr");
 			else
@@ -136,7 +143,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 			(void) close(s2);
 			goto bad;
 		}
-		s3 = accept(s2, &from, &len, 0);
+		s3 = accept(s2, (struct sockaddr *)&from, &len);
 		(void) close(s2);
 		if (s3 < 0) {
 			perror("accept");
@@ -144,13 +151,27 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 			goto bad;
 		}
 		*fd2p = s3;
-		from.sin_port = ntohs((u_short)from.sin_port);
-		if (from.sin_family != AF_INET ||
-		    from.sin_port >= IPPORT_RESERVED ||
-		    from.sin_port < IPPORT_RESERVED / 2) {
-			fprintf(stderr,
+        switch (from.sin_family) {
+            case AF_INET:
+#ifdef INET6
+		    case AF_INET6:
+#endif
+            from.sin_port = ntohs((u_short)from.sin_port);
+            if (from.sin_port != atoi(num)) {
+                from.sin_port = atoi(num);
+            }
+			if (getnameinfo((struct sockaddr *)(void *)&from, len,
+			    NULL, 0, num, (socklen_t)sizeof(num),
+			    NI_NUMERICSERV) != 0 ||
+			    (from.sin_port >= IPPORT_RESERVED ||
+			     from.sin_port < IPPORT_RESERVED / 2)) {
+				fprintf(stderr,
 			    "socket: protocol failure in circuit setup.\n");
-			goto bad2;
+				goto bad2;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 	(void) write(s, locuser, strlen(locuser)+1);
@@ -162,7 +183,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	}
 	if (c != 0) {
 		while (read(s, &c, 1) == 1) {
-			(void) write(2, &c, 1);
+			(void) write(STDERR_FILENO, &c, 1);
 			if (c == '\n')
 				break;
 		}
@@ -179,20 +200,48 @@ bad:
 	return (-1);
 }
 
+int
 rresvport(alport)
-	int *alport;
+    int *alport;
 {
-	struct sockaddr_in sin;
+    return (rresvport_af(alport, AF_INET));
+}
+
+int
+rresvport_af(alport, af)
+	int *alport, af;
+{
+	struct sockaddr_storage ss;
+	struct sockaddr *sa;
+    u_int16_t *portp;
 	int s;
 
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = INADDR_ANY;
+	bzero(&ss, sizeof ss);
+	sa = (struct sockaddr *)&ss;
+
+    switch (af) {
+    case AF_INET:
+		sa->sa_len = sizeof(struct sockaddr_in);
+		portp = &((struct sockaddr_in *)sa)->sin_port;
+		break;
+#ifdef INET6
+    case AF_INET6:
+#endif
+		sa->sa_len = sizeof(struct sockaddr_in6);
+		portp = &((struct sockaddr_in6 *)sa)->sin6_port;
+		break;
+    default:
+   		errno = EPFNOSUPPORT;
+		return (-1);
+    }
+    sa->sa_family = af;
+
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0)
 		return (-1);
 	for (;;) {
-		sin.sin_port = htons((u_short)*alport);
-		if (bind(s, (caddr_t)&sin, sizeof (sin)) >= 0)
+		portp = htons((u_short)*alport);
+		if (bind(s, sa, sa->sa_len) >= 0)
 			return (s);
 		if (errno != EADDRINUSE) {
 			(void) close(s);
@@ -209,6 +258,7 @@ rresvport(alport)
 
 int	_check_rhosts_file = 1;
 
+int
 ruserok(rhost, superuser, ruser, luser)
 	char *rhost;
 	int superuser;
@@ -302,7 +352,7 @@ _validuser(hostf, rhost, luser, ruser, baselen)
 	return (-1);
 }
 
-static
+static int
 _checkhost(rhost, lhost, len)
 	char *rhost, *lhost;
 	int len;
