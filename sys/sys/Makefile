@@ -26,9 +26,10 @@ INCS=		acct.h agpio.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h bswap.h
 			vnode.h wait.h		
 
 INCSYMLINKS=									\
-		sys/exec_elf.h 	/usr/include/elf.h 		\
+		sys/exec_elf.h 	/usr/include/elf.h 	\
 		sys/fcntl.h 	/usr/include/fcntl.h 	\
-		sys/poll.h 		/usr/include/poll.h 	\
+		sys/poll.h 	/usr/include/poll.h 	\
+		sys/select.h 	/usr/include/select.h 	\
 		sys/stdarg.h 	/usr/include/stdarg.h 	\
 		sys/stdbool.h 	/usr/include/stdbool.h 	\
 		sys/stddef.h 	/usr/include/stddef.h 	\
