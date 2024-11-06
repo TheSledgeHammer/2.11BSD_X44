@@ -47,7 +47,7 @@ static char sccsid[] = "@(#)strpbrk.c	8.1.1 (2.11BSD) 1996/1/11";
 char *
 strpbrk(s1, s2)
 	register char *s1;
-	char	*s2;
+	const char *s2;
 {
 	register char *scanp;
 	register int c;
