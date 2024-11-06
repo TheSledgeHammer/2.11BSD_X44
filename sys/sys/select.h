@@ -85,5 +85,14 @@ void 	selnotify(struct selinfo *, long);
 /* 4.4BSD compat */
 #define selwakeup1(sel) \
 	(_selwakeup(sel))
+
+#else
+
+__BEGIN_DECLS
+/* must define _SELECT_DECLARED to use select */
+#ifdef _SELECT_DECLARED
+int select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+#endif /* _SELECT_DECLARED */
+__END_DECLS
 #endif /* !KERNEL */
 #endif /* !_SYS_SELECT_H_ */
