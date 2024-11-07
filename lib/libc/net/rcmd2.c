@@ -52,6 +52,8 @@ static char sccsid[] = "@(#)rcmd.c	5.20.1 (2.11BSD) 1999/10/24";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/socket.h>
@@ -61,14 +63,18 @@ static char sccsid[] = "@(#)rcmd.c	5.20.1 (2.11BSD) 1999/10/24";
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <netgroup.h>
 #include <pwd.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int rcmd_af(char **, u_short, const char *, const char *, const char *, int *, int);
 int rresvport_af(int *, int);
@@ -95,7 +101,7 @@ rcmd_af(ahost, rport, locuser, remuser, cmd, fd2p, af)
 	int *fd2p;
 	int af;
 {
-	static char hbuf[MAXHOSTNAMELEN];
+	char buf[MAXHOSTNAMELEN];
 	char pbuf[NI_MAXSERV];
 	sigset_t oldmask, nmask;
 	pid_t pid;
@@ -128,8 +134,8 @@ rcmd_af(ahost, rport, locuser, remuser, cmd, fd2p, af)
 		return (-1);
 	}
 	if (res->ai_canonname) {
-		strlcpy(hbuf, res->ai_canonname, sizeof(hbuf));
-		hp->h_name = hbuf;
+		strlcpy(buf, res->ai_canonname, sizeof(buf));
+		hp->h_name = buf;
 		*ahost = hp->h_name;
 	}
 	r = res;
@@ -154,7 +160,7 @@ rcmd_af(ahost, rport, locuser, remuser, cmd, fd2p, af)
 			}
 		}
 		fcntl(s, F_SETOWN, pid);
-		if (connect(s, r->ai_addr, r->ai_addrlen, 0) >= 0) {
+		if (connect(s, r->ai_addr, r->ai_addrlen) >= 0) {
 			break;
 		}
 		(void) close(s);
@@ -293,7 +299,7 @@ rresvport_af(alport, af)
 {
 	struct sockaddr_storage ss;
 	struct sockaddr *sa;
-	u_short *portp;
+	u_int16_t *portp;
 	int s;
 
 	bzero(&ss, sizeof ss);
@@ -322,7 +328,7 @@ rresvport_af(alport, af)
 	}
 
 	for (;;) {
-		portp = htons((u_short)*alport);
+		*portp = htons(*alport);
 		if (bind(s, sa, sa->sa_len) >= 0)
 			return (s);
 		if (errno != EADDRINUSE) {
@@ -336,6 +342,14 @@ rresvport_af(alport, af)
 			return (-1);
 		}
 	}
+	*portp = 0;
+	sa->sa_family = af;
+    if (bindresvport_sa(s, sa) == -1) {
+        (void)close(s);
+        return (-1);
+    }
+    *alport = ntohs(*portp);
+    return (s);
 }
 
 int
@@ -376,15 +390,15 @@ __iruserok(raddr, rlen, rhost, superuser, ruser, luser)
 	struct passwd *pwd;
 	const char fhost[MAXHOSTNAMELEN];
 	int first = 1;
-	register const char *sp, *p;
+	char *sp, *p;
 	int baselen = -1;
 	char pbuf[MAXPATHLEN];
 	uid_t uid;
 	gid_t gid;
 
-	sa = (struct sockaddr *)raddr;
-	sp = rhost;
-	p = fhost;
+	sa = __UNCONST(raddr);
+	sp = __UNCONST(rhost);
+	p = __UNCONST(fhost);
 	while (*sp) {
 		if (*sp == '.') {
 			if (baselen == -1) {
@@ -407,7 +421,7 @@ again:
 	}
 	if (first == 1 && (_check_rhosts_file || superuser)) {
 		first = 0;
-		if ((pwd = getpwnam(luser)) == NULL) {
+		if ((pwd = getpwnam(__UNCONST(luser))) == NULL) {
 			return (-1);
 		}
 		uid = geteuid();
@@ -453,12 +467,12 @@ __ivaliduser(hostf, raddr, salen, rhost, luser, ruser, baselen)
 	int firsttime = 1;
 	int hostok, userok;
 	char domain[MAXHOSTNAMELEN];
-	register char *p;
+	char *p;
 
 	(void)getdomainname(domain, sizeof(domain));
 
-	while (fgets(ahost, sizeof(ahost), hostf)) {
-		p = ahost;
+	while (fgets(__UNCONST(ahost), sizeof(ahost), hostf)) {
+		p = __UNCONST(ahost);
 		while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0') {
 			*p = isupper(*p) ? tolower(*p) : *p;
 			p++;
@@ -576,9 +590,10 @@ __ivaliduser(hostf, raddr, salen, rhost, luser, ruser, baselen)
 
 static int
 __icheckhost(raddr, salen, rhost, lhost, len)
-	const struct sockaddr *raddr;
+	struct sockaddr *raddr;
 	socklen_t salen;
 	const char *rhost, *lhost;
+    int len;
 {
 	struct addrinfo hints, *res, *r;
 	int error;
@@ -589,7 +604,7 @@ __icheckhost(raddr, salen, rhost, lhost, len)
 	_DIAGASSERT(lhost != NULL);
 
 	h1[0] = '\0';
-	if (getnameinfo(raddr, salen, h1, (socklen_t)sizeof(h1), 0, niflags) != 0) {
+	if (getnameinfo(raddr, salen, h1, (socklen_t)sizeof(h1), NULL, 0, niflags) != 0) {
 		return (0);
 	}
 
@@ -629,7 +644,7 @@ __icheckhost(raddr, salen, rhost, lhost, len)
  */
 static char *
 __gethostloop(raddr, salen)
-	const struct sockaddr *raddr;
+	struct sockaddr *raddr;
 	socklen_t salen;
 {
 	static char remotehost[NI_MAXHOST];
