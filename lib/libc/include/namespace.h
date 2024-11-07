@@ -111,7 +111,7 @@
 #define authunix_create_default _authunix_create_default
 #define basename			_basename
 #define bindresvport		_bindresvport
-#define bindresvport_sa		_bindresvport_sa
+//#define bindresvport_sa		_bindresvport_sa
 #define bm_comp				_bm_comp
 #define bm_exec				_bm_exec
 #define bm_free				_bm_free
