@@ -183,7 +183,7 @@ sched_rate_range(val, min, max)
 	if (val > max) {
 		val = max;
 	}
-	if ((val >= min) &&	(val <= max)) {
+	if ((val >= min) && (val <= max)) {
 		return (0);
 	}
 	return (-1);
