@@ -426,6 +426,16 @@ struct ip_mreq {
 #include <netinet6/in6.h>
 #undef __KAME_NETINET_IN_H_INCLUDED_
 
+#ifndef _KERNEL
+#if __BSD_VISIBLE
+__BEGIN_DECLS
+int	   bindresvport(int, struct sockaddr_in *);
+struct sockaddr;
+int	   bindresvport_sa(int, struct sockaddr *);
+__END_DECLS
+#endif /* __BSD_VISIBLE */
+#endif /* !_KERNEL */
+
 #ifdef _KERNEL
 /*
  * in_cksum_phdr:
