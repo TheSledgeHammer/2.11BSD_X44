@@ -177,7 +177,13 @@ static __inline int
 sched_rate_range(val, min, max)
 	int val, min, max;
 {
-	if ((val >= min) &&	((val <= max) || (val > 100))) {
+	if (val < min) {
+		val = min;
+	}
+	if (val > max) {
+		val = max;
+	}
+	if ((val >= min) &&	(val <= max)) {
 		return (0);
 	}
 	return (-1);

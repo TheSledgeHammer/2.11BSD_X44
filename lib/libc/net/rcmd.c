@@ -120,7 +120,6 @@ rcmd_af(ahost, rport, locuser, remuser, cmd, fd2p, af)
 	int lport, s, timo;
 	char c;
 	struct hostent *hp;
-	struct pollfd reads[2];
 
 	timo = 1;
 	lport = IPPORT_RESERVED - 1;
