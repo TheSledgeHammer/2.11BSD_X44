@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)ruserpass.c	5.2.1 (2.11BSD) 1996/11/16";
 static char tokval[100];
 
 static struct toktab {
-	char *tokstr;
+	const char *tokstr;
 	int tval;
 } toktab[]= {
 		{ "default",	DEFAULT },
@@ -63,9 +63,21 @@ static struct toktab {
 static void renv(const char *, char **, char **);
 static char	*renvlook(const char *);
 static void rnetrc(const char *, char **, char **);
-static int rmach(const char *, char **, char **, char *);
+static int rmach(const char *, char **, char **, const char *);
 static int token(void);
 static struct utmp *getutemp(char *);
+static char *nbsdecrypt(char *, char *, char *);
+static char *nbsencrypt(char *, char *, char *);
+static char *nbs8encrypt(char *, char *);
+static char *nbs8decrypt(char *, char *);
+static void enblkclr(char *, char *);
+static char *deblkclr(char *);
+static void enblknot(char *, char *);
+static char *deblknot(char *);
+static void nbssetkey(char *);
+static void blkencrypt(char *, int);
+static void sreverse(char *, char *);
+static char *mkenvkey(char);
 void mkpwunclear(char *, char, char *);
 void mkpwclear(char *, char, char *);
 
@@ -76,7 +88,8 @@ ruserpass(host, aname, apass)
 	const char *host;
 	char **aname, **apass;
 {
-	char myname[MAXHOSTNAMELEN + 1], *mydomain;
+	char *myname;
+    const char *mydomain;
 
 	renv(host, aname, apass);
 	if (*aname == NULL || *apass == NULL) {
@@ -105,7 +118,7 @@ ruserpass(host, aname, apass)
 				*aname = myname;
 			} else {
 				if (strchr(*aname, '\n')) {
-					*strchr(*aname, '\n') = NULL;
+					*strchr(*aname, '\n') = 0;
 				}
 			}
 		}
@@ -113,7 +126,7 @@ ruserpass(host, aname, apass)
 	if (*aname && *apass == NULL) {
 		printf("Password (%s:%s): ", host, *aname);
 		fflush(stdout);
-		*apass = getpass("");
+		*apass = getpass(__UNCONST(""));
 	}
 	return (0);
 }
@@ -124,7 +137,7 @@ renv(host, aname, apass)
 	char **aname, **apass;
 {
 	register char *cp;
-	char *stemp, fgetlogin, *comma;
+	char *comma;
 
 	cp = renvlook(host);
 	if (cp == NULL)
@@ -174,7 +187,8 @@ rnetrc(host, aname, apass)
 	const char *host;
 	char **aname, **apass;
 {
-	char *hdir, buf[BUFSIZ];
+	const char *hdir;
+    char buf[BUFSIZ];
 	int t;
 	struct stat stb;
 
@@ -183,9 +197,9 @@ rnetrc(host, aname, apass)
 		hdir = ".";
 	}
 	if (strlen(hdir) + sizeof(".netrc") < sizeof(buf)) {
-		sprintf(buf, "%s/.netrc", hdir);
+        (void)snprintf(buf, sizeof buf, "%s/.netrc", hdir);
 	} else {
-		fprintf(stderr, "%s/.netrc: %s", hdir);
+		fprintf(stderr, "%s/.netrc:", hdir);
 		return;
 	}
 
@@ -261,7 +275,7 @@ static int
 rmach(host, aname, apass, mydomain)
 	const char *host;
 	char **aname, **apass;
-	char *mydomain;
+	const char *mydomain;
 {
 	const char *ctmp;
 
@@ -318,10 +332,6 @@ token(void)
 }
 /* rest is nbs.c stolen from berknet */
 
-static char *deblknot(char *);
-static char *deblkclr(char *);
-static char *nbs8decrypt(char *, char *);
-static char *nbs8encrypt(char *, char *);
 static char	E[48];
 
 /*
@@ -338,8 +348,9 @@ static char	e[] = {
 	28,29,30,31,32, 1,
 };
 
+
 static char *
-nbsencrypt(str,key,result)
+nbsencrypt(str, key, result)
   char *result;
   char *str, *key;
 {
@@ -420,7 +431,7 @@ nbs8decrypt(crp,key)
 	return (deblkclr(blk));
 }
 
-static
+static void
 enblkclr(blk,str)		/* ignores top bit of chars in string str */
 	char *blk,*str;
 {
@@ -456,7 +467,7 @@ deblkclr(blk)
 	return (iobuf);
 }
 
-static
+static void
 enblknot(blk,crp)
 	char *blk;
 	char *crp;
@@ -598,11 +609,11 @@ static char	KS[16][48];
  * Set up the key schedule from the key.
  */
 
-static
+static void
 nbssetkey(key)
 	char *key;
 {
-	register i, j, k;
+	register int i, j, k;
 	int t;
 
 	/*
@@ -731,20 +742,34 @@ static char	preS[48];
 /*
  * The payoff: encrypt a block.
  */
-
 static void
 blkencrypt(block, edflag)
 	char *block;
 	int edflag;
 {
 	int i, ii;
-	register t, j, k;
+	register int t, j, k;
+    char tmp32[32], tmp64[32];
+
+    /* first 32 bits i.e. 0-32 */
+    for (j = 0; j < 32; j++) {
+        tmp32[j] = block[IP[j] - 1];
+    }
+    /* second 32 bits i.e. 32-64 */
+    for (j = 32; j < 64; j++) {
+        tmp64[j] = block[IP[j] - 1];
+    }
 
 	/*
 	 * First, permute the bits in the input
 	 */
-	for (j = 0; j < 64; j++)
-		L[j] = block[IP[j] - 1];
+    for (j = 0; j < 32; j++) {
+        L[j] += tmp32[j];
+    }
+    for (j = 0; j < 32; j++) {
+        L[j] += tmp64[j];
+    }
+
 	/*
 	 * Perform an encryption operation 16 times.
 	 */
