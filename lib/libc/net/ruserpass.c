@@ -65,6 +65,7 @@ static void renv(const char *, char **, char **);
 static char	*renvlook(const char *);
 static void rnetrc(const char *, char **, char **);
 static int rmach(const char *, char **, char **, const char *);
+static void rlogin(char *, const char *, char **);
 static int token(void);
 static struct utmp *getutemp(char *);
 static char *nbsdecrypt(char *, char *, char *);
@@ -89,8 +90,8 @@ ruserpass(host, aname, apass)
 	const char *host;
 	char **aname, **apass;
 {
-	char *myname;
-    	const char *mydomain;
+	char myname[256+1];
+	const char *mydomain;
 
 	renv(host, aname, apass);
 	if (*aname == NULL || *apass == NULL) {
@@ -108,20 +109,7 @@ ruserpass(host, aname, apass)
 		if (rmach(host, aname, apass, mydomain) == 0) {
 			rnetrc(host, aname, apass);
 		} else {
-			myname = getlogin();
-			*aname = (char*)malloc(sizeof(myname) - 1);
-			printf("Name (%s:%s): ", host, myname);
-			fflush(stdout);
-			if (read(2, *aname, sizeof(myname) - 1) <= 0) {
-				exit(1);
-			}
-			if ((*aname)[0] == '\n') {
-				*aname = myname;
-			} else {
-				if (strchr(*aname, '\n')) {
-					*strchr(*aname, '\n') = 0;
-				}
-			}
+			rlogin(myname, host, aname);
 		}
 	}
 	if (*aname && *apass == NULL) {
@@ -131,6 +119,8 @@ ruserpass(host, aname, apass)
 	}
 	return (0);
 }
+
+
 
 static void
 renv(host, aname, apass)
@@ -290,6 +280,33 @@ rmach(host, aname, apass, mydomain)
 		return (0);
 	}
 	return (1);
+}
+
+static void
+rlogin(myname, host, aname)
+	char *myname;
+	const char *host;
+	char **aname;
+{
+	char *mylogin;
+
+	mylogin = getlogin();
+	if (strncmp(mylogin, myname, strlen(myname)) == 0) {
+		mylogin = myname;
+	}
+	*aname = (char*)malloc(sizeof(mylogin) - 1);
+	printf("Name (%s:%s): ", host, mylogin);
+	fflush(stdout);
+	if (read(2, *aname, sizeof(mylogin) - 1) <= 0) {
+		exit(1);
+	}
+	if ((*aname)[0] == '\n') {
+		*aname = mylogin;
+	} else {
+		if (strchr(*aname, '\n')) {
+			*strchr(*aname, '\n') = 0;
+		}
+	}
 }
 
 static int
@@ -749,27 +766,20 @@ blkencrypt(block, edflag)
 	int edflag;
 {
 	int i, ii;
-	register int t, j, k;
-    	char tmp32[32], tmp64[32];
-
-    	/* first 32 bits i.e. 0-32 */
-    	for (j = 0; j < 32; j++) {
-        	tmp32[j] = block[IP[j] - 1];
-    	}
-    	/* second 32 bits i.e. 32-64 */
-    	for (j = 32; j < 64; j++) {
-        	tmp64[j] = block[IP[j] - 1];
-    	}
+	int j, jj;
+	register int t, k;
 
 	/*
 	 * First, permute the bits in the input
 	 */
-    	for (j = 0; j < 32; j++) {
-        	L[j] += tmp32[j];
-    	}
-    	for (j = 0; j < 32; j++) {
-        	L[j] += tmp64[j];
-    	}
+	jj = 32;
+	for (j = 0; j < 32; j++) {
+		jj++;
+		/* first 32 bits i.e. 0-32 */
+		L[j] = block[IP[j] - 1];
+		/* second 32 bits i.e. 32-64 */
+		L[jj] = block[IP[jj] - 1];
+	}
 
 	/*
 	 * Perform an encryption operation 16 times.
