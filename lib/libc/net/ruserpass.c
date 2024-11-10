@@ -89,7 +89,7 @@ ruserpass(host, aname, apass)
 	char **aname, **apass;
 {
 	char *myname;
-    const char *mydomain;
+    	const char *mydomain;
 
 	renv(host, aname, apass);
 	if (*aname == NULL || *apass == NULL) {
@@ -188,7 +188,7 @@ rnetrc(host, aname, apass)
 	char **aname, **apass;
 {
 	const char *hdir;
-    char buf[BUFSIZ];
+    	char buf[BUFSIZ];
 	int t;
 	struct stat stb;
 
@@ -749,26 +749,26 @@ blkencrypt(block, edflag)
 {
 	int i, ii;
 	register int t, j, k;
-    char tmp32[32], tmp64[32];
+    	char tmp32[32], tmp64[32];
 
-    /* first 32 bits i.e. 0-32 */
-    for (j = 0; j < 32; j++) {
-        tmp32[j] = block[IP[j] - 1];
-    }
-    /* second 32 bits i.e. 32-64 */
-    for (j = 32; j < 64; j++) {
-        tmp64[j] = block[IP[j] - 1];
-    }
+    	/* first 32 bits i.e. 0-32 */
+    	for (j = 0; j < 32; j++) {
+        	tmp32[j] = block[IP[j] - 1];
+    	}
+    	/* second 32 bits i.e. 32-64 */
+    	for (j = 32; j < 64; j++) {
+        	tmp64[j] = block[IP[j] - 1];
+    	}
 
 	/*
 	 * First, permute the bits in the input
 	 */
-    for (j = 0; j < 32; j++) {
-        L[j] += tmp32[j];
-    }
-    for (j = 0; j < 32; j++) {
-        L[j] += tmp64[j];
-    }
+    	for (j = 0; j < 32; j++) {
+        	L[j] += tmp32[j];
+    	}
+    	for (j = 0; j < 32; j++) {
+        	L[j] += tmp64[j];
+    	}
 
 	/*
 	 * Perform an encryption operation 16 times.
