@@ -60,6 +60,7 @@ static struct toktab {
 		{ NULL,			0 },
 };
 
+int ruserpass(const char *, char **, char **);
 static void renv(const char *, char **, char **);
 static char	*renvlook(const char *);
 static void rnetrc(const char *, char **, char **);
