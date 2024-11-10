@@ -120,8 +120,6 @@ ruserpass(host, aname, apass)
 	return (0);
 }
 
-
-
 static void
 renv(host, aname, apass)
 	const char *host;
