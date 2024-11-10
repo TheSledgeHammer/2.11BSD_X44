@@ -43,6 +43,7 @@ __RCSID("$NetBSD: sockatmark.c,v 1.1 2001/10/22 17:53:43 kleink Exp $");
 
 #include "namespace.h"
 
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
