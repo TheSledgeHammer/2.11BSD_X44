@@ -11,12 +11,14 @@ static char sccsid[] = "@(#)gethostnamadr.c	5.5 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
 #include <sys/types.h>
-#include <netdb.h>
 #include <sys/file.h>
-#include <ndbm.h>
+
 #include <ctype.h>
+#include <netdb.h>
+#include <ndbm.h>
+#include <stdio.h>
+#include <string.h>
 
 #define	MAXALIASES	20
 #define	MAXADDRS	10
@@ -31,15 +33,17 @@ int h_errno;
 /*
  * The following is shared with gethostent.c
  */
-extern	char *_host_file;
+extern const char *_host_file;
 DBM	*_host_db = (DBM *)NULL;
 int	_host_stayopen;	/* set by sethostent(), cleared by endhostent() */
+
+static struct hostent *fetchhost(datum);
 
 static struct hostent *
 fetchhost(key)
 	datum key;
 {
-        register char *cp, *tp, **ap;
+    register char *cp, *tp, **ap;
 	int naliases, naddrs;
 
         if (key.dptr == 0)
@@ -66,7 +70,7 @@ fetchhost(key)
 	bcopy(cp, (char *)&host.h_length, sizeof (int));
 	cp += sizeof (int);
 	host.h_addr_list = host_addrs;
-	naddrs = (key.dsize - (cp - key.dptr)) / host.h_length;
+	naddrs = (key.dsize - (cp - (char *)key.dptr)) / host.h_length;
 	if (naddrs > MAXADDRS)
 		naddrs = MAXADDRS;
 	for (ap = host_addrs; naddrs; naddrs--) {
@@ -97,12 +101,12 @@ gethostbyname(nam)
 	*lp = '\0';
 
 	if ((_host_db == (DBM *)NULL)
-	  && ((_host_db = dbm_open(_host_file, O_RDONLY)) == (DBM *)NULL)) {
+	  && ((_host_db = dbm_open(_host_file, O_RDONLY, 0)) == (DBM *)NULL)) {
 		sethostent(_host_stayopen);
-		while (hp == gethostent()) {
+		while ((hp = gethostent())) {
 			if (strcmp(hp->h_name, lowname) == 0)
 				break;
-			for (cp = hp->h_aliases; cp != 0 && *cp != 0; cp++)
+			for (cp = __UNCONST(hp->h_aliases); cp != 0 && *cp != 0; cp++)
 				if (strcmp(*cp, lowname) == 0)
 					goto found;
 		}
@@ -130,12 +134,12 @@ gethostbyaddr(addr, length, type)
 	register int type;
 {
 	register struct hostent *hp;
-        datum key;
+    datum key;
 
 	if ((_host_db == (DBM *)NULL)
-	  && ((_host_db = dbm_open(_host_file, O_RDONLY)) == (DBM *)NULL)) {
+	  && ((_host_db = dbm_open(_host_file, O_RDONLY, 0)) == (DBM *)NULL)) {
 		sethostent(_host_stayopen);
-		while (hp == gethostent()) {
+		while ((hp = gethostent())) {
 			if (hp->h_addrtype == type && hp->h_length == length
 			    && bcmp(hp->h_addr, addr, length) == 0)
 				break;
@@ -146,7 +150,7 @@ gethostbyaddr(addr, length, type)
 			h_errno = HOST_NOT_FOUND;
 		return (hp);
 	}
-        key.dptr = addr;
+        key.dptr = __UNCONST(addr);
         key.dsize = length;
 	hp = fetchhost(key);
 	if (!_host_stayopen) {

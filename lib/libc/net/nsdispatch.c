@@ -168,22 +168,21 @@ _nsdbtget(name)
 	if (confmod) {
 		if (stat(_PATH_NS_CONF, &statbuf) == -1)
 			return (NULL);
-		if (confmod < statbuf.st_mtime) {
+		if (confmod < statbuf.st_mtim) {
 			int i, j;
 
 			for (i = 0; i < _nsmapsize; i++) {
 				for (j = 0; j < _nsmap[i].srclistsize; j++) {
 					if (_nsmap[i].srclist[j].name != NULL) {
 						/*LINTED const cast*/
-						free((void *)
-						    _nsmap[i].srclist[j].name);
+						free(/*(void *)*/__UNCONST(_nsmap[i].srclist[j].name));
 					}
 				}
 				if (_nsmap[i].srclist)
 					free(_nsmap[i].srclist);
 				if (_nsmap[i].name) {
 					/*LINTED const cast*/
-					free((void *)_nsmap[i].name);
+					free(/*(void *)*/__UNCONST(_nsmap[i].name));
 				}
 			}
 			if (_nsmap)
@@ -202,7 +201,7 @@ _nsdbtget(name)
 		_nsyyparse();
 		(void)fclose(_nsyyin);
 		qsort(_nsmap, (size_t)_nsmapsize, sizeof(ns_dbt), _nscmp);
-		confmod = statbuf.st_mtime;
+		confmod = statbuf.st_mtim;
 	}
 	return (bsearch(&dbt, _nsmap, (size_t)_nsmapsize, sizeof(ns_dbt), _nscmp));
 }

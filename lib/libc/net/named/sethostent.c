@@ -12,27 +12,34 @@ static char sccsid[] = "@(#)sethostent.c	6.3 (Berkeley) 4/10/86";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <arpa/nameser.h>
+
 #include <netinet/in.h>
+#include <arpa/nameser.h>
+
+#include <netdb.h>
 #include <resolv.h>
+
+void endhostent(void);
+void sethostfile(const char *);
 
 void
 sethostent(stayopen)
+    int stayopen;
 {
 	if (stayopen)
 		_res.options |= RES_STAYOPEN | RES_USEVC;
 }
 
 void
-endhostent()
+endhostent(void)
 {
 	_res.options &= ~(RES_STAYOPEN | RES_USEVC);
-	_res_close();
+//	res_close();
 }
 
 void
 sethostfile(name)
-	char *name;
+	const char *name;
 {
 #ifdef lint
 	name = name;

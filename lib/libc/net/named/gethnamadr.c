@@ -12,7 +12,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)gethostnamadr.c	6.31.2 (2.11BSD GTE) 6/27/94";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -48,7 +50,7 @@ static struct hostent host;
 static char *host_aliases[MAXALIASES];
 static char hostbuf[256+1];
 static struct in_addr host_addr;
-static char HOSTDB[] = "/etc/hosts";
+static char HOSTDB[] = _PATH_HOSTS;
 static FILE *hostf = NULL;
 static char hostaddr[MAXADDRS];
 static char *host_addrs[2];

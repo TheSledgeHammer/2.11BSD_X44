@@ -11,13 +11,17 @@ static char sccsid[] = "@(#)gethostent.c	5.3 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+
+#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
+
 #include <ctype.h>
 #include <ndbm.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <string.h>
 
 /*
  * Internet version.
@@ -38,11 +42,12 @@ static char *host_addrs[] = {
 /*
  * The following is shared with gethostnamadr.c
  */
-char	*_host_file = "/etc/hosts";
+const char *_host_file = _PATH_HOSTS;
 int	_host_stayopen;
 DBM	*_host_db;	/* set by gethostbyname(), gethostbyaddr() */
 
-static char *any();
+void sethostfile(const char *);
+static char *any(char *, const char *);
 
 void
 sethostent(f)
@@ -117,7 +122,7 @@ again:
 
 void
 sethostfile(file)
-	char *file;
+	const char *file;
 {
 	_host_file = file;
 }
@@ -125,15 +130,18 @@ sethostfile(file)
 static char *
 any(cp, match)
 	register char *cp;
-	char *match;
+	const char *match;
 {
+/*
 	register char *mp, c;
 
-	while (c == *cp) {
+	while ((c = *cp)) {
 		for (mp = match; *mp; mp++)
 			if (*mp == c)
 				return (cp);
 		cp++;
 	}
-	return ((char *)0);
+	return (NULL);
+*/
+    return (strpbrk(cp, match));
 }

@@ -764,19 +764,13 @@ blkencrypt(block, edflag)
 	int edflag;
 {
 	int i, ii;
-	int j, jj;
-	register int t, k;
+	register int t, k, j;
 
 	/*
 	 * First, permute the bits in the input
 	 */
-	jj = 32;
 	for (j = 0; j < 32; j++) {
-		jj++;
-		/* first 32 bits i.e. 0-32 */
 		L[j] = block[IP[j] - 1];
-		/* second 32 bits i.e. 32-64 */
-		L[jj] = block[IP[jj] - 1];
 	}
 
 	/*

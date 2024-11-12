@@ -94,7 +94,7 @@ struct hesiod_p {
 #define	MAX_HESRESP	1024
 
 static int	  read_config_file(struct hesiod_p *, const char *);
-static char	**get_txt_records(int, const char *);
+static char	  **get_txt_records(int, const char *);
 static int	  init_context(void);
 static void	  translate_errors(void);
 
