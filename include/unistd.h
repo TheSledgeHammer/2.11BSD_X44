@@ -187,6 +187,7 @@ char			*getusershell(void);
 char			*getwd(char *);
 int	 			initgroups(const char *, gid_t);
 int	 			iruserok(unsigned long, int, const char *, const char *);
+int             issetugid(void);
 int	 			lchown(const char *, uid_t, gid_t);
 int	 			lockf(int, int, off_t);
 int	 			mknod(const char *, mode_t, dev_t);
