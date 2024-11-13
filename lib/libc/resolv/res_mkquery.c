@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)res_mkquery.c	6.7 (Berkeley) 3/7/88";
 #include "res_private.h"
 
 static struct rrec *res_newrr(const u_char *);
-static int res_rr_mkquery(int, const char *, int, int, const u_char *, int, const u_char *, char *, int);
+static int res_rr_mkquery(int, const char *, int, int, const u_char *, int, const u_char *, u_char *, int);
 
 int
 res_mkquery(op, dname, class, type, data, datalen, newrr_in, buf, buflen)
@@ -39,7 +39,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr_in, buf, buflen)
 	const u_char *data;
 	int datalen;
 	const u_char *newrr_in;
-	char *buf;
+	u_char *buf;
 	int buflen;
 {
 	struct rrec *newrr;
@@ -75,7 +75,7 @@ res_rr_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	const u_char *data;		/* resource record data */
 	int datalen;		/* length of data */
 	struct rrec *newrr;	/* new rr for modify or append */
-	char *buf;		/* buffer to put query */
+	u_char *buf;		/* buffer to put query */
 	int buflen;		/* size of buffer */
 {
 	register HEADER *hp;
