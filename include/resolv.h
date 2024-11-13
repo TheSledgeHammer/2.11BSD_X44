@@ -189,5 +189,6 @@ int	 	res_query(char *, int, int, u_char *, int);
 int	 	res_querydomain(char *, char *, int, int, u_char *, int);
 int	 	res_search(char *, int, int, u_char *, int);
 int	 	res_send(const u_char *, int, u_char *, int);
+void    	res_close(void);
 __END_DECLS
 #endif /* !_RESOLV_H_ */
