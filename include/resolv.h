@@ -157,7 +157,7 @@ extern struct __res_state _res;
 #define res_close		_res_close
 
 __BEGIN_DECLS
-void 		fp_resstat(struct state *, FILE *);
+void 		fp_resstat(res_state, FILE *);
 void 		fp_query(char *, FILE *);
 char 		*hostalias(const char *);
 
@@ -183,7 +183,7 @@ res_state 	res_get_state(void);
 void		res_put_state(res_state);
 
 int	 	res_init(void);
-int	 	res_mkquery(int, const char *, int, int, const u_char *, int, const u_char *, char *, int);
+int	 	res_mkquery(int, const char *, int, int, const u_char *, int, const u_char *, u_char *, int);
 int	 	res_query(char *, int, int, u_char *, int);
 int	 	res_querydomain(char *, char *, int, int, u_char *, int);
 int	 	res_search(char *, int, int, u_char *, int);
