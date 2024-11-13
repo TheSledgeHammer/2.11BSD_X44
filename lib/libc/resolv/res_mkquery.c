@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)res_mkquery.c	6.7 (Berkeley) 3/7/88";
 #include "res_private.h"
 
 static struct rrec *res_newrr(const u_char *);
-static int res_rr_mkquery(int, const char *, int, int, const u_char *, int, const u_char *, u_char *, int);
+static int res_rr_mkquery(int, const char *, int, int, const u_char *, int, struct rrec *, u_char *, int);
 
 int
 res_mkquery(op, dname, class, type, data, datalen, newrr_in, buf, buflen)
