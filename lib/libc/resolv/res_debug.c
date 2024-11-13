@@ -94,7 +94,7 @@ p_query(msg)
  */
 void
 fp_resstat(statp, file)
-	struct __res_state *statp;
+	res_state statp;
 	FILE *file;
 {
 	int bit;
