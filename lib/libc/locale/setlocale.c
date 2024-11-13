@@ -142,23 +142,23 @@ __setlocale(category, locale)
 		if (!env)
 			env = _C_LOCALE;
 
-		(void) strncpy(new_categories[category], env, 31);
+		(void) strncpy(new_categories[category], env, 32);
 		new_categories[category][31] = 0;
 		if (!category) {
 			for (i = 1; i < _LC_LAST; ++i) {
 				if (!(env = getenv(categories[i])))
 					env = new_categories[0];
-				(void) strncpy(new_categories[i], env, 31);
+				(void) strncpy(new_categories[i], env, 32);
 				new_categories[i][31] = 0;
 			}
 		}
 	} else if (category) {
-		(void) strncpy(new_categories[category], locale, 31);
+		(void) strncpy(new_categories[category], locale, 32);
 		new_categories[category][31] = 0;
 	} else {
 		if ((r = strchr(locale, '/')) == 0) {
 			for (i = 1; i < _LC_LAST; ++i) {
-				(void) strncpy(new_categories[i], locale, 31);
+				(void) strncpy(new_categories[i], locale, 32);
 				new_categories[i][31] = 0;
 			}
 		} else {
