@@ -45,6 +45,9 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+#ifdef _SELECT_DECLARED
+#include <sys/select.h>
+#endif
 #include <stdio.h>	        /* For NULL */
 #include <unistd.h>
 
@@ -63,6 +66,7 @@ __weak_alias(sleep,_sleep)
  * problem the program has.  The select() call either completes successfully
  * or is interrupted - no errors to be checked for.
 */
+#ifndef _SELECT_DECLARED
 
 u_int
 sleep(seconds)
@@ -86,7 +90,8 @@ sleep(seconds)
    	return (seconds);
 }
 
-#ifdef notyet
+#else
+
 u_int
 sleep(seconds)
 	u_int seconds;

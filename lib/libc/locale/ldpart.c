@@ -61,15 +61,15 @@ __part_load_locale(const char *name,
 		int locale_buf_size_min,
 		const char **dst_localebuf)
 {
-    static int num_lines;
-	int			saverr, fd;
-	char		*lbuf;
-	char		*p;
-	const char 	*plim;
-	char 		filename[PATH_MAX];
-	struct stat	st;
-	size_t		namesize;
-	size_t		bufsize;
+	static int num_lines;
+	int saverr, fd;
+	char *lbuf;
+	char *p;
+	const char *plim;
+	char filename[PATH_MAX];
+	struct stat st;
+	size_t namesize;
+	size_t bufsize;
 
 	/* 'name' must be already checked. */
 	if (strcmp(name, _C_LOCALE) == 0 || strcmp(name, _POSIX_LOCALE) == 0) {
@@ -80,7 +80,7 @@ __part_load_locale(const char *name,
 	/*
 	 * If the locale name is the same as our cache, use the cache.
 	 */
-    lbuf = *locale_buf;
+	lbuf = *locale_buf;
 	if (lbuf != NULL && strcmp(name, lbuf) == 0) {
 		set_from_buf(lbuf, num_lines, dst_localebuf);
 		*using_locale = 1;
@@ -107,7 +107,7 @@ __part_load_locale(const char *name,
 		errno = EFTYPE;
 	}
 	bufsize = namesize + st.st_size;
-    *locale_buf = NULL;
+	*locale_buf = NULL;
 	if ((lbuf = malloc(bufsize)) == NULL) {
 		errno = ENOMEM;
 		goto bad_locale;
@@ -135,7 +135,7 @@ __part_load_locale(const char *name,
 		errno = EFTYPE;
 		goto bad_lbuf;
 	}
-	(void)close(fd);
+	(void) close(fd);
 	set_from_buf(lbuf, num_lines, dst_localebuf);
 
 	/*
@@ -155,7 +155,7 @@ bad_lbuf:
 	errno = saverr;
 bad_locale:
 	saverr = errno;
-	(void)close(fd);
+	(void) close(fd);
 	errno = saverr;
 
 	return (_LDP_ERROR);

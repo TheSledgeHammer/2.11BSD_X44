@@ -26,6 +26,8 @@ static char sccsid[] = "@(#)res_query.c	5.3 (Berkeley) 4/5/88";
 #include <arpa/nameser.h>
 #include <resolv.h>
 
+#include "res_private.h"
+
 #if PACKETSZ > 1024
 #define MAXPACKET	PACKETSZ
 #else

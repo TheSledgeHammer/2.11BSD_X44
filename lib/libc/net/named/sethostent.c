@@ -26,15 +26,16 @@ void
 sethostent(stayopen)
     int stayopen;
 {
-	if (stayopen)
+	if (stayopen) {
 		_res.options |= RES_STAYOPEN | RES_USEVC;
+	}
 }
 
 void
 endhostent(void)
 {
 	_res.options &= ~(RES_STAYOPEN | RES_USEVC);
-//	res_close();
+	res_close();
 }
 
 void

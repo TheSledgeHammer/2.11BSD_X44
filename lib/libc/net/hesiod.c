@@ -434,8 +434,7 @@ get_txt_records(qclass, name)
 		return NULL;
 
 	/* Construct the query. */
-	n = res_mkquery(QUERY, name, qclass, T_TXT, NULL, 0,
-	    NULL, qbuf, PACKETSZ);
+	n = res_mkquery(QUERY, name, qclass, T_TXT, NULL, 0, NULL, qbuf, PACKETSZ);
 	if (n < 0) {
 		errno = EMSGSIZE;
 		return NULL;

@@ -10,6 +10,7 @@
  * is provided ``as is'' without express or implied warranty.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 #endif /* LIBC_SCCS and not lint */
@@ -22,34 +23,37 @@ static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <errno.h>
-#include <arpa/nameser.h>
-#include <resolv.h>
 
-extern int errno;
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+
+#include <errno.h>
+#include <resolv.h>
+#include <stdio.h>
+
+#include "res_private.h"
+
+//extern int errno;
 
 static int s = -1;	/* socket used for communications */
 static struct sockaddr no_addr;
-  
 
 #ifndef FD_SET
-#define	NFDBITS		32
-#define	FD_SETSIZE	32
+#define	NFDBITS			32
+#define	FD_SETSIZE		32
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
+#define FD_ZERO(p)		bzero((char *)(p), sizeof(*(p)))
 #endif
 
-#define KEEPOPEN (RES_USEVC|RES_STAYOPEN)
+#define KEEPOPEN 		(RES_USEVC|RES_STAYOPEN)
 
 int
 res_send(buf, buflen, answer, anslen)
-	const char *buf;
+	const u_char *buf;
 	int buflen;
-	char *answer;
+	u_char *answer;
 	int anslen;
 {
 	register int n;

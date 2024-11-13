@@ -256,7 +256,7 @@ struct rrec {
 	short	r_type;			/* type number */
 	u_long	r_ttl;			/* time to live */
 	int		r_size;			/* size of data area */
-	char	*r_data;		/* pointer to data */
+	const u_char *r_data;	/* pointer to data */
 };
 
 extern	u_short	_getshort(u_char *);

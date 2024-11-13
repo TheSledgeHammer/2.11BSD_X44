@@ -46,7 +46,6 @@ const char *_host_file = _PATH_HOSTS;
 int	_host_stayopen;
 DBM	*_host_db;	/* set by gethostbyname(), gethostbyaddr() */
 
-void sethostfile(const char *);
 static char *any(char *, const char *);
 
 void
@@ -132,16 +131,5 @@ any(cp, match)
 	register char *cp;
 	const char *match;
 {
-/*
-	register char *mp, c;
-
-	while ((c = *cp)) {
-		for (mp = match; *mp; mp++)
-			if (*mp == c)
-				return (cp);
-		cp++;
-	}
-	return (NULL);
-*/
     return (strpbrk(cp, match));
 }

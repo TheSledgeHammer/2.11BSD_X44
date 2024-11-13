@@ -103,16 +103,5 @@ any(cp, match)
 	register char *cp;
 	const char *match;
 {
-/*
-	register char *mp, c;
-
-	while (c == *cp) {
-		for (mp = match; *mp; mp++)
-			if (*mp == c)
-				return (cp);
-		cp++;
-	}
-	return (NULL);
-*/
     return (strpbrk(cp, match));
 }

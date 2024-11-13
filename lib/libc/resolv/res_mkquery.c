@@ -10,27 +10,69 @@
  * is provided ``as is'' without express or implied warranty.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)res_mkquery.c	6.7 (Berkeley) 3/7/88";
+#endif
 #endif /* LIBC_SCCS and not lint */
+
+#include <sys/types.h>
+#include <netinet/in.h>
+
+#include <arpa/nameser.h>
 
 #include <stdio.h>
 #include <string.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/nameser.h>
 #include <resolv.h>
+
+#include "res_private.h"
+
+static struct rrec *res_newrr(const u_char *);
+static int res_rr_mkquery(int, const char *, int, int, const u_char *, int, const u_char *, char *, int);
+
+int
+res_mkquery(op, dname, class, type, data, datalen, newrr_in, buf, buflen)
+	int op;
+	const char *dname;
+	int class, type;
+	const u_char *data;
+	int datalen;
+	const u_char *newrr_in;
+	char *buf;
+	int buflen;
+{
+	struct rrec *newrr;
+
+	newrr = res_newrr(newrr_in);
+	return (res_rr_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen));
+}
+
+static struct rrec *
+res_newrr(newrr_in)
+	const u_char *newrr_in;
+{
+	struct rrec *newrr;
+
+	newrr = (struct rrec *)malloc(sizeof(struct rrec));
+	if (newrr_in != NULL) {
+		newrr->r_data = newrr_in;
+		return (newrr);
+	}
+	free(newrr);
+	return (NULL);
+}
 
 /*
  * Form all types of queries.
  * Returns the size of the result or -1.
  */
-int
-res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
+static int
+res_rr_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	int op;			/* opcode of query */
 	const char *dname;		/* domain name */
 	int class, type;	/* class and type of query */
-	const char *data;		/* resource record data */
+	const u_char *data;		/* resource record data */
 	int datalen;		/* length of data */
 	struct rrec *newrr;	/* new rr for modify or append */
 	char *buf;		/* buffer to put query */
@@ -41,7 +83,6 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	register int n;
 	char dnbuf[MAXDNAME];
 	char *dnptrs[10], **dpp, **lastdnptr;
-	//extern char *index();
 
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG)
@@ -159,18 +200,18 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		cp += n;
 		putshort(type, cp);
-                cp += sizeof(u_short);
-                putshort(class, cp);
-                cp += sizeof(u_short);
-		putlong((long)0, cp);
+		cp += sizeof(u_short);
+		putshort(class, cp);
+		cp += sizeof(u_short);
+		putlong((long) 0, cp);
 		cp += sizeof(u_long);
 		putshort(datalen, cp);
-                cp += sizeof(u_short);
+		cp += sizeof(u_short);
 		if (datalen) {
 			bcopy(data, cp, datalen);
 			cp += datalen;
 		}
-		if ( (op == UPDATED) || (op == UPDATEDA) ) {
+		if ((op == UPDATED) || (op == UPDATEDA)) {
 			hp->ancount = htons(0);
 			break;
 		}
@@ -182,13 +223,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		cp += n;
 		putshort(newrr->r_type, cp);
-                cp += sizeof(u_short);
-                putshort(newrr->r_class, cp);
-                cp += sizeof(u_short);
-		putlong((long)0, cp);
+		cp += sizeof(u_short);
+		putshort(newrr->r_class, cp);
+		cp += sizeof(u_short);
+		putlong((long) 0, cp);
 		cp += sizeof(u_long);
 		putshort(newrr->r_size, cp);
-                cp += sizeof(u_short);
+        cp += sizeof(u_short);
 		if (newrr->r_size) {
 			bcopy(newrr->r_data, cp, newrr->r_size);
 			cp += newrr->r_size;

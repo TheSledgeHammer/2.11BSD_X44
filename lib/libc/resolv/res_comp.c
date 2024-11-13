@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)res_comp.c	6.13 (Berkeley) 3/13/88";
 int
 dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 	const u_char *msg, *eomorig, *comp_dn;
-	u_char *exp_dn;
+	char *exp_dn;
 	int length;
 {
 	register u_char *cp, *dn;
@@ -209,6 +209,116 @@ dn_skipname(comp_dn, eom)
 	return (cp - comp_dn);
 }
 
+/*%
+ * Verify that a domain name uses an acceptable character set.
+ *
+ * Note the conspicuous absence of ctype macros in these definitions.  On
+ * non-ASCII hosts, we can't depend on string literals or ctype macros to
+ * tell us anything about network-format data.  The rest of the BIND system
+ * is not careful about this, but for some reason, we're doing it right here.
+ */
+#define PERIOD 0x2e
+#define	hyphenchar(c) ((c) == 0x2d)
+#define bslashchar(c) ((c) == 0x5c)
+#define periodchar(c) ((c) == PERIOD)
+#define asterchar(c) ((c) == 0x2a)
+#define alphachar(c) (((c) >= 0x41 && (c) <= 0x5a) \
+		   || ((c) >= 0x61 && (c) <= 0x7a))
+#define digitchar(c) ((c) >= 0x30 && (c) <= 0x39)
+
+#define borderchar(c) (alphachar(c) || digitchar(c))
+#define middlechar(c) (borderchar(c) || hyphenchar(c))
+#define	domainchar(c) ((c) > 0x20 && (c) < 0x7f)
+
+int
+res_hnok(dn)
+	const char *dn;
+{
+	int pch = PERIOD, ch = *dn++;
+
+	while (ch != '\0') {
+		int nch = *dn++;
+
+		if (periodchar(ch)) {
+			;
+		} else if (periodchar(pch)) {
+			if (!borderchar(ch))
+				return (0);
+		} else if (periodchar(nch) || nch == '\0') {
+			if (!borderchar(ch))
+				return (0);
+		} else {
+			if (!middlechar(ch))
+				return (0);
+		}
+		pch = ch, ch = nch;
+	}
+	return (1);
+}
+
+/*%
+ * hostname-like (A, MX, WKS) owners can have "*" as their first label
+ * but must otherwise be as a host name.
+ */
+int
+res_ownok(dn)
+	const char *dn;
+{
+	if (asterchar(dn[0])) {
+		if (periodchar(dn[1]))
+			return (res_hnok(dn+2));
+		if (dn[1] == '\0')
+			return (1);
+	}
+	return (res_hnok(dn));
+}
+
+/*%
+ * SOA RNAMEs and RP RNAMEs can have any printable character in their first
+ * label, but the rest of the name has to look like a host name.
+ */
+int
+res_mailok(dn)
+	const char *dn;
+{
+	int ch, escaped = 0;
+
+	/* "." is a valid missing representation */
+	if (*dn == '\0')
+		return (1);
+
+	/* otherwise <label>.<hostname> */
+	while ((ch = *dn++) != '\0') {
+		if (!domainchar(ch))
+			return (0);
+		if (!escaped && periodchar(ch))
+			break;
+		if (escaped)
+			escaped = 0;
+		else if (bslashchar(ch))
+			escaped = 1;
+	}
+	if (periodchar(ch))
+		return (res_hnok(dn));
+	return (0);
+}
+
+/*%
+ * This function is quite liberal, since RFC1034's character sets are only
+ * recommendations.
+ */
+int
+res_dnok(dn)
+	const char *dn;
+{
+	int ch;
+
+	while ((ch = *dn++) != '\0')
+		if (!domainchar(ch))
+			return (0);
+	return (1);
+}
+
 /*
  * Search for expanded name from a list of previously compressed names.
  * Return the offset from msg if found or -1.
@@ -232,29 +342,33 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 			 * check for indirection
 			 */
 			switch (n & INDIR_MASK) {
-			case 0:		/* normal case, n == len */
+			case 0: /* normal case, n == len */
 				while (--n >= 0) {
 					if (*dn == '\\')
 						dn++;
-					if (*dn++ != *cp++)
+					if (*dn++ != *cp++) {
 						goto next;
+					}
 				}
-				if ((n = *dn++) == '\0' && *cp == '\0')
+				if ((n = *dn++) == '\0' && *cp == '\0') {
 					return (sp - msg);
-				if (n == '.')
+				}
+				if (n == '.') {
 					continue;
+				}
 				goto next;
 
-			default:	/* illegal type */
+			default: /* illegal type */
 				return (-1);
 
-			case INDIR_MASK:	/* indirection */
+			case INDIR_MASK: /* indirection */
 				cp = msg + (((n & 0x3f) << 8) | *cp);
 			}
 		}
-		if (*dn == '\0')
+		if (*dn == '\0') {
 			return (sp - msg);
-	next:	;
+		}
+next: ;
 	}
 	return (-1);
 }
@@ -269,7 +383,7 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 
 u_short
 _getshort(msgp)
-	u_char *msgp;
+	const u_char *msgp;
 {
 	register u_char *p = (u_char *) msgp;
 #ifdef vax
@@ -287,7 +401,7 @@ _getshort(msgp)
 
 u_long
 _getlong(msgp)
-	u_char *msgp;
+	const u_char *msgp;
 {
 	register u_char *p = (u_char *) msgp;
 	register u_long u;
@@ -295,6 +409,7 @@ _getlong(msgp)
 	u = *p++; u <<= 8;
 	u |= *p++; u <<= 8;
 	u |= *p++; u <<= 8;
+
 	return (u | *p);
 }
 

@@ -139,7 +139,7 @@ struct explore {
 	int e_protocol;
 	const char *e_protostr;
 	int e_wild;
-#define WILD_AF(ex)		((ex)->e_wild & 0x01)
+#define WILD_AF(ex)			((ex)->e_wild & 0x01)
 #define WILD_SOCKTYPE(ex)	((ex)->e_wild & 0x02)
 #define WILD_PROTOCOL(ex)	((ex)->e_wild & 0x04)
 };
@@ -1654,8 +1654,7 @@ _yp_getaddrinfo(void *rv, void *cb_data, va_list ap)
  * Caller must parse answer and determine whether it answers the question.
  */
 static int
-res_queryN(const char *name, /* domain name */ struct res_target *target,
-    res_state res)
+res_queryN(const char *name, /* domain name */ struct res_target *target, res_state res)
 {
 	u_char buf[MAXPACKET];
 	HEADER *hp;
@@ -1688,8 +1687,7 @@ res_queryN(const char *name, /* domain name */ struct res_target *target,
 			printf(";; res_nquery(%s, %d, %d)\n", name, class, type);
 #endif
 
-		n = res_nmkquery(res, QUERY, name, class, type, NULL, 0, NULL,
-		    buf, sizeof(buf));
+		n = res_nmkquery(res, QUERY, name, class, type, NULL, 0, NULL, buf, sizeof(buf));
 #ifdef RES_USE_EDNS0
 		if (n > 0 && (res->options & RES_USE_EDNS0) != 0)
 			n = res_nopt(res, n, buf, sizeof(buf), anslen);

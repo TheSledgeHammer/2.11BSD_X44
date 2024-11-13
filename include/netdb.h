@@ -190,8 +190,6 @@ struct addrinfo {
 #endif
 #endif /* (_POSIX_C_SOURCE - 0) >= 200112L || ... */
 
-//unsigned long	gethostid(void);
-
 __BEGIN_DECLS
 void			endhostent(void);
 void			endnetent(void);
@@ -215,6 +213,7 @@ void			sethostent(int);
 void			setnetent(int);
 void			setprotoent(int);
 void			setservent(int);
+void 			sethostfile(const char *);
 #if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 520 || defined(__BSD_VISIBLE)
 int				getaddrinfo(const char * __restrict, const char * __restrict, const struct addrinfo * __restrict, struct addrinfo ** __restrict);
 int				getnameinfo(const struct sockaddr * __restrict, socklen_t, char * __restrict, socklen_t, char * __restrict, socklen_t, int);

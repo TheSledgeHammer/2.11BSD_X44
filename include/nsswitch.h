@@ -129,6 +129,7 @@ typedef struct {
 #else
 #   define NS_NIS_CB(F,C)
 #endif
+#define	NS_NULL_CB		{ .src = NULL },
 
 /*
  * ns_src - `nsswitch source'

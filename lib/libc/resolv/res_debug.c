@@ -35,6 +35,8 @@ static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) 3/7/88";
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include "res_private.h"
 //extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
 //extern char *inet_ntoa();
 
@@ -83,6 +85,28 @@ p_query(msg)
 #ifdef DEBUG
 	fp_query(msg,stdout);
 #endif
+}
+
+
+/*
+ * Print the current options.
+ * This is intended to be primarily a debugging routine.
+ */
+void
+fp_resstat(statp, file)
+	struct __res_state *statp;
+	FILE *file;
+{
+	int bit;
+
+	fprintf(file, ";; res options:");
+	if (!statp)
+		statp = &_res;
+	for (bit = 0;  bit < 32;  bit++) {	/* XXX 32 - bad assumption! */
+		if (statp->options & (1<<bit))
+			fprintf(file, " %s", p_option(1<<bit));
+	}
+	putc('\n', file);
 }
 
 /*
