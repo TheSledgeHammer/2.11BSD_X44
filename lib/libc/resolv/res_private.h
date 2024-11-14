@@ -38,7 +38,7 @@
 
 __BEGIN_DECLS
 void	res_ninit(res_state);
-int		res_nmkquery(res_state, int, const char *, int, int, const u_char *, int, const u_char *, char *, int);
+int		res_nmkquery(res_state, int, const char *, int, int, const u_char *, int, const u_char *, u_char *, int);
 int		res_nquery(res_state, char *, int, int, u_char *, int);
 int		res_nquerydomain(res_state, char *, char *, int, int, u_char *, int);
 int		res_nsearch(res_state, char *, int, int, u_char *, int);
