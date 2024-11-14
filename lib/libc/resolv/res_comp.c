@@ -382,7 +382,7 @@ next: ;
  */
 
 u_short
-_getshort(msgp)
+getshort(msgp)
 	const u_char *msgp;
 {
 	register u_char *p = (u_char *) msgp;
@@ -400,7 +400,7 @@ _getshort(msgp)
 }
 
 u_long
-_getlong(msgp)
+getlong(msgp)
 	const u_char *msgp;
 {
 	register u_char *p = (u_char *) msgp;

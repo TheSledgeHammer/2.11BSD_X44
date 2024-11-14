@@ -34,10 +34,7 @@ static char sccsid[] = "@(#)res_query.c	5.3 (Berkeley) 4/5/88";
 #define MAXPACKET	1024
 #endif
 
-extern int errno;
 int h_errno;
-
-char *hostalias(const char *);
 
 /*
  * Formulate a normal query, send, and await answer.
@@ -49,7 +46,8 @@ char *hostalias(const char *);
  * Caller must parse answer and determine whether it answers the question.
  */
 int
-res_query(name, class, type, answer, anslen)
+res_nquery(statp, name, class, type, answer, anslen)
+	res_state statp;
 	char *name;		/* domain name */
 	int class, type;	/* class and type of query */
 	u_char *answer;		/* buffer to put answer */
@@ -59,27 +57,26 @@ res_query(name, class, type, answer, anslen)
 	HEADER *hp;
 	int n;
 
-	if ((_res.options & RES_INIT) == 0 && res_init() == -1)
+	if ((statp->options & RES_INIT) == 0 && res_ninit(statp) == -1)
 		return (-1);
 #ifdef DEBUG
-	if (_res.options & RES_DEBUG)
+	if (statp->options & RES_DEBUG)
 		printf("res_query(%s, %d, %d)\n", name, class, type);
 #endif
-	n = res_mkquery(QUERY, name, class, type, (char *)NULL, 0, NULL,
-	    buf, sizeof(buf));
+	n = res_nmkquery(statp, QUERY, name, class, type, (char *)NULL, 0, NULL, buf, sizeof(buf));
 
 	if (n <= 0) {
 #ifdef DEBUG
-		if (_res.options & RES_DEBUG)
+		if (statp->options & RES_DEBUG)
 			printf("res_query: mkquery failed\n");
 #endif
 		h_errno = NO_RECOVERY;
 		return (n);
 	}
-	n = res_send(buf, n, answer, anslen);
+	n = res_nsend(statp, buf, n, answer, anslen);
 	if (n < 0) {
 #ifdef DEBUG
-		if (_res.options & RES_DEBUG)
+		if (statp->options & RES_DEBUG)
 			printf("res_query: send error\n");
 #endif
 		h_errno = TRY_AGAIN;
@@ -89,7 +86,7 @@ res_query(name, class, type, answer, anslen)
 	hp = (HEADER *) answer;
 	if (hp->rcode != NOERROR || ntohs(hp->ancount) == 0) {
 #ifdef DEBUG
-		if (_res.options & RES_DEBUG)
+		if (statp->options & RES_DEBUG)
 			printf("rcode = %d, ancount=%d\n", hp->rcode,
 			    ntohs(hp->ancount));
 #endif
@@ -112,7 +109,7 @@ res_query(name, class, type, answer, anslen)
 		}
 		return (-1);
 	}
-	return(n);
+	return (n);
 }
 
 /*
@@ -124,8 +121,9 @@ res_query(name, class, type, answer, anslen)
  * (not, for example, for host address-to-name lookups in domain in-addr.arpa).
  */
 int
-res_search(name, class, type, answer, anslen)
-	char *name;		/* domain name */
+res_nsearch(statp, name, class, type, answer, anslen)
+	res_state statp;	/* res state */
+	char *name;			/* domain name */
 	int class, type;	/* class and type of query */
 	u_char *answer;		/* buffer to put answer */
 	int anslen;		/* size of answer */
@@ -133,51 +131,55 @@ res_search(name, class, type, answer, anslen)
 	register char *cp, **domain;
 	int n, ret;
 
-	if ((_res.options & RES_INIT) == 0 && res_init() == -1)
+	if ((statp->options & RES_INIT) == 0 && res_ninit(statp) == -1)
 		return (-1);
 
 	errno = 0;
 	h_errno = HOST_NOT_FOUND;		/* default, if we never query */
-	for (cp = name, n = 0; *cp; cp++)
-		if (*cp == '.')
+	for (cp = name, n = 0; *cp; cp++) {
+		if (*cp == '.') {
 			n++;
-	if (n == 0 && (cp = hostalias(name)))
-		return (res_query(cp, class, type, answer, anslen));
-
-	if ((n == 0 || *--cp != '.') && (_res.options & RES_DEFNAMES))
-	    for (domain = _res.dnsrch; *domain; domain++) {
-		h_errno = 0;
-		ret = res_querydomain(name, *domain, class, type,
-		    answer, anslen);
-		if (ret > 0)
-			return (ret);
-		/*
-		 * If no server present, give up.
-		 * If name isn't found in this domain,
-		 * keep trying higher domains in the search list
-		 * (if that's enabled).
-		 * On a NO_DATA error, keep trying, otherwise
-		 * a wildcard entry of another type could keep us
-		 * from finding this entry higher in the domain.
-		 * If we get some other error (non-authoritative negative
-		 * answer or server failure), then stop searching up,
-		 * but try the input name below in case it's fully-qualified.
-		 */
-		if (errno == ECONNREFUSED) {
-			h_errno = TRY_AGAIN;
-			return (-1);
 		}
-		if ((h_errno != HOST_NOT_FOUND && h_errno != NO_DATA) ||
-		    (_res.options & RES_DNSRCH) == 0)
-			break;
-	    }
+	}
+	if (n == 0 && (cp = hostalias(name)))
+		return (res_nquery(statp, cp, class, type, answer, anslen));
+
+	if ((n == 0 || *--cp != '.') && (statp->options & RES_DEFNAMES)) {
+		for (domain = statp->dnsrch; *domain; domain++) {
+			h_errno = 0;
+			ret = res_nquerydomain(statp, name, *domain, class, type, answer,
+					anslen);
+			if (ret > 0)
+				return (ret);
+			/*
+			 * If no server present, give up.
+			 * If name isn't found in this domain,
+			 * keep trying higher domains in the search list
+			 * (if that's enabled).
+			 * On a NO_DATA error, keep trying, otherwise
+			 * a wildcard entry of another type could keep us
+			 * from finding this entry higher in the domain.
+			 * If we get some other error (non-authoritative negative
+			 * answer or server failure), then stop searching up,
+			 * but try the input name below in case it's fully-qualified.
+			 */
+			if (errno == ECONNREFUSED) {
+				h_errno = TRY_AGAIN;
+				return (-1);
+			}
+			if ((h_errno != HOST_NOT_FOUND && h_errno != NO_DATA)
+					|| (statp->options & RES_DNSRCH) == 0)
+				break;
+		}
+	}
 	/*
 	 * If the search/default failed, try the name as fully-qualified,
 	 * but only if it contained at least one dot (even trailing).
 	 */
-	if (n)
-		return (res_querydomain(name, (char *)NULL, class, type,
-		    answer, anslen));
+	if (n) {
+		return (res_nquerydomain(statp, name, (char*) NULL, class, type, answer,
+				anslen));
+	}
 	return (-1);
 }
 
@@ -186,20 +188,20 @@ res_search(name, class, type, answer, anslen)
  * removing a trailing dot from name if domain is NULL.
  */
 int
-res_querydomain(name, domain, class, type, answer, anslen)
+res_nquerydomain(statp, name, domain, class, type, answer, anslen)
+	res_state statp;	/* res state */
 	char *name, *domain;
 	int class, type;	/* class and type of query */
 	u_char *answer;		/* buffer to put answer */
-	int anslen;		/* size of answer */
+	int anslen;			/* size of answer */
 {
 	char nbuf[2*MAXDNAME+2];
 	char *longname = nbuf;
 	int n;
 
 #ifdef DEBUG
-	if (_res.options & RES_DEBUG)
-		printf("res_querydomain(%s, %s, %d, %d)\n",
-		    name, domain, class, type);
+	if (statp->options & RES_DEBUG)
+		printf("res_querydomain(%s, %s, %d, %d)\n", name, domain, class, type);
 #endif
 	if (domain == NULL) {
 		/*
@@ -216,7 +218,7 @@ res_querydomain(name, domain, class, type, answer, anslen)
 		(void)sprintf(nbuf, "%.*s.%.*s",
 		    MAXDNAME, name, MAXDNAME, domain);
 
-	return (res_query(longname, class, type, answer, anslen));
+	return (res_nquery(statp, longname, class, type, answer, anslen));
 }
 
 char *

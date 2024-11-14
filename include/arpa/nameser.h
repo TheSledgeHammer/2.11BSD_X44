@@ -259,8 +259,8 @@ struct rrec {
 	const u_char *r_data;	/* pointer to data */
 };
 
-extern	u_short	_getshort(u_char *);
-extern	u_long	_getlong(u_char *);
+//extern	u_short	_getshort(u_char *);
+//extern	u_long	_getlong(u_char *);
 
 /*
  * Inline versions of get/put short/long.

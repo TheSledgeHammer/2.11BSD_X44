@@ -29,10 +29,11 @@ static char sccsid[] = "@(#)res_mkquery.c	6.7 (Berkeley) 3/7/88";
 #include "res_private.h"
 
 static struct rrec *res_newrr(const u_char *);
-static int res_rr_mkquery(int, const char *, int, int, const u_char *, int, struct rrec *, u_char *, int);
+static int res_rr_nmkquery(res_state, int, const char *, int, int, const u_char *, int, struct rrec *, u_char *, int);
 
 int
-res_mkquery(op, dname, class, type, data, datalen, newrr_in, buf, buflen)
+res_nmkquery(statp, op, dname, class, type, data, datalen, newrr_in, buf, buflen)
+	res_state statp;
 	int op;
 	const char *dname;
 	int class, type;
@@ -45,7 +46,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr_in, buf, buflen)
 	struct rrec *newrr;
 
 	newrr = res_newrr(newrr_in);
-	return (res_rr_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen));
+	return (res_rr_nmkquery(statp, op, dname, class, type, data, datalen, newrr, buf, buflen));
 }
 
 static struct rrec *
@@ -55,7 +56,7 @@ res_newrr(newrr_in)
 	struct rrec *newrr;
 
 	newrr = (struct rrec *)malloc(sizeof(struct rrec));
-	if (newrr_in != NULL) {
+	if ((newrr != NULL) && (newrr_in != NULL)) {
 		newrr->r_data = newrr_in;
 		return (newrr);
 	}
@@ -68,7 +69,8 @@ res_newrr(newrr_in)
  * Returns the size of the result or -1.
  */
 static int
-res_rr_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
+res_rr_nmkquery(statp, op, dname, class, type, data, datalen, newrr, buf, buflen)
+	res_state statp;	/* res state */
 	int op;			/* opcode of query */
 	const char *dname;		/* domain name */
 	int class, type;	/* class and type of query */
@@ -85,18 +87,18 @@ res_rr_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	char *dnptrs[10], **dpp, **lastdnptr;
 
 #ifdef DEBUG
-	if (_res.options & RES_DEBUG)
+	if (statp->options & RES_DEBUG)
 		printf("res_mkquery(%d, %s, %d, %d)\n", op, dname, class, type);
 #endif DEBUG
 	/*
 	 * Initialize header fields.
 	 */
 	hp = (HEADER *) buf;
-	hp->id = htons(++_res.id);
+	hp->id = htons(++statp->id);
 	hp->opcode = op;
 	hp->qr = hp->aa = hp->tc = hp->ra = 0;
-	hp->pr = (_res.options & RES_PRIMARY) != 0;
-	hp->rd = (_res.options & RES_RECURSE) != 0;
+	hp->pr = (statp->options & RES_PRIMARY) != 0;
+	hp->rd = (statp->options & RES_RECURSE) != 0;
 	hp->rcode = NOERROR;
 	hp->qdcount = 0;
 	hp->ancount = 0;
@@ -112,13 +114,13 @@ res_rr_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	 * If the domain name contains no dots (single label), then
 	 * append the default domain name to the one given.
 	 */
-	if ((_res.options & RES_DEFNAMES) && dname != 0 && dname[0] != '\0' &&
+	if ((statp->options & RES_DEFNAMES) && dname != 0 && dname[0] != '\0' &&
 	    index(dname, '.') == NULL) {
-		if (!(_res.options & RES_INIT))
+		if (!(statp->options & RES_INIT))
 			if (res_init() == -1)
 				return(-1);
-		if (_res.defdname[0] != '\0') {
-			(void)sprintf(dnbuf, "%s.%s", dname, _res.defdname);
+		if (statp->defdname[0] != '\0') {
+			(void)sprintf(dnbuf, "%s.%s", dname, statp->defdname);
 			dname = dnbuf;
 		}
 	}

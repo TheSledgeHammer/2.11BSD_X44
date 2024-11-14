@@ -52,10 +52,92 @@ struct __res_state _res = {
 		.nscount = 1,                       /* number of name servers */
 };
 
+
+void
+res_close(void)
+{
+	res_state statp;
+
+	statp = &_res;
+	res_nclose(statp);
+}
+
 int
 res_init(void)
 {
-	return (res_ninit(&_res));
+	res_state statp;
+
+	statp = &_res;
+	return (res_ninit(statp));
+}
+
+int
+res_mkquery(op, dname, class, type, data, datalen, newrr_in, buf, buflen)
+	int op;
+	const char *dname;
+	int class, type;
+	const u_char *data;
+	int datalen;
+	const u_char *newrr_in;
+	u_char *buf;
+	int buflen;
+{
+	res_state statp;
+
+	statp = &_res;
+	return (res_nmkquery(statp, op, dname, class, type, data, datalen, newrr_in, buf, buflen));
+}
+
+int
+res_search(name, class, type, answer, anslen)
+	char *name;
+	int class, type;
+	u_char *answer;
+	int anslen;
+{
+	res_state statp;
+
+	statp = &_res;
+	return (res_nsearch(statp, name, class, type, answer, anslen));
+}
+
+int
+res_send(buf, buflen, answer, anslen)
+	const u_char *buf;
+	int buflen;
+	u_char *answer;
+	int anslen;
+{
+	res_state statp;
+
+	statp = &_res;
+	return (res_nsend(statp, buf, buflen, answer, anslen));
+}
+
+int
+res_query(name, class, type, answer, anslen)
+	char *name;
+	int class, type;
+	u_char *answer;
+	int anslen;
+{
+	res_state statp;
+
+	statp = &_res;
+	return (res_nquery(statp, name, class, type, answer, anslen));
+}
+
+int
+res_querydomain(name, domain, class, type, answer, anslen)
+	char *name, *domain;
+	int class, type;
+	u_char *answer;
+	int anslen;
+{
+	res_state statp;
+
+	statp = &_res;
+	return (res_nquerydomain(statp, name, domain, class, type, answer, anslen));
 }
 
 /*
@@ -204,32 +286,6 @@ res_ninit(statp)
 	}
 	statp->options |= RES_INIT;
 	return (0);
-}
-
-/*%
- * This routine is for closing the socket if a virtual circuit is used and
- * the program wants to close it.  This provides support for endhostent()
- * which expects to close the socket.
- *
- * This routine is not expected to be user visible.
- */
-void
-res_nclose(statp)
-	res_state statp;
-{
-	int ns;
-
-	if (statp->_vcsock >= 0) {
-		(void) close(statp->_vcsock);
-		statp->_vcsock = -1;
-		statp->_flags &= ~(RES_F_VC | RES_F_CONN);
-	}
-	for (ns = 0; ns < statp->u.nscount; ns++) {
-		if (statp->u.nssocks[ns] != -1) {
-			(void) close(statp->u.nssocks[ns]);
-			statp->u.nssocks[ns] = -1;
-		}
-	}
 }
 
 res_state
