@@ -355,9 +355,6 @@ res_nsend(statp, buf, buflen, answer, anslen)
 					}
 				}
 				s = EXT(statp).nssocks[ns];
-				if (statp->_vcsock < 0) {
-					statp->_vcsock = s;
-				}
 //#if	BSD >= 43
 				if (statp->nscount == 1 || (retry == statp->retry && ns == 0)) {
 					/*
@@ -503,9 +500,7 @@ wait:
 			}
 		}
 	}
-	if (statp->_vcsock >= 0) {
-		//(void) close(s);
-		//s = -1;
+	if (statp->_vcsock >= 0 || s >= 0) {
 		res_nclose(statp);
 	}
 	if (v_circuit == 0)
@@ -517,7 +512,6 @@ wait:
 		errno = terrno;
 	return (-1);
 }
-
 
 /* Private */
 
@@ -612,10 +606,10 @@ res_nclose(statp)
 		statp->_vcsock = -1;
 		statp->_flags &= ~(RES_F_VC | RES_F_CONN);
 	}
-	for (ns = 0; ns < statp->u.nscount; ns++) {
-		if (statp->u.nssocks[ns] != -1) {
-			(void) close(statp->u.nssocks[ns]);
-			statp->u.nssocks[ns] = -1;
+	for (ns = 0; ns < EXT(statp).nscount; ns++) {
+		if (EXT(statp).nssocks[ns] >= 0 || EXT(statp).nssocks[ns] != -1) {
+			(void) close(EXT(statp).nssocks[ns]);
+			EXT(statp).nssocks[ns] = -1;
 		}
 	}
 }
