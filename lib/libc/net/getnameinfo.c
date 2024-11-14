@@ -55,7 +55,6 @@ __RCSID("$NetBSD: getnameinfo.c,v 1.45 2006/10/15 16:14:46 christos Exp $");
 #include <sys/socket.h>
 #include <net/if.h>
 #include <net/if_dl.h>
-//#include <net/if_ieee1394.h>
 #include <net/if_types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -67,6 +66,7 @@ __RCSID("$NetBSD: getnameinfo.c,v 1.45 2006/10/15 16:14:46 christos Exp $");
 #include <stddef.h>
 #include <string.h>
 
+#include "resolv/res_private.h"
 #include "servent.h"
 
 #ifdef __weak_alias
@@ -423,7 +423,6 @@ ip6_sa2str(sa6, buf, bufsiz, flags)
 }
 #endif /* INET6 */
 
-
 /*
  * getnameinfo_link():
  * Format a link-layer address into a printable format, paying attention to
@@ -437,7 +436,7 @@ getnameinfo_link(const struct sockaddr *sa, socklen_t salen,
 {
 	const struct sockaddr_dl *sdl =
 	    (const struct sockaddr_dl *)(const void *)sa;
-	const struct ieee1394_hwaddr *iha;
+    const u_char *laddr;
 	int n;
 
 	if (serv != NULL && servlen > 0)
@@ -451,30 +450,8 @@ getnameinfo_link(const struct sockaddr *sa, socklen_t salen,
 		}
 		return 0;
 	}
-
+    
 	switch (sdl->sdl_type) {
-#ifdef IFT_ECONET
-	case IFT_ECONET:
-		if (sdl->sdl_alen < 2)
-			return EAI_FAMILY;
-		if (CLLADDR(sdl)[1] == 0)
-			n = snprintf(host, hostlen, "%u", CLLADDR(sdl)[0]);
-		else
-			n = snprintf(host, hostlen, "%u.%u",
-			    CLLADDR(sdl)[1], CLLADDR(sdl)[0]);
-		if (n < 0 || (socklen_t) n >= hostlen) {
-			*host = '\0';
-			return EAI_MEMORY;
-		} else
-			return 0;
-#endif
-	case IFT_IEEE1394:
-		if (sdl->sdl_alen < sizeof(iha->iha_uid))
-			return EAI_FAMILY;
-		iha =
-		    (const struct ieee1394_hwaddr *)(const void *)CLLADDR(sdl);
-		return hexname(iha->iha_uid, sizeof(iha->iha_uid),
-		    host, hostlen);
 	/*
 	 * The following have zero-length addresses.
 	 * IFT_ATM	(net/if_atmsubr.c)
@@ -497,8 +474,8 @@ getnameinfo_link(const struct sockaddr *sa, socklen_t salen,
 	case IFT_HIPPI:
 	case IFT_ISO88025:
 	default:
-		return hexname((const u_int8_t *)CLLADDR(sdl),
-		    (size_t)sdl->sdl_alen, host, hostlen);
+        laddr = (const u_char *)sdl->sdl_data + sdl->sdl_nlen;
+		return hexname((const u_int8_t *)laddr, (size_t)sdl->sdl_alen, host, hostlen);
 	}
 }
 

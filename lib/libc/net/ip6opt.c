@@ -130,7 +130,7 @@ inet6_option_append(cmsg, typep, multx, plusy)
 	_DIAGASSERT(typep != NULL);
 
 	bp = (u_char *)(void *)cmsg + cmsg->cmsg_len;
-	eh = (struct ip6_ext *)(void *)CMSG_DATA(cmsg);
+	eh = (struct ip6_ext *)CMSG_DATA(cmsg);
 
 	/* argument validation */
 	if (multx != 1 && multx != 2 && multx != 4 && multx != 8)
@@ -209,7 +209,7 @@ inet6_option_alloc(cmsg, datalen, multx, plusy)
 	_DIAGASSERT(cmsg != NULL);
 
 	bp = (u_char *)(void *)cmsg + cmsg->cmsg_len;
-	eh = (struct ip6_ext *)(void *)CMSG_DATA(cmsg);
+	eh = (struct ip6_ext *)CMSG_DATA(cmsg);
 
 	/* argument validation */
 	if (multx != 1 && multx != 2 && multx != 4 && multx != 8)
@@ -287,7 +287,7 @@ inet6_option_next(cmsg, tptrp)
 	if (cmsg->cmsg_len < CMSG_SPACE(sizeof(struct ip6_ext)))
 		return(-1);
 	/* LINTED const castaway */
-	ip6e = (struct ip6_ext *)(void *)CMSG_DATA(cmsg);
+	ip6e = (struct ip6_ext *)(const void *)CMSG_DATA(cmsg);
 	hdrlen = (ip6e->ip6e_len + 1) << 3;
 	if (cmsg->cmsg_len < CMSG_SPACE(hdrlen))
 		return(-1);
@@ -350,7 +350,7 @@ inet6_option_find(cmsg, tptrp, type)
 	if (cmsg->cmsg_len < CMSG_SPACE(sizeof(struct ip6_ext)))
 		return(-1);
 	/* LINTED const castaway */
-	ip6e = (struct ip6_ext *)(void *)CMSG_DATA(cmsg);
+	ip6e = __UNCONST(CMSG_DATA(cmsg));
 	hdrlen = (ip6e->ip6e_len + 1) << 3;
 	if (cmsg->cmsg_len < CMSG_SPACE(hdrlen))
 		return(-1);	

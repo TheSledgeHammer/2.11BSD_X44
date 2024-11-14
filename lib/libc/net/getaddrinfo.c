@@ -87,6 +87,7 @@ __RCSID("$NetBSD: getaddrinfo.c,v 1.91.6.1 2009/01/26 00:27:34 snj Exp $");
 #include <rpcsvc/ypclnt.h>
 #endif
 
+#include "resolv/res_private.h"
 #include "servent.h"
 
 #ifdef __weak_alias
@@ -1125,11 +1126,11 @@ getanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 			continue;
 		}
 		cp += n;			/* name */
-		type = _getshort(cp);
+		type = getshort(cp);
  		cp += INT16SZ;			/* type */
-		class = _getshort(cp);
+		class = getshort(cp);
  		cp += INT16SZ + INT32SZ;	/* class, TTL */
-		n = _getshort(cp);
+		n = getshort(cp);
 		cp += INT16SZ;			/* len */
 		if (class != C_IN) {
 			/* XXX - debug? syslog? */
@@ -1162,8 +1163,8 @@ getanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 			}
 		} else if (type != qtype) {
 			if (type != T_KEY && type != T_SIG) {
-				struct syslog_data sd = SYSLOG_DATA_INIT;
-				syslog_r(LOG_NOTICE|LOG_AUTH, &sd,
+//				struct syslog_data sd = SYSLOG_DATA_INIT;
+				syslog(LOG_NOTICE|LOG_AUTH,
 	       "gethostby*.getanswer: asked for \"%s %s %s\", got type \"%s\"",
 				       qname, p_class(C_IN), p_type(qtype),
 				       p_type(type));
@@ -1175,9 +1176,8 @@ getanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 		case T_A:
 		case T_AAAA:
 			if (strcasecmp(canonname, bp) != 0) {
-				struct syslog_data sd = SYSLOG_DATA_INIT;
-				syslog_r(LOG_NOTICE|LOG_AUTH, &sd,
-				       AskedForGot, canonname, bp);
+//				struct syslog_data sd = SYSLOG_DATA_INIT;
+				syslog(LOG_NOTICE|LOG_AUTH, AskedForGot, canonname, bp);
 				cp += n;
 				continue;	/* XXX - had_error++ ? */
 			}
@@ -1337,7 +1337,7 @@ _dns_getaddrinfo(void *rv, void	*cb_data, va_list ap)
 		return NS_UNAVAIL;
 	}
 
-	res = __res_get_state();
+	res = res_get_state();
 	if (res == NULL) {
 		free(buf);
 		free(buf2);
@@ -1345,7 +1345,7 @@ _dns_getaddrinfo(void *rv, void	*cb_data, va_list ap)
 	}
 
 	if (res_searchN(name, &q, res) < 0) {
-		__res_put_state(res);
+		res_put_state(res);
 		free(buf);
 		free(buf2);
 		return NS_NOTFOUND;
@@ -1364,7 +1364,7 @@ _dns_getaddrinfo(void *rv, void	*cb_data, va_list ap)
 	free(buf);
 	free(buf2);
 	if (sentinel.ai_next == NULL) {
-		__res_put_state(res);
+		res_put_state(res);
 		switch (h_errno) {
 		case HOST_NOT_FOUND:
 			return NS_NOTFOUND;
@@ -1378,7 +1378,7 @@ _dns_getaddrinfo(void *rv, void	*cb_data, va_list ap)
 	if (res->nsort)
 		aisort(&sentinel, res);
 
-	__res_put_state(res);
+	res_put_state(res);
 
 	*((struct addrinfo **)rv) = sentinel.ai_next;
 	return NS_SUCCESS;
@@ -1917,13 +1917,14 @@ res_querydomainN(const char *name, const char *domain,
 		 * copy without '.' if present.
 		 */
 		n = strlen(name);
-		if (n + 1 > sizeof(nbuf)) {
+		if (n >= sizeof(nbuf)) {
 			h_errno = NO_RECOVERY;
 			return -1;
 		}
 		if (n > 0 && name[--n] == '.') {
-			strncpy(nbuf, name, n);
-			nbuf[n] = '\0';
+            //strncpy(nbuf, name, n);
+			//nbuf[n] = '\0';
+            snprintf(nbuf, sizeof(nbuf), "%*s", (int)n, name);
 		} else
 			longname = name;
 	} else {
