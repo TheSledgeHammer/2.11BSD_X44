@@ -1,3 +1,5 @@
+/*	$NetBSD: moddi3.c,v 1.6 2003/08/07 16:43:17 agc Exp $	*/
+
 /*-
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -14,11 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -35,8 +33,13 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)moddi3.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: moddi3.c,v 1.6 2003/08/07 16:43:17 agc Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -44,24 +47,24 @@ static char sccsid[] = "@(#)moddi3.c	8.1 (Berkeley) 6/4/93";
 /*
  * Return remainder after dividing two signed quads.
  *
- * XXX
- * If -1/2 should produce -1 on this machine, this code is wrong.
+ * XXX	we assume a % b < 0 iff a < 0, but this is actually machine-dependent.
  */
 quad_t
 __moddi3(a, b)
 	quad_t a, b;
 {
 	u_quad_t ua, ub, ur;
-	int neg;
+	int neg = 0;
+
+	ua = a;
+	ub = b;
 
 	if (a < 0)
-		ua = -(u_quad_t)a, neg = 1;
-	else
-		ua = a, neg = 0;
+		ua = -ua, neg ^= 1;
 	if (b < 0)
-		ub = -(u_quad_t)b, neg ^= 1;
-	else
-		ub = b;
+		ub = -ub;
 	(void)__qdivrem(ua, ub, &ur);
-	return (neg ? -ur : ur);
+	if (neg)
+		ur = -ur;
+	return (ur);
 }

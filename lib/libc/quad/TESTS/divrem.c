@@ -1,3 +1,5 @@
+/*	$NetBSD: divrem.c,v 1.4 2003/08/07 16:43:18 agc Exp $	*/
+
 /*-
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -14,11 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -42,14 +40,18 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)divrem.c	8.1 (Berkeley) 6/4/93";
+#else
+static char rcsid[] = "$NetBSD: divrem.c,v 1.4 2003/08/07 16:43:18 agc Exp $";
+#endif
 #endif /* not lint */
 
 #include <stdio.h>
 
 main()
 {
-	union { long long q; unsigned long v[2]; } a, b, q, r;
+	union { long long q; unsigned int v[2]; } a, b, q, r;
 	char buf[300];
 	extern long long __qdivrem(unsigned long long, unsigned long long,
 	    unsigned long long *);
@@ -58,19 +60,19 @@ main()
 		printf("> ");
 		if (fgets(buf, sizeof buf, stdin) == NULL)
 			break;
-		if (sscanf(buf, "%lu:%lu %lu:%lu",
+		if (sscanf(buf, "%u:%u %u:%u",
 			    &a.v[0], &a.v[1], &b.v[0], &b.v[1]) != 4 &&
-		    sscanf(buf, "0x%lx:%lx 0x%lx:%lx",
+		    sscanf(buf, "0x%x:%x 0x%x:%x",
 			    &a.v[0], &a.v[1], &b.v[0], &b.v[1]) != 4) {
 			printf("eh?\n");
 			continue;
 		}
 		q.q = __qdivrem(a.q, b.q, &r.q);
-		printf("%lx:%lx /%% %lx:%lx => q=%lx:%lx r=%lx:%lx\n",
+		printf("%x:%x /%% %x:%x => q=%x:%x r=%x:%x\n",
 		    a.v[0], a.v[1], b.v[0], b.v[1],
 		    q.v[0], q.v[1], r.v[0], r.v[1]);
-		printf("  = %lX%08lX / %lX%08lX => %lX%08lX\n\
-  = %lX%08lX %% %lX%08lX => %lX%08lX\n",
+		printf("  = %X%08X / %X%08X => %X%08X\n\
+  = %X%08X %% %X%08X => %X%08X\n",
 		    a.v[0], a.v[1], b.v[0], b.v[1], q.v[0], q.v[1],
 		    a.v[0], a.v[1], b.v[0], b.v[1], r.v[0], r.v[1]);
 	}

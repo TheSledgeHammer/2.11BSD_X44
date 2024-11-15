@@ -1,3 +1,5 @@
+/*	$NetBSD: floatdisf.c,v 1.6 2003/08/07 16:43:16 agc Exp $	*/
+
 /*-
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -14,11 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -35,8 +33,13 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)floatdisf.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: floatdisf.c,v 1.6 2003/08/07 16:43:16 agc Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -62,14 +65,14 @@ __floatdisf(x)
 
 	/*
 	 * Now u.ul[H] has the factor of 2^32 (or whatever) and u.ul[L]
-	 * has the units.  Ideally we could just set f, add LONG_BITS to
+	 * has the units.  Ideally we could just set f, add INT_BITS to
 	 * its exponent, and then add the units, but this is portable
 	 * code and does not know how to get at an exponent.  Machine-
 	 * specific code may be able to do this more efficiently.
 	 *
 	 * Using double here may be excessive paranoia.
 	 */
-	f = (double)u.ul[H] * ((1 << (LONG_BITS - 2)) * 4.0);
+	f = (double)u.ul[H] * (((int)1 << (INT_BITS - 2)) * 4.0);
 	f += u.ul[L];
 
 	return (neg ? -f : f);
