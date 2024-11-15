@@ -51,8 +51,11 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)herror.c	6.1 (Berkeley) 12/4/87";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include "port_before.h"
@@ -99,17 +102,17 @@ herror(s)
 	register struct iovec *v = iov;
 
 	if (s && *s) {
-		v->iov_base = s;
+		v->iov_base = __UNCONST(s);
 		v->iov_len = strlen(s);
 		v++;
-		v->iov_base = ": ";
+		v->iov_base = __UNCONST(": ");
 		v->iov_len = 2;
 		v++;
 	}
-	v->iov_base = h_errno < h_nerr ? h_errlist[h_errno] : "Unknown error";
+	v->iov_base = __UNCONST(h_errno < h_nerr ? h_errlist[h_errno] : "Unknown error");
 	v->iov_len = strlen(v->iov_base);
 	v++;
-	v->iov_base = "\n";
+	v->iov_base = __UNCONST("\n");
 	v->iov_len = 1;
 	writev(2, iov, (v - iov) + 1);
 }
