@@ -201,11 +201,11 @@ __weak_alias(regexec,_regexec)
  */
 int				/* 0 success, REG_NOMATCH failure */
 regexec(preg, string, nmatch, pmatch, eflags)
-const regex_t *preg;
-const char *string;
-size_t nmatch;
-regmatch_t pmatch[];
-int eflags;
+    const regex_t *preg;
+    const char *string;
+    size_t nmatch;
+    regmatch_t pmatch[];
+    int eflags;
 {
 	struct re_guts *g = preg->re_g;
 	char *s;
@@ -226,7 +226,7 @@ int eflags;
 	eflags = GOODFLAGS(eflags);
 
 	/* LINTED we believe that the regex routines do not change the string */
-	s = (char *)string;
+	s = __UNCONST(string);
 
 	if (g->nstates <= CHAR_BIT*sizeof(states1) && !(eflags&REG_LARGE))
 		return(smatcher(g, s, nmatch, pmatch, eflags));

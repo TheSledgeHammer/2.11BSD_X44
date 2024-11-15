@@ -103,7 +103,7 @@ extern "C" {
 #endif
 
 /* === regerror.c === */
-static char *regatoi(const regex_t *preg, char *localbuf, size_t buflen);
+static const char *regatoi(const regex_t *preg, char *localbuf, size_t buflen);
 
 #ifdef __cplusplus
 }
@@ -160,10 +160,10 @@ static const struct rerr {
 /* ARGSUSED */
 size_t
 regerror(errcode, preg, errbuf, errbuf_size)
-int errcode;
-const regex_t *preg;
-char *errbuf;
-size_t errbuf_size;
+    int errcode;
+    const regex_t *preg;
+    char *errbuf;
+    size_t errbuf_size;
 {
 	const struct rerr *r;
 	size_t len;
@@ -203,11 +203,11 @@ size_t errbuf_size;
  * regatoi - internal routine to implement REG_ATOI
  * static char *regatoi(const regex_t *preg, char *localbuf, size_t buflen);
  */
-static char *
+static const char *
 regatoi(preg, localbuf, buflen)
-const regex_t *preg;
-char *localbuf;
-size_t buflen;
+    const regex_t *preg;
+    char *localbuf;
+    size_t buflen;
 {
 	const struct rerr *r;
 
@@ -215,7 +215,7 @@ size_t buflen;
 		if (strcmp(r->name, preg->re_endp) == 0)
 			break;
 	if (r->code == 0)
-		return("0");
+		return ("0");
 
 	(void)snprintf(localbuf, buflen, "%d", r->code);
 	return(localbuf);

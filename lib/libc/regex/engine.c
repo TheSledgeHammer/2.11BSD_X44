@@ -174,11 +174,11 @@ static int nope = 0;
  */
 static int			/* 0 success, REG_NOMATCH failure */
 matcher(g, string, nmatch, pmatch, eflags)
-struct re_guts *g;
-char *string;
-size_t nmatch;
-regmatch_t pmatch[];
-int eflags;
+    struct re_guts *g;
+    char *string;
+    size_t nmatch;
+    regmatch_t pmatch[];
+    int eflags;
 {
 	char *endp;
 	int i;
@@ -351,11 +351,11 @@ done:
  */
 static char *			/* == stop (success) always */
 dissect(m, start, stop, startst, stopst)
-struct match *m;
-char *start;
-char *stop;
-sopno startst;
-sopno stopst;
+    struct match *m;
+    char *start;
+    char *stop;
+    sopno startst;
+    sopno stopst;
 {
 	int i;
 	sopno ss;	/* start sop of current subRE */
@@ -560,12 +560,12 @@ sopno stopst;
  */
 static char *			/* == stop (success) or NULL (failure) */
 backref(m, start, stop, startst, stopst, lev)
-struct match *m;
-char *start;
-char *stop;
-sopno startst;
-sopno stopst;
-sopno lev;			/* PLUS nesting level */
+    struct match *m;
+    char *start;
+    char *stop;
+    sopno startst;
+    sopno stopst;
+    sopno lev;			/* PLUS nesting level */
 {
 	int i;
 	sopno ss;	/* start sop of current subRE */
@@ -769,10 +769,10 @@ sopno lev;			/* PLUS nesting level */
 static char *			/* where tentative match ended, or NULL */
 fast(m, start, stop, startst, stopst)
 struct match *m;
-char *start;
-char *stop;
-sopno startst;
-sopno stopst;
+    char *start;
+    char *stop;
+    sopno startst;
+    sopno stopst;
 {
 	states st = m->st;
 	states fresh = m->fresh;
@@ -863,11 +863,11 @@ sopno stopst;
  */
 static char *			/* where it ended */
 slow(m, start, stop, startst, stopst)
-struct match *m;
-char *start;
-char *stop;
-sopno startst;
-sopno stopst;
+    struct match *m;
+    char *start;
+    char *stop;
+    sopno startst;
+    sopno stopst;
 {
 	states st = m->st;
 	states empty = m->empty;
@@ -963,12 +963,12 @@ sopno stopst;
  */
 static states
 step(g, start, stop, bef, ch, aft)
-struct re_guts *g;
-sopno start;			/* start state within strip */
-sopno stop;			/* state after stop state within strip */
-states bef;		/* states reachable before */
-int ch;				/* character or NONCHAR code */
-states aft;		/* states already known reachable after */
+    struct re_guts *g;
+    sopno start;			/* start state within strip */
+    sopno stop;			/* state after stop state within strip */
+    states bef;		/* states reachable before */
+    int ch;				/* character or NONCHAR code */
+    states aft;		/* states already known reachable after */
 {
 	cset *cs;
 	sop s;
@@ -1087,11 +1087,11 @@ states aft;		/* states already known reachable after */
  */
 static void
 print(m, caption, st, ch, d)
-struct match *m;
-char *caption;
-states st;
-int ch;
-FILE *d;
+    struct match *m;
+    char *caption;
+    states st;
+    int ch;
+    FILE *d;
 {
 	struct re_guts *g = m->g;
 	int i;
@@ -1125,12 +1125,12 @@ FILE *d;
  */
 static void
 at(m, title, start, stop, startst, stopst)
-struct match *m;
-char *title;
-char *start;
-char *stop;
-sopno startst;
-sopno stopst;
+    struct match *m;
+    char *title;
+    char *start;
+    char *stop;
+    sopno startst;
+    sopno stopst;
 {
 
 	_DIAGASSERT(m != NULL);
@@ -1161,7 +1161,7 @@ sopno stopst;
  */
 static char *			/* -> representation */
 pchar(ch)
-int ch;
+    int ch;
 {
 	static char pbuf[10];
 
