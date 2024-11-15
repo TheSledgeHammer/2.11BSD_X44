@@ -287,7 +287,7 @@ inet6_option_next(cmsg, tptrp)
 	if (cmsg->cmsg_len < CMSG_SPACE(sizeof(struct ip6_ext)))
 		return(-1);
 	/* LINTED const castaway */
-	ip6e = (struct ip6_ext *)CMSG_DATA(cmsg);
+	ip6e = __UNCONST(CCMSG_DATA(cmsg));
 	hdrlen = (ip6e->ip6e_len + 1) << 3;
 	if (cmsg->cmsg_len < CMSG_SPACE(hdrlen))
 		return(-1);
@@ -350,7 +350,7 @@ inet6_option_find(cmsg, tptrp, type)
 	if (cmsg->cmsg_len < CMSG_SPACE(sizeof(struct ip6_ext)))
 		return(-1);
 	/* LINTED const castaway */
-	ip6e = (struct ip6_ext *)CMSG_DATA(cmsg);
+	ip6e = __UNCONST(CCMSG_DATA(cmsg));
 	hdrlen = (ip6e->ip6e_len + 1) << 3;
 	if (cmsg->cmsg_len < CMSG_SPACE(hdrlen))
 		return(-1);	

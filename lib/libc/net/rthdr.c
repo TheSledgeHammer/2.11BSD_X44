@@ -181,7 +181,7 @@ inet6_rthdr_segments(cmsg)
 	_DIAGASSERT(cmsg != NULL);
 
 	/*LINTED const castaway*/
-	rthdr = (const struct ip6_rthdr *)CMSG_DATA(cmsg);
+	rthdr = (const struct ip6_rthdr *)CCMSG_DATA(cmsg);
 
 	switch (rthdr->ip6r_type) {
 	case IPV6_RTHDR_TYPE_0:
@@ -240,7 +240,7 @@ inet6_rthdr_getflags(cmsg, idx)
 	_DIAGASSERT(cmsg != NULL);
 
 	/*LINTED const castaway*/
-	rthdr = (const struct ip6_rthdr *)CMSG_DATA(cmsg);
+	rthdr = (const struct ip6_rthdr *)CCMSG_DATA(cmsg);
 
 	switch (rthdr->ip6r_type) {
 	case IPV6_RTHDR_TYPE_0:
