@@ -155,13 +155,14 @@ extern int				errno;	/* global error number */
 #define	ENOSYS			78		/* Function not implemented */
 
 #define	EFTYPE			79		/* Inappropriate file type or format */
-#define	EAUTH			80		/* Authentication error */
+#define	EAUTH			  80		/* Authentication error */
 #define	ENEEDAUTH		81		/* Need authenticator */
+#define	ENOMSG		  82		/* No message of desired type */
 
 /* Wide/multibyte-character handling, ISO/IEC 9899/AMD1:1995 */
-#define	EILSEQ		    82		/* Illegal byte sequence */
+#define	EILSEQ		    83		/* Illegal byte sequence */
 
-#define	ELAST			82		/* Must be equal largest errno */
+#define	ELAST			83		/* Must be equal largest errno */
 
 #ifdef	_KERNEL
 /* pseudo-errors returned inside kernel to modify return back to user mode */
