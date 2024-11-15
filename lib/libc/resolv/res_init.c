@@ -240,9 +240,9 @@ res_ninit(statp)
 	res_state statp;
 {
 	register FILE *fp;
-    register char *cp, **pp;
-    register int n;
-    char buf[BUFSIZ];
+    	register char *cp, **pp;
+    	register int n;
+    	char buf[BUFSIZ];
 	int nserv = 0;
 	int haveenv = 0;
 	int havesearch = 0;
@@ -374,7 +374,7 @@ res_ninit(statp)
 			/* read nameservers to query */
 			if (MATCH(buf, "nameserver") && nserv < maxns) {
 				struct addrinfo hints, *ai;
-			    char sbuf[NI_MAXSERV];
+			    	char sbuf[NI_MAXSERV];
 				const size_t minsiz = sizeof(statp->u.ext->nsaddr_list[0]);
 
 				cp = buf + sizeof("nameserver") - 1;
