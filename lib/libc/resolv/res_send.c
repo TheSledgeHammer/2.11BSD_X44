@@ -1,4 +1,86 @@
 /*
+ * Portions Copyright (C) 2004-2009  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) 1996-2003  Internet Software Consortium.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES WITH
+ * REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS.  IN NO EVENT SHALL ISC BE LIABLE FOR ANY SPECIAL, DIRECT,
+ * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+ * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+ * OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * Copyright (c) 1985, 1989, 1993
+ *    The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+/*
+ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies, and that
+ * the name of Digital Equipment Corporation not be used in advertising or
+ * publicity pertaining to distribution of the document or software without
+ * specific, written prior permission.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
+ */
+
+/*
+ * Copyright (c) 2005 by Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (c) 1996-1999 by Internet Software Consortium.
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS.  IN NO EVENT SHALL ISC BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.
  *
@@ -24,6 +106,12 @@ static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 #include <sys/socket.h>
 #include <sys/uio.h>
 
+#ifdef _SELECT_DECLARED
+#include <sys/select.h>
+#else
+#include <sys/poll.h>
+#endif
+
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 
@@ -34,14 +122,10 @@ static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 #include "res_private.h"
 
 #define EXT(res) ((res)->u)
-//extern int errno;
 
-//static int s = -1;	/* socket used for communications */
 static struct sockaddr no_addr;
 
-static socklen_t get_salen(const struct sockaddr *);
-static struct sockaddr *get_nsaddr(res_state, size_t);
-static int sock_eq(struct sockaddr *, struct sockaddr *);
+#ifdef _SELECT_DECLARED
 
 #ifndef FD_SET
 #define	NFDBITS			32
@@ -51,6 +135,13 @@ static int sock_eq(struct sockaddr *, struct sockaddr *);
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
 #define FD_ZERO(p)		bzero((char *)(p), sizeof(*(p)))
 #endif
+static int res_select(int, fd_set *, struct timeval *);
+#else
+static int res_poll(int, struct pollfd *, struct timeval *);
+#endif
+static socklen_t get_salen(const struct sockaddr *);
+static struct sockaddr *get_nsaddr(res_state, size_t);
+static int sock_eq(struct sockaddr *, struct sockaddr *);
 
 #define KEEPOPEN 		(RES_USEVC | RES_STAYOPEN)
 
@@ -68,7 +159,6 @@ res_nsend(statp, buf, buflen, answer, anslen)
 	int needclose = 0, connreset = 0;
 	u_short id, len;
 	char *cp;
-	fd_set dsmask;
 	struct timeval timeout;
 	HEADER *hp = (HEADER *) buf;
 	HEADER *anhp = (HEADER *) answer;
@@ -78,6 +168,11 @@ res_nsend(statp, buf, buflen, answer, anslen)
 	socklen_t peerlen;
 	int terrno = ETIMEDOUT;
 	char junk[16];
+#ifdef _SELECT_DECLARED
+	fd_set dsmask;
+#else
+	struct pollfd pollfd;
+#endif
 
 #ifdef DEBUG
 	if (statp->options & RES_DEBUG) {
@@ -407,9 +502,11 @@ res_nsend(statp, buf, buflen, answer, anslen)
 					timeout.tv_sec = 1;
 				timeout.tv_usec = 0;
 wait:
-				FD_ZERO(&dsmask);
-				FD_SET(s, &dsmask);
-				n = select(s + 1, &dsmask, (fd_set*) NULL, (fd_set*) NULL, &timeout);
+#ifdef _SELECT_DECLARED
+				n = res_select(s, &dsmask, &timeout);
+#else
+				n = res_poll(1, &pollfd, &timeout);
+#endif
 				if (n < 0) {
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
@@ -514,6 +611,37 @@ wait:
 }
 
 /* Private */
+#ifdef _SELECT_DECLARED
+static int
+res_select(s, dsmask, timeout)
+	int s;
+	fd_set *dsmask;
+	struct timeval *timeout;
+{
+	FD_ZERO(dsmask);
+	FD_SET(s, dsmask);
+	return (select(s + 1, dsmask, (fd_set*) NULL, (fd_set*) NULL, timeout));
+}
+
+#else
+
+static int
+res_poll(s, pollfd, timeout)
+	int s;
+	struct pollfd   *pollfd;
+	struct timeval *timeout;
+{
+	struct timespec timespec;
+	int polltimeout;
+
+	TIMEVAL_TO_TIMESPEC(timeout, &timespec);
+	polltimeout = 1000 * (int) timespec.tv_sec
+			+ (int) timespec.tv_nsec / 1000000;
+	pollfd->fd = s;
+	pollfd->events = POLLRDNORM;
+	return (poll(s, pollfd, polltimeout));
+}
+#endif
 
 static socklen_t
 get_salen(sa)

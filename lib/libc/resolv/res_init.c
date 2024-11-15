@@ -1,4 +1,69 @@
 /*
+ * Copyright (c) 1985, 1989, 1993
+ *    The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+/*
+ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies, and that
+ * the name of Digital Equipment Corporation not be used in advertising or
+ * publicity pertaining to distribution of the document or software without
+ * specific, written prior permission.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
+ */
+
+/*
+ * Copyright (c) 2004 by Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (c) 1996-1999 by Internet Software Consortium.
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS.  IN NO EVENT SHALL ISC BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+/*
  * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.
  *
@@ -29,6 +94,13 @@ static char sccsid[] = "@(#)res_init.c	6.8 (Berkeley) 3/7/88";
 #include <stdio.h>
 #include <string.h>
 
+#define HAVE_MD5
+#include <hash/md5.h>
+
+#ifndef _MD5_H_
+# define _MD5_H_ 1	/* make sure we do not include rsaref md5.h file */
+#endif
+
 #include "res_private.h"
 
 /*
@@ -41,6 +113,11 @@ static char sccsid[] = "@(#)res_init.c	6.8 (Berkeley) 3/7/88";
 #define	CONFFILE	_PATH_RESCONF
 #endif
 
+const char *res_get_nibblesuffix(res_state);
+const char *res_get_nibblesuffix2(res_state);
+void res_setservers(res_state, const union res_sockaddr_union *, int);
+int res_getservers(res_state, union res_sockaddr_union *, int);
+
 /*
  * Resolver state default settings
  */
@@ -52,7 +129,6 @@ struct __res_state _res = {
 		.nscount = 1,                       /* number of name servers */
 };
 
-
 void
 res_close(void)
 {
@@ -60,6 +136,15 @@ res_close(void)
 
 	statp = &_res;
 	res_nclose(statp);
+}
+
+void
+res_destroy(void)
+{
+	res_state statp;
+
+	statp = &_res;
+	res_ndestroy(statp);
 }
 
 int
@@ -155,11 +240,21 @@ res_ninit(statp)
 	res_state statp;
 {
 	register FILE *fp;
-	union res_sockaddr_union u[2];
     register char *cp, **pp;
     register int n;
     char buf[BUFSIZ];
 	int nserv = 0;
+	int haveenv = 0;
+	int havesearch = 0;
+	union res_sockaddr_union u[2];
+	int maxns = MAXNS;
+
+	if ((statp->options & RES_INIT) != 0U) {
+		res_ndestroy(statp);
+	}
+	statp->_rnd = malloc(16);
+	res_rndinit(statp);
+	statp->id = res_nrandomid(statp);
 
 	memset(u, 0, sizeof(u));
 #ifdef USELOOPBACK
@@ -196,12 +291,23 @@ res_ninit(statp)
 	statp->u.nscount = 0;
 	statp->u.ext = malloc(sizeof(*statp->u.ext));
 	if (statp->u.ext != NULL) {
-        memset(statp->u.ext, 0, sizeof(*statp->u.ext));
-        statp->u.ext->nsaddr_list[0].sin = statp->nsaddr;
-        strcpy(statp->u.ext->nsuffix, "ip6.arpa");
-        strcpy(statp->u.ext->nsuffix2, "ip6.int");
+		memset(statp->u.ext, 0, sizeof(*statp->u.ext));
+		statp->u.ext->nsaddr_list[0].sin = statp->nsaddr;
+		strcpy(statp->u.ext->nsuffix, "ip6.arpa");
+		strcpy(statp->u.ext->nsuffix2, "ip6.int");
+	} else {
+		h_errno = NETDB_INTERNAL;
+		maxns = 0;
 	}
 
+	res_setservers(statp, u, nserv);
+
+#define	MATCH(line, name) \
+	(!strncmp(line, name, sizeof(name) - 1) && \
+	(line[sizeof(name) - 1] == ' ' || \
+	 line[sizeof(name) - 1] == '\t'))
+
+	nserv = 0;
 	if ((fp = fopen(CONFFILE, "r")) != NULL) {
 		/* read the config file */
 		while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -210,12 +316,14 @@ res_ninit(statp)
 				continue;
 			}
 			/* read default domain name */
-			if (!strncmp(buf, "domain", sizeof("domain") - 1)) {
+			if (MATCH(buf, "domain")) {
+				if (haveenv) /*%< skip if have from environ */
+					continue;
 				cp = buf + sizeof("domain") - 1;
 				while (*cp == ' ' || *cp == '\t') {
 					cp++;
 				}
-				if (*cp == '\0') {
+				if (*cp == '\0' || (*cp == '\n')) {
 					continue;
 				}
 				(void) strncpy(statp->defdname, cp, sizeof(statp->defdname));
@@ -223,43 +331,97 @@ res_ninit(statp)
 				if ((cp = strpbrk(statp->defdname,  " \t\n")) != NULL) {
 					*cp = '\0';
 				}
+				havesearch = 0;
+				continue;
+			}
+			/* set search list */
+			if (MATCH(buf, "search")) {
+				if (haveenv) /*%< skip if have from environ */
+					continue;
+				cp = buf + sizeof("search") - 1;
+				while (*cp == ' ' || *cp == '\t')
+					cp++;
+				if ((*cp == '\0') || (*cp == '\n'))
+					continue;
+				strncpy(statp->defdname, cp, sizeof(statp->defdname) - 1);
+				statp->defdname[sizeof(statp->defdname) - 1] = '\0';
+				if ((cp = strchr(statp->defdname, '\n')) != NULL)
+					*cp = '\0';
+				/*
+				 * Set search list to be blank-separated strings
+				 * on rest of line.
+				 */
+				cp = statp->defdname;
+				pp = statp->dnsrch;
+				*pp++ = cp;
+				for (n = 0; *cp && pp < statp->dnsrch + MAXDNSRCH; cp++) {
+					if (*cp == ' ' || *cp == '\t') {
+						*cp = 0;
+						n = 1;
+					} else if (n) {
+						*pp++ = cp;
+						n = 0;
+					}
+				}
+				/* null terminate last domain if there are excess */
+				while (*cp != '\0' && *cp != ' ' && *cp != '\t')
+					cp++;
+				*cp = '\0';
+				*pp++ = 0;
+				havesearch = 1;
 				continue;
 			}
 			/* read nameservers to query */
-			if (!strncmp(buf, "nameserver", sizeof("nameserver") - 1)
-					&& (nserv < MAXNS)) {
+			if (MATCH(buf, "nameserver") && nserv < maxns) {
 				struct addrinfo hints, *ai;
+			    char sbuf[NI_MAXSERV];
+				const size_t minsiz = sizeof(statp->u.ext->nsaddr_list[0]);
 
 				cp = buf + sizeof("nameserver") - 1;
 				while (*cp == ' ' || *cp == '\t') {
 					cp++;
 				}
-				if (*cp == '\0') {
-					continue;
+				cp[strcspn(cp, ";# \t\n")] = '\0';
+				if ((*cp != '\0') && (*cp != '\n')) {
+					memset(&hints, 0, sizeof(hints));
+					hints.ai_family = PF_UNSPEC;
+					hints.ai_socktype = SOCK_DGRAM; /*dummy*/
+					hints.ai_flags = AI_NUMERICHOST;
+					sprintf(sbuf, "%u", NAMESERVER_PORT);
+					if (getaddrinfo(cp, sbuf, &hints, &ai) == 0
+							&& ai->ai_addrlen <= minsiz) {
+						if (statp->u.ext != NULL) {
+							memcpy(&statp->u.ext->nsaddr_list[nserv],
+									ai->ai_addr, ai->ai_addrlen);
+						}
+						if (ai->ai_addrlen
+								<= sizeof(statp->nsaddr_list[nserv])) {
+							memcpy(&statp->nsaddr_list[nserv], ai->ai_addr,
+									ai->ai_addrlen);
+						} else {
+							statp->nsaddr_list[nserv].sin_family = 0;
+						}
+						freeaddrinfo(ai);
+						nserv++;
+					}
 				}
-
-				statp->nsaddr_list[nserv].sin_addr.s_addr = inet_addr(cp);
-				if (statp->nsaddr_list[nserv].sin_addr.s_addr == (unsigned) -1) {
-					statp->nsaddr_list[nserv].sin_addr.s_addr = INADDR_ANY;
-				}
-				statp->nsaddr_list[nserv].sin_family = AF_INET;
-				statp->nsaddr_list[nserv].sin_port = htons(NAMESERVER_PORT);
-				if (++nserv >= MAXNS) {
-					nserv = MAXNS;
+				if (nserv >= maxns) {
+					nserv = maxns;
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG) {
 						printf("MAXNS reached, reading resolv.conf\n");
 					}
-#endif DEBUG
+#endif
 				}
 				continue;
 			}
 		}
-		if (nserv > 1) {
+		if (nserv > 0) {
 			statp->nscount = nserv;
 		}
 		(void) fclose(fp);
 	}
+
 	if (statp->defdname[0] == 0) {
 		if (gethostname(buf, sizeof(statp->defdname)) == 0 && (cp = strchr(buf, '.'))) {
 			(void) strcpy(statp->defdname, cp + 1);
@@ -268,24 +430,228 @@ res_ninit(statp)
 
 	/* Allow user to override the local domain definition */
 	if ((cp = getenv("LOCALDOMAIN")) != NULL) {
-		(void) strncpy(statp->defdname, cp, sizeof(statp->defdname));
+		(void) strncpy(statp->defdname, cp, sizeof(statp->defdname) - 1);
+		statp->defdname[sizeof(statp->defdname) - 1] = '\0';
+		haveenv++;
+
+		cp = statp->defdname;
+		pp = statp->dnsrch;
+		*pp++ = cp;
+		for (n = 0; *cp && pp < statp->dnsrch + MAXDNSRCH; cp++) {
+			if (*cp == '\n') { /* silly backwards compat */
+				break;
+			} else if (*cp == ' ' || *cp == '\t') {
+				*cp = 0;
+				n = 1;
+			} else if (n) {
+				*pp++ = cp;
+				n = 0;
+				havesearch = 1;
+			}
+		}
+		/* null terminate last domain if there are excess */
+		while (*cp != '\0' && *cp != ' ' && *cp != '\t' && *cp != '\n') {
+			cp++;
+		}
+		*cp = '\0';
+		*pp++ = 0;
 	}
 
 	/* find components of local domain that might be searched */
-	pp = statp->dnsrch;
-	*pp++ = statp->defdname;
-	for (cp = statp->defdname, n = 0; *cp; cp++) {
-		if (*cp == '.') {
-			n++;
+	if (havesearch == 0) {
+		pp = statp->dnsrch;
+		*pp++ = statp->defdname;
+		for (cp = statp->defdname, n = 0; *cp; cp++) {
+			if (*cp == '.') {
+				n++;
+			}
 		}
-	}
-	cp = statp->defdname;
-	for (; n >= LOCALDOMAINPARTS && pp < statp->dnsrch + MAXDNSRCH; n--) {
-		cp = index(cp, '.');
-		*pp++ = ++cp;
+		cp = statp->defdname;
+		for (; n >= LOCALDOMAINPARTS && pp < statp->dnsrch + MAXDNSRCH; n--) {
+			cp = strchr(cp, '.');
+			*pp++ = ++cp;
+		}
 	}
 	statp->options |= RES_INIT;
 	return (0);
+}
+
+static u_char srnd[16];
+
+void
+res_rndinit(statp)
+	res_state statp;
+{
+	struct timeval now;
+	uint32_t u32;
+	uint16_t u16;
+	u_char *rnd;
+
+	rnd = statp->_rnd == NULL ? srnd : statp->_rnd;
+	gettimeofday(&now, NULL);
+	u32 = (uint32_t)now.tv_sec;
+	memcpy(rnd, &u32, 4);
+	u32 = now.tv_usec;
+	memcpy(rnd + 4, &u32, 4);
+	u32 += (uint32_t)now.tv_sec;
+	memcpy(rnd + 8, &u32, 4);
+	u16 = getpid();
+	memcpy(rnd + 12, &u16, 2);
+}
+
+u_int
+res_nrandomid(statp)
+	res_state statp;
+{
+	struct timeval now;
+	uint16_t u16;
+	MD5_CTX ctx;
+	u_char *rnd;
+
+	rnd = statp->_rnd == NULL ? srnd : statp->_rnd;
+	gettimeofday(&now, NULL);
+	u16 = (uint16_t) (now.tv_sec ^ now.tv_usec);
+	memcpy(rnd + 14, &u16, 2);
+#ifndef HAVE_MD5
+	MD5_Init(&ctx);
+	MD5_Update(&ctx, rnd, 16);
+	MD5_Final(rnd, &ctx);
+#else
+	MD5Init(&ctx);
+	MD5Update(&ctx, rnd, 16);
+	MD5Final(rnd, &ctx);
+#endif
+	memcpy(&u16, rnd + 14, 2);
+	return ((u_int) u16);
+}
+
+void
+res_ndestroy(statp)
+	res_state statp;
+{
+	res_state_ext ext;
+
+	ext = statp->u.ext;
+	res_nclose(statp);
+	if (ext != NULL) {
+		free(ext);
+		statp->u.ext = NULL;
+	}
+	statp->options &= ~RES_INIT;
+}
+
+const char *
+res_get_nibblesuffix(statp)
+	res_state statp;
+{
+	if (statp->u.ext) {
+		return (statp->u.ext->nsuffix);
+	}
+	return ("ip6.arpa");
+}
+
+const char *
+res_get_nibblesuffix2(statp)
+	res_state statp;
+{
+	if (statp->u.ext) {
+		return (statp->u.ext->nsuffix2);
+	}
+	return ("ip6.int");
+}
+
+void
+res_setservers(statp, set, cnt)
+	res_state statp;
+	const union res_sockaddr_union *set;
+	int cnt;
+{
+	int i, nserv;
+	size_t size;
+
+	/* close open servers */
+	res_nclose(statp);
+
+	/* cause rtt times to be forgotten */
+	statp->u.nscount = 0;
+
+	nserv = 0;
+	for (i = 0; i < cnt && nserv < MAXNS; i++) {
+		switch (set->sin.sin_family) {
+		case AF_INET:
+			size = sizeof(set->sin);
+			if (statp->u.ext)
+				memcpy(&statp->u.ext->nsaddr_list[nserv], &set->sin, size);
+			if (size <= sizeof(statp->nsaddr_list[nserv]))
+				memcpy(&statp->nsaddr_list[nserv], &set->sin, size);
+			else
+				statp->nsaddr_list[nserv].sin_family = 0;
+			nserv++;
+			break;
+
+#ifdef HAS_INET6_STRUCTS
+		case AF_INET6:
+			size = sizeof(set->sin6);
+			if (statp->u.ext)
+				memcpy(&statp->u.ext->nsaddr_list[nserv], &set->sin6, size);
+			if (size <= sizeof(statp->nsaddr_list[nserv]))
+				memcpy(&statp->nsaddr_list[nserv], &set->sin6, size);
+			else
+				statp->nsaddr_list[nserv].sin_family = 0;
+			nserv++;
+			break;
+#endif
+
+		default:
+			break;
+		}
+		set++;
+	}
+	statp->nscount = nserv;
+}
+
+int
+res_getservers(statp, set, cnt)
+	res_state statp;
+	union res_sockaddr_union *set;
+	int cnt;
+{
+	int i;
+	size_t size;
+	uint16_t family;
+
+	for (i = 0; i < statp->nscount && i < cnt; i++) {
+		if (statp->u.ext)
+			family = statp->u.ext->nsaddr_list[i].sin.sin_family;
+		else
+			family = statp->nsaddr_list[i].sin_family;
+
+		switch (family) {
+		case AF_INET:
+			size = sizeof(set->sin);
+			if (statp->u.ext)
+				memcpy(&set->sin, &statp->u.ext->nsaddr_list[i], size);
+			else
+				memcpy(&set->sin, &statp->nsaddr_list[i], size);
+			break;
+
+#ifdef HAS_INET6_STRUCTS
+		case AF_INET6:
+			size = sizeof(set->sin6);
+			if (statp->u.ext)
+				memcpy(&set->sin6, &statp->u.ext->nsaddr_list[i], size);
+			else
+				memcpy(&set->sin6, &statp->nsaddr_list[i], size);
+			break;
+#endif
+
+		default:
+			set->sin.sin_family = 0;
+			break;
+		}
+		set++;
+	}
+	return (statp->nscount);
 }
 
 res_state

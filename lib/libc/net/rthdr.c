@@ -82,7 +82,7 @@ inet6_rthdr_init(bp, type)
 	_DIAGASSERT(bp != NULL);
 
 	ch = (struct cmsghdr *)bp;
-	rthdr = (struct ip6_rthdr *)(void *)CMSG_DATA(ch);
+	rthdr = (struct ip6_rthdr *)CMSG_DATA(ch);
 
 	ch->cmsg_level = IPPROTO_IPV6;
 	ch->cmsg_type = IPV6_RTHDR;
@@ -109,18 +109,18 @@ inet6_rthdr_add(cmsg, addr, flags)
 	_DIAGASSERT(cmsg != NULL);
 	_DIAGASSERT(addr != NULL);
 
-	rthdr = (struct ip6_rthdr *)(void *)CMSG_DATA(cmsg);
+	rthdr = (struct ip6_rthdr *)CMSG_DATA(cmsg);
 
 	switch (rthdr->ip6r_type) {
 	case IPV6_RTHDR_TYPE_0:
 	{
-		struct ip6_rthdr0 *rt0 = (struct ip6_rthdr0 *)(void *)rthdr;
+		struct ip6_rthdr0 *rt0 = (struct ip6_rthdr0 *)rthdr;
 		if (flags != IPV6_RTHDR_LOOSE)
 			return (-1);
 		if (rt0->ip6r0_segleft == 23)
 			return (-1);
 		rt0->ip6r0_segleft++;
-		(void)memcpy(((caddr_t)(void *)rt0) +
+		(void)memcpy(((caddr_t)rt0) +
 		    ((rt0->ip6r0_len + 1) << 3), addr, sizeof(struct in6_addr));
 		rt0->ip6r0_len += sizeof(struct in6_addr) >> 3;
 		cmsg->cmsg_len = CMSG_LEN((rt0->ip6r0_len + 1) << 3);
@@ -142,12 +142,12 @@ inet6_rthdr_lasthop(cmsg, flags)
 
 	_DIAGASSERT(cmsg != NULL);
 
-	rthdr = (struct ip6_rthdr *)(void *)CMSG_DATA(cmsg);
+	rthdr = (struct ip6_rthdr *)CMSG_DATA(cmsg);
 
 	switch (rthdr->ip6r_type) {
 	case IPV6_RTHDR_TYPE_0:
 	{
-		struct ip6_rthdr0 *rt0 = (struct ip6_rthdr0 *)(void *)rthdr;
+		struct ip6_rthdr0 *rt0 = (struct ip6_rthdr0 *)rthdr;
 		if (flags != IPV6_RTHDR_LOOSE)
 			return (-1);
 		if (rt0->ip6r0_segleft > 23)
@@ -181,13 +181,13 @@ inet6_rthdr_segments(cmsg)
 	_DIAGASSERT(cmsg != NULL);
 
 	/*LINTED const castaway*/
-	rthdr = (const struct ip6_rthdr *)(const void *)CMSG_DATA(cmsg);
+	rthdr = (const struct ip6_rthdr *)CMSG_DATA(cmsg);
 
 	switch (rthdr->ip6r_type) {
 	case IPV6_RTHDR_TYPE_0:
 	{
 		const struct ip6_rthdr0 *rt0 =
-		    (const struct ip6_rthdr0 *)(const void *)rthdr;
+		    (const struct ip6_rthdr0 *)rthdr;
 
 		if (rt0->ip6r0_len % 2 || 46 < rt0->ip6r0_len)
 			return (-1);
@@ -209,12 +209,12 @@ inet6_rthdr_getaddr(cmsg, idx)
 
 	_DIAGASSERT(cmsg != NULL);
 
-	rthdr = (struct ip6_rthdr *)(void *)CMSG_DATA(cmsg);
+	rthdr = (struct ip6_rthdr *)CMSG_DATA(cmsg);
 
 	switch (rthdr->ip6r_type) {
 	case IPV6_RTHDR_TYPE_0:
 	{
-		struct ip6_rthdr0 *rt0 = (struct ip6_rthdr0 *)(void *)rthdr;
+		struct ip6_rthdr0 *rt0 = (struct ip6_rthdr0 *)rthdr;
 		int naddr;
 
 		if (rt0->ip6r0_len % 2 || 46 < rt0->ip6r0_len)
@@ -222,7 +222,7 @@ inet6_rthdr_getaddr(cmsg, idx)
 		naddr = (rt0->ip6r0_len * 8) / sizeof(struct in6_addr);
 		if (idx <= 0 || naddr < idx)
 			return NULL;
-		return ((struct in6_addr *)(void *)(rt0 + 1)) + idx;
+		return ((struct in6_addr *)(rt0 + 1)) + idx;
 	}
 
 	default:
@@ -240,13 +240,12 @@ inet6_rthdr_getflags(cmsg, idx)
 	_DIAGASSERT(cmsg != NULL);
 
 	/*LINTED const castaway*/
-	rthdr = (const struct ip6_rthdr *)(const void *)CMSG_DATA(cmsg);
+	rthdr = (const struct ip6_rthdr *)CMSG_DATA(cmsg);
 
 	switch (rthdr->ip6r_type) {
 	case IPV6_RTHDR_TYPE_0:
 	{
-		const struct ip6_rthdr0 *rt0 = (const struct ip6_rthdr0 *)
-		(const void *)rthdr;
+		const struct ip6_rthdr0 *rt0 = (const struct ip6_rthdr0 *)rthdr;
 		int naddr;
 
 		if (rt0->ip6r0_len % 2 || 46 < rt0->ip6r0_len)

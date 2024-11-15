@@ -129,7 +129,7 @@ inet6_option_append(cmsg, typep, multx, plusy)
 	_DIAGASSERT(cmsg != NULL);
 	_DIAGASSERT(typep != NULL);
 
-	bp = (u_char *)(void *)cmsg + cmsg->cmsg_len;
+	bp = (u_char *)cmsg + cmsg->cmsg_len;
 	eh = (struct ip6_ext *)CMSG_DATA(cmsg);
 
 	/* argument validation */
@@ -143,13 +143,13 @@ inet6_option_append(cmsg, typep, multx, plusy)
 	 * first 2 bytes(for next header and length fields) of
 	 * the option header.
 	 */
-	if (bp == (u_char *)(void *)eh) {
+	if (bp == (u_char *)eh) {
 		bp += 2;
 		cmsg->cmsg_len += 2;
 	}
 
 	/* calculate pad length before the option. */
-	off = bp - (u_char *)(void *)eh;
+	off = bp - (u_char *)eh;
 	padlen = (((off % multx) + (multx - 1)) & ~(multx - 1)) -
 		(off % multx);
 	padlen += plusy;
@@ -168,14 +168,14 @@ inet6_option_append(cmsg, typep, multx, plusy)
 	cmsg->cmsg_len += optlen;
 
 	/* calculate pad length after the option and insert the padding */
-	off = bp - (u_char *)(void *)eh;
+	off = bp - (u_char *)eh;
 	padlen = ((off + 7) & ~7) - off;
 	inet6_insert_padopt(bp, padlen);
 	bp += padlen;
 	cmsg->cmsg_len += padlen;
 
 	/* update the length field of the ip6 option header */
-	off = bp - (u_char *)(void *)eh;
+	off = bp - (u_char *)eh;
 	eh->ip6e_len = (off >> 3) - 1;
 
 	return(0);
@@ -208,7 +208,7 @@ inet6_option_alloc(cmsg, datalen, multx, plusy)
 
 	_DIAGASSERT(cmsg != NULL);
 
-	bp = (u_char *)(void *)cmsg + cmsg->cmsg_len;
+	bp = (u_char *)cmsg + cmsg->cmsg_len;
 	eh = (struct ip6_ext *)CMSG_DATA(cmsg);
 
 	/* argument validation */
@@ -222,13 +222,13 @@ inet6_option_alloc(cmsg, datalen, multx, plusy)
 	 * first 2 bytes(for next header and length fields) of
 	 * the option header.
 	 */
-	if (bp == (u_char *)(void *)eh) {
+	if (bp == (u_char *)eh) {
 		bp += 2;
 		cmsg->cmsg_len += 2;
 	}
 
 	/* calculate pad length before the option. */
-	off = bp - (u_char *)(void *)eh;
+	off = bp - (u_char *)eh;
 	padlen = (((off % multx) + (multx - 1)) & ~(multx - 1)) -
 		(off % multx);
 	padlen += plusy;
@@ -243,14 +243,14 @@ inet6_option_alloc(cmsg, datalen, multx, plusy)
 	cmsg->cmsg_len += datalen;
 
 	/* calculate pad length after the option and insert the padding */
-	off = bp - (u_char *)(void *)eh;
+	off = bp - (u_char *)eh;
 	padlen = ((off + 7) & ~7) - off;
 	inet6_insert_padopt(bp, padlen);
 	bp += padlen;
 	cmsg->cmsg_len += padlen;
 
 	/* update the length field of the ip6 option header */
-	off = bp - (u_char *)(void *)eh;
+	off = bp - (u_char *)eh;
 	eh->ip6e_len = (off >> 3) - 1;
 
 	return(retval);
@@ -287,7 +287,7 @@ inet6_option_next(cmsg, tptrp)
 	if (cmsg->cmsg_len < CMSG_SPACE(sizeof(struct ip6_ext)))
 		return(-1);
 	/* LINTED const castaway */
-	ip6e = (struct ip6_ext *)(const void *)CMSG_DATA(cmsg);
+	ip6e = (struct ip6_ext *)CMSG_DATA(cmsg);
 	hdrlen = (ip6e->ip6e_len + 1) << 3;
 	if (cmsg->cmsg_len < CMSG_SPACE(hdrlen))
 		return(-1);
@@ -297,9 +297,9 @@ inet6_option_next(cmsg, tptrp)
 	 * simply return the 1st option.
 	 * Otherwise, search the option list for the next option.
 	 */
-	lim = (u_int8_t *)(void *)ip6e + hdrlen;
+	lim = (u_int8_t *)ip6e + hdrlen;
 	if (*tptrp == NULL)
-		*tptrp = (u_int8_t *)(void *)(ip6e + 1);
+		*tptrp = (u_int8_t *)(ip6e + 1);
 	else {
 		if ((optlen = ip6optlen(*tptrp, lim)) == 0)
 			return(-1);
@@ -350,7 +350,7 @@ inet6_option_find(cmsg, tptrp, type)
 	if (cmsg->cmsg_len < CMSG_SPACE(sizeof(struct ip6_ext)))
 		return(-1);
 	/* LINTED const castaway */
-	ip6e = __UNCONST(CMSG_DATA(cmsg));
+	ip6e = (struct ip6_ext *)CMSG_DATA(cmsg);
 	hdrlen = (ip6e->ip6e_len + 1) << 3;
 	if (cmsg->cmsg_len < CMSG_SPACE(hdrlen))
 		return(-1);	
@@ -360,9 +360,9 @@ inet6_option_find(cmsg, tptrp, type)
 	 * search from the beginning of the option list.
 	 * Otherwise, search from *the next option* of the specified point.
 	 */
-	lim = (u_int8_t *)(void *)ip6e + hdrlen;
+	lim = (u_int8_t *)ip6e + hdrlen;
 	if (*tptrp == NULL)
-		*tptrp = (u_int8_t *)(void *)(ip6e + 1);
+		*tptrp = (u_int8_t *)(ip6e + 1);
 	else {
 		if ((optlen = ip6optlen(*tptrp, lim)) == 0)
 			return(-1);

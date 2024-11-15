@@ -44,6 +44,10 @@
 #include "namespace.h"
 #include <sys/types.h>
 #include <sys/time.h>
+#ifdef _SELECT_DECLARED
+#include <sys/select.h>
+#endif
+
 #include <stdio.h>	/* For NULL */
 #include <unistd.h>
 
@@ -59,7 +63,7 @@ __weak_alias(usleep,_usleep)
  * Nothing is returned and if less than ~20000 microseconds is specified the
  * select will return without any delay at all.
 */
-
+#ifndef _SELECT_DECLARED
 void
 usleep(micros)
 	long micros;
@@ -73,7 +77,8 @@ usleep(micros)
 	}
 }
 
-#ifdef notyet
+#else
+
 void
 usleep(micros)
 	long micros;

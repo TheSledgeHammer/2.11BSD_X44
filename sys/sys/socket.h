@@ -352,28 +352,31 @@ struct cmsghdr {
 	/* followed by	u_char  cmsg_data[]; */
 };
 
+#define _CMSG_ALIGN(n)		_ALIGN(n)
+
 /* Round len up to next alignment boundary */
 #ifdef _KERNEL
-#define CMSG_ALIGN(n)		_ALIGN(n)
+#define CMSG_ALIGN(n)		_CMSG_ALIGN(n)
 #endif
 
 /* given pointer to struct cmsghdr, return pointer to data */
-#define	CMSG_DATA(cmsg)		((u_char *)((cmsg) + _ALIGN(sizeof(struct cmsghdr))))
+#define	CMSG_DATA(cmsg)		((unsigned char *)((cmsg) + _CMSG_ALIGN(sizeof(struct cmsghdr))))
 
 /* given pointer to struct cmsghdr, return pointer to next cmsghdr */
 #define	CMSG_NXTHDR(mhdr, cmsg)										\
-	(((caddr_t)(cmsg) + (cmsg)->cmsg_len + sizeof(struct cmsghdr) > \
+	(((caddr_t)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len) + 			\
+			_CMSG_ALIGN(sizeof(struct cmsghdr)) > 					\
 	    (mhdr)->msg_control + (mhdr)->msg_controllen) ? 			\
 	    (struct cmsghdr *)NULL : 									\
-	    (struct cmsghdr *)((caddr_t)(cmsg) + ALIGN((cmsg)->cmsg_len)))
+	    (struct cmsghdr *)((caddr_t)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len)))
 
 #define	CMSG_FIRSTHDR(mhdr)	((struct cmsghdr *)(mhdr)->msg_control)
 
 /* Length of the contents of a control message of length len */
-#define	CMSG_LEN(len)	(_ALIGN(sizeof(struct cmsghdr)) + (len))
+#define	CMSG_LEN(len)	(_CMSG_ALIGN(sizeof(struct cmsghdr)) + (len))
 
 /* Length of the space taken up by a padded control message of length len */
-#define	CMSG_SPACE(len)	(_ALIGN(sizeof(struct cmsghdr)) + _ALIGN(len))
+#define	CMSG_SPACE(len)	(_CMSG_ALIGN(sizeof(struct cmsghdr)) + _CMSG_ALIGN(len))
 
 /* "Socket"-level control message types: */
 #define	SCM_RIGHTS		0x01		/* access rights (array of int) */

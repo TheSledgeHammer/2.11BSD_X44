@@ -69,6 +69,7 @@ struct __res_state {
 		int			nssocks[MAXNS];
 		struct __res_state_ext	*ext;				/* extension for IPv6 */
 	} u;
+	u_char			*_rnd;				/* PRIVATE: random state */
 };
 
 union res_sockaddr_union {
@@ -196,5 +197,6 @@ int	 	res_querydomain(char *, char *, int, int, u_char *, int);
 int	 	res_search(char *, int, int, u_char *, int);
 int	 	res_send(const u_char *, int, u_char *, int);
 void    res_close(void);
+void    res_destroy(void);
 __END_DECLS
 #endif /* !_RESOLV_H_ */

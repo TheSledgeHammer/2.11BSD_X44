@@ -44,5 +44,8 @@ int		res_nquerydomain(res_state, char *, char *, int, int, u_char *, int);
 int		res_nsearch(res_state, char *, int, int, u_char *, int);
 int		res_nsend(res_state, const u_char *, int, u_char *, int);
 void	res_nclose(res_state);
+void	res_ndestroy(res_state);
+void	res_rndinit(res_state);
+u_int	res_nrandomid(res_state);
 __END_DECLS
 #endif /* _RES_PRIVATE_H_ */

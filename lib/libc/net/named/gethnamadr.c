@@ -55,7 +55,7 @@ static FILE *hostf = NULL;
 static char hostaddr[MAXADDRS];
 static char *host_addrs[2];
 static int stayopen = 0;
-static char *any();
+static char *any(char *, const char *);
 
 #if PACKETSZ > 1024
 #define	MAXPACKET	PACKETSZ
@@ -370,17 +370,9 @@ again:
 static char *
 any(cp, match)
 	register char *cp;
-	char *match;
+	const char *match;
 {
-	register char *mp, c;
-
-	while (c == *cp) {
-		for (mp = match; *mp; mp++)
-			if (*mp == c)
-				return (cp);
-		cp++;
-	}
-	return ((char *)0);
+	return (strpbrk(cp, match));
 }
 
 struct hostent *
