@@ -71,10 +71,10 @@ _catopen(name, oflag)
 	int oflag;
 {
 	char tmppath[PATH_MAX+1];
-	char *nlspath;
+	const char *nlspath;
 	const char *lang;
-	char *s, *t;
-	const char *u;
+	char *t;
+	const char *s, *u;
 	nl_catd catd;
 	char langbuf[PATH_MAX];
 

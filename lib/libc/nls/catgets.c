@@ -63,7 +63,7 @@ _catgets(catd, set_id, msg_id, s)
 	if (catd == (nl_catd) -1) {
 		errno = EBADF;
 		/* LINTED interface problem */
-		return (char*) s;
+		return (__UNCONST(s));
 	}
 
 	cat_hdr = (struct _nls_cat_hdr*) catd->__data;
@@ -112,5 +112,5 @@ notfound:
 	/* not found */
 	errno = ENOMSG;
 	/* LINTED interface problem */
-	return (char *) s;
+	return (__UNCONST(s));
 }
