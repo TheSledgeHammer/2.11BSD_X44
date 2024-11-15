@@ -286,7 +286,7 @@ res_rr_nmkquery(statp, op, dname, class, type, data, datalen, newrr, buf, buflen
 		putlong((long) 0, cp);
 		cp += sizeof(u_long);
 		putshort(newrr->r_size, cp);
-        cp += sizeof(u_short);
+	        cp += sizeof(u_short);
 		if (newrr->r_size) {
 			bcopy(newrr->r_data, cp, newrr->r_size);
 			cp += newrr->r_size;
