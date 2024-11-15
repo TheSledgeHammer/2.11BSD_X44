@@ -36,9 +36,9 @@
 #ifndef _I386_ENDIAN_H_
 #define	_I386_ENDIAN_H_
 
-#include <sys/endian.h>
-
 #define _BYTE_ORDER _LITTLE_ENDIAN
+
+#include <sys/endian.h>
 
 #ifdef __GNUC__
 
