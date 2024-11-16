@@ -94,13 +94,16 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 /*
  * Send query to name server and wait for reply.
  */
 
+#include "namespace.h"
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -113,11 +116,14 @@ static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 #endif
 
 #include <netinet/in.h>
+//#include <netinet6/in6.h>
 #include <arpa/nameser.h>
 
 #include <errno.h>
 #include <resolv.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "res_private.h"
 
@@ -153,19 +159,19 @@ res_nsend(statp, buf, buflen, answer, anslen)
 	u_char *answer;
 	int anslen;
 {
-	register int n, s;
+	register int n, s = 0;
 	int retry, v_circuit, resplen, ns;
 	int gotsomewhere = 0, connected = 0;
 	int needclose = 0, connreset = 0;
 	u_short id, len;
-	char *cp;
+	u_char *cp;
 	struct timeval timeout;
-	HEADER *hp = (HEADER *) buf;
+	const HEADER *hp = (const HEADER *) buf;
 	HEADER *anhp = (HEADER *) answer;
 	u_int badns;		/* XXX NSMAX can't exceed #/bits per this */
 	struct iovec iov[2];
 	struct sockaddr_storage peer;
-	socklen_t peerlen;
+	int peerlen;
 	int terrno = ETIMEDOUT;
 	char junk[16];
 #ifdef _SELECT_DECLARED
@@ -179,7 +185,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 		printf("res_send()\n");
 		p_query(buf);
 	}
-#endif DEBUG
+#endif /* DEBUG */
 	if (!(statp->options & RES_INIT)) {
 		if (res_ninit(statp) == -1) {
 			return (-1);
@@ -304,7 +310,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 			if (statp->options & RES_DEBUG)
 				printf("Querying server (# %d) address = %s\n", ns + 1,
 						inet_ntoa(statp->nsaddr_list[ns].sin_addr));
-#endif DEBUG
+#endif /* DEBUG */
 
 			if (v_circuit) {
 				int truncated = 0;
@@ -332,7 +338,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 #ifdef DEBUG
 						if (statp->options & RES_DEBUG)
 							perror("socket failed");
-#endif DEBUG
+#endif /* DEBUG */
 						continue;
 					}
 					if (connect(statp->_vcsock, nsap, nsaplen) < 0) {
@@ -340,7 +346,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 #ifdef DEBUG
 						if (statp->options & RES_DEBUG)
 							perror("connect failed");
-#endif DEBUG
+#endif /* DEBUG */
 						res_nclose(statp);
 						continue;
 					}
@@ -353,14 +359,14 @@ res_nsend(statp, buf, buflen, answer, anslen)
 				len = htons((u_short) buflen);
 				iov[0].iov_base = (caddr_t) &len;
 				iov[0].iov_len = sizeof(len);
-				iov[1].iov_base = buf;
+				iov[1].iov_base = __UNCONST(buf);
 				iov[1].iov_len = buflen;
 				if (writev(statp->_vcsock, iov, 2) != sizeof(len) + buflen) {
 					terrno = errno;
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
 						perror("write failed");
-#endif DEBUG
+#endif /* DEBUG */
 					res_nclose(statp);
 					continue;
 				}
@@ -379,7 +385,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
 						perror("read failed");
-#endif DEBUG
+#endif /* DEBUG */
 					res_nclose(statp);
 					/*
 					 * A long running process might get its TCP
@@ -401,7 +407,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
 						fprintf(stderr, "response truncated\n");
-#endif DEBUG
+#endif /* DEBUG */
 					len = anslen;
 					truncated = 1;
 				} else
@@ -415,7 +421,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
 						perror("read failed");
-#endif DEBUG
+#endif /* DEBUG */
 					res_nclose(statp);
 					continue;
 				}
@@ -445,7 +451,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 #ifdef DEBUG
 						if (_res.options & RES_DEBUG)
 							perror("socket (dg) failed");
-#endif
+#endif /* DEBUG */
 						continue;
 					}
 				}
@@ -462,7 +468,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 #ifdef DEBUG
 							if (statp->options & RES_DEBUG)
 								perror("connect");
-#endif DEBUG
+#endif /* DEBUG */
 							continue;
 						}
 						connected = 1;
@@ -471,7 +477,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 #ifdef DEBUG
 						if (statp->options & RES_DEBUG)
 							perror("send");
-#endif DEBUG
+#endif /* DEBUG */
 						continue;
 					}
 				} else {
@@ -489,7 +495,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
 						perror("sendto");
-#endif DEBUG
+#endif /* DEBUG */
 					continue;
 				}
 
@@ -511,7 +517,7 @@ wait:
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
 						perror("select");
-#endif DEBUG
+#endif /* DEBUG */
 					continue;
 				}
 				if (n == 0) {
@@ -521,7 +527,7 @@ wait:
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
 						printf("timeout\n");
-#endif DEBUG
+#endif /* DEBUG */
 					gotsomewhere = 1;
 					continue;
 				}
@@ -529,7 +535,7 @@ wait:
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
 						perror("recvfrom");
-#endif DEBUG
+#endif /* DEBUG */
 					continue;
 				}
 				gotsomewhere = 1;
@@ -543,7 +549,7 @@ wait:
 						printf("old answer:\n");
 						p_query(answer);
 					}
-#endif DEBUG
+#endif /* DEBUG */
 					goto wait;
 				}
 				if (anhp->rcode == SERVFAIL || anhp->rcode == NOTIMP
@@ -553,7 +559,7 @@ wait:
 						printf("server rejected query:\n");
 						p_query(answer);
 					}
-#endif
+#endif /* DEBUG */
 					badns |= (1 << ns);
 					continue;
 				}
@@ -564,7 +570,7 @@ wait:
 #ifdef DEBUG
 					if (statp->options & RES_DEBUG)
 						printf("truncated answer\n");
-#endif DEBUG
+#endif /* DEBUG */
 					res_nclose(statp);
 					/*
 					 * retry decremented on continue
@@ -583,7 +589,7 @@ wait:
 			if ((statp->options & RES_DEBUG) || (statp->pfcode & RES_PRF_REPLY)) {
 				p_query(answer);
 			}
-#endif DEBUG
+#endif /* DEBUG */
 			/*
 			 * We are going to assume that the first server is preferred
 			 * over the rest (i.e. it is on the local machine) and only
@@ -639,7 +645,7 @@ res_poll(s, pollfd, timeout)
 			+ (int) timespec.tv_nsec / 1000000;
 	pollfd->fd = s;
 	pollfd->events = POLLRDNORM;
-	return (poll(s, pollfd, polltimeout));
+	return (poll(pollfd, s, polltimeout));
 }
 #endif
 

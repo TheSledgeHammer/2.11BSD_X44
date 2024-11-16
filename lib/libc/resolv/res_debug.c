@@ -202,7 +202,7 @@ const char *_res_optioncodes[] = {
 
 void
 p_query(msg)
-	char *msg;
+	const u_char *msg;
 {
 	fp_query(msg, stdout);
 }
@@ -235,17 +235,17 @@ fp_resstat(statp, file)
  */
 void
 fp_query(msg, file)
-	char *msg;
+	const u_char *msg;
 	FILE *file;
 {
-	register char *cp;
-	register HEADER *hp;
+	register const u_char *cp;
+	register const HEADER *hp;
 	register int n;
 
 	/*
 	 * Print header fields.
 	 */
-	hp = (HEADER *)msg;
+	hp = (const HEADER *)msg;
 	cp = msg + sizeof(HEADER);
 	fprintf(file,"HEADER:\n");
 	fprintf(file,"\topcode = %s", _res_opcodes[hp->opcode]);
@@ -278,9 +278,9 @@ fp_query(msg, file)
 			cp = p_cdname(cp, msg, file);
 			if (cp == NULL)
 				return;
-			fprintf(file,", type = %s", p_type(_getshort(cp)));
+			fprintf(file,", type = %s", p_type(getshort(cp)));
 			cp += sizeof(u_short);
-			fprintf(file,", class = %s\n\n", p_class(_getshort(cp)));
+			fprintf(file,", class = %s\n\n", p_class(getshort(cp)));
 			cp += sizeof(u_short);
 		}
 	}
@@ -330,7 +330,7 @@ p_cdname(cp, msg, file)
 	char name[MAXDNAME];
 	int n, len;
 
-	len = PACKETSZ;
+	len = MAXCDNAME;
 	if ((n = dn_expand(msg, msg + len, cp, name, sizeof(name))) < 0) {
 		return (NULL);
 	}
@@ -342,17 +342,41 @@ p_cdname(cp, msg, file)
 	return (cp + n);
 }
 
+const u_char *
+p_fqname(cp, msg, file)
+	const u_char *cp, *msg;
+	FILE *file;
+{
+	char name[MAXDNAME];
+	int n, len;
+
+	len = MAXCDNAME;
+	if ((n = dn_expand(msg, msg + len, cp, name, sizeof(name))) < 0) {
+		return (NULL);
+	}
+	if (name[0] == '\0') {
+		name[0] = '.';
+		name[1] = '\0';
+	}
+	fputs(name, file);
+    if (name[strlen(name) - 1] != '.') {
+   		name[0] = '.';
+		name[1] = '\0';
+    }
+	return (cp + n);
+}
+
 /*
  * Print resource record fields in human readable form.
  */
-char *
+const u_char *
 p_rr(cp, msg, file)
 	const u_char *cp, *msg;
 	FILE *file;
 {
-	int type, class, dlen, n, c, len;;
+	int type, class, dlen, n, c;
 	struct in_addr inaddr;
-	char *cp1;
+	const u_char *cp1;
 
 	if ((cp = p_cdname(cp, msg, file)) == NULL)
 		return (NULL); /* compression error */
@@ -480,10 +504,12 @@ p_rr(cp, msg, file)
 	case T_UNSPEC:
 		{
 			int NumBytes = 8;
-			char *DataPtr;
+			const u_char *DataPtr;
 			int i;
 
-			if (dlen < NumBytes) NumBytes = dlen;
+			if (dlen < NumBytes) {
+                NumBytes = dlen;
+            }
 			fprintf(file, "\tFirst %d bytes of hex data:",
 				NumBytes);
 			for (i = 0, DataPtr = cp; i < NumBytes; i++, DataPtr++)
@@ -499,7 +525,7 @@ p_rr(cp, msg, file)
 		cp += dlen;
 	}
 	if (cp != cp1 + dlen)
-		fprintf(file, "packet size error (%#x != %#x)\n", cp, cp1 + dlen);
+		fprintf(file, "packet size error (%p != %p)\n", __UNCONST(cp), __UNCONST(cp1 + dlen));
 	fprintf(file, "\n");
 	return (cp);
 }

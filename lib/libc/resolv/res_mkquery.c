@@ -77,6 +77,7 @@ static char rcsid[] = "$Id: res_mkquery.c,v 4.9.1.2 1993/05/17 10:00:01 vixie Ex
 #include <arpa/nameser.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <resolv.h>
 
@@ -135,15 +136,15 @@ res_rr_nmkquery(statp, op, dname, class, type, data, datalen, newrr, buf, buflen
 	int buflen;		/* size of buffer */
 {
 	register HEADER *hp;
-	register char *cp;
+	register u_char *cp;
 	register int n;
 	char dnbuf[MAXDNAME];
-	char *dnptrs[10], **dpp, **lastdnptr;
+	u_char *dnptrs[10], **dpp, **lastdnptr;
 
 #ifdef DEBUG
 	if (statp->options & RES_DEBUG)
 		printf("res_mkquery(%d, %s, %d, %d)\n", op, dname, class, type);
-#endif DEBUG
+#endif /* DEBUG */
 	/*
 	 * Initialize header fields.
 	 */
@@ -170,12 +171,12 @@ res_rr_nmkquery(statp, op, dname, class, type, data, datalen, newrr, buf, buflen
 	 * append the default domain name to the one given.
 	 */
 	if ((statp->options & RES_DEFNAMES) && dname != 0 && dname[0] != '\0' &&
-	    index(dname, '.') == NULL) {
+	    strchr(dname, '.') == NULL) {
 		if (!(statp->options & RES_INIT))
-			if (res_init() == -1)
+			if (res_ninit(statp) == -1)
 				return(-1);
 		if (statp->defdname[0] != '\0') {
-			(void)sprintf(dnbuf, "%s.%s", dname, statp->defdname);
+			(void)snprintf(dnbuf, sizeof(dnbuf)+1, "%s.%s", dname, statp->defdname);
 			dname = dnbuf;
 		}
 	}
@@ -185,7 +186,7 @@ res_rr_nmkquery(statp, op, dname, class, type, data, datalen, newrr, buf, buflen
 	switch (op) {
 	case QUERY:
 		buflen -= QFIXEDSZ;
-		if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
+		if ((n = dn_comp((const u_char *)dname, cp, buflen, dnptrs, lastdnptr)) < 0)
 			return (-1);
 		cp += n;
 		buflen -= n;
@@ -253,7 +254,7 @@ res_rr_nmkquery(statp, op, dname, class, type, data, datalen, newrr, buf, buflen
 		 */
 	case UPDATEDA:
 		buflen -= RRFIXEDSZ + datalen;
-		if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
+		if ((n = dn_comp((const u_char *)dname, cp, buflen, dnptrs, lastdnptr)) < 0)
 			return (-1);
 		cp += n;
 		putshort(type, cp);
@@ -276,7 +277,7 @@ res_rr_nmkquery(statp, op, dname, class, type, data, datalen, newrr, buf, buflen
 
 	case UPDATEA:	/* Add new resource record */
 		buflen -= RRFIXEDSZ + datalen;
-		if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
+		if ((n = dn_comp((const u_char *)dname, cp, buflen, dnptrs, lastdnptr)) < 0)
 			return (-1);
 		cp += n;
 		putshort(newrr->r_type, cp);
@@ -294,7 +295,7 @@ res_rr_nmkquery(statp, op, dname, class, type, data, datalen, newrr, buf, buflen
 		hp->ancount = htons(0);
 		break;
 
-#endif ALLOW_UPDATES
+#endif /* ALLOW_UPDATES */
 	}
 	return (cp - buf);
 }

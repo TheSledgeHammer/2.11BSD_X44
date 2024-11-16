@@ -71,14 +71,17 @@ static char sccsid[] = "@(#)res_query.c	5.3 (Berkeley) 4/5/88";
 
 #include <sys/param.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <ctype.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <errno.h>
-#include <strings.h>
+
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
+#include <netinet/in.h>
+
+#include <ctype.h>
+#include <errno.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
 #include <resolv.h>
 
 #include "res_private.h"
@@ -108,7 +111,7 @@ res_nquery(statp, name, class, type, answer, anslen)
 	u_char *answer;		/* buffer to put answer */
 	int anslen;		/* size of answer buffer */
 {
-	char buf[MAXPACKET];
+	u_char buf[MAXPACKET];
 	HEADER *hp;
 	int n;
 
@@ -118,7 +121,7 @@ res_nquery(statp, name, class, type, answer, anslen)
 	if (statp->options & RES_DEBUG)
 		printf("res_query(%s, %d, %d)\n", name, class, type);
 #endif
-	n = res_nmkquery(statp, QUERY, name, class, type, (char *)NULL, 0, NULL, buf, sizeof(buf));
+	n = res_nmkquery(statp, QUERY, name, class, type, NULL, 0, NULL, buf, sizeof(buf));
 
 	if (n <= 0) {
 #ifdef DEBUG
