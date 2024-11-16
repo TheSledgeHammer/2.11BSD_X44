@@ -540,10 +540,10 @@ sym_name_lookup(array, number, length, success)
 
 	for (i = 0; i < length; i++) {
 		if (i == number) {
-            if (success) {
-                *success = 1;
-            }
-            return (array[i]);
+            		if (success) {
+                		*success = 1;
+            		}
+            		return (array[i]);
 		}
 	}
     	(void)sprintf(symbuf, "%d", number);
