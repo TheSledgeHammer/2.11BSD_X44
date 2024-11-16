@@ -570,7 +570,7 @@ p_class(class)
 /*
  * Return a mnemonic for an option
  */
-static const char *
+const char *
 p_option(option)
 	u_int option;
 {
