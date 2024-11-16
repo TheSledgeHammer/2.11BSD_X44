@@ -44,7 +44,7 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 	char *exp_dn;
 	int length;
 {
-    register char *dn;
+    	register char *dn;
 	register const u_char *cp;
 	register int n, c;
 	char *eom;
@@ -135,7 +135,7 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 	dn = __UNCONST(exp_dn);
 	cp = comp_dn;
 	eob = cp + length;
-    cpp = NULL;
+    	cpp = NULL;
 	if (dnptrs != NULL) {
 		if ((msg = *dnptrs++) != NULL) {
 			for (cpp = dnptrs; *cpp != NULL; cpp++)
