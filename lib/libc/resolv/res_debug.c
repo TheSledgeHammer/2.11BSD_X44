@@ -137,9 +137,9 @@ const char *_res_typecodes[] = {
 		"RRSIG",	/* rrsig */
 		"NSEC",		/* nsec */
 		"DNSKEY",	/* DNS key */
-		"DHCID",    /* dynamic host configuration identifier */
+		"DHCID",    	/* dynamic host configuration identifier */
 		"NSEC3",	/* nsec3 */
-		"NSEC3PARAM", /* NSEC3 parameters */
+		"NSEC3PARAM", 	/* NSEC3 parameters */
 		"HIP",		/* host identity protocol */
 		"SPF",		/* sender policy framework */
 		"TKEY",		/* tkey */
