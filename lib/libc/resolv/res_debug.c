@@ -359,10 +359,10 @@ p_fqname(cp, msg, file)
 		name[1] = '\0';
 	}
 	fputs(name, file);
-    if (name[strlen(name) - 1] != '.') {
+    	if (name[strlen(name) - 1] != '.') {
    		name[0] = '.';
 		name[1] = '\0';
-    }
+    	}
 	return (cp + n);
 }
 
@@ -508,8 +508,8 @@ p_rr(cp, msg, file)
 			int i;
 
 			if (dlen < NumBytes) {
-                NumBytes = dlen;
-            }
+                		NumBytes = dlen;
+            		}
 			fprintf(file, "\tFirst %d bytes of hex data:",
 				NumBytes);
 			for (i = 0, DataPtr = cp; i < NumBytes; i++, DataPtr++)
@@ -546,11 +546,11 @@ sym_name_lookup(array, number, length, success)
             return (array[i]);
 		}
 	}
-    (void)sprintf(symbuf, "%d", number);
-    if (success) {
-        *success = 0;
-    }
-    return (symbuf);
+    	(void)sprintf(symbuf, "%d", number);
+    	if (success) {
+        	*success = 0;
+    	}
+    	return (symbuf);
 }
 
 /*
