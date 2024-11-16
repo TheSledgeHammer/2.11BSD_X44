@@ -175,8 +175,8 @@ u_short		getshort(const u_char *);
 void 		p_query(char *);
 char 		*p_cdname(char *, char *, FILE *);
 char 		*p_rr(char *, char *, FILE *);
-char 		*p_type(int);
-char 		*p_class(int);
+const char	*p_type(int);
+const char	*p_class(int);
 
 int		dn_skipname(const u_char *, const u_char *);
 int		dn_comp(const u_char *, u_char *, int, u_char **, u_char **);
