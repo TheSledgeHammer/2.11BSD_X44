@@ -44,7 +44,7 @@ __RCSID("$NetBSD: fixunsdfdi.c,v 1.7 2003/08/07 16:43:16 agc Exp $");
 
 #include "quad.h"
 
-#define	ONE_FOURTH	(1 << (INT_BITS - 2))
+#define	ONE_FOURTH	(1 << (LONG_BITS - 2))
 #define	ONE_HALF	(ONE_FOURTH * 2.0)
 #define	ONE		(ONE_FOURTH * 4.0)
 
