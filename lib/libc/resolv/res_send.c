@@ -116,7 +116,6 @@ static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 #endif
 
 #include <netinet/in.h>
-//#include <netinet6/in6.h>
 #include <arpa/nameser.h>
 
 #include <errno.h>
