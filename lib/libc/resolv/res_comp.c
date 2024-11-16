@@ -10,9 +10,14 @@
  * is provided ``as is'' without express or implied warranty.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)res_comp.c	6.13 (Berkeley) 3/13/88";
+#endif
 #endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -23,6 +28,8 @@ static char sccsid[] = "@(#)res_comp.c	6.13 (Berkeley) 3/13/88";
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
+static int dn_find(u_char *, u_char *, u_char **, u_char **);
 
 /*
  * Expand compressed domain name 'comp_dn' to full domain name.
@@ -37,9 +44,10 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 	char *exp_dn;
 	int length;
 {
-	register u_char *cp, *dn;
+    register char *dn;
+	register const u_char *cp;
 	register int n, c;
-	u_char *eom;
+	char *eom;
 	int len = -1, checked = 0;
 
 	dn = exp_dn;
@@ -124,9 +132,10 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 	u_char **cpp, **lpp, *sp, *eob;
 	u_char *msg;
 
-	dn = exp_dn;
+	dn = __UNCONST(exp_dn);
 	cp = comp_dn;
 	eob = cp + length;
+    cpp = NULL;
 	if (dnptrs != NULL) {
 		if ((msg = *dnptrs++) != NULL) {
 			for (cpp = dnptrs; *cpp != NULL; cpp++)
@@ -187,7 +196,7 @@ int
 dn_skipname(comp_dn, eom)
 	const u_char *comp_dn, *eom;
 {
-	register u_char *cp;
+	register const u_char *cp;
 	register int n;
 
 	cp = comp_dn;
@@ -337,7 +346,7 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 	for (cpp = dnptrs; cpp < lastdnptr; cpp++) {
 		dn = exp_dn;
 		sp = cp = *cpp;
-		while (n == *cp++) {
+		while ((n = *cp++)) {
 			/*
 			 * check for indirection
 			 */
@@ -385,7 +394,7 @@ u_short
 getshort(msgp)
 	const u_char *msgp;
 {
-	register u_char *p = (u_char *) msgp;
+	register const u_char *p = msgp;
 #ifdef vax
 	/*
 	 * vax compiler doesn't put shorts in registers
@@ -403,7 +412,7 @@ u_long
 getlong(msgp)
 	const u_char *msgp;
 {
-	register u_char *p = (u_char *) msgp;
+	register const u_char *p = msgp;
 	register u_long u;
 
 	u = *p++; u <<= 8;

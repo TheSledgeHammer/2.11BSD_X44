@@ -10,8 +10,11 @@
  * is provided ``as is'' without express or implied warranty.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) 3/7/88";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #if defined(lint) && !defined(DEBUG)
@@ -37,10 +40,8 @@ static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) 3/7/88";
 #include <time.h>
 
 #include "res_private.h"
-//extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
-//extern char *inet_ntoa();
 
-char *_res_opcodes[] = {
+const char *_res_opcodes[] = {
 	"QUERY",
 	"IQUERY",
 	"CQUERYM",
@@ -59,7 +60,7 @@ char *_res_opcodes[] = {
 	"ZONEREF",
 };
 
-char *_res_resultcodes[] = {
+const char *_res_resultcodes[] = {
 	"NOERROR",
 	"FORMERR",
 	"SERVFAIL",
@@ -82,9 +83,9 @@ void
 p_query(msg)
 	char *msg;
 {
-#ifdef DEBUG
+//#ifdef DEBUG
 	fp_query(msg,stdout);
-#endif
+//#endif
 }
 
 
@@ -114,7 +115,7 @@ fp_resstat(statp, file)
  * This is intended to be primarily a debugging routine.
  */
 void
-fp_query(msg,file)
+fp_query(msg, file)
 	char *msg;
 	FILE *file;
 {
@@ -209,7 +210,7 @@ p_cdname(cp, msg, file)
 	char *cp, *msg;
 	FILE *file;
 {
-#ifdef DEBUG
+//#ifdef DEBUG
 	char name[MAXDNAME];
 	int n;
 
@@ -221,7 +222,7 @@ p_cdname(cp, msg, file)
 	}
 	fputs(name, file);
 	return (cp + n);
-#endif
+//#endif
 }
 
 /*
@@ -232,7 +233,7 @@ p_rr(cp, msg, file)
 	char *cp, *msg;
 	FILE *file;
 {
-#ifdef DEBUG
+//#ifdef DEBUG
 	int type, class, dlen, n, c;
 	struct in_addr inaddr;
 	char *cp1;
@@ -388,7 +389,7 @@ p_rr(cp, msg, file)
 		fprintf(file,"packet size error (%#x != %#x)\n", cp, cp1+dlen);
 	fprintf(file,"\n");
 	return (cp);
-#endif
+//#endif
 }
 
 static	char nbuf[20];
@@ -396,7 +397,7 @@ static	char nbuf[20];
 /*
  * Return a string for the type
  */
-char *
+const char *
 p_type(type)
 	int type;
 {
@@ -460,7 +461,7 @@ p_type(type)
 /*
  * Return a mnemonic for class
  */
-char *
+const char *
 p_class(class)
 	int class;
 {
