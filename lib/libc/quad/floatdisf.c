@@ -65,14 +65,14 @@ __floatdisf(x)
 
 	/*
 	 * Now u.ul[H] has the factor of 2^32 (or whatever) and u.ul[L]
-	 * has the units.  Ideally we could just set f, add INT_BITS to
+	 * has the units.  Ideally we could just set f, add LONG_BITS to
 	 * its exponent, and then add the units, but this is portable
 	 * code and does not know how to get at an exponent.  Machine-
 	 * specific code may be able to do this more efficiently.
 	 *
 	 * Using double here may be excessive paranoia.
 	 */
-	f = (double)u.ul[H] * (((int)1 << (INT_BITS - 2)) * 4.0);
+	f = (double)u.ul[H] * (((int)1 << (LONG_BITS - 2)) * 4.0);
 	f += u.ul[L];
 
 	return (neg ? -f : f);

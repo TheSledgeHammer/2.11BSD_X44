@@ -44,7 +44,7 @@ __RCSID("$NetBSD: fixunsdfdi.c,v 1.7 2003/08/07 16:43:16 agc Exp $");
 
 #include "quad.h"
 
-#define	ONE_FOURTH	((int)1 << (INT_BITS - 2))
+#define	ONE_FOURTH	(1 << (INT_BITS - 2))
 #define	ONE_HALF	(ONE_FOURTH * 2.0)
 #define	ONE		(ONE_FOURTH * 4.0)
 
@@ -58,7 +58,7 @@ __fixunsdfdi(x)
 	double x;
 {
 	union uu t;
-	unsigned int tmp;
+	double toppart;
 
 	if (x < 0)
 		return (UQUAD_MAX);	/* ??? should be 0?  ERANGE??? */
@@ -70,14 +70,30 @@ __fixunsdfdi(x)
 		return (UQUAD_MAX);
 #endif
 	/*
-	 * Now we know that 0 <= x <= 18446744073709549568.  The upper
-	 * limit is one ulp less than 18446744073709551615 tested for above.
-	 * Dividing this by 2^32 will *not* round irrespective of any
-	 * rounding modes (except if the result is an IEEE denorm).
-	 * Furthermore, the quotient will fit into a 32-bit integer.
+	 * Get the upper part of the result.  Note that the divide
+	 * may round up; we want to avoid this if possible, so we
+	 * subtract `1/2' first.
 	 */
-	tmp = x / ONE;
-	t.ul[L] = (unsigned int) (x - tmp * ONE);
-	t.ul[H] = tmp;
+	toppart = (x - ONE_HALF) / ONE;
+	/*
+	 * Now build a u_quad_t out of the top part.  The difference
+	 * between x and this is the bottom part (this may introduce
+	 * a few fuzzy bits, but what the heck).  With any luck this
+	 * difference will be nonnegative: x should wind up in the
+	 * range [0..ULONG_MAX].  For paranoia, we assume [LONG_MIN..
+	 * 2*ULONG_MAX] instead.
+	 */
+	t.ul[H] = (unsigned long)toppart;
+	t.ul[L] = 0;
+	x -= (double)t.uq;
+	if (x < 0) {
+		t.ul[H]--;
+		x += ULONG_MAX;
+	}
+	if (x > ULONG_MAX) {
+		t.ul[H]++;
+		x -= ULONG_MAX;
+	}
+	t.ul[L] = (u_long)x;
 	return (t.uq);
 }

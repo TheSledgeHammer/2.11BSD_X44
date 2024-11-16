@@ -55,15 +55,12 @@ __lshldi3(a, shift)
 {
 	union uu aa;
 
-	if (shift == 0)
-		return(a);
 	aa.q = a;
-	if (shift >= INT_BITS) {
-		aa.ul[H] = aa.ul[L] << (shift - INT_BITS);
+	if (shift >= LONG_BITS) {
+		aa.ul[H] = shift >= QUAD_BITS ? 0 : aa.ul[L] << (shift - LONG_BITS);
 		aa.ul[L] = 0;
-	} else {
-		aa.ul[H] = (aa.ul[H] << shift) |
-		    (aa.ul[L] >> (INT_BITS - shift));
+	} else if (shift > 0) {
+		aa.ul[H] = (aa.ul[H] << shift) | (aa.ul[L] >> (LONG_BITS - shift));
 		aa.ul[L] <<= shift;
 	}
 	return (aa.q);

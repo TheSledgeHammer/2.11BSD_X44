@@ -54,28 +54,22 @@ __ashrdi3(a, shift)
 {
 	union uu aa;
 
-	if (shift == 0)
-		return(a);
 	aa.q = a;
-	if (shift >= INT_BITS) {
-		int s;
+	if (shift >= LONG_BITS) {
+		long s;
 
 		/*
 		 * Smear bits rightward using the machine's right-shift
 		 * method, whether that is sign extension or zero fill,
 		 * to get the `sign word' s.  Note that shifting by
-		 * INT_BITS is undefined, so we shift (INT_BITS-1),
+		 * LONG_BITS is undefined, so we shift (LONG_BITS-1),
 		 * then 1 more, to get our answer.
 		 */
-		/* LINTED inherits machine dependency */
-		s = (aa.sl[H] >> (INT_BITS - 1)) >> 1;
-		/* LINTED inherits machine dependency*/
-		aa.ul[L] = aa.sl[H] >> (shift - INT_BITS);
+		s = (aa.sl[H] >> (LONG_BITS - 1)) >> 1;
+		aa.ul[L] = shift >= QUAD_BITS ? s : aa.sl[H] >> (shift - LONG_BITS);
 		aa.ul[H] = s;
-	} else {
-		aa.ul[L] = (aa.ul[L] >> shift) |
-		    (aa.ul[H] << (INT_BITS - shift));
-		/* LINTED inherits machine dependency */
+	} else if (shift > 0) {
+		aa.ul[L] = (aa.ul[L] >> shift) | (aa.ul[H] << (LONG_BITS - shift));
 		aa.sl[H] >>= shift;
 	}
 	return (aa.q);

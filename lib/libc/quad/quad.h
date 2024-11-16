@@ -42,13 +42,13 @@
  *
  *  - The type long long (aka quad_t) exists.
  *
- *  - A quad variable is exactly twice as long as `int'.
+ *  - A quad variable is exactly twice as long as `long'.
  *
  *  - The machine's arithmetic is two's complement.
  *
  * This library can provide 128-bit arithmetic on a machine with 128-bit
- * quads and 64-bit ints, for instance, or 96-bit arithmetic on machines
- * with 48-bit ints.
+ * quads and 64-bit longs, for instance, or 96-bit arithmetic on machines
+ * with 48-bit longs.
  */
 
 #include <sys/types.h>
@@ -59,10 +59,10 @@
  * one or more of the following formats.
  */
 union uu {
-	quad_t	q;		/* as a (signed) quad */
-	u_quad_t uq;		/* as an unsigned quad */
-	int	sl[2];		/* as two signed ints */
-	u_int	ul[2];		/* as two unsigned ints */
+	quad_t		q;			/* as a (signed) quad */
+	u_quad_t	uq;			/* as an unsigned quad */
+	long		sl[2];		/* as two signed longs */
+	u_long		ul[2];		/* as two unsigned longs */
 };
 
 /*
@@ -77,21 +77,21 @@ union uu {
  * and assembly.
  */
 #define	QUAD_BITS	(sizeof(quad_t) * CHAR_BIT)
-#define	INT_BITS	(sizeof(int) * CHAR_BIT)
-#define	HALF_BITS	(sizeof(int) * CHAR_BIT / 2)
+#define	LONG_BITS	(sizeof(long) * CHAR_BIT)
+#define	HALF_BITS	(sizeof(long) * CHAR_BIT / 2)
 
 /*
  * Extract high and low shortwords from longword, and move low shortword of
  * longword to upper half of long, i.e., produce the upper longword of
- * ((quad_t)(x) << (number_of_bits_in_int/2)).  (`x' must actually be u_int.)
+ * ((quad_t)(x) << (number_of_bits_in_long/2)).  (`x' must actually be u_long.)
  *
  * These are used in the multiply code, to split a longword into upper
  * and lower halves, and to reassemble a product as a quad_t, shifted left
- * (sizeof(int)*CHAR_BIT/2).
+ * (sizeof(long)*CHAR_BIT/2).
  */
-#define	HHALF(x)	((u_int)(x) >> HALF_BITS)
-#define	LHALF(x)	((u_int)(x) & (((int)1 << HALF_BITS) - 1))
-#define	LHUP(x)		((u_int)(x) << HALF_BITS)
+#define	HHALF(x)	((x) >> HALF_BITS)
+#define	LHALF(x)	((x) & ((1 << HALF_BITS) - 1))
+#define	LHUP(x)		((x) << HALF_BITS)
 
 /*
  * XXX

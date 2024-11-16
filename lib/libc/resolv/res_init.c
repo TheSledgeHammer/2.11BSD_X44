@@ -82,6 +82,7 @@ static char sccsid[] = "@(#)res_init.c	6.8 (Berkeley) 3/7/88";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -92,7 +93,9 @@ static char sccsid[] = "@(#)res_init.c	6.8 (Berkeley) 3/7/88";
 #include <netdb.h>
 #include <resolv.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define HAVE_MD5
 #include <hash/md5.h>
@@ -328,7 +331,7 @@ res_ninit(statp)
 				}
 				(void) strncpy(statp->defdname, cp, sizeof(statp->defdname));
 				statp->defdname[sizeof(statp->defdname) - 1] = '\0';
-				if ((cp = strpbrk(statp->defdname,  " \t\n")) != NULL) {
+				if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL) {
 					*cp = '\0';
 				}
 				havesearch = 0;
@@ -374,7 +377,7 @@ res_ninit(statp)
 			/* read nameservers to query */
 			if (MATCH(buf, "nameserver") && nserv < maxns) {
 				struct addrinfo hints, *ai;
-			    	char sbuf[NI_MAXSERV];
+				char sbuf[NI_MAXSERV];
 				const size_t minsiz = sizeof(statp->u.ext->nsaddr_list[0]);
 
 				cp = buf + sizeof("nameserver") - 1;

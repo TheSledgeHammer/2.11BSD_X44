@@ -44,7 +44,7 @@ __RCSID("$NetBSD: fixunssfdi.c,v 1.6 2003/08/07 16:43:16 agc Exp $");
 
 #include "quad.h"
 
-#define	ONE_FOURTH	((int)1 << (INT_BITS - 2))
+#define	ONE_FOURTH	(1 << (INT_BITS - 2))
 #define	ONE_HALF	(ONE_FOURTH * 2.0)
 #define	ONE		(ONE_FOURTH * 4.0)
 
@@ -84,20 +84,20 @@ __fixunssfdi(float f)
 	 * between x and this is the bottom part (this may introduce
 	 * a few fuzzy bits, but what the heck).  With any luck this
 	 * difference will be nonnegative: x should wind up in the
-	 * range [0..UINT_MAX].  For paranoia, we assume [INT_MIN..
-	 * 2*UINT_MAX] instead.
+	 * range [0..ULONG_MAX].  For paranoia, we assume [LONG_MIN..
+	 * 2*ULONG_MAX] instead.
 	 */
-	t.ul[H] = (unsigned int)toppart;
+	t.ul[H] = (unsigned long)toppart;
 	t.ul[L] = 0;
 	x -= (double)t.uq;
 	if (x < 0) {
 		t.ul[H]--;
-		x += UINT_MAX;
+		x += ULONG_MAX;
 	}
-	if (x > UINT_MAX) {
+	if (x > ULONG_MAX) {
 		t.ul[H]++;
-		x -= UINT_MAX;
+		x -= ULONG_MAX;
 	}
-	t.ul[L] = (u_int)x;
+	t.ul[L] = (u_long)x;
 	return (t.uq);
 }

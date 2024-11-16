@@ -173,10 +173,11 @@ u_long 		getlong(const u_char *);
 u_short		getshort(const u_char *);
 
 void 		p_query(char *);
-char 		*p_cdname(char *, char *, FILE *);
+const u_char *p_cdname(const u_char *, const u_char *, FILE *);
 char 		*p_rr(char *, char *, FILE *);
 const char	*p_type(int);
 const char	*p_class(int);
+const char  *p_option(u_int);
 
 int		dn_skipname(const u_char *, const u_char *);
 int		dn_comp(const u_char *, u_char *, int, u_char **, u_char **);

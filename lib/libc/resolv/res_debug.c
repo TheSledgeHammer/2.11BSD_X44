@@ -41,51 +41,170 @@ static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) 3/7/88";
 
 #include "res_private.h"
 
+static char symbuf[20];
+static const char *sym_name_lookup(const char **, int, int, int *);
+
 const char *_res_opcodes[] = {
-	"QUERY",
-	"IQUERY",
-	"CQUERYM",
-	"CQUERYU",
-	"4",
-	"5",
-	"6",
-	"7",
-	"8",
-	"UPDATEA",
-	"UPDATED",
-	"UPDATEDA",
-	"UPDATEM",
-	"UPDATEMA",
-	"ZONEINIT",
-	"ZONEREF",
+		"QUERY",
+		"IQUERY",
+		"CQUERYM",
+		"CQUERYU",
+		"4",
+		"5",
+		"6",
+		"7",
+		"8",
+		"UPDATEA",
+		"UPDATED",
+		"UPDATEDA",
+		"UPDATEM",
+		"UPDATEMA",
+		"ZONEINIT",
+		"ZONEREF",
 };
 
 const char *_res_resultcodes[] = {
-	"NOERROR",
-	"FORMERR",
-	"SERVFAIL",
-	"NXDOMAIN",
-	"NOTIMP",
-	"REFUSED",
-	"6",
-	"7",
-	"8",
-	"9",
-	"10",
-	"11",
-	"12",
-	"13",
-	"14",
-	"NOCHANGE",
+		"NOERROR",
+		"FORMERR",
+		"SERVFAIL",
+		"NXDOMAIN",
+		"NOTIMP",
+		"REFUSED",
+		"6",
+		"7",
+		"8",
+		"9",
+		"10",
+		"11",
+		"12",
+		"13",
+		"14",
+		"NOCHANGE",
+};
+
+const char *_res_classcodes[] = {
+		"IN",
+		"CH",
+		"CHAOS",
+		"HS",
+		"HESIOD",
+		"ANY",
+		"NONE",
+};
+
+const char *_res_typecodes[] = {
+		"A",		/* address */
+		"NS",		/* name server */
+#ifdef OLDRR
+		"MD",		/* mail destination */
+		"MF",		/* mail forwarder */
+#endif
+		"CNAME",	/* connonical name */
+		"SOA",		/* start of authority zone */
+		"MB",		/* mailbox domain name */
+		"MG",		/* mail group member */
+		"MX",		/* mail routing info (exchanger) */
+		"MR",		/* mail rename name */
+		"TXT",		/* text */
+		"RP",		/* responsible person */
+		"AFSDB",	/* DCE or AFS server */
+		"X25",		/* X25 address */
+		"ISDN",		/* ISDN address */
+		"RT",		/* router */
+		"NSAP",		/* nsap address */
+		"NSAP_PTR",	/* domain name pointer */
+		"SIG",		/* signature */
+		"KEY",		/* key */
+		"PX",		/* mapping information */
+		"GPOS",		/* geographical position (withdrawn) */
+		"AAAA",		/* IPv6 address */
+		"LOC",		/* location */
+		"NXT",		/* next valid name (unimplemented) */
+		"EID",		/* endpoint identifier (unimplemented) */
+		"NIMLOC",	/* NIMROD locator (unimplemented) */
+		"SRV",		/* server selection */
+		"ATMA",		/* ATM address (unimplemented) */
+		"NAPTR",	/* naptr */
+		"KX",		/* key exchange */
+		"CERT",		/* certificate */
+		"A",		/* IPv6 address (experimental) */
+		"DNAME",	/* non-terminal redirection */
+		"OPT",		/* opt */
+		"apl",		/* apl */
+		"DS",		/* delegation signer */
+		"SSFP",		/* SSH fingerprint */
+		"IPSECKEY",	/* IPSEC key */
+		"RRSIG",	/* rrsig */
+		"NSEC",		/* nsec */
+		"DNSKEY",	/* DNS key */
+		"DHCID",    /* dynamic host configuration identifier */
+		"NSEC3",	/* nsec3 */
+		"NSEC3PARAM", /* NSEC3 parameters */
+		"HIP",		/* host identity protocol */
+		"SPF",		/* sender policy framework */
+		"TKEY",		/* tkey */
+		"TSIG",		/* transaction signature */
+		"NULL",		/* null resource record */
+		"WKS",		/* well known service */
+		"PTR", 		/* domain name pointer */
+		"HINFO",	/* host information */
+		"MINFO",	/* mailbox information */
+		"IXFR",		/* incremental zone transfer */
+		"AXFR",		/* zone transfer */
+		"ZXFR", 	/* compressed zone transfer */
+		"MAILB",	/* mail box */
+		"MAILA",	/* mail address */
+		"NAPTR",	/* URN Naming Authority */
+		"KX",		/* Key Exchange */
+		"CERT",		/* Certificate */
+		"A6",		/* IPv6 Address */
+		"DNAME",	/* dname */
+		"SINK",		/* Kitchen Sink (experimental) */
+		"OPT",		/* EDNS Options */
+		"ANY",		/* matches any type */
+		"DLV",		/* DNSSEC look-aside validation */
+		"UINFO",
+		"UID",
+		"GID",
+#ifdef ALLOW_T_UNSPEC
+		"UNSPEC",
+#endif
+};
+
+const char *_res_optioncodes[] = {
+		"init",
+		"debug",
+		"aaonly",
+		"usevc",
+		"primry",
+		"igntc",
+		"recurs",
+		"defnam",
+		"styopn",
+		"dnsrch",
+#ifdef RES_USE_EDNS0	/* KAME extension */
+		"edns0",
+		"nsid",
+#endif
+#ifdef RES_USE_DNAME
+		"dname",
+#endif
+#ifdef RES_USE_DNSSEC
+		"dnssec",
+#endif
+#ifdef RES_NOTLDQUERY
+		"no-tld-query",
+#endif
+#ifdef RES_NO_NIBBLE2
+		"no-nibble2",
+#endif
 };
 
 void
 p_query(msg)
 	char *msg;
 {
-//#ifdef DEBUG
-	fp_query(msg,stdout);
-//#endif
+	fp_query(msg, stdout);
 }
 
 
@@ -119,7 +238,6 @@ fp_query(msg, file)
 	char *msg;
 	FILE *file;
 {
-#ifdef DEBUG
 	register char *cp;
 	register HEADER *hp;
 	register int n;
@@ -153,7 +271,7 @@ fp_query(msg, file)
 	/*
 	 * Print question records.
 	 */
-	if (n = ntohs(hp->qdcount)) {
+	if ((n = ntohs(hp->qdcount))) {
 		fprintf(file,"QUESTIONS:\n");
 		while (--n >= 0) {
 			fprintf(file,"\t");
@@ -169,7 +287,7 @@ fp_query(msg, file)
 	/*
 	 * Print authoritative answer records
 	 */
-	if (n = ntohs(hp->ancount)) {
+	if ((n = ntohs(hp->ancount))) {
 		fprintf(file,"ANSWERS:\n");
 		while (--n >= 0) {
 			fprintf(file,"\t");
@@ -181,7 +299,7 @@ fp_query(msg, file)
 	/*
 	 * print name server records
 	 */
-	if (n = ntohs(hp->nscount)) {
+	if ((n = ntohs(hp->nscount))) {
 		fprintf(file,"NAME SERVERS:\n");
 		while (--n >= 0) {
 			fprintf(file,"\t");
@@ -193,7 +311,7 @@ fp_query(msg, file)
 	/*
 	 * print additional records
 	 */
-	if (n = ntohs(hp->arcount)) {
+	if ((n = ntohs(hp->arcount))) {
 		fprintf(file,"ADDITIONAL RECORDS:\n");
 		while (--n >= 0) {
 			fprintf(file,"\t");
@@ -202,27 +320,26 @@ fp_query(msg, file)
 				return;
 		}
 	}
-#endif
 }
 
-char *
+const u_char *
 p_cdname(cp, msg, file)
-	char *cp, *msg;
+	const u_char *cp, *msg;
 	FILE *file;
 {
-//#ifdef DEBUG
 	char name[MAXDNAME];
-	int n;
+	int n, len;
 
-	if ((n = dn_expand(msg, msg + 512, cp, name, sizeof(name))) < 0)
+	len = PACKETSZ;
+	if ((n = dn_expand(msg, msg + len, cp, name, sizeof(name))) < 0) {
 		return (NULL);
+	}
 	if (name[0] == '\0') {
 		name[0] = '.';
 		name[1] = '\0';
 	}
 	fputs(name, file);
 	return (cp + n);
-//#endif
 }
 
 /*
@@ -230,23 +347,22 @@ p_cdname(cp, msg, file)
  */
 char *
 p_rr(cp, msg, file)
-	char *cp, *msg;
+	const u_char *cp, *msg;
 	FILE *file;
 {
-//#ifdef DEBUG
-	int type, class, dlen, n, c;
+	int type, class, dlen, n, c, len;;
 	struct in_addr inaddr;
 	char *cp1;
 
 	if ((cp = p_cdname(cp, msg, file)) == NULL)
-		return (NULL);			/* compression error */
-	fprintf(file,"\n\ttype = %s", p_type(type = _getshort(cp)));
+		return (NULL); /* compression error */
+	fprintf(file, "\n\ttype = %s", p_type(type = getshort(cp)));
 	cp += sizeof(u_short);
-	fprintf(file,", class = %s", p_class(class = _getshort(cp)));
+	fprintf(file, ", class = %s", p_class(class = getshort(cp)));
 	cp += sizeof(u_short);
-	fprintf(file,", ttl = %lu", _getlong(cp));
+	fprintf(file, ", ttl = %lu", getlong(cp));
 	cp += sizeof(u_long);
-	fprintf(file,", dlen = %d\n", dlen = _getshort(cp));
+	fprintf(file, ", dlen = %d\n", dlen = getshort(cp));
 	cp += sizeof(u_short);
 	cp1 = cp;
 	/*
@@ -256,17 +372,14 @@ p_rr(cp, msg, file)
 	case T_A:
 		switch (class) {
 		case C_IN:
-			bcopy(cp, (char *)&inaddr, sizeof(inaddr));
+			bcopy(cp, (char *) &inaddr, sizeof(inaddr));
 			if (dlen == 4) {
-				fprintf(file,"\tinternet address = %s\n",
-					inet_ntoa(inaddr));
+				fprintf(file, "\tinternet address = %s\n", inet_ntoa(inaddr));
 				cp += dlen;
 			} else if (dlen == 7) {
-				fprintf(file,"\tinternet address = %s",
-					inet_ntoa(inaddr));
-				fprintf(file,", protocol = %d", cp[4]);
-				fprintf(file,", port = %d\n",
-					(cp[5] << 8) + cp[6]);
+				fprintf(file, "\tinternet address = %s", inet_ntoa(inaddr));
+				fprintf(file, ", protocol = %d", cp[4]);
+				fprintf(file, ", port = %d\n", (cp[5] << 8) + cp[6]);
 				cp += dlen;
 			}
 			break;
@@ -284,62 +397,62 @@ p_rr(cp, msg, file)
 	case T_MR:
 	case T_NS:
 	case T_PTR:
-		fprintf(file,"\tdomain name = ");
+		fprintf(file, "\tdomain name = ");
 		cp = p_cdname(cp, msg, file);
-		fprintf(file,"\n");
+		fprintf(file, "\n");
 		break;
 
 	case T_HINFO:
-		if (n = *cp++) {
-			fprintf(file,"\tCPU=%.*s\n", n, cp);
+		if ((n = *cp++)) {
+			fprintf(file, "\tCPU=%.*s\n", n, cp);
 			cp += n;
 		}
-		if (n = *cp++) {
-			fprintf(file,"\tOS=%.*s\n", n, cp);
+		if ((n = *cp++)) {
+			fprintf(file, "\tOS=%.*s\n", n, cp);
 			cp += n;
 		}
 		break;
 
 	case T_SOA:
-		fprintf(file,"\torigin = ");
+		fprintf(file, "\torigin = ");
 		cp = p_cdname(cp, msg, file);
-		fprintf(file,"\n\tmail addr = ");
+		fprintf(file, "\n\tmail addr = ");
 		cp = p_cdname(cp, msg, file);
-		fprintf(file,"\n\tserial=%ld", _getlong(cp));
+		fprintf(file, "\n\tserial=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", refresh=%ld", _getlong(cp));
+		fprintf(file, ", refresh=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", retry=%ld", _getlong(cp));
+		fprintf(file, ", retry=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", expire=%ld", _getlong(cp));
+		fprintf(file, ", expire=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", min=%ld\n", _getlong(cp));
+		fprintf(file, ", min=%ld\n", getlong(cp));
 		cp += sizeof(u_long);
 		break;
 
 	case T_MX:
-		fprintf(file,"\tpreference = %d,",_getshort(cp));
+		fprintf(file, "\tpreference = %d,", getshort(cp));
 		cp += sizeof(u_short);
-		fprintf(file," name = ");
+		fprintf(file, " name = ");
 		cp = p_cdname(cp, msg, file);
 		break;
 
 	case T_MINFO:
-		fprintf(file,"\trequests = ");
+		fprintf(file, "\trequests = ");
 		cp = p_cdname(cp, msg, file);
-		fprintf(file,"\n\terrors = ");
+		fprintf(file, "\n\terrors = ");
 		cp = p_cdname(cp, msg, file);
 		break;
 
 	case T_UINFO:
-		fprintf(file,"\t%s\n", cp);
+		fprintf(file, "\t%s\n", cp);
 		cp += dlen;
 		break;
 
 	case T_UID:
 	case T_GID:
 		if (dlen == 4) {
-			fprintf(file,"\t%ld\n", _getlong(cp));
+			fprintf(file, "\t%ld\n", getlong(cp));
 			cp += sizeof(int);
 		}
 		break;
@@ -347,20 +460,20 @@ p_rr(cp, msg, file)
 	case T_WKS:
 		if (dlen < sizeof(u_long) + 1)
 			break;
-		bcopy(cp, (char *)&inaddr, sizeof(inaddr));
+		bcopy(cp, (char*) &inaddr, sizeof(inaddr));
 		cp += sizeof(u_long);
-		fprintf(file,"\tinternet address = %s, protocol = %d\n\t",
-			inet_ntoa(inaddr), *cp++);
+		fprintf(file, "\tinternet address = %s, protocol = %d\n\t",
+				inet_ntoa(inaddr), *cp++);
 		n = 0;
 		while (cp < cp1 + dlen) {
 			c = *cp++;
 			do {
- 				if (c & 0200)
-					fprintf(file," %d", n);
- 				c <<= 1;
+				if (c & 0200)
+					fprintf(file, " %d", n);
+				c <<= 1;
 			} while (++n & 07);
 		}
-		putc('\n',file);
+		putc('\n', file);
 		break;
 
 #ifdef ALLOW_T_UNSPEC
@@ -382,17 +495,37 @@ p_rr(cp, msg, file)
 #endif /* ALLOW_T_UNSPEC */
 
 	default:
-		fprintf(file,"\t???\n");
+		fprintf(file, "\t???\n");
 		cp += dlen;
 	}
 	if (cp != cp1 + dlen)
-		fprintf(file,"packet size error (%#x != %#x)\n", cp, cp1+dlen);
-	fprintf(file,"\n");
+		fprintf(file, "packet size error (%#x != %#x)\n", cp, cp1 + dlen);
+	fprintf(file, "\n");
 	return (cp);
-//#endif
 }
 
-static	char nbuf[20];
+static const char *
+sym_name_lookup(array, number, length, success)
+	const char **array;
+	int number, length;
+	int *success;
+{
+	int i;
+
+	for (i = 0; i < length; i++) {
+		if (i == number) {
+            if (success) {
+                *success = 1;
+            }
+            return (array[i]);
+		}
+	}
+    (void)sprintf(symbuf, "%d", number);
+    if (success) {
+        *success = 0;
+    }
+    return (symbuf);
+}
 
 /*
  * Return a string for the type
@@ -401,61 +534,17 @@ const char *
 p_type(type)
 	int type;
 {
-	switch (type) {
-	case T_A:
-		return("A");
-	case T_NS:		/* authoritative server */
-		return("NS");
-#ifdef OLDRR
-	case T_MD:		/* mail destination */
-		return("MD");
-	case T_MF:		/* mail forwarder */
-		return("MF");
-#endif /* OLDRR */
-	case T_CNAME:		/* connonical name */
-		return("CNAME");
-	case T_SOA:		/* start of authority zone */
-		return("SOA");
-	case T_MB:		/* mailbox domain name */
-		return("MB");
-	case T_MG:		/* mail group member */
-		return("MG");
-	case T_MX:		/* mail routing info */
-		return("MX");
-	case T_MR:		/* mail rename name */
-		return("MR");
-	case T_NULL:		/* null resource record */
-		return("NULL");
-	case T_WKS:		/* well known service */
-		return("WKS");
-	case T_PTR:		/* domain name pointer */
-		return("PTR");
-	case T_HINFO:		/* host information */
-		return("HINFO");
-	case T_MINFO:		/* mailbox information */
-		return("MINFO");
-	case T_AXFR:		/* zone transfer */
-		return("AXFR");
-	case T_MAILB:		/* mail box */
-		return("MAILB");
-	case T_MAILA:		/* mail address */
-		return("MAILA");
-	case T_ANY:		/* matches any type */
-		return("ANY");
-	case T_UINFO:
-		return("UINFO");
-	case T_UID:
-		return("UID");
-	case T_GID:
-		return("GID");
-#ifdef ALLOW_T_UNSPEC
-	case T_UNSPEC:
-		return("UNSPEC");
-#endif /* ALLOW_T_UNSPEC */
-	default:
-		(void)sprintf(nbuf, "%d", type);
-		return(nbuf);
+	const char *ptype;
+	static char typebuf[20];
+	int len, success;
+
+	len = (sizeof(_res_typecodes)/sizeof(_res_typecodes[0]));
+	ptype = sym_name_lookup(_res_typecodes, type, len, &success);
+	if (success) {
+		return (ptype);
 	}
+	sprintf(typebuf, "TYPE%d", type);
+	return (typebuf);
 }
 
 /*
@@ -465,14 +554,35 @@ const char *
 p_class(class)
 	int class;
 {
+	const char *pclass;
+	static char classbuf[20];
+	int len, success;
 
-	switch (class) {
-	case C_IN:		/* internet class */
-		return("IN");
-	case C_ANY:		/* matches any class */
-		return("ANY");
-	default:
-		(void)sprintf(nbuf, "%d", class);
-		return(nbuf);
+	len = (sizeof(_res_classcodes)/sizeof(_res_classcodes[0]));
+	pclass = sym_name_lookup(_res_classcodes, class, len, &success);
+	if (success) {
+		return (pclass);
 	}
+	sprintf(classbuf, "CLASS%d", class);
+	return (classbuf);
+}
+
+/*
+ * Return a mnemonic for an option
+ */
+static const char *
+p_option(option)
+	u_int option;
+{
+	const char *poption;
+	static char optionbuf[20];
+	int len, success;
+
+	len = (sizeof(_res_optioncodes)/sizeof(_res_optioncodes[0]));
+	poption = sym_name_lookup(_res_optioncodes, option, len, &success);
+	if (success) {
+		return (poption);
+	}
+	sprintf(optionbuf, "?0x%x?", option);
+	return (optionbuf);
 }

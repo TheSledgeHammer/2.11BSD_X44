@@ -44,13 +44,14 @@ __RCSID("$NetBSD: muldi3.c,v 1.6 2003/08/07 16:43:17 agc Exp $");
 
 #include "quad.h"
 
+
 /*
  * Multiply two quads.
  *
  * Our algorithm is based on the following.  Split incoming quad values
  * u and v (where u,v >= 0) into
  *
- *	u = 2^n u1  *  u0	(n = number of bits in `u_int', usu. 32)
+ *	u = 2^n u1  *  u0	(n = number of bits in `u_long', usu. 32)
  *
  * and 
  *
@@ -81,9 +82,9 @@ __RCSID("$NetBSD: muldi3.c,v 1.6 2003/08/07 16:43:17 agc Exp $");
  *
  * This algorithm is from Knuth vol. 2 (2nd ed), section 4.3.3, p. 278.
  *
- * Since C does not give us a `int * int = quad' operator, we split
- * our input quads into two ints, then split the two ints into two
- * shorts.  We can then calculate `short * short = int' in native
+ * Since C does not give us a `long * long = quad' operator, we split
+ * our input quads into two longs, then split the two longs into two
+ * shorts.  We can then calculate `short * short = long' in native
  * arithmetic.
  *
  * Our product should, strictly speaking, be a `long quad', with 128
@@ -101,15 +102,15 @@ __RCSID("$NetBSD: muldi3.c,v 1.6 2003/08/07 16:43:17 agc Exp $");
  * of 2^n in either one will also vanish.  Only `low' need be computed
  * mod 2^2n, and only because of the final term above.
  */
-static quad_t __lmulq(u_int, u_int);
+static quad_t __lmulq(u_long, u_long);
 
 quad_t
 __muldi3(a, b)
 	quad_t a, b;
 {
 	union uu u, v, low, prod;
-	u_int high, mid, udiff, vdiff;
-	int negall, negmid;
+	register u_long high, mid, udiff, vdiff;
+	register int negall, negmid;
 #define	u1	u.ul[H]
 #define	u0	u.ul[L]
 #define	v1	v.ul[H]
@@ -118,7 +119,7 @@ __muldi3(a, b)
 	/*
 	 * Get u and v such that u, v >= 0.  When this is finished,
 	 * u1, u0, v1, and v0 will be directly accessible through the
-	 * int fields.
+	 * longword fields.
 	 */
 	if (a >= 0)
 		u.q = a, negall = 0;
@@ -141,7 +142,7 @@ __muldi3(a, b)
 		 * Compute the three intermediate products, remembering
 		 * whether the middle term is negative.  We can discard
 		 * any upper bits in high and mid, so we can use native
-		 * u_int * u_int => u_int arithmetic.
+		 * u_long * u_long => u_long arithmetic.
 		 */
 		low.q = __lmulq(u0, v0);
 
@@ -172,27 +173,27 @@ __muldi3(a, b)
 }
 
 /*
- * Multiply two 2N-bit ints to produce a 4N-bit quad, where N is half
- * the number of bits in an int (whatever that is---the code below
+ * Multiply two 2N-bit longs to produce a 4N-bit quad, where N is half
+ * the number of bits in a long (whatever that is---the code below
  * does not care as long as quad.h does its part of the bargain---but
  * typically N==16).
  *
  * We use the same algorithm from Knuth, but this time the modulo refinement
- * does not apply.  On the other hand, since N is half the size of an int,
+ * does not apply.  On the other hand, since N is half the size of a long,
  * we can get away with native multiplication---none of our input terms
- * exceeds (UINT_MAX >> 1).
+ * exceeds (ULONG_MAX >> 1).
  *
- * Note that, for u_int l, the quad-precision result
+ * Note that, for u_long l, the quad-precision result
  *
  *	l << N
  *
- * splits into high and low ints as HHALF(l) and LHUP(l) respectively.
+ * splits into high and low longs as HHALF(l) and LHUP(l) respectively.
  */
 static quad_t
-__lmulq(u_int u, u_int v)
+__lmulq(u_long u, u_long v)
 {
-	u_int u1, u0, v1, v0, udiff, vdiff, high, mid, low;
-	u_int prodh, prodl, was;
+	u_long u1, u0, v1, v0, udiff, vdiff, high, mid, low;
+	u_long prodh, prodl, was;
 	union uu prod;
 	int neg;
 

@@ -49,19 +49,19 @@ __RCSID("$NetBSD: qdivrem.c,v 1.12 2003/08/07 16:43:17 agc Exp $");
 
 #include "quad.h"
 
-#define	B	((int)1 << HALF_BITS)	/* digit base */
+#define	B	(1 << HALF_BITS)	/* digit base */
 
 /* Combine two `digits' to make a single two-digit number. */
-#define	COMBINE(a, b) (((u_int)(a) << HALF_BITS) | (b))
+#define	COMBINE(a, b) (((u_long)(a) << HALF_BITS) | (b))
 
 /* select a type for digits in base B: use unsigned short if they fit */
-#if UINT_MAX == 0xffffffffU && USHRT_MAX >= 0xffff
+#if ULONG_MAX == 0xffffffff && USHRT_MAX >= 0xffff
 typedef unsigned short digit;
 #else
-typedef u_int digit;
+typedef u_long digit;
 #endif
 
-static void shl __P((digit *p, int len, int sh));
+static void shl(digit *p, int len, int sh);
 
 /*
  * __qdivrem(u, v, rem) returns u/v and, optionally, sets *rem to u%v.
@@ -78,7 +78,7 @@ __qdivrem(uq, vq, arq)
 	union uu tmp;
 	digit *u, *v, *q;
 	digit v1, v2;
-	u_int qhat, rhat, t;
+	u_long qhat, rhat, t;
 	int m, n, d, j, i;
 	digit uspace[5], vspace[5], qspace[5];
 
@@ -129,7 +129,7 @@ __qdivrem(uq, vq, arq)
 	v[4] = (digit)LHALF(tmp.ul[L]);
 	for (n = 4; v[1] == 0; v++) {
 		if (--n == 1) {
-			u_int rbj;	/* r*B+u[j] (not root boy jim) */
+			u_long rbj;	/* r*B+u[j] (not root boy jim) */
 			digit q1, q2, q3, q4;
 
 			/*
@@ -279,7 +279,6 @@ shl(digit *p, int len, int sh)
 	int i;
 
 	for (i = 0; i < len; i++)
-		p[i] = (digit)(LHALF((u_int)p[i] << sh) |
-		    ((u_int)p[i + 1] >> (HALF_BITS - sh)));
-	p[i] = (digit)(LHALF((u_int)p[i] << sh));
+		p[i] = (digit)LHALF(p[i] << sh) | (p[i + 1] >> (HALF_BITS - sh));
+	p[i] = (digit)LHALF(p[i] << sh);
 }
