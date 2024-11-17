@@ -45,6 +45,7 @@
 extern "C" {
 #endif
 
+#include <sys/types.h>
 /*
  * raw.h
  *
@@ -57,8 +58,19 @@ extern char *__rpc_rawcombuf;
 }
 #endif
 
-#define	bool_t	int32_t
-#define	enum_t	int32_t
+//#define	bool_t	int32_t
+//#define	enum_t	int32_t
+
+typedef int32_t bool_t;
+typedef int32_t enum_t;
+
+typedef uint32_t rpcprog_t;
+typedef uint32_t rpcvers_t;
+typedef uint32_t rpcproc_t;
+typedef uint32_t rpcprot_t;
+typedef uint32_t rpcport_t;
+typedef int32_t rpc_inline_t;
+
 #define __dontcare__	-1
 
 #ifndef FALSE
@@ -74,9 +86,43 @@ extern char *__rpc_rawcombuf;
 #define mem_alloc(bsize)		malloc(bsize)
 #define mem_free(ptr, bsize)	free(ptr)
 
-#ifndef makedev /* ie, we haven't already included it */
-#include <sys/types.h>
-#endif
 #include <sys/time.h>
+#include <netconfig.h>
+
+/*
+ * The netbuf structure is defined here, because NetBSD only uses it inside
+ * the RPC code. It's in <xti.h> on SVR4, but it would be confusing to
+ * have an xti.h, since NetBSD does not support XTI/TLI.
+ */
+
+/*
+ * The netbuf structure is used for transport-independent address storage.
+ */
+struct netbuf {
+	unsigned int maxlen;
+	unsigned int len;
+	void *buf;
+};
+
+/*
+ * The format of the address and options arguments of the XTI t_bind call.
+ * Only provided for compatibility, it should not be used.
+ */
+
+struct t_bind {
+	struct netbuf   addr;
+	unsigned int    qlen;
+};
+
+/*
+ * Internal library and rpcbind use. This is not an exported interface, do
+ * not use.
+ */
+struct __rpc_sockinfo {
+	int si_af;
+	int si_proto;
+	int si_socktype;
+	int si_alen;
+};
 
 #endif /* !_RPC_TYPES_H */

@@ -59,11 +59,11 @@
  * Unix style credentials.
  */
 struct authunix_parms {
-	u_long	 aup_time;
-	char	*aup_machname;
+	unsigned long	aup_time;
+	char		*aup_machname;
 	int	 	aup_uid;
 	int	 	aup_gid;
-	u_int	aup_len;
+	unsigned int	aup_len;
 	int		*aup_gids;
 };
 

@@ -41,10 +41,10 @@ __RCSID("$NetBSD: auth_none.c,v 1.14 2001/01/16 15:46:52 lukem Exp $");
 
 /*
  * auth_none.c
- * Creates a client authentication handle for passing "null" 
- * credentials and verifiers to remote systems. 
- * 
- * Copyright (C) 1984, Sun Microsystems, Inc. 
+ * Creates a client authentication handle for passing "null"
+ * credentials and verifiers to remote systems.
+ *
+ * Copyright (C) 1984, Sun Microsystems, Inc.
  */
 
 #include "namespace.h"
@@ -73,11 +73,11 @@ static bool_t authnone_refresh(AUTH *);
 static void authnone_destroy(AUTH *);
 
 static const struct auth_ops ops = {
-	authnone_verf,
-	authnone_marshal,
-	authnone_validate,
-	authnone_refresh,
-	authnone_destroy
+		authnone_verf,
+		authnone_marshal,
+		authnone_validate,
+		authnone_refresh,
+		authnone_destroy
 };
 
 static struct authnone_private {
@@ -87,7 +87,7 @@ static struct authnone_private {
 } *authnone_private;
 
 AUTH *
-authnone_create()
+authnone_create(void)
 {
 	struct authnone_private *ap = authnone_private;
 	XDR xdr_stream;

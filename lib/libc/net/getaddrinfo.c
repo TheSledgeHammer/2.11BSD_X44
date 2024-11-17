@@ -1782,7 +1782,7 @@ res_searchN(const char *name, struct res_target *target, res_state res)
 	/*
 	 * if there aren't any dots, it could be a user-level alias
 	 */
-	if (!dots && (cp = __hostalias(name)) != NULL) {
+	if (!dots && (cp = hostalias(name)) != NULL) {
 		ret = res_queryN(cp, target, res);
 		return ret;
 	}

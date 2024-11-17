@@ -401,7 +401,10 @@ struct rpc_createerr {
 	struct rpc_err cf_error; /* useful when cf_stat == RPC_PMAPFAILURE */
 };
 
-extern struct rpc_createerr rpc_createerr;
+__BEGIN_DECLS
+extern struct rpc_createerr	*__rpc_createerr(void);
+__END_DECLS
+#define rpc_createerr		(*(__rpc_createerr()))
 
 
 #define UDPMSGSIZE	8800	/* rpc imposed limit on udp msg size */

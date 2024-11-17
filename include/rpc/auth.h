@@ -112,7 +112,7 @@ typedef struct __rpc_auth {
 		/* destroy this structure */
 		void	(*ah_destroy)(struct __rpc_auth *);
 	} *ah_ops;
-	caddr_t ah_private;
+	void *ah_private;
 } AUTH;
 
 
@@ -172,10 +172,23 @@ extern AUTH *authunix_create(char *, int, int, int, int *);
 extern AUTH *authunix_create_default(void);
 extern AUTH *authnone_create(void);
 extern AUTH *authdes_create(char *, u_int, struct sockaddr_in *, des_block *);
+
+extern bool_t xdr_opaque_auth(XDR *, struct opaque_auth *);
+extern void set_rpc_maxgrouplist(int);
+
+#define authsys_create(c,i1,i2,i3,ip) authunix_create((c),(i1),(i2),(i3),(ip))
+#define authsys_create_default() authunix_create_default()
+
+struct svc_req;
+struct rpc_msg;
+enum auth_stat _svcauth_null(struct svc_req *, struct rpc_msg *);
+enum auth_stat _svcauth_short(struct svc_req *, struct rpc_msg *);
+enum auth_stat _svcauth_unix(struct svc_req *, struct rpc_msg *);
 __END_DECLS
 
 #define AUTH_NONE	0		/* no authentication */
 #define	AUTH_NULL	0		/* backward compatibility */
+#define	AUTH_SYS	1		/* unix style (uid, gids) */
 #define	AUTH_UNIX	1		/* unix style (uid, gids) */
 #define	AUTH_SHORT	2		/* short hand unix style */
 #define AUTH_DES	3		/* des style (encrypted timestamps) */
