@@ -67,7 +67,7 @@ static void shl(digit *p, int len, int sh);
  * __qdivrem(u, v, rem) returns u/v and, optionally, sets *rem to u%v.
  *
  * We do this in base 2-sup-HALF_BITS, so that all intermediate products
- * fit within u_int.  As a consequence, the maximum length dividend and
+ * fit within u_long.  As a consequence, the maximum length dividend and
  * divisor are 4 `digits' in this base (they are shorter if they have
  * leading zeros).
  */
@@ -78,7 +78,7 @@ __qdivrem(uq, vq, arq)
 	union uu tmp;
 	digit *u, *v, *q;
 	digit v1, v2;
-	u_int qhat, rhat, t;
+	u_long qhat, rhat, t;
 	int m, n, d, j, i;
 	digit uspace[5], vspace[5], qspace[5];
 
@@ -254,8 +254,8 @@ __qdivrem(uq, vq, arq)
 	if (arq) {
 		if (d) {
 			for (i = m + n; i > m; --i)
-				u[i] = (digit)(((u_int)u[i] >> d) |
-				    LHALF((u_int)u[i - 1] << (HALF_BITS - d)));
+				u[i] = (digit)((u[i] >> d) |
+				    LHALF(u[i - 1] << (HALF_BITS - d)));
 			u[i] = 0;
 		}
 		tmp.ul[H] = COMBINE(uspace[1], uspace[2]);
