@@ -49,16 +49,16 @@ __RCSID("$NetBSD: qdivrem.c,v 1.10 2003/08/07 16:32:10 agc Exp $");
 
 #include "quad.h"
 
-#define	B	((int)1 << HALF_BITS)	/* digit base */
+#define	B	(1 << HALF_BITS)	/* digit base */
 
 /* Combine two `digits' to make a single two-digit number. */
-#define	COMBINE(a, b) (((u_int)(a) << HALF_BITS) | (b))
+#define	COMBINE(a, b) (((u_long)(a) << HALF_BITS) | (b))
 
 /* select a type for digits in base B: use unsigned short if they fit */
-#if UINT_MAX == 0xffffffffU && USHRT_MAX >= 0xffff
+#if ULONG_MAX == 0xffffffff && USHRT_MAX >= 0xffff
 typedef unsigned short digit;
 #else
-typedef u_int digit;
+typedef u_long digit;
 #endif
 
 static void shl(digit *p, int len, int sh);
@@ -279,7 +279,7 @@ shl(digit *p, int len, int sh)
 	int i;
 
 	for (i = 0; i < len; i++)
-		p[i] = (digit)(LHALF((u_int)p[i] << sh) |
-		    ((u_int)p[i + 1] >> (HALF_BITS - sh)));
-	p[i] = (digit)(LHALF((u_int)p[i] << sh));
+		p[i] = (digit)(LHALF(p[i] << sh) |
+		    (p[i + 1] >> (HALF_BITS - sh)));
+	p[i] = (digit)(LHALF(p[i] << sh));
 }
