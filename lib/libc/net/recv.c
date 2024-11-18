@@ -38,7 +38,6 @@ static char sccsid[] = "@(#)recv.c	8.2 (Berkeley) 2/21/94";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-
 #include <sys/types.h>
 #include <sys/socket.h>
 
