@@ -45,7 +45,6 @@
 extern "C" {
 #endif
 
-#include <sys/types.h>
 /*
  * raw.h
  *
@@ -58,18 +57,8 @@ extern char *__rpc_rawcombuf;
 }
 #endif
 
-//#define	bool_t	int32_t
-//#define	enum_t	int32_t
-
-typedef int32_t bool_t;
-typedef int32_t enum_t;
-
-typedef uint32_t rpcprog_t;
-typedef uint32_t rpcvers_t;
-typedef uint32_t rpcproc_t;
-typedef uint32_t rpcprot_t;
-typedef uint32_t rpcport_t;
-typedef int32_t rpc_inline_t;
+#define	bool_t	int32_t
+#define	enum_t	int32_t
 
 #define __dontcare__	-1
 
@@ -86,8 +75,18 @@ typedef int32_t rpc_inline_t;
 #define mem_alloc(bsize)		malloc(bsize)
 #define mem_free(ptr, bsize)	free(ptr)
 
+#ifndef makedev /* ie, we haven't already included it */
+#include <sys/types.h>
+#endif
 #include <sys/time.h>
 #include <netconfig.h>
+
+typedef uint32_t rpcprog_t;
+typedef uint32_t rpcvers_t;
+typedef uint32_t rpcproc_t;
+typedef uint32_t rpcprot_t;
+typedef uint32_t rpcport_t;
+typedef int32_t  rpc_inline_t;
 
 /*
  * The netbuf structure is defined here, because NetBSD only uses it inside
