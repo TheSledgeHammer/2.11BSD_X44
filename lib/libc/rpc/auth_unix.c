@@ -80,7 +80,14 @@ static bool_t authunix_validate(AUTH *, struct opaque_auth *);
 static bool_t authunix_refresh(AUTH *);
 static void authunix_destroy(AUTH *);
 static void marshal_new_auth(AUTH *);
-static const struct auth_ops *authunix_ops(void);
+
+static const struct auth_ops authunix_ops = {
+        .ah_nextverf = authunix_nextverf,
+		.ah_marshal = authunix_marshal,
+		.ah_validate = authunix_validate,
+		.ah_refresh = authunix_refresh,
+		.ah_destroy = authunix_destroy,
+};
 
 /*
  * This struct is pointed to by the ah_private field of an auth_handle.
@@ -131,7 +138,7 @@ authunix_create(machname, uid, gid, len, aup_gids)
 		goto cleanup_authunix_create;
 	}
 #endif
-	auth->ah_ops = authunix_ops();
+	auth->ah_ops = &authunix_ops;
 	auth->ah_private = au;
 	auth->ah_verf = au->au_shcred = _null_auth;
 	au->au_shfaults = 0;
@@ -359,26 +366,4 @@ marshal_new_auth(auth)
 	else
 		au->au_mpos = XDR_GETPOS(xdrs);
 	XDR_DESTROY(xdrs);
-}
-
-static const struct auth_ops *
-authunix_ops()
-{
-	static struct auth_ops ops;
-#ifdef _REENTRANT
-	extern mutex_t ops_lock;
-#endif
-
-	/* VARIABLES PROTECTED BY ops_lock: ops */
-
-	mutex_lock(&ops_lock);
-	if (ops.ah_nextverf == NULL) {
-		ops.ah_nextverf = authunix_nextverf;
-		ops.ah_marshal = authunix_marshal;
-		ops.ah_validate = authunix_validate;
-		ops.ah_refresh = authunix_refresh;
-		ops.ah_destroy = authunix_destroy;
-	}
-	mutex_unlock(&ops_lock);
-	return (&ops);
 }
