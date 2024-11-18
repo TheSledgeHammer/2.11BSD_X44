@@ -32,7 +32,7 @@
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
-static char *sccsid = "@(#)authunixprot.c 1.15 87/08/11 Copyr 1984 Sun Micro";
+static char *sccsid = "@(#)authunix_prot.c 1.15 87/08/11 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)authunix_prot.c	2.1 88/07/29 4.0 RPCSRC";
 #else
 __RCSID("$NetBSD: authunix_prot.c,v 1.12 2000/01/22 22:19:17 mycroft Exp $");
