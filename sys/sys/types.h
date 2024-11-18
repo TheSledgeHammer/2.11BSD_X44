@@ -151,7 +151,6 @@ typedef	u_long				uid_t;		/* user id */
 typedef	u_long				gid_t;		/* group id */
 typedef	u_char	    		pid_t;		/* process id */
 typedef	u_short				mode_t;		/* permissions */
-typedef char				bool_t;		/* boolean */
 typedef long				memaddr_t;	/* core & swap address */
 
 typedef u_char 				pri_t;		/* priority */
@@ -235,6 +234,9 @@ struct	user;
 #if defined(_KERNEL) || defined(_STANDALONE)
 
 #include <sys/stdbool.h>
+/* 2.11BSD bool_t type. Needed for backwards compatability. */
+typedef char	bool_t;
+
 /*
  * Deprecated Mach-style boolean_t type.  Should not be used by new code.
  */
