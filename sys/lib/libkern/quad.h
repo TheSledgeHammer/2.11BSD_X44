@@ -66,8 +66,8 @@
 union uu {
 	quad_t		q;		/* as a (signed) quad */
 	u_quad_t 	uq;		/* as an unsigned quad */
-	long			sl[2];	/* as two signed ints */
-	u_long		ul[2];	/* as two unsigned ints */
+	long			sl[2];	/* as two signed longs */
+	u_long		ul[2];	/* as two unsigned longs */
 };
 
 /*
