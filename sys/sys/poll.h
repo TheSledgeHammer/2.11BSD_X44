@@ -76,12 +76,14 @@ struct timespec;
 int pollscan(struct pollfd *, u_int, int *);
 #else
 __BEGIN_DECLS
-#if __BSD_VISIBLE
-typedef unsigned long 	sigset_t;
+struct proc;
+struct timespec;
+typedef unsigned long sigset_t;
 
+#if __BSD_VISIBLE
 int ppoll(struct pollfd[], nfds_t, const struct timespec *, const sigset_t *);
 #endif /* __BSD_VISIBLE */
-int poll(struct pollfd *, u_int, int);
+int poll(struct pollfd *, nfds_t, int);
 __END_DECLS
 #endif /* _KERNEL */
 #endif /* _SYS_POLL_H_ */
