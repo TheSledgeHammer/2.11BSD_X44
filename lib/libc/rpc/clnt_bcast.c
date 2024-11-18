@@ -58,10 +58,11 @@ __RCSID("$NetBSD: clnt_bcast.c,v 1.12 2003/09/09 03:56:39 itojun Exp $");
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/queue.h>
+#include <sys/poll.h>
+
 #include <net/if.h>
 #include <netinet/in.h>
 #include <ifaddrs.h>
-#include <sys/poll.h>
 #include <rpc/rpc.h>
 #ifdef PORTMAP
 #include <rpc/pmap_prot.h>

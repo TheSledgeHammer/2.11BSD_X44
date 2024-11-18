@@ -77,6 +77,8 @@ int pollscan(struct pollfd *, u_int, int *);
 #else
 __BEGIN_DECLS
 #if __BSD_VISIBLE
+typedef unsigned long 	sigset_t;
+
 int ppoll(struct pollfd[], nfds_t, const struct timespec *, const sigset_t *);
 #endif /* __BSD_VISIBLE */
 int poll(struct pollfd *, u_int, int);

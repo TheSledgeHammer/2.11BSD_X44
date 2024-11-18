@@ -1,9 +1,6 @@
-/*	$NetBSD: __rpc_getxid.c,v 1.3 2003/09/13 21:27:46 itojun Exp $	*/
-/*	$OpenBSD: ip_id.c,v 1.6 2002/03/15 18:19:52 millert Exp $	*/
-
 /*
- * Copyright (C) 2003 WIDE Project.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13,14 +10,18 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the project nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -32,42 +33,22 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: __rpc_getxid.c,v 1.3 2003/09/13 21:27:46 itojun Exp $");
+#if 0
+static char sccsid[] = "@(#)recv.c	8.2 (Berkeley) 2/21/94";
 #endif
+#endif /* LIBC_SCCS and not lint */
+
 
 #include <sys/types.h>
-#include <sys/time.h>
+#include <sys/socket.h>
 
-#include "namespace.h"
+#include <stddef.h>
 
-#include <stdlib.h>
-//#include <randomid.h>
-#include <rpc/rpc.h>
-
-#include "rpc_internal.h"
-
-/*
-u_int32_t
-__rpc_getxid(void)
+ssize_t
+recv(s, buf, len, flags)
+	int s, flags;
+	size_t len;
+	void *buf;
 {
-	static randomid_t ctx = NULL;
-
-	if (!ctx) {
-		ctx = randomid_new(32, RANDOMID_TIMEO_DEFAULT);
-		if (!ctx)
-			abort();
-	}
-
-	return randomid(ctx);
-}
-*/
-u_int32_t
-__rpc_getxid(void)
-{
-    struct timeval now;
-    u_int32_t xid;
-
-    gettimeofday(&now, NULL);
-    xid = (u_int32_t)getpid() ^ (u_int32_t)now.tv_sec ^ (u_int32_t)now.tv_usec;
-    return (xid);
+	return (recvfrom(s, buf, len, flags, NULL, 0));
 }

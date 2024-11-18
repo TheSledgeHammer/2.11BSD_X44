@@ -17,8 +17,8 @@
 SRCS+=	ethers.c getifaddrs.c getnbyaddr.c getnbyname.c getnent.c 	\
 		getpent.c getpname.c getproto.c getsbyname.c getsbyport.c 	\
 		getsent.c if_indextoname.c if_nameindex.c if_nametoindex.c 	\
-		ip6opt.c linkaddr.c rcmd.c rexec.c rthdr.c ruserpass.c		\
-		sockatmark.c
+		ip6opt.c linkaddr.c rcmd.c recv.c rexec.c rthdr.c 			\
+		ruserpass.c send.c sockatmark.c
 SRCS+=	nsdispatch.c nslexer.l nsparser.y
 
 .if (${MKHESIOD} != "no")
@@ -31,7 +31,7 @@ SRCS+=	hesiod.c
 
 SRCS+=	getaddrinfo.c getnameinfo.c
 .if (${USE_INET6} != "no")
-SRCS+=	ip6opt.c rthdr.c #inet6_scopeid.c
+SRCS+=	ip6opt.c rthdr.c
 .endif
 SRCS+=	vars6.c
 
