@@ -79,14 +79,6 @@ extern char *__rpc_rawcombuf;
 #include <sys/types.h>
 #endif
 #include <sys/time.h>
-#include <netconfig.h>
-
-typedef uint32_t rpcprog_t;
-typedef uint32_t rpcvers_t;
-typedef uint32_t rpcproc_t;
-typedef uint32_t rpcprot_t;
-typedef uint32_t rpcport_t;
-typedef int32_t  rpc_inline_t;
 
 /*
  * The netbuf structure is defined here, because NetBSD only uses it inside
@@ -101,27 +93,6 @@ struct netbuf {
 	unsigned int maxlen;
 	unsigned int len;
 	void *buf;
-};
-
-/*
- * The format of the address and options arguments of the XTI t_bind call.
- * Only provided for compatibility, it should not be used.
- */
-
-struct t_bind {
-	struct netbuf   addr;
-	unsigned int    qlen;
-};
-
-/*
- * Internal library and rpcbind use. This is not an exported interface, do
- * not use.
- */
-struct __rpc_sockinfo {
-	int si_af;
-	int si_proto;
-	int si_socktype;
-	int si_alen;
 };
 
 #endif /* !_RPC_TYPES_H */

@@ -1,4 +1,4 @@
-/*	$NetBSD: getrpcent.c,v 1.18.6.1 2004/08/11 19:41:12 jmc Exp $	*/
+/*	$NetBSD: getrpcent.c,v 1.13 1998/11/15 17:32:42 christos Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 #if 0
 static char *sccsid = "@(#)getrpcent.c 1.14 91/03/11 Copyr 1984 Sun Micro";
 #else
-__RCSID("$NetBSD: getrpcent.c,v 1.18.6.1 2004/08/11 19:41:12 jmc Exp $");
+__RCSID("$NetBSD: getrpcent.c,v 1.13 1998/11/15 17:32:42 christos Exp $");
 #endif
 #endif
 
@@ -50,7 +50,6 @@ __RCSID("$NetBSD: getrpcent.c,v 1.18.6.1 2004/08/11 19:41:12 jmc Exp $");
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <assert.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,11 +58,11 @@ __RCSID("$NetBSD: getrpcent.c,v 1.18.6.1 2004/08/11 19:41:12 jmc Exp $");
 #include <rpc/rpc.h>
 
 #ifdef __weak_alias
-__weak_alias(endrpcent,_endrpcent)
-__weak_alias(getrpcbyname,_getrpcbyname)
-__weak_alias(getrpcbynumber,_getrpcbynumber)
-__weak_alias(getrpcent,_getrpcent)
-__weak_alias(setrpcent,_setrpcent)
+__weak_alias(endrpcent,_endrpcent);
+__weak_alias(getrpcbyname,_getrpcbyname);
+__weak_alias(getrpcbynumber,_getrpcbynumber);
+__weak_alias(getrpcent,_getrpcent);
+__weak_alias(setrpcent,_setrpcent);
 #endif
 
 /*
@@ -85,7 +84,7 @@ static	struct rpcent *interpret(char *val, size_t len);
 static struct rpcdata *_rpcdata(void);
 
 static struct rpcdata *
-_rpcdata()
+_rpcdata(void)
 {
 	struct rpcdata *d = rpcdata;
 
@@ -118,8 +117,6 @@ getrpcbyname(name)
 	struct rpcent *rpc;
 	char **rp;
 
-	_DIAGASSERT(name != NULL);
-
 	setrpcent(0);
 	while ((rpc = getrpcent()) != NULL) {
 		if (strcmp(rpc->r_name, name) == 0)
@@ -150,7 +147,7 @@ setrpcent(f)
 }
 
 void
-endrpcent()
+endrpcent(void)
 {
 	struct rpcdata *d = _rpcdata();
 
@@ -163,7 +160,7 @@ endrpcent()
 }
 
 struct rpcent *
-getrpcent()
+getrpcent(void)
 {
 	struct rpcdata *d = _rpcdata();
 
@@ -171,7 +168,7 @@ getrpcent()
 		return(NULL);
 	if (d->rpcf == NULL && (d->rpcf = fopen(RPCDB, "r")) == NULL)
 		return (NULL);
-	if (fgets(d->line, BUFSIZ, d->rpcf) == NULL)
+    if (fgets(d->line, BUFSIZ, d->rpcf) == NULL)
 		return (NULL);
 	return (interpret(d->line, strlen(d->line)));
 }
@@ -185,11 +182,9 @@ interpret(val, len)
 	char *p;
 	char *cp, **q;
 
-	_DIAGASSERT(val != NULL);
-
 	if (d == 0)
 		return (0);
-	(void) strncpy(d->line, val, len);
+	(void) strncpy(d->line, val, sizeof(d->line) - 1);
 	p = d->line;
 	d->line[len] = '\n';
 	if (*p == '#')

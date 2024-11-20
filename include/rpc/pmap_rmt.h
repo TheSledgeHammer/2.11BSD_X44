@@ -45,7 +45,7 @@
 
 struct rmtcallargs {
 	u_long prog, vers, proc, arglen;
-	const char *args_ptr;
+	caddr_t args_ptr;
 	xdrproc_t xdr_args;
 };
 

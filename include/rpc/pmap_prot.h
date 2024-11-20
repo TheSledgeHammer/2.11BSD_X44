@@ -74,9 +74,9 @@
 
 #include <sys/cdefs.h>
 
-#define PMAPPORT			((u_short)111)
-#define PMAPPROG			((u_long)100000)
-#define PMAPVERS			((u_long)2)
+#define PMAPPORT		((u_short)111)
+#define PMAPPROG		((u_long)100000)
+#define PMAPVERS		((u_long)2)
 #define PMAPVERS_PROTO		((u_long)2)
 #define PMAPVERS_ORIG		((u_long)1)
 #define PMAPPROC_NULL		((u_long)0)
@@ -94,7 +94,7 @@ struct pmap {
 };
 
 struct pmaplist {
-	struct pmap		pml_map;
+	struct pmap	pml_map;
 	struct pmaplist *pml_next;
 };
 

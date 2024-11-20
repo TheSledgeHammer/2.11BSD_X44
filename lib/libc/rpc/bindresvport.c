@@ -1,4 +1,4 @@
-/*	$NetBSD: bindresvport.c,v 1.21 2003/01/18 11:29:03 thorpej Exp $	*/
+/*	$NetBSD: bindresvport.c,v 1.14 1999/01/20 11:37:35 lukem Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)bindresvport.c 1.8 88/02/08 SMI";
 static char *sccsid = "@(#)bindresvport.c	2.2 88/07/29 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: bindresvport.c,v 1.21 2003/01/18 11:29:03 thorpej Exp $");
+__RCSID("$NetBSD: bindresvport.c,v 1.14 1999/01/20 11:37:35 lukem Exp $");
 #endif
 #endif
 
@@ -57,19 +57,20 @@ __RCSID("$NetBSD: bindresvport.c,v 1.21 2003/01/18 11:29:03 thorpej Exp $");
 #include <rpc/rpc.h>
 
 #ifdef __weak_alias
-__weak_alias(bindresvport,_bindresvport)
-__weak_alias(bindresvport_sa,_bindresvport_sa)
+__weak_alias(bindresvport,_bindresvport);
+__weak_alias(bindresvport_sa,_bindresvport_sa);
 #endif
+
 
 /*
  * Bind a socket to a privileged IP port
  */
 int
-bindresvport(sd, brsin)
+bindresvport(sd, sin)
 	int sd;
-	struct sockaddr_in *brsin;
+	struct sockaddr_in *sin;
 {
-	return bindresvport_sa(sd, (struct sockaddr *)(void *)brsin);
+	return (bindresvport_sa(sd, (struct sockaddr *)sin));
 }
 
 /*
@@ -80,46 +81,44 @@ bindresvport_sa(sd, sa)
 	int sd;
 	struct sockaddr *sa;
 {
-	int error, old;
+	int error, old, af;
 	struct sockaddr_storage myaddr;
-	struct sockaddr_in *brsin;
+	struct sockaddr_in *sin;
 #ifdef INET6
-	struct sockaddr_in6 *brsin6;
+	struct sockaddr_in6 *sin6;
 #endif
 	int proto, portrange, portlow;
 	u_int16_t *portp;
 	socklen_t salen;
-	int af;
 
 	if (sa == NULL) {
 		salen = sizeof(myaddr);
-		sa = (struct sockaddr *)(void *)&myaddr;
-
-		if (getsockname(sd, sa, &salen) == -1)
-			return -1;	/* errno is correctly set */
-
+		sa = (struct sockaddr *)&myaddr;
+		if (getsockname(sd, sa, &salen) == -1) {
+			return (-1);
+		}
 		af = sa->sa_family;
 		memset(sa, 0, salen);
-	} else
+	} else {
 		af = sa->sa_family;
-
+	}
 	switch (af) {
 	case AF_INET:
 		proto = IPPROTO_IP;
 		portrange = IP_PORTRANGE;
 		portlow = IP_PORTRANGE_LOW;
-		brsin = (struct sockaddr_in *)(void *)sa;
+		sin = (struct sockaddr_in *)sa;
 		salen = sizeof(struct sockaddr_in);
-		portp = &brsin->sin_port;
+		portp = &sin->sin_port;
 		break;
 #ifdef INET6
 	case AF_INET6:
 		proto = IPPROTO_IPV6;
 		portrange = IPV6_PORTRANGE;
 		portlow = IPV6_PORTRANGE_LOW;
-		brsin6 = (struct sockaddr_in6 *)(void *)sa;
+		sin6 = (struct sockaddr_in6 *)sa;
 		salen = sizeof(struct sockaddr_in6);
-		portp = &brsin6->sin6_port;
+		portp = &sin6->sin6_port;
 		break;
 #endif
 	default:
@@ -133,10 +132,10 @@ bindresvport_sa(sd, sa)
 		socklen_t oldlen = sizeof(old);
 
 		error = getsockopt(sd, proto, portrange, &old, &oldlen);
-		if (error < 0)
+		if (error < 0) {
 			return (error);
-		error = setsockopt(sd, proto, portrange, &portlow,
-		    sizeof(portlow));
+		}
+		error = setsockopt(sd, proto, portrange, &portlow, sizeof(portlow));
 		if (error < 0)
 			return (error);
 	}
@@ -147,13 +146,12 @@ bindresvport_sa(sd, sa)
 		int saved_errno = errno;
 
 		if (error < 0) {
-			if (setsockopt(sd, proto, portrange, &old,
-			    sizeof(old)) < 0)
+			if (setsockopt(sd, proto, portrange, &old, sizeof(old)) < 0)
 				errno = saved_errno;
 			return (error);
 		}
 
-		if (sa != (struct sockaddr *)(void *)&myaddr) {
+		if (sa != (struct sockaddr*) (void*) &myaddr) {
 			/* What did the kernel assign? */
 			if (getsockname(sd, sa, &salen) < 0)
 				errno = saved_errno;

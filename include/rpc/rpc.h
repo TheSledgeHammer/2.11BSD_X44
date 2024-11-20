@@ -72,8 +72,6 @@
 #include <rpc/pmap_clnt.h>
 #include <rpc/pmap_prot.h>
 
-#include <rpc/rpcb_clnt.h>	/* rpcbind interface functions */
-
 /*
  * COMMENT OUT THE NEXT INCLUDE (or add to the #ifndef) IF RUNNING ON
  * A VERSION OF UNIX THAT USES SUN'S NFS SOURCE.  These systems will
@@ -90,30 +88,12 @@ struct rpcent {
 __BEGIN_DECLS
 extern int get_myaddress(struct sockaddr_in *);
 extern int bindresvport(int, struct sockaddr_in *);
-extern int registerrpc(int, int, int, char *(*)(char [UDPMSGSIZE]),
-    xdrproc_t, xdrproc_t);
-extern int callrpc(char *, int, int, int, xdrproc_t, char *,
-    xdrproc_t , char *);
+extern int registerrpc(int, int, int, char *(*)(char [UDPMSGSIZE]), xdrproc_t, xdrproc_t);
+extern int callrpc(char *, int, int, int, xdrproc_t, char *, xdrproc_t , char *);
 extern int getrpcport(char *, int, int, int);
-
-char *taddr2uaddr(const struct netconfig *, const struct netbuf *);
-struct netbuf *uaddr2taddr(const struct netconfig *, const char *);
 
 struct sockaddr;
 extern int bindresvport_sa(int, struct sockaddr *);
-__END_DECLS
-
-/*
- * The following are not exported interfaces, they are for internal library
- * and rpcbind use only. Do not use, they may change without notice.
- */
-__BEGIN_DECLS
-int __rpc_nconf2fd(const struct netconfig *);
-int __rpc_nconf2sockinfo(const struct netconfig *,
-			      struct __rpc_sockinfo *);
-int __rpc_fd2sockinfo(int, struct __rpc_sockinfo *);
-int __rpc_setnodelay(int, const struct __rpc_sockinfo *);
-unsigned __rpc_get_t_size(int, int, int);
 __END_DECLS
 
 __BEGIN_DECLS

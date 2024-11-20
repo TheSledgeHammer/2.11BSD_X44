@@ -1,4 +1,4 @@
-/*	$NetBSD: rpc_prot.c,v 1.18 2003/05/29 18:15:25 christos Exp $	*/
+/*	$NetBSD: rpc_prot.c,v 1.12 1999/01/31 20:45:31 christos Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)rpc_prot.c 1.36 87/08/11 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)rpc_prot.c	2.3 88/08/07 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: rpc_prot.c,v 1.18 2003/05/29 18:15:25 christos Exp $");
+__RCSID("$NetBSD: rpc_prot.c,v 1.12 1999/01/31 20:45:31 christos Exp $");
 #endif
 #endif
 
@@ -56,23 +56,23 @@ __RCSID("$NetBSD: rpc_prot.c,v 1.18 2003/05/29 18:15:25 christos Exp $");
 
 #include <sys/param.h>
 
-#include <assert.h>
-
 #include <rpc/rpc.h>
 
 #ifdef __weak_alias
-__weak_alias(xdr_accepted_reply,_xdr_accepted_reply)
-__weak_alias(xdr_callhdr,_xdr_callhdr)
-__weak_alias(xdr_des_block,_xdr_des_block)
-__weak_alias(xdr_opaque_auth,_xdr_opaque_auth)
-__weak_alias(xdr_rejected_reply,_xdr_rejected_reply)
-__weak_alias(xdr_replymsg,_xdr_replymsg)
+__weak_alias(xdr_accepted_reply,_xdr_accepted_reply);
+__weak_alias(xdr_callhdr,_xdr_callhdr);
+__weak_alias(xdr_des_block,_xdr_des_block);
+__weak_alias(xdr_opaque_auth,_xdr_opaque_auth);
+__weak_alias(xdr_rejected_reply,_xdr_rejected_reply);
+__weak_alias(xdr_replymsg,_xdr_replymsg);
 #endif
 
 static void accepted(enum accept_stat, struct rpc_err *);
 static void rejected(enum reject_stat, struct rpc_err *);
 
 /* * * * * * * * * * * * * * XDR Authentication * * * * * * * * * * * */
+
+struct opaque_auth _null_auth;
 
 /*
  * XDR an opaque authentication struct
@@ -83,9 +83,6 @@ xdr_opaque_auth(xdrs, ap)
 	XDR *xdrs;
 	struct opaque_auth *ap;
 {
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(ap != NULL);
 
 	if (xdr_enum(xdrs, &(ap->oa_flavor)))
 		return (xdr_bytes(xdrs, &ap->oa_base,
@@ -101,10 +98,6 @@ xdr_des_block(xdrs, blkp)
 	XDR *xdrs;
 	des_block *blkp;
 {
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(blkp != NULL);
-
 	return (xdr_opaque(xdrs, (caddr_t)(void *)blkp, sizeof(des_block)));
 }
 
@@ -119,13 +112,10 @@ xdr_accepted_reply(xdrs, ar)
 	struct accepted_reply *ar;
 {
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(ar != NULL);
-
 	/* personalized union, rather than calling xdr_union */
 	if (! xdr_opaque_auth(xdrs, &(ar->ar_verf)))
 		return (FALSE);
-	if (! xdr_enum(xdrs, (enum_t *)(void *)&(ar->ar_stat)))
+	if (! xdr_enum(xdrs, (enum_t *)&(ar->ar_stat)))
 		return (FALSE);
 	switch (ar->ar_stat) {
 
@@ -155,11 +145,8 @@ xdr_rejected_reply(xdrs, rr)
 	struct rejected_reply *rr;
 {
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(rr != NULL);
-
 	/* personalized union, rather than calling xdr_union */
-	if (! xdr_enum(xdrs, (enum_t *)(void *)&(rr->rj_stat)))
+	if (! xdr_enum(xdrs, (enum_t *)&(rr->rj_stat)))
 		return (FALSE);
 	switch (rr->rj_stat) {
 
@@ -169,13 +156,13 @@ xdr_rejected_reply(xdrs, rr)
 		return (xdr_u_int32_t(xdrs, &(rr->rj_vers.high)));
 
 	case AUTH_ERROR:
-		return (xdr_enum(xdrs, (enum_t *)(void *)&(rr->rj_why)));
+		return (xdr_enum(xdrs, (enum_t *)&(rr->rj_why)));
 	}
 	/* NOTREACHED */
 	return (FALSE);
 }
 
-static const struct xdr_discrim reply_dscrm[3] = {
+static struct xdr_discrim reply_dscrm[3] = {
 	{ (int)MSG_ACCEPTED, (xdrproc_t)xdr_accepted_reply },
 	{ (int)MSG_DENIED, (xdrproc_t)xdr_rejected_reply },
 	{ __dontcare__, NULL_xdrproc_t } };
@@ -188,15 +175,12 @@ xdr_replymsg(xdrs, rmsg)
 	XDR *xdrs;
 	struct rpc_msg *rmsg;
 {
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(rmsg != NULL);
-
 	if (
 	    xdr_u_int32_t(xdrs, &(rmsg->rm_xid)) && 
-	    xdr_enum(xdrs, (enum_t *)(void *)&(rmsg->rm_direction)) &&
+	    xdr_enum(xdrs, (enum_t *)&(rmsg->rm_direction)) &&
 	    (rmsg->rm_direction == REPLY) )
-		return (xdr_union(xdrs, (enum_t *)(void *)&(rmsg->rm_reply.rp_stat),
-		   (caddr_t)(void *)&(rmsg->rm_reply.ru), reply_dscrm,
+		return (xdr_union(xdrs, (enum_t *)&(rmsg->rm_reply.rp_stat),
+		   (caddr_t)&(rmsg->rm_reply.ru), reply_dscrm,
 		   NULL_xdrproc_t));
 	return (FALSE);
 }
@@ -213,15 +197,12 @@ xdr_callhdr(xdrs, cmsg)
 	struct rpc_msg *cmsg;
 {
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(cmsg != NULL);
-
 	cmsg->rm_direction = CALL;
 	cmsg->rm_call.cb_rpcvers = RPC_MSG_VERSION;
 	if (
 	    (xdrs->x_op == XDR_ENCODE) &&
 	    xdr_u_int32_t(xdrs, &(cmsg->rm_xid)) &&
-	    xdr_enum(xdrs, (enum_t *)(void *)&(cmsg->rm_direction)) &&
+	    xdr_enum(xdrs, (enum_t *)&(cmsg->rm_direction)) &&
 	    xdr_u_int32_t(xdrs, &(cmsg->rm_call.cb_rpcvers)) &&
 	    xdr_u_int32_t(xdrs, &(cmsg->rm_call.cb_prog)) )
 		return (xdr_u_int32_t(xdrs, &(cmsg->rm_call.cb_vers)));
@@ -235,8 +216,6 @@ accepted(acpt_stat, error)
 	enum accept_stat acpt_stat;
 	struct rpc_err *error;
 {
-
-	_DIAGASSERT(error != NULL);
 
 	switch (acpt_stat) {
 
@@ -277,8 +256,6 @@ rejected(rjct_stat, error)
 	struct rpc_err *error;
 {
 
-	_DIAGASSERT(error != NULL);
-
 	switch (rjct_stat) {
 	case RPC_MISMATCH:
 		error->re_status = RPC_VERSMISMATCH;
@@ -303,9 +280,6 @@ _seterr_reply(msg, error)
 	struct rpc_msg *msg;
 	struct rpc_err *error;
 {
-
-	_DIAGASSERT(msg != NULL);
-	_DIAGASSERT(error != NULL);
 
 	/* optimized for normal, SUCCESSful case */
 	switch (msg->rm_reply.rp_stat) {
@@ -358,7 +332,6 @@ _seterr_reply(msg, error)
 	case RPC_CANTSEND:
 	case RPC_CANTDECODERES:
 	case RPC_CANTENCODEARGS:
-	default:
 		break;
 	}
 }

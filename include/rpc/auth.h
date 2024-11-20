@@ -174,10 +174,6 @@ extern AUTH *authnone_create(void);
 extern AUTH *authdes_create(char *, u_int, struct sockaddr_in *, des_block *);
 
 extern bool_t xdr_opaque_auth(XDR *, struct opaque_auth *);
-extern void set_rpc_maxgrouplist(int);
-
-#define authsys_create(c,i1,i2,i3,ip) authunix_create((c),(i1),(i2),(i3),(ip))
-#define authsys_create_default() authunix_create_default()
 
 struct svc_req;
 struct rpc_msg;

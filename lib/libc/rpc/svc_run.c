@@ -1,4 +1,4 @@
-/*	$NetBSD: svc_run.c,v 1.19 2003/01/18 11:29:07 thorpej Exp $	*/
+/*	$NetBSD: svc_run.c,v 1.13 1999/01/20 11:37:39 lukem Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)svc_run.c 1.1 87/10/13 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)svc_run.c	2.1 88/07/29 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: svc_run.c,v 1.19 2003/01/18 11:29:07 thorpej Exp $");
+__RCSID("$NetBSD: svc_run.c,v 1.13 1999/01/20 11:37:39 lukem Exp $");
 #endif
 #endif
 
@@ -44,67 +44,94 @@ __RCSID("$NetBSD: svc_run.c,v 1.19 2003/01/18 11:29:07 thorpej Exp $");
  * Wait for input, call server program.
  */
 #include "namespace.h"
-#include "reentrant.h"
+
 #include <err.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <rpc/rpc.h>
 
-#include "rpc_internal.h"
-
 #ifdef __weak_alias
-__weak_alias(svc_run,_svc_run)
-__weak_alias(svc_exit,_svc_exit)
+__weak_alias(svc_run,_svc_run);
+#endif
+
+#ifdef _SELECT_DECLARED
+static int svc_run_select(fd_set *);
+#else
+static int svc_run_poll(struct pollfd *);
 #endif
 
 void
-svc_run()
+svc_run(void)
 {
-	fd_set readfds, cleanfds;
-	struct timeval timeout;
-#ifdef _REENTRANT
-	extern rwlock_t svc_fd_lock;
-#endif
-
-	timeout.tv_sec = 30;
-	timeout.tv_usec = 0;
+	fd_set readfds;
+	struct pollfd readpfd;
+	int ret;
 
 	for (;;) {
-		rwlock_rdlock(&svc_fd_lock);
+		readpfd = svc_pollfd;
 		readfds = svc_fdset;
-		cleanfds = svc_fdset;
-		rwlock_unlock(&svc_fd_lock);
-		switch (select(svc_maxfd+1, &readfds, NULL, NULL, &timeout)) {
+
+#ifdef _SELECT_DECLARED
+		ret = svc_run_select(&readfds);
+#else
+		ret = svc_run_poll(&readpfd);
+#endif
+		switch (ret) {
 		case -1:
 			if (errno == EINTR) {
 				continue;
 			}
-			warn("svc_run: - select failed");
 			return;
 		case 0:
-			__svc_clean_idle(&cleanfds, 30, FALSE);
 			continue;
 		default:
-			svc_getreqset(&readfds);
+			svc_getreqset_mix(&readpfd, &readfds);
 		}
 	}
 }
 
-/*
- *      This function causes svc_run() to exit by telling it that it has no
- *      more work to do.
- */
-void
-svc_exit()
+#ifdef _SELECT_DECLARED
+static int
+svc_run_select(readfds)
+	fd_set *readfds;
 {
-#ifdef _REENTRANT
-	extern rwlock_t svc_fd_lock;
-#endif
+	int ret;
 
-	rwlock_wrlock(&svc_fd_lock);
-	FD_ZERO(&svc_fdset);
-	rwlock_unlock(&svc_fd_lock);
+	ret = select(svc_maxfd+1, readfds, (fd_set *)0, (fd_set *)0, (struct timeval *)0);
+	if (ret != 0) {
+		warn("svc_run: - select failed");
+		return (-1);
+	}
+	return (0);
 }
+
+#else
+
+static int
+svc_run_poll(readpfd)
+	struct pollfd *readpfd;
+{
+	struct pollfd *newp;
+	int ret, saved_max_pollfd = 0;
+
+	if (svc_max_pollfd > saved_max_pollfd) {
+		newp = reallocarray(readpfd, svc_max_pollfd, sizeof(*readpfd));
+		if (newp == NULL) {
+			return (-1);			/* XXX */
+		}
+		saved_max_pollfd = svc_max_pollfd;
+		readpfd = newp;
+	}
+	memcpy(readpfd, &svc_pollfd, sizeof(*readpfd) * svc_max_pollfd);
+	ret = poll(readpfd, svc_max_pollfd, INFTIM);
+	if (ret != 0) {
+		warn("svc_run: - poll failed");
+		return (-1);
+	}
+	return (0);
+}
+#endif

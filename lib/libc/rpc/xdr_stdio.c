@@ -1,4 +1,4 @@
-/*	$NetBSD: xdr_stdio.c,v 1.16 2004/01/03 23:50:47 martin Exp $	*/
+/*	$NetBSD: xdr_stdio.c,v 1.13 1999/03/25 01:16:11 lukem Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)xdr_stdio.c 1.16 87/08/11 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)xdr_stdio.c	2.1 88/07/29 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: xdr_stdio.c,v 1.16 2004/01/03 23:50:47 martin Exp $");
+__RCSID("$NetBSD: xdr_stdio.c,v 1.13 1999/03/25 01:16:11 lukem Exp $");
 #endif
 #endif
 
@@ -57,14 +57,14 @@ __RCSID("$NetBSD: xdr_stdio.c,v 1.16 2004/01/03 23:50:47 martin Exp $");
 #include <rpc/xdr.h>
 
 #ifdef __weak_alias
-__weak_alias(xdrstdio_create,_xdrstdio_create)
+__weak_alias(xdrstdio_create,_xdrstdio_create);
 #endif
 
 static void xdrstdio_destroy(XDR *);
 static bool_t xdrstdio_getlong(XDR *, long *);
 static bool_t xdrstdio_putlong(XDR *, const long *);
-static bool_t xdrstdio_getbytes(XDR *, char *, u_int);
-static bool_t xdrstdio_putbytes(XDR *, const char *, u_int);
+static bool_t xdrstdio_getbytes(XDR *, caddr_t, u_int);
+static bool_t xdrstdio_putbytes(XDR *, const caddr_t, u_int);
 static u_int xdrstdio_getpos(XDR *);
 static bool_t xdrstdio_setpos(XDR *, u_int);
 static int32_t *xdrstdio_inline(XDR *, u_int);
@@ -73,14 +73,14 @@ static int32_t *xdrstdio_inline(XDR *, u_int);
  * Ops vector for stdio type XDR
  */
 static const struct xdr_ops	xdrstdio_ops = {
-	xdrstdio_getlong,	/* deseraialize a long int */
-	xdrstdio_putlong,	/* seraialize a long int */
-	xdrstdio_getbytes,	/* deserialize counted bytes */
-	xdrstdio_putbytes,	/* serialize counted bytes */
-	xdrstdio_getpos,	/* get offset in the stream */
-	xdrstdio_setpos,	/* set offset in the stream */
-	xdrstdio_inline,	/* prime stream for inline macros */
-	xdrstdio_destroy	/* destroy stream */
+		xdrstdio_getlong,	/* deseraialize a long int */
+		xdrstdio_putlong,	/* seraialize a long int */
+		xdrstdio_getbytes,	/* deserialize counted bytes */
+		xdrstdio_putbytes,	/* serialize counted bytes */
+		xdrstdio_getpos,	/* get offset in the stream */
+		xdrstdio_setpos,	/* set offset in the stream */
+		xdrstdio_inline,	/* prime stream for inline macros */
+		xdrstdio_destroy	/* destroy stream */
 };
 
 /*
@@ -119,11 +119,10 @@ xdrstdio_getlong(xdrs, lp)
 	XDR *xdrs;
 	long *lp;
 {
-	u_int32_t temp;
 
-	if (fread(&temp, sizeof(int32_t), 1, (FILE *)xdrs->x_private) != 1)
+	if (fread(lp, sizeof(int32_t), 1, (FILE *)xdrs->x_private) != 1)
 		return (FALSE);
-	*lp = (long)ntohl(temp);
+	*lp = (long)ntohl((u_int32_t)*lp);
 	return (TRUE);
 }
 
@@ -132,7 +131,7 @@ xdrstdio_putlong(xdrs, lp)
 	XDR *xdrs;
 	const long *lp;
 {
-	int32_t mycopy = htonl((u_int32_t)*lp);
+	long mycopy = (long)htonl((u_int32_t)*lp);
 
 	if (fwrite(&mycopy, sizeof(int32_t), 1, (FILE *)xdrs->x_private) != 1)
 		return (FALSE);
@@ -142,7 +141,7 @@ xdrstdio_putlong(xdrs, lp)
 static bool_t
 xdrstdio_getbytes(xdrs, addr, len)
 	XDR *xdrs;
-	char *addr;
+	caddr_t addr;
 	u_int len;
 {
 
@@ -154,7 +153,7 @@ xdrstdio_getbytes(xdrs, addr, len)
 static bool_t
 xdrstdio_putbytes(xdrs, addr, len)
 	XDR *xdrs;
-	const char *addr;
+	const caddr_t addr;
 	u_int len;
 {
 

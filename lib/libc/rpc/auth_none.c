@@ -1,4 +1,4 @@
-/*	$NetBSD: auth_none.c,v 1.14 2001/01/16 15:46:52 lukem Exp $	*/
+/*	$NetBSD: auth_none.c,v 1.11 1999/01/20 11:37:34 lukem Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,21 +35,20 @@
 static char *sccsid = "@(#)auth_none.c 1.19 87/08/11 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)auth_none.c	2.1 88/07/29 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: auth_none.c,v 1.14 2001/01/16 15:46:52 lukem Exp $");
+__RCSID("$NetBSD: auth_none.c,v 1.11 1999/01/20 11:37:34 lukem Exp $");
 #endif
 #endif
 
 /*
  * auth_none.c
- * Creates a client authentication handle for passing "null"
- * credentials and verifiers to remote systems.
- *
- * Copyright (C) 1984, Sun Microsystems, Inc.
+ * Creates a client authentication handle for passing "null" 
+ * credentials and verifiers to remote systems. 
+ * 
+ * Copyright (C) 1984, Sun Microsystems, Inc. 
  */
 
 #include "namespace.h"
 
-#include <assert.h>
 #include <stdlib.h>
 
 #include <rpc/types.h>
@@ -57,10 +56,10 @@ __RCSID("$NetBSD: auth_none.c,v 1.14 2001/01/16 15:46:52 lukem Exp $");
 #include <rpc/auth.h>
 
 #ifdef __weak_alias
-__weak_alias(authnone_create,_authnone_create)
+__weak_alias(authnone_create,_authnone_create);
 #endif
 
-#define MAX_MARSHAL_SIZE 20
+#define MAX_MARSHEL_SIZE 20
 
 /*
  * Authenticator operations routines
@@ -82,12 +81,12 @@ static const struct auth_ops ops = {
 
 static struct authnone_private {
 	AUTH	no_client;
-	char	marshalled_client[MAX_MARSHAL_SIZE];
+	char	marshalled_client[MAX_MARSHEL_SIZE];
 	u_int	mcnt;
 } *authnone_private;
 
 AUTH *
-authnone_create(void)
+authnone_create()
 {
 	struct authnone_private *ap = authnone_private;
 	XDR xdr_stream;
@@ -104,7 +103,7 @@ authnone_create(void)
 		ap->no_client.ah_ops = &ops;
 		xdrs = &xdr_stream;
 		xdrmem_create(xdrs, ap->marshalled_client,
-		    (u_int)MAX_MARSHAL_SIZE, XDR_ENCODE);
+		    (u_int)MAX_MARSHEL_SIZE, XDR_ENCODE);
 		(void)xdr_opaque_auth(xdrs, &ap->no_client.ah_cred);
 		(void)xdr_opaque_auth(xdrs, &ap->no_client.ah_verf);
 		ap->mcnt = XDR_GETPOS(xdrs);
@@ -120,8 +119,6 @@ authnone_marshal(client, xdrs)
 	XDR *xdrs;
 {
 	struct authnone_private *ap = authnone_private;
-
-	_DIAGASSERT(xdrs != NULL);
 
 	if (ap == 0)
 		return (0);

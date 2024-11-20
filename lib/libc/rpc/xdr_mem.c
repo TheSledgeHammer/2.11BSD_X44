@@ -1,4 +1,4 @@
-/*	$NetBSD: xdr_mem.c,v 1.16 2003/03/16 15:42:22 christos Exp $	*/
+/*	$NetBSD: xdr_mem.c,v 1.14 1998/11/15 17:32:47 christos Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)xdr_mem.c 1.19 87/08/11 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)xdr_mem.c	2.1 88/07/29 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: xdr_mem.c,v 1.16 2003/03/16 15:42:22 christos Exp $");
+__RCSID("$NetBSD: xdr_mem.c,v 1.14 1998/11/15 17:32:47 christos Exp $");
 #endif
 #endif
 
@@ -62,16 +62,16 @@ __RCSID("$NetBSD: xdr_mem.c,v 1.16 2003/03/16 15:42:22 christos Exp $");
 #include <rpc/xdr.h>
 
 #ifdef __weak_alias
-__weak_alias(xdrmem_create,_xdrmem_create)
+__weak_alias(xdrmem_create,_xdrmem_create);
 #endif
 
-static void xdrmem_destroy(XDR *));
+static void xdrmem_destroy(XDR *);
 static bool_t xdrmem_getlong_aligned(XDR *, long *);
 static bool_t xdrmem_putlong_aligned(XDR *, const long *);
 static bool_t xdrmem_getlong_unaligned(XDR *, long *);
 static bool_t xdrmem_putlong_unaligned(XDR *, const long *);
-static bool_t xdrmem_getbytes(XDR *, char *, u_int);
-static bool_t xdrmem_putbytes(XDR *, const char *, u_int);
+static bool_t xdrmem_getbytes(XDR *, caddr_t, u_int);
+static bool_t xdrmem_putbytes(XDR *, const caddr_t, u_int);
 /* XXX: w/64-bit pointers, u_int not enough! */
 static u_int xdrmem_getpos(XDR *);
 static bool_t xdrmem_setpos(XDR *, u_int);
@@ -79,25 +79,25 @@ static int32_t *xdrmem_inline_aligned(XDR *, u_int);
 static int32_t *xdrmem_inline_unaligned(XDR *, u_int);
 
 static const struct	xdr_ops xdrmem_ops_aligned = {
-	xdrmem_getlong_aligned,
-	xdrmem_putlong_aligned,
-	xdrmem_getbytes,
-	xdrmem_putbytes,
-	xdrmem_getpos,
-	xdrmem_setpos,
-	xdrmem_inline_aligned,
-	xdrmem_destroy
+		xdrmem_getlong_aligned,
+		xdrmem_putlong_aligned,
+		xdrmem_getbytes,
+		xdrmem_putbytes,
+		xdrmem_getpos,
+		xdrmem_setpos,
+		xdrmem_inline_aligned,
+		xdrmem_destroy
 };
 
 static const struct	xdr_ops xdrmem_ops_unaligned = {
-	xdrmem_getlong_unaligned,
-	xdrmem_putlong_unaligned,
-	xdrmem_getbytes,
-	xdrmem_putbytes,
-	xdrmem_getpos,
-	xdrmem_setpos,
-	xdrmem_inline_unaligned,
-	xdrmem_destroy
+		xdrmem_getlong_unaligned,
+		xdrmem_putlong_unaligned,
+		xdrmem_getbytes,
+		xdrmem_putbytes,
+		xdrmem_getpos,
+		xdrmem_setpos,
+		xdrmem_inline_unaligned,
+		xdrmem_destroy
 };
 
 /*
@@ -133,9 +133,8 @@ xdrmem_getlong_aligned(xdrs, lp)
 	long *lp;
 {
 
-	if (xdrs->x_handy < sizeof(int32_t))
+	if ((xdrs->x_handy -= sizeof(int32_t)) < 0)
 		return (FALSE);
-	xdrs->x_handy -= sizeof(int32_t);
 	*lp = ntohl(*(u_int32_t *)xdrs->x_private);
 	xdrs->x_private = (char *)xdrs->x_private + sizeof(int32_t);
 	return (TRUE);
@@ -147,9 +146,8 @@ xdrmem_putlong_aligned(xdrs, lp)
 	const long *lp;
 {
 
-	if (xdrs->x_handy < sizeof(int32_t))
+	if ((xdrs->x_handy -= sizeof(int32_t)) < 0)
 		return (FALSE);
-	xdrs->x_handy -= sizeof(int32_t);
 	*(u_int32_t *)xdrs->x_private = htonl((u_int32_t)*lp);
 	xdrs->x_private = (char *)xdrs->x_private + sizeof(int32_t);
 	return (TRUE);
@@ -162,9 +160,8 @@ xdrmem_getlong_unaligned(xdrs, lp)
 {
 	u_int32_t l;
 
-	if (xdrs->x_handy < sizeof(int32_t))
+	if ((xdrs->x_handy -= sizeof(int32_t)) < 0)
 		return (FALSE);
-	xdrs->x_handy -= sizeof(int32_t);
 	memmove(&l, xdrs->x_private, sizeof(int32_t));
 	*lp = ntohl(l);
 	xdrs->x_private = (char *)xdrs->x_private + sizeof(int32_t);
@@ -178,9 +175,8 @@ xdrmem_putlong_unaligned(xdrs, lp)
 {
 	u_int32_t l;
 
-	if (xdrs->x_handy < sizeof(int32_t))
+	if ((xdrs->x_handy -= sizeof(int32_t)) < 0)
 		return (FALSE);
-	xdrs->x_handy -= sizeof(int32_t);
 	l = htonl((u_int32_t)*lp);
 	memmove(xdrs->x_private, &l, sizeof(int32_t));
 	xdrs->x_private = (char *)xdrs->x_private + sizeof(int32_t);
@@ -190,13 +186,12 @@ xdrmem_putlong_unaligned(xdrs, lp)
 static bool_t
 xdrmem_getbytes(xdrs, addr, len)
 	XDR *xdrs;
-	char *addr;
+	caddr_t addr;
 	u_int len;
 {
 
-	if (xdrs->x_handy < len)
+	if ((xdrs->x_handy -= len) < 0)
 		return (FALSE);
-	xdrs->x_handy -= len;
 	memmove(addr, xdrs->x_private, len);
 	xdrs->x_private = (char *)xdrs->x_private + len;
 	return (TRUE);
@@ -205,13 +200,12 @@ xdrmem_getbytes(xdrs, addr, len)
 static bool_t
 xdrmem_putbytes(xdrs, addr, len)
 	XDR *xdrs;
-	const char *addr;
+	const caddr_t addr;
 	u_int len;
 {
 
-	if (xdrs->x_handy < len)
+	if ((xdrs->x_handy -= len) < 0)
 		return (FALSE);
-	xdrs->x_handy -= len;
 	memmove(xdrs->x_private, addr, len);
 	xdrs->x_private = (char *)xdrs->x_private + len;
 	return (TRUE);

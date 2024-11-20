@@ -53,58 +53,41 @@
  * independent) list of errors.
  */
 enum clnt_stat {
-	RPC_SUCCESS=0,				/* call succeeded */
+	RPC_SUCCESS=0,			/* call succeeded */
 	/*
 	 * local errors
 	 */
 	RPC_CANTENCODEARGS=1,		/* can't encode arguments */
 	RPC_CANTDECODERES=2,		/* can't decode results */
-	RPC_CANTSEND=3,				/* failure in sending call */
-	RPC_CANTRECV=4,				/* failure in receiving result */
-	RPC_TIMEDOUT=5,				/* call timed out */
-
+	RPC_CANTSEND=3,			/* failure in sending call */
+	RPC_CANTRECV=4,			/* failure in receiving result */
+	RPC_TIMEDOUT=5,			/* call timed out */
 	/*
 	 * remote errors
 	 */
-	RPC_VERSMISMATCH=6,			/* rpc versions not compatible */
-	RPC_AUTHERROR=7,			/* authentication error */
-	RPC_PROGUNAVAIL=8,			/* program not available */
+	RPC_VERSMISMATCH=6,		/* rpc versions not compatible */
+	RPC_AUTHERROR=7,		/* authentication error */
+	RPC_PROGUNAVAIL=8,		/* program not available */
 	RPC_PROGVERSMISMATCH=9,		/* program version mismatched */
-	RPC_PROCUNAVAIL=10,			/* procedure unavailable */
+	RPC_PROCUNAVAIL=10,		/* procedure unavailable */
 	RPC_CANTDECODEARGS=11,		/* decode arguments error */
-	RPC_SYSTEMERROR=12,			/* generic "other problem" */
+	RPC_SYSTEMERROR=12,		/* generic "other problem" */
 
 	/*
 	 * callrpc & clnt_create errors
 	 */
-	RPC_UNKNOWNHOST=13,			/* unknown host name */
+	RPC_UNKNOWNHOST=13,		/* unknown host name */
 	RPC_UNKNOWNPROTO=17,		/* unkown protocol */
-	RPC_UNKNOWNADDR = 19,		/* Remote address unknown */
-	RPC_NOBROADCAST = 21,		/* Broadcasting not supported */
 
 	/*
 	 * _ create errors
 	 */
-	RPC_PMAPFAILURE=14,			/* the pmapper failed in its call */
-#define RPC_PMAPFAILURE RPC_RPCBFAILURE
+	RPC_PMAPFAILURE=14,		/* the pmapper failed in its call */
 	RPC_PROGNOTREGISTERED=15,	/* remote program is not registered */
-	RPC_N2AXLATEFAILURE = 22,	/* name -> addr translation failed */
-
-	/*
-	 * Misc error in the TLI library (provided for compatibility)
-	 */
-	RPC_TLIERROR = 20,
-
 	/*
 	 * unspecified error
 	 */
-	RPC_FAILED=16,
-
-	/*
-	 * asynchronous errors
-	 */
-	RPC_INPROGRESS = 24,
-	RPC_STALERACHANDLE = 25
+	RPC_FAILED=16
 };
 
 
@@ -139,7 +122,7 @@ struct rpc_err {
  */
 typedef struct __rpc_client {
 	AUTH	*cl_auth;			/* authenticator */
-	struct clnt_ops {
+	const struct clnt_ops {
 		/* call remote procedure */
 		enum clnt_stat	(*cl_call)(struct __rpc_client *, u_long, xdrproc_t, caddr_t, xdrproc_t, caddr_t, struct timeval);
 		/* abort a call */
@@ -154,31 +137,7 @@ typedef struct __rpc_client {
 		bool_t      (*cl_control)(struct __rpc_client *, u_int, char *);
 	} *cl_ops;
 	void			*cl_private;	/* private stuff */
-	char			*cl_netid;		/* network token */
-	char			*cl_tp;			/* device name */
 } CLIENT;
-
-/*
- * Timers used for the pseudo-transport protocol when using datagrams
- */
-struct rpc_timers {
-	unsigned short	rt_srtt;	/* smoothed round-trip time */
-	unsigned short	rt_deviate;	/* estimated deviation */
-	unsigned long	rt_rtxcur;	/* current (backed-off) rto */
-};
-
-/*
- * Feedback values used for possible congestion and rate control
- */
-#define FEEDBACK_REXMIT1	1	/* first retransmit */
-#define FEEDBACK_OK			2	/* no retransmits */
-
-/* Used to set version of portmapper used in broadcast */
-
-#define CLCR_SET_LOWVERS	3
-#define CLCR_GET_LOWVERS	4
-
-#define RPCSMALLMSGSIZE 400	/* a more reasonable packet size */
 
 /*
  * client side rpc interface ops
@@ -245,27 +204,27 @@ struct rpc_timers {
 /*
  * control operations that apply to both udp and tcp transports
  */
-#define CLSET_TIMEOUT       1   /* set timeout (timeval) */
-#define CLGET_TIMEOUT       2   /* get timeout (timeval) */
-#define CLGET_SERVER_ADDR   3   /* get server's address (sockaddr) */
-#define	CLGET_FD			6	/* get connections file descriptor */
+#define CLSET_TIMEOUT       	1   	/* set timeout (timeval) */
+#define CLGET_TIMEOUT       	2   	/* get timeout (timeval) */
+#define CLGET_SERVER_ADDR   	3   	/* get server's address (sockaddr) */
+#define	CLGET_FD		6	/* get connections file descriptor */
 #define	CLGET_SVC_ADDR		7	/* get server's address (netbuf) */
 #define	CLSET_FD_CLOSE		8	/* close fd while clnt_destroy */
 #define	CLSET_FD_NCLOSE		9	/* Do not close fd while clnt_destroy */
-#define	CLGET_XID 			10	/* Get xid */
-#define	CLSET_XID			11	/* Set xid */
-#define	CLGET_VERS			12	/* Get version number */
-#define	CLSET_VERS			13	/* Set version number */
-#define	CLGET_PROG			14	/* Get program number */
-#define	CLSET_PROG			15	/* Set program number */
+#define	CLGET_XID 		10	/* Get xid */
+#define	CLSET_XID		11	/* Set xid */
+#define	CLGET_VERS		12	/* Get version number */
+#define	CLSET_VERS		13	/* Set version number */
+#define	CLGET_PROG		14	/* Get program number */
+#define	CLSET_PROG		15	/* Set program number */
 #define	CLSET_SVC_ADDR		16	/* get server's address (netbuf) */
 #define	CLSET_PUSH_TIMOD	17	/* push timod if not already present */
 #define	CLSET_POP_TIMOD		18	/* pop timod */
 /*
  * udp only control operations
  */
-#define CLSET_RETRY_TIMEOUT 4   /* set retry timeout (timeval) */
-#define CLGET_RETRY_TIMEOUT 5   /* get retry timeout (timeval) */
+#define CLSET_RETRY_TIMEOUT 	4   	/* set retry timeout (timeval) */
+#define CLGET_RETRY_TIMEOUT 	5   	/* get retry timeout (timeval) */
 
 /*
  * void
@@ -285,13 +244,13 @@ struct rpc_timers {
 #define RPCTEST_PROGRAM			((u_long)1)
 #define RPCTEST_VERSION			((u_long)1)
 #define RPCTEST_NULL_PROC		((u_long)2)
-#define RPCTEST_NULL_BATCH_PROC	((u_long)3)
+#define RPCTEST_NULL_BATCH_PROC		((u_long)3)
 
 /*
  * By convention, procedure 0 takes null arguments and returns them
  */
 
-#define NULLPROC ((u_long)0)
+#define NULLPROC 			((u_long)0)
 
 /*
  * Below are the client handle creation routines for the various
@@ -401,10 +360,7 @@ struct rpc_createerr {
 	struct rpc_err cf_error; /* useful when cf_stat == RPC_PMAPFAILURE */
 };
 
-__BEGIN_DECLS
-extern struct rpc_createerr	*__rpc_createerr(void);
-__END_DECLS
-#define rpc_createerr		(*(__rpc_createerr()))
+extern struct rpc_createerr	rpc_createerr;
 
 
 #define UDPMSGSIZE	8800	/* rpc imposed limit on udp msg size */

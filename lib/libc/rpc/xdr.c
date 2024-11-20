@@ -1,4 +1,4 @@
-/*	$NetBSD: xdr.c,v 1.27 2003/07/26 19:24:50 salo Exp $	*/
+/*	$NetBSD: xdr.c,v 1.18 1998/11/15 17:32:46 christos Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)xdr.c 1.35 87/08/12";
 static char *sccsid = "@(#)xdr.c	2.1 88/07/29 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: xdr.c,v 1.27 2003/07/26 19:24:50 salo Exp $");
+__RCSID("$NetBSD: xdr.c,v 1.18 1998/11/15 17:32:46 christos Exp $");
 #endif
 #endif
 
@@ -51,7 +51,6 @@ __RCSID("$NetBSD: xdr.c,v 1.27 2003/07/26 19:24:50 salo Exp $");
 
 #include "namespace.h"
 
-#include <assert.h>
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,34 +60,28 @@ __RCSID("$NetBSD: xdr.c,v 1.27 2003/07/26 19:24:50 salo Exp $");
 #include <rpc/xdr.h>
 
 #ifdef __weak_alias
-__weak_alias(xdr_bool,_xdr_bool)
-__weak_alias(xdr_bytes,_xdr_bytes)
-__weak_alias(xdr_char,_xdr_char)
-__weak_alias(xdr_enum,_xdr_enum)
-__weak_alias(xdr_free,_xdr_free)
-__weak_alias(xdr_hyper,_xdr_hyper)
-__weak_alias(xdr_int,_xdr_int)
-__weak_alias(xdr_int16_t,_xdr_int16_t)
-__weak_alias(xdr_int32_t,_xdr_int32_t)
-__weak_alias(xdr_int64_t,_xdr_int64_t)
-__weak_alias(xdr_long,_xdr_long)
-__weak_alias(xdr_longlong_t,_xdr_longlong_t)
-__weak_alias(xdr_netobj,_xdr_netobj)
-__weak_alias(xdr_opaque,_xdr_opaque)
-__weak_alias(xdr_short,_xdr_short)
-__weak_alias(xdr_string,_xdr_string)
-__weak_alias(xdr_u_char,_xdr_u_char)
-__weak_alias(xdr_u_hyper,_xdr_u_hyper)
-__weak_alias(xdr_u_int,_xdr_u_int)
-__weak_alias(xdr_u_int16_t,_xdr_u_int16_t)
-__weak_alias(xdr_u_int32_t,_xdr_u_int32_t)
-__weak_alias(xdr_u_int64_t,_xdr_u_int64_t)
-__weak_alias(xdr_u_long,_xdr_u_long)
-__weak_alias(xdr_u_longlong_t,_xdr_u_longlong_t)
-__weak_alias(xdr_u_short,_xdr_u_short)
-__weak_alias(xdr_union,_xdr_union)
-__weak_alias(xdr_void,_xdr_void)
-__weak_alias(xdr_wrapstring,_xdr_wrapstring)
+__weak_alias(xdr_bool,_xdr_bool);
+__weak_alias(xdr_bytes,_xdr_bytes);
+__weak_alias(xdr_char,_xdr_char);
+__weak_alias(xdr_enum,_xdr_enum);
+__weak_alias(xdr_free,_xdr_free);
+__weak_alias(xdr_int,_xdr_int);
+__weak_alias(xdr_int16_t,_xdr_int16_t);
+__weak_alias(xdr_int32_t,_xdr_int32_t);
+__weak_alias(xdr_long,_xdr_long);
+__weak_alias(xdr_netobj,_xdr_netobj);
+__weak_alias(xdr_opaque,_xdr_opaque);
+__weak_alias(xdr_short,_xdr_short);
+__weak_alias(xdr_string,_xdr_string);
+__weak_alias(xdr_u_char,_xdr_u_char);
+__weak_alias(xdr_u_int,_xdr_u_int);
+__weak_alias(xdr_u_int16_t,_xdr_u_int16_t);
+__weak_alias(xdr_u_int32_t,_xdr_u_int32_t);
+__weak_alias(xdr_u_long,_xdr_u_long);
+__weak_alias(xdr_u_short,_xdr_u_short);
+__weak_alias(xdr_union,_xdr_union);
+__weak_alias(xdr_void,_xdr_void);
+__weak_alias(xdr_wrapstring,_xdr_wrapstring);
 #endif
 
 /*
@@ -101,7 +94,7 @@ __weak_alias(xdr_wrapstring,_xdr_wrapstring)
 /*
  * for unit alignment
  */
-static const char xdr_zero[BYTES_PER_XDR_UNIT] = { 0, 0, 0, 0 };
+static char xdr_zero[BYTES_PER_XDR_UNIT] = { 0, 0, 0, 0 };
 
 /*
  * Free a data structure using XDR
@@ -141,9 +134,6 @@ xdr_int(xdrs, ip)
 {
 	long l;
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(ip != NULL);
-
 	switch (xdrs->x_op) {
 
 	case XDR_ENCODE:
@@ -173,9 +163,6 @@ xdr_u_int(xdrs, up)
 	u_int *up;
 {
 	u_long l;
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(up != NULL);
 
 	switch (xdrs->x_op) {
 
@@ -207,10 +194,6 @@ xdr_long(xdrs, lp)
 	XDR *xdrs;
 	long *lp;
 {
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(lp != NULL);
-
 	switch (xdrs->x_op) {
 	case XDR_ENCODE:
 		return (XDR_PUTLONG(xdrs, lp));
@@ -232,10 +215,6 @@ xdr_u_long(xdrs, ulp)
 	XDR *xdrs;
 	u_long *ulp;
 {
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(ulp != NULL);
-
 	switch (xdrs->x_op) {
 	case XDR_ENCODE:
 		return (XDR_PUTLONG(xdrs, (long *)ulp));
@@ -259,9 +238,6 @@ xdr_int32_t(xdrs, int32_p)
 	int32_t *int32_p;
 {
 	long l;
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(int32_p != NULL);
 
 	switch (xdrs->x_op) {
 
@@ -294,9 +270,6 @@ xdr_u_int32_t(xdrs, u_int32_p)
 {
 	u_long l;
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(u_int32_p != NULL);
-
 	switch (xdrs->x_op) {
 
 	case XDR_ENCODE:
@@ -328,9 +301,6 @@ xdr_short(xdrs, sp)
 {
 	long l;
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(sp != NULL);
-
 	switch (xdrs->x_op) {
 
 	case XDR_ENCODE:
@@ -360,9 +330,6 @@ xdr_u_short(xdrs, usp)
 	u_short *usp;
 {
 	u_long l;
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(usp != NULL);
 
 	switch (xdrs->x_op) {
 
@@ -395,9 +362,6 @@ xdr_int16_t(xdrs, int16_p)
 {
 	long l;
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(int16_p != NULL);
-
 	switch (xdrs->x_op) {
 
 	case XDR_ENCODE:
@@ -427,9 +391,6 @@ xdr_u_int16_t(xdrs, u_int16_p)
 	u_int16_t *u_int16_p;
 {
 	u_long l;
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(u_int16_p != NULL);
 
 	switch (xdrs->x_op) {
 
@@ -462,9 +423,6 @@ xdr_char(xdrs, cp)
 {
 	int i;
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(cp != NULL);
-
 	i = (*cp);
 	if (!xdr_int(xdrs, &i)) {
 		return (FALSE);
@@ -483,9 +441,6 @@ xdr_u_char(xdrs, cp)
 {
 	u_int u;
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(cp != NULL);
-
 	u = (*cp);
 	if (!xdr_u_int(xdrs, &u)) {
 		return (FALSE);
@@ -503,9 +458,6 @@ xdr_bool(xdrs, bp)
 	bool_t *bp;
 {
 	long lb;
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(bp != NULL);
 
 	switch (xdrs->x_op) {
 
@@ -535,29 +487,20 @@ xdr_enum(xdrs, ep)
 	XDR *xdrs;
 	enum_t *ep;
 {
-	long l;
+	enum sizecheck { SIZEVAL };	/* used to find the size of an enum */
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(ep != NULL);
-
-	switch (xdrs->x_op) {
-
-	case XDR_ENCODE:
-		l = (long) *ep;
-		return (XDR_PUTLONG(xdrs, &l));
-
-	case XDR_DECODE:
-		if (!XDR_GETLONG(xdrs, &l)) {
-			return (FALSE);
-		}
-		*ep = (enum_t) l;
-		return (TRUE);
-
-	case XDR_FREE:
-		return (TRUE);
+	/*
+	 * enums are treated as ints
+	 */
+	/* LINTED */ if (sizeof (enum sizecheck) == sizeof (long)) {
+		return (xdr_long(xdrs, (long *)ep));
+	} else /* LINTED */ if (sizeof (enum sizecheck) == sizeof (int)) {
+		return (xdr_int(xdrs, (int *)ep));
+	} else /* LINTED */ if (sizeof (enum sizecheck) == sizeof (short)) {
+		return (xdr_short(xdrs, (short *)ep));
+	} else {
+		return (FALSE);
 	}
-	/* NOTREACHED */
-	return (FALSE);
 }
 
 /*
@@ -574,13 +517,11 @@ xdr_opaque(xdrs, cp, cnt)
 	u_int rndup;
 	static int crud[BYTES_PER_XDR_UNIT];
 
-	_DIAGASSERT(xdrs != NULL);
-		/*
-		 * if no data we are done
-		 */
+	/*
+	 * if no data we are done
+	 */
 	if (cnt == 0)
 		return (TRUE);
-	_DIAGASSERT(cp != NULL);
 
 	/*
 	 * round byte count to full xdr units
@@ -595,7 +536,7 @@ xdr_opaque(xdrs, cp, cnt)
 		}
 		if (rndup == 0)
 			return (TRUE);
-		return (XDR_GETBYTES(xdrs, (caddr_t)(void *)crud, rndup));
+		return (XDR_GETBYTES(xdrs, (caddr_t)crud, rndup));
 	}
 
 	if (xdrs->x_op == XDR_ENCODE) {
@@ -626,14 +567,8 @@ xdr_bytes(xdrs, cpp, sizep, maxsize)
 	u_int *sizep;
 	u_int maxsize;
 {
-	char *sp;  		/* sp is the actual string pointer */
+	char *sp = *cpp;  /* sp is the actual string pointer */
 	u_int nodesize;
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(cpp != NULL);
-	_DIAGASSERT(sizep != NULL);
-
-	sp = *cpp;
 
 	/*
 	 * first deal with the length since xdr bytes are counted
@@ -656,7 +591,7 @@ xdr_bytes(xdrs, cpp, sizep, maxsize)
 			return (TRUE);
 		}
 		if (sp == NULL) {
-			*cpp = sp = mem_alloc(nodesize);
+			*cpp = sp = (char *)mem_alloc(nodesize);
 		}
 		if (sp == NULL) {
 			warnx("xdr_bytes: out of memory");
@@ -687,9 +622,6 @@ xdr_netobj(xdrs, np)
 	struct netobj *np;
 {
 
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(np != NULL);
-
 	return (xdr_bytes(xdrs, &np->n_bytes, &np->n_len, MAX_NETOBJ_SZ));
 }
 
@@ -709,16 +641,10 @@ xdr_union(xdrs, dscmp, unp, choices, dfault)
 	XDR *xdrs;
 	enum_t *dscmp;		/* enum to decide which arm to work on */
 	char *unp;		/* the union itself */
-	const struct xdr_discrim *choices; /* [value, xdr proc] for each arm */
+	struct xdr_discrim *choices;	/* [value, xdr proc] for each arm */
 	xdrproc_t dfault;	/* default xdr routine */
 {
 	enum_t dscm;
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(dscmp != NULL);
-	_DIAGASSERT(unp != NULL);
-	_DIAGASSERT(choices != NULL);
-	/* dfault may be NULL */
 
 	/*
 	 * we deal with the discriminator;  it's an enum
@@ -765,14 +691,9 @@ xdr_string(xdrs, cpp, maxsize)
 	char **cpp;
 	u_int maxsize;
 {
-	char *sp;  		/* sp is the actual string pointer */
+	char *sp = *cpp;  /* sp is the actual string pointer */
 	u_int size;
 	u_int nodesize;
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(cpp != NULL);
-
-	sp = *cpp;
 
 	/*
 	 * first deal with the length since xdr strings are counted-strings
@@ -807,7 +728,7 @@ xdr_string(xdrs, cpp, maxsize)
 			return (TRUE);
 		}
 		if (sp == NULL)
-			*cpp = sp = mem_alloc(nodesize);
+			*cpp = sp = (char *)mem_alloc(nodesize);
 		if (sp == NULL) {
 			warnx("xdr_string: out of memory");
 			return (FALSE);
@@ -836,168 +757,5 @@ xdr_wrapstring(xdrs, cpp)
 	XDR *xdrs;
 	char **cpp;
 {
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(cpp != NULL);
-
 	return xdr_string(xdrs, cpp, LASTUNSIGNED);
-}
-
-/*
- * NOTE: xdr_hyper(), xdr_u_hyper(), xdr_longlong_t(), and xdr_u_longlong_t()
- * are in the "non-portable" section because they require that a `long long'
- * be a 64-bit type.
- *
- *	--thorpej@NetBSD.org, November 30, 1999
- */
-
-/*
- * XDR 64-bit integers
- */
-bool_t
-xdr_int64_t(xdrs, llp)
-	XDR *xdrs;
-	int64_t *llp;
-{
-	u_long ul[2];
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(llp != NULL);
-
-	switch (xdrs->x_op) {
-	case XDR_ENCODE:
-		ul[0] = (u_long)((u_int64_t)*llp >> 32) & 0xffffffff;
-		ul[1] = (u_long)((u_int64_t)*llp) & 0xffffffff;
-		if (XDR_PUTLONG(xdrs, (long *)&ul[0]) == FALSE)
-			return (FALSE);
-		return (XDR_PUTLONG(xdrs, (long *)&ul[1]));
-	case XDR_DECODE:
-		if (XDR_GETLONG(xdrs, (long *)&ul[0]) == FALSE)
-			return (FALSE);
-		if (XDR_GETLONG(xdrs, (long *)&ul[1]) == FALSE)
-			return (FALSE);
-		*llp = (int64_t)
-		    (((u_int64_t)ul[0] << 32) | ((u_int64_t)ul[1]));
-		return (TRUE);
-	case XDR_FREE:
-		return (TRUE);
-	}
-	/* NOTREACHED */
-	return (FALSE);
-}
-
-
-/*
- * XDR unsigned 64-bit integers
- */
-bool_t
-xdr_u_int64_t(xdrs, ullp)
-	XDR *xdrs;
-	u_int64_t *ullp;
-{
-	u_long ul[2];
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(ullp != NULL);
-
-	switch (xdrs->x_op) {
-	case XDR_ENCODE:
-		ul[0] = (u_long)(*ullp >> 32) & 0xffffffff;
-		ul[1] = (u_long)(*ullp) & 0xffffffff;
-		if (XDR_PUTLONG(xdrs, (long *)&ul[0]) == FALSE)
-			return (FALSE);
-		return (XDR_PUTLONG(xdrs, (long *)&ul[1]));
-	case XDR_DECODE:
-		if (XDR_GETLONG(xdrs, (long *)&ul[0]) == FALSE)
-			return (FALSE);
-		if (XDR_GETLONG(xdrs, (long *)&ul[1]) == FALSE)
-			return (FALSE);
-		*ullp = (u_int64_t)
-		    (((u_int64_t)ul[0] << 32) | ((u_int64_t)ul[1]));
-		return (TRUE);
-	case XDR_FREE:
-		return (TRUE);
-	}
-	/* NOTREACHED */
-	return (FALSE);
-}
-
-
-/*
- * XDR hypers
- */
-bool_t
-xdr_hyper(xdrs, llp)
-	XDR *xdrs;
-	longlong_t *llp;
-{
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(llp != NULL);
-
-	/*
-	 * Don't bother open-coding this; it's a fair amount of code.  Just
-	 * call xdr_int64_t().
-	 */
-	return (xdr_int64_t(xdrs, (int64_t *)llp));
-}
-
-
-/*
- * XDR unsigned hypers
- */
-bool_t
-xdr_u_hyper(xdrs, ullp)
-	XDR *xdrs;
-	u_longlong_t *ullp;
-{
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(ullp != NULL);
-
-	/*
-	 * Don't bother open-coding this; it's a fair amount of code.  Just
-	 * call xdr_u_int64_t().
-	 */
-	return (xdr_u_int64_t(xdrs, (u_int64_t *)ullp));
-}
-
-
-/*
- * XDR longlong_t's
- */
-bool_t
-xdr_longlong_t(xdrs, llp)
-	XDR *xdrs;
-	longlong_t *llp;
-{
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(llp != NULL);
-
-	/*
-	 * Don't bother open-coding this; it's a fair amount of code.  Just
-	 * call xdr_int64_t().
-	 */
-	return (xdr_int64_t(xdrs, (int64_t *)llp));
-}
-
-
-/*
- * XDR u_longlong_t's
- */
-bool_t
-xdr_u_longlong_t(xdrs, ullp)
-	XDR *xdrs;
-	u_longlong_t *ullp;
-{
-
-	_DIAGASSERT(xdrs != NULL);
-	_DIAGASSERT(ullp != NULL);
-
-	/*
-	 * Don't bother open-coding this; it's a fair amount of code.  Just
-	 * call xdr_u_int64_t().
-	 */
-	return (xdr_u_int64_t(xdrs, (u_int64_t *)ullp));
 }

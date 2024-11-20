@@ -1,4 +1,4 @@
-/*	$NetBSD: getrpcport.c,v 1.16 2000/01/22 22:19:18 mycroft Exp $	*/
+/*	$NetBSD: getrpcport.c,v 1.13 1998/11/15 17:25:39 christos Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)getrpcport.c 1.3 87/08/11 SMI";
 static char *sccsid = "@(#)getrpcport.c	2.1 88/07/29 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: getrpcport.c,v 1.16 2000/01/22 22:19:18 mycroft Exp $");
+__RCSID("$NetBSD: getrpcport.c,v 1.13 1998/11/15 17:25:39 christos Exp $");
 #endif
 #endif
 
@@ -48,7 +48,6 @@ __RCSID("$NetBSD: getrpcport.c,v 1.16 2000/01/22 22:19:18 mycroft Exp $");
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <assert.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <string.h>
@@ -57,7 +56,7 @@ __RCSID("$NetBSD: getrpcport.c,v 1.16 2000/01/22 22:19:18 mycroft Exp $");
 #include <rpc/pmap_clnt.h>
 
 #ifdef __weak_alias
-__weak_alias(getrpcport,_getrpcport)
+__weak_alias(getrpcport,_getrpcport);
 #endif
 
 int
@@ -67,8 +66,6 @@ getrpcport(host, prognum, versnum, proto)
 {
 	struct sockaddr_in addr;
 	struct hostent *hp;
-
-	_DIAGASSERT(host != NULL);
 
 	if ((hp = gethostbyname(host)) == NULL)
 		return (0);

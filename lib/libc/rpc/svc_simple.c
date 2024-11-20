@@ -1,4 +1,4 @@
-/*	$NetBSD: svc_simple.c,v 1.26 2003/09/09 03:56:40 itojun Exp $	*/
+/*	$NetBSD: svc_simple.c,v 1.14 1999/01/31 20:45:31 christos Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -28,293 +28,134 @@
  * 2550 Garcia Avenue
  * Mountain View, California  94043
  */
-/*
- * Copyright (c) 1986-1991 by Sun Microsystems Inc. 
- */
-
-/* #pragma ident	"@(#)svc_simple.c	1.18	94/04/24 SMI" */
-
-/*
- * svc_simple.c
- * Simplified front end to rpc.
- */
-
-/*
- * This interface creates a virtual listener for all the services
- * started thru rpc_reg(). It listens on the same endpoint for
- * all the services and then executes the corresponding service
- * for the given prognum and procnum.
- */
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: svc_simple.c,v 1.26 2003/09/09 03:56:40 itojun Exp $");
+#if 0
+static char *sccsid = "@(#)svc_simple.c 1.18 87/08/11 Copyr 1984 Sun Micro";
+static char *sccsid = "@(#)svc_simple.c	2.2 88/08/01 4.0 RPCSRC";
+#else
+__RCSID("$NetBSD: svc_simple.c,v 1.14 1999/01/31 20:45:31 christos Exp $");
+#endif
 #endif
 
+/* 
+ * svc_simple.c
+ * Simplified front end to rpc.
+ *
+ * Copyright (C) 1984, Sun Microsystems, Inc.
+ */
+
 #include "namespace.h"
-#include "reentrant.h"
+
 #include <sys/types.h>
-#include <rpc/rpc.h>
-#include <rpc/nettype.h>
-#include <assert.h>
+#include <sys/socket.h>
+
 #include <err.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "rpc_internal.h"
+#include <rpc/rpc.h>
+#include <rpc/pmap_clnt.h>
 
 #ifdef __weak_alias
-__weak_alias(rpc_reg,_rpc_reg)
+__weak_alias(registerrpc,_registerrpc);
 #endif
 
-static void universal(struct svc_req *, SVCXPRT *);
-
 static struct proglst {
-	char *(*p_progname)(char *);
-	rpcprog_t p_prognum;
-	rpcvers_t p_versnum;
-	rpcproc_t p_procnum;
-	SVCXPRT *p_transp;
-	char *p_netid;
-	char *p_xdrbuf;
-	int p_recvsz;
+	char *(*p_progname)(char [UDPMSGSIZE]);
+	int  p_prognum;
+	int  p_procnum;
 	xdrproc_t p_inproc, p_outproc;
 	struct proglst *p_nxt;
 } *proglst;
 
-static const char rpc_reg_err[] = "%s: %s";
-static const char rpc_reg_msg[] = "rpc_reg: ";
-static const char __reg_err1[] = "can't find appropriate transport";
-static const char __reg_err2[] = "can't get protocol info";
-static const char __reg_err3[] = "unsupported transport size";
-static const char __no_mem_str[] = "out of memory";
-
-/*
- * For simplified, easy to use kind of rpc interfaces.
- * nettype indicates the type of transport on which the service will be
- * listening. Used for conservation of the system resource. Only one
- * handle is created for all the services (actually one of each netid)
- * and same xdrbuf is used for same netid. The size of the arguments
- * is also limited by the recvsize for that transport, even if it is
- * a COTS transport. This may be wrong, but for cases like these, they
- * should not use the simplified interfaces like this.
- */
+static void universal(struct svc_req *, SVCXPRT *);
+static SVCXPRT *transp;
+struct proglst *pl;
 
 int
-rpc_reg(prognum, versnum, procnum, progname, inproc, outproc, nettype)
-	rpcprog_t prognum;			/* program number */
-	rpcvers_t versnum;			/* version number */
-	rpcproc_t procnum;			/* procedure number */
-	char *(*progname)(char *); /* Server routine */
-	xdrproc_t inproc, outproc;	/* in/out XDR procedures */
-	char *nettype;			/* nettype */
+registerrpc(prognum, versnum, procnum, progname, inproc, outproc)
+	int prognum, versnum, procnum;
+	char *(*progname)(char [UDPMSGSIZE]);
+	xdrproc_t inproc, outproc;
 {
-	struct netconfig *nconf;
-	int done = FALSE;
-	void *handle;
-#ifdef _REENTRANT
-	extern mutex_t proglst_lock;
-#endif
-
+	
 	if (procnum == NULLPROC) {
-		warnx("%s can't reassign procedure number %u", rpc_reg_msg,
-			NULLPROC);
+		warnx("can't reassign procedure number %ld", NULLPROC);
 		return (-1);
 	}
-
-	if (nettype == NULL)
-		nettype = "netpath";		/* The default behavior */
-	if ((handle = __rpc_setconf(nettype)) == NULL) {
-		warnx(rpc_reg_err, rpc_reg_msg, __reg_err1);
+	if (transp == 0) {
+		transp = svcudp_create(RPC_ANYSOCK);
+		if (transp == NULL) {
+			warnx("couldn't create an rpc server");
+			return (-1);
+		}
+	}
+	(void) pmap_unset((u_long)prognum, (u_long)versnum);
+	if (!svc_register(transp, (u_long)prognum, (u_long)versnum, 
+	    universal, IPPROTO_UDP)) {
+	    	warnx("couldn't register prog %d vers %d", prognum, versnum);
 		return (-1);
 	}
-/* VARIABLES PROTECTED BY proglst_lock: proglst */
-	mutex_lock(&proglst_lock);
-	while ((nconf = __rpc_getconf(handle)) != NULL) {
-		struct proglst *pl;
-		SVCXPRT *svcxprt;
-		int madenow;
-		u_int recvsz;
-		char *xdrbuf;
-		char *netid;
-
-		madenow = FALSE;
-		svcxprt = NULL;
-		for (pl = proglst; pl; pl = pl->p_nxt)
-			if (strcmp(pl->p_netid, nconf->nc_netid) == 0) {
-				svcxprt = pl->p_transp;
-				xdrbuf = pl->p_xdrbuf;
-				recvsz = pl->p_recvsz;
-				netid = pl->p_netid;
-				break;
-			}
-
-		if (svcxprt == NULL) {
-			struct __rpc_sockinfo si;
-
-			svcxprt = svc_tli_create(RPC_ANYFD, nconf, NULL, 0, 0);
-			if (svcxprt == NULL)
-				continue;
-			if (!__rpc_fd2sockinfo(svcxprt->xp_fd, &si)) {
-				warnx(rpc_reg_err, rpc_reg_msg, __reg_err2);
-				SVC_DESTROY(svcxprt);
-				continue;
-			}
-			recvsz = __rpc_get_t_size(si.si_af, si.si_proto, 0);
-			if (recvsz == 0) {
-				warnx(rpc_reg_err, rpc_reg_msg, __reg_err3);
-				SVC_DESTROY(svcxprt);
-				continue;
-			}
-			if (((xdrbuf = malloc((unsigned)recvsz)) == NULL) ||
-				((netid = strdup(nconf->nc_netid)) == NULL)) {
-				warnx(rpc_reg_err, rpc_reg_msg, __no_mem_str);
-				SVC_DESTROY(svcxprt);
-				break;
-			}
-			madenow = TRUE;
-		}
-		/*
-		 * Check if this (program, version, netid) had already been
-		 * registered.  The check may save a few RPC calls to rpcbind
-		 */
-		for (pl = proglst; pl; pl = pl->p_nxt)
-			if ((pl->p_prognum == prognum) &&
-				(pl->p_versnum == versnum) &&
-				(strcmp(pl->p_netid, netid) == 0))
-				break;
-		if (pl == NULL) { /* Not yet */
-			(void) rpcb_unset(prognum, versnum, nconf);
-		} else {
-			/* so that svc_reg does not call rpcb_set() */
-			nconf = NULL;
-		}
-
-		if (!svc_reg(svcxprt, prognum, versnum, universal, nconf)) {
-			warnx("%s couldn't register prog %u vers %u for %s",
-				rpc_reg_msg, (unsigned)prognum,
-				(unsigned)versnum, netid);
-			if (madenow) {
-				SVC_DESTROY(svcxprt);
-				free(xdrbuf);
-				free(netid);
-			}
-			continue;
-		}
-
-		pl = malloc(sizeof (struct proglst));
-		if (pl == NULL) {
-			warnx(rpc_reg_err, rpc_reg_msg, __no_mem_str);
-			if (madenow) {
-				SVC_DESTROY(svcxprt);
-				free(xdrbuf);
-				free(netid);
-			}
-			break;
-		}
-		pl->p_progname = progname;
-		pl->p_prognum = prognum;
-		pl->p_versnum = versnum;
-		pl->p_procnum = procnum;
-		pl->p_inproc = inproc;
-		pl->p_outproc = outproc;
-		pl->p_transp = svcxprt;
-		pl->p_xdrbuf = xdrbuf;
-		pl->p_recvsz = recvsz;
-		pl->p_netid = netid;
-		pl->p_nxt = proglst;
-		proglst = pl;
-		done = TRUE;
-	}
-	__rpc_endconf(handle);
-	mutex_unlock(&proglst_lock);
-
-	if (done == FALSE) {
-		warnx("%s cant find suitable transport for %s",
-			rpc_reg_msg, nettype);
+	pl = (struct proglst *)malloc(sizeof(struct proglst));
+	if (pl == NULL) {
+		warnx("registerrpc: out of memory");
 		return (-1);
 	}
+	pl->p_progname = progname;
+	pl->p_prognum = prognum;
+	pl->p_procnum = procnum;
+	pl->p_inproc = inproc;
+	pl->p_outproc = outproc;
+	pl->p_nxt = proglst;
+	proglst = pl;
 	return (0);
 }
 
-/*
- * The universal handler for the services registered using registerrpc.
- * It handles both the connectionless and the connection oriented cases.
- */
-
 static void
-universal(rqstp, transp)
+universal(rqstp, transpp)
 	struct svc_req *rqstp;
-	SVCXPRT *transp;
+	SVCXPRT *transpp;
 {
-	rpcprog_t prog;
-	rpcvers_t vers;
-	rpcproc_t proc;
+	int prog, proc;
 	char *outdata;
-	char *xdrbuf;
-	struct proglst *pl;
-#ifdef _REENTRANT
-	extern mutex_t proglst_lock;
-#endif
+	char xdrbuf[UDPMSGSIZE];
+	struct proglst *plist;
 
-	_DIAGASSERT(rqstp != NULL);
-	_DIAGASSERT(transp != NULL);
-
-	/*
+	/* 
 	 * enforce "procnum 0 is echo" convention
 	 */
 	if (rqstp->rq_proc == NULLPROC) {
-		if (svc_sendreply(transp, (xdrproc_t) xdr_void, NULL) ==
-		    FALSE) {
-			warnx("svc_sendreply failed");
+		if (svc_sendreply(transpp, (xdrproc_t)xdr_void, NULL) == FALSE) {
+			errx(1, "svc_sendreply failed");
+			exit(1);
 		}
 		return;
 	}
 	prog = rqstp->rq_prog;
-	vers = rqstp->rq_vers;
 	proc = rqstp->rq_proc;
-	mutex_lock(&proglst_lock);
-	for (pl = proglst; pl; pl = pl->p_nxt)
-		if (pl->p_prognum == prog && pl->p_procnum == proc &&
-			pl->p_versnum == vers &&
-			(strcmp(pl->p_netid, transp->xp_netid) == 0)) {
+	for (plist = proglst; plist != NULL; plist = plist->p_nxt)
+		if (plist->p_prognum == prog && plist->p_procnum == proc) {
 			/* decode arguments into a CLEAN buffer */
-			xdrbuf = pl->p_xdrbuf;
-			/* Zero the arguments: reqd ! */
-			(void) memset(xdrbuf, 0, (size_t)pl->p_recvsz);
-			/*
-			 * Assuming that sizeof (xdrbuf) would be enough
-			 * for the arguments; if not then the program
-			 * may bomb. BEWARE!
-			 */
-			if (!svc_getargs(transp, pl->p_inproc, xdrbuf)) {
-				svcerr_decode(transp);
-				mutex_unlock(&proglst_lock);
+			memset(xdrbuf, 0, sizeof(xdrbuf)); /* required ! */
+			if (!svc_getargs(transpp, plist->p_inproc, xdrbuf)) {
+				svcerr_decode(transpp);
 				return;
 			}
-			outdata = (*(pl->p_progname))(xdrbuf);
+			outdata = (*(plist->p_progname))(xdrbuf);
 			if (outdata == NULL &&
-				pl->p_outproc != (xdrproc_t) xdr_void){
+			    plist->p_outproc != (xdrproc_t)xdr_void)
 				/* there was an error */
-				mutex_unlock(&proglst_lock);
 				return;
-			}
-			if (!svc_sendreply(transp, pl->p_outproc, outdata)) {
-				warnx(
-			"rpc: rpc_reg trouble replying to prog %u vers %u",
-				(unsigned)prog, (unsigned)vers);
-				mutex_unlock(&proglst_lock);
-				return;
-			}
+			if (!svc_sendreply(transpp, plist->p_outproc, outdata))
+				errx(1, "trouble replying to prog %d",
+				    plist->p_prognum);
 			/* free the decoded arguments */
-			(void) svc_freeargs(transp, pl->p_inproc, xdrbuf);
-			mutex_unlock(&proglst_lock);
+			(void)svc_freeargs(transpp, plist->p_inproc, xdrbuf);
 			return;
 		}
-	mutex_unlock(&proglst_lock);
-	/* This should never happen */
-	warnx("rpc: rpc_reg: never registered prog %u vers %u",
-		(unsigned)prog, (unsigned)vers);
-	return;
+	errx(1, "never registered prog %d", prog);
 }

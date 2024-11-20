@@ -1,4 +1,4 @@
-/*	$NetBSD: xdr_float.c,v 1.32 2003/12/08 06:18:16 matt Exp $	*/
+/*	$NetBSD: xdr_float.c,v 1.18 1998/11/15 17:32:47 christos Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)xdr_float.c 1.12 87/08/11 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)xdr_float.c	2.1 88/07/29 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: xdr_float.c,v 1.32 2003/12/08 06:18:16 matt Exp $");
+__RCSID("$NetBSD: xdr_float.c,v 1.18 1998/11/15 17:32:47 christos Exp $");
 #endif
 #endif
 
@@ -60,8 +60,8 @@ __RCSID("$NetBSD: xdr_float.c,v 1.32 2003/12/08 06:18:16 matt Exp $");
 #include <rpc/xdr.h>
 
 #ifdef __weak_alias
-__weak_alias(xdr_double,_xdr_double)
-__weak_alias(xdr_float,_xdr_float)
+__weak_alias(xdr_double,_xdr_double);
+__weak_alias(xdr_float,_xdr_float);
 #endif
 
 /*
@@ -71,8 +71,7 @@ __weak_alias(xdr_float,_xdr_float)
 
 #if defined(__m68k__) || defined(__sparc__) || defined(__i386__) || \
     defined(__mips__) || defined(__ns32k__) || defined(__alpha__) || \
-    defined(__arm__) || defined(__powerpc__) || defined(__sh__) || \
-    defined(__x86_64__) || defined(__hppa__)
+    defined(__arm32__) || defined(__powerpc__)
 #include <machine/endian.h>
 #define IEEEFP
 #endif
@@ -113,7 +112,10 @@ xdr_float(xdrs, fp)
 	XDR *xdrs;
 	float *fp;
 {
-#ifndef IEEEFP
+#ifdef IEEEFP
+	bool_t rv;
+	long tmpl;
+#else
 	struct ieee_single is;
 	struct vax_single vs, *vsp;
 	struct sgl_limits *lim;
@@ -122,8 +124,9 @@ xdr_float(xdrs, fp)
 	switch (xdrs->x_op) {
 
 	case XDR_ENCODE:
-#ifdef IEEEFP
-		return (XDR_PUTINT32(xdrs, (int32_t *)(void *)fp));
+#ifdef IEEEFP 
+		tmpl = *(int32_t *)(void *)fp;
+		return (XDR_PUTLONG(xdrs, &tmpl));
 #else
 		vs = *((struct vax_single *)fp);
 		for (i = 0, lim = sgl_limits;
@@ -140,15 +143,17 @@ xdr_float(xdrs, fp)
 		is.mantissa = (vs.mantissa1 << 16) | vs.mantissa2;
 	shipit:
 		is.sign = vs.sign;
-		return (XDR_PUTINT32(xdrs, (int32_t *)(void *)&is));
+		return (XDR_PUTLONG(xdrs, (long *)&is));
 #endif
 
 	case XDR_DECODE:
 #ifdef IEEEFP
-		return (XDR_GETINT32(xdrs, (int32_t *)(void *)fp));
+		rv = XDR_GETLONG(xdrs, &tmpl);
+		*(int32_t *)(void *)fp = (int32_t)tmpl;
+		return (rv);
 #else
 		vsp = (struct vax_single *)fp;
-		if (!XDR_GETINT32(xdrs, (int32_t *)(void *)&is))
+		if (!XDR_GETLONG(xdrs, (long *)&is))
 			return (FALSE);
 		for (i = 0, lim = sgl_limits;
 			i < sizeof(sgl_limits)/sizeof(struct sgl_limits);
@@ -218,8 +223,9 @@ xdr_double(xdrs, dp)
 #ifdef IEEEFP
 	int32_t *i32p;
 	bool_t rv;
+	long tmpl;
 #else
-	int32_t *lp;
+	long *lp;
 	struct	ieee_double id;
 	struct	vax_double vd;
 	struct dbl_limits *lim;
@@ -231,17 +237,20 @@ xdr_double(xdrs, dp)
 	case XDR_ENCODE:
 #ifdef IEEEFP
 		i32p = (int32_t *)(void *)dp;
-#if (BYTE_ORDER == BIG_ENDIAN) || \
-    (defined(__arm__) && !defined(__VFP_FP__))
-		rv = XDR_PUTINT32(xdrs, i32p);
+#if BYTE_ORDER == BIG_ENDIAN
+		tmpl = *i32p++;
+		rv = XDR_PUTLONG(xdrs, &tmpl);
 		if (!rv)
 			return (rv);
-		rv = XDR_PUTINT32(xdrs, i32p+1);
+		tmpl = *i32p;
+		rv = XDR_PUTLONG(xdrs, &tmpl);
 #else
-		rv = XDR_PUTINT32(xdrs, i32p+1);
+		tmpl = *(i32p+1);
+		rv = XDR_PUTLONG(xdrs, &tmpl);
 		if (!rv)
 			return (rv);
-		rv = XDR_PUTINT32(xdrs, i32p);
+		tmpl = *i32p;
+		rv = XDR_PUTLONG(xdrs, &tmpl);
 #endif
 		return (rv);
 #else
@@ -265,29 +274,32 @@ xdr_double(xdrs, dp)
 				((vd.mantissa4 >> 3) & MASK(13));
 	shipit:
 		id.sign = vd.sign;
-		lp = (int32_t *)(void *)&id;
-		return (XDR_PUTINT32(xdrs, lp++) && XDR_PUTINT32(xdrs, lp));
+		lp = (long *)&id;
+		return (XDR_PUTLONG(xdrs, lp++) && XDR_PUTLONG(xdrs, lp));
 #endif
 
 	case XDR_DECODE:
 #ifdef IEEEFP
 		i32p = (int32_t *)(void *)dp;
-#if BYTE_ORDER == BIG_ENDIAN || \
-    (defined(__arm__) && !defined(__VFP_FP__))
-		rv = XDR_GETINT32(xdrs, i32p);
+#if BYTE_ORDER == BIG_ENDIAN
+		rv = XDR_GETLONG(xdrs, &tmpl);
+		*i32p++ = tmpl;
 		if (!rv)
 			return (rv);
-		rv = XDR_GETINT32(xdrs, i32p+1);
+		rv = XDR_GETLONG(xdrs, &tmpl);
+		*i32p = tmpl;
 #else
-		rv = XDR_GETINT32(xdrs, i32p+1);
+		rv = XDR_GETLONG(xdrs, &tmpl);
+		*(i32p+1) = (int32_t)tmpl;
 		if (!rv)
 			return (rv);
-		rv = XDR_GETINT32(xdrs, i32p);
+		rv = XDR_GETLONG(xdrs, &tmpl);
+		*i32p = (int32_t)tmpl;
 #endif
 		return (rv);
 #else
-		lp = (int32_t *)(void *)&id;
-		if (!XDR_GETINT32(xdrs, lp++) || !XDR_GETINT32(xdrs, lp))
+		lp = (long *)&id;
+		if (!XDR_GETLONG(xdrs, lp++) || !XDR_GETLONG(xdrs, lp))
 			return (FALSE);
 		for (i = 0, lim = dbl_limits;
 			i < sizeof(dbl_limits)/sizeof(struct dbl_limits);
@@ -307,7 +319,7 @@ xdr_double(xdrs, dp)
 		vd.mantissa4 = (id.mantissa2 << 3);
 	doneit:
 		vd.sign = id.sign;
-		*dp = *((double *)(void *)&vd);
+		*dp = *((double *)&vd);
 		return (TRUE);
 #endif
 

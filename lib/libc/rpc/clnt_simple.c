@@ -1,4 +1,4 @@
-/*	$NetBSD: clnt_simple.c,v 1.25 2003/10/21 00:00:34 fvdl Exp $	*/
+/*	$NetBSD: clnt_simple.c,v 1.16 1999/03/25 01:16:10 lukem Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -28,191 +28,114 @@
  * 2550 Garcia Avenue
  * Mountain View, California  94043
  */
-/*
- * Copyright (c) 1986-1991 by Sun Microsystems Inc. 
- */
-
-/* #ident	"@(#)clnt_simple.c	1.17	94/04/24 SMI" */
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
-static char sccsid[] = "@(#)clnt_simple.c 1.49 89/01/31 Copyr 1984 Sun Micro";
+static char *sccsid = "@(#)clnt_simple.c 1.35 87/08/11 Copyr 1984 Sun Micro";
+static char *sccsid = "@(#)clnt_simple.c	2.2 88/08/01 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: clnt_simple.c,v 1.25 2003/10/21 00:00:34 fvdl Exp $");
+__RCSID("$NetBSD: clnt_simple.c,v 1.16 1999/03/25 01:16:10 lukem Exp $");
 #endif
 #endif
 
-/*
+/* 
  * clnt_simple.c
- * Simplified front end to client rpc.
+ * Simplified front end to rpc.
  *
+ * Copyright (C) 1984, Sun Microsystems, Inc.
  */
 
 #include "namespace.h"
-#include "reentrant.h"
-#include <sys/param.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <netdb.h>
 #include <stdio.h>
-#include <assert.h>
-#include <errno.h>
-#include <rpc/rpc.h>
-#include <string.h>
 #include <stdlib.h>
-#include <fcntl.h>
+#include <string.h>
 #include <unistd.h>
 
+#include <rpc/rpc.h>
+
 #ifdef __weak_alias
-__weak_alias(rpc_call,_rpc_call)
+__weak_alias(callrpc,_callrpc);
 #endif
 
-#ifndef MAXHOSTNAMELEN
-#define	MAXHOSTNAMELEN 64
-#endif
+static struct callrpc_private {
+	CLIENT	*client;
+	int	socket;
+	int	oldprognum, oldversnum, valid;
+	char	*oldhost;
+} *callrpc_private;
 
-#ifndef NETIDLEN
-#define	NETIDLEN 32
-#endif
-
-struct rpc_call_private {
-	int	valid;			/* Is this entry valid ? */
-	CLIENT	*client;		/* Client handle */
-	pid_t	pid;			/* process-id at moment of creation */
-	rpcprog_t prognum;		/* Program */
-	rpcvers_t versnum;		/* Version */
-	char	host[MAXHOSTNAMELEN];	/* Servers host */
-	char	nettype[NETIDLEN];	/* Network type */
-};
-static struct rpc_call_private *rpc_call_private_main;
-
-#ifdef _REENTRANT
-static void rpc_call_destroy(void *);
-
-static void
-rpc_call_destroy(void *vp)
+int
+callrpc(host, prognum, versnum, procnum, inproc, in, outproc, out)
+	char *host;
+	int prognum, versnum, procnum;
+	xdrproc_t inproc, outproc;
+	char *in, *out;
 {
-	struct rpc_call_private *rcp = (struct rpc_call_private *)vp;
-
-	if (rcp) {
-		if (rcp->client)
-			CLNT_DESTROY(rcp->client);
-		free(rcp);
-	}
-}
-static thread_key_t rpc_call_key;
-static once_t rpc_call_once = ONCE_INITIALIZER;
-
-static void
-rpc_call_setup(void)
-{
-
-	thr_keycreate(&rpc_call_key, rpc_call_destroy);
-}
-#endif
-
-
-/*
- * This is the simplified interface to the client rpc layer.
- * The client handle is not destroyed here and is reused for
- * the future calls to same prog, vers, host and nettype combination.
- *
- * The total time available is 25 seconds.
- */
-enum clnt_stat
-rpc_call(host, prognum, versnum, procnum, inproc, in, outproc, out, nettype)
-	const char *host;			/* host name */
-	rpcprog_t prognum;			/* program number */
-	rpcvers_t versnum;			/* version number */
-	rpcproc_t procnum;			/* procedure number */
-	xdrproc_t inproc, outproc;	/* in/out XDR procedures */
-	const char *in;
-	char  *out;			/* recv/send data */
-	const char *nettype;			/* nettype */
-{
-	struct rpc_call_private *rcp = (struct rpc_call_private *) 0;
+	struct callrpc_private *crp = callrpc_private;
+	struct sockaddr_in server_addr;
 	enum clnt_stat clnt_stat;
+	struct hostent *hp;
 	struct timeval timeout, tottimeout;
-	extern int __isthreaded;
 
-	_DIAGASSERT(host != NULL);
-	/* XXX: in may be NULL ??? */
-	/* XXX: out may be NULL ??? */
-	/* XXX: nettype may be NULL ??? */
-
-#ifdef _REENTRANT
-	if (__isthreaded == 0) {
-		rcp = rpc_call_private_main;
+	if (crp == 0) {
+		crp = (struct callrpc_private *)calloc(1, sizeof (*crp));
+		if (crp == 0)
+			return (0);
+		callrpc_private = crp;
+	}
+	if (crp->oldhost == NULL) {
+		crp->oldhost = malloc(256);
+		crp->oldhost[0] = 0;
+		crp->socket = RPC_ANYSOCK;
+	}
+	if (crp->valid && crp->oldprognum == prognum
+	    && crp->oldversnum == versnum && strcmp(crp->oldhost, host) == 0) {
+		/* reuse old client */		
 	} else {
-		thr_once(&rpc_call_once, rpc_call_setup);
-		rcp = thr_getspecific(rpc_call_key);
-	}
-#else
-	rcp = rpc_call_private_main;
-#endif
-	if (rcp == NULL) {
-		rcp = malloc(sizeof (*rcp));
-		if (rcp == NULL) {
-			rpc_createerr.cf_stat = RPC_SYSTEMERROR;
-			rpc_createerr.cf_error.re_errno = errno;
-			return (rpc_createerr.cf_stat);
+		crp->valid = 0;
+		if (crp->socket != -1) {
+			(void)close(crp->socket);
+			crp->socket = -1;
 		}
-		if (__isthreaded == 0)
-			rpc_call_private_main = rcp;
-		else
-			thr_setspecific(rpc_call_key, (void *) rcp);
-		rcp->valid = 0;
-		rcp->client = NULL;
-	}
-	if ((nettype == NULL) || (nettype[0] == 0))
-		nettype = "netpath";
-	if (!(rcp->valid && rcp->pid == getpid() &&
-		(rcp->prognum == prognum) &&
-		(rcp->versnum == versnum) &&
-		(!strcmp(rcp->host, host)) &&
-		(!strcmp(rcp->nettype, nettype)))) {
-		int fd;
-
-		rcp->valid = 0;
-		if (rcp->client)
-			CLNT_DESTROY(rcp->client);
-		/*
-		 * Using the first successful transport for that type
-		 */
-		rcp->client = clnt_create(host, prognum, versnum, nettype);
-		rcp->pid = getpid();
-		if (rcp->client == NULL) {
-			return (rpc_createerr.cf_stat);
+		if (crp->client) {
+			CLNT_DESTROY(crp->client);
+			crp->client = NULL;
 		}
-		/*
-		 * Set time outs for connectionless case.  Do it
-		 * unconditionally.  Faster than doing a t_getinfo()
-		 * and then doing the right thing.
-		 */
+		crp->socket = RPC_ANYSOCK;
+		if ((hp = gethostbyname(host)) == NULL)
+			return ((int) RPC_UNKNOWNHOST);
 		timeout.tv_usec = 0;
 		timeout.tv_sec = 5;
-		(void) CLNT_CONTROL(rcp->client,
-				CLSET_RETRY_TIMEOUT, (char *)(void *)&timeout);
-		if (CLNT_CONTROL(rcp->client, CLGET_FD, (char *)(void *)&fd))
-			fcntl(fd, F_SETFD, 1);	/* make it "close on exec" */
-		rcp->prognum = prognum;
-		rcp->versnum = versnum;
-		if ((strlen(host) < (size_t)MAXHOSTNAMELEN) &&
-		    (strlen(nettype) < (size_t)NETIDLEN)) {
-			(void) strcpy(rcp->host, host);
-			(void) strcpy(rcp->nettype, nettype);
-			rcp->valid = 1;
-		} else {
-			rcp->valid = 0;
-		}
-	} /* else reuse old client */
+		memset(&server_addr, 0, sizeof(server_addr));
+		if (hp->h_length > sizeof(struct sockaddr_in))
+			hp->h_length = sizeof(struct sockaddr_in);
+		memcpy(&server_addr.sin_addr.s_addr, hp->h_addr,
+		    (size_t)hp->h_length);
+		server_addr.sin_len = sizeof(struct sockaddr_in);
+		server_addr.sin_family = AF_INET;
+		server_addr.sin_port =  0;
+		if ((crp->client = clntudp_create(&server_addr, (u_long)prognum,
+		    (u_long)versnum, timeout, &crp->socket)) == NULL)
+			return ((int) rpc_createerr.cf_stat);
+		crp->valid = 1;
+		crp->oldprognum = prognum;
+		crp->oldversnum = versnum;
+		(void)strncpy(crp->oldhost, host, 256 - 1);
+	}
 	tottimeout.tv_sec = 25;
 	tottimeout.tv_usec = 0;
-	/*LINTED const castaway*/
-	clnt_stat = CLNT_CALL(rcp->client, procnum, inproc, (char *) in,
+	clnt_stat = clnt_call(crp->client, (unsigned long)procnum, inproc, in,
 	    outproc, out, tottimeout);
-	/*
+	/* 
 	 * if call failed, empty cache
 	 */
 	if (clnt_stat != RPC_SUCCESS)
-		rcp->valid = 0;
-	return (clnt_stat);
+		crp->valid = 0;
+	return ((int) clnt_stat);
 }

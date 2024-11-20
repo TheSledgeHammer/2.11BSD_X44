@@ -41,8 +41,8 @@
 #ifndef _RPC_SVC_H
 #define _RPC_SVC_H
 #include <sys/cdefs.h>
-
-#include <sys/select.h>
+#include <select.h>
+#include <poll.h>
 
 /*
  * This interface must manage two items concerning remote procedure calling:
@@ -86,7 +86,7 @@ enum xprt_stat {
 typedef struct __rpc_svcxprt {
 	int			xp_sock;
 	u_short		xp_port;	 /* associated port number */
-	struct xp_ops {
+	const struct xp_ops {
 		/* receive incomming requests */
 		bool_t	(*xp_recv)(struct __rpc_svcxprt *, struct rpc_msg *);
 		/* get transport status */
@@ -108,13 +108,13 @@ typedef struct __rpc_svcxprt {
 	} *xp_ops2;
 	char			*xp_tp;		 /* transport provider device name */
 	char			*xp_netid;	 /* network token */
-	struct netbuf	xp_ltaddr;	 /* local transport address */
-	struct netbuf	xp_rtaddr;	 /* remote transport address */
-	struct opaque_auth xp_verf;	 /* raw response verifier */
+	struct netbuf		xp_ltaddr;	 /* local transport address */
+	struct netbuf		xp_rtaddr;	 /* remote transport address */
+	struct opaque_auth 	xp_verf;	 /* raw response verifier */
 	void			*xp_p1;		 /* private */
 	void			*xp_p2;		 /* private */
 	void			*xp_p3;		 /* private: for use by svc lib */
-	int				xp_type;	 /* transport type */
+	int			xp_type;	 /* transport type */
 } SVCXPRT;
 
 /*
@@ -273,16 +273,11 @@ __END_DECLS
  * dynamic; must be inspected before each call to select 
  */
 extern int svc_maxfd;
-#ifdef FD_SETSIZE
+extern int svc_max_pollfd;
 extern fd_set svc_fdset;
-#define svc_maxfd 		(*svc_fdset_getmax())
-#define svc_fdset 		(*svc_fdset_get())
-#define svc_pollfd 		svc_pollfd_get()
-#define svc_max_pollfd (*svc_fdset_getmax())
-#define svc_fds svc_fdset.fds_bits[0]	/* compatibility */
-#else
-extern int svc_fds;
-#endif /* def FD_SETSIZE */
+extern struct pollfd svc_pollfd;
+#define svc_fds  svc_fdset.fds_bits[0]	/* compatibility */
+
 
 /*
  * a small program implemented by the svc_rpc implementation itself;
@@ -291,9 +286,15 @@ extern int svc_fds;
 extern void rpctest_service(void);				/* XXX relic? */
 
 __BEGIN_DECLS
-extern void	svc_getreq(int);
-extern void	svc_getreqset(fd_set *);
-extern void	svc_run(void);
+extern void svc_getreqset(void *);
+extern void svc_getreq(int);
+extern void svc_run(void);
+/* non-standard */
+extern void svc_getreqset_fdset(fd_set *);
+extern void svc_getreqset_poll(struct pollfd *);
+extern void svc_getreqset_mix(struct pollfd *, fd_set *);
+extern void svc_getreqset_nomask(struct pollfd *, fd_set *, int);
+extern int  svc_getreqset_mask(int32_t *, int);
 __END_DECLS
 
 /*
@@ -319,6 +320,7 @@ __END_DECLS
 __BEGIN_DECLS
 extern SVCXPRT *svcudp_create(int);
 extern SVCXPRT *svcudp_bufcreate(int, u_int, u_int);
+extern int svcudp_enablecache(SVCXPRT *, u_long);
 __END_DECLS
 
 

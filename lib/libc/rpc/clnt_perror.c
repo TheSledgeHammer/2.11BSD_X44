@@ -1,4 +1,4 @@
-/*	$NetBSD: clnt_perror.c,v 1.25 2001/02/13 01:00:21 cgd Exp $	*/
+/*	$NetBSD: clnt_perror.c,v 1.16 1999/01/20 11:37:35 lukem Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)clnt_perror.c 1.15 87/10/07 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)clnt_perror.c	2.1 88/07/29 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: clnt_perror.c,v 1.25 2001/02/13 01:00:21 cgd Exp $");
+__RCSID("$NetBSD: clnt_perror.c,v 1.16 1999/01/20 11:37:35 lukem Exp $");
 #endif
 #endif
 
@@ -47,7 +47,6 @@ __RCSID("$NetBSD: clnt_perror.c,v 1.25 2001/02/13 01:00:21 cgd Exp $");
  */
 #include "namespace.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,16 +57,16 @@ __RCSID("$NetBSD: clnt_perror.c,v 1.25 2001/02/13 01:00:21 cgd Exp $");
 #include <rpc/clnt.h>
 
 #ifdef __weak_alias
-__weak_alias(clnt_pcreateerror,_clnt_pcreateerror)
-__weak_alias(clnt_perrno,_clnt_perrno)
-__weak_alias(clnt_perror,_clnt_perror)
-__weak_alias(clnt_spcreateerror,_clnt_spcreateerror)
-__weak_alias(clnt_sperrno,_clnt_sperrno)
-__weak_alias(clnt_sperror,_clnt_sperror)
+__weak_alias(clnt_pcreateerror,_clnt_pcreateerror);
+__weak_alias(clnt_perrno,_clnt_perrno);
+__weak_alias(clnt_perror,_clnt_perror);
+__weak_alias(clnt_spcreateerror,_clnt_spcreateerror);
+__weak_alias(clnt_sperrno,_clnt_sperrno);
+__weak_alias(clnt_sperror,_clnt_sperror);
 #endif
 
 static char *buf;
-static size_t buflen;
+static int buflen;
 
 static char *_buf(void);
 static char *auth_errmsg(enum auth_stat);
@@ -88,22 +87,16 @@ _buf()
 char *
 clnt_sperror(rpch, s)
 	CLIENT *rpch;
-	const char *s;
+	char *s;
 {
 	struct rpc_err e;
 	char *err;
-	char *str;
-	char *strstart;
-	size_t len, i;
+	char *str = _buf();
+	char *strstart = str;
+	size_t len = buflen, i;
 
-	_DIAGASSERT(rpch != NULL);
-	_DIAGASSERT(s != NULL);
-
-	str = _buf(); /* side effect: sets "buflen" */
 	if (str == 0)
 		return (0);
-	len = buflen;
-	strstart = str;
 	CLNT_GETERR(rpch, &e);
 
 	i = snprintf(str, len, "%s: ", s);  
@@ -181,12 +174,8 @@ clnt_sperror(rpch, s)
 void
 clnt_perror(rpch, s)
 	CLIENT *rpch;
-	const char *s;
+	char *s;
 {
-
-	_DIAGASSERT(rpch != NULL);
-	_DIAGASSERT(s != NULL);
-
 	(void) fprintf(stderr, "%s\n", clnt_sperror(rpch,s));
 }
 
@@ -220,12 +209,16 @@ clnt_sperrno(stat)
 	enum clnt_stat stat;
 {
 	unsigned int errnum = stat;
+    const char *msg;
 
+    msg = NULL;
 	if (errnum < (sizeof(rpc_errlist)/sizeof(rpc_errlist[0])))
 		/* LINTED interface problem */
-		return (char *)rpc_errlist[errnum];
+        msg = rpc_errlist[errnum];
+	if (msg == NULL)
+        msg = "RPC: (unknown error code)";
 
-	return ("RPC: (unknown error code)");
+	return (__UNCONST(msg));
 }
 
 void
@@ -238,17 +231,13 @@ clnt_perrno(num)
 
 char *
 clnt_spcreateerror(s)
-	const char *s;
+	char *s;
 {
-	char *str;
-	size_t len, i;
+	char *str = _buf();
+	size_t len = buflen, i;
 
-	_DIAGASSERT(s != NULL);
-
-	str = _buf(); /* side effect: sets "buflen" */
 	if (str == 0)
 		return(0);
-	len = buflen;
 	i = snprintf(str, len, "%s: ", s);
 	len -= i;
 	(void)strncat(str, clnt_sperrno(rpc_createerr.cf_stat), len - 1);
@@ -281,7 +270,6 @@ clnt_spcreateerror(s)
 	case RPC_VERSMISMATCH:
 	case RPC_TIMEDOUT:
 	case RPC_CANTRECV:
-	default:
 		break;
 	}
 	return (str);
@@ -289,11 +277,8 @@ clnt_spcreateerror(s)
 
 void
 clnt_pcreateerror(s)
-	const char *s;
+	char *s;
 {
-
-	_DIAGASSERT(s != NULL);
-
 	(void) fprintf(stderr, "%s\n", clnt_spcreateerror(s));
 }
 
@@ -316,7 +301,7 @@ auth_errmsg(stat)
 
 	if (errnum < (sizeof(auth_errlist)/sizeof(auth_errlist[0])))
 		/* LINTED interface problem */
-		return (char *)auth_errlist[errnum];
+		return (__UNCONST(auth_errlist[errnum]));
 
-	return(NULL);
+	return (NULL);
 }

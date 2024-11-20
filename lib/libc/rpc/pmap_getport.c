@@ -1,4 +1,4 @@
-/*	$NetBSD: pmap_getport.c,v 1.16 2000/07/06 03:10:34 christos Exp $	*/
+/*	$NetBSD: pmap_getport.c,v 1.12 1999/03/25 01:16:11 lukem Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -35,7 +35,7 @@
 static char *sccsid = "@(#)pmap_getport.c 1.9 87/08/11 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)pmap_getport.c	2.2 88/08/01 4.0 RPCSRC";
 #else
-__RCSID("$NetBSD: pmap_getport.c,v 1.16 2000/07/06 03:10:34 christos Exp $");
+__RCSID("$NetBSD: pmap_getport.c,v 1.12 1999/03/25 01:16:11 lukem Exp $");
 #endif
 #endif
 
@@ -53,7 +53,6 @@ __RCSID("$NetBSD: pmap_getport.c,v 1.16 2000/07/06 03:10:34 christos Exp $");
 
 #include <net/if.h>
 
-#include <assert.h>
 #include <unistd.h>
 
 #include <rpc/rpc.h>
@@ -61,7 +60,7 @@ __RCSID("$NetBSD: pmap_getport.c,v 1.16 2000/07/06 03:10:34 christos Exp $");
 #include <rpc/pmap_clnt.h>
 
 #ifdef __weak_alias
-__weak_alias(pmap_getport,_pmap_getport)
+__weak_alias(pmap_getport,_pmap_getport);
 #endif
 
 static const struct timeval timeout = { 5, 0 };
@@ -84,18 +83,15 @@ pmap_getport(address, program, version, protocol)
 	CLIENT *client;
 	struct pmap parms;
 
-	_DIAGASSERT(address != NULL);
-
 	address->sin_port = htons(PMAPPORT);
 	client = clntudp_bufcreate(address, PMAPPROG,
 	    PMAPVERS, timeout, &sock, RPCSMALLMSGSIZE, RPCSMALLMSGSIZE);
-	if (client != NULL) {
+	if (client != (CLIENT *)NULL) {
 		parms.pm_prog = program;
 		parms.pm_vers = version;
 		parms.pm_prot = protocol;
 		parms.pm_port = 0;  /* not needed or used */
-		if (CLNT_CALL(client, (rpcproc_t)PMAPPROC_GETPORT,
-		    (xdrproc_t)xdr_pmap,
+		if (CLNT_CALL(client, PMAPPROC_GETPORT, (xdrproc_t)xdr_pmap,
 		    &parms, (xdrproc_t)xdr_u_short, &port, tottimeout) !=
 		    RPC_SUCCESS){
 			rpc_createerr.cf_stat = RPC_PMAPFAILURE;

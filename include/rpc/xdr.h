@@ -99,15 +99,15 @@ enum xdr_op {
  */
 typedef struct __rpc_xdr {
 	enum xdr_op	x_op;		/* operation; fast additional param */
-	struct xdr_ops {
+	const struct xdr_ops {
 		/* get a long from underlying stream */
 		bool_t	(*x_getlong) (struct __rpc_xdr *, long *);
 		/* put a long to " */
-		bool_t	(*x_putlong) (struct __rpc_xdr *, long *);
+		bool_t	(*x_putlong) (struct __rpc_xdr *, const long *);
 		/* get some bytes from " */
 		bool_t	(*x_getbytes) (struct __rpc_xdr *, caddr_t, u_int);
 		/* put some bytes to " */
-		bool_t	(*x_putbytes) (struct __rpc_xdr *, caddr_t, u_int);
+		bool_t	(*x_putbytes) (struct __rpc_xdr *, const caddr_t, u_int);
 		/* returns bytes off from beginning */
 		u_int	(*x_getpostn) (struct __rpc_xdr *);
 		/* lets you reposition the stream */
@@ -118,7 +118,7 @@ typedef struct __rpc_xdr {
 		void	(*x_destroy) (struct __rpc_xdr *);
 	} *x_ops;
 	caddr_t 	x_public;	/* users' data */
-	caddr_t		x_private;	/* pointer to private data */
+	void		*x_private;	/* pointer to private data */
 	caddr_t 	x_base;		/* private used for position info */
 	int			x_handy;	/* extra private word */
 } XDR;
