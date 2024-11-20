@@ -99,8 +99,16 @@ static struct svc_callout {
 } *svc_head;
 
 static struct svc_callout *svc_find(u_long, u_long, struct svc_callout **);
+static int svc_fd_insert(struct pollfd *, fd_set *, int);
+static int svc_fd_remove(struct pollfd *, int);
 static void svc_getreqset_cred(struct rpc_msg *, struct svc_req *);
 static void svc_getreqset_common(int, struct rpc_msg *, struct svc_req *);
+
+int __svc_fdsetsize = FD_SETSIZE;
+static int svc_pollfd_size;			/* number of slots in svc_pollfd */
+static int svc_used_pollfd;			/* number of used slots in svc_pollfd */
+static int *svc_pollfd_freelist;		/* svc_pollfd free list */
+static int svc_max_free;			/* number of used slots in free list */
 
 /* ***************  SVCXPRT related stuff **************** */
 
@@ -116,11 +124,15 @@ xprt_register(xprt)
 	if (xports == NULL) {
 		xports = (SVCXPRT **)
 			mem_alloc(FD_SETSIZE * sizeof(SVCXPRT *));
-		if (xports == NULL)
+		if (xports == NULL) {
 			return;
+		}
 		memset(xports, '\0', FD_SETSIZE * sizeof(SVCXPRT *));
 	}
-	if (sock < FD_SETSIZE) {
+	if (svc_fd_insert(&svc_pollfd, &svc_fdset, sock)) {
+		return;
+	}
+	if ((sock < FD_SETSIZE) || (sock < __svc_fdsetsize)) {
 		xports[sock] = xprt;
 		FD_SET(sock, &svc_fdset);
 		svc_maxfd = max(svc_maxfd, sock);
@@ -136,15 +148,151 @@ xprt_unregister(xprt)
 { 
 	int sock = xprt->xp_sock;
 
-	if ((sock < FD_SETSIZE) && (xports[sock] == xprt)) {
-		xports[sock] = (SVCXPRT *)0;
+	if (((sock < FD_SETSIZE) || (sock < __svc_fdsetsize)) && (xports[sock] == xprt)) {
+		xports[sock] = (SVCXPRT *)NULL;
+		(void)svc_fd_remove(&svc_pollfd, sock);
 		FD_CLR(sock, &svc_fdset);
 		if (sock == svc_maxfd) {
-			for (svc_maxfd--; svc_maxfd>=0; svc_maxfd--)
-				if (xports[svc_maxfd])
+			for (svc_maxfd--; svc_maxfd >= 0; svc_maxfd--) {
+				if (xports[svc_maxfd]) {
 					break;
+				}
+			}
 		}
 	}
+}
+
+/*
+ * Insert a socket into svc_pollfd, svc_fdset.
+ * If we are out of space, we allocate ~128 more slots than we
+ * need now for future expansion.
+ * We try to keep svc_pollfd well packed (no holes) as possible
+ * so that poll(2) is efficient.
+ */
+static int
+svc_fd_insert(struct pollfd *readpfd, fd_set *readfds, int sock)
+{
+	int slot;
+
+	/*
+	 * Find a slot for sock in svc_pollfd; four possible cases:
+	 *  1) need to allocate more space for svc_pollfd
+	 *  2) there is an entry on the free list
+	 *  3) the free list is empty (svc_used_pollfd is the next slot)
+	 */
+	if (readpfd == NULL || svc_used_pollfd == svc_pollfd_size) {
+		struct pollfd *pfd;
+		int new_size, *new_freelist;
+
+		new_size = readpfd ? svc_pollfd_size + 128 : FD_SETSIZE;
+		pfd = reallocarray(readpfd, new_size, sizeof(*readpfd));
+		if (pfd == NULL) {
+			return (0);			/* no changes */
+		}
+		new_freelist = realloc(svc_pollfd_freelist, new_size / 2);
+		if (new_freelist == NULL) {
+			free(pfd);
+			return (0);			/* no changes */
+		}
+		readpfd = pfd;
+		svc_pollfd_size = new_size;
+		svc_pollfd_freelist = new_freelist;
+		for (slot = svc_used_pollfd; slot < svc_pollfd_size; slot++) {
+			readpfd[slot].fd = -1;
+			readpfd[slot].events = 0;
+			readpfd[slot].revents = 0;
+		}
+		slot = svc_used_pollfd;
+	}  else if (svc_max_free != 0) {
+		/* there is an entry on the free list, use it */
+		slot = svc_pollfd_freelist[--svc_max_free];
+	} else {
+		/* nothing on the free list but we have room to grow */
+		slot = svc_used_pollfd;
+	}
+	if (sock + 1 > __svc_fdsetsize) {
+		fd_set *fds;
+		size_t bytes;
+
+		bytes = howmany(sock + 128, NFDBITS) * sizeof(fd_mask);
+		/* realloc() would be nicer but it gets tricky... */
+		fds = (fd_set*)mem_alloc(bytes);
+		if (fds != NULL) {
+			memset(fds, 0, bytes);
+			memcpy(fds, readfds, howmany(__svc_fdsetsize, NFDBITS) * sizeof(fd_mask));
+			readfds = fds;
+			__svc_fdsetsize = bytes / sizeof(fd_mask) * NFDBITS;
+		}
+	}
+	readpfd[slot].fd = sock;
+	readpfd[slot].events = POLLIN;
+	svc_used_pollfd++;
+	if (svc_max_pollfd < slot + 1) {
+		svc_max_pollfd = slot + 1;
+	}
+	return (1);
+}
+
+
+/*
+ * Remove a socket from svc_pollfd.
+ * Freed slots are placed on the free list.  If the free list fills
+ * up, we compact svc_pollfd (free list size == svc_pollfd_size /2).
+ */
+static int
+svc_fd_remove(struct pollfd *readpfd, int sock)
+{
+	int slot;
+
+	if (readpfd == NULL) {
+		return (0);
+	}
+
+	for (slot = 0; slot < svc_max_pollfd; slot++) {
+		if (readpfd[slot].fd == sock) {
+			readpfd[slot].fd = -1;
+			readpfd[slot].events = 0;
+			readpfd[slot].revents = 0;
+			svc_used_pollfd--;
+			if (svc_max_free == svc_pollfd_size / 2) {
+				int i, j;
+
+				/*
+				 * Out of space in the free list; this means
+				 * that svc_pollfd is half full.  Pack things
+				 * such that svc_max_pollfd == svc_used_pollfd
+				 * and svc_pollfd_freelist is empty.
+				 */
+				for (i = svc_used_pollfd, j = 0;
+						i < svc_max_pollfd && j < svc_max_free; i++) {
+					if (readpfd[i].fd == -1) {
+						continue;
+					}
+					/* be sure to use a low-numbered slot */
+					while (svc_pollfd_freelist[j] >= svc_used_pollfd) {
+						j++;
+					}
+					readpfd[svc_pollfd_freelist[j++]] = readpfd[i];
+					readpfd[i].fd = -1;
+					readpfd[i].events = 0;
+					readpfd[i].revents = 0;
+				}
+				svc_max_pollfd = svc_used_pollfd;
+				svc_max_free = 0;
+				/* could realloc if svc_pollfd_size is big */
+			} else {
+				/* trim svc_max_pollfd from the end */
+				while (svc_max_pollfd > 0
+						&& readpfd[svc_max_pollfd - 1].fd == -1) {
+					svc_max_pollfd--;
+				}
+			}
+			svc_pollfd_freelist[svc_max_free++] = slot;
+
+			return (1);
+		}
+	}
+	return (0);		/* not found, shouldn't happen */
 }
 
 
@@ -160,7 +308,7 @@ svc_register(xprt, prog, vers, dispatch, protocol)
 	SVCXPRT *xprt;
 	u_long prog;
 	u_long vers;
-	void (*dispatch) __P((struct svc_req *, SVCXPRT *));
+	void (*dispatch)(struct svc_req *, SVCXPRT *);
 	int protocol;
 {
 	struct svc_callout *prev;
