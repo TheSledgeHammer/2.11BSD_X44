@@ -105,9 +105,9 @@ typedef struct __rpc_xdr {
 		/* put a long to " */
 		bool_t	(*x_putlong) (struct __rpc_xdr *, const long *);
 		/* get some bytes from " */
-		bool_t	(*x_getbytes) (struct __rpc_xdr *, caddr_t, u_int);
+		bool_t	(*x_getbytes) (struct __rpc_xdr *, char *, u_int);
 		/* put some bytes to " */
-		bool_t	(*x_putbytes) (struct __rpc_xdr *, const caddr_t, u_int);
+		bool_t	(*x_putbytes) (struct __rpc_xdr *, const char *, u_int);
 		/* returns bytes off from beginning */
 		u_int	(*x_getpostn) (struct __rpc_xdr *);
 		/* lets you reposition the stream */
@@ -117,10 +117,10 @@ typedef struct __rpc_xdr {
 		/* free privates of this xdr_stream */
 		void	(*x_destroy) (struct __rpc_xdr *);
 	} *x_ops;
-	caddr_t 	x_public;	/* users' data */
+	char 		*x_public;	/* users' data */
 	void		*x_private;	/* pointer to private data */
-	caddr_t 	x_base;		/* private used for position info */
-	int			x_handy;	/* extra private word */
+	char 		*x_base;	/* private used for position info */
+	int		x_handy;	/* extra private word */
 } XDR;
 
 /*
