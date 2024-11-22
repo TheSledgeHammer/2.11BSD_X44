@@ -102,19 +102,9 @@ typedef struct __rpc_svcxprt {
 	} *xp_ops;
 	int				xp_addrlen;	 /* length of remote address */
 	struct sockaddr_in 	xp_raddr;	 /* remote address */
-	const struct xp_ops2 {
-		/* catch-all function */
-		bool_t  (*xp_control)(struct __rpc_svcxprt *, const unsigned int, void *);
-	} *xp_ops2;
-	char			*xp_tp;		 /* transport provider device name */
-	char			*xp_netid;	 /* network token */
-	struct netbuf		xp_ltaddr;	 /* local transport address */
-	struct netbuf		xp_rtaddr;	 /* remote transport address */
 	struct opaque_auth 	xp_verf;	 /* raw response verifier */
 	void			*xp_p1;		 /* private */
 	void			*xp_p2;		 /* private */
-	void			*xp_p3;		 /* private: for use by svc lib */
-	int			xp_type;	 /* transport type */
 } SVCXPRT;
 
 /*

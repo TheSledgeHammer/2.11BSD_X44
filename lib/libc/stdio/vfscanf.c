@@ -36,7 +36,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <assert.h>
@@ -86,20 +88,31 @@ static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 #define	CT_INT		3	/* integer, i.e., strtol or strtoul */
 #define	CT_FLOAT	4	/* floating, i.e., strtod */
 
-#define u_char unsigned char
-#define u_long unsigned long
+//#define u_char unsigned char
+//#define u_long unsigned long
 
-static u_char *__sccl();
+static u_char *__sccl(char *, u_char *);
+/*
+int
+vfscanf(fp, fmt0, ap)
+	register FILE *fp;
+	char const *fmt0;
+	va_list ap;
+{
+	return (__svfscanf(fp, fmt0, ap));
+}
+*/
 
 /*
  * vfscanf
  */
+int
 __svfscanf(fp, fmt0, ap)
 	register FILE *fp;
 	char const *fmt0;
 	va_list ap;
 {
-	register u_char *fmt = (u_char *)fmt0;
+	register u_char *fmt;
 	register int c;		/* character from format, or conversion */
 	register size_t width;	/* field width, or 0 */
 	register char *p;	/* points into all kinds of strings */
@@ -107,9 +120,9 @@ __svfscanf(fp, fmt0, ap)
 	register int flags;	/* flags as defined above */
 	register char *p0;	/* saves original value of p when necessary */
 	int nassigned;		/* number of fields assigned */
-	int nread;		/* number of characters consumed from fp */
-	int base;		/* base argument to strtol/strtoul */
-	u_long (*ccfn)();	/* conversion function (strtol/strtoul) */
+	int nread;			/* number of characters consumed from fp */
+	int base;			/* base argument to strtol/strtoul */
+	u_long (*ccfn)(char *, char **, int);	/* conversion function (strtol/strtoul) */
 	char ccltab[256];	/* character class table for %[...] */
 	char buf[BUF];		/* buffer for numeric conversions */
 
@@ -117,6 +130,7 @@ __svfscanf(fp, fmt0, ap)
 	static short basefix[17] =
 		{ 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 
+	fmt = (u_char *)fmt0;
 	nassigned = 0;
 	nread = 0;
 	base = 0;		/* XXX just to keep gcc happy */
@@ -143,7 +157,8 @@ __svfscanf(fp, fmt0, ap)
 		 * switch on the format.  continue if done;
 		 * break once format type is derived.
 		 */
-again:		c = *fmt++;
+again:
+		c = *fmt++;
 		switch (c) {
 		case '%':
 literal:

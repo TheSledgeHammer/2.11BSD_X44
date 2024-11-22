@@ -80,19 +80,4 @@ extern char *__rpc_rawcombuf;
 #endif
 #include <sys/time.h>
 
-/*
- * The netbuf structure is defined here, because NetBSD only uses it inside
- * the RPC code. It's in <xti.h> on SVR4, but it would be confusing to
- * have an xti.h, since NetBSD does not support XTI/TLI.
- */
-
-/*
- * The netbuf structure is used for transport-independent address storage.
- */
-struct netbuf {
-	unsigned int maxlen;
-	unsigned int len;
-	void *buf;
-};
-
 #endif /* !_RPC_TYPES_H */

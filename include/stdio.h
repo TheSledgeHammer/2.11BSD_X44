@@ -59,6 +59,13 @@ typedef	_BSD_SSIZE_T_	ssize_t;
 #undef	_BSD_SSIZE_T_
 #endif
 
+#if defined(_POSIX_C_SOURCE)
+#ifndef __VA_LIST_DECLARED
+typedef __va_list va_list;
+#define __VA_LIST_DECLARED
+#endif
+#endif
+
 #include <sys/null.h>
 /*
  * This is fairly grotesque, but pure ANSI code must not inspect the
@@ -70,7 +77,8 @@ typedef __off_t fpos_t;
 #else
 typedef struct __sfpos {
 	__off_t 		_pos;
-	__mbstate_t 	_mbstate_in, _mbstate_out;
+	__mbstate_t 		_mbstate_in;
+	__mbstate_t		_mbstate_out;
 } fpos_t;
 #endif
 
@@ -85,7 +93,7 @@ typedef struct __sfpos {
 /* stdio buffers */
 struct __sbuf {
 	unsigned char 	*_base;
-	int				_size;
+	int		_size;
 };
 
 /*
@@ -233,7 +241,6 @@ __END_DECLS
 #define	stdout		(&__iob[1])
 #define	stderr		(&__iob[2])
 
-
 #define	FPARSELN_UNESCESC	0x01
 #define	FPARSELN_UNESCCONT	0x02
 #define	FPARSELN_UNESCCOMM	0x04
@@ -245,6 +252,7 @@ __END_DECLS
  */
 __BEGIN_DECLS
 void 	clearerr(FILE *);
+int 	doprnt(FILE * __restrict, char * __restrict, __va_list);
 int	 	fclose(FILE *);
 int	 	feof(FILE *);
 int	 	ferror(FILE *);
@@ -387,7 +395,9 @@ int		__svfscanf(FILE *, const char *, __va_list);
 int		__swbuf(int, FILE *);
 
 /* 2.11BSD Compatibility */
-__inline int _doscan(FILE * iop, char *fmt, __va_list argp) {
+__inline int
+_doscan(FILE * iop, char *fmt, __va_list argp)
+{
 	return (__svfscanf(iop, fmt, argp));
 }
 __END_DECLS
