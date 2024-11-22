@@ -293,7 +293,7 @@ makevis(dst, dlen, c, flag, nextc, extra)
 		*dst++ = c;
 	}
 out:
-    *dlen = odlen;
+    	*dlen = odlen;
 done:
 	*dst = '\0';
 	return (dst);
