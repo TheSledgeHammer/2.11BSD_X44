@@ -63,8 +63,8 @@ __weak_alias(xdrstdio_create,_xdrstdio_create);
 static void xdrstdio_destroy(XDR *);
 static bool_t xdrstdio_getlong(XDR *, long *);
 static bool_t xdrstdio_putlong(XDR *, const long *);
-static bool_t xdrstdio_getbytes(XDR *, caddr_t, u_int);
-static bool_t xdrstdio_putbytes(XDR *, const caddr_t, u_int);
+static bool_t xdrstdio_getbytes(XDR *, char *, u_int);
+static bool_t xdrstdio_putbytes(XDR *, const char *, u_int);
 static u_int xdrstdio_getpos(XDR *);
 static bool_t xdrstdio_setpos(XDR *, u_int);
 static int32_t *xdrstdio_inline(XDR *, u_int);
@@ -141,7 +141,7 @@ xdrstdio_putlong(xdrs, lp)
 static bool_t
 xdrstdio_getbytes(xdrs, addr, len)
 	XDR *xdrs;
-	caddr_t addr;
+	char *addr;
 	u_int len;
 {
 
@@ -153,7 +153,7 @@ xdrstdio_getbytes(xdrs, addr, len)
 static bool_t
 xdrstdio_putbytes(xdrs, addr, len)
 	XDR *xdrs;
-	const caddr_t addr;
+	const char *addr;
 	u_int len;
 {
 

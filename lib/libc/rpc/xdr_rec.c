@@ -66,6 +66,7 @@ __RCSID("$NetBSD: xdr_rec.c,v 1.16 1999/03/04 05:26:48 lukem Exp $");
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <rpc/types.h>
 #include <rpc/xdr.h>
@@ -87,7 +88,7 @@ static bool_t	xdrrec_setpos(XDR *, u_int);
 static int32_t *xdrrec_inline(XDR *, u_int);
 static void	xdrrec_destroy(XDR *);
 
-static const struct  xdr_ops xdrrec_ops = {
+static const struct xdr_ops xdrrec_ops = {
 		xdrrec_getlong,
 		xdrrec_putlong,
 		xdrrec_getbytes,

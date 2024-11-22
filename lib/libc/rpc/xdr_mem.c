@@ -70,8 +70,8 @@ static bool_t xdrmem_getlong_aligned(XDR *, long *);
 static bool_t xdrmem_putlong_aligned(XDR *, const long *);
 static bool_t xdrmem_getlong_unaligned(XDR *, long *);
 static bool_t xdrmem_putlong_unaligned(XDR *, const long *);
-static bool_t xdrmem_getbytes(XDR *, caddr_t, u_int);
-static bool_t xdrmem_putbytes(XDR *, const caddr_t, u_int);
+static bool_t xdrmem_getbytes(XDR *, char *, u_int);
+static bool_t xdrmem_putbytes(XDR *, const char *, u_int);
 /* XXX: w/64-bit pointers, u_int not enough! */
 static u_int xdrmem_getpos(XDR *);
 static bool_t xdrmem_setpos(XDR *, u_int);
@@ -186,7 +186,7 @@ xdrmem_putlong_unaligned(xdrs, lp)
 static bool_t
 xdrmem_getbytes(xdrs, addr, len)
 	XDR *xdrs;
-	caddr_t addr;
+	char *addr;
 	u_int len;
 {
 
@@ -200,7 +200,7 @@ xdrmem_getbytes(xdrs, addr, len)
 static bool_t
 xdrmem_putbytes(xdrs, addr, len)
 	XDR *xdrs;
-	const caddr_t addr;
+	const char *addr;
 	u_int len;
 {
 
