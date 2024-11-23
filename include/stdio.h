@@ -253,6 +253,7 @@ __END_DECLS
 __BEGIN_DECLS
 void 	clearerr(FILE *);
 int 	doprnt(FILE * __restrict, char * __restrict, __va_list);
+int 	doscan(FILE * __restrict, char * __restrict, __va_list);
 int	 	fclose(FILE *);
 int	 	feof(FILE *);
 int	 	ferror(FILE *);
@@ -302,7 +303,7 @@ __END_DECLS
 /*
  * Functions defined in POSIX 1003.1.
  */
-#ifndef _ANSI_SOURCE
+#if !defined (_ANSI_SOURCE)
 #define	L_cuserid	9		/* size for cuserid(); UT_NAMESIZE + 1 */
 #define	L_ctermid	1024	/* size for ctermid(); PATH_MAX */
 
@@ -346,6 +347,7 @@ char	*tempnam(const char *, const char *);
 int	    snprintf(char * __restrict, size_t, const char * __restrict, ...);
 int	    vsnprintf(char * __restrict, size_t, const char * __restrict, __va_list);
 int	    vasprintf(char ** __restrict, const char * __restrict, __va_list);
+int	vfscanf(FILE * __restrict, const char * __restrict, __va_list);
 int	    vscanf(const char * __restrict, __va_list);
 int	    vsscanf(const char * __restrict, const char * __restrict, __va_list);
 
@@ -364,17 +366,11 @@ typedef	__off_t		off_t;
 #endif /* off_t */
 
 __BEGIN_DECLS
-int	  fseeko(FILE *, long, int);
+int	  	fseeko(FILE *, long, int);
 off_t 	ftello(FILE *);
 __END_DECLS
 #endif /* (_POSIX_C_SOURCE - 0) >= 200112L || _XOPEN_SOURCE >= 500 || ... */
 
-/*
- * This is a #define because the function is used internally and
- * (unlike vfscanf) the name __svfscanf is guaranteed not to collide
- * with a user function when _ANSI_SOURCE or _POSIX_SOURCE is defined.
- */
-#define	 vfscanf	__svfscanf
 
 /*
  * Stdio function-access interface.
@@ -393,13 +389,6 @@ __BEGIN_DECLS
 int		__srget(FILE *);
 int		__svfscanf(FILE *, const char *, __va_list);
 int		__swbuf(int, FILE *);
-
-/* 2.11BSD Compatibility */
-__inline int
-_doscan(FILE * iop, char *fmt, __va_list argp)
-{
-	return (__svfscanf(iop, fmt, argp));
-}
 __END_DECLS
 
 /*
@@ -407,7 +396,10 @@ __END_DECLS
  * define function versions in the C library.
  */
 #define	__sgetc(p) (--(p)->_r < 0 ? __srget(p) : (int)(*(p)->_p++))
-static __inline int __sputc(int _c, FILE *_p) {
+
+static __inline int
+__sputc(int _c, FILE *_p)
+{
 	if (--_p->_w >= 0 || (_p->_w >= _p->_lbfsize && (char)_c != '\n'))
 		return (*_p->_p++ = _c);
 	else

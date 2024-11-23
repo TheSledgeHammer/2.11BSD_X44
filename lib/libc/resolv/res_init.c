@@ -243,9 +243,9 @@ res_ninit(statp)
 	res_state statp;
 {
 	register FILE *fp;
-    	register char *cp, **pp;
-    	register int n;
-    	char buf[BUFSIZ];
+	register char *cp, **pp;
+	register int n;
+	char buf[BUFSIZ];
 	int nserv = 0;
 	int haveenv = 0;
 	int havesearch = 0;

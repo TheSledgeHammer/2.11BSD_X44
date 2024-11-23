@@ -312,9 +312,9 @@ fp_resstat(statp, file)
 	fprintf(file, ";; res options:");
 	if (!statp)
 		statp = &_res;
-	for (bit = 0;  bit < 32;  bit++) {	/* XXX 32 - bad assumption! */
-		if (statp->options & (1<<bit))
-			fprintf(file, " %s", p_option(1<<bit));
+	for (bit = 0; bit < 32; bit++) { /* XXX 32 - bad assumption! */
+		if (statp->options & (1 << bit))
+			fprintf(file, " %s", p_option(1 << bit));
 	}
 	putc('\n', file);
 }
@@ -335,42 +335,42 @@ fp_query(msg, file)
 	/*
 	 * Print header fields.
 	 */
-	hp = (const HEADER *)msg;
+	hp = (const HEADER*) msg;
 	cp = msg + sizeof(HEADER);
-	fprintf(file,"HEADER:\n");
-	fprintf(file,"\topcode = %s", _res_opcodes[hp->opcode]);
-	fprintf(file,", id = %d", ntohs(hp->id));
-	fprintf(file,", rcode = %s\n", _res_resultcodes[hp->rcode]);
-	fprintf(file,"\theader flags: ");
+	fprintf(file, "HEADER:\n");
+	fprintf(file, "\topcode = %s", _res_opcodes[hp->opcode]);
+	fprintf(file, ", id = %d", ntohs(hp->id));
+	fprintf(file, ", rcode = %s\n", _res_resultcodes[hp->rcode]);
+	fprintf(file, "\theader flags: ");
 	if (hp->qr)
-		fprintf(file," qr");
+		fprintf(file, " qr");
 	if (hp->aa)
-		fprintf(file," aa");
+		fprintf(file, " aa");
 	if (hp->tc)
-		fprintf(file," tc");
+		fprintf(file, " tc");
 	if (hp->rd)
-		fprintf(file," rd");
+		fprintf(file, " rd");
 	if (hp->ra)
-		fprintf(file," ra");
+		fprintf(file, " ra");
 	if (hp->pr)
-		fprintf(file," pr");
-	fprintf(file,"\n\tqdcount = %d", ntohs(hp->qdcount));
-	fprintf(file,", ancount = %d", ntohs(hp->ancount));
-	fprintf(file,", nscount = %d", ntohs(hp->nscount));
-	fprintf(file,", arcount = %d\n\n", ntohs(hp->arcount));
+		fprintf(file, " pr");
+	fprintf(file, "\n\tqdcount = %d", ntohs(hp->qdcount));
+	fprintf(file, ", ancount = %d", ntohs(hp->ancount));
+	fprintf(file, ", nscount = %d", ntohs(hp->nscount));
+	fprintf(file, ", arcount = %d\n\n", ntohs(hp->arcount));
 	/*
 	 * Print question records.
 	 */
 	if ((n = ntohs(hp->qdcount))) {
-		fprintf(file,"QUESTIONS:\n");
+		fprintf(file, "QUESTIONS:\n");
 		while (--n >= 0) {
-			fprintf(file,"\t");
+			fprintf(file, "\t");
 			cp = p_cdname(cp, msg, file);
 			if (cp == NULL)
 				return;
-			fprintf(file,", type = %s", p_type(getshort(cp)));
+			fprintf(file, ", type = %s", p_type(getshort(cp)));
 			cp += sizeof(u_short);
-			fprintf(file,", class = %s\n\n", p_class(getshort(cp)));
+			fprintf(file, ", class = %s\n\n", p_class(getshort(cp)));
 			cp += sizeof(u_short);
 		}
 	}
@@ -378,9 +378,9 @@ fp_query(msg, file)
 	 * Print authoritative answer records
 	 */
 	if ((n = ntohs(hp->ancount))) {
-		fprintf(file,"ANSWERS:\n");
+		fprintf(file, "ANSWERS:\n");
 		while (--n >= 0) {
-			fprintf(file,"\t");
+			fprintf(file, "\t");
 			cp = p_rr(cp, msg, file);
 			if (cp == NULL)
 				return;
@@ -390,9 +390,9 @@ fp_query(msg, file)
 	 * print name server records
 	 */
 	if ((n = ntohs(hp->nscount))) {
-		fprintf(file,"NAME SERVERS:\n");
+		fprintf(file, "NAME SERVERS:\n");
 		while (--n >= 0) {
-			fprintf(file,"\t");
+			fprintf(file, "\t");
 			cp = p_rr(cp, msg, file);
 			if (cp == NULL)
 				return;
@@ -402,9 +402,9 @@ fp_query(msg, file)
 	 * print additional records
 	 */
 	if ((n = ntohs(hp->arcount))) {
-		fprintf(file,"ADDITIONAL RECORDS:\n");
+		fprintf(file, "ADDITIONAL RECORDS:\n");
 		while (--n >= 0) {
-			fprintf(file,"\t");
+			fprintf(file, "\t");
 			cp = p_rr(cp, msg, file);
 			if (cp == NULL)
 				return;
@@ -449,10 +449,10 @@ p_fqname(cp, msg, file)
 		name[1] = '\0';
 	}
 	fputs(name, file);
-    	if (name[strlen(name) - 1] != '.') {
-   		name[0] = '.';
+	if (name[strlen(name) - 1] != '.') {
+		name[0] = '.';
 		name[1] = '\0';
-    	}
+	}
 	return (cp + n);
 }
 
@@ -615,7 +615,8 @@ p_rr(cp, msg, file)
 		cp += dlen;
 	}
 	if (cp != cp1 + dlen)
-		fprintf(file, "packet size error (%p != %p)\n", __UNCONST(cp), __UNCONST(cp1 + dlen));
+		fprintf(file, "packet size error (%p != %p)\n", __UNCONST(cp),
+				__UNCONST(cp1 + dlen));
 	fprintf(file, "\n");
 	return (cp);
 }

@@ -59,11 +59,17 @@ static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
  * Flags used during conversion.
  */
 #define	LONG		0x01	/* l: long or double */
-#define	LONGDBL		0x02	/* L: long double; unimplemented */
+#define	LONGDBL		0x02	/* L: long double */
 #define	SHORT		0x04	/* h: short */
-#define	SUPPRESS	0x08	/* suppress assignment */
-#define	POINTER		0x10	/* weird %p pointer (`fake hex') */
-#define	NOSKIP		0x20	/* do not skip blanks */
+#define	SUPPRESS	0x08	/* *: suppress assignment */
+#define	POINTER		0x10	/* p: void * (as hex) */
+#define	NOSKIP		0x20	/* [ or c: do not skip blanks */
+#define	LONGLONG	0x400	/* ll: quad_t (+ deprecated q: quad) */
+#define	INTMAXT		0x800	/* j: intmax_t */
+#define	PTRDIFFT	0x1000	/* t: ptrdiff_t */
+#define	SIZET		0x2000	/* z: size_t */
+#define	SHORTSHORT	0x4000	/* hh: char */
+#define	UNSIGNED	0x8000	/* %[oupxX] conversions */
 
 /*
  * The following are used in numeric conversions only:
@@ -88,11 +94,8 @@ static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 #define	CT_INT		3	/* integer, i.e., strtol or strtoul */
 #define	CT_FLOAT	4	/* floating, i.e., strtod */
 
-//#define u_char unsigned char
-//#define u_long unsigned long
-
 static u_char *__sccl(char *, u_char *);
-/*
+
 int
 vfscanf(fp, fmt0, ap)
 	register FILE *fp;
@@ -101,7 +104,6 @@ vfscanf(fp, fmt0, ap)
 {
 	return (__svfscanf(fp, fmt0, ap));
 }
-*/
 
 /*
  * vfscanf
@@ -173,14 +175,34 @@ literal:
 		case '*':
 			flags |= SUPPRESS;
 			goto again;
+		case 'j':
+			flags |= INTMAXT;
+			goto again;
 		case 'l':
-			flags |= LONG;
+			if (flags & LONG) {
+				flags &= ~LONG;
+				flags |= LONGLONG;
+			} else
+				flags |= LONG;
+			goto again;
+		case 'q':
+			flags |= LONGLONG;	/* not quite */
+			goto again;
+		case 't':
+			flags |= PTRDIFFT;
+			goto again;
+		case 'z':
+			flags |= SIZET;
 			goto again;
 		case 'L':
 			flags |= LONGDBL;
 			goto again;
 		case 'h':
-			flags |= SHORT;
+			if (flags & SHORT) {
+				flags &= ~SHORT;
+				flags |= SHORTSHORT;
+			} else
+				flags |= SHORT;
 			goto again;
 
 		case '0':
@@ -244,15 +266,23 @@ literal:
 			break;
 
 #ifdef FLOATING_POINT
+		case 'A':
 		case 'E':	/* compat   XXX */
 		case 'F':	/* compat */
+		case 'G':
 			flags |= LONG;
 			/* FALLTHROUGH */
-		case 'e': case 'f': case 'g':
+		case 'a':
+		case 'e':
+		case 'f':
+		case 'g':
 			c = CT_FLOAT;
 			break;
 #endif
 
+		case 'S':
+			flags |= LONG;
+			/* FALLTHROUGH */
 		case 's':
 			c = CT_STRING;
 			break;
@@ -263,6 +293,9 @@ literal:
 			c = CT_CCL;
 			break;
 
+		case 'C':
+			flags |= LONG;
+			/* FALLTHROUGH */
 		case 'c':
 			flags |= NOSKIP;
 			c = CT_CHAR;
@@ -276,14 +309,24 @@ literal:
 			break;
 
 		case 'n':
-			if (flags & SUPPRESS) /* ??? */
+			if (flags & SUPPRESS)	/* ??? */
 				continue;
-			if (flags & SHORT)
-				*va_arg(ap, short*) = nread;
+			if (flags & SHORTSHORT)
+				*va_arg(ap, char *) = (char)nread;
+			else if (flags & SHORT)
+				*va_arg(ap, short *) = (short)nread;
 			else if (flags & LONG)
-				*va_arg(ap, long*) = nread;
+				*va_arg(ap, long *) = nread;
+			else if (flags & LONGLONG)
+				*va_arg(ap, quad_t *) = nread;
+			else if (flags & INTMAXT)
+				*va_arg(ap, intmax_t *) = nread;
+			else if (flags & SIZET)
+				*va_arg(ap, size_t *) = nread;
+			else if (flags & PTRDIFFT)
+				*va_arg(ap, ptrdiff_t *) = nread;
 			else
-				*va_arg(ap, int*) = nread;
+				*va_arg(ap, int *) = (int)nread;
 			continue;
 
 			/*
@@ -335,6 +378,7 @@ literal:
 			/* scan arbitrary characters (sets NOSKIP) */
 			if (width == 0)
 				width = 1;
+
 			if (flags & SUPPRESS) {
 				size_t sum = 0;
 				for (;;) {
@@ -577,12 +621,22 @@ literal:
 				res = (*ccfn)(buf, (char**) NULL, base);
 				if (flags & POINTER)
 					*va_arg(ap, void**) = (void*) res;
+				else if (flags & SHORTSHORT)
+					*va_arg(ap, char*) = (char) res;
 				else if (flags & SHORT)
-					*va_arg(ap, short*) = res;
+					*va_arg(ap, short*) = (short) res;
 				else if (flags & LONG)
-					*va_arg(ap, long*) = res;
+					*va_arg(ap, long*) = (long) res;
+				else if (flags & LONGLONG)
+					*va_arg(ap, quad_t*) = res;
+				else if (flags & INTMAXT)
+					*va_arg(ap, intmax_t*) = res;
+				else if (flags & PTRDIFFT)
+					*va_arg(ap, ptrdiff_t*) = (ptrdiff_t) res;
+				else if (flags & SIZET)
+					*va_arg(ap, size_t*) = (size_t) res;
 				else
-					*va_arg(ap, int*) = res;
+					*va_arg(ap, int*) = (int) res;
 				nassigned++;
 			}
 			nread += p - buf;
