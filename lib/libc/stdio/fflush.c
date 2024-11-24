@@ -36,7 +36,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)fflush.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
@@ -45,6 +47,7 @@ static char sccsid[] = "@(#)fflush.c	8.1 (Berkeley) 6/4/93";
 #include "local.h"
 
 /* Flush a single file, or (if fp is NULL) all files.  */
+int
 fflush(fp)
 	register FILE *fp;
 {
@@ -58,6 +61,7 @@ fflush(fp)
 	return (__sflush(fp));
 }
 
+int
 __sflush(fp)
 	register FILE *fp;
 {

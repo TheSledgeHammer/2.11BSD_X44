@@ -36,13 +36,16 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)fpurge.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <wchar.h>
 #include "local.h"
 
 /*
@@ -58,8 +61,10 @@ fpurge(fp)
 		return (EOF);
 	}
 
-	if (HASUB(fp))
+	if (HASUB(fp)) {
 		FREEUB(fp);
+	}
+	WCIO_FREE(fp);
 	fp->_p = fp->_bf._base;
 	fp->_r = 0;
 	fp->_w = fp->_flags & (__SLBF|__SNBF) ? 0 : fp->_bf._size;

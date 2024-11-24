@@ -36,7 +36,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)flags.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -49,8 +51,9 @@ static char sccsid[] = "@(#)flags.c	8.1 (Berkeley) 6/4/93";
  * to be passed to an open() syscall through *optr.
  * Return 0 on error.
  */
+int
 __sflags(mode, optr)
-	register char *mode;
+	register const char *mode;
 	int *optr;
 {
 	register int ret, m, o;
@@ -79,7 +82,6 @@ __sflags(mode, optr)
 		errno = EINVAL;
 		return (0);
 	}
-
 	/* [rwa]\+ or [rwa]b\+ means read and write */
 	if (*mode == '+' || (*mode == 'b' && mode[1] == '+')) {
 		ret = __SRW;

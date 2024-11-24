@@ -44,3 +44,4 @@
 #define	MAXEXP		308
 /* 128 bit fraction takes up 39 decimal digits; max reasonable precision */
 #define	MAXFRACT	39
+

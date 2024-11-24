@@ -36,7 +36,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)fwalk.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
@@ -45,8 +47,9 @@ static char sccsid[] = "@(#)fwalk.c	8.1 (Berkeley) 6/4/93";
 #include "local.h"
 #include "glue.h"
 
+int
 _fwalk(function)
-	register int (*function)();
+	register int (*function)(FILE *);
 {
 	register FILE *fp;
 	register int n, ret;

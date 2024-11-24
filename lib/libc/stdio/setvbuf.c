@@ -36,8 +36,10 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)setvbuf.c	8.2 (Berkeley) 11/16/93";
 static char sccsid[] = "@(#)setvbuf.c	8.1.1 (2.11BSD) 1997/7/27";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>

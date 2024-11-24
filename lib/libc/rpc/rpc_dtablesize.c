@@ -40,7 +40,7 @@ __RCSID("$NetBSD: rpc_dtablesize.c,v 1.14 1998/11/15 17:32:43 christos Exp $");
 #endif
 
 #include "namespace.h"
-
+#include <select.h>
 #include <unistd.h>
 
 int _rpc_dtablesize(void);	/* XXX */
@@ -50,10 +50,14 @@ int _rpc_dtablesize(void);	/* XXX */
  * expensive system call every time.
  */
 int
-_rpc_dtablesize()
+_rpc_dtablesize(void)
 {
 	static int size;
-	if (size == 0)
-		size = (int)sysconf(_SC_OPEN_MAX);
+	if (size == 0) {
+		size = getdtablesize();
+		if (size > FD_SETSIZE) {
+			size = FD_SETSIZE;
+		}
+	}
 	return (size);
 }

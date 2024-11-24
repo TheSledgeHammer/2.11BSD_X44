@@ -17,7 +17,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <assert.h>

@@ -44,14 +44,16 @@ static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 #include <assert.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <locale.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <ctype.h>
-#include <stdarg.h>
 #include <string.h>
 #include <wchar.h>
 #include <wctype.h>
+
+#include "local.h"
 
 #define	BUF			513	/* Maximum length of numeric string. */
 

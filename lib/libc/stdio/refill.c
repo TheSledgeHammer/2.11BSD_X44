@@ -36,7 +36,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)refill.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
@@ -44,7 +46,7 @@ static char sccsid[] = "@(#)refill.c	8.1 (Berkeley) 6/4/93";
 #include <stdlib.h>
 #include "local.h"
 
-static
+static int
 lflush(fp)
 	FILE *fp;
 {
@@ -58,6 +60,7 @@ lflush(fp)
  * Refill a stdio buffer.
  * Return EOF on eof or error, 0 otherwise.
  */
+int
 __srefill(fp)
 	register FILE *fp;
 {

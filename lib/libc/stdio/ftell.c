@@ -58,6 +58,20 @@ long
 ftell(fp)
 	register FILE *fp;
 {
+	off_t offset;
+
+	offset = ftello(fp);
+	if (offset > LONG_MAX) {
+		errno = EOVERFLOW;
+		return (-1);
+	}
+	return ((long)offset);
+}
+
+off_t
+ftello(fp)
+	register FILE *fp;
+{
 	register fpos_t pos;
 
 	if (fp->_seek == NULL) {
@@ -69,6 +83,7 @@ ftell(fp)
 	 * Find offset of underlying I/O object, then
 	 * adjust for buffered bytes.
 	 */
+	__sflush(fp);
 	if (fp->_flags & __SOFF)
 		pos = fp->_offset;
 	else {

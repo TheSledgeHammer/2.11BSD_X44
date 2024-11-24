@@ -37,9 +37,8 @@
 int
 doprnt(fp, fmt, ap)
 	FILE *fp;
-	char *fmt;
+	const char *fmt;
 	va_list ap;
 {
-	const char *fmt0 = __UNCONST(fmt);
-	return (vfprintf(fp, fmt0, ap));
+	return (vfprintf(fp, fmt, ap));
 }

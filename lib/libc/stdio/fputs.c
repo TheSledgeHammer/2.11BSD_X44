@@ -50,6 +50,7 @@ static char sccsid[] = "@(#)fputs.c	5.2 (Berkeley) 3/9/86";
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+#include "local.h"
 #include "fvwrite.h"
 
 int

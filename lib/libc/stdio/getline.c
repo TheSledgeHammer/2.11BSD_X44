@@ -41,5 +41,5 @@ __weak_alias(getline, _getline)
 ssize_t
 getline(char **__restrict buf, size_t *__restrict buflen, FILE *__restrict fp)
 {
-	return getdelim(buf, buflen, '\n', fp);
+	return (getdelim(buf, buflen, '\n', fp));
 }

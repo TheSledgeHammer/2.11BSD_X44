@@ -34,7 +34,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)scanf.c	5.2 (Berkeley) 3/9/86";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <assert.h>
@@ -60,7 +62,7 @@ scanf(char const *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = _doscan(stdin, fmt, ap);
+	ret = doscan(stdin, fmt, ap);
 	va_end(ap);
 	return(ret);
 }
@@ -72,7 +74,7 @@ fscanf(FILE *fp, char const *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = _doscan(stdin, fmt, ap);
+	ret = doscan(stdin, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -80,7 +82,7 @@ fscanf(FILE *fp, char const *fmt, ...)
 int
 vscanf(const char *fmt, va_list ap)
 {
-	return (_doscan(stdin, fmt, ap));
+	return (doscan(stdin, fmt, ap));
 }
 
 int
@@ -97,7 +99,7 @@ sscanf(const char *str, char const *fmt, ...)
 	_strbuf._ub._base = NULL;
 	_strbuf._lb._base = NULL;
 	va_start(ap, fmt);
-	ret = _doscan(&_strbuf, fmt, ap);
+	ret = doscan(&_strbuf, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -114,5 +116,5 @@ vsscanf(const char *str, const char *fmt, va_list ap)
 	_strbuf._read = eofread;
 	_strbuf._ub._base = NULL;
 	_strbuf._lb._base = NULL;
-	return (_doscan(&_strbuf, fmt, ap));
+	return (doscan(&_strbuf, fmt, ap));
 }

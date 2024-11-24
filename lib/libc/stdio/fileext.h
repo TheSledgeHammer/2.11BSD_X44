@@ -32,43 +32,50 @@
  * file extension
  */
 struct __sfileext {
-	struct	__sbuf 		 _ub; /* ungetc buffer */
-	struct wchar_io_data _wcio;	/* wide char i/o status */
+	struct	__sbuf 		 _ub; 				/* ungetc buffer */
+	struct wchar_io_data _wcio;				/* wide char i/o status */
 	size_t 				_fgetstr_len;
 	char 				*_fgetstr_buf;
 #ifdef _REENTRANT
-	mutex_t				_lock;	/* Lock for FLOCKFILE/FUNLOCKFILE */
-	cond_t 				_lockcond; /* Condition variable for signalling lock releases */
-	thr_t 				_lockowner; /* The thread currently holding the lock */
-	int 				_lockcount; /* Count of recursive locks */
-	int 				_lockinternal; /* Flag of whether the lock is held inside stdio */
-	int 				_lockcancelstate; /* Stashed cancellation state on internal lock */
+	mutex_t				_lock;				/* Lock for FLOCKFILE/FUNLOCKFILE */
+	cond_t 				_lockcond; 			/* Condition variable for signalling lock releases */
+	thr_t 				_lockowner; 		/* The thread currently holding the lock */
+	int 				_lockcount; 		/* Count of recursive locks */
+	int 				_lockinternal; 		/* Flag of whether the lock is held inside stdio */
+	int 				_lockcancelstate; 	/* Stashed cancellation state on internal lock */
 #endif
 };
 
 #define _EXT(fp) 				((struct __sfileext *)(void *)((fp)->_ext._base))
 #define _UB(fp) 				(_EXT(fp)->_ub)
+
 #ifdef _REENTRANT
+
 #define _LOCK(fp) 				(_EXT(fp)->_lock)
 #define _LOCKCOND(fp) 			(_EXT(fp)->_lockcond)
 #define _LOCKOWNER(fp) 			(_EXT(fp)->_lockowner)
 #define _LOCKCOUNT(fp) 			(_EXT(fp)->_lockcount)
 #define _LOCKINTERNAL(fp) 		(_EXT(fp)->_lockinternal)
 #define _LOCKCANCELSTATE(fp) 	(_EXT(fp)->_lockcancelstate)
-#define _FILEEXT_SETUP(f, fext) do { \
-	/* LINTED */(f)->_ext._base = (unsigned char *)(fext); \
-	(fext)->_fgetstr_len = 0; \
-	(fext)->_fgetstr_buf = NULL; \
-	mutex_init(&_LOCK(f), NULL); \
-	cond_init(&_LOCKCOND(f), 0, NULL); \
-	_LOCKOWNER(f) = NULL; \
-	_LOCKCOUNT(f) = 0; \
-	_LOCKINTERNAL(f) = 0; \
-	} while (0)
+#define _FILEEXT_SETUP(f, fext) 				\
+do { 											\
+	(f)->_ext._base = (unsigned char *)(fext); 	\
+	(fext)->_fgetstr_len = 0; 					\
+	(fext)->_fgetstr_buf = NULL; 				\
+	mutex_init(&_LOCK(f), NULL); 				\
+	cond_init(&_LOCKCOND(f), 0, NULL); 			\
+	_LOCKOWNER(f) = NULL; 						\
+	_LOCKCOUNT(f) = 0; 							\
+	_LOCKINTERNAL(f) = 0; 						\
+} while (0)
+
 #else
-#define _FILEEXT_SETUP(f, fext) do { \
-	/* LINTED */(f)->_ext._base = (unsigned char *)(fext); \
-	(fext)->_fgetstr_len = 0; \
-	(fext)->_fgetstr_buf = NULL; \
-	} while (0)
+
+#define _FILEEXT_SETUP(f, fext) 				\
+do {											\
+	(f)->_ext._base = (unsigned char *)(fext); 	\
+	(fext)->_fgetstr_buf = NULL; 				\
+	(fext)->_fgetstr_buf = NULL; 				\
+} while (0)
+
 #endif

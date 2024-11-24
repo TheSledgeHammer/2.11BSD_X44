@@ -50,10 +50,10 @@ static char sccsid[] = "@(#)getchar.c	5.2 (Berkeley) 3/9/86";
 #undef getchar_unlocked
 
 int
-getchar()
+getchar(void)
 {
 	int r;
 
-	r = __sgetc(stdin);
+	r = getc(stdin);
 	return (r);
 }

@@ -40,6 +40,7 @@ __RCSID("$NetBSD: flockfile.c,v 1.11 2012/03/15 18:22:30 christos Exp $");
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "reentrant.h"
 #include "local.h"
 
@@ -50,8 +51,6 @@ __weak_alias(funlockfile,_funlockfile)
 #endif
 
 #ifdef _REENTRANT
-
-extern int __isthreaded;
 
 void
 flockfile(fp)

@@ -36,6 +36,7 @@
  *	@(#)local.h	8.3 (Berkeley) 7/3/94
  */
 
+
 #include "wcio.h"
 #include "fileext.h"
 
@@ -64,6 +65,7 @@ extern int		_fwalk(int (*)(FILE *));
 extern char    *_mktemp(char *);
 extern int		__swsetup(FILE *);
 extern int		__sflags(const char *, int *);
+extern int		__svfscanf(FILE * __restrict, const char * __restrict, __va_list);
 
 extern int		__sdidinit;
 

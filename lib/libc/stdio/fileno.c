@@ -36,16 +36,20 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)fileno.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
+#include "local.h"
 
 /*
  * A subroutine version of the macro fileno.
  */
 #undef fileno
 
+int
 fileno(fp)
 	FILE *fp;
 {

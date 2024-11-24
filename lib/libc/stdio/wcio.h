@@ -46,25 +46,28 @@ struct wchar_io_data {
 	int 		wcio_mode; /* orientation */
 };
 
-#define _SET_ORIENTATION(fp, mode) \
-do {\
-	struct wchar_io_data *_wcio = WCIO_GET(fp);\
-	if (_wcio && _wcio->wcio_mode == 0)\
-		_wcio->wcio_mode = (mode);\
+#define _SET_ORIENTATION(fp, mode) 				\
+do {											\
+	struct wchar_io_data *_wcio = WCIO_GET(fp);	\
+	if (_wcio && _wcio->wcio_mode == 0)			\
+		_wcio->wcio_mode = (mode);				\
 } while (0)
 
 /*
  * WCIO_FREE should be called by fclose
  */
-#define WCIO_GET(fp) (&(_EXT(fp)->_wcio))
-#define WCIO_FREE(fp) \
-do {\
-	_EXT(fp)->_wcio.wcio_mode = 0;\
-	WCIO_FREEUB(fp);\
+#define WCIO_GET(fp) 							\
+	(&(_EXT(fp)->_wcio))
+
+#define WCIO_FREE(fp) 							\
+do {											\
+	_EXT(fp)->_wcio.wcio_mode = 0;				\
+	WCIO_FREEUB(fp);							\
 } while (0)
-#define WCIO_FREEUB(fp) \
-do {\
-	_EXT(fp)->_wcio.wcio_ungetwc_inbuf = 0;\
+
+#define WCIO_FREEUB(fp) 						\
+do {											\
+	_EXT(fp)->_wcio.wcio_ungetwc_inbuf = 0;		\
 } while (0)
 
 #endif /*_WCIO_H_*/

@@ -36,12 +36,15 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)remove.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
 #include <stdio.h>
 
+int
 remove(file)
 	const char *file;
 {

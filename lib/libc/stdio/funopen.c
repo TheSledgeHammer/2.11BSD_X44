@@ -36,7 +36,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)funopen.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -44,16 +46,31 @@ static char sccsid[] = "@(#)funopen.c	8.1 (Berkeley) 6/4/93";
 #include <errno.h>
 #include "local.h"
 
+typedef int (*readfn_t)(void *, char *, int);
+typedef int (*writefn_t)(void *, const char *, int);
+typedef fpos_t (*seekfn_t)(void *, fpos_t, int);
+typedef int (*closefn_t)(void *);
+typedef int	(*flushfn_t)(void *);
+
 FILE *
 funopen(cookie, readfn, writefn, seekfn, closefn)
 	const void *cookie;
-	int (*readfn)(), (*writefn)();
-#if __STDC__
-	fpos_t (*seekfn)(void *cookie, fpos_t off, int whence);
-#else
-	fpos_t (*seekfn)();
-#endif
-	int (*closefn)();
+	readfn_t readfn;
+	writefn_t writefn;
+	seekfn_t seekfn;
+	closefn_t closefn;
+{
+	return (funopen2(cookie, readfn, writefn, seekfn, NULL, closefn));
+}
+
+FILE *
+funopen2(cookie, readfn, writefn, seekfn, flushfn, closefn)
+	const void *cookie;
+	readfn_t readfn;
+	writefn_t writefn;
+	seekfn_t seekfn;
+	flushfn_t flushfn;
+	closefn_t closefn;
 {
 	register FILE *fp;
 	int flags;
@@ -74,10 +91,13 @@ funopen(cookie, readfn, writefn, seekfn, closefn)
 		return (NULL);
 	fp->_flags = flags;
 	fp->_file = -1;
-	fp->_cookie = (void *)cookie;
+	fp->_cookie = __UNCONST(cookie);
 	fp->_read = readfn;
 	fp->_write = writefn;
 	fp->_seek = seekfn;
 	fp->_close = closefn;
+	fp->_flush = flushfn;
+
+
 	return (fp);
 }

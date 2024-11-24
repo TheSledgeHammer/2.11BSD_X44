@@ -36,7 +36,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)stdio.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <fcntl.h>
@@ -48,6 +50,7 @@ static char sccsid[] = "@(#)stdio.c	8.1 (Berkeley) 6/4/93";
  * Small standard I/O/seek/close functions.
  * These maintain the `known seek offset' for seek optimisation.
  */
+int
 __sread(cookie, buf, n)
 	void *cookie;
 	char *buf;

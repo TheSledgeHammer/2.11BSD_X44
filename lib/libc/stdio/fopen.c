@@ -44,7 +44,7 @@
 static char sccsid[] = "@(#)fopen.c	8.1 (Berkeley) 6/4/93";
 static char sccsid[] = "@(#)fopen.c	5.2 (Berkeley) 3/9/86";
 #endif
-#endif LIBC_SCCS and not lint
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -68,6 +68,19 @@ fopen(file, mode)
 	if ((fp = __sfp()) == NULL)
 		return (NULL);
 	if ((f = open(file, oflags, DEFFILEMODE)) < 0) {
+		fp->_flags = 0;			/* release */
+		return (NULL);
+	}
+	/*
+	 * File descriptors are a full int, but _file is only a short.
+	 * If we get a valid file descriptor that is greater or equal to
+	 * USHRT_MAX, then the fd will get sign-extended into an
+	 * invalid file descriptor.  Handle this case by failing the
+	 * open. (We treat the short as unsigned, and special-case -1).
+	 */
+	if (f >= USHRT_MAX) {
+		(void)close(f);
+		errno = EMFILE;
 		fp->_flags = 0;			/* release */
 		return (NULL);
 	}

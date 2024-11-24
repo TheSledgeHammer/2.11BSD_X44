@@ -34,7 +34,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)putw.c	5.2.1 (2.11BSD GTE) 1/1/94";
+#endif
 #endif
 
 #include <assert.h>

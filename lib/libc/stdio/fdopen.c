@@ -38,7 +38,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) 3/9/86";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -66,7 +68,12 @@ fdopen(fd, mode)
 	const char *mode;
 {
 	FILE *fp;
+	static int nofile;
 	int flags, oflags, fdflags, tmp;
+
+	if (nofile == 0) {
+		nofile = getdtablesize();
+	}
 
 	if ((flags = __sflags(mode, &oflags)) == 0)
 		return (NULL);

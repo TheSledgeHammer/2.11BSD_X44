@@ -76,9 +76,9 @@ fseek(fp, offset, whence)
 }
 
 int
-fseek(fp, offset, whence)
+fseeko(fp, offset, whence)
 	register FILE *fp;
-	long offset;
+	off_t offset;
 	int whence;
 {
 	register fpos_t (*seekfn)(void *, fpos_t, int);

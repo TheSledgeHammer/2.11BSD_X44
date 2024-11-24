@@ -252,7 +252,7 @@ __END_DECLS
  */
 __BEGIN_DECLS
 void 	clearerr(FILE *);
-int 	doprnt(FILE * __restrict, char * __restrict, __va_list);
+int 	doprnt(FILE * __restrict, const char * __restrict, __va_list);
 int 	doscan(FILE * __restrict, char * __restrict, __va_list);
 int	 	fclose(FILE *);
 int	 	feof(FILE *);
@@ -347,7 +347,7 @@ char	*tempnam(const char *, const char *);
 int	    snprintf(char * __restrict, size_t, const char * __restrict, ...);
 int	    vsnprintf(char * __restrict, size_t, const char * __restrict, __va_list);
 int	    vasprintf(char ** __restrict, const char * __restrict, __va_list);
-int	vfscanf(FILE * __restrict, const char * __restrict, __va_list);
+int		vfscanf(FILE * __restrict, const char * __restrict, __va_list);
 int	    vscanf(const char * __restrict, __va_list);
 int	    vsscanf(const char * __restrict, const char * __restrict, __va_list);
 
@@ -377,9 +377,18 @@ __END_DECLS
  */
 __BEGIN_DECLS
 FILE		*funopen(const void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), fpos_t (*)(void *, fpos_t, int), int (*)(void *));
+FILE		*funopen2(const void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), fpos_t (*)(void *, fpos_t, int), int (*)(void *), int (*)(void*));
 __END_DECLS
-#define		fropen(cookie, fn) funopen(cookie, fn, 0, 0, 0)
-#define		fwopen(cookie, fn) funopen(cookie, 0, fn, 0, 0)
+/* funopen: read */
+#define		fropen(cookie, fn) funopen2(cookie, fn, 0, 0, 0, 0)
+/* funopen: write */
+#define		fwopen(cookie, fn) funopen2(cookie, 0, fn, 0, 0, 0)
+/* funopen: seek */
+#define		fsopen(cookie, fn) funopen2(cookie, 0, 0, fn, 0, 0)
+/* funopen: flush */
+#define		ffopen(cookie, fn) funopen2(cookie, 0, 0, 0, fn ,0)
+/* funopen: close */
+#define		fcopen(cookie, fn) funopen2(cookie, 0, 0, 0, 0, fn)
 #endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
 
 /*
@@ -387,7 +396,6 @@ __END_DECLS
  */
 __BEGIN_DECLS
 int		__srget(FILE *);
-int		__svfscanf(FILE *, const char *, __va_list);
 int		__swbuf(int, FILE *);
 __END_DECLS
 
