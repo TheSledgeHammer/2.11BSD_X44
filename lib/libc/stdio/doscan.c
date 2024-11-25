@@ -32,7 +32,9 @@
 
 #include <sys/cdefs.h>
 
+#include <stdarg.h>
 #include <stdio.h>
+#include "local.h"
 
 int
 doscan(iop, fmt, argp)
