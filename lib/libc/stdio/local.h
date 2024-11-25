@@ -72,7 +72,7 @@ extern int		__sdidinit;
 /*
  * Return true iff the given FILE cannot be written now.
  */
-#define	cantwrite(fp) 												\
+#define	cantwrite(fp) 							\
 	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && 	\
 	 __swsetup(fp))
 
@@ -80,29 +80,20 @@ extern int		__sdidinit;
  * Test whether the given stdio file has an active ungetc buffer;
  * release such a buffer, without restoring ordinary unread data.
  */
-#define	HASUB(fp) ((fp)->_ub._base != NULL)
-#define	FREEUB(fp) { 					\
-	if ((fp)->_ub._base != (fp)->_ubuf) \
-		free((char *)(fp)->_ub._base); 	\
-	(fp)->_ub._base = NULL; 			\
+#define	HASUB(fp) (_UB(fp)._base != NULL)
+#define	FREEUB(fp) { 							\
+	if (_UB(fp)._base != (fp)->_ubuf) 				\
+		free((char *)_UB(fp)._base); 				\
+	_UB(fp)._base = NULL; 						\
 }
 
 /*
  * test for an fgetln() buffer.
  */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { 					\
-	free((char *)(fp)->_lb._base); 		\
-	(fp)->_lb._base = NULL; 			\
-}
-
-/*
- * test for an fgetln() buffer.
- */
-#define	FREELB(fp) { \
-	free(_EXT(fp)->_fgetstr_buf); \
-	_EXT(fp)->_fgetstr_buf = NULL; \
-	_EXT(fp)->_fgetstr_len = 0; \
+#define	FREELB(fp) { 							\
+	free(_EXT(fp)->_fgetstr_buf); 					\
+	_EXT(fp)->_fgetstr_buf = NULL; 					\
+	_EXT(fp)->_fgetstr_len = 0; 					\
 }
 
 extern void __flockfile_internal(FILE *, int);
