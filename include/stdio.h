@@ -253,7 +253,7 @@ __END_DECLS
 __BEGIN_DECLS
 void 	clearerr(FILE *);
 int 	doprnt(FILE * __restrict, const char * __restrict, __va_list);
-int 	doscan(FILE * __restrict, char * __restrict, __va_list);
+int 	doscan(FILE * __restrict, const char * __restrict, __va_list);
 int	 	fclose(FILE *);
 int	 	feof(FILE *);
 int	 	ferror(FILE *);
