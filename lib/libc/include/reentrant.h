@@ -104,8 +104,6 @@
 #include <pthread.h>
 #include <signal.h>
 
-#include "thread_private.h"
-
 #define	mutex_t					pthread_mutex_t
 #define	MUTEX_INITIALIZER			PTHREAD_MUTEX_INITIALIZER
 
