@@ -39,6 +39,7 @@
 
 #ifdef _REENTRANT
 #include "namespace.h"
+#include "reentrant.h"
 
 #include <sys/types.h>
 #include <sys/time.h>
