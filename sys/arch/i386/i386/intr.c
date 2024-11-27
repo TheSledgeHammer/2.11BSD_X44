@@ -539,11 +539,18 @@ fakeintr(spic, fakehand, level)
 	}
 
 #ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
-	if (spic->sp_template == PIC_SOFT) {
+	switch (spic->sp_template) {
+	case PIC_I8259:
+		break;
+	case PIC_IOAPIC:
+		break;
+	case PIC_LAPIC:
+		break;
+	case PIC_SOFT:
 		softintr_dispatch(which);
+		break;
 	}
 #endif
-
 	fakehand->ih_pic = softpic_handle_pic(spic);
 	fakehand->ih_apic = softpic_handle_apic(spic);
 	fakehand->ih_level = which;

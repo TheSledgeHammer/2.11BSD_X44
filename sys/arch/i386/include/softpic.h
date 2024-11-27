@@ -51,7 +51,7 @@ struct softpic {
     struct intrhand         *sp_inthnd;
     struct ioapic_softc		*sp_ioapic;
     struct softpic_pin		sp_pins[0];
-    //struct i386_soft_intr	*sp_softintr;
+    struct i386_soft_intr	*sp_softintr;
     int                     sp_template;
     bool_t               	sp_isapic;
     int 					sp_idtvec;

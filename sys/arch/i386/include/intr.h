@@ -268,7 +268,7 @@ struct i386_soft_intr {
 	TAILQ_HEAD(, i386_soft_intrhand) 	softintr_q;
 	int 								softintr_ssir;
 	struct lock_object					*softintr_slock;
-	//struct softpic 						*softintr_softpic;
+	struct softpic 						*softintr_softpic;
 };
 
 void	i386_softintr_lock(struct i386_soft_intr *, int);

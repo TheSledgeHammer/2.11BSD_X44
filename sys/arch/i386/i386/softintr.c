@@ -52,6 +52,7 @@
 
 #include <machine/pic.h>
 #include <machine/intr.h>
+#include <machine/softpic.h>
 
 #include <vm/include/vm_extern.h>
 
@@ -281,8 +282,6 @@ softintr_schedule(arg)
 
 #ifdef notyet
 
-#include <machine/softpic.h>
-
 static void softintr_hwmask(struct softpic *, int);
 static void softintr_hwunmask(struct softpic *, int);
 static void softintr_addroute(struct softpic *, struct cpu_info *, int, int, int);
@@ -297,15 +296,21 @@ struct pic softintr_pic_template = {
 		.pic_register = softintr_register_pic
 };
 
+/* softintr to softpic interface (sisp) */
+struct i386_soft_intr *sisp_setup(int, struct softpic *, int, bool_t, int);
+struct softpic *sisp_select(struct softpic *, int, bool_t, int);
+void sisp_hwmask(struct softpic *, int, bool_t, int);
+void sisp_hwunmask(struct softpic *, int, bool_t, int);
+void sisp_addroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
+void sisp_delroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
+
 static void
 softintr_hwmask(spic, pin)
 	struct softpic *spic;
 	int pin;
 {
 	if (spic->sp_template != PIC_SOFT) {
-		softintr_softpic_hwmask(spic, pin, spic->sp_isapic, spic->sp_template);
-	} else {
-		softintr_softpic_hwmask(spic, pin, spic->sp_isapic, PIC_SOFT);
+		sisp_hwmask(spic, pin, spic->sp_isapic, spic->sp_template);
 	}
 }
 
@@ -315,9 +320,7 @@ softintr_hwunmask(spic, pin)
 	int pin;
 {
 	if (spic->sp_template != PIC_SOFT) {
-		softintr_softpic_hwunmask(spic, pin, spic->sp_isapic, spic->sp_template);
-	} else {
-		softintr_softpic_hwunmask(spic, pin, spic->sp_isapic, PIC_SOFT);
+		sisp_hwunmask(spic, pin, spic->sp_isapic, spic->sp_template);
 	}
 }
 
@@ -328,9 +331,7 @@ softintr_addroute(spic, ci, pin, idtvec, type)
 	int pin, idtvec, type;
 {
 	if (spic->sp_template != PIC_SOFT) {
-		softintr_softpic_addroute(spic, ci, pin, idtvec, type, spic->sp_isapic, spic->sp_template);
-	} else {
-		softintr_softpic_addroute(spic, ci, pin, idtvec, type, spic->sp_isapic, PIC_SOFT);
+		sisp_addroute(spic, ci, pin, idtvec, type, spic->sp_isapic, spic->sp_template);
 	}
 }
 
@@ -341,16 +342,14 @@ softintr_delroute(spic, ci, pin, idtvec, type)
 	int pin, idtvec, type;
 {
 	if (spic->sp_template != PIC_SOFT) {
-		softintr_softpic_delroute(spic, ci, pin, idtvec, type, spic->sp_isapic, spic->sp_template);
-	} else {
-		softintr_softpic_delroute(spic, ci, pin, idtvec, type, spic->sp_isapic, PIC_SOFT);
+		sisp_delroute(spic, ci, pin, idtvec, type, spic->sp_isapic,
+				spic->sp_template);
 	}
 }
 
-/* softintr to softpic interfaces */
-
+/* softintr to softpic interface (sisp) */
 struct i386_soft_intr *
-softintr_softpic_setup(which, spic, irq, isapic, pictemplate)
+sisp_setup(which, spic, irq, isapic, pictemplate)
 	int which;
 	struct softpic *spic;
 	int irq, pictemplate;
@@ -371,7 +370,7 @@ softintr_softpic_setup(which, spic, irq, isapic, pictemplate)
 }
 
 struct softpic *
-softintr_softpic_select(spic, irq, isapic, pictemplate)
+sisp_select(spic, irq, isapic, pictemplate)
 	struct softpic *spic;
 	int irq, pictemplate;
 	bool_t isapic;
@@ -383,7 +382,7 @@ softintr_softpic_select(spic, irq, isapic, pictemplate)
 	si = NULL;
 	sisp = NULL;
 	for (i = 0; i < I386_NSOFTINTR; i++) {
-		si = softintr_softpic_setup(i, spic, irq, isapic, pictemplate);
+		si = sisp_setup(i, spic, irq, isapic, pictemplate);
 		if (si != NULL) {
 			sisp = si->softintr_softpic;
 		}
@@ -392,14 +391,14 @@ softintr_softpic_select(spic, irq, isapic, pictemplate)
 }
 
 void
-softintr_softpic_hwmask(spic, pin, isapic, pictemplate)
+sisp_hwmask(spic, pin, isapic, pictemplate)
 	struct softpic *spic;
 	int pin, pictemplate;
 	bool_t isapic;
 {
 	register struct softpic *sisp;
 
-	sisp = softintr_softpic_select(spic, pin, isapic, pictemplate);
+	sisp = sisp_select(spic, pin, isapic, pictemplate);
 	if (sisp != NULL) {
 		switch (sisp->sp_template) {
 		case PIC_I8259:
@@ -412,21 +411,22 @@ softintr_softpic_hwmask(spic, pin, isapic, pictemplate)
 			softpic_pic_hwmask(sisp, pin, TRUE, PIC_LAPIC);
 			break;
 		case PIC_SOFT:
-			printf("softintr_hwmask: cannot return self");
+			//printf("softintr_hwmask: cannot return self");
+			panic("softintr_hwmask: infinite loop");
 			break;
 		}
 	}
 }
 
 void
-softintr_softpic_hwunmask(spic, pin, isapic, pictemplate)
+sisp_hwunmask(spic, pin, isapic, pictemplate)
 	struct softpic *spic;
 	int pin, pictemplate;
 	bool_t 	isapic;
 {
 	register struct softpic *sisp;
 
-	sisp = softintr_softpic_select(spic, pin, isapic, pictemplate);
+	sisp = sisp_select(spic, pin, isapic, pictemplate);
 	if (sisp != NULL) {
 		switch (sisp->sp_template) {
 		case PIC_I8259:
@@ -439,14 +439,15 @@ softintr_softpic_hwunmask(spic, pin, isapic, pictemplate)
 			softpic_pic_hwunmask(sisp, pin, TRUE, PIC_LAPIC);
 			break;
 		case PIC_SOFT:
-			printf("softintr_hwunmask: cannot return self");
+			//printf("softintr_hwunmask: cannot return self");
+			panic("softintr_hwunmask: infinite loop");
 			break;
 		}
 	}
 }
 
 void
-softintr_softpic_addroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
+sisp_addroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 	struct softpic *spic;
 	struct cpu_info *ci;
 	int pin, idtvec, type, pictemplate;
@@ -454,7 +455,7 @@ softintr_softpic_addroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 {
 	register struct softpic *sisp;
 
-	sisp = softintr_softpic_select(spic, pin, isapic, pictemplate);
+	sisp = sisp_select(spic, pin, isapic, pictemplate);
 	if (sisp != NULL) {
 		switch (sisp->sp_template) {
 		case PIC_I8259:
@@ -467,14 +468,15 @@ softintr_softpic_addroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 			softpic_pic_addroute(sisp, ci, pin, idtvec, type, TRUE, PIC_LAPIC);
 			break;
 		case PIC_SOFT:
-			printf("softintr_addroute: cannot return self");
+			//printf("softintr_addroute: cannot return self");
+			panic("softintr_addroute: infinite loop");
 			break;
 		}
 	}
 }
 
 void
-softintr_softpic_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
+sisp_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 	struct softpic *spic;
 	struct cpu_info *ci;
 	int pin, idtvec, type, pictemplate;
@@ -482,7 +484,7 @@ softintr_softpic_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 {
 	register struct softpic *sisp;
 
-	sisp = softintr_softpic_select(spic, pin, isapic, pictemplate);
+	sisp = sisp_select(spic, pin, isapic, pictemplate);
 	if (sisp != NULL) {
 		switch (sisp->sp_template) {
 		case PIC_I8259:
@@ -495,7 +497,8 @@ softintr_softpic_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 			softpic_pic_delroute(sisp, ci, pin, idtvec, type, TRUE, PIC_LAPIC);
 			break;
 		case PIC_SOFT:
-			printf("softintr_delroute: cannot return self");
+			//printf("softintr_delroute: cannot return self");
+			panic("softintr_delroute: infinite loop");
 			break;
 		}
 	}
