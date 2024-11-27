@@ -7,10 +7,12 @@ static char sccsid[] = "@(#)strout.c	5.2 (Berkeley) 3/9/86";
 
 #include	<stdio.h>
 
+void _strout(int, char *, int, FILE *, int);
+
 void
 _strout(count, string, adjust, file, fillch)
 	register char *string;
-	register count;
+	register int count;
 	int adjust;
 	register FILE *file;
 	register int fillch;

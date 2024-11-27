@@ -37,6 +37,8 @@ __RCSID("$NetBSD: vasprintf.c,v 1.7 2000/01/21 19:51:37 mycroft Exp $");
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 int

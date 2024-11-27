@@ -44,8 +44,13 @@ static char sccsid[] = "@(#)ungetc.c	5.3 (Berkeley) 3/26/86";
 
 #include <stdio.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
+
+#include "reentrant.h"
 #include "local.h"
+
+static int __submore(FILE *);
 
 /*
  * Expand the ungetc buffer `in place'.  That is, adjust fp->_p when

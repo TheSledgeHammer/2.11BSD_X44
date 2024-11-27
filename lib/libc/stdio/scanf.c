@@ -46,6 +46,8 @@ static char sccsid[] = "@(#)scanf.c	5.2 (Berkeley) 3/9/86";
 #include <string.h>
 #include <stddef.h>
 
+static int eofread(void *, char *, int);
+
 static int
 eofread(cookie, buf, len)
 	void *cookie;
@@ -93,7 +95,7 @@ sscanf(const char *str, char const *fmt, ...)
 	FILE _strbuf;
 
 	_strbuf._flags = _IOREAD|_IOSTRG;
-	_strbuf._bf._base = _strbuf._p = (unsigned char *)str;
+	_strbuf._bf._base = _strbuf._p = __UNCONST(str);
 	_strbuf._bf._size = _strbuf._r = strlen(str);
 	_strbuf._read = eofread;
 	_strbuf._ub._base = NULL;
@@ -111,10 +113,11 @@ vsscanf(const char *str, const char *fmt, va_list ap)
 	FILE _strbuf;
 
 	_strbuf._flags = __SRD;
-	_strbuf._bf._base = _strbuf._p = (unsigned char *)str;
+	_strbuf._bf._base = _strbuf._p = __UNCONST(str);
 	_strbuf._bf._size = _strbuf._r = strlen(str);
 	_strbuf._read = eofread;
 	_strbuf._ub._base = NULL;
 	_strbuf._lb._base = NULL;
-	return (doscan(&_strbuf, fmt, ap));
+    ret = doscan(&_strbuf, fmt, ap);
+	return (ret);
 }

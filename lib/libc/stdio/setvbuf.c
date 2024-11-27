@@ -42,11 +42,16 @@ static char sccsid[] = "@(#)setvbuf.c	8.1.1 (2.11BSD) 1997/7/27";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+//#include "namespace.h"
+
 #include <sys/types.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+
+#include "reentrant.h"
+#include "local.h"
 
 /*
  * Set one of the three kinds of buffering, optionally including

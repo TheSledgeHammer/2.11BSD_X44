@@ -29,6 +29,7 @@ static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "reentrant.h"
 #include "local.h"
 
 int

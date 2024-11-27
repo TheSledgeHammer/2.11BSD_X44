@@ -41,9 +41,13 @@ static char sccsid[] = "@(#)stdio.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 /*
@@ -68,6 +72,7 @@ __sread(cookie, buf, n)
 	return (ret);
 }
 
+int
 __swrite(cookie, buf, n)
 	void *cookie;
 	char const *buf;
@@ -100,6 +105,7 @@ __sseek(cookie, offset, whence)
 	return (ret);
 }
 
+int
 __sclose(cookie)
 	void *cookie;
 {

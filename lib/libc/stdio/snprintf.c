@@ -37,11 +37,13 @@
 #include <sys/cdefs.h>
 
 #include "namespace.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "reentrant.h"
 #include "local.h"
 
 #ifdef __weak_alias
