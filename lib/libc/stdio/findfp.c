@@ -49,6 +49,8 @@ static char sccsid[] = "@(#)findfp.c	8.2 (Berkeley) 1/4/94";
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "reentrant.h"
 #include "local.h"
 #include "glue.h"
 
@@ -101,6 +103,9 @@ FILE __sF[3] = {
 		std(__SWR|__SNBF, STDERR_FILENO)	/* stderr */
 };
 struct glue __sglue = { &uglue, 3, __sF };
+
+static struct glue *moreglue(int);
+void f_prealloc(void);
 
 static struct glue *
 moreglue(n)

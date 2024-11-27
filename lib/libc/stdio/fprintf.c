@@ -49,8 +49,9 @@ static char sccsid[] = "@(#)fprintf.c	8.1 (Berkeley) 6/4/93";
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
-#include <stdio.h>
+#include <stdarg.h>
 #include <stddef.h>
+#include <stdio.h>
 
 int
 fprintf(FILE *iop, const char *fmt, ...)

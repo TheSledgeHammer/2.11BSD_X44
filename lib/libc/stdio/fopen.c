@@ -46,12 +46,16 @@ static char sccsid[] = "@(#)fopen.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <errno.h>
+#include <unistd.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 FILE *

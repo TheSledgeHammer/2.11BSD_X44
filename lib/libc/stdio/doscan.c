@@ -34,6 +34,8 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 int

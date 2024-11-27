@@ -45,7 +45,11 @@ static char sccsid[] = "@(#)fgetln.c	8.2 (Berkeley) 1/2/94";
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+
+#include "reentrant.h"
 #include "local.h"
+
+static int __slbexpand(FILE *, size_t);
 
 /*
  * Expand the line buffer.  Return -1 on error.
@@ -54,7 +58,7 @@ static char sccsid[] = "@(#)fgetln.c	8.2 (Berkeley) 1/2/94";
  * so we add 1 here.
 #endif
  */
-int
+static int
 __slbexpand(fp, newsize)
 	FILE *fp;
 	size_t newsize;

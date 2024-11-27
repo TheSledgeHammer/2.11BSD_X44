@@ -44,6 +44,8 @@ static char sccsid[] = "@(#)fflush.c	8.1 (Berkeley) 6/4/93";
 #include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 /* Flush a single file, or (if fp is NULL) all files.  */

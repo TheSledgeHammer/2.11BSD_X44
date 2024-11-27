@@ -40,6 +40,8 @@ static char sccsid[] = "@(#)fgetc.c	5.3 (Berkeley) 3/4/87";
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 int

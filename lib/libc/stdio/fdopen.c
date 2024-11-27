@@ -49,6 +49,8 @@ static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) 3/9/86";
  * status
  */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -60,6 +62,7 @@ static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) 3/9/86";
 #include <stddef.h>
 #include <limits.h>
 
+#include "reentrant.h"
 #include "local.h"
 
 FILE *

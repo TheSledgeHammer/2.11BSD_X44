@@ -44,6 +44,10 @@ static char sccsid[] = "@(#)fgets.c	8.2 (Berkeley) 12/22/93";
 
 #include	<stdio.h>
 #include	<stddef.h>
+#include	<string.h>
+
+#include "reentrant.h"
+#include "local.h"
 
 /*
  * Read at most n-1 characters from the given file.
@@ -53,10 +57,10 @@ static char sccsid[] = "@(#)fgets.c	8.2 (Berkeley) 12/22/93";
 char *
 fgets(buf, n, fp)
 	char *buf;
-	register size_t n;
+	register int n;
 	register FILE *fp;
 {
-	register size_t len;
+	register int len;
 	register char *s;
 	register unsigned char *p, *t;
 

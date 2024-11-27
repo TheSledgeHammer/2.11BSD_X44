@@ -46,6 +46,8 @@ static char sccsid[] = "@(#)fpurge.c	8.1 (Berkeley) 6/4/93";
 #include <stdlib.h>
 #include <stddef.h>
 #include <wchar.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 /*

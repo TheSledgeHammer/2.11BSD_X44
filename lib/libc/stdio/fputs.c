@@ -50,6 +50,8 @@ static char sccsid[] = "@(#)fputs.c	5.2 (Berkeley) 3/9/86";
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+
+#include "reentrant.h"
 #include "local.h"
 #include "fvwrite.h"
 
@@ -61,7 +63,7 @@ fputs(s, fp)
 	struct __suio uio;
 	struct __siov iov;
 
-	iov.iov_base = (void *)s;
+	iov.iov_base = __UNCONST(s);
 	iov.iov_len = uio.uio_resid = strlen(s);
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;

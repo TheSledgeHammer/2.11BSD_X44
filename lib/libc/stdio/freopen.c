@@ -47,6 +47,8 @@ static char sccsid[] = "@(#)freopen.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -55,6 +57,8 @@ static char sccsid[] = "@(#)freopen.c	5.2 (Berkeley) 3/9/86";
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 /*
