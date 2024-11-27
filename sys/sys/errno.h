@@ -157,12 +157,15 @@ extern int				errno;	/* global error number */
 #define	EFTYPE			79		/* Inappropriate file type or format */
 #define	EAUTH			  80		/* Authentication error */
 #define	ENEEDAUTH		81		/* Need authenticator */
-#define	ENOMSG		  82		/* No message of desired type */
+
+/* SystemV IPC */
+#define	ENOMSG		    82		/* No message of desired type */
+#define	EOVERFLOW	    83		/* Value too large to be stored in data type */
 
 /* Wide/multibyte-character handling, ISO/IEC 9899/AMD1:1995 */
-#define	EILSEQ		    83		/* Illegal byte sequence */
+#define	EILSEQ		    84		/* Illegal byte sequence */
 
-#define	ELAST			83		/* Must be equal largest errno */
+#define	ELAST			84		/* Must be equal largest errno */
 
 #ifdef	_KERNEL
 /* pseudo-errors returned inside kernel to modify return back to user mode */
