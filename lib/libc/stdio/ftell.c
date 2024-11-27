@@ -49,6 +49,8 @@ static char sccsid[] = "@(#)ftell.c	5.2 (Berkeley) 3/9/86";
 #include <stddef.h>
 #include <stdio.h>
 #include <errno.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 /*

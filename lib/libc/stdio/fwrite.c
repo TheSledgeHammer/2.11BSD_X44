@@ -48,6 +48,8 @@ static char sccsid[] = "@(#)fwrite.c	5.2 (Berkeley) 3/9/86";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
+
+#include "reentrant.h"
 #include "local.h"
 #include "fvwrite.h"
 
@@ -65,7 +67,7 @@ fwrite(buf, size, count, fp)
 	struct __suio uio;
 	struct __siov iov;
 
-	iov.iov_base = (void *)buf;
+	iov.iov_base = __UNCONST(buf);
 	uio.uio_resid = iov.iov_len = n = count * size;
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;

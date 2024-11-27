@@ -37,9 +37,10 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
+
 # include "reentrant.h"
 # include "local.h"
-# define	GETTEMP		_gettemp
+//# define	GETTEMP		_gettemp
 #endif
 
 __BEGIN_DECLS

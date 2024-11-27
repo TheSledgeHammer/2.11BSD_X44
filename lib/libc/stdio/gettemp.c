@@ -51,6 +51,7 @@ __RCSID("$NetBSD: gettemp.c,v 1.13 2003/12/05 00:57:36 uebayasi Exp $");
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <ctype.h>
 #include <fcntl.h>
 #include <string.h>
 
@@ -167,7 +168,6 @@ _gettemp(as, doopen, domkdir)
 	register int *doopen;
 	int domkdir;
 {
-	extern int	errno;
 	register char	*start, *trv;
 	struct stat	sbuf;
 	u_int	pid;

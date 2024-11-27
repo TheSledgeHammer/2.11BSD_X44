@@ -44,6 +44,8 @@ static char sccsid[] = "@(#)getchar.c	5.2 (Berkeley) 3/9/86";
  */
 #define	USE_STDIO_MACROS
 #include <stdio.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 #undef getchar

@@ -47,6 +47,8 @@ static char sccsid[] = "@(#)fvwrite.c	8.1 (Berkeley) 6/4/93";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "reentrant.h"
 #include "local.h"
 #include "fvwrite.h"
 

@@ -44,6 +44,8 @@ static char sccsid[] = "@(#)funopen.c	8.1 (Berkeley) 6/4/93";
 #include <stdio.h>
 #include <stddef.h>
 #include <errno.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 typedef int (*readfn_t)(void *, char *, int);
@@ -97,7 +99,6 @@ funopen2(cookie, readfn, writefn, seekfn, flushfn, closefn)
 	fp->_seek = seekfn;
 	fp->_close = closefn;
 	fp->_flush = flushfn;
-
 
 	return (fp);
 }

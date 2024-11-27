@@ -41,6 +41,7 @@ __RCSID("$NetBSD: getdelim.c,v 1.14 2017/06/08 15:59:45 uwe Exp $");
 #include <stdlib.h>
 #include <string.h>
 
+#include "reentrant.h"
 #include "local.h"
 
 #ifdef __weak_alias
@@ -51,6 +52,8 @@ __weak_alias(getdelim, _getdelim)
  * This should allow config files to fit into our power of 2 buffer growth
  * without the need for a realloc. */
 #define MINBUF	128
+
+ssize_t __getdelim(char **__restrict, size_t *__restrict, int, FILE *__restrict);
 
 ssize_t
 __getdelim(char **__restrict buf, size_t *__restrict buflen, int sep, FILE *__restrict fp)
@@ -144,8 +147,8 @@ getdelim(char **__restrict buf, size_t *__restrict buflen, int sep, FILE *__rest
 {
 	ssize_t n;
 
-	//FLOCKFILE(fp);
+	FLOCKFILE(fp);
 	n = __getdelim(buf, buflen, sep, fp);
-	//FUNLOCKFILE(fp);
+	FUNLOCKFILE(fp);
 	return n;
 }

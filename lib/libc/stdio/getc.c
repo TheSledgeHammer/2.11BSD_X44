@@ -45,6 +45,7 @@ static char sccsid[] = "@(#)getc.c	8.1 (Berkeley) 6/4/93";
 #include <errno.h>
 #include <stdio.h>
 
+#include "reentrant.h"
 #include "local.h"
 /*
  * A subroutine version of the macro getc.
@@ -62,5 +63,5 @@ getc(fp)
 int
 getc_unlocked(FILE *fp)
 {
-	return (__sgetc(fp));
+	return (getc(fp));
 }

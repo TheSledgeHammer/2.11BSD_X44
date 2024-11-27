@@ -47,6 +47,7 @@ static char sccsid[] = "@(#)fseek.c	5.3 (Berkeley) 3/9/86";
  */
 
 #include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -54,6 +55,8 @@ static char sccsid[] = "@(#)fseek.c	5.3 (Berkeley) 3/9/86";
 #include <stdlib.h>
 #include <stddef.h>
 #include <errno.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 #ifdef __weak_alias
