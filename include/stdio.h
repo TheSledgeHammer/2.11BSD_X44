@@ -377,7 +377,7 @@ typedef	__off_t		off_t;
 #endif /* off_t */
 
 __BEGIN_DECLS
-int	  	fseeko(FILE *, long, int);
+int	fseeko(FILE *, off_t, int);
 off_t 	ftello(FILE *);
 __END_DECLS
 #endif /* (_POSIX_C_SOURCE - 0) >= 200112L || _XOPEN_SOURCE >= 500 || ... */
