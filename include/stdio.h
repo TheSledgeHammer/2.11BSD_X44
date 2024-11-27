@@ -294,16 +294,17 @@ int	    sscanf(const char * __restrict, const char * __restrict, ...);
 int	    sprintf(char * __restrict, const char * __restrict, ...);
 FILE 	*tmpfile(void);
 char 	*tmpnam(char *);
-int	 	ungetc(int, FILE *);
-int	    vfprintf(FILE * __restrict, const char * __restrict, __va_list);
-int	    vprintf(const char * __restrict, __va_list);
-int	    vsprintf(char * __restrict, const char * __restrict, __va_list);
+int	 ungetc(int, FILE *);
+int	 vfprintf(FILE * __restrict, const char * __restrict, __va_list);
+int	 vprintf(const char * __restrict, __va_list);
+int	 vsprintf(char * __restrict, const char * __restrict, __va_list);
 __END_DECLS
 
 /*
  * Functions defined in POSIX 1003.1.
  */
-#if !defined (_ANSI_SOURCE)
+#if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE) || \
+    defined(__BSD_VISIBLE)
 #define	L_cuserid	9		/* size for cuserid(); UT_NAMESIZE + 1 */
 #define	L_ctermid	1024	/* size for ctermid(); PATH_MAX */
 
@@ -315,18 +316,28 @@ char	*ctermid(char *);
 char	*cuserid(char *);
 #endif /* __CUSERID_DECLARED */
 FILE	*fdopen(int, const char *);
-int	 	fileno(FILE *);
+int	 fileno(FILE *);
+__END_DECLS
+#endif /* not ANSI */
 
+/*
+ * IEEE Std 1003.1c-95, also adopted by X/Open CAE Spec Issue 5 Version 2
+ */
+#if (_POSIX_C_SOURCE - 0) >= 199506L || (_XOPEN_SOURCE - 0) >= 500 || defined(_REENTRANT)
+__BEGIN_DECLS
+void 	flockfile(FILE *);
+int	ftrylockfile(FILE *);
+void 	funlockfile(FILE *);
 /*
  * These are normally used through macros as defined below, but POSIX
  * requires functions as well.
  */
-int	 	getc_unlocked(FILE *);
-int	 	getchar_unlocked(void);
-int	 	putc_unlocked(int, FILE *);
-int	 	putchar_unlocked(int);
+int	getc_unlocked(FILE *);
+int	getchar_unlocked(void);
+int	putc_unlocked(int, FILE *);
+int	putchar_unlocked(int);
 __END_DECLS
-#endif /* not ANSI */
+#endif /* _POSIX_C_SOURCE >= 199506 || _XOPEN_SOURCE >= 500 || ... */
 
 /*
  * Routines that are purely local.
