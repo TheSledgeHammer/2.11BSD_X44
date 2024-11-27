@@ -41,7 +41,7 @@
 int
 doscan(iop, fmt, argp)
 	FILE *iop;
-	char *fmt;
+	const char *fmt;
 	va_list argp;
 {
 	return (__svfscanf(iop, fmt, argp));
