@@ -45,6 +45,7 @@ static char sccsid[] = "@(#)putc.c	8.1 (Berkeley) 6/4/93";
 #include <errno.h>
 #include <stdio.h>
 
+#include "reentrant.h"
 #include "local.h"
 
 /*
@@ -66,5 +67,5 @@ putc_unlocked(c, fp)
 	int c;
 	register FILE *fp;
 {
-	return (__sputc(c, fp));
+	return (putc(c, fp));
 }

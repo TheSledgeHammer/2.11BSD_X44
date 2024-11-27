@@ -51,6 +51,9 @@ __weak_alias(mkstemp,_mkstemp)
 __weak_alias(mktemp,_mktemp)
 #endif
 
+char *_mkdtemp(char *);
+int  _mkstemp(char *);
+
 char *
 _mkdtemp(as)
 	char *as;
@@ -67,7 +70,7 @@ mkdtemp(as)
 	return (_gettemp(as, (int *)NULL, 1) ? as : (char *)NULL);
 }
 
-char *
+int
 _mkstemp(as)
 	char	*as;
 {
@@ -76,7 +79,7 @@ _mkstemp(as)
 	return (GETTEMP(as, &fd, 0) ? fd : -1);
 }
 
-char *
+int
 mkstemp(as)
 	char *as;
 {

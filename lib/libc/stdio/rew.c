@@ -45,13 +45,15 @@ static char sccsid[] = "@(#)rewind.c	8.1 (Berkeley) 6/4/93";
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 void
 rewind(iop)
 	register FILE *iop;
 {
-	(void) fseek(fp, 0L, SEEK_SET);
+	(void) fseek(iop, 0L, SEEK_SET);
 	clearerr(iop);
 	errno = 0;      /* not required, but seems reasonable */
 }

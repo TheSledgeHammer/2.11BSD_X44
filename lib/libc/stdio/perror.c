@@ -38,6 +38,8 @@ static char sccsid[] = "@(#)perror.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -47,24 +49,24 @@ static char sccsid[] = "@(#)perror.c	8.1 (Berkeley) 6/4/93";
 
 void
 perror(s)
-	char *s;
+	const char *s;
 {
 	register struct iovec *v;
 	struct iovec iov[4];
 
 	v = iov;
 	if (s && *s) {
-		v->iov_base = (char *)s;
+		v->iov_base = __UNCONST(s);
 		v->iov_len = strlen(s);
 		v++;
-		v->iov_base = ": ";
+		v->iov_base = __UNCONST(": ");
 		v->iov_len = 2;
 		v++;
 	}
 	v->iov_base = strerror(errno);
 	v->iov_len = strlen(v->iov_base);
 	v++;
-	v->iov_base = "\n";
+	v->iov_base = __UNCONST("\n");
 	v->iov_len = 1;
 	(void)writev(STDERR_FILENO, iov, (v - iov) + 1);
 }

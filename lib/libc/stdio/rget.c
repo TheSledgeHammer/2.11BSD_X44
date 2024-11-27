@@ -43,6 +43,9 @@ static char sccsid[] = "@(#)rget.c	8.1 (Berkeley) 6/4/93";
 
 #include <stdio.h>
 
+#include "reentrant.h"
+#include "local.h"
+
 /*
  * Handle getc() when the buffer ran out:
  * Refill, then return the first character

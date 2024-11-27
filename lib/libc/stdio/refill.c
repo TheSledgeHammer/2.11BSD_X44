@@ -44,14 +44,18 @@ static char sccsid[] = "@(#)refill.c	8.1 (Berkeley) 6/4/93";
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "reentrant.h"
 #include "local.h"
+
+static int lflush(FILE *);
 
 static int
 lflush(fp)
 	FILE *fp;
 {
 
-	if ((fp->_flags & (__SLBF|__SWR)) == __SLBF|__SWR)
+	if ((fp->_flags & (__SLBF|__SWR)) == (__SLBF|__SWR))
 		return (__sflush(fp));
 	return (0);
 }

@@ -42,8 +42,10 @@ static char sccsid[] = "@(#)putw.c	5.2.1 (2.11BSD GTE) 1/1/94";
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
-#include "fvwrite.h"
+
+#include "reentrant.h"
 #include "local.h"
+#include "fvwrite.h"
 
 int
 putw(w, fp)
