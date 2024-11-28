@@ -22,23 +22,27 @@ static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/ansi.h>
+#include "namespace.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 
+#include "reentrant.h"
 #include "local.h"
 
 int
-vsprintf(str, fmt, ap)
-	char *str;
-	const char *fmt;
-	va_list ap;
+vsprintf(char *str, const char *fmt, va_list ap)
 {
 	int ret;
 	FILE f;
+	struct __sfileext fext;
 
+	_DIAGASSERT(str != NULL);
+	_DIAGASSERT(fmt != NULL);
+
+	_FILEEXT_SETUP(&f, &fext);
 	f._flags = _IOWRT | _IOSTRG;
 	f._flags = __SWR | __SSTR;
 	f._bf._base = f._p = (unsigned char *)str;

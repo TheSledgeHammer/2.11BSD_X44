@@ -41,9 +41,13 @@ static char sccsid[] = "@(#)wsetup.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
+#include <errno.h>
+//#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
+
+#include "reentrant.h"
 #include "local.h"
 
 /*
@@ -51,9 +55,12 @@ static char sccsid[] = "@(#)wsetup.c	8.1 (Berkeley) 6/4/93";
  * because either _flags does not include __SWR, or _buf is NULL.
  * _wsetup returns 0 if OK to write, nonzero otherwise.
  */
+int
 __swsetup(fp)
 	register FILE *fp;
 {
+	_DIAGASSERT(fp != NULL);
+
 	/* make sure stdio is set up */
 	if (!__sdidinit)
 		__sinit();

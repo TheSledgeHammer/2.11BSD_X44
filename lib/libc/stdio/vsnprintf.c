@@ -41,12 +41,14 @@ static char sccsid[] = "@(#)vsnprintf.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/ansi.h>
+#include "namespace.h"
 
 #include <assert.h>
 #include <errno.h>
-#include <locale.h>
 #include <stdio.h>
+
+#include "reentrant.h"
+#include "local.h"
 
 int
 vsnprintf(str, n, fmt, ap)
@@ -57,9 +59,14 @@ vsnprintf(str, n, fmt, ap)
 {
 	int ret;
 	FILE f;
+    struct __sfileext fext;
+
+	_DIAGASSERT(n == 0 || str != NULL);
+	_DIAGASSERT(fmt != NULL);
 
 	if ((int)n < 1)
 		return (EOF);
+    _FILEEXT_SETUP(&f, &fext);
 	f._flags = __SWR | __SSTR;
 	f._bf._base = f._p = (unsigned char *)str;
 	f._bf._size = f._w = n - 1;

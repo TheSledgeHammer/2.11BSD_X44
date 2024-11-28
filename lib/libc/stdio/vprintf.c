@@ -22,15 +22,16 @@ static char sccsid[] = "@(#)vprintf.c	5.2 (Berkeley) 6/27/88";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/ansi.h>
-#include <assert.h>
+//#include <sys/types.h>
+
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 
 int
-vprintf(fmt, ap)
-	char const *fmt;
-	va_list ap;
+vprintf(const char *fmt, va_list ap)
+//	char const *fmt;
+//	va_list ap;
 {
 	return (vfprintf(stdout, fmt, ap));
 }

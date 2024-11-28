@@ -42,27 +42,205 @@ static char sccsid[] = "@(#)vfprintf.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/ansi.h>
-#include <sys/types.h>
-#include <limits.h>
+#include "namespace.h"
 
 #include <assert.h>
 #include <errno.h>
-#include <locale.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <wchar.h>
-#include <wctype.h>
 
+#include "reentrant.h"
 #include "local.h"
 #include "fvwrite.h"
 #include "extern.h"
 
+static int __sprint(FILE *, struct __suio *);
+static int __sbprintf(FILE *, const char *, va_list);
+static char *__ultoa(u_long, const char *, int, int, const char *);
+static char *__uqtoa(u_quad_t, const char *, int, int, const char *);
+
+static const char xdigs_lower[16] = "0123456789abcdef";
+static const char xdigs_upper[16] = "0123456789ABCDEF";
+
+/*
+ * Flush out all the vectors defined by the given uio,
+ * then reset it so that it can be reused.
+ */
+static int
+__sprint(FILE *fp, struct __suio *uio)
+{
+	int err;
+
+	if (uio->uio_resid == 0) {
+		uio->uio_iovcnt = 0;
+		return (0);
+	}
+	err = __sfvwrite(fp, uio);
+	uio->uio_resid = 0;
+	uio->uio_iovcnt = 0;
+	return (err);
+}
+
+/*
+ * Helper function for `fprintf to unbuffered unix file': creates a
+ * temporary buffer.  We only work on write-only files; this avoids
+ * worries about ungetc buffers and so forth.
+ */
+static int
+__sbprintf(FILE *fp, const char *fmt, va_list ap)
+{
+	int ret;
+	FILE fake;
+    struct __sfileext fakeext;
+	unsigned char buf[BUFSIZ];
+
+    _FILEEXT_SETUP(&fake, &fakeext);
+	/* copy the important variables */
+	fake._flags = fp->_flags & ~__SNBF;
+	fake._file = fp->_file;
+	fake._cookie = fp->_cookie;
+	fake._write = fp->_write;
+
+	/* set up the buffer */
+	fake._bf._base = fake._p = buf;
+	fake._bf._size = fake._w = sizeof(buf);
+	fake._lbfsize = 0; /* not actually used, but Just In Case */
+
+	/* do the work, then copy any error status */
+	ret = vfprintf(&fake, fmt, ap);
+	if (ret >= 0 && fflush(&fake))
+		ret = EOF;
+	if (fake._flags & __SERR)
+		fp->_flags |= __SERR;
+	return (ret);
+}
+
+/*
+ * Macros for converting digits to letters and vice versa
+ */
+#define	to_digit(c)	((c) - '0')
+#define is_digit(c)	((unsigned)to_digit(c) <= 9)
+#define	to_char(n)	((n) + '0')
+
+/*
+ * Convert an unsigned long to ASCII for printf purposes, returning
+ * a pointer to the first character of the string representation.
+ * Octal numbers can be forced to have a leading zero; hex numbers
+ * use the given digits.
+ */
+static char *
+__ultoa(u_long val, const char *endp, int base, int octzero, const char *xdigs)
+{
+	char *cp = __UNCONST(endp);
+	long sval;
+
+	/*
+	 * Handle the three cases separately, in the hope of getting
+	 * better/faster code.
+	 */
+	switch (base) {
+	case 10:
+		if (val < 10) { /* many numbers are 1 digit */
+			*--cp = to_char(val);
+			return (cp);
+		}
+		/*
+		 * On many machines, unsigned arithmetic is harder than
+		 * signed arithmetic, so we do at most one unsigned mod and
+		 * divide; this is sufficient to reduce the range of
+		 * the incoming value to where signed arithmetic works.
+		 */
+		if (val > LONG_MAX) {
+			*--cp = to_char(val % 10);
+			sval = val / 10;
+		} else
+			sval = val;
+		do {
+			*--cp = to_char(sval % 10);
+			sval /= 10;
+		} while (sval != 0);
+		break;
+
+	case 8:
+		do {
+			*--cp = to_char(val & 7);
+			val >>= 3;
+		} while (val);
+		if (octzero && *cp != '0')
+			*--cp = '0';
+		break;
+
+	case 16:
+		do {
+			*--cp = xdigs[val & 15];
+			val >>= 4;
+		} while (val);
+		break;
+
+	default: /* oops */
+		abort();
+	}
+	return (cp);
+}
+
+/* Identical to __ultoa, but for quads. */
+static char *
+__uqtoa(u_quad_t val, const char *endp, int base, int octzero, const char *xdigs)
+{
+	char *cp = __UNCONST(endp);
+	quad_t sval;
+
+	/* quick test for small values; __ultoa is typically much faster */
+	/* (perhaps instead we should run until small, then call __ultoa?) */
+	if (val <= ULONG_MAX)
+		return (__ultoa((u_long) val, endp, base, octzero, xdigs));
+	switch (base) {
+	case 10:
+		if (val < 10) {
+			*--cp = to_char(val % 10);
+			return (cp);
+		}
+		if (val > QUAD_MAX) {
+			*--cp = to_char(val % 10);
+			sval = val / 10;
+		} else
+			sval = val;
+		do {
+			*--cp = to_char(sval % 10);
+			sval /= 10;
+		} while (sval != 0);
+		break;
+
+	case 8:
+		do {
+			*--cp = to_char(val & 7);
+			val >>= 3;
+		} while (val);
+		if (octzero && *cp != '0')
+			*--cp = '0';
+		break;
+
+	case 16:
+		do {
+			*--cp = xdigs[val & 15];
+			val >>= 4;
+		} while (val);
+		break;
+
+	default:
+		abort();
+	}
+	return (cp);
+}
+
 #ifdef FLOATING_POINT
+#include <locale.h>
 #include <math.h>
 #include "floatio.h"
 
@@ -77,23 +255,6 @@ static int exponent(char *, int, int);
 #define	BUF		100
 
 #endif /* FLOATING_POINT */
-
-static int __sprint(FILE *, struct __suio *);
-static int __sbprintf(FILE *, const char *, va_list) __attribute__((__format__(__printf__, 2, 0)));
-static char *__ultoa(u_long, char *, int, int, const char *);
-static char *__uqtoa(u_quad_t, char *, int, int, const char *);
-static wchar_t *__mbsconv(char *, int, locale_t);
-static char *__wcsconv(wchar_t *, int, locale_t);
-
-static const char xdigs_lower[16] = "0123456789abcdef";
-static const char xdigs_upper[16] = "0123456789ABCDEF";
-
-/*
- * Macros for converting digits to letters and vice versa
- */
-#define	to_digit(c)	((c) - '0')
-#define is_digit(c)	((unsigned)to_digit(c) <= 9)
-#define	to_char(n)	((char)((n) + '0'))
 
 /*
  * Flags used during conversion.
@@ -110,6 +271,8 @@ static const char xdigs_upper[16] = "0123456789ABCDEF";
 #define	SIZEINT		0x200		/* (signed) size_t */
 #define	ZEROPAD		0x400		/* zero (as opposed to blank) pad */
 #define FPT		0x800		/* Floating point number */
+/*
+int vfprintf_unlocked(FILE *, const char *, va_list);
 
 int
 vfprintf(fp, fmt0, ap)
@@ -117,16 +280,18 @@ vfprintf(fp, fmt0, ap)
 	const char *fmt0;
 	va_list ap;
  {
-	return (vfprintf_l(fp, fmt0, ap, __get_locale()));
+    int ret;
+
+    FLOCKFILE(fp);
+    ret = vfprintf_unlocked(fp, fmt0, ap);
+    FUNLOCKFILE(fp);
+	return (ret);
  }
+*/
 
 int
-vfprintf_l(fp, fmt0, ap, locale)
-	FILE *fp;
-	const char *fmt0;
-	va_list ap;
-	locale_t locale;
- {
+vfprintf(FILE *fp, const char *fmt0, va_list ap)
+{
 	const char *fmt; 		/* format string */
 	int ch; 			/* character from fmt */
 	int n, m; 			/* handy integers (short term usage) */
@@ -138,6 +303,7 @@ vfprintf_l(fp, fmt0, ap, locale)
 	int prec; 			/* precision from format (%.3d), or -1 */
 	char sign; 			/* sign prefix (' ', '+', '-', or \0) */
 #ifdef FLOATING_POINT
+    struct lconv *lc;
 	char *decimal_point;
 	char softsign;			/* temporary negative sign for floats */
 	double _double;			/* double precision arguments %[eEfgG] */
@@ -160,11 +326,10 @@ vfprintf_l(fp, fmt0, ap, locale)
 	struct __siov *iovp;	/* for PRINT macro */
 	char buf[BUF];			/* space for %c, %[diouxX], %[eEfgG] */
 	char ox[2];			/* space for 0x hex-prefix */
-	struct lconv *lc;
 	wchar_t wc;
 	mbstate_t ps;
-	intmax_t _intmax;
-	uintmax_t _uintmax;
+//	intmax_t _intmax;
+//	uintmax_t _uintmax;
 
 	/*
 	 * Choose PADSIZE to trade efficiency vs. size.  If larger printf
@@ -183,7 +348,7 @@ vfprintf_l(fp, fmt0, ap, locale)
 	 * BEWARE, these `goto error' on error, and PAD uses `n'.
 	 */
 #define	PRINT(ptr, len) { 					\
-	iovp->iov_base = (ptr); 				\
+	iovp->iov_base = __UNCONST(ptr); 				\
 	iovp->iov_len = (len); 					\
 	uio.uio_resid += (len); 				\
 	iovp++; 						\
@@ -233,6 +398,8 @@ vfprintf_l(fp, fmt0, ap, locale)
 	_DIAGASSERT(fp != NULL);
 	_DIAGASSERT(fmt0 != NULL);
 
+    _SET_ORIENTATION(fp, -1);
+
 	/* sorry, fprintf(read_only_file, "") returns EOF, not 0 */
 	if (cantwrite(fp)) {
 		return (EOF);
@@ -240,7 +407,8 @@ vfprintf_l(fp, fmt0, ap, locale)
 
 	/* optimise fprintf(stderr) (and other unbuffered Unix files) */
 	if ((fp->_flags & (__SNBF|__SWR|__SRW)) == (__SNBF|__SWR) && fp->_file >= 0) {
-		return (__sbprintf(fp, fmt0, ap));
+        ret = __sbprintf(fp, fmt0, ap);
+		return (ret);
 	}
 
 	fmt = fmt0;
@@ -248,8 +416,12 @@ vfprintf_l(fp, fmt0, ap, locale)
 	uio.uio_resid = 0;
 	uio.uio_iovcnt = 0;
 	ret = 0;
-	lc = localeconv_l(locale);
+    ulval = 0;
+    uqval = 0;
+    xdigs = NULL;
+
 #ifdef FLOATING_POINT
+    lc = localeconv();
 	decimal_point = lc->decimal_point;
 #endif
 
@@ -260,7 +432,7 @@ vfprintf_l(fp, fmt0, ap, locale)
 	 */
 	for (;;) {
 		cp = fmt;
-		n = mbrtowc_l(&wc, fmt, MB_CUR_MAX, &ps, locale);
+		n = mbrtowc(&wc, fmt, MB_CUR_MAX, &ps);
 		while (n > 0) {
 			fmt += n;
 			if (wc == '%') {
@@ -359,14 +531,29 @@ reswitch:
 		case 'h':
 			flags |= SHORTINT;
 			goto rflag;
+		case 'j':
+			flags |= MAXINT;
+			goto rflag;
 		case 'l':
-			flags |= LONGINT;
+			if (*fmt == 'l') {
+				fmt++;
+				flags |= QUADINT;
+			} else {
+				flags |= LONGINT;
+			}
 			goto rflag;
 		case 'q':
 			flags |= QUADINT;
 			goto rflag;
+		case 't':
+			flags |= PTRINT;
+			goto rflag;
+		case 'z':
+			flags |= SIZEINT;
+			goto rflag;
 		case 'c':
-			*(cp = buf) = va_arg(ap, int);
+			*buf = va_arg(ap, int);
+            cp = buf;
 			size = 1;
 			sign = '\0';
 			break;
@@ -453,15 +640,21 @@ fp_begin:
 			break;
 #endif /* FLOATING_POINT */
 		case 'n':
-			if (flags & QUADINT)
-				*va_arg(ap, quad_t*) = ret;
+			if (flags & MAXINT)
+				*va_arg(ap, intmax_t *) = ret;
+			else if (flags & PTRINT)
+				*va_arg(ap, ptrdiff_t *) = ret;
+			else if (flags & SIZEINT)
+				*va_arg(ap, ssize_t *) = ret;	/* XXX */
+			else if (flags & QUADINT)
+				*va_arg(ap, quad_t *) = ret;
 			else if (flags & LONGINT)
-				*va_arg(ap, long*) = ret;
+				*va_arg(ap, long *) = ret;
 			else if (flags & SHORTINT)
-				*va_arg(ap, short*) = ret;
+				*va_arg(ap, short *) = ret;
 			else
-				*va_arg(ap, int*) = ret;
-			continue; /* no output */
+				*va_arg(ap, int *) = ret;
+			continue;	/* no output */
 		case 'O':
 			flags |= LONGINT;
 			/*FALLTHROUGH*/
@@ -482,7 +675,7 @@ fp_begin:
 			 */
 			ulval = (u_long) va_arg(ap, void*);
 			base = 16;
-			xdigs = xdigs_lower;;
+			xdigs = xdigs_lower;
 			flags = (flags & ~QUADINT) | HEXPREFIX;
 			ch = 'x';
 			goto nosign;
@@ -549,24 +742,25 @@ number:
 			 * explicit precision of zero is no characters.''
 			 *	-- ANSI X3J11
 			 */
-			cp = buf + BUF;
+			bp = buf + BUF;
 			if (flags & QUADINT) {
 				if (uqval != 0 || prec != 0) {
-					cp = __uqtoa(uqval, cp, base, flags & ALT, xdigs);
+					bp = __uqtoa(uqval, cp, base, flags & ALT, xdigs);
 				}
 			} else {
 				if (ulval != 0 || prec != 0) {
-					cp = __ultoa(ulval, cp, base, flags & ALT, xdigs);
+					bp = __ultoa(ulval, cp, base, flags & ALT, xdigs);
 				}
 			}
-			size = buf + BUF - cp;
+            cp = bp;
+			size = buf + BUF - bp;
 			break;
 		default: /* "%?" prints ?, unless ? is NUL */
 			if (ch == '\0')
 				goto done;
 			/* pretend it was %c with argument ch */
+            *buf = ch;
 			cp = buf;
-			*cp = ch;
 			size = 1;
 			sign = '\0';
 			break;
@@ -680,327 +874,10 @@ error:
 	return (ret);
 }
 
-/*
- * Flush out all the vectors defined by the given uio,
- * then reset it so that it can be reused.
- */
-static int
-__sprint(fp, uio)
-	FILE *fp;
-	register struct __suio *uio;
-{
-	register int err;
-
-	if (uio->uio_resid == 0) {
-		uio->uio_iovcnt = 0;
-		return (0);
-	}
-	err = __sfvwrite(fp, uio);
-	uio->uio_resid = 0;
-	uio->uio_iovcnt = 0;
-	return (err);
-}
-
-/*
- * Helper function for `fprintf to unbuffered unix file': creates a
- * temporary buffer.  We only work on write-only files; this avoids
- * worries about ungetc buffers and so forth.
- */
-static int
-__sbprintf(fp, fmt, ap)
-	register FILE *fp;
-	const char *fmt;
-	va_list ap;
-{
-	int ret;
-	FILE fake;
-	unsigned char buf[BUFSIZ];
-
-	/* copy the important variables */
-	fake._flags = fp->_flags & ~__SNBF;
-	fake._file = fp->_file;
-	fake._cookie = fp->_cookie;
-	fake._write = fp->_write;
-
-	/* set up the buffer */
-	fake._bf._base = fake._p = buf;
-	fake._bf._size = fake._w = sizeof(buf);
-	fake._lbfsize = 0; /* not actually used, but Just In Case */
-
-	/* do the work, then copy any error status */
-	ret = vfprintf(&fake, fmt, ap);
-	if (ret >= 0 && fflush(&fake))
-		ret = EOF;
-	if (fake._flags & __SERR)
-		fp->_flags |= __SERR;
-	return (ret);
-}
-
-/*
- * Convert an unsigned long to ASCII for printf purposes, returning
- * a pointer to the first character of the string representation.
- * Octal numbers can be forced to have a leading zero; hex numbers
- * use the given digits.
- */
-static char *
-__ultoa(val, endp, base, octzero, xdigs)
-	register u_long val;
-	char *endp;
-	int base, octzero;
-	const char *xdigs;
-{
-	register char *cp = endp;
-	register long sval;
-
-	/*
-	 * Handle the three cases separately, in the hope of getting
-	 * better/faster code.
-	 */
-	switch (base) {
-	case 10:
-		if (val < 10) { /* many numbers are 1 digit */
-			*--cp = to_char(val);
-			return (cp);
-		}
-		/*
-		 * On many machines, unsigned arithmetic is harder than
-		 * signed arithmetic, so we do at most one unsigned mod and
-		 * divide; this is sufficient to reduce the range of
-		 * the incoming value to where signed arithmetic works.
-		 */
-		if (val > LONG_MAX) {
-			*--cp = to_char(val % 10);
-			sval = val / 10;
-		} else
-			sval = val;
-		do {
-			*--cp = to_char(sval % 10);
-			sval /= 10;
-		} while (sval != 0);
-		break;
-
-	case 8:
-		do {
-			*--cp = to_char(val & 7);
-			val >>= 3;
-		} while (val);
-		if (octzero && *cp != '0')
-			*--cp = '0';
-		break;
-
-	case 16:
-		do {
-			*--cp = xdigs[val & 15];
-			val >>= 4;
-		} while (val);
-		break;
-
-	default: /* oops */
-		abort();
-	}
-	return (cp);
-}
-
-/* Identical to __ultoa, but for quads. */
-static char *
-__uqtoa(val, endp, base, octzero, xdigs)
-	register u_quad_t val;
-	char *endp;
-	int base, octzero;
-	const char *xdigs;
-{
-	register char *cp = endp;
-	register quad_t sval;
-
-	/* quick test for small values; __ultoa is typically much faster */
-	/* (perhaps instead we should run until small, then call __ultoa?) */
-	if (val <= ULONG_MAX)
-		return (__ultoa((u_long) val, endp, base, octzero, xdigs));
-	switch (base) {
-	case 10:
-		if (val < 10) {
-			*--cp = to_char(val % 10);
-			return (cp);
-		}
-		if (val > QUAD_MAX) {
-			*--cp = to_char(val % 10);
-			sval = val / 10;
-		} else
-			sval = val;
-		do {
-			*--cp = to_char(sval % 10);
-			sval /= 10;
-		} while (sval != 0);
-		break;
-
-	case 8:
-		do {
-			*--cp = to_char(val & 7);
-			val >>= 3;
-		} while (val);
-		if (octzero && *cp != '0')
-			*--cp = '0';
-		break;
-
-	case 16:
-		do {
-			*--cp = xdigs[val & 15];
-			val >>= 4;
-		} while (val);
-		break;
-
-	default:
-		abort();
-	}
-	return (cp);
-}
-
-/*
- * Convert a multibyte character string argument for the %s format to a wide
- * string representation. ``prec'' specifies the maximum number of bytes
- * to output. If ``prec'' is greater than or equal to zero, we can't assume
- * that the multibyte char. string ends in a null character.
- */
-static wchar_t *
-__mbsconv(mbsarg, prec, loc)
-	char *mbsarg;
-	int prec;
-	locale_t loc;
-{
-	static const mbstate_t initial;
-	mbstate_t mbs;
-	wchar_t *convbuf, *wcp;
-	const char *p;
-	size_t insize, nchars, nconv;
-
-	if (mbsarg == NULL)
-		return NULL;
-
-	/*
-	 * Supplied argument is a multibyte string; convert it to wide
-	 * characters first.
-	 */
-	if (prec >= 0) {
-		/*
-		 * String is not guaranteed to be NUL-terminated. Find the
-		 * number of characters to print.
-		 */
-		p = mbsarg;
-		insize = nchars = nconv = 0;
-		mbs = initial;
-		while (nchars != (size_t) prec) {
-			nconv = mbrlen_l(p, MB_CUR_MAX_L(loc), &mbs, loc);
-			if (nconv == 0 || nconv == (size_t) - 1 || nconv == (size_t) - 2)
-				break;
-			p += nconv;
-			nchars++;
-			insize += nconv;
-		}
-		if (nconv == (size_t) - 1 || nconv == (size_t) - 2)
-			return NULL;
-	} else
-		insize = strlen(mbsarg);
-
-	/*
-	 * Allocate buffer for the result and perform the conversion,
-	 * converting at most `size' bytes of the input multibyte string to
-	 * wide characters for printing.
-	 */
-	convbuf = NULL;
-	errno = reallocarr(&convbuf, insize + 1, sizeof(*convbuf));
-	if (errno)
-		return NULL;
-	wcp = convbuf;
-	p = mbsarg;
-	mbs = initial;
-	nconv = 0;
-	while (insize != 0) {
-		nconv = mbrtowc_l(wcp, p, insize, &mbs, loc);
-		if (nconv == 0 || nconv == (size_t) - 1 || nconv == (size_t) - 2)
-			break;
-		wcp++;
-		p += nconv;
-		insize -= nconv;
-	}
-	if (nconv == (size_t) - 1 || nconv == (size_t) - 2) {
-		int serrno = errno;
-		free(convbuf);
-		errno = serrno;
-		return NULL;
-	}
-	*wcp = L'\0';
-
-	return convbuf;
-}
-
-/*
- * Convert a wide-character string argument for the %ls format to a multibyte
- * string representation. If not -1, prec specifies the maximum number of
- * bytes to output, and also means that we can't assume that the wide-char.
- * string ends is null-terminated.
- */
-static char *
-__wcsconv(wcsarg, prec, loc)
-	wchar_t *wcsarg;
-	int prec;
-	locale_t loc;
-{
-	static const mbstate_t initial;
-	mbstate_t mbs;
-	char buf[MB_LEN_MAX];
-	wchar_t *p;
-	char *convbuf;
-	size_t clen, nbytes;
-
-	/* Allocate space for the maximum number of bytes we could output. */
-	if (prec < 0) {
-		p = wcsarg;
-		mbs = initial;
-		nbytes = wcsrtombs_l(NULL, (void*) &p, 0, &mbs, loc);
-		if (nbytes == (size_t) - 1)
-			return NULL;
-	} else {
-		/*
-		 * Optimisation: if the output precision is small enough,
-		 * just allocate enough memory for the maximum instead of
-		 * scanning the string.
-		 */
-		if (prec < 128)
-			nbytes = prec;
-		else {
-			nbytes = 0;
-			p = wcsarg;
-			mbs = initial;
-			for (;;) {
-				clen = wcrtomb_l(buf, *p++, &mbs, loc);
-				if (clen == 0 || clen == (size_t) - 1
-						|| nbytes + clen > (size_t) prec)
-					break;
-				nbytes += clen;
-			}
-		}
-	}
-	if ((convbuf = malloc(nbytes + 1)) == NULL)
-		return NULL;
-
-	/* Fill the output buffer. */
-	p = wcsarg;
-	mbs = initial;
-	if ((nbytes = wcsrtombs_l(convbuf, (void*) &p, nbytes, &mbs, loc))
-			== (size_t) - 1) {
-		free(convbuf);
-		return NULL;
-	}
-	convbuf[nbytes] = '\0';
-	return convbuf;
-}
-
 #ifdef FLOATING_POINT
+
 static char *
-cvt(value, ndigits, flags, sign, decpt, ch, length)
-	double value;
-	int ndigits, flags, *decpt, ch, *length;
-	char *sign;
+cvt(double value, int ndigits, int flags, char *sign, int *decpt, int ch, int *length)
 {
 	int mode, dsgn;
 	char *digits, *bp, *rve;
@@ -1045,11 +922,9 @@ cvt(value, ndigits, flags, sign, decpt, ch, length)
 }
 
 static int
-exponent(p0, exp, fmtch)
-	char *p0;
-	int exp, fmtch;
+exponent(char *p0, int exp, int fmtch)
 {
-	register char *p, *t;
+	char *p, *t;
 	char expbuf[MAXEXP];
 
 	p = p0;

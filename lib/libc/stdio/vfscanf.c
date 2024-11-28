@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <assert.h>
 #include <ctype.h>
 #include <inttypes.h>
@@ -53,6 +55,7 @@ static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 #include <wchar.h>
 #include <wctype.h>
 
+#include "reentrant.h"
 #include "local.h"
 
 #define	BUF			513	/* Maximum length of numeric string. */
@@ -96,13 +99,10 @@ static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 #define	CT_INT		3	/* integer, i.e., strtol or strtoul */
 #define	CT_FLOAT	4	/* floating, i.e., strtod */
 
-static u_char *__sccl(char *, u_char *);
+static const u_char *__sccl(char *, const u_char *);
 
 int
-vfscanf(fp, fmt0, ap)
-	register FILE *fp;
-	char const *fmt0;
-	va_list ap;
+vfscanf(FILE *fp, const char *fmt0, va_list ap)
 {
 	return (__svfscanf(fp, fmt0, ap));
 }
@@ -111,12 +111,9 @@ vfscanf(fp, fmt0, ap)
  * vfscanf
  */
 int
-__svfscanf(fp, fmt0, ap)
-	register FILE *fp;
-	char const *fmt0;
-	va_list ap;
+__svfscanf(FILE *fp, const char *fmt0, va_list ap)
 {
-	register u_char *fmt;
+	register const u_char *fmt;
 	register int c;		/* character from format, or conversion */
 	register size_t width;	/* field width, or 0 */
 	register char *p;	/* points into all kinds of strings */
@@ -126,7 +123,7 @@ __svfscanf(fp, fmt0, ap)
 	int nassigned;		/* number of fields assigned */
 	int nread;			/* number of characters consumed from fp */
 	int base;			/* base argument to strtol/strtoul */
-	u_long (*ccfn)(char *, char **, int);	/* conversion function (strtol/strtoul) */
+	u_long (*ccfn)(const char *, char **, int);	/* conversion function (strtol/strtoul) */
 	char ccltab[256];	/* character class table for %[...] */
 	char buf[BUF];		/* buffer for numeric conversions */
 
@@ -134,7 +131,9 @@ __svfscanf(fp, fmt0, ap)
 	static short basefix[17] =
 		{ 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 
-	fmt = (u_char *)fmt0;
+    _SET_ORIENTATION(fp, -1);
+
+	fmt = (const u_char *)fmt0;
 	nassigned = 0;
 	nread = 0;
 	base = 0;		/* XXX just to keep gcc happy */
@@ -232,13 +231,13 @@ literal:
 			/* FALLTHROUGH */
 		case 'd':
 			c = CT_INT;
-			ccfn = (u_long (*)()) strtol;
+			ccfn = (u_long (*)(const char *, char **, int)) strtol;
 			base = 10;
 			break;
 
 		case 'i':
 			c = CT_INT;
-			ccfn = (u_long (*)()) strtol;
+			ccfn = (u_long (*)(const char *, char **, int)) strtol;
 			base = 0;
 			break;
 
@@ -341,7 +340,7 @@ literal:
 			if (isupper(c))
 				flags |= LONG;
 			c = CT_INT;
-			ccfn = (u_long (*)()) strtol;
+			ccfn = (u_long (*)(const char *, char **, int)) strtol;
 			base = 10;
 			break;
 		}
@@ -756,10 +755,8 @@ match_failure:
  * closing `]'.  The table has a 1 wherever characters should be
  * considered part of the scanset.
  */
-static u_char *
-__sccl(tab, fmt)
-	register char *tab;
-	register u_char *fmt;
+static const u_char *
+__sccl(char *tab, const u_char *fmt)
 {
 	register int c, n, v;
 
