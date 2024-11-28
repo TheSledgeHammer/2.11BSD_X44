@@ -31,6 +31,10 @@ A General todo list. Don't hesitate to add to this list. :)
 	- crtbegin.c: jcr and jv_RegisterClasses does not work correctly.
  	- elf_note: unused
 - libc:
+	- softfloat: add to libc
+	- stdio: improve support
+ 		- wide characters.
+   		- flockfile and funlockfile where appropriate
 
 ## libexec:
 - add:
