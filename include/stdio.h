@@ -70,7 +70,7 @@ typedef	_BSD_SSIZE_T_	ssize_t;
 typedef __off_t fpos_t;
 #else
 typedef struct __sfpos {
-	__off_t 		_pos;
+	__off_t 		_pos[8];
 	__mbstate_t 		_mbstate_in;
 	__mbstate_t		_mbstate_out;
 } fpos_t;
