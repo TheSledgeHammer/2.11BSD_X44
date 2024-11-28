@@ -59,14 +59,8 @@ typedef	_BSD_SSIZE_T_	ssize_t;
 #undef	_BSD_SSIZE_T_
 #endif
 
-#if defined(_POSIX_C_SOURCE)
-#ifndef __VA_LIST_DECLARED
-typedef __va_list va_list;
-#define __VA_LIST_DECLARED
-#endif
-#endif
-
 #include <sys/null.h>
+
 /*
  * This is fairly grotesque, but pure ANSI code must not inspect the
  * innards of an fpos_t anyway.  The library internally uses off_t,
@@ -123,9 +117,8 @@ struct __sbuf {
  * NB: see WARNING above before changing the layout of this structure!
  */
 
-struct _siobuf {
+typedef struct __siobuf {
 	unsigned char 	*_p;		/* current position in (some) buffer */
-
 	int				_r;			/* read space left for getc() */
 	int				_w;			/* write space left for putc() */
 	unsigned short 	_flags;		/* flags, below; this FILE is free if 0 */
@@ -158,9 +151,8 @@ struct _siobuf {
 
 	/* Unix stdio files get aligned to block boundaries on fseek() */
 	int				_blksize;	/* stat.st_blksize (may be != _bf._size) */
-	__off_t			_offset;	/* current lseek offset */
-};
-typedef struct _siobuf FILE;
+	fpos_t			_offset;	/* current lseek offset */
+} FILE;
 
 __BEGIN_DECLS
 extern FILE __iob[3];
@@ -217,7 +209,7 @@ __END_DECLS
 #define	FILENAME_MAX	1024	/* must be <= PATH_MAX <sys/syslimits.h> */
 
 /* System V/ANSI C; this is the wrong way to do this, do *not* use these. */
-#if __BSD_VISIBLE || __XPG_VISIBLE
+#if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 #define	P_tmpdir	"/var/tmp/"
 #endif
 #define	L_tmpnam	1024	/* XXX must be == PATH_MAX */
@@ -240,12 +232,6 @@ __END_DECLS
 #define	stdin		(&__iob[0])
 #define	stdout		(&__iob[1])
 #define	stderr		(&__iob[2])
-
-#define	FPARSELN_UNESCESC	0x01
-#define	FPARSELN_UNESCCONT	0x02
-#define	FPARSELN_UNESCCOMM	0x04
-#define	FPARSELN_UNESCREST	0x08
-#define	FPARSELN_UNESCALL	0x0f
 
 /*
  * Functions defined in ANSI C standard.
@@ -323,7 +309,7 @@ __END_DECLS
 /*
  * IEEE Std 1003.1c-95, also adopted by X/Open CAE Spec Issue 5 Version 2
  */
-#if (_POSIX_C_SOURCE - 0) >= 199506L || (_XOPEN_SOURCE - 0) >= 500 || defined(_REENTRANT)
+#if (_POSIX_C_SOURCE - 0) >= 199506L || (_XOPEN_SOURCE - 0) >= 500 || defined(_REENTRANT) || defined(__BSD_VISIBLE)
 __BEGIN_DECLS
 void 	flockfile(FILE *);
 int	ftrylockfile(FILE *);
@@ -342,7 +328,14 @@ __END_DECLS
 /*
  * Routines that are purely local.
  */
-#if !defined (_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+#if !defined (_ANSI_SOURCE) && !defined(_POSIX_SOURCE) || defined(__BSD_VISIBLE)
+
+#define	FPARSELN_UNESCESC	0x01
+#define	FPARSELN_UNESCCONT	0x02
+#define	FPARSELN_UNESCCOMM	0x04
+#define	FPARSELN_UNESCREST	0x08
+#define	FPARSELN_UNESCALL	0x0f
+
 __BEGIN_DECLS
 int	    asprintf(char ** __restrict, const char * __restrict, ...);
 char	*fgetln(FILE * __restrict, size_t * __restrict);
