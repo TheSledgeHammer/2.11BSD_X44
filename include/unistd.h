@@ -124,6 +124,8 @@ extern const char *sys_siglist[];
     defined(__BSD_VISIBLE)
 extern	char	*optarg;		/* getopt(3) external variables */
 extern	int	    opterr, optind, optopt;
+extern	int     optreset;		/* getopt(3) external variable */
+extern	char    *suboptarg;	    /* getsubopt(3) external variable */
 int	 			getopt(int, char * const [], const char *);
 #endif
 
@@ -240,8 +242,8 @@ pid_t	 		vfork(void);
  */
 #if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 500 || \
     defined(__BSD_VISIBLE)
-ssize_t	 pread(int, void *, size_t, off_t);
-ssize_t	 pwrite(int, const void *, size_t, off_t);
+ssize_t	     pread(int, void *, size_t, off_t);
+ssize_t	     pwrite(int, const void *, size_t, off_t);
 #endif /* (_POSIX_C_SOURCE - 0) >= 200112L || ... */
 #endif /* !_POSIX_SOURCE */
 __END_DECLS
