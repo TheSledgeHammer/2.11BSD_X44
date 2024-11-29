@@ -51,16 +51,22 @@ static char sccsid[] = "@(#)putchar.c	5.2 (Berkeley) 3/9/86";
 #undef putchar_unlocked
 
 int
-putchar(int c)
+putchar(c)
+	int c;
 {
+	FILE *fp;
 	int r;
 
-	r = __sputc(c, stdout);
+	fp = stdout;
+	FLOCKFILE(fp);
+	r = __sputc(c, fp);
+	FUNLOCKFILE(fp);
 	return (r);
 }
 
 int
-putchar_unlocked(int c)
+putchar_unlocked(c)
+	int c;
 {
 	return (__sputc(c, stdout));
 }

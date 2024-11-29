@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)fileno.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 
 #include "reentrant.h"
@@ -55,5 +57,12 @@ int
 fileno(fp)
 	FILE *fp;
 {
-	return (__sfileno(fp));
+	int r;
+
+	_DIAGASSERT(fp != NULL);
+
+	FLOCKFILE(fp);
+	r = __sfileno(fp);
+	FUNLOCKFILE(fp);
+	return (r);
 }

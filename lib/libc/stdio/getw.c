@@ -5,6 +5,8 @@ static char sccsid[] = "@(#)getw.c	5.2.1 (2.11BSD GTE) 1/1/94";
 #endif
 #endif
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 
 int
@@ -14,6 +16,8 @@ getw(iop)
 	register int i;
 	register char *p;
 	int w;
+
+	_DIAGASSERT(iop != NULL);
 
 	p = (char *)&w;
 	for (i = sizeof(w); --i >= 0;) {

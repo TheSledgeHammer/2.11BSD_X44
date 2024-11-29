@@ -77,7 +77,11 @@ fwrite(buf, size, count, fp)
 	 * skip the divide if this happens, since divides are
 	 * generally slow and since this occurs whenever size==0.
 	 */
-	if (__sfvwrite(fp, &uio) == 0)
+	FLOCKFILE(fp);
+	if (__sfvwrite(fp, &uio) == 0) {
+		FUNLOCKFILE(fp);
 		return (count);
+	}
+	FUNLOCKFILE(fp);
 	return ((n - uio.uio_resid) / size);
 }

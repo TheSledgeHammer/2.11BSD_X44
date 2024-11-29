@@ -35,11 +35,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)atexit.c	8.2 (Berkeley) 7/3/94";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <stddef.h>
 #include <stdlib.h>
+
 #include "atexit.h"
 
 struct atexit *__atexit;	/* points to head of LIFO stack */
@@ -49,16 +52,17 @@ struct atexit *__atexit;	/* points to head of LIFO stack */
  */
 int
 atexit(fn)
-	void (*fn)();
+	void (*fn)(void);
 {
 	static struct atexit __atexit0;	/* one guaranteed table */
 	register struct atexit *p;
 
-	if ((p = __atexit) == NULL)
+	if ((p = __atexit) == NULL) {
 		__atexit = p = &__atexit0;
-	else if (p->ind >= ATEXIT_SIZE) {
-		if ((p = malloc(sizeof(*p))) == NULL)
+	} else if (p->ind >= ATEXIT_SIZE) {
+		if ((p = malloc(sizeof(*p))) == NULL) {
 			return (-1);
+		}
 		p->ind = 0;
 		p->next = __atexit;
 		__atexit = p;

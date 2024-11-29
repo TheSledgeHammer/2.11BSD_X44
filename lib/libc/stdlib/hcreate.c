@@ -47,8 +47,7 @@ __RCSID("$NetBSD: hcreate.c,v 1.13 2022/03/13 01:44:37 kre Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #if !defined(lint)
-__COPYRIGHT("@(#) Copyright (c) 2001\
- Christopher G. Demetriou.  All rights reserved.");
+__COPYRIGHT("@(#) Copyright (c) 2001\ Christopher G. Demetriou.  All rights reserved.");
 #endif /* not lint */
 
 #include "namespace.h"

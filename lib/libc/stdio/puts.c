@@ -60,6 +60,8 @@ puts(s)
 	struct __siov iov[2];
 	int r;
 
+	_DIAGASSERT(s != NULL);
+
 	/* LINTED we don't touch the string */
 	iov[0].iov_base = __UNCONST(s);
 	iov[0].iov_len = c;
@@ -68,6 +70,8 @@ puts(s)
 	uio.uio_resid = c + 1;
 	uio.uio_iov = &iov[0];
 	uio.uio_iovcnt = 2;
+	FLOCKFILE(stdout);
 	r = __sfvwrite(stdout, &uio);
+	FUNLOCKFILE(stdout);
 	return (r ? EOF : '\n');
 }

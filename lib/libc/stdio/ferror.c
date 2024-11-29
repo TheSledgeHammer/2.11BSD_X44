@@ -41,7 +41,11 @@ static char sccsid[] = "@(#)ferror.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <stdio.h>
+
+#include "reentrant.h"
+#include "local.h"
 
 /*
  * A subroutine version of the macro ferror.
@@ -52,5 +56,12 @@ int
 ferror(fp)
 	FILE *fp;
 {
-	return (__sferror(fp));
+	int r;
+
+	_DIAGASSERT(fp != NULL);
+
+	FLOCKFILE(fp);
+	r = __sferror(fp);
+	FUNLOCKFILE(fp);
+	return (r);
 }

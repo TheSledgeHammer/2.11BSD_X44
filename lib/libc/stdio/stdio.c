@@ -43,6 +43,8 @@ static char sccsid[] = "@(#)stdio.c	8.1 (Berkeley) 6/4/93";
 
 #include "namespace.h"
 
+#include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -63,6 +65,9 @@ __sread(cookie, buf, n)
 	register FILE *fp = cookie;
 	register int ret;
 	
+	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(buf != NULL);
+
 	ret = read(fp->_file, buf, n);
 	/* if the read succeeded, update the current offset */
 	if (ret >= 0)
@@ -80,6 +85,9 @@ __swrite(cookie, buf, n)
 {
 	register FILE *fp = cookie;
 
+	_DIAGASSERT(cookie != NULL);
+	_DIAGASSERT(buf != NULL);
+
 	if (fp->_flags & __SAPP)
 		(void) lseek(fp->_file, (off_t)0, SEEK_END);
 	fp->_flags &= ~__SOFF;	/* in case FAPPEND mode is set */
@@ -95,6 +103,8 @@ __sseek(cookie, offset, whence)
 	register FILE *fp = cookie;
 	register off_t ret;
 	
+	_DIAGASSERT(fp != NULL);
+
 	ret = lseek(fp->_file, (off_t)offset, whence);
 	if (ret == -1L)
 		fp->_flags &= ~__SOFF;
@@ -109,6 +119,7 @@ int
 __sclose(cookie)
 	void *cookie;
 {
+	_DIAGASSERT(cookie != NULL);
 
 	return (close(((FILE *)cookie)->_file));
 }

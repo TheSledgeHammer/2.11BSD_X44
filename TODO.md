@@ -34,7 +34,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	- softfloat: add to libc
 	- stdio: improve support
  		- wide characters.
-   		- flockfile and funlockfile where appropriate
 
 ## libexec:
 - add:

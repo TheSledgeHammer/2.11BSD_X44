@@ -29,6 +29,6 @@ nrand48(unsigned short xseed[3])
 	_DIAGASSERT(xseed != NULL);
 
 	__dorand48(xseed);
-	return (long)((unsigned long) xseed[2] << 15) +
-	    ((unsigned long) xseed[1] >> 1);
+	return ((long)((unsigned long) xseed[2] << 15) +
+	    ((unsigned long) xseed[1] >> 1));
 }

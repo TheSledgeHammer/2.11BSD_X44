@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)fgetpos.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 
 int
@@ -48,5 +50,8 @@ fgetpos(fp, pos)
 	FILE *fp;
 	fpos_t *pos;
 {
+	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(pos != NULL);
+
 	return((*pos = ftell(fp)) == (fpos_t)-1);
 }

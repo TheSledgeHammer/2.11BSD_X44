@@ -50,7 +50,7 @@ printf(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = vfprintf(stdout, fmt, ap);
+	ret = doprnt(stdout, fmt, ap);
 	va_end(ap);
 	return (ret);
 }

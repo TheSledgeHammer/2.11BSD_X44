@@ -58,6 +58,10 @@ static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 #include "reentrant.h"
 #include "local.h"
 
+#ifdef FLOATING_POINT
+#include "floatio.h"
+#endif
+
 #define	BUF			513	/* Maximum length of numeric string. */
 
 /*
@@ -130,6 +134,9 @@ __svfscanf(FILE *fp, const char *fmt0, va_list ap)
 	/* `basefix' is used to avoid `if' tests in the integer scanner */
 	static short basefix[17] =
 		{ 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+
+	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(fmt0 != NULL);
 
     _SET_ORIENTATION(fp, -1);
 
@@ -759,6 +766,9 @@ static const u_char *
 __sccl(char *tab, const u_char *fmt)
 {
 	register int c, n, v;
+
+	_DIAGASSERT(tab != NULL);
+	_DIAGASSERT(fmt != NULL);
 
 	/* first `clear' the whole table */
 	c = *fmt++;		/* first char hat => negated scanset */

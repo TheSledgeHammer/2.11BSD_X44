@@ -279,7 +279,7 @@ void	softintr_disestablish(void *);
 void	softintr_init(void);
 void	softintr_dispatch(int);
 void	softintr_schedule(void *);
-void 	softintr_set(void *, int);
+void 	softintr_set(struct i386_soft_intr *, int);
 
 #endif /* _LOCORE */
 #endif /* !_I386_INTR_H_ */

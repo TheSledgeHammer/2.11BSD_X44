@@ -65,6 +65,8 @@ __submore(fp)
 	register int i;
 	register unsigned char *p;
 
+	_DIAGASSERT(fp != NULL);
+
 	if (fp->_ub._base == fp->_ubuf) {
 		/*
 		 * Get a new buffer (rather than expanding the old one).
@@ -96,20 +98,28 @@ ungetc(c, fp)
 	int c;
 	register FILE *fp;
 {
+	_DIAGASSERT(fp != NULL);
+
 	if (c == EOF)
 		return (EOF);
 	if (!__sdidinit)
 		__sinit();
+	FLOCKFILE(fp);
+	_SET_ORIENTATION(fp, -1);
 	if ((fp->_flags & __SRD) == 0) {
 		/*
 		 * Not already reading: no good unless reading-and-writing.
 		 * Otherwise, flush any current write stuff.
 		 */
-		if ((fp->_flags & __SRW) == 0)
+		if ((fp->_flags & __SRW) == 0) {
+			FUNLOCKFILE(fp);
 			return (EOF);
+		}
 		if (fp->_flags & __SWR) {
-			if (__sflush(fp))
+			if (__sflush(fp)) {
+				FUNLOCKFILE(fp);
 				return (EOF);
+			}
 			fp->_flags &= ~__SWR;
 			fp->_w = 0;
 			fp->_lbfsize = 0;
@@ -123,10 +133,13 @@ ungetc(c, fp)
 	 * This may require expanding the current ungetc buffer.
 	 */
 	if (HASUB(fp)) {
-		if (fp->_r >= fp->_ub._size && __submore(fp))
+		if (fp->_r >= fp->_ub._size && __submore(fp)) {
+			FUNLOCKFILE(fp);
 			return (EOF);
+		}
 		*--fp->_p = c;
 		fp->_r++;
+		FUNLOCKFILE(fp);
 		return (c);
 	}
 	fp->_flags &= ~__SEOF;
@@ -140,6 +153,7 @@ ungetc(c, fp)
 	    fp->_p[-1] == c) {
 		fp->_p--;
 		fp->_r++;
+		FUNLOCKFILE(fp);
 		return (c);
 	}
 
@@ -154,5 +168,6 @@ ungetc(c, fp)
 	fp->_ubuf[sizeof(fp->_ubuf) - 1] = c;
 	fp->_p = &fp->_ubuf[sizeof(fp->_ubuf) - 1];
 	fp->_r = 1;
+	FUNLOCKFILE(fp);
 	return (c);
 }

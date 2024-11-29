@@ -56,12 +56,17 @@ snprintf(char *str, size_t n, char const *fmt, ...)
 	int ret;
 	va_list ap;
 	FILE _strbuf;
+	struct __sfileext fext;
+
+	_DIAGASSERT(n == 0 || str != NULL);
+	_DIAGASSERT(fmt != NULL);
 
 	if ((int)n < 1) {
 		return (EOF);
 	}
 
 	va_start(ap, fmt);
+	_FILEEXT_SETUP(&_strbuf, &fext);
 	_strbuf._flags = __SWR | __SSTR;
 	_strbuf._bf._base = _strbuf._p = (unsigned char *)str;
 	_strbuf._bf._size = _strbuf._w = n - 1;

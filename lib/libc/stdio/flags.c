@@ -61,6 +61,8 @@ __sflags(mode, optr)
 {
 	register int ret, m, o;
 
+	_DIAGASSERT(mode != NULL);
+
 	switch (*mode++) {
 
 	case 'r':	/* open for reading */

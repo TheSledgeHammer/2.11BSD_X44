@@ -50,6 +50,8 @@ static char sccsid[] = "@(#)fseek.c	5.3 (Berkeley) 3/9/86";
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,6 +77,7 @@ fseek(fp, offset, whence)
 	long offset;
 	int whence;
 {
+	_DIAGASSERT(fp != NULL);
     return (fseeko(fp, offset, whence));
 }
 
@@ -90,15 +93,20 @@ fseeko(fp, offset, whence)
 	struct stat st;
 	int havepos;
 
+	_DIAGASSERT(fp != NULL);
+
 	/* make sure stdio is set up */
 	if (!__sdidinit)
 		__sinit();
+
+	FLOCKFILE(fp);
 
 	/*
 	 * Have to be able to seek.
 	 */
 	if ((seekfn = fp->_seek) == NULL) {
 		errno = ESPIPE;			/* historic practice */
+		FLOCKFILE(fp);
 		return (EOF);
 	}
 
@@ -119,6 +127,7 @@ fseeko(fp, offset, whence)
 		else {
 			curoff = (*seekfn)(fp->_cookie, (fpos_t)0, SEEK_CUR);
 			if (curoff == -1L)
+				FLOCKFILE(fp);
 				return (EOF);
 		}
 		if (fp->_flags & __SRD) {
@@ -141,6 +150,7 @@ fseeko(fp, offset, whence)
 
 	default:
 		errno = EINVAL;
+		FLOCKFILE(fp);
 		return (EOF);
 	}
 
@@ -224,6 +234,7 @@ fseeko(fp, offset, whence)
 		if (HASUB(fp))
 			FREEUB(fp);
 		fp->_flags &= ~__SEOF;
+		FLOCKFILE(fp);
 		return (0);
 	}
 
@@ -249,6 +260,7 @@ fseeko(fp, offset, whence)
 		fp->_p += n;
 		fp->_r -= n;
 	}
+	FLOCKFILE(fp);
 	return (0);
 
 	/*
@@ -258,6 +270,7 @@ fseeko(fp, offset, whence)
 dumb:
 	if (__sflush(fp) ||
 	    (*seekfn)(fp->_cookie, (fpos_t)offset, whence) == POS_ERR) {
+		FLOCKFILE(fp);
 		return (EOF);
 	}
 	/* success: clear EOF indicator and discard ungetc() data */
@@ -267,5 +280,6 @@ dumb:
 	fp->_r = 0;
 	/* fp->_w = 0; */	/* unnecessary (I think...) */
 	fp->_flags &= ~__SEOF;
+	FLOCKFILE(fp);
 	return (0);
 }

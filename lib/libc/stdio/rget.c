@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)rget.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 
 #include "reentrant.h"
@@ -55,6 +57,10 @@ int
 __srget(fp)
 	register FILE *fp;
 {
+	_DIAGASSERT(fp != NULL);
+
+	_SET_ORIENTATION(fp, -1);
+
 	if (__srefill(fp) == 0) {
 		fp->_r--;
 		return (*fp->_p++);

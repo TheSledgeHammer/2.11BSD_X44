@@ -5,7 +5,7 @@ static char sccsid[] = "@(#)strout.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include	<stdio.h>
+#include <stdio.h>
 
 void _strout(int, char *, int, FILE *, int);
 

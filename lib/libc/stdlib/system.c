@@ -33,13 +33,17 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)system.c	5.10.1 (2.11BSD) 1999/10/24";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
+
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -62,23 +66,23 @@ system(command)
 
 	sigemptyset(&nmask);
 	sigaddset(&nmask, SIGCHLD);
-	(void)sigprocmask(SIG_BLOCK, &nmask, &omask);
-	switch(pid = vfork()) {
+	(void) sigprocmask(SIG_BLOCK, &nmask, &omask);
+	switch (pid = vfork()) {
 	case -1:			/* error */
-		(void)sigprocmask(SIG_SETMASK, &omask, NULL);
+		(void) sigprocmask(SIG_SETMASK, &omask, NULL);
 		pstat.w_status = 0;
 		pstat.w_retcode = 127;
-		return(pstat.w_status);
+		return (pstat.w_status);
 	case 0:				/* child */
-		(void)sigprocmask(SIG_SETMASK, &omask, NULL);
-		execl("/bin/sh", "sh", "-c", command, (char *)NULL);
+		(void) sigprocmask(SIG_SETMASK, &omask, NULL);
+		execl("/bin/sh", "sh", "-c", command, (char*) NULL);
 		_exit(127);
 	}
 	intsave = signal(SIGINT, SIG_IGN);
 	quitsave = signal(SIGQUIT, SIG_IGN);
-	pid = waitpid(pid, (int *)&pstat, 0);
-	(void)sigprocmask(SIG_SETMASK, &omask, NULL);
-	(void)signal(SIGINT, intsave);
-	(void)signal(SIGQUIT, quitsave);
-	return(pid == -1 ? -1 : pstat.w_status);
+	pid = waitpid(pid, (int*) &pstat, 0);
+	(void) sigprocmask(SIG_SETMASK, &omask, NULL);
+	(void) signal(SIGINT, intsave);
+	(void) signal(SIGQUIT, quitsave);
+	return (pid == -1 ? -1 : pstat.w_status);
 }

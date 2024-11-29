@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)fpurge.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,11 +59,13 @@ int
 fpurge(fp)
 	register FILE *fp;
 {
+	_DIAGASSERT(fp != NULL);
+
 	if (!fp->_flags) {
 		errno = EBADF;
 		return (EOF);
 	}
-
+	FLOCKFILE(fp);
 	if (HASUB(fp)) {
 		FREEUB(fp);
 	}
@@ -70,5 +73,6 @@ fpurge(fp)
 	fp->_p = fp->_bf._base;
 	fp->_r = 0;
 	fp->_w = fp->_flags & (__SLBF|__SNBF) ? 0 : fp->_bf._size;
+	FUNLOCKFILE(fp);
 	return (0);
 }

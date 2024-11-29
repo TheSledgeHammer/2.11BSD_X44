@@ -42,6 +42,8 @@ static char sccsid[] = "@(#)fputc.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 
 #include "reentrant.h"
@@ -52,5 +54,12 @@ fputc(c, fp)
 	register int c;
 	register FILE *fp;
 {
-	return (putc(c, fp));
+	int r;
+
+	_DIAGASSERT(fp != NULL);
+
+	FLOCKFILE(fp);
+	r = __sputc(c, fp);
+	FUNLOCKFILE(fp);
+	return (r);
 }

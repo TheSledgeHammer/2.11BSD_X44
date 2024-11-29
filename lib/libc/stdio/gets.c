@@ -41,10 +41,15 @@ static char sccsid[] = "@(#)gets.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include	<stdio.h>
-#include 	<stddef.h>
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stddef.h>
 
-__warn_references(gets, "warning: this program uses gets(), which is unsafe.")
+#include "reentrant.h"
+#include "local.h"
+
+//__warn_references(gets, "warning: this program uses gets(), which is unsafe.")
 
 char *
 gets(s)
@@ -53,13 +58,18 @@ gets(s)
 	register int c;
 	register char *cs;
 
+	_DIAGASSERT(s != NULL);
+
+	FLOCKFILE(stdin);
 	cs = s;
-	while ((c = getchar()) != '\n' && c != EOF) {
+	while ((c = getchar_unlocked()) != '\n' && c != EOF) {
 		*cs++ = c;
 	}
 	if (c == EOF && cs == s) {
+		FUNLOCKFILE(stdin);
 		return (NULL);
 	}
 	*cs++ = '\0';
+	FUNLOCKFILE(stdin);
 	return (s);
 }

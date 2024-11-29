@@ -43,12 +43,16 @@ static char sccsid[] = "@(#)remove.c	8.1 (Berkeley) 6/4/93";
 
 #include "namespace.h"
 
-#include <unistd.h>
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 
 int
 remove(file)
 	const char *file;
 {
+	_DIAGASSERT(file != NULL);
+
 	return (unlink(file));
 }

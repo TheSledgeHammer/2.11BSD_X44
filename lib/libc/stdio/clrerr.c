@@ -42,12 +42,21 @@ static char sccsid[] = "@(#)clrerr.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <stdio.h>
+
+#include "reentrant.h"
+#include "local.h"
+
 #undef	clearerr
 
 void
 clearerr(iop)
 	register FILE *iop;
 {
+	_DIAGASSERT(fp != NULL);
+
+	FLOCKFILE(fp);
 	iop->_flags &= ~(_IOERR|_IOEOF);
+	FUNLOCKFILE(fp);
 }

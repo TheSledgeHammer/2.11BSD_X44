@@ -54,8 +54,18 @@ static char sccsid[] = "@(#)getchar.c	5.2 (Berkeley) 3/9/86";
 int
 getchar(void)
 {
+	FILE *fp;
 	int r;
 
-	r = getc(stdin);
+	fp = stdin;
+    FLOCKFILE(fp);
+    r = __sgetc(fp);
+    FUNLOCKFILE(fp);
 	return (r);
+}
+
+int
+getchar_unlocked(void)
+{
+	return (__sgetc(stdin));
 }

@@ -41,6 +41,10 @@ static char sccsid[] = "@(#)fsetpos.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 
 /*
@@ -51,5 +55,7 @@ fsetpos(iop, pos)
 	FILE *iop;
 	const fpos_t *pos;
 {
+	_DIAGASSERT(iop != NULL);
+	_DIAGASSERT(pos != NULL);
 	return (fseeko(iop, *pos, SEEK_SET));
 }

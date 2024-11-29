@@ -56,21 +56,29 @@ fclose(fp)
 {
 	int r;
 
+	_DIAGASSERT(fp != NULL);
+
 	if (fp->_flags == 0) { /* not open! */
 		errno = EBADF;
 		return (EOF);
 	}
+
+	FLOCKFILE(fp);
+	WCIO_FREE(fp);
 	r = fp->_flags & __SWR ? __sflush(fp) : 0;
-	if (fp->_close != NULL && (*fp->_close)(fp->_cookie) < 0)
+	if (fp->_close != NULL && (*fp->_close)(fp->_cookie) < 0) {
 		r = EOF;
-	if (fp->_flags & __SMBF)
+	}
+	if (fp->_flags & __SMBF) {
 		free((char*) fp->_bf._base);
-
-	if (HASUB(fp))
+	}
+	if (HASUB(fp)) {
 		FREEUB(fp);
-	if (HASLB(fp))
+	}
+	if (HASLB(fp)) {
 		FREELB(fp);
-
+	}
+	FUNLOCKFILE(fp);
 	fp->_file = -1;
 	fp->_flags = 0;			/* Release this FILE for reuse. */
 	fp->_r = fp->_w = 0;	/* Mess up if reaccessed. */

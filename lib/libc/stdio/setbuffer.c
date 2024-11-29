@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)setbuffer.c	8.1.1 (2.11BSD) 1997/7/29";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -51,7 +52,7 @@ setbuffer(fp, buf, size)
 	char *buf;
 	int size;
 {
-
+	_DIAGASSERT(fp != NULL);
 	(void)setvbuf(fp, buf, buf ? _IOFBF : _IONBF, size);
 }
 
@@ -62,5 +63,6 @@ int
 setlinebuf(fp)
 	FILE *fp;
 {
+	_DIAGASSERT(fp != NULL);
 	return (setvbuf(fp, (char *)NULL, _IOLBF, (size_t)0));
 }

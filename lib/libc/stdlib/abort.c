@@ -33,9 +33,15 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)abort.c	8.1.1 (2.11BSD) 1997/9/9";
+#endif
 #endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
+
 #include <sys/signal.h>
+
 #include <signal.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -62,5 +68,5 @@ abort()
 	(void)signal(SIGABRT, SIG_DFL);
 	(void)sigprocmask(SIG_SETMASK, &mask, (sigset_t *)NULL);
 	(void)kill(getpid(), SIGABRT);
-	exit(1);
+	_exit(1);
 }

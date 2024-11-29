@@ -70,6 +70,9 @@ __sfvwrite(fp, uio)
 	char *nl;
 	int nlknown, nldist;
 
+	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(uio != NULL);
+
 	if ((len = uio->uio_resid) == 0)
 		return (0);
 	/* make sure we can write */

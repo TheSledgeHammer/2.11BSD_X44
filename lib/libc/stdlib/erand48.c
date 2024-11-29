@@ -30,7 +30,7 @@ erand48(unsigned short xseed[3])
 	_DIAGASSERT(xseed != NULL);
 
 	__dorand48(xseed);
-	return ldexp((double) xseed[0], -48) +
+	return (ldexp((double) xseed[0], -48) +
 	       ldexp((double) xseed[1], -32) +
-	       ldexp((double) xseed[2], -16);
+	       ldexp((double) xseed[2], -16));
 }

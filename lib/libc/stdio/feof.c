@@ -41,7 +41,11 @@ static char sccsid[] = "@(#)feof.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <stdio.h>
+
+#include "reentrant.h"
+#include "local.h"
 
 /*
  * A subroutine version of the macro feof.
@@ -52,5 +56,11 @@ int
 feof(fp)
 	FILE *fp;
 {
-	return (__sfeof(fp));
+	int r;
+
+	_DIAGASSERT(fp != NULL);
+	FLOCKFILE(fp);
+	r = __sfeof(fp);
+	FUNLOCKFILE(fp);
+	return (r);
 }

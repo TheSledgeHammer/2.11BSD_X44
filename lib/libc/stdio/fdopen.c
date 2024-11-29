@@ -74,6 +74,8 @@ fdopen(fd, mode)
 	static int nofile;
 	int flags, oflags, fdflags, tmp;
 
+	_DIAGASSERT(fd != -1);
+
 	if (nofile == 0) {
 		nofile = getdtablesize();
 	}

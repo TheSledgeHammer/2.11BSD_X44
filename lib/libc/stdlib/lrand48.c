@@ -24,6 +24,6 @@ long
 lrand48(void)
 {
 	__dorand48(__rand48_seed);
-	return (long)((unsigned long) __rand48_seed[2] << 15) +
-	    ((unsigned long) __rand48_seed[1] >> 1);
+	return ((long)((unsigned long) __rand48_seed[2] << 15) +
+	    ((unsigned long) __rand48_seed[1] >> 1));
 }

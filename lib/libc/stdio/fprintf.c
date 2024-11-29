@@ -59,9 +59,11 @@ fprintf(FILE *iop, const char *fmt, ...)
 	int ret;
 	va_list ap;
 
+	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(fmt != NULL);
+
 	va_start(ap, fmt);
-	ret = vfprintf(iop, fmt, ap);
+	ret = doprnt(iop, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
-

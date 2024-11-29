@@ -229,14 +229,12 @@ softintr_disestablish(void *arg)
  *  Software interrupt update.
  */
 void
-softintr_set(arg, which)
-	void *arg;
+softintr_set(si, which)
+	struct i386_soft_intr *si;
 	int which;
 {
-	struct i386_soft_intr *si;
 	int sir;
 
-	si = (struct i386_soft_intr *)arg;
 	if (si == NULL) {
 		switch (which) {
 		case I386_SOFTINTR_SOFTBIO:
@@ -309,9 +307,7 @@ softintr_hwmask(spic, pin)
 	struct softpic *spic;
 	int pin;
 {
-	if (spic->sp_template != PIC_SOFT) {
-		sisp_hwmask(spic, pin, spic->sp_isapic, spic->sp_template);
-	}
+	sisp_hwmask(spic, pin, spic->sp_isapic, spic->sp_template);
 }
 
 static void
@@ -319,9 +315,7 @@ softintr_hwunmask(spic, pin)
 	struct softpic *spic;
 	int pin;
 {
-	if (spic->sp_template != PIC_SOFT) {
-		sisp_hwunmask(spic, pin, spic->sp_isapic, spic->sp_template);
-	}
+	sisp_hwunmask(spic, pin, spic->sp_isapic, spic->sp_template);
 }
 
 static void
@@ -330,9 +324,7 @@ softintr_addroute(spic, ci, pin, idtvec, type)
 	struct cpu_info *ci;
 	int pin, idtvec, type;
 {
-	if (spic->sp_template != PIC_SOFT) {
-		sisp_addroute(spic, ci, pin, idtvec, type, spic->sp_isapic, spic->sp_template);
-	}
+	sisp_addroute(spic, ci, pin, idtvec, type, spic->sp_isapic, spic->sp_template);
 }
 
 static void
@@ -341,10 +333,7 @@ softintr_delroute(spic, ci, pin, idtvec, type)
 	struct cpu_info *ci;
 	int pin, idtvec, type;
 {
-	if (spic->sp_template != PIC_SOFT) {
-		sisp_delroute(spic, ci, pin, idtvec, type, spic->sp_isapic,
-				spic->sp_template);
-	}
+	sisp_delroute(spic, ci, pin, idtvec, type, spic->sp_isapic, spic->sp_template);
 }
 
 /* softintr to softpic interface (sisp) */

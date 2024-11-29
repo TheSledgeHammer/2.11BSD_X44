@@ -154,6 +154,9 @@ typedef struct __siobuf {
 	fpos_t			_offset;	/* current lseek offset */
 } FILE;
 
+
+#define FILE struct __siobuf
+
 __BEGIN_DECLS
 extern FILE __iob[3];
 extern FILE __sF[3];
@@ -280,10 +283,10 @@ int	    sscanf(const char * __restrict, const char * __restrict, ...);
 int	    sprintf(char * __restrict, const char * __restrict, ...);
 FILE 	*tmpfile(void);
 char 	*tmpnam(char *);
-int	 ungetc(int, FILE *);
-int	 vfprintf(FILE * __restrict, const char * __restrict, __va_list);
-int	 vprintf(const char * __restrict, __va_list);
-int	 vsprintf(char * __restrict, const char * __restrict, __va_list);
+int	 	ungetc(int, FILE *);
+int	 	vfprintf(FILE * __restrict, const char * __restrict, __va_list);
+int	 	vprintf(const char * __restrict, __va_list);
+int	 	vsprintf(char * __restrict, const char * __restrict, __va_list);
 __END_DECLS
 
 /*
@@ -302,7 +305,7 @@ char	*ctermid(char *);
 char	*cuserid(char *);
 #endif /* __CUSERID_DECLARED */
 FILE	*fdopen(int, const char *);
-int	 fileno(FILE *);
+int	 	fileno(FILE *);
 __END_DECLS
 #endif /* not ANSI */
 
@@ -312,16 +315,16 @@ __END_DECLS
 #if (_POSIX_C_SOURCE - 0) >= 199506L || (_XOPEN_SOURCE - 0) >= 500 || defined(_REENTRANT) || defined(__BSD_VISIBLE)
 __BEGIN_DECLS
 void 	flockfile(FILE *);
-int	ftrylockfile(FILE *);
+int		ftrylockfile(FILE *);
 void 	funlockfile(FILE *);
 /*
  * These are normally used through macros as defined below, but POSIX
  * requires functions as well.
  */
-int	getc_unlocked(FILE *);
-int	getchar_unlocked(void);
-int	putc_unlocked(int, FILE *);
-int	putchar_unlocked(int);
+int		getc_unlocked(FILE *);
+int		getchar_unlocked(void);
+int		putc_unlocked(int, FILE *);
+int		putchar_unlocked(int);
 __END_DECLS
 #endif /* _POSIX_C_SOURCE >= 199506 || _XOPEN_SOURCE >= 500 || ... */
 
@@ -354,9 +357,6 @@ int	    vasprintf(char ** __restrict, const char * __restrict, __va_list);
 int		vfscanf(FILE * __restrict, const char * __restrict, __va_list);
 int	    vscanf(const char * __restrict, __va_list);
 int	    vsscanf(const char * __restrict, const char * __restrict, __va_list);
-
-ssize_t	 getdelim(char ** __restrict, size_t * __restrict, int, FILE * __restrict);
-ssize_t	 getline(char ** __restrict, size_t * __restrict, FILE * __restrict);
 __END_DECLS
 
 /*
@@ -370,7 +370,7 @@ typedef	__off_t		off_t;
 #endif /* off_t */
 
 __BEGIN_DECLS
-int	fseeko(FILE *, off_t, int);
+int		fseeko(FILE *, off_t, int);
 off_t 	ftello(FILE *);
 __END_DECLS
 #endif /* (_POSIX_C_SOURCE - 0) >= 200112L || _XOPEN_SOURCE >= 500 || ... */
@@ -436,20 +436,27 @@ __sputc(int _c, FILE *_p)
 #define putc(x, fp)		__sputc(x, fp)
 #endif /* lint */
 
-#if __POSIX_VISIBLE >= 199506
-#define	getc_unlocked(fp)	__sgetc(fp)
+#define	getchar()		getc(stdin)
+#define	putchar(x)		putc(x, stdout)
+
+#if (_POSIX_C_SOURCE - 0) >= 199506L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(_REENTRANT) || defined(__BSD_VISIBLE)
+#define	getc_unlocked(fp)		__sgetc(fp)
 /*
  * The macro implementations of putc and putc_unlocked are not
  * fully POSIX compliant; they do not set errno on failure
  */
-#if __BSD_VISIBLE
 #define putc_unlocked(x, fp)	__sputc(x, fp)
-#endif /* __BSD_VISIBLE */
-#endif /* __POSIX_VISIBLE >= 199506 */
+#define getchar_unlocked()		getc_unlocked(stdin)
+#define putchar_unlocked(c)		putc_unlocked(c, stdout)
+#endif /* _POSIX_C_SOURCE >= 199506 || _XOPEN_SOURCE >= 500 || _REENTRANT... */
 
-#define	getchar()			getc(stdin)
-#define	putchar(x)			putc(x, stdout)
-#define getchar_unlocked()	getc_unlocked(stdin)
-#define putchar_unlocked(c)	putc_unlocked(c, stdout)
+#if (_POSIX_C_SOURCE - 0) >= 200809L || (_XOPEN_SOURCE - 0) >= 700 || \
+    defined(__BSD_VISIBLE)
+__BEGIN_DECLS
+ssize_t	 getdelim(char ** __restrict, size_t * __restrict, int, FILE * __restrict);
+ssize_t	 getline(char ** __restrict, size_t * __restrict, FILE * __restrict);
+__END_DECLS
+#endif
 
 #endif /* _STDIO_H_ */

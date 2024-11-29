@@ -53,7 +53,11 @@ void
 rewind(iop)
 	register FILE *iop;
 {
+	_DIAGASSERT(iop != NULL);
+
+	FLOCKFILE(fp);
 	(void) fseek(iop, 0L, SEEK_SET);
 	clearerr(iop);
 	errno = 0;      /* not required, but seems reasonable */
+	FUNLOCKFILE(fp);
 }

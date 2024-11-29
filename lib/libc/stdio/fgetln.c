@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)fgetln.c	8.2 (Berkeley) 1/2/94";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -68,6 +69,9 @@ __slbexpand(fp, newsize)
 #ifdef notdef
 	++newsize;
 #endif
+
+	_DIAGASSERT(fp != NULL);
+
 	if (fp->_lb._size >= newsize)
 		return (0);
 	if ((p = realloc(fp->_lb._base, newsize)) == NULL)
@@ -93,9 +97,15 @@ fgetln(fp, lenp)
 	register size_t len;
 	size_t off;
 
+	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(lenp != NULL);
+
+	FLOCKFILE(fp);
+
 	/* make sure there is input */
 	if (fp->_r <= 0 && __srefill(fp)) {
 		*lenp = 0;
+		FUNLOCKFILE(fp);
 		return (NULL);
 	}
 
@@ -114,6 +124,7 @@ fgetln(fp, lenp)
 		fp->_flags |= __SMOD;
 		fp->_r -= len;
 		fp->_p = p;
+		FUNLOCKFILE(fp);
 		return (ret);
 	}
 
@@ -161,9 +172,11 @@ fgetln(fp, lenp)
 #ifdef notdef
 	fp->_lb._base[len] = 0;
 #endif
+	FUNLOCKFILE(fp);
 	return ((char *)fp->_lb._base);
 
 error:
 	*lenp = 0;			/* ??? */
+	FUNLOCKFILE(fp);
 	return (NULL);		/* ??? */
 }

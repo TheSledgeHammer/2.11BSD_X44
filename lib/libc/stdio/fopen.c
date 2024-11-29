@@ -47,8 +47,11 @@ static char sccsid[] = "@(#)fopen.c	5.2 (Berkeley) 3/9/86";
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -66,6 +69,8 @@ fopen(file, mode)
 	register FILE *fp;
 	register int f;
 	int flags, oflags;
+
+	_DIAGASSERT(file != NULL);
 
 	if ((flags = __sflags(mode, &oflags)) == 0)
 		return (NULL);

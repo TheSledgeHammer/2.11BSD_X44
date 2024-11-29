@@ -42,9 +42,10 @@ static char sccsid[] = "@(#)fgets.c	8.2 (Berkeley) 12/22/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include	<stdio.h>
-#include	<stddef.h>
-#include	<string.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
 
 #include "reentrant.h"
 #include "local.h"
@@ -64,9 +65,14 @@ fgets(buf, n, fp)
 	register char *s;
 	register unsigned char *p, *t;
 
+	_DIAGASSERT(buf != NULL);
+	_DIAGASSERT(fp != NULL);
+
 	if (n == 0)		/* sanity check */
 		return (NULL);
 
+	FLOCKFILE(fp);
+	_SET_ORIENTATION(fp, -1);
 	s = buf;
 	n--;			/* leave space for NUL */
 	while (n != 0) {
@@ -76,8 +82,10 @@ fgets(buf, n, fp)
 		if ((len = fp->_r) <= 0) {
 			if (__srefill(fp)) {
 				/* EOF/error: stop with partial or no line */
-				if (s == buf)
+				if (s == buf) {
+					FUNLOCKFILE(fp);
 					return (NULL);
+				}
 				break;
 			}
 			len = fp->_r;
@@ -99,6 +107,7 @@ fgets(buf, n, fp)
 			fp->_p = t;
 			(void)memcpy((void *)s, (void *)p, len);
 			s[len] = 0;
+			FUNLOCKFILE(fp);
 			return (buf);
 		}
 		fp->_r -= len;
@@ -108,5 +117,6 @@ fgets(buf, n, fp)
 		n -= len;
 	}
 	*s = 0;
+	FUNLOCKFILE(fp);
 	return (buf);
 }

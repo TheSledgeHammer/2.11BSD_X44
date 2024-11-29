@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)refill.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,6 +55,7 @@ static int
 lflush(fp)
 	FILE *fp;
 {
+	_DIAGASSERT(fp != NULL);
 
 	if ((fp->_flags & (__SLBF|__SWR)) == (__SLBF|__SWR))
 		return (__sflush(fp));
@@ -68,6 +70,7 @@ int
 __srefill(fp)
 	register FILE *fp;
 {
+	_DIAGASSERT(fp != NULL);
 
 	/* make sure stdio is set up */
 	if (!__sdidinit)

@@ -46,9 +46,12 @@ static char sccsid[] = "@(#)setvbuf.c	8.1.1 (2.11BSD) 1997/7/27";
 
 #include <sys/types.h>
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <wchar.h>
 
 #include "reentrant.h"
 #include "local.h"
@@ -68,6 +71,8 @@ setvbuf(fp, buf, mode, size)
 	size_t iosize;
 	int ttyflag;
 
+	_DIAGASSERT(fp != NULL);
+
 	/*
 	 * Verify arguments.  The `int' limit on `size' is due to this
 	 * particular implementation.  Note, buf and size are ignored
@@ -77,6 +82,7 @@ setvbuf(fp, buf, mode, size)
 		if ((mode != _IOFBF && mode != _IOLBF) || (int)size < 0)
 			return (EOF);
 
+	FLOCKFILE(fp);
 	/*
 	 * Write current buffer, if any.  Discard unread input (including
 	 * ungetc data), cancel line buffering, and free old buffer if
@@ -87,6 +93,7 @@ setvbuf(fp, buf, mode, size)
 	(void)__sflush(fp);
 	if (HASUB(fp))
 		FREEUB(fp);
+	WCIO_FREE(fp);
 	fp->_r = fp->_lbfsize = 0;
 	flags = fp->_flags;
 	if (flags & __SMBF)
@@ -128,6 +135,7 @@ nbf:
 			fp->_w = 0;
 			fp->_bf._base = fp->_p = fp->_nbuf;
 			fp->_bf._size = 1;
+			FUNLOCKFILE(fp);
 			return (ret);
 		}
 		flags |= __SMBF;
@@ -168,5 +176,6 @@ nbf:
 	}
 	__cleanup = _cleanup;
 
+	FUNLOCKFILE(fp);
 	return (ret);
 }

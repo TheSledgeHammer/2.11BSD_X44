@@ -33,7 +33,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)malloc.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -48,12 +50,10 @@ static char sccsid[] = "@(#)malloc.c	8.1 (Berkeley) 6/4/93";
  */
 
 #include <sys/types.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-static void morecore();
-static int findbucket();
 
 /*
  * The overhead on a block is at least 4 bytes.  When free, this space
@@ -90,6 +90,9 @@ union overhead {
 #define	RSLOP		0
 #endif
 
+static void morecore(int);
+static int findbucket(union overhead *, int);
+
 /*
  * nextf[i] is the pointer to the next free block of size 2^(i+3).  The
  * smallest allocatable block is 8 bytes.  The overhead information
@@ -97,7 +100,7 @@ union overhead {
  */
 #define	NBUCKETS 30
 static	union overhead *nextf[NBUCKETS];
-extern	char *sbrk();
+//extern	char *sbrk();
 
 static	int pagesz;			/* page size */
 static	int pagebucket;			/* page size bucket */

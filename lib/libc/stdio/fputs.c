@@ -47,6 +47,8 @@ static char sccsid[] = "@(#)fputs.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -62,10 +64,18 @@ fputs(s, fp)
 {
 	struct __suio uio;
 	struct __siov iov;
+	int r;
+
+	_DIAGASSERT(s != NULL);
+	_DIAGASSERT(fp != NULL);
 
 	iov.iov_base = __UNCONST(s);
 	iov.iov_len = uio.uio_resid = strlen(s);
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;
-	return (__sfvwrite(fp, &uio));
+	FLOCKFILE(fp);
+	_SET_ORIENTATION(fp, -1);
+	r = __sfvwrite(fp, &uio);
+	FUNLOCKFILE(fp);
+	return (r);
 }

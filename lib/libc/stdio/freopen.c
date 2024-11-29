@@ -51,12 +51,15 @@ static char sccsid[] = "@(#)freopen.c	5.2 (Berkeley) 3/9/86";
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include <assert.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <wchar.h>
 
 #include "reentrant.h"
 #include "local.h"
@@ -73,6 +76,11 @@ freopen(file, mode, fp)
 {
 	register int f;
 	int flags, isopen, oflags, sverrno, wantfd;
+
+
+	_DIAGASSERT(file != NULL);
+	_DIAGASSERT(mode != NULL);
+	_DIAGASSERT(fp != NULL);
 
 	if ((flags = __sflags(mode, &oflags)) == 0) {
 		(void) fclose(fp);
@@ -135,6 +143,7 @@ freopen(file, mode, fp)
 	fp->_lbfsize = 0;
 	if (HASUB(fp))
 		FREEUB(fp);
+	WCIO_FREE(fp);
 	fp->_ub._size = 0;
 	if (HASLB(fp))
 		FREELB(fp);
@@ -165,5 +174,16 @@ freopen(file, mode, fp)
 	fp->_write = __swrite;
 	fp->_seek = __sseek;
 	fp->_close = __sclose;
+
+	/*
+	 * When reopening in append mode, even though we use O_APPEND,
+	 * we need to seek to the end so that ftell() gets the right
+	 * answer.  If the user then alters the seek pointer, or
+	 * the file extends, this will fail, but there is not much
+	 * we can do about this.  (We could set __SAPP and check in
+	 * fseek and ftell.)
+	 */
+	if (oflags & O_APPEND)
+		(void) __sseek((void *)fp, (fpos_t)0, SEEK_END);
 	return (fp);
 }

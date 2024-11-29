@@ -77,6 +77,9 @@ __sprint(FILE *fp, struct __suio *uio)
 {
 	int err;
 
+	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(uio != NULL);
+
 	if (uio->uio_resid == 0) {
 		uio->uio_iovcnt = 0;
 		return (0);
@@ -100,7 +103,11 @@ __sbprintf(FILE *fp, const char *fmt, va_list ap)
     struct __sfileext fakeext;
 	unsigned char buf[BUFSIZ];
 
+	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(fmt != NULL);
+
     _FILEEXT_SETUP(&fake, &fakeext);
+
 	/* copy the important variables */
 	fake._flags = fp->_flags & ~__SNBF;
 	fake._file = fp->_file;
@@ -926,6 +933,8 @@ exponent(char *p0, int exp, int fmtch)
 {
 	char *p, *t;
 	char expbuf[MAXEXP];
+
+	_DIAGASSERT(p0 != NULL);
 
 	p = p0;
 	*p++ = fmtch;

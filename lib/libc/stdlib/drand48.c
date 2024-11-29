@@ -23,5 +23,5 @@ __weak_alias(drand48,_drand48)
 double
 drand48(void)
 {
-	return erand48(__rand48_seed);
+	return (erand48(__rand48_seed));
 }

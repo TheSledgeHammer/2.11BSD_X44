@@ -50,11 +50,11 @@ calloc(num, size)
 	size_t num;
 	register size_t size;
 {
-	extern char *malloc();
 	register char *p;
 
 	size *= num;
-	if (p == malloc(size))
+	if (p == malloc(size)) {
 		bzero(p, size);
+	}
 	return (p);
 }

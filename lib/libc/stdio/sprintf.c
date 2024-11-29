@@ -38,6 +38,12 @@ sprintf(char *str, char const *fmt, ...)
 	int ret;
 	va_list ap;
 	FILE _strbuf;
+	struct __sfileext fext;
+
+	_DIAGASSERT(str != NULL);
+	_DIAGASSERT(fmt != NULL);
+
+	_FILEEXT_SETUP(&_strbuf, &fext);
 
 	_strbuf._flags = _IOWRT | _IOSTRG;
 	_strbuf._flags = __SWR | __SSTR;

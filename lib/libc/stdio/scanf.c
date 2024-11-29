@@ -46,6 +46,9 @@ static char sccsid[] = "@(#)scanf.c	5.2 (Berkeley) 3/9/86";
 #include <string.h>
 #include <stddef.h>
 
+#include "reentrant.h"
+#include "local.h"
+
 static int eofread(void *, char *, int);
 
 static int
@@ -62,6 +65,8 @@ scanf(char const *fmt, ...)
 {
 	int ret;
 	va_list ap;
+
+	_DIAGASSERT(fmt != NULL);
 
 	va_start(ap, fmt);
 	ret = doscan(stdin, fmt, ap);
@@ -93,8 +98,13 @@ sscanf(const char *str, char const *fmt, ...)
 	int ret;
 	va_list ap;
 	FILE _strbuf;
+	struct __sfileext fext;
 
-	_strbuf._flags = _IOREAD|_IOSTRG;
+	_DIAGASSERT(str != NULL);
+	_DIAGASSERT(fmt != NULL);
+
+	_FILEEXT_SETUP(&_strbuf, &fext);
+	_strbuf._flags = __SRD|_IOREAD|_IOSTRG;
 	_strbuf._bf._base = _strbuf._p = __UNCONST(str);
 	_strbuf._bf._size = _strbuf._r = strlen(str);
 	_strbuf._read = eofread;
@@ -111,7 +121,12 @@ vsscanf(const char *str, const char *fmt, va_list ap)
 {
 	int ret;
 	FILE _strbuf;
+	struct __sfileext fext;
 
+	_DIAGASSERT(str != NULL);
+	_DIAGASSERT(fmt != NULL);
+
+	_FILEEXT_SETUP(&_strbuf, &fext);
 	_strbuf._flags = __SRD;
 	_strbuf._bf._base = _strbuf._p = __UNCONST(str);
 	_strbuf._bf._size = _strbuf._r = strlen(str);

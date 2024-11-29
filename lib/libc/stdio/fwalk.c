@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)fwalk.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -56,6 +57,8 @@ _fwalk(function)
 	register FILE *fp;
 	register int n, ret;
 	register struct glue *g;
+
+	_DIAGASSERT(function != NULL);
 
 	ret = 0;
 	for (g = &__sglue; g != NULL; g = g->next)

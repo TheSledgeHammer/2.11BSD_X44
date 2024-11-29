@@ -56,10 +56,14 @@ putw(w, fp)
 	struct __siov iov;
 	int r;
 
+	_DIAGASSERT(fp != NULL);
+
 	iov.iov_base = &w;
 	iov.iov_len = uio.uio_resid = sizeof(w);
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;
+	FLOCKFILE(fp);
 	r = __sfvwrite(fp, &uio);
-	return r;
+	FUNLOCKFILE(fp);
+	return (r);
 }

@@ -47,6 +47,8 @@ static char sccsid[] = "@(#)fread.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -64,6 +66,8 @@ fread(buf, size, count, fp)
 	register int r;
 	size_t total;
 
+	_DIAGASSERT(fp != NULL);
+
 	/*
 	 * The ANSI standard requires a return value of 0 for a count
 	 * or a size of 0.  Peculiarily, it imposes no such requirements
@@ -71,6 +75,10 @@ fread(buf, size, count, fp)
 	 */
 	if ((resid = count * size) == 0)
 		return (0);
+
+	_DIAGASSERT(buf != NULL);
+
+	FLOCKFILE(fp);
 	if (fp->_r < 0)
 		fp->_r = 0;
 	total = resid;
@@ -83,11 +91,13 @@ fread(buf, size, count, fp)
 		resid -= r;
 		if (__srefill(fp)) {
 			/* no more input: return partial result */
+			FUNLOCKFILE(fp);
 			return ((total - resid) / size);
 		}
 	}
 	(void)memcpy((void *)p, (void *)fp->_p, resid);
 	fp->_r -= resid;
 	fp->_p += resid;
+	FUNLOCKFILE(fp);
 	return (count);
 }

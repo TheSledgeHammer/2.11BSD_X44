@@ -50,7 +50,10 @@ fgetc(fp)
 {
 	int r;
 
-	r = __sgetc(fp);
+	_DIAGASSERT(fp != NULL);
 
+	FLOCKFILE(fp);
+	r = __sgetc(fp);
+	FUNLOCKFILE(fp);
 	return (r);
 }

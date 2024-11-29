@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)fflush.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -53,14 +54,19 @@ int
 fflush(fp)
 	register FILE *fp;
 {
+	int r;
 
 	if (fp == NULL)
 		return (_fwalk(__sflush));
+
+	FLOCKFILE(fp);
 	if ((fp->_flags & (__SWR | __SRW)) == 0) {
 		errno = EBADF;
 		return (EOF);
 	}
-	return (__sflush(fp));
+	r = __sflush(fp);
+	FUNLOCKFILE(fp);
+	return (r);
 }
 
 int
@@ -69,6 +75,8 @@ __sflush(fp)
 {
 	register unsigned char *p;
 	register int n, t;
+
+	_DIAGASSERT(fp != NULL);
 
 	t = fp->_flags;
 	if ((t & __SWR) == 0)
@@ -92,6 +100,9 @@ __sflush(fp)
 			fp->_flags |= __SERR;
 			return (EOF);
 		}
+	}
+	if (fp->_flush) {
+		return (*fp->_flush)(fp->_cookie);
 	}
 	return (0);
 }

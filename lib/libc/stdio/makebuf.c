@@ -45,9 +45,11 @@ static char sccsid[] = "@(#)makebuf.c	8.1 (Berkeley) 6/4/93";
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "reentrant.h"
 #include "local.h"
@@ -67,6 +69,8 @@ __smakebuf(fp)
 	register int flags;
 	size_t size;
 	int couldbetty;
+
+	_DIAGASSERT(fp != NULL);
 
 	if (fp->_flags & __SNBF) {
 		fp->_bf._base = fp->_p = fp->_nbuf;
@@ -99,6 +103,10 @@ __swhatbuf(fp, bufsize, couldbetty)
 	int *couldbetty;
 {
 	struct stat st;
+
+	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(bufsize != NULL);
+	_DIAGASSERT(couldbetty != NULL);
 
 	if (fp->_file < 0 || fstat(fp->_file, &st) < 0) {
 		*couldbetty = 0;

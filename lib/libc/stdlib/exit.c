@@ -40,6 +40,7 @@ static char sccsid[] = "@(#)exit.c	5.2 (Berkeley) 3/9/86";
 
 #include <stdlib.h>
 #include <unistd.h>
+
 #include "atexit.h"
 
 void (*__cleanup)();

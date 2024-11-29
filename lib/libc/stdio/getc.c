@@ -57,11 +57,21 @@ int
 getc(fp)
 	register FILE *fp;
 {
-	return (__sgetc(fp));
+	int r;
+
+	_DIAGASSERT(fp != NULL);
+
+	FLOCKFILE(fp);
+	r = __sgetc(fp);
+	FUNLOCKFILE(fp);
+	return (r);
 }
 
 int
-getc_unlocked(FILE *fp)
+getc_unlocked(fp)
+	FILE *fp;
 {
-	return (getc(fp));
+	_DIAGASSERT(fp != NULL);
+
+	return (__sgetc(fp));
 }

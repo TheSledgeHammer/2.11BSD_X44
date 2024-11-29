@@ -24,5 +24,5 @@ long
 mrand48(void)
 {
 	__dorand48(__rand48_seed);
-	return ((long) __rand48_seed[2] << 16) + (long) __rand48_seed[1];
+	return (((long) __rand48_seed[2] << 16) + (long) __rand48_seed[1]);
 }

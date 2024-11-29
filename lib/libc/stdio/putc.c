@@ -59,7 +59,14 @@ putc(c, fp)
 	int c;
 	register FILE *fp;
 {
-	return (__sputc(c, fp));
+	int r;
+
+	_DIAGASSERT(fp != NULL);
+
+	FLOCKFILE(fp);
+	r = __sputc(c, fp);
+	FUNLOCKFILE(fp);
+	return (r);
 }
 
 int
@@ -67,5 +74,7 @@ putc_unlocked(c, fp)
 	int c;
 	register FILE *fp;
 {
-	return (putc(c, fp));
+	_DIAGASSERT(fp != NULL);
+
+	return (__sputc(c, fp));
 }
