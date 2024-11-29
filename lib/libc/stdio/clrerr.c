@@ -54,9 +54,9 @@ void
 clearerr(iop)
 	register FILE *iop;
 {
-	_DIAGASSERT(fp != NULL);
+	_DIAGASSERT(iop != NULL);
 
-	FLOCKFILE(fp);
+	FLOCKFILE(iop);
 	iop->_flags &= ~(_IOERR|_IOEOF);
-	FUNLOCKFILE(fp);
+	FUNLOCKFILE(iop);
 }

@@ -42,6 +42,7 @@ static char sccsid[] = "@(#)ungetc.c	5.3 (Berkeley) 3/26/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>

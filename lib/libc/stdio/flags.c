@@ -43,6 +43,8 @@ static char sccsid[] = "@(#)flags.c	8.1 (Berkeley) 6/4/93";
 
 #include <sys/types.h>
 #include <sys/file.h>
+
+#include <assert.h>
 #include <stdio.h>
 #include <errno.h>
 
