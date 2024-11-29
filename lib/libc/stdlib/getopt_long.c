@@ -96,11 +96,11 @@ __weak_alias(getopt_long,_getopt_long)
 
 #define	EMSG	""
 
-static int getopt_internal (int, char * const *, const char *);
-static int gcd (int, int);
-static void permute_args (int, int, int, char * const *);
+static int getopt_internal(int, char **, const char *);
+static int gcd(int, int);
+static void permute_args(int, int, int, char **);
 
-static char *place = EMSG; /* option letter processing */
+static const char *place = EMSG; /* option letter processing */
 
 /* XXX: set optreset to 1 rather than these two */
 static int nonopt_start = -1; /* first non option argument (for permute) */
@@ -113,7 +113,6 @@ static const char ambig[] = "ambiguous option -- %.*s";
 static const char noarg[] = "option doesn't take an argument -- %.*s";
 static const char illoptchar[] = "unknown option -- %c";
 static const char illoptstring[] = "unknown option -- %s";
-
 
 /*
  * Compute the greatest common divisor of a and b.
@@ -145,7 +144,7 @@ permute_args(panonopt_start, panonopt_end, opt_end, nargv)
 	int panonopt_start;
 	int panonopt_end;
 	int opt_end;
-	char * const *nargv;
+	char **nargv;
 {
 	int cstart, cyclelen, i, j, ncycle, nnonopts, nopts, pos;
 	char *swap;
@@ -185,10 +184,10 @@ permute_args(panonopt_start, panonopt_end, opt_end, nargv)
 static int
 getopt_internal(nargc, nargv, options)
 	int nargc;
-	char * const *nargv;
+	char **nargv;
 	const char *options;
 {
-	char *oli;				/* option letter list index */
+	const char *oli;				/* option letter list index */
 	int optchar;
 
 	_DIAGASSERT(nargv != NULL);
@@ -301,7 +300,7 @@ start:
 	} else {				/* takes (optional) argument */
 		optarg = NULL;
 		if (*place)			/* no white space */
-			optarg = place;
+			optarg = __UNCONST(place);
 		/* XXX: disable test for :: if PC? (GNU doesn't) */
 		else if (oli[1] != ':') {	/* arg not optional */
 			if (++optind >= nargc) {	/* no arg */
@@ -338,7 +337,7 @@ getopt(nargc, nargv, options)
 	_DIAGASSERT(nargv != NULL);
 	_DIAGASSERT(options != NULL);
 
-	if ((retval = getopt_internal(nargc, nargv, options)) == -2) {
+	if ((retval = getopt_internal(nargc, __UNCONST(nargv), options)) == -2) {
 		++optind;
 		/*
 		 * We found an option (--), so if we skipped non-options,
@@ -346,7 +345,7 @@ getopt(nargc, nargv, options)
 		 */
 		if (nonopt_end != -1) {
 			permute_args(nonopt_start, nonopt_end, optind,
-				       nargv);
+				       __UNCONST(nargv));
 			optind -= nonopt_end - nonopt_start;
 		}
 		nonopt_start = nonopt_end = -1;
@@ -375,12 +374,12 @@ getopt_long(nargc, nargv, options, long_options, idx)
 	_DIAGASSERT(long_options != NULL);
 	/* idx may be NULL */
 
-	if ((retval = getopt_internal(nargc, nargv, options)) == -2) {
+	if ((retval = getopt_internal(nargc, __UNCONST(nargv), options)) == -2) {
 		char *current_argv, *has_equal;
 		size_t current_argv_len;
 		int i, match;
 
-		current_argv = place;
+		current_argv = __UNCONST(place);
 		match = -1;
 
 		optind++;
@@ -393,7 +392,7 @@ getopt_long(nargc, nargv, options, long_options, idx)
 			 */
 			if (nonopt_end != -1) {
 				permute_args(nonopt_start, nonopt_end,
-				    optind, nargv);
+				    optind, __UNCONST(nargv));
 				optind -= nonopt_end - nonopt_start;
 			}
 			nonopt_start = nonopt_end = -1;

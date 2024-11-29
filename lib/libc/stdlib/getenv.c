@@ -49,13 +49,14 @@ __RCSID("$NetBSD: getenv.c,v 1.17 2003/08/07 16:43:39 agc Exp $");
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "local.h"
-#include "reentrant.h"
+//#include "local.h"
+//#include "reentrant.h"
 
 extern char **environ;
 
-char *__findenv(const char *, int);
+char *__findenv(const char *, int *);
 
 /*
  * getenv(name) --

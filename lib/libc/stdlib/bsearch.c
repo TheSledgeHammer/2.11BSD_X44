@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)bsearch.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -69,13 +70,17 @@ bsearch(key, base0, nmemb, size, compar)
 	register int cmp;
 	register const void *p;
 
+	_DIAGASSERT(key != NULL);
+	_DIAGASSERT(base0 != NULL || nmemb == 0);
+	_DIAGASSERT(compar != NULL);
+
 	for (lim = nmemb; lim != 0; lim >>= 1) {
 		p = base + (lim >> 1) * size;
 		cmp = (*compar)(key, p);
 		if (cmp == 0)
-			return ((void *)p);
+			return (__UNCONST(p));
 		if (cmp > 0) {	/* key > p: move right */
-			base = (char *)p + size;
+			base = (const char *)p + size;
 			lim--;
 		}		/* else move left */
 	}

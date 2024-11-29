@@ -38,10 +38,14 @@ static char sccsid[] = "@(#)getopt.c	8.2.1 (2.11BSD) 1996/1/11";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <stddef.h>
+#include "namespace.h"
+
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int		opterr = 1,		/* if error message should be printed */
 		optind = 1,		/* index into parent argv vector */
@@ -60,32 +64,32 @@ char	*optarg;		/* argument associated with option */
 int
 getopt(nargc, nargv, ostr)
 	int nargc;
-	char **nargv;
-	char *ostr;
+	char * const *nargv;
+	const char *ostr;
 {
-	static char *place = EMSG;		/* option letter processing */
+	static const char *place = EMSG;		/* option letter processing */
 	char *oli;				/* option letter list index */
 
 	if (optreset || !*place) {		/* update scanning pointer */
 		optreset = 0;
 		if (optind >= nargc || *(place = nargv[optind]) != '-') {
 			place = EMSG;
-			return (EOF);
+			return (-1);
 		}
 		if (place[1] && *++place == '-') {	/* found "--" */
 			++optind;
 			place = EMSG;
-			return (EOF);
+			return (-1);
 		}
 	}					/* option letter okay? */
 	if ((optopt = (int)*place++) == (int)':' ||
 	    !(oli = strchr(ostr, optopt))) {
 		/*
 		 * if the user didn't specify '-' as an option,
-		 * assume it means EOF.
+		 * assume it means -1.
 		 */
 		if (optopt == (int)'-')
-			return (EOF);
+			return (-1);
 		if (!*place)
 			++optind;
 		if (opterr && *ostr != ':')
@@ -100,7 +104,7 @@ getopt(nargc, nargv, ostr)
 	}
 	else {					/* need an argument */
 		if (*place)			/* no white space */
-			optarg = place;
+			optarg = __UNCONST(place);
 		else if (nargc <= ++optind) {	/* no arg */
 			place = EMSG;
 			if (*ostr == ':')
@@ -108,7 +112,7 @@ getopt(nargc, nargv, ostr)
 			if (opterr)
 				(void)fprintf(stderr,
 				    "%s: option requires an argument -- %c\n",
-					getprogname(), optopt);
+				    getprogname(), optopt);
 			return (BADCH);
 		}
 	 	else				/* white space */

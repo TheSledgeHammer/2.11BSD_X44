@@ -45,12 +45,14 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 __RCSID("$NetBSD: hcreate.c,v 1.13 2022/03/13 01:44:37 kre Exp $");
 #endif /* LIBC_SCCS and not lint */
-
 #if !defined(lint)
+#if 0
 __COPYRIGHT("@(#) Copyright (c) 2001\ Christopher G. Demetriou.  All rights reserved.");
+#endif
 #endif /* not lint */
 
 #include "namespace.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>

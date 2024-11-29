@@ -8,8 +8,9 @@ static char sccsid[] = "@(#)atoi.c	5.2 (Berkeley) 3/9/86";
 #include <stdlib.h>
 #include <stddef.h>
 
+int
 atoi(p)
-	register char *p;
+	register const char *p;
 {
 	register int n;
 	register int f;

@@ -38,12 +38,16 @@ static char sccsid[] = "@(#)exit.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "reentrant.h"
 #include "atexit.h"
 
-void (*__cleanup)();
+extern void (*__cleanup)(void);
+//void (*__cleanup)();
 
 /*
  * Exit, flushing stdio buffers if necessary.
@@ -63,7 +67,5 @@ exit(code)
 	if (__cleanup) {
 		(*__cleanup)();
 	}
-
-	_cleanup();
 	_exit(code);
 }

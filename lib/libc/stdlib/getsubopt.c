@@ -42,6 +42,8 @@ __RCSID("$NetBSD: getsubopt.c,v 1.7 2003/08/07 16:43:40 agc Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

@@ -43,7 +43,7 @@ static char sccsid[] = "@(#)atol.c	5.2 (Berkeley) 3/9/86";
 
 long
 atol(p)
-	register char *p;
+	register const char *p;
 {
 	long n;
 	register int f;
@@ -64,7 +64,7 @@ atol(p)
 	}
 	while(*p >= '0' && *p <= '9')
 		n = n*10 + *p++ - '0';
-	return(f? -n: n);
+	return (f? -n: n);
 
 	//return(strtol(p, (char **)NULL, 10));
 }

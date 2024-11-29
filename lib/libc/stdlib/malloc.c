@@ -49,6 +49,8 @@ static char sccsid[] = "@(#)malloc.c	8.1 (Berkeley) 6/4/93";
  * This is designed for use in a virtual memory environment.
  */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 
 #include <stdlib.h>
@@ -369,7 +371,7 @@ realloc(cp, nbytes)
  * header starts at ``freep''.  If srchlen is -1 search the whole list.
  * Return bucket number, or -1 if not found.
  */
-static
+static int
 findbucket(freep, srchlen)
 	union overhead *freep;
 	int srchlen;
@@ -396,6 +398,7 @@ findbucket(freep, srchlen)
  * for each size category, the second showing the number of mallocs -
  * frees for each size category.
  */
+void
 mstats(s)
 	char *s;
 {

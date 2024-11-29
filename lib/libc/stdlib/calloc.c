@@ -45,15 +45,15 @@ static char sccsid[] = "@(#)calloc.c	8.1 (Berkeley) 6/4/93";
 /*
  * Calloc - allocate and clear memory block
  */
-char *
+void *
 calloc(num, size)
 	size_t num;
 	register size_t size;
 {
-	register char *p;
+	register void *p;
 
 	size *= num;
-	if (p == malloc(size)) {
+	if ((p = malloc(size))) {
 		bzero(p, size);
 	}
 	return (p);
