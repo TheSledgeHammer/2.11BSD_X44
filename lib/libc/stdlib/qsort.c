@@ -30,7 +30,7 @@ static  int		(*qcmp)(const void *, const void *);		/* the comparison routine */
 static  int		qsz;			/* size of each record */
 static  int		thresh;			/* THRESHold in chars */
 static  int		mthresh;		/* MTHRESHold in chars */
-static  void    qst(char *, char *);
+static  void    	qst(char *, char *);
 
 
 /*
@@ -45,14 +45,14 @@ qsort(a, n, size, compar)
 	size_t n, size;
 	int	(*compar)(const void *, const void *);
 {
-    register char *base;
+    	register char *base;
 	register char c, *i, *j, *lo, *hi;
 	char *min, *max;
 
-    base = (char *)a;
+    	base = (char *)a;
 	if (n <= 1) {
 		return;
-    }
+    	}
 
 	qsz = size;
 	qcmp = compar;
