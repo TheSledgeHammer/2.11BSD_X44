@@ -92,11 +92,10 @@ unsetenv(name)
 	register char **P;
 	int	offset;
     
-    if (name == NULL) {
+    	if (name == NULL) {
    		errno = EINVAL;
 		return (-1);
-    }
-
+    	}
 	while (__findenv(name, &offset)) {	/* if set multiple times */
 		for (P = &environ[offset];; ++P) {
 			if (!(*P = *(P + 1))) {
@@ -104,5 +103,5 @@ unsetenv(name)
 			}
 		}
 	}
-    return (0);
+    	return (0);
 }
