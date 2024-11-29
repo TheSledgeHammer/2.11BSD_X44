@@ -277,6 +277,7 @@ long long strsuftoll(const char *, const char *, long long, long long);
 	/* LONGLONG */
 long long strsuftollx(const char *, const char *, long long, long long, char *, size_t);
 
+int	 l64a_r(long, char *, int);
 
 size_t	 shquote(const char *, char *, size_t);
 //size_t shquotev(int, char * const *, char *, size_t);
