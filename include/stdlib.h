@@ -281,12 +281,14 @@ long long strsuftoll(const char *, const char *, long long, long long);
 long long strsuftollx(const char *, const char *, long long, long long, char *, size_t);
 
 
-size_t		shquote(const char *, char *, size_t);
-//size_t		shquotev(int, char * const *, char *, size_t);
+size_t	 shquote(const char *, char *, size_t);
+//size_t shquotev(int, char * const *, char *, size_t);
 
-u_int32_t 	arc4random(void);
-void	 	arc4random_stir(void);
-void	 	arc4random_addrandom(u_char *, int);
+int	 reallocarr(void *, size_t, size_t);
+
+u_int32_t arc4random(void);
+void	  arc4random_stir(void);
+void	  arc4random_addrandom(u_char *, int);
 
 #endif /* __BSD_VISIBLE */
 #endif /* _POSIX_C_SOURCE || _XOPEN_SOURCE || __BSD_VISIBLE */
