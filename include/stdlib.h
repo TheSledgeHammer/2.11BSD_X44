@@ -142,7 +142,7 @@ void	ltol3(char *, long *, int);
 /* convert 3-byte disk addresses to longs */
 void 	l3tol(long *, char *, int);
 
-int	 	mblen(const char *, size_t);
+int	mblen(const char *, size_t);
 size_t	mbstowcs(wchar_t * __restrict, const char * __restrict, size_t);
 int	wctomb(char *, wchar_t);
 int	mbtowc(wchar_t * __restrict, const char * __restrict, size_t);
