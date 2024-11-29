@@ -16,9 +16,10 @@ static char sccsid[] = "@(#)setenv.c	1.3 (Berkeley) 6/16/87";
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern char	**environ;
-extern char *__findenv(const char *, int);
+extern char *__findenv(const char *, int *);
 
 /*
  * setenv(name,value,rewrite)
@@ -84,12 +85,17 @@ setenv(name, value, rewrite)
  * unsetenv(name) --
  *	Delete environmental variable "name".
  */
-void
+int
 unsetenv(name)
 	const char *name;
 {
 	register char **P;
 	int	offset;
+    
+    if (name == NULL) {
+   		errno = EINVAL;
+		return (-1);
+    }
 
 	while (__findenv(name, &offset)) {	/* if set multiple times */
 		for (P = &environ[offset];; ++P) {
@@ -98,4 +104,5 @@ unsetenv(name)
 			}
 		}
 	}
+    return (0);
 }

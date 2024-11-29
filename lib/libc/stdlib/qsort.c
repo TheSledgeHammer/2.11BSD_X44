@@ -23,13 +23,15 @@ static char sccsid[] = "@(#)qsort.c	5.2 (Berkeley) 3/9/86";
  * The MTHREShold is where we stop finding a better median.
  */
 
-#define		THRESH		4		/* threshold for insertion */
-#define		MTHRESH		6		/* threshold for median */
+#define	THRESH		4		/* threshold for insertion */
+#define	MTHRESH		6		/* threshold for median */
 
-static  int		(*qcmp)();		/* the comparison routine */
+static  int		(*qcmp)(const void *, const void *);		/* the comparison routine */
 static  int		qsz;			/* size of each record */
 static  int		thresh;			/* THRESHold in chars */
 static  int		mthresh;		/* MTHRESHold in chars */
+static  void    qst(char *, char *);
+
 
 /*
  * qsort:
@@ -38,22 +40,26 @@ static  int		mthresh;		/* MTHRESHold in chars */
  * It's not...
  */
 void
-qsort(base, n, size, compar)
-	char	*base;
-	int	n;
-	int	size;
-	int	(*compar)();
+qsort(a, n, size, compar)
+	void *a;
+	size_t n, size;
+	int	(*compar)(const void *, const void *);
 {
+    register char *base;
 	register char c, *i, *j, *lo, *hi;
 	char *min, *max;
 
-	if (n <= 1)
+    base = (char *)a;
+	if (n <= 1) {
 		return;
+    }
+
 	qsz = size;
 	qcmp = compar;
 	thresh = qsz * THRESH;
 	mthresh = qsz * MTHRESH;
 	max = base + n * qsz;
+
 	if (n >= THRESH) {
 		qst(base, max);
 		hi = base + thresh;
@@ -113,7 +119,7 @@ qsort(base, n, size, compar)
  * (And there are only three places where this is done).
  */
 
-static
+static void
 qst(base, max)
 	char *base, *max;
 {
