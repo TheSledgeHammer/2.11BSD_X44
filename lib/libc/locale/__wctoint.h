@@ -28,6 +28,8 @@
  *	$Citrus: xpg4dl/FreeBSD/lib/libc/locale/__wctoint.h,v 1.1 2001/09/21 13:52:32 yamt Exp $
  */
 
+#ifndef __WCTOINT_H_
+#define __WCTOINT_H_
 
 __inline static int
 __wctoint(wchar_t wc)
@@ -77,3 +79,5 @@ __wctoint(wchar_t wc)
 
 	return n;
 }
+
+#endif /* __WCTOINT_H_ */

@@ -57,7 +57,7 @@ setenv(name, value, rewrite)
 			environ = (char**) realloc((char*) environ,
 					(u_int) (sizeof(char*) * (cnt + 2)));
 			if (!environ) {
-				return(-1);
+				return (-1);
 			}
 		} else {
 			alloced = 1; /* copy old entries into it */
@@ -90,18 +90,18 @@ unsetenv(name)
 	const char *name;
 {
 	register char **P;
-	int	offset;
-    
-    	if (name == NULL) {
-   		errno = EINVAL;
+	int offset;
+
+	if (name == NULL) {
+		errno = EINVAL;
 		return (-1);
-    	}
-	while (__findenv(name, &offset)) {	/* if set multiple times */
+	}
+	while (__findenv(name, &offset)) { /* if set multiple times */
 		for (P = &environ[offset];; ++P) {
 			if (!(*P = *(P + 1))) {
 				break;
 			}
 		}
 	}
-    	return (0);
+	return (0);
 }

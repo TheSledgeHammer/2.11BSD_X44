@@ -56,14 +56,74 @@ __RCSID("$NetBSD: strtoi.c,v 1.3 2019/11/28 12:33:23 roy Exp $");
 #include <errno.h>
 #include <inttypes.h>
 #endif
-
+/*
 #define	_FUNCNAME	strtoi
 #define	__TYPE		intmax_t
 #define	__WRAPPED	strtoimax
 
 #include "_strtoi.h"
-
+*/
 #ifdef _LIBC
 __weak_alias(strtoi, _strtoi)
-__weak_alias(strtoi_l, _strtoi_l)
+//__weak_alias(strtoi_l, _strtoi_l)
 #endif
+
+intmax_t
+strtoi(nptr, endptr, base, lo, hi, rstatus)
+	const char *nptr;
+	char **endptr;
+	intmax_t lo, hi;
+	int base, *rstatus;
+{
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+	int serrno;
+#endif
+	intmax_t im;
+	char *ep;
+	int rep;
+
+	_DIAGASSERT(hi >= lo);
+
+	_DIAGASSERT(nptr != NULL);
+	/* endptr may be NULL */
+
+	if (endptr == NULL)
+		endptr = &ep;
+
+	if (rstatus == NULL)
+		rstatus = &rep;
+
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+	serrno = errno;
+	errno = 0;
+#endif
+
+	im = strtoimax(nptr, endptr, base);
+
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+	*rstatus = errno;
+	errno = serrno;
+#endif
+
+	if (*rstatus == 0) {
+		/* No digits were found */
+		if (nptr == *endptr)
+			*rstatus = ECANCELED;
+		/* There are further characters after number */
+		else if (**endptr != '\0')
+			*rstatus = ENOTSUP;
+	}
+
+	if (im < lo) {
+		if (*rstatus == 0)
+			*rstatus = ERANGE;
+		return (lo);
+	}
+	if (im > hi) {
+		if (*rstatus == 0)
+			*rstatus = ERANGE;
+		return (hi);
+	}
+
+	return (im);
+}

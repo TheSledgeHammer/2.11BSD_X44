@@ -57,7 +57,7 @@ __weak_alias(strtoumax, _strtoumax)
  * alphabets and digits are each contiguous.
  */
 uintmax_t
-_strtoumax(nptr, endptr, base)
+strtoumax(nptr, endptr, base)
 	const char *nptr;
 	char **endptr;
 	int base;
@@ -123,14 +123,4 @@ _strtoumax(nptr, endptr, base)
 		/* LINTED interface specification */
 		*endptr = (char *)(any ? s - 1 : nptr);
 	return (acc);
-}
-
-uintmax_t
-strtoumax(nptr, endptr, base)
-	const char *nptr;
-	char **endptr;
-	int base;
-{
-
-	return _strtoumax(nptr, endptr, base);
 }

@@ -34,6 +34,9 @@
  * NetBSD: wcstoul.c,v 1.1 2001/09/27 16:30:37 yamt Exp
  */
 
+#ifndef __WCSTOUL_H_
+#define __WCSTOUL_H_
+
 /*
  * function template for wcstoul, wcstoull and wcstoumax.
  *
@@ -119,3 +122,5 @@ _FUNCNAME(nptr, endptr, base)
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
 }
+
+#endif /* __WCSTOUL_H_ */

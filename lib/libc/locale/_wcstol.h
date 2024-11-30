@@ -34,6 +34,9 @@
  * Citrus: xpg4dl/FreeBSD/lib/libc/locale/wcstol.c,v 1.2 2001/09/21 16:11:41 yamt Exp
  */
 
+#ifndef __WCSTOL_H_
+#define __WCSTOL_H_
+
 /*
  * function template for wcstol, wcstoll and wcstoimax.
  *
@@ -143,3 +146,5 @@ _FUNCNAME(nptr, endptr, base)
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
 }
+
+#endif /* __WCSTOL_H_ */
