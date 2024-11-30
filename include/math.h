@@ -27,18 +27,18 @@ union __long_double_u {
 };
 
 #ifdef __HAVE_LONG_DOUBLE
-#define	__fpmacro_unary_floating(__name, __arg0)	\
-	/* LINTED */							        \
+#define	__fpmacro_unary_floating(__name, __arg0)		\
+	/* LINTED */						\
 	((sizeof (__arg0) == sizeof (float))			\
-	?	__ ## __name ## f (__arg0)				    \
+	?	__ ## __name ## f (__arg0)			\
 	: (sizeof (__arg0) == sizeof (double))			\
-	?	__ ## __name ## d (__arg0)				    \
+	?	__ ## __name ## d (__arg0)			\
 	:	__ ## __name ## l (__arg0))
 #else
-#define	__fpmacro_unary_floating(__name, __arg0)	\
-	/* LINTED */							        \
+#define	__fpmacro_unary_floating(__name, __arg0)		\
+	/* LINTED */						\
 	((sizeof (__arg0) == sizeof (float))			\
-	?	__ ## __name ## f (__arg0)				    \
+	?	__ ## __name ## f (__arg0)			\
 	:	__ ## __name ## d (__arg0))
 #endif /* __HAVE_LONG_DOUBLE */
 
@@ -94,7 +94,7 @@ extern __const union __float_u __nanf;
  * XOPEN/SVID
  */
 #if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
-#define	M_E		    2.7182818284590452354	/* e */
+#define	M_E		2.7182818284590452354	/* e */
 #define	M_LOG2E		1.4426950408889634074	/* log 2e */
 #define	M_LOG10E	0.43429448190325182765	/* log 10e */
 #define	M_LN2		0.69314718055994530942	/* log e2 */
