@@ -165,13 +165,20 @@ extern int				errno;	/* global error number */
 /* Wide/multibyte-character handling, ISO/IEC 9899/AMD1:1995 */
 #define	EILSEQ		    84		/* Illegal byte sequence */
 
-#define	ELAST			84		/* Must be equal largest errno */
+/* From IEEE Std 1003.1-2001 */
+/* Base, Realtime, Threads or Thread Priority Scheduling option errors */
+#define ENOTSUP		    85		/* Not supported */
+
+/* Realtime option errors */
+#define ECANCELED	    86		/* Operation canceled */
+
+#define	ELAST			    86		/* Must be equal largest errno */
 
 #ifdef	_KERNEL
 /* pseudo-errors returned inside kernel to modify return back to user mode */
-#define	ERESTART		-1		/* restart syscall */
+#define	ERESTART		  -1		/* restart syscall */
 #define	EJUSTRETURN		-2		/* don't modify regs, just return */
-#define	ENOIOCTL		-3		/* ioctl not handled by this layer (aka EPASSTHROUGH) */
+#define	ENOIOCTL		  -3		/* ioctl not handled by this layer (aka EPASSTHROUGH) */
 #define EPASSTHROUGH	ENOIOCTL
 #endif
 
