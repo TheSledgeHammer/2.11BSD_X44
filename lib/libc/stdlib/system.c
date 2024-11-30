@@ -59,7 +59,7 @@ system(command)
 	union wait pstat;
 	register int pid;
 	sigset_t omask, nmask;
-	int (*intsave)(), (*quitsave)();
+    sig_t intsave, quitsave;
 
 	if (!command)		/* just checking... */
 		return(1);

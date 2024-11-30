@@ -176,7 +176,7 @@ strtoll(nptr, endptr, base)
 	}
 	if (endptr != 0)
 		/* LINTED interface specification */
-		*endptr = (char *)(any ? s - 1 : nptr);
+		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
 }
 #endif

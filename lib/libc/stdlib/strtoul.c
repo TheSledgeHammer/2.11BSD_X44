@@ -51,11 +51,11 @@ static char sccsid[] = "@(#)strtoul.c	8.1.1 (2.11BSD) 1996/1/11";
  */
 unsigned long
 strtoul(nptr, endptr, base)
-	char *nptr;
+	const char *nptr;
 	char **endptr;
 	register int base;
 {
-	register char *s = nptr;
+	register const char *s = nptr;
 	register unsigned long acc;
 	register int c;
 	register unsigned long cutoff;
@@ -105,6 +105,6 @@ strtoul(nptr, endptr, base)
 	} else if (neg)
 		acc = -acc;
 	if (endptr != 0)
-		*endptr = (char *)(any ? s - 1 : nptr);
+		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
 }
