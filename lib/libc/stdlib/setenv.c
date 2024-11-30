@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)setenv.c	1.3 (Berkeley) 6/16/87";
 
 #include <sys/types.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>

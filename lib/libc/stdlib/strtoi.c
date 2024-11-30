@@ -30,7 +30,7 @@
  * NetBSD: src/common/lib/libc/stdlib/strtoul.c,v 1.3 2008/08/20 19:58:34 oster Exp
  */
 
-#if defined(HAVE_NBTOOL_CONFIG_H) && HAVE_NBTOOL_CONFIG_H
+#if HAVE_NBTOOL_CONFIG_H
 #include "nbtool_config.h"
 #endif
 
@@ -41,32 +41,17 @@ __RCSID("$NetBSD: strtoi.c,v 1.3 2019/11/28 12:33:23 roy Exp $");
 #include "namespace.h"
 #endif
 
-#if defined(_KERNEL)
-#include <sys/param.h>
-#include <sys/types.h>
-#include <lib/libkern/libkern.h>
-#elif defined(_STANDALONE)
-#include <sys/param.h>
-#include <sys/types.h>
-#include <lib/libkern/libkern.h>
-#include <lib/libsa/stand.h>
-#else
 #include <stddef.h>
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
-#endif
-/*
-#define	_FUNCNAME	strtoi
-#define	__TYPE		intmax_t
-#define	__WRAPPED	strtoimax
 
-#include "_strtoi.h"
-*/
 #ifdef _LIBC
 __weak_alias(strtoi, _strtoi)
 //__weak_alias(strtoi_l, _strtoi_l)
 #endif
+
+#if !HAVE_DECL_STRTOI
 
 intmax_t
 strtoi(nptr, endptr, base, lo, hi, rstatus)
@@ -75,9 +60,7 @@ strtoi(nptr, endptr, base, lo, hi, rstatus)
 	intmax_t lo, hi;
 	int base, *rstatus;
 {
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 	int serrno;
-#endif
 	intmax_t im;
 	char *ep;
 	int rep;
@@ -93,17 +76,13 @@ strtoi(nptr, endptr, base, lo, hi, rstatus)
 	if (rstatus == NULL)
 		rstatus = &rep;
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 	serrno = errno;
 	errno = 0;
-#endif
 
 	im = strtoimax(nptr, endptr, base);
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 	*rstatus = errno;
 	errno = serrno;
-#endif
 
 	if (*rstatus == 0) {
 		/* No digits were found */
@@ -127,3 +106,5 @@ strtoi(nptr, endptr, base, lo, hi, rstatus)
 
 	return (im);
 }
+
+#endif

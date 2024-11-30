@@ -59,7 +59,7 @@ __weak_alias(strtoll, _strtoll)
 #endif
 #endif
 
-#if !HAVE_STRTOLL
+#if !HAVE_DECL_STRTOLL
 /*
  * Convert a string to a long long integer.
  *
