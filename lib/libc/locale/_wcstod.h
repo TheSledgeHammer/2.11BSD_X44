@@ -79,8 +79,9 @@ _FUNCNAME(nptr, endptr)
 	}
 	if (wcschr(_L("Ee"), *src)) {
 		src++;
-		if (wcschr(_L("+-"), *src))
-		src++;
+		if (wcschr(_L("+-"), *src)) {
+			src++;
+		}
 		size = wcsspn(src, _L("0123456789"));
 		src += size;
 	}
@@ -115,7 +116,7 @@ _FUNCNAME(nptr, endptr)
 			/* XXX should not happen */
 			free(buf);
 			errno = EILSEQ;
-			return 0;
+			return (0);
 		}
 
 		buf[size] = 0;
