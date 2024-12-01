@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)strerror.c	8.1.1 (2.11BSD) 1996/3/15";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <errlst.h>
 #include <string.h>
 #include <limits.h>
 
@@ -56,7 +57,7 @@ strerror(num)
 	if (errnum < sys_nerr) {
 		return (syserrlst(errnum));
 	}
-	if (p == syserrlst(errnum)) {
+	if ((p = syserrlst(errnum))) {
 		return (p);
 	}
 

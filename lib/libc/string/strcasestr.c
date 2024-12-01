@@ -65,5 +65,5 @@ strcasestr(const char *s, const char *find)
 		} while (strncasecmp(s, find, len) != 0);
 		s--;
 	}
-	return ((char *)s);
+	return (__UNCONST(s));
 }

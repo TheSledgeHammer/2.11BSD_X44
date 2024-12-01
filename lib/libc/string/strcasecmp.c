@@ -1,4 +1,36 @@
 /*
+ * Copyright (c) 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+/*
  * Copyright (c) 1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
@@ -12,6 +44,7 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
 static char sccsid[] = "@(#)strcasecmp.c	1.2 (Berkeley) 7/2/87";
+static char sccsid[] = "@(#)strcasecmp.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
@@ -29,12 +62,13 @@ __weak_alias(strncasecmp,_strncasecmp)
 #include <lib/libkern/libkern.h>
 #include <machine/limits.h>
 #endif
+
 /*
  * This array is designed for mapping upper and lower case letter
  * together for a case independent comparison.  The mappings are
  * based upon ascii character sequences.
  */
-static char charmap[] = {
+static const u_char charmap[] = {
 	'\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007',
 	'\010', '\011', '\012', '\013', '\014', '\015', '\016', '\017',
 	'\020', '\021', '\022', '\023', '\024', '\025', '\026', '\027',
@@ -73,12 +107,15 @@ int
 strcasecmp(s1, s2)
 	const char *s1, *s2;
 {
-	register char *cm = charmap;
+	register const unsigned char *cm, *us1, *us2;
 
-	while (cm[*s1] == cm[*s2++])
-		if (*s1++ == '\0')
+    cm = charmap;
+    us1 = (const unsigned char *)s1;
+    us2 = (const unsigned char *)s2;
+	while (cm[*us1] == cm[*us2++])
+		if (*us1++ == '\0')
 			return (0);
-	return (cm[*s1] - cm[*--s2]);
+	return (cm[*us1] - cm[*--us2]);
 }
 
 int
@@ -86,10 +123,13 @@ strncasecmp(s1, s2, n)
 	const char *s1, *s2;
 	register size_t n;
 {
-	register char *cm = charmap;
+	register const unsigned char *cm, *us1, *us2;
 
-	while (--n >= 0 && cm[*s1] == cm[*s2++])
-		if (*s1++ == '\0')
+    cm = charmap;
+    us1 = (const unsigned char *)s1;
+    us2 = (const unsigned char *)s2;
+	while (--n >= 0 && cm[*us1] == cm[*us2++])
+		if (*us1++ == '\0')
 			return (0);
-	return (n < 0 ? 0 : cm[*s1] - cm[*--s2]);
+	return (n < 0 ? 0 : cm[*us1] - cm[*--us2]);
 }

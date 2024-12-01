@@ -30,10 +30,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)strmode.c	8.3 (Berkeley) 8/15/94";
+#endif
 #endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>

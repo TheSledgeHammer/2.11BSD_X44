@@ -13,6 +13,8 @@ static char sccsid[] = "@(#)bcmp.c	1.1 (Berkeley) 1/19/87";
 
 #include <string.h>
 
+int __bcmp(const char *, const char *, unsigned int);
+
 /*
  * bcmp -- vax cmpc3 instruction
  */

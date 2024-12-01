@@ -38,10 +38,10 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
 static char sccsid[] = "@(#)strcspn.c	8.1.1 (2.11BSD) 1996/1/11";
+static char sccsid[] = "@(#)strcspn.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <assert.h>
 #include <string.h>
 
 /*
@@ -49,10 +49,9 @@ static char sccsid[] = "@(#)strcspn.c	8.1.1 (2.11BSD) 1996/1/11";
  */
 size_t
 strcspn(s1, s2)
-	char *s1;
-	char *s2;
+	const char *s1, *s2;
 {
-	register char *p, *spanp;
+	register const char *p, *spanp;
 	register char c, sc;
 
 	/*

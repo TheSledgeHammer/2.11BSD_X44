@@ -13,9 +13,13 @@ static char sccsid[] = "@(#)ffs.c	1.1 (Berkeley) 1/19/87";
 
 #include <string.h>
 
+/* #undef ffs() - might be defined as macro to __builtin_ffs() */
+#undef ffs
+
 /*
  * ffs -- vax ffs instruction
  */
+int
 ffs(mask)
 	register long mask;
 {

@@ -16,6 +16,8 @@ __weak_alias(explicit_bzero, _explicit_bzero)
 __weak_alias(explicit_memset, _explicit_memset)
 #endif
 
+void __explicit_bzero_hook(void *, size_t);
+
 __attribute__((weak)) void
 __explicit_bzero_hook(void *buf, size_t len)
 {
@@ -38,5 +40,5 @@ void * (*volatile explicit_memset_impl)(void*, int, size_t) = memset;
 void *
 explicit_memset(void *b, int c, size_t len)
 {
-	return ((*explicit_memset_impl)(buf, c, len));
+	return ((*explicit_memset_impl)(b, c, len));
 }
