@@ -33,13 +33,21 @@ typedef	_BSD_SIZE_T_	size_t;
 
 #include <sys/cdefs.h>
 
+#include <machine/types.h>
+
 __BEGIN_DECLS
+#if defined(__BSD_VISIBLE) || \
+    (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE - 0 < 700)
 int	 	bcmp(const void *, const void *, size_t);
 void	bcopy(const void *, void *, size_t);
 void	bzero(void *, size_t);
+#endif
 int	 	ffs(int);
+#if defined(__BSD_VISIBLE) || \
+    (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE - 0 < 700)
 char	*index(const char *, int);
 char	*rindex(const char *, int);
+#endif
 int	 	strcasecmp(const char *, const char *);
 int	 	strncasecmp(const char *, const char *, size_t);
 __END_DECLS
