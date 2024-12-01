@@ -49,7 +49,7 @@ static char sccsid[] = "@(#)strstr.c	8.1.1 (2.11BSD) 1996/1/15";
  */
 char *
 strstr(s, find)
-	register char *s, *find;
+	register const char *s, *find;
 {
 	register char c;
 	char	sc;
@@ -65,5 +65,5 @@ strstr(s, find)
 		} while (strncmp(s, find, len) != 0);
 		s--;
 	}
-	return ((char *)s);
+	return (__UNCONST(s));
 }

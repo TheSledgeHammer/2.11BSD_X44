@@ -45,9 +45,9 @@ static char sccsid[] = "@(#)strtok.c	8.1.1 (2.11BSD) 1996/1/11";
 char *
 strtok(s, delim)
 	register char *s;
-	const  char *delim;
+	const char *delim;
 {
-	const  char *spanp;
+	char *spanp;
 	int c, sc;
 	char *tok;
 	static char *last;
@@ -61,7 +61,7 @@ strtok(s, delim)
 	 */
 cont:
 	c = *s++;
-	for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
+	for (spanp = __UNCONST(delim); (sc = *spanp++) != 0;) {
 		if (c == sc)
 			goto cont;
 	}
@@ -78,7 +78,7 @@ cont:
 	 */
 	for (;;) {
 		c = *s++;
-		spanp = (char *)delim;
+		spanp = __UNCONST(delim);
 		do {
 			if ((sc = *spanp++) == c) {
 				if (c == 0)

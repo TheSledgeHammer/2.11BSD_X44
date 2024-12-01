@@ -38,7 +38,6 @@ static char sccsid[] = "@(#)strspn.c	8.1.1 (2.11BSD) 1996/1/11";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
 #include <string.h>
 
 /*
@@ -49,7 +48,7 @@ strspn(s1, s2)
 	const char *s1;
 	const char *s2;
 {
-	register char *p = s1, *spanp;
+	register const char *p = s1, *spanp;
 	register char c, sc;
 
 	/*
