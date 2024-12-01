@@ -211,6 +211,7 @@ int	 			sethostname(const char *, size_t);
 int	 			setkey(const char *);
 int	 			setlogin(const char *);
 void			*setmode(const char *);
+void            strmode(mode_t, char *);
 #ifndef __STRSIGNAL_DECLARED
 #define __STRSIGNAL_DECLARED
 /* backwards-compatibility; also in string.h */
