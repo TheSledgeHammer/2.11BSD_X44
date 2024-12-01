@@ -12,6 +12,12 @@
 #define	_ERRLST_H_
 
 #include <sys/cdefs.h>
+#include <sys/ansi.h>
+
+#ifndef	off_t
+typedef	__off_t		off_t;
+#define	off_t		__off_t
+#endif /* off_t */
 
 /*
  * Definitions used by the 'mkerrlst' program which creates error message 
@@ -43,7 +49,7 @@ struct	ERRLST {
 };
 
 #define	ERRMAGIC		012345
-#define	_PATH_SYSERRLST	"/etc/syserrlst"
+#define	_PATH_SYSERRLST		"/etc/syserrlst"
 
 __BEGIN_DECLS
 char *syserrlst(int);
