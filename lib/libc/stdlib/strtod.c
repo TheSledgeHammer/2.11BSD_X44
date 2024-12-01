@@ -1740,7 +1740,8 @@ strtod
  ret:
 	if (se)
 		/* LINTED interface specification */
-		*se = (char*) s;
+//		*se = (char *) s;
+        *se = __UNCONST(s);
 	return sign ? -value(rv) : value(rv);
 }
 
@@ -1966,11 +1967,11 @@ __dtoa
 	{
 		/* Infinity or NaN */
 		*decpt = 9999;
-		s =
+		s = __UNCONST(
 #ifdef IEEE_Arith
 				!word1(d) && !(word0(d) & 0xfffff) ? "Infinity" :
 #endif
-														"NaN";
+														"NaN");
 		if (rve)
 			*rve =
 #ifdef IEEE_Arith
@@ -1985,7 +1986,7 @@ __dtoa
 #endif
 	if (!value(d)) {
 		*decpt = 1;
-		s = "0";
+		s = __UNCONST("0");
 		if (rve)
 			*rve = s + 1;
 		return s;
