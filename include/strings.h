@@ -42,7 +42,7 @@ int	 	bcmp(const void *, const void *, size_t);
 void	bcopy(const void *, void *, size_t);
 void	bzero(void *, size_t);
 #endif
-int	 	ffs(int);
+int	 	ffs(long);
 #if defined(__BSD_VISIBLE) || \
     (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE - 0 < 700)
 char	*index(const char *, int);
