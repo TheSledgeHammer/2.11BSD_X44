@@ -19,5 +19,5 @@ strlen(s)
 	n = 0;
 	while (*s++)
 		n++;
-	return(n);
+	return (n);
 }

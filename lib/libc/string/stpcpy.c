@@ -49,9 +49,10 @@ __RCSID("$NetBSD: stpcpy.c,v 1.2 2013/11/06 21:05:27 tron Exp $");
 
 char *
 stpcpy(to, from)
-    char * __restrict to;
-    const char * __restrict from;
+    char *to;
+    const char *from;
 {
-	for (; (*to = *from); ++from, ++to);
-	return(to);
+	for (; (*to = *from); ++from, ++to)
+		;
+	return (to);
 }

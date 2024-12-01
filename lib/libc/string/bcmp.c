@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)bcmp.c	1.1 (Berkeley) 1/19/87";
  */
 int
 __bcmp(b1, b2, length)
-	register char *b1, *b2;
+	register const char *b1, *b2;
 	register unsigned int length;
 {
 	if (length) {
@@ -37,9 +37,9 @@ bcmp(b1, b2, length)
 	const void *b2;
 	size_t length;
 {
-	 char *p1, *p2;
+	 const char *p1, *p2;
 
-	 p1 = (char *)b1;
-	 p2 = (char *)b2;
+	 p1 = (const char *)b1;
+	 p2 = (const char *)b2;
 	 return (__bcmp(p1, p2, length));
 }

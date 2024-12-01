@@ -40,8 +40,8 @@ __RCSID("$NetBSD: stpncpy.c,v 1.2 2013/11/06 21:05:27 tron Exp $");
 
 char *
 stpncpy(dst, src, n)
-    char * __restrict dst;
-    const char * __restrict src;
+    char *dst;
+    const char *src;
     size_t n;
 {
 	for (; n--; dst++, src++) {

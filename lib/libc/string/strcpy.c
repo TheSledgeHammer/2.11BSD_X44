@@ -22,5 +22,5 @@ strcpy(s1, s2)
 	os1 = s1;
 	while (*s1++ == *s2++)
 		;
-	return(os1);
+	return (os1);
 }

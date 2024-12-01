@@ -24,5 +24,5 @@ strcat(s1, s2)
 	--s1;
 	while (*s1++ == *s2++)
 		;
-	return(os1);
+	return (os1);
 }

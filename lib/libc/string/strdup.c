@@ -17,7 +17,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)strdup.c	5.1 (Berkeley) 12/12/88";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -39,8 +41,8 @@ strdup(str)
 	char *copy;
 
 	len = strlen(str) + 1;
-	if (!(copy = malloc((u_int)len)))
-		return((char *)NULL);
+	if (!(copy = malloc((u_int) len)))
+		return ((char*) NULL);
 	bcopy(str, copy, len);
-	return(copy);
+	return (copy);
 }

@@ -45,14 +45,14 @@ qsort(a, n, size, compar)
 	size_t n, size;
 	int	(*compar)(const void *, const void *);
 {
-    	register char *base;
+	register char *base;
 	register char c, *i, *j, *lo, *hi;
 	char *min, *max;
 
-    	base = (char *)a;
+	base = (char*) a;
 	if (n <= 1) {
 		return;
-    	}
+	}
 
 	qsz = size;
 	qcmp = compar;
@@ -72,12 +72,12 @@ qsort(a, n, size, compar)
 	 * the first THRESH elements (or the first n if n < THRESH), finding
 	 * the min, and swapping it into the first position.
 	 */
-	for (j = lo = base; (lo += qsz) < hi; )
+	for (j = lo = base; (lo += qsz) < hi;)
 		if (qcmp(j, lo) > 0)
 			j = lo;
 	if (j != base) {
 		/* swap j into place */
-		for (i = base, hi = base + qsz; i < hi; ) {
+		for (i = base, hi = base + qsz; i < hi;) {
 			c = *j;
 			*j++ = *i;
 			*i++ = c;
@@ -90,11 +90,11 @@ qsort(a, n, size, compar)
 	 * Then, do the standard insertion sort shift on a character at a time
 	 * basis for each element in the frob.
 	 */
-	for (min = base; (hi = min += qsz) < max; ) {
+	for (min = base; (hi = min += qsz) < max;) {
 		while (qcmp(hi -= qsz, min) > 0)
 			/* void */;
 		if ((hi += qsz) != min) {
-			for (lo = min + qsz; --lo >= min; ) {
+			for (lo = min + qsz; --lo >= min;) {
 				c = *lo;
 				for (i = j = lo; (j -= qsz) >= hi; i = j)
 					*i = *j;
@@ -137,8 +137,8 @@ qst(base, max)
 	 * max with loser of first and take larger.  Things are set up to
 	 * prefer the middle, then the first in case of ties.
 	 */
-	lo = max - base;		/* number of elements as chars */
-	do	{
+	lo = max - base; /* number of elements as chars */
+	do {
 		mid = i = base + qsz * ((lo / qsz) >> 1);
 		if (lo >= mthresh) {
 			j = (qcmp((jj = base), i) > 0 ? jj : i);
@@ -150,7 +150,7 @@ qst(base, max)
 			}
 			if (j != i) {
 				ii = qsz;
-				do	{
+				do {
 					c = *i;
 					*i++ = *j;
 					*j++ = c;
@@ -160,7 +160,7 @@ qst(base, max)
 		/*
 		 * Semi-standard quicksort partitioning/swapping
 		 */
-		for (i = base, j = max - qsz; ; ) {
+		for (i = base, j = max - qsz;;) {
 			while (i < mid && qcmp(i, mid) <= 0)
 				i += qsz;
 			while (j > mid) {
@@ -168,7 +168,7 @@ qst(base, max)
 					j -= qsz;
 					continue;
 				}
-				tmp = i + qsz;	/* value of i after swap */
+				tmp = i + qsz; /* value of i after swap */
 				if (i == mid) {
 					/* j <-> mid, new mid is j */
 					mid = jj = j;
@@ -184,12 +184,12 @@ qst(base, max)
 			} else {
 				/* i <-> mid, new mid is i */
 				jj = mid;
-				tmp = mid = i;	/* value of i after swap */
+				tmp = mid = i; /* value of i after swap */
 				j -= qsz;
 			}
-		swap:
+swap:
 			ii = qsz;
-			do	{
+			do {
 				c = *i;
 				*i++ = *jj;
 				*jj++ = c;

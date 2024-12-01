@@ -33,7 +33,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)strerror.c	8.1.1 (2.11BSD) 1996/3/15";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
@@ -50,7 +52,7 @@ strerror(num)
 	register char *p, *t;
 	char tmp[40];
 
-	errnum = num;				/* convert to unsigned */
+	errnum = num; /* convert to unsigned */
 	if (errnum < sys_nerr) {
 		return (syserrlst(errnum));
 	}

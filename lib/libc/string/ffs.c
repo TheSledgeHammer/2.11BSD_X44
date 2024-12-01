@@ -22,8 +22,8 @@ ffs(mask)
 	register int cnt;
 
 	if (mask == 0)
-		return(0);
-	for (cnt = 1; !(mask&1); cnt++)
+		return (0);
+	for (cnt = 1; !(mask & 1); cnt++)
 		mask >>= 1;
-	return(cnt);
+	return (cnt);
 }

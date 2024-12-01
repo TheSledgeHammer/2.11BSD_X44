@@ -74,7 +74,7 @@ __RCSID("$NetBSD: strsuftoll.c,v 1.8 2008/04/28 20:23:00 martin Exp $");
 #include "namespace.h"
 #endif
 
-#if !HAVE_DECL_STRSUFTOLL
+#if !HAVE_STRSUFTOLL
 
 #include <sys/types.h>
 #include <sys/time.h>

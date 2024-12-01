@@ -18,7 +18,8 @@ static char sccsid[] = "@(#)bcopy.c	1.1 (Berkeley) 1/19/87";
  */
 int
 __bcopy(src, dst, length)
-	register char *src, *dst;
+	register const char *src;
+	register char *dst;
 	register unsigned int length;
 {
 	if (length && src != dst) {

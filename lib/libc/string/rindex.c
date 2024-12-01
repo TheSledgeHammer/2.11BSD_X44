@@ -13,7 +13,7 @@ static char sccsid[] = "@(#)rindex.c	5.2 (Berkeley) 3/9/86";
 
 char *
 rindex(sp, c)
-register char *sp, c;
+	register char *sp, c;
 {
 	register char *r;
 
@@ -22,5 +22,5 @@ register char *sp, c;
 		if (*sp == c)
 			r = sp;
 	} while (*sp++);
-	return(r);
+	return (r);
 }

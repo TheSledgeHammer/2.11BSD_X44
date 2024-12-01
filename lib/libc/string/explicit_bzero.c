@@ -11,9 +11,15 @@
 
 #include <string.h>
 
+#ifdef __weak_alias
+__weak_alias(explicit_bzero, _explicit_bzero)
+__weak_alias(explicit_memset, _explicit_memset)
+#endif
+
 __attribute__((weak)) void
 __explicit_bzero_hook(void *buf, size_t len)
 {
+
 }
 
 void
@@ -27,7 +33,7 @@ explicit_bzero(void *buf, size_t len)
  * The use of a volatile pointer guarantees that the compiler
  * will not optimise the call away.
  */
-void *(* volatile explicit_memset_impl)(void *, int, size_t) = memset;
+void * (*volatile explicit_memset_impl)(void*, int, size_t) = memset;
 
 void *
 explicit_memset(void *b, int c, size_t len)

@@ -12,11 +12,11 @@ static char sccsid[] = "@(#)strcmp.c	5.2 (Berkeley) 3/9/86";
  */
 int
 strcmp(s1, s2)
-	register char *s1, *s2;
+	register const char *s1, *s2;
 {
 
 	while (*s1 == *s2++)
-		if (*s1++=='\0')
-			return(0);
-	return(*s1 - *--s2);
+		if (*s1++ == '\0')
+			return (0);
+	return (*s1 - *--s2);
 }

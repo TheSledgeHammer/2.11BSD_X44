@@ -29,5 +29,5 @@ strncat(s1, s2, n)
 			*--s1 = '\0';
 			break;
 		}
-	return(os1);
+	return (os1);
 }
