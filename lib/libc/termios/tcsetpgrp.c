@@ -38,6 +38,8 @@ __RCSID("$NetBSD: tcsetpgrp.c,v 1.9 2003/08/07 16:44:14 agc Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
