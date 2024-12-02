@@ -54,7 +54,7 @@ wcsstr(big, little)
 
 	if (!*little) {
 		/* LINTED interface specification */
-		return (wchar_t *)big;
+		return __UNCONST(big);
 	}
 	if (wcslen(big) < wcslen(little))
 		return NULL;
@@ -72,7 +72,7 @@ wcsstr(big, little)
 		}
 		if (!*q) {
 			/* LINTED interface specification */
-			return (wchar_t *)p;
+			return __UNCONST(p);
 		}
 		p++;
 	}

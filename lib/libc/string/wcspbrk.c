@@ -53,7 +53,7 @@ wcspbrk(s, set)
 		while (*q) {
 			if (*p == *q) {
 				/* LINTED interface specification */
-				return (wchar_t *)p;
+				return __UNCONST(p);
 			}
 			q++;
 		}

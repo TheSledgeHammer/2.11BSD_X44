@@ -49,7 +49,7 @@ wmemchr(s, c, n)
 	for (i = 0; i < n; i++) {
 		if (*s == c) {
 			/* LINTED const castaway */
-			return (wchar_t *)s;
+			return __UNCONST(s);
 		}
 		s++;
 	}

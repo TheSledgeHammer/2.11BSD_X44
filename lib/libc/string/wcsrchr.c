@@ -51,7 +51,7 @@ wcsrchr(s, c)
 	while (s <= p) {
 		if (*p == c) {
 			/* LINTED interface specification */
-			return (wchar_t *)p;
+			return __UNCONST(p);
 		}
 		p--;
 	}
