@@ -39,7 +39,9 @@
 #include "SYS.h"
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	RCSID("$NetBSD: getcontext.S,v 1.2 2003/01/18 11:08:12 thorpej Exp $")
+#if 0
+RCSID("$NetBSD: getcontext.S,v 1.2 2003/01/18 11:08:12 thorpej Exp $")
+#endif
 #endif /* SYSLIBC_SCCS && !lint */
 
 SYSCALL(getcontext)
