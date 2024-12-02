@@ -278,7 +278,7 @@ __libc_thr_setspecific_stub(thread_key_t k, const void *v)
 {
 
 	/* LINTED cast away const */
-	__libc_tsd[k].tsd_val = (void *) v;
+	__libc_tsd[k].tsd_val = __UNCONST(v);
 
 	return (0);
 }

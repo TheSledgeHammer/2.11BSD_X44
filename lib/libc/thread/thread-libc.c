@@ -47,10 +47,9 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "thread_private.h"
-
-extern int	__syscall(quad_t, ...);
 
 int
 __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
@@ -85,13 +84,19 @@ __libc_connect(int s, const struct sockaddr *addr, socklen_t namelen)
 int
 __libc_execve(const char *path, char *const argv[], char *const envp[])
 {
-	return (__syscall(SYS_execve, fname, argp, envp));
+	return (__syscall(SYS_execve, path, argv, envp));
 }
 
 int
 __libc_fcntl(int fd, int cmd, va_list ap)
 {
 	return (__syscall(SYS_fcntl, fd, cmd, ap));
+}
+
+pid_t
+__libc_fork(void)
+{
+    return (fork());
 }
 
 int
@@ -300,6 +305,7 @@ __strong_alias(_close, __libc_close)
 __strong_alias(_connect, __libc_connect)
 __strong_alias(__exeve, __libc_execve)
 __strong_alias(_fcntl, __libc_fcntl)
+__strong_alias(_fork, __libc_fork)
 __strong_alias(_fsync, __libc_fsync)
 __weak_alias(__libc_fsync_range, _fsync_range)
 __strong_alias(_getitimer, __libc_getitimer)

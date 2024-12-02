@@ -42,6 +42,7 @@ __RCSID("$NetBSD: pthread_atfork.c,v 1.18 2024/01/20 14:52:47 christos Exp $");
 #include <sys/queue.h>
 #include "extern.h"
 #include "reentrant.h"
+#include "thread_private.h"
 
 #ifdef __weak_alias
 __weak_alias(__libc_fork, fork)
