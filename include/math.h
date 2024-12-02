@@ -1,9 +1,57 @@
 /*
+ * Copyright (c) 1985, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)math.h	8.1 (Berkeley) 6/2/93
+ */
+/*
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
  *	@(#)math.h	1.1 (2.10BSD Berkeley) 12/1/86
+ */
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice 
+ * is preserved.
+ * ====================================================
+ */
+
+/*
+ * from: @(#)fdlibm.h 5.1 93/09/24
  */
 
 #ifndef _MATH_H_
@@ -26,28 +74,16 @@ union __long_double_u {
 	long double __val;
 };
 
-#ifdef __HAVE_LONG_DOUBLE
-#define	__fpmacro_unary_floating(__name, __arg0)		\
-	/* LINTED */						\
-	((sizeof (__arg0) == sizeof (float))			\
-	?	__ ## __name ## f (__arg0)			\
-	: (sizeof (__arg0) == sizeof (double))			\
-	?	__ ## __name ## d (__arg0)			\
-	:	__ ## __name ## l (__arg0))
-#else
-#define	__fpmacro_unary_floating(__name, __arg0)		\
-	/* LINTED */						\
-	((sizeof (__arg0) == sizeof (float))			\
-	?	__ ## __name ## f (__arg0)			\
-	:	__ ## __name ## d (__arg0))
-#endif /* __HAVE_LONG_DOUBLE */
-
 /*
  * ANSI/POSIX
  */
 /* 7.12#3 HUGE_VAL, HUGELF, HUGE_VALL */
+#if __GNUC_PREREQ__(3, 3)
+#define HUGE_VAL	__builtin_huge_val()
+#else
 extern __const union __double_u __infinity;
 #define HUGE_VAL	__infinity.__val
+#endif
 
 /*
  * ISO C99
@@ -58,42 +94,30 @@ extern __const union __double_u __infinity;
     ((_POSIX_C_SOURCE - 0) >= 200112L) || \
     ((_XOPEN_SOURCE  - 0) >= 600) || \
     defined(_ISOC99_SOURCE) || defined(__BSD_VISIBLE)
+
 /* 7.12#3 HUGE_VAL, HUGELF, HUGE_VALL */
+#if __GNUC_PREREQ__(3, 3)
+#define	HUGE_VALF	__builtin_huge_valf()
+#define	HUGE_VALL	__builtin_huge_vall()
+#define	INFINITY	__builtin_inff()
+#define	NAN		__builtin_nanf("")
+#else /* __GNUC_PREREQ__(3, 3) */
 extern __const union __float_u __infinityf;
 #define	HUGE_VALF	__infinityf.__val
+#define	INFINITY	HUGE_VALF
 
 extern __const union __long_double_u __infinityl;
 #define	HUGE_VALL	__infinityl.__val
 
-/* 7.12#4 INFINITY */
-#ifdef __INFINITY
-#define	INFINITY	__INFINITY	/* float constant which overflows */
-#else
-#define	INFINITY	HUGE_VALF	/* positive infinity */
-#endif /* __INFINITY */
-
-/* 7.12#5 NAN: a quiet NaN, if supported */
-#ifdef __HAVE_NANF
 extern __const union __float_u __nanf;
-#define	NAN		__nanf.__val
-#endif /* __HAVE_NANF */
-
-/* 7.12#6 number classification macros */
-#define	FP_INFINITE	0x00
-#define	FP_NAN		0x01
-#define	FP_NORMAL	0x02
-#define	FP_SUBNORMAL	0x03
-#define	FP_ZERO		0x04
-/* NetBSD extensions */
-#define	_FP_LOMD	0x80		/* range for machine-specific classes */
-#define	_FP_HIMD	0xff
+#define	NAN		 __nanf.__val
+#endif /* __GNUC_PREREQ__(3, 3) */
 
 #endif /* !_ANSI_SOURCE && ... */
 
-/*
- * XOPEN/SVID
- */
-#if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE) \
+    || defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
+
 #define	M_E		2.7182818284590452354	/* e */
 #define	M_LOG2E		1.4426950408889634074	/* log 2e */
 #define	M_LOG10E	0.43429448190325182765	/* log 10e */
@@ -110,20 +134,25 @@ extern __const union __float_u __nanf;
 
 #define	MAXFLOAT	((float)3.40282346638528860e+38)
 extern int signgam;
-#endif /* _XOPEN_SOURCE || __BSD_VISIBLE */
 
-#define	HUGE	    1.701411733192644270e38
+#if defined(vax) || defined(tahoe) || defined(pdp11)
+#define	HUGE	    1.701411733192644270E+38
+#else
+#define	HUGE	    MAXFLOAT
+#endif
+
 #define	LOGHUGE	    39
+#endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
 
 __BEGIN_DECLS
 
-extern	double	fabs(double), floor(double), ceil(double), fmod(double, double), ldexp(double, int);
-extern	double	sqrt(double), hypot(double, double), atof(const char *);
-extern	double	sin(double), cos(double), tan(double), asin(double), acos(double), atan(double), atan2(double, double);
-extern	double	exp(double), log(double), log10(double), pow(double, double);
-extern	double	sinh(double), cosh(double), tanh(double);
-extern	double	gamma(double);
-extern	double	j0(double), j1(double), jn(int, double), y0(double), y1(double), yn(int, double);
+double	fabs(double), floor(double), ceil(double), fmod(double, double), ldexp(double, int);
+double	sqrt(double), hypot(double, double), atof(const char *);
+double	sin(double), cos(double), tan(double), asin(double), acos(double), atan(double), atan2(double, double);
+double	exp(double), log(double), log10(double), pow(double, double);
+double	sinh(double), cosh(double), tanh(double);
+double	gamma(double);
+double	j0(double), j1(double), jn(int, double), y0(double), y1(double), yn(int, double);
 
 /* libc/gen/arch/"arch" */
 double frexp(double, int *);
