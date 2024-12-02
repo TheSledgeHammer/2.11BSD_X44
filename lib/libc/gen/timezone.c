@@ -12,11 +12,11 @@ static char sccsid[] = "@(#)timezone.c	1.2 (2.11BSD) 1996/11/27";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <sys/time.h>
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include <tzfile.h>
 
 /*
@@ -26,7 +26,6 @@ static char sccsid[] = "@(#)timezone.c	1.2 (2.11BSD) 1996/11/27";
  *	giving the name of the local timezone.  Should be replaced, in the
  *	application code, by a call to localtime.
  */
-const char *tztab(int, int);
 static char	czone[TZ_MAX_CHARS];		/* space for zone name */
 
 char *
