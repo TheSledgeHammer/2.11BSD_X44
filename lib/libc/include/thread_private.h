@@ -53,11 +53,11 @@ struct sockaddr;
 __BEGIN_DECLS
 int 		__libc_accept(int, struct sockaddr *, socklen_t *);
 int 		__libc_atfork(void (*)(void), void (*)(void), void (*)(void));
-int		__libc_clock_gettime(clockid_t clock_id, struct timespec *tp);
-int		__libc_clock_settime(clockid_t clock_id, const struct timespec *tp);
+int		__libc_clock_gettime(clockid_t, struct timespec *);
+int		__libc_clock_settime(clockid_t, const struct timespec *);
 int 		__libc_close(int);
 int 		__libc_connect(int, const struct sockaddr *, socklen_t);
-int 		__libc_execve(const char *path, char *const *, char *const *);
+int 		__libc_execve(const char *, char *const *, char *const *);
 int 		__libc_fcntl(int, int, va_list);
 pid_t		__libc_fork(void);
 int 		__libc_fsync(int);
