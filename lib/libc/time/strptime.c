@@ -44,11 +44,14 @@ __RCSID("$NetBSD: strptime.c,v 1.22 2000/12/20 20:56:34 christos Exp $");
 
 #include <ctype.h>
 #include <locale.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <tzfile.h>
 
 #include "locale/ltime.h"
+#include "locale/setlocale.h"
+#include "private.h"
 
 #ifdef __weak_alias
 __weak_alias(strptime,_strptime)

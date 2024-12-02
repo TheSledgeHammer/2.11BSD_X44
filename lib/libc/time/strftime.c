@@ -62,17 +62,19 @@ __RCSID("$NetBSD: strftime.c,v 1.14.2.2 2004/05/17 10:38:03 tron Exp $");
 ** SUCH DAMAGE.
 */
 
-#ifndef LIBC_SCCS
-#ifndef lint
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static const char	sccsid[] = "@(#)strftime.c	5.4 (Berkeley) 3/14/89";
-#endif /* !defined lint */
-#endif /* !defined LIBC_SCCS */
+#endif
+#endif
 
 #include <tzfile.h>
 #include <fcntl.h>
 #include <locale.h>
 
 #include "locale/ltime.h"
+#include "locale/setlocale.h"
+#include "private.h"
 
 static time_locale_t *CurrentTimeLocale(locale_t);
 

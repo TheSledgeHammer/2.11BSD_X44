@@ -11,15 +11,63 @@ static char sccsid[] = "@(#)ctime.c	1.1 (Berkeley) 3/25/87";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 
 #include <fcntl.h>
+#include <ctype.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <tzfile.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdio.h>
 #include <unistd.h>
+
+#include "private.h"
+
+
+/*
+** Some systems only handle "%.2d"; others only handle "%02d";
+** "%02.2d" makes (most) everybody happy.
+** At least some versions of gcc warn about the %02.2d;
+** we conditionalize below to avoid the warning.
+*/
+/*
+** All years associated with 32-bit time_t values are exactly four digits long;
+** some years associated with 64-bit time_t values are not.
+** Vintage programs are coded for years that are always four digits long
+** and may assume that the newline always lands in the same place.
+** For years that are less than four digits, we pad the output with
+** leading zeroes to get the newline in the traditional place.
+** The -4 ensures that we get four characters of output even if
+** we call a strftime variant that produces fewer characters for some years.
+** The ISO C 1999 and POSIX 1003.1-2004 standards prohibit padding the year,
+** but many implementations pad anyway; most likely the standards are buggy.
+*/
+#define ASCTIME_FMT	"%.3s %.3s%3d %2.2d:%2.2d:%2.2d %-4s\n"
+                      
+/*
+** For years that are more than four digits we put extra spaces before the year
+** so that code trying to overwrite the newline won't end up overwriting
+** a digit within a year and truncating the year (operating on the assumption
+** that no output is better than wrong output).
+*/
+#define ASCTIME_FMT_B	"%.3s %.3s%3d %2.2d:%2.2d:%2.2d     %s\n"
+
+#define STD_ASCTIME_BUF_SIZE	26
+/*
+** Big enough for something such as
+** ??? ???-2147483648 -2147483648:-2147483648:-2147483648     -2147483648\n
+** (two three-character abbreviations, five strings denoting integers,
+** seven explicit spaces, two explicit colons, a newline,
+** and a trailing ASCII nul).
+** The values above are for systems where an int is 32 bits and are provided
+** as an example; the define below calculates the maximum for the system at
+** hand.
+*/
+#define MAX_ASCTIME_BUF_SIZE	(2*3+5*INT_STRLEN_MAXIMUM(int)+7+2+1+1)
 
 struct ttinfo {					/* time type information */
 	long			tt_gmtoff;	/* GMT offset in seconds */
@@ -37,20 +85,25 @@ struct state {
 	char			chars[TZ_MAX_CHARS + 1];
 };
 
-char *tzname[2] = {
+const char *tzname[2] = {
 		"GMT",
 		"GMT"
 };
 
 #ifdef USG_COMPAT
-time_t		timezone = 0;
+time_t		tzone = 0;
 int			daylight = 0;
 #endif /* USG_COMPAT */
 
 static struct state	s;
 static int	tz_is_set;
 
-struct tm 	*offtime(time_t *, long);
+struct tm 	*offtime(const time_t *, long);
+
+static long detzcode(const char *);
+static int tzload(const char *);
+static int tzsetkernel(void);
+static void tzsetgmt(void);
 
 char *
 ctime(t)
@@ -67,16 +120,25 @@ char *
 asctime(timeptr)
 	register const struct tm *timeptr;
 {
-	static char	wday_name[DAYS_PER_WEEK][3] = {
+	static const char	wday_name[DAYS_PER_WEEK][3] = {
 		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 	};
-	static char	mon_name[MONS_PER_YEAR][3] = {
+	static const char	mon_name[MONS_PER_YEAR][3] = {
 		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 	};
-	static char	result[26];
+    static char	year[INT_STRLEN_MAXIMUM(int) + 2];
+	static char	result[MAX_ASCTIME_BUF_SIZE];
 
-	(void) sprintf(result, "%.3s %.3s%3d %02d:%02d:%02d %d\n",
+	/*
+	** Use strftime's %Y to generate the year, to avoid overflow problems
+	** when computing timeptr->tm_year + TM_YEAR_BASE.
+	** Assume that strftime is unaffected by other out-of-range members
+	** (e.g., timeptr->tm_mday) when processing "%Y".
+	*/
+    strftime(year, sizeof(year), "%Y", timeptr);
+    (void) snprintf(result, sizeof(result), 
+        ((strlen(year) <= 4) ? ASCTIME_FMT : ASCTIME_FMT_B),
 		wday_name[timeptr->tm_wday],
 		mon_name[timeptr->tm_mon],
 		timeptr->tm_mday, timeptr->tm_hour,
@@ -87,7 +149,7 @@ asctime(timeptr)
 
 static long
 detzcode(codep)
-	char *	codep;
+	const char * const codep;
 {
 	register long	result;
 	register int	i;
@@ -100,7 +162,7 @@ detzcode(codep)
 
 static int
 tzload(name)
-	register char *	name;
+	register const char *name;
 {
 	register int	i;
 	register int	fid;
@@ -108,7 +170,7 @@ tzload(name)
 	if (name == 0 && (name = TZDEFAULT) == 0)
 		return -1;
 	{
-		register char *p;
+		register const char *p;
 		register int doaccess;
 		char fullname[MAXPATHLEN];
 
@@ -135,7 +197,7 @@ tzload(name)
 			return -1;
 	}
 	{
-		register char *p;
+		register const char *p;
 		register struct tzhead *tzhp;
 		char buf[sizeof s];
 
@@ -192,7 +254,7 @@ tzload(name)
 	 */
 	tzname[0] = tzname[1] = &s.chars[0];
 #ifdef USG_COMPAT
-	timezone = s.ttis[0].tt_gmtoff;
+	tzone = s.ttis[0].tt_gmtoff;
 	daylight = 0;
 #endif /* USG_COMPAT */
 	for (i = 1; i < s.typecnt; ++i) {
@@ -207,7 +269,7 @@ tzload(name)
 		} else {
 			tzname[0] = &s.chars[ttisp->tt_abbrind];
 #ifdef USG_COMPAT
-			timezone = ttisp->tt_gmtoff;
+			tzone = ttisp->tt_gmtoff;
 #endif /* USG_COMPAT */
 		}
 	}
@@ -219,7 +281,6 @@ tzsetkernel(void)
 {
 	struct timeval	tv;
 	struct timezone	tz;
-	char	*tztab();
 
 	if (gettimeofday(&tv, &tz))
 		return -1;
@@ -229,7 +290,7 @@ tzsetkernel(void)
 	(void) strcpy(s.chars, tztab(tz.tz_minuteswest, 0));
 	tzname[0] = tzname[1] = s.chars;
 #ifdef USG_COMPAT
-	timezone = tz.tz_minuteswest * 60;
+	tzone = tz.tz_minuteswest * 60;
 	daylight = tz.tz_dsttime;
 #endif /* USG_COMPAT */
 	return 0;
@@ -244,7 +305,7 @@ tzsetgmt(void)
 	(void) strcpy(s.chars, "GMT");
 	tzname[0] = tzname[1] = s.chars;
 #ifdef USG_COMPAT
-	timezone = 0;
+	tzone = 0;
 	daylight = 0;
 #endif /* USG_COMPAT */
 }
@@ -252,7 +313,7 @@ tzsetgmt(void)
 void
 tzset(void)
 {
-	register char *	name;
+	register char *name;
 
 	tz_is_set = TRUE;
 	name = getenv("TZ");
@@ -271,13 +332,13 @@ struct tm *
 localtime(timep)
 	const time_t *timep;
 {
-	register struct ttinfo *	ttisp;
-	register struct tm *		tmp;
-	register int			i;
-	time_t				t;
+	register struct ttinfo *ttisp;
+	register struct tm *tmp;
+	register int i;
+	time_t t;
 
 	if (!tz_is_set)
-		(void) tzset();
+		(void)tzset();
 	t = *timep;
 	if (s.timecnt == 0 || t < s.ats[0]) {
 		i = 0;
@@ -307,19 +368,19 @@ localtime(timep)
 
 struct tm *
 gmtime(clock)
-	const time_t *	clock;
+	const time_t *clock;
 {
-	register struct tm *	tmp;
+	register struct tm *tmp;
 
 	tmp = offtime(clock, 0L);
 	tzname[0] = "GMT";
-	tmp->tm_zone = "GMT";		/* UCT ? */
+	tmp->tm_zone = __UNCONST("GMT");		/* UCT ? */
 	return tmp;
 }
 
 static int	mon_lengths[2][MONS_PER_YEAR] = {
-	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
-	31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
+	{ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
 };
 
 static int	year_lengths[2] = {
@@ -328,7 +389,7 @@ static int	year_lengths[2] = {
 
 struct tm *
 offtime(clock, offset)
-	time_t *	clock;
+	const time_t *	clock;
 	long		offset;
 {
 	register struct tm 	*tmp;
@@ -336,7 +397,7 @@ offtime(clock, offset)
 	register long		rem;
 	register int		y;
 	register int		yleap;
-	register int *		ip;
+	register int        *ip;
 	static struct tm	tm;
 
 	tmp = &tm;
@@ -380,7 +441,7 @@ offtime(clock, offset)
 		days = days - (long) ip[tmp->tm_mon];
 	tmp->tm_mday = (int) (days + 1);
 	tmp->tm_isdst = 0;
-	tmp->tm_zone = "";
+	tmp->tm_zone = __UNCONST("");
 	tmp->tm_gmtoff = offset;
 	return tmp;
 }
