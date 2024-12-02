@@ -226,6 +226,8 @@ __END_DECLS
 #define	thr_enabled()			(__isthreaded)
 #define thr_setcancelstate(n, o) 	__libc_thr_setcancelstate((n),(o))
 
+#endif /* __LIBC_THREAD_STUBS */
+
 __BEGIN_DECLS
 int		__libc_mutex_init_stub(mutex_t *, const mutexattr_t *);
 int		__libc_mutex_catchall_stub(mutex_t *);
@@ -250,8 +252,6 @@ void		__libc_thr_exit_stub(void *);
 int		*__libc_thr_errno_stub(void);
 int		__libc_thr_setcancelstate_stub(int, int *);
 __END_DECLS
-
-#endif /* __LIBC_THREAD_STUBS */
 
 #define	FLOCKFILE(fp)			__flockfile_internal(fp, 1)
 #define	FUNLOCKFILE(fp)			__funlockfile_internal(fp, 1)
