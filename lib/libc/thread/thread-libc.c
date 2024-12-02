@@ -93,12 +93,6 @@ __libc_fcntl(int fd, int cmd, va_list ap)
 	return (__syscall(SYS_fcntl, fd, cmd, ap));
 }
 
-pid_t
-__libc_fork(void)
-{
-    return (fork());
-}
-
 int
 __libc_fsync(int d)
 {
@@ -305,7 +299,6 @@ __strong_alias(_close, __libc_close)
 __strong_alias(_connect, __libc_connect)
 __strong_alias(__exeve, __libc_execve)
 __strong_alias(_fcntl, __libc_fcntl)
-__strong_alias(_fork, __libc_fork)
 __strong_alias(_fsync, __libc_fsync)
 __weak_alias(__libc_fsync_range, _fsync_range)
 __strong_alias(_getitimer, __libc_getitimer)
