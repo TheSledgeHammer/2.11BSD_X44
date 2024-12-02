@@ -31,13 +31,20 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)mmap.c	8.1 (Berkeley) 6/17/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
 
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
+
+#include <unistd.h>
 
 /*
  * This function provides 64-bit offset padding that
@@ -50,9 +57,7 @@ mmap(addr, len, prot, flags, fd, offset)
 	int	prot;
 	int	flags;
 	int	fd;
-	off_t	offset;
+	off_t offset;
 {
-
-	return((caddr_t)__syscall((quad_t)SYS_mmap, addr, len, prot, flags,
-		fd, 0, offset));
+	return ((caddr_t)(long)__syscall((quad_t)SYS_mmap, addr, len, prot, flags, fd, 0, offset));
 }

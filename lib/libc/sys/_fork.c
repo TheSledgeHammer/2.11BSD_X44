@@ -31,6 +31,8 @@
 
 #include <sys/cdefs.h>
 
+#include "namespace.h"
+
 #ifdef __weak_alias
 __weak_alias(_fork, fork)
 #endif

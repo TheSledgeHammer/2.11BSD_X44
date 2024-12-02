@@ -9,7 +9,7 @@ SRCS+=	Ovfork.S brk.S cerror.S exect.S fork.S getcontext.S pipe.S ptrace.S \
 		sigsuspend.S syscall.S
 
 # glue to provide compatibility between GCC 1.X and 2.X
-SRCS+= _getcontext.c _getlogin.c _fork.c ftruncate.c lseek.c mmap.c _resumecontext.c _swapcontext.c truncate.c
+SRCS+= _getcontext.c _getlogin.c _fork.c ftruncate.c lseek.c mmap.c truncate.c
 
 # modules with default implementations on all architectures:
 ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \

@@ -31,12 +31,19 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)lseek.c	8.1 (Berkeley) 6/17/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
 
 #include <sys/types.h>
 #include <sys/syscall.h>
+
+#include <unistd.h>
 
 /*
  * This function provides 64-bit offset padding that
@@ -48,7 +55,5 @@ lseek(fd, offset, whence)
 	off_t	offset;
 	int	whence;
 {
-	extern off_t __syscall();
-
-	return(__syscall((quad_t)SYS_lseek, fd, 0, offset, whence));
+	return (__syscall((quad_t)SYS_lseek, fd, 0, offset, whence));
 }
