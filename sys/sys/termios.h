@@ -38,6 +38,7 @@
 #define _SYS_TERMIOS_H_
 
 #include <sys/cdefs.h>
+#include <sys/types.h>
 
 /* 
  * Special Control Characters 
@@ -244,20 +245,22 @@ struct termios {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-speed_t	cfgetispeed (const struct termios *);
-speed_t	cfgetospeed (const struct termios *);
-int	cfsetispeed (struct termios *, speed_t);
-int	cfsetospeed (struct termios *, speed_t);
-int	tcgetattr (int, struct termios *);
-int	tcsetattr (int, int, const struct termios *);
-int	tcdrain (int);
-int	tcflow (int, int);
-int	tcflush (int, int);
-int	tcsendbreak (int, int);
-
+speed_t	cfgetispeed(const struct termios *);
+speed_t	cfgetospeed(const struct termios *);
+int	cfsetispeed(struct termios *, speed_t);
+int	cfsetospeed(struct termios *, speed_t);
+int	tcgetattr(int, struct termios *);
+int	tcsetattr(int, int, const struct termios *);
+int	tcdrain(int);
+int	tcflow(int, int);
+int	tcflush(int, int);
+int	tcsendbreak(int, int);
+#if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
+pid_t	tcgetsid(int);
+#endif /* _XOPEN_SOURCE || __BSD_VISIBLE */
 #ifndef _POSIX_SOURCE
-void	cfmakeraw (struct termios *);
-int		cfsetspeed (struct termios *, speed_t);
+void	cfmakeraw(struct termios *);
+int	cfsetspeed(struct termios *, speed_t);
 #endif /* !_POSIX_SOURCE */
 __END_DECLS
 
