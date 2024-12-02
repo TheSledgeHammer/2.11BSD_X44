@@ -37,6 +37,7 @@ char 		*__getcwd(char *, size_t);
 #endif
 int 		_getlogin(char *, u_int);
 void 		_resumecontext(void);
+int 		_swapcontext(ucontext_t *, const ucontext_t *);
 const char 	*__strerror(int , char *, size_t);	/* TODO: Resolve  */
 const char 	*__strsignal(int , char *, size_t); /* TODO: Resolve  */
 char 		*__dtoa(double, int, int, int *, int *, char **);
