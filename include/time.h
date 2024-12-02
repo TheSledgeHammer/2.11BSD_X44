@@ -82,6 +82,7 @@ char 		*strptime(const char * __restrict, const char * __restrict, struct tm * _
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 char 		*timezone(int, int);
 void 		tzsetwall(void);
+const char  	*tztab(int, int);
 #endif /* neither ANSI nor POSIX */
 
 /*
