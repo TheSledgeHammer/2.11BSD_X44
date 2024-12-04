@@ -255,7 +255,7 @@ _nis_lookup(rv, cb_data, ap)
 
 	static char	*__ypdomain;
 	int              i;
-	char            *map = NULL;
+	const char      *map = NULL;
 
 	if(__ypdomain == NULL) {
 		switch (yp_get_default_domain(&__ypdomain)) {
