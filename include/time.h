@@ -68,7 +68,7 @@ double 		difftime(time_t, time_t);
 struct tm 	*gmtime(const time_t *);
 struct tm 	*localtime(const time_t *);
 time_t 		mktime(struct tm *);
-size_t 		strftime(char * __restrict, size_t, const char * __restrict, const struct tm * __restrict);
+size_t 		strftime(char * __restrict, size_t, const char * __restrict, const struct tm * __restrict) __attribute__((__format__(__strftime__, 3, 0)));
 time_t 		time(time_t *);
 
 #ifndef _ANSI_SOURCE
