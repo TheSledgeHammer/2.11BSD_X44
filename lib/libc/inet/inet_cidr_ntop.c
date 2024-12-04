@@ -102,7 +102,6 @@ decoct(const u_char *src, size_t bytes, char *dst, size_t size) {
 		}
 		size -= (size_t)(dst - t);
 	}
-	_DIAGASSERT(__type_fit(int, dst - odst));
 	return (int)(dst - odst);
 }
 
