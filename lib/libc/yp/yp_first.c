@@ -76,12 +76,12 @@ again:
 	yprnk.map = inmap;
 	(void)memset(&yprkv, 0, sizeof yprkv);
 
-	r = clnt_call(ysd->dom_client, (rpcproc_t)YPPROC_FIRST,
+	r = clnt_call(ysd->dom_client, YPPROC_FIRST,
 	    (xdrproc_t)xdr_ypreq_nokey,
 	    &yprnk, (xdrproc_t)xdr_ypresp_key_val, &yprkv, _yplib_timeout);
 	if (r != RPC_SUCCESS) {
 		if (_yplib_bindtries <= 0 && ++nerrs == _yplib_nerrs) {
-			clnt_perror(ysd->dom_client, "yp_first: clnt_call");
+			clnt_perror(ysd->dom_client, __UNCONST("yp_first: clnt_call"));
 			nerrs = 0;
 		} else if (_yplib_bindtries > 0 && ++nerrs == _yplib_bindtries)
 			return YPERR_YPSERV;
@@ -153,12 +153,12 @@ again:
 	yprk.keydat.dsize = inkeylen;
 	(void)memset(&yprkv, 0, sizeof yprkv);
 
-	r = clnt_call(ysd->dom_client, (rpcproc_t)YPPROC_NEXT,
+	r = clnt_call(ysd->dom_client, YPPROC_NEXT,
 	    (xdrproc_t)xdr_ypreq_key,
 	    &yprk, (xdrproc_t)xdr_ypresp_key_val, &yprkv, _yplib_timeout);
 	if (r != RPC_SUCCESS) {
 		if (_yplib_bindtries <= 0 && ++nerrs == _yplib_nerrs) {
-			clnt_perror(ysd->dom_client, "yp_next: clnt_call");
+			clnt_perror(ysd->dom_client, __UNCONST("yp_next: clnt_call"));
 			nerrs = 0;
 		} else if (_yplib_bindtries > 0 && ++nerrs == _yplib_bindtries)
 			return YPERR_YPSERV;

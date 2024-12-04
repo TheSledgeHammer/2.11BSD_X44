@@ -71,13 +71,13 @@ again:
 
 	(void)memset(&ypro, 0, sizeof ypro);
 
-	r = clnt_call(ysd->dom_client, (rpcproc_t)YPPROC_ORDER,
+	r = clnt_call(ysd->dom_client, YPPROC_ORDER,
 		      (xdrproc_t)xdr_ypreq_nokey, &yprnk,
 		      (xdrproc_t)xdr_ypresp_order, &ypro, 
 		      _yplib_timeout);
 	if (r != RPC_SUCCESS) {
 		if (_yplib_bindtries <= 0 && ++nerrs == _yplib_nerrs) {
-			clnt_perror(ysd->dom_client, "yp_order: clnt_call");
+			clnt_perror(ysd->dom_client, __UNCONST("yp_order: clnt_call"));
 			nerrs = 0;
 		} else if (_yplib_bindtries > 0 && ++nerrs == _yplib_bindtries)
 			return YPERR_YPSERV;

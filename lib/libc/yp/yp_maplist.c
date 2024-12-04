@@ -63,12 +63,12 @@ again:
 
 	memset(&ypml, 0, sizeof ypml);
 
-	r = clnt_call(ysd->dom_client, (rpcproc_t)YPPROC_MAPLIST,
+	r = clnt_call(ysd->dom_client, YPPROC_MAPLIST,
 		   (xdrproc_t)xdr_ypdomain_wrap_string, &indomain,
 		   (xdrproc_t)xdr_ypresp_maplist, &ypml, _yplib_timeout);
 	if (r != RPC_SUCCESS) {
 		if (_yplib_bindtries <= 0 && ++nerrs == _yplib_nerrs) {
-			clnt_perror(ysd->dom_client, "yp_maplist: clnt_call");
+			clnt_perror(ysd->dom_client, __UNCONST("yp_maplist: clnt_call"));
 			nerrs = 0;
 		} else if (_yplib_bindtries > 0 && ++nerrs == _yplib_bindtries)
 			return YPERR_YPSERV;

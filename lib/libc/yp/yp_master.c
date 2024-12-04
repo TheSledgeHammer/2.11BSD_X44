@@ -74,12 +74,12 @@ again:
 
 	(void)memset(&yprm, 0, sizeof yprm);
 
-	r = clnt_call(ysd->dom_client, (rpcproc_t)YPPROC_MASTER,
+	r = clnt_call(ysd->dom_client, YPPROC_MASTER,
 		      (xdrproc_t)xdr_ypreq_nokey, &yprnk,
 		      (xdrproc_t)xdr_ypresp_master, &yprm, _yplib_timeout);
 	if (r != RPC_SUCCESS) {
 		if (_yplib_bindtries <= 0 && ++nerrs == _yplib_nerrs) {
-			clnt_perror(ysd->dom_client, "yp_master: clnt_call");
+			clnt_perror(ysd->dom_client, __UNCONST("yp_master: clnt_call"));
 			nerrs = 0;
 		} else if (_yplib_bindtries > 0 && ++nerrs == _yplib_bindtries)
 			return YPERR_YPSERV;

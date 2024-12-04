@@ -169,10 +169,10 @@ again:
 			u_short         ypb_port;
 			struct ypbind_binding *bn;
 
-			iov[0].iov_base = &ypb_port;
-			iov[0].iov_len = sizeof ypb_port;
-			iov[1].iov_base = &ybr;
-			iov[1].iov_len = sizeof ybr;
+			iov[0].iov_base = (void *)&ypb_port;
+			iov[0].iov_len = sizeof(ypb_port);
+			iov[1].iov_base = (void *)&ybr;
+			iov[1].iov_len = sizeof(ybr);
 
 			r = readv(fd, iov, 2);
 			if (r != (ssize_t)(iov[0].iov_len + iov[1].iov_len)) {
@@ -215,12 +215,12 @@ trynet:
 		client = clnttcp_create(&clnt_sin, YPBINDPROG, YPBINDVERS,
 					&clnt_sock, 0, 0);
 		if (client == NULL) {
-			clnt_pcreateerror("clnttcp_create");
+			clnt_pcreateerror(__UNCONST("clnttcp_create"));
 			if (new)
 				free(ysd);
 			return YPERR_YPBIND;
 		}
-		r = clnt_call(client, (rpcproc_t)YPBINDPROC_DOMAIN,
+		r = clnt_call(client, YPBINDPROC_DOMAIN,
 		    (xdrproc_t)xdr_ypdomain_wrap_string, &dom,
 		    (xdrproc_t)xdr_ypbind_resp, &ypbr, _yplib_timeout);
 		if (r != RPC_SUCCESS) {
@@ -263,7 +263,7 @@ gotit:
 	ysd->dom_client = clntudp_create(&ysd->dom_server_addr,
 	    YPPROG, YPVERS, _yplib_rpc_timeout, &ysd->dom_socket);
 	if (ysd->dom_client == NULL) {
-		clnt_pcreateerror("clntudp_create");
+		clnt_pcreateerror(__UNCONST("clntudp_create"));
 		ysd->dom_vers = -1;
 		goto again;
 	}

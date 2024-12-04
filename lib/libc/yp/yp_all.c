@@ -78,7 +78,7 @@ yp_all(const char *indomain, const char *inmap,
 	yprnk.domain = indomain;
 	yprnk.map = inmap;
 
-	status = clnt_call(clnt, (rpcproc_t)YPPROC_ALL,
+	status = clnt_call(clnt, YPPROC_ALL,
 	    (xdrproc_t)xdr_ypreq_nokey, &yprnk,
 	    (xdrproc_t)xdr_ypall, (char *)(void *)incallback, _yplib_timeout);
 	clnt_destroy(clnt);
