@@ -60,8 +60,6 @@ strndup(const char *str, size_t n)
 	size_t len;
 	char *copy;
 
-	_DIAGASSERT(str != NULL);
-
 	for (len = 0; len < n && str[len]; len++)
 		continue;
 
