@@ -46,8 +46,9 @@
  * for utilities to have to include one of them to include nsswitch.h, so
  * we get _BSD_VA_LIST_ from <machine/ansi.h> and use it.
  */
-#include <machine/ansi.h>
+
 #include <sys/types.h>
+#include <stdarg.h>
 
 #ifndef _PATH_NS_CONF
 #define _PATH_NS_CONF	"/etc/nsswitch.conf"
@@ -108,24 +109,24 @@
  */
 typedef struct {
 	const char	 *src;
-	int		(*callback)(void *, void *, _BSD_VA_LIST_);
+	int		(*callback)(void *, void *, va_list);
 	void		 *cb_data;
 } ns_dtab;
 
 /*
  * macros to help build an ns_dtab[]
  */
-#define NS_FILES_CB(F,C)	{ NSSRC_FILES,	F,	C },
-#define NS_COMPAT_CB(F,C)	{ NSSRC_COMPAT,	F,	C },
+#define NS_FILES_CB(F,C)	{ NSSRC_FILES,	F,	__UNCONST(C) },
+#define NS_COMPAT_CB(F,C)	{ NSSRC_COMPAT,	F,	__UNCONST(C) },
 
 #ifdef HESIOD
-#   define NS_DNS_CB(F,C)	{ NSSRC_DNS,	F,	C },
+#   define NS_DNS_CB(F,C)	{ NSSRC_DNS,	F,	__UNCONST(C) },
 #else
 #   define NS_DNS_CB(F,C)
 #endif
 
 #ifdef YP
-#   define NS_NIS_CB(F,C)	{ NSSRC_NIS,	F,	C },
+#   define NS_NIS_CB(F,C)	{ NSSRC_NIS,	F,	__UNCONST(C) },
 #else
 #   define NS_NIS_CB(F,C)
 #endif
@@ -176,11 +177,11 @@ int	nsdispatch(void *, const ns_dtab [], const char *,
 			    const char *, const ns_src [], ...);
 
 #ifdef _NS_PRIVATE
-int		 _nsdbtaddsrc(ns_dbt *, const ns_src *);
-void	_nsdbtdump(const ns_dbt *);
+int		_nsdbtaddsrc(ns_dbt *, const ns_src *);
+void		_nsdbtdump(const ns_dbt *);
 const ns_dbt	*_nsdbtget(const char *);
 int		 _nsdbtput(const ns_dbt *);
-void	 _nsyyerror(const char *);
+void		 _nsyyerror(const char *);
 int		 _nsyylex(void);
 #endif /* _NS_PRIVATE */
 
