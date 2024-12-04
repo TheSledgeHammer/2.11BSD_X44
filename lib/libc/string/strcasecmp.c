@@ -48,7 +48,6 @@ static char sccsid[] = "@(#)strcasecmp.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 #include "namespace.h"
 #include <assert.h>
 #include <ctype.h>
@@ -57,10 +56,6 @@ static char sccsid[] = "@(#)strcasecmp.c	8.1 (Berkeley) 6/4/93";
 #ifdef __weak_alias
 __weak_alias(strcasecmp,_strcasecmp)
 __weak_alias(strncasecmp,_strncasecmp)
-#endif
-#else
-#include <lib/libkern/libkern.h>
-#include <machine/limits.h>
 #endif
 
 /*

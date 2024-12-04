@@ -66,9 +66,11 @@ void devsw_io_detach(dev_t, const struct bdevsw *, const struct cdevsw *, const 
 int  devsw_io_lookup(dev_t, const void *, int);
 
 void
-devswtable_init()
+devswtable_init(void)
 {
-	for(int i = 0; i < MAXDEVSW; i++) {
+	int i;
+
+	for(i = 0; i < MAXDEVSW; i++) {
 		TAILQ_INIT(&devsw_hashtable[i]);
 	}
 
@@ -135,7 +137,7 @@ devswtable_lookup(data, major)
 
 	simple_lock(&devswtable_lock);
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
-	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, dve_link)) {
+	TAILQ_FOREACH(entry, bucket, dve_link) {
 		devsw = entry->dve_devswtable;
 		if(devsw->dv_data == data && devsw->dv_major == major) {
 			devswtable_unlock(&devswtable_lock);
@@ -178,9 +180,9 @@ devswtable_remove(data, major)
 
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
 	devswtable_lock(&devswtable_lock);
-	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, dve_link)) {
+	TAILQ_FOREACH(entry, bucket, dve_link) {
 		devsw = entry->dve_devswtable;
-		if(devsw->dv_data == data && devsw->dv_major == major) {
+		if (devsw->dv_data == data && devsw->dv_major == major) {
 			TAILQ_REMOVE(bucket, entry, dve_link);
 			devswtable_unlock(&devswtable_lock);
 		}
@@ -790,9 +792,8 @@ dev_t
 devsw_io_chrtoblk(dev)
 	dev_t dev;
 {
-	dev_t bmajor, cmajor;
+	dev_t rv, bmajor, cmajor;
 	int i;
-	dev_t rv;
 
 	cmajor = major(dev);
 	bmajor = NODEVMAJOR;
@@ -821,9 +822,8 @@ dev_t
 devsw_io_blktochr(dev)
 	dev_t dev;
 {
-	dev_t bmajor, cmajor;
+	dev_t rv, bmajor, cmajor;
 	int i;
-	dev_t rv;
 
 	bmajor = major(dev);
 	cmajor = NODEVMAJOR;

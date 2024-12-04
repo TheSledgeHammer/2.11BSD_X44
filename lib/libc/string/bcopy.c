@@ -13,7 +13,7 @@ static char sccsid[] = "@(#)bcopy.c	1.1 (Berkeley) 1/19/87";
 
 #include <string.h>
 
-#if defined(_FORTIFY_SOURCE) || defined(_STANDALONE) || defined(_KERNEL)
+#if defined(_FORTIFY_SOURCE)
 #undef bcopy
 #endif
 
@@ -50,7 +50,7 @@ bcopy(src0, dst0, length)
 	void *dst0;
 	size_t length;
 {
-	char *dst = dst0;
-    const char *src = src0;
-	(void)__bcopy(src, dst, length);
+	char *dst = (char*) dst0;
+	const char *src = (const char*) src0;
+	(void) __bcopy(src, dst, length);
 }

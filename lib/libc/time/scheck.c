@@ -37,6 +37,7 @@
  *	@(#)scheck.c	1.1 scheck.c 3/4/87
  */
 
+#include <sys/cdefs.h>
 /*LINTLIBRARY*/
 
 #include <stdio.h>
@@ -79,16 +80,17 @@ scheck(string, format)
 		if (*fp == 'l' || *fp == 'h')
 			*tp++ = *fp++;
 		else if (*fp == '[')
-			do *tp++ = *fp++;
-				while (*fp != '\0' && *fp != ']');
+			do
+				*tp++ = *fp++;
+			while (*fp != '\0' && *fp != ']');
 		if ((*tp++ = *fp++) == '\0')
 			break;
 	}
 	*(tp - 1) = '%';
 	*tp++ = 'c';
 	*tp = '\0';
-	if (sscanf((char *)string, fbuf, &dummy) != 1)
-		result = (char *)format;
+	if (sscanf((char*) string, fbuf, &dummy) != 1)
+		result = (char*) format;
 	free(fbuf);
 	return result;
 }

@@ -36,8 +36,26 @@
 #ifndef _I386_FLOAT_H_
 #define	_I386_FLOAT_H_
 
+#include <sys/cdefs.h>
+
+static const int map[] = {
+		1,	/* round to nearest */
+		3,	/* round to zero */
+		2,	/* round to negative infinity */
+		0	/* round to positive infinity */
+};
+
+static __inline int
+__flt_rounds(void)
+{
+	int x;
+
+	__asm("fnstcw %0" : "=m" (x));
+	return (map[(x >> 10) & 0x03]);
+}
+
 #define FLT_RADIX		2				/* b */
-#define FLT_ROUNDS		1				/* FP addition rounds to nearest */
+#define FLT_ROUNDS		__flt_rounds()  /* FP addition rounds to nearest (1) */
 
 #define FLT_MANT_DIG	24				/* p */
 #define FLT_EPSILON		1.19209290E-07F	/* b**(1-p) */
@@ -68,5 +86,7 @@
 #define LDBL_MAX_EXP	16384
 #define LDBL_MAX		1.1897314953572317650E+4932L
 #define LDBL_MAX_10_EXP	4932
+
+#define	DECIMAL_DIG		21
 
 #endif /* !_I386_FLOAT_H_ */

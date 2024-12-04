@@ -55,11 +55,11 @@ __index(sp, c)
 {
     register char *r;
 
-    r = NULL;
+	r = NULL;
 	do {
 		if (*sp == c)
-            r = __UNCONST(sp);
-			return (r);
+			r = __UNCONST(sp);
+		return (r);
 	} while (*sp++);
 	return (NULL);
 }

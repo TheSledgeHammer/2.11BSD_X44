@@ -66,10 +66,10 @@ struct opt_offsets {
 static struct opt_offsets b0_ofs[] = {
         /* no boot block */
         {
-        	.opt = 0x0,
-		.drive = 0x0,
-		.flags = 0x0,
-		.ticks = 0x0
+        		.opt = 0x0,
+				.drive = 0x0,
+				.flags = 0x0,
+				.ticks = 0x0
         },
         /* original block */
         {
@@ -479,16 +479,16 @@ boot0bs(const u_int8_t *bs)
 	static u_int8_t id0[] = { 0xfc, 0x31, 0xc0, 0x8e, 0xc0, 0x8e, 0xd8, 0x8e,
 			0xd0, 0xbc, 0x00, 0x7c };
     /* the drive id */
-    static u_int8_t id1[] = {'D', 'r', 'i', 'v', 'e', ' '};
+    static u_int8_t id1[] = { 'D', 'r', 'i', 'v', 'e', ' ' };
 
     static struct byte_pattern patterns[] = {
-        {0x0,   sizeof(id0), id0},
-        {0x1b2, sizeof(id1), id1},
-        {1, 0, NULL},
-        {0x0,   sizeof(id0), id0},	/* version with NT support */
-        {0x1ae, sizeof(id1), id1},
-        {2, 0, NULL},
-        {0, 0, NULL},
+        { 0x0,   sizeof(id0), id0 },
+        { 0x1b2, sizeof(id1), id1 },
+        { 1, 0, NULL},
+        { 0x0,   sizeof(id0), id0 },	/* version with NT support */
+        { 0x1ae, sizeof(id1), id1 },
+        { 2, 0, NULL },
+        { 0, 0, NULL },
     };
     struct byte_pattern *p = patterns;
 

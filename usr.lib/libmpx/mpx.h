@@ -35,7 +35,7 @@
 
 __BEGIN_DECLS
 struct mpx;
-int 	mpx(int, struct mpx *, int, void *);
+int mpx(int, struct mpx *, int, void *);
 int	mpx_create(struct mpx *, int, void *);
 int	mpx_put(struct mpx *, int, void *);
 int	mpx_get(struct mpx *, int, void *);

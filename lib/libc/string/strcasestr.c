@@ -55,13 +55,13 @@ strcasestr(const char *s, const char *find)
 	_DIAGASSERT(find != NULL);
 
 	if ((c = *find++) != 0) {
-		c = tolower((unsigned char)c);
+		c = tolower((unsigned char) c);
 		len = strlen(find);
 		do {
 			do {
 				if ((sc = *s++) == 0)
 					return (NULL);
-			} while ((char)tolower((unsigned char)sc) != c);
+			} while ((char) tolower((unsigned char) sc) != c);
 		} while (strncasecmp(s, find, len) != 0);
 		s--;
 	}

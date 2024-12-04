@@ -199,7 +199,7 @@ void
 intr_legacy_vectors(void)
 {
 	int i, idx;
-	for(i = 0; i < NUM_LEGACY_IRQS; i++) {
+	for (i = 0; i < NUM_LEGACY_IRQS; i++) {
 		idx = ICU_OFFSET + i;
 		idt_vec_reserve(idx);
 		idt_vec_set(idx, legacy_stubs[i].ist_entry);
@@ -216,15 +216,16 @@ void
 intrvector(int irq, int level, int *idtvec, bool isapic)
 {
     int i, min, max;
+
     min = 0;
     max = MAX_INTR_SOURCES;
-    for(i = min; i < max; i++) {
-        intrlevel[i] = i;
-        if(level == i) {
-            level = intrlevel[i];
-            *idtvec = idtvector(irq, level, min, max, isapic);
-        }
-    }
+	for (i = min; i < max; i++) {
+		intrlevel[i] = i;
+		if (level == i) {
+			level = intrlevel[i];
+			*idtvec = idtvector(irq, level, min, max, isapic);
+		}
+	}
 }
 
 void
@@ -237,7 +238,7 @@ intr_calculatemasks()
 	unusedirqs = 0xffffffff;
 	for (irq = 0; irq < MAX_INTR_SOURCES; irq++) {
 		int levels = 0;
-		if(intrsrc[irq] == NULL) {
+		if (intrsrc[irq] == NULL) {
 			intrlevel[irq] = 0;
 			continue;
 		}
@@ -269,8 +270,8 @@ intr_calculatemasks()
 	 * Enforce a hierarchy that gives slow devices a better chance at not
 	 * dropping data.
 	 */
-	for (level = 0; level < (NIPL-1); level++) {
-		imask[level+1] |= imask[level];
+	for (level = 0; level < (NIPL - 1); level++) {
+		imask[level + 1] |= imask[level];
 	}
 
 	/* And eventually calculate the complete masks. */
@@ -279,7 +280,7 @@ intr_calculatemasks()
 		int maxlevel = IPL_NONE;
 		int minlevel = IPL_HIGH;
 
-		if(intrsrc[irq] != NULL) {
+		if (intrsrc[irq] != NULL) {
 			continue;
 		};
 
@@ -293,7 +294,7 @@ intr_calculatemasks()
 			}
 		}
 		intrmask[irq] = irqs;
-		intrsrc[irq]->is_maxlevel =  maxlevel;
+		intrsrc[irq]->is_maxlevel = maxlevel;
 		intrsrc[irq]->is_minlevel = minlevel;
 	}
 
@@ -388,31 +389,31 @@ intr_allocate_slot_cpu(spic, ci, pin, index, isapic)
     struct intrsource *isp;
     int i, slot, start, max;
 
-    if(isapic == FALSE) {
-    	slot = pin;
-    } else {
-        start = 0;
-        max = MAX_INTR_SOURCES;
-        slot = -1;
+	if (isapic == FALSE) {
+		slot = pin;
+	} else {
+		start = 0;
+		max = MAX_INTR_SOURCES;
+		slot = -1;
 
-        if (CPU_IS_PRIMARY(ci)) {
+		if (CPU_IS_PRIMARY(ci)) {
 			start = NUM_LEGACY_IRQS;
 		}
-        for (i = start; i < max; i++) {
-        	if(intrsrc[i] == NULL) {
-        		slot = i;
-        		break;
-        	}
-        }
+		for (i = start; i < max; i++) {
+			if (intrsrc[i] == NULL) {
+				slot = i;
+				break;
+			}
+		}
 		if (slot == -1) {
 			return EBUSY;
 		}
-    }
-    isp = intrsrc[slot];
+	}
+	isp = intrsrc[slot];
 	spic->sp_intsrc = isp;
-    spic->sp_slot = slot;
-    *index = slot;
-    return (0);
+	spic->sp_slot = slot;
+	*index = slot;
+	return (0);
 }
 
 int

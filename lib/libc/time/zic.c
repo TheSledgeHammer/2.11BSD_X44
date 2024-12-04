@@ -36,16 +36,17 @@
 /*
  *	@(#)zic.c	1.1 zic.c 3/4/87
  */
+#include <sys/cdefs.h>
 
 #include <sys/types.h>
-#include <sys/cdefs.h>
 #include <sys/stat.h>
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <tzfile.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 #ifndef BUFSIZ

@@ -60,14 +60,15 @@ softpic_init(void)
 	struct softpic *spic;
 	
 	spic = &intrspic;
-	if(spic == NULL) {
-		spic = (struct softpic *)malloc(sizeof(struct softpic *), M_DEVBUF, M_WAITOK);
+	if (spic == NULL) {
+		spic = (struct softpic*) malloc(sizeof(struct softpic*), M_DEVBUF,
+		M_WAITOK);
 	}
 	TAILQ_INIT(&pichead);
 	TAILQ_INIT(&apichead);
 
-	spic->sp_intsrc = (struct intrsource *)intrsrc;
-	spic->sp_inthnd = (struct intrhand *)intrhand;
+	spic->sp_intsrc = (struct intrsource*) intrsrc;
+	spic->sp_inthnd = (struct intrhand*) intrhand;
 }
 
 void
@@ -103,12 +104,12 @@ softpic_register(pic, apic)
 {
 	int error;
 	
-	if(softpic_register_pic(pic) != 0 || pic == NULL) {
+	if (softpic_register_pic(pic) != 0 || pic == NULL) {
 		printf("softpic_register: pic not found!\n");
 	} else {
 		printf("softpic_register: pic registered\n");
 	}
-	if(softpic_register_apic(apic) != 0 || apic == NULL) {
+	if (softpic_register_apic(apic) != 0 || apic == NULL) {
 		printf("softpic_register: apic not found!\n");
 	} else {
 		printf("softpic_register: apic registered\n");
@@ -181,28 +182,29 @@ softpic_handle_pic(spic)
 {
 	struct pic *pic;
 
-	switch(spic->sp_template) {
+	switch (spic->sp_template) {
 	case PIC_I8259:
 		pic = softpic_lookup_pic(PIC_I8259);
-		if(pic == &i8259_pic_template && spic->sp_template == pic->pic_type) {
+		if (pic == &i8259_pic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_IOAPIC:
 		pic = softpic_lookup_pic(PIC_IOAPIC);
-		if(pic == &ioapic_pic_template && spic->sp_template == pic->pic_type) {
+		if (pic == &ioapic_pic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_LAPIC:
 		pic = softpic_lookup_pic(PIC_LAPIC);
-		if(pic == &lapic_pic_template && spic->sp_template == pic->pic_type) {
+		if (pic == &lapic_pic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_SOFT:
 		pic = softpic_lookup_pic(PIC_SOFT);
-		if(pic == &softintr_pic_template && spic->sp_template == pic->pic_type) {
+		if (pic == &softintr_pic_template
+				&& spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
@@ -328,33 +330,37 @@ softpic_handle_apic(spic)
 {
     struct apic *apic;
 	
-    switch(spic->sp_template) {
-        case PIC_I8259:
-            apic = softpic_lookup_apic(PIC_I8259);
-            if(apic == &i8259_apic_template && spic->sp_template == apic->apic_pic_type) {
-                return (apic);
-            }
-            break;
-        case PIC_IOAPIC:
-            apic = softpic_lookup_apic(PIC_IOAPIC);
-            if(apic == &ioapic_apic_template && spic->sp_template == apic->apic_pic_type) {
-                return (apic);
-            }
-            break;
-        case PIC_LAPIC:
-            apic = softpic_lookup_apic(PIC_LAPIC);
-            if(apic == &lapic_apic_template && spic->sp_template == apic->apic_pic_type) {
-                return (apic);
-            }
-            break;
-    	case PIC_SOFT:
-    		apic = softpic_lookup_apic(PIC_SOFT);
-    		if(apic == &softintr_apic_template && spic->sp_template == apic->apic_pic_type) {
-    			return (apic);
-    		}
-    		break;
-    }
-    return (NULL);
+    switch (spic->sp_template) {
+	case PIC_I8259:
+		apic = softpic_lookup_apic(PIC_I8259);
+		if (apic == &i8259_apic_template
+				&& spic->sp_template == apic->apic_pic_type) {
+			return (apic);
+		}
+		break;
+	case PIC_IOAPIC:
+		apic = softpic_lookup_apic(PIC_IOAPIC);
+		if (apic == &ioapic_apic_template
+				&& spic->sp_template == apic->apic_pic_type) {
+			return (apic);
+		}
+		break;
+	case PIC_LAPIC:
+		apic = softpic_lookup_apic(PIC_LAPIC);
+		if (apic == &lapic_apic_template
+				&& spic->sp_template == apic->apic_pic_type) {
+			return (apic);
+		}
+		break;
+	case PIC_SOFT:
+		apic = softpic_lookup_apic(PIC_SOFT);
+		if (apic == &softintr_apic_template
+				&& spic->sp_template == apic->apic_pic_type) {
+			return (apic);
+		}
+		break;
+	}
+	return (NULL);
 }
 
 void
@@ -472,7 +478,7 @@ softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isap
 	}
 	is->is_type = intrtype[irq];
 
-	if(!cold) {
+	if (!cold) {
 		softpic_pic_hwmask(spic, irq, isapic, pictemplate);
 	}
 
@@ -481,20 +487,21 @@ softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isap
 	 * This is O(N^2), but we want to preserve the order, and N is
 	 * generally small.
 	 */
-    for (p = &intrsrc[slot]->is_handlers; (q = *p) != NULL && q->ih_level > level; p = &q->ih_next) {
-        ;
-    }
+	for (p = &intrsrc[slot]->is_handlers;
+			(q = *p) != NULL && q->ih_level > level; p = &q->ih_next) {
+		;
+	}
 
-    fakeintr(spic, &fakehand, level);
-    *p = &fakehand;
+	fakeintr(spic, &fakehand, level);
+	*p = &fakehand;
 
-    intr_calculatemasks();
+	intr_calculatemasks();
 
 	/*
 	 * Poke the real handler in now.
 	 */
-    ih->ih_pic = softpic_handle_pic(spic);
-    ih->ih_apic = softpic_handle_apic(spic);
+	ih->ih_pic = softpic_handle_pic(spic);
+	ih->ih_apic = softpic_handle_apic(spic);
 	ih->ih_fun = ih_fun;
 	ih->ih_arg = ih_arg;
 	ih->ih_next = *p;
@@ -503,7 +510,7 @@ softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isap
 	ih->ih_slot = slot;
 	*p = ih;
 
-	if(spic->sp_slot != slot) {
+	if (spic->sp_slot != slot) {
 		spic->sp_slot = slot;
 	}
 
@@ -512,11 +519,11 @@ softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isap
 	softpic_apic_allocate(spic, irq, type, idtvec, isapic, pictemplate);
 	softpic_pic_addroute(spic, ci, irq, idtvec, type, isapic, pictemplate);
 
-    if(!cold) {
+	if (!cold) {
 		softpic_pic_hwunmask(spic, irq, isapic, pictemplate);
 	}
 
-    return (ih);
+	return (ih);
 }
 
 void
@@ -534,30 +541,31 @@ softpic_disestablish(spic, ci, irq, idtvec, isapic, pictemplate)
     ih = intrhand[irq];
     is = intrsrc[irq];
 
-    if (!LEGAL_IRQ(irq)) {
+	if (!LEGAL_IRQ(irq)) {
 		panic("softpic_disestablish: bogus irq");
 	}
 
-    softpic_pic_hwmask(spic, irq, isapic, pictemplate);
+	softpic_pic_hwmask(spic, irq, isapic, pictemplate);
 
-    for (p = &is->is_handlers; (q = *p) != NULL && q != ih; p = &q->ih_next) {
-        ;
-    }
-    if (q) {
-        *p = q->ih_next;
-    } else {
-        panic("softpic_disestablish: handler not registered");
-    }
+	for (p = &is->is_handlers; (q = *p) != NULL && q != ih; p = &q->ih_next) {
+		;
+	}
+	if (q) {
+		*p = q->ih_next;
+	} else {
+		panic("softpic_disestablish: handler not registered");
+	}
 
-    intr_calculatemasks();
+	intr_calculatemasks();
 
-    if(is->is_handlers == NULL) {
-    	intrhand[irq] = NULL;
-    	intrtype[irq] = IST_NONE;
-    	softpic_pic_delroute(spic, ci, irq, idtvec, is->is_type, isapic, pictemplate);
-    } else if(is->is_count == 0) {
-    	softpic_pic_hwunmask(spic, irq, isapic, pictemplate);
-    }
-    softpic_apic_free(spic, irq, idtvec, isapic, pictemplate);
-    free(ih, M_DEVBUF);
+	if (is->is_handlers == NULL) {
+		intrhand[irq] = NULL;
+		intrtype[irq] = IST_NONE;
+		softpic_pic_delroute(spic, ci, irq, idtvec, is->is_type, isapic,
+				pictemplate);
+	} else if (is->is_count == 0) {
+		softpic_pic_hwunmask(spic, irq, isapic, pictemplate);
+	}
+	softpic_apic_free(spic, irq, idtvec, isapic, pictemplate);
+	free(ih, M_DEVBUF);
 }

@@ -62,7 +62,7 @@ strxfrm(dst, src, n)
 	srclen = strlen(src);
 	if (n != 0) {
 		copysize = srclen < n ? srclen : n - 1;
-		(void)memcpy(dst, src, copysize);
+		(void) memcpy(dst, src, copysize);
 		dst[copysize] = 0;
 	}
 	return (srclen);

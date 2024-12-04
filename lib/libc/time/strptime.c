@@ -42,6 +42,8 @@ __RCSID("$NetBSD: strptime.c,v 1.22 2000/12/20 20:56:34 christos Exp $");
 
 #include "namespace.h"
 
+#include <sys/types.h>
+
 #include <ctype.h>
 #include <locale.h>
 #include <stdio.h>
@@ -55,6 +57,7 @@ __RCSID("$NetBSD: strptime.c,v 1.22 2000/12/20 20:56:34 christos Exp $");
 
 #ifdef __weak_alias
 __weak_alias(strptime,_strptime)
+__weak_alias(strptime_l, _strptime_l)
 #endif
 
 /*
@@ -68,22 +71,26 @@ __weak_alias(strptime,_strptime)
 static	int conv_num(const unsigned char **, int *, int, int);
 static time_locale_t *CurrentTimeLocale(locale_t);
 
-#define	_ctloc(loc, x)		(CurrentTimeLocale(loc)->x)
+#define	_ctloc(loc, x)		(CurrentTimeLocale((loc))->x)
 
 static time_locale_t *
 CurrentTimeLocale(locale)
 	locale_t locale;
 {
-	time_locale_t *time;
-	time = __get_current_time_locale(locale);
+	time_locale_t *time, ltime;
+
+	time = __get_current_time_locale();
+	ltime = (time_locale_t *)locale->part_impl[LC_TIME];
+	if (ltime == time) {
+		return (ltime);
+	}
 	return (time);
 }
 
 char *
-strptime(buf, fmt, tm, locale)
+strptime(buf, fmt, tm)
 	const char *buf, *fmt;
 	struct tm *tm;
-	locale_t locale;
 {
 	return (strptime_l(buf, fmt, tm, __get_locale()));
 }

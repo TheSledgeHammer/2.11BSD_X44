@@ -48,7 +48,7 @@ strerror(num)
 {
 	extern int sys_nerr;
 #define	UPREFIX	"Unknown error: "
-	static char ebuf[40] = UPREFIX;		/* 64-bit number + slop */
+	static char ebuf[40] = UPREFIX; /* 64-bit number + slop */
 	register unsigned int errnum;
 	register char *p, *t;
 	char tmp[40];

@@ -38,13 +38,9 @@ __RCSID("$NetBSD: strchrnul.c,v 1.1 2016/10/12 20:01:40 christos Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 #include "namespace.h"
 #include <assert.h>
 #include <string.h>
-#else
-#include <lib/libkern/libkern.h>
-#endif
 
 char *
 strchrnul(const char *p, int ch)

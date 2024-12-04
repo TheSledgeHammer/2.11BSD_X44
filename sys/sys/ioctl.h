@@ -165,7 +165,7 @@ struct ttysize {
 #define	ANYP				0x000000c0							/* get any parity/send none */
 						/* 	0x100 (old NLDELAY) */
 						/* 	0x200 */
-#define	XTABS				0x00000400	/* expand tabs on output */
+#define	XTABS				0x00000400							/* expand tabs on output */
 						/* 	0x0800 (part of old XTABS) */
 						/* 	0x1000 (old CRDELAY) */
 						/* 	0x2000 */
@@ -371,8 +371,8 @@ struct ttysize {
 #define	SIOCSIFGATTR   		_IOW('i', 140, struct ifgroupreq) 	/* set ifgroup attribs */
 #define	SIOCGIFGLIST   		_IOWR('i', 141, struct ifgroupreq) 	/* get ifgroup list */
 
-#define	SIOCSETPFSYNC		_IOW('i', 247, struct ifreq)
-#define	SIOCGETPFSYNC		_IOWR('i', 248, struct ifreq)
+#define	SIOCSETPFSYNC		_IOW('i', 247, struct ifreq)		/* set pfsync */
+#define	SIOCGETPFSYNC		_IOWR('i', 248, struct ifreq)		/* get pfsync */
 
 #ifndef _KERNEL
 #include <sys/cdefs.h>

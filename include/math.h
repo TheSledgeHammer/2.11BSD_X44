@@ -145,14 +145,35 @@ extern int signgam;
 #endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
 
 __BEGIN_DECLS
-
-double	fabs(double), floor(double), ceil(double), fmod(double, double), ldexp(double, int);
-double	sqrt(double), hypot(double, double), atof(const char *);
-double	sin(double), cos(double), tan(double), asin(double), acos(double), atan(double), atan2(double, double);
-double	exp(double), log(double), log10(double), pow(double, double);
-double	sinh(double), cosh(double), tanh(double);
+double	fabs(double),
+		floor(double),
+		ceil(double),
+		fmod(double, double),
+		ldexp(double, int);
+double	sqrt(double),
+		hypot(double, double),
+		atof(const char *);
+double	sin(double),
+		cos(double),
+		tan(double),
+		asin(double),
+		acos(double),
+		atan(double),
+		atan2(double, double);
+double	exp(double),
+		log(double),
+		log10(double),
+		pow(double, double);
+double	sinh(double),
+		cosh(double),
+		tanh(double);
 double	gamma(double);
-double	j0(double), j1(double), jn(int, double), y0(double), y1(double), yn(int, double);
+double	j0(double),
+		j1(double),
+		jn(int, double),
+		y0(double),
+		y1(double),
+		yn(int, double);
 
 /* libc/gen/arch/"arch" */
 double frexp(double, int *);

@@ -3,13 +3,13 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/types.h>	/* for time_t */
 
-#include "stdio.h"		/* for stdout, stderr, perror */
-#include "string.h"		/* for strcpy */
-#include "sys/types.h"	/* for time_t */
-#include "tzfile.h"
-#include "time.h"		/* for struct tm */
-#include "stdlib.h"		/* for exit, malloc, atoi */
+#include <stdio.h>		/* for stdout, stderr, perror */
+#include <stdlib.h>		/* for exit, malloc, atoi */
+#include <string.h>		/* for strcpy */
+#include <time.h>		/* for struct tm */
+#include <tzfile.h>
 
 #ifndef TRUE
 #define TRUE		1

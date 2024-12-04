@@ -11,12 +11,19 @@ __RCSID("$NetBSD: strftime.c,v 1.14.2.2 2004/05/17 10:38:03 tron Exp $");
 
 #include "namespace.h"
 
+#include <stddef.h>
+#include <assert.h>
+#include <locale.h>
+
+#include "locale/ltime.h"
+#include "locale/setlocale.h"
+
 /*
 ** Based on the UCB version with the ID appearing below.
 ** This is ANSIish only when "multibyte character == plain character".
 */
 
-//#include "private.h"
+#include "private.h"
 
 /*
 ** We don't use these extensions in strftime operation even when
@@ -68,21 +75,20 @@ static const char	sccsid[] = "@(#)strftime.c	5.4 (Berkeley) 3/14/89";
 #endif
 #endif
 
-#include <tzfile.h>
 #include <fcntl.h>
 #include <locale.h>
-
-#include "locale/ltime.h"
-#include "locale/setlocale.h"
-#include "private.h"
+#include <stdio.h>
+#include <tzfile.h>
 
 static time_locale_t *CurrentTimeLocale(locale_t);
-
-#define	_ctloc(loc, x)		(CurrentTimeLocale(loc)->x)
-
 static char *_add(const char *, char *, const char *);
 static char *_conv(int, const char *, char *, const char *);
 static char *_fmt(const char *, const struct tm *, char *, const char *, int *, locale_t);
+static char *_yconv(int, int, int, int, char *, const char *);
+
+extern char *tzname[];
+
+#define	_ctloc(loc, x)		(CurrentTimeLocale((loc))->x)
 
 #define NO_RUN_TIME_WARNINGS_ABOUT_YEAR_2000_PROBLEMS_THANK_YOU
 
@@ -90,11 +96,24 @@ static char *_fmt(const char *, const struct tm *, char *, const char *, int *, 
 #define YEAR_2000_NAME	"CHECK_STRFTIME_FORMATS_FOR_TWO_DIGIT_YEARS"
 #endif /* !defined YEAR_2000_NAME */
 
-
 #define IN_NONE	0
 #define IN_SOME	1
 #define IN_THIS	2
 #define IN_ALL	3
+
+static time_locale_t *
+CurrentTimeLocale(locale)
+	locale_t locale;
+{
+	time_locale_t *time, ltime;
+
+	time = __get_current_time_locale();
+	ltime = (time_locale_t *)locale->part_impl[LC_TIME];
+	if (ltime == time) {
+		return (ltime);
+	}
+	return (time);
+}
 
 size_t
 strftime(s, maxsize, format, t)
@@ -119,7 +138,7 @@ strftime_l(s, maxsize, format, t, locale)
 
 	tzset();
 	warn = IN_NONE;
-	p = _fmt(((format == NULL) ? "%c" : format), t, s, s + maxsize, &warn);
+	p = _fmt(((format == NULL) ? "%c" : format), t, s, s + maxsize, &warn, locale);
 #ifndef NO_RUN_TIME_WARNINGS_ABOUT_YEAR_2000_PROBLEMS_THANK_YOU
 	if (warn != IN_NONE && getenv(YEAR_2000_NAME) != NULL) {
 		(void) fprintf(stderr, "\n");
@@ -137,19 +156,14 @@ strftime_l(s, maxsize, format, t, locale)
 		(void) fprintf(stderr, "\n");
 	}
 #endif /* !defined NO_RUN_TIME_WARNINGS_ABOUT_YEAR_2000_PROBLEMS_THANK_YOU */
-	if (p == s + maxsize)
-		return 0;
+	if (p == s + maxsize) {
+		if (maxsize > 0) {
+			s[maxsize - 1] = '\0';
+		}
+		return (0);
+	}
 	*p = '\0';
-	return p - s;
-}
-
-static time_locale_t *
-CurrentTimeLocale(locale)
-	locale_t locale;
-{
-	time_locale_t *time;
-	time = __get_current_time_locale(locale);
-	return (time);
+	return (p - s);
 }
 
 static char *
@@ -161,7 +175,7 @@ _fmt(format, t, pt, ptlim, warnp, locale)
 	int *warnp;
 	locale_t locale;
 {
-	for ( ; *format; ++format) {
+	for (; *format; ++format) {
 		if (*format == '%') {
 label:
 			switch (*++format) {
@@ -201,14 +215,13 @@ label:
 				** something completely different.
 				** (ado, 1993-05-24)
 				*/
-				pt = _conv((t->tm_year + TM_YEAR_BASE) / 100,
-					"%02d", pt, ptlim);
+				pt = _yconv(t->tm_year, TM_YEAR_BASE, 1, 0, pt, ptlim);
 				continue;
 			case 'c':
 				{
 				int warn2 = IN_SOME;
 
-				pt = _fmt(_ctloc(locale, c_fmt), t, pt, ptlim, warnp);
+				pt = _fmt(_ctloc(locale, c_fmt), t, pt, ptlim, warnp, locale);
 				if (warn2 == IN_ALL)
 					warn2 = IN_THIS;
 				if (warn2 > *warnp)
@@ -216,7 +229,7 @@ label:
 				}
 				continue;
 			case 'D':
-				pt = _fmt("%m/%d/%y", t, pt, ptlim, warnp);
+				pt = _fmt("%m/%d/%y", t, pt, ptlim, warnp, locale);
 				continue;
 			case 'd':
 				pt = _conv(t->tm_mday, "%02d", pt, ptlim);
@@ -237,7 +250,7 @@ label:
 				pt = _conv(t->tm_mday, "%2d", pt, ptlim);
 				continue;
 			case 'F':
-				pt = _fmt("%Y-%m-%d", t, pt, ptlim, warnp);
+				pt = _fmt("%Y-%m-%d", t, pt, ptlim, warnp, locale);
 				continue;
 			case 'H':
 				pt = _conv(t->tm_hour, "%02d", pt, ptlim);
@@ -301,10 +314,10 @@ label:
 					pt, ptlim);
 				continue;
 			case 'R':
-				pt = _fmt("%H:%M", t, pt, ptlim, warnp);
+				pt = _fmt("%H:%M", t, pt, ptlim, warnp, locale);
 				continue;
 			case 'r':
-				pt = _fmt("%I:%M:%S %p", t, pt, ptlim, warnp);
+				pt = _fmt("%I:%M:%S %p", t, pt, ptlim, warnp, locale);
 				continue;
 			case 'S':
 				pt = _conv(t->tm_sec, "%02d", pt, ptlim);
@@ -328,7 +341,7 @@ label:
 				}
 				continue;
 			case 'T':
-				pt = _fmt("%H:%M:%S", t, pt, ptlim, warnp);
+				pt = _fmt("%H:%M:%S", t, pt, ptlim, warnp, locale);
 				continue;
 			case 't':
 				pt = _add("\t", pt, ptlim);
@@ -431,8 +444,10 @@ label:
 						*warnp = IN_ALL;
 						pt = _conv(year % 100, "%02d",
 							pt, ptlim);
-					} else	pt = _conv(year, "%04d",
-							pt, ptlim);
+						pt = _yconv(year, TM_YEAR_BASE, 0, 1, pt, ptlim);
+					} else	{
+						pt = _yconv(year, TM_YEAR_BASE, 1, 1, pt, ptlim);
+					}
 				}
 				continue;
 			case 'v':
@@ -441,7 +456,7 @@ label:
 				** "date as dd-bbb-YYYY"
 				** (ado, 1993-05-24)
 				*/
-				pt = _fmt("%e-%b-%Y", t, pt, ptlim, warnp);
+				pt = _fmt("%e-%b-%Y", t, pt, ptlim, warnp, locale);
 				continue;
 			case 'W':
 				pt = _conv((t->tm_yday + DAYSPERWEEK -
@@ -454,13 +469,13 @@ label:
 				pt = _conv(t->tm_wday, "%d", pt, ptlim);
 				continue;
 			case 'X':
-				pt = _fmt(_ctloc(locale, X_fmt), t, pt, ptlim, warnp);
+				pt = _fmt(_ctloc(locale, X_fmt), t, pt, ptlim, warnp, locale);
 				continue;
 			case 'x':
 				{
 				int	warn2 = IN_SOME;
 
-				pt = _fmt(_ctloc(locale, x_fmt), t, pt, ptlim, &warn2);
+				pt = _fmt(_ctloc(locale, x_fmt), t, pt, ptlim, &warn2, locale);
 				if (warn2 == IN_ALL)
 					warn2 = IN_THIS;
 				if (warn2 > *warnp)
@@ -469,12 +484,10 @@ label:
 				continue;
 			case 'y':
 				*warnp = IN_ALL;
-				pt = _conv((t->tm_year + TM_YEAR_BASE) % 100,
-					"%02d", pt, ptlim);
+				pt = _yconv(t->tm_year, TM_YEAR_BASE, 0, 1, pt, ptlim);
 				continue;
 			case 'Y':
-				pt = _conv(t->tm_year + TM_YEAR_BASE, "%04d",
-					pt, ptlim);
+				pt = _yconv(t->tm_year, TM_YEAR_BASE, 1, 1, pt, ptlim);
 				continue;
 			case 'Z':
 #ifdef TM_ZONE
@@ -575,8 +588,7 @@ label:
 				continue;
 #if 0
 			case '+':
-				pt = _fmt(_ctloc(locale, date_fmt), t, pt, ptlim,
-					warnp);
+				pt = _fmt(_ctloc(locale, date_fmt), t, pt, ptlim, warnp, locale);
 				continue;
 #endif
 			case '%':
@@ -598,7 +610,7 @@ label:
 
 static char *
 _conv(n, format, pt, ptlim)
-	const int		n;
+	const int n;
 	const char * const	format;
 	char * const		pt;
 	const char * const	ptlim;
@@ -606,7 +618,7 @@ _conv(n, format, pt, ptlim)
 	char	buf[INT_STRLEN_MAXIMUM(int) + 1];
 
 	(void) sprintf(buf, format, n);
-	return _add(buf, pt, ptlim);
+	return (_add(buf, pt, ptlim));
 }
 
 static char *
@@ -615,7 +627,47 @@ _add(str, pt, ptlim)
 	char *pt;
 	const char * const	ptlim;
 {
-	while (pt < ptlim && (*pt = *str++) != '\0')
+	while (pt < ptlim && (*pt = *str++) != '\0') {
 		++pt;
+	}
+	return (pt);
+}
+
+/*
+** POSIX and the C Standard are unclear or inconsistent about
+** what %C and %y do if the year is negative or exceeds 9999.
+** Use the convention that %C concatenated with %y yields the
+** same output as %Y, and that %Y contains at least 4 bytes,
+** with more only if necessary.
+*/
+
+static char *
+_yconv(a, b, convert_top, convert_yy, pt, ptlim)
+	int a, b, convert_top, convert_yy;
+	char *pt;
+	const char *ptlim;
+{
+	int lead;
+	int trail;
+
+#define DIVISOR	100
+	trail = a % DIVISOR + b % DIVISOR;
+	lead = a / DIVISOR + b / DIVISOR + trail / DIVISOR;
+	trail %= DIVISOR;
+	if (trail < 0 && lead > 0) {
+		trail += DIVISOR;
+		--lead;
+	} else if (lead < 0 && trail > 0) {
+		trail -= DIVISOR;
+		++lead;
+	}
+	if (convert_top) {
+		if (lead == 0 && trail < 0)
+			pt = _add("-0", pt, ptlim);
+		else
+			pt = _conv(lead, "%02d", pt, ptlim);
+	}
+	if (convert_yy)
+		pt = _conv(((trail < 0) ? -trail : trail), "%02d", pt, ptlim);
 	return pt;
 }

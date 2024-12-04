@@ -92,12 +92,12 @@ swab(from, to, len)
 	void *to;
 	ssize_t len;
 {
-    const char *fp;
-    char *tp;
-    int n;
+	const char *fp;
+	char *tp;
+	int n;
 
-    fp = (const char *)from;
-    tp = (char *)to;
-    n = (int)len;
-    __swab(fp, tp, n);
+	fp = (const char*) from;
+	tp = (char*) to;
+	n = (int) len;
+	__swab(fp, tp, n);
 }

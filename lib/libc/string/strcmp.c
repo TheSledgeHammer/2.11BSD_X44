@@ -14,7 +14,6 @@ int
 strcmp(s1, s2)
 	register const char *s1, *s2;
 {
-
 	while (*s1 == *s2++)
 		if (*s1++ == '\0')
 			return (0);

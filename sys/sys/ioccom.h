@@ -50,7 +50,7 @@
  * we restrict parameters to at most 256 bytes (disklabels are 216 bytes).
  */
 #ifdef COMPAT_211BSD
-//#define	IOCPARM_MASK		0xff		/* parameters must be < 256 bytes */
+#define	IOCPARM_MASK		0xff		/* parameters must be < 256 bytes */
 #endif
 #define	IOCPARM_MASK		0x1fff		/* parameter length, at most 13 bits */
 #define	IOCPARM_SHIFT		16

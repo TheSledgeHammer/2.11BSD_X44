@@ -37,6 +37,7 @@
  *	@(#)ialloc.c	1.1 ialloc.c 3/4/87
  */
 
+#include <sys/cdefs.h>
 /*LINTLIBRARY*/
 
 #include <stdio.h>
@@ -98,7 +99,7 @@ irealloc(pointer, size)
 char *
 icatalloc(old, new)
 	char *old;
-	const char * const new;
+	const char *const new;
 {
 	register char *result;
 	register int oldsize, newsize;
@@ -121,7 +122,7 @@ icpyalloc(string)
 
 void
 ifree(p)
-	char * const	p;
+	char *const p;
 {
 	if (!NULLMAL(p))
 		free(p);

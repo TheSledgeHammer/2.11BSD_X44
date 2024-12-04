@@ -42,6 +42,6 @@ bzero(dst0, length)
 {
 	char *p;
 
-	p = (char *)dst0;
-	(void)__bzero(p, length);
+	p = (char*) dst0;
+	(void) __bzero(p, length);
 }

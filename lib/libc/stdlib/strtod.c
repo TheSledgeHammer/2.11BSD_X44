@@ -202,7 +202,9 @@ typedef union {
 	double d;
 	ULong ul[2];
 } _double;
+
 #define value(x) ((x).d)
+
 #ifdef IEEE_LITTLE_ENDIAN
 #define word0(x) ((x).ul[1])
 #define word1(x) ((x).ul[0])
@@ -1191,7 +1193,7 @@ static CONST double tinytens[] = { 1e-16, 1e-32 };
 #endif
 #endif
 
- double
+double
 strtod
 #ifdef KR_headers
 	(s00, se) CONST char *s00; char **se;
@@ -1740,7 +1742,6 @@ strtod
  ret:
 	if (se)
 		/* LINTED interface specification */
-//		*se = (char *) s;
         *se = __UNCONST(s);
 	return sign ? -value(rv) : value(rv);
 }

@@ -102,12 +102,12 @@
 #define	B_ADAPTOR(val)		(((val) >> B_ADAPTORSHIFT) & B_ADAPTORMASK)
 #define B_CONTROLLERSHIFT	20
 #define B_CONTROLLERMASK	0xf
-#define	B_CONTROLLER(val)	(((val)>>B_CONTROLLERSHIFT) & B_CONTROLLERMASK)
+#define	B_CONTROLLER(val)	(((val) >> B_CONTROLLERSHIFT) & B_CONTROLLERMASK)
 
 /* Slices: */
 #define B_SLICESHIFT		20
 #define B_SLICEMASK			0xff
-#define B_SLICE(val)		(((val)>>B_SLICESHIFT) & B_SLICEMASK)
+#define B_SLICE(val)		(((val) >> B_SLICESHIFT) & B_SLICEMASK)
 
 /* Common: */
 #define B_UNITSHIFT			16

@@ -39,9 +39,9 @@ bcmp(b1, b2, length)
 	const void *b2;
 	size_t length;
 {
-	 const char *p1, *p2;
+	const char *p1, *p2;
 
-	 p1 = (const char *)b1;
-	 p2 = (const char *)b2;
-	 return (__bcmp(p1, p2, length));
+	p1 = (const char*) b1;
+	p2 = (const char*) b2;
+	return (__bcmp(p1, p2, length));
 }

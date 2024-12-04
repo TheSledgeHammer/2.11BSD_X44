@@ -15,8 +15,9 @@
  *
  * __errlst - same as above but the caller must specify an error list file.
  *
- * ____errlst_default - same as above but generates a default error list as
+ * __errlst_default - same as above but generates a default error list as
  * 			pre-defined by list.
+ *
  * syserrlst_default - same as above but sets "sys_errlist" from "errlst.c"
  * 			as the pre-defined list.
 */
