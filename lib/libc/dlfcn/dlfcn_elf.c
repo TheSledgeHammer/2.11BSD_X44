@@ -165,7 +165,6 @@ dl_iterate_phdr_setup(void)
 			dlpi_phdr = (void *)aux->a_v;
 			break;
 		case AT_PHNUM:
-			_DIAGASSERT(__type_fit(Elf_Half, aux->a_v));
 			dlpi_phnum = (Elf_Half)aux->a_v;
 			break;
 		case AT_SUN_EXECNAME:
