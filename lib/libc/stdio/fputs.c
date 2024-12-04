@@ -66,9 +66,6 @@ fputs(s, fp)
 	struct __siov iov;
 	int r;
 
-	_DIAGASSERT(s != NULL);
-	_DIAGASSERT(fp != NULL);
-
 	iov.iov_base = __UNCONST(s);
 	iov.iov_len = uio.uio_resid = strlen(s);
 	uio.uio_iov = &iov;

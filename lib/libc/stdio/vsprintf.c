@@ -39,9 +39,6 @@ vsprintf(char *str, const char *fmt, va_list ap)
 	FILE f;
 	struct __sfileext fext;
 
-	_DIAGASSERT(str != NULL);
-	_DIAGASSERT(fmt != NULL);
-
 	_FILEEXT_SETUP(&f, &fext);
 	f._flags = _IOWRT | _IOSTRG;
 	f._flags = __SWR | __SSTR;

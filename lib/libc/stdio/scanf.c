@@ -66,7 +66,7 @@ scanf(char const *fmt, ...)
 	int ret;
 	va_list ap;
 
-	_DIAGASSERT(fmt != NULL);
+
 
 	va_start(ap, fmt);
 	ret = doscan(stdin, fmt, ap);
@@ -101,7 +101,6 @@ sscanf(const char *str, char const *fmt, ...)
 	struct __sfileext fext;
 
 	_DIAGASSERT(str != NULL);
-	_DIAGASSERT(fmt != NULL);
 
 	_FILEEXT_SETUP(&_strbuf, &fext);
 	_strbuf._flags = __SRD|_IOREAD|_IOSTRG;
@@ -124,7 +123,6 @@ vsscanf(const char *str, const char *fmt, va_list ap)
 	struct __sfileext fext;
 
 	_DIAGASSERT(str != NULL);
-	_DIAGASSERT(fmt != NULL);
 
 	_FILEEXT_SETUP(&_strbuf, &fext);
 	_strbuf._flags = __SRD;

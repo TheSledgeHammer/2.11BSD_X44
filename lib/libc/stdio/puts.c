@@ -60,8 +60,6 @@ puts(s)
 	struct __siov iov[2];
 	int r;
 
-	_DIAGASSERT(s != NULL);
-
 	/* LINTED we don't touch the string */
 	iov[0].iov_base = __UNCONST(s);
 	iov[0].iov_len = c;

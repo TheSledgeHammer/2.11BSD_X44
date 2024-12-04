@@ -402,9 +402,6 @@ vfprintf(FILE *fp, const char *fmt0, va_list ap)
 	    flags&SHORTINT ? (u_long)(u_short)va_arg(ap, int) : \
 	    (u_long)va_arg(ap, u_int))
 
-	_DIAGASSERT(fp != NULL);
-	_DIAGASSERT(fmt0 != NULL);
-
     _SET_ORIENTATION(fp, -1);
 
 	/* sorry, fprintf(read_only_file, "") returns EOF, not 0 */

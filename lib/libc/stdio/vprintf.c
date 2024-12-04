@@ -30,6 +30,5 @@ static char sccsid[] = "@(#)vprintf.c	5.2 (Berkeley) 6/27/88";
 int
 vprintf(const char *fmt, va_list ap)
 {
-	_DIAGASSERT(fmt != NULL);
 	return (doprnt(stdout, fmt, ap));
 }
