@@ -15,9 +15,6 @@ __RCSID("$NetBSD: strftime.c,v 1.14.2.2 2004/05/17 10:38:03 tron Exp $");
 #include <assert.h>
 #include <locale.h>
 
-#include "locale/ltime.h"
-#include "locale/setlocale.h"
-
 /*
 ** Based on the UCB version with the ID appearing below.
 ** This is ANSIish only when "multibyte character == plain character".
@@ -80,6 +77,14 @@ static const char	sccsid[] = "@(#)strftime.c	5.4 (Berkeley) 3/14/89";
 #include <stdio.h>
 #include <tzfile.h>
 
+#include "locale/ltime.h"
+#include "locale/setlocale.h"
+
+#ifdef USG_COMPAT
+time_t		tzone = 0;
+int			daylight = 0;
+#endif /* USG_COMPAT */
+
 static time_locale_t *CurrentTimeLocale(locale_t);
 static char *_add(const char *, char *, const char *);
 static char *_conv(int, const char *, char *, const char *);
@@ -87,8 +92,6 @@ static char *_fmt(const char *, const struct tm *, char *, const char *, int *, 
 static char *_yconv(int, int, int, int, char *, const char *);
 
 extern char *tzname[];
-
-#define	_ctloc(loc, x)		(CurrentTimeLocale((loc))->x)
 
 #define NO_RUN_TIME_WARNINGS_ABOUT_YEAR_2000_PROBLEMS_THANK_YOU
 
@@ -102,10 +105,9 @@ extern char *tzname[];
 #define IN_ALL	3
 
 static time_locale_t *
-CurrentTimeLocale(locale)
-	locale_t locale;
+CurrentTimeLocale(locale_t locale)
 {
-	time_locale_t *time, ltime;
+	time_locale_t *time, *ltime;
 
 	time = __get_current_time_locale();
 	ltime = (time_locale_t *)locale->part_impl[LC_TIME];
@@ -116,22 +118,13 @@ CurrentTimeLocale(locale)
 }
 
 size_t
-strftime(s, maxsize, format, t)
-	char * const		s;
-	const size_t		maxsize;
-	const char * const	format;
-	const struct tm * const	t;
+strftime(char *s, size_t maxsize, const char *format, const struct tm *t)
 {
 	return (strftime_l(s, maxsize, format, t, __get_locale()));
 }
 
 size_t
-strftime_l(s, maxsize, format, t, locale)
-	char * const		s;
-	const size_t		maxsize;
-	const char * const	format;
-	const struct tm * const	t;
-	locale_t locale;
+strftime_l(char *s, size_t maxsize, const char *format, const struct tm *t, locale_t locale)
 {
 	char *p;
 	int	warn;
@@ -157,9 +150,6 @@ strftime_l(s, maxsize, format, t, locale)
 	}
 #endif /* !defined NO_RUN_TIME_WARNINGS_ABOUT_YEAR_2000_PROBLEMS_THANK_YOU */
 	if (p == s + maxsize) {
-		if (maxsize > 0) {
-			s[maxsize - 1] = '\0';
-		}
 		return (0);
 	}
 	*p = '\0';
@@ -171,10 +161,13 @@ _fmt(format, t, pt, ptlim, warnp, locale)
 	const char *format;
 	const struct tm * const	t;
 	char *pt;
-	const char * const	ptlim;
+	const char * const ptlim;
 	int *warnp;
 	locale_t locale;
 {
+    time_locale_t *time;
+
+    time = CurrentTimeLocale(locale);
 	for (; *format; ++format) {
 		if (*format == '%') {
 label:
@@ -185,26 +178,26 @@ label:
 			case 'A':
 				pt = _add((t->tm_wday < 0 ||
 					t->tm_wday >= DAYSPERWEEK) ?
-					"?" : _ctloc(locale, weekday[t->tm_wday]),
+					"?" : time->weekday[t->tm_wday],
 					pt, ptlim);
 				continue;
 			case 'a':
 				pt = _add((t->tm_wday < 0 ||
 					t->tm_wday >= DAYSPERWEEK) ?
-					"?" : _ctloc(locale, wday[t->tm_wday]),
+					"?" : time->wday[t->tm_wday],
 					pt, ptlim);
 				continue;
 			case 'B':
 				pt = _add((t->tm_mon < 0 ||
 					t->tm_mon >= MONSPERYEAR) ?
-					"?" : (0 ? _ctloc(locale, alt_month[t->tm_mon]) : _ctloc(locale, month[t->tm_mon])),
+					"?" : (0 ? time->alt_month[t->tm_mon] : time->month[t->tm_mon]),
 					pt, ptlim);
 				continue;
 			case 'b':
 			case 'h':
 				pt = _add((t->tm_mon < 0 ||
 					t->tm_mon >= MONSPERYEAR) ?
-					"?" : _ctloc(locale, mon[t->tm_mon]),
+					"?" : time->mon[t->tm_mon],
 					pt, ptlim);
 				continue;
 			case 'C':
@@ -221,7 +214,7 @@ label:
 				{
 				int warn2 = IN_SOME;
 
-				pt = _fmt(_ctloc(locale, c_fmt), t, pt, ptlim, warnp, locale);
+				pt = _fmt(time->c_fmt, t, pt, ptlim, warnp, locale);
 				if (warn2 == IN_ALL)
 					warn2 = IN_THIS;
 				if (warn2 > *warnp)
@@ -309,9 +302,7 @@ label:
 				continue;
 			case 'p':
 				pt = _add((t->tm_hour >= (HOURSPERDAY / 2)) ?
-					_ctloc(locale, pm) :
-					_ctloc(locale, am),
-					pt, ptlim);
+					time->pm : time->am, pt, ptlim);
 				continue;
 			case 'R':
 				pt = _fmt("%H:%M", t, pt, ptlim, warnp, locale);
@@ -469,13 +460,13 @@ label:
 				pt = _conv(t->tm_wday, "%d", pt, ptlim);
 				continue;
 			case 'X':
-				pt = _fmt(_ctloc(locale, X_fmt), t, pt, ptlim, warnp, locale);
+				pt = _fmt(time->X_fmt, t, pt, ptlim, warnp, locale);
 				continue;
 			case 'x':
 				{
 				int	warn2 = IN_SOME;
 
-				pt = _fmt(_ctloc(locale, x_fmt), t, pt, ptlim, &warn2, locale);
+				pt = _fmt(time->x_fmt, t, pt, ptlim, &warn2, locale);
 				if (warn2 == IN_ALL)
 					warn2 = IN_THIS;
 				if (warn2 > *warnp)
@@ -536,7 +527,7 @@ label:
 #ifndef STD_INSPIRED
 				if (t->tm_isdst == 0)
 #ifdef USG_COMPAT
-					diff = -timezone;
+					diff = -tzone;
 #else /* !defined USG_COMPAT */
 					continue;
 #endif /* !defined USG_COMPAT */

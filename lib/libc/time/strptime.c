@@ -60,6 +60,11 @@ __weak_alias(strptime,_strptime)
 __weak_alias(strptime_l, _strptime_l)
 #endif
 
+#ifdef USG_COMPAT
+time_t		tzone = 0;
+int			daylight = 0;
+#endif /* USG_COMPAT */
+
 /*
  * We do not implement alternate representations. However, we always
  * check whether a given modifier is allowed for a certain conversion.
@@ -71,13 +76,11 @@ __weak_alias(strptime_l, _strptime_l)
 static	int conv_num(const unsigned char **, int *, int, int);
 static time_locale_t *CurrentTimeLocale(locale_t);
 
-#define	_ctloc(loc, x)		(CurrentTimeLocale((loc))->x)
-
 static time_locale_t *
 CurrentTimeLocale(locale)
 	locale_t locale;
 {
-	time_locale_t *time, ltime;
+	time_locale_t *time, *ltime;
 
 	time = __get_current_time_locale();
 	ltime = (time_locale_t *)locale->part_impl[LC_TIME];
@@ -105,8 +108,10 @@ strptime_l(buf, fmt, tm, locale)
 	const unsigned char *bp;
 	size_t len = 0;
 	int alt_format, i, split_year = 0;
+    time_locale_t *time;
 
 	bp = (const u_char *)buf;
+    time = CurrentTimeLocale(locale);
 
 	while ((c = *fmt) != '\0') {
 		/* Clear `alternate' modifier prior to new conversion. */
@@ -152,7 +157,7 @@ literal:
 		case 'c':	/* Date and time, using the locale's format. */
 			LEGAL_ALT(ALT_E);
 			if (!(bp = (const u_char *)strptime((const char *)bp,
-			    _ctloc(locale, c_fmt), tm)))
+			    time->c_fmt, tm)))
 				return (0);
 			break;
 
@@ -173,7 +178,7 @@ literal:
 		case 'r':	/* The time in 12-hour clock representation. */
 			LEGAL_ALT(0);
 			if (!(bp = (const u_char *)strptime((const char *)bp,
-			    _ctloc(locale, ampm_fmt), tm)))
+			    time->ampm_fmt, tm)))
 				return (0);
 			break;
 
@@ -187,14 +192,14 @@ literal:
 		case 'X':	/* The time, using the locale's format. */
 			LEGAL_ALT(ALT_E);
 			if (!(bp = (const u_char *)strptime((const char *)bp,
-			    _ctloc(locale, X_fmt), tm)))
+			    time->X_fmt, tm)))
 				return (0);
 			break;
 
 		case 'x':	/* The date, using the locale's format. */
 			LEGAL_ALT(ALT_E);
 			if (!(bp = (const u_char *)strptime((const char *)bp,
-			    _ctloc(locale, x_fmt), tm)))
+			    time->x_fmt, tm)))
 				return (0);
 			break;
 
@@ -206,14 +211,14 @@ literal:
 			LEGAL_ALT(0);
 			for (i = 0; i < 7; i++) {
 				/* Full name. */
-				len = strlen(_ctloc(locale, weekday[i]));
-				if (strncasecmp(_ctloc(locale, weekday[i]),
+				len = strlen(time->weekday[i]);
+				if (strncasecmp(time->weekday[i],
 				    (const char *)bp, len) == 0)
 					break;
 
 				/* Abbreviated name. */
-				len = strlen(_ctloc(locale, wday[i]));
-				if (strncasecmp(_ctloc(locale, wday[i]),
+				len = strlen(time->wday[i]);
+				if (strncasecmp(time->wday[i],
 				    (const char *)bp, len) == 0)
 					break;
 			}
@@ -232,19 +237,19 @@ literal:
 			LEGAL_ALT(0);
 			for (i = 0; i < 12; i++) {
 				/* Full name. */
-				len = strlen(_ctloc(locale, alt_month[i]));
-				if (strncasecmp(_ctloc(locale, alt_month[i]),
+				len = strlen(time->alt_month[i]);
+				if (strncasecmp(time->alt_month[i],
 				    (const char *)bp, len) == 0)
 					break;
 
-				len = strlen(_ctloc(locale, month[i]));
-				if (strncasecmp(_ctloc(locale, month[i]),
+				len = strlen(time->month[i]);
+				if (strncasecmp(time->month[i],
 					(const char *)bp, len) == 0)
 					break;
 
 				/* Abbreviated name. */
-				len = strlen(_ctloc(locale, mon[i]));
-				if (strncasecmp(_ctloc(locale, mon[i]),
+				len = strlen(time->mon[i]);
+				if (strncasecmp(time->mon[i],
 				    (const char *)bp, len) == 0)
 					break;
 			}
@@ -320,22 +325,22 @@ literal:
 		case 'p':	/* The locale's equivalent of AM/PM. */
 			LEGAL_ALT(0);
 			/* AM? */
-			if (strcasecmp(_ctloc(locale, am[0]),
+			if (strcasecmp(&time->am[0],
 			    (const char *)bp) == 0) {
 				if (tm->tm_hour > 11)
 					return (0);
 
-				bp += strlen(_ctloc(locale, am[0]));
+				bp += strlen(&time->am[0]);
 				break;
 			}
 			/* PM? */
-			else if (strcasecmp(_ctloc(locale, pm[1]),
+			else if (strcasecmp(&time->pm[1],
 			    (const char *)bp) == 0) {
 				if (tm->tm_hour > 11)
 					return (0);
 
 				tm->tm_hour += 12;
-				bp += strlen(_ctloc(locale, pm[1]));
+				bp += strlen(&time->pm[1]);
 				break;
 			}
 
@@ -410,7 +415,7 @@ literal:
 	}
 
 	/* LINTED functional specification */
-	return ((char *)bp);
+	return (__UNCONST(bp));
 }
 
 
