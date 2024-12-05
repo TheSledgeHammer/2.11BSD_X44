@@ -138,8 +138,9 @@ typedef struct {
 #define	EI_DATA				5	/* Data encoding */
 #define	EI_VERSION			6	/* File version */
 #define	EI_OSABI			7	/* Operating system/ABI identification */
-#define	EI_ABIVERSION		8	/* ABI version */
+#define	EI_ABIVERSION			8	/* ABI version */
 #define	EI_PAD				9	/* Start of padding bytes up to EI_NIDENT*/
+#define EI_NIDENT	        	16	/* First non-ident header byte */
 
 /* e_ident[ELFMAG0,ELFMAG3] */
 #define	ELFMAG0				0x7f
