@@ -28,7 +28,7 @@ USE_SHLIBDIR=	yes
 # Stops GCC from complaining about old-style-definition
 WARNS=3
 CPPFLAGS+=	-D_LIBC -DLIBC_SCCS -DSYSLIBC_SCCS -D_REENTRANT
-#CPPFLAGS+=	-D_DIAGNOSTIC
+CPPFLAGS+=	-D_DIAGNOSTIC -D_LIBC_INTERNAL
 .if defined(MLIBDIR)
 CPPFLAGS+=	-DMLIBDIR=\"${MLIBDIR}\"
 .endif
@@ -46,10 +46,16 @@ CPPFLAGS+=	-DINET6
 
 CPPFLAGS+=	-DNLS
 
+.if (${USE_YP} != "no")
+CPPFLAGS+=	-DYP
+.endif
+
 # Set lint to exit on warnings
-#LINTFLAGS+=	-w
+LINTFLAGS+=	-w
 # ignore 'empty translation unit' warnings.
 LINTFLAGS+=	-X 272
+# XXX: ignore 'missing header declaration' warnings (for now).
+LINTFLAGS+=	-X 351
 
 .include "libcincludes.mk"
 
