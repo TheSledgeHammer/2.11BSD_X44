@@ -46,9 +46,9 @@ static char sccsid[] = "@(#)setreuid.c	8.1.1 (2.11BSD) 1997/11/26";
 
 int
 #if __STDC__
-setregid(gid_t rgid, gid_t egid)
+setreuid(gid_t rgid, gid_t egid)
 #else
-setregid(rgid, egid)
+setreuid(rgid, egid)
 	gid_t rgid, egid;
 #endif
 {
