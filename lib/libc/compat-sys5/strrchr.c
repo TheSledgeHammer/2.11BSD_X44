@@ -13,7 +13,7 @@ static char sccsid[] = "@(#)strrchr.c	5.2 (berkeley) 86/03/09";
  *
  * This routine is just "rindex" renamed.
  */
-__strong_alias(rindex, strrchr)
+
 char *
 #if __STDC__
 strrchr(const char *sp, int c)
