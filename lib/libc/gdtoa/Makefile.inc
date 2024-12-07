@@ -9,7 +9,7 @@
 CPPFLAGS+=-I${.CURDIR}/gdtoa -I${.CURDIR}/locale
 
 # ieee754 infinity constants and functions
-.if ${MACHINE_ARCH} == "aarch64" || "mips" || "risv"
+.if ${MACHINE_ARCH} == "aarch64" || "mips" || "riscv"
 SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_ieee754.c
 .endif
 .if  ${MACHINE_ARCH} == "alpha" || "arm" || "hppa" || \
