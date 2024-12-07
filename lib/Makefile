@@ -65,7 +65,7 @@ SUBDIR+=	${USRLIBDIR}/libskey
 .endif
 
 SUBDIR+=	../contrib/flex/lib
-SUBDIR+=	../contrib/elftoolchain/libelf
+SUBDIR+=	../contrib/elftoolchain/lib/libelf
 SUBDIR+=	../contrib/liblzf/lib
 
 SUBDIR+=	${USRLIBDIR}/libpcap
@@ -95,7 +95,7 @@ SUBDIR+=	../contrib/gnu/mpc/lib/libmpc
 SUBDIR+=	.WAIT
 
 SUBDIR+=	../contrib/xz/lib		# depends on libpthread
-SUBDIR+=	../contrib/elftoolchain/libdwarf # depends on libelf
+SUBDIR+=	../contrib/elftoolchain/lib/libdwarf # depends on libelf
 SUBDIR+=	../contrib/lua/lib          	# depends on libm
 SUBDIR+=	../contrib/sqlite/lib		# depends on libm
 SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
