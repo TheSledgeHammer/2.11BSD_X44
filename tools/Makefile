@@ -56,6 +56,10 @@ TOOLCHAIN_BITS+= pcc
 TOOLCHAIN_BITS+= dbsym mdsetimage
 .endif
 
+ELFTOOLCHAIN_BITS=
+ELFTOOLCHAIN_BITS+= .WAIT libelf
+ELFTOOLCHAIN_BITS+= .WAIT libdwarf
+
 LINT_BITS=
 .if ${MKLINT} != "no"
 LINT_BITS= lint lint2
@@ -92,6 +96,7 @@ SUBDIR=	host-mkdep compat binstall date .WAIT mktemp .WAIT sed .WAIT genassym 		
 		.WAIT texinfo 															\
 		.WAIT tic																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
+        ${ELFTOOLCHAIN_BITS}                                                    \
 		cksum db																\
 		file lint1																\
 		makefs sortinfo 																\
