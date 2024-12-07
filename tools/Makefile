@@ -57,8 +57,8 @@ TOOLCHAIN_BITS+= dbsym mdsetimage
 .endif
 
 ELFTOOLCHAIN_BITS=
-ELFTOOLCHAIN_BITS+= .WAIT libelf
-ELFTOOLCHAIN_BITS+= .WAIT libdwarf
+ELFTOOLCHAIN_BITS+= libelf .WAIT
+ELFTOOLCHAIN_BITS+= libdwarf .WAIT
 
 LINT_BITS=
 .if ${MKLINT} != "no"
