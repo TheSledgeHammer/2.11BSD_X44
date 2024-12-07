@@ -31,5 +31,5 @@ strrchr(sp, c)
 			r = __UNCONST(sp);
         }
 	} while (*sp++);
-	return(r);
+	return (r);
 }
