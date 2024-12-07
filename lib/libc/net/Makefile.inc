@@ -26,7 +26,7 @@ SRCS+=	hesiod.c
 .endif
 
 # sub-directories net sources
-.include "${.CURDIR}/net/hosttable/Makefile.inc"
+#.include "${.CURDIR}/net/hosttable/Makefile.inc"
 .include "${.CURDIR}/net/named/Makefile.inc"
 
 SRCS+=	getaddrinfo.c getnameinfo.c
