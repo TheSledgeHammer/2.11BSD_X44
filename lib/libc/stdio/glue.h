@@ -44,4 +44,6 @@ struct glue {
 	struct glue *next;
 	int			niobs;
 	FILE		*iobs;
-} __sglue;
+};
+
+extern struct glue __sglue;
