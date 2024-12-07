@@ -96,7 +96,7 @@ SUBDIR=	host-mkdep compat binstall date .WAIT mktemp .WAIT sed .WAIT genassym 		
 		.WAIT texinfo 															\
 		.WAIT tic																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
-        ${ELFTOOLCHAIN_BITS}                                                    \
+        	${ELFTOOLCHAIN_BITS}                                                    \
 		cksum db																\
 		file lint1																\
 		makefs sortinfo 																\
