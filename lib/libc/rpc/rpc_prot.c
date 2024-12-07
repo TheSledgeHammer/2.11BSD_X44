@@ -72,8 +72,6 @@ static void rejected(enum reject_stat, struct rpc_err *);
 
 /* * * * * * * * * * * * * * XDR Authentication * * * * * * * * * * * */
 
-struct opaque_auth _null_auth;
-
 /*
  * XDR an opaque authentication struct
  * (see auth.h)
