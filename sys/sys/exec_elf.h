@@ -54,40 +54,40 @@
 
 typedef	uint8_t				Elf_Byte;
 
-typedef	u_int32_t			Elf32_Addr;
+typedef	uint32_t			Elf32_Addr;
 #define	ELF32_FSZ_ADDR		4
-typedef	u_int32_t 			Elf32_Off;
+typedef	uint32_t 			Elf32_Off;
 typedef int32_t				Elf32_SOff;
 #define	ELF32_FSZ_OFF		4
 typedef	int32_t   			Elf32_Sword;
 #define	ELF32_FSZ_SWORD		4
-typedef	u_int32_t 			Elf32_Word;
+typedef	uint32_t 			Elf32_Word;
 #define	ELF32_FSZ_WORD		4
-typedef	u_int16_t 			Elf32_Half;
+typedef	uint16_t 			Elf32_Half;
 #define	ELF32_FSZ_HALF		2
 typedef uint64_t			Elf32_Lword;
 #define ELF32_FSZ_LWORD 	8
 
-typedef	u_int64_t			Elf64_Addr;
+typedef	uint64_t			Elf64_Addr;
 #define	ELF64_FSZ_ADDR		8
-typedef	u_int64_t			Elf64_Off;
+typedef	uint64_t			Elf64_Off;
 typedef int64_t				Elf64_SOff;
 #define	ELF64_FSZ_OFF		8
 typedef	int32_t				Elf64_Shalf;
 #define	ELF64_FSZ_SHALF		4
 typedef	int64_t				Elf64_Sword;
 #define	ELF64_FSZ_SWORD		8
-typedef	u_int64_t			Elf64_Word;
+typedef	uint64_t			Elf64_Word;
 #define	ELF64_FSZ_WORD		8
 typedef	int64_t				Elf64_Sxword;
 #define	ELF64_FSZ_XWORD		8
-typedef	u_int64_t			Elf64_Xword;
+typedef	uint64_t			Elf64_Xword;
 #define	ELF64_FSZ_XWORD		8
 typedef uint64_t			Elf64_Lword;
 #define ELF64_FSZ_LWORD 	8
-typedef	u_int32_t			Elf64_Half;
+typedef	uint32_t			Elf64_Half;
 #define	ELF64_FSZ_HALF		4
-typedef	u_int16_t 			Elf64_Quarter;
+typedef	uint16_t 			Elf64_Quarter;
 #define	ELF64_FSZ_QUARTER 	2
 
 /*
@@ -899,8 +899,10 @@ typedef struct {
 #define	Elf_Dyn		Elf32_Dyn
 #define	Elf_Word	Elf32_Word
 #define	Elf_Sword	Elf32_Sword
+#define Elf_Half	Elf32_Half
 #define	Elf_Addr	Elf32_Addr
 #define	Elf_Off		Elf32_Off
+#define Elf_SOff	Elf32_SOff
 #define	Elf_Nhdr	Elf32_Nhdr
 
 #define	ELF_R_SYM	ELF32_R_SYM
@@ -918,8 +920,10 @@ typedef struct {
 #define	Elf_Dyn		Elf64_Dyn
 #define	Elf_Word	Elf64_Word
 #define	Elf_Sword	Elf64_Sword
+#define Elf_Half	Elf64_Half
 #define	Elf_Addr	Elf64_Addr
 #define	Elf_Off		Elf64_Off
+#define Elf_SOff	Elf64_SOff
 #define	Elf_Nhdr	Elf64_Nhdr
 
 #define	ELF_R_SYM	ELF64_R_SYM
