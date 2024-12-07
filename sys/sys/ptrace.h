@@ -23,7 +23,8 @@
 #define	PT_DETACH		11	/* stop tracing a process */
 
 #define	PT_FIRSTMACH	32	/* for machine-specific requests */
-//#include <machine/ptrace.h>	/* machine-specific requests, if any */
+
+#include <machine/ptrace.h>	/* machine-specific requests, if any */
 
 #ifdef _KERNEL
 void	proc_reparent(struct proc *, struct proc *);
