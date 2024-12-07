@@ -54,40 +54,40 @@
 
 typedef	uint8_t				Elf_Byte;
 
-typedef	uint32_t			Elf32_Addr;
+typedef	u_int32_t			Elf32_Addr;
 #define	ELF32_FSZ_ADDR		4
-typedef	uint32_t 			Elf32_Off;
+typedef	u_int32_t 			Elf32_Off;
 typedef int32_t				Elf32_SOff;
 #define	ELF32_FSZ_OFF		4
 typedef	int32_t   			Elf32_Sword;
 #define	ELF32_FSZ_SWORD		4
-typedef	uint32_t 			Elf32_Word;
+typedef	u_int32_t 			Elf32_Word;
 #define	ELF32_FSZ_WORD		4
-typedef	uint16_t 			Elf32_Half;
+typedef	u_int16_t 			Elf32_Half;
 #define	ELF32_FSZ_HALF		2
 typedef uint64_t			Elf32_Lword;
 #define ELF32_FSZ_LWORD 	8
 
-typedef	uint64_t			Elf64_Addr;
+typedef	u_int64_t			Elf64_Addr;
 #define	ELF64_FSZ_ADDR		8
-typedef	uint64_t			Elf64_Off;
+typedef	u_int64_t			Elf64_Off;
 typedef int64_t				Elf64_SOff;
 #define	ELF64_FSZ_OFF		8
 typedef	int32_t				Elf64_Shalf;
 #define	ELF64_FSZ_SHALF		4
 typedef	int64_t				Elf64_Sword;
 #define	ELF64_FSZ_SWORD		8
-typedef	uint64_t			Elf64_Word;
+typedef	u_int64_t			Elf64_Word;
 #define	ELF64_FSZ_WORD		8
 typedef	int64_t				Elf64_Sxword;
 #define	ELF64_FSZ_XWORD		8
-typedef	uint64_t			Elf64_Xword;
+typedef	u_int64_t			Elf64_Xword;
 #define	ELF64_FSZ_XWORD		8
 typedef uint64_t			Elf64_Lword;
 #define ELF64_FSZ_LWORD 	8
-typedef	uint32_t			Elf64_Half;
+typedef	u_int32_t			Elf64_Half;
 #define	ELF64_FSZ_HALF		4
-typedef	uint16_t 			Elf64_Quarter;
+typedef	u_int16_t 			Elf64_Quarter;
 #define	ELF64_FSZ_QUARTER 	2
 
 /*
@@ -138,9 +138,9 @@ typedef struct {
 #define	EI_DATA				5	/* Data encoding */
 #define	EI_VERSION			6	/* File version */
 #define	EI_OSABI			7	/* Operating system/ABI identification */
-#define	EI_ABIVERSION			8	/* ABI version */
+#define	EI_ABIVERSION		8	/* ABI version */
 #define	EI_PAD				9	/* Start of padding bytes up to EI_NIDENT*/
-#define EI_NIDENT	        	16	/* First non-ident header byte */
+#define EI_NIDENT	        16	/* First non-ident header byte */
 
 /* e_ident[ELFMAG0,ELFMAG3] */
 #define	ELFMAG0				0x7f
@@ -180,8 +180,12 @@ typedef struct {
 #define ELFOSABI_TRU64		10	/* TRU64 UNIX */
 #define ELFOSABI_MODESTO	11	/* Novell Modesto */
 #define ELFOSABI_OPENBSD	12	/* OpenBSD */
+/* Unofficial OSABIs follow */
 #define ELFOSABI_ARM		97	/* ARM */
-#define	ELFOSABI_STANDALONE	255	/* Standalone (embedded) application */
+#define ELFOSABI_STANDALONE	255	/* Standalone (embedded) application */
+
+#define ELFOSABI_NONE		ELFOSABI_SYSV
+#define ELFOSABI_AIX		ELFOSABI_MONTEREY
 
 /* e_type */
 #define	ET_NONE				0		/* No file type */
@@ -197,43 +201,116 @@ typedef struct {
 #define	ET_HIPROC			0xffff
 
 /* e_machine */
-#define	EM_NONE				0		/* No machine */
-#define	EM_M32				1		/* AT&T WE 32100 */
-#define	EM_SPARC			2		/* SPARC */
-#define	EM_386				3		/* Intel 80386 */
-#define	EM_68K				4		/* Motorola 68000 */
-#define	EM_88K				5		/* Motorola 88000 */
-#define	EM_486				6		/* Intel 80486 */
-#define	EM_860				7		/* Intel 80860 */
-#define	EM_MIPS				8		/* MIPS I Architecture */
-#define	EM_S370				9		/* Amdahl UTS on System/370 */
-#define	EM_MIPS_RS3_LE		10		/* MIPS RS3000 Little-endian */
-#define	EM_RS6000			11		/* IBM RS/6000 XXX reserved */
-#define	EM_PARISC			15		/* Hewlett-Packard PA-RISC */
-#define	EM_NCUBE			16		/* NCube XXX reserved */
-#define	EM_VPP500			17		/* Fujitsu VPP500 */
-#define	EM_SPARC32PLUS		18		/* Enhanced instruction set SPARC */
-#define	EM_960				19		/* Intel 80960 */
-#define	EM_PPC				20		/* PowerPC */
-#define	EM_V800				36		/* NEC V800 */
-#define	EM_FR20				37		/* Fujitsu FR20 */
-#define	EM_RH32				38		/* TRW RH-32 */
-#define	EM_RCE				39		/* Motorola RCE */
-#define	EM_ARM				40		/* Advanced RISC Machines ARM */
-#define	EM_ALPHA			41		/* DIGITAL Alpha */
-#define	EM_SH				42		/* Hitachi Super-H */
-#define	EM_SPARCV9			43		/* SPARC Version 9 */
-#define	EM_TRICORE			44		/* Siemens Tricore */
-#define	EM_ARC				45		/* Argonaut RISC Core */
-#define	EM_H8_300			46		/* Hitachi H8/300 */
-#define	EM_H8_300H			47		/* Hitachi H8/300H */
-#define	EM_H8S				48		/* Hitachi H8S */
-#define	EM_H8_500			49		/* Hitachi H8/500 */
-#define	EM_IA_64			50		/* Intel Merced Processor */
-#define	EM_MIPS_X			51		/* Stanford MIPS-X */
-#define	EM_COLDFIRE			52		/* Motorola Coldfire */
-#define	EM_68HC12			53		/* Motorola MC68HC12 */
-#define	EM_VAX				75		/* DIGITAL VAX */
+#define EM_NONE		        0	/* No machine */
+#define EM_M32		        1	/* AT&T WE 32100 */
+#define EM_SPARC	        2	/* SPARC */
+#define EM_386		        3	/* Intel 80386 */
+#define EM_68K		        4	/* Motorola 68000 */
+#define EM_88K		        5	/* Motorola 88000 */
+#define EM_486		        6	/* Intel 80486 [old] */
+#define EM_IAMCU	        6	/* Intel MCU. */
+#define EM_860		        7	/* Intel 80860 */
+#define EM_MIPS		        8	/* MIPS I Architecture */
+#define EM_S370		        9	/* Amdahl UTS on System/370 */
+#define EM_MIPS_RS3_LE	    10	/* MIPS RS3000 Little-endian */
+			                /* 11-14 - Reserved */
+#define EM_RS6000	        11	/* IBM RS/6000 XXX reserved */
+#define EM_PARISC	        15	/* Hewlett-Packard PA-RISC */
+#define EM_NCUBE	        16	/* NCube XXX reserved */
+#define EM_VPP500	        17	/* Fujitsu VPP500 */
+#define EM_SPARC32PLUS	    18	/* Enhanced instruction set SPARC */
+#define EM_960		        19	/* Intel 80960 */
+#define EM_PPC		        20	/* PowerPC */
+#define EM_PPC64	        21	/* 64-bit PowerPC */
+			                /* 22-35 - Reserved */
+#define EM_S390		        22	/* System/390 XXX reserved */
+#define EM_V800		        36	/* NEC V800 */
+#define EM_FR20		        37	/* Fujitsu FR20 */
+#define EM_RH32		        38	/* TRW RH-32 */
+#define EM_RCE		        39	/* Motorola RCE */
+#define EM_ARM		        40	/* Advanced RISC Machines ARM */
+#define EM_ALPHA	        41	/* DIGITAL Alpha */
+#define EM_SH		        42	/* Hitachi Super-H */
+#define EM_SPARCV9	        43	/* SPARC Version 9 */
+#define EM_TRICORE	        44	/* Siemens Tricore */
+#define EM_ARC		        45	/* Argonaut RISC Core */
+#define EM_H8_300	        46	/* Hitachi H8/300 */
+#define EM_H8_300H	        47	/* Hitachi H8/300H */
+#define EM_H8S		        48	/* Hitachi H8S */
+#define EM_H8_500	        49	/* Hitachi H8/500 */
+#define EM_IA_64	        50	/* Intel Merced Processor */
+#define EM_MIPS_X	        51	/* Stanford MIPS-X */
+#define EM_COLDFIRE	        52	/* Motorola Coldfire */
+#define EM_68HC12	        53	/* Motorola MC68HC12 */
+#define EM_MMA		        54	/* Fujitsu MMA Multimedia Accelerator */
+#define EM_PCP		        55	/* Siemens PCP */
+#define EM_NCPU		        56	/* Sony nCPU embedded RISC processor */
+#define EM_NDR1		        57	/* Denso NDR1 microprocessor */
+#define EM_STARCORE	        58	/* Motorola Star*Core processor */
+#define EM_ME16		        59	/* Toyota ME16 processor */
+#define EM_ST100	        60	/* STMicroelectronics ST100 processor */
+#define EM_TINYJ	        61	/* Advanced Logic Corp. TinyJ embedded family processor */
+#define EM_X86_64	        62	/* AMD x86-64 architecture */
+#define EM_PDSP		        63	/* Sony DSP Processor */
+#define EM_PDP10	        64	/* Digital Equipment Corp. PDP-10 */
+#define EM_PDP11	        65	/* Digital Equipment Corp. PDP-11 */
+#define EM_FX66		        66	/* Siemens FX66 microcontroller */
+#define EM_ST9PLUS	        67	/* STMicroelectronics ST9+ 8/16 bit microcontroller */
+#define EM_ST7		        68	/* STMicroelectronics ST7 8-bit microcontroller */
+#define EM_68HC16	        69	/* Motorola MC68HC16 Microcontroller */
+#define EM_68HC11	        70	/* Motorola MC68HC11 Microcontroller */
+#define EM_68HC08	        71	/* Motorola MC68HC08 Microcontroller */
+#define EM_68HC05	        72	/* Motorola MC68HC05 Microcontroller */
+#define EM_SVX		        73	/* Silicon Graphics SVx */
+#define EM_ST19		        74	/* STMicroelectronics ST19 8-bit CPU */
+#define EM_VAX		        75	/* Digital VAX */
+#define EM_CRIS		        76	/* Axis Communications 32-bit embedded processor */
+#define EM_JAVELIN	        77	/* Infineon Technologies 32-bit embedded CPU */
+#define EM_FIREPATH	        78	/* Element 14 64-bit DSP processor */
+#define EM_ZSP		        79	/* LSI Logic's 16-bit DSP processor */
+#define EM_MMIX		        80	/* Donald Knuth's educational 64-bit processor */
+#define EM_HUANY	        81	/* Harvard's machine-independent format */
+#define EM_PRISM	        82	/* SiTera Prism */
+#define EM_AVR		        83	/* Atmel AVR 8-bit microcontroller */
+#define EM_FR30		        84	/* Fujitsu FR30 */
+#define EM_D10V		        85	/* Mitsubishi D10V */
+#define EM_D30V		        86	/* Mitsubishi D30V */
+#define EM_V850		        87	/* NEC v850 */
+#define EM_M32R		        88	/* Mitsubishi M32R */
+#define EM_MN10300	        89	/* Matsushita MN10300 */
+#define EM_MN10200	        90	/* Matsushita MN10200 */
+#define EM_PJ		        91	/* picoJava */
+#define EM_OR1K		        92	/* OpenRISC 32-bit embedded processor */
+#define EM_OPENRISC	        EM_OR1K
+#define EM_ARC_A5	        93	/* ARC Cores Tangent-A5 */
+#define EM_XTENSA	        94	/* Tensilica Xtensa Architecture */
+#define EM_VIDEOCORE	    95	/* Alphamosaic VideoCore processor */
+#define EM_TMM_GPP	        96	/* Thompson Multimedia General Purpose Processor */
+#define EM_NS32K	        97	/* National Semiconductor 32000 series */
+#define EM_TPC		        98	/* Tenor Network TPC processor */
+#define EM_SNP1K	        99	/* Trebia SNP 1000 processor */
+#define EM_ST200	        100	/* STMicroelectronics ST200 microcontroller */
+#define EM_IP2K		        101	/* Ubicom IP2xxx microcontroller family */
+#define EM_MAX		        102	/* MAX processor */
+#define EM_CR		        103	/* National Semiconductor CompactRISC micorprocessor */
+#define EM_F2MC16	        104	/* Fujitsu F2MC16 */
+#define EM_MSP430	        105	/* Texas Instruments MSP430 */
+#define EM_BLACKFIN	        106	/* Analog Devices Blackfin DSP */
+#define EM_SE_C33	        107	/* Seiko Epson S1C33 family */
+#define EM_SEP		        108	/* Sharp embedded microprocessor */
+#define EM_ARCA		        109	/* Arca RISC microprocessor */
+#define EM_UNICORE	        110	/* UNICORE from PKU-Unity Ltd. and MPRC Peking University */
+#define EM_ALTERA_NIOS2	    113	/* Altera Nios II soft-core processor */
+#define EM_AARCH64	        183	/* AArch64 64-bit ARM microprocessor */
+#define EM_AVR32	        185	/* Atmel Corporation 32-bit microprocessor family*/
+#define EM_TILE64	        187	/* Tilera TILE64 multicore architecture family */
+#define EM_TILEPRO	        188	/* Tilera TILEPro multicore architecture family */
+#define EM_MICROBLAZE	    189	/* Xilinx MicroBlaze 32-bit RISC soft processor core */
+#define EM_TILEGX	        192	/* Tilera TILE-GX multicore architecture family */
+#define EM_Z80		        220	/* Zilog Z80 */
+#define EM_RISCV	        243	/* RISC-V */
+
+/* Unofficial machine types follow */
 #define	EM_ALPHA_EXP		36902	/* used by NetBSD/alpha; obsolete */
 #define	EM_NUM				36903
 
@@ -268,22 +345,33 @@ typedef struct {
 #define	PT_NOTE				4			/* Auxiliary information */
 #define	PT_SHLIB			5			/* Reserved, unspecified semantics */
 #define	PT_PHDR				6			/* Entry for header table itself */
-#define	PT_NUM				7
+#define PT_TLS		        7		    /* TLS initialisation image */
+#define	PT_NUM				8
 
 #define PT_LOOS				0x60000000	/* OS-specific range */
+
+/* GNU-specific */
+#define PT_GNU_EH_FRAME     0x6474e550	/* EH frame segment */
+#define PT_GNU_STACK	    0x6474e551	/* Indicate executable stack */
+#define PT_GNU_RELRO	    0x6474e552	/* Make read-only after relocation */
+
+#define PT_HIOS		        0x6fffffff
+#define PT_LOPROC	        0x70000000	/* Processor-specific range */
+#define PT_HIPROC	        0x7fffffff
+
+#define PT_MIPS_REGINFO     0x70000000
+#define PT_MIPS_ABIFLAGS    0x70000003
 
 /* p_flags */
 #define	PF_R				0x4			/* Segment is readable */
 #define	PF_W				0x2			/* Segment is writable */
 #define	PF_X				0x1			/* Segment is executable */
 
-#define	PF_MASKOS			0x0ff00000	/* Opersting system specific values */
-#define	PF_MASKPROC			0xf0000000	/* Processor-specific values */
+#define PF_MASKOS	        0x0ff00000	/* Operating system specific values */
+#define PF_MASKPROC	        0xf0000000	/* Processor-specific values */
 
-#define	PT_LOPROC			0x70000000	/* Processor-specific range */
-#define	PT_HIPROC			0x7fffffff
-
-#define	PT_MIPS_REGINFO		0x70000000
+/* Extended program header index. */
+#define PN_XNUM		        0xffff
 
 /*
  * Section Headers
@@ -315,31 +403,60 @@ typedef struct {
 } Elf64_Shdr;
 
 /* sh_type */
-#define	SHT_NULL			0
-#define	SHT_PROGBITS		1
-#define	SHT_SYMTAB			2
-#define	SHT_STRTAB			3
-#define	SHT_RELA			4
-#define	SHT_HASH			5
-#define	SHT_DYNAMIC			6
-#define	SHT_NOTE			7
-#define	SHT_NOBITS			8
-#define	SHT_REL				9
-#define	SHT_SHLIB			10
-#define	SHT_DYNSYM			11
-#define SHT_INIT_ARRAY	    14			/* Initialization function pointers */
-#define SHT_FINI_ARRAY	    15			/* Termination function pointers */
-#define SHT_PREINIT_ARRAY   16			/* Pre-initialization function ptrs */
-#define SHT_GROUP	     	17			/* Section group */
-#define SHT_SYMTAB_SHNDX    18			/* Section indexes (see SHN_XINDEX) */
-#define	SHT_NUM				19
+#define SHT_NULL	         0		/* Section header table entry unused */
+#define SHT_PROGBITS	     1		/* Program information */
+#define SHT_SYMTAB	         2		/* Symbol table */
+#define SHT_STRTAB	         3		/* String table */
+#define SHT_RELA	         4		/* Relocation information w/ addend */
+#define SHT_HASH	         5		/* Symbol hash table */
+#define SHT_DYNAMIC	         6		/* Dynamic linking information */
+#define SHT_NOTE	         7		/* Auxiliary information */
+#define SHT_NOBITS	         8		/* No space allocated in file image */
+#define SHT_REL		         9		/* Relocation information w/o addend */
+#define SHT_SHLIB	         10		/* Reserved, unspecified semantics */
+#define SHT_DYNSYM	         11		/* Symbol table for dynamic linker */
+#define SHT_INIT_ARRAY	     14		/* Initialization function pointers */
+#define SHT_FINI_ARRAY	     15		/* Termination function pointers */
+#define SHT_PREINIT_ARRAY    16		/* Pre-initialization function ptrs */
+#define SHT_GROUP	         17		/* Section group */
+#define SHT_SYMTAB_SHNDX     18		/* Section indexes (see SHN_XINDEX) */
+#define SHT_NUM		         19
 
-#define	SHT_LOOS			0x60000000	/* Operating system specific range */
-#define	SHT_HIOS			0x6fffffff
-#define	SHT_LOPROC			0x70000000	/* Processor-specific range */
-#define	SHT_HIPROC			0x7fffffff
-#define	SHT_LOUSER			0x80000000	/* Application-specific range */
-#define	SHT_HIUSER			0xffffffff
+#define SHT_LOOS	         0x60000000 /* Operating system specific range */
+#define SHT_GNU_INCREMENTAL_INPUTS 0x6fff4700   /* GNU incremental build data */
+#define	SHT_LOSUNW	         0x6ffffff4
+#define	SHT_SUNW_dof	     0x6ffffff4
+#define	SHT_GNU_ATTRIBUTES   0x6ffffff5	/* GNU object attributes */
+#define	SHT_SUNW_cap	     0x6ffffff5
+#define	SHT_SUNW_SIGNATURE   0x6ffffff6
+#define SHT_GNU_HASH	     0x6ffffff6 /* GNU style symbol hash table */
+#define SHT_GNU_LIBLIST	     0x6ffffff7 /* GNU list of prelink dependencies */
+#define SHT_SUNW_move	     0x6ffffffa
+#define	SHT_SUNW_COMDAT	     0x6ffffffb
+#define SHT_SUNW_syminfo     0x6ffffffc
+#define SHT_SUNW_verdef	     0x6ffffffd /* Versions defined by file */
+#define SHT_GNU_verdef	     SHT_SUNW_verdef
+#define SHT_SUNW_verneed     0x6ffffffe /* Versions needed by file */
+#define SHT_GNU_verneed	     SHT_SUNW_verneed
+#define SHT_SUNW_versym	     0x6fffffff /* Symbol versions */
+#define SHT_GNU_versym	     SHT_SUNW_versym
+#define	SHT_HISUNW	         0x6fffffff
+#define SHT_HIOS	         0x6fffffff
+#define SHT_LOPROC	         0x70000000 /* Processor-specific range */
+#define SHT_AMD64_UNWIND     0x70000001 /* unwind information */
+#define SHT_ARM_EXIDX	     0x70000001	/* exception index table */
+#define SHT_ARM_PREEMPTMAP   0x70000002 /* BPABI DLL dynamic linking 
+					 * pre-emption map */
+#define SHT_ARM_ATTRIBUTES   0x70000003 /* Object file compatibility 
+					 * attributes */
+#define SHT_ARM_DEBUGOVERLAY 0x70000004 /* See DBGOVL for details */
+#define SHT_ARM_OVERLAYSECTION 0x70000005
+#define	SHT_MIPS_REGINFO    0x70000006
+#define	SHT_MIPS_OPTIONS    0x7000000d
+#define	SHT_MIPS_DWARF	    0x7000001e	/* MIPS gcc uses MIPS_DWARF */
+#define SHT_HIPROC	        0x7fffffff
+#define SHT_LOUSER	        0x80000000 /* Application-specific range */
+#define SHT_HIUSER	        0xffffffff
 
 /* sh_flags */
 #define	SHF_WRITE			0x00000001	/* Section contains writable data */
@@ -430,6 +547,7 @@ typedef struct {
 #define	SHN_LORESERVE		0xff00		/* Reserved range */
 #define	SHN_ABS				0xfff1		/*  Absolute symbols */
 #define	SHN_COMMON			0xfff2		/*  Common symbols */
+#define SHN_XINDEX	        0xffff		/* Escape -- index stored elsewhere */
 #define	SHN_HIRESERVE		0xffff
 
 #define	SHN_LOPROC			0xff00		/* Processor-specific range */
@@ -684,6 +802,16 @@ typedef struct {
 #define	AT_SUN_EXECNAME	2014
 
 /*
+ * The header for GNU-style hash sections.
+ */
+typedef struct {
+	uint32_t	gh_nbuckets;	/* Number of hash buckets. */
+	uint32_t	gh_symndx;	/* First visible symbol in .dynsym. */
+	uint32_t	gh_maskwords;	/* #maskwords used in bloom filter. */
+	uint32_t	gh_shift2;	/* Bloom filter shift count. */
+} Elf_GNU_Hash_Header;
+
+/*
  * Note Headers
  */
 typedef struct {
@@ -698,6 +826,8 @@ typedef struct {
 	Elf64_Half n_type;
 } Elf64_Nhdr;
 
+#define ELF_NOTE_GNU_NAMESZ		        4
+#define ELF_NOTE_GNU_NAME		        "GNU\0"
 
 #define	ELF_NOTE_TYPE_ABI_TAG			1
 
@@ -711,6 +841,8 @@ typedef struct {
 #define	ELF_NOTE_ABI_OS_LINUX			0
 #define	ELF_NOTE_ABI_OS_HURD			1
 #define	ELF_NOTE_ABI_OS_SOLARIS			2
+#define ELF_NOTE_ABI_OS_KFREEBSD	    3
+#define ELF_NOTE_ABI_OS_KNETBSD		    4
 
 /* NetBSD-specific note type: Emulation name.  desc is emul name string. */
 #define ELF_NOTE_TYPE_211BSD_TAG		1
@@ -767,10 +899,8 @@ typedef struct {
 #define	Elf_Dyn		Elf32_Dyn
 #define	Elf_Word	Elf32_Word
 #define	Elf_Sword	Elf32_Sword
-#define Elf_Half	Elf32_Half
 #define	Elf_Addr	Elf32_Addr
 #define	Elf_Off		Elf32_Off
-#define Elf_SOff	Elf32_SOff
 #define	Elf_Nhdr	Elf32_Nhdr
 
 #define	ELF_R_SYM	ELF32_R_SYM
@@ -788,10 +918,8 @@ typedef struct {
 #define	Elf_Dyn		Elf64_Dyn
 #define	Elf_Word	Elf64_Word
 #define	Elf_Sword	Elf64_Sword
-#define Elf_Half	Elf64_Half
 #define	Elf_Addr	Elf64_Addr
 #define	Elf_Off		Elf64_Off
-#define Elf_SOff	Elf64_SOff
 #define	Elf_Nhdr	Elf64_Nhdr
 
 #define	ELF_R_SYM	ELF64_R_SYM
