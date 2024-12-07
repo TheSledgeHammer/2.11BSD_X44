@@ -42,11 +42,11 @@
 #ifdef __STDC__
 #define _SYSNAM(x)	SYS_ ## x
 #define _CALLNAM(x)	call _## x
-#define _GLOBL(x)   .globl _## x
+#define _GLOBL(x)   	.globl _## x
 #else
 #define	_SYSNAM(x)	SYS_/**/x
 #define _CALLNAM(x)	call _/**/x
-#define _GLOBL(x)   .globl _/**/x
+#define _GLOBL(x)   	.globl _/**/x
 #endif
 
 #ifdef __ELF__
@@ -55,58 +55,58 @@
 #define ALIGNTEXT .align 2
 #endif
 
-#define SYSTRAP(x)			    \
-	movl _SYSNAM(x),%eax		;\
-	int $0x80
+#define SYSTRAP(x)			\
+    	lea	_SYSNAM(x), %eax	;\
+	LCALL(7, 0)
 
 #ifdef ENTRY
 #undef ENTRY
-#define	ENTRY(x)	            \
-    _GLOBL(x)                   ;\
-    .data                       ;\
-1:  .long   0                   ;\
-    .text                       ;\
-    ALIGNTEXT                   ;\
-    _C_LABEL(x):                \
-    movl    $1b, %eax           ;\
-    _PROF_PROLOGUE
+#define	ENTRY(x)	            	\
+    	.text                       	;\
+    	ALIGNTEXT                   	;\
+    	_GLOBL(x)                   	;\
+    	.data                       	;\
+1:  	.long   0                   	;\
+    	_C_LABEL(x):                	\
+    	movl    $1b, %eax           	;\
+    	_PROF_PROLOGUE
 #endif
+
+#define SYSCALL_NOERR(x,y)      	\
+    	ENTRY(x)                    	;\
+    	SYSTRAP(y)
 
 #ifdef PIC
-#define SYSCALL_ERR             \
-    PIC_PROLOGUE                ;\
-    mov PIC_GOT(cerror), %eax   ;\
-    PIC_EPILOGUE                ;\
-    jmp     *%eax
+#define SYSCALL_ERR             	\
+    	PIC_PROLOGUE                	;\
+    	mov PIC_GOT(cerror), %ecx   	;\
+    	PIC_EPILOGUE                	;\
+    	jmp     *%ecx
 #else
-#define SYSCALL_ERR             \
-    jmp		cerror
+#define SYSCALL_ERR             	\
+    	jmp	cerror
 #endif
 
-#define SYSCALL(x)              \
-2:  SYSCALL_ERR                 ;\
-   	ENTRY(x)					;\
-	lea		_SYSNAM(x), %eax	;\
-	LCALL(7, 0)					;\
-	jb		2b
+#define SYSCALL(x)              	\
+2:  	SYSCALL_ERR                 	;\
+    	SYSCALL_NOERR(x,x)          	;\
+	jb	2b
 
-#define	RSYSCALL(x)				\
-	SYSCALL(x)					;\
+#define	RSYSCALL(x)			\
+	SYSCALL(x)			;\
 	ret
 
-#define	PSEUDO(x,y)				\
-	ENTRY(x)					;\
-	lea 	_SYSNAM(y), %eax;   ;\
-	LCALL(7,0)					;\
+#define	PSEUDO(x,y)			\
+	SYSCALL_NOERR(x,y)          	;\
 	ret
 
-#define	CALL(x, y)				\
-	_CALLNAM(y)					;\
+#define	CALL(x,y)			\
+	_CALLNAM(y)			;\
 	addl	$4*x, %esp
 
-#define LCALL(x, y)				\
-	.byte	0x9a				;\
-	.long 	y					;\
+#define LCALL(x y)			\
+	.byte	0x9a			;\
+	.long 	y			;\
 	.word	x
 
 #define	ASMSTR	.asciz
