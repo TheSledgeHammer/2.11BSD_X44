@@ -80,17 +80,14 @@ static const char	sccsid[] = "@(#)strftime.c	5.4 (Berkeley) 3/14/89";
 #include "locale/ltime.h"
 #include "locale/setlocale.h"
 
-#ifdef USG_COMPAT
-time_t		tzone = 0;
-int			daylight = 0;
-#endif /* USG_COMPAT */
-
 static time_locale_t *CurrentTimeLocale(locale_t);
 static char *_add(const char *, char *, const char *);
 static char *_conv(int, const char *, char *, const char *);
 static char *_fmt(const char *, const struct tm *, char *, const char *, int *, locale_t);
 static char *_yconv(int, int, int, int, char *, const char *);
 
+extern time_t tzone;
+extern int daylight;
 extern char *tzname[];
 
 #define NO_RUN_TIME_WARNINGS_ABOUT_YEAR_2000_PROBLEMS_THANK_YOU
