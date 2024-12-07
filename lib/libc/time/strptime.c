@@ -60,11 +60,6 @@ __weak_alias(strptime,_strptime)
 __weak_alias(strptime_l, _strptime_l)
 #endif
 
-#ifdef USG_COMPAT
-time_t		tzone = 0;
-int			daylight = 0;
-#endif /* USG_COMPAT */
-
 /*
  * We do not implement alternate representations. However, we always
  * check whether a given modifier is allowed for a certain conversion.
@@ -75,6 +70,9 @@ int			daylight = 0;
 
 static	int conv_num(const unsigned char **, int *, int, int);
 static time_locale_t *CurrentTimeLocale(locale_t);
+
+extern time_t tzone;
+extern int daylight;
 
 static time_locale_t *
 CurrentTimeLocale(locale)
