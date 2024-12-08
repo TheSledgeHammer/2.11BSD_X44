@@ -54,17 +54,17 @@ _vfork:
 	popl	%ecx		/* my rta into ecx */
 	movl	$vfork, %eax
 	LCALL(7,0)
-	jb		verror
+	jb	verror
 vforkok:
 	cmpl	$0,%edx		/* child process? */
-	jne		child		/* yes */
+	jne	child		/* yes */
 	jmp 	parent 
 .globl		_errno
 verror:
 	movl	%eax,_errno
 	movl	$-1,%eax
-	jmp		%ecx
+	jmp	*%ecx
 child:
 	movl	$0,%eax
 parent:
-	jmp		%ecx
+	jmp	*%ecx
