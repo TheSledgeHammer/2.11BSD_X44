@@ -87,7 +87,7 @@
 #endif
 
 #define _ENTRY(name)		\
-	.text; ALIGN_TEXT; .globl name; .type name,@function; name:
+	.text; _ALIGN_TEXT; .globl name; .type name,@function; name:
 #define _ALTENTRY(name) 	\
 	_ENTRY(name)
 
