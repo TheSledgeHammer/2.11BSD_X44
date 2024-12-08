@@ -63,7 +63,7 @@
 
 #define	__S(x)	__STRING(x)
 __asm(
-	".section\t\".note.211bsd.ident\", \"a\"\n"
+	".section\t\".note.netbsd.ident\", \"a\"\n"
 	"\t.p2align\t2\n\n"
 
 	"\t.long\t" __S(ELF_NOTE_211BSD_NAMESZ) "\n"
@@ -77,7 +77,7 @@ __asm(
 );
 
 __asm(
-	".section\t\".note.211bsd.pax\", \"a\"\n"
+	".section\t\".note.netbsd.pax\", \"a\"\n"
 	"\t.p2align\t2\n\n"
 
 	"\t.long\t" __S(ELF_NOTE_PAX_NAMESZ) "\n"
