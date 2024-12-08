@@ -97,13 +97,13 @@ typedef	uint16_t 			Elf64_Quarter;
 
 typedef struct {
 	unsigned char			e_ident[ELF_NIDENT];	/* Id bytes */
-	Elf32_Half				e_type;					/* file type */
-	Elf32_Half				e_machine;				/* machine type */
-	Elf32_Word				e_version;				/* version number */
-	Elf32_Addr				e_entry;				/* entry point */
-	Elf32_Off				e_phoff;				/* Program hdr offset */
-	Elf32_Off				e_shoff;				/* Section hdr offset */
-	Elf32_Word				e_flags;				/* Processor flags */
+	Elf32_Half			e_type;					/* file type */
+	Elf32_Half			e_machine;				/* machine type */
+	Elf32_Word			e_version;				/* version number */
+	Elf32_Addr			e_entry;				/* entry point */
+	Elf32_Off			e_phoff;				/* Program hdr offset */
+	Elf32_Off			e_shoff;				/* Section hdr offset */
+	Elf32_Word			e_flags;				/* Processor flags */
 	Elf32_Half      		e_ehsize;				/* sizeof ehdr */
 	Elf32_Half      		e_phentsize;			/* Program header entry size */
 	Elf32_Half      		e_phnum;				/* Number of program headers */
@@ -116,11 +116,11 @@ typedef struct {
 	unsigned char			e_ident[ELF_NIDENT];	/* Id bytes */
 	Elf64_Quarter			e_type;					/* file type */
 	Elf64_Quarter			e_machine;				/* machine type */
-	Elf64_Half				e_version;				/* version number */
-	Elf64_Addr				e_entry;				/* entry point */
-	Elf64_Off				e_phoff;				/* Program hdr offset */
-	Elf64_Off				e_shoff;				/* Section hdr offset */
-	Elf64_Half				e_flags;				/* Processor flags */
+	Elf64_Half			e_version;				/* version number */
+	Elf64_Addr			e_entry;				/* entry point */
+	Elf64_Off			e_phoff;				/* Program hdr offset */
+	Elf64_Off			e_shoff;				/* Section hdr offset */
+	Elf64_Half			e_flags;				/* Processor flags */
 	Elf64_Quarter			e_ehsize;				/* sizeof ehdr */
 	Elf64_Quarter			e_phentsize;			/* Program header entry size */
 	Elf64_Quarter			e_phnum;				/* Number of program headers */
@@ -138,9 +138,9 @@ typedef struct {
 #define	EI_DATA				5	/* Data encoding */
 #define	EI_VERSION			6	/* File version */
 #define	EI_OSABI			7	/* Operating system/ABI identification */
-#define	EI_ABIVERSION		8	/* ABI version */
+#define	EI_ABIVERSION			8	/* ABI version */
 #define	EI_PAD				9	/* Start of padding bytes up to EI_NIDENT*/
-#define EI_NIDENT	        16	/* First non-ident header byte */
+#define EI_NIDENT	        	16	/* First non-ident header byte */
 
 /* e_ident[ELFMAG0,ELFMAG3] */
 #define	ELFMAG0				0x7f
@@ -151,7 +151,7 @@ typedef struct {
 #define	SELFMAG				4
 
 /* e_ident[EI_CLASS] */
-#define	ELFCLASSNONE		0	/* Invalid class */
+#define	ELFCLASSNONE			0	/* Invalid class */
 #define	ELFCLASS32			1	/* 32-bit objects */
 #define	ELFCLASS64			2	/* 64-bit objects */
 #define	ELFCLASSNUM			3
@@ -212,13 +212,13 @@ typedef struct {
 #define EM_860		        7	/* Intel 80860 */
 #define EM_MIPS		        8	/* MIPS I Architecture */
 #define EM_S370		        9	/* Amdahl UTS on System/370 */
-#define EM_MIPS_RS3_LE	    10	/* MIPS RS3000 Little-endian */
+#define EM_MIPS_RS3_LE	    	10	/* MIPS RS3000 Little-endian */
 			                /* 11-14 - Reserved */
 #define EM_RS6000	        11	/* IBM RS/6000 XXX reserved */
 #define EM_PARISC	        15	/* Hewlett-Packard PA-RISC */
 #define EM_NCUBE	        16	/* NCube XXX reserved */
 #define EM_VPP500	        17	/* Fujitsu VPP500 */
-#define EM_SPARC32PLUS	    18	/* Enhanced instruction set SPARC */
+#define EM_SPARC32PLUS	    	18	/* Enhanced instruction set SPARC */
 #define EM_960		        19	/* Intel 80960 */
 #define EM_PPC		        20	/* PowerPC */
 #define EM_PPC64	        21	/* 64-bit PowerPC */
@@ -284,7 +284,7 @@ typedef struct {
 #define EM_OPENRISC	        EM_OR1K
 #define EM_ARC_A5	        93	/* ARC Cores Tangent-A5 */
 #define EM_XTENSA	        94	/* Tensilica Xtensa Architecture */
-#define EM_VIDEOCORE	    95	/* Alphamosaic VideoCore processor */
+#define EM_VIDEOCORE	    	95	/* Alphamosaic VideoCore processor */
 #define EM_TMM_GPP	        96	/* Thompson Multimedia General Purpose Processor */
 #define EM_NS32K	        97	/* National Semiconductor 32000 series */
 #define EM_TPC		        98	/* Tenor Network TPC processor */
@@ -300,19 +300,19 @@ typedef struct {
 #define EM_SEP		        108	/* Sharp embedded microprocessor */
 #define EM_ARCA		        109	/* Arca RISC microprocessor */
 #define EM_UNICORE	        110	/* UNICORE from PKU-Unity Ltd. and MPRC Peking University */
-#define EM_ALTERA_NIOS2	    113	/* Altera Nios II soft-core processor */
+#define EM_ALTERA_NIOS2	    	113	/* Altera Nios II soft-core processor */
 #define EM_AARCH64	        183	/* AArch64 64-bit ARM microprocessor */
 #define EM_AVR32	        185	/* Atmel Corporation 32-bit microprocessor family*/
 #define EM_TILE64	        187	/* Tilera TILE64 multicore architecture family */
 #define EM_TILEPRO	        188	/* Tilera TILEPro multicore architecture family */
-#define EM_MICROBLAZE	    189	/* Xilinx MicroBlaze 32-bit RISC soft processor core */
+#define EM_MICROBLAZE	    	189	/* Xilinx MicroBlaze 32-bit RISC soft processor core */
 #define EM_TILEGX	        192	/* Tilera TILE-GX multicore architecture family */
 #define EM_Z80		        220	/* Zilog Z80 */
 #define EM_RISCV	        243	/* RISC-V */
 
 /* Unofficial machine types follow */
 #define	EM_ALPHA_EXP		36902	/* used by NetBSD/alpha; obsolete */
-#define	EM_NUM				36903
+#define	EM_NUM			36903
 
 /* Program Header */
 typedef struct {
@@ -345,7 +345,7 @@ typedef struct {
 #define	PT_NOTE				4			/* Auxiliary information */
 #define	PT_SHLIB			5			/* Reserved, unspecified semantics */
 #define	PT_PHDR				6			/* Entry for header table itself */
-#define PT_TLS		        7		    /* TLS initialisation image */
+#define PT_TLS		        	7		    /* TLS initialisation image */
 #define	PT_NUM				8
 
 #define PT_LOOS				0x60000000	/* OS-specific range */
@@ -829,49 +829,108 @@ typedef struct {
 #define ELF_NOTE_GNU_NAMESZ		        4
 #define ELF_NOTE_GNU_NAME		        "GNU\0"
 
-#define	ELF_NOTE_TYPE_ABI_TAG			1
-
+/*
+ * GNU-specific note type: ABI tag
+ * name: GNU\0
+ * namesz: 4
+ * desc:
+ *	word[0]: OS tag
+ *	word[1]: major version
+ *	word[2]: minor version
+ *	word[3]: teeny version
+ * descsz: 16
+ */
 /* GNU-specific note name and description sizes */
-#define	ELF_NOTE_ABI_NAMESZ				4
-#define	ELF_NOTE_ABI_DESCSZ				16
-/* GNU-specific note name */
-#define	ELF_NOTE_ABI_NAME				"GNU\0"
-
+#define ELF_NOTE_TYPE_ABI_TAG		    	1
+#define ELF_NOTE_ABI_NAME		        ELF_NOTE_GNU_NAME
+#define ELF_NOTE_ABI_NAMESZ		        ELF_NOTE_GNU_NAMESZ
+#define ELF_NOTE_ABI_DESCSZ		        16
 /* GNU-specific OS/version value stuff */
-#define	ELF_NOTE_ABI_OS_LINUX			0
-#define	ELF_NOTE_ABI_OS_HURD			1
-#define	ELF_NOTE_ABI_OS_SOLARIS			2
-#define ELF_NOTE_ABI_OS_KFREEBSD	    3
-#define ELF_NOTE_ABI_OS_KNETBSD		    4
+#define ELF_NOTE_ABI_OS_LINUX		    	0
+#define ELF_NOTE_ABI_OS_HURD		    	1
+#define ELF_NOTE_ABI_OS_SOLARIS		    	2
+#define ELF_NOTE_ABI_OS_KFREEBSD	    	3
+#define ELF_NOTE_ABI_OS_KNETBSD		    	4
 
-/* NetBSD-specific note type: Emulation name.  desc is emul name string. */
-#define ELF_NOTE_TYPE_211BSD_TAG		1
+/* Old gcc style, under the ABI tag */
+#define ELF_NOTE_OGCC_NAMESZ		    	8
+#define ELF_NOTE_OGCC_NAME		        "01.01\0\0\0\0"
+#define ELF_NOTE_OGCC_DESCSZ		    	0
+
+/*
+ * GNU-specific note type: Hardware capabilities
+ * name: GNU\0
+ * namesz: 4
+ * desc:
+ *	word[0]: Number of entries
+ *	word[1]: Bitmask of enabled entries
+ *	Followed by a byte id, and a NUL terminated string per entry
+ * descsz: variable
+ */
+#define ELF_NOTE_TYPE_GNU_HWCAP		    	2
+
+/*
+ * GNU-specific note type: Build ID generated by ld
+ * name: GNU\0
+ * desc:
+ *	word[0..4] SHA1 [default] 
+ * or
+ *	word[0..3] md5 or uuid
+ * descsz: 16 or 20
+ */
+#define ELF_NOTE_TYPE_GNU_BUILD_ID	    	3
+
+/* Go-specific note type: buildid
+ * name: Go\0\0
+ * namesz: 4
+ * desc: 
+ *	words[10]
+ * descsz: 40
+ */
+#define ELF_NOTE_TYPE_GO_BUILDID_TAG	 	4
+#define ELF_NOTE_GO_BUILDID_NAMESZ	    	4
+#define ELF_NOTE_GO_BUILDID_DESCSZ	    	40
+#define ELF_NOTE_GO_BUILDID_NAME	    	"Go\0\0"
+
+/* NetBSD-specific note type: NetBSD ABI version.
+ * name: NetBSD\0\0
+ * namesz: 8
+ * desc: 
+ *	word[0]: MMmmrrpp00
+ *
+ *	M = major version
+ *	m = minor version
+ *	r = release ["",A-Z,Z[A-Z] but numeric]
+ *	p = patchlevel
+ * descsz: 4
+ */
+#define ELF_NOTE_TYPE_NETBSD_TAG	    	1
 /* NetBSD-specific note name and description sizes */
+#define ELF_NOTE_NETBSD_NAMESZ		   	7
+#define ELF_NOTE_NETBSD_DESCSZ		    	4
+/* NetBSD-specific note name */
+#define ELF_NOTE_NETBSD_NAME		    	"NetBSD\0\0"
+
+/* 211BSD ELF: Piggyback of NetBSD ELF */
+#define ELF_NOTE_TYPE_211BSD_TAG		1
+/* TwoBSD-specific note name and description sizes */
 #define	ELF_NOTE_211BSD_NAMESZ			7
 #define	ELF_NOTE_211BSD_DESCSZ			4
-/* NetBSD-specific note name */
-#define	ELF_NOTE_211BSD_NAME			"211BSD\0\0"
-
-/* NetBSD-specific note type: Checksum.  There should be 1 NOTE per PT_LOAD
-   section.  desc is a tuple of <phnum>(16),<chk-type>(16),<chk-value>. */
-#define	ELF_NOTE_TYPE_CHECKSUM_TAG		2
-#define	ELF_NOTE_CHECKSUM_CRC32			1
-#define	ELF_NOTE_CHECKSUM_MD5			2
-#define	ELF_NOTE_CHECKSUM_SHA1			3
-#define	ELF_NOTE_CHECKSUM_SHA256		4
+/* TwoBSD-specific note name */
+#define	ELF_NOTE_211BSD_NAME			ELF_NOTE_NETBSD_NAME
 
 /* NetBSD-specific note type: PaX.  There should be 1 NOTE per executable.
    section.  desc is a 32 bit bitmask */
 #define ELF_NOTE_TYPE_PAX_TAG			3
 #define ELF_NOTE_PAX_MPROTECT			0x01	/* Force enable Mprotect */
 #define ELF_NOTE_PAX_NOMPROTECT			0x02	/* Force disable Mprotect */
-#define ELF_NOTE_PAX_GUARD				0x04	/* Force enable Segvguard */
+#define ELF_NOTE_PAX_GUARD			0x04	/* Force enable Segvguard */
 #define ELF_NOTE_PAX_NOGUARD			0x08	/* Force disable Segvguard */
-#define ELF_NOTE_PAX_ASLR				0x10	/* Force enable ASLR */
-#define ELF_NOTE_PAX_NOASLR				0x20	/* Force disable ASLR */
-#define ELF_NOTE_PAX_NAMESZ				4
-#define ELF_NOTE_PAX_NAME				"PaX\0"
-#define ELF_NOTE_PAX_DESCSZ				4
+#define ELF_NOTE_PAX_ASLR			0x10	/* Force enable ASLR */
+#define ELF_NOTE_PAX_NOASLR			0x20	/* Force disable ASLR */
+#define ELF_NOTE_PAX_NAMESZ			4
+#define ELF_NOTE_PAX_NAME			"PaX\0"
+#define ELF_NOTE_PAX_DESCSZ			4
 
 #if !defined(ELFSIZE)
 # if !defined(_KERNEL)
