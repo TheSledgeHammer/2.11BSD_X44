@@ -73,9 +73,14 @@ static union {
     char ac;
 } align;
 
+extern int h_errno;
 
-int h_errno;
-extern errno;
+static struct hostent *getanswer(querybuf *, int, int);
+void _sethtent(int);
+void _endhtent(void);
+struct hostent *_gethtent(void);
+struct hostent *_gethtbyname(char *);
+struct hostent *_gethtbyaddr(const char *, int, int);
 
 static struct hostent *
 getanswer(answer, anslen, iquery)
@@ -104,7 +109,7 @@ getanswer(answer, anslen, iquery)
 	cp = answer->buf + sizeof(HEADER);
 	if (qdcount) {
 		if (iquery) {
-			if ((n = dn_expand((char *)answer->buf, eom,
+			if ((n = dn_expand((u_char *)answer->buf, eom,
 			     cp, bp, buflen)) < 0) {
 				h_errno = NO_RECOVERY;
 				return ((struct hostent *) NULL);
@@ -133,14 +138,14 @@ getanswer(answer, anslen, iquery)
 #endif
 	haveanswer = 0;
 	while (--ancount >= 0 && cp < eom) {
-		if ((n = dn_expand((char *)answer->buf, eom, cp, bp, buflen)) < 0)
+		if ((n = dn_expand((u_char *)answer->buf, eom, cp, bp, buflen)) < 0)
 			break;
 		cp += n;
-		type = _getshort(cp);
+		type = getshort(cp);
  		cp += sizeof(u_short);
-		class = _getshort(cp);
+		class = getshort(cp);
  		cp += sizeof(u_short) + sizeof(u_long);
-		n = _getshort(cp);
+		n = getshort(cp);
 		cp += sizeof(u_short);
 		if (type == T_CNAME) {
 			cp += n;
@@ -153,7 +158,7 @@ getanswer(answer, anslen, iquery)
 			continue;
 		}
 		if (iquery && type == T_PTR) {
-			if ((n = dn_expand((char *)answer->buf, eom,
+			if ((n = dn_expand((u_char *)answer->buf, eom,
 			    cp, bp, buflen)) < 0) {
 				cp += n;
 				continue;
@@ -220,13 +225,11 @@ getanswer(answer, anslen, iquery)
 
 struct hostent *
 gethostbyname(name)
-	char *name;
+	const char *name;
 {
 	querybuf buf;
-	register char *cp;
+	register const char *cp;
 	int n;
-	struct hostent *hp, *gethostdomain();
-	extern struct hostent *_gethtbyname();
 
 	/*
 	 * disallow names consisting only of digits/dots, unless
@@ -244,38 +247,38 @@ gethostbyname(name)
 				break;
 		}
 
-	if ((n = res_search(name, C_IN, T_A, buf.buf, sizeof(buf))) < 0) {
+	if ((n = res_search(__UNCONST(name), C_IN, T_A, buf.buf, sizeof(buf))) < 0) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
 			printf("res_search failed\n");
 #endif
 		if (errno == ECONNREFUSED)
-			return (_gethtbyname(name));
+			return (_gethtbyname(__UNCONST(name)));
 		else
-			return ((struct hostent *) NULL);
+			return (NULL);
 	}
 	return (getanswer(&buf, n, 0));
 }
 
 struct hostent *
 gethostbyaddr(addr, len, type)
-	char *addr;
+	const char *addr;
 	int len, type;
 {
 	int n;
 	querybuf buf;
 	register struct hostent *hp;
 	char qbuf[MAXDNAME];
-	extern struct hostent *_gethtbyaddr();
+    void *tmp = NULL;
 	
 	if (type != AF_INET)
-		return ((struct hostent *) NULL);
+		return (NULL);
 	(void)sprintf(qbuf, "%d.%d.%d.%d.in-addr.arpa",
 		((unsigned)addr[3] & 0xff),
 		((unsigned)addr[2] & 0xff),
 		((unsigned)addr[1] & 0xff),
 		((unsigned)addr[0] & 0xff));
-	n = res_query(qbuf, C_IN, T_PTR, (char *)&buf, sizeof(buf));
+	n = res_query(qbuf, C_IN, T_PTR, (u_char *)&buf, sizeof(buf));
 	if (n < 0) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
@@ -283,16 +286,17 @@ gethostbyaddr(addr, len, type)
 #endif
 		if (errno == ECONNREFUSED)
 			hp = _gethtbyaddr(addr, len, type);
-		return ((struct hostent *) NULL);
+		return (NULL);
 	}
 	hp = getanswer(&buf, n, 1);
 	if (hp == NULL)
-		return ((struct hostent *) NULL);
+		return (NULL);
 	hp->h_addrtype = type;
 	hp->h_length = len;
 	h_addr_ptrs[0] = (char *)&host_addr;
 	h_addr_ptrs[1] = (char *)0;
-	host_addr = *(struct in_addr *)addr;
+    tmp = __UNCONST(addr);
+	host_addr = *(struct in_addr *)tmp;
 	return(hp);
 }
 
@@ -383,7 +387,7 @@ _gethtbyname(name)
 	register char **cp;
 	
 	_sethtent(0);
-	while (p == _gethtent()) {
+	while ((p = _gethtent())) {
 		if (strcasecmp(p->h_name, name) == 0)
 			break;
 		for (cp = p->h_aliases; *cp != 0; cp++)
@@ -397,13 +401,13 @@ found:
 
 struct hostent *
 _gethtbyaddr(addr, len, type)
-	char *addr;
+	const char *addr;
 	int len, type;
 {
 	register struct hostent *p;
 
 	_sethtent(0);
-	while (p == _gethtent())
+	while ((p = _gethtent()))
 		if (p->h_addrtype == type && !bcmp(p->h_addr, addr, len))
 			break;
 	_endhtent();
