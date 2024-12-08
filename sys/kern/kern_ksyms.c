@@ -129,6 +129,10 @@ int 			ksyms_ctfsz;
 struct ksyms_symhead 	ksyms_symtabs;
 static void ksyms_hdr_init(const void *hdraddr);
 
+/* symtab and note name */
+static const char *symtab_name = "netbsd";
+static const char *note_name = "NetBSD\0";
+
 static int
 ksyms_verify(const void *symstart, const void *strstart)
 {
@@ -427,7 +431,7 @@ ksyms_addsyms_elf(int symsize, void *start, void *end)
 	if (!ksyms_verify(symstart, strstart))
 		return;
 
-	addsymtab("211bsd", symstart, symsize, strstart, strsize, &kernel_symtab, symstart, ctfstart, ctfsize, ksyms_nmap);
+	addsymtab(symtab_name, symstart, symsize, strstart, strsize, &kernel_symtab, symstart, ctfstart, ctfsize, ksyms_nmap);
 
 #ifdef DEBUG
 	printf("Loaded initial symtab at %p, strtab at %p, # entries %ld\n",
@@ -451,7 +455,7 @@ ksyms_addsyms_explicit(void *ehdr, void *symstart, size_t symsize, void *strstar
 		return;
 
 	ksyms_hdr_init(ehdr);
-	addsymtab("211bsd", symstart, symsize, strstart, strsize, &kernel_symtab, symstart, NULL, 0, ksyms_nmap);
+	addsymtab(symtab_name, symstart, symsize, strstart, strsize, &kernel_symtab, symstart, NULL, 0, ksyms_nmap);
 }
 
 /*
@@ -494,7 +498,7 @@ ksyms_fill_note(void)
 	note[0] = ELF_NOTE_211BSD_NAMESZ;
 	note[1] = ELF_NOTE_211BSD_DESCSZ;
 	note[2] = ELF_NOTE_TYPE_211BSD_TAG;
-	memcpy(&note[3],  "211BSD\0", 8);
+	memcpy(&note[3], note_name, 8);
 	note[5] = __211BSD_Version__;
 }
 
