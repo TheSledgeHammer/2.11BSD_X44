@@ -61,7 +61,7 @@
 	.word	x
 
 #define SYSTRAP(x)			\
-    	movl	_SYSNAM(x), %eax	;\
+    	lea	_SYSNAM(x), %eax	;\
 	LCALL(7, 0)             
 
 #define _SYSCALL_NOERR(x,y)      	\
