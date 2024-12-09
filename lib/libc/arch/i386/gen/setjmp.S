@@ -91,7 +91,7 @@ ENTRY(longjmp)
 	movl	16(%edx),%esi
 	movl	20(%edx),%edi
 	cmpl	$0,%eax
-	jne		1f
+	jne	1f
 	movl	$1,%eax
 1:	movl	%ecx,0(%esp)
 	ret
