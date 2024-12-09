@@ -279,6 +279,12 @@ extern Char *MALLOC ANSI((size_t));
 
 #include "math.h"
 
+#ifdef Unsigned_Shifts
+#define Sign_Extend(a,b) if (b < 0) a |= 0xffff0000;
+#else
+#define Sign_Extend(a,b) /*no-op*/
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -499,15 +505,14 @@ extern void memcpy_D2A ANSI((void*, const void*, size_t));
 #define Bcopy(x,y) memcpy(&x->sign, &y->sign, y->wds*sizeof(ULong) + 2*sizeof(int))
 #endif /* NO_STRING_H */
 
-#define dtoa __dtoa
-
+//#define dtoa __dtoa
 
 extern CONST double bigtens[], tens[], tinytens[];
 
 extern Bigint *Balloc ANSI((int));
 extern void Bfree ANSI((Bigint*));
 extern Bigint *multadd ANSI((Bigint*, int, int));
-extern Bigint *s2b ANSI((CONST char*, int, int, ULong, int));
+extern Bigint *s2b ANSI((CONST char*, int, int, ULong));
 extern int hi0bits ANSI((ULong));
 extern int lo0bits ANSI((ULong*));
 extern Bigint *i2b ANSI((int));

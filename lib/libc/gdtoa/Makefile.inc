@@ -10,13 +10,13 @@ CPPFLAGS+=-I${.CURDIR}/gdtoa -I${.CURDIR}/locale
 
 # ieee754 infinity constants and functions
 .if ${MACHINE_ARCH} == "aarch64" || "mips" || "riscv"
-SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_ieee754.c
+#SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_ieee754.c
 .endif
 
 .if  ${MACHINE_ARCH} == "alpha" || "arm" || "hppa" || "ia64" || \
 	"or1k" || "powerpc" || "powerpc64" || "sh3" || \
 	"sparc"
-SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_dbl_ieee754.c
+#SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_dbl_ieee754.c
 .endif
 
 .if  ${MACHINE_ARCH} == "i386" || "vax" || "x86_64"

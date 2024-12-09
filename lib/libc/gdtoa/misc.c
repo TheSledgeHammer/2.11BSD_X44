@@ -57,7 +57,7 @@ CONST double tinytens[] = { 1e-16, 1e-32 };
 
 static Bigint *freelist[Kmax + 1];
 
-#ifdef MULTIPLE_THREADS || _REENTRANT
+#ifdef _REENTRANT
 static mutex_t freelist_mutex = MUTEX_INITIALIZER;
 #endif
 
