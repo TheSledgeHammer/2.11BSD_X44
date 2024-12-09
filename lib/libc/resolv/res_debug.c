@@ -131,9 +131,6 @@ static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) 3/7/88";
 
 #include "res_private.h"
 
-static char symbuf[20];
-static const char *sym_name_lookup(const char **, int, int, int *);
-
 const char *_res_opcodes[] = {
 		"QUERY",
 		"IQUERY",
@@ -289,6 +286,9 @@ const char *_res_optioncodes[] = {
 		"no-nibble2",
 #endif
 };
+
+static char symbuf[20];
+static const char *sym_name_lookup(const char **, int, int, int *);
 
 void
 p_query(msg)

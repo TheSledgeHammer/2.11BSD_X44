@@ -28,18 +28,7 @@
 	dmg@research.att.com or research!dmg
  */
 
-#ifdef IEEE_Arith
-CONST double bigtens[] = { 1e16, 1e32, 1e64, 1e128, 1e256 };
-CONST double tinytens[] = { 1e-16, 1e-32, 1e-64, 1e-128, 1e-256 };
-#else
-#ifdef IBM
-CONST double bigtens[] = { 1e16, 1e32, 1e64 };
-CONST double tinytens[] = { 1e-16, 1e-32, 1e-64 };
-#else
-CONST double bigtens[] = { 1e16, 1e32 };
-CONST double tinytens[] = { 1e-16, 1e-32 };
-#endif
-#endif
+#include "gdtoaimp.h"
 
 char *
 __dtoa

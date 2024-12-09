@@ -33,6 +33,28 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
+CONST double tens[] = {
+		1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
+		1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
+		1e20, 1e21, 1e22
+#ifdef VAX
+		, 1e23, 1e24
+#endif
+};
+
+#ifdef IEEE_Arith
+CONST double bigtens[] = { 1e16, 1e32, 1e64, 1e128, 1e256 };
+CONST double tinytens[] = { 1e-16, 1e-32, 1e-64, 1e-128, 1e-256 };
+#else
+#ifdef IBM
+CONST double bigtens[] = { 1e16, 1e32, 1e64 };
+CONST double tinytens[] = { 1e-16, 1e-32, 1e-64 };
+#else
+CONST double bigtens[] = { 1e16, 1e32 };
+CONST double tinytens[] = { 1e-16, 1e-32 };
+#endif
+#endif
+
 static Bigint *freelist[Kmax + 1];
 
 #ifdef MULTIPLE_THREADS || _REENTRANT

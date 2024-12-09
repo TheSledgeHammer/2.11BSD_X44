@@ -26,8 +26,15 @@
 #define IEEE_BIG_ENDIAN
 #endif
 
-#ifdef __vax__
+#if defined(__alpha__) || defined(__ia64__)
+#ifndef _IEEE_FP
+#define Sudden_Underflow
+#endif
+#endif
+
+#if defined(__vax__)
 #define VAX
+#define NO_HEX_FP	/* XXX */
 #endif
 
 #endif /* _ARITH_H_INCLUDED */

@@ -194,6 +194,7 @@ THIS SOFTWARE.
 #ifndef GDTOAIMP_H_INCLUDED
 #define GDTOAIMP_H_INCLUDED
 #include "gdtoa.h"
+#include "gd_qnan.h"
 
 #ifdef DEBUG
 #include "stdio.h"
@@ -493,9 +494,9 @@ typedef struct Bigint Bigint;
 typedef unsigned int size_t;
 #endif
 extern void memcpy_D2A ANSI((void*, const void*, size_t));
-#define Bcopy(x,y) memcpy_D2A(&x->sign,&y->sign,y->wds*sizeof(ULong) + 2*sizeof(int))
+#define Bcopy(x,y) memcpy_D2A(&x->sign, &y->sign, y->wds*sizeof(ULong) + 2*sizeof(int))
 #else /* !NO_STRING_H */
-#define Bcopy(x,y) memcpy(&x->sign,&y->sign,y->wds*sizeof(ULong) + 2*sizeof(int))
+#define Bcopy(x,y) memcpy(&x->sign, &y->sign, y->wds*sizeof(ULong) + 2*sizeof(int))
 #endif /* NO_STRING_H */
 
 #define dtoa __dtoa

@@ -269,7 +269,7 @@ gethostbyaddr(addr, len, type)
 	querybuf buf;
 	register struct hostent *hp;
 	char qbuf[MAXDNAME];
-    void *tmp = NULL;
+	void *tmp = NULL;
 	
 	if (type != AF_INET)
 		return (NULL);
@@ -295,7 +295,7 @@ gethostbyaddr(addr, len, type)
 	hp->h_length = len;
 	h_addr_ptrs[0] = (char *)&host_addr;
 	h_addr_ptrs[1] = (char *)0;
-    tmp = __UNCONST(addr);
+	tmp = __UNCONST(addr);
 	host_addr = *(struct in_addr *)tmp;
 	return(hp);
 }

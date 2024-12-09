@@ -33,4 +33,4 @@ SRCS+=	strtod.c
 SRCS+=	dtoa.c
 
 # private interfaces
-SRCS+= misc.c
+SRCS+= 	misc.c
