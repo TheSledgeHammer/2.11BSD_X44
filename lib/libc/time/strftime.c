@@ -576,7 +576,7 @@ label:
 				continue;
 #if 0
 			case '+':
-				pt = _fmt(_ctloc(locale, date_fmt), t, pt, ptlim, warnp, locale);
+				pt = _fmt(time->date_fmt, t, pt, ptlim, warnp, locale);
 				continue;
 #endif
 			case '%':
