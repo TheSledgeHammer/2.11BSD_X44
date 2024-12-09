@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)ptrace.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */
@@ -41,11 +42,24 @@
 #include "SYS.h"
 
 ENTRY(ptrace)
+#ifdef __PIC__
+	PIC_PROLOGUE
+	call 	PIC_PLT(_errno)
+	PIC_EPILOGUE
+#else
+	call 	_errno
+#endif
 	xorl	%eax,%eax
 	movl	%eax,_errno
-	lea		SYS_ptrace,%eax
-	LCALL(7,0)
+	SYSTRAP(ptrace)
 	jb		err
 	ret
 err:
-	jmp	cerror
+#ifdef __PIC__
+	PIC_PROLOGUE
+	mov		PIC_GOT(cerror), %ecx
+	PIC_EPILOGUE
+	jmp		*%ecx
+#else
+	jmp		cerror
+#endif

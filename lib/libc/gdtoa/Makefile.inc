@@ -12,10 +12,26 @@ CPPFLAGS+=-I${.CURDIR}/gdtoa -I${.CURDIR}/locale
 .if ${MACHINE_ARCH} == "aarch64" || "mips" || "riscv"
 SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_ieee754.c
 .endif
-.if  ${MACHINE_ARCH} == "alpha" || "arm" || "hppa" || \
-	"ia64" || "or1k" || "powerpc" || \
-	"powerpc64" || "sh3" || "sparc"
+
+.if  ${MACHINE_ARCH} == "alpha" || "arm" || "hppa" || "ia64" || \
+	"or1k" || "powerpc" || "powerpc64" || "sh3" || \
+	"sparc"
 SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_dbl_ieee754.c
+.endif
+
+.if  ${MACHINE_ARCH} == "i386" || "vax" || "x86_64"
+SRCS+= infinityl.c
+.endif
+
+.if  ${MACHINE_ARCH} == "vax"
+SRCS+= infinityf.c infinity.c
+.endif
+
+.if  ${MACHINE_ARCH} == "aarch64" || "alpha" || "arm" || "hppa" || \
+	"i386" || "m68k" ||  "mips" || "vax" || \
+	"powerpc" || "powerpc64" || "riscv" ||  "sh3" || \
+	 "sparc" || "x86_64"
+SRCS+= nanf.c
 .endif
 
 # machine-dependent Makefile must define names of modules to use for

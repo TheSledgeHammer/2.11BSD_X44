@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)sigpending.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */

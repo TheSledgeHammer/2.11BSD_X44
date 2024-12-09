@@ -34,21 +34,27 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)sigsuspend.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
-err:
-	jmp		cerror
-
 ENTRY(sigsuspend)
 	movl	4(%esp),%eax	# fetch mask arg
 	movl	(%eax),%eax		# indirect to mask arg
 	movl	%eax,4(%esp)
-	movl	$ SYS_sigsuspend ,%eax
-	LCALL(0x7,0)
+	_SYSTRAP(sigsuspend, 0x7)
 	jb		err
 	xorl	%eax,%eax		# shouldn t happen
 	ret
+err:
+#ifdef __PIC__
+	PIC_PROLOGUE
+	mov		PIC_GOT(cerror), %ecx
+	PIC_EPILOGUE
+	jmp		*%ecx
+#else
+	jmp		cerror
+#endif

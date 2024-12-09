@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)exect.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */
@@ -42,11 +43,18 @@
 #include <machine/psl.h>
 
 ENTRY(exect)
-	lea	SYS_execve,%eax
+	lea		SYS_execve,%eax
 	pushf
 	popl	%edx
-	orl	$ PSL_T,%edx
+	orl		$PSL_T,%edx
 	pushl	%edx
 	popf
-	LCALL(7,0)
-	jmp	cerror		/* exect(file, argv, env); */
+	LCALL(7, 0)
+#ifdef __PIC__
+	PIC_PROLOGUE
+	mov		PIC_GOT(cerror), %ecx
+	PIC_EPILOGUE
+	jmp		*%ecx
+#else
+	jmp		cerror		/* exect(file, argv, env); */
+#endif

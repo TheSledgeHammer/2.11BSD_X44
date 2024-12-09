@@ -34,14 +34,12 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)ntohl.s	8.1 (Berkeley) 6/4/93"
 #endif /* LIBC_SCCS and not lint */
 
 /* hostorder = ntohl(netorder) */
-
-#include "DEFS.h"
-
 ENTRY(ntohl)
 	movl	4(%esp),%eax
 	xchgb	%al,%ah

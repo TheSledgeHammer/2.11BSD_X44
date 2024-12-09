@@ -41,7 +41,8 @@
 #include "SYS.h"
 
 	.globl	_errno
-cerror:
+
+ENTRY(cerror)
 	movl	%eax,_errno
 	movl	$-1,%eax
 	ret

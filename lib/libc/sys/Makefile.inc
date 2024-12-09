@@ -34,7 +34,7 @@ ASM=	accept.S access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
 
 PSEUDO=	_exit.S _getlogin.S
 
-ASMDEPS=    ${.CURDIR}/sys/Makefile.inc ${ARCHDIR}/SYS.h ${ARCHDIR}/DEFS.h \
+ASMDEPS=    ${.CURDIR}/sys/Makefile.inc ${ARCHDIR}/SYS.h \
             ${DESTDIR}/usr/include/sys/syscall.h
 
 PASM=	    ${ASM:.S=.po}

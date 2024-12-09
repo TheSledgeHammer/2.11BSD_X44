@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)sigreturn.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */
@@ -45,9 +46,14 @@
  */
 #ifdef PROF
 #undef ENTRY
+#ifdef __ELF__
+#define MCOUNT_SYMBOL	__mcount
+#else
+#define MCOUNT_SYMBOL	mcount
+#endif
 #define	ENTRY(x) \
-	.globl _/**/x; .align 2; _/**/x:  pusha ; \
-	.data; 1:; .long 0; .text; movl $1b,%eax; call mcount; popa ; nop
+	.globl _/**/x; ALIGNTEXT; _/**/x:  pusha ; \
+	.data; 1:; .long 0; .text; movl $1b,%eax; call MCOUNT_SYMBOL; popa ; nop
 #endif /* PROF */
 
 SYSCALL(sigreturn)

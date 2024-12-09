@@ -34,12 +34,12 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)fixdfsi.s	8.1 (Berkeley) 6/4/93"
 #endif /* LIBC_SCCS and not lint */
 
-	.globl ___fixdfsi
-___fixdfsi:
+ENTRY(___fixdfsi)
 	fldl	4(%esp)
 	fistpl	4(%esp)
 	movl	4(%esp),%eax

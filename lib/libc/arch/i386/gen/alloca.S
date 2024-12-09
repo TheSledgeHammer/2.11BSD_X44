@@ -34,13 +34,12 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)alloca.s	8.1 (Berkeley) 6/4/93"
 #endif /* LIBC_SCCS and not lint */
 
 /* like alloc, but automatic automatic free in return */
-
-#include "DEFS.h"
 
 ENTRY(alloca)
 	popl	%edx		/*  pop return addr */

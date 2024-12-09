@@ -29,8 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-//#include <machine/asm.h>
-#include "SYS.h"
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 //RCSID("$NetBSD: swapcontext.S,v 1.6 2008/04/28 20:22:56 martin Exp $")
 #endif /* LIBC_SCCS && !lint */

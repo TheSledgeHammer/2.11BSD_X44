@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)sbrk.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */
@@ -52,14 +53,36 @@ curbrk:	.long	_end
 	.text
 
 ENTRY(sbrk)
+#ifdef __PIC__
+	movl	4(%esp),%ecx
+	PIC_PROLOGUE
+	movl	PIC_GOT(curbrk),%edx
+	PIC_EPILOGUE
+	movl	(%edx),%eax
+	addl	%eax,%ecx
+	movl	%ecx,4(%esp)
+	SYSTRAP(brk)
+	jc		err
+	PIC_PROLOGUE
+	movl	PIC_GOT(curbrk),%edx
+	PIC_EPILOGUE
+	movl	(%edx),%eax
+	movl	%ecx,(%edx)
+	ret
+err:
+	PIC_PROLOGUE
+	mov		PIC_GOT(cerror),%edx
+	PIC_EPILOGUE
+	jmp		*%edx
+#else
 	movl	4(%esp),%ecx
 	movl	curbrk,%eax
 	addl	%eax,4(%esp)
-	lea	SYS_brk,%eax
-	LCALL(7,0)
-	jb	err
+	SYSTRAP(brk)
+	jb		err
 	movl	curbrk,%eax
 	addl	%ecx,curbrk
 	ret
 err:
-	jmp	cerror
+	jmp		cerror
+#endif

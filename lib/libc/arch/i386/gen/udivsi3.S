@@ -34,12 +34,12 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)udivsi3.s	8.1 (Berkeley) 6/4/93"
 #endif /* LIBC_SCCS and not lint */
 
-	.globl ___udivsi3
-___udivsi3:
+ENTRY(___udivsi3)
 	movl 	4(%esp),%eax
 	xorl 	%edx,%edx
 	divl 	8(%esp)

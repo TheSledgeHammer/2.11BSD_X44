@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)setjmp.s	8.1 (Berkeley) 6/4/93"
 #endif /* LIBC_SCCS and not lint */
@@ -48,12 +49,16 @@
  * The previous signal state is restored.
  */
 
-#include "DEFS.h"
-
 ENTRY(setjmp)
+	PIC_PROLOGUE
 	pushl	$0
-	call	_sigblock
+	#ifdef PIC
+	call	PIC_PLT(_C_LABEL(sigblock))
+#else
+	call	_C_LABEL(sigblock)
+#endif
 	popl	%edx
+	PIC_EPILOGUE
 	movl	4(%esp),%ecx 
 	movl	0(%esp),%edx
 	movl	%edx, 0(%ecx)
@@ -68,9 +73,15 @@ ENTRY(setjmp)
 
 ENTRY(longjmp)
 	movl	4(%esp),%edx
+	PIC_PROLOGUE
 	pushl	24(%edx)
-	call	_sigsetmask
+#ifdef PIC
+	call	PIC_PLT(_C_LABEL(sigsetmask))
+#else
+	call	_C_LABEL(sigsetmask)
+#endif
 	popl	%eax
+	PIC_EPILOGUE
 	movl	4(%esp),%edx
 	movl	8(%esp),%eax
 	movl	0(%edx),%ecx

@@ -34,15 +34,22 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)fixunsdfsi.s	8.1	6/4/93"
 #endif /* LIBC_SCCS and not lint */
 
-	.globl ___fixunsdfsi
-___fixunsdfsi:
+ENTRY(___fixunsdfsi)
 	fldl	4(%esp)				/* argument double to accum stack */
 	frndint						/* create integer */
+#ifdef __PIC__
+	PIC_PROLOGUE
+	leal	PIC_GOTOFF(fbiggestsigned),%eax
+	PIC_EPILOGUE
+	fcoml	(%eax)
+#else
 	fcoml	fbiggestsigned		/* bigger than biggest signed? */
+#endif
 	fstsw	%ax
 	sahf
 	jnb		1f
@@ -51,7 +58,15 @@ ___fixunsdfsi:
 	movl	4(%esp),%eax
 	ret
 
-1:	fsubl	fbiggestsigned		/* reduce for proper conversion */
+1:
+#ifdef __PIC__
+	PIC_PROLOGUE
+	leal	PIC_GOTOFF(fbiggestsigned),%eax
+	PIC_EPILOGUE
+	fsubl	(%eax)
+#else
+	fsubl	fbiggestsigned		/* reduce for proper conversion */
+#endif
 	fistpl	4(%esp)				/* convert */
 	movl	4(%esp),%eax
 	orl		$0x80000000,%eax	/* restore bias */

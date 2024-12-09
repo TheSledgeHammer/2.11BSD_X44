@@ -34,14 +34,14 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)bzero.s	8.1 (Berkeley) 6/4/93"
 #endif /* LIBC_SCCS and not lint */
 
 /* bzero (base,cnt) */
 
-	.globl _bzero
-_bzero:
+ENTRY(bzero)
 	pushl	%edi
 	movl	8(%esp),%edi
 	movl	12(%esp),%ecx

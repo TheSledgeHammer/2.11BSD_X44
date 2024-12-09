@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)Ovfork.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */
@@ -47,24 +48,21 @@
  * %eax == pid of child in parent, %eax == pid of parent in child.
  *
  */
-	.set	vfork,66
-	.globl	_vfork
 
-_vfork:
+ENTRY(vfork)
 	popl	%ecx		/* my rta into ecx */
-	movl	$vfork, %eax
-	LCALL(7,0)
-	jb	verror
+	SYSTRAP(vfork)
+	jb		verror
 vforkok:
 	cmpl	$0,%edx		/* child process? */
-	jne	child		/* yes */
+	jne		child		/* yes */
 	jmp 	parent 
 .globl		_errno
 verror:
 	movl	%eax,_errno
 	movl	$-1,%eax
-	jmp	*%ecx
+	jmp		*%ecx
 child:
 	movl	$0,%eax
 parent:
-	jmp	*%ecx
+	jmp		*%ecx

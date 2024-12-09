@@ -44,6 +44,10 @@ RCSID("$NetBSD: getcontext.S,v 1.2 2003/01/18 11:08:12 thorpej Exp $")
 #endif
 #endif /* SYSLIBC_SCCS && !lint */
 
+#ifdef WEAK_ALIAS
+WEAK_ALIAS(getcontext, _getcontext)
+#endif
+
 SYSCALL(getcontext)
 	movl	4(%esp),%ecx
 	movl	0(%esp),%edx

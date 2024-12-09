@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)setlogin.s	8.1 (Berkeley) 6/4/93"
 #endif /* LIBC_SCCS and not lint */
@@ -44,4 +45,4 @@
 
 SYSCALL(setlogin)
 	movl	$0,__logname_valid
-	ret				/* setlogin(name) */
+	ret		/* setlogin(name) */

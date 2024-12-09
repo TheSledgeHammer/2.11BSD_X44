@@ -60,9 +60,12 @@
 	.long 	y			;\
 	.word	x
 
-#define SYSTRAP(x)			\
+#define _SYSTRAP(x,y)			\
     	lea	_SYSNAM(x), %eax	;\
-	LCALL(7, 0)             
+	LCALL(y, 0)
+
+#define SYSTRAP(x)			\
+    	_SYSTRAP(x,7)
 
 #define _SYSCALL_NOERR(x,y)      	\
     	ENTRY(x)                    	;\
@@ -109,6 +112,4 @@
 	_SYSCALL(x,y)			;\
 	ret
 
-#define	ASMSTR	.asciz
-
-	.globl	cerror
+_GLOBL(cerror)	//.globl	cerror

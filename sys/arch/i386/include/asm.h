@@ -149,6 +149,8 @@
 #define	ASENTRY(y)			_ENTRY(_ASM_LABEL(y)); _PROF_PROLOGUE
 #define	ALTENTRY(y)			_ALTENTRY(_C_LABEL(y))
 
+#define	ASMSTR				.asciz
+
 /*
  * STRONG_ALIAS, WEAK_ALIAS
  *	Create a strong or weak alias.

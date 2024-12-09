@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)fork.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */
@@ -44,7 +45,7 @@
 WEAK_ALIAS(fork, _fork)
 #endif
 
-SYSCALL(fork)
+_SYSCALL(fork)
 	cmpl	$0,%edx	/* parent, since %edx == 0 in parent, 1 in child */
 	je		1f
 	movl	$0,%eax

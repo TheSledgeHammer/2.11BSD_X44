@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)syscall.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */
@@ -48,4 +49,11 @@ ENTRY(syscall)
 	jb		1f
 	ret
 1:
+#ifdef __PIC__
+	PIC_PROLOGUE
+	mov		PIC_GOT(cerror), %ecx
+	PIC_EPILOGUE
+	jmp		*%ecx
+#else
 	jmp		cerror
+#endif

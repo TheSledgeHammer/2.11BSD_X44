@@ -34,14 +34,12 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
 	.asciz "@(#)sigprocmask.s	8.1 (Berkeley) 6/4/93"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
-
-err:
-	jmp	cerror
 
 ENTRY(sigprocmask)
 	movl	8(%esp),%ecx	# fetch new sigset pointer
@@ -52,8 +50,7 @@ ENTRY(sigprocmask)
 	jmp		2f
 1:	movl	(%ecx),%ecx		# fetch indirect  ...
 	movl	%ecx,8(%esp)	# to new mask arg
-2:	movl	$ SYS_sigprocmask , %eax
-	LCALL(0x7,0)
+2:	SYSTRAP(sigprocmask, 0x7)
 	jb		err
 	movl	12(%esp),%ecx	# fetch old mask requested
 	cmpl	$0,%ecx			# test if old mask requested
@@ -62,3 +59,12 @@ ENTRY(sigprocmask)
 out:
 	xorl	%eax,%eax
 	ret
+err:
+#ifdef __PIC__
+	PIC_PROLOGUE
+	mov	PIC_GOT(cerror), %ecx
+	PIC_EPILOGUE
+	jmp		*%ecx
+#else
+	jmp		cerror
+#endif

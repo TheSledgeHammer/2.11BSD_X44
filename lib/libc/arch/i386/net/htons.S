@@ -34,13 +34,12 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)htons.s	8.1 (Berkeley) 6/4/93"
 #endif /* LIBC_SCCS and not lint */
 
 /* netorder = htons(hostorder) */
-
-#include "DEFS.h"
 
 ENTRY(htons)
 	movzwl	4(%esp),%eax

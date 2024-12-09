@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)_setjmp.s	8.1 (Berkeley) 6/4/93"
 #endif /* LIBC_SCCS and not lint */
@@ -47,8 +48,6 @@
  * by restoring registers from the stack.
  * The previous signal state is NOT restored.
  */
-
-#include "DEFS.h"
 
 ENTRY(_setjmp)
 	movl	4(%esp),%eax
