@@ -46,10 +46,10 @@
 	.globl	curbrk
 	.globl	minbrk
 ENTRY(_brk)
-	jmp	ok
+	jmp	    ok
 
 ENTRY(brk)
-#ifdef __PIC__
+#ifdef PIC
 	movl	4(%esp),%eax
 	PIC_PROLOGUE
 	movl	PIC_GOT(minbrk),%edx

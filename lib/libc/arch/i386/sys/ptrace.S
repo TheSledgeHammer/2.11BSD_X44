@@ -42,7 +42,7 @@
 #include "SYS.h"
 
 ENTRY(ptrace)
-#ifdef __PIC__
+#ifdef PIC
 	PIC_PROLOGUE
 	call 	PIC_PLT(_errno)
 	PIC_EPILOGUE
@@ -55,7 +55,7 @@ ENTRY(ptrace)
 	jb		err
 	ret
 err:
-#ifdef __PIC__
+#ifdef PIC
 	PIC_PROLOGUE
 	mov		PIC_GOT(cerror), %ecx
 	PIC_EPILOGUE

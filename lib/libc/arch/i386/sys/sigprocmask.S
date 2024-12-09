@@ -50,7 +50,7 @@ ENTRY(sigprocmask)
 	jmp		2f
 1:	movl	(%ecx),%ecx		# fetch indirect  ...
 	movl	%ecx,8(%esp)	# to new mask arg
-2:	SYSTRAP(sigprocmask, 0x7)
+2:	_SYSTRAP(sigprocmask, 0x7)
 	jb		err
 	movl	12(%esp),%ecx	# fetch old mask requested
 	cmpl	$0,%ecx			# test if old mask requested
@@ -60,7 +60,7 @@ out:
 	xorl	%eax,%eax
 	ret
 err:
-#ifdef __PIC__
+#ifdef PIC
 	PIC_PROLOGUE
 	mov	PIC_GOT(cerror), %ecx
 	PIC_EPILOGUE

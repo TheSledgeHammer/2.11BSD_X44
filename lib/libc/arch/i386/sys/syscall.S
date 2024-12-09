@@ -49,7 +49,7 @@ ENTRY(syscall)
 	jb		1f
 	ret
 1:
-#ifdef __PIC__
+#ifdef PIC
 	PIC_PROLOGUE
 	mov		PIC_GOT(cerror), %ecx
 	PIC_EPILOGUE

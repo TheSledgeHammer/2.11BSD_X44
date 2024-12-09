@@ -30,6 +30,7 @@
  */
 
 #include <machine/asm.h>
+
 #if defined(LIBC_SCCS) && !defined(lint)
 //RCSID("$NetBSD: resumecontext.S,v 1.6 2008/04/28 20:22:56 martin Exp $")
 #endif /* LIBC_SCCS && !lint */
@@ -55,27 +56,10 @@ ENTRY(_resumecontext)	/* profiling prologue would clobber TOS */
 	PIC_EPILOGUE
 	movl	4(%esp),%ecx		/* uc_link */
 	PIC_PROLOGUE
-	pushl	%ecx	/* argument for exit() or setcontext() */
-	testl	%ecx,%ecx		/* link end? */
-	jnz	9f	/* watch out for local label use in PIC_* */
-
-	/* normal exit */
-#ifdef PIC
-	call	PIC_PLT(_C_LABEL(exit))
-#else
-	call	_C_LABEL(exit)
-#endif
-	/* NOTREACHED */
-
-9:
+	pushl	%ecx
 #ifdef PIC
 	call	PIC_PLT(_C_LABEL(setcontext))
 #else
 	call	_C_LABEL(setcontext)
 #endif
 	/* NOTREACHED */
-
-	/* something is wrong, pull the brake */
-	pushl	$-1
-	pushl	%eax	/* unused return address */
-	SYSTRAP(exit)

@@ -53,7 +53,7 @@ curbrk:	.long	_end
 	.text
 
 ENTRY(sbrk)
-#ifdef __PIC__
+#ifdef PIC
 	movl	4(%esp),%ecx
 	PIC_PROLOGUE
 	movl	PIC_GOT(curbrk),%edx

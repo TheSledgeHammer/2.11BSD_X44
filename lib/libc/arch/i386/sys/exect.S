@@ -50,7 +50,7 @@ ENTRY(exect)
 	pushl	%edx
 	popf
 	LCALL(7, 0)
-#ifdef __PIC__
+#ifdef PIC
 	PIC_PROLOGUE
 	mov		PIC_GOT(cerror), %ecx
 	PIC_EPILOGUE

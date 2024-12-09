@@ -50,7 +50,7 @@ ENTRY(sigsuspend)
 	xorl	%eax,%eax		# shouldn t happen
 	ret
 err:
-#ifdef __PIC__
+#ifdef PIC
 	PIC_PROLOGUE
 	mov		PIC_GOT(cerror), %ecx
 	PIC_EPILOGUE
