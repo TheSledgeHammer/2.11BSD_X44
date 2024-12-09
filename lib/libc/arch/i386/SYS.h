@@ -49,65 +49,65 @@
 #define _GLOBL(x)   	.globl _/**/x
 #endif
 
-#ifdef __ELF__
-#define ALIGNTEXT .align 4
-#else
-#define ALIGNTEXT .align 2
-#endif
+#define ALIGNTEXT _ALIGN_TEXT
+
+#define	CALL(x, y)			\
+	_CALLNAM(y)			;\
+	addl	$4*x, %esp
+
+#define LCALL(x, y)			\
+	.byte	0x9a			;\
+	.long 	y			;\
+	.word	x
 
 #define SYSTRAP(x)			\
-    	lea	_SYSNAM(x), %eax	;\
-	LCALL(7, 0)
+    	movl	_SYSNAM(x), %eax	;\
+	LCALL(7, 0)             
 
-#ifdef ENTRY
-#undef ENTRY
-#define	ENTRY(x)	            	\
-    	.text                       	;\
-    	ALIGNTEXT                   	;\
-    	_GLOBL(x)                   	;\
-    	.data                       	;\
-1:  	.long   0                   	;\
-    	_C_LABEL(x):                	\
-    	movl    $1b, %eax           	;\
-    	_PROF_PROLOGUE
-#endif
-
-#define SYSCALL_NOERR(x,y)      	\
+#define _SYSCALL_NOERR(x,y)      	\
     	ENTRY(x)                    	;\
-    	SYSTRAP(y)
+    	SYSTRAP(y)				
 
 #ifdef PIC
-#define SYSCALL_ERR             	\
+#define _SYSCALL_ERR             	\
     	PIC_PROLOGUE                	;\
     	mov PIC_GOT(cerror), %ecx   	;\
     	PIC_EPILOGUE                	;\
     	jmp     *%ecx
 #else
-#define SYSCALL_ERR             	\
+#define _SYSCALL_ERR             	\
     	jmp	cerror
 #endif
 
-#define SYSCALL(x)              	\
-2:  	SYSCALL_ERR                 	;\
-    	SYSCALL_NOERR(x,x)          	;\
-	jb	2b
+#define _SYSCALL(x,y)           	\
+    	.text                       	;\
+    	ALIGNTEXT                   	;\
+2:  	_SYSCALL_ERR                	;\
+    	_SYSCALL_NOERR(x,y)         	;\
+    	jb	2b         
+
+
+#define SYSCALL_NOERR(x)		\
+	_SYSCALL_NOERR(x,x)
+
+#define SYSCALL(x)			\
+    	_SYSCALL(x,x)
+
+#define RSYSCALL_NOERR(x)		\
+    	SYSCALL_NOERR(x)            	;\
+    	ret
 
 #define	RSYSCALL(x)			\
-	SYSCALL(x)			;\
+	SYSCALL(x)  			;\
+	ret
+
+#define PSEUDO_NOERR(x,y)		\
+	_SYSCALL_NOERR(x,y)         	;\
 	ret
 
 #define	PSEUDO(x,y)			\
-	SYSCALL_NOERR(x,y)          	;\
+	_SYSCALL(x,y)			;\
 	ret
-
-#define	CALL(x,y)			\
-	_CALLNAM(y)			;\
-	addl	$4*x, %esp
-
-#define LCALL(x y)			\
-	.byte	0x9a			;\
-	.long 	y			;\
-	.word	x
 
 #define	ASMSTR	.asciz
 
