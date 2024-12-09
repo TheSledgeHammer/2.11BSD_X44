@@ -51,11 +51,11 @@
 
 #define ALIGNTEXT _ALIGN_TEXT
 
-#define	CALL(x, y)			\
+#define	CALL(x,y)			\
 	_CALLNAM(y)			;\
 	addl	$4*x, %esp
 
-#define LCALL(x, y)			\
+#define LCALL(x,y)			\
 	.byte	0x9a			;\
 	.long 	y			;\
 	.word	x
