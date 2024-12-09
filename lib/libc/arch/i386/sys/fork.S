@@ -45,7 +45,7 @@
 WEAK_ALIAS(fork, _fork)
 #endif
 
-_SYSCALL(fork)
+SYSCALL(fork)
 	cmpl	$0,%edx	/* parent, since %edx == 0 in parent, 1 in child */
 	je		1f
 	movl	$0,%eax
