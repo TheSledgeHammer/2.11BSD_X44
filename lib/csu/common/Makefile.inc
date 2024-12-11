@@ -17,7 +17,7 @@ OBJS+= crt0.o gcrt0.o
 OBJS+= crtbegin.o crtend.o
 OBJS+= crtbeginS.o crtendS.o
 OBJS+= crti.o crtn.o
-#OBJS+= elf_note.o
+OBJS+= elf_note.o
 
 realall: ${OBJS}
 
@@ -97,6 +97,16 @@ crt0.o: crt0.c crt0_common.c
 gcrt0.o: crt0.c crt0.o
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${MY_PICFLAGS} -DMCRT0 ${ARCHDIR}/crt0.c -o ${.TARGET}.o
+		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
+		rm -f ${.TARGET}.o
+.if ${MKSTRIPIDENT} != "no"
+		${OBJCOPY} -R .ident ${.TARGET}
+.endif
+
+elf_note.o: elf_note.S
+		${_MKTARGET_COMPILE}
+		${COMPILE.S} ${PICFLAGS} ${COMMON_DIR}/elf_note.S -o ${.TARGET}.o
 		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
