@@ -66,13 +66,13 @@
 
 #ifdef I686_LIBC
 #define SYSTRAP(x)			\
-	    pushl	%ebx			;\
-	    movl	_SYSNAM(x),%eax		;\
-	    movl	$123f,%edx		;\
-	    movl	%esp,%ecx		;\
-	    sysenter			;\
+	pushl	%ebx			;\
+	movl	_SYSNAM(x),%eax		;\
+	movl	$123f,%edx		;\
+	movl	%esp,%ecx		;\
+	sysenter			;\
 123:	movl	%ebx,%edx		;\
-	    popl	%ebx
+	popl	%ebx
 #else	/* I686_LIBC */
 #define SYSTRAP(x)	OSYSTRAP(x)
 #endif	/* I686_LIBC */
@@ -123,11 +123,11 @@
 	ret
 
 #ifdef WEAK_ALIAS
-#define	WSYSCALL(weak,strong)						\
-	WEAK_ALIAS(weak,strong);					\
+#define	WSYSCALL(weak,strong)		\
+	WEAK_ALIAS(weak,strong);	\
 	PSEUDO(strong,weak)
 #else
-#define	WSYSCALL(weak,strong)						\
+#define	WSYSCALL(weak,strong)		\
 	PSEUDO(weak,weak)
 #endif
 
