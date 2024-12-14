@@ -3,64 +3,117 @@
 # sys sources
 .PATH: ${ARCHDIR}/sys ${.CURDIR}/sys
 
+# kernel syscalls.
+# vadvise: exists but not in syscalls
+
 # modules with non-default implementations on at least one architecture:
-SRCS+=	Ovfork.S brk.S cerror.S exect.S fork.S getcontext.S pipe.S ptrace.S \
-        reboot.S sbrk.S setlogin.S sigpending.S sigprocmask.S sigreturn.S \
-		sigsuspend.S syscall.S
+SRCS+=      exect.S reboot.S setlogin.S \
+            sigpending.S sigprocmask.S sigreturn.S \
+            sigsuspend.S
+SRCS+=      Ovfork.S brk.S pipe.S \
+            getcontext.S ptrace.S sbrk.S \
+            syscall.S __syscall.S cerror.S
 
 # glue to provide compatibility between GCC 1.X and 2.X
-SRCS+= _getcontext.c _getlogin.c _fork.c ftruncate.c lseek.c mmap.c truncate.c
+GLUE+=      _getcontext.c _getlogin.c ftruncate.c lseek.c mmap.c truncate.c
+
+# 'glue' files might .c or .S depending on the architecture
+.for glue in ${GLUE}
+. if exists(${glue:.c=.S})
+# Build the ASM glue file
+SRCS+=${glue:.c=.S}
+. else
+.  if exists(__${glue:.c=.S})
+SRCS+=__${glue:.c=.S} ${glue}
+.  else
+# Build the C glue file
+SRCS+= ${glue}
+# and an asm entry for __<syscall>
+ASM_GLUE+= tmp_${glue:.c=.S}
+.  endif
+. endif
+.endfor
+
+# 'glue' files might .c or .S depending on the architecture
+.for glue in ${GLUENOERR}
+. if exists(${glue:.c=.S})
+# Build the ASM glue file
+SRCS+=${glue:.c=.S}
+. else
+.  if exists(__${glue:.c=.S})
+SRCS+=__${glue:.c=.S} ${glue}
+.  else
+# Build the C glue file
+SRCS+= ${glue}
+# and an asm entry for __<syscall>
+ASM_GLUENOERR+= tmp_${glue:.c=.S}
+.  endif
+. endif
+.endfor
 
 # modules with default implementations on all architectures:
-ASM=	accept.S access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
-	chown.S chroot.S close.S connect.S dup.S dup2.S execve.S fchdir.S \
-	fchflags.S fchmod.S fchown.S fcntl.S flock.S fpathconf.S fstat.S \
-	fstatfs.S fsync.S getdirentries.S getdtablesize.S getegid.S \
-	geteuid.S getfh.S getfsstat.S getgid.S getgroups.S getitimer.S \
-	getpeername.S getpgrp.S getpid.S getppid.S getpriority.S \
-	getrlimit.S getrusage.S getsockname.S getsockopt.S gettimeofday.S \
-	getuid.S ioctl.S kill.S ktrace.S lfs_bmapv.S lfs_markv.S \
-	lfs_segclean.S lfs_segwait.S link.S listen.S lstat.S \
-	madvise.S mincore.S mkdir.S mkfifo.S mknod.S mlock.S mount.S \
-	mprotect.S msync.S munlock.S munmap.S nfssvc.S open.S \
-	pathconf.S profil.S quotactl.S read.S \
-	readlink.S readv.S recvfrom.S recvmsg.S rename.S revoke.S rmdir.S \
-	select.S sendmsg.S sendto.S setegid.S seteuid.S setgid.S \
-	setgroups.S setitimer.S setpgid.S setpriority.S setrlimit.S \
-	setsid.S setsockopt.S settimeofday.S setuid.S shutdown.S \
-	sigaction.S sigaltstack.S socket.S socketpair.S stat.S statfs.S \
-	swapon.S symlink.S sync.S umask.S undelete.S unlink.S unmount.S \
-	utimes.S vadvise.S wait4.S write.S writev.S __syscall.S __sysctl.S
+ASM=        access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
+            chown.S chroot.S clock_gettime.S clock_settime.S dup.S \
+            dup2.S fchdir.S fchflags.S fchmod.S fchown.S flock.S \
+            fpathconf.S fstat.S fstatfs.S getdirentries.S getdtablesize.S \
+            getegid.S geteuid.S getfsstat.S getgid.S getgroups.S getitimer.S \
+            getpeername.S getpgrp.S getpid.S getppid.S getpriority.S \
+            getrlimit.S getrusage.S getsockname.S getsockopt.S gettimeofday.S \
+            getuid.S ioctl.S issetugid.S ktrace.S lfs_bmapv.S lfs_markv.S \
+            lfs_segclean.S lfs_segwait.S link.S kenv.S kevent.S \
+            kqueue.S listen.S lstat.S madvise.S mincore.S mkdir.S mkfifo.S \
+            mknod.S mlock.S mount.S mprotect.S mpx.S msync.S munlock.S \
+            munmap.S nanosleep.S nostk.S pathconf.S profil.S quotactl.S \
+            rename.S revoke.S rmdir.S setegid.S seteuid.S setgid.S \
+            setgroups.S setitimer.S setpgid.S setpriority.S \
+            setrlimit.S setsid.S setsockopt.S settimeofday.S setuid.S \
+            sigaction.S sigaltstack.S sigstack.S sigtimedwait.S shutdown.S \
+            socket.S socketpair.S sstk.S stat.S statfs.S swapctl.S \
+            symlink.S sync.S __sysctl.S umask.S undelete.S unlink.S \
+            unmount.S utimes.S uuidgen.S vtrace.S
 
-PSEUDO=	_exit.S _getlogin.S
+WEAKASM=    accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill.S \
+            msgrcv.S msgsnd.S open.S poll.S pselect.S read.S readlink.S readv.S \
+            recvfrom.S recvmmsg.S recvmsg.S select.S sendmmsg.S sendmsg.S \
+            sendto.S setcontext.S sysarch.S wait4.S write.S writev.S
 
-ASMDEPS=    ${.CURDIR}/sys/Makefile.inc ${ARCHDIR}/SYS.h \
-            ${DESTDIR}/usr/include/sys/syscall.h
+PSEUDONOERR=    _exit.S
 
-PASM=	    ${ASM:.S=.po}
-SASM=	    ${ASM:.S=.so}
-PPSEUDO=    ${PSEUDO:.S=.po}
-SPSEUDO=    ${PSEUDO:.S=.so}
+_GENFILES=	    ${ASM} ${WEAKASM} ${NOERR} ${PSEUDONOERR} \
+	            ${ASM_GLUE} ${ASM_GLUENOERR}
 
-OBJS+=	${ASM} ${PSEUDO}
-POBJS+=	${PASM} ${SASM} ${PPSEUDO} ${SPSEUDO}
-CLEANFILES+=${ASM} ${PSEUDO} ${POBJS}
+SRCS+=		    ${_GENFILES}
+CLEANFILES+=    ${_GENFILES}
 
-${PASM}: ${ASMDEPS}
+ASMDEPS=        ${.CURDIR}/sys/Makefile.inc ${ARCHDIR}/SYS.h \
+                ${DESTDIR}/usr/include/sys/syscall.h
+
+
+${ASM}: ${ASMDEPS}
 	${_MKTARGET_CREATE}
-	printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' >${.TARGET}
+	printf '#include "SYS.h"\nRSYSCALL(${.PREFIX:S/tmp_//})\n' >${.TARGET}
 
-${SASM}: ${ASMDEPS}
+${ASM_GLUE}: ${ASMDEPS}
 	${_MKTARGET_CREATE}
-	printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' >${.TARGET}
+	printf '#include "SYS.h"\nPSEUDO(${.PREFIX:S/tmp_/__/},${.PREFIX:S/tmp_//})\n' >${.TARGET}
 
-${PPSEUDO}: ${ASMDEPS}
+${ASM_GLUENOERR}: ${ASMDEPS}
 	${_MKTARGET_CREATE}
-	printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' >${.TARGET}
+	printf '#include "SYS.h"\nPSEUDO_NOERROR(${.PREFIX:S/tmp_/__/},${.PREFIX:S/tmp_//})\n' >${.TARGET}
 
-${SPSEUDO}: ${ASMDEPS}
+${WEAKASM}: ${ASMDEPS}
 	${_MKTARGET_CREATE}
-	printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' >${.TARGET}
+	printf '#include "SYS.h"\nWSYSCALL(${.PREFIX},${.PREFIX})\nWEAK_ALIAS(_${.PREFIX},${.PREFIX})\n' >${.TARGET}
+
+${NOERR}: ${ASMDEPS}
+	${_MKTARGET_CREATE}
+	printf '#include "SYS.h"\nRSYSCALL_NOERROR(${.PREFIX})\n' >${.TARGET}
+
+${PSEUDONOERR}: ${ASMDEPS}
+	${_MKTARGET_CREATE}
+	printf '#include "SYS.h"\nPSEUDO_NOERROR(${.PREFIX},${.PREFIX:S/_//})\n' >${.TARGET}
+	# add an _Exit alias to _exit
+	printf 'STRONG_ALIAS(${.PREFIX:S/e/E/},${.PREFIX})\n' >>${.TARGET}
 
 MAN+=	accept.2 access.2 acct.2 adjtime.2 bind.2 brk.2 chdir.2 chflags.2 \
 		chmod.2 chown.2 chroot.2 close.2 connect.2 dup.2 execve.2 _exit.2 \

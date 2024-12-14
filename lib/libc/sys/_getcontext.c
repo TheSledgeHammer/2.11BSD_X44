@@ -40,12 +40,9 @@ __weak_alias(_getcontext, getcontext)
 #endif
 
 /*ARGSUSED*/
-/*
 int
 getcontext(ucp)
 	ucontext_t *ucp;
 {
-
 	return (0);
 }
-*/
