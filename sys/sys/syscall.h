@@ -58,8 +58,8 @@
 #define	SYS_setgid	49
 #define	SYS_setegid	50
 #define	SYS_acct	51
-#define	SYS_getucontext	52
-#define	SYS_setucontext	53
+#define	SYS_getcontext	52
+#define	SYS_setcontext	53
 #define	SYS_ioctl	54
 #define	SYS_reboot	55
 #define	SYS_sigwait	56
