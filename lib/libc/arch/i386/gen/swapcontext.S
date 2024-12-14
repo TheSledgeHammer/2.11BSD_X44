@@ -46,7 +46,7 @@ ENTRY(swapcontext)
 	addl	$4,%esp			/* pop oucp */
 	PIC_EPILOGUE
 	testl	%eax,%eax
-	jnz	2f
+	jnz	    2f
 	movl	4(%esp),%ecx
 	movl	0(%esp),%edx
 	movl	%edx,(36 + 14 * 4)(%ecx)	/*  Adjust saved %eip ... */

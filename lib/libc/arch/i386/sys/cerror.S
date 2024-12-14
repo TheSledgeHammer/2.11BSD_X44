@@ -42,7 +42,16 @@
 
 	.globl	_errno
 
-ENTRY(cerror)
-	movl	%eax,_errno
+_ENTRY(cerror)
+	pushl	%eax
+#ifdef __PIC__
+	PIC_PROLOGUE
+	call	PIC_PLT(_errno)
+	PIC_EPILOGUE
+#else
+	call	_errno
+#endif /* __PIC__ */
+	popl	(%eax)
 	movl	$-1,%eax
+	movl	$-1,%edx
 	ret

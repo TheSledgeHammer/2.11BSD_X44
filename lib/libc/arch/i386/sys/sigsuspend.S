@@ -45,7 +45,7 @@ ENTRY(sigsuspend)
 	movl	4(%esp),%eax	# fetch mask arg
 	movl	(%eax),%eax		# indirect to mask arg
 	movl	%eax,4(%esp)
-	_SYSTRAP(sigsuspend, 0x7)
+	SYSTRAP(sigsuspend)
 	jb		err
 	xorl	%eax,%eax		# shouldn t happen
 	ret

@@ -47,12 +47,17 @@
 	.globl	minbrk
 	.globl	curbrk
 
+
+#ifdef WEAK_ALIAS
+WEAK_ALIAS(sbrk, _sbrk)
+#endif
+
 	.data
 minbrk:	.long	_end
 curbrk:	.long	_end
 	.text
 
-ENTRY(sbrk)
+ENTRY(_sbrk)
 #ifdef PIC
 	movl	4(%esp),%ecx
 	PIC_PROLOGUE

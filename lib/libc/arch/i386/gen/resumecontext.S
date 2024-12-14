@@ -41,7 +41,7 @@
  * function's return address (us), which is the point of the exercise.
  */
 
-ENTRY(_resumecontext)	/* profiling prologue would clobber TOS */
+NENTRY(_resumecontext)	/* profiling prologue would clobber TOS */
 	leal	-(4 + 776)(%esp),%ecx	/* retaddr + sizeof (ucontext_t) */
 	andl	$~(0xf),%ecx		/* align on _UC_UCONTEXT_ALIGN */
 	movl	%ecx,%esp

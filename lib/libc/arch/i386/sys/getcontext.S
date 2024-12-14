@@ -48,7 +48,7 @@ RCSID("$NetBSD: getcontext.S,v 1.2 2003/01/18 11:08:12 thorpej Exp $")
 WEAK_ALIAS(getcontext, _getcontext)
 #endif
 
-SYSCALL(getcontext)
+_SYSCALL(_getcontext,getcontext)
 	movl	4(%esp),%ecx
 	movl	0(%esp),%edx
 	movl	%edx,(36 + 14 * 4)(%ecx)	/* Adjust saved %eip ... */

@@ -36,13 +36,13 @@
 
 #include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)fixunsdfsi.s	8.1	6/4/93"
+	//.asciz "@(#)fixunsdfsi.s	8.1	6/4/93"
 #endif /* LIBC_SCCS and not lint */
 
-ENTRY(___fixunsdfsi)
+ENTRY(__fixunsdfsi)
 	fldl	4(%esp)				/* argument double to accum stack */
 	frndint						/* create integer */
-#ifdef PIC
+#ifdef __PIC__
 	PIC_PROLOGUE
 	leal	PIC_GOTOFF(fbiggestsigned),%eax
 	PIC_EPILOGUE
@@ -52,14 +52,14 @@ ENTRY(___fixunsdfsi)
 #endif
 	fstsw	%ax
 	sahf
-	jnb		1f
+	jnb		2f
 	
 	fistpl	4(%esp)
 	movl	4(%esp),%eax
 	ret
 
-1:
-#ifdef PIC
+2:
+#ifdef __PIC__
 	PIC_PROLOGUE
 	leal	PIC_GOTOFF(fbiggestsigned),%eax
 	PIC_EPILOGUE
@@ -72,4 +72,4 @@ ENTRY(___fixunsdfsi)
 	orl		$0x80000000,%eax	/* restore bias */
 	ret
 
-fbiggestsigned:	.double	0r2147483648.0
+fbiggestsigned:	.double	2147483648.0

@@ -1,6 +1,8 @@
+/*	$NetBSD: __syscall.S,v 1.5 2014/05/23 02:34:19 uebayasi Exp $	*/
+
 /*-
- * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
@@ -13,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -32,24 +30,26 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	from: @(#)syscall.s	5.1 (Berkeley) 4/23/90
  */
 
 #include <machine/asm.h>
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)fork.s	8.1 (Berkeley) 6/4/93"
+	//RCSID("$NetBSD: __syscall.S,v 1.5 2014/05/23 02:34:19 uebayasi Exp $")
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
-/*
-#ifdef WEAK_ALIAS
-WEAK_ALIAS(fork, _fork)
-#endif
-*/
-
-_SYSCALL(__fork,fork)
-	cmpl	$0,%edx	/* parent, since %edx == 0 in parent, 1 in child */
-	je		1f
-	movl	$0,%eax
-1:
-	ret		/* pid = fork(); */
+ENTRY(__syscall)
+	pop	    %ecx	/* rta */
+	pop	    %eax	/* syscall number */
+	pop	    %edx	/* junk */
+	push	%ecx
+	int	    $0x80
+	push	%ecx	/* Keep stack frame consistant */
+	push	%ecx	/* Keep stack frame consistant */
+	jc	    err
+	ret
+err:
+	jmp	    cerror

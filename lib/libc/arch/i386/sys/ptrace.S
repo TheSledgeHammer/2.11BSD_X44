@@ -41,6 +41,8 @@
 
 #include "SYS.h"
 
+    .globl	_errno
+
 ENTRY(ptrace)
 #ifdef PIC
 	PIC_PROLOGUE
@@ -49,8 +51,8 @@ ENTRY(ptrace)
 #else
 	call 	_errno
 #endif
-	xorl	%eax,%eax
-	movl	%eax,_errno
+	xorl	%edx,%edx
+	movl	%edx,(%eax)
 	SYSTRAP(ptrace)
 	jb		err
 	ret

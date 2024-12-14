@@ -50,7 +50,7 @@ ENTRY(sigprocmask)
 	jmp		2f
 1:	movl	(%ecx),%ecx		# fetch indirect  ...
 	movl	%ecx,8(%esp)	# to new mask arg
-2:	_SYSTRAP(sigprocmask, 0x7)
+2:	SYSTRAP(sigprocmask)
 	jb		err
 	movl	12(%esp),%ecx	# fetch old mask requested
 	cmpl	$0,%ecx			# test if old mask requested

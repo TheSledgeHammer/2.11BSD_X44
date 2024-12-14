@@ -1,6 +1,10 @@
 #	@(#)Makefile.inc	8.1 (Berkeley) 6/4/93
 
-SRCS+=	isinf.c
-SRCS+=	_setjmp.S alloca.S fabs.S ldexp.c modf.S setjmp.S
-SRCS+=	divsi3.S fixdfsi.S fixunsdfsi.S udivsi3.S
+SRCS+=	alloca.S fabs.S modf.S
+SRCS+=	setjmp.S _setjmp.S
 SRCS+=	resumecontext.S swapcontext.S makecontext.c
+SRCS+=	isinf.c ldexp.c
+# "internal" objects (don't provide part of the user-visible API)
+SRCS+=	divsi3.S fixdfsi.S udivsi3.S
+# cannot compile, text relocation error
+#fixunsdfsi.S

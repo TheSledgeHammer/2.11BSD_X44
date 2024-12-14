@@ -44,16 +44,10 @@
 ENTRY(syscall)
 	pop		%ecx	/* rta */
 	pop		%eax	/* syscall number */
+    int	    $0x80
 	push	%ecx
-	LCALL(7,0)
 	jb		1f
 	ret
 1:
-#ifdef PIC
-	PIC_PROLOGUE
-	mov		PIC_GOT(cerror), %ecx
-	PIC_EPILOGUE
-	jmp		*%ecx
-#else
-	jmp		cerror
-#endif
+    jmp		cerror
+
