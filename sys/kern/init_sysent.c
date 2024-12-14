@@ -62,8 +62,8 @@ int	getegid();
 int	setgid();
 int	setegid();
 int	acct();
-int	getucontext();
-int	setucontext();
+int	getcontext();
+int	setcontext();
 int	ioctl();
 int	reboot();
 int	sigwait();
@@ -282,9 +282,9 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    acct },				/* 51 = acct */
 	{ 0, 0,
-	    getucontext },			/* 52 = getucontext */
+	    getcontext },			/* 52 = getcontext */
 	{ 0, 0,
-	    setucontext },			/* 53 = setucontext */
+	    setcontext },			/* 53 = setcontext */
 	{ 0, 0,
 	    ioctl },				/* 54 = ioctl */
 	{ 0, 0,

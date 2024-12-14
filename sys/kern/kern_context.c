@@ -107,11 +107,11 @@ proc_setucontext(p, ucp)
 }
 
 int
-getucontext()
+getcontext()
 {
-	register struct getucontext_args {
+	register struct getcontext_args {
 		syscallarg(struct __ucontext *) ucp;
-	} *uap = (struct getucontext_args *)u.u_ap;
+	} *uap = (struct getcontext_args *)u.u_ap;
 	ucontext_t uc;
 
 	proc_getucontext(u.u_procp, &uc);
@@ -120,11 +120,11 @@ getucontext()
 }
 
 int
-setucontext()
+setcontext()
 {
-	register struct setucontext_args {
+	register struct setcontext_args {
 		syscallarg(struct __ucontext *) ucp;
-	} *uap = (struct setucontext_args *)u.u_ap;
+	} *uap = (struct setcontext_args *)u.u_ap;
 	ucontext_t uc;
 	int error;
 

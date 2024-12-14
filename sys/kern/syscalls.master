@@ -93,8 +93,8 @@
 49  STD     	{ int setgid(); }
 50  STD     	{ int setegid(); }
 51	STD			{ int acct(); } 
-52  STD     	{ int getucontext(); } 
-53   STD     	{ int setucontext(); } 
+52  STD     	{ int getcontext(); } 
+53   STD     	{ int setcontext(); } 
 54  STD     	{ int ioctl(); }
 55  STD     	{ int reboot(); }
 56  STD     	{ int sigwait(); }
