@@ -60,12 +60,22 @@
 	.long 	y			;\
 	.word	x
 
-#define _SYSTRAP(x,y)			\
-    	lea	_SYSNAM(x), %eax	;\
-	LCALL(y, 0)
+#define OSYSTRAP(x)			\
+    	movl	_SYSNAM(x), %eax	;\
+        int     $0x80
 
+#ifdef I686_LIBC
 #define SYSTRAP(x)			\
-    	_SYSTRAP(x,7)
+	    pushl	%ebx			;\
+	    movl	_SYSNAM(x),%eax		;\
+	    movl	$123f,%edx		;\
+	    movl	%esp,%ecx		;\
+	    sysenter			;\
+123:	movl	%ebx,%edx		;\
+	    popl	%ebx
+#else	/* I686_LIBC */
+#define SYSTRAP(x)	OSYSTRAP(x)
+#endif	/* I686_LIBC */
 
 #define _SYSCALL_NOERR(x,y)      	\
     	ENTRY(x)                    	;\
@@ -112,4 +122,13 @@
 	_SYSCALL(x,y)			;\
 	ret
 
-_GLOBL(cerror)	//.globl	cerror
+#ifdef WEAK_ALIAS
+#define	WSYSCALL(weak,strong)						\
+	WEAK_ALIAS(weak,strong);					\
+	PSEUDO(strong,weak)
+#else
+#define	WSYSCALL(weak,strong)						\
+	PSEUDO(weak,weak)
+#endif
+
+    .globl	cerror
