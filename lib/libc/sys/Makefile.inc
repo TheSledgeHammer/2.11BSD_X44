@@ -73,7 +73,7 @@ ASM=        access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
             unmount.S utimes.S uuidgen.S vtrace.S
 
 WEAKASM=    accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill.S \
-            msgrcv.S msgsnd.S open.S poll.S pselect.S read.S readlink.S readv.S \
+            open.S poll.S pselect.S read.S readlink.S readv.S \
             recvfrom.S recvmmsg.S recvmsg.S select.S sendmmsg.S sendmsg.S \
             sendto.S setcontext.S sysarch.S wait4.S write.S writev.S
 
