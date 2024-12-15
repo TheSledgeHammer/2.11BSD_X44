@@ -2,9 +2,9 @@
 
 SRCS+=	alloca.S fabs.S modf.S
 SRCS+=	setjmp.S _setjmp.S
-SRCS+=	resumecontext.S swapcontext.S makecontext.c
+SRCS+=	makecontext.c
 SRCS+=	isinf.c ldexp.c
 # "internal" objects (don't provide part of the user-visible API)
 SRCS+=	divsi3.S fixdfsi.S udivsi3.S
 # cannot compile, text relocation error
-#fixunsdfsi.S
+#fixunsdfsi.S resumecontext.S swapcontext.S
