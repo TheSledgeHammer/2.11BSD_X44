@@ -42,7 +42,7 @@
 ENTRY(__fixunsdfsi)
 	fldl	4(%esp)				/* argument double to accum stack */
 	frndint						/* create integer */
-#ifdef __PIC__
+#ifdef PIC
 	PIC_PROLOGUE
 	leal	PIC_GOTOFF(fbiggestsigned),%eax
 	PIC_EPILOGUE
@@ -59,7 +59,7 @@ ENTRY(__fixunsdfsi)
 	ret
 
 2:
-#ifdef __PIC__
+#ifdef PIC
 	PIC_PROLOGUE
 	leal	PIC_GOTOFF(fbiggestsigned),%eax
 	PIC_EPILOGUE
