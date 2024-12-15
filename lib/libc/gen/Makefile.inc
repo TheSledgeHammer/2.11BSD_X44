@@ -30,7 +30,7 @@ SRCS+=	alarm.c arc4random.c assert.c basename.c closedir.c confstr.c ctermid.c d
 	setdomainname.c sethostname.c setjmperr.c setmode.c setproctitle.c shquote.c siginterrupt.c 	\
 	siglist.c signal.c sigsetops.c sleep.c stringlist.c sysconf.c sysctl.c syserrlst.c syslog.c 	\
 	telldir.c time.c timezone.c ttyname.c ttyslot.c ualarm.c usleep.c utmp.c utmpx.c valloc.c 	\
-	vis.c uname.c unvis.c wait.c wait3.c waitpid.c _resumecontext.c _swapcontext.c
+	vis.c uname.c unvis.c wait.c wait3.c waitpid.c
 
 # Removed: frexp.c
 
