@@ -41,6 +41,10 @@
 
 #include "SYS.h"
 
+#ifdef WEAK_ALIAS
+WEAK_ALIAS(sigprocmask, _sigprocmask)
+#endif
+
 ENTRY(sigprocmask)
 	movl	8(%esp),%ecx	# fetch new sigset pointer
 	cmpl	$0,%ecx			# check new sigset pointer
