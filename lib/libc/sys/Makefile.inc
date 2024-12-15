@@ -12,7 +12,7 @@ SRCS+=      exect.S reboot.S setlogin.S \
             sigsuspend.S
 SRCS+=      Ovfork.S brk.S pipe.S \
             getcontext.S ptrace.S sbrk.S \
-            syscall.S __syscall.S cerror.S
+            syscall.S cerror.S
 
 # glue to provide compatibility between GCC 1.X and 2.X
 GLUE+=      _getcontext.c _getlogin.c ftruncate.c lseek.c mmap.c truncate.c
@@ -59,7 +59,7 @@ ASM=        access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
             getegid.S geteuid.S getfsstat.S getgid.S getgroups.S getitimer.S \
             getpeername.S getpgrp.S getpid.S getppid.S getpriority.S \
             getrlimit.S getrusage.S getsockname.S getsockopt.S gettimeofday.S \
-            getuid.S ioctl.S issetugid.S ktrace.S lfs_bmapv.S lfs_markv.S \
+            getuid.S ioctl.S ktrace.S lfs_bmapv.S lfs_markv.S \
             lfs_segclean.S lfs_segwait.S link.S kenv.S kevent.S \
             kqueue.S listen.S lstat.S madvise.S mincore.S mkdir.S mkfifo.S \
             mknod.S mlock.S mount.S mprotect.S mpx.S msync.S munlock.S \
