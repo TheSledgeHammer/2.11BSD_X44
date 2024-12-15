@@ -50,5 +50,5 @@ ENTRY(syscall)
 	jb	1f
 	ret
 1:
-    	jmp	cerror
+    	jmp	CERROR
 

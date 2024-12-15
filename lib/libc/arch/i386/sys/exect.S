@@ -1,3 +1,4 @@
+/*	$NetBSD: exect.S,v 1.12 2002/03/20 22:06:18 ross Exp $	*/
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -43,18 +44,15 @@
 #include <machine/psl.h>
 
 ENTRY(exect)
-	lea		SYS_execve,%eax
-	pushf
-	popl	%edx
-	orl		$PSL_T,%edx
-	pushl	%edx
-	popf
-	LCALL(7, 0)
+	pushfl
+	orb		$(PSL_T>>8),1(%esp)
+	popfl
+	SYSTRAP(execve)
 #ifdef PIC
 	PIC_PROLOGUE
-	mov		PIC_GOT(cerror), %ecx
+	mov		PIC_GOT(CERROR), %ecx
 	PIC_EPILOGUE
 	jmp		*%ecx
 #else
-	jmp		cerror		/* exect(file, argv, env); */
+	jmp		CERROR		/* exect(file, argv, env); */
 #endif

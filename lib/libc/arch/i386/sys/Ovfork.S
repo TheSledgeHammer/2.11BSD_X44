@@ -57,9 +57,9 @@ vforkok:
 	cmpl	$0,%edx		/* child process? */
 	jne		child		/* yes */
 	jmp 	parent 
-.globl		_errno
+	.globl	_C_LABEL(_errno)
 verror:
-	movl	%eax,_errno
+	movl	%eax,_C_LABEL(_errno)
 	movl	$-1,%eax
 	jmp		*%ecx
 child:

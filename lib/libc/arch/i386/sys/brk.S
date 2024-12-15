@@ -68,7 +68,7 @@ ok:
 	movl	$0,%eax
 	ret
 err:
-	jmp		cerror
+	jmp		CERROR
 #else
 	movl	4(%esp),%eax
 	cmpl	%eax,minbrk
@@ -83,5 +83,5 @@ ok:
 	movl	$0,%eax
 	ret
 err:
-	jmp		cerror
+	jmp		CERROR
 #endif

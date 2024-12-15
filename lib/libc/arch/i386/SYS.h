@@ -49,6 +49,12 @@
 #define _GLOBL(x)   	.globl _/**/x
 #endif
 
+#ifdef __ELF__
+#define CERROR		_C_LABEL(cerror)
+#else
+#define CERROR		_ASM_LABEL(cerror)
+#endif
+
 #define ALIGNTEXT _ALIGN_TEXT
 
 #define	CALL(x,y)			\
@@ -89,7 +95,7 @@
     	jmp     *%ecx
 #else
 #define _SYSCALL_ERR             	\
-    	jmp	cerror
+    	jmp	CERROR
 #endif
 
 #define _SYSCALL(x,y)           	\
@@ -98,7 +104,6 @@
 2:  	_SYSCALL_ERR                	;\
     	_SYSCALL_NOERR(x,y)         	;\
     	jb	2b         
-
 
 #define SYSCALL_NOERR(x)		\
 	_SYSCALL_NOERR(x,x)
@@ -131,4 +136,4 @@
 	PSEUDO(weak,weak)
 #endif
 
-    .globl	cerror
+    .globl	CERROR

@@ -34,16 +34,16 @@
 #include <ucontext.h>
 
 #include "extern.h"
-
+/*
 #ifdef __weak_alias
 __weak_alias(_swapcontext, swapcontext)
 #else
 #error requires either weak aliases or indirect references!
 #endif
-
+*/
 /*ARGSUSED*/
 int
-_swapcontext(oucp, ucp)
+swapcontext(oucp, ucp)
 	ucontext_t *oucp;
 	const ucontext_t *ucp;
 {

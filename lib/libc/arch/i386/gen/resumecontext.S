@@ -30,6 +30,7 @@
  */
 
 #include <machine/asm.h>
+#include "SYS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
 //RCSID("$NetBSD: resumecontext.S,v 1.6 2008/04/28 20:22:56 martin Exp $")

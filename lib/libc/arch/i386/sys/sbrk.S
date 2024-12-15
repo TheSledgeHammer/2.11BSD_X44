@@ -76,7 +76,7 @@ ENTRY(_sbrk)
 	ret
 err:
 	PIC_PROLOGUE
-	mov		PIC_GOT(cerror),%edx
+	mov		PIC_GOT(CERROR),%edx
 	PIC_EPILOGUE
 	jmp		*%edx
 #else
@@ -89,5 +89,5 @@ err:
 	addl	%ecx,curbrk
 	ret
 err:
-	jmp		cerror
+	jmp		CERROR
 #endif

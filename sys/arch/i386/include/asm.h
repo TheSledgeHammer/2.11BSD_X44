@@ -90,6 +90,8 @@
 	.text; _ALIGN_TEXT; .globl name; .type name,@function; name:
 #define _ALTENTRY(name) 	\
 	_ENTRY(name)
+#define _LABEL(x) 			\
+	.globl x; x:
 
 #ifdef _KERNEL
 
@@ -146,8 +148,9 @@
 
 #define	ENTRY(y)			_ENTRY(_C_LABEL(y)); _PROF_PROLOGUE
 #define	NENTRY(y)			_ENTRY(_C_LABEL(y))
-#define	ASENTRY(y)			_ENTRY(_ASM_LABEL(y)); _PROF_PROLOGUE
 #define	ALTENTRY(y)			_ALTENTRY(_C_LABEL(y))
+#define	ASENTRY(y)			_ENTRY(_ASM_LABEL(y)); _PROF_PROLOGUE
+#define	LABEL(y)			_LABEL(_C_LABEL(y))
 
 #define	ASMSTR				.asciz
 

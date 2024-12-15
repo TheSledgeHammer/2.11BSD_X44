@@ -41,8 +41,16 @@
 
 #include "SYS.h"
 
-.globl	__logname_valid		/* in getlogin() */
+	.globl	_C_LABEL(__logname_valid)		/* in getlogin() */
 
 SYSCALL(setlogin)
-	movl	$0,__logname_valid
+	xorl	%eax,%eax
+#ifdef PIC
+	PIC_PROLOGUE
+	movl	PIC_GOT(_C_LABEL(__logname_valid)),%edx
+	PIC_EPILOGUE
+	movl	%eax,(%edx)
+#else
+	movl	%eax,_C_LABEL(__logname_valid)
+#endif
 	ret		/* setlogin(name) */

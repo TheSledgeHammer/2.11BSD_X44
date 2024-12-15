@@ -41,15 +41,15 @@
 
 #include "SYS.h"
 
-    .globl	_errno
+    .globl	_C_LABEL(_errno)
 
 ENTRY(ptrace)
 #ifdef PIC
 	PIC_PROLOGUE
-	call 	PIC_PLT(_errno)
+	call 	PIC_PLT(_C_LABEL(_errno))
 	PIC_EPILOGUE
 #else
-	call 	_errno
+	call 	_C_LABEL(_errno)
 #endif
 	xorl	%edx,%edx
 	movl	%edx,(%eax)
@@ -59,9 +59,9 @@ ENTRY(ptrace)
 err:
 #ifdef PIC
 	PIC_PROLOGUE
-	mov		PIC_GOT(cerror), %ecx
+	mov		PIC_GOT(CERROR), %ecx
 	PIC_EPILOGUE
 	jmp		*%ecx
 #else
-	jmp		cerror
+	jmp		CERROR
 #endif

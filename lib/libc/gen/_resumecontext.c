@@ -34,13 +34,13 @@
 #include <ucontext.h>
 
 #include "extern.h"
-
+/*
 #ifdef __weak_alias
 __weak_alias(_resumecontext, resumecontext)
 #else
 #error requires either weak aliases or indirect references!
 #endif
-
+*/
 /*ARGSUSED*/
 void
 _resumecontext(void)

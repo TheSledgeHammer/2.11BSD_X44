@@ -51,7 +51,7 @@ static char sccsid[] = "@(#)getlogin.c	8.1.1 (2.11BSD) 1997.9.23";
 
 //extern int _getlogin(char *, u_int);
 
-int	_logname_valid;		/* known to setlogin() */
+static int	_logname_valid;		/* known to setlogin() */
 
 char *
 getlogin(void)

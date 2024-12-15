@@ -41,16 +41,16 @@
 
 #include "SYS.h"
 
-	.globl	_errno
+	.globl	_C_LABEL(_errno)
 
-_ENTRY(cerror)
+_ENTRY(CERROR)
 	pushl	%eax
 #ifdef PIC
 	PIC_PROLOGUE
-	call	PIC_PLT(_errno)
+	call	PIC_PLT(_C_LABEL(_errno))
 	PIC_EPILOGUE
 #else
-	call	_errno
+	call	_C_LABEL(_errno)
 #endif /* PIC */
 	popl	(%eax)
 	movl	$-1,%eax

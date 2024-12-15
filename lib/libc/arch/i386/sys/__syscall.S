@@ -52,4 +52,4 @@ ENTRY(__syscall)
 	jc	    err
 	ret
 err:
-	jmp	    cerror
+	jmp	    CERROR

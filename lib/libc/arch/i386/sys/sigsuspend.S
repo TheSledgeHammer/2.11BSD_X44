@@ -52,9 +52,9 @@ ENTRY(sigsuspend)
 err:
 #ifdef PIC
 	PIC_PROLOGUE
-	mov		PIC_GOT(cerror), %ecx
+	mov		PIC_GOT(CERROR), %ecx
 	PIC_EPILOGUE
 	jmp		*%ecx
 #else
-	jmp		cerror
+	jmp		CERROR
 #endif
