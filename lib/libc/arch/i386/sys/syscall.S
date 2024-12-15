@@ -42,12 +42,13 @@
 #include "SYS.h"
 
 ENTRY(syscall)
-	pop		%ecx	/* rta */
-	pop		%eax	/* syscall number */
-    int	    $0x80
+	pop	%ecx	/* rta */
+	pop	%eax	/* syscall number */
 	push	%ecx
-	jb		1f
+    	int	$0x80
+	push	%ecx
+	jb	1f
 	ret
 1:
-    jmp		cerror
+    	jmp	cerror
 
