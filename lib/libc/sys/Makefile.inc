@@ -3,19 +3,15 @@
 # sys sources
 .PATH: ${ARCHDIR}/sys ${.CURDIR}/sys
 
-# kernel syscalls.
-# vadvise: exists but not in syscalls
-
 # modules with non-default implementations on at least one architecture:
-SRCS+=      exect.S reboot.S setlogin.S \
-            sigpending.S sigprocmask.S sigreturn.S \
-            sigsuspend.S
-SRCS+=      Ovfork.S brk.S pipe.S \
-            getcontext.S ptrace.S sbrk.S \
-            syscall.S cerror.S
+SRCS+=      	Ovfork.S brk.S exect.S pipe.S \
+            	getcontext.S ptrace.S reboot.S \
+            	sbrk.S setlogin.S sigpending.S \
+            	sigprocmask.S sigreturn.S syscall.S \
+            	cerror.S
 
 # glue to provide compatibility between GCC 1.X and 2.X
-GLUE+=      _getcontext.c _getlogin.c ftruncate.c lseek.c mmap.c truncate.c
+GLUE+=          _getcontext.c _getlogin.c ftruncate.c lseek.c mmap.c truncate.c
 
 # 'glue' files might .c or .S depending on the architecture
 .for glue in ${GLUE}
@@ -34,60 +30,44 @@ ASM_GLUE+= tmp_${glue:.c=.S}
 . endif
 .endfor
 
-# 'glue' files might .c or .S depending on the architecture
-.for glue in ${GLUENOERR}
-. if exists(${glue:.c=.S})
-# Build the ASM glue file
-SRCS+=${glue:.c=.S}
-. else
-.  if exists(__${glue:.c=.S})
-SRCS+=__${glue:.c=.S} ${glue}
-.  else
-# Build the C glue file
-SRCS+= ${glue}
-# and an asm entry for __<syscall>
-ASM_GLUENOERR+= tmp_${glue:.c=.S}
-.  endif
-. endif
-.endfor
-
 # modules with default implementations on all architectures:
-ASM=        access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
-            chown.S chroot.S clock_gettime.S clock_settime.S dup.S \
-            dup2.S fchdir.S fchflags.S fchmod.S fchown.S flock.S \
-            fpathconf.S fstat.S fstatfs.S getdirentries.S getdtablesize.S \
-            getegid.S geteuid.S getfsstat.S getgid.S getgroups.S getitimer.S \
-            getpeername.S getpgrp.S getpid.S getppid.S getpriority.S \
-            getrlimit.S getrusage.S getsockname.S getsockopt.S gettimeofday.S \
-            getuid.S ioctl.S ktrace.S lfs_bmapv.S lfs_markv.S \
-            lfs_segclean.S lfs_segwait.S link.S kenv.S kevent.S \
-            kqueue.S listen.S lstat.S madvise.S mincore.S mkdir.S mkfifo.S \
-            mknod.S mlock.S mount.S mprotect.S mpx.S msync.S munlock.S \
-            munmap.S nanosleep.S nostk.S pathconf.S profil.S quotactl.S \
-            rename.S revoke.S rmdir.S setegid.S seteuid.S setgid.S \
-            setgroups.S setitimer.S setpgid.S setpriority.S \
-            setrlimit.S setsid.S setsockopt.S settimeofday.S setuid.S \
-            sigaction.S sigaltstack.S sigstack.S sigtimedwait.S shutdown.S \
-            socket.S socketpair.S sstk.S stat.S statfs.S swapctl.S \
-            symlink.S sync.S __sysctl.S umask.S undelete.S unlink.S \
-            unmount.S utimes.S uuidgen.S vtrace.S
+ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
+                chown.S chroot.S clock_gettime.S clock_settime.S dup.S \
+                dup2.S fchdir.S fchflags.S fchmod.S fchown.S flock.S \
+                fpathconf.S fstat.S fstatfs.S getdirentries.S getdtablesize.S \
+                getfsstat.S getgroups.S getitimer.S getpeername.S getpriority.S \
+                getrlimit.S getrusage.S getsockname.S getsockopt.S gettimeofday.S \
+                ioctl.S ktrace.S lfs_bmapv.S lfs_markv.S \
+                lfs_segclean.S lfs_segwait.S link.S kenv.S kevent.S \
+                kqueue.S listen.S lstat.S madvise.S mincore.S mkdir.S mkfifo.S \
+                mknod.S mlock.S mount.S mprotect.S mpx.S msync.S munlock.S \
+                munmap.S nanosleep.S nostk.S pathconf.S quotactl.S \
+                rename.S revoke.S rmdir.S setegid.S seteuid.S setgid.S \
+                setgroups.S setitimer.S setpgid.S setpriority.S \
+                setrlimit.S setsid.S setsockopt.S settimeofday.S setuid.S \
+                sigaltstack.S sigstack.S sigtimedwait.S shutdown.S \
+                socket.S socketpair.S sstk.S stat.S statfs.S swapctl.S \
+                symlink.S sync.S umask.S undelete.S unlink.S \
+                unmount.S utimes.S uuidgen.S vtrace.S
 
-WEAKASM=    accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill.S \
-            open.S poll.S pselect.S read.S readlink.S readv.S \
-            recvfrom.S recvmmsg.S recvmsg.S select.S sendmmsg.S sendmsg.S \
-            sendto.S setcontext.S sysarch.S wait4.S write.S writev.S
+WEAKASM=        accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill.S \
+                open.S poll.S pselect.S read.S readlink.S readv.S \
+                recvfrom.S recvmmsg.S recvmsg.S select.S sendmmsg.S sendmsg.S \
+                sendto.S setcontext.S sysarch.S wait4.S write.S writev.S
+
+NOERR=          getgid.S getegid.S geteuid.S getpgrp.S getpid.S getpgrp.S getppid.S \
+                getuid.S profil.S sigaction.S __sysctl.S
 
 PSEUDONOERR=    _exit.S
 
 _GENFILES=	${ASM} ${WEAKASM} ${NOERR} ${PSEUDONOERR} \
-	        ${ASM_GLUE} ${ASM_GLUENOERR}
+	        ${ASM_GLUE}
 
 SRCS+=		${_GENFILES}
 CLEANFILES+=    ${_GENFILES}
 
 ASMDEPS=        ${.CURDIR}/sys/Makefile.inc ${ARCHDIR}/SYS.h \
                 ${DESTDIR}/usr/include/sys/syscall.h
-
 
 ${ASM}: ${ASMDEPS}
 	${_MKTARGET_CREATE}
