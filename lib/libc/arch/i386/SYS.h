@@ -90,7 +90,7 @@
 #ifdef PIC
 #define _SYSCALL_ERR             	\
     	PIC_PROLOGUE                	;\
-    	mov PIC_GOT(cerror), %ecx   	;\
+    	mov PIC_GOT(CERROR), %ecx   	;\
     	PIC_EPILOGUE                	;\
     	jmp     *%ecx
 #else
@@ -136,4 +136,4 @@
 	PSEUDO(weak,weak)
 #endif
 
-    .globl	CERROR
+    	.globl	 CERROR
