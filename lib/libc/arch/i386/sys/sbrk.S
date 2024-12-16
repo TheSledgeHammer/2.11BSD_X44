@@ -47,7 +47,6 @@
 	.globl	minbrk
 	.globl	curbrk
 
-
 #ifdef WEAK_ALIAS
 WEAK_ALIAS(sbrk, _sbrk)
 #endif

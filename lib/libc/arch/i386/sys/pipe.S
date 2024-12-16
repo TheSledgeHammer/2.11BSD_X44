@@ -45,7 +45,7 @@
 WEAK_ALIAS(pipe, _pipe)
 #endif
 
-_SYSCALL(_pipe,pipe)
+SYSCALL2(_pipe,pipe)
 	movl	4(%esp),%ecx
 	movl	%eax,(%ecx)
 	movl	%edx,4(%ecx)

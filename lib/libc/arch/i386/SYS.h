@@ -57,79 +57,72 @@
 
 #define ALIGNTEXT _ALIGN_TEXT
 
-#define	CALL(x,y)			\
-	_CALLNAM(y)			;\
-	addl	$4*x, %esp
+#define	CALL(x,y)			        \
+	    _CALLNAM(y)			        ;\
+	    addl	$4*x, %esp
 
-#define LCALL(x,y)			\
-	.byte	0x9a			;\
-	.long 	y			;\
-	.word	x
+#define LCALL(x,y)			        \
+	    .byte	0x9a			    ;\
+	    .long 	y			        ;\
+	    .word	x
 
-#define OSYSTRAP(x)			\
+#define DO_SYSTRAP(x)			    \
     	movl	_SYSNAM(x), %eax	;\
         int     $0x80
 
-#ifdef I686_LIBC
-#define SYSTRAP(x)			\
-	pushl	%ebx			;\
-	movl	_SYSNAM(x),%eax		;\
-	movl	$123f,%edx		;\
-	movl	%esp,%ecx		;\
-	sysenter			;\
-123:	movl	%ebx,%edx		;\
-	popl	%ebx
-#else	/* I686_LIBC */
-#define SYSTRAP(x)	OSYSTRAP(x)
-#endif	/* I686_LIBC */
+#define SYSTRAP(x)	                \
+        DO_SYSTRAP(x)
 
-#define _SYSCALL_NOERR(x,y)      	\
-    	ENTRY(x)                    	;\
-    	SYSTRAP(y)				
+#define DO_SYSCALL_NOERROR(x,y)     \
+    	ENTRY(x)                    ;\
+    	SYSTRAP(y)			
 
 #ifdef PIC
-#define _SYSCALL_ERR             	\
-    	PIC_PROLOGUE                	;\
-    	mov PIC_GOT(CERROR), %ecx   	;\
-    	PIC_EPILOGUE                	;\
+#define DO_SYSCALL_ERROR            \
+    	PIC_PROLOGUE                ;\
+    	mov PIC_GOT(CERROR), %ecx   ;\
+    	PIC_EPILOGUE                ;\
     	jmp     *%ecx
 #else
-#define _SYSCALL_ERR             	\
+#define DO_SYSCALL_ERROR            \
     	jmp	CERROR
 #endif
 
-#define _SYSCALL(x,y)           	\
-    	.text                       	;\
-    	ALIGNTEXT                   	;\
-2:  	_SYSCALL_ERR                	;\
-    	_SYSCALL_NOERR(x,y)         	;\
-    	jb	2b         
+#define DO_SYSCALL(x,y)           	\
+    	.text                       ;\
+    	ALIGNTEXT                   ;\
+2:  	DO_SYSCALL_ERROR            ;\
+    	DO_SYSCALL_NOERROR(x,y)     ;\
+    	jb	    2b         
 
-#define SYSCALL_NOERR(x)		\
-	_SYSCALL_NOERR(x,x)
+#define SYSCALL_NOERROR(x)		    \
+	    DO_SYSCALL_NOERROR(x,x)
 
-#define SYSCALL(x)			\
-    	_SYSCALL(x,x)
+#define SYSCALL(x)			        \
+    	DO_SYSCALL(x,x)
 
-#define RSYSCALL_NOERR(x)		\
-    	SYSCALL_NOERR(x)            	;\
+#define SYSCALL2(x,y)			    \
+    	DO_SYSCALL(x,y)
+
+#define RSYSCALL_NOERROR(x)		    \
+    	SYSCALL_NOERROR(x)          ;\
     	ret
 
-#define	RSYSCALL(x)			\
-	SYSCALL(x)  			;\
-	ret
+#define	RSYSCALL(x)			        \
+	    SYSCALL(x)  			    ;\
+	    ret
 
-#define PSEUDO_NOERR(x,y)		\
-	_SYSCALL_NOERR(x,y)         	;\
-	ret
+#define PSEUDO_NOERROR(x,y)		    \
+	    DO_SYSCALL_NOERROR(x,y)     ;\
+	    ret
 
-#define	PSEUDO(x,y)			\
-	_SYSCALL(x,y)			;\
-	ret
+#define	PSEUDO(x,y)			        \
+	    SYSCALL2(x,y)			    ;\
+	    ret
 
 #ifdef WEAK_ALIAS
 #define	WSYSCALL(weak,strong)		\
-	WEAK_ALIAS(weak,strong);	\
+	WEAK_ALIAS(weak,strong)         ;\
 	PSEUDO(strong,weak)
 #else
 #define	WSYSCALL(weak,strong)		\

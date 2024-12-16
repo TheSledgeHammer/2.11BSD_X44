@@ -42,13 +42,20 @@
 #include "SYS.h"
 
 ENTRY(syscall)
-	pop	%ecx	/* rta */
-	pop	%eax	/* syscall number */
+	pop	    %ecx	/* rta */
+	pop	    %eax	/* syscall number */
 	push	%ecx
-    	int	$0x80
-	push	%ecx
-	jb	1f
+	int	    $0x80
+	push	%ecx	/* Keep stack frame consistant */
+	jb	    err
 	ret
-1:
-    	jmp	CERROR
+err:
+#ifdef PIC
+	PIC_PROLOGUE
+	mov	    PIC_GOT(CERROR), %ecx
+	PIC_EPILOGUE
+	jmp	    *%ecx
+#else
+	jmp	    CERROR
+#endif
 

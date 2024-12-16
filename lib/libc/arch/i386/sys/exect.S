@@ -45,7 +45,7 @@
 
 ENTRY(exect)
 	pushfl
-	orb		$(PSL_T>>8),1(%esp)
+	orb	$(PSL_T>>8),1(%esp)
 	popfl
 	SYSTRAP(execve)
 #ifdef PIC

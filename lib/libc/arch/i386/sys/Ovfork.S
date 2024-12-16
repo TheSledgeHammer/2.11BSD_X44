@@ -52,17 +52,17 @@
 ENTRY(vfork)
 	popl	%ecx		/* my rta into ecx */
 	SYSTRAP(vfork)
-	jb		verror
-vforkok:
-	cmpl	$0,%edx		/* child process? */
-	jne		child		/* yes */
-	jmp 	parent 
-	.globl	_C_LABEL(_errno)
-verror:
-	movl	%eax,_C_LABEL(_errno)
-	movl	$-1,%eax
-	jmp		*%ecx
-child:
-	movl	$0,%eax
-parent:
-	jmp		*%ecx
+	jc	err
+	decl	%edx
+	andl	%edx,%eax
+	jmp	*%ecx
+err:
+	pushl	%ecx
+#ifdef PIC
+	PIC_PROLOGUE
+	mov	PIC_GOT(CERROR), %ecx
+	PIC_EPILOGUE
+	jmp	*%ecx
+#else
+	jmp	CERROR
+#endif
