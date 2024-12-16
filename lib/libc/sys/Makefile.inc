@@ -35,6 +35,7 @@ ASM_GLUE+= tmp_${glue:.c=.S}
 .  endif
 . endif
 .endfor
+
 # modules with default implementations on all architectures:
 ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
                 chown.S chroot.S clock_gettime.S clock_settime.S dup.S \
