@@ -47,16 +47,15 @@ ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
                 setrlimit.S setsid.S setsockopt.S settimeofday.S setuid.S \
                 sigaltstack.S sigstack.S sigtimedwait.S shutdown.S \
                 socket.S socketpair.S sstk.S stat.S statfs.S swapctl.S \
-                symlink.S sync.S umask.S undelete.S unlink.S \
-                unmount.S utimes.S uuidgen.S vtrace.S
+                symlink.S undelete.S unlink.S unmount.S utimes.S uuidgen.S vtrace.S
 
 WEAKASM=        accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill.S \
-                open.S poll.S pselect.S read.S readlink.S readv.S \
-                recvfrom.S recvmmsg.S recvmsg.S select.S sendmmsg.S sendmsg.S \
-                sendto.S setcontext.S sysarch.S wait4.S write.S writev.S
+                open.S poll.S pselect.S read.S readlink.S readv.S recvfrom.S recvmsg.S \
+                select.S sendmsg.S sendto.S setcontext.S sysarch.S wait4.S write.S \
+                writev.S
 
 NOERR=          getgid.S getegid.S geteuid.S getpgrp.S getpid.S getpgrp.S getppid.S \
-                getuid.S profil.S sigaction.S __sysctl.S
+                getuid.S profil.S sigaction.S sync.S __sysctl.S umask.S
 
 PSEUDONOERR=    _exit.S
 
