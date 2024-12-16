@@ -3,6 +3,12 @@
 # sys sources
 .PATH: ${ARCHDIR}/sys ${.CURDIR}/sys
 
+# TODO: Fix compiler warning below:  
+# - relocation against SYS_ in read-only section '.text'
+# For the following:
+# - fpathconf.S, __syscall.S
+# - _getcontext.c _getlogin.c
+
 # modules with non-default implementations on at least one architecture:
 SRCS+=      	Ovfork.S brk.S exect.S pipe.S \
             	getcontext.S ptrace.S reboot.S \
@@ -11,7 +17,7 @@ SRCS+=      	Ovfork.S brk.S exect.S pipe.S \
             	cerror.S
 
 # glue to provide compatibility between GCC 1.X and 2.X
-GLUE+=          _getcontext.c _getlogin.c ftruncate.c lseek.c mmap.c truncate.c
+GLUE+=          ftruncate.c lseek.c mmap.c truncate.c
 
 # 'glue' files might .c or .S depending on the architecture
 .for glue in ${GLUE}
@@ -29,12 +35,11 @@ ASM_GLUE+= tmp_${glue:.c=.S}
 .  endif
 . endif
 .endfor
-
 # modules with default implementations on all architectures:
 ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
                 chown.S chroot.S clock_gettime.S clock_settime.S dup.S \
                 dup2.S fchdir.S fchflags.S fchmod.S fchown.S flock.S \
-                fpathconf.S fstat.S fstatfs.S getdirentries.S getdtablesize.S \
+                fstat.S fstatfs.S getdirentries.S getdtablesize.S \
                 getfsstat.S getgroups.S getitimer.S getpeername.S getpriority.S \
                 getrlimit.S getrusage.S getsockname.S getsockopt.S gettimeofday.S \
                 ioctl.S ktrace.S lfs_bmapv.S lfs_markv.S \
@@ -47,15 +52,16 @@ ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
                 setrlimit.S setsid.S setsockopt.S settimeofday.S setuid.S \
                 sigaltstack.S sigstack.S sigtimedwait.S shutdown.S \
                 socket.S socketpair.S sstk.S stat.S statfs.S swapctl.S \
-                symlink.S undelete.S unlink.S unmount.S utimes.S uuidgen.S vtrace.S
+                symlink.S undelete.S unlink.S unmount.S utimes.S uuidgen.S \
+                vtrace.S __sysctl.S
 
 WEAKASM=        accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill.S \
-                open.S poll.S pselect.S read.S readlink.S readv.S recvfrom.S recvmsg.S \
-                select.S sendmsg.S sendto.S setcontext.S sysarch.S wait4.S write.S \
-                writev.S
+                open.S poll.S pselect.S read.S readlink.S readv.S recvfrom.S \
+                recvmsg.S select.S sendmsg.S sendto.S setcontext.S sysarch.S \
+                wait4.S write.S writev.S
 
-NOERR=          getgid.S getegid.S geteuid.S getpgrp.S getpid.S getpgrp.S getppid.S \
-                getuid.S profil.S sigaction.S sync.S __sysctl.S umask.S
+NOERR=          getegid.S geteuid.S getgid.S getpid.S getpgrp.S getppid.S \
+                getuid.S profil.S sigaction.S sync.S umask.S
 
 PSEUDONOERR=    _exit.S
 
@@ -75,10 +81,6 @@ ${ASM}: ${ASMDEPS}
 ${ASM_GLUE}: ${ASMDEPS}
 	${_MKTARGET_CREATE}
 	printf '#include "SYS.h"\nPSEUDO(${.PREFIX:S/tmp_/__/},${.PREFIX:S/tmp_//})\n' >${.TARGET}
-
-${ASM_GLUENOERR}: ${ASMDEPS}
-	${_MKTARGET_CREATE}
-	printf '#include "SYS.h"\nPSEUDO_NOERROR(${.PREFIX:S/tmp_/__/},${.PREFIX:S/tmp_//})\n' >${.TARGET}
 
 ${WEAKASM}: ${ASMDEPS}
 	${_MKTARGET_CREATE}
