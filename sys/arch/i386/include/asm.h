@@ -37,7 +37,7 @@
 #ifndef _I386_ASM_H_
 #define	_I386_ASM_H_
 
-#ifdef PIC
+#ifdef __PIC__
 #define	PIC_PROLOGUE								\
 	pushl	%ebx;									\
 	call	1f;										\
@@ -55,6 +55,8 @@
 #define	PIC_PLT(x)		x
 #define	PIC_GOTOFF(x)	x
 #endif
+
+#define PIC __PIC__
 
 #ifdef __ELF__
 # define _C_LABEL(x)	x
