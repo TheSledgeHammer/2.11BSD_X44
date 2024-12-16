@@ -46,7 +46,7 @@
 	.globl	curbrk
 	.globl	minbrk
 ENTRY(_brk)
-	jmp	    ok
+	jmp	ok
 
 ENTRY(brk)
 #ifdef PIC
@@ -55,12 +55,12 @@ ENTRY(brk)
 	movl	PIC_GOT(minbrk),%edx
 	PIC_EPILOGUE
 	cmpl	%eax,(%edx)
-	jl		ok
+	jl	ok
 	movl	(%edx),%eax
 	movl	%eax,4(%esp)
 ok:
 	SYSTRAP(brk)
-	jb		err
+	jb	err
 	PIC_PROLOGUE
 	movl	PIC_GOT(curbrk),%edx
 	PIC_EPILOGUE
@@ -68,20 +68,23 @@ ok:
 	movl	$0,%eax
 	ret
 err:
-	jmp		CERROR
+	PIC_PROLOGUE
+	mov	 PIC_GOT(CERROR),%edx
+	PIC_EPILOGUE
+	jmp	 *%edx
 #else
 	movl	4(%esp),%eax
 	cmpl	%eax,minbrk
-	jl		ok
+	jl	ok
 	movl	minbrk,%eax
 	movl	%eax,4(%esp)
 ok:
 	SYSTRAP(brk)
-	jb		err
+	jb	err
 	movl	4(%esp),%eax
 	movl	%eax,curbrk
 	movl	$0,%eax
 	ret
 err:
-	jmp		CERROR
+	jmp	CERROR
 #endif
