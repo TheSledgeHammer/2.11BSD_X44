@@ -505,8 +505,6 @@ extern void memcpy_D2A ANSI((void*, const void*, size_t));
 #define Bcopy(x,y) memcpy(&x->sign, &y->sign, y->wds*sizeof(ULong) + 2*sizeof(int))
 #endif /* NO_STRING_H */
 
-//#define dtoa __dtoa
-
 extern CONST double bigtens[], tens[], tinytens[];
 
 extern Bigint *Balloc ANSI((int));
