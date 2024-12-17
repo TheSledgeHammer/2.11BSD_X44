@@ -35,6 +35,13 @@ THIS SOFTWARE.
 #define GDTOA_H_INCLUDED
 
 #include "arith.h"
+#include <stddef.h> /* for size_t */
+#include <stdint.h>
+
+#ifndef __LOCALE_T_DECLARED
+typedef struct _locale		*locale_t;
+#define __LOCALE_T_DECLARED
+#endif
 
 #ifndef Long
 #define Long int32_t
