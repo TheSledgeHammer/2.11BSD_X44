@@ -9,29 +9,27 @@
 CPPFLAGS+=-I${.CURDIR}/gdtoa -I${.CURDIR}/locale
 
 # ieee754 infinity constants and functions
-.if ${MACHINE_ARCH} == "aarch64" || "mips" || "riscv"
-#SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_ieee754.c
+.if ${MACHINE_ARCH} == __aarch64__ || __mips__ || __riscv__
+SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_ieee754.c
 .endif
 
-.if  ${MACHINE_ARCH} == "alpha" || "arm" || "hppa" || "ia64" || \
-	"or1k" || "powerpc" || "powerpc64" || "sh3" || \
-	"sparc"
-#SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_dbl_ieee754.c
+.if ${MACHINE_ARCH} == __alpha__ || __arm__ || __hppa__ || __ia64__ || \
+	__or1k__ || __powerpc__ || __powerpc64__ || __sh3__ || __sparc__
+SRCS+=	infinityf_ieee754.c infinity_ieee754.c infinityl_dbl_ieee754.c
 .endif
 
-.if  ${MACHINE_ARCH} == "i386" || "vax" || "x86_64"
-SRCS+= infinityl.c
+.if ${MACHINE_ARCH} == __i386__ || __vax__ || __x86_64__
+SRCS+=  infinityl.c
 .endif
 
-.if  ${MACHINE_ARCH} == "vax"
-SRCS+= infinityf.c infinity.c
+.if ${MACHINE_ARCH} == __vax__
+SRCS+=  infinityf.c infinity.c
 .endif
 
-.if  ${MACHINE_ARCH} == "aarch64" || "alpha" || "arm" || "hppa" || \
-	"i386" || "m68k" ||  "mips" || "vax" || \
-	"powerpc" || "powerpc64" || "riscv" ||  "sh3" || \
-	 "sparc" || "x86_64"
-SRCS+= nanf.c
+.if ${MACHINE_ARCH} == __aarch64__ || __alpha__ || __arm__ || __hppa__ || \
+	__i386__ || __m68k__ ||  __mips__ || __vax__ || __powerpc__ || \
+    __powerpc64__ || __riscv__ ||  __sh3__ || __sparc__ || __x86_64__
+SRCS+=  nanf.c
 .endif
 
 # machine-dependent Makefile must define names of modules to use for
