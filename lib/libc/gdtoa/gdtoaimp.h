@@ -203,6 +203,8 @@ THIS SOFTWARE.
 
 #include "stdlib.h"
 #include "string.h"
+#include "ctype.h"
+#include "locale.h"
 
 #include "extern.h"
 #include "reentrant.h"
