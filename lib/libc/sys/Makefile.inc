@@ -7,10 +7,10 @@
 # - relocation against SYS_ in read-only section '.text'
 # For the following:
 # - fpathconf.S, __syscall.S
-# - _getcontext.c _getlogin.c
+# - _fork.c _getcontext.c _getlogin.c
 
 # modules with non-default implementations on at least one architecture:
-SRCS+=      	Ovfork.S brk.S exect.S pipe.S \
+SRCS+=      	Ovfork.S brk.S exect.S fork.S pipe.S \
             	getcontext.S ptrace.S reboot.S \
             	sbrk.S setlogin.S sigpending.S \
             	sigprocmask.S sigreturn.S syscall.S \
