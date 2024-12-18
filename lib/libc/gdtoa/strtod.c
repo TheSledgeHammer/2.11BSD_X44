@@ -95,8 +95,6 @@
 #include "gdtoaimp.h"
 
 #ifdef USE_LOCALE
-#include <ctype.h>
-#include <locale.h>
 #include "setlocale.h"
 #endif
 
