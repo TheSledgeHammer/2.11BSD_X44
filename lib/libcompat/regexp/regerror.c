@@ -3,7 +3,7 @@
 
 void
 regerror(s)
-const char *s;
+    const char *s;
 {
 #ifdef ERRAVAIL
 	error("regexp: %s", s);

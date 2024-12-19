@@ -18,6 +18,7 @@ SRCS+=      	Ovfork.S brk.S exect.S fork.S pipe.S \
 
 # glue to provide compatibility between GCC 1.X and 2.X
 GLUE+=          ftruncate.c lseek.c mmap.c truncate.c
+GLUENOERR+=		_fork.c _getcontext.c _getlogin.c
 
 # 'glue' files might .c or .S depending on the architecture
 .for glue in ${GLUE}
@@ -32,6 +33,23 @@ SRCS+=__${glue:.c=.S} ${glue}
 SRCS+= ${glue}
 # and an asm entry for __<syscall>
 ASM_GLUE+= tmp_${glue:.c=.S}
+.  endif
+. endif
+.endfor
+
+# 'glue' files might .c or .S depending on the architecture
+.for glue in ${GLUENOERR}
+. if exists(${glue:.c=.S})
+# Build the ASM glue file
+SRCS+=${glue:.c=.S}
+. else
+.  if exists(__${glue:.c=.S})
+SRCS+=__${glue:.c=.S} ${glue}
+.  else
+# Build the C glue file
+SRCS+= ${glue}
+# and an asm entry for __<syscall>
+ASM_GLUENOERR+= tmp_${glue:.c=.S}
 .  endif
 . endif
 .endfor
@@ -82,6 +100,11 @@ ${ASM}: ${ASMDEPS}
 ${ASM_GLUE}: ${ASMDEPS}
 	${_MKTARGET_CREATE}
 	printf '#include "SYS.h"\nPSEUDO(${.PREFIX:S/tmp_/__/},${.PREFIX:S/tmp_//})\n' >${.TARGET}
+
+
+${ASM_GLUENOERR}: ${ASMDEPS}
+	${_MKTARGET_CREATE}
+	printf '#include "SYS.h"\nPSEUDO_NOERROR(${.PREFIX:S/tmp_/__/},${.PREFIX:S/tmp_//})\n' >${.TARGET}
 
 ${WEAKASM}: ${ASMDEPS}
 	${_MKTARGET_CREATE}

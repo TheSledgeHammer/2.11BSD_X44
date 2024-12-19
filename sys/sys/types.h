@@ -136,10 +136,10 @@ typedef	uint64_t	 		u_quad_t; 	/* quads */
 typedef	int64_t				quad_t;
 typedef	quad_t 				*qaddr_t;
 
+#if defined(_KERNEL)
 typedef u_long				fixpt_t;	/* fixed point number */
 typedef	u_short				nlink_t;	/* link count */
 typedef	long				segsz_t;	/* segment size */
-
 typedef	long				daddr_t;	/* disk address */
 typedef	char 				*caddr_t;	/* core address */
 typedef	u_long				ino_t;		/* inode number*/
@@ -147,13 +147,43 @@ typedef	long				swblk_t;	/* swap offset */
 typedef	long				time_t;		/* time? */
 typedef	u_long				dev_t;		/* device number */
 typedef	quad_t				off_t;		/* file offset */
-typedef	u_long				uid_t;		/* user id */
-typedef	u_long				gid_t;		/* group id */
-typedef	u_char	    		pid_t;		/* process id */
 typedef	u_short				mode_t;		/* permissions */
 typedef long				memaddr_t;	/* core & swap address */
+typedef u_quad_t			fsblkcnt_t; /* fs block count (statvfs) */
+typedef u_quad_t			fsfilcnt_t; /* fs file count */
 
-typedef u_char 				pri_t;		/* priority */
+typedef	u_long				gid_t;		/* group id */
+typedef	u_char	    		pid_t;		/* process id */
+typedef u_char 				pri_t;		/* process priority */
+typedef	u_long				uid_t;		/* user id */
+
+typedef uint32_t			in_addr_t;	/* IP(v4) address */
+typedef uint16_t			in_port_t;	/* "Internet" port number */
+typedef u_quad_t			sa_family_t;/* socket address family */
+typedef u_quad_t			socklen_t;	/* socket-related datum length */
+#else
+typedef __fixpt_t 			fixpt_t;	/* fixed point number */
+typedef	__nlink_t 			nlink_t;	/* link count */
+typedef	__segsz_t 			segsz_t;	/* segment size */
+typedef __daddr_t			daddr_t;	/* disk address */
+typedef __caddr_t 			caddr_t;	/* core address */
+typedef __ino_t				ino_t;		/* inode number*/
+typedef	__swblk_t 			swblk_t;	/* swap offset */
+typedef	__time_t 			time_t;		/* time? */
+typedef __dev_t				dev_t;		/* device number */
+typedef __off_t 			off_t;		/* file offset */
+typedef __mode_t 			mode_t;		/* permissions */
+typedef __memaddr_t			memaddr_t;	/* core & swap address */
+typedef __fsblkcnt_t		fsblkcnt_t; /* fs block count (statvfs) */
+typedef __fsfilcnt_t		fsfilcnt_t; /* fs file count */
+typedef __gid_t 			gid_t;		/* group id */
+typedef __pid_t 			pid_t;		/* process id */
+typedef	__pri_t				pri_t;		/* process priority */
+typedef __uid_t 			uid_t;		/* user id */
+typedef __in_addr_t			in_addr_t;	/* IP(v4) address */
+typedef __in_port_t			in_port_t;	/* "Internet" port number */
+typedef __sa_family_t		sa_family_t;/* socket address family */
+typedef __socklen_t			socklen_t;	/* socket-related datum length */
 
 #if defined(_KERNEL) || defined(_LIBC)
 #include <sys/stdint.h>

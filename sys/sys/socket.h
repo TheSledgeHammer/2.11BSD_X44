@@ -406,7 +406,7 @@ int	setsockopt(int, int, int, const void *, int);
 int	shutdown(int, int);
 int	socket(int, int, int);
 int	socketpair(int, int, int, int *);
-int 	sockatmark(int);
+int sockatmark(int);
 __END_DECLS
 
 #endif /* !_KERNEL */

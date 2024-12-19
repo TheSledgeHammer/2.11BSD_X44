@@ -48,4 +48,3 @@ _getlogin(namebuf, namelen)
    return (__syscall((quad_t)SYS_getlogin, namebuf, namelen));
 }
 
-

@@ -43,15 +43,25 @@
 //#include <machine/ansi.h>
 #include <machine/types.h>
 
+typedef u_long				__fixpt_t;		/* fixed point number */
+typedef	u_short				__nlink_t;		/* link count */
+typedef	long				__segsz_t;		/* segment size */
+typedef long				__daddr_t;		/* disk address */
 typedef char 				*__caddr_t;		/* core address */
+typedef unsigned long		__ino_t;		/* inode number*/
+typedef	long				__swblk_t;		/* swap offset */
+typedef	long				__time_t;		/* time? */
+typedef unsigned long		__dev_t;		/* device number */
+typedef long				__memaddr_t;	/* core & swap address */
 typedef __uint32_t			__gid_t;		/* group id */
 typedef __uint32_t			__in_addr_t;	/* IP(v4) address */
 typedef __uint16_t			__in_port_t;	/* "Internet" port number */
 typedef __uint32_t			__mode_t;		/* file permissions */
 typedef __int64_t			__off_t;		/* file offset */
 typedef __int32_t			__pid_t;		/* process id */
+typedef __int32_t 			__pri_t;		/* process priority */
 typedef __uint8_t			__sa_family_t;	/* socket address family */
-typedef int				__socklen_t;	/* socket-related datum length */
+typedef int					__socklen_t;	/* socket-related datum length */
 typedef __uint32_t			__uid_t;		/* user id */
 typedef	__uint64_t			__fsblkcnt_t;	/* fs block count (statvfs) */
 typedef	__uint64_t			__fsfilcnt_t;	/* fs file count */

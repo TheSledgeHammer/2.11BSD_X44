@@ -13,7 +13,7 @@ SRCS+=	a64l.c abort.c abs.c atexit.c atof.c atoi.c atol.c bsearch.c calloc.c div
 	erand48.c exit.c getenv.c getopt_long.c getopt.c getsubopt.c hcreate.c heapsort.c       		\
         jrand48.c l64a.c labs.c lcong48.c ldiv.c llabs.c lldiv.c lrand48.c malloc.c merge.c     		\
 	mi_vector_hash.c mrand48.c nrand48.c putenv.c qabs.c qdiv.c qsort.c radixsort.c rand_r.c random.c	\
-	reallocarr.c reallocarray.c seed48.c setenv.c srand48.c strsuftoll.c strtod.c strtoi.c 			\
+	reallocarr.c reallocarray.c seed48.c setenv.c srand48.c strsuftoll.c strtoi.c 			\
         strtoimax.c strtol.c strtoll.c strtou.c strtoul.c strtoumax.c strtouq.c system.c tdelete.c 		\
 	tfind.c tsearch.c twalk.c
 

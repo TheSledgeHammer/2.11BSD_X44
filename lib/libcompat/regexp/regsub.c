@@ -34,9 +34,9 @@
  */
 void
 regsub(prog, source, dest)
-const regexp *prog;
-const char *source;
-char *dest;
+	const regexp *prog;
+	const char *source;
+	char *dest;
 {
 	register char *src;
 	register char *dst;

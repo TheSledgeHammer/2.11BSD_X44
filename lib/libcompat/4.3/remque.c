@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)remque.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -46,6 +49,7 @@ struct vaxque {		/* queue format expected by VAX queue instructions */
 	struct vaxque	*vq_prev;
 };
 
+void
 remque(e)
 	register struct vaxque *e;
 {

@@ -42,7 +42,7 @@ pid_t	_fork(void);	/* XXX */
 
 /*ARGSUSED*/
 pid_t
-fork()
+fork(void)
 {
 	return (_fork());
 }

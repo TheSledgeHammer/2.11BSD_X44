@@ -28,6 +28,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef	_LIBC_EXTERN_H_
+#define	_LIBC_EXTERN_H_
+
 #include <sys/cdefs.h>
 #include <ucontext.h>
 
@@ -35,16 +39,19 @@ __BEGIN_DECLS
 #if __SSP_FORTIFY_LEVEL > 0
 char 		*__getcwd(char *, size_t);
 #endif
-int 		_getlogin(char *, u_int);
-void 		_resumecontext(void);
-int 		_swapcontext(ucontext_t *, const ucontext_t *);
 const char 	*__strerror(int , char *, size_t);	/* TODO: Resolve  */
 const char 	*__strsignal(int , char *, size_t); /* TODO: Resolve  */
 char 		*__dtoa(double, int, int, int *, int *, char **);
 int 		__sysctl(int *, unsigned int, void *, size_t *, void *, size_t);
+
+int 		_getlogin(char *, u_int);
+void 		_resumecontext(void);
+int 		_swapcontext(ucontext_t *, const ucontext_t *);
 
 //extern char *__minbrk;
 //int 		__setlogin(const char *);
 //struct sigaction;
 //int 		__sigaction_sigtramp(int, const struct sigaction *, struct sigaction *, const void *, int);
 __END_DECLS
+
+#endif	/* _LIBC_EXTERN_H_ */

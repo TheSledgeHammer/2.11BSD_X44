@@ -201,7 +201,7 @@ STATIC int strcspn();
  */
 regexp *
 regcomp(exp)
-const char *exp;
+	const char *exp;
 {
 	register regexp *r;
 	register char *scan;
@@ -291,8 +291,8 @@ const char *exp;
  */
 static char *
 reg(paren, flagp)
-int paren;			/* Parenthesized? */
-int *flagp;
+	int paren;			/* Parenthesized? */
+	int *flagp;
 {
 	register char *ret;
 	register char *br;
@@ -363,7 +363,7 @@ int *flagp;
  */
 static char *
 regbranch(flagp)
-int *flagp;
+	int *flagp;
 {
 	register char *ret;
 	register char *chain;
@@ -403,7 +403,7 @@ int *flagp;
  */
 static char *
 regpiece(flagp)
-int *flagp;
+	int *flagp;
 {
 	register char *ret;
 	register char op;
@@ -467,7 +467,7 @@ int *flagp;
  */
 static char *
 regatom(flagp)
-int *flagp;
+	int *flagp;
 {
 	register char *ret;
 	int flags;
@@ -645,7 +645,7 @@ int *flagp;
  */
 static char *			/* Location. */
 regnode(op)
-char op;
+	char op;
 {
 	register char *ret;
 	register char *ptr;
@@ -670,7 +670,7 @@ char op;
  */
 static void
 regc(b)
-char b;
+	char b;
 {
 	if (regcode != &regdummy)
 		*regcode++ = b;
@@ -685,8 +685,8 @@ char b;
  */
 static void
 reginsert(op, opnd)
-char op;
-char *opnd;
+	char op;
+	char *opnd;
 {
 	register char *src;
 	register char *dst;
@@ -714,8 +714,8 @@ char *opnd;
  */
 static void
 regtail(p, val)
-char *p;
-char *val;
+	char *p;
+	char *val;
 {
 	register char *scan;
 	register char *temp;
@@ -746,8 +746,8 @@ char *val;
  */
 static void
 regoptail(p, val)
-char *p;
-char *val;
+	char *p;
+	char *val;
 {
 	/* "Operandless" and "op != BRANCH" are synonymous in practice. */
 	if (p == NULL || p == &regdummy || OP(p) != BRANCH)
@@ -785,8 +785,8 @@ STATIC char *regprop();
  */
 int
 regexec(prog, string)
-register const regexp *prog;
-register const char *string;
+	register const regexp *prog;
+	register const char *string;
 {
 	register char *s;
 	extern char *strchr();
@@ -847,8 +847,8 @@ register const char *string;
  */
 static int			/* 0 failure, 1 success */
 regtry(prog, string)
-regexp *prog;
-char *string;
+	regexp *prog;
+	char *string;
 {
 	register int i;
 	register char **sp;
@@ -884,7 +884,7 @@ char *string;
  */
 static int			/* 0 failure, 1 success */
 regmatch(prog)
-char *prog;
+	char *prog;
 {
 	register char *scan;	/* Current node. */
 	char *next;		/* Next node. */
@@ -1087,7 +1087,7 @@ char *prog;
  */
 static int
 regrepeat(p)
-char *p;
+	char *p;
 {
 	register int count = 0;
 	register char *scan;
@@ -1133,7 +1133,7 @@ char *p;
  */
 static char *
 regnext(p)
-register char *p;
+	register char *p;
 {
 	register int offset;
 
@@ -1159,7 +1159,7 @@ STATIC char *regprop();
  */
 void
 regdump(r)
-regexp *r;
+	regexp *r;
 {
 	register char *s;
 	register char op = EXACTLY;	/* Arbitrary non-END op. */
@@ -1203,7 +1203,7 @@ regexp *r;
  */
 static char *
 regprop(op)
-char *op;
+	char *op;
 {
 	register char *p;
 	static char buf[50];
@@ -1301,8 +1301,8 @@ char *op;
 
 static int
 strcspn(s1, s2)
-char *s1;
-char *s2;
+	char *s1;
+	char *s2;
 {
 	register char *scan1;
 	register char *scan2;
