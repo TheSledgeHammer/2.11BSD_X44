@@ -164,12 +164,12 @@ typedef u_quad_t			socklen_t;	/* socket-related datum length */
 #else
 typedef __fixpt_t 			fixpt_t;	/* fixed point number */
 typedef	__nlink_t 			nlink_t;	/* link count */
-typedef	__segsz_t 			segsz_t;	/* segment size */
+typedef	long     			segsz_t;	/* segment size */
 typedef __daddr_t			daddr_t;	/* disk address */
 typedef __caddr_t 			caddr_t;	/* core address */
 typedef __ino_t				ino_t;		/* inode number*/
 typedef	__swblk_t 			swblk_t;	/* swap offset */
-typedef	__time_t 			time_t;		/* time? */
+typedef	long 			    time_t;		/* time? */
 typedef __dev_t				dev_t;		/* device number */
 typedef __off_t 			off_t;		/* file offset */
 typedef __mode_t 			mode_t;		/* permissions */
@@ -184,6 +184,7 @@ typedef __in_addr_t			in_addr_t;	/* IP(v4) address */
 typedef __in_port_t			in_port_t;	/* "Internet" port number */
 typedef __sa_family_t		sa_family_t;/* socket address family */
 typedef __socklen_t			socklen_t;	/* socket-related datum length */
+#endif /* _KERNEL */
 
 #if defined(_KERNEL) || defined(_LIBC)
 #include <sys/stdint.h>
