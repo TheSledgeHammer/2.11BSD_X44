@@ -401,7 +401,7 @@ kmem_malloc(map, size, canwait)
 	extern vm_object_t		kmem_object;
 
 	if (map != kmem_map && map != mb_map) {
-		panic("kern_malloc_alloc: map != {kmem,mb}_map");
+		panic("kern_malloc: map != {kmem,mb}_map");
 	}
 
 	size = round_page(size);
