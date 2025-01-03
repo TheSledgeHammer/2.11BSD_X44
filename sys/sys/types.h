@@ -159,8 +159,8 @@ typedef	u_long				uid_t;		/* user id */
 
 typedef uint32_t			in_addr_t;	/* IP(v4) address */
 typedef uint16_t			in_port_t;	/* "Internet" port number */
-typedef u_quad_t			sa_family_t;/* socket address family */
-typedef u_quad_t			socklen_t;	/* socket-related datum length */
+//typedef u_quad_t			sa_family_t;/* socket address family */
+//typedef u_quad_t			socklen_t;	/* socket-related datum length */
 #else
 typedef __fixpt_t 			fixpt_t;	/* fixed point number */
 typedef	__nlink_t 			nlink_t;	/* link count */
