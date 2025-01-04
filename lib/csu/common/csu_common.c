@@ -80,17 +80,17 @@ common_fini(func_t final, void *handle, fptr_t *list, fptr_t *end)
     	static int finished;
 
     	if (finished) {
-	    	return;
-	    }
+	  	return;
+	}
 
-	    finished = 1;
+	finished = 1;
 
 #ifdef SHARED
     	common_finalize(final, handle);
 #endif
 
-	    /* Call global destructors.	*/
-	    common_dtors(list, end);
+	/* Call global destructors.	*/
+	common_dtors(list, end);
 }
 #endif
 #endif /* CRTBEGIN */
@@ -102,8 +102,8 @@ static void
 common_jcr(fptr_t *list, func_t regclass)
 {
     	if (list[0] != NULL && regclass != NULL) {
-		    regclass(list);
-	    }
+		regclass(list);
+	}
 }
 #endif
 
@@ -122,8 +122,8 @@ common_init(fptr_t *jcr, func_t regclass, fptr_t *list, fptr_t *end)
 {
     	static int initialized;
 
-	    if (initialized) {
-	    	return;
+	if (initialized) {
+	    return;
     	}
 
     	initialized = 1;
@@ -132,7 +132,7 @@ common_init(fptr_t *jcr, func_t regclass, fptr_t *list, fptr_t *end)
         common_jcr(jcr, regclass);
 #endif
 
-	    /* Call global constructors. */
+	/* Call global constructors. */
     	common_ctors(list, end);
 }
 #endif
