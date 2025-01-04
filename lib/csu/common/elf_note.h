@@ -5,7 +5,7 @@
 #define	CSU_ELF_NOTE_211BSD_DESCSZ		  4
 #define	CSU_ELF_NOTE_TYPE_211BSD_TAG	  1
 #define	CSU_ELF_NOTE_211BSD_NAME		    "NetBSD\0\0"
-#define	CSU_211BSD_Version__		        0000000100
+#define	CSU_211BSD_Version		          0
 
 #define	CSU_ELF_NOTE_PAX_NAMESZ		      4
 #define	CSU_ELF_NOTE_PAX_DESCSZ		      4
