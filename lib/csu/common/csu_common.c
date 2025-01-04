@@ -61,7 +61,7 @@ common_finalize(func_t final, void *handle)
 static inline void
 common_dtors(fptr_t *list, fptr_t *end)
 {
-    fptr_t *p;
+	fptr_t *p;
 	for (p = list + 1; p < end; ) {
 		(*(*--p))();
 	}
@@ -115,13 +115,13 @@ common_init(fptr_t jcr, func_t regclass, fptr_t *list, fptr_t *end)
 		return;
 	}
 
-    initialized = 1;
+    	initialized = 1;
 
 #if defined(JCR) && defined(__GNUC__)
-    common_jcr(list, regclass);
+    	common_jcr(list, regclass);
 #endif
 
 	/* Call global constructors. */
-    common_ctors(list, end);
+    	common_ctors(list, end);
 }
 #endif
