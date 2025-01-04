@@ -33,10 +33,18 @@ typedef void (*fptr_t)(void);
 typedef void (*func_t)(void *);
 
 #ifdef CRTBEGIN
-
 #ifdef SHARED
 static void common_finalize(func_t, void *);
 #endif
+#endif /* CRTBEGIN */
+
+#ifdef CRTEND
+#if defined(JCR) && defined(__GNUC__)
+static void common_jcr(fptr_t *, func_t);
+#endif
+#endif /* CRTEND */
+
+#ifdef CRTBEGIN
 
 #ifdef SHARED
 /*
@@ -85,17 +93,12 @@ common_fini(func_t final, void *handle, fptr_t *list, fptr_t *end)
 	    common_dtors(list, end);
 }
 #endif
-
 #endif /* CRTBEGIN */
 
 #ifdef CRTEND
 
 #if defined(JCR) && defined(__GNUC__)
-static void common_jcr(fptr_t *, func_t);
-#endif
-
-#if defined(JCR) && defined(__GNUC__)
-static inline void
+static void
 common_jcr(fptr_t *list, func_t regclass)
 {
     	if (list[0] != NULL && regclass != NULL) {
@@ -126,14 +129,11 @@ common_init(fptr_t *jcr, func_t regclass, fptr_t *list, fptr_t *end)
     	initialized = 1;
 
 #if defined(JCR) && defined(__GNUC__)
-    	if (jcr[0] != NULL && regclass != NULL) {
-		    regclass(jcr);
-	    }
+        common_jcr(jcr, regclass);
 #endif
 
 	    /* Call global constructors. */
     	common_ctors(list, end);
 }
 #endif
-
 #endif /* CRTEND */
