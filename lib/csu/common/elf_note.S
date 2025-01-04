@@ -64,7 +64,7 @@
 		.long	CSU_ELF_NOTE_211BSD_DESCSZ
 		.long	CSU_ELF_NOTE_TYPE_211BSD_TAG
 		.ascii	"NetBSD\0\0"				/* ELF_NOTE_211BSD_NAME */
-		.long	CSU_211BSD_Version__
+		.long	CSU_211BSD_Version
 
 		.section ".note.netbsd.pax", "a"
 		.p2align 2
