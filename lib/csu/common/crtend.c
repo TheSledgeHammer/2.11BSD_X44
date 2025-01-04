@@ -69,7 +69,7 @@ __ctors(void)
 static void
 __do_global_ctors_aux(void)
 {
-    common_init(__JCR_LIST__, _Jv_RegisterClasses, __CTOR_LIST__, __CTOR_END__)
+    common_init(__JCR_LIST__, _Jv_RegisterClasses, __CTOR_LIST__, __CTOR_END__);
 }
 
 MD_CALL_STATIC_FUNCTION(.init, __do_global_ctors_aux)
