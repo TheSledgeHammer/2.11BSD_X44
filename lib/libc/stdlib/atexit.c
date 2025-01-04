@@ -55,10 +55,13 @@ struct atexit *__atexit;	/* points to head of LIFO stack */
 static mutex_t atexit_mutex;
 #endif /* _REENTRANT */
 
+static int atexit_alloc(struct atexit_fun *);
+static int common_atexit(void (*)(void), void (*)(void *), void *, void *);
+
 /*
  * Register a function to be performed at exit.
  */
-int
+static int
 atexit_alloc(fun)
 	struct atexit_fun *fun;
 {
@@ -82,7 +85,7 @@ atexit_alloc(fun)
 	return (0);
 }
 
-int
+static int
 common_atexit(func, cxa_func, arg, dso)
 	void (*func)(void);
 	void (*cxa_func)(void *);
