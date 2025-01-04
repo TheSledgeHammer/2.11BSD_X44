@@ -32,11 +32,10 @@
 typedef void (*fptr_t)(void);
 typedef void (*func_t)(void *);
 
+#ifdef CRTBEGIN
+
 #ifdef SHARED
-static void common_finalize(func_t final, void *handle);
-#endif
-#if defined(JCR) && defined(__GNUC__)
-static void common_jcr(fptr_t *list, func_t regclass);
+static void common_finalize(func_t, void *);
 #endif
 
 #ifdef SHARED
@@ -51,9 +50,9 @@ __attribute__((destructor))
 static void
 common_finalize(func_t final, void *handle)
 {
-	if (final != NULL) {
-		final(handle);
-	}
+    	if (final != NULL) {
+    		final(handle);
+    	}
 }
 #endif
 
@@ -61,39 +60,47 @@ common_finalize(func_t final, void *handle)
 static inline void
 common_dtors(fptr_t *list, fptr_t *end)
 {
-	fptr_t *p;
-	for (p = list + 1; p < end; ) {
-		(*(*--p))();
-	}
+    	fptr_t *p;
+    	for (p = list + 1; p < end; ) {
+    		(*(*--p))();
+    	}
 }
 
 static inline void
 common_fini(func_t final, void *handle, fptr_t *list, fptr_t *end)
 {
-	static int finished;
+    	static int finished;
 
-	if (finished) {
-		return;
-	}
+    	if (finished) {
+	    	return;
+	    }
 
-	finished = 1;
+	    finished = 1;
 
 #ifdef SHARED
-	common_finalize(final, handle);
+    	common_finalize(final, handle);
 #endif
 
-	/* Call global destructors.	*/
-	common_dtors(list, end);
+	    /* Call global destructors.	*/
+	    common_dtors(list, end);
 }
 #endif
 
+#endif /* CRTBEGIN */
+
+#ifdef CRTEND
+
 #if defined(JCR) && defined(__GNUC__)
-static void
+static void common_jcr(fptr_t *, func_t);
+#endif
+
+#if defined(JCR) && defined(__GNUC__)
+static inline void
 common_jcr(fptr_t *list, func_t regclass)
 {
-	if (list[0] != NULL && regclass != NULL) {
-		regclass(list);
-	}
+    	if (list[0] != NULL && regclass != NULL) {
+		    regclass(list);
+	    }
 }
 #endif
 
@@ -101,27 +108,32 @@ common_jcr(fptr_t *list, func_t regclass)
 static inline void
 common_ctors(fptr_t *list, fptr_t *end)
 {
-	fptr_t *p;
-	for (p = end; p > list + 1; ) {
-		(*(*--p))();
-	}
+    	fptr_t *p;
+    	for (p = end; p > list + 1; ) {
+    		(*(*--p))();
+    	}
+}
 
 static inline void
-common_init(fptr_t jcr, func_t regclass, fptr_t *list, fptr_t *end)
+common_init(fptr_t *jcr, func_t regclass, fptr_t *list, fptr_t *end)
 {
-	static int initialized;
+    	static int initialized;
 
-	if (initialized) {
-		return;
-	}
+	    if (initialized) {
+	    	return;
+    	}
 
     	initialized = 1;
 
 #if defined(JCR) && defined(__GNUC__)
-    	common_jcr(list, regclass);
+    	if (jcr[0] != NULL && regclass != NULL) {
+		    regclass(jcr);
+	    }
 #endif
 
-	/* Call global constructors. */
+	    /* Call global constructors. */
     	common_ctors(list, end);
 }
 #endif
+
+#endif /* CRTEND */

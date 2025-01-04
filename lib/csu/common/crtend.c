@@ -20,12 +20,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/*
-#include <sys/cdefs.h>
-#include <sys/param.h>
-*/
+
 #include "csu_common.c"
 #include <dot_init.h>
+
+#define CRTEND /* needed by csu_common.c */
 
 #ifdef HAVE_CTORS
 static fptr_t __CTOR_LIST__[1] __section(".ctors") __used = { (fptr_t)-1 };
