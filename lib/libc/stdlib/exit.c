@@ -56,6 +56,7 @@ void
 exit(code)
 	int code;
 {
+/*
 	register struct atexit *p;
 	register int n;
 
@@ -64,6 +65,8 @@ exit(code)
 			(*p->fns[n])();
 		}
 	}
+*/
+    	__cxa_finalize(NULL);
 	if (__cleanup) {
 		(*__cleanup)();
 	}
