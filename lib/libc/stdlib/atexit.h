@@ -36,10 +36,21 @@
 /* must be at least 32 to guarantee ANSI conformance */
 #define	ATEXIT_SIZE	32
 
+struct atexit_fun {
+	union {
+		void (*fun_atexit)(void);
+		void (*fun_cxa_atexit)(void *);
+	};
+	void  *fun_arg;	/* argument for cxa_atexit handlers */
+	void  *fun_dso;	/* home DSO for cxa_atexit handlers */
+};
+
 struct atexit {
 	struct atexit 	*next;					/* next in list */
 	int 			ind;					/* next index in this table */
-	void 			(*fns[ATEXIT_SIZE])(void);	/* the table itself */
+	struct atexit_fun fns[ATEXIT_SIZE];		/* the table itself */
 };
 
 extern struct atexit *__atexit;				/* points to head of LIFO stack */
+
+void __cxa_finalize(void *dso);

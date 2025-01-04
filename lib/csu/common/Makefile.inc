@@ -21,7 +21,7 @@ OBJS+= elf_note.o
 
 realall: ${OBJS}
 
-crtbegin.o: crtbegin.c
+crtbegin.o: crtbegin.c csu_common.c
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${CFLAGS.crtbegin.c} ${COMMON_DIR}/crtbegin.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
@@ -30,7 +30,7 @@ crtbegin.o: crtbegin.c
 		${OBJCOPY} -R .ident ${.TARGET}
 .endif
 
-crtend.o: crtend.c
+crtend.o: crtend.c csu_common.c
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${CFLAGS.crtend.c} ${COMMON_DIR}/crtend.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
@@ -39,7 +39,7 @@ crtend.o: crtend.c
 		${OBJCOPY} -R .ident ${.TARGET}
 .endif
 
-crtbeginS.o: crtbegin.c
+crtbeginS.o: crtbegin.c csu_common.c
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${CFLAGS.crtbeginS.c} ${PICFLAGS} -DSHARED ${COMMON_DIR}/crtbegin.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
@@ -48,7 +48,7 @@ crtbeginS.o: crtbegin.c
 		${OBJCOPY} -R .ident ${.TARGET}
 .endif
 
-crtendS.o: crtend.c
+crtendS.o: crtend.c csu_common.c
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${CFLAGS.crtendS.c} ${PICFLAGS} -DSHARED ${COMMON_DIR}/crtend.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}

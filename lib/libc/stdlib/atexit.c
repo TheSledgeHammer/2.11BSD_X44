@@ -34,11 +34,14 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
 static char sccsid[] = "@(#)atexit.c	8.2 (Berkeley) 7/3/94";
 #endif
 #endif /* LIBC_SCCS and not lint */
+
+#include "reentrant.h"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -47,26 +50,96 @@ static char sccsid[] = "@(#)atexit.c	8.2 (Berkeley) 7/3/94";
 
 struct atexit *__atexit;	/* points to head of LIFO stack */
 
+#ifdef _REENTRANT
+/* ..and a mutex to protect it all. */
+static mutex_t atexit_mutex;
+#endif /* _REENTRANT */
+
 /*
  * Register a function to be performed at exit.
  */
 int
-atexit(fn)
-	void (*fn)(void);
+atexit_alloc(fun)
+	struct atexit_fun *fun;
 {
 	static struct atexit __atexit0;	/* one guaranteed table */
 	register struct atexit *p;
 
+	mutex_lock(&atexit_mutex);
 	if ((p = __atexit) == NULL) {
 		__atexit = p = &__atexit0;
 	} else if (p->ind >= ATEXIT_SIZE) {
 		if ((p = malloc(sizeof(*p))) == NULL) {
+			mutex_unlock(&atexit_mutex);
 			return (-1);
 		}
 		p->ind = 0;
 		p->next = __atexit;
 		__atexit = p;
 	}
-	p->fns[p->ind++] = fn;
+	p->fns[p->ind++] = *fun;
+	mutex_unlock(&atexit_mutex);
 	return (0);
+}
+
+int
+common_atexit(func, cxa_func, arg, dso)
+	void (*func)(void);
+	void (*cxa_func)(void *);
+	void *arg, *dso;
+{
+	struct atexit_fun fun;
+	int error;
+
+	mutex_lock(&atexit_mutex);
+	fun.fun_atexit = func;
+	fun.fun_cxa_atexit = cxa_func;
+	fun.fun_arg = arg;
+	fun.fun_dso = dso;
+	error = atexit_alloc(&fun);
+	mutex_unlock(&atexit_mutex);
+	return (error);
+}
+
+int
+atexit(func)
+	void (*func)(void);
+{
+	return (common_atexit(func, NULL, NULL, NULL));
+}
+
+int
+__cxa_atexit(cxa_func, arg, dso)
+	void (*cxa_func)(void *);
+	void *arg, *dso;
+{
+	return (common_atexit(NULL, cxa_func, arg, dso));
+}
+
+void
+__cxa_finalize(dso)
+	void *dso;
+{
+	struct atexit *p;
+	struct atexit_fun fun;
+	int n;
+
+	mutex_lock(&atexit_mutex);
+	for (p = __atexit; p; p = p->next) {
+		for (n = p->ind; --n >= 0;) {
+			fun = p->fns[n];
+			if ((dso != NULL) && (fun.fun_dso != NULL)) {
+				if (dso != fun.fun_dso) {
+					continue;
+				}
+			}
+			if (fun.fun_cxa_atexit != NULL) {
+				fun.fun_cxa_atexit(fun.fun_arg);
+			}
+			if (fun.fun_atexit != NULL) {
+				fun.fun_atexit();
+			}
+		}
+	}
+	mutex_unlock(&atexit_mutex);
 }

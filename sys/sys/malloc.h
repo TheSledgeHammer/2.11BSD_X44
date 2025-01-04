@@ -102,14 +102,14 @@ struct kmemslabs {
     int                 ksl_stype;      /* slab type: see below */
 
     int					ksl_flags;		/* slab flags */
-    int                 ksl_refcount;
     int                 ksl_usecount;   /* usage counter for slab caching */
 };
 
 /* Slab Cache */
 struct kmemslabs_cache {
 	CIRCLEQ_HEAD(, kmemslabs) ksc_head;
-	struct kmemslabs	ksc_link;
+	struct kmemslabs	ksc_slab;
+	int                	ksc_refcount;	/* number of slabs counter */
 };
 
 /* slab flags */
@@ -214,11 +214,10 @@ struct kmemslabs_cache {
 
 #endif /* do not collect statistics */
 
-extern struct kmemslabs_cache   *slabCache;
+extern struct kmemslabs_cache   *slabcache;
 extern struct kmemslabs			slabbucket[];
 extern struct kmemusage 		*kmemusage;
 extern char 					*kmembase;
-extern int			        	kmemslab_count;    /* number of items in slablist */
 
 extern void *malloc(unsigned long, int, int);
 extern void free(void *, int);

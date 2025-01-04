@@ -26,14 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
+/*
 #include <sys/cdefs.h>
 #include <sys/param.h>
-//#include <stdlib.h>
-
+*/
+#include "csu_common.c"
 #include <dot_init.h>
-
-typedef void (*fptr_t)(void);
 
 extern void *__dso_handle;
 __asm(".hidden  __dso_handle");
@@ -47,97 +45,44 @@ static fptr_t __DTOR_END__[] __section(".dtors") __used = { (fptr_t)0 };
 void *__dso_handle = NULL;
 #else
 void *__dso_handle = &__dso_handle;
-void __cxa_finalize(void *)  __attribute__((weak));
-
-/*
- * Call __cxa_finalize with the dso handle in shared objects.
- * When we have ctors/dtors call from the dtor handler before calling
- * any dtors, otherwise use a destructor.
- */
-#ifndef HAVE_CTORS
-__attribute__((destructor))
+extern void __cxa_finalize(void *)  __attribute__((weak));
 #endif
-static void
-run_cxa_finalize(void)
-{
 
-	if (__cxa_finalize != NULL)
-		__cxa_finalize(__dso_handle);
+#ifndef MD_CALL_STATIC_FUNCTION
+#if defined(__GNUC__)
+#define	MD_CALL_STATIC_FUNCTION(section, func)		\
+static void __attribute__((__unused__))				\
+__call_##func(void)									\
+{													\
+	__asm volatile (".section " #section);			\
+	func();											\
+	__asm volatile (".previous");					\
 }
+#else
+#error Need MD_CALL_STATIC_FUNCTION
 #endif
+#endif /* ! MD_CALL_STATIC_FUNCTION */
 
 /*
  * On some architectures and toolchains we may need to call the .dtors.
  * These are called in the order they are in the ELF file.
  */
-
 #ifdef HAVE_CTORS
+
+static void __dtors(void) __used;
+static void __do_global_dtors_aux(void) __used;
+
 static void
 __dtors(void)
 {
-    fptr_t *p;
-	for (p = __DTOR_LIST__ + 1; p < __DTOR_END__; ) {
-		(*(*--p))();
-	}
+	common_dtors(__DTOR_LIST__, __DTOR_END__);
 }
-
-static void __do_global_dtors_aux(void) __used;
 
 static void
 __do_global_dtors_aux(void)
 {
-	static int finished;
-
-	if (finished) {
-		return;
-	}
-
-	__finished = 1;
-
-#ifdef SHARED
-	run_cxa_finalize();
-#endif
-
-	/*
-	 * Call global destructors.
-	 */
-	__dtors();
+	common_fini(__cxa_finalize, __dso_handle, __DTOR_LIST__, __DTOR_END__);
 }
 
 MD_CALL_STATIC_FUNCTION(.fini, __do_global_dtors_aux)
 #endif
-
-#if defined(JCR) && defined(__GNUC__)
-/*
- * Handler for gcj. These provide a _Jv_RegisterClasses function and fill
- * out the .jcr section. We just need to call this function with a pointer
- * to the appropriate section.
- */
-extern void _Jv_RegisterClasses(void *) __attribute__((weak));
-static void register_classes(void) __used;
-
-static fptr_t __JCR_LIST__[] __section(".jcr") __used = {  };
-static fptr_t __JCR_END__[] __section(".jcr") __used = { (fptr_t)0 };
-
-#ifndef CTORS_CONSTRUCTORS
-__attribute__((constructor))
-#endif
-static void
-register_classes(void)
-{
-	if (_Jv_RegisterClasses && __JCR_LIST__[0]) {
-		_Jv_RegisterClasses(__JCR_LIST__);
-	}
-}
-
-/*
- * We can't use constructors when they use the .ctors section as they may be
- * placed before __CTOR_LIST__.
- */
-
-#ifdef CTORS_CONSTRUCTORS
-MD_CALL_STATIC_FUNCTION(.init, register_classes)
-#endif
-
-#endif /* JCR && __GNUC__ */
-
