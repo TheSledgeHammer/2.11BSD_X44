@@ -53,4 +53,5 @@ struct atexit {
 
 extern struct atexit *__atexit;				/* points to head of LIFO stack */
 
-void __cxa_finalize(void *dso);
+int     __cxa_atexit(void (*)(void *), void *, void *);
+void    __cxa_finalize(void *);
