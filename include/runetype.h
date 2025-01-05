@@ -164,10 +164,10 @@ typedef struct _RuneOps {
     sgetcsrune_t    ro_sgetcsrune;
     sputcsrune_t    ro_sputcsrune;
 
-    /* module */
+    	/* module */
     module_init_t   ro_module_init;
     module_uninit_t ro_module_uninit;
-} _RuneOps;;
+} _RuneOps;
 
 /*
  * ctype stuffs
