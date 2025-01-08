@@ -21,7 +21,7 @@ __RCSID("$NetBSD: md5crypt.c,v 1.14 2013/08/28 17:47:07 riastradh Exp $");
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#include <md5.h>
+#include <hash/md5.h>
 
 #include "crypt.h"
 
