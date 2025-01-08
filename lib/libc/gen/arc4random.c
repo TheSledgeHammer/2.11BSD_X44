@@ -166,7 +166,7 @@ arc4_getword(as)
 }
 
 void
-arc4random_stir()
+arc4random_stir(void)
 {
 	if (!rs_initialized) {
 		arc4_init(&rs);
@@ -180,18 +180,103 @@ arc4random_addrandom(dat, datlen)
 	u_char *dat;
 	int     datlen;
 {
-	if (!rs_initialized)
+	if (!rs_initialized) {
 		arc4random_stir();
+	}
 	arc4_addrandom(&rs, dat, datlen);
 }
 
 u_int32_t
-arc4random()
+arc4random(void)
 {
-	if (!rs_initialized)
+	if (!rs_initialized) {
 		arc4random_stir();
+	}
 	return arc4_getword(&rs);
 }
+
+void
+arc4random_buf(buf, len)
+    void *buf;
+    size_t len;
+{
+    arc4random_addrandom((u_char *)buf, (int)len);
+}
+
+u_int32_t
+arc4random_uniform(bound)
+    	u_int32_t bound;
+{
+    	u_int32_t minimum, r;
+	
+	/*
+	 * We want a uniform random choice in [0, n), and arc4random()
+	 * makes a uniform random choice in [0, 2^32).  If we reduce
+	 * that modulo n, values in [0, 2^32 mod n) will be represented
+	 * slightly more than values in [2^32 mod n, n).  Instead we
+	 * choose only from [2^32 mod n, 2^32) by rejecting samples in
+	 * [0, 2^32 mod n), to avoid counting the extra representative
+	 * of [0, 2^32 mod n).  To compute 2^32 mod n, note that
+	 *
+	 *	2^32 mod n = 2^32 mod n - 0
+	 *	  = 2^32 mod n - n mod n
+	 *	  = (2^32 - n) mod n,
+	 *
+	 * the last of which is what we compute in 32-bit arithmetic.
+	 */
+    	minimum = (-bound % bound);
+
+    	if (!rs_initialized) {
+        	arc4random_stir();
+    	}
+    	do {
+        	arc4_addrandom(&rs, (u_char *)&r, sizeof(r));
+    	} while (__predict_false(r < minimum));
+
+    	return (r % bound);
+}
+
+#ifdef notyet
+/* chacha */
+#include <assert.h>
+#include <sys/crypto/chacha/chacha.h>
+
+#define outputsize  64
+#define inputsize   16
+#define keysize     32
+#define ivsize      8
+#define bufsize     (outputsize * outputsize)
+#define ebufsize    (keysize * ivsize)
+
+static void chacha_init(chacha_ctx *, u_char *, size_t);
+
+static void
+chacha_init(cc, buf, n)
+	chacha_ctx *cc;
+	u_char *buf;
+	size_t n;
+{
+	_DIAGASSERT(n >= ebufsize);
+	chacha_keysetup(cc, buf, ebufsize);
+    	chacha_ivsetup(cc, buf + keysize, NULL);
+}
+
+static void
+chacha_buf(cc, buf, n)
+	chacha_ctx *cc;
+	void *buf;
+	size_t n;
+{
+	u_int8_t output[bufsize];
+	
+	chacha_encrypt_bytes(cc, output, output, sizeof(output));
+	
+	(void)memcpy(cc, output, sizeof(cc));
+	(void)memcpy(buf, output + sizeof(cc), n);
+	(void)explicit_memset(output, 0, sizeof(output));
+}
+
+#endif
 
 #if 0
 /*-------- Test code for i386 --------*/
