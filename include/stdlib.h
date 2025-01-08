@@ -285,6 +285,8 @@ size_t	 shquote(const char *, char *, size_t);
 int	 reallocarr(void *, size_t, size_t);
 
 u_int32_t arc4random(void);
+u_int32_t arc4random_uniform(u_int32_t);
+void      arc4random_buf(void *, size_t);
 void	  arc4random_stir(void);
 void	  arc4random_addrandom(u_char *, int);
 
