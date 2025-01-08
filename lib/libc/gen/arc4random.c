@@ -230,7 +230,8 @@ arc4random_uniform(bound)
         	arc4random_stir();
     	}
     	do {
-        	arc4_addrandom(&rs, (u_char *)&r, sizeof(r));
+		r = arc4_getword(&rs);
+        	//arc4_addrandom(&rs, (u_char *)&r, sizeof(r));
     	} while (__predict_false(r < minimum));
 
     	return (r % bound);
