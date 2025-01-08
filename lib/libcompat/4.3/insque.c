@@ -38,6 +38,8 @@ static char sccsid[] = "@(#)insque.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <search.h>
+
 /*
  * insque -- vax insque instruction
  *
@@ -49,12 +51,26 @@ struct vaxque {		/* queue format expected by VAX queue instructions */
 	struct vaxque	*vq_prev;
 };
 
-void
-insque(e, prev)
+static void vax_insque(struct vaxque *, struct vaxque *);
+
+static void
+vax_insque(e, prev)
 	register struct vaxque *e, *prev;
 {
 	e->vq_prev = prev;
 	e->vq_next = prev->vq_next;
 	prev->vq_next->vq_prev = e;
 	prev->vq_next = e;
+}
+
+void
+insque(entry, pred)
+   	void *entry;
+    void *pred;
+{
+    struct vaxque *e, *prev;
+
+    e = (struct vaxque *)entry;
+    prev = (struct vaxque *)pred;
+    vax_insque(e, prev);
 }

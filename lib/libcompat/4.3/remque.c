@@ -38,6 +38,8 @@ static char sccsid[] = "@(#)remque.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <search.h>
+
 /*
  * remque -- vax remque instruction
  *
@@ -49,10 +51,22 @@ struct vaxque {		/* queue format expected by VAX queue instructions */
 	struct vaxque	*vq_prev;
 };
 
-void
-remque(e)
+static void vax_remque(struct vaxque *);
+
+static void
+vax_remque(e)
 	register struct vaxque *e;
 {
 	e->vq_prev->vq_next = e->vq_next;
 	e->vq_next->vq_prev = e->vq_prev;
+}
+
+void
+remque(entry)
+	void *entry;
+{
+    struct vaxque *e;
+
+    e = (struct vaxque *)entry;
+    vax_remque(e);
 }

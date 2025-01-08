@@ -42,43 +42,49 @@ static char sccsid[] = "@(#)lsearch.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <unistd.h>
 
-static char *linear_base();
+#include <search.h>
+#include <string.h>
 
-char *
+typedef int (*compare_t)(const void *, const void *);
+static void *linear_base(const void *, void *, size_t *, size_t, compare_t, int);
+
+void *
 lsearch(key, base, nelp, width, compar)
-	char *key, *base;
-	u_int *nelp, width;
-	int (*compar)();
+    const void *key;
+    void *base;
+	size_t *nelp, width;
+	compare_t compar;
 {
-	return(linear_base(key, base, nelp, width, compar, 1));
+	return (linear_base(key, base, nelp, width, compar, 1));
 }
 
-char *
+void *
 lfind(key, base, nelp, width, compar)
-	char *key, *base;
-	u_int *nelp, width;
-	int (*compar)();
+	const void *key, *base;
+	size_t *nelp, width;
+	compare_t compar;
 {
-	return(linear_base(key, base, nelp, width, compar, 0));
+	return (linear_base(key, __UNCONST(base), nelp, width, compar, 0));
 }
 
-static char *
+static void *
 linear_base(key, base, nelp, width, compar, add_flag)
-	char *key, *base;
-	u_int *nelp, width;
-	int (*compar)(), add_flag;
+	const void *key;
+    void *base;
+	size_t *nelp, width;
+    compare_t compar;
+	int add_flag;
 {
 	register char *element, *end;
 
-	end = base + *nelp * width;
+	end = (char *)base + *nelp * width;
 	for (element = base; element < end; element += width)
 		if (!compar(element, key))		/* key found */
-			return(element);
+			return (element);
 
 	if (!add_flag)					/* key not found */
-		return(NULL);
+		return (NULL);
 
 	/*
 	 * The UNIX System User's Manual, 1986 edition claims that
@@ -90,6 +96,6 @@ linear_base(key, base, nelp, width, compar, add_flag)
 	 * manual.
 	 */
 	++*nelp;
-	bcopy(key, end, (int)width);
-	return(end);
+	bcopy(key, end, width);
+	return (end);
 }

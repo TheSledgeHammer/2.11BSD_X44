@@ -170,18 +170,18 @@ static long regsize;		/* Code size. */
 #ifndef STATIC
 #define	STATIC	static
 #endif
-STATIC char *reg();
-STATIC char *regbranch();
-STATIC char *regpiece();
-STATIC char *regatom();
-STATIC char *regnode();
-STATIC char *regnext();
-STATIC void regc();
-STATIC void reginsert();
-STATIC void regtail();
-STATIC void regoptail();
+STATIC char *reg(int, int *);
+STATIC char *regbranch(int *);
+STATIC char *regpiece(int *);
+STATIC char *regatom(int *);
+STATIC char *regnode(char);
+STATIC char *regnext(char *);
+STATIC void regc(char);
+STATIC void reginsert(char, char *);
+STATIC void regtail(char *, char *);
+STATIC void regoptail(char *, char *);
 #ifdef STRCSPN
-STATIC int strcspn();
+STATIC int strcspn(char *, char *);
 #endif
 
 /*
@@ -315,7 +315,7 @@ reg(paren, flagp)
 	/* Pick up the branches, linking them together. */
 	br = regbranch(&flags);
 	if (br == NULL)
-		return(NULL);
+		return (NULL);
 	if (ret != NULL)
 		regtail(ret, br);	/* OPEN -> first. */
 	else
@@ -327,7 +327,7 @@ reg(paren, flagp)
 		regparse++;
 		br = regbranch(&flags);
 		if (br == NULL)
-			return(NULL);
+			return (NULL);
 		regtail(ret, br);	/* BRANCH -> BRANCH. */
 		if (!(flags&HASWIDTH))
 			*flagp &= ~HASWIDTH;
@@ -353,7 +353,7 @@ reg(paren, flagp)
 		/* NOTREACHED */
 	}
 
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -378,7 +378,7 @@ regbranch(flagp)
 	       *regparse != '\n' && *regparse != '|') {
 		latest = regpiece(&flags);
 		if (latest == NULL)
-			return(NULL);
+			return (NULL);
 		*flagp |= flags&HASWIDTH;
 		if (chain == NULL)	/* First piece. */
 			*flagp |= flags&SPSTART;
@@ -389,7 +389,7 @@ regbranch(flagp)
 	if (chain == NULL)	/* Loop ran zero times. */
 		(void) regnode(NOTHING);
 
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -412,12 +412,12 @@ regpiece(flagp)
 
 	ret = regatom(&flags);
 	if (ret == NULL)
-		return(NULL);
+		return (NULL);
 
 	op = *regparse;
 	if (!ISMULT(op)) {
 		*flagp = flags;
-		return(ret);
+		return (ret);
 	}
 
 	if (!(flags&HASWIDTH) && op != '?')
@@ -454,7 +454,7 @@ regpiece(flagp)
 	if (ISMULT(*regparse))
 		FAIL("nested *?+");
 
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -637,7 +637,7 @@ regatom(flagp)
 		break;
 	}
 
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -653,7 +653,7 @@ regnode(op)
 	ret = regcode;
 	if (ret == &regdummy) {
 		regsize += 3;
-		return(ret);
+		return (ret);
 	}
 
 	ptr = ret;
@@ -662,7 +662,7 @@ regnode(op)
 	*ptr++ = '\0';
 	regcode = ptr;
 
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -770,14 +770,14 @@ static char **regendp;		/* Ditto for endp. */
 /*
  * Forwards.
  */
-STATIC int regtry();
-STATIC int regmatch();
-STATIC int regrepeat();
+STATIC int regtry(const regexp *, const char *);
+STATIC int regmatch(char *);
+STATIC int regrepeat(char *);
 
 #ifdef DEBUG
 int regnarrate = 0;
-void regdump();
-STATIC char *regprop();
+void regdump(regexp *);
+STATIC char *regprop(char *);
 #endif
 
 /*
@@ -789,18 +789,17 @@ regexec(prog, string)
 	register const char *string;
 {
 	register char *s;
-	extern char *strchr();
 
 	/* Be paranoid... */
 	if (prog == NULL || string == NULL) {
 		regerror("NULL parameter");
-		return(0);
+		return (0);
 	}
 
 	/* Check validity of program. */
 	if (UCHARAT(prog->program) != MAGIC) {
 		regerror("corrupted program");
-		return(0);
+		return (0);
 	}
 
 	/* If there is a "must appear" string, look for it. */
@@ -812,7 +811,7 @@ regexec(prog, string)
 			s++;
 		}
 		if (s == NULL)	/* Not present. */
-			return(0);
+			return (0);
 	}
 
 	/* Mark beginning of line for ^ . */
@@ -820,7 +819,7 @@ regexec(prog, string)
 
 	/* Simplest case:  anchored match need be tried only once. */
 	if (prog->reganch)
-		return(regtry(prog, string));
+		return (regtry(prog, string));
 
 	/* Messy cases:  unanchored match. */
 	s = (char *)string;
@@ -828,18 +827,18 @@ regexec(prog, string)
 		/* We know what char it must start with. */
 		while ((s = strchr(s, prog->regstart)) != NULL) {
 			if (regtry(prog, s))
-				return(1);
+				return (1);
 			s++;
 		}
 	else
 		/* We don't -- general case. */
 		do {
 			if (regtry(prog, s))
-				return(1);
+				return (1);
 		} while (*s++ != '\0');
 
 	/* Failure. */
-	return(0);
+	return (0);
 }
 
 /*
@@ -847,26 +846,26 @@ regexec(prog, string)
  */
 static int			/* 0 failure, 1 success */
 regtry(prog, string)
-	regexp *prog;
-	char *string;
+    const regexp *prog;
+	const char *string;
 {
 	register int i;
 	register char **sp;
 	register char **ep;
 
-	reginput = string;
-	regstartp = prog->startp;
-	regendp = prog->endp;
+	reginput = (char *)string;
+	regstartp = (char **)prog->startp;
+	regendp = (char **)prog->endp;
 
-	sp = prog->startp;
-	ep = prog->endp;
+	sp = (char **)prog->startp;
+	ep = (char **)prog->endp;
 	for (i = NSUBEXP; i > 0; i--) {
 		*sp++ = NULL;
 		*ep++ = NULL;
 	}
-	if (regmatch(prog->program + 1)) {
-		prog->startp[0] = string;
-		prog->endp[0] = reginput;
+	if (regmatch((char *)prog->program + 1)) {
+		((regexp *)prog)->startp[0] = (char *)string;
+		((regexp *)prog)->endp[0] = reginput;
 		return(1);
 	} else
 		return(0);
@@ -888,7 +887,6 @@ regmatch(prog)
 {
 	register char *scan;	/* Current node. */
 	char *next;		/* Next node. */
-	extern char *strchr();
 
 	scan = prog;
 #ifdef DEBUG
@@ -1079,7 +1077,7 @@ regmatch(prog)
 	 * the terminating point.
 	 */
 	regerror("corrupted pointers");
-	return(0);
+	return (0);
 }
 
 /*
@@ -1152,7 +1150,7 @@ regnext(p)
 
 #ifdef DEBUG
 
-STATIC char *regprop();
+STATIC char *regprop(char *);
 
 /*
  - regdump - dump a regexp onto stdout in vaguely comprehensible form
@@ -1164,8 +1162,6 @@ regdump(r)
 	register char *s;
 	register char op = EXACTLY;	/* Arbitrary non-END op. */
 	register char *next;
-	extern char *strchr();
-
 
 	s = r->program + 1;
 	while (op != END) {	/* While that wasn't END last time... */

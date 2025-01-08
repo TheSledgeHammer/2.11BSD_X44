@@ -43,14 +43,16 @@ static char sccsid[] = "@(#)rexec.c	8.1 (Berkeley) 6/4/93";
 
 #include <netinet/in.h>
 
-#include <stdio.h>
-#include <netdb.h>
 #include <errno.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
-extern	errno;
-char	*index();
 int	    rexecoptions;
-char	*getpass(), *getlogin();
+
+int	    ruserpass(const char *, char **, char **);
+int	    rexec(char **, int, char *, char *, char *, int *);
 
 int
 rexec(ahost, rport, name, pass, cmd, fd2p)
