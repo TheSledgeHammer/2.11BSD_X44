@@ -573,7 +573,7 @@ _chacha20_init(buf, n)
 	size_t n;
 {
 	KASSERT(n >= CHACHA20_EBUF_SIZE);
-	chacha_keysetup(&rs, buf, CHACHA20_KEY_SIZE * CHACHA20_IV_SIZE);
+	chacha_keysetup(&rs, buf, CHACHA20_EBUF_SIZE);
 	chacha_ivsetup(&rs, buf + CHACHA20_KEY_SIZE, NULL);
 }
 
