@@ -32,108 +32,69 @@
 typedef void (*fptr_t)(void);
 typedef void (*func_t)(void *);
 
-#ifdef CRTBEGIN
-#ifdef SHARED
-static void common_finalize(func_t, void *);
-#endif
-#endif /* CRTBEGIN */
-
-#ifdef CRTEND
-#if defined(JCR) && defined(__GNUC__)
-static void common_jcr(fptr_t *, func_t);
-#endif
-#endif /* CRTEND */
-
-#ifdef CRTBEGIN
-
-#ifdef SHARED
-/*
- * Call __cxa_finalize with the dso handle in shared objects.
- * When we have ctors/dtors call from the dtor handler before calling
- * any dtors, otherwise use a destructor.
- */
-#ifndef HAVE_CTORS
-__attribute__((destructor))
-#endif
-static void
-common_finalize(func_t final, void *handle)
-{
-    	if (final != NULL) {
-    		final(handle);
-    	}
-}
-#endif
-
 #ifdef HAVE_CTORS
 static inline void
 common_dtors(fptr_t *list, fptr_t *end)
 {
-    	fptr_t *p;
-    	for (p = list + 1; p < end; ) {
-    		(*(*--p))();
-    	}
+	fptr_t *p;
+	for (p = list + 1; p < end;) {
+		(*(*--p))();
+	}
 }
 
 static inline void
 common_fini(func_t final, void *handle, fptr_t *list, fptr_t *end)
 {
-    	static int finished;
+	static int finished;
 
-    	if (finished) {
-	  	return;
+	if (finished) {
+		return;
 	}
 
 	finished = 1;
 
 #ifdef SHARED
-    	common_finalize(final, handle);
+	/*
+	 * Call __cxa_finalize with the dso handle in shared objects.
+	 * When we have ctors/dtors call from the dtor handler before calling
+	 * any dtors, otherwise use a destructor.
+	 */
+	if (final != NULL) {
+		final(handle);
+	}
 #endif
 
 	/* Call global destructors.	*/
 	common_dtors(list, end);
 }
-#endif
-#endif /* CRTBEGIN */
 
-#ifdef CRTEND
-
-#if defined(JCR) && defined(__GNUC__)
-static void
-common_jcr(fptr_t *list, func_t regclass)
-{
-    	if (list[0] != NULL && regclass != NULL) {
-		regclass(list);
-	}
-}
-#endif
-
-#ifdef HAVE_CTORS
 static inline void
 common_ctors(fptr_t *list, fptr_t *end)
 {
-    	fptr_t *p;
-    	for (p = end; p > list + 1; ) {
-    		(*(*--p))();
-    	}
+	fptr_t *p;
+	for (p = end; p > list + 1;) {
+		(*(*--p))();
+	}
 }
 
 static inline void
 common_init(fptr_t *jcr, func_t regclass, fptr_t *list, fptr_t *end)
 {
-    	static int initialized;
+	static int initialized;
 
 	if (initialized) {
-	    return;
-    	}
+		return;
+	}
 
-    	initialized = 1;
+	initialized = 1;
 
 #if defined(JCR) && defined(__GNUC__)
-        common_jcr(jcr, regclass);
+	if (jcr[0] != NULL && regclass != NULL) {
+		regclass(jcr);
+	}
 #endif
 
 	/* Call global constructors. */
-    	common_ctors(list, end);
+	common_ctors(list, end);
 }
 #endif
-#endif /* CRTEND */

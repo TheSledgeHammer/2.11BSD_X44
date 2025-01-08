@@ -25,5 +25,5 @@ gtty(fd, ap)
 	struct sgttyb *ap;
 #endif
 {
-	return(ioctl(fd, TIOCGETP, ap));
+	return (ioctl(fd, TIOCGETP, ap));
 }

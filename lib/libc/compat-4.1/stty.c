@@ -25,5 +25,5 @@ stty(fd, ap)
 	struct sgttyb *ap;
 #endif
 {
-	return(ioctl(fd, TIOCSETP, ap));
+	return (ioctl(fd, TIOCSETP, ap));
 }

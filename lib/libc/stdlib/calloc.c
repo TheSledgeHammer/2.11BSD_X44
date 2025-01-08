@@ -42,6 +42,8 @@ static char sccsid[] = "@(#)calloc.c	8.1 (Berkeley) 6/4/93";
 #include <stdlib.h>
 #include <string.h>
 
+void ccfree(void *, size_t, size_t);
+
 /*
  * Calloc - allocate and clear memory block
  */
@@ -57,4 +59,13 @@ calloc(num, size)
 		bzero(p, size);
 	}
 	return (p);
+}
+
+void
+ccfree(p, num, size)
+	void *p;
+	size_t num;
+	size_t size;
+{
+	free(p);
 }

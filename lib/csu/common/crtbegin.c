@@ -30,8 +30,6 @@
 #include "csu_common.c"
 #include <dot_init.h>
 
-#define CRTBEGIN    /* needed by csu_common.c */
-
 extern void *__dso_handle;
 __asm(".hidden  __dso_handle");
 

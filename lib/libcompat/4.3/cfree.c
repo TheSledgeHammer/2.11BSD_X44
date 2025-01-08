@@ -46,12 +46,3 @@ cfree(p)
 {
 	free(p);
 }
-
-void
-cfree(p, num, size)
-	void *p;
-	size_t num;
-	size_t size;
-{
-	free(p);
-}
