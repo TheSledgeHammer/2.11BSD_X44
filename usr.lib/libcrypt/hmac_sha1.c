@@ -4,7 +4,7 @@
  * hmac_sha1 - using HMAC from RFC 2104
  */
 
-#include <sha1.h> /* XXX */
+#include <hash/sha1.h> /* XXX */
 #include "crypt.h"
 
 #define HMAC_HASH SHA1
