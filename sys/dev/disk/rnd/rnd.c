@@ -85,6 +85,7 @@
 #include <sys/kernel.h>
 #include <sys/conf.h>
 #include <sys/vnode.h>
+#include <sys/sysctl.h>
 
 #include <vm/include/vm_extern.h>
 
@@ -573,7 +574,7 @@ _chacha20_init(buf, n)
 	size_t n;
 {
 	KASSERT(n >= CHACHA20_EBUF_SIZE);
-	chacha_keysetup(&rs, buf, CHACHA20_EBUF_SIZE);
+	chacha_keysetup(&rs, buf, CHACHA20_KEY_SIZE * CHACHA20_IV_SIZE);
 	chacha_ivsetup(&rs, buf + CHACHA20_KEY_SIZE, NULL);
 }
 
@@ -657,4 +658,76 @@ _chacha20_rekey(dat, datlen)
 	_chacha20_init(rs_buf, CHACHA20_EBUF_SIZE);
 	memset(rs_buf, 0, CHACHA20_EBUF_SIZE);
 	rs_have = sizeof(rs_buf) - CHACHA20_KEY_SIZE - CHACHA20_IV_SIZE;
+}
+
+static inline void
+_chacha20_random_buf(buf, n)
+	void *buf;
+	size_t n;
+{
+	u_char *data;
+	size_t m;
+
+	data = (u_char *)buf;
+	_chacha20_stir_if_needed(n);
+	while (n > 0) {
+		if (rs_have > 0) {
+			m = MIN(n, rs_have);
+			memcpy(buf, rs_buf + sizeof(rs_buf) - rs_have, m);
+			memset(rs_buf + sizeof(rs_buf) - rs_have, 0, m);
+			buf += m;
+			n -= m;
+			rs_have -= m;
+		}
+		if (rs_have == 0) {
+			_chacha20_rekey(NULL, 0);
+		}
+	}
+}
+
+static inline void
+_chacha20_random_u32(val)
+	u_int32_t *val;
+{
+	_chacha20_stir_if_needed(sizeof(*val));
+	if (rs_have < sizeof(*val)) {
+		_chacha20_rekey(NULL, 0);
+	}
+	memcpy(val, rs_buf + sizeof(rs_buf) - rs_have, sizeof(*val));
+	memset(rs_buf + sizeof(rs_buf) - rs_have, 0, sizeof(*val));
+	rs_have -= sizeof(*val);
+}
+
+/*
+ * sysctl kern.urandom
+ *
+ *	Independent uniform random 32-bit integer.  Read-only.
+ */
+int
+sysctl_urandom(oldp, oldlenp, newp)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+{
+	int rnd;
+
+	_chacha20_random_buf(&rnd, sizeof(rnd));
+	return (sysctl_rdint(oldp, oldlenp, newp, rnd));
+}
+
+/*
+ * sysctl kern.arandom
+ *
+ *	Independent uniform random bytes, up to 256 bytes.  Read-only.
+ */
+int
+sysctl_arandom(oldp, oldlenp, newp)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+{
+	u_int8_t rnd[256];
+
+	_chacha20_random_buf(rnd, sizeof(rnd));
+	return (sysctl_rdint(oldp, oldlenp, newp, rnd));
 }

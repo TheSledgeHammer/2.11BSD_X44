@@ -91,6 +91,5 @@ u_int32_t 	*rndpool_get_pool(rndpool_t *);
 u_int32_t	rndpool_get_poolsize(void);
 void		rndpool_add_data(rndpool_t *, void *, u_int32_t, u_int32_t);
 u_int32_t	rndpool_extract_data(rndpool_t *, void *, u_int32_t);
-
 #endif /* _KERNEL */
 #endif /* _DEV_RND_H_ */

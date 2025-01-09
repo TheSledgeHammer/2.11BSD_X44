@@ -117,30 +117,30 @@ struct ctlname {
 /*
  * CTL_KERN identifiers
  */
-#define	KERN_OSTYPE	 		 1	/* string: system version */
+#define	KERN_OSTYPE	 	 1	/* string: system version */
 #define	KERN_OSRELEASE		 2	/* string: system release */
-#define	KERN_OSREV	 		 3	/* int: system revision */
+#define	KERN_OSREV	 	 3	/* int: system revision */
 #define KERN_OSVERSION		 4	/* string: kernel build version */
 #define	KERN_VERSION		 5	/* string: compile time info */
 #define	KERN_MAXVNODES		 6	/* int: max vnode */
 #define	KERN_MAXPROC		 7	/* int: max processes */
 #define	KERN_MAXFILES		 8	/* int: max open files */
-#define	KERN_ARGMAX	 		 9	/* int: max arguments to exec */
+#define	KERN_ARGMAX	 	 9	/* int: max arguments to exec */
 #define	KERN_SECURELVL		10	/* int: system security level */
 #define	KERN_HOSTNAME		11	/* string: hostname */
-#define	KERN_HOSTID			12	/* int: host identifier */
+#define	KERN_HOSTID		12	/* int: host identifier */
 #define	KERN_CLOCKRATE		13	/* struct: struct clockrate */
-#define	KERN_VNODE			14	/* struct: vnode structures */
-#define	KERN_PROC			15	/* struct: process entries */
-#define	KERN_FILE			16	/* struct: file entries */
-#define	KERN_PROF			17	/* node: kernel profiling info */
-#define	KERN_POSIX1			18	/* int: POSIX.1 version */
+#define	KERN_VNODE		14	/* struct: vnode structures */
+#define	KERN_PROC		15	/* struct: process entries */
+#define	KERN_FILE		16	/* struct: file entries */
+#define	KERN_PROF		17	/* node: kernel profiling info */
+#define	KERN_POSIX1		18	/* int: POSIX.1 version */
 #define	KERN_NGROUPS		19	/* int: # of supplemental group ids */
 #define	KERN_JOB_CONTROL	20	/* int: is job control available */
 #define	KERN_SAVED_IDS		21	/* int: saved set-user/group-ID */
 #define	KERN_BOOTTIME		22	/* struct: time kernel was booted */
 #define	KERN_MAXTEXTS		23	/* int: # of text entries */
-#define	KERN_TEXT			24	/* struct: text entries */
+#define	KERN_TEXT		24	/* struct: text entries */
 #define	KERN_ACCTTHRESH		25	/* int: accounting daemon threshold */
 #define KERN_DOMAINNAME		26	/* string: YP domain name */
 #define KERN_UPDATEINTERVAL	27	/* int: update process sleep time */
@@ -150,7 +150,11 @@ struct ctlname {
 #define	KERN_MAXPARTITIONS	31	/* int: number of partitions/disk */
 #define	KERN_RAWPARTITION	32	/* int: raw partition number */
 #define	KERN_TIMECOUNTER	33	/* node: timecounter */
-#define	KERN_MAXID			34	/* number of valid kern ids */
+#define	KERN_URND		34	/* int: random integer from urandom */
+#ifndef _KERNEL
+#define	KERN_ARND		KERN_URND /* compat w/ openbsd */
+#endif
+#define	KERN_MAXID		35	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { 				\
 	{ 0, 0 }, 							\
@@ -186,6 +190,7 @@ struct ctlname {
 	{ "maxpartitions", CTLTYPE_INT }, 	\
 	{ "rawpartition", CTLTYPE_INT }, 	\
 	{ "timecounter", CTLTYPE_NODE }, 	\
+	{ "urandom", CTLTYPE_INT }, 		\
 }
 
 /* 
@@ -410,6 +415,8 @@ int sysctl_cnmagic(char *, size_t *, void *, size_t);
 int	sysctl_vnode(char *, size_t *, struct proc *);
 int sysctl_text(char *, size_t *);
 int	sysctl_timecounter(int *, u_int, void *, size_t *, void *, size_t);
+int	sysctl_urandom(void *, size_t *, void *);
+int	sysctl_arandom(void *, size_t *, void *);
 void fill_eproc(struct proc *, struct eproc *);
 
 #else	/* !KERNEL */

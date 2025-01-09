@@ -276,6 +276,10 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 			domainnamelen = newlen;
 		}
 		return (error);
+	case KERN_URND:
+		return (sysctl_urandom(oldp, oldlenp, newp));
+	case KERN_ARND:
+		return (sysctl_arandom(oldp, oldlenp, newp));
 	default:
 		return (EOPNOTSUPP);
 	}

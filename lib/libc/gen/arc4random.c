@@ -60,7 +60,7 @@ static inline void
 arc4_init(as)
 	struct arc4_stream *as;
 {
-	int     n;
+	int n;
 
 	for (n = 0; n < 256; n++)
 		as->s[n] = n;
@@ -96,7 +96,7 @@ arc4_stir(as)
 	struct {
 		struct timeval tv;
 		u_int rnd[(128 - sizeof(struct timeval)) / sizeof(u_int)];
-	}       rdat;
+	} rdat;
 	int	n;
 
 	gettimeofday(&rdat.tv, NULL);
@@ -107,27 +107,24 @@ arc4_stir(as)
 	}
 #ifdef KERN_URND
 	else {
-		int mib[2];
 		u_int i;
 		size_t len;
 
 		/* Device could not be opened, we might be chrooted, take
 		 * randomness from sysctl. */
 
-		mib[0] = CTL_KERN;
-		mib[1] = KERN_URND;
-
 		for (i = 0; i < sizeof(rdat.rnd) / sizeof(u_int); i++) {
 			len = sizeof(u_int);
-			if (sysctl(mib, 2, &rdat.rnd[i], &len, NULL, 0) == -1)
+			if (getentropy(&rdat.rnd[i], &len) == -1) {
 				break;
+			}
 		}
 	}
 #endif
 	/* fd < 0 or failed sysctl ?  Ah, what the heck. We'll just take
 	 * whatever was on the stack... */
 
-	arc4_addrandom(as, (void *) &rdat, sizeof(rdat));
+	arc4_addrandom(as, (void *)&rdat, sizeof(rdat));
 
 	/*
 	 * Throw away the first N words of output, as suggested in the
@@ -207,8 +204,8 @@ u_int32_t
 arc4random_uniform(bound)
     	u_int32_t bound;
 {
-    	u_int32_t minimum, r;
-	
+	u_int32_t minimum, r;
+
 	/*
 	 * We want a uniform random choice in [0, n), and arc4random()
 	 * makes a uniform random choice in [0, 2^32).  If we reduce
@@ -224,57 +221,127 @@ arc4random_uniform(bound)
 	 *
 	 * the last of which is what we compute in 32-bit arithmetic.
 	 */
-    	minimum = (-bound % bound);
+	minimum = (-bound % bound);
 
-    	if (!rs_initialized) {
-        	arc4random_stir();
-    	}
-    	do {
-		r = arc4_getword(&rs);
-        	//arc4_addrandom(&rs, (u_char *)&r, sizeof(r));
-    	} while (__predict_false(r < minimum));
+	do {
+		r = arc4random();
+	} while (__predict_false(r < minimum));
 
-    	return (r % bound);
+	return (r % bound);
 }
 
 #ifdef notyet
 /* chacha */
-#include <assert.h>
 #include <sys/crypto/chacha/chacha.h>
+
+#define minimum(a, b) ((a) < (b) ? (a) : (b))
 
 #define outputsize  64
 #define inputsize   16
 #define keysize     32
 #define ivsize      8
-#define bufsize     (outputsize * outputsize)
-#define ebufsize    (keysize * ivsize)
+#define bufsize     (inputsize * outputsize)
+#define ebufsize    (keysize + ivsize)
+#define rekeybase	(1024*1024)
 
-static void chacha_init(chacha_ctx *, u_char *, size_t);
+struct chacha_zero {
+	size_t 		have;
+	size_t 		count;
+};
 
-static void
+struct chacha_stream {
+	chacha_ctx 	chacha;
+	u_char		buf[bufsize];
+};
+
+static struct chacha_stream crs;
+static struct chacha_rnd 	crsx;
+
+static inline void chacha_init(chacha_ctx *, u_char *, size_t);
+
+static inline void
 chacha_init(cc, buf, n)
 	chacha_ctx *cc;
 	u_char *buf;
 	size_t n;
 {
-	_DIAGASSERT(n >= ebufsize);
-	chacha_keysetup(cc, buf, ebufsize);
-    	chacha_ivsetup(cc, buf + keysize, NULL);
+	if (n < ebufsize) {
+		return;
+	}
+
+	chacha_keysetup(cc, buf, keysize * ivsize);
+	chacha_ivsetup(cc, buf + keysize, NULL);
 }
 
-static void
-chacha_buf(cc, buf, n)
-	chacha_ctx *cc;
-	void *buf;
-	size_t n;
+static inline void
+chacha_stir(cs, cz)
+	struct chacha_stream *cs;
+	struct chacha_zero 	 *cz;
 {
-	u_int8_t output[bufsize];
+	u_char rnd[ebufsize];
+	u_int32_t rekey_fuzz = 0;
+
+	if (getentropy(rnd, sizeof(rnd)) == -1) {
+		return;
+	}
+
+	if (!cz) {
+		chacha_init(&cs->chacha, rnd, sizeof(rnd));
+	} else {
+		chacha_rekey(&cs->chacha, rnd, sizeof(rnd));
+	}
+	(void)explicit_bzero(rnd, sizeof(rnd));
+	/* invalidate buf */
+	cz->have = 0;
+	memset(cs->buf, 0, sizeof(cs->buf));
+
+	/* rekey interval should not be predictable */
+	chacha_encrypt_bytes(&cs->chacha, (u_int8_t *)&rekey_fuzz, (u_int8_t *)&rekey_fuzz, sizeof(rekey_fuzz));
+	cz->count = rekeybase + (rekey_fuzz % rekeybase);
+}
+
+static inline void
+chacha_rekey(cs, cz, dat, datlen)
+	struct chacha_stream *cs;
+	struct chacha_zero 	 *cz;
+	u_char *dat;
+	size_t datlen;
+{
+#ifndef KEYSTREAM_ONLY
+	memset(cs->buf, 0, sizeof(cs->buf));
+#endif
 	
-	chacha_encrypt_bytes(cc, output, output, sizeof(output));
-	
-	(void)memcpy(cc, output, sizeof(cc));
-	(void)memcpy(buf, output + sizeof(cc), n);
-	(void)explicit_memset(output, 0, sizeof(output));
+	/* fill buf with the keystream */
+	chacha_encrypt_bytes(&cs->chacha, cs->buf, cs->buf, sizeof(cs->buf));
+	/* mix in optional user provided data */
+	if (dat) {
+		size_t i, m;
+
+		m =  minimum(n, ebufsize);
+		for (i = 0; i < m; i++) {
+			cs->buf[i] ^= dat[i];
+		}
+	}
+	/* immediately reinit for backtracking resistance */
+	chacha_init(&cs->chacha, cs->buf, ebufsize);
+	memset(cs->buf, 0, ebufsize);
+	cz->have = sizeof(cs->buf) - keysize - ivsize;
+}
+
+static inline void
+chacha_stir_if_needed(cs, cz, len)
+	struct chacha_stream *cs;
+	struct chacha_zero *cz;
+	size_t len;
+{
+	if (!cz || cz->count <= len) {
+		chacha_stir(cs, cz);
+	}
+	if (cz->count <= len) {
+		cz->count = 0;
+	} else {
+		cz->count -= len;
+	}
 }
 
 #endif

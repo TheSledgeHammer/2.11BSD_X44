@@ -149,6 +149,14 @@ int	 			setegid(gid_t);
 int	 			seteuid(uid_t);
 #endif
 
+/*
+ * IEEE Std 1003.1-2024 (POSIX.1-2024)
+ */
+#if (_POSIX_C_SOURCE - 0) >= 202405L || (_XOPEN_SOURCE - 0 >= 800) || \
+    defined(__BSD_VISIBLE)
+int	 			getentropy(void *, size_t);
+#endif
+
 #ifndef	_POSIX_SOURCE
 #ifdef	__STDC__
 struct timeval;				/* select(2) */
