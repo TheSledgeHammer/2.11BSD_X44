@@ -138,9 +138,11 @@ static size_t 		rs_have;		/* valid bytes at end of rs_buf */
 static size_t 		rs_count;		/* bytes till reseed */
 
 static inline void	_chacha20_init(u_char *, size_t);
-static void			_chacha20_stir(int);
+static void	 	_chacha20_stir(int);
 static inline void 	_chacha20_rekey(u_char *, size_t);
-static inline void	_chacha20_stir_if_needed(size_t);
+static inline void 	_chacha20_stir_if_needed(size_t);
+static inline void 	_chacha20_random_buf(void *, size_t);
+static inline void 	_chacha20_random_u32(u_int32_t *);
 
 dev_type_open(rndopen);
 dev_type_read(rndread);
