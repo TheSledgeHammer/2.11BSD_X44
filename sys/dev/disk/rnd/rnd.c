@@ -673,9 +673,9 @@ _chacha20_random_buf(buf, n)
 	while (n > 0) {
 		if (rs_have > 0) {
 			m = MIN(n, rs_have);
-			memcpy(buf, rs_buf + sizeof(rs_buf) - rs_have, m);
+			memcpy(data, rs_buf + sizeof(rs_buf) - rs_have, m);
 			memset(rs_buf + sizeof(rs_buf) - rs_have, 0, m);
-			buf += m;
+			data += m;
 			n -= m;
 			rs_have -= m;
 		}
