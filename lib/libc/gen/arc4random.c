@@ -355,7 +355,7 @@ chacha_rekey(ck, cm, dat, datlen)
 	if (dat) {
 		size_t i, m;
 
-		m =  minimum(n, ebufsize);
+		m =  minimum(datlen, ebufsize);
 		for (i = 0; i < m; i++) {
 			ck->buf[i] ^= dat[i];
 		}
