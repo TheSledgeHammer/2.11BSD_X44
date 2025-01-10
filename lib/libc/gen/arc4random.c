@@ -62,8 +62,9 @@ arc4_init(as)
 {
 	int n;
 
-	for (n = 0; n < 256; n++)
+	for (n = 0; n < 256; n++) {
 		as->s[n] = n;
+	}
 	as->i = 0;
 	as->j = 0;
 }
@@ -131,8 +132,9 @@ arc4_stir(as)
 	 * paper "Weaknesses in the Key Scheduling Algorithm of RC4"
 	 * by Fluher, Mantin, and Shamir.  (N = 256 in our case.)
 	 */
-	for (n = 0; n < 256 * 4; n++)
+	for (n = 0; n < 256 * 4; n++) {
 		arc4_getbyte(as);
+	}
 }
 
 static inline u_int8_t
@@ -159,7 +161,7 @@ arc4_getword(as)
 	val |= arc4_getbyte(as) << 16;
 	val |= arc4_getbyte(as) << 8;
 	val |= arc4_getbyte(as);
-	return val;
+	return (val);
 }
 
 void
@@ -189,7 +191,7 @@ arc4random(void)
 	if (!rs_initialized) {
 		arc4random_stir();
 	}
-	return arc4_getword(&rs);
+	return (arc4_getword(&rs));
 }
 
 void
@@ -231,7 +233,8 @@ arc4random_uniform(bound)
 }
 
 #ifdef notyet
-/* chacha */
+/* chacha macros and functions */
+#include <sys/mman.h>
 #include <sys/crypto/chacha/chacha.h>
 
 #define minimum(a, b) ((a) < (b) ? (a) : (b))
@@ -244,24 +247,53 @@ arc4random_uniform(bound)
 #define ebufsize    (keysize + ivsize)
 #define rekeybase	(1024*1024)
 
-struct chacha_zero {
+struct chacha_mem {
 	size_t 		have;
 	size_t 		count;
 };
 
-struct chacha_stream {
-	chacha_ctx 	chacha;
+struct chacha_keystream {
+    chacha_ctx 	chacha;
 	u_char		buf[bufsize];
 };
 
-static struct chacha_stream crs;
-static struct chacha_rnd 	crsx;
+static inline int 	chacha_allocate(struct chacha_keystream **, struct chacha_mem **);
+static inline void 	chacha_init(struct chacha_keystream *, struct chacha_mem *, u_char *, size_t);
+static inline void	chacha_stir(struct chacha_keystream *, struct chacha_mem *);
+static inline void	chacha_rekey(struct chacha_keystream *, struct chacha_mem *, u_char *, size_t);
+static inline void	chacha_stir_if_needed(struct chacha_keystream *, struct chacha_mem *, size_t);
+static inline void 	chacha_random_buf(struct chacha_keystream *, struct chacha_mem *, void *, size_t);
+static inline void	chacha_random_u32(struct chacha_keystream *, struct chacha_mem *, u_int32_t *);
 
-static inline void chacha_init(chacha_ctx *, u_char *, size_t);
+static inline int
+chacha_allocate(ckp, cmp)
+    struct chacha_keystream **ckp;
+    struct chacha_mem **cmp;
+{
+    struct chacha_global {
+        struct chacha_keystream ck;
+        struct chacha_mem cm;
+    };
+    struct chacha_global *cg;
+
+	cg = mmap(NULL, sizeof(*cg), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+	if (cg == MAP_FAILED) {
+		return (-1);
+	}
+	if (minherit(cg, sizeof(*cg), MAP_INHERIT_ZERO) == -1) {
+		munmap(cg, sizeof(*cg));
+		return (-1);
+	}
+
+	*ckp = &cg->ck;
+	*cmp = &cg->cm;
+	return (0);
+}
 
 static inline void
-chacha_init(cc, buf, n)
-	chacha_ctx *cc;
+chacha_init(ck, cm, buf, n)
+	struct chacha_keystream *ck;
+	struct chacha_mem *cm;
 	u_char *buf;
 	size_t n;
 {
@@ -269,14 +301,20 @@ chacha_init(cc, buf, n)
 		return;
 	}
 
-	chacha_keysetup(cc, buf, keysize * ivsize);
-	chacha_ivsetup(cc, buf + keysize, NULL);
+    if (cm == NULL) {
+        if (chacha_allocate(&ck, &cm) == -1) {
+            _exit(-1);
+        }
+    }
+
+	chacha_keysetup(&ck->chacha, buf, keysize * ivsize);
+	chacha_ivsetup(&ck->chacha, buf + keysize, NULL);
 }
 
 static inline void
-chacha_stir(cs, cz)
-	struct chacha_stream *cs;
-	struct chacha_zero 	 *cz;
+chacha_stir(ck, cm)
+	struct chacha_keystream *ck;
+	struct chacha_mem 	 *cm;
 {
 	u_char rnd[ebufsize];
 	u_int32_t rekey_fuzz = 0;
@@ -285,65 +323,110 @@ chacha_stir(cs, cz)
 		return;
 	}
 
-	if (!cz) {
-		chacha_init(&cs->chacha, rnd, sizeof(rnd));
+	if (!cm) {
+		chacha_init(&ck->chacha, rnd, sizeof(rnd));
 	} else {
-		chacha_rekey(&cs->chacha, rnd, sizeof(rnd));
+		chacha_rekey(&ck->chacha, rnd, sizeof(rnd));
 	}
 	(void)explicit_bzero(rnd, sizeof(rnd));
 	/* invalidate buf */
-	cz->have = 0;
-	memset(cs->buf, 0, sizeof(cs->buf));
+	cm->have = 0;
+	memset(ck->buf, 0, sizeof(ck->buf));
 
 	/* rekey interval should not be predictable */
-	chacha_encrypt_bytes(&cs->chacha, (u_int8_t *)&rekey_fuzz, (u_int8_t *)&rekey_fuzz, sizeof(rekey_fuzz));
-	cz->count = rekeybase + (rekey_fuzz % rekeybase);
+	chacha_encrypt_bytes(&ck->chacha, (u_int8_t *)&rekey_fuzz, (u_int8_t *)&rekey_fuzz, sizeof(rekey_fuzz));
+	cm->count = rekeybase + (rekey_fuzz % rekeybase);
 }
 
 static inline void
-chacha_rekey(cs, cz, dat, datlen)
-	struct chacha_stream *cs;
-	struct chacha_zero 	 *cz;
+chacha_rekey(ck, cm, dat, datlen)
+	struct chacha_keystream *ck;
+	struct chacha_mem 	 *cm;
 	u_char *dat;
 	size_t datlen;
 {
 #ifndef KEYSTREAM_ONLY
-	memset(cs->buf, 0, sizeof(cs->buf));
+	memset(ck->buf, 0, sizeof(ck->buf));
 #endif
 	
 	/* fill buf with the keystream */
-	chacha_encrypt_bytes(&cs->chacha, cs->buf, cs->buf, sizeof(cs->buf));
+	chacha_encrypt_bytes(&ck->chacha, ck->buf, ck->buf, sizeof(ck->buf));
 	/* mix in optional user provided data */
 	if (dat) {
 		size_t i, m;
 
 		m =  minimum(n, ebufsize);
 		for (i = 0; i < m; i++) {
-			cs->buf[i] ^= dat[i];
+			ck->buf[i] ^= dat[i];
 		}
 	}
 	/* immediately reinit for backtracking resistance */
-	chacha_init(&cs->chacha, cs->buf, ebufsize);
-	memset(cs->buf, 0, ebufsize);
-	cz->have = sizeof(cs->buf) - keysize - ivsize;
+	chacha_init(&ck->chacha, ck->buf, ebufsize);
+	memset(ck->buf, 0, ebufsize);
+	cm->have = sizeof(ck->buf) - keysize - ivsize;
 }
 
 static inline void
-chacha_stir_if_needed(cs, cz, len)
-	struct chacha_stream *cs;
-	struct chacha_zero *cz;
+chacha_stir_if_needed(ck, cm, len)
+	struct chacha_keystream *ck;
+	struct chacha_mem *cm;
 	size_t len;
 {
-	if (!cz || cz->count <= len) {
-		chacha_stir(cs, cz);
+	if (!cm || cm->count <= len) {
+		chacha_stir(ck, cm);
 	}
-	if (cz->count <= len) {
-		cz->count = 0;
+	if (cm->count <= len) {
+		cm->count = 0;
 	} else {
-		cz->count -= len;
+		cm->count -= len;
 	}
 }
 
+static inline void
+chacha_random_buf(ck, cm, buf, n)
+	struct chacha_keystream *ck;
+	struct chacha_mem *cm;
+	void *buf;
+	size_t n;
+{
+	u_char *data, *keystream;
+	size_t m;
+
+	data = (u_char *)buf;
+	chacha_stir_if_needed(ck, cm, n);
+	while (n > 0) {
+		if (cm->have > 0) {
+			m = minimum(n, cm->have);
+			keystream = ck->buf + sizeof(ck->buf) - cm->have;
+			memcpy(data, keystream, m);
+			memset(keystream, 0, m);
+			data += m;
+			n -= m;
+			cm->have -= m;
+		}
+		if (cm->have == 0) {
+			chacha_rekey(ck, cm, NULL, 0);
+		}
+	}
+}
+
+static inline void
+chacha_random_u32(ck, cm, val)
+	struct chacha_keystream *ck;
+	struct chacha_mem *cm;
+	u_int32_t *val;
+{
+	u_char *keystream;
+
+	chacha_stir_if_needed(sizeof(*val));
+	if (cm->have < sizeof(*val)) {
+		chacha_rekey(ck, cm, NULL, 0);
+	}
+	keystream = ck->buf + sizeof(ck->buf) - cm->have;
+	memcpy(val, keystream, sizeof(*val));
+	memset(keystream, 0, sizeof(*val));
+	cm->have -= sizeof(*val);
+}
 #endif
 
 #if 0

@@ -50,7 +50,8 @@
  * rnd.c and rndpool.c to decide when enough entropy exists to do a
  * hash to extract it.
  */
-#define	RND_ENTROPY_THRESHOLD	10
+#define	RND_ENTROPY_THRESHOLD		10
+#define RND_ENTROPY_THRESHOLD_MAX 	(RND_ENTROPY_THRESHOLD * 8)
 
 /*
  * Size of the event queue.  This _MUST_ be a power of 2.
