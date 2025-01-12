@@ -61,8 +61,8 @@ struct arc4_stream {
 static inline void 		arc4_init(struct arc4_stream *);
 static inline void 		arc4_addrandom(struct arc4_stream *, u_char *, int);
 static void 			arc4_stir(struct arc4_stream *);
-static inline u_int8_t 	arc4_getbyte(struct arc4_stream *);
-static inline u_int32_t arc4_getword(struct arc4_stream *);
+static inline u_int8_t 		arc4_getbyte(struct arc4_stream *);
+static inline u_int32_t 	arc4_getword(struct arc4_stream *);
 
 int rs_initialized;
 static struct arc4_stream rs;
@@ -76,7 +76,7 @@ static struct arc4_stream rs;
 #define ivsize      	8
 #define bufsize     	(inputsize * outputsize)
 #define ebufsize    	(keysize + ivsize)
-#define rekeybase		(1024 * 1024)
+#define rekeybase	(1024 * 1024)
 
 struct chacha1 {
 	size_t 		have;
@@ -84,7 +84,7 @@ struct chacha1 {
 };
 
 struct chacha2 {
-    chacha_ctx 	chacha;
+    	chacha_ctx 	chacha;
 	u_char		buf[bufsize];
 };
 
