@@ -72,10 +72,10 @@ typedef	__off_t		off_t;		/* file offset */
  */
 #define	MAP_FIXED	 		0x0010	/* map addr must be exactly as requested */
 #define	MAP_RENAME	 		0x0020	/* Sun: rename private pages to file */
-#define	MAP_NORESERVE		0x0040	/* Sun: don't reserve needed swap area */
+#define	MAP_NORESERVE			0x0040	/* Sun: don't reserve needed swap area */
 #define	MAP_INHERIT	 		0x0080	/* region is retained after exec */
-#define	MAP_NOEXTEND	 	0x0100	/* for MAP_FILE, don't change file size */
-#define	MAP_HASSEMAPHORE 	0x0200	/* region may contain semaphores */
+#define	MAP_NOEXTEND	 		0x0100	/* for MAP_FILE, don't change file size */
+#define	MAP_HASSEMAPHORE 		0x0200	/* region may contain semaphores */
 
 /*
  * Mapping type; default is map from file.
@@ -84,14 +84,23 @@ typedef	__off_t		off_t;		/* file offset */
 #define	MAP_ANON			0x1000	/* allocated from memory, swap space */
 
 /*
+ * Inherit to minherit
+ */
+#define	MAP_INHERIT_SHARE		0
+#define	MAP_INHERIT_COPY		1
+#define	MAP_INHERIT_NONE		2
+#define MAP_INHERIT_DONATE_COPY		3
+#define	MAP_INHERIT_ZERO		4
+
+/*
  * Advice to madvise
  */
 #define	MADV_NORMAL			0		/* no further special treatment */
 #define	MADV_RANDOM			1		/* expect random page references */
-#define	MADV_SEQUENTIAL		2		/* expect sequential page references */
-#define	MADV_WILLNEED		3		/* will need these pages */
-#define	MADV_DONTNEED		4		/* dont need these pages */
-#define MADV_SPACEAVAIL		5		/* Insure that resources are reserved */
+#define	MADV_SEQUENTIAL			2		/* expect sequential page references */
+#define	MADV_WILLNEED			3		/* will need these pages */
+#define	MADV_DONTNEED			4		/* dont need these pages */
+#define MADV_SPACEAVAIL			5		/* Insure that resources are reserved */
 #define MADV_FREE			6		/* Pages are empty, free them */
 
 /*
@@ -103,7 +112,7 @@ typedef	__off_t		off_t;		/* file offset */
  * Flags to msync
  */
 #define	MS_ASYNC			0x01	/* perform asynchronous writes */
-#define	MS_INVALIDATE		0x02	/* invalidate cached data */
+#define	MS_INVALIDATE			0x02	/* invalidate cached data */
 #define	MS_SYNC				0x04	/* perform synchronous writes */
 
 #ifndef _KERNEL
@@ -118,7 +127,7 @@ int	munmap(caddr_t, size_t);
 int	msync(caddr_t, size_t, int);
 int	mlock(caddr_t, size_t);
 int	munlock(caddr_t, size_t);
-int madvise(caddr_t, size_t, int);
+int 	madvise(caddr_t, size_t, int);
 int	minherit(caddr_t, size_t, int);
 __END_DECLS
 

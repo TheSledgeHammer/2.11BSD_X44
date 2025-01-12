@@ -1471,6 +1471,8 @@ vm_map_inherit(map, start, end, new_inheritance)
 	vm_map_entry_t	temp_entry;
 
 	switch (new_inheritance) {
+	case VM_INHERIT_ZERO:
+	case VM_INHERIT_DONATE_COPY:
 	case VM_INHERIT_NONE:
 	case VM_INHERIT_COPY:
 	case VM_INHERIT_SHARE:
