@@ -278,8 +278,10 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (error);
 	case KERN_URND:
 		return (sysctl_urandom(oldp, oldlenp, newp));
+#ifndef _KERNEL
 	case KERN_ARND:
 		return (sysctl_arandom(oldp, oldlenp, newp));
+#endif
 	default:
 		return (EOPNOTSUPP);
 	}
