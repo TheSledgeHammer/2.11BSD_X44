@@ -82,7 +82,7 @@ struct chacha1 {
 };
 
 struct chacha2 {
-    chacha_ctx 	chacha;
+    	chacha_ctx 	chacha;
 	u_char		buf[bufsize];
 };
 
@@ -243,7 +243,7 @@ arc4random_buf(buf, len)
     void *buf;
     size_t len;
 {
-    arc4random_addrandom((u_char *)buf, (int)len);
+    	arc4random_addrandom((u_char *)buf, (int)len);
 }
 
 u_int32_t
@@ -283,11 +283,11 @@ chacha_allocate(cp1, cp2)
     struct chacha1 **cp1;
     struct chacha2 **cp2;
 {
-    struct chacha_global {
-        struct chacha1 cc1;
-        struct chacha2 cc2;
-    };
-    struct chacha_global *cg;
+    	struct chacha_global {
+        	struct chacha1 cc1;
+        	struct chacha2 cc2;
+    	};
+    	struct chacha_global *cg;
 
 	cg = (struct chacha_global *)mmap(NULL, sizeof(*cg), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
 	if (cg == MAP_FAILED) {
@@ -313,11 +313,11 @@ chacha_init(cs, buf, n)
 		return;
 	}
 
-    if (cs->cs_cc1 == NULL) {
-        if (chacha_allocate(&cs->cs_cc1, &cs->cs_cc2) == -1) {
-            _exit(-1);
-        }
-    }
+    	if (cs->cs_cc1 == NULL) {
+		if (chacha_allocate(&cs->cs_cc1, &cs->cs_cc2) == -1) {
+			_exit(-1);
+        	}
+    	}
 
 	chacha_keysetup(&cs->cs_chacha, buf, keysize * ivsize);
 	chacha_ivsetup(&cs->cs_chacha, buf + keysize);
@@ -449,7 +449,7 @@ arc4random_buf(buf, len)
     void *buf;
     size_t len;
 {
-    chacha_random_buf(&rs, buf, len);
+    	chacha_random_buf(&rs, buf, len);
 }
 
 void
