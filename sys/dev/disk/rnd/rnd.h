@@ -33,7 +33,7 @@
 #ifndef _DEV_RND_H_
 #define _DEV_RND_H_
 
-#define	RND_DEV_RANDOM			0	/* minor devices for random and kinda random */
+#define	RND_DEV_ARANDOM			0	/* minor devices for random and kinda random */
 #define	RND_DEV_URANDOM			1
 
 /*

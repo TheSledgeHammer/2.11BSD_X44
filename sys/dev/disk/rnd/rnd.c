@@ -150,7 +150,7 @@ const struct cdevsw rnd_cdevsw = {
 		.d_ioctl = random_ioctl,
 		.d_stop = nullstop,
 		.d_tty = notty,
-		.d_poll = rndpoll,
+		.d_poll = random_poll,
 		.d_mmap = nommap,
 		.d_kqfilter = random_kqfilter,
 		.d_discard = nodiscard,
@@ -160,12 +160,15 @@ const struct cdevsw rnd_cdevsw = {
 static inline u_int32_t rnd_counter(void);
 
 static inline void	_chacha20_init(u_char *, size_t);
-static void		_chacha20_seed(u_char *, size_t);
-static void		_chacha20_stir(int);
+static void		    _chacha20_seed(u_char *, size_t);
+static void		    _chacha20_stir(int);
 static inline void 	_chacha20_rekey(u_char *, size_t);
 static inline void 	_chacha20_stir_if_needed(size_t);
 static inline void 	_chacha20_random_buf(void *, size_t);
 static inline void 	_chacha20_random_u32(u_int32_t *);
+chacha_ctx          *_chacha20_ctx_new(void);
+void                _chacha20_ctx_free(chacha_ctx *);
+void                _chacha20_ctx_buf(chacha_ctx *, void *, size_t);
 
 /* random keystream by ChaCha */
 static inline void
@@ -317,7 +320,7 @@ _chacha20_ctx_free(ctx)
 	chacha_ctx *ctx;
 {
 	bzero(ctx, sizeof(chacha_ctx));
-	free(ctx, M_TEMP, sizeof(chacha_ctx));
+	free(ctx, M_TEMP);
 }
 
 void
@@ -453,7 +456,7 @@ random_open(dev, flag, mode, p)
 	}
 
 	switch (minor(dev)) {
-	case RND_DEV_RANDOM:
+	case RND_DEV_ARANDOM:
 		if (rnd_have_entropy == 0) {
 			return (ENXIO);
 		}
@@ -494,7 +497,7 @@ random_read(dev, uio, flag)
 
 	buf = malloc(RND_POOLWORDS, M_TEMP, M_WAITOK);
 	if (uio->uio_resid > RND_POOLWORDS) {
-		lctx = _chacha20_new_ctx();
+		lctx = _chacha20_ctx_new();
 	}
 
 	while (uio->uio_resid > 0) {
@@ -619,7 +622,7 @@ random_poll(dev, events, p)
 	/*
 	 * If the minor device is not /dev/random, we are always readable.
 	 */
-	if (minor(dev) != RND_DEV_RANDOM) {
+	if (minor(dev) != RND_DEV_ARANDOM) {
 		revents |= events & (POLLIN | POLLRDNORM);
 		return (revents);
 	}
@@ -696,7 +699,7 @@ random_kqfilter(dev, kn)
 	case EVFILT_READ:
 		klist = &rnd_selq.si_klist;
 		switch (minor(dev)) {
-		case RND_DEV_RANDOM:
+		case RND_DEV_ARANDOM:
 			kn->kn_fop = &rndread_filtops;
 			break;
 
@@ -713,7 +716,7 @@ random_kqfilter(dev, kn)
 	case EVFILT_WRITE:
 		klist = &rnd_selq.si_klist;
 		switch (minor(dev)) {
-		case RND_DEV_RANDOM:
+		case RND_DEV_ARANDOM:
 			kn->kn_fop = &rndwrite_filtops;
 			break;
 
@@ -774,5 +777,5 @@ sysctl_arandom(oldp, oldlenp, newp)
 		*oldlenp = 256;
 	}
 	_chacha20_random_buf(rnd, sizeof(rnd));
-	return (sysctl_rdint(oldp, oldlenp, newp, rnd));
+	return (sysctl_rdint(oldp, oldlenp, newp, (int)rnd));
 }
