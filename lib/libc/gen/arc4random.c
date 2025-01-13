@@ -29,17 +29,15 @@
 
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/sysctl.h>
 #include <sys/mman.h>
-
-#if defined(USE_ARC4) && (USE_ARC4 == 1)
 #define KEYSTREAM_ONLY
-#include <sys/crypto/chacha/chacha.h>
-#endif
+#include "chacha_private.h"
 
 #ifdef __GNUC__
 #define inline __inline
@@ -84,7 +82,7 @@ struct chacha1 {
 };
 
 struct chacha2 {
-    	chacha_ctx 	chacha;
+    chacha_ctx 	chacha;
 	u_char		buf[bufsize];
 };
 
@@ -295,8 +293,8 @@ chacha_allocate(cp1, cp2)
 	if (cg == MAP_FAILED) {
 		return (-1);
 	}
-	if (minherit(cg, sizeof(*cg), MAP_INHERIT_ZERO) == -1) {
-		munmap(cg, sizeof(*cg));
+	if (minherit((caddr_t)cg, sizeof(*cg), MAP_INHERIT_ZERO) == -1) {
+		munmap((caddr_t)cg, sizeof(*cg));
 		return (-1);
 	}
 
@@ -322,7 +320,7 @@ chacha_init(cs, buf, n)
     }
 
 	chacha_keysetup(&cs->cs_chacha, buf, keysize * ivsize);
-	chacha_ivsetup(&cs->cs_chacha, buf + keysize, NULL);
+	chacha_ivsetup(&cs->cs_chacha, buf + keysize);
 }
 
 static inline void
@@ -337,9 +335,9 @@ chacha_stir(cs)
 	}
 
 	if (!cs->cs_cc1) {
-		chacha_init(&cs->cs_chacha, rnd, sizeof(rnd));
+		chacha_init(cs, rnd, sizeof(rnd));
 	} else {
-		chacha_rekey(&cs->cs_chacha, rnd, sizeof(rnd));
+		chacha_rekey(cs, rnd, sizeof(rnd));
 	}
 	(void)explicit_bzero(rnd, sizeof(rnd));
 	/* invalidate buf */
@@ -373,7 +371,7 @@ chacha_rekey(cs, dat, datlen)
 		}
 	}
 	/* immediately reinit for backtracking resistance */
-	chacha_init(&cs->cs_chacha, cs->cs_buf, ebufsize);
+	chacha_init(cs, cs->cs_buf, ebufsize);
 	memset(cs->cs_buf, 0, ebufsize);
 	cs->cs_have = sizeof(cs->cs_buf) - keysize - ivsize;
 }
