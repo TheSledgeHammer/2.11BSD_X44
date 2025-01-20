@@ -6,10 +6,12 @@
  *	@(#)dbm.h	5.1 (Berkeley) 3/27/86
  */
 
-#include <sys/null.h>
+#ifndef _LIBDBM_DBM_H_
+#define _LIBDBM_DBM_H_
 
-#include "ndbm.h"
+#include <sys/cdefs.h>
 
+__BEGIN_DECLS
 datum	fetch(datum);
 datum	firstkey(void);
 datum	nextkey(datum);
@@ -18,3 +20,5 @@ datum	makdatum(char *, int);
 long	dcalchash(datum);
 long	hashinc(DBM *, long);
 #endif
+__END_DECLS
+#endif /* _LIBDBM_DBM_H_ */

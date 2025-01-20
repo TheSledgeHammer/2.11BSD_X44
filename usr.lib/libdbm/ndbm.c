@@ -14,19 +14,33 @@ static char sccsid[] = "@(#)ndbm.c	5.3 (Berkeley) 3/9/86";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-#include <stdio.h>
+
 #include <errno.h>
+#include <stdio.h>
 #include <unistd.h>
 
 #include "dbm.h"
+#include "ndbm.h"
 
 #define BYTESIZ 8
 #undef setbit
 
-static  datum makdatum();
-static  long hashinc();
-static  long dcalchash();
-extern  int errno;
+static void dbm_access(DBM *, long);
+static int  getbit(DBM *);
+static void setbit(DBM *);
+static datum makdatum(char *, int);
+static int finddatum(char *, datum);
+static long hashinc(DBM *, long);
+static long dcalchash(datum);
+static int delitem(char *, int);
+static int additem(char *, datum, datum);
+#ifdef DEBUG
+static int chkblk(char *);
+#endif
+
+static int hitab[16];
+static long hltab[64];
+extern int errno;
 
 DBM *
 dbm_open(file, flags, mode)
@@ -268,7 +282,7 @@ err:
 	return (item);
 }
 
-static
+static void
 dbm_access(db, hash)
 	register DBM *db;
 	long hash;
@@ -292,7 +306,7 @@ dbm_access(db, hash)
 	}
 }
 
-static
+static int
 getbit(db)
 	register DBM *db;
 {
@@ -315,7 +329,7 @@ getbit(db)
 	return (db->dbm_dirbuf[i] & (1<<n));
 }
 
-static
+static void
 setbit(db)
 	register DBM *db;
 {
@@ -364,7 +378,7 @@ makdatum(buf, n)
 	return (item);
 }
 
-static
+static int
 finddatum(buf, item)
 	char buf[PBLKSIZ];
 	datum item;
@@ -394,6 +408,7 @@ static  int hitab[16]
  = {    61, 57, 53, 49, 45, 41, 37, 33,
 	29, 25, 21, 17, 13,  9,  5,  1,
 };
+
 static  long hltab[64]
  = {
 	06100151277L,06106161736L,06452611562L,05001724107L,
@@ -458,7 +473,7 @@ dcalchash(item)
 /*
  * Delete pairs of items (n & n+1).
  */
-static
+static int
 delitem(buf, n)
 	char buf[PBLKSIZ];
 	int n;
@@ -491,7 +506,7 @@ delitem(buf, n)
 /*
  * Add pairs of items (item & item1).
  */
-static
+static int
 additem(buf, item, item1)
 	char buf[PBLKSIZ];
 	datum item, item1;
@@ -516,7 +531,7 @@ additem(buf, item, item1)
 }
 
 #ifdef DEBUG
-static
+static int
 chkblk(buf)
 	char buf[PBLKSIZ];
 {

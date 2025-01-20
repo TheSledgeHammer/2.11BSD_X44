@@ -4,11 +4,15 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if !defined(lint) && !defined(NOSCCS)
+#if 0
 static char sccsid[] = "@(#)dbm.c	5.3 (Berkeley) 85/08/15";
-#endif not lint
+#endif
+#endif /* not lint */
 
-#include	"dbm.h"
+#include "dbm.h"
+#include "ndbm.h"
 
 #define	NODB	((DBM *)0)
 
@@ -34,7 +38,7 @@ dbminit(file)
 
 long
 forder(key)
-datum key;
+    datum key;
 {
 	if (cur_db == NODB) {
 		printf(no_db);
@@ -45,7 +49,7 @@ datum key;
 
 datum
 fetch(key)
-datum key;
+    datum key;
 {
 	datum item;
 
@@ -59,7 +63,7 @@ datum key;
 
 int
 delete(key)
-datum key;
+    datum key;
 {
 	if (cur_db == NODB) {
 		printf(no_db);
@@ -72,7 +76,7 @@ datum key;
 
 int
 store(key, dat)
-datum key, dat;
+    datum key, dat;
 {
 	if (cur_db == NODB) {
 		printf(no_db);
@@ -85,7 +89,7 @@ datum key, dat;
 }
 
 datum
-firstkey()
+firstkey(void)
 {
 	datum item;
 
@@ -99,7 +103,7 @@ firstkey()
 
 datum
 nextkey(key)
-datum key;
+    datum key;
 {
 	datum item;
 

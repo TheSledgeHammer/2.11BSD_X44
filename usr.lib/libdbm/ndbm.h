@@ -6,11 +6,12 @@
  *	@(#)ndbm.h	5.1.1 (2.11BSD GTE) 12/31/93
  */
 
-#ifndef _NDBM_H_
-#define	_NDBM_H_
+#ifndef _LIBDBM_NDBM_H_
+#define	_LIBDBM_NDBM_H_
 
 #include <sys/cdefs.h>
-#include <stdint.h>
+//#include <stdint.h>
+
 /*
  * Hashed key data base library.
  */
@@ -21,7 +22,7 @@
 #define DBLKSIZ 4096
 #endif
 
-typedef struct {
+typedef struct dbm {
 	int		dbm_dirf;				/* open directory file */
 	int		dbm_pagf;				/* open page file */
 	int		dbm_flags;				/* flags, see below */
@@ -35,7 +36,9 @@ typedef struct {
 	char	dbm_pagbuf[PBLKSIZ];	/* page file block buffer */
 	long	dbm_dirbno;				/* current block in dirbuf */
 	char	dbm_dirbuf[DBLKSIZ];	/* directory file block buffer */
-} DBM;
+};
+
+typedef struct dbm DBM;
 
 #define _DBM_RDONLY			0x1	/* data base open read-only */
 #define _DBM_IOERR			0x2	/* data base I/O error */
@@ -61,6 +64,7 @@ typedef struct {
 #define DBM_INSERT	0
 #define DBM_REPLACE	1
 
+__BEGIN_DECLS
 DBM		*dbm_open(char *, int, int);
 void	dbm_close(DBM *);
 datum	dbm_fetch(DBM *, datum);
@@ -69,5 +73,5 @@ datum	dbm_nextkey(DBM *);
 long	dbm_forder(DBM *, datum);
 int		dbm_delete(DBM *, datum);
 int		dbm_store(DBM *, datum, datum, int);
-
-#endif	/* _NDBM_H_ */
+__END_DECLS
+#endif	/* _LIBDBM_NDBM_H_ */
