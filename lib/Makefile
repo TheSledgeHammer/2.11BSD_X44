@@ -35,26 +35,48 @@ SUBDIR+=	libarch libcompat
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 		\
             	${USRLIBDIR}/libcrypt   	\
-		${USRLIBDIR}/libdbm 		\
-		${USRLIBDIR}/libfortran		\
 		${USRLIBDIR}/libintl 	    	\
 		${USRLIBDIR}/libipsec 		\
 		${USRLIBDIR}/libkvm 		\
 		${USRLIBDIR}/libm 		\
-		${USRLIBDIR}/libmp 		\
 		${USRLIBDIR}/libmpx 		\
-		${USRLIBDIR}/libom 		\
 		${USRLIBDIR}/libresolv 		\
-            	${USRLIBDIR}/librpcsvc      	\
+        	${USRLIBDIR}/librpcsvc      	\
 		${USRLIBDIR}/libpci		\
 		${USRLIBDIR}/libpthread 	\
 		${USRLIBDIR}/libpthread_dbg 	\
-		${USRLIBDIR}/libstubs  		\
 		${USRLIBDIR}/libterminfo 	\
 		${USRLIBDIR}/libutil 		\
-		${USRLIBDIR}/libvmf 		\
 		${USRLIBDIR}/liby 		\
 		${USRLIBDIR}/libz
+
+#
+# 2.11BSD Original Libraries
+#
+# fix bsd.hostprog.mk: conflicts with gcc's dbm
+.if (${MKLIBNDBM} != "no")
+SUBDIR+= 	${USRLIBDIR}/libdbm
+.endif
+
+.if (${MKLIBFORTRAN} != "no")
+SUBDIR+= 	${USRLIBDIR}/libfortran
+.endif
+
+.if (${MKLIBMP} != "no")
+SUBDIR+= 	${USRLIBDIR}/libmp
+.endif
+
+.if (${MKLIBOM} != "no")
+SUBDIR+= 	${USRLIBDIR}/libom
+.endif
+
+.if (${MKLIBSTUBS} != "no")
+SUBDIR+= 	${USRLIBDIR}/libstubs
+.endif
+
+.if (${MKLIBVMF} != "no")
+SUBDIR+= 	${USRLIBDIR}/libvmf
+.endif
 
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern

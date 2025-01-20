@@ -905,6 +905,17 @@ MKSTATICPIE?=	no
 .endif
 
 #
+# 2.11BSD Original Libraries
+#
+MKLIBNDBM?= no
+MKLIBFORTRAN?= no
+MKLIBMP?= yes
+MKLIBOM?= yes
+MKLIBSTUBS?= yes
+MKLIBTERMCAP?= no # here for legacy reasons (termcap cannot be enabled)
+MKLIBVMF?= no
+
+#
 # MK* options which default to "yes".
 #
 _MKVARS.yes= \

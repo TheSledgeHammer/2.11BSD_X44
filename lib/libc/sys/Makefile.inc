@@ -6,8 +6,7 @@
 # TODO: Fix compiler warning below:  
 # - relocation against SYS_ in read-only section '.text'
 # For the following:
-# - fpathconf.S, __syscall.S
-# - _fork.c _getcontext.c _getlogin.c
+# - __syscall.S
 
 # modules with non-default implementations on at least one architecture:
 SRCS+=      	Ovfork.S brk.S exect.S fork.S pipe.S \
