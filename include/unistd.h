@@ -176,7 +176,7 @@ struct timeval;				/* select(2) */
 int	 			acct(const char *, pid_t);
 char			*brk(const char *);
 int	 			chroot(const char *);
-char			*crypt(char *, char *);
+char			*crypt(const char *, const char *);
 int	 			des_cipher(const char *, char *, long, int);
 int	 			des_setkey(const char *);
 int	 			encrypt(char *, int);
