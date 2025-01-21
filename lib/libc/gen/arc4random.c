@@ -138,7 +138,7 @@ arc4_addrandom(as, dat, datlen)
 	u_char *dat;
 	int     datlen;
 {
-	int     n;
+	int n;
 	u_int8_t si;
 
 	as->i--;
@@ -160,7 +160,7 @@ arc4_stir(as)
 		struct timeval tv;
 		u_int rnd[(128 - sizeof(struct timeval)) / sizeof(u_int)];
 	} rdat;
-	int	n;
+	int n;
 	u_int i;
 	size_t len;
 
