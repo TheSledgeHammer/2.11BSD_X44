@@ -36,6 +36,7 @@
 #include <sys/time.h>
 #include <sys/sysctl.h>
 #include <sys/mman.h>
+
 #define KEYSTREAM_ONLY
 #include "chacha_private.h"
 
@@ -123,6 +124,12 @@ arc4_init(as)
 	}
 	as->i = 0;
 	as->j = 0;
+
+	arc4_stir(as);
+
+	for (n = 0; n < 768 * 4; n++) {
+		arc4_getbyte(as);
+	}
 }
 
 static inline void
@@ -151,7 +158,7 @@ arc4_stir(as)
 {
 	struct {
 		struct timeval tv;
-		u_int rnd[(256 - sizeof(struct timeval)) / sizeof(u_int)];
+		u_int rnd[(128 - sizeof(struct timeval)) / sizeof(u_int)];
 	} rdat;
 	int	n;
 	u_int i;
@@ -248,7 +255,7 @@ arc4random_buf(buf, len)
 
 u_int32_t
 arc4random_uniform(bound)
-    	u_int32_t bound;
+    u_int32_t bound;
 {
 	u_int32_t minimum, r;
 
@@ -283,18 +290,19 @@ chacha_allocate(cp1, cp2)
     struct chacha1 **cp1;
     struct chacha2 **cp2;
 {
-    	struct chacha_global {
-        	struct chacha1 cc1;
-        	struct chacha2 cc2;
-    	};
-    	struct chacha_global *cg;
+	struct chacha_global {
+		struct chacha1 cc1;
+		struct chacha2 cc2;
+	};
+	struct chacha_global *cg;
 
-	cg = (struct chacha_global *)mmap(NULL, sizeof(*cg), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+	cg = (struct chacha_global*) mmap(NULL, sizeof(*cg), PROT_READ | PROT_WRITE,
+	MAP_ANON | MAP_PRIVATE, -1, 0);
 	if (cg == MAP_FAILED) {
 		return (-1);
 	}
-	if (minherit((caddr_t)cg, sizeof(*cg), MAP_INHERIT_ZERO) == -1) {
-		munmap((caddr_t)cg, sizeof(*cg));
+	if (minherit((caddr_t) cg, sizeof(*cg), MAP_INHERIT_ZERO) == -1) {
+		munmap((caddr_t) cg, sizeof(*cg));
 		return (-1);
 	}
 
@@ -313,11 +321,11 @@ chacha_init(cs, buf, n)
 		return;
 	}
 
-    	if (cs->cs_cc1 == NULL) {
+	if (cs->cs_cc1 == NULL) {
 		if (chacha_allocate(&cs->cs_cc1, &cs->cs_cc2) == -1) {
 			_exit(-1);
-        	}
-    	}
+		}
+	}
 
 	chacha_keysetup(&cs->cs_chacha, buf, keysize * ivsize);
 	chacha_ivsetup(&cs->cs_chacha, buf + keysize);
@@ -449,7 +457,7 @@ arc4random_buf(buf, len)
     void *buf;
     size_t len;
 {
-    	chacha_random_buf(&rs, buf, len);
+	chacha_random_buf(&rs, buf, len);
 }
 
 void
@@ -457,12 +465,12 @@ arc4random_addrandom(dat, datlen)
 	u_char *dat;
 	int     datlen;
 {
-	chacha_random_buf(&rs, (u_char *)dat, (int)datlen);
+	chacha_random_buf(&rs, (u_char *) dat, (int) datlen);
 }
 
 u_int32_t
 arc4random_uniform(bound)
-    	u_int32_t bound;
+    u_int32_t bound;
 {
 	u_int32_t minimum, r;
 
