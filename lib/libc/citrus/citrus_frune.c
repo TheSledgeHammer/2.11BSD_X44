@@ -33,22 +33,16 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "citrus_rune.h"
+#include "citrus_ctype.h"
+#include "citrus_types.h"
+#include "citrus_stdenc.h"
+#include "citrus_frune.h"
 
-/* file rune */
-
-struct frune_encoding {
-	_ENCODING_INFO 			*fe_info;
-	_ENCODING_STATE 		*fe_state;
-	_RuneLocale				*fe_runelocale;
-};
-
+/*
+ * open frune
+ */
 int
-frune_open(rfe, encoding, variable, lenvar)
-	struct frune_encoding **rfe;
-	char *encoding;
-	void *variable;
-	size_t lenvar;
+frune_open(struct frune_encoding **rfe, char *encoding, void *variable, size_t lenvar)
 {
 	struct frune_encoding *fe;
 	int ret;
@@ -89,9 +83,11 @@ frune_open(rfe, encoding, variable, lenvar)
 	return (0);
 }
 
+/*
+ * close frune
+ */
 void
-frune_close(fe)
-	struct frune_encoding *fe;
+frune_close(struct frune_encoding *fe)
 {
 	if (fe->fe_runelocale != NULL) {
 		if (fe->fe_info != NULL) {
@@ -103,4 +99,67 @@ frune_close(fe)
 		free(fe->fe_runelocale);
 	}
 	free(fe);
+}
+
+/*
+ * convenience routines for translating frunes to stdenc.
+ */
+void
+frune_save_encoding_state(struct frune_encoding *fe, void *ps, void *pssaved)
+{
+	if (ps) {
+		memcpy(pssaved, ps, _citrus_stdenc_get_state_size(fe->fe_info));
+	}
+}
+
+void
+frune_restore_encoding_state(struct frune_encoding *fe, void *ps, void *pssaved)
+{
+	if (ps) {
+		memcpy(ps, pssaved, _citrus_stdenc_get_state_size(fe->fe_info));
+	}
+}
+
+void
+frune_init_encoding_state(struct frune_encoding *fe, void *ps)
+{
+	if (ps) {
+		_citrus_stdenc_init_state(fe->fe_info, fe->fe_state);
+	}
+}
+
+int
+frune_mbtocsx(struct frune_encoding *fe, _csid_t *csid, _index_t *idx, const char **s, size_t n, size_t *nresult)
+{
+	return (_citrus_stdenc_mbtocs(fe->fe_info, csid, idx, s, n, fe->fe_state, nresult));
+}
+
+int
+frune_cstombx(struct frune_encoding *fe, char *s, size_t n, _csid_t csid, _index_t idx, size_t *nresult)
+{
+	return (_citrus_stdenc_cstomb(fe->fe_info, s, n, csid, idx, fe->fe_state, nresult));
+}
+
+int
+frune_wctombx(struct frune_encoding *fe, char *s, size_t n, _wc_t wc, size_t *nresult)
+{
+	return (_citrus_stdenc_wctomb(fe->fe_info, s, n, wc, fe->fe_state, nresult));
+}
+
+int
+frune_put_state_resetx(struct frune_encoding *fe, char *s, size_t n, size_t *nresult)
+{
+	return (_citrus_stdenc_put_state_reset(fe->fe_info, s, n, fe->fe_state, nresult));
+}
+
+int
+frune_get_state_desc_gen(struct frune_encoding *fe, int *rstate)
+{
+	int ret, state;
+
+	ret = _citrus_stdenc_get_state_desc(fe->fe_info, fe->fe_state, _CITRUS_STDENC_SDID_GENERIC, &state);
+	if (!ret) {
+		*rstate = &state;
+	}
+	return (ret);
 }

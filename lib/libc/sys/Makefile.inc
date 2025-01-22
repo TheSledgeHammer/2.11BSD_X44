@@ -7,6 +7,7 @@
 # - relocation against SYS_ in read-only section '.text'
 # For the following:
 # - __syscall.S
+# - _resumecontext.c _swapcontext.c
 
 # modules with non-default implementations on at least one architecture:
 SRCS+=      	Ovfork.S brk.S exect.S fork.S pipe.S \
