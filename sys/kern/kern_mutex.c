@@ -93,13 +93,11 @@ mtx_owned(mtx, curowner)
 	struct lock_holder 	*holder;
 
 	holder = lockholder_get(mtx->mtx_holder);
-	if (holder == NULL) {
-		return (1);
+	if (holder != NULL) {
+		if (LOCKHOLDER_DATA(holder) == curowner) {
+			return (0);
+		}
 	}
-	if (LOCKHOLDER_DATA(holder) == curowner) {
-		return (0);
-	}
-
 	return (1);
 }
 
