@@ -3,18 +3,22 @@
 USE_FORT= yes
 USE_SHLIBDIR=	yes
 
+.include <bsd.own.mk>
+
 LIB=	ipsec
-CFLAGS+=-g
+CPPFLAGS+=-I${.CURDIR} -I. -DIPSEC_DEBUG -DYY_NO_UNPUT
 
 .if defined(IPSEC)
-CPPFLAGS+=-DIPSEC_DEBUG -DIPSEC
+CPPFLAGS+=-DIPSEC
 .endif
 
 .if defined(FAST_IPSEC)
-CPPFLAGS+=-DIPSEC_DEBUG -DFAST_IPSEC
+CPPFLAGS+=-DFAST_IPSEC
 .endif
 
-CPPFLAGS+=-DINET6 -I${.CURDIR} -I. -DYY_NO_UNPUT
+.if (${USE_INET6} != "no")
+CPPFLAGS+=-DINET6
+.endif
 
 SRCS+=	ipsec_strerror.c policy_parse.y policy_token.l
 SRCS+=	ipsec_get_policylen.c ipsec_dump_policy.c
@@ -30,7 +34,7 @@ YHEADER=1
 
 MAN=	ipsec_set_policy.3 ipsec_strerror.3
 MLINKS+=ipsec_set_policy.3 ipsec_get_policylen.3 \
-	ipsec_set_policy.3 ipsec_dump_policy.3
+	    ipsec_set_policy.3 ipsec_dump_policy.3
 
 CLEANFILES+=	y.tab.h
 
