@@ -56,11 +56,11 @@ static char sccsid[] = "@(#)kvm_hp300.c	8.1 (Berkeley) 6/4/93";
 
 #include "kvm_private.h"
 
-#include <i386/include/pmap.h>
-#include <i386/include/pte.h>
-#include <i386/include/param.h>
-#include <i386/include/ram.h>
-#include <i386/include/vmparam.h>
+#include <i386/pmap.h>
+#include <i386/pte.h>
+#include <i386/param.h>
+#include <i386/ram.h>
+#include <i386/vmparam.h>
 
 #ifndef btop
 #define	btop(x)		(i386_btop(x)) //(((unsigned)(x)) >> PGSHIFT)	/* XXX */
