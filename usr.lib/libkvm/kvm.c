@@ -37,7 +37,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)kvm.c	8.2 (Berkeley) 2/13/94";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -60,6 +62,7 @@ static char sccsid[] = "@(#)kvm.c	8.2 (Berkeley) 2/13/94";
 #include <limits.h>
 #include <nlist.h>
 #include <paths.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,6 +70,7 @@ static char sccsid[] = "@(#)kvm.c	8.2 (Berkeley) 2/13/94";
 
 #include "kvm_private.h"
 
+static kvm_t *_kvm_open(kvm_t *, const char *, const char *, const char *, int, char *);
 static int kvm_dbopen(kvm_t *, const char *);
 
 char *
@@ -76,12 +80,6 @@ kvm_geterr(kd)
 	return (kd->errbuf);
 }
 
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
 /*
  * Report an error using printf style arguments.  "program" is kd->program
  * on hard errors, and 0 on soft errors, so that under sun error emulation,
@@ -89,51 +87,30 @@ kvm_geterr(kd)
  * generate tons of error messages when trying to access bogus pointers).
  */
 void
-#if __STDC__
 _kvm_err(kvm_t *kd, const char *program, const char *fmt, ...)
-#else
-_kvm_err(kd, program, fmt, va_alist)
-	kvm_t *kd;
-	char *program, *fmt;
-	va_dcl
-#endif
 {
 	va_list ap;
 
-#ifdef __STDC__
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
 	if (program != NULL) {
 		(void)fprintf(stderr, "%s: ", program);
 		(void)vfprintf(stderr, fmt, ap);
 		(void)fputc('\n', stderr);
-	} else
+	} else {
 		(void)vsnprintf(kd->errbuf,
-		    sizeof(kd->errbuf), (char *)fmt, ap);
+		    sizeof(kd->errbuf), fmt, ap);
+    }
 
 	va_end(ap);
 }
 
 void
-#if __STDC__
 _kvm_syserr(kvm_t *kd, const char *program, const char *fmt, ...)
-#else
-_kvm_syserr(kd, program, fmt, va_alist)
-	kvm_t *kd;
-	char *program, *fmt;
-	va_dcl
-#endif
 {
 	va_list ap;
 	register int n;
 
-#if __STDC__
 	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
 	if (program != NULL) {
 		(void)fprintf(stderr, "%s: ", program);
 		(void)vfprintf(stderr, fmt, ap);
@@ -141,7 +118,7 @@ _kvm_syserr(kd, program, fmt, va_alist)
 	} else {
 		register char *cp = kd->errbuf;
 
-		(void)vsnprintf(cp, sizeof(kd->errbuf), (char *)fmt, ap);
+		(void)vsnprintf(cp, sizeof(kd->errbuf), fmt, ap);
 		n = strlen(cp);
 		(void)snprintf(&cp[n], sizeof(kd->errbuf) - n, ": %s",
 		    strerror(errno));
@@ -171,7 +148,7 @@ _kvm_open(kd, uf, mf, sf, flag, errout)
 	char *errout;
 {
 	struct stat st;
-
+    
 	kd->vmfd = -1;
 	kd->pmfd = -1;
 	kd->swfd = -1;
@@ -291,7 +268,7 @@ kvm_open(uf, mf, sf, flag, program)
 	register kvm_t *kd;
 
 	if ((kd = malloc(sizeof(*kd))) == NULL && program != NULL) {
-		(void)fprintf(stderr, "%s: %s\n", strerror(errno));
+		(void)fprintf(stderr, "%s: %s\n", program ? program : getprogname(), strerror(errno));
 		return (0);
 	}
 	kd->program = program;
@@ -354,7 +331,7 @@ kvm_dbopen(kd, uf)
 	/*
 	 * read version out of database
 	 */
-	rec.data = VRS_KEY;
+	rec.data = __UNCONST(VRS_KEY);
 	rec.size = sizeof(VRS_KEY) - 1;
 	if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0))
 		goto close;
@@ -368,7 +345,7 @@ kvm_dbopen(kd, uf)
 	 * Since we are dealing with a live kernel, we can call kvm_read()
 	 * at this point.
 	 */
-	rec.data = VRS_SYM;
+	rec.data = __UNCONST(VRS_SYM);
 	rec.size = sizeof(VRS_SYM) - 1;
 	if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0))
 		goto close;
@@ -420,7 +397,7 @@ kvm_nlist(kd, nl)
 			_kvm_err(kd, kd->program, "symbol too large");
 			return (-1);
 		}
-		rec.data = p->n_name;
+		rec.data = __UNCONST(p->n_name);
 		rec.size = len;
 		if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0))
 			continue;
@@ -446,7 +423,7 @@ kvm_nlist(kd, nl)
 ssize_t
 kvm_read(kd, kva, buf, len)
 	kvm_t *kd;
-	register u_long kva;
+	register unsigned long kva;
 	register void *buf;
 	register size_t len;
 {
@@ -460,7 +437,7 @@ kvm_read(kd, kva, buf, len)
 		 */
 		errno = 0;
 		if (lseek(kd->vmfd, (off_t)kva, 0) == -1 && errno != 0) {
-			_kvm_err(kd, 0, "invalid address (%x)", kva);
+			_kvm_err(kd, 0, "invalid address (%lx)", kva);
 			return (0);
 		}
 		cc = read(kd->vmfd, buf, len);
@@ -498,7 +475,8 @@ kvm_read(kd, kva, buf, len)
 			 */
 			if (cc == 0)
 				break;
-			(char *)cp += cc;
+            cp = (char *)cp + cc;
+//			cp += (char *)cc;
 			kva += cc;
 			len -= cc;
 		}
@@ -510,7 +488,7 @@ kvm_read(kd, kva, buf, len)
 ssize_t
 kvm_write(kd, kva, buf, len)
 	kvm_t *kd;
-	register u_long kva;
+	register unsigned long kva;
 	register const void *buf;
 	register size_t len;
 {
@@ -522,7 +500,7 @@ kvm_write(kd, kva, buf, len)
 		 */
 		errno = 0;
 		if (lseek(kd->vmfd, (off_t)kva, 0) == -1 && errno != 0) {
-			_kvm_err(kd, 0, "invalid address (%x)", kva);
+			_kvm_err(kd, 0, "invalid address (%lx)", kva);
 			return (0);
 		}
 		cc = write(kd->vmfd, buf, len);

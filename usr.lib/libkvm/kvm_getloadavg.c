@@ -33,7 +33,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)kvm_getloadavg.c	8.1 (Berkeley) 6/4/93";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -41,6 +43,7 @@ static char sccsid[] = "@(#)kvm_getloadavg.c	8.1 (Berkeley) 6/4/93";
 #include <sys/resource.h>
 #include <sys/proc.h>
 #include <sys/sysctl.h>
+
 #include <vm/include/vm_param.h>
 
 #include <db.h>
@@ -48,6 +51,7 @@ static char sccsid[] = "@(#)kvm_getloadavg.c	8.1 (Berkeley) 6/4/93";
 #include <limits.h>
 #include <nlist.h>
 #include <kvm.h>
+#include <stdlib.h>
 
 #include "kvm_private.h"
 
@@ -84,9 +88,6 @@ kvm_getloadavg(kd, loadavg, nelem)
 		    "%s: no such symbol", p->n_name);
 		return (-1);
 	}
-
-#define KREAD(kd, addr, obj) \
-	(kvm_read(kd, addr, (char *)(obj), sizeof(*obj)) != sizeof(*obj))
 	if (KREAD(kd, nl[X_AVERUNNABLE].n_value, &loadinfo)) {
 		_kvm_err(kd, kd->program, "can't read averunnable");
 		return (-1);
