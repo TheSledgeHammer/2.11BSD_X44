@@ -171,9 +171,7 @@ extern int 				nfiles;		/* actual number of open files */
 #define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */
 #define	DTYPE_KQUEUE	4	/* event queue */
 #define DTYPE_CRYPTO 	5	/* crypto */
-#endif
 
-#ifdef _KERNEL
 int                 fset(struct file *, int, int);
 int                 fgetown(struct file *, int *);
 int                 fsetown(struct file *, int);
