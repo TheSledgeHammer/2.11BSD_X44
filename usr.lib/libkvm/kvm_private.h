@@ -74,12 +74,12 @@ struct __kvm {
 void	_kvm_err(kvm_t *, const char *, const char *, ...)  __attribute__((__format__(__printf__, 3, 4)));
 void	_kvm_freeprocs(kvm_t *);
 void	_kvm_freevtop(kvm_t *);
-int	 	_kvm_initvtop(kvm_t *);
-int	 	_kvm_kvatop(kvm_t *, u_long, u_long *);
+int	_kvm_initvtop(kvm_t *);
+int	_kvm_kvatop(kvm_t *, u_long, u_long *);
 void	*_kvm_malloc(kvm_t *, size_t);
 void	*_kvm_realloc(kvm_t *, void *, size_t);
 void	_kvm_syserr(kvm_t *, const char *, const char *, ...)  __attribute__((__format__(__printf__, 3, 4)));
-int	 	_kvm_uvatop(kvm_t *, const struct proc *, u_long, u_long *);
+int	_kvm_uvatop(kvm_t *, const struct proc *, u_long, u_long *);
 
 #define KREAD(kd, addr, obj) \
         (kvm_read(kd, addr, obj, sizeof(*obj)) != sizeof(*obj))
