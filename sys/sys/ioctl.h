@@ -378,7 +378,7 @@ struct ttysize {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	ioctl(/*int, unsigned long, ...*/);
+int	ioctl(int, unsigned long, ...);
 __END_DECLS
 #endif /* !KERNEL */
 #endif /* !_SYS_IOCTL_H_ */
