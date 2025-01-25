@@ -8,7 +8,7 @@ USE_FORT?= yes	# used primarily by setgid programs
 USE_SHLIBDIR=	yes
 
 LIB=	kvm
-CPPFLAGS+=-DLIBC_SCCS -I${NETBSDSRCDIR}/sys -D_KMEMUSER
+CPPFLAGS+=-DLIBC_SCCS -I${NETBSDSRCDIR}/sys
 
 SRCS=	kvm.c kvm_file.c kvm_getloadavg.c kvm_proc.c
 
@@ -18,11 +18,7 @@ SRCS=	kvm.c kvm_file.c kvm_getloadavg.c kvm_proc.c
 # the dispatch on ${MACHINE} should be done at run time (see m68k).
 
 .include <bsd.own.mk>
-.if exists(kvm_${KVM_MACHINE_ARCH}.c)
-SRCS+=	kvm_${KVM_MACHINE_ARCH}.c
-.elif exists(kvm_${KVM_MACHINE_CPU}.c)
-SRCS+=	kvm_${KVM_MACHINE_CPU}.c
-.elif exists(kvm_${MACHINE_ARCH}.c)
+.if exists(kvm_${MACHINE_ARCH}.c)
 SRCS+=	kvm_${MACHINE_ARCH}.c
 .elif  exists(kvm_${MACHINE_CPU}.c)
 SRCS+=	kvm_${MACHINE_CPU}.c
