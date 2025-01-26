@@ -130,6 +130,7 @@ kvm_readswap(kd, p, va, cnt)
 	/*
 	 * Check anon's align for given virtual address.
 	 */
+	offset = va - vme.start + vme.offset;
 	if (vme.aref.ar_amap == NULL) {
 		return (0);
 	}
