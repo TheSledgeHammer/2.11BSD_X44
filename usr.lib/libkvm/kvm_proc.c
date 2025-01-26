@@ -613,12 +613,11 @@ kvm_argv(kd, p, addr, narg, maxcnt)
 			 */
 			*++argv = 0;
 			*cp = 0;
-            break;
-//			return (kd->argv);
+            		break;
 		}
 	}
-    *argv = NULL;
-    return (kd->argv);
+    	*argv = NULL;
+    	return (kd->argv);
 }
 
 static void
