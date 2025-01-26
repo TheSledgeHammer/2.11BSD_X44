@@ -81,8 +81,8 @@ static int i386_use_pae = 1;
 #endif
 
 struct vmstate {
-	pd_entry_t 	*ptd;
-	int		pae;
+	pd_entry_t 		*ptd;
+	int				pae;
 	u_long 	        kernbase;
 };
 
@@ -496,9 +496,9 @@ _kvm_pa2off(kd, pa)
 	phys_ram_seg_t *ramsegs;
 	off_t off;
 	int i, nmemsegs;
-    	uint64_t start, size, pa64;
+    uint64_t start, size, pa64;
 
-    	pa64 = (uint64_t)pa;
+    pa64 = (uint64_t)pa;
 	ramsegs = (phys_ram_seg_t *)_kvm_malloc(kd, sizeof(*ramsegs) + ALIGN(sizeof(*ramsegs)));
 	nmemsegs = PHYSSEG_MAX;
 	off = 0;

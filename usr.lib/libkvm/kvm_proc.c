@@ -57,6 +57,9 @@ static char sccsid[] = "@(#)kvm_proc.c	8.4 (Berkeley) 8/20/94";
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/queue.h>
+
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <nlist.h>
 #include <kvm.h>
@@ -64,8 +67,6 @@ static char sccsid[] = "@(#)kvm_proc.c	8.4 (Berkeley) 8/20/94";
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
 #include <vm/include/swap_pager.h>
-
-#include <i386/include/param.h>
 
 #include <sys/sysctl.h>
 
@@ -78,11 +79,13 @@ static char sccsid[] = "@(#)kvm_proc.c	8.4 (Berkeley) 8/20/94";
 static char *kvm_readswap(kvm_t *, const struct proc *, u_long, u_long *);
 static int 	kvm_proclist(kvm_t *, int, int, struct proc *, struct kinfo_proc *, int);
 static int 	kvm_deadprocs(kvm_t *, int, int, u_long, u_long, int);
-static char **kvm_argv(kvm_t *, struct proc *, u_long, int, int);
+static char **kvm_argv(kvm_t *, const struct proc *, u_long, int, int);
 static void ps_str_a(struct ps_strings *, u_long *, int *);
 static void ps_str_e(struct ps_strings *, u_long *, int *);
 static int 	proc_verify(kvm_t *, u_long, const struct proc *);
-static char **kvm_doargv(kvm_t *, const struct kinfo_proc *, int, int (*)(struct ps_strings*, u_long *, int *));
+static char **kvm_doargv(kvm_t *, const struct kinfo_proc *, int, void (*)(struct ps_strings*, u_long *, int *));
+
+ssize_t kvm_uread(kvm_t *, const struct proc *, u_long, char *, size_t);
 
 static char *
 kvm_readswap(kd, p, va, cnt)
@@ -121,7 +124,7 @@ kvm_readswap(kd, p, va, cnt)
 			break;
 		}
 
-		addr = (u_long) CIRCLEQ_NEXT(vme, cl_entry);
+		addr = (u_long) vme.cl_entry.cqe_next;//CIRCLEQ_NEXT(vme, cl_entry);
 		if (addr == 0 || addr == head) {
 			return (0);
 		}
@@ -247,9 +250,9 @@ kvm_proclist(kd, what, arg, p, bp, maxcnt)
 	struct tty tty;
 	struct proc proc;
 
-	for (; cnt < maxcnt && p != 0; p = proc->p_list.le_next) {
+	for (; cnt < maxcnt && p != 0; p = p->p_list.le_next) {
 		if (KREAD(kd, (u_long)p, &proc)) {
-			_kvm_err(kd, kd->program, "can't read proc at %x", p);
+			_kvm_err(kd, kd->program, "can't read proc at %p", p);
 			return (-1);
 		}
 		if (KREAD(kd, (u_long)proc.p_cred, &eproc.e_pcred) == 0) {
@@ -291,27 +294,26 @@ kvm_proclist(kd, what, arg, p, bp, maxcnt)
 		 */
 		eproc.e_paddr = p;
 		if (KREAD(kd, (u_long )proc.p_pgrp, &pgrp)) {
-			_kvm_err(kd, kd->program, "can't read pgrp at %x", proc.p_pgrp);
+			_kvm_err(kd, kd->program, "can't read pgrp at %p", proc.p_pgrp);
 			return (-1);
 		}
 		eproc.e_sess = pgrp.pg_session;
 		eproc.e_pgid = pgrp.pg_id;
 		eproc.e_jobc = pgrp.pg_jobc;
 		if (KREAD(kd, (u_long )pgrp.pg_session, &sess)) {
-			_kvm_err(kd, kd->program, "can't read session at %x",
-					pgrp.pg_session);
+			_kvm_err(kd, kd->program, "can't read session at %p", pgrp.pg_session);
 			return (-1);
 		}
 		if ((proc.p_flag & P_CONTROLT) && sess.s_ttyp != NULL) {
 			if (KREAD(kd, (u_long )sess.s_ttyp, &tty)) {
-				_kvm_err(kd, kd->program, "can't read tty at %x", sess.s_ttyp);
+				_kvm_err(kd, kd->program, "can't read tty at %p", sess.s_ttyp);
 				return (-1);
 			}
 			eproc.e_tdev = tty.t_dev;
 			eproc.e_tsess = tty.t_session;
 			if (tty.t_pgrp != NULL) {
 				if (KREAD(kd, (u_long )tty.t_pgrp, &pgrp)) {
-					_kvm_err(kd, kd->program, "can't read tpgrp at &x",
+					_kvm_err(kd, kd->program, "can't read tpgrp at %p",
 							tty.t_pgrp);
 					return (-1);
 				}
@@ -419,7 +421,8 @@ kvm_getprocs(kd, op, arg, cnt)
 	int op, arg;
 	int *cnt;
 {
-	int mib[4], size, st, nprocs;
+    size_t size;
+	int mib[4], st, nprocs;
 
 	if (kd->procbase != 0) {
 		free((void *)kd->procbase);
@@ -507,7 +510,7 @@ _kvm_freeprocs(kd)
 static char **
 kvm_argv(kd, p, addr, narg, maxcnt)
 	kvm_t *kd;
-	struct proc *p;
+	const struct proc *p;
 	register u_long addr;
 	register int narg;
 	register int maxcnt;
@@ -610,9 +613,12 @@ kvm_argv(kd, p, addr, narg, maxcnt)
 			 */
 			*++argv = 0;
 			*cp = 0;
-			return (kd->argv);
+            break;
+//			return (kd->argv);
 		}
 	}
+    *argv = NULL;
+    return (kd->argv);
 }
 
 static void
@@ -652,8 +658,7 @@ proc_verify(kd, kernp, p)
 	 * Just read in the whole proc.  It's not that big relative
 	 * to the cost of the read system call.
 	 */
-	if (kvm_read(kd, kernp, (char*) &kernproc, sizeof(kernproc))
-			!= sizeof(kernproc)) {
+	if (KREAD(kd, kernp, &kernproc)) {
 		return (0);
 	}
 	return (p->p_pid == kernproc.p_pid
@@ -665,7 +670,7 @@ kvm_doargv(kd, kp, nchr, info)
 	kvm_t *kd;
 	const struct kinfo_proc *kp;
 	int nchr;
-	int (*info)(struct ps_strings*, u_long *, int *);
+	void (*info)(struct ps_strings*, u_long *, int *);
 {
 	register const struct proc *p = &kp->kp_proc;
 	register char **ap;
@@ -721,7 +726,7 @@ kvm_getenvv(kd, kp, nchr)
 ssize_t
 kvm_uread(kd, p, uva, buf, len)
 	kvm_t *kd;
-	register struct proc *p;
+	register const struct proc *p;
 	register u_long uva;
 	register char *buf;
 	register size_t len;
@@ -740,7 +745,7 @@ kvm_uread(kd, p, uva, buf, len)
 			}
 			errno = 0;
 			if (lseek(kd->pmfd, (off_t) pa, 0) == -1 && errno != 0) {
-				_kvm_err(kd, 0, "invalid address (%x)", uva);
+				_kvm_err(kd, 0, "invalid address (%lx)", uva);
 				break;
 			}
 			cc = read(kd->pmfd, cp, cc);
@@ -754,11 +759,11 @@ kvm_uread(kd, p, uva, buf, len)
 		} else if (ISALIVE(kd)) {
 			/* try swap */
 			register char *dp;
-			int cnt;
+			u_long cnt;
 
 			dp = kvm_readswap(kd, p, uva, &cnt);
 			if (dp == 0) {
-				_kvm_err(kd, 0, "invalid address (%x)", uva);
+				_kvm_err(kd, 0, "invalid address (%lx)", uva);
 				return (0);
 			}
 			cc = MIN(cnt, len);
