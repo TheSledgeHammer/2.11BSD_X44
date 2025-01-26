@@ -91,9 +91,9 @@ struct fileops {
 	int (*fo_kqfilter)	(struct file *, struct knote *);
 };
 
-struct filelists;
-LIST_HEAD(filelists, file);
-extern struct filelists filehead;	/* head of list of open files */
+struct filelist;
+LIST_HEAD(filelist, file);
+extern struct filelist  filehead;	/* head of list of open files */
 extern int 				maxfiles;	/* kernel limit on number of open files */
 extern int 				nfiles;		/* actual number of open files */
 

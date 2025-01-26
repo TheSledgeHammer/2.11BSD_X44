@@ -133,9 +133,24 @@ _kvm_malloc(kd, n)
 {
 	void *p;
 
-	if ((p = malloc(n)) == NULL)
+	if ((p = malloc(n)) == NULL) {
 		_kvm_err(kd, kd->program, strerror(errno));
+	}
 	return (p);
+}
+
+void *
+_kvm_realloc(kd, p, n)
+	kvm_t *kd;
+	void *p;
+	size_t n;
+{
+	void *np;
+
+	if ((np = realloc(p, n)) == NULL) {
+		_kvm_err(kd, kd->program, strerror(errno));
+	}
+	return (np);
 }
 
 static kvm_t *
@@ -159,9 +174,9 @@ _kvm_open(kd, uf, mf, sf, flag, errout)
 	kd->argspc = 0;
 	kd->argv = 0;
 
-	if (uf == 0)
+	if (uf == 0) {
 		uf = _PATH_UNIX;
-	else if (strlen(uf) >= MAXPATHLEN) {
+	} else if (strlen(uf) >= MAXPATHLEN) {
 		_kvm_err(kd, kd->program, "exec file name too long");
 		goto failed;
 	}
@@ -169,10 +184,12 @@ _kvm_open(kd, uf, mf, sf, flag, errout)
 		_kvm_err(kd, kd->program, "bad flags arg");
 		goto failed;
 	}
-	if (mf == 0)
+	if (mf == 0) {
 		mf = _PATH_MEM;
-	if (sf == 0)
+	}
+	if (sf == 0) {
 		sf = _PATH_DRUM;
+	}
 
 	if ((kd->pmfd = open(mf, flag, 0)) < 0) {
 		_kvm_syserr(kd, kd->program, "%s", mf);
@@ -189,9 +206,8 @@ _kvm_open(kd, uf, mf, sf, flag, errout)
 		 * make it work for either /dev/mem or /dev/kmem -- in either
 		 * case you're working with a live kernel.)
 		 */
-		if (strcmp(mf, _PATH_MEM) != 0) {	/* XXX */
-			_kvm_err(kd, kd->program,
-				 "%s: not physical memory device", mf);
+		if (strcmp(mf, _PATH_MEM) != 0) { /* XXX */
+			_kvm_err(kd, kd->program, "%s: not physical memory device", mf);
 			goto failed;
 		}
 		if ((kd->vmfd = open(_PATH_KMEM, flag)) < 0) {
@@ -210,8 +226,7 @@ _kvm_open(kd, uf, mf, sf, flag, errout)
 		 * If the database cannot be opened, open the namelist
 		 * argument so we revert to slow nlist() calls.
 		 */
-		if (kvm_dbopen(kd, uf) < 0 && 
-		    (kd->nlfd = open(uf, O_RDONLY, 0)) < 0) {
+		if (kvm_dbopen(kd, uf) < 0 && (kd->nlfd = open(uf, O_RDONLY, 0)) < 0) {
 			_kvm_syserr(kd, kd->program, "%s", uf);
 			goto failed;
 		}
@@ -225,17 +240,19 @@ _kvm_open(kd, uf, mf, sf, flag, errout)
 			_kvm_syserr(kd, kd->program, "%s", uf);
 			goto failed;
 		}
-		if (_kvm_initvtop(kd) < 0)
+		if (_kvm_initvtop(kd) < 0) {
 			goto failed;
+		}
 	}
 	return (kd);
 failed:
 	/*
 	 * Copy out the error if doing sane error semantics.
 	 */
-	if (errout != 0)
+	if (errout != 0) {
 		strcpy(errout, kd->errbuf);
-	(void)kvm_close(kd);
+	}
+	(void) kvm_close(kd);
 	return (0);
 }
 
@@ -281,23 +298,31 @@ kvm_close(kd)
 {
 	register int error = 0;
 
-	if (kd->pmfd >= 0)
+	if (kd->pmfd >= 0) {
 		error |= close(kd->pmfd);
-	if (kd->vmfd >= 0)
+	}
+	if (kd->vmfd >= 0) {
 		error |= close(kd->vmfd);
-	if (kd->nlfd >= 0)
+	}
+	if (kd->nlfd >= 0) {
 		error |= close(kd->nlfd);
-	if (kd->swfd >= 0)
+	}
+	if (kd->swfd >= 0) {
 		error |= close(kd->swfd);
-	if (kd->db != 0)
+	}
+	if (kd->db != 0) {
 		error |= (kd->db->close)(kd->db);
-	if (kd->vmst)
+	}
+	if (kd->vmst) {
 		_kvm_freevtop(kd);
-	if (kd->procbase != 0)
-		free((void *)kd->procbase);
-	if (kd->argv != 0)
-		free((void *)kd->argv);
-	free((void *)kd);
+	}
+	if (kd->procbase != 0) {
+		free((void*) kd->procbase);
+	}
+	if (kd->argv != 0) {
+		free((void*) kd->argv);
+	}
+	free((void*) kd);
 
 	return (0);
 }
@@ -326,17 +351,20 @@ kvm_dbopen(kd, uf)
 
 	(void)snprintf(dbname, sizeof(dbname), "%skvm_%s.db", _PATH_VARDB, uf);
 	kd->db = dbopen(dbname, O_RDONLY, 0, DB_HASH, NULL);
-	if (kd->db == 0)
+	if (kd->db == 0) {
 		return (-1);
+	}
 	/*
 	 * read version out of database
 	 */
 	rec.data = __UNCONST(VRS_KEY);
 	rec.size = sizeof(VRS_KEY) - 1;
-	if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0))
+	if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0)) {
 		goto close;
-	if (rec.data == 0 || rec.size > sizeof(dbversion))
+	}
+	if (rec.data == 0 || rec.size > sizeof(dbversion)) {
 		goto close;
+	}
 
 	bcopy(rec.data, dbversion, rec.size);
 	dbversionlen = rec.size;
@@ -347,20 +375,24 @@ kvm_dbopen(kd, uf)
 	 */
 	rec.data = __UNCONST(VRS_SYM);
 	rec.size = sizeof(VRS_SYM) - 1;
-	if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0))
+	if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0)) {
 		goto close;
-	if (rec.data == 0 || rec.size != sizeof(struct nlist))
+	}
+	if (rec.data == 0 || rec.size != sizeof(struct nlist)) {
 		goto close;
+	}
 	bcopy((char *)rec.data, (char *)&nitem, sizeof(nitem));
-	if (kvm_read(kd, (u_long)nitem.n_value, kversion, dbversionlen) != 
-	    dbversionlen)
+	if (kvm_read(kd, (u_long) nitem.n_value, kversion, dbversionlen)
+			!= dbversionlen) {
 		goto close;
+	}
 	/*
 	 * If they match, we win - otherwise clear out kd->db so
 	 * we revert to slow nlist().
 	 */
-	if (bcmp(dbversion, kversion, dbversionlen) == 0)
+	if (bcmp(dbversion, kversion, dbversionlen) == 0) {
 		return (0);
+	}
 close:
 	(void)(kd->db->close)(kd->db);
 	kd->db = 0;
@@ -380,8 +412,9 @@ kvm_nlist(kd, nl)
 	 * If we can't use the data base, revert to the 
 	 * slow library call.
 	 */
-	if (kd->db == 0)
+	if (kd->db == 0) {
 		return (__fdnlist(kd->nlfd, nl));
+	}
 
 	/*
 	 * We can use the kvm data base.  Go through each nlist entry
@@ -399,20 +432,20 @@ kvm_nlist(kd, nl)
 		}
 		rec.data = __UNCONST(p->n_name);
 		rec.size = len;
-		if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0))
+		if ((kd->db->get)(kd->db, (DBT*) &rec, (DBT*) &rec, 0)) {
 			continue;
-		if (rec.data == 0 || rec.size != sizeof(struct nlist))
+		}
+		if (rec.data == 0 || rec.size != sizeof(struct nlist)) {
 			continue;
+		}
 		++nvalid;
 		/*
 		 * Avoid alignment issues.
 		 */
-		bcopy((char *)&((struct nlist *)rec.data)->n_type,
-		      (char *)&p->n_type, 
-		      sizeof(p->n_type));
-		bcopy((char *)&((struct nlist *)rec.data)->n_value,
-		      (char *)&p->n_value, 
-		      sizeof(p->n_value));
+		bcopy((char*) &((struct nlist*) rec.data)->n_type, (char*) &p->n_type,
+				sizeof(p->n_type));
+		bcopy((char*) &((struct nlist*) rec.data)->n_value, (char*) &p->n_value,
+				sizeof(p->n_value));
 	}
 	/*
 	 * Return the number of entries that weren't found.
@@ -436,7 +469,7 @@ kvm_read(kd, kva, buf, len)
 		 * device and let the active kernel do the address translation.
 		 */
 		errno = 0;
-		if (lseek(kd->vmfd, (off_t)kva, 0) == -1 && errno != 0) {
+		if (lseek(kd->vmfd, (off_t) kva, 0) == -1 && errno != 0) {
 			_kvm_err(kd, 0, "invalid address (%lx)", kva);
 			return (0);
 		}
@@ -444,8 +477,9 @@ kvm_read(kd, kva, buf, len)
 		if (cc < 0) {
 			_kvm_syserr(kd, 0, "kvm_read");
 			return (0);
-		} else if (cc < len)
+		} else if (cc < len) {
 			_kvm_err(kd, kd->program, "short read");
+		}
 		return (cc);
 	} else {
 		cp = buf;
@@ -453,10 +487,12 @@ kvm_read(kd, kva, buf, len)
 			u_long pa;
 		
 			cc = _kvm_kvatop(kd, kva, &pa);
-			if (cc == 0)
+			if (cc == 0) {
 				return (0);
-			if (cc > len)
+			}
+			if (cc > len) {
 				cc = len;
+			}
 			errno = 0;
 			if (lseek(kd->pmfd, (off_t)pa, 0) == -1 && errno != 0) {
 				_kvm_syserr(kd, 0, _PATH_MEM);
@@ -473,9 +509,10 @@ kvm_read(kd, kva, buf, len)
 			 * the end of the core file in which case the read will
 			 * return 0 (EOF).
 			 */
-			if (cc == 0)
+			if (cc == 0) {
 				break;
-            cp = (char *)cp + cc;
+			}
+			cp = (char*) cp + cc;
 //			cp += (char *)cc;
 			kva += cc;
 			len -= cc;
@@ -499,7 +536,7 @@ kvm_write(kd, kva, buf, len)
 		 * Just like kvm_read, only we write.
 		 */
 		errno = 0;
-		if (lseek(kd->vmfd, (off_t)kva, 0) == -1 && errno != 0) {
+		if (lseek(kd->vmfd, (off_t) kva, 0) == -1 && errno != 0) {
 			_kvm_err(kd, 0, "invalid address (%lx)", kva);
 			return (0);
 		}
@@ -507,12 +544,12 @@ kvm_write(kd, kva, buf, len)
 		if (cc < 0) {
 			_kvm_syserr(kd, 0, "kvm_write");
 			return (0);
-		} else if (cc < len)
+		} else if (cc < len) {
 			_kvm_err(kd, kd->program, "short write");
+		}
 		return (cc);
 	} else {
-		_kvm_err(kd, kd->program,
-		    "kvm_write not implemented for dead kernels");
+		_kvm_err(kd, kd->program, "kvm_write not implemented for dead kernels");
 		return (0);
 	}
 	/* NOTREACHED */

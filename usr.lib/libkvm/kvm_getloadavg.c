@@ -56,11 +56,12 @@ static char sccsid[] = "@(#)kvm_getloadavg.c	8.1 (Berkeley) 6/4/93";
 #include "kvm_private.h"
 
 static struct nlist nl[] = {
-	{ "_averunnable" },
 #define	X_AVERUNNABLE	0
-	{ "_fscale" },
-#define	X_FSCALE	1
-	{ "" },
+		{ .n_name = "_averunnable" },
+#define	X_FSCALE		1
+		{ .n_name = "_fscale" },
+#define	X_END			2
+		{ .n_name = "" },
 };
 
 /*
@@ -79,13 +80,13 @@ kvm_getloadavg(kd, loadavg, nelem)
 	struct nlist *p;
 	int fscale, i;
 
-	if (ISALIVE(kd))
+	if (ISALIVE(kd)) {
 		return (getloadavg(loadavg, nelem));
+	}
 
 	if (kvm_nlist(kd, nl) != 0) {
 		for (p = nl; p->n_type != 0; ++p);
-		_kvm_err(kd, kd->program,
-		    "%s: no such symbol", p->n_name);
+		_kvm_err(kd, kd->program, "%s: no such symbol", p->n_name);
 		return (-1);
 	}
 	if (KREAD(kd, nl[X_AVERUNNABLE].n_value, &loadinfo)) {
@@ -97,11 +98,13 @@ kvm_getloadavg(kd, loadavg, nelem)
 	 * Old kernels have fscale separately; if not found assume
 	 * running new format.
 	 */
-	if (!KREAD(kd, nl[X_FSCALE].n_value, &fscale))
+	if (!KREAD(kd, nl[X_FSCALE].n_value, &fscale)) {
 		loadinfo.fscale = fscale;
+	}
 
 	nelem = MIN(nelem, sizeof(loadinfo.ldavg) / sizeof(fixpt_t));
-	for (i = 0; i < nelem; i++)
+	for (i = 0; i < nelem; i++) {
 		loadavg[i] = (double) loadinfo.ldavg[i] / loadinfo.fscale;
+	}
 	return (nelem);
 }

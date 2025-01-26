@@ -74,14 +74,14 @@ static char sccsid[] = "@(#)kvm_hp300.c	8.1 (Berkeley) 6/4/93";
 #define dtob(x)		(i386_dtob(x))
 #endif
 
-static int  i386_initvtop(kvm_t *, struct vmstate *, struct nlist *);
-static int  i386_initvtop_pae(kvm_t *, struct vmstate *, struct nlist *);
+static int  _i386_initvtop(kvm_t *, struct vmstate *, struct nlist *);
+static int  _i386_initvtop_pae(kvm_t *, struct vmstate *, struct nlist *);
 static int  _i386_vatop(kvm_t *, u_long, u_long *);
 static int  _i386_vatop_pae(kvm_t *, u_long, u_long *);
 static int  _i386_uvatop(kvm_t *, struct vmspace *, u_long, u_long *);
 static int  _i386_uvatop_pae(kvm_t *, struct vmspace *, u_long, u_long *);
 static int  _kvm_vatop(kvm_t *, u_long, u_long *);
-off_t       _kvm_pa2off(kvm_t *, u_long *);
+off_t       _kvm_pa2off(kvm_t *, u_long);
 
 #ifdef PMAP_PAE_COMP
 static int i386_use_pae = 0;
@@ -108,7 +108,7 @@ _kvm_freevtop(kd)
 }
 
 static int
-i386_initvtop(kd, vm, nlist)
+_i386_initvtop(kd, vm, nlist)
 	kvm_t *kd;
 	struct vmstate *vm;
 	struct nlist *nlist;
@@ -131,7 +131,7 @@ i386_initvtop(kd, vm, nlist)
 }
 
 static int
-i386_initvtop_pae(kd, vm, nlist)
+_i386_initvtop_pae(kd, vm, nlist)
 	kvm_t *kd;
 	struct vmstate *vm;
 	struct nlist *nlist;
@@ -202,12 +202,12 @@ _kvm_initvtop(kd)
 		if (i386_use_pae == 0) {
 			nlist[0].n_name = "IdlePDPT";
 			nlist[1].n_name = 0;
-			return (i386_initvtop_pae(kd, vm, nlist));
+			return (_i386_initvtop_pae(kd, vm, nlist));
 		}
 		if (i386_use_pae == 1) {
 			nlist[0].n_name = "IdlePTD";
 			nlist[1].n_name = 0;
-			return (i386_initvtop(kd, vm, nlist));
+			return (_i386_initvtop(kd, vm, nlist));
 		}
 	}
 	return (0);
@@ -239,12 +239,12 @@ _i386_vatop(kd, va, pa)
 	}
 
 	pde = vm->ptd[PL1_I(va)];
-	if (((u_long)pde & PG_V) == 0) {
+	if (((u_long) pde & PG_V) == 0) {
 		goto invalid;
 	}
 
-	pte_pa = ((u_long)pde & PG_FRAME) + (PL1_PI(va) * sizeof(pt_entry_t));
-	s = _kvm_pa2off(kd, &pte_pa);
+	pte_pa = ((u_long) pde & PG_FRAME) + (PL1_PI(va) * sizeof(pt_entry_t));
+	s = _kvm_pa2off(kd, pte_pa);
 	if (s < sizeof(pte)) {
 		_kvm_err(kd, kd->program, "_i386_vatop: pte_pa not found");
 		goto invalid;
@@ -261,8 +261,8 @@ _i386_vatop(kd, va, pa)
 		goto invalid;
 	}
 
-	a = (u_long)(pte & PG_FRAME) + offset;
-	s = _kvm_pa2off(kd, &a);
+	a = (u_long) (pte & PG_FRAME) + offset;
+	s = _kvm_pa2off(kd, a);
 	if (s == 0) {
 		_kvm_err(kd, kd->program, "_i386_vatop: address not in dump");
 		goto invalid;
@@ -300,12 +300,12 @@ _i386_vatop_pae(kd, va, pa)
 		return (I386_PAGE_SIZE - offset);
 	}
 	pde = vm->ptd[PL2_I(va)];
-	if (((u_long)pde & PG_V) == 0) {
+	if (((u_long) pde & PG_V) == 0) {
 		goto invalid;
 	}
 
-	pde_pa = ((u_long)pde & PG_FRAME) + (PL2_PI(va) * sizeof(pde));
-	s = _kvm_pa2off(kd, &pde_pa);
+	pde_pa = ((u_long) pde & PG_FRAME) + (PL2_PI(va) * sizeof(pde));
+	s = _kvm_pa2off(kd, pde_pa);
 	if (s < sizeof(pde)) {
 		_kvm_err(kd, kd->program, "_i386_vatop_pae: pde_pa not found");
 		goto invalid;
@@ -323,11 +323,11 @@ _i386_vatop_pae(kd, va, pa)
 
 	if ((pde & PG_PS) != 0) {
 		offset = va & ~PG_4MFRAME;
-		return ((int)(NBPD_L2 - offset));
+		return ((int) (NBPD_L2 - offset));
 	}
 
-	pte_pa = ((u_long)pde & PG_FRAME) + (PL1_PI(va) * sizeof(pt_entry_t));
-	s = _kvm_pa2off(kd, &pte_pa);
+	pte_pa = ((u_long) pde & PG_FRAME) + (PL1_PI(va) * sizeof(pt_entry_t));
+	s = _kvm_pa2off(kd, pte_pa);
 	if (s < sizeof(pte)) {
 		_kvm_err(kd, kd->program, "_i386_vatop_pae: pte_pa not found");
 		goto invalid;
@@ -344,8 +344,8 @@ _i386_vatop_pae(kd, va, pa)
 		goto invalid;
 	}
 
-	a = (u_long)(pte & PG_FRAME) + offset;
-	s = _kvm_pa2off(kd, &a);
+	a = (u_long) (pte & PG_FRAME) + offset;
+	s = _kvm_pa2off(kd, a);
 	if (s == 0) {
 		_kvm_err(kd, kd->program, "_i386_vatop_pae: address not in dump");
 		goto invalid;
@@ -403,22 +403,22 @@ _i386_uvatop(kd, vms, va, pa)
 	u_long kva, index, offset;
 
 	if (ISALIVE(kd)) {
-		kva = (u_long)&vms->vm_pmap.pm_pdir;
+		kva = (u_long) &vms->vm_pmap.pm_pdir;
 		if (KREAD(kd, kva, &pdir)) {
 			_kvm_err(kd, kd->program, "invalid address (%lx)", va);
 			return (0);
 		}
 		index = PL1_I(va);
-		kva = (u_long)&pdir[index];
+		kva = (u_long) &pdir[index];
 		if (KREAD(kd, kva, &pte) || (pte & PG_V) == 0) {
 			_kvm_err(kd, kd->program, "invalid address (%lx)", va);
 			return (0);
 		}
 		offset = va & (NBPD_L1 - 1);
-		*pa = (u_long)((pte & L1_FRAME) + offset);
+		*pa = (u_long) ((pte & L1_FRAME) + offset);
 		return (NBPD_L1 - offset);
 	}
-	kva = (u_long)&vms->vm_pmap.pm_pdir;
+	kva = (u_long) &vms->vm_pmap.pm_pdir;
 	if (KREAD(kd, kva, &kva)) {
 		_kvm_err(kd, kd->program, "invalid address (%lx)", va);
 		return (0);
@@ -445,14 +445,14 @@ _i386_uvatop_pae(kd, vms, va, pa)
 			return (0);
 		}
 		index = PL2_I(va);
-		kva = (u_long)&pdpt[index];
+		kva = (u_long) &pdpt[index];
 		if (KREAD(kd, kva, &pde) || (pde & PG_V) == 0) {
 			_kvm_err(kd, kd->program, "invalid address (%lx)", va);
 			return (0);
 		}
 		if ((pde & PG_PS) != 0) {
 			offset = va & (NBPD_L2 - 1);
-			*pa = (u_long)((pde & L2_FRAME) + offset);
+			*pa = (u_long) ((pde & L2_FRAME) + offset);
 			return (NBPD_L2 - offset);
 		}
 		if (KREAD(kd, kva, &pdir)) {
@@ -460,13 +460,13 @@ _i386_uvatop_pae(kd, vms, va, pa)
 			return (0);
 		}
 		index = PL1_I(va);
-		kva = (u_long)&pdir[index];
+		kva = (u_long) &pdir[index];
 		if (KREAD(kd, kva, &pte) || (pte & PG_V) == 0) {
 			_kvm_err(kd, kd->program, "invalid address (%lx)", va);
 			return (0);
 		}
 		offset = va & (NBPD_L1 - 1);
-		*pa = (u_long)((pte & L1_FRAME) + offset);
+		*pa = (u_long) ((pte & L1_FRAME) + offset);
 		return (NBPD_L1 - offset);
 	}
 
@@ -500,25 +500,25 @@ _kvm_uvatop(kd, p, va, pa)
 off_t
 _kvm_pa2off(kd, pa)
 	kvm_t *kd;
-	u_long *pa;
+	u_long pa;
 {
 	phys_ram_seg_t *ramsegs;
 	off_t off;
 	int i, nmemsegs;
     uint64_t start, size, pa64;
 
-    *pa64 = (uint64_t*)pa;
+    pa64 = (uint64_t)pa;
 	ramsegs = (phys_ram_seg_t *)_kvm_malloc(kd, sizeof(*ramsegs) + ALIGN(sizeof(*ramsegs)));
 	nmemsegs = PHYSSEG_MAX;
 	off = 0;
 	for (i = 0; i < nmemsegs; i++) {
-        start = ramsegs[i].start;
-        size = ramsegs[i].size;
-        if (pa64 >= start && (pa64 - start) < size) {
-            off += (off_t)(pa64 - start);
-            break;
-        }
-        off += (off_t)size;
+		start = ramsegs[i].start;
+		size = ramsegs[i].size;
+		if (pa64 >= start && (pa64 - start) < size) {
+			off += (off_t) (pa64 - start);
+			break;
+		}
+		off += (off_t) size;
 	}
 	return (kd->dump_off + off);
 }

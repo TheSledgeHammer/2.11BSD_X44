@@ -70,7 +70,7 @@
 #include <sys/null.h>
 #include <sys/sysdecl.h>
 
-struct filelists filehead;		/* head of list of open files */
+struct filelist  filehead;		/* head of list of open files */
 int 			 nfiles;		/* actual number of open files */
 
 /*
