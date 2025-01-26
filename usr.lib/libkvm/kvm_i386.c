@@ -65,15 +65,6 @@ static char sccsid[] = "@(#)kvm_hp300.c	8.1 (Berkeley) 6/4/93";
 #include <i386/ram.h>
 #include <i386/vmparam.h>
 
-#ifndef btop
-#define	btop(x)		(i386_btop(x)) //(((unsigned)(x)) >> PGSHIFT)	/* XXX */
-#define	ptob(x)		(i386_ptob(x)) //((caddr_t)((x) << PGSHIFT))	/* XXX */
-#endif
-#ifndef btod
-#define btod(x)		(i386_btod(x))
-#define dtob(x)		(i386_dtob(x))
-#endif
-
 static int  _i386_initvtop(kvm_t *, struct vmstate *, struct nlist *);
 static int  _i386_initvtop_pae(kvm_t *, struct vmstate *, struct nlist *);
 static int  _i386_vatop(kvm_t *, u_long, u_long *);
@@ -90,8 +81,8 @@ static int i386_use_pae = 1;
 #endif
 
 struct vmstate {
-	pd_entry_t 		*ptd;
-	int				pae;
+	pd_entry_t 	*ptd;
+	int		pae;
 	u_long 	        kernbase;
 };
 
