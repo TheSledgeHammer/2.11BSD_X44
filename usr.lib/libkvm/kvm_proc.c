@@ -130,7 +130,6 @@ kvm_readswap(kd, p, va, cnt)
 	/*
 	 * Check anon's align for given virtual address.
 	 */
-	offset = va - vme.start + vme.offset;
 	if (vme.aref.ar_amap == NULL) {
 		return (0);
 	}
@@ -138,6 +137,7 @@ kvm_readswap(kd, p, va, cnt)
 	if (KREAD(kd, addr, &amap)) {
 		return (0);
 	}
+	offset = va - vme.start + vme.offset;
 	slot = offset / NBPG + vme.aref.ar_pageoff;
 	/* sanity-check slot number */
 	if (slot > amap.am_nslot) {
