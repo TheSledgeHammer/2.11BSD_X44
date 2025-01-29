@@ -62,6 +62,7 @@
 #include <sys/sysctl.h>
 #include <sys/mount.h>
 #include <sys/exec_linker.h>
+#include <sys/exec_elf.h>
 #include <sys/kenv.h>
 #include <sys/ksyms.h>
 #include <sys/power.h>
@@ -118,6 +119,7 @@ int	 cpu_dump(void);
 void dumpsys(void);
 void init386_bootinfo(struct bootinfo *);
 struct bootinfo *bootinfo_check(struct bootinfo *);
+int i386_ksyms_addsyms_elf(caddr_t, caddr_t, size_t, size_t, uint32_t);
 void cpu_reset(void);
 void cpu_halt(void);
 void identify_cpu(void);
@@ -1410,7 +1412,7 @@ init386_bootinfo(boot)
 {
 	vm_offset_t addend;
 
-	if (i386_ksyms_addsyms_elf(boot)) {
+	if (i386_ksyms_addsyms_elf(boot->bi_symstart, boot->bi_strstart, boot->bi_symsize, boot->bi_strsize, boot->bi_flags)) {
 		init386_ksyms(boot);
 	} else {
 		if (boot->bi_environment != 0) {
@@ -1425,20 +1427,60 @@ bootinfo_check(boot)
 	struct bootinfo *boot;
 {
 	if (boot != NULL) {
-		if(boot->bi_version != BOOTINFO_VERSION) {
+		if (boot->bi_version != BOOTINFO_VERSION) {
 			printf("bootinfo_check: Boot version does not match!\n");
 			return (NULL);
 		}
-		if(boot->bi_memsizes_valid == 0) {
+		if (boot->bi_memsizes_valid == 0) {
 			printf("bootinfo_check: Boot is not valid!\n");
 			return (NULL);
 		}
-		if(boot->bi_size > BOOTINFO_MAXSIZE || boot->bi_size != sizeof(struct bootinfo *)) {
+		if (boot->bi_size > BOOTINFO_MAXSIZE || boot->bi_size != sizeof(struct bootinfo *)) {
 			printf("bootinfo_check: Boot size is too big!\n");
 			return (NULL);
 		}
 	}
 	return (boot);
+}
+
+int
+i386_ksyms_addsyms_elf(symstart, strstart, symsize, strsize, flags)
+	caddr_t symstart, strstart;
+	size_t 	symsize, strsize;
+	uint32_t flags;
+{
+	if (flags == BOOTINFO_ELF_SYMS) {
+		Elf_Ehdr ehdr;
+
+		KASSERT(esym != 0);
+
+		memset(&ehdr, 0, sizeof(ehdr));
+		memcpy(ehdr.e_ident, ELFMAG, SELFMAG);
+#ifdef ELFSIZE32
+		ehdr.e_ident[EI_CLASS] = ELFCLASS32;
+#endif
+#ifdef ELFSIZE64
+		ehdr.e_ident[EI_CLASS] = ELFCLASS64;
+#endif
+		ehdr.e_ident[EI_DATA] = ELFDATA2LSB;
+		ehdr.e_ident[EI_VERSION] = EV_CURRENT;
+		ehdr.e_ident[EI_OSABI] = ELFOSABI_SYSV;
+		ehdr.e_ident[EI_ABIVERSION] = 0;
+		ehdr.e_type = ET_EXEC;
+#ifdef __amd64__
+		ehdr.e_machine = EM_X86_64;
+#elif __i386__
+		ehdr.e_machine = EM_386;
+#else
+#error "Unknwo ELF machine type"
+#endif
+		ehdr.e_version = 1;
+		ehdr.e_ehsize = sizeof(ehdr);
+		ehdr.e_entry = (Elf_Addr) 0xffffff;
+
+		ksyms_addsyms_explicit((void*) &ehdr, (void*) symstart, symsize, (void*) strstart, strsize);
+	}
+	return (flags & BOOTINFO_ELF_SYMS);
 }
 
 void

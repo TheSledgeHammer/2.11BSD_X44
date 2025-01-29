@@ -92,7 +92,7 @@ typedef struct _locale		*locale_t;
 	STRTOG_NoMemory = 0x100
 };
 
- typedef struct
+typedef struct
 FPI {
 	int nbits;
 	int emin;

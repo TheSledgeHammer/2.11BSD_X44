@@ -176,9 +176,9 @@ double	j0(double),
 		yn(int, double);
 
 /* libc/gen/arch/"arch" */
-double frexp(double, int *);
-int    isnan(double);
-int    isinf(double);
+double 	frexp(double, int *);
+int    	isnan(double);
+int    	isinf(double);
 __END_DECLS
 
 #endif /* _MATH_H_ */

@@ -299,17 +299,30 @@ typedef union {
 	double d;
 	ULong ul[2];
 } _double;
+typedef _double U;
 
-#define value(x) ((x).d)
+/* Compatibility with older strtod.c */
+#if !defined(USE_STRTOD_COMPAT)
 #define dval(x)  ((x)->d)
-
 #ifdef IEEE_LITTLE_ENDIAN
+#define alias_word0(x) ()
+#define word0(x) ((x)->ul[1])
+#define word1(x) ((x)->ul[0])
+#else
+#define word0(x) ((x)->ul[0])
+#define word1(x) ((x)->ul[1])
+#endif
+#else  /* USE_STRTOD_COMPAT */
+#define value(x) ((x).d)
+#ifdef IEEE_LITTLE_ENDIAN
+#define alias_word0(x) ()
 #define word0(x) ((x).ul[1])
 #define word1(x) ((x).ul[0])
 #else
 #define word0(x) ((x).ul[0])
 #define word1(x) ((x).ul[1])
 #endif
+#endif /* !USE_STRTOD_COMPAT */
 
 /* The following definition of Storeinc is appropriate for MIPS processors.
  * An alternative that might be better on some machines is
@@ -324,7 +337,6 @@ typedef union {
     (((u_short *)(void *)a)[0] = \
 	(u_short)b, ((u_short *)(void *)a)[1] = (u_short)c, a++)
 #endif
-
 
 /* #define P DBL_MANT_DIG */
 /* Ten_pmax = floor(P*log(2)/log(5)) */

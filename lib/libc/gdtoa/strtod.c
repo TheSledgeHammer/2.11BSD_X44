@@ -92,6 +92,7 @@
  */
 
 #include "namespace.h"
+#define USE_STRTOD_COMPAT
 #include "gdtoaimp.h"
 
 #ifdef USE_LOCALE
@@ -463,7 +464,7 @@ strtod
 			/* Error is less than half an ulp -- check for
 			 * special case of mantissa a power of two.
 			 */
-			if (dsign || word1(rv) || word0(rv) & Bndry_mask)
+			if (dsign || word1(rv) || (word0(rv) & Bndry_mask))
 				break;
 			delta = lshift(delta, Log2P);
 			if (cmp(delta, bs) > 0)
@@ -527,7 +528,7 @@ strtod
 		if ((aadj = ratio(delta, bs)) <= 2.) {
 			if (dsign)
 				aadj = aadj1 = 1.;
-			else if (word1(rv) || word0(rv) & Bndry_mask) {
+			else if (word1(rv) || (word0(rv) & Bndry_mask)) {
 #ifndef Sudden_Underflow
 				if (word1(rv) == Tiny1 && !word0(rv))
 					goto undfl;
@@ -626,7 +627,7 @@ strtod
 			L = aadj;
 			aadj -= L;
 			/* The tolerances below are conservative. */
-			if (dsign || word1(rv) || word0(rv) & Bndry_mask) {
+			if (dsign || word1(rv) || (word0(rv) & Bndry_mask)) {
 				if (aadj < .4999999 || aadj > .5000001)
 					break;
 			} else if (aadj < .4999999 / FLT_RADIX)
