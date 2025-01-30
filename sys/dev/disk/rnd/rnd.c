@@ -662,7 +662,7 @@ filt_rndread(kn, hint)
 	uint32_t entcnt;
 
 	entcnt = rndpool_get_entropy_count(&rnd_pool);
-	if (entcnt >= RND_ENTROPY_THRESHOLD * 8) {
+	if (entcnt >= RND_ENTROPY_THRESHOLD_MAX) {
 		kn->kn_data = RND_POOLWORDS;
 		return (1);
 	}
