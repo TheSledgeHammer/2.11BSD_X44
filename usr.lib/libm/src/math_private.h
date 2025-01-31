@@ -40,17 +40,15 @@
 
 #if (BYTE_ORDER == BIG_ENDIAN) || (defined(__arm__) && !defined(__VFP_FP__))
 
-typedef union
-{
-  double value;
-  struct
-  {
-    u_int32_t msw;
-    u_int32_t lsw;
-  } parts;
-  struct {
-    u_int64_t w;
-  } xparts;
+typedef union {
+	double value;
+	struct {
+		u_int32_t msw;
+		u_int32_t lsw;
+	} parts;
+	struct {
+		u_int64_t w;
+	} xparts;
 } ieee_double_shape_type;
 
 #endif
@@ -60,15 +58,14 @@ typedef union
 
 typedef union
 {
-  double value;
-  struct
-  {
-    u_int32_t lsw;
-    u_int32_t msw;
-  } parts;
-  struct {
-    u_int64_t w;
-  } xparts;
+	double value;
+	struct {
+		u_int32_t lsw;
+		u_int32_t msw;
+	} parts;
+	struct {
+		u_int64_t w;
+	} xparts;
 } ieee_double_shape_type;
 
 #endif
