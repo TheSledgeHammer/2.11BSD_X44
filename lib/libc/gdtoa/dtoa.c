@@ -28,6 +28,7 @@
 	dmg@research.att.com or research!dmg
  */
 
+#define USE_STRTOD_COMPAT
 #include "gdtoaimp.h"
 
 char *
