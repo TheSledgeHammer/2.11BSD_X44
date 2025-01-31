@@ -76,7 +76,7 @@
  *
  * -149 == -127 - 23 + 1.
  */
-#define	SNG_EXPBITS		8
+#define	SNG_EXPBITS	8
 #define	SNG_FRACBITS	23
 
 struct ieee_single {
