@@ -31,6 +31,7 @@ THIS SOFTWARE.
 /* Please send bug reports to David M. Gay (dmg at acm dot org,
  * with " at " changed at "@" and " dot " changed to ".").	*/
 
+#define USE_STRTOD_COMPAT
 #include "gdtoaimp.h"
 
 CONST double tens[] = {
