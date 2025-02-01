@@ -25,22 +25,20 @@
  */
 
 #include <sys/cdefs.h>
-__RCSID("$NetBSD: s_fmaxl.c,v 1.4 2013/11/29 22:16:10 joerg Exp $");
+__RCSID("NetBSD$");
 #ifdef notdef
 __FBSDID("$FreeBSD: src/lib/msun/src/s_fmaxl.c,v 1.1 2004/06/30 07:04:01 das Exp $");
 #endif
 
-#include <string.h>
 #include <math.h>
 
 #include <machine/ieee.h>
-#ifdef __HAVE_LONG_DOUBLE
+#ifdef EXT_EXP_INFNAN
 long double
 fmaxl(long double x, long double y)
 {
 	union ieee_ext_u u[2];
 
-	memset(&u, 0, sizeof u);
 	u[0].extu_ld = x;
 	u[0].extu_ext.ext_frach &= ~0x80000000;
 	u[1].extu_ld = y;

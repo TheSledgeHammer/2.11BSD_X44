@@ -1,4 +1,4 @@
-/*      $NetBSD: n_floor.c,v 1.8 2014/03/16 09:51:39 martin Exp $ */
+/*      $NetBSD: n_floor.c,v 1.6 2004/05/13 20:35:40 mhitch Exp $ */
 /*
  * Copyright (c) 1985, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -43,12 +43,6 @@ ic(L, 4503599627370496.0E0, 52, 1.0)			  /* 2**52 */
 
 #ifdef vccast
 #define	L	vccast(L)
-#endif
-
-#ifdef __weak_alias
-__weak_alias(ceill, ceil);
-__weak_alias(floorl, floor);
-__weak_alias(truncl, trunc);
 #endif
 
 /*
@@ -150,87 +144,3 @@ rint(double x)
 	return (t - s);
 }
 #endif	/* not national */
-
-long
-lrint(double x)
-{
-	double s;
-	volatile double t;
-	const double one = 1.0;
-
-#if !defined(__vax__)&&!defined(tahoe)
-	if (x != x)				/* NaN */
-		return (x);
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
-	if (copysign(x,one) >= L)		/* already an integer */
-	    return (x);
-	s = copysign(L,x);
-	t = x + s;				/* x+s rounded to integer */
-	return (t - s);
-}
-
-long long
-llrint(double x)
-{
-	double s;
-	volatile double t;
-	const double one = 1.0;
-
-#if !defined(__vax__)&&!defined(tahoe)
-	if (x != x)				/* NaN */
-		return (x);
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
-	if (copysign(x,one) >= L)		/* already an integer */
-	    return (x);
-	s = copysign(L,x);
-	t = x + s;				/* x+s rounded to integer */
-	return (t - s);
-}
-
-long
-lrintf(float x)
-{
-	float s;
-	volatile float t;
-	const float one = 1.0;
-
-#if !defined(__vax__)&&!defined(tahoe)
-	if (x != x)				/* NaN */
-		return (x);
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
-	if (copysign(x,one) >= L)		/* already an integer */
-	    return (x);
-	s = copysign(L,x);
-	t = x + s;				/* x+s rounded to integer */
-	return (t - s);
-}
-
-long long
-llrintf(float x)
-{
-	float s;
-	volatile float t;
-	const float one = 1.0;
-
-#if !defined(__vax__)&&!defined(tahoe)
-	if (x != x)				/* NaN */
-		return (x);
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
-	if (copysign(x,one) >= L)		/* already an integer */
-	    return (x);
-	s = copysign(L,x);
-	t = x + s;				/* x+s rounded to integer */
-	return (t - s);
-}
-
-double
-trunc(double x)
-{
-	return x < 0 ? ceil(x) : floor(x);
-}
-
-float
-truncf(float x)
-{
-	return x < 0 ? ceilf(x) : floorf(x);
-}

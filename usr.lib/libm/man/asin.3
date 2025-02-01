@@ -26,15 +26,14 @@
 .\" SUCH DAMAGE.
 .\"
 .\"     from: @(#)asin.3	5.1 (Berkeley) 5/2/91
-.\"	$NetBSD: asin.3,v 1.18 2017/07/03 21:32:50 wiz Exp $
+.\"	$NetBSD: asin.3,v 1.16 2003/08/07 16:44:46 agc Exp $
 .\"
-.Dd January 29, 2013
+.Dd May 2, 1991
 .Dt ASIN 3
 .Os
 .Sh NAME
 .Nm asin ,
-.Nm asinf ,
-.Nm asinl
+.Nm asinf
 .Nd arc sine function
 .Sh LIBRARY
 .Lb libm
@@ -44,14 +43,11 @@
 .Fn asin "double x"
 .Ft float
 .Fn asinf "float x"
-.Ft long double
-.Fn asinl "long double x"
 .Sh DESCRIPTION
 The
-.Fn asin ,
-.Fn asinf ,
+.Fn asin
 and
-.Fn asinl
+.Fn asinf
 functions compute the principal value of the arc sine of
 .Fa x
 in the range
@@ -60,11 +56,10 @@ in the range
 .Ek
 .Sh RETURN VALUES
 .\" POSIX_MODE
-If |x|>1,
-.Fn asin "x" ,
-.Fn asinf "x" ,
+If |x|\*[Gt]1,
+.Fn asin "x"
 and
-.Fn asinl "x"
+.Fn asinf "x"
 return NaN and set the global variable
 .Va errno
 to EDOM.
@@ -87,4 +82,4 @@ to EDOM.
 The
 .Fn asin
 function conforms to
-.St -isoC-99 .
+.St -ansiC .

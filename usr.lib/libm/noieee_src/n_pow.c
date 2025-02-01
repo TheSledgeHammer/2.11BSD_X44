@@ -1,4 +1,4 @@
-/*      $NetBSD: n_pow.c,v 1.11 2014/10/11 07:19:27 martin Exp $ */
+/*      $NetBSD: n_pow.c,v 1.7 2003/08/07 16:44:52 agc Exp $ */
 /*
  * Copyright (c) 1985, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -122,13 +122,6 @@ static const double zero=0.0, one=1.0, two=2.0, negone= -1.0;
 
 static double pow_P (double, double);
 
-#ifdef __weak_alias
-__weak_alias(_powf, powf);
-__weak_alias(_pow, pow);
-__weak_alias(_powl, pow);
-__weak_alias(powl, pow);
-#endif
-
 float
 powf(float x, float y)
 {
@@ -183,7 +176,7 @@ static double
 pow_P(double x, double y)
 {
 	struct Double s, t;
-	double  huge = _HUGE, tiny = _TINY;
+	double  huge = 1e300, tiny = 1e-300;
 
 	if (x == zero) {
 		if (y > zero)

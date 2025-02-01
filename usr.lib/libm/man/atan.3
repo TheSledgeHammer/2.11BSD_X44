@@ -26,15 +26,14 @@
 .\" SUCH DAMAGE.
 .\"
 .\"     from: @(#)atan.3	5.1 (Berkeley) 5/2/91
-.\"	$NetBSD: atan.3,v 1.17 2013/01/29 02:54:30 matt Exp $
+.\"	$NetBSD: atan.3,v 1.16 2003/08/07 16:44:46 agc Exp $
 .\"
-.Dd January 29, 2013
+.Dd May 2, 1991
 .Dt ATAN 3
 .Os
 .Sh NAME
 .Nm atan ,
-.Nm atanf ,
-.Nm atanl
+.Nm atanf
 .Nd arc tangent function of one variable
 .Sh LIBRARY
 .Lb libm
@@ -44,14 +43,11 @@
 .Fn atan "double x"
 .Ft float
 .Fn atanf "float x"
-.Ft long double
-.Fn atanl "long double x"
 .Sh DESCRIPTION
 The
-.Fn atan ,
-.Fn atanf ,
+.Fn atan
 and
-.Fn atanl
+.Fn atanf
 functions compute the principal value of the arc tangent of
 .Fa x
 in the range
@@ -78,4 +74,4 @@ in the range
 The
 .Fn atan
 functions conforms to
-.St -isoC-99 .
+.St -ansiC .

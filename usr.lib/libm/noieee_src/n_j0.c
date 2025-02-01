@@ -1,4 +1,4 @@
-/*	$NetBSD: n_j0.c,v 1.7 2011/11/02 02:34:56 christos Exp $	*/
+/*	$NetBSD: n_j0.c,v 1.6 2003/08/07 16:44:51 agc Exp $	*/
 /*-
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -123,7 +123,7 @@ static char sccsid[] = "@(#)j0.c	8.2 (Berkeley) 11/30/93";
 static double pzero (double), qzero (double);
 
 static const double
-huge 	= _HUGE,
+huge 	= 1e300,
 zero    = 0.0,
 one	= 1.0,
 invsqrtpi= 5.641895835477562869480794515607725858441e-0001,
@@ -144,11 +144,8 @@ j0(double x)
 	double z, s,c,ss,cc,r,u,v;
 
 	if (!finite(x)) {
-#if _IEEE
-		return one/(x*x);
-#else
-		return (0);
-#endif
+		if (_IEEE) return one/(x*x);
+		else return (0);
 	}
 	x = fabs(x);
 	if (x >= 2.0) {	/* |x| >= 2.0 */
@@ -165,12 +162,9 @@ j0(double x)
 	 * j0(x) = 1/sqrt(pi) * (P(0,x)*cc - Q(0,x)*ss) / sqrt(x)
 	 * y0(x) = 1/sqrt(pi) * (P(0,x)*ss + Q(0,x)*cc) / sqrt(x)
 	 */
-#if _IEEE
-		if (x > 6.80564733841876927e+38) /* 2^129 */
+		if (_IEEE && x> 6.80564733841876927e+38) /* 2^129 */
 			z = (invsqrtpi*cc)/sqrt(x);
-		else
-#endif
-		{
+		else {
 		    u = pzero(x); v = qzero(x);
 		    z = invsqrtpi*(u*cc-v*ss)/sqrt(x);
 		}
@@ -213,25 +207,18 @@ y0(double x)
 	double z, s, c, ss, cc, u, v;
     /* Y0(NaN) is NaN, y0(-inf) is Nan, y0(inf) is 0  */
 	if (!finite(x)) {
-#if _IEEE
+		if (_IEEE)
 			return (one/(x+x*x));
-#else
+		else
 			return (0);
-#endif
 	}
         if (x == 0) {
-#if _IEEE
-		return (-one/zero);
-#else
-		return(infnan(-ERANGE));
-#endif
+		if (_IEEE)	return (-one/zero);
+		else		return(infnan(-ERANGE));
 	}
         if (x<0) {
-#if _IEEE
-		return (zero/zero);
-#else
-		return (infnan(EDOM));
-#endif
+		if (_IEEE)	return (zero/zero);
+		else		return (infnan(EDOM));
 	}
         if (x >= 2.00) {	/* |x| >= 2.0 */
         /* y0(x) = sqrt(2/(pi*x))*(p0(x)*sin(x0)+q0(x)*cos(x0))
@@ -258,12 +245,9 @@ y0(double x)
                     if ((s*c)<zero) cc = z/ss;
                     else            ss = z/cc;
                 }
-#if _IEEE
-                if (x > 6.80564733841876927e+38) /* > 2^129 */
+                if (_IEEE && x > 6.80564733841876927e+38) /* > 2^129 */
 			z = (invsqrtpi*ss)/sqrt(x);
-                else
-#endif
-		{
+                else {
                     u = pzero(x); v = qzero(x);
                     z = invsqrtpi*(u*ss+v*cc)/sqrt(x);
                 }

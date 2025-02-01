@@ -1,4 +1,4 @@
-.\"	$NetBSD: nan.3,v 1.5 2016/08/27 02:56:26 dholland Exp $
+.\"	$NetBSD: nan.3,v 1.2 2008/04/30 13:10:51 martin Exp $
 .\"
 .\" Copyright (c) 2006 The NetBSD Foundation, Inc.
 .\" All rights reserved.
@@ -49,11 +49,11 @@
 The call
 .Fn nan "\*qn-char-sequence\*q"
 is equivalent to the call
-.Fn strtod "\*qNAN(n-char-sequence)\*q" "NULL" .
+.Fn strod "\*qNAN(n-char-sequence)\*q" "NULL" .
 The call
 .Fn nan "\*q\*q"
 is equivalent to the call
-.Fn strtod "\*qNAN()\*q" "NULL" .
+.Fn strod "\*qNAN()\*q" "NULL" .
 .Pp
 The
 .Fn nanf
@@ -64,7 +64,7 @@ functions are equivalent to
 but substituting
 .Fn strtof
 and
-.Fn strtold ,
+.Fn strtod ,
 respectively.
 .Sh RETURN VALUES
 .Ss IEEE 754
@@ -84,7 +84,7 @@ and
 functions return zero.
 .Sh SEE ALSO
 .Xr math 3 ,
-.Xr strtod 3
+.Xr strod 3
 .Sh STANDARDS
 The
 .Fn nan ,

@@ -12,7 +12,7 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBM_SCCS) && !defined(lint)
-__RCSID("$NetBSD: k_standard.c,v 1.23 2021/04/12 09:15:52 mrg Exp $");
+__RCSID("$NetBSD: k_standard.c,v 1.12.26.1 2010/01/23 18:02:33 bouyer Exp $");
 #endif
 
 #include "math.h"
@@ -137,9 +137,9 @@ __kernel_standard(double x, double y, int type)
 		exc.type = DOMAIN;
 		exc.name = type < 100 ? "atan2" : "atan2f";
 		exc.retval = zero;
-		if(_LIB_VERSION == _POSIX_) {
-		  exc.retval = copysign(signbit(y) ? M_PI : zero, x);
-		} else if (!matherr(&exc)) {
+		if(_LIB_VERSION == _POSIX_)
+		  errno = EDOM;
+		else if (!matherr(&exc)) {
 		  if(_LIB_VERSION == _SVID_) {
 			(void) WRITE2("atan2: DOMAIN error\n", 20);
 		      }
@@ -370,7 +370,7 @@ __kernel_standard(double x, double y, int type)
 		if (_LIB_VERSION == _SVID_)
 		  exc.retval = -HUGE;
 		else
-		  exc.retval = zero/zero;
+		  exc.retval = -HUGE_VAL;
 		if (_LIB_VERSION == _POSIX_)
 		  errno = EDOM;
 		else if (!matherr(&exc)) {
@@ -406,7 +406,7 @@ __kernel_standard(double x, double y, int type)
 		if (_LIB_VERSION == _SVID_)
 		  exc.retval = -HUGE;
 		else
-		  exc.retval = zero/zero;
+		  exc.retval = -HUGE_VAL;
 		if (_LIB_VERSION == _POSIX_)
 		  errno = EDOM;
 		else if (!matherr(&exc)) {
@@ -468,11 +468,8 @@ __kernel_standard(double x, double y, int type)
 		exc.name = type < 100 ? "pow" : "powf";
 		if (_LIB_VERSION == _SVID_)
 		  exc.retval = zero;
-		else {
-		  exc.retval = HUGE_VAL;
-		  y *= 0.5;
-		  if(signbit(x)&&rint(y)!=y) exc.retval = -HUGE_VAL;
-		}
+		else
+		  exc.retval = -HUGE_VAL;
 		if (_LIB_VERSION == _POSIX_)
 		  errno = EDOM;
 		else if (!matherr(&exc)) {
@@ -517,15 +514,9 @@ __kernel_standard(double x, double y, int type)
 		break;
 	    case 26:
 	    case 126:
-	    case 226:
 		/* sqrt(x<0) */
 		exc.type = DOMAIN;
-		if (type == 26)
-			exc.name = "sqrt";
-		else if (type == 126)
-			exc.name = "sqrtf";
-		else
-			exc.name = "sqrtl";
+		exc.name = type < 100 ? "sqrt" : "sqrtf";
 		if (_LIB_VERSION == _SVID_)
 		  exc.retval = zero;
 		else
@@ -541,15 +532,9 @@ __kernel_standard(double x, double y, int type)
 		break;
             case 27:
 	    case 127:
-	    case 227:
                 /* fmod(x,0) */
                 exc.type = DOMAIN;
-		if (type == 27)
-			exc.name = "fmod";
-		else if (type == 127)
-			exc.name = "fmodf";
-		else
-			exc.name = "fmodl";
+                exc.name = type < 100 ? "fmod" : "fmodf";
                 if (_LIB_VERSION == _SVID_)
                     exc.retval = x;
 		else
@@ -815,7 +800,7 @@ __kernel_standard(double x, double y, int type)
 		if (_LIB_VERSION == _SVID_)
 		  exc.retval = -HUGE;
 		else
-		  exc.retval = zero/zero;
+		  exc.retval = -HUGE_VAL;
 		if (_LIB_VERSION == _POSIX_)
 		  errno = EDOM;
 		else if (!matherr(&exc)) {
@@ -824,13 +809,6 @@ __kernel_standard(double x, double y, int type)
 		      }
 		  errno = EDOM;
 		}
-		break;
-	    default:
-		if (_LIB_VERSION == _SVID_)
-		  exc.retval = -HUGE;
-		else
-		  exc.retval = -HUGE_VAL;
-		errno = EDOM;
 		break;
 	}
 	return exc.retval;

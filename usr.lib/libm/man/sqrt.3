@@ -26,18 +26,16 @@
 .\" SUCH DAMAGE.
 .\"
 .\"     from: @(#)sqrt.3	6.4 (Berkeley) 5/6/91
-.\"	$NetBSD: sqrt.3,v 1.14 2013/11/19 19:24:33 joerg Exp $
+.\"	$NetBSD: sqrt.3,v 1.13 2003/08/07 16:44:49 agc Exp $
 .\"
-.Dd November 19, 2013
+.Dd May 6, 1991
 .Dt SQRT 3
 .Os
 .Sh NAME
 .Nm cbrt ,
 .Nm cbrtf ,
-.Nm cbrtl ,
 .Nm sqrt ,
-.Nm sqrtf ,
-.Nm sqrtl
+.Nm sqrtf
 .Nd cube root and square root functions
 .Sh LIBRARY
 .Lb libm
@@ -47,37 +45,30 @@
 .Fn cbrt "double x"
 .Ft float
 .Fn cbrtf "float x"
-.Ft long double
-.Fn cbrtl "long double x"
 .Ft double
 .Fn sqrt "double x"
 .Ft float
 .Fn sqrtf "float x"
-.Ft long double
-.Fn sqrtl "long double x"
 .Sh DESCRIPTION
 The
-.Fn cbrt ,
-.Fn cbrtf
+.Fn cbrt
 and
-.Fn cbrtl
+.Fn cbrtf
 functions compute
 the cube root of
 .Ar x .
 .Pp
 The
-.Fn sqrt ,
-.Fn sqrtf
+.Fn sqrt
 and
-.Fn sqrtl
+.Fn sqrtf
 functions compute
 the non-negative square root of x.
 .Sh RETURN VALUES
 If x is negative,
-.Fn sqrt "x" ,
-.Fn sqrtf "x"
+.Fn sqrt "x"
 and
-.Fn sqrtl "x"
+.Fn sqrtf "x"
 .\" POSIX_MODE
 set the global variable
 .Va errno

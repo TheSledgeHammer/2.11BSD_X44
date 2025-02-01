@@ -1,26 +1,24 @@
-# $NetBSD: Makefile.inc,v 1.10 2017/05/07 22:01:54 christos Exp $
+# $NetBSD: Makefile.inc,v 1.2 2008/03/08 14:21:41 drochner Exp $
 
 .PATH: ${.CURDIR}/complex
 
-COMPLEX_SRCS = cabs.c carg.c \
-	ccos.c ccosh.c cephes_subr.c cexp.c clog.c conj.c cpow.c cproj.c \
-	cimag.c creal.c csin.c csinh.c csqrt.c ctan.c ctanh.c \
-	catrig.c
-CATRIG_SRCS = cacos.c cacosh.c casin.c casinh.c catan.c catanh.c
+SRCS+= cabs.c cabsf.c carg.c cargf.c
+SRCS+= creal.c crealf.c cimag.c cimagf.c conj.c conjf.c
+SRCS+= csqrt.c cexp.c clog.c cpow.c
+SRCS+= cephes_subr.c csin.c ccos.c ctan.c csinh.c ccosh.c ctanh.c
+SRCS+= casin.c cacos.c catan.c casinh.c cacosh.c catanh.c
+SRCS+= csqrtf.c cexpf.c clogf.c cpowf.c
+SRCS+= cephes_subrf.c csinf.c ccosf.c ctanf.c csinhf.c ccoshf.c ctanhf.c
+SRCS+= casinf.c cacosf.c catanf.c casinhf.c cacoshf.c catanhf.c
 
-CPPFLAGS+=-I${.CURDIR}/src
-.for i in ${COMPLEX_SRCS}
-SRCS+=	$i ${i:S/.c/f.c/} ${i:S/.c/l.c/}
-MAN+= ${i:Ncatrig*:Ncephes_*:S/.c/.3/}
-MLINKS+= ${i:Ncatrig*:Ncephes_*:S/.c/.3/} ${i:Ncatrig*:Ncephes_*:S/.c/f.3/}
-MLINKS+= ${i:Ncatrig*:Ncephes_*:S/.c/.3/} ${i:Ncatrig*:Ncephes_*:S/.c/l.3/}
-.endfor
+MAN+= cabs.3 cacos.3 cacosh.3 carg.3 casin.3 casinh.3 catan.3 catanh.3
+MAN+= ccos.3 ccosh.3 cexp.3 cimag.3 clog.3 conj.3 cpow.3 creal.3
+MAN+= csin.3 csinh.3 csqrt.3 ctan.3 ctanh.3
 
-.for i in ${CATRIG_SRCS}
-SRCS+=	${i:S/.c/l.c/}
-MAN+= ${i:S/.c/.3/}
-MLINKS+= ${i:S/.c/.3/} ${i:S/.c/f.3/}
-MLINKS+= ${i:S/.c/.3/} ${i:S/.c/l.3/}
-.endfor
-
-
+MLINKS+= cabs.3 cabsf.3 cacos.3 cacosf.3 cacosh.3 cacoshf.3
+MLINKS+= carg.3 cargf.3 casin.3 casinf.3 casinh.3 casinhf.3
+MLINKS+= catan.3 catanf.3 catanh.3 catanhf.3 ccos.3 ccosf.3
+MLINKS+= ccosh.3 ccoshf.3 cexp.3 cexpf.3 cimag.3 cimagf.3
+MLINKS+= clog.3 clogf.3 conj.3 conjf.3 cpow.3 cpowf.3
+MLINKS+= creal.3 crealf.3 csin.3 csinf.3 csinh.3 csinhf.3
+MLINKS+= csqrt.3 csqrtf.3 ctan.3 ctanf.3 ctanh.3 ctanhf.3

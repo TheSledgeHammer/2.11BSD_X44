@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $NetBSD: makeas.sh,v 1.8 2010/01/06 14:10:57 phx Exp $
+# $NetBSD: makeas.sh,v 1.6 2000/05/16 19:05:37 is Exp $
 
 # Copyright (c) 1999, 2000 Ignatios Souvatzis
 # All rights reserved.
@@ -13,6 +13,12 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#      This product includes software developed for the NetBSD Project
+#      by Ignatios Souvatzis.
+# 4. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission
 #
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 # IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -71,11 +77,11 @@ echo -n " " ${THESRC} >> $FILELIST
 
 ENTRY($NAME)
 #ifdef __SVR4_ABI__
-	bral PIC_PLT(_C_LABEL(__fplsp060_$OFFS))
+	jbra _C_LABEL(__fplsp060_$OFFS)
 #else
 	movel %sp@(8),%sp@-
 	movel %sp@(8),%sp@-
-	bsrl PIC_PLT(_C_LABEL(__fplsp060_$OFFS))
+	jbsr _C_LABEL(__fplsp060_$OFFS)
 	fmoved %fp0,%sp@
 	movel %sp@+,%d0
 	movel %sp@+,%d1
@@ -104,10 +110,10 @@ echo -n " " ${THESRC} >> $FILELIST
 
 ENTRY($NAME)
 #ifdef __SVR4_ABI__
-	bral PIC_PLT(_C_LABEL(__fplsp060_$OFFS))
+	jbra _C_LABEL(__fplsp060_$OFFS)
 #else
 	movel %sp@(4),%sp@-
-	bsrl PIC_PLT(_C_LABEL(__fplsp060_$OFFS))
+	jbsr _C_LABEL(__fplsp060_$OFFS)
 	fmoves %fp0,%sp@
 	movel %sp@+,%d0
 	rts

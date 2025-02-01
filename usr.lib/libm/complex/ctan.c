@@ -1,4 +1,4 @@
-/* $NetBSD: ctan.c,v 1.2 2011/07/03 06:45:24 mrg Exp $ */
+/* $NetBSD: ctan.c,v 1.1 2007/08/20 16:01:37 drochner Exp $ */
 
 /*-
  * Copyright (c) 2007 The NetBSD Foundation, Inc.
@@ -32,10 +32,9 @@
 #include "../src/namespace.h"
 #include <complex.h>
 #include <math.h>
-#include <float.h>
 #include "cephes_subr.h"
 
-#define MAXNUM DBL_MAX
+#define MAXNUM 1.0e308
 
 double complex
 ctan(double complex z)

@@ -74,6 +74,22 @@ union __long_double_u {
 	long double __val;
 };
 
+#ifdef __HAVE_LONG_DOUBLE
+#define	__fpmacro_unary_floating(__name, __arg0)			\
+	/* LINTED */							\
+	((sizeof (__arg0) == sizeof (float))				\
+	?	__ ## __name ## f (__arg0)				\
+	: (sizeof (__arg0) == sizeof (double))				\
+	?	__ ## __name ## d (__arg0)				\
+	:	__ ## __name ## l (__arg0))
+#else
+#define	__fpmacro_unary_floating(__name, __arg0)			\
+	/* LINTED */							\
+	((sizeof (__arg0) == sizeof (float))				\
+	?	__ ## __name ## f (__arg0)				\
+	:	__ ## __name ## d (__arg0))
+#endif /* __HAVE_LONG_DOUBLE */
+
 /*
  * ANSI/POSIX
  */
@@ -145,40 +161,303 @@ extern int signgam;
 #endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
 
 __BEGIN_DECLS
-double	fabs(double),
-		floor(double),
-		ceil(double),
-		fmod(double, double),
-		ldexp(double, int);
-double	sqrt(double),
-		hypot(double, double),
-		atof(const char *);
-double	sin(double),
-		cos(double),
-		tan(double),
-		asin(double),
-		acos(double),
-		atan(double),
-		atan2(double, double);
-double	exp(double),
-		log(double),
-		log10(double),
-		pow(double, double);
-double	sinh(double),
-		cosh(double),
-		tanh(double);
-double	gamma(double);
-double	j0(double),
-		j1(double),
-		jn(int, double),
-		y0(double),
-		y1(double),
-		yn(int, double);
+/*
+ * ANSI/POSIX
+ */
+double	acos(double);
+double	asin(double);
+double	atan(double);
+double	atan2(double, double);
+double	cos(double);
+double	sin(double);
+double	tan(double);
 
-/* libc/gen/arch/"arch" */
-double 	frexp(double, int *);
-int    	isnan(double);
-int    	isinf(double);
+double	cosh(double);
+double	sinh(double);
+double	tanh(double);
+
+double	exp(double);
+double	frexp(double, int *);
+double	ldexp(double, int);
+double	log(double);
+double	log2(double);
+double	log10(double);
+double	modf(double, double *);
+
+double	pow(double, double);
+double	sqrt(double);
+
+double	ceil(double);
+double	fabs(double);
+double	floor(double);
+double	fmod(double, double);
+
+#if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
+double	erf(double);
+double	erfc(double);
+double	gamma(double);
+double	hypot(double, double);
+int	finite(double);
+double	j0(double);
+double	j1(double);
+double	jn(int, double);
+double	lgamma(double);
+double	y0(double);
+double	y1(double);
+double	yn(int, double);
+
+#if (_XOPEN_SOURCE - 0) >= 500 || defined(__BSD_VISIBLE)
+double	acosh(double);
+double	asinh(double);
+double	atanh(double);
+double	cbrt(double);
+double	expm1(double);
+int	ilogb(double);
+double	log1p(double);
+double	logb(double);
+double	nextafter(double, double);
+double	remainder(double, double);
+double	rint(double);
+double	scalb(double, double);
+#endif /* (_XOPEN_SOURCE - 0) >= 500 || defined(__BSD_VISIBLE)*/
+#endif /* _XOPEN_SOURCE || __BSD_VISIBLE */
+
+/*
+ * ISO C99
+ */
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE) && \
+    !defined(_XOPEN_SOURCE) || \
+    ((__STDC_VERSION__ - 0) >= 199901L) || \
+    ((_POSIX_C_SOURCE - 0) >= 200112L) || \
+    ((_XOPEN_SOURCE  - 0) >= 600) || \
+    defined(_ISOC99_SOURCE) || defined(__BSD_VISIBLE)
+/* 7.12.3.1 int fpclassify(real-floating x) */
+#define	fpclassify(__x)	__fpmacro_unary_floating(fpclassify, __x)
+
+/* 7.12.3.2 int isfinite(real-floating x) */
+#define	isfinite(__x)	__fpmacro_unary_floating(isfinite, __x)
+
+/* 7.12.3.5 int isnormal(real-floating x) */
+#define	isnormal(__x)	(fpclassify(__x) == FP_NORMAL)
+
+/* 7.12.3.6 int signbit(real-floating x) */
+#define	signbit(__x)	__fpmacro_unary_floating(signbit, __x)
+
+/* 7.12.4 trigonometric */
+
+float	acosf(float);
+float	asinf(float);
+float	atanf(float);
+float	atan2f(float, float);
+float	cosf(float);
+float	sinf(float);
+float	tanf(float);
+
+/* 7.12.5 hyperbolic */
+
+float	acoshf(float);
+float	asinhf(float);
+float	atanhf(float);
+float	coshf(float);
+float	sinhf(float);
+float	tanhf(float);
+
+/* 7.12.6 exp / log */
+
+float	expf(float);
+float	expm1f(float);
+float	frexpf(float, int *);
+int	ilogbf(float);
+float	ldexpf(float, int);
+float	logf(float);
+float	log2f(float);
+float	log10f(float);
+float	log1pf(float);
+float	logbf(float);
+float	modff(float, float *);
+float	scalbnf(float, int);
+
+/* 7.12.7 power / absolute */
+
+float	cbrtf(float);
+float	fabsf(float);
+float	hypotf(float, float);
+float	powf(float, float);
+float	sqrtf(float);
+
+/* 7.12.8 error / gamma */
+
+float	erff(float);
+float	erfcf(float);
+float	lgammaf(float);
+
+/* 7.12.9 nearest integer */
+
+float	ceilf(float);
+float	floorf(float);
+float	rintf(float);
+double	round(double);
+float	roundf(float);
+double	trunc(double);
+float	truncf(float);
+long int	lrint(double);
+long int	lrintf(float);
+/* LONGLONG */
+long long int	llrint(double);
+/* LONGLONG */
+long long int	llrintf(float);
+long int	lround(double);
+long int	lroundf(float);
+/* LONGLONG */
+long long int	llround(double);
+/* LONGLONG */
+long long int	llroundf(float);
+
+/* 7.12.10 remainder */
+
+float	fmodf(float, float);
+float	remainderf(float, float);
+
+/* 7.12.11 manipulation */
+
+float	copysignf(float, float);
+double	nan(const char *);
+float	nanf(const char *);
+long double	nanl(const char *);
+float	nextafterf(float, float);
+
+/* 7.12.14 comparision */
+
+#define isunordered(x, y)	(isnan(x) || isnan(y))
+#define isgreater(x, y)		(!isunordered((x), (y)) && (x) > (y))
+#define isgreaterequal(x, y)	(!isunordered((x), (y)) && (x) >= (y))
+#define isless(x, y)		(!isunordered((x), (y)) && (x) < (y))
+#define islessequal(x, y)	(!isunordered((x), (y)) && (x) <= (y))
+#define islessgreater(x, y)	(!isunordered((x), (y)) && \
+				 ((x) > (y) || (y) > (x)))
+double	fdim(double, double);
+double	fmax(double, double);
+double	fmin(double, double);
+float	fdimf(float, float);
+float	fmaxf(float, float);
+float	fminf(float, float);
+long double fdiml(long double, long double);
+long double fmaxl(long double, long double);
+long double fminl(long double, long double);
+
+#endif /* !_ANSI_SOURCE && ... */
+
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE) || \
+    !defined(_XOPEN_SOURCE) || \
+    ((__STDC_VERSION__ - 0) >= 199901L) || \
+    ((_POSIX_C_SOURCE - 0) >= 200112L) || \
+    defined(_ISOC99_SOURCE) || defined(__BSD_VISIBLE)
+/* 7.12.3.3 int isinf(real-floating x) */
+#ifdef __isinf
+#define	isinf(__x)	__isinf(__x)
+#else
+#define	isinf(__x)	__fpmacro_unary_floating(isinf, __x)
+#endif
+
+/* 7.12.3.4 int isnan(real-floating x) */
+#ifdef __isnan
+#define	isnan(__x)	__isnan(__x)
+#else
+#define	isnan(__x)	__fpmacro_unary_floating(isnan, __x)
+#endif
+#endif /* !_ANSI_SOURCE && ... */
+
+#if defined(__BSD_VISIBLE)
+#ifndef __cplusplus
+int	matherr(struct exception *);
+#endif
+
+/*
+ * IEEE Test Vector
+ */
+double	significand(double);
+
+/*
+ * Functions callable from C, intended to support IEEE arithmetic.
+ */
+double	copysign(double, double);
+double	scalbn(double, int);
+
+/*
+ * BSD math library entry points
+ */
+double	drem(double, double);
+
+#endif /* __BSD_VISIBLE */
+
+#if defined(__BSD_VISIBLE) || defined(_REENTRANT)
+/*
+ * Reentrant version of gamma & lgamma; passes signgam back by reference
+ * as the second argument; user must allocate space for signgam.
+ */
+double	gamma_r(double, int *);
+double	lgamma_r(double, int *);
+#endif /* __BSD_VISIBLE || _REENTRANT */
+
+#if defined(__BSD_VISIBLE)
+
+/* float versions of ANSI/POSIX functions */
+
+float	gammaf(float);
+int	isinff(float);
+int	isnanf(float);
+int	finitef(float);
+float	j0f(float);
+float	j1f(float);
+float	jnf(int, float);
+float	y0f(float);
+float	y1f(float);
+float	ynf(int, float);
+
+float	scalbf(float, float);
+
+/*
+ * float version of IEEE Test Vector
+ */
+float	significandf(float);
+
+/*
+ * float versions of BSD math library entry points
+ */
+float	dremf(float, float);
+#endif /* __BSD_VISIBLE */
+
+#if defined(__BSD_VISIBLE) || defined(_REENTRANT)
+/*
+ * Float versions of reentrant version of gamma & lgamma; passes
+ * signgam back by reference as the second argument; user must
+ * allocate space for signgam.
+ */
+float	gammaf_r(float, int *);
+float	lgammaf_r(float, int *);
+#endif /* !... || _REENTRANT */
+
+/*
+ * Library implementation
+ */
+int	__fpclassifyf(float);
+int	__fpclassifyd(double);
+int	__isfinitef(float);
+int	__isfinited(double);
+int	__isinff(float);
+int	__isinfd(double);
+int	__isnanf(float);
+int	__isnand(double);
+int	__signbitf(float);
+int	__signbitd(double);
+
+#ifdef __HAVE_LONG_DOUBLE
+int	__fpclassifyl(long double);
+int	__isfinitel(long double);
+int	__isinfl(long double);
+int	__isnanl(long double);
+int	__signbitl(long double);
+#endif
 __END_DECLS
 
 #endif /* _MATH_H_ */

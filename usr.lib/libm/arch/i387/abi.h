@@ -1,12 +1,12 @@
-/*	$NetBSD: abi.h,v 1.8 2013/09/12 15:36:16 joerg Exp $	*/
+/*	$NetBSD: abi.h,v 1.5 2008/06/23 10:24:13 drochner Exp $	*/
 
 /*
  * Written by Frank van der Linden (fvdl@wasabisystems.com)
  */
 
 /*
- * The x86-64 ABI specifies that float and double arguments
- * are passed in SSE2 (xmm) registers. Unfortunately,
+ * The x86-64 ABI specifies that float, double and long double
+ * arguments are passed in SSE2 (xmm) registers. Unfortunately,
  * there is no way to push those on to the FP stack, which is
  * where the fancier instructions get their arguments from.
  *
@@ -16,8 +16,6 @@
 
 #ifdef __x86_64__
 
-#define ARG_LONG_DOUBLE_ONE	8(%rsp)
-#define ARG_LONG_DOUBLE_TWO	24(%rsp)
 #define ARG_DOUBLE_ONE		-8(%rsp)
 #define ARG_DOUBLE_ONE_LSW	-8(%rsp)
 #define ARG_DOUBLE_ONE_MSW	-4(%rsp)
@@ -51,8 +49,6 @@
 
 #else
 
-#define ARG_LONG_DOUBLE_ONE	4(%esp)
-#define ARG_LONG_DOUBLE_TWO	16(%esp)
 #define ARG_DOUBLE_ONE		4(%esp)
 #define ARG_DOUBLE_ONE_LSW	4(%esp)
 #define ARG_DOUBLE_ONE_MSW	8(%esp)
@@ -68,7 +64,7 @@
 #define XMM_DOUBLE_EPILOGUE
 #define XMM_FLOAT_EPILOGUE
 
-#ifdef __PIC__
+#ifdef PIC
 #define FLDL_VAR(x) \
 	PIC_PROLOGUE ; \
 	fldl PIC_GOTOFF(x) ; \

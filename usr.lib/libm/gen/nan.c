@@ -1,4 +1,4 @@
-/* $NetBSD: nan.c,v 1.3 2017/03/07 11:15:08 maya Exp $ */
+/* $NetBSD: nan.c,v 1.2 2008/04/28 20:23:01 martin Exp $ */
 
 /*-
  * Copyright (c) 2006 The NetBSD Foundation, Inc.
@@ -31,7 +31,7 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBM_SCCS) && !defined(lint) && !defined(NAN_FUNCTION)
-__RCSID("$NetBSD: nan.c,v 1.3 2017/03/07 11:15:08 maya Exp $");
+__RCSID("$NetBSD: nan.c,v 1.2 2008/04/28 20:23:01 martin Exp $");
 #endif /* LIBM_SCCS and not lint */
 
 #include <assert.h>
@@ -78,7 +78,8 @@ NAN_FUNCTION(const char *tagp)
 
 	res = NAN_STRTOD(nstr, NULL);
 
-	free(buf);
+	if (buf != NULL)
+		free(buf);
 
 	return res;
 }

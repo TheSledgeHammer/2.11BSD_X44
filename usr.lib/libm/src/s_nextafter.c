@@ -12,7 +12,7 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBM_SCCS) && !defined(lint)
-__RCSID("$NetBSD: s_nextafter.c,v 1.16 2017/08/16 11:22:52 he Exp $");
+__RCSID("$NetBSD: s_nextafter.c,v 1.11 2002/05/26 22:01:57 wiz Exp $");
 #endif
 
 /* IEEE functions
@@ -24,11 +24,6 @@ __RCSID("$NetBSD: s_nextafter.c,v 1.16 2017/08/16 11:22:52 he Exp $");
 
 #include "math.h"
 #include "math_private.h"
-
-#ifndef __HAVE_LONG_DOUBLE
-__strong_alias(nextafterl, nextafter)
-__strong_alias(nexttoward, nextafter)
-#endif
 
 double
 nextafter(double x, double y)
@@ -44,7 +39,7 @@ nextafter(double x, double y)
 	if(((ix>=0x7ff00000)&&((ix-0x7ff00000)|lx)!=0) ||   /* x is nan */
 	   ((iy>=0x7ff00000)&&((iy-0x7ff00000)|ly)!=0))     /* y is nan */
 	   return x+y;
-	if(x==y) return y;		/* x=y, return y */
+	if(x==y) return x;		/* x=y, return x */
 	if((ix|lx)==0) {			/* x == 0 */
 	    INSERT_WORDS(x,hy&0x80000000,1);	/* return +-minsubnormal */
 	    y = x*x;

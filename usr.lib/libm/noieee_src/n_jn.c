@@ -1,4 +1,4 @@
-/*	$NetBSD: n_jn.c,v 1.8 2018/03/05 23:00:55 christos Exp $	*/
+/*	$NetBSD: n_jn.c,v 1.6 2003/08/07 16:44:51 agc Exp $	*/
 /*-
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -102,9 +102,7 @@ static char sccsid[] = "@(#)jn.c	8.2 (Berkeley) 11/30/93";
 #endif
 
 static const double
-#if _IEEE
 invsqrtpi= 5.641895835477562869480794515607725858441e-0001,
-#endif
 two  = 2.0,
 zero = 0.0,
 one  = 1.0;
@@ -120,9 +118,7 @@ jn(int n, double x)
      * Thus, J(-n,x) = J(n,-x)
      */
     /* if J(n,NaN) is NaN */
-#if _IEEE
-	if (snan(x)) return x+x;
-#endif
+	if (_IEEE && isnan(x)) return x+x;
 	if (n<0){
 		n = -n;
 		x = -x;
@@ -135,8 +131,7 @@ jn(int n, double x)
 	    b = zero;
 	else if ((double) n <= x) {
 			/* Safe to use J(n+1,x)=2n/x *J(n,x)-J(n-1,x) */
-#if _IEEE
-	    if (x >= 8.148143905337944345e+090) {
+	    if (_IEEE && x >= 8.148143905337944345e+090) {
 					/* x >= 2**302 */
     /* (x >> n**2)
      *	    Jn(x) = cos(x-(2n+1)*pi/4)*sqrt(2/x*pi)
@@ -158,9 +153,7 @@ jn(int n, double x)
 		    case 3: temp =  cos(x)-sin(x); break;
 		}
 		b = invsqrtpi*temp/sqrt(x);
-	    } else
-#endif
-	    {
+	    } else {
 	        a = j0(x);
 	        b = j1(x);
 	        for(i=1;i<n;i++){
@@ -281,8 +274,7 @@ yn(int n, double x)
 	}
 	if (n == 0) return(y0(x));
 	if (n == 1) return(sign*y1(x));
-#if _IEEE
-	if(x >= 8.148143905337944345e+090) { /* x > 2**302 */
+	if(_IEEE && x >= 8.148143905337944345e+090) { /* x > 2**302 */
     /* (x >> n**2)
      *	    Jn(x) = cos(x-(2n+1)*pi/4)*sqrt(2/x*pi)
      *	    Yn(x) = sin(x-(2n+1)*pi/4)*sqrt(2/x*pi)
@@ -303,9 +295,7 @@ yn(int n, double x)
 		    case 3: temp =  sin(x)+cos(x); break;
 		}
 		b = invsqrtpi*temp/sqrt(x);
-	} else
-#endif
-	{
+	} else {
 	    a = y0(x);
 	    b = y1(x);
 	/* quit if b is -inf */

@@ -26,9 +26,9 @@
 .\" SUCH DAMAGE.
 .\"
 .\"     from: @(#)lgamma.3	6.6 (Berkeley) 12/3/92
-.\"	$NetBSD: lgamma.3,v 1.23 2017/07/03 21:32:50 wiz Exp $
+.\"	$NetBSD: lgamma.3,v 1.21 2003/08/07 16:44:48 agc Exp $
 .\"
-.Dd May 4, 2012
+.Dd December 3, 1992
 .Dt LGAMMA 3
 .Os
 .Sh NAME
@@ -39,9 +39,7 @@
 .Nm gamma ,
 .Nm gammaf ,
 .Nm gamma_r ,
-.Nm gammaf_r ,
-.Nm tgamma ,
-.Nm tgammaf
+.Nm gammaf_r
 .Nd log gamma function
 .Sh LIBRARY
 .Lb libm
@@ -66,18 +64,14 @@
 .Fn gamma_r "double x" "int *sign"
 .Ft float
 .Fn gammaf_r "float x" "int *sign"
-.Ft double
-.Fn tgamma "double x"
-.Ft float
-.Fn tgammaf "float x"
 .Sh DESCRIPTION
 .Fn lgamma x
 .if t \{\
 returns ln\||\(*G(x)| where
 .Bd -unfilled -offset indent
-\(*G(x) = \(is\d\s8\z0\s10\u\u\s8\(if\s10\d t\u\s8x\-1\s10\d e\u\s8\-t\s10\d dt	for x > 0 and
+\(*G(x) = \(is\d\s8\z0\s10\u\u\s8\(if\s10\d t\u\s8x\-1\s10\d e\u\s8\-t\s10\d dt	for x \*[Gt] 0 and
 .br
-\(*G(x) = \(*p/(\(*G(1\-x)\|sin(\(*px))	for x < 1.
+\(*G(x) = \(*p/(\(*G(1\-x)\|sin(\(*px))	for x \*[Lt] 1.
 .Ed
 .\}
 .if n \
@@ -96,26 +90,6 @@ pointed to by the
 argument and
 .Fa signgam
 is not modified.
-.Pp
-The
-.Fn tgamma x
-and
-.Fn tgammaf x
-functions return \(*G(x), with no effect on
-.Fa signgam .
-.Pp
-.Fn gamma ,
-.Fn gammaf ,
-.Fn gamma_r ,
-and
-.Fn gammaf_r
-are deprecated aliases for
-.Fn lgamma ,
-.Fn lgammaf ,
-.Fn lgamma_r ,
-and
-.Fn lgammaf_r ,
-respectively.
 .Sh IDIOSYNCRASIES
 Do not use the expression
 .Dq Li signgam\(**exp(lgamma(x))
@@ -133,9 +107,6 @@ has returned can signgam be correct.
 returns appropriate values unless an argument is out of range.
 Overflow will occur for sufficiently large positive values, and
 non-positive integers.
-For large non-integer negative values,
-.Fn tgamma
-will underflow.
 On the
 .Tn VAX ,
 the reserved operator is returned,
@@ -150,7 +121,3 @@ The
 .Nm lgamma
 function appeared in
 .Bx 4.3 .
-The
-.Fn tgamma
-function appeared in
-.Nx 6.0 .

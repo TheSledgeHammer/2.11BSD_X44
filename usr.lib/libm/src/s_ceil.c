@@ -12,7 +12,7 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBM_SCCS) && !defined(lint)
-__RCSID("$NetBSD: s_ceil.c,v 1.14 2013/11/11 23:57:34 joerg Exp $");
+__RCSID("$NetBSD: s_ceil.c,v 1.12 2008/04/25 22:21:53 christos Exp $");
 #endif
 
 /*
@@ -28,11 +28,6 @@ __RCSID("$NetBSD: s_ceil.c,v 1.14 2013/11/11 23:57:34 joerg Exp $");
 #include "math_private.h"
 
 static const double huge = 1.0e300;
-
-#ifndef __HAVE_LONG_DOUBLE
-__strong_alias(_ceill, ceil)
-__weak_alias(ceill, ceil)
-#endif
 
 double
 ceil(double x)
@@ -66,7 +61,7 @@ ceil(double x)
 		    if(jj0==20) i0+=1;
 		    else {
 			j = i1 + (1<<(52-jj0));
-			if(j<(u_int32_t)i1) i0+=1;	/* got a carry */
+			if(j<i1) i0+=1;	/* got a carry */
 			i1 = j;
 		    }
 		}

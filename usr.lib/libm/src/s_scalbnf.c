@@ -15,36 +15,20 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBM_SCCS) && !defined(lint)
-__RCSID("$NetBSD: s_scalbnf.c,v 1.12 2013/05/20 19:40:09 joerg Exp $");
+__RCSID("$NetBSD: s_scalbnf.c,v 1.8 2002/05/26 22:01:58 wiz Exp $");
 #endif
 
-#include "namespace.h"
 #include "math.h"
 #include "math_private.h"
 
-#ifndef _LP64
-__strong_alias(_scalbnf, _scalblnf)
-#endif
-__weak_alias(scalbnf, _scalbnf)
-__weak_alias(scalblnf, _scalblnf)
-__weak_alias(ldexpf, _scalbnf)
-
 static const float
-two25   =  0x1.0p25,	/* 0x4c000000 */
-twom25  =  0x1.0p-25,	/* 0x33000000 */
+two25   =  3.355443200e+07,	/* 0x4c000000 */
+twom25  =  2.9802322388e-08,	/* 0x33000000 */
 huge   = 1.0e+30,
 tiny   = 1.0e-30;
 
-#ifdef _LP64
 float
 scalbnf(float x, int n)
-{
-	return scalblnf(x, n);
-}
-#endif
-
-float
-scalblnf(float x, long n)
 {
 	int32_t k,ix;
 	GET_FLOAT_WORD(ix,x);

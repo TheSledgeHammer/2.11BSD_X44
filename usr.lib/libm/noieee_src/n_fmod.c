@@ -1,4 +1,4 @@
-/*	$NetBSD: n_fmod.c,v 1.11 2018/11/09 10:19:47 martin Exp $	*/
+/*	$NetBSD: n_fmod.c,v 1.5 2003/08/07 16:44:51 agc Exp $	*/
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -66,14 +66,6 @@ static char sccsid[] = "@(#)fmod.c	8.1 (Berkeley) 6/4/93";
 extern int isnan(),finite();
 #endif	/* !defined(__vax__) && !defined(tahoe) */
 
-#if DBL_MANT_DIG == LDBL_MANT_DIG && DBL_MIN_EXP == LDBL_MIN_EXP \
-	 && DBL_MIN_EXP == LDBL_MIN_EXP
-#ifdef __weak_alias
-__weak_alias(fmodl, fmod);
-__weak_alias(modfl, fmod);
-#endif
-#endif
-
 #ifdef TEST_FMOD
 static double
 _fmod(double x, double y)
@@ -103,41 +95,24 @@ fmod(double x, double y)
 	return x >= (double)0 ? r : -r;
 }
 
-float
-fmodf(float x, float y)
-{
-	return fmod(x, y);
-}
-
 #ifdef TEST_FMOD
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+extern long random();
+extern double fmod();
 
 #define	NTEST	10000
 #define	NCASES	3
 
 static int nfail = 0;
-static void
-prf(const char *s, double d)
-{
-	union {
-		double d;
-		unsigned long long u;
-	} x;
-	x.d = d;
-	printf("%s = %#016.16llx (%24.16e)\n", s, x.u, x.d);
-}
 
 static void
 doit(double x, double y)
 {
 	double ro = fmod(x,y),rn = _fmod(x,y);
 	if (ro != rn) {
-		prf(" x   ", x);
-		prf(" y   ", y);
-		prf(" fmod", ro);
-		prf("_fmod", rn);
+		(void)printf(" x    = 0x%08.8x %08.8x (%24.16e)\n",x,x);
+		(void)printf(" y    = 0x%08.8x %08.8x (%24.16e)\n",y,y);
+		(void)printf(" fmod = 0x%08.8x %08.8x (%24.16e)\n",ro,ro);
+		(void)printf("_fmod = 0x%08.8x %08.8x (%24.16e)\n",rn,rn);
 		(void)printf("\n");
 	}
 }

@@ -15,10 +15,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBM_SCCS) && !defined(lint)
-__RCSID("$NetBSD: k_rem_pio2f.c,v 1.9 2017/06/22 12:43:43 maya Exp $");
+__RCSID("$NetBSD: k_rem_pio2f.c,v 1.7 2002/05/26 22:01:53 wiz Exp $");
 #endif
 
-#include "namespace.h"
 #include "math.h"
 #include "math_private.h"
 
@@ -68,9 +67,7 @@ __kernel_rem_pio2f(float *x, float *y, int e0, int nx, int prec, const int32_t *
 
     /* compute q[0],q[1],...q[jk] */
 	for (i=0;i<=jk;i++) {
-	    for(j=0,fw=0.0;j<=jx;j++)
-		    fw += x[j]*f[jx+i-j];
-	    q[i] = fw;
+	    for(j=0,fw=0.0;j<=jx;j++) fw += x[j]*f[jx+i-j]; q[i] = fw;
 	}
 
 	jz = jk;

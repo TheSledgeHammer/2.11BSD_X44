@@ -26,16 +26,15 @@
 .\" SUCH DAMAGE.
 .\"
 .\"     from: @(#)fabs.3	5.1 (Berkeley) 5/2/91
-.\"	$NetBSD: fabs.3,v 1.17 2016/03/17 09:44:56 wiz Exp $
+.\"	$NetBSD: fabs.3,v 1.14 2003/08/07 16:44:47 agc Exp $
 .\"
-.Dd March 17, 2016
+.Dd May 2, 1991
 .Dt FABS 3
 .Os
 .Sh NAME
 .Nm fabs ,
-.Nm fabsf ,
-.Nm fabsl
-.Nd floating-point absolute value functions
+.Nm fabsf
+.Nd floating-point absolute value function
 .Sh LIBRARY
 .Lb libm
 .Sh SYNOPSIS
@@ -44,25 +43,23 @@
 .Fn fabs "double x"
 .Ft float
 .Fn fabsf "float x"
-.Ft long double
-.Fn fabsl "long double x"
 .Sh DESCRIPTION
 The
-.Fn fabs ,
-.Fn fabsf
+.Fn fabs
 and
-.Fn fabsl
+.Fn fabsf
 functions compute the absolute value of a floating-point number
 .Fa x .
 .Sh RETURN VALUES
-Functions of the
+The
 .Fn fabs
-family return the absolute value of
+function returns the absolute value of
 .Fa x .
 .Sh SEE ALSO
 .Xr abs 3 ,
 .Xr ceil 3 ,
 .Xr floor 3 ,
+.Xr ieee 3 ,
 .Xr math 3 ,
 .Xr rint 3
 .Sh STANDARDS
@@ -70,9 +67,3 @@ The
 .Fn fabs
 function conforms to
 .St -ansiC .
-The
-.Fn fabsf
-and
-.Fn fabsl
-functions conform to
-.St -isoC-99 .

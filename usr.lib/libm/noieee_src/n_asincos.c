@@ -1,4 +1,4 @@
-/*	$NetBSD: n_asincos.c,v 1.9 2016/09/21 14:11:40 christos Exp $	*/
+/*	$NetBSD: n_asincos.c,v 1.7 2003/08/07 16:44:50 agc Exp $	*/
 /*
  * Copyright (c) 1985, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -27,8 +27,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <sys/cdefs.h>
-__RCSID("$NetBSD: n_asincos.c,v 1.9 2016/09/21 14:11:40 christos Exp $");
 
 #ifndef lint
 #if 0
@@ -88,15 +86,7 @@ static char sccsid[] = "@(#)asincos.c	8.1 (Berkeley) 6/4/93";
  *      1.99 ulps.
  */
 
-#include "namespace.h"
 #include "mathimpl.h"
-
-#ifdef __weak_alias
-__weak_alias(asinf, _asinf)
-#endif
-#ifdef __weak_alias
-__weak_alias(asin, _asin)
-#endif
 
 double
 asin(double x)
@@ -111,12 +101,6 @@ asin(double x)
 	else
 	    { t=one-s; s=t+t; return(atan2(x,sqrt(s-t*t))); }
 
-}
-
-float
-asinf(float x)
-{
-	return (float)asin(x);
 }
 
 /* ACOS(X)
@@ -183,10 +167,4 @@ acos(double x)
 	else
 	    t=atan2(one,0.0);	/* t = PI/2 */
 	return(t+t);
-}
-
-float
-acosf(float x)
-{
-	return (float)acos(x);
 }

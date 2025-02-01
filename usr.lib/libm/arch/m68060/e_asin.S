@@ -1,4 +1,4 @@
-/* $NetBSD: e_asin.S,v 1.6 2010/01/06 14:11:53 phx Exp $ */
+/* $NetBSD: e_asin.S,v 1.5 2000/05/16 19:07:35 is Exp $ */
 
 /*
  * FPLSP wrapper for __ieee754_asin
@@ -9,11 +9,11 @@
 
 ENTRY(__ieee754_asin)
 #ifdef __SVR4_ABI__
-	bral PIC_PLT(_C_LABEL(__fplsp060_0020))
+	jbra _C_LABEL(__fplsp060_0020)
 #else
 	movel %sp@(8),%sp@-
 	movel %sp@(8),%sp@-
-	bsrl PIC_PLT(_C_LABEL(__fplsp060_0020))
+	jbsr _C_LABEL(__fplsp060_0020)
 	fmoved %fp0,%sp@
 	movel %sp@+,%d0
 	movel %sp@+,%d1

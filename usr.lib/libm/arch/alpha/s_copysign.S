@@ -1,4 +1,4 @@
-/*	$NetBSD: s_copysign.S,v 1.7 2014/11/15 21:07:01 joerg Exp $	*/
+/*	$NetBSD: s_copysign.S,v 1.5 2008/04/28 20:23:01 martin Exp $	*/
 
 /*-
  * Copyright (c) 1996 The NetBSD Foundation, Inc.
@@ -30,9 +30,6 @@
  */
 
 #include <machine/asm.h>
-
-STRONG_ALIAS(_copysignl, copysign)
-WEAK_ALIAS(copysignl, _copysignl)
 
 LEAF(copysign, 2)
 	cpys	fa1, fa0, fv0

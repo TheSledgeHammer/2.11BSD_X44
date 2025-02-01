@@ -26,15 +26,14 @@
 .\" SUCH DAMAGE.
 .\"
 .\"     from: @(#)acos.3	5.1 (Berkeley) 5/2/91
-.\"	$NetBSD: acos.3,v 1.18 2017/07/03 21:32:50 wiz Exp $
+.\"	$NetBSD: acos.3,v 1.16 2003/08/07 16:44:46 agc Exp $
 .\"
-.Dd January 29, 2013
+.Dd May 2, 1991
 .Dt ACOS 3
 .Os
 .Sh NAME
 .Nm acos ,
-.Nm acosf ,
-.Nm acosl
+.Nm acosf
 .Nd arc cosine function
 .Sh LIBRARY
 .Lb libm
@@ -44,24 +43,20 @@
 .Fn acos "double x"
 .Ft float
 .Fn acosf "float x"
-.Ft long double
-.Fn acosl "long double x"
 .Sh DESCRIPTION
 The
-.Fn acos ,
-.Fn acosf ,
+.Fn acos
 and
-.Fn acosl
+.Fn acosf
 functions compute the principal value of the arc cosine of
 .Fa x
 in the range
 .Bq 0 , \*(Pi .
 .Sh RETURN VALUES
-If |x|>1,
-.Fn acos "x" ,
-.Fn acosf "x" ,
+If |x|\*[Gt]1,
+.Fn acos "x"
 and
-.Fn acosl "x"
+.Fn acosf "x"
 .\" POSIX_MODE
 set the global variable
 .Va errno
@@ -85,4 +80,4 @@ to EDOM.
 The
 .Fn acos
 function conforms to
-.St -isoC-99 .
+.St -ansiC .
