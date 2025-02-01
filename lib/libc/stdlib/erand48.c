@@ -16,6 +16,7 @@
 #include "namespace.h"
 
 #include <assert.h>
+#include <math.h>
 
 #include "rand48.h"
 
