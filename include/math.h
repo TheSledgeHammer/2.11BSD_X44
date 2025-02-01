@@ -454,10 +454,12 @@ int	__fpclassifyf(float);
 int	__fpclassifyd(double);
 int	__isfinitef(float);
 int	__isfinited(double);
+int	__isinf(double);
 int	__isinff(float);
-int	__isinfd(double);
+//int	__isinfd(double);	/* same as: __isinf */
+int	__isnan(double);
 int	__isnanf(float);
-int	__isnand(double);
+//int	__isnand(double); 	/* same as: __isnan */
 int	__signbitf(float);
 int	__signbitd(double);
 
