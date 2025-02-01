@@ -43,6 +43,10 @@
 #ifndef _I386_IEEE_H_
 #define _I386_IEEE_H_
 
+#ifndef __HAVE_LONG_DOUBLE
+#define __HAVE_LONG_DOUBLE
+#endif
+
 /*
  * ieee.h defines the machine-dependent layout of the machine's IEEE
  * floating point.  It does *not* define (yet?) any of the rounding
