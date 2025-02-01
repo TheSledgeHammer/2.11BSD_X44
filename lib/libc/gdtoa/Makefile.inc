@@ -2,7 +2,6 @@
 
 # The current iteration of gdtoa is a refactored version of stdlib/strtod.c (NetBSD 4.0).
 # With a few additions such as ieee infinity.
-# Currently untested since refactored and has not been added to the libc Makefile.inc
 
 # gdtoa sources
 .PATH: ${.CURDIR}/gdtoa
