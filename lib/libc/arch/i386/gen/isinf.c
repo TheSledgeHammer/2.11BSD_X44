@@ -101,11 +101,11 @@ __isinfl(d)
  */
 int
 __isnanf(f)
-    float f;
+    	float f;
 {
-    register struct ieee_single *p = (struct ieee_single *)&f;
-
-    return (p->sng_exp == SNG_EXP_INFNAN && p->sng_frac);
+	register struct ieee_single *p = (struct ieee_single *)&f;
+	
+	return (p->sng_exp == SNG_EXP_INFNAN && p->sng_frac);
 }
 
 /*
@@ -114,9 +114,9 @@ __isnanf(f)
  */
 int
 __isinff(f)
-    float f;
+    	float f;
 {
-    register struct ieee_single *p = (struct ieee_single *)&f;
-
-    return (p->sng_exp == SNG_EXP_INFNAN && !p->sng_frac);
+	register struct ieee_single *p = (struct ieee_single *)&f;
+	
+	return (p->sng_exp == SNG_EXP_INFNAN && !p->sng_frac);
 }
