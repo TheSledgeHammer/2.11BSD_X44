@@ -39,32 +39,58 @@ static char sccsid[] = "@(#)isinf.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <machine/ieee.h>
 #include <math.h>
 
+#ifdef __weak_alias
+__weak_alias(isnan,__isnan)
+__weak_alias(isinf,__isinf)
+#endif
+
 int
-isnan(d)
+__isnan(d)
 	double d;
 {
-	register struct IEEEdp {
-		u_int manl : 32;
-		u_int manh : 20;
-		u_int  exp : 11;
-		u_int sign :  1;
-	} *p = (struct IEEEdp *)&d;
+	register struct ieee_double *p = (struct ieee_double *)&d;
 
-	return(p->exp == 2047 && (p->manh || p->manl));
+    	return (p->dbl_exp == DBL_EXP_INFNAN && (p->dbl_frach || p->dbl_fracl));
 }
 
 int
-isinf(d)
+__isinf(d)
 	double d;
 {
-	register struct IEEEdp {
-		u_int manl : 32;
-		u_int manh : 20;
-		u_int  exp : 11;
-		u_int sign :  1;
-	} *p = (struct IEEEdp *)&d;
+	register struct ieee_double *p = (struct ieee_double *)&d;
+	
+	return (p->dbl_exp == DBL_EXP_INFNAN && !p->dbl_frach && !p->dbl_fracl);
+}
 
-	return(p->exp == 2047 && !p->manh && !p->manl);
+/*
+ * 7.12.3.4 isnan - test for a NaN
+ *          IEEE 754 compatible 80-bit extended-precision Intel 386 version
+ */
+int
+__isnanl(d)
+	long double d;
+{
+	register struct ieee_ext *p = (struct ieee_ext *)&d;
+	
+	p->ext_frach &= ~0x80000000;	/* clear normalization bit */
+	
+	return (p->ext_exp == EXT_EXP_INFNAN && (p->ext_frach || p->ext_fracl));
+}
+
+/*
+ * 7.12.3.3 isinf - test for infinity
+ *          IEEE 754 compatible 80-bit extended-precision Intel 386 version
+ */
+int
+__isinfl(d)
+    	long double d;
+{
+	register struct ieee_ext *p = (struct ieee_ext *)&d;
+	
+	p->ext_frach &= ~0x80000000;	/* clear normalization bit */
+	
+	return (p->ext_exp == EXT_EXP_INFNAN && !p->ext_frach && !p->ext_fracl);
 }
