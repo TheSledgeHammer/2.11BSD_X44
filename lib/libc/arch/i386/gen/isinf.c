@@ -94,3 +94,29 @@ __isinfl(d)
 	
 	return (p->ext_exp == EXT_EXP_INFNAN && !p->ext_frach && !p->ext_fracl);
 }
+
+/*
+ * 7.12.3.4 isnan - test for a NaN
+ *          IEEE 754 single-precision version
+ */
+int
+__isnanf(f)
+    float f;
+{
+    register struct ieee_single *p = (struct ieee_single *)&f;
+
+    return (p->sng_exp == SNG_EXP_INFNAN && p->sng_frac);
+}
+
+/*
+ * 7.12.3.3 isinf - test for infinity
+ *          IEEE 754 single-precision version
+ */
+int
+__isinff(f)
+    float f;
+{
+    register struct ieee_single *p = (struct ieee_single *)&f;
+
+    return (p->sng_exp == SNG_EXP_INFNAN && !p->sng_frac);
+}
