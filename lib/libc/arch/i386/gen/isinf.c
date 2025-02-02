@@ -59,7 +59,7 @@ __isnan(d)
 {
 	register struct ieee_double *p = (struct ieee_double *)&d;
 
-    return (p->dbl_exp == DBL_EXP_INFNAN && (p->dbl_frach || p->dbl_fracl));
+    	return (p->dbl_exp == DBL_EXP_INFNAN && (p->dbl_frach || p->dbl_fracl));
 }
 
 int
