@@ -145,7 +145,6 @@ __isfinited(d)
 	return (__isfinite(d));
 }
 
-
 /*
  * 7.12.3.6 signbit - determine whether the sign of an argument is negative
  *          IEEE 754 double-precision version
