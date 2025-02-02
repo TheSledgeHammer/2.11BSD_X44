@@ -129,6 +129,30 @@ extern __const union __float_u __nanf;
 #define	NAN		 __nanf.__val
 #endif /* __GNUC_PREREQ__(3, 3) */
 
+/* 7.12#6 number classification macros */
+#define	FP_INFINITE		0x00
+#define	FP_NAN			0x01
+#define	FP_NORMAL		0x02
+#define	FP_SUBNORMAL		0x03
+#define	FP_ZERO			0x04
+
+/* 7.12#7 fast fma(3) feature test macros */
+#if __GNUC_PREREQ__(4, 4)
+#  ifdef __FP_FAST_FMA
+#    define	FP_FAST_FMA	1
+#  endif
+#  ifdef __FP_FAST_FMAF
+#    define	FP_FAST_FMAF	1
+#  endif
+#  ifdef __FP_FAST_FMAL
+#    define	FP_FAST_FMAL	1
+#  endif
+#endif
+
+/* 7.12#8 ilogb exceptional input result value macros */
+#define	FP_ILOGB0		INT_MIN
+#define	FP_ILOGBNAN		INT_MAX
+
 #endif /* !_ANSI_SOURCE && ... */
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE) \
@@ -450,19 +474,28 @@ float	lgammaf_r(float, int *);
 /*
  * Library implementation
  */
-int	__fpclassifyf(float);
-int	__fpclassifyd(double);
-int	__isfinitef(float);
-int	__isfinited(double);
-int	__isinf(double);
-int	__isinff(float);
-//int	__isinfd(double);	/* same as: __isinf */
+/* IEEE 754 Double-Precision */
+int	__fpclassify(double);
+int	__isfinite(double);
 int	__isnan(double);
-int	__isnanf(float);
-//int	__isnand(double); 	/* same as: __isnan */
-int	__signbitf(float);
+int	__isinf(double);
+int	__signbit(double);
+
+/* NetBSD IEEE 754 Double-Precision Compatibility */
+int	__fpclassifyd(double);
+int	__isfinited(double);
+int	__isinfd(double);
+int	__isnand(double);
 int	__signbitd(double);
 
+/* IEEE 754 Single-Precision */
+int	__fpclassifyf(float);
+int	__isfinitef(float);
+int	__isinff(float);
+int	__isnanf(float);
+int	__signbitf(float);
+
+/* IEEE 754 Extended-Precision */
 #ifdef __HAVE_LONG_DOUBLE
 int	__fpclassifyl(long double);
 int	__isfinitel(long double);
