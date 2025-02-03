@@ -84,7 +84,7 @@ percpu_lookup(ci)
 	struct percpu *pc, *npci;
 	LIST_FOREACH(pc, &cpuhead, pc_entry) {
 	    npci = ci->cpu_percpu;
-		if(npci == pc) {
+		if (npci == pc) {
 			return (pc);
 		}
 	}
@@ -98,7 +98,7 @@ percpu_remove(ci)
 {
 	struct percpu *pc;
 	pc = percpu_lookup(ci);
-	if(pc->pc_cpuid == ci->cpu_cpuid) {
+	if (pc->pc_cpuid == ci->cpu_cpuid) {
 		percpu_destroy(pc);
 	}
 }
@@ -157,7 +157,7 @@ percpu_extent_region(pc)
 	int error;
 
 	ext = pc->pc_extent;
-	if(ext == NULL) {
+	if (ext == NULL) {
 		panic("percpu_extent_region: no extent");
 		return;
 	}
@@ -181,7 +181,7 @@ percpu_extent_subregion(pc, size)
 	int error;
 
 	ext = pc->pc_extent;
-	if(ext == NULL) {
+	if (ext == NULL) {
 		panic("percpu_extent_subregion: no extent");
 		return;
 	}
@@ -190,7 +190,7 @@ percpu_extent_subregion(pc, size)
 		percpu_extent_free(pc, pc->pc_start, pc->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
 		panic("percpu_extent_subregion");
 	}  else {
-	    pc->pc_dynamic = result;
+	    	pc->pc_dynamic = result;
 		printf("percpu_extent_subregion: successful");
 	}
 }
@@ -206,8 +206,9 @@ percpu_extent_free(pc, start, end, flags)
 	int error;
 
 	ext = pc->pc_extent;
-	if(ext == NULL) {
+	if (ext == NULL) {
 		printf("percpu_extent_free: no extent to free");
+		return;
 	}
 
 	error = extent_free(ext, start, end, flags);
@@ -223,7 +224,7 @@ void
 percpu_free(pc)
 	struct percpu *pc;
 {
-	if(pc->pc_extent != NULL) {
+	if (pc->pc_extent != NULL) {
 		extent_destroy(pc->pc_extent);
 	}
 	free(pc, M_PERCPU);
