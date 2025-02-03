@@ -13,6 +13,9 @@
 #
 #
 
+NOSANITIZER=	# defined
+COPTS+=			${${ACTIVE_CC} == "gcc":? -frounding-math :}
+
 #
 # There are two options in making libm at fdlibm compile time:
 # 	_IEEE_LIBM 	--- IEEE libm; smaller, and somewhat faster
@@ -47,11 +50,43 @@ USE_SHLIBDIR=	yes
 # require this for the value of I387_LIBM from mk.conf, if set.
 .include <bsd.own.mk>
 
-.if (${MACHINE_ARCH} == "alpha")
+LIBC_MACHINE_ARCH?=	${MACHINE_ARCH}
+LIBC_MACHINE_CPU?=	${MACHINE_CPU}
+
+# compiler_rt uses typeof() and __extension__
+LINTFLAGS += -g
+
+.if (${LIBC_MACHINE_CPU} == "aarch64")
+.PATH: ${.CURDIR}/arch/aarch64
+ARCH_SRCS = 
+
+.elif (${LIBC_MACHINE_ARCH} == "alpha")
 .PATH: ${.CURDIR}/arch/alpha
 ARCH_SRCS = s_copysign.S s_copysignf.S lrint.S
+
+.elif (${LIBC_MACHINE_CPU} == "arm")
+.PATH.c: ${.CURDIR}/arch/arm
+
+.elif (${LIBC_MACHINE_ARCH} == "ia64")
+.PATH: ${.CURDIR}/arch/ia64
+
+.elif (${LIBC_MACHINE_ARCH} == "hppa")
+.PATH.c: ${.CURDIR}/arch/hppa
+
+.elif (${LIBC_MACHINE_ARCH} == "sparc")
+.PATH: ${.CURDIR}/arch/sparc
+
+.elif (${LIBC_MACHINE_ARCH} == "sparc64")
+.PATH: ${.CURDIR}/arch/sparc64
+
 .elif ((${MACHINE_ARCH} == "i386") || (${MACHINE_ARCH} == "x86_64"))
+
+# XXX consider making this LIBC_MACHINE_ARCH?
+.if (${MACHINE_ARCH} == "x86_64")
+.PATH: ${.CURDIR}/arch/x86_64
+.endif
 .PATH:	${.CURDIR}/arch/i387
+
 ARCH_SRCS = e_acos.S e_asin.S e_atan2.S e_exp.S e_expf.S e_fmod.S e_log.S \
 	    e_logf.S e_log10.S e_log10f.S e_log2.S e_log2f.S e_remainder.S \
 	    e_remainderf.S e_scalb.S e_scalbf.S e_sqrt.S e_sqrtf.S s_atan.S \
@@ -60,10 +95,12 @@ ARCH_SRCS = e_acos.S e_asin.S e_atan2.S e_exp.S e_expf.S e_fmod.S e_log.S \
 	    s_ilogbf.S s_log1p.S s_log1pf.S s_logb.S s_logbf.S s_rint.S \
 	    s_rintf.S s_scalbn.S s_scalbnf.S s_significand.S \
 	    s_significandf.S s_sin.S s_sinf.S s_tan.S s_tanf.S lrint.S
+
 .if (${MACHINE_ARCH} == "i386")
 SUBDIR=arch/i387
 .endif
-.elif (${MACHINE_ARCH} == "m68k")
+
+.elif (${LIBC_MACHINE_ARCH} == "m68k")
 .if defined(M68060)
 .PATH:	${.CURDIR}/arch/m68060
 .include "${.CURDIR}/arch/m68060/Makefile.list"
@@ -75,7 +112,7 @@ ARCH_SRCS += s_ceil.S s_copysign.S s_finite.S s_floor.S s_rint.S
 COPTS+=-m68040
 ARCH_SRCS = s_copysign.S s_finite.S
 .else
-.if (${MKSOFTFLOAT} != "yes")
+.if (${MKSOFTFLOAT} == "no")
 .PATH:	${.CURDIR}/arch/mc68881 ${.CURDIR}/arch/m68k
 ARCH_SRCS = e_acos.S e_asin.S e_atanh.S e_cosh.S e_exp.S e_fmod.S e_log.S \
 	    e_log10.S e_remainder.S e_scalb.S e_sinh.S e_sqrt.S s_atan.S \
@@ -84,23 +121,42 @@ ARCH_SRCS = e_acos.S e_asin.S e_atanh.S e_cosh.S e_exp.S e_fmod.S e_log.S \
 .endif
 .endif
 # end of m68k
-.elif (${MACHINE_ARCH} == "vax")
-#.PATH:	${.CURDIR}/arch/vax
+
+.elif (${LIBC_MACHINE_ARCH} == "vax")
+.PATH:	${.CURDIR}/arch/vax
 
 #NOIEEE_ARCH= n_infnan.S n_argred.S n_sqrt.S
 #ARCH_SRCS = n_atan2.S n_cabs.S n_cbrt.S n_support.S n_sincos.S n_tan.S
 # XXX - ripped out due to lack of the insn polyd in the Mariah chip,
 # and emulation code isn't written yet.
-WARNS?=4
-.endif
+WARNS?=5
 
-WARNS?=4
+.elif (${LIBC_MACHINE_CPU} == "riscv")
+.PATH:	${.CURDIR}/arch/riscv
+
+.elif (${LIBC_MACHINE_ARCH} == "powerpc")
+.PATH:	${.CURDIR}/arch/powerpc
+
+.elif (${LIBC_MACHINE_CPU} == "mips")
+.PATH:	${.CURDIR}/arch/mips
+
+.elif (${LIBC_MACHINE_CPU} == "sh3")
+.PATH:	${.CURDIR}/arch/sh3
+
+.endif
+# End of list of CPU tests
+
+WARNS?=5
 
 .PATH:	${.CURDIR}/man
 .PATH:	${.CURDIR}/src
 .PATH:	${.CURDIR}/noieee_src
 
-.if (${MACHINE_ARCH} != "vax")
+.if (${LIBC_MACHINE_ARCH} == "alpha")
+COPTS+= -mfp-rounding-mode=d
+.endif
+
+.if (${LIBC_MACHINE_ARCH} != "vax")
 CPPFLAGS+= -D_MULTI_LIBM -D_POSIX_MODE
 # XXX noieee libm is gross
 COPTS+=	-fno-strict-aliasing
@@ -161,14 +217,14 @@ NOIEEE_SRCS = n_asincos.c n_acosh.c n_asinh.c n_atan.c n_atanh.c n_cosh.c \
 # NetBSD's C library supplies these functions:
 #COMMON_SRCS+=	s_fabs.c s_frexp.c s_isinf.c s_isnan.c s_ldexp.c s_modf.c
 
-.if (${MACHINE_ARCH} == "vax")
+.if (${LIBC_MACHINE_ARCH} == "vax")
 SRCS=	${NOIEEE_SRCS} ${NOIEEE_ARCH}
 .else
 SRCS=	${COMMON_SRCS}
 .endif
 
 .ifdef ARCH_ADDS
-SRCS+= ${ARCH_ADDS}
+SRCS+=  ${ARCH_ADDS}
 .endif
 
 # Substitute common sources with any arch specific sources
@@ -176,10 +232,15 @@ SRCS+= ${ARCH_ADDS}
     SRCS:=${SRCS:S/^${i:S/.S/.c/}/$i/}
 .endfor
 
-.if (${MACHINE_ARCH} == "vax") # XXX until POLYD is written.
+.if (${LIBC_MACHINE_ARCH} == "vax") # XXX until POLYD is written.
 .PATH:	${.CURDIR}/arch/vax
 SRCS:=${SRCS} n_sqrt.S n_argred.S n_infnan.S n_atan2.S n_cabs.S n_cbrt.S \
 	n_support.S
+.endif
+
+.if (${LIBC_MACHINE_ARCH} == "i386")
+# XXX this gets miscompiled. There should be a better fix.
+COPTS.s_tanh.c+= -O0
 .endif
 
 MAN+=	acos.3 acosh.3 asin.3 asinh.3 atan.3 atan2.3 atanh.3 ceil.3 \
@@ -239,6 +300,10 @@ MLINKS+=fdim.3 fdimf.3
 .include "${.CURDIR}/complex/Makefile.inc"
 .endif
 
+COPTS.compat_cabs.c+=	${${ACTIVE_CC} == "clang":? -Wno-incompatible-library-redeclaration :}
+COPTS.compat_cabsf.c+=	${${ACTIVE_CC} == "clang":? -Wno-incompatible-library-redeclaration :}
+
 .include "${.CURDIR}/gen/Makefile.inc"
+
 .include <bsd.lib.mk>
 .include <bsd.subdir.mk>
