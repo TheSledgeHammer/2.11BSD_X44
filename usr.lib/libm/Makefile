@@ -14,7 +14,7 @@
 #
 
 NOSANITIZER=	# defined
-COPTS+=			${${ACTIVE_CC} == "gcc":? -frounding-math :}
+COPTS+=		${${ACTIVE_CC} == "gcc":? -frounding-math :}
 
 #
 # There are two options in making libm at fdlibm compile time:
