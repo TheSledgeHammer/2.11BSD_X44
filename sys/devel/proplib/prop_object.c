@@ -16,17 +16,23 @@
 #define atomic_inc_32(x)		atomic_add_int(x, 1)
 #define atomic_dec_32(x)		atomic_add_int(x, 1)
 
+void
+prop_object_init(struct prop_object *po, const struct prop_object_type *pot)
+{
+	po->po_type = pot;
+	po->po_refcnt = 1;
+}
 
 int
 prop_object_type(opaque_t obj)
 {
 	struct prop_object *po;
 
-	po = obj;
+	po = (struct prop_object *)obj;
 	if (obj == NULL) {
 		return (PROP_TYPE_UNKNOWN);
 	}
-	return (po->po_type);
+	return (po->po_type->pot_type);
 }
 
 void
@@ -58,12 +64,10 @@ prop_object_release_emergency(opaque_t obj)
 		if (ocnt != 1) {
 			break;
 		}
-
 		KASSERT(po->po_type);
 		if ((po->po_type->pot_free)(&obj) == _PROP_OBJECT_FREE_DONE) {
 			break;
 		}
-
 		parent = po;
 		atomic_inc_32(&po->po_refcnt);
 	}

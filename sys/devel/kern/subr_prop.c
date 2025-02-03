@@ -66,10 +66,10 @@ int propdebug = 0;
 #define	KDB_SIZE		32	/* Initial hash table size */
 #define	KDB_MAXLEN		6	/* Max acceptable bucket length */
 #define	KDB_STEP		2	/* Increment size for hash table */
-#define	KDB_HASH(v, s)	((((v)>>16)^((v)>>8))&((s)-1))
-#define	KDB_HASH2(v, s)	(prospector32(v)&(s - 1))
+#define	KDB_HASH2(v, s)	((((v) >> 16) ^ ((v) >> 8)) & ((s) - 1))
+#define	KDB_HASH(v, s)	(prospector32(v) & ((s) - 1))
 
-typedef RB_HEAD(kobj_root, kdbobj) kobj_bucket_t;
+typedef LIST_HEAD(kobj_list, kdbobj) kobj_bucket_t;
 
 static LIST_HEAD(propdb_list, propdb) propdbs =	LIST_HEAD_INITIALIZER(propdbs);
 
@@ -84,29 +84,22 @@ struct propdb {
 };
 
 struct kdbobj {
-	RB_ENTRY(kdbobj)	ko_link;
+	LIST_ENTRY(kdbobj)	ko_link;
 	opaque_t			ko_object;
 	/* 
 	 * There should only be a dozen props for each object,
 	 * so we can keep them in a list.
 	 */
-	RB_HEAD(kprop_root, kdbprop) ko_props;
+	LIST_HEAD(kprop_list, kdbprop) ko_props;
 };
 
 struct kdbprop {
-	RB_ENTRY(kdbprop)	kp_link;
+	LIST_ENTRY(kdbprop)	kp_link;
 	const char			*kp_name;
 	const char			*kp_val;
 	int					kp_len;
 	int					kp_type;
 };
-
-/* kdbobj rbtree */
-RB_PROTOTYPE(kobj_root, kdbobj, ko_link, kdbobj_compare);
-RB_GENERATE(kobj_root, kdbobj, ko_link, kdbobj_compare);
-/* kdbprop rbtree */
-RB_PROTOTYPE(kprop_root, kdbprop, kp_link, kdbprop_compare);
-RB_GENERATE(kprop_root, kdbprop, kp_link, kdbprop_compare);
 
 static struct kdbprop *allocprop(const char *name, size_t len, int wait);
 static void kdb_rehash(struct propdb *db);
@@ -118,7 +111,6 @@ struct lock_object propdb_slock;
 #define prop_lock_init(lock)	simple_lock_init(lock, "propdb_slock")
 #define prop_lock(lock)			simple_lock(lock);
 #define prop_unlock(lock)		simple_unlock(lock);
-
 
 /* 
  * Allocate a prop structure large enough to hold
@@ -169,22 +161,23 @@ kdb_rehash(struct propdb *db)
 	int s;
 
 	new = (kobj_bucket_t *)calloc(newsize, sizeof(kobj_bucket_t), M_PROP, M_NOWAIT);
-	if (new == NULL)
+	if (new == NULL) {
 		return;
+	}
 	s = splvm();
 	for (i = 0; i < newsize; i++) {
-		RB_INIT(&new[i]);
+		LIST_INIT(&new[i]);
 	}
 
 	/* Now pop an object from the old table and insert it in the new one. */
 	prop_lock(&propdb_slock);
 	for (i = 0; i < db->kd_size; i++) {
-		obj = RB_FIRST(kobj_root, &old[i]);
+		obj = LIST_FIRST(&old[i]);
 		while (obj != NULL) {
-			RB_REMOVE(kobj_root, &old[i], obj);
+			LIST_REMOVE(obj, ko_link);
 			hash = (long)obj->ko_object;
 			hash = KDB_HASH2(hash, db->kd_size);
-			RB_INSERT(kobj_root, &new[hash], obj);
+			LIST_INSERT_HEAD(&new[hash], obj, ko_link);
 		}
 	}
 	prop_unlock(&propdb_slock);
@@ -215,7 +208,7 @@ propdb_create(const char *name)
 	db->kd_longest = 0;
 	db->kd_obj = (kobj_bucket_t *)calloc(db->kd_size, sizeof(kobj_bucket_t), M_PROP, M_WAITOK);
 	for (i = 0; i < db->kd_size; i++) {
-		RB_INIT(&db->kd_obj[i]);
+		LIST_INIT(&db->kd_obj[i]);
 	}
 	prop_lock(&propdb_slock);
 	LIST_INSERT_HEAD(&propdbs, db, kd_link);
@@ -236,19 +229,23 @@ propdb_destroy(propdb_t db)
 
 	/* Make sure we have a handle to a valid database */
 	LIST_FOREACH(p, &propdbs, kd_link) {
-		if (p == db) break;
+		if (p == db) {
+			break;
+		}
 	}
-	if (p == NULL) panic("propdb_destroy: invalid database");
+	if (p == NULL) {
+		panic("propdb_destroy: invalid database");
+	}
 #endif
 	LIST_REMOVE(db, kd_link);
 
 	/* Empty out each hash bucket */
 	for (i = 0; i < db->kd_size; i++) {
-		obj = RB_FIRST(kobj_root, &db->kd_obj[i]);
+		obj = LIST_FIRST(&db->kd_obj[i]);
 		while (obj) {
-			RB_REMOVE(kobj_root, &db->kd_obj[i], obj);
-			while ((prop = RB_FIRST(kprop_root, &obj->ko_props))) {
-				RB_REMOVE(kprop_root, &obj->ko_props, prop);
+			LIST_REMOVE(obj, ko_link);
+			while ((prop = LIST_FIRST(&obj->ko_props))) {
+				LIST_REMOVE(prop, kp_link);
 				free(prop, M_PROP);
 			}
 			free(obj, M_PROP);
@@ -273,10 +270,11 @@ kdbobj_find(propdb_t db, opaque_t object, int create, int wait)
 	hash = KDB_HASH(hash, db->kd_size);
 	i=0;
 	prop_lock(&propdb_slock);
-	RB_FOREACH(obj, kobj_root, &db->kd_obj[hash]) {
+	LIST_FOREACH(obj, &db->kd_obj[hash], ko_link) {
 		i++;	/* Measure chain depth */
-		if (obj->ko_object == object)
+		if (obj->ko_object == object) {
 			break;
+		}
 	}
 	if (create && (obj == NULL)) {
 		/* Need a new object. */
@@ -287,8 +285,9 @@ kdbobj_find(propdb_t db, opaque_t object, int create, int wait)
 		}
 
 		/* Handle hash table growth */
-		if (++i > db->kd_longest) 
+		if (++i > db->kd_longest) {
 			db->kd_longest = i;
+		}
 		if (db->kd_longest > KDB_MAXLEN) {
 			/* Increase the size of our hash table */
 			kdb_rehash(db);
@@ -296,8 +295,8 @@ kdbobj_find(propdb_t db, opaque_t object, int create, int wait)
 
 		/* Initialize object */
 		obj->ko_object = object;
-		RB_INIT(&obj->ko_props);
-		RB_INSERT(kobj_root, &db->kd_obj[hash], obj);
+		LIST_INIT(&obj->ko_props);
+		LIST_INSERT_HEAD(&db->kd_obj[hash], obj, ko_link);
 	}
 	prop_unlock(&propdb_slock);
 	return (obj);
@@ -308,7 +307,7 @@ prop_exist(struct kdbobj *obj, const char *name, size_t len, int type)
 {
 	struct kdbprop *oprop;
 	/* Does the prop exist already? */
-	RB_FOREACH(oprop, kprop_root, &obj->ko_props) {
+	LIST_FOREACH(oprop, &obj->ko_props, kp_link) {
 		if (strcmp(oprop->kp_name, name) == 0) {
 			break;
 		}
@@ -359,9 +358,9 @@ prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int typ
 	/* Now clean up if necessary */
 	prop_lock(&propdb_slock);
 	if (prop != oprop) {
-		RB_INSERT(kprop_root, &obj->ko_props, prop);
+		LIST_INSERT_HEAD(&obj->ko_props, prop, kp_link);
 		if (oprop) {
-			RB_REMOVE(kprop_root, &obj->ko_props, oprop);
+			LIST_REMOVE(oprop, kp_link);
 			free(oprop, M_PROP);
 		}
 	}
@@ -411,9 +410,10 @@ propdb_get(propdb_t db, opaque_t object, const char *name, void *val, size_t len
 	}
 
 	/* find our prop */
-	RB_FOREACH(prop, kprop_root, &obj->ko_props) {
-		if (strcmp(prop->kp_name, name) == 0)
+	LIST_FOREACH(prop, &obj->ko_props, kp_link) {
+		if (strcmp(prop->kp_name, name) == 0) {
 			break;
+		}
 	}
 	if (!prop) {
 		splx(s);
@@ -426,8 +426,9 @@ propdb_get(propdb_t db, opaque_t object, const char *name, void *val, size_t len
 	if (val && len) {
 		bcopy(prop->kp_val, val, len);
 	}
-	if (type)
+	if (type) {
 		*type = prop->kp_type;
+	}
 	splx(s);
 	DPRINTF(x, ("copied %ld of %d\n", (long) len, prop->kp_len));
 	return (prop->kp_len);
@@ -449,7 +450,7 @@ propdb_objs(propdb_t db, opaque_t *objects, size_t len)
 
 	s = splvm();
 	for (i = 0, j = 0; i < db->kd_size; i++) {
-		RB_FOREACH(obj, kobj_root, &db->kd_obj[i]) {
+		LIST_FOREACH(obj, &db->kd_obj[i], ko_link) {
 			if (objects && j < nelem) {
 				objects[j] = obj->ko_object;
 			}
@@ -485,7 +486,7 @@ propdb_list(propdb_t db, opaque_t object, char *names, size_t len)
 
 	sp = names;
 	ep = names + len;
-	RB_FOREACH(prop, kprop_root, &obj->ko_props) {
+	LIST_FOREACH(prop, &obj->ko_props, kp_link) {
 		i = strlen(prop->kp_name) + 1;
 		if (names + i + 1 < ep) {
 			strlcpy(names, prop->kp_name, ep - names);
@@ -519,28 +520,29 @@ propdb_delete(propdb_t db, opaque_t object, const char *name)
 	if (name) {
 		prop_lock(&propdb_slock);
 		/* Find our prop */
-		RB_FOREACH(prop, kprop_root, &obj->ko_props) {
-			if (strcmp(prop->kp_name, name) == 0)
+		LIST_FOREACH(prop, &obj->ko_props, kp_link) {
+			if (strcmp(prop->kp_name, name) == 0) {
 				break;
+			}
 		}
 		if (!prop) {
 			splx(s);
 			prop_unlock(&propdb_slock);
 			return (0);
 		}
-		RB_REMOVE(kprop_root, &obj->ko_props, prop);
+		LIST_REMOVE(prop, kp_link);
 		free(prop, M_PROP);
 		i++;
 	} else {
-		while ((prop = RB_FIRST(kprop_root, &obj->ko_props))) {
-			RB_REMOVE(kprop_root, &obj->ko_props, prop);
+		while ((prop = LIST_FIRST(&obj->ko_props))) {
+			LIST_REMOVE(prop, kp_link);
 			free(prop, M_PROP);
 			i++;
 		}
 	}
-	if (RB_EMPTY(&obj->ko_props)) {
+	if (LIST_EMPTY(&obj->ko_props)) {
 		/* Free up the empty container. */
-		RB_REMOVE(kobj_root, &db->kd_obj[i], obj);
+		LIST_REMOVE(obj, ko_link);
 		free(obj, M_PROP);
 	}
 	prop_unlock(&propdb_slock);
@@ -573,7 +575,7 @@ propdb_copy(propdb_t db, opaque_t source, opaque_t dest, int wait)
 	}
 
 	/* Copy these properties over now */
-	RB_FOREACH(srcp, kprop_root, &oobj->ko_props) {
+	LIST_FOREACH(srcp, &oobj->ko_props, kp_link) {
 
 		DPRINTF(x, ("prop_copy: copying prop %s\n", srcp->kp_name));
 
@@ -596,35 +598,11 @@ propdb_obj_type(opaque_t obj)
 {
     struct kdbprop *kp;
 
-    kp = obj;
+    kp = (struct kdbprop *)obj;
     if (obj == NULL) {
         return (PROP_UNKNOWN);
     }
     return (kp->kp_type);
-}
-
-int
-kdbobj_compare(struct kdbobj *obj1, struct kdbobj *obj2)
-{
-	if (obj1 < obj2) {
-		return (-1);
-	} else if (obj1 > obj2) {
-		return (1);
-	} else {
-		return (0);
-	}
-}
-
-int
-kdbprop_compare(struct kdbprop *pr1, struct kdbprop *pr2)
-{
-	if (pr1 < pr2) {
-		return (-1);
-	} else if (pr1 > pr2) {
-		return (1);
-	} else {
-		return (0);
-	}
 }
 
 void

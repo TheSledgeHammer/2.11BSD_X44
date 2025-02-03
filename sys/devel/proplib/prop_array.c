@@ -161,8 +161,9 @@ prop_array_copy(prop_array_t opa)
 	int ret;
 	unsigned int idx;
 
-	if (! prop_object_is_array(opa))
+	if (! prop_object_is_array(opa)) {
 		return (NULL);
+	}
 
 	_PROP_RWLOCK_RDLOCK(opa->pa_rwlock);
 
@@ -190,9 +191,9 @@ prop_array_copy_mutable(prop_array_t opa)
 	prop_array_t pa;
 
 	pa = prop_array_copy(opa);
-	if (pa != NULL)
+	if (pa != NULL) {
 		pa->pa_flags &= ~PA_F_IMMUTABLE;
-
+	}
 	return (pa);
 }
 
@@ -201,12 +202,14 @@ prop_array_get(prop_array_t pa, unsigned int idx)
 {
 	opaque_t po = NULL;
 
-	if (! prop_object_is_array(pa))
+	if (!prop_object_is_array(pa)) {
 		return (NULL);
+	}
 
 	_PROP_RWLOCK_RDLOCK(pa->pa_rwlock);
-	if (idx >= pa->pa_count)
+	if (idx >= pa->pa_count) {
 		goto out;
+	}
 	po = pa->pa_array[idx];
 	_PROP_ASSERT(po != NULL);
  out:
@@ -312,8 +315,9 @@ prop_array_remove(prop_array_t pa, unsigned int idx)
 	po = pa->pa_array[idx];
 	_PROP_ASSERT(po != NULL);
 
-	for (++idx; idx < pa->pa_count; idx++)
+	for (++idx; idx < pa->pa_count; idx++) {
 		pa->pa_array[idx - 1] = pa->pa_array[idx];
+	}
 	pa->pa_count--;
 	pa->pa_version++;
 
@@ -327,7 +331,7 @@ propdb_array_set(opaque_t obj)
 {
 	prop_array_t pa;
 
-	pa = obj;
+	pa = (prop_array_t)obj;
 	return (proplib_set(pa->pa_db, pa, &pa->pa_obj, &prop_object_type_array, pa->pa_array, sizeof(pa->pa_array)));
 }
 
@@ -336,6 +340,6 @@ propdb_array_get(opaque_t obj)
 {
 	prop_array_t pa;
 
-	pa = obj;
+	pa = (prop_array_t)obj;
 	return (proplib_get(pa->pa_db, pa, &pa->pa_obj, &prop_object_type_array, pa->pa_array, sizeof(pa->pa_array)));
 }

@@ -122,7 +122,6 @@ devswtable_hash(data, major)
 {
 	Fnv32_t hash1 = fnv_32_buf(&data, sizeof(&data), FNV1_32_INIT) % MAXDEVSW;
 	Fnv32_t hash2 = fnv_32_buf(&major, sizeof(&major), FNV1_32_INIT) % MAXDEVSW;
-
 	return (hash1^hash2);
 }
 

@@ -27,13 +27,15 @@
  *
  */
 
+#include <sys/cdefs.h>
+#include <sys/stddef.h>
 #include <sys/malloc.h>
 #include <devel/sys/properties.h>
 
 #include "proplib_compat.h"
 
 propdb_t
-proplib_create(opaque_t obj, struct prop_object *po, struct prop_object_type *type)
+proplib_create(opaque_t obj, struct prop_object *po, const struct prop_object_type *type)
 {
 	propdb_t db;
 	db = propdb_create(type->pot_name);
@@ -41,20 +43,25 @@ proplib_create(opaque_t obj, struct prop_object *po, struct prop_object_type *ty
 	po->po_type = type;
 	po->po_obj = obj;
 	po->po_refcnt = 1;
-
 	return (db);
 }
 
 int
-proplib_set(propdb_t db, opaque_t obj, struct prop_object *po, struct prop_object_type *type, void *val, size_t len)
+proplib_set(propdb_t db, opaque_t obj, struct prop_object *po, const struct prop_object_type *type, void *val, size_t len)
 {
-	return (propdb_set(db, obj, type->pot_name, val, len, type->pot_type, M_WAITOK));
+	if ((obj != NULL) && (po != NULL)) {
+		return (propdb_set(db, obj, type->pot_name, val, len, type->pot_type, M_WAITOK));
+	}
+	return (-1);
 }
 
 size_t
 proplib_get(propdb_t db, opaque_t obj, struct prop_object *po, struct prop_object_type *type, void *val, size_t len)
 {
-	return (propdb_get(db, obj, type->pot_name, val, len, type->pot_type));
+	if ((obj != NULL) && (po != NULL)) {
+		return (propdb_get(db, obj, type->pot_name, val, len, type->pot_type));
+	}
+	return (-1);
 }
 
 size_t
@@ -72,7 +79,10 @@ proplib_list(propdb_t db, struct prop_object *po, struct prop_object_type *type,
 int
 proplib_delete(propdb_t db, struct prop_object *po, struct prop_object_type *type)
 {
-	return (propdb_delete(db, po->po_obj, type->pot_name));
+	if ((po != NULL) && (type != NULL)) {
+		return (propdb_delete(db, po->po_obj, type->pot_name));
+	}
+	return (-1);
 }
 
 int
@@ -80,3 +90,4 @@ proplib_copy(propdb_t db, struct prop_object *source, struct prop_object *dest)
 {
 	return (propdb_copy(db, source->po_obj, dest->po_obj, M_WAITOK));
 }
+
