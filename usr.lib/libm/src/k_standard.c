@@ -79,7 +79,6 @@ static const double zero = 0.0;	/* used as const */
  *	49-- log2(x<0)
  */
 
-
 double
 __kernel_standard(double x, double y, int type)
 {
@@ -96,6 +95,7 @@ __kernel_standard(double x, double y, int type)
 #endif
 	exc.arg1 = x;
 	exc.arg2 = y;
+	exc.retval = zero;
 	switch(type) {
 	    case 1:
 	    case 101:
