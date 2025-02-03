@@ -208,7 +208,7 @@ __ieee754_powf(float x, float y)
 	else if (j==0x43000000) {			/* if z == 128 */
 	    if(p_l+ovt>z-p_h) return s*huge*huge;	/* overflow */
 	}
-	else if (j==0xc3160000){			/* z == -150 */
+	else if (j==(int)0xc3160000){			/* z == -150 */
 	    if(p_l<=z-p_h) return s*tiny*tiny;		/* underflow */
 	}
 	else if ((j&0x7fffffff)>0x43160000)		/* z <= -150 */

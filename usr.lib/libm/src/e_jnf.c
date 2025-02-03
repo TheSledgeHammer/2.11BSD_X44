@@ -60,25 +60,25 @@ __ieee754_jnf(int n, float x)
 	    a = __ieee754_j0f(x);
 	    b = __ieee754_j1f(x);
 	    for(i=1;i<n;i++){
-		temp = b;
-		b = b*((float)(i+i)/x) - a; /* avoid underflow */
-		a = temp;
+		    temp = b;
+		    b = b*((float)(i+i)/x) - a; /* avoid underflow */
+		    a = temp;
 	    }
 	} else {
 	    if(ix<0x30800000) {	/* x < 2**-29 */
     /* x is tiny, return the first Taylor expansion of J(n,x)
      * J(n,x) = 1/n!*(x/2)^n  - ...
      */
-		if(n>33)	/* underflow */
-		    b = zero;
-		else {
-		    temp = x*(float)0.5; b = temp;
-		    for (a=one,i=2;i<=n;i++) {
-			a *= (float)i;		/* a = n! */
-			b *= temp;		/* b = (x/2)^n */
-		    }
-		    b = b/a;
-		}
+		    if(n>33)	/* underflow */
+		        b = zero;
+    		else {
+	    	    temp = x*(float)0.5; b = temp;
+	    	    for (a=one,i=2;i<=n;i++) {
+	        		a *= (float)i;		/* a = n! */
+	        		b *= temp;		/* b = (x/2)^n */
+	    	    }
+	    	    b = b/a;
+	    	}
 	    } else {
 		/* use backward recurrence */
 		/* 			x      x^2      x^2
@@ -136,27 +136,27 @@ __ieee754_jnf(int n, float x)
 		tmp = tmp*__ieee754_logf(fabsf(v*tmp));
 		if(tmp<(float)8.8721679688e+01) {
 	    	    for(i=n-1,di=(float)(i+i);i>0;i--){
-		        temp = b;
-			b *= di;
-			b  = b/x - a;
-		        a = temp;
-			di -= two;
+		            temp = b;
+			        b *= di;
+			        b  = b/x - a;
+		            a = temp;
+        			di -= two;
 	     	    }
 		} else {
 	    	    for(i=n-1,di=(float)(i+i);i>0;i--){
-		        temp = b;
-			b *= di;
-			b  = b/x - a;
-		        a = temp;
-			di -= two;
-		    /* scale b to avoid spurious overflow */
-			if(b>(float)1e10) {
-			    a /= b;
-			    t /= b;
-			    b  = one;
-			}
-	     	    }
-		}
+		            temp = b;
+			        b *= di;
+			        b  = b/x - a;
+		            a = temp;
+    			    di -= two;
+        		    /* scale b to avoid spurious overflow */
+	    		    if(b>(float)1e10) {
+	        		    a /= b;
+	        		    t /= b;
+	        		    b  = one;
+	        		}
+	       	    }
+	    	}
 	    	b = (t*__ieee754_j0f(x)/b);
 	    }
 	}
@@ -189,7 +189,7 @@ __ieee754_ynf(int n, float x)
 	b = __ieee754_y1f(x);
 	/* quit if b is -inf */
 	GET_FLOAT_WORD(ib,b);
-	for(i=1;i<n&&ib!=0xff800000;i++){
+	for(i=1;i<n&&(uint32_t)ib!=0xff800000;i++){
 	    temp = b;
 	    b = ((float)(i+i)/x)*b - a;
 	    GET_FLOAT_WORD(ib,b);
