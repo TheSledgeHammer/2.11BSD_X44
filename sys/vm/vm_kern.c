@@ -307,7 +307,7 @@ kmem_malloc_all(map, addr, object, size, offset)
 	for (i = 0; i < round_segment(size); i += SEGMENT_SIZE) {
 		segment = vm_segment_alloc(object, offset + i);
 		if (segment != NULL) {
-			for (j = 0; j < round_page(size); i += PAGE_SIZE) {
+			for (j = 0; j < round_page(size); j += PAGE_SIZE) {
 				page = vm_page_alloc(segment, offset + j);
 
 				/*
