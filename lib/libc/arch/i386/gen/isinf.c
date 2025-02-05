@@ -208,13 +208,13 @@ __fpclassifyl(d)
 	register struct ieee_ext *p = (struct ieee_ext *)&d;
 
 	if (p->ext_exp == 0) {
-		if (!p->dbl_frach && !p->dbl_fracl) {
+		if (!p->ext_frach && !p->ext_fracl) {
 			return (FP_ZERO);
 		} else {
 			return (FP_SUBNORMAL);
 		}
 	} else if (p->ext_exp == EXT_EXP_INFNAN) {
-		if (!p->dbl_frach && !p->dbl_fracl) {
+		if (!p->ext_frach && !p->ext_fracl) {
 			return (FP_INFINITE);
 		} else {
 			return (FP_NAN);
