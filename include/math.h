@@ -184,16 +184,6 @@ extern int signgam;
 #define	LOGHUGE	    39
 #endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
 
-#ifndef __cplusplus
-struct exception {
-	int type;
-	const char *name;
-	double arg1;
-	double arg2;
-	double retval;
-};
-#endif
-
 __BEGIN_DECLS
 /*
  * ANSI/POSIX
@@ -402,9 +392,6 @@ long double fminl(long double, long double);
 #endif /* !_ANSI_SOURCE && ... */
 
 #if defined(__BSD_VISIBLE)
-#ifndef __cplusplus
-int	matherr(struct exception *);
-#endif
 
 /*
  * IEEE Test Vector

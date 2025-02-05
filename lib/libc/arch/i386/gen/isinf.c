@@ -199,7 +199,7 @@ __isinfl(d)
 
 /*
  * 7.12.3.1 fpclassify - classify real floating type
- *          IEEE 754 compatible 128-bit extended-precision version
+ *          IEEE 754 compatible 80-bit extended-precision Intel 386 version
  */
 int
 __fpclassifyl(d)
@@ -225,7 +225,7 @@ __fpclassifyl(d)
 
 /*
  * 7.12.3.2 isfinite - determine whether an argument has finite value
- *          IEEE 754 compatible 128-bit extended-precision version
+ *          IEEE 754 compatible 80-bit extended-precision Intel 386 version
  */
 int
 __isfinitel(d)
@@ -249,7 +249,7 @@ __isfinitel(d)
  */
 int
 __signbitl(d)
-	double d;
+	long double d;
 {
 	register struct ieee_ext *p = (struct ieee_ext *)&d;
 

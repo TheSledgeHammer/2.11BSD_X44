@@ -37,24 +37,22 @@ __FBSDID("$FreeBSD: src/lib/msun/src/s_fminl.c,v 1.1 2004/06/30 07:04:01 das Exp
 long double
 fminl(long double x, long double y)
 {
-	union ieee_ext_u u[2];
+	struct ieee_ext u[2];
 
-	u[0].extu_ld = x;
-	u[0].extu_ext.ext_frach &= ~0x80000000;
-	u[1].extu_ld = y;
-	u[1].extu_ext.ext_frach &= ~0x80000000;
+	u[0].ext_frach &= ~0x80000000;
+	u[1].ext_frach &= ~0x80000000;
 
 	/* Check for NaNs to avoid raising spurious exceptions. */
-	if (u[0].extu_ext.ext_exp == EXT_EXP_INFNAN &&
-	    (u[0].extu_ext.ext_frach | u[0].extu_ext.ext_fracl) != 0)
+	if (u[0].ext_exp == EXT_EXP_INFNAN &&
+	    (u[0].ext_frach | u[0].ext_fracl) != 0)
 		return (y);
-	if (u[1].extu_ext.ext_exp == EXT_EXP_INFNAN &&
-	    (u[1].extu_ext.ext_frach | u[1].extu_ext.ext_fracl) != 0)
+	if (u[1].ext_exp == EXT_EXP_INFNAN &&
+	    (u[1].ext_frach | u[1].ext_fracl) != 0)
 		return (x);
 
 	/* Handle comparisons of ext_signed zeroes. */
-	if (u[0].extu_ext.ext_sign != u[1].extu_ext.ext_sign)
-		return (u[1].extu_ext.ext_sign ? y : x);
+	if (u[0].ext_sign != u[1].ext_sign)
+		return (u[1].ext_sign ? y : x);
 
 	return (x < y ? x : y);
 }

@@ -37,22 +37,24 @@ __FBSDID("$FreeBSD: src/lib/msun/src/s_fmaxf.c,v 1.1 2004/06/30 07:04:01 das Exp
 float
 fmaxf(float x, float y)
 {
-	union ieee_single_u u[2];
-
-	u[0].sngu_f = x;
-	u[1].sngu_f = y;
+	struct ieee_single u[2];
 
 	/* Check for NaNs to avoid raising spurious exceptions. */
-	if (u[0].sngu_sng.sng_exp == SNG_EXP_INFNAN &&
-	    u[0].sngu_sng.sng_frac != 0)
+	if (u[0].sng_exp == SNG_EXP_INFNAN &&
+	    u[0].sng_frac != 0)
 		return (y);
-	if (u[1].sngu_sng.sng_exp == SNG_EXP_INFNAN &&
-	    u[1].sngu_sng.sng_frac != 0)
+	if (u[1].sng_exp == SNG_EXP_INFNAN &&
+	    u[1].sng_frac != 0)
 		return (x);
 
 	/* Handle comparisons of sng_signed zeroes. */
-	if (u[0].sngu_sng.sng_sign != u[1].sngu_sng.sng_sign)
-		return (u[u[0].sngu_sng.sng_sign].sngu_f);
+	if (u[0].sng_sign != u[1].sng_sign) {
+		if (u[u[0].sng_sign].sng_sign) {
+			return (y);
+		} else {
+			return (x);
+		}
+	}
 
 	return (x > y ? x : y);
 }

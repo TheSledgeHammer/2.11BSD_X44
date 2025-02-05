@@ -27,8 +27,6 @@
 #include <netipsec/ipsec.h>
 #endif
 
-int knetisr;
-
 void
 netstart(void)
 {
