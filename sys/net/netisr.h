@@ -133,14 +133,9 @@ extern void pppnetisr(void);
 
 #if defined(_KERNEL) && !defined(_LOCORE)
 
-#ifndef schednetisr
-/*
-#define schednetisr(anisr) { 		\
-	netisr |= 1 << (anisr);		\
-	setsoftnet();			\
-}
-*/
+extern	int netisr;			/* scheduling bits for network */
 
+#ifndef schednetisr
 static __inline void
 schednetisr(int anisr)
 {
@@ -148,9 +143,6 @@ schednetisr(int anisr)
 	setsoftnet();
 }
 #endif
-
-extern	int netisr;			/* scheduling bits for network */
-
 #endif /* defined(_KERNEL) && !defined(_LOCORE) */
 
 #endif /* _NET_NETISR_H_ */
