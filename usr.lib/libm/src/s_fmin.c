@@ -49,7 +49,7 @@ fmin(double x, double y)
 
 	/* Handle comparisons of signed zeroes. */
 	if (u[0].dbl_sign != u[1].dbl_sign) {
-		if (u[u[1].dbl_sign]) {
+		if (u[u[1].dbl_sign].dbl_sign) {
 			return (y);
 		} else {
 			return (x);
