@@ -4,7 +4,11 @@
 .PATH:	${.CURDIR}/gen
 CPPFLAGS+=-I${.CURDIR}/gen
 
-SRCS+=	nan.c nanf.c nanl.c
+SRCS+=	nan.c
+# No strtof support
+#SRCS+=	nanf.c
+# No strtold support
+#SRCS+=	nanl.c
 
 MAN+=	nan.3
 
