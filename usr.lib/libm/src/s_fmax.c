@@ -1,3 +1,4 @@
+/*	$OpenBSD: s_fmax.c,v 1.10 2013/11/12 18:28:02 martynas Exp $	*/
 /*-
  * Copyright (c) 2004 David Schultz <das@FreeBSD.ORG>
  * All rights reserved.
@@ -37,19 +38,17 @@ __FBSDID("$FreeBSD: src/lib/msun/src/s_fmax.c,v 1.1 2004/06/30 07:04:01 das Exp 
 double
 fmax(double x, double y)
 {
-	struct ieee_double u[2];
-
 	/* Check for NaNs to avoid raising spurious exceptions. */
-	if (u[0].dbl_exp == DBL_EXP_INFNAN &&
-	    (u[0].dbl_frach | u[0].dbl_fracl) != 0)
+	if (isnan(x)) {
 		return (y);
-	if (u[1].dbl_exp == DBL_EXP_INFNAN &&
-	    (u[1].dbl_frach | u[1].dbl_fracl) != 0)
+	}
+	if (isnan(y)) {
 		return (x);
+	}
 
 	/* Handle comparisons of signed zeroes. */
-	if (u[0].dbl_sign != u[1].dbl_sign) {
-		if (u[u[0].dbl_sign].dbl_sign) {
+	if (signbit(x) != signbit(y)) {
+		if (signbit(x)) {
 			return (y);
 		} else {
 			return (x);

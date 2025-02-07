@@ -55,6 +55,15 @@ proplib_set(propdb_t db, opaque_t obj, struct prop_object *po, const struct prop
 	return (-1);
 }
 
+int
+proplib_delete(propdb_t db, struct prop_object *po, struct prop_object_type *type)
+{
+	if ((po != NULL) && (type != NULL)) {
+		return (propdb_delete(db, po->po_obj, type->pot_name));
+	}
+	return (-1);
+}
+
 size_t
 proplib_get(propdb_t db, opaque_t obj, struct prop_object *po, struct prop_object_type *type, void *val, size_t len)
 {
@@ -74,15 +83,6 @@ size_t
 proplib_list(propdb_t db, struct prop_object *po, struct prop_object_type *type, size_t len)
 {
 	return (propdb_list(db, po->po_obj, type->pot_name, len));
-}
-
-int
-proplib_delete(propdb_t db, struct prop_object *po, struct prop_object_type *type)
-{
-	if ((po != NULL) && (type != NULL)) {
-		return (propdb_delete(db, po->po_obj, type->pot_name));
-	}
-	return (-1);
 }
 
 int

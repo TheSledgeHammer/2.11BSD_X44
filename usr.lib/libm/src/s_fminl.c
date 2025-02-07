@@ -1,3 +1,4 @@
+/*	$OpenBSD: s_fminl.c,v 1.2 2013/11/12 18:28:02 martynas Exp $	*/
 /*-
  * Copyright (c) 2004 David Schultz <das@FreeBSD.ORG>
  * All rights reserved.
@@ -37,22 +38,22 @@ __FBSDID("$FreeBSD: src/lib/msun/src/s_fminl.c,v 1.1 2004/06/30 07:04:01 das Exp
 long double
 fminl(long double x, long double y)
 {
-	struct ieee_ext u[2];
-
-	u[0].ext_frach &= ~0x80000000;
-	u[1].ext_frach &= ~0x80000000;
-
 	/* Check for NaNs to avoid raising spurious exceptions. */
-	if (u[0].ext_exp == EXT_EXP_INFNAN &&
-	    (u[0].ext_frach | u[0].ext_fracl) != 0)
+	if (isnan(x)) {
 		return (y);
-	if (u[1].ext_exp == EXT_EXP_INFNAN &&
-	    (u[1].ext_frach | u[1].ext_fracl) != 0)
+	}
+	if (isnan(y)) {
 		return (x);
+	}
 
-	/* Handle comparisons of ext_signed zeroes. */
-	if (u[0].ext_sign != u[1].ext_sign)
-		return (u[1].ext_sign ? y : x);
+	/* Handle comparisons of signed zeroes. */
+	if (signbit(x) != signbit(y)) {
+		if (signbit(y)) {
+			return (y);
+		} else {
+			return (x);
+		}
+	}
 
 	return (x < y ? x : y);
 }

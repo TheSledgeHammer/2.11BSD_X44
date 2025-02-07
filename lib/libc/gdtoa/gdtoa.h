@@ -114,7 +114,7 @@ extern "C" {
 
 #define	dtoa		__dtoa
 
-extern char *dtoa  ANSI((double d, int mode, int ndigits, int *decpt, int *sign, char **rve));
+extern char *dtoa ANSI((double, int, int, int *, int *, char **));
 extern double strtod ANSI((CONST char *, char **));
 
 #ifdef __cplusplus

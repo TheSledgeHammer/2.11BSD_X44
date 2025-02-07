@@ -1,3 +1,4 @@
+/*	$OpenBSD: s_fminf.c,v 1.3 2013/11/12 18:28:02 martynas Exp $	*/
 /*-
  * Copyright (c) 2004 David Schultz <das@FreeBSD.ORG>
  * All rights reserved.
@@ -37,19 +38,17 @@ __FBSDID("$FreeBSD: src/lib/msun/src/s_fminf.c,v 1.1 2004/06/30 07:04:01 das Exp
 float
 fminf(float x, float y)
 {
-	struct ieee_single u[2];
-
 	/* Check for NaNs to avoid raising spurious exceptions. */
-	if (u[0].sng_exp == SNG_EXP_INFNAN &&
-	    u[0].sng_frac != 0)
+	if (isnan(x)) {
 		return (y);
-	if (u[1].sng_exp == SNG_EXP_INFNAN &&
-	    u[1].sng_frac != 0)
+	}
+	if (isnan(y)) {
 		return (x);
+	}
 
-	/* Handle comparisons of sng_singed zeroes. */
-	if (u[0].sng_sign != u[1].sng_sign) {
-		if (u[u[1].sng_sign].sng_sign) {
+	/* Handle comparisons of signed zeroes. */
+	if (signbit(x) != signbit(y)) {
+		if (signbit(y)) {
 			return (y);
 		} else {
 			return (x);
