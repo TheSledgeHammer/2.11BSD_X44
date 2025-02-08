@@ -26,45 +26,46 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/types.h>
 #include <sys/syscall.h>
 
 #include <mpx.h>
-
-extern int	__syscall(quad_t, ...);
+#include <unistd.h>
 
 int
-mpx(int cmd, struct mpx *mpx, int idx, void *data)
+mpx(int cmd, struct mpx *mx, int idx, void *data)
 {
-	return (__syscall(SYS_mpx, cmd, mpx, idx, data));
+	return (__syscall((quad_t)SYS_mpx, cmd, mx, idx, data));
 }
 
 int
-mpx_create(struct mpx *mpx, int idx, void *data)
+mpx_create(struct mpx *mx, int idx, void *data)
 {
-	return (mpx(MPXCREATE, mpx, idx, data));
+	return (mpx(MPXCREATE, mx, idx, data));
 }
 
 int
-mpx_put(struct mpx *mpx, int idx, void *data)
+mpx_put(struct mpx *mx, int idx, void *data)
 {
-	return (mpx(MPXPUT, mpx, idx, data));
+	return (mpx(MPXPUT, mx, idx, data));
 }
 
 int
-mpx_get(struct mpx *mpx, int idx, void *data)
+mpx_get(struct mpx *mx, int idx, void *data)
 {
-	return (mpx(MPXGET, mpx, idx, data));
+	return (mpx(MPXGET, mx, idx, data));
 }
 
 int
-mpx_destroy(struct mpx *mpx, int idx, void *data)
+mpx_destroy(struct mpx *mx, int idx, void *data)
 {
-	return (mpx(MPXDESTROY, mpx, idx, data));
+	return (mpx(MPXDESTROY, mx, idx, data));
 }
 
 int
-mpx_remove(struct mpx *mpx, int idx, void *data)
+mpx_remove(struct mpx *mx, int idx, void *data)
 {
-	return (mpx(MPXREMOVE, mpx, idx, data));
+	return (mpx(MPXREMOVE, mx, idx, data));
 }
