@@ -50,12 +50,12 @@
 int
 exec_loadfile(char *kerneltype, char *filename, u_long dest, struct preloaded_file **result)
 {
-    struct preloaded_file	*fp;
-    u_long                  *marks;
-    int						err;
-    u_int					pad;
-    ssize_t					bytes_read;
-    int                     fd;
+    	struct preloaded_file	*fp;
+    	u_long                  *marks;
+    	int			err;
+    	u_int			pad;
+    	ssize_t			bytes_read;
+    	int                     fd;
 
 	err = loadfile_header(kerneltype, filename);
 	if (err != 0)
@@ -102,9 +102,9 @@ loadfile_header(char *kerneltype, char *filename)
 	struct preloaded_file	*fp;
 	int						err;
 
-    /*
-     * Open the image, read and validate header
-     */
+    	/*
+     	* Open the image, read and validate header
+     	*/
 	 if (filename == NULL) {	/* can't handle nameless */
 		 return(EFTYPE);
 	 }
