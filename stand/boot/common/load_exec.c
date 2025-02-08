@@ -91,7 +91,7 @@ exec_loadfile(char *kerneltype, char *filename, u_long dest, struct preloaded_fi
 ioerr:
 	err = EIO;
 oerr:
-    file_discard(fp);
+    	file_discard(fp);
 out:
 	return(err);
 }
