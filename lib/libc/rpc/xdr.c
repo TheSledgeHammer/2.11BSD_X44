@@ -779,7 +779,6 @@ xdr_int64_t(xdrs, int64_p)
 			return (FALSE);
 		return (XDR_PUTLONG(xdrs, (long* )&ul[1]));
 	case XDR_DECODE:
-	case XDR_DECODE:
 		if (XDR_GETLONG(xdrs, (long *)&ul[0]) == FALSE)
 			return (FALSE);
 		if (XDR_GETLONG(xdrs, (long *)&ul[1]) == FALSE)
