@@ -247,6 +247,8 @@ extern bool_t	xdr_int16_t(XDR *, int16_t *);
 extern bool_t	xdr_u_int16_t(XDR *, u_int16_t *);
 extern bool_t	xdr_int32_t(XDR *, int32_t *);
 extern bool_t	xdr_u_int32_t(XDR *, u_int32_t *);
+extern bool_t	xdr_int64_t(XDR *, int64_t *);
+extern bool_t	xdr_u_int64_t(XDR *, u_int64_t *);
 extern bool_t	xdr_bool(XDR *, bool_t *);
 extern bool_t	xdr_enum(XDR *, enum_t *);
 extern bool_t	xdr_array(XDR *, char **, u_int *, u_int, u_int, xdrproc_t);
@@ -262,7 +264,7 @@ extern bool_t	xdr_double(XDR *, double *);
 extern bool_t	xdr_reference(XDR *, caddr_t *, u_int, xdrproc_t);
 extern bool_t	xdr_pointer(XDR *, caddr_t *, u_int, xdrproc_t);
 extern bool_t	xdr_wrapstring(XDR *, char **);
-extern void		xdr_free(xdrproc_t, char *);
+extern void	xdr_free(xdrproc_t, char *);
 __END_DECLS
 
 /*
