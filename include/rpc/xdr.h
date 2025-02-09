@@ -217,13 +217,18 @@ struct xdr_discrim {
  * N.B. and frozen for all time: each data type here uses 4 bytes
  * of external representation.
  */
-#define IXDR_GET_LONG(buf)			((long)ntohl((u_long)*(buf)++))
+#define IXDR_GET_INT32(buf)		((int32_t)ntohl((uint32_t)*(buf)++))
+#define IXDR_PUT_INT32(buf, v)		(*(buf)++ =(int32_t)htonl((uint32_t)v))
+#define IXDR_GET_U_INT32(buf)		((uint32_t)IXDR_GET_INT32(buf))
+#define IXDR_PUT_U_INT32(buf, v)	IXDR_PUT_INT32((buf), ((int32_t)(v)))
+
+#define IXDR_GET_LONG(buf)		((long)ntohl((u_long)*(buf)++))
 #define IXDR_PUT_LONG(buf, v)		(*(buf)++ = (long)htonl((u_long)v))
 
-#define IXDR_GET_BOOL(buf)			((bool_t)IXDR_GET_LONG(buf))
+#define IXDR_GET_BOOL(buf)		((bool_t)IXDR_GET_LONG(buf))
 #define IXDR_GET_ENUM(buf, t)		((t)IXDR_GET_LONG(buf))
 #define IXDR_GET_U_LONG(buf)		((u_long)IXDR_GET_LONG(buf))
-#define IXDR_GET_SHORT(buf)			((short)IXDR_GET_LONG(buf))
+#define IXDR_GET_SHORT(buf)		((short)IXDR_GET_LONG(buf))
 #define IXDR_GET_U_SHORT(buf)		((u_short)IXDR_GET_LONG(buf))
 
 #define IXDR_PUT_BOOL(buf, v)		IXDR_PUT_LONG((buf), ((long)(v)))
