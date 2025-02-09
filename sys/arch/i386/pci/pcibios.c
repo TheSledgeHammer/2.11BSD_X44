@@ -200,7 +200,7 @@ pcibios_init(void)
  * _PIR instead.  We shrug and cope by looking for both.
  */
 void
-pcibios_pir_init()
+pcibios_pir_init(void)
 {
 	struct PIR_table *pt;
 	uint32_t sigaddr;
