@@ -68,7 +68,7 @@ struct pmap_hat_list 	tmphat_list;
 static vm_offset_t 		pmap_hat_to_pa_index(vm_offset_t, vm_offset_t);
 static pv_entry_t 		pmap_hat_to_pvh(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, vm_offset_t, vm_offset_t, int);
 static void 			pmap_remove_pv(pmap_t, vm_offset_t, pv_entry_t, int);
-static void 			pmap_enter_pv(pmap_t, vm_offset_t, vm_offset_t);
+static void 			pmap_enter_pv(pmap_t, vm_offset_t, pv_entry_t);
 static vm_size_t 		pmap_hat_pv_alloc(vm_offset_t, vm_offset_t);
 static pmap_hat_t 		pmap_hat_create(pmap_hat_list_t, pmap_hat_map_t, vm_offset_t, vm_offset_t, vm_offset_t, int);
 static void 			pmap_hat_init(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, vm_offset_t, vm_offset_t, vm_offset_t, int);
