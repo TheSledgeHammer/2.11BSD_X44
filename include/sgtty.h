@@ -3,6 +3,9 @@
 #ifndef	_SGTTY_H_
 #define	_SGTTY_H_
 
+#ifndef USE_OLD_TTY
+#define	USE_OLD_TTY
+#endif
 #include <sys/ioctl.h>
 #include <sys/cdefs.h>
 
