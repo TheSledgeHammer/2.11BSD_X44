@@ -58,7 +58,7 @@
 #include <sys/ioccom.h>
 
 #ifdef _KERNEL
-//#define USE_OLD_TTY /* kernel still uses these */
+#define USE_OLD_TTY /* kernel still uses these */
 #endif
 
 #if defined(USE_OLD_TTY) || defined(COMPAT_43) || defined(COMPAT_SUNOS)
