@@ -13,8 +13,10 @@
  * the source to whatever application still references the symbols below.
 */
 
-#ifndef	_TTY_COMPAT_OBSOLETE
-#define	_TTY_COMPAT_OBSOLETE
+#ifndef _SYS_IOCTL_COMPAT_H_
+#define	_SYS_IOCTL_COMPAT_H_
+
+#ifdef USE_OLD_TTY
 
 #define		LCASE		0x0	 /* (obsolete) place holder */
 #define		NLDELAY		0x0	 /* \n delay */
@@ -42,4 +44,5 @@
 #define		LTILDE		((int)TILDE>>16)) /* (obsolete) place holder */
 
 #define		L001000		0x0
-#endif /* _TTY_COMPAT_OBSOLETE */
+#endif  /* USE_OLD_TTY */
+#endif /* !_SYS_IOCTL_COMPAT_H_ */

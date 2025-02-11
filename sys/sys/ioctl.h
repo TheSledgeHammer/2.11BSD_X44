@@ -57,6 +57,12 @@
 #include <sys/syslimits.h>
 #include <sys/ioccom.h>
 
+#ifdef _KERNEL
+//#define USE_OLD_TTY /* kernel still uses these */
+#endif
+
+#if defined(USE_OLD_TTY) || defined(COMPAT_43) || defined(COMPAT_SUNOS)
+
 struct tchars {
 	char	t_intrc;	/* interrupt */
 	char	t_quitc;	/* quit */
@@ -88,6 +94,7 @@ struct sgttyb {
 	short	sg_flags;		/* mode flags */
 };
 #endif
+#endif /* USE_OLD_TTY || COMPAT_43 || COMPAT_SUNOS */
 
 /*
  * Window/terminal size structure.
@@ -124,9 +131,11 @@ struct ttysize {
 /*
  * tty ioctl commands
  */
+#ifdef USE_OLD_TTY
 #define	TIOCGETD			_IOR('t', 0, int)						/* get line discipline */
 #define	TIOCSETD			_IOW('t', 1, int)						/* set line discipline */
 #define	TIOCHPCL			_IO('t', 2)							/* hang up on last close */
+#endif /* USE_OLD_TTY */
 #define	TIOCMODG			_IOR('t', 3, int)						/* get modem control state */
 #define	TIOCMODS			_IOW('t', 4, int)						/* set modem control state */
 #define	TIOCM_LE			0001								/* line enable */
@@ -140,20 +149,25 @@ struct ttysize {
 #define	TIOCM_RNG			0200								/* ring */
 #define	TIOCM_RI			TIOCM_RNG
 #define	TIOCM_DSR			0400								/* data set ready */
+#ifdef USE_OLD_TTY
 #define	TIOCGETP			_IOR('t', 8,struct sgttyb)			/* get parameters -- gtty */
 #define	TIOCSETP			_IOW('t', 9,struct sgttyb)			/* set parameters -- stty */
 #define	TIOCSETN			_IOW('t', 10,struct sgttyb)			/* as above, but no flushtty */
+#endif /* USE_OLD_TTY */
 #define	TIOCEXCL			_IO('t', 13)						/* set exclusive use of tty */
 #define	TIOCNXCL			_IO('t', 14)						/* reset exclusive use of tty */
 #define	TIOCFLUSH			_IOW('t', 16, int)					/* flush buffers */
+#ifdef USE_OLD_TTY
 #define	TIOCSETC			_IOW('t', 17,struct tchars)			/* set special characters */
 #define	TIOCGETC			_IOR('t', 18,struct tchars)			/* get special characters */
+#endif /* USE_OLD_TTY */
 #define	TIOCGETA			_IOR('t', 19, struct termios) 		/* get termios struct */
 #define	TIOCSETA			_IOW('t', 20, struct termios) 		/* set termios struct */
 #define	TIOCSETAW			_IOW('t', 21, struct termios) 		/* drain output, set */
 #define	TIOCSETAF			_IOW('t', 22, struct termios) 		/* drn out, fls in, set */
 /* 4.4BSD's TIOCGETD		_IOR('t', 26, int) 				 get line discipline */
 /* 4.4BSD's TIOCSETD		_IOW('t', 27, int)				 set line discipline */
+#ifdef USE_OLD_TTY
 #define	TANDEM				0x00000001							/* send stopc on out q full */
 #define	CBREAK				0x00000002							/* half-cooked mode */
 						/* 	0x4 (old LCASE) */
@@ -207,14 +221,17 @@ struct ttysize {
 #define	LPENDIN				((int)(PENDIN>>16))
 #define	LDECCTQ				((int)(DECCTQ>>16))
 #define	LNOFLSH				((int)(NOFLSH>>16))
+#endif /* USE_OLD_TTY */
 #define	TIOCSBRK			_IO('t', 123)						/* set break bit */
 #define	TIOCCBRK			_IO('t', 122)						/* clear break bit */
 #define	TIOCSDTR			_IO('t', 121)						/* set data terminal ready */
 #define	TIOCCDTR			_IO('t', 120)						/* clear data terminal ready */
 #define	TIOCGPGRP			_IOR('t', 119, int)					/* get pgrp of tty */
 #define	TIOCSPGRP			_IOW('t', 118, int)					/* set pgrp of tty */
+#ifdef USE_OLD_TTY
 #define	TIOCSLTC			_IOW('t', 117,struct ltchars)		/* set local special chars */
 #define	TIOCGLTC			_IOR('t', 116,struct ltchars)		/* get local special chars */
+#endif /* USE_OLD_TTY */
 #define	TIOCOUTQ			_IOR('t', 115, int)					/* output queue size */
 #define	TIOCSTI				_IOW('t', 114, char)				/* simulate terminal input */
 #define	TIOCNOTTY			_IO('t', 113)						/* void tty association */
@@ -264,9 +281,11 @@ struct ttysize {
 #define	TIOCXMTFRAME		_IOW('t', 68, struct mbuf *)		/* data frame transmit */
 
 #define	TTYDISC				0									/* termios tty line discipline */
+#ifdef USE_OLD_TTY
 #define	NTTYDISC			1									/* new tty discipline */
 #define	OTTYDISC			2									/* old, v7 std tty driver */
 #define	NETLDISC			3									/* line discip for berk net */
+#endif /* USE_OLD_TTY */
 #define	TABLDISC			4									/* tablet discipline */
 #define	SLIPDISC			5									/* serial IP discipline */
 #define PPPDISC				6									/* PPP discipline */
@@ -274,6 +293,7 @@ struct ttysize {
 /* Generic file-descriptor ioctl's. */
 #define	FIOCLEX				_IO('f', 1)							/* set exclusive use on fd */
 #define	FIONCLEX			_IO('f', 2)							/* remove exclusive use */
+
 /* another local */
 /* should use off_t for FIONREAD but that would require types.h */
 #define	FIONREAD			_IOR('f', 127, long)				/* get # bytes to read */
@@ -376,7 +396,6 @@ struct ttysize {
 
 #ifndef _KERNEL
 #include <sys/cdefs.h>
-
 __BEGIN_DECLS
 int	ioctl(int, unsigned long, ...);
 __END_DECLS
