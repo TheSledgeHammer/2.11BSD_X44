@@ -35,6 +35,9 @@
  * PCI bus autoconfiguration.
  */
 #include <sys/cdefs.h>
+
+#include "opt_pci.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
