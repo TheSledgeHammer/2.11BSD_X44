@@ -4,7 +4,7 @@
 # Included by ports that need it.  Requires that the SCSI files be
 # defined first.
 
-defflag	opt_pci.h	PCIVERBOSE
+defopt	PCIVERBOSE
 defflag	opt_puccn.h	PUCCN
 
 device	pci {[dev = -1], [function = -1]}

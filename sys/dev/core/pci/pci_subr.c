@@ -35,12 +35,20 @@
  */
 #include <sys/cdefs.h>
 
-#include "opt_pci.h"
+
+#ifdef _KERNEL
+#include "opt_pciverbose.h"
+#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/user.h>
+
+#ifndef _KERNEL
+#include <pci.h>
+#include <stdio.h>
+#endif
 
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>

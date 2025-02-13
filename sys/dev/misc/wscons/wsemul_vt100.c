@@ -39,7 +39,7 @@
 #include <dev/misc/wscons/wsemul_vt100var.h>
 #include <dev/misc/wscons/ascii.h>
 
-//#include "opt_wskernattr.h"
+#include "opt_wskernattr.h"
 
 void	*wsemul_vt100_cnattach(const struct wsscreen_descr *, void *, int, int, long);
 void	*wsemul_vt100_attach(int console, const struct wsscreen_descr *, void *, int, int, void *, long);

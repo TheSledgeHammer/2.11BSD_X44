@@ -51,6 +51,8 @@
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsdisplayvar.h>
 
+#include "opt_vga.h"
+
 #define	NBARS		6	/* number of PCI BARs */
 
 struct vga_bar {

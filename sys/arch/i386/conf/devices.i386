@@ -2,14 +2,20 @@
 # $211BSD$
 # i386/x86 Devices & Drivers
 #
+
 # PCI BIOS options
 defflag	opt_pcibios.h	PCIBIOS PCIBIOSVERBOSE
-					PCIBIOS_ADDR_FIXUP PCIBIOS_BUS_FIXUP
-					PCIBIOS_INTR_FIXUP PCIBIOS_INTR_FIXUP_FORCE
-					PCIBIOS_INTR_GUESS PCIINTR_DEBUG
+			PCIBIOS_ADDR_FIXUP PCIBIOS_BUS_FIXUP
+			PCIBIOS_INTR_FIXUP PCIBIOS_INTR_FIXUP_FORCE
+			PCIBIOS_INTR_GUESS PCIINTR_DEBUG
 defparam opt_pcibios.h	PCIBIOS_IRQS_HINT
 # PCI options
-defparam				PCI_CONF_MODE
+defparam		PCI_CONF_MODE
+
+# PCIC options
+defparam 		PCIC_ISA_ALLOC_IOBASE
+defparam 		PCIC_ISA_ALLOC_IOSIZE
+defparam 		PCIC_ISA_INTR_ALLOC_MASK
 
 #
 # System bus types
@@ -109,10 +115,6 @@ file	arch/i386/isa/isapnp_machdep.c	    isapnp
 # PCIC pcmcia contoller
 # XXX this needs to be done very late, so it's done here.  This feels
 # like a kludge, but it might be for the best.
-
-defparam PCIC_ISA_ALLOC_IOBASE
-defparam PCIC_ISA_ALLOC_IOSIZE
-defparam PCIC_ISA_INTR_ALLOC_MASK
 
 device	pcic: pcmciabus
 file	dev/core/io/i82365/i82365.c			   pcic

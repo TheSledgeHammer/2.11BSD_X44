@@ -29,6 +29,8 @@
 #include <sys/cdefs.h>
 /* __KERNEL_RCSID(0, "$NetBSD: vga_subr.c,v 1.17 2004/03/24 17:26:53 drochner Exp $"); */
 
+#include "opt_vga.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>

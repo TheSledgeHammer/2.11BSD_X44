@@ -41,6 +41,8 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: bpf.c,v 1.90.2.2 2004/05/28 07:24:55 tron Exp $");
 
+#include "opt_bpf.h"
+
 #include "bpfilter.h"
 
 #include <sys/param.h>

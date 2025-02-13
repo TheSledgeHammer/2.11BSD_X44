@@ -30,6 +30,8 @@
 #include <sys/cdefs.h>
 /* __KERNEL_RCSID(0, "$NetBSD: vga.c,v 1.71.4.6 2007/08/12 19:52:27 bouyer Exp $"); */
 
+#include "opt_vga.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/callout.h>
@@ -54,7 +56,7 @@
 #include <dev/misc/pccons/pcdisplay.h>
 
 /* for WSCONS_SUPPORT_PCVTFONTS and WSDISPLAY_CHARFUNCS */
-//#include "opt_wsdisplay_compat.h"
+#include "opt_wsdisplay_compat.h"
 
 int vga_no_builtinfont = 0;
 

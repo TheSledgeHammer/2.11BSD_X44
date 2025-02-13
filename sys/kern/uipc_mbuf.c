@@ -68,6 +68,9 @@
  */
 
 #include <sys/cdefs.h>
+
+#include "opt_nmbclusters.h"
+
 #include <sys/param.h>
 //#ifdef INET
 #include <sys/user.h>
