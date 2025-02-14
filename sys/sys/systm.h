@@ -129,8 +129,8 @@ struct execa_args {
 	syscallarg(char	**) envp;
 };
 
-int 				execa(struct execa_args *);
-void				execa_set(struct execa_args *, char *, char **, char **);
+int 			execa(struct execa_args *);
+void			execa_set(struct execa_args *, char *, char **, char **);
 struct execa_args 	*execa_get(void);
 
 /*
@@ -172,7 +172,8 @@ int 	nosys();
 void 	*hashinit(int, int, u_long *);
 void 	*hashfree(void *, int, int, u_long *);
 
-int		ureadc(int, struct uio *);
+#ifdef _KERNEL
+int	ureadc(int, struct uio *);
 
 void 	panic(const char *, ...) __attribute__((__noreturn__,__format__(__printf__,1,2)));
 void	tablefull(const char *);
@@ -182,11 +183,11 @@ void	vlog(int, const char *, va_list);
 
 /* subr_prf.c */
 void	printf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
-int		sprintf(char *, const char *, ...)  __attribute__((__format__(__printf__,2,3)));
-int		snprintf(char *, size_t, const char *, ...) __attribute__((__format__(__printf__,3,4)));
+int	sprintf(char *, const char *, ...)  __attribute__((__format__(__printf__,2,3)));
+int	snprintf(char *, size_t, const char *, ...) __attribute__((__format__(__printf__,3,4)));
 void	vprintf(const char *, va_list);
-int		vsprintf(char *, const char *, va_list);
-int		vsnprintf(char *, size_t, const char *, va_list);
+int	vsprintf(char *, const char *, va_list);
+int	vsnprintf(char *, size_t, const char *, va_list);
 
 void	ttyprintf(struct tty *, const char *, ...);
 void	uprintf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
@@ -196,26 +197,26 @@ char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 void 	ovbcopy(const void *, void *, u_int);
 void 	bcopy(const void *, void *, u_int);
 void 	bzero(void *, u_int);
-int		bcmp(const void *, const void *, size_t);
+int	bcmp(const void *, const void *, size_t);
 
-int		copystr(const void *, void *, size_t, size_t *);
-int		copyinstr(const void *, void *, size_t, size_t *);
-int		copyoutstr(const void *, void *, size_t, size_t *);
-int		copyin(const void *, void *, size_t);
-int		copyout(const void *, void *, size_t);
+int	copystr(const void *, void *, size_t, size_t *);
+int	copyinstr(const void *, void *, size_t, size_t *);
+int	copyoutstr(const void *, void *, size_t, size_t *);
+int	copyin(const void *, void *, size_t);
+int	copyout(const void *, void *, size_t);
 
-int		fubyte(const void *);
-int		fuibyte(void *);
-int		fuword(const void *);
-int		fuiword(void *);
+int	fubyte(const void *);
+int	fuibyte(void *);
+int	fuword(const void *);
+int	fuiword(void *);
 int 	fusword(const void *);
-int		subyte(void *, int);
-int		suibyte(void *, int);
-int		suword(void *, int);
-int		suiword(void *, int);
-int		susword(void *, int);
+int	subyte(void *, int);
+int	suibyte(void *, int);
+int	suword(void *, int);
+int	suiword(void *, int);
+int	susword(void *, int);
 
-int		hzto(struct timeval *tv);
+int	hzto(struct timeval *tv);
 void 	timeout(void (*func)(void *), void *, int);
 void 	untimeout(void (*func)(void *), void *);
 void	realitexpire(void *);
@@ -230,23 +231,22 @@ void    stopprofclock(struct proc *);
 /* kern_environment.c / kenv.h */
 char	*kern_getenv(const char *);
 void	freeenv(char *);
-int		getenv_int(const char *, int *);
-int		getenv_uint(const char *, unsigned int *);
-int		getenv_long(const char *, long *);
-int		getenv_ulong(const char *, unsigned long *);
-int		getenv_string(const char *, char *, int );
-int		getenv_int64(const char *, int64_t *);
-int		getenv_uint64(const char *, uint64_t *);
-int		getenv_quad(const char *, quad_t *);
-int		kern_setenv(const char *, const char *);
-int		kern_unsetenv(const char *);
-int		testenv(const char *);
-int		getenv_array(const char *, void *, int, int *, int, bool_t);
+int	getenv_int(const char *, int *);
+int	getenv_uint(const char *, unsigned int *);
+int	getenv_long(const char *, long *);
+int	getenv_ulong(const char *, unsigned long *);
+int	getenv_string(const char *, char *, int );
+int	getenv_int64(const char *, int64_t *);
+int	getenv_uint64(const char *, uint64_t *);
+int	getenv_quad(const char *, quad_t *);
+int	kern_setenv(const char *, const char *);
+int	kern_unsetenv(const char *);
+int	testenv(const char *);
+int	getenv_array(const char *, void *, int, int *, int, bool_t);
 
 #define	GETENV_UNSIGNED	false	/* negative numbers not allowed */
 #define	GETENV_SIGNED	true	/* negative numbers allowed */
 
-#ifdef _KERNEL
 #include <lib/libkern/libkern.h>
 #endif
 
