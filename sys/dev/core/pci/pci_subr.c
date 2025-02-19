@@ -49,9 +49,9 @@
 #endif
 
 #ifdef PCIVERBOSE
+struct pci_knowndev;
 static char *pci_findvendor(const struct pci_knowndev *, pcireg_t);
 static char *pci_findproduct(const struct pci_knowndev *, pcireg_t);
-static const struct pci_knowndev *pci_findknowndev(pcireg_t);
 #endif /* PCIVERBOSE */
 
 const struct pci_class pci_subclass_prehistoric[] = {
@@ -236,25 +236,18 @@ pci_findproduct(kdp, id_reg)
 	vendor = PCI_VENDOR(id_reg);
 	product = PCI_PRODUCT(id_reg);
 	while (kdp->productname != NULL) { /* all have product name */
-		if (kdp->vendor == vendor && kdp->product == product) {
+		if (kdp->vendor == vendor && (kdp->product == product ||
+		    (kdp->flags & PCI_KNOWNDEV_NOPROD) != 0)) {
 			break;
 		}
 		kdp++;
 	}
+    	if ((kdp->flags & PCI_KNOWNDEV_NOPROD) == 0) {
+        	return (NULL);
+    	}
 	return (kdp->productname);
 }
 
-static const struct pci_knowndev *
-pci_findknowndev(id_reg)
-	pcireg_t id_reg;
-{
-	const struct pci_knowndev *kdp;
-
-	kdp = pci_knowndevs;
-	kdp->vendorname = pci_findvendor(kdp, id_reg);
-	kdp->productname = pci_findproduct(kdp, id_reg);
-	return (kdp);
-}
 #endif /* PCIVERBOSE */
 
 void
@@ -286,9 +279,9 @@ pci_devinfo(id_reg, class_reg, showclass, cp)
 	interface = PCI_INTERFACE(class_reg);
 	revision = PCI_REVISION(class_reg);
 #ifdef PCIVERBOSE
-	kdp = pci_findknowndev(id_reg);
-	vendor_namep = kdp->vendorname;
-	product_namep = kdp->productname;
+	kdp = pci_knowndevs;
+	vendor_namep = pci_findvendor(kdp, id_reg);
+	product_namep = pci_findproduct(kdp, id_reg);
 #else /* PCIVERBOSE */
 	vendor_namep = NULL;
 	product_namep = NULL;
@@ -334,31 +327,34 @@ pci_devinfo(id_reg, class_reg, showclass, cp)
 }
 
 void
-pci_knowndevs(pc, tag, regs, rval)
+pci_knowndev(pc, tag, regs, rval)
 	pci_chipset_tag_t pc;
 	pcitag_t tag;
 	const pcireg_t *regs;
 	pcireg_t rval;
 {
 #ifdef PCIVERBOSE
+    	char *vendor_namep, *product_namep;
 	const struct pci_knowndev *kdp;
 #endif
 #ifndef PCIVERBOSE
 	printf("    Vendor ID: 0x%04x\n", PCI_VENDOR(rval));
 	printf("    Device ID: 0x%04x\n", PCI_PRODUCT(rval));
 #else
-	kdp = pci_findknowndev(rval);
+	kdp = pci_knowndevs;
+	vendor_namep = pci_findvendor(kdp, rval);
+	product_namep = pci_findproduct(kdp, rval);
 	if (kdp->vendor == PCI_VENDOR(rval)) {
-		if (kdp->vendorname != NULL) {
-			printf("    Vendor Name: %s (0x%04x)\n", kdp->vendorname,
+		if (vendor_namep != NULL) {
+			printf("    Vendor Name: %s (0x%04x)\n", vendor_namep,
 			    PCI_VENDOR(rval));
 		} else {
 			printf("    Vendor ID: 0x%04x\n", PCI_VENDOR(rval));
 		}
 	}
 	if (kdp->product == PCI_PRODUCT(rval)) {
-		if (kdp->productname != NULL) {
-			printf("    Device Name: %s (0x%04x)\n", kdp->productname,
+		if (product_namep != NULL) {
+			printf("    Device Name: %s (0x%04x)\n", product_namep,
 			    PCI_PRODUCT(rval));
 		} else {
 			printf("    Device ID: 0x%04x\n", PCI_PRODUCT(rval));
