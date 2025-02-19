@@ -144,6 +144,7 @@ extern struct sysent {
 extern int nsysent;
 
 /* Initialize the world */
+#ifdef _KERNEL
 extern void startup(void);			/* cpu startup */
 extern void consinit(void);			/* console startup */
 extern void cinit(void);			/* clist startup */
@@ -153,6 +154,7 @@ extern void mbinit(void);			/* mbuf startup */
 extern void netstart(void);			/* network startup */
 extern void rmapinit(void);			/* rmap startup (map) */
 extern void vfsinit(void);			/* vfs startup */
+#endif
 
 /* General Function Declarations */
 struct clockframe;
@@ -169,11 +171,12 @@ int 	einval(void);
 int 	nonet(void);
 int 	nosys();
 
+#ifdef _KERNEL
 void 	*hashinit(int, int, u_long *);
 void 	*hashfree(void *, int, int, u_long *);
 
-#ifdef _KERNEL
 int	ureadc(int, struct uio *);
+#endif
 
 void 	panic(const char *, ...) __attribute__((__noreturn__,__format__(__printf__,1,2)));
 void	tablefull(const char *);
@@ -181,6 +184,7 @@ void	addlog(const char *, ...) __attribute__((__format__(__printf__,1,2)));
 void	log(int, const char *, ...);
 void	vlog(int, const char *, va_list);
 
+#ifdef _KERNEL
 /* subr_prf.c */
 void	printf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
 int	sprintf(char *, const char *, ...)  __attribute__((__format__(__printf__,2,3)));
@@ -188,16 +192,19 @@ int	snprintf(char *, size_t, const char *, ...) __attribute__((__format__(__prin
 void	vprintf(const char *, va_list);
 int	vsprintf(char *, const char *, va_list);
 int	vsnprintf(char *, size_t, const char *, va_list);
+#endif
 
 void	ttyprintf(struct tty *, const char *, ...);
 void	uprintf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
 void    printn(long, u_int, int, struct tty *);
 char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 
+#ifdef _KERNEL
 void 	ovbcopy(const void *, void *, u_int);
 void 	bcopy(const void *, void *, u_int);
 void 	bzero(void *, u_int);
 int	bcmp(const void *, const void *, size_t);
+#endif
 
 int	copystr(const void *, void *, size_t, size_t *);
 int	copyinstr(const void *, void *, size_t, size_t *);
@@ -247,6 +254,7 @@ int	getenv_array(const char *, void *, int, int *, int, bool_t);
 #define	GETENV_UNSIGNED	false	/* negative numbers not allowed */
 #define	GETENV_SIGNED	true	/* negative numbers allowed */
 
+#ifdef _KERNEL
 #include <lib/libkern/libkern.h>
 #endif
 

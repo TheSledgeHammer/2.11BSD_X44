@@ -379,7 +379,7 @@ pci_mode_set(int mode)
 }
 
 int
-pci_mode_detect()
+pci_mode_detect(void)
 {
 #ifdef PCI_CONF_MODE
 #if (PCI_CONF_MODE == 1) || (PCI_CONF_MODE == 2)

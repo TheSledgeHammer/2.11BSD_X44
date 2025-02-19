@@ -391,26 +391,27 @@ pci_devioctl(pc, tag, cmd, data, flag, p)
 
 	switch (cmd) {
 	case PCI_IOC_CFGREAD:
-	case PCI_IOC_CFGWRITE:
-		if (cmd == PCI_IOC_CFGREAD)
-			r->val = pci_conf_read(pc, tag, r->reg);
-		else {
-			if ((flag & FWRITE) == 0)
-				return (EBADF);
-			pci_conf_write(pc, tag, r->reg, r->val);
+		if ((flag & FREAD) == 0) {
+			return (EBADF);
 		}
+		r->val = pci_conf_read(pc, tag, r->reg);
+		break;
+
+	case PCI_IOC_CFGWRITE:
+		if ((flag & FWRITE) == 0) {
+			return (EBADF);
+		}
+		pci_conf_write(pc, tag, r->reg, r->val);
 		break;
 
 	default:
 		return (EPASSTHROUGH);
 	}
-
 	return (0);
 }
 
 int
-pci_probe_device(struct pci_softc *sc, pcitag_t tag,
-    int (*match)(struct pci_attach_args *), struct pci_attach_args *pap)
+pci_probe_device(struct pci_softc *sc, pcitag_t tag, int (*match)(struct pci_attach_args *), struct pci_attach_args *pap)
 {
 	pci_chipset_tag_t pc = sc->sc_pc;
 	struct pci_attach_args pa;
