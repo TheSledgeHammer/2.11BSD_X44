@@ -182,7 +182,7 @@ pci_conf_print_typeX(struct pci_cfg *cfg, int hdrtype, const pcireg_t *regs, pci
 		endoff = 64;
 		break;
 	}
-    printf("  Type %d ", cfg->pc_type);
+    printf("  Type %d ", hdrtype);
     if (typename != NULL) {
         printf("(%s) ", typename);
     }
