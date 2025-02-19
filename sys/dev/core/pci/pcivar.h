@@ -215,7 +215,7 @@ int 	pci_get_capability(pci_chipset_tag_t, pcitag_t, int, int *, pcireg_t *);
 int		pci_enumerate_bus_generic(struct pci_softc *, int (*)(struct pci_attach_args *), struct pci_attach_args *);
 int		pci_probe_device(struct pci_softc *, pcitag_t tag, int (*)(struct pci_attach_args *), struct pci_attach_args *);
 void	pci_devinfo(pcireg_t, pcireg_t, int, char *);
-void 	pci_knowndevs(pci_chipset_tag_t , pcitag_t, const pcireg_t *, pcireg_t);
+void 	pci_knowndev(pci_chipset_tag_t , pcitag_t, const pcireg_t *, pcireg_t);
 void	pci_conf_print(pci_chipset_tag_t, pcitag_t, void (*)(pci_chipset_tag_t, pcitag_t, const pcireg_t *));
 const struct pci_quirkdata *pci_lookup_quirkdata(pci_vendor_id_t, pci_product_id_t);
 
