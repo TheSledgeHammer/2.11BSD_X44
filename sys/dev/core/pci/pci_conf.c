@@ -50,10 +50,12 @@ static void pci_conf_print_type0(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 static void pci_conf_print_type1(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 static void pci_conf_print_type2(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 
-//#ifndef _KERNEL
+extern const struct pci_class pci_class[];
+
 /*
  * typeprintfn and printfn
  */
+//#ifndef _KERNEL
 typedef void (*pci_conf_func_t)(pci_chipset_tag_t , pcitag_t, const pcireg_t *);
 //#else
 //typedef void (*pci_conf_func_t)(const pcireg_t *);
