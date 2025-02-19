@@ -84,7 +84,7 @@ pci_conf_print_common(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 
 	rval = regs[o2i(PCI_ID_REG)];
 
-	pci_knowndevs(pc, tag, regs, rval);
+	pci_knowndev(pc, tag, regs, rval);
 
 	rval = regs[o2i(PCI_COMMAND_STATUS_REG)];
 
