@@ -54,7 +54,7 @@ struct pci_cfg {
     int                 pc_type;
     pci_chipset_tag_t   pc_pc;
     pcitag_t            pc_tag;
-    const pcireg_t 		*pc_regs;
+    const pcireg_t 	*pc_regs;
 };
 
 struct pci_cfg pci_cfg_array[3];
