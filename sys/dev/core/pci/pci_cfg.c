@@ -291,7 +291,7 @@ pci_cfg_print_type0(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 	int off;
 	pcireg_t rval;
 
-    pci_cfg_set(0, pc, tag, regs);
+    	pci_cfg_set(0, pc, tag, regs);
 	for (off = PCI_MAPREG_START; off < PCI_MAPREG_END; off += 4) {
 		pci_cfg_print_bar(pc, tag, regs, off, NULL);
 	}
@@ -341,7 +341,7 @@ pci_cfg_print_type1(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 	int off;
 	pcireg_t rval;
 
-    pci_cfg_set(1, pc, tag, regs);
+    	pci_cfg_set(1, pc, tag, regs);
 	/*
 	 * XXX these need to be printed in more detail, need to be
 	 * XXX checked against specs/docs, etc.
@@ -464,7 +464,7 @@ pci_cfg_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
 	pcireg_t rval;
 
-    pci_cfg_set(2, pc, tag, regs);
+    	pci_cfg_set(2, pc, tag, regs);
 	/*
 	 * XXX these need to be printed in more detail, need to be
 	 * XXX checked against specs/docs, etc.
@@ -605,12 +605,12 @@ pci_cfg_print_commonX(int type, const pcireg_t *regs)
 
     cfg = pci_cfg_get(type, regs);
     if (cfg != NULL) {
-   		/* common header */
-	    printf("  Common header:\n");
-	    pci_cfg_print_regs(regs, 0, 16);
+   	/* common header */
+	printf("  Common header:\n");
+	pci_cfg_print_regs(regs, 0, 16);
 
         printf("\n");
-	    pci_cfg_print_common(cfg->pc_pc, cfg->pc_tag, regs);
+	pci_cfg_print_common(cfg->pc_pc, cfg->pc_tag, regs);
     	printf("\n");
     }
 }
