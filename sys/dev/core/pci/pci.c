@@ -321,21 +321,22 @@ pciioctl(dev, cmd, data, flag, p)
 
 	switch (cmd) {
 	case PCI_IOC_BDF_CFGREAD:
-	case PCI_IOC_BDF_CFGWRITE:
-		if (bdfr->bus > 255 || bdfr->device >= sc->sc_maxndevs ||
-		    bdfr->function > 7)
-			return (EINVAL);
-		tag = pci_make_tag(sc->sc_pc, bdfr->bus, bdfr->device,
-		    bdfr->function);
-		if (cmd == PCI_IOC_BDF_CFGREAD)
-			bdfr->cfgreg.val = pci_conf_read(sc->sc_pc, tag,
-			    bdfr->cfgreg.reg);
-		else {
-			if ((flag & FWRITE) == 0)
-				return (EBADF);
-			pci_conf_write(sc->sc_pc, tag, bdfr->cfgreg.reg,
-			    bdfr->cfgreg.val);
+		if ((flag & FRREAD) == 0) {
+			return (EBADF);
 		}
+		bdfr->cfgreg.val = pci_conf_read(sc->sc_pc, tag, bdfr->cfgreg.reg);
+		break;
+
+	case PCI_IOC_BDF_CFGWRITE:
+		if (bdfr->bus > 255 || bdfr->device >= sc->sc_maxndevs
+				|| bdfr->function > 7) {
+			return (EINVAL);
+		}
+		tag = pci_make_tag(sc->sc_pc, bdfr->bus, bdfr->device, bdfr->function);
+		if ((flag & FWRITE) == 0) {
+			return (EBADF);
+		}
+		pci_conf_write(sc->sc_pc, tag, bdfr->cfgreg.reg, bdfr->cfgreg.val);
 		break;
 
 	case PCI_IOC_BUSINFO:

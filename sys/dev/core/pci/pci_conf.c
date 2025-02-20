@@ -69,9 +69,9 @@ static void pci_conf_print_type0(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 static void pci_conf_print_type1(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 static void pci_conf_print_type2(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 #else
-static void pci_conf_print_type0(const pcireg_t *);
-static void pci_conf_print_type1(const pcireg_t *);
-static void pci_conf_print_type2(const pcireg_t *);
+static void pci_conf_print_type0(const pcireg_t*);
+static void pci_conf_print_type1(const pcireg_t*);
+static void pci_conf_print_type2(const pcireg_t*);
 #endif
 
 #define	o2i(o)	((o) / 4)
@@ -111,10 +111,10 @@ pci_conf_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 void
 pci_conf_print(pci_chipset_tag_t pc, pcitag_t tag, pci_conf_func_t printfn)
 {
-    pcireg_t regs[o2i(256)];
+	pcireg_t regs[o2i(256)];
 	const char *typename;
-    int off, hdrtype, endoff;
-    pci_conf_func_t typeprintfn;
+	int off, hdrtype, endoff;
+	pci_conf_func_t typeprintfn;
 
 	printf("PCI configuration registers:\n");
 
@@ -122,11 +122,11 @@ pci_conf_print(pci_chipset_tag_t pc, pcitag_t tag, pci_conf_func_t printfn)
 		regs[o2i(off)] = pci_conf_read(pc, tag, off);
 	}
 
-   	/* common header */
+	/* common header */
 	printf("  Common header:\n");
 	pci_conf_print_regs(regs, 0, 16);
 
-    printf("\n");
+	printf("\n");
 	pci_conf_print_common(pc, tag, regs);
 	printf("\n");
 
@@ -156,18 +156,17 @@ pci_conf_print(pci_chipset_tag_t pc, pcitag_t tag, pci_conf_func_t printfn)
 		endoff = 64;
 		break;
 	}
-    printf("  Type %d ", hdrtype);
-    if (typename != NULL) {
-        printf("(%s) ", typename);
-    }
-    printf("header:\n");
-    pci_conf_print_regs(regs, 16, endoff);
-    printf("\n");
+	printf("  Type %d ", hdrtype);
+	if (typename != NULL) {
+		printf("(%s) ", typename);
+	}
+	printf("header:\n");
+	pci_conf_print_regs(regs, 16, endoff);
+	printf("\n");
 	if (typeprintfn) {
 		(*typeprintfn)(pc, tag, regs);
 	} else {
-		printf("    Don't know how to pretty-print type %d header.\n",
-		    hdrtype);
+		printf("    Don't know how to pretty-print type %d header.\n", hdrtype);
 	}
 	printf("\n");
 
@@ -188,19 +187,19 @@ pci_conf_print(pci_chipset_tag_t pc, pcitag_t tag, pci_conf_func_t printfn)
 static void
 pci_conf_print_type0(const pcireg_t *regs)
 {
-    pci_cfg_print_typeX(0, regs);
+	pci_cfg_print_typeX(0, regs);
 }
 
 static void
 pci_conf_print_type1(const pcireg_t *regs)
 {
-    pci_cfg_print_typeX(1, regs);
+	pci_cfg_print_typeX(1, regs);
 }
 
 static void
 pci_conf_print_type2(const pcireg_t *regs)
 {
-    pci_cfg_print_typeX(2, regs);
+	pci_cfg_print_typeX(2, regs);
 }
 
 void
@@ -208,21 +207,22 @@ pci_conf_print(int pcifd, u_int bus, u_int dev, u_int func)
 {
 	pcireg_t regs[o2i(256)];
 	const char *typename;
-    int off, hdrtype, endoff;
-    pci_conf_func_t typeprintfn;
+	int off, hdrtype, endoff;
+	pci_conf_func_t typeprintfn;
 
 	printf("PCI configuration registers:\n");
 
 	for (off = 0; off < 256; off += 4) {
-		if (pcibus_conf_read(pcifd, bus, dev, func, off, &regs[o2i(off)]) == -1) {
+		if (pcibus_conf_read(pcifd, bus, dev, func, off, &regs[o2i(off)])
+				== -1) {
 			regs[o2i(off)] = 0;
 		}
 	}
 
 	hdrtype = PCI_HDRTYPE(regs[o2i(PCI_BHLC_REG)]);
-    pci_cfg_print_commonX(hdrtype, regs);
+	pci_cfg_print_commonX(hdrtype, regs);
 
-    /* type-dependent header */
+	/* type-dependent header */
 	switch (hdrtype) {
 	case 0:
 		/* Standard device header */
@@ -248,18 +248,17 @@ pci_conf_print(int pcifd, u_int bus, u_int dev, u_int func)
 		endoff = 64;
 		break;
 	}
-    printf("  Type %d ", hdrtype);
-    if (typename != NULL) {
-        printf("(%s) ", typename);
-    }
-    printf("header:\n");
-    pci_conf_print_regs(regs, 16, endoff);
-    printf("\n");
+	printf("  Type %d ", hdrtype);
+	if (typename != NULL) {
+		printf("(%s) ", typename);
+	}
+	printf("header:\n");
+	pci_conf_print_regs(regs, 16, endoff);
+	printf("\n");
 	if (typeprintfn) {
 		(*typeprintfn)(regs);
 	} else {
-		printf("    Don't know how to pretty-print type %d header.\n",
-		    hdrtype);
+		printf("    Don't know how to pretty-print type %d header.\n", hdrtype);
 	}
 	printf("\n");
 

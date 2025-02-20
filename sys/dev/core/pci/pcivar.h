@@ -242,7 +242,7 @@ int	pci_get_powerstate(pci_chipset_tag_t, pcitag_t);
 /*
  * Misc.
  */
-int	pci_find_device(struct pci_attach_args *, int (*match)(struct pci_attach_args *));
+int		pci_find_device(struct pci_attach_args *, int (*match)(struct pci_attach_args *));
 void	set_pci_isa_bridge_callback(void (*)(void *), void *);
 			
 #endif /* _KERNEL */

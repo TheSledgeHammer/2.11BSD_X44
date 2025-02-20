@@ -333,7 +333,7 @@ pci_knowndev(regs, rval)
 	pcireg_t rval;
 {
 #ifdef PCIVERBOSE
-    	char *vendor_namep, *product_namep;
+	char *vendor_namep, *product_namep;
 	const struct pci_knowndev *kdp;
 #endif
 #ifndef PCIVERBOSE

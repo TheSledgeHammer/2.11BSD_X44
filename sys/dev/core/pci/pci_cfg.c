@@ -45,14 +45,26 @@
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/pci/pcicfg.h>
 
+/*
+ * pci_conf kern/user interface
+ */
+
+struct pci_cfg {
+    int                 pc_type;
+    pci_chipset_tag_t   pc_pc;
+    pcitag_t            pc_tag;
+    const pcireg_t 	*pc_regs;
+};
+
 extern const struct pci_class pci_class[];
 
 struct pci_cfg pci_cfg_array[3];
 
+static struct pci_cfg *pci_cfg_get(int, const pcireg_t *);
 static void    pci_cfg_set(int, pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 static void    pci_cfg_print_bar(pci_chipset_tag_t, pcitag_t, const pcireg_t *, int, const char *);
 
-struct pci_cfg *
+static struct pci_cfg *
 pci_cfg_get(int type, const pcireg_t *regs)
 {
 	struct pci_cfg *cfg;
@@ -291,7 +303,7 @@ pci_cfg_print_type0(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 	int off;
 	pcireg_t rval;
 
-    	pci_cfg_set(0, pc, tag, regs);
+	pci_cfg_set(0, pc, tag, regs);
 	for (off = PCI_MAPREG_START; off < PCI_MAPREG_END; off += 4) {
 		pci_cfg_print_bar(pc, tag, regs, off, NULL);
 	}
@@ -341,7 +353,7 @@ pci_cfg_print_type1(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 	int off;
 	pcireg_t rval;
 
-    	pci_cfg_set(1, pc, tag, regs);
+	pci_cfg_set(1, pc, tag, regs);
 	/*
 	 * XXX these need to be printed in more detail, need to be
 	 * XXX checked against specs/docs, etc.
@@ -581,21 +593,21 @@ void
 pci_cfg_print_typeX(int type, const pcireg_t *regs)
 {
     struct pci_cfg *cfg = pci_cfg_get(type, regs);
-    if (cfg != NULL) {
-        switch (type) {
-        case 0:
-            pci_cfg_print_type0(cfg->pc_pc, cfg->pc_tag, regs);
-            return;
+	if (cfg != NULL) {
+		switch (type) {
+		case 0:
+			pci_cfg_print_type0(cfg->pc_pc, cfg->pc_tag, regs);
+			return;
 
-        case 1:
-            pci_cfg_print_type2(cfg->pc_pc, cfg->pc_tag, regs);
-            return;
+		case 1:
+			pci_cfg_print_type2(cfg->pc_pc, cfg->pc_tag, regs);
+			return;
 
-        case 2:
-            pci_cfg_print_type2(cfg->pc_pc, cfg->pc_tag, regs);
-            return;
-        }
-    }
+		case 2:
+			pci_cfg_print_type2(cfg->pc_pc, cfg->pc_tag, regs);
+			return;
+		}
+	}
 }
 
 void
@@ -603,14 +615,14 @@ pci_cfg_print_commonX(int type, const pcireg_t *regs)
 {
     struct pci_cfg *cfg;
 
-    cfg = pci_cfg_get(type, regs);
-    if (cfg != NULL) {
-   	/* common header */
-	printf("  Common header:\n");
-	pci_cfg_print_regs(regs, 0, 16);
+	cfg = pci_cfg_get(type, regs);
+	if (cfg != NULL) {
+		/* common header */
+		printf("  Common header:\n");
+		pci_cfg_print_regs(regs, 0, 16);
 
-        printf("\n");
-	pci_cfg_print_common(cfg->pc_pc, cfg->pc_tag, regs);
-    	printf("\n");
-    }
+		printf("\n");
+		pci_cfg_print_common(cfg->pc_pc, cfg->pc_tag, regs);
+		printf("\n");
+	}
 }

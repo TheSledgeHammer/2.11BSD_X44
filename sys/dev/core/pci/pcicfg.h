@@ -31,23 +31,11 @@
 
 #ifdef _KERNEL
 
-/*
- * pci_conf kern/user interface
- */
-
-struct pci_cfg {
-    int                 pc_type;
-    pci_chipset_tag_t   pc_pc;
-    pcitag_t            pc_tag;
-    const pcireg_t 	    *pc_regs;
-};
-
 void    pci_cfg_print_common(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 void    pci_cfg_print_type0(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 void    pci_cfg_print_type1(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 void    pci_cfg_print_type2(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 #else
-struct pci_cfg *pci_cfg_get(int, const pcireg_t *);
 void    pci_cfg_print_regs(const pcireg_t *, int, int);
 void    pci_cfg_print_typeX(int, const pcireg_t *);
 void    pci_cfg_print_commonX(int, const pcireg_t *);
