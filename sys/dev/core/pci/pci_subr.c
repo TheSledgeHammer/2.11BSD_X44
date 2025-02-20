@@ -205,6 +205,7 @@ struct pci_knowndev {
 	char			*vendorname;
 	char			*productname;
 };
+#define	PCI_KNOWNDEV_NOPROD	0x01		/* match on vendor only */
 
 #include <dev/core/pci/pcidevs_data.h>
 
