@@ -328,9 +328,7 @@ pci_devinfo(id_reg, class_reg, showclass, cp)
 }
 
 void
-pci_knowndev(pc, tag, regs, rval)
-	pci_chipset_tag_t pc;
-	pcitag_t tag;
+pci_knowndev(regs, rval)
 	const pcireg_t *regs;
 	pcireg_t rval;
 {
