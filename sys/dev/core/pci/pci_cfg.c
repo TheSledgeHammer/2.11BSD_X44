@@ -293,8 +293,9 @@ pci_cfg_print_regs(const pcireg_t *regs, int first, int pastlast)
 			neednl = 0;
 		}
 	}
-	if (neednl)
+	if (neednl) {
 		printf("\n");
+	}
 }
 
 void
@@ -476,7 +477,7 @@ pci_cfg_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
 	pcireg_t rval;
 
-    	pci_cfg_set(2, pc, tag, regs);
+	pci_cfg_set(2, pc, tag, regs);
 	/*
 	 * XXX these need to be printed in more detail, need to be
 	 * XXX checked against specs/docs, etc.
@@ -592,7 +593,9 @@ pci_cfg_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 void
 pci_cfg_print_typeX(int type, const pcireg_t *regs)
 {
-    struct pci_cfg *cfg = pci_cfg_get(type, regs);
+	struct pci_cfg *cfg;
+
+	cfg = pci_cfg_get(type, regs);
 	if (cfg != NULL) {
 		switch (type) {
 		case 0:
@@ -613,7 +616,7 @@ pci_cfg_print_typeX(int type, const pcireg_t *regs)
 void
 pci_cfg_print_commonX(int type, const pcireg_t *regs)
 {
-    struct pci_cfg *cfg;
+	struct pci_cfg *cfg;
 
 	cfg = pci_cfg_get(type, regs);
 	if (cfg != NULL) {
