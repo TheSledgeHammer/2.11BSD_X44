@@ -321,7 +321,7 @@ pciioctl(dev, cmd, data, flag, p)
 
 	switch (cmd) {
 	case PCI_IOC_BDF_CFGREAD:
-		if ((flag & FRREAD) == 0) {
+		if ((flag & FREAD) == 0) {
 			return (EBADF);
 		}
 		bdfr->cfgreg.val = pci_conf_read(sc->sc_pc, tag, bdfr->cfgreg.reg);
