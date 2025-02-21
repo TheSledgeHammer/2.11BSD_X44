@@ -61,52 +61,9 @@ typedef void (*pci_conf_func_t)(pci_chipset_tag_t , pcitag_t, const pcireg_t *);
 typedef void (*pci_conf_func_t)(const pcireg_t *);
 #endif
 
-static void pci_conf_print_regs(const pcireg_t *, int, int);
-
-#ifdef _KERNEL
-static void pci_conf_print_common(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
-static void pci_conf_print_type0(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
-static void pci_conf_print_type1(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
-static void pci_conf_print_type2(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
-#else
-static void pci_conf_print_type0(const pcireg_t*);
-static void pci_conf_print_type1(const pcireg_t*);
-static void pci_conf_print_type2(const pcireg_t*);
-#endif
-
 #define	o2i(o)	((o) / 4)
 
-static void
-pci_conf_print_regs(const pcireg_t *regs, int first, int pastlast)
-{
-    pci_cfg_print_regs(regs, first, pastlast);
-}
-
 #ifdef _KERNEL
-
-static void
-pci_conf_print_common(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
-{
-    pci_cfg_print_common(pc, tag, regs);
-}
-
-static void
-pci_conf_print_type0(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
-{
-    pci_cfg_print_type0(pc, tag, regs);
-}
-
-static void
-pci_conf_print_type1(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
-{
-    pci_cfg_print_type1(pc, tag, regs);
-}
-
-static void
-pci_conf_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
-{
-    pci_cfg_print_type2(pc, tag, regs);
-}
 
 void
 pci_conf_print(pci_chipset_tag_t pc, pcitag_t tag, pci_conf_func_t printfn)
@@ -131,6 +88,7 @@ pci_conf_print(pci_chipset_tag_t pc, pcitag_t tag, pci_conf_func_t printfn)
 	printf("\n");
 
 	/* type-dependent header */
+    hdrtype = PCI_HDRTYPE(regs[o2i(PCI_BHLC_REG)]);
 	switch (hdrtype) {
 	case 0:
 		/* Standard device header */
@@ -184,24 +142,6 @@ pci_conf_print(pci_chipset_tag_t pc, pcitag_t tag, pci_conf_func_t printfn)
 
 #else
 
-static void
-pci_conf_print_type0(const pcireg_t *regs)
-{
-	pci_cfg_print_typeX(0, regs);
-}
-
-static void
-pci_conf_print_type1(const pcireg_t *regs)
-{
-	pci_cfg_print_typeX(1, regs);
-}
-
-static void
-pci_conf_print_type2(const pcireg_t *regs)
-{
-	pci_cfg_print_typeX(2, regs);
-}
-
 void
 pci_conf_print(int pcifd, u_int bus, u_int dev, u_int func)
 {
@@ -219,10 +159,9 @@ pci_conf_print(int pcifd, u_int bus, u_int dev, u_int func)
 		}
 	}
 
+    /* type-dependent header */
 	hdrtype = PCI_HDRTYPE(regs[o2i(PCI_BHLC_REG)]);
-	pci_cfg_print_commonX(hdrtype, regs);
-
-	/* type-dependent header */
+	pci_conf_printX(hdrtype, regs);	
 	switch (hdrtype) {
 	case 0:
 		/* Standard device header */

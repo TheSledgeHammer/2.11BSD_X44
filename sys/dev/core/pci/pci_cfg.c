@@ -62,7 +62,13 @@ struct pci_cfg pci_cfg_array[3];
 
 static struct pci_cfg *pci_cfg_get(int, const pcireg_t *);
 static void    pci_cfg_set(int, pci_chipset_tag_t, pcitag_t, const pcireg_t *);
+
+static void    pci_cfg_print_common(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 static void    pci_cfg_print_bar(pci_chipset_tag_t, pcitag_t, const pcireg_t *, int, const char *);
+static void    pci_cfg_print_regs(const pcireg_t *, int, int);
+static void    pci_cfg_print_type0(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
+static void    pci_cfg_print_type1(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
+static void    pci_cfg_print_type2(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 
 static struct pci_cfg *
 pci_cfg_get(int type, const pcireg_t *regs)
@@ -274,7 +280,7 @@ pci_cfg_print_bar(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs, int 
 	}
 }
 
-void
+static void
 pci_cfg_print_regs(const pcireg_t *regs, int first, int pastlast)
 {
 	int off, needaddr, neednl;
@@ -298,7 +304,7 @@ pci_cfg_print_regs(const pcireg_t *regs, int first, int pastlast)
 	}
 }
 
-void
+static void
 pci_cfg_print_type0(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
 	int off;
@@ -348,7 +354,7 @@ pci_cfg_print_type0(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 	printf("    Interrupt line: 0x%02x\n", PCI_INTERRUPT_LINE(rval));
 }
 
-void
+static void
 pci_cfg_print_type1(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
 	int off;
@@ -472,7 +478,7 @@ pci_cfg_print_type1(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 	onoff("Fast back-to-back capable", 0x0080);
 }
 
-void
+static void
 pci_cfg_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
 	pcireg_t rval;
@@ -591,41 +597,90 @@ pci_cfg_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 }
 
 void
-pci_cfg_print_typeX(int type, const pcireg_t *regs)
+pci_conf_print_common(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
-	struct pci_cfg *cfg;
-
-	cfg = pci_cfg_get(type, regs);
-	if (cfg != NULL) {
-		switch (type) {
-		case 0:
-			pci_cfg_print_type0(cfg->pc_pc, cfg->pc_tag, regs);
-			return;
-
-		case 1:
-			pci_cfg_print_type2(cfg->pc_pc, cfg->pc_tag, regs);
-			return;
-
-		case 2:
-			pci_cfg_print_type2(cfg->pc_pc, cfg->pc_tag, regs);
-			return;
-		}
-	}
+    pci_cfg_print_common(pc, tag, regs);
 }
 
 void
-pci_cfg_print_commonX(int type, const pcireg_t *regs)
+pci_conf_print_regs(const pcireg_t *regs, int first, int pastlast)
+{
+    pci_cfg_print_regs(regs, first, pastlast);
+}
+
+#ifdef _KERNEL
+
+void
+pci_conf_print_type0(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
+{
+    pci_cfg_print_type0(pc, tag, regs);
+}
+
+void
+pci_conf_print_type1(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
+{
+    pci_cfg_print_type1(pc, tag, regs);
+}
+
+void
+pci_conf_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
+{
+    pci_cfg_print_type2(pc, tag, regs);
+}
+
+#else
+
+void
+pci_conf_print_type0(const pcireg_t *regs)
 {
 	struct pci_cfg *cfg;
 
-	cfg = pci_cfg_get(type, regs);
+	cfg = pci_cfg_get(0, regs);
+	if (cfg != NULL) {
+        pci_cfg_print_type0(cfg->pc_pc, cfg->pc_tag, regs);
+    }
+}
+
+void
+pci_conf_print_type1(const pcireg_t *regs)
+{
+    struct pci_cfg *cfg;
+
+	cfg = pci_cfg_get(1, regs);
+	if (cfg != NULL) {
+        pci_cfg_print_type1(cfg->pc_pc, cfg->pc_tag, regs);
+    }
+}
+
+void
+pci_conf_print_type2(const pcireg_t *regs)
+{
+    struct pci_cfg *cfg;
+
+	cfg = pci_cfg_get(2, regs);
+	if (cfg != NULL) {
+        pci_cfg_print_type2(cfg->pc_pc, cfg->pc_tag, regs);
+    }
+}
+
+void
+pci_conf_printX(int hdrtype, const pcireg_t *regs)
+{
+	struct pci_cfg *cfg;
+    const char *typename;
+    int off, endoff;
+    pci_conf_func_t typeprintfn;
+
+	cfg = pci_cfg_get(hdrtype, regs);
 	if (cfg != NULL) {
 		/* common header */
 		printf("  Common header:\n");
-		pci_cfg_print_regs(regs, 0, 16);
+		pci_conf_print_regs(regs, 0, 16);
 
 		printf("\n");
-		pci_cfg_print_common(cfg->pc_pc, cfg->pc_tag, regs);
+		pci_conf_print_common(cfg->pc_pc, cfg->pc_tag, regs);
 		printf("\n");
 	}
 }
+
+#endif

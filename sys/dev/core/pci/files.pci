@@ -13,6 +13,7 @@ file	dev/core/pci/pci.c			pci 				needs-flag
 file	dev/core/pci/pci_map.c		pci
 file	dev/core/pci/pci_quirks.c		pci
 file	dev/core/pci/pci_subr.c		pci
+file	dev/core/pci/pci_cfg.c		pci
 file	dev/core/pci/pci_conf.c		pci
 
 # PCI-PCI bridge chips

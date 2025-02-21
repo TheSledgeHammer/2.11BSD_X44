@@ -30,15 +30,16 @@
 #define	_DEV_PCI_PCICFG_H_
 
 #ifdef _KERNEL
-
-void    pci_cfg_print_common(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
-void    pci_cfg_print_type0(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
-void    pci_cfg_print_type1(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
-void    pci_cfg_print_type2(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
+void    pci_conf_print_common(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
+void    pci_conf_print_regs(const pcireg_t *, int, int);
+void    pci_conf_print_type0(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
+void    pci_conf_print_type1(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
+void    pci_conf_print_type2(pci_chipset_tag_t, pcitag_t, const pcireg_t *);
 #else
-void    pci_cfg_print_regs(const pcireg_t *, int, int);
-void    pci_cfg_print_typeX(int, const pcireg_t *);
-void    pci_cfg_print_commonX(int, const pcireg_t *);
+void    pci_conf_print_regs(const pcireg_t *, int, int);
+void    pci_conf_print_type0(const pcireg_t *);
+void    pci_conf_print_type1(const pcireg_t *);
+void    pci_conf_print_type2(const pcireg_t *);
+void    pci_conf_printX(int, const pcireg_t *);
 #endif
-
 #endif /* _DEV_PCI_PCICFG_H_ */
