@@ -599,13 +599,13 @@ pci_cfg_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 void
 pci_conf_print_common(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
-    pci_cfg_print_common(pc, tag, regs);
+	pci_cfg_print_common(pc, tag, regs);
 }
 
 void
 pci_conf_print_regs(const pcireg_t *regs, int first, int pastlast)
 {
-    pci_cfg_print_regs(regs, first, pastlast);
+	pci_cfg_print_regs(regs, first, pastlast);
 }
 
 #ifdef _KERNEL
@@ -613,19 +613,19 @@ pci_conf_print_regs(const pcireg_t *regs, int first, int pastlast)
 void
 pci_conf_print_type0(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
-    pci_cfg_print_type0(pc, tag, regs);
+	pci_cfg_print_type0(pc, tag, regs);
 }
 
 void
 pci_conf_print_type1(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
-    pci_cfg_print_type1(pc, tag, regs);
+	pci_cfg_print_type1(pc, tag, regs);
 }
 
 void
 pci_conf_print_type2(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
-    pci_cfg_print_type2(pc, tag, regs);
+	pci_cfg_print_type2(pc, tag, regs);
 }
 
 #else
@@ -637,39 +637,36 @@ pci_conf_print_type0(const pcireg_t *regs)
 
 	cfg = pci_cfg_get(0, regs);
 	if (cfg != NULL) {
-        pci_cfg_print_type0(cfg->pc_pc, cfg->pc_tag, regs);
-    }
+		pci_cfg_print_type0(cfg->pc_pc, cfg->pc_tag, regs);
+	}
 }
 
 void
 pci_conf_print_type1(const pcireg_t *regs)
 {
-    struct pci_cfg *cfg;
+	struct pci_cfg *cfg;
 
 	cfg = pci_cfg_get(1, regs);
 	if (cfg != NULL) {
-        pci_cfg_print_type1(cfg->pc_pc, cfg->pc_tag, regs);
-    }
+		pci_cfg_print_type1(cfg->pc_pc, cfg->pc_tag, regs);
+	}
 }
 
 void
 pci_conf_print_type2(const pcireg_t *regs)
 {
-    struct pci_cfg *cfg;
+	struct pci_cfg *cfg;
 
 	cfg = pci_cfg_get(2, regs);
 	if (cfg != NULL) {
-        pci_cfg_print_type2(cfg->pc_pc, cfg->pc_tag, regs);
-    }
+		pci_cfg_print_type2(cfg->pc_pc, cfg->pc_tag, regs);
+	}
 }
 
 void
 pci_conf_printX(int hdrtype, const pcireg_t *regs)
 {
 	struct pci_cfg *cfg;
-    const char *typename;
-    int off, endoff;
-    pci_conf_func_t typeprintfn;
 
 	cfg = pci_cfg_get(hdrtype, regs);
 	if (cfg != NULL) {
