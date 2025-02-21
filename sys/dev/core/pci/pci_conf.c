@@ -88,7 +88,7 @@ pci_conf_print(pci_chipset_tag_t pc, pcitag_t tag, pci_conf_func_t printfn)
 	printf("\n");
 
 	/* type-dependent header */
-    hdrtype = PCI_HDRTYPE(regs[o2i(PCI_BHLC_REG)]);
+    	hdrtype = PCI_HDRTYPE(regs[o2i(PCI_BHLC_REG)]);
 	switch (hdrtype) {
 	case 0:
 		/* Standard device header */
@@ -159,7 +159,7 @@ pci_conf_print(int pcifd, u_int bus, u_int dev, u_int func)
 		}
 	}
 
-    /* type-dependent header */
+    	/* type-dependent header */
 	hdrtype = PCI_HDRTYPE(regs[o2i(PCI_BHLC_REG)]);
 	pci_conf_printX(hdrtype, regs);	
 	switch (hdrtype) {
