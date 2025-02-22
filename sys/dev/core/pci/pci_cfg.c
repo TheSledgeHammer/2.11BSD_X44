@@ -111,7 +111,7 @@ pci_cfg_set(int type, pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 #define	onoff(str, bit)							\
 	printf("      %s: %s\n", (str), (rval & (bit)) ? "on" : "off");
 
-void
+static void
 pci_cfg_print_common(pci_chipset_tag_t pc, pcitag_t tag, const pcireg_t *regs)
 {
 	const struct pci_class *classp, *subclassp;
