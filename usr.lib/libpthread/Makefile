@@ -60,6 +60,7 @@ SRCS+=	pthread_specific.c
 SRCS+=  pthread_stack.c
 SRCS+=	pthread_syscalls.c
 SRCS+=	pthread_tsd.c
+SRCS+=  pthread_debug.c
 SRCS+=	sched.c
 SRCS+=	sem.c
 # Architecture-dependent files

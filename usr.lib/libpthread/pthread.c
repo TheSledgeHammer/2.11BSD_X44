@@ -102,9 +102,6 @@ __strong_alias(__libc_thr_create,pthread_create)
 __strong_alias(__libc_thr_exit,pthread_exit)
 __strong_alias(__libc_thr_errno,pthread__errno)
 __strong_alias(__libc_thr_setcancelstate,pthread_setcancelstate)
-#ifdef __weak_alias
-__weak_alias(pthread_atfork, thr_atfork)
-#endif /* __weak_alias */
 
 /*
  * Static library kludge.  Place a reference to a symbol any library
@@ -187,7 +184,7 @@ pthread_init(void)
 	pthread__signal_init();
 	PTHREAD_MD_INIT
 #ifdef PTHREAD__DEBUG
-//	pthread__debug_init(ncpu);
+	pthread__debug_init(ncpu);
 #endif
 
 	for (p = getenv("PTHREAD_DIAGASSERT"); p && *p; p++) {
@@ -845,7 +842,7 @@ void
 pthread__setconcurrency(int concurrency)
 {
 	pthread_t self;
-	int ret;
+//	int ret;
 
 	self = pthread__self();
 	SDPRINTF(("(setconcurrency %p) requested delta %d, current %d\n",
@@ -858,8 +855,8 @@ pthread__setconcurrency(int concurrency)
 	if (concurrency > pthread__concurrency) {
 		pthread__concurrency = concurrency;
 
-		SDPRINTF(("(setconcurrency %p) requested %d, now %d, ret %d\n",
-			     self, concurrency, pthread__concurrency, ret));
+		//SDPRINTF(("(setconcurrency %p) requested %d, now %d, ret %d\n",
+			//     self, concurrency, pthread__concurrency, ret));
 	}
 	SDPRINTF(("(set %p concurrency) now %d\n",
 		     self, pthread__concurrency));
@@ -910,7 +907,7 @@ pthread_cancel(pthread_t thread)
 			 * uninterruptably in the kernel, and there's
 			 * not much to be done about it.
 			 */
-			_lwp_wakeup(thread->pt_blockedp);
+			//_lwp_wakeup(thread->pt_blockedp);
 		} else if (thread->pt_state == PT_STATE_BLOCKED_QUEUE) {
 			/*
 			 * We're blocked somewhere (pthread__block()
@@ -1019,13 +1016,14 @@ pthread_setcanceltype(int type, int *oldtype)
 
 
 void
-pthread_testcancel()
+pthread_testcancel(void)
 {
 	pthread_t self;
 
 	self = pthread__self();
-	if (self->pt_cancel)
+	if (self->pt_cancel) {
 		pthread_exit(PTHREAD_CANCELED);
+	}
 }
 
 
@@ -1058,8 +1056,9 @@ void
 pthread__testcancel(pthread_t self)
 {
 
-	if (self->pt_cancel)
+	if (self->pt_cancel) {
 		pthread_exit(PTHREAD_CANCELED);
+	}
 }
 
 
@@ -1163,9 +1162,5 @@ pthread__errorfunc(const char *file, int line, const char *function, const char 
 int
 pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void))
 {
-	int ret;
-
-	ret = thr_atfork(prepare, parent, child);
-
-	return (ret);
+	return (pthread_sys_atfork(prepare, parent, child));
 }

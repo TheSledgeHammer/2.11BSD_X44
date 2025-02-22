@@ -63,8 +63,6 @@ pthread_spin_t pthread_alarmqlock;
 void
 pthread__alarm_init(void)
 {
-
-	//sigevent_t ev;
 	int retval;
 /*
 	ev.ptev_notify = SIGEV_SA;
@@ -94,8 +92,9 @@ pthread__alarm_add(pthread_t self, struct pt_alarm_t *alarm,
 	prev = NULL;
 	pthread_spinlock(self, &pthread_alarmqlock);
 	PTQ_FOREACH(iterator, &pthread_alarmqueue, pta_next) {
-		if (timespeccmp(ts, iterator->pta_time, <))
+		if (timespeccmp(ts, iterator->pta_time, '<')) {
 			break;
+		}
 		prev = iterator;
 	}
 
@@ -143,7 +142,7 @@ pthread__alarm_del(pthread_t self, struct pt_alarm_t *alarm)
 		if (alarm == PTQ_FIRST(&pthread_alarmqueue)) {
 			next = PTQ_NEXT(alarm, pta_next);
 			timespecclear(&it.it_interval);
-			if (next != NULL)
+			if (next != NULL) {
 				/* See comment in pthread__alarm_add() */
 				if (timespecisset(next->pta_time)) {
 					it.it_value = *next->pta_time;
@@ -151,8 +150,9 @@ pthread__alarm_del(pthread_t self, struct pt_alarm_t *alarm)
 					it.it_value.tv_sec = 1;
 					it.it_value.tv_nsec = 0;
 				}
-			else
+			} else {
 				timespecclear(&it.it_value);
+			}
 			SDPRINTF(("(del %p) resetting alarm timer to %d.%06d\n",
 			    self, it.it_value.tv_sec, it.it_value.tv_nsec/1000));
 			retval = pthread_sys_timer_settime(pthread_alarmtimer, TIMER_ABSTIME, &it, NULL);
@@ -167,7 +167,6 @@ pthread__alarm_del(pthread_t self, struct pt_alarm_t *alarm)
 int
 pthread__alarm_fired(struct pt_alarm_t *alarm)
 {
-
 	return alarm->pta_fired;
 }
 
@@ -195,8 +194,9 @@ pthread__alarm_process(pthread_t self, void *arg)
 	for (iterator = next = PTQ_FIRST(&pthread_alarmqueue);
 	     iterator; 
 	     iterator = next) {
-		if (timespeccmp(&ts, iterator->pta_time, <=))
+		if (timespeccmp(&ts, iterator->pta_time, '<=')) {
 			break;
+		}
 		pthread_spinlock(self, &iterator->pta_lock);
 		next = PTQ_NEXT(iterator, pta_next);
 		PTQ_REMOVE(&pthread_alarmqueue, iterator, pta_next);
@@ -267,66 +267,3 @@ pthread_sys_timer_create(int clockid, int signo, int *timerid)
 	timer_id = *timerid;
 	return (0);
 }
-
-int
-pthread_sys_timer_delete(int timerid)
-{
-	if (timerid < 2 || timerid >= TIMER_MAX) {
-		return (EINVAL);
-	}
-	return (0);
-}
-
-int
-pthread_sys_timer_settime(int timerid, int flags, const struct itimerspec *value, struct itimerspec *ovalue)
-{
-	struct itimerval val, oval;
-	int error;
-
-	error = pthread_sys_timer_delete(timerid);
-	if (error != 0) {
-		return (error);
-	}
-
-	error = thr_setitimer(timerid, &val, &oval);
-	if (error != 0) {
-		return (error);
-	}
-
-	TIMESPEC_TO_TIMEVAL(&val.it_value, &value.it_value);
-	TIMESPEC_TO_TIMEVAL(&val.it_interval, &value.it_interval);
-	if (itimerfix(&val.it_value) || itimerfix(&val.it_interval)) {
-		return (EINVAL);
-	}
-
-	if (ovalue) {
-		TIMEVAL_TO_TIMESPEC(&oval->it_value, &ovalue.it_value);
-		TIMEVAL_TO_TIMESPEC(&oval->it_interval, &ovalue.it_interval);
-	}
-
-	return (0);
-}
-
-int
-pthread_sys_timer_gettime(int timerid, struct itimerspec *value)
-{
-	struct itimerval aitv;
-	struct itimerspec its;
-	int error;
-
-	error = pthread_sys_timer_delete(timerid);
-	if (error != 0) {
-		return (error);
-	}
-
-	error = thr_getitimer(timerid, &aitv);
-	if (error != 0) {
-		return (error);
-	}
-	TIMEVAL_TO_TIMESPEC(&aitv.it_interval, &its.it_interval);
-	TIMEVAL_TO_TIMESPEC(&aitv.it_value, &its.it_value);
-	return (0);
-}
-
-__strong_alias(thr_getitimer, pthread_sys_timer_gettime)
-__strong_alias(thr_setitimer, pthread_sys_timer_settime)

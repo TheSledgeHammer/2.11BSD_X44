@@ -160,7 +160,7 @@ struct itimerval {
  * Structure defined by POSIX.1b to be like a itimerval, but with
  * timespecs. Used in the timer_*() system calls.
  */
-struct	itimerspec {
+struct itimerspec {
 	struct timespec it_interval;
 	struct timespec it_value;
 };
@@ -169,6 +169,9 @@ struct	itimerspec {
 #define	CLOCK_VIRTUAL	1
 #define	CLOCK_PROF	2
 #define	CLOCK_MONOTONIC	3
+
+#define	TIMER_RELTIME	0x0	/* relative timer */
+#define	TIMER_ABSTIME	0x1	/* absolute timer */
 
 #define	TIMER_MAX	32
 
@@ -327,6 +330,7 @@ ns2bintime(uint64_t ns)
 	return bt;
 }
 #endif /* !defined(_STANDALONE) */
+
 #ifdef _KERNEL  /*|| STANDALONE*/
 extern volatile time_t	time_second;
 extern volatile time_t  time_uptime;

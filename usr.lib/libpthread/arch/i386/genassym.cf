@@ -42,44 +42,43 @@ include "pthread.h"
 include "pthread_int.h"
 include "pthread_md.h"
 
-define PT_NEXT			  offsetof(struct __pthread_st, pt_next)
-define PT_SWITCHTO		offsetof(struct __pthread_st, pt_switchto)
+define PT_NEXT		offsetof(struct __pthread_st, pt_next)
+define PT_SWITCHTO	offsetof(struct __pthread_st, pt_switchto)
 define PT_SWITCHTOUC	offsetof(struct __pthread_st, pt_switchtouc)
-define PT_SPINLOCKS		offsetof(struct __pthread_st, pt_spinlocks)
-define PT_HELDLOCK		offsetof(struct __pthread_st, pt_heldlock)
-define PT_UC			    offsetof(struct __pthread_st, pt_uc)
-define PT_TRAPUC		  offsetof(struct __pthread_st, pt_trapuc)
-define CONTEXTSIZE		sizeof(ucontext_t)
-define UC_FLAGS			  offsetof(ucontext_t, uc_flags)
-define UC_REGS			  offsetof(ucontext_t, uc_mcontext.mc_gregs)
-define UC_EIP			    offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_eip)
-define UC_FPREGS		  offsetof(ucontext_t, uc_mcontext.mc_fpregs.mc_fp_reg_set.mc_fpchip_state.fp_state)
+define PT_SPINLOCKS	offsetof(struct __pthread_st, pt_spinlocks)
+define PT_HELDLOCK	offsetof(struct __pthread_st, pt_heldlock)
+define PT_UC		offsetof(struct __pthread_st, pt_uc)
+define PT_TRAPUC	offsetof(struct __pthread_st, pt_trapuc)
+define CONTEXTSIZE	sizeof(ucontext_t)
+define UC_FLAGS		offsetof(ucontext_t, uc_flags)
+define UC_REGS		offsetof(ucontext_t, uc_mcontext.mc_gregs)
+define UC_EIP		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_eip)
+define UC_FPREGS	offsetof(ucontext_t, uc_mcontext.mc_fpregs.mc_fp_reg_set.mc_fpchip_state.fp_state)
 define UC_FXSAVEREGS	offsetof(ucontext_t, uc_mcontext.mc_fpregs.mc_fp_reg_set.mc_fp_xmm_state.fp_xmm)
 
-define STACKSPACE		  STACKSPACE
+define STACKSPACE	STACKSPACE
 
-define _UC_CPU			  _UC_CPU
-define _UC_FPU			  _UC_FPU
-define _UC_USER			  _UC_USER
-define _UC_USER_BIT		_UC_USER_BIT
+define _UC_CPU		_UC_CPU
+define _UC_FPU		_UC_FPU
+define _UC_USER		_UC_USER
+define _UC_USER_BIT	_UC_USER_BIT
 
-define _REGS(rs)      (offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_#rs))
-define _REG_GS			  _REGS(gs)
-define _REG_FS			  _REGS(fs)
-define _REG_ES			  _REGS(es)
-define _REG_DS			  _REGS(ds)
-define _REG_EDI			  _REGS(edi)
-define _REG_ESI			  _REGS(esi)
-define _REG_EBP			  _REGS(ebp)
-define _REG_ESP			  _REGS(esp)
-define _REG_EBX			  _REGS(ebx)
-define _REG_EDX			  _REGS(edx)
-define _REG_ECX			  _REGS(ecx)
-define _REG_EAX			  _REGS(eax)
-define _REG_TRAPNO		_REGS(trapno)
-define _REG_ERR			  _REGS(err)
-define _REG_EIP			  _REGS(eip)
-define _REG_CS			  _REGS(cs)
-define _REG_EFL			  _REGS(eflags)
-define _REG_UESP		  _REGS(esp)
-define _REG_SS			  _REGS(ss)
+define _REG_GS		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_gs)
+define _REG_FS		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_fs)
+define _REG_ES		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_es)
+define _REG_DS		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_ds)
+define _REG_EDI		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_edi)
+define _REG_ESI		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_esi)
+define _REG_EBP		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_ebp)
+define _REG_ESP		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_esp)
+define _REG_EBX		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_ebx)
+define _REG_EDX		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_edx)
+define _REG_ECX		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_ecx)
+define _REG_EAX		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_eax)
+define _REG_TRAPNO	offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_trapno)
+define _REG_ERR		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_err)
+define _REG_EIP		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_eip)
+define _REG_CS		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_cs)
+define _REG_EFL		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_eflags)
+define _REG_UESP	offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_esp)
+define _REG_SS		offsetof(ucontext_t, uc_mcontext.mc_gregs.mc_ss)

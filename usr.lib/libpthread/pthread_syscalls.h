@@ -44,6 +44,7 @@ struct iovec;
 struct rusage;
 struct sockaddr;
 __BEGIN_DECLS
+int		pthread_sys_atfork(void (*)(void), void (*)(void), void (*)(void));
 int		pthread_sys_accept(int, struct sockaddr *, socklen_t *);
 int		pthread_sys_close(int);
 int		pthread_sys_connect(int, const struct sockaddr *, socklen_t);
