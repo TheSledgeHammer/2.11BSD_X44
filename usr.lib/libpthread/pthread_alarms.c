@@ -40,7 +40,10 @@
 __RCSID("$NetBSD: pthread_alarms.c,v 1.9.4.1 2005/04/08 21:56:12 tron Exp $");
 
 #include <err.h>
+#include <errno.h>
 #include <sys/time.h>
+#include <netdb.h>
+#include <poll.h>
 #include <stdlib.h>
 
 #include "pthread.h"

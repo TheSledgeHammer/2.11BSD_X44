@@ -196,13 +196,13 @@ pthread__stackid_setup(void *base, size_t size)
 	return t;
 }
 
-
+/*
 ssize_t
 pthread__stackinfo_offset()
 {
 	size_t pagesize;
 
 	pagesize = (size_t)sysconf(_SC_PAGESIZE);
-	return (-(2 * pagesize) +
-	    offsetof(struct __pthread_st, pt_stackinfo));
+	return (-(2 * pagesize) + offsetof(struct __pthread_st, pt_stackinfo));
 }
+*/

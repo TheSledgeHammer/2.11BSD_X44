@@ -161,7 +161,7 @@ struct	__pthread_st {
 	/* Upcall stack information shared between kernel and
 	 * userland.
 	 */
-	struct sa_stackinfo_t	pt_stackinfo;
+//	struct sa_stackinfo_t	pt_stackinfo;
 
 	/* Thread-specific data */
 	void*		pt_specific[PTHREAD_KEYS_MAX];
@@ -211,6 +211,24 @@ struct pthread_lock_ops {
 #define PT_ATTR_MAGIC			0x22220002
 #define PT_ATTR_DEAD			0xDEAD0002
 
+#ifdef PT_FIXEDSTACKSIZE_LG
+
+#define	PT_STACKSIZE_LG	PT_FIXEDSTACKSIZE_LG 
+#define	PT_STACKSIZE	(1<<(PT_STACKSIZE_LG)) 
+#define	PT_STACKMASK	(PT_STACKSIZE-1)
+
+#else  /* PT_FIXEDSTACKSIZE_LG */
+
+extern	int		        pthread_stacksize_lg;
+extern	size_t		    pthread_stacksize;
+extern	vaddr_t	        pthread_stackmask;
+
+#define	PT_STACKSIZE_LG	pthread_stacksize_lg
+#define	PT_STACKSIZE	pthread_stacksize
+#define	PT_STACKMASK	pthread_stackmask
+
+#endif /* PT_FIXEDSTACKSIZE_LG */
+
 #define PT_ALARMTIMER_MAGIC		0x88880010
 #define PT_RRTIMER_MAGIC		0x88880020
 #define NIDLETHREADS			4
@@ -231,7 +249,7 @@ void	pthread_init(void)  __attribute__ ((__constructor__));
 /* Set up/clean up a thread's basic state. */
 void	pthread__initthread(pthread_t self, pthread_t t);
 /* Get offset from stack start to struct sa_stackinfo */
-ssize_t	pthread__stackinfo_offset(void);
+//ssize_t	pthread__stackinfo_offset(void);
 
 /* Go do something else. Don't go back on the run queue */
 void	pthread__block(pthread_t self, pthread_spin_t* queuelock);
@@ -279,13 +297,13 @@ extern const struct pthread_lock_ops *pthread__lock_ops;
 #define	pthread__simple_unlock(alp)		(*pthread__lock_ops->plo_unlock)(alp)
 
 #ifndef _getcontext_u
-int	_getcontext_u(ucontext_t *);
+int	    _getcontext_u(ucontext_t *);
 #endif
 #ifndef _setcontext_u
-int	_setcontext_u(const ucontext_t *);
+int	    _setcontext_u(const ucontext_t *);
 #endif
 #ifndef _swapcontext_u
-int	_swapcontext_u(ucontext_t *, const ucontext_t *);
+int	    _swapcontext_u(ucontext_t *, const ucontext_t *);
 #endif
 
 void	pthread__testcancel(pthread_t self);
@@ -339,7 +357,7 @@ void	pthread__signal_init(void);
 void	pthread__signal(pthread_t self, pthread_t t, siginfo_t *si);
 
 void	pthread__destroy_tsd(pthread_t self);
-void	pthread__assertfunc(char *file, int line, char *function, char *expr);
-void	pthread__errorfunc(char *file, int line, char *function, char *msg);
+void	pthread__assertfunc(const char *file, int line, const char *function, const char *expr);
+void	pthread__errorfunc(const char *file, int line, const char *function, const char *msg);
 
 #endif /* _LIB_PTHREAD_INT_H */

@@ -40,6 +40,9 @@
 #ifndef _LIB_PTHREAD_SYSCALLS_H
 #define _LIB_PTHREAD_SYSCALLS_H
 
+struct iovec;
+struct rusage;
+struct sockaddr;
 __BEGIN_DECLS
 int		pthread_sys_accept(int, struct sockaddr *, socklen_t *);
 int		pthread_sys_close(int);

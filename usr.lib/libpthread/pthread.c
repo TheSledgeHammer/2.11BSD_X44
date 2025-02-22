@@ -41,7 +41,7 @@ __RCSID("$NetBSD: pthread.c,v 1.33.2.1 2004/08/30 10:01:22 tron Exp $");
 
 #include <err.h>
 #include <errno.h>
-#include <proc.h>
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,7 +49,9 @@ __RCSID("$NetBSD: pthread.c,v 1.33.2.1 2004/08/30 10:01:22 tron Exp $");
 #include <syslog.h>
 #include <ucontext.h>
 #include <unistd.h>
+
 #include <sys/param.h>
+#include <sys/proc.h>
 #include <sys/sysctl.h>
 
 #include <sched.h>
@@ -185,7 +187,7 @@ pthread_init(void)
 	pthread__signal_init();
 	PTHREAD_MD_INIT
 #ifdef PTHREAD__DEBUG
-	pthread__debug_init(ncpu);
+//	pthread__debug_init(ncpu);
 #endif
 
 	for (p = getenv("PTHREAD_DIAGASSERT"); p && *p; p++) {
@@ -1101,7 +1103,7 @@ pthread__errno(void)
 }
 
 void
-pthread__assertfunc(char *file, int line, char *function, char *expr)
+pthread__assertfunc(const char *file, int line, const char *function, const char *expr)
 {
 	char buf[1024];
 	int len;
@@ -1125,7 +1127,7 @@ pthread__assertfunc(char *file, int line, char *function, char *expr)
 
 
 void
-pthread__errorfunc(char *file, int line, char *function, char *msg)
+pthread__errorfunc(const char *file, int line, const char *function, const char *msg)
 {
 	char buf[1024];
 	size_t len;

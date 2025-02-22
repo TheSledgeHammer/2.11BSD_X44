@@ -39,6 +39,8 @@
 #ifndef _LIB_PTHREAD_TYPES_H
 #define _LIB_PTHREAD_TYPES_H
 
+typedef unsigned long vaddr_t;
+
 /*
  * We use the "pthread_spin_t" name internally; "pthread_spinlock_t" is the
  * POSIX spinlock object. 
@@ -85,7 +87,6 @@ typedef struct __pthread_barrier_st pthread_barrier_t;
 typedef struct __pthread_barrierattr_st pthread_barrierattr_t;
 typedef int pthread_key_t;
 typedef pthread_siginfo_t siginfo_t; /* Compatibility */
-
 
 struct __pthread_siginfo_st {
 	int 			ptsi_signo;

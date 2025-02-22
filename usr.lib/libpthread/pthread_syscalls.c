@@ -46,7 +46,7 @@ __RCSID("$NetBSD: pthread_cancelstub.c,v 1.8 2003/11/24 23:23:17 cl Exp $");
 #include <sys/wait.h>
 
 #include <fcntl.h>
-#include <poll.h>
+
 #include <stdarg.h>
 #include <unistd.h>
 
@@ -54,6 +54,7 @@ int	pthread__cancel_stub_binder;
 
 #include <signal.h>
 #include <sys/mman.h>
+#include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 
