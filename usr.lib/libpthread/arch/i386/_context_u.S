@@ -39,6 +39,7 @@
 #include <machine/asm.h>
 #include "assym.h"
 
+#define	STUB(n)		ENTRY(n); .hidden _C_LABEL(n)
 
 #define FPSAVE(reg)	fnsave UC_FPREGS(reg)
 #define FPLOAD(reg)	frstor UC_FPREGS(reg)
