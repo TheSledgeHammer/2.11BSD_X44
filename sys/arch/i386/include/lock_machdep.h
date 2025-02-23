@@ -74,6 +74,8 @@ static __inline int
 __cpu_simple_lock_try(__cpu_simple_lock_t *lockp)
 {
 	uint8_t val;
+	
+	val = __SIMPLELOCK_LOCKED;
 	__asm__ volatile ("xchgb %0,(%2)" : "=qQ" (val) :"0" (val), "r" (lockp));
 	__insn_barrier();
 	return (val == __SIMPLELOCK_UNLOCKED);
