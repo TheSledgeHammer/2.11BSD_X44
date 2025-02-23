@@ -92,7 +92,7 @@ pthread__alarm_add(pthread_t self, struct pt_alarm_t *alarm,
 	prev = NULL;
 	pthread_spinlock(self, &pthread_alarmqlock);
 	PTQ_FOREACH(iterator, &pthread_alarmqueue, pta_next) {
-		if (timespeccmp(ts, iterator->pta_time, '<')) {
+		if (timespeccmp(ts, iterator->pta_time, <)) {
 			break;
 		}
 		prev = iterator;
@@ -194,7 +194,7 @@ pthread__alarm_process(pthread_t self, void *arg)
 	for (iterator = next = PTQ_FIRST(&pthread_alarmqueue);
 	     iterator; 
 	     iterator = next) {
-		if (timespeccmp(&ts, iterator->pta_time, '<=')) {
+		if (timespeccmp(&ts, iterator->pta_time, <=)) {
 			break;
 		}
 		pthread_spinlock(self, &iterator->pta_lock);

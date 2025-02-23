@@ -40,8 +40,14 @@
 #ifndef _LIB_PTHREAD_SYSCALLS_H
 #define _LIB_PTHREAD_SYSCALLS_H
 
+#if !defined(nfds_t)
+typedef unsigned int __nfds_t;
+#define nfds_t __nfds_t
+#endif
+
 struct iovec;
 struct rusage;
+struct pollfd;
 struct sockaddr;
 __BEGIN_DECLS
 int		pthread_sys_atfork(void (*)(void), void (*)(void), void (*)(void));

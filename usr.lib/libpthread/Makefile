@@ -33,15 +33,19 @@ INCSDIR=/usr/include
 ARCHDIR=	${.CURDIR}/arch/${ARCHSUBDIR}
 .PATH:	${ARCHDIR}
 
-CPPFLAGS+=	-I${ARCHDIR} -I${.CURDIR} -I${.OBJDIR} -D_LIBC
+CPPFLAGS+=	-I${ARCHDIR} -I${.CURDIR} -I${.OBJDIR} -D_LIBC -D_REENTRANT
+CPPFLAGS+=	-I${.CURDIR}/../libc/include
+CPPFLAGS+=	-D__LIBPTHREAD_SOURCE__ -D__LIBC_THREAD_STUBS
+
+# XXX: This crappy poke at libc's internals needs to be fixed.
+CPPFLAGS+=-I${NETBSDSRCDIR}/sys -I${.CURDIR}/../libc
 
 DPSRCS+=		assym.h
 CLEANFILES+=	assym.h
 
-assym.h: genassym.sh ${ARCHDIR}/genassym.cf \
-		pthread.h pthread_int.h pthread_md.h
+assym.h: ${ARCHDIR}/genassym.cf pthread.h pthread_int.h pthread_md.h
 	${_MKTARGET_CREATE}
-	${HOST_SH} ${.CURDIR}/genassym.sh ${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} \
+	${TOOL_GENASSYM} -- ${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} \
 		< ${ARCHDIR}/genassym.cf > assym.h.tmp && \
 	mv -f assym.h.tmp assym.h
 
@@ -64,16 +68,35 @@ SRCS+=  pthread_debug.c
 SRCS+=	sched.c
 SRCS+=	sem.c
 # Architecture-dependent files
-SRCS+=	pthread_switch.S _context_u.S
+SRCS+=	pthread_switch.S
+SRCS+=  _context_u.S
 .if exists(${ARCHDIR}/pthread_md.c)
 SRCS+= pthread_md.c
 .endif
 
 # The TSD routines are used in the implementation of profiling, and so
 # can't be profiled themselves.
+COPTS.pthread_specific.c+=	-fomit-frame-pointer -falign-functions=32
 pthread_specific.po: pthread_specific.o
 	${_MKTARGET_CREATE}
 	cp pthread_specific.o pthread_specific.po
+
+COPTS.pthread.c += -Wno-stack-protector -Wno-format-nonliteral
+COPTS.pthread_attr.c += -Wno-format-nonliteral
+
+# Internal spinlock routines are performance critical.  Don't profile them,
+# it's incompatibile with -fomit-frame-pointer.
+COPTS.pthread_lock.c+=	-fomit-frame-pointer -falign-functions=32
+pthread_lock.po: pthread_lock.o
+	${_MKTARGET_CREATE}
+	cp pthread_lock.o pthread_lock.po
+
+COPTS.pthread_mutex.c+=	-fomit-frame-pointer -falign-functions=32
+pthread_mutex.po: pthread_mutex.o
+	${_MKTARGET_CREATE}
+	cp pthread_mutex.o pthread_mutex.po
+
+COPTS.pthread.c += -Wno-stack-protector
 
 _context_u.po: _context_u.o
 	${_MKTARGET_CREATE}

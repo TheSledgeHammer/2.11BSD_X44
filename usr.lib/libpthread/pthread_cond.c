@@ -367,10 +367,11 @@ pthread_cond_wait_nothread(pthread_t self, pthread_mutex_t *mutex,
 		gettimeofday(&now, NULL);
 		TIMESPEC_TO_TIMEVAL(tvp, abstime);
 
-		if  (timercmp(tvp, &now, <))
+		if (timercmp(tvp, &now, <)) {
 			timerclear(tvp);
-		else
+		} else {
 			timersub(tvp, &now, tvp);
+        }
 	}
 
 	/*

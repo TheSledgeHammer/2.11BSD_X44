@@ -137,3 +137,5 @@ pthread__debuglog_printf(const char *fmt, ...)
 
 	linebuf[vpid].len = 0;
 }
+
+#endif
