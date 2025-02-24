@@ -52,6 +52,8 @@ struct sockaddr;
 __BEGIN_DECLS
 int		pthread_sys_atfork(void (*)(void), void (*)(void), void (*)(void));
 int		pthread_sys_accept(int, struct sockaddr *, socklen_t *);
+int		pthread_sys_clock_gettime(clockid_t, struct timespec *);
+int		pthread_sys_clock_settime(clockid_t, const struct timespec *);
 int		pthread_sys_close(int);
 int		pthread_sys_connect(int, const struct sockaddr *, socklen_t);
 int		pthread_sys_execve(const char *, char *const *, char *const *);

@@ -68,6 +68,8 @@ static pthread_cond_t pt_nanosleep_cond = PTHREAD_COND_INITIALIZER;
 
 static void pthread__nanosleep_callback(void *);
 
+int pthread_nanosleep(const struct timespec *, struct timespec *);
+
 __strong_alias(thr_nanosleep, pthread_nanosleep)
 
 int

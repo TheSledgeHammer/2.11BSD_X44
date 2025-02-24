@@ -104,6 +104,7 @@ static int firstsig(const sigset_t *);
 static int pthread__sigmask(int, const sigset_t *, sigset_t *);
 
 int		pthread_execve(const char *, char *const [], char *const []);
+int     pthread_kill(pthread_t, int);
 int		pthread_sigaction(int, const struct sigaction *, struct sigaction *);
 int		pthread_sigmask(int, const sigset_t *, sigset_t *);
 int		pthread_sigsuspend(const sigset_t *);
@@ -128,6 +129,9 @@ pthread__signal_init(void)
 static void
 pthread__make_siginfo(siginfo_t *si, int sig)
 {
+/** si_code */
+#define	SI_USER		0	/* Sent by kill(2)			*/
+
 	(void)memset(si, 0, sizeof(*si));
 	si->ptsi_signo = sig;
 	si->ptsi_code = SI_USER;
@@ -274,7 +278,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 
 	/* if threading not started yet, just do the syscall */
 	if (__predict_false(pthread__started == 0)) {
-		return (pthread_sys_timedwait(set, info->ptsi_signo, timeout));
+		return (pthread_sys_timedwait(set, &info->ptsi_signo, __UNCONST(timeout)));
 	}
 
 	self = pthread__self();
@@ -282,7 +286,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 
 	/* also call syscall if timeout is zero (i.e. polling) */
 	if (timeout && timeout->tv_sec == 0 && timeout->tv_nsec == 0) {
-		error = pthread_sys_timedwait(set, info->ptsi_signo, timeout);
+		error = pthread_sys_timedwait(set, &info->ptsi_signo, __UNCONST(timeout));
 		pthread__testcancel(self);
 		return (error);
 	}
@@ -422,7 +426,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 		 * We are either the only one, or wait set was setup already.
 		 * Just do the syscall now.
 		 */
-		error = pthread_sys_sigtimedwait(&wset, info->ptsi_signo, (timeout) ? &timo : NULL);
+		error = pthread_sys_timedwait(&wset, &info->ptsi_signo, (timeout) ? &timo : NULL);
 
 		pthread_spinlock(self, &pt_sigwaiting_lock);
 		if ((error && (errno != ECANCELED || self->pt_cancel))
@@ -740,7 +744,7 @@ pthread__kill(pthread_t self, pthread_t target, siginfo_t *si)
 	}
 
 	if (self == target) {
-		pthread__kill_self(self, si->ptsi_signo);
+		pthread__kill_self(self, si);
 		return;
 	}
 
