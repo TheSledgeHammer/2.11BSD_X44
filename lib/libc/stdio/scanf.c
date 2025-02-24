@@ -66,8 +66,6 @@ scanf(char const *fmt, ...)
 	int ret;
 	va_list ap;
 
-
-
 	va_start(ap, fmt);
 	ret = doscan(stdin, fmt, ap);
 	va_end(ap);
