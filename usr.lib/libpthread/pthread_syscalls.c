@@ -124,6 +124,16 @@ pthread_sys_connect(int s, const struct sockaddr *addr, socklen_t namelen)
 }
 
 int
+pthread_sys_execve(const char *path, char *const argv[], char *const envp[])
+{
+	int retval;
+
+	retval = thr_execve(path, argv, envp);
+
+	return (retval);
+}
+
+int
 pthread_sys_fcntl(int fd, int cmd, ...)
 {
 	int retval;
@@ -209,6 +219,20 @@ pthread_sys_msync(void *addr, size_t len, int flags)
 }
 
 int
+pthread_sys_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
+{
+	int retval;
+	pthread_t self;
+
+	self = pthread__self();
+	TESTCANCEL(self);
+	retval = thr_nanosleep(rqtp, rmtp);
+	TESTCANCEL(self);
+
+	return (retval);
+}
+
+int
 pthread_sys_open(const char *path, int flags, ...)
 {
 	int retval;
@@ -217,7 +241,7 @@ pthread_sys_open(const char *path, int flags, ...)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = thr_open(SYS_open, path, flags, va_arg(ap, mode_t));
+	retval = thr_open(path, flags, va_arg(ap, mode_t));
 	TESTCANCEL(self);
 
 	return (retval);
@@ -307,6 +331,54 @@ pthread_sys_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfd
 	return (retval);
 }
 
+int
+pthread_sys_sigaction(int sig, const struct sigaction *act, struct sigaction *oact)
+{
+	int retval;
+
+	retval = thr_sigaction(sig, act, oact);
+
+	return (retval);
+}
+
+int
+pthread_sys_sigmask(int how, const sigset_t *set, sigset_t *oset)
+{
+	int retval;
+
+	retval = thr_sigmask(how, set, oset);
+
+	return (retval);
+}
+
+int
+pthread_sys_sigsuspend(const sigset_t *sigmask)
+{
+	int retval;
+	pthread_t self;
+
+	self = pthread__self();
+	TESTCANCEL(self);
+	retval = thr_sigsuspend(sigmask);
+	TESTCANCEL(self);
+
+	return (retval);
+}
+
+int
+pthread_sys_timedwait(const sigset_t * set, int *signo, struct timespec * timeout)
+{
+	int retval;
+	pthread_t self;
+
+	self = pthread__self();
+	TESTCANCEL(self);
+	retval = thr_sigtimedwait(set, signo, timeout);
+	TESTCANCEL(self);
+
+	return (retval);
+}
+
 static int
 pthread_sys_timer_delete(int timerid)
 {
@@ -321,16 +393,16 @@ pthread_sys_timer_gettime(int timerid, struct itimerspec *value)
 {
 	struct itimerval aitv;
 	struct itimerspec its;
-	int error;
+	int retval;
 
-	error = pthread_sys_timer_delete(timerid);
-	if (error != 0) {
-		return (error);
+	retval = pthread_sys_timer_delete(timerid);
+	if (retval != 0) {
+		return (retval);
 	}
 
-	error = thr_getitimer(timerid, &aitv);
-	if (error != 0) {
-		return (error);
+	retval = thr_getitimer(timerid, &aitv);
+	if (retval != 0) {
+		return (retval);
 	}
 	TIMEVAL_TO_TIMESPEC(&aitv.it_interval, &its.it_interval);
 	TIMEVAL_TO_TIMESPEC(&aitv.it_value, &its.it_value);
@@ -341,11 +413,11 @@ int
 pthread_sys_timer_settime(int timerid, int flags, const struct itimerspec *value, struct itimerspec *ovalue)
 {
 	struct itimerval val, oval;
-	int error;
+	int retval;
 
-	error = thr_setitimer(timerid, &val, &oval);
-	if (error != 0) {
-		return (error);
+	retval = thr_setitimer(timerid, &val, &oval);
+	if (retval != 0) {
+		return (retval);
 	}
 
 	TIMESPEC_TO_TIMEVAL(&val.it_value, &value->it_value);

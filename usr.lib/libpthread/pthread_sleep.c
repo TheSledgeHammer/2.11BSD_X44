@@ -68,8 +68,10 @@ static pthread_cond_t pt_nanosleep_cond = PTHREAD_COND_INITIALIZER;
 
 static void pthread__nanosleep_callback(void *);
 
+__strong_alias(thr_nanosleep, pthread_nanosleep)
+
 int
-pthread_sys_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
+pthread_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
 	int retval;
 	pthread_t self;
@@ -86,9 +88,7 @@ pthread_sys_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 	self = pthread__self();
 
 	if (pthread__started == 0) {
-		pthread__testcancel(self);
-		retval = thr_nanosleep(rqtp, rmtp);
-		pthread__testcancel(self);
+		retval = pthread_sys_nanosleep(rqtp, rmtp);
 		return retval;
 	}
 
@@ -164,5 +164,3 @@ pthread__nanosleep_callback(void *arg)
 	}
 	pthread_spinunlock(self, &pt_nanosleep_lock);
 }
-
-__strong_alias(thr_nanosleep, pthread_sys_nanosleep)

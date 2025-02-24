@@ -97,11 +97,11 @@ struct pthread_queue_t pthread__suspqueue;
 
 int pthread__concurrency, pthread__maxconcurrency;
 
-__strong_alias(__libc_thr_self,pthread_self)
-__strong_alias(__libc_thr_create,pthread_create)
-__strong_alias(__libc_thr_exit,pthread_exit)
-__strong_alias(__libc_thr_errno,pthread__errno)
-__strong_alias(__libc_thr_setcancelstate,pthread_setcancelstate)
+__strong_alias(__libc_thr_self, pthread_self)
+__strong_alias(__libc_thr_create, pthread_create)
+__strong_alias(__libc_thr_exit, pthread_exit)
+__strong_alias(__libc_thr_errno, pthread__errno)
+__strong_alias(__libc_thr_setcancelstate, pthread_setcancelstate)
 
 /*
  * Static library kludge.  Place a reference to a symbol any library

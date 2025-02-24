@@ -41,7 +41,7 @@ __RCSID("$NetBSD: pthread_sig.c,v 1.34 2004/03/24 20:01:37 lha Exp $");
 
 #define	__PTHREAD_SIGNAL_PRIVATE
 
-#include <sys/proc.h>
+//#include <sys/proc.h>
 
 #include <errno.h>
 #include <stdint.h>
@@ -100,17 +100,26 @@ static void pthread__make_siginfo(siginfo_t *, int);
 static void pthread__kill(pthread_t, pthread_t, siginfo_t *);
 static void pthread__kill_self(pthread_t, siginfo_t *);
 
-static int firstsig(const sigset_t *ss);
+static int firstsig(const sigset_t *);
+static int pthread__sigmask(int, const sigset_t *, sigset_t *);
 
-__strong_alias(thr_sigmask, pthread_sys_sigmask)
-__strong_alias(thr_sigmask, pthread_sys_sigmask)
-__strong_alias(thr_execve, pthread_sys_execve)
+int		pthread_execve(const char *, char *const [], char *const []);
+int		pthread_sigaction(int, const struct sigaction *, struct sigaction *);
+int		pthread_sigmask(int, const sigset_t *, sigset_t *);
+int		pthread_sigsuspend(const sigset_t *);
+int		pthread_timedwait(const sigset_t * __restrict, siginfo_t * __restrict, const struct timespec * __restrict);
+
+__strong_alias(thr_execve, pthread_execve)
+__strong_alias(thr_sigaction, pthread_sigaction)
+__strong_alias(thr_sigmask, pthread_sigmask)
+__strong_alias(thr_sigsuspend, pthread_sigsuspend)
+__strong_alias(thr_timedwait, pthread_timedwait)
 
 void
 pthread__signal_init(void)
 {
 	SDPRINTF(("(signal_init) setting process sigmask\n"));
-	thr_sigmask(0, NULL, &pt_process_sigmask);
+	pthread_sys_sigmask(0, NULL, &pt_process_sigmask);
 
 	PTQ_INIT(&pt_sigsuspended);
 	PTQ_INIT(&pt_sigwaiting);
@@ -169,11 +178,11 @@ pthread_kill(pthread_t thread, int sig)
 		pthread_spinunlock(self, &thread->pt_siglock);
 	}
 
-	return 0;
+	return (0);
 }
 
 int
-pthread_sys_sigaction(int sig, const struct sigaction *act, struct sigaction *oact)
+pthread_sigaction(int sig, const struct sigaction *act, struct sigaction *oact)
 {
 	struct sigaction realact;
 	sigset_t oldmask;
@@ -203,22 +212,22 @@ pthread_sys_sigaction(int sig, const struct sigaction *act, struct sigaction *oa
 		act = &realact;
 	}
 
-	retval = thr_sigaction(sig, act, oact);
+	retval = pthread_sys_sigaction(sig, act, oact);
 	if (oact && (retval == 0))
 		oact->sa_mask = oldmask;
 
-	return retval;
+	return (retval);
 }
 
 int
-pthread_sys_sigsuspend(const sigset_t *sigmask)
+pthread_sigsuspend(const sigset_t *sigmask)
 {
 	pthread_t self;
 	sigset_t oldmask;
 
 	/* if threading not started yet, just do the syscall */
 	if (__predict_false(pthread__started == 0))
-		return (thr_sigsuspend(sigmask));
+		return (pthread_sys_sigsuspend(sigmask));
 
 	self = pthread__self();
 
@@ -255,7 +264,7 @@ pthread_sigtimedwait__callback(void *arg)
 }
 
 int
-pthread_sys_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, const struct timespec * __restrict timeout)
+pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, const struct timespec * __restrict timeout)
 {
 	pthread_t self;
 	int error = 0;
@@ -265,7 +274,7 @@ pthread_sys_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict in
 
 	/* if threading not started yet, just do the syscall */
 	if (__predict_false(pthread__started == 0)) {
-		return (thr_sigtimedwait(set, info->ptsi_signo, timeout));
+		return (pthread_sys_timedwait(set, info->ptsi_signo, timeout));
 	}
 
 	self = pthread__self();
@@ -273,7 +282,7 @@ pthread_sys_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict in
 
 	/* also call syscall if timeout is zero (i.e. polling) */
 	if (timeout && timeout->tv_sec == 0 && timeout->tv_nsec == 0) {
-		error = thr_sigtimedwait(set, info->ptsi_signo, timeout);
+		error = pthread_sys_timedwait(set, info->ptsi_signo, timeout);
 		pthread__testcancel(self);
 		return (error);
 	}
@@ -300,7 +309,7 @@ pthread_sys_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict in
 		 * Get current time. We need it if we would become master.
 		 */
 		if (timeout) {
-			thr_clock_gettime(CLOCK_MONOTONIC, &etimo);
+			pthread_sys_clock_gettime(CLOCK_MONOTONIC, &etimo);
 			timespecadd(&etimo, timeout, &etimo);
 		}
 
@@ -384,7 +393,7 @@ pthread_sys_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict in
 		if (timeout) {
 			struct timespec tnow;
 
-			thr_clock_gettime(CLOCK_MONOTONIC, &tnow);
+			pthread_sys_clock_gettime(CLOCK_MONOTONIC, &tnow);
 			/* compute difference to end time */
 			timespecsub(&tnow, &etimo, &tnow);
 			/* substract the difference from timeout */
@@ -413,7 +422,7 @@ pthread_sys_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict in
 		 * We are either the only one, or wait set was setup already.
 		 * Just do the syscall now.
 		 */
-		error = thr_sigtimedwait(&wset, info->ptsi_signo, (timeout) ? &timo : NULL);
+		error = pthread_sys_sigtimedwait(&wset, info->ptsi_signo, (timeout) ? &timo : NULL);
 
 		pthread_spinlock(self, &pt_sigwaiting_lock);
 		if ((error && (errno != ECANCELED || self->pt_cancel))
@@ -504,7 +513,7 @@ firstsig(const sigset_t *ss)
 }
 
 int
-pthread_sys_sigmask(int how, const sigset_t *set, sigset_t *oset)
+pthread__sigmask(int how, const sigset_t *set, sigset_t *oset)
 {
 	sigset_t tmp, takelist;
 	pthread_t self;
@@ -543,7 +552,7 @@ pthread_sys_sigmask(int how, const sigset_t *set, sigset_t *oset)
 
 	if (__predict_false(pthread__started == 0)) {
 		pt_process_sigmask = self->pt_sigmask;
-		thr_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+		pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 		pthread_spinunlock(self, &self->pt_siglock);
 		return 0;
 	}
@@ -569,13 +578,13 @@ pthread_sys_sigmask(int how, const sigset_t *set, sigset_t *oset)
 	}
 	/* Unblock any signals that were blocked process-wide before this. */
 	tmp = pt_process_sigmask;
-	thr_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+	pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 	pthread_spinunlock(self, &pt_process_siglock);
 
 	pthread__make_siginfo(&si, 0);
 	while ((i = firstsig(&takelist)) != 0) {
 		/* Take the signal */
-		SDPRINTF(("(pt_sigmask %p) taking unblocked signal %d\n",  self, i));
+		SDPRINTF(("(pt_sigmask %p) taking unblocked signal %d\n", self, i));
 		si.ptsi_signo = i;
 		pthread__kill_self(self, &si);
 		sigdelset(&takelist, i);
@@ -583,14 +592,13 @@ pthread_sys_sigmask(int how, const sigset_t *set, sigset_t *oset)
 
 	pthread_spinunlock(self, &self->pt_siglock);
 
-	return 0;
+	return (0);
 }
-
 
 int
 pthread_sigmask(int how, const sigset_t *set, sigset_t *oset)
 {
-	return (pthread_sys_sigmask(how, set, oset));
+	return (pthread__sigmask(how, set, oset));
 }
 
 /*
@@ -657,7 +665,7 @@ pthread__signal(pthread_t self, pthread_t t, siginfo_t *si)
 			sigaddset(&pt_process_sigmask, si->ptsi_signo);
 			SDPRINTF(("(pt_signal %p) lazily setting proc sigmask to "
 			    "%08x\n", self, pt_process_sigmask));
-			thr_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+			pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 			sigaddset(&pt_process_siglist, si->ptsi_signo);
 			pthread_spinunlock(self, &pt_process_siglock);
 			return;
@@ -679,7 +687,7 @@ pthread__signal(pthread_t self, pthread_t t, siginfo_t *si)
 	pthread_spinlock(self, &pt_process_siglock);
 	SDPRINTF(("(pt_signal %p) setting proc sigmask to "
 	    "%08x\n", self, pt_process_sigmask));
-	thr_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+	pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 	pthread_spinunlock(self, &pt_process_siglock);
 
 	pthread__kill(self, target, si);
@@ -799,7 +807,7 @@ pthread__kill(pthread_t self, pthread_t target, siginfo_t *si)
  * kernel the correct value.
  */
 int
-pthread_sys_execve(const char *path, char *const argv[], char *const envp[])
+pthread_execve(const char *path, char *const argv[], char *const envp[])
 {
 	pthread_t self;
 	int ret;
@@ -824,11 +832,11 @@ pthread_sys_execve(const char *path, char *const argv[], char *const envp[])
 	 * routine between the sigprocmask and the _sys_execve()
 	 * call. I don't have much sympathy for such a program.
 	 */
-	thr_sigmask(SIG_SETMASK, &self->pt_sigmask, NULL);
-	ret = thr_execve(path, argv, envp);
+	pthread_sys_sigmask(SIG_SETMASK, &self->pt_sigmask, NULL);
+	ret = pthread_sys_execve(path, argv, envp);
 
 	/* Normally, we shouldn't get here; this is an error condition. */
-	thr_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+	pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 
 	return ret;
 }
