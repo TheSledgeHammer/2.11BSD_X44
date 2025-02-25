@@ -58,12 +58,12 @@ extern int pthread__started;
 static void pthread_cond_wait__callback(void *);
 static int pthread_cond_wait_nothread(pthread_t, pthread_mutex_t *, const struct timespec *);
 
-__strong_alias(__libc_cond_init,pthread_cond_init)
-__strong_alias(__libc_cond_signal,pthread_cond_signal)
-__strong_alias(__libc_cond_broadcast,pthread_cond_broadcast)
-__strong_alias(__libc_cond_wait,pthread_cond_wait)
-__strong_alias(__libc_cond_timedwait,pthread_cond_timedwait)
-__strong_alias(__libc_cond_destroy,pthread_cond_destroy)
+__strong_alias(__libc_cond_init, pthread_cond_init)
+__strong_alias(__libc_cond_signal, pthread_cond_signal)
+__strong_alias(__libc_cond_broadcast, pthread_cond_broadcast)
+__strong_alias(__libc_cond_wait, pthread_cond_wait)
+__strong_alias(__libc_cond_timedwait, pthread_cond_timedwait)
+__strong_alias(__libc_cond_destroy, pthread_cond_destroy)
 
 int
 pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)

@@ -44,8 +44,8 @@ __RCSID("$NetBSD: pthread_specific.c,v 1.10 2003/08/13 18:52:01 nathanw Exp $");
 #include "pthread.h"
 #include "pthread_int.h"
 
-__strong_alias(__libc_thr_setspecific,pthread_setspecific)
-__strong_alias(__libc_thr_getspecific,pthread_getspecific)
+__strong_alias(__libc_thr_setspecific, pthread_setspecific)
+__strong_alias(__libc_thr_getspecific, pthread_getspecific)
 
 int
 pthread_setspecific(pthread_key_t key, const void *value)

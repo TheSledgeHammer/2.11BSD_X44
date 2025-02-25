@@ -46,13 +46,13 @@ __RCSID("$NetBSD: pthread_rwlock.c,v 1.7.2.2 2004/08/12 18:26:38 jmc Exp $");
 
 static void pthread_rwlock__callback(void *);
 
-__strong_alias(__libc_rwlock_init,pthread_rwlock_init)
-__strong_alias(__libc_rwlock_rdlock,pthread_rwlock_rdlock)
-__strong_alias(__libc_rwlock_wrlock,pthread_rwlock_wrlock)
-__strong_alias(__libc_rwlock_tryrdlock,pthread_rwlock_tryrdlock)
-__strong_alias(__libc_rwlock_trywrlock,pthread_rwlock_trywrlock)
-__strong_alias(__libc_rwlock_unlock,pthread_rwlock_unlock)
-__strong_alias(__libc_rwlock_destroy,pthread_rwlock_destroy)
+__strong_alias(__libc_rwlock_init, pthread_rwlock_init)
+__strong_alias(__libc_rwlock_rdlock, pthread_rwlock_rdlock)
+__strong_alias(__libc_rwlock_wrlock, pthread_rwlock_wrlock)
+__strong_alias(__libc_rwlock_tryrdlock, pthread_rwlock_tryrdlock)
+__strong_alias(__libc_rwlock_trywrlock, pthread_rwlock_trywrlock)
+__strong_alias(__libc_rwlock_unlock, pthread_rwlock_unlock)
+__strong_alias(__libc_rwlock_destroy, pthread_rwlock_destroy)
 
 int
 pthread_rwlock_init(pthread_rwlock_t *rwlock,

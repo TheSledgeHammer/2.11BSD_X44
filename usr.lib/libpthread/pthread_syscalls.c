@@ -65,6 +65,30 @@ int	pthread__cancel_stub_binder;
 
 static int pthread_sys_timer_delete(int);
 
+__weak_alias(pthread_sys_atfork, __libc_atfork)
+__weak_alias(pthread_sys_fsync_range, __libc_fsync_range)
+__strong_alias(__libc_accept, pthread_sys_accept)
+__strong_alias(__libc_clock_gettime, pthread_sys_clock_gettime)
+__strong_alias(__libc_clock_settime, pthread_sys_clock_settime)
+__strong_alias(__libc_close, pthread_sys_close)
+__strong_alias(__libc_fcntl, pthread_sys_fcntl)
+__strong_alias(__libc_fsync, pthread_sys_fsync)
+__strong_alias(__libc_msgrcv, pthread_sys_msgrcv)
+__strong_alias(__libc_msgsnd, pthread_sys_msgsnd)
+__strong_alias(__libc_msync, pthread_sys_msync)
+__strong_alias(__libc_open, pthread_sys_open)
+__strong_alias(__libc_poll, pthread_sys_poll)
+__strong_alias(__libc_pread, pthread_sys_pread)
+__strong_alias(__libc_pwrite, pthread_sys_pwrite)
+__strong_alias(__libc_read, pthread_sys_read)
+__strong_alias(__libc_readv, pthread_sys_readv)
+__strong_alias(__libc_select, pthread_sys_select)
+__strong_alias(__libc_getitimer, pthread_sys_timer_gettime)
+__strong_alias(__libc_setitimer, pthread_sys_timer_settime)
+__strong_alias(__libc_wait4, pthread_sys_wait4)
+__strong_alias(__libc_write, pthread_sys_write)
+__strong_alias(__libc_writev, pthread_sys_writev)
+
 #define TESTCANCEL(id) 	do {			\
 	if (__predict_false((id)->pt_cancel)) {	\
 		pthread_exit(PTHREAD_CANCELED);	\
@@ -498,29 +522,3 @@ pthread_sys_writev(int d, const struct iovec *iov, int iovcnt)
 
 	return (retval);
 }
-
-
-__weak_alias(pthread_sys_atfork, __libc_atfork)
-__weak_alias(pthread_sys_fsync_range, __libc_fsync_range)
-
-__strong_alias(__libc_accept, pthread_sys_accept)
-__strong_alias(__libc_clock_gettime, pthread_sys_clock_gettime)
-__strong_alias(__libc_clock_settime, pthread_sys_clock_settime)
-__strong_alias(__libc_close, pthread_sys_close)
-__strong_alias(__libc_fcntl, pthread_sys_fcntl)
-__strong_alias(__libc_fsync, pthread_sys_fsync)
-__strong_alias(__libc_msgrcv, pthread_sys_msgrcv)
-__strong_alias(__libc_msgsnd, pthread_sys_msgsnd)
-__strong_alias(__libc_msync, pthread_sys_msync)
-__strong_alias(__libc_open, pthread_sys_open)
-__strong_alias(__libc_poll, pthread_sys_poll)
-__strong_alias(__libc_pread, pthread_sys_pread)
-__strong_alias(__libc_pwrite, pthread_sys_pwrite)
-__strong_alias(__libc_read, pthread_sys_read)
-__strong_alias(__libc_readv, pthread_sys_readv)
-__strong_alias(__libc_select, pthread_sys_select)
-__strong_alias(__libc_getitimer, pthread_sys_timer_gettime)
-__strong_alias(__libc_setitimer, pthread_sys_timer_settime)
-__strong_alias(__libc_wait4, pthread_sys_wait4)
-__strong_alias(__libc_write, pthread_sys_write)
-__strong_alias(__libc_writev, pthread_sys_writev)

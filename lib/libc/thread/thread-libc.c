@@ -37,7 +37,8 @@
  *
  */
 
-#ifdef _REENTRANT
+#include <sys/cdefs.h>
+
 #include "namespace.h"
 #include "reentrant.h"
 
@@ -47,9 +48,14 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>  /* required for socklen_t */
+#include <poll.h>
+#include <select.h>
+#include <signal.h>
 #include <unistd.h>
+#include <pthread.h>
 
-#include "thread_private.h"
+//#include "thread_private.h"
 
 int
 __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
@@ -248,7 +254,7 @@ __libc_sigaction(int sig, struct sigaction *act, struct sigaction *oact)
 		int sav = errno;
 		int rv = __syscall(SYS_sigaction, 0, sig, act, oact);
 		if (rv >= 0 || errno != EINVAL) {
-			return rv;
+			return (rv);
 		}
 		errno = sav;
 	}
@@ -292,6 +298,8 @@ __libc_writev(int d, const struct iovec *iov, int iovcnt)
 	return (__syscall(SYS_writev, d, iov, iovcnt));
 }
 
+__weak_alias(__libc_fsync_range, _fsync_range)
+
 __strong_alias(_accept, __libc_accept)
 __strong_alias(_clock_gettime, __libc_clock_gettime)
 __strong_alias(_clock_settime, __libc_clock_settime)
@@ -300,7 +308,6 @@ __strong_alias(_connect, __libc_connect)
 __strong_alias(__exeve, __libc_execve)
 __strong_alias(_fcntl, __libc_fcntl)
 __strong_alias(_fsync, __libc_fsync)
-__weak_alias(__libc_fsync_range, _fsync_range)
 __strong_alias(_getitimer, __libc_getitimer)
 __strong_alias(_ksem_close, __libc_ksem_close)
 __strong_alias(_ksem_destroy, __libc_ksem_destroy)
@@ -330,5 +337,3 @@ __strong_alias(_sigtimedwait, __libc_sigtimedwait)
 __strong_alias(_wait4, __libc_wait4)
 __strong_alias(_write, __libc_write)
 __strong_alias(_writev, __libc_writev)
-
-#endif /* _REENTRANT */

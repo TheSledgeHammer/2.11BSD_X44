@@ -49,17 +49,17 @@ __RCSID("$NetBSD: pthread_mutex.c,v 1.18 2004/03/14 01:19:42 cl Exp $");
 
 static int pthread_mutex_lock_slow(pthread_mutex_t *);
 
-__strong_alias(__libc_mutex_init,pthread_mutex_init)
-__strong_alias(__libc_mutex_lock,pthread_mutex_lock)
-__strong_alias(__libc_mutex_trylock,pthread_mutex_trylock)
-__strong_alias(__libc_mutex_unlock,pthread_mutex_unlock)
-__strong_alias(__libc_mutex_destroy,pthread_mutex_destroy)
+__strong_alias(__libc_mutex_init, pthread_mutex_init)
+__strong_alias(__libc_mutex_lock, pthread_mutex_lock)
+__strong_alias(__libc_mutex_trylock, pthread_mutex_trylock)
+__strong_alias(__libc_mutex_unlock, pthread_mutex_unlock)
+__strong_alias(__libc_mutex_destroy, pthread_mutex_destroy)
 
-__strong_alias(__libc_mutexattr_init,pthread_mutexattr_init)
-__strong_alias(__libc_mutexattr_destroy,pthread_mutexattr_destroy)
-__strong_alias(__libc_mutexattr_settype,pthread_mutexattr_settype)
+__strong_alias(__libc_mutexattr_init, pthread_mutexattr_init)
+__strong_alias(__libc_mutexattr_destroy, pthread_mutexattr_destroy)
+__strong_alias(__libc_mutexattr_settype, pthread_mutexattr_settype)
 
-__strong_alias(__libc_thr_once,pthread_once)
+__strong_alias(__libc_thr_once, pthread_once)
 
 struct mutex_private {
 	int	type;

@@ -61,7 +61,7 @@ extern struct pthread_queue_t *pthread__reidlequeue;
 
 extern int pthread__concurrency, pthread__maxconcurrency;
 
-__strong_alias(__libc_thr_yield,sched_yield)
+__strong_alias(__libc_thr_yield, sched_yield)
 
 int
 sched_yield(void)

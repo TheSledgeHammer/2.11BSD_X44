@@ -50,8 +50,8 @@ static int nextkey;
 int pthread__tsd_alloc[PTHREAD_KEYS_MAX];
 void (*pthread__tsd_destructors[PTHREAD_KEYS_MAX])(void *);
 
-__strong_alias(__libc_thr_keycreate,pthread_key_create)
-__strong_alias(__libc_thr_keydelete,pthread_key_delete)
+__strong_alias(__libc_thr_keycreate, pthread_key_create)
+__strong_alias(__libc_thr_keydelete, pthread_key_delete)
 
 int
 pthread_key_create(pthread_key_t *key, void (*destructor)(void *))

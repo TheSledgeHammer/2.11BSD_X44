@@ -101,17 +101,17 @@ int	pthread_once(pthread_once_t *, void (*)(void));
 int	pthread_key_create(pthread_key_t *, void (*)(void *));
 int	pthread_key_delete(pthread_key_t);
 int	pthread_setspecific(pthread_key_t, const void *);
-void *pthread_getspecific(pthread_key_t);
+void 	*pthread_getspecific(pthread_key_t);
 
 int	pthread_cancel(pthread_t);
 int	pthread_setcancelstate(int, int *);
 int	pthread_setcanceltype(int, int *);
-void pthread_testcancel(void);
+void 	pthread_testcancel(void);
 
 int	pthread_getname_np(pthread_t, char *, size_t);
 int	pthread_setname_np(pthread_t, const char *, void *);
 
-int pthread_attr_setcreatesuspend_np(pthread_attr_t *);
+int 	pthread_attr_setcreatesuspend_np(pthread_attr_t *);
 int	pthread_suspend_np(pthread_t);
 int	pthread_resume_np(pthread_t);
 
@@ -158,7 +158,7 @@ int	pthread_barrierattr_destroy(pthread_barrierattr_t *);
 int	pthread_getschedparam(pthread_t, int *, struct sched_param *);
 int	pthread_setschedparam(pthread_t, int, const struct sched_param *);
 
-int *pthread__errno(void);
+int 	*pthread__errno(void);
 __END_DECLS
 
 #define	PTHREAD_CREATE_JOINABLE	0
@@ -207,5 +207,69 @@ __END_DECLS
 #define PTHREAD_ONCE_INIT				_PTHREAD_ONCE_INIT
 #define PTHREAD_RWLOCK_INITIALIZER		_PTHREAD_RWLOCK_INITIALIZER
 #define PTHREAD_SPINLOCK_INITIALIZER	_PTHREAD_SPINLOCK_INITIALIZER
+
+#ifndef __LIBPTHREAD_SOURCE__
+
+#include <stdarg.h>
+
+struct iovec;
+struct pollfd;
+struct rusage;
+struct sigaction;
+struct sockaddr;
+__BEGIN_DECLS
+int 	__libc_accept(int, struct sockaddr *, socklen_t *);
+int 	__libc_atfork(void (*)(void), void (*)(void), void (*)(void));
+int	__libc_clock_gettime(clockid_t, struct timespec *);
+int	__libc_clock_settime(clockid_t, const struct timespec *);
+int 	__libc_close(int);
+int 	__libc_connect(int, const struct sockaddr *, socklen_t);
+int 	__libc_execve(const char *, char *const *, char *const *);
+int 	__libc_fcntl(int, int, va_list);
+pid_t	__libc_fork(void);
+int 	__libc_fsync(int);
+int 	__libc_fsync_range(int, int, off_t, off_t);
+int	__libc_getitimer(unsigned int, struct itimerval *);
+int 	__libc_ksem_close(semid_t);
+int 	__libc_ksem_destroy(semid_t);
+int 	__libc_ksem_getvalue(semid_t, unsigned int *);
+int 	__libc_ksem_init(unsigned int, semid_t *);
+int 	__libc_ksem_open(const char *, int, mode_t, unsigned int, semid_t *);
+int 	__libc_ksem_post(semid_t);
+int 	__libc_ksem_trywait(semid_t);
+int 	__libc_ksem_unlink(const char *);
+int 	__libc_ksem_wait(semid_t);
+ssize_t __libc_msgrcv(int, void *, size_t, long, int);
+int 	__libc_msgsnd(int, const void *, size_t, int);
+int 	__libc_msync(void *, size_t, int);
+int	__libc_nanosleep(const struct timespec *, struct timespec *);
+int 	__libc_open(const char *, int, va_list);
+int 	__libc_poll(struct pollfd *, nfds_t, int);
+ssize_t __libc_pread(int, void *, size_t, off_t);
+ssize_t __libc_pwrite(int, const void *, size_t, off_t);
+int 	__libc_read(int, void *, size_t);
+int 	__libc_readv(int, const struct iovec *, int);
+int 	__libc_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+int	__libc_setitimer(unsigned int, struct itimerval *, struct itimerval *);
+int 	__libc_sigaction(int, struct sigaction *, struct sigaction *);
+int 	__libc_sigsuspend(const sigset_t *);
+int 	__libc_sigprocmask(int, sigset_t *, sigset_t *);
+int 	__libc_sigtimedwait(const sigset_t *, int *, struct timespec *);
+int	__libc_wait4(pid_t, int *, int, struct rusage *);
+int 	__libc_write(int, const void *, size_t);
+int 	__libc_writev(int, const struct iovec *, int);
+__END_DECLS
+
+__BEGIN_DECLS
+int	pthread_execve(const char *, char *const [], char *const []);
+int 	pthread_kill(pthread_t, int);
+int 	pthread_nanosleep(const struct timespec *, struct timespec *);
+int	pthread_sigaction(int, const struct sigaction *, struct sigaction *);
+int	pthread_sigmask(int, const sigset_t *, sigset_t *);
+int	pthread_sigsuspend(const sigset_t *);
+int	pthread_timedwait(const sigset_t * __restrict, siginfo_t * __restrict, const struct timespec * __restrict);
+__END_DECLS
+
+#endif /* __LIBPTHREAD_SOURCE__ */
 
 #endif /* _LIB_PTHREAD_H */

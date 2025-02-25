@@ -46,8 +46,9 @@ typedef unsigned int __nfds_t;
 #endif
 
 struct iovec;
-struct rusage;
 struct pollfd;
+struct rusage;
+struct sigaction;
 struct sockaddr;
 __BEGIN_DECLS
 int		pthread_sys_atfork(void (*)(void), void (*)(void), void (*)(void));

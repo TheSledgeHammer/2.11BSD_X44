@@ -106,18 +106,11 @@ static void pthread__kill_self(pthread_t, siginfo_t *);
 static int firstsig(const sigset_t *);
 static int pthread__sigmask(int, const sigset_t *, sigset_t *);
 
-int	pthread_execve(const char *, char *const [], char *const []);
-int 	pthread_kill(pthread_t, int);
-int	pthread_sigaction(int, const struct sigaction *, struct sigaction *);
-int	pthread_sigmask(int, const sigset_t *, sigset_t *);
-int	pthread_sigsuspend(const sigset_t *);
-int	pthread_timedwait(const sigset_t * __restrict, siginfo_t * __restrict, const struct timespec * __restrict);
-
-__strong_alias(thr_execve, pthread_execve)
-__strong_alias(thr_sigaction, pthread_sigaction)
-__strong_alias(thr_sigmask, pthread_sigmask)
-__strong_alias(thr_sigsuspend, pthread_sigsuspend)
-__strong_alias(thr_timedwait, pthread_timedwait)
+__strong_alias(__libc_execve, pthread_execve)
+__strong_alias(__libc_sigaction, pthread_sigaction)
+__strong_alias(__libc_sigprocmask, pthread_sigmask)
+__strong_alias(__libc_sigsuspend, pthread_sigsuspend)
+__strong_alias(__libc_sigtimedwait, pthread_timedwait)
 
 static int
 __sigsetequal(const sigset_t *s1, const sigset_t *s2)

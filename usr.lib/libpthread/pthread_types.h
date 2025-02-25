@@ -103,6 +103,7 @@ struct __pthread_siginfo_st {
 #define ptsi_uid	ptsi_data.proc.uid
 #define ptsi_pid	ptsi_data.proc.pid
 };
+
 /** si_code */
 #define	SI_USER		0	/* Sent by kill(2)			*/
 #define	SI_QUEUE	-1	/* Sent by the sigqueue(2)		*/
