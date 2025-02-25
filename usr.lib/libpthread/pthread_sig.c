@@ -41,8 +41,6 @@ __RCSID("$NetBSD: pthread_sig.c,v 1.34 2004/03/24 20:01:37 lha Exp $");
 
 #define	__PTHREAD_SIGNAL_PRIVATE
 
-//#include <sys/proc.h>
-
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -235,10 +233,10 @@ pthread_sigaction(int sig, const struct sigaction *act, struct sigaction *oact)
 		return EINVAL;
 
 	self = pthread__self();
+	pthread_spinlock(self, &pt_sigacts_lock);
+	oldmask = pt_sigacts[sig].sa_mask;
 	if (act != NULL) {
 		/* Save the information for our internal dispatch. */
-		pthread_spinlock(self, &pt_sigacts_lock);
-		oldmask = pt_sigacts[sig].sa_mask;
 		pt_sigacts[sig] = *act;
 		pthread_spinunlock(self, &pt_sigacts_lock);
 		/*
@@ -249,9 +247,13 @@ pthread_sigaction(int sig, const struct sigaction *act, struct sigaction *oact)
 		 * appropriate, because that would permit a continuous
 		 * stream of signals to exhaust the supply of upcalls.
 		 */
-		realact = *act;
-		sigemptyset(&realact.sa_mask);
-		act = &realact;
+		if (pthread__started) {
+			realact = *act;
+			sigemptyset(&realact.sa_mask);
+			act = &realact;
+		}
+	} else {
+		pthread_spinunlock(self, &pt_sigacts_lock);
 	}
 
 	retval = pthread_sys_sigaction(sig, act, oact);
