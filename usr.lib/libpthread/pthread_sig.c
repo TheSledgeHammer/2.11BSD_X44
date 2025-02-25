@@ -96,6 +96,11 @@ static pthread_spin_t pt_sigwaiting_lock;
 static pthread_t pt_sigwmaster;
 static pthread_cond_t pt_sigwaiting_cond = PTHREAD_COND_INITIALIZER;
 
+static int __sigsetequal(const sigset_t *, const sigset_t *);
+static int __sigplusset(const sigset_t *, sigset_t *);
+static int __sigminusset(const sigset_t *, sigset_t *);
+static int __sigandset(const sigset_t *, sigset_t *);
+
 static void pthread__make_siginfo(siginfo_t *, int);
 static void pthread__kill(pthread_t, pthread_t, siginfo_t *);
 static void pthread__kill_self(pthread_t, siginfo_t *);
@@ -103,18 +108,54 @@ static void pthread__kill_self(pthread_t, siginfo_t *);
 static int firstsig(const sigset_t *);
 static int pthread__sigmask(int, const sigset_t *, sigset_t *);
 
-int		pthread_execve(const char *, char *const [], char *const []);
-int     pthread_kill(pthread_t, int);
-int		pthread_sigaction(int, const struct sigaction *, struct sigaction *);
-int		pthread_sigmask(int, const sigset_t *, sigset_t *);
-int		pthread_sigsuspend(const sigset_t *);
-int		pthread_timedwait(const sigset_t * __restrict, siginfo_t * __restrict, const struct timespec * __restrict);
+int	pthread_execve(const char *, char *const [], char *const []);
+int 	pthread_kill(pthread_t, int);
+int	pthread_sigaction(int, const struct sigaction *, struct sigaction *);
+int	pthread_sigmask(int, const sigset_t *, sigset_t *);
+int	pthread_sigsuspend(const sigset_t *);
+int	pthread_timedwait(const sigset_t * __restrict, siginfo_t * __restrict, const struct timespec * __restrict);
 
 __strong_alias(thr_execve, pthread_execve)
 __strong_alias(thr_sigaction, pthread_sigaction)
 __strong_alias(thr_sigmask, pthread_sigmask)
 __strong_alias(thr_sigsuspend, pthread_sigsuspend)
 __strong_alias(thr_timedwait, pthread_timedwait)
+
+static int
+__sigsetequal(const sigset_t *s1, const sigset_t *s2)
+{
+    	int equal;
+
+    	equal = (*s1 == *s2) == 0;
+    	return (equal);
+}
+
+static int
+__sigplusset(const sigset_t *s, sigset_t *t)
+{
+	int plus;
+
+	plus = (*t |= *s) == 0;
+	return (plus);
+}
+
+static int
+__sigminusset(const sigset_t *s, sigset_t *t)
+{
+	int minus;
+
+    	minus = (*t &= ~*s) == 0;
+    	return (minus);
+}
+
+static int
+__sigandset(const sigset_t *s, sigset_t *t)
+{
+	int and;
+
+	and = (*t &= *s) == 0;
+    	return (and);
+}
 
 void
 pthread__signal_init(void)
@@ -129,9 +170,6 @@ pthread__signal_init(void)
 static void
 pthread__make_siginfo(siginfo_t *si, int sig)
 {
-/** si_code */
-#define	SI_USER		0	/* Sent by kill(2)			*/
-
 	(void)memset(si, 0, sizeof(*si));
 	si->ptsi_signo = sig;
 	si->ptsi_code = SI_USER;
@@ -321,6 +359,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 		 * Check if this thread's wait set is different to master set.
 		 */
 		wset = *set;
+
 		__sigminusset(pt_sigwmaster->pt_sigwait, &wset);
 		if (firstsig(&wset)) {
 			/*
@@ -416,7 +455,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 		wset = *set;
 		if (!PTQ_EMPTY(&pt_sigwaiting)) {
 			PTQ_FOREACH(target, &pt_sigwaiting, pt_sleep) {
-				sigaddset(target->pt_sigwait, &wset);
+				__sigplusset(target->pt_sigwait, &wset);
 			}
 		}
 
@@ -455,8 +494,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 			 * Scan the queue of sigwaiters and wakeup
 			 * the first thread waiting for this signal.
 			 */
-			PTQ_FOREACH(target, &pt_sigwaiting, pt_sleep)
-			{
+			PTQ_FOREACH(target, &pt_sigwaiting, pt_sleep) {
 				if (sigismember(target->pt_sigwait, info->ptsi_signo)) {
 					pthread__assert(target->pt_state == PT_STATE_BLOCKED_QUEUE);
 
@@ -483,7 +521,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 				 */
 				wset = *set;
 				PTQ_FOREACH(target, &pt_sigwaiting, pt_sleep) {
-					sigaddset(target->pt_sigwait, &wset);
+					__sigplusset(target->pt_sigwait, &wset);
 				}
 			}
 		} else {
@@ -535,7 +573,7 @@ pthread__sigmask(int how, const sigset_t *set, sigset_t *oset)
 	}
 
 	if (how == SIG_BLOCK) {
-		sigaddset(set, &self->pt_sigmask);
+		__sigplusset(set, &self->pt_sigmask);
 		/*
 		 * Blocking of signals that are now
 		 * blocked by all threads will be done
@@ -546,7 +584,7 @@ pthread__sigmask(int how, const sigset_t *set, sigset_t *oset)
 			return 0;
 		}
 	} else if (how == SIG_UNBLOCK) {
-		sigdelset(set, &self->pt_sigmask);
+		__sigminusset(set, &self->pt_sigmask);
 	} else if (how == SIG_SETMASK) {
 		self->pt_sigmask = *set;
 	} else {
@@ -580,9 +618,14 @@ pthread__sigmask(int how, const sigset_t *set, sigset_t *oset)
 		}
 		sigdelset(&tmp, i);
 	}
+
 	/* Unblock any signals that were blocked process-wide before this. */
 	tmp = pt_process_sigmask;
-	pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+	__sigandset(&self->pt_sigmask, &tmp);
+	if (!__sigsetequal(&tmp, &pt_process_sigmask)) {
+		pt_process_sigmask = tmp;
+		pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+	}
 	pthread_spinunlock(self, &pt_process_siglock);
 
 	pthread__make_siginfo(&si, 0);
@@ -708,7 +751,7 @@ pthread__kill_self(pthread_t self, siginfo_t *si)
 {
 	sigset_t oldmask;
 	struct sigaction act;
-	ucontext_t uc;	/* XXX: we don't pass the right context here */
+	//ucontext_t uc;	/* XXX: we don't pass the right context here */
 
 	pthread_spinlock(self, &pt_sigacts_lock);
 	act = pt_sigacts[si->ptsi_signo];
@@ -717,7 +760,7 @@ pthread__kill_self(pthread_t self, siginfo_t *si)
 	SDPRINTF(("(pthread__kill_self %p) sig %d\n", self, si->ptsi_signo));
 
 	oldmask = self->pt_sigmask;
-	sigaddset(&self->pt_sigmask, &act.sa_mask);
+	__sigplusset(&self->pt_sigmask, &act.sa_mask);
 	if ((act.sa_flags & SA_NODEFER) == 0) {
 		sigaddset(&self->pt_sigmask, si->ptsi_signo);
 	}
