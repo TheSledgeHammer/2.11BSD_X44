@@ -162,13 +162,13 @@ static void
 pthread__make_siginfo(siginfo_t *si, int sig)
 {
 	(void)memset(si, 0, sizeof(*si));
-	si->ptsi_signo = sig;
-	si->ptsi_code = SI_USER;
+	si->si_signo = sig;
+	si->si_code = SI_USER;
 	/*
 	 * XXX: these could be cached, but beware of setuid().
 	 */
-	si->ptsi_uid = getuid();
-	si->ptsi_pid = getpid();
+	si->si_uid = getuid();
+	si->si_pid = getpid();
 }
 
 int
@@ -311,7 +311,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 
 	/* if threading not started yet, just do the syscall */
 	if (__predict_false(pthread__started == 0)) {
-		return (pthread_sys_timedwait(set, &info->ptsi_signo, __UNCONST(timeout)));
+		return (pthread_sys_timedwait(set, &info->si_signo, __UNCONST(timeout)));
 	}
 
 	self = pthread__self();
@@ -319,7 +319,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 
 	/* also call syscall if timeout is zero (i.e. polling) */
 	if (timeout && timeout->tv_sec == 0 && timeout->tv_nsec == 0) {
-		error = pthread_sys_timedwait(set, &info->ptsi_signo, __UNCONST(timeout));
+		error = pthread_sys_timedwait(set, &info->si_signo, __UNCONST(timeout));
 		pthread__testcancel(self);
 		return (error);
 	}
@@ -370,7 +370,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 		self->pt_wsig = info;
 
 		/* zero to recognize when we get passed the signal from master */
-		info->ptsi_signo = 0;
+		info->si_signo = 0;
 
 		if (timeout) {
 			pthread__alarm_add(self, &timoalarm, &etimo, pthread_sigtimedwait__callback, self);
@@ -388,7 +388,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 		pthread__block(self, &pt_sigwaiting_lock);
 
 		/* check if we got a signal we waited for */
-		if (info->ptsi_signo) {
+		if (info->si_signo) {
 			/* got the signal from master */
 			pthread__testcancel(self);
 			return (0);
@@ -460,11 +460,11 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 		 * We are either the only one, or wait set was setup already.
 		 * Just do the syscall now.
 		 */
-		error = pthread_sys_timedwait(&wset, &info->ptsi_signo, (timeout) ? &timo : NULL);
+		error = pthread_sys_timedwait(&wset, &info->si_signo, (timeout) ? &timo : NULL);
 
 		pthread_spinlock(self, &pt_sigwaiting_lock);
 		if ((error && (errno != ECANCELED || self->pt_cancel))
-				|| (!error && sigismember(set, info->ptsi_signo))) {
+				|| (!error && sigismember(set, info->si_signo))) {
 			/*
 			 * Normal function return. Clear pt_sigwmaster,
 			 * and if wait queue is nonempty, make first waiter
@@ -490,7 +490,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 			 * the first thread waiting for this signal.
 			 */
 			PTQ_FOREACH(target, &pt_sigwaiting, pt_sleep) {
-				if (sigismember(target->pt_sigwait, info->ptsi_signo)) {
+				if (sigismember(target->pt_sigwait, info->si_signo)) {
 					pthread__assert(target->pt_state == PT_STATE_BLOCKED_QUEUE);
 
 					/* copy to waiter siginfo */
@@ -627,7 +627,7 @@ pthread__sigmask(int how, const sigset_t *set, sigset_t *oset)
 	while ((i = firstsig(&takelist)) != 0) {
 		/* Take the signal */
 		SDPRINTF(("(pt_sigmask %p) taking unblocked signal %d\n", self, i));
-		si.ptsi_signo = i;
+		si.si_signo = i;
 		pthread__kill_self(self, &si);
 		sigdelset(&takelist, i);
 	}
@@ -675,7 +675,7 @@ pthread__signal(pthread_t self, pthread_t t, siginfo_t *si)
 			SDPRINTF((
 				"(pt_signal %p) target %p: state %d, mask %08x\n",
 				self, target, target->pt_state, target->pt_sigmask.__bits[0]));
-			if (!sigismember(&target->pt_sigmask, si->ptsi_signo)) {
+			if (!sigismember(&target->pt_sigmask, si->si_signo)) {
 				if (target->pt_blockgen == target->pt_unblockgen) {
 					good = target;
 					/* Leave target locked */
@@ -704,11 +704,11 @@ pthread__signal(pthread_t self, pthread_t t, siginfo_t *si)
 			 * for later unblocking.
 			 */
 			pthread_spinlock(self, &pt_process_siglock);
-			sigaddset(&pt_process_sigmask, si->ptsi_signo);
+			sigaddset(&pt_process_sigmask, si->si_signo);
 			SDPRINTF(("(pt_signal %p) lazily setting proc sigmask to "
 			    "%08x\n", self, pt_process_sigmask));
 			pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
-			sigaddset(&pt_process_siglist, si->ptsi_signo);
+			sigaddset(&pt_process_siglist, si->si_signo);
 			pthread_spinunlock(self, &pt_process_siglock);
 			return;
 		}
@@ -749,20 +749,20 @@ pthread__kill_self(pthread_t self, siginfo_t *si)
 	//ucontext_t uc;	/* XXX: we don't pass the right context here */
 
 	pthread_spinlock(self, &pt_sigacts_lock);
-	act = pt_sigacts[si->ptsi_signo];
+	act = pt_sigacts[si->si_signo];
 	pthread_spinunlock(self, &pt_sigacts_lock);
 
-	SDPRINTF(("(pthread__kill_self %p) sig %d\n", self, si->ptsi_signo));
+	SDPRINTF(("(pthread__kill_self %p) sig %d\n", self, si->si_signo));
 
 	oldmask = self->pt_sigmask;
 	__sigplusset(&self->pt_sigmask, &act.sa_mask);
 	if ((act.sa_flags & SA_NODEFER) == 0) {
-		sigaddset(&self->pt_sigmask, si->ptsi_signo);
+		sigaddset(&self->pt_sigmask, si->si_signo);
 	}
 
 	/*
 	pthread_spinunlock(self, &self->pt_siglock);
-	(*act.sa_sigaction)(si->ptsi_signo, si, &uc);
+	(*act.sa_sigaction)(si->si_signo, si, &uc);
 	pthread_spinlock(self, &self->pt_siglock);
 	*/
 
@@ -773,11 +773,11 @@ pthread__kill_self(pthread_t self, siginfo_t *si)
 static void
 pthread__kill(pthread_t self, pthread_t target, siginfo_t *si)
 {
-	SDPRINTF(("(pthread__kill %p) target %p sig %d code %d\n", self, target, si->ptsi_signo, si->ptsi_code));
+	SDPRINTF(("(pthread__kill %p) target %p sig %d code %d\n", self, target, si->si_signo, si->si_code));
 
-	if (sigismember(&target->pt_sigmask, si->ptsi_signo)) {
+	if (sigismember(&target->pt_sigmask, si->si_signo)) {
 		/* Record the signal for later delivery. */
-		sigaddset(&target->pt_siglist, si->ptsi_signo);
+		sigaddset(&target->pt_siglist, si->si_signo);
 		return;
 	}
 
@@ -808,8 +808,8 @@ pthread__kill(pthread_t self, pthread_t target, siginfo_t *si)
 		 * from its torpor, then mark the signal for
 		 * later processing.
 		 */
-		sigaddset(&target->pt_sigblocked, si->ptsi_signo);
-		sigaddset(&target->pt_sigmask, si->ptsi_signo);
+		sigaddset(&target->pt_sigblocked, si->si_signo);
+		sigaddset(&target->pt_sigmask, si->si_signo);
 		pthread_spinlock(self, &target->pt_flaglock);
 		target->pt_flags |= PT_FLAG_SIGDEFERRED;
 		pthread_spinunlock(self, &target->pt_flaglock);
