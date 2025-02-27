@@ -511,7 +511,7 @@ pthread_sys_timer_gettime(int timerid, struct itimerspec *value)
 		return (retval);
 	}
 
-	retval = __syscall(SYS_setitimer, timerid, &aitv);
+	retval = __syscall(SYS_getitimer, timerid, &aitv);
 	if (retval != 0) {
 		return (retval);
 	}
