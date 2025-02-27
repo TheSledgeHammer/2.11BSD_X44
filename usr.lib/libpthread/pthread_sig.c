@@ -106,11 +106,11 @@ static void pthread__kill_self(pthread_t, siginfo_t *);
 static int firstsig(const sigset_t *);
 static int pthread__sigmask(int, const sigset_t *, sigset_t *);
 
-__strong_alias(__libc_execve, pthread_execve)
-__strong_alias(__libc_sigaction, pthread_sigaction)
-__strong_alias(__libc_sigprocmask, pthread_sigmask)
-__strong_alias(__libc_sigsuspend, pthread_sigsuspend)
-__strong_alias(__libc_sigtimedwait, pthread_timedwait)
+__strong_alias(pthread_sys_execve, pthread_execve)
+__strong_alias(pthread_sys_sigaction, pthread_sigaction)
+__strong_alias(pthread_sys_sigprocmask, pthread_sigmask)
+__strong_alias(pthread_sys_sigsuspend, pthread_sigsuspend)
+__strong_alias(pthread_sys_sigtimedwait, pthread_timedwait)
 
 static int
 __sigsetequal(const sigset_t *s1, const sigset_t *s2)
