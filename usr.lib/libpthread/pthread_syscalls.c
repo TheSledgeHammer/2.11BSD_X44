@@ -103,10 +103,10 @@ __strong_alias(_writev, pthread_sys_writev)
 
 static int pthread_sys_timer_delete(int);
 
-#define TESTCANCEL(id) 	do {				\
+#define TESTCANCEL(id) 	do {			\
 	if (__predict_false((id)->pt_cancel)) {	\
-		pthread_exit(PTHREAD_CANCELED);		\
-	} 										\
+		pthread_exit(PTHREAD_CANCELED);	\
+	} 					\
 } while (/*CONSTCOND*/0)
 
 int
@@ -126,12 +126,12 @@ pthread_sys_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 int
 pthread_sys_clock_gettime(clockid_t clock_id, struct timespec *tp)
 {
-    int retval;
-    pthread_t self;
+	int retval;
+	pthread_t self;
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __syscall(SYS_clock_gettime, clock_id, tp);
+	retval = __syscall(SYS_clock_gettime, clock_id, tp);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -140,15 +140,15 @@ pthread_sys_clock_gettime(clockid_t clock_id, struct timespec *tp)
 int
 pthread_sys_clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
-    int retval;
-    pthread_t self;
+	int retval;
+	pthread_t self;
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __syscall(SYS_clock_settime, clock_id, tp);
+	retval = __syscall(SYS_clock_settime, clock_id, tp);
 	TESTCANCEL(self);
-
-    return (retval);
+	
+	return (retval);
 }
 
 int
