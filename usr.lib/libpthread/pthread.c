@@ -1158,9 +1158,3 @@ pthread__errorfunc(const char *file, int line, const char *function, const char 
 		_exit(1);
 	}
 }
-
-int
-pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void))
-{
-	return (pthread_sys_atfork(prepare, parent, child));
-}

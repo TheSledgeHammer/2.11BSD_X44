@@ -37,73 +37,77 @@
  */
 
 #include <sys/cdefs.h>
-__RCSID("$NetBSD: pthread_cancelstub.c,v 1.8 2003/11/24 23:23:17 cl Exp $");
-
-#define	pthread_sys_fsync_range	_fsync_range
 
 #include <sys/types.h>
+
+#include <sys/poll.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/syscall.h>
+#include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/wait.h>
 
 #include <fcntl.h>
-
+#include <signal.h>
 #include <stdarg.h>
 #include <unistd.h>
 
 int	pthread__cancel_stub_binder;
 
-#include <signal.h>
-#include <sys/mman.h>
-#include <sys/poll.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-
 #include "pthread.h"
 #include "pthread_int.h"
 #include "pthread_syscalls.h"
 
+__weak_alias(__libc_fsync_range, _fsync_range)
+
+__strong_alias(_accept, pthread_sys_accept)
+__strong_alias(_clock_gettime, pthread_sys_clock_gettime)
+__strong_alias(_clock_settime, pthread_sys_clock_settime)
+__strong_alias(_close, pthread_sys_close)
+__strong_alias(_connect, pthread_sys_connect)
+__strong_alias(__exeve, pthread_sys_execve)
+__strong_alias(_fcntl, pthread_sys_fcntl)
+__strong_alias(_fsync, pthread_sys_fsync)
+__strong_alias(_getitimer, pthread_sys_getitimer)
+
+__strong_alias(_ksem_close, pthread_sys_ksem_close)
+__strong_alias(_ksem_destroy, pthread_sys_ksem_destroy)
+__strong_alias(_ksem_getvalue, pthread_sys_ksem_getvalue)
+__strong_alias(_ksem_init, pthread_sys_ksem_init)
+__strong_alias(_ksem_open, pthread_sys_ksem_open)
+__strong_alias(_ksem_post, pthread_sys_ksem_post)
+__strong_alias(_ksem_trywait, pthread_sys_ksem_trywait)
+__strong_alias(_ksem_unlink, pthread_sys_ksem_unlink)
+__strong_alias(_ksem_wait, pthread_sys_ksem_wait)
+
+__strong_alias(_msgrcv, pthread_sys_msgrcv)
+__strong_alias(_msgsnd, pthread_sys_msgsnd)
+__strong_alias(_msync, pthread_sys_msync)
+__strong_alias(_nanosleep, pthread_sys_nanosleep)
+__strong_alias(_open, pthread_sys_open)
+__strong_alias(_poll, pthread_sys_poll)
+__strong_alias(_pread, pthread_sys_pread)
+__strong_alias(_pwrite, pthread_sys_pwrite)
+__strong_alias(_read, pthread_sys_read)
+__strong_alias(_readv, pthread_sys_readv)
+__strong_alias(_select, pthread_sys_select)
+__strong_alias(_setitimer, pthread_sys_setitimer)
+__strong_alias(_sigaction, pthread_sys_sigaction)
+__strong_alias(_sigsuspend, pthread_sys_sigsuspend)
+__strong_alias(_sigprocmask, pthread_sys_sigprocmask)
+__strong_alias(_sigtimedwait, pthread_sys_sigtimedwait)
+__strong_alias(_wait4, pthread_sys_wait4)
+__strong_alias(_write, pthread_sys_write)
+__strong_alias(_writev, pthread_sys_writev)
+
 static int pthread_sys_timer_delete(int);
 
-__weak_alias(pthread_sys_atfork, __libc_atfork)
-__weak_alias(pthread_sys_fsync_range, __libc_fsync_range)
-__strong_alias(__libc_accept, pthread_sys_accept)
-__strong_alias(__libc_clock_gettime, pthread_sys_clock_gettime)
-__strong_alias(__libc_clock_settime, pthread_sys_clock_settime)
-__strong_alias(__libc_close, pthread_sys_close)
-__strong_alias(__libc_fcntl, pthread_sys_fcntl)
-__strong_alias(__libc_fsync, pthread_sys_fsync)
-__strong_alias(__libc_msgrcv, pthread_sys_msgrcv)
-__strong_alias(__libc_msgsnd, pthread_sys_msgsnd)
-__strong_alias(__libc_msync, pthread_sys_msync)
-__strong_alias(__libc_open, pthread_sys_open)
-__strong_alias(__libc_poll, pthread_sys_poll)
-__strong_alias(__libc_pread, pthread_sys_pread)
-__strong_alias(__libc_pwrite, pthread_sys_pwrite)
-__strong_alias(__libc_read, pthread_sys_read)
-__strong_alias(__libc_readv, pthread_sys_readv)
-__strong_alias(__libc_select, pthread_sys_select)
-__strong_alias(__libc_getitimer, pthread_sys_timer_gettime)
-__strong_alias(__libc_setitimer, pthread_sys_timer_settime)
-__strong_alias(__libc_wait4, pthread_sys_wait4)
-__strong_alias(__libc_write, pthread_sys_write)
-__strong_alias(__libc_writev, pthread_sys_writev)
-
-#define TESTCANCEL(id) 	do {			\
+#define TESTCANCEL(id) 	do {				\
 	if (__predict_false((id)->pt_cancel)) {	\
-		pthread_exit(PTHREAD_CANCELED);	\
-	} 					\
+		pthread_exit(PTHREAD_CANCELED);		\
+	} 										\
 } while (/*CONSTCOND*/0)
-
-int
-pthread_sys_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void))
-{
-	int retval;
-
-	retval = __libc_atfork(prepare, parent, child);
-
-	return (retval);
-}
 
 int
 pthread_sys_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
@@ -113,7 +117,7 @@ pthread_sys_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_accept(s, addr, addrlen);
+	retval = __syscall(SYS_accept, s, addr, addrlen);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -127,10 +131,10 @@ pthread_sys_clock_gettime(clockid_t clock_id, struct timespec *tp)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __libc_clock_gettime(id, tp);
+    retval = __syscall(SYS_clock_gettime, clock_id, tp);
 	TESTCANCEL(self);
 
-    return (retval);
+	return (retval);
 }
 
 int
@@ -141,7 +145,7 @@ pthread_sys_clock_settime(clockid_t clock_id, const struct timespec *tp)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-    retval = __libc_clock_settime(id, tp);
+    retval = __syscall(SYS_clock_settime, clock_id, tp);
 	TESTCANCEL(self);
 
     return (retval);
@@ -155,7 +159,7 @@ pthread_sys_close(int d)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_close(d);
+	retval = __syscall(SYS_close, d);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -169,7 +173,7 @@ pthread_sys_connect(int s, const struct sockaddr *addr, socklen_t namelen)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_connect(s, addr, namelen);
+	retval = __syscall(SYS_connect, s, addr, namelen);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -178,11 +182,7 @@ pthread_sys_connect(int s, const struct sockaddr *addr, socklen_t namelen)
 int
 pthread_sys_execve(const char *path, char *const argv[], char *const envp[])
 {
-	int retval;
-
-	retval = __libc_execve(path, argv, envp);
-
-	return (retval);
+	return (__syscall(SYS_execve, path, argv, envp));
 }
 
 int
@@ -194,7 +194,7 @@ pthread_sys_fcntl(int fd, int cmd, ...)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_fcntl(fd, cmd, va_arg(ap, void *));
+	retval = __syscall(SYS_fcntl,fd, cmd, va_arg(ap, void *));
 	TESTCANCEL(self);
 
 	return (retval);
@@ -208,7 +208,7 @@ pthread_sys_fsync(int d)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_fsync(d);
+	retval = __syscall(SYS_fsync, d);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -222,21 +222,75 @@ pthread_sys_fsync_range(int d, int f, off_t s, off_t e)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_fsync_range(d, f, s, e);
+	retval = ENOSYS;
 	TESTCANCEL(self);
 
 	return (retval);
 }
 
+int
+pthread_sys_ksem_close(semid_t id)
+{
+	return (ENOSYS);
+}
+
+int
+pthread_sys_ksem_destroy(semid_t id)
+{
+	return (ENOSYS);
+}
+
+int
+pthread_sys_ksem_getvalue(semid_t id, unsigned int *value)
+{
+	return (ENOSYS);
+}
+
+int
+pthread_sys_ksem_init(unsigned int value, semid_t *idp)
+{
+	return (ENOSYS);
+}
+
+int
+pthread_sys_ksem_open(const char *name, int oflag, mode_t mode, unsigned int value, semid_t *idp)
+{
+	return (ENOSYS);
+}
+
+int
+pthread_sys_ksem_post(semid_t id)
+{
+	return (ENOSYS);
+}
+
+int
+pthread_sys_ksem_trywait(semid_t id)
+{
+	return (ENOSYS);
+}
+
+int
+pthread_sys_ksem_unlink(const char *name)
+{
+	return (ENOSYS);
+}
+
+int
+pthread_sys_ksem_wait(semid_t id)
+{
+	return (ENOSYS);
+}
+
 ssize_t
 pthread_sys_msgrcv(int msgid, void *msgp, size_t msgsz, long msgtyp, int msgflg)
 {
-	ssize_t retval;
+	int retval;
 	pthread_t self;
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_msgrcv(msgid, msgp, msgsz, msgtyp, msgflg);
+	retval = ENOSYS;
 	TESTCANCEL(self);
 
 	return (retval);
@@ -250,7 +304,7 @@ pthread_sys_msgsnd(int msgid, const void *msgp, size_t msgsz, int msgflg)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_msgsnd(msgid, msgp, msgsz, msgflg);
+	retval = ENOSYS;
 	TESTCANCEL(self);
 
 	return (retval);
@@ -264,7 +318,7 @@ pthread_sys_msync(void *addr, size_t len, int flags)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_msync(addr, len, flags);
+	retval = __syscall(SYS_msync, addr, len, flags);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -278,14 +332,14 @@ pthread_sys_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_nanosleep(rqtp, rmtp);
+	retval = __syscall(SYS_nanosleep, rqtp, rmtp);
 	TESTCANCEL(self);
 
 	return (retval);
 }
 
 int
-pthread_sys_open(const char *path, int flags, ...)
+pthread_sys_open(const char *path, int flags, va_list ap)
 {
 	int retval;
 	pthread_t self;
@@ -293,7 +347,7 @@ pthread_sys_open(const char *path, int flags, ...)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_open(path, flags, va_arg(ap, mode_t));
+	retval = __syscall(SYS_open, path, flags, va_arg(ap, mode_t));
 	TESTCANCEL(self);
 
 	return (retval);
@@ -307,7 +361,7 @@ pthread_sys_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_poll(fds, nfds, timeout);
+	retval = __syscall(SYS_poll, fds, nfds, timeout);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -321,7 +375,7 @@ pthread_sys_pread(int d, void *buf, size_t nbytes, off_t offset)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_pread(d, buf, nbytes, offset);
+	retval = pread(d, buf, nbytes, offset);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -335,7 +389,7 @@ pthread_sys_pwrite(int d, const void *buf, size_t nbytes, off_t offset)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_pwrite(d, buf, nbytes, offset);
+	retval = pwrite(d, buf, nbytes, offset);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -349,7 +403,7 @@ pthread_sys_read(int d, void *buf, size_t nbytes)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_read(d, buf, nbytes);
+	retval = __syscall(SYS_read, d, buf, nbytes);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -363,7 +417,7 @@ pthread_sys_readv(int d, const struct iovec *iov, int iovcnt)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_readv(d, iov, iovcnt);
+	retval = __syscall(SYS_readv, d, iov, iovcnt);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -377,30 +431,35 @@ pthread_sys_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfd
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_select(nfds, readfds, writefds, exceptfds, timeout);
+	retval = __syscall(SYS_select, nfds, readfds, writefds, exceptfds, timeout);
 	TESTCANCEL(self);
 
 	return (retval);
 }
 
 int
-pthread_sys_sigaction(int sig, const struct sigaction *act, struct sigaction *oact)
+pthread_sys_sigaction(int sig, struct sigaction *act, struct sigaction *oact)
 {
-	int retval;
+	if (act == NULL) {
+		return  (__syscall(SYS_sigaction, 0, sig, act, oact));
+	}
 
-	retval = __libc_sigaction(sig, act, oact);
+	if ((act->sa_flags & SA_SIGINFO) == 0) {
+		int sav = errno;
+		int rv = __syscall(SYS_sigaction, 0, sig, act, oact);
+		if (rv >= 0 || errno != EINVAL) {
+			return (rv);
+		}
+		errno = sav;
+	}
 
-	return (retval);
+	return (__syscall(SYS_sigaction, 0, sig, act, oact));
 }
 
 int
-pthread_sys_sigmask(int how, const sigset_t *set, sigset_t *oset)
+pthread_sys_sigprocmask(int how, sigset_t *set, sigset_t *oset)
 {
-	int retval;
-
-	retval = __libc_sigmask(how, set, oset);
-
-	return (retval);
+	return (__syscall(SYS_sigprocmask, how, set, oset));
 }
 
 int
@@ -411,21 +470,21 @@ pthread_sys_sigsuspend(const sigset_t *sigmask)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_sigsuspend(sigmask);
+	retval = __syscall(SYS_sigsuspend, sigmask);
 	TESTCANCEL(self);
 
 	return (retval);
 }
 
 int
-pthread_sys_timedwait(const sigset_t * set, int *signo, struct timespec * timeout)
+pthread_sys_sigtimedwait(const sigset_t * set, int *signo, struct timespec * timeout)
 {
 	int retval;
 	pthread_t self;
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_sigtimedwait(set, signo, timeout);
+	retval = __syscall(SYS_sigtimedwait, set, signo, timeout);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -452,7 +511,7 @@ pthread_sys_timer_gettime(int timerid, struct itimerspec *value)
 		return (retval);
 	}
 
-	retval = __libc_getitimer(timerid, &aitv);
+	retval = __syscall(SYS_setitimer, timerid, &aitv);
 	if (retval != 0) {
 		return (retval);
 	}
@@ -467,7 +526,7 @@ pthread_sys_timer_settime(int timerid, int flags, const struct itimerspec *value
 	struct itimerval val, oval;
 	int retval;
 
-	retval = __libc_setitimer(timerid, &val, &oval);
+	retval = __syscall(SYS_setitimer, timerid, &val, &oval);
 	if (retval != 0) {
 		return (retval);
 	}
@@ -489,7 +548,7 @@ pthread_sys_wait4(pid_t wpid, int *status, int options, struct rusage *rusage)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_wait4(wpid, status, options, rusage);
+	retval = __syscall(SYS_wait4, wpid, status, options, rusage);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -503,7 +562,7 @@ pthread_sys_write(int d, const void *buf, size_t nbytes)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_write(d, buf, nbytes);
+	retval = __syscall(SYS_write, d, buf, nbytes);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -517,7 +576,7 @@ pthread_sys_writev(int d, const struct iovec *iov, int iovcnt)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __libc_writev(d, iov, iovcnt);
+	retval = __syscall(SYS_writev, d, iov, iovcnt);
 	TESTCANCEL(self);
 
 	return (retval);

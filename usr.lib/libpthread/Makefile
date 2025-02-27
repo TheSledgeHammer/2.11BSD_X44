@@ -51,6 +51,7 @@ assym.h: ${ARCHDIR}/genassym.cf pthread.h pthread_int.h pthread_md.h
 
 SRCS=	pthread.c
 SRCS+=	pthread_alarms.c
+SRCS=	pthread_atfork.c
 SRCS+=	pthread_attr.c
 SRCS+=	pthread_barrier.c
 SRCS+=	pthread_cond.c

@@ -152,7 +152,7 @@ void
 pthread__signal_init(void)
 {
 	SDPRINTF(("(signal_init) setting process sigmask\n"));
-	pthread_sys_sigmask(0, NULL, &pt_process_sigmask);
+	pthread_sys_sigprocmask(0, NULL, &pt_process_sigmask);
 
 	PTQ_INIT(&pt_sigsuspended);
 	PTQ_INIT(&pt_sigwaiting);
@@ -311,7 +311,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 
 	/* if threading not started yet, just do the syscall */
 	if (__predict_false(pthread__started == 0)) {
-		return (pthread_sys_timedwait(set, &info->si_signo, __UNCONST(timeout)));
+		return (pthread_sys_sigtimedwait(set, &info->si_signo, __UNCONST(timeout)));
 	}
 
 	self = pthread__self();
@@ -319,7 +319,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 
 	/* also call syscall if timeout is zero (i.e. polling) */
 	if (timeout && timeout->tv_sec == 0 && timeout->tv_nsec == 0) {
-		error = pthread_sys_timedwait(set, &info->si_signo, __UNCONST(timeout));
+		error = pthread_sys_sigtimedwait(set, &info->si_signo, __UNCONST(timeout));
 		pthread__testcancel(self);
 		return (error);
 	}
@@ -460,7 +460,7 @@ pthread_timedwait(const sigset_t * __restrict set, siginfo_t * __restrict info, 
 		 * We are either the only one, or wait set was setup already.
 		 * Just do the syscall now.
 		 */
-		error = pthread_sys_timedwait(&wset, &info->si_signo, (timeout) ? &timo : NULL);
+		error = pthread_sys_sigtimedwait(&wset, &info->si_signo, (timeout) ? &timo : NULL);
 
 		pthread_spinlock(self, &pt_sigwaiting_lock);
 		if ((error && (errno != ECANCELED || self->pt_cancel))
@@ -589,7 +589,7 @@ pthread__sigmask(int how, const sigset_t *set, sigset_t *oset)
 
 	if (__predict_false(pthread__started == 0)) {
 		pt_process_sigmask = self->pt_sigmask;
-		pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+		pthread_sys_sigprocmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 		pthread_spinunlock(self, &self->pt_siglock);
 		return 0;
 	}
@@ -619,7 +619,7 @@ pthread__sigmask(int how, const sigset_t *set, sigset_t *oset)
 	__sigandset(&self->pt_sigmask, &tmp);
 	if (!__sigsetequal(&tmp, &pt_process_sigmask)) {
 		pt_process_sigmask = tmp;
-		pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+		pthread_sys_sigprocmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 	}
 	pthread_spinunlock(self, &pt_process_siglock);
 
@@ -707,7 +707,7 @@ pthread__signal(pthread_t self, pthread_t t, siginfo_t *si)
 			sigaddset(&pt_process_sigmask, si->si_signo);
 			SDPRINTF(("(pt_signal %p) lazily setting proc sigmask to "
 			    "%08x\n", self, pt_process_sigmask));
-			pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+			pthread_sys_sigprocmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 			sigaddset(&pt_process_siglist, si->si_signo);
 			pthread_spinunlock(self, &pt_process_siglock);
 			return;
@@ -729,7 +729,7 @@ pthread__signal(pthread_t self, pthread_t t, siginfo_t *si)
 	pthread_spinlock(self, &pt_process_siglock);
 	SDPRINTF(("(pt_signal %p) setting proc sigmask to "
 	    "%08x\n", self, pt_process_sigmask));
-	pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+	pthread_sys_sigprocmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 	pthread_spinunlock(self, &pt_process_siglock);
 
 	pthread__kill(self, target, si);
@@ -874,11 +874,11 @@ pthread_execve(const char *path, char *const argv[], char *const envp[])
 	 * routine between the sigprocmask and the _sys_execve()
 	 * call. I don't have much sympathy for such a program.
 	 */
-	pthread_sys_sigmask(SIG_SETMASK, &self->pt_sigmask, NULL);
+	pthread_sys_sigprocmask(SIG_SETMASK, &self->pt_sigmask, NULL);
 	ret = pthread_sys_execve(path, argv, envp);
 
 	/* Normally, we shouldn't get here; this is an error condition. */
-	pthread_sys_sigmask(SIG_SETMASK, &pt_process_sigmask, NULL);
+	pthread_sys_sigprocmask(SIG_SETMASK, &pt_process_sigmask, NULL);
 
 	return ret;
 }
