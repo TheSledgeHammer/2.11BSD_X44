@@ -69,10 +69,11 @@ static struct linebuf *linebuf;
 static void pthread__debug_printcounters(void);
 static const char *pthread__counternames[] = PTHREADD_INITCOUNTERNAMES;
 
+extern int pthread__maxconcurrency;
+
 void
 pthread__debug_init(int ncpu)
 {
-	time_t t;
 	int i;
 
 	if (getenv("PTHREAD_DEBUGCOUNTERS") != NULL) {

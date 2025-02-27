@@ -68,7 +68,12 @@ static pthread_cond_t pt_nanosleep_cond = PTHREAD_COND_INITIALIZER;
 
 static void pthread__nanosleep_callback(void *);
 
-__strong_alias(pthread_sys_nanosleep, pthread_nanosleep)
+/* 
+ * Some alias's may need to change from strong to weak.
+ * Noteably the ones blanked out. 
+ * Cause multiple definition errors during compliation.
+ */
+//__strong_alias(pthread_sys_nanosleep, pthread_nanosleep)
 
 int
 pthread_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)

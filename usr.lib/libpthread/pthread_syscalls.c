@@ -48,6 +48,7 @@
 #include <sys/uio.h>
 #include <sys/wait.h>
 
+#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -59,14 +60,20 @@ int	pthread__cancel_stub_binder;
 #include "pthread_int.h"
 #include "pthread_syscalls.h"
 
-__weak_alias(__libc_fsync_range, _fsync_range)
+/* 
+ * Some alias's may need to change from strong to weak.
+ * Noteably the ones blanked out. 
+ * Cause multiple definition errors during compliation.
+ */
+
+__weak_alias(pthread_sys_fsync_range, _fsync_range)
 
 __strong_alias(_accept, pthread_sys_accept)
 __strong_alias(_clock_gettime, pthread_sys_clock_gettime)
 __strong_alias(_clock_settime, pthread_sys_clock_settime)
 __strong_alias(_close, pthread_sys_close)
 __strong_alias(_connect, pthread_sys_connect)
-__strong_alias(__exeve, pthread_sys_execve)
+//__strong_alias(__exeve, pthread_sys_execve)
 __strong_alias(_fcntl, pthread_sys_fcntl)
 __strong_alias(_fsync, pthread_sys_fsync)
 __strong_alias(_getitimer, pthread_sys_getitimer)
@@ -84,7 +91,7 @@ __strong_alias(_ksem_wait, pthread_sys_ksem_wait)
 __strong_alias(_msgrcv, pthread_sys_msgrcv)
 __strong_alias(_msgsnd, pthread_sys_msgsnd)
 __strong_alias(_msync, pthread_sys_msync)
-__strong_alias(_nanosleep, pthread_sys_nanosleep)
+//__strong_alias(_nanosleep, pthread_sys_nanosleep)
 __strong_alias(_open, pthread_sys_open)
 __strong_alias(_poll, pthread_sys_poll)
 __strong_alias(_pread, pthread_sys_pread)
@@ -93,10 +100,10 @@ __strong_alias(_read, pthread_sys_read)
 __strong_alias(_readv, pthread_sys_readv)
 __strong_alias(_select, pthread_sys_select)
 __strong_alias(_setitimer, pthread_sys_setitimer)
-__strong_alias(_sigaction, pthread_sys_sigaction)
-__strong_alias(_sigsuspend, pthread_sys_sigsuspend)
-__strong_alias(_sigprocmask, pthread_sys_sigprocmask)
-__strong_alias(_sigtimedwait, pthread_sys_sigtimedwait)
+//__strong_alias(_sigaction, pthread_sys_sigaction)
+//__strong_alias(_sigsuspend, pthread_sys_sigsuspend)
+//__strong_alias(_sigprocmask, pthread_sys_sigprocmask)
+//__strong_alias(_sigtimedwait, pthread_sys_sigtimedwait)
 __strong_alias(_wait4, pthread_sys_wait4)
 __strong_alias(_write, pthread_sys_write)
 __strong_alias(_writev, pthread_sys_writev)
@@ -186,11 +193,10 @@ pthread_sys_execve(const char *path, char *const argv[], char *const envp[])
 }
 
 int
-pthread_sys_fcntl(int fd, int cmd, ...)
+pthread_sys_fcntl(int fd, int cmd, va_list ap)
 {
 	int retval;
 	pthread_t self;
-	va_list ap;
 
 	self = pthread__self();
 	TESTCANCEL(self);
@@ -241,7 +247,7 @@ pthread_sys_ksem_destroy(semid_t id)
 }
 
 int
-pthread_sys_ksem_getvalue(semid_t id, unsigned int *value)
+pthread_sys_ksem_getvalue(semid_t id, int *value)
 {
 	return (ENOSYS);
 }
@@ -343,7 +349,6 @@ pthread_sys_open(const char *path, int flags, va_list ap)
 {
 	int retval;
 	pthread_t self;
-	va_list ap;
 
 	self = pthread__self();
 	TESTCANCEL(self);
@@ -354,7 +359,7 @@ pthread_sys_open(const char *path, int flags, va_list ap)
 }
 
 int
-pthread_sys_poll(struct pollfd *fds, nfds_t nfds, int timeout)
+pthread_sys_poll(struct pollfd *fds, unsigned long nfds, int timeout)
 {
 	int retval;
 	pthread_t self;
@@ -438,7 +443,7 @@ pthread_sys_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfd
 }
 
 int
-pthread_sys_sigaction(int sig, struct sigaction *act, struct sigaction *oact)
+pthread_sys_sigaction(int sig, const struct sigaction *act, struct sigaction *oact)
 {
 	if (act == NULL) {
 		return  (__syscall(SYS_sigaction, 0, sig, act, oact));
