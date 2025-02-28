@@ -40,6 +40,8 @@
 #define	_I386_REG_H_
 
 #include <machine/types.h>
+#include <machine/npx.h>
+
 /*
  * Location of the users' stored
  * registers within appropriate frame of 'trap' and 'syscall', relative to
@@ -49,8 +51,8 @@
 
 /* When referenced during a trap/exception, registers are at these offsets */
 
-#define	tES		(0)
-#define	tDS		(1)
+#define	tES	(0)
+#define	tDS	(1)
 #define	tEDI	(2)
 #define	tESI	(3)
 #define	tEBP	(4)
@@ -61,10 +63,10 @@
 #define	tEAX	(9)
 
 #define	tEIP	(12)
-#define	tCS		(13)
+#define	tCS	(13)
 #define	tEFLAGS	(14)
 #define	tESP	(15)
-#define	tSS		(16)
+#define	tSS	(16)
 
 /* During a system call, registers are at these offsets instead of above. */
 
@@ -78,15 +80,15 @@
 #define	sEAX	(7)
 #define	sEFLAGS	(8)
 #define	sEIP	(9)
-#define	sCS		(10)
+#define	sCS	(10)
 #define	sESP	(11)
-#define	sSS		(12)
+#define	sSS	(12)
 
-#define	PC		sEIP
-#define	SP		sESP
-#define	PS		sEFLAGS
-#define	R0		sEDX
-#define	R1		sECX
+#define	PC	sEIP
+#define	SP	sESP
+#define	PS	sEFLAGS
+#define	R0	sEDX
+#define	R1	sECX
 /*
  * Registers accessible to ptrace(2) syscall for debugger
  */
