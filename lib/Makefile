@@ -44,11 +44,13 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
         	${USRLIBDIR}/librpcsvc      	\
 		${USRLIBDIR}/libpci		\
 		${USRLIBDIR}/libpthread 	\
-		${USRLIBDIR}/libpthread_dbg 	\
 		${USRLIBDIR}/libterminfo 	\
 		${USRLIBDIR}/libutil 		\
 		${USRLIBDIR}/liby 		\
 		${USRLIBDIR}/libz
+
+# Disabled: Does not currently work!
+#${USRLIBDIR}/libpthread_dbg 	\
 
 #
 # 2.11BSD Original Libraries
