@@ -38,6 +38,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 
 #include <paths.h>
+#include <string.h>
 #include <util.h>
 
 const char *

@@ -17,7 +17,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)login.c	5.2 (Berkeley) 4/18/89";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -28,8 +30,7 @@ static char sccsid[] = "@(#)login.c	5.2 (Berkeley) 4/18/89";
 #include <util.h>
 
 void
-login(ut)
-	const struct utmp *ut;
+login(const struct utmp *ut)
 {
 	register int fd;
 	int tty;
@@ -37,11 +38,11 @@ login(ut)
 	tty = ttyslot();
 	if (tty > 0 && (fd = open(_PATH_UTMP, O_WRONLY, 0)) >= 0) {
 		(void)lseek(fd, (long)(tty * sizeof(struct utmp)), SEEK_SET);
-		(void)write(fd, (char *)ut, sizeof(struct utmp));
+		(void)write(fd, ut, sizeof(struct utmp));
 		(void)close(fd);
 	}
 	if ((fd = open(_PATH_WTMP, O_WRONLY|O_APPEND, 0)) >= 0) {
-		(void)write(fd, (char *)ut, sizeof(struct utmp));
+		(void)write(fd, ut, sizeof(struct utmp));
 		(void)close(fd);
 	}
 }

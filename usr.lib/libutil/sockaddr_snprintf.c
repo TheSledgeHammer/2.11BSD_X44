@@ -38,7 +38,7 @@ __RCSID("$NetBSD: sockaddr_snprintf.c,v 1.9 2008/04/28 20:23:03 martin Exp $");
 #include <sys/un.h>
 
 #include <netinet/in.h>
-#include <netatalk/at.h>
+//#include <netatalk/at.h>
 #include <net/if_dl.h>
 
 #include <stdio.h>
@@ -57,7 +57,7 @@ sockaddr_snprintf(char * const sbuf, const size_t len, const char * const fmt,
 	char *ebuf = &sbuf[len - 1], *buf = sbuf;
 	const char *ptr, *s;
 	int p = -1;
-	const struct sockaddr_at *sat = NULL;
+//	const struct sockaddr_at *sat = NULL;
 	const struct sockaddr_in *sin4 = NULL;
 	const struct sockaddr_in6 *sin6 = NULL;
 	const struct sockaddr_un *sun = NULL;
@@ -75,12 +75,15 @@ sockaddr_snprintf(char * const sbuf, const size_t len, const char * const fmt,
 	case AF_UNSPEC:
 		goto done;
 	case AF_APPLETALK:
+        goto done;
+/*
 		sat = ((const struct sockaddr_at *)(const void *)sa);
 		p = ntohs(sat->sat_port);
 		(void)snprintf(addr = abuf, sizeof(abuf), "%u.%u",
 			ntohs(sat->sat_addr.s_net), sat->sat_addr.s_node);
 		(void)snprintf(port = pbuf, sizeof(pbuf), "%d", p);
 		break;
+*/
 	case AF_LOCAL:
 		sun = ((const struct sockaddr_un *)(const void *)sa);
 		(void)strlcpy(addr = abuf, sun->sun_path, SUN_LEN(sun));

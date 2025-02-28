@@ -46,7 +46,7 @@ __RCSID("$NetBSD: getrawpartition.c,v 1.4 1999/07/02 15:49:12 simonb Exp $");
 #include <util.h>
 
 int
-getrawpartition()
+getrawpartition(void)
 {
 	int rawpart, mib[2];
 	size_t varlen;
