@@ -125,7 +125,7 @@ void 		*ecalloc(size_t, size_t);
 void 		*emalloc(size_t);
 void 		*erealloc(void *, size_t);
 void 		ereallocarr(void *, size_t, size_t);
-struct __sFILE	*efopen(const char *, const char *);
+struct __siobuf	*efopen(const char *, const char *);
 int	 		easprintf(char ** __restrict, const char * __restrict, ...)	__printflike(2, 3);
 int			evasprintf(char ** __restrict, const char * __restrict, __va_list) __printflike(2, 0);
 __END_DECLS
