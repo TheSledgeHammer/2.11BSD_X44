@@ -154,6 +154,7 @@ typedef struct __siobuf {
 	fpos_t			_offset;	/* current lseek offset */
 } FILE;
 
+typedef struct __siobuf __sFILE;
 
 #define FILE struct __siobuf
 
