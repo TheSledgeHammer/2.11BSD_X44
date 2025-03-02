@@ -41,6 +41,8 @@
 
 #include <sys/ucontext.h>
 
+#include <arch/i386/include/reg.h>
+
 extern int (*_md_getcontext_u)(ucontext_t *);
 extern int (*_md_setcontext_u)(const ucontext_t *);
 extern int (*_md_swapcontext_u)(ucontext_t *, const ucontext_t *);

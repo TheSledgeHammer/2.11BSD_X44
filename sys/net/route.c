@@ -152,6 +152,7 @@ static int rtdeletemsg(struct rtentry *);
 static int rtflushclone1(struct radix_node *, void *);
 static void rtflushclone(struct radix_node_head *, struct rtentry *);
 static void rt_draincache(void);
+static int rtioctl_sc(u_long, struct rtentry *, struct sockaddr *, struct sockaddr *, struct sockaddr *, int, sa_family_t);
 
 void
 rtable_init(table)
@@ -449,10 +450,37 @@ rtflushclone(rnh, parent)
 	rnh->rnh_walktree(rnh, rtflushclone1, (void *)parent);
 }
 
+static int
+rtioctl_sc(req, rt, dst, netmask, gateway, flags, af)
+	u_long req;
+	struct rtentry *rt;
+	struct sockaddr *dst, *netmask, *gateway;
+	int flags;
+	sa_family_t af;
+{
+	if (rt == NULL) {
+		return (EHOSTUNREACH);
+	}
+
+	if ((flags & RTF_HOST) == 0) {
+		if (af >= AF_UNSPEC && af < AF_MAX) {
+			if ((dst == NULL) || (netmask == NULL) || (gateway == NULL)) {
+				return (EHOSTUNREACH);
+			} else {
+				if ((dst != NULL) && (dst->sa_family != af)) {
+					return (EAFNOSUPPORT);
+				}
+				netmask->sa_family = af;
+				gateway->sa_family = af;
+			}
+		}
+	}
+	return (rtrequest(req, dst, gateway, netmask, flags, &rt));
+}
+
 /*
  * Routing table ioctl interface.
  */
-
 int
 rtioctl(req, data, p)
 	u_long req;
@@ -462,14 +490,22 @@ rtioctl(req, data, p)
 	struct rtentry *rt;
 	struct sockaddr *dst, *gateway, *netmask;
 	int error, flags;
+	sa_family_t family;
+
+	error = suser1(p->p_ucred, &p->p_acflag);
+	if (error) {
+		return (error);
+	}
 
 	rt = (struct rtentry *)data;
 	dst = rt_key(rt);
 	gateway = rt->rt_gateway;
 	netmask = rt_mask(rt);
 	flags = rt->rt_flags;
+	family = dst->sa_family;
 
-	error = rtrequest(req, dst, gateway, netmask, flags, &rt);
+	error = rtioctl_sc(req, rt, dst, gateway, netmask, flags, family);
+	//error = rtrequest(req, dst, gateway, netmask, flags, &rt);
 	return (error);
 	//return (EOPNOTSUPP);
 }

@@ -42,6 +42,7 @@ __RCSID("$NetBSD: pidfile.c,v 1.7 2002/05/22 07:31:45 itojun Exp $");
 #endif
 
 #include <sys/param.h>
+
 #include <paths.h>
 #include <stdlib.h>
 #include <stdio.h>

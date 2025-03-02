@@ -30,7 +30,7 @@ struct td_proc_st {
 struct td_thread_st {
 	td_proc_t *proc;
 	caddr_t addr;
-	lwpid_t lwp;
+	int32_t lwp;
 	PTQ_ENTRY(td_thread_st)	list;
 };
 
@@ -41,9 +41,9 @@ struct td_sync_st {
 	PTQ_ENTRY(td_sync_st) list;
 };
 
-#define READ(proc, addr, buf, size) ((proc)->cb->proc_read((proc)->arg, (addr), (buf), (size)))
-#define WRITE(proc, addr, buf, size) ((proc)->cb->proc_write((proc)->arg, (addr), (buf), (size)))
-#define LOOKUP(proc, sym, addr) ((proc)->cb->proc_lookup((proc)->arg, (sym), (addr)))
-#define REGSIZE(proc, regset, size) ((proc)->cb->proc_regsize((proc)->arg, (regset), (size)))
+#define READ(proc, addr, buf, size) 	((proc)->cb->proc_read((proc)->arg, (addr), (buf), (size)))
+#define WRITE(proc, addr, buf, size) 	((proc)->cb->proc_write((proc)->arg, (addr), (buf), (size)))
+#define LOOKUP(proc, sym, addr) 		((proc)->cb->proc_lookup((proc)->arg, (sym), (addr)))
+#define REGSIZE(proc, regset, size) 	((proc)->cb->proc_regsize((proc)->arg, (regset), (size)))
 #define GETREGS(proc, regset, lwp, buf) ((proc)->cb->proc_getregs((proc)->arg, (regset), (lwp), (buf)))
 #define SETREGS(proc, regset, lwp, buf) ((proc)->cb->proc_setregs((proc)->arg, (regset), (lwp), (buf)))

@@ -89,13 +89,28 @@
 #define	PS	sEFLAGS
 #define	R0	sEDX
 #define	R1	sECX
+
 /*
  * Registers accessible to ptrace(2) syscall for debugger
  */
 #ifdef IPCREG
 #define	NIPCREG 14
-int ipcreg[NIPCREG] =
-  { tES,tDS,tEDI,tESI,tEBP,tEBX,tEDX,tECX,tEAX,tEIP,tCS,tEFLAGS,tESP,tSS };
+int ipcreg[NIPCREG] = {
+		tES,
+		tDS,
+		tEDI,
+		tESI,
+		tEBP,
+		tEBX,
+		tEDX,
+		tECX,
+		tEAX,
+		tEIP,
+		tCS,
+		tEFLAGS,
+		tESP,
+		tSS
+};
 #endif
 
 /*

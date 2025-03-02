@@ -45,16 +45,17 @@ static char sccsid[] = "@(#)login_tty.c	8.1 (Berkeley) 6/4/93";
 #include <util.h>
 
 int
-login_tty(fd)
-	int fd;
+login_tty(int fd)
 {
 	(void) setsid();
-	if (ioctl(fd, TIOCSCTTY, (char *)NULL) == -1)
+	if (ioctl(fd, TIOCSCTTY, NULL) == -1) {
 		return (-1);
+	}
 	(void) dup2(fd, STDIN_FILENO);
 	(void) dup2(fd, STDOUT_FILENO);
 	(void) dup2(fd, STDERR_FILENO);
-	if (fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO)
+	if (fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO) {
 		(void) close(fd);
+	}
 	return (0);
 }

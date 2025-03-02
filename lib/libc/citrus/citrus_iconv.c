@@ -58,76 +58,76 @@ int get_state_desc_gen(struct _citrus_iconv_std_encoding *, int *);
 void
 save_encoding_state(struct _citrus_iconv_std_encoding *se)
 {
-	frune_save_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
+	_citrus_frune_save_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
 }
 
 void
 restore_encoding_state(struct _citrus_iconv_std_encoding *se)
 {
-	frune_restore_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
+	_citrus_frune_restore_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
 }
 
 void
 init_encoding_state(struct _citrus_iconv_std_encoding *se)
 {
-	frune_init_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
+	_citrus_frune_init_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
 }
 
 int
 mbtocsx(struct _citrus_iconv_std_encoding *se, _csid_t *csid, _index_t *idx, const char **s, size_t n,	size_t *nresult)
 {
-	struct frune_encoding *fe;
+	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
 	fe->fe_state = TO_STATE(se->se_ps);
-	return (frune_mbtocsx(fe, csid, idx, s, n, nresult));
+	return (_citrus_frune_mbtocsx(fe, csid, idx, s, n, nresult));
 }
 
 int
 cstombx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, _csid_t csid, _index_t idx, size_t *nresult)
 {
-	struct frune_encoding *fe;
+	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
 	fe->fe_state = TO_STATE(se->se_ps);
-	return (frune_cstombx(fe, s, n, csid, idx, nresult));
+	return (_citrus_frune_cstombx(fe, s, n, csid, idx, nresult));
 }
 
 int
 wctombx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, _wc_t wc, size_t *nresult)
 {
-	struct frune_encoding *fe;
+	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
 	fe->fe_state = TO_STATE(se->se_ps);
-	return (frune_wctombx(fe, s, n, wc, nresult));
+	return (_citrus_frune_wctombx(fe, s, n, wc, nresult));
 }
 
 int
 put_state_resetx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, size_t *nresult)
 {
-	struct frune_encoding *fe;
+	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
 	fe->fe_state = TO_STATE(se->se_ps);
-	return (frune_put_state_resetx(fe, s, n, nresult));
+	return (_citrus_frune_put_state_resetx(fe, s, n, nresult));
 }
 
 int
 get_state_desc_gen(struct _citrus_iconv_std_encoding *se, int *rstate)
 {
-	struct frune_encoding *fe;
+	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
 	fe->fe_state = TO_STATE(se->se_ps);
-	return (frune_get_state_desc_gen(fe, rstate));
+	return (_citrus_frune_get_state_desc_gen(fe, rstate));
 }
 
 /*
  * init encoding context
  */
 int
-init_encoding(struct _citrus_iconv_std_encoding *se, struct frune_encoding *fe, void *ps1, void *ps2)
+init_encoding(struct _citrus_iconv_std_encoding *se, struct _citrus_frune_encoding *fe, void *ps1, void *ps2)
 {
 	int ret;
 
@@ -337,11 +337,11 @@ _citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_shared *ci, const char 
 		goto err2;
 	}
 
-	ret = frune_open(&is->is_src_encoding, esdbsrc.db_encname, esdbsrc.db_variable, esdbsrc.db_len_variable);
+	ret = _citrus_frune_open(&is->is_src_encoding, esdbsrc.db_encname, esdbsrc.db_variable, esdbsrc.db_len_variable);
 	if (ret) {
 		goto err3;
 	}
-	ret = frune_open(&is->is_dst_encoding, esdbdst.db_encname, esdbdst.db_variable, esdbdst.db_len_variable);
+	ret = _citrus_frune_open(&is->is_dst_encoding, esdbdst.db_encname, esdbdst.db_variable, esdbdst.db_len_variable);
 	if (ret) {
 		goto err4;
 	}
@@ -360,9 +360,9 @@ _citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_shared *ci, const char 
 	return (0);
 
 err5:
-	frune_close(is->is_dst_encoding);
+	_citrus_frune_close(is->is_dst_encoding);
 err4:
-	frune_close(is->is_src_encoding);
+	_citrus_frune_close(is->is_src_encoding);
 err3:
 	_citrus_esdb_close(&esdbdst);
 err2:

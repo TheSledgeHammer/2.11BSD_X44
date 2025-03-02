@@ -35,14 +35,13 @@ static char sccsid[] = "%W% (Berkeley) %G%";
 typedef struct utmp UTMP;
 
 int
-logout(line)
-	register char *line;
+logout(const char *line)
 {
 	register int fd;
 	UTMP ut;
 	int rval;
-	off_t lseek();
-	time_t time();
+	//off_t lseek();
+	//time_t time();
 
 	if ((fd = open(_PATH_UTMP, O_RDWR)) < 0)
 		return(0);

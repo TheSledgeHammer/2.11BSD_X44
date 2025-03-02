@@ -33,7 +33,7 @@
  * encoding
  */
 struct _citrus_iconv_std_encoding {
-	struct frune_encoding 			*se_handle;
+	struct _citrus_frune_encoding 	*se_handle;
 	void 					*se_ps;
 	void 					*se_pssaved;
 };
@@ -63,8 +63,8 @@ TAILQ_HEAD(_citrus_iconv_std_src_list, _citrus_iconv_std_src);
  * iconv_std handle
  */
 struct _citrus_iconv_std_shared {
-	struct frune_encoding 			*is_src_encoding;
-	struct frune_encoding 			*is_dst_encoding;
+	struct _citrus_frune_encoding 		*is_src_encoding;
+	struct _citrus_frune_encoding 		*is_dst_encoding;
 	struct _citrus_iconv_std_src_list	is_srcs;
 	int					is_use_invalid;
 	_citrus_wc_t				is_invalid;

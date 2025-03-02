@@ -34,7 +34,7 @@
 #define _CITRUS_FRUNE_H_
 
 /* frune */
-struct frune_encoding {
+struct _citrus_frune_encoding {
 	_ENCODING_INFO 		*fe_info;
 	_ENCODING_STATE 	*fe_state;
 	_RuneLocale		*fe_runelocale;
@@ -42,16 +42,16 @@ struct frune_encoding {
 
 /* prototypes */
 __BEGIN_DECLS
-int frune_open(struct frune_encoding **, char *, void *, size_t);
-void frune_close(struct frune_encoding *);
-void frune_save_encoding_state(struct frune_encoding *, void *, void *);
-void frune_restore_encoding_state(struct frune_encoding *, void *, void *);
-void frune_init_encoding_state(struct frune_encoding *, void *);
-int frune_mbtocsx(struct frune_encoding *, _csid_t *, _index_t *, const char **, size_t, size_t *);
-int frune_cstombx(struct frune_encoding *, char *, size_t, _csid_t, _index_t, size_t *);
-int frune_wctombx(struct frune_encoding *, char *, size_t, _wc_t, size_t *);
-int frune_put_state_resetx(struct frune_encoding *, char *, size_t, size_t *);
-int frune_get_state_desc_gen(struct frune_encoding *, int *);
+int _citrus_frune_open(struct _citrus_frune_encoding **, char *, void *, size_t);
+void _citrus_frune_close(struct _citrus_frune_encoding *);
+void _citrus_frune_save_encoding_state(struct _citrus_frune_encoding *, void *, void *);
+void _citrus_frune_restore_encoding_state(struct _citrus_frune_encoding *, void *, void *);
+void _citrus_frune_init_encoding_state(struct _citrus_frune_encoding *, void *);
+int _citrus_frune_mbtocsx(struct _citrus_frune_encoding *, _csid_t *, _index_t *, const char **, size_t, size_t *);
+int _citrus_frune_cstombx(struct _citrus_frune_encoding *, char *, size_t, _csid_t, _index_t, size_t *);
+int _citrus_frune_wctombx(struct _citrus_frune_encoding *, char *, size_t, _wc_t, size_t *);
+int _citrus_frune_put_state_resetx(struct _citrus_frune_encoding *, char *, size_t, size_t *);
+int _citrus_frune_get_state_desc_gen(struct _citrus_frune_encoding *, int *);
 __END_DECLS
 
 #endif /* _CITRUS_FRUNE_H_ */

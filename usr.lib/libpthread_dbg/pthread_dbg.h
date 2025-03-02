@@ -107,23 +107,23 @@ typedef struct {
 	} sync_data;
 } td_sync_info_t;
 
-#define	TD_SYNC_UNKNOWN	0
-#define	TD_SYNC_MUTEX	1	/* pthread_mutex_t */
-#define TD_SYNC_COND	2	/* pthread_cond_t */
-#define TD_SYNC_SPIN	3	/* pthread_spinlock_t */
-#define TD_SYNC_JOIN	4	/* thread being joined */
-#define TD_SYNC_RWLOCK	5	/* pthread_rwlock_t */
+#define	TD_SYNC_UNKNOWN		0
+#define	TD_SYNC_MUTEX		1	/* pthread_mutex_t */
+#define TD_SYNC_COND		2	/* pthread_cond_t */
+#define TD_SYNC_SPIN		3	/* pthread_spinlock_t */
+#define TD_SYNC_JOIN		4	/* thread being joined */
+#define TD_SYNC_RWLOCK		5	/* pthread_rwlock_t */
 
 /* Error return codes */
-#define TD_ERR_OK		0
-#define TD_ERR_ERR		1  /* Generic error */
+#define TD_ERR_OK			0
+#define TD_ERR_ERR			1  /* Generic error */
 #define TD_ERR_NOSYM		2  /* Symbol not found (proc_lookup) */
 #define TD_ERR_NOOBJ		3  /* No object matched the request */
 #define TD_ERR_BADTHREAD	4  /* Request is not meaningful for that thread */
 #define TD_ERR_INUSE		5  /* The process is already being debugged */
 #define TD_ERR_NOLIB		6  /* The process is not using libpthread */
 #define TD_ERR_NOMEM		7  /* malloc() failed */
-#define TD_ERR_IO		8  /* A callback failed to read or write */
+#define TD_ERR_IO			8  /* A callback failed to read or write */
 #define TD_ERR_INVAL		9  /* Invalid parameter */
 
 /* Make a connection to a threaded process */

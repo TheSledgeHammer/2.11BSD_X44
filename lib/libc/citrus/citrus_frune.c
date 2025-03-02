@@ -42,9 +42,9 @@
  * open frune
  */
 int
-frune_open(struct frune_encoding **rfe, char *encoding, void *variable, size_t lenvar)
+_citrus_frune_open(struct _citrus_frune_encoding **rfe, char *encoding, void *variable, size_t lenvar)
 {
-	struct frune_encoding *fe;
+	struct _citrus_frune_encoding *fe;
 	int ret;
 
 	fe = malloc(sizeof(*fe));
@@ -87,7 +87,7 @@ frune_open(struct frune_encoding **rfe, char *encoding, void *variable, size_t l
  * close frune
  */
 void
-frune_close(struct frune_encoding *fe)
+_citrus_frune_close(struct _citrus_frune_encoding *fe)
 {
 	if (fe->fe_runelocale != NULL) {
 		if (fe->fe_info != NULL) {
@@ -105,7 +105,7 @@ frune_close(struct frune_encoding *fe)
  * convenience routines for translating frunes to stdenc.
  */
 void
-frune_save_encoding_state(struct frune_encoding *fe, void *ps, void *pssaved)
+_citrus_frune_save_encoding_state(struct _citrus_frune_encoding *fe, void *ps, void *pssaved)
 {
 	if (ps) {
 		memcpy(pssaved, ps, _citrus_stdenc_get_state_size(fe->fe_info));
@@ -113,7 +113,7 @@ frune_save_encoding_state(struct frune_encoding *fe, void *ps, void *pssaved)
 }
 
 void
-frune_restore_encoding_state(struct frune_encoding *fe, void *ps, void *pssaved)
+_citrus_frune_restore_encoding_state(struct _citrus_frune_encoding *fe, void *ps, void *pssaved)
 {
 	if (ps) {
 		memcpy(ps, pssaved, _citrus_stdenc_get_state_size(fe->fe_info));
@@ -121,7 +121,7 @@ frune_restore_encoding_state(struct frune_encoding *fe, void *ps, void *pssaved)
 }
 
 void
-frune_init_encoding_state(struct frune_encoding *fe, void *ps)
+_citrus_frune_init_encoding_state(struct _citrus_frune_encoding *fe, void *ps)
 {
 	if (ps) {
 		_citrus_stdenc_init_state(fe->fe_info, fe->fe_state);
@@ -129,31 +129,31 @@ frune_init_encoding_state(struct frune_encoding *fe, void *ps)
 }
 
 int
-frune_mbtocsx(struct frune_encoding *fe, _csid_t *csid, _index_t *idx, const char **s, size_t n, size_t *nresult)
+_citrus_frune_mbtocsx(struct _citrus_frune_encoding *fe, _csid_t *csid, _index_t *idx, const char **s, size_t n, size_t *nresult)
 {
 	return (_citrus_stdenc_mbtocs(fe->fe_info, csid, idx, s, n, fe->fe_state, nresult));
 }
 
 int
-frune_cstombx(struct frune_encoding *fe, char *s, size_t n, _csid_t csid, _index_t idx, size_t *nresult)
+_citrus_frune_cstombx(struct _citrus_frune_encoding *fe, char *s, size_t n, _csid_t csid, _index_t idx, size_t *nresult)
 {
 	return (_citrus_stdenc_cstomb(fe->fe_info, s, n, csid, idx, fe->fe_state, nresult));
 }
 
 int
-frune_wctombx(struct frune_encoding *fe, char *s, size_t n, _wc_t wc, size_t *nresult)
+_citrus_frune_wctombx(struct _citrus_frune_encoding *fe, char *s, size_t n, _wc_t wc, size_t *nresult)
 {
 	return (_citrus_stdenc_wctomb(fe->fe_info, s, n, wc, fe->fe_state, nresult));
 }
 
 int
-frune_put_state_resetx(struct frune_encoding *fe, char *s, size_t n, size_t *nresult)
+_citrus_frune_put_state_resetx(struct _citrus_frune_encoding *fe, char *s, size_t n, size_t *nresult)
 {
 	return (_citrus_stdenc_put_state_reset(fe->fe_info, s, n, fe->fe_state, nresult));
 }
 
 int
-frune_get_state_desc_gen(struct frune_encoding *fe, int *rstate)
+_citrus_frune_get_state_desc_gen(struct _citrus_frune_encoding *fe, int *rstate)
 {
 	int ret, state;
 

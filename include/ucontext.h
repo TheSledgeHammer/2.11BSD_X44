@@ -40,6 +40,7 @@
 #define _UCONTEXT_H_
 
 #include <sys/cdefs.h>
+#include <sys/types.h>
 #include <sys/ucontext.h>
 
 __BEGIN_DECLS
