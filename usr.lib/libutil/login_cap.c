@@ -615,8 +615,7 @@ setusercontext(login_cap_t *lc, struct passwd *pwd, uid_t uid, u_int flags)
 	}
 
 	if (flags & LOGIN_SETUMASK) {
-		p = login_getcapnum(lc, "umask", (quad_t) LOGIN_DEFUMASK,
-												   (quad_t) LOGIN_DEFUMASK);
+		p = login_getcapnum(lc, "umask", (quad_t) LOGIN_DEFUMASK, (quad_t) LOGIN_DEFUMASK);
 		umask((mode_t)p);
 	}
 
