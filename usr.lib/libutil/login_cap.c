@@ -86,7 +86,7 @@ login_getclass(const char *class)
 	}
 
 	if ((lc = malloc(sizeof(login_cap_t))) == NULL) {
-		syslog(LOG_ERR, "%s:%d malloc: %m", __FILE__, __LINE__);
+		syslog(LOG_ERR, "%s:%d malloc: ", __FILE__, __LINE__);
 		return (0);
 	}
 
@@ -98,7 +98,7 @@ login_getclass(const char *class)
 	}
 
 	if ((lc->lc_class = strdup(class)) == NULL) {
-		syslog(LOG_ERR, "%s:%d strdup: %m", __FILE__, __LINE__);
+		syslog(LOG_ERR, "%s:%d strdup: ", __FILE__, __LINE__);
 		free(lc);
 		return (0);
 	}
@@ -111,7 +111,7 @@ login_getclass(const char *class)
 	if (classfiles[0] == NULL)
 		return(lc);
 
-	if ((res = cgetent(&lc->lc_cap, classfiles, lc->lc_class)) != 0) {
+	if ((res = cgetent(&lc->lc_cap, __UNCONST(classfiles), lc->lc_class)) != 0) {
 		lc->lc_cap = 0;
 		switch (res) {
 		case 1:
@@ -127,7 +127,7 @@ login_getclass(const char *class)
 			syslog(LOG_ERR, "%s: unknown class", lc->lc_class);
 			break;
 		case -2:
-			syslog(LOG_ERR, "%s: getting class information: %m", lc->lc_class);
+			syslog(LOG_ERR, "%s: getting class information: ", lc->lc_class);
 			break;
 		case -3:
 			syslog(LOG_ERR, "%s: 'tc' reference loop", lc->lc_class);
@@ -173,7 +173,7 @@ login_getcapstr(login_cap_t *lc, const char *cap, char *def, char *e)
 		}
 		return (def);
 	case -2:
-		syslog(LOG_ERR, "%s: getting capability %s: %m", lc->lc_class, cap);
+		syslog(LOG_ERR, "%s: getting capability %s: ", lc->lc_class, cap);
 		if (res) {
 			free(res);
 		}
@@ -213,7 +213,7 @@ login_getcaptime(login_cap_t *lc, const char *cap, quad_t def, quad_t e)
 		}
 		return (def);
 	case -2:
-		syslog(LOG_ERR, "%s: getting capability %s: %m",
+		syslog(LOG_ERR, "%s: getting capability %s: ",
 		    lc->lc_class, cap);
 		errno = ERANGE;
 		if (res) {
@@ -309,7 +309,7 @@ login_getcapnum(login_cap_t *lc, const char *cap, quad_t def, quad_t e)
 			free(res);
 		return (def);
 	case -2:
-		syslog(LOG_ERR, "%s: getting capability %s: %m",
+		syslog(LOG_ERR, "%s: getting capability %s:",
 		    lc->lc_class, cap);
 		errno = ERANGE;
 		if (res)
@@ -365,7 +365,7 @@ login_getcapsize(login_cap_t *lc, const char *cap, quad_t def, quad_t e)
 		}
 		return (def);
 	case -2:
-		syslog(LOG_ERR, "%s: getting capability %s: %m", lc->lc_class, cap);
+		syslog(LOG_ERR, "%s: getting capability %s:", lc->lc_class, cap);
 		errno = ERANGE;
 		if (res) {
 			free(res);
@@ -463,7 +463,7 @@ gsetrl(login_cap_t *lc, int what, const char *name, int type)
 	sprintf(name_max, "%s-max", name);
 
 	if (getrlimit(what, &r)) {
-		syslog(LOG_ERR, "getting resource limit: %m");
+		syslog(LOG_ERR, "getting resource limit: ");
 		return (-1);
 	}
 
@@ -494,7 +494,7 @@ gsetrl(login_cap_t *lc, int what, const char *name, int type)
 	}
 
 	if (setrlimit(what, &rl)) {
-		syslog(LOG_ERR, "%s: setting resource limit %s: %m",
+		syslog(LOG_ERR, "%s: setting resource limit %s: ",
 		    lc->lc_class, name);
 		return (-1);
 	}
@@ -506,7 +506,7 @@ gsetrl(login_cap_t *lc, int what, const char *name, int type)
 static int
 setuserenv(login_cap_t *lc)
 {
-	char *stop = ", \t";
+	const char *stop = ", \t";
 	int i, count;
 	char *ptr;
 	char **res;
@@ -551,7 +551,7 @@ setuserenv(login_cap_t *lc)
 			if ((ptr = strchr(res[i], '=')) != NULL) {
 				*ptr++ = '\0';
 			} else {
-				ptr = "";
+				ptr = NULL;
 			}
 			setenv(res[i], ptr, 1);
 		}
@@ -610,7 +610,7 @@ setusercontext(login_cap_t *lc, struct passwd *pwd, uid_t uid, u_int flags)
 		p = login_getcapnum(lc, "priority", 0LL, 0LL);
 
 		if (setpriority(PRIO_PROCESS, 0, (int)p) < 0) {
-			syslog(LOG_ERR, "%s: setpriority: %m", lc->lc_class);
+			syslog(LOG_ERR, "%s: setpriority: ", lc->lc_class);
 		}
 	}
 
@@ -622,13 +622,13 @@ setusercontext(login_cap_t *lc, struct passwd *pwd, uid_t uid, u_int flags)
 
 	if (flags & LOGIN_SETGROUP) {
 		if (setgid(pwd->pw_gid) < 0) {
-			syslog(LOG_ERR, "setgid(%d): %m", pwd->pw_gid);
+			syslog(LOG_ERR, "setgid(%d): ", pwd->pw_gid);
 			login_close(flc);
 			return (-1);
 		}
 
 		if (initgroups(pwd->pw_name, pwd->pw_gid) < 0) {
-			syslog(LOG_ERR, "initgroups(%s,%d): %m",
+			syslog(LOG_ERR, "initgroups(%s,%d): ",
 			    pwd->pw_name, pwd->pw_gid);
 			login_close(flc);
 			return (-1);
@@ -637,7 +637,7 @@ setusercontext(login_cap_t *lc, struct passwd *pwd, uid_t uid, u_int flags)
 
 	if (flags & LOGIN_SETLOGIN) {
 		if (setlogin(pwd->pw_name) < 0) {
-			syslog(LOG_ERR, "setlogin(%s) failure: %m",
+			syslog(LOG_ERR, "setlogin(%s) failure: ",
 			    pwd->pw_name);
 			login_close(flc);
 			return (-1);
@@ -646,7 +646,7 @@ setusercontext(login_cap_t *lc, struct passwd *pwd, uid_t uid, u_int flags)
 
 	if (flags & LOGIN_SETUSER) {
 		if (setuid(uid) < 0) {
-			syslog(LOG_ERR, "setuid(%d): %m", uid);
+			syslog(LOG_ERR, "setuid(%d): ", uid);
 			login_close(flc);
 			return (-1);
 		}
@@ -669,7 +669,8 @@ setuserpath(login_cap_t *lc, const char *home)
 {
 	size_t hlen, plen;
 	int cnt = 0;
-	const char *path;
+	char *path;
+    const char *cpath;
 	char *p, *q;
 
 	_DIAGASSERT(home != NULL);
@@ -711,13 +712,14 @@ setuserpath(login_cap_t *lc, const char *home)
 				q += plen;
 			}
 			*q = '\0';
+            cpath = path;
 		} else {
-			path = _PATH_DEFPATH;
+			cpath = _PATH_DEFPATH;
 		}
 	} else {
-		path = _PATH_DEFPATH;
+		cpath = _PATH_DEFPATH;
 	}
-	if (setenv("PATH", path, 1)) {
+	if (setenv("PATH", cpath, 1)) {
 		warn("could not set PATH");
 	}
 
