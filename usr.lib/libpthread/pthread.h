@@ -214,8 +214,8 @@ __END_DECLS
 
 __BEGIN_DECLS
 int	pthread_execve(const char *, char *const [], char *const []);
-int pthread_kill(pthread_t, int);
-int pthread_nanosleep(const struct timespec *, struct timespec *);
+int 	pthread_kill(pthread_t, int);
+int 	pthread_nanosleep(const struct timespec *, struct timespec *);
 int	pthread_sigaction(int, const struct sigaction *, struct sigaction *);
 int	pthread_sigmask(int, const sigset_t *, sigset_t *);
 int	pthread_sigsuspend(const sigset_t *);
