@@ -670,7 +670,7 @@ setuserpath(login_cap_t *lc, const char *home)
 	size_t hlen, plen;
 	int cnt = 0;
 	char *path;
-    const char *cpath;
+    	const char *cpath;
 	char *p, *q;
 
 	_DIAGASSERT(home != NULL);
