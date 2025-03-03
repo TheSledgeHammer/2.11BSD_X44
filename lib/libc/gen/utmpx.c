@@ -309,6 +309,45 @@ fail:
 	return u;
 }
 
+#ifdef notyet
+static struct utmpx *utmp_wait1(const struct utmpx *, pid_t);
+
+static struct utmpx *
+utmp_wait1(utx, pid)
+	const struct utmpx *utx;
+    pid_t pid;
+{
+    union wait w;
+    int status;
+
+    status = (-1 ? -1 : w.w_status);
+    if (waitpid(pid, (int *)&w, 0) == status) {
+        return (NULL);
+    }
+    if (WIFEXITED(w) && WEXITSTATUS(w) == 0) {
+        return (memcpy(&ut, utx, sizeof(ut)));
+    }
+    return (NULL);
+}
+#endif
+
+static struct utmpx *utmp_wait2(const struct utmpx *, pid_t);
+
+static struct utmpx *
+utmp_wait2(utx, pid)
+	const struct utmpx *utx;
+    pid_t pid;
+{
+    int status;
+
+    if (waitpid(pid, &status, 0) == -1) {
+        return (NULL);
+    }
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        return (memcpy(&ut, utx, sizeof(ut)));
+    }
+    return (NULL);
+}
 
 static struct utmpx *
 utmp_update(utx)
@@ -316,7 +355,8 @@ utmp_update(utx)
 {
 	char buf[sizeof(*utx) * 4 + 1];
 	pid_t pid;
-	union wait w;
+//	union wait w;
+//    int status;
 
 	_DIAGASSERT(utx != NULL);
 
@@ -331,11 +371,18 @@ utmp_update(utx)
 //	case -1:
 //		return NULL;
 	default:
+/*
+        if (waitpid(pid, &status, 0) == -1)
+            return NULL;
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+            return memcpy(&ut, utx, sizeof(ut));
+
 		if (waitpid(pid, (int *)&w, 0) == (-1 ? -1 : w.w_status))
 			return NULL;
 		if (WIFEXITED(w) && WEXITSTATUS(w) == 0)
 			return memcpy(&ut, utx, sizeof(ut));
-		return NULL;
+*/
+		return utmp_wait2(utx, pid);
 	}
 }
 
