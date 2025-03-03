@@ -159,7 +159,6 @@ static int tzparse(const char *, struct state *const);
 static void gmtload(struct state *const);
 static void gmtcheck(void);
 static struct tm *localtimesub(const time_t *, const struct tm *);
-static struct tm *gmtsub(clock, offset, tmp);
 static struct tm *gmtsub(const time_t *, long, struct tm *);
 
 char *
