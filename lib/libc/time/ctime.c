@@ -28,6 +28,45 @@ static char sccsid[] = "@(#)ctime.c	1.1 (Berkeley) 3/25/87";
 #include "private.h"
 
 
+#ifndef TZ_ABBR_MAX_LEN
+#define TZ_ABBR_MAX_LEN	16
+#endif /* !defined TZ_ABBR_MAX_LEN */
+
+#ifndef TZ_ABBR_CHAR_SET
+#define TZ_ABBR_CHAR_SET \
+	"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :+-._"
+#endif /* !defined TZ_ABBR_CHAR_SET */
+
+#ifndef TZ_ABBR_ERR_CHAR
+#define TZ_ABBR_ERR_CHAR	'_'
+#endif /* !defined TZ_ABBR_ERR_CHAR */
+
+#ifndef WILDABBR
+/*
+** Someone might make incorrect use of a time zone abbreviation:
+**	1.	They might reference tzname[0] before calling tzset (explicitly
+**		or implicitly).
+**	2.	They might reference tzname[1] before calling tzset (explicitly
+**		or implicitly).
+**	3.	They might reference tzname[1] after setting to a time zone
+**		in which Daylight Saving Time is never observed.
+**	4.	They might reference tzname[0] after setting to a time zone
+**		in which Standard Time is never observed.
+**	5.	They might reference tm.tm_zone after calling offtime.
+** What's best to do in the above cases is open to debate;
+** for now, we just set things up so that in any of the five cases
+** WILDABBR is used. Another possibility: initialize tzname[0] to the
+** string "tzname[0] used before set", and similarly for the other cases.
+** And another: initialize tzname[0] to "ERA", with an explanation in the
+** manual page of what this "time zone abbreviation" means (doing this so
+** that tzname[0] has the "normal" length of three characters).
+*/
+#define WILDABBR	"   "
+#endif /* !defined WILDABBR */
+
+static char		wildabbr[] = WILDABBR;
+
+
 /*
 ** Some systems only handle "%.2d"; others only handle "%02d";
 ** "%02.2d" makes (most) everybody happy.
@@ -70,19 +109,27 @@ static char sccsid[] = "@(#)ctime.c	1.1 (Berkeley) 3/25/87";
 #define MAX_ASCTIME_BUF_SIZE	(2*3+5*INT_STRLEN_MAXIMUM(int)+7+2+1+1)
 
 struct ttinfo {					/* time type information */
-	long			tt_gmtoff;	/* GMT offset in seconds */
-	int				tt_isdst;	/* used to set tm_isdst */
-	int				tt_abbrind;	/* abbreviation list index */
+	long		tt_gmtoff;	/* GMT offset in seconds */
+	int		tt_isdst;	/* used to set tm_isdst */
+	int		tt_abbrind;	/* abbreviation list index */
+};
+
+struct lsinfo {					/* leap second information */
+	time_t		ls_trans;	/* transition time */
+	int_fast32_t	ls_corr;	/* correction to apply */
 };
 
 struct state {
-	int				timecnt;
-	int				typecnt;
-	int				charcnt;
-	time_t			ats[TZ_MAX_TIMES];
+	int		leapcnt;
+	int		timecnt;
+	int		typecnt;
+	int		charcnt;
+	time_t		ats[TZ_MAX_TIMES];
 	unsigned char	types[TZ_MAX_TIMES];
 	struct ttinfo	ttis[TZ_MAX_TYPES];
-	char			chars[TZ_MAX_CHARS + 1];
+	char		chars[TZ_MAX_CHARS + 1];
+
+	struct lsinfo	lsis[TZ_MAX_LEAPS];
 };
 
 const char *tzname[2] = {
@@ -98,12 +145,22 @@ int			daylight = 0;
 static struct state	s;
 static int	tz_is_set;
 
-struct tm 	*offtime(const time_t *, long);
+static struct state *const gmtptr = &s;
+
+//struct tm 	*offtime(const time_t *, long);
+//static struct tm *offtime_r(const time_t *, long, struct tm *);
 
 static long detzcode(const char *);
 static int tzload(const char *);
 static int tzsetkernel(void);
 static void tzsetgmt(void);
+
+static int tzparse(const char *, struct state *const);
+static void gmtload(struct state *const);
+static void gmtcheck(void);
+static struct tm *localtimesub(const time_t *, const struct tm *);
+static struct tm *gmtsub(clock, offset, tmp);
+static struct tm *gmtsub(const time_t *, long, struct tm *);
 
 char *
 ctime(t)
@@ -277,6 +334,19 @@ tzload(name)
 }
 
 static int
+tzparse(name, sp)
+	const char *name;
+	struct state *const sp;
+{
+	if (sp != NULL) {
+		if ((tzload(name) != 0) && (sp == &s)) {
+			return (0);
+		}
+	}
+	return (-1);
+}
+
+static int
 tzsetkernel(void)
 {
 	struct timeval	tv;
@@ -328,12 +398,36 @@ tzset(void)
 	tzsetgmt();				/* GMT is default */
 }
 
-struct tm *
-localtime(timep)
+static void
+gmtload(struct state *const sp)
+{
+	if (tzload("GMT") != 0) {
+		(void) tzparse("GMT", sp);
+	}
+}
+
+static void
+gmtcheck(void)
+{
+	 static bool gmt_is_set;
+
+	 if (!gmt_is_set) {
+		 gmtptr = malloc(sizeof *gmtptr);
+	 }
+	 if (gmtptr) {
+		 gmtload(gmtptr);
+	 }
+	 gmt_is_set = true;
+}
+
+static struct tm *
+localtimesub(timep, tmp)
 	const time_t *timep;
+	const struct tm *tmp;
 {
 	register struct ttinfo *ttisp;
-	register struct tm *tmp;
+	//register struct tm *tmp;
+	register struct tm *result;
 	register int i;
 	time_t t;
 
@@ -359,7 +453,7 @@ localtime(timep)
 	 ** you'd replace the statement below with
 	 **	tmp = offtime((time_t) (t + ttisp->tt_gmtoff), 0L);
 	 */
-	tmp = offtime(&t, ttisp->tt_gmtoff);
+	result = offtime_r(&t, ttisp->tt_gmtoff, tmp);
 	tmp->tm_isdst = ttisp->tt_isdst;
 	tzname[tmp->tm_isdst] = &s.chars[ttisp->tt_abbrind];
 	tmp->tm_zone = &s.chars[ttisp->tt_abbrind];
@@ -367,15 +461,54 @@ localtime(timep)
 }
 
 struct tm *
+localtime_r(timep, tmp)
+	const time_t *timep;
+	struct tm *tmp;
+{
+	return localtimesub(timep, tmp);
+}
+
+struct tm *
+localtime(timep)
+	const time_t *timep;
+{
+	register struct tm 	tmp;
+
+	return localtime_r(timep, &tmp);
+}
+
+static struct tm *
+gmtsub(clock, offset, tmp)
+	const time_t *clock;
+	long		offset;
+	struct tm 	*tmp;
+{
+	register struct tm *result;
+
+	result = offtime_r(clock, offset, tmp);
+	if (result) {
+		tzname[0] = "GMT";
+		result->tm_zone = UNCONST(offset ? wildabbr : gmtptr ? gmtptr->chars : "GMT"); /* UCT ? */
+	}
+	return result;
+}
+
+struct tm *
+gmtime_r(timep, tmp)
+	time_t const *timep;
+	struct tm *tmp;
+{
+	gmtcheck();
+	return gmtsub(clock, 0L, tmp);
+}
+
+struct tm *
 gmtime(clock)
 	const time_t *clock;
 {
-	register struct tm *tmp;
+	register struct tm tmp;
 
-	tmp = offtime(clock, 0L);
-	tzname[0] = "GMT";
-	tmp->tm_zone = __UNCONST("GMT");		/* UCT ? */
-	return tmp;
+	return gmtime_r(clock, &tmp);
 }
 
 static int	mon_lengths[2][MONS_PER_YEAR] = {
@@ -389,18 +522,28 @@ static int	year_lengths[2] = {
 
 struct tm *
 offtime(clock, offset)
-	const time_t *	clock;
+	const time_t *clock;
 	long		offset;
 {
 	register struct tm 	*tmp;
+	static struct tm tm;
+
+	tmp = &tm;
+	return (offtime_r(clock, offset, tmp));
+}
+
+struct tm *
+offtime_r(clock, offset, tmp)
+	const time_t *clock;
+	long		offset;
+	struct tm 	*tmp;
+{
 	register long		days;
 	register long		rem;
 	register int		y;
 	register int		yleap;
 	register int        *ip;
-	static struct tm	tm;
 
-	tmp = &tm;
 	days = *clock / SECS_PER_DAY;
 	rem = *clock % SECS_PER_DAY;
 	rem += offset;

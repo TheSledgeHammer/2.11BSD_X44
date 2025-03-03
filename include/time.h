@@ -75,6 +75,9 @@ time_t 		time(time_t *);
 void 		tzset(void);
 #endif /* not ANSI */
 
+struct tm *gmtime_r(const time_t *, struct tm *);
+struct tm *localtime_r(const time_t *, struct tm *);
+
 #if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 char 		*strptime(const char * __restrict, const char * __restrict, struct tm * __restrict);
 #endif
@@ -109,6 +112,8 @@ size_t strftime_l(char * __restrict, size_t, const char * __restrict, const stru
 #endif
 
 #if defined(__BSD_VISIBLE)
+struct tm *offtime(const time_t *, long);
+struct tm *offtime_r(const time_t *, long, struct tm *);
 char *strptime_l(const char * __restrict, const char * __restrict, struct tm * __restrict, locale_t);
 #endif
 __END_DECLS
