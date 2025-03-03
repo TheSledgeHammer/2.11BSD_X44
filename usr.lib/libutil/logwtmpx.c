@@ -53,9 +53,7 @@ __RCSID("$NetBSD: logwtmpx.c,v 1.2 2003/08/07 16:44:59 agc Exp $");
 #include <util.h>
 
 void
-logwtmpx(line, name, host, status, type)
-	const char *line, *name, *host;
-	int status, type;
+logwtmpx(const char *line, const char *name, const char *host, int status, int type)
 {
 	struct utmpx ut;
 
@@ -64,9 +62,15 @@ logwtmpx(line, name, host, status, type)
 	_DIAGASSERT(host != NULL);
 
 	(void)memset(&ut, 0, sizeof(ut));
-	(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
-	(void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
-	(void)strncpy(ut.ut_host, host, sizeof(ut.ut_host));
+    if (strlen(line) <= strlen(ut.ut_line)) {
+        (void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
+    }
+    if (strlen(name) <= strlen(ut.ut_name)) {
+        (void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
+    }
+    if (strlen(host) <= strlen(ut.ut_line)) {
+        (void)strncpy(ut.ut_host, host, sizeof(ut.ut_host));
+    }
 	ut.ut_type = type;
 	if (WIFEXITED(status))
 		ut.ut_exit.e_exit = (uint16_t)WEXITSTATUS(status);

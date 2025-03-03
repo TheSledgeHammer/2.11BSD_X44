@@ -41,6 +41,12 @@ MAN=	efun.3 														\
 		raise_default_signal.3 secure_path.3 snprintb.3 			\
 		sockaddr_snprintf.3 stat_flags.3 ttymsg.3
 
+
+CPPFLAGS.sockaddr_snprintf.c+=-DHAVE_UTIL_H
+#CPPFLAGS.sockaddr_snprintf.c+=-DHAVE_NETATALK_AT_H
+CPPFLAGS.sockaddr_snprintf.c+=-DHAVE_NET_IF_DL_H
+LINTFLAGS.if_media.c+=	-X 351	# 'extern' declaration outside header
+
 COPTS.logwtmp.c+=	${GCC_NO_STRINGOP_TRUNCATION}
 COPTS.logwtmpx.c+=	${CC_WNO_STRINGOP_TRUNCATION}
 

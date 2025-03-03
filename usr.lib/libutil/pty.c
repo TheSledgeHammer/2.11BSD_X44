@@ -33,7 +33,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)pty.c	8.3 (Berkeley) 5/16/94";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -58,11 +60,7 @@ static char sccsid[] = "@(#)pty.c	8.3 (Berkeley) 5/16/94";
 #define TTY_NEW_SUFFIX	"ghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 int
-openpty(amaster, aslave, name, termp, winp)
-	int *amaster, *aslave;
-	char *name;
-	struct termios *termp;
-	struct winsize *winp;
+openpty(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp)
 {
 	static char line[] = "/dev/ptyXX";
 	register const char *cp1, *cp2, *cp;
@@ -118,11 +116,7 @@ openpty(amaster, aslave, name, termp, winp)
 }
 
 pid_t
-forkpty(amaster, name, termp, winp)
-	int *amaster;
-	char *name;
-	struct termios *termp;
-	struct winsize *winp;
+forkpty(int *amaster, char *name, struct termios *termp, struct winsize *winp)
 {
 	int master, slave, pid;
 

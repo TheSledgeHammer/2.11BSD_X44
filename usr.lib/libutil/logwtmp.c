@@ -17,7 +17,9 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)logwtmp.c	5.3 (Berkeley) 4/2/89";
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -25,26 +27,36 @@ static char sccsid[] = "@(#)logwtmp.c	5.3 (Berkeley) 4/2/89";
 #include <sys/time.h>
 #include <sys/stat.h>
 
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 #include <utmp.h>
+#include <util.h>
 
 void
-logwtmp(line, name, host)
-	char *line, *name, *host;
+logwtmp(const char *line, const char *name, const char *host)
 {
 	struct utmp ut;
 	struct stat buf;
 	int fd;
-	//time_t time();
-	//char *strncpy();
 
 	if ((fd = open(_PATH_WTMP, O_WRONLY|O_APPEND, 0)) < 0)
 		return;
 	if (!fstat(fd, &buf)) {
-		(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
-		(void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
-		(void)strncpy(ut.ut_host, host, sizeof(ut.ut_host));
+        if (strlen(line) <= strlen(ut.ut_line)) {
+            (void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
+        }
+        if (strlen(name) <= strlen(ut.ut_name)) {
+            (void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
+        }
+        if (strlen(host) <= strlen(ut.ut_line)) {
+            (void)strncpy(ut.ut_host, host, sizeof(ut.ut_host));
+        }
+//		(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
+//		(void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
+//		(void)strncpy(ut.ut_host, host, sizeof(ut.ut_host));
 		(void)time(&ut.ut_time);
-		if (write(fd, (char *)&ut, sizeof(struct utmp)) !=
+		if (write(fd, &ut, sizeof(struct utmp)) !=
 		    sizeof(struct utmp))
 			(void)ftruncate(fd, buf.st_size);
 	}
