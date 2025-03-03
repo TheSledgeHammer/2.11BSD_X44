@@ -62,17 +62,33 @@ union wait	{
 #define WNOHANG		1	/* dont hang in wait */
 #define WUNTRACED	2	/* tell about stopped, untraced children */
 
+#ifdef _KERNEL
+
 #define WIFSTOPPED(x)		((x).w_stopval == WSTOPPED)
 #define WIFSIGNALED(x)		((x).w_stopval != WSTOPPED && (x).w_termsig != 0)
-#define WTERMSIG(x)			((x).w_stopval)
+#define WTERMSIG(x)		((x).w_stopval)
 #define WIFEXITED(x)		((x).w_stopval != WSTOPPED && (x).w_termsig == 0)
 #define	WEXITSTATUS(x)		((x).w_retcode)
+
+#else /* !_KERNEL */
+
+/* Userspace Signals Conversion */
+#define	_W_INT(w)	        (*(int *)&(w))	/* convert union wait to int */
+#define	_WSTATUS(x)	        (_W_INT(x) & 0177)
+#define	_WSTOPPED           	WSTOPPED
+
+#define WIFSIGNALED(x)	    	(_WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0)
+#define WTERMSIG(x)	        (_WSTATUS(x))
+#define WIFEXITED(x)	    	(_WSTATUS(x) == 0)
+#define WEXITSTATUS(x)	    	(_W_INT(x) >> 8)
+
+#endif
 
 #define	W_STOPCODE(sig)		((sig << 8) | WSTOPPED)
 #define	W_EXITCODE(ret,sig)	((ret << 8) | (sig))
 
-#define	WAIT_ANY			(-1)
-#define	WAIT_MYPGRP			0
+#define	WAIT_ANY		(-1)
+#define	WAIT_MYPGRP		0
 
 #ifndef _KERNEL
 #include <sys/types.h>
