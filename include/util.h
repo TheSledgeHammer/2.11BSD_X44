@@ -93,6 +93,7 @@ void		logwtmpx(const char *, const char *, const char *, int, int);
 int			opendisk(const char *, int, char *, size_t, int);
 int			openpty(int *, int *, char *, struct termios *, struct winsize *);
 pid_t		forkpty(int *, char *, struct termios *, struct winsize *);
+time_t	parsedate(const char *, const time_t *, const int *);
 int			pidfile(const char *);
 int			pw_lock(int);
 int			pw_mkdb(void);
