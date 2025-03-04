@@ -75,9 +75,9 @@ ttymsg(struct iovec *iov, int iovcnt, const char *line, int tmout)
 	_DIAGASSERT(line != NULL);
 
 	if (iovcnt > sizeof(localiov) / sizeof(localiov[0]))
-        (void) snprintf(errbuf, sizeof(errbuf), "%s: too many iov's (%d) max is %zu", __func__, 
-            iovcnt, sizeof(localiov) / sizeof(localiov[0]));
-        return (errbuf);
+        	(void) snprintf(errbuf, sizeof(errbuf), "%s: too many iov's (%d) max is %zu", 
+			__func__, iovcnt, sizeof(localiov) / sizeof(localiov[0]));
+        	return (errbuf);
 		//return ("too many iov's (change code in libutil/ttymsg.c)");
 
 	if (strlcpy(device, _PATH_DEV, sizeof(device)) >= sizeof(device) ||
