@@ -144,8 +144,9 @@ int			daylight = 0;
 
 static struct state	s;
 static int	tz_is_set;
+static bool gmt_is_set;
 
-static struct state *const gmtptr = &s;
+static struct state *gmtptr = &s;
 
 //struct tm 	*offtime(const time_t *, long);
 //static struct tm *offtime_r(const time_t *, long, struct tm *);
@@ -155,10 +156,10 @@ static int tzload(const char *);
 static int tzsetkernel(void);
 static void tzsetgmt(void);
 
-static int tzparse(const char *, struct state *const);
-static void gmtload(struct state *const);
+static int tzparse(const char *, struct state *);
+static void gmtload(struct state *);
 static void gmtcheck(void);
-static struct tm *localtimesub(const time_t *, const struct tm *);
+static struct tm *localtimesub(const time_t *, struct tm *);
 static struct tm *gmtsub(const time_t *, long, struct tm *);
 
 char *
@@ -335,7 +336,7 @@ tzload(name)
 static int
 tzparse(name, sp)
 	const char *name;
-	struct state *const sp;
+	struct state *sp;
 {
 	if (sp != NULL) {
 		if ((tzload(name) != 0) && (sp == &s)) {
@@ -398,7 +399,7 @@ tzset(void)
 }
 
 static void
-gmtload(struct state *const sp)
+gmtload(struct state *sp)
 {
 	if (tzload("GMT") != 0) {
 		(void) tzparse("GMT", sp);
@@ -408,25 +409,21 @@ gmtload(struct state *const sp)
 static void
 gmtcheck(void)
 {
-	 static bool gmt_is_set;
-
 	 if (!gmt_is_set) {
-		 gmtptr = malloc(sizeof *gmtptr);
+		 gmtptr = (struct state *)malloc(sizeof *gmtptr);
 	 }
 	 if (gmtptr) {
 		 gmtload(gmtptr);
 	 }
-	 gmt_is_set = true;
+	 gmt_is_set = TRUE;
 }
 
 static struct tm *
 localtimesub(timep, tmp)
 	const time_t *timep;
-	const struct tm *tmp;
+	struct tm *tmp;
 {
 	register struct ttinfo *ttisp;
-	//register struct tm *tmp;
-	register struct tm *result;
 	register int i;
 	time_t t;
 
@@ -452,7 +449,7 @@ localtimesub(timep, tmp)
 	 ** you'd replace the statement below with
 	 **	tmp = offtime((time_t) (t + ttisp->tt_gmtoff), 0L);
 	 */
-	result = offtime_r(&t, ttisp->tt_gmtoff, tmp);
+	tmp = offtime_r(&t, ttisp->tt_gmtoff, tmp);
 	tmp->tm_isdst = ttisp->tt_isdst;
 	tzname[tmp->tm_isdst] = &s.chars[ttisp->tt_abbrind];
 	tmp->tm_zone = &s.chars[ttisp->tt_abbrind];
@@ -471,7 +468,7 @@ struct tm *
 localtime(timep)
 	const time_t *timep;
 {
-	register struct tm 	tmp;
+	struct tm tmp;
 
 	return localtime_r(timep, &tmp);
 }
@@ -487,14 +484,14 @@ gmtsub(clock, offset, tmp)
 	result = offtime_r(clock, offset, tmp);
 	if (result) {
 		tzname[0] = "GMT";
-		result->tm_zone = UNCONST(offset ? wildabbr : gmtptr ? gmtptr->chars : "GMT"); /* UCT ? */
+		result->tm_zone = __UNCONST(offset ? wildabbr : gmtptr ? gmtptr->chars : "GMT"); /* UCT ? */
 	}
 	return result;
 }
 
 struct tm *
-gmtime_r(timep, tmp)
-	time_t const *timep;
+gmtime_r(clock, tmp)
+	const time_t *clock;
 	struct tm *tmp;
 {
 	gmtcheck();
@@ -505,7 +502,7 @@ struct tm *
 gmtime(clock)
 	const time_t *clock;
 {
-	register struct tm tmp;
+	struct tm tmp;
 
 	return gmtime_r(clock, &tmp);
 }
