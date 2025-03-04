@@ -52,13 +52,10 @@ __RCSID("$NetBSD: snprintb.c,v 1.3 2003/10/27 00:12:42 lukem Exp $");
 #include <util.h>
 
 int
-snprintb(buf, buflen, bitfmt, val)
-	char *buf;
-	size_t buflen;
-	const char *bitfmt;
-	uint64_t val;
+snprintb(char *buf, size_t buflen, const char *bitfmt, uint64_t val)
 {
-	char *bp = buf, *sbase;
+	char *bp = buf;
+    const char *sbase;
 	int bit, ch, len, sep, flen;
 	uint64_t field;
 
@@ -76,8 +73,8 @@ snprintb(buf, buflen, bitfmt, val)
 		break;
 	}
 
-	len = snprintf(bp, buflen, sbase, val);
-	if (len < buflen)
+    len = snprintf(bp, buflen, sbase, val);
+	if ((size_t)len < buflen)
 		bp += len;
 	else
 		bp += buflen - 1;
@@ -91,8 +88,15 @@ snprintb(buf, buflen, bitfmt, val)
 		return len;
 	}
 
-#define PUTC(c) if (++len < buflen) *bp++ = (c); else
-#define PUTS(s) while ((ch = *(s)++) != 0) PUTC(ch)
+#define PUTC(c)                     \
+    if ((size_t)++len < buflen) {   \
+        *bp++ = (c);                \
+    }
+
+#define PUTS(s)                     \
+    while ((ch = *(s)++) != 0) {    \
+        PUTC(ch);                   \
+    }
 
 	/*
 	 * Chris Torek's new bitmask format is identified by a leading \177
@@ -133,9 +137,9 @@ snprintb(buf, buflen, bitfmt, val)
 				sep = ',';
 				PUTS(bitfmt);
 				PUTC('=');
-				flen = snprintf(bp, buflen - len, sbase, field);
+                flen = snprintf(bp, buflen - len, sbase, field);
 				len += flen;
-				if (len < buflen)
+				if ((size_t)len < buflen)
 					bp += flen;
 				break;
 			case '=':

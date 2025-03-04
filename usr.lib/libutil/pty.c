@@ -63,18 +63,15 @@ int
 openpty(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp)
 {
 	static char line[] = "/dev/ptyXX";
-	register const char *cp1, *cp2, *cp;
-	register int master, slave;
+	const char *cp1, *cp2, *cp;
+	int master, slave;
 	gid_t ttygid;
-	mode_t mode;
 	struct group *gr;
 
 	if ((gr = getgrnam("tty")) != NULL) {
 		ttygid = gr->gr_gid;
-		mode = S_IRUSR|S_IWUSR|S_IWGRP;
 	} else {
 		ttygid = getgid();
-		mode = S_IRUSR|S_IWUSR;
 	}
 
 	for (cp1 = TTY_LETTERS; *cp1; cp1++) {

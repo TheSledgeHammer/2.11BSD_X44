@@ -24,12 +24,14 @@ USE_SHLIBDIR=	yes
 
 .include <bsd.own.mk>
 
-WARNS?=	5
+#WARNS=5
+# Stops GCC from complaining about format-nonliteral (reason: snprintb.c)
+WARNS?=	3
 LIB=	util
 CPPFLAGS+=-DLIBC_SCCS -I${.CURDIR}
-LINTFLAGS+=-w
 SRCS+=	efun.c 														\
 		getbootfile.c getmaxpartitions.c getrawpartition.c 			\
+        if_media.c                                                  \
 		login.c loginx.c login_cap.c login_tty.c logout.c logoutx.c \
 		logwtmp.c logwtmpx.c parsedate.y pidfile.c pty.c 			\
 		raise_default_signal.c secure_path.c snprintb.c 			\
@@ -41,16 +43,10 @@ MAN=	efun.3 														\
 		raise_default_signal.3 secure_path.3 snprintb.3 			\
 		sockaddr_snprintf.3 stat_flags.3 ttymsg.3
 
-
 CPPFLAGS.sockaddr_snprintf.c+=-DHAVE_UTIL_H
 #CPPFLAGS.sockaddr_snprintf.c+=-DHAVE_NETATALK_AT_H
 CPPFLAGS.sockaddr_snprintf.c+=-DHAVE_NET_IF_DL_H
-LINTFLAGS.if_media.c+=	-X 351	# 'extern' declaration outside header
 
-COPTS.logwtmp.c+=	${GCC_NO_STRINGOP_TRUNCATION}
-COPTS.logwtmpx.c+=	${CC_WNO_STRINGOP_TRUNCATION}
-
-YPREFIX=__pd
 .PATH:	${NETBSDSRCDIR}/lib/libc/gen
 
 MLINKS+=login.3 logout.3

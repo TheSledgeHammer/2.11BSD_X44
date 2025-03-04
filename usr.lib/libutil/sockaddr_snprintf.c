@@ -199,6 +199,7 @@ sockaddr_snprintf(char * const sbuf, const size_t len, const char * const fmt,
 			}
 			break;
 		case 'R':
+/*
 			if (sat) {
 				const struct netrange *n =
 				    &sat->sat_range.r_netrange;
@@ -210,6 +211,7 @@ sockaddr_snprintf(char * const sbuf, const size_t len, const char * const fmt,
 				ADDNA();
 			}
 			break;
+*/
 		default:
 			ADDC('%');
 			if (na == 0)

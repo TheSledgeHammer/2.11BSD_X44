@@ -64,7 +64,7 @@ logwtmpx(const char *line, const char *name, const char *host, int status, int t
 	(void)memset(&ut, 0, sizeof(ut));
 	if (strlen(line) <= strlen(ut.ut_line)) {
 		(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
-    	}
+    }
 	if (strlen(name) <= strlen(ut.ut_name)) {
 		(void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
 	}
