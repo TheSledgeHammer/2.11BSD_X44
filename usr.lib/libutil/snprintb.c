@@ -55,7 +55,7 @@ int
 snprintb(char *buf, size_t buflen, const char *bitfmt, uint64_t val)
 {
 	char *bp = buf;
-    const char *sbase;
+    	const char *sbase;
 	int bit, ch, len, sep, flen;
 	uint64_t field;
 
@@ -73,7 +73,7 @@ snprintb(char *buf, size_t buflen, const char *bitfmt, uint64_t val)
 		break;
 	}
 
-    len = snprintf(bp, buflen, sbase, val);
+    	len = snprintf(bp, buflen, sbase, val);
 	if ((size_t)len < buflen)
 		bp += len;
 	else
@@ -137,7 +137,7 @@ snprintb(char *buf, size_t buflen, const char *bitfmt, uint64_t val)
 				sep = ',';
 				PUTS(bitfmt);
 				PUTC('=');
-                flen = snprintf(bp, buflen - len, sbase, field);
+                		flen = snprintf(bp, buflen - len, sbase, field);
 				len += flen;
 				if ((size_t)len < buflen)
 					bp += flen;
