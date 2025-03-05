@@ -909,9 +909,9 @@ MKSTATICPIE?=	no
 #
 MKLIBNDBM?= no
 MKLIBFORTRAN?= no
-MKLIBMP?= yes
-MKLIBOM?= yes
-MKLIBSTUBS?= yes
+MKLIBMP?= no
+MKLIBOM?= no
+MKLIBSTUBS?= no
 MKLIBTERMCAP?= no # here for legacy reasons (termcap cannot be enabled)
 MKLIBVMF?= no
 
