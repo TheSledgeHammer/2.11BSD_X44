@@ -132,7 +132,7 @@ offtime(const time_t *clock, long offset)
 	getb(RECV_FD, &tmtmp, sizeof tmtmp);
 	tmtmp.tm_zone = "";
 	return (&tmtmp);
-	}
+}
 
 struct passwd *
 getpwent(void)
