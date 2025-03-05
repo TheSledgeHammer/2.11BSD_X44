@@ -1,17 +1,17 @@
 #include <sys/cdefs.h>
+
 #include <sys/types.h>
 #include <time.h>
 
 #include <paths.h>
-#include <stdlib.h>
+#include <pwd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sysexits.h>
-#include <varargs.h>
 #include <unistd.h>
-
-#include <pwd.h>
 #include <utmp.h>
+#include <varargs.h>
 
 #define	SEND_FD	W[1]
 #define	RECV_FD	R[0]
@@ -29,10 +29,10 @@
 #define SETPASSENT      10
 #define ENDPWENT        11
 
-static	int	R[2], W[2], inited;
-static	char	result[256 + 4];
-static	struct	tm	tmtmp;
-static	struct	passwd	_pw;
+static int R[2], W[2], inited;
+static char	result[256 + 4];
+static struct tm tmtmp;
+static struct passwd _pw;
 
 /* ctimed stubs command table */
 struct commands {
@@ -265,7 +265,7 @@ sewer(const char *arg, int func)
 		dup2(R[1], 1); 	/* parent read side to our stdout */
 		close(SEND_FD); /* copies made, close the... */
 		close(RECV_FD); /* originals now */
-        	ctimed_commands(arg, func);
+		ctimed_commands(arg, func);
 		_exit(EX_OSFILE);
 	}
 	if (pid == -1) {
@@ -308,6 +308,6 @@ ctimed_commands(const char *arg, int val)
 void
 ctimed_usage(void)
 {
-	(void)fprintf(stderr, "usage: ctimed [-c ctime] [-a asctime] [-t tzet] [-l localtime] [-g gmtime] [-o offtime]\n");
-	(void)fprintf(stderr, "usage: ctimed [-e getpwent] [-n getpwnam] [-u getpwuid] [-p setpassent ] [-f endpwent]\n");
+	(void)fprintf(stderr, "usage: ctimed stubs [-c ctime] [-a asctime] [-t tzet] [-l localtime] [-g gmtime] [-o offtime]\n");
+	(void)fprintf(stderr, "usage: ctimed stubs [-e getpwent] [-n getpwnam] [-u getpwuid] [-p setpassent ] [-f endpwent]\n");
 }

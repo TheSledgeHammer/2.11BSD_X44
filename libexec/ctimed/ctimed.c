@@ -7,13 +7,16 @@
  * 	    in 'libcstubs.a'.
 */
 
+#include	<sys/cdefs.h>
+
+#include	<sys/types.h>
+#include	<sys/ioctl.h>
+#include	<sys/time.h>
+
+#include	<pwd.h>
+#include	<setjmp.h>
 #include	<signal.h>
 #include	<stdio.h>
-#include	<setjmp.h>
-#include	<sys/ioctl.h>
-#include	<sys/types.h>
-#include	<sys/time.h>
-#include	<pwd.h>
 #include	<utmp.h>
 
 /*
@@ -22,6 +25,7 @@
  * (if for no other reason than to add the stub code).
 */
 
+/* Deprecated
 #define	CTIME	1
 #define	ASCTIME	2
 #define	TZSET	3
@@ -34,30 +38,35 @@
 #define	GETPWUID	9
 #define	SETPASSENT	10
 #define	ENDPWENT	11
+*/
 
-extern	struct	tm	*offtime();
+static void read_prog(time_t *, struct tm *, struct tm *, int, int *);
+static void getb(int, char *, size_t);
+static void ctimeout(void);
+static void checkppid(void);
+static void do_pw(struct passwd *);
+static int packpwtobuf(struct passwd *, char *);
+static void usage(void);
 
 jmp_buf env;
-char *cp;
 char junk[256 + sizeof(struct passwd) + 4];
 long off;
-time_t l;
-void timeout(), checkppid();
-struct tm tmtmp, *tp;
 
 int
-main()
+main(int argc, char **argv)
 {
 	register int i;
 	register struct passwd *pw;
-	struct	itimerval it;
-	u_char	c, xxx;
-	int	len, tosslen;
-	uid_t	uid;
+	struct itimerval it;
+	int ch, c;
+	time_t l;
+	struct tm tmtmp, tp;
 
 	signal(SIGPIPE, SIG_DFL);
-	for (i = getdtablesize(); --i > 2;)
+	for (i = getdtablesize(); --i > 2;) {
 		close(i);
+	}
+
 	/*
 	 * Need a timer running while we disassociate from the control terminal
 	 * in case of a modem line which has lost carrier.
@@ -65,7 +74,7 @@ main()
 	timerclear(&it.it_interval);
 	it.it_value.tv_sec = 5;
 	it.it_value.tv_usec = 0;
-	signal(SIGALRM, timeout);
+	signal(SIGALRM, ctimeout);
 	setitimer(ITIMER_REAL, &it, (struct itimerval*) NULL);
 	if (setjmp(env) == 0) {
 		i = open("/dev/tty", 0);
@@ -74,6 +83,7 @@ main()
 			close(i);
 		}
 	}
+
 	/*
 	 * Now start a timer with one minute refresh.  In the signal service
 	 * routine, check the parent process id to see if this process has
@@ -90,126 +100,141 @@ main()
 	signal(SIGALRM, checkppid);
 	setitimer(ITIMER_REAL, &it, (struct itimerval*) NULL);
 
-	while (read(fileno(stdin), &c, 1) == 1) {
-		switch (c) {
-		case CTIME:
-			l = 0L;
-			getb(fileno(stdin), &l, sizeof l);
-			cp = ctime(&l);
+	while ((ch = getopt(argc, argv, "-catlgoenupf")) != -1) {
+		read_prog(&l, &tmtmp, &tp, ch, &c);
+	}
+}
+
+static void
+read_prog(time_t *timep, struct tm *tmp, struct tm *tp, int ch, int *c)
+{
+	char *cp;
+	int	ret, len, tosslen;
+	uid_t uid;
+
+	ret = read(fileno(stdin), c, 1);
+	if (((ret == 1) && (ch >= 0)) || ret == ch) {
+		switch ((char)ch) {
+		case "c":	/* CTIME */
+			timep = 0L;
+			getb(fileno(stdin), timep, sizeof(*timep));
+			cp = ctime(timep);
 			write(fileno(stdout), cp, 26);
 			break;
-		case ASCTIME:
-			getb(fileno(stdin), &tmtmp, sizeof tmtmp);
-			cp = asctime(&tmtmp);
+		case "a":	/* ASCTIME */
+			getb(fileno(stdin), tmp, sizeof(*tmp));
+			cp = asctime(tmp);
 			write(fileno(stdout), cp, 26);
 			break;
-		case TZSET:
+		case "t":	/* TZSET */
 			(void) tzset();
 			break;
-		case LOCALTIME:
-			l = 0L;
-			getb(fileno(stdin), &l, sizeof l);
-			tp = localtime(&l);
+		case "l":	/* LOCALTIME */
+			timep = 0L;
+			getb(fileno(stdin), timep, sizeof(*timep));
+			tp = localtime(timep);
 			write(fileno(stdout), tp, sizeof(*tp));
 			strcpy(junk, tp->tm_zone);
 			junk[24] = '\0';
 			write(fileno(stdout), junk, 24);
 			break;
-		case GMTIME:
-			l = 0L;
-			getb(fileno(stdin), &l, sizeof l);
-			tp = gmtime(&l);
+		case "g":	/* GMTIME */
+			timep = 0L;
+			getb(fileno(stdin), timep, sizeof(*timep));
+			tp = gmtime(timep);
 			write(fileno(stdout), tp, sizeof(*tp));
 			strcpy(junk, tp->tm_zone);
 			junk[24] = '\0';
 			write(fileno(stdout), junk, 24);
 			break;
-		case OFFTIME:
-			getb(fileno(stdin), &l, sizeof l);
-			getb(fileno(stdin), &off, sizeof off);
+		case "o":	/* OFFTIME */
+			getb(fileno(stdin), timep, sizeof(*timep));
+			getb(fileno(stdin), &off, sizeof(off));
 #ifdef	__bsdi__
-				l += off;
-				tp = localtime(&l);
+			timep += off;
+			tp = localtime(timep);
 #else
-			tp = offtime(&l, off);
+			tp = offtime(timep, off);
 #endif
 			write(fileno(stdout), tp, sizeof(*tp));
 			break;
-		case GETPWENT:
+		case "e":	/* GETPWENT */
 			pw = getpwent();
 			do_pw(pw);
 			break;
-		case GETPWNAM:
+		case "n":	/* GETPWNAM */
 			getb(fileno(stdin), &len, sizeof(int));
 			if (len > UT_NAMESIZE) {
 				tosslen = len - UT_NAMESIZE;
 				len = UT_NAMESIZE;
-			} else
+			} else {
 				tosslen = 0;
+			}
 			getb(fileno(stdin), junk, len);
-			for (; tosslen; tosslen--)
+			for (; tosslen; tosslen--) {
 				getb(fileno(stdin), &xxx, 1);
+			}
 			junk[len] = '\0';
 			pw = getpwnam(junk);
 			do_pw(pw);
 			break;
-		case GETPWUID:
+		case "u":	/* GETPWUID */
 			getb(fileno(stdin), &uid, sizeof(uid_t));
 			pw = getpwuid(uid);
 			do_pw(pw);
 			break;
-		case SETPASSENT:
+		case "p":	/* SETPASSENT */
 			getb(fileno(stdin), &len, sizeof(int));
-			if (setpassent(len))
+			if (setpassent(len)) {
 				len = 1;
-			else
+			} else {
 				len = 0;
+			}
 			write(fileno(stdout), &len, sizeof(int));
 			break;
-		case ENDPWENT:
+		case "f":	/* ENDPWENT */
 			endpwent();
 			break;
 		default:
-			abort("switch");
+			ret = 1;
+			usage();
 		}
 	}
+	ret = 1;
+	exit(ret);
 }
 
-void
-getb(f, p, n)
-	int	f;
-	register char	*p;
-	register int	n;
+static void
+getb(int f, char *p, size_t n)
 {
 	register int i;
 
 	while (n) {
 		i = read(f, p, n);
-		if (i <= 0)
+		if (i <= 0) {
 			return;
+		}
 		p += i;
-		n -= i;
+		n -= (size_t)i;
 	}
 }
 
-void
-timeout()
+static void
+ctimeout(void)
 {
-
 	longjmp(env, 1);
 }
 
-void
-checkppid()
+static void
+checkppid(void)
 {
-
-	if	(getppid() == 1)
+	if (getppid() == 1) {
 		exit(0);
+	}
 }
 
-void
-do_pw(pw)
-	struct passwd *pw;
+static void
+do_pw(struct passwd *pw)
 {
 	int	len;
 
@@ -225,37 +250,43 @@ do_pw(pw)
 	return;
 }
 
-int
-packpwtobuf(pw, buf)
-	register struct passwd *pw;
-	char	*buf;
+static int
+packpwtobuf(struct passwd *pw, char *buf)
 {
 	register char *cp = buf;
 	register char *dp;
 
 	dp = pw->pw_name;
-	pw->pw_name = (char*) 0;
-	while (*cp++ = *dp++)
+	pw->pw_name = (char *)0;
+	while ((*cp++ = *dp++))
 		;
 	dp = pw->pw_passwd;
 	pw->pw_passwd = (char*) (cp - buf);
-	while (*cp++ = *dp++)
+	while ((*cp++ = *dp++))
 		;
 	dp = pw->pw_class;
 	pw->pw_class = (char*) (cp - buf);
-	while (*cp++ = *dp++)
+	while ((*cp++ = *dp++))
 		;
 	dp = pw->pw_gecos;
 	pw->pw_gecos = (char*) (cp - buf);
-	while (*cp++ = *dp++)
+	while ((*cp++ = *dp++))
 		;
 	dp = pw->pw_dir;
 	pw->pw_dir = (char*) (cp - buf);
-	while (*cp++ = *dp++)
+	while ((*cp++ = *dp++))
 		;
 	dp = pw->pw_shell;
 	pw->pw_shell = (char*) (cp - buf);
-	while (*cp++ = *dp++)
+	while ((*cp++ = *dp++))
 		;
 	return (cp - buf);
+}
+
+static void
+usage(void)
+{
+	(void)fprintf(stderr, "Usage: ctimed [-c ctime] [-a asctime] [-t tzet] [-l localtime] [-g gmtime] [-o offtime]\n");
+	(void)fprintf(stderr, "Usage: ctimed [-e getpwent] [-n getpwnam] [-u getpwuid] [-p setpassent ] [-f endpwent]\n");
+	exit(1);
 }

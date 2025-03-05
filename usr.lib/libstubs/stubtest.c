@@ -1,5 +1,6 @@
-#include	<stdio.h>
 #include	<sys/types.h>
+
+#include	<stdio.h>
 #include	<pwd.h>
 #include	<time.h>
 
@@ -7,10 +8,10 @@ void dump_tm(char *, struct tm *);
 void dump_pw(struct	passwd *);
 
 void
-main()
+main(int argc, char **argv)
 {
-	struct	tm	*tm;
-	struct	passwd	*pw;
+	struct tm *tm;
+	struct passwd *pw;
 	char	*cp;
 	time_t	l;
 	uid_t	uid;
@@ -61,9 +62,7 @@ main()
 }
 
 void
-dump_tm(str, tm)
-	char	*str;
-	struct	tm *tm;
+dump_tm(char *str, struct tm *tm)
 {
 	printf("%s sec: %d min: %d hr: %d mday: %d mon: %d yr: %d wday: %d yday: %d isdst: %d zone: %s gmtoff: %d\n",
 		str,
@@ -81,8 +80,7 @@ dump_tm(str, tm)
 }
 
 void
-dump_pw(p)
-	struct	passwd *p;
+dump_pw(struct passwd *p)
 {
 	printf("%s:%s:%u:%u:%s:%ld:%ld:%s:%s:%s\n",
 		p->pw_name,

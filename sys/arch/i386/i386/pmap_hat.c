@@ -149,9 +149,9 @@ pmap_hat_detach(hatlist, hat, map, object, flags)
 		return;
 	}
 	LIST_FOREACH(hat, hatlist, ph_next) {
-        if (map == hat->ph_map && object == hat->ph_object && flags == hat->ph_flags) {
-        	LIST_REMOVE(hat, ph_next);
-        }
+		if ((map == hat->ph_map) && (object == hat->ph_object) && (flags == hat->ph_flags)) {
+			LIST_REMOVE(hat, ph_next);
+		}
     }
 }
 
@@ -165,7 +165,7 @@ pmap_hat_find(hatlist, map, object, flags)
 	pmap_hat_t hat;
 
 	LIST_FOREACH(hat, hatlist, ph_next) {
-        if (map == hat->ph_map && object == hat->ph_object && flags == hat->ph_flags) {
+		if ((map == hat->ph_map) && (object == hat->ph_object) && (flags == hat->ph_flags)) {
             return (hat);
         }
     }
@@ -498,21 +498,6 @@ vm_hat_init(hatlist, phys_start, phys_end, addr)
 	pmap_hat_list_t hatlist;
 	vm_offset_t phys_start, phys_end, addr;
 {
-	/*
-	pmap_hat_t hat;
-	vm_size_t size;
-
-    vm_object_reference(kernel_object);
-    vm_map_find(kernel_map, kernel_object, addr, &addr, 2*NBPG, FALSE);
-
-	size = pmap_hat_pv_alloc(phys_start, phys_end);
-
-	LIST_INIT(hatlist);
-	hat = (struct pmap_hat *)pmap_hat_alloc(kernel_map, sizeof(struct pmap_hat), PMAP_HAT_VM);
-	hat->ph_pvtable = (struct pv_entry *)pmap_hat_alloc(kernel_map, size, PMAP_HAT_VM);
-	hat->ph_pvtable->pv_attr = (char)addr;
-	pmap_hat_attach(hatlist, hat, kernel_map, kernel_object, PMAP_HAT_VM);
-	*/
 	pmap_hat_init(hatlist, kernel_map, kernel_object, phys_start, phys_end, addr, PMAP_HAT_VM);
 }
 
@@ -538,21 +523,6 @@ ovl_hat_init(hatlist, phys_start, phys_end, addr)
 	pmap_hat_list_t hatlist;
 	vm_offset_t phys_start, phys_end, addr;
 {
-	/*
-	pmap_hat_t hat;
-	vm_size_t size;
-
-	ovl_object_reference(overlay_object);
-	ovl_map_find(overlay_map, overlay_object, addr, &addr, 2*NBPG, FALSE);
-
-	size = pmap_hat_pv_alloc(phys_start, phys_end);
-
-	LIST_INIT(hatlist);
-	hat = (struct pmap_hat *)pmap_hat_alloc(overlay_map, sizeof(struct pmap_hat), PMAP_HAT_OVL);
-	hat->ph_pvtable = (struct pv_entry *)pmap_hat_alloc(overlay_map, size, PMAP_HAT_OVL);
-	hat->ph_pvtable->pv_attr = (char)addr;
-	pmap_hat_attach(hatlist, hat, overlay_map, overlay_object, PMAP_HAT_OVL);
-	*/
 	pmap_hat_init(hatlist, overlay_map, overlay_object, phys_start, phys_end, addr, PMAP_HAT_OVL);
 }
 

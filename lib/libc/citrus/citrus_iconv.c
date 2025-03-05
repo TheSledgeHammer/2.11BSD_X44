@@ -355,7 +355,7 @@ _citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_shared *ci, const char 
 	}
 	_citrus_esdb_close(&esdbsrc);
 	_citrus_esdb_close(&esdbdst);
-	ci->ci_closure = is;
+	//ci->ci_closure = is;
 
 	return (0);
 
