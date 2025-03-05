@@ -109,7 +109,8 @@ static void
 read_prog(time_t *timep, struct tm *tmp, struct tm *tp, int ch, int *c)
 {
 	char *cp;
-	int	ret, len, tosslen;
+	u_char xxx;
+	int ret, len, tosslen;
 	uid_t uid;
 
 	ret = read(fileno(stdin), c, 1);
