@@ -265,7 +265,7 @@ sewer(const char *arg, int func)
 		dup2(R[1], 1); 	/* parent read side to our stdout */
 		close(SEND_FD); /* copies made, close the... */
 		close(RECV_FD); /* originals now */
-        ctimed_commands(arg, func);
+        	ctimed_commands(arg, func);
 		_exit(EX_OSFILE);
 	}
 	if (pid == -1) {
@@ -293,21 +293,21 @@ XXctime(void)
 void
 ctimed_commands(const char *arg, int val)
 {
-    struct commands *cmd;
+	struct commands *cmd;
 
-    cmd = &command[val];
-    if (cmd != NULL) {
-        if ((cmd->arg == arg) && (cmd->val == val)) {
-            (void)execl(_PATH_CTIMED, "ctimed", cmd->arg, NULL);
-        } else {
-            ctimed_usage();
-        }
-    }
+    	cmd = &command[val];
+    	if (cmd != NULL) {
+		if ((cmd->arg == arg) && (cmd->val == val)) {
+			(void)execl(_PATH_CTIMED, "ctimed", cmd->arg, NULL);
+		} else {
+			ctimed_usage();
+		}
+	}
 }
 
 void
 ctimed_usage(void)
 {
-    (void)fprintf(stderr, "usage: ctimed [-c ctime] [-a asctime] [-t tzet] [-l localtime] [-g gmtime] [-o offtime]\n");
-    (void)fprintf(stderr, "usage: ctimed [-e getpwent] [-n getpwnam] [-u getpwuid] [-p setpassent ] [-f endpwent]\n");
+	(void)fprintf(stderr, "usage: ctimed [-c ctime] [-a asctime] [-t tzet] [-l localtime] [-g gmtime] [-o offtime]\n");
+	(void)fprintf(stderr, "usage: ctimed [-e getpwent] [-n getpwnam] [-u getpwuid] [-p setpassent ] [-f endpwent]\n");
 }
