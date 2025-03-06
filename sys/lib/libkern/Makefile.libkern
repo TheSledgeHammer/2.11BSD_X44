@@ -14,6 +14,9 @@
 
 .include <bsd.own.mk>
 
+LIBKERN_ARCH= ${MACHINE_ARCH}
+KERNMISCMAKEFLAGS="LIBKERN_ARCH=${LIBKERN_ARCH}"
+
 .if defined(LIBKERN_ARCH) && !empty(LIBKERN_ARCH) && \
     exists(${KERNDIR}/arch/${LIBKERN_ARCH})
 ARCHSUBDIR=     ${LIBKERN_ARCH}

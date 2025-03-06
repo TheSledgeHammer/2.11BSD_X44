@@ -47,6 +47,7 @@ KERNMAKE= \
 	    KERNCPPFLAGS=${CPPFLAGS:S@^-I.@-I${KERNDOTDIR}@g:Q} \
 	    KERNMISCCPPFLAGS=${KERNMISCCPPFLAGS:Q} \
 	    LINTFLAGS=${KERNLINTFLAGS:Q} \
+	    LIBKERN_ARCH=${LIBKERN_ARCH:Q} \
 	    ${KERNMISCMAKEFLAGS}
 
 ${KERNLIB}:		.NOTMAIN .MAKE __always_make_kernlib
@@ -89,3 +90,5 @@ __always_make_kernlib:	.NOTMAIN
 
 .PHONY: __always_make_kernlib
 .PHONY: cleankernlib cleandirkernlib dependkernlib
+
+.include "${.PARSEDIR}/../../../lib/libc/Makefile.inc"
