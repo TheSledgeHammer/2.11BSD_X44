@@ -72,7 +72,7 @@ union wait	{
 
 #else /* !_KERNEL */
 
-/* Userspace Signals Conversion */
+/* Userspace Wait Signals Conversion */
 #define	_W_INT(w)	        (*(int *)&(w))	/* convert union wait to int */
 #define	_WSTATUS(x)	        (_W_INT(x) & 0177)
 #define	_WSTOPPED           	WSTOPPED
