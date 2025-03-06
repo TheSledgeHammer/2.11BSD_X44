@@ -182,8 +182,8 @@ typedef	__pri_t				pri_t;		/* process priority */
 typedef __uid_t 			uid_t;		/* user id */
 typedef __in_addr_t			in_addr_t;	/* IP(v4) address */
 typedef __in_port_t			in_port_t;	/* "Internet" port number */
-typedef __sa_family_t		sa_family_t;/* socket address family */
-typedef __socklen_t			socklen_t;	/* socket-related datum length */
+//typedef __sa_family_t		sa_family_t;/* socket address family */
+//typedef __socklen_t			socklen_t;	/* socket-related datum length */
 #endif /* _KERNEL */
 
 #if defined(_KERNEL) || defined(_LIBC)
