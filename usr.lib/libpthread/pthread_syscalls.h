@@ -40,6 +40,7 @@
 #ifndef _LIB_PTHREAD_SYSCALLS_H
 #define _LIB_PTHREAD_SYSCALLS_H
 
+#include <netdb.h>
 #include <stdarg.h>
 
 struct iovec;
