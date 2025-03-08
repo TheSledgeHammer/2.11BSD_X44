@@ -49,9 +49,6 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
 		${USRLIBDIR}/liby 		\
 		${USRLIBDIR}/libz
 
-# Disabled: Does not currently work!
-#${USRLIBDIR}/libpthread_dbg 	\
-
 #
 # 2.11BSD Original Libraries
 #
@@ -80,9 +77,10 @@ SUBDIR+= 	${USRLIBDIR}/libstubs
 SUBDIR+= 	${USRLIBDIR}/libvmf
 .endif
 
-.if !defined(BSD_MK_COMPAT_FILE)
-SUBDIR+=	libkern
-.endif
+#.if !defined(BSD_MK_COMPAT_FILE)
+# Does not compile
+#SUBDIR+=	libkern
+#.endif
 
 .if (${MKSKEY} != "no")
 SUBDIR+=	${USRLIBDIR}/libskey
