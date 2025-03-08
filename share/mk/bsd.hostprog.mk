@@ -58,8 +58,9 @@ LIBWRAP?=			/usr.lib/libwrap.a
 LIBY?=				/usr.lib/liby.a
 LIBZ?=				/usr.lib/libz.a
 
+# OS Compat Libraries
 # 2.11BSD Libraries
-#LIBNDBM?=			/usr.lib/libdbm.a
+LIBNDBM?=			/usr.lib/libndbm.a
 LIBFORTRAN?=		/usr.lib/libfortran
 LIBF77?=			${LIBFORTRAN}/libF77.a
 LIBI77?=			${LIBFORTRAN}/libI77.a

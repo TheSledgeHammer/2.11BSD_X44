@@ -1,0 +1,31 @@
+Application	Version
+-----------	-------
+libndbm/	4.3BSD		 	(dbm & ndbm before it was merged into Berkley DB)
+libfortran/	4.3BSD			(Contains libF77, libI77 and libU77)
+libmp/		4.3BSD
+libom/		4.3BSD  	   	(used for both libom.a and libm.a)
+libstubs/	2.11BSD
+libtermcap/	4.4BSD-Lite2
+libutil/	4.4BSD-Lite2
+
+lib2648/	UNIMPLEMENTED
+libF77/		libfortran/libF77
+libI77/		libfortran/libI77
+libU77/		libfortran/libU77
+libpc/		UNIMPLEMENTED
+libplot/	UNIMPLEMENTED
+libg/		UNIMPLEMENTED 		(4.3 should be ported)
+libln/		UNIMPLEMENTED
+
+Notes
+-----
+libm/	We haven't made any effort to convert the new math library for
+	the PDP-11 yet (if it's even possible).  If anyone does it for
+	us, PLEASE #ifdef your changes on "pdp11".  A PDP support
+	subdirectory would be nice too ...  In any case, till that
+	happens (sic), 2.11BSD uses libom and hides that fact from
+	applications by linking libm.a to libom.a in /usr/lib.
+
+The directorie PORT is somewhat special.  It contains source from the 4.3
+that should probably be ported to 2.11 as soon as someone has the time
+and inclination to do so.

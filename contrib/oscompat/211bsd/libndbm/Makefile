@@ -7,7 +7,7 @@
 #
 .include <bsd.own.mk>
 
-LIB=		dbm
+LIB=		ndbm
 WARNS?=		5
 
 CPPFLAGS+=	-I${.CURDIR}

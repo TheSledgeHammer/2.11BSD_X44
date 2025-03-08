@@ -41,7 +41,7 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
 		${USRLIBDIR}/libm 		\
 		${USRLIBDIR}/libmpx 		\
 		${USRLIBDIR}/libresolv 		\
-        	${USRLIBDIR}/librpcsvc      	\
+        ${USRLIBDIR}/librpcsvc      	\
 		${USRLIBDIR}/libpci		\
 		${USRLIBDIR}/libpthread 	\
 		${USRLIBDIR}/libterminfo 	\
@@ -50,32 +50,9 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
 		${USRLIBDIR}/libz
 
 #
-# 2.11BSD Original Libraries
+# OS-Compatability
 #
-# fix bsd.hostprog.mk: conflicts with gcc's dbm
-.if (${MKLIBNDBM} != "no")
-SUBDIR+= 	${USRLIBDIR}/libdbm
-.endif
-
-.if (${MKLIBFORTRAN} != "no")
-SUBDIR+= 	${USRLIBDIR}/libfortran
-.endif
-
-.if (${MKLIBMP} != "no")
-SUBDIR+= 	${USRLIBDIR}/libmp
-.endif
-
-.if (${MKLIBOM} != "no")
-SUBDIR+= 	${USRLIBDIR}/libom
-.endif
-
-.if (${MKLIBSTUBS} != "no")
-SUBDIR+= 	${USRLIBDIR}/libstubs
-.endif
-
-.if (${MKLIBVMF} != "no")
-SUBDIR+= 	${USRLIBDIR}/libvmf
-.endif
+SUBDIR+= ../contrib/oscompat
 
 #.if !defined(BSD_MK_COMPAT_FILE)
 # Does not compile
