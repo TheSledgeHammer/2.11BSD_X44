@@ -18,7 +18,7 @@ EFISRC=						${BOOTSRC}/efi
 EFIINC=						${EFISRC}/include
 EFIINCMD=					${EFIINC}/${MACHINE}
 FDTSRC=						${BOOTSRC}/fdt
-LDRSRC=						${BOOTSRC}/common
+COMMONSRC=					${BOOTSRC}/common
 LIBLUASRC=					${BOOTSRC}/liblua
 LUASRC=						/contrib/lua/dist
 DLOADER=					${BOOTSRC}/dloader
@@ -79,42 +79,41 @@ LOADER_NET_SUPPORT?=		no
 
 # Standard options:
 # Options used when building standalone components
-CPPFLAGS+= -nostdinc -I${.OBJDIR} -I${S}
+CPPFLAGS+= -nostdinc -I${.OBJDIR} -I${BOOTARCH}/${MACHINE}/lib${MACHINE} -I${LIBSRC}/lib/libsa
 CPPFLAGS+= -D_STANDALONE
+LDFLAGS+=  -nostdlib
 
-COPTS+=	-ffreestanding
-COPTS+=	-fno-stack-protector
-COPTS+=	-fno-unwind-tables
-CWARNFLAGS+= -Werror
-CWARNFLAGS+= -Wall -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith
+.if ${MACHINE_ARCH} == "x86_64"
+CPPFLAGS+=-m32
+LDFLAGS+=-Wl,-m,elf_i386
+LIBKERN_ARCH=i386
+KERNMISCMAKEFLAGS="LIBKERN_ARCH=i386"
+.endif
 
 ### find out what to use for libkern
 KERN_AS=	library
-KERNDIR=	${LIBSRC}/lib/libkern
-
-#.include 	"${KERNDIR}/Makefile"
+.include 	"${LIBSRC}/lib/libkern/Makefile.inc"
+LIBKERN=	${KERNLIB}
 
 ### find out what to use for libsa
 SA_AS=		library
-SADIR=		${LIBSRC}/lib/libsa
+SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
+.include 	"${LIBSRC}/lib/libsa/Makefile.inc"
+LIBSA=		${SALIB}
 
-#.include 	"${SADIR}/Makefile.libsa"
-
-CLEANFILES+=	vers.c
-VERSION_FILE?=	${.CURDIR}/version
-
-vers.c: ${LDRSRC}/newvers.sh ${VERSION_FILE}
-	sh ${LDRSRC}/newvers.sh ${REPRO_FLAG} ${VERSION_FILE} \
-	    ${NEWVERSWHAT}
+### find out what to use for libz
+Z_AS=		library
+.include    "${LIBSRC}/lib/libz/Makefile.inc"
+LIBZ=		${ZLIB}
 
 .if !empty(HELP_FILES)
-HELP_FILES+=	${LDRSRC}/help.common
+HELP_FILES+=	${COMMONSRC}/help.common
 
 CLEANFILES+=	loader.help
 FILES+=			loader.help
 
 loader.help: ${HELP_FILES}
-	cat ${HELP_FILES} | awk -f ${LDRSRC}/merge_help.awk > ${.TARGET}
+		${TOOL_CAT} ${HELP_FILES} | ${TOOL_AWK} -f ${COMMONSRC}/merge_help.awk
 .endif
 
 .endif	# !defined(_BSD_LOADER_MK_)

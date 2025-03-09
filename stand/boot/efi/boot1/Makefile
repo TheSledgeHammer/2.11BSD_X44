@@ -58,9 +58,9 @@ CFLAGS+=	-DEFI_DEBUG
 # Always add MI sources and REGULAR efi loader bits
 .PATH:		${EFISRC}/loader/arch/${MACHINE}
 .PATH:		${EFISRC}/loader
-.PATH:		${LDRSRC}
+.PATH:		${COMMONSRC}
 .PATH:		${EFISRC}/libefi
-CFLAGS+=	-I${LDRSRC}
+CFLAGS+=	-I${COMMONSRC}
 
 FILES=	${BOOT1}.efi
 FILESMODE_${BOOT1}.efi=	${BINMODE}
