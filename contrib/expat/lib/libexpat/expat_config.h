@@ -28,7 +28,7 @@
 /* Host build might not have getrandom */
 #ifndef TOOL_FCCACHE
 /* Define to 1 if you have the `getrandom' function. */
-#define HAVE_GETRANDOM 1
+/* #undef HAVE_GETRANDOM */
 #endif
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -57,7 +57,7 @@
 
 #ifndef TOOL_FCCACHE
 /* Define to 1 if you have `syscall' and `SYS_getrandom'. */
-#define HAVE_SYSCALL_GETRANDOM 1
+/* #undef HAVE_SYSCALL_GETRANDOM */
 #endif
 
 /* Define to 1 if you have the <sys/param.h> header file. */
