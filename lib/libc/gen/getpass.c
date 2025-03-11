@@ -51,7 +51,7 @@ static char sccsid[] = "@(#)getpass.c	8.1 (Berkeley) 6/4/93";
 #include <unistd.h>
 #include <fcntl.h>
 
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 #include <sgtty.h>
 #else
 #include <sys/termios.h>
@@ -63,7 +63,7 @@ __weak_alias(getpass,_getpass)
 
 static void getpass_common(FILE *, FILE *, char *, char *);
 
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 static void getpass_sgtty(struct sgttyb *, FILE *, FILE *, long, char *, char *);
 #else
 static void getpass_termios(struct termios *, FILE *, FILE *, long, char *, char *);
@@ -73,7 +73,7 @@ char *
 getpass(prompt)
 	char *prompt;
 {
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
     struct sgttyb ttyb;
 #else
 	struct termios term;
@@ -91,7 +91,7 @@ getpass(prompt)
         setbuf(fi, (char *)NULL);
     }
     omask = sigblock(sigmask(SIGINT)|sigmask(SIGTSTP));
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
     getpass_sgtty(&ttyb, fi, fo, omask, pbuf, prompt);
 #else
     getpass_termios(&term, fi, fo, omask, pbuf, prompt);
@@ -122,7 +122,7 @@ getpass_common(fi, fo, pbuf, prompt)
     (void)write(fileno(fo), "\n", 1);
 }
 
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 
 static void
 getpass_sgtty(ttyb, fi, fo, omask, pbuf, prompt)

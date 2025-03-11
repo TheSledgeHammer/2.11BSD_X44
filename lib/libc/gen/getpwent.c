@@ -33,7 +33,7 @@ static char sccsid[] = "@(#)getpwent.c	5.9.1 (2.11BSD) 1996/1/12";
 #include <stdio.h>
 #include <pwd.h>
 
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 #include <ndbm.h>
 #else
 #include <db.h>
@@ -57,7 +57,7 @@ __weak_alias(setpwfile,_setpwfile)
 #endif
 
 #define	MAXLINELENGTH	256
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 static DBM *_pw_db;			/* password database */
 static const char *_pw_file = _PATH_PASSWD;	/* password path */
 static FILE *_pw_fp;			/* password file */
@@ -74,7 +74,7 @@ static char *line;
 
 static int start_pw(void);
 static int hashpw(char *, char *);
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 static int scanpw(void);
 static int init_ndbm(void);
 static int fetch_pw(datum);
@@ -84,7 +84,7 @@ static int init_db(void);
 static int fetch_pw(DBT *);
 #endif
 
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 struct passwd *
 getpwent(void)
 {
@@ -260,7 +260,7 @@ start_pw(void)
 {
 	int ret;
 
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 	ret = init_ndbm();
 #else
 	ret = init_db();
@@ -290,7 +290,7 @@ void
 endpwent(void)
 {
 	_pw_keynum = 0;
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 	if (_pw_db) {
 		dbm_close(_pw_db);
 		_pw_db = (DBM *)NULL;
@@ -334,7 +334,7 @@ hashpw(p, t)
 	return (1);
 }
 
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 
 static int
 scanpw(void)

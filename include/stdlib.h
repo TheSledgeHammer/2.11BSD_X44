@@ -217,12 +217,20 @@ unsigned long long int
 		strtoull(const char * __restrict, char ** __restrict, int);
 #endif
 
+#if defined(_ISOC11_SOURCE) || (__STDC_VERSION__ - 0) >= 201101L || \
+    defined(__BSD_VISIBLE) || (__cplusplus - 0) >= 201103L
+void	*aligned_alloc(size_t, size_t);
+#endif
+
 /*
  * The Open Group Base Specifications, Issue 6; IEEE Std 1003.1-2001 (POSIX)
  */
 #if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 600 || defined(__BSD_VISIBLE)
 int	 setenv(const char *, const char *, int);
 int	 unsetenv(const char *);
+
+int	 memalign(void **, size_t, size_t);
+int	 posix_memalign(void **, size_t, size_t);
 #endif
 
 /*

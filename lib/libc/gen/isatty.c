@@ -44,14 +44,14 @@ static char sccsid[] = "@(#)isatty.c	8.1 (Berkeley) 6/4/93";
 /*
  * Returns 1 iff file is a tty
  */
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 #include <sgtty.h>
 #else
 #include <termios.h>
 #endif
 #include <unistd.h>
 
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 int
 isatty(fd)
     int fd;

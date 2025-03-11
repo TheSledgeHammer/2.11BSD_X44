@@ -314,7 +314,7 @@ __weak_alias(__libc_thr_create,__libc_thr_create_stub)
 __weak_alias(__libc_thr_exit,__libc_thr_exit_stub)
 __weak_alias(__libc_thr_errno,__libc_thr_errno_stub)
 __weak_alias(__libc_thr_setcancelstate,__libc_thr_setcancelstate_stub)
-
+__weak_alias(__libc_thr_curcpu,__libc_thr_curcpu_stub)
 
 int
 __libc_thr_once_stub(once_t *o, void (*r)(void))
@@ -401,6 +401,12 @@ __libc_thr_errno_stub(void)
 	DIE();
 
 	return (NULL);
+}
+
+unsigned int
+__libc_thr_curcpu_stub(void)
+{
+	return (0);
 }
 
 #endif /* _REENTRANT */

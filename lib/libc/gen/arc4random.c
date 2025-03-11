@@ -48,7 +48,7 @@
 
 #define minimum(a, b) 	((a) < (b) ? (a) : (b))
 
-#if defined(USE_ARC4) && (USE_ARC4 == 0)
+#if defined(RUN_ARC4) && (RUN_ARC4 == 0)
 
 /* arc4 macros and functions */
 struct arc4_stream {
@@ -66,7 +66,7 @@ static inline u_int32_t 	arc4_getword(struct arc4_stream *);
 int rs_initialized;
 static struct arc4_stream rs;
 
-#else /* !USE_ARC4 */
+#else /* !RUN_ARC4 */
 
 /* chacha macros and functions */
 #define outputsize  	64
@@ -110,9 +110,9 @@ static inline void		chacha_random_u32(struct chacha_stream *, u_int32_t *);
 
 static struct chacha_stream rs;
 
-#endif /* USE_ARC4 */
+#endif /* RUN_ARC4 */
 
-#if defined(USE_ARC4) && (USE_ARC4 == 0)
+#if defined(RUN_ARC4) && (RUN_ARC4 == 0)
 static inline void
 arc4_init(as)
 	struct arc4_stream *as;
@@ -283,7 +283,7 @@ arc4random_uniform(bound)
 	return (r % bound);
 }
 
-#else /* !USE_ARC4 */
+#else /* !RUN_ARC4 */
 
 static inline int
 chacha_allocate(cp1, cp2)
@@ -497,7 +497,7 @@ arc4random_uniform(bound)
 
 	return (r % bound);
 }
-#endif /* USE_ARC4 */
+#endif /* RUN_ARC4 */
 
 #if 0
 /*-------- Test code for i386 --------*/

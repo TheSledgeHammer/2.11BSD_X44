@@ -1196,10 +1196,24 @@ USE_${var}?= yes
 .endfor
 
 #
+# libc USE_* options which default to "yes".
+#
+.for var in JEMALLOC
+USE_${var}?= no
+.endfor
+
+#
+# libc USE_* options which to "no".
+#
+.for var in ARC4 SGTTY NDBM
+USE_${var}?= no
+.endfor
+
+#
 # USE_* options which default to "no".
 #
 # For now, disable pigz as compressor by default
-.for var in PIGZGZIP JEMALLOC
+.for var in PIGZGZIP
 USE_${var}?= no
 .endfor
 

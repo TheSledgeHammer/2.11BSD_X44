@@ -5,24 +5,35 @@
 #
 #	@(#)Makefile	5.7.11 (2.11BSD) 1997/12/31
 #
+# Optional: USE_ARC4, USE_NDBM and USE_SGTTY
+# To enable or disable the below options, please see bsd.own.mk.
+# Modify the USE_* (i.e. USE_ARC4, USE_NDBM, etc) and change the
+# variable to "yes" or "no".
+# PLEASE DO NOT MODIFY THESE DIRECTLY!!
 
 # machine-independent gen sources
 .PATH: ${ARCHDIR}/gen ${.CURDIR}/gen
 
-# use ndbm instead of db (0 = yes, 1 = no)
-USE_NDBM?=  1
-# This changes the following files:
-# devname.c getpwent.c
-
-# use sgtty instead of termios   (0 = yes, 1 = no)
-USE_SGTTY?= 1
-# This changes the following files:
-# getpass.c
-
 # use arc4 instead of chacha (0 = yes, 1 = no)
-USE_ARC4?= 1
-# This changes the following files:
-# arc4random.c
+.if (${USE_ARC4} != "no")
+RUN_ARC4?= 0
+.else
+RUN_ARC4?= 1
+.endif
+
+# use ndbm instead of db (0 = yes, 1 = no)
+.if (${USE_NDBM} != "no")
+RUN_NDBM?= 0
+.else
+RUN_NDBM?= 1
+.endif
+
+# use sgtty instead of termios (0 = yes, 1 = no)
+.if (${USE_SGTTY} != "no")
+RUN_SGTTY?= 0
+.else
+RUN_SGTTY?= 1
+.endif
 
 SRCS+=	alarm.c arc4random.c assert.c basename.c closedir.c confstr.c ctermid.c daemon.c devname.c  	\
         dirname.c disklabel.c err.c errlst.c execvp.c fabs.c fnmatch.c fstab.c fts.c gcvt.c 		\

@@ -58,7 +58,7 @@ static char sccsid[] = "@(#)ttyname.c	8.2 (Berkeley) 1/27/94";
 #include <paths.h>
 #include <unistd.h>
 
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 #include <sgtty.h>
 #else
 #include <sys/termios.h>
@@ -71,7 +71,7 @@ __weak_alias(ttyname,_ttyname)
 static char buf[sizeof(_PATH_DEV) + MAXNAMLEN] = _PATH_DEV;
 static char *oldttyname(int);
 
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 static int ttyname_sgtty(int);
 #else
 static int ttyname_termios(int);
@@ -90,7 +90,7 @@ ttyname(fd)
 	} bkey;
 
 	/* Must be a terminal. */
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 	if (ttyname_sgtty(fd) < 0) {
 		return (NULL);
 	}
@@ -153,7 +153,7 @@ oldttyname(f)
 	return (NULL);
 }
 
-#if defined(USE_SGTTY) && (USE_SGTTY == 0)
+#if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 static int
 ttyname_sgtty(fd)
 	int fd;

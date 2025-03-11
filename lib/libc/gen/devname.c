@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)devname.c	8.1.1 (2.11BSD GTE) 2/3/95";
 
 #include <sys/types.h>
 
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 #include <ndbm.h>
 #else
 #include <db.h>
@@ -58,7 +58,7 @@ struct bkey {
 	dev_t  dev;
 };
 
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 static char *devname_ndbm(const char *, dev_t, mode_t);
 #else
 static char *devname_db(const char *, dev_t, mode_t);
@@ -69,14 +69,14 @@ devname(dev, type)
 	dev_t dev;
 	mode_t type;
 {
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 	return (devname_ndbm(_PATH_DEVDB, dev, type));
 #else
 	return (devname_db(_PATH_DEVDB, dev, type));
 #endif
 }
 
-#if defined(USE_NDBM) && (USE_NDBM == 0)
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
 static char *
 devname_ndbm(devdb, dev, type)
 	const char *devdb;

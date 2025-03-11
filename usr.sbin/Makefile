@@ -40,4 +40,10 @@ SUBDIR+= mdsetimage
 SUBDIR+= traceroute6 
 .endif
 
+.if (${USE_NDBM} != "no)
+SUBDIR+= mkpasswd
+#.else
+#SUBDIR+= 
+.endif
+
 .include <bsd.subdir.mk>

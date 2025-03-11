@@ -213,6 +213,7 @@ void 		__libc_thr_create(thr_t *, const thrattr_t *, void *(*)(void *), void *);
 void 		__libc_thr_exit(void *) __attribute__((__noreturn__));
 int		*__libc_thr_errno(void);
 int		__libc_thr_setcancelstate(int, int *);
+unsigned int	__libc_thr_curcpu(void);
 
 extern int __isthreaded;
 __END_DECLS
@@ -225,6 +226,7 @@ __END_DECLS
 #define	thr_errno()			__libc_thr_errno()
 #define	thr_enabled()			(__isthreaded)
 #define thr_setcancelstate(n, o) 	__libc_thr_setcancelstate((n),(o))
+#define thr_curcpu()			__libc_thr_curcpu()
 
 #endif /* __LIBC_THREAD_STUBS */
 
