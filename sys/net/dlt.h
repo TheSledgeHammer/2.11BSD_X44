@@ -43,55 +43,55 @@
 /*
  * Data-link level type codes.
  */
-#define DLT_NULL				        0	/* no link-layer encapsulation */
-#define DLT_EN10MB				      1	/* Ethernet (10Mb) */
-#define DLT_EN3MB				        2	/* Experimental Ethernet (3Mb) */
-#define DLT_AX25				        3	/* Amateur Radio AX.25 */
-#define DLT_PRONET				      4	/* Proteon ProNET Token Ring */
-#define DLT_CHAOS				        5	/* Chaos */
-#define DLT_IEEE802				      6	/* IEEE 802 Networks */
-#define DLT_ARCNET				      7	/* ARCNET */
-#define DLT_SLIP				        8	/* Serial Line IP */
-#define DLT_PPP					        9	/* Point-to-point Protocol */
-#define DLT_FDDI				        10	/* FDDI */
-#define DLT_ATM_RFC1483			    11	/* LLC/SNAP encapsulated atm */
-#define DLT_RAW					        12	/* raw IP */
-#define DLT_SLIP_BSDOS			    13	/* BSD/OS Serial Line IP */
-#define DLT_PPP_BSDOS			      14	/* BSD/OS Point-to-point Protocol */
-#define DLT_HIPPI				        15	/* HIPPI */
-#define DLT_HDLC				        16	/* HDLC framing */
+#define DLT_NULL	0	/* no link-layer encapsulation */
+#define DLT_EN10MB	1	/* Ethernet (10Mb) */
+#define DLT_EN3MB	2	/* Experimental Ethernet (3Mb) */
+#define DLT_AX25	3	/* Amateur Radio AX.25 */
+#define DLT_PRONET	4	/* Proteon ProNET Token Ring */
+#define DLT_CHAOS	5	/* Chaos */
+#define DLT_IEEE802	6	/* IEEE 802 Networks */
+#define DLT_ARCNET	7	/* ARCNET */
+#define DLT_SLIP	8	/* Serial Line IP */
+#define DLT_PPP		9	/* Point-to-point Protocol */
+#define DLT_FDDI	10	/* FDDI */
+#define DLT_ATM_RFC1483	11	/* LLC/SNAP encapsulated atm */
+#define DLT_RAW		12	/* raw IP */
+#define DLT_SLIP_BSDOS	13	/* BSD/OS Serial Line IP */
+#define DLT_PPP_BSDOS	14	/* BSD/OS Point-to-point Protocol */
+#define DLT_HIPPI	15	/* HIPPI */
+#define DLT_HDLC	16	/* HDLC framing */
 
-#define DLT_PFSYNC				      18	/* Packet filter state syncing */
-#define DLT_ATM_CLIP			      19	/* Linux Classical-IP over ATM */
-#define DLT_ENC					        109	/* Encapsulated packets for IPsec */
-#define DLT_LINUX_SLL			      113	/* Linux cooked sockets */
-#define DLT_LTALK				        114	/* Apple LocalTalk hardware */
-#define DLT_PFLOG				        117	/* Packet filter logging, by pcap people */
-#define DLT_CISCO_IOS			      118	/* Registered for Cisco-internal use */
+#define DLT_PFSYNC	18	/* Packet filter state syncing */
+#define DLT_ATM_CLIP	19	/* Linux Classical-IP over ATM */
+#define DLT_ENC		109	/* Encapsulated packets for IPsec */
+#define DLT_LINUX_SLL	113	/* Linux cooked sockets */
+#define DLT_LTALK	114	/* Apple LocalTalk hardware */
+#define DLT_PFLOG	117	/* Packet filter logging, by pcap people */
+#define DLT_CISCO_IOS	118	/* Registered for Cisco-internal use */
 
 /* NetBSD-specific types */
-#define	DLT_PPP_SERIAL			    50	/* PPP over serial (async and sync) */
-#define	DLT_PPP_ETHER			      51	/* XXX - deprecated! PPP over Ethernet; session only, w/o ether header */
+#define	DLT_PPP_SERIAL	50	/* PPP over serial (async and sync) */
+#define	DLT_PPP_ETHER	51	/* XXX - deprecated! PPP over Ethernet; session only, w/o ether header */
 
 /* Axent Raptor / Symantec Enterprise Firewall */
-#define DLT_SYMANTEC_FIREWALL	  99
+#define DLT_SYMANTEC_FIREWALL	99
 
-#define DLT_C_HDLC		          104	/* Cisco HDLC */
-#define DLT_IEEE802_11	    	  105	/* IEEE 802.11 wireless */
-#define DLT_FRELAY		          107	/* Frame Relay */
-#define DLT_LOOP		            108	/* OpenBSD DLT_LOOP */
-#define DLT_ECONET		          115	/* Acorn Econet */
-#define DLT_PRISM_HEADER	      119	/* 802.11 header plus Prism II info. */
-#define DLT_AIRONET_HEADER 	    120	/* 802.11 header plus Aironet info. */
-#define DLT_HHDLC		            121	/* Reserved for Siemens HiPath HDLC */
-#define DLT_IP_OVER_FC		      122	/* RFC 2625 IP-over-Fibre Channel */
-#define DLT_SUNATM		          123	/* Solaris+SunATM */
-#define DLT_RIO                 124 /* RapidIO */
-#define DLT_PCI_EXP             125 /* PCI Express */
-#define DLT_AURORA              126 /* Xilinx Aurora link layer */
-#define DLT_IEEE802_11_RADIO 	  127	/* 802.11 header plus radio info. */
-#define DLT_TZSP                128 /* Tazmen Sniffer Protocol */
-#define DLT_ARCNET_LINUX	      129	/* ARCNET */
+#define DLT_C_HDLC		104	/* Cisco HDLC */
+#define DLT_IEEE802_11		105	/* IEEE 802.11 wireless */
+#define DLT_FRELAY		107	/* Frame Relay */
+#define DLT_LOOP		108	/* OpenBSD DLT_LOOP */
+#define DLT_ECONET		115	/* Acorn Econet */
+#define DLT_PRISM_HEADER	119	/* 802.11 header plus Prism II info. */
+#define DLT_AIRONET_HEADER 	120	/* 802.11 header plus Aironet info. */
+#define DLT_HHDLC		121	/* Reserved for Siemens HiPath HDLC */
+#define DLT_IP_OVER_FC		122	/* RFC 2625 IP-over-Fibre Channel */
+#define DLT_SUNATM		123	/* Solaris+SunATM */
+#define DLT_RIO                 124     /* RapidIO */
+#define DLT_PCI_EXP             125     /* PCI Express */
+#define DLT_AURORA              126     /* Xilinx Aurora link layer */
+#define DLT_IEEE802_11_RADIO 	127	/* 802.11 header plus radio info. */
+#define DLT_TZSP                128     /* Tazmen Sniffer Protocol */
+#define DLT_ARCNET_LINUX	129	/* ARCNET */
 #define DLT_JUNIPER_MLPPP       130	/* Juniper-private data link types. */
 #define DLT_JUNIPER_MLFR        131
 #define DLT_JUNIPER_ES          132
@@ -106,14 +106,14 @@
  * 139 through 142 are reserved for SS7.
  */
 
-#define DLT_DOCSIS		          143	/* Reserved for DOCSIS MAC frames. */
-#define DLT_LINUX_IRDA		      144	/* Linux-IrDA packets */
+#define DLT_DOCSIS		143	/* Reserved for DOCSIS MAC frames. */
+#define DLT_LINUX_IRDA		144	/* Linux-IrDA packets */
 
 /* Reserved for IBM SP switch and IBM Next Federation switch. */
-#define DLT_IBM_SP		          145
-#define DLT_IBM_SN		          146
+#define DLT_IBM_SP		145
+#define DLT_IBM_SN		146
 
-#define DLT_IEEE802_11_RADIO_AVS    163	/* 802.11 plus AVS header */
+#define DLT_IEEE802_11_RADIO_AVS	163	/* 802.11 plus AVS header */
 #define DLT_JUNIPER_MONITOR     164	/* Juniper-private data link type */
 
 /*
