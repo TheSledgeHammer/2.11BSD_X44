@@ -35,7 +35,6 @@
  */
 __BEGIN_DECLS
 void 	*je_malloc(size_t);
-int 	posix_memalign(void **, size_t alignment, size_t);
 void	*je_calloc(size_t, size_t);
 void 	*je_realloc(void *, size_t);
 void 	je_free(void *);
