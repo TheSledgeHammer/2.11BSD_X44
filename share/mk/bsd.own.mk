@@ -1203,7 +1203,7 @@ USE_${var}?= no
 .endfor
 
 #
-# libc USE_* options which to "no".
+# libc USE_* options which default to "no".
 #
 .for var in ARC4 SGTTY NDBM
 USE_${var}?= no
