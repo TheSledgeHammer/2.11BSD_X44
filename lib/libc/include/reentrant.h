@@ -253,6 +253,7 @@ int		__libc_thr_create_stub(thr_t *, const thrattr_t *, void *(*)(void *), void 
 void		__libc_thr_exit_stub(void *);
 int		*__libc_thr_errno_stub(void);
 int		__libc_thr_setcancelstate_stub(int, int *);
+unsigned int __libc_thr_curcpu_stub(void);
 __END_DECLS
 
 #define	FLOCKFILE(fp)			__flockfile_internal(fp, 1)
