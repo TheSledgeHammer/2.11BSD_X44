@@ -20,7 +20,7 @@ SUBDIR=	ac accton arp authpf 						\
 		wsconscfg wsfontload wsmoused wsmuxctl		\
         zdump zic
 
-.if ${MKMAKEMANDB} != "no"
+.if (${MKMAKEMANDB} != "no")
 SUBDIR+= makemandb
 .endif
 
@@ -28,7 +28,7 @@ SUBDIR+= makemandb
 SUBDIR+= ypbind yppoll ypserv ypset
 .endif
 
-.if ${TOOLCHAIN_MISSING} != "no"
+.if (${TOOLCHAIN_MISSING} != "no")
 SUBDIR+= mdsetimage
 .endif
 
@@ -40,7 +40,7 @@ SUBDIR+= mdsetimage
 SUBDIR+= traceroute6 
 .endif
 
-.if (${USE_NDBM} != "no)
+.if (${USE_NDBM} != "no")
 SUBDIR+= mkpasswd
 #.else
 #SUBDIR+= 
