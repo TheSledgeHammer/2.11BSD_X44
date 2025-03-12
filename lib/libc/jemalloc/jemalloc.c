@@ -98,8 +98,11 @@
 
 /* LINTLIBRARY */
 
-
+#ifdef noutrace
 #  define xutrace(a, b)		utrace("malloc", (a), (b))
+#endif
+
+#  define xutrace(a, b)     /* do nothing! */
 #  define __DECONST(x, y)	((x)__UNCONST(y))
 #  define NO_TLS
 
@@ -776,20 +779,26 @@ static bool	opt_xmalloc = false;
 static bool	opt_zero = false;
 static int32_t	opt_narenas_lshift = 0;
 
+#ifdef noutrace
+
 typedef struct {
 	void	*p;
 	size_t	s;
 	void	*r;
 } malloc_utrace_t;
 
-#define	UTRACE(a, b, c)							\
-	if (opt_utrace) {						\
-		malloc_utrace_t ut;					\
+#define	UTRACE(a, b, c)					\
+	if (opt_utrace) {					\
+		malloc_utrace_t ut;				\
 		ut.p = a;						\
 		ut.s = b;						\
 		ut.r = c;						\
-		xutrace(&ut, sizeof(ut));				\
+		xutrace(&ut, sizeof(ut));		\
 	}
+
+#endif
+
+#define	UTRACE(a, b, c)	/* do nothing */
 
 /******************************************************************************/
 /*
@@ -815,6 +824,7 @@ static void 	*pages_remap(void *old_addr, size_t old_size, void *new_addr, size_
 static void	pages_unmap(void *addr, size_t size);
 static void	*chunk_alloc(size_t size);
 static void	chunk_dealloc(void *chunk, size_t size);
+static arena_t *choose_arena_hard(void);
 static void	arena_run_split(arena_t *arena, arena_run_t *run, size_t size);
 static arena_chunk_t *arena_chunk_alloc(arena_t *arena);
 static void	arena_chunk_dealloc(arena_t *arena, arena_chunk_t *chunk);
@@ -844,6 +854,9 @@ static void	idalloc(void *ptr);
 static void	malloc_print_stats(void);
 static bool	malloc_init_hard(void);
 
+size_t  malloc_usable_size(const void *ptr);
+void    _malloc_prefork(void);
+void    _malloc_postfork(void);
 /*
  * End function prototypes.
  */
@@ -1238,13 +1251,13 @@ pages_remap(void *old_addr, size_t old_size, void *new_addr, size_t new_size, in
 	void *ret;
 	int error;
 
-	if ((new_addr == old_addr) && (align == 0 || (old_addr & (align - 1)) == 0)) {
+	if ((new_addr == old_addr) && (align == 0 || (old_addr && (align - 1)) == 0)) {
 		if (new_size == old_size) {
 			new_addr = old_addr;
 			goto done;
 		}
 		if (new_size < old_size) {
-			error = munmap(old_addr + new_size, old_addr + old_size);
+			error = munmap((caddr_t)old_addr + new_size, (size_t)old_addr + old_size);
 			if (error != 0) {
 				return (NULL);
 			}
@@ -1253,12 +1266,12 @@ pages_remap(void *old_addr, size_t old_size, void *new_addr, size_t new_size, in
 		}
 	}
 	if (new_size > old_size) {
-		ret = pages_map_align(new_addr + old_size, new_size - old_size, align);
+		ret = pages_map_align((caddr_t)new_addr + old_size, new_size - old_size, align);
 		if (ret != NULL) {
 			if (new_addr == old_addr) {
-				error = munmap(new_addr + old_size, new_addr + new_size);
+				error = munmap((caddr_t)new_addr + old_size, (size_t)new_addr + new_size);
 			} else {
-				error = munmap(new_addr + old_size, new_addr + new_size);
+				error = munmap((caddr_t)new_addr + old_size, (size_t)new_addr + new_size);
 			}
 			if (error != 0) {
 				return (NULL);
@@ -1399,7 +1412,7 @@ RETURN:
 		 */
 		key.chunk = ret;
 		/* LINTED */
-		tchunk = RB_NFIND(chunk_tree_s, &old_chunks, &key);
+		tchunk = RB_FIND(chunk_tree_s, &old_chunks, &key);
 		while (tchunk != NULL
 		    && (uintptr_t)tchunk->chunk >= (uintptr_t)ret
 		    && (uintptr_t)tchunk->chunk < (uintptr_t)ret + size) {
@@ -1534,14 +1547,13 @@ chunk_dealloc(void *chunk, size_t size)
  * amongst threads.  To accomplish this, next_arena advances only in
  * ncpu steps.
  */
-
-static __noinline arena_t *
+static arena_t *
 choose_arena_hard(void)
 {
 	malloc_mutex_lock(&arenas_mtx);
 	for (unsigned i = 1; i < ncpus; i++)
 		if (arenas[i] == NULL)
-			arenas[i] = arenas_extend();
+			arenas[i] = arenas_extend(i);
 	malloc_mutex_unlock(&arenas_mtx);
 
 	return arenas[thr_curcpu()];
@@ -2002,7 +2014,7 @@ arena_run_dalloc(arena_t *arena, arena_run_t *run, size_t size)
 	 * requested via runtime configuration.
 	 */
 	if (opt_hint)
-		madvise(run, size, MADV_FREE);
+		madvise((caddr_t)run, size, MADV_FREE);
 
 	/* Try to coalesce with neighboring runs. */
 	if (run_ind > arena_chunk_header_npages &&
