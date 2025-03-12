@@ -37,12 +37,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-int
-memalign(void **memptr, size_t alignment, size_t size)
-{
-	return (posix_memalign(memptr, alignment, size));
-}
-
 void *
 aligned_alloc(size_t alignment, size_t size)
 {
