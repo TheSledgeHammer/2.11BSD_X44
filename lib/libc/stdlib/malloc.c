@@ -57,6 +57,8 @@ static char sccsid[] = "@(#)malloc.c	8.1 (Berkeley) 6/4/93";
 #include <string.h>
 #include <unistd.h>
 
+#include "reentrant.h"
+
 /*
  * The overhead on a block is at least 4 bytes.  When free, this space
  * contains a pointer to the next free block, and the bottom two bits must
@@ -92,8 +94,13 @@ union overhead {
 #define	RSLOP		0
 #endif
 
+#ifdef _REENTRANT
+static	mutex_t malloc_mutex = MUTEX_INITIALIZER;
+#endif
+
 static void morecore(int);
 static int findbucket(union overhead *, int);
+static long cachedpagesize(void);
 
 /*
  * nextf[i] is the pointer to the next free block of size 2^(i+3).  The
@@ -139,6 +146,8 @@ malloc(nbytes)
   	register int bucket, n;
 	register unsigned amt;
 
+	mutex_lock(&malloc_mutex);
+
 	/*
 	 * First time malloc is called, setup page size and
 	 * align break pointer so all data will be page aligned.
@@ -151,6 +160,7 @@ malloc(nbytes)
 			n += pagesz;
   		if (n) {
   			if (sbrk(n) == (char *)-1)
+  				mutex_unlock(&malloc_mutex);
 				return (NULL);
 		}
 		bucket = 0;
@@ -192,6 +202,7 @@ malloc(nbytes)
   	if ((op = nextf[bucket]) == NULL) {
   		morecore(bucket);
   		if ((op = nextf[bucket]) == NULL)
+  			mutex_unlock(&malloc_mutex);
   			return (NULL);
 	}
 	/* remove from linked list */
@@ -201,6 +212,7 @@ malloc(nbytes)
 #ifdef MSTATS
   	nmalloc[bucket]++;
 #endif
+	mutex_unlock(&malloc_mutex);
 #ifdef RCHECK
 	/*
 	 * Record allocated size of block and
@@ -280,11 +292,13 @@ free(cp)
 #endif
   	size = op->ov_index;
   	ASSERT(size < NBUCKETS);
-	op->ov_next = nextf[size];	/* also clobbers ov_magic */
-  	nextf[size] = op;
+	mutex_lock(&malloc_mutex);
+	op->ov_next = nextf[size]; /* also clobbers ov_magic */
+	nextf[size] = op;
 #ifdef MSTATS
   	nmalloc[size]--;
 #endif
+	mutex_unlock(&malloc_mutex);
 }
 
 /*
@@ -314,6 +328,7 @@ realloc(cp, nbytes)
   	if (cp == NULL)
   		return (malloc(nbytes));
 	op = (union overhead *)((caddr_t)cp - sizeof (union overhead));
+	mutex_lock(&malloc_mutex);
 	if (op->ov_magic == MAGIC) {
 		was_alloced++;
 		i = op->ov_index;
@@ -355,14 +370,24 @@ realloc(cp, nbytes)
 			op->ov_size = (nbytes + RSLOP - 1) & ~(RSLOP - 1);
 			*(u_short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
-			return(cp);
+			mutex_unlock(&malloc_mutex);
+			return (cp);
 		} else
 			free(cp);
 	}
+	mutex_unlock(&malloc_mutex);
   	if ((res = malloc(nbytes)) == NULL)
+#ifdef _REENTRANT
+		free(cp);
+#endif
   		return (NULL);
+#ifndef _REENTRANT
   	if (cp != res)		/* common optimization if "compacting" */
 		bcopy(cp, res, (nbytes < onb) ? nbytes : onb);
+#else
+	bcopy(cp, res, (nbytes < onb) ? nbytes : onb);
+	free(cp);
+#endif
   	return (res);
 }
 
@@ -423,3 +448,40 @@ mstats(s)
 	    totused, totfree);
 }
 #endif
+
+static long
+cachedpagesize(void)
+{
+	long n;
+
+	/* XXX atomic_load_relaxed, but that's not defined in userland atm */
+	if (__predict_false((n = pagesz) == 0)) {
+		mutex_lock(&malloc_mutex);
+		if ((n = pagesz) == 0) {
+			n = pagesz = getpagesize();
+		}
+		mutex_unlock(&malloc_mutex);
+	}
+
+	return (n);
+}
+
+int
+posix_memalign(memptr, alignment, size)
+	void **memptr;
+	size_t alignment, size;
+{
+	char *p;
+
+	if (alignment < sizeof(void*) || (alignment & (alignment - 1)) != 0
+			|| alignment > cachedpagesize()) {
+		return (EINVAL);
+	}
+	p = malloc(size < alignment ? alignment : size);
+	if (__predict_false(p == NULL)) {
+		return (ENOMEM);
+	}
+	ASSERT((uintptr_t)p % alignment == 0);
+	*memptr = p;
+	return (0);
+}

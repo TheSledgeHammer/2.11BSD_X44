@@ -129,6 +129,7 @@ __RCSID("$NetBSD: jemalloc.c,v 1.64 2023/12/13 23:53:50 mrg Exp $");
 #include <sys/ktrace.h> /* Must come after several other sys/ includes. */
 
 #include <errno.h>
+#include <errlst.h>
 #include <limits.h>
 #include <pthread.h>
 #include <sched.h>
@@ -144,8 +145,6 @@ __RCSID("$NetBSD: jemalloc.c,v 1.64 2023/12/13 23:53:50 mrg Exp $");
 #include <reentrant.h>
 #include "extern.h"
 
-#include "jemalloc.h"
-
 #define STRERROR_R(a, b, c)	__strerror_r(a, b, c);
 
  static int
@@ -155,10 +154,10 @@ __RCSID("$NetBSD: jemalloc.c,v 1.64 2023/12/13 23:53:50 mrg Exp $");
  	size_t slen;
 
  	if (e >= 0 && e < sys_nerr) {
- 		slen = strlcpy(s, sys_errlist[e], l);
+ 		slen = strlcpy(s, __UNCONST(syserrlst(e)), l);
  		rval = 0;
  	} else {
- 		slen = snprintf_ss(s, l, "Unknown error %u", e);
+ 		slen = snprintf(s, l, "Unknown error %u", e);
  		rval = EINVAL;
  	}
  	return slen >= l ? ERANGE : rval;
@@ -812,6 +811,7 @@ static void	stats_print(arena_t *arena);
 #endif
 static void	*pages_map(void *addr, size_t size);
 static void	*pages_map_align(void *addr, size_t size, int align);
+static void 	*pages_remap(void *old_addr, size_t old_size, void *new_addr, size_t new_size, int align);
 static void	pages_unmap(void *addr, size_t size);
 static void	*chunk_alloc(size_t size);
 static void	chunk_dealloc(void *chunk, size_t size);
@@ -1186,6 +1186,7 @@ chunk_comp(chunk_node_t *a, chunk_node_t *b)
 }
 
 /* Generate red-black tree code for chunks. */
+RB_PROTOTYPE(chunk_tree_s, chunk_node_s, link, chunk_comp);
 RB_GENERATE(chunk_tree_s, chunk_node_s, link, chunk_comp);
 
 static void *
@@ -1229,6 +1230,46 @@ pages_map(void *addr, size_t size)
 {
 
 	return pages_map_align(addr, size, 0);
+}
+
+static void *
+pages_remap(void *old_addr, size_t old_size, void *new_addr, size_t new_size, int align)
+{
+	void *ret;
+	int error;
+
+	if ((new_addr == old_addr) && (align == 0 || (old_addr & (align - 1)) == 0)) {
+		if (new_size == old_size) {
+			new_addr = old_addr;
+			goto done;
+		}
+		if (new_size < old_size) {
+			error = munmap(old_addr + new_size, old_addr + old_size);
+			if (error != 0) {
+				return (NULL);
+			}
+			new_addr = old_addr;
+			goto done;
+		}
+	}
+	if (new_size > old_size) {
+		ret = pages_map_align(new_addr + old_size, new_size - old_size, align);
+		if (ret != NULL) {
+			if (new_addr == old_addr) {
+				error = munmap(new_addr + old_size, new_addr + new_size);
+			} else {
+				error = munmap(new_addr + old_size, new_addr + new_size);
+			}
+			if (error != 0) {
+				return (NULL);
+			}
+			return (ret);
+		}
+	}
+
+done:
+	ret = pages_map_align(new_addr, new_size, align);
+	return (ret);
 }
 
 static void
@@ -1540,6 +1581,7 @@ arena_chunk_comp(arena_chunk_t *a, arena_chunk_t *b)
 }
 
 /* Generate red-black tree code for arena chunks. */
+RB_PROTOTYPE(arena_chunk_tree_s, arena_chunk_s, link, arena_chunk_comp);
 RB_GENERATE(arena_chunk_tree_s, arena_chunk_s, link, arena_chunk_comp);
 
 static inline int
@@ -1558,6 +1600,7 @@ arena_run_comp(arena_run_t *a, arena_run_t *b)
 }
 
 /* Generate red-black tree code for arena runs. */
+RB_PROTOTYPE(arena_run_tree_s, arena_run_s, link, arena_run_comp);
 RB_GENERATE(arena_run_tree_s, arena_run_s, link, arena_run_comp);
 
 static inline void *
@@ -2836,8 +2879,7 @@ huge_ralloc(void *ptr, size_t size, size_t oldsize)
 		RB_REMOVE(chunk_tree_s, &huge, node);
 		malloc_mutex_unlock(&chunks_mtx);
 
-		newptr = mremap(ptr, oldcsize, NULL, newcsize,
-		    MAP_ALIGNED(chunksize_2pow));
+		newptr = pages_remap(ptr, oldcsize, NULL, newcsize, MAP_ALIGNED(chunksize_2pow));
 		if (newptr == MAP_FAILED) {
 			/* We still own the old region. */
 			malloc_mutex_lock(&chunks_mtx);
@@ -3636,7 +3678,7 @@ malloc_init_hard(void)
  */
 
 void *
-je_malloc(size_t size)
+malloc(size_t size)
 {
 	void *ret;
 
@@ -3717,7 +3759,7 @@ RETURN:
 }
 
 void *
-je_calloc(size_t num, size_t size)
+calloc(size_t num, size_t size)
 {
 	void *ret;
 	size_t num_size;
@@ -3767,7 +3809,7 @@ RETURN:
 }
 
 void *
-je_realloc(void *ptr, size_t size)
+realloc(void *ptr, size_t size)
 {
 	void *ret;
 
@@ -3819,7 +3861,7 @@ RETURN:
 }
 
 void
-je_free(void *ptr)
+free(void *ptr)
 {
 
 	UTRACE(ptr, 0, 0);

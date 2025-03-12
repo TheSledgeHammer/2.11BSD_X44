@@ -37,8 +37,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "jemalloc.h"
-
 int
 memalign(void **memptr, size_t alignment, size_t size)
 {
@@ -56,7 +54,7 @@ aligned_alloc(size_t alignment, size_t size)
 	 */
 	if (alignment == 0 || ((alignment - 1) & alignment) != 0) {
 		errno = EINVAL;
-		return NULL;
+		return (NULL);
 	}
 
 	/*
@@ -70,8 +68,8 @@ aligned_alloc(size_t alignment, size_t size)
 	err = posix_memalign(&memptr, alignment, size);
 	if (err) {
 		errno = err;
-		return NULL;
+		return (NULL);
 	}
 
-	return memptr;
+	return (memptr);
 }

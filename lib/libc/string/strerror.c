@@ -42,16 +42,18 @@ static char sccsid[] = "@(#)strerror.c	8.1.1 (2.11BSD) 1996/3/15";
 #include <string.h>
 #include <limits.h>
 
+#define	EBUFSIZE	40
+#define	UPREFIX		"Unknown error: "
+
 char *
 strerror(num)
 	int num;
 {
 	extern int sys_nerr;
-#define	UPREFIX	"Unknown error: "
-	static char ebuf[40] = UPREFIX; /* 64-bit number + slop */
+	static char ebuf[EBUFSIZE] = UPREFIX; /* 64-bit number + slop */
 	register unsigned int errnum;
 	register char *p, *t;
-	char tmp[40];
+	char tmp[EBUFSIZE];
 
 	errnum = num; /* convert to unsigned */
 	if (errnum < sys_nerr) {
@@ -69,9 +71,10 @@ strerror(num)
 	} while (errnum /= 10);
 	for (p = ebuf + sizeof(UPREFIX) - 1;;) {
 		*p++ = *--t;
-		if (t <= tmp)
+		if (t <= tmp) {
 			break;
+		}
 	}
+
 	return (ebuf);
 }
-
