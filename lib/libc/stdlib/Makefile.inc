@@ -9,7 +9,7 @@
 # stdlib sources
 .PATH: ${ARCHDIR}/stdlib ${.CURDIR}/stdlib
 
-SRCS+=	a64l.c abort.c abs.c atexit.c atof.c atoi.c atol.c bsearch.c div.c drand48.c 			\
+SRCS+=	a64l.c abort.c abs.c aligned_alloc.c atexit.c atof.c atoi.c atol.c bsearch.c div.c drand48.c 			\
 	erand48.c exit.c getenv.c getopt_long.c getopt.c getsubopt.c hcreate.c heapsort.c       		\
         jrand48.c l64a.c labs.c lcong48.c ldiv.c llabs.c lldiv.c lrand48.c memalign.c merge.c  \
 	mi_vector_hash.c mrand48.c nrand48.c putenv.c qabs.c qdiv.c qsort.c radixsort.c rand_r.c random.c	\
