@@ -229,7 +229,6 @@ void	*aligned_alloc(size_t, size_t);
 int	 setenv(const char *, const char *, int);
 int	 unsetenv(const char *);
 
-int	 memalign(void **, size_t, size_t);
 int	 posix_memalign(void **, size_t, size_t);
 #endif
 
