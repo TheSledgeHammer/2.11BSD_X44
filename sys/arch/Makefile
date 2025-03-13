@@ -19,6 +19,6 @@ SUBDIR+= ${ARCHSUBDIR}
 
 INCSYMLINKS= ${MACHINE} /usr/include/machine
 
-INCSYMLINKS+= machine/float.h /usr/include/float.h
+#INCSYMLINKS+= machine/float.h /usr/include/float.h
 
 .include <bsd.kinc.mk>

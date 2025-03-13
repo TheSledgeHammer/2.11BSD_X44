@@ -12,7 +12,7 @@ NOOBJ=		# defined
 
 INCS=   a.out.h ar.h assert.h atomic.h bitstring.h cdbr.h cdbw.h complex.h 	\
 	cpio.h ctype.h db.h dirent.h dlfcn.h encoding.h endian.h err.h errlst.h \
-	errno.h fenv.h fmtmsg.h fnmatch.h fstab.h fts.h ftw.h getopt.h glob.h 	\
+	errno.h fenv.h float.h fmtmsg.h fnmatch.h fstab.h fts.h ftw.h getopt.h glob.h 	\
 	grp.h iconv.h ident.h ifaddrs.h inttypes.h iso646.h kenv.h kvm.h 	\
 	langinfo.h lastlog.h lastlogx.h libgen.h limits.h link.h link_aout.h 	\
         link_elf.h locale.h login_cap.h math.h memory.h mp.h mpool.h mtab.h 	\
