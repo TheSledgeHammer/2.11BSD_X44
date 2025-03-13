@@ -40,5 +40,5 @@ i386_vm86(int fcn, void *data)
 	p.sub_op = fcn;
 	p.sub_args = (char *)data;
 
-	return (sysarch(I386_VM86, &p));
+	return (sysarch(I386_VM86, (void *)&p));
 }
