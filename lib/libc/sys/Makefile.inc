@@ -56,8 +56,8 @@ ASM_GLUENOERR+= tmp_${glue:.c=.S}
 
 # modules with default implementations on all architectures:
 ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
-                chown.S chroot.S clock_gettime.S clock_settime.S dup.S \
-                dup2.S fchdir.S fchflags.S fchmod.S fchown.S flock.S \
+                chown.S chroot.S clock_gettime.S clock_getres.S clock_settime.S \
+		dup.S dup2.S fchdir.S fchflags.S fchmod.S fchown.S flock.S \
                 fstat.S fstatfs.S getdirentries.S getdtablesize.S \
                 getfsstat.S getgroups.S getitimer.S getpeername.S getpriority.S \
                 getrlimit.S getrusage.S getsockname.S getsockopt.S gettimeofday.S \
@@ -71,8 +71,8 @@ ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
                 setrlimit.S setsid.S setsockopt.S settimeofday.S setuid.S \
                 sigaltstack.S sigstack.S sigtimedwait.S shutdown.S \
                 socket.S socketpair.S sstk.S stat.S statfs.S swapctl.S \
-                symlink.S undelete.S unlink.S unmount.S utimes.S uuidgen.S \
-                vtrace.S __sysctl.S
+                symlink.S undelete.S unlink.S unmount.S utimes.S utrace.S \
+		uuidgen.S vtrace.S __sysctl.S
 
 WEAKASM=        accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill.S \
                 open.S poll.S pselect.S read.S readlink.S readv.S recvfrom.S \

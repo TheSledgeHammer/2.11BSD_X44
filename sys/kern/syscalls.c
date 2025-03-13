@@ -156,7 +156,7 @@ char *syscallnames[] = {
 	"setrlimit",			/* 145 = setrlimit */
 	"killpg",			/* 146 = killpg */
 	"quotactl",			/* 147 = quotactl */
-	"#148",		/* 148 = obsolete old setquota */
+	"clock_getres",			/* 148 = clock_getres */
 	"#149",		/* 149 = obsolete old quota */
 	"getsockname",			/* 150 = getsockname */
 	"uuidgen",			/* 151 = uuidgen */
@@ -176,12 +176,14 @@ char *syscallnames[] = {
 	"_syscall",			/* 165 = _syscall */
 #ifdef KTRACE
 	"ktrace",			/* 166 = ktrace */
+	"utrace",			/* 167 = utrace */
 #else 
 	"#166",		/* 166 = unused ktrace */
+	"#167",		/* 167 = unused utrace */
 #endif
 #ifdef TRACE
-	"vtrace",			/* 167 = vtrace */
+	"vtrace",			/* 168 = vtrace */
 #else
-	"#167",		/* 167 = unused vtrace */
+	"#168",		/* 168 = unused vtrace */
 #endif
 };

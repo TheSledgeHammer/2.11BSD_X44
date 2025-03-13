@@ -397,7 +397,7 @@ done:
 /* ARGSUSED */
 int
 ktrace()
- {
+{
 	register struct ktrace_args {
 		syscallarg(char *) fname;
 		syscallarg(int) ops;
@@ -597,7 +597,6 @@ ktrcanset(callp, targetp)
 /*
  * Put user defined entry to ktrace records.
  */
-#ifdef notyet
 int
 utrace()
 {
@@ -606,10 +605,9 @@ utrace()
 		syscallarg(void *) addr;
 		syscallarg(size_t) len;
 	} *uap = (struct utrace_args *)u.u_ap;
-    	register struct proc *p;
-	
+	register struct proc *p;
+
 	p = u.u_procp;
-	return (ktruser(p, SCARG(uap, label), SCARG(uap, addr), SCARG(uap, len), 1);
+	return (ktruser(p, SCARG(uap, label), SCARG(uap, addr), SCARG(uap, len), 1));
 }
-#endif
 #endif

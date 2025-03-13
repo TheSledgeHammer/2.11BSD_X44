@@ -153,6 +153,7 @@ int	getrlimit();
 int	setrlimit();
 int	killpg();
 int	quotactl();
+int	clock_getres();
 int	getsockname();
 int	uuidgen();
 int	nostk();
@@ -168,6 +169,7 @@ int	swapctl();
 int	nosys();
 #ifdef KTRACE
 int	ktrace();
+int	utrace();
 #else 
 #endif
 #ifdef TRACE
@@ -474,7 +476,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    quotactl },				/* 147 = quotactl */
 	{ 0, 0,
-	    nosys },				/* 148 = obsolete old setquota */
+	    clock_getres },			/* 148 = clock_getres */
 	{ 0, 0,
 	    nosys },				/* 149 = obsolete old quota */
 	{ 0, 0,
@@ -512,16 +514,20 @@ struct sysent sysent[] = {
 #ifdef KTRACE
 	{ 0, 0,
 	    ktrace },				/* 166 = ktrace */
+	{ 0, 0,
+	    utrace },				/* 167 = utrace */
 #else 
 	{ 0, 0,
 	    nosys },				/* 166 = unused ktrace */
+	{ 0, 0,
+	    nosys },				/* 167 = unused utrace */
 #endif
 #ifdef TRACE
 	{ 0, 0,
-	    vtrace },				/* 167 = vtrace */
+	    vtrace },				/* 168 = vtrace */
 #else
 	{ 0, 0,
-	    nosys },				/* 167 = unused vtrace */
+	    nosys },				/* 168 = unused vtrace */
 #endif
 };
 

@@ -151,7 +151,7 @@
 #define	SYS_setrlimit	145
 #define	SYS_killpg	146
 #define	SYS_quotactl	147
-				/* 148 is obsolete old setquota */
+#define	SYS_clock_getres	148
 				/* 149 is obsolete old quota */
 #define	SYS_getsockname	150
 #define	SYS_uuidgen	151
@@ -170,5 +170,6 @@
 #define	SYS_swapctl	164
 #define	SYS__syscall	165
 #define	SYS_ktrace	166
-#define	SYS_vtrace	167
-#define	SYS_MAXSYSCALL	168
+#define	SYS_utrace	167
+#define	SYS_vtrace	168
+#define	SYS_MAXSYSCALL	169

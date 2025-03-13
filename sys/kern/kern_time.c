@@ -577,6 +577,35 @@ clock_settime()
 }
 
 int
+clock_getres()
+{
+	register struct clock_getres_args {
+		syscallarg(clockid_t) clock_id;
+		syscallarg(struct timespec *) tp;
+	} *uap = (struct clock_getres_args *)u.u_ap;
+	struct timespec ts;
+
+	switch (SCARG(uap, clock_id)) {
+	case CLOCK_REALTIME:
+	case CLOCK_MONOTONIC:
+		ts.tv_sec = 0;
+		if (tc_getfrequency() > 1000000000) {
+			ts.tv_nsec = 1;
+		} else {
+			ts.tv_nsec = 1000000000 / tc_getfrequency();
+		}
+		break;
+	default:
+		u.u_error = EINVAL;
+		return (EINVAL);
+	}
+	if (SCARG(uap, tp)) {
+		u.u_error = copyout(&ts, SCARG(uap, tp), sizeof(ts));
+	}
+	return (u.u_error);
+}
+
+int
 nanosleep()
 {
 	register struct nanosleep_args {

@@ -167,6 +167,7 @@ struct ktr_user {
 
 __BEGIN_DECLS
 int	ktrace(const char *, int, int, pid_t);
+int	utrace(const char *, void *, size_t);
 __END_DECLS
 
 #else
