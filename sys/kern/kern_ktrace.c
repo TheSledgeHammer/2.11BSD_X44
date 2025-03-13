@@ -608,6 +608,7 @@ utrace()
 	register struct proc *p;
 
 	p = u.u_procp;
-	return (ktruser(p, SCARG(uap, label), SCARG(uap, addr), SCARG(uap, len), 1));
+	ktruser(p, SCARG(uap, label), SCARG(uap, addr), SCARG(uap, len), 1);
+	return (0);
 }
 #endif
