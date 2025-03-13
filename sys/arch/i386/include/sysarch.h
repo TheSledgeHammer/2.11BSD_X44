@@ -58,13 +58,14 @@ int i386_get_sdbase(struct proc *, void *, char);
 int i386_set_sdbase(struct proc *, void *, char);
 #else
 __BEGIN_DECLS
-int i386_get_ldt(struct proc *, void *, register_t *);
-int i386_set_ldt(struct proc *, void *, register_t *);
+int i386_get_ldt(int, union descriptor *, int);
+int i386_set_ldt(int, union descriptor *, int);
 int i386_iopl(int);
 int i386_get_fsbase(void *);
 int i386_set_fsbase(void *);
 int i386_get_gsbase(void *);
 int i386_set_gsbase(void *);
+int i386_vm86(int, void *);
 int sysarch(int, void *);
 __END_DECLS
 #endif
