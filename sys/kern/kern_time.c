@@ -48,6 +48,7 @@
 #include <sys/systm.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <sys/timetc.h>
 #include <sys/sysdecl.h>
 
 static void setthetime(struct timeval);
