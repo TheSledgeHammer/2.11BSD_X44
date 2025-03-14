@@ -35,6 +35,7 @@
 #define _FLOAT_H_
 
 #include <sys/cdefs.h>
+#include <machine/float.h>
 
 #if !defined(__ASSEMBLER__) && !defined(FLT_ROUNDS)
 __BEGIN_DECLS
@@ -85,8 +86,6 @@ __END_DECLS
 
 #else /* GCC < 3.3 */
 
-#include <machine/float.h>
-
 #define FLT_RADIX	__FLT_RADIX			/* b */
 
 #define FLT_ROUNDS	__FLT_ROUNDS	  		/* FP addition rounds to nearest (1) */
@@ -125,5 +124,33 @@ __END_DECLS
 #define	DECIMAL_DIG	__DECIMAL_DIG
 
 #endif /* GCC < 3.3 */
+
+/*
+ * If no extended-precision type is defined by the machine-dependent
+ * header including this, default to `long double' being double-precision.
+ */
+#ifndef LDBL_MANT_DIG
+#define LDBL_MANT_DIG	DBL_MANT_DIG
+#define LDBL_EPSILON	DBL_EPSILON
+#define LDBL_DIG	DBL_DIG
+#define LDBL_MIN_EXP	DBL_MIN_EXP
+#define LDBL_MIN	DBL_MIN
+#define LDBL_MIN_10_EXP	DBL_MIN_10_EXP
+#define LDBL_MAX_EXP	DBL_MAX_EXP
+#define LDBL_MAX	DBL_MAX
+#define LDBL_MAX_10_EXP	DBL_MAX_10_EXP
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE) && \
+    !defined(_XOPEN_SOURCE) || \
+    ((__STDC_VERSION__ - 0) >= 199901L) || \
+    ((_POSIX_C_SOURCE - 0) >= 200112L) || \
+    ((_XOPEN_SOURCE  - 0) >= 600) || \
+    defined(_ISOC99_SOURCE) || defined(__BSD_VISIBLE)
+#if __GNUC_PREREQ__(3, 3)
+#define DECIMAL_DIG	__DECIMAL_DIG__
+#else
+#define DECIMAL_DIG	17		/* ceil((1+p*log10(b))-(b==10) */
+#endif
+#endif /* !defined(_ANSI_SOURCE) && ... */
+#endif /* LDBL_MANT_DIG */
 
 #endif /* _FLOAT_H_ */
