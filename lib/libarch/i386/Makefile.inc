@@ -1,7 +1,7 @@
 #	$NetBSD: Makefile,v 1.1 1996/02/21 02:45:47 jtk Exp $
 
 
-MANSUBDIR=i386
+#MANSUBDIR=i386
 
 .if (${MACHINE} == "i386" || ${MLIBDIR:Unone} == "i386")
 SRCS+=	i386_iopl.c i386_vm86.c \
