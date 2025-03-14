@@ -39,18 +39,22 @@ static char sccsid[] = "@(#)strerror.c	8.1.1 (2.11BSD) 1996/3/15";
 #endif /* LIBC_SCCS and not lint */
 
 #include <errlst.h>
+#include <errno.h>
 #include <string.h>
 #include <limits.h>
 
 #define	EBUFSIZE	40
 #define	UPREFIX		"Unknown error: "
 
-char *
-strerror(num)
+static char *error2string(int, const char *, char *);
+
+static char *
+error2string(num, uprefix, ebuf)
 	int num;
+	const char *uprefix;
+	char *ebuf;
 {
 	extern int sys_nerr;
-	static char ebuf[EBUFSIZE] = UPREFIX; /* 64-bit number + slop */
 	register unsigned int errnum;
 	register char *p, *t;
 	char tmp[EBUFSIZE];
@@ -59,9 +63,6 @@ strerror(num)
 	if (errnum < sys_nerr) {
 		return (syserrlst(errnum));
 	}
-	if ((p = syserrlst(errnum))) {
-		return (p);
-	}
 
 	/* Do this by hand, so we don't include stdio(3). */
 	t = tmp;
@@ -69,12 +70,46 @@ strerror(num)
 		//*t++ = '0' + (errnum % 10);
 		*t++ = "0123456789"[errnum % 10];
 	} while (errnum /= 10);
-	for (p = ebuf + sizeof(UPREFIX) - 1;;) {
+	for (p = ebuf + sizeof(uprefix) - 1;;) {
 		*p++ = *--t;
 		if (t <= tmp) {
 			break;
 		}
 	}
+	return (ebuf);
+}
 
+int
+strerror_r(num, buf, buflen)
+	int num;
+	char *buf;
+	size_t buflen;
+{
+	char *error;
+	size_t slen;
+	int rval;
+
+	rval = 0;
+	if (num >= 0) {
+		error = error2string(num, UPREFIX, buf);
+		slen = strlcpy(buf, error, buflen);
+		if (slen > buflen) {
+			rval = ERANGE;
+		}
+	} else {
+		slen = snprintf(buf, buflen, UPREFIX, num);
+		rval = EINVAL;
+	}
+	return (rval);
+}
+
+char *
+strerror(num)
+	int num;
+{
+	static char ebuf[EBUFSIZE] = UPREFIX; /* 64-bit number + slop */
+	if (strerror_r(num, ebuf, sizeof(ebuf)) != 0) {
+		errno = EINVAL;
+	}
 	return (ebuf);
 }

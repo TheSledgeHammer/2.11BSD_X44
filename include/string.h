@@ -94,6 +94,11 @@ void	*memccpy(void *, const void *, int, size_t);
 char	*strdup(const char *);
 #endif
 
+#if (_POSIX_C_SOURCE - 0 >= 200112L) || \
+    defined(_REENTRANT) || defined(__BSD_VISIBLE)
+int	 	strerror_r(int, char *, size_t);
+#endif /* _POSIX_C_SOURCE || _REENTRANT || __BSD_VISIBLE */
+
 #if (_POSIX_C_SOURCE - 0 >= 200809L) || (_XOPEN_SOURCE - 0 >= 700) || defined(__BSD_VISIBLE)
 char	*strndup(const char *, size_t);
 size_t	strnlen(const char *, size_t);
