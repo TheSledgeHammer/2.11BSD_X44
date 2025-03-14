@@ -148,7 +148,17 @@
 ./usr/include/ufs/ufs211
 ./usr/include/vm/include
 ./usr/lib
+./usr/lib/pkgconfig
 ./usr/share
+./usr/share/doc
+./usr/share/doc/reference
+./usr/share/doc/reference/ref1
+./usr/share/doc/reference/ref1/bzip2
+./usr/share/doc/reference/ref3
+./usr/share/doc/reference/ref5
+./usr/share/doc/reference/ref7
+./usr/share/doc/reference/ref8
+./usr/share/doc/reference/ref9
 ./usr/share/man
 ./usr/share/man/cat0
 ./usr/share/man/cat1
