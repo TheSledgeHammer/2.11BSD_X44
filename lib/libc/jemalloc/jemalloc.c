@@ -98,11 +98,6 @@
 
 /* LINTLIBRARY */
 
-#ifdef noutrace
-#  define xutrace(a, b)		utrace("malloc", (a), (b))
-#endif
-
-#  define xutrace(a, b)     /* do nothing! */
 #  define __DECONST(x, y)	((x)__UNCONST(y))
 #  define NO_TLS
 
@@ -148,23 +143,7 @@ __RCSID("$NetBSD: jemalloc.c,v 1.64 2023/12/13 23:53:50 mrg Exp $");
 #include <reentrant.h>
 #include "extern.h"
 
-#define STRERROR_R(a, b, c)	__strerror_r(a, b, c);
-
- static int
- __strerror_r(int e, char *s, size_t l)
- {
- 	int rval;
- 	size_t slen;
-
- 	if (e >= 0 && e < sys_nerr) {
- 		slen = strlcpy(s, __UNCONST(syserrlst(e)), l);
- 		rval = 0;
- 	} else {
- 		slen = snprintf(s, l, "Unknown error %u", e);
- 		rval = EINVAL;
- 	}
- 	return slen >= l ? ERANGE : rval;
- }
+#define STRERROR_R(a, b, c)	strerror_r(a, b, c);
 
 /* MALLOC_STATS enables statistics calculation. */
 #ifndef MALLOC_PRODUCTION
@@ -779,26 +758,20 @@ static bool	opt_xmalloc = false;
 static bool	opt_zero = false;
 static int32_t	opt_narenas_lshift = 0;
 
-#ifdef noutrace
-
 typedef struct {
 	void	*p;
 	size_t	s;
 	void	*r;
 } malloc_utrace_t;
 
-#define	UTRACE(a, b, c)					\
-	if (opt_utrace) {					\
-		malloc_utrace_t ut;				\
-		ut.p = a;						\
-		ut.s = b;						\
-		ut.r = c;						\
-		xutrace(&ut, sizeof(ut));		\
+#define	UTRACE(a, b, c)				\
+	if (opt_utrace) {				\
+		malloc_utrace_t ut;			\
+		ut.p = a;				\
+		ut.s = b;				\
+		ut.r = c;				\
+		utrace("malloc", &ut, sizeof(ut));	\
 	}
-
-#endif
-
-#define	UTRACE(a, b, c)	/* do nothing */
 
 /******************************************************************************/
 /*
