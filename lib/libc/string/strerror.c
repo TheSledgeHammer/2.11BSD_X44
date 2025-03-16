@@ -97,7 +97,7 @@ strerror_r(num, buf, buflen)
 			rval = ERANGE;
 		}
 	} else {
-		slen = snprintf(buf, buflen, UPREFIX, num);
+		//slen = snprintf(buf, buflen, UPREFIX, num);
 		rval = EINVAL;
 	}
 	return (rval);
