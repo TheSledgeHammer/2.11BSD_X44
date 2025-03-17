@@ -207,8 +207,6 @@
 ./usr/share/dict/papers
 ./usr/share/dict/special
 ./usr/share/doc
-./usr/share/doc/html
-./usr/share/doc/html/bzip2
 ./usr/share/doc/2.10
 ./usr/share/doc/2.10/fsck
 ./usr/share/doc/2.10/kchanges.2.10
@@ -220,6 +218,8 @@
 ./usr/share/doc/2.10/setup.2.10
 ./usr/share/doc/2.10/setup.2.11
 ./usr/share/doc/2.10/v7summary
+./usr/share/doc/html
+./usr/share/doc/html/bzip2
 ./usr/share/doc/misc
 ./usr/share/doc/misc/berknet
 ./usr/share/doc/misc/ctour
