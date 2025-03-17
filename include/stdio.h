@@ -453,6 +453,7 @@ __sputc(int _c, FILE *_p)
 #if (_POSIX_C_SOURCE - 0) >= 200809L || (_XOPEN_SOURCE - 0) >= 700 || \
     defined(__BSD_VISIBLE)
 __BEGIN_DECLS
+FILE 	 *open_memstream(char **, size_t *);
 ssize_t	 getdelim(char ** __restrict, size_t * __restrict, int, FILE * __restrict);
 ssize_t	 getline(char ** __restrict, size_t * __restrict, FILE * __restrict);
 __END_DECLS

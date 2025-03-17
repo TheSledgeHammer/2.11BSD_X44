@@ -154,6 +154,11 @@ long long int wcstoll(const wchar_t * __restrict, wchar_t ** __restrict, int);
 unsigned long long int wcstoull(const wchar_t * __restrict, wchar_t ** __restrict, int);
 #endif
 
+#if (_POSIX_C_SOURCE - 0) >= 200809L || (_XOPEN_SOURCE - 0) >= 700 || \
+    defined(__BSD_VISIBLE)
+FILE	*open_wmemstream(wchar_t **, size_t *);
+#endif
+
 wint_t 	ungetwc(wint_t, FILE *);
 wint_t 	fgetwc(FILE *);
 wchar_t *fgetws(wchar_t * __restrict, int, FILE * __restrict);
