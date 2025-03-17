@@ -207,6 +207,8 @@
 ./usr/share/dict/papers
 ./usr/share/dict/special
 ./usr/share/doc
+./usr/share/doc/html
+./usr/share/doc/html/bzip2
 ./usr/share/doc/2.10
 ./usr/share/doc/2.10/fsck
 ./usr/share/doc/2.10/kchanges.2.10
@@ -229,14 +231,6 @@
 ./usr/share/doc/misc/sysperf
 ./usr/share/doc/misc/uchanges.4.2
 ./usr/share/doc/papers
-./usr/share/doc/reference
-./usr/share/doc/reference/ref1
-./usr/share/doc/reference/ref1/bzip2
-./usr/share/doc/reference/ref3
-./usr/share/doc/reference/ref5
-./usr/share/doc/reference/ref7
-./usr/share/doc/reference/ref8
-./usr/share/doc/reference/ref9
 ./usr/share/doc/ps1
 ./usr/share/doc/ps1/01.Clang
 ./usr/share/doc/ps1/02.f77
