@@ -135,7 +135,11 @@ wins_nwstr(WINDOW *win, const wchar_t *wstr, int n)
 	const wchar_t *scp;
 	int width, len, sx, x, y, cw, pcw, newx;
 	nschar_t *np;
-	wchar_t ws[] = L"		";
+	wchar_t *wsstr = (wchar_t *)L"		";
+    size_t wlen = wcslen(wsstr);
+	wchar_t ws[wlen];
+
+    wcsncpy(ws, wsstr, wlen);
 
 	/* check for leading non-spacing character */
 	if (!wstr)
