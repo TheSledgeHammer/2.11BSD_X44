@@ -89,11 +89,11 @@ wins_wch(WINDOW *win, const cchar_t *wch)
 	__LINE *lnp;
 	int cw, pcw, x, y, sx, ex, newx, i;
 	nschar_t *np, *tnp;
-    wchar_t *wsstr = (wchar_t *)L"		";
-    size_t len = wcslen(wsstr);
+    	wchar_t *wsstr = (wchar_t *)L"		";
+    	size_t len = wcslen(wsstr);
 	wchar_t ws[len];
 
-    wcsncpy(ws, wsstr, len);
+    	wcsncpy(ws, wsstr, len);
 
 	/* check for non-spacing characters */
 	if (!wch)
