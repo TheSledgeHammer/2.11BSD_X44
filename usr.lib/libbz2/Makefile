@@ -31,7 +31,7 @@ COPTS.blocksort.c+=	-fno-loop-optimize
 .endif
 
 .if ${MKSHARE} != "no"
-FILESDIR=	/usr/share/doc/reference/ref1/bzip2
+FILESDIR=	${HTMLDOCDIR}/bzip2
 FILES=		manual.html
 .endif
 
