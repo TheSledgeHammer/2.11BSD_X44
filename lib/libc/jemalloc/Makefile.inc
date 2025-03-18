@@ -8,4 +8,4 @@
 SRCS+= jemalloc.c
 .endif
 
-#MAN+= jemalloc.3 posix_memalign.3
+MAN+= jemalloc.3
