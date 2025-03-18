@@ -123,8 +123,8 @@ wbuflen(const mbstate_t *state, const char *buf, size_t len)
 	return (count);
 }
 
-static ssize_t
-wmemstream_write(void *cookie, const void *buf, size_t len)
+static int
+wmemstream_write(void *cookie, const char *buf, int len)
 {
 	struct wmemstream *ms;
 	ssize_t consumed, wlen;
@@ -173,7 +173,7 @@ wmemstream_write(void *cookie, const void *buf, size_t len)
 #ifdef DEBUG
 	fprintf(stderr, "WMS: write(%p, %zu) = %zd\n", ms, len, consumed);
 #endif
-	return (consumed);
+	return (int)consumed;
 }
 
 static off_t
