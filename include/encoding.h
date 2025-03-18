@@ -44,7 +44,7 @@ typedef _BSD_WCHAR_T_	wchar_t;
 #endif
 
 /* Stdenc types */
-typedef uint32_t	_wc_t;
+typedef int32_t		_wc_t;
 typedef uint32_t	_index_t;
 typedef uint32_t 	_csid_t;
 
