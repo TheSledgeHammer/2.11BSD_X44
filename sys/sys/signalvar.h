@@ -64,10 +64,6 @@ struct sigacts {
 #define	SAS_OLDMASK		0x01		/* need to restore mask before pause */
 #define	SAS_ALTSTACK	0x02		/* have alternate signal stack */
 
-/* additional signal action values, used only temporarily/internally */
-#define	SIG_CATCH	(void (*) (int))2
-#define	SIG_HOLD	(void (*) (int))3
-
 /*
  * get signal action for process and signal; currently only for current process
  */
