@@ -168,9 +168,9 @@ typedef long						__register_t;
 typedef	unsigned long					__uregister_t;
 
 /* Wide character support types */
-typedef	__uint32_t					__wchar_t;
-typedef __uint32_t					__wint_t;
-typedef	__uint32_t					__rune_t;
+typedef	__int32_t					__wchar_t;
+typedef __int32_t					__wint_t;
+typedef	__int32_t					__rune_t;
 typedef	void 						*__wctrans_t;
 typedef	void 						*__wctype_t;
 
