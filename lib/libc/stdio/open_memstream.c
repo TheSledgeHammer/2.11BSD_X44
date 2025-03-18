@@ -90,8 +90,8 @@ memstream_update(struct memstream *ms)
 	*ms->sizep = ms->len < ms->offset ? ms->len : ms->offset;
 }
 
-static ssize_t
-memstream_write(void *cookie, const void *buf, size_t len)
+static int
+memstream_write(void *cookie, const char *buf, int len)
 {
 	struct memstream *ms;
 	size_t tocopy;
@@ -111,7 +111,7 @@ memstream_write(void *cookie, const void *buf, size_t len)
 #ifdef DEBUG
 	fprintf(stderr, "MS: write(%p, %zu) = %zu\n", ms, len, tocopy);
 #endif
-	return (ssize_t)tocopy;
+	return (int)tocopy;
 }
 
 static off_t
