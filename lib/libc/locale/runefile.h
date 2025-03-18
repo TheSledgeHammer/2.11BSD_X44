@@ -35,8 +35,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
-typedef uint32_t 		rune_t;
-typedef uint32_t 		_RuneType;
+typedef int32_t 		rune_t;
+typedef int32_t 		_RuneType;
 
 #ifndef _CACHED_RUNES
 #define	_CACHED_RUNES	(1 << 8)
