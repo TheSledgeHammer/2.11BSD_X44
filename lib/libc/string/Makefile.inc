@@ -16,7 +16,7 @@ SRCS+=	bcmp.c bcopy.c bzero.c explicit_bzero.c ffs.c index.c rindex.c 		\
 		swab.c strchrnul.c
 
 # wide char
-SRCS+=	wcscat.c wcschr.c wcscmp.c wcscpy.c wcscspn.c wcslcat.c wcslcpy.c \
+SRCS+=	wcscat.c wcschr.c wcscmp.c wcscpy.c wcscspn.c wcsdup.c wcslcat.c wcslcpy.c \
 		wcslen.c wcsncat.c \
 		wcsncmp.c wcsncpy.c wcspbrk.c wcsrchr.c wcsspn.c wcsstr.c wcstok.c \
 		wcswcs.c wcswidth.c \
