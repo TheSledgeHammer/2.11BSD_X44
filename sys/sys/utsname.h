@@ -51,7 +51,7 @@ struct utsname {
 
 #include <sys/cdefs.h>
 
-#ifndef KERNEL
+#ifndef _KERNEL
 #ifdef __STDC__
 __BEGIN_DECLS
 int	uname (struct utsname *);

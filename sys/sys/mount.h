@@ -43,7 +43,7 @@
 #ifndef _SYS_MOUNT_H_
 #define _SYS_MOUNT_H_
 
-#ifndef KERNEL
+#ifndef _KERNEL
 #include <sys/ucred.h>
 #include <sys/user.h>
 #endif

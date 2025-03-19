@@ -91,7 +91,7 @@ int	tubahashsize = TUBAHASHSIZE;
  * Tuba initialization
  */
 void
-tuba_init()
+tuba_init(void)
 {
 	in_pcbinit(&tubapcbtable, tubahashsize, tubahashsize);
 	tuba_isopcb.isop_next = tuba_isopcb.isop_prev = &tuba_isopcb;

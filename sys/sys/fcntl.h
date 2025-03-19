@@ -69,7 +69,7 @@
  * independently testable: 1 greater than the above.
  *
  * XXX
- * FREAD and FWRITE are excluded from the #ifdef KERNEL so that TIOCFLUSH,
+ * FREAD and FWRITE are excluded from the #ifdef _KERNEL so that TIOCFLUSH,
  * which was documented to use FREAD/FWRITE, continues to work.
  */
 #ifndef _POSIX_SOURCE

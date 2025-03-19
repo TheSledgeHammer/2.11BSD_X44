@@ -232,7 +232,7 @@ struct termios {
 #define EXTB	38400
 #endif  /* !_POSIX_SOURCE */
 
-#ifndef KERNEL
+#ifndef _KERNEL
 
 #define	TCIFLUSH	1
 #define	TCOFLUSH	2

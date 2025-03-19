@@ -59,7 +59,7 @@ struct tuba_cache {
 		{ union { u_char c[2]; u_short s;} s; u_char t; \
 		s.s = (b); t = s.c[0]; s.c[0] = s.c[1]; s.c[1] = t; a = s.s;}
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern int tuba_table_size;
 extern struct tuba_cache **tuba_table;
 extern struct radix_node_head *tuba_tree;

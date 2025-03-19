@@ -406,21 +406,56 @@ __END_DECLS
  * The __sfoo macros are here so that we can
  * define function versions in the C library.
  */
-#define	__sgetc(p) (--(p)->_r < 0 ? __srget(p) : (int)(*(p)->_p++))
+//#define	__sgetc(p) (--(p)->_r < 0 ? __srget(p) : (int)(*(p)->_p++))
+static __inline int
+__sgetc(FILE *_p)
+{
+	if (--_p->_r < 0)
+		return (__srget(_p));
+	else
+		return ((int)*_p->_p++);
+}
 
 static __inline int
 __sputc(int _c, FILE *_p)
 {
 	if (--_p->_w >= 0 || (_p->_w >= _p->_lbfsize && (char)_c != '\n'))
-		return (*_p->_p++ = _c);
+		return (*_p->_p++ = (unsigned char)_c);
 	else
 		return (__swbuf(_c, _p));
 }
 
-#define	__sfeof(p)		(((p)->_flags & __SEOF) != 0)
-#define	__sferror(p)	(((p)->_flags & __SERR) != 0)
-#define	__sclearerr(p)	((void)((p)->_flags &= (unsigned short)~(__SERR|__SEOF)))
-#define	__sfileno(p)	((p)->_file == -1 ? -1 : (int)(unsigned short)(p)->_file)
+static __inline int
+__sfeof(FILE *_p)
+{
+	return ((_p->_flags & __SEOF) != 0);
+}
+
+static __inline int
+__sferror(FILE *_p)
+{
+	return ((_p->_flags & __SERR) != 0);
+}
+
+static __inline void
+__sclearerr(FILE *_p)
+{
+	_p->_flags &= (unsigned short)~(__SERR|__SEOF);
+}
+
+static __inline int
+__sfileno(FILE *_p)
+{
+	if (_p->_file == -1)
+		return (-1);
+	else
+		return ((int)(unsigned short)_p->_file);
+}
+
+//#define	__sfeof(p)		(((p)->_flags & __SEOF) != 0)
+//#define	__sferror(p)	(((p)->_flags & __SERR) != 0)
+//#define	__sclearerr(p)	((void)((p)->_flags &= (unsigned short)~(__SERR|__SEOF)))
+//#define	__sfileno(p)	((p)->_file == -1 ? -1 : (int)(unsigned short)(p)->_file)
 
 #define	feof(p)			__sfeof(p)
 #define	ferror(p)		__sferror(p)
