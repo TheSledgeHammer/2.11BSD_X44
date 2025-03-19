@@ -222,8 +222,10 @@
 #define percent(x, y)	(((x) / 100) * (y)) 		/* calculate the percentage of a value */
 #define powertwo(x) 	(1 << (x))					/* returns x to the power of 2 */
 
-#define	__arraycount(__x)	(sizeof(__x) / sizeof(__x[0]))
-#define nitems(_a)			(__arraycount(_a))
+#define nitems(_a)	(sizeof(_a) / sizeof(_a[0]))
+#ifndef __arraycount
+#define	__arraycount(__x)	(nitems(__x))
+#endif
 
 /*
  * Macros for fast min/max.
