@@ -170,6 +170,8 @@ int 	  fputws(const wchar_t * __restrict, FILE * __restrict);
 //wint_t 	putwchar(wchar_t);
 int 	  fwide (FILE *, int);
 
+wchar_t     *wcsdup(const wchar_t *);
+
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #  ifndef __LOCALE_T_DECLARED
 //typedef void		*locale_t;
