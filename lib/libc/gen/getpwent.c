@@ -520,8 +520,8 @@ fetch_pw(key)
 	if (data.size > max && !(line = realloc(line, max += 1024))) {
 		return (0);
 	}
-    t = line;
-    return (hashpw(p, t));
+	t = line;
+	return (hashpw(p, t));
 }
 
 #endif

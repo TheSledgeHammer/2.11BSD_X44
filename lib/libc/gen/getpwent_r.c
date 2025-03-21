@@ -1,0 +1,368 @@
+/*	$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $	*/
+
+/*-
+ * Copyright (c) 1997-2000, 2004-2005 The NetBSD Foundation, Inc.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Luke Mewburn.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+/*
+ * Portions Copyright (c) 1994, 1995, Jason Downs.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR(S) ``AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR(S) BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+/*
+ * Work in Progress: Not Ready for use
+ */
+
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)getpwent.c	8.2 (Berkeley) 4/27/95";
+#else
+__RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
+#include "reentrant.h"
+
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/file.h>
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+#include <ndbm.h>
+#else
+#include <db.h>
+#endif
+
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <nsswitch.h>
+#include <pwd.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
+
+#include "pw_private.h"
+
+/* These belong in limits.h */
+#define	_GETGR_R_SIZE_MAX	1024
+#define	_GETPW_R_SIZE_MAX	1024
+
+struct passwd_storage {
+	int 		stayopen;	/* see getpassent(3) */
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	DBM			*db;		/* DBM passwd file handle */
+	FILE 		*fp;		/* DBM passwd file */
+	int 		rewind;
+#else
+	DB			*db;		/* DB passwd file handle */
+#endif
+	int	 		keynum;		/* key counter, -1 if no more */
+	const char 	*name;		/* name */
+	uid_t		uid;		/* uid */
+	int	 		version;	/* version */
+};
+
+static struct passwd_storage	_pws_storage;
+static struct passwd _pws_passwd;
+static char	_pws_passwdbuf[_GETPW_R_SIZE_MAX];
+
+static int _pws_start(struct passwd_storage *);
+static int _pws_end(struct passwd_storage *);
+static int _pws_search(struct passwd *, char *, size_t, struct passwd_storage *, int);
+static int _pws_keybynum(struct passwd *, char *, size_t, struct passwd_storage *);
+static int _pws_keybyname(struct passwd *, char *, size_t, struct passwd_storage *);
+static int _pws_keybyuid(struct passwd *, char *, size_t, struct passwd_storage *);
+
+/*
+ *	passwd storage common methods
+ *
+ *	DB: see pw_db.c
+ *	DBM/NDBM: see pw_ndbm.c
+ */
+static int
+_pws_start(state)
+	struct passwd_storage *state;
+{
+	int rval;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_start(&state->db, &state->fp, &state->keynum, &state->version);
+#else
+	rval = _pw_start(&state->db, &state->keynum, &state->version);
+#endif
+	return (rval);
+}
+
+static int
+_pws_end(state)
+	struct passwd_storage *state;
+{
+	int rval;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_end(&state->db, &state->fp, &state->rewind, &state->keynum);
+#else
+	rval = _pw_end(&state->db, &state->keynum);
+#endif
+	return (rval);
+}
+
+static int
+_pws_search(pw, buffer, buflen, state, search)
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+	int search;
+{
+	const void *from;
+	size_t	fromlen;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	DBM		key;
+#else
+	DBT 	key;
+#endif
+
+	switch (search) {
+	case _PW_KEYBYNUM:
+		if (state->keynum == -1) {
+			return (NS_NOTFOUND); /* no more records */
+		}
+		state->keynum++;
+		from = &state->keynum;
+		fromlen = sizeof(state->keynum);
+		break;
+	case _PW_KEYBYNAME:
+		from = state->name;
+		fromlen = strlen(state->name);
+		break;
+	case _PW_KEYBYUID:
+		from = &state->uid;
+		fromlen = sizeof(state->uid);
+		break;
+	default:
+		abort();
+	}
+
+	if (buflen <= fromlen) {
+		errno = ERANGE;
+		return (NS_UNAVAIL);
+	}
+	buffer[0] = search;
+	bcopy(from, buffer + 1, fromlen);
+	_pw_setkey(key, buffer, fromlen + 1);
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_getkey(state->db, &key, pw, buffer, buflen, NULL, &state->rewind, state->version);
+#else
+	rval = _pw_getkey(state->db, &key, pw, buffer, buflen, NULL, state->version);
+#endif
+	return (rval);
+}
+
+static int
+_pws_keybynum(pw, buffer, buflen, state)
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+{
+	return (_pws_search(pw, buffer, buflen, state, _PW_KEYBYNUM));
+}
+
+static int
+_pws_keybyname(pw, buffer, buflen, state)
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+{
+	return (_pws_search(pw, buffer, buflen, state, _PW_KEYBYNAME));
+}
+
+static int
+_pws_keybyuid(pw, buffer, buflen, state)
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+{
+	return (_pws_search(pw, buffer, buflen, state, _PW_KEYBYUID));
+}
+
+/*
+ *	public functions
+ */
+struct passwd *
+getpwent(void)
+{
+
+
+}
+
+int
+getpwent_r(pwd, buffer, buflen, result)
+	struct passwd *pwd;
+	char *buffer;
+	size_t buflen;
+	struct passwd **result;
+{
+	struct passwd_storage *state;
+
+	state = &_pws_storage;
+
+	rval = _pws_keybynum(pwd, buffer, buflen, state);
+
+	return (rval);
+}
+
+struct passwd *
+getpwnam(name)
+	const char *name;
+{
+
+}
+
+int
+getpwnam_r(name, pwd, buffer, buflen, result)
+	const char *name;
+	struct passwd *pwd;
+	char *buffer;
+	size_t buflen;
+	struct passwd **result;
+{
+	struct passwd_storage *state;
+
+	state = &_pws_storage;
+
+	rval = _pws_keybyname(pwd, buffer, buflen, state);
+
+	return (rval);
+}
+
+struct passwd *
+getpwuid(uid)
+	uid_t uid;
+{
+
+}
+
+int
+getpwuid_r(uid, pwd, buffer, buflen, result)
+	uid_t uid;
+	struct passwd *pwd;
+	char *buffer;
+	size_t buflen;
+	struct passwd **result;
+{
+	struct passwd_storage *state;
+
+	state = &_pws_storage;
+
+	rval = _pws_keybyuid(pwd, buffer, buflen, state);
+
+	return (rval);
+}
+
+void
+endpwent(void)
+{
+
+}
+
+int
+setpassent(stayopen)
+	int stayopen;
+{
+
+}
+
+void
+setpwent(void)
+{
+
+}

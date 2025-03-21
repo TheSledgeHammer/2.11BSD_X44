@@ -63,25 +63,25 @@ setttyent(void)
 {
 	if (tf == NULL) {
 		tf = fopen(_PATH_TTYS, "r");
-        	return (1);
+		return (1);
 	} else {
 		rewind(tf);
-        	return (1);
+		return (1);
 	}
-    	return (0);
+	return (0);
 }
 
 int
 endttyent(void)
 {
-    	int rval;
+	int rval;
 
 	if (tf != NULL) {
 		rval = !(fclose(tf) == EOF);
 		tf = NULL;
-        	return (rval);
+		return (rval);
 	}
-    	return (1);
+	return (1);
 }
 
 #define QUOTED	1
@@ -100,10 +100,10 @@ skip(p)
 
 	for (; (c = *p) != '\0'; p++) {
 		if (c == '"') {
-			q ^= QUOTED;	/* obscure, but nice */
+			q ^= QUOTED; /* obscure, but nice */
 			continue;
 		}
-		if (q == QUOTED && *p == '\\' && *(p+1) == '"') {
+		if (q == QUOTED && *p == '\\' && *(p + 1) == '"') {
 			p++;
 		}
 		*t++ = *p;
@@ -154,18 +154,19 @@ getttyent(void)
 	for (;;) {
 		if (!fgets(p = line, sizeof(line), tf)) {
 			return (NULL);
-        	}
+		}
 		/* skip lines that are too big */
 		if (!index(p, '\n')) {
-			while ((c = getc(tf)) != '\n' && c != EOF);
+			while ((c = getc(tf)) != '\n' && c != EOF)
+				;
 			continue;
 		}
-		while (isspace((unsigned char)*p)) {
+		while (isspace((unsigned char) *p)) {
 			++p;
-        	}
+		}
 		if (*p && *p != '#') {
 			break;
-        	}
+		}
 	}
 
 	zapchar = 0;
@@ -213,7 +214,8 @@ getttyent(void)
 		}
 	}
 	if (zapchar == '#' || *p == '#') {
-		while ((c = *++p) == ' ' || c == '\t');
+		while ((c = *++p) == ' ' || c == '\t')
+			;
 	}
 	tty.ty_comment = p;
 	if (*p == 0) {

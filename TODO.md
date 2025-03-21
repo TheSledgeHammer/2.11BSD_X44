@@ -76,6 +76,8 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## usr.sbin:
 - pstat: add proc and usr stats
+- mkpasswd: ndbm (4.4BSD/NetBSD) is not fully compatible.
+	- Still relies on dbm_pagfno from 2.11BSD's ndbm
 - add: More critical software
 	- Generic:
 		- amd, eeprom, kgmon, syslog
