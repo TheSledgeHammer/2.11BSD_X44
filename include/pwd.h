@@ -72,17 +72,16 @@ struct passwd {
 };
 
 __BEGIN_DECLS
-
 #if (_POSIX_C_SOURCE - 0) >= 199506L || (_XOPEN_SOURCE - 0) >= 500 || \
     defined(_REENTRANT) || defined(__BSD_VISIBLE)
-int		 		getpwent_r(struct passwd *, char *, size_t, struct passwd **);
-int		 		getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
-int		 		getpwnam_r(const char *, struct passwd *, char *, size_t, struct passwd **);
+int		 getpwent_r(struct passwd *, char *, size_t, struct passwd **);
+int		 getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
+int		 getpwnam_r(const char *, struct passwd *, char *, size_t, struct passwd **);
 #endif
 
 struct passwd 	*getpwent(void);
 struct passwd 	*getpwuid(uid_t);
-struct passwd 	*getpwnam(char *);
+struct passwd 	*getpwnam(const char *);
 void		setpwent(void);
 void	 	endpwent(void);
 int 		setpassent(int);
@@ -91,6 +90,6 @@ int		pw_gensalt(char *, size_t, const char *, const char *);
 int		pw_scan(char *, struct passwd *, int *);
 const char	*user_from_uid(uid_t, int);
 int		uid_from_user(const char *, uid_t *);
-int		pwcache_userdb(int (*)(int), void (*)(void), struct passwd * (*)(char *), struct passwd * (*)(uid_t));
+int		pwcache_userdb(int (*)(int), void (*)(void), struct passwd * (*)(const char *), struct passwd * (*)(uid_t));
 __END_DECLS
 #endif /* !_PWD_H_ */
