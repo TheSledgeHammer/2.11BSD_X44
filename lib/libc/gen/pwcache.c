@@ -123,7 +123,7 @@ static	struct group 	*(*_pwcache_getgrnam)(const char *)	= getgrnam;
 static	struct group 	*(*_pwcache_getgrgid)(gid_t)		= getgrgid;
 static	int				(*_pwcache_setpassent)(int)			= setpassent;
 static	void			(*_pwcache_endpwent)(void)			= endpwent;
-static	struct passwd 	*(*_pwcache_getpwnam)(char *)	    = getpwnam;
+static	struct passwd 	*(*_pwcache_getpwnam)(const char *)	= getpwnam;
 static	struct passwd 	*(*_pwcache_getpwuid)(uid_t)		= getpwuid;
 
 /*
@@ -435,13 +435,13 @@ uid_from_user(const char *name, uid_t *uid)
 	 * or store the matching uid
 	 */
 	if (ptr == NULL) {
-		if ((pw = (*_pwcache_getpwnam)((char *)&name)) == NULL)
+		if ((pw = (*_pwcache_getpwnam)(name)) == NULL)
 			return (-1);
 		*uid = pw->pw_uid;
 		return (0);
 	}
 	(void)strlcpy(ptr->name, name, UNMLEN);
-	if ((pw = (*_pwcache_getpwnam)((char *)&name)) == NULL) {
+	if ((pw = (*_pwcache_getpwnam)(name)) == NULL) {
 		ptr->valid = INVALID;
 		return (-1);
 	}
@@ -530,7 +530,7 @@ int
 pwcache_userdb(
 	int		(*a_setpassent)(int),
 	void		(*a_endpwent)(void),
-	struct passwd *	(*a_getpwnam)(char *),
+	struct passwd *	(*a_getpwnam)(const char *),
 	struct passwd *	(*a_getpwuid)(uid_t))
 {
 	int i;

@@ -154,7 +154,7 @@ static char			_pws_passwdbuf[_GETPW_R_SIZE_MAX];
 
 static int _pws_start(struct passwd_storage *);
 static int _pws_end(struct passwd_storage *);
-static int _pws_search(struct passwd *, char *, size_t, struct passwd_storage *, int);
+static int _pws_search(struct passwd *, char *, size_t, struct passwd_storage *, int, const char *, uid_t);
 static int _pws_keybynum(struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
 static int _pws_keybyname(const char *, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
 static int _pws_keybyuid(uid_t uid, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
@@ -188,9 +188,9 @@ _pws_end(state)
 {
 	int rval;
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	rval = _pw_end(&state->db, &state->fp, &state->rewind, &state->keynum);
+	rval = _pw_end(state->db, &state->fp, &state->rewind, &state->keynum);
 #else
-	rval = _pw_end(&state->db, &state->keynum);
+	rval = _pw_end(state->db, &state->keynum);
 #endif
 	return (rval);
 }
@@ -212,6 +212,7 @@ _pws_search(pw, buffer, buflen, state, search, name, uid)
 #else
 	DBT 	key;
 #endif
+    int     rval;
 
 	if (state->db == NULL) {
 		rval = _pws_start(state);
@@ -234,7 +235,6 @@ _pws_search(pw, buffer, buflen, state, search, name, uid)
 		fromlen = strlen(name);
 		break;
 	case _PW_KEYBYUID:
-		state->uid = uid;
 		from = &uid;
 		fromlen = sizeof(uid);
 		break;
@@ -248,7 +248,7 @@ _pws_search(pw, buffer, buflen, state, search, name, uid)
 	}
 	buffer[0] = search;
 	bcopy(from, buffer + 1, fromlen);
-	_pw_setkey(key, buffer, fromlen + 1);
+	_pw_setkey(&key, buffer, fromlen + 1);
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
 	rval = _pw_getkey(state->db, &key, pw, buffer, buflen, NULL, &state->rewind, state->version);
 #else
@@ -307,7 +307,7 @@ _pws_keybyname(name, pw, buffer, buflen, state, result)
 	struct passwd_storage *state;
 	struct passwd **result;
 {
-	int rval, ret;
+	int rval;
 
 	if (state->db == NULL) {
 		rval = _pws_start(state);
@@ -321,6 +321,8 @@ _pws_keybyname(name, pw, buffer, buflen, state, result)
 		rval = NS_NOTFOUND;
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
 	} else {
+        int ret;
+
 		ret = _pw_scanfp(state->fp, pw, buffer);
 		for (rval = 0; ret;) {
 			if (strcmp(name, pw->pw_name) == 0) {
@@ -353,7 +355,7 @@ _pws_keybyuid(uid, pw, buffer, buflen, state, result)
 	struct passwd_storage *state;
 	struct passwd **result;
 {
-	int rval, ret;
+	int rval;
 
 	if (state->db == NULL) {
 		rval = _pws_start(state);
@@ -367,7 +369,9 @@ _pws_keybyuid(uid, pw, buffer, buflen, state, result)
 		rval = NS_NOTFOUND;
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
 	} else {
-		ret = _pw_scanfp(state->fp, pw, buffer);
+		int ret;
+
+        ret = _pw_scanfp(state->fp, pw, buffer);
 		for (rval = 0; ret;) {
 			if (pw->pw_uid == uid) {
 				rval = NS_SUCCESS;
@@ -402,6 +406,8 @@ _pws_setpassent(state, stayopen, result)
 	struct passwd_storage *state;
 	int stayopen, *result;
 {
+    int rval;
+
 	state->keynum = 0;
 	state->stayopen = stayopen;
 	rval = _pws_start(state);
