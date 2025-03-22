@@ -127,7 +127,7 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 #include <sys/types.h>
 #include <sys/file.h>
 
-#include <db.h>
+#include <ndbm.h>
 
 #include <errno.h>
 #include <fcntl.h>
