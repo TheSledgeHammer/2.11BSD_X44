@@ -24,8 +24,10 @@ RUN_ARC4?= 1
 # use ndbm instead of db (0 = yes, 1 = no)
 .if (${USE_NDBM} != "no")
 RUN_NDBM?= 0
+SRCS+= pw_ndbm.c
 .else
 RUN_NDBM?= 1
+SRCS+= pw_db.c
 .endif
 
 # use sgtty instead of termios (0 = yes, 1 = no)

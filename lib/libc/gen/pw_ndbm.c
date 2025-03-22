@@ -469,14 +469,17 @@ _pw_scanfp(fp, pw, buffer)
 }
 
 void
-_pw_readfp(pw)
+_pw_readfp(db, pw, buffer)
+	DBM *db;
 	struct passwd *pw;
+	char *buffer;
 {
 	static char pwbuf[50];
 	const char *dbfile;
 	int fd, n;
 	register char *p;
 
+	pwbuf = buffer;
 	if (geteuid() == 0) {
 		dbfile = _PATH_MASTERPASSWD;
 		fd = open(dbfile, O_RDONLY, 0);

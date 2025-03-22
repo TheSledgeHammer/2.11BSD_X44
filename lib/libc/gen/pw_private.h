@@ -16,7 +16,7 @@ int 	_pw_end(DBM *, FILE *, int *);
 int	_pw_getkey(DBM *, datum *, struct passwd *, char *, size_t, int *, int *, int);
 void 	_pw_setkey(datum *, char *, size_t);
 int	_pw_scanfp(FILE *, struct passwd *, char *);
-void	_pw_readfp(struct passwd *);
+void	_pw_readfp(DBM *, struct passwd *, char *);
 #else
 /* DB */
 int 	_pw_start(DB *, int *, int *);

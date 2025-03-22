@@ -134,26 +134,23 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 static 	mutex_t			_pwmutex = MUTEX_INITIALIZER;
 #endif
 
-/* These belong in limits.h */
-#define	_GETGR_R_SIZE_MAX	1024
-#define	_GETPW_R_SIZE_MAX	1024
-
 struct passwd_storage {
 	int 		stayopen;	/* see getpassent(3) */
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	DBM			*db;		/* DBM passwd file handle */
+	DBM		*db;		/* DBM passwd file handle */
 	FILE 		*fp;		/* DBM passwd file */
+	const char 	*file;		/* DBM passwd file name */
 	int 		rewind;
 #else
-	DB			*db;		/* DB passwd file handle */
+	DB		*db;		/* DB passwd file handle */
 #endif
-	int	 		keynum;		/* key counter, -1 if no more */
-	int	 		version;	/* version */
+	int	 	keynum;		/* key counter, -1 if no more */
+	int	 	version;	/* version */
 };
 
 static struct passwd_storage	_pws_storage;
-static struct passwd _pws_passwd;
-static char	_pws_passwdbuf[_GETPW_R_SIZE_MAX];
+static struct passwd 		_pws_passwd;
+static char			_pws_passwdbuf[_GETPW_R_SIZE_MAX];
 
 static int _pws_start(struct passwd_storage *);
 static int _pws_end(struct passwd_storage *);
@@ -162,8 +159,9 @@ static int _pws_keybynum(struct passwd *, char *, size_t, struct passwd_storage 
 static int _pws_keybyname(const char *, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
 static int _pws_keybyuid(uid_t uid, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
 static int _pws_setpwent(struct passwd_storage *);
-static int _pws_setpassent(struct passwd_storage *, int);
+static int _pws_setpassent(struct passwd_storage *, int, int *);
 static int _pws_endpwent(struct passwd_storage *);
+static int _pws_setpwfile(struct passwd_storage *, const char *, int *);
 
 /*
  *	passwd storage common methods
@@ -293,7 +291,7 @@ _pws_keybynum(pw, buffer, buflen, state, result)
 
 	if (rval == NS_SUCCESS) {
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-		_pw_readfp(pw);
+		_pw_readfp(state->db, pw, buffer);
 #endif
 		result = &pw;
 	}
@@ -339,7 +337,7 @@ _pws_keybyname(name, pw, buffer, buflen, state, result)
 
 	if (rval == NS_SUCCESS) {
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-		_pw_readfp(pw);
+		_pw_readfp(state->db, pw, buffer);
 #endif
 		result = &pw;
 	}
@@ -383,7 +381,7 @@ _pws_keybyuid(uid, pw, buffer, buflen, state, result)
 	}
 	if (rval == NS_SUCCESS) {
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-		_pw_readfp(pw);
+		_pw_readfp(state->db, pw, buffer);
 #endif
 		result = &pw;
 	}
@@ -394,17 +392,21 @@ static int
 _pws_setpwent(state)
 	struct passwd_storage *state;
 {
-	return (_pws_setpassent(state, 0));
+	int result;
+
+	return (_pws_setpassent(state, 0, &result));
 }
 
 static int
-_pws_setpassent(state, stayopen)
+_pws_setpassent(state, stayopen, result)
 	struct passwd_storage *state;
-	int stayopen;
+	int stayopen, *result;
 {
 	state->keynum = 0;
 	state->stayopen = stayopen;
-	return (_pws_start(state));
+	rval = _pws_start(state);
+	*result = (rval == NS_SUCCESS);
+	return (rval);
 }
 
 static int
@@ -413,6 +415,27 @@ _pws_endpwent(state)
 {
 	state->stayopen = 0;
 	return (_pws_end(state));
+}
+
+static int
+_pws_setpwfile(state, file, result)
+	struct passwd_storage *state;
+	const char *file;
+	int *result;
+{
+	int rval;
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	state->file = file;
+	rval = _pws_start(state);
+	*result = (rval == NS_SUCCESS);
+#else
+	/* Not supported for DB */
+	file = NULL;
+	*result = EINVAL;
+	rval = NS_NOTFOUND;
+#endif
+	return (rval);
 }
 
 /*
@@ -512,7 +535,7 @@ setpassent(stayopen)
 	int rval, result;
 
 	mutex_lock(&_pwmutex);
-	rval = _pws_setpassent(&_pws_storage, stayopen);
+	rval = _pws_setpassent(&_pws_storage, stayopen, &result);
 	mutex_unlock(&_pwmutex);
 	return ((rval == NS_SUCCESS) ? result : 0);
 }
@@ -522,5 +545,16 @@ endpwent(void)
 {
 	mutex_lock(&_pwmutex);
 	(void)_pws_endpwent(&_pws_storage);
+	mutex_unlock(&_pwmutex);
+}
+
+void
+setpwfile(file)
+	const char *file;
+{
+	int result;
+
+	mutex_lock(&_pwmutex);
+	(void)_pws_setpwfile(&_pws_storage, file, &result);
 	mutex_unlock(&_pwmutex);
 }

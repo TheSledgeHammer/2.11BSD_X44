@@ -72,6 +72,14 @@ struct passwd {
 };
 
 __BEGIN_DECLS
+
+#if (_POSIX_C_SOURCE - 0) >= 199506L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(_REENTRANT) || defined(__BSD_VISIBLE)
+int		 		getpwent_r(struct passwd *, char *, size_t, struct passwd **);
+int		 		getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
+int		 		getpwnam_r(const char *, struct passwd *, char *, size_t, struct passwd **);
+#endif
+
 struct passwd 	*getpwent(void);
 struct passwd 	*getpwuid(uid_t);
 struct passwd 	*getpwnam(char *);
