@@ -13,13 +13,15 @@ int		__pw_scan(char *, struct passwd *, int *);
 /* NDBM */
 int 	_pw_start(DBM *, FILE *, int *, int *, int *);
 int 	_pw_end(DBM *, FILE *, int *);
-int		_pw_getkey(DBM *, datum *, struct passwd *, char *, size_t, int *, int *, int);
+int	_pw_getkey(DBM *, datum *, struct passwd *, char *, size_t, int *, int *, int);
 void 	_pw_setkey(datum *, char *, size_t);
+int	_pw_scanfp(FILE *, struct passwd *, char *);
+void	_pw_readfp(struct passwd *);
 #else
 /* DB */
 int 	_pw_start(DB *, int *, int *);
 int 	_pw_end(DB *, int *);
-int		_pw_getkey(DB *, DBT *, struct passwd *, char *, size_t, int *, int);
+int	_pw_getkey(DB *, DBT *, struct passwd *, char *, size_t, int *, int);
 void 	_pw_setkey(DBT *, char *, size_t);
 #endif
 #endif /* _PW_PRIVATE_H_ */

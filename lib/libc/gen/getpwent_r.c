@@ -130,6 +130,10 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 
 #include "pw_private.h"
 
+#ifdef _REENTRANT
+static 	mutex_t			_pwmutex = MUTEX_INITIALIZER;
+#endif
+
 /* These belong in limits.h */
 #define	_GETGR_R_SIZE_MAX	1024
 #define	_GETPW_R_SIZE_MAX	1024
@@ -144,8 +148,6 @@ struct passwd_storage {
 	DB			*db;		/* DB passwd file handle */
 #endif
 	int	 		keynum;		/* key counter, -1 if no more */
-	const char 	*name;		/* name */
-	uid_t		uid;		/* uid */
 	int	 		version;	/* version */
 };
 
@@ -156,9 +158,12 @@ static char	_pws_passwdbuf[_GETPW_R_SIZE_MAX];
 static int _pws_start(struct passwd_storage *);
 static int _pws_end(struct passwd_storage *);
 static int _pws_search(struct passwd *, char *, size_t, struct passwd_storage *, int);
-static int _pws_keybynum(struct passwd *, char *, size_t, struct passwd_storage *);
-static int _pws_keybyname(struct passwd *, char *, size_t, struct passwd_storage *);
-static int _pws_keybyuid(struct passwd *, char *, size_t, struct passwd_storage *);
+static int _pws_keybynum(struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
+static int _pws_keybyname(const char *, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
+static int _pws_keybyuid(uid_t uid, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
+static int _pws_setpwent(struct passwd_storage *);
+static int _pws_setpassent(struct passwd_storage *, int);
+static int _pws_endpwent(struct passwd_storage *);
 
 /*
  *	passwd storage common methods
@@ -193,12 +198,14 @@ _pws_end(state)
 }
 
 static int
-_pws_search(pw, buffer, buflen, state, search)
+_pws_search(pw, buffer, buflen, state, search, name, uid)
 	struct passwd *pw;
 	char *buffer;
 	size_t buflen;
 	struct passwd_storage *state;
 	int search;
+	const char *name;
+	uid_t uid;
 {
 	const void *from;
 	size_t	fromlen;
@@ -207,6 +214,13 @@ _pws_search(pw, buffer, buflen, state, search)
 #else
 	DBT 	key;
 #endif
+
+	if (state->db == NULL) {
+		rval = _pws_start(state);
+		if (rval != NS_SUCCESS) {
+			return (rval);
+		}
+	}
 
 	switch (search) {
 	case _PW_KEYBYNUM:
@@ -218,12 +232,13 @@ _pws_search(pw, buffer, buflen, state, search)
 		fromlen = sizeof(state->keynum);
 		break;
 	case _PW_KEYBYNAME:
-		from = state->name;
-		fromlen = strlen(state->name);
+		from = name;
+		fromlen = strlen(name);
 		break;
 	case _PW_KEYBYUID:
-		from = &state->uid;
-		fromlen = sizeof(state->uid);
+		state->uid = uid;
+		from = &uid;
+		fromlen = sizeof(uid);
 		break;
 	default:
 		abort();
@@ -245,45 +260,164 @@ _pws_search(pw, buffer, buflen, state, search)
 }
 
 static int
-_pws_keybynum(pw, buffer, buflen, state)
+_pws_keybynum(pw, buffer, buflen, state, result)
 	struct passwd *pw;
 	char *buffer;
 	size_t buflen;
 	struct passwd_storage *state;
+	struct passwd **result;
 {
-	return (_pws_search(pw, buffer, buflen, state, _PW_KEYBYNUM));
+	int rval;
+
+	if (state->db == NULL) {
+		rval = _pws_start(state);
+		if (rval != NS_SUCCESS) {
+			return (rval);
+		}
+	}
+
+	rval = _pws_search(pw, buffer, buflen, state, _PW_KEYBYNUM, NULL, 0);
+	if (rval == NS_NOTFOUND) {
+		state->keynum = -1; /* flag `no more records' */
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	} else {
+		if (state->fp != NULL) {
+			rval = _pw_scanfp(state->fp, pw, buffer);
+		}
+#endif
+	}
+
+	if (!state->stayopen) {
+		_pws_endpwent(state);
+	}
+
+	if (rval == NS_SUCCESS) {
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		_pw_readfp(pw);
+#endif
+		result = &pw;
+	}
+	return (rval);
 }
 
 static int
-_pws_keybyname(pw, buffer, buflen, state)
+_pws_keybyname(name, pw, buffer, buflen, state, result)
+	const char *name;
 	struct passwd *pw;
 	char *buffer;
 	size_t buflen;
 	struct passwd_storage *state;
+	struct passwd **result;
 {
-	return (_pws_search(pw, buffer, buflen, state, _PW_KEYBYNAME));
+	int rval, ret;
+
+	if (state->db == NULL) {
+		rval = _pws_start(state);
+		if (rval != NS_SUCCESS) {
+			return (rval);
+		}
+	}
+
+	rval = _pws_search(pw, buffer, buflen, state, _PW_KEYBYNAME, name, 0);
+	if (strcmp(pw->pw_name, name) != 0) {
+		rval = NS_NOTFOUND;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	} else {
+		ret = _pw_scanfp(state->fp, pw, buffer);
+		for (rval = 0; ret;) {
+			if (strcmp(name, pw->pw_name) == 0) {
+				rval = NS_SUCCESS;
+				break;
+			}
+		}
+#endif
+	}
+
+	if (!state->stayopen) {
+		_pws_endpwent(state);
+	}
+
+	if (rval == NS_SUCCESS) {
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		_pw_readfp(pw);
+#endif
+		result = &pw;
+	}
+	return (rval);
 }
 
 static int
-_pws_keybyuid(pw, buffer, buflen, state)
+_pws_keybyuid(uid, pw, buffer, buflen, state, result)
+	uid_t uid;
 	struct passwd *pw;
 	char *buffer;
 	size_t buflen;
 	struct passwd_storage *state;
+	struct passwd **result;
 {
-	return (_pws_search(pw, buffer, buflen, state, _PW_KEYBYUID));
+	int rval, ret;
+
+	if (state->db == NULL) {
+		rval = _pws_start(state);
+		if (rval != NS_SUCCESS) {
+			return (rval);
+		}
+	}
+
+	rval = _pws_search(pw, buffer, buflen, state, _PW_KEYBYUID, NULL, uid);
+	if (pw->pw_uid != uid) {
+		rval = NS_NOTFOUND;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	} else {
+		ret = _pw_scanfp(state->fp, pw, buffer);
+		for (rval = 0; ret;) {
+			if (pw->pw_uid == uid) {
+				rval = NS_SUCCESS;
+				break;
+			}
+		}
+#endif
+	}
+	if (!state->stayopen) {
+		_pws_endpwent(state);
+	}
+	if (rval == NS_SUCCESS) {
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		_pw_readfp(pw);
+#endif
+		result = &pw;
+	}
+	return (rval);
+}
+
+static int
+_pws_setpwent(state)
+	struct passwd_storage *state;
+{
+	return (_pws_setpassent(state, 0));
+}
+
+static int
+_pws_setpassent(state, stayopen)
+	struct passwd_storage *state;
+	int stayopen;
+{
+	state->keynum = 0;
+	state->stayopen = stayopen;
+	return (_pws_start(state));
+}
+
+static int
+_pws_endpwent(state)
+	struct passwd_storage *state;
+{
+	state->stayopen = 0;
+	return (_pws_end(state));
 }
 
 /*
  *	public functions
  */
-struct passwd *
-getpwent(void)
-{
-
-
-}
-
 int
 getpwent_r(pwd, buffer, buflen, result)
 	struct passwd *pwd;
@@ -291,20 +425,22 @@ getpwent_r(pwd, buffer, buflen, result)
 	size_t buflen;
 	struct passwd **result;
 {
-	struct passwd_storage *state;
+	int rval;
 
-	state = &_pws_storage;
-
-	rval = _pws_keybynum(pwd, buffer, buflen, state);
-
+	mutex_lock(&_pwmutex);
+	rval = _pws_keybynum(pwd, buffer, buflen, &_pws_storage, result);
+	mutex_unlock(&_pwmutex);
 	return (rval);
 }
 
 struct passwd *
-getpwnam(name)
-	const char *name;
+getpwent(void)
 {
+	struct passwd *result;
+	int rval;
 
+	rval = getpwent_r(&_pws_passwd, _pws_passwdbuf, sizeof(_pws_passwdbuf), &result);
+	return ((rval == NS_SUCCESS) ? result : NULL);
 }
 
 int
@@ -315,20 +451,23 @@ getpwnam_r(name, pwd, buffer, buflen, result)
 	size_t buflen;
 	struct passwd **result;
 {
-	struct passwd_storage *state;
+	int rval;
 
-	state = &_pws_storage;
-
-	rval = _pws_keybyname(pwd, buffer, buflen, state);
-
+	mutex_lock(&_pwmutex);
+	rval = _pws_keybyname(name, pwd, buffer, buflen, &_pws_storage, result);
+	mutex_unlock(&_pwmutex);
 	return (rval);
 }
 
 struct passwd *
-getpwuid(uid)
-	uid_t uid;
+getpwnam(name)
+	const char *name;
 {
+	struct passwd *result;
+	int rval;
 
+	rval = getpwnam_r(name, &_pws_passwd, _pws_passwdbuf, sizeof(_pws_passwdbuf), &result);
+	return ((rval == NS_SUCCESS) ? result : NULL);
 }
 
 int
@@ -339,30 +478,49 @@ getpwuid_r(uid, pwd, buffer, buflen, result)
 	size_t buflen;
 	struct passwd **result;
 {
-	struct passwd_storage *state;
+	int rval;
 
-	state = &_pws_storage;
-
-	rval = _pws_keybyuid(pwd, buffer, buflen, state);
-
+	mutex_lock(&_pwmutex);
+	rval = _pws_keybyuid(uid, pwd, buffer, buflen, &_pws_storage, result);
+	mutex_unlock(&_pwmutex);
 	return (rval);
 }
 
-void
-endpwent(void)
+struct passwd *
+getpwuid(uid)
+	uid_t uid;
 {
+	struct passwd *result;
+	int rval;
 
+	rval = getpwuid_r(uid, &_pws_passwd, _pws_passwdbuf, sizeof(_pws_passwdbuf), &result);
+	return ((rval == NS_SUCCESS) ? result : NULL);
+}
+
+void
+setpwent(void)
+{
+	mutex_lock(&_pwmutex);
+	(void)_pws_setpwent(&_pws_storage);
+	mutex_unlock(&_pwmutex);
 }
 
 int
 setpassent(stayopen)
 	int stayopen;
 {
+	int rval, result;
 
+	mutex_lock(&_pwmutex);
+	rval = _pws_setpassent(&_pws_storage, stayopen);
+	mutex_unlock(&_pwmutex);
+	return ((rval == NS_SUCCESS) ? result : 0);
 }
 
 void
-setpwent(void)
+endpwent(void)
 {
-
+	mutex_lock(&_pwmutex);
+	(void)_pws_endpwent(&_pws_storage);
+	mutex_unlock(&_pwmutex);
 }

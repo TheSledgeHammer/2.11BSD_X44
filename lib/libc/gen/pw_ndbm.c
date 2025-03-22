@@ -414,11 +414,68 @@ _pw_fetch(db, key, pw, buffer, buflen, pwflags, rewind, version)
 	return (_pw_hashdb(&data, pw, p, t, (char *)pwflags, version));
 }
 
-/*
-_pw_read()
+int
+_pw_scanfp(fp, pw, buffer)
+	FILE *fp;
+	struct passwd *pw;
+	char *buffer;
 {
+	register char *cp;
+	register int ch;
+	char *bp;
+
+	bp = buffer;
+	for (;;) {
+		if (!(fgets(buffer, sizeof(buffer), fp))) {
+			return (0);
+		}
+		/* skip lines that are too big */
+		if (!(cp = index(buffer, '\n'))) {
+			while ((ch = fgetc(fp)) != '\n' && ch != EOF) {
+				;
+			}
+			continue;
+		}
+		*cp = '\0';
+		pw->pw_name = strsep(&bp, ":");
+		pw->pw_passwd = strsep(&bp, ":");
+		if (!(cp = strsep(&bp, ":"))) {
+			continue;
+		}
+		pw->pw_uid = atoi(cp);
+		if (!(cp = strsep(&bp, ":"))) {
+			continue;
+		}
+		pw->pw_gid = atoi(cp);
+		pw->pw_class = strsep(&bp, ":");
+		if (!(cp = strsep(&bp, ":"))) {
+			continue;
+		}
+		pw->pw_change = atol(cp);
+		if (!(cp = strsep(&bp, ":"))) {
+			continue;
+		}
+		pw->pw_expire = atol(cp);
+		pw->pw_gecos = strsep(&bp, ":");
+		pw->pw_dir = strsep(&bp, ":");
+		pw->pw_shell = strsep(&bp, ":");
+		if (!pw->pw_shell) {
+			continue;
+		}
+		return (1);
+	}
+	/* NOTREACHED */
+	return (1);
+}
+
+void
+_pw_readfp(pw)
+	struct passwd *pw;
+{
+	static char pwbuf[50];
 	const char *dbfile;
-	int fd;
+	int fd, n;
+	register char *p;
 
 	if (geteuid() == 0) {
 		dbfile = _PATH_MASTERPASSWD;
@@ -435,9 +492,22 @@ _pw_read()
 			return;
 		}
 	}
+	pos = atol(pw->pw_passwd);
 	if (lseek(fd, pos, L_SET) != pos) {
-
+		goto bad;
 	}
+	n = read(fd, pwbuf, sizeof(pwbuf) -1);
+	if (n < 0) {
+		goto bad;
+	}
+	pwbuf[n] = '\0';
+	for (p = pwbuf; *p; ++p) {
+		if (*p == ':') {
+			*p = '\0';
+			pw->pw_passwd = pwbuf;
+			break;
+		}
+	}
+bad:
 	(void)close(fd);
 }
-*/
