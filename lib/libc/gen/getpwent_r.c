@@ -90,10 +90,6 @@
  * SUCH DAMAGE.
  */
 
-/*
- * Work in Progress: Not Ready for use
- */
-
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
@@ -110,12 +106,6 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 #include <sys/types.h>
 #include <sys/file.h>
 
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-#include <ndbm.h>
-#else
-#include <db.h>
-#endif
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -127,6 +117,14 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+#include <ndbm.h>
+#include "pw_ndbm.h"
+#else
+#include <db.h>
+#include "pw_db.h"
+#endif
 
 #include "pw_private.h"
 
@@ -212,7 +210,7 @@ _pws_search(pw, buffer, buflen, state, search, name, uid)
 #else
 	DBT 	key;
 #endif
-    int     rval;
+	int 	rval;
 
 	if (state->db == NULL) {
 		rval = _pws_start(state);
@@ -321,7 +319,7 @@ _pws_keybyname(name, pw, buffer, buflen, state, result)
 		rval = NS_NOTFOUND;
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
 	} else {
-        int ret;
+		int ret;
 
 		ret = _pw_scanfp(state->fp, pw, buffer);
 		for (rval = 0; ret;) {
@@ -371,7 +369,7 @@ _pws_keybyuid(uid, pw, buffer, buflen, state, result)
 	} else {
 		int ret;
 
-        ret = _pw_scanfp(state->fp, pw, buffer);
+		ret = _pw_scanfp(state->fp, pw, buffer);
 		for (rval = 0; ret;) {
 			if (pw->pw_uid == uid) {
 				rval = NS_SUCCESS;
@@ -406,7 +404,7 @@ _pws_setpassent(state, stayopen, result)
 	struct passwd_storage *state;
 	int stayopen, *result;
 {
-    int rval;
+	int rval;
 
 	state->keynum = 0;
 	state->stayopen = stayopen;

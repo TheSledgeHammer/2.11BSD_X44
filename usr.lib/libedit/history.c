@@ -67,8 +67,19 @@ static const char hist_cookie[] = "_HiStOrY_V2_\n";
 #define	Strdup(s)		strdup(s)
 #define	Strcmp(d, s)		strcmp(d, s)
 #define	Strncmp(d, s, n)	strncmp(d, s, n)
-#define	Strncpy(d, s, n)	strncpy(d, s, n)
-#define	Strncat(d, s, n)	strncat(d, s, n)
+//#define	Strncpy(d, s, n)	strncpy(d, s, n)
+//#define	Strncat(d, s, n)	strncat(d, s, n)
+
+#define	Strncpy(d, s, n)		\
+	if (Strlen(s) <= Strlen(d)) {	\
+		strncpy(d, s, n);	\
+	}
+
+#define	Strncat(d, s, n)		\
+	if (Strlen(s) <= Strlen(d)) {	\
+		strncat(d, s, n);	\
+	}
+
 #define	ct_decode_string(s, b)	(s)
 #define	ct_encode_string(s, b)	(s)
 
@@ -81,12 +92,22 @@ static const char hist_cookie[] = "_HiStOrY_V2_\n";
 #define	TYPE(type)		type ## W
 #define	STR(x)			L ## x
 
-#define	Strlen(s)		wcslen(s)
-#define	Strdup(s)		wcsdup(s)
+#define	Strlen(s)			wcslen(s)
+#define	Strdup(s)			wcsdup(s)
 #define	Strcmp(d, s)		wcscmp(d, s)
 #define	Strncmp(d, s, n)	wcsncmp(d, s, n)
-#define	Strncpy(d, s, n)	wcsncpy(d, s, n)
-#define	Strncat(d, s, n)	wcsncat(d, s, n)
+//#define	Strncpy(d, s, n)	wcsncpy(d, s, n)
+//#define	Strncat(d, s, n)	wcsncat(d, s, n)
+
+#define	Strncpy(d, s, n)		\
+	if (Strlen(s) <= Strlen(d)) {	\
+		wcsncpy(d, s, n);	\
+	}
+
+#define	Strncat(d, s, n)		\
+	if (Strlen(s) <= Strlen(d)) {	\
+		wcsncat(d, s, n);	\
+	}
 
 #endif
 

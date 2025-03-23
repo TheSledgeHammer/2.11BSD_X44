@@ -141,10 +141,10 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 #include <syslog.h>
 #include <unistd.h>
 
-#include "pw_private.h"
+#include "pw_ndbm.h"
 
 static int _pw_getdb(DBM *, datum *, int *);
-static int _pw_version(DBM *, datum *, datum *, int *, int *);
+static int _pw_version(DBM **, datum *, datum *, int *, int *);
 static int _pw_opendb(DBM **, FILE *, int *, int *);
 static void _pw_closedb(DBM *, FILE *);
 static int _pw_hashdb(datum *, struct passwd *, char *, char *, char *, int);
@@ -209,7 +209,7 @@ _pw_setkey(key, data, size)
 	size_t size;
 {
 	key->dsize = size;
-	key->dptr = (u_char *)data;
+	key->dptr = (u_char*) data;
 }
 
 static int
@@ -251,18 +251,18 @@ out:
 
 static int
 _pw_version(db, key, value, rewind, version)
-	DBM *db;
+	DBM **db;
 	datum *key, *value;
 	int *rewind, *version;
 {
 	key->dptr = __UNCONST("VERSION");
 	key->dsize = strlen((char *)key->dptr) + 1;
-	switch (_pw_getdb(db, key, rewind)) {
+	switch (_pw_getdb(*db, key, rewind)) {
 	case 0:
 		if (sizeof(*version) != value->dsize) {
 			return (NS_UNAVAIL);
 		}
-		(void)memcpy(version, value->dptr, value->dsize);
+		(void)bcopy(value->dptr, version, value->dsize);
 		break;
 	case 1:
 		*version = 0;		/* not found */
@@ -474,8 +474,9 @@ _pw_readfp(db, pw, buffer)
 	struct passwd *pw;
 	char *buffer;
 {
-	static char pwbuf[50];
+	char pwbuf[50];
 	const char *dbfile;
+	long pos;
 	int fd, n;
 	register char *p;
 
@@ -496,7 +497,7 @@ _pw_readfp(db, pw, buffer)
 		}
 	}
 	pos = atol(pw->pw_passwd);
-	if (lseek(fd, pos, L_SET) != pos) {
+	if (lseek(fd, pos, SEEK_SET) != pos) {
 		goto bad;
 	}
 	n = read(fd, pwbuf, sizeof(pwbuf) -1);

@@ -90,10 +90,6 @@
  * SUCH DAMAGE.
  */
 
-/*
- * Work in Progress
- */
-
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
@@ -124,7 +120,7 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 #include <syslog.h>
 #include <unistd.h>
 
-#include "pw_private.h"
+#include "pw_db.h"
 
 static int _pw_version(DB **, DBT *, DBT *, int *);
 static int _pw_opendb(DB **, int *);
@@ -204,7 +200,7 @@ _pw_version(db, key, value, version)
 		if (sizeof(*version) != value->size) {
 			return (NS_UNAVAIL);
 		}
-		(void)memcpy(version, value->data, value->size);
+		(void)bcopy(value->data, version, value->size);
 		break;
 	case 1:
 		*version = 0;		/* not found */
