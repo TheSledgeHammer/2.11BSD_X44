@@ -49,18 +49,22 @@
 
 __BEGIN_DECLS
 int		setjmp(jmp_buf);
-void	longjmp(jmp_buf, int);
+void	longjmp(jmp_buf, int) __dead;
 
-#ifndef _ANSI_SOURCE
+#if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE) || \
+    defined(__BSD_VISIBLE)
 int		sigsetjmp(sigjmp_buf, int);
-void	siglongjmp(sigjmp_buf, int);
+void	siglongjmp(sigjmp_buf, int) __dead;
 #endif /* not ANSI */
 
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+#if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 int		_setjmp(jmp_buf);
-void	_longjmp(jmp_buf, int);
-void	longjmperror(void);
+void	_longjmp(jmp_buf, int) __dead;
 #endif /* neither ANSI nor POSIX */
+
+#if defined(__BSD_VISIBLE)
+void	longjmperror(void);
+#endif
 __END_DECLS
 
 #endif /* !_SETJMP_H_ */

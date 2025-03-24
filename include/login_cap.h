@@ -68,20 +68,15 @@ __BEGIN_DECLS
 struct passwd;
 
 login_cap_t *login_getclass(const char *);
-#ifndef __LIBC12_SOURCE__
 login_cap_t *login_getpwclass(const struct passwd *);
-#endif
 void	login_close(login_cap_t *);
 int	 	login_getcapbool(login_cap_t *, const char *, unsigned int);
 quad_t	login_getcapnum(login_cap_t *, const char *, quad_t, quad_t);
 quad_t	login_getcapsize(login_cap_t *, const char *, quad_t, quad_t);
 char	*login_getcapstr(login_cap_t *, const char *, char *, char *);
 quad_t	login_getcaptime(login_cap_t *, const char *, quad_t, quad_t);
-
 int		setclasscontext(const char *, unsigned int);
-#ifndef __LIBC12_SOURCE__
 int		setusercontext(login_cap_t *, struct passwd *, uid_t, unsigned int);
-#endif
 __END_DECLS
 
 #endif	/* !_LOGIN_CAP_H_ */
