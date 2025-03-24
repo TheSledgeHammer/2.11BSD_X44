@@ -80,3 +80,6 @@ MLINKS+=stat_flags.3 string_to_flags.3
 MLINKS+=stat_flags.3 flags_to_string.3
 
 .include <bsd.lib.mk>
+
+COPTS.logwtmp.c+=	${GCC_NO_STRINGOP_TRUNCATION} ${GCC_NO_STRINGOP_OVERFLOW}
+COPTS.logwtmpx.c+=	${GCC_NO_STRINGOP_TRUNCATION} ${GCC_NO_STRINGOP_OVERFLOW}
