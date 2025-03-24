@@ -137,3 +137,7 @@ COPTS.literal.c+=	-Wno-sign-conversion
 COPTS.tokenizer.c+=	-Wno-cast-qual
 COPTS.tokenizern.c+=	-Wno-cast-qual
 .endif
+
+COPTS.history.c+=	${GCC_NO_STRINGOP_OVERFLOW}
+COPTS.historyn.c+=	${GCC_NO_STRINGOP_OVERFLOW}
+COPTS.readline.c+=	${GCC_NO_STRINGOP_TRUNCATION} ${GCC_NO_STRINGOP_OVERFLOW}
