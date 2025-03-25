@@ -46,6 +46,7 @@ __RCSID("$NetBSD: vdprintf.c,v 1.5 2017/01/10 17:45:12 christos Exp $");
 #include <fcntl.h>
 #include <locale.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <limits.h>
 
