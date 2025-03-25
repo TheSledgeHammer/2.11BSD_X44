@@ -18,6 +18,7 @@
 ./usr/include/rpc
 ./usr/include/rpcsvc
 ./usr/include/ssp
+./usr/include/crypto
 ./usr/include/dev
 ./usr/include/dev/audio
 ./usr/include/dev/audio/mulaw
