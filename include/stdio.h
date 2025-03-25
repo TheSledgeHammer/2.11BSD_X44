@@ -374,7 +374,6 @@ off_t 	ftello(FILE *);
 __END_DECLS
 #endif /* (_POSIX_C_SOURCE - 0) >= 200112L || _XOPEN_SOURCE >= 500 || ... */
 
-
 /*
  * Stdio function-access interface.
  */
@@ -511,7 +510,7 @@ typedef struct _locale		*locale_t;
 __BEGIN_DECLS
 int  	doprnt_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
 int	vfprintf_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
-int  	vdprintf_l(int, locale_t, const char * __restrict, va_list);
+int  	vdprintf_l(int, locale_t, const char * __restrict, __va_list);
 int	dprintf_l(int, locale_t, const char * __restrict, ...);
 __END_DECLS
 #endif
