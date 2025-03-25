@@ -47,6 +47,7 @@ static char sccsid[] = "@(#)vfprintf.c	8.1 (Berkeley) 6/4/93";
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <locale.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -299,6 +300,12 @@ vfprintf(fp, fmt0, ap)
 int
 vfprintf(FILE *fp, const char *fmt0, va_list ap)
 {
+	return (vfprintf_l(fp, __get_locale(), fmt0, ap));
+}
+
+int
+vfprintf_l(FILE *fp, locale_t locale, const char *fmt0, va_list ap)
+{
 	const char *fmt; 		/* format string */
 	int ch; 			/* character from fmt */
 	int n, m; 			/* handy integers (short term usage) */
@@ -310,7 +317,7 @@ vfprintf(FILE *fp, const char *fmt0, va_list ap)
 	int prec; 			/* precision from format (%.3d), or -1 */
 	char sign; 			/* sign prefix (' ', '+', '-', or \0) */
 #ifdef FLOATING_POINT
-    struct lconv *lc;
+    	struct lconv *lc;
 	char *decimal_point;
 	char softsign;			/* temporary negative sign for floats */
 	double _double;			/* double precision arguments %[eEfgG] */
@@ -425,7 +432,7 @@ vfprintf(FILE *fp, const char *fmt0, va_list ap)
     xdigs = NULL;
 
 #ifdef FLOATING_POINT
-    lc = localeconv();
+    lc = localeconv_l(locale);
 	decimal_point = lc->decimal_point;
 #endif
 

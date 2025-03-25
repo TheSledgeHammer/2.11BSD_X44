@@ -128,6 +128,16 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 
 #include "pw_private.h"
 
+#ifdef __weak_alias
+__weak_alias(getpwent,_getpwent)
+__weak_alias(getpwnam,_getpwnam)
+__weak_alias(getpwuid,_getpwuid)
+__weak_alias(setpwent,_setpwent)
+__weak_alias(setpassent,_setpassent)
+__weak_alias(endpwent,_endpwent)
+__weak_alias(setpwfile,_setpwfile)
+#endif
+
 #ifdef _REENTRANT
 static 	mutex_t			_pwmutex = MUTEX_INITIALIZER;
 #endif

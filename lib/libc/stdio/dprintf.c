@@ -1,6 +1,8 @@
+/*	$NetBSD: dprintf.c,v 1.2 2013/04/19 15:22:25 joerg Exp $	*/
+
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Chris Torek.
@@ -31,26 +33,40 @@
  */
 
 #include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+__RCSID("$NetBSD: dprintf.c,v 1.2 2013/04/19 15:22:25 joerg Exp $");
+#endif /* LIBC_SCCS and not lint */
 
-#include <locale.h>
-#include <stdarg.h>
+#include "namespace.h"
+#include <sys/types.h>
+
 #include <stdio.h>
+#include <stdarg.h>
+
+#include "reentrant.h"
+
+__weak_alias(dprintf_l, _dprintf_l)
 
 int
-doprnt_l(fp, locale, fmt, ap)
-	FILE *fp;
-	locale_t locale;
-	const char *fmt;
-	va_list ap;
+dprintf(int fd, const char * __restrict fmt, ...)
 {
-	return (vfprintf_l(fp, locale, fmt, ap));
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = vdprintf(fd, fmt, ap);
+	va_end(ap);
+	return ret;
 }
 
 int
-doprnt(fp, fmt, ap)
-	FILE *fp;
-	const char *fmt;
-	va_list ap;
+dprintf_l(int fd, locale_t loc, const char * __restrict fmt, ...)
 {
-	return (vfprintf(fp, fmt, ap));
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = vdprintf_l(fd, loc, fmt, ap);
+	va_end(ap);
+	return ret;
 }

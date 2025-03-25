@@ -406,7 +406,6 @@ __END_DECLS
  * The __sfoo macros are here so that we can
  * define function versions in the C library.
  */
-//#define	__sgetc(p) (--(p)->_r < 0 ? __srget(p) : (int)(*(p)->_p++))
 static __inline int
 __sgetc(FILE *_p)
 {
@@ -452,11 +451,13 @@ __sfileno(FILE *_p)
 		return ((int)(unsigned short)_p->_file);
 }
 
-//#define	__sfeof(p)		(((p)->_flags & __SEOF) != 0)
-//#define	__sferror(p)	(((p)->_flags & __SERR) != 0)
-//#define	__sclearerr(p)	((void)((p)->_flags &= (unsigned short)~(__SERR|__SEOF)))
-//#define	__sfileno(p)	((p)->_file == -1 ? -1 : (int)(unsigned short)(p)->_file)
-
+/*
+#define	__sgetc(p) (--(p)->_r < 0 ? __srget(p) : (int)(*(p)->_p++))
+#define	__sfeof(p)		(((p)->_flags & __SEOF) != 0)
+#define	__sferror(p)	(((p)->_flags & __SERR) != 0)
+#define	__sclearerr(p)	((void)((p)->_flags &= (unsigned short)~(__SERR|__SEOF)))
+#define	__sfileno(p)	((p)->_file == -1 ? -1 : (int)(unsigned short)(p)->_file)
+*/
 #define	feof(p)			__sfeof(p)
 #define	ferror(p)		__sferror(p)
 #define	clearerr(p)		__sclearerr(p)
@@ -472,6 +473,14 @@ __sfileno(FILE *_p)
 
 #define	getchar()		getc(stdin)
 #define	putchar(x)		putc(x, stdout)
+
+
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
+__BEGIN_DECLS
+int	 vdprintf(int, const char * __restrict, __va_list);
+int	 dprintf(int, const char * __restrict, ...);
+__END_DECLS
+#endif /* (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE) */
 
 #if (_POSIX_C_SOURCE - 0) >= 199506L || (_XOPEN_SOURCE - 0) >= 500 || \
     defined(_REENTRANT) || defined(__BSD_VISIBLE)
@@ -494,4 +503,16 @@ ssize_t	 getline(char ** __restrict, size_t * __restrict, FILE * __restrict);
 __END_DECLS
 #endif
 
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
+#  ifndef __LOCALE_T_DECLARED
+typedef struct _locale		*locale_t;
+#  define __LOCALE_T_DECLARED
+#  endif
+__BEGIN_DECLS
+int  	doprnt_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
+int	vfprintf_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
+int  	vdprintf_l(int, locale_t, const char * __restrict, va_list);
+int	dprintf_l(int, locale_t, const char * __restrict, ...);
+__END_DECLS
+#endif
 #endif /* _STDIO_H_ */
