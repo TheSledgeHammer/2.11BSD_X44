@@ -4,26 +4,8 @@
 _MAKEFILE_OPENSSL_INCLUDED=1
 
 .include <bsd.own.mk>
-WARNS=3
 
-# would require changing a lot of code
-CWARNFLAGS+= -Wno-error=cast-qual
-CWARNFLAGS+= -Wno-error=char-subscripts # XXX likely real ctype(3) missing cast bugs
-CWARNFLAGS+= -Wno-error=missing-field-initializers
-CWARNFLAGS+= -Wno-error=shadow
-
-CWARNFLAGS.gcc+= -Wno-error=discarded-qualifiers
-CWARNFLAGS.clang+= -Wno-error=ignored-qualifiers
-
-# OpenSSL extensively uses string literals as char *, which clang
-# (reasonably if not exactly rightly) objects to.
-CWARNFLAGS.clang+= -Wno-error=incompatible-pointer-types-discards-qualifiers
-
-# XXX: re-examine the below
-CWARNFLAGS.clang+= -Wno-empty-body -Wno-unused-value -Wno-parentheses
-CWARNFLAGS.clang+= -Wno-implicit-int-float-conversion
-# XXX: This warning seems to trigger incorrectly
-CWARNFLAGS.clang+=	-Wno-atomic-alignment
+WARNS=0
 
 LINTFLAGS+=	-X 161	# constant in conditional context
 LINTFLAGS+=	-X 129	# expression has null effect
