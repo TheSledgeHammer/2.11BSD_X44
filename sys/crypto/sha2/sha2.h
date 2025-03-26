@@ -43,6 +43,7 @@
 extern "C" {
 #endif
 
+#include <sys/types.h>
 
 /*** SHA-256/384/512 Various Length Definitions ***********************/
 #define SHA256_BLOCK_LENGTH		64
