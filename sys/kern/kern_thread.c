@@ -32,6 +32,13 @@
  * 		- flags: additional flags
  * 		- kill:
  * 			- add capability to kill thread\s if needed
+ *		- reparent: Needs to change!
+ *			- A thread's sleep and run queues should not be transferred from one process to another. 
+ *				1) a thread should not be waiting to run/running or sleeping. Whether it is stealable or not.  
+ *   				2) If it is stealable, the process has already likely been set to be a zombie, with all it's threads.
+ *
+ *      		 - New logic: check thread's runqueue and sleepqueue before carrying out the reparenting. 
+ *				- Return if the runqueue and sleepqueue are not empty.
  * 		- steal:
  * 			- add a time counter for how long a thread can remain held as stealable before being released.
  * 				- prevent indefinite loop, where a thread is flagged as stealable but not need by a process
@@ -108,13 +115,13 @@ thread_add(p, td)
 	struct thread *td;
 {
 	THREAD_LOCK(td);
-    if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-        LIST_INSERT_HEAD(p->p_allthread, td, td_sibling);
-    }
-    LIST_INSERT_HEAD(TIDHASH(td->td_tid), td , td_hash);
-    LIST_INSERT_HEAD(p->p_allthread, td, td_list);
-    THREAD_UNLOCK(td);
-    p->p_nthreads++;
+    	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+        	LIST_INSERT_HEAD(p->p_allthread, td, td_sibling);
+    	}
+    	LIST_INSERT_HEAD(TIDHASH(td->td_tid), td , td_hash);
+    	LIST_INSERT_HEAD(p->p_allthread, td, td_list);
+    	THREAD_UNLOCK(td);
+    	p->p_nthreads++;
 }
 
 void
@@ -177,6 +184,7 @@ proc_tdfind(p, tid)
 }
 
 /*
+ * TODO: Fix runqueue and sleepqueue logic
  * reparent a thread from one proc to another.
  * from: current thread parent.
  * to: new thread parent.
@@ -205,9 +213,9 @@ thread_reparent(from, to, td)
 
 		thread_remove(from, td);
 		td->td_procp = to;
-    	td->td_flag = 0;
-    	td->td_ptid = to->p_pid;
-    	td->td_pgrp = to->p_pgrp;
+    		td->td_flag = 0;
+    		td->td_ptid = to->p_pid;
+    		td->td_pgrp = to->p_pgrp;
 		thread_add(to, td);
 
 		if (isrq == 1) {
@@ -247,27 +255,27 @@ thread_alloc(p, stack)
 	struct proc *p;
 	size_t stack;
 {
-    struct thread *td;
+	struct thread *td;
 
-    td = (struct thread *)malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
-    td->td_procp = p;
-    td->td_stack = (struct thread *)td;
-    td->td_stacksize = stack;
-    td->td_stat = SIDL;
-    td->td_flag = 0;
-    td->td_tid = 0;
-    td->td_ptid = p->p_pid;
-    td->td_pgrp = p->p_pgrp;
-    td->td_pri = thread_primask(p);
-    td->td_ppri = p->p_pri;
-    td->td_steal = 0;
+    	td = (struct thread *)malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
+    	td->td_procp = p;
+    	td->td_stack = (struct thread *)td;
+    	td->td_stacksize = stack;
+    	td->td_stat = SIDL;
+    	td->td_flag = 0;
+    	td->td_tid = 0;
+    	td->td_ptid = p->p_pid;
+    	td->td_pgrp = p->p_pgrp;
+    	td->td_pri = thread_primask(p);
+    	td->td_ppri = p->p_pri;
+    	td->td_steal = 0;
 
-    if (!LIST_EMPTY(p->p_allthread)) {
-        p->p_threado = LIST_FIRST(p->p_allthread);
-    } else {
-        p->p_threado = td;
-    }
-    return (td);
+    	if (!LIST_EMPTY(p->p_allthread)) {
+        	p->p_threado = LIST_FIRST(p->p_allthread);
+    	} else {
+        	p->p_threado = td;
+    	}
+    	return (td);
 }
 
 void
@@ -340,29 +348,29 @@ thread_updatepri(p, td)
 	struct proc *p;
 	struct thread *td;
 {
-    int pri, retry;
+	int pri, retry;
 
-    retry = 0;
-    if ((td->td_ppri != p->p_pri)) {
+    	retry = 0;
+	if ((td->td_ppri != p->p_pri)) {
 check:
-        if (td->td_pri == (td->td_ppri + p->p_nthreads)) {
-        	pri = thread_setpri(p, td);
-        	td->td_pri = pri;
-        	return;
-        } else if (td->td_pri != (td->td_ppri + p->p_nthreads)){
-            printf("thread_updatepri: priority mismatch!\n");
-            printf("thread_updatepri: updating priority...\n");
-            pri = thread_setpri(p, td);
-            td->td_pri = pri;
-            return;
-        }
-        if (retry != 0) {
-            printf("thread_updatepri: no change in priority\n");
-        }
-    } else {
-        retry = 1;
-        goto check;
-    }
+		if (td->td_pri == (td->td_ppri + p->p_nthreads)) {
+			pri = thread_setpri(p, td);
+        		td->td_pri = pri;
+        		return;
+		} else if (td->td_pri != (td->td_ppri + p->p_nthreads)){
+			printf("thread_updatepri: priority mismatch!\n");
+            		printf("thread_updatepri: updating priority...\n");
+			pri = thread_setpri(p, td);
+			td->td_pri = pri;
+			return;
+		}
+		if (retry != 0) {
+			printf("thread_updatepri: no change in priority\n");
+		}
+	} else {
+		retry = 1;
+		goto check;
+	}
 }
 
 int
@@ -899,9 +907,9 @@ thread_wakeup(p, chan)
 	register const void *chan;
 {
 	register struct thread *td, *tq;
-    struct threadhd *qt;
+    	struct threadhd *qt;
 
-    qt = p->p_threadsq;
+    	qt = p->p_threadsq;
 restart:
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 		for (tq = TAILQ_FIRST(qt); tq != NULL; td = tq) {
