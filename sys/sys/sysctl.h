@@ -43,6 +43,7 @@
  * These are for the eproc, etext, einode, efile and map structures.
  */
 #ifndef _KERNEL
+#include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/file.h>
@@ -53,6 +54,8 @@
 #include <sys/map.h>
 #include <sys/types.h>
 #include <vm/include/vm.h>
+#else
+#include <sys/proc.h>
 #endif
 
 /*
@@ -203,10 +206,6 @@ struct ctlname {
 #define	KERN_PROC_TTY		4	/* by controlling tty */
 #define	KERN_PROC_UID		5	/* by effective uid */
 #define	KERN_PROC_RUID		6	/* by real uid */
-
-#include <sys/proc.h>
-struct proc;
-struct vmspace;
 
 /* 
  * KERN_PROC subtype ops return arrays of augmented proc structures:
