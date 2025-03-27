@@ -89,13 +89,13 @@ EXTERNAL_GCC_SUBDIR=		gcc.old
 EXTERNAL_GCC_SUBDIR=		/does/not/exist
 .endif
 .else
-MKGCCCMDS?=					no
+MKGCCCMDS?=			no
 .endif
 
 #
 # What binutils is used?
 #
-HAVE_BINUTILS?=				234
+HAVE_BINUTILS?=			234
 
 .if ${HAVE_BINUTILS} == 	234
 EXTERNAL_BINUTILS_SUBDIR=	binutils
@@ -108,14 +108,27 @@ EXTERNAL_BINUTILS_SUBDIR=	/does/not/exist
 #
 # What GDB is used?
 #
-HAVE_GDB?=					1100
+HAVE_GDB?=			1100
 
-.if ${HAVE_GDB} == 			1100
+.if ${HAVE_GDB} == 		1100
 EXTERNAL_GDB_SUBDIR=		gdb
 .elif ${HAVE_GDB} == 		830
 EXTERNAL_GDB_SUBDIR=		gdb.old
 .else
 EXTERNAL_GDB_SUBDIR=		/does/not/exist
+.endif
+
+#
+# What LibreSSL is used? (Planned Support: Not currently included)
+# 
+HAVE_LIBRESSL?=	40
+
+.if ${HAVE_LIBRESSL} == 40
+EXTERNAL_LIBRESSL_SUBDIR=libressl
+.elif ${HAVE_LIBRESSL} == 39
+EXTERNAL_LIBRESSL_SUBDIR=libressl.old
+.else
+EXTERNAL_LIBRESSL_SUBDIR=/does/not/exist
 .endif
 
 #
@@ -139,7 +152,6 @@ EXTERNAL_OPENSSL_SUBDIR=/does/not/exist
 # Does the platform support UEFI?
 #
 
-
 #
 # Does the platform support NVMM?
 #
@@ -149,7 +161,7 @@ _LIBC_COMPILER_RT.${MACHINE_ARCH}=	yes
 .endif
 
 _LIBC_COMPILER_RT.aarch64=		yes
-_LIBC_COMPILER_RT.aarch64eb=	yes
+_LIBC_COMPILER_RT.aarch64eb=		yes
 _LIBC_COMPILER_RT.i386=			yes
 _LIBC_COMPILER_RT.x86_64=		yes
 
@@ -903,17 +915,6 @@ MKSTATICPIE?=	yes
 .else
 MKSTATICPIE?=	no
 .endif
-
-#
-# 2.11BSD Original Libraries
-#
-MKLIBNDBM?= no
-MKLIBFORTRAN?= no
-MKLIBMP?= no
-MKLIBOM?= no
-MKLIBSTUBS?= no
-MKLIBTERMCAP?= no # here for legacy reasons (termcap cannot be enabled)
-MKLIBVMF?= no
 
 #
 # MK* options which default to "yes".
