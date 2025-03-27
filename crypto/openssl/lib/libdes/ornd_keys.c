@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <sha1.h>
+#include <hash/sha1.h>
 
 void
 des_set_random_generator_seed(des_cblock *seed)
