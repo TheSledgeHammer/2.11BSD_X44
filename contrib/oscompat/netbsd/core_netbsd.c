@@ -72,26 +72,26 @@ int coredump_netbsd(void *, struct coredump_iostate *);
 static int
 coredump_internal(char *name, struct siginfo *sig, struct coredump_state *cs, struct coredump_iostate *iocookie)
 {
-    if (cs == NULL) {
-        cs = (struct coredump_state *)malloc(sizeof(*cs));
-    }
+	if (cs == NULL) {
+		cs = (struct coredump_state *)malloc(sizeof(*cs));
+	}
 	cs->iocookie = iocookie;
 	cs->core.c_midmag = 0;
-    if (name != NULL) {
-        strncpy(cs->core.c_name, name, MAXCOMLEN);
-    }
+	if (name != NULL) {
+		strncpy(cs->core.c_name, name, MAXCOMLEN);
+    	}
 	cs->core.c_nseg = 0;
-    cs->core.c_signo = sig->si_signo;
+	cs->core.c_signo = sig->si_signo;
 	cs->core.c_ucode = sig->si_code;
 	cs->core.c_cpusize = 0;
-
-    return (0);
+	
+	return (0);
 }
 
 int
 coredump_netbsd(void *arg, struct coredump_iostate *iocookie)
 {
-    struct coredump_state cs;
-
-    return (coredump_internal(NULL, (struct siginfo *)arg, &cs, iocookie));
+	struct coredump_state cs;
+	
+	return (coredump_internal(NULL, (struct siginfo *)arg, &cs, iocookie));
 }
