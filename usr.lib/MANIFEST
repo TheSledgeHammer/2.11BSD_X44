@@ -16,7 +16,6 @@ libpci/		NetBSD
 libpthread/	NetBSD
 libresolv/  NetBSD
 libskey/    NetBSD
-libss/      NetBSD
 libtelenet/ UNIMPLEMENTED
 libterminfo/ NetBSD
 libutil/	4.4BSD-Lite2/NetBSD
