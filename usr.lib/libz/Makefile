@@ -37,5 +37,5 @@ test: minigzip
 
 # Note: CFLAGS omitted by intention!
 # This is to verify that zlib.h works standalone.
-minigzip: ${ZLIBDIR}/test/minigzip.c libz.a
+minigzip: ${.CURDIR}/test/minigzip.c libz.a
 	${CC} -o minigzip ${ZLIBDIR}/test/minigzip.c libz.a
