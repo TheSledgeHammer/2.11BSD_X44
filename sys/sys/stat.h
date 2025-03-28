@@ -53,56 +53,95 @@
 
 #ifndef _POSIX_SOURCE
 struct ostat {
-	u_int16_t 			st_dev;			/* inode's device */
-	ino_t	  			st_ino;			/* inode's number */
-	mode_t	  			st_mode;		/* inode protection mode */
-	nlink_t	  			st_nlink;		/* number of hard links */
-	u_int16_t 			st_uid;			/* user ID of the file's owner */
-	u_int16_t 			st_gid;			/* group ID of the file's group */
-	u_int16_t 			st_rdev;		/* device type */
-	int32_t	  			st_size;		/* file size, in bytes */
-	struct	timespec 	st_atimespec;	/* time of last access */
-	struct	timespec 	st_mtimespec;	/* time of last data modification */
-	struct	timespec 	st_ctimespec;	/* time of last file status change */
-	struct	timespec  	st_birthtimespec;/* time of creation */
-	int32_t	  			st_blksize;		/* optimal blocksize for I/O */
-	int32_t	  			st_blocks;		/* blocks allocated for file */
-	u_int32_t 			st_flags;		/* user defined flags for file */
-	u_int32_t 			st_gen;			/* file generation number */
+	u_int16_t 		st_dev;			/* inode's device */
+	ino_t	  		st_ino;			/* inode's number */
+	mode_t	  		st_mode;		/* inode protection mode */
+	nlink_t	  		st_nlink;		/* number of hard links */
+	u_int16_t 		st_uid;			/* user ID of the file's owner */
+	u_int16_t 		st_gid;			/* group ID of the file's group */
+	u_int16_t 		st_rdev;		/* device type */
+	int32_t	  		st_size;		/* file size, in bytes */
+	struct	timespec 	st_atimespec;		/* time of last access */
+	struct	timespec 	st_mtimespec;		/* time of last data modification */
+	struct	timespec 	st_ctimespec;		/* time of last file status change */
+	struct	timespec  	st_birthtimespec;	/* time of creation */
+	int32_t	  		st_blksize;		/* optimal blocksize for I/O */
+	int32_t	  		st_blocks;		/* blocks allocated for file */
+	u_int32_t 		st_flags;		/* user defined flags for file */
+	u_int32_t 		st_gen;			/* file generation number */
 };
 #endif /* !_POSIX_SOURCE */
 
 struct stat {
-	dev_t				st_dev;			/* inode's device */
-	ino_t				st_ino;			/* inode's number */
-	mode_t	 			st_mode;		/* inode protection mode */
-	nlink_t				st_nlink;		/* number of hard links */
-	uid_t				st_uid;			/* user ID of the file's owner */
-	gid_t				st_gid;			/* group ID of the file's group */
-	dev_t				st_rdev;		/* device type */
-	off_t				st_size;		/* file size, in bytes */
+	dev_t			st_dev;			/* inode's device */
+	ino_t			st_ino;			/* inode's number */
+	mode_t	 		st_mode;		/* inode protection mode */
+	nlink_t			st_nlink;		/* number of hard links */
+	uid_t			st_uid;			/* user ID of the file's owner */
+	gid_t			st_gid;			/* group ID of the file's group */
+	dev_t			st_rdev;		/* device type */
+	off_t			st_size;		/* file size, in bytes */
+#ifdef _KERNEL
 	struct	timespec	st_atime;		/* time of last access */
 	struct	timespec	st_mtime;		/* time of last data modification */
 	struct	timespec 	st_ctime;		/* time of last file status change */
-	struct	timespec  	st_birthtime;	/* time of creation */
+	struct	timespec  	st_birthtime;		/* time of creation */
+#else /* !_KERNEL */
+#ifndef _POSIX_SOURCE 
+	struct  timespec    	st_atimespec;		/* time of last access */
+	struct  timespec    	st_mtimespec;		/* time of last data modification */
+	struct  timespec    	st_ctimespec;		/* time of last file status change */
+	struct  timespec    	st_birthtimespec;	/* time of creation */
+#else /* _POSIX_SOURCE */
+	time_t	            	st_atime;		/* time of last access */
+	long	            	st_atimensec;		/* nsec of last access */
+	time_t	            	st_mtime;		/* time of last data modification */
+	long	            	st_mtimensec;		/* nsec of last data modification */
+	time_t	            	st_ctime;		/* time of last file status change */
+	long	            	st_ctimensec;		/* nsec of last file status change */
+	time_t	            	st_birthtime;		/* time of creation */
+	long	            	st_birthtimensec;	/* nsec of time of creation */
+#endif /* !_POSIX_SOURCE */
+#endif /* _KERNEL */
 	unsigned long		st_blksize;		/* optimal blocksize for I/O */
-	quad_t				st_blocks;		/* blocks allocated for file */
+	quad_t			st_blocks;		/* blocks allocated for file */
 	unsigned long		st_flags;		/* user defined flags for file */
 	unsigned long		st_gen;			/* file generation number */
-	int					st_spare1;
-	int					st_spare2;
-	long				st_spare3;
-	quad_t				st_spare4[3];
+	int			st_spare1;
+	int			st_spare2;
+	long			st_spare3;
+	quad_t			st_spare4[3];
 };
 
-#define st_atim 		st_atime.tv_sec
-#define st_mtim 		st_mtime.tv_sec
-#define st_ctim 		st_ctime.tv_sec
+#ifdef _KERNEL
+/* timespec seconds (tv_sec) */
+/* New macros */
+#define st_atimesec 		st_atime.tv_sec
+#define st_mtimesec 		st_mtime.tv_sec
+#define st_ctimesec 		st_ctime.tv_sec
+#define st_birthtimesec     	st_birthtime.tv_sec
 
-#define st_atimensec	st_atime.tv_nsec
-#define st_mtimensec	st_mtime.tv_nsec
-#define st_ctimensec	st_ctime.tv_nsec
-#define st_birthtimensec st_atime.tv_nsec
+/* Old macros (To be replaced) */
+#define st_atim 		st_atimesec
+#define st_mtim 		st_mtimesec
+#define st_ctim 		st_ctimesec
+#define st_birthtim         	st_birthtimesec
+
+/* timespec nanoseconds (tv_nsec) */
+#define st_atimensec	    	st_atime.tv_nsec
+#define st_mtimensec	    	st_mtime.tv_nsec
+#define st_ctimensec	    	st_ctime.tv_nsec
+#define st_birthtimensec    	st_birthtime.tv_nsec
+
+#else /* !_KERNEL */
+
+#ifndef _POSIX_SOURCE
+#define st_atime            	st_atimespec.tv_sec
+#define st_mtime            	st_mtimespec.tv_sec
+#define st_ctime            	st_ctimespec.tv_sec
+#define	st_birthtime		st_birthtimespec.tv_sec
+#endif  /* !_POSIX_SOURCE */
+#endif /* _KERNEL */
 
 #define	S_IFMT	 0170000	/* type of file */
 #define	S_IFDIR	 0040000	/* directory */
