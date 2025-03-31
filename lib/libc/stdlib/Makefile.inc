@@ -10,10 +10,10 @@
 .PATH: ${ARCHDIR}/stdlib ${.CURDIR}/stdlib
 
 SRCS+=	a64l.c abort.c abs.c aligned_alloc.c atexit.c atof.c atoi.c atol.c bsearch.c div.c drand48.c 			\
-	erand48.c exit.c getenv.c getopt_long.c getopt.c getsubopt.c hcreate.c heapsort.c       		\
+	erand48.c exit.c freezero.c getenv.c getopt_long.c getopt.c getsubopt.c hcreate.c heapsort.c       		\
         jrand48.c l64a.c labs.c lcong48.c ldiv.c llabs.c lldiv.c lrand48.c merge.c  \
 	mi_vector_hash.c mrand48.c nrand48.c putenv.c qabs.c qdiv.c qsort.c radixsort.c rand_r.c random.c	\
-	reallocarr.c reallocarray.c seed48.c setenv.c srand48.c strsuftoll.c strtoi.c 			\
+	reallocarr.c reallocarray.c recallocarray.c seed48.c setenv.c srand48.c strsuftoll.c strtoi.c 			\
         strtoimax.c strtol.c strtoll.c strtou.c strtoul.c strtoumax.c strtouq.c system.c tdelete.c 		\
 	tfind.c tsearch.c twalk.c
 
@@ -31,7 +31,9 @@ MAN+= 	a64l.3 abort.3 abs.3 atexit.3 atof.3 atoi.3 atol.3 bsearch.3 calloc.3 div
 MLINKS+=a64l.3 l64a.3
 MLINKS+=a64l.3 l64a_r.3
 MLINKS+=hcreate.3 hdestroy.3 hcreate.3 hsearch.3
+MLINKS+=malloc.3 freezero.3
 MLINKS+=posix_memalign.3 aligned_alloc.3
+MLINKS+=reallocarray.3 recallocarray.3
 MLINKS+=rand.3 rand_r.3
 MLINKS+=rand.3 srand.3
 MLINKS+=rand48.3 drand48.3 rand48.3 erand48.3 rand48.3 lrand48.3
