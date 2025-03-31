@@ -6,14 +6,14 @@ _BSD_OSCOMPAT_MK_=1
 
 .include <bsd.own.mk>
 
-MK211BSD= 		yes
+MK211BSD= 		  yes
 MKDRAGONFLYBSD=	no
-MKFREEBSD=		no
-MKNETBSD=		no
-MKOPENBSD=		no
-MKPLAN9= 		no
-MKLINUX=		no
-MKSOLARIS=		no	
+MKFREEBSD=		  no
+MKNETBSD=		    yes
+MKOPENBSD=		  no
+MKPLAN9= 		    no
+MKLINUX=		    no
+MKSOLARIS=		  no	
 
 .include <bsd.sys.mk>
 
