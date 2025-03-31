@@ -254,6 +254,15 @@
 #endif
 
 /*
+ * __bounded:
+ */
+#if __GNUC_PREREQ__(3,3) && !defined(__clang__)
+# define __bounded(args)	__attribute__((__bounded__ args ))
+#else
+# define __bounded(args)	/* delete */
+#endif
+
+/*
  * __diagused: Note that item is used in diagnostic code, but may be
  * unused in non-diagnostic code.
  */
