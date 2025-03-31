@@ -1,8 +1,7 @@
+#	$211BSD: Makefile,v 1.0 2025/03/31 19:15:27 Exp $
 # LibreSSL dist/crypto
 
 CPPFLAGS+= -I${LCRYPTO_SRC}
-CPPFLAGS+= -I${LCRYPTO_SRC}/compat
-#CPPFLAGS+= -I${LCRYPTO_SRC}/hidden
 CPPFLAGS+= -I${LCRYPTO_SRC}/aes
 CPPFLAGS+= -I${LCRYPTO_SRC}/arch
 CPPFLAGS+= -I${LCRYPTO_SRC}/asn1
@@ -59,7 +58,6 @@ CPPFLAGS+= -I${LCRYPTO_SRC}/ui
 CPPFLAGS+= -I${LCRYPTO_SRC}/x509
 
 .PATH: ${LCRYPTO_SRC}
-#.PATH: ${LCRYPTO_SRC}/hidden
 .PATH: ${LCRYPTO_SRC}/aes
 .PATH: ${LCRYPTO_SRC}/arch
 .PATH: ${LCRYPTO_SRC}/asn1
@@ -115,6 +113,9 @@ CPPFLAGS+= -I${LCRYPTO_SRC}/x509
 .PATH: ${LCRYPTO_SRC}/ui
 .PATH: ${LCRYPTO_SRC}/x509
 
+# This list is built from the contents of the dist/crypto/Makefile.am
+# in the LibreSSL source distribution.
+
 .if !empty(${LIBRESSL_MACHINE_ARCH}/crypto_arch.h) && !empty(${LIBRESSL_MACHINE_ARCH}/bn_arch.h)
 LIBRESSL_MACHINE:= ${LIBRESSL_MACHINE_ARCH}
 .elif exists(${LIBRESSL_MACHINE_CPU}/crypto_arch.h) && exists(${LIBRESSL_MACHINE_CPU}/bn_arch.h)
@@ -154,7 +155,7 @@ SRCS += o_fips.c
 SRCS += aes.c
 SRCS += aes_core.c
 SRCS += aes_ige.c
-INCS += aes_local.h
+#INCS += aes_local.h
 
 # asn1
 SRCS += a_bitstr.c
@@ -322,6 +323,9 @@ SRCS += cms_pwri.c
 SRCS += cms_sd.c
 SRCS += cms_smime.c
 #INCS += cms_local.h
+
+# compat
+SRCS += syslog_r.c
 
 # conf
 SRCS += conf_api.c

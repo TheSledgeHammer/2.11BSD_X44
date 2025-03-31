@@ -1,3 +1,4 @@
+#	$211BSD: Makefile,v 1.0 2025/03/31 19:15:27 Exp $
 # LibreSSL dist/include
 
 CPPFLAGS+= -I${LCRYPTO_INC}
@@ -10,6 +11,8 @@ CPPFLAGS+= -I${LCRYPTO_INC}/compat
 .PATH: ${LCRYPTO_INC}/arch
 .PATH: ${LCRYPTO_INC}/compat
 
+# This list is built from the contents of the dist/include/Makefile.am
+# in the LibreSSL source distribution.
 .if !empty(${LIBRESSL_MACHINE_ARCH}/opensslconf.h)
 LIBRESSL_MACHINE:= ${LIBRESSL_MACHINE_ARCH}
 .elif exists(${LIBRESSL_MACHINE_CPU}/opensslconf.h)
@@ -19,7 +22,6 @@ LIBRESSL_MACHINE:= ${LIBRESSL_MACHINE_CPU}
 .endif
 
 CPPFLAGS+= -I${LCRYPTO_INC}/arch/${LIBRESSL_MACHINE}
-
 .PATH: ${LCRYPTO_INC}/arch/${LIBRESSL_MACHINE}
 
 # arch
