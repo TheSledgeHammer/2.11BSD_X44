@@ -80,6 +80,10 @@
  * Definitions related to sockets: types, address families, options.
  */
 
+#if __BSD_VISIBLE
+#include <sys/types.h>			/* for off_t, uid_t, and gid_t */
+#endif
+
 /*
  * Data types.
  */
@@ -390,7 +394,7 @@ struct cmsghdr {
 
 __BEGIN_DECLS
 int	accept(int, struct sockaddr *, int *);
-int	bind(int, const struct sockaddr *, u_int);
+int	bind(int, const struct sockaddr *, int);
 int	connect(int, const struct sockaddr *, int);
 int	getpeername(int, struct sockaddr *, int *);
 int	getsockname(int, struct sockaddr *, int *);
