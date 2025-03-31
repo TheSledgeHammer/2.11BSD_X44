@@ -12,25 +12,28 @@ LCRYPTO_SRC=  	${LIBRESSLSRC}/crypto
 LCRYPTO_INC=  	${LIBRESSLSRC}/include
 LSSL_SRC=		${LIBRESSLSRC}/ssl
 
+CPPFLAGS+= -DLIBRESSL_INTERNAL -DLIBRESSL_CRYPTO_INTERNAL
 CPPFLAGS+= -Dlib${LIB}
 CPPFLAGS+= -I${LIBRESSLSRC}
-CPPFLAGS+= -I${LCRYPTO_INC}
-CPPFLAGS+= -I${LCRYPTO_INC}/openssl
 CPPFLAGS+= -I${LCRYPTO_SRC}
+CPPFLAGS+= -I${LCRYPTO_SRC}/arch
 CPPFLAGS+= -I${LCRYPTO_SRC}/bio
 CPPFLAGS+= -I${LSSL_SRC}
 CPPFLAGS+= -I${LSSL_SRC}/hidden
+CPPFLAGS+= -I${LSSL_SRC}/hidden/openssl
 
 CRYPTODIST=	${NETBSDSRCDIR}/crypto
 
 .include "${NETBSDSRCDIR}/crypto/Makefile.libressl"
 .PATH: ${LIBRESSLSRC}
-.PATH: ${LCRYPTO_INC}
-.PATH: ${LCRYPTO_INC}/openssl
 .PATH: ${LCRYPTO_SRC}
+.PATH: ${LCRYPTO_SRC}/arch
 .PATH: ${LCRYPTO_SRC}/bio
 .PATH: ${LSSL_SRC}
 .PATH: ${LSSL_SRC}/hidden
+.PATH: ${LSSL_SRC}/hidden/openssl
+
+.include "Makefile.incs"
 
 LIBDPLIBS+=crypto ${.CURDIR}/../libcrypto
 
@@ -39,8 +42,8 @@ AFLAGS+=-DELF
 # This list is built from the contents of the dist/ssl/Makefile.am
 # in the LibreSSL source distribution.
 
-INCS += bytestring.h
-INCS += srtp.h
+#INCS += bytestring.h
+#INCS += srtp.h
 #INCS += dtls_local.h
 #INCS += ssl_local.h
 #INCS += ssl_sigalgs.h
