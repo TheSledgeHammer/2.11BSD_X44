@@ -159,12 +159,11 @@ typedef	u_long				uid_t;		/* user id */
 
 typedef uint32_t			in_addr_t;	/* IP(v4) address */
 typedef uint16_t			in_port_t;	/* "Internet" port number */
-//typedef u_quad_t			sa_family_t;/* socket address family */
-//typedef u_quad_t			socklen_t;	/* socket-related datum length */
 #else
 typedef __fixpt_t 			fixpt_t;	/* fixed point number */
 typedef	__nlink_t 			nlink_t;	/* link count */
 typedef	long     			segsz_t;	/* segment size */
+typedef uint64_t			rlim_t;		/* resource limit */
 typedef __daddr_t			daddr_t;	/* disk address */
 typedef __caddr_t 			caddr_t;	/* core address */
 typedef __ino_t				ino_t;		/* inode number*/
@@ -182,8 +181,6 @@ typedef	__pri_t				pri_t;		/* process priority */
 typedef __uid_t 			uid_t;		/* user id */
 typedef __in_addr_t			in_addr_t;	/* IP(v4) address */
 typedef __in_port_t			in_port_t;	/* "Internet" port number */
-//typedef __sa_family_t		sa_family_t;/* socket address family */
-//typedef __socklen_t			socklen_t;	/* socket-related datum length */
 #endif /* _KERNEL */
 
 #if defined(_KERNEL) || defined(_LIBC)

@@ -1163,7 +1163,6 @@ getanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 			}
 		} else if (type != qtype) {
 			if (type != T_KEY && type != T_SIG) {
-//				struct syslog_data sd = SYSLOG_DATA_INIT;
 				syslog(LOG_NOTICE|LOG_AUTH,
 	       "gethostby*.getanswer: asked for \"%s %s %s\", got type \"%s\"",
 				       qname, p_class(C_IN), p_type(qtype),
@@ -1176,7 +1175,6 @@ getanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 		case T_A:
 		case T_AAAA:
 			if (strcasecmp(canonname, bp) != 0) {
-//				struct syslog_data sd = SYSLOG_DATA_INIT;
 				syslog(LOG_NOTICE|LOG_AUTH, AskedForGot, canonname, bp);
 				cp += n;
 				continue;	/* XXX - had_error++ ? */

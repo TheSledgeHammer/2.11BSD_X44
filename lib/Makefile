@@ -101,7 +101,11 @@ SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
 
+.if (${MKOPENSSL} != "no")
 SUBDIR+=	../crypto/${EXTERNAL_OPENSSL_SUBDIR}/lib # depends on libcrypt
+.else
+SUBDIR+=	../crypto/${EXTERNAL_LIBRESSL_SUBDIR}/lib # depends on libcrypt
+.endif
 
 .if (${MKBINUTILS} != "no")
 SUBDIR+=	../contrib/gnu/${EXTERNAL_BINUTILS_SUBDIR}/lib	# libbfd depends on libz

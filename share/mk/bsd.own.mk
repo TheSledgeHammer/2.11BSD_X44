@@ -145,6 +145,15 @@ EXTERNAL_OPENSSL_SUBDIR=/does/not/exist
 .endif
 
 #
+# Compile OpenSSL or LibreSSL.
+#
+.if ${MKOPENSSL:Uno} != "no" 
+MKLIBRESSL? = no
+.else
+MKLIBRESSL? = yes
+.endif
+
+#
 # Does the platform support ACPI?
 #
 

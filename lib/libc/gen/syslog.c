@@ -65,7 +65,7 @@ __weak_alias(openlog,_openlog)
 __weak_alias(setlogmask,_setlogmask)
 #endif
 
-#ifdef	pdp11
+#if defined(pdp11)
 static	char	ToFile = 0;		/* set if logfile is used */
 static	char	logfile[] = "/usr/adm/messages";
 #endif
@@ -169,7 +169,7 @@ vsyslog(int pri, const char *fmt, va_list ap)
 	/* Get connected, output the message to the local logger. */
 	if (!connected)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
-#ifdef	pdp11
+#if defined(pdp11)
 	if (ToFile) {
 		if (write(LogFile, tbuf, cnt) == cnt)
 			return;
@@ -226,7 +226,7 @@ openlog(ident, logstat, logfac)
 		    sizeof(SyslogAddr.sa_data));
 		if (LogStat & LOG_NDELAY) {
 			LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
-#ifdef	pdp11
+#if defined(pdp11)
 			if (LogFile == -1) {
 				LogFile = open(logfile, O_WRONLY|O_APPEND);
 				ToFile = 1;
