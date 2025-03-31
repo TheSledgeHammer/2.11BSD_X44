@@ -46,6 +46,11 @@
 ./usr/include/arpa
 ./usr/include/c++
 ./usr/include/c++/experimental
+./usr/include/c++/ext
+./usr/include/c++/__iterator
+./usr/include/c++/__memory
+./usr/include/c++/__ranges
+./usr/include/c++/__utility
 ./usr/include/crypto
 ./usr/include/dev
 ./usr/include/dev/audio
