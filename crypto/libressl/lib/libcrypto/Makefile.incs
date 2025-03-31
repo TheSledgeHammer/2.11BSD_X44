@@ -13,6 +13,7 @@ CPPFLAGS+= -I${LCRYPTO_INC}/compat
 
 # This list is built from the contents of the dist/include/Makefile.am
 # in the LibreSSL source distribution.
+
 .if !empty(${LIBRESSL_MACHINE_ARCH}/opensslconf.h)
 LIBRESSL_MACHINE:= ${LIBRESSL_MACHINE_ARCH}
 .elif exists(${LIBRESSL_MACHINE_CPU}/opensslconf.h)
