@@ -80,9 +80,7 @@
  * Definitions related to sockets: types, address families, options.
  */
 
-#if __BSD_VISIBLE
 #include <sys/types.h>			/* for off_t, uid_t, and gid_t */
-#endif
 
 /*
  * Data types.
