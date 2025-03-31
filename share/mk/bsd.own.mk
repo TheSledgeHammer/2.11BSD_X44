@@ -147,6 +147,9 @@ EXTERNAL_OPENSSL_SUBDIR=/does/not/exist
 #
 # Compile OpenSSL or LibreSSL.
 #
+# Set in /crypto/Makefile
+MKOPENSSL?= 
+
 .if ${MKOPENSSL:Uno} != "no" 
 MKLIBRESSL? = no
 .else
