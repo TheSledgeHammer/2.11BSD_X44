@@ -259,6 +259,13 @@ struct sockaddr_storage {
 #define	PF_MAX			AF_MAX
 
 /*
+ * These are the valid values for the "how" field used by shutdown(2).
+ */
+#define	SHUT_RD		0
+#define	SHUT_WR		1
+#define	SHUT_RDWR	2
+
+/*
  * PF_ROUTE - Routing table
  *
  * Three additional levels are defined:
