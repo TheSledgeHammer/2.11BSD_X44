@@ -102,7 +102,6 @@ extern size_t 		__mb_cur_max;
 #define	MB_CUR_MAX	__mb_cur_max
 
 __BEGIN_DECLS
-void 	_Exit(int) __attribute__((__noreturn__));
 void 	abort(void) __attribute__((__noreturn__));
 int 	abs(int);
 int	atexit(void (*)(void));
@@ -122,10 +121,12 @@ __aconst char 	*getenv(const char *);
 long 	labs(long);
 ldiv_t	ldiv(long, long);
 void	*malloc(size_t);
+void	freezero(void *, size_t);
 void	qsort(void *, size_t, size_t, int (*)(const void *, const void *));
 int	rand(void);
 void	*realloc(void *, size_t);
 void	*reallocarray(void *, size_t, size_t);
+void	*recallocarray(void *, size_t, size_t, size_t);
 void	srand(unsigned);
 double	strtod(const char * __restrict, char ** __restrict);
 long	strtol(const char * __restrict, char ** __restrict, int);
