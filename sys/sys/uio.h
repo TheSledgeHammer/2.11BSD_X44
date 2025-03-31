@@ -86,8 +86,8 @@ int	uiomove(void *, size_t, struct uio *);
 #else	/* !_KERNEL */
 #include <sys/cdefs.h>
 
-ssize_t	readv(int, const struct iovec *, u_int);
-ssize_t	writev(int, const struct iovec *, u_int);
+ssize_t	readv(int, const struct iovec *, int);
+ssize_t	writev(int, const struct iovec *, int);
 #endif /* !_KERNEL */
 
 __END_DECLS
