@@ -1,5 +1,5 @@
 #	$211BSD: Makefile,v 1.0 2025/03/31 19:15:27 Exp $
-# Makefile LibreSSL 4.0 libcrypto
+# 	Makefile LibreSSL 4.0 libcrypto
 
 LIB=	crypto
 USE_FORT?= yes	# cryptographic software

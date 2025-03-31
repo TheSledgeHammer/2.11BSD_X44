@@ -1,32 +1,56 @@
+#	$211BSD: Makefile,v 1.0 2025/03/31 19:15:27 Exp $
+# 	Makefile LibreSSL 4.0 libssl
 
 .include <bsd.own.mk>
 
-USE_FORT?=yes	# cryptographic software and network library
-
 LIB=	ssl
-CPPFLAGS+= -Dlib${LIB} -I${LIBRESSLSRC} -I${LIBRESSLSRC}/crypto
-CPPFLAGS+= -I${LIBRESSLSRC}/include
+USE_FORT?=yes	# Secure Sockets Layer and cryptography libraries
+
+WARNS=0
+
+LCRYPTO_SRC=  	${LIBRESSLSRC}/crypto
+LCRYPTO_INC=  	${LIBRESSLSRC}/include
+LSSL_SRC=		${LIBRESSLSRC}/ssl
+
+CPPFLAGS+= -Dlib${LIB}
+CPPFLAGS+= -I${LIBRESSLSRC}
+CPPFLAGS+= -I${LCRYPTO_INC}
+CPPFLAGS+= -I${LCRYPTO_INC}/openssl
+CPPFLAGS+= -I${LCRYPTO_SRC}
+CPPFLAGS+= -I${LCRYPTO_SRC}/bio
+CPPFLAGS+= -I${LSSL_SRC}
+CPPFLAGS+= -I${LSSL_SRC}/hidden
 
 CRYPTODIST=	${NETBSDSRCDIR}/crypto
 
 .include "${NETBSDSRCDIR}/crypto/Makefile.libressl"
-.PATH: ${LIBRESSLSRC} ${LIBRESSLSRC}/include/openssl
-.PATH: ${LIBRESSLSRC}/ssl
+.PATH: ${LIBRESSLSRC}
+.PATH: ${LCRYPTO_INC}
+.PATH: ${LCRYPTO_INC}/openssl
+.PATH: ${LCRYPTO_SRC}
+.PATH: ${LCRYPTO_SRC}/bio
+.PATH: ${LSSL_SRC}
+.PATH: ${LSSL_SRC}/hidden
+
+LIBDPLIBS+=crypto ${.CURDIR}/../libcrypto
+
+AFLAGS+=-DELF
+
+# This list is built from the contents of the dist/ssl/Makefile.am
+# in the LibreSSL source distribution.
 
 INCS += bytestring.h
 INCS += srtp.h
-INCS += dtls_local.h
-INCS += ssl_local.h
-INCS += ssl_sigalgs.h
-INCS += ssl_tlsext.h
-INCS += tls_content.h
-INCS += tls_internal.h
-INCS += tls12_internal.h
-INCS += tls13_internal.h
-INCS += tls13_handshake.h
-INCS += tls13_record.h
-
-INCSDIR=/usr/include/openssl
+#INCS += dtls_local.h
+#INCS += ssl_local.h
+#INCS += ssl_sigalgs.h
+#INCS += ssl_tlsext.h
+#INCS += tls_content.h
+#INCS += tls_internal.h
+#INCS += tls12_internal.h
+#INCS += tls13_internal.h
+#INCS += tls13_handshake.h
+#INCS += tls13_record.h
 
 SRCS += bio_ssl.c
 SRCS += d1_both.c
@@ -80,7 +104,9 @@ SRCS += tls13_record.c
 SRCS += tls13_record_layer.c
 SRCS += tls13_server.c
 
-PKGCONFIG=libssl
+INCSDIR=/usr/include/openssl
+
+PKGCONFIG= libssl openssl
 .include "${.CURDIR}/../../pkgconfig.mk"
 
 .include <bsd.lib.mk>
