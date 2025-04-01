@@ -96,6 +96,7 @@ extern int	setsid();
 extern int	setpgid();
 extern int	getdtablesize();
 extern int	dup2();
+extern int	pipe2();
 extern int	fcntl();
 extern int	select();
 extern int	mkfifo();

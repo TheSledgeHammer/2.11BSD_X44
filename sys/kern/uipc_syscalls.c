@@ -62,6 +62,8 @@
 
 #include <machine/setjmp.h>
 
+static int pipe1(int *, int);
+
 static void
 MBZAP(m, len, type)
 	register struct mbuf *m;
@@ -773,9 +775,15 @@ bad:
 }
 
 /* pipe multiplexor */
-#define FMPX_READ 		0	/* read channel */
-#define FMPX_WRITE 		1	/* write channel */
-#define FMPX_NCHANS 	2	/* number of channels */
+//#define FMPX_READ 	0	/* read channel */
+//#define FMPX_WRITE 	1	/* write channel */
+//#define FMPX_NCHANS 	2	/* number of channels */
+
+enum pipe_ops {
+	FMPX_READ,		/* read channel */
+	FMPX_WRITE,		/* write channel */
+	FMPX_NCHANS,		/* number of channels */
+};
 
 static struct mpx *
 pipe_mpx_create(fp, idx, size, data)
@@ -930,6 +938,37 @@ free1:
 	(void)soclose(rso);
 
 	u.u_error = error;
+	return (error);
+}
+
+static int
+pipe1(int *fildes, int flags)
+{
+	if (flags &~(O_CLOEXEC | O_NONBLOCK)) {
+		return (EINVAL);
+	}
+	return (pipe(fildes));
+}
+
+int
+pipe2()
+{
+	register struct pipe2_args {
+		syscallarg(int *) fildes;
+		syscallarg(int) flags;
+	} *uap = (struct pipe2_args *)u.u_ap;
+
+	int fd[2], error;
+
+	error = pipe1(fd, SCARG(uap, flags));
+	if (error != 0) {
+		u.u_error = error;
+	}
+	error = copyout(fd, SCARG(uap, fildes), sizeof(fd));
+	if (error != 0) {
+		u.u_error = error;
+	}
+	u.u_r.r_val1 = 0;
 	return (error);
 }
 

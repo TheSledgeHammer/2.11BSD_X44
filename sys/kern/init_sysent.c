@@ -100,6 +100,7 @@ int	setsid();
 int	setpgid();
 int	getdtablesize();
 int	dup2();
+int	pipe2();
 int	fcntl();
 int	select();
 int	mkfifo();
@@ -362,7 +363,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    dup2 },				/* 90 = dup2 */
 	{ 0, 0,
-	    nosys },				/* 91 = unused */
+	    pipe2 },				/* 91 = pipe2 */
 	{ 0, 0,
 	    fcntl },				/* 92 = fcntl */
 	{ 0, 0,

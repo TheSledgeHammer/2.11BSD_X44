@@ -155,6 +155,7 @@ int	 			seteuid(uid_t);
 #if (_POSIX_C_SOURCE - 0) >= 202405L || (_XOPEN_SOURCE - 0 >= 800) || \
     defined(__BSD_VISIBLE)
 int	 			getentropy(void *, size_t);
+int	 			pipe2(int *, int);
 #endif
 
 #ifndef	_POSIX_SOURCE

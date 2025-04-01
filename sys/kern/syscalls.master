@@ -132,7 +132,7 @@
 88  STD   	    { int setpgid(); }
 89  STD     	{ int getdtablesize(); }
 90  STD     	{ int dup2(); }
-91  UNIMPL
+91  STD		{ int pipe2(); }
 92  STD     	{ int fcntl(); }
 93  STD     	{ int select(); }
 94	STD		    { int mkfifo(); }

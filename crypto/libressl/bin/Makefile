@@ -1,3 +1,5 @@
+#	$211BSD: Makefile,v 1.0 2025/03/31 19:15:27 Exp $
+
 WARNS?=	2
 
 NOMAN=	# defined
@@ -26,6 +28,9 @@ CRYPTODIST=	${NETBSDSRCDIR}/crypto
 .include "${NETBSDSRCDIR}/crypto/Makefile.libressl"
 .PATH:	${LAPPS_SRC}
 .PATH:	${LAPPS_SRC}/openssl
+
+# This list is built from the contents of the dist/apps/openssl/Makefile.am
+# in the LibreSSL source distribution.
 
 SRCS += apps.c
 SRCS += asn1pars.c

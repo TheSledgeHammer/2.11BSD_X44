@@ -96,6 +96,7 @@
 #define	SYS_setpgid	88
 #define	SYS_getdtablesize	89
 #define	SYS_dup2	90
+#define	SYS_pipe2	91
 #define	SYS_fcntl	92
 #define	SYS_select	93
 #define	SYS_mkfifo	94
