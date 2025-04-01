@@ -119,7 +119,7 @@ EXTERNAL_GDB_SUBDIR=		/does/not/exist
 .endif
 
 #
-# What LibreSSL is used? (Planned Support: Not currently included)
+# What LibreSSL is used?
 # 
 HAVE_LIBRESSL?=	40
 
