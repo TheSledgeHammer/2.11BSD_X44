@@ -12,7 +12,7 @@ LCRYPTO_SRC=  	${LIBRESSLSRC}/crypto
 LCRYPTO_INC=  	${LIBRESSLSRC}/include
 LSSL_SRC=		${LIBRESSLSRC}/ssl
 
-CPPFLAGS+= -DLIBRESSL_INTERNAL -DLIBRESSL_CRYPTO_INTERNAL
+CPPFLAGS+= -DLIBRESSL_INTERNAL -DLIBRESSL_NAMESPACE
 CPPFLAGS+= -Dlib${LIB}
 CPPFLAGS+= -I${LIBRESSLSRC}
 CPPFLAGS+= -I${LCRYPTO_SRC}
@@ -107,7 +107,7 @@ SRCS += tls13_record.c
 SRCS += tls13_record_layer.c
 SRCS += tls13_server.c
 
-INCSDIR=/usr/include/openssl
+#INCSDIR=/usr/include/openssl
 
 PKGCONFIG= libssl openssl
 .include "${.CURDIR}/../../pkgconfig.mk"

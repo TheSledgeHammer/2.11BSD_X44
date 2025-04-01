@@ -5,6 +5,6 @@
 # LibreSSL libraries.
 SUBDIR= libcrypto .WAIT
 SUBDIR+= libssl .WAIT	# depends on libcrypto
-#SUBDIR+= libtls	        # depends on libcrypto and libssl
+SUBDIR+= libtls	        # depends on libcrypto
 
 .include <bsd.subdir.mk>
