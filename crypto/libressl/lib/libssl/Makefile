@@ -55,6 +55,9 @@ AFLAGS+=-DELF
 #INCS += tls13_handshake.h
 #INCS += tls13_record.h
 
+SRCS += bs_ber.c
+SRCS += bs_cbb.c
+SRCS += bs_cbs.c
 SRCS += bio_ssl.c
 SRCS += d1_both.c
 SRCS += d1_lib.c

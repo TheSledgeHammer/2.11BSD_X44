@@ -1,0 +1,5 @@
+#	$211BSD: shlib_version,v 1.0 2025/03/31 19:15:27 Exp $
+#	Remember to update distrib/sets/lists/base/shl.* when changing
+#
+major=31
+minor=0

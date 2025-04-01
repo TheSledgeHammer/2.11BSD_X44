@@ -11,22 +11,22 @@ sed -e "s/@VERSION@/${VERSION}/g" < "$2"
 
 case "$2" in
 libcrypto.pc)
-	NAME="LibreSSL-libcrypto"
+	NAME="OpenSSL-libcrypto"
 	LIBS="-lcrypto"
 	DESCRIPTION="LibreSSL cryptography library"
 	;;
 libssl.pc)
-	NAME="LibreSSL-libssl"
+	NAME="OpenSSL-libssl"
 	LIBS="-lssl -lcrypto"
 	DESCRIPTION="Secure Sockets Layer and cryptography libraries"
 	;;
 libtls.pc)
-	NAME="LibreSSL-libtls"
-	LIBS="-lssl -lcrypto"
+	NAME="OpenSSL-libtls"
+	LIBS="-ltls -lcrypto"
 	DESCRIPTION="Secure communications using the TLS socket protocol"
 	;;
 openssl.pc)
-	NAME="LibreSSL"
+	NAME="OpenSSL"
 	LIBS="-lssl -lcrypto"
 	DESCRIPTION="Sockets Layer and cryptography libraries and tools"
 	;;

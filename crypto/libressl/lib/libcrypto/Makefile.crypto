@@ -133,6 +133,25 @@ CPPFLAGS+= -I${LCRYPTO_SRC}/bn/arch/${LIBRESSL_MACHINE_CPU}
 .error Architecture (${LIBRESSL_MACHINE_ARCH} or ${LIBRESSL_MACHINE_CPU}) unsupported
 .endif
 
+# Assembly Support Required:
+# - arm, mips, mips64, x86_64
+.if ${LIBRESSL_MACHINE_ARCH} != __arm__ || __mips__ || __mips64__ || __x86_64__
+CPPFLAGS+= -DOPENSSL_NO_ASM
+.else
+.if ${LIBRESSL_MACHINE_ARCH} == __arm__
+
+.endif
+.if ${LIBRESSL_MACHINE_ARCH} == __mips__
+
+.endif
+.if ${LIBRESSL_MACHINE_ARCH} == __mips64__
+
+.endif
+.if ${LIBRESSL_MACHINE_ARCH} == __x86_64__
+
+.endif
+.endif
+
 SRCS += cpt_err.c
 SRCS += cryptlib.c
 SRCS += crypto_ex_data.c
@@ -335,6 +354,7 @@ SRCS += conf_api.c
 SRCS += conf_def.c
 SRCS += conf_err.c
 SRCS += conf_lib.c
+SRCS += conf_mall.c
 SRCS += conf_mod.c
 SRCS += conf_sap.c
 #INCS += conf_def.h
