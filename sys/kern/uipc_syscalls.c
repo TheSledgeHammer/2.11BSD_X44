@@ -864,6 +864,7 @@ pipe_read(rf, rso)
 	rf->f_data = (caddr_t)rso;
 }
 
+/* pipe write using mpx */
 static void
 pipe_write(wf, wso)
 	struct file *wf;
@@ -957,7 +958,6 @@ pipe2()
 		syscallarg(int *) fildes;
 		syscallarg(int) flags;
 	} *uap = (struct pipe2_args *)u.u_ap;
-
 	int fd[2], error;
 
 	error = pipe1(fd, SCARG(uap, flags));

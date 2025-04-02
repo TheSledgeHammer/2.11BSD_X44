@@ -7,9 +7,9 @@ WARNS?=	5
 
 CPPFLAGS+=	-I${.CURDIR}
 
-INCS+=      core.h
+INCS+=      core.h statvfs.h
 INCSDIR=	/usr/include/sys
 
-SRCS+=      core_netbsd.c
+SRCS+=      core_netbsd.c statvfs.c
 
 .include <bsd.lib.mk>

@@ -508,12 +508,12 @@ ufs211_statfs(mp, sbp, p)
 	ufs211_mapin(fbp);
 	fbp = (struct ufs211_fblk *)bp;
 	sbp->f_bsize = fs->fs_fsize;
-	//sbp->f_iosize = fs->fs_step;
-	//sbp->f_blocks = btodb(fs->fs_isize + MAXBSIZE - 1);
+	sbp->f_iosize = MAXBSIZE;
+	sbp->f_blocks = fs->fs_fsize - fs->fs_isize;
 	sbp->f_bfree = fs->fs_tfree;
-	//sbp->f_bavail =  (fs->fs_isize * (100 - fs->fs_minfree) / 100) - (fs->fs_isize - sbp->f_bfree);
-	//sbp->f_files = fs->fs_ncg * fs->fs_ipg - UFS211_ROOTINO;
-	sbp->f_ffree = (long)fs->fs_inode;
+	sbp->f_bavail = fs->fs_tfree;
+	sbp->f_files = (fs->fs_isize - 2) * INOPB;
+	sbp->f_ffree = fs->fs_tinode;
 	*((struct ufs211_fblk *) &fs->fs_nfree) = *fbp;
 	ufs211_mapout(bp);
 	if (sbp != &mp->mnt_stat) {

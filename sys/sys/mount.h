@@ -152,7 +152,8 @@ struct	xmount {
 	char					xm_mnton[MNAMELEN];			/* directory mounted on - this is the full(er) version of fs_fsmnt. */
 };
 
-#define	XMOUNTDESC			(((btoc(sizeof (struct xmount)) - 1) << 8) | RW)
+#define XMNT_RW				0x06						/* 2.11BSD RW flag from pdp11 seg.h */
+#define	XMOUNTDESC			(((btoc(sizeof(struct xmount)) - 1) << 8) | XMNT_RW)
 
 /*
  * Mount flags.
