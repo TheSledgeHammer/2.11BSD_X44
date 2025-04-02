@@ -27,18 +27,18 @@ static void statfs_to_statvfs(struct statfs *, struct statvfs *);
 static void
 statfs_to_statvfs(struct statfs *fsp, struct statvfs *vfsp)
 {
-    vfsp->f_bsize = fsp->f_iosize;  /* XXX */
-    vfsp->f_frsize = fsp->f_bsize;  /* XXX */
+    	vfsp->f_bsize = fsp->f_iosize;  /* XXX */
+    	vfsp->f_frsize = fsp->f_bsize;  /* XXX */
 
-    vfsp->f_blocks = fsp->f_blocks;
-    vfsp->f_bfree = fsp->f_bfree;
+   	vfsp->f_blocks = fsp->f_blocks;
+    	vfsp->f_bfree = fsp->f_bfree;
 	vfsp->f_bavail = fsp->f_bavail < 0 ? 0 : fsp->f_bavail;
 
 	vfsp->f_files = fsp->f_files;
-    vfsp->f_ffree = fsp->f_ffree;
+    	vfsp->f_ffree = fsp->f_ffree;
 
-    vfsp->f_fsid = fsp->f_fsid.val[0]; /* XXX */
-    vfsp->f_flag = 0;
+    	vfsp->f_fsid = fsp->f_fsid.val[0]; /* XXX */
+    	vfsp->f_flag = 0;
 	if (fsp->f_flags & MNT_RDONLY) {
 		vfsp->f_flag |= ST_RDONLY;
 	}
