@@ -18,7 +18,12 @@
 
 #include <sys/cdefs.h>
 
+#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/mount.h>
+
+#include <limits.h>
+#include <string.h>
 
 #include "statvfs.h"
 
