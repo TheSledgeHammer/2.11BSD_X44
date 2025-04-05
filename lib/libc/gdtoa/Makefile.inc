@@ -61,7 +61,7 @@ SRCS+=	dtoa.c
 
 # private interfaces
 SRCS+= 	gethex.c gmisc.c hd_init.c hexnan.c \
-		misc.c smisc.c strtodg.c
+		misc.c smisc.c strtodg.c sum.c
 
 # XXX no hexadecimal floating-point string conversion for VAX FP yet
 .if ${MACHINE_ARCH} != __vax__

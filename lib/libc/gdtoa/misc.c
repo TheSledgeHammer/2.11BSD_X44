@@ -150,7 +150,8 @@ multadd
 	return b;
 }
 
- Bigint*
+#ifdef notyet
+Bigint*
 s2b
 #ifdef KR_headers
 (s, nd0, nd, y9)
@@ -189,6 +190,7 @@ s2b
 		b = multadd(b, 10, *s++ - '0');
 	return b;
 }
+#endif
 
  int
 hi0bits
@@ -830,6 +832,7 @@ d2b
 #undef d0
 #undef d1
 
+#ifdef notyet
  double
 ratio
 #ifdef KR_headers
@@ -869,3 +872,5 @@ ratio
 #endif
 	return value(da) / value(db);
 }
+
+#endif

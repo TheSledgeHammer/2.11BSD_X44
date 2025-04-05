@@ -298,9 +298,9 @@ Exactly one of IEEE_LITTLE_ENDIAN, IEEE_BIG_ENDIAN, VAX, or IBM should be define
 typedef union {
 	double d;
 #if !defined(USE_STRTOD_COMPAT)
-	ULong ul[2];
+    ULong L[2];
 #else
-	ULong L[2];
+	ULong ul[2];
 #endif
 } _double;
 typedef _double U;
@@ -310,11 +310,11 @@ typedef _double U;
 #define dval(x)  ((x)->d)
 #ifdef IEEE_LITTLE_ENDIAN
 #define alias_word0(x) ()
-#define word0(x) ((x)->ul[1])
-#define word1(x) ((x)->ul[0])
+#define word0(x) ((x)->L[1])
+#define word1(x) ((x)->L[0])
 #else
-#define word0(x) ((x)->ul[0])
-#define word1(x) ((x)->ul[1])
+#define word0(x) ((x)->L[0])
+#define word1(x) ((x)->L[1])
 #endif
 #else  /* USE_STRTOD_COMPAT */
 #define value(x) ((x).d)
@@ -554,11 +554,13 @@ extern int decrement ANSI((Bigint*));
 extern int gethex ANSI((CONST char**, CONST FPI*, Long*, Bigint**, int));
 extern void hexdig_init_D2A(Void);
 extern int hexnan ANSI((CONST char**, CONST FPI*, ULong*));
+extern Bigint *increment ANSI((Bigint*));
 extern int match ANSI((CONST char**, CONST char*));
 extern double ratio ANSI((Bigint*, Bigint*));
 extern void rshift ANSI((Bigint*, int));
 extern Bigint *set_ones ANSI((Bigint*, int));
 extern Bigint *s2b ANSI((CONST char*, int, int, ULong));
+extern Bigint *sum ANSI((Bigint*, Bigint*));
 extern int trailz ANSI((CONST Bigint*));
 
 #ifdef __cplusplus
