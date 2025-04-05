@@ -65,7 +65,8 @@ static mutex_t freelist_mutex = MUTEX_INITIALIZER;
  Bigint*
 Balloc
 #ifdef KR_headers
-	(k) int k;
+(k)
+ 	 int k;
 #else
 (int k)
 #endif
@@ -90,7 +91,8 @@ Balloc
  void
 Bfree
 #ifdef KR_headers
-	(v) Bigint *v;
+(v)
+ 	 Bigint *v;
 #else
 (Bigint *v)
 #endif
@@ -106,9 +108,10 @@ Bfree
 Bigint *
 multadd
 #ifdef KR_headers
-	(b, m, a) Bigint *b; int m, a;
+(b, m, a)
+	Bigint *b; int m, a;
 #else
-	(Bigint *b, int m, int a)	/* multiply by m and add a */
+(Bigint *b, int m, int a)	/* multiply by m and add a */
 #endif
 {
 	int i, wds;
@@ -150,9 +153,10 @@ multadd
  Bigint*
 s2b
 #ifdef KR_headers
-	(s, nd0, nd, y9) CONST char *s; int nd0, nd; ULong y9;
+(s, nd0, nd, y9)
+ 	 CONST char *s; int nd0, nd; ULong y9;
 #else
-	(CONST char *s, int nd0, int nd, ULong y9)
+(CONST char *s, int nd0, int nd, ULong y9)
 #endif
 {
 	Bigint *b;
@@ -189,9 +193,10 @@ s2b
  int
 hi0bits
 #ifdef KR_headers
-	(x) ULong x;
+(x)
+ 	 ULong x;
 #else
-	(ULong x)
+(ULong x)
 #endif
 {
 	int k = 0;
@@ -223,9 +228,10 @@ hi0bits
  int
 lo0bits
 #ifdef KR_headers
-	(y) ULong *y;
+(y)
+ ULong *y;
 #else
-	(ULong *y)
+(ULong *y)
 #endif
 {
 	int k;
@@ -271,9 +277,10 @@ lo0bits
  Bigint *
 i2b
 #ifdef KR_headers
-	(i) int i;
+(i)
+ int i;
 #else
-	(int i)
+(int i)
 #endif
 {
 	Bigint *b;
@@ -287,9 +294,10 @@ i2b
  Bigint *
 mult
 #ifdef KR_headers
-	(a, b) Bigint *a, *b;
+(a, b)
+ Bigint *a, *b;
 #else
-	(Bigint *a, Bigint *b)
+(Bigint *a, Bigint *b)
 #endif
 {
 	Bigint *c;
@@ -375,9 +383,10 @@ static Bigint *p5s;
  Bigint*
 pow5mult
 #ifdef KR_headers
-	(b, k) Bigint *b; int k;
+(b, k)
+ Bigint *b; int k;
 #else
-	(Bigint *b, int k)
+(Bigint *b, int k)
 #endif
 {
 	Bigint *b1, *p5, *p51;
@@ -414,9 +423,10 @@ pow5mult
 Bigint *
 lshift
 #ifdef KR_headers
-	(b, k) Bigint *b; int k;
+(b, k)
+	Bigint *b; int k;
 #else
-	(Bigint *b, int k)
+(Bigint *b, int k)
 #endif
 {
 	int i, k1, n, n1;
@@ -473,9 +483,10 @@ lshift
  int
 cmp
 #ifdef KR_headers
-	(a, b) Bigint *a, *b;
+(a, b)
+ Bigint *a, *b;
 #else
-	(Bigint *a, Bigint *b)
+(Bigint *a, Bigint *b)
 #endif
 {
 	ULong *xa, *xa0, *xb, *xb0;

@@ -297,7 +297,11 @@ Exactly one of IEEE_LITTLE_ENDIAN, IEEE_BIG_ENDIAN, VAX, or IBM should be define
 
 typedef union {
 	double d;
+#if !defined(USE_STRTOD_COMPAT)
 	ULong ul[2];
+#else
+	ULong L[2];
+#endif
 } _double;
 typedef _double U;
 
@@ -520,6 +524,7 @@ extern void memcpy_D2A ANSI((void*, const void*, size_t));
 #endif /* NO_STRING_H */
 
 extern CONST double bigtens[], tens[], tinytens[];
+extern unsigned char hexdig[];
 
 extern Bigint *Balloc ANSI((int));
 extern void Bfree ANSI((Bigint*));
@@ -538,6 +543,23 @@ extern double b2d ANSI((Bigint*, int*));
 extern Bigint *d2b ANSI((double, int*, int*));
 extern double ratio ANSI((Bigint*, Bigint*));
 extern int quorem ANSI((Bigint*, Bigint*));
+
+extern void ULtof ANSI((ULong*, ULong*, Long, int));
+extern void ULtod ANSI((ULong*, ULong*, Long, int));
+extern void ULtox ANSI((UShort*, ULong*, Long, int));
+
+extern ULong any_on ANSI((Bigint*, int));
+extern void copybits ANSI((ULong*, int, Bigint*));
+extern int decrement ANSI((Bigint*));
+extern int gethex ANSI((CONST char**, CONST FPI*, Long*, Bigint**, int));
+extern void hexdig_init_D2A(Void);
+extern int hexnan ANSI((CONST char**, CONST FPI*, ULong*));
+extern int match ANSI((CONST char**, CONST char*));
+extern double ratio ANSI((Bigint*, Bigint*));
+extern void rshift ANSI((Bigint*, int));
+extern Bigint *set_ones ANSI((Bigint*, int));
+extern Bigint *s2b ANSI((CONST char*, int, int, ULong));
+extern int trailz ANSI((CONST Bigint*));
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,9 @@
 #	$NetBSD: Makefile.inc,v 1.15 2024/06/07 20:50:13 riastradh Exp $
 
-# The current iteration of gdtoa is a refactored version of stdlib/strtod.c (NetBSD 4.0).
-# With a few additions such as ieee infinity.
+# The current iteration of gdtoa is a refactored version of stdlib/strtod.c (NetBSD 3.1).
+# As well as support for integer, floating and extended precision (NetBSD 4.0 / 5.2),
+# and includes ieee infinity.
+# Note: Floating and extended precision are WIP.
 
 # gdtoa sources
 .PATH: ${.CURDIR}/gdtoa
@@ -39,6 +41,18 @@ SRCS+=  nanf.c
 #	strtold(): strtold_p{x,xL,Q}.c
 #	helpers:   strtop{x,xL,Q}.c
 
+
+.if ${MACHINE_ARCH} == __alpha__ || __arm__ || __hppa__ || __ia64__ || \
+	__i386__ || __m68k__ || __mips__ || __powerpc__ || __powerpc64__ || \
+	__sh3__ || __sparc__ || __sparc64 || __x86_64__
+SRCS+= strtof.c
+.endif
+
+.if ${MACHINE_ARCH} == __i386__ || __x86_64__
+#SRCS+= strtold_px.c
+#SRCS+= strtopx.c
+.endif
+
 # public interfaces
 SRCS+=	strtod.c
 
@@ -46,4 +60,10 @@ SRCS+=	strtod.c
 SRCS+=	dtoa.c
 
 # private interfaces
-SRCS+= 	misc.c
+SRCS+= 	gethex.c gmisc.c hd_init.c hexnan.c \
+		misc.c smisc.c strtodg.c
+
+# XXX no hexadecimal floating-point string conversion for VAX FP yet
+.if ${MACHINE_ARCH} != __vax__
+SRCS+=	strtord.c
+.endif

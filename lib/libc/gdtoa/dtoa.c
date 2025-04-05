@@ -34,10 +34,10 @@
 char *
 __dtoa
 #ifdef KR_headers
-	(_d, mode, ndigits, decpt, sign, rve)
+(_d, mode, ndigits, decpt, sign, rve)
 	double _d; int mode, ndigits, *decpt, *sign; char **rve;
 #else
-	(double _d, int mode, int ndigits, int *decpt, int *sign, char **rve)
+(double _d, int mode, int ndigits, int *decpt, int *sign, char **rve)
 #endif
 {
  /*	Arguments ndigits, decpt, sign are similar to those

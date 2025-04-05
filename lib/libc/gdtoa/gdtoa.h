@@ -115,7 +115,22 @@ extern "C" {
 #define	dtoa		__dtoa
 
 extern char *dtoa ANSI((double, int, int, int *, int *, char **));
+extern float  strtof ANSI((CONST char *, char **));
 extern double strtod ANSI((CONST char *, char **));
+extern int strtodg ANSI((CONST char *, char **, CONST FPI *, Long *, ULong *));
+
+extern int	strtord  ANSI((CONST char *, char **, int, double *));
+extern int	strtorf  ANSI((CONST char *, char **, int, float *));
+extern int	strtorx  ANSI((CONST char *, char **, int, void *));
+#if 1
+extern int	strtopd  ANSI((CONST char *, char **, double *));
+extern int	strtopf  ANSI((CONST char *, char **, float *));
+extern int	strtopx  ANSI((CONST char *, char **, void *));
+#else
+#define strtopd(s,se,x) strtord(s,se,1,x)
+#define strtopf(s,se,x) strtorf(s,se,1,x)
+#define strtopx(s,se,x) strtorx(s,se,1,x)
+#endif
 
 #ifdef __cplusplus
 }

@@ -102,9 +102,10 @@
 double
 strtod
 #ifdef KR_headers
-	(s00, se) CONST char *s00; char **se;
+(s00, se)
+	CONST char *s00; char **se;
 #else
-	(CONST char *s00, char **se)
+(CONST char *s00, char **se)
 #endif
 {
 	int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, dsign,
@@ -648,6 +649,6 @@ strtod
  ret:
 	if (se)
 		/* LINTED interface specification */
-        *se = __UNCONST(s);
+		*se = __UNCONST(s);
 	return sign ? -value(rv) : value(rv);
 }

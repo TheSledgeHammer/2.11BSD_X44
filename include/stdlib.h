@@ -102,6 +102,7 @@ extern size_t 		__mb_cur_max;
 #define	MB_CUR_MAX	__mb_cur_max
 
 __BEGIN_DECLS
+__dead void 	_Exit(int) __attribute__((__noreturn__));
 void 	abort(void) __attribute__((__noreturn__));
 int 	abs(int);
 int	atexit(void (*)(void));
@@ -115,7 +116,7 @@ void	*bsearch(const void *, const void *, size_t, size_t, int (*)(const void *, 
 #endif /* __BSEARCH_DECLARED */
 void	*calloc(size_t, size_t);
 div_t	div(int, int);
-void 	exit(int) __attribute__((__noreturn__));
+__dead void 	exit(int) __attribute__((__noreturn__));
 void	free(void *);
 __aconst char 	*getenv(const char *);
 long 	labs(long);
@@ -216,11 +217,15 @@ long long int	strtoll(const char * __restrict, char ** __restrict, int);
 /* LONGLONG */
 unsigned long long int
 		strtoull(const char * __restrict, char ** __restrict, int);
+float		strtof(const char * __restrict, char ** __restrict);
+long double	strtold(const char * __restrict, char ** __restrict);
 #endif
 
 #if defined(_ISOC11_SOURCE) || (__STDC_VERSION__ - 0) >= 201101L || \
     defined(__BSD_VISIBLE) || (__cplusplus - 0) >= 201103L
 void	*aligned_alloc(size_t, size_t);
+int		at_quick_exit(void (*)(void));
+__dead void quick_exit(int);
 #endif
 
 /*

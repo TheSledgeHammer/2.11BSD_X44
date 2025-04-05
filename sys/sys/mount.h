@@ -144,10 +144,12 @@ struct	mount {
 
 	dev_t					mnt_dev;					/* device mounted */
 	memaddr_t				mnt_extern;					/* click address of mount table extension */
-	struct xmount			*mnt_xmnt;
+	struct xmount			*mnt_xmnt;					/* 2.11BSD mount extension */
+#define	mnt_mntfrom			mnt_xmnt->xm_mntfrom
+#define mnt_mnton			mnt_xmnt->xm_mnton
 };
 
-struct	xmount {
+struct xmount {
 	char					xm_mntfrom[MNAMELEN];		/* /dev/xxxx mounted from */
 	char					xm_mnton[MNAMELEN];			/* directory mounted on - this is the full(er) version of fs_fsmnt. */
 };

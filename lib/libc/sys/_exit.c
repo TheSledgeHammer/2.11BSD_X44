@@ -56,5 +56,3 @@ _exit(code)
 {
     (void)__exit(code);
 }
-
-
