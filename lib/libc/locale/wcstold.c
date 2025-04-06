@@ -37,8 +37,8 @@
 #include <wchar.h>
 #include <wctype.h>
 
-#define	_FUNCNAME 		wcstod
-#define	__DOUBLE		double
-#define	_STRTOD_FUNC	strtod
+#define _FUNCNAME		wcstold
+#define __DOUBLE		long double
+#define _STRTOD_FUNC	strtold
 
 #include "_wcstod.h"

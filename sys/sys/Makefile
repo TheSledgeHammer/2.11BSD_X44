@@ -11,10 +11,10 @@ INCS=		acct.h agpio.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h bswap.h
 			dmap.h domain.h dvdio.h endian.h errno.h event.h eventvar.h exec_aout.h 	\
 			exec_coff.h exec_ecoff.h exec_elf.h exec_linker.h exec_macho.h 				\
 			exec_pecoff.h exec_script.h exec_xcoff.h exec.h	extent.h fcntl.h fdio.h 	\
-			file.h filedesc.h fnv_hash.h fperr.h gmon.h hint.h inttypes.h ioccom.h 		\
-			ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h kthread.h ktrace.h lock.h 	\
-			lockf.h malloc.h malloctypes.h map.h mbuf.h memrange.h midiio.h mman.h 		\
-			mount.h mpx.h msgbuf.h mtio.h mutex.h namei.h null.h param.h percpu.h 		\
+			file.h filedesc.h filio.h fnv_hash.h fperr.h gmon.h hint.h inttypes.h 		\
+			ioccom.h ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h kthread.h ktrace.h 	\
+			lock.h lockf.h malloc.h malloctypes.h map.h mbuf.h memrange.h midiio.h 		\
+			mman.h mount.h mpx.h msgbuf.h mtio.h mutex.h namei.h null.h param.h percpu.h \
 			poll.h power.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h resource.h 	\
 			resourcevar.h rwlock.h scanio.h sched_cfs.h sched_edf.h	sched.h scsiio.h 	\
 			select.h signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h 			\

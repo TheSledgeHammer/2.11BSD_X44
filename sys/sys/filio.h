@@ -1,6 +1,11 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1982, 1986, 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,52 +35,26 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)stddef.h	8.1 (Berkeley) 6/2/93
+ *	@(#)filio.h	8.1 (Berkeley) 3/28/94
  */
 
-#ifndef _SYS_STDDEF_H_
-#define _SYS_STDDEF_H_
+#ifndef	_SYS_FILIO_H_
+#define	_SYS_FILIO_H_
 
-#include <machine/ansi.h>
+#include <sys/ioccom.h>
 
-#ifdef	_BSD_PTRDIFF_T_
-typedef	_BSD_PTRDIFF_T_	ptrdiff_t;
-#undef	_BSD_PTRDIFF_T_
-#endif
+/* Generic file-descriptor ioctl's. */
+#define	FIOCLEX		 _IO('f', 1)				/* set close on exec on fd */
+#define	FIONCLEX	 _IO('f', 2)				/* remove close on exec */
+#define	FIONREAD	_IOR('f', 127, long)		/* get # bytes to read */
+#define	FIONBIO		_IOW('f', 126, int)			/* set/clear non-blocking i/o */
+#define	FIOASYNC	_IOW('f', 125, int)			/* set/clear async i/o */
+#define	FIOSETOWN	_IOW('f', 124, int)			/* set owner */
+#define	FIOGETOWN	_IOR('f', 123, int)			/* get owner */
 
-#ifdef	_BSD_SIZE_T_
-typedef	_BSD_SIZE_T_	size_t;
-#undef	_BSD_SIZE_T_
-#endif
+#define	FIOGETBMAP	_IOWR('f', 122, daddr_t) 	/* get underlying block no. */
 
-#ifdef	_BSD_RUNE_T_
-#ifndef _ANSI_SOURCE
-typedef	_BSD_RUNE_T_	rune_t;
-#undef 	_BSD_RUNE_T_
-#endif
-#endif
+/* Ugly symbol for compatibility with other operating systems */
+#define	FIBMAP		FIOGETBMAP
 
-#ifdef	_BSD_WCHAR_T_
-typedef	_BSD_WCHAR_T_	wchar_t;
-#undef	_BSD_WCHAR_T_
-#endif
-
-#if (__STDC_VERSION__ - 0) >= 201112L || (__cplusplus - 0) >= 201103L
-typedef union {
-	void *_v;
-	long double _ld;
-	long long int _ll;
-} max_align_t;
-#endif
-
-#include <sys/null.h>
-
-#ifndef offsetof
-#if __GNUC_PREREQ__(4, 0)
-#define offsetof(type, member)	__builtin_offsetof(type, member)
-#else
-#define	offsetof(type, member) ((size_t)(unsigned long)(&(((type *)0)->member)))
-#endif
-#endif
-
-#endif /* _SYS_STDDEF_H_ */
+#endif /* !_SYS_FILIO_H_ */

@@ -120,10 +120,12 @@ extern double strtod ANSI((CONST char *, char **));
 extern int strtodg ANSI((CONST char *, char **, CONST FPI *, Long *, ULong *));
 
 extern int	strtord  ANSI((CONST char *, char **, int, double *));
+extern int 	strtordd ANSI((CONST char *, char **, int, double *));
 extern int	strtorf  ANSI((CONST char *, char **, int, float *));
 extern int	strtorx  ANSI((CONST char *, char **, int, void *));
 #if 1
 extern int	strtopd  ANSI((CONST char *, char **, double *));
+extern int 	strtopdd ANSI((CONST char *, char **, double *));
 extern int	strtopf  ANSI((CONST char *, char **, float *));
 extern int	strtopx  ANSI((CONST char *, char **, void *));
 #else

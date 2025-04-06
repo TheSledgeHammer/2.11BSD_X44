@@ -1,4 +1,4 @@
-/* $NetBSD: sum.c,v 1.2 2008/03/21 23:13:48 christos Exp $ */
+/* $NetBSD: strtopd.c,v 1.2 2008/03/21 23:13:48 christos Exp $ */
 
 /****************************************************************
 
@@ -33,73 +33,22 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
-Bigint *
+int
 #ifdef KR_headers
-sum(a, b)
-	Bigint *a; Bigint *b;
+strtopd(s, sp, d)
+	char *s; char **sp; double *d;
 #else
-sum(Bigint *a, Bigint *b)
+strtopd(CONST char *s, char **sp, double *d)
 #endif
 {
-	Bigint *c;
-	ULong carry, *xc, *xa, *xb, *xe, y;
-#ifdef Pack_32
-	ULong z;
-#endif
+	static FPI fpi0 = { 53, 1-1023-53+1, 2046-1023-53+1, 1, SI };
+	ULong bits[2];
+	Long exp;
+	int k;
 
-	if (a->wds < b->wds) {
-		c = b;
-		b = a;
-		a = c;
-	}
-	c = Balloc(a->k);
-	if (c == NULL)
-		return NULL;
-	c->wds = a->wds;
-	carry = 0;
-	xa = a->x;
-	xb = b->x;
-	xc = c->x;
-	xe = xc + b->wds;
-#ifdef Pack_32
-	do {
-		y = (*xa & 0xffff) + (*xb & 0xffff) + carry;
-		carry = (y & 0x10000) >> 16;
-		z = (*xa++ >> 16) + (*xb++ >> 16) + carry;
-		carry = (z & 0x10000) >> 16;
-		Storeinc(xc, z, y);
-	} while (xc < xe);
-	xe += a->wds - b->wds;
-	while (xc < xe) {
-		y = (*xa & 0xffff) + carry;
-		carry = (y & 0x10000) >> 16;
-		z = (*xa++ >> 16) + carry;
-		carry = (z & 0x10000) >> 16;
-		Storeinc(xc, z, y);
-	}
-#else
-	do {
-		y = *xa++ + *xb++ + carry;
-		carry = (y & 0x10000) >> 16;
-		*xc++ = y & 0xffff;
-	} while (xc < xe);
-	xe += a->wds - b->wds;
-	while (xc < xe) {
-		y = *xa++ + carry;
-		carry = (y & 0x10000) >> 16;
-		*xc++ = y & 0xffff;
-	}
-#endif
-	if (carry) {
-		if (c->wds == c->maxwds) {
-			b = Balloc(c->k + 1);
-			if (b == NULL)
-				return NULL;
-			Bcopy(b, c);
-			Bfree(c);
-			c = b;
-		}
-		c->x[c->wds++] = 1;
-	}
-	return c;
+	k = strtodg(s, sp, &fpi0, &exp, bits);
+	if (k == STRTOG_NoMemory)
+		return k;
+	ULtod((ULong*) d, bits, exp, k);
+	return k;
 }

@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c)2002 Citrus Project,
  * All rights reserved.

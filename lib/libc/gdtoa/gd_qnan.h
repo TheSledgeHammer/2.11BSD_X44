@@ -101,7 +101,7 @@
 #endif
 #endif
 
-#if defined(__powerpc__)
+#if defined(__powerpc__) || defined(__powerpc64__)
 #define f_QNAN 		0x7fc00000
 #define d_QNAN0 	0x7ff80000
 #define d_QNAN1 	0x0
@@ -138,10 +138,16 @@
 #endif
 #endif
 
-#if defined(__sparc__)
+#if defined(__sparc__) || defined(__sparc64__)
 #define f_QNAN 		0x7fc00000
 #define d_QNAN0 	0x7ff80000
 #define d_QNAN1 	0x0
+#if defined(__sparc64__)
+#define ld_QNAN0 	0x7fff8000
+#define ld_QNAN1 	0x0
+#define ld_QNAN2 	0x0
+#define ld_QNAN3 	0x0
+#endif
 #endif
 
 #if defined(__x86_64__)

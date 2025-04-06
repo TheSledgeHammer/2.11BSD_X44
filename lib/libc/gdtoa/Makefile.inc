@@ -49,8 +49,8 @@ SRCS+= strtof.c
 .endif
 
 .if ${MACHINE_ARCH} == __i386__ || __x86_64__
-#SRCS+= strtold_px.c
-#SRCS+= strtopx.c
+SRCS+= strtold.c
+SRCS+= strtopx.c
 .endif
 
 # public interfaces

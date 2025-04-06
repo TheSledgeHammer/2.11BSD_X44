@@ -160,10 +160,7 @@ struct trapframe_vm86;
 
 /* set vm86 flags from vm86 trapframe & kernel */
 static __inline void
-set_vm86flags(tf86, vm86, flags)
-	struct trapframe_vm86 	*tf86;
-	struct vm86_kernel 		*vm86;
-	int flags;
+set_vm86flags(struct trapframe_vm86 *tf86, struct vm86_kernel *vm86, int flags)
 {
 	SETFLAGS(vm86->vm86_eflags, flags, VM86_VIRTFLAGS);
 	SETFLAGS(tf86->tf_eflags, flags, VM86_REALFLAGS);
@@ -178,9 +175,7 @@ set_vm86flags(tf86, vm86, flags)
 
 /* get vm86 flags from vm86 trapframe & kernel */
 static __inline int
-get_vm86flags(tf86, vm86)
-	struct trapframe_vm86 	*tf86;
-	struct vm86_kernel 		*vm86;
+get_vm86flags(struct trapframe_vm86 *tf86, struct vm86_kernel *vm86)
 {
 	int flags;
 

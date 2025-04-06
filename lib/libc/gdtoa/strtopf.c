@@ -1,10 +1,10 @@
-/* $NetBSD: sum.c,v 1.2 2008/03/21 23:13:48 christos Exp $ */
+/* $NetBSD: strtopf.c,v 1.2 2008/03/21 23:13:48 christos Exp $ */
 
 /****************************************************************
 
 The author of this software is David M. Gay.
 
-Copyright (C) 1998 by Lucent Technologies
+Copyright (C) 1998, 2000 by Lucent Technologies
 All Rights Reserved
 
 Permission to use, copy, modify, and distribute this software and
@@ -33,73 +33,46 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
-Bigint *
+ int
 #ifdef KR_headers
-sum(a, b)
-	Bigint *a; Bigint *b;
+strtopf(s, sp, f)
+ 	 CONST char *s; char **sp; float *f;
 #else
-sum(Bigint *a, Bigint *b)
+strtopf(CONST char *s, char **sp, float *f)
 #endif
 {
-	Bigint *c;
-	ULong carry, *xc, *xa, *xb, *xe, y;
-#ifdef Pack_32
-	ULong z;
-#endif
+	static FPI fpi = { 24, 1-127-24+1,  254-127-24+1, 1, SI };
+	ULong bits[1], *L;
+	Long exp;
+	int k;
 
-	if (a->wds < b->wds) {
-		c = b;
-		b = a;
-		a = c;
+	k = strtodg(s, sp, &fpi, &exp, bits);
+	if (k == STRTOG_NoMemory)
+		return k;
+	L = (ULong*) f;
+	switch (k & STRTOG_Retmask) {
+	case STRTOG_NoNumber:
+	case STRTOG_Zero:
+		L[0] = 0;
+		break;
+
+	case STRTOG_Normal:
+	case STRTOG_NaNbits:
+		L[0] = (bits[0] & 0x7fffff) | (exp + 0x7f + 23 << 23);
+		break;
+
+	case STRTOG_Denormal:
+		L[0] = bits[0];
+		break;
+
+	case STRTOG_Infinite:
+		L[0] = 0x7f800000;
+		break;
+
+	case STRTOG_NaN:
+		L[0] = f_QNAN;
 	}
-	c = Balloc(a->k);
-	if (c == NULL)
-		return NULL;
-	c->wds = a->wds;
-	carry = 0;
-	xa = a->x;
-	xb = b->x;
-	xc = c->x;
-	xe = xc + b->wds;
-#ifdef Pack_32
-	do {
-		y = (*xa & 0xffff) + (*xb & 0xffff) + carry;
-		carry = (y & 0x10000) >> 16;
-		z = (*xa++ >> 16) + (*xb++ >> 16) + carry;
-		carry = (z & 0x10000) >> 16;
-		Storeinc(xc, z, y);
-	} while (xc < xe);
-	xe += a->wds - b->wds;
-	while (xc < xe) {
-		y = (*xa & 0xffff) + carry;
-		carry = (y & 0x10000) >> 16;
-		z = (*xa++ >> 16) + carry;
-		carry = (z & 0x10000) >> 16;
-		Storeinc(xc, z, y);
-	}
-#else
-	do {
-		y = *xa++ + *xb++ + carry;
-		carry = (y & 0x10000) >> 16;
-		*xc++ = y & 0xffff;
-	} while (xc < xe);
-	xe += a->wds - b->wds;
-	while (xc < xe) {
-		y = *xa++ + carry;
-		carry = (y & 0x10000) >> 16;
-		*xc++ = y & 0xffff;
-	}
-#endif
-	if (carry) {
-		if (c->wds == c->maxwds) {
-			b = Balloc(c->k + 1);
-			if (b == NULL)
-				return NULL;
-			Bcopy(b, c);
-			Bfree(c);
-			c = b;
-		}
-		c->x[c->wds++] = 1;
-	}
-	return c;
+	if (k & STRTOG_Neg)
+		L[0] |= 0x80000000L;
+	return k;
 }

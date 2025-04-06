@@ -298,7 +298,7 @@ Exactly one of IEEE_LITTLE_ENDIAN, IEEE_BIG_ENDIAN, VAX, or IBM should be define
 typedef union {
 	double d;
 #if !defined(USE_STRTOD_COMPAT)
-    ULong L[2];
+    	ULong L[2];
 #else
 	ULong ul[2];
 #endif
@@ -526,6 +526,11 @@ extern void memcpy_D2A ANSI((void*, const void*, size_t));
 extern CONST double bigtens[], tens[], tinytens[];
 extern unsigned char hexdig[];
 
+extern void ULtof ANSI((ULong*, ULong*, Long, int));
+extern void ULtod ANSI((ULong*, ULong*, Long, int));
+extern void ULtodd ANSI((ULong *, ULong *, Long, int));
+extern void ULtox ANSI((UShort*, ULong*, Long, int));
+
 extern Bigint *Balloc ANSI((int));
 extern void Bfree ANSI((Bigint*));
 extern Bigint *multadd ANSI((Bigint*, int, int));
@@ -543,10 +548,6 @@ extern double b2d ANSI((Bigint*, int*));
 extern Bigint *d2b ANSI((double, int*, int*));
 extern double ratio ANSI((Bigint*, Bigint*));
 extern int quorem ANSI((Bigint*, Bigint*));
-
-extern void ULtof ANSI((ULong*, ULong*, Long, int));
-extern void ULtod ANSI((ULong*, ULong*, Long, int));
-extern void ULtox ANSI((UShort*, ULong*, Long, int));
 
 extern ULong any_on ANSI((Bigint*, int));
 extern void copybits ANSI((ULong*, int, Bigint*));

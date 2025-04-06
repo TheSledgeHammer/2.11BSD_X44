@@ -148,6 +148,9 @@ long int wcstol(const wchar_t * __restrict, wchar_t ** __restrict, int);
 double wcstod(const wchar_t * __restrict, wchar_t ** __restrict);
 
 #if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) > 199901L || defined(__BSD_VISIBLE)
+float wcstof(const wchar_t * __restrict, wchar_t ** __restrict);
+long double wcstold(const wchar_t * __restrict, wchar_t ** __restrict);
+
 /* LONGLONG */
 long long int wcstoll(const wchar_t * __restrict, wchar_t ** __restrict, int);
 /* LONGLONG */
