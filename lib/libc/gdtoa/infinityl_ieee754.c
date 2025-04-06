@@ -10,6 +10,7 @@ __RCSID("$NetBSD: infinityl_ieee754.c,v 1.1 2011/01/17 23:53:03 matt Exp $");
 
 #include <math.h>
 #include <machine/endian.h>
+#include <machine/ieee.h>
 
 #ifdef __HAVE_LONG_DOUBLE
 #define	LDBL_EXPBITS		EXT_EXPBITS

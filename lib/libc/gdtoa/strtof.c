@@ -81,6 +81,10 @@ strtof(CONST char *s, char **sp)
 
 	case STRTOG_NaN:
 		u.L[0] = f_QNAN;
+    
+    default:
+		u.L[0] = 0; /* for gcc warning */
+		break;
 	}
 	if (k & STRTOG_Neg)
 		u.L[0] |= 0x80000000L;
