@@ -37,13 +37,6 @@
 #include <wchar.h>
 #include <wctype.h>
 
-#include <assert.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <wchar.h>
-#include <wctype.h>
-
 #define _FUNCNAME		wcstof
 #define __DOUBLE		float
 #define _STRTOD_FUNC	strtof
