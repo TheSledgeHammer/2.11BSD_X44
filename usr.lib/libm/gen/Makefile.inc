@@ -5,10 +5,8 @@
 CPPFLAGS+=-I${.CURDIR}/gen
 
 SRCS+=	nan.c
-# No strtof support
-#SRCS+=	nanf.c
-# No strtold support
-#SRCS+=	nanl.c
+SRCS+=	nanf.c
+SRCS+=	nanl.c
 
 MAN+=	nan.3
 
