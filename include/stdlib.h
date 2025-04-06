@@ -205,7 +205,8 @@ int	 getsubopt(char **, char * const *, char **);
 /*
  * ISO C99
  */
-#if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) >= 199901L || defined(__BSD_VISIBLE)
+#if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) >= 199901L || \
+    defined(__BSD_VISIBLE) || (__cplusplus - 0) >= 201103L
 /* LONGLONG */
 long long int	atoll(const char *);
 /* LONGLONG */
