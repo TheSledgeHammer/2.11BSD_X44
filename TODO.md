@@ -29,7 +29,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	- GCC:
 		- libstdc++-v3 & libsupc++:
 			- Compiler error with vterminate.cc. (More info to be provided ASAP)
-				- The issue is related to line 32: # include <cstdio> 
+				- The issue is related to line 32: include cstdio
 	
 ## lib:
 - csu:
