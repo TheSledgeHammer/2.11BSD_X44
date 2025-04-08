@@ -3,4 +3,6 @@
 .include <bsd.own.mk>
 
 LIBCXXRT_SRCDIR:=	${.PARSEDIR}/dist/libcxxrt
-LIBCXX_SRCDIR:=		${NETBSDSRCDIR}/contrib/llvm/dist/libcxx
+LIBCXX_SRCDIR:=		${.PARSEDIR}/dist/libcxx
+# LLVM Not currently in source tree
+#LIBCXX_SRCDIR:=	${NETBSDSRCDIR}/contrib/llvm/dist/libcxx

@@ -41,8 +41,11 @@ CFLAGS?=		${DBG}
 COMPILE.c?=		${CC} ${CFLAGS} ${CPPFLAGS} -c
 LINK.c?=		${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
+# Strip flags unsupported by C++ compilers
+# Remove -Wsystem-headers because C++ headers aren't clean of warnings
+CXXSTRIPFLAGS?= N-Wno-traditional:N-Wstrict-prototypes:N-Wmissing-prototypes:N-Wno-pointer-sign:N-ffreestanding:N-std=gnu[0-9][0-9]:N-Wold-style-definition:N-Wno-format-zero-length:N-Wsystem-headers
 CXX?=			c++
-CXXFLAGS?=		${CFLAGS}
+CXXFLAGS?=		${CFLAGS:${CXXSTRIPFLAGS}}
 COMPILE.cc?=	${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
 LINK.cc?=		${CXX} ${CXXFLAGS} ${CPPFLAGS} ${LDFLAGS}
 

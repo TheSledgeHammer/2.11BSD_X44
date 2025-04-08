@@ -25,6 +25,11 @@ A General todo list. Don't hesitate to add to this list. :)
 
 # usr/ (User & OS Libraries):
 ## Contrib:
+- GNU:
+	- GCC:
+		- libstdc++-v3 & libsupc++:
+			- Compiler with vterminate.cc.
+				- The issue is related to line 32: # include <cstdio>
 	
 ## lib:
 - csu:

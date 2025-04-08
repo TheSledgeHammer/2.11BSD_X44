@@ -65,7 +65,11 @@ CFLAGS+=	-Wreturn-type -Wswitch -Wshadow
 CFLAGS+=	-Wcast-qual -Wwrite-strings
 # Readd -Wno-sign-compare to override -Wextra with clang
 CFLAGS+=	-Wno-sign-compare
+.if "${ACTIVE_CC}" == "gcc" && ${HAVE_GCC} < 8
+#  XXX: Won't warn about anything.  -Wabi warns about differences from
+#  the most up-to-date ABI, which in g++ 8 is used by default.
 CXXFLAGS+=	-Wabi
+.endif
 CXXFLAGS+=	-Wold-style-cast
 CXXFLAGS+=	-Wctor-dtor-privacy -Wnon-virtual-dtor -Wreorder \
 		    -Wno-deprecated -Woverloaded-virtual -Wsign-promo -Wsynth

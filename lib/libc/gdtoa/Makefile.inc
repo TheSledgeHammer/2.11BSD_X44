@@ -50,7 +50,6 @@ SRCS+=  nanf.c
 #	strtold(): strtold_p{x,xL,Q}.c
 #	helpers:   strtop{x,xL,Q}.c
 
-
 .if ${MACHINE_ARCH} == "alpha" || ${MACHINE_ARCH} == "arm" || \
     ${MACHINE_ARCH} == "hppa" || ${MACHINE_ARCH} == "ia64" || \
 	${MACHINE_ARCH} == "i386" || ${MACHINE_ARCH} == "m68k" || \
@@ -62,8 +61,8 @@ SRCS+= strtof.c
 .endif
 
 .if ${MACHINE_ARCH} == "i386" || ${MACHINE_ARCH} == "x86_64"
-SRCS+= strtold.c
-SRCS+= strtopx.c
+SRCS+= 	strtold.c
+SRCS+= 	strtopx.c
 .endif
 
 # public interfaces
@@ -73,8 +72,10 @@ SRCS+=	strtod.c
 SRCS+=	dtoa.c
 
 # private interfaces
-SRCS+= 	gethex.c gmisc.c hd_init.c hexnan.c \
-		misc.c smisc.c strtodg.c sum.c
+SRCS+= 	gethex.c gmisc.c \
+		hd_init.c hexnan.c \
+		misc.c \
+		smisc.c strtodg.c sum.c
 
 # XXX no hexadecimal floating-point string conversion for VAX FP yet
 .if ${MACHINE_ARCH} != "vax"

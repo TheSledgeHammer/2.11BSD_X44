@@ -152,7 +152,7 @@ EXTERNAL_OPENSSL_SUBDIR=/does/not/exist
 # For OpenSSL:  MKOPENSSL? = yes
 # For LibreSSL: MKOPENSSL? = no
 #
-MKOPENSSL?= yes
+MKOPENSSL?= no
 
 .if ${MKOPENSSL:Uno} != "no" 
 MKLIBRESSL? = no
@@ -933,6 +933,14 @@ MKSTATICPIE?=	no
 .endif
 
 #
+# Notes: MKCXX and MKLIBSTDCXX
+# Would normally be place in "_MKVARS.yes" options. 
+# However, due to compiler issues have been placed
+# in "_MKVARS.no".
+# Please read TODO.md for issue.
+#
+
+#
 # MK* options which default to "yes".
 #
 _MKVARS.yes= \
@@ -940,7 +948,6 @@ _MKVARS.yes= \
 	MKBSDTAR \
 	MKCOMPLEX \
 	MKCVS \
-	MKCXX \
 	MKDOC \
 	MKDYNAMICROOT \
 	MKGCC \
@@ -951,7 +958,6 @@ _MKVARS.yes= \
     	MKIEEEFP \
     	MKINET6 \
 	MKINFO \
-	MKLIBSTDCXX \
     	MKLINKLIB \
 	MKMAN \
     	MKMANDOC \
@@ -1060,7 +1066,9 @@ _MKVARS.no= \
 	MKKERBEROS \
 	MKPAM \
 	MKPOSTFIX \
-	MKUNBOUND
+	MKUNBOUND \
+	MKCXX \
+	MKLIBSTDCXX
 	
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}

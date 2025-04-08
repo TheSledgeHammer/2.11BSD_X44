@@ -3,6 +3,7 @@
 .ifndef _EXTERNAL_GPL3_GCC_USR_BIN_MAKEFILE_INC_
 _EXTERNAL_GPL3_GCC_USR_BIN_MAKEFILE_INC_=1
 
+NOLINT=yes
 NOCTF=	# defined
 .include <bsd.init.mk>
 
@@ -40,7 +41,7 @@ FRONTENDOBJ!=		cd ${.CURDIR}/../frontend && ${PRINTOBJDIR}
 NBCOMPATLIB=   -L${TOOLDIR}/lib -lnbcompat
 .endif
 
-CXXFLAGS+=	-std=gnu++98
+#CXXFLAGS+=	-std=gnu++98
 
 GNUHOSTDIST=	${DIST}
 BUILD_PREFIX=	${C_BUILD_PREFIX}
