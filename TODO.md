@@ -32,9 +32,6 @@ A General todo list. Don't hesitate to add to this list. :)
 				- The issue is related to line 32: include cstdio
 	
 ## lib:
-- csu:
-	- crtbegin.c: jcr and jv_RegisterClasses does not work correctly.
- 	- elf_note: unused
 - libc:
 	- net: nslexer.l doesn't like %%
 	- softfloat: add to libc
