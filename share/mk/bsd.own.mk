@@ -934,7 +934,7 @@ MKSTATICPIE?=	no
 
 #
 # Notes: MKCXX and MKLIBSTDCXX
-# Would normally be place in "_MKVARS.yes" options. 
+# Would normally be placed in "_MKVARS.yes" options. 
 # However, due to compiler issues have been placed
 # in "_MKVARS.no".
 # Please read TODO.md for issue.
