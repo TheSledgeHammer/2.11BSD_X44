@@ -6,6 +6,7 @@ LIB=		lzma
 USE_SHLIBDIR=	yes
 NOLINT=		yes
 
+.include "Makefile.compat"
 
 .PATH:	${XZSRCDIR}/src/liblzma/api ${XZSRCDIR}/src/liblzma/api/lzma
 INCS+=	base.h bcj.h block.h check.h container.h delta.h \

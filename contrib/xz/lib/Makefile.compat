@@ -1,0 +1,10 @@
+#	$211BSD: Makefile,v 1.0 2025/04/08 16:57:23 Exp $
+#
+#   Additional compiler flags to address differences
+#   in source and header file locations.
+
+# Hash file headers: i.e. sha2
+# expected: include/"name_of_hash_file".h
+# actual: include/hash/"name_of_hash_file".h
+.PATH:  ${NETBSDSRCDIR}/include/hash
+CPPFLAGS+=  -I${NETBSDSRCDIR}/include/hash
