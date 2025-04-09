@@ -27,10 +27,15 @@ A General todo list. Don't hesitate to add to this list. :)
 ## Contrib:
 - GNU:
 	- GCC:
-		- libstdc++-v3 & libsupc++:
-			- Compiler error with vterminate.cc. (More info to be provided ASAP)
-				- The issue is related to line 32: include cstdio
-	
+		- libstdc++-v3 & libsupc++: (Disabled)
+			- Compiler error with vterminate.cc. (Fixed: see commit dc710b2)
+				- Caused by stdio.h line 157. 
+					define FILE struct __siobuf
+			- Keeping Disabled: (Low Priority)
+				- Missing a fairly large portion of libc requirements.
+				- With 2.11BSD_X44 not requiring c++. These libc additions are 
+				unlikely to be incorporated in the immediate future. 
+			
 ## lib:
 - libc:
 	- net: nslexer.l doesn't like %%
