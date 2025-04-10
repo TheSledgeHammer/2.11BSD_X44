@@ -137,12 +137,18 @@ Cross-Compiler Compatability Table:
 |  PCC  | Yes***   |  i386  | No | No | 
 
 ** Clang: Library needs updating and fixing along with the relevent toolchain components.
+
 *** PCC: Will compile when using the following: https://github.com/arnoldrobbins/pcc-revived
-	- The script files are not required.
-	- Remove pcc folder from contrib/pcc/dist
-	- Copy and Paste both pcc and pcc-libs from the above git repo 
+
+
+- The script files are not required.
+
+- Remove pcc folder from contrib/pcc/dist
+
+ - Copy and Paste both pcc and pcc-libs from the above git repo 
 	into the contrib/pcc/dist.
-	- then run build.sh -c pcc. To use the pcc instead of gcc. 
+
+ - then run build.sh -c pcc. To use the pcc instead of gcc. 
 	
 ### Known OS's Supported:
 - Ubuntu (20.04 to 23.04)
