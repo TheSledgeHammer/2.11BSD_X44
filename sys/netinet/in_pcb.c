@@ -946,7 +946,7 @@ in_selectsrc(sin, ro, soopts, mopts, errorp)
 	if (ro->ro_rt &&
 	    (ro->ro_dst.sa_family != AF_INET ||
 	    !in_hosteq(satosin(&ro->ro_dst)->sin_addr, sin->sin_addr) ||
-	    soopts & SO_DONTROUTE)) {
+	    (soopts & SO_DONTROUTE))) {
 		RTFREE(ro->ro_rt);
 		ro->ro_rt = (struct rtentry *)0;
 	}
