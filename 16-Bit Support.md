@@ -1,4 +1,4 @@
-# 16-Bit Support (Hardware and Software): Revisited
+# 16-Bit Support (Hardware and Software):
 - 2.11BSD_X44 will openly support 16-Bit hardware if capable.
 - Although 16-Bit platforms are not the primary focus.
 	- 32-Bit/64-Bit is the project's intended focus.
