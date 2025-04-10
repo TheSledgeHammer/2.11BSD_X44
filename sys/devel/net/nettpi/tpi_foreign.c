@@ -59,7 +59,7 @@ tpi_foreign_insert(struct tpipcbtable *table, void *faddr, uint16_t fport)
     }
     tpf->tpf_faddr = faddr;
     tpf->tpf_fport = fport;
-    LIST_INSERT_HEAD(tpi_local_hash(table, tpf->tpf_faddr, tpf->tpf_fport), &tpf->tpf_head, tpph_fhash);
+    LIST_INSERT_HEAD(tpi_foreign_hash(table, tpf->tpf_faddr, tpf->tpf_fport), &tpf->tpf_head, tpph_fhash);
 }
 
 struct tpi_foreign *
