@@ -141,7 +141,7 @@ Cross-Compiler Compatability Table:
 *** PCC: Will compile when using the following: https://github.com/arnoldrobbins/pcc-revived
 
 
-- The script files are not required.
+- The git repo script files are not required.
 
 - Remove pcc folder from contrib/pcc/dist
 
