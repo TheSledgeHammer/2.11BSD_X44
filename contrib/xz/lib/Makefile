@@ -106,7 +106,7 @@ CLEANFILES+=	liblzma.pc
 HOST_CPPFLAGS+=	${CPPFLAGS:N-Wp,-iremap,*}
 .include <bsd.hostlib.mk>
 .else
-LIBDPLIBS+=	pthread ${NETBSDSRCDIR}/lib/libpthread
+LIBDPLIBS+=	pthread ${NETBSDSRCDIR}/usr.lib/libpthread
 .include <bsd.lib.mk>
 .endif
 
