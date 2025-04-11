@@ -221,6 +221,4 @@ int	pthread_sigmask(int, const sigset_t *, sigset_t *);
 int	pthread_sigsuspend(const sigset_t *);
 int	pthread_timedwait(const sigset_t * __restrict, siginfo_t * __restrict, const struct timespec * __restrict);
 __END_DECLS
-
-//#endif /* __LIBPTHREAD_SOURCE__ */
 #endif /* _LIB_PTHREAD_H */
