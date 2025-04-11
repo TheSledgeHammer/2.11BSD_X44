@@ -94,6 +94,8 @@ int	pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, const struct tim
 int	pthread_cond_signal(pthread_cond_t *);
 int	pthread_cond_broadcast(pthread_cond_t *);
 int	pthread_condattr_init(pthread_condattr_t *);
+int pthread_condattr_setclock(pthread_condattr_t *, clockid_t);
+int	pthread_condattr_getclock(const pthread_condattr_t * __restrict, clockid_t * __restrict);
 int	pthread_condattr_destroy(pthread_condattr_t *);
 
 int	pthread_once(pthread_once_t *, void (*)(void));
@@ -208,19 +210,17 @@ __END_DECLS
 #define PTHREAD_RWLOCK_INITIALIZER		_PTHREAD_RWLOCK_INITIALIZER
 #define PTHREAD_SPINLOCK_INITIALIZER	_PTHREAD_SPINLOCK_INITIALIZER
 
-#ifdef __LIBPTHREAD_SOURCE__
-
 #include <signal.h>
 
 __BEGIN_DECLS
 int	pthread_execve(const char *, char *const [], char *const []);
-int 	pthread_kill(pthread_t, int);
-int 	pthread_nanosleep(const struct timespec *, struct timespec *);
+int pthread_kill(pthread_t, int);
+int pthread_nanosleep(const struct timespec *, struct timespec *);
 int	pthread_sigaction(int, const struct sigaction *, struct sigaction *);
 int	pthread_sigmask(int, const sigset_t *, sigset_t *);
 int	pthread_sigsuspend(const sigset_t *);
 int	pthread_timedwait(const sigset_t * __restrict, siginfo_t * __restrict, const struct timespec * __restrict);
 __END_DECLS
 
-#endif /* __LIBPTHREAD_SOURCE__ */
+//#endif /* __LIBPTHREAD_SOURCE__ */
 #endif /* _LIB_PTHREAD_H */

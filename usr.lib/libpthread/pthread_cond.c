@@ -40,6 +40,8 @@
 __RCSID("$NetBSD: pthread_cond.c,v 1.14.2.2.2.1 2005/04/08 21:57:47 tron Exp $");
 
 #include <errno.h>
+#include <stdlib.h>
+
 #include <sys/time.h>
 #include <sys/types.h>
 
@@ -336,9 +338,44 @@ pthread_condattr_init(pthread_condattr_t *attr)
 
 	attr->ptca_magic = _PT_CONDATTR_MAGIC;
 
+
 	return 0;
 }
 
+int
+pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clck)
+{
+
+	pthread__error(EINVAL, "Invalid condition variable attribute",
+	    attr->ptca_magic == _PT_CONDATTR_MAGIC);
+
+	switch (clck) {
+	case CLOCK_MONOTONIC:
+	case CLOCK_REALTIME:
+		if (attr->ptca_private == NULL)
+			attr->ptca_private = malloc(sizeof(clockid_t));
+		if (attr->ptca_private == NULL)
+			return errno;
+		*(clockid_t *)attr->ptca_private = clck;
+		return 0;
+	default:
+		return EINVAL;
+	}
+}
+
+int
+pthread_condattr_getclock(const pthread_condattr_t *__restrict attr,
+    clockid_t *__restrict clock_id)
+{
+
+	pthread__error(EINVAL, "Invalid condition variable attribute",
+	    attr->ptca_magic == _PT_CONDATTR_MAGIC);
+
+	if (attr == NULL || attr->ptca_private == NULL)
+		return EINVAL;
+	*clock_id = *(clockid_t *)attr->ptca_private;
+	return 0;
+}
 
 int
 pthread_condattr_destroy(pthread_condattr_t *attr)
