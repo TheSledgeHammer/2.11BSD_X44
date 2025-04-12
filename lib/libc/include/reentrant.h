@@ -167,11 +167,11 @@ int		__libc_cond_timedwait(cond_t *, mutex_t *, const struct timespec *);
 int		__libc_cond_destroy(cond_t *);
 __END_DECLS
 
-#define	cond_init(c, t, a)     		__libc_cond_init((c), (a))
+#define	cond_init(c, t, a)     	__libc_cond_init((c), (a))
 #define	cond_signal(c)			__libc_cond_signal((c))
 #define	cond_broadcast(c)		__libc_cond_broadcast((c))
 #define	cond_wait(c, m)			__libc_cond_wait((c), (m))
-#define	cond_timedwait(c, m, t)		__libc_cond_timedwait((c), (m), (t))
+#define	cond_timedwait(c, m, t)	__libc_cond_timedwait((c), (m), (t))
 #define	cond_destroy(c)			__libc_cond_destroy((c))
 
 __BEGIN_DECLS
@@ -195,22 +195,22 @@ __END_DECLS
 __BEGIN_DECLS
 int		__libc_thr_keycreate(thread_key_t *, void (*)(void *));
 int		__libc_thr_setspecific(thread_key_t, const void *);
-void 		*__libc_thr_getspecific(thread_key_t);
+void 	*__libc_thr_getspecific(thread_key_t);
 int		__libc_thr_keydelete(thread_key_t);
 __END_DECLS
 
 #define	thr_keycreate(k, d)		__libc_thr_keycreate((k), (d))
-#define	thr_setspecific(k, p)		__libc_thr_setspecific((k), (p))
+#define	thr_setspecific(k, p)	__libc_thr_setspecific((k), (p))
 #define	thr_getspecific(k)		__libc_thr_getspecific((k))
 #define	thr_keydelete(k)		__libc_thr_keydelete((k))
 
 __BEGIN_DECLS
 int		__libc_thr_once(once_t *, void (*)(void));
 int		__libc_thr_sigsetmask(int, const sigset_t *, sigset_t *);
-thr_t 		__libc_thr_self(void);
-void 		__libc_thr_yield(void);
-void 		__libc_thr_create(thr_t *, const thrattr_t *, void *(*)(void *), void *);
-void 		__libc_thr_exit(void *) __attribute__((__noreturn__));
+thr_t 	__libc_thr_self(void);
+void 	__libc_thr_yield(void);
+void 	__libc_thr_create(thr_t *, const thrattr_t *, void *(*)(void *), void *);
+void 	__libc_thr_exit(void *) __attribute__((__noreturn__));
 int		*__libc_thr_errno(void);
 int		__libc_thr_setcancelstate(int, int *);
 unsigned int	__libc_thr_curcpu(void);
@@ -218,43 +218,50 @@ unsigned int	__libc_thr_curcpu(void);
 extern int __isthreaded;
 __END_DECLS
 
-#define	thr_once(o, f)			__libc_thr_once((o), (f))
+#define	thr_once(o, f)			    __libc_thr_once((o), (f))
 #define	thr_sigsetmask(f, n, o)		__libc_thr_sigsetmask((f), (n), (o))
-#define	thr_self()			__libc_thr_self()
-#define	thr_yield()			__libc_thr_yield()
-#define	thr_exit(v)			__libc_thr_exit((v))
-#define	thr_errno()			__libc_thr_errno()
-#define	thr_enabled()			(__isthreaded)
-#define thr_setcancelstate(n, o) 	__libc_thr_setcancelstate((n),(o))
-#define thr_curcpu()			__libc_thr_curcpu()
+#define	thr_self()			        __libc_thr_self()
+#define	thr_yield()			        __libc_thr_yield()
+#define	thr_exit(v)			        __libc_thr_exit((v))
+#define	thr_errno()			        __libc_thr_errno()
+#define	thr_enabled()			    (__isthreaded)
+#define thr_setcancelstate(n, o)    __libc_thr_setcancelstate((n),(o))
+#define thr_curcpu()			    __libc_thr_curcpu()
 
-#endif /* __LIBC_THREAD_STUBS */
+#else /* __LIBC_THREAD_STUBS */
 
 __BEGIN_DECLS
 int		__libc_mutex_init_stub(mutex_t *, const mutexattr_t *);
 int		__libc_mutex_catchall_stub(mutex_t *);
+
 int		__libc_mutexattr_catchall_stub(mutexattr_t *);
 int		__libc_mutexattr_settype_stub(mutexattr_t *, int);
+
 int		__libc_cond_init_stub(cond_t *, const condattr_t *);
 int		__libc_cond_wait_stub(cond_t *, mutex_t *);
 int		__libc_cond_timedwait_stub(cond_t *, mutex_t *, const struct timespec *);
 int		__libc_cond_catchall_stub(cond_t *);
+
 int		__libc_rwlock_init_stub(rwlock_t *, rwlockattr_t *);
 int		__libc_rwlock_catchall_stub(rwlock_t *);
+
 int		__libc_thr_keycreate_stub(thread_key_t *, void (*)(void *));
 int		__libc_thr_setspecific_stub(thread_key_t, const void *);
-void		*__libc_thr_getspecific_stub(thread_key_t);
+void	*__libc_thr_getspecific_stub(thread_key_t);
 int		__libc_thr_keydelete_stub(thread_key_t);
+
 int		__libc_thr_once_stub(once_t *, void (*)(void));
 int		__libc_thr_sigsetmask_stub(int, const sigset_t *, sigset_t *);
-thr_t		__libc_thr_self_stub(void);
+thr_t	__libc_thr_self_stub(void);
 int		__libc_thr_yield_stub(void);
 int		__libc_thr_create_stub(thr_t *, const thrattr_t *, void *(*)(void *), void *);
-void		__libc_thr_exit_stub(void *);
+void	__libc_thr_exit_stub(void *);
 int		*__libc_thr_errno_stub(void);
 int		__libc_thr_setcancelstate_stub(int, int *);
 unsigned int __libc_thr_curcpu_stub(void);
 __END_DECLS
+
+#endif /* __LIBC_THREAD_STUBS */
 
 #define	FLOCKFILE(fp)			__flockfile_internal(fp, 1)
 #define	FUNLOCKFILE(fp)			__funlockfile_internal(fp, 1)
@@ -287,10 +294,19 @@ __END_DECLS
 #define	thr_getspecific(k)
 #define	thr_keydelete(k)
 
-#define	thr_once(o, f)
+static inline int
+thr_once(once_t *once_control, void (*routine)(void))
+{
+	if (__predict_false(once_control->pto_done == 0)) {
+		(*routine)();
+		once_control->pto_done = 1;
+	}
+	return 0;
+}
 #define	thr_sigsetmask(f, n, o)
 #define	thr_self()
 #define	thr_errno()
+#define	thr_curcpu()		((unsigned int)0)
 
 #define	FLOCKFILE(fp)
 #define	FUNLOCKFILE(fp)
