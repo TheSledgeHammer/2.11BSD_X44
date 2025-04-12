@@ -73,7 +73,7 @@ static void pthread__nanosleep_callback(void *);
  * Noteably the ones blanked out. 
  * Cause multiple definition errors during compliation.
  */
-//__strong_alias(pthread_sys_nanosleep, pthread_nanosleep)
+__weak_alias(pthread_sys_nanosleep, pthread_nanosleep)
 
 int
 pthread_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)

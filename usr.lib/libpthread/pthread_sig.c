@@ -111,13 +111,11 @@ static int pthread__sigmask(int, const sigset_t *, sigset_t *);
  * Noteably the ones blanked out. 
  * Cause multiple definition errors during compliation.
  */
-/*
-__strong_alias(pthread_sys_execve, pthread_execve)
-__strong_alias(pthread_sys_sigaction, pthread_sigaction)
-__strong_alias(pthread_sys_sigprocmask, pthread_sigmask)
-__strong_alias(pthread_sys_sigsuspend, pthread_sigsuspend)
-__strong_alias(pthread_sys_sigtimedwait, pthread_timedwait)
-*/
+__weak_alias(pthread_sys_execve, pthread_execve)
+__weak_alias(pthread_sys_sigaction, pthread_sigaction)
+__weak_alias(pthread_sys_sigprocmask, pthread_sigmask)
+__weak_alias(pthread_sys_sigsuspend, pthread_sigsuspend)
+__weak_alias(pthread_sys_sigtimedwait, pthread_timedwait)
 
 static int
 __sigsetequal(const sigset_t *s1, const sigset_t *s2)

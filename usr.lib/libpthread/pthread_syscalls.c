@@ -59,6 +59,7 @@ int	pthread__cancel_stub_binder;
 #include "pthread.h"
 #include "pthread_int.h"
 #include "pthread_syscalls.h"
+#include "reentrant.h"
 
 /* 
  * Some alias's may need to change from strong to weak.
@@ -73,7 +74,7 @@ __strong_alias(_clock_gettime, pthread_sys_clock_gettime)
 __strong_alias(_clock_settime, pthread_sys_clock_settime)
 __strong_alias(_close, pthread_sys_close)
 __strong_alias(_connect, pthread_sys_connect)
-//__strong_alias(__exeve, pthread_sys_execve)
+__strong_alias(__exeve, pthread_sys_execve)
 __strong_alias(_fcntl, pthread_sys_fcntl)
 __strong_alias(_fsync, pthread_sys_fsync)
 __strong_alias(_getitimer, pthread_sys_getitimer)
@@ -91,7 +92,7 @@ __strong_alias(_ksem_wait, pthread_sys_ksem_wait)
 __strong_alias(_msgrcv, pthread_sys_msgrcv)
 __strong_alias(_msgsnd, pthread_sys_msgsnd)
 __strong_alias(_msync, pthread_sys_msync)
-//__strong_alias(_nanosleep, pthread_sys_nanosleep)
+__strong_alias(_nanosleep, pthread_sys_nanosleep)
 __strong_alias(_open, pthread_sys_open)
 __strong_alias(_poll, pthread_sys_poll)
 __strong_alias(_pread, pthread_sys_pread)
@@ -100,10 +101,10 @@ __strong_alias(_read, pthread_sys_read)
 __strong_alias(_readv, pthread_sys_readv)
 __strong_alias(_select, pthread_sys_select)
 __strong_alias(_setitimer, pthread_sys_setitimer)
-//__strong_alias(_sigaction, pthread_sys_sigaction)
-//__strong_alias(_sigsuspend, pthread_sys_sigsuspend)
-//__strong_alias(_sigprocmask, pthread_sys_sigprocmask)
-//__strong_alias(_sigtimedwait, pthread_sys_sigtimedwait)
+__strong_alias(_sigaction, pthread_sys_sigaction)
+__strong_alias(_sigsuspend, pthread_sys_sigsuspend)
+__strong_alias(_sigprocmask, pthread_sys_sigprocmask)
+__strong_alias(_sigtimedwait, pthread_sys_sigtimedwait)
 __strong_alias(_wait4, pthread_sys_wait4)
 __strong_alias(_write, pthread_sys_write)
 __strong_alias(_writev, pthread_sys_writev)

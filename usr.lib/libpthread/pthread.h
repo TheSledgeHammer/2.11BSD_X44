@@ -48,7 +48,7 @@
 
 __BEGIN_DECLS
 int	pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
-int	pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *);
+int	pthread_create(pthread_t * __restrict, const pthread_attr_t * __restrict, void *(*)(void *), void * __restrict);
 void 	pthread_exit(void *) __attribute__((__noreturn__));
 int	pthread_join(pthread_t, void **);
 int	pthread_equal(pthread_t, pthread_t);
@@ -94,7 +94,7 @@ int	pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, const struct tim
 int	pthread_cond_signal(pthread_cond_t *);
 int	pthread_cond_broadcast(pthread_cond_t *);
 int	pthread_condattr_init(pthread_condattr_t *);
-int 	pthread_condattr_setclock(pthread_condattr_t *, clockid_t);
+int pthread_condattr_setclock(pthread_condattr_t *, clockid_t);
 int	pthread_condattr_getclock(const pthread_condattr_t * __restrict, clockid_t * __restrict);
 int	pthread_condattr_destroy(pthread_condattr_t *);
 
@@ -210,15 +210,106 @@ __END_DECLS
 #define PTHREAD_RWLOCK_INITIALIZER		_PTHREAD_RWLOCK_INITIALIZER
 #define PTHREAD_SPINLOCK_INITIALIZER	_PTHREAD_SPINLOCK_INITIALIZER
 
+
+#ifndef __LIBPTHREAD_SOURCE__
+__BEGIN_DECLS
+int	__libc_mutex_init(pthread_mutex_t * __restrict, const pthread_mutexattr_t * __restrict);
+int	__libc_mutex_lock(pthread_mutex_t *);
+int	__libc_mutex_trylock(pthread_mutex_t *);
+int	__libc_mutex_unlock(pthread_mutex_t *);
+int	__libc_mutex_destroy(pthread_mutex_t *);
+
+int	__libc_mutexattr_init(pthread_mutexattr_t *);
+int	__libc_mutexattr_settype(pthread_mutexattr_t *, int);
+int	__libc_mutexattr_destroy(pthread_mutexattr_t *);
+__END_DECLS
+
+#define	pthread_mutex_init		    __libc_mutex_init
+#define	pthread_mutex_lock		    __libc_mutex_lock
+#define	pthread_mutex_trylock		__libc_mutex_trylock
+#define	pthread_mutex_unlock		__libc_mutex_unlock
+#define	pthread_mutex_destroy		__libc_mutex_destroy
+
+#define	pthread_mutexattr_init		__libc_mutexattr_init
+#define	pthread_mutexattr_settype	__libc_mutexattr_settype
+#define	pthread_mutexattr_destroy	__libc_mutexattr_destroy
+
+__BEGIN_DECLS
+int	__libc_cond_init(pthread_cond_t * __restrict,
+	    const pthread_condattr_t * __restrict);
+int	__libc_cond_signal(pthread_cond_t *);
+int	__libc_cond_broadcast(pthread_cond_t *);
+int	__libc_cond_wait(pthread_cond_t * __restrict,
+	    pthread_mutex_t * __restrict);
+int	__libc_cond_timedwait(pthread_cond_t * __restrict,
+	    pthread_mutex_t * __restrict, const struct timespec * __restrict);
+int	__libc_cond_destroy(pthread_cond_t *);
+__END_DECLS
+
+#define	pthread_cond_init	     	__libc_cond_init
+#define	pthread_cond_signal		    __libc_cond_signal
+#define	pthread_cond_broadcast		__libc_cond_broadcast
+#define	pthread_cond_wait		    __libc_cond_wait
+#define	pthread_cond_timedwait		__libc_cond_timedwait
+#define	pthread_cond_destroy		__libc_cond_destroy
+
+__BEGIN_DECLS
+int	__libc_rwlock_init(pthread_rwlock_t * __restrict,
+	    const pthread_rwlockattr_t * __restrict);
+int	__libc_rwlock_rdlock(pthread_rwlock_t *);
+int	__libc_rwlock_wrlock(pthread_rwlock_t *);
+int	__libc_rwlock_tryrdlock(pthread_rwlock_t *);
+int	__libc_rwlock_trywrlock(pthread_rwlock_t *);
+int	__libc_rwlock_unlock(pthread_rwlock_t *);
+int	__libc_rwlock_destroy(pthread_rwlock_t *);
+__END_DECLS
+
+#define	pthread_rwlock_init		    __libc_rwlock_init
+#define	pthread_rwlock_rdlock		__libc_rwlock_rdlock
+#define	pthread_rwlock_wrlock		__libc_rwlock_wrlock
+#define	pthread_rwlock_tryrdlock	__libc_rwlock_tryrdlock
+#define	pthread_rwlock_trywrlock	__libc_rwlock_trywrlock
+#define	pthread_rwlock_unlock		__libc_rwlock_unlock
+#define	pthread_rwlock_destroy		__libc_rwlock_destroy
+
+__BEGIN_DECLS
+int	__libc_thr_keycreate(pthread_key_t *, void (*)(void *));
+int	__libc_thr_setspecific(pthread_key_t, const void *);
+void	*__libc_thr_getspecific(pthread_key_t);
+int	__libc_thr_keydelete(pthread_key_t);
+__END_DECLS
+
+#define	pthread_key_create		__libc_thr_keycreate
+#define	pthread_setspecific		__libc_thr_setspecific
+#define	pthread_getspecific		__libc_thr_getspecific
+#define	pthread_key_delete		__libc_thr_keydelete
+
+__BEGIN_DECLS
+int	__libc_thr_once(pthread_once_t *, void (*)(void));
+pthread_t	__libc_thr_self(void);
+void	__libc_thr_exit(void *) __attribute__((__noreturn__));
+int	__libc_thr_setcancelstate(int, int *);
+unsigned int	__libc_thr_curcpu(void);
+__END_DECLS
+
+#define	pthread_once			__libc_thr_once
+#define	pthread_self			__libc_thr_self
+#define	pthread_exit			__libc_thr_exit
+#define	pthread_setcancelstate	__libc_thr_setcancelstate
+#define pthread_curcpu		    __libc_thr_curcpu
+
+#endif /* __LIBPTHREAD_SOURCE__ */
+
 #include <signal.h>
 
 __BEGIN_DECLS
 int	pthread_execve(const char *, char *const [], char *const []);
-int 	pthread_kill(pthread_t, int);
-int 	pthread_nanosleep(const struct timespec *, struct timespec *);
+int pthread_kill(pthread_t, int);
+int pthread_nanosleep(const struct timespec *, struct timespec *);
 int	pthread_sigaction(int, const struct sigaction *, struct sigaction *);
 int	pthread_sigmask(int, const sigset_t *, sigset_t *);
 int	pthread_sigsuspend(const sigset_t *);
 int	pthread_timedwait(const sigset_t * __restrict, siginfo_t * __restrict, const struct timespec * __restrict);
 __END_DECLS
+
 #endif /* _LIB_PTHREAD_H */

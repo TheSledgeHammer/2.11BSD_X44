@@ -39,6 +39,8 @@
 #include <sys/cdefs.h>
 __RCSID("$NetBSD: pthread.c,v 1.33.2.1 2004/08/30 10:01:22 tron Exp $");
 
+#include "reentrant.h"
+
 #include <err.h>
 #include <errno.h>
 
