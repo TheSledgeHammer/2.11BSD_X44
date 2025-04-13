@@ -93,7 +93,9 @@ SUBDIR+=	../contrib/gnu/mpc/lib/libmpc
 #==================== 1st library dependency barrier ====================
 SUBDIR+=	.WAIT
 
+.if (${MKXZ} != "no")
 SUBDIR+=	../contrib/xz/lib		# depends on libpthread
+.endif
 SUBDIR+=	../contrib/elftoolchain/lib/libdwarf # depends on libelf
 SUBDIR+=	../contrib/lua/lib          	# depends on libm
 SUBDIR+=	../contrib/sqlite/lib		# depends on libm
