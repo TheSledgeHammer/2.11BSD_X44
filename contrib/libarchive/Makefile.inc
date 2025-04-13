@@ -9,6 +9,9 @@ LIBARCHIVEDIR=	${NETBSDSRCDIR}/contrib/libarchive/dist
 CPPFLAGS+=	-I${NETBSDSRCDIR}/contrib/libarchive/include
 CPPFLAGS+=	-DPLATFORM_CONFIG_H=\"config_netbsd.h\"
 
+.PATH:      ${NETBSDSRCDIR}/include/hash
+CPPFLAGS+=  -I${NETBSDSRCDIR}/include/hash
+
 LIBARCHIVE_FE_DIR!=	cd ${.PARSEDIR}/lib/libarchive_fe && ${PRINTOBJDIR}
 LIBARCHIVE_FE=		${LIBARCHIVE_FE_DIR}/libarchive_fe.a
 
