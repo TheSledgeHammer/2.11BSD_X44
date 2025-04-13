@@ -19,5 +19,4 @@ run-configure:
 	    CC=${CC:Q} CFLAGS=${CFLAGS:N-Werror:Q} CPPFLAGS=${CPPFLAGS:Q} LDFLAGS=${LDFLAGS:Q}
 	rm -r tmp
 
-.include <bsd.own.mk>
 .include <bsd.subdir.mk>
