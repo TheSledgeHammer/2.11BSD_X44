@@ -6,7 +6,7 @@ CONFIG_DIR:=	${.PARSEDIR}/dist
 
 .include <bsd.own.mk>
 
-.if (${MKXZ} != "no")
+.if (${MKXZ} != "yes")
 CONFIG_ARGS+= --without-lzma
 .endif
 CONFIG_ARGS+= --without-xml2
