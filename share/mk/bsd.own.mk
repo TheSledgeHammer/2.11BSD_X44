@@ -1076,6 +1076,12 @@ ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
 .endfor
 
 #
+# MKXZ is optional.
+# Note: Compile time linker issues with memmove and libpthreads.
+#
+MKXZ:= no
+
+#
 # Force some options off if their dependencies are off.
 #
 
