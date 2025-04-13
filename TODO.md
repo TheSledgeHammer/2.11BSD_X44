@@ -34,8 +34,10 @@ A General todo list. Don't hesitate to add to this list. :)
 			- Keeping Disabled: (Low Priority)
 				- Missing a fairly large portion of libc requirements.
 				- With 2.11BSD_X44 not requiring c++. These libc additions are 
-				unlikely to be incorporated in the immediate future. 
-			
+				unlikely to be incorporated in the immediate future.
+- XZ: (Optional)
+	- Linker compiler time issue:
+
 ## lib:
 - libc:
 	- net: nslexer.l doesn't like %%
