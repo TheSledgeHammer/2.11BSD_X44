@@ -135,19 +135,19 @@ CPPFLAGS+= -I${LCRYPTO_SRC}/bn/arch/${LIBRESSL_MACHINE_CPU}
 
 # Assembly Support Required:
 # - arm, mips, mips64, x86_64
-.if ${LIBRESSL_MACHINE_ARCH} != __arm__ || __mips__ || __mips64__ || __x86_64__
+.if ${LIBRESSL_MACHINE_ARCH} != "arm" || ${LIBRESSL_MACHINE_ARCH} != "mips" || ${LIBRESSL_MACHINE_ARCH} != "mips64" || ${LIBRESSL_MACHINE_ARCH} != "x86_64"
 CPPFLAGS+= -DOPENSSL_NO_ASM
 .else
-.if ${LIBRESSL_MACHINE_ARCH} == __arm__
+.if ${LIBRESSL_MACHINE_ARCH} == "arm"
 
 .endif
-.if ${LIBRESSL_MACHINE_ARCH} == __mips__
+.if ${LIBRESSL_MACHINE_ARCH} == "mips"
 
 .endif
-.if ${LIBRESSL_MACHINE_ARCH} == __mips64__
+.if ${LIBRESSL_MACHINE_ARCH} == "mips64"
 
 .endif
-.if ${LIBRESSL_MACHINE_ARCH} == __x86_64__
+.if ${LIBRESSL_MACHINE_ARCH} == "x86_64"
 
 .endif
 .endif

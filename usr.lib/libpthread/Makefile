@@ -34,11 +34,11 @@ ARCHDIR=	${.CURDIR}/arch/${ARCHSUBDIR}
 .PATH:	${ARCHDIR}
 
 CPPFLAGS+=	-I${ARCHDIR} -I${.CURDIR} -I${.OBJDIR} -D_LIBC -D_REENTRANT
-CPPFLAGS+=	-I${.CURDIR}/../libc/include
+CPPFLAGS+=	-I${.CURDIR}/../../libc/include
 CPPFLAGS+=	-D__LIBPTHREAD_SOURCE__ -D__LIBC_THREAD_STUBS
 
 # XXX: This crappy poke at libc's internals needs to be fixed.
-CPPFLAGS+=-I${NETBSDSRCDIR}/sys -I${.CURDIR}/../libc
+CPPFLAGS+=-I${NETBSDSRCDIR}/sys -I${.CURDIR}/../../libc
 
 DPSRCS+=		assym.h
 CLEANFILES+=	assym.h

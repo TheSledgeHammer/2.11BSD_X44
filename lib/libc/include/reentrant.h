@@ -258,6 +258,7 @@ int		__libc_thr_create_stub(thr_t *, const thrattr_t *, void *(*)(void *), void 
 void	__libc_thr_exit_stub(void *);
 int		*__libc_thr_errno_stub(void);
 int		__libc_thr_setcancelstate_stub(int, int *);
+int	__libc_thr_equal_stub(pthread_t, pthread_t);
 unsigned int __libc_thr_curcpu_stub(void);
 __END_DECLS
 

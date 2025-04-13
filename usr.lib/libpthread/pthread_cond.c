@@ -347,7 +347,7 @@ pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clck)
 {
 
 	pthread__error(EINVAL, "Invalid condition variable attribute",
-	    attr->ptca_magic == _PT_CONDATTR_MAGIC);
+			attr->ptca_magic == _PT_CONDATTR_MAGIC);
 
 	switch (clck) {
 	case CLOCK_MONOTONIC:
@@ -356,7 +356,7 @@ pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clck)
 			attr->ptca_private = malloc(sizeof(clockid_t));
 		if (attr->ptca_private == NULL)
 			return errno;
-		*(clockid_t *)attr->ptca_private = clck;
+		*(clockid_t*) attr->ptca_private = clck;
 		return 0;
 	default:
 		return EINVAL;
@@ -369,11 +369,11 @@ pthread_condattr_getclock(const pthread_condattr_t *__restrict attr,
 {
 
 	pthread__error(EINVAL, "Invalid condition variable attribute",
-	    attr->ptca_magic == _PT_CONDATTR_MAGIC);
+			attr->ptca_magic == _PT_CONDATTR_MAGIC);
 
 	if (attr == NULL || attr->ptca_private == NULL)
 		return EINVAL;
-	*clock_id = *(clockid_t *)attr->ptca_private;
+	*clock_id = *(clockid_t*) attr->ptca_private;
 	return 0;
 }
 

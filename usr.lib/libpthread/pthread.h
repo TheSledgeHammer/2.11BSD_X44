@@ -210,6 +210,38 @@ __END_DECLS
 #define PTHREAD_RWLOCK_INITIALIZER		_PTHREAD_RWLOCK_INITIALIZER
 #define PTHREAD_SPINLOCK_INITIALIZER	_PTHREAD_SPINLOCK_INITIALIZER
 
+/*
+ * Use macros to rename many pthread functions to the corresponding
+ * libc symbols which are either trivial/no-op stubs or the real
+ * thing, depending on whether libpthread is linked in to the
+ * program. This permits code, particularly libraries that do not
+ * directly use threads but want to be thread-safe in the presence of
+ * threaded callers, to use pthread mutexes and the like without
+ * unnecessairly including libpthread in their linkage.
+ *
+ * Left out of this list are functions that can't sensibly be trivial
+ * or no-op stubs in a single-threaded process (pthread_create,
+ * pthread_kill, pthread_detach), functions that normally block and
+ * wait for another thread to do something (pthread_join), and
+ * functions that don't make sense without the previous functions
+ * (pthread_attr_*). The pthread_cond_wait and pthread_cond_timedwait
+ * functions are useful in implementing certain protection mechanisms,
+ * though a non-buggy app shouldn't end up calling them in
+ * single-threaded mode.
+ *
+ * The rename is done as:
+ * #define pthread_foo	__libc_foo
+ * instead of
+ * #define pthread_foo(x) __libc_foo((x))
+ * in order that taking the address of the function ("func =
+ * &pthread_foo;") continue to work.
+ *
+ * POSIX/SUSv3 requires that its functions exist as functions (even if
+ * macro versions exist) and specifically that "#undef pthread_foo" is
+ * legal and should not break anything. Code that does such will not
+ * successfully get the stub behavior implemented here and will
+ * require libpthread to be linked in.
+ */
 
 #ifndef __LIBPTHREAD_SOURCE__
 __BEGIN_DECLS
@@ -289,6 +321,7 @@ int	__libc_thr_once(pthread_once_t *, void (*)(void));
 pthread_t	__libc_thr_self(void);
 void	__libc_thr_exit(void *) __attribute__((__noreturn__));
 int	__libc_thr_setcancelstate(int, int *);
+int	__libc_thr_equal(pthread_t, pthread_t);
 unsigned int	__libc_thr_curcpu(void);
 __END_DECLS
 
@@ -296,6 +329,7 @@ __END_DECLS
 #define	pthread_self			__libc_thr_self
 #define	pthread_exit			__libc_thr_exit
 #define	pthread_setcancelstate	__libc_thr_setcancelstate
+#define pthread_equal			__libc_thr_equal
 #define pthread_curcpu		    __libc_thr_curcpu
 
 #endif /* __LIBPTHREAD_SOURCE__ */

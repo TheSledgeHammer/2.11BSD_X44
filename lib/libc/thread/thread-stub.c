@@ -314,6 +314,7 @@ __weak_alias(__libc_thr_create,__libc_thr_create_stub)
 __weak_alias(__libc_thr_exit,__libc_thr_exit_stub)
 __weak_alias(__libc_thr_errno,__libc_thr_errno_stub)
 __weak_alias(__libc_thr_setcancelstate,__libc_thr_setcancelstate_stub)
+__weak_alias(__libc_thr_equal,__libc_thr_equal_stub)
 __weak_alias(__libc_thr_curcpu,__libc_thr_curcpu_stub)
 
 int
@@ -392,6 +393,14 @@ __libc_thr_setcancelstate_stub(int new, int *old)
 	CHECK_NOT_THREADED();
 
 	return (0);
+}
+
+int
+__libc_thr_equal_stub(pthread_t t1, pthread_t t2)
+{
+
+	/* assert that t1=t2=pthread_self() */
+	return (t1 == t2);
 }
 
 int *
