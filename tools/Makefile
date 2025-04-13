@@ -52,6 +52,14 @@ TOOLCHAIN_BITS+= pcc
 . endif
 .endif
 
+XZ_BITS1=
+XZ_BITS2=
+.if ${MKXZ} != "no"
+XZ_BITS1+= xz-include .WAIT
+XZ_BITS1+= xz-lib
+XZ_BITS2+= xz-bin
+.endif
+
 .if ${TOOLCHAIN_MISSING} == "no" || defined(EXTERNAL_TOOLCHAIN)
 TOOLCHAIN_BITS+= dbsym mdsetimage
 .endif
@@ -92,7 +100,7 @@ SUBDIR=	host-mkdep compat binstall date .WAIT mktemp .WAIT sed .WAIT genassym 		
 		${LINT_BITS} 															\
 		makewhatis mtree nbperf .WAIT uudecode 										\
 		cat rpcgen join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
-		xz-include .WAIT grep xz-lib pax									\
+		${XZ_BITS1} .WAIT grep pax									\
 		.WAIT texinfo 															\
 		.WAIT tic																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
@@ -107,7 +115,7 @@ SUBDIR=	host-mkdep compat binstall date .WAIT mktemp .WAIT sed .WAIT genassym 		
 		.WAIT 																	\
 		pwd_mkdb strfile vgrind zic												
 														
-SUBDIR+= stat .WAIT config xz-bin
+SUBDIR+= stat .WAIT config ${XZ_BITS2}
 
 .if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
 SUBDIR+= 						\
