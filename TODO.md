@@ -35,8 +35,15 @@ A General todo list. Don't hesitate to add to this list. :)
 				- Missing a fairly large portion of libc requirements.
 				- With 2.11BSD_X44 not requiring c++. These libc additions are 
 				unlikely to be incorporated in the immediate future.
-- XZ: (Optional)
-	- Linker compiler time issue:
+- XZ:
+	- Linker compiler time issue: Not finding symbols
+ 		- liblzma_pic.a(stream_encoder_mt.pico):(.text+0x2b7): undefined reference to `pthread_join'
+   		- liblzma_pic.a(stream_encoder_mt.pico):(.text+0xd4e): undefined reference to `pthread_create'
+ 		- liblzma_pic.a(lzma_decoder.pico): in function `.L400': lzma_decoder.c:(.text+0x2b9a): undefined reference to `memmove'
+   		- liblzma_pic.a(lz_encoder.pico): in function `.L11': lz_encoder.c:(.text+0x4ab): undefined reference to `memmove'
+     - Currently points to an xz compatability issue, with this issue not showing it's face elsewhere.
+     	- Though should be interesting if it does present itself later on.
+     - Due to xz not being esstential, it's requirement in the toolchain and dependencies have become optional.
 
 ## lib:
 - libc:
