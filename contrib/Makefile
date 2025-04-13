@@ -4,7 +4,7 @@
 
 SUBDIR= bc byacc expat fetch file flex gnu libevent 	\
 	less libarchive liblzf lua mdocml nawk ntp 		\
-	sqlite xz
+	sqlite
 
 SUBDIR+= pkg_install
 
@@ -28,7 +28,10 @@ SUBDIR+= pcc
 SUBDIR+= unbound
 .endif
 
+.if (${MKXZ} != "no")
+SUBDIR+= xz
+.endif
+
 SUBDIR+= nvi
-#SUBDIR+= oscompat
 
 .include <bsd.subdir.mk>
