@@ -265,6 +265,8 @@
 ./usr/share/doc/ps2/07.fp
 ./usr/share/doc/ps2/08.ratfor
 ./usr/share/doc/ps2/09.lisp
+./usr/share/doc/psd
+./usr/share/doc/psd/19.curses
 ./usr/share/doc/run
 ./usr/share/doc/smm
 ./usr/share/doc/smm/01.setup
