@@ -166,6 +166,8 @@
 ./usr/share/doc/papers
 ./usr/share/doc/ps1
 ./usr/share/doc/ps2
+./usr/share/doc/psd
+./usr/share/doc/psd/19.curses
 ./usr/share/doc/run
 ./usr/share/doc/smm
 ./usr/share/doc/usd
