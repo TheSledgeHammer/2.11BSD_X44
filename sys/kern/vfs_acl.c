@@ -277,7 +277,7 @@ kern_acl_get_filedesc(p, cmd, filedes, type, aclp)
 	}
 	error = checkfiledesc(&fp, filedes);
 	if (error == 0) {
-		error =  vacl_get_acl(u.u_procp, (struct vnode *)fp->f_data, type, aclp);
+		error =  vacl_get_acl(p, (struct vnode *)fp->f_data, type, aclp);
 	}
 	return (error);
 }
@@ -298,7 +298,7 @@ kern_acl_set_filedesc(p, cmd, filedes, type, aclp)
 	}
 	error = checkfiledesc(&fp, filedes);
 	if (error == 0) {
-		error = vacl_set_acl(u.u_procp, (struct vnode *)fp->f_data, type, aclp);
+		error = vacl_set_acl(p, (struct vnode *)fp->f_data, type, aclp);
 	}
 	return (error);
 }
