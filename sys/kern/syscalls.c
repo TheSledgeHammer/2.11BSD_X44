@@ -186,4 +186,6 @@ char *syscallnames[] = {
 #else
 	"#168",		/* 168 = unused vtrace */
 #endif
+	"acl_file",			/* 169 = acl_file */
+	"acl_filedesc",			/* 170 = acl_filedesc */
 };

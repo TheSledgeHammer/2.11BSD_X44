@@ -538,7 +538,7 @@ ufalloc(want, result)
  * to point at the file structure.
  */
 struct file *
-falloc()
+falloc(void)
 {
 	register struct file *fp, *fq;
 	int i, error;
@@ -1171,4 +1171,35 @@ getfiledesc(fdp, fd, fpp, type)
 	}
 	*fpp = fp;
 	return (0);
+}
+
+/* checks vnode file and file descriptor */
+int
+checkfiledesc(fpp, filedes)
+	struct file **fpp;
+	int filedes;
+{
+	struct file *fp;
+	struct filedesc *fdp;
+	int error;
+
+	/* allocate file for file descriptors */
+	fp = getf(filedes);
+	if (fp == NULL) {
+		return (ENOENT);
+	}
+	/* allocate file descriptor */
+	fdp = fdalloc(fp);
+	if (fdp == NULL) {
+		return (ENOENT);
+	}
+	/* get vnode file descriptor */
+	error = getvnode(fdp, fpp, filedes);
+	if (error == 0) {
+		/* check the allocated file matches vnode file */
+		if (*fp != fpp) {
+			*fp = fpp;
+		}
+	}
+	return (error);
 }

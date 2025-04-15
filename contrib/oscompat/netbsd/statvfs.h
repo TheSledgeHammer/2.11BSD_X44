@@ -47,8 +47,6 @@
 
 #include <sys/cdefs.h>
 
-//#include <sys/stdint.h>
-//#include <machine/ansi.h>
 #include <sys/ansi.h>
 
 #define _VFS_NAMELEN_MAX 	255	/* maximum filename length */

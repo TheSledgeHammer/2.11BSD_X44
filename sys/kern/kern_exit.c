@@ -264,7 +264,6 @@ struct wait_args {
 	syscallarg(int *) status;
 	syscallarg(int) options;
 	syscallarg(struct rusage *) rusage;
-
 	syscallarg(int) compat;
 };
 

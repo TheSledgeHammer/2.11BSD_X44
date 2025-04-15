@@ -177,6 +177,8 @@ int	utrace();
 int	vtrace();
 #else
 #endif
+int	acl_file();
+int	acl_filedesc();
 #define	s(type)	sizeof(type)
 
 struct sysent sysent[] = {
@@ -530,6 +532,10 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    nosys },				/* 168 = unused vtrace */
 #endif
+	{ 0, 0,
+	    acl_file },				/* 169 = acl_file */
+	{ 0, 0,
+	    acl_filedesc },			/* 170 = acl_filedesc */
 };
 
 int	nsysent= sizeof(sysent) / sizeof(sysent[0]);

@@ -43,7 +43,7 @@ A General todo list. Don't hesitate to add to this list. :)
    		- liblzma_pic.a(lz_encoder.pico): in function `.L11': lz_encoder.c:(.text+0x4ab): undefined reference to `memmove'
      - Currently points to an xz compatability issue, with this issue not showing it's face elsewhere.
      	- Though should be interesting if it does present itself later on.
-     - Due to xz not being esstential, it's requirement in the toolchain and dependencies have become optional.
+     - Due to xz not being esstential, it's requirement in the toolchain and dependents have become optional.
 
 ## lib:
 - libc:

@@ -222,3 +222,5 @@
 #else
 168	UNIMPL		vtrace
 #endif
+169 STD		{ int acl_file(); }
+170 STD		{ int acl_filedesc(); }

@@ -167,3 +167,5 @@ extern int	nosys();
 extern int	ktrace();
 extern int	utrace();
 extern int	vtrace();
+extern int	acl_file();
+extern int	acl_filedesc();

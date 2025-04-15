@@ -105,7 +105,7 @@ struct filedesc0 {
  */ 
 void				finit(struct filedesc *);
 int			        ufalloc(int, int *);
-struct file	        *falloc();
+struct file	        *falloc(void);
 void				fdexpand(int);
 int  		        ufdalloc(struct file *);
 struct filedesc 	*fdalloc(struct file *);
@@ -125,6 +125,7 @@ int					fdrelease(int);
 void				fdunshare(void);
 void				fdcloseexec(void);
 int					getfiledesc(struct filedesc *, int, struct file **, int);
+int					checkfiledesc(struct file **, int);
 void				fownsignal(pid_t, int);
 #endif
 #endif

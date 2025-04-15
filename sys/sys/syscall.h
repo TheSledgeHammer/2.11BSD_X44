@@ -173,4 +173,6 @@
 #define	SYS_ktrace	166
 #define	SYS_utrace	167
 #define	SYS_vtrace	168
-#define	SYS_MAXSYSCALL	169
+#define	SYS_acl_file	169
+#define	SYS_acl_filedesc	170
+#define	SYS_MAXSYSCALL	171
