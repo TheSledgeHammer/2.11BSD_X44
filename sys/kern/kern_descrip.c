@@ -1194,11 +1194,11 @@ checkfiledesc(fpp, filedes)
 		return (ENOENT);
 	}
 	/* get vnode file descriptor */
-	error = getvnode(fdp, fpp, filedes);
+	error = getfiledesc(fdp, filedes, fpp, DTYPE_VNODE);
 	if (error == 0) {
 		/* check the allocated file matches vnode file */
-		if (*fp != fpp) {
-			*fp = fpp;
+		if (fp != *fpp) {
+			fp = *fpp;
 		}
 	}
 	return (error);

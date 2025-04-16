@@ -52,24 +52,25 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/acl.h>
+#include <sys/vnode.h>
 #include <sys/user.h>
 #include <sys/sysdecl.h>
 
-static int vacl_set_acl(struct proc *p, struct vnode *vp, acl_type_t type, struct acl *aclp);
-static int vacl_get_acl(struct proc *p, struct vnode *vp, acl_type_t type, struct acl *aclp);
-static int vacl_delete(struct proc *p, struct vnode *vp, acl_type_t type);
-static int vacl_aclcheck(struct proc *p, struct vnode *vp, acl_type_t type, struct acl *aclp);
+static int vacl_get_acl(struct proc *, struct vnode *, acl_type_t, struct acl *);
+static int vacl_set_acl(struct proc *, struct vnode *, acl_type_t, const struct acl *);
+static int vacl_delete(struct proc *, struct vnode *, acl_type_t);
+static int vacl_aclcheck(struct proc *, struct vnode *, acl_type_t, const struct acl *);
 
 /* file */
-static int kern_acl_get_file(int, const char *, acl_type_t, struct acl *);
-static int kern_acl_set_file(int, const char *, acl_type_t, struct acl *);
-static int kern_acl_delete_file(int, const char *, acl_type_t);
-static int kern_acl_aclcheck_file(int, const char *, acl_type_t, struct acl *);
+static int kern_acl_get_file(struct proc *, int, char *, acl_type_t, struct acl *);
+static int kern_acl_set_file(struct proc *, int, char *, acl_type_t, const struct acl *);
+static int kern_acl_delete_file(struct proc *, int, char *, acl_type_t);
+static int kern_acl_aclcheck_file(struct proc *, int, char *, acl_type_t, const struct acl *);
 /* file descriptor */
-static int kern_acl_get_filedesc(int, int, acl_type_t, struct acl *);
-static int kern_acl_set_filedesc(int, int, acl_type_t, struct acl *);
-static int kern_acl_delete_filedesc(int, int, acl_type_t);
-static int kern_acl_aclcheck_filedesc(int, int, acl_type_t, struct acl *);
+static int kern_acl_get_filedesc(struct proc *, int, int, acl_type_t, struct acl *);
+static int kern_acl_set_filedesc(struct proc *, int, int, acl_type_t, const struct acl *);
+static int kern_acl_delete_filedesc(struct proc *, int, int, acl_type_t);
+static int kern_acl_aclcheck_filedesc(struct proc *, int, int, acl_type_t, const struct acl *);
 
 /*
  * These calls wrap the real vnode operations, and are called by the syscall
@@ -78,6 +79,28 @@ static int kern_acl_aclcheck_filedesc(int, int, acl_type_t, struct acl *);
  * this should not be consumed within the kernel except by syscall code.
  * Other code should directly invoke VOP_{SET,GET}ACL.
  */
+
+/*
+ * Given a vnode, get its ACL.
+ */
+static int
+vacl_get_acl(p, vp, type, aclp)
+	struct proc *p;
+	struct vnode *vp;
+	acl_type_t type;
+	struct acl *aclp;
+{
+	struct acl inkernacl;
+	int error;
+
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
+	error = VOP_GETACL(vp, type, &inkernacl, u.u_ucred);
+	VOP_UNLOCK(vp, 0, p);
+	if (error == 0) {
+		error = copyout(&inkernacl, aclp, sizeof(struct acl));
+	}
+	return (error);
+}
 
 /*
  * Given a vnode, set its ACL.
@@ -97,31 +120,9 @@ vacl_set_acl(p, vp, type, aclp)
 		return(error);
 	}
 
-	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
-	error = VOP_SETACL(vp, type, inkernacl, u.u_ucred);
-	VOP_UNLOCK(vp);
-	return (error);
-}
-
-/*
- * Given a vnode, get its ACL.
- */
-static int
-vacl_get_acl(p, vp, type, aclp)
-	struct proc *p;
-	struct vnode *vp;
-	acl_type_t type;
-	struct acl *aclp;
-{
-	struct acl inkernelacl;
-	int error;
-
-	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
-	error = VOP_GETACL(vp, type, &inkernelacl, u.u_ucred);
-	VOP_UNLOCK(vp);
-	if (error == 0) {
-		error = copyout(&inkernelacl, aclp, sizeof(struct acl));
-	}
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
+	error = VOP_SETACL(vp, type, &inkernacl, u.u_ucred);
+	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
@@ -136,9 +137,9 @@ vacl_delete(p, vp, type)
 {
 	int error;
 
-	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	error = VOP_SETACL(vp, ACL_TYPE_DEFAULT, 0, u.u_ucred);
-	vn_unlock(vp);
+	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
@@ -166,11 +167,10 @@ vacl_aclcheck(p, vp, type, aclp)
 }
 
 static int
-kern_acl_get_file(p, cmd, path, follow, type, aclp)
+kern_acl_get_file(p, cmd, path, type, aclp)
 	struct proc *p;
 	int cmd;
-	const char *path;
-	int follow;
+	char *path;
 	acl_type_t type;
 	struct acl *aclp;
 {
@@ -180,7 +180,7 @@ kern_acl_get_file(p, cmd, path, follow, type, aclp)
 	if (cmd != GETACL) {
 		return (EINVAL);
 	}
-	NDINIT(&nd, LOOKUP, follow, UIO_USERSPACE, path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, path, p);
 	error = namei(&nd);
 	if (error == 0) {
 		error = vacl_get_acl(p, nd.ni_vp, type, aclp);
@@ -190,11 +190,10 @@ kern_acl_get_file(p, cmd, path, follow, type, aclp)
 }
 
 static int
-kern_acl_set_file(p, cmd, path, follow, type, aclp)
+kern_acl_set_file(p, cmd, path, type, aclp)
 	struct proc *p;
 	int cmd;
-	const char *path;
-	int follow;
+	char *path;
 	acl_type_t type;
 	const struct acl *aclp;
 {
@@ -204,7 +203,7 @@ kern_acl_set_file(p, cmd, path, follow, type, aclp)
 	if (cmd != SETACL) {
 		return (EINVAL);
 	}
-	NDINIT(&nd, LOOKUP, follow, UIO_USERSPACE, path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, path, p);
 	error = namei(&nd);
 	if (error == 0) {
 		error = vacl_set_acl(p, nd.ni_vp, type, aclp);
@@ -214,11 +213,10 @@ kern_acl_set_file(p, cmd, path, follow, type, aclp)
 }
 
 static int
-kern_acl_delete_file(p, cmd, path, follow, type)
+kern_acl_delete_file(p, cmd, path, type)
 	struct proc *p;
 	int cmd;
-	const char *path;
-	int follow;
+	char *path;
 	acl_type_t type;
 {
 	struct nameidata nd;
@@ -227,7 +225,7 @@ kern_acl_delete_file(p, cmd, path, follow, type)
 	if (cmd != DELACL) {
 		return (EINVAL);
 	}
-	NDINIT(&nd, LOOKUP, follow, UIO_USERSPACE, path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, path, p);
 	error = namei(&nd);
 	if (error == 0) {
 		error = vacl_delete(p, nd.ni_vp, type);
@@ -237,11 +235,10 @@ kern_acl_delete_file(p, cmd, path, follow, type)
 }
 
 static int
-kern_acl_aclcheck_file(p, cmd, path, follow, type, aclp)
+kern_acl_aclcheck_file(p, cmd, path, type, aclp)
 	struct proc *p;
 	int cmd;
-	const char *path;
-	int follow;
+	char *path;
 	acl_type_t type;
 	const struct acl *aclp;
 {
@@ -251,7 +248,7 @@ kern_acl_aclcheck_file(p, cmd, path, follow, type, aclp)
 	if (cmd != CHECKACL) {
 		return (EINVAL);
 	}
-	NDINIT(&nd, LOOKUP, follow, UIO_USERSPACE, path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, path, p);
 	error = namei(&nd);
 	if (error == 0) {
 		error = vacl_aclcheck(p, nd.ni_vp, type, aclp);
@@ -266,7 +263,7 @@ kern_acl_get_filedesc(p, cmd, filedes, type, aclp)
 	int cmd;
 	int filedes;
 	acl_type_t type;
-	const struct acl *aclp;
+	struct acl *aclp;
 {
 	struct file *fp;
 	int error;
@@ -348,7 +345,7 @@ acl_file()
 {
 	register struct acl_file_args {
 		syscallarg(int) cmd;
-		syscallarg(const char *) path;
+		syscallarg(char *) path;
 		syscallarg(acl_type_t) type;
 		syscallarg(struct acl *) aclp;
 	} *uap = (struct acl_file_args *)u.u_ap;

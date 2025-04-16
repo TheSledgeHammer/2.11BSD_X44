@@ -52,7 +52,6 @@
 #include <sys/sysctl.h>
 #include <sys/event.h>
 #include <sys/queue.h>
-#include <sys/acl.h>
 
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
