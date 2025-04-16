@@ -46,7 +46,7 @@
 typedef uint32_t	acl_tag_t;
 typedef uint32_t	acl_perm_t;
 typedef uint16_t	acl_flag_t;
-typedef int			acl_type_t;
+typedef int		acl_type_t;
 
 #define	ACL_MAX_ENTRIES		254
 
@@ -58,7 +58,7 @@ struct acl_entry {
 typedef struct acl_entry 	*acl_entry_t;
 
 struct acl {
-	int					acl_cnt;
+	int		acl_cnt;
 	struct acl_entry	acl_entry[ACL_MAX_ENTRIES];
 };
 typedef struct acl 	*acl_t;
@@ -106,23 +106,22 @@ enum acl_cmdops {
 #define	ACL_POSIX1E_BITS	(ACL_PERM_EXEC | ACL_PERM_WRITE | ACL_PERM_READ)
 
 #ifndef _KERNEL
-
 __BEGIN_DECLS
 /* kernel acl syscall callback */
-int acl_file(int, const char *, acl_type_t, struct acl *);
+int acl_file(int, char *, acl_type_t, struct acl *);
 int acl_filedesc(int, int, acl_type_t, struct acl *);
 
 /* file */
-int acl_get_file(int, const char *, acl_type_t, struct acl *);
-int acl_set_file(int, const char *, acl_type_t, struct acl *);
-int acl_delete_file(int, const char *, acl_type_t);
-int acl_aclcheck_file(int, const char *, acl_type_t, struct acl *);
+int acl_get_file(char *, acl_type_t, struct acl *);
+int acl_set_file(char *, acl_type_t, struct acl *);
+int acl_delete_file(char *, acl_type_t);
+int acl_aclcheck_file(char *, acl_type_t, struct acl *);
 
 /* file descriptor */
-int acl_get_fd(int, int, acl_type_t, struct acl *);
-int acl_set_fd(int, int, acl_type_t, struct acl *);
-int acl_delete_fd(int, int, acl_type_t);
-int acl_aclcheck_fd(int, int, acl_type_t, struct acl *);
+int acl_get_fd(int, acl_type_t, struct acl *);
+int acl_set_fd(int, acl_type_t, struct acl *);
+int acl_delete_fd(int, acl_type_t);
+int acl_aclcheck_fd(int, acl_type_t, struct acl *);
 __END_DECLS
 #endif /* !_KERNEL */
 
