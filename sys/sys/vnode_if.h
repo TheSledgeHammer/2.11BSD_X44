@@ -36,6 +36,7 @@
 #ifndef _SYS_VNODE_IF_H_
 #define _SYS_VNODE_IF_H_
 
+#include <sys/acl.h>
 #include <sys/buf.h>
 #include <sys/stddef.h>
 
