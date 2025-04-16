@@ -450,6 +450,33 @@ struct vop_putpages_args {
 	int 					a_flags;
 };
 
+extern struct vnodeop_desc 	vop_getacl_desc;
+struct vop_getacl_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	acl_type_t 				a_type;
+	struct acl 				*a_aclp;
+	struct ucred 			*a_cred;
+};
+
+extern struct vnodeop_desc 	vop_setacl_desc;
+struct vop_setacl_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	acl_type_t 				a_type;
+	struct acl 				*a_aclp;
+	struct ucred 			*a_cred;
+};
+
+extern struct vnodeop_desc 	vop_aclcheck_desc;
+struct vop_aclcheck_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	acl_type_t 				a_type;
+	struct acl 				*a_aclp;
+	struct ucred 			*a_cred;
+};
+
 /* Special cases: */
 extern struct vnodeop_desc 	vop_strategy_desc;
 struct vop_strategy_args {
@@ -514,6 +541,9 @@ struct vnodeops {
 	int (*vop_update)		(struct vop_update_args *);
 	int (*vop_getpages)		(struct vop_getpages_args *);
 	int (*vop_putpages)		(struct vop_putpages_args *);
+	int (*vop_getacl)		(struct vop_getacl_args *);
+	int (*vop_setacl)		(struct vop_setacl_args *);
+	int (*vop_aclcheck)		(struct vop_aclcheck_args *);
 	int	(*vop_strategy)		(struct vop_strategy_args *);
 	int (*vop_bwrite)		(struct vop_bwrite_args *);
 };
@@ -573,6 +603,9 @@ int vop_truncate(struct vnode *, off_t, int, struct ucred *, struct proc *);
 int vop_update(struct vnode *, struct timeval *, struct timeval *, int);
 int	vop_getpages(struct vnode *, off_t, struct vm_page **, int *, int, vm_prot_t, int, int);
 int	vop_putpages(struct vnode *, off_t, off_t, int);
+int vop_getacl(struct vnode *, acl_type_t, struct acl *, struct ucred *)
+int vop_setacl(struct vnode *, acl_type_t, struct acl *, struct ucred *)
+int vop_aclcheck(struct vnode *, acl_type_t, struct acl *, struct ucred *)
 int	vop_strategy(struct buf *);
 int vop_bwrite(struct buf *);
 
@@ -677,6 +710,12 @@ int	vop_norevoke(struct vop_revoke_args *);
 	vop_getpages(vp, offset, m, count, centeridx, access_type, advice, flags)
 #define VOP_PUTPAGES(vp, offlo, offhi, flags)										\
 	vop_putpages(vp, offlo, offhi, flags)
+#define	VOP_GETACL(vp, type, aclp, cred)											\
+	vop_getacl(vp, type, aclp, cred)
+#define	VOP_SETACL(vp, type, aclp, cred)											\
+	vop_setacl(vp, type, aclp, cred)
+#define	VOP_ACLCHECK(vp, type, aclp, cred)											\
+	vop_aclcheck(vp, type, aclp, cred)
 #define	VOP_STRATEGY(bp)															\
 	vop_strategy(bp)
 #define VOP_BWRITE(bp)																\

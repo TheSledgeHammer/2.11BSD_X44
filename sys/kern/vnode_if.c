@@ -792,6 +792,54 @@ struct vnodeop_desc vop_putpages_desc = {
 	NULL,
 };
 
+int vop_getacl_vp_offsets[] = {
+	VOPARG_OFFSETOF(struct vop_getacl_args, a_vp),
+	VDESC_NO_OFFSET
+};
+struct vnodeop_desc vop_getacl_desc = {
+	0,
+	"vop_getacl",
+	0,
+	vop_getacl_vp_offsets,
+	VDESC_NO_OFFSET,
+	VOPARG_OFFSETOF(struct vop_getacl_args, a_cred),
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	NULL,
+};
+
+int vop_setacl_vp_offsets[] = {
+	VOPARG_OFFSETOF(struct vop_setacl_args, a_vp),
+	VDESC_NO_OFFSET
+};
+struct vnodeop_desc vop_setacl_desc = {
+	0,
+	"vop_setacl",
+	0,
+	vop_setacl_vp_offsets,
+	VDESC_NO_OFFSET,
+	VOPARG_OFFSETOF(struct vop_getacl_args, a_cred),
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	NULL,
+};
+
+int vop_aclcheck_vp_offsets[] = {
+	VOPARG_OFFSETOF(struct vop_aclcheck_args, a_vp),
+	VDESC_NO_OFFSET
+};
+struct vnodeop_desc vop_aclcheck_desc = {
+	0,
+	"vop_aclcheck",
+	0,
+	vop_aclcheck_vp_offsets,
+	VDESC_NO_OFFSET,
+	VOPARG_OFFSETOF(struct vop_getacl_args, a_cred),
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	NULL,
+};
+
 /* Special cases: */
 
 int vop_strategy_vp_offsets[] = {
@@ -877,5 +925,8 @@ struct vnodeop_desc *vfs_op_descs[] = {
 	&vop_update_desc,
 	&vop_getpages_desc,
 	&vop_putpages_desc,
+	&vop_getacl_desc,
+	&vop_setacl_desc,
+	&vop_aclcheck_desc,
 	NULL
 };

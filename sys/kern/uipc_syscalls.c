@@ -775,10 +775,6 @@ bad:
 }
 
 /* pipe multiplexor */
-//#define FMPX_READ 	0	/* read channel */
-//#define FMPX_WRITE 	1	/* write channel */
-//#define FMPX_NCHANS 	2	/* number of channels */
-
 enum pipe_ops {
 	FMPX_READ,		/* read channel */
 	FMPX_WRITE,		/* write channel */

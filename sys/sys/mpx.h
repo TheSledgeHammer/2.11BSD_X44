@@ -58,11 +58,13 @@ struct mpx {
 };
 
 /* mpx args: mpxcall */
-#define MPXCREATE			0
-#define MPXDESTROY			1
-#define MPXPUT				2
-#define MPXREMOVE			3
-#define MPXGET				4
+enum mpx_cmdops {
+	MPXCREATE,
+	MPXDESTROY,
+	MPXPUT,
+	MPXREMOVE,
+	MPXGET
+};
 
 #define MPX_LOCK_INIT(mpx, name)  simple_lock_init(&(mpx)->mpx_slock, name)
 #define MPX_LOCK(mpx)		simple_lock(&(mpx)->mpx_slock)

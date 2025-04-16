@@ -52,6 +52,7 @@
 #include <sys/sysctl.h>
 #include <sys/event.h>
 #include <sys/queue.h>
+#include <sys/acl.h>
 
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
@@ -127,7 +128,7 @@ vop_create(dvp, vpp, cnp, vap)
 	a.a_cnp = cnp;
 	a.a_vap = vap;
 
-	if(VNOP(dvp, vop_create) == NULL) {
+	if (VNOP(dvp, vop_create) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -151,7 +152,7 @@ vop_whiteout(dvp, cnp, flags)
 	a.a_cnp = cnp;
 	a.a_flags = flags;
 
-	if(VNOP(dvp, vop_whiteout) == NULL) {
+	if (VNOP(dvp, vop_whiteout) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -177,7 +178,7 @@ vop_mknod(dvp, vpp, cnp, vap)
 	a.a_cnp = cnp;
 	a.a_vap = vap;
 
-	if(VNOP(dvp, vop_mknod) == NULL) {
+	if (VNOP(dvp, vop_mknod) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -203,7 +204,7 @@ vop_open(vp, mode, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_open) == NULL) {
+	if (VNOP(vp, vop_open) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -229,7 +230,7 @@ vop_close(vp, fflag, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_close) == NULL) {
+	if (VNOP(vp, vop_close) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -255,7 +256,7 @@ vop_access(vp, mode, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_access) == NULL) {
+	if (VNOP(vp, vop_access) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -281,7 +282,7 @@ vop_getattr(vp, vap, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_getattr) == NULL) {
+	if (VNOP(vp, vop_getattr) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -307,7 +308,7 @@ vop_setattr(vp, vap, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_setattr) == NULL) {
+	if (VNOP(vp, vop_setattr) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -333,7 +334,7 @@ vop_read(vp, uio, ioflag, cred)
 	a.a_ioflag = ioflag;
 	a.a_cred = cred;
 
-	if(VNOP(vp, vop_read) == NULL) {
+	if (VNOP(vp, vop_read) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -359,7 +360,7 @@ vop_write(vp, uio, ioflag, cred)
 	a.a_ioflag = ioflag;
 	a.a_cred = cred;
 
-	if(VNOP(vp, vop_write) == NULL) {
+	if (VNOP(vp, vop_write) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -385,7 +386,7 @@ vop_lease(vp, p, cred, flag)
 	a.a_cred = cred;
 	a.a_flag = flag;
 
-	if(VNOP(vp, vop_lease) == NULL) {
+	if (VNOP(vp, vop_lease) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -415,7 +416,7 @@ vop_ioctl(vp, command, data, fflag, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_ioctl) == NULL) {
+	if (VNOP(vp, vop_ioctl) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -443,7 +444,7 @@ vop_select(vp, which, fflags, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_select) == NULL) {
+	if (VNOP(vp, vop_select) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -469,7 +470,7 @@ vop_poll(vp, fflags, events, p)
 	a.a_events = events;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_poll) == NULL) {
+	if (VNOP(vp, vop_poll) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -491,7 +492,7 @@ vop_kqfilter(vp, kn)
 	a.a_vp = vp;
 	a.a_kn = kn;
 
-	if(VNOP(vp, vop_kqfilter) == NULL) {
+	if (VNOP(vp, vop_kqfilter) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -513,7 +514,7 @@ vop_revoke(vp, flags)
 	a.a_vp = vp;
 	a.a_flags = flags;
 
-	if(VNOP(vp, vop_revoke) == NULL) {
+	if (VNOP(vp, vop_revoke) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -539,7 +540,7 @@ vop_mmap(vp, fflags, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_mmap) == NULL) {
+	if (VNOP(vp, vop_mmap) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -566,7 +567,7 @@ vop_fsync(vp, cred, waitfor, flag, p)
 	a.a_flags = flag;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_fsync) == NULL) {
+	if (VNOP(vp, vop_fsync) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -592,7 +593,7 @@ vop_seek(vp, oldoff, newoff, cred)
 	a.a_newoff = newoff;
 	a.a_cred = cred;
 
-	if(VNOP(vp, vop_seek) == NULL) {
+	if (VNOP(vp, vop_seek) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -616,7 +617,7 @@ vop_remove(dvp, vp, cnp)
 	a.a_vp = vp;
 	a.a_cnp = cnp;
 
-	if(VNOP(dvp, vop_remove) == NULL) {
+	if (VNOP(dvp, vop_remove) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -640,7 +641,7 @@ vop_link(vp, tdvp, cnp)
 	a.a_tdvp = tdvp;
 	a.a_cnp = cnp;
 
-	if(VNOP(vp, vop_link) == NULL) {
+	if (VNOP(vp, vop_link) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -670,7 +671,7 @@ vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
 	a.a_tvp = tvp;
 	a.a_tcnp = tcnp;
 
-	if(VNOP(fdvp, vop_rename) == NULL) {
+	if (VNOP(fdvp, vop_rename) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -696,7 +697,7 @@ vop_mkdir(dvp, vpp, cnp, vap)
 	a.a_cnp = cnp;
 	a.a_vap = vap;
 
-	if(VNOP(dvp, vop_mkdir) == NULL) {
+	if (VNOP(dvp, vop_mkdir) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -720,7 +721,7 @@ vop_rmdir(dvp, vp, cnp)
 	a.a_vp = vp;
 	a.a_cnp = cnp;
 
-	if(VNOP(dvp, vop_rmdir) == NULL) {
+	if (VNOP(dvp, vop_rmdir) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -748,7 +749,7 @@ vop_symlink(dvp, vpp, cnp, vap, target)
 	a.a_vap = vap;
 	a.a_target = target;
 
-	if(VNOP(dvp, vop_symlink) == NULL) {
+	if (VNOP(dvp, vop_symlink) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -778,7 +779,7 @@ vop_readdir(vp, uio, cred, eofflag, ncookies, cookies)
 	a.a_ncookies = ncookies;
 	a.a_cookies = cookies;
 
-	if(VNOP(vp, vop_readdir) == NULL) {
+	if (VNOP(vp, vop_readdir) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -802,7 +803,7 @@ vop_readlink(vp, uio, cred)
 	a.a_uio = uio;
 	a.a_cred = cred;
 
-	if(VNOP(vp, vop_readlink) == NULL) {
+	if (VNOP(vp, vop_readlink) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -824,7 +825,7 @@ vop_abortop(dvp, cnp)
 	a.a_dvp = dvp;
 	a.a_cnp = cnp;
 
-	if(VNOP(dvp, vop_abortop) == NULL) {
+	if (VNOP(dvp, vop_abortop) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -846,7 +847,7 @@ vop_inactive(vp, p)
 	a.a_vp = vp;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_inactive) == NULL) {
+	if (VNOP(vp, vop_inactive) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -868,7 +869,7 @@ vop_reclaim(vp, p)
 	a.a_vp = vp;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_reclaim) == NULL) {
+	if (VNOP(vp, vop_reclaim) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -892,7 +893,7 @@ vop_lock(vp, flags, p)
 	a.a_flags = flags;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_lock) == NULL) {
+	if (VNOP(vp, vop_lock) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -916,7 +917,7 @@ vop_unlock(vp, flags, p)
 	a.a_flags = flags;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_unlock) == NULL) {
+	if (VNOP(vp, vop_unlock) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -944,7 +945,7 @@ vop_bmap(vp, bn, vpp, bnp, runp)
 	a.a_bnp = bnp;
 	a.a_runp = runp;
 
-	if(VNOP(vp, vop_bmap) == NULL) {
+	if (VNOP(vp, vop_bmap) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -964,7 +965,7 @@ vop_print(vp)
 	a.a_head.a_desc = VDESC(vop_print);
 	a.a_vp = vp;
 
-	if(VNOP(vp, vop_print) == NULL) {
+	if (VNOP(vp, vop_print) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -984,7 +985,7 @@ vop_islocked(vp)
 	a.a_head.a_desc = VDESC(vop_islocked);
 	a.a_vp = vp;
 
-	if(VNOP(vp, vop_islocked) == NULL) {
+	if (VNOP(vp, vop_islocked) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1008,7 +1009,7 @@ vop_pathconf(vp, name, retval)
 	a.a_name = name;
 	a.a_retval = retval;
 
-	if(VNOP(vp, vop_pathconf) == NULL) {
+	if (VNOP(vp, vop_pathconf) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1036,7 +1037,7 @@ vop_advlock(vp, id, op, fl, flags)
 	a.a_fl = fl;
 	a.a_flags = flags;
 
-	if(VNOP(vp, vop_advlock) == NULL) {
+	if (VNOP(vp, vop_advlock) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1062,7 +1063,7 @@ vop_blkatoff(vp, offset, res, bpp)
 	a.a_res = res;
 	a.a_bpp = bpp;
 
-	if(VNOP(vp, vop_blkatoff) == NULL) {
+	if (VNOP(vp, vop_blkatoff) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1088,7 +1089,7 @@ vop_valloc(pvp, mode, cred, vpp)
 	a.a_cred = cred;
 	a.a_vpp = vpp;
 
-	if(VNOP(pvp, vop_valloc) == NULL) {
+	if (VNOP(pvp, vop_valloc) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1110,7 +1111,7 @@ vop_reallocblks(vp, buflist)
 	a.a_vp = vp;
 	a.a_buflist = buflist;
 
-	if(VNOP(vp, vop_reallocblks) == NULL) {
+	if (VNOP(vp, vop_reallocblks) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1134,7 +1135,7 @@ vop_vfree(pvp, ino, mode)
 	a.a_ino = ino;
 	a.a_mode = mode;
 
-	if(VNOP(pvp, vop_vfree) == NULL) {
+	if (VNOP(pvp, vop_vfree) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1162,7 +1163,7 @@ vop_truncate(vp, length, flags, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(VNOP(vp, vop_truncate) == NULL) {
+	if (VNOP(vp, vop_truncate) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1188,7 +1189,7 @@ vop_update(vp, access, modify, waitfor)
 	a.a_modify = modify;
 	a.a_waitfor = waitfor;
 
-	if(VNOP(vp, vop_update) == NULL) {
+	if (VNOP(vp, vop_update) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1221,7 +1222,7 @@ vop_getpages(vp, offset, m, count, centeridx, access_type, advice, flags)
 	a.a_access_type = access_type;
 	a.a_flags = flags;
 
-	if(VNOP(vp, vop_getpages) == NULL) {
+	if (VNOP(vp, vop_getpages) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1247,11 +1248,89 @@ vop_putpages(vp, offlo, offhi, flags)
 	a.a_offhi = offhi;
 	a.a_flags = flags;
 
-	if(VNOP(vp, vop_putpages) == NULL) {
+	if (VNOP(vp, vop_putpages) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
 	DO_OPS(vp->v_op, error, &a, vop_putpages);
+
+	return (error);
+}
+
+int
+vop_getacl(vp, type, aclp, cred)
+	struct vnode *vp;
+	acl_type_t type;
+	struct acl *aclp;
+	struct ucred *cred;
+{
+	struct vop_getacl_args a;
+	int error;
+
+	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_getacl);
+	a.a_vp = vp;
+	a.a_type = type;
+	a.a_aclp = aclp;
+	a.a_cred = cred;
+
+	if (VNOP(vp, vop_getacl) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_getacl);
+
+	return (error);
+}
+
+int
+vop_setacl(vp, type, aclp, cred)
+	struct vnode *vp;
+	acl_type_t type;
+	struct acl *aclp;
+	struct ucred *cred;
+{
+	struct vop_setacl_args a;
+	int error;
+
+	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_setacl);
+	a.a_vp = vp;
+	a.a_type = type;
+	a.a_aclp = aclp;
+	a.a_cred = cred;
+
+	if (VNOP(vp, vop_setacl) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_setacl);
+
+	return (error);
+}
+
+int
+vop_aclcheck(vp, type, aclp, cred)
+	struct vnode *vp;
+	acl_type_t type;
+	struct acl *aclp;
+	struct ucred *cred;
+{
+	struct vop_aclcheck_args a;
+	int error;
+
+	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_aclcheck);
+	a.a_vp = vp;
+	a.a_type = type;
+	a.a_aclp = aclp;
+	a.a_cred = cred;
+
+	if (VNOP(vp, vop_aclcheck) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_aclcheck);
 
 	return (error);
 }
@@ -1269,7 +1348,7 @@ vop_strategy(bp)
 	a.a_head.a_desc = VDESC(vop_strategy);
 	a.a_bp = bp;
 
-	if(VNOP(bp->b_vp, vop_strategy) == NULL) {
+	if (VNOP(bp->b_vp, vop_strategy) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -1289,7 +1368,7 @@ vop_bwrite(bp)
 	a.a_head.a_desc = VDESC(vop_bwrite);
 	a.a_bp = bp;
 
-	if(VNOP(bp->b_vp, vop_bwrite) == NULL) {
+	if (VNOP(bp->b_vp, vop_bwrite) == NULL) {
 		return (EOPNOTSUPP);
 	}
 

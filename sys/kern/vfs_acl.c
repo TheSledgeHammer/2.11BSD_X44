@@ -92,14 +92,13 @@ vacl_set_acl(p, vp, type, aclp)
 	struct acl inkernacl;
 	int error;
 
-	inkernacl = acl_alloc(M_WAITOK);
 	error = copyin(aclp, &inkernacl, sizeof(struct acl));
 	if (error) {
 		return(error);
 	}
 
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
-	error = VOP_SETACL(vp, type, inkernacl, p->p_cred);
+	error = VOP_SETACL(vp, type, inkernacl, u.u_ucred);
 	VOP_UNLOCK(vp);
 	return (error);
 }
@@ -118,7 +117,7 @@ vacl_get_acl(p, vp, type, aclp)
 	int error;
 
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
-	error = VOP_GETACL(vp, type, &inkernelacl, p->p_cred);
+	error = VOP_GETACL(vp, type, &inkernelacl, u.u_ucred);
 	VOP_UNLOCK(vp);
 	if (error == 0) {
 		error = copyout(&inkernelacl, aclp, sizeof(struct acl));
@@ -138,7 +137,7 @@ vacl_delete(p, vp, type)
 	int error;
 
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
-	error = VOP_SETACL(vp, ACL_TYPE_DEFAULT, 0, p->p_cred);
+	error = VOP_SETACL(vp, ACL_TYPE_DEFAULT, 0, u.u_ucred);
 	vn_unlock(vp);
 	return (error);
 }
@@ -162,7 +161,7 @@ vacl_aclcheck(p, vp, type, aclp)
 	if (error) {
 		return (error);
 	}
-	error = VOP_ACLCHECK(vp, type, &inkernelacl, p->p_cred);
+	error = VOP_ACLCHECK(vp, type, &inkernelacl, u.u_ucred);
 	return (error);
 }
 
