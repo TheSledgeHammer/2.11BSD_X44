@@ -59,7 +59,6 @@ int	pthread__cancel_stub_binder;
 #include "pthread.h"
 #include "pthread_int.h"
 #include "pthread_syscalls.h"
-#include "reentrant.h"
 
 /* 
  * Some alias's may need to change from strong to weak.
