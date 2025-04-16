@@ -7,7 +7,7 @@
     defined(__mips__) || defined(__ns32k__) || defined(__alpha__) || \
     defined(__powerpc__) || defined(__sh__) || defined(__x86_64__) || \
     defined(__hppa__) || defined(__aarch__) || defined(__powerpc64__) || \
-	defined(__sparc64__) || defined(__riscv__) \
+	defined(__sparc64__) || defined(__riscv__) || \
     (defined(__arm__) && defined(__VFP_FP__))
 #include <sys/types.h>
 #include <machine/endian.h>
