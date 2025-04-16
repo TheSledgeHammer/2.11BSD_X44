@@ -603,9 +603,9 @@ int vop_truncate(struct vnode *, off_t, int, struct ucred *, struct proc *);
 int vop_update(struct vnode *, struct timeval *, struct timeval *, int);
 int	vop_getpages(struct vnode *, off_t, struct vm_page **, int *, int, vm_prot_t, int, int);
 int	vop_putpages(struct vnode *, off_t, off_t, int);
-int vop_getacl(struct vnode *, acl_type_t, struct acl *, struct ucred *)
-int vop_setacl(struct vnode *, acl_type_t, struct acl *, struct ucred *)
-int vop_aclcheck(struct vnode *, acl_type_t, struct acl *, struct ucred *)
+int vop_getacl(struct vnode *, acl_type_t, struct acl *, struct ucred *);
+int vop_setacl(struct vnode *, acl_type_t, struct acl *, struct ucred *);
+int vop_aclcheck(struct vnode *, acl_type_t, struct acl *, struct ucred *);
 int	vop_strategy(struct buf *);
 int vop_bwrite(struct buf *);
 
