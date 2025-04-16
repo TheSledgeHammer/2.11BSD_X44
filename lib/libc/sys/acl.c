@@ -35,13 +35,14 @@
 
 #include <sys/types.h>
 #include <sys/syscall.h>
-#include <sys/null.h>
 #include <sys/acl.h>
+
+#include <unistd.h>
 
 int
 acl_file(cmd, path, type, aclp)
 	int cmd;
-	const char *path;
+	char *path;
 	acl_type_t type;
 	struct acl *aclp;
 {
@@ -60,7 +61,7 @@ acl_filedesc(cmd, filedes, type, aclp)
 
 int
 acl_get_file(path, type, aclp)
-	const char *path;
+	char *path;
 	acl_type_t type;
 	struct acl *aclp;
 {
@@ -69,7 +70,7 @@ acl_get_file(path, type, aclp)
 
 int
 acl_set_file(path, type, aclp)
-	const char *path;
+	char *path;
 	acl_type_t type;
 	struct acl *aclp;
 {
@@ -77,17 +78,16 @@ acl_set_file(path, type, aclp)
 }
 
 int
-acl_delete_file(path, type, aclp)
-	const char *path;
+acl_delete_file(path, type)
+	char *path;
 	acl_type_t type;
-	struct acl *aclp;
 {
 	return (acl_file(DELACL, path, type, NULL));
 }
 
 int
 acl_aclcheck_file(path, type, aclp)
-	const char *path;
+	char *path;
 	acl_type_t type;
 	struct acl *aclp;
 {
@@ -113,10 +113,9 @@ acl_set_fd(filedes, type, aclp)
 }
 
 int
-acl_delete_fd(filedes, type, aclp)
+acl_delete_fd(filedes, type)
 	int filedes;
 	acl_type_t type;
-	struct acl *aclp;
 {
 	return (acl_filedesc(DELACL, filedes, type, NULL));
 }
