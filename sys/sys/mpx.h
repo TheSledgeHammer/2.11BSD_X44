@@ -57,7 +57,10 @@ struct mpx {
     int 					mpx_nchans;		/* max number channels for this mpx */
 };
 
-/* mpx args: mpxcall */
+/*
+ * mpx options for mpx syscalls
+ * - create, destroy, put, remove, get
+ */
 enum mpx_cmdops {
 	MPXCREATE,
 	MPXDESTROY,

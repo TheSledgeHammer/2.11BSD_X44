@@ -181,7 +181,6 @@ kill()
 
 out:
 	u.u_error = error;
-
 	return (error);
 }
 

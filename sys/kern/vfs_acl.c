@@ -66,6 +66,7 @@ static int kern_acl_get_file(struct proc *, int, char *, acl_type_t, struct acl 
 static int kern_acl_set_file(struct proc *, int, char *, acl_type_t, struct acl *);
 static int kern_acl_delete_file(struct proc *, int, char *, acl_type_t);
 static int kern_acl_aclcheck_file(struct proc *, int, char *, acl_type_t, struct acl *);
+
 /* file descriptor */
 static int kern_acl_get_filedesc(struct proc *, int, int, acl_type_t, struct acl *);
 static int kern_acl_set_filedesc(struct proc *, int, int, acl_type_t, struct acl *);
@@ -370,6 +371,7 @@ acl_file()
 		error = EINVAL;
 		break;
 	}
+	u.u_error = error;
 	return (error);
 }
 
@@ -403,5 +405,6 @@ acl_filedesc()
 		error = EINVAL;
 		break;
 	}
+	u.u_error = error;
 	return (error);
 }
