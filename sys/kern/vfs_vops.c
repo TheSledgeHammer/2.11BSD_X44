@@ -1334,6 +1334,92 @@ vop_aclcheck(vp, type, aclp, cred)
 	return (error);
 }
 
+int
+vop_getextattr(vp, attrnamespace, name, uio, size, cred)
+	struct vnode *vp;
+	int attrnamespace;
+	const char *name;
+	struct uio *uio;
+	size_t size;
+	struct ucred *cred;
+{
+	struct vop_getextattr_args a;
+	int error;
+
+	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_getextattr);
+	a.a_vp = vp;
+	a.a_attrnamespace = attrnamespace;
+	a.a_name = name;
+	a.a_uio = uio;
+	a.a_size = size;
+	a.a_cred = cred;
+
+	if (VNOP(vp, vop_getextattr) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_getextattr);
+
+	return (error);
+}
+
+int
+vop_setextattr(vp, attrnamespace, name, uio, size, cred)
+	struct vnode *vp;
+	int attrnamespace;
+	const char *name;
+	struct uio *uio;
+	size_t size;
+	struct ucred *cred;
+{
+	struct vop_setextattr_args a;
+	int error;
+
+	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_setextattr);
+	a.a_vp = vp;
+	a.a_attrnamespace = attrnamespace;
+	a.a_name = name;
+	a.a_uio = uio;
+	a.a_size = size;
+	a.a_cred = cred;
+
+	if (VNOP(vp, vop_setextattr) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_setextattr);
+
+	return (error);
+}
+
+int
+vop_deleteextattr(vp, attrnamespace, name, cred)
+	struct vnode *vp;
+	int attrnamespace;
+	const char *name;
+	struct ucred *cred;
+{
+	struct vop_deleteextattr_args a;
+	int error;
+
+	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_deleteextattr);
+	a.a_vp = vp;
+	a.a_attrnamespace = attrnamespace;
+	a.a_name = name;
+	a.a_cred = cred;
+
+	if (VNOP(vp, vop_deleteextattr) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_deleteextattr);
+
+	return (error);
+}
+
 /* Special cases: */
 
 int

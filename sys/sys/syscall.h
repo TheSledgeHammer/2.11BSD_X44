@@ -175,4 +175,6 @@
 #define	SYS_vtrace	168
 #define	SYS_acl_file	169
 #define	SYS_acl_filedesc	170
-#define	SYS_MAXSYSCALL	171
+#define	SYS_extattr_file	171
+#define	SYS_extattr_filedesc	172
+#define	SYS_MAXSYSCALL	173

@@ -79,6 +79,8 @@ enum extattr_cmdops {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
+//int	extattrctl(char *, int, const char *, int, const char *);
+
 /* kernel extattr/xattr syscall callback */
 int extattr_file(int, char *, int, const char *, const void *, size_t);
 int extattr_filedesc(int, int, int, const char *, const void *, size_t);

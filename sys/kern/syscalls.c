@@ -188,4 +188,6 @@ char *syscallnames[] = {
 #endif
 	"acl_file",			/* 169 = acl_file */
 	"acl_filedesc",			/* 170 = acl_filedesc */
+	"extattr_file",			/* 171 = extattr_file */
+	"extattr_filedesc",			/* 172 = extattr_filedesc */
 };

@@ -169,3 +169,5 @@ extern int	utrace();
 extern int	vtrace();
 extern int	acl_file();
 extern int	acl_filedesc();
+extern int	extattr_file();
+extern int	extattr_filedesc();

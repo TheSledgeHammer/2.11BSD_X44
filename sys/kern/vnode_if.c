@@ -818,7 +818,7 @@ struct vnodeop_desc vop_setacl_desc = {
 	0,
 	vop_setacl_vp_offsets,
 	VDESC_NO_OFFSET,
-	VOPARG_OFFSETOF(struct vop_getacl_args, a_cred),
+	VOPARG_OFFSETOF(struct vop_setacl_args, a_cred),
 	VDESC_NO_OFFSET,
 	VDESC_NO_OFFSET,
 	NULL,
@@ -834,7 +834,55 @@ struct vnodeop_desc vop_aclcheck_desc = {
 	0,
 	vop_aclcheck_vp_offsets,
 	VDESC_NO_OFFSET,
-	VOPARG_OFFSETOF(struct vop_getacl_args, a_cred),
+	VOPARG_OFFSETOF(struct vop_aclcheck_args, a_cred),
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	NULL,
+};
+
+int vop_getextattr_vp_offsets[] = {
+	VOPARG_OFFSETOF(struct vop_getextattr_args, a_vp),
+	VDESC_NO_OFFSET
+};
+struct vnodeop_desc vop_getextattr_desc = {
+	0,
+	"vop_getextattr",
+	0,
+	vop_getextattr_vp_offsets,
+	VDESC_NO_OFFSET,
+	VOPARG_OFFSETOF(struct vop_getextattr_args, a_cred),
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	NULL,
+};
+
+int vop_setextattr_vp_offsets[] = {
+	VOPARG_OFFSETOF(struct vop_setextattr_args, a_vp),
+	VDESC_NO_OFFSET
+};
+struct vnodeop_desc vop_setextattr_desc = {
+	0,
+	"vop_setextattr",
+	0,
+	vop_setextattr_vp_offsets,
+	VDESC_NO_OFFSET,
+	VOPARG_OFFSETOF(struct vop_setextattr_args, a_cred),
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	NULL,
+};
+
+int vop_deleteextattr_vp_offsets[] = {
+	VOPARG_OFFSETOF(struct vop_deleteextattr_args, a_vp),
+	VDESC_NO_OFFSET
+};
+struct vnodeop_desc vop_deleteextattr_desc = {
+	0,
+	"vop_deleteextattr",
+	0,
+	vop_deleteextattr_vp_offsets,
+	VDESC_NO_OFFSET,
+	VOPARG_OFFSETOF(struct vop_deleteextattr_args, a_cred),
 	VDESC_NO_OFFSET,
 	VDESC_NO_OFFSET,
 	NULL,
@@ -928,5 +976,8 @@ struct vnodeop_desc *vfs_op_descs[] = {
 	&vop_getacl_desc,
 	&vop_setacl_desc,
 	&vop_aclcheck_desc,
+	&vop_getextattr_desc
+	&vop_setextattr_desc,
+	&vop_deleteextattr_desc,
 	NULL
 };

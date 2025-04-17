@@ -224,3 +224,5 @@
 #endif
 169 STD		{ int acl_file(); }
 170 STD		{ int acl_filedesc(); }
+171 STD		{ int extattr_file(); }
+172 STD		{ int extattr_filedesc(); }

@@ -478,6 +478,37 @@ struct vop_aclcheck_args {
 	struct ucred 			*a_cred;
 };
 
+extern struct vnodeop_desc 	vop_getextattr_desc;
+struct vop_getextattr_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_attrnamespace;
+	const char 				*a_name;
+	struct uio 				*a_uio;
+	size_t 					*a_size;
+	struct ucred 			*a_cred;
+};
+
+extern struct vnodeop_desc 	vop_setextattr_desc;
+struct vop_setextattr_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_attrnamespace;
+	const char 				*a_name;
+	struct uio 				*a_uio;
+	size_t 					*a_size;
+	struct ucred 			*a_cred;
+};
+
+extern struct vnodeop_desc 	vop_deleteextattr_desc;
+struct vop_deleteextattr_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_attrnamespace;
+	const char 				*a_name;
+	struct ucred 			*a_cred;
+};
+
 /* Special cases: */
 extern struct vnodeop_desc 	vop_strategy_desc;
 struct vop_strategy_args {
@@ -545,6 +576,9 @@ struct vnodeops {
 	int (*vop_getacl)		(struct vop_getacl_args *);
 	int (*vop_setacl)		(struct vop_setacl_args *);
 	int (*vop_aclcheck)		(struct vop_aclcheck_args *);
+	int (*vop_getextattr)	(struct vop_getextattr_args *);
+	int (*vop_setextattr)	(struct vop_setextattr_args *);
+	int (*vop_deleteextattr)(struct vop_deleteextattr_args *);
 	int	(*vop_strategy)		(struct vop_strategy_args *);
 	int (*vop_bwrite)		(struct vop_bwrite_args *);
 };
@@ -607,6 +641,9 @@ int	vop_putpages(struct vnode *, off_t, off_t, int);
 int vop_getacl(struct vnode *, acl_type_t, struct acl *, struct ucred *);
 int vop_setacl(struct vnode *, acl_type_t, struct acl *, struct ucred *);
 int vop_aclcheck(struct vnode *, acl_type_t, struct acl *, struct ucred *);
+int vop_getextattr(struct vnode *, int, const char *, struct uio *, size_t, struct ucred *);
+int vop_setextattr(struct vnode *, int, const char *, struct uio *, size_t, struct ucred *);
+int vop_deleteextattr(struct vnode *, int, const char *, struct ucred *);
 int	vop_strategy(struct buf *);
 int vop_bwrite(struct buf *);
 
@@ -717,6 +754,12 @@ int	vop_norevoke(struct vop_revoke_args *);
 	vop_setacl(vp, type, aclp, cred)
 #define	VOP_ACLCHECK(vp, type, aclp, cred)											\
 	vop_aclcheck(vp, type, aclp, cred)
+#define VOP_GETEXTATTR(vp, attrnamespace, name, uio, size, cred)					\
+	vop_getextattr(vp, attrnamespace, name, uio, size, cred)
+#define VOP_SETEXTATTR(vp, attrnamespace, name, uio, size, cred)					\
+	vop_setextattr(vp, attrnamespace, name, uio, size, cred)
+#define VOP_DELETEEXTATTR(vp, attrnamespace, name, cred)							\
+	vop_deleteextattr(vp, attrnamespace, name, cred)
 #define	VOP_STRATEGY(bp)															\
 	vop_strategy(bp)
 #define VOP_BWRITE(bp)																\

@@ -55,14 +55,14 @@ static int extattr_set_vp(struct proc *, int, struct vnode *, int, const char *,
 static int extattr_delete_vp(struct proc *, int, struct vnode *, int, const char *);
 
 /* file */
-static int kern_extattr_get_file(struct proc *, int, char *, int, void *, size_t);
-static int kern_extattr_set_file(struct proc *, int, char *, int, void *, size_t);
-static int kern_extattr_delete_file(struct proc *, int, char *, int);
+static int kern_extattr_get_file(struct proc *, int, char *, int, const char *, void *, size_t);
+static int kern_extattr_set_file(struct proc *, int, char *, int, const char *, void *, size_t);
+static int kern_extattr_delete_file(struct proc *, int, char *, int, const char *);
 
 /* file descriptor */
-static int kern_extattr_get_filedesc(struct proc *, int, int, int, void *, size_t);
-static int kern_extattr_set_filedesc(struct proc *, int, int, int, void *, size_t);
-static int kern_extattr_delete_filedesc(struct proc *, int, int, int);
+static int kern_extattr_get_filedesc(struct proc *, int, int, int, const char *, void *, size_t);
+static int kern_extattr_set_filedesc(struct proc *, int, int, int, const char *, void *, size_t);
+static int kern_extattr_delete_filedesc(struct proc *, int, int, int, const char *);
 
 /*
  * extattr_get_vp:
@@ -190,7 +190,7 @@ extattr_delete_vp(p, cmd, vp, attrnamespace, attrname)
 
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 
-	error = VOP_DELETEEXTATTR(vp, attrnamespace, attrname, p->p_ucred);
+	error = VOP_DELETEEXTATTR(vp, attrnamespace, attrname, u.u_ucred);
 	if (error == EOPNOTSUPP) {
 		error = VOP_SETEXTATTR(vp, attrnamespace, attrname, NULL, u.u_ucred);
 	}
@@ -199,32 +199,25 @@ extattr_delete_vp(p, cmd, vp, attrnamespace, attrname)
 	return (error);
 }
 
-int
-extattrctl()
-{
-	int error;
-
-	return (error);
-}
-
 static int
-kern_extattr_get_file(p, cmd, path, attrnamespace, data, nbytes)
+kern_extattr_get_file(p, cmd, path, attrnamespace, attrname, data, nbytes)
 	struct proc *p;
 	int cmd;
 	char *path;
 	int attrnamespace;
+	const char *attrname;
 	void *data;
 	size_t nbytes;
 {
 	struct nameidata nd;
-	char attrname[EXTATTR_MAXNAMELEN + 1];
+	char attrnam[EXTATTR_MAXNAMELEN + 1];
 	int error;
 
 	if (cmd != GETEXTATTR) {
 		return (EINVAL);
 	}
 
-	error = copyinstr(attrname, attrname, sizeof(attrname), NULL);
+	error = copyinstr(attrname, attrnam, sizeof(attrnam), NULL);
 	if (error) {
 		return (error);
 	}
@@ -235,29 +228,30 @@ kern_extattr_get_file(p, cmd, path, attrnamespace, data, nbytes)
 		return (error);
 	}
 
-	error = extattr_get_vp(p, cmd, nd.ni_vp, attrnamespace, attrname, data, nbytes);
+	error = extattr_get_vp(p, cmd, nd.ni_vp, attrnamespace, attrnam, data, nbytes);
 	vrele(nd.ni_vp);
 	return (error);
 }
 
 static int
-kern_extattr_set_file(p, cmd, path, attrnamespace, data, nbytes)
+kern_extattr_set_file(p, cmd, path, attrnamespace, attrname, data, nbytes)
 	struct proc *p;
 	int cmd;
 	char *path;
 	int attrnamespace;
+	const char *attrname;
 	void *data;
 	size_t nbytes;
 {
 	struct nameidata nd;
-	char attrname[EXTATTR_MAXNAMELEN + 1];
+	char attrnam[EXTATTR_MAXNAMELEN + 1];
 	int error;
 
 	if (cmd != SETEXTATTR) {
 		return (EINVAL);
 	}
 
-	error = copyinstr(attrname, attrname, sizeof(attrname), NULL);
+	error = copyinstr(attrname, attrnam, sizeof(attrnam), NULL);
 	if (error) {
 		return (error);
 	}
@@ -268,27 +262,28 @@ kern_extattr_set_file(p, cmd, path, attrnamespace, data, nbytes)
 		return (error);
 	}
 
-	error = extattr_set_vp(p, cmd, nd.ni_vp, attrnamespace, attrname, data, nbytes);
+	error = extattr_set_vp(p, cmd, nd.ni_vp, attrnamespace, attrnam, data, nbytes);
 	vrele(nd.ni_vp);
 	return (error);
 }
 
 static int
-kern_extattr_delete_file(p, cmd, path, attrnamespace)
+kern_extattr_delete_file(p, cmd, path, attrnamespace, attrname, attrname)
 	struct proc *p;
 	int cmd;
 	char *path;
 	int attrnamespace;
+	const char *attrname;
 {
 	struct nameidata nd;
-	char attrname[EXTATTR_MAXNAMELEN + 1];
+	char attrnam[EXTATTR_MAXNAMELEN + 1];
 	int error;
 
 	if (cmd != DELEXTATTR) {
 		return (EINVAL);
 	}
 
-	error = copyinstr(attrname, attrname, sizeof(attrname), NULL);
+	error = copyinstr(attrname, attrnam, sizeof(attrnam), NULL);
 	if (error) {
 		return (error);
 	}
@@ -299,27 +294,28 @@ kern_extattr_delete_file(p, cmd, path, attrnamespace)
 		return (error);
 	}
 
-	error = extattr_delete_vp(p, cmd, nd.ni_vp, attrnamespace, attrname);
+	error = extattr_delete_vp(p, cmd, nd.ni_vp, attrnamespace, attrnam);
 	vrele(nd.ni_vp);
 	return (error);
 }
 
 static int
-kern_extattr_get_filedesc(p, cmd, filedes, attrnamespace, data, nbytes)
+kern_extattr_get_filedesc(p, cmd, filedes, attrnamespace, attrname, data, nbytes)
 	struct proc *p;
 	int cmd, filedes, attrnamespace;
+	const char *attrname;
 	void *data;
 	size_t nbytes;
 {
 	struct file *fp;
-	char attrname[EXTATTR_MAXNAMELEN + 1];
+	char attrnam[EXTATTR_MAXNAMELEN + 1];
 	int error;
 
 	if (cmd != GETEXTATTR) {
 		return (EINVAL);
 	}
 
-	error = copyinstr(attrname, attrname, sizeof(attrname), NULL);
+	error = copyinstr(attrname, attrnam, sizeof(attrnam), NULL);
 	if (error) {
 		return (error);
 	}
@@ -329,26 +325,27 @@ kern_extattr_get_filedesc(p, cmd, filedes, attrnamespace, data, nbytes)
 		return (error);
 	}
 
-	error = extattr_get_vp(p, cmd, (struct vnode *)fp->f_data, attrnamespace, attrname, data, nbytes);
+	error = extattr_get_vp(p, cmd, (struct vnode *)fp->f_data, attrnamespace, attrnam, data, nbytes);
 	return (error);
 }
 
 static int
-kern_extattr_set_filedesc(p, cmd, filedes, attrnamespace, data, nbytes)
+kern_extattr_set_filedesc(p, cmd, filedes, attrnamespace, attrname, data, nbytes)
 	struct proc *p;
 	int cmd, filedes, attrnamespace;
+	const char *attrname;
 	void *data;
 	size_t nbytes;
 {
 	struct file *fp;
-	char attrname[EXTATTR_MAXNAMELEN + 1];
+	char attrnam[EXTATTR_MAXNAMELEN + 1];
 	int error;
 
 	if (cmd != SETEXTATTR) {
 		return (EINVAL);
 	}
 
-	error = copyinstr(attrname, attrname, sizeof(attrname), NULL);
+	error = copyinstr(attrname, attrnam, sizeof(attrnam), NULL);
 	if (error) {
 		return (error);
 	}
@@ -358,24 +355,25 @@ kern_extattr_set_filedesc(p, cmd, filedes, attrnamespace, data, nbytes)
 		return (error);
 	}
 
-	error = extattr_set_vp(p, cmd, (struct vnode *)fp->f_data, attrnamespace, attrname, data, nbytes);
+	error = extattr_set_vp(p, cmd, (struct vnode *)fp->f_data, attrnamespace, attrnam, data, nbytes);
 	return (error);
 }
 
 static int
-kern_extattr_delete_filedesc(p, cmd, filedes, attrnamespace)
+kern_extattr_delete_filedesc(p, cmd, filedes, attrnamespace, attrname)
 	struct proc *p;
 	int cmd, filedes, attrnamespace;
+	const char *attrname;
 {
 	struct file *fp;
-	char attrname[EXTATTR_MAXNAMELEN + 1];
+	char attrnam[EXTATTR_MAXNAMELEN + 1];
 	int error;
 
 	if (cmd != DELEXTATTR) {
 		return (EINVAL);
 	}
 
-	error = copyinstr(attrname, attrname, sizeof(attrname), NULL);
+	error = copyinstr(attrname, attrnam, sizeof(attrnam), NULL);
 	if (error) {
 		return (error);
 	}
@@ -385,7 +383,7 @@ kern_extattr_delete_filedesc(p, cmd, filedes, attrnamespace)
 		return (error);
 	}
 
-	error = extattr_delete_vp(p, cmd, (struct vnode *)fp->f_data, attrnamespace, attrname);
+	error = extattr_delete_vp(p, cmd, (struct vnode *)fp->f_data, attrnamespace, attrnam);
 	return (error);
 }
 
@@ -425,7 +423,7 @@ extattr_file()
 int
 extattr_filedesc()
 {
-	struct extattr_filedesc_args {
+	register struct extattr_filedesc_args {
 		syscallarg(int) cmd;
 		syscallarg(int) fd;
 		syscallarg(int) attrnamespace;
@@ -454,3 +452,66 @@ extattr_filedesc()
 	u.u_error = error;
 	return (error);
 }
+
+#ifdef notyet
+int
+extattrctl()
+{
+	register struct extattrctl_args {
+		syscallarg(char *) path;
+		syscallarg(int) cmd;
+		syscallarg(const char *) filename;
+		syscallarg(int) attrnamespace;
+		syscallarg(const char *) attrname;
+	} *uap = (struct extattrctl_args *)u.u_ap;
+	register struct proc *p;
+	struct vnode *vp;
+	struct nameidata nd;
+	char attrname[EXTATTR_MAXNAMELEN + 1];
+	int error;
+
+	p = u.u_procp;
+
+	/*
+	 * uap->attrname is not always defined.  We check again later when we
+	 * invoke the VFS call so as to pass in NULL there if needed.
+	 */
+	if (SCARG(uap, attrname) != NULL) {
+		error = copyinstr(SCARG(uap, attrname), attrname, sizeof(attrname), NULL);
+		if (error) {
+			u.u_error = error;
+			return (error);
+		}
+	}
+
+	vp = NULL;
+	if (SCARG(uap, filename) != NULL) {
+		NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, SCARG(uap, filename), p);
+		error = namei(&nd);
+		if (error) {
+			u.u_error = error;
+			return (error);
+		}
+		vp = nd.ni_vp;
+	}
+
+	/* uap->path is always defined. */
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, SCARG(uap, path), p);
+	error = namei(&nd);
+	if (error) {
+		goto out;
+	}
+
+	error = VFS_EXTATTRCTL(vp->v_mount, SCARG(uap, cmd), vp,
+			SCARG(uap, attrnamespace),
+			SCARG(uap, attrname) != NULL ? attrname : NULL);
+
+out:
+	if (vp != NULL) {
+		vrele(vp);
+	}
+
+	u.u_error = error;
+	return (error);
+}
+#endif
