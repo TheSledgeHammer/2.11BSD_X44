@@ -86,13 +86,13 @@ int extattr_file(int, char *, int, const char *, const void *, size_t);
 int extattr_filedesc(int, int, int, const char *, const void *, size_t);
 
 /* file */
-int extattr_get_file(char *, int, const char *, void *, size_t);
-int extattr_set_file(char *, int, const char *, void *, size_t);
+int extattr_get_file(char *, int, const char *, const void *, size_t);
+int extattr_set_file(char *, int, const char *, const void *, size_t);
 int extattr_delete_file(char *, int, const char *);
 
 /* file descriptor */
-int extattr_get_fd(int, int, const char *, void *, size_t);
-int extattr_set_fd(int, int, const char *, void *, size_t);
+int extattr_get_fd(int, int, const char *, const void *, size_t);
+int extattr_set_fd(int, int, const char *, const void *, size_t);
 int extattr_delete_fd(int, int, const char *);
 __END_DECLS
 #endif /* !_KERNEL */
