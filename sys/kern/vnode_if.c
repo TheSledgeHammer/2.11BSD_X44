@@ -976,7 +976,7 @@ struct vnodeop_desc *vfs_op_descs[] = {
 	&vop_getacl_desc,
 	&vop_setacl_desc,
 	&vop_aclcheck_desc,
-	&vop_getextattr_desc
+	&vop_getextattr_desc,
 	&vop_setextattr_desc,
 	&vop_deleteextattr_desc,
 	NULL

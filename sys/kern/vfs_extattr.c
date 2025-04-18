@@ -268,7 +268,7 @@ kern_extattr_set_file(p, cmd, path, attrnamespace, attrname, data, nbytes)
 }
 
 static int
-kern_extattr_delete_file(p, cmd, path, attrnamespace, attrname, attrname)
+kern_extattr_delete_file(p, cmd, path, attrnamespace, attrname)
 	struct proc *p;
 	int cmd;
 	char *path;
@@ -395,7 +395,7 @@ extattr_file()
 		syscallarg(char *) path;
 		syscallarg(int) attrnamespace;
 		syscallarg(const char *) attrname;
-		syscallarg(const void *) data;
+		syscallarg(void *) data;
 		syscallarg(size_t) nbytes;
 	} *uap = (struct extattr_file_args *)u.u_ap;
 	register struct proc *p;
@@ -428,7 +428,7 @@ extattr_filedesc()
 		syscallarg(int) fd;
 		syscallarg(int) attrnamespace;
 		syscallarg(const char *) attrname;
-		syscallarg(const void *) data;
+		syscallarg(void *) data;
 		syscallarg(size_t) nbytes;
 	} *uap = (struct extattr_filedesc_args *)u.u_ap;
 	register struct proc *p;

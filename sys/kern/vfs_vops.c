@@ -1340,7 +1340,7 @@ vop_getextattr(vp, attrnamespace, name, uio, size, cred)
 	int attrnamespace;
 	const char *name;
 	struct uio *uio;
-	size_t size;
+	size_t *size;
 	struct ucred *cred;
 {
 	struct vop_getextattr_args a;
@@ -1365,12 +1365,11 @@ vop_getextattr(vp, attrnamespace, name, uio, size, cred)
 }
 
 int
-vop_setextattr(vp, attrnamespace, name, uio, size, cred)
+vop_setextattr(vp, attrnamespace, name, uio, cred)
 	struct vnode *vp;
 	int attrnamespace;
 	const char *name;
 	struct uio *uio;
-	size_t size;
 	struct ucred *cred;
 {
 	struct vop_setextattr_args a;
@@ -1382,7 +1381,6 @@ vop_setextattr(vp, attrnamespace, name, uio, size, cred)
 	a.a_attrnamespace = attrnamespace;
 	a.a_name = name;
 	a.a_uio = uio;
-	a.a_size = size;
 	a.a_cred = cred;
 
 	if (VNOP(vp, vop_setextattr) == NULL) {
