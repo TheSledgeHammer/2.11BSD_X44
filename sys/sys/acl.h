@@ -44,8 +44,9 @@
  */
 
 typedef uint32_t	acl_tag_t;
+typedef uint32_t	acl_perm_t;
 typedef uint16_t	acl_flag_t;
-typedef int		acl_type_t;
+typedef int		    acl_type_t;
 
 #define	ACL_MAX_ENTRIES		254
 

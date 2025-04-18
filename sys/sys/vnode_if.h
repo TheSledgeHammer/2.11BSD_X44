@@ -496,7 +496,6 @@ struct vop_setextattr_args {
 	int 					a_attrnamespace;
 	const char 				*a_name;
 	struct uio 				*a_uio;
-	size_t 					*a_size;
 	struct ucred 			*a_cred;
 };
 
@@ -641,8 +640,8 @@ int	vop_putpages(struct vnode *, off_t, off_t, int);
 int vop_getacl(struct vnode *, acl_type_t, struct acl *, struct ucred *);
 int vop_setacl(struct vnode *, acl_type_t, struct acl *, struct ucred *);
 int vop_aclcheck(struct vnode *, acl_type_t, struct acl *, struct ucred *);
-int vop_getextattr(struct vnode *, int, const char *, struct uio *, size_t, struct ucred *);
-int vop_setextattr(struct vnode *, int, const char *, struct uio *, size_t, struct ucred *);
+int vop_getextattr(struct vnode *, int, const char *, struct uio *, size_t *, struct ucred *);
+int vop_setextattr(struct vnode *, int, const char *, struct uio *, struct ucred *);
 int vop_deleteextattr(struct vnode *, int, const char *, struct ucred *);
 int	vop_strategy(struct buf *);
 int vop_bwrite(struct buf *);
@@ -756,8 +755,8 @@ int	vop_norevoke(struct vop_revoke_args *);
 	vop_aclcheck(vp, type, aclp, cred)
 #define VOP_GETEXTATTR(vp, attrnamespace, name, uio, size, cred)					\
 	vop_getextattr(vp, attrnamespace, name, uio, size, cred)
-#define VOP_SETEXTATTR(vp, attrnamespace, name, uio, size, cred)					\
-	vop_setextattr(vp, attrnamespace, name, uio, size, cred)
+#define VOP_SETEXTATTR(vp, attrnamespace, name, uio, cred)					        \
+	vop_setextattr(vp, attrnamespace, name, uio, cred)
 #define VOP_DELETEEXTATTR(vp, attrnamespace, name, cred)							\
 	vop_deleteextattr(vp, attrnamespace, name, cred)
 #define	VOP_STRATEGY(bp)															\
