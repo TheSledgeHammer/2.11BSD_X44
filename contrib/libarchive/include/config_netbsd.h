@@ -459,7 +459,7 @@
 #define HAVE_EXTATTR_SET_FD 1
 
 /* Define to 1 if you have the `extattr_set_link' function. */
-/* #undef HAVE_EXTATTR_SET_LINK 1
+/* #undef HAVE_EXTATTR_SET_LINK */
 
 /* Define to 1 if you have the `facl' function. */
 /* #undef HAVE_FACL */
