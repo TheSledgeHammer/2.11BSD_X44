@@ -483,7 +483,7 @@
 #define HAVE_FCNTL_H 1
 
 /* Define to 1 if you have the `fdopendir' function. */
-#define HAVE_FDOPENDIR 1
+/* #undef HAVE_FDOPENDIR */
 
 /* Define to 1 if you have the `fgetea' function. */
 /* #undef HAVE_FGETEA */
@@ -513,7 +513,7 @@
 #define HAVE_FSTAT 1
 
 /* Define to 1 if you have the `fstatat' function. */
-#define HAVE_FSTATAT 1
+/* #undef HAVE_FSTATAT */
 
 /* Define to 1 if you have the `fstatfs' function. */
 #define HAVE_FSTATFS 1
@@ -525,10 +525,10 @@
 #define HAVE_FTRUNCATE 1
 
 /* Define to 1 if you have the `futimens' function. */
-#define HAVE_FUTIMENS 1
+/* #undef HAVE_FUTIMENS */
 
 /* Define to 1 if you have the `futimes' function. */
-#define HAVE_FUTIMES 1
+/* #undef HAVE_FUTIMES */
 
 /* Define to 1 if you have the `futimesat' function. */
 /* #undef HAVE_FUTIMESAT */
@@ -540,19 +540,19 @@
 #define HAVE_GETEUID 1
 
 /* Define to 1 if you have the `getgrgid_r' function. */
-#define HAVE_GETGRGID_R 1
+/* #undef HAVE_GETGRGID_R */
 
 /* Define to 1 if you have the `getgrnam_r' function. */
-#define HAVE_GETGRNAM_R 1
+/* #undef HAVE_GETGRNAM_R */
 
 /* Define to 1 if you have the `getpid' function. */
 #define HAVE_GETPID 1
 
 /* Define to 1 if you have the `getpwnam_r' function. */
-#define HAVE_GETPWNAM_R 1
+/* #undef HAVE_GETPWNAM_R */
 
 /* Define to 1 if you have the `getpwuid_r' function. */
-#define HAVE_GETPWUID_R 1
+/* #undef HAVE_GETPWUID_R */
 
 /* Define to 1 if you have the `getvfsbyname' function. */
 /* #undef HAVE_GETVFSBYNAME */
@@ -561,7 +561,7 @@
 /* #undef HAVE_GETXATTR */
 
 /* Define to 1 if you have the `gmtime_r' function. */
-#define HAVE_GMTIME_R 1
+/* #undef HAVE_GMTIME_R */
 
 /* Define to 1 if you have the <grp.h> header file. */
 #define HAVE_GRP_H 1
@@ -724,7 +724,7 @@
 /* #undef HAVE_LSTAT_EMPTY_STRING_BUG */
 
 /* Define to 1 if you have the `lutimes' function. */
-#define HAVE_LUTIMES 1
+/* #undef HAVE_LUTIMES */
 
 /* Define to 1 if you have the <lz4hc.h> header file. */
 /* #undef HAVE_LZ4HC_H */
@@ -808,7 +808,7 @@
 #define HAVE_NL_LANGINFO 1
 
 /* Define to 1 if you have the `openat' function. */
-#define HAVE_OPENAT 1
+/* #undef HAVE_OPENAT */
 
 /* Define to 1 if you have the <openssl/evp.h> header file. */
 #define HAVE_OPENSSL_EVP_H 1
@@ -841,13 +841,13 @@
 #define HAVE_PWD_H 1
 
 /* Define to 1 if you have a POSIX compatible readdir_r */
-#define HAVE_READDIR_R 1
+/* #undef HAVE_READDIR_R */
 
 /* Define to 1 if you have the `readlink' function. */
 #define HAVE_READLINK 1
 
 /* Define to 1 if you have the `readlinkat' function. */
-#define HAVE_READLINKAT 1
+/* #undef HAVE_READLINKAT */
 
 /* Define to 1 if you have the `readpassphrase' function. */
 /* #undef HAVE_READPASSPHRASE */
@@ -910,7 +910,7 @@
 #define HAVE_SIGNAL_H 1
 
 /* Define to 1 if you have the <spawn.h> header file. */
-#define HAVE_SPAWN_H 1
+/* #undef HAVE_SPAWN_H */
 
 /* Define to 1 if you have the `statfs' function. */
 #define HAVE_STATFS 1
@@ -1057,7 +1057,7 @@
 /* #undef HAVE_SYS_STATFS_H */
 
 /* Define to 1 if you have the <sys/statvfs.h> header file. */
-#define HAVE_SYS_STATVFS_H 1
+/* #undef HAVE_SYS_STATVFS_H */
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
