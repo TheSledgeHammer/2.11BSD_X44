@@ -120,10 +120,10 @@ __weak_alias(pthread_sys_sigtimedwait, pthread_timedwait)
 static int
 __sigsetequal(const sigset_t *s1, const sigset_t *s2)
 {
-    	int equal;
+	int equal;
 
-    	equal = (*s1 == *s2) == 0;
-    	return (equal);
+	equal = (*s1 == *s2) == 0;
+	return (equal);
 }
 
 static int
@@ -140,8 +140,8 @@ __sigminusset(const sigset_t *s, sigset_t *t)
 {
 	int minus;
 
-    	minus = (*t &= ~*s) == 0;
-    	return (minus);
+	minus = (*t &= ~*s) == 0;
+	return (minus);
 }
 
 static int
@@ -150,7 +150,7 @@ __sigandset(const sigset_t *s, sigset_t *t)
 	int and;
 
 	and = (*t &= *s) == 0;
-    	return (and);
+	return (and);
 }
 
 void

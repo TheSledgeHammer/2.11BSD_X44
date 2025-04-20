@@ -157,10 +157,10 @@ edf_schedcpu(p)
 
 	if (edf_test(edf)) {
 		sched_check_threads(sc, p);
-		return (0);
+		error = 0;
 	} else {
 		//reschedule(p);
-		error = P_EDFFAIL;
+		error = -1;
 	}
 	return (error);
 }

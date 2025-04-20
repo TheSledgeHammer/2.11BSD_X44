@@ -119,8 +119,8 @@ extern struct lock_holder 	thread_loholder;
 extern 	LIST_HEAD(tidhashhead, thread) 	*tidhashtbl;
 extern u_long 	tidhash;
 
-extern int	nthread, maxthread;					/* Current and max number of threads. */
-extern int ppnthreadmax;						/* max number of threads per proc (hits stack limit) */
+extern int nthread, maxthread;					/* Current and max number of threads. */
+extern int ppnthreadmax;					/* max number of threads per proc (hits stack limit) */
 
 struct threadhd;
 TAILQ_HEAD(threadhd, thread);

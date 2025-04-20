@@ -39,10 +39,6 @@
 
 #include <unistd.h>
 
-/*
- * WIP: vnode's extattr not yet implemented.
- */
-
 int
 extattr_file(cmd, path, attrnamespace, attrname, data, nbytes)
 	int cmd;

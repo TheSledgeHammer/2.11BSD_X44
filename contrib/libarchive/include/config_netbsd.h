@@ -5,10 +5,10 @@
 /* #undef ARCHIVE_ACL_DARWIN */
 
 /* FreeBSD ACL support */
-#define ARCHIVE_ACL_FREEBSD 1
+/* #undef ARCHIVE_ACL_FREEBSD */
 
 /* FreeBSD NFSv4 ACL support */
-#define ARCHIVE_ACL_FREEBSD_NFS4 1
+/* #undef ARCHIVE_ACL_FREEBSD_NFS4 */
 
 /* Linux POSIX.1e ACL support via libacl */
 /* #undef ARCHIVE_ACL_LIBACL */
@@ -146,7 +146,7 @@
 /* #undef ARCHIVE_XATTR_DARWIN */
 
 /* FreeBSD xattr support */
-#define ARCHIVE_XATTR_FREEBSD 1
+/* #undef ARCHIVE_XATTR_FREEBSD */
 
 /* Linux xattr support */
 /* #undef ARCHIVE_XATTR_LINUX */
@@ -170,103 +170,103 @@
 /* #undef HAVE_ACLENT_T */
 
 /* Define to 1 if you have the `acl_add_flag_np' function. */
-#define HAVE_ACL_ADD_FLAG_NP 1
+/* #undef HAVE_ACL_ADD_FLAG_NP */
 
 /* Define to 1 if you have the `acl_add_perm' function. */
-#define HAVE_ACL_ADD_PERM 1
+/* #undef HAVE_ACL_ADD_PERM */
 
 /* Define to 1 if you have the `acl_clear_flags_np' function. */
-#define HAVE_ACL_CLEAR_FLAGS_NP 1
+/* #undef HAVE_ACL_CLEAR_FLAGS_NP */
 
 /* Define to 1 if you have the `acl_clear_perms' function. */
-#define HAVE_ACL_CLEAR_PERMS 1
+/* #undef HAVE_ACL_CLEAR_PERMS */
 
 /* Define to 1 if you have the `acl_create_entry' function. */
-#define HAVE_ACL_CREATE_ENTRY 1
+/* #undef HAVE_ACL_CREATE_ENTRY */
 
 /* Define to 1 if you have the `acl_delete_def_file' function. */
-#define HAVE_ACL_DELETE_DEF_FILE 1
+/* #undef HAVE_ACL_DELETE_DEF_FILE */
 
 /* Define to 1 if the system has the type `acl_entry_t'. */
 #define HAVE_ACL_ENTRY_T 1
 
 /* Define to 1 if you have the `acl_free' function. */
-#define HAVE_ACL_FREE 1
+/* #undef HAVE_ACL_FREE */
 
 /* Define to 1 if you have the `acl_get_brand_np' function. */
-#define HAVE_ACL_GET_BRAND_NP 1
+/* #undef HAVE_ACL_GET_BRAND_NP */
 
 /* Define to 1 if you have the `acl_get_entry' function. */
-#define HAVE_ACL_GET_ENTRY 1
+/* #undef HAVE_ACL_GET_ENTRY */
 
 /* Define to 1 if you have the `acl_get_entry_type_np' function. */
-#define HAVE_ACL_GET_ENTRY_TYPE_NP 1
+/* #undef HAVE_ACL_GET_ENTRY_TYPE_NP */
 
 /* Define to 1 if you have the `acl_get_fd' function. */
-#define HAVE_ACL_GET_FD 1
+/* #undef HAVE_ACL_GET_FD */
 
 /* Define to 1 if you have the `acl_get_fd_np' function. */
-#define HAVE_ACL_GET_FD_NP 1
+/* #undef HAVE_ACL_GET_FD_NP */
 
 /* Define to 1 if you have the `acl_get_file' function. */
-#define HAVE_ACL_GET_FILE 1
+/* #undef HAVE_ACL_GET_FILE */
 
 /* Define to 1 if you have the `acl_get_flagset_np' function. */
-#define HAVE_ACL_GET_FLAGSET_NP 1
+/* #undef HAVE_ACL_GET_FLAGSET_NP */
 
 /* Define to 1 if you have the `acl_get_flag_np' function. */
-#define HAVE_ACL_GET_FLAG_NP 1
+/* #undef HAVE_ACL_GET_FLAG_NP */
 
 /* Define to 1 if you have the `acl_get_link_np' function. */
-#define HAVE_ACL_GET_LINK_NP 1
+/* #undef HAVE_ACL_GET_LINK_NP */
 
 /* Define to 1 if you have the `acl_get_perm' function. */
 /* #undef HAVE_ACL_GET_PERM */
 
 /* Define to 1 if you have the `acl_get_permset' function. */
-#define HAVE_ACL_GET_PERMSET 1
+/* #undef HAVE_ACL_GET_PERMSET */
 
 /* Define to 1 if you have the `acl_get_perm_np' function. */
-#define HAVE_ACL_GET_PERM_NP 1
+/* #undef HAVE_ACL_GET_PERM_NP */
 
 /* Define to 1 if you have the `acl_get_qualifier' function. */
-#define HAVE_ACL_GET_QUALIFIER 1
+/* #undef HAVE_ACL_GET_QUALIFIER */
 
 /* Define to 1 if you have the `acl_get_tag_type' function. */
-#define HAVE_ACL_GET_TAG_TYPE 1
+/* #undef HAVE_ACL_GET_TAG_TYPE */
 
 /* Define to 1 if you have the `acl_init' function. */
-#define HAVE_ACL_INIT 1
+/* #undef HAVE_ACL_INIT */
 
 /* Define to 1 if you have the `acl_is_trivial_np' function. */
-#define HAVE_ACL_IS_TRIVIAL_NP 1
+/* #undef HAVE_ACL_IS_TRIVIAL_NP */
 
 /* Define to 1 if you have the <acl/libacl.h> header file. */
 /* #undef HAVE_ACL_LIBACL_H */
 
 /* Define to 1 if the system has the type `acl_permset_t'. */
-#define HAVE_ACL_PERMSET_T 1
+/* #undef HAVE_ACL_PERMSET_T */
 
 /* Define to 1 if you have the `acl_set_entry_type_np' function. */
-#define HAVE_ACL_SET_ENTRY_TYPE_NP 1
+/* #undef HAVE_ACL_SET_ENTRY_TYPE_NP */
 
 /* Define to 1 if you have the `acl_set_fd' function. */
-#define HAVE_ACL_SET_FD 1
+/* #undef HAVE_ACL_SET_FD */
 
 /* Define to 1 if you have the `acl_set_fd_np' function. */
-#define HAVE_ACL_SET_FD_NP 1
+/* #undef HAVE_ACL_SET_FD_NP */
 
 /* Define to 1 if you have the `acl_set_file' function. */
-#define HAVE_ACL_SET_FILE 1
+/* #undef HAVE_ACL_SET_FILE */
 
 /* Define to 1 if you have the `acl_set_link_np' function. */
-#define HAVE_ACL_SET_LINK_NP 1
+/* #undef HAVE_ACL_SET_LINK_NP */
 
 /* Define to 1 if you have the `acl_set_qualifier' function. */
-#define HAVE_ACL_SET_QUALIFIER 1
+/* #undef HAVE_ACL_SET_QUALIFIER */
 
 /* Define to 1 if you have the `acl_set_tag_type' function. */
-#define HAVE_ACL_SET_TAG_TYPE 1
+/* #undef HAVE_ACL_SET_TAG_TYPE */
 
 /* Define to 1 if the system has the type `acl_t'. */
 #define HAVE_ACL_T 1
@@ -324,19 +324,19 @@
 
 /* Define to 1 if you have the declaration of `ACL_SYNCHRONIZE', and to 0 if
    you don't. */
-#define HAVE_DECL_ACL_SYNCHRONIZE 1
+/* #undef HAVE_DECL_ACL_SYNCHRONIZE */
 
 /* Define to 1 if you have the declaration of `ACL_TYPE_EXTENDED', and to 0 if
    you don't. */
-#define HAVE_DECL_ACL_TYPE_EXTENDED 0
+/* #undef HAVE_DECL_ACL_TYPE_EXTENDED */
 
 /* Define to 1 if you have the declaration of `ACL_TYPE_NFS4', and to 0 if you
    don't. */
-#define HAVE_DECL_ACL_TYPE_NFS4 1
+/* #undef HAVE_DECL_ACL_TYPE_NFS4 */
 
 /* Define to 1 if you have the declaration of `ACL_USER', and to 0 if you
    don't. */
-#define HAVE_DECL_ACL_USER 1
+/* #undef HAVE_DECL_ACL_USER */
 
 /* Define to 1 if you have the declaration of `EXTATTR_NAMESPACE_USER', and to
    0 if you don't. */
@@ -444,22 +444,22 @@
 #define HAVE_EXTATTR_GET_FILE 1
 
 /* Define to 1 if you have the `extattr_get_link' function. */
-#define HAVE_EXTATTR_GET_LINK 1
+/* #undef HAVE_EXTATTR_GET_LINK */
 
 /* Define to 1 if you have the `extattr_list_fd' function. */
-#define HAVE_EXTATTR_LIST_FD 1
+/* #undef HAVE_EXTATTR_LIST_FD */
 
 /* Define to 1 if you have the `extattr_list_file' function. */
-#define HAVE_EXTATTR_LIST_FILE 1
+/* #undef HAVE_EXTATTR_LIST_FILE */
 
 /* Define to 1 if you have the `extattr_list_link' function. */
-#define HAVE_EXTATTR_LIST_LINK 1
+/* #undef HAVE_EXTATTR_LIST_LINK */
 
 /* Define to 1 if you have the `extattr_set_fd' function. */
 #define HAVE_EXTATTR_SET_FD 1
 
 /* Define to 1 if you have the `extattr_set_link' function. */
-#define HAVE_EXTATTR_SET_LINK 1
+/* #undef HAVE_EXTATTR_SET_LINK 1
 
 /* Define to 1 if you have the `facl' function. */
 /* #undef HAVE_FACL */
@@ -627,7 +627,7 @@
 /* #undef HAVE_LIBLZ4 */
 
 /* Define to 1 if you have the `lzma' library (-llzma). */
-#define HAVE_LIBLZMA 1
+/* #undef HAVE_LIBLZMA */
 
 /* Define to 1 if you have the `lzo2' library (-llzo2). */
 /* #undef HAVE_LIBLZO2 */
@@ -733,10 +733,10 @@
 /* #undef HAVE_LZ4_H */
 
 /* Define to 1 if you have the <lzma.h> header file. */
-#define HAVE_LZMA_H 1
+/* #undef HAVE_LZMA_H */
 
 /* Define to 1 if you have the `lzma_stream_encoder_mt' function. */
-#define HAVE_LZMA_STREAM_ENCODER_MT 1
+/* #undef HAVE_LZMA_STREAM_ENCODER_MT */
 
 /* Define to 1 if you have the <lzo/lzo1x.h> header file. */
 /* #undef HAVE_LZO_LZO1X_H */
@@ -832,7 +832,7 @@
 #define HAVE_POLL_H 1
 
 /* Define to 1 if you have the `posix_spawnp' function. */
-#define HAVE_POSIX_SPAWNP 1
+/* #undef HAVE_POSIX_SPAWNP */
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #define HAVE_PTHREAD_H 1
@@ -1084,7 +1084,7 @@
 #define HAVE_SYS_WAIT_H 1
 
 /* Define to 1 if you have the <sys/xattr.h> header file. */
-#define HAVE_SYS_XATTR_H 1
+/* #undef HAVE_SYS_XATTR_H */
 
 /* Define to 1 if you have the `timegm' function. */
 #define HAVE_TIMEGM 1

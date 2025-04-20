@@ -191,15 +191,17 @@ sched_compute(sc, p)
 	/* laxity/slack */
 	sched_base_slack(sc, p->p_cpticks, p->p_time, p->p_cpu);
 	/* utilization */
-    	sched_base_utilization(sc, p->p_cpu, p->p_swtime);
-    	/* demand */
-    	sched_base_demand(sc, p->p_time, p->p_cpticks, p->p_swtime, p->p_cpu);
+	sched_base_utilization(sc, p->p_cpu, p->p_swtime);
+	/* demand */
+	sched_base_demand(sc, p->p_time, p->p_cpticks, p->p_swtime, p->p_cpu);
 	/* workload */
-    	sched_base_workload(sc, p->p_time, p->p_swtime, p->p_cpu);
+	sched_base_workload(sc, p->p_time, p->p_swtime, p->p_cpu);
 	/* priority weighting */
-    	sched_base_priority_weighting(sc, p->p_pri, p->p_cpticks, sc->sc_slack, p->p_slptime);
-    	/* schedule factors to compute */
-    	sched_factor_compute(sc->sc_factor, sc->sc_utilization, sc->sc_demand, sc->sc_workload);
+	sched_base_priority_weighting(sc, p->p_pri, p->p_cpticks, sc->sc_slack,
+			p->p_slptime);
+	/* schedule factors to compute */
+	sched_factor_compute(sc->sc_factor, sc->sc_utilization, sc->sc_demand,
+			sc->sc_workload);
 }
 
 /* schedule factor */
@@ -223,7 +225,7 @@ sched_factor_compute(sf, utilization, demand, workload)
 	sched_factor_workload(sf, workload);
 	/* factors average rate and weight */
 	sched_factor_average(sf);
-    	/* factor optimal nthreads for process */
+	/* factor optimal nthreads for process */
 	sched_factor_nthreads(sf);
 }
 
@@ -234,9 +236,9 @@ sched_factor_utilization(sf, utilization)
 	struct sched_factor *sf;
 	u_char utilization;
 {
-    	sf->sfu_utilization = utilization;
-    	sf->sfu_rate = sched_rating(sf->sfu_utilization);
-    	sf->sfu_weight = sched_weighting(sf->sfu_utilization);
+	sf->sfu_utilization = utilization;
+	sf->sfu_rate = sched_rating(sf->sfu_utilization);
+	sf->sfu_weight = sched_weighting(sf->sfu_utilization);
 }
 
 void
@@ -244,9 +246,9 @@ sched_factor_demand(sf, demand)
 	struct sched_factor *sf;
 	u_char demand;
 {
-    	sf->sfd_demand = demand;
-    	sf->sfd_rate = sched_rating(sf->sfd_demand);
-    	sf->sfd_weight = sched_weighting(sf->sfd_demand);
+	sf->sfd_demand = demand;
+    sf->sfd_rate = sched_rating(sf->sfd_demand);
+    sf->sfd_weight = sched_weighting(sf->sfd_demand);
 }
 
 void
@@ -306,10 +308,6 @@ sched_check_threads(sc, p)
 	}
 }
 
-/*
- * TODO:
- * Implement use of thread stealing
- */
 /*
  * proc_create_nthreads: [internal use only]
  * create nthreads on existing proc.

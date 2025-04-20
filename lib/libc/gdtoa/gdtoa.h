@@ -130,6 +130,7 @@ extern int	strtopf  ANSI((CONST char *, char **, float *));
 extern int	strtopx  ANSI((CONST char *, char **, void *));
 #else
 #define strtopd(s,se,x) strtord(s,se,1,x)
+#define strtopdd(s,se,x)strtordd(s,se,1,x)
 #define strtopf(s,se,x) strtorf(s,se,1,x)
 #define strtopx(s,se,x) strtorx(s,se,1,x)
 #endif

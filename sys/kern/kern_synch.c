@@ -145,7 +145,7 @@ schedcpu(arg)
 		if (p->p_pri >= PUSER) {
 			setpri(p);
 		}
-		if (edf_schedcpu(p)) {
+		if (edf_schedcpu(p) == 0) {
 			if((p != curproc) &&
 					(p->p_stat == SRUN) &&
 					(p->p_flag & P_INMEM) &&

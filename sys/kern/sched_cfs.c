@@ -213,7 +213,6 @@ cfs_schedcpu(p)
 {
 	register struct sched *sc;
 	register struct sched_cfs *cfs;
-	struct sched_cfs *cfsp;		/* cfs process */
 	int cpticks;				/* p_cpticks counter (deadline) */
 	u_char new_bsched; 			/* new base schedule period */
 
@@ -237,7 +236,8 @@ cfs_schedcpu(p)
 	}
 
 	/* run-through red-black tree */
-	for (cfs = RB_FIRST(sched_cfs_rbtree, &cfs->cfs_parent); cfs != NULL; cfs = RB_LEFT(cfs, cfs_entry)) {
+	for (cfs = RB_FIRST(sched_cfs_rbtree, &cfs->cfs_parent); cfs != NULL; cfs =
+			RB_LEFT(cfs, cfs_entry)) {
 		/* set cpticks */
 		sched_cpticks(cfs->cfs_cpticks, p->p_cpticks);
 		/* start deadline counter */
@@ -247,50 +247,38 @@ cfs_schedcpu(p)
 			if (cfs->cfs_cpticks == cpticks) {
 				/* test if time doesn't equal the base scheduling period */
 				if (cfs->cfs_time != cfs->cfs_bsched) {
-					cfsp = cfs;
-					goto fin;
-					break;
+					cfs_update(p, cfs->cfs_priweight);
+					RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
+					goto end;
 				} else {
-					cfsp = cfs;
+					cfs_update(p, cfs->cfs_priweight);
+					RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 					goto out;
-					break;
 				}
 			} else if (cfs->cfs_cpticks != cpticks) {
 				/* test if time equals the base scheduling period */
 				if (cfs->cfs_time == cfs->cfs_bsched) {
-					cfsp = cfs;
-					goto fin;
-					break;
+					cfs_update(p, cfs->cfs_priweight);
+					RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
+					goto end;
 				} else {
-					cfsp = cfs;
+					cfs_update(p, cfs->cfs_priweight);
+					RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 					goto out;
-					break;
 				}
 			} else {
 				/* SHOULD NEVER REACH THIS POINT!! */
 				/* panic?? */
-				cfsp = cfs;
+				cfs_update(p, cfs->cfs_priweight);
+				RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
 				goto out;
-				break;
 			}
 		}
 	}
 
 out:
-	/* update cfs variables */
-	cfs = cfsp;
-	cfs_update(p, cfs->cfs_priweight);
-	/* remove from cfs queue */
-	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
-
 	return (0);
 
-fin:
-	/* update cfs variables */
-	cfs = cfsp;
-	cfs_update(p, cfs->cfs_priweight);
-	/* remove from cfs queue */
-	RB_REMOVE(sched_cfs_rbtree, &cfs->cfs_parent, cfs);
-
+end:
 	return (1);
 }

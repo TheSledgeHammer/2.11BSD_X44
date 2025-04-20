@@ -1179,27 +1179,22 @@ checkfiledesc(fpp, filedes)
 	struct file **fpp;
 	int filedes;
 {
-	struct file *fp;
 	struct filedesc *fdp;
 	int error;
 
-	/* allocate file for file descriptors */
-	fp = getf(filedes);
-	if (fp == NULL) {
+	/* check file is not null */
+	if (*fpp == NULL) {
 		return (ENOENT);
 	}
 	/* allocate file descriptor */
-	fdp = fdalloc(fp);
+	fdp = fdalloc(*fpp);
 	if (fdp == NULL) {
 		return (ENOENT);
 	}
 	/* get vnode file descriptor */
 	error = getfiledesc(fdp, filedes, fpp, DTYPE_VNODE);
 	if (error == 0) {
-		/* check the allocated file matches vnode file */
-		if (fp != *fpp) {
-			fp = *fpp;
-		}
+		return (0);
 	}
 	return (error);
 }

@@ -298,7 +298,7 @@ Exactly one of IEEE_LITTLE_ENDIAN, IEEE_BIG_ENDIAN, VAX, or IBM should be define
 typedef union {
 	double d;
 #if !defined(USE_STRTOD_COMPAT)
-    	ULong L[2];
+	ULong L[2];
 #else
 	ULong ul[2];
 #endif

@@ -195,37 +195,17 @@ thread_reparent(from, to, td)
 	struct proc *from, *to;
 	struct thread *td;
 {
-	int isrq, issq;
-
 	if (LIST_EMPTY(from->p_allthread) || from == NULL || to == NULL || td == NULL) {
 		return;
 	}
 
 	if (td->td_stat != (SZOMB | SRUN)) {
-		if (!TAILQ_EMPTY(from->p_threadrq)) {
-			thread_remrq(from, td);
-			isrq = 1;
-		}
-		if (!TAILQ_EMPTY(from->p_threadsq)) {
-			thread_remsq(from, td);
-			issq = 1;
-		}
-
 		thread_remove(from, td);
 		td->td_procp = to;
-    		td->td_flag = 0;
-    		td->td_ptid = to->p_pid;
-    		td->td_pgrp = to->p_pgrp;
+		td->td_flag = 0;
+		td->td_ptid = to->p_pid;
+		td->td_pgrp = to->p_pgrp;
 		thread_add(to, td);
-
-		if (isrq == 1) {
-			thread_setrq(to, td);
-			isrq = 0;
-		}
-		if (issq == 1) {
-			thread_setsq(to, td);
-			issq = 0;
-		}
 	}
 }
 
@@ -257,25 +237,25 @@ thread_alloc(p, stack)
 {
 	struct thread *td;
 
-    	td = (struct thread *)malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
-    	td->td_procp = p;
-    	td->td_stack = (struct thread *)td;
-    	td->td_stacksize = stack;
-    	td->td_stat = SIDL;
-    	td->td_flag = 0;
-    	td->td_tid = 0;
-    	td->td_ptid = p->p_pid;
-    	td->td_pgrp = p->p_pgrp;
-    	td->td_pri = thread_primask(p);
-    	td->td_ppri = p->p_pri;
-    	td->td_steal = 0;
+	td = (struct thread*) malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
+	td->td_procp = p;
+	td->td_stack = (struct thread *)td;
+	td->td_stacksize = stack;
+	td->td_stat = SIDL;
+	td->td_flag = 0;
+	td->td_tid = 0;
+	td->td_ptid = p->p_pid;
+	td->td_pgrp = p->p_pgrp;
+	td->td_pri = thread_primask(p);
+	td->td_ppri = p->p_pri;
+	td->td_steal = 0;
 
-    	if (!LIST_EMPTY(p->p_allthread)) {
-        	p->p_threado = LIST_FIRST(p->p_allthread);
-    	} else {
-        	p->p_threado = td;
-    	}
-    	return (td);
+	if (!LIST_EMPTY(p->p_allthread)) {
+		p->p_threado = LIST_FIRST(p->p_allthread);
+	} else {
+		p->p_threado = td;
+	}
+	return (td);
 }
 
 void
@@ -297,9 +277,9 @@ thread_stacklimit(td)
 	int i, stacklimit;
 
 	size = 0;
-	maxsize = (td->td_stacksize - sizeof(*td));
+	maxsize = (td->td_stacksize - sizeof(struct thread));
 	for (i = 0; i < maxthread; i++) {
-		size += sizeof(*td);
+		size += sizeof(struct thread);
 		if ((size >= maxsize) && (size <= td->td_stacksize)) {
 			stacklimit = i;
 			break;
@@ -907,9 +887,9 @@ thread_wakeup(p, chan)
 	register const void *chan;
 {
 	register struct thread *td, *tq;
-    	struct threadhd *qt;
+	struct threadhd *qt;
 
-    	qt = p->p_threadsq;
+	qt = p->p_threadsq;
 restart:
 	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 		for (tq = TAILQ_FIRST(qt); tq != NULL; td = tq) {
@@ -1169,7 +1149,6 @@ loop:
 		TAILQ_INSERT_HEAD(tqs, tp, td_link);
 	}
 	pri = n;
-//	thread_setpri(p, tp);
 }
 
 void
