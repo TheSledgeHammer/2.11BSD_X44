@@ -143,7 +143,7 @@ SUBDIR+=	${USRLIBDIR}/libwrap
 SUBDIR+=	../contrib/llvm/librt
 .endif
 
-SUBDIR+=	../contrib/libarchive/lib	# depends on libxz, libcrypto
+#SUBDIR+=	../contrib/libarchive/lib	# depends on libxz, libcrypto (Missing dependencies)
 SUBDIR+=	../contrib/file/lib		# depends on libz, libbz2, libxz
 
 SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
