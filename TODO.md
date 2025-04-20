@@ -35,6 +35,9 @@ A General todo list. Don't hesitate to add to this list. :)
 				- Missing a fairly large portion of libc requirements.
 				- With 2.11BSD_X44 not requiring c++. These libc additions are 
 				unlikely to be incorporated in the immediate future.
+- Libarchive:
+	- Issues with statfs. (Probably a config thing!)
+ 	- 2.11_X44 lacks support without numerous quick fixes (hacks). That will most likely be fixed in due time. 
 - XZ:
 	- Linker compiler time issue: Not finding symbols
  		- liblzma_pic.a(stream_encoder_mt.pico):(.text+0x2b7): undefined reference to `pthread_join'
