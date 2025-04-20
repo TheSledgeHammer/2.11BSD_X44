@@ -14,7 +14,7 @@
 #define ELFCORE 1
 
 /* Define to 1 if you have the `asctime_r' function. */
-#define HAVE_ASCTIME_R 1
+/* #undef HAVE_ASCTIME_R */
 
 /* Define to 1 if you have the `asprintf' function. */
 #define HAVE_ASPRINTF 1
@@ -23,7 +23,7 @@
 #define HAVE_BZLIB_H 1
 
 /* Define to 1 if you have the `ctime_r' function. */
-#define HAVE_CTIME_R 1
+/* #undef HAVE_CTIME_R */
 
 /* HAVE_DAYLIGHT */
 #define HAVE_DAYLIGHT 1
@@ -88,7 +88,7 @@
 /* #undef HAVE_LIBGNURX */
 
 /* Define to 1 if you have the `lzma' library (-llzma). */
-#define HAVE_LIBLZMA 1
+/* #undef HAVE_LIBLZMA */
 
 /* Define to 1 if you have the `seccomp' library (-lseccomp). */
 /* #undef HAVE_LIBSECCOMP */
@@ -100,7 +100,7 @@
 #define HAVE_LOCALTIME_R 1
 
 /* Define to 1 if you have the <lzma.h> header file. */
-#define HAVE_LZMA_H 1
+/* #undef HAVE_LZMA_H */
 
 /* Define to 1 if mbrtowc and mbstate_t are properly declared. */
 #define HAVE_MBRTOWC 1
