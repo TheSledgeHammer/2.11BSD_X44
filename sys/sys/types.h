@@ -181,6 +181,7 @@ typedef	__pri_t				pri_t;		/* process priority */
 typedef __uid_t 			uid_t;		/* user id */
 typedef __in_addr_t			in_addr_t;	/* IP(v4) address */
 typedef __in_port_t			in_port_t;	/* "Internet" port number */
+typedef	uint32_t	        id_t;		/* group id, process id or user id */
 #endif /* _KERNEL */
 
 #if defined(_KERNEL) || defined(_LIBC)
