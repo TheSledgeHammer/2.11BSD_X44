@@ -106,6 +106,8 @@ void 	selnotify(struct selinfo *, long);
 
 #else
 __BEGIN_DECLS
+struct timeval;
+
 /* must define __SELECT_DECLARED to use select */
 #ifdef __SELECT_DECLARED
 int select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
