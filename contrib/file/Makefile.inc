@@ -20,9 +20,11 @@ CPPFLAGS+=	-DMAGIC='"${MAGIC}"' -DHAVE_CONFIG_H -DQUICK -DBUILTIN_ELF \
 		-DELFCORE -DVERSION='"${VERSION}"'
 CPPFLAGS+=	-I${.CURDIR}/../include -I${DIST}/src
 
+CPPFLAGS+=  	-D__SELECT_DECLARED
+
 .PATH:		${DIST}/src ${DIST}/doc
 
-DPLIBS+=     lzma    ${NETBSDSRCDIR}/contrib/xz/lib
+#DPLIBS+=     lzma    ${NETBSDSRCDIR}/contrib/xz/lib
 DPLIBS+=     bz2     ${NETBSDSRCDIR}/usr.lib/libbz2
 DPLIBS+=     z       ${NETBSDSRCDIR}/usr.lib/libz
 
