@@ -49,7 +49,7 @@
 #define HAVE_FCNTL_H 1
 
 /* Define to 1 if you have the `fmtcheck' function. */
-#define HAVE_FMTCHECK 1
+/* #undef HAVE_FMTCHECK */
 
 /* Define to 1 if you have the `fork' function. */
 #define HAVE_FORK 1
@@ -109,7 +109,7 @@
 #define HAVE_MBSTATE_T 1
 
 /* Define to 1 if you have the `memmem' function. */
-#define HAVE_MEMMEM 1
+/* #undef HAVE_MEMMEM */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
