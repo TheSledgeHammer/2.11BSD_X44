@@ -56,19 +56,19 @@ typedef long			fd_mask;/* 32 = 2 ^ 5 */
 
 #define	NFD_LEN(a)		(((a) + (NFDBITS - 1)) / NFDBITS)
 #define	NFD_SIZE		NFD_LEN(FD_SETSIZE)
-#define	NFD_BYTES(a)	(NFD_LEN(a) * sizeof(fd_mask))
+#define	NFD_BYTES(a)		(NFD_LEN(a) * sizeof(fd_mask))
 
 typedef	struct fd_set {
-	fd_mask		fds_bits[NFD_SIZE];
+	fd_mask		fds_bits[1];
 } fd_set;
 
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1L << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1L << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1L << ((n) % NFDBITS)))
 #if __GNUC_PREREQ__(2, 95)
-#define	FD_ZERO(p)		(void)__builtin_memset((p), 0, sizeof(*(p)))
+#define	FD_ZERO(p)	(void)__builtin_memset((p), 0, sizeof(*(p)))
 #else
-#define FD_ZERO(p)		(void)bzero((char *)(p), sizeof(*(p)))
+#define FD_ZERO(p)	(void)bzero((char *)(p), sizeof(*(p)))
 #endif /* GCC 2.95 */
 
 #if defined(__BSD_VISIBLE)
