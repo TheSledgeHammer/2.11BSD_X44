@@ -46,21 +46,38 @@
  * should be >= NOFILE (param.h).
  */
 #ifndef	FD_SETSIZE
-#define	FD_SETSIZE	32
+#define	FD_SETSIZE		256
 #endif
 
-typedef long			fd_mask;
+typedef long			fd_mask;/* 32 = 2 ^ 5 */
 #define NFDBITS			(sizeof(fd_mask) * NBBY)	/* bits per mask */
+#define	NFDSHIFT		(5)
+#define	NFDMASK			(NFDBITS - 1)
+
+#define	NFD_LEN(a)		(((a) + (NFDBITS - 1)) / NFDBITS)
+#define	NFD_SIZE		NFD_LEN(FD_SETSIZE)
+#define	NFD_BYTES(a)	(NFD_LEN(a) * sizeof(fd_mask))
 
 typedef	struct fd_set {
-	fd_mask		fds_bits[1];
+	fd_mask		fds_bits[NFD_SIZE];
 } fd_set;
 
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1L << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1L << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1L << ((n) % NFDBITS)))
-#define FD_ZERO(p)		bzero((char *)(p), sizeof(*(p)))
+#if __GNUC_PREREQ__(2, 95)
+#define	FD_ZERO(p)		(void)__builtin_memset((p), 0, sizeof(*(p)))
+#else
+#define FD_ZERO(p)		(void)bzero((char *)(p), sizeof(*(p)))
+#endif /* GCC 2.95 */
 
+#if defined(__BSD_VISIBLE)
+#if __GNUC_PREREQ__(2, 95)
+#define	FD_COPY(f, t)	(void)__builtin_memcpy((t), (f), sizeof(*(f)))
+#else
+#define	FD_COPY(f, t)	(void)bcopy((f), (t), sizeof(*(f)))
+#endif /* GCC 2.95 */
+#endif /* __BSD_VISIBLE */
 /*
  * Used to maintain information about processes that wish to be
  * notified when I/O becomes possible.
@@ -73,6 +90,7 @@ struct selinfo {
 #define	SI_COLL		0x0001		/* collision occurred */
 
 #ifdef _KERNEL
+#include <sys/cdefs.h>
 struct proc;
 
 void	selrecord(struct proc *, struct selinfo *);
@@ -87,12 +105,11 @@ void 	selnotify(struct selinfo *, long);
 	(_selwakeup(sel))
 
 #else
-
 __BEGIN_DECLS
-/* must define _SELECT_DECLARED to use select */
-#ifdef _SELECT_DECLARED
+/* must define __SELECT_DECLARED to use select */
+#ifdef __SELECT_DECLARED
 int select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
-#endif /* _SELECT_DECLARED */
+#endif /* __SELECT_DECLARED */
 __END_DECLS
 #endif /* !KERNEL */
 #endif /* !_SYS_SELECT_H_ */

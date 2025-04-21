@@ -51,8 +51,11 @@ __RCSID("$NetBSD: svc.c,v 1.16 1999/01/20 11:37:38 lukem Exp $");
 
 #include "namespace.h"
 
-#include <sys/poll.h>
+#ifdef __SELECT_DECLARED
 #include <sys/select.h>
+#else
+#include <sys/poll.h>
+#endif
 
 #include <errno.h>
 #include <stdlib.h>
@@ -550,7 +553,7 @@ void
 svc_getreqset(arg)
 	void *arg;
 {
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 	fd_set *readfds = (fd_set *)arg;
 	svc_getreqset_fdset(readfds);
 #else

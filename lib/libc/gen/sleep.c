@@ -45,7 +45,7 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 #include <sys/select.h>
 #endif
 #include <stdio.h>	        /* For NULL */
@@ -66,7 +66,31 @@ __weak_alias(sleep,_sleep)
  * problem the program has.  The select() call either completes successfully
  * or is interrupted - no errors to be checked for.
 */
-#ifndef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
+u_int
+sleep(seconds)
+	u_int seconds;
+{
+	struct timeval f, s;
+
+	if (seconds) {
+		gettimeofday(&f, NULL);
+		s.tv_sec = seconds;
+		s.tv_usec = 0;
+		select(0, NULL, NULL, NULL, &s);
+		gettimeofday(&s, NULL);
+		seconds -= (s.tv_sec - f.tv_sec);
+		/*
+		 * ONLY way this can happen is if the system time gets set back while we're
+		 * in the select() call.  In this case return 0 instead of a bogus number.
+		 */
+		if (seconds < 0)
+			seconds = 0;
+	}
+	return (seconds);
+}
+
+#else
 
 u_int
 sleep(seconds)
@@ -90,28 +114,4 @@ sleep(seconds)
    	return (seconds);
 }
 
-#else
-
-u_int
-sleep(seconds)
-	u_int seconds;
-{
-	struct timeval f, s;
-
-	if (seconds) {
-		gettimeofday(&f, NULL);
-		s.tv_sec = seconds;
-		s.tv_usec = 0;
-		select(0, NULL, NULL, NULL, &s);
-		gettimeofday(&s, NULL);
-		seconds -= (s.tv_sec - f.tv_sec);
-		/*
-		 * ONLY way this can happen is if the system time gets set back while we're
-		 * in the select() call.  In this case return 0 instead of a bogus number.
-		 */
-		if (seconds < 0)
-			seconds = 0;
-	}
-	return (seconds);
-}
 #endif

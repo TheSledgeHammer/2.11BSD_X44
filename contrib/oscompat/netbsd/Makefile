@@ -7,7 +7,7 @@ WARNS?=	5
 
 CPPFLAGS+=	-I${.CURDIR}
 
-INCS+=      core.h statvfs.h
+INCS+=      core.h dkio.h filio.h statvfs.h
 INCSDIR=	/usr/include/sys
 
 SRCS+=      core_netbsd.c statvfs.c

@@ -213,6 +213,10 @@ int	 			reboot(int, char *);
 int	 			revoke(const char *);
 int	 			rresvport(int *);
 int	 			ruserok(const char *, int, const char *, const char *);
+#ifdef __SELECT_DECLARED
+/* backwards-compatibility; also in select.h */
+int				select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+#endif /* __SELECT_DECLARED */
 int	 			setdomainname(const char *, size_t);
 int	 			setgroups(int, const gid_t *);
 unsigned long	sethostid(unsigned long);

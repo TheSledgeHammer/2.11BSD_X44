@@ -109,7 +109,7 @@ static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 #include <sys/socket.h>
 #include <sys/uio.h>
 
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 #include <sys/select.h>
 #else
 #include <sys/poll.h>
@@ -130,7 +130,7 @@ static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 
 static struct sockaddr no_addr;
 
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 
 #ifndef FD_SET
 #define	NFDBITS			32
@@ -173,7 +173,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 	int peerlen;
 	int terrno = ETIMEDOUT;
 	char junk[16];
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 	fd_set dsmask;
 #else
 	struct pollfd pollfd;
@@ -507,7 +507,7 @@ res_nsend(statp, buf, buflen, answer, anslen)
 					timeout.tv_sec = 1;
 				timeout.tv_usec = 0;
 wait:
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 				n = res_select(s, &dsmask, &timeout);
 #else
 				n = res_poll(1, &pollfd, &timeout);
@@ -616,7 +616,7 @@ wait:
 }
 
 /* Private */
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 static int
 res_select(s, dsmask, timeout)
 	int s;

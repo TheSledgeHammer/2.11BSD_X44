@@ -44,7 +44,7 @@
 #include "namespace.h"
 #include <sys/types.h>
 #include <sys/time.h>
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 #include <sys/select.h>
 #endif
 
@@ -63,21 +63,8 @@ __weak_alias(usleep,_usleep)
  * Nothing is returned and if less than ~20000 microseconds is specified the
  * select will return without any delay at all.
 */
-#ifndef _SELECT_DECLARED
-void
-usleep(micros)
-	long micros;
-{
-	struct timespec s;
 
-	if (micros > 0) {
-		s.tv_sec = micros / 1000000L;
-		s.tv_nsec = micros % 1000000L * 1000;
-		nanosleep(&s, NULL);
-	}
-}
-
-#else
+#ifdef __SELECT_DECLARED
 
 void
 usleep(micros)
@@ -89,6 +76,21 @@ usleep(micros)
 		s.tv_sec = micros / 1000000L;
 		s.tv_usec = micros % 1000000L;
 		select(0, NULL, NULL, NULL, &s);
+	}
+}
+
+#else
+
+void
+usleep(micros)
+	long micros;
+{
+	struct timespec s;
+
+	if (micros > 0) {
+		s.tv_sec = micros / 1000000L;
+		s.tv_nsec = micros % 1000000L * 1000;
+		nanosleep(&s, NULL);
 	}
 }
 

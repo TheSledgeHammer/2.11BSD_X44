@@ -58,7 +58,7 @@ static char sccsid[] = "@(#)rcmd.c	5.20.1 (2.11BSD) 1999/10/24";
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 #include <sys/select.h>
 #else
 #include <sys/poll.h>
@@ -81,7 +81,7 @@ static char sccsid[] = "@(#)rcmd.c	5.20.1 (2.11BSD) 1999/10/24";
 #include <unistd.h>
 
 int rcmd_af(char **, u_short, const char *, const char *, const char *, int *, int);
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 int rcmd_select(int, int);
 #else
 int rcmd_poll(int, int);
@@ -228,7 +228,7 @@ rcmd_af(ahost, rport, locuser, remuser, cmd, fd2p, af)
 			(void) close(s2);
 			goto bad;
 		}
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 		if (rcmd_select(s, s2) != 0) {
 			goto bad;
 		}
@@ -290,7 +290,7 @@ bad:
 	return (-1);
 }
 
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 int
 rcmd_select(s, s2)
 	int s, s2;

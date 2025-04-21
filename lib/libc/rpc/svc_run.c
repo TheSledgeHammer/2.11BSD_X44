@@ -58,7 +58,7 @@ __RCSID("$NetBSD: svc_run.c,v 1.13 1999/01/20 11:37:39 lukem Exp $");
 __weak_alias(svc_run,_svc_run);
 #endif
 
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 static int svc_run_select(fd_set *);
 #else
 static int svc_run_poll(struct pollfd *);
@@ -75,7 +75,7 @@ svc_run(void)
 		readpfd = svc_pollfd;
 		readfds = svc_fdset;
 
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 		ret = svc_run_select(&readfds);
 #else
 		ret = svc_run_poll(&readpfd);
@@ -94,7 +94,7 @@ svc_run(void)
 	}
 }
 
-#ifdef _SELECT_DECLARED
+#ifdef __SELECT_DECLARED
 static int
 svc_run_select(readfds)
 	fd_set *readfds;
