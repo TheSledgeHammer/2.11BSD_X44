@@ -152,7 +152,8 @@ int thread_setpri(struct proc *, struct thread *);
 void thread_setrun(struct proc *, struct thread *);
 void thread_schedule(struct proc *, struct thread *);
 void thread_schedcpu(struct proc *);
-int	 newthread(struct thread **, char *, size_t, bool_t);
+int newthread1(struct proc **, struct thread **, char *, size_t, bool_t);
+int newthread(struct thread **, char *, size_t, bool_t);
 void thread_exit(int, int);
 void thread_psignal(struct proc *, int, int);
 int  thread_kill(struct proc *, int, pid_t);
@@ -166,7 +167,7 @@ void thread_wakeup(struct proc *, const void *);
 
 //pid_t thread_tidmask(struct proc *);					/* thread tidmask */
 int thread_primask(struct proc *);						/* thread primask */
-int	thread_usrprimask(struct proc *);					/* thread usrprimask */
+int thread_usrprimask(struct proc *);					/* thread usrprimask */
 
 #endif 	/* KERNEL */
 #endif /* _SYS_THREAD_H_ */

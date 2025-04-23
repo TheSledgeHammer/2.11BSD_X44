@@ -89,3 +89,28 @@ tpi_foreign_remove(struct tpipcbtable *table, void *faddr, uint16_t fport)
         LIST_REMOVE(&tpf->tpf_head, tpph_fhash);
     }
 }
+
+int
+tpi_foreign_compare(struct tpi_foreign *tpf_a, struct tpi_foreign *tpf_b)
+{
+	if (tpf_a != tpf_b) {
+		return (1);
+	}
+	return (bcmp(tpf_a, tpf_b, sizeof(tpf_a)));
+}
+
+void
+tpi_foreign_set_fsockaddr(struct tpi_foreign *tpf, void *fsockaddr)
+{
+	tpf->tpf_fsockaddr = fsockaddr;
+}
+
+void *
+tpi_foreign_get_fsockaddr(struct tpi_foreign *tpf)
+{
+	void *fsockaddr = tpf->tpf_fsockaddr;
+	if (fsockaddr != NULL) {
+		return (fsockaddr);
+	}
+	return (NULL);
+}

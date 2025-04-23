@@ -348,18 +348,18 @@ extern struct prochd qs[];
 extern struct sleepque slpque[];
 extern struct emul emul_211bsd;			/* emulation struct */
 
-struct proc *pfind(pid_t);			    /* Find process by id. */
-struct pgrp *pgfind(pid_t);				/* Find process group by id. */
-int			setpri(struct proc *);
+struct proc 	*pfind(pid_t);			    /* Find process by id. */
+struct pgrp 	*pgfind(pid_t);				/* Find process group by id. */
+int		setpri(struct proc *);
 void		setrun(struct proc *);
 void		setrq(struct proc *);
 void		remrq(struct proc *);
-struct proc *getrq(struct proc *);
+struct proc 	*getrq(struct proc *);
 void		swtch();
 void		sleep(void *, int);
-int			tsleep(void *, int, char *, u_short);
+int		tsleep(void *, int, char *, u_short);
 int 		ltsleep(void *, int, char *, u_short, __volatile struct lock_object *);
-void        endtsleep(struct proc *);
+void        	endtsleep(struct proc *);
 void		unsleep(struct proc *);
 void		wakeup(const void *);
 void		wakeup_one(const void *);
@@ -370,12 +370,12 @@ void		sqinit(void);
 void		idle_check(void);
 int 		chgproccnt(uid_t, int);
 void		pgdelete(struct pgrp *);
-int			leavepgrp(struct proc *);
-int			enterpgrp(struct proc *, pid_t, int);
+int		leavepgrp(struct proc *);
+int		enterpgrp(struct proc *, pid_t, int);
 void		fixjobc(struct proc *, struct pgrp *, int);
-int			inferior(struct proc *);
-int			newproc(int);
-
+int		inferior(struct proc *);
+int		newproc(int);
+int 		proc_create(struct proc **);
 /* kern_exit.c */
 void    	exit(int);
 void		endvfork();

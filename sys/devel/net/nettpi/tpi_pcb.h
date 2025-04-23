@@ -67,7 +67,7 @@ union tpi_addr_union {
 /* Transport Local structure */
 struct tpi_local {
 	struct tpipcb_hdr			tpl_head;
-	union tpi_sockaddr_union	tpf_lsockaddr;	/* local sockaddr */
+	union tpi_sockaddr_union	tpl_lsockaddr;	/* local sockaddr */
 	union tpi_addr_union		tpl_laddr;		/* local addr */
 	u_int16_t					tpl_lport;		/* local port */
 };

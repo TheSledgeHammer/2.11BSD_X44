@@ -641,39 +641,11 @@ thread_schedcpu(p)
 }
 
 /*
- * [Internal Use Only]: see newthread for use.
- * Use newproc(int isvfork) for forking a proc!
+ * create a new thread.
  */
 int
-proc_create(newpp)
+newthread1(newpp, newtd, name, stack, forkproc)
 	struct proc **newpp;
-{
-	struct proc *p;
-	register_t 	rval[2];
-	int 		error;
-
-	/* First, create the new process. */
-	error = newproc(0);
-	if (__predict_false(error != 0)) {
-		return (error);
-	}
-
-	if (rval[1]) {
-		p->p_flag |= P_INMEM | P_SYSTEM | P_NOCLDWAIT;
-	}
-
-	if (newpp != NULL) {
-		*newpp = p;
-	}
-
-	return (0);
-}
-
-/*
- * create a new thread on an existing proc
- */
-int
-newthread(newtd, name, stack, forkproc)
 	struct thread **newtd;
 	char *name;
 	size_t stack;
@@ -692,9 +664,11 @@ newthread(newtd, name, stack, forkproc)
 			return (error);
 		}
 	} else {
-		p = curproc;
+		if (newpp == NULL) {
+			*newpp = curproc;
+		}
+		p = *newpp;
 	}
-
 	/* allocate and attach a new thread to process */
 	td = thread_alloc(p, stack);
 	thread_add(p, td);
@@ -710,6 +684,19 @@ newthread(newtd, name, stack, forkproc)
 		*newtd = td;
 	}
 	return (0);
+}
+
+/*
+ * create a new threads.
+ */
+int
+newthread(newtd, name, stack, forkproc)
+	struct thread **newtd;
+	char *name;
+	size_t stack;
+	bool_t forkproc;
+{
+	return (newthread1(&curproc, newtd, name, stack, forkproc));
 }
 
 void
@@ -1079,7 +1066,6 @@ thread_kill(p, signo, tid)
 out:
 	return (error);
 }
-
 
 void
 thread_idle_check(p)

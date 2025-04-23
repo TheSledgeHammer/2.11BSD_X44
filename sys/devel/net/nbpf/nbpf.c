@@ -153,6 +153,33 @@ nbpfioctl(d, dev, cmd, addr, flag, p)
 	return (error);
 }
 
+/*
+static void
+nbpf_reset_d(nd, nbuf, len)
+	struct nbpf_d *nd;
+	nbpf_buf_t *nbuf;
+	size_t len;
+{
+	void *nptr;
+	const struct mbuf *const n;
+	const size_t off;
+
+	n = nbuf;
+	nptr = nbpf_dataptr(n);
+	off = (uintptr_t)nptr - mtod(n, uintptr_t);
+	if (nbpf_fetch_datum(n, nptr, len, off)) {
+
+	}
+}
+
+static void
+nbpf_catchpacket(nd, pkt, pktlen, slen, cpfn)
+	struct nbpf_d *nd;
+{
+
+}
+*/
+
 int
 nbpf_setf(nd, fp, error)
 	struct nbpf_d *nd;
@@ -170,7 +197,7 @@ nbpf_setf(nd, fp, error)
 		}
 		s = splnet();
 		nd->nbd_filter = 0;
-		//reset_d(d);
+		nbpf_reset_d(nd);
 		splx(s);
 		if (old != 0) {
 			free((caddr_t)old, M_DEVBUF);
@@ -184,7 +211,7 @@ nbpf_setf(nd, fp, error)
 	if (copyin((caddr_t)fp->nbf_insns, (caddr_t)ncode, size) == 0 && nbpf_validate(ncode, (int)nlen, error)) {
 		s = splnet();
 		nd->nbd_filter = ncode;
-		//reset_d(d);
+		nbpf_reset_d(nd);
 		splx(s);
 		if (old != 0) {
 			free((caddr_t)old, M_DEVBUF);
@@ -206,7 +233,7 @@ nbpf_filtncatch(d, nd, pkt, pktlen, slen, cpfn)
 {
 	slen = nbpf_filter(nd->nbd_state, nd->nbd_filter, (nbpf_buf_t *)pktlen, nd->nbd_layer);
 	if (slen != 0) {
-		//catchpacket(d, pkt, pktlen, slen, cpfn);
+		nbpf_catchpacket(nd, pkt, pktlen, slen, cpfn);
 	}
 }
 

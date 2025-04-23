@@ -77,19 +77,20 @@ int	kthread_create_now;
  */
 /* creates a new thread */
 int
-kthread_create(func, arg, newtd, name, forkproc)
+kthread_create1(func, arg, newpp, newtd, name, forkproc)
 	void (*func)(void *);
 	void *arg;
+	struct proc *newpp;
 	struct thread **newtd;
 	char *name;
 	bool_t forkproc;
 {
-	error = newthread(newtd, name, THREAD_STACK, forkproc);
+	int error;
+
+	error = sched_create_threads(newpp, newtd, name, THREAD_STACK, forkproc);
 	if (__predict_false(error != 0)) {
 		return (error);
 	}
-
-
 	return (0);
 }
 
@@ -108,7 +109,8 @@ kthread_exit(ecode)
 	if (ecode != 0) {
 		printf("WARNING: thread `%s' (%d) exits with status %d\n", curthread->td_name, curthread->td_tid, ecode);
 	}
-	thread_exit(W_EXITCODE(ecode, 0));
+
+	sched_destroy_threads(curproc, ecode, 0);
 
 	for (;;);
 }

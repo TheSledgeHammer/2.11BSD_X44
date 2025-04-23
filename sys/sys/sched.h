@@ -249,10 +249,12 @@ struct sched_domain {
 #endif
 
 #ifdef _KERNEL
-void 				sched_init(struct proc *);
-void				sched_estcpu(u_int, u_int);
-void				sched_cpticks(int, int);
-void				sched_compute(struct sched *, struct proc *);
-void				sched_check_threads(struct sched *, struct proc *);
+void 	sched_init(struct proc *);
+void	sched_estcpu(u_int, u_int);
+void	sched_cpticks(int, int);
+void	sched_compute(struct sched *, struct proc *);
+void	sched_check_threads(struct sched *, struct proc *);
+int	sched_create_threads(struct proc **, struct thread **, char *, size_t, bool_t);
+void	sched_destroy_threads(struct proc *, int, int);
 #endif /* _KERNEL */
 #endif /* _SYS_SCHED_H */

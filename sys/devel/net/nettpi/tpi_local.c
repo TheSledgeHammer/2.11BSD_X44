@@ -90,6 +90,27 @@ tpi_local_remove(struct tpipcbtable *table, void *laddr, uint16_t lport)
 	}
 }
 
-local_bind
+int
+tpi_local_compare(struct tpi_local *tpl_a, struct tpi_local *tpl_b)
+{
+	if (tpl_a != tpl_b) {
+		return (1);
+	}
+	return (bcmp(tpl_a, tpl_b, sizeof(tpl_a)));
+}
 
-connect
+void
+tpi_local_set_lsockaddr(struct tpi_local *tpl, void *lsockaddr)
+{
+	tpl->tpl_lsockaddr = lsockaddr;
+}
+
+void *
+tpi_local_get_lsockaddr(struct tpi_local *tpl)
+{
+	void *lsockaddr = tpl->tpl_lsockaddr;
+	if (lsockaddr != NULL) {
+		return (lsockaddr);
+	}
+	return (NULL);
+}

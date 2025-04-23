@@ -75,20 +75,20 @@ SOFTWARE.
 
 struct tpi_protosw {
 	int		tpi_afamily;			/* address family */
-	int		(*tpi_putnetaddr)();	/* puts addresses in nl pcb */
-	int		(*tpi_getnetaddr)();	/* gets addresses from nl pcb */
+	int		(*tpi_putnetaddr)();	/* puts addresses in tpi pcb */
+	int		(*tpi_getnetaddr)();	/* gets addresses from tpi pcb */
 	int		(*tpi_cmpnetaddr)();	/* compares address in pcb with sockaddr */
-	int		(*tpi_putsufx)();		/* puts transport suffixes in nl pcb */
-	int		(*tpi_getsufx)();		/* gets transport suffixes from nl pcb */
-	int		(*tpi_recycle_suffix)();/* clears suffix from nl pcb */
-	int		(*tpi_mtu)();			/* figures out mtu based on nl used */
+	int		(*tpi_putsufx)();		/* puts transport suffixes in tpi pcb */
+	int		(*tpi_getsufx)();		/* gets transport suffixes from tpi pcb */
+	int		(*tpi_recycle_suffix)();/* clears suffix from tpi pcb */
+	int		(*tpi_mtu)();			/* figures out mtu based on tpi used */
 	int		(*tpi_pcbbind)();		/* bind to pcb for net level */
 	int		(*tpi_pcbconn)();		/* connect for net level */
 	int		(*tpi_pcbdisc)();		/* disconnect net level */
 	int		(*tpi_pcbdetach)();		/* detach net level pcb */
 	int		(*tpi_pcballoc)();		/* allocate a net level pcb */
-	int		(*tpi_output)();		/* prepare a packet to give to nl */
-	int		(*tpi_dgoutput)();		/* prepare a packet to give to nl */
+	int		(*tpi_output)();		/* prepare a packet to give to tpi */
+	int		(*tpi_dgoutput)();		/* prepare a packet to give to tpi */
 	int		(*tpi_ctloutput)();		/* hook for network set/get options */
 	caddr_t	tpi_pcblist;			/* list of xx_pcb's for connections */
 };

@@ -387,3 +387,33 @@ again:
 
 	return (0);
 }
+
+/*
+ * [Internal Use Only]: see newthread for use.
+ * Use newproc(int isvfork) for forking a proc!
+ * or newthread.
+ */
+int
+proc_create(newpp)
+	struct proc **newpp;
+{
+	struct proc *p;
+	register_t 	rval[2];
+	int 		error;
+
+	/* First, create the new process. */
+	error = newproc(0);
+	if (__predict_false(error != 0)) {
+		return (error);
+	}
+
+	if (rval[1]) {
+		p->p_flag |= P_INMEM | P_SYSTEM | P_NOCLDWAIT;
+	}
+
+	if (newpp != NULL) {
+		*newpp = p;
+	}
+
+	return (0);
+}

@@ -309,57 +309,68 @@ sched_check_threads(sc, p)
 }
 
 /*
- * proc_create_nthreads: [internal use only]
- * create nthreads on existing proc.
+ * sched_create_threads:
+ * - create nthreads on a new or existing process.
  * Note: nthreads is pre-determined by "sched_nthreads" and "sched_check_threads".
  */
 int
-proc_create_nthreads(p)
-	struct proc *p;
+sched_create_threads(newpp, newtd, name, stack, forkproc)
+	struct proc **newpp;
+	struct thread **newtd;
+	char *name;
+	size_t stack;
+	bool_t forkproc;
 {
+	struct proc *pp;
+	struct thread *tdp;
 	struct sched *sc;
-	struct thread *td;
-	int nthreads, error, i;
+	struct sched_factor *sf;
+	int i, error, nthreads;
 
-	sc = p->p_sched;
-	if ((p->p_flag & P_TDCREATE) == 0) {
-		nthreads = sc->sc_factor->sf_optnthreads;
-		for (i = 0; i < nthreads; i++) {
-			if ((td->td_flag & TD_STEALABLE) == 0) {
-				thread_steal(p, td);
+	pp = *newpp;
+	tdp = *newtd;
+	sc = pp->p_sched;
+	sf = sc->sc_factor;
+	if ((pp->p_flag & P_TDCREATE) == 0) {
+		nthreads = sf->sf_optnthreads;
+		for (i = 0; i < nthreads + 1; i++) {
+			if ((tdp->td_flag & TD_STEALABLE) == 0) {
+				thread_steal(pp, tdp);
 			} else {
-				error = newthread(&td, NULL, THREAD_STACK, FALSE);
+				error = newthread1(&pp, &tdp, name, stack, forkproc);
 				if (error != 0) {
 					return (error);
 				}
 			}
 		}
-		p->p_flag &= ~P_TDCREATE;
+		pp->p_flag &= ~P_TDCREATE;
 	}
+	*newpp = pp;
+	*newtd = tdp;
 	return (0);
 }
 
 /*
- * proc_destroy_nthreads: [internal use only]
- * destroy nthreads on existing proc.
+ * sched_destroy_threads:
+ * - destroy nthreads on an existing process.
  * Note: nthreads is pre-determined by "sched_nthreads" and "sched_check_threads".
  */
 void
-proc_destroy_nthreads(p, ecode)
-	struct proc *p;
-	int ecode;
+sched_destroy_threads(pp, ecode, all)
+	struct proc *pp;
+	int ecode, all;
 {
 	struct sched *sc;
-	register struct thread *td;
+	struct sched_factor *sf;
+	int i, nthreads;
 
-	int nthreads, i;
-
-	sc = p->p_sched;
-	if ((p->p_flag & P_TDDESTROY) == 0) {
-		nthreads = sc->sc_factor->sf_optnthreads;
-		for (i = 0; i < nthreads; i++) {
-			thread_exit(W_EXITCODE(ecode, 0), 1);
+	sc = pp->p_sched;
+	sf = sc->sc_factor;
+	if ((pp->p_flag & P_TDCREATE) == 0) {
+		nthreads = sf->sf_optnthreads;
+		for (i = 0; i < nthreads + 1; i++) {
+			thread_exit(W_EXITCODE(ecode, 0), all);
 		}
-		p->p_flag &= ~P_TDDESTROY;
+		pp->p_flag &= ~P_TDDESTROY;
 	}
 }

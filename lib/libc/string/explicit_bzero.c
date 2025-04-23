@@ -35,7 +35,7 @@ explicit_bzero(void *buf, size_t len)
  * The use of a volatile pointer guarantees that the compiler
  * will not optimise the call away.
  */
-void * (*volatile explicit_memset_impl)(void*, int, size_t) = memset;
+void * (*volatile explicit_memset_impl)(void *, int, size_t) = memset;
 
 void *
 explicit_memset(void *b, int c, size_t len)
