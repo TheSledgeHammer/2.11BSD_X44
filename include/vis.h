@@ -34,8 +34,6 @@
 #ifndef _VIS_H_
 #define	_VIS_H_
 
-#include <sys/types.h>
-
 /*
  * to select alternate encoding format
  */
@@ -62,7 +60,7 @@
 #define	VIS_MIMESTYLE	0x0100	/* mime-style escape = HEX HEX */
 #define	VIS_HTTP1866	0x0200	/* http-style &#num; or &string; */
 #define	VIS_NOESCAPE	0x0400	/* don't decode `\' */
-#define	_VIS_END		0x0800	/* for unvis */
+#define	VIS_END		0x0800	/* for unvis */
 #define	VIS_GLOB		0x1000	/* encode glob(3) magic characters */
 #define	VIS_SHELL		0x2000	/* encode shell special characters [not glob] */
 #define	VIS_META		(VIS_WHITE | VIS_GLOB | VIS_SHELL)
@@ -80,7 +78,7 @@
 /*
  * unvis flags
  */
-#define	UNVIS_END	_VIS_END	/* no more characters */
+#define	UNVIS_END	VIS_END	/* no more characters */
 
 #include <sys/cdefs.h>
 
