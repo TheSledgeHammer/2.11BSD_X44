@@ -1,25 +1,24 @@
-/*	$NetBSD: xmss_hash.c,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
-/* $OpenBSD: xmss_hash.c,v 1.2 2018/02/26 03:56:44 dtucker Exp $ */
+/* $OpenBSD: xmss_hash.c,v 1.4 2023/12/20 00:06:25 jsg Exp $ */
 /*
 hash.c version 20160722
 Andreas Hülsing
 Joost Rijneveld
 Public domain.
 */
+
 #include "includes.h"
-__RCSID("$NetBSD: xmss_hash.c,v 1.2 2018/04/06 18:59:00 christos Exp $");
+#ifdef WITH_XMSS
 
 #include "xmss_hash_address.h"
 #include "xmss_commons.h"
 #include "xmss_hash.h"
 
 #include <stddef.h>
-#include <stdint.h>
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
 #include <stdio.h>
 #include <string.h>
-#include <openssl/sha.h>
-#include <openssl/hmac.h>
-#include <openssl/evp.h>
 
 int core_hash_SHA2(unsigned char *, const unsigned int, const unsigned char *,
     unsigned int, const unsigned char *, unsigned long long, unsigned int);
@@ -75,7 +74,7 @@ int prf(unsigned char *out, const unsigned char *in, const unsigned char *key, u
 }
 
 /*
- * Implemts H_msg
+ * Implements H_msg
  */
 int h_msg(unsigned char *out, const unsigned char *in, unsigned long long inlen, const unsigned char *key, const unsigned int keylen, const unsigned int n)
 {
@@ -135,3 +134,4 @@ int hash_f(unsigned char *out, const unsigned char *in, const unsigned char *pub
   }
   return core_hash_SHA2(out, 0, key, n, buf, n, n);
 }
+#endif /* WITH_XMSS */

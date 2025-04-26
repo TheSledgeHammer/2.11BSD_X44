@@ -1,4 +1,3 @@
-/*	$NetBSD: canohost.h,v 1.8 2017/04/18 18:41:46 christos Exp $	*/
 /* $OpenBSD: canohost.h,v 1.12 2016/03/07 19:02:43 djm Exp $ */
 
 /*
@@ -23,3 +22,5 @@ char		*get_local_name(int);
 int		get_local_port(int);
 
 #endif /* _CANOHOST_H */
+
+void		 ipv64_normalise_mapped(struct sockaddr_storage *, socklen_t *);

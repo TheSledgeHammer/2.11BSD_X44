@@ -1,4 +1,3 @@
-/*	$NetBSD: ssh-sandbox.h,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
 /* $OpenBSD: ssh-sandbox.h,v 1.1 2011/06/23 09:34:13 djm Exp $ */
 /*
  * Copyright (c) 2011 Damien Miller <djm@mindrot.org>
@@ -16,9 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+struct monitor;
 struct ssh_sandbox;
 
-struct ssh_sandbox *ssh_sandbox_init(void);
+struct ssh_sandbox *ssh_sandbox_init(struct monitor *);
 void ssh_sandbox_child(struct ssh_sandbox *);
-void ssh_sandbox_parent_finish(struct ssh_sandbox *);
-void ssh_sandbox_parent_preauth(struct ssh_sandbox *, pid_t);

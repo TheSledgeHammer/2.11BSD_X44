@@ -1,4 +1,3 @@
-/*	$NetBSD: xmss_commons.c,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
 /* $OpenBSD: xmss_commons.c,v 1.2 2018/02/26 03:56:44 dtucker Exp $ */
 /*
 xmss_commons.c 20160722
@@ -6,13 +5,16 @@ Andreas Hülsing
 Joost Rijneveld
 Public domain.
 */
+
 #include "includes.h"
-__RCSID("$NetBSD: xmss_commons.c,v 1.2 2018/04/06 18:59:00 christos Exp $");
+#ifdef WITH_XMSS
 
 #include "xmss_commons.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
 
 void to_byte(unsigned char *out, unsigned long long in, uint32_t bytes)
 {
@@ -23,9 +25,12 @@ void to_byte(unsigned char *out, unsigned long long in, uint32_t bytes)
   }
 }
 
+#if 0
 void hexdump(const unsigned char *a, size_t len)
 {
   size_t i;
   for (i = 0; i < len; i++)
     printf("%02x", a[i]);
 }
+#endif
+#endif /* WITH_XMSS */

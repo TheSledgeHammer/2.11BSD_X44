@@ -1,4 +1,3 @@
-/*	$NetBSD: uidswap.h,v 1.7 2018/08/26 07:46:37 christos Exp $	*/
 /* $OpenBSD: uidswap.h,v 1.14 2018/07/18 11:34:05 dtucker Exp $ */
 
 /*

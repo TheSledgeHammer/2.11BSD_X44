@@ -1,4 +1,3 @@
-/*	$NetBSD: atomicio.h,v 1.8 2019/04/20 17:16:40 christos Exp $	*/
 /* $OpenBSD: atomicio.h,v 1.12 2018/12/27 03:25:25 djm Exp $ */
 
 /*

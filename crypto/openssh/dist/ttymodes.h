@@ -1,4 +1,3 @@
-/*	$NetBSD: ttymodes.h,v 1.8 2017/10/07 19:39:19 christos Exp $	*/
 /* $OpenBSD: ttymodes.h,v 1.16 2017/04/30 23:26:54 djm Exp $ */
 
 /*
@@ -151,7 +150,9 @@ TTYMODE(OPOST,	c_oflag, 70)
 #if defined(OLCUC)
 TTYMODE(OLCUC,	c_oflag, 71)
 #endif
+#ifdef ONLCR
 TTYMODE(ONLCR,	c_oflag, 72)
+#endif
 #ifdef OCRNL
 TTYMODE(OCRNL,	c_oflag, 73)
 #endif

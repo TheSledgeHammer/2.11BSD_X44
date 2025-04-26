@@ -1,4 +1,3 @@
-/*	$NetBSD: gss-serv-krb5.c,v 1.12 2019/01/27 02:08:33 pgoyette Exp $	*/
 /* $OpenBSD: gss-serv-krb5.c,v 1.9 2018/07/09 21:37:55 markus Exp $ */
 
 /*
@@ -26,7 +25,7 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: gss-serv-krb5.c,v 1.12 2019/01/27 02:08:33 pgoyette Exp $");
+
 #ifdef GSSAPI
 #ifdef KRB5
 
@@ -47,8 +46,14 @@ __RCSID("$NetBSD: gss-serv-krb5.c,v 1.12 2019/01/27 02:08:33 pgoyette Exp $");
 
 extern ServerOptions options;
 
-#include <krb5.h>
-#include <gssapi/gssapi_krb5.h>
+#ifdef HEIMDAL
+# include <krb5.h>
+#endif
+#ifdef HAVE_GSSAPI_KRB5_H
+# include <gssapi_krb5.h>
+#elif HAVE_GSSAPI_GSSAPI_KRB5_H
+# include <gssapi/gssapi_krb5.h>
+#endif
 
 static krb5_context krb_context = NULL;
 
@@ -67,9 +72,6 @@ ssh_gssapi_krb5_init(void)
 		logit("Cannot initialize krb5 context");
 		return 0;
 	}
-#ifdef isneeded
-	krb5_init_ets(krb_context);
-#endif
 
 	return 1;
 }
@@ -118,7 +120,7 @@ ssh_gssapi_krb5_storecreds(ssh_gssapi_client *client)
 	krb5_error_code problem;
 	krb5_principal princ;
 	OM_uint32 maj_status, min_status;
-	size_t len;
+	int len;
 	const char *errmsg;
 
 	if (client->creds == NULL) {
@@ -129,20 +131,34 @@ ssh_gssapi_krb5_storecreds(ssh_gssapi_client *client)
 	if (ssh_gssapi_krb5_init() == 0)
 		return;
 
+#ifdef HEIMDAL
+# ifdef HAVE_KRB5_CC_NEW_UNIQUE
 	if ((problem = krb5_cc_new_unique(krb_context, krb5_fcc_ops.prefix,
 	    NULL, &ccache)) != 0) {
 		errmsg = krb5_get_error_message(krb_context, problem);
 		logit("krb5_cc_new_unique(): %.100s", errmsg);
+# else
+	if ((problem = krb5_cc_gen_new(krb_context, &krb5_fcc_ops, &ccache))) {
+	    logit("krb5_cc_gen_new(): %.100s",
+		krb5_get_err_text(krb_context, problem));
+# endif
 		krb5_free_error_message(krb_context, errmsg);
 		return;
 	}
+#else
+	if ((problem = ssh_krb5_cc_gen(krb_context, &ccache))) {
+		errmsg = krb5_get_error_message(krb_context, problem);
+		logit("ssh_krb5_cc_gen(): %.100s", errmsg);
+		krb5_free_error_message(krb_context, errmsg);
+		return;
+	}
+#endif	/* #ifdef HEIMDAL */
 
 	if ((problem = krb5_parse_name(krb_context,
 	    client->exportedname.value, &princ))) {
 		errmsg = krb5_get_error_message(krb_context, problem);
 		logit("krb5_parse_name(): %.100s", errmsg);
 		krb5_free_error_message(krb_context, errmsg);
-		krb5_cc_destroy(krb_context, ccache);
 		return;
 	}
 
@@ -165,7 +181,7 @@ ssh_gssapi_krb5_storecreds(ssh_gssapi_client *client)
 	}
 
 	client->store.filename = xstrdup(krb5_cc_get_name(krb_context, ccache));
-	client->store.envvar = __UNCONST("KRB5CCNAME");
+	client->store.envvar = "KRB5CCNAME";
 	len = strlen(client->store.filename) + 6;
 	client->store.envval = xmalloc(len);
 	snprintf(client->store.envval, len, "FILE:%s", client->store.filename);
@@ -183,7 +199,7 @@ ssh_gssapi_krb5_storecreds(ssh_gssapi_client *client)
 ssh_gssapi_mech gssapi_kerberos_mech = {
 	"toWM5Slw5Ew8Mqkay+al2g==",
 	"Kerberos",
-	{9, __UNCONST("\x2A\x86\x48\x86\xF7\x12\x01\x02\x02")},
+	{9, "\x2A\x86\x48\x86\xF7\x12\x01\x02\x02"},
 	NULL,
 	&ssh_gssapi_krb5_userok,
 	NULL,

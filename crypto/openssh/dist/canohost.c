@@ -1,5 +1,4 @@
-/*	$NetBSD: canohost.c,v 1.12 2017/04/18 18:41:46 christos Exp $	*/
-/* $OpenBSD: canohost.c,v 1.73 2016/03/07 19:02:43 djm Exp $ */
+/* $OpenBSD: canohost.c,v 1.77 2023/03/31 04:42:29 dtucker Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -14,12 +13,13 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: canohost.c,v 1.12 2017/04/18 18:41:46 christos Exp $");
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <errno.h>
 #include <netdb.h>
@@ -27,7 +27,6 @@ __RCSID("$NetBSD: canohost.c,v 1.12 2017/04/18 18:41:46 christos Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "xmalloc.h"
@@ -35,6 +34,31 @@ __RCSID("$NetBSD: canohost.c,v 1.12 2017/04/18 18:41:46 christos Exp $");
 #include "log.h"
 #include "canohost.h"
 #include "misc.h"
+
+void
+ipv64_normalise_mapped(struct sockaddr_storage *addr, socklen_t *len)
+{
+	struct sockaddr_in6 *a6 = (struct sockaddr_in6 *)addr;
+	struct sockaddr_in *a4 = (struct sockaddr_in *)addr;
+	struct in_addr inaddr;
+	u_int16_t port;
+
+	if (addr->ss_family != AF_INET6 ||
+	    !IN6_IS_ADDR_V4MAPPED(&a6->sin6_addr))
+		return;
+
+	debug3("Normalising mapped IPv4 in IPv6 address");
+
+	memcpy(&inaddr, ((char *)&a6->sin6_addr) + 12, sizeof(inaddr));
+	port = a6->sin6_port;
+
+	memset(a4, 0, sizeof(*a4));
+
+	a4->sin_family = AF_INET;
+	*len = sizeof(*a4);
+	memcpy(&a4->sin_addr, &inaddr, sizeof(inaddr));
+	a4->sin_port = port;
+}
 
 /*
  * Returns the local/remote IP-address/hostname of socket as a string.
@@ -48,6 +72,9 @@ get_socket_address(int sock, int remote, int flags)
 	char ntop[NI_MAXHOST];
 	int r;
 
+	if (sock < 0)
+		return NULL;
+
 	/* Get IP address of client. */
 	addrlen = sizeof(addr);
 	memset(&addr, 0, sizeof(addr));
@@ -60,13 +87,19 @@ get_socket_address(int sock, int remote, int flags)
 			return NULL;
 	}
 
+	/* Work around Linux IPv6 weirdness */
+	if (addr.ss_family == AF_INET6) {
+		addrlen = sizeof(struct sockaddr_in6);
+		ipv64_normalise_mapped(&addr, &addrlen);
+	}
+
 	switch (addr.ss_family) {
 	case AF_INET:
 	case AF_INET6:
 		/* Get the address in ascii. */
 		if ((r = getnameinfo((struct sockaddr *)&addr, addrlen, ntop,
 		    sizeof(ntop), NULL, 0, flags)) != 0) {
-			error("%s: getnameinfo %d failed: %s", __func__,
+			error_f("getnameinfo %d failed: %s",
 			    flags, ssh_gai_strerror(r));
 			return NULL;
 		}
@@ -111,7 +144,7 @@ get_local_name(int fd)
 
 	/* Handle the case where we were passed a pipe */
 	if (gethostname(myname, sizeof(myname)) == -1) {
-		verbose("%s: gethostname: %s", __func__, strerror(errno));
+		verbose_f("gethostname: %s", strerror(errno));
 		host = xstrdup("UNKNOWN");
 	} else {
 		host = xstrdup(myname);
@@ -130,20 +163,26 @@ get_sock_port(int sock, int local)
 	char strport[NI_MAXSERV];
 	int r;
 
+	if (sock < 0)
+		return -1;
 	/* Get IP address of client. */
 	fromlen = sizeof(from);
 	memset(&from, 0, sizeof(from));
 	if (local) {
-		if (getsockname(sock, (struct sockaddr *)&from, &fromlen) < 0) {
+		if (getsockname(sock, (struct sockaddr *)&from, &fromlen) == -1) {
 			error("getsockname failed: %.100s", strerror(errno));
 			return 0;
 		}
 	} else {
-		if (getpeername(sock, (struct sockaddr *)&from, &fromlen) < 0) {
+		if (getpeername(sock, (struct sockaddr *)&from, &fromlen) == -1) {
 			debug("getpeername failed: %.100s", strerror(errno));
 			return -1;
 		}
 	}
+
+	/* Work around Linux IPv6 weirdness */
+	if (from.ss_family == AF_INET6)
+		fromlen = sizeof(struct sockaddr_in6);
 
 	/* Non-inet sockets don't have a port number. */
 	if (from.ss_family != AF_INET && from.ss_family != AF_INET6)
@@ -152,7 +191,7 @@ get_sock_port(int sock, int local)
 	/* Return port number. */
 	if ((r = getnameinfo((struct sockaddr *)&from, fromlen, NULL, 0,
 	    strport, sizeof(strport), NI_NUMERICSERV)) != 0)
-		fatal("%s: getnameinfo NI_NUMERICSERV failed: %s", __func__,
+		fatal_f("getnameinfo NI_NUMERICSERV failed: %s",
 		    ssh_gai_strerror(r));
 	return atoi(strport);
 }

@@ -1,4 +1,4 @@
-/*	$NetBSD: xmss_fast.h,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
+#ifdef WITH_XMSS
 /* $OpenBSD: xmss_fast.h,v 1.2 2018/02/26 03:56:44 dtucker Exp $ */
 /*
 xmss_fast.h version 20160722
@@ -108,4 +108,4 @@ int xmssmt_sign(unsigned char *sk, bds_state *state, unsigned char *wots_sigs, u
  */
 int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk, const xmssmt_params *params);
 #endif
-
+#endif /* WITH_XMSS */

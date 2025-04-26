@@ -1,6 +1,4 @@
-/*	$NetBSD: sshlogin.c,v 1.11 2019/01/27 02:08:33 pgoyette Exp $	*/
-/* $OpenBSD: sshlogin.c,v 1.33 2018/07/09 21:26:02 markus Exp $ */
-
+/* $OpenBSD: sshlogin.c,v 1.35 2020/10/18 11:32:02 djm Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -42,37 +40,29 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: sshlogin.c,v 1.11 2019/01/27 02:08:33 pgoyette Exp $");
-#include <sys/param.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <netinet/in.h>
+
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <util.h>
-#ifdef SUPPORT_UTMP
-#include <utmp.h>
-#endif
-#ifdef SUPPORT_UTMPX
-#include <utmpx.h>
-#endif
-#include <stdarg.h>
 #include <limits.h>
 
 #include "sshlogin.h"
 #include "ssherr.h"
+#include "loginrec.h"
 #include "log.h"
 #include "sshbuf.h"
 #include "misc.h"
 #include "servconf.h"
-
-#ifndef HOST_NAME_MAX
-#define HOST_NAME_MAX MAXHOSTNAMELEN
-#endif
 
 extern struct sshbuf *loginmsg;
 extern ServerOptions options;
@@ -86,55 +76,11 @@ time_t
 get_last_login_time(uid_t uid, const char *logname,
     char *buf, size_t bufsize)
 {
-#ifdef SUPPORT_UTMPX
-	struct lastlogx llx, *llxp;
-#endif
-#ifdef SUPPORT_UTMP
-	struct lastlog ll;
-	int fd;
-#endif
-	off_t pos, r;
+	struct logininfo li;
 
-	buf[0] = '\0';
-#ifdef SUPPORT_UTMPX
-	if ((llxp = getlastlogx(_PATH_LASTLOGX, uid, &llx)) != NULL) {
-		if (bufsize > sizeof(llxp->ll_host) + 1)
-			bufsize = sizeof(llxp->ll_host) + 1;
-		strncpy(buf, llxp->ll_host, bufsize - 1);
-		buf[bufsize - 1] = 0;
-		return llxp->ll_tv.tv_sec;
-	}
-#endif
-#ifdef SUPPORT_UTMP
-	fd = open(_PATH_LASTLOG, O_RDONLY);
-	if (fd < 0)
-		return 0;
-
-	pos = (off_t)uid * sizeof(ll);
-	r = lseek(fd, pos, SEEK_SET);
-	if (r == -1) {
-		error("%s: lseek: %s", __func__, strerror(errno));
-		close(fd);
-		return (0);
-	}
-	if (r != pos) {
-		debug("%s: truncated lastlog", __func__);
-		close(fd);
-		return (0);
-	}
-	if (read(fd, &ll, sizeof(ll)) != sizeof(ll)) {
-		close(fd);
-		return 0;
-	}
-	close(fd);
-	if (bufsize > sizeof(ll.ll_host) + 1)
-		bufsize = sizeof(ll.ll_host) + 1;
-	strncpy(buf, ll.ll_host, bufsize - 1);
-	buf[bufsize - 1] = '\0';
-	return (time_t)ll.ll_time;
-#else
-	return 0;
-#endif
+	login_get_lastlog(&li, uid);
+	strlcpy(buf, li.hostname, bufsize);
+	return (time_t)li.tv_sec;
 }
 
 /*
@@ -144,19 +90,32 @@ get_last_login_time(uid_t uid, const char *logname,
 static void
 store_lastlog_message(const char *user, uid_t uid)
 {
-	char *time_string, hostname[HOST_NAME_MAX+1] = "";
+#ifndef NO_SSH_LASTLOG
+# ifndef CUSTOM_SYS_AUTH_GET_LASTLOGIN_MSG
+	char hostname[HOST_NAME_MAX+1] = "";
 	time_t last_login_time;
+# endif
+	char *time_string;
 	int r;
 
 	if (!options.print_lastlog)
 		return;
 
+# ifdef CUSTOM_SYS_AUTH_GET_LASTLOGIN_MSG
+	time_string = sys_auth_get_lastlogin_msg(user, uid);
+	if (time_string != NULL) {
+		if ((r = sshbuf_put(loginmsg,
+		    time_string, strlen(time_string))) != 0)
+			fatal("%s: buffer error: %s", __func__, ssh_err(r));
+		free(time_string);
+	}
+# else
 	last_login_time = get_last_login_time(uid, user, hostname,
 	    sizeof(hostname));
 
 	if (last_login_time != 0) {
-		if ((time_string = ctime(&last_login_time)) != NULL)
-			time_string[strcspn(time_string, "\n")] = '\0';
+		time_string = ctime(&last_login_time);
+		time_string[strcspn(time_string, "\n")] = '\0';
 		if (strcmp(hostname, "") == 0)
 			r = sshbuf_putf(loginmsg, "Last login: %s\r\n",
 			    time_string);
@@ -164,8 +123,10 @@ store_lastlog_message(const char *user, uid_t uid)
 			r = sshbuf_putf(loginmsg, "Last login: %s from %s\r\n",
 			    time_string, hostname);
 		if (r != 0)
-			fatal("%s: buffer error: %s", __func__, ssh_err(r));
+			fatal_fr(r, "sshbuf_putf");
 	}
+# endif /* CUSTOM_SYS_AUTH_GET_LASTLOGIN_MSG */
+#endif /* NO_SSH_LASTLOG */
 }
 
 /*
@@ -176,120 +137,38 @@ void
 record_login(pid_t pid, const char *tty, const char *user, uid_t uid,
     const char *host, struct sockaddr *addr, socklen_t addrlen)
 {
-#if defined(SUPPORT_UTMP) || defined(SUPPORT_UTMPX)
-	int fd;
-#endif
-	struct timeval tv;
-#ifdef SUPPORT_UTMP
-	struct utmp u;
-	struct lastlog ll;
-#endif
-#ifdef SUPPORT_UTMPX
-	struct utmpx ux, *uxp = &ux;
-	struct lastlogx llx;
-#endif
-	(void)gettimeofday(&tv, NULL);
-	/*
-	 * XXX: why do we need to handle logout cases here?
-	 * Isn't the function below taking care of this?
-	 */
+	struct logininfo *li;
+
 	/* save previous login details before writing new */
 	store_lastlog_message(user, uid);
 
-#ifdef SUPPORT_UTMP
-	/* Construct an utmp/wtmp entry. */
-	memset(&u, 0, sizeof(u));
-	strncpy(u.ut_line, tty + 5, sizeof(u.ut_line));
-	u.ut_time = (time_t)tv.tv_sec;
-	strncpy(u.ut_name, user, sizeof(u.ut_name));
-	strncpy(u.ut_host, host, sizeof(u.ut_host));
-
-	login(&u);
-
-	/* Update lastlog unless actually recording a logout. */
-	if (*user != '\0') {
-		/*
-		 * It is safer to memset the lastlog structure first because
-		 * some systems might have some extra fields in it (e.g. SGI)
-		 */
-		memset(&ll, 0, sizeof(ll));
-
-		/* Update lastlog. */
-		ll.ll_time = time(NULL);
-		strncpy(ll.ll_line, tty + 5, sizeof(ll.ll_line));
-		strncpy(ll.ll_host, host, sizeof(ll.ll_host));
-		fd = open(_PATH_LASTLOG, O_RDWR);
-		if (fd >= 0) {
-			lseek(fd, (off_t)uid * sizeof(ll), SEEK_SET);
-			if (write(fd, &ll, sizeof(ll)) != sizeof(ll))
-				logit("Could not write %.100s: %.100s", _PATH_LASTLOG, strerror(errno));
-			close(fd);
-		}
-	}
-#endif
-#ifdef SUPPORT_UTMPX
-	/* Construct an utmpx/wtmpx entry. */
-	memset(&ux, 0, sizeof(ux));
-	strncpy(ux.ut_line, tty + 5, sizeof(ux.ut_line));
-	if (*user) {
-		ux.ut_pid = pid;
-		ux.ut_type = USER_PROCESS;
-		ux.ut_tv = tv;
-		strncpy(ux.ut_name, user, sizeof(ux.ut_name));
-		strncpy(ux.ut_host, host, sizeof(ux.ut_host));
-		/* XXX: need ut_id, use last 4 char of tty */
-		if (strlen(tty) > sizeof(ux.ut_id)) {
-			strncpy(ux.ut_id,
-			    tty + strlen(tty) - sizeof(ux.ut_id),
-			    sizeof(ux.ut_id));
-		} else
-			strncpy(ux.ut_id, tty, sizeof(ux.ut_id));
-		/* XXX: It would be better if we had sockaddr_storage here */
-		if (addrlen > sizeof(ux.ut_ss))
-			addrlen = sizeof(ux.ut_ss);
-		(void)memcpy(&ux.ut_ss, addr, addrlen);
-		if (pututxline(&ux) == NULL)
-			logit("could not add utmpx line: %.100s",
-			    strerror(errno));
-		/* Update lastlog. */
-		(void)gettimeofday(&llx.ll_tv, NULL);
-		strncpy(llx.ll_line, tty + 5, sizeof(llx.ll_line));
-		strncpy(llx.ll_host, host, sizeof(llx.ll_host));
-		(void)memcpy(&llx.ll_ss, addr, addrlen);
-		if (updlastlogx(_PATH_LASTLOGX, uid, &llx) == -1)
-			logit("Could not update %.100s: %.100s",
-			    _PATH_LASTLOGX, strerror(errno));
-	} else {
-		if ((uxp = getutxline(&ux)) == NULL)
-			logit("could not find utmpx line for %.100s", tty);
-		else {
-			uxp->ut_type = DEAD_PROCESS;
-			uxp->ut_tv = tv;
-			/* XXX: we don't record exit info yet */
-			if (pututxline(&ux) == NULL)
-				logit("could not replace utmpx line: %.100s",
-				    strerror(errno));
-		}
-	}
-	endutxent();
-	updwtmpx(_PATH_WTMPX, uxp);
-#endif
+	li = login_alloc_entry(pid, user, host, tty);
+	login_set_addr(li, addr, addrlen);
+	login_login(li);
+	login_free_entry(li);
 }
+
+#ifdef LOGIN_NEEDS_UTMPX
+void
+record_utmp_only(pid_t pid, const char *ttyname, const char *user,
+		 const char *host, struct sockaddr *addr, socklen_t addrlen)
+{
+	struct logininfo *li;
+
+	li = login_alloc_entry(pid, user, host, ttyname);
+	login_set_addr(li, addr, addrlen);
+	login_utmp_only(li);
+	login_free_entry(li);
+}
+#endif
 
 /* Records that the user has logged out. */
 void
-record_logout(pid_t pid, const char *tty)
+record_logout(pid_t pid, const char *tty, const char *user)
 {
-#if defined(SUPPORT_UTMP) || defined(SUPPORT_UTMPX)
-	const char *line = tty + 5;	/* /dev/ttyq8 -> ttyq8 */
-#endif
-#ifdef SUPPORT_UTMP
-	if (logout(line))
-		logwtmp(line, "", "");
-#endif
-#ifdef SUPPORT_UTMPX
-	/* XXX: no exit info yet */
-	if (logoutx(line, 0, DEAD_PROCESS))
-		logwtmpx(line, "", "", 0, DEAD_PROCESS);
-#endif
+	struct logininfo *li;
+
+	li = login_alloc_entry(pid, user, NULL, tty);
+	login_logout(li);
+	login_free_entry(li);
 }

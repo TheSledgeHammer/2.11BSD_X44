@@ -1,5 +1,4 @@
-/*	$NetBSD: kexdh.c,v 1.8 2019/04/20 17:16:40 christos Exp $	*/
-/* $OpenBSD: kexdh.c,v 1.32 2019/01/21 10:40:11 djm Exp $ */
+/* $OpenBSD: kexdh.c,v 1.34 2020/12/04 02:29:25 djm Exp $ */
 /*
  * Copyright (c) 2019 Markus Friedl.  All rights reserved.
  *
@@ -25,12 +24,17 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: kexdh.c,v 1.8 2019/04/20 17:16:40 christos Exp $");
+
+#ifdef WITH_OPENSSL
+
 #include <sys/types.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+
+#include "openbsd-compat/openssl-compat.h"
+#include <openssl/dh.h>
 
 #include "sshkey.h"
 #include "kex.h"
@@ -38,6 +42,7 @@ __RCSID("$NetBSD: kexdh.c,v 1.8 2019/04/20 17:16:40 christos Exp $");
 #include "digest.h"
 #include "ssherr.h"
 #include "dh.h"
+#include "log.h"
 
 int
 kex_dh_keygen(struct kex *kex)
@@ -189,8 +194,10 @@ kex_dh_dec(struct kex *kex, const struct sshbuf *dh_blob,
 	*shared_secretp = buf;
 	buf = NULL;
  out:
+	BN_free(dh_pub);
 	DH_free(kex->dh);
 	kex->dh = NULL;
 	sshbuf_free(buf);
 	return r;
 }
+#endif /* WITH_OPENSSL */

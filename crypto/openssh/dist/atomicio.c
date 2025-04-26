@@ -1,4 +1,3 @@
-/*	$NetBSD: atomicio.c,v 1.9 2019/04/20 17:16:40 christos Exp $	*/
 /* $OpenBSD: atomicio.c,v 1.30 2019/01/24 02:42:23 dtucker Exp $ */
 /*
  * Copyright (c) 2006 Damien Miller. All rights reserved.
@@ -28,12 +27,17 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: atomicio.c,v 1.9 2019/04/20 17:16:40 christos Exp $");
-#include <sys/param.h>
+
 #include <sys/uio.h>
 
 #include <errno.h>
+#ifdef HAVE_POLL_H
 #include <poll.h>
+#else
+# ifdef HAVE_SYS_POLL_H
+#  include <sys/poll.h>
+# endif
+#endif
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
@@ -53,11 +57,11 @@ atomicio6(ssize_t (*f) (int, void *, size_t), int fd, void *_s, size_t n,
 	struct pollfd pfd;
 
 	pfd.fd = fd;
-	/*
-	 * check for vwrite instead of read to avoid read being renamed
-	 * by SSP issues
-	 */
-	pfd.events = f == vwrite ? POLLOUT : POLLIN;
+#ifndef BROKEN_READ_COMPARISON
+	pfd.events = f == read ? POLLIN : POLLOUT;
+#else
+	pfd.events = POLLIN|POLLOUT;
+#endif
 	while (n > pos) {
 		res = (f) (fd, s + pos, n - pos);
 		switch (res) {
@@ -115,7 +119,11 @@ atomiciov6(ssize_t (*f) (int, const struct iovec *, int), int fd,
 	memcpy(iov, _iov, (size_t)iovcnt * sizeof(*_iov));
 
 	pfd.fd = fd;
+#ifndef BROKEN_READV_COMPARISON
 	pfd.events = f == readv ? POLLIN : POLLOUT;
+#else
+	pfd.events = POLLIN|POLLOUT;
+#endif
 	for (; iovcnt > 0 && iov[0].iov_len > 0;) {
 		res = (f) (fd, iov, iovcnt);
 		switch (res) {

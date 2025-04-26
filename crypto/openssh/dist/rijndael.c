@@ -1,4 +1,3 @@
-/*	$NetBSD: rijndael.c,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
 /*	$OpenBSD: rijndael.c,v 1.20 2015/03/16 11:09:52 djm Exp $ */
 
 /**
@@ -28,8 +27,9 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: rijndael.c,v 1.2 2018/04/06 18:59:00 christos Exp $");
-#include <sys/types.h>
+
+#include <stdlib.h>
+#include <string.h>
 
 #include "rijndael.h"
 

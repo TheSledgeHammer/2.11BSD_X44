@@ -5,7 +5,7 @@
 SSHDIST?= ${NETBSDSRCDIR}/crypto/openssh/dist
 
 SUBDIR=	ssh sshd ssh-add ssh-copy-id ssh-keygen ssh-agent scp \
-	sftp-server ssh-keysign ssh-keyscan sftp ssh-pkcs11-helper
+	    sftp-server ssh-keysign ssh-keyscan sftp ssh-pkcs11-helper
 
 .PATH: ${SSHDIST}
 .MADE: moduli

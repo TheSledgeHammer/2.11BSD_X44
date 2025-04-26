@@ -1,48 +1,23 @@
+#	$211BSD_X44: Makefile.inc,v 1.14 2025/05/26 17:33:59 martin Exp $
 #	$NetBSD: Makefile.inc,v 1.14 2018/04/06 18:58:59 christos Exp $
 
-WARNS?=	4
+WARNS?=	2
 
 .include <bsd.own.mk>
 
 USE_FORT?= yes	# network client/server
-WITH_OPENSSL=1
 
-SSHDIST?= ${NETBSDSRCDIR}/crypto/openssh/dist
+SSHDIR?= ${NETBSDSRCDIR}/crypto/openssh
+SSHDIST?= ${SSHDIR}/dist
 
 CPPFLAGS+=-I${SSHDIST}
+CPPFLAGS+=-I${SSHDIR}/include
 
-CPPFLAGS+=-DHAVE_DLOPEN
-CPPFLAGS+=-DHAVE_HEADER_AD
-CPPFLAGS+=-DHAVE_LOGIN_CAP
-CPPFLAGS+=-DHAVE_STDLIB_H
 .if ${HAVE_OPENSSL} < 11
 CPPFLAGS+=-DOPENSSL_API_COMPAT=0x10100000L
 .endif
 
-CPPFLAGS+=-DWITH_OPENSSL -DENABLE_PKCS11 -D_OPENBSD_SOURCE -DWITH_XMSS
-.if !defined(NOPIC)
-CPPFLAGS+=-DHAVE_DLOPEN
-.endif
 .PATH: ${SSHDIST}
+.PATH: ${SSHDIR}/include
 
-.if (${USE_PAM} != "no")
-CPPFLAGS+=-DUSE_PAM
-.else	# USE_PAM == no
-.if (${USE_SKEY} != "no")
-CPPFLAGS+=-DSKEY
-.endif
-.endif	# USE_PAM == no
-
-.if (${USE_KERBEROS} != "no")
-CPPFLAGS+=-DGSSAPI
-CPPFLAGS+=-DKRB5 -DHEIMDAL
-.endif
-
-.if (${USE_LDAP} != "no")
-CPPFLAGS+=-DWITH_LDAP_PUBKEY
-.endif
-
-CPPFLAGS+=-DX11BASE=\"/usr/X11R7\"
-
-CPPFLAGS+=-DSUPPORT_UTMP -DSUPPORT_UTMPX
 CPPFLAGS+=-DLIBWRAP

@@ -1,6 +1,4 @@
-/*	$NetBSD: utf8.c,v 1.8 2019/01/27 02:08:33 pgoyette Exp $	*/
-/* $OpenBSD: utf8.c,v 1.8 2018/08/21 13:56:27 schwarze Exp $ */
-
+/* $OpenBSD: utf8.c,v 1.11 2020/05/01 06:28:52 djm Exp $ */
 /*
  * Copyright (c) 2016 Ingo Schwarze <schwarze@openbsd.org>
  *
@@ -17,29 +15,34 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "includes.h"
-__RCSID("$NetBSD: utf8.c,v 1.8 2019/01/27 02:08:33 pgoyette Exp $");
 /*
  * Utility functions for multibyte-character handling,
  * in particular to sanitize untrusted strings for terminal output.
  */
 
+#include "includes.h"
+
 #include <sys/types.h>
-#include <langinfo.h>
+#ifdef HAVE_LANGINFO_H
+# include <langinfo.h>
+#endif
 #include <limits.h>
+#include <locale.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <vis.h>
-#include <wchar.h>
+#if defined(HAVE_STRNVIS) && defined(HAVE_VIS_H) && !defined(BROKEN_STRNVIS)
+# include <vis.h>
+#endif
+#ifdef HAVE_WCHAR_H
+# include <wchar.h>
+#endif
 
 #include "utf8.h"
 
 static int	 dangerous_locale(void);
 static int	 grow_dst(char **, size_t *, size_t, char **, size_t);
-static int	 vasnmprintf(char **, size_t, int *, const char *, va_list)
-		     __attribute__((format(printf, 4, 0)));
 
 
 /*
@@ -97,7 +100,7 @@ grow_dst(char **dst, size_t *sz, size_t maxsz, char **dp, size_t need)
  * written is returned in *wp.
  */
 
-static int
+int
 vasnmprintf(char **str, size_t maxsz, int *wp, const char *fmt, va_list ap)
 {
 	char	*src;	/* Source string returned from vasprintf. */
@@ -189,9 +192,6 @@ vasnmprintf(char **str, size_t maxsz, int *wp, const char *fmt, va_list ap)
 					ret = -1;
 					break;
 				}
-#ifndef VIS_ALL
-#define VIS_ALL VIS_WHITE	/* XXX */
-#endif
 				tp = vis(dp, *sp, VIS_OCTAL | VIS_ALL, 0);
 				width = tp - dp;
 				total_width += width;
@@ -240,7 +240,7 @@ int
 snmprintf(char *str, size_t sz, int *wp, const char *fmt, ...)
 {
 	va_list	 ap;
-	char	*cp;
+	char	*cp = NULL;
 	int	 ret;
 
 	va_start(ap, fmt);
@@ -254,6 +254,20 @@ snmprintf(char *str, size_t sz, int *wp, const char *fmt, ...)
 	return ret;
 }
 
+int
+asmprintf(char **outp, size_t sz, int *wp, const char *fmt, ...)
+{
+	va_list	 ap;
+	int	 ret;
+
+	*outp = NULL;
+	va_start(ap, fmt);
+	ret = vasnmprintf(outp, sz, wp, fmt, ap);
+	va_end(ap);
+
+	return ret;
+}
+
 /*
  * To stay close to the standard interfaces, the following functions
  * return the number of non-NUL bytes written.
@@ -262,11 +276,13 @@ snmprintf(char *str, size_t sz, int *wp, const char *fmt, ...)
 int
 vfmprintf(FILE *stream, const char *fmt, va_list ap)
 {
-	char	*str;
+	char	*str = NULL;
 	int	 ret;
 
-	if ((ret = vasnmprintf(&str, INT_MAX, NULL, fmt, ap)) < 0)
+	if ((ret = vasnmprintf(&str, INT_MAX, NULL, fmt, ap)) < 0) {
+		free(str);
 		return -1;
+	}
 	if (fputs(str, stream) == EOF)
 		ret = -1;
 	free(str);
@@ -295,4 +311,45 @@ mprintf(const char *fmt, ...)
 	ret = vfmprintf(stdout, fmt, ap);
 	va_end(ap);
 	return ret;
+}
+
+/*
+ * Set up libc for multibyte output in the user's chosen locale.
+ *
+ * XXX: we are known to have problems with Turkish (i/I confusion) so we
+ *      deliberately fall back to the C locale for now. Longer term we should
+ *      always prefer to select C.[encoding] if possible, but there's no
+ *      standardisation in locales between systems, so we'll need to survey
+ *      what's out there first.
+ */
+void
+msetlocale(void)
+{
+	const char *vars[] = { "LC_ALL", "LC_CTYPE", "LANG", NULL };
+	char *cp;
+	int i;
+
+	/*
+	 * We can't yet cope with dotless/dotted I in Turkish locales,
+	 * so fall back to the C locale for these.
+	 */
+	for (i = 0; vars[i] != NULL; i++) {
+		if ((cp = getenv(vars[i])) == NULL)
+			continue;
+		if (strncasecmp(cp, "TR", 2) != 0)
+			break;
+		/*
+		 * If we're in a UTF-8 locale then prefer to use
+		 * the C.UTF-8 locale (or equivalent) if it exists.
+		 */
+		if ((strcasestr(cp, "UTF-8") != NULL ||
+		    strcasestr(cp, "UTF8") != NULL) &&
+		    (setlocale(LC_CTYPE, "C.UTF-8") != NULL ||
+		    setlocale(LC_CTYPE, "POSIX.UTF-8") != NULL))
+			return;
+		setlocale(LC_CTYPE, "C");
+		return;
+	}
+	/* We can handle this locale */
+	setlocale(LC_CTYPE, "");
 }

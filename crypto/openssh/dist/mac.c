@@ -1,5 +1,4 @@
-/*	$NetBSD: mac.c,v 1.15 2017/10/07 19:39:19 christos Exp $	*/
-/* $OpenBSD: mac.c,v 1.34 2017/05/08 22:57:38 djm Exp $ */
+/* $OpenBSD: mac.c,v 1.35 2019/09/06 04:53:27 djm Exp $ */
 /*
  * Copyright (c) 2001 Markus Friedl.  All rights reserved.
  *
@@ -25,12 +24,12 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: mac.c,v 1.15 2017/10/07 19:39:19 christos Exp $");
+
 #include <sys/types.h>
 
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <time.h>
 
 #include "digest.h"
 #include "hmac.h"
@@ -40,12 +39,14 @@ __RCSID("$NetBSD: mac.c,v 1.15 2017/10/07 19:39:19 christos Exp $");
 #include "ssherr.h"
 #include "sshbuf.h"
 
+#include "openbsd-compat/openssl-compat.h"
+
 #define SSH_DIGEST	1	/* SSH_DIGEST_XXX */
 #define SSH_UMAC	2	/* UMAC (not integrated with OpenSSL) */
 #define SSH_UMAC128	3
 
 struct macalg {
-	const char	*name;
+	char		*name;
 	int		type;
 	int		alg;
 	int		truncatebits;	/* truncate digest if != 0 */

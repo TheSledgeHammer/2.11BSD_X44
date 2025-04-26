@@ -1,4 +1,4 @@
-/*	$NetBSD: xmss_hash_address.h,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
+#ifdef WITH_XMSS
 /* $OpenBSD: xmss_hash_address.h,v 1.2 2018/02/26 03:56:44 dtucker Exp $ */
 /*
 hash_address.h version 20160722
@@ -7,7 +7,9 @@ Joost Rijneveld
 Public domain.
 */
 
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
 
 void setLayerADRS(uint32_t adrs[8], uint32_t layer);
 
@@ -35,5 +37,4 @@ void setTreeHeight(uint32_t adrs[8], uint32_t treeHeight);
 
 void setTreeIndex(uint32_t adrs[8], uint32_t treeIndex);
 
-
-
+#endif /* WITH_XMSS */

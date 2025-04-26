@@ -1,5 +1,4 @@
-/*	$NetBSD: pathnames.h,v 1.14 2018/04/06 18:59:00 christos Exp $	*/
-/* $OpenBSD: pathnames.h,v 1.28 2018/02/23 15:58:37 markus Exp $ */
+/* $OpenBSD: pathnames.h,v 1.32 2024/05/17 00:30:24 djm Exp $ */
 
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
@@ -14,8 +13,14 @@
  */
 
 #define ETCDIR				"/etc"
+
+#ifndef SSHDIR
 #define SSHDIR				ETCDIR "/ssh"
+#endif
+
+#ifndef _PATH_SSH_PIDDIR
 #define _PATH_SSH_PIDDIR		"/var/run"
+#endif
 
 /*
  * System-wide file containing host keys of known hosts.  This file should be
@@ -33,12 +38,22 @@
 #define _PATH_HOST_CONFIG_FILE		SSHDIR "/ssh_config"
 #define _PATH_HOST_DSA_KEY_FILE		SSHDIR "/ssh_host_dsa_key"
 #define _PATH_HOST_ECDSA_KEY_FILE	SSHDIR "/ssh_host_ecdsa_key"
-#define _PATH_HOST_RSA_KEY_FILE		SSHDIR "/ssh_host_rsa_key"
 #define _PATH_HOST_ED25519_KEY_FILE	SSHDIR "/ssh_host_ed25519_key"
 #define _PATH_HOST_XMSS_KEY_FILE	SSHDIR "/ssh_host_xmss_key"
-#define _PATH_DH_MODULI			ETCDIR "/moduli"
+#define _PATH_HOST_RSA_KEY_FILE		SSHDIR "/ssh_host_rsa_key"
+#define _PATH_DH_MODULI			SSHDIR "/moduli"
 
+#ifndef _PATH_SSH_PROGRAM
 #define _PATH_SSH_PROGRAM		"/usr/bin/ssh"
+#endif
+
+/* Binary paths for the sshd components */
+#ifndef _PATH_SSHD_SESSION
+#define _PATH_SSHD_SESSION		"/usr/libexec/sshd-session"
+#endif
+#ifndef _PATH_SSHD_AUTH
+#define _PATH_SSHD_AUTH			"/usr/libexec/sshd-auth"
+#endif
 
 /*
  * The process id of the daemon listening for connections is saved here to
@@ -70,6 +85,8 @@
 #define _PATH_SSH_CLIENT_ID_RSA		_PATH_SSH_USER_DIR "/id_rsa"
 #define _PATH_SSH_CLIENT_ID_ED25519	_PATH_SSH_USER_DIR "/id_ed25519"
 #define _PATH_SSH_CLIENT_ID_XMSS	_PATH_SSH_USER_DIR "/id_xmss"
+#define _PATH_SSH_CLIENT_ID_ECDSA_SK	_PATH_SSH_USER_DIR "/id_ecdsa_sk"
+#define _PATH_SSH_CLIENT_ID_ED25519_SK	_PATH_SSH_USER_DIR "/id_ed25519_sk"
 
 /*
  * Configuration file in user's home directory.  This file need not be
@@ -105,48 +122,66 @@
  * Ssh-only version of /etc/hosts.equiv.  Additionally, the daemon may use
  * ~/.rhosts and /etc/hosts.equiv if rhosts authentication is enabled.
  */
-#define _PATH_SSH_HOSTS_EQUIV		ETCDIR "/shosts.equiv"
+#define _PATH_SSH_HOSTS_EQUIV		SSHDIR "/shosts.equiv"
 #define _PATH_RHOSTS_EQUIV		"/etc/hosts.equiv"
-
-/*
- * X11 base directory
- */
-#ifndef X11BASE
-#define X11BASE				"/usr/X11R6"
-#endif
 
 /*
  * Default location of askpass
  */
-#define _PATH_SSH_ASKPASS_DEFAULT	X11BASE "/bin/ssh-askpass"
-
-/* Location of ssh-keysign for hostbased authentication */
-#define _PATH_SSH_KEY_SIGN		"/usr/libexec/ssh-keysign"
-
-/* Location of ssh-pkcs11-helper to support keys in tokens */
-#define _PATH_SSH_PKCS11_HELPER		"/usr/libexec/ssh-pkcs11-helper"
-
-/* xauth for X11 forwarding */
-#define _PATH_XAUTH			X11BASE "/bin/xauth"
-
-/* UNIX domain socket for X11 server; displaynum will replace %u */
-#define _PATH_UNIX_X "/tmp/.X11-unix/X%u"
-
-/* for scp */
-#define _PATH_CP			"cp"
-
-/* for sftp */
-#define _PATH_SFTP_SERVER		"/usr/libexec/sftp-server"
-#define _PATH_LS			"ls"
-
-/* chroot directory for unprivileged user when UsePrivilegeSeparation=yes */
-#ifdef __OpenBSD__
-#define _PATH_PRIVSEP_CHROOT_DIR	"/var/empty"
-#else
-#define _PATH_PRIVSEP_CHROOT_DIR	"/var/chroot/sshd"
+#ifndef _PATH_SSH_ASKPASS_DEFAULT
+#define _PATH_SSH_ASKPASS_DEFAULT	"/usr/X11R6/bin/ssh-askpass"
 #endif
 
-#define _PATH_URANDOM			"/dev/urandom"
+/* Location of ssh-keysign for hostbased authentication */
+#ifndef _PATH_SSH_KEY_SIGN
+#define _PATH_SSH_KEY_SIGN		"/usr/libexec/ssh-keysign"
+#endif
+
+/* Location of ssh-pkcs11-helper to support keys in tokens */
+#ifndef _PATH_SSH_PKCS11_HELPER
+#define _PATH_SSH_PKCS11_HELPER		"/usr/libexec/ssh-pkcs11-helper"
+#endif
+
+/* Location of ssh-sk-helper to support keys in security keys */
+#ifndef _PATH_SSH_SK_HELPER
+#define _PATH_SSH_SK_HELPER		"/usr/libexec/ssh-sk-helper"
+#endif
+
+/* xauth for X11 forwarding */
+#ifndef _PATH_XAUTH
+#define _PATH_XAUTH			"/usr/X11R6/bin/xauth"
+#endif
+
+/* UNIX domain socket for X11 server; displaynum will replace %u */
+#ifndef _PATH_UNIX_X
+#define _PATH_UNIX_X "/tmp/.X11-unix/X%u"
+#endif
+
+/* for scp */
+#ifndef _PATH_CP
+#define _PATH_CP			"cp"
+#endif
+
+/* for sftp */
+#ifndef _PATH_SFTP_SERVER
+#define _PATH_SFTP_SERVER		"/usr/libexec/sftp-server"
+#endif
+
+/* chroot directory for unprivileged user when UsePrivilegeSeparation=yes */
+#ifndef _PATH_PRIVSEP_CHROOT_DIR
+#define _PATH_PRIVSEP_CHROOT_DIR	"/var/empty"
+#endif
 
 /* for passwd change */
-#define _PATH_PASSWD_PROG		"/usr/bin/passwd"
+#ifndef _PATH_PASSWD_PROG
+#define _PATH_PASSWD_PROG             "/usr/bin/passwd"
+#endif
+
+#ifndef _PATH_LS
+#define _PATH_LS			"ls"
+#endif
+
+/* Askpass program define */
+#ifndef ASKPASS_PROGRAM
+#define ASKPASS_PROGRAM         "/usr/lib/ssh/ssh-askpass"
+#endif /* ASKPASS_PROGRAM */

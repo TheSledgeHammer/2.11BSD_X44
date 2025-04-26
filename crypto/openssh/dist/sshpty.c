@@ -1,6 +1,4 @@
-/*	$NetBSD: sshpty.c,v 1.7 2017/04/18 18:41:46 christos Exp $	*/
-/* $OpenBSD: sshpty.c,v 1.31 2016/11/29 03:54:50 dtucker Exp $ */
-
+/* $OpenBSD: sshpty.c,v 1.34 2019/07/04 16:20:10 deraadt Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -15,27 +13,45 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: sshpty.c,v 1.7 2017/04/18 18:41:46 christos Exp $");
+
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <signal.h>
 
 #include <errno.h>
 #include <fcntl.h>
 #include <grp.h>
-#include <paths.h>
+#ifdef HAVE_PATHS_H
+# include <paths.h>
+#endif
 #include <pwd.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include <termios.h>
+#ifdef HAVE_UTIL_H
+# include <util.h>
+#endif
 #include <unistd.h>
-#include <util.h>
 
 #include "sshpty.h"
 #include "log.h"
+#include "misc.h"
+
+#ifdef HAVE_PTY_H
+# include <pty.h>
+#endif
 
 #ifndef O_NOCTTY
 #define O_NOCTTY 0
+#endif
+
+#ifdef __APPLE__
+# include <AvailabilityMacros.h>
+# if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
+#  define __APPLE_PRIVPTY__
+# endif
 #endif
 
 /*
@@ -48,15 +64,20 @@ __RCSID("$NetBSD: sshpty.c,v 1.7 2017/04/18 18:41:46 christos Exp $");
 int
 pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, size_t namebuflen)
 {
-	char buf[64];
+	/* openpty(3) exists in OSF/1 and some other os'es */
+	char *name;
 	int i;
 
-	i = openpty(ptyfd, ttyfd, buf, NULL, NULL);
-	if (i < 0) {
+	i = openpty(ptyfd, ttyfd, NULL, NULL, NULL);
+	if (i == -1) {
 		error("openpty: %.100s", strerror(errno));
 		return 0;
 	}
-	strlcpy(namebuf, buf, namebuflen);	/* possible truncation */
+	name = ttyname(*ttyfd);
+	if (!name)
+		fatal("openpty returns device for which ttyname fails.");
+
+	strlcpy(namebuf, name, namebuflen);	/* possible truncation */
 	return 1;
 }
 
@@ -65,10 +86,12 @@ pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, size_t namebuflen)
 void
 pty_release(const char *tty)
 {
-	if (chown(tty, (uid_t) 0, (gid_t) 0) < 0)
+#if !defined(__APPLE_PRIVPTY__) && !defined(HAVE_OPENPTY)
+	if (chown(tty, (uid_t) 0, (gid_t) 0) == -1)
 		error("chown %.100s 0 0 failed: %.100s", tty, strerror(errno));
-	if (chmod(tty, (mode_t) 0666) < 0)
+	if (chmod(tty, (mode_t) 0666) == -1)
 		error("chmod %.100s 0666 failed: %.100s", tty, strerror(errno));
+#endif /* !__APPLE_PRIVPTY__ && !HAVE_OPENPTY */
 }
 
 /* Makes the tty the process's controlling tty and sets it to sane modes. */
@@ -86,7 +109,7 @@ pty_make_controlling_tty(int *ttyfd, const char *tty)
 		close(fd);
 	}
 #endif /* TIOCNOTTY */
-	if (setsid() < 0)
+	if (setsid() == -1)
 		error("setsid: %.100s", strerror(errno));
 
 	/*
@@ -104,15 +127,19 @@ pty_make_controlling_tty(int *ttyfd, const char *tty)
 	if (ioctl(*ttyfd, TIOCSCTTY, NULL) < 0)
 		error("ioctl(TIOCSCTTY): %.100s", strerror(errno));
 #endif /* TIOCSCTTY */
+#ifdef NEED_SETPGRP
+	if (setpgrp(0,0) < 0)
+		error("SETPGRP %s",strerror(errno));
+#endif /* NEED_SETPGRP */
 	fd = open(tty, O_RDWR);
-	if (fd < 0)
+	if (fd == -1)
 		error("%.100s: %.100s", tty, strerror(errno));
 	else
 		close(fd);
 
 	/* Verify that we now have a controlling tty. */
 	fd = open(_PATH_TTY, O_WRONLY);
-	if (fd < 0)
+	if (fd == -1)
 		error("open /dev/tty failed - could not set controlling tty: %.100s",
 		    strerror(errno));
 	else
@@ -145,6 +172,8 @@ pty_setowner(struct passwd *pw, const char *tty)
 
 	/* Determine the group to make the owner of the tty. */
 	grp = getgrnam("tty");
+	if (grp == NULL)
+		debug("%s: no tty group", __func__);
 	gid = (grp != NULL) ? grp->gr_gid : pw->pw_gid;
 	mode = (grp != NULL) ? 0620 : 0600;
 
@@ -153,12 +182,16 @@ pty_setowner(struct passwd *pw, const char *tty)
 	 * Warn but continue if filesystem is read-only and the uids match/
 	 * tty is owned by root.
 	 */
-	if (stat(tty, &st))
+	if (stat(tty, &st) == -1)
 		fatal("stat(%.100s) failed: %.100s", tty,
 		    strerror(errno));
 
+#ifdef WITH_SELINUX
+	ssh_selinux_setup_pty(pw->pw_name, tty);
+#endif
+
 	if (st.st_uid != pw->pw_uid || st.st_gid != gid) {
-		if (chown(tty, pw->pw_uid, gid) < 0) {
+		if (chown(tty, pw->pw_uid, gid) == -1) {
 			if (errno == EROFS &&
 			    (st.st_uid == pw->pw_uid || st.st_uid == 0))
 				debug("chown(%.100s, %u, %u) failed: %.100s",
@@ -172,7 +205,7 @@ pty_setowner(struct passwd *pw, const char *tty)
 	}
 
 	if ((st.st_mode & (S_IRWXU|S_IRWXG|S_IRWXO)) != mode) {
-		if (chmod(tty, mode) < 0) {
+		if (chmod(tty, mode) == -1) {
 			if (errno == EROFS &&
 			    (st.st_mode & (S_IRGRP | S_IROTH)) == 0)
 				debug("chmod(%.100s, 0%o) failed: %.100s",
@@ -188,10 +221,12 @@ pty_setowner(struct passwd *pw, const char *tty)
 void
 disconnect_controlling_tty(void)
 {
+#ifdef TIOCNOTTY
 	int fd;
 
 	if ((fd = open(_PATH_TTY, O_RDWR | O_NOCTTY)) >= 0) {
 		(void) ioctl(fd, TIOCNOTTY, NULL);
 		close(fd);
 	}
+#endif /* TIOCNOTTY */
 }

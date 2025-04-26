@@ -1,5 +1,4 @@
-/*	$NetBSD: ssh.h,v 1.12 2019/04/20 17:16:40 christos Exp $	*/
-/* $OpenBSD: ssh.h,v 1.89 2018/12/27 03:25:25 djm Exp $ */
+/* $OpenBSD: ssh.h,v 1.91 2024/09/25 23:01:39 jsg Exp $ */
 
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
@@ -12,9 +11,6 @@
  * incompatible with the protocol description in the RFC file, it must be
  * called by a name other than "ssh" or "Secure Shell".
  */
-
-/* Cipher used for encrypting authentication files. */
-#define SSH_AUTHFILE_CIPHER	SSH_CIPHER_3DES
 
 /* Default port number. */
 #define SSH_DEFAULT_PORT	22
@@ -37,11 +33,9 @@
  *
  * Minor protocol version.  Different version indicates minor incompatibility
  * that does not prevent interoperation.
+ *
+ * We support only SSH2
  */
-#define PROTOCOL_MAJOR_1	1
-#define PROTOCOL_MINOR_1	5
-
-/* We support only SSH2 */
 #define PROTOCOL_MAJOR_2	2
 #define PROTOCOL_MINOR_2	0
 
@@ -69,10 +63,9 @@
 #define SSH_ASKPASS_ENV		"SSH_ASKPASS"
 
 /*
- * Force host key length and server key length to differ by at least this
- * many bits.  This is to make double encryption with rsaref work.
+ * Environment variable to control whether or not askpass is used.
  */
-#define SSH_KEY_BITS_RESERVED		128
+#define SSH_ASKPASS_REQUIRE_ENV		"SSH_ASKPASS_REQUIRE"
 
 /*
  * Length of the session key in bytes.  (Specified as 256 bits in the
@@ -83,15 +76,14 @@
 /* Used to identify ``EscapeChar none'' */
 #define SSH_ESCAPECHAR_NONE		-2
 
-/* Name of Kerberos service for SSH to use. */
-#define KRB4_SERVICE_NAME		"rcmd"
-
 /*
  * unprivileged user when UsePrivilegeSeparation=yes;
  * sshd will change its privileges to this user and its
  * primary group.
  */
+#ifndef SSH_PRIVSEP_USER
 #define SSH_PRIVSEP_USER		"sshd"
+#endif
 
 /* Listen backlog for sshd, ssh-agent and forwarding sockets */
 #define SSH_LISTEN_BACKLOG		128

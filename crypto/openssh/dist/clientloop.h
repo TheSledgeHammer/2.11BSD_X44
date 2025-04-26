@@ -1,5 +1,4 @@
-/*	$NetBSD: clientloop.h,v 1.17 2018/08/26 07:46:36 christos Exp $	*/
-/* $OpenBSD: clientloop.h,v 1.36 2018/07/09 21:03:30 markus Exp $ */
+/* $OpenBSD: clientloop.h,v 1.38 2024/05/17 06:42:04 jsg Exp $ */
 
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
@@ -44,16 +43,16 @@ struct ssh;
 int	 client_loop(struct ssh *, int, int, int);
 int	 client_x11_get_proto(struct ssh *, const char *, const char *,
 	    u_int, u_int, char **, char **);
-void	 client_global_request_reply_fwd(int, u_int32_t, void *);
 void	 client_session2_setup(struct ssh *, int, int, int,
 	    const char *, struct termios *, int, struct sshbuf *, char **);
-char	 *client_request_tun_fwd(struct ssh *, int, int, int);
+char	 *client_request_tun_fwd(struct ssh *, int, int, int,
+    channel_open_fn *, void *);
 void	 client_stop_mux(void);
 
 /* Escape filter for protocol 2 sessions */
 void	*client_new_escape_filter_ctx(int);
 void	 client_filter_cleanup(struct ssh *, int, void *);
-int	 client_simple_escape_filter(struct ssh *, Channel *, const char *, int);
+int	 client_simple_escape_filter(struct ssh *, Channel *, char *, int);
 
 /* Global request confirmation callbacks */
 typedef void global_confirm_cb(struct ssh *, int, u_int32_t, void *);

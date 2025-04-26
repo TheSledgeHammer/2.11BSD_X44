@@ -1,4 +1,4 @@
-/*	$NetBSD: xmss_hash.h,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
+#ifdef WITH_XMSS
 /* $OpenBSD: xmss_hash.h,v 1.2 2018/02/26 03:56:44 dtucker Exp $ */
 /*
 hash.h version 20160722
@@ -19,3 +19,4 @@ int hash_h(unsigned char *out, const unsigned char *in, const unsigned char *pub
 int hash_f(unsigned char *out, const unsigned char *in, const unsigned char *pub_seed, uint32_t addr[8], const unsigned int n);
 
 #endif
+#endif /* WITH_XMSS */

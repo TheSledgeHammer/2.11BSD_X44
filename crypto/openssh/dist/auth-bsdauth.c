@@ -1,6 +1,4 @@
-/*	$NetBSD: auth-bsdauth.c,v 1.9 2019/01/27 02:08:33 pgoyette Exp $	*/
 /* $OpenBSD: auth-bsdauth.c,v 1.15 2018/07/09 21:35:50 markus Exp $ */
-
 /*
  * Copyright (c) 2001 Markus Friedl.  All rights reserved.
  *
@@ -26,7 +24,7 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: auth-bsdauth.c,v 1.9 2019/01/27 02:08:33 pgoyette Exp $");
+
 #include <sys/types.h>
 #include <stdarg.h>
 #include <stdio.h>

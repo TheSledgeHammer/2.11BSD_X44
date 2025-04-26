@@ -1,5 +1,4 @@
-/*	$NetBSD: dh.c,v 1.17 2019/04/20 17:16:40 christos Exp $	*/
-/* $OpenBSD: dh.c,v 1.69 2018/11/09 02:56:22 djm Exp $ */
+/* $OpenBSD: dh.c,v 1.75 2024/12/03 16:27:53 dtucker Exp $ */
 /*
  * Copyright (c) 2000 Niels Provos.  All rights reserved.
  *
@@ -25,25 +24,38 @@
  */
 
 #include "includes.h"
-__RCSID("$NetBSD: dh.c,v 1.17 2019/04/20 17:16:40 christos Exp $");
 
-#include <sys/param.h>	/* MIN */
-#include <openssl/bn.h>
-#include <openssl/dh.h>
+#ifdef WITH_OPENSSL
 
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <limits.h>
+
+#include <openssl/bn.h>
+#include <openssl/dh.h>
 
 #include "dh.h"
 #include "pathnames.h"
 #include "log.h"
 #include "misc.h"
-#include "random.h"
 #include "ssherr.h"
+
+#include "openbsd-compat/openssl-compat.h"
+
+static const char *moduli_filename;
+
+void dh_set_moduli_file(const char *filename)
+{
+	moduli_filename = filename;
+}
+
+static const char * get_moduli_filename(void)
+{
+	return moduli_filename ? moduli_filename : _PATH_DH_MODULI;
+}
 
 static int
 parse_prime(int linenum, char *line, struct dhgroup *dhg)
@@ -152,9 +164,9 @@ choose_dh(int min, int wantbits, int max)
 	int best, bestcount, which, linenum;
 	struct dhgroup dhg;
 
-	if ((f = fopen(_PATH_DH_MODULI, "r")) == NULL) {
+	if ((f = fopen(get_moduli_filename(), "r")) == NULL) {
 		logit("WARNING: could not open %s (%s), using fixed modulus",
-		    _PATH_DH_MODULI, strerror(errno));
+		    get_moduli_filename(), strerror(errno));
 		return (dh_new_group_fallback(max));
 	}
 
@@ -185,8 +197,9 @@ choose_dh(int min, int wantbits, int max)
 
 	if (bestcount == 0) {
 		fclose(f);
-		logit("WARNING: no suitable primes in %s", _PATH_DH_MODULI);
-		return (dh_new_group_fallback(max));
+		logit("WARNING: no suitable primes (size %d/%d/%d) in %s",
+		    min, wantbits, max, get_moduli_filename());
+		return NULL;
 	}
 	which = arc4random_uniform(bestcount);
 
@@ -210,7 +223,7 @@ choose_dh(int min, int wantbits, int max)
 	fclose(f);
 	if (bestcount != which + 1) {
 		logit("WARNING: selected prime disappeared in %s, giving up",
-		    _PATH_DH_MODULI);
+		    get_moduli_filename());
 		return (dh_new_group_fallback(max));
 	}
 
@@ -240,7 +253,7 @@ dh_pub_is_valid(const DH *dh, const BIGNUM *dh_pub)
 	}
 
 	if ((tmp = BN_new()) == NULL) {
-		error("%s: BN_new failed", __func__);
+		error_f("BN_new failed");
 		return 0;
 	}
 	if (!BN_sub(tmp, dh_p, BN_value_one()) ||
@@ -261,7 +274,7 @@ dh_pub_is_valid(const DH *dh, const BIGNUM *dh_pub)
 	 */
 	if (bits_set < 4) {
 		logit("invalid public DH value (%d/%d)",
-		   bits_set, BN_num_bits(dh_p));
+		    bits_set, BN_num_bits(dh_p));
 		return 0;
 	}
 	return 1;
@@ -340,7 +353,7 @@ dh_new_group(BIGNUM *gen, BIGNUM *modulus)
 DH *
 dh_new_group1(void)
 {
-	static const char *gen = "2", *group1 =
+	static char *gen = "2", *group1 =
 	    "FFFFFFFF" "FFFFFFFF" "C90FDAA2" "2168C234" "C4C6628B" "80DC1CD1"
 	    "29024E08" "8A67CC74" "020BBEA6" "3B139B22" "514A0879" "8E3404DD"
 	    "EF9519B3" "CD3A431B" "302B0A6D" "F25F1437" "4FE1356D" "6D51C245"
@@ -355,7 +368,7 @@ dh_new_group1(void)
 DH *
 dh_new_group14(void)
 {
-	static const char *gen = "2", *group14 =
+	static char *gen = "2", *group14 =
 	    "FFFFFFFF" "FFFFFFFF" "C90FDAA2" "2168C234" "C4C6628B" "80DC1CD1"
 	    "29024E08" "8A67CC74" "020BBEA6" "3B139B22" "514A0879" "8E3404DD"
 	    "EF9519B3" "CD3A431B" "302B0A6D" "F25F1437" "4FE1356D" "6D51C245"
@@ -375,7 +388,7 @@ dh_new_group14(void)
 DH *
 dh_new_group16(void)
 {
-	static const char *gen = "2", *group16 =
+	static char *gen = "2", *group16 =
 	    "FFFFFFFF" "FFFFFFFF" "C90FDAA2" "2168C234" "C4C6628B" "80DC1CD1"
 	    "29024E08" "8A67CC74" "020BBEA6" "3B139B22" "514A0879" "8E3404DD"
 	    "EF9519B3" "CD3A431B" "302B0A6D" "F25F1437" "4FE1356D" "6D51C245"
@@ -406,7 +419,7 @@ dh_new_group16(void)
 DH *
 dh_new_group18(void)
 {
-	static const char *gen = "2", *group18 =
+	static char *gen = "2", *group18 =
 	    "FFFFFFFF" "FFFFFFFF" "C90FDAA2" "2168C234" "C4C6628B" "80DC1CD1"
 	    "29024E08" "8A67CC74" "020BBEA6" "3B139B22" "514A0879" "8E3404DD"
 	    "EF9519B3" "CD3A431B" "302B0A6D" "F25F1437" "4FE1356D" "6D51C245"
@@ -458,7 +471,7 @@ dh_new_group18(void)
 DH *
 dh_new_group_fallback(int max)
 {
-	debug3("%s: requested max size %d", __func__, max);
+	debug3_f("requested max size %d", max);
 	if (max < 3072) {
 		debug3("using 2k bit group 14");
 		return dh_new_group14();
@@ -488,3 +501,5 @@ dh_estimate(int bits)
 		return 7680;
 	return 8192;
 }
+
+#endif /* WITH_OPENSSL */

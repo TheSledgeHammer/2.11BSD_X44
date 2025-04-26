@@ -1,4 +1,3 @@
-/*	$NetBSD: progressmeter.h,v 1.7 2019/04/20 17:16:40 christos Exp $	*/
 /* $OpenBSD: progressmeter.h,v 1.5 2019/01/24 16:52:17 dtucker Exp $ */
 /*
  * Copyright (c) 2002 Nils Nordman.  All rights reserved.

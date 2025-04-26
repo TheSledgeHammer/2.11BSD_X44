@@ -1,8 +1,9 @@
-#	$NetBSD: sshd_config,v 1.23 2018/08/26 07:46:37 christos Exp $
-#	$OpenBSD: sshd_config,v 1.103 2018/04/09 20:41:22 tj Exp $
+#	$OpenBSD: sshd_config,v 1.105 2024/12/03 14:12:47 dtucker Exp $
 
 # This is the sshd server system-wide configuration file.  See
 # sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/usr/bin:/bin:/usr/sbin:/sbin
 
 # The strategy used for options in the default sshd_config shipped with
 # OpenSSH is to specify options with their default value where
@@ -27,8 +28,7 @@
 
 # Authentication:
 
-# For slow CPUs, bumped from 2 minutes to 10
-LoginGraceTime 600
+#LoginGraceTime 2m
 #PermitRootLogin prohibit-password
 #StrictModes yes
 #MaxAuthTries 6
@@ -53,28 +53,46 @@ AuthorizedKeysFile	.ssh/authorized_keys
 # Don't read the user's ~/.rhosts and ~/.shosts files
 #IgnoreRhosts yes
 
-# To disable password authentication, set this and UsePam to no
+# To disable tunneled clear text passwords, change to "no" here!
 #PasswordAuthentication yes
 #PermitEmptyPasswords no
 
-# Change to no to disable s/key passwords
-#ChallengeResponseAuthentication yes
+# Change to "no" to disable keyboard-interactive authentication.  Depending on
+# the system's configuration, this may involve passwords, challenge-response,
+# one-time passwords or some combination of these and other methods.
+#KbdInteractiveAuthentication yes
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+#KerberosGetAFSToken no
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the KbdInteractiveAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via KbdInteractiveAuthentication may bypass
+# the setting of "PermitRootLogin prohibit-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and KbdInteractiveAuthentication to 'no'.
+#UsePAM no
 
 #AllowAgentForwarding yes
 #AllowTcpForwarding yes
 #GatewayPorts no
 #X11Forwarding no
-# If you use xorg from pkgsrc then uncomment the following line.
-#XAuthLocation /usr/pkg/bin/xauth
 #X11DisplayOffset 10
 #X11UseLocalhost yes
 #PermitTTY yes
 #PrintMotd yes
 #PrintLastLog yes
 #TCPKeepAlive yes
-#UseLogin no
-#UsePrivilegeSeparation sandbox
-UsePam yes
 #PermitUserEnvironment no
 #Compression delayed
 #ClientAliveInterval 0
@@ -89,38 +107,8 @@ UsePam yes
 # no default banner path
 #Banner none
 
-# here are the new patched ldap related tokens
-# entries in your LDAP must have posixAccount & ldapPublicKey objectclass
-#UseLPK yes
-#LpkLdapConf /etc/ldap.conf
-#LpkServers  ldap://10.1.7.1/ ldap://10.1.7.2/
-#LpkUserDN   ou=users,dc=phear,dc=org
-#LpkGroupDN  ou=groups,dc=phear,dc=org
-#LpkBindDN cn=Manager,dc=phear,dc=org
-#LpkBindPw secret
-#LpkServerGroup mail
-#LpkFilter (hostAccess=master.phear.org)
-#LpkForceTLS no
-#LpkSearchTimelimit 3
-#LpkBindTimelimit 3
-#LpkPubKeyAttr sshPublicKey
-
 # override default of no subsystems
 Subsystem	sftp	/usr/libexec/sftp-server
-
-# the following are HPN related configuration options
-# tcp receive buffer polling. disable in non autotuning kernels
-#TcpRcvBufPoll yes
-
-# allow the use of the none cipher
-#NoneEnabled no
-
-# disable hpn performance boosts.
-#HPNDisabled no
-
-# buffer size for hpn to non-hpn connections
-#HPNBufferSize 2048
-
 
 # Example of overriding settings on a per-user basis
 #Match User anoncvs

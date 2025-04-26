@@ -1,5 +1,4 @@
-/*	$NetBSD: digest-openssl.c,v 1.8 2019/04/20 17:16:40 christos Exp $	*/
-/* $OpenBSD: digest-openssl.c,v 1.8 2018/09/13 02:08:33 djm Exp $ */
+/* $OpenBSD: digest-openssl.c,v 1.9 2020/10/29 02:52:43 djm Exp $ */
 /*
  * Copyright (c) 2013 Damien Miller <djm@mindrot.org>
  *
@@ -15,8 +14,10 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
 #include "includes.h"
-__RCSID("$NetBSD: digest-openssl.c,v 1.8 2019/04/20 17:16:40 christos Exp $");
+
+#ifdef WITH_OPENSSL
 
 #include <sys/types.h>
 #include <limits.h>
@@ -25,9 +26,21 @@ __RCSID("$NetBSD: digest-openssl.c,v 1.8 2019/04/20 17:16:40 christos Exp $");
 
 #include <openssl/evp.h>
 
+#include "openbsd-compat/openssl-compat.h"
+
 #include "sshbuf.h"
 #include "digest.h"
 #include "ssherr.h"
+
+#ifndef HAVE_EVP_SHA256
+# define EVP_sha256 NULL
+#endif
+#ifndef HAVE_EVP_SHA384
+# define EVP_sha384 NULL
+#endif
+#ifndef HAVE_EVP_SHA512
+# define EVP_sha512 NULL
+#endif
 
 struct ssh_digest_ctx {
 	int alg;
@@ -43,11 +56,11 @@ struct ssh_digest {
 
 /* NB. Indexed directly by algorithm number */
 const struct ssh_digest digests[] = {
-	{ SSH_DIGEST_MD5,	"MD5",	 	16,	EVP_md5 },
-	{ SSH_DIGEST_SHA1,	"SHA1",	 	20,	EVP_sha1 },
-	{ SSH_DIGEST_SHA256,	"SHA256", 	32,	EVP_sha256 },
+	{ SSH_DIGEST_MD5,	"MD5",		16,	EVP_md5 },
+	{ SSH_DIGEST_SHA1,	"SHA1",		20,	EVP_sha1 },
+	{ SSH_DIGEST_SHA256,	"SHA256",	32,	EVP_sha256 },
 	{ SSH_DIGEST_SHA384,	"SHA384",	48,	EVP_sha384 },
-	{ SSH_DIGEST_SHA512,	"SHA512", 	64,	EVP_sha512 },
+	{ SSH_DIGEST_SHA512,	"SHA512",	64,	EVP_sha512 },
 	{ -1,			NULL,		0,	NULL },
 };
 
@@ -57,6 +70,8 @@ ssh_digest_by_alg(int alg)
 	if (alg < 0 || alg >= SSH_DIGEST_MAX)
 		return NULL;
 	if (digests[alg].id != alg) /* sanity */
+		return NULL;
+	if (digests[alg].mdfunc == NULL)
 		return NULL;
 	return &(digests[alg]);
 }
@@ -99,7 +114,7 @@ struct ssh_digest_ctx *
 ssh_digest_start(int alg)
 {
 	const struct ssh_digest *digest = ssh_digest_by_alg(alg);
-	struct ssh_digest_ctx *ret = NULL;
+	struct ssh_digest_ctx *ret;
 
 	if (digest == NULL || ((ret = calloc(1, sizeof(*ret))) == NULL))
 		return NULL;
@@ -189,3 +204,4 @@ ssh_digest_buffer(int alg, const struct sshbuf *b, u_char *d, size_t dlen)
 {
 	return ssh_digest_memory(alg, sshbuf_ptr(b), sshbuf_len(b), d, dlen);
 }
+#endif /* WITH_OPENSSL */

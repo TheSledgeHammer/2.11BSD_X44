@@ -1,125 +1,98 @@
+#	$211BSD_X44: Makefile,v 1.27 2025/05/26 17:33:59 martin Exp $
 #	$NetBSD: Makefile,v 1.27 2019/04/20 17:16:41 christos Exp $
 
 .include <bsd.own.mk>
 
-.include "../Makefile.inc"
+.include "${.CURDIR}/../Makefile.inc"
 
 LIB=	ssh
-SRCS=\
-addrmatch.c \
-atomicio.c \
-authfd.c \
-authfile.c \
-bcrypt_pbkdf.c \
-bitmap.c \
-blowfish.c \
-canohost.c \
-chacha.c \
-channels.c \
-cipher-chachapoly.c \
-cipher.c \
-cleanup.c \
-compat.c \
-crc32.c \
-dh.c \
-dispatch.c \
-dns.c \
-ed25519.c \
-fatal.c \
-fe25519.c \
-freezero.c \
-ge25519.c \
-hash.c \
-hmac.c \
-hostfile.c \
-kex.c \
-kexdh.c \
-kexecdh.c \
-kexgen.c \
-kexgex.c \
-kexgexc.c \
-kexsntrup4591761x25519.c \
-krl.c \
-log.c \
-mac.c \
-match.c \
-misc.c \
-monitor_fdpass.c \
-msg.c \
-nchan.c \
-packet.c \
-poly1305.c \
-progressmeter.c \
-readpass.c \
-recallocarray.c \
-sc25519.c \
-smult_curve25519_ref.c \
-sntrup4591761.c \
-ssh-ed25519.c \
-ssh-pkcs11.c \
-ssh-xmss.c \
-sshbuf-getput-basic.c \
-sshbuf-getput-crypto.c \
-sshbuf-misc.c \
-sshbuf.c \
-ssherr.c \
-sshkey-xmss.c \
-sshkey.c \
-ttymodes.c \
-uidswap.c \
-umac.c \
-umac128.c \
-utf8.c \
-uuencode.c \
-verify.c \
-xmalloc.c \
-xmss_commons.c \
-xmss_fast.c \
-xmss_hash.c \
-xmss_hash_address.c \
-xmss_wots.c
 
-OPENSSL_SRCS=\
-digest-openssl.c \
-kexc25519.c \
-ssh-dss.c \
-ssh-ecdsa.c \
-ssh-rsa.c
+OPENBSD_COMPAT?= ${SSHDIST}/openbsd-compat
 
-SRCS+=	fmt_scaled.c
-SRCS+=	readpassphrase.c getpeereid.c getrrsetbyname.c
-COPTS.monitor_fdpass.c+=-Wno-stack-protector
-COPTS.xmss_fast.c+=	-Wno-stack-protector
-COPTS.xmss_hash.c+=	-Wno-stack-protector
-COPTS.xmss_wots.c+=	-Wno-stack-protector
-COPTS.sntrup4591761.c+=	-Wno-stack-protector
+# SRCS built from /usr/src/crypto/openssh/Makefile.in,
+#	XMSS_OBJS
+#	LIBOPENSSH_OBJS
+#	LIBSHS_OBJS
+#	+ ssh-sk-client.c
+#
+#	ssh-sk-client.c is used by sshkey.c from LIBOPENSSH_OBJS and had
+#	to be included in libssh in order for initrd rescue to build.
+#
+XMSS_SRCS= \
+        ssh-xmss.c \
+        sshkey-xmss.c \
+        xmss_commons.c \
+        xmss_fast.c \
+        xmss_hash.c \
+        xmss_hash_address.c \
+        xmss_wots.c \
 
-.if WITH_OPENSSL
-SRCS+=		${OPENSSL_SRCS}
-.else
-SRCS+=		digest-libc.c
-.endif
+LIBOPENSSH_SRCS= \
+        ssh_api.c \
+        ssherr.c \
+        sshbuf.c \
+        sshkey.c \
+        sshbuf-getput-basic.c \
+        sshbuf-misc.c \
+        sshbuf-getput-crypto.c \
+        krl.c \
+        bitmap.c
 
-CPPFLAGS+= -DHAVE_BLF_H
+LIBSSH_SRCS= \
+        authfd.c authfile.c \
+        canohost.c channels.c cipher.c cipher-aes.c cipher-aesctr.c \
+	    cleanup.c \
+    	compat.c fatal.c hostfile.c \
+	    log.c match.c moduli.c nchan.c packet.c \
+    	readpass.c ttymodes.c xmalloc.c addr.c addrmatch.c \
+	    atomicio.c dispatch.c mac.c misc.c utf8.c \
+    	monitor_fdpass.c rijndael.c ssh-dss.c ssh-ecdsa.c ssh-ecdsa-sk.c \
+	    ssh-ed25519-sk.c ssh-rsa.c dh.c \
+	    msg.c progressmeter.c dns.c entropy.c gss-genr.c umac.c umac128.c \
+	    ssh-pkcs11.c smult_curve25519_ref.c \
+	    poly1305.c chacha.c cipher-chachapoly.c cipher-chachapoly-libcrypto.c \
+	    ssh-ed25519.c digest-openssl.c digest-libc.c \
+	    hmac.c ed25519.c hash.c \
+	    kex.c kex-names.c kexdh.c kexgex.c kexecdh.c kexc25519.c \
+	    kexgexc.c kexgexs.c \
+	    kexsntrup761x25519.c kexmlkem768x25519.c sntrup761.c kexgen.c \
+	    sftp-realpath.c platform-pledge.c platform-tracing.c platform-misc.c \
+	    sshbuf-io.c
 
-CPPFLAGS+=	-I${SSHDIST}
+SK_SRCS= ssh-sk-client.c
+
+OPENBSD_COMPAT_SRCS= \
+        bcrypt_pbkdf.c \
+        blowfish.c \
+        bsd-misc.c \
+        bsd-signal.c \
+        openssl-compat.c \
+	    libressl-api-compat.c \
+        xcrypt.c
+
+SRCS+= ${LIBOPENSSH_SRCS} ${XMSS_SRCS} ${LIBSSH_SRCS} ${SK_SRCS} \
+       ${OPENBSD_COMPAT_SRCS}
+
+COPTS.addr.c+= -Wno-sign-compare
+COPTS.channels.c+= -Wno-pointer-sign
+COPTS.kex.c+= -Wno-pointer-sign
+COPTS.log.c+= -Wno-format-truncation
+COPTS.misc.c+= -Wno-format-truncation
+COPTS.packet.c+= -Wno-pointer-sign
+COPTS.ssh-pkcs11.c+= -Wno-pointer-sign
+COPTS.sshkey.c+= -Wno-pointer-sign
+COPTS.bcrypt_pbkdf.c+= -Wno-pointer-sign
+
+COPTS.channels.c+= -fno-strict-aliasing
+
+CPPFLAGS+= -I${SSHDIST}
+CPPFLAGS+= -I${OPENBSD_COMPAT}
 .PATH:		${SSHDIST}
+.PATH:      ${OPENBSD_COMPAT}
 
 LIBDPLIBS+=	crypto	${NETBSDSRCDIR}/crypto/${EXTERNAL_OPENSSL_SUBDIR}/lib/libcrypto \
 			crypt	${NETBSDSRCDIR}/usr.lib/libcrypt \
+            util    ${NETBSDSRCDIR}/usr.lib/libutil \
 			z		${NETBSDSRCDIR}/usr.lib/libz
-
-.for f in dns channels hostfile ssh-pkcs11
-COPTS.${f}.c+=	-Wno-pointer-sign
-.endfor
-
-# XXX
-COPTS.channels.c+=	-fno-strict-aliasing
-
-# XXX
-.if ${MACHINE} == "vax"
-COPTS.poly1305.c+=	-O0
-COPTS.umac.c+=		-O0
-.endif
 
 .include <bsd.lib.mk>

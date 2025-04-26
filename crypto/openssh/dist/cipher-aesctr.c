@@ -1,4 +1,3 @@
-/*	$NetBSD: cipher-aesctr.c,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
 /* $OpenBSD: cipher-aesctr.c,v 1.2 2015/01/14 10:24:42 markus Exp $ */
 /*
  * Copyright (c) 2003 Markus Friedl.  All rights reserved.
@@ -15,11 +14,13 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
 #include "includes.h"
-__RCSID("$NetBSD: cipher-aesctr.c,v 1.2 2018/04/06 18:59:00 christos Exp $");
 
 #include <sys/types.h>
 #include <string.h>
+
+#ifndef WITH_OPENSSL
 
 #include "cipher-aesctr.h"
 
@@ -28,7 +29,7 @@ __RCSID("$NetBSD: cipher-aesctr.c,v 1.2 2018/04/06 18:59:00 christos Exp $");
  * the counter is of size 'len' bytes and stored in network-byte-order.
  * (LSB at ctr[len-1], MSB at ctr[0])
  */
-static __inline__ void
+static inline void
 aesctr_inc(u8 *ctr, u32 len)
 {
 	ssize_t i;
@@ -79,3 +80,4 @@ aesctr_encrypt_bytes(aesctr_ctx *x,const u8 *m,u8 *c,u32 bytes)
 		n = (n + 1) % AES_BLOCK_SIZE;
 	}
 }
+#endif /* !WITH_OPENSSL */

@@ -1,4 +1,4 @@
-/*	$NetBSD: xmss_wots.h,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
+#ifdef WITH_XMSS
 /* $OpenBSD: xmss_wots.h,v 1.3 2018/02/26 12:14:53 dtucker Exp $ */
 /*
 wots.h version 20160722
@@ -9,6 +9,10 @@ Public domain.
 
 #ifndef WOTS_H
 #define WOTS_H
+
+#ifdef HAVE_STDINT_H
+#include "stdint.h"
+#endif
 
 /**
  * WOTS parameter set
@@ -57,3 +61,4 @@ int wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char 
 int wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8]);
 
 #endif
+#endif /* WITH_XMSS */

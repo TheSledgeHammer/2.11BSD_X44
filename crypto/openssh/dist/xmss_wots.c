@@ -1,17 +1,18 @@
-/*	$NetBSD: xmss_wots.c,v 1.4 2019/01/27 02:08:33 pgoyette Exp $	*/
 /* $OpenBSD: xmss_wots.c,v 1.3 2018/04/10 00:10:49 djm Exp $ */
-
 /*
 wots.c version 20160722
 Andreas Hülsing
 Joost Rijneveld
 Public domain.
 */
+
 #include "includes.h"
-__RCSID("$NetBSD: xmss_wots.c,v 1.4 2019/01/27 02:08:33 pgoyette Exp $");
+#ifdef WITH_XMSS
 
 #include <stdlib.h>
-#include <stdint.h>
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
 #include <limits.h>
 #include "xmss_commons.h"
 #include "xmss_hash.h"
@@ -188,3 +189,4 @@ int wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned c
   free(basew);
   return 0;
 }
+#endif /* WITH_XMSS */

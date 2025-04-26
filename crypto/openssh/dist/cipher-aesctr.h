@@ -1,4 +1,3 @@
-/*	$NetBSD: cipher-aesctr.h,v 1.2 2018/04/06 18:59:00 christos Exp $	*/
 /* $OpenBSD: cipher-aesctr.h,v 1.1 2014/04/29 15:39:33 markus Exp $ */
 /*
  * Copyright (c) 2014 Markus Friedl
