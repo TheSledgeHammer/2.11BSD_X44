@@ -80,12 +80,24 @@ extern struct lock_holder mpx_loholder;
 #define MPX_MUTEX_EXIT(mpx)	 					mtx_unlock(mpx, &mpx_loholder)
 */
 #ifdef _KERNEL
-struct mpx 					*mpx_allocate(int);
-void						mpx_deallocate(struct mpx *);
-int							mpx_channel_create(struct mpx *, int, u_long, void *);
-int							mpx_channel_put(struct mpx *, int, u_long, void *);
-int							mpx_channel_get(struct mpx *, int, void *);
-int							mpx_channel_destroy(struct mpx *, int, void *);
-int							mpx_channel_remove(struct mpx *, int, void *);
-#endif /* _KERNEL */
+struct mpx *mpx_allocate(int);
+void mpx_deallocate(struct mpx *);
+int mpx_channel_create(struct mpx *, int, u_long, void *);
+int mpx_channel_put(struct mpx *, int, u_long, void *);
+int mpx_channel_get(struct mpx *, int, void *);
+int mpx_channel_destroy(struct mpx *, int, void *);
+int mpx_channel_remove(struct mpx *, int, void *);
+
+#else
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int mpx(int, struct mpx *, int, void *);
+int mpx_create(struct mpx *, int, void *);
+int mpx_put(struct mpx *, int, void *);
+int mpx_get(struct mpx *, int, void *);
+int mpx_destroy(struct mpx *, int, void *);
+int mpx_remove(struct mpx *, int, void *);
+__END_DECLS
+#endif /* !_KERNEL */
 #endif /* SYS_MPX_H_ */
