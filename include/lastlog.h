@@ -12,7 +12,9 @@
 
 #include <utmp.h>
 
+#ifndef _PATH_LASTLOG
 #define	_PATH_LASTLOG	"/var/log/lastlog"
+#endif
 
 struct lastlog {
 	time_t	ll_time;
