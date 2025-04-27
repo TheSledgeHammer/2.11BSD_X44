@@ -120,7 +120,7 @@ extern 	LIST_HEAD(tidhashhead, thread) 	*tidhashtbl;
 extern u_long 	tidhash;
 
 extern int nthread, maxthread;					/* Current and max number of threads. */
-extern int ppnthreadmax;					/* max number of threads per proc (hits stack limit) */
+extern int ppnthreadmax;						/* max number of threads per proc (hits stack limit) */
 
 struct threadhd;
 TAILQ_HEAD(threadhd, thread);
@@ -156,7 +156,8 @@ int newthread1(struct proc **, struct thread **, char *, size_t, bool_t);
 int newthread(struct thread **, char *, size_t, bool_t);
 void thread_exit(int, int);
 void thread_psignal(struct proc *, int, int);
-int  thread_kill(struct proc *, int, pid_t);
+void thread_idle_check(struct proc *);
+void thread_swtch(struct proc *);
 
 int thread_ltsleep(void *, int, char *, u_short, __volatile struct lock_object *);
 int thread_tsleep(void *, int, char *, u_short);
@@ -164,6 +165,7 @@ void thread_sleep(void *, int);
 void thread_unsleep(struct proc *, struct thread *);
 void thread_endtsleep(struct proc *, struct thread *);
 void thread_wakeup(struct proc *, const void *);
+
 
 //pid_t thread_tidmask(struct proc *);					/* thread tidmask */
 int thread_primask(struct proc *);						/* thread primask */

@@ -17,7 +17,8 @@ SRCS+=      	Ovfork.S brk.S exect.S fork.S pipe.S \
             	cerror.S
 
 # glue to provide compatibility between GCC 1.X and 2.X
-GLUE+=          acl.c extattr.c ftruncate.c lseek.c mmap.c truncate.c
+GLUE+=          acl.c extattr.c ftruncate.c lseek.c mmap.c mpx.c \
+				truncate.c
 GLUENOERR+=		_fork.c _getcontext.c _getlogin.c
 
 # 'glue' files might .c or .S depending on the architecture

@@ -39,7 +39,6 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
 		${USRLIBDIR}/libipsec 		\
 		${USRLIBDIR}/libkvm 		\
 		${USRLIBDIR}/libm 		\
-		${USRLIBDIR}/libmpx 		\
 		${USRLIBDIR}/libresolv 		\
         ${USRLIBDIR}/librpcsvc      	\
 		${USRLIBDIR}/libpci		\
@@ -48,6 +47,8 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
 		${USRLIBDIR}/libutil 		\
 		${USRLIBDIR}/liby 		\
 		${USRLIBDIR}/libz
+
+#${USRLIBDIR}/libmpx /* moving into libc/sys */ 		
 
 #
 # OS-Compatability

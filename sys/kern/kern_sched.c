@@ -366,7 +366,7 @@ sched_destroy_threads(pp, ecode, all)
 
 	sc = pp->p_sched;
 	sf = sc->sc_factor;
-	if ((pp->p_flag & P_TDCREATE) == 0) {
+	if ((pp->p_flag & P_TDDESTROY) == 0) {
 		nthreads = sf->sf_optnthreads;
 		for (i = 0; i < nthreads + 1; i++) {
 			thread_exit(W_EXITCODE(ecode, 0), all);

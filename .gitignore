@@ -2,8 +2,6 @@
 *.bak
 *.core
 *.diff
-!/contrib/groff/src/devices/grops/psfig.diff
-!/lib/libstand/bzlib.c.diff
 *.orig
 *.patch
 *.plist
@@ -16,3 +14,6 @@ cscope.*
 *.prefs
 .settings
 .metadata
+!/contrib/groff/src/devices/grops/psfig.diff
+!/lib/libstand/bzlib.c.diff
+!/crypto/openssh/dist/regress

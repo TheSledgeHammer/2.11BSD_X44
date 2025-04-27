@@ -115,13 +115,13 @@ thread_add(p, td)
 	struct thread *td;
 {
 	THREAD_LOCK(td);
-    	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-        	LIST_INSERT_HEAD(p->p_allthread, td, td_sibling);
-    	}
-    	LIST_INSERT_HEAD(TIDHASH(td->td_tid), td , td_hash);
-    	LIST_INSERT_HEAD(p->p_allthread, td, td_list);
-    	THREAD_UNLOCK(td);
-    	p->p_nthreads++;
+	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+		LIST_INSERT_HEAD(p->p_allthread, td, td_sibling);
+	}
+	LIST_INSERT_HEAD(TIDHASH(td->td_tid), td, td_hash);
+	LIST_INSERT_HEAD(p->p_allthread, td, td_list);
+	THREAD_UNLOCK(td);
+	p->p_nthreads++;
 }
 
 void
@@ -560,11 +560,11 @@ thread_setrun(p, td)
 	/* check if thread is flagged as stealable and increment steal counter */
 	if ((td->td_flag & TD_STEALABLE) == 0) {
 		td->td_steal++;
-		/* check if steal counter reaches limit, unflag thread as stealable */
-		if (td->td_steal == TD_STEALCOUNTMAX) {
-			td->td_flag &= ~TD_STEALABLE;
-			td->td_steal = 0;
-		}
+	}
+	/* check if steal counter reaches limit, unflag thread as stealable */
+	if (td->td_steal == TD_STEALCOUNTMAX) {
+		td->td_flag &= ~TD_STEALABLE;
+		td->td_steal = 0;
 	}
 }
 
@@ -785,7 +785,7 @@ thread_ltsleep(chan, pri, wmesg, timo, interlock)
 		}
 		td->td_stat = SSLEEP;
 		//u.u_ru.ru_nvcsw++;
-		//thread_swtch(p);
+		thread_swtch(p);
 		/* switch counter? */
 resume:
 		td->td_flag &= ~TD_SINTR;
@@ -984,89 +984,10 @@ thread_psignal(p, sig, all)
 	}
 }
 
-#ifdef notyet
-static int
-thread_killpg1(p, signo, pgrp, all)
-	struct proc *p;
-	int signo, pgrp, all;
-{
-	register struct thread *td;
-	int f, error = 0;
-
-	if (!all && pgrp == 0) {
-		/*
-		 * Zero process id means send to my process group.
-		 */
-		pgrp = u.u_threado->td_pgrp->pg_id;
-		if (pgrp == 0)
-			return (ESRCH);
-	}
-	for (f = 0, td = LIST_FIRST(p->p_allthread); td != NULL; td = LIST_NEXT(td, td_list)) {
-		if ((td->td_pgrp->pg_id != pgrp && !all) || td->td_ptid == 0 ||
-		    (td->td_flag & TD_SYSTEM) || (all && td == u.u_threado))
-			continue;
-		if (!cansignal(p, signo)) {
-			if (!all)
-				error = EPERM;
-			continue;
-		}
-		f++;
-		if (signo) {
-			if (!all) {
-				thread_psignal(p, signo, !all);
-			} else {
-				thread_psignal(p, signo, all);
-			}
-		}
-	}
-	return (error ? error : (f == 0 ? ESRCH : 0));
-}
-
-int
-thread_kill(p, signo, tid)
-	struct proc *p;
-	int signo;
-	pid_t tid;
-{
-	register struct thread *td;
-	register int error = 0;
-
-	if (signo < 0 || signo >= NSIG) {
-		error = EINVAL;
-		goto out;
-	}
-
-	if (tid > 0) {
-		/* kill single thread */
-		td = tdfind(tid);
-		if (td == 0) {
-			error = ESRCH;
-			goto out;
-		}
-		if (!cansignal(p, signo)) {
-			error = EPERM;
-		} else if (signo) {
-			thread_psignal(p, signo, 0);
-		}
-		goto out;
-	}
-
-	switch () {
-	case -1:		/* broadcast signal */
-		error = thread_killpg1(p, signo, 0, all);
-		break;
-	case 0:			/* signal own thread group */
-		error = thread_killpg1(p, signo, 0, 0);
-		break;
-	default:		/* negative explicit thread group */
-		error = thread_killpg1(p, signo, -tid, 0);
-		break;
-	}
-
-out:
-	return (error);
-}
-
+/*
+ * Check if thread is idle.
+ * Will also check if proc is idle.
+ */
 void
 thread_idle_check(p)
 	struct proc *p;
@@ -1094,7 +1015,7 @@ thread_swtch(p)
 	} else {
 		u.u_threado = p->p_curthread;
 	}
-	
+
 	tqs = p->p_threadrq;
 
 loop:
@@ -1135,6 +1056,104 @@ loop:
 		TAILQ_INSERT_HEAD(tqs, tp, td_link);
 	}
 	pri = n;
+}
+
+#ifdef notyet
+static int
+thread_killpg1(p, signo, pgrp, all)
+	struct proc *p;
+	int signo, pgrp, all;
+{
+	register struct thread *td;
+	int f, error = 0;
+
+	if (!all && pgrp == 0) {
+		/*
+		 * Zero process id means send to my process group.
+		 */
+		pgrp = u.u_threado->td_pgrp->pg_id;
+		if (pgrp == 0)
+			return (ESRCH);
+	}
+	for (f = 0, td = LIST_FIRST(p->p_allthread); td != NULL; td = LIST_NEXT(td, td_list)) {
+		if ((td->td_pgrp->pg_id != pgrp && !all) || td->td_ptid == 0 ||
+		    (td->td_flag & TD_SYSTEM) || (all && td == u.u_threado))
+			continue;
+		if (!cansignal(p, signo)) {
+			if (!all)
+				error = EPERM;
+			continue;
+		}
+		f++;
+		if (signo) {
+			if (!all) {
+				thread_psignal(p, signo, !all);
+			} else {
+				thread_psignal(p, signo, all);
+			}
+		}
+	}
+	return (error ? error : (f == 0 ? ESRCH : 0));
+}
+
+int
+thread_killpg(p, signo, pgrp)
+	struct proc *p;
+	int signo, pgrp;
+{
+	int error;
+
+	if (signo < 0 || signo >= NSIG) {
+		return (EINVAL);
+	}
+	error = thread_killpg1(p, signo, pgrp, 0);
+	return (error);
+}
+
+int
+thread_kill(p, signo, tid)
+	struct proc *p;
+	int signo;
+	pid_t tid;
+{
+	register struct thread *td;
+	register int error = 0;
+
+	if (signo < 0 || signo >= NSIG) {
+		error = EINVAL;
+		goto out;
+	}
+
+	if (tid > 0) {
+		/* kill single thread */
+		td = tdfind(tid);
+		if (td == 0) {
+			error = ESRCH;
+			goto out;
+		}
+		if (!cansignal(p, signo)) {
+			error = EPERM;
+		} else if (signo) {
+			thread_psignal(p, signo, 0);
+		}
+		goto out;
+	}
+
+	switch (tid) {
+	case -1:		/* broadcast signal */
+		error = thread_killpg1(p, signo, 0, 1);
+		break;
+	case 0:			/* signal own thread group */
+		error = thread_killpg1(p, signo, 0, 0);
+		break;
+	default:		/* negative explicit thread group */
+		error = thread_killpg1(p, signo, -tid, 0);
+		break;
+	}
+
+out:
+	u.u_error = error;
+	return (error);
 }
 
 void
