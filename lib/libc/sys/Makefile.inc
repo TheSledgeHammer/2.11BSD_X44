@@ -65,7 +65,7 @@ ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
                 ioctl.S ktrace.S lfs_bmapv.S lfs_markv.S \
                 lfs_segclean.S lfs_segwait.S link.S kenv.S kevent.S \
                 kqueue.S listen.S lstat.S madvise.S mincore.S mkdir.S mkfifo.S \
-                mknod.S mlock.S mount.S mprotect.S mpx.S msync.S munlock.S \
+                mknod.S mlock.S mount.S mprotect.S msync.S munlock.S \
                 munmap.S nanosleep.S nostk.S pathconf.S pipe2.S quotactl.S \
                 rename.S revoke.S rmdir.S setegid.S seteuid.S setgid.S \
                 setgroups.S setitimer.S setpgid.S setpriority.S \
