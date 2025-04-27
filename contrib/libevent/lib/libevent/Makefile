@@ -33,6 +33,7 @@ signal.c
 COPTS.bufferevent_filter.c += -Wno-error=implicit-fallthrough
 COPTS.evdns.c += -Wno-error=implicit-fallthrough
 COPTS.event.c += -Wno-error=implicit-fallthrough
+COPTS.kqueue.c+= -Wno-int-conversion
 .endif
 
 .include <bsd.lib.mk>
