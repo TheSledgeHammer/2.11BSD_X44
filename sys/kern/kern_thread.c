@@ -1059,6 +1059,12 @@ loop:
 }
 
 #ifdef notyet
+static int thread_killpg1(struct proc *, int, int, int);
+//int  thread_killpg(struct proc *, int, int)
+int  thread_kill(struct proc *, int, pid_t);
+void thread_yield(struct proc *);
+void thread_preempt(struct proc *, struct thread *);
+
 static int
 thread_killpg1(p, signo, pgrp, all)
 	struct proc *p;
@@ -1096,12 +1102,13 @@ thread_killpg1(p, signo, pgrp, all)
 	return (error ? error : (f == 0 ? ESRCH : 0));
 }
 
+/* Not Working Properly
 int
 thread_killpg(p, signo, pgrp)
 	struct proc *p;
 	int signo, pgrp;
 {
-	int error;
+	int error = 0;
 
 	if (signo < 0 || signo >= NSIG) {
 		return (EINVAL);
@@ -1109,6 +1116,7 @@ thread_killpg(p, signo, pgrp)
 	error = thread_killpg1(p, signo, pgrp, 0);
 	return (error);
 }
+*/
 
 int
 thread_kill(p, signo, tid)
@@ -1140,6 +1148,7 @@ thread_kill(p, signo, tid)
 	}
 
 	switch (tid) {
+	  /* Fix: can't be -1 for a tid */
 	case -1:		/* broadcast signal */
 		error = thread_killpg1(p, signo, 0, 1);
 		break;
