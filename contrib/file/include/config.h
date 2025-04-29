@@ -14,7 +14,7 @@
 #define ELFCORE 1
 
 /* Define to 1 if you have the `asctime_r' function. */
-/* #undef HAVE_ASCTIME_R */
+#define HAVE_ASCTIME_R 1
 
 /* Define to 1 if you have the `asprintf' function. */
 #define HAVE_ASPRINTF 1
@@ -23,7 +23,7 @@
 #define HAVE_BZLIB_H 1
 
 /* Define to 1 if you have the `ctime_r' function. */
-/* #undef HAVE_CTIME_R */
+#define HAVE_CTIME_R 1
 
 /* HAVE_DAYLIGHT */
 #define HAVE_DAYLIGHT 1
