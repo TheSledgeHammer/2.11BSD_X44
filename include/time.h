@@ -104,12 +104,28 @@ int clock_settime(clockid_t, const struct timespec *);
 int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
+#if ((_POSIX_C_SOURCE - 0) >= 199506L && (_POSIX_C_SOURCE - 0) < 202405L) || \
+    (_XOPEN_SOURCE - 0) >= 500 || defined(_REENTRANT) || defined(__BSD_VISIBLE)
+char *asctime_r(const struct tm * __restrict, char * __restrict);
+char *ctime_r(const time_t *, char *);
+#endif
+
+#if (_POSIX_C_SOURCE - 0) >= 199506L || \
+    (_XOPEN_SOURCE - 0) >= 500 || defined(_REENTRANT) || defined(__BSD_VISIBLE)
+struct tm *gmtime_r(const time_t * __restrict, struct tm * __restrict);
+struct tm *localtime_r(const time_t * __restrict, struct tm * __restrict);
+#endif
+
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #  ifndef __LOCALE_T_DECLARED
 typedef struct _locale		*locale_t;
 #  define __LOCALE_T_DECLARED
 #  endif
 size_t strftime_l(char * __restrict, size_t, const char * __restrict, const struct tm * __restrict, locale_t);
+#endif
+
+#if (__STDC_VERSION__ - 0 >= 202311L) || defined(__BSD_VISIBLE)
+time_t timegm(struct tm *);
 #endif
 
 #if defined(__BSD_VISIBLE)
