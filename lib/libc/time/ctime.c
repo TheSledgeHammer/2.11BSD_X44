@@ -719,7 +719,7 @@ transtime(janfirst, year, rulep, offset)
 		 */
 		value = janfirst + (rulep->r_day - 1) * SECS_PER_DAY;
 		if (leapyear && rulep->r_day >= 60)
-			value += SECSPERDAY;
+			value += SECS_PER_DAY;
 		break;
 
 	case DAY_OF_YEAR:
