@@ -496,10 +496,11 @@ tzload(name, sp)
 	const char *name;
 	struct state *sp;
 {
-	register int load_result;
+	int load_result;
 
+    load_result = 0;
 	if ((sp != NULL) || (sp == &s)) {
-		load_result = tzload1(name);
+        load_result = tzload1(name);
 		if (load_result != 0) {
 			sp->leapcnt = 0; /* so, we're off a little */
 		}
@@ -706,6 +707,7 @@ transtime(janfirst, year, rulep, offset)
 	register int	i;
 	int		d, m1, yy0, yy1, yy2, dow;
 
+    value = NULL;
 	leapyear = isleap(year);
 	switch (rulep->r_type) {
 
@@ -987,6 +989,7 @@ tzsetkernel(void)
 	if (gettimeofday(&tv, &tz))
 		return -1;
 	s.timecnt = 0; /* UNIX counts *west* of Greenwich */
+    s.leapcnt = 0;
 	s.ttis[0].tt_gmtoff = tz.tz_minuteswest * -SECS_PER_MIN;
 	s.ttis[0].tt_abbrind = 0;
 	(void) strcpy(s.chars, tztab(tz.tz_minuteswest, 0));
@@ -995,6 +998,9 @@ tzsetkernel(void)
 	tzone = tz.tz_minuteswest * 60;
 	daylight = tz.tz_dsttime;
 #endif /* USG_COMPAT */
+#ifdef ALTZONE
+	altzone = tz.tz_minuteswest * 60;
+#endif /* ALTZONE */
 	return 0;
 }
 
@@ -1013,7 +1019,7 @@ tzsetgmt(void)
 #endif /* USG_COMPAT */
 #ifdef ALTZONE
 	altzone = 0;
-#endif /* defined ALTZONE */
+#endif /* ALTZONE */
 }
 
 #ifdef notyet
@@ -1053,6 +1059,7 @@ tzset(void)
 			return;
 		}
 		if (!tzsetkernel()) {			/* kernel guess worked */
+            gmtload(lclptr);
 			return;
 		}
 		if (name[0] == ':' || !tzparse(name, lclptr, FALSE)) {
@@ -1330,7 +1337,7 @@ state_alloc(funcp)
 	}
 #ifdef ALL_STATE
 	if (sp == NULL) {
-		return WRONG;
+		return NULL;
 	}
 #endif
 	return sp;
