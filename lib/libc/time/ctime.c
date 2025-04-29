@@ -184,7 +184,7 @@ struct rule {
 	int		r_day;		/* day number of rule */
 	int		r_week;		/* week number of rule */
 	int		r_mon;		/* month number of rule */
-	long	r_time;		/* transition time of rule */
+	long		r_time;		/* transition time of rule */
 };
 
 #define	JULIAN_DAY		0	/* Jn - Julian day */
@@ -297,7 +297,7 @@ asctime_r(timeptr, buf)
 	** Assume that strftime is unaffected by other out-of-range members
 	** (e.g., timeptr->tm_mday) when processing "%Y".
 	*/
-    strftime(year, sizeof(year), "%Y", timeptr);
+   	strftime(year, sizeof(year), "%Y", timeptr);
 	(void) snprintf(result, sizeof(result),
 			((strlen(year) <= 4) ? ASCTIME_FMT : ASCTIME_FMT_B),
 			wn,
@@ -1043,7 +1043,7 @@ tzset(void)
 
 	lcl_is_set = TRUE;
 	name = getenv("TZ");
-	if (!name || *name) {						/* did not request GMT */
+	if (!name || *name) {				/* did not request GMT */
 		if (name && !tzload(name, lclptr)) { 	/* requested name worked */
 			gmtload(lclptr);
 			return;
@@ -1052,14 +1052,14 @@ tzset(void)
 			gmtload(lclptr);
 			return;
 		}
-		if (!tzsetkernel()) {					/* kernel guess worked */
+		if (!tzsetkernel()) {			/* kernel guess worked */
 			return;
 		}
 		if (name[0] == ':' || !tzparse(name, lclptr, FALSE)) {
 			gmtload(lclptr);
 		}
 	}
-	tzsetgmt();									/* GMT is default */
+	tzsetgmt();					/* GMT is default */
 }
 
 static void
