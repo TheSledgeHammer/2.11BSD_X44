@@ -38,5 +38,6 @@ CFLAGS+=	-Wno-macro-redefined # _REENTRANT redefined
 .endif
 
 COPTS.ftp.c+= -Wno-sign-compare
+COPTS.http.c+= -Wno-stringop-truncation
 
 .include <bsd.lib.mk>
