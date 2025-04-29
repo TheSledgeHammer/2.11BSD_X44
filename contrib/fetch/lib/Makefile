@@ -37,4 +37,6 @@ httperr.h: ${LIBFETCHDIR}/http.errors ${LIBFETCHDIR}/errlist.sh
 CFLAGS+=	-Wno-macro-redefined # _REENTRANT redefined
 .endif
 
+COPTS.ftp.c+= -Wno-sign-compare
+
 .include <bsd.lib.mk>
