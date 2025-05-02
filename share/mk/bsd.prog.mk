@@ -99,10 +99,10 @@ _LIBLIST= \
 			INTL IPSEC \
 			L LUA \
 			KVM \
-			M MAGIC MENU MP MPX \
-            NS \
+			M MAGIC MENU MP \
+            NS NETBSD \
             OBJC OM \
-			PANEL PCAP PCI PTHREAD \
+			PANEL PCAP PCI PLAN9 PTHREAD \
             RESOLV RPCSVC \
             SKEY SQLITE3 SSH SSL SSP STDC++ STUBS SUPC++ \
             TERMINFO \

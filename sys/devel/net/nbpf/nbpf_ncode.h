@@ -48,6 +48,9 @@ struct nbpf_insn {
 	size_t 				sz;
 };
 
+struct nbpf_insn *nbpf_nc_alloc(int);
+void nbpf_nc_free(struct nbpf_insn *);
+
 int nbpf_filter(nbpf_state_t *, struct nbpf_insn *, nbpf_buf_t *, int);
 int nbpf_validate(struct nbpf_insn *, size_t, int *);
 

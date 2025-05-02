@@ -77,21 +77,33 @@ int	kthread_create_now;
  */
 /* creates a new thread */
 int
-kthread_create1(func, arg, newpp, newtd, name, forkproc)
+kthread_create1(func, arg, newpp, newtd, name)
 	void (*func)(void *);
 	void *arg;
-	struct proc *newpp;
+	struct proc **newpp;
 	struct thread **newtd;
 	char *name;
 	bool_t forkproc;
 {
 	int error;
 
-	error = sched_create_threads(newpp, newtd, name, THREAD_STACK, forkproc);
+	error = sched_create_threads(newpp, newtd, name, THREAD_STACK);
 	if (__predict_false(error != 0)) {
 		return (error);
 	}
 	return (0);
+}
+
+int
+kthread_create(func, arg, newpp, name)
+	void (*func)(void *);
+	void *arg;
+	struct proc **newpp;
+	char *name;
+{
+	struct thread *td = NULL;
+
+	return (kthread_create1(func, arg, newpp, &td, name));
 }
 
 /*

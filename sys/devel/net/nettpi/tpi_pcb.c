@@ -107,7 +107,8 @@ tpi_pcbdetach()
 void
 tpi_setsockaddr()
 {
-
+	tpi_local_set_lsockaddr();
+	tpi_foreign_set_fsockaddr();
 }
 
 void

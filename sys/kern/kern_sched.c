@@ -314,17 +314,17 @@ sched_check_threads(sc, p)
  * Note: nthreads is pre-determined by "sched_nthreads" and "sched_check_threads".
  */
 int
-sched_create_threads(newpp, newtd, name, stack, forkproc)
+sched_create_threads(newpp, newtd, name, stack)
 	struct proc **newpp;
 	struct thread **newtd;
 	char *name;
 	size_t stack;
-	bool_t forkproc;
 {
 	struct proc *pp;
 	struct thread *tdp;
 	struct sched *sc;
 	struct sched_factor *sf;
+	bool_t forkproc;
 	int i, error, nthreads;
 
 	pp = *newpp;
@@ -337,6 +337,12 @@ sched_create_threads(newpp, newtd, name, stack, forkproc)
 			if ((tdp->td_flag & TD_STEALABLE) == 0) {
 				thread_steal(pp, tdp);
 			} else {
+				/* check proc has any threads ready */
+				if ((pp->p_tqsready > 0) && (pp->p_stat != SRUN)) {
+					forkproc = TRUE;
+				} else {
+					forkproc = FALSE;
+				}
 				error = newthread1(&pp, &tdp, name, stack, forkproc);
 				if (error != 0) {
 					return (error);

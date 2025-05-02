@@ -35,7 +35,7 @@ int	outf;
 struct	iovec	iov[2];
 off_t	msgoff;
 char	*outfn, *infn, *msg;
-struct	ERRLSTHDR	ehdr;
+struct	errlsthdr	ehdr;
 FILE	*infp;
 
 char *getmsg(int, FILE *);
@@ -99,7 +99,7 @@ main(argc,argv)
 	if (write(outf, &ehdr, sizeof(ehdr)) != sizeof(ehdr))
 		err(1, "write");
 
-	msgoff = sizeof(ehdr) + ((off_t) sizeof(struct ERRLST) * sys_nerr);
+	msgoff = sizeof(ehdr) + ((off_t) sizeof(struct errlst) * sys_nerr);
 	iov[0].iov_base = (caddr_t) &msgoff;
 	iov[0].iov_len = sizeof(off_t);
 

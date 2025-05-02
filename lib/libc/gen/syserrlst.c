@@ -64,8 +64,8 @@ __errlst(err, path)
 	register char *retval = NULL;
 	int	saverrno;
 	off_t off;
-	struct ERRLST	emsg;
-	struct ERRLSTHDR ehdr;
+	struct errlst	emsg;
+	struct errlsthdr ehdr;
 
 	saverrno = errno;
 	f = open(path, O_RDONLY);
@@ -78,7 +78,7 @@ __errlst(err, path)
 	if (err < 0|| err > ehdr.maxmsgnum || ehdr.maxmsgnum <= 0 || ehdr.magic != ERRMAGIC)
 		goto oops;
 
-	off = sizeof(ehdr) + ((off_t) sizeof(struct ERRLST) * err);
+	off = sizeof(ehdr) + ((off_t) sizeof(struct errlst) * err);
 	if (lseek(f, off, SEEK_SET) == (off_t) -1)
 		goto oops;
 

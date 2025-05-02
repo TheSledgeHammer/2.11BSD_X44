@@ -29,8 +29,8 @@ The file format is:
  *
  * The format of the file created is:
  *
- *	struct	ERRLSTHDR ehdr;
- *	struct	ERRLST  emsg[num_of_messages];
+ *	struct	errlsthdr ehdr;
+ *	struct	errlst  emsg[num_of_messages];
  *	struct	{
  *		char	msg[] = "error message string";
  *		char	lf = '\n';
@@ -48,7 +48,7 @@ The file format is:
 		short	pad[5];		/* Reserved */
 		};
 
-	struct	ERRLST
+	struct	errlst
 		{
 		off_t	offmsg;
 		short	lenmsg;

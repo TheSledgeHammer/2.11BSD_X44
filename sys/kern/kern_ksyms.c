@@ -349,7 +349,7 @@ addsymtab(const char *name, void *symstart, size_t symsize,
 }
 
 void
-ksyms_delsymtab()
+ksyms_delsymtab(void)
 {
 	struct ksyms_symtab *st, *next;
 	bool_t resize;

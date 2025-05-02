@@ -75,8 +75,8 @@ time_t 		time(time_t *);
 void 		tzset(void);
 #endif /* not ANSI */
 
-struct tm *gmtime_r(const time_t *, struct tm *);
-struct tm *localtime_r(const time_t *, struct tm *);
+//struct tm *gmtime_r(const time_t *, struct tm *);
+//struct tm *localtime_r(const time_t *, struct tm *);
 
 #if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 char 		*strptime(const char * __restrict, const char * __restrict, struct tm * __restrict);

@@ -116,6 +116,23 @@ nc_insn_get(struct nbpf_ncode *ncode)
 	return (1);
 }
 
+struct nbpf_insn *
+nbpf_nc_alloc(size)
+	int size;
+{
+	struct nbpf_insn *ncode;
+
+	ncode = (struct nbpf_insn *)malloc(size, M_DEVBUF, M_WAITOK);
+	return (ncode);
+}
+
+void
+nbpf_nc_free(ncode)
+	struct nbpf_insn *ncode;
+{
+	free(ncode, M_DEVBUF);
+}
+
 /*
  * RISC-like instructions.
  */

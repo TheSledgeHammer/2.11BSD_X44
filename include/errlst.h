@@ -25,8 +25,8 @@ typedef	__off_t		off_t;
  *
  * The format of the file created is:
  *
- *	struct	ERRLSTHDR	ehdr;
- *	struct	ERRLST  emsg[num_of_msgs];
+ *	struct	errlsthdr	ehdr;
+ *	struct	errlst  emsg[num_of_msgs];
  *	struct	{
  *		char	msg[] = "error message string";
  *		char	lf = '\n';
@@ -36,17 +36,19 @@ typedef	__off_t		off_t;
  *        are present to make it easy to 'cat' or 'vi' the file.
 */
 
-struct	ERRLSTHDR {
+struct	errlsthdr {
 	short	magic;
 	short	maxmsgnum;
 	short	maxmsglen;
 	short	pad[5];		/* Reserved */
 };
+typedef struct errlsthdr ERRLSTHDR;
 
-struct	ERRLST {
+struct errlst {
 	off_t	offmsg;
 	short	lenmsg;
 };
+typedef struct errlst ERRLST;
 
 #define	ERRMAGIC		012345
 #define	_PATH_SYSERRLST		"/etc/syserrlst"

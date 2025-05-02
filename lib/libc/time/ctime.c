@@ -240,11 +240,6 @@ static time_t	time2(struct tm *, void (*)(const time_t *, long, struct tm *), lo
 static int		tmcomp(const struct tm *, const struct tm *);
 static time_t	transtime(time_t, int, const struct rule *, long);
 
-char *ctime_r(const time_t *, char *);
-char *asctime_r(const struct tm *, char *);
-time_t mktime(struct tm * const);
-time_t timegm(struct tm * const);
-
 char *
 ctime(t)
 	const time_t *t;
@@ -498,9 +493,9 @@ tzload(name, sp)
 {
 	int load_result;
 
-    load_result = 0;
+	load_result = 0;
 	if ((sp != NULL) || (sp == &s)) {
-        load_result = tzload1(name);
+		load_result = tzload1(name);
 		if (load_result != 0) {
 			sp->leapcnt = 0; /* so, we're off a little */
 		}
@@ -989,7 +984,7 @@ tzsetkernel(void)
 	if (gettimeofday(&tv, &tz))
 		return -1;
 	s.timecnt = 0; /* UNIX counts *west* of Greenwich */
-    s.leapcnt = 0;
+	s.leapcnt = 0;
 	s.ttis[0].tt_gmtoff = tz.tz_minuteswest * -SECS_PER_MIN;
 	s.ttis[0].tt_abbrind = 0;
 	(void) strcpy(s.chars, tztab(tz.tz_minuteswest, 0));
@@ -1008,7 +1003,7 @@ static void
 tzsetgmt(void)
 {
 	s.timecnt = 0;
-	s.leapcnt = 0;		/* so, we're off a little */
+	s.leapcnt = 0;
 	s.ttis[0].tt_gmtoff = 0;
 	s.ttis[0].tt_abbrind = 0;
 	(void) strcpy(s.chars, GMT);
@@ -1030,15 +1025,15 @@ tzset(void)
 
 	lcl_is_set = TRUE;
 	name = getenv("TZ");
-	if (!name || *name) {			/* did not request GMT */
-		if (name && !tzload(name))	/* requested name worked */
+	if (!name || *name) { /* did not request GMT */
+		if (name && !tzload(name)) /* requested name worked */
 			return;
-		if (!tzload((char *)0))		/* default name worked */
+		if (!tzload((char*) 0)) /* default name worked */
 			return;
-		if (!tzsetkernel())		/* kernel guess worked */
+		if (!tzsetkernel()) /* kernel guess worked */
 			return;
 	}
-	tzsetgmt();				/* GMT is default */
+	tzsetgmt(); /* GMT is default */
 }
 #endif
 
@@ -1049,24 +1044,24 @@ tzset(void)
 
 	lcl_is_set = TRUE;
 	name = getenv("TZ");
-	if (!name || *name) {				/* did not request GMT */
-		if (name && !tzload(name, lclptr)) { 	/* requested name worked */
+	if (!name || *name) { /* did not request GMT */
+		if (name && !tzload(name, lclptr)) { /* requested name worked */
 			gmtload(lclptr);
 			return;
 		}
-		if (!tzload((char *)0, lclptr)) {	/* default name worked */
+		if (!tzload((char*) 0, lclptr)) { /* default name worked */
 			gmtload(lclptr);
 			return;
 		}
-		if (!tzsetkernel()) {			/* kernel guess worked */
-            gmtload(lclptr);
+		if (!tzsetkernel()) { /* kernel guess worked */
+			gmtload(lclptr);
 			return;
 		}
 		if (name[0] == ':' || !tzparse(name, lclptr, FALSE)) {
 			gmtload(lclptr);
 		}
 	}
-	tzsetgmt();					/* GMT is default */
+	tzsetgmt(); /* GMT is default */
 }
 
 static void

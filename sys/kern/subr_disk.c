@@ -564,10 +564,11 @@ struct dkdevice *
 disk_find_by_dev(dev)
    dev_t dev;
 {
-    struct dkdevice *diskp;
+    struct dkdevice *diskp, *disk;
     
     TAILQ_FOREACH(diskp, &disklist, dk_link) {
-        if (&diskp[dkunit(dev)] == diskp) {
+    	disk = &diskp[dkunit(dev)];
+        if (disk == diskp) {
             return (diskp);
         }
     }

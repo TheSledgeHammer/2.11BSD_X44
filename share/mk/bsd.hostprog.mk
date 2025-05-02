@@ -44,7 +44,6 @@ LIBIPSEC?=		    /usr.lib/libipsec.a
 LIBKVM?=			/usr.lib/libkvm.a
 LIBM?=				/usr.lib/libm.a
 LIBMENU?=			/usr.lib/libmenu.a
-LIBMPX?=			/usr.lib/libmpx.a
 LIBPANEL?=			/usr.lib/libpanel.a
 LIBPCAP?=			/usr.lib/libpcap.a
 LIBPCI?=			/usr.lib/libpci.a
@@ -59,6 +58,7 @@ LIBY?=				/usr.lib/liby.a
 LIBZ?=				/usr.lib/libz.a
 
 # OS Compat Libraries
+
 # 2.11BSD Libraries
 LIBNDBM?=			/usr.lib/libndbm.a
 LIBFORTRAN?=		/usr.lib/libfortran
@@ -70,6 +70,12 @@ LIBOM?=				/usr.lib/libom.a
 LIBSTUBS?=			/usr.lib/libstubs.a
 #LIBTERMCAP?=		/usr.lib/libtermcap.a
 LIBVMF?=			/usr.lib/libvmf.a
+
+# NetBSD
+LIBNETBSD?=			/usr/lib/libnetbsd.a
+
+# Plan9
+LIBPLAN9?=			/usr/lib/libplan9.a
 
 MKDEP_SUFFIXES?=	.lo .ln .d
 
