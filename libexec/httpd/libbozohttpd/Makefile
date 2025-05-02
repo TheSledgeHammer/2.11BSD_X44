@@ -24,4 +24,6 @@ INCSDIR=	/usr/include
 LDADD+=	-lssl -lcrypto
 DPADD+=	${LIBSSL} ${LIBCRYPTO}
 
+COPTS.bozohttpd.c+= -Wno-format-overflow
+
 .include <bsd.lib.mk>
