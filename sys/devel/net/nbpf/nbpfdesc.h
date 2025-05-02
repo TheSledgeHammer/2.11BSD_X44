@@ -46,12 +46,22 @@ struct nbpf_d {
 	nbpf_state_t		*nbd_state;
 	struct nbpf_insn 	*nbd_filter;
 	int 				nbd_layer;
+
+	/* nbpf buffer */
+	void 				*nbd_nptr;	/* nbuf pointer to object */
+	nbpf_buf_t 			*nbd_nbuf;	/* nbuf store */
+	size_t				nbd_nlen;	/* nbuf length */
+
+	size_t				nbd_bufsize; /* bufsize */
+
+	struct bpf_d		*nbd_bpf; 	/* bpf back-pointer */
 };
 
 #define BIOCSTBLF	_IOW('B', 115, struct nbpf_program) /* nbpf tblset */
 
-struct nbpf_d *nbpf_d_alloc(size_t);
-void	nbpf_d_free(struct nbpf_d *);
+struct nbpf_d 	*nbpf_d_alloc(size_t);
+void			nbpf_d_free(struct nbpf_d *);
+
 void	nbpf_attachd(struct nbpf_d *);
 void	nbpf_detachd(struct nbpf_d *);
 int		nbpfioctl(struct nbpf_d *, dev_t, u_long, caddr_t, int, struct proc *);

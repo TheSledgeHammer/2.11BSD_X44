@@ -153,32 +153,53 @@ nbpfioctl(d, dev, cmd, addr, flag, p)
 	return (error);
 }
 
-/*
 static void
-nbpf_reset_d(nd, nbuf, len)
+nbpf_set_d(nd, nbuf, nptr, bufsize, len)
 	struct nbpf_d *nd;
 	nbpf_buf_t *nbuf;
-	size_t len;
-{
 	void *nptr;
-	const struct mbuf *const n;
-	const size_t off;
-
-	n = nbuf;
-	nptr = nbpf_dataptr(n);
-	off = (uintptr_t)nptr - mtod(n, uintptr_t);
-	if (nbpf_fetch_datum(n, nptr, len, off)) {
-
-	}
+	size_t bufsize, len;
+{
+	nd->nbd_nbuf = nbuf;
+	nd->nbd_nptr = nptr;
+	nd->nbd_bufsize = bufsize;
+	nd->nbd_nlen = len;
 }
 
 static void
-nbpf_catchpacket(nd, pkt, pktlen, slen, cpfn)
+nbpf_reset_d(nd)
 	struct nbpf_d *nd;
 {
-
+	nd->nbd_nbuf = NULL;
+	nd->nbd_nptr = NULL;
+	nd->nbd_bufsize = 0;
+	nd->nbd_nlen = 0;
 }
-*/
+
+int
+nbpf_allocbufs(nd)
+	struct nbpf_d *nd;
+{
+	nd->nbd_nbuf = malloc(nd->nbd_bufsize, M_DEVBUF, M_NOWAIT);
+	if (!nd->nbd_nbuf) {
+		free(nd->nbd_nbuf, M_DEVBUF);
+		return (ENOBUFS);
+	}
+	nd->nbd_nlen = 0;
+	return (0);
+}
+
+void
+nbpf_freed(nd)
+	struct nbpf_d *nd;
+{
+	if (nd->nbd_nbuf != NULL) {
+		free(nd->nbd_nbuf, M_DEVBUF);
+	}
+	if (nd->nbd_filter != NULL) {
+		free((caddr_t)nd->nbd_filter, M_DEVBUF);
+	}
+}
 
 int
 nbpf_setf(nd, fp, error)
@@ -200,25 +221,24 @@ nbpf_setf(nd, fp, error)
 		nbpf_reset_d(nd);
 		splx(s);
 		if (old != 0) {
-			free((caddr_t)old, M_DEVBUF);
+			nbpf_nc_free(old);
 		}
 		return (0);
 	}
 	nlen = fp->nbf_len;
-
 	size = nlen * sizeof(*fp->nbf_insns);
-	ncode = (struct nbpf_insn *)malloc(size, M_DEVBUF, M_WAITOK);
+	ncode = nbpf_nc_alloc(size);
 	if (copyin((caddr_t)fp->nbf_insns, (caddr_t)ncode, size) == 0 && nbpf_validate(ncode, (int)nlen, error)) {
 		s = splnet();
 		nd->nbd_filter = ncode;
 		nbpf_reset_d(nd);
 		splx(s);
 		if (old != 0) {
-			free((caddr_t)old, M_DEVBUF);
+			nbpf_nc_free(old);
 		}
 		return (0);
 	}
-	free((caddr_t)ncode, M_DEVBUF);
+	nbpf_nc_free(ncode);
 	return (EINVAL);
 }
 
@@ -234,6 +254,30 @@ nbpf_filtncatch(d, nd, pkt, pktlen, slen, cpfn)
 	slen = nbpf_filter(nd->nbd_state, nd->nbd_filter, (nbpf_buf_t *)pktlen, nd->nbd_layer);
 	if (slen != 0) {
 		nbpf_catchpacket(nd, pkt, pktlen, slen, cpfn);
+	}
+}
+
+static void
+nbpf_catchpacket(nd, pkt, pktlen, snaplen, cpfn)
+	struct nbpf_d *nd;
+	u_char *pkt;
+	u_int pktlen, snaplen;
+	void *(*cpfn)(void *, const void *, size_t);
+{
+	struct bpf_d *d;
+	int error, totlen, hdrlen, curlen;
+
+	d = nd->nbd_bpf;
+	hdrlen = d->bd_bif->bif_hdrlen;
+	totlen = hdrlen + min(snaplen, pktlen);
+	if (totlen > d->bd_bufsize) {
+		totlen = d->bd_bufsize;
+	}
+
+	nbpf_set_d(nd, pkt, nbpf_dataptr(pkt), totlen, hdrlen);
+	error = nbpf_check_cache(nd->nbd_state, nd->nbd_nbuf, nd->nbd_nptr);
+	if (error == (nd->nbd_state->nbs_info & (NBPC_IP46 | NBPC_LAYER4))) {
+		nd->nbd_state->nbs_info = 0;
 	}
 }
 
