@@ -137,7 +137,7 @@ nbpf_packet_handler(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
 	void *nptr;
 
 	nptr = nbpf_dataptr(nbuf);
-	if (nbpf_cache_all(state, nbuf) & NBPC_IPFRAG) {
+	if (nbpf_cache_all(state, nbuf, nptr) & NBPC_IPFRAG) {
 		error = nbpf_reassembly(state, nbuf, mp);
 		if (error) {
 			goto out;
