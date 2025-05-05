@@ -87,6 +87,8 @@ struct bpf_d {
 	u_char			bd_pad;		/* explicit alignment */
 	struct selinfo	bd_sel;		/* bsd select info */
 	struct callout	bd_callout;	/* for BPF timeouts with select */
+
+	//struct nbpf_d  	*bd_nbpf;    /* nbpf extension structure */
 };
 
 /* Values for bd_state */

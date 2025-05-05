@@ -227,8 +227,8 @@ bool	nbpf_fetch_udp(nbpf_state_t *, nbpf_port_t *, nbpf_buf_t *, void *);
 bool	nbpf_fetch_icmp(nbpf_state_t *, nbpf_icmp_t *, nbpf_buf_t *, void *);
 bool	nbpf_fetch_tcpopts(const nbpf_state_t *, nbpf_port_t *, nbpf_buf_t *, uint16_t *, int *);
 
-int		nbpf_cache_all(nbpf_state_t *, nbpf_buf_t *);
-void	nbpf_recache(nbpf_state_t *, nbpf_buf_t *);
+int		nbpf_cache_all(nbpf_state_t *, nbpf_buf_t *, void *);
+void	nbpf_recache(nbpf_state_t *, nbpf_buf_t *, void *);
 int		nbpf_reassembly(nbpf_state_t *, nbpf_buf_t *, struct mbuf **);
 
 int		nbpf_addr_cmp(const nbpf_addr_t *, const nbpf_netmask_t, const nbpf_addr_t *, const nbpf_netmask_t, const int);
@@ -255,6 +255,7 @@ void	nbpf_tableset_destroy(nbpf_tableset_t *);
 int		nbpf_tableset_insert(nbpf_tableset_t *, nbpf_table_t *);
 void	nbpf_tableset_reload(nbpf_tableset_t *, nbpf_tableset_t *);
 
+/* Table interface. */
 nbpf_table_t 	*nbpf_table_create(u_int, int, size_t);
 void	nbpf_table_destroy(nbpf_table_t *);
 

@@ -72,7 +72,7 @@ struct nbpf_tblent {
 	union {
 		LIST_ENTRY(nbpf_tblent) 	hashq;		/* hash */
 		LIST_ENTRY(nbpf_tblent) 	listent;	/* lpm */
-		pt_node_t				node;
+		pt_node_t					node;		/* ptree */
 	} te_entry;
 	uint16_t				te_preflen;
 	int						te_alen;
@@ -110,8 +110,7 @@ extern const pt_tree_ops_t nbpf_table_ptree_ops;
 #define M_NBPF 	M_DEVBUF
 
 static void *
-nbpf_tableset_malloc(size)
-	size_t size;
+nbpf_tableset_malloc(size_t size)
 {
 	void *arg;
 
@@ -120,8 +119,7 @@ nbpf_tableset_malloc(size)
 }
 
 static void
-nbpf_tableset_free(ent)
-	nbpf_tblent_t *ent;
+nbpf_tableset_free(nbpf_tblent_t *ent)
 {
 	free(ent, M_NBPF);
 }
@@ -154,7 +152,7 @@ nbpf_tableset_create(void)
 void
 nbpf_tableset_destroy(nbpf_tableset_t *tblset)
 {
-	const size_t sz = NBPF_TABLE_SLOTS * sizeof(nbpf_table_t *);
+	const size_t sz = NBPF_TABLE_SLOTS * sizeof(nbpf_table_t*);
 	nbpf_table_t *t;
 	u_int tid;
 
@@ -182,7 +180,7 @@ nbpf_tableset_insert(nbpf_tableset_t *tblset, nbpf_table_t *t)
 	const u_int tid = t->t_id;
 	int error;
 
-	KASSERT((u_int)tid < NBPF_TABLE_SLOTS);
+	KASSERT((u_int) tid < NBPF_TABLE_SLOTS);
 
 	if (tblset[tid] == NULL) {
 		atomic_inc_int(&t->t_refcnt);
@@ -262,7 +260,7 @@ table_lpm_lookup(const nbpf_table_t *t, const nbpf_addr_t *addr, const int alen,
 	struct nbpf_hashl *list;
 	nbpf_tblent_t *ent;
 
-    list = t->t_list;
+	list = t->t_list;
 	LIST_FOREACH(ent, list, te_entry.listent) {
 		if ((&ent->te_addr == addr) && (ent->te_alen == alen)) {
 			if (lpm_lookup(t->t_lpm, addr, alen) != NULL) {
@@ -320,17 +318,18 @@ nbpf_table_create(u_int tid, int type, size_t hsize)
 			nbpf_tableset_free(t);
 			return (NULL);
 		}
-		LIST_INIT(t->t_list);
+		LIST_INIT(t->t_list)
+		;
 		break;
 	case NBPF_TABLE_TREE:
 		ptree_init(&t->t_tree[0], &nbpf_table_ptree_ops,
-		    (void *)(sizeof(struct in_addr) / sizeof(uint32_t)),
-		    offsetof(nbpf_tblent_t, te_entry.node),
-		    offsetof(nbpf_tblent_t, te_addr));
+				(void*) (sizeof(struct in_addr) / sizeof(uint32_t)),
+				offsetof(nbpf_tblent_t, te_entry.node),
+				offsetof(nbpf_tblent_t, te_addr));
 		ptree_init(&t->t_tree[1], &nbpf_table_ptree_ops,
-		    (void *)(sizeof(struct in6_addr) / sizeof(uint32_t)),
-		    offsetof(nbpf_tblent_t, te_entry.node),
-		    offsetof(nbpf_tblent_t, te_addr));
+				(void*) (sizeof(struct in6_addr) / sizeof(uint32_t)),
+				offsetof(nbpf_tblent_t, te_entry.node),
+				offsetof(nbpf_tblent_t, te_addr));
 		break;
 	case NBPF_TABLE_HASH:
 		t->t_hashl = hashinit(hsize, M_NBPF, &t->t_hashmask);
@@ -390,8 +389,7 @@ nbpf_table_destroy(nbpf_table_t *t)
 int
 nbpf_table_check(const nbpf_tableset_t *tset, u_int tid, int type)
 {
-
-	if ((u_int)tid >= NBPF_TABLE_SLOTS) {
+	if ((u_int) tid >= NBPF_TABLE_SLOTS) {
 		return EINVAL;
 	}
 	if (tset[tid] != NULL) {
@@ -410,7 +408,6 @@ nbpf_table_check(const nbpf_tableset_t *tset, u_int tid, int type)
 static int
 table_cidr_check(const u_int aidx, const nbpf_addr_t *addr, const nbpf_netmask_t mask)
 {
-
 	if (mask > NBPF_MAX_NETMASK && mask != NBPF_NO_NETMASK) {
 		return EINVAL;
 	}
@@ -439,7 +436,7 @@ nbpf_table_insert(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	nbpf_table_t *t;
 	int error;
 
-	if ((u_int)tid >= NBPF_TABLE_SLOTS || (t = tset[tid]) == NULL) {
+	if ((u_int) tid >= NBPF_TABLE_SLOTS || (t = tset[tid]) == NULL) {
 		return EINVAL;
 	}
 
@@ -496,8 +493,8 @@ nbpf_table_insert(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 		 * If no mask specified, use maximum mask.
 		 */
 		ok = (mask != NBPF_NO_NETMASK) ?
-		    ptree_insert_mask_node(tree, ent, mask) :
-		    ptree_insert_node(tree, ent);
+				ptree_insert_mask_node(tree, ent, mask) :
+				ptree_insert_node(tree, ent);
 		if (ok) {
 			t->t_nitems++;
 			error = 0;
@@ -533,7 +530,7 @@ nbpf_table_remove(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 		return error;
 	}
 
-	if ((u_int)tid >= NBPF_TABLE_SLOTS || (t = tset[tid]) == NULL) {
+	if ((u_int) tid >= NBPF_TABLE_SLOTS || (t = tset[tid]) == NULL) {
 		return EINVAL;
 	}
 
@@ -597,7 +594,7 @@ nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 		return EINVAL;
 	}
 
-	if ((u_int)tid >= NBPF_TABLE_SLOTS || (t = tset[tid]) == NULL) {
+	if ((u_int) tid >= NBPF_TABLE_SLOTS || (t = tset[tid]) == NULL) {
 		return EINVAL;
 	}
 
@@ -627,15 +624,10 @@ nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 }
 
 int
-nbpf_mktable(tset, tbl, tid, type, hsize)
-	nbpf_tableset_t **tset;
-	nbpf_table_t **tbl;
-	u_int tid;
-	int type;
-	size_t hsize;
+nbpf_mktable(nbpf_tableset_t **tset, nbpf_table_t **tbl, u_int tid, int type, size_t hsize)
 {
-    nbpf_tableset_t *ts;
-    nbpf_table_t    *tb;
+	nbpf_tableset_t *ts;
+	nbpf_table_t *tb;
 	int error;
 
 	ts = nbpf_tableset_create();
@@ -654,27 +646,28 @@ nbpf_mktable(tset, tbl, tid, type, hsize)
 	if (error != 0) {
 		return (error);
 	}
-    *tset = ts;
-    *tbl = tb;
+	*tset = ts;
+	*tbl = tb;
 	return (0);
 }
 
 int
-nbpf_table_ioctl(nbiot, tblset)
-	struct nbpf_ioctl_table *nbiot;
-	nbpf_tableset_t *tblset;
+nbpf_table_ioctl(struct nbpf_ioctl_table *nbiot, nbpf_tableset_t *tblset)
 {
 	int error;
 
 	switch (nbiot->nct_cmd) {
 	case NBPF_CMD_TABLE_LOOKUP:
-		error = nbpf_table_lookup(tblset, nbiot->nct_tid, nbiot->nct_alen, &nbiot->nct_addr);
+		error = nbpf_table_lookup(tblset, nbiot->nct_tid, nbiot->nct_alen,
+				&nbiot->nct_addr);
 		break;
 	case NBPF_CMD_TABLE_ADD:
-		error = nbpf_table_insert(tblset, nbiot->nct_tid, nbiot->nct_alen, &nbiot->nct_addr, nbiot->nct_mask);
+		error = nbpf_table_insert(tblset, nbiot->nct_tid, nbiot->nct_alen,
+				&nbiot->nct_addr, nbiot->nct_mask);
 		break;
 	case NBPF_CMD_TABLE_REMOVE:
-		error = nbpf_table_remove(tblset, nbiot->nct_tid, nbiot->nct_alen, &nbiot->nct_addr, nbiot->nct_mask);
+		error = nbpf_table_remove(tblset, nbiot->nct_tid, nbiot->nct_alen,
+				&nbiot->nct_addr, nbiot->nct_mask);
 		break;
 	default:
 		error = EINVAL;

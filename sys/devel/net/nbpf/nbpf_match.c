@@ -139,7 +139,7 @@ nbpf_match_table(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, const int sd
 		}
 		KASSERT(nbpf_iscached(state, NBPC_IP46));
 	}
-    
+
 	addr4 = (sd ? nb4->nb4_srcip : nb4->nb4_dstip);
 	addr6 = (sd ? nb6->nb6_srcip : nb6->nb6_dstip);
 	addr = (sd ? addr4 : addr6);

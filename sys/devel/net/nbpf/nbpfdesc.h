@@ -45,26 +45,36 @@ struct nbpf_d {
 	/* nbpf ncode */
 	nbpf_state_t		*nbd_state;
 	struct nbpf_insn 	*nbd_filter;
-	int 				nbd_layer;
+	int 			nbd_layer;
 
 	/* nbpf buffer */
-	void 				*nbd_nptr;	/* nbuf pointer to object */
-	nbpf_buf_t 			*nbd_nbuf;	/* nbuf store */
-	size_t				nbd_nlen;	/* nbuf length */
+	void 			*nbd_nptr;			/* nbuf pointer to object */
+	nbpf_buf_t 		*nbd_nbuf;			/* nbuf store */
+	size_t			nbd_nlen;			/* nbuf length */
+	size_t			nbd_nsize; 			/* nbuf size */
 
-	size_t				nbd_bufsize; /* bufsize */
+	/* bpf information: needed by the nbpf */
+	struct bpf_d		*nbd_bpf; 			/* bpf back-pointer */
+#define nbd_sbuf		nbd_bpf->bd_sbuf
+#define nbd_fbuf		nbd_bpf->bd_fbuf
+#define nbd_slen		nbd_bpf->bd_slen
 
-	struct bpf_d		*nbd_bpf; 	/* bpf back-pointer */
+#define nbd_bufsize		nbd_bpf->bd_bufsize /* absolute length of buffers */
+
+#define	nbd_bif			nbd_bpf->bd_bif		/* interface descriptor */
+#define nbd_rcount		nbd_bpf->bd_rcount
+#define nbd_dcount		nbd_bpf->bd_dcount
+#define nbd_ccount		nbd_bpf->bd_ccount
 };
 
 #define BIOCSTBLF	_IOW('B', 115, struct nbpf_program) /* nbpf tblset */
 
 struct nbpf_d 	*nbpf_d_alloc(size_t);
-void			nbpf_d_free(struct nbpf_d *);
+void	nbpf_d_free(struct nbpf_d *);
 
 void	nbpf_attachd(struct nbpf_d *);
 void	nbpf_detachd(struct nbpf_d *);
-int		nbpfioctl(struct nbpf_d *, dev_t, u_long, caddr_t, int, struct proc *);
+int	nbpfioctl(struct nbpf_d *, dev_t, u_long, caddr_t, int, struct proc *);
 void	nbpf_filtncatch(struct bpf_d *, struct nbpf_d *, u_char *, u_int, u_int, void *(*)(void *, const void *, size_t));
 
 #endif /* _NBPF_NBPFDESC_H_ */

@@ -136,7 +136,7 @@ npf_cache_all(nbpf_cache_t *npc, nbuf_t *nbuf)
 {
 	nbpf_state_t *state = (nbpf_state_t *)npc;
 
-	return (nbpf_cache_all(state, nbuf));
+	return (nbpf_cache_all(state, nbuf, nbpf_dataptr(nbuf)));
 }
 
 void
@@ -144,7 +144,7 @@ npf_recache(nbpf_cache_t *npc, nbuf_t *nbuf)
 {
 	nbpf_state_t *state = (nbpf_state_t *)npc;
 
-	nbpf_recache(state, nbuf);
+	nbpf_recache(state, nbuf, nbpf_dataptr(nbuf));
 }
 
 /*

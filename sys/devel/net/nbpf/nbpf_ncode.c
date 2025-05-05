@@ -65,7 +65,7 @@
 static inline const void *
 nc_fetch_word(const void *iptr, uint32_t *a)
 {
-	const uint32_t *tptr = (const uint32_t *)iptr;
+	const uint32_t *tptr = (const uint32_t*) iptr;
 
 	KASSERT(ALIGNED_POINTER(iptr, uint32_t));
 	*a = *tptr++;
@@ -79,7 +79,7 @@ nc_fetch_word(const void *iptr, uint32_t *a)
 static inline const void *
 nc_fetch_double(const void *iptr, uint32_t *a, uint32_t *b)
 {
-	const uint32_t *tptr = (const uint32_t *)iptr;
+	const uint32_t *tptr = (const uint32_t*) iptr;
 
 	KASSERT(ALIGNED_POINTER(iptr, uint32_t));
 	*a = *tptr++;
@@ -99,7 +99,7 @@ nc_jump(const void *iptr, int n, u_int *lcount)
 		return NULL;
 	}
 	*lcount = *lcount - 1;
-	return (const uint32_t *)iptr + n;
+	return (const uint32_t*) iptr + n;
 }
 
 /*
@@ -122,7 +122,7 @@ nbpf_nc_alloc(size)
 {
 	struct nbpf_insn *ncode;
 
-	ncode = (struct nbpf_insn *)malloc(size, M_DEVBUF, M_WAITOK);
+	ncode = (struct nbpf_insn*) malloc(size, M_DEVBUF, M_WAITOK);
 	return (ncode);
 }
 
@@ -140,8 +140,8 @@ int
 nbpf_risc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
 {
 	/* Virtual registers. */
-	uint32_t	regs[NBPF_NREGS];
-	u_int 		lcount;
+	uint32_t regs[NBPF_NREGS];
+	u_int lcount;
 
 	regs[0] = layer;
 	lcount = NBPF_LOOP_LIMIT;
@@ -164,15 +164,16 @@ nbpf_risc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 		}
 		break;
 	case NBPF_OPCODE_LW:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Size, register */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Size, register */
 		KASSERT(ncode->i < NBPF_NREGS);
 		KASSERT(ncode->n >= sizeof(uint8_t) && ncode->n <= sizeof(uint32_t));
-		if (nbpf_fetch_datum(nbuf, nptr, ncode->n, (uint32_t *)regs + ncode->i)) {
+		if (nbpf_fetch_datum(nbuf, nptr, ncode->n,
+				(uint32_t*) regs + ncode->i)) {
 			goto fail;
 		}
 		break;
 	case NBPF_OPCODE_CMP:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Value, register */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Value, register */
 		KASSERT(ncode->i < NBPF_NREGS);
 		if (ncode->n != regs[ncode->i]) {
 			cmpval = (ncode->n > regs[ncode->i]) ? 1 : -1;
@@ -181,7 +182,7 @@ nbpf_risc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 		}
 		break;
 	case NBPF_OPCODE_CMPR:
-		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);	/* Value, register */
+		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Value, register */
 		KASSERT(ncode->i < NBPF_NREGS);
 		if (regs[ncode->n] != regs[ncode->i]) {
 			cmpval = (regs[ncode->n] > regs[ncode->i]) ? 1 : -1;
@@ -190,7 +191,7 @@ nbpf_risc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 		}
 		break;
 	case NBPF_OPCODE_BEQ:
-		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);	/* N-code line */
+		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n); /* N-code line */
 		if (cmpval == 0) {
 			goto make_jump;
 		}
@@ -214,7 +215,7 @@ nbpf_risc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 		}
 		break;
 	case NBPF_OPCODE_RET:
-		(void)nc_fetch_word(ncode->iptr, &ncode->n);		/* Return value */
+		(void) nc_fetch_word(ncode->iptr, &ncode->n); /* Return value */
 		return (ncode->n);
 	case NBPF_OPCODE_TAG:
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i); /* Key, value */
@@ -261,8 +262,8 @@ int
 nbpf_cisc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf, void *nptr, int cmpval, const int layer)
 {
 	/* Virtual registers. */
-	uint32_t	regs[NBPF_NREGS];
-	nbpf_addr_t  addr;
+	uint32_t regs[NBPF_NREGS];
+	nbpf_addr_t addr;
 
 	regs[0] = layer;
 
@@ -270,16 +271,23 @@ nbpf_cisc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 	case NBPF_OPCODE_IP4MASK:
 		/* Source/destination, network address, subnet. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
-		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0], &ncode->n);
-		cmpval = nbpf_match_ipv4(state, nbuf, nptr, (sizeof(struct in_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0],
+				&ncode->n);
+		cmpval = nbpf_match_ipv4(state, nbuf, nptr,
+				(sizeof(struct in_addr) << 1) | (ncode->d & 0x1), &addr,
+				(nbpf_netmask_t) ncode->n);
 		break;
 	case NBPF_OPCODE_IP6MASK:
 		/* Source/destination, network address, subnet. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
-		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0], &addr.s6_addr32[1]);
-		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[2], &addr.s6_addr32[3]);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[0],
+				&addr.s6_addr32[1]);
+		ncode->iptr = nc_fetch_double(ncode->iptr, &addr.s6_addr32[2],
+				&addr.s6_addr32[3]);
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->n);
-		cmpval = nbpf_match_ipv6(state, nbuf, nptr, (sizeof(struct in6_addr) << 1) | (ncode->d & 0x1), &addr, (nbpf_netmask_t)ncode->n);
+		cmpval = nbpf_match_ipv6(state, nbuf, nptr,
+				(sizeof(struct in6_addr) << 1) | (ncode->d & 0x1), &addr,
+				(nbpf_netmask_t) ncode->n);
 		break;
 	case NBPF_OPCODE_TABLE:
 		/* Source/destination, NPF table ID. */
@@ -319,7 +327,8 @@ nbpf_cisc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 		/* Source/destination, reserved, ethernet type. */
 		ncode->iptr = nc_fetch_word(ncode->iptr, &ncode->d);
 		ncode->iptr = nc_fetch_double(ncode->iptr, &ncode->n, &ncode->i);
-		cmpval = nbpf_match_ether(nbuf, ncode->d, ncode->n, ncode->i, &regs[NBPF_NREGS - 1]);
+		cmpval = nbpf_match_ether(nbuf, ncode->d, ncode->n, ncode->i,
+				&regs[NBPF_NREGS - 1]);
 		break;
 	default:
 		/* Invalid instruction. */
@@ -344,11 +353,11 @@ int
 nbpf_ncode_process(nbpf_state_t *state, struct nbpf_insn *pc, nbpf_buf_t *nbuf0, const int layer)
 {
 	/* Pointer of current nbuf in the chain. */
-	nbpf_buf_t 	*nbuf;
+	nbpf_buf_t *nbuf;
 	/* Data pointer in the current nbuf. */
-	void 		*nptr;
+	void *nptr;
 	/* Virtual registers. */
-	uint32_t	regs[NBPF_NREGS];
+	uint32_t regs[NBPF_NREGS];
 	struct nbpf_ncode *ncode;
 	int cmpval;
 	int error;
@@ -378,17 +387,18 @@ process_next:
 static int
 nc_ptr_check(uintptr_t *iptr, struct nbpf_insn *pc, u_int nargs, uint32_t *val, u_int r)
 {
-	const uint32_t *tptr = (const uint32_t *)*iptr;
+	const uint32_t *tptr = (const uint32_t*) *iptr;
 	u_int i;
 
 	KASSERT(ALIGNED_POINTER(*iptr, uint32_t));
 	KASSERT(nargs > 0);
 
-	if ((uintptr_t)tptr < (uintptr_t)pc->nc) {
+	if ((uintptr_t) tptr < (uintptr_t) pc->nc) {
 		return (NBPF_ERR_JUMP);
 	}
 
-	if ((uintptr_t)tptr + (nargs * sizeof(uint32_t)) > (uintptr_t)pc->nc + pc->sz) {
+	if ((uintptr_t) tptr + (nargs * sizeof(uint32_t))
+			> (uintptr_t) pc->nc + pc->sz) {
 		return (NBPF_ERR_RANGE);
 	}
 
@@ -398,7 +408,7 @@ nc_ptr_check(uintptr_t *iptr, struct nbpf_insn *pc, u_int nargs, uint32_t *val, 
 		}
 		tptr++;
 	}
-	*iptr = (uintptr_t)tptr;
+	*iptr = (uintptr_t) tptr;
 	return (0);
 }
 
@@ -439,7 +449,7 @@ risc_insn_check(uintptr_t iptr, struct nbpf_insn *pc, uint32_t regidx, uint32_t 
 	case NBPF_OPCODE_CMPR:
 		error = nc_ptr_check(&iptr, pc, 1, &regidx, 1);
 		/* Handle first register explicitly. */
-		if (error || (u_int)regidx < NBPF_NREGS) {
+		if (error || (u_int) regidx < NBPF_NREGS) {
 			res = error ? error : NBPF_ERR_REG;
 			error = res;
 			break;
@@ -556,7 +566,7 @@ nc_insn_check(const uintptr_t optr, struct nbpf_insn *pc, size_t *adv, size_t *j
 	if (error) {
 		return (error);
 	}
-	if ((u_int)regidx >= NBPF_NREGS) {
+	if ((u_int) regidx >= NBPF_NREGS) {
 		/* Invalid register. */
 		return (NBPF_ERR_REG);
 	}
@@ -574,7 +584,7 @@ nc_jmp_check(struct nbpf_insn *pc, const uintptr_t jaddr)
 	uintptr_t iaddr;
 	int error;
 
-	iaddr = (uintptr_t)pc->nc;
+	iaddr = (uintptr_t) pc->nc;
 	KASSERT(iaddr != jaddr);
 	do {
 		size_t _jmp, adv;
@@ -608,8 +618,8 @@ nbpf_ncode_validate(struct nbpf_insn *pc, int *errat)
 	int error;
 	bool ret;
 
-	nc_end = (uintptr_t)pc->nc + pc->sz;
-	iptr = (uintptr_t)pc->nc;
+	nc_end = (uintptr_t) pc->nc + pc->sz;
+	iptr = (uintptr_t) pc->nc;
 
 	do {
 		size_t jmp, adv;

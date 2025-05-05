@@ -1329,13 +1329,14 @@ catchpacket(d, pkt, pktlen, snaplen, cpfn)
 		ROTATE_BUFFERS(d);
 		bpf_wakeup(d);
 		curlen = 0;
-	} else if (d->bd_immediate || d->bd_state == BPF_TIMED_OUT)
+	} else if (d->bd_immediate || d->bd_state == BPF_TIMED_OUT) {
 		/*
 		 * Immediate mode is set, or the read timeout has
 		 * already expired during a select call.  A packet
 		 * arrived, so the reader should be woken up.
 		 */
 		bpf_wakeup(d);
+	}
 
 	/*
 	 * Append the bpf header.

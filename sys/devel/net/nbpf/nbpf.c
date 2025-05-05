@@ -53,7 +53,7 @@ nbpf_d_alloc(size)
 {
 	struct nbpf_d *nd;
 
-	nd = (struct nbpf_d *)malloc(size, M_DEVBUF, M_DONTWAIT);
+	nd = (struct nbpf_d*) malloc(size, M_DEVBUF, M_DONTWAIT);
 	return (nd);
 }
 
@@ -73,7 +73,7 @@ nbpf_state_init(nd, layer, tag)
 {
 	nbpf_state_t *state;
 
-	state = (nbpf_state_t *)malloc(sizeof(*state), M_DEVBUF, M_DONTWAIT);
+	state = (nbpf_state_t*) malloc(sizeof(*state), M_DEVBUF, M_DONTWAIT);
 	nbpf_set_tag(state, tag);
 	nd->nbd_state = state;
 	nd->nbd_layer = layer;
@@ -87,7 +87,8 @@ nbpf_table_init(nd)
 	nbpf_table_t *t;
 	int error;
 
-	error = nbpf_mktable(&tset, &t, NBPF_TABLE_TID, NBPF_TABLE_TYPE, NBPF_TABLE_HSIZE);
+	error = nbpf_mktable(&tset, &t, NBPF_TABLE_TID, NBPF_TABLE_TYPE,
+	NBPF_TABLE_HSIZE);
 	if (error != 0) {
 		return;
 	}
@@ -121,31 +122,31 @@ nbpf_detachd(nd)
 }
 
 int
-nbpfioctl(d, dev, cmd, addr, flag, p)
-	struct nbpf_d *d;
+nbpfioctl(nd, dev, cmd, addr, flag, p)
+	struct nbpf_d *nd;
 	dev_t dev;
 	u_long cmd;
 	caddr_t addr;
 	int flag;
 	struct proc *p;
 {
-    struct nbpf_ioctl_table *nbiot;
-    nbpf_tableset_t *tset;
+	struct nbpf_ioctl_table *nbiot;
+	nbpf_tableset_t *tset;
 	int error, ret;
 
 	switch (cmd) {
 	case BIOCSETF:
-		error = nbpf_setf(d, (struct nbpf_program *) addr, &ret);
+		error = nbpf_setf(nd, (struct nbpf_program*) addr, &ret);
 		if (ret != 0) {
 			error = ret;
 		}
 		break;
 
 	case BIOCSTBLF:
-		nbiot = (struct nbpf_ioctl_table *)addr;
-		tset = d->nbd_tableset;
+		nbiot = (struct nbpf_ioctl_table*) addr;
+		tset = nd->nbd_tableset;
 		if (tset == NULL) {
-			nbpf_table_init(d);
+			nbpf_table_init(nd);
 		}
 		error = nbpf_table_ioctl(nbiot, tset);
 		break;
@@ -154,15 +155,15 @@ nbpfioctl(d, dev, cmd, addr, flag, p)
 }
 
 static void
-nbpf_set_d(nd, nbuf, nptr, bufsize, len)
+nbpf_set_d(nd, nbuf, nptr, size, len)
 	struct nbpf_d *nd;
 	nbpf_buf_t *nbuf;
 	void *nptr;
-	size_t bufsize, len;
+	size_t size, len;
 {
 	nd->nbd_nbuf = nbuf;
 	nd->nbd_nptr = nptr;
-	nd->nbd_bufsize = bufsize;
+	nd->nbd_nsize = size;
 	nd->nbd_nlen = len;
 }
 
@@ -172,7 +173,7 @@ nbpf_reset_d(nd)
 {
 	nd->nbd_nbuf = NULL;
 	nd->nbd_nptr = NULL;
-	nd->nbd_bufsize = 0;
+	nd->nbd_nsize = 0;
 	nd->nbd_nlen = 0;
 }
 
@@ -197,7 +198,7 @@ nbpf_freed(nd)
 		free(nd->nbd_nbuf, M_DEVBUF);
 	}
 	if (nd->nbd_filter != NULL) {
-		free((caddr_t)nd->nbd_filter, M_DEVBUF);
+		nbpf_nc_free(nd->nbd_filter);
 	}
 }
 
@@ -228,7 +229,8 @@ nbpf_setf(nd, fp, error)
 	nlen = fp->nbf_len;
 	size = nlen * sizeof(*fp->nbf_insns);
 	ncode = nbpf_nc_alloc(size);
-	if (copyin((caddr_t)fp->nbf_insns, (caddr_t)ncode, size) == 0 && nbpf_validate(ncode, (int)nlen, error)) {
+	if (copyin((caddr_t) fp->nbf_insns, (caddr_t) ncode, size) == 0
+			&& nbpf_validate(ncode, (int) nlen, error)) {
 		s = splnet();
 		nd->nbd_filter = ncode;
 		nbpf_reset_d(nd);
@@ -243,148 +245,83 @@ nbpf_setf(nd, fp, error)
 }
 
 void
-nbpf_filtncatch(d, nd, pkt, pktlen, slen, cpfn)
-	struct bpf_d *d;
+nbpf_filtncatch(nd, nd, pkt, pktlen, slen, cpfn)
 	struct nbpf_d *nd;
 	u_char *pkt;
 	u_int pktlen;
 	u_int slen;
 	void *(*cpfn)(void *, const void *, size_t);
 {
-	slen = nbpf_filter(nd->nbd_state, nd->nbd_filter, (nbpf_buf_t *)pktlen, nd->nbd_layer);
+	slen = nbpf_filter(nd->nbd_state, nd->nbd_filter, nd->nbd_nbuf, nd->nbd_layer);
 	if (slen != 0) {
-		nbpf_catchpacket(nd, pkt, pktlen, slen, cpfn);
+		nbpf_catchpacket(nd, pkt, pktlen, slen, (NBPC_IP46 | NBPC_LAYER4), cpfn);
 	}
-}
-
-static void
-nbpf_catchpacket(nd, pkt, pktlen, snaplen, cpfn)
-	struct nbpf_d *nd;
-	u_char *pkt;
-	u_int pktlen, snaplen;
-	void *(*cpfn)(void *, const void *, size_t);
-{
-	struct bpf_d *d;
-	int error, totlen, hdrlen, curlen;
-
-	d = nd->nbd_bpf;
-	hdrlen = d->bd_bif->bif_hdrlen;
-	totlen = hdrlen + min(snaplen, pktlen);
-	if (totlen > d->bd_bufsize) {
-		totlen = d->bd_bufsize;
-	}
-
-	nbpf_set_d(nd, pkt, nbpf_dataptr(pkt), totlen, hdrlen);
-	error = nbpf_check_cache(nd->nbd_state, nd->nbd_nbuf, nd->nbd_nptr);
-	if (error == (nd->nbd_state->nbs_info & (NBPC_IP46 | NBPC_LAYER4))) {
-		nd->nbd_state->nbs_info = 0;
-	}
-}
-
-static int
-nbpf_check_cache(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr)
-{
-	if (!nbpf_iscached(state, NBPC_IP46) &&
-			!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr) &&
-			!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
-		return (state->nbs_info);
-	}
-	if (nbpf_iscached(state, NBPC_IPFRAG)) {
-		return (state->nbs_info);
-	}
-
-	switch (nbpf_cache_ipproto(state)) {
-	case IPPROTO_TCP:
-		(void)nbpf_fetch_tcp(state, &state->nbs_port, nbuf, nptr);
-		break;
-	case IPPROTO_UDP:
-		(void)nbpf_fetch_udp(state, &state->nbs_port, nbuf, nptr);
-		break;
-	case IPPROTO_ICMP:
-        (void)nbpf_fetch_icmp(state, &state->nbs_icmp, nbuf, nptr);
-        break;
-	case IPPROTO_ICMPV6:
-		(void)nbpf_fetch_icmp(state, &state->nbs_icmp, nbuf, nptr);
-		break;
-	}
-	return (state->nbs_info);
 }
 
 /*
- * npf_cache_all: general routine to cache all relevant IP (v4 or v6)
- * and TCP, UDP or ICMP headers.
+ * TODO:
+ * - updating the bpf
  */
-int
-nbpf_cache_all(nbpf_state_t *state, nbpf_buf_t *nbuf)
+static void
+nbpf_catchpacket(nd, pkt, pktlen, snaplen, flags, cpfn)
+	struct nbpf_d *nd;
+	u_char *pkt;
+	u_int pktlen, snaplen;
+	int flags;
+	void *(*cpfn)(void *, const void *, size_t);
 {
 	void *nptr;
+	int totlen, hdrlen, curlen;
+	int mflags, error;
 
-	nptr = nbpf_dataptr(nbuf);
-	return (nbpf_check_cache(state, nbuf, nptr));
+	mflags = (nd->nbd_state->nbs_info & flags);
+	nptr = nbpf_dataptr(pkt);
+	hdrlen = nd->nbd_bif->bif_hdrlen;
+	totlen = hdrlen + min(snaplen, pktlen);
+	if (totlen > nd->nbd_bufsize) {
+		totlen = nd->nbd_bufsize;
+	}
+	curlen = BPF_WORDALIGN(nd->nbd_slen);
+	if (curlen + totlen > nd->nbd_bufsize) {
+		ROTATE_BUFFERS(nd->nbd_bpf);
+		curlen = 0;
+	}
+	nbpf_set_d(nd, pkt, nptr, totlen, hdrlen);
+	error = nbpf_advcache(nd->nbd_state, nd->nbd_nbuf, nd->nbd_nptr, nd->nbd_nlen, nd->nbd_nsize, pkt, cpfn);
+	if (error == mflags) {
+		nd->nbd_state->nbs_info = 0;
+	}
+	nd->nbd_slen = curlen + totlen;
 }
 
-void
-nbpf_recache(nbpf_state_t *state, nbpf_buf_t *nbuf)
+/*
+ * TODO:
+ * - cpfn: adjust, as it does not account for the bpf_hdr
+ */
+static int
+nbpf_advcache(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, u_int hdrlen, size_t size, void *buf, void *(*cpfn)(void *, const void *, size_t))
 {
-	int mflags, flags;
+	int flags, error;
+	u_int hlen;
 
-	mflags = state->nbs_info & (NBPC_IP46 | NBPC_LAYER4);
-	state->nbs_info = 0;
-	flags = nbpf_cache_all(state, nbuf);
-	KASSERT((flags & mflags) == mflags);
-}
-
-int
-nbpf_reassembly(nbpf_state_t *state, nbpf_buf_t *nbuf, struct mbuf **mp)
-{
-	int error;
-
-	if (nbpf_iscached(state, NBPC_IP4)) {
-		struct ip *ip = nbpf_dataptr(nbuf);
-		error = ip_reass_packet(mp, ip);
-	} else if (nbpf_iscached(state, NBPC_IP6)) {
-		error = ip6_reass_packet(mp, state->nbs_hlen);
-		if (error && *mp == NULL) {
-			memset(nbuf, 0, sizeof(nbpf_buf_t));
-		}
+	flags = nbpf_cache_all(state, nbuf, nptr);
+	if ((flags & (NBPC_IP46 | NBPC_LAYER4)) == 0 || (flags & NBPC_IPFRAG) != 0) {
+		state->nbs_info |= flags;
 	}
-	if (error) {
-		return (error);
-	}
-	if (*mp == NULL) {
-		return (0);
-	}
-	state->nbs_info = 0;
-	if (nbpf_cache_all(state, nbuf) & NBPC_IPFRAG) {
-		return (EINVAL);
-	}
-	return (0);
-}
 
-int
-nbpf_packet_handler(d, buf, mp)
-	struct nbpf_d *d;
-	void *buf;
-	struct mbuf **mp;
-{
-	int error;
-
-	if (nbpf_cache_all(d->nbd_state, buf) & NBPC_IPFRAG) {
-		error = nbpf_reassembly(d->nbd_state, buf, mp);
+	hlen = state->nbs_hlen;
+	if (hlen != hdrlen) {
+		error = nbpf_advstore(&nbuf, &nptr, hlen, size, buf);
 		if (error) {
-			goto out;
+			return (error);
 		}
-		if (*mp == NULL) {
-			return (0);
+		cpfn(nbuf, buf, hlen);
+	} else {
+		error = nbpf_advstore(&nbuf, &nptr, hdrlen, size, buf);
+		if (error) {
+			return (error);
 		}
+		cpfn(nbuf, buf, hdrlen);
 	}
-out:
-	if (!error) {
-		error = ENETUNREACH;
-	}
-	if (*mp) {
-		m_freem(*mp);
-		*mp = NULL;
-	}
-	return (error);
+	return (flags);
 }

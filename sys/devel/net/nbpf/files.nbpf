@@ -8,6 +8,7 @@ define nbpf
 file	net/nbpf/nbpf.c                 nbpf
 file	net/nbpf/nbpf_buf.c             nbpf
 file	net/nbpf/nbpf_fetch.c           nbpf
+file	net/nbpf/nbpf_inet.c           	nbpf
 file	net/nbpf/nbpf_match.c           nbpf
 file	net/nbpf/nbpf_ncode.c           nbpf
 

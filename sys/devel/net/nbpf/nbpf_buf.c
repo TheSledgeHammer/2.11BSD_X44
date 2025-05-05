@@ -70,7 +70,7 @@ nbpf_advance(nbpf_buf_t **nbuf, void *nptr, size_t len)
 
 	m = *nbuf;
 	/* Offset with amount to advance. */
-	off = (uintptr_t)nptr - mtod(m, uintptr_t) + len;
+	off = (uintptr_t) nptr - mtod(m, uintptr_t) + len;
 	wmark = m->m_len;
 
 	/* Find the mbuf according to offset. */
@@ -90,7 +90,7 @@ nbpf_advance(nbpf_buf_t **nbuf, void *nptr, size_t len)
 	KASSERT(off >= (wmark - m->m_len));
 	d += (off - (wmark - m->m_len));
 
-	*nbuf = (void *)m;
+	*nbuf = (void*) m;
 	return (d);
 }
 
@@ -119,8 +119,8 @@ nbpf_rw_datum(const int wr, struct mbuf *m, void *nptr, size_t len, void *buf)
 	b = buf;
 
 	/* Current offset in mbuf. */
-	off = (uintptr_t)nptr - mtod(m, uintptr_t);
-	KASSERT(off < (u_int)m->m_len);
+	off = (uintptr_t) nptr - mtod(m, uintptr_t);
+	KASSERT(off < (u_int) m->m_len);
 	wmark = m->m_len;
 
 	/* Is datum overlapping? */
@@ -158,7 +158,7 @@ nbpf_rw_datum(const int wr, struct mbuf *m, void *nptr, size_t len, void *buf)
 		off = 0;
 	}
 	KASSERT(nptr == d || mtod(m, uint8_t *) == d);
-	KASSERT(len <= (u_int)m->m_len);
+	KASSERT(len <= (u_int) m->m_len);
 
 	/* Non-overlapping case: fetch the actual data. */
 	if (wr == NBPF_BUF_DATA_WRITE) {
@@ -252,7 +252,7 @@ nbpf_cksum_barrier(nbpf_buf_t *nbuf, int di)
 	struct mbuf *m;
 
 	m = nbuf;
-    if (di != PFIL_OUT) {
+	if (di != PFIL_OUT) {
 		return (false);
 	}
 	KASSERT((m->m_flags & M_PKTHDR) != 0);
@@ -282,7 +282,7 @@ nbpf_add_tag(nbpf_state_t *state, nbpf_buf_t *nbuf, uint32_t key, uint32_t val)
 	if (__predict_false(mt == NULL)) {
 		return (ENOMEM);
 	}
-	dat = (uint32_t *)(mt + 1);
+	dat = (uint32_t*) (mt + 1);
 	*dat = val;
 	m_tag_prepend(m, mt);
 	return (0);
@@ -304,6 +304,6 @@ nbpf_find_tag(nbpf_state_t *state, nbpf_buf_t *nbuf, uint32_t key, void **data)
 	if (__predict_false(mt == NULL)) {
 		return EINVAL;
 	}
-	*data = (void *)(mt + 1);
+	*data = (void*) (mt + 1);
 	return 0;
 }

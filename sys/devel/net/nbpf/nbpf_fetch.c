@@ -54,7 +54,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_inet.c,v 1.10.4.5.4.1 2012/12/16 18:20:09 riz Ex
 /*
  * npf_fetch_ip4: fetch, check and cache IPv6 header.
  */
-bool
+bool_t
 nbpf_fetch_ipv4(nbpf_state_t *state, nbpf_ipv4_t *nb4, nbpf_buf_t *nbuf, void *nptr)
 {
 	struct ip *ip = &nb4->nb4_v4;
@@ -64,7 +64,7 @@ nbpf_fetch_ipv4(nbpf_state_t *state, nbpf_ipv4_t *nb4, nbpf_buf_t *nbuf, void *n
 		return (false);
 	}
 	/* Check header length and fragment offset. */
-	if ((u_int)(ip->ip_hl << 2) < sizeof(struct ip)) {
+	if ((u_int) (ip->ip_hl << 2) < sizeof(struct ip)) {
 		return (false);
 	}
 	if (ip->ip_off & ~htons(IP_DF | IP_RF)) {
@@ -72,8 +72,8 @@ nbpf_fetch_ipv4(nbpf_state_t *state, nbpf_ipv4_t *nb4, nbpf_buf_t *nbuf, void *n
 		state->nbs_info |= NBPC_IPFRAG;
 	}
 	state->nbs_alen = sizeof(struct in_addr);
-	nb4->nb4_srcip = (nbpf_addr_t *)&ip->ip_src;
-	nb4->nb4_dstip = (nbpf_addr_t *)&ip->ip_dst;
+	nb4->nb4_srcip = (nbpf_addr_t*) &ip->ip_src;
+	nb4->nb4_dstip = (nbpf_addr_t*) &ip->ip_dst;
 	state->nbs_info |= NBPC_IP4;
 	state->nbs_hlen = ip->ip_hl << 2;
 	state->nbs_proto = nb4->nb4_v4.ip_p;
@@ -83,7 +83,7 @@ nbpf_fetch_ipv4(nbpf_state_t *state, nbpf_ipv4_t *nb4, nbpf_buf_t *nbuf, void *n
 /*
  * npf_fetch_ip6: fetch, check and cache IPv6 header.
  */
-bool
+bool_t
 nbpf_fetch_ipv6(nbpf_state_t *state, nbpf_ipv6_t *nb6, nbpf_buf_t *nbuf, void *nptr)
 {
 	struct ip6_hdr *ip6 = &nb6->nb6_v6;
@@ -127,8 +127,8 @@ nbpf_fetch_ipv6(nbpf_state_t *state, nbpf_ipv6_t *nb6, nbpf_buf_t *nbuf, void *n
 		state->nbs_hlen += hlen;
 	}
 	state->nbs_alen = sizeof(struct in6_addr);
-	nb6->nb6_srcip = (nbpf_addr_t *)&ip6->ip6_src;
-	nb6->nb6_dstip = (nbpf_addr_t *)&ip6->ip6_dst;
+	nb6->nb6_srcip = (nbpf_addr_t*) &ip6->ip6_src;
+	nb6->nb6_dstip = (nbpf_addr_t*) &ip6->ip6_dst;
 	state->nbs_info |= NBPC_IP6;
 	return (true);
 }
@@ -137,15 +137,15 @@ nbpf_fetch_ipv6(nbpf_state_t *state, nbpf_ipv6_t *nb6, nbpf_buf_t *nbuf, void *n
  * npf_fetch_tcp: fetch, check and cache TCP header.  If necessary,
  * fetch and cache layer 3 as well.
  */
-bool
+bool_t
 nbpf_fetch_tcp(nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, void *nptr)
 {
 	struct tcphdr *th;
 
 	/* Must have IP header processed for its length and protocol. */
-	if (!nbpf_iscached(state, NBPC_IP46) &&
-			!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr) &&
-			!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
+	if (!nbpf_iscached(state, NBPC_IP46)
+			&& !nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr)
+			&& !nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
 		return (false);
 	}
 
@@ -156,7 +156,8 @@ nbpf_fetch_tcp(nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, void *np
 	th = &tcp->nbp_tcp;
 
 	/* Fetch TCP header. */
-	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen(state), sizeof(struct tcphdr), th)) {
+	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen(state),
+			sizeof(struct tcphdr), th)) {
 		return (false);
 	}
 
@@ -169,15 +170,15 @@ nbpf_fetch_tcp(nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, void *np
  * npf_fetch_udp: fetch, check and cache UDP header.  If necessary,
  * fetch and cache layer 3 as well.
  */
-bool
+bool_t
 nbpf_fetch_udp(nbpf_state_t *state, nbpf_port_t *udp, nbpf_buf_t *nbuf, void *nptr)
 {
 	struct udphdr *uh;
 
 	/* Must have IP header processed for its length and protocol. */
-	if (!nbpf_iscached(state, NBPC_IP46) &&
-			!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr) &&
-			!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
+	if (!nbpf_iscached(state, NBPC_IP46)
+			&& !nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr)
+			&& !nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
 		return (false);
 	}
 	if (nbpf_cache_ipproto(state) != IPPROTO_UDP) {
@@ -187,7 +188,8 @@ nbpf_fetch_udp(nbpf_state_t *state, nbpf_port_t *udp, nbpf_buf_t *nbuf, void *np
 	uh = &udp->nbp_udp;
 
 	/* Fetch UDP header. */
-	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen(state), sizeof(struct udphdr), uh)) {
+	if (nbpf_advfetch(&nbuf, &nptr, nbpf_cache_hlen(state),
+			sizeof(struct udphdr), uh)) {
 		return (false);
 	}
 
@@ -199,20 +201,20 @@ nbpf_fetch_udp(nbpf_state_t *state, nbpf_port_t *udp, nbpf_buf_t *nbuf, void *np
 /*
  * npf_fetch_icmp: fetch ICMP code, type and possible query ID.
  */
-bool
+bool_t
 nbpf_fetch_icmp(nbpf_state_t *state, nbpf_icmp_t *icmp, nbpf_buf_t *nbuf, void *nptr)
 {
 	struct icmp *ic;
 	u_int iclen;
 
 	/* Must have IP header processed for its length and protocol. */
-	if (!nbpf_iscached(state, NBPC_IP46) &&
-			!nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr) &&
-			!nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
+	if (!nbpf_iscached(state, NBPC_IP46)
+			&& !nbpf_fetch_ipv4(state, &state->nbs_ip4, nbuf, nptr)
+			&& !nbpf_fetch_ipv6(state, &state->nbs_ip6, nbuf, nptr)) {
 		return (false);
 	}
-	if (nbpf_cache_ipproto(state) != IPPROTO_ICMP &&
-	    nbpf_cache_ipproto(state) != IPPROTO_ICMPV6) {
+	if (nbpf_cache_ipproto(state) != IPPROTO_ICMP
+			&& nbpf_cache_ipproto(state) != IPPROTO_ICMPV6) {
 		return (false);
 	}
 	ic = &icmp->nbi_icmp;
@@ -233,7 +235,7 @@ nbpf_fetch_icmp(nbpf_state_t *state, nbpf_icmp_t *icmp, nbpf_buf_t *nbuf, void *
 /*
  * npf_fetch_tcpopts: parse and return TCP options.
  */
-bool
+bool_t
 nbpf_fetch_tcpopts(const nbpf_state_t *state, nbpf_port_t *tcp, nbpf_buf_t *nbuf, uint16_t *mss, int *wscale)
 {
 	void *nptr = nbpf_dataptr(nbuf);
