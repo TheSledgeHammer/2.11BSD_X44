@@ -269,9 +269,8 @@ _grs_getgrgid(gid, group, state, buffer, buflen, result)
  *	public functions
  */
 int
-getgrent_r(group, state, buffer, buflen, result)
+getgrent_r(group, buffer, buflen, result)
 	struct group *group;
-	struct group_storage *state;
 	char *buffer;
 	size_t buflen;
 	struct group **result;
@@ -279,7 +278,7 @@ getgrent_r(group, state, buffer, buflen, result)
 	int rval;
 
 	mutex_lock(&_grmutex);
-	rval = _grs_getgrent(group, state, buffer, buflen);
+	rval = _grs_getgrent(group, &_grs_storage, buffer, buflen);
 	mutex_unlock(&_grmutex);
 	return (rval);
 }
@@ -295,10 +294,9 @@ getgrent(void)
 }
 
 int
-getgrnam_r(name, group, state, buffer, buflen, result)
+getgrnam_r(name, group, buffer, buflen, result)
 	const char *name;
 	struct group *group;
-	struct group_storage *state;
 	char *buffer;
 	size_t buflen;
 	struct group **result;
@@ -306,7 +304,7 @@ getgrnam_r(name, group, state, buffer, buflen, result)
 	int rval;
 
 	mutex_lock(&_grmutex);
-	rval = _grs_getgrnam(name, group, state, buffer, buflen);
+	rval = _grs_getgrnam(name, group, &_grs_storage, buffer, buflen);
 	mutex_unlock(&_grmutex);
 	return (rval);
 }
@@ -323,10 +321,9 @@ getgrnam(name)
 }
 
 int
-getgrgid_r(gid, group, state, buffer, buflen, result)
+getgrgid_r(gid, group, buffer, buflen, result)
 	gid_t gid;
 	struct group *group;
-	struct group_storage *state;
 	char *buffer;
 	size_t buflen;
 	struct group **result;
@@ -334,7 +331,7 @@ getgrgid_r(gid, group, state, buffer, buflen, result)
 	int rval;
 
 	mutex_lock(&_grmutex);
-	rval = _grs_getgrgid(gid, group, state, buffer, buflen);
+	rval = _grs_getgrgid(gid, group, &_grs_storage, buffer, buflen);
 	mutex_unlock(&_grmutex);
 	return (rval);
 }

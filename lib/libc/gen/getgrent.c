@@ -136,7 +136,6 @@ grscan(search, gid, name)
 {
 	register char *cp, **m;
 	char *bp;
-	//char *fgets(), *strsep(), *index();
 
 	for (;;) {
 		if (!fgets(line, sizeof(line), grf))

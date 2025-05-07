@@ -54,15 +54,20 @@ struct	group { /* see getgrent(3) */
 __BEGIN_DECLS
 struct group *getgrgid(gid_t);
 struct group *getgrnam(const char *);
+#if (_POSIX_C_SOURCE - 0) >= 199506L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(_REENTRANT) || defined(__BSD_VISIBLE)
+int		 	getgrgid_r(gid_t, struct group *, char *, size_t, struct group **);
+int		 	getgrnam_r(const char *, struct group *, char *, size_t, struct group **);
+#endif
 #if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 struct group *getgrent(void);
 void 		 setgrent(void);
 void 		 endgrent(void);
 #endif
 #if defined(__BSD_VISIBLE)
-void 		 setgrfile(const char *);
-int 		 setgroupent(int);
-
+void 		setgrfile(const char *);
+int 		setgroupent(int);
+int		 	getgrent_r(struct group *, char *, size_t, struct group **);
 const char	*group_from_gid(gid_t, int);
 int		 	gid_from_group(const char *, gid_t *);
 int		 	pwcache_groupdb(int (*)(int), void (*)(void), struct group * (*)(const char *), struct group * (*)(gid_t));
