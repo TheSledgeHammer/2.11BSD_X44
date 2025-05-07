@@ -53,6 +53,18 @@ static char sccsid[] = "@(#)getgrent.c	8.2 (Berkeley) 3/21/94";
 #include <string.h>
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(endgrent,_endgrent)
+__weak_alias(getgrent,_getgrent)
+__weak_alias(getgrent_r,_getgrent_r)
+__weak_alias(getgrgid,_getgrgid)
+__weak_alias(getgrgid_r,_getgrgid_r)
+__weak_alias(getgrnam,_getgrnam)
+__weak_alias(getgrnam_r,_getgrnam_r)
+__weak_alias(setgrent,_setgrent)
+__weak_alias(setgroupent,_setgroupent)
+#endif
+
 #ifdef _REENTRANT
 static 	mutex_t			_grmutex = MUTEX_INITIALIZER;
 #endif
@@ -121,7 +133,7 @@ _grs_grscan(search, gid, name, group, state, buffer, buflen)
 			continue;
 		}
 		cp = NULL;
-		for (m = group->gr_mem = &state->mem;; bp++) {
+		for (m = group->gr_mem = state->mem;; bp++) {
 			if (m == &state->mem[MAXGRP - 1]) {
 				break;
 			}
@@ -182,6 +194,8 @@ _grs_setgroupent(state, stayopen, result)
 	struct group_storage *state;
 	int stayopen, *result;
 {
+    int rval;
+
 	state->stayopen = stayopen;
 	rval = _grs_start(state);
 	*result = (rval == NS_SUCCESS);
@@ -204,6 +218,8 @@ _grs_getgrent(group, state, buffer, buflen, result)
 	size_t buflen;
 	struct group **result;
 {
+    int rval;
+
 	rval = _grs_start(state);
 	if (rval != NS_SUCCESS) {
 		return (rval);
@@ -278,7 +294,7 @@ getgrent_r(group, buffer, buflen, result)
 	int rval;
 
 	mutex_lock(&_grmutex);
-	rval = _grs_getgrent(group, &_grs_storage, buffer, buflen);
+	rval = _grs_getgrent(group, &_grs_storage, buffer, buflen, result);
 	mutex_unlock(&_grmutex);
 	return (rval);
 }
@@ -289,7 +305,7 @@ getgrent(void)
 	struct group *result;
 	int rval;
 
-	rval = getgrent_r(&_grs_group, &_grs_storage, _grs_groupbuf, sizeof(_grs_groupbuf), &result);
+	rval = getgrent_r(&_grs_group, _grs_groupbuf, sizeof(_grs_groupbuf), &result);
 	return ((rval == NS_SUCCESS) ? result : NULL);
 }
 
@@ -304,7 +320,7 @@ getgrnam_r(name, group, buffer, buflen, result)
 	int rval;
 
 	mutex_lock(&_grmutex);
-	rval = _grs_getgrnam(name, group, &_grs_storage, buffer, buflen);
+	rval = _grs_getgrnam(name, group, &_grs_storage, buffer, buflen, result);
 	mutex_unlock(&_grmutex);
 	return (rval);
 }
@@ -316,7 +332,7 @@ getgrnam(name)
 	struct group *result;
 	int rval;
 
-	rval = getgrnam_r(name, &_grs_group, &_grs_storage, _grs_groupbuf, sizeof(_grs_groupbuf), &result);
+	rval = getgrnam_r(name, &_grs_group, _grs_groupbuf, sizeof(_grs_groupbuf), &result);
 	return ((rval == NS_SUCCESS) ? result : NULL);
 }
 
@@ -331,7 +347,7 @@ getgrgid_r(gid, group, buffer, buflen, result)
 	int rval;
 
 	mutex_lock(&_grmutex);
-	rval = _grs_getgrgid(gid, group, &_grs_storage, buffer, buflen);
+	rval = _grs_getgrgid(gid, group, &_grs_storage, buffer, buflen, result);
 	mutex_unlock(&_grmutex);
 	return (rval);
 }
@@ -343,7 +359,7 @@ getgrgid(gid)
 	struct group *result;
 	int rval;
 
-	rval = getgrgid_r(gid, &_grs_group, &_grs_storage, _grs_groupbuf, sizeof(_grs_groupbuf), &result);
+	rval = getgrgid_r(gid, &_grs_group, _grs_groupbuf, sizeof(_grs_groupbuf), &result);
 	return ((rval == NS_SUCCESS) ? result : NULL);
 }
 
@@ -367,7 +383,7 @@ setgroupent(stayopen)
 	return ((rval == NS_SUCCESS) ? result : 0);
 }
 
-int
+void
 setgrent(void)
 {
 	mutex_lock(&_grmutex);
