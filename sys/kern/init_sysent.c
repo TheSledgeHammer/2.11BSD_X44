@@ -74,6 +74,7 @@ int	umask();
 int	chroot();
 int	fstat();
 int	undelete();
+int	getsid();
 int	pselect();
 int	vfork();
 int	obreak();
@@ -148,6 +149,7 @@ int	socketpair();
 int	mkdir();
 int	rmdir();
 int	utimes();
+int	getpgid();
 int	adjtime();
 int	getpeername();
 int	getrlimit();
@@ -313,7 +315,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    undelete },				/* 63 = undelete */
 	{ 0, 0,
-	    nosys },				/* 64 = unused old getpagesize */
+	    getsid },				/* 64 = getsid */
 	{ 0, 0,
 	    pselect },				/* 65 = pselect */
 	{ 0, 0,
@@ -463,7 +465,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    utimes },				/* 138 = utimes */
 	{ 0, 0,
-	    nosys },				/* 139 = unused */
+	    getpgid },				/* 139 = getpgid */
 	{ 0, 0,
 	    adjtime },				/* 140 = adjtime */
 	{ 0, 0,

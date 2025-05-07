@@ -70,6 +70,7 @@
 #define	SYS_chroot	61
 #define	SYS_fstat	62
 #define	SYS_undelete	63
+#define	SYS_getsid	64
 #define	SYS_pselect	65
 #define	SYS_vfork	66
 #define	SYS_break	67
@@ -144,6 +145,7 @@
 #define	SYS_mkdir	136
 #define	SYS_rmdir	137
 #define	SYS_utimes	138
+#define	SYS_getpgid	139
 #define	SYS_adjtime	140
 #define	SYS_getpeername	141
 				/* 142 is obsolete old gethostid */

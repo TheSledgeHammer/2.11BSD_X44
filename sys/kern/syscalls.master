@@ -105,7 +105,7 @@
 61  STD     	{ int chroot(); }
 62  STD     	{ int fstat(); }
 63	STD		{ int undelete(); }
-64	UNIMPL	old getpagesize
+64	STD	{ int getsid(); }
 65  STD     	{ int pselect(); }
 66  STD     	{ int vfork(); }
 67	STD		{ int obreak(); } break
@@ -180,7 +180,7 @@
 136 STD     	{ int mkdir(); }
 137 STD     	{ int rmdir(); }
 138 STD     	{ int utimes(); }
-139 UNIMPL
+139 STD		{ int getpgid(); }
 140 STD     	{ int adjtime(); }
 141 STD     	{ int getpeername(); }
 142 OBSOL   	old gethostid

@@ -147,6 +147,46 @@ getegid()
 	return (0);
 }
 
+int
+getpgid()
+{
+	register struct getpgid_args {
+		syscallarg(int) pid;
+	} *uap = (struct getpgid_args*) u.u_ap;
+	register struct proc *p;
+
+	if (SCARG(uap, pid) == 0) {
+		SCARG(uap, pid) = p->p_pgid;
+	}
+	p = pfind(SCARG(uap, pid));
+	if (p == 0) {
+		u.u_error = ESRCH;
+		return (u.u_error);
+	}
+	u.u_r.r_val1 = p->p_pgid;
+	return (0);
+}
+
+int
+getsid()
+{
+	register struct getsid_args {
+		syscallarg(int) pid;
+	} *uap = (struct getsid_args*) u.u_ap;
+	register struct proc *p;
+
+	if (SCARG(uap, pid) == 0) {
+		SCARG(uap, pid) = p->p_session->s_leader->p_pid;
+	}
+	p = pfind(SCARG(uap, pid));
+	if (p == 0) {
+		u.u_error = ESRCH;
+		return (u.u_error);
+	}
+	u.u_r.r_val1 = p->p_session->s_leader->p_pid;
+	return (0);
+}
+
 /*
  * getgroups and setgroups differ from 4.X because the VAX stores group
  * entries in the user structure as shorts and has to convert them to ints.

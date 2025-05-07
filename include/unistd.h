@@ -149,6 +149,11 @@ int	 			setegid(gid_t);
 int	 			seteuid(uid_t);
 #endif
 
+#if defined(_XOPEN_SOURCE) || (_POSIX_C_SOURCE - 0) >= 200809L || \
+    defined(__BSD_VISIBLE)
+pid_t	 		getsid(pid_t);
+#endif
+
 /*
  * IEEE Std 1003.1-2024 (POSIX.1-2024)
  */
@@ -193,6 +198,7 @@ int	 			getdtablesize(void);
 unsigned long	gethostid(void);
 mode_t	 		getmode(const void *, mode_t);
 int	 	        getpagesize(void) __attribute__((__pure__));
+pid_t			getpgid(pid_t);
 char			*getpass(char *);
 char			*getusershell(void);
 char			*getwd(char *);

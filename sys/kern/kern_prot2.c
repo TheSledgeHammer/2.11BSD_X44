@@ -120,10 +120,10 @@ _setgid(gid)
 	register gid_t gid;
 {
 	if (gid != u.u_pcred->p_rgid && !suser()) {
-		return (u.u_error);	/* XXX */
+		return (u.u_error); /* XXX */
 	}
-        u.u_pcred->pc_ucred = crcopy(u.u_pcred->pc_ucred);
-	u.u_ucred->cr_groups[0] = gid;		/* effective gid is u_groups[0] */
+	u.u_pcred->pc_ucred = crcopy(u.u_pcred->pc_ucred);
+	u.u_ucred->cr_groups[0] = gid; /* effective gid is u_groups[0] */
 	u.u_pcred->p_rgid = gid;
 	u.u_pcred->p_svgid = gid;
 	u.u_acflag |= ASUGID;
@@ -133,13 +133,13 @@ _setgid(gid)
 int
 setgid()
 {
-	struct setgid_args {
+	register struct setgid_args {
 		syscallarg(gid_t) gid;
-	} *uap = (struct setgid_args *)u.u_ap;
-        register gid_t gid;
-        
-        gid = SCARG(uap, gid);
-        u.u_error = _setgid(gid);
+	} *uap = (struct setgid_args*) u.u_ap;
+	register gid_t gid;
+
+	gid = SCARG(uap, gid);
+	u.u_error = _setgid(gid);
 	u.u_procp->p_flag |= P_SUGID;
 	return (u.u_error);
 }
@@ -177,11 +177,11 @@ _setsid(pid)
 {
 	register struct proc *p;
 
-	if(u.u_procp == pfind(pid)) {
+	if (u.u_procp == pfind(pid)) {
 		u.u_procp->p_pid = pid;
 		p = u.u_procp;
 
-		if(p->p_pgid == p->p_pid || pgfind(p->p_pid)) {
+		if (p->p_pgid == p->p_pid || pgfind(p->p_pid)) {
 			return (u.u_error = EPERM);
 		} else {
 			(void)enterpgrp(p, p->p_pid, 1);

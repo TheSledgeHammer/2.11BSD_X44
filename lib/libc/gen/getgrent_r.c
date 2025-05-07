@@ -194,7 +194,7 @@ _grs_setgroupent(state, stayopen, result)
 	struct group_storage *state;
 	int stayopen, *result;
 {
-    int rval;
+	int rval;
 
 	state->stayopen = stayopen;
 	rval = _grs_start(state);
@@ -218,7 +218,7 @@ _grs_getgrent(group, state, buffer, buflen, result)
 	size_t buflen;
 	struct group **result;
 {
-    int rval;
+	int rval;
 
 	rval = _grs_start(state);
 	if (rval != NS_SUCCESS) {

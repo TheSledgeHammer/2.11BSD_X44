@@ -278,6 +278,7 @@ enterpgrp(p, pgid, mksess)
 		MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP, M_WAITOK);
 		if ((np = pfind(savepid)) == NULL || np != p)
 			return (ESRCH);
+
 		if (mksess) {
 			register struct session *sess;
 
