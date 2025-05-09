@@ -191,7 +191,7 @@ BUILDTARGETS+=	do-distrib-dirs
 BUILDTARGETS+=	includes
 .endif
 BUILDTARGETS+=	do-lib
-BUILDTARGETS+=	do-compat-lib
+#BUILDTARGETS+=	do-compat-lib
 .if ${MKLLVM} != "no"
 BUILDTARGETS+=	do-sanitizer
 .if ${MKSANITIZER:Uno} == "yes"
