@@ -8,7 +8,6 @@ arch.c \
 att.c \
 chars.c \
 compat_ohash.c \
-compat_recallocarray.c \
 eqn.c \
 lib.c \
 man.c \
