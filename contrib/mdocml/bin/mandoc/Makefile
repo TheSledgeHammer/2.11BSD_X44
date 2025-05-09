@@ -41,7 +41,7 @@ CPPFLAGS+=	-DUSE_WCHAR
 .else
 SRCS.libmandoc!=cd ${.PARSEDIR}/../../lib/libmandoc && ${MAKE} -v SRCS
 
-SRCS+=		${SRCS.libmandoc} compat_strtonum.c
+SRCS+=		${SRCS.libmandoc} compat_strtonum.c compat_reallocarray.c
 .endif
 
 COPTS.man_term.c+= -Wno-error=array-bounds
