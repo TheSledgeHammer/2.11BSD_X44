@@ -10,8 +10,8 @@
 #include <sys/types.h>
 
 #define MAN_CONF_FILE "/etc/man.conf"
-#define MANPATH_BASE "/usr/share/man:/usr/X11R6/man"
-#define MANPATH_DEFAULT "/usr/share/man:/usr/X11R6/man:/usr/local/man"
+#define MANPATH_BASE "/usr/share/man:"
+#define MANPATH_DEFAULT "/usr/share/man:/usr/local/man"
 #define OSENUM MANDOC_OS_NETBSD
 #define UTF8_LOCALE "en_US.UTF-8"
 #define HAVE_CMSG_XPG42 0
@@ -29,7 +29,7 @@
 #define HAVE_PLEDGE 0
 #define HAVE_PROGNAME 1
 #define HAVE_REALLOCARRAY 1
-#define HAVE_RECALLOCARRAY 0
+#define HAVE_RECALLOCARRAY 1
 #define HAVE_REWB_BSD 1
 #define HAVE_REWB_SYSV 0
 #define HAVE_SANDBOX_INIT 0
@@ -52,5 +52,3 @@
 #define BINM_MAN "man"
 #define BINM_SOELIM "soelim"
 #define BINM_WHATIS "whatis"
-
-extern	void	 *recallocarray(void *, size_t, size_t, size_t);
