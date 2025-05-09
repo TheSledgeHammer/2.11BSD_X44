@@ -7,7 +7,7 @@
 VERSION!=	cd ${.PARSEDIR}/dist && ${MAKE} -V VERSION
 CPPFLAGS+=	-DVERSION=\"${VERSION}\" -I${DISTDIR}/../include
 #CPPFLAGS+=	-D_OPENBSD_SOURCE
-#CPPFLAGS+=	-DMANPATH_BASE=\"/usr/share/man:/usr/X11R7/man\"
+#CPPFLAGS+=	-DMANPATH_BASE=\"/usr/share/man\"
 .endif
 
 DISTDIR:=	${.PARSEDIR}/dist
