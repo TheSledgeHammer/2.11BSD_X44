@@ -74,8 +74,11 @@ LIBVMF?=			/usr.lib/libvmf.a
 # NetBSD
 LIBNETBSD?=			/usr/lib/libnetbsd.a
 
-# Plan9
-LIBPLAN9?=			/usr/lib/libplan9.a
+# Plan9 Libraries
+LIBBIO?=			/usr/lib/libbio.a
+LIBFMT?=            		/usr/lib/libfmt.a
+LIBREGEXP?=         		/usr/lib/libregexp.a
+LIBUTF?=            		/usr/lib/libutf.a
 
 MKDEP_SUFFIXES?=	.lo .ln .d
 
