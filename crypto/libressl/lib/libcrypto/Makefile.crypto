@@ -139,16 +139,94 @@ CPPFLAGS+= -I${LCRYPTO_SRC}/bn/arch/${LIBRESSL_MACHINE_CPU}
 CPPFLAGS+= -DOPENSSL_NO_ASM
 .else
 .if ${LIBRESSL_MACHINE_ARCH} == "arm"
-
+# This list is built from the contents of the dist/crypto/Makefile.am.elf-arm
+CPPFLAGS += -DAES_ASM
+CPPFLAGS += -DOPENSSL_BN_ASM_MONT
+CPPFLAGS += -DGHASH_ASM
+CPPFLAGS += -DSHA1_ASM
+CPPFLAGS += -DSHA256_ASM
+CPPFLAGS += -DSHA512_ASM
+CPPFLAGS += -DOPENSSL_CPUID_OBJ
+SRCS += aes/aes-elf-armv4.S
+SRCS += bn/mont-elf-armv4.S
+SRCS += sha/sha1-elf-armv4.S
+SRCS += sha/sha512-elf-armv4.S
+SRCS += sha/sha256-elf-armv4.S
+SRCS += modes/ghash-elf-armv4.S
+SRCS += armv4cpuid.S
+SRCS += armcap.c
 .endif
 .if ${LIBRESSL_MACHINE_ARCH} == "mips"
-
+# This list is built from the contents of the dist/crypto/Makefile.am.elf-mips
+CPPFLAGS += -DAES_ASM
+CPPFLAGS += -DOPENSSL_BN_ASM_MONT
+CPPFLAGS += -DSHA1_ASM
+CPPFLAGS += -DSHA256_ASM
+CPPFLAGS += -DSHA512_ASM
+SRCS += aes/aes-mips.S
+SRCS += bn/bn-mips.S
+SRCS += bn/mont-mips.S
+SRCS += sha/sha1-mips.S
+SRCS += sha/sha512-mips.S
+SRCS += sha/sha256-mips.S
 .endif
 .if ${LIBRESSL_MACHINE_ARCH} == "mips64"
-
+# This list is built from the contents of the dist/crypto/Makefile.am.elf-mips64
+CPPFLAGS += -DAES_ASM
+CPPFLAGS += -DOPENSSL_BN_ASM_MONT
+CPPFLAGS += -DSHA1_ASM
+CPPFLAGS += -DSHA256_ASM
+CPPFLAGS += -DSHA512_ASM
+SRCS += aes/aes-mips.S
+SRCS += bn/bn-mips.S
+SRCS += bn/mont-mips.S
+SRCS += sha/sha1-mips.S
+SRCS += sha/sha512-mips.S
+SRCS += sha/sha256-mips.S
 .endif
 .if ${LIBRESSL_MACHINE_ARCH} == "x86_64"
+# This list is built from the contents of the dist/crypto/Makefile.am.elf-x86_64
+CPPFLAGS += -DAES_ASM
+CPPFLAGS += -DBSAES_ASM
+CPPFLAGS += -DVPAES_ASM
+CPPFLAGS += -DOPENSSL_IA32_SSE2
+CPPFLAGS += -DOPENSSL_BN_ASM_MONT
+CPPFLAGS += -DOPENSSL_BN_ASM_MONT5
+CPPFLAGS += -DMD5_ASM
+CPPFLAGS += -DGHASH_ASM
+CPPFLAGS += -DRSA_ASM
+CPPFLAGS += -DSHA1_ASM
+CPPFLAGS += -DSHA256_ASM
+CPPFLAGS += -DSHA512_ASM
+CPPFLAGS += -DWHIRLPOOL_ASM
+CPPFLAGS += -DOPENSSL_CPUID_OBJ
+SRCS += aes/aes-elf-x86_64.S
+SRCS += aes/bsaes-elf-x86_64.S
+SRCS += aes/vpaes-elf-x86_64.S
+SRCS += aes/aesni-elf-x86_64.S
+SRCS += bn/modexp512-elf-x86_64.S
+SRCS += bn/mont-elf-x86_64.S
+SRCS += bn/mont5-elf-x86_64.S
+SRCS += md5/md5-elf-x86_64.S
+SRCS += modes/ghash-elf-x86_64.S
+SRCS += rc4/rc4-elf-x86_64.S
+SRCS += sha/sha1-elf-x86_64.S
+SRCS += sha/sha256-elf-x86_64.S
+SRCS += sha/sha512-elf-x86_64.S
+SRCS += cpuid-elf-x86_64.S
 
+SRCS += bn/arch/amd64/bignum_add.S
+SRCS += bn/arch/amd64/bignum_cmadd.S
+SRCS += bn/arch/amd64/bignum_cmul.S
+SRCS += bn/arch/amd64/bignum_mul.S
+SRCS += bn/arch/amd64/bignum_mul_4_8_alt.S
+SRCS += bn/arch/amd64/bignum_mul_8_16_alt.S
+SRCS += bn/arch/amd64/bignum_sqr.S
+SRCS += bn/arch/amd64/bignum_sqr_4_8_alt.S
+SRCS += bn/arch/amd64/bignum_sqr_8_16_alt.S
+SRCS += bn/arch/amd64/bignum_sub.S
+SRCS += bn/arch/amd64/word_clz.S
+SRCS += bn/arch/amd64/bn_arch.c
 .endif
 .endif
 

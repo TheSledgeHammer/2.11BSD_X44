@@ -643,4 +643,3 @@ propdb_lookup(propdb_t db, opaque_t obj, char *name, void *val, size_t len, int 
 	}
 	printf("propdb_lookup: unsucessful \n");
 }
-

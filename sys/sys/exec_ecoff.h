@@ -220,8 +220,6 @@ enum strclass {
 #ifdef _KERNEL
 
 int	 exec_ecoff_linker(struct exec_linker *);
-//void cpu_exec_ecoff_setregs(struct proc *, struct exec_linker *, u_long);
-
 int	 exec_ecoff_prep_zmagic(struct exec_linker *, struct ecoff_exechdr *, struct vnode *);
 int	 exec_ecoff_prep_nmagic(struct exec_linker *, struct ecoff_exechdr *, struct vnode *);
 int	 exec_ecoff_prep_omagic(struct exec_linker *, struct ecoff_exechdr *, struct vnode *);

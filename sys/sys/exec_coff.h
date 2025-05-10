@@ -31,16 +31,6 @@
 
 #include <machine/coff_machdep.h>
 
-/* coff basic abstract types */
-typedef int8_t			coff_char;
-typedef int16_t			coff_short;
-typedef int32_t			coff_int;
-typedef int64_t			coff_long;
-typedef uint8_t			coff_uchar;
-typedef uint16_t		coff_ushort;
-typedef uint32_t		coff_uint;
-typedef uint64_t		coff_ulong;
-
 /* COFF file header */
 struct coff_filehdr {
 	u_short	f_magic;	/* magic number */

@@ -17,16 +17,14 @@
 #include <varargs.h>
 #include <fcntl.h>
 
-
-static	char	*fmsg = "Can't fchdir() back to starting directory";
+static	const char *fmsg = "Can't fchdir() back to starting directory";
 static	int	oct, status, fflag, rflag;
 static	u_short	set, clear;
 static	struct	stat st;
-static	void	usage();
-
-extern	long	strtol();
+static	void	usage(void);
 extern	int	optind, errno;
-extern	u_short	string_to_flags();	/* from ../ls */
+//extern	long	strtol();
+//extern	u_short	string_to_flags();	/* from ../ls */
 
 void
 main(argc, argv)
@@ -189,7 +187,7 @@ newflags(flags)
 }
 
 static void
-usage()
+usage(void)
 {
 	fputs("usage: chflags [-Rf] flags file ...\n", stderr);
 	exit(1);

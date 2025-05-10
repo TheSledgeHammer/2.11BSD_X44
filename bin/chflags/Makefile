@@ -4,9 +4,16 @@
 #	@(#)Makefile	1.2 (2.11BSD GTE) 1996/1/27
 #
 
+.include <bsd.own.mk>
+
 PROG=	chflags
 SRCS= 	chflags.c
 MAN=	chflags.1
+
+WARNS?=	3
+
+LDADD+= -lutil
+DPADD+= ${LIBUTIL}
 
 .include <bsd.prog.mk>
 

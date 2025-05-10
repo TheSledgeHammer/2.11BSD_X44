@@ -4,4 +4,6 @@ PROG=	cat
 SRCS=	cat.c
 MAN=	cat.1
 
+WARNS?=	3
+
 .include <bsd.prog.mk>

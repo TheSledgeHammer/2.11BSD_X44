@@ -39,14 +39,17 @@
 #endif
 
 #include <sys/cdefs.h>
-#ifndef lint
+#if !defined(lint)
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1989, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
-
-#ifndef lint
+#if !defined(lint)
+#if 0
 static char sccsid[] = "@(#)cat.c	8.2 (Berkeley) 4/27/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -62,7 +65,7 @@ static char sccsid[] = "@(#)cat.c	8.2 (Berkeley) 4/27/95";
 #include <unistd.h>
 
 int bflag, eflag, fflag, lflag, nflag, sflag, tflag, vflag;
-size_t bsize;
+size_t bssize;
 int rval;
 char *filename;
 
@@ -83,13 +86,13 @@ main(argc, argv)
 	while ((ch = getopt(argc, argv, "B:beflnstuv")) != -1)
 		switch (ch) {
 		case 'B':
-			bsize = (size_t)strtol(optarg, NULL, 0);
+			bssize = (size_t) strtol(optarg, NULL, 0);
 			break;
 		case 'b':
-			bflag = nflag = 1;	/* -b implies -n */
+			bflag = nflag = 1; /* -b implies -n */
 			break;
 		case 'e':
-			eflag = vflag = 1;	/* -e implies -v */
+			eflag = vflag = 1; /* -e implies -v */
 			break;
 		case 'f':
 			fflag = 1;
@@ -104,18 +107,18 @@ main(argc, argv)
 			sflag = 1;
 			break;
 		case 't':
-			tflag = vflag = 1;	/* -t implies -v */
+			tflag = vflag = 1; /* -t implies -v */
 			break;
 		case 'u':
-			setbuf(stdout, (char *)NULL);
+			setbuf(stdout, (char*) NULL);
 			break;
 		case 'v':
 			vflag = 1;
 			break;
 		default:
 		case '?':
-			(void)fprintf(stderr,
-			    "usage: cat [-beflnstuv] [-B bsize] [-] [file ...]\n");
+			(void) fprintf(stderr,
+					"usage: cat [-beflnstuv] [-B bsize] [-] [file ...]\n");
 			exit(1);
 		}
 	argv += optind;
@@ -146,7 +149,7 @@ cook_args(argv)
 	register FILE *fp;
 
 	fp = stdin;
-	filename = "stdin";
+	filename = __UNCONST("stdin");
 	do {
 		if (*argv) {
 			if (!strcmp(*argv, "-"))
@@ -277,7 +280,7 @@ raw_cat(rfd)
 	register int rfd;
 {
 	register int nr, nw, off, wfd;
-	static int bsize;
+	static int bssize;
 	static char *buf, fb_buf[BUFSIZ];
 	struct stat sbuf;
 
@@ -285,16 +288,16 @@ raw_cat(rfd)
 	if (buf == NULL) {
 		if (fstat(wfd, &sbuf))
 			err(1, "%s", filename);
-		bsize = MAX(sbuf.st_blksize, 1024);
-		if ((buf = malloc((u_int)bsize)) == NULL) {
+		bssize = MAX(sbuf.st_blksize, 1024);
+		if ((buf = malloc((u_int)bssize)) == NULL) {
 			err(1, NULL);
 		}
 		if (buf == NULL) {
-			bsize = sizeof(fb_buf);
+			bssize = sizeof(fb_buf);
 			buf = fb_buf;
 		}
 	}
-	while ((nr = read(rfd, buf, bsize)) > 0)
+	while ((nr = read(rfd, buf, bssize)) > 0)
 		for (off = 0; nr; nr -= nw, off += nw)
 			if ((nw = write(wfd, buf + off, nr)) < 0)
 				err(1, "stdout");
