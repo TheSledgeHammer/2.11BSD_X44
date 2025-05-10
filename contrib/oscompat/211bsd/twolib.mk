@@ -23,6 +23,7 @@ MKLIBVMF?= 		no
 #     - Math Library Part2
 # libstubs:
 #     - Time library stubs. Can be used with ctimed (ctime daemon)
+#     - Needs fixes applied before it can be enabled
 # libtermcap: 
 #     - Cannot be enabled, until below sub-points are fixed.
 #         - conflicts with libterminfo, which has toolchain dependents (i.e. tic), 
