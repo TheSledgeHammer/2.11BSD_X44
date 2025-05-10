@@ -8,12 +8,24 @@ MKLIBFORTRAN?= 	no
 MKLIBMP?= 		no
 MKLIBOM?= 		no
 MKLIBSTUBS?= 	no
-MKLIBTERMCAP?= 	no # here for legacy reasons (cannot be enabled: conflicts with libterminfo)
+MKLIBTERMCAP?= 	no
 MKLIBVMF?= 		no
 
 #
-# Notes:
+# Notes/Info:
+# libndbm:
+#    - includes dbm and ndbm
+# libfortran:
+#    - includes libF77, libI77 and libU77
+# libmp:
+#     - Math Library Part1
+# libom:
+#     - Math Library Part2
+# libstubs:
+#     - Time library stubs. Can be used with ctimed (ctime daemon)
 # libtermcap: 
-# - Cannot be enabled, until below sub-points are fixed.
-    - conflicts with libterminfo, which has toolchain dependents (i.e. tic), resulting in not compiling
-# - Legacy code
+#     - Cannot be enabled, until below sub-points are fixed.
+#         - conflicts with libterminfo, which has toolchain dependents (i.e. tic), resulting in not compiling
+# libvmf:
+#     - Disk Based Virtual Memory Routines
+#         - Was used in 2.11BSD's linker program
