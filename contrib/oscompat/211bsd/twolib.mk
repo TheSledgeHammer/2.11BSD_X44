@@ -25,7 +25,8 @@ MKLIBVMF?= 		no
 #     - Time library stubs. Can be used with ctimed (ctime daemon)
 # libtermcap: 
 #     - Cannot be enabled, until below sub-points are fixed.
-#         - conflicts with libterminfo, which has toolchain dependents (i.e. tic), resulting in not compiling
+#         - conflicts with libterminfo, which has toolchain dependents (i.e. tic), 
+#           results in failing to compile
 # libvmf:
 #     - Disk Based Virtual Memory Routines
 #         - Was used in 2.11BSD's linker program
