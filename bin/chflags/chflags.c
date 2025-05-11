@@ -14,7 +14,7 @@
 #include <sys/types.h>
 
 #include <stdio.h>
-#include <varargs.h>
+#include <stdarg.h>
 #include <fcntl.h>
 
 static	const char *fmsg = "Can't fchdir() back to starting directory";
@@ -23,8 +23,6 @@ static	u_short	set, clear;
 static	struct	stat st;
 static	void	usage(void);
 extern	int	optind, errno;
-//extern	long	strtol();
-//extern	u_short	string_to_flags();	/* from ../ls */
 
 void
 main(argc, argv)
