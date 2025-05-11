@@ -23,7 +23,7 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include	<syslog.h>
-#include	<varargs.h>
+#include	<stdarg.h>
 #include	<unistd.h>
 
 struct ACCTPARM {
