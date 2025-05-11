@@ -65,9 +65,9 @@ static char sccsid[] = "@(#)cat.c	8.2 (Berkeley) 4/27/95";
 #include <unistd.h>
 
 int bflag, eflag, fflag, lflag, nflag, sflag, tflag, vflag;
-size_t bssize;
+size_t bsize;
 int rval;
-char *filename;
+const char *filename;
 
 void cook_args(char *argv[]);
 void cook_buf(FILE *);
@@ -86,7 +86,7 @@ main(argc, argv)
 	while ((ch = getopt(argc, argv, "B:beflnstuv")) != -1)
 		switch (ch) {
 		case 'B':
-			bssize = (size_t) strtol(optarg, NULL, 0);
+			bsize = (size_t) strtol(optarg, NULL, 0);
 			break;
 		case 'b':
 			bflag = nflag = 1; /* -b implies -n */
@@ -149,7 +149,7 @@ cook_args(argv)
 	register FILE *fp;
 
 	fp = stdin;
-	filename = __UNCONST("stdin");
+	filename = "stdin";
 	do {
 		if (*argv) {
 			if (!strcmp(*argv, "-"))
@@ -280,7 +280,6 @@ raw_cat(rfd)
 	register int rfd;
 {
 	register int nr, nw, off, wfd;
-	static int bssize;
 	static char *buf, fb_buf[BUFSIZ];
 	struct stat sbuf;
 
@@ -288,16 +287,16 @@ raw_cat(rfd)
 	if (buf == NULL) {
 		if (fstat(wfd, &sbuf))
 			err(1, "%s", filename);
-		bssize = MAX(sbuf.st_blksize, 1024);
-		if ((buf = malloc((u_int)bssize)) == NULL) {
+		bsize = MAX(sbuf.st_blksize, 1024);
+		if ((buf = malloc((u_int)bsize)) == NULL) {
 			err(1, NULL);
 		}
 		if (buf == NULL) {
-			bssize = sizeof(fb_buf);
+			bsize = sizeof(fb_buf);
 			buf = fb_buf;
 		}
 	}
-	while ((nr = read(rfd, buf, bssize)) > 0)
+	while ((nr = read(rfd, buf, bsize)) > 0)
 		for (off = 0; nr; nr -= nw, off += nw)
 			if ((nw = write(wfd, buf + off, nr)) < 0)
 				err(1, "stdout");
