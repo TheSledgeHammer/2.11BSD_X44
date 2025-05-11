@@ -69,6 +69,7 @@ size_t bsize;
 int rval;
 const char *filename;
 
+int  main(int argc, char *argv[]);
 void cook_args(char *argv[]);
 void cook_buf(FILE *);
 void raw_args(char *argv[]);
