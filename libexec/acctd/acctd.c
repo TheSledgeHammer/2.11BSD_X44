@@ -6,6 +6,7 @@
  * acctd - process accounting daemon
 */
 
+#include	<sys/cdefs.h>
 
 #include	<sys/types.h>
 #include	<sys/param.h>
@@ -23,6 +24,7 @@
 #include	<string.h>
 #include	<syslog.h>
 #include	<varargs.h>
+#include	<unistd.h>
 
 struct ACCTPARM {
 	int suspend;
@@ -40,22 +42,26 @@ char *Acctfile;
 int Alogfd;
 struct ACCTPARM Acctparms;
 FILE *Acctfp;
-char *Acctdcf = _PATH_ACCTDCF;
+const char *Acctdcf = _PATH_ACCTDCF;
 
-int	checkacctspace(void);
-int hupcatch(void);
-int terminate(void);
-void usage(void);
-void errline(int);
-void die(char *, ...);
-void reportit(char *, ...);
+int  main(int, char **);
 void doit(void);
-extern	char	*__progname;
+void checkacctspace(int);
+void hupcatch(int);
+void terminate(int);
+int  parseconf(struct ACCTPARM *);
+void errline(int);
+void reconfig(struct ACCTPARM *);
+void die(const char *, ...);
+void reportit(const char *, ...);
+void usage(void);
+
+//extern	char	*__progname;
 
 int
 main(argc, argv)
 	int	argc;
-	char	**argv;
+	char **argv;
 {
 	int	c, i;
 	pid_t	pid;
@@ -168,7 +174,7 @@ void
 doit(void)
 {
 	struct	acct	abuf[4];
-	struct	ACCTPARM ajunk;
+	//struct	ACCTPARM ajunk;
 	sigset_t	smask, omask;
 	int	len;
 	
@@ -206,8 +212,9 @@ doit(void)
 	}
 }
 
-int
-checkacctspace(void)
+void
+checkacctspace(sig)
+    int sig;
 {
 	struct	statfs	fsb;
 	float	suspendfree, totalfree, resumefree;
@@ -222,14 +229,14 @@ checkacctspace(void)
 			reportit("less than %d%% freespace on %s, accounting suspended\n",
 					Acctparms.suspend, fsb.f_mntfromname);
 		Disabled = 1;
-		return (0);
+		return;
 	}
 	/*
 	 * If accounting is not disabled then just return.  If it has been disabled
 	 * check if enough space is free to resume accounting.
 	 */
 	if (!Disabled)
-		return (0);
+		return;
 
 	resumefree = ((float) fsb.f_blocks * (float) Acctparms.resume) / 100.0;
 	if (totalfree >= resumefree) {
@@ -237,7 +244,7 @@ checkacctspace(void)
 				Acctparms.resume, fsb.f_mntfromname);
 		Disabled = 0;
 	}
-	return (0);
+	return;
 }
 
 /*
@@ -245,7 +252,8 @@ checkacctspace(void)
  * in the signal handler because other signals are blocked.
 */
 void
-hupcatch(void)
+hupcatch(sig)
+    int sig;
 {
 	struct	ACCTPARM ajunk;
 
@@ -273,7 +281,8 @@ hupcatch(void)
  * either get all that we asked for or nothing.
 */
 void
-terminate(void)
+terminate(sig)
+    int sig;
 {
 	register int	i, cnt;
 	struct	acct	a;
@@ -439,24 +448,24 @@ reconfig(new)
 */
 
 void
-die(char *str, ...)
+die(const char *str, ...)
 {
 	va_list ap;
 
 	openlog("acctd", LOG_CONS|LOG_NDELAY|LOG_PID, LOG_DAEMON);
-	va_start(ap);
+	va_start(ap, str);
 	vsyslog(LOG_ERR, str, ap);
 	va_end(ap);
 	exit(1);
 }
 
 void
-reportit(char *str, ...)
+reportit(const char *str, ...)
 {
 	va_list ap;
 
 	openlog("acctd", LOG_CONS|LOG_NDELAY|LOG_PID, LOG_DAEMON);
-	va_start(ap);
+	va_start(ap, str);
 	vsyslog(LOG_WARNING, str, ap);
 	va_end(ap);
 }
@@ -467,6 +476,6 @@ usage(void)
 
 	die(
 			"Usage: %s [-f acctfile] [-s %suspend] [-r %resume] [-t chkfreq] [acctfile]",
-			__progname);
+			getprogname());
 	/* NOTREACHED */
 }

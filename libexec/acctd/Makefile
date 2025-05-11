@@ -11,6 +11,8 @@ SRCS= 	acctd.c
 MAN=	acctd.8
 BINDIR=	/usr/libexec
 
+WARNS?=  3
+
 BINOWN=		root
 BINMODE=	700
 
