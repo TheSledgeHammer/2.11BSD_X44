@@ -18,6 +18,13 @@ OBJS+= crtbeginS.o crtendS.o
 OBJS+= crti.o crtn.o
 OBJS+= elf_note.o
 
+.if ${MKPIC} == "yes"
+OBJS+=		crtbeginS.o
+OBJS+=		crtendS.o
+CFLAGS.crtbegin.c+= -fPIE
+CFLAGS.crtend.c+= -fPIE
+.endif
+
 realall: ${OBJS}
 
 crtbegin.o: crtbegin.c csu_common.c
