@@ -130,7 +130,9 @@ CPPFLAGS+=	-DRESCUEDIR=\"${RESCUEDIR}\"
 
 _PROGLDOPTS=
 .if ${SHLINKDIR} != "/usr/libexec"	# XXX: change or remove if ld.so moves
+.if ${OBJECT_FMT} == "ELF"
 _PROGLDOPTS+=	-Wl,-dynamic-linker=${_SHLINKER}
+.endif
 .endif
 .if ${SHLIBDIR} != "/usr/lib"
 _PROGLDOPTS+=	-Wl,-rpath,${SHLIBDIR} \
@@ -161,14 +163,17 @@ _APPEND_MANS=yes
 _APPEND_SRCS=yes
 
 _CCLINKFLAGS=
+.if defined(DESTDIR)
+_CCLINKFLAGS+=	-B${_GCC_CRTDIR}/ -B${DESTDIR}/usr/lib/
+.endif
 
 .if defined(PROG_CXX)
 PROG=		${PROG_CXX}
 _CCLINK=	${CXX} ${_CCLINKFLAGS}
 .endif
 
-PROGS=			${PROG}
-CPPFLAGS+=		-DCRUNCHOPS
+#PROGS=			${PROG}
+#CPPFLAGS+=		-DCRUNCHOPS
 
 .if defined(PROG)
 _CCLINK?=	${CC} ${_CCLINKFLAGS}
@@ -186,6 +191,14 @@ PROGNAME.${PROG}=	${PROGNAME}
 SRCS.${PROG}=	${SRCS}
 _APPEND_SRCS=	no
 .  endif
+.endif
+
+# Turn the single-program PROG and PROG_CXX variables into their multi-word
+# counterparts, PROGS and PROGS_CXX.
+.if defined(PROG_CXX) && !defined(PROGS_CXX)
+PROGS_CXX=	${PROG_CXX}
+.elif defined(PROG) && !defined(PROGS)
+PROGS=		${PROG}
 .endif
 
 ##### Libraries that this may depend upon.
