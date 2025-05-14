@@ -213,7 +213,7 @@ crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
 #ifdef MCRT0
 	atexit(_mcleanup);
 	monstartup(&eprol, &etext);
-    	__asm__("eprol:");
+    __asm__("eprol:");
 #endif
 
     handle_static_init(argc, argv, env);

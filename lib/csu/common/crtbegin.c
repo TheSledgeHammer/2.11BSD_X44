@@ -26,19 +26,20 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <sys/cdefs.h>
 #include <dot_init.h>
 #include "csu_common.c"
 
 #ifdef HAVE_CTORS
-__dso_hidden fptr_t __DTOR_LIST__[1] __section(".dtors") __used = { (fptr_t)-1 };
-__dso_hidden fptr_t __DTOR_END__[] __section(".dtors") __used = { (fptr_t)0 };
+static fptr_t __DTOR_LIST__[1] __section(".dtors") __used = { (fptr_t)-1 };
+static fptr_t __DTOR_END__[] __section(".dtors") __used = { (fptr_t)0 };
 #endif
 
 #ifdef SHARED
-__dso_hidden void *__dso_handle = &__dso_handle;
+void *__dso_handle = &__dso_handle;
 #else
-__dso_hidden void *__dso_handle = NULL;
+void *__dso_handle = NULL;
 #endif
 __asm(".hidden  __dso_handle");
 
