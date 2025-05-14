@@ -9,7 +9,7 @@ COMMON_DIR:=	${.CURDIR}/common
 
 SHAREDFLAGS= -DSHARED
 
-CPPFLAGS+=	-DDYNAMIC
+CPPFLAGS+=	-DPIC -DDYNAMIC
 CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
 CPPFLAGS+=	-I${COMMON_DIR} -I.
 CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
@@ -54,6 +54,7 @@ crtend.o: crtend.c csu_common.c
 crtbeginS.o: crtbegin.c csu_common.c
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${CFLAGS.crtbeginS.c} ${PICFLAGS} ${SHAREDFLAGS} ${COMMON_DIR}/crtbegin.c -o ${.TARGET}.o
+	    ${COMPILE.c} ${CFLAGS.csu_common.c} ${PICFLAGS} ${SHAREDFLAGS} ${COMMON_DIR}/csu_common.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
 .if ${MKSTRIPIDENT} != "no"
@@ -63,6 +64,7 @@ crtbeginS.o: crtbegin.c csu_common.c
 crtendS.o: crtend.c csu_common.c
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${CFLAGS.crtendS.c} ${PICFLAGS} ${SHAREDFLAGS} ${COMMON_DIR}/crtend.c -o ${.TARGET}.o
+	    ${COMPILE.c} ${CFLAGS.csu_common.c} ${PICFLAGS} ${SHAREDFLAGS} ${COMMON_DIR}/csu_common.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
 .if ${MKSTRIPIDENT} != "no"
@@ -118,15 +120,15 @@ gcrt0.o: crt0.c crt0_common.c crt0.o
 		${OBJCOPY} -R .ident ${.TARGET}
 .endif
 
-elf_note.o: elf_note.S
-		${_MKTARGET_COMPILE}
-		${COMPILE.S} ${PICFLAGS} ${COMMON_DIR}/elf_note.S -o ${.TARGET}.o
-		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
-		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
-		rm -f ${.TARGET}.o
-.if ${MKSTRIPIDENT} != "no"
-		${OBJCOPY} -R .ident ${.TARGET}
-.endif
+#elf_note.o: elf_note.S
+#		${_MKTARGET_COMPILE}
+#		${COMPILE.S} ${PICFLAGS} ${COMMON_DIR}/elf_note.S -o ${.TARGET}.o
+#		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+#		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
+#		rm -f ${.TARGET}.o
+#.if ${MKSTRIPIDENT} != "no"
+#		${OBJCOPY} -R .ident ${.TARGET}
+#.endif
 
 FILES=${OBJS}
 FILESDIR=${LIBDIR}
