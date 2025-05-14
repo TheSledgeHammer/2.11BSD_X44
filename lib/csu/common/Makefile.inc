@@ -120,15 +120,15 @@ gcrt0.o: crt0.c crt0_common.c crt0.o
 		${OBJCOPY} -R .ident ${.TARGET}
 .endif
 
-#elf_note.o: elf_note.S
-#		${_MKTARGET_COMPILE}
-#		${COMPILE.S} ${PICFLAGS} ${COMMON_DIR}/elf_note.S -o ${.TARGET}.o
-#		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
-#		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
-#		rm -f ${.TARGET}.o
-#.if ${MKSTRIPIDENT} != "no"
-#		${OBJCOPY} -R .ident ${.TARGET}
-#.endif
+elf_note.o: elf_note.S
+		${_MKTARGET_COMPILE}
+		${COMPILE.S} ${PICFLAGS} ${COMMON_DIR}/elf_note.S -o ${.TARGET}.o
+		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
+		rm -f ${.TARGET}.o
+.if ${MKSTRIPIDENT} != "no"
+		${OBJCOPY} -R .ident ${.TARGET}
+.endif
 
 FILES=${OBJS}
 FILESDIR=${LIBDIR}
