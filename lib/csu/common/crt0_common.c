@@ -118,7 +118,7 @@ handle_argv(int argc, char *argv[], char **env)
 extern const Elf_Rela __rela_iplt_start[] __dso_hidden __weak;
 extern const Elf_Rela __rela_iplt_end[] __dso_hidden __weak;
 #define write_plt(where, value) *where = value
-#define IFUNC_RELOCATION	RTYPE(IRELATIVE)
+#define IFUNC_RELOCATION	R_TYPE(IRELATIVE)
 
 static void
 fix_iplta(void)
@@ -145,7 +145,7 @@ fix_iplta(void)
 #include <stdio.h>
 extern const Elf_Rel __rel_iplt_start[] __dso_hidden __weak;
 extern const Elf_Rel __rel_iplt_end[] __dso_hidden __weak;
-#define IFUNC_RELOCATION	RTYPE(IRELATIVE)
+#define IFUNC_RELOCATION	R_TYPE(IRELATIVE)
 
 static void
 fix_iplt(void)
