@@ -128,10 +128,6 @@ handle_argv(int argc, char *argv[], char **env)
 }
 
 #if defined(HAS_IPLTA)
-#if defined(__aarch64__) || defined(__powerpc__) || \
-    defined(__sparc__) || defined(__x86_64__)
-static void fix_iplta(void) __noinline;
-#endif	
 #include <stdio.h>
 extern const Elf_Rela __rela_iplt_start[] __dso_hidden __weak;
 extern const Elf_Rela __rela_iplt_end[] __dso_hidden __weak;
@@ -160,9 +156,6 @@ fix_iplta(void)
 #endif
 
 #if defined(HAS_IPLT)
-#if defined(__arm__) || defined(__i386__)
-static void fix_iplt(void) __noinline;
-#endif	
 #include <stdio.h>
 extern const Elf_Rel __rel_iplt_start[] __dso_hidden __weak;
 extern const Elf_Rel __rel_iplt_end[] __dso_hidden __weak;
@@ -220,7 +213,7 @@ crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
 #ifdef MCRT0
 	atexit(_mcleanup);
 	monstartup(&eprol, &etext);
-    __asm__("eprol:");
+    	__asm__("eprol:");
 #endif
 
     handle_static_init(argc, argv, env);
