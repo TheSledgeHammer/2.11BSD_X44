@@ -21,15 +21,16 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "csu_common.c"
+#include <sys/cdefs.h>
 #include <dot_init.h>
+#include "csu_common.c"
 
 #ifdef HAVE_CTORS
-static fptr_t __CTOR_LIST__[1] __section(".ctors") __used = { (fptr_t)-1 };
-static fptr_t __CTOR_END__[] __section(".ctors") __used = { (fptr_t)0 };
+__dso_hidden fptr_t __CTOR_LIST__[1] __section(".ctors") __used = { (fptr_t)-1 };
+__dso_hidden fptr_t __CTOR_END__[] __section(".ctors") __used = { (fptr_t)0 };
 #endif
 #if defined(JCR) && defined(__GNUC__)
-static fptr_t __JCR_LIST__[] __section(".jcr") __used = { (fptr_t)0 };
+__dso_hidden fptr_t __JCR_LIST__[] __section(".jcr") __used = { (fptr_t)0 };
 extern void _Jv_RegisterClasses(void *) __attribute__((weak));
 #endif
 

@@ -38,9 +38,6 @@
 
 #include <sys/cdefs.h>
 
-#define	HAVE_CTORS
-#define HAS_IPLT
-
 #define	MD_SECTION_PROLOGUE(sect, entry_pt)			\
 	__asm (											\
 			".section "#sect",\"ax\",@progbits	 	\n"\

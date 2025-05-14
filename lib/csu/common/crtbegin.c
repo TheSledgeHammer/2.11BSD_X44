@@ -26,22 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include "csu_common.c"
+#include <sys/cdefs.h>
 #include <dot_init.h>
-
-extern void *__dso_handle;
-__asm(".hidden  __dso_handle");
+#include "csu_common.c"
 
 #ifdef HAVE_CTORS
-static fptr_t __DTOR_LIST__[1] __section(".dtors") __used = { (fptr_t)-1 };
-static fptr_t __DTOR_END__[] __section(".dtors") __used = { (fptr_t)0 };
+__dso_hidden fptr_t __DTOR_LIST__[1] __section(".dtors") __used = { (fptr_t)-1 };
+__dso_hidden fptr_t __DTOR_END__[] __section(".dtors") __used = { (fptr_t)0 };
 #endif
 
-#ifndef SHARED
-void *__dso_handle = NULL;
+#ifdef SHARED
+__dso_hidden void *__dso_handle = &__dso_handle;
 #else
-void *__dso_handle = &__dso_handle;
+__dso_hidden void *__dso_handle = NULL;
+#endif
+__asm(".hidden  __dso_handle");
+
+#ifdef SHARED
 extern void __cxa_finalize(void *)  __attribute__((weak));
 #endif
 

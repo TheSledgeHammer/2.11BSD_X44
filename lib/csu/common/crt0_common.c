@@ -36,35 +36,64 @@
 typedef void (*fptr_t)(void);
 
 static char	        empty_string[] = "";
-char 				**environ;
-const char 			*__progname = empty_string;
+char 			**environ;
+const char 		*__progname = empty_string;
 struct ps_strings 	*__ps_strings = 0;
 
 extern int   main(int argc, char **argv, char **env);
 
-extern void (*__preinit_array_start[])(int, char **, char **);
-extern void (*__preinit_array_end[])(int, char **, char **);
-extern void (*__init_array_start[])(int, char **, char **);
-extern void (*__init_array_end[])(int, char **, char **);
-extern void (*__fini_array_start[])(void);
-extern void (*__fini_array_end[])(void);
-extern void	_init(void);
-extern void	_fini(void);
+extern void (*__preinit_array_start[])(int, char **, char **) __dso_hidden;
+extern void (*__preinit_array_end[])(int, char **, char **) __dso_hidden;
+extern void (*__init_array_start[])(int, char **, char **) __dso_hidden;
+extern void (*__init_array_end[])(int, char **, char **) __dso_hidden;
+extern void (*__fini_array_start[])(void) __dso_hidden;
+extern void (*__fini_array_end[])(void) __dso_hidden;
+extern void _init(void);
+extern void _fini(void);
 
 extern int _DYNAMIC;
 #pragma weak _DYNAMIC
 
 static void
+preinitializer(int argc, char **argv, char **env)
+{
+	void (*func)(int, char **, char **);
+	size_t array_size, n;
+
+	array_size = __preinit_array_end - __preinit_array_start;
+	for (n = 0; n < array_size; n++) {
+		func = __preinit_array_start[n];
+		if ((uintptr_t)func != 0 && (uintptr_t)func != 1)
+			func(argc, argv, env);
+	}
+}
+
+static void
+initializer(int argc, char **argv, char **env)
+{
+	void (*func)(int, char **, char **);
+	size_t array_size, n;
+
+	_init();
+	array_size = __init_array_end - __init_array_start;
+	for (n = 0; n < array_size; n++) {
+		func = __init_array_start[n];
+		if ((uintptr_t)func != 0 && (uintptr_t)func != 1)
+			func(argc, argv, env);
+	}
+}
+
+static void
 finalizer(void)
 {
-	void (*fn)(void);
+	void (*func)(void);
 	size_t array_size, n;
 
 	array_size = __fini_array_end - __fini_array_start;
 	for (n = array_size; n > 0; n--) {
-		fn = __fini_array_start[n - 1];
-		if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
-			(fn)();
+		func = __fini_array_start[n - 1];
+		if ((uintptr_t)func != 0 && (uintptr_t)func != 1)
+			(func)();
 	}
 	_fini();
 }
@@ -72,27 +101,12 @@ finalizer(void)
 static inline void
 handle_static_init(int argc, char **argv, char **env)
 {
-	void (*fn)(int, char **, char **);
-	size_t array_size, n;
-
 	if (&_DYNAMIC != NULL)
 		return;
 
 	atexit(finalizer);
-
-	array_size = __preinit_array_end - __preinit_array_start;
-	for (n = 0; n < array_size; n++) {
-		fn = __preinit_array_start[n];
-		if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
-			fn(argc, argv, env);
-	}
-	_init();
-	array_size = __init_array_end - __init_array_start;
-	for (n = 0; n < array_size; n++) {
-		fn = __init_array_start[n];
-		if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
-			fn(argc, argv, env);
-	}
+	preinitializer(argc, argv, env);
+	initializer(argc, argv, env);
 }
 
 static inline void
@@ -114,6 +128,10 @@ handle_argv(int argc, char *argv[], char **env)
 }
 
 #if defined(HAS_IPLTA)
+#if defined(__aarch64__) || defined(__powerpc__) || \
+    defined(__sparc__) || defined(__x86_64__)
+static void fix_iplta(void) __noinline;
+#endif	
 #include <stdio.h>
 extern const Elf_Rela __rela_iplt_start[] __dso_hidden __weak;
 extern const Elf_Rela __rela_iplt_end[] __dso_hidden __weak;
@@ -142,6 +160,9 @@ fix_iplta(void)
 #endif
 
 #if defined(HAS_IPLT)
+#if defined(__arm__) || defined(__i386__)
+static void fix_iplt(void) __noinline;
+#endif	
 #include <stdio.h>
 extern const Elf_Rel __rel_iplt_start[] __dso_hidden __weak;
 extern const Elf_Rel __rel_iplt_end[] __dso_hidden __weak;

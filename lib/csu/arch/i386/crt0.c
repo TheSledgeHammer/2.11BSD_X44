@@ -26,6 +26,9 @@
  * $FreeBSD$
  */
 
+#define	HAVE_CTORS
+#define HAS_IPLT
+
 #include "crt0_common.c"
 
 void ___start(fptr_t, struct ps_strings *);
@@ -52,4 +55,3 @@ ___start(fptr_t cleanup, struct ps_strings *ps_strings)
     environ = &ps_strings->ps_envstr;
     crt0_start(cleanup, ps_strings->ps_nargvstr, &ps_strings->ps_argvstr, environ);
 }
-

@@ -2,15 +2,19 @@
 
 .include <bsd.own.mk>
 
+PICFLAGS?=	-fPIC
+
 COMMON_DIR:=	${.CURDIR}/common
 .PATH:		    ${COMMON_DIR}
 
-PICFLAGS?=	-fPIC
+SHAREDFLAGS= -DSHARED
+
 CPPFLAGS+=	-DDYNAMIC
 CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
 CPPFLAGS+=	-I${COMMON_DIR} -I.
 CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
-CPPFLAGS+=  	-DJCR
+CPPFLAGS+=  -DJCR
+CPPFLAGS+=	-fno-omit-frame-pointer
 
 OBJS+= crt0.o gcrt0.o
 OBJS+= crtbegin.o crtend.o
@@ -30,6 +34,7 @@ realall: ${OBJS}
 crtbegin.o: crtbegin.c csu_common.c
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${CFLAGS.crtbegin.c} ${COMMON_DIR}/crtbegin.c -o ${.TARGET}.o
+		${COMPILE.c} ${CFLAGS.csu_common.c} ${COMMON_DIR}/csu_common.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
 .if ${MKSTRIPIDENT} != "no"
@@ -39,6 +44,7 @@ crtbegin.o: crtbegin.c csu_common.c
 crtend.o: crtend.c csu_common.c
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${CFLAGS.crtend.c} ${COMMON_DIR}/crtend.c -o ${.TARGET}.o
+		${COMPILE.c} ${CFLAGS.csu_common.c} ${COMMON_DIR}/csu_common.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
 .if ${MKSTRIPIDENT} != "no"
@@ -47,7 +53,7 @@ crtend.o: crtend.c csu_common.c
 
 crtbeginS.o: crtbegin.c csu_common.c
 		${_MKTARGET_COMPILE}
-		${COMPILE.c} ${CFLAGS.crtbeginS.c} ${PICFLAGS} -DSHARED ${COMMON_DIR}/crtbegin.c -o ${.TARGET}.o
+		${COMPILE.c} ${CFLAGS.crtbeginS.c} ${PICFLAGS} ${SHAREDFLAGS} ${COMMON_DIR}/crtbegin.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
 .if ${MKSTRIPIDENT} != "no"
@@ -56,7 +62,7 @@ crtbeginS.o: crtbegin.c csu_common.c
 
 crtendS.o: crtend.c csu_common.c
 		${_MKTARGET_COMPILE}
-		${COMPILE.c} ${CFLAGS.crtendS.c} ${PICFLAGS} -DSHARED ${COMMON_DIR}/crtend.c -o ${.TARGET}.o
+		${COMPILE.c} ${CFLAGS.crtendS.c} ${PICFLAGS} ${SHAREDFLAGS} ${COMMON_DIR}/crtend.c -o ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
 .if ${MKSTRIPIDENT} != "no"
@@ -92,6 +98,7 @@ crtn.o: crtn.c
 crt0.o: crt0.c crt0_common.c
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${MY_PICFLAGS} ${ARCHDIR}/crt0.c -o ${.TARGET}.o
+		${COMPILE.c} ${MY_PICFLAGS} ${COMMON_DIR}/crt0_common.c -o ${.TARGET}.o
 		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
@@ -100,9 +107,10 @@ crt0.o: crt0.c crt0_common.c
 .endif
 
 # dependant on crt0.o to pick up header dependencies
-gcrt0.o: crt0.c crt0.o
+gcrt0.o: crt0.c crt0_common.c crt0.o
 		${_MKTARGET_COMPILE}
 		${COMPILE.c} ${MY_PICFLAGS} -DMCRT0 ${ARCHDIR}/crt0.c -o ${.TARGET}.o
+		${COMPILE.c} ${MY_PICFLAGS} -DMCRT0 ${COMMON_DIR}/crt0_common.c -o ${.TARGET}.o
 		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
 		rm -f ${.TARGET}.o
@@ -123,5 +131,9 @@ elf_note.o: elf_note.S
 FILES=${OBJS}
 FILESDIR=${LIBDIR}
 CLEANFILES+=${OBJS}
+
+.if ${MKPIC} == "yes"
+SYMLINKS+=	crtbegin.o ${LIBDIR}/crtbeginT.o
+.endif
 
 .include <bsd.prog.mk>
