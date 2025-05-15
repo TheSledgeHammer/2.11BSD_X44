@@ -88,30 +88,30 @@ LIBCRTI=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o
 #     etc..
 #
 
-_LIBLIST= \
-            ARCHIVE \
-            BZ2 \
-			C C_PIC COMPAT CRYPTO CRYPT CURSES CXX \
-            DBM DES \
-            EDIT EXECINFO EVENT EVENT_OPENSSL EVENT_PTHREADS EXPAT \
-			FETCH FL FORM FORTRAN \
-            G2C GCC GNUCTF GNUMALLOC \
-			INTL IPSEC \
-			L LUA \
-			KVM \
-			M MAGIC MENU MP \
-            NS NETBSD \
-            OBJC OM \
-			PANEL PCAP PCI PLAN9 PTHREAD \
-            RESOLV RPCSVC \
-            SKEY SQLITE3 SSH SSL SSP STDC++ STUBS SUPC++ \
-            TERMINFO \
-			UTIL \
-			VMF \
-            WIND WRAP \
-			Y \
-			Z
-			
+_LIBLIST=   \
+            archive \
+            bz2 \
+            c c_pic compat crypto curses cxx \
+            dbm des \
+            edit execinfo event event_openssl event_pthreads expat \
+            fetch fl form fortran \
+            g2c gcc gnuctf gnumalloc \
+            intl ipsec \
+            l lua \
+            kvm \
+            m magic menu mp \
+            netbsd ns \
+            objc om \
+            panel pcap pci plan9 pthread \
+            resolv rpcsvs \
+            skey sqlite3 ssh ssl ssp stdc++ stubs supc++ \
+            terminfo \
+            util \
+            vmf \
+            wrap \
+            y \
+            z
+
 .for _var in ${_LIBLIST}
 .ifndef LIB${_var:tu}
 LIB${_var:tu}:=	 ${DESTDIR}/usr/lib/lib${_var:S/xx/++/}.a
