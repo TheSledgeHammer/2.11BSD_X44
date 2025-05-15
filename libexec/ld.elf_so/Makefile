@@ -1,5 +1,11 @@
 #	$NetBSD: Makefile,v 1.87.2.2 2012/03/17 18:28:33 bouyer Exp $
-  
+
+NOLIBCSANITIZER=# defined
+NOSANITIZER=	# defined
+WARNS?=4
+
+LDELFSO_MACHINE_ARCH?= ${MACHINE_ARCH}
+
 # This needs to be before bsd.init.mk
 .if defined(BSD_MK_COMPAT_FILE)
 .include <${BSD_MK_COMPAT_FILE}>
@@ -33,8 +39,14 @@ M=		${.CURDIR}/arch/${ARCHSUBDIR}
      (${MACHINE_ARCH} == "vax")) &&					\
     ${OBJECT_FMT} == "ELF" && ${MKPIC} != "no"
 
-LDFLAGS+=	-shared -symbolic -nostartfiles
+LDFLAGS+=	${${ACTIVE_CC} == "clang":? -Wl,-Bsymbolic : -symbolic} \
+		    -shared -nostartfiles -nodefaultlibs
 LDFLAGS+=	-Wl,-static
+LDFLAGS+=	-Wl,--warn-shared-textrel
+LDFLAGS+=	-Wl,--no-undefined
+LDFLAGS+=	-Wl,-Map=${.TARGET}.map
+
+COPTS+=		-fvisibility=hidden
 
 # Adds SRCS, CPPFLAGS, LDFLAGS, etc.  Must go first so MD startup source
 # is first.
@@ -52,8 +64,18 @@ PROG=		ld.elf_so
 
 CLIBOBJ!=	cd ${NETBSDSRCDIR}/lib/libc && ${PRINTOBJDIR}
 
-SRCS+=		rtld.c reloc.c symbol.c xmalloc.c xprintf.c debug.c \
-		map_object.c load.c search.c headers.c paths.c expand.c
+SRCS+=	rtld.c
+SRCS+=  reloc.c 
+SRCS+=  symbol.c
+SRCS+=  xmalloc.c
+SRCS+=  xprintf.c
+SRCS+=  debug.c
+SRCS+=  map_object.c
+SRCS+=  load.c
+SRCS+=  search.c
+SRCS+=  headers.c
+SRCS+=  paths.c
+SRCS+=  expand.c
 
 #.if ${USE_FORT} == "yes"
 #.PATH.c: ${NETBSDSRCDIR}/lib/libc/misc
@@ -66,15 +88,27 @@ SRCS+=		exit.c
 BINDIR=		${SHLINKINSTALLDIR}
 
 CPPFLAGS+=	-DLIBDIR=\"${LIBDIR}\" -D_PATH_RTLD=\"${BINDIR}/${PROG}\"
-CPPFLAGS+=	-I${.CURDIR}
+CPPFLAGS+=	-I${.CURDIR} -I. -D_KERNTYPES
 CPPFLAGS+=	-DRTLD_LOADER
+CPPFLAGS+=	-DGNU_RELRO
 CPPFLAGS+=	-D_RTLD_SOURCE
 CPPFLAGS+=	-DCOMBRELOC
 #CPPFLAGS+=	-DDEBUG
 #CPPFLAGS+=	-DRTLD_DEBUG
 #CPPFLAGS+=	-DRTLD_DEBUG_RELOC
+.if !empty(LDELFSO_MACHINE_ARCH:Mearm*)
+CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libexecinfo
+.endif
 #DBG=		-g
-DBG=		-O3 -fomit-frame-pointer
+DBG=		-O3
+
+.if ${MACHINE_CPU} != "m68k" && ${MACHINE_CPU} != "sh3" && ${MACHINE_ARCH} != "vax"
+COPTS+=		-fomit-frame-pointer
+.endif
+
+.if ${LDELFSO_MACHINE_ARCH} == "i386" || ${LDELFSO_MACHINE_ARCH} == "x86_64"
+COPTS+=		-mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-sse3
+.endif
 
 .if ${SHLIBDIR} != ${LIBDIR}
 CPPFLAGS+=	-DRTLD_DEFAULT_LIBRARY_PATH=\"${SHLIBDIR}:${LIBDIR}\"
@@ -103,9 +137,22 @@ STRIPFLAG=
 ${PROG}: ${OBJS} ${DPADD}
 	${_MKMSG_LINK} ${PROG}
 	${CC} ${LDFLAGS} -o ${PROG} ${OBJS} ${LDADD}
+.if ${MKDEBUG} != "no"
+	(  ${OBJCOPY} --only-keep-debug ${.TARGET} ${.TARGET}.debug \
+	   && ${OBJCOPY} --strip-debug -p -R .gnu_debuglink \
+	   --add-gnu-debuglink=${.TARGET}.debug ${.TARGET} \
+	) || (rm -f ${.TARGET}.debug; false)
+
+_PROGDEBUG.${PROG} := ${PROG}.debug
+.endif
+
 
 .if ${SHLINKINSTALLDIR} != "/usr/libexec"
 SYMLINKS+=	${SHLINKINSTALLDIR}/${PROG} /usr/libexec/${PROG}
+.if ${MKDEBUG} != "no"
+SYMLINKS+=	${DEBUGDIR}${BINDIR}/${PROG}.debug \
+		${DEBUGDIR}/usr${BINDIR}/${PROG}.debug
+.endif
 .endif
 
 .include <bsd.prog.mk>
