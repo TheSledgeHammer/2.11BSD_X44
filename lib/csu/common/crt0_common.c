@@ -202,7 +202,7 @@ extern int 	etext;
 static inline void
 crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
 {
-    handle_argv(argc, argv, env);
+	handle_argv(argc, argv, env);
 	if (&_DYNAMIC != NULL) {
 		atexit(cleanup);
 	} else {
@@ -216,6 +216,6 @@ crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
 	__asm__("eprol:");
 #endif
 
-    handle_static_init(argc, argv, env);
-    exit(main(argc, argv, env));
+	handle_static_init(argc, argv, env);
+	exit(main(argc, argv, env));
 }
