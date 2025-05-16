@@ -202,7 +202,6 @@ extern int 	etext;
 static inline void
 crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
 {
-    env = (argc + argv + 1);
     handle_argv(argc, argv, env);
 	if (&_DYNAMIC != NULL) {
 		atexit(cleanup);
@@ -213,7 +212,8 @@ crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
 #ifdef MCRT0
 	atexit(_mcleanup);
 	monstartup(&eprol, &etext);
-    __asm__("eprol:");
+	__asm__("  .text");
+	__asm__("eprol:");
 #endif
 
     handle_static_init(argc, argv, env);

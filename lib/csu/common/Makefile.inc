@@ -14,7 +14,6 @@ CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
 CPPFLAGS+=	-I${COMMON_DIR} -I.
 CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
 CPPFLAGS+=  -DJCR
-#CPPFLAGS+=	-fno-omit-frame-pointer
 
 OBJS+= crt0.o gcrt0.o
 OBJS+= crtbegin.o crtend.o
