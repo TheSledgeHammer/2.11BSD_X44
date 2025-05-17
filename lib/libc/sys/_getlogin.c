@@ -32,8 +32,6 @@
 
 #include <sys/cdefs.h>
 
-#include "namespace.h"
-
 #include <sys/types.h>
 #include <sys/syscall.h>
 
@@ -41,10 +39,10 @@
 #include "extern.h"
 
 int
-_getlogin(namebuf, namelen)
+__getlogin(namebuf, namelen)
     char *namebuf;
     u_int namelen;
 {
-   return (__syscall((quad_t)SYS_getlogin, namebuf, namelen));
+    return (__syscall((quad_t)SYS_getlogin, namebuf, namelen));
 }
 
