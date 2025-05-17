@@ -44,7 +44,7 @@ const char 	*__strsignal(int , char *, size_t); /* TODO: Resolve  */
 char 		*__dtoa(double, int, int, int *, int *, char **);
 int 		__sysctl(int *, unsigned int, void *, size_t *, void *, size_t);
 
-int 		_getlogin(char *, u_int);
+int 		__getlogin(char *, u_int);
 void 		_resumecontext(void);
 int 		_swapcontext(ucontext_t *, const ucontext_t *);
 
