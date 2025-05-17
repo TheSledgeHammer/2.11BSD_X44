@@ -50,7 +50,7 @@
 //#ifdef _REENTRANT
 //#define fileno				_fileno
 //#endif
-#define fork					_fork
+//#define fork					_fork
 #define fseeko					_fseeko
 #define ftello					_ftello
 #define getcontext				_getcontext
