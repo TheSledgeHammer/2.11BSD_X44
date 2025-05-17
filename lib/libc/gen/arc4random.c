@@ -40,6 +40,14 @@
 #define KEYSTREAM_ONLY
 #include "chacha_private.h"
 
+#ifdef __weak_alias
+__weak_alias(arc4random,_arc4random)
+__weak_alias(arc4random_addrandom,_arc4random_addrandom)
+__weak_alias(arc4random_buf,_arc4random_buf)
+__weak_alias(arc4random_stir,_arc4random_stir)
+__weak_alias(arc4random_uniform,_arc4random_uniform)
+#endif
+
 #ifdef __GNUC__
 #define inline __inline
 #else				/* !__GNUC__ */

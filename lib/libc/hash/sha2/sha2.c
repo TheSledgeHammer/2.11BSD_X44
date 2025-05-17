@@ -237,6 +237,7 @@ static const u_int64_t sha512_initial_hash_value[8] = {
 	0x5be0cd19137e2179ULL
 };
 
+#if !defined(_KERNEL) && !defined(_STANDALONE)
 #if defined(__weak_alias)
 __weak_alias(SHA224_Init,_SHA224_Init) 
 __weak_alias(SHA224_Update,_SHA224_Update)
@@ -257,6 +258,7 @@ __weak_alias(SHA512_Init,_SHA512_Init)
 __weak_alias(SHA512_Update,_SHA512_Update)
 __weak_alias(SHA512_Final,_SHA512_Final)
 __weak_alias(SHA512_Transform,_SHA512_Transform)
+#endif
 #endif
 
 /*** SHA-256: *********************************************************/

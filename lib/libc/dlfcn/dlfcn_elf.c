@@ -67,6 +67,7 @@ __weak_alias(dladdr,___dladdr)
 __weak_alias(dlinfo,___dlinfo)
 __weak_alias(dl_iterate_phdr,___dl_iterate_phdr)
 
+
 __weak_alias(__dlopen,___dlopen)
 __weak_alias(__dlclose,___dlclose)
 __weak_alias(__dlsym,___dlsym)
@@ -126,7 +127,6 @@ dlvsym(void *handle, const char *name, const char *version)
 __aconst char *
 dlerror()
 {
-
 	return dlfcn_error;
 }
 

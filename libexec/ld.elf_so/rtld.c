@@ -100,6 +100,7 @@ Search_Path    *_rtld_default_paths;
 Search_Path    *_rtld_paths;
 
 Library_Xform  *_rtld_xforms;
+static void    *auxinfo;
 
 /*
  * Global declarations normally provided by crt0.
@@ -287,6 +288,12 @@ _rtld_exit(void)
 	dbg(("rtld_exit()"));
 
 	_rtld_call_fini_functions(1);
+}
+
+void *
+_dlauxinfo(void)
+{
+	return auxinfo;
 }
 
 /*

@@ -54,6 +54,7 @@ __RCSID("$NetBSD: sha3.c,v 1.2 2020/05/30 18:40:28 riastradh Exp $");
 #include "keccak.h"
 
 /* XXX Disabled for now -- these will be libc-private.  */
+#if 0 && !defined(_KERNEL) && !defined(_STANDALONE)
 #ifdef __weak_alias
 __weak_alias(SHA3_224_Init,_SHA3_224_Init)
 __weak_alias(SHA3_224_Update,_SHA3_224_Update)
@@ -75,6 +76,7 @@ __weak_alias(SHAKE256_Init,_SHAKE256_Init)
 __weak_alias(SHAKE256_Update,_SHAKE256_Update)
 __weak_alias(SHAKE256_Final,_SHAKE256_Final)
 #endif	/* __weak_alias */
+#endif	/* kernel/standalone */
 
 #define	MIN(a,b)	((a) < (b) ? (a) : (b))
 #define	arraycount(a)	(sizeof(a)/sizeof((a)[0]))

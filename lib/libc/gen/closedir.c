@@ -50,6 +50,10 @@ static char sccsid[] = "@(#)closedir.c	5.2 (Berkeley) 3/9/86";
 #include <stdlib.h>
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(closedir,_closedir)
+#endif
+
 /*
  * close a directory.
  */

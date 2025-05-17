@@ -38,7 +38,14 @@ static char sccsid[] = "@(#)errlst.c	8.2 (Berkeley) 11/16/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <stdio.h>
+
+#ifdef __weak_alias
+__weak_alias(sys_errlist, _sys_errlist)
+__weak_alias(sys_nerr, _sys_nerr)
+#endif
 
 const char *sys_errlist[] = {
 	"Undefined error: 0",					/*  0 - ENOERROR */

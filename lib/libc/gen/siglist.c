@@ -42,7 +42,16 @@ static char sccsid[] = "@(#)siglist.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <signal.h>
+
+#ifdef __weak_alias
+__weak_alias(sys_signame, _sys_signame)
+__weak_alias(sys_siglist, _sys_siglist)
+__weak_alias(sys_nsigname, _sys_nsigname)
+__weak_alias(sys_nsiglist, _sys_nsiglist)
+#endif
 
 const char *sys_signame[NSIG] = {
 		"Signal 0",

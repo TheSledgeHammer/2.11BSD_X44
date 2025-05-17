@@ -6,7 +6,13 @@ static char sccsid[] = "@(#)gcvt.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <stdlib.h>
+
+#ifdef __weak_alias
+__weak_alias(gcvt, _gcvt)
+#endif
 
 /*
  * gcvt  - Floating output conversion to

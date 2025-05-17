@@ -155,7 +155,7 @@ typedef struct __siobuf {
 } FILE;
 
 __BEGIN_DECLS
-extern FILE __iob[3];
+//extern FILE __iob[3];
 extern FILE __sF[3];
 __END_DECLS
 
@@ -229,9 +229,9 @@ __END_DECLS
 #define	SEEK_END	2		/* set file offset to EOF plus offset */
 #endif
 
-#define	stdin		(&__iob[0])
-#define	stdout		(&__iob[1])
-#define	stderr		(&__iob[2])
+#define	stdin		(&__sF[0])
+#define	stdout		(&__sF[1])
+#define	stderr		(&__sF[2])
 
 /*
  * Functions defined in ANSI C standard.

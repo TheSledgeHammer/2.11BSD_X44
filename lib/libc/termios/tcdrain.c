@@ -38,6 +38,8 @@ __RCSID("$NetBSD: tcdrain.c,v 1.8 2003/08/07 16:44:13 agc Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/ioctl.h>
 
 #include <assert.h>

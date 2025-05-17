@@ -254,6 +254,7 @@ int dladdr(const void *, Dl_info *);
 int dlinfo(void *, int, void *);
 int dl_iterate_phdr(int (*)(struct dl_phdr_info *, size_t, void *),
     void *);
+void *_dlauxinfo(void) __pure;
 
 /* These aren't exported */
 void _rtld_error(const char *, ...)

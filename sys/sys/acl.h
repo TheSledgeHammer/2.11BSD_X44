@@ -106,6 +106,7 @@ enum acl_cmdops {
 #define	ACL_POSIX1E_BITS	(ACL_PERM_EXEC | ACL_PERM_WRITE | ACL_PERM_READ)
 
 #ifndef _KERNEL
+#if defined(_ACL_PRIVATE)
 __BEGIN_DECLS
 /* kernel acl syscall callback */
 int acl_file(int, char *, acl_type_t, struct acl *);
@@ -124,5 +125,6 @@ int acl_delete_fd(int, acl_type_t);
 int acl_aclcheck_fd(int, acl_type_t, struct acl *);
 __END_DECLS
 #endif /* !_KERNEL */
+#endif /* _ACL_PRIVATE */
 
 #endif /* _SYS_ACL_H_ */
