@@ -49,7 +49,9 @@ static char sccsid[] = "@(#)getlogin.c	8.1.1 (2.11BSD) 1997.9.23";
 
 #include "extern.h"
 
-//extern int _getlogin(char *, u_int);
+#ifdef __weak_alias
+__weak_alias(getlogin,_getlogin)
+#endif
 
 static int	_logname_valid;		/* known to setlogin() */
 
@@ -59,7 +61,7 @@ getlogin(void)
 	static char logname[MAXLOGNAME + 1];
 
 	if (_logname_valid == 0) {
-		if (_getlogin(logname, sizeof(logname) - 1) < 0)
+		if (__getlogin(logname, sizeof(logname) - 1) < 0)
 			return ((char *)NULL);
 		_logname_valid = 1;
 	}
