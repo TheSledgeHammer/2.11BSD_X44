@@ -34,7 +34,7 @@
 #include "namespace.h"
 
 #ifdef __weak_alias
-__weak_alias(fork, _fork)
+__weak_alias(_fork, fork)
 #endif
 
 #include <unistd.h>
