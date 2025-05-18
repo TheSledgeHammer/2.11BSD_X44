@@ -35,6 +35,7 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/sysctl.h>
+
 #include <sys/mman.h>
 
 #define KEYSTREAM_ONLY
@@ -458,6 +459,12 @@ arc4random(void)
 
 	chacha_random_u32(&rs, &val);
 	return (val);
+}
+
+void
+arc4random_stir(void)
+{
+	chacha_stir_if_needed(&rs);
 }
 
 void

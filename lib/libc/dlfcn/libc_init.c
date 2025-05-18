@@ -139,7 +139,7 @@ crt0_prestart(struct ps_strings *ps_strings)
 	relocate_self(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr,  ps_strings->ps_nenvstr);
 #endif
 
-	if (ps_strings != (struct ps_strings *)0) {
+	if (ps_strings != (struct ps_strings*) 0) {
 		__ps_strings = ps_strings;
-    	}
+	}
 }

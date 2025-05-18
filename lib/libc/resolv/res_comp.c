@@ -29,6 +29,18 @@ static char sccsid[] = "@(#)res_comp.c	6.13 (Berkeley) 3/13/88";
 #include <string.h>
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(dn_expand,_dn_expand)
+__weak_alias(dn_comp,__dn_comp)
+#if 0
+__weak_alias(dn_skipname,__dn_skipname)
+__weak_alias(res_hnok,__res_hnok)
+__weak_alias(res_ownok,__res_ownok)
+__weak_alias(res_mailok,__res_mailok)
+__weak_alias(res_dnok,__res_dnok)
+#endif
+#endif
+
 static int dn_find(u_char *, u_char *, u_char **, u_char **);
 
 /*

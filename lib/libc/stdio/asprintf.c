@@ -32,12 +32,18 @@
 __RCSID("$NetBSD: asprintf.c,v 1.7 2000/01/21 19:51:36 mycroft Exp $");
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <errno.h>
 #include <stdarg.h>
+
+#ifdef __weak_alias
+__weak_alias(asprintf,_asprintf)
+#endif
 
 int
 asprintf(char **str, char const *fmt, ...)

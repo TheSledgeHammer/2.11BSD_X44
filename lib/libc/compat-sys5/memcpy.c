@@ -41,3 +41,28 @@ memcpy(t, f, n)
     }
 	return (t);
 }
+
+void *
+#if __STDC__
+memmove(void *s1, const void *s2, size_t n)
+#else
+memmove(s1, s2, n)
+	register void *s1;
+	register const void *s2;
+	register size_t n;
+#endif
+{
+	const char *f = s2;
+	char *t = s1;
+
+	if (f < t) {
+		f += n;
+		t += n;
+		while (n-- > 0)
+			*--t = *--f;
+	} else {
+		while (n-- > 0)
+			*t++ = *f++;
+	}
+	return s1;
+}

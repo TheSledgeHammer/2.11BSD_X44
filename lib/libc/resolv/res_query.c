@@ -86,6 +86,16 @@ static char sccsid[] = "@(#)res_query.c	5.3 (Berkeley) 4/5/88";
 
 #include "res_private.h"
 
+
+#if 0
+#ifdef __weak_alias
+__weak_alias(res_nquery,_res_nquery)
+__weak_alias(res_nsearch,_res_nsearch)
+__weak_alias(res_nquerydomain,__res_nquerydomain)
+__weak_alias(hostalias,__hostalias)
+#endif
+#endif
+
 #if PACKETSZ > 1024
 #define MAXPACKET	PACKETSZ
 #else

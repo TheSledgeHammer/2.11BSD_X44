@@ -38,10 +38,17 @@ static char sccsid[] = "@(#)strerror.c	8.1.1 (2.11BSD) 1996/3/15";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <errlst.h>
 #include <errno.h>
 #include <string.h>
 #include <limits.h>
+
+#ifdef __weak_alias
+__weak_alias(strerror,_strerror)
+__weak_alias(strerror_r,_strerror_r)
+#endif
 
 #define	EBUFSIZE	40
 #define	UPREFIX		"Unknown error: "

@@ -24,6 +24,10 @@ static char sccsid[] = "@(#)opendir.c	5.2 (Berkeley) 3/9/86";
 #include <stdlib.h>
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(opendir,_opendir)
+#endif
+
 /*
  * open a directory.
  */

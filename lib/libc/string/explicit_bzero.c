@@ -9,6 +9,8 @@
  * Public domain.
  */
 
+#include "namespace.h"
+
 #include <string.h>
 
 #ifdef __weak_alias

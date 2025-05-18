@@ -126,6 +126,12 @@ static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 
 #include "res_private.h"
 
+#if 0
+#ifdef __weak_alias
+__weak_alias(res_nsend,__res_nsend)
+#endif
+#endif
+
 #define EXT(res) ((res)->u)
 
 static struct sockaddr no_addr;

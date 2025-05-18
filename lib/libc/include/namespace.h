@@ -263,6 +263,7 @@
 #define dirname					_dirname
 #define dn_expand				_dn_expand
 #define drand48					_drand48
+#define ecvt					_ecvt
 #define endfsent				_endfsent
 #define endgrent				_endgrent
 #define endhostent				_endhostent
@@ -288,6 +289,9 @@
 #define execlp					_execlp
 #define execv					_execv
 #define execvp					_execvp
+#define explicit_bzero			_explicit_bzero
+#define explicit_memset			_explicit_memset
+#define fcvt					_fcvt
 #define fdopen					_fdopen
 #define fgetln					_fgetln
 #define flockfile				_flockfile
@@ -377,6 +381,7 @@
 #define globfree				_globfree
 #define gmtime_r				_gmtime_r
 #define group_from_gid				_group_from_gid
+#define gcvt					_gcvt
 #define heapsort				_heapsort
 #define herror					_herror
 #define hes_error				_hes_error
@@ -534,6 +539,7 @@
 #define setprotoent				_setprotoent
 #define setprotoent_r				_setprotoent_r
 #define setpwent				_setpwent
+#define setpwfile				_setpwfile
 #define setrpcent				_setrpcent
 #define setservent				_setservent
 #define setservent_r				_setservent_r
@@ -644,6 +650,7 @@
 #define wait					_wait
 #define wait3					_wait3
 #define waitpid					_waitpid
+#define wcsdup					_wcsdup
 #define xdr_accepted_reply			_xdr_accepted_reply
 #define xdr_array				_xdr_array
 #define xdr_authunix_parms			_xdr_authunix_parms

@@ -18,6 +18,7 @@ __RCSID("$NetBSD: wcsdup.c,v 1.6 2022/03/12 17:31:40 christos Exp $");
 #endif /* LIBC_SCCS and not lint */ 
 
 #include "namespace.h"
+
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
