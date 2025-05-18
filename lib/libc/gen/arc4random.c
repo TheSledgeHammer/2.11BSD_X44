@@ -464,7 +464,7 @@ arc4random(void)
 void
 arc4random_stir(void)
 {
-	chacha_stir_if_needed(&rs);
+	chacha_stir(&rs);
 }
 
 void
