@@ -90,7 +90,6 @@
 #ifdef __weak_alias
 #define MD2Data					_MD2Data
 #define MD2End					_MD2End
-#define MD2FileChunk				_MD2FileChunk
 #define MD2File					_MD2File
 #define MD2Final				_MD2Final
 #define MD2Init					_MD2Init
