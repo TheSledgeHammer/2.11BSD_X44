@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)memcpy.c	5.2 (Berkeley) 86/03/09";
 
 #if defined(_FORTIFY_SOURCE)
 #undef memcpy
+#undef memmove
 #endif
 
 void *
