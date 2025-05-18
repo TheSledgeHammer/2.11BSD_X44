@@ -20,11 +20,12 @@ typedef struct MD2Context {
 __BEGIN_DECLS
 void	MD2Init(MD2_CTX *);
 void	MD2Update(MD2_CTX *, const unsigned char *, unsigned int);
-void	MD2Final(unsigned char[16], MD2_CTX *);
+void	MD2Final(unsigned char[MD2_DIGEST_LENGTH], MD2_CTX *);
+#ifndef _KERNEL
 char	*MD2End(MD2_CTX *, char *);
 char	*MD2File(const char *, char *);
-char	*MD2FileChunk(const char *, char *, off_t, off_t);
-char	*MD2Data(const unsigned char *, size_t, char *);
+char	*MD2Data(const unsigned char *, unsigned int, char *);
+#endif /* _KERNEL */
 __END_DECLS
 
 #endif /* _MD2_H_ */
