@@ -83,7 +83,7 @@ int
 #if __STDC__
 rand_r(unsigned int *seed)
 #else
-rand_r(x)
+rand_r(seed)
 	unsigned int *seed;
 #endif
 {
