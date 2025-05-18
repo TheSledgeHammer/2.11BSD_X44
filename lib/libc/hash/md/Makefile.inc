@@ -5,7 +5,7 @@
 # MD2/MD4/MD5 sources
 .PATH: ${ARCHDIR}/md ${.CURDIR}/hash/md
 
-#SRCS+=	md2.c md4c.c md5c.c
+SRCS+=	md2.c md4c.c md5c.c
 SRCS+=	md2hl.c md4hl.c md5hl.c
 
 MAN+= 	md2.3 md4.3 md5.3

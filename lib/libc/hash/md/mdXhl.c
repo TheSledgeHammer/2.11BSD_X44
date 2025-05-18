@@ -15,26 +15,41 @@
  * Modified April 29, 1997 by Jason R. Thorpe <thorpej@NetBSD.org>
  */
 
+#ifdef MDALGORITHM
+
 #if HAVE_NBTOOL_CONFIG_H
 #include "nbtool_config.h"
 #endif
 
+/*
+ * Do all the name mangling before we include "namespace.h"
+ */
 #define	CONCAT(x,y)	__CONCAT(x,y)
-#define	MDNAME(x)	CONCAT(MDALGORITHM,x)
+
+#ifndef MD_FNPREFIX
+#define MD_FNPREFIX     MDALGORITHM
+#endif /* !MD_FNPREFIX */
+
+#define	FNPREFIX(x)	    CONCAT(MD_FNPREFIX,x)
+#define	MD_CTX	        CONCAT(MDALGORITHM,_CTX)
+#define	MD_LEN	        CONCAT(MDALGORITHM,_DIGEST_LENGTH)
+#define	MD_STRLEN	    CONCAT(MDALGORITHM,_DIGEST_STRING_LENGTH)
+
+#define	MDNAME(x)	    CONCAT(MDALGORITHM,x)
 
 #if !defined(_KERNEL) && defined(__weak_alias) && !defined(HAVE_NBTOOL_CONFIG_H)
 #define	WA(a,b)	__weak_alias(a,b)
-WA(MDNAME(End),CONCAT(_,MDNAME(End)))
-WA(MDNAME(File),CONCAT(_,MDNAME(File)))
-WA(MDNAME(Data),CONCAT(_,MDNAME(Data)))
+WA(FNPREFIX(End),CONCAT(_,FNPREFIX(End)))
+WA(FNPREFIX(File),CONCAT(_,FNPREFIX(File)))
+WA(FNPREFIX(Data),CONCAT(_,FNPREFIX(Data)))
 #undef WA
 #endif
 
 #include "namespace.h"
 
 #include <sys/types.h>
-
 #include MDINCLUDE
+
 #include <assert.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -43,24 +58,22 @@ WA(MDNAME(Data),CONCAT(_,MDNAME(Data)))
 #include <unistd.h>
 
 char *
-MDNAME(End)(ctx, buf)
-	MDNAME(_CTX) *ctx;
-	char *buf;
+FNPREFIX(End)(MD_CTX *ctx, char *buf)
 {
 	int i;
-	unsigned char digest[16];
+	unsigned char digest[MD_LEN];
 	static const char hex[]="0123456789abcdef";
 
 	_DIAGASSERT(ctx != 0);
 
 	if (buf == NULL)
-		buf = malloc(33);
+		buf = malloc((size_t)MD_STRLEN);
 	if (buf == NULL)
 		return (NULL);
 
-	MDNAME(Final)(digest, ctx);
+	FNPREFIX(Final)(digest, ctx);
 
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < MD_LEN; i++) {
 		buf[i+i] = hex[(u_int32_t)digest[i] >> 4];
 		buf[i+i+1] = hex[digest[i] & 0x0f];
 	}
@@ -70,23 +83,23 @@ MDNAME(End)(ctx, buf)
 }
 
 char *
-MDNAME(File)(const char *filename, char *buf)
+FNPREFIX(File)(const char *filename, char *buf)
 {
 	unsigned char buffer[BUFSIZ];
-	MDNAME(_CTX) ctx;
+	MD_CTX ctx;
 	int f, j;
 	ssize_t i;
 
 	_DIAGASSERT(filename != 0);
 	/* buf may be NULL */
 
-	MDNAME(Init)(&ctx);
+	FNPREFIX(Init)(&ctx);
 	f = open(filename, O_RDONLY | O_CLOEXEC, 0666);
 	if (f < 0)
 		return NULL;
 
 	while ((i = read(f, buffer, sizeof(buffer))) > 0)
-		MDNAME(Update)(&ctx, buffer, (unsigned int)i);
+		FNPREFIX(Update)(&ctx, buffer, (unsigned int)i);
 
 	j = errno;
 	close(f);
@@ -95,17 +108,19 @@ MDNAME(File)(const char *filename, char *buf)
 	if (i < 0)
 		return NULL;
 
-	return (MDNAME(End)(&ctx, buf));
+	return (FNPREFIX(End)(&ctx, buf));
 }
 
 char *
-MDNAME(Data)(const unsigned char *data, unsigned int len, char *buf)
+FNPREFIX(Data)(const unsigned char *data, unsigned int len, char *buf)
 {
-	MDNAME(_CTX) ctx;
+	MD_CTX ctx;
 
 	_DIAGASSERT(data != 0);
 
-	MDNAME(Init)(&ctx);
-	MDNAME(Update)(&ctx, data, len);
-	return (MDNAME(End)(&ctx, buf));
+	FNPREFIX(Init)(&ctx);
+	FNPREFIX(Update)(&ctx, data, len);
+	return (FNPREFIX(End)(&ctx, buf));
 }
+
+#endif /* MDALGORITHM */

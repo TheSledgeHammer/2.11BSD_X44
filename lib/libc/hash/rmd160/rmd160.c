@@ -30,6 +30,10 @@
  * ftp://ftp.rsasecurity.com/pub/cryptobytes/crypto3n2.pdf
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 __RCSID("$NetBSD: rmd160.c,v 1.7 2015/04/21 12:47:33 riastradh Exp $");

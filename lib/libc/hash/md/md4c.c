@@ -113,11 +113,13 @@ static const unsigned char PADDING[64] = {
 	(a) = ROTATE_LEFT ((a), (s)); \
 }
 
-#if !defined(_KERNEL) && !defined(_STANDALONE) && defined(__weak_alias)
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+#if defined(__weak_alias)
 __weak_alias(MD4Init,_MD4Init)
 __weak_alias(MD4Update,_MD4Update)
 __weak_alias(MD4Final,_MD4Final)
 __weak_alias(MD4Transform,_MD4Transform)
+#endif
 #endif
 
 /*
@@ -144,7 +146,7 @@ MD4Init(MD4_CTX *context)		/* context */
  * context.
  */
 void
-MD4Update (MD4_CTX *context,		/* context */
+MD4Update(MD4_CTX *context,		/* context */
 	const unsigned char *input,	/* input block */
 	unsigned int inputLen)		/* length of input block */
 {
@@ -185,7 +187,7 @@ MD4Update (MD4_CTX *context,		/* context */
  * message digest and zeroing the context.
  */
 void
-MD4Final (unsigned char digest[16],	/* message digest */
+MD4Final(unsigned char digest[16],	/* message digest */
 	MD4_CTX *context)		/* context */
 {
 	unsigned char bits[8];
@@ -216,7 +218,7 @@ MD4Final (unsigned char digest[16],	/* message digest */
  * MD4 basic transformation.  Transforms state based on block.
  */
 static void
-MD4Transform (UINT4 state[4], const unsigned char block[64])
+MD4Transform(UINT4 state[4], const unsigned char block[64])
 {
 	UINT4 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 

@@ -10,14 +10,6 @@
 __RCSID("$NetBSD: md5hl.c,v 1.7 2005/09/26 03:01:41 christos Exp $");
 #endif /* LIBC_SCCS and not lint */
 
-#include "namespace.h"
-
-#if HAVE_NBTOOL_CONFIG_H
-#include <md5.h>
-#else
-#include <hash/md5.h>
-#endif
-
 #define	MDALGORITHM	MD5
 
 #if HAVE_NBTOOL_CONFIG_H

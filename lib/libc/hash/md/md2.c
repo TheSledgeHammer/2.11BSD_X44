@@ -41,7 +41,6 @@ __RCSID("$NetBSD: md2.c,v 1.7 2012/06/25 22:32:44 abs Exp $");
 #include "namespace.h"
 
 #include <sys/types.h>
-
 #include <assert.h>
 #include <string.h>
 
@@ -106,11 +105,13 @@ static const unsigned char *pad[] = {
  * XXX so it must remain so.
  */
 /*static*/ void MD2Transform(MD2_CTX *);
-#if !defined(_KERNEL) && !defined(_STANDALONE) && defined(__weak_alias)
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+#if defined(__weak_alias)
 __weak_alias(MD2Init,_MD2Init)
 __weak_alias(MD2Update,_MD2Update)
 __weak_alias(MD2Final,_MD2Final)
 __weak_alias(MD2Transform,_MD2Transform)
+#endif
 #endif
 
 void
