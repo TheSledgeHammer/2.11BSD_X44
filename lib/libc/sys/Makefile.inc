@@ -6,18 +6,20 @@
 # TODO: Fix compiler warning below:  
 # - relocation against SYS_ in read-only section '.text'
 # For the following:
-# - __syscall.S
 # - _resumecontext.c _swapcontext.c
 
 # modules with non-default implementations on at least one architecture:
 SRCS+=      	Ovfork.S brk.S exect.S fork.S pipe.S \
             	getcontext.S ptrace.S reboot.S \
             	sbrk.S setlogin.S sigpending.S \
-            	sigprocmask.S sigreturn.S syscall.S \
-				__syscall.S cerror.S
+            	sigprocmask.S sigreturn.S sigsuspend.S \
+                syscall.S __syscall.S cerror.S
 
+#acl_file.S acl_filedesc.S
 # glue to provide compatibility between GCC 1.X and 2.X
-GLUE+=          acl.c extattr.c ftruncate.c lseek.c mmap.c mpx.c \
+GLUE+=          acl_file.c acl_filedesc.c \
+                extattr_file.c extattr_filedesc.c \
+                ftruncate.c lseek.c mmap.c mpx.c \
 				truncate.c
 GLUENOERR+=		_fork.c _getcontext.c _getlogin.c
 
@@ -77,8 +79,8 @@ ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
 
 WEAKASM=        accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill.S \
                 open.S poll.S pselect.S read.S readlink.S readv.S recvfrom.S \
-                recvmsg.S select.S sendmsg.S sendto.S setcontext.S sysarch.S \
-                wait4.S write.S writev.S
+                recvmsg.S select.S sendmsg.S sendto.S setcontext.S \
+                sysarch.S wait4.S write.S writev.S
 
 NOERR=          getegid.S geteuid.S getgid.S getpgid.S getpid.S getpgrp.S \
 				getppid.S getsid.S getuid.S profil.S sigaction.S sync.S umask.S
