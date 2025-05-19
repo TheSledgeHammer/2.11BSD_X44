@@ -1,53 +1,40 @@
-include ../Make.inc
-include ../unix/Make.$(SYSNAME)
+#	$211BSD: Makefile,v 1.0 2025/05/19 19:27:27 Exp $
 
-PREFIX=/usr/local
-
-NUKEFILES=
-
-TGZFILES=
-
-CLEANFILES=
-
-LIB=libbio.a
+LIB= bio
+MAN= bio.3
 VERSION=2.0
-PORTPLACE=devel/libbio
-NAME=libbio
 
-OFILES=\
-	bbuffered.$O\
-	bfildes.$O\
-	bflush.$O\
-	bgetc.$O\
-	bgetd.$O\
-	bgetrune.$O\
-	binit.$O\
-	boffset.$O\
-	bprint.$O\
-	bvprint.$O\
-	bputc.$O\
-	bputrune.$O\
-	brdline.$O\
-	brdstr.$O\
-	bread.$O\
-	bseek.$O\
-	bwrite.$O\
+.include <bsd.own.mk>
 
-HFILES=\
-	bio.h\
+.include "../Makefile.inc"
 
-all: $(LIB)
+CPPFLAGS+= -I${PLAN9_LIBBIO}
+CPPFLAGS+= -I${PLAN9_LIBUTF}
+CPPFLAGS+= -I${PLAN9_LIBFMT}
 
-install: $(LIB)
-	mkdir -p $(PREFIX)/share/man/man3
-	install -m 0644 bio.3 $(PREFIX)/share/man/man3/bio.3
-	mkdir -p $(PREFIX)/include
-	install -m 0644 bio.h $(PREFIX)/include
-	mkdir -p $(PREFIX)/lib
-	install -m 0644 $(LIB) $(PREFIX)/lib/$(LIB)
+.PATH: ${PLAN9_LIBBIO}
+.PATH: ${PLAN9_LIBUTF}
+.PATH: ${PLAN9_LIBFMT}
 
-bcat: bcat.$O $(LIB)
-	$(CC) -o bcat bcat.$O $(LIB) -L/usr/local/lib -lfmt -lutf
+CFILES=\
+	bbuffered.c\
+	bfildes.c\
+	bflush.c\
+	bgetc.c\
+	bgetd.c\
+	bgetrune.c\
+	binit.c\
+	boffset.c\
+	bprint.c\
+	bvprint.c\
+	bputc.c\
+	bputrune.c\
+	brdline.c\
+	brdstr.c\
+	bread.c\
+	bseek.c\
+	bwrite.c\
 
-include ../Make.clib
-include ../unix/Make.package
+SRCS= ${CFILES}
+
+.include <bsd.lib.mk>

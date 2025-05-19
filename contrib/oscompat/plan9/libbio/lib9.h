@@ -9,17 +9,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#define OREAD		O_RDONLY
-#define OWRITE	O_WRONLY
+#include <lib9.h>
 
-#define	OCEXEC 0
-#define	ORCLOSE	0
-#define	OTRUNC	0
 
-#define nil ((void*)0)
-
-typedef long long vlong;
-typedef unsigned long long uvlong;
-
-#define seek(fd, offset, whence) lseek(fd, offset, whence)
-#define create(name, mode, perm) creat(name, perm)

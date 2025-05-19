@@ -5,6 +5,4 @@
 #include <unistd.h>
 #include <stddef.h>
 
-#define	exits(x)	exit(x && *x ? 1 : 0)
-
-#define	nil	0
+#include <lib9.h>

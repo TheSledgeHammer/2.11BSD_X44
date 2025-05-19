@@ -1,56 +1,39 @@
-include ../Make.inc
-include ../unix/Make.$(SYSNAME)
+#	$211BSD: Makefile,v 1.0 2025/05/19 19:27:27 Exp $
 
-PREFIX=/usr/local
-
-NUKEFILES=
-
-TGZFILES=
-
-CLEANFILES=
-
-LIB=libutf.a
+LIB= utf
+MAN= rune.3 runestrcat.3 utf.7
 VERSION=2.0
-PORTPLACE=devel/libutf
-NAME=libutf
 
-OFILES=\
-	rune.$O\
-	runestrcat.$O\
-	runestrchr.$O\
-	runestrcmp.$O\
-	runestrcpy.$O\
-	runestrdup.$O\
-	runestrlen.$O\
-	runestrecpy.$O\
-	runestrncat.$O\
-	runestrncmp.$O\
-	runestrncpy.$O\
-	runestrrchr.$O\
-	runestrstr.$O\
-	runetype.$O\
-	utfecpy.$O\
-	utflen.$O\
-	utfnlen.$O\
-	utfrrune.$O\
-	utfrune.$O\
-	utfutf.$O\
+.include <bsd.own.mk>
 
-HFILES=\
-	utf.h\
+.include "../Makefile.inc"
 
-all: $(LIB)
+CPPFLAGS+= -I${PLAN9_LIBUTF}
 
-install: $(LIB)
-	mkdir -p $(PREFIX)/share/man/man3 $(PREFIX)/man/man7
-	install -c -m 0644 isalpharune.3 $(PREFIX)/share/man/man3/isalpharune.3
-	install -c -m 0644 utf.7 $(PREFIX)/man/man7/utf.7
-	install -c -m 0644 rune.3 $(PREFIX)/share/man/man3/rune.3
-	install -c -m 0644 runestrcat.3 $(PREFIX)/share/man/man3/runestrcat.3
-	mkdir -p $(PREFIX)/include
-	install -c -m 0644 utf.h $(PREFIX)/include/utf.h
-	mkdir -p $(PREFIX)/lib
-	install -c -m 0644 $(LIB) $(PREFIX)/lib/$(LIB)
+.PATH: ${PLAN9_LIBUTF}
 
-include ../Make.clib
-include ../unix/Make.package
+CFILES=\
+	rune.c\
+	runestrcat.c\
+	runestrchr.c\
+	runestrcmp.c\
+	runestrcpy.c\
+	runestrdup.c\
+	runestrlen.c\
+	runestrecpy.c\
+	runestrncat.c\
+	runestrncmp.c\
+	runestrncpy.c\
+	runestrrchr.c\
+	runestrstr.c\
+	runetype.c\
+	utfecpy.c\
+	utflen.c\
+	utfnlen.c\
+	utfrrune.c\
+	utfrune.c\
+	utfutf.c\
+
+SRCS= ${CFILES}
+
+.include <bsd.lib.mk>

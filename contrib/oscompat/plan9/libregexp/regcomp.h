@@ -3,6 +3,8 @@
  */
 #define uchar __reuchar
 typedef unsigned char uchar;
+
+#undef nelem
 #define nelem(x) (sizeof(x)/sizeof((x)[0]))
 
 #define NSUBEXP 32

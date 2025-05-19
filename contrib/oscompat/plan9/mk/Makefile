@@ -1,66 +1,55 @@
-include ../Make.inc
-include ../unix/Make.$(SYSNAME)
+#	$211BSD: Makefile,v 1.0 2025/05/19 19:27:27 Exp $
 
-PREFIX=/usr/local
+.include <bsd.own.mk>
 
-NUKEFILES=
-
-TGZFILES=
-
-CLEANFILES=
-
-TARG=mk
+TARG= mk
+PROG= ${TARG}
+MAN= mk.1
 VERSION=2.0
-PORTPLACE=devel/mk
-NAME=mk
-CLEANFILES=mk mk.1a
 
-OFILES=\
-	arc.$O\
-	archive.$O\
-	bufblock.$O\
-	env.$O\
-	file.$O\
-	graph.$O\
-	job.$O\
-	lex.$O\
-	main.$O\
-	match.$O\
-	mk.$O\
-	parse.$O\
-	recipe.$O\
-	rc.$O\
-	rule.$O\
-	run.$O\
-	sh.$O\
-	shell.$O\
-	shprint.$O\
-	symtab.$O\
-	var.$O\
-	varsub.$O\
-	word.$O\
-	unix.$O\
+.include "../Makefile.inc"
 
-HFILES=\
-	mk.h\
-	fns.h\
+CPPFLAGS+= -I${PLAN9_LIBREGEXP}
+CPPFLAGS+= -I${PLAN9_LIBBIO}
+CPPFLAGS+= -I${PLAN9_LIBUTF}
+CPPFLAGS+= -I${PLAN9_LIBFMT}
 
-all: $(TARG)
+.PATH: ${PLAN9_LIBREGEXP}
+.PATH: ${PLAN9_LIBBIO}
+.PATH: ${PLAN9_LIBUTF}
+.PATH: ${PLAN9_LIBFMT}
 
-TGZFILES+=mk.pdf
+LDADD+=	-lregexp -lbio -lfmt -lutf
+DPADD+=	${LIBREGEXP} ${LIBBIO} ${LIBFMT} ${LIBUTF}
 
-install: $(TARG)
-	mkdir -p $(PREFIX)/bin
-	install -m 0755 mk $(PREFIX)/bin/mk
-	cat mk.1 | sed 's;DOCPREFIX;$(PREFIX);g' >mk.1a
-	mkdir -p $(PREFIX)/man/man1
-	install -m 0644 mk.1a $(PREFIX)/man/man1/mk.1
-	mkdir -p $(PREFIX)/doc
-	install -m 0644 mk.pdf $(PREFIX)/doc/mk.pdf
+CFILES=\
+	arc.c\
+	archive.c\
+	bufblock.c\
+	env.c\
+	file.c\
+	graph.c\
+	job.c\
+	lex.c\
+	main.c\
+	match.c\
+	mk.c\
+	parse.c\
+	recipe.c\
+	rc.c\
+	rule.c\
+	run.c\
+	sh.c\
+	shell.c\
+	shprint.c\
+	symtab.c\
+	var.c\
+	varsub.c\
+	word.c\
+	unix.c\
 
-include ../Make.clib
-include ../unix/Make.package
+SRCS= ${CFILES}
 
-$(TARG): $(OFILES)
-	$(CC) -o $(TARG) $(OFILES) -L$(PREFIX)/lib -L../libutf -L../libfmt -L../libbio -L../libregexp -lregexp9 -lbio -lfmt -lutf
+COPTS.match.c = -Wno-stringop-overflow
 
+.include <bsd.prog.mk>

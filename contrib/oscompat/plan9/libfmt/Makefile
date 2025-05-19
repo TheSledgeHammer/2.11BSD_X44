@@ -1,81 +1,62 @@
-include ../Make.inc
-include ../unix/Make.$(SYSNAME)
+#	$211BSD: Makefile,v 1.0 2025/05/19 19:27:27 Exp $
 
-PREFIX=/usr/local
-
-NUKEFILES=
-
-TGZFILES=
-
-CLEANFILES=
-
-LIB=libfmt.a
+LIB= fmt
+MAN= fmtinstall.3 print.3
 VERSION=2.0
-PORTPLACE=devel/libfmt
-NAME=libfmt
+
+.include <bsd.own.mk>
+
+.include "../Makefile.inc"
+
+CPPFLAGS+= -I${PLAN9_LIBUTF}
+CPPFLAGS+= -I${PLAN9_LIBFMT}
+
+.PATH: ${PLAN9_LIBUTF}
+.PATH: ${PLAN9_LIBFMT}
+
+NAN=\
+    	nan64.c
 
 NUM=\
-	charstod.$O\
-	pow10.$O\
+	charstod.c\
+	pow10.c\
 
-OFILES=\
-	dofmt.$O\
-	dorfmt.$O\
-	errfmt.$O\
-	fltfmt.$O\
-	fmt.$O\
-	fmtfd.$O\
-	fmtfdflush.$O\
-	fmtlocale.$O\
-	fmtlock.$O\
-	fmtnull.$O\
-	fmtprint.$O\
-	fmtquote.$O\
-	fmtrune.$O\
-	fmtstr.$O\
-	fmtvprint.$O\
-	fprint.$O\
-	print.$O\
-	runefmtstr.$O\
-	runeseprint.$O\
-	runesmprint.$O\
-	runesnprint.$O\
-	runesprint.$O\
-	runevseprint.$O\
-	runevsmprint.$O\
-	runevsnprint.$O\
-	seprint.$O\
-	smprint.$O\
-	snprint.$O\
-	sprint.$O\
-	strtod.$O\
-	vfprint.$O\
-	vseprint.$O\
-	vsmprint.$O\
-	vsnprint.$O\
-	$(NUM)\
-	$(NAN)\
+CFILES=\
+	dofmt.c\
+	dorfmt.c\
+	errfmt.c\
+	fltfmt.c\
+	fmt.c\
+	fmtfd.c\
+	fmtfdflush.c\
+	fmtlocale.c\
+	fmtlock.c\
+	fmtnull.c\
+	fmtprint.c\
+	fmtquote.c\
+	fmtrune.c\
+	fmtstr.c\
+	fmtvprint.c\
+	fprint.c\
+	print.c\
+	runefmtstr.c\
+	runeseprint.c\
+	runesmprint.c\
+	runesnprint.c\
+	runesprint.c\
+	runevseprint.c\
+	runevsmprint.c\
+	runevsnprint.c\
+	seprint.c\
+	smprint.c\
+	snprint.c\
+	sprint.c\
+	strtod.c\
+	vfprint.c\
+	vseprint.c\
+	vsmprint.c\
+	vsnprint.c\
 
-HFILES=\
-	fmtdef.h\
-	fmt.h\
+SRCS= ${CFILES} ${NUM} ${NAN}
 
-all: $(LIB)
-
-install: $(LIB)
-	test -d $(PREFIX)/share/man/man3 || mkdir -p $(PREFIX)/share/man/man3
-	install -m 0644 print.3 $(PREFIX)/share/man/man3/print.3
-	install -m 0644 fmtinstall.3 $(PREFIX)/share/man/man3/fmtinstall.3
-	mkdir -p $(PREFIX)/include
-	install -m 0644 fmt.h $(PREFIX)/include/fmt.h
-	mkdir -p $(PREFIX)/lib
-	install -m 0644 $(LIB) $(PREFIX)/lib/$(LIB)
-
-$(NAN).$O: nan.h
-strtod.$O: nan.h
-
-test: $(LIB) test.$O
-	$(CC) -o test test.$O $(LIB) -L$(PREFIX)/lib -lutf
-
-include ../Make.clib
-include ../unix/Make.package
+.include <bsd.lib.mk>

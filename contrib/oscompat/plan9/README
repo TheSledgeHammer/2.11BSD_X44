@@ -3,3 +3,31 @@ Please send comments to rsc@swtch.com.
 
 https://9fans.github.io/plan9port/unix
 
+Additional Notes:
+- Files have been modified or moved for a both source 
+  and compiler integration into 2.11BSD. As listed below.
+
+Modified Files:
+- libutf: 
+    - plan9.h
+    - utfdef.h
+    - utf.h -> include/utf.h
+- libfmt:
+    - plan9.h
+    - fmt.h -> include/fmt.h
+- libbio:
+    - lib.9.h
+    - bio.h -> include/bio.h
+- libregexp:
+    - lib.9.h
+    - regcomp.h
+    - regexp9.h -> include/regexp9.h
+
+Additional Files/Folders:
+- include:
+    - bio.h
+    - fmt.h
+    - regexp9.h
+    - utf.h
+    - lib9.h: Contains most definitions
+    needed by all currently included libraries.

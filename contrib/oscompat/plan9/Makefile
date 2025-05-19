@@ -1,8 +1,26 @@
-all:
-	for i in libutf libfmt libbio libregexp mk; do (cd $$i; make); done; ls -l mk/mk
+#	$211BSD: Makefile,v 1.0 2025/05/19 19:27:27 Exp $
 
-clean:
-	for i in libutf libfmt libbio libregexp mk; do (cd $$i; make clean); done
+.include <bsd.own.mk>
+.include "plan9.mk"
 
-install:
-	for i in libutf libfmt libbio libregexp mk; do (cd $$i; make install); done
+.if (${MKLIBUTF} != "no")
+SUBDIR+= libutf
+.endif
+
+.if (${MKLIBFMT} != "no")
+SUBDIR+= libutf libfmt
+.endif
+
+.if (${MKLIBBIO} != "no")
+SUBDIR+= libutf libfmt libbio
+.endif
+
+.if (${MKLIBREGEXP} != "no")
+SUBDIR+= libutf libfmt libregexp
+.endif
+
+.if (${MKMK} != "no")
+SUBDIR+= libutf libfmt libregexp
+.endif
+
+.include <bsd.subdir.mk>

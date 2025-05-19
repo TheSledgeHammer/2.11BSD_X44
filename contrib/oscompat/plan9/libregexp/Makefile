@@ -1,48 +1,30 @@
-include ../Make.inc
-include ../unix/Make.$(SYSNAME)
+#	$211BSD: Makefile,v 1.0 2025/05/19 19:27:27 Exp $
 
-PREFIX=/usr/local
-
-NUKEFILES=
-
-TGZFILES=
-
-CLEANFILES=
-
-LIB=libregexp9.a
+LIB= regexp9
+MAN= regexp9.3 regexp9.7
 VERSION=2.0
-PORTPLACE=devel/libregexp9
-NAME=libregexp9
 
-OFILES=\
-	regcomp.$O\
-	regerror.$O\
-	regexec.$O\
-	regsub.$O\
-	regaux.$O\
-	rregexec.$O\
-	rregsub.$O\
+.include <bsd.own.mk>
 
-HFILES=\
-	regexp9.h\
-	regcomp.h\
+.include "../Makefile.inc"
 
-all: $(LIB)
+CPPFLAGS+= -I${PLAN9_LIBREGEXP}
+CPPFLAGS+= -I${PLAN9_LIBUTF}
+CPPFLAGS+= -I${PLAN9_LIBFMT}
 
-install: $(LIB)
-	mkdir -p $(PREFIX)/share/man/man3 $(PREFIX)/man/man7
-	install -m 0644 regexp9.3 $(PREFIX)/share/man/man3/regexp9.3
-	install -m 0644 regexp9.7 $(PREFIX)/man/man7/regexp9.7
-	mkdir -p $(PREFIX)/lib
-	install -m 0644 $(LIB) $(PREFIX)/lib/$(LIB)
-	mkdir -p $(PREFIX)/include
-	install -m 0644 regexp9.h $(PREFIX)/include/regexp9.h
+.PATH: ${PLAN9_LIBREGEXP}
+.PATH: ${PLAN9_LIBUTF}
+.PATH: ${PLAN9_LIBFMT}
 
-test: test.$O $(LIB)
-	$(CC) -o test test.$O $(LIB) -L/usr/local/lib -lfmt -lutf
+CFILES=\
+	regcomp.c\
+	regerror.c\
+	regexec.c\
+	regsub.c\
+	regaux.c\
+	rregexec.c\
+	rregsub.c\
 
-test2: test2.$O $(LIB)
-	$(CC) -o test2 test2.$O $(LIB) -L/usr/local/lib -lfmt -lutf
+SRCS= ${CFILES}
 
-include ../Make.clib
-include ../unix/Make.package
+.include <bsd.lib.mk>
