@@ -150,18 +150,23 @@ typedef struct __res_state_ext 		*res_state_ext;
 extern struct __res_state _res;
 
 /* Private routines shared between libc/net, named, nslookup and others. */
-#define	__dn_skipname		dn_skipname
-#define	__fp_query		fp_query
-#define	__hostalias		hostalias
-#define	__putlong		putlong
-#define	__putshort		putshort
-#define __p_query		p_query
-#define __p_cdname		p_cdname
-#define __p_rr			p_rr
-#define __p_class		p_class
-#define __p_type		p_type
+#define	dn_skipname	    	__dn_skipname
+#define fp_resstat      	__fp_resstat
+#define	fp_query		__fp_query
+#define	hostalias		__hostalias
+#define	putlong		    	__putlong
+#define	putshort		__putshort
+#define p_fqname        	__p_fqname
+#define p_query		    	__p_query
+#define p_cdname		__p_cdname
+#define p_rr			__p_rr
+#define p_class		    	__p_class
+#define p_type		    	__p_type
+#define p_option        	__p_option
 
-#define __res_close		res_close
+#define res_close		__res_close
+#define	res_querydomain		__res_querydomain
+#define res_send		__res_send
 
 __BEGIN_DECLS
 void 		fp_resstat(res_state, FILE *);
