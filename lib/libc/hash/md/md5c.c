@@ -83,7 +83,7 @@ typedef u_int32_t UINT4;
 __weak_alias(MD5Init,_MD5Init)
 __weak_alias(MD5Update,_MD5Update)
 __weak_alias(MD5Final,_MD5Final)
-//__weak_alias(MD5Transform,_MD5Transform)
+__weak_alias(MD5Transform,_MD5Transform)
 #endif
 #endif
 
