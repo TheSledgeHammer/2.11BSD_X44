@@ -52,8 +52,10 @@ struct atexit *__atexit;	/* points to head of LIFO stack */
 
 #ifdef _REENTRANT
 /* ..and a mutex to protect it all. */
-static mutex_t atexit_mutex;
+mutex_t __atexit_mutex;
 #endif /* _REENTRANT */
+
+void atexit_init(void) __attribute__ ((visibility("hidden")));
 
 static int atexit_alloc(struct atexit_fun *);
 static int common_atexit(void (*)(void), void (*)(void *), void *, void *);
@@ -68,12 +70,12 @@ atexit_alloc(fun)
 	static struct atexit __atexit0;	/* one guaranteed table */
 	register struct atexit *p;
 
-	mutex_lock(&atexit_mutex);
+	mutex_lock(&__atexit_mutex);
 	if ((p = __atexit) == NULL) {
 		__atexit = p = &__atexit0;
 	} else if (p->ind >= ATEXIT_SIZE) {
 		if ((p = malloc(sizeof(*p))) == NULL) {
-			mutex_unlock(&atexit_mutex);
+			mutex_unlock(&__atexit_mutex);
 			return (-1);
 		}
 		p->ind = 0;
@@ -81,7 +83,7 @@ atexit_alloc(fun)
 		__atexit = p;
 	}
 	p->fns[p->ind++] = *fun;
-	mutex_unlock(&atexit_mutex);
+	mutex_unlock(&__atexit_mutex);
 	return (0);
 }
 
@@ -94,13 +96,13 @@ common_atexit(func, cxa_func, arg, dso)
 	struct atexit_fun fun;
 	int error;
 
-	mutex_lock(&atexit_mutex);
+	mutex_lock(&__atexit_mutex);
 	fun.fun_atexit = func;
 	fun.fun_cxa_atexit = cxa_func;
 	fun.fun_arg = arg;
 	fun.fun_dso = dso;
 	error = atexit_alloc(&fun);
-	mutex_unlock(&atexit_mutex);
+	mutex_unlock(&__atexit_mutex);
 	return (error);
 }
 
@@ -120,6 +122,17 @@ __cxa_atexit(cxa_func, arg, dso)
 }
 
 void
+atexit_init(void)
+{
+#ifdef _REENTRANT
+	mutexattr_t atexit_mutex_attr;
+	mutexattr_init(&atexit_mutex_attr);
+	mutexattr_settype(&atexit_mutex_attr, PTHREAD_MUTEX_RECURSIVE);
+    mutex_init(&__atexit_mutex, &atexit_mutex_attr);
+#endif
+}
+
+void
 __cxa_finalize(dso)
 	void *dso;
 {
@@ -127,7 +140,7 @@ __cxa_finalize(dso)
 	struct atexit_fun fun;
 	int n;
 
-	mutex_lock(&atexit_mutex);
+	mutex_lock(&__atexit_mutex);
 	for (p = __atexit; p; p = p->next) {
 		for (n = p->ind; --n >= 0;) {
 			fun = p->fns[n];
@@ -144,5 +157,5 @@ __cxa_finalize(dso)
 			}
 		}
 	}
-	mutex_unlock(&atexit_mutex);
+	mutex_unlock(&__atexit_mutex);
 }

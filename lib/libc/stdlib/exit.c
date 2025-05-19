@@ -41,11 +41,12 @@ static char sccsid[] = "@(#)exit.c	5.2 (Berkeley) 3/9/86";
 #include <stdlib.h>
 #include <unistd.h>
 
+#ifdef _LIBC
 #include "reentrant.h"
 #include "atexit.h"
-
-extern void (*__cleanup)(void);
-//void (*__cleanup)();
+#endif
+//extern void (*__cleanup)(void);
+void (*__cleanup)(void);
 
 /*
  * Exit, flushing stdio buffers if necessary.
