@@ -4,7 +4,7 @@ Please send comments to rsc@swtch.com.
 https://9fans.github.io/plan9port/unix
 
 Additional Notes:
-- Files have been modified or moved for a both source 
+- Files have been modified or moved for both source 
   and compiler integration into 2.11BSD. As listed below.
 
 Modified Files:
@@ -16,10 +16,10 @@ Modified Files:
     - plan9.h
     - fmt.h -> include/fmt.h
 - libbio:
-    - lib.9.h
+    - lib9.h
     - bio.h -> include/bio.h
 - libregexp:
-    - lib.9.h
+    - lib9.h
     - regcomp.h
     - regexp9.h -> include/regexp9.h
 
