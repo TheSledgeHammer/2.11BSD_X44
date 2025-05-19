@@ -104,13 +104,13 @@ static const unsigned char *pad[] = {
  * XXX This should not be visible, but due to an accident, it is
  * XXX so it must remain so.
  */
-static void MD2Transform(MD2_CTX *);
+/*static*/ void MD2Transform(MD2_CTX *);
 #if !defined(_KERNEL) && !defined(_STANDALONE)
 #if defined(__weak_alias)
 __weak_alias(MD2Init,_MD2Init)
 __weak_alias(MD2Update,_MD2Update)
 __weak_alias(MD2Final,_MD2Final)
-//__weak_alias(MD2Transform,_MD2Transform)
+__weak_alias(MD2Transform,_MD2Transform)
 #endif
 #endif
 
@@ -166,7 +166,7 @@ MD2Final(unsigned char digest[16], MD2_CTX *context)
 	MD2Init(context);
 }
 
-static void
+/*static*/ void
 MD2Transform(MD2_CTX *context)
 {
 	u_int32_t l, j, k, t;
