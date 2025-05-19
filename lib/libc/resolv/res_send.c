@@ -129,6 +129,7 @@ static char sccsid[] = "@(#)res_send.c	6.19.1 (Berkeley) 6/27/94";
 #if 0
 #ifdef __weak_alias
 __weak_alias(res_nsend,__res_nsend)
+__weak_alias(res_nclose,__res_nclose)
 #endif
 #endif
 

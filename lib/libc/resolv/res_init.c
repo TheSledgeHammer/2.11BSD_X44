@@ -97,11 +97,21 @@ static char sccsid[] = "@(#)res_init.c	6.8 (Berkeley) 3/7/88";
 #include <string.h>
 #include <unistd.h>
 
+
 #define HAVE_MD5
 #include <hash/md5.h>
 
 #ifndef _MD5_H_
 # define _MD5_H_ 1	/* make sure we do not include rsaref md5.h file */
+#endif
+
+#ifdef __weak_alias
+__weak_alias(res_init,_res_init)
+__weak_alias(res_mkquery,_res_mkquery)
+__weak_alias(res_query,_res_query)
+__weak_alias(res_search,_res_search)
+__weak_alias(res_send,__res_send)
+__weak_alias(res_querydomain,__res_querydomain)
 #endif
 
 #include "res_private.h"

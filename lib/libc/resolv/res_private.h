@@ -36,6 +36,17 @@
 #ifndef _RES_PRIVATE_H_
 #define _RES_PRIVATE_H_
 
+#define __res_ninit         res_ninit
+#define __res_nmkquery      res_nmkquery
+#define __res_nquery        res_nquery
+#define __res_nquerydomain  res_nquerydomain
+#define __res_nsearch       res_nsearch
+#define __res_nsend         res_nsend
+#define __res_nclose        res_nclose
+#define __res_ndestroy      res_ndestroy
+#define __res_rndinit       res_rndinit
+#define __res_nrandomid     res_nrandomid
+
 __BEGIN_DECLS
 int	    res_ninit(res_state);
 int		res_nmkquery(res_state, int, const char *, int, int, const u_char *, int, const u_char *, u_char *, int);

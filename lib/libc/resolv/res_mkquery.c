@@ -71,6 +71,7 @@ static char rcsid[] = "$Id: res_mkquery.c,v 4.9.1.2 1993/05/17 10:00:01 vixie Ex
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/types.h>
 #include <netinet/in.h>
 
@@ -82,6 +83,12 @@ static char rcsid[] = "$Id: res_mkquery.c,v 4.9.1.2 1993/05/17 10:00:01 vixie Ex
 #include <resolv.h>
 
 #include "res_private.h"
+
+#if 0
+#ifdef __weak_alias
+__weak_alias(res_nmkquery,_res_nmkquery)
+#endif
+#endif
 
 static struct rrec *res_newrr(const u_char *);
 static int res_rr_nmkquery(res_state, int, const char *, int, int, const u_char *, int, struct rrec *, u_char *, int);

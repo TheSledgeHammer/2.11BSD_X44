@@ -111,6 +111,8 @@ static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) 3/7/88";
 #define DEBUG
 #endif
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -130,6 +132,21 @@ static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) 3/7/88";
 #include <time.h>
 
 #include "res_private.h"
+
+#if 0
+#ifdef __weak_alias
+__weak_alias(p_query,__p_query)
+__weak_alias(p_cdname,__p_cdname)
+__weak_alias(p_rr,__p_rr)
+__weak_alias(p_fqname,__p_fqname)
+__weak_alias(p_class,__p_class)
+__weak_alias(p_type,__p_type)
+__weak_alias(p_name,__p_name)
+__weak_alias(p_option,__p_option)
+__weak_alias(fp_query,__fp_query)
+__weak_alias(fp_resstat,__fp_resstat)
+#endif
+#endif
 
 const char *_res_opcodes[] = {
 		"QUERY",
@@ -296,7 +313,6 @@ p_query(msg)
 {
 	fp_query(msg, stdout);
 }
-
 
 /*
  * Print the current options.
