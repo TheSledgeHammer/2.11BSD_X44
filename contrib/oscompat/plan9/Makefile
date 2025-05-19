@@ -20,7 +20,7 @@ SUBDIR+= libutf libfmt libregexp
 .endif
 
 .if (${MKMK} != "no")
-SUBDIR+= libutf libfmt libregexp
+SUBDIR+= libutf libfmt libbio libregexp
 .endif
 
 .include <bsd.subdir.mk>
