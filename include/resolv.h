@@ -150,6 +150,7 @@ typedef struct __res_state_ext 		*res_state_ext;
 extern struct __res_state _res;
 
 /* Private routines shared between libc/net, named, nslookup and others. */
+#define	dn_comp	        	__dn_comp
 #define	dn_skipname	    	__dn_skipname
 #define fp_resstat      	__fp_resstat
 #define	fp_query		__fp_query
