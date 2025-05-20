@@ -112,6 +112,9 @@ __weak_alias(res_query,_res_query)
 __weak_alias(res_search,_res_search)
 __weak_alias(res_send,__res_send)
 __weak_alias(res_querydomain,__res_querydomain)
+#if 0
+__weak_alias(hostalias,__hostalias)
+#endif
 #endif
 
 #include "res_private.h"
@@ -236,6 +239,17 @@ res_querydomain(name, domain, class, type, answer, anslen)
 
 	statp = &_res;
 	return (res_nquerydomain(statp, name, domain, class, type, answer, anslen));
+}
+
+char *
+hostalias(name)
+	const char *name;
+{
+	res_state statp;
+	static char abuf[MAXDNAME];
+
+	statp = &_res;
+	return (__UNCONST(res_hostalias(statp, name, abuf, sizeof(abuf))));
 }
 
 /*

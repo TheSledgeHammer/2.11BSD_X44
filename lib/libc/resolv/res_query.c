@@ -92,7 +92,7 @@ static char sccsid[] = "@(#)res_query.c	5.3 (Berkeley) 4/5/88";
 __weak_alias(res_nquery,_res_nquery)
 __weak_alias(res_nsearch,_res_nsearch)
 __weak_alias(res_nquerydomain,__res_nquerydomain)
-__weak_alias(hostalias,__hostalias)
+__weak_alias(res_hostalias,__res_hostalias)
 #endif
 #endif
 
@@ -289,16 +289,29 @@ res_nquerydomain(statp, name, domain, class, type, answer, anslen)
 	return (res_nquery(statp, longname, class, type, answer, anslen));
 }
 
-char *
-hostalias(name)
-	register const char *name;
+const char *
+res_hostalias(statp, name, dst, size)
+	res_state statp;
+	const char *name;
+	char *dst;
+	size_t size;
 {
 	register char *C1, *C2;
 	FILE *fp;
 	char *file;
 	char buf[BUFSIZ];
-	static char abuf[MAXDNAME];
 
+	if (statp->options & RES_NOALIASES) {
+		return (NULL);
+	}
+
+	/*
+	 * forbid hostaliases for setuid binary, due to possible security
+	 * breach.
+	 */
+	if (issetugid()) {
+		return (NULL);
+	}
 	file = getenv("HOSTALIASES");
 	if (file == NULL || (fp = fopen(file, "r")) == NULL)
 		return (NULL);
@@ -316,10 +329,11 @@ hostalias(name)
 				break;
 			for (C2 = C1 + 1; *C2 && !isspace(*C2); ++C2)
 				;
-			abuf[sizeof(abuf) - 1] = *C2 = '\0';
-			(void) strncpy(abuf, C1, sizeof(abuf) - 1);
+			*C2 = '\0';
+			strncpy(dst, C1, size - 1);
+			dst[size -1] = '\0';
 			fclose(fp);
-			return (abuf);
+			return (dst);
 		}
 	}
 	fclose(fp);

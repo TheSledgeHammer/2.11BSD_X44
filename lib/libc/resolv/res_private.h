@@ -40,6 +40,7 @@
 #define __res_nmkquery      res_nmkquery
 #define __res_nquery        res_nquery
 #define __res_nquerydomain  res_nquerydomain
+#define __res_hostalias  	res_hostalias
 #define __res_nsearch       res_nsearch
 #define __res_nsend         res_nsend
 #define __res_nclose        res_nclose
@@ -52,6 +53,7 @@ int	    res_ninit(res_state);
 int		res_nmkquery(res_state, int, const char *, int, int, const u_char *, int, const u_char *, u_char *, int);
 int		res_nquery(res_state, char *, int, int, u_char *, int);
 int		res_nquerydomain(res_state, char *, char *, int, int, u_char *, int);
+const char *res_hostalias(res_state, const char *, char *, size_t);
 int		res_nsearch(res_state, char *, int, int, u_char *, int);
 int		res_nsend(res_state, const u_char *, int, u_char *, int);
 void	res_nclose(res_state);

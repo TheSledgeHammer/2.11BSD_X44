@@ -122,6 +122,8 @@ typedef struct __res_state_ext 		*res_state_ext;
 #define RES_STAYOPEN		0x00000100		/* Keep TCP socket open */
 #define RES_DNSRCH		0x00000200		/* search up local domain tree */
 
+#define	RES_NOALIASES		0x00001000		/*%< shuts off HOSTALIASES feature */
+
 #define RES_ROTATE		0x00004000		/* rotate ns list after each query */
 #define	RES_BLAST		0x00020000		/* blast all recursive servers */
 
