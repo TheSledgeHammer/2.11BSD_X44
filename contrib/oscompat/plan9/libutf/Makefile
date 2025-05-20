@@ -8,8 +8,10 @@ VERSION=2.0
 
 .include "../Makefile.inc"
 
+CPPFLAGS+= -I${PLAN9_INCLUDE}
 CPPFLAGS+= -I${PLAN9_LIBUTF}
 
+.PATH: ${PLAN9_INCLUDE}
 .PATH: ${PLAN9_LIBUTF}
 
 CFILES=\
@@ -35,5 +37,8 @@ CFILES=\
 	utfutf.c\
 
 SRCS= ${CFILES}
+
+INCS+=    lib9.h utf.h
+INCSDIR=  /usr/include
 
 .include <bsd.lib.mk>
