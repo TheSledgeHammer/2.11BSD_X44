@@ -8,9 +8,11 @@ VERSION=2.0
 
 .include "../Makefile.inc"
 
+CPPFLAGS+= -I${PLAN9_INCLUDE}
 CPPFLAGS+= -I${PLAN9_LIBUTF}
 CPPFLAGS+= -I${PLAN9_LIBFMT}
 
+.PATH: ${PLAN9_INCLUDE}
 .PATH: ${PLAN9_LIBUTF}
 .PATH: ${PLAN9_LIBFMT}
 
@@ -58,5 +60,8 @@ CFILES=\
 	vsnprint.c\
 
 SRCS= ${CFILES} ${NUM} ${NAN}
+
+INCS+=    fmt.h
+INCSDIR=  /usr/include
 
 .include <bsd.lib.mk>
