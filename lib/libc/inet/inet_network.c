@@ -11,10 +11,15 @@ static char sccsid[] = "@(#)inet_network.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <ctype.h>
 #include <arpa/inet.h>
+
+#ifdef __weak_alias
+__weak_alias(inet_network, _inet_network)
+#endif
 
 /*
  * Internet network address interpretation routine.

@@ -336,6 +336,7 @@
 #define gethostent				_gethostent
 #define gethostname				_gethostname
 #define getifaddrs				_getifaddrs
+#define getline					_getline
 #define getloadavg				_getloadavg
 #define getlogin				_getlogin
 #define getmntinfo				_getmntinfo

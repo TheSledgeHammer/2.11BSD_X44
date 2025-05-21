@@ -38,9 +38,14 @@ static char sccsid[] = "@(#)inet_netof.c	5.7 (Berkeley) 2/24/91";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#ifdef __weak_alias
+__weak_alias(inet_netof, _inet_netof)
+#endif
 
 /*
  * Return the network number from an internet

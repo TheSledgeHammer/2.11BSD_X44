@@ -38,7 +38,7 @@ RUN_SGTTY?= 1
 .endif
 
 SRCS+=	alarm.c arc4random.c assert.c basename.c closedir.c confstr.c ctermid.c daemon.c devname.c  	\
-        dirname.c disklabel.c err.c errlst.c execvp.c fabs.c fnmatch.c fstab.c fts.c gcvt.c 		\
+        dirname.c disklabel.c err.c errlst.c errno.c execvp.c fabs.c fnmatch.c fstab.c fts.c gcvt.c 		\
 	getbsize.c getcap.c getcwd.c getdevpath.c getdomainname.c getentropy.c getgrent_r.c getlogin.c        \
         getgrouplist.c gethostname.c getpagesize.c getpass.c getpwent_r.c getloadavg.c getmntinfo.c   	\
         getnetgrent.c getttyent.c getttynam.c getusershell.c getvfsbyname.c getwd.c glob.c          	\

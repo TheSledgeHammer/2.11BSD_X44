@@ -1,11 +1,11 @@
-/*	$NetBSD: servent.h,v 1.3 2008/04/28 20:23:00 martin Exp $	*/
+/*	$NetBSD: _errno.c,v 1.14 2024/01/20 14:52:47 christos Exp $	*/
 
 /*-
- * Copyright (c) 2004 The NetBSD Foundation, Inc.
+ * Copyright (c) 1996 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Christos Zoulas.
+ * by J.T. Conklin.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,21 +29,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+__RCSID("$NetBSD: _errno.c,v 1.14 2024/01/20 14:52:47 christos Exp $");
+#endif /* LIBC_SCCS and not lint */
 
-struct servent_data {
-	FILE *servf;
-	void *db;
-	struct servent serv;
-	char **aliases;
-	size_t maxaliases;
-	int stayopen;
-	char *line;
-	//void *dummy;
-};
+#include "reentrant.h"
+#include <errno.h>
+#include <stdlib.h>
 
-struct servent	*getservent_r(struct servent *, struct servent_data *);
-struct servent	*getservbyname_r(const char *, const char *, struct servent *, struct servent_data *);
-struct servent	*getservbyport_r(int, const char *, struct servent *, struct servent_data *);
-void setservent_r(int, struct servent_data *);
-void endservent_r(struct servent_data *);
+int *
+__errno(void)
+{
+	int *_errno;
+
+#ifdef _REENTRANT
+	if (__isthreaded == 0) {
+		_errno = &errno;
+	} else {
+		_errno = thr_errno();
+	}
+#else
+	_errno = &errno;
+#endif
+	return (_errno);
+}

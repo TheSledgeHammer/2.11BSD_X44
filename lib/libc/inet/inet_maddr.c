@@ -44,9 +44,14 @@ __RCSID("$NetBSD: inet_makeaddr.c,v 1.15 2003/08/07 16:43:11 agc Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#ifdef __weak_alias
+__weak_alias(inet_makeaddr,_inet_makeaddr)
+#endif
 
 /*
  * Formulate an Internet address from network + host.  Used in
