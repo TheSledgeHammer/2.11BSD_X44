@@ -163,11 +163,16 @@ static int
 _grs_start(state)
 	struct group_storage *state;
 {
-	if (state->fp) {
+	int rval;
+
+	if (state->fp == NULL) {
+		state->fp = fopen(_PATH_GROUP, "r");
+		rval = NS_UNAVAIL;
+	} else {
 		rewind(state->fp);
-		return (NS_SUCCESS);
+		rval = NS_SUCCESS;
 	}
-	return ((state->fp == fopen(_PATH_GROUP, "r")) ? NS_SUCCESS : NS_UNAVAIL);
+	return (rval);
 }
 
 static int

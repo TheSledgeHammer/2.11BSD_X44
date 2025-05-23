@@ -1,4 +1,4 @@
-/*	$NetBSD: servent.h,v 1.3 2008/04/28 20:23:00 martin Exp $	*/
+/*	$NetBSD: protoent.h,v 1.3 2024/01/20 14:52:48 christos Exp $	*/
 
 /*-
  * Copyright (c) 2004 The NetBSD Foundation, Inc.
@@ -31,8 +31,8 @@
 
 #include <stdio.h>
 
-struct servent_data {
-	FILE *servf;
+struct protoent_data {
+	FILE *protof;
 	char **aliases;
 	size_t maxaliases;
 	int stayopen;
@@ -41,14 +41,14 @@ struct servent_data {
 	//char *line;
 };
 
-#define _GETSENT_R_SIZE_MAX 1024
+#define _GETPENT_R_SIZE_MAX 	1024
 
-extern struct servent_data 	_svs_servd;
-extern struct servent 		_svs_serv;
-extern char 				_svs_servbuf[_GETSENT_R_SIZE_MAX];
+extern struct protoent_data 	_pvs_protod;
+extern struct protoent 			_pvs_proto;
+extern char 					_pvs_protobuf[_GETPENT_R_SIZE_MAX];
 
-struct servent	*getservent_r(struct servent *, struct servent_data *, char *, size_t, struct servent **);
-struct servent	*getservbyname_r(struct servent *, struct servent_data *, const char *, const char *, char *, size_t, struct servent **);
-struct servent	*getservbyport_r(struct servent *, struct servent_data *, int, const char *, char *, size_t, struct servent **);
-void setservent_r(int, struct servent_data *);
-void endservent_r(struct servent_data *);
+int  getprotoent_r(struct protoent *, struct protoent_data *, char *, size_t, struct protoent **);
+int	 getprotobyname_r(struct protoent *, struct protoent_data *, const char *, char *, size_t, struct protoent **);
+int  getprotobynumber_r(struct protoent *, struct protoent_data *, int, char *, size_t, struct protoent **);
+void setprotoent_r(int, struct protoent_data *);
+void endprotoent_r(struct protoent_data *);

@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)getprotoent.c	5.3 (Berkeley) 5/19/86";
 
 #include <sys/types.h>
 #include <sys/socket.h>
+
 #include <ctype.h>
 #include <netdb.h>
 #include <stdio.h>
