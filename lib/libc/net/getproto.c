@@ -82,7 +82,7 @@ struct protoent *
 getprotobynumber(proto)
 	register int proto;
 {
-	register struct protoent *p;
+	struct protoent *p;
 	int rval;
 
 	rval = getprotobynumber_r(&_pvs_proto, &_pvs_protod, proto, _pvs_protobuf, sizeof(_pvs_protobuf), &p);
