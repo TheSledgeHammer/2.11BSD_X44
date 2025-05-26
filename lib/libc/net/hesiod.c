@@ -187,7 +187,10 @@ hesiod_end(context)
  *	name which is to be resolved.
  */
 char *
-hesiod_to_bind(void *context, const char *name, const char *type)
+hesiod_to_bind(context, name, type)
+	void *context;
+	const char *name;
+	const char *type;
 {
 	struct hesiod_p *ctx = (struct hesiod_p *) context;
 	char		 bindname[MAXDNAME], *p, *ret, **rhs_list = NULL;
@@ -547,7 +550,7 @@ static void	 *context;
 static int	  errval = HES_ER_UNINIT;
 
 int
-hes_init()
+hes_init(void)
 {
 	init_context();
 	return errval;
@@ -600,7 +603,7 @@ hes_resolve(name, type)
 }
 
 int
-hes_error()
+hes_error(void)
 {
 	return errval;
 }
@@ -613,7 +616,7 @@ hes_free(hp)
 }
 
 static int
-init_context()
+init_context(void)
 {
 	if (!inited) {
 		inited = 1;
@@ -627,7 +630,7 @@ init_context()
 }
 
 static void
-translate_errors()
+translate_errors(void)
 {
 	switch (errno) {
 	case ENOENT:

@@ -74,34 +74,39 @@
 /*
  * currently implemented databases
  */
-#define NSDB_HOSTS			"hosts"
-#define NSDB_GROUP			"group"
+#define NSDB_HOSTS		"hosts"
+#define NSDB_GROUP		"group"
 #define NSDB_GROUP_COMPAT	"group_compat"
 #define NSDB_NETGROUP		"netgroup"
 #define NSDB_NETWORKS		"networks"
-#define NSDB_PASSWD			"passwd"
+#define NSDB_PASSWD		"passwd"
 #define NSDB_PASSWD_COMPAT	"passwd_compat"
-#define NSDB_SHELLS			"shells"
+#define NSDB_SHELLS		"shells"
 
 /*
  * suggested databases to implement
  */
 #define NSDB_ALIASES		"aliases"
-#define NSDB_AUTH			"auth"
+#define NSDB_AUTH		"auth"
 #define NSDB_AUTOMOUNT		"automount"
 #define NSDB_BOOTPARAMS		"bootparams"
-#define NSDB_ETHERS			"ethers"
+#define NSDB_ETHERS		"ethers"
 #define NSDB_EXPORTS		"exports"
 #define NSDB_NETMASKS		"netmasks"
-#define NSDB_PHONES			"phones"
+#define NSDB_PHONES		"phones"
 #define NSDB_PRINTCAP		"printcap"
 #define NSDB_PROTOCOLS		"protocols"
-#define NSDB_REMOTE			"remote"
-#define NSDB_RPC			"rpc"
+#define NSDB_REMOTE		"remote"
+#define NSDB_RPC		"rpc"
 #define NSDB_SENDMAILVARS	"sendmailvars"
 #define NSDB_SERVICES		"services"
 #define NSDB_TERMCAP		"termcap"
-#define NSDB_TTYS			"ttys"
+#define NSDB_TTYS		"ttys"
+
+/*
+ * ns_dtab `callback' function signature.
+ */
+typedef	int (*nss_method)(void *, void *, va_list);
 
 /*
  * ns_dtab - `nsswitch dispatch table'
@@ -109,7 +114,7 @@
  */
 typedef struct {
 	const char	 *src;
-	int		(*callback)(void *, void *, va_list);
+	nss_method	 callback;
 	void		 *cb_data;
 } ns_dtab;
 
@@ -162,9 +167,9 @@ extern const ns_src __nsdefaultsrc[];
  * name and a list of ns_src's containing the source information.
  */
 typedef struct {
-	const char	*name;		/* name of database */
-	ns_src		*srclist;	/* list of sources */
-	int		 srclistsize;	/* size of srclist */
+	const char	*name;			/* name of database */
+	ns_src		*srclist;		/* list of sources */
+	int		srclistsize;		/* size of srclist */
 } ns_dbt;
 
 #endif /* _NS_PRIVATE */

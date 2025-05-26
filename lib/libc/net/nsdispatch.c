@@ -66,35 +66,30 @@ extern	int	 _nsyyparse(void);
 __weak_alias(nsdispatch,_nsdispatch)
 #endif
 
-
 /*
  * default sourcelist: `files'
  */
 const ns_src __nsdefaultsrc[] = {
-	{ NSSRC_FILES, NS_SUCCESS },
-	{ 0 },
+		{ NSSRC_FILES, NS_SUCCESS },
+		{ 0 },
 };
 
-
-static	int			 _nsmapsize = 0;
-static	ns_dbt			*_nsmap = NULL;
+static	int	_nsmapsize = 0;
+static	ns_dbt	*_nsmap = NULL;
 
 /*
  * size of dynamic array chunk for _nsmap and _nsmap[x].srclist
  */
 #define NSELEMSPERCHUNK		8
 
-
 int	_nscmp(const void *, const void *);
-
 
 int
 _nscmp(a, b)
 	const void *a;
 	const void *b;
 {
-	return (strcasecmp(((const ns_dbt *)a)->name,
-	    ((const ns_dbt *)b)->name));
+	return (strcasecmp(((const ns_dbt*) a)->name, ((const ns_dbt*) b)->name));
 }
 
 
@@ -103,17 +98,17 @@ _nsdbtaddsrc(dbt, src)
 	ns_dbt		*dbt;
 	const ns_src	*src;
 {
-
 	_DIAGASSERT(dbt != NULL);
 	_DIAGASSERT(src != NULL);
 
 	if ((dbt->srclistsize % NSELEMSPERCHUNK) == 0) {
 		ns_src *new;
 
-		new = (ns_src *)realloc(dbt->srclist,
-		    (dbt->srclistsize + NSELEMSPERCHUNK) * sizeof(ns_src));
-		if (new == NULL)
+		new = (ns_src*) realloc(dbt->srclist,
+				(dbt->srclistsize + NSELEMSPERCHUNK) * sizeof(ns_src));
+		if (new == NULL) {
 			return (-1);
+		}
 		dbt->srclist = new;
 	}
 	memmove(&dbt->srclist[dbt->srclistsize++], src, sizeof(ns_src));
@@ -130,22 +125,26 @@ _nsdbtdump(dbt)
 	_DIAGASSERT(dbt != NULL);
 
 	printf("%s (%d source%s):", dbt->name, dbt->srclistsize,
-	    dbt->srclistsize == 1 ? "" : "s");
+			dbt->srclistsize == 1 ? "" : "s");
 	for (i = 0; i < dbt->srclistsize; i++) {
 		printf(" %s", dbt->srclist[i].name);
-		if (!(dbt->srclist[i].flags &
-		    (NS_UNAVAIL|NS_NOTFOUND|NS_TRYAGAIN)) &&
-		    (dbt->srclist[i].flags & NS_SUCCESS))
+		if (!(dbt->srclist[i].flags & (NS_UNAVAIL | NS_NOTFOUND | NS_TRYAGAIN))
+				&& (dbt->srclist[i].flags & NS_SUCCESS)) {
 			continue;
+		}
 		printf(" [");
-		if (!(dbt->srclist[i].flags & NS_SUCCESS))
+		if (!(dbt->srclist[i].flags & NS_SUCCESS)) {
 			printf(" SUCCESS=continue");
-		if (dbt->srclist[i].flags & NS_UNAVAIL)
+		}
+		if (dbt->srclist[i].flags & NS_UNAVAIL) {
 			printf(" UNAVAIL=return");
-		if (dbt->srclist[i].flags & NS_NOTFOUND)
+		}
+		if (dbt->srclist[i].flags & NS_NOTFOUND) {
 			printf(" NOTFOUND=return");
-		if (dbt->srclist[i].flags & NS_TRYAGAIN)
+		}
+		if (dbt->srclist[i].flags & NS_TRYAGAIN) {
 			printf(" TRYAGAIN=return");
+		}
 		printf(" ]");
 	}
 	printf("\n");
@@ -166,9 +165,10 @@ _nsdbtget(name)
 	dbt.name = name;
 
 	if (confmod) {
-		if (stat(_PATH_NS_CONF, &statbuf) == -1)
+		if (stat(_PATH_NS_CONF, &statbuf) == -1) {
 			return (NULL);
-		if (confmod < statbuf.st_mtim) {
+		}
+		if (confmod < statbuf.st_mtime) {
 			int i, j;
 
 			for (i = 0; i < _nsmapsize; i++) {
@@ -178,32 +178,36 @@ _nsdbtget(name)
 						free(/*(void *)*/__UNCONST(_nsmap[i].srclist[j].name));
 					}
 				}
-				if (_nsmap[i].srclist)
+				if (_nsmap[i].srclist) {
 					free(_nsmap[i].srclist);
+				}
 				if (_nsmap[i].name) {
 					/*LINTED const cast*/
 					free(/*(void *)*/__UNCONST(_nsmap[i].name));
 				}
 			}
-			if (_nsmap)
+			if (_nsmap) {
 				free(_nsmap);
+			}
 			_nsmap = NULL;
 			_nsmapsize = 0;
 			confmod = 0;
 		}
 	}
 	if (!confmod) {
-		if (stat(_PATH_NS_CONF, &statbuf) == -1)
+		if (stat(_PATH_NS_CONF, &statbuf) == -1) {
 			return (NULL);
+		}
 		_nsyyin = fopen(_PATH_NS_CONF, "r");
-		if (_nsyyin == NULL)
+		if (_nsyyin == NULL) {
 			return (NULL);
+		}
 		_nsyyparse();
-		(void)fclose(_nsyyin);
-		qsort(_nsmap, (size_t)_nsmapsize, sizeof(ns_dbt), _nscmp);
-		confmod = statbuf.st_mtim;
+		(void) fclose(_nsyyin);
+		qsort(_nsmap, (size_t) _nsmapsize, sizeof(ns_dbt), _nscmp);
+		confmod = statbuf.st_mtime;
 	}
-	return (bsearch(&dbt, _nsmap, (size_t)_nsmapsize, sizeof(ns_dbt), _nscmp));
+	return (bsearch(&dbt, _nsmap, (size_t) _nsmapsize, sizeof(ns_dbt), _nscmp));
 }
 
 
@@ -217,9 +221,10 @@ _nsdbtput(dbt)
 
 	for (i = 0; i < _nsmapsize; i++) {
 		if (_nscmp(dbt, &_nsmap[i]) == 0) {
-					/* overwrite existing entry */
-			if (_nsmap[i].srclist != NULL)
+			/* overwrite existing entry */
+			if (_nsmap[i].srclist != NULL) {
 				free(_nsmap[i].srclist);
+			}
 			memmove(&_nsmap[i], dbt, sizeof(ns_dbt));
 			return (0);
 		}
@@ -228,10 +233,11 @@ _nsdbtput(dbt)
 	if ((_nsmapsize % NSELEMSPERCHUNK) == 0) {
 		ns_dbt *new;
 
-		new = (ns_dbt *)realloc(_nsmap,
-		    (_nsmapsize + NSELEMSPERCHUNK) * sizeof(ns_dbt));
-		if (new == NULL)
+		new = (ns_dbt*) realloc(_nsmap,
+				(_nsmapsize + NSELEMSPERCHUNK) * sizeof(ns_dbt));
+		if (new == NULL) {
 			return (-1);
+		}
 		_nsmap = new;
 	}
 	memmove(&_nsmap[_nsmapsize++], dbt, sizeof(ns_dbt));
@@ -251,8 +257,10 @@ nsdispatch(void *retval, const ns_dtab disp_tab[], const char *database, const c
 
 	_DIAGASSERT(database != NULL);
 	_DIAGASSERT(method != NULL);
-	if (database == NULL || method == NULL)
+
+	if (database == NULL || method == NULL) {
 		return (NS_UNAVAIL);
+	}
 
 	dbt = _nsdbtget(database);
 	if (dbt != NULL) {
@@ -261,21 +269,23 @@ nsdispatch(void *retval, const ns_dtab disp_tab[], const char *database, const c
 	} else {
 		srclist = defaults;
 		srclistsize = 0;
-		while (srclist[srclistsize].name != NULL)
+		while (srclist[srclistsize].name != NULL) {
 			srclistsize++;
+		}
 	}
 	result = 0;
 
 	for (i = 0; i < srclistsize; i++) {
-		for (curdisp = 0; disp_tab[curdisp].src != NULL; curdisp++)
-			if (strcasecmp(disp_tab[curdisp].src,
-			    srclist[i].name) == 0)
+		for (curdisp = 0; disp_tab[curdisp].src != NULL; curdisp++) {
+			if (strcasecmp(disp_tab[curdisp].src, srclist[i].name) == 0) {
 				break;
+			}
+		}
 		result = 0;
 		if (disp_tab[curdisp].callback) {
 			va_start(ap, defaults);
 			result = disp_tab[curdisp].callback(retval,
-			    disp_tab[curdisp].cb_data, ap);
+					disp_tab[curdisp].cb_data, ap);
 			va_end(ap);
 			if (result & srclist[i].flags) {
 				break;

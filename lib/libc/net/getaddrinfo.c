@@ -122,16 +122,34 @@ static const struct afd {
 	int a_scoped;
 } afdl [] = {
 #ifdef INET6
-	{PF_INET6, sizeof(struct in6_addr),
-	 sizeof(struct sockaddr_in6),
-	 offsetof(struct sockaddr_in6, sin6_addr),
-	 in6_addrany, in6_loopback, 1},
+		{
+				.a_af = PF_INET6,
+				.a_addrlen = sizeof(struct in6_addr),
+				.a_socklen = sizeof(struct sockaddr_in6),
+				.a_off = offsetof(struct sockaddr_in6, sin6_addr),
+				.a_addrany = in6_addrany,
+				.a_loopback = in6_loopback,
+				.a_scoped = 1,
+		},
 #endif
-	{PF_INET, sizeof(struct in_addr),
-	 sizeof(struct sockaddr_in),
-	 offsetof(struct sockaddr_in, sin_addr),
-	 in_addrany, in_loopback, 0},
-	{0, 0, 0, 0, NULL, NULL, 0},
+		{
+				.a_af = PF_INET,
+				.a_addrlen = sizeof(struct in_addr),
+				.a_socklen = sizeof(struct sockaddr_in),
+				.a_off = offsetof(struct sockaddr_in, sin_addr),
+				.a_addrany = in_addrany,
+				.a_loopback = in_loopback,
+				.a_scoped = 1,
+		},
+		{
+				.a_af = 0,
+				.a_addrlen = 0,
+				.a_socklen = 0,
+				.a_off = 0,
+				.a_addrany = NULL,
+				.a_loopback = NULL,
+				.a_scoped = 0,
+		},
 };
 
 struct explore {

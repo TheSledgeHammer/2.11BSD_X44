@@ -16,10 +16,9 @@
 
 SRCS+=	ethers.c getifaddrs.c getnbyaddr.c getnbyname.c getnent.c 	\
 		getpent.c getpname.c getproto.c getsbyname.c getsbyport.c 	\
-		getsent.c if_indextoname.c if_nameindex.c if_nametoindex.c 	\
-		ip6opt.c linkaddr.c rcmd.c recv.c rexec.c rthdr.c 			\
+		getsent.c ip6opt.c linkaddr.c rcmd.c recv.c rexec.c 		\
 		ruserpass.c send.c sockatmark.c
-#SRCS+=	nsdispatch.c nslexer.l nsparser.y
+SRCS+=	nsdispatch.c nslexer.l nsparser.y
 
 .if (${MKHESIOD} != "no")
 SRCS+=	hesiod.c
@@ -34,16 +33,17 @@ SRCS+=	getaddrinfo.c getnameinfo.c
 SRCS+=	ip6opt.c rthdr.c
 .endif
 SRCS+=	vars6.c
+SRCS+= 	if_indextoname.c if_nameindex.c if_nametoindex.c
 
-#LPREFIX=_nsyy
-#YPREFIX=_nsyy
-#YHEADER=1
+LPREFIX=_nsyy
+YPREFIX=_nsyy
+YHEADER=1
 
-#CLEANFILES+=nsparser.c nslexer.c nsparser.h
+CLEANFILES+=nsparser.c nslexer.c nsparser.h
 
-#nslexer.c: nslexer.l nsparser.h
-#	${_MKTARGET_LEX}
-#	${LEX.l} -t ${.IMPSRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' >${.TARGET}
+nslexer.c: nslexer.l nsparser.h
+	${_MKTARGET_LEX}
+	${LEX.l} -t ${.IMPSRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' >${.TARGET}
 
 .include "${ARCHDIR}/net/Makefile.inc"
 

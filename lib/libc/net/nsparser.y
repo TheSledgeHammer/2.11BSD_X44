@@ -57,7 +57,7 @@ static	void	_nsaddsrctomap(const char *);
 static	ns_dbt		curdbt;
 static	ns_src		cursrc;
 
-extern char *	_nsyytext;
+extern char *_nsyytext;
 extern int _nsyylineno;
 %}
 
