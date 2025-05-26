@@ -51,11 +51,9 @@ __RCSID("$NetBSD: nslexer.l,v 1.7 2004/01/25 16:38:15 lukem Exp $");
 
 #include "nsparser.h"
 
-#define YY_NO_UNPUT
-
 %}
 
-%option yylineno
+%option yylineno nounput noinput
 %option never-interactive
 
 BLANK		[ \t]
@@ -85,7 +83,7 @@ STRING		[a-zA-Z][a-zA-Z0-9_]*
 			size_t i;
 
 			if ((p = strdup(yytext)) == NULL) {
-				syslog(LOG_ERR, "libc nsdispatch: %m");
+				syslog(LOG_ERR, "libc nsdispatch: ");
 				return NL;
 			}
 
