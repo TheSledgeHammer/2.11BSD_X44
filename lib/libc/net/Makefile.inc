@@ -16,7 +16,7 @@
 
 SRCS+=	ethers.c getifaddrs.c getnbyaddr.c getnbyname.c getnent.c 	\
 	getpent_r.c getpname.c getproto.c getsbyname.c getsbyport.c 	\
-	getsent_r.c ip6opt.c linkaddr.c rcmd.c recv.c rexec.c 		\
+	getsent_r.c linkaddr.c rcmd.c recv.c rexec.c 			\
 	ruserpass.c send.c sockatmark.c
 SRCS+=	nsdispatch.c nslexer.l nsparser.y
 
