@@ -309,9 +309,11 @@ res_hostalias(statp, name, dst, size)
 	 * forbid hostaliases for setuid binary, due to possible security
 	 * breach.
 	 */
+	/*
 	if (issetugid()) {
 		return (NULL);
 	}
+	*/
 	file = getenv("HOSTALIASES");
 	if (file == NULL || (fp = fopen(file, "r")) == NULL)
 		return (NULL);
