@@ -193,11 +193,9 @@ getnameinfo_inet(sa, salen, host, hostlen, serv, servlen, flags)
 			sp = NULL;
 		else {
 			struct servent_data svd;
-			struct servent sv;
-
+            struct servent sv = _svs_serv;
 			(void)memset(&svd, 0, sizeof(svd));
-			sp = getservbyport_r(port,
-				(flags & NI_DGRAM) ? "udp" : "tcp", &sv, &svd);
+			(void)getservbyport_r(&sv, &svd, port, (flags & NI_DGRAM) ? "udp" : "tcp", _svs_servbuf, sizeof(_svs_servbuf), &sp);
 			endservent_r(&svd);
 		}
 		if (sp) {

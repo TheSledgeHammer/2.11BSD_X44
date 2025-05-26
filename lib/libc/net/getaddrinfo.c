@@ -954,7 +954,7 @@ get_port(const struct addrinfo *ai, const char *servname, int matchonly,
 			return EAI_SERVICE;
 		port = htons(port);
 	} else {
-		struct servent sv;
+		struct servent sv = _svs_serv;
 		if (ai->ai_flags & AI_NUMERICSERV)
 			return EAI_NONAME;
 
@@ -970,7 +970,7 @@ get_port(const struct addrinfo *ai, const char *servname, int matchonly,
 			break;
 		}
 
-		sp = getservbyname_r(servname, proto, &sv, svd);
+        (void)getservbyname_r(&sv, svd, servname, proto, _svs_servbuf, sizeof(_svs_servbuf), &sp);
 		if (sp == NULL)
 			return EAI_SERVICE;
 		port = sp->s_port;
