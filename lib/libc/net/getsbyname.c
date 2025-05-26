@@ -94,7 +94,7 @@ struct servent *
 getservbyname(name, proto)
 	const char *name, *proto;
 {
-	register struct servent *p;
+	struct servent *p;
 	int rval;
 
 	rval = getservbyname_r(&_svs_serv, &_svs_servd, name, proto, _svs_servbuf, sizeof(_svs_servbuf), &p);

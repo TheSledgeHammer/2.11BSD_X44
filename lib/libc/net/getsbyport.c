@@ -88,7 +88,7 @@ getservbyport(port, proto)
 	int port;
 	const char *proto;
 {
-	register struct servent *p;
+	struct servent *p;
 	int rval;
 
 	rval = getservbyport_r(&_svs_serv, &_svs_servd, port, proto, _svs_servbuf, sizeof(_svs_servbuf), &p);

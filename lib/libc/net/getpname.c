@@ -90,7 +90,7 @@ struct protoent *
 getprotobyname(name)
 	register const char *name;
 {
-	register struct protoent *p;
+	struct protoent *p;
 	int rval;
 
 	rval = getprotobyname_r(&_pvs_proto, &_pvs_protod, name, _pvs_protobuf, sizeof(_pvs_protobuf), &p);

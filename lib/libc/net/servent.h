@@ -47,8 +47,9 @@ extern struct servent_data 	_svs_servd;
 extern struct servent 		_svs_serv;
 extern char 				_svs_servbuf[_GETSENT_R_SIZE_MAX];
 
-struct servent	*getservent_r(struct servent *, struct servent_data *, char *, size_t, struct servent **);
-struct servent	*getservbyname_r(struct servent *, struct servent_data *, const char *, const char *, char *, size_t, struct servent **);
-struct servent	*getservbyport_r(struct servent *, struct servent_data *, int, const char *, char *, size_t, struct servent **);
+
+int getservent_r(struct servent *, struct servent_data *, char *, size_t, struct servent **);
+int getservbyname_r(struct servent *, struct servent_data *, const char *, const char *, char *, size_t, struct servent **);
+int getservbyport_r(struct servent *, struct servent_data *, int, const char *, char *, size_t, struct servent **);
 void setservent_r(int, struct servent_data *);
 void endservent_r(struct servent_data *);
