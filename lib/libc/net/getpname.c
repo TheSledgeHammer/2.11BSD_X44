@@ -44,17 +44,18 @@ static char sccsid[] = "@(#)getprotoname.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include "namespace.h"
+//#include "namespace.h"
 
 #include <netdb.h>
 #include <string.h>
 
 #include "protoent.h"
-
+/*
 #ifdef __weak_alias
 __weak_alias(getprotobyname_r,getprotobyname_r)
 __weak_alias(getprotobyname,_getprotobyname)
 #endif
+*/
 
 int
 getprotobyname_r(pp, pd, name, buffer, buflen, result)
