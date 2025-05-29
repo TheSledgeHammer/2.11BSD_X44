@@ -54,14 +54,14 @@
 #define _PATH_NS_CONF	"/etc/nsswitch.conf"
 #endif
 
-#define	NS_CONTINUE	0
-#define	NS_RETURN	1
+#define	NS_CONTINUE		0
+#define	NS_RETURN		1
 
 #define	NS_SUCCESS		(1<<0)		/* entry was found */
 #define	NS_UNAVAIL		(1<<1)		/* source not responding, or corrupt */
 #define	NS_NOTFOUND		(1<<2)		/* source responded 'no such entry' */
 #define	NS_TRYAGAIN		(1<<3)		/* source busy, may respond to retrys */
-#define	NS_STATUSMASK	0x000000ff	/* bitmask to get the status flags */
+#define	NS_STATUSMASK		0x000000ff	/* bitmask to get the status flags */
 
 /*
  * currently implemented sources
@@ -69,7 +69,7 @@
 #define NSSRC_FILES		"files"		/* local files */
 #define	NSSRC_DNS		"dns"		/* DNS; IN for hosts, HS for others */
 #define	NSSRC_NIS		"nis"		/* YP/NIS */
-#define	NSSRC_COMPAT	"compat"	/* passwd,group in YP compat mode */
+#define	NSSRC_COMPAT		"compat"	/* passwd,group in YP compat mode */
 
 /*
  * currently implemented databases
@@ -153,7 +153,9 @@ typedef struct {
  * or the requested database doesn't have an entry.
  */
 extern const ns_src __nsdefaultsrc[];
-
+extern const ns_src __nsdefaultfiles[];
+extern const ns_src __nsdefaultnis[];
+extern const ns_src __nsdefaultcompat[];
 
 #ifdef _NS_PRIVATE
 

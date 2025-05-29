@@ -80,12 +80,25 @@ static const struct afd {
 	int		a_off;
 } afdl [] = {
 #ifdef INET6
-	{PF_INET6, sizeof(struct in6_addr), sizeof(struct sockaddr_in6),
-		offsetof(struct sockaddr_in6, sin6_addr)},
+		{
+				.a_af = PF_INET6,
+				.a_addrlen = sizeof(struct in6_addr),
+				.a_socklen = sizeof(struct sockaddr_in6),
+				.a_off = offsetof(struct sockaddr_in6, sin6_addr),
+		},
 #endif
-	{PF_INET, sizeof(struct in_addr), sizeof(struct sockaddr_in),
-		offsetof(struct sockaddr_in, sin_addr)},
-	{0, 0, 0, 0},
+		{
+				.a_af = PF_INET,
+				.a_addrlen = sizeof(struct in_addr),
+				.a_socklen = sizeof(struct sockaddr_in),
+				.a_off = offsetof(struct sockaddr_in, sin_addr),
+		},
+		{
+				.a_af = 0,
+				.a_addrlen = 0,
+				.a_socklen = 0,
+				.a_off = 0,
+		}
 };
 
 struct sockinet {
@@ -193,9 +206,11 @@ getnameinfo_inet(sa, salen, host, hostlen, serv, servlen, flags)
 			sp = NULL;
 		else {
 			struct servent_data svd;
-            struct servent sv = _svs_serv;
-			(void)memset(&svd, 0, sizeof(svd));
-			(void)getservbyport_r(&sv, &svd, port, (flags & NI_DGRAM) ? "udp" : "tcp", _svs_servbuf, sizeof(_svs_servbuf), &sp);
+			struct servent sv = _svs_serv;
+			(void) memset(&svd, 0, sizeof(svd));
+			(void) getservbyport_r(&sv, &svd, port,
+					(flags & NI_DGRAM) ? "udp" : "tcp", _svs_servbuf,
+					sizeof(_svs_servbuf), &sp);
 			endservent_r(&svd);
 		}
 		if (sp) {

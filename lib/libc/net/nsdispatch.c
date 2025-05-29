@@ -61,7 +61,6 @@ __RCSID("$NetBSD: nsdispatch.c,v 1.18 2002/05/26 14:48:19 wiz Exp $");
 extern	FILE 	*_nsyyin;
 extern	int	 _nsyyparse(void);
 
-
 #ifdef __weak_alias
 __weak_alias(nsdispatch,_nsdispatch)
 #endif
@@ -71,7 +70,22 @@ __weak_alias(nsdispatch,_nsdispatch)
  */
 const ns_src __nsdefaultsrc[] = {
 		{ NSSRC_FILES, NS_SUCCESS },
-		{ 0 },
+		{ 0, 0 },
+};
+
+const ns_src __nsdefaultfiles[] = {
+		{ NSSRC_FILES, NS_SUCCESS },
+		{ 0, 0 },
+};
+
+const ns_src __nsdefaultnis[] = {
+		{ NSSRC_NIS, NS_SUCCESS },
+		{ 0, 0 }
+};
+
+const ns_src __nsdefaultcompat[] = {
+		{ NSSRC_COMPAT,	NS_SUCCESS },
+		{ 0, 0 }
 };
 
 static	int	_nsmapsize = 0;

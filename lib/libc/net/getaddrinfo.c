@@ -572,10 +572,10 @@ explore_fqdn(const struct addrinfo *pai, const char *hostname,
 	struct addrinfo *cur;
 	int error = 0;
 	static const ns_dtab dtab[] = {
-		NS_FILES_CB(_files_getaddrinfo, NULL)
-		{ NSSRC_DNS, _dns_getaddrinfo, NULL },	/* force -DHESIOD */
-		NS_NIS_CB(_yp_getaddrinfo, NULL)
-		NS_NULL_CB
+			NS_FILES_CB(_files_getaddrinfo, NULL)
+			{ NSSRC_DNS, _dns_getaddrinfo, NULL },	/* force -DHESIOD */
+			NS_NIS_CB(_yp_getaddrinfo, NULL)
+			NS_NULL_CB
 	};
 
 	_DIAGASSERT(pai != NULL);
@@ -970,7 +970,8 @@ get_port(const struct addrinfo *ai, const char *servname, int matchonly,
 			break;
 		}
 
-        (void)getservbyname_r(&sv, svd, servname, proto, _svs_servbuf, sizeof(_svs_servbuf), &sp);
+		(void) getservbyname_r(&sv, svd, servname, proto, _svs_servbuf,
+				sizeof(_svs_servbuf), &sp);
 		if (sp == NULL)
 			return EAI_SERVICE;
 		port = sp->s_port;
