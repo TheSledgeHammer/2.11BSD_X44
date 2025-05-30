@@ -117,7 +117,7 @@ __RCSID("$NetBSD: getgrent.c,v 1.48 2003/10/13 15:36:33 agc Exp $");
 #include <rpcsvc/ypclnt.h>
 #endif
 
-#include "gr_private.h"
+#include "gr_storage.h"
 
 static int _grs_parse(int, gid_t, const char *, struct group *, struct group_storage *, char *, size_t);
 

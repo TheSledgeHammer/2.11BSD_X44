@@ -53,7 +53,7 @@ static char sccsid[] = "@(#)getgrent.c	8.2 (Berkeley) 3/21/94";
 #include <string.h>
 #include <unistd.h>
 
-#include "gr_private.h"
+#include "gr_storage.h"
 
 #ifdef _REENTRANT
 static 	mutex_t			_grmutex = MUTEX_INITIALIZER;

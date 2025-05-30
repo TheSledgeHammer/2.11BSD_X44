@@ -31,34 +31,45 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _GR_PRIVATE_H_
-#define _GR_PRIVATE_H_
+#ifndef _PW_STORAGE_H_
+#define _PW_STORAGE_H_
 
 #if defined(YP) || defined(HESIOD)
 #define _GROUP_COMPAT
 #endif
 
-struct group_storage {
-	char 	*mem[MAXGRP];
-	FILE 	*fp;
-	int 	stayopen;
+struct passwd_storage {
+	int 	stayopen;		/* see getpassent(3) */
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	DBM		*db;			/* DBM passwd file handle */
+	FILE 	*fp;			/* DBM passwd file */
+	const char 	*file;		/* DBM passwd file name */
+	int 	rewind;
+#else
+	DB		*db;			/* DB passwd file handle */
+#endif
+	int	 	keynum;			/* key counter, -1 if no more */
+	int	 	version;		/* version */
 #ifdef HESIOD
-	void 	*context;	/* Hesiod context */
-	int 	num;		/* group index, -1 if no more */
+	void 	*context;		/* Hesiod context */
+	int	 	num;			/* passwd index, -1 if no more */
 #endif /* HESIOD */
 #ifdef YP
-	char	*domain;	/* NIS domain */
-	int	 	done;		/* non-zero if search exhausted */
-	char	*current;	/* current first/next match */
-	int	 	currentlen;	/* length of _nis_current */
+	char	*domain;		/* NIS domain */
+	int		done;			/* non-zero if search exhausted */
+	char	*current;		/* current first/next match */
+	int		currentlen;		/* length of _nis_current */
+	enum {					/* shadow map type */
+		NISMAP_UNKNOWN = 0,	/*  unknown ... */
+		NISMAP_NONE,		/*  none: use "passwd.by*" */
+		NISMAP_ADJUNCT,		/*  pw_passwd from "passwd.adjunct.*" */
+		NISMAP_MASTER		/*  all from "master.passwd.by*" */
+	} maptype;
 #endif /* YP */
-#ifdef _GROUP_COMPAT
-	char 	*name;
-#endif /* _GROUP_COMPAT */
 };
 
-int _grs_start(struct group_storage *);
-int _grs_end(struct group_storage *);
-int _grs_grscan(int, gid_t, const char *, struct group *, struct group_storage *, char *, size_t);
+int _pws_start(struct passwd_storage *);
+int _pws_end(struct passwd_storage *);
+int _pws_search(struct passwd *, char *, size_t, struct passwd_storage *, int, const char *, uid_t);
 
-#endif /* _GR_PRIVATE_H_ */
+#endif /* _PW_STORAGE_H_ */
