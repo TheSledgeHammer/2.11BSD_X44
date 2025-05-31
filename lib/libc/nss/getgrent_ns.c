@@ -598,7 +598,6 @@ static int
 _grs_ns_start(state)
 	struct group_storage *state;
 {
-	int rval;
 	static const ns_dtab dtab[] = {
 			NS_FILES_CB(_grs_bad_method, "files")
 			NS_DNS_CB(_grs_hesiod_start, NULL)
@@ -607,17 +606,8 @@ _grs_ns_start(state)
 			NS_NULL_CB
 	};
 
-	if (state->fp == NULL) {
-		state->fp = fopen(_PATH_GROUP, "r");
-		rval = NS_UNAVAIL;
-	} else {
-		rewind(state->fp);
-		rval = NS_SUCCESS;
-	}
-	if (rval == NS_SUCCESS) {
-		rval = nsdispatch(NULL, dtab, NSDB_GROUP_COMPAT, "_grs_ns_start", __nsdefaultnis, state);
-	}
-	return (rval);
+	return (nsdispatch(NULL, dtab, NSDB_GROUP_COMPAT, "_grs_ns_start",
+			__nsdefaultnis, state));
 }
 
 static int
@@ -631,15 +621,9 @@ _grs_ns_end(state)
 			NS_COMPAT_CB(_grs_bad_method, "compat")
 			NS_NULL_CB
 	};
-	if (state->name) {
-		free(state->name);
-		state->name = NULL;
-	}
-	if (state->fp) {
-		fclose(state->fp);
-		state->fp = NULL;
-	}
-	return (nsdispatch(NULL, dtab, NSDB_GROUP_COMPAT, "_grs_ns_end", __nsdefaultnis, state));
+
+	return (nsdispatch(NULL, dtab, NSDB_GROUP_COMPAT, "_grs_ns_end",
+			__nsdefaultnis, state));
 }
 
 static int
@@ -660,7 +644,8 @@ _grs_ns_scan(search, gid, name, group, state, buffer, buflen)
 			NS_NULL_CB
 	};
 
-	return (nsdispatch(NULL, dtab, NSDB_GROUP_COMPAT, "_grs_ns_scan", __nsdefaultnis, search, gid, name, group, state, buffer, buflen));
+	return (nsdispatch(NULL, dtab, NSDB_GROUP_COMPAT, "_grs_ns_scan",
+			__nsdefaultnis, search, gid, name, group, state, buffer, buflen));
 }
 
 static int
@@ -672,7 +657,19 @@ _grs_compat_start(nsrv, nscb, ap)
 
 	state = va_arg(ap, struct group_storage*);
 
-	return (_grs_ns_start(state));
+	int rval;
+
+	if (state->fp == NULL) {
+		state->fp = fopen(_PATH_GROUP, "r");
+		rval = NS_UNAVAIL;
+	} else {
+		rewind(state->fp);
+		rval = NS_SUCCESS;
+	}
+	if (rval == NS_SUCCESS) {
+		rval = _grs_ns_start(state);
+	}
+	return (rval);
 }
 
 static int
@@ -684,6 +681,14 @@ _grs_compat_end(nsrv, nscb, ap)
 
 	state = va_arg(ap, struct group_storage *);
 
+	if (state->name) {
+		free(state->name);
+		state->name = NULL;
+	}
+	if (state->fp) {
+		fclose(state->fp);
+		state->fp = NULL;
+	}
 	return (_grs_ns_end(state));
 }
 

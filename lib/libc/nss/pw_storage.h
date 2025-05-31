@@ -66,7 +66,7 @@ struct passwd_storage {
 		YPMAP_MASTER		/*  all from "master.passwd.by*" */
 	} maptype;
 #endif /* YP */
-//#ifdef _GROUP_COMPAT
+#ifdef _GROUP_COMPAT
 	enum {
 		COMPAT_NOTOKEN = 0,	/*  no compat token present */
 		COMPAT_NONE,		/*  parsing normal pwd.db line */

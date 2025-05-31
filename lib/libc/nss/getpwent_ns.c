@@ -84,10 +84,6 @@
  * SUCH DAMAGE.
  */
 
-/*
- * Work in Progress
- */
-
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
@@ -180,6 +176,7 @@ static int _pws_ns_start(struct passwd_storage *);
 static int _pws_ns_end(struct passwd_storage *);
 static int _pws_ns_search(struct passwd *, char *, size_t, struct passwd_storage *, int, const char *, uid_t);
 
+static void _pws_compat_proto_set(struct passwd *, struct passwd_storage *, int);
 static int _pws_compat_add_exclude(struct passwd_storage *, const char *);
 static int _pws_compat_is_excluded(struct passwd_storage *, const char *);
 
@@ -217,7 +214,7 @@ _pws_bad_method(nsrv, nscb, ap)
 	static int warned;
 
 	if (!warned) {
-		syslog(LOG_ERR, "nsswitch.conf group_compat database can't use '%s'", (char *)nscb);
+		syslog(LOG_ERR, "nsswitch.conf passwd_compat database can't use '%s'", (char *)nscb);
 	}
 	warned = 1;
 	return (NS_UNAVAIL);
@@ -771,15 +768,6 @@ static int
 _pws_ns_start(state)
 	struct passwd_storage *state;
 {
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	datum *key;
-	datum *pkey;
-#else
-	DBT key, data;
-	DBT	pkey, pdata;
-#endif
-	char bf[MAXLOGNAME];
-	int rval, ret;
 	static const ns_dtab dtab[] = {
 			NS_FILES_CB(_pws_bad_method, "files")
 			NS_DNS_CB(_pws_hesiod_start, NULL)
@@ -788,43 +776,13 @@ _pws_ns_start(state)
 			NS_NULL_CB
 	};
 
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	rval = _pw_start(&state->db, &state->fp, &state->keynum, &state->version);
-#else
-	rval = _pw_start(&state->db, &state->keynum, &state->version);
-#endif
-
-	if (rval == NS_SUCCESS) {
-		state->mode = COMPAT_NOTOKEN;
-
-		/*
-		 *	Determine if the "compat" token is present in pwd.db;
-		 *	either "__YP!" or PW_KEYBYNAME+"+".
-		 *	Only works if pwd_mkdb installs the token.
-		 */
-		_pw_setkey(&key, (unsigned char *)__UNCONST(__yp_token), strlen(__yp_token));
-
-		bf[0] = _PW_KEYBYNAME;	 /* Pre-token database support. */
-		bf[1] = '+';
-		_pw_setkey(&pkey, bf, 2);
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-		ret = (_pw_getdb(state->db, &key, &state->rewind) == 0 || _pw_getdb(state->db, &pkey, &state->rewind) == 0);
-#else
-		ret = (_pw_getdb(state->db, &key, &data, 0) == 0 || _pw_getdb(state->db, &pkey, &pdata, 0) == 0);
-#endif
-		if (ret) {
-			state->mode = COMPAT_NONE;
-		}
-		rval = nsdispatch(NULL, dtab, NSDB_PASSWD_COMPAT, "_pws_ns_start", __nsdefaultnis, state);
-	}
-	return (rval);
+	return (nsdispatch(NULL, dtab, NSDB_PASSWD_COMPAT, "_pws_ns_start", __nsdefaultnis, state));
 }
 
 static int
 _pws_ns_end(state)
 	struct passwd_storage *state;
 {
-	int rval;
 	static const ns_dtab dtab[] = {
 			NS_FILES_CB(_pws_bad_method, "files")
 			NS_DNS_CB(_pws_hesiod_end, NULL)
@@ -833,31 +791,7 @@ _pws_ns_end(state)
 			NS_NULL_CB
 	};
 
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	rval = _pw_end(state->db, &state->fp, &state->rewind, &state->keynum);
-#else
-	rval = _pw_end(state->db, &state->keynum);
-#endif
-
-	if (rval == NS_SUCCESS) {
-		state->mode = COMPAT_NOTOKEN;
-		if (state->user) {
-			free(state->user);
-		}
-		state->user = NULL;
-		if (state->exclude != NULL) {
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-			_pw_closedb(state->exclude, state->fp);
-#else
-			_pw_closedb(state->exclude);
-#endif
-		}
-		state->exclude = NULL;
-		state->proto.pw_name = NULL;
-		state->protoflags = 0;
-		rval = nsdispatch(NULL, dtab, NSDB_PASSWD_COMPAT, "_pws_ns_end", __nsdefaultnis, state);
-	}
-	return (rval);
+	return (nsdispatch(NULL, dtab, NSDB_PASSWD_COMPAT, "_pws_ns_end", __nsdefaultnis, state));
 }
 
 static int
@@ -882,64 +816,175 @@ _pws_ns_search(pw, buffer, buflen, state, search, name, uid)
 }
 
 static int
-_pws_compat_proto_set(pw, proto, state, pwflags)
+_pws_compat_start(nsrv, nscb, ap)
+	void *nsrv, *nscb;
+	va_list ap;
+{
+	struct passwd_storage *state;
+
+	state = va_arg(ap, struct passwd_storage *);
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	datum *key;
+	datum *pkey;
+#else
+	DBT key, data;
+	DBT pkey, pdata;
+#endif
+	char bf[MAXLOGNAME];
+	int rval, ret;
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_start(&state->db, &state->fp, &state->keynum, &state->version);
+#else
+	rval = _pw_start(&state->db, &state->keynum, &state->version);
+#endif
+
+	if (rval == NS_SUCCESS) {
+		state->mode = COMPAT_NOTOKEN;
+
+		/*
+		 *	Determine if the "compat" token is present in pwd.db;
+		 *	either "__YP!" or PW_KEYBYNAME+"+".
+		 *	Only works if pwd_mkdb installs the token.
+		 */
+		_pw_setkey(&key, (unsigned char*) __UNCONST(__yp_token),
+				strlen(__yp_token));
+
+		bf[0] = _PW_KEYBYNAME; /* Pre-token database support. */
+		bf[1] = '+';
+		_pw_setkey(&pkey, bf, 2);
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		ret = (_pw_getdb(state->db, &key, &state->rewind) == 0 || _pw_getdb(state->db, &pkey, &state->rewind) == 0);
+#else
+		ret = (_pw_getdb(state->db, &key, &data, 0) == 0
+				|| _pw_getdb(state->db, &pkey, &pdata, 0) == 0);
+#endif
+		if (ret) {
+			state->mode = COMPAT_NONE;
+		}
+		rval = _pws_ns_start(state);
+	}
+	return (rval);
+}
+
+static int
+_pws_compat_end(nsrv, nscb, ap)
+	void *nsrv, *nscb;
+	va_list ap;
+{
+	struct passwd_storage *state;
+
+	state = va_arg(ap, struct passwd_storage *);
+
+	int rval;
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_end(state->db, &state->fp, &state->rewind, &state->keynum);
+#else
+	rval = _pw_end(state->db, &state->keynum);
+#endif
+
+	if (rval == NS_SUCCESS) {
+		state->mode = COMPAT_NOTOKEN;
+		if (state->user) {
+			free(state->user);
+		}
+		state->user = NULL;
+		if (state->exclude != NULL) {
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+			_pw_closedb(state->exclude, state->fp);
+#else
+			_pw_closedb(state->exclude);
+#endif
+		}
+		state->exclude = NULL;
+		state->proto.pw_name = NULL;
+		state->protoflags = 0;
+		rval = _pws_ns_end(state);
+	}
+	return (rval);
+}
+
+static void
+_pws_compat_proto_set(pw, state, pwflags)
 	struct passwd *pw;
-	struct passwd *proto;
 	struct passwd_storage *state;
 	int pwflags;
 {
+    struct passwd *proto;
+    char *ptr;
 
-	if (pw->pw_name[0] == '+') {
-		switch (pw->pw_name[1]) {
-		case '\0': /* `+' */
-			state->mode = COMPAT_FULL;
-			break;
-		case '@': /* `+@netgroup' */
-			state->mode = COMPAT_NETGROUP;
-			setnetgrent(proto->pw_name + 2);
-			break;
-		default: /* `+name' */
-			state->mode = COMPAT_USER;
-			if (state->user) {
-				free(state->user);
-			}
-			state->user = strdup(proto->pw_name + 1);
-			break;
-		}
-	}
-	if (pw->pw_name[0] == '-') {
+    proto = &state->proto;
+    ptr = state->protobuf;
 
-	}
-	/* name */
-	proto->pw_name = pw->pw_name;
+    /* name */
+    if (pw->pw_name && (pw->pw_name)[0]) {
+        bcopy(pw->pw_name, ptr, (strlen(pw->pw_name) + 1));
+        memmove(ptr, pw->pw_name, (strlen(pw->pw_name) + 1));
+        proto->pw_name = ptr;
+        ptr += (strlen(pw->pw_name) + 1);
+    } else {
+        proto->pw_name = (char *)NULL;
+    }
 
-	/* password */
-	proto->pw_passwd = pw->pw_passwd;
+    /* password */
+    if (pw->pw_passwd && (pw->pw_passwd)[0]) {
+        bcopy(pw->pw_passwd, ptr, (strlen(pw->pw_passwd) + 1));
+        memmove(ptr, pw->pw_passwd, (strlen(pw->pw_passwd) + 1));
+        proto->pw_passwd = ptr;
+        ptr += (strlen(pw->pw_passwd) + 1);
+    } else {
+        proto->pw_passwd = (char *)NULL;
+    }
 
-	/* uid */
-	proto->pw_uid = pw->pw_uid;
+    /* uid */
+    proto->pw_uid = pw->pw_uid;
 
-	/* gid */
-	proto->pw_gid = pw->pw_gid;
+    /* gid */
+    proto->pw_gid = pw->pw_gid;
 
-	/* change (ignored anyway) */
-	proto->pw_change = pw->pw_change;
+    /* change (ignored anyway) */
+    proto->pw_change = pw->pw_change;
 
-	/* class (ignored anyway) */
-	proto->pw_class = "";
+    /* class (ignored anyway) */
+    proto->pw_class = "";
 
-	/* gecos */
+    /* gecos */
+    if (pw->pw_gecos && (pw->pw_gecos)[0]) {
+        bcopy(pw->pw_gecos, ptr, (strlen(pw->pw_gecos) + 1));
+        memmove(ptr, pw->pw_gecos, (strlen(pw->pw_gecos) + 1));
+        proto->pw_gecos = ptr;
+        ptr += (strlen(pw->pw_gecos) + 1);
+    } else {
+        proto->pw_gecos = (char *)NULL;
+    }
 
-	/* dir */
+    /* dir */
+    if (pw->pw_dir && (pw->pw_dir)[0]) {
+        bcopy(pw->pw_dir, ptr, (strlen(pw->pw_dir) + 1));
+        memmove(ptr, pw->pw_dir, (strlen(pw->pw_dir) + 1));
+        proto->pw_dir = ptr;
+        ptr += (strlen(pw->pw_dir) + 1);
+    } else {
+        proto->pw_dir = (char *)NULL;
+    }
 
-	/* shell */
+    /* shell */
+    if (pw->pw_shell && (pw->pw_shell)[0]) {
+        bcopy(pw->pw_shell, ptr, (strlen(pw->pw_shell) + 1));
+        memmove(ptr, pw->pw_shell,(strlen(pw->pw_shell) + 1));
+        proto->pw_shell = ptr;
+        ptr += (strlen(pw->pw_shell) + 1);
+    } else {
+        proto->pw_shell = (char *)NULL;
+    }
 
+    /* expire (ignored anyway) */
+    proto->pw_expire = pw->pw_expire;
 
-	/* expire (ignored anyway) */
-	proto->pw_expire = pw->pw_expire;
-
-	/* flags */
-	state->protoflags = pwflags;
+    /* flags */
+    state->protoflags = pwflags;
 }
 
 static int
@@ -1006,30 +1051,6 @@ _pws_compat_is_excluded(state, name)
 		return (1); /* is excluded */
 	}
 	return (0);
-}
-
-static int
-_pws_compat_start(nsrv, nscb, ap)
-	void *nsrv, *nscb;
-	va_list ap;
-{
-	struct passwd_storage *state;
-
-	state = va_arg(ap, struct passwd_storage *);
-
-	return (_pws_ns_start(state));
-}
-
-static int
-_pws_compat_end(nsrv, nscb, ap)
-	void *nsrv, *nscb;
-	va_list ap;
-{
-	struct passwd_storage *state;
-
-	state = va_arg(ap, struct passwd_storage *);
-
-	return (_pws_ns_end(state));
 }
 
 static int
@@ -1110,6 +1131,9 @@ _pws_compat_search(nsrv, nscb, ap)
 			if (rval != NS_SUCCESS) {	/* if not matched, next loop */
 				continue;
 			}
+
+			_pws_compat_proto_set(pw, state, state->protoflags);
+
 			if (_pws_compat_is_excluded(state, pw->pw_name)) {
 				continue;				/* excluded; next loop */
 			}
@@ -1178,6 +1202,71 @@ _pws_compat_search(nsrv, nscb, ap)
 			break;
 		}
 
+		if (pw->pw_name[0] == '+') {
+			/* compat inclusion */
+			switch (pw->pw_name[1]) {
+			case '\0':
+				state->mode = COMPAT_FULL;
+				break;
+			case '@':
+				state->mode = COMPAT_NETGROUP;
+				setnetgrent(pw->pw_name + 2);
+				break;
+			default:
+				state->mode = COMPAT_USER;
+				if (state->user) {
+					free(state->user);
+				}
+				state->user = strdup(pw->pw_name + 1);
+				break;
+			}
+			_pws_compat_proto_set(pw, state, pwflags);
+			continue;
+		} else if (pw->pw_name[0] == '-') {
+			/* compat exclusion */
+			rval = NS_SUCCESS;
+			switch (pw->pw_name[1]) {
+			case '\0':
+				break;
+			case '@':
+				setnetgrent(pw->pw_name + 2);
+				while (getnetgrent(&host, &user, &dom)) {
+					if (!user || !*user) {
+						continue;
+					}
+					if (!_compat_add_exclude(state, user)) {
+						rval = NS_UNAVAIL;
+						break;
+					}
+				}
+				endnetgrent();
+				break;
+			default:
+				if (!_compat_add_exclude(state, pw->pw_name + 1)) {
+					rval = NS_UNAVAIL;
+				}
+				break;
+			}
+			if (rval != NS_SUCCESS) {
+				break;
+			}
+			continue;
+		}
+		if (search == _PW_KEYBYNUM
+				|| (search == _PW_KEYBYUID && pw->pw_uid == uid)
+				|| (search == _PW_KEYBYNAME && strcmp(pw->pw_name, name) == 0)) {
+			break; /* token mode match found */
+		}
+	}
+	if (rval == NS_NOTFOUND
+			&& (search == _PW_KEYBYNUM || state->mode != COMPAT_NOTOKEN)) {
+		state->keynum = -1; /* flag `no more records' */
+	}
+	if (rval == NS_SUCCESS) {
+		if ((search == _PW_KEYBYNAME && strcmp(pw->pw_name, name) != 0)
+				|| (search == _PW_KEYBYUID && pw->pw_uid != uid)) {
+			rval = NS_NOTFOUND;
+		}
 	}
 	return (rval);
 }
@@ -1188,14 +1277,34 @@ int
 _pws_start(state)
 	struct passwd_storage *state;
 {
+	int rval;
+	static const ns_dtab dtab[] = {
+			NS_FILES_CB(_pws_local_start, NULL)
+			NS_DNS_CB(_pws_hesiod_start, NULL)
+			NS_NIS_CB(_pws_yp_start, NULL)
+			NS_COMPAT_CB(_pws_compat_start, NULL)
+			NS_NULL_CB
+	};
 
+	rval = nsdispatch(NULL, dtab, NSDB_PASSWD, "_pws_start", __nsdefaultcompat, state);
+	return ((rval == NS_SUCCESS) ? 1 : 0);
 }
 
 int
 _pws_end(state)
 	struct passwd_storage *state;
 {
+	int rval;
+	static const ns_dtab dtab[] = {
+			NS_FILES_CB(_pws_local_end, NULL)
+			NS_DNS_CB(_pws_hesiod_end, NULL)
+			NS_NIS_CB(_pws_yp_end, NULL)
+			NS_COMPAT_CB(_pws_compat_end, NULL)
+			NS_NULL_CB
+	};
 
+	rval = nsdispatch(NULL, dtab, NSDB_PASSWD, "_pws_end", __nsdefaultcompat, state);
+	return ((rval == NS_SUCCESS) ? 1 : 0);
 }
 
 int
@@ -1208,5 +1317,15 @@ _pws_search(pw, buffer, buflen, state, search, name, uid)
 	const char *name;
 	uid_t uid;
 {
+	int rval;
+	static const ns_dtab dtab[] = {
+			NS_FILES_CB(_pws_local_search, NULL)
+			NS_DNS_CB(_pws_hesiod_search, NULL)
+			NS_NIS_CB(_pws_yp_search, NULL)
+			NS_COMPAT_CB(_pws_compat_search, NULL)
+			NS_NULL_CB
+	};
 
+	rval = nsdispatch(NULL, dtab, NSDB_PASSWD, "_pws_search", __nsdefaultcompat, state);
+	return ((rval == NS_SUCCESS) ? 1 : 0);
 }
