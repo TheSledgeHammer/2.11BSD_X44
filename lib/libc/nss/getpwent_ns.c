@@ -921,7 +921,6 @@ _pws_compat_proto_set(pw, state, pwflags)
     /* name */
     if (pw->pw_name && (pw->pw_name)[0]) {
         bcopy(pw->pw_name, ptr, (strlen(pw->pw_name) + 1));
-        memmove(ptr, pw->pw_name, (strlen(pw->pw_name) + 1));
         proto->pw_name = ptr;
         ptr += (strlen(pw->pw_name) + 1);
     } else {
@@ -931,7 +930,6 @@ _pws_compat_proto_set(pw, state, pwflags)
     /* password */
     if (pw->pw_passwd && (pw->pw_passwd)[0]) {
         bcopy(pw->pw_passwd, ptr, (strlen(pw->pw_passwd) + 1));
-        memmove(ptr, pw->pw_passwd, (strlen(pw->pw_passwd) + 1));
         proto->pw_passwd = ptr;
         ptr += (strlen(pw->pw_passwd) + 1);
     } else {
@@ -953,7 +951,6 @@ _pws_compat_proto_set(pw, state, pwflags)
     /* gecos */
     if (pw->pw_gecos && (pw->pw_gecos)[0]) {
         bcopy(pw->pw_gecos, ptr, (strlen(pw->pw_gecos) + 1));
-        memmove(ptr, pw->pw_gecos, (strlen(pw->pw_gecos) + 1));
         proto->pw_gecos = ptr;
         ptr += (strlen(pw->pw_gecos) + 1);
     } else {
@@ -963,7 +960,6 @@ _pws_compat_proto_set(pw, state, pwflags)
     /* dir */
     if (pw->pw_dir && (pw->pw_dir)[0]) {
         bcopy(pw->pw_dir, ptr, (strlen(pw->pw_dir) + 1));
-        memmove(ptr, pw->pw_dir, (strlen(pw->pw_dir) + 1));
         proto->pw_dir = ptr;
         ptr += (strlen(pw->pw_dir) + 1);
     } else {
@@ -973,7 +969,6 @@ _pws_compat_proto_set(pw, state, pwflags)
     /* shell */
     if (pw->pw_shell && (pw->pw_shell)[0]) {
         bcopy(pw->pw_shell, ptr, (strlen(pw->pw_shell) + 1));
-        memmove(ptr, pw->pw_shell,(strlen(pw->pw_shell) + 1));
         proto->pw_shell = ptr;
         ptr += (strlen(pw->pw_shell) + 1);
     } else {
