@@ -209,44 +209,7 @@ _pw_setkey(key, data, size)
 	size_t size;
 {
 	key->dsize = size;
-	key->dptr = (u_char*) data;
-}
-
-static int
-_pw_getdb(db, key, rewind)
-	DBM *db;
-	datum *key;
-	int *rewind;
-{
-	int ret;
-
-	if (flock(dbm_dirfno(db), LOCK_SH)) {
-		ret = -1;
-		goto out;
-	}
-
-	if (!key->dptr) {
-		if (*rewind) {
-			*rewind = 0;
-			*key = dbm_firstkey(db);
-		} else {
-			*key = dbm_nextkey(db);
-		}
-	}
-
-	if (key->dptr) {
-		*key = dbm_fetch(db, *key);
-		if (*key != NULL) {
-			ret = 0;
-		} else if (*key == NULL) {
-			ret = 1;
-		} else {
-			ret = -1;
-		}
-	}
-out:
-	(void)flock(dbm_dirfno(db), LOCK_UN);
-	return (ret);
+	key->dptr = (u_char *)data;
 }
 
 static int
@@ -326,7 +289,44 @@ _pw_opendb(db, fp, rewind, version)
 	return (_pw_version(db, &key, &value, version));
 }
 
-static void
+int
+_pw_getdb(db, key, rewind)
+	DBM *db;
+	datum *key;
+	int *rewind;
+{
+	int ret;
+
+	if (flock(dbm_dirfno(db), LOCK_SH)) {
+		ret = -1;
+		goto out;
+	}
+
+	if (!key->dptr) {
+		if (*rewind) {
+			*rewind = 0;
+			*key = dbm_firstkey(db);
+		} else {
+			*key = dbm_nextkey(db);
+		}
+	}
+
+	if (key->dptr) {
+		*key = dbm_fetch(db, *key);
+		if (*key != NULL) {
+			ret = 0;
+		} else if (*key == NULL) {
+			ret = 1;
+		} else {
+			ret = -1;
+		}
+	}
+out:
+	(void)flock(dbm_dirfno(db), LOCK_UN);
+	return (ret);
+}
+
+void
 _pw_closedb(db, fp)
 	DBM *db;
 	FILE *fp;
@@ -338,6 +338,16 @@ _pw_closedb(db, fp)
 		(void)fclose(fp);
 		fp = (FILE *)NULL;
 	}
+}
+
+int
+_pw_storedb(db, key, data, flag)
+	DB *db;
+	datum key;
+	datum data;
+	int flag;
+{
+	return (dbm_store(db, key, data, flag));
 }
 
 static int

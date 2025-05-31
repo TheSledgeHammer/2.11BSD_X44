@@ -124,7 +124,6 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 
 static int _pw_version(DB **, DBT *, DBT *, int *);
 static int _pw_opendb(DB **, int *);
-static void _pw_closedb(DB *);
 static int _pw_hashdb(DBT *, struct passwd *, char *, char *, char *, int);
 static int _pw_fetch(DB *, DBT *, struct passwd *, char *, size_t, int *, int);
 
@@ -195,7 +194,8 @@ _pw_version(db, key, value, version)
 {
 	key->data = __UNCONST("VERSION");
 	key->size = strlen((char *)key->data) + 1;
-	switch ((*(*db)->get)(*db, key, value, 0)) {
+	switch (_pw_getdb(*db, key, value, 0)) {
+	//switch ((*(*db)->get)(*db, key, value, 0)) {
 	case 0:
 		if (sizeof(*version) != value->size) {
 			return (NS_UNAVAIL);
@@ -252,7 +252,17 @@ _pw_opendb(db, version)
 	return (_pw_version(db, &key, &value, version));
 }
 
-static void
+int
+_pw_getdb(db, key, value, flag)
+	DB *db;
+	DBT *key;
+	DBT *value;
+	unsigned int flag;
+{
+	return ((db->get)(db, key, value, flag));
+}
+
+void
 _pw_closedb(db)
 	DB *db;
 {
@@ -260,6 +270,16 @@ _pw_closedb(db)
 		(void)(db->close)(db);
 		db = (DB *)NULL;
 	}
+}
+
+int
+_pw_storedb(db, key, value, flag)
+	DB *db;
+	DBT *key;
+	DBT *value;
+	unsigned int flag;
+{
+	return ((db->put)(db, key, value, flag));
 }
 
 static int

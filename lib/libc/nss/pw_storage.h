@@ -60,12 +60,30 @@ struct passwd_storage {
 	char	*current;		/* current first/next match */
 	int		currentlen;		/* length of _nis_current */
 	enum {					/* shadow map type */
-		NISMAP_UNKNOWN = 0,	/*  unknown ... */
-		NISMAP_NONE,		/*  none: use "passwd.by*" */
-		NISMAP_ADJUNCT,		/*  pw_passwd from "passwd.adjunct.*" */
-		NISMAP_MASTER		/*  all from "master.passwd.by*" */
+		YPMAP_UNKNOWN = 0,	/*  unknown ... */
+		YPMAP_NONE,			/*  none: use "passwd.by*" */
+		YPMAP_ADJUNCT,		/*  pw_passwd from "passwd.adjunct.*" */
+		YPMAP_MASTER		/*  all from "master.passwd.by*" */
 	} maptype;
 #endif /* YP */
+//#ifdef _GROUP_COMPAT
+	enum {
+		COMPAT_NOTOKEN = 0,	/*  no compat token present */
+		COMPAT_NONE,		/*  parsing normal pwd.db line */
+		COMPAT_FULL,		/*  parsing `+' entries */
+		COMPAT_USER,		/*  parsing `+name' entries */
+		COMPAT_NETGROUP		/*  parsing `+@netgroup' entries */
+	} mode;
+	char 	*user;			/* COMPAT_USER "+name" */
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	DBM 	*exclude;		/* compat exclude DBM */
+#else
+	DB		*exclude;		/* compat exclude DB */
+#endif
+	struct passwd proto;	/* proto passwd entry */
+	char	protobuf[_GETPW_R_SIZE_MAX]; /* buffer for proto ptrs */
+	int		protoflags;		/* proto passwd flags */
+#endif /* _GROUP_COMPAT */
 };
 
 int _pws_start(struct passwd_storage *);

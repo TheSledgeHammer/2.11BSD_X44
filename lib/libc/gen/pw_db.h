@@ -34,5 +34,7 @@ int 	_pw_start(DB **, int *, int *);
 int 	_pw_end(DB *, int *);
 int	_pw_getkey(DB *, DBT *, struct passwd *, char *, size_t, int *, int);
 void 	_pw_setkey(DBT *, char *, size_t);
-
+int _pw_getdb(DB *, DBT *, DBT *, unsigned int);
+void _pw_closedb(DB *);
+int _pw_storedb(DB *, DBT *, DBT *, unsigned int);
 #endif /* _PW_DB_H_ */

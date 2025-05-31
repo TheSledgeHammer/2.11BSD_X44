@@ -183,7 +183,7 @@ _pws_start(state)
 {
 	int rval;
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	rval = _pw_start(&state->db, &state->fp, &state->keynum, &state->version);
+	rval = _pw_start(&state->db, state->fp, &state->keynum, &state->version);
 #else
 	rval = _pw_start(&state->db, &state->keynum, &state->version);
 #endif
@@ -196,7 +196,7 @@ _pws_end(state)
 {
 	int rval;
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	rval = _pw_end(state->db, &state->fp, &state->rewind, &state->keynum);
+	rval = _pw_end(state->db, state->fp, &state->rewind, &state->keynum);
 #else
 	rval = _pw_end(state->db, &state->keynum);
 #endif
@@ -216,7 +216,7 @@ _pws_search(pw, buffer, buflen, state, search, name, uid)
 	const void *from;
 	size_t	fromlen;
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	DBM		key;
+	datum	key;
 #else
 	DBT 	key;
 #endif

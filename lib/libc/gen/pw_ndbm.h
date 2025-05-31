@@ -36,5 +36,7 @@ int	_pw_getkey(DBM *, datum *, struct passwd *, char *, size_t, int *, int *, in
 void 	_pw_setkey(datum *, char *, size_t);
 int	_pw_scanfp(FILE *, struct passwd *, char *);
 void	_pw_readfp(DBM *, struct passwd *, char *);
-
+int _pw_getdb(DBM *, datum *, int *);
+void _pw_closedb(DBM *, FILE *);
+int _pw_storedb(DBM *, datum, datum, int);
 #endif /* _PW_NDBM_H_ */

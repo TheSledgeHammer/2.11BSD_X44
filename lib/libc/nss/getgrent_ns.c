@@ -654,16 +654,14 @@ _grs_ns_scan(search, gid, name, group, state, buffer, buflen)
 {
 	static const ns_dtab dtab[] = {
 			NS_FILES_CB(_grs_bad_method, "files")
-			NS_DNS_CB(_grs_hesiod_nsscan, NULL)
-			NS_NIS_CB(_grs_yp_nsscan, NULL)
+			NS_DNS_CB(_grs_hesiod_scan, NULL)
+			NS_NIS_CB(_grs_yp_scan, NULL)
 			NS_COMPAT_CB(_grs_bad_method, "compat")
 			NS_NULL_CB
 	};
 
 	return (nsdispatch(NULL, dtab, NSDB_GROUP_COMPAT, "_grs_ns_scan", __nsdefaultnis, search, gid, name, group, state, buffer, buflen));
 }
-
-#endif
 
 static int
 _grs_compat_start(nsrv, nscb, ap)
@@ -713,7 +711,6 @@ _grs_compat_scan(nsrv, nscb, ap)
 	int rval;
 
 	for (;;) {
-#ifdef _GROUP_COMPAT
 		if (state->name != NULL) {
 			rval = _grs_ns_scan(search, gid, state->name, group, state, buffer, buflen);
 			free(state->name);
@@ -736,7 +733,6 @@ _grs_compat_scan(nsrv, nscb, ap)
 				return (NS_SUCCESS);
 			}
 		}
-#endif	/* _GROUP_COMPAT */
 
 		if (!fgets(buffer, buflen, state->fp)) {
 			return (NS_NOTFOUND);
@@ -752,7 +748,6 @@ _grs_compat_scan(nsrv, nscb, ap)
 			continue;
 		}
 
-#ifdef _GROUP_COMPAT
 		if (index(buffer, '+')) {
 			char *tptr, *bp;
 
@@ -774,12 +769,13 @@ _grs_compat_scan(nsrv, nscb, ap)
 			}
 			continue;
 		}
-#endif	/* _GROUP_COMPAT */
 		rval = _grs_parse(search, gid, name, group, state, buffer, buflen);
 		return (rval);
 	}
 	/* NOTREACHED */
 }
+
+#endif
 
 int
 _grs_start(state)

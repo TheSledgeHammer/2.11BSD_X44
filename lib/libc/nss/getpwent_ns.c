@@ -137,21 +137,24 @@ __RCSID("$NetBSD: getpwent.c,v 1.56 2003/11/26 00:48:59 lukem Exp $");
 #include "pw_private.h"
 #include "pw_storage.h"
 
+const char __yp_token[] = "__YP!";	/* Let pwd_mkdb pull this in. */
+
 #ifdef YP
 static const char __nis_pw_n_1[] = "master.passwd.byname";
 static const char __nis_pw_n_2[] = "passwd.byname";
 static const char __nis_pw_u_1[] = "master.passwd.byuid";
 static const char __nis_pw_u_2[] = "passwd.byuid";
 
-static const char * const __nis_pw_n_map[4] = { __nis_pw_n_2, __nis_pw_n_2, __nis_pw_n_2, __nis_pw_n_1 };
-static const char * const __nis_pw_u_map[4] = { __nis_pw_u_2, __nis_pw_u_2, __nis_pw_u_2, __nis_pw_u_1 };
+static const char *__nis_pw_n_map[4] = { __nis_pw_n_2, __nis_pw_n_2, __nis_pw_n_2, __nis_pw_n_1 };
+static const char *__nis_pw_u_map[4] = { __nis_pw_u_2, __nis_pw_u_2, __nis_pw_u_2, __nis_pw_u_1 };
 
 /* macros for deciding which NIS maps to use. */
-#define	PASSWD_BYNAME(x)	((x)->maptype == NISMAP_MASTER ? __nis_pw_n_1 : __nis_pw_n_2)
-#define	PASSWD_BYUID(x)		((x)->maptype == NISMAP_MASTER ? __nis_pw_u_1 : __nis_pw_u_2)
+#define	PASSWD_BYNAME(x)	((x)->maptype == YPMAP_MASTER ? __nis_pw_n_1 : __nis_pw_n_2)
+#define	PASSWD_BYUID(x)		((x)->maptype == YPMAP_MASTER ? __nis_pw_u_1 : __nis_pw_u_2)
 #endif
 
 static int _pws_parse(const char *, struct passwd *, char *, size_t, int);
+static int _pws_bad_method(void *, void *, va_list);
 
 static int _pws_local_start(void *, void *, va_list);
 static int _pws_local_end(void *, void *, va_list);
@@ -172,9 +175,18 @@ static int _pws_yp_scan(struct passwd *, struct passwd_storage *, char *, size_t
 static int _pws_yp_search(void *, void *, va_list);
 #endif
 
+#ifdef _GROUP_COMPAT
+static int _pws_ns_start(struct passwd_storage *);
+static int _pws_ns_end(struct passwd_storage *);
+static int _pws_ns_search(struct passwd *, char *, size_t, struct passwd_storage *, int, const char *, uid_t);
+
+static int _pws_compat_add_exclude(struct passwd_storage *, const char *);
+static int _pws_compat_is_excluded(struct passwd_storage *, const char *);
+
 static int _pws_compat_start(void *, void *, va_list);
 static int _pws_compat_end(void *, void *, va_list);
 static int _pws_compat_search(void *, void *, va_list);
+#endif
 
 static int
 _pws_parse(s, pw, buffer, buflen, old)
@@ -194,6 +206,21 @@ _pws_parse(s, pw, buffer, buflen, old)
 		flags |= _PASSWORD_OLDFMT;
 	}
 	return (__pw_scan(buffer, pw, &flags));
+}
+
+/* nsdispatch: methods */
+static int
+_pws_bad_method(nsrv, nscb, ap)
+	void *nsrv, *nscb;
+	va_list ap;
+{
+	static int warned;
+
+	if (!warned) {
+		syslog(LOG_ERR, "nsswitch.conf group_compat database can't use '%s'", (char *)nscb);
+	}
+	warned = 1;
+	return (NS_UNAVAIL);
 }
 
 /* Local/Files Methods */
@@ -450,8 +477,8 @@ _pws_yp_maptype(state)
 	int order, rval;
 
 	/* determine where to get pw_passwd from */
-	if (state->maptype == NISMAP_UNKNOWN) {
-		state->maptype = NISMAP_NONE;	/* default to no adjunct */
+	if (state->maptype == YPMAP_UNKNOWN) {
+		state->maptype = YPMAP_NONE;	/* default to no adjunct */
 		if (geteuid() != 0) {			/* non-root can't use adjunct */
 			return (NS_SUCCESS);
 		}
@@ -459,7 +486,7 @@ _pws_yp_maptype(state)
 		/* look for "master.passwd.*" */
 		rval = yp_order(state->domain, "master.passwd.byname", &order);
 		if (rval == 0) {
-			state->maptype = NISMAP_MASTER;
+			state->maptype = YPMAP_MASTER;
 			return (NS_SUCCESS);
 		}
 
@@ -475,7 +502,7 @@ _pws_yp_maptype(state)
 		if (rval == YPERR_MAP) {
 			rval = yp_order(state->domain, "passwd.adjunct.byname", &order);
 			if (rval == 0) {
-				state->maptype = NISMAP_ADJUNCT;
+				state->maptype = YPMAP_ADJUNCT;
 			}
 			return (NS_SUCCESS);
 		}
@@ -536,7 +563,7 @@ _pws_yp_end(nsrv, nscb, ap)
 		free(state->current);
 	}
 	state->current = NULL;
-	state->maptype = NISMAP_UNKNOWN;
+	state->maptype = YPMAP_UNKNOWN;
 	return (NS_SUCCESS);
 }
 
@@ -555,21 +582,19 @@ _pws_yp_parse(s, pw, buffer, buflen, state)
 	if (elen >= buflen) {
 		return (0);
 	}
-	rval = _pws_parse(s, pw, buffer, buflen, !(state->maptype == NISMAP_MASTER));
+	rval = _pws_parse(s, pw, buffer, buflen, !(state->maptype == YPMAP_MASTER));
 	if (!rval) {
 		return (0);
 	}
-	if ((state->maptype == NISMAP_ADJUNCT) &&
+	if ((state->maptype == YPMAP_ADJUNCT) &&
 		    (strstr(pw->pw_passwd, "##") != NULL)) {
-		char *data;
+		char *data, *bp;
 		int	datalen;
 
 		if (yp_match(state->domain, "passwd.adjunct.byname", pw->pw_name,
 				(int) strlen(pw->pw_name), &data, &datalen) == 0) {
-			char *bp, *ep;
 			/* skip name to get password */
-			ep = data;
-			if (strsep(&ep, ":") != NULL && (bp = strsep(&ep, ":")) != NULL) {
+			if (strsep(&data, ":") != NULL && (bp = strsep(&data, ":")) != NULL) {
 				/* store new pw_passwd after entry */
 				if (strlcpy(buf + elen, bp, buflen - elen) >= buflen - elen) {
 					free(data);
@@ -669,8 +694,8 @@ _pws_yp_search(nsrv, nscb, ap)
 	uid = va_arg(ap, uid_t);
 
 	const void *from;
-	size_t	fromlen;
 	const char *map_arr;
+	size_t	fromlen, nmaps;
 	char *data;
 	int rval, nisr, datalen;
 
@@ -680,18 +705,26 @@ _pws_yp_search(nsrv, nscb, ap)
 	case _PW_KEYBYNAME:
 		from = name;
 		fromlen = strlen(name);
-		map_arr = PASSWD_BYNAME(state);
+		map_arr = __nis_pw_n_map;
+		nmaps = (sizeof(__nis_pw_n_map)/sizeof(__nis_pw_n_map[0]));
 		break;
 	case _PW_KEYBYUID:
 		from = &uid;
 		fromlen = sizeof(uid);
-		map_arr = PASSWD_BYUID(state);
+		map_arr = __nis_pw_u_map;
+		nmaps = (sizeof(__nis_pw_u_map)/sizeof(__nis_pw_u_map[0]));
 		break;
 	default:
 		abort();
 	}
 
-	rval = NS_UNAVAIL;
+	if (buflen <= fromlen) {
+		return (NS_UNAVAIL);
+	}
+
+	buffer[0] = search;
+	bcopy(from, buffer + 1, fromlen);
+	rval = NS_NOTFOUND | NS_UNAVAIL;
 	if (search != _PW_KEYBYNUM) {
 		data = NULL;
 		nisr = yp_match(state->domain, map_arr[state->maptype], buffer,
@@ -718,14 +751,7 @@ _pws_yp_search(nsrv, nscb, ap)
 	if (state->done) {
 		return (NS_NOTFOUND);
 	}
-	/* Belongs inside if (search != _PW_KEYBYNUM) ??
-	if (buflen <= fromlen) {
-		return (NS_UNAVAIL);
-	}
 
-	buffer[0] = search;
-	bcopy(from, buffer + 1, fromlen);
-	*/
 	rval = _pws_yp_scan(pw, state, buffer, buflen, map_arr);
 	if (rval == NS_UNAVAIL) {
 		return (rval);
@@ -742,11 +768,256 @@ _pws_yp_search(nsrv, nscb, ap)
 #ifdef _GROUP_COMPAT
 
 static int
+_pws_ns_start(state)
+	struct passwd_storage *state;
+{
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	datum *key;
+	datum *pkey;
+#else
+	DBT key, data;
+	DBT	pkey, pdata;
+#endif
+	char bf[MAXLOGNAME];
+	int rval, ret;
+	static const ns_dtab dtab[] = {
+			NS_FILES_CB(_pws_bad_method, "files")
+			NS_DNS_CB(_pws_hesiod_start, NULL)
+			NS_NIS_CB(_pws_yp_start, NULL)
+			NS_COMPAT_CB(_pws_bad_method, "compat")
+			NS_NULL_CB
+	};
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_start(&state->db, &state->fp, &state->keynum, &state->version);
+#else
+	rval = _pw_start(&state->db, &state->keynum, &state->version);
+#endif
+
+	if (rval == NS_SUCCESS) {
+		state->mode = COMPAT_NOTOKEN;
+
+		/*
+		 *	Determine if the "compat" token is present in pwd.db;
+		 *	either "__YP!" or PW_KEYBYNAME+"+".
+		 *	Only works if pwd_mkdb installs the token.
+		 */
+		_pw_setkey(&key, (unsigned char *)__UNCONST(__yp_token), strlen(__yp_token));
+
+		bf[0] = _PW_KEYBYNAME;	 /* Pre-token database support. */
+		bf[1] = '+';
+		_pw_setkey(&pkey, bf, 2);
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		ret = (_pw_getdb(state->db, &key, &state->rewind) == 0 || _pw_getdb(state->db, &pkey, &state->rewind) == 0);
+#else
+		ret = (_pw_getdb(state->db, &key, &data, 0) == 0 || _pw_getdb(state->db, &pkey, &pdata, 0) == 0);
+#endif
+		if (ret) {
+			state->mode = COMPAT_NONE;
+		}
+		rval = nsdispatch(NULL, dtab, NSDB_PASSWD_COMPAT, "_pws_ns_start", __nsdefaultnis, state);
+	}
+	return (rval);
+}
+
+static int
+_pws_ns_end(state)
+	struct passwd_storage *state;
+{
+	int rval;
+	static const ns_dtab dtab[] = {
+			NS_FILES_CB(_pws_bad_method, "files")
+			NS_DNS_CB(_pws_hesiod_end, NULL)
+			NS_NIS_CB(_pws_yp_end, NULL)
+			NS_COMPAT_CB(_pws_bad_method, "compat")
+			NS_NULL_CB
+	};
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_end(state->db, &state->fp, &state->rewind, &state->keynum);
+#else
+	rval = _pw_end(state->db, &state->keynum);
+#endif
+
+	if (rval == NS_SUCCESS) {
+		state->mode = COMPAT_NOTOKEN;
+		if (state->user) {
+			free(state->user);
+		}
+		state->user = NULL;
+		if (state->exclude != NULL) {
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+			_pw_closedb(state->exclude, state->fp);
+#else
+			_pw_closedb(state->exclude);
+#endif
+		}
+		state->exclude = NULL;
+		state->proto.pw_name = NULL;
+		state->protoflags = 0;
+		rval = nsdispatch(NULL, dtab, NSDB_PASSWD_COMPAT, "_pws_ns_end", __nsdefaultnis, state);
+	}
+	return (rval);
+}
+
+static int
+_pws_ns_search(pw, buffer, buflen, state, search, name, uid)
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+	int search;
+	const char *name;
+	uid_t uid;
+{
+	static const ns_dtab dtab[] = {
+			NS_FILES_CB(_pws_bad_method, "files")
+			NS_DNS_CB(_pws_hesiod_search, NULL)
+			NS_NIS_CB(_pws_yp_search, NULL)
+			NS_COMPAT_CB(_pws_bad_method, "compat")
+			NS_NULL_CB
+	};
+
+	return (nsdispatch(NULL, dtab, NSDB_PASSWD_COMPAT, "_pws_ns_search", __nsdefaultnis, pw, buffer, buflen, state, search, name, uid));
+}
+
+static int
+_pws_compat_proto_set(pw, proto, state, pwflags)
+	struct passwd *pw;
+	struct passwd *proto;
+	struct passwd_storage *state;
+	int pwflags;
+{
+
+	if (pw->pw_name[0] == '+') {
+		switch (pw->pw_name[1]) {
+		case '\0': /* `+' */
+			state->mode = COMPAT_FULL;
+			break;
+		case '@': /* `+@netgroup' */
+			state->mode = COMPAT_NETGROUP;
+			setnetgrent(proto->pw_name + 2);
+			break;
+		default: /* `+name' */
+			state->mode = COMPAT_USER;
+			if (state->user) {
+				free(state->user);
+			}
+			state->user = strdup(proto->pw_name + 1);
+			break;
+		}
+	}
+	if (pw->pw_name[0] == '-') {
+
+	}
+	/* name */
+	proto->pw_name = pw->pw_name;
+
+	/* password */
+	proto->pw_passwd = pw->pw_passwd;
+
+	/* uid */
+	proto->pw_uid = pw->pw_uid;
+
+	/* gid */
+	proto->pw_gid = pw->pw_gid;
+
+	/* change (ignored anyway) */
+	proto->pw_change = pw->pw_change;
+
+	/* class (ignored anyway) */
+	proto->pw_class = "";
+
+	/* gecos */
+
+	/* dir */
+
+	/* shell */
+
+
+	/* expire (ignored anyway) */
+	proto->pw_expire = pw->pw_expire;
+
+	/* flags */
+	state->protoflags = pwflags;
+}
+
+static int
+_pws_compat_add_exclude(state, name)
+	struct passwd_storage *state;
+	const char *name;
+{
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	datum key, data;
+#else
+	DBT	key, data;
+#endif
+	int ret;
+
+	if (state->exclude == NULL) {
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		state->exclude = dbm_open(NULL, O_RDWR, 600);
+#endif
+		state->exclude = dbopen(NULL, O_RDWR, 600, DB_HASH, NULL);
+		if (state->exclude == NULL) {
+			return (0);
+		}
+	}
+	/* set up the key */
+	_pw_setkey(&key, (unsigned char *)__UNCONST(name), strlen(name));
+	/* data is nothing */
+	_pw_setkey(&data, (unsigned char *)__UNCONST(name), strlen(name));
+
+	/* store it */
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	ret = _pw_storedb(state->exclude, key, data, 0);
+#else
+	ret = _pw_storedb(state->exclude, &key, &data, 0);
+#endif
+	if (ret == -1 ) {
+		return (0);
+	}
+	return (1);
+}
+
+static int
+_pws_compat_is_excluded(state, name)
+	struct passwd_storage *state;
+	const char *name;
+{
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	datum key;
+#else
+	DBT	key, data;
+#endif
+	int ret;
+	if (state->exclude == NULL) {
+		return (0);			/* nothing excluded */
+	}
+	/* set up the key */
+	_pw_setkey(&key, (unsigned char*) __UNCONST(name), strlen(name));
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	ret = _pw_getdb(state->exclude, &key, 0);
+#else
+	ret = _pw_getdb(state->exclude, &key, &data, 0);
+#endif
+	if (ret == 0) {
+		return (1); /* is excluded */
+	}
+	return (0);
+}
+
+static int
 _pws_compat_start(nsrv, nscb, ap)
 	void *nsrv, *nscb;
 	va_list ap;
 {
+	struct passwd_storage *state;
 
+	state = va_arg(ap, struct passwd_storage *);
+
+	return (_pws_ns_start(state));
 }
 
 static int
@@ -754,7 +1025,11 @@ _pws_compat_end(nsrv, nscb, ap)
 	void *nsrv, *nscb;
 	va_list ap;
 {
+	struct passwd_storage *state;
 
+	state = va_arg(ap, struct passwd_storage *);
+
+	return (_pws_ns_end(state));
 }
 
 static int
@@ -762,8 +1037,151 @@ _pws_compat_search(nsrv, nscb, ap)
 	void *nsrv, *nscb;
 	va_list ap;
 {
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+	int search;
+	const char *name;
+	uid_t uid;
 
+	pw = va_arg(ap, struct passwd *);
+	buffer = va_arg(ap, char *);
+	buflen = va_arg(ap, size_t);
+	state = va_arg(ap, struct passwd_storage *);
+	search = va_arg(ap, int);
+	name = va_arg(ap, const char *);
+	uid = va_arg(ap, uid_t);
+
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	datum	key;
+#else
+	DBT 	key;
+#endif
+	const char	*user, *host, *dom;
+	const void	*from;
+	size_t fromlen;
+	int rval, pwflags;
+
+	if (buflen <= 1) {			/* buffer too small */
+		return (NS_UNAVAIL);
+	}
+
+	for (;;) { /* loop over pwd.db */
+		if (state->mode != COMPAT_NOTOKEN && state->mode != COMPAT_NONE) {
+			/* doing a compat lookup */
+			switch (state->mode) {
+			case COMPAT_FULL:
+				rval = _pws_ns_search(pw, buffer, buflen, state, search, name,
+						uid);
+				if (rval != NS_SUCCESS) {
+					state->mode = COMPAT_NONE;
+				}
+				break;
+			case COMPAT_NETGROUP:
+				/* get next user from netgroup */
+				rval = getnetgrent(&host, &user, &dom);
+				if (rval == 0) {
+					endnetgrent();
+					state->mode = COMPAT_NONE;
+					break;
+				}
+				if (!user || !*user) {
+					break;
+				}
+				rval = _pws_ns_search(pw, buffer, buflen, state, _PW_KEYBYNAME, user, 0);
+				break;
+			case COMPAT_USER:
+				/* get specific user */
+				if (state->user == NULL) {
+					state->mode = COMPAT_NONE;
+					break;
+				}
+				rval = _pws_ns_search(pw, buffer, buflen, state, _PW_KEYBYNAME, state->user, 0);
+				free(state->user);
+				state->user = NULL;
+				state->mode = COMPAT_NONE;
+				break;
+			case COMPAT_NOTOKEN:
+			case COMPAT_NONE:
+				abort();
+			}
+
+			if (rval != NS_SUCCESS) {	/* if not matched, next loop */
+				continue;
+			}
+			if (_pws_compat_is_excluded(state, pw->pw_name)) {
+				continue;				/* excluded; next loop */
+			}
+
+			if ((search == _PW_KEYBYNAME && strcmp(pw->pw_name, name) != 0)
+					|| (search == _PW_KEYBYUID && pw->pw_uid != uid)) {
+				continue; 				/* not specific; next loop */
+			}
+			break;						/* exit loop if found */
+		} else {
+			state->proto.pw_name = NULL;
+		}
+
+		if (state->mode == COMPAT_NOTOKEN) {
+			/* no compat token; do direct lookup */
+			switch (search) {
+			case _PW_KEYBYNUM:
+				if (state->keynum == -1) {/* no more records */
+					return (NS_NOTFOUND);
+				}
+				state->keynum++;
+				from = &state->keynum;
+				fromlen = sizeof(state->keynum);
+				break;
+			case _PW_KEYBYNAME:
+				from = name;
+				fromlen = strlen(name);
+				break;
+			case _PW_KEYBYUID:
+				from = &uid;
+				fromlen = sizeof(uid);
+				break;
+			default:
+				abort();
+			}
+			buffer[0] = search;
+		} else {
+			/* compat token; do line by line */
+			if (state->keynum == -1) { /* no more records */
+				return (NS_NOTFOUND);
+			}
+			state->keynum++;
+			from = &state->keynum;
+			fromlen = sizeof(state->keynum);
+			buffer[0] = _PW_KEYBYNUM;
+		}
+
+		if (buflen <= fromlen) {
+			return (NS_UNAVAIL);
+		}
+
+		bcopy(from, buffer + 1, fromlen);
+		_pw_setkey(&key, buffer, fromlen + 1);
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		rval = _pw_getkey(state->db, &key, pw, buffer, buflen, &pwflags,
+				&state->rewind, state->version);
+#else
+		rval = _pw_getkey(state->db, &key, pw, buffer, buflen, &pwflags,
+				state->version);
+#endif
+		if (rval != NS_SUCCESS) {
+			break;
+		}
+
+		if (state->mode == COMPAT_NOTOKEN) {
+			break;
+		}
+
+	}
+	return (rval);
 }
+
 #endif
 
 int
