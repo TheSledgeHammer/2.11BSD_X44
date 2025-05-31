@@ -912,74 +912,74 @@ _pws_compat_proto_set(pw, state, pwflags)
 	struct passwd_storage *state;
 	int pwflags;
 {
-    struct passwd *proto;
-    char *ptr;
+	struct passwd *proto;
+	char *ptr;
 
-    proto = &state->proto;
-    ptr = state->protobuf;
+	proto = &state->proto;
+	ptr = state->protobuf;
 
-    /* name */
-    if (pw->pw_name && (pw->pw_name)[0]) {
-        bcopy(pw->pw_name, ptr, (strlen(pw->pw_name) + 1));
-        proto->pw_name = ptr;
-        ptr += (strlen(pw->pw_name) + 1);
-    } else {
-        proto->pw_name = (char *)NULL;
-    }
+	/* name */
+	if (pw->pw_name && (pw->pw_name)[0]) {
+		bcopy(pw->pw_name, ptr, (strlen(pw->pw_name) + 1));
+		proto->pw_name = ptr;
+		ptr += (strlen(pw->pw_name) + 1);
+	} else {
+		proto->pw_name = (char*) NULL;
+	}
 
-    /* password */
-    if (pw->pw_passwd && (pw->pw_passwd)[0]) {
-        bcopy(pw->pw_passwd, ptr, (strlen(pw->pw_passwd) + 1));
-        proto->pw_passwd = ptr;
-        ptr += (strlen(pw->pw_passwd) + 1);
-    } else {
-        proto->pw_passwd = (char *)NULL;
-    }
+	/* password */
+	if (pw->pw_passwd && (pw->pw_passwd)[0]) {
+		bcopy(pw->pw_passwd, ptr, (strlen(pw->pw_passwd) + 1));
+		proto->pw_passwd = ptr;
+		ptr += (strlen(pw->pw_passwd) + 1);
+	} else {
+		proto->pw_passwd = (char*) NULL;
+	}
 
-    /* uid */
-    proto->pw_uid = pw->pw_uid;
+	/* uid */
+	proto->pw_uid = pw->pw_uid;
 
-    /* gid */
-    proto->pw_gid = pw->pw_gid;
+	/* gid */
+	proto->pw_gid = pw->pw_gid;
 
-    /* change (ignored anyway) */
-    proto->pw_change = pw->pw_change;
+	/* change (ignored anyway) */
+	proto->pw_change = pw->pw_change;
 
-    /* class (ignored anyway) */
-    proto->pw_class = "";
+	/* class (ignored anyway) */
+	proto->pw_class = "";
 
-    /* gecos */
-    if (pw->pw_gecos && (pw->pw_gecos)[0]) {
-        bcopy(pw->pw_gecos, ptr, (strlen(pw->pw_gecos) + 1));
-        proto->pw_gecos = ptr;
-        ptr += (strlen(pw->pw_gecos) + 1);
-    } else {
-        proto->pw_gecos = (char *)NULL;
-    }
+	/* gecos */
+	if (pw->pw_gecos && (pw->pw_gecos)[0]) {
+		bcopy(pw->pw_gecos, ptr, (strlen(pw->pw_gecos) + 1));
+		proto->pw_gecos = ptr;
+		ptr += (strlen(pw->pw_gecos) + 1);
+	} else {
+		proto->pw_gecos = (char*) NULL;
+	}
 
-    /* dir */
-    if (pw->pw_dir && (pw->pw_dir)[0]) {
-        bcopy(pw->pw_dir, ptr, (strlen(pw->pw_dir) + 1));
-        proto->pw_dir = ptr;
-        ptr += (strlen(pw->pw_dir) + 1);
-    } else {
-        proto->pw_dir = (char *)NULL;
-    }
+	/* dir */
+	if (pw->pw_dir && (pw->pw_dir)[0]) {
+		bcopy(pw->pw_dir, ptr, (strlen(pw->pw_dir) + 1));
+		proto->pw_dir = ptr;
+		ptr += (strlen(pw->pw_dir) + 1);
+	} else {
+		proto->pw_dir = (char*) NULL;
+	}
 
-    /* shell */
-    if (pw->pw_shell && (pw->pw_shell)[0]) {
-        bcopy(pw->pw_shell, ptr, (strlen(pw->pw_shell) + 1));
-        proto->pw_shell = ptr;
-        ptr += (strlen(pw->pw_shell) + 1);
-    } else {
-        proto->pw_shell = (char *)NULL;
-    }
+	/* shell */
+	if (pw->pw_shell && (pw->pw_shell)[0]) {
+		bcopy(pw->pw_shell, ptr, (strlen(pw->pw_shell) + 1));
+		proto->pw_shell = ptr;
+		ptr += (strlen(pw->pw_shell) + 1);
+	} else {
+		proto->pw_shell = (char*) NULL;
+	}
 
-    /* expire (ignored anyway) */
-    proto->pw_expire = pw->pw_expire;
+	/* expire (ignored anyway) */
+	proto->pw_expire = pw->pw_expire;
 
-    /* flags */
-    state->protoflags = pwflags;
+	/* flags */
+	state->protoflags = pwflags;
 }
 
 static int
@@ -997,8 +997,9 @@ _pws_compat_add_exclude(state, name)
 	if (state->exclude == NULL) {
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
 		state->exclude = dbm_open(NULL, O_RDWR, 600);
-#endif
+#else
 		state->exclude = dbopen(NULL, O_RDWR, 600, DB_HASH, NULL);
+#endif
 		if (state->exclude == NULL) {
 			return (0);
 		}
