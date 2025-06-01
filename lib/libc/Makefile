@@ -103,6 +103,7 @@ assym.h: ${ARCHDIR}/genassym.cf
 .include "${.CURDIR}/locale/Makefile.inc"
 .include "${.CURDIR}/net/Makefile.inc"
 .include "${.CURDIR}/nls/Makefile.inc"
+.include "${.CURDIR}/nss/Makefile.inc"
 .include "${.CURDIR}/quad/Makefile.inc"
 .include "${.CURDIR}/regex/Makefile.inc"
 .include "${.CURDIR}/resolv/Makefile.inc"

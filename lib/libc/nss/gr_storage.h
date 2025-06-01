@@ -38,7 +38,8 @@
 #define _GROUP_COMPAT
 #endif
 
-#define	MAXGRP	200
+#define	MAXGRP			200
+#define	MAXLINELENGTH	_GETGR_R_SIZE_MAX
 
 struct group_storage {
 	char 	*mem[MAXGRP];
@@ -58,6 +59,10 @@ struct group_storage {
 	char 	*name;
 #endif /* _GROUP_COMPAT */
 };
+
+extern struct group_storage _grs_storage;
+extern struct group _grs_group;
+extern char _grs_groupbuf[MAXLINELENGTH];
 
 int _grs_start(struct group_storage *);
 int _grs_end(struct group_storage *);

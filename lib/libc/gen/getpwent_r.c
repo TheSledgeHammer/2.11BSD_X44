@@ -126,7 +126,7 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 #include "pw_db.h"
 #endif
 
-#include "pw_private.h"
+#include <nss/pw_storage.h>
 
 #ifdef __weak_alias
 __weak_alias(getpwent,_getpwent)
@@ -142,6 +142,8 @@ __weak_alias(setpwfile,_setpwfile)
 static 	mutex_t			_pwmutex = MUTEX_INITIALIZER;
 #endif
 
+#ifdef no_nsswitch
+
 struct passwd_storage {
 	int 		stayopen;	/* see getpassent(3) */
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
@@ -156,13 +158,20 @@ struct passwd_storage {
 	int	 	version;	/* version */
 };
 
-static struct passwd_storage	_pws_storage;
-static struct passwd 		_pws_passwd;
-static char			_pws_passwdbuf[_GETPW_R_SIZE_MAX];
+#endif /* no_nsswitch */
+
+struct passwd_storage _pws_storage;
+struct passwd _pws_passwd;
+char _pws_passwdbuf[_GETPW_R_SIZE_MAX];
+
+#ifdef no_nsswitch
 
 static int _pws_start(struct passwd_storage *);
 static int _pws_end(struct passwd_storage *);
 static int _pws_search(struct passwd *, char *, size_t, struct passwd_storage *, int, const char *, uid_t);
+
+#endif /* no_nsswitch */
+
 static int _pws_keybynum(struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
 static int _pws_keybyname(const char *, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
 static int _pws_keybyuid(uid_t uid, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
@@ -171,12 +180,15 @@ static int _pws_setpassent(struct passwd_storage *, int, int *);
 static int _pws_endpwent(struct passwd_storage *);
 static int _pws_setpwfile(struct passwd_storage *, const char *, int *);
 
+
 /*
  *	passwd storage common methods
  *
  *	DB: see pw_db.c
  *	DBM/NDBM: see pw_ndbm.c
  */
+#ifdef no_nsswitch
+
 static int
 _pws_start(state)
 	struct passwd_storage *state;
@@ -264,6 +276,8 @@ _pws_search(pw, buffer, buflen, state, search, name, uid)
 #endif
 	return (rval);
 }
+
+#endif /* no_nsswitch */
 
 static int
 _pws_keybynum(pw, buffer, buflen, state, result)

@@ -118,8 +118,6 @@ __RCSID("$NetBSD: getgrent.c,v 1.48 2003/10/13 15:36:33 agc Exp $");
 #include <rpcsvc/ypclnt.h>
 #endif
 
-#define	MAXGRP	200
-
 #include "gr_storage.h"
 
 static int _grs_parse(int, gid_t, const char *, struct group *, struct group_storage *, char *, size_t);
@@ -146,11 +144,11 @@ static int _grs_yp_scan(void *, void *, va_list);
 static int _grs_ns_start(struct group_storage *);
 static int _grs_ns_end(struct group_storage *);
 static int _grs_ns_scan(int, gid_t, const char *, struct group *, struct group_storage *, char *, size_t);
-#endif
 
 static int _grs_compat_start(void *, void *, va_list);
 static int _grs_compat_end(void *, void *, va_list);
 static int _grs_compat_scan(void *, void *, va_list);
+#endif
 
 static int
 _grs_parse(search, gid, name, group, state, buffer, buflen)
@@ -455,7 +453,7 @@ _grs_yp_start(nsrv, nscb, ap)
 
 	int rval;
 
-    rval = NS_NOTFOUND;
+	rval = NS_NOTFOUND;
 	state->done = 0;
 	if (state->current) {
 		free(state->current);

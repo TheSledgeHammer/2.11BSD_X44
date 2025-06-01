@@ -53,6 +53,8 @@ static char sccsid[] = "@(#)getgrent.c	8.2 (Berkeley) 3/21/94";
 #include <string.h>
 #include <unistd.h>
 
+#include <nss/gr_storage.h>
+
 #ifdef __weak_alias
 __weak_alias(endgrent,_endgrent)
 __weak_alias(getgrent,_getgrent)
@@ -69,6 +71,8 @@ __weak_alias(setgroupent,_setgroupent)
 static 	mutex_t			_grmutex = MUTEX_INITIALIZER;
 #endif
 
+#ifdef no_nsswitch
+
 #define	MAXGRP			200
 #define	MAXLINELENGTH	_GETGR_R_SIZE_MAX
 
@@ -78,19 +82,28 @@ struct group_storage {
 	int 	stayopen;
 };
 
-static struct group_storage _grs_storage;
-static struct group _grs_group;
-static char _grs_groupbuf[MAXLINELENGTH];
+#endif /* no_nsswitch */
+
+struct group_storage _grs_storage;
+struct group _grs_group;
+char _grs_groupbuf[MAXLINELENGTH];
+
+#ifdef no_nsswitch
 
 static int _grs_grscan(int, gid_t, const char *, struct group *, struct group_storage *, char *, size_t);
 static int _grs_start(struct group_storage *);
 static int _grs_end(struct group_storage *);
+
+#endif /* no_nsswitch */
+
 static int _grs_setgrent(struct group_storage *);
 static int _grs_setgroupent(struct group_storage *, int, int *);
 static int _grs_endgrent(struct group_storage *);
 static int _grs_getgrent(struct group *, struct group_storage *, char *, size_t, struct group **);
 static int _grs_getgrnam(const char *, struct group *, struct group_storage *, char *, size_t, struct group **);
 static int _grs_getgrgid(gid_t, struct group *, struct group_storage *, char *, size_t, struct group **);
+
+#ifdef no_nsswitch
 
 static int
 _grs_grscan(search, gid, name, group, state, buffer, buflen)
@@ -185,6 +198,8 @@ _grs_end(state)
 	}
 	return (NS_SUCCESS);
 }
+
+#endif /* no_nsswitch */
 
 static int
 _grs_endgrent(state)

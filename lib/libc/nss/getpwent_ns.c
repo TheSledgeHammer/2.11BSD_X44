@@ -93,9 +93,6 @@ __RCSID("$NetBSD: getpwent.c,v 1.56 2003/11/26 00:48:59 lukem Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-//#include "namespace.h"
-//#include "reentrant.h"
-
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/file.h>
@@ -407,8 +404,8 @@ _pws_hesiod_search(nsrv, nscb, ap)
 			NULL
 	};
 
-    hp = NULL;
-    rval = NS_NOTFOUND;
+	hp = NULL;
+	rval = NS_NOTFOUND;
 
 	switch (search) {
 	case _PW_KEYBYNUM:
@@ -522,7 +519,7 @@ _pws_yp_start(nsrv, nscb, ap)
 
 	int rval;
 
-    rval = NS_NOTFOUND;
+	rval = NS_NOTFOUND;
 	state->done = 0;
 	if (state->current) {
 		free(state->current);
@@ -541,9 +538,9 @@ _pws_yp_start(nsrv, nscb, ap)
 			rval = NS_UNAVAIL;
 			break;
 		}
-        if (rval == NS_SUCCESS) {
-		    rval = _pws_yp_maptype(state);
-	    }
+		if (rval == NS_SUCCESS) {
+			rval = _pws_yp_maptype(state);
+		}
 	}
 	return (rval);
 }
@@ -702,9 +699,9 @@ _pws_yp_search(nsrv, nscb, ap)
 	char *data;
 	int rval, nisr, datalen;
 
-    from = NULL;
-    fromlen = 0;
-    map_arr = NULL;
+	from = NULL;
+	fromlen = 0;
+	map_arr = NULL;
 
 	switch (search) {
 	case _PW_KEYBYNUM:
@@ -726,9 +723,9 @@ _pws_yp_search(nsrv, nscb, ap)
 	}
 
 	rval = NS_NOTFOUND | NS_UNAVAIL;
-    if (state->maptype == YPMAP_UNKNOWN && state->maptype >= nmaps) {
-        return (rval);
-    }
+	if (state->maptype == YPMAP_UNKNOWN && state->maptype >= nmaps) {
+		return (rval);
+	}
 	if (search != _PW_KEYBYNUM) {
 		data = NULL;
 		nisr = yp_match(state->domain, map_arr[state->maptype], buffer,

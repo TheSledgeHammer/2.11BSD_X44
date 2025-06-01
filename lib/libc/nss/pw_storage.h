@@ -86,6 +86,10 @@ struct passwd_storage {
 #endif /* _GROUP_COMPAT */
 };
 
+extern struct passwd_storage _pws_storage;
+extern struct passwd _pws_passwd;
+extern char _pws_passwdbuf[_GETPW_R_SIZE_MAX];
+
 int _pws_start(struct passwd_storage *);
 int _pws_end(struct passwd_storage *);
 int _pws_search(struct passwd *, char *, size_t, struct passwd_storage *, int, const char *, uid_t);
