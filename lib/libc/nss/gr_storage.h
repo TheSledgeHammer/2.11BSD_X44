@@ -38,6 +38,8 @@
 #define _GROUP_COMPAT
 #endif
 
+#define	MAXGRP	200
+
 struct group_storage {
 	char 	*mem[MAXGRP];
 	FILE 	*fp;

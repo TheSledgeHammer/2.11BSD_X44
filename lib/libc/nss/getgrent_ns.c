@@ -105,6 +105,7 @@ __RCSID("$NetBSD: getgrent.c,v 1.48 2003/10/13 15:36:33 agc Exp $");
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <syslog.h>
 #include <unistd.h>
 
 #ifdef HESIOD
@@ -116,6 +117,8 @@ __RCSID("$NetBSD: getgrent.c,v 1.48 2003/10/13 15:36:33 agc Exp $");
 #include <rpcsvc/yp_prot.h>
 #include <rpcsvc/ypclnt.h>
 #endif
+
+#define	MAXGRP	200
 
 #include "gr_storage.h"
 
@@ -135,7 +138,7 @@ static int _grs_hesiod_scan(void *, void *, va_list);
 
 #ifdef YP
 static int _grs_yp_start(void *, void *, va_list);
-static int _grs_yp_start(void *, void *, va_list);
+static int _grs_yp_end(void *, void *, va_list);
 static int _grs_yp_scan(void *, void *, va_list);
 #endif
 
@@ -426,7 +429,7 @@ _grs_hesiod_scan(nsrv, nscb, ap)
 
 		strncpy(buffer, hp[0], buflen);
 		buffer[buflen - 1] = '\0';
-		rval = _grs_parse(search, group, name, state, buffer, buflen);
+		rval = _grs_parse(search, gid, hp[0], group, state, buffer, buflen);
 scan_out:
 		if (hp) {
 			hesiod_free_list(state->context, hp);
@@ -452,6 +455,7 @@ _grs_yp_start(nsrv, nscb, ap)
 
 	int rval;
 
+    rval = NS_NOTFOUND;
 	state->done = 0;
 	if (state->current) {
 		free(state->current);
@@ -576,7 +580,7 @@ _grs_yp_scan(nsrv, nscb, ap)
 			data[datalen] = '\0'; /* clear trailing \n */
 			strncpy(buffer, data, buflen);
 			buffer[buflen - 1] = '\0';
-			rval = _grs_parse(search, group, name, state, buffer, buflen);
+			rval = _grs_parse(search, gid, data, group, state, buffer, buflen);
 		}
 		if (key) {
 			free(key);

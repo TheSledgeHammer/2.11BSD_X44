@@ -93,8 +93,8 @@ __RCSID("$NetBSD: getpwent.c,v 1.56 2003/11/26 00:48:59 lukem Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include "namespace.h"
-#include "reentrant.h"
+//#include "namespace.h"
+//#include "reentrant.h"
 
 #include <sys/param.h>
 #include <sys/types.h>
@@ -103,6 +103,7 @@ __RCSID("$NetBSD: getpwent.c,v 1.56 2003/11/26 00:48:59 lukem Exp $");
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <netgroup.h>
 #include <nsswitch.h>
 #include <pwd.h>
 #include <stdarg.h>
@@ -114,10 +115,10 @@ __RCSID("$NetBSD: getpwent.c,v 1.56 2003/11/26 00:48:59 lukem Exp $");
 
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
 #include <ndbm.h>
-#include "pw_ndbm.h"
+#include <gen/pw_ndbm.h>
 #else
 #include <db.h>
-#include "pw_db.h"
+#include <gen/pw_db.h>
 #endif
 
 #ifdef HESIOD
@@ -130,7 +131,7 @@ __RCSID("$NetBSD: getpwent.c,v 1.56 2003/11/26 00:48:59 lukem Exp $");
 #include <rpcsvc/ypclnt.h>
 #endif
 
-#include "pw_private.h"
+#include <gen/pw_private.h>
 #include "pw_storage.h"
 
 const char __yp_token[] = "__YP!";	/* Let pwd_mkdb pull this in. */
@@ -167,7 +168,7 @@ static int _pws_yp_maptype(struct passwd_storage *);
 static int _pws_yp_start(void *, void *, va_list);
 static int _pws_yp_end(void *, void *, va_list);
 static int _pws_yp_parse(const char *, struct passwd *, char *, size_t, struct passwd_storage *);
-static int _pws_yp_scan(struct passwd *, struct passwd_storage *, char *, size_t, const char *);
+static int _pws_yp_scan(struct passwd *, struct passwd_storage *, char *, size_t, const char **);
 static int _pws_yp_search(void *, void *, va_list);
 #endif
 
@@ -406,6 +407,9 @@ _pws_hesiod_search(nsrv, nscb, ap)
 			NULL
 	};
 
+    hp = NULL;
+    rval = NS_NOTFOUND;
+
 	switch (search) {
 	case _PW_KEYBYNUM:
 		if (state->num == -1) {
@@ -448,7 +452,7 @@ _pws_hesiod_search(nsrv, nscb, ap)
 	}
 	buffer[0] = search;
 	bcopy(from, buffer + 1, fromlen);
-	rval = _pws_parse(hp[0], buffer, buflen, 1);
+	rval = _pws_parse(hp[0], pw, buffer, buflen, 1);
 	if (rval) {
 		rval = NS_SUCCESS;
 	} else {
@@ -518,6 +522,7 @@ _pws_yp_start(nsrv, nscb, ap)
 
 	int rval;
 
+    rval = NS_NOTFOUND;
 	state->done = 0;
 	if (state->current) {
 		free(state->current);
@@ -536,9 +541,9 @@ _pws_yp_start(nsrv, nscb, ap)
 			rval = NS_UNAVAIL;
 			break;
 		}
-	}
-	if (rval == NS_SUCCESS) {
-		rval = _pws_yp_maptype(state);
+        if (rval == NS_SUCCESS) {
+		    rval = _pws_yp_maptype(state);
+	    }
 	}
 	return (rval);
 }
@@ -593,7 +598,7 @@ _pws_yp_parse(s, pw, buffer, buflen, state)
 			/* skip name to get password */
 			if (strsep(&data, ":") != NULL && (bp = strsep(&data, ":")) != NULL) {
 				/* store new pw_passwd after entry */
-				if (strlcpy(buf + elen, bp, buflen - elen) >= buflen - elen) {
+				if (strlcpy(buffer + elen, bp, buflen - elen) >= buflen - elen) {
 					free(data);
 					return (0);
 				}
@@ -611,7 +616,7 @@ _pws_yp_scan(pw, state, buffer, buflen, map_arr)
 	struct passwd_storage *state;
 	char *buffer;
 	size_t buflen;
-	const char *map_arr;
+	const char **map_arr;
 {
 	char *key, *data;
 	int keylen, datalen, rval, nisr;
@@ -622,7 +627,7 @@ next_entry:
 	rval = NS_NOTFOUND;
 
 	if (state->current) {
-		nisr = yp_next(state->domain, map_arr, state->current,
+		nisr = yp_next(state->domain, map_arr[state->maptype], state->current,
 				state->currentlen, &key, &keylen, &data, &datalen);
 		free(state->current);
 		state->current = NULL;
@@ -640,8 +645,8 @@ next_entry:
 			goto scan_out;
 		}
 	} else {
-		nisr = yp_first(state->domain, map_arr, state->current,
-				state->currentlen, &data, &datalen);
+		nisr = yp_first(state->domain, map_arr[state->maptype], &state->current,
+				&state->currentlen, &data, &datalen);
 		if (nisr) {
 			rval = NS_UNAVAIL;
 			goto scan_out;
@@ -691,10 +696,15 @@ _pws_yp_search(nsrv, nscb, ap)
 	uid = va_arg(ap, uid_t);
 
 	const void *from;
-	const char *map_arr;
-	size_t	fromlen, nmaps;
+	const char **map_arr;
+	size_t fromlen;
+    size_t nmaps;
 	char *data;
 	int rval, nisr, datalen;
+
+    from = NULL;
+    fromlen = 0;
+    map_arr = NULL;
 
 	switch (search) {
 	case _PW_KEYBYNUM:
@@ -715,13 +725,10 @@ _pws_yp_search(nsrv, nscb, ap)
 		abort();
 	}
 
-	if (buflen <= fromlen) {
-		return (NS_UNAVAIL);
-	}
-
-	buffer[0] = search;
-	bcopy(from, buffer + 1, fromlen);
 	rval = NS_NOTFOUND | NS_UNAVAIL;
+    if (state->maptype == YPMAP_UNKNOWN && state->maptype >= nmaps) {
+        return (rval);
+    }
 	if (search != _PW_KEYBYNUM) {
 		data = NULL;
 		nisr = yp_match(state->domain, map_arr[state->maptype], buffer,
@@ -749,6 +756,12 @@ _pws_yp_search(nsrv, nscb, ap)
 		return (NS_NOTFOUND);
 	}
 
+	if (buflen <= fromlen) {
+		return (NS_UNAVAIL);
+	}
+
+	buffer[0] = search;
+	bcopy(from, buffer + 1, fromlen);
 	rval = _pws_yp_scan(pw, state, buffer, buflen, map_arr);
 	if (rval == NS_UNAVAIL) {
 		return (rval);
@@ -848,7 +861,7 @@ _pws_compat_start(nsrv, nscb, ap)
 		 *	either "__YP!" or PW_KEYBYNAME+"+".
 		 *	Only works if pwd_mkdb installs the token.
 		 */
-		_pw_setkey(&key, (unsigned char*) __UNCONST(__yp_token),
+		_pw_setkey(&key, __UNCONST(__yp_token),
 				strlen(__yp_token));
 
 		bf[0] = _PW_KEYBYNAME; /* Pre-token database support. */
@@ -946,7 +959,7 @@ _pws_compat_proto_set(pw, state, pwflags)
 	proto->pw_change = pw->pw_change;
 
 	/* class (ignored anyway) */
-	proto->pw_class = "";
+	proto->pw_class = __UNCONST("");
 
 	/* gecos */
 	if (pw->pw_gecos && (pw->pw_gecos)[0]) {
@@ -1005,9 +1018,9 @@ _pws_compat_add_exclude(state, name)
 		}
 	}
 	/* set up the key */
-	_pw_setkey(&key, (unsigned char *)__UNCONST(name), strlen(name));
+	_pw_setkey(&key, __UNCONST(name), strlen(name));
 	/* data is nothing */
-	_pw_setkey(&data, (unsigned char *)__UNCONST(name), strlen(name));
+	_pw_setkey(&data, __UNCONST(name), strlen(name));
 
 	/* store it */
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
@@ -1036,7 +1049,7 @@ _pws_compat_is_excluded(state, name)
 		return (0);			/* nothing excluded */
 	}
 	/* set up the key */
-	_pw_setkey(&key, (unsigned char*) __UNCONST(name), strlen(name));
+	_pw_setkey(&key, __UNCONST(name), strlen(name));
 
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
 	ret = _pw_getdb(state->exclude, &key, 0);
@@ -1085,6 +1098,7 @@ _pws_compat_search(nsrv, nscb, ap)
 	}
 
 	for (;;) { /* loop over pwd.db */
+        rval = NS_NOTFOUND;
 		if (state->mode != COMPAT_NOTOKEN && state->mode != COMPAT_NONE) {
 			/* doing a compat lookup */
 			switch (state->mode) {
@@ -1230,7 +1244,7 @@ _pws_compat_search(nsrv, nscb, ap)
 					if (!user || !*user) {
 						continue;
 					}
-					if (!_compat_add_exclude(state, user)) {
+					if (!_pws_compat_add_exclude(state, user)) {
 						rval = NS_UNAVAIL;
 						break;
 					}
@@ -1238,7 +1252,7 @@ _pws_compat_search(nsrv, nscb, ap)
 				endnetgrent();
 				break;
 			default:
-				if (!_compat_add_exclude(state, pw->pw_name + 1)) {
+				if (!_pws_compat_add_exclude(state, pw->pw_name + 1)) {
 					rval = NS_UNAVAIL;
 				}
 				break;
