@@ -129,6 +129,7 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 
 #include <ndbm.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -143,24 +144,22 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 
 #include "pw_ndbm.h"
 
-static int _pw_getdb(DBM *, datum *, int *);
 static int _pw_version(DBM **, datum *, datum *, int *, int *);
 static int _pw_opendb(DBM **, FILE *, int *, int *);
-static void _pw_closedb(DBM *, FILE *);
 static int _pw_hashdb(datum *, struct passwd *, char *, char *, char *, int);
 static int _pw_fetch(DBM *, datum *, struct passwd *, char *, size_t, int *, int *, int);
 
 int
-_pw_start(db, fp, rewind, keynum, version)
+_pw_start(db, fp, rew, keynum, version)
 	DBM **db;
 	FILE *fp;
-	int *rewind, *keynum, *version;
+	int *rew, *keynum, *version;
 {
 	int rv;
 
-	*rewind = 1;
+	*rew = 1;
 	*keynum = 0;
-	rv = _pw_opendb(db, fp, rewind, version);
+	rv = _pw_opendb(db, fp, rew, version);
 	if (rv != NS_SUCCESS) {
 		return (rv);
 	}
@@ -188,18 +187,18 @@ _pw_end(db, fp, keynum)
  *	of key.data will be invalid on exit.)
  */
 int
-_pw_getkey(db, key, pw, buffer, buflen, pwflags, rewind, version)
+_pw_getkey(db, key, pw, buffer, buflen, pwflags, rew, version)
 	DBM *db;
 	datum *key;
 	struct passwd *pw;
 	char *buffer;
 	size_t buflen;
-	int *pwflags, *rewind, version;
+	int *pwflags, *rew, version;
 {
 	if (db == NULL) {			/* this shouldn't happen */
 		return (NS_UNAVAIL);
 	}
-	return (_pw_fetch(db, key, pw, buffer, buflen, pwflags, rewind, version));
+	return (_pw_fetch(db, key, pw, buffer, buflen, pwflags, rew, version));
 }
 
 void
@@ -213,14 +212,14 @@ _pw_setkey(key, data, size)
 }
 
 static int
-_pw_version(db, key, value, rewind, version)
+_pw_version(db, key, value, rew, version)
 	DBM **db;
 	datum *key, *value;
-	int *rewind, *version;
+	int *rew, *version;
 {
 	key->dptr = __UNCONST("VERSION");
 	key->dsize = strlen((char *)key->dptr) + 1;
-	switch (_pw_getdb(*db, key, rewind)) {
+	switch (_pw_getdb(*db, key, rew)) {
 	case 0:
 		if (sizeof(*version) != value->dsize) {
 			return (NS_UNAVAIL);
@@ -244,10 +243,10 @@ _pw_version(db, key, value, rewind, version)
  *	upon permissions, etc)
  */
 static int
-_pw_opendb(db, fp, rewind, version)
+_pw_opendb(db, fp, rew, version)
 	DBM **db;
 	FILE *fp;
-	int *rewind;
+	int *rew;
 	int *version;
 {
 	const char *dbfile = NULL;
@@ -258,7 +257,7 @@ _pw_opendb(db, fp, rewind, version)
 	_DIAGASSERT(version != NULL);
 
 	if (*db != NULL) {
-		*rewind = 1;
+		*rew = 1;
 		return (NS_SUCCESS);
 	}
 	if (fp != NULL) {
@@ -269,13 +268,13 @@ _pw_opendb(db, fp, rewind, version)
 	if (geteuid() == 0) {
 		dbfile = _PATH_MASTERPASSWD;
 		*db = dbm_open(dbfile, O_RDONLY, 0);
-		*rewind = 1;
+		*rew = 1;
 	}
 
 	if (*db == NULL) {
 		dbfile = _PATH_PASSWD;
 		*db = dbm_open(dbfile, O_RDONLY, 0);
-		*rewind = 1;
+		*rew = 1;
 	}
 
 	if (fp == fopen(dbfile, "r")) {
@@ -286,16 +285,16 @@ _pw_opendb(db, fp, rewind, version)
 		return (NS_UNAVAIL);
 	}
 
-	return (_pw_version(db, &key, &value, version));
+	return (_pw_version(db, &key, &value, rew, version));
 }
 
 int
-_pw_getdb(db, key, rewind)
+_pw_getdb(db, key, rew)
 	DBM *db;
 	datum *key;
-	int *rewind;
+	int *rew;
 {
-	int ret;
+	int ret = 0;
 
 	if (flock(dbm_dirfno(db), LOCK_SH)) {
 		ret = -1;
@@ -303,8 +302,8 @@ _pw_getdb(db, key, rewind)
 	}
 
 	if (!key->dptr) {
-		if (*rewind) {
-			*rewind = 0;
+		if (*rew) {
+			*rew = 0;
 			*key = dbm_firstkey(db);
 		} else {
 			*key = dbm_nextkey(db);
@@ -313,9 +312,9 @@ _pw_getdb(db, key, rewind)
 
 	if (key->dptr) {
 		*key = dbm_fetch(db, *key);
-		if (*key != NULL) {
+		if (key != NULL) {
 			ret = 0;
-		} else if (*key == NULL) {
+		} else if (key == NULL) {
 			ret = 1;
 		} else {
 			ret = -1;
@@ -394,18 +393,18 @@ _pw_hashdb(data, pw, p, t, pwflags, version)
 }
 
 static int
-_pw_fetch(db, key, pw, buffer, buflen, pwflags, rewind, version)
+_pw_fetch(db, key, pw, buffer, buflen, pwflags, rew, version)
 	DBM *db;
 	datum *key;
 	struct passwd *pw;
 	char *buffer;
 	size_t buflen;
-	int *pwflags, *rewind, version;
+	int *pwflags, *rew, version;
 {
 	register char *p, *t;
 	datum data;
 
-	switch (_pw_getdb(db, key, rewind)) {
+	switch (_pw_getdb(db, key, rew)) {
 	case 0:
 		break; 					/* found */
 	case 1:
@@ -484,12 +483,13 @@ _pw_readfp(db, pw, buffer)
 	struct passwd *pw;
 	char *buffer;
 {
-	char pwbuf[50];
+	char *pwbuf;
 	const char *dbfile;
 	long pos;
 	int fd, n;
 	register char *p;
 
+    fd = 0;
 	pwbuf = buffer;
 	if (geteuid() == 0) {
 		dbfile = _PATH_MASTERPASSWD;
@@ -499,7 +499,7 @@ _pw_readfp(db, pw, buffer)
 		}
 	}
 
-	if (*db != NULL) {
+	if (db != NULL) {
 		dbfile = _PATH_PASSWD;
 		fd = open(dbfile, O_RDONLY, 0);
 		if (fd < 0) {
