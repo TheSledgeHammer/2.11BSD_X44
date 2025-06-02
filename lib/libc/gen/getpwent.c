@@ -1,50 +1,132 @@
-/*
- * Copyright (c) 1988 The Regents of the University of California.
+/*	$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $	*/
+
+/*-
+ * Copyright (c) 1997-2000, 2004-2005 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Luke Mewburn.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+/*
+ * Portions Copyright (c) 1994, 1995, Jason Downs.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR(S) ``AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR(S) BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
-static char sccsid[] = "@(#)getpwent.c	5.9.1 (2.11BSD) 1996/1/12";
+static char sccsid[] = "@(#)getpwent.c	8.2 (Berkeley) 4/27/95";
+#else
+__RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+#include "reentrant.h"
 
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/file.h>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <nsswitch.h>
 #include <pwd.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
 
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
 #include <ndbm.h>
+#include "pw_ndbm.h"
 #else
 #include <db.h>
+#include "pw_db.h"
 #endif
 
-#include <fcntl.h>
-#include <syslog.h>
-#include <utmp.h>
-#include <errno.h>
-#include <unistd.h>
-#include <limits.h>
+#include <nss/pw_storage.h>
 
 #ifdef __weak_alias
 __weak_alias(getpwent,_getpwent)
@@ -56,472 +138,451 @@ __weak_alias(endpwent,_endpwent)
 __weak_alias(setpwfile,_setpwfile)
 #endif
 
-#define	MAXLINELENGTH	256
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-static DBM *_pw_db;			/* password database */
-static const char *_pw_file = _PATH_PASSWD;	/* password path */
-static FILE *_pw_fp;			/* password file */
-static int _pw_rewind = 1;
-#else
-static DB *_pw_db;			/* password database */
-static const char *_pw_file = _PATH_MP_DB;	/* password path */
-#endif
-static struct passwd _pw_passwd;	/* password structure */
-static int _pw_keynum;			/* key counter */
-static int _pw_stayopen;		/* keep fd's open */
-static char _pw_flag;
-static char *line;
-
-static int start_pw(void);
-static int hashpw(char *, char *);
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-static int scanpw(void);
-static int init_ndbm(void);
-static int fetch_pw(datum);
-static void getpw(void);
-#else
-static int init_db(void);
-static int fetch_pw(DBT *);
+#ifdef _REENTRANT
+static 	mutex_t			_pwmutex = MUTEX_INITIALIZER;
 #endif
 
+#ifdef no_nsswitch
+
+struct passwd_storage {
+	int 		stayopen;	/* see getpassent(3) */
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-struct passwd *
-getpwent(void)
-{
-	datum key;
-	int rval;
-	char bf[sizeof(_pw_keynum) + 1];
-
-	if (!_pw_db && !_pw_fp && !start_pw()) {
-		return ((struct passwd *) NULL);
-	}
-    rval = 0;
-	do {
-		if (_pw_db) {
-			++_pw_keynum;
-			bf[0] = _PW_KEYBYNUM;
-			bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
-			key.dptr = (u_char *)bf;
-			key.dsize = sizeof(_pw_keynum) + 1;
-			rval = fetch_pw(key);
-		} else { /* _pw_fp */
-			rval = scanpw();
-		}
-	} while (rval && _pw_flag != _PW_KEYBYNUM);
-	if (rval) {
-		getpw();
-	}
-	return (rval ? &_pw_passwd : (struct passwd *) NULL);
-}
-
-struct passwd *
-getpwnam(nam)
-	char *nam;
-{
-	datum key;
-	int len, rval;
-	char bf[UT_NAMESIZE + 1];
-
-	if (!_pw_db && !start_pw()) {
-		return ((struct passwd *) NULL);
-	}
-    rval = 0;
-	if (_pw_db) {
-		bf[0] = _PW_KEYBYNAME;
-		len = strlen(nam);
-		bcopy(nam, bf + 1, MIN(len, UT_NAMESIZE));
-		key.dptr = nam;
-		key.dsize = strlen(nam);
-		rval = fetch_pw(key);
-	} else {	/* _pw_fp */
-		for (rval = 0; scanpw();) {
-			if (!strcmp(nam, _pw_passwd.pw_name)) {
-				rval = 1;
-				break;
-			}
-		}
-	}
-	if (!_pw_stayopen) {
-		endpwent();
-	}
-	if (rval) {
-		getpw();
-	}
-	return (rval ? &_pw_passwd : (struct passwd *) NULL);
-}
-
-struct passwd *
-getpwuid(uid)
-	uid_t uid;
-{
-	datum key;
-	int keyuid, rval;
-	char bf[sizeof(keyuid) + 1];
-
-	if (!_pw_db && !start_pw()) {
-		return ((struct passwd *) NULL);
-	}
-    rval = 0;
-	if (_pw_db) {
-		bf[0] = _PW_KEYBYUID;
-		keyuid = uid;
-		bcopy(&keyuid, bf + 1, sizeof(keyuid));
-		key.dptr = (u_char *)bf;
-		key.dsize =  sizeof(keyuid) + 1;
-		rval = fetch_pw(key);
-	} else {	/* _pw_fp */
-		for (rval = 0; scanpw();) {
-			if (_pw_passwd.pw_uid == uid) {
-				rval = 1;
-				break;
-			}
-		}
-	}
-	if (!_pw_stayopen) {
-		endpwent();
-	}
-	if (rval) {
-		getpw();
-	}
-	return (rval ? &_pw_passwd : (struct passwd *) NULL);
-}
-
+	DBM		*db;		/* DBM passwd file handle */
+	FILE 		*fp;		/* DBM passwd file */
+	const char 	*file;		/* DBM passwd file name */
+	int 		rewind;
 #else
-
-struct passwd *
-getpwent(void)
-{
-	DBT key;
-	int rval;
-	char bf[sizeof(_pw_keynum) + 1];
-
-	if (!_pw_db && !start_pw()) {
-		return ((struct passwd *) NULL);
-	}
-	++_pw_keynum;
-	bf[0] = _PW_KEYBYNUM;
-	bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
-	key.data = (u_char *)bf;
-	key.size = sizeof(_pw_keynum) + 1;
-	rval = fetch_pw(&key);
-	return (rval ? &_pw_passwd : (struct passwd *) NULL);
-}
-
-struct passwd *
-getpwnam(nam)
-	char *nam;
-{
-	DBT key;
-	int len, rval;
-	char bf[UT_NAMESIZE + 1];
-
-	if (!_pw_db && !start_pw()) {
-		return ((struct passwd *) NULL);
-	}
-	bf[0] = _PW_KEYBYNAME;
-	len = strlen(nam);
-	bcopy(nam, bf + 1, MIN(len, UT_NAMESIZE));
-	key.data = (u_char *)bf;
-	key.size = len + 1;
-	rval = fetch_pw(&key);
-	if (!_pw_stayopen) {
-		endpwent();
-	}
-	return (rval ? &_pw_passwd : (struct passwd *) NULL);
-}
-
-struct passwd *
-getpwuid(uid)
-	uid_t uid;
-{
-	DBT key;
-	int keyuid, rval;
-	char bf[sizeof(keyuid) + 1];
-
-	if (!_pw_db && !start_pw()) {
-		return ((struct passwd *) NULL);
-	}
-	bf[0] = _PW_KEYBYUID;
-	keyuid = uid;
-	bcopy(&keyuid, bf + 1, sizeof(keyuid));
-	key.data = (u_char *)bf;
-	key.size = sizeof(keyuid) + 1;
-	rval = fetch_pw(&key);
-	if (!_pw_stayopen) {
-		endpwent();
-	}
-	return (rval ? &_pw_passwd : (struct passwd *) NULL);
-}
-
+	DB		*db;		/* DB passwd file handle */
 #endif
+	int	 	keynum;		/* key counter, -1 if no more */
+	int	 	version;	/* version */
+};
+
+#endif /* no_nsswitch */
+
+struct passwd_storage _pws_storage;
+struct passwd _pws_passwd;
+char _pws_passwdbuf[_GETPW_R_SIZE_MAX];
+
+#ifdef no_nsswitch
+
+static int _pws_start(struct passwd_storage *);
+static int _pws_end(struct passwd_storage *);
+static int _pws_search(struct passwd *, char *, size_t, struct passwd_storage *, int, const char *, uid_t);
+
+#endif /* no_nsswitch */
+
+static int _pws_keybynum(struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
+static int _pws_keybyname(const char *, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
+static int _pws_keybyuid(uid_t uid, struct passwd *, char *, size_t, struct passwd_storage *, struct passwd **);
+static int _pws_setpwent(struct passwd_storage *);
+static int _pws_setpassent(struct passwd_storage *, int, int *);
+static int _pws_endpwent(struct passwd_storage *);
+static int _pws_setpwfile(struct passwd_storage *, const char *, int *);
+
+
+/*
+ *	passwd storage common methods
+ *
+ *	DB: see pw_db.c
+ *	DBM/NDBM: see pw_ndbm.c
+ */
+#ifdef no_nsswitch
 
 static int
-start_pw(void)
+_pws_start(state)
+	struct passwd_storage *state;
 {
-	int ret;
+	int rval;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_start(&state->db, state->fp, &state->keynum, &state->version);
+#else
+	rval = _pw_start(&state->db, &state->keynum, &state->version);
+#endif
+	return (rval);
+}
+
+static int
+_pws_end(state)
+	struct passwd_storage *state;
+{
+	int rval;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_end(state->db, state->fp, &state->rewind, &state->keynum);
+#else
+	rval = _pw_end(state->db, &state->keynum);
+#endif
+	return (rval);
+}
+
+static int
+_pws_search(pw, buffer, buflen, state, search, name, uid)
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+	int search;
+	const char *name;
+	uid_t uid;
+{
+	const void *from;
+	size_t	fromlen;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	datum	key;
+#else
+	DBT 	key;
+#endif
+	int 	rval;
+
+	if (state->db == NULL) {
+		rval = _pws_start(state);
+		if (rval != NS_SUCCESS) {
+			return (rval);
+		}
+	}
+
+	switch (search) {
+	case _PW_KEYBYNUM:
+		if (state->keynum == -1) {
+			return (NS_NOTFOUND); /* no more records */
+		}
+		state->keynum++;
+		from = &state->keynum;
+		fromlen = sizeof(state->keynum);
+		break;
+	case _PW_KEYBYNAME:
+		from = name;
+		fromlen = strlen(name);
+		break;
+	case _PW_KEYBYUID:
+		from = &uid;
+		fromlen = sizeof(uid);
+		break;
+	default:
+		abort();
+	}
+
+	if (buflen <= fromlen) {
+		errno = ERANGE;
+		return (NS_UNAVAIL);
+	}
+	buffer[0] = search;
+	bcopy(from, buffer + 1, fromlen);
+	_pw_setkey(&key, buffer, fromlen + 1);
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	rval = _pw_getkey(state->db, &key, pw, buffer, buflen, NULL, &state->rewind, state->version);
+#else
+	rval = _pw_getkey(state->db, &key, pw, buffer, buflen, NULL, state->version);
+#endif
+	return (rval);
+}
+
+#endif /* no_nsswitch */
+
+static int
+_pws_keybynum(pw, buffer, buflen, state, result)
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+	struct passwd **result;
+{
+	int rval;
+
+	if (state->db == NULL) {
+		rval = _pws_start(state);
+		if (rval != NS_SUCCESS) {
+			return (rval);
+		}
+	}
+
+	rval = _pws_search(pw, buffer, buflen, state, _PW_KEYBYNUM, NULL, 0);
+	if (rval == NS_NOTFOUND) {
+		state->keynum = -1; /* flag `no more records' */
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	} else {
+		if (state->fp != NULL) {
+			rval = _pw_scanfp(state->fp, pw, buffer);
+		}
+#endif
+	}
+
+	if (!state->stayopen) {
+		_pws_endpwent(state);
+	}
+
+	if (rval == NS_SUCCESS) {
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		_pw_readfp(state->db, pw, buffer);
+#endif
+		result = &pw;
+	}
+	return (rval);
+}
+
+static int
+_pws_keybyname(name, pw, buffer, buflen, state, result)
+	const char *name;
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+	struct passwd **result;
+{
+	int rval;
+
+	if (state->db == NULL) {
+		rval = _pws_start(state);
+		if (rval != NS_SUCCESS) {
+			return (rval);
+		}
+	}
+
+	rval = _pws_search(pw, buffer, buflen, state, _PW_KEYBYNAME, name, 0);
+	if (strcmp(pw->pw_name, name) != 0) {
+		rval = NS_NOTFOUND;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	} else {
+		int ret;
+
+		ret = _pw_scanfp(state->fp, pw, buffer);
+		for (rval = 0; ret;) {
+			if (strcmp(name, pw->pw_name) == 0) {
+				rval = NS_SUCCESS;
+				break;
+			}
+		}
+#endif
+	}
+
+	if (!state->stayopen) {
+		_pws_endpwent(state);
+	}
+
+	if (rval == NS_SUCCESS) {
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		_pw_readfp(state->db, pw, buffer);
+#endif
+		result = &pw;
+	}
+	return (rval);
+}
+
+static int
+_pws_keybyuid(uid, pw, buffer, buflen, state, result)
+	uid_t uid;
+	struct passwd *pw;
+	char *buffer;
+	size_t buflen;
+	struct passwd_storage *state;
+	struct passwd **result;
+{
+	int rval;
+
+	if (state->db == NULL) {
+		rval = _pws_start(state);
+		if (rval != NS_SUCCESS) {
+			return (rval);
+		}
+	}
+
+	rval = _pws_search(pw, buffer, buflen, state, _PW_KEYBYUID, NULL, uid);
+	if (pw->pw_uid != uid) {
+		rval = NS_NOTFOUND;
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+	} else {
+		int ret;
+
+		ret = _pw_scanfp(state->fp, pw, buffer);
+		for (rval = 0; ret;) {
+			if (pw->pw_uid == uid) {
+				rval = NS_SUCCESS;
+				break;
+			}
+		}
+#endif
+	}
+	if (!state->stayopen) {
+		_pws_endpwent(state);
+	}
+	if (rval == NS_SUCCESS) {
+#if defined(RUN_NDBM) && (RUN_NDBM == 0)
+		_pw_readfp(state->db, pw, buffer);
+#endif
+		result = &pw;
+	}
+	return (rval);
+}
+
+static int
+_pws_setpwent(state)
+	struct passwd_storage *state;
+{
+	int result;
+
+	return (_pws_setpassent(state, 0, &result));
+}
+
+static int
+_pws_setpassent(state, stayopen, result)
+	struct passwd_storage *state;
+	int stayopen, *result;
+{
+	int rval;
+
+	state->keynum = 0;
+	state->stayopen = stayopen;
+	rval = _pws_start(state);
+	*result = (rval == NS_SUCCESS);
+	return (rval);
+}
+
+static int
+_pws_endpwent(state)
+	struct passwd_storage *state;
+{
+	state->stayopen = 0;
+	return (_pws_end(state));
+}
+
+static int
+_pws_setpwfile(state, file, result)
+	struct passwd_storage *state;
+	const char *file;
+	int *result;
+{
+	int rval;
 
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	ret = init_ndbm();
+	state->file = file;
+	rval = _pws_start(state);
+	*result = (rval == NS_SUCCESS);
 #else
-	ret = init_db();
+	/* Not supported for DB */
+	file = NULL;
+	*result = EINVAL;
+	rval = NS_NOTFOUND;
 #endif
-	return (ret);
+	return (rval);
+}
+
+/*
+ *	public functions
+ */
+int
+getpwent_r(pwd, buffer, buflen, result)
+	struct passwd *pwd;
+	char *buffer;
+	size_t buflen;
+	struct passwd **result;
+{
+	int rval;
+
+	mutex_lock(&_pwmutex);
+	rval = _pws_keybynum(pwd, buffer, buflen, &_pws_storage, result);
+	mutex_unlock(&_pwmutex);
+	return (rval);
+}
+
+struct passwd *
+getpwent(void)
+{
+	struct passwd *result;
+	int rval;
+
+	rval = getpwent_r(&_pws_passwd, _pws_passwdbuf, sizeof(_pws_passwdbuf), &result);
+	return ((rval == NS_SUCCESS) ? result : NULL);
+}
+
+int
+getpwnam_r(name, pwd, buffer, buflen, result)
+	const char *name;
+	struct passwd *pwd;
+	char *buffer;
+	size_t buflen;
+	struct passwd **result;
+{
+	int rval;
+
+	mutex_lock(&_pwmutex);
+	rval = _pws_keybyname(name, pwd, buffer, buflen, &_pws_storage, result);
+	mutex_unlock(&_pwmutex);
+	return (rval);
+}
+
+struct passwd *
+getpwnam(name)
+	const char *name;
+{
+	struct passwd *result;
+	int rval;
+
+	rval = getpwnam_r(name, &_pws_passwd, _pws_passwdbuf, sizeof(_pws_passwdbuf), &result);
+	return ((rval == NS_SUCCESS) ? result : NULL);
+}
+
+int
+getpwuid_r(uid, pwd, buffer, buflen, result)
+	uid_t uid;
+	struct passwd *pwd;
+	char *buffer;
+	size_t buflen;
+	struct passwd **result;
+{
+	int rval;
+
+	mutex_lock(&_pwmutex);
+	rval = _pws_keybyuid(uid, pwd, buffer, buflen, &_pws_storage, result);
+	mutex_unlock(&_pwmutex);
+	return (rval);
+}
+
+struct passwd *
+getpwuid(uid)
+	uid_t uid;
+{
+	struct passwd *result;
+	int rval;
+
+	rval = getpwuid_r(uid, &_pws_passwd, _pws_passwdbuf, sizeof(_pws_passwdbuf), &result);
+	return ((rval == NS_SUCCESS) ? result : NULL);
 }
 
 void
 setpwent(void)
 {
-	(void)setpassent(0);
+	mutex_lock(&_pwmutex);
+	(void)_pws_setpwent(&_pws_storage);
+	mutex_unlock(&_pwmutex);
 }
 
 int
 setpassent(stayopen)
 	int stayopen;
 {
-	if (!start_pw()) {
-		return (0);
-	}
-	_pw_keynum = 0;
-	_pw_stayopen = stayopen;
-	return (1);
+	int rval, result;
+
+	mutex_lock(&_pwmutex);
+	rval = _pws_setpassent(&_pws_storage, stayopen, &result);
+	mutex_unlock(&_pwmutex);
+	return ((rval == NS_SUCCESS) ? result : 0);
 }
 
 void
 endpwent(void)
 {
-	_pw_keynum = 0;
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	if (_pw_db) {
-		dbm_close(_pw_db);
-		_pw_db = (DBM *)NULL;
-	} else if (_pw_fp) {
-		(void)fclose(_pw_fp);
-		_pw_fp = (FILE *)NULL;
-	}
-#else
-	if (_pw_db) {
-		(void)(_pw_db->close)(_pw_db);
-		_pw_db = (DB *)NULL;
-	}
-#endif
+	mutex_lock(&_pwmutex);
+	(void)_pws_endpwent(&_pws_storage);
+	mutex_unlock(&_pwmutex);
 }
 
 void
 setpwfile(file)
 	const char *file;
 {
-	_pw_file = file;
+	int result;
+
+	mutex_lock(&_pwmutex);
+	(void)_pws_setpwfile(&_pws_storage, file, &result);
+	mutex_unlock(&_pwmutex);
 }
-
-static int
-hashpw(p, t)
-	char *p, *t;
-{
-#define MACRO(a)	do { a } while (0)
-#define	EXPAND(e)	MACRO(e = t; while ((*t++ = *p++));)
-#define	SCALAR(v)	MACRO(memmove(&(v), p, sizeof v); p += sizeof v;)
-	EXPAND(_pw_passwd.pw_name);
-	EXPAND(_pw_passwd.pw_passwd);
-	SCALAR(_pw_passwd.pw_uid);
-	SCALAR(_pw_passwd.pw_gid);
-	SCALAR(_pw_passwd.pw_change);
-	EXPAND(_pw_passwd.pw_class);
-	EXPAND(_pw_passwd.pw_gecos);
-	EXPAND(_pw_passwd.pw_dir);
-	EXPAND(_pw_passwd.pw_shell);
-	SCALAR(_pw_passwd.pw_expire);
-	_pw_flag = *p;
-	return (1);
-}
-
-#if defined(RUN_NDBM) && (RUN_NDBM == 0)
-
-static int
-scanpw(void)
-{
-	register char *cp;
-	char *bp = line;
-	register int ch;
-
-	for (;;) {
-		if (!(fgets(line, sizeof(line), _pw_fp))) {
-			return (0);
-		}
-		/* skip lines that are too big */
-		if (!(cp = index(line, '\n'))) {
-			while ((ch = fgetc(_pw_fp)) != '\n' && ch != EOF) {
-				;
-			}
-			continue;
-		}
-		*cp = '\0';
-		_pw_passwd.pw_name = strsep(&bp, ":");
-		_pw_passwd.pw_passwd = strsep(&bp, ":");
-		if (!(cp = strsep(&bp, ":"))) {
-			continue;
-		}
-		_pw_passwd.pw_uid = atoi(cp);
-		if (!(cp = strsep(&bp, ":"))) {
-			continue;
-		}
-		_pw_passwd.pw_gid = atoi(cp);
-		_pw_passwd.pw_class = strsep(&bp, ":");
-		if (!(cp = strsep(&bp, ":"))) {
-			continue;
-		}
-		_pw_passwd.pw_change = atol(cp);
-		if (!(cp = strsep(&bp, ":"))) {
-			continue;
-		}
-		_pw_passwd.pw_expire = atol(cp);
-		_pw_passwd.pw_gecos = strsep(&bp, ":");
-		_pw_passwd.pw_dir = strsep(&bp, ":");
-		_pw_passwd.pw_shell = strsep(&bp, ":");
-		if (!_pw_passwd.pw_shell) {
-			continue;
-		}
-		return (1);
-	}
-	/* NOTREACHED */
-	return (1);
-}
-
-static int
-init_ndbm(void)
-{
-	register char *p;
-
-	if (_pw_db) {
-		_pw_rewind = 1;
-		return (1);
-	}
-	if (_pw_fp) {
-		rewind(_pw_fp);
-		return (1);
-	}
-	_pw_db = dbm_open(_pw_file, O_RDONLY, 0);
-	if (_pw_db) {
-		_pw_rewind = 1;
-		return (1);
-	}
-	/*
-	 * special case; if it's the official password file, look in
-	 * the master password file, otherwise, look in the file itself.
-	 */
-	p = strcmp(_pw_file, _PATH_PASSWD) ? _pw_file : _PATH_MASTERPASSWD;
-	if (_pw_fp == fopen(p, "r")) {
-		return (1);
-	}
-	return (0);
-}
-
-static int
-fetch_pw(key)
-    datum key;
-{
-    register char *p, *t;
-
-    if (flock(dbm_dirfno(_pw_db), LOCK_SH)) {
-        return (0);
-    }
-    if (!key.dptr) {
-        if (_pw_rewind) {
-			_pw_rewind = 0;
-			key = dbm_firstkey(_pw_db);
-		} else {
-			key = dbm_nextkey(_pw_db);
-		}
-    }
-    if (key.dptr) {
-		key = dbm_fetch(_pw_db, key);
-	}
-	(void) flock(dbm_dirfno(_pw_db), LOCK_UN);
-    p = (char *)key.dptr;
-    if (!p) {
-        return (0);
-    }
-    t = line;
-    return (hashpw(p, t));
-}
-
-static void
-getpw(void)
-{
-	static char pwbuf[50];
-	long pos;
-	int fd, n;
-	register char *p;
-
-	if (geteuid()) {
-		return;
-	}
-
-	/*
-	 * special case; if it's the official password file, look in
-	 * the master password file, otherwise, look in the file itself.
-	 */
-	p = strcmp(_pw_file, _PATH_PASSWD) ? _pw_file : _PATH_MASTERPASSWD;
-	if ((fd = open(p, O_RDONLY, 0)) < 0) {
-		return;
-	}
-	pos = atol(_pw_passwd.pw_passwd);
-	if (lseek(fd, pos, L_SET) != pos) {
-		goto bad;
-	}
-	if ((n = read(fd, pwbuf, sizeof(pwbuf) - 1)) < 0) {
-		goto bad;
-	}
-	pwbuf[n] = '\0';
-	for (p = pwbuf; *p; ++p) {
-		if (*p == ':') {
-			*p = '\0';
-			_pw_passwd.pw_passwd = pwbuf;
-			break;
-		}
-	}
-bad:
-	(void)close(fd);
-}
-
-#else
-
-static int
-init_db(void)
-{
-	register const char *p;
-	
-	if (geteuid()) {
-		return (1);
-	}
-	_pw_db = dbopen(_pw_file, O_RDONLY, 0, DB_HASH, NULL);
-	if (_pw_db) {
-		return (1);
-	}
-	p = strcmp(_pw_file, _PATH_MP_DB) ? _pw_file : _PATH_SMP_DB;
-	_pw_db = dbopen(p, O_RDONLY, 0, DB_HASH, NULL);
-	if (_pw_db) {
-		return (1);
-	}
-	return (0);
-}
-
-static int
-fetch_pw(key)
-	DBT *key;
-{
-	register char *p, *t;
-	static u_int max;
-	DBT data;
-
-	if ((_pw_db->get)(_pw_db, key, &data, 0)) {
-		return (0);
-	}
-	p = (char *)data.data;
-	if (data.size > max && !(line = realloc(line, max += 1024))) {
-		return (0);
-	}
-	t = line;
-	return (hashpw(p, t));
-}
-
-#endif

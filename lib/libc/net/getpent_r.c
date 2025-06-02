@@ -244,8 +244,8 @@ getprotoent(void)
 
 void
 setprotoent_r(f, protod)
-	struct protoent_data *protod;
 	int f;
+	struct protoent_data *protod;
 {
 	mutex_lock(&_pvsmutex);
 	(void) _pvs_setprotoent(protod, f);

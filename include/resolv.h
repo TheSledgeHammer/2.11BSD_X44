@@ -123,7 +123,7 @@ typedef struct __res_state_ext 		*res_state_ext;
 #define RES_DNSRCH		0x00000200		/* search up local domain tree */
 
 #define	RES_NOALIASES		0x00001000		/*%< shuts off HOSTALIASES feature */
-
+#define	RES_USE_INET6		0x00002000		/*%< use/map IPv6 in gethostbyname() */
 #define RES_ROTATE		0x00004000		/* rotate ns list after each query */
 #define	RES_BLAST		0x00020000		/* blast all recursive servers */
 
@@ -166,6 +166,9 @@ extern struct __res_state _res;
 #define p_class		    	__p_class
 #define p_type		    	__p_type
 #define p_option        	__p_option
+
+#define res_get_state  		__res_get_state
+#define res_put_state  		__res_put_state
 
 #define res_close		__res_close
 #define	res_querydomain		__res_querydomain

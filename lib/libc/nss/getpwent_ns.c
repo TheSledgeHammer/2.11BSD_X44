@@ -695,7 +695,7 @@ _pws_yp_search(nsrv, nscb, ap)
 	const void *from;
 	const char **map_arr;
 	size_t fromlen;
-    size_t nmaps;
+	size_t nmaps;
 	char *data;
 	int rval, nisr, datalen;
 

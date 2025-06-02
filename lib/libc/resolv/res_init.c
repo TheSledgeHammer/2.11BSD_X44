@@ -97,7 +97,6 @@ static char sccsid[] = "@(#)res_init.c	6.8 (Berkeley) 3/7/88";
 #include <string.h>
 #include <unistd.h>
 
-
 #define HAVE_MD5
 #include <hash/md5.h>
 
