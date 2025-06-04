@@ -1,11 +1,11 @@
-/*	$NetBSD: _errno.c,v 1.14 2024/01/20 14:52:47 christos Exp $	*/
+/*	$NetBSD: lockf.c,v 1.4 2012/06/25 22:32:43 abs Exp $	*/
 
 /*-
- * Copyright (c) 1996 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by J.T. Conklin.
+ * by Klaus Klein.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,29 +31,58 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: _errno.c,v 1.14 2024/01/20 14:52:47 christos Exp $");
-#endif /* LIBC_SCCS and not lint */
-
-#include "reentrant.h"
-
-#include <errno.h>
-#include <stdlib.h>
-
-#undef errno
-
-int *
-__errno(void)
-{
-	int *_errno;
-
-#ifdef _REENTRANT
-	if (__isthreaded == 0) {
-		_errno = &errno;
-	} else {
-		_errno = thr_errno();
-	}
-#else
-	_errno = &errno;
+__RCSID("$NetBSD: lockf.c,v 1.4 2012/06/25 22:32:43 abs Exp $");
 #endif
-	return (_errno);
+
+#include "namespace.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#ifdef __weak_alias
+__weak_alias(lockf,_lockf)
+#endif
+
+int
+lockf(filedes, function, size)
+	int filedes;
+	int function;
+	off_t size;
+{
+	struct flock fl;
+	int cmd;
+
+	fl.l_start = 0;
+	fl.l_len = size;
+	fl.l_whence = SEEK_CUR;
+
+	switch (function) {
+	case F_ULOCK:
+		cmd = F_SETLK;
+		fl.l_type = F_UNLCK;
+		break;
+	case F_LOCK:
+		cmd = F_SETLKW;
+		fl.l_type = F_WRLCK;
+		break;
+	case F_TLOCK:
+		cmd = F_SETLK;
+		fl.l_type = F_WRLCK;
+		break;
+	case F_TEST:
+		fl.l_type = F_WRLCK;
+		if (fcntl(filedes, F_GETLK, &fl) == -1)
+			return (-1);
+		if (fl.l_type == F_UNLCK || fl.l_pid == getpid())
+			return (0);
+		errno = EAGAIN;
+		return (-1);
+		/* NOTREACHED */
+	default:
+		errno = EINVAL;
+		return (-1);
+		/* NOTREACHED */
+	}
+
+	return (fcntl(filedes, cmd, &fl));
 }

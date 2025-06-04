@@ -1095,7 +1095,7 @@ _pws_compat_search(nsrv, nscb, ap)
 	}
 
 	for (;;) { /* loop over pwd.db */
-        rval = NS_NOTFOUND;
+		rval = NS_NOTFOUND;
 		if (state->mode != COMPAT_NOTOKEN && state->mode != COMPAT_NONE) {
 			/* doing a compat lookup */
 			switch (state->mode) {
@@ -1333,6 +1333,6 @@ _pws_search(pw, buffer, buflen, state, search, name, uid)
 			NS_NULL_CB
 	};
 
-	rval = nsdispatch(NULL, dtab, NSDB_PASSWD, "_pws_search", __nsdefaultcompat, state);
+	rval = nsdispatch(NULL, dtab, NSDB_PASSWD, "_pws_search", __nsdefaultcompat, pw, buffer, buflen, state, search, name, uid);
 	return ((rval == NS_SUCCESS) ? 1 : 0);
 }

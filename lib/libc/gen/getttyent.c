@@ -44,10 +44,18 @@ static char sccsid[] = "@(#)getttyent.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <ttyent.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+
+#ifdef __weak_alias
+__weak_alias(setttyent,_setttyent)
+__weak_alias(endttyent,_endttyent)
+__weak_alias(getttyent,_getttyent)
+#endif
 
 static char zapchar;
 static FILE *tf = NULL;

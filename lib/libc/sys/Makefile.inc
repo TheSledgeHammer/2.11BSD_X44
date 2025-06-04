@@ -20,6 +20,7 @@ SRCS+=      	Ovfork.S brk.S exect.S fork.S pipe.S \
 GLUE+=          acl_file.c acl_filedesc.c \
                 extattr_file.c extattr_filedesc.c \
                 ftruncate.c lseek.c mmap.c mpx.c \
+				pread.c preadv.c pwrite.c pwritev.c \
 				truncate.c
 GLUENOERR+=		_fork.c _getcontext.c _getlogin.c
 

@@ -201,14 +201,14 @@ arc4_getbyte(as)
 {
     uint8_t si, sj, ss;
 
-    as->i = (as->i + 1) % 256;
-    si = as->s[as->i];
-    as->j = (as->j + si) % 256;
-    sj = as->s[as->j];
-    as->s[as->i] = sj;
-    as->s[as->j] = si;
-    ss = (si + sj) % 256;
-    return (as->s[ss]);
+	as->i = (as->i + 1) % 256;
+	si = as->s[as->i];
+	as->j = (as->j + si) % 256;
+	sj = as->s[as->j];
+	as->s[as->i] = sj;
+	as->s[as->j] = si;
+	ss = (si + sj) % 256;
+	return (as->s[ss]);
 }
 
 static inline u_int32_t

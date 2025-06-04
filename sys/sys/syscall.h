@@ -148,8 +148,8 @@
 #define	SYS_getpgid	139
 #define	SYS_adjtime	140
 #define	SYS_getpeername	141
-				/* 142 is obsolete old gethostid */
-				/* 143 is obsolete old sethostid */
+#define	SYS_pread	142
+#define	SYS_pwrite	143
 #define	SYS_getrlimit	144
 #define	SYS_setrlimit	145
 #define	SYS_killpg	146
@@ -179,4 +179,6 @@
 #define	SYS_acl_filedesc	170
 #define	SYS_extattr_file	171
 #define	SYS_extattr_filedesc	172
-#define	SYS_MAXSYSCALL	173
+#define	SYS_preadv	173
+#define	SYS_pwritev	174
+#define	SYS_MAXSYSCALL	175

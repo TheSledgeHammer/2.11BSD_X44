@@ -88,6 +88,11 @@ int	uiomove(void *, size_t, struct uio *);
 #else	/* !_KERNEL */
 #include <sys/cdefs.h>
 
+#if defined(__BSD_VISIBLE)
+ssize_t preadv(int, const struct iovec *, int, off_t);
+ssize_t pwritev(int, const struct iovec *, int, off_t);
+#endif /* __BSD_VISIBLE */
+
 ssize_t	readv(int, const struct iovec *, int);
 ssize_t	writev(int, const struct iovec *, int);
 #endif /* !_KERNEL */

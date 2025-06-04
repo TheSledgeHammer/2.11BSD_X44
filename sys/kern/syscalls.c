@@ -150,8 +150,8 @@ char *syscallnames[] = {
 	"getpgid",			/* 139 = getpgid */
 	"adjtime",			/* 140 = adjtime */
 	"getpeername",			/* 141 = getpeername */
-	"#142",		/* 142 = obsolete old gethostid */
-	"#143",		/* 143 = obsolete old sethostid */
+	"pread",			/* 142 = pread */
+	"pwrite",			/* 143 = pwrite */
 	"getrlimit",			/* 144 = getrlimit */
 	"setrlimit",			/* 145 = setrlimit */
 	"killpg",			/* 146 = killpg */
@@ -190,4 +190,6 @@ char *syscallnames[] = {
 	"acl_filedesc",			/* 170 = acl_filedesc */
 	"extattr_file",			/* 171 = extattr_file */
 	"extattr_filedesc",			/* 172 = extattr_filedesc */
+	"preadv",			/* 173 = preadv */
+	"pwritev",			/* 174 = pwritev */
 };

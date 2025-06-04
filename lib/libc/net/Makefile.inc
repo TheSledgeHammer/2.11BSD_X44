@@ -14,6 +14,8 @@
 # machine-independent net sources
 .PATH:	${ARCHDIR}/net ${.CURDIR}/net
 
+#SRCS+=	gethnamadr.c
+
 SRCS+=	ethers.c getifaddrs.c getnbyaddr.c getnbyname.c getnent.c 	\
 	getpent_r.c getpname.c getproto.c getsbyname.c getsbyport.c 	\
 	getsent_r.c linkaddr.c rcmd.c recv.c rexec.c 			\

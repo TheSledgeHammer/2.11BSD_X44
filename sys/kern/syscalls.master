@@ -183,8 +183,8 @@
 139 STD		{ int getpgid(); }
 140 STD     	{ int adjtime(); }
 141 STD     	{ int getpeername(); }
-142 OBSOL   	old gethostid
-143 OBSOL   	old sethostid
+142 STD		{ int pread(); }
+143 STD		{ int pwrite(); }
 144 STD     	{ int getrlimit(); }
 145 STD     	{ int setrlimit(); }
 146 STD     	{ int killpg(); }
@@ -226,3 +226,5 @@
 170 STD		{ int acl_filedesc(); }
 171 STD		{ int extattr_file(); }
 172 STD		{ int extattr_filedesc(); }
+173 STD		{ int preadv(); }
+174 STD		{ int pwritev(); }

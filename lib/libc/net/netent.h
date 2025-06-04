@@ -1,11 +1,11 @@
-/*	$NetBSD: _errno.c,v 1.14 2024/01/20 14:52:47 christos Exp $	*/
+/*	$NetBSD: servent.h,v 1.3 2008/04/28 20:23:00 martin Exp $	*/
 
 /*-
- * Copyright (c) 1996 The NetBSD Foundation, Inc.
+ * Copyright (c) 2004 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by J.T. Conklin.
+ * by Christos Zoulas.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,31 +29,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: _errno.c,v 1.14 2024/01/20 14:52:47 christos Exp $");
-#endif /* LIBC_SCCS and not lint */
+#include <stdio.h>
 
-#include "reentrant.h"
+struct nettent_data {
+	FILE *netf;
+	char **aliases;
+	size_t maxaliases;
+	int stayopen;
+};
 
-#include <errno.h>
-#include <stdlib.h>
+#define _GETNENT_R_SIZE_MAX 1024
 
-#undef errno
+extern struct nettent_data 	_nvs_netd;
+extern struct nettent 		_nvs_net;
+extern char 			_nvs_netbuf[_GETNENT_R_SIZE_MAX];
 
-int *
-__errno(void)
-{
-	int *_errno;
-
-#ifdef _REENTRANT
-	if (__isthreaded == 0) {
-		_errno = &errno;
-	} else {
-		_errno = thr_errno();
-	}
-#else
-	_errno = &errno;
-#endif
-	return (_errno);
-}

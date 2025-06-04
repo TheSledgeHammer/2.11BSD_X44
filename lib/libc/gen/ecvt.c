@@ -6,15 +6,15 @@ static char sccsid[] = "@(#)ecvt.c	5.1 (Berkeley) 3/15/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include "namespace.h"
+//#include "namespace.h"
 
 #include <stdlib.h>
-
+/*
 #ifdef __weak_alias
 __weak_alias(ecvt, _ecvt)
 __weak_alias(fcvt, _fcvt)
 #endif
-
+*/
 /*
  *	ecvt converts to decimal
  *	the number of digits is specified by ndigit

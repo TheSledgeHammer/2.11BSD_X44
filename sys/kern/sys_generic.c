@@ -27,6 +27,7 @@
 #include <machine/setjmp.h>
 	
 static int rwuio(struct uio *, struct iovec *, int);
+static int rwuiov(struct uio *, struct iovec *, unsigned int);
 
 /*
  * Read system call.
@@ -96,7 +97,61 @@ readv()
 	u.u_error = copyin((caddr_t)SCARG(uap, iovp), (caddr_t)aiov, SCARG(uap, iovcnt) * sizeof (struct iovec));
 	if (u.u_error)
 		return (u.u_error);
+	return (rwuio(&auio, NULL, SCARG(uap, fdes)));
+}
 
+/*
+ * Positional read system call.
+ */
+int
+pread()
+{
+	register struct pread_args {
+		syscallarg(int) fdes;
+		syscallarg(void *) buf;
+		syscallarg(size_t) nbyte;
+		syscallarg(off_t) offset;
+	} *uap = (struct pread_args *) u.u_ap;
+	struct uio auio;
+	struct iovec aiov;
+
+	aiov.iov_base = SCARG(uap, buf);
+	aiov.iov_len = SCARG(uap, nbyte);
+	if (aiov.iov_len > SSIZE_MAX) {
+		return (EINVAL);
+	}
+
+	auio.uio_iov = &iov;
+	auio.uio_iovcnt = 1;
+	auio.uio_resid = iov.iov_len;
+	auio.uio_offset = SCARG(uap, offset);
+
+	return (rwuio(&auio, &aiov, SCARG(uap, fdes)));
+}
+
+int
+preadv()
+{
+	register struct preadv_args {
+		syscallarg(int) fdes;
+		syscallarg(const struct iovec *) iovp;
+		syscallarg(int) iovcnt;
+		syscallarg(off_t) offset;
+	} *uap = (struct preadv_args *) u.u_ap;
+	struct uio auio;
+	struct iovec aiov[16];
+
+	u.u_error = rwuiov(&auio, &aiov, SCARG(uap, iovcnt));
+	if (u.u_error == EINVAL) {
+		return (EINVAL);
+	}
+	auio.uio_iov = aiov;
+	auio.uio_iovcnt = SCARG(uap, iovcnt);
+	auio.uio_rw = UIO_READ;
+	auio.uio_offset = SCARG(uap, offset);
+	u.u_error = copyin((caddr_t)SCARG(uap, iovp), (caddr_t)aiov, SCARG(uap, iovcnt) * sizeof (struct iovec));
+	if (u.u_error)
+		return (u.u_error);
 	return (rwuio(&auio, NULL, SCARG(uap, fdes)));
 }
 
@@ -160,9 +215,64 @@ writev()
 		u.u_error = EINVAL;
 		return (EINVAL);
 	}
+
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = SCARG(uap, iovcnt);
 	auio.uio_rw = UIO_WRITE;
+	u.u_error = copyin((caddr_t)SCARG(uap, iovp), (caddr_t)aiov, SCARG(uap, iovcnt) * sizeof (struct iovec));
+	if (u.u_error)
+		return (u.u_error);
+	return (rwuio(&auio, NULL, SCARG(uap, fdes)));
+}
+
+/*
+ * Positional write system call.
+ */
+int
+pwrite()
+{
+	register struct pwrite_args {
+		syscallarg(int) fdes;
+		syscallarg(const void *) buf;
+		syscallarg(size_t) nbyte;
+		syscallarg(off_t) offset;
+	} *uap = (struct pwrite_args *) u.u_ap;
+	struct uio auio;
+	struct iovec aiov;
+
+	aiov.iov_base = SCARG(uap, buf);
+	aiov.iov_len = SCARG(uap, nbyte);
+	if (aiov.iov_len > SSIZE_MAX) {
+		return (EINVAL);
+	}
+	auio.uio_iov = aiov;
+	auio.uio_iovcnt = 1;
+	auio.uio_resid = aiov.iov_len;
+	auio.uio_offset = SCARG(uap, offset);
+
+	return (rwuio(&auio, &aiov, SCARG(uap, fdes)));
+}
+
+int
+pwritev()
+{
+	register struct pwritev_args {
+		syscallarg(int) fdes;
+		syscallarg(const struct iovec *) iovp;
+		syscallarg(int) iovcnt;
+		syscallarg(off_t) offset;
+	} *uap = (struct pwritev_args *) u.u_ap;
+	struct uio auio;
+	struct iovec aiov[16];
+
+	u.u_error = rwuiov(&auio, &aiov, SCARG(uap, iovcnt));
+	if (u.u_error == EINVAL) {
+		return (EINVAL);
+	}
+	auio.uio_iov = aiov;
+	auio.uio_iovcnt = SCARG(uap, iovcnt);
+	auio.uio_rw = UIO_WRITE;
+	auio.uio_offset = SCARG(uap, offset);
 	u.u_error = copyin((caddr_t)SCARG(uap, iovp), (caddr_t)aiov, SCARG(uap, iovcnt) * sizeof (struct iovec));
 	if (u.u_error)
 		return (u.u_error);
@@ -222,7 +332,7 @@ rwuio(uio, aiov, fdes)
 		u.u_error = (*fp->f_ops->fo_rw)(fp, uio, u.u_ucred);
 	}
 #ifdef KTRACE
-	if(aiov == NULL) {
+	if (aiov == NULL) {
 		if (ktriov != NULL) {
 			if (u.u_error == 0) {
 				ktrgenio(u.u_procp, fdes, UIO_READ, ktriov, count, u.u_error);
@@ -236,6 +346,39 @@ rwuio(uio, aiov, fdes)
 	}
 #endif
 	u.u_r.r_val1 = count - uio->uio_resid;
+	return (u.u_error);
+}
+
+static int
+rwuiov(uio, aiov, iovcnt)
+	register struct uio *uio;
+	register struct iovec *aiov;
+	register unsigned int iovcnt;
+{
+#ifdef KTRACE
+	struct iovec *ktriov;
+	u_int iovlen;
+
+	if (aiov == NULL) {
+		ktriov = NULL;
+	}
+	/*
+	 * if tracing, save a copy of iovec
+	 */
+	iovlen = iovcnt * sizeof(struct iovec);
+	if (aiov == NULL) {
+		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
+		bcopy((caddr_t) uio->uio_iov, (caddr_t) ktriov, iovlen);
+	} else {
+		if (KTRPOINT(u.u_procp, KTR_GENIO)) {
+			ktriov = aiov;
+		}
+	}
+#endif
+	if (iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
+		u.u_error = EINVAL;
+		return (EINVAL);
+	}
 	return (u.u_error);
 }
 

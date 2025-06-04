@@ -380,7 +380,7 @@ pthread_sys_pread(int d, void *buf, size_t nbytes, off_t offset)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = pread(d, buf, nbytes, offset);
+	retval = __syscall(SYS_pread, d, buf, nbytes, offset);
 	TESTCANCEL(self);
 
 	return (retval);
@@ -394,7 +394,7 @@ pthread_sys_pwrite(int d, const void *buf, size_t nbytes, off_t offset)
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = pwrite(d, buf, nbytes, offset);
+	retval = __syscall(SYS_pwrite, d, buf, nbytes, offset);
 	TESTCANCEL(self);
 
 	return (retval);

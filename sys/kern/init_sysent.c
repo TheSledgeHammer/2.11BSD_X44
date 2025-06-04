@@ -152,6 +152,8 @@ int	utimes();
 int	getpgid();
 int	adjtime();
 int	getpeername();
+int	pread();
+int	pwrite();
 int	getrlimit();
 int	setrlimit();
 int	killpg();
@@ -183,6 +185,8 @@ int	acl_file();
 int	acl_filedesc();
 int	extattr_file();
 int	extattr_filedesc();
+int	preadv();
+int	pwritev();
 #define	s(type)	sizeof(type)
 
 struct sysent sysent[] = {
@@ -471,9 +475,9 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    getpeername },			/* 141 = getpeername */
 	{ 0, 0,
-	    nosys },				/* 142 = obsolete old gethostid */
+	    pread },				/* 142 = pread */
 	{ 0, 0,
-	    nosys },				/* 143 = obsolete old sethostid */
+	    pwrite },				/* 143 = pwrite */
 	{ 0, 0,
 	    getrlimit },			/* 144 = getrlimit */
 	{ 0, 0,
@@ -544,6 +548,10 @@ struct sysent sysent[] = {
 	    extattr_file },			/* 171 = extattr_file */
 	{ 0, 0,
 	    extattr_filedesc },			/* 172 = extattr_filedesc */
+	{ 0, 0,
+	    preadv },				/* 173 = preadv */
+	{ 0, 0,
+	    pwritev },				/* 174 = pwritev */
 };
 
 int	nsysent= sizeof(sysent) / sizeof(sysent[0]);
