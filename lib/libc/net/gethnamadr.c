@@ -117,7 +117,9 @@ static char sccsid[] = "@(#)gethostnamadr.c	6.47 (Berkeley) 6/18/92";
 #include <errno.h>
 #include <netdb.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <resolv.h>
 #include <syslog.h>
@@ -169,6 +171,7 @@ typedef union {
 
 extern int h_errno;
 
+
 static int addalias(char **, char *, struct hostent_data *);
 static int _hvs_getanswer(struct hostent *, struct hostent_data *, res_state, querybuf *, int, int, char *, size_t);
 static int _hvs_gethostbyname(struct hostent *, struct hostent_data *, res_state, querybuf *, const char *, int, char *, size_t, struct hostent **);
@@ -181,6 +184,8 @@ static int _hvs_sethtent(struct hostent_data *, int);
 static int _hvs_endhtent(struct hostent_data *);
 static int _hvs_gethtent(struct hostent *, struct hostent_data *, char *, size_t, struct hostent **);
 
+static int getanswer_r(struct hostent *, struct hostent_data *, res_state, querybuf *, int, int, char *, size_t, struct hostent **);
+static struct hostent *getanswer(querybuf *, int, int);
 static int gethostbyname_internal(struct hostent *, struct hostent_data *, res_state, querybuf *, const char *, int, char *, size_t, struct hostent **);
 static int gethostbyaddr_internal(struct hostent *, struct hostent_data *, res_state, querybuf *, const char *, int, int, char *, size_t, struct hostent **);
 
@@ -245,7 +250,7 @@ _hvs_getanswer(host, hostd, statp, answer, anslen, iquery, buffer, buflen)
 	if (qdcount) {
 		if (iquery) {
 			n = dn_expand((u_char *)answer->buf, (u_char *)eom, (u_char *)cp,
-					(u_char *)bp, buflen);
+					bp, buflen);
 			if (n < 0) {
 				h_errno = NO_RECOVERY;
 				return (0);
@@ -286,7 +291,7 @@ _hvs_getanswer(host, hostd, statp, answer, anslen, iquery, buffer, buflen)
 	haveanswer = 0;
 	while (--ancount >= 0 && cp < eom) {
 		n = dn_expand((u_char *)answer->buf, (u_char *)eom, (u_char *)cp,
-				(u_char *)bp, buflen);
+				bp, buflen);
 		if (n < 0) {
 			break;
 		}
@@ -313,7 +318,7 @@ _hvs_getanswer(host, hostd, statp, answer, anslen, iquery, buffer, buflen)
 		}
 		if (iquery && type == T_PTR) {
 			n = dn_expand((u_char *)answer->buf, (u_char *)eom,
-					(u_char *)cp, (u_char *)bp, buflen);
+					(u_char *)cp, bp, buflen);
 			if (n < 0) {
 				break;
 			}
@@ -377,7 +382,7 @@ _hvs_getanswer(host, hostd, statp, answer, anslen, iquery, buffer, buflen)
 			}
 		}
 		bp += sizeof(align) - ((u_int32_t)bp % sizeof(align));
-		if (bp + n >= buffer[buflen]) {
+		if ((bp + n) >= (buffer + buflen)) {
 			break;
 		}
 		bcopy(cp, *hap++ = bp, n);
@@ -417,7 +422,7 @@ _hvs_gethostbyname(host, hostd, statp, buf, name, type, buffer, buflen, result)
 {
 	register const char *cp;
 	char hbuf[MAXHOSTNAMELEN];
-	int n, af, rval;
+	int n, af;
 
 	switch (type) {
 	case AF_INET:
@@ -441,7 +446,7 @@ _hvs_gethostbyname(host, hostd, statp, buf, name, type, buffer, buflen, result)
 	 * this is also done in res_nquery() since we are not the only
 	 * function that looks up host names.
 	 */
-	if (!strchr(name, '.') && (cp = res_hostalias(res, name, hbuf, sizeof(hbuf)))) {
+	if (!strchr(name, '.') && (cp = res_hostalias(statp, name, hbuf, sizeof(hbuf)))) {
 		name = cp;
 	}
 
@@ -474,7 +479,7 @@ _hvs_gethostbyname(host, hostd, statp, buf, name, type, buffer, buflen, result)
 					return (0);
 				}
 
-				host->h_name = (char*) name;
+				host->h_name = __UNCONST(name);
 				host->h_aliases = hostd->aliases;
 				hostd->aliases[0] = NULL;
 				switch (type) {
@@ -490,7 +495,7 @@ _hvs_gethostbyname(host, hostd, statp, buf, name, type, buffer, buflen, result)
 				host->h_addr_list = hostaddr;
 				host->h_addr= hostaddr[0];
 				if (statp->options & RES_USE_INET6) {
-					map_v4v6_hostent(host, (buffer + MAXDNAME), (buffer + buflen));
+					map_v4v6_hostent(host, &buffer, (buffer + buflen));
 				}
 				h_errno = NETDB_SUCCESS;
 				return (1);
@@ -517,7 +522,7 @@ _hvs_gethostbyname(host, hostd, statp, buf, name, type, buffer, buflen, result)
 					return (0);
 				}
 
-				host->h_name = (char*) name;
+				host->h_name = __UNCONST(name);
 				host->h_aliases = hostd->aliases;
 				hostd->aliases[0] = NULL;
 				switch (type) {
@@ -540,13 +545,13 @@ _hvs_gethostbyname(host, hostd, statp, buf, name, type, buffer, buflen, result)
 			}
 		}
 	}
-	n = res_nsearch(statp, name, C_IN, af, buf->buf, sizeof(buf));
+	n = res_nsearch(statp, __UNCONST(name), C_IN, af, buf->buf, sizeof(buf));
 	if (n < 0) {
 		if (statp->options & RES_DEBUG) {
 			printf("res_search failed\n");
 		}
 		if (errno == ECONNREFUSED) {
-			return (gethtbyname_r(host, hostd, name, buffer, buflen, result));
+			return (gethtbyname_r(host, hostd, __UNCONST(name), buffer, buflen, result));
 		} else {
 			return (0);
 		}
@@ -577,16 +582,16 @@ _hvs_gethostbyaddr(host, hostd, statp, buf, addr, len, type, buffer, buflen, res
 		return (0);
 	}
 	if (type == AF_INET6 && len == IN6ADDRSZ
-			&& (IN6_IS_ADDR_V4MAPPED((const struct in6_addr* )addr)
-					|| IN6_IS_ADDR_V4COMPAT((const struct in6_addr* )addr))) {
+			&& (IN6_IS_ADDR_V4MAPPED((const struct in6_addr *)addr)
+					|| IN6_IS_ADDR_V4COMPAT((const struct in6_addr *)addr))) {
 		/* Unmap. */
 		uaddr += IN6ADDRSZ - INADDRSZ;
-		addr = uaddr;
+		addr = (const char *)uaddr;
 		type = AF_INET;
 		len = INADDRSZ;
 	}
 
-	n = res_nquery(statp, qbuf, C_IN, T_PTR, (char *)buf, sizeof(buf));
+	n = res_nquery(statp, qbuf, C_IN, T_PTR, (u_char *)buf, sizeof(buf));
 	if (n < 0) {
 		if (statp->options & RES_DEBUG) {
 			printf("res_search failed\n");
@@ -607,19 +612,19 @@ _hvs_gethostbyaddr(host, hostd, statp, buf, addr, len, type, buffer, buflen, res
 	case AF_INET:
 		hostaddr[0] = (char *)&host_addr;
 		hostaddr[1] = (char *)NULL;
-		host_addr = *(struct in_addr *)addr;
+		host_addr = *(struct in_addr *)__UNCONST(addr);
 		break;
 	case AF_INET6:
 		hostaddr[0] = (char *)&host6_addr;
 		hostaddr[1] = (char *)NULL;
-		host6_addr = *(struct in6_addr *)addr;
+		host6_addr = *(struct in6_addr *)__UNCONST(addr);
 		break;
 	default:
 		errno = EINVAL;
 		return (0);
 	}
 	if (type == AF_INET && (statp->options & RES_USE_INET6)) {
-		map_v4v6_address((char*) (void *)host_addrs, (char *)(void *)host_addrs);
+		map_v4v6_address((char *)(void *)host_addrs, (char *)(void *)host_addrs);
 		host->h_addrtype = AF_INET6;
 		host->h_length = IN6ADDRSZ;
 	}
@@ -711,7 +716,7 @@ again:
 			cp++;
 			continue;
 		}
-		if (q < &hd->aliases[hd->aliases - 1])
+		if (q < &hd->aliases[hd->maxaliases - 1])
 			*q++ = cp;
 		cp = any(cp, " \t");
 		if (cp != NULL)
@@ -834,10 +839,7 @@ gethostbyaddr_internal(hp, hd, statp, buf, addr, len, type, buffer, buflen, resu
 	return (rval);
 }
 
-/*
- * Public Methods
- */
-int
+static int
 getanswer_r(hp, hd, statp, answer, anslen, iquery, buffer, buflen, result)
 	struct hostent *hp;
 	struct hostent_data *hd;
@@ -858,7 +860,7 @@ getanswer_r(hp, hd, statp, answer, anslen, iquery, buffer, buflen, result)
 	return (rval);
 }
 
-struct hostent *
+static struct hostent *
 getanswer(answer, anslen, iquery)
 	querybuf *answer;
 	int anslen;
@@ -870,13 +872,16 @@ getanswer(answer, anslen, iquery)
 
 	statp = __res_get_state();
 	if (statp == NULL) {
-		return (NULL);
+		return (0);
 	}
-	rval = getanswer_r(_hvs_host, _hvs_hostd, statp, answer, anslen, iquery, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = getanswer_r(&_hvs_host, &_hvs_hostd, statp, answer, anslen, iquery, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
 	__res_put_state(statp);
 	return ((rval == 1) ? result : NULL);
 }
 
+/*
+ * Public Methods
+ */
 int
 gethostbyname2_r(hp, hd, name, type, buffer, buflen, result)
 	struct hostent *hp;
@@ -894,10 +899,10 @@ gethostbyname2_r(hp, hd, name, type, buffer, buflen, result)
 	statp = __res_get_state();
 	if (statp == NULL) {
 		h_errno = NETDB_INTERNAL;
-		return (NULL);
+		return (0);
 	}
 
-	rval = gethostbyname_internal(hp, hd, statp, &buf, name, type, buffer, buffer, buflen, result);
+	rval = gethostbyname_internal(hp, hd, statp, &buf, name, type, buffer, buflen, result);
 	__res_put_state(statp);
 	return (rval);
 }
@@ -910,7 +915,7 @@ gethostbyname2(name, type)
 	struct hostent *result;
 	int rval;
 
-	rval = gethostbyname2_r(_hvs_host, _hvs_hostd, name, type, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethostbyname2_r(&_hvs_host, &_hvs_hostd, name, type, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }
 
@@ -929,7 +934,7 @@ gethostbyname_r(hp, hd, name, buffer, buflen, result)
 	statp = __res_get_state();
 	if (statp == NULL) {
 		h_errno = NETDB_INTERNAL;
-		return (NULL);
+		return (0);
 	}
 
 	if (statp->options & RES_USE_INET6) {
@@ -948,7 +953,7 @@ gethostbyname(name)
 	struct hostent *result;
 	int rval;
 
-	rval = gethostbyname_r(_hvs_host, _hvs_hostd, name, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethostbyname_r(&_hvs_host, &_hvs_hostd, name, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }
 
@@ -969,7 +974,7 @@ gethostbyaddr_r(hp, hd, addr, len, type, buffer, buflen, result)
 	statp = __res_get_state();
 	if (statp == NULL) {
 		h_errno = NETDB_INTERNAL;
-		return (NULL);
+		return (0);
 	}
 
 	rval = gethostbyaddr_internal(hp, hd, statp, &buf, addr, len, type, buffer, buflen, result);
@@ -985,7 +990,7 @@ gethostbyaddr(addr, len, type)
 	struct hostent *result;
 	int rval;
 
-	rval = gethostbyname_r(_hvs_host, _hvs_hostd, addr, len, type, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethostbyaddr_r(&_hvs_host, &_hvs_hostd, addr, len, type, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }
 
@@ -1011,7 +1016,7 @@ gethtent(void)
 	struct hostent *result;
 	int rval;
 
-	rval = gethtent_r(_hvs_host, _hvs_hostd, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethtent_r(&_hvs_host, &_hvs_hostd, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }
 
@@ -1059,7 +1064,7 @@ gethtbyname_r(hp, hd, name, buffer, buflen, result)
 	register char **cp;
 	int rval;
 
-	sethtent_r(hd, hd->stayopen);
+	sethtent_r(hd->stayopen, hd);
 	while ((rval = gethtent_r(hp, hd, buffer, buflen, result))) {
 		if (strcasecmp(hp->h_name, name) == 0) {
 			break;
@@ -1087,7 +1092,7 @@ gethtbyaddr_r(hp, hd, addr, len, type, buffer, buflen, result)
 {
 	int rval;
 
-	sethtent_r(hd, hd->stayopen);
+	sethtent_r(hd->stayopen, hd);
 	while ((rval = gethtent_r(hp, hd, buffer, buflen, result))) {
 		if (hp->h_addrtype == type && !bcmp(hp->h_addr, addr, len)) {
 			break;
@@ -1104,7 +1109,7 @@ gethtbyname(name)
 	struct hostent *p;
 	int rval;
 
-	rval = gethtbyname_r(_hvs_host, _hvs_hostd, name, _hvs_hostbuf, sizeof(_hvs_hostbuf), &p);
+	rval = gethtbyname_r(&_hvs_host, &_hvs_hostd, name, _hvs_hostbuf, sizeof(_hvs_hostbuf), &p);
 	return ((rval == 1) ? p : NULL);
 }
 
@@ -1116,7 +1121,7 @@ gethtbyaddr(addr, len, type)
 	struct hostent *p;
 	int rval;
 
-	rval = gethtbyaddr_r(_hvs_host, _hvs_hostd, addr, len, type, _hvs_hostbuf, sizeof(_hvs_hostbuf), &p);
+	rval = gethtbyaddr_r(&_hvs_host, &_hvs_hostd, addr, len, type, _hvs_hostbuf, sizeof(_hvs_hostbuf), &p);
 	return ((rval == 1) ? p : NULL);
 }
 

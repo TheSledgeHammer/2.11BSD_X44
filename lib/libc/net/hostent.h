@@ -41,8 +41,6 @@ extern struct hostent_data 	_hvs_hostd;
 extern struct hostent 		_hvs_host;
 extern char 			_hvs_hostbuf[_GETHTENT_R_SIZE_MAX];
 
-int getanswer_r(struct hostent *, struct hostent_data *, res_state, querybuf *, int, int, char *, size_t, struct hostent **);
-struct hostent *getanswer(querybuf *, int, int);
 int gethostbyname2_r(struct hostent *, struct hostent_data *, const char *, int, char *, size_t, struct hostent **);
 struct hostent *gethostbyname2(const char *, int);
 int gethostbyname_r(struct hostent *, struct hostent_data *, const char *, char *, size_t, struct hostent **);

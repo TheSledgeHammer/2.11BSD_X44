@@ -14,12 +14,10 @@
 # machine-independent net sources
 .PATH:	${ARCHDIR}/net ${.CURDIR}/net
 
-#SRCS+=	gethnamadr.c
-
-SRCS+=	ethers.c getifaddrs.c getnbyaddr.c getnbyname.c getnent.c 	\
-	getpent_r.c getpname.c getproto.c getsbyname.c getsbyport.c 	\
-	getsent_r.c linkaddr.c rcmd.c recv.c rexec.c 			\
-	ruserpass.c send.c sockatmark.c
+SRCS+=	ethers.c getifaddrs.c gethnamadr.c getnbyaddr.c getnbyname.c    \
+        getnent.c getpent_r.c getpname.c getproto.c getsbyname.c        \
+        getsbyport.c getsent_r.c linkaddr.c rcmd.c recv.c rexec.c 	    \
+	    ruserpass.c send.c sockatmark.c
 SRCS+=	nsdispatch.c nslexer.l nsparser.y
 
 .if (${MKHESIOD} != "no")
@@ -52,3 +50,4 @@ nslexer.c: nslexer.l nsparser.h
 MAN+=	ethers.3 gai_strerror.3 getaddrinfo.3 getifaddrs.3 getnameinfo.3 \
 		if_indextoname.3 linkaddr.3 nsdispatch.3 sockatmark.3
 
+COPTS.gethnamadr.c+= -Wno-unused-function
