@@ -7,4 +7,5 @@
 #
 
 .PATH:	${.CURDIR}/net/named
-SRCS+=	gethnamadr.c sethostent.c
+#SRCS+=	gethnamadr.c
+SRCS+=  sethostent.c
