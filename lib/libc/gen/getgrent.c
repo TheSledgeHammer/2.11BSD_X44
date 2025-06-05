@@ -58,11 +58,11 @@ static char sccsid[] = "@(#)getgrent.c	8.2 (Berkeley) 3/21/94";
 #ifdef __weak_alias
 __weak_alias(endgrent,_endgrent)
 __weak_alias(getgrent,_getgrent)
-__weak_alias(getgrent_r,_getgrent_r)
+//__weak_alias(getgrent_r,_getgrent_r)
 __weak_alias(getgrgid,_getgrgid)
-__weak_alias(getgrgid_r,_getgrgid_r)
+//__weak_alias(getgrgid_r,_getgrgid_r)
 __weak_alias(getgrnam,_getgrnam)
-__weak_alias(getgrnam_r,_getgrnam_r)
+//__weak_alias(getgrnam_r,_getgrnam_r)
 __weak_alias(setgrent,_setgrent)
 __weak_alias(setgroupent,_setgroupent)
 #endif

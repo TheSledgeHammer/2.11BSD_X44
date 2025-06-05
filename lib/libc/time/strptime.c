@@ -57,7 +57,7 @@ __RCSID("$NetBSD: strptime.c,v 1.22 2000/12/20 20:56:34 christos Exp $");
 
 #ifdef __weak_alias
 __weak_alias(strptime,_strptime)
-__weak_alias(strptime_l, _strptime_l)
+//__weak_alias(strptime_l, _strptime_l)
 #endif
 
 /*

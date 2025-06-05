@@ -265,7 +265,6 @@
 #define dirname					_dirname
 #define dn_expand				_dn_expand
 #define drand48					_drand48
-//#define ecvt					_ecvt
 #define endfsent				_endfsent
 #define endgrent				_endgrent
 #define endhostent				_endhostent
@@ -293,7 +292,6 @@
 #define execvp					_execvp
 #define explicit_bzero			_explicit_bzero
 #define explicit_memset			_explicit_memset
-#define fcvt					_fcvt
 #define fdopen					_fdopen
 #define fgetln					_fgetln
 #define flockfile				_flockfile
@@ -384,7 +382,6 @@
 #define globfree				_globfree
 #define gmtime_r				_gmtime_r
 #define group_from_gid				_group_from_gid
-#define gcvt					_gcvt
 #define heapsort				_heapsort
 #define herror					_herror
 #define hes_error				_hes_error
@@ -760,7 +757,8 @@
 #define yperr_string				_yperr_string
 #define ypprot_err				_ypprot_err
 #define yp_setbindtries				_yp_setbindtries
-#define dl_iterate_phdr				__dl_iterate_phdr
+
+#define dl_iterate_phdr			__dl_iterate_phdr
 #define dlopen					__dlopen
 #define dlclose					__dlclose
 #define dlsym					__dlsym

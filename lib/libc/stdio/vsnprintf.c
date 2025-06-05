@@ -50,6 +50,10 @@ static char sccsid[] = "@(#)vsnprintf.c	8.1 (Berkeley) 6/4/93";
 #include "reentrant.h"
 #include "local.h"
 
+#ifdef __weak_alias
+__weak_alias(vsnprintf,_vsnprintf)
+#endif
+
 int
 vsnprintf(str, n, fmt, ap)
 	char *str;

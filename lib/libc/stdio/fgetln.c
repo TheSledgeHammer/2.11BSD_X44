@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)fgetln.c	8.2 (Berkeley) 1/2/94";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,6 +51,10 @@ static char sccsid[] = "@(#)fgetln.c	8.2 (Berkeley) 1/2/94";
 
 #include "reentrant.h"
 #include "local.h"
+
+#ifdef __weak_alias
+__weak_alias(fgetln, _fgetln)
+#endif
 
 static int __slbexpand(FILE *, size_t);
 

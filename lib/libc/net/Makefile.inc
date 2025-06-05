@@ -14,10 +14,10 @@
 # machine-independent net sources
 .PATH:	${ARCHDIR}/net ${.CURDIR}/net
 
-SRCS+=	ethers.c getifaddrs.c gethnamadr.c getnbyaddr.c getnbyname.c    \
-        getnent.c getpent_r.c getpname.c getproto.c getsbyname.c        \
-        getsbyport.c getsent_r.c linkaddr.c rcmd.c recv.c rexec.c 	    \
-	    ruserpass.c send.c sockatmark.c
+SRCS+=	ethers.c gethnamadr.c gethostent.c getifaddrs.c getnbyaddr.c 	\
+		getnbyname.c getnent.c getpent_r.c getpname.c getproto.c 		\
+		getsbyname.c getsbyport.c getsent_r.c linkaddr.c rcmd.c recv.c 	\
+		rexec.c ruserpass.c send.c sethostent.c sockatmark.c
 SRCS+=	nsdispatch.c nslexer.l nsparser.y
 
 .if (${MKHESIOD} != "no")
@@ -26,7 +26,7 @@ SRCS+=	hesiod.c
 
 # sub-directories net sources
 #.include "${.CURDIR}/net/hosttable/Makefile.inc"
-.include "${.CURDIR}/net/named/Makefile.inc"
+#.include "${.CURDIR}/net/named/Makefile.inc"
 
 SRCS+=	getaddrinfo.c getnameinfo.c
 .if (${USE_INET6} != "no")

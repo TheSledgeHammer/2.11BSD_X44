@@ -30,6 +30,7 @@
 
 struct hostent_data {
 	FILE *hostf;
+	const char *filename;
 	char **aliases;
 	size_t maxaliases;
 	int stayopen;
@@ -41,6 +42,9 @@ extern struct hostent_data 	_hvs_hostd;
 extern struct hostent 		_hvs_host;
 extern char 			_hvs_hostbuf[_GETHTENT_R_SIZE_MAX];
 
+/*
+ * gethnamadr.c
+ */
 int gethostbyname2_r(struct hostent *, struct hostent_data *, const char *, int, char *, size_t, struct hostent **);
 struct hostent *gethostbyname2(const char *, int);
 int gethostbyname_r(struct hostent *, struct hostent_data *, const char *, char *, size_t, struct hostent **);
@@ -52,8 +56,22 @@ int  gethtbyname_r(struct hostent *, struct hostent_data *, char *, char *, size
 int  gethtbyaddr_r(struct hostent *, struct hostent_data *, const char *, int, int, char *, size_t, struct hostent **);
 void sethtent_r(int, struct hostent_data *);
 void endhtent_r(struct hostent_data *);
+void sethtfile_r(const char *, struct hostent_data *);
 struct hostent *gethtent(void);
 void sethtent(int);
 void endhtent(void);
+void sethtfile(const char *);
 struct hostent *gethtbyname(char *);
 struct hostent *gethtbyaddr(const char *, int, int);
+
+/*
+ * sethostent.c
+ */
+void sethostent_r(struct hostent_data *, res_state, int);
+void endhostent_r(struct hostent_data *, res_state);
+void sethostfile_r(struct hostent_data *, const char *);
+
+/*
+ * gethostent.c
+ */
+int gethostent_r(struct hostent *, struct hostent_data *, char *, size_t, struct hostent **);

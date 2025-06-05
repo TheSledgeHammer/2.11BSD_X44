@@ -38,10 +38,16 @@ static char sccsid[] = "@(#)strsep.c	8.1.1 (2.11BSD) 1996/1/11";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h>
 #include <stddef.h>
+
+#ifdef __weak_alias
+__weak_alias(strsep, _strsep)
+#endif
 
 /*
  * Get next token from string *stringp, where tokens are possibly-empty

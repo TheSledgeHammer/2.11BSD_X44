@@ -53,6 +53,7 @@ __RCSID("$NetBSD: dlfcn_elf.c,v 1.4.2.1 2004/07/19 09:07:13 tron Exp $");
 #define	dlerror		___dlerror
 #define	dladdr		___dladdr
 #define	dlinfo		___dlinfo
+#define	dl_iterate_phdr	___dl_iterate_phdr
 
 #define ELFSIZE ARCH_ELFSIZE
 #include "rtld.h"
@@ -76,7 +77,7 @@ __weak_alias(__dlerror,___dlerror)
 __weak_alias(__dladdr,___dladdr)
 __weak_alias(__dlinfo,___dlinfo)
 __weak_alias(__dl_iterate_phdr,___dl_iterate_phdr)
-__weak_alias(__dl_cxa_refcount, ___dl_cxa_refcount)
+__weak_alias(__dl_cxa_refcount,___dl_cxa_refcount)
 #endif
 
 /*
@@ -90,6 +91,8 @@ __weak_alias(__dl_cxa_refcount, ___dl_cxa_refcount)
  */
 
 static char dlfcn_error[] = "Service unavailable";
+
+void *dlauxinfo(int, char **, int);
 
 /*ARGSUSED*/
 void *
@@ -149,14 +152,17 @@ static Elf_Addr dlpi_addr;
 static const Elf_Phdr *dlpi_phdr;
 static Elf_Half dlpi_phnum;
 
+void *__auxinfo;
+__asm(".hidden  __auxinfo");
+
 static void
 dl_iterate_phdr_setup(void)
 {
 	const AuxInfo *aux;
 
-	_DIAGASSERT(_dlauxinfo() != NULL);
+	_DIAGASSERT(__auxinfo != NULL);
 
-	for (aux = _dlauxinfo(); aux->a_type != AT_NULL; ++aux) {
+	for (aux = __auxinfo; aux->a_type != AT_NULL; ++aux) {
 		switch (aux->a_type) {
 		case AT_BASE:
 			dlpi_addr = aux->a_v;
@@ -219,4 +225,11 @@ void
 ___dl_cxa_refcount(void *dso_symbol, ssize_t delta)
 {
 
+}
+
+void *
+dlauxinfo(int argc, char **argv, int envc)
+{
+	__auxinfo = (argv + argc + envc + 2);
+	return (__auxinfo);
 }

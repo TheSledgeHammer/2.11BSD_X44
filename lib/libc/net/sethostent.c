@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1988, 1993
+ * Copyright (c) 1985, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,53 +31,95 @@
  * SUCH DAMAGE.
  */
 /*
- * Copyright (c) 1988 The Regents of the University of California.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  */
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
-static char sccsid[] = "@(#)strdup.c	5.1 (Berkeley) 12/12/88";
-static char sccsid[] = "@(#)strdup.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)sethostent.c	6.3 (Berkeley) 4/10/86";
+static char sccsid[] = "@(#)sethostent.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#if defined(_LIBC)
 #include "namespace.h"
+#endif
 
 #include <sys/types.h>
 
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
+#include <netinet/in.h>
+#include <arpa/nameser.h>
 
-#ifdef __weak_alias
-__weak_alias(strdup,_strdup)
+#include <netdb.h>
+#include <resolv.h>
+
+#include <resolv/res_private.h>
+
+#include "hostent.h"
+
+#if defined(_LIBC) && defined(__weak_alias)
+__weak_alias(sethostent,_sethostent)
+__weak_alias(endhostent,_endhostent)
 #endif
 
-char *
-strdup(str)
-	const char *str;
-{
-	int len;
-	char *copy;
+static char HOSTDB[] = _PATH_HOSTS;
 
-	len = strlen(str) + 1;
-	if (!(copy = malloc((u_int) len)))
-		return (NULL);
-	bcopy(str, copy, len);
-	return (copy);
+void
+sethostent_r(hd, statp, stayopen)
+	struct hostent_data *hd;
+	res_state statp;
+	int stayopen;
+{
+	if (stayopen) {
+		statp->options |= RES_STAYOPEN | RES_USEVC;
+	}
+	sethtent_r(stayopen, hd);
+}
+
+void
+endhostent_r(hd, statp)
+	struct hostent_data *hd;
+	res_state statp;
+{
+	statp->options &= ~(RES_STAYOPEN | RES_USEVC);
+	res_nclose(statp);
+	endhtent_r(hd);
+}
+
+void
+sethostfile_r(hd, name)
+	struct hostent_data *hd;
+	const char *name;
+{
+	sethtfile_r(name, hd);
+}
+
+void
+sethostent(stayopen)
+	int stayopen;
+{
+	res_state statp;
+
+	statp = &_res;
+	sethostfile_r(&_hvs_hostd, HOSTDB);
+	sethostent_r(&_hvs_hostd, statp, stayopen);
+}
+
+void
+endhostent(void)
+{
+	res_state statp;
+
+	statp = &_res;
+	endhostent_r(&_hvs_hostd, statp);
+}
+
+void
+sethostfile(name)
+	const char *name;
+{
+	sethostfile_r(&_hvs_hostd, name);
 }

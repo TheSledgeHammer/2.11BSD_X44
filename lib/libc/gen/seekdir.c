@@ -18,6 +18,10 @@ static char sccsid[] = "@(#)seekdir.c	5.2 (Berkeley) 3/9/86";
 #include <stddef.h>
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(seekdir,_seekdir)
+#endif
+
 /*
  * seek to an entry in a directory.
  * Only values returned by "telldir" should be passed to seekdir.

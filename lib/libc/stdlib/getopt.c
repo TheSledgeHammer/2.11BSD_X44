@@ -38,8 +38,6 @@ static char sccsid[] = "@(#)getopt.c	8.2.1 (2.11BSD) 1996/1/11";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include "namespace.h"
-
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>

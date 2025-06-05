@@ -72,7 +72,8 @@ SRCS+=	strtod.c
 SRCS+=	dtoa.c
 
 # private interfaces
-SRCS+= 	gethex.c gmisc.c \
+SRCS+= 	dmisc.c \
+		gethex.c gmisc.c \
 		hd_init.c hexnan.c \
 		misc.c \
 		smisc.c strtodg.c sum.c

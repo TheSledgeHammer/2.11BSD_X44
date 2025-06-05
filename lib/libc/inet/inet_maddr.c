@@ -45,6 +45,7 @@ __RCSID("$NetBSD: inet_makeaddr.c,v 1.15 2003/08/07 16:43:11 agc Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -53,12 +54,13 @@ __RCSID("$NetBSD: inet_makeaddr.c,v 1.15 2003/08/07 16:43:11 agc Exp $");
 __weak_alias(inet_makeaddr,_inet_makeaddr)
 #endif
 
+struct in_addr inet_maddr(long, long);
 /*
  * Formulate an Internet address from network + host.  Used in
  * building addresses stored in the ifnet structure.
  */
 struct in_addr
-inet_makeaddr(net, host)
+inet_maddr(net, host)
 	long net, host;
 {
 	u_long addr;
@@ -74,4 +76,11 @@ inet_makeaddr(net, host)
 		addr = net | host;
 	ret.s_addr = htonl(addr);
 	return (ret);
+}
+
+struct in_addr
+inet_makeaddr(net, host)
+	in_addr_t net, host;
+{
+	return (inet_maddr(net, host));
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1988, 1993
+ * Copyright (c) 1985, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,53 +31,49 @@
  * SUCH DAMAGE.
  */
 /*
- * Copyright (c) 1988 The Regents of the University of California.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  */
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
-static char sccsid[] = "@(#)strdup.c	5.1 (Berkeley) 12/12/88";
-static char sccsid[] = "@(#)strdup.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)gethostent.c	5.3 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#if defined(_LIBC)
 #include "namespace.h"
+#endif
 
 #include <sys/types.h>
 
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
+#include <netdb.h>
 
-#ifdef __weak_alias
-__weak_alias(strdup,_strdup)
+#include "hostent.h"
+
+#if defined(_LIBC) && defined(__weak_alias)
+__weak_alias(gethostent,_gethostent)
 #endif
 
-char *
-strdup(str)
-	const char *str;
+int
+gethostent_r(hp, hd, buffer, buflen, result)
+	struct hostent *hp;
+	struct hostent_data *hd;
+	char *buffer;
+	size_t buflen;
+	struct hostent **result;
 {
-	int len;
-	char *copy;
+	return (gethtent_r(hp, hd, buffer, buflen, result));
+}
 
-	len = strlen(str) + 1;
-	if (!(copy = malloc((u_int) len)))
-		return (NULL);
-	bcopy(str, copy, len);
-	return (copy);
+struct hostent *
+gethostent(void)
+{
+	struct hostent *result;
+	int rval;
+
+	rval = gethostent_r(&_hvs_host, &_hvs_hostd, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	return ((rval == 1) ? result : NULL);
 }

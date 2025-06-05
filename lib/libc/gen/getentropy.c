@@ -32,7 +32,7 @@
 #include <sys/cdefs.h>
 __RCSID("$NetBSD: getentropy.c,v 1.3 2022/05/31 13:42:59 riastradh Exp $");
 
-#include "namespace.h"
+//#include "namespace.h"
 
 #include <sys/param.h>
 #include <sys/sysctl.h>
@@ -40,10 +40,11 @@ __RCSID("$NetBSD: getentropy.c,v 1.3 2022/05/31 13:42:59 riastradh Exp $");
 #include <errno.h>
 #include <limits.h>
 #include <unistd.h>
-
+/*
 #ifdef __weak_alias
 __weak_alias(getentropy,_getentropy)
 #endif
+*/
 
 int
 getentropy(buf, buflen)

@@ -68,7 +68,7 @@ static char sccsid[] = "@(#)unvis.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include "namespace.h"
+//#include "namespace.h"
 #include <sys/types.h>
 
 #include <assert.h>
@@ -77,10 +77,11 @@ static char sccsid[] = "@(#)unvis.c	8.1 (Berkeley) 6/4/93";
 #include <stdio.h>
 #include <errno.h>
 #include <vis.h>
-
+/*
 #ifdef __weak_alias
 __weak_alias(strnunvisx,_strnunvisx)
 #endif
+*/
 
 #if !HAVE_VIS
 

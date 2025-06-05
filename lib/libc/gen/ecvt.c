@@ -26,7 +26,7 @@ static char	*cvt(double, int, int *, int *);
 
 #define	NDIG	80
 
-char*
+char *
 ecvt(arg, ndigits, decpt, sign)
 	double arg;
 	int ndigits, *decpt, *sign;
@@ -34,7 +34,7 @@ ecvt(arg, ndigits, decpt, sign)
 	return (cvt(arg, ndigits, decpt, sign, 1));
 }
 
-char*
+char *
 fcvt(arg, ndigits, decpt, sign)
 	double arg;
 	int ndigits, *decpt, *sign;

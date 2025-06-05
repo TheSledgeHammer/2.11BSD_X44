@@ -11,11 +11,17 @@ static char sccsid[] = "@(#)time.c	5.3 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 /*
  * Backwards compatible time call.
  */
 #include <sys/types.h>
 #include <sys/time.h>
+
+#ifdef __weak_alias
+__weak_alias(time, _time)
+#endif
 
 long
 time(t)

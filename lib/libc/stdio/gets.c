@@ -48,11 +48,14 @@ static char sccsid[] = "@(#)gets.c	5.2 (Berkeley) 3/9/86";
 
 #include "reentrant.h"
 #include "local.h"
+#ifdef _FORTIFY_SOURCE
+#undef gets
+#endif
 
 //__warn_references(gets, "warning: this program uses gets(), which is unsafe.")
 
 char *
-gets(s)
+__gets(s)
 	char *s;
 {
 	register int c;
@@ -72,4 +75,11 @@ gets(s)
 	*cs++ = '\0';
 	FUNLOCKFILE(stdin);
 	return (s);
+}
+
+char *
+gets(s)
+	char *s;
+{
+	return (__gets(s));
 }

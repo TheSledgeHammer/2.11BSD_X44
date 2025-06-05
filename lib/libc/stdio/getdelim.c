@@ -30,7 +30,7 @@
 #include <sys/cdefs.h>
 __RCSID("$NetBSD: getdelim.c,v 1.14 2017/06/08 15:59:45 uwe Exp $");
 
-#include "namespace.h"
+//#include "namespace.h"
 
 #include <sys/param.h>
 
@@ -43,10 +43,11 @@ __RCSID("$NetBSD: getdelim.c,v 1.14 2017/06/08 15:59:45 uwe Exp $");
 
 #include "reentrant.h"
 #include "local.h"
-
+/*
 #ifdef __weak_alias
 __weak_alias(getdelim, _getdelim)
 #endif
+*/
 
 /* Minimum buffer size we create.
  * This should allow config files to fit into our power of 2 buffer growth

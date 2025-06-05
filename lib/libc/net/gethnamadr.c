@@ -171,7 +171,6 @@ typedef union {
 
 extern int h_errno;
 
-
 static int addalias(char **, char *, struct hostent_data *);
 static int _hvs_getanswer(struct hostent *, struct hostent_data *, res_state, querybuf *, int, int, char *, size_t);
 static int _hvs_gethostbyname(struct hostent *, struct hostent_data *, res_state, querybuf *, const char *, int, char *, size_t, struct hostent **);
@@ -182,6 +181,7 @@ static int _hvs_start(struct hostent_data *);
 static int _hvs_end(struct hostent_data *);
 static int _hvs_sethtent(struct hostent_data *, int);
 static int _hvs_endhtent(struct hostent_data *);
+static void _hvs_sethtfile(struct hostent_data *, const char *);
 static int _hvs_gethtent(struct hostent *, struct hostent_data *, char *, size_t, struct hostent **);
 
 static int getanswer_r(struct hostent *, struct hostent_data *, res_state, querybuf *, int, int, char *, size_t, struct hostent **);
@@ -775,6 +775,14 @@ _hvs_endhtent(hd)
 	return (_hvs_end(hd));
 }
 
+static void
+_hvs_sethtfile(hd, file)
+	struct hostent_data *hd;
+	const char *file;
+{
+	hd->filename = file;
+}
+
 static int
 _hvs_gethtent(hp, hd, buffer, buflen, result)
 	struct hostent *hp;
@@ -1021,6 +1029,14 @@ gethtent(void)
 }
 
 void
+sethtfile_r(name, hostd)
+	const char *name;
+	struct hostent_data *hostd;
+{
+	_hvs_sethtfile(hostd, name);
+}
+
+void
 sethtent_r(f, hostd)
 	int f;
 	struct hostent_data *hostd;
@@ -1040,6 +1056,14 @@ endhtent_r(hostd)
 }
 
 void
+sethtfile_r(name, hostd)
+	const char *name;
+	struct hostent_data *hostd;
+{
+	_hvs_sethtfile(hostd, name);
+}
+
+void
 sethtent(f)
 	int f;
 {
@@ -1050,6 +1074,13 @@ void
 endhtent(void)
 {
 	endhtent_r(&_hvs_hostd);
+}
+
+void
+sethtfile(name)
+	const char *name;
+{
+	sethtfile_r(name, &_hvs_hostd);
 }
 
 int

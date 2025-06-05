@@ -73,7 +73,7 @@ __weak_alias(cgetnum,_cgetnum)
 __weak_alias(cgetset,_cgetset)
 __weak_alias(cgetstr,_cgetstr)
 __weak_alias(cgetustr,_cgetustr)
-__weak_alias(csetexpandtc,_csetexpandtc)
+//__weak_alias(csetexpandtc,_csetexpandtc)
 #endif
 
 #define	BFRAG			1024

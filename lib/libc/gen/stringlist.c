@@ -55,7 +55,7 @@ __weak_alias(sl_add,_sl_add)
 __weak_alias(sl_find,_sl_find)
 __weak_alias(sl_free,_sl_free)
 __weak_alias(sl_init,_sl_init)
-__weak_alias(sl_delete,_sl_delete)
+//__weak_alias(sl_delete,_sl_delete)
 #endif
 
 #define _SL_CHUNKSIZE	20

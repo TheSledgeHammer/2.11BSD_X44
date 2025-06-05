@@ -18,6 +18,10 @@ static char sccsid[] = "@(#)readdir.c	5.2 (Berkeley) 3/9/86";
 #include <dirent.h>
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(readdir,_readdir)
+#endif
+
 /*
  * get next entry in a directory.
  */

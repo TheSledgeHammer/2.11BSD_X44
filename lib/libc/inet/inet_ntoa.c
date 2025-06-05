@@ -11,6 +11,8 @@ static char sccsid[] = "@(#)inet_ntoa.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 /*
  * Convert network-format internet address
  * to base 256 d.d.d.d representation.
@@ -19,6 +21,10 @@ static char sccsid[] = "@(#)inet_ntoa.c	5.2 (Berkeley) 3/9/86";
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdio.h>
+
+#ifdef __weak_alias
+__weak_alias(inet_ntoa,_inet_ntoa)
+#endif
 
 char *
 inet_ntoa(in)

@@ -48,7 +48,7 @@ __RCSID("$NetBSD: shquote.c,v 1.8 2006/03/19 02:33:02 christos Exp $");
  */
 #undef	SHQUOTE_USE_MULTIBYTE
 
-#include "namespace.h"
+//#include "namespace.h"
 #include <stdlib.h>
 #include <string.h>
 #ifdef SHQUOTE_USE_MULTIBYTE
@@ -56,11 +56,11 @@ __RCSID("$NetBSD: shquote.c,v 1.8 2006/03/19 02:33:02 christos Exp $");
 #include <stdio.h>
 #include <wchar.h>
 #endif
-
+/*
 #ifdef __weak_alias
 __weak_alias(shquote,_shquote)
 #endif
-
+*/
 /*
  * shquote():
  *

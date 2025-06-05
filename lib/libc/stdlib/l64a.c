@@ -18,7 +18,7 @@ __RCSID("$NetBSD: l64a.c,v 1.13 2003/07/26 19:24:54 salo Exp $");
 
 #ifdef __weak_alias
 __weak_alias(l64a,_l64a)
-__weak_alias(l64a_r,_l64a_r)
+//__weak_alias(l64a_r,_l64a_r)
 #endif
 
 char *
