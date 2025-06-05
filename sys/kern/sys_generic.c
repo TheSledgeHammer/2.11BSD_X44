@@ -63,33 +63,12 @@ readv()
 	} *uap = (struct readv_args *)u.u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
-	
-#ifdef KTRACE
-	struct iovec *ktriov;
-	u_int iovlen;
-	
-	if (aiov == NULL) {
-		ktriov = NULL;
-	}
-	
-	/*
-	 * if tracing, save a copy of iovec
-	 */
-    iovlen = SCARG(uap, iovcnt) * sizeof(struct iovec);
-    if (aiov == NULL) {
-		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
-		bcopy((caddr_t) auio.uio_iov, (caddr_t) ktriov, iovlen);
-	} else {
-		if (KTRPOINT(u.u_procp, KTR_GENIO)) {
-			ktriov = aiov;
-		}
-	}
-#endif
 
-	if (SCARG(uap, iovcnt) > sizeof(aiov)/sizeof(aiov[0])) {
-		u.u_error = EINVAL;
+	u.u_error = rwuiov(&auio, aiov, SCARG(uap, iovcnt));
+	if (u.u_error == EINVAL) {
 		return (EINVAL);
 	}
+
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = SCARG(uap, iovcnt);
 	auio.uio_rw = UIO_READ;
@@ -121,9 +100,9 @@ pread()
 		return (EINVAL);
 	}
 
-	auio.uio_iov = &iov;
+	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
-	auio.uio_resid = iov.iov_len;
+	auio.uio_resid = aiov.iov_len;
 	auio.uio_offset = SCARG(uap, offset);
 
 	return (rwuio(&auio, &aiov, SCARG(uap, fdes)));
@@ -141,7 +120,7 @@ preadv()
 	struct uio auio;
 	struct iovec aiov[16];
 
-	u.u_error = rwuiov(&auio, &aiov, SCARG(uap, iovcnt));
+	u.u_error = rwuiov(&auio, aiov, SCARG(uap, iovcnt));
 	if (u.u_error == EINVAL) {
 		return (EINVAL);
 	}
@@ -188,31 +167,9 @@ writev()
 	} *uap = (struct writev_args *)u.u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
-	
-#ifdef KTRACE
-	struct iovec *ktriov;
-	u_int iovlen;
-	
-	if (aiov == NULL) {
-		ktriov = NULL;
-	}
-	
-	/*
-	 * if tracing, save a copy of iovec
-	 */
-    iovlen = SCARG(uap, iovcnt) * sizeof(struct iovec);
-    if (aiov == NULL) {
-		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
-		bcopy((caddr_t) auio.uio_iov, (caddr_t) ktriov, iovlen);
-	} else {
-		if (KTRPOINT(u.u_procp, KTR_GENIO)) {
-			ktriov = aiov;
-		}
-	}
-#endif
 
-	if (SCARG(uap, iovcnt) > sizeof(aiov)/sizeof(aiov[0])) {
-		u.u_error = EINVAL;
+	u.u_error = rwuiov(&auio, aiov, SCARG(uap, iovcnt));
+	if (u.u_error == EINVAL) {
 		return (EINVAL);
 	}
 
@@ -233,7 +190,7 @@ pwrite()
 {
 	register struct pwrite_args {
 		syscallarg(int) fdes;
-		syscallarg(const void *) buf;
+		syscallarg(void *) buf;
 		syscallarg(size_t) nbyte;
 		syscallarg(off_t) offset;
 	} *uap = (struct pwrite_args *) u.u_ap;
@@ -245,7 +202,7 @@ pwrite()
 	if (aiov.iov_len > SSIZE_MAX) {
 		return (EINVAL);
 	}
-	auio.uio_iov = aiov;
+	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
 	auio.uio_resid = aiov.iov_len;
 	auio.uio_offset = SCARG(uap, offset);
@@ -265,7 +222,7 @@ pwritev()
 	struct uio auio;
 	struct iovec aiov[16];
 
-	u.u_error = rwuiov(&auio, &aiov, SCARG(uap, iovcnt));
+	u.u_error = rwuiov(&auio, aiov, SCARG(uap, iovcnt));
 	if (u.u_error == EINVAL) {
 		return (EINVAL);
 	}
