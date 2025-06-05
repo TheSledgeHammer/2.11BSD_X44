@@ -38,7 +38,7 @@
 ssize_t
 pwrite(fdes, buf, nbyte, offset)
 	int fdes;
-	void *buf;
+	const void *buf;
 	size_t nbyte;
 	off_t offset;
 {
