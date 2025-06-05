@@ -40,13 +40,16 @@
 #define __res_nmkquery      res_nmkquery
 #define __res_nquery        res_nquery
 #define __res_nquerydomain  res_nquerydomain
-#define __res_hostalias  	res_hostalias
+#define __res_hostalias  	  res_hostalias
 #define __res_nsearch       res_nsearch
 #define __res_nsend         res_nsend
 #define __res_nclose        res_nclose
 #define __res_ndestroy      res_ndestroy
 #define __res_rndinit       res_rndinit
 #define __res_nrandomid     res_nrandomid
+
+#define _getlong            getlong
+#define _getshort           getshort
 
 __BEGIN_DECLS
 int	    res_ninit(res_state);
