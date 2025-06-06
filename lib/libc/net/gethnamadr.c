@@ -132,7 +132,6 @@ static char sccsid[] = "@(#)gethostnamadr.c	6.47 (Berkeley) 6/18/92";
 #if defined(_LIBC) && defined(__weak_alias)
 __weak_alias(gethostbyaddr,_gethostbyaddr)
 __weak_alias(gethostbyname,_gethostbyname)
-__weak_alias(gethostent,_gethostent)
 #endif
 
 #ifdef _REENTRANT
@@ -733,6 +732,7 @@ _hvs_start(hd)
 	int rval;
 
 	if (hd->hostf == NULL) {
+        hd->filename = HOSTDB;
 		hd->hostf = fopen(HOSTDB, "r" );
 		rval = 0;
 	} else {
@@ -1026,14 +1026,6 @@ gethtent(void)
 
 	rval = gethtent_r(&_hvs_host, &_hvs_hostd, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
-}
-
-void
-sethtfile_r(name, hostd)
-	const char *name;
-	struct hostent_data *hostd;
-{
-	_hvs_sethtfile(hostd, name);
 }
 
 void

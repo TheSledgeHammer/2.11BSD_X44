@@ -67,8 +67,10 @@ struct hostent *gethtbyaddr(const char *, int, int);
 /*
  * sethostent.c
  */
-void sethostent_r(struct hostent_data *, res_state, int);
-void endhostent_r(struct hostent_data *, res_state);
+
+struct __res_state;
+void sethostent_r(struct hostent_data *, struct __res_state *, int);
+void endhostent_r(struct hostent_data *, struct __res_state *);
 void sethostfile_r(struct hostent_data *, const char *);
 
 /*
