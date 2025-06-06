@@ -67,6 +67,8 @@ extern int		__swsetup(FILE *);
 extern int		__sflags(const char *, int *);
 extern int		__svfscanf(FILE * __restrict, const char * __restrict, __va_list);
 
+extern char     	*__gets(char *);
+
 extern int		__sdidinit;
 
 /*
