@@ -5,7 +5,7 @@
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-/*
+
 #define option 		__nbcompat_option
 #define getopt_long __nbcompat_getopt_long
 
@@ -15,4 +15,4 @@
 #undef _GETOPT_H_
 
 #include "../../include/getopt.h"
-*/
+

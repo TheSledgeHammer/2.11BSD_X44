@@ -732,7 +732,6 @@ _hvs_start(hd)
 	int rval;
 
 	if (hd->hostf == NULL) {
-        hd->filename = HOSTDB;
 		hd->hostf = fopen(HOSTDB, "r" );
 		rval = 0;
 	} else {

@@ -27,17 +27,25 @@ static char	*cvt(double, int, int *, int *);
 #define	NDIG	80
 
 char *
+#if __STDC__
+ecvt(double arg, int ndigits, int *decpt, int *sign)
+#else
 ecvt(arg, ndigits, decpt, sign)
 	double arg;
 	int ndigits, *decpt, *sign;
+#endif
 {
 	return (cvt(arg, ndigits, decpt, sign, 1));
 }
 
 char *
+#if __STDC__
+fcvt(double arg, int ndigits, int *decpt, int *sign)
+#else
 fcvt(arg, ndigits, decpt, sign)
 	double arg;
 	int ndigits, *decpt, *sign;
+#endif
 {
 	return (cvt(arg, ndigits, decpt, sign, 0));
 }

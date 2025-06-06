@@ -21,10 +21,14 @@ __weak_alias(gcvt, _gcvt)
  */
 
 char *
+#if __STDC__
+gcvt(double number, int ndigit, char *buf)
+#else
 gcvt(number, ndigit, buf)
 	double number;
 	int ndigit;
 	char *buf;
+#endif
 {
 	int sign, decpt;
 	register char *p1, *p2;

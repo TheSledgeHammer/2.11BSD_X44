@@ -79,8 +79,12 @@ inet_maddr(net, host)
 }
 
 struct in_addr
+#if __STDC__
+inet_makeaddr(in_addr_t net, in_addr_t host)
+#else
 inet_makeaddr(net, host)
 	in_addr_t net, host;
+#endif
 {
 	return (inet_maddr(net, host));
 }

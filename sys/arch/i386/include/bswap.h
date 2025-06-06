@@ -8,12 +8,10 @@
 #define __BSWAP_RENAME
 #include <sys/bswap.h>
 
-#ifdef  __GNUC__
-
 #include <machine/byte_swap.h>
+
 #define bswap16(x)      __byte_swap_word(x)
 #define bswap32(x)      __byte_swap_long(x)
-
-#endif /* __GNUC__ */
+#define bswap64(x)	__byte_swap_quad(x)
 
 #endif /* !_MACHINE_BSWAP_H_ */

@@ -549,6 +549,7 @@
 #define setusershell				_setusershell
 #define siginterrupt				_siginterrupt
 #define signal					_signal
+#define sigprocmask				_sigprocmask
 #define sl_add					_sl_add
 #define sl_create				_sl_create
 #define sl_find					_sl_find

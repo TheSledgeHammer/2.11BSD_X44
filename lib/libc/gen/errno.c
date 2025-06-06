@@ -36,10 +36,9 @@ __RCSID("$NetBSD: _errno.c,v 1.14 2024/01/20 14:52:47 christos Exp $");
 
 #include "reentrant.h"
 
+#undef errno
 #include <errno.h>
 #include <stdlib.h>
-
-#undef errno
 
 int *
 __errno(void)

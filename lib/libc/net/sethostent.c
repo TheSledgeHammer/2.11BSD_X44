@@ -65,8 +65,6 @@ __weak_alias(sethostent,_sethostent)
 __weak_alias(endhostent,_endhostent)
 #endif
 
-static char HOSTDB[] = _PATH_HOSTS;
-
 void
 sethostent_r(hd, statp, stayopen)
 	struct hostent_data *hd;
@@ -104,7 +102,6 @@ sethostent(stayopen)
 	res_state statp;
 
 	statp = &_res;
-	sethostfile_r(&_hvs_hostd, HOSTDB);
 	sethostent_r(&_hvs_hostd, statp, stayopen);
 }
 
