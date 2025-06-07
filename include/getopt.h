@@ -57,7 +57,9 @@ struct option {
 };
 
 __BEGIN_DECLS
+#if defined(__BSD_VISIBLE)
 int getopt_long(int, char * const *, const char *, const struct option *, int *);
+#endif /* __BSD_VISIBLE */
 __END_DECLS
 
 #endif /* !_GETOPT_H_ */
