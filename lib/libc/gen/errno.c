@@ -36,23 +36,30 @@ __RCSID("$NetBSD: _errno.c,v 1.14 2024/01/20 14:52:47 christos Exp $");
 
 #include "reentrant.h"
 
-#undef errno
 #include <errno.h>
 #include <stdlib.h>
 
 int *
 __errno(void)
 {
-	int *_errno;
+	static int *err;
 
 #ifdef _REENTRANT
 	if (__isthreaded == 0) {
-		_errno = &errno;
+		err = &errno;
 	} else {
-		_errno = thr_errno();
+		err = thr_errno();
 	}
 #else
-	_errno = &errno;
+	err = &errno;
 #endif
-	return (_errno);
+	return (err);
 }
+
+/* Compatability with 4.4BSD Lite2/2.11BSD, avoids conflicts */
+int *
+_errno(void)
+{
+    return (__errno());
+}
+
