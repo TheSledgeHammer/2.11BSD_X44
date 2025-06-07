@@ -33,6 +33,8 @@
 #include <machine/profile.h>
 #include <stdlib.h>
 
+#include "dlfcn_private.h"
+
 typedef void (*fptr_t)(void);
 
 static char empty_string[] = "";
@@ -206,9 +208,11 @@ extern int 	etext;
 #endif
 
 static inline void
-crt0_start(fptr_t cleanup, int argc, char **argv, char **env)
+crt0_start(fptr_t cleanup, void *prog, int argc, char **argv, char **env, int envc)
 {
+	crt0_preinit(prog, argc, argv, envc);
 	handle_argv(argc, argv, env);
+	libc_init(prog, argc, argv, envc);
 	if (&_DYNAMIC != NULL) {
 		atexit(cleanup);
 	} else {
