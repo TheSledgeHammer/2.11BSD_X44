@@ -49,8 +49,5 @@ __asm(
 void
 ___start(fptr_t cleanup, struct ps_strings *ps_strings)
 {
-	if (ps_strings != (struct ps_strings *)0) {
-		__ps_strings = ps_strings;
-    }
     crt0_start(cleanup, (struct ps_strings *)ps_strings, ps_strings->ps_nargvstr, &ps_strings->ps_argvstr, environ, ps_strings->ps_nenvstr);
 }
