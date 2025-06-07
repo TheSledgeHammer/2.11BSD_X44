@@ -21,6 +21,13 @@ int *__errno(void);
 #ifndef errno
 #define errno (*__errno())
 #endif
+
+/* 
+ * Compatability with 4.4BSD Lite2/2.11BSD:
+ * Cannot #define _errno. Will cause numerous 
+ * conflicts
+ */
+int *_errno(void); 
 __END_DECLS
 
 #endif /* !_ERRNO_H_ */
