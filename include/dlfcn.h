@@ -51,7 +51,7 @@ typedef struct _dl_info {
  * User interface to the run-time linker.
  */
 __BEGIN_DECLS
-void 	*_dlauxinfo(void)  __pure;
+//void 	*_dlauxinfo(void)  __pure;
 
 void	*dlopen(const char *, int);
 int		dlclose(void *);
