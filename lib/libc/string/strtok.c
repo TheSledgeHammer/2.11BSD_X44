@@ -99,7 +99,7 @@ cont:
 }
 
 char *
-strtok(s, delim, last)
+strtok(s, delim)
 	char *s;
 	const char *delim;
 {
