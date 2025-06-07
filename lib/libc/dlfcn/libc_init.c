@@ -35,6 +35,17 @@
  * <<Id: LICENSE,v 1.2 2000/06/14 15:57:33 cgd Exp>>
  */
 
+#include <sys/cdefs.h>
+
+#include <sys/types.h>
+
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "dlfcn_private.h"
+
+static int libc_initialised;
+
 #if defined(__x86_64__) || defined(__i386__)
 #  define HAS_RELOCATE_SELF
 #  if defined(__x86_64__)
@@ -49,12 +60,6 @@
 #  endif
 
 #include <elf.h>
-
-#include "dlfcn_private.h"
-
-struct ps_strings *__ps_strings;
-
-static bool libc_initialised;
 
 static void relocate_self(int, char **, int);
 
@@ -137,6 +142,8 @@ relocate_self(int argc, char **argv, int envc)
 		}
 	}
 }
+
+#endif
 
 void
 libc_init(void *prog, int argc, char **argv, int envc)

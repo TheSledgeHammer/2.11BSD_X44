@@ -38,6 +38,8 @@ __RCSID("$NetBSD: dlfcn_elf.c,v 1.4.2.1 2004/07/19 09:07:13 tron Exp $");
 #include <string.h>
 #include <stdbool.h>
 
+#include "dlfcn_private.h"
+
 #undef dl_iterate_phdr
 #undef dlopen
 #undef dlclose

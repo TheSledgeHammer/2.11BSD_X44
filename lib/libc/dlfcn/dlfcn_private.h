@@ -33,7 +33,7 @@ extern struct ps_strings *__ps_strings;
 
 /* dlfcn_elf.c */
 void dlauxinfo_init(int, char **, int);
-void *_dlauxinfo(void);
+void *_dlauxinfo(void) __pure;
 
 /* libc_init.c */
 void libc_init(void *, int, char **, int);
