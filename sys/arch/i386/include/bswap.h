@@ -12,6 +12,5 @@
 
 #define bswap16(x)      __byte_swap_word(x)
 #define bswap32(x)      __byte_swap_long(x)
-#define bswap64(x)	__byte_swap_quad(x)
 
 #endif /* !_MACHINE_BSWAP_H_ */

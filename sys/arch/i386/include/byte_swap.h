@@ -44,16 +44,8 @@
 #ifdef  __GNUC__
 
 __BEGIN_DECLS
-static __inline u_int64_t __byte_swap_quad_variable(u_int64_t);
 static __inline u_int32_t __byte_swap_long_variable(u_int32_t);
 static __inline u_int16_t __byte_swap_word_variable(u_int16_t);
-
-static __inline u_int64_t
-__byte_swap_quad_variable(u_int64_t x)
-{
-	__asm volatile ( "bswap %1" : "=r" (x) : "0" (x));
-	return (x);
-}
 
 static __inline u_int32_t
 __byte_swap_long_variable(u_int32_t x)
@@ -71,36 +63,6 @@ __byte_swap_word_variable(u_int16_t x)
 
 __END_DECLS
 
-#ifdef __OPTIMIZE__
-
-#if defined(x86_64) || defined(PMAP_PAE_COMP)
-
-#define __byte_swap_quad_constant(x) \
-	((((x) & 0xff00000000000000ull) >> 56) | \
-	 (((x) & 0x00ff000000000000ull) >> 40) | \
-	 (((x) & 0x0000ff0000000000ull) >> 24) | \
-	 (((x) & 0x000000ff00000000ull) >>  8) | \
-	 (((x) & 0x00000000ff000000ull) <<  8) | \
-	 (((x) & 0x0000000000ff0000ull) << 24) | \
-	 (((x) & 0x000000000000ff00ull) << 40) | \
-	 (((x) & 0x00000000000000ffull) << 56))
-
-#else
-
-#define	__byte_swap_long_constant_high(x) \
-	__byte_swap_long_constant((u_int32_t)((x) & \
-			0x00000000ffffffffULL))
-
-#define	__byte_swap_long_constant_low(x) \
-	__byte_swap_long_constant((u_int32_t)(((x) >> 32) & \
-			0x00000000ffffffffULL))
-
-#define __byte_swap_quad_constant(x) \
-	((__byte_swap_long_constant_high(x) << 32) | \
-			__byte_swap_long_constant_low(x))
-
-#endif
-
 #define	__byte_swap_long_constant(x) \
 	((((x) & 0xff000000) >> 24) | \
 	 (((x) & 0x00ff0000) >>  8) | \
@@ -111,10 +73,6 @@ __END_DECLS
 	((((x) & 0xff00) >> 8) | \
 	 (((x) & 0x00ff) << 8))
 
-#define	__byte_swap_quad(x) \
-	(__builtin_constant_p((x)) ? \
-	 __byte_swap_quad_constant(x) : __byte_swap_quad_variable(x))
-
 #define	__byte_swap_long(x) \
 	(__builtin_constant_p((x)) ? \
 	 __byte_swap_long_constant(x) : __byte_swap_long_variable(x))
@@ -123,13 +81,6 @@ __END_DECLS
 	(__builtin_constant_p((x)) ? \
 	 __byte_swap_word_constant(x) : __byte_swap_word_variable(x))
 
-#else /* __OPTIMIZE__ */
-
-#define	__byte_swap_quad(x)	__byte_swap_quad_variable(x)
-#define	__byte_swap_long(x)	__byte_swap_long_variable(x)
-#define	__byte_swap_word(x)	__byte_swap_word_variable(x)
-
-#endif /* __OPTIMIZE__ */
 #endif /* __GNUC__ */
 
 #endif /* !_I386_BYTE_SWAP_H_ */
