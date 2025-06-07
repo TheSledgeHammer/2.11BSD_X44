@@ -780,6 +780,9 @@ _hvs_sethtfile(hd, file)
 	const char *file;
 {
 	hd->filename = file;
+	if (hd->hostf != NULL) {
+		hd->hostf = fopen(hd->filename, "r");
+	}
 }
 
 static int

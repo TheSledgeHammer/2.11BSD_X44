@@ -38,22 +38,27 @@ static char sccsid[] = "@(#)strtok.c	8.1.1 (2.11BSD) 1996/1/11";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <stddef.h>
 
+#ifdef __weak_alias
+__weak_alias(strtok_r,_strtok_r)
+#endif
+
 char *
-strtok(s, delim)
+strtok_r(s, delim, last)
 	register char *s;
 	const char *delim;
+	char **last;
 {
 	char *spanp;
 	int c, sc;
 	char *tok;
-	static char *last;
 
-
-	if (s == NULL && (s = last) == NULL)
+	if (s == NULL && (s = *last) == NULL)
 		return (NULL);
 
 	/*
@@ -67,7 +72,7 @@ cont:
 	}
 
 	if (c == 0) { /* no non-delimiter characters */
-		last = NULL;
+		*last = NULL;
 		return (NULL);
 	}
 	tok = s - 1;
@@ -85,10 +90,20 @@ cont:
 					s = NULL;
 				else
 					s[-1] = 0;
-				last = s;
+				*last = s;
 				return (tok);
 			}
 		} while (sc != 0);
 	}
 	/* NOTREACHED */
+}
+
+char *
+strtok(s, delim, last)
+	char *s;
+	const char *delim;
+{
+	static char *last;
+
+	return (strtok_r(s, delim, &last));
 }

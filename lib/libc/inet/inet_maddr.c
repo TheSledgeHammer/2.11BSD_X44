@@ -46,6 +46,7 @@ __RCSID("$NetBSD: inet_makeaddr.c,v 1.15 2003/08/07 16:43:11 agc Exp $");
 
 #include "namespace.h"
 
+#include <sys/param.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -60,8 +61,12 @@ struct in_addr inet_maddr(long, long);
  * building addresses stored in the ifnet structure.
  */
 struct in_addr
+#if __STDC__
+inet_maddr(long net, long host)
+#else
 inet_maddr(net, host)
 	long net, host;
+#endif
 {
 	u_long addr;
 	struct in_addr ret;
@@ -86,5 +91,5 @@ inet_makeaddr(net, host)
 	in_addr_t net, host;
 #endif
 {
-	return (inet_maddr(net, host));
+	return (inet_maddr((in_addr_t)net, (in_addr_t)host));
 }

@@ -35,10 +35,10 @@
 
 typedef void (*fptr_t)(void);
 
-static char	        empty_string[] = "";
-char 			**environ;
-const char 		*__progname = empty_string;
-struct ps_strings 	*__ps_strings = 0;
+static char empty_string[] = "";
+char **environ;
+const char *__progname = empty_string;
+struct ps_strings *__ps_strings = 0;
 
 extern int   main(int argc, char **argv, char **env);
 
@@ -63,8 +63,9 @@ preinitializer(int argc, char **argv, char **env)
 	array_size = __preinit_array_end - __preinit_array_start;
 	for (n = 0; n < array_size; n++) {
 		func = __preinit_array_start[n];
-		if ((uintptr_t)func != 0 && (uintptr_t)func != 1)
+		if ((uintptr_t)func != 0 && (uintptr_t)func != 1) {
 			func(argc, argv, env);
+		}
 	}
 }
 
@@ -78,8 +79,9 @@ initializer(int argc, char **argv, char **env)
 	array_size = __init_array_end - __init_array_start;
 	for (n = 0; n < array_size; n++) {
 		func = __init_array_start[n];
-		if ((uintptr_t)func != 0 && (uintptr_t)func != 1)
+		if ((uintptr_t)func != 0 && (uintptr_t)func != 1) {
 			func(argc, argv, env);
+		}
 	}
 }
 
@@ -92,8 +94,9 @@ finalizer(void)
 	array_size = __fini_array_end - __fini_array_start;
 	for (n = array_size; n > 0; n--) {
 		func = __fini_array_start[n - 1];
-		if ((uintptr_t)func != 0 && (uintptr_t)func != 1)
+		if ((uintptr_t)func != 0 && (uintptr_t)func != 1) {
 			(func)();
+		}
 	}
 	_fini();
 }
@@ -101,8 +104,9 @@ finalizer(void)
 static inline void
 handle_static_init(int argc, char **argv, char **env)
 {
-	if (&_DYNAMIC != NULL)
+	if (&_DYNAMIC != NULL) {
 		return;
+	}
 
 	atexit(finalizer);
 	preinitializer(argc, argv, env);
@@ -114,13 +118,15 @@ handle_argv(int argc, char *argv[], char **env)
 {
 	const char *s;
 
-	if (environ == NULL)
+	if (environ == NULL) {
 		environ = env;
+	}
 	if (argc > 0 && argv[0] != NULL) {
 		__progname = argv[0];
 		for (s = __progname; *s != '\0'; s++) {
-			if (*s == '/')
+			if (*s == '/') {
 				__progname = s + 1;
+			}
 		}
 	} else {
         __progname = empty_string;

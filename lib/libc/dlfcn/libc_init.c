@@ -50,6 +50,12 @@
 
 #include <elf.h>
 
+#include "dlfcn_private.h"
+
+struct ps_strings *__ps_strings;
+
+static bool libc_initialised;
+
 static void relocate_self(int, char **, int);
 
 static void
@@ -132,14 +138,28 @@ relocate_self(int argc, char **argv, int envc)
 	}
 }
 
-static void
-crt0_prestart(struct ps_strings *ps_strings)
+void
+libc_init(void *prog, int argc, char **argv, int envc)
+{
+	if (libc_initialised) {
+		return;
+	}
+
+	libc_initialised = 1;
+
+	if (prog != NULL) {
+		dlauxinfo_init(argc, argv, envc);
+	}
+}
+
+void
+crt0_preinit(void *prog, int argc, char **argv, int envc)
 {
 #if defined(HAS_RELOCATE_SELF)
-	relocate_self(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr,  ps_strings->ps_nenvstr);
+	relocate_self(argc, argv, envc);
 #endif
 
-	if (ps_strings != (struct ps_strings*) 0) {
-		__ps_strings = ps_strings;
+	if (prog != NULL) {
+		__ps_strings = prog;
 	}
 }

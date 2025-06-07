@@ -53,17 +53,17 @@ static char sccsid[] = "@(#)getlogin.c	8.1.1 (2.11BSD) 1997.9.23";
 __weak_alias(getlogin,_getlogin)
 #endif
 
-int	_logname_valid;		/* known to setlogin() */
+int	__logname_valid;		/* known to setlogin() */
 
 char *
 getlogin(void)
 {
 	static char logname[MAXLOGNAME + 1];
 
-	if (_logname_valid == 0) {
+	if (__logname_valid == 0) {
 		if (__getlogin(logname, sizeof(logname) - 1) < 0)
 			return ((char *)NULL);
-		_logname_valid = 1;
+		__logname_valid = 1;
 	}
 	return (*logname ? logname : (char *)NULL);
 }

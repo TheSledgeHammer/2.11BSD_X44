@@ -7,7 +7,7 @@ static char sccsid[] = "@(#)ecvt.c	5.1 (Berkeley) 3/15/86";
 #endif /* LIBC_SCCS and not lint */
 
 //#include "namespace.h"
-
+#include <math.h>
 #include <stdlib.h>
 /*
 #ifdef __weak_alias
@@ -22,7 +22,7 @@ __weak_alias(fcvt, _fcvt)
  *	sign is set to 0 for positive, 1 for negative
  */
 
-static char	*cvt(double, int, int *, int *);
+static char	*cvt(double, int, int *, int *, int);
 
 #define	NDIG	80
 
@@ -50,16 +50,19 @@ fcvt(arg, ndigits, decpt, sign)
 	return (cvt(arg, ndigits, decpt, sign, 0));
 }
 
-static char*
+static char *
+#if __STDC__
+cvt(double arg, int ndigits, int *decpt, int *sign, int eflag)
+#else
 cvt(arg, ndigits, decpt, sign, eflag)
 	double arg;
-	int ndigits, *decpt, *sign;
+	int ndigits, *decpt, *sign, eflag;
+#endif
 {
 	register int r2;
 	double fi, fj;
 	register char *p, *p1;
 	static char buf[NDIG];
-	double modf();
 
 	if (ndigits < 0)
 		ndigits = 0;

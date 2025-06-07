@@ -90,6 +90,14 @@ __weak_alias(__dl_cxa_refcount,___dl_cxa_refcount)
  * be weak symbols so that the dynamic linker can override them.
  */
 
+static const char *dlpi_name;
+static Elf_Addr dlpi_addr;
+static const Elf_Phdr *dlpi_phdr;
+static Elf_Half dlpi_phnum;
+
+static void *__auxinfo;
+__asm(".hidden  __auxinfo");
+
 static char dlfcn_error[] = "Service unavailable";
 
 void *dlauxinfo(int, char **, int);
@@ -146,14 +154,6 @@ dlinfo(void *handle, int req, void *v)
 {
 	return -1;
 }
-
-static const char *dlpi_name;
-static Elf_Addr dlpi_addr;
-static const Elf_Phdr *dlpi_phdr;
-static Elf_Half dlpi_phnum;
-
-void *__auxinfo;
-__asm(".hidden  __auxinfo");
 
 static void
 dl_iterate_phdr_setup(void)
@@ -227,9 +227,20 @@ ___dl_cxa_refcount(void *dso_symbol, ssize_t delta)
 
 }
 
-void *
-dlauxinfo(int argc, char **argv, int envc)
+void
+dlauxinfo_init(int argc, char **argv, int envc)
 {
-	__auxinfo = (argv + argc + envc + 2);
-	return (__auxinfo);
+	__auxinfo = (void *)(argv + argc + envc + 2);
+}
+
+void *
+_dlauxinfo(void)
+{
+	void *aux;
+
+	aux = __auxinfo;
+	if (aux != NULL) {
+		return (aux);
+	}
+	return (NULL);
 }
