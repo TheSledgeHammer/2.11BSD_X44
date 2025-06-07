@@ -38,12 +38,18 @@ static char sccsid[] = "@(#)getopt.c	8.2.1 (2.11BSD) 1996/1/11";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef __weak_alias
+__weak_alias(getopt,_getopt)
+#endif
 
 int		opterr = 1,		/* if error message should be printed */
 		optind = 1,		/* index into parent argv vector */

@@ -10,7 +10,7 @@
 .PATH: ${ARCHDIR}/stdlib ${.CURDIR}/stdlib
 
 SRCS+=	a64l.c abort.c abs.c aligned_alloc.c atexit.c atof.c atoi.c atol.c bsearch.c div.c drand48.c 			\
-	erand48.c exit.c freezero.c getenv.c getopt_long.c getsubopt.c hcreate.c heapsort.c       		\
+	erand48.c exit.c freezero.c getenv.c getopt.c getopt_long.c getsubopt.c hcreate.c heapsort.c       		\
         jrand48.c l64a.c labs.c lcong48.c ldiv.c llabs.c lldiv.c lrand48.c merge.c  \
 	mi_vector_hash.c mrand48.c nrand48.c putenv.c qabs.c qdiv.c qsort.c radixsort.c rand48.c random.c	\
 	reallocarr.c reallocarray.c recallocarray.c seed48.c setenv.c srand48.c strsuftoll.c strtoi.c 			\
