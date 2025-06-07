@@ -7,12 +7,14 @@
 #endif
 
 #define option 		__nbcompat_option
-#define getopt_long __nbcompat_getopt_long
 
 #undef no_argument
 #undef required_argument
 #undef optional_argument
+
+#ifdef _GETOPT_H_
 #undef _GETOPT_H_
+#endif
 
 #include "../../include/getopt.h"
 
