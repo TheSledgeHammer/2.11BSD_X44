@@ -30,17 +30,19 @@
 #include <sys/types.h>
 
 #include <netinet/in.h>
-
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 520 || \
+    defined(__BSD_VISIBLE)
 #ifndef	_SOCKLEN_T_DEFINED_
 #define	_SOCKLEN_T_DEFINED_
 typedef __socklen_t	socklen_t;
 #define socklen_t	__socklen_t
 #endif
+#endif /* _POSIX_C_SOURCE >= 200112 || XOPEN_SOURCE >= 520 || __BSD_VISIBLE */
 
 __BEGIN_DECLS
 unsigned long 	inet_addr(const char *);
 char			*inet_ntoa(struct in_addr);
-struct	in_addr inet_makeaddr(long , long);
+struct in_addr inet_makeaddr(long , long);
 unsigned long 	inet_network(const char *);
 unsigned long 	inet_netof(struct in_addr);
 unsigned long 	inet_lnaof(struct in_addr);
