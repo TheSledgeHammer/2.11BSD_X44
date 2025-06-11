@@ -190,7 +190,7 @@
 146 STD     	{ int killpg(); }
 147	STD		    { int quotactl(); }
 148 STD     	{ int clock_getres(); }
-149 OBSOL     	old quota
+149 STD     	{ int issetugid(); }
 150 STD     	{ int getsockname(); }
 ; Syscalls 151-155 are special for 2BSD
 151 STD		{ int uuidgen(); }

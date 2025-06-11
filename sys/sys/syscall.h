@@ -155,7 +155,7 @@
 #define	SYS_killpg	146
 #define	SYS_quotactl	147
 #define	SYS_clock_getres	148
-				/* 149 is obsolete old quota */
+#define	SYS_issetugid	149
 #define	SYS_getsockname	150
 #define	SYS_uuidgen	151
 #define	SYS_nostk	152

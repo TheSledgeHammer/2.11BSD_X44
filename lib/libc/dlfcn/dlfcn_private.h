@@ -1,6 +1,6 @@
 /*
  * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+ * Copyright (c) 2025 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ void dlauxinfo_init(int, char **, int);
 void *_dlauxinfo(void) __pure;
 
 /* elf_reloc.c */
-void elf_relocate(int, char **, int, void *);
+void elf_relocate(int, char **, int);
 
 /* libc_init.c */
 void _libc_init(void);

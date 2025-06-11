@@ -159,6 +159,7 @@ int	setrlimit();
 int	killpg();
 int	quotactl();
 int	clock_getres();
+int	issetugid();
 int	getsockname();
 int	uuidgen();
 int	nostk();
@@ -489,7 +490,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    clock_getres },			/* 148 = clock_getres */
 	{ 0, 0,
-	    nosys },				/* 149 = obsolete old quota */
+	    issetugid },			/* 149 = issetugid */
 	{ 0, 0,
 	    getsockname },			/* 150 = getsockname */
 	{ 0, 0,

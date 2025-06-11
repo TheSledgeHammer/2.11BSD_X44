@@ -67,7 +67,6 @@
             ".previous		                        	\n"\
         )
 
-
 #define	MD_INIT_SECTION_PROLOGUE MD_SECTION_PROLOGUE(.init, _init)
 #define	MD_FINI_SECTION_PROLOGUE MD_SECTION_PROLOGUE(.fini, _fini)
 

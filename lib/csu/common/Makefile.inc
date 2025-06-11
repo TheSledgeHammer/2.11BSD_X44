@@ -13,7 +13,7 @@ CPPFLAGS+=	-I${ARCH_DIR} -I.
 CPPFLAGS+=	-I${COMMON_DIR} -I.
 CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
 CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
-CPPFLAGS+=  -DJCR
+CPPFLAGS+=  	-DJCR
 
 OBJS+= crt0.o gcrt0.o
 OBJS+= crtbegin.o crtend.o
@@ -92,8 +92,8 @@ gcrt0.o: crt0.S crt0_common.c
 		${OBJCOPY} -R .ident ${.TARGET}
 .endif
 
-crti.o: crti.c elf_note.h
-crtn.o: crtn.c
+crti.o: 	crti.c elf_note.h
+crtn.o: 	crtn.c
 
 FILES=${OBJS}
 FILESDIR=${LIBDIR}

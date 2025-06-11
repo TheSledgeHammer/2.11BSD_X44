@@ -206,6 +206,21 @@ setsid()
 }
 
 int
+issetugid()
+{
+	/*
+	 * Note: OpenBSD sets a P_SUGIDEXEC flag set at execve() time,
+	 * we use P_SUGID because we consider changing the owners as
+	 * "tainting" as well.
+	 * This is significant for procs that start as root and "become"
+	 * a user without an exec - programs cannot know *everything*
+	 * that libc *might* have put in their data segment.
+	 */
+	u.u_r.r_val1 = (u.u_procp->p_flag & P_SUGID) ? 1 : 0;
+	return (0);
+}
+
+int
 _groupmember(gid, cred)
 	gid_t 			gid;
 	struct ucred 	*cred;

@@ -155,6 +155,7 @@ extern int	setrlimit();
 extern int	killpg();
 extern int	quotactl();
 extern int	clock_getres();
+extern int	issetugid();
 extern int	getsockname();
 extern int	uuidgen();
 extern int	nostk();

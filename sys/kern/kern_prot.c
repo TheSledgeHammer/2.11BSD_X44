@@ -58,7 +58,7 @@
 #include <sys/malloc.h>
 
 int	entergroup(gid_t);
-void	leavegroup(gid_t);
+void leavegroup(gid_t);
 
 int
 getpid()

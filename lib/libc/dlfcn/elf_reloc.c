@@ -144,7 +144,7 @@ relocate_self(int argc, char **argv, int envc)
 #endif
 
 void
-elf_relocate(int argc, char **argv, int envc, void *ps)
+elf_relocate(int argc, char **argv, int envc)
 {
 #if defined(HAS_RELOCATE_SELF)
 	relocate_self(argc, argv, envc);

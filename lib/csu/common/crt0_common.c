@@ -67,11 +67,6 @@ extern void (*__fini_array_end[])(void) __dso_hidden;
 extern void _init(void);
 extern void _fini(void);
 
-/*
-extern void	_libc_init(void);
-extern void	elf_relocate(int, char **, int, void *);
-*/
-
 extern int _DYNAMIC;
 #pragma weak _DYNAMIC
 
@@ -249,7 +244,7 @@ void
 ___start(void (*cleanup)(void), const Obj_Entry *obj, struct ps_strings *ps_strings)
 {
 	elf_relocate(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr,
-			ps_strings->ps_nenvstr, (struct ps_strings *)ps_strings);
+			ps_strings->ps_nenvstr);
 
 	if (ps_strings == NULL) {
 		_FATAL("ps_strings missing\n");
@@ -271,6 +266,7 @@ ___start(void (*cleanup)(void), const Obj_Entry *obj, struct ps_strings *ps_stri
 	monstartup(&eprol, &etext);
 #endif
 
-    handle_static_init(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr, environ);
-    exit(main(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr, environ));
+	handle_static_init(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr,
+			environ);
+	exit(main(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr, environ));
 }
