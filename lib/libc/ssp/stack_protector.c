@@ -57,7 +57,7 @@ void __guard_setup(void);
 void
 __guard_setup(void)
 {
-	static const int mib[2] = { CTL_KERN, KERN_ARND };
+	static int mib[2] = { CTL_KERN, KERN_ARND };
 	size_t len;
 	unsigned int miblen;
 
