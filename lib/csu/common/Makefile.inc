@@ -9,10 +9,11 @@ COMMON_DIR:=	${.CURDIR}/common
 .PATH:		    ${COMMON_DIR}
 
 #CPPFLAGS+=	-DPIC -DDYNAMIC
-CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
+CPPFLAGS+=	-I${ARCH_DIR} -I.
 CPPFLAGS+=	-I${COMMON_DIR} -I.
+CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
 CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
-CPPFLAGS+=  -DJCR
+CPPFLAGS+=  	-DJCR
 
 OBJS+= crt0.o gcrt0.o
 OBJS+= crtbegin.o crtend.o
