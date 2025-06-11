@@ -13,7 +13,7 @@ CPPFLAGS+=	-I${ARCH_DIR} -I.
 CPPFLAGS+=	-I${COMMON_DIR} -I.
 CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
 CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/libc/dlfcn
-CPPFLAGS+=  	-DJCR
+CPPFLAGS+=  -DJCR
 
 OBJS+= crt0.o gcrt0.o
 OBJS+= crtbegin.o crtend.o
@@ -72,28 +72,27 @@ MY_PICFLAGS=
 
 crt0.o: crt0.S crt0_common.c
 		${_MKTARGET_COMPILE}
-		${COMPILE.S} ${ARCH_DIR}/crt0.S -o ${.TARGET}.o
-		${COMPILE.c} ${CFLAGS.crt0_common.c} ${MY_PICFLAGS} ${COMMON_DIR}/crt0_common.c -o ${.TARGET}.o
-		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+		${COMPILE.S} ${ARCH_DIR}/crt0.S -o ${.TARGET}.S.o
+		${COMPILE.c} ${CFLAGS.crt0_common.c} ${MY_PICFLAGS} ${COMMON_DIR}/crt0_common.c -o ${.TARGET}.c.o
+		${LD} -r -o ${.TARGET}.o ${.TARGET}.S.o ${.TARGET}.c.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
-		rm -f ${.TARGET}.o
+		rm -f ${.TARGET}.S.o ${.TARGET}.c.o ${.TARGET}.o
 .if ${MKSTRIPIDENT} != "no"
 		${OBJCOPY} -R .ident ${.TARGET}
 .endif
 
-# dependant on crt0.o to pick up header dependencies
-gcrt0.o: crt0.S crt0_common.c crt0.o
+gcrt0.o: crt0.S crt0_common.c
 		${_MKTARGET_COMPILE}
-		${COMPILE.S} ${ARCH_DIR}/crt0.S -o ${.TARGET}.o
-		${COMPILE.c} ${MY_PICFLAGS} -DMCRT0 ${COMMON_DIR}/crt0_common.c -o ${.TARGET}.o
-		${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+		${COMPILE.S} ${ARCH_DIR}/crt0.S -o ${.TARGET}.S.o
+		${COMPILE.c} ${MY_PICFLAGS} -DMCRT0 ${COMMON_DIR}/crt0_common.c -o ${.TARGET}.c.o
+		${LD} -r -o ${.TARGET}.o ${.TARGET}.S.o ${.TARGET}.c.o
 		${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}.o ${.TARGET}
-		rm -f ${.TARGET}.o
+		rm -f ${.TARGET}.S.o ${.TARGET}.c.o ${.TARGET}.o
 .if ${MKSTRIPIDENT} != "no"
 		${OBJCOPY} -R .ident ${.TARGET}
 .endif
 
-crti.o: crti.c
+crti.o: crti.c elf_note.h
 crtn.o: crtn.c
 
 FILES=${OBJS}

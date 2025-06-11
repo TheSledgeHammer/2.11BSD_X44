@@ -34,6 +34,7 @@
 #include <sys/exec_elf.h>
 
 #include "sysident.h"
+#include "elf_note.h"
 #include <dot_init.h>
 
 #ifdef MD_INIT_SECTION_PROLOGUE
