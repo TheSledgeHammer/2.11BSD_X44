@@ -37,6 +37,7 @@ __RCSID("$NetBSD: initfini.c,v 1.14 2017/06/17 15:26:44 joerg Exp $");
 #endif
 
 #include <sys/types.h>
+#include <sys/exec.h>
 
 #include "dlfcn_private.h"
 
