@@ -36,5 +36,10 @@
 #include "sysident.h"
 #include <dot_init.h>
 
+#ifdef MD_INIT_SECTION_PROLOGUE
 MD_INIT_SECTION_PROLOGUE;
+#endif
+
+#ifdef MD_FINI_SECTION_PROLOGUE
 MD_FINI_SECTION_PROLOGUE;
+#endif

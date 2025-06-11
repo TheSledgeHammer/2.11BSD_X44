@@ -55,7 +55,7 @@ struct atexit *__atexit;	/* points to head of LIFO stack */
 mutex_t __atexit_mutex;
 #endif /* _REENTRANT */
 
-void atexit_init(void) __attribute__ ((visibility("hidden")));
+void __atexit_init(void) __attribute__ ((visibility("hidden")));
 
 static int atexit_alloc(struct atexit_fun *);
 static int common_atexit(void (*)(void), void (*)(void *), void *, void *);
@@ -122,7 +122,7 @@ __cxa_atexit(cxa_func, arg, dso)
 }
 
 void
-atexit_init(void)
+__atexit_init(void)
 {
 #ifdef _REENTRANT
 	mutexattr_t atexit_mutex_attr;

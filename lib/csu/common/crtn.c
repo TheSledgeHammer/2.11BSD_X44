@@ -31,5 +31,10 @@
 
 #include <dot_init.h>
 
+#ifdef MD_INIT_SECTION_EPILOGUE
 MD_INIT_SECTION_EPILOGUE;
+#endif
+
+#ifdef MD_FINI_SECTION_EPILOGUE
 MD_FINI_SECTION_EPILOGUE;
+#endif

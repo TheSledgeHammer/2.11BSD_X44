@@ -37,6 +37,7 @@ __RCSID("$NetBSD: dlfcn_elf.c,v 1.4.2.1 2004/07/19 09:07:13 tron Exp $");
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "dlfcn_private.h"
 
@@ -101,8 +102,6 @@ static void *__auxinfo;
 __asm(".hidden  __auxinfo");
 
 static char dlfcn_error[] = "Service unavailable";
-
-void *dlauxinfo(int, char **, int);
 
 /*ARGSUSED*/
 void *

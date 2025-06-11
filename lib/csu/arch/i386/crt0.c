@@ -26,9 +26,6 @@
  * $FreeBSD$
  */
 
-#define	HAVE_CTORS
-#define HAS_IPLT
-
 #include "crt0_common.c"
 
 void ___start(fptr_t, struct ps_strings *);

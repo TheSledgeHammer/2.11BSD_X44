@@ -28,8 +28,12 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/param.h>
+
 #include <dot_init.h>
-#include "csu_common.c"
+
+typedef void (*fptr_t)(void);
+typedef void (*func_t)(void *);
 
 #ifdef HAVE_CTORS
 static fptr_t __DTOR_LIST__[1] __section(".dtors") __used = { (fptr_t)-1 };
@@ -71,6 +75,41 @@ __call_##func(void)									\
 static void __dtors(void) __used;
 static void __do_global_dtors_aux(void) __used;
 
+static inline void
+common_dtors(fptr_t *list, fptr_t *end)
+{
+	fptr_t *p;
+	for (p = list + 1; p < end;) {
+		(*(*--p))();
+	}
+}
+
+static inline void
+common_fini(func_t final, void *handle, fptr_t *list, fptr_t *end)
+{
+	static int finished;
+
+	if (finished) {
+		return;
+	}
+
+	finished = 1;
+
+#ifdef SHARED
+	/*
+	 * Call __cxa_finalize with the dso handle in shared objects.
+	 * When we have ctors/dtors call from the dtor handler before calling
+	 * any dtors, otherwise use a destructor.
+	 */
+	if (final != NULL) {
+		final(handle);
+	}
+#endif
+
+	/* Call global destructors.	*/
+	common_dtors(list, end);
+}
+
 static void
 __dtors(void)
 {
@@ -80,8 +119,12 @@ __dtors(void)
 static void
 __do_global_dtors_aux(void)
 {
+#ifdef SHARED
 	common_fini(__cxa_finalize, __dso_handle, __DTOR_LIST__, __DTOR_END__);
+#else
+	common_fini(NULL, __dso_handle, __DTOR_LIST__, __DTOR_END__);
+#endif
 }
 
-MD_CALL_STATIC_FUNCTION(.fini, __do_global_dtors_aux)
+MD_CALL_STATIC_FUNCTION(.fini, __do_global_dtors_aux);
 #endif

@@ -52,6 +52,30 @@ void xprintf(const char *fmt, ...);
 long __stack_chk_guard[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 static void __fail(const char *) __attribute__((__noreturn__));
 __dead void __stack_chk_fail_local(void);
+void __guard_setup(void);
+
+void
+__guard_setup(void)
+{
+	static const int mib[2] = { CTL_KERN, KERN_ARND };
+	size_t len;
+	unsigned int miblen;
+
+	if (__stack_chk_guard[0] != 0) {
+		return;
+	}
+
+	miblen = (sizeof(mib)/sizeof(mib[0]));
+	len = sizeof(__stack_chk_guard);
+	if (__sysctl(mib, miblen, __stack_chk_guard, &len, NULL, 0) == -1 || len != sizeof(__stack_chk_guard)) {
+		/* If sysctl was unsuccessful, use the "terminator canary". */
+		((unsigned char *)(void *)__stack_chk_guard)[0] = 0;
+		((unsigned char *)(void *)__stack_chk_guard)[1] = 0;
+		((unsigned char *)(void *)__stack_chk_guard)[2] = '\n';
+		((unsigned char *)(void *)__stack_chk_guard)[3] = 255;
+	}
+}
+
 
 /*ARGSUSED*/
 static void

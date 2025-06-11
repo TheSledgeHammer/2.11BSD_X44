@@ -39,38 +39,39 @@
 #include <sys/cdefs.h>
 
 #define	MD_SECTION_PROLOGUE(sect, entry_pt)			\
-	__asm (											\
-			".section "#sect",\"ax\",@progbits	 	\n"\
-			".globl "#entry_pt" 					\n"\
-			"	.align	16							\n"\
-			#entry_pt":								\n"\
-			"	pushl	%ebp						\n"\
-			"	movl	%esp, %ebp					\n"\
-			"	/* fall thru */						\n"\
+	__asm (							\
+			".section "#sect",\"ax\",@progbits	\n"\
+			".globl "#entry_pt" 			\n"\
+			"	.align	16			\n"\
+			#entry_pt":				\n"\
+			"	pushl	%ebp			\n"\
+			"	movl	%esp, %ebp		\n"\
+			"	/* fall thru */			\n"\
 			".previous                              \n"\
           )
 
 		/* placement of the .align _after_ the label is intentional */
 
-#define	MD_SECTION_EPILOGUE(sect)					\
-	__asm (											\
-			".section "#sect",\"ax\",@progbits		\n"\
-			"	leave								\n"\
-			"	ret									\n"\
+#define	MD_SECTION_EPILOGUE(sect)				\
+	__asm (							\
+			".section "#sect",\"ax\",@progbits	\n"\
+			"	leave				\n"\
+			"	ret				\n"\
 			".previous                              \n"\
           )
+
+#define	MD_CALL_STATIC_FUNCTION(section, func)	    		\
+    __asm (                                           		\
+            ".section " #section "		            	\n"\
+            " call " #func "                     		\n"\
+            ".previous		                        	\n"\
+        )
+
 
 #define	MD_INIT_SECTION_PROLOGUE MD_SECTION_PROLOGUE(.init, _init)
 #define	MD_FINI_SECTION_PROLOGUE MD_SECTION_PROLOGUE(.fini, _fini)
 
 #define	MD_INIT_SECTION_EPILOGUE MD_SECTION_EPILOGUE(.init)
 #define	MD_FINI_SECTION_EPILOGUE MD_SECTION_EPILOGUE(.fini)
-
-#define	MD_CALL_STATIC_FUNCTION(section, func)	    \
-    asm (                                           \
-            ".section " #section "		            \n"\
-            "\t" call " #func "                     \n"\
-            ".previous		                        \n"\
-        )
 
 #endif /* _I386_DOT_INIT_H_ */

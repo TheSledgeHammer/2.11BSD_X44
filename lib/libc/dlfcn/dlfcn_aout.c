@@ -45,6 +45,7 @@ __RCSID("$NetBSD: dlfcn_elf.c,v 1.4.2.1 2004/07/19 09:07:13 tron Exp $");
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #undef dlopen
 #undef dlclose
@@ -84,9 +85,10 @@ __weak_alias(__dladdr,___dladdr)
 #define LDSO	"/usr/libexec/ld.so"
 #endif
 
-#define _FATAL(str) 					\
+#define _FATAL(str) do {				\
 	write(2, str, sizeof(str) - 1); 	\
-	exit(1);
+	exit(1);							\
+} while (0);
 
 static struct ld_entry **ld_entry;
 static char dlfcn_error[] = "Service unavailable";

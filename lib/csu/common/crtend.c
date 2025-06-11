@@ -22,8 +22,12 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/param.h>
+
 #include <dot_init.h>
-#include "csu_common.c"
+
+typedef void (*fptr_t)(void);
+typedef void (*func_t)(void *);
 
 #ifdef HAVE_CTORS
 static fptr_t __CTOR_LIST__[1] __section(".ctors") __used = { (fptr_t)-1 };
@@ -58,6 +62,36 @@ __call_##func(void)									\
 static void __ctors(void) __used;
 static void __do_global_ctors_aux(void) __used;
 
+static inline void
+common_ctors(fptr_t *list, fptr_t *end)
+{
+	fptr_t *p;
+	for (p = end; p > list + 1;) {
+		(*(*--p))();
+	}
+}
+
+static inline void
+common_init(fptr_t *jcr, func_t regclass, fptr_t *list, fptr_t *end)
+{
+	static int initialized;
+
+	if (initialized) {
+		return;
+	}
+
+	initialized = 1;
+
+#if defined(JCR) && defined(__GNUC__)
+	if (jcr[0] != NULL && regclass != NULL) {
+		regclass(jcr);
+	}
+#endif
+
+	/* Call global constructors. */
+	common_ctors(list, end);
+}
+
 static void
 __ctors(void)
 {
@@ -70,5 +104,6 @@ __do_global_ctors_aux(void)
     common_init(__JCR_LIST__, _Jv_RegisterClasses, __CTOR_LIST__, __CTOR_END__);
 }
 
-MD_CALL_STATIC_FUNCTION(.init, __do_global_ctors_aux)
+MD_CALL_STATIC_FUNCTION(.init, __do_global_ctors_aux);
+
 #endif

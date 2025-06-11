@@ -30,10 +30,14 @@
 #include <sys/types.h>
 #include <sys/exec.h>
 #include <sys/exec_elf.h>
+#include <sys/syscall.h>
 #include <machine/profile.h>
 #include <stdlib.h>
 
 #include "dlfcn_private.h"
+#include "rtld.h"
+
+__dead void ___start(void (*)(void), const Obj_Entry *, struct ps_strings *) __dso_hidden;
 
 typedef void (*fptr_t)(void);
 
@@ -44,6 +48,16 @@ struct ps_strings *__ps_strings = 0;
 
 extern int   main(int argc, char **argv, char **env);
 
+extern int	            __syscall(quad_t, ...);
+#define	_exit(v)	    __syscall(SYS_rexit, (v))
+#define	write(fd, s, n)	__syscall(SYS_write, (fd), (s), (n))
+
+#define	_FATAL(str)			\
+do {					\
+	write(2, str, sizeof(str)-1);	\
+	_exit(1);			\
+} while (0)
+
 extern void (*__preinit_array_start[])(int, char **, char **) __dso_hidden;
 extern void (*__preinit_array_end[])(int, char **, char **) __dso_hidden;
 extern void (*__init_array_start[])(int, char **, char **) __dso_hidden;
@@ -52,6 +66,11 @@ extern void (*__fini_array_start[])(void) __dso_hidden;
 extern void (*__fini_array_end[])(void) __dso_hidden;
 extern void _init(void);
 extern void _fini(void);
+
+/*
+extern void	_libc_init(void);
+extern void	elf_relocate(int, char **, int, void *);
+*/
 
 extern int _DYNAMIC;
 #pragma weak _DYNAMIC
@@ -205,27 +224,53 @@ extern void _mcleanup(void);
 extern void monstartup(void *, void *);
 extern int 	eprol;
 extern int 	etext;
+#ifdef MCRT0
+__asm ("  .text");
+#ifdef EPROL_EXPORT
+EPROL_EXPORT;
+#endif
+__asm ("_eprol:");
+#endif
 #endif
 
-static inline void
-crt0_start(fptr_t cleanup, void *prog, int argc, char **argv, char **env, int envc)
+static void
+rtld_setup(void (*cleanup)(void), const Obj_Entry *obj)
 {
-	crt0_preinit(prog, argc, argv, envc);
-	handle_argv(argc, argv, env);
-	libc_init(prog, argc, argv, envc);
+	if ((obj == NULL) || (obj->magic != RTLD_MAGIC)) {
+		_FATAL("Corrupt Obj_Entry pointer in GOT\n");
+	}
+	if (obj->version != RTLD_VERSION) {
+		_FATAL("Dynamic linker version mismatch\n");
+	}
+	atexit(cleanup);
+}
+
+void
+___start(void (*cleanup)(void), const Obj_Entry *obj, struct ps_strings *ps_strings)
+{
+	elf_relocate(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr,
+			ps_strings->ps_nenvstr, (struct ps_strings *)ps_strings);
+
+	if (ps_strings == NULL) {
+		_FATAL("ps_strings missing\n");
+	}
+
+	__ps_strings = ps_strings;
+
+	handle_argv(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr, &ps_strings->ps_envstr);
 	if (&_DYNAMIC != NULL) {
-		atexit(cleanup);
+		rtld_setup(cleanup, obj);
 	} else {
 		process_irelocs();
 	}
 
+	_libc_init();
+
 #ifdef MCRT0
 	atexit(_mcleanup);
 	monstartup(&eprol, &etext);
-	__asm__("  .text");
-	__asm__("eprol:");
 #endif
 
-	handle_static_init(argc, argv, env);
-	exit(main(argc, argv, env));
+    handle_static_init(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr, environ);
+    exit(main(ps_strings->ps_nargvstr, &ps_strings->ps_argvstr, environ));
 }
