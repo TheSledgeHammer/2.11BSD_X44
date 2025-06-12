@@ -43,7 +43,8 @@ main(int argc, char	*argv[])
 	char *flags, *ep;
 	int ch, fcurdir;
 	long tmp;
-
+	
+	fcurdir = 0;
 	while ((ch = getopt(argc, argv, "Rf")) != EOF) {
 		switch (ch) {
 		case 'R':
