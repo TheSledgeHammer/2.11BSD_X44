@@ -59,9 +59,7 @@ void usage(void);
 //extern	char	*__progname;
 
 int
-main(argc, argv)
-	int	argc;
-	char **argv;
+main(int argc, char *argv[])
 {
 	int	c, i;
 	pid_t	pid;
@@ -213,8 +211,7 @@ doit(void)
 }
 
 void
-checkacctspace(sig)
-    int sig;
+checkacctspace(int sig)
 {
 	struct	statfs	fsb;
 	float	suspendfree, totalfree, resumefree;
@@ -252,8 +249,7 @@ checkacctspace(sig)
  * in the signal handler because other signals are blocked.
 */
 void
-hupcatch(sig)
-    int sig;
+hupcatch(int sig)
 {
 	struct	ACCTPARM ajunk;
 
@@ -281,8 +277,7 @@ hupcatch(sig)
  * either get all that we asked for or nothing.
 */
 void
-terminate(sig)
-    int sig;
+terminate(int sig)
 {
 	register int	i, cnt;
 	struct	acct	a;
@@ -307,8 +302,7 @@ terminate(sig)
  * checking of the arguments is performed here.
 */
 int
-parseconf(ap)
-	register struct ACCTPARM *ap;
+parseconf(struct ACCTPARM *ap)
 {
 	int err = 0, count;
 	register FILE *fp;
@@ -412,8 +406,7 @@ errline(int l)
  * stored in a structure (a pointer to which is passed to this routine). 
 */
 void
-reconfig(new)
-	struct ACCTPARM *new;
+reconfig(struct ACCTPARM *new)
 {
 	struct itimerval itmr;
 	int fd;
@@ -425,12 +418,14 @@ reconfig(new)
 	Acctparms = *new;
 
 	fd = open(Acctparms.acctfile, O_WRONLY | O_APPEND, 644);
-	if (fd < 0)
+	if (fd < 0) {
 		die("open(%s,O_WRONLY|O_APPEND): %d\n", Acctparms.acctfile,
 		errno);
+    }
 	Acctfp = fdopen(fd, "a");
-	if (!Acctfp)
+	if (!Acctfp) {
 		die("fdopen(%d,a): %d\n", fd, errno);
+    }
 	itmr.it_interval.tv_sec = Acctparms.chkfreq;
 	itmr.it_interval.tv_usec = 0;
 	itmr.it_value.tv_sec = Acctparms.chkfreq;

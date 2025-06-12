@@ -6,17 +6,15 @@
 
 .include <bsd.own.mk>
 
+WARNS?=  3
+
 PROG= 	acctd
 SRCS= 	acctd.c
 MAN=	acctd.8
 BINDIR=	/usr/libexec
 
-WARNS?=  3
-
 BINOWN=		root
 BINMODE=	700
-
-COPTS.acctd.c = -Wno-format-nonliteral
 	
 .include <bsd.prog.mk>
 # DO NOT DELETE THIS LINE -- mkdep uses it.
