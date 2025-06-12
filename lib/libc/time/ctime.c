@@ -70,6 +70,10 @@ static char sccsid[] = "@(#)ctime.c	8.2 (Berkeley) 3/20/94";
 
 #include "private.h"
 
+#ifdef __weak_alias
+__weak_alias(gmtime_r,_gmtime_r)
+__weak_alias(localtime_r,_localtime_r)
+#endif
 
 #ifndef TZ_ABBR_MAX_LEN
 #define TZ_ABBR_MAX_LEN	16
