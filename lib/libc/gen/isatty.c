@@ -51,6 +51,10 @@ static char sccsid[] = "@(#)isatty.c	8.1 (Berkeley) 6/4/93";
 #endif
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(isatty,_isatty)
+#endif
+
 #if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
 int
 isatty(fd)
