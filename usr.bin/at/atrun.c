@@ -4,15 +4,19 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
+#if !defined(lint)
+#if 0
 char copyright[] =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif
+#endif /* not lint */
 
-#ifndef lint
+#if !defined(lint)
+#if 0
 static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
-#endif not lint
+#endif
+#endif /* not lint */
 
 /*
  *	Synopsis: atrun
@@ -26,7 +30,8 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
  *				University of California @ Berkeley
  *
  */
-# include <stdio.h>
+#include <sys/cdefs.h>
+
 # include <sys/types.h>
 # include <sys/dir.h>
 # include <sys/file.h>
@@ -36,7 +41,12 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
 # include <sys/quota.h>
 #endif
 # include <sys/stat.h>
+
+# include <dirent.h>
+# include <stdio.h>
+# include <stdlib.h>
 # include <pwd.h>
+# include <unistd.h>
 
 # define ATDIR		"/usr/spool/at"		/* spooling area */
 # define TMPDIR		"/tmp"			/* area for temporary files */
@@ -51,14 +61,18 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
 char nowtime[11];			/* time it is right now (yy.ddd.hhmm) */
 char errfile[25];			/* file where we redirect errors to */
 
+void makenowtime(char *);
+void run(char *);
+void sendmailto(char *, char *, int);
+int should_be_run(struct direct *);
+void updatetime(void);
+char *getname(int);
 
-main(argc, argv)
-char **argv;
+int
+main(int argc, char *argv[])
 {
-
 	int i;				/* for loop index */
 	int numjobs;			/* number of jobs to be run */
-	int should_be_run();		/* should a job be run? */
 	struct direct **jobqueue;	/* queue of jobs to be run */
 
 
@@ -102,8 +116,8 @@ char **argv;
  * time it is right now. This string is used to determine whether a
  * job should be run.
  */
-makenowtime(nowtime)
-char *nowtime;
+void
+makenowtime(char *nowtime)
 {
 	struct tm *now;			/* broken down representation of the
 					   time it is right now */
@@ -137,8 +151,9 @@ char *nowtime;
 /*
  * Run a job.
  */
+void
 run(spoolfile)
-char *spoolfile;
+    char *spoolfile;
 {
 	int i;				/* scratch variable */
 	int pid;			/* process id of forked shell */
@@ -367,10 +382,11 @@ char *spoolfile;
 /*
  * Send mail to the owner of the job. 
  */
-sendmailto(user,jobname,exitstatus)
-char *user;
-char *jobname;
-int exitstatus;
+void
+sendmailto(user, jobname, exitstatus)
+    char *user;
+    char *jobname;
+    int exitstatus;
 {
 	char ch;			/* scratch variable */
 	char mailtouser[100];		/* the process we use to send mail */
@@ -460,8 +476,9 @@ int exitstatus;
  * We'll only consider files with three dots in their name since these
  * are the only files that represent jobs to be run.
  */
+int
 should_be_run(direntry)
-struct direct *direntry;
+    struct direct *direntry;
 {
 	int numdot = 0;			/* number of dots found in a filename */
 	char *filename;			/* pointer for scanning a filename */
@@ -485,13 +502,14 @@ struct direct *direntry;
 	 * If a directory entry represents a job, determine if it's time to
 	 * run it.
 	 */
-	return(strncmp(direntry->d_name, nowtime,11) <= 0);
+	return (strncmp(direntry->d_name, nowtime,11) <= 0);
 }
 
 /*
  * Record the last time that "atrun" was run.
  */
-updatetime()
+void
+updatetime(void)
 {
 
 	struct timeval time;		/* number of seconds since 1/1/70 */
@@ -531,7 +549,7 @@ updatetime()
  */
 char *
 getname(uid)
-int uid;
+    int uid;
 {
 	struct passwd *pwdinfo;			/* password info structure */
 	
@@ -540,5 +558,5 @@ int uid;
 		perror(uid);
 		exit(1);
 	}
-	return(pwdinfo->pw_name);
+	return (pwdinfo->pw_name);
 }
