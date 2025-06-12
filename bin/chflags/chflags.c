@@ -9,25 +9,35 @@
 */
 
 #include <sys/cdefs.h>
-#include <sys/dirent.h>
+#include <sys/dir.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <stdio.h>
-#include <stdarg.h>
+#include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <util.h>
 
 static	const char *fmsg = "Can't fchdir() back to starting directory";
 static	int	oct, status, fflag, rflag;
 static	u_short	set, clear;
 static	struct	stat st;
-static	void	usage(void);
-extern	int	optind, errno;
 
-void
-main(argc, argv)
-	int	argc;
-	char	*argv[];
+int recurse(char *, int);
+void die(const char *, ...);
+int warning(char *);
+int newflags(u_short);
+void usage(void);
+
+//extern	int	optind, errno;
+
+int
+main(int argc, char	*argv[])
 {
 	register char *p;
 	char *flags, *ep;
@@ -60,7 +70,7 @@ main(argc, argv)
 		oct = 1;
 		set = tmp;
 	} else {
-		if (string_to_flags(&flags, &set, &clear))
+		if (string_to_flags(&flags, (u_long *)&set, (u_long *)&clear))
 			die("invalid flag: %s", flags);
 		clear = ~clear;
 		oct = 0;
@@ -72,7 +82,7 @@ main(argc, argv)
 			die("Can't open .");
 	}
 
-	while (p == *argv++) {
+	while ((p = *argv++)) {
 		if (lstat(p, &st) < 0) {
 			status |= warning(p);
 			continue;
@@ -95,12 +105,10 @@ main(argc, argv)
 }
 
 int
-recurse(dir, savedir)
-	char	*dir;
-	int	savedir;
+recurse(char *dir, int savedir)
 {
 	register DIR *dirp;
-	register struct direct *dp;
+	register struct dirent *dp;
 	int ecode;
 
 	if (chdir(dir) < 0) {
@@ -149,15 +157,15 @@ recurse(dir, savedir)
 
 /* VARARGS1 */
 void
-die(fmt, ap)
-	char *fmt;
-	va_list	ap;
+die(const char *fmt, ...)
 {
-	va_start(ap);
+    va_list	ap;
+
+	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	fputc('\n', stderr);
 	va_end(ap);
-	exit(1);
+    exit(1);
 }
 
 int
@@ -184,7 +192,7 @@ newflags(flags)
 	return (flags);
 }
 
-static void
+void
 usage(void)
 {
 	fputs("usage: chflags [-Rf] flags file ...\n", stderr);
