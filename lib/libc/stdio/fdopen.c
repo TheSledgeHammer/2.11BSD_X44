@@ -65,6 +65,10 @@ static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) 3/9/86";
 #include "reentrant.h"
 #include "local.h"
 
+#ifdef __weak_alias
+__weak_alias(fdopen,_fdopen)
+#endif
+
 FILE *
 fdopen(fd, mode)
 	int fd;
