@@ -84,7 +84,8 @@ WEAKASM=        accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill
                 sysarch.S wait4.S write.S writev.S
 
 NOERR=          getegid.S geteuid.S getgid.S getpgid.S getpid.S getpgrp.S \
-				getppid.S getsid.S getuid.S profil.S sigaction.S sync.S umask.S
+		getppid.S getsid.S getuid.S issetugid.S profil.S sigaction.S \
+		sync.S umask.S
 
 PSEUDONOERR=    _exit.S
 
