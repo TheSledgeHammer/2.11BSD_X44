@@ -7,9 +7,11 @@ SRCS= 	atrun.c
 BINDIR=	/usr/libexec
 MAN=	atrun.8
 
-.PATH.c: ${NETBSDSRCDIR}/usr.bin/at
+AT_DIR:= ${NETBSDSRCDIR}/usr.bin/at
 
-CPPFLAGS+= -I${NETBSDSRCDIR}/usr.bin/at
+.PATH.c: ${AT_DIR}
+
+CPPFLAGS+= -I${AT_DIR}
 COPTS.atrun.c = -Wno-format-nonliteral
 
 .include <bsd.prog.mk>
