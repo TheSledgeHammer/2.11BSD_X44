@@ -14,7 +14,7 @@ SRCS+=	a64l.c abort.c abs.c aligned_alloc.c atexit.c atof.c atoi.c atol.c bsearc
         jrand48.c l64a.c labs.c lcong48.c ldiv.c llabs.c lldiv.c lrand48.c merge.c  \
 	mi_vector_hash.c mrand48.c nrand48.c putenv.c qabs.c qdiv.c qsort.c radixsort.c rand48.c random.c	\
 	reallocarr.c reallocarray.c recallocarray.c seed48.c setenv.c srand48.c strsuftoll.c strtoi.c 			\
-        strtoimax.c strtol.c strtoll.c strtou.c strtoul.c strtoumax.c strtouq.c system.c tdelete.c 		\
+        strtoimax.c strtol.c strtoq.c strtoll.c strtou.c strtoul.c strtoumax.c strtouq.c system.c tdelete.c 		\
 	tfind.c tsearch.c twalk.c
 
 .if (${USE_JEMALLOC} == "no")
