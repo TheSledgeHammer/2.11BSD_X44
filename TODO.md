@@ -49,7 +49,6 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## lib:
 - libc:
-	- net: nslexer.l doesn't like %%
 	- softfloat: add to libc
 	- stdio: improve support
  		- wide characters.
@@ -67,7 +66,12 @@ A General todo list. Don't hesitate to add to this list. :)
 		- startslip
 
 ## share:
-
+- doc:
+	- Improve organization of directories and folders for both new and old documentation.
+ 		- Still allowing old to be accessible. Especially the still relavent stuff.
+   	- Compiling: Currently only the new stuff is compiled.
+   		- This would require going through the various makefiles and applying fixes.
+   	
 ## tools:
 
 ## stand:
