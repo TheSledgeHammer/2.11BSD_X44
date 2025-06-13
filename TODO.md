@@ -115,9 +115,6 @@ A General todo list. Don't hesitate to add to this list. :)
 ## ddb:
 
 ## kern:
-- Implement Access Control Lists
-- Implement Extended Attributes
-
 - subr_hints.c: It's usefulness is in question...
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
 - RLimit (Minor Issue)
