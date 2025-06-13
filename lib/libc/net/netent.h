@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 
-struct nettent_data {
+struct netent_data {
 	FILE *netf;
 	char **aliases;
 	size_t maxaliases;
@@ -40,7 +40,16 @@ struct nettent_data {
 
 #define _GETNENT_R_SIZE_MAX 1024
 
-extern struct nettent_data 	_nvs_netd;
-extern struct nettent 		_nvs_net;
+extern struct netent_data 	_nvs_netd;
+extern struct netent 		_nvs_net;
 extern char 			_nvs_netbuf[_GETNENT_R_SIZE_MAX];
 
+int getnetent_r(struct netent *, struct netent_data *, char *, size_t, struct netent **);
+void setnetent_r(int, struct netent_data *);
+void endnetent_r(struct netent_data *);
+
+/* getnbyaddr.c */
+int getnetbyaddr_r(struct netent *, struct netent_data *, long, int, char *, size_t, struct netent **);
+
+/* getnbyname.c */
+int getnetbyname_r(struct netent *, struct netent_data *, const char *, char *, size_t, struct netent **);

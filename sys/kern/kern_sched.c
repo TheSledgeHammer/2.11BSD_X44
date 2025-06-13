@@ -109,7 +109,9 @@ sched_cfs_init(cfs, p)
 	cfs->cfs_bsched = BSCHEDULE;
 }
 
-/* set estcpu */
+/*
+ * set estcpu
+ */
 void
 sched_estcpu(estcpu1, estcpu2)
 	u_int estcpu1, estcpu2;
@@ -131,7 +133,9 @@ sched_estcpu(estcpu1, estcpu2)
 	}
 }
 
-/* set cpticks */
+/*
+ * set cpticks
+ */
 void
 sched_cpticks(cpticks1, cpticks2)
 	int cpticks1, cpticks2;
@@ -231,6 +235,9 @@ sched_factor_compute(sf, utilization, demand, workload)
 
 #define SCHED_AVG(a, b, c) (((a)+(b)+(c))/3)
 
+/*
+ * schedule utilization
+ */
 void
 sched_factor_utilization(sf, utilization)
 	struct sched_factor *sf;
@@ -241,6 +248,9 @@ sched_factor_utilization(sf, utilization)
 	sf->sfu_weight = sched_weighting(sf->sfu_utilization);
 }
 
+/*
+ * schedule demand
+ */
 void
 sched_factor_demand(sf, demand)
 	struct sched_factor *sf;
@@ -251,6 +261,9 @@ sched_factor_demand(sf, demand)
     sf->sfd_weight = sched_weighting(sf->sfd_demand);
 }
 
+/*
+ * schedule workload
+ */
 void
 sched_factor_workload(sf, workload)
 	struct sched_factor *sf;
@@ -261,7 +274,13 @@ sched_factor_workload(sf, workload)
 	sf->sfw_weight = sched_weighting(sf->sfw_workload);
 }
 
-/* schedule factor average */
+/*
+ * schedule average:
+ * Calculated from below;
+ * - utilization: rate & weight
+ * - demand: rate & weight
+ * - workload: rate & weight
+ */
 void
 sched_factor_average(sf)
 	struct sched_factor *sf;
@@ -270,6 +289,10 @@ sched_factor_average(sf)
 	sf->sf_avgweight = SCHED_AVG(sf->sfu_weight, sf->sfd_weight, sf->sfw_weight);
 }
 
+/*
+ * Calculate the optimal number of threads
+ * from the average rate and weight.
+ */
 void
 sched_factor_nthreads(sf)
 	struct sched_factor *sf;
@@ -290,6 +313,11 @@ sched_factor_nthreads(sf)
 	sf->sf_optnthreads = nthreads;
 }
 
+/*
+ * Determine how many additional threads proc needs
+ * from the optimal number of threads and the current
+ * number of threads.
+ */
 void
 sched_check_threads(sc, p)
 	struct sched *sc;
