@@ -56,6 +56,14 @@ __RCSID("$NetBSD: fts.c,v 1.49 2016/05/31 07:49:09 pgoyette Exp $");
 #include <string.h>
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(fts_children, _fts_children)
+__weak_alias(fts_close, _fts_close)
+__weak_alias(fts_open, _fts_open)
+__weak_alias(fts_read, _fts_read)
+__weak_alias(fts_set, _fts_set)
+#endif
+
 #if ! HAVE_NBTOOL_CONFIG_H
 #define	HAVE_STRUCT_DIRENT_D_NAMLEN
 #endif
