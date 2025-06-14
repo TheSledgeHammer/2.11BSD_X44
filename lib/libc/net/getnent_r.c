@@ -44,13 +44,17 @@ static char sccsid[] = "@(#)getnetent.c	5.3 (Berkeley) 5/19/86";
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+#include "reentrant.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
 #include <netdb.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "netent.h"
