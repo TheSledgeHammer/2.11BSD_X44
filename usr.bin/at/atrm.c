@@ -44,10 +44,10 @@ int user;					/* person requesting removal */
 int fflag = 0;					/* suppress announcements? */
 int iflag = 0;					/* run interactively? */
 
+int
 main(argc,argv)
-int argc;
-char **argv;
-
+	int argc;
+	char **argv;
 {
 	int i;				/* for loop index */
 	int userid;			/* uid of owner of file */
@@ -230,7 +230,8 @@ char **argv;
 /*
  * Print usage info and exit.
  */
-usage()
+void
+usage(void)
 {
 	fprintf(stderr,"usage: atrm [-f] [-i] [-] [[job #] [user] ...]\n");
 	exit(1);
@@ -242,8 +243,9 @@ usage()
  * the file name has three dots in it. This test will suffice since the only
  * other files in /usr/spool/at don't have any dots in their name.
  */
+int
 filewanted(direntry)
-struct direct *direntry;
+	struct direct *direntry;
 {
 	int numdot = 0;			/* number of dots in a filename */
 	char *filename;			/* filename we are looking at */
@@ -251,7 +253,7 @@ struct direct *direntry;
 	filename = direntry->d_name;
 	while (*filename)
 		numdot += (*(filename++) == '.');
-	return(numdot == 3);
+	return (numdot == 3);
 }
 
 /*
@@ -261,15 +263,16 @@ struct direct *direntry;
  * in this manner because then it's ok for someone to have digits in their 
  * user name.
  */
+char *
 isusername(string)
-char *string;
+	char *string;
 {
 	char *ptr;			/* pointer used for scanning string */
 
 	ptr = string;
 	while (isdigit(*ptr))
 		++ptr;
-	return((*ptr == '\0') ? 0 : 1);
+	return ((*ptr == '\0') ? 0 : 1);
 }
 
 /*
@@ -284,9 +287,9 @@ char *string;
  */
 int
 removentry(filename,inode,user)
-char *filename;
-int inode;
-int user;
+	char *filename;
+	int inode;
+	int user;
 {
 
 	if (!fflag)
@@ -326,9 +329,10 @@ int user;
 /*
  * See if "name" owns "job".
  */
+int
 isowner(name,job)
-char *name;
-char *job;
+	char *name;
+	char *job;
 {
 	char buf[128];			/* buffer for 1st line of spoolfile 
 					   header */
@@ -346,15 +350,16 @@ char *job;
 	}
 
 	fclose(infile);
-	return((strcmp(name,buf) == 0) ? 1 : 0);
+	return ((strcmp(name, buf) == 0) ? 1 : 0);
 }
 
 /*
  * Print the owner of the job. This is stored on the first line of the
  * spoolfile. If we run into trouble getting the name, we'll just print "???".
  */
+void
 powner(file)
-char *file;
+	char *file;
 {
 	char owner[128];			/* the owner */
 	FILE *infile;				/* I/O stream to spoolfile */
@@ -377,14 +382,14 @@ char *file;
 
 	fclose(infile);
 	printf("%s",owner);
-
 }
 
 /*
  * Get answer to interactive prompts, eating all characters beyond the first
  * one. If a 'y' is typed, return 1.
  */
-yes()
+char
+yes(void)
 {
 	char ch;				/* dummy variable */
 	char ch1;				/* dummy variable */
@@ -394,23 +399,24 @@ yes()
 		ch1 = getchar();
 	if (isupper(ch))
 		ch = tolower(ch);
-	return(ch == 'y');
+	return (ch == 'y');
 }
 
 /*
  * Get the uid of a person using his/her login name. Return -1 if no
  * such account name exists.
  */
+int
 getid(name)
-char *name;
+	char *name;
 {
 
 	struct passwd *pwdinfo;		/* password info structure */
-	
-	if ((pwdinfo = getpwnam(name)) == 0)
-		return(-1);
 
-	return(pwdinfo->pw_uid);
+	if ((pwdinfo = getpwnam(name)) == 0)
+		return (-1);
+
+	return (pwdinfo->pw_uid);
 }
 
 /*
@@ -418,13 +424,12 @@ char *name;
  */
 char *
 getname(uid)
-int uid;
+	int uid;
 {
 	struct passwd *pwdinfo;			/* password info structure */
 	
-
 	if ((pwdinfo = getpwuid(uid)) == 0)
-		return("???");
-	return(pwdinfo->pw_name);
+		return ("???");
+	return (pwdinfo->pw_name);
 }
 

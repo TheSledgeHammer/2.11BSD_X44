@@ -45,6 +45,8 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
 # include <dirent.h>
 # include <stdio.h>
 # include <stdlib.h>
+# include <string.h>
+# include <paths.h>
 # include <pwd.h>
 # include <unistd.h>
 
@@ -90,7 +92,7 @@ main(int argc, char *argv[])
 	/*
 	 * Create a queue of the jobs that should be run.
 	 */
-	if ((numjobs = scandir(".",&jobqueue,should_be_run, 0)) < 0) {
+	if ((numjobs = scandir(".", &jobqueue, should_be_run, 0)) < 0) {
 		perror(ATDIR);
 		exit(1);
 	}
@@ -108,7 +110,6 @@ main(int argc, char *argv[])
 	 * Record the last update time.
 	 */
 	updatetime();
-
 }
 
 /*
@@ -161,7 +162,7 @@ run(spoolfile)
 	int notifybymail;		/* should we notify the owner of the
 					   job after the job is run? */
 	char shell[4];			/* shell to run the job under */
-	char *getname();		/* get a uname from using a uid */
+	//char *getname();		/* get a uname from using a uid */
 	char mailvar[4];		/* send mail variable ("yes" or "no") */
 	char runfile[100];		/* file sent to forked shell for exec-
 					   ution */
@@ -177,13 +178,13 @@ run(spoolfile)
 	/*
 	 * First we fork a child so that the main can run other jobs.
 	 */
-	if (pid = fork())
+	if ((pid = fork()))
 		return;
 
 	/*
 	 * Open the spoolfile.
 	 */
-	if ((infile = fopen(spoolfile,"r")) == NULL) {
+	if ((infile = fopen(spoolfile, "r")) == NULL) {
 		perror(spoolfile);
 		exit(1);
 	}
@@ -192,10 +193,10 @@ run(spoolfile)
 	 * Grab the 4-line header out of the spoolfile.
 	 */
 	if (
-	    (fscanf(infile,"# owner: %127s%*[^\n]\n",owner) != 1) ||
-	    (fscanf(infile,"# jobname: %127s%*[^\n]\n",jobname) != 1) ||
-	    (fscanf(infile,"# shell: %3s%*[^\n]\n",shell) != 1) ||
-	    (fscanf(infile,"# notify by mail: %3s%*[^\n]\n",mailvar) != 1)
+	    (fscanf(infile, "# owner: %127s%*[^\n]\n", owner) != 1) ||
+	    (fscanf(infile, "# jobname: %127s%*[^\n]\n", jobname) != 1) ||
+	    (fscanf(infile, "# shell: %3s%*[^\n]\n", shell) != 1) ||
+	    (fscanf(infile, "# notify by mail: %3s%*[^\n]\n", mailvar) != 1)
 	    ) {
 		fprintf(stderr, "%s: bad spool header\n", spoolfile);
 		exit(1);
@@ -213,11 +214,10 @@ run(spoolfile)
 	 */
 	pwdbuf = getpwnam(owner);
 	if (pwdbuf == NULL) {
-		fprintf(stderr, "%s: could not find owner in passwd file\n",
-		    spoolfile);
+		fprintf(stderr, "%s: could not find owner in passwd file\n", spoolfile);
 		exit(1);
 	}
-	if (chown(spoolfile,pwdbuf->pw_uid,pwdbuf->pw_gid) == -1) {
+	if (chown(spoolfile, pwdbuf->pw_uid, pwdbuf->pw_gid) == -1) {
 		perror(spoolfile);
 		exit(1);
 	}
@@ -226,7 +226,7 @@ run(spoolfile)
 	 * Move the spoolfile to the directory where jobs are run from and
 	 * then move into that directory.
 	 */
-	sprintf(runfile,"%s/%s",PASTDIR,spoolfile);
+	sprintf(runfile, "%s/%s", PASTDIR, spoolfile);
 	rename(spoolfile, runfile);
 	chdir(PASTDIR);
 
@@ -236,7 +236,7 @@ run(spoolfile)
 	 * check on the file.
 	 */
 	for (i = 0; i <= 1000; i += 2) {
-		sprintf(errfile,"%s/at.err%d",TMPDIR,(getpid() + i));
+		sprintf(errfile, "%s/at.err%d", TMPDIR, (getpid() + i));
 
 		if (access(errfile, F_OK))
 			break;
@@ -258,7 +258,7 @@ run(spoolfile)
 	/*
 	 * Fork another child that will run the job.
 	 */
-	if (pid = fork()) {
+	if ((pid = fork())) {
 
 		/*
 		 * If the child fails, save the job so that it gets
@@ -280,7 +280,7 @@ run(spoolfile)
 		 * status of the child. We assume that if there is anything
 		 * in the error file then the job ran into some errors.
 		 */
-		if (stat(errfile,&errbuf) != 0) {
+		if (stat(errfile, &errbuf) != 0) {
 			perror(errfile);
 			exit(1);
 		}
@@ -304,7 +304,7 @@ run(spoolfile)
 		 *
 		 */ 
 		if (exitstatus == ABNORMAL || notifybymail)
-			sendmailto(getname(jobbuf.st_uid),jobname,exitstatus);
+			sendmailto(getname(jobbuf.st_uid), jobname, exitstatus);
 
 		/*
 		 * Remove the errorfile and the jobfile.
@@ -329,7 +329,7 @@ run(spoolfile)
 	quota(Q_SETUID,jobbuf.st_uid,0,0);
 #endif
 	setgid(jobbuf.st_gid);
-	initgroups(getname(jobbuf.st_uid),jobbuf.st_gid);
+	initgroups(getname(jobbuf.st_uid), jobbuf.st_gid);
 	setuid(jobbuf.st_uid);
 
 	/*
@@ -349,33 +349,33 @@ run(spoolfile)
 	 */
 	open("/dev/null", 0);
 	open("/dev/null", 1);
-	open(errfile,O_CREAT|O_WRONLY,00644);
+	open(errfile, O_CREAT | O_WRONLY, 00644);
 
 	/*
 	 * Now we fork the shell.
 	 *
 	 * See if the shell is in /bin
 	 */
-	sprintf(whichshell,"/bin/%s",shell);
-	execl(whichshell,shell,runfile, 0);
+	sprintf(whichshell, "/bin/%s", shell);
+	execl(whichshell, shell, runfile, (char *)NULL);
 
 	/*
 	 * If not in /bin, look for the shell in /usr/bin.
 	 */
-	sprintf(whichshell,"/usr/bin/%s",shell);
-	execl(whichshell,shell,runfile, 0);
+	sprintf(whichshell, "/usr/bin/%s", shell);
+	execl(whichshell, shell, runfile, (char *)NULL);
 
 	/*
 	 * If not in /bin, look for the shell in /usr/new.
 	 */
-	sprintf(whichshell,"/usr/new/%s",shell);
-	execl(whichshell,shell,runfile, 0);
+	sprintf(whichshell, "/usr/new/%s", shell);
+	execl(whichshell, shell, runfile, (char *)NULL);
 
 	/*
 	 * If we don't succeed by now, we're really having troubles,
 	 * so we'll send the owner some mail.
 	 */
-	fprintf(stderr, "%s: Can't execl shell\n",shell);
+	fprintf(stderr, "%s: Can't execl shell\n", shell);
 	exit(1);
 }
 
@@ -393,18 +393,18 @@ sendmailto(user, jobname, exitstatus)
 	FILE *mailptr;			/* I/O stream to the mail process */
 	FILE *errptr;			/* I/O stream to file containing error
 					   messages */
-	FILE *popen();			/* initiate I/O to a process */
+//	FILE *popen();			/* initiate I/O to a process */
 
 
 	/*
 	 * Create the full name for the mail process.
 	 */
-	sprintf(mailtouser,"%s %s",MAILER, user);
+	sprintf(mailtouser,"%s %s", MAILER, user);
 
 	/*
 	 * Open a stream to the mail process.
 	 */
-	if ((mailptr = popen(mailtouser,"w")) == NULL) {
+	if ((mailptr = popen(mailtouser, "w")) == NULL) {
 		perror(MAILER);
 		exit(1);
 	}
@@ -502,7 +502,7 @@ should_be_run(direntry)
 	 * If a directory entry represents a job, determine if it's time to
 	 * run it.
 	 */
-	return (strncmp(direntry->d_name, nowtime,11) <= 0);
+	return (strncmp(direntry->d_name, nowtime, (unsigned int)11) <= 0);
 }
 
 /*
@@ -553,10 +553,30 @@ getname(uid)
 {
 	struct passwd *pwdinfo;			/* password info structure */
 	
-
-	if ((pwdinfo = getpwuid(uid)) == 0) {
-		perror(uid);
+	pwdinfo = getpwuid(uid);
+	if (pwdinfo == NULL) {
+		perror("getname: uid not found");
 		exit(1);
+	}
+
+	if (setegid(pwdinfo->pw_gid) == -1 || setgid(pwdinfo->pw_gid) == -1) {
+		perror("Cannot change primary group to %lu",
+				(unsigned long) pwdinfo->pw_gid);
+	}
+
+	if (setsid() == -1)
+		perror("Cannot create a session");
+
+	if (setlogin(pwdinfo->pw_name) == -1) {
+		perror("Cannot set login name to `%s'", pwdinfo->pw_name);
+	}
+
+	if (setuid(uid) == -1 || seteuid(uid) == -1) {
+		perror("Cannot set user id to %lu", (unsigned long) uid);
+	}
+
+	if (chdir(pwdinfo->pw_dir) == -1) {
+		(void) chdir("/");
 	}
 	return (pwdinfo->pw_name);
 }

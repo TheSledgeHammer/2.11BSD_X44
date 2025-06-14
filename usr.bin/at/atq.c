@@ -57,10 +57,10 @@ int namewanted = 0;			/* only print jobs belonging to a
 					   certain person */
 struct direct **queue;			/* the queue itself */
 
-
+int
 main(argc,argv)
-int argc;
-char **argv;
+	int argc;
+	char **argv;
 {
 
 	int cflag = 0;			/* print in order of creation time */
