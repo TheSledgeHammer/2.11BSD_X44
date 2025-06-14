@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
 # include <sys/quota.h>
 #endif
 # include <sys/stat.h>
+# include <sys/wait.h>
 
 # include <dirent.h>
 # include <stdio.h>
@@ -357,19 +358,19 @@ run(spoolfile)
 	 * See if the shell is in /bin
 	 */
 	sprintf(whichshell, "/bin/%s", shell);
-	execl(whichshell, shell, runfile, (char *)NULL);
+	execl(whichshell, shell, runfile, (char *)0);
 
 	/*
 	 * If not in /bin, look for the shell in /usr/bin.
 	 */
 	sprintf(whichshell, "/usr/bin/%s", shell);
-	execl(whichshell, shell, runfile, (char *)NULL);
+	execl(whichshell, shell, runfile, (char *)0);
 
 	/*
 	 * If not in /bin, look for the shell in /usr/new.
 	 */
 	sprintf(whichshell, "/usr/new/%s", shell);
-	execl(whichshell, shell, runfile, (char *)NULL);
+	execl(whichshell, shell, runfile, (char *)0);
 
 	/*
 	 * If we don't succeed by now, we're really having troubles,
@@ -560,19 +561,18 @@ getname(uid)
 	}
 
 	if (setegid(pwdinfo->pw_gid) == -1 || setgid(pwdinfo->pw_gid) == -1) {
-		perror("Cannot change primary group to %lu",
-				(unsigned long) pwdinfo->pw_gid);
+//		perr("Cannot change primary group to %lu", (unsigned long) pwdinfo->pw_gid);
 	}
 
 	if (setsid() == -1)
 		perror("Cannot create a session");
 
 	if (setlogin(pwdinfo->pw_name) == -1) {
-		perror("Cannot set login name to `%s'", pwdinfo->pw_name);
+//		perr("Cannot set login name to `%s'", pwdinfo->pw_name);
 	}
 
 	if (setuid(uid) == -1 || seteuid(uid) == -1) {
-		perror("Cannot set user id to %lu", (unsigned long) uid);
+//		perr("Cannot set user id to %lu", (unsigned long) uid);
 	}
 
 	if (chdir(pwdinfo->pw_dir) == -1) {
