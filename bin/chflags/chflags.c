@@ -217,7 +217,7 @@ fts_traversal(char *argv[], FTS *ftsp, FTSENT *p, int fts_options)
 	int fts_status;
 
 	fts_status = 0;
-	ftsp = fts_open(argv, fts_options , 0);
+	ftsp = fts_open(argv, fts_options, NULL);
 	if (ftsp == NULL) {
 		die("fts_open");
 	}
@@ -287,7 +287,7 @@ recurse(struct stat *stp, char *dir, int savedir)
 			continue;
 		}
 		if ((stp->st_mode & S_IFMT) == S_IFDIR) {
-			ecode = recurse(dp->d_name, dirfd(dirp));
+			ecode = recurse(stp, dp->d_name, dirfd(dirp));
 			if (ecode) {
 				break;
 			}
