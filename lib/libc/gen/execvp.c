@@ -55,6 +55,14 @@ static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
 #include <varargs.h>
 #endif
 
+#ifdef __weak_alias
+__weak_alias(execl,_execl)
+__weak_alias(execle,_execle)
+__weak_alias(execlp,_execlp)
+__weak_alias(execv,_execv)
+__weak_alias(execvp,_execvp)
+#endif
+
 /*
  *	execlp(name, arg,...,0)	(like execl, but does path search)
  *	execvp(name, argv)	(like execv, but does path search)
