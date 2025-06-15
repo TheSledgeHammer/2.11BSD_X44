@@ -57,6 +57,7 @@ static 	void putcolsp(void);
 #ifdef __weak_alias
 __weak_alias(err, _err)
 __weak_alias(errc, _errc)
+__weak_alias(errx, _errx)
 __weak_alias(verrx, _verrx)
 __weak_alias(verr, _verr)
 __weak_alias(verrc, _verrc)
