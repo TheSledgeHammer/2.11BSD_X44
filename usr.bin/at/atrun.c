@@ -51,14 +51,22 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
 # include <pwd.h>
 # include <unistd.h>
 
-# define ATDIR		"/usr/spool/at"		/* spooling area */
-# define TMPDIR		"/tmp"			/* area for temporary files */
-# define MAILER		"/bin/mail"		/* program to use for sending
-						   mail */
-# define NORMAL		0			/* job exited normally */
-# define ABNORMAL	1			/* job exited abnormally */
-# define PASTDIR	"/usr/spool/at/past"	/* area to run jobs from */
-# define LASTFILE	"/usr/spool/at/lasttimedone"	/* update time file */
+# define ATDIR_OLD      "/usr/spool/at"
+# define ATDIR_NEW      "/usr/var/at/spool"
+
+# define PASTDIR_OLD    "/usr/spool/at/past"
+# define PASTDIR_NEW    "/usr/var/at/spool/past"
+
+# define LASTFILE_OLD   "/usr/spool/at/lasttimedone"
+# define LASTFILE_NEW   "/usr/var/at/spool/lasttimedone"
+
+# define ATDIR		ATDIR_NEW	/* spooling area */
+# define TMPDIR		"/tmp"		/* area for temporary files */
+# define MAILER		"/bin/mail"	/* program to use for sending mail */
+# define NORMAL		0		/* job exited normally */
+# define ABNORMAL	1		/* job exited abnormally */
+# define PASTDIR	PASTDIR_NEW	/* area to run jobs from */
+# define LASTFILE	LASTFILE_NEW	/* update time file */
 
 
 char nowtime[11];			/* time it is right now (yy.ddd.hhmm) */
