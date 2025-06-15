@@ -127,7 +127,7 @@ main(int argc, char *argv[])
  * job should be run.
  */
 void
-makenowtime(char *nowtime)
+makenowtime(char *curtime)
 {
 	struct tm *now;			/* broken down representation of the
 					   time it is right now */
@@ -151,7 +151,7 @@ makenowtime(char *nowtime)
 	 * Create a string to be used in determining whether or not a job
 	 * should be run. The syntax is yy.ddd.hhmm .
 	 */
-	sprintf(nowtime,"%d.%03d.%02d%02d",now->tm_year,
+	sprintf(curtime,"%d.%03d.%02d%02d",now->tm_year,
 					   now->tm_yday,
 					   now->tm_hour,
 					   now->tm_min);
