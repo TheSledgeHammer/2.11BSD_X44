@@ -54,3 +54,16 @@ getprogname(void)
 {
 	return (__progname);
 }
+
+void
+setprogname(const char *progname)
+{
+    char *tmp;
+
+    tmp = strrchr(progname, '/');
+    if (tmp == NULL) {
+        __progname = progname;
+    } else {
+        __progname = tmp + 1;
+    }
+}
