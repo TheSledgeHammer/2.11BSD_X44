@@ -221,4 +221,7 @@
 ./usr/share/nls/sv
 ./usr/share/tmac
 ./var
+./var/at
+./var/at/jobs
+./var/at/spool
 ./var/db
