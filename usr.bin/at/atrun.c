@@ -30,7 +30,7 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
  *				University of California @ Berkeley
  *
  */
-#include <sys/cdefs.h>
+# include <sys/cdefs.h>
 
 # include <sys/types.h>
 # include <sys/dir.h>
