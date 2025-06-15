@@ -35,7 +35,8 @@ off_t n_ovlsum(u_int *);
 
 off_t
 n_stroff(ep)
-	register struct xexec *ep; {
+	register struct xexec *ep;
+{
 	off_t l;
 
 	l = n_symoff(ep);
@@ -64,15 +65,17 @@ off_t
 n_dreloc(ep)
 	register struct xexec *ep;
 {
-	off_t l;
-	register u_int *ov;
 	register int i;
+	off_t l;
 
-	ov = ep->o.ov_siz;
-	l = N_DATOFF(ep->e);
+	l = (sizeof(struct exec) + ep->e.a_text + ep->e.a_data);
+#ifdef OVERLAY
 	if (N_GETMAGIC(ep->e) == A_MAGIC5 || N_GETMAGIC(ep->e) == A_MAGIC6) {
-		l += n_ovlsum(ov);
+		l += n_ovlsum(ep->o.ov_siz);
+		l += sizeof(struct ovlhdr);
 	}
+#endif
+	l += ep->e.a_text;
 	return (l);
 }
 
@@ -92,13 +95,22 @@ n_symoff(ep)
 	register struct xexec *ep;
 {
 	register int i;
-	off_t sum;
+	off_t sum, l;
 
-	sum = N_RELOFF(ep->e);
+	l = N_TXTOFF(ep->e);
+	sum = (ep->e.a_text + ep->e.a_data);
+#ifdef OVERLAY
 	if (N_GETMAGIC(ep->e) == A_MAGIC5 || N_GETMAGIC(ep->e) == A_MAGIC6) {
 		sum += n_ovlsum(ep->o.ov_siz);
 	}
-	return (sum);
+#endif
+	l += N_ALIGN(ep->e, sum);
+	if (l == N_RELOFF(ep->e)) {
+		l = N_SYMOFF(ep->e);
+	} else {
+		l += ep->e.a_trsize + ep->e.a_drsize;
+	}
+	return (l);
 }
 
 off_t

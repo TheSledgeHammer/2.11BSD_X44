@@ -151,6 +151,7 @@ _nvs_start(nd)
 		rval = 0;
 	} else {
 		rewind(nd->netf);
+		rval = 1;
 	}
 	return (rval);
 }

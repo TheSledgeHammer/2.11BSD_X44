@@ -408,31 +408,31 @@ _hvs_getanswer(host, hostd, statp, answer, anslen, iquery, buffer, buflen)
 }
 
 static int
-_hvs_gethostbyname(host, hostd, statp, buf, name, type, buffer, buflen, result)
+_hvs_gethostbyname(host, hostd, statp, buf, name, af, buffer, buflen, result)
 	struct hostent *host;
 	struct hostent_data *hostd;
 	res_state statp;
 	querybuf *buf;
 	const char *name;
-	int type;
+	int af;
 	char *buffer;
 	size_t buflen;
 	struct hostent **result;
 {
 	register const char *cp;
 	char hbuf[MAXHOSTNAMELEN];
-	int n, af;
+	int n, type;
 
-	switch (type) {
+	switch (af) {
 	case AF_INET:
 		host->h_addrtype = AF_INET;
 		host->h_length = INADDRSZ;
-		af = T_A;
+		type = T_A;
 		break;
 	case AF_INET6:
 		host->h_addrtype = AF_INET6;
 		host->h_length = IN6ADDRSZ;
-		af = T_AAAA;
+		type = T_AAAA;
 		break;
 	default:
 		h_errno = NETDB_INTERNAL;
@@ -544,7 +544,7 @@ _hvs_gethostbyname(host, hostd, statp, buf, name, type, buffer, buflen, result)
 			}
 		}
 	}
-	n = res_nsearch(statp, __UNCONST(name), C_IN, af, buf->buf, sizeof(buf));
+	n = res_nsearch(statp, __UNCONST(name), C_IN, type, buf->buf, sizeof(buf));
 	if (n < 0) {
 		if (statp->options & RES_DEBUG) {
 			printf("res_search failed\n");
@@ -808,20 +808,20 @@ _hvs_gethtent(hp, hd, buffer, buflen, result)
 }
 
 static int
-gethostbyname_internal(hp, hd, statp, buf, name, type, buffer, buflen, result)
+gethostbyname_internal(hp, hd, statp, buf, name, af, buffer, buflen, result)
 	struct hostent *hp;
 	struct hostent_data *hd;
 	res_state statp;
 	querybuf *buf;
 	const char *name;
-	int type;
+	int af;
 	char *buffer;
 	size_t buflen;
 	struct hostent **result;
 {
 	int rval;
 
-	rval = _hvs_gethostbyname(hp, hd, statp, buf, name, type, buffer, buflen, result);
+	rval = _hvs_gethostbyname(hp, hd, statp, buf, name, af, buffer, buflen, result);
 	if (rval == 1) {
 		result = &hp;
 	}
@@ -893,11 +893,11 @@ getanswer(answer, anslen, iquery)
  * Public Methods
  */
 int
-gethostbyname2_r(hp, hd, name, type, buffer, buflen, result)
+gethostbyname2_r(hp, hd, name, af, buffer, buflen, result)
 	struct hostent *hp;
 	struct hostent_data *hd;
 	const char *name;
-	int type;
+	int af;
 	char *buffer;
 	size_t buflen;
 	struct hostent **result;
@@ -912,20 +912,20 @@ gethostbyname2_r(hp, hd, name, type, buffer, buflen, result)
 		return (0);
 	}
 
-	rval = gethostbyname_internal(hp, hd, statp, &buf, name, type, buffer, buflen, result);
+	rval = gethostbyname_internal(hp, hd, statp, &buf, name, af, buffer, buflen, result);
 	__res_put_state(statp);
 	return (rval);
 }
 
 struct hostent *
-gethostbyname2(name, type)
+gethostbyname2(name, af)
 	const char *name;
-	int type;
+	int af;
 {
 	struct hostent *result;
 	int rval;
 
-	rval = gethostbyname2_r(&_hvs_host, &_hvs_hostd, name, type, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethostbyname2_r(&_hvs_host, &_hvs_hostd, name, af, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }
 
