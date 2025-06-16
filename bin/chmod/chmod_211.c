@@ -206,7 +206,7 @@ stat_traversal(int argc, char *argv[], struct stat *stp, void *set, int oct, int
 	int	fcurdir;
 
 	fcurdir = 0;
-	if (rflag) {
+	if (Rflag) {
 		fcurdir = open(".", O_RDONLY);
 		if (fcurdir < 0) {
 			fatal(255, "Can't open .");
@@ -219,7 +219,7 @@ stat_traversal(int argc, char *argv[], struct stat *stp, void *set, int oct, int
 			status += Perror(p);
 			continue;
 		}
-		if (rflag && (stp->st_mode & S_IFMT) == S_IFDIR) {
+		if (Rflag && (stp->st_mode & S_IFMT) == S_IFDIR) {
 			status += chmodr2(stp, p, getmode(set, stp->st_mode), fcurdir);
 			continue;
 		}
