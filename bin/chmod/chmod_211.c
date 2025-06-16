@@ -169,7 +169,7 @@ main(argc, argv)
 	}
 
 done:
-    	argv += optind;
+	argv += optind;
 	argc -= optind;
 
 	if (argc < 2) {
@@ -220,7 +220,7 @@ stat_traversal(int argc, char *argv[], struct stat *stp, void *set, int oct, int
 			continue;
 		}
 		if (Rflag && (stp->st_mode & S_IFMT) == S_IFDIR) {
-			status += chmodr2(stp, p, getmode(set, stp->st_mode), fcurdir);
+			status += chmodr(stp, p, getmode(set, stp->st_mode), fcurdir);
 			continue;
 		}
 		if ((stp->st_mode & S_IFMT) == S_IFLNK && stat(p, stp) < 0) {
