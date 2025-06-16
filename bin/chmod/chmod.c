@@ -1,5 +1,3 @@
-/* $NetBSD: chmod.c,v 1.38 2012/10/22 18:00:46 christos Exp $ */
-
 /*
  * Copyright (c) 1989, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -12,7 +10,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -39,8 +41,6 @@ __COPYRIGHT(
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)chmod.c	8.8 (Berkeley) 4/1/94";
-#else
-__RCSID("$NetBSD: chmod.c,v 1.38 2012/10/22 18:00:46 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -59,14 +59,7 @@ __RCSID("$NetBSD: chmod.c,v 1.38 2012/10/22 18:00:46 christos Exp $");
 #include <unistd.h>
 #include <getopt.h>
 
-__dead static void	usage(void);
-
-struct option chmod_longopts[] = {
-	{ "reference",		required_argument,	0,
-						1 },
-	{ NULL,			0,			0,
-						0 },
-};
+static void	usage(void);
 
 int
 main(int argc, char *argv[])
@@ -74,47 +67,40 @@ main(int argc, char *argv[])
 	FTS *ftsp;
 	FTSENT *p;
 	void *set;
-	mode_t mval;
-	int Hflag, Lflag, Rflag, ch, fflag, fts_options, hflag, rval;
-	char *mode, *reference;
-	int (*change_mode)(const char *, mode_t);
+	long val;
+	int oct, omode;
+	int Hflag, Lflag, Pflag, Rflag, ch, fflag, fts_options, hflag, rval;
+	char *ep, *mode;
 
-	setprogname(argv[0]);
-	(void)setlocale(LC_ALL, "");
-
-	Hflag = Lflag = Rflag = fflag = hflag = 0;
-	reference = NULL;
-	while ((ch = getopt_long(argc, argv, "HLPRXfghorstuwx",
-	    chmod_longopts, NULL)) != -1)
+    omode = 0;
+	Hflag = Lflag = Pflag = Rflag = fflag = hflag = 0;
+	while ((ch = getopt(argc, argv, "HLPRXfgorstuwx")) != EOF)
 		switch (ch) {
-		case 1:
-			reference = optarg;
-			break;
 		case 'H':
 			Hflag = 1;
-			Lflag = 0;
+			Lflag = Pflag = 0;
 			break;
 		case 'L':
 			Lflag = 1;
-			Hflag = 0;
+			Hflag = Pflag = 0;
 			break;
 		case 'P':
+			Pflag = 1;
 			Hflag = Lflag = 0;
 			break;
 		case 'R':
 			Rflag = 1;
 			break;
-		case 'f':
+		case 'f':		/* XXX: undocumented. */
 			fflag = 1;
 			break;
 		case 'h':
 			/*
-			 * In System V the -h option causes chmod to
-			 * change the mode of the symbolic link.
-			 * 4.4BSD's symbolic links didn't have modes,
-			 * so it was an undocumented noop.  In NetBSD
-			 * 1.3, lchmod(2) is introduced and this
-			 * option does real work.
+			 * In System V (and probably POSIX.2) the -h option
+			 * causes chmod to change the mode of the symbolic
+			 * link.  4.4BSD's symbolic links don't have modes,
+			 * so it's an undocumented noop.  Do syntax checking,
+			 * though.
 			 */
 			hflag = 1;
 			break;
@@ -135,64 +121,57 @@ main(int argc, char *argv[])
 		default:
 			usage();
 		}
-done:	argv += optind;
+done:	
+    argv += optind;
 	argc -= optind;
 
-	if (argc == 0 || (argc == 1 && reference == NULL))
+	if (argc < 2)
 		usage();
 
 	fts_options = FTS_PHYSICAL;
 	if (Rflag) {
-		if (hflag) {
-			errx(EXIT_FAILURE,
+		if (hflag)
+			errx(1,
 		"the -R and -h options may not be specified together.");
-			/* NOTREACHED */
-		}
 		if (Hflag)
 			fts_options |= FTS_COMFOLLOW;
 		if (Lflag) {
 			fts_options &= ~FTS_PHYSICAL;
 			fts_options |= FTS_LOGICAL;
 		}
-	} else if (!hflag)
-		fts_options |= FTS_COMFOLLOW;
-	if (hflag)
-		change_mode = lchmod;
-	else
-		change_mode = chmod;
+	}
 
-	if (reference == NULL) {
-		mode = *argv++;
-		if ((set = setmode(mode)) == NULL) {
-			err(EXIT_FAILURE, "Cannot set file mode `%s'", mode);
-			/* NOTREACHED */
-		}
-		mval = 0;
+	mode = *argv;
+	if (*mode >= '0' && *mode <= '7') {
+		errno = 0;
+		val = strtol(mode, &ep, 8);
+		if (val > INT_MAX || val < 0)
+			errno = ERANGE;
+		if (errno)
+			err(1, "invalid file mode: %s", mode);
+		if (*ep)
+			errx(1, "invalid file mode: %s", mode);
+		omode = val;
+		oct = 1;
 	} else {
-		struct stat st;
-
-		if (stat(reference, &st) == -1)
-			err(EXIT_FAILURE, "Cannot stat `%s'", reference);
-		mval = st.st_mode;
-		set = NULL;
+		if ((set = setmode(mode)) == NULL)
+			errx(1, "invalid file mode: %s", mode);
+		oct = 0;
 	}
 
-	if ((ftsp = fts_open(argv, fts_options, 0)) == NULL) {
-		err(EXIT_FAILURE, "fts_open");
-		/* NOTREACHED */
-	}
+	if ((ftsp = fts_open(++argv, fts_options, 0)) == NULL)
+		err(1, NULL);
 	for (rval = 0; (p = fts_read(ftsp)) != NULL;) {
 		switch (p->fts_info) {
 		case FTS_D:
-			if (!Rflag)
-				(void)fts_set(ftsp, p, FTS_SKIP);
+			if (Rflag)		/* Change it at FTS_DP. */
+				continue;
+			fts_set(ftsp, p, FTS_SKIP);
 			break;
 		case FTS_DNR:			/* Warn, chmod, continue. */
 			warnx("%s: %s", p->fts_path, strerror(p->fts_errno));
 			rval = 1;
 			break;
-		case FTS_DP:			/* Already changed at FTS_D. */
-			continue;
 		case FTS_ERR:			/* Warn, continue. */
 		case FTS_NS:
 			warnx("%s: %s", p->fts_path, strerror(p->fts_errno));
@@ -205,35 +184,25 @@ done:	argv += optind;
 			 * don't point to anything and ones that we found
 			 * doing a physical walk.
 			 */
-			if (!hflag)
-				continue;
-			/* else */
-			/* FALLTHROUGH */
+			continue;
 		default:
 			break;
 		}
-		if ((*change_mode)(p->fts_accpath,
-		    set ? getmode(set, p->fts_statp->st_mode) : mval)
-		    && !fflag) {
-			warn("%s", p->fts_path);
+		if (chmod(p->fts_accpath, oct ? omode :
+		    getmode(set, p->fts_statp->st_mode)) && !fflag) {
+			warn(p->fts_path);
 			rval = 1;
 		}
 	}
-	if (errno) {
-		err(EXIT_FAILURE, "fts_read");
-		/* NOTREACHED */
-	}
+	if (errno)
+		err(1, "fts_read");
 	exit(rval);
-	/* NOTREACHED */
 }
 
-static void
+void
 usage(void)
 {
 	(void)fprintf(stderr,
-	    "Usage: %s [-R [-H | -L | -P]] [-fh] mode file ...\n"
-	    "\t%s [-R [-H | -L | -P]] [-fh] --reference=rfile file ...\n",
-	    getprogname(), getprogname());
+	    "usage: chmod [-R [-H | -L | -P]] mode file ...\n");
 	exit(1);
-	/* NOTREACHED */
 }

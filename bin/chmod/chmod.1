@@ -1,5 +1,3 @@
-.\"	$NetBSD: chmod.1,v 1.28 2017/07/04 06:47:27 wiz Exp $
-.\"
 .\" Copyright (c) 1989, 1990, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
@@ -14,7 +12,11 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
-.\" 3. Neither the name of the University nor the names of its contributors
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
 .\"    may be used to endorse or promote products derived from this software
 .\"    without specific prior written permission.
 .\"
@@ -32,41 +34,27 @@
 .\"
 .\"	@(#)chmod.1	8.4 (Berkeley) 3/31/94
 .\"
-.Dd August 11, 2016
+.Dd March 31, 1994
 .Dt CHMOD 1
 .Os
 .Sh NAME
 .Nm chmod
 .Nd change file modes
 .Sh SYNOPSIS
-.Nm
+.Nm chmod
 .Oo
 .Fl R
 .Op Fl H | Fl L | Fl P
 .Oc
-.Op Fl fh
 .Ar mode
-.Ar
-.Nm
-.Oo
-.Fl R
-.Op Fl H | Fl L | Fl P
-.Oc
-.Op Fl fh
-.Fl Fl reference=rfile
-.Ar
+.Ar file ...
 .Sh DESCRIPTION
 The
-.Nm
+.Nm chmod
 utility modifies the file mode bits of the listed files
 as specified by the
 .Ar mode
-operand, or
-copied from a reference
-.Ar rfile ,
-as specified with the
-.Fl Fl reference
-argument.
+operand.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
@@ -86,16 +74,15 @@ option is specified, no symbolic links are followed.
 .It Fl R
 Change the modes of the file hierarchies rooted in the files
 instead of just the files themselves.
-.It Fl f
-Do not display a diagnostic message or modify the exit status if
-.Nm
-fails to change the mode of a file.
-.It Fl h
-If
-.Ar file
-is symbolic link, the mode of the link is changed.
 .El
 .Pp
+Symbolic links do not have modes, so unless the
+.Fl H
+or
+.Fl L
+option is set,
+.Nm chmod
+on a symbolic link always succeeds and has no effect.
 The
 .Fl H ,
 .Fl L
@@ -106,18 +93,17 @@ options are ignored unless the
 option is specified.
 In addition, these options override each other and the
 command's actions are determined by the last one specified.
-The default is as if the
-.Fl P
-option had been specified.
 .Pp
 Only the owner of a file or the super-user is permitted to change
 the mode of a file.
-.Sh EXIT STATUS
-.Ex -std chmod
+.Pp
+The
+.Nm chmod
+utility exits 0 on success, and >0 if an error occurs.
 .Sh MODES
 Modes may be absolute or symbolic.
 An absolute mode is an octal number constructed by
-.Em or Ap ing
+.Ar or-ing
 the following values:
 .Pp
 .Bl -tag -width 6n -compact -offset indent
@@ -126,8 +112,7 @@ set-user-ID-on-execution
 .It Li 2000
 set-group-ID-on-execution
 .It Li 1000
-sticky bit, see
-.Xr chmod 2
+sticky bit, see chmod(2)
 .It Li 0400
 read by owner
 .It Li 0200
@@ -162,6 +147,7 @@ The
 .Ar who
 symbol ``a'' is equivalent to ``ugo''.
 .Pp
+.ne 1i
 The
 .Ar perm
 symbols represent the portions of the mode bits as follows:
@@ -282,8 +268,11 @@ clear all mode bits for group and others.
 .It Li g=u-w
 set the group bits equal to the user bits, but clear the group write bit.
 .El
+.Sh BUGS
+There's no
+.Ar perm
+option for the naughty bits.
 .Sh SEE ALSO
-.Xr chflags 1 ,
 .Xr install 1 ,
 .Xr chmod 2 ,
 .Xr stat 2 ,
@@ -294,20 +283,12 @@ set the group bits equal to the user bits, but clear the group write bit.
 .Xr chown 8
 .Sh STANDARDS
 The
-.Nm
-utility is expected to be
-.St -p1003.2-92
+.Nm chmod
+utility is expected to be POSIX 1003.2
 compatible with the exception of the
 .Ar perm
-symbol
+symbols
 .Dq t
-which is not included in that standard.
-.Sh HISTORY
-A
-.Nm
-utility appeared in
-.At v1 .
-.Sh BUGS
-There's no
-.Ar perm
-option for the naughty bits.
+and
+.Dq X
+which are not included in that standard.

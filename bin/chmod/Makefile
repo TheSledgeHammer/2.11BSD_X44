@@ -5,4 +5,6 @@ PROG=	chmod
 SRCS=	chmod.c
 MAN=	chmod.1
 
+COPTS.chmod.c = -Wno-format-nonliteral
+
 .include <bsd.prog.mk>
