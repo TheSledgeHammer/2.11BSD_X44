@@ -39,6 +39,7 @@ static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) 3/16/89";
 
 uid_t uid;
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -50,7 +51,6 @@ main(argc, argv)
 	int fd;
 	char *fend, *np, *passwd, *temp, *tend;
 	char from[MAXPATHLEN], to[MAXPATHLEN];
-	char *getnewpasswd();
 
 	uid = getuid();
 	switch(--argc) {

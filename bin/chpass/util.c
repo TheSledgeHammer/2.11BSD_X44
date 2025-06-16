@@ -16,18 +16,21 @@
  */
 
 #include <sys/cdefs.h>
-#if	!defined(lint) && defined(DOSCCS)
+#if !defined(lint) && defined(DOSCCS)
+#if 0
 static char sccsid[] = "@(#)util.c	5.9.1 (2.11BSD) 1996/1/12";
 #endif
+#endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
+
 #include <pwd.h>
 #include <stdio.h>
 #include <chpass.h>
 #include <strings.h>
 #include <ctype.h>
-#include "pathnames.h"
+#include <paths.h>
 
 static char dmsize[] =
 	{ -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -59,7 +62,7 @@ atot(p, store)
 {
 	register char *t, **mp;
 	static struct tm *lt;
-	time_t tval, time();
+	time_t tval;
 	int day, month, year;
 
 	if (!*p) {
@@ -97,14 +100,14 @@ atot(p, store)
 #define	HOURSPERDAY		24
 #define	MINSPERHOUR		60
 #define	SECSPERMIN		60
-#define	isleap(y) 		(((y) % 4) == 0 && ((y) % 100) != 0 || ((y) % 400) == 0)
+#define	isleap(y) 		(((((y) % 4) == 0 && ((y) % 100) != 0 ) || (((y) % 400) == 0)))
 
 	if (year < 100)
 		year += TM_YEAR_BASE;
 	if (year <= EPOCH_YEAR)
 bad:
 	return (1);
-	tval = isleap(year) && month > 2;
+	tval = (isleap(year) && month > 2);
 	for (--year; year >= EPOCH_YEAR; --year)
 		tval += isleap(year) ?
 		DAYSPERLYEAR :
@@ -125,7 +128,6 @@ print(fp, pw)
 {
 	register char *p;
 	char	*bp;
-	char *getusershell(), *ttoa();
 
 	fprintf(fp, "#Changing user database information for %s.\n", pw->pw_name);
 	if (!uid) {

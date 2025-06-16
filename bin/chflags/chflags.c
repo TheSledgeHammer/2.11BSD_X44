@@ -70,7 +70,7 @@ static char sccsid[] = "@(#)chflags.c	8.5 (Berkeley) 4/1/94";
 #include <util.h>
 
 static	const char *fmsg = "Can't fchdir() back to starting directory";
-static	int	oct, status, fflag, rflag, hflag, lflag, pflag;
+static	int	oct, status, fflag, Rflag, Hflag, Lflag, Pflag;
 static	u_short	set, clear;
 static  struct stat st;
 
@@ -96,25 +96,25 @@ main(int argc, char	*argv[])
 	while ((ch = getopt(argc, argv, "HLPRf")) != EOF) {
 		switch (ch) {
 		case 'H':
-			hflag++;
-			lflag = 0;
-			pflag = 0;
+			Hflag++;
+			Lflag = 0;
+			Pflag = 0;
 			fflag = 0;
 			break;
 		case 'L':
-			lflag++;
-			hflag = 0;
-			pflag = 0;
+			Lflag++;
+			Hflag = 0;
+			Pflag = 0;
 			fflag = 0;
 			break;
 		case 'P':
-			pflag++;
-			hflag = 0;
-			lflag = 0;
+			Pflag++;
+			Hflag = 0;
+			Lflag = 0;
 			fflag = 0;
 			break;
 		case 'R':
-			rflag++;
+			Rflag++;
 			break;
 		case 'f':
 			fflag++;
@@ -125,7 +125,8 @@ main(int argc, char	*argv[])
 		}
 	}
 	argv += optind;
-	argc += optind;
+	argc -= optind;
+
 	if (argc < 2) {
 		usage();
 	}
@@ -148,7 +149,7 @@ main(int argc, char	*argv[])
 		oct = 0;
 	}
 
-	if ((hflag != 0 || lflag != 0 || pflag != 0) && (fflag == 0)) {
+	if ((Hflag != 0 || Lflag != 0 || Pflag != 0) && (fflag == 0)) {
 		status = fts_traversal(argv, &ftsp, &p, fts_options);
 	} else {
 		status = stat_traversal(argv, &st);
@@ -226,7 +227,7 @@ fts_traversal(char *argv[], FTS *ftsp, FTSENT *p, int fts_options)
 	while (p != NULL) {
 		switch (p->fts_info) {
 		case FTS_D:
-			if (rflag) { /* Change it at FTS_DP. */
+			if (Rflag) { /* Change it at FTS_DP. */
 				continue;
 			}
 			fts_set(ftsp, p, FTS_SKIP);

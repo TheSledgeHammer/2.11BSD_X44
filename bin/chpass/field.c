@@ -16,18 +16,21 @@
  */
 
 #include <sys/cdefs.h>
-#ifndef lint
+#if !defined(lint)
+#if 0
 static char sccsid[] = "@(#)field.c	5.8 (Berkeley) 3/16/89";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
+
 #include <pwd.h>
 #include <grp.h>
 #include <strings.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <chpass.h>
-#include <pathnames.h>
+#include <paths.h>
 
 /* ARGSUSED */
 int
@@ -221,7 +224,6 @@ p_shell(p, pw, ep)
 	struct entry *ep;
 {
 	register char *sh, *t;
-	char *getusershell();
 
 	if (!*p) {
 		pw->pw_shell = _PATH_BSHELL;

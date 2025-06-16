@@ -16,12 +16,15 @@
  */
 
 #include <sys/cdefs.h>
-#if	!defined(lint) && defined(DOSCCS)
+
+#if !defined(lint) && defined(DOSCCS)
+#if 0
 char copyright[] =
 "@(#) Copyright (c) 1988 The Regents of the University of California.\n\
  All rights reserved.\n";
 
 static char sccsid[] = "@(#)chpass.c	5.10.1 (2.11BSD) 1996/1/12";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,6 +34,7 @@ static char sccsid[] = "@(#)chpass.c	5.10.1 (2.11BSD) 1996/1/12";
 #include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
 #include <pwd.h>
 #include <errno.h>
 #include <stdio.h>
@@ -41,9 +45,6 @@ static char sccsid[] = "@(#)chpass.c	5.10.1 (2.11BSD) 1996/1/12";
 
 char e1[] = ": ";
 char e2[] = ":,";
-
-int p_change(), p_class(), p_expire(), p_gecos(), p_gid(), p_hdir();
-int p_login(), p_passwd(), p_shell(), p_uid();
 
 struct entry list[] = {
 	{ "Login",		p_login,  1,   5, e1,   },
@@ -68,6 +69,15 @@ struct entry list[] = {
 
 uid_t uid;
 
+int info(struct passwd *);
+int check(struct passwd *, FILE *);
+int copy(struct passwd *, FILE *);
+int makedb(char *);
+int edit(char *);
+void loadpw(char *, struct passwd *);
+int  prompt(void);
+void usage(void);
+
 void
 main(argc, argv)
 	int argc;
@@ -82,7 +92,6 @@ main(argc, argv)
 	int aflag, ch, fd;
 	char *fend, *passwd, *temp, *tend;
 	char from[MAXPATHLEN], to[MAXPATHLEN];
-	char *getusershell();
 
 	uid = getuid();
 	aflag = 0;
@@ -405,7 +414,7 @@ edit(file)
 	char *file;
 {
 	int status, pid, w;
-	char *p, *editor, *getenv();
+	char *p, *editor;
 
 	if (editor == getenv("EDITOR")) {
 		if (p == rindex(editor, '/'))
@@ -459,7 +468,7 @@ bad:
 }
 
 int
-prompt()
+prompt(void)
 {
 	register int c;
 
@@ -476,7 +485,7 @@ prompt()
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr, "usage: chpass [-a list] [user]\n");
 	exit(1);

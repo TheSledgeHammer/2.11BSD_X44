@@ -3,7 +3,8 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= acctd atrun \
+# Note: atrun: to be compiled with usr.bin/at
+SUBDIR= acctd \
 		comsat ctimed \
 		fingerd ftpd \
 		getty \

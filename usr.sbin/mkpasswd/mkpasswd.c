@@ -39,12 +39,12 @@ static off_t offset;
 #define	MAXLINELENGTH	256
 static char line[MAXLINELENGTH];
 
-static int  compact(DBM *, datum, datum, char *, char *, FILE *, int);
-static int  storekeybyname(DBM *, datum, datum, char *);
-static int  storekeybyuid(DBM *, datum, datum, char *);
-static int  storekeybykeynum(DBM *, datum, datum, char *);
+static int  compact(struct passwd *, FILE *, char *, DBM *, datum, datum, char *, char *, FILE *, int);
+static int  storekeybyname(struct passwd *, DBM *, datum, datum, char *);
+static int  storekeybyuid(struct passwd *, DBM *, datum, datum, char *);
+static int  storekeybykeynum(struct passwd *, DBM *, datum, datum, char *);
 static void rmall(char *);
-static int  scanpw(void);
+static int  scanpw(struct passwd *, FILE *, char *);
 static void usage(void);
 
 /*
@@ -114,7 +114,7 @@ main(argc, argv)
 		(void)fprintf(stderr, "mkpasswd: %s: %s\n", *argv, strerror(errno));
 		exit(1);
 	}
-	if (compact(dp, content, key, buf, nbuf, oldfp, makeold) != 0) {
+	if (compact(&_pw_passwd, _pw_fp, line, dp, content, key, buf, nbuf, oldfp, makeold) != 0) {
 		(void)fprintf(stderr, "mkpasswd: dbm_store failed.\n");
 		rmall(*argv);
 		exit(1);
@@ -123,17 +123,19 @@ main(argc, argv)
 }
 
 static int
-compact(dp, content, key, buf, nbuf, oldfp, old)
+compact(pw, fp, buffer, dp, content, key, buf, nbuf, oldfp, old)
+	struct passwd *pw;
+	char *buffer;
 	DBM *dp;
 	datum content, key;
 	char *buf, *nbuf;
-	FILE *oldfp;
+	FILE *oldfp, *fp;
 	int old;
 {
 	register char *p, *t, *flag;
 
 	content.dptr = buf;
-	while (scanpw()) {
+	while (scanpw(pw, fp, buffer)) {
 		/* create dbm entry */
 		p = buf;
 
@@ -141,54 +143,55 @@ compact(dp, content, key, buf, nbuf, oldfp, old)
 #define	COMPACT(e)	MACRO(t = e; while ((*p++ = *t++));)
 #define	SCALAR(v)	MACRO(memmove(&(v), p, sizeof v); p += sizeof v;)
 
-		COMPACT(_pw_passwd.pw_name);
+		COMPACT(pw->pw_name);
 		(void)sprintf(nbuf, "%ld", offset);
 		COMPACT(nbuf);
-		SCALAR(_pw_passwd.pw_uid);
-		SCALAR(_pw_passwd.pw_gid);
-		SCALAR(_pw_passwd.pw_change);
-		COMPACT(_pw_passwd.pw_class);
-		COMPACT(_pw_passwd.pw_gecos);
-		COMPACT(_pw_passwd.pw_dir);
-		COMPACT(_pw_passwd.pw_shell);
-		SCALAR(_pw_passwd.pw_expire);
+		SCALAR(pw->pw_uid);
+		SCALAR(pw->pw_gid);
+		SCALAR(pw->pw_change);
+		COMPACT(pw->pw_class);
+		COMPACT(pw->pw_gecos);
+		COMPACT(pw->pw_dir);
+		COMPACT(pw->pw_shell);
+		SCALAR(pw->pw_expire);
 		*flag = _PW_KEYBYNAME;
 		p++ = flag;
 		content.dsize = (p - buf);
 #ifdef debug
-		(void)printf("store %s, uid %d\n", _pw_passwd.pw_name, _pw_passwd.pw_uid);
+		(void)printf("store %s, uid %d\n", pw->pw_name, pw->pw_uid);
 #endif
-		if (storekeybyname(dp, content, key, flag) != 0) {
+		if (storekeybyname(pw, dp, content, key, flag) != 0) {
 			return (1);
 		}
 		*flag = _PW_KEYBYUID;
-		if (storekeybyuid(dp, content, key, flag) != 0) {
+		if (storekeybyuid(pw, dp, content, key, flag) != 0) {
 			return (1);
 		}
 		*flag = _PW_KEYBYNUM;
-		if (storekeybykeynum(dp, content, key, flag) != 0) {
+		if (storekeybykeynum(pw, dp, content, key, flag) != 0) {
 			return (1);
 		}
 		if (!old) {
 			continue;
 		}
-		fprintf(oldfp, "%s:*:%d:%d:%s:%s:%s\n", _pw_passwd.pw_name,
-				_pw_passwd.pw_uid, _pw_passwd.pw_gid, _pw_passwd.pw_gecos,
-				_pw_passwd.pw_dir, _pw_passwd.pw_shell);
+		fprintf(oldfp, "%s:*:%d:%d:%s:%s:%s\n", pw->pw_name,
+				pw->pw_uid, pw->pw_gid, pw->pw_gecos,
+				pw->pw_dir, pw->pw_shell);
 	}
 	dbm_close(dp);
 	return (0);
 }
 
 static int
-storekeybykeynum(dp, content, key, flag)
+storekeybykeynum(pw, dp, content, key, flag)
+	struct passwd *pw;
 	DBM *dp;
 	datum content, key;
 	char *flag;
 {
 	if (flag == _PW_KEYBYNUM) {
-		key.dptr = _pw_passwd.pw_name;
-		key.dsize = strlen(_pw_passwd.pw_name);
+		key.dptr = pw->pw_name;
+		key.dsize = strlen(pw->pw_name);
 		if (dbm_store(dp, key, content, DBM_INSERT) < 0) {
 			return (1);
 		}
@@ -198,14 +201,15 @@ storekeybykeynum(dp, content, key, flag)
 }
 
 static int
-storekeybyname(dp, content, key, flag)
+storekeybyname(pw, dp, content, key, flag)
+	struct passwd *pw;
 	DBM *dp;
 	datum content, key;
 	char *flag;
 {
 	if (flag == _PW_KEYBYNAME) {
-		key.dptr = _pw_passwd.pw_name;
-		key.dsize = strlen(_pw_passwd.pw_name);
+		key.dptr = pw->pw_name;
+		key.dsize = strlen(pw->pw_name);
 		if (dbm_store(dp, key, content, DBM_INSERT) < 0) {
 			return (1);
 		}
@@ -215,13 +219,14 @@ storekeybyname(dp, content, key, flag)
 }
 
 static int
-storekeybyuid(dp, content, key, flag)
+storekeybyuid(pw, dp, content, key, flag)
+	struct passwd *pw;
 	DBM *dp;
 	datum content, key;
 	char *flag;
 {
 	if (flag == _PW_KEYBYUID) {
-		key.dptr = (char *)&_pw_passwd.pw_uid;
+		key.dptr = (char *)&pw->pw_uid;
 		key.dsize = sizeof(int);
 		if (dbm_store(dp, key, content, DBM_INSERT) < 0) {
 			return (1);
@@ -254,50 +259,50 @@ usage(void)
 	exit(1);
 }
 
-/* from libc/gen/getpwent.c */
+/* copied from libc/gen/getpwent.c */
 
 static int
-scanpw(void)
+scanpw(struct passwd *pw, FILE *fp, char *buffer)
 {
 	register char *cp;
 	char *bp;
 
 	for (;;) {
-		offset = ftell(_pw_fp);
-		if (!(fgets(line, sizeof(line), _pw_fp))) {
+		offset = ftell(fp);
+		if (!(fgets(buffer, sizeof(buffer), fp))) {
 			return (0);
 		}
 		bp = line;
 		/* skip lines that are too big */
-		if (!(cp = index(line, '\n'))) {
+		if (!(cp = index(buffer, '\n'))) {
 			int ch;
-			while ((ch = getc(_pw_fp)) != '\n' && ch != EOF);
+			while ((ch = getc(fp)) != '\n' && ch != EOF);
 			continue;
 		}
 		*cp = '\0';
-		_pw_passwd.pw_name = strsep(&bp, ":");
-		_pw_passwd.pw_passwd = strsep(&bp, ":");
-		offset += _pw_passwd.pw_passwd - line;
+		pw->pw_name = strsep(&bp, ":");
+		pw->pw_passwd = strsep(&bp, ":");
+		offset += pw->pw_passwd - line;
 		if (!(cp = strsep(&bp, ":"))) {
 			continue;
 		}
-		_pw_passwd.pw_uid = atoi(cp);
+		pw->pw_uid = atoi(cp);
 		if (!(cp = strsep(&bp, ":"))) {
 			continue;
 		}
-		_pw_passwd.pw_gid = atoi(cp);
-		_pw_passwd.pw_class = strsep(&bp, ":");
+		pw->pw_gid = atoi(cp);
+		pw->pw_class = strsep(&bp, ":");
 		if (!(cp = strsep(&bp, ":"))) {
 			continue;
 		}
-		_pw_passwd.pw_change = atol(cp);
+		pw->pw_change = atol(cp);
 		if (!(cp = strsep(&bp, ":"))) {
 			continue;
 		}
-		_pw_passwd.pw_expire = atol(cp);
-		_pw_passwd.pw_gecos = strsep(&bp, ":");
-		_pw_passwd.pw_dir = strsep(&bp, ":");
-		_pw_passwd.pw_shell = strsep(&bp, ":");
+		pw->pw_expire = atol(cp);
+		pw->pw_gecos = strsep(&bp, ":");
+		pw->pw_dir = strsep(&bp, ":");
+		pw->pw_shell = strsep(&bp, ":");
 		return (1);
 	}
 	/* NOTREACHED */

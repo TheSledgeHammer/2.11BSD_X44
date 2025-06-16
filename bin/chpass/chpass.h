@@ -19,8 +19,28 @@
 
 struct entry {
 	char *prompt;
-	int (*func)(), restricted, len;
-	char *except, *save;
+	int  (*func)(char *, struct passwd *, struct entry *);
+	int  restricted;
+	int  len;
+	char *except;
+	char *save;
 };
 
 extern uid_t uid;
+
+/* field.c */
+int p_login(char *, struct passwd *, struct entry *);
+int p_passwd(char *, struct passwd *, struct entry *);
+int p_uid(char *, struct passwd *, struct entry *);
+int p_gid(char *, struct passwd *, struct entry *);
+int p_class(char *, struct passwd *, struct entry *);
+int p_change(char *, struct passwd *, struct entry *);
+int p_expire(char *, struct passwd *, struct entry *);
+int p_gecos(char *, struct passwd *, struct entry *);
+int p_hdir(char *, struct passwd *, struct entry *);
+int p_shell(char *, struct passwd *, struct entry *);
+
+/* util.c */
+char *ttoa(time_t);
+int  atot(char *, time_t *);
+void print(FILE *, struct passwd *);
