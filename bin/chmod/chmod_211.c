@@ -169,7 +169,7 @@ main(argc, argv)
 	}
 
 done:
-    argv += optind;
+    	argv += optind;
 	argc -= optind;
 
 	if (argc < 2) {
