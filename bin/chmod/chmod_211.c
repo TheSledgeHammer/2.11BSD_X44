@@ -193,8 +193,7 @@ done:
 void
 usage(void)
 {
-	(void)fprintf(stderr, "Usage: chmod (options) [-Rf [-H | -L | -P]] mode file ...\n");
-	(void)fprintf(stderr, "Usage: chmod (mode) [ugoa][+-=][rwxXstugo] file ...\n");
+	(void)fprintf(stderr, "Usage: chmod [-Rf [-H | -L | -P]] [ugoa][+-=][rwxXstugo] file ...\n");
 	exit(-1);
 }
 
