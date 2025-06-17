@@ -547,5 +547,9 @@ usage(void)
 	(void)fprintf(stderr, "       md5 %s %s\n", hashargs, fileargs);
 	(void)fprintf(stderr, "       rmd160 %s %s\n", hashargs, fileargs);
 	(void)fprintf(stderr, "       sha1 %s %s\n", hashargs, fileargs);
+    (void)fprintf(stderr, "       sha1 %s %s\n", hashargs, fileargs);
+    (void)fprintf(stderr, "       sha256 %s %s\n", hashargs, fileargs);
+    (void)fprintf(stderr, "       sha384 %s %s\n", hashargs, fileargs);
+    (void)fprintf(stderr, "       sha512 %s %s\n", hashargs, fileargs);
 	exit(1);
 }
