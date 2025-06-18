@@ -103,8 +103,8 @@ main(int argc, char *argv[])
 	int ch, oct, omode, mask;
 	int fts_options;
 	char *mode;
-
-    set = NULL;
+	
+	set = NULL;
 	omode = 0;
 	while ((ch = getopt(argc, argv, "HLPRXfgorstuwx")) != EOF) {
 		switch (ch) {
@@ -429,6 +429,7 @@ abs_filemode(msp)
 {
 	register int c, i;
 
+	i = 0;
 	while ((c = (unsigned char)*msp++) >= '0' && c <= '7') {
 		i = (i << 3) + (c - '0');
 	}
