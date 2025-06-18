@@ -73,6 +73,8 @@ static char sccsid[] = "@(#)ctime.c	8.2 (Berkeley) 3/20/94";
 #ifdef __weak_alias
 __weak_alias(gmtime_r,_gmtime_r)
 __weak_alias(localtime_r,_localtime_r)
+__weak_alias(offtime, _offtime)
+__weak_alias(tzset, _tzset)
 #endif
 
 #ifndef TZ_ABBR_MAX_LEN
