@@ -166,7 +166,7 @@ stat_traversal(char *argv[], struct stat *stp)
 
 	stat_status = 0;
 	fcurdir = 0;
-	if (rflag) {
+	if (Rflag) {
 		fcurdir = open(".", O_RDONLY);
 		if (fcurdir < 0) {
 			die("Can't open .");
@@ -177,7 +177,7 @@ stat_traversal(char *argv[], struct stat *stp)
 			stat_status |= warning(p);
 			continue;
 		}
-		if (rflag && (stp->st_mode & S_IFMT) == S_IFDIR) {
+		if (Rflag && (stp->st_mode & S_IFMT) == S_IFDIR) {
 			stat_status |= recurse(stp, p, fcurdir);
 			continue;
 		}
@@ -200,11 +200,11 @@ fts_option(void)
 	int fts_options;
 
 	fts_options = FTS_PHYSICAL;
-	if (rflag) {
-		if (hflag) {
+	if (Rflag) {
+		if (Hflag) {
 			fts_options |= FTS_COMFOLLOW;
 		}
-		if (lflag) {
+		if (Lflag) {
 			fts_options &= ~FTS_PHYSICAL;
 			fts_options |= FTS_LOGICAL;
 		}
