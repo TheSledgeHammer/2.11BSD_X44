@@ -11,7 +11,7 @@
 
 #include	<sys/types.h>
 #include	<sys/ioctl.h>
-#include    <sys/file.h>
+#include    	<sys/file.h>
 //#include	<sys/time.h>
 
 #include	<pwd.h>
@@ -108,7 +108,6 @@ main(int argc, char **argv)
 	while ((ch = getopt(argc, argv, "-catlgoenupf")) != -1) {
 		read_prog(&l, &tmtmp, &tp, &pw, ch, &c);
 	}
-    exit(1);
 }
 
 static void
@@ -206,19 +205,22 @@ read_prog(time_t *timep, struct tm *tmp, struct tm *tp, struct passwd *pw, int c
 			usage();
 		}
 	}
+	exit(ret);
 }
 
 static void
 getb(int f, void *p, size_t n)
 {
-	register int i;
+	int i;
+	char *buf;
 
+	buf = (char *)p
 	while (n) {
-		i = read(f, p, n);
+		i = read(f, buf, n);
 		if (i <= 0) {
 			return;
 		}
-		p += i;
+		buf += i;
 		n -= (size_t)i;
 	}
 }
