@@ -4,10 +4,7 @@
 .include <bsd.own.mk>
 
 PROG=	comsat
-SRCS=	comsat.c utmpentry.c
+SRCS=	comsat.c
 MAN=	comsat.8
-
-.PATH.c: ${NETBSDSRCDIR}/usr.bin/who
-CPPFLAGS+=-I${NETBSDSRCDIR}/usr.bin/who -DSUPPORT_UTMPX -DSUPPORT_UTMP
 
 .include <bsd.prog.mk>
