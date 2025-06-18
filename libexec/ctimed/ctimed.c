@@ -11,13 +11,18 @@
 
 #include	<sys/types.h>
 #include	<sys/ioctl.h>
-#include	<sys/time.h>
+#include    <sys/file.h>
+//#include	<sys/time.h>
 
 #include	<pwd.h>
 #include	<setjmp.h>
 #include	<signal.h>
 #include	<stdio.h>
+#include	<stdlib.h>
+#include	<string.h>
+#include	<time.h>
 #include	<utmp.h>
+#include	<unistd.h>
 
 /*
  * These should probably be placed in an include file.  If you add anything
@@ -40,10 +45,10 @@
 #define	ENDPWENT	11
 */
 
-static void read_prog(time_t *, struct tm *, struct tm *, int, int *);
-static void getb(int, char *, size_t);
-static void ctimeout(void);
-static void checkppid(void);
+static void read_prog(time_t *, struct tm *, struct tm *, struct passwd *, int, int *);
+static void getb(int, void *, size_t);
+static void ctimeout(int);
+static void checkppid(int);
 static void do_pw(struct passwd *);
 static int packpwtobuf(struct passwd *, char *);
 static void usage(void);
@@ -56,7 +61,7 @@ int
 main(int argc, char **argv)
 {
 	register int i;
-	register struct passwd *pw;
+	struct passwd pw;
 	struct itimerval it;
 	int ch, c;
 	time_t l;
@@ -101,12 +106,13 @@ main(int argc, char **argv)
 	setitimer(ITIMER_REAL, &it, (struct itimerval*) NULL);
 
 	while ((ch = getopt(argc, argv, "-catlgoenupf")) != -1) {
-		read_prog(&l, &tmtmp, &tp, ch, &c);
+		read_prog(&l, &tmtmp, &tp, &pw, ch, &c);
 	}
+    exit(1);
 }
 
 static void
-read_prog(time_t *timep, struct tm *tmp, struct tm *tp, int ch, int *c)
+read_prog(time_t *timep, struct tm *tmp, struct tm *tp, struct passwd *pw, int ch, int *c)
 {
 	char *cp;
 	u_char xxx;
@@ -115,22 +121,22 @@ read_prog(time_t *timep, struct tm *tmp, struct tm *tp, int ch, int *c)
 
 	ret = read(fileno(stdin), c, 1);
 	if (((ret == 1) && (ch >= 0)) || ret == ch) {
-		switch ((char)ch) {
-		case "c":	/* CTIME */
+		switch (ch) {
+		case 'c':	/* CTIME */
 			timep = 0L;
 			getb(fileno(stdin), timep, sizeof(*timep));
 			cp = ctime(timep);
 			write(fileno(stdout), cp, 26);
 			break;
-		case "a":	/* ASCTIME */
+		case 'a':	/* ASCTIME */
 			getb(fileno(stdin), tmp, sizeof(*tmp));
 			cp = asctime(tmp);
 			write(fileno(stdout), cp, 26);
 			break;
-		case "t":	/* TZSET */
+		case 't':	/* TZSET */
 			(void) tzset();
 			break;
-		case "l":	/* LOCALTIME */
+		case 'l':	/* LOCALTIME */
 			timep = 0L;
 			getb(fileno(stdin), timep, sizeof(*timep));
 			tp = localtime(timep);
@@ -139,7 +145,7 @@ read_prog(time_t *timep, struct tm *tmp, struct tm *tp, int ch, int *c)
 			junk[24] = '\0';
 			write(fileno(stdout), junk, 24);
 			break;
-		case "g":	/* GMTIME */
+		case 'g':	/* GMTIME */
 			timep = 0L;
 			getb(fileno(stdin), timep, sizeof(*timep));
 			tp = gmtime(timep);
@@ -148,7 +154,7 @@ read_prog(time_t *timep, struct tm *tmp, struct tm *tp, int ch, int *c)
 			junk[24] = '\0';
 			write(fileno(stdout), junk, 24);
 			break;
-		case "o":	/* OFFTIME */
+		case 'o':	/* OFFTIME */
 			getb(fileno(stdin), timep, sizeof(*timep));
 			getb(fileno(stdin), &off, sizeof(off));
 #ifdef	__bsdi__
@@ -159,11 +165,11 @@ read_prog(time_t *timep, struct tm *tmp, struct tm *tp, int ch, int *c)
 #endif
 			write(fileno(stdout), tp, sizeof(*tp));
 			break;
-		case "e":	/* GETPWENT */
+		case 'e':	/* GETPWENT */
 			pw = getpwent();
 			do_pw(pw);
 			break;
-		case "n":	/* GETPWNAM */
+		case 'n':	/* GETPWNAM */
 			getb(fileno(stdin), &len, sizeof(int));
 			if (len > UT_NAMESIZE) {
 				tosslen = len - UT_NAMESIZE;
@@ -179,12 +185,12 @@ read_prog(time_t *timep, struct tm *tmp, struct tm *tp, int ch, int *c)
 			pw = getpwnam(junk);
 			do_pw(pw);
 			break;
-		case "u":	/* GETPWUID */
+		case 'u':	/* GETPWUID */
 			getb(fileno(stdin), &uid, sizeof(uid_t));
 			pw = getpwuid(uid);
 			do_pw(pw);
 			break;
-		case "p":	/* SETPASSENT */
+		case 'p':	/* SETPASSENT */
 			getb(fileno(stdin), &len, sizeof(int));
 			if (setpassent(len)) {
 				len = 1;
@@ -193,20 +199,17 @@ read_prog(time_t *timep, struct tm *tmp, struct tm *tp, int ch, int *c)
 			}
 			write(fileno(stdout), &len, sizeof(int));
 			break;
-		case "f":	/* ENDPWENT */
+		case 'f':	/* ENDPWENT */
 			endpwent();
 			break;
 		default:
-			ret = 1;
 			usage();
 		}
 	}
-	ret = 1;
-	exit(ret);
 }
 
 static void
-getb(int f, char *p, size_t n)
+getb(int f, void *p, size_t n)
 {
 	register int i;
 
@@ -221,13 +224,13 @@ getb(int f, char *p, size_t n)
 }
 
 static void
-ctimeout(void)
+ctimeout(int signo)
 {
 	longjmp(env, 1);
 }
 
 static void
-checkppid(void)
+checkppid(int signo)
 {
 	if (getppid() == 1) {
 		exit(0);
