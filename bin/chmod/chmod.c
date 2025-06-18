@@ -68,6 +68,7 @@ __COPYRIGHT(
 #include <errno.h>
 #include <fcntl.h>
 #include <fts.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,7 +76,7 @@ __COPYRIGHT(
 
 static const char *fchdirmsg = "Can't fchdir() back to starting directory";
 int	status;
-int Rflag, Pflag, Lflag, hflag, fflag;
+int Rflag, Hflag, Pflag, Lflag, hflag, fflag;
 
 void usage(void);
 int stat_traversal(int, char **, struct stat *, void *, int, int);
@@ -93,18 +94,17 @@ int what(char *);
 int where(char *, int);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	FTS ftsp;
 	FTSENT p;
 	struct stat st;
 	void *set;
-	int oct, omode;
+	int ch, oct, omode, mask;
 	int fts_options;
 	char *mode;
 
+    set = NULL;
 	omode = 0;
 	while ((ch = getopt(argc, argv, "HLPRXfgorstuwx")) != EOF) {
 		switch (ch) {
@@ -208,7 +208,7 @@ stat_traversal(int argc, char *argv[], struct stat *stp, void *set, int oct, int
 	if (Rflag) {
 		fcurdir = open(".", O_RDONLY);
 		if (fcurdir < 0) {
-			fatal(255, "Can't open .");
+			fatal(255, "Can't open .", NULL);
 		}
 	}
 	for (i = 1; i < argc; i++) {
@@ -346,7 +346,7 @@ chmodr(struct stat *stp, char *dir, mode_t mode, int savedir)
 		}
 	}
 	if (fchdir(savedir) < 0) {
-		fatal(255, fchdirmsg);
+		fatal(255, fchdirmsg, dir);
 	}
 	closedir(dirp);
 	return (ecode);
@@ -391,9 +391,9 @@ newmode(msp, omode, oct, set, ump, nm)
 	unsigned int nm;
 {
 	register int o, m, b;
-	int savem;
+//	int savem;
 
-	savem = nm;
+//	savem = nm;
 	m = abs_filemode(msp);
 	if (*msp == '\0') {
 		return (m);
