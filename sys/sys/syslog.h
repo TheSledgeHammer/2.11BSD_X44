@@ -180,8 +180,8 @@ __BEGIN_DECLS
 void	closelog(void);
 void	openlog(const char *, int, int);
 int		setlogmask(int);
-void	syslog(int, const char *, ...) __attribute__((__format__(__printf__,2,3)));
-void	vsyslog(int, const char *, __va_list) __attribute__((__format__(__printf__,2,0)));
+void	syslog(int, const char *, ...) __sysloglike(2,3);
+void	vsyslog(int, const char *, __va_list) __sysloglike(2,0);
 __END_DECLS
 
 #endif /* !KERNEL */
