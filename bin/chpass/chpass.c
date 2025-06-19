@@ -34,14 +34,19 @@ static char sccsid[] = "@(#)chpass.c	5.10.1 (2.11BSD) 1996/1/12";
 #include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/wait.h>
 
-#include <pwd.h>
-#include <errno.h>
-#include <stdio.h>
 #include <ctype.h>
-#include <chpass.h>
+#include <errno.h>
+#include <pwd.h>
+#include <stdio.h>
 #include <strings.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <util.h>
+#include <libgen.h>
+
+#include "chpass.h"
 
 char e1[] = ": ";
 char e2[] = ":,";
@@ -69,22 +74,20 @@ struct entry list[] = {
 
 uid_t uid;
 
-int info(struct passwd *);
-int check(struct passwd *, FILE *);
-int copy(struct passwd *, FILE *);
-int makedb(char *);
-int edit(char *);
-void loadpw(char *, struct passwd *);
-int  prompt(void);
-void usage(void);
+static int info(struct passwd *);
+static int check(FILE *, struct passwd *);
+static int copy(struct passwd *, FILE *);
+static int makedb(char *);
+static int edit(char *);
+static void loadpw(char *, struct passwd *);
+static int  prompt(void);
+static void usage(void);
 
-void
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno, optind;
-	extern char *optarg;
 	register char *p;
 	struct passwd lpw, *pw;
 	struct rlimit rlim;
@@ -241,14 +244,14 @@ bad:		(void)fprintf(stderr, "%s unchanged.\n", _PATH_MASTERPASSWD);
 	exit(0);
 }
 
-int
+static int
 info(pw)
 	struct passwd *pw;
 {
 	struct stat begin, end;
 	FILE *fp;
 	int fd, rval;
-	char *tfile;
+	char tfile[];
 
 	tfile = "/tmp/passwd.XXXXXX";
 	if ((fd = mkstemp(tfile)) == -1 || !(fp = fdopen(fd, "w+"))) {
@@ -290,7 +293,7 @@ info(pw)
 	return (rval);
 }
 
-int
+static int
 check(fp, pw)
 	FILE *fp;
 	struct passwd *pw;
@@ -351,7 +354,7 @@ check(fp, pw)
 	return (1);
 }
 
-int
+static int
 copy(pw, fp)
 	struct passwd *pw;
 	FILE *fp;
@@ -394,7 +397,7 @@ copy(pw, fp)
 	return (1);
 }
 
-int
+static int
 makedb(file)
 	char *file;
 {
@@ -409,12 +412,12 @@ makedb(file)
 	return (w == -1 || status);
 }
 
-int
+static int
 edit(file)
 	char *file;
 {
 	int status, pid, w;
-	char *p, *editor;
+	const char *p, *editor;
 
 	if (editor == getenv("EDITOR")) {
 		if (p == rindex(editor, '/'))
@@ -426,7 +429,7 @@ edit(file)
 	if (!(pid = vfork())) {
 		(void) setgid(getgid());
 		(void) setuid(getuid());
-		execlp(editor, p, file, NULL);
+		execlp(editor, p, file, (char *)NULL);
 		_exit(127);
 	}
 	while ((w = wait(&status)) != pid && w != -1)
@@ -434,7 +437,7 @@ edit(file)
 	return (w == -1 || status);
 }
 
-void
+static void
 loadpw(arg, pw)
 	char *arg;
 	register struct passwd *pw;
@@ -467,7 +470,7 @@ bad:
 	}
 }
 
-int
+static int
 prompt(void)
 {
 	register int c;
@@ -484,7 +487,7 @@ prompt(void)
 	/* NOTREACHED */
 }
 
-void
+static void
 usage(void)
 {
 	(void)fprintf(stderr, "usage: chpass [-a list] [user]\n");

@@ -27,10 +27,11 @@ static char sccsid[] = "@(#)util.c	5.9.1 (2.11BSD) 1996/1/12";
 
 #include <pwd.h>
 #include <stdio.h>
-#include <chpass.h>
 #include <strings.h>
 #include <ctype.h>
 #include <paths.h>
+
+#include "chpass.h"
 
 static char dmsize[] =
 	{ -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };

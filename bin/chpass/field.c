@@ -29,13 +29,14 @@ static char sccsid[] = "@(#)field.c	5.8 (Berkeley) 3/16/89";
 #include <strings.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <chpass.h>
 #include <paths.h>
+
+#include "chpass.h"
 
 /* ARGSUSED */
 int
 p_login(p, pw, ep)
-	char *p;
+	const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
@@ -66,7 +67,7 @@ p_login(p, pw, ep)
 /* ARGSUSED */
 int
 p_passwd(p, pw, ep)
-	char *p;
+	const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
@@ -83,7 +84,7 @@ p_passwd(p, pw, ep)
 /* ARGSUSED */
 int
 p_uid(p, pw, ep)
-	register char *p;
+	register const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
@@ -110,7 +111,7 @@ p_uid(p, pw, ep)
 /* ARGSUSED */
 int
 p_gid(p, pw, ep)
-	register char *p;
+	register const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
@@ -142,7 +143,7 @@ p_gid(p, pw, ep)
 /* ARGSUSED */
 int
 p_class(p, pw, ep)
-	char *p;
+	const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
@@ -159,7 +160,7 @@ p_class(p, pw, ep)
 /* ARGSUSED */
 int
 p_change(p, pw, ep)
-	char *p;
+	const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
@@ -185,7 +186,7 @@ p_expire(p, pw, ep)
 /* ARGSUSED */
 int
 p_gecos(p, pw, ep)
-	char *p;
+	const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
@@ -201,7 +202,7 @@ p_gecos(p, pw, ep)
 /* ARGSUSED */
 int
 p_hdir(p, pw, ep)
-	char *p;
+	const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
@@ -219,7 +220,7 @@ p_hdir(p, pw, ep)
 /* ARGSUSED */
 int
 p_shell(p, pw, ep)
-	register char *p;
+	register const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {

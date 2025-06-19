@@ -18,27 +18,27 @@
  */
 
 struct entry {
-	char *prompt;
-	int  (*func)(char *, struct passwd *, struct entry *);
+	const char *prompt;
+	int  (*func)(const char *, struct passwd *, struct entry *);
 	int  restricted;
 	int  len;
-	char *except;
-	char *save;
+	const char *except;
+	const char *save;
 };
 
 extern uid_t uid;
 
 /* field.c */
-int p_login(char *, struct passwd *, struct entry *);
-int p_passwd(char *, struct passwd *, struct entry *);
-int p_uid(char *, struct passwd *, struct entry *);
-int p_gid(char *, struct passwd *, struct entry *);
-int p_class(char *, struct passwd *, struct entry *);
-int p_change(char *, struct passwd *, struct entry *);
-int p_expire(char *, struct passwd *, struct entry *);
-int p_gecos(char *, struct passwd *, struct entry *);
-int p_hdir(char *, struct passwd *, struct entry *);
-int p_shell(char *, struct passwd *, struct entry *);
+int p_login(const char *, struct passwd *, struct entry *);
+int p_passwd(const char *, struct passwd *, struct entry *);
+int p_uid(const char *, struct passwd *, struct entry *);
+int p_gid(const char *, struct passwd *, struct entry *);
+int p_class(const char *, struct passwd *, struct entry *);
+int p_change(const char *, struct passwd *, struct entry *);
+int p_expire(const char *, struct passwd *, struct entry *);
+int p_gecos(const char *, struct passwd *, struct entry *);
+int p_hdir(const char *, struct passwd *, struct entry *);
+int p_shell(const char *, struct passwd *, struct entry *);
 
 /* util.c */
 char *ttoa(time_t);

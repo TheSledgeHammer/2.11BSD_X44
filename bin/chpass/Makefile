@@ -17,8 +17,8 @@
 #	@(#)Makefile	5.1.2 (2.11BSD) 1996/12/1
 #
 
+WARNS= 3
 PROG=	chflags
-
 SRCS=	chpass.c field.c util.c
 MAN=	chpass.1
 
