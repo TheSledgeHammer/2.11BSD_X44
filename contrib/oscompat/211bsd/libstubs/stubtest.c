@@ -1,14 +1,16 @@
+#include	<sys/cdefs.h>
 #include	<sys/types.h>
 
 #include	<stdio.h>
 #include	<pwd.h>
 #include	<time.h>
 
-void dump_tm(char *, struct tm *);
+void dump_tm(const char *, struct tm *);
 void dump_pw(struct	passwd *);
+void main_test(int argc, char **argv);
 
 void
-main(int argc, char **argv)
+main_test(int argc, char **argv)
 {
 	struct tm *tm;
 	struct passwd *pw;
@@ -33,7 +35,7 @@ main(int argc, char **argv)
 	}
 
 	printf("getpwent\n");
-	while (pw == getpwent()) {
+	while ((pw = getpwent())) {
 		dump_pw(pw);
 	}
 	printf("getpwnam(root)\n");
@@ -62,9 +64,9 @@ main(int argc, char **argv)
 }
 
 void
-dump_tm(char *str, struct tm *tm)
+dump_tm(const char *str, struct tm *tm)
 {
-	printf("%s sec: %d min: %d hr: %d mday: %d mon: %d yr: %d wday: %d yday: %d isdst: %d zone: %s gmtoff: %d\n",
+	printf("%s sec: %d min: %d hr: %d mday: %d mon: %d yr: %d wday: %d yday: %d isdst: %d zone: %s gmtoff: %ld\n",
 		str,
 		tm->tm_sec,
 		tm->tm_min,

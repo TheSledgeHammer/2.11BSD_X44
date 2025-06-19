@@ -1,8 +1,8 @@
 #include <sys/cdefs.h>
 
 #include <sys/types.h>
-#include <time.h>
 
+#include <time.h>
 #include <paths.h>
 #include <pwd.h>
 #include <stdio.h>
@@ -35,28 +35,29 @@ static struct tm tmtmp;
 static struct passwd _pw;
 
 /* ctimed stubs command table */
+
 struct commands {
-    const char  *arg;
-    int         val;
+    char  arg;
+    int   val;
 } command[] = {
-    { .arg = "-c", .val = CTIME },
-    { .arg = "-a", .val = ASCTIME },
-    { .arg = "-t", .val = TZSET },
-    { .arg = "-l", .val = LOCALTIME },
-    { .arg = "-g", .val = GMTIME },
-    { .arg = "-o", .val = OFFTIME },
-    { .arg = "-e", .val = GETPWENT },
-    { .arg = "-n", .val = GETPWNAM },
-    { .arg = "-u", .val = GETPWUID },
-    { .arg = "-p", .val = SETPASSENT },
-    { .arg = "-f", .val = ENDPWENT },
+    { .arg = 'c', .val = CTIME },
+    { .arg = 'a', .val = ASCTIME },
+    { .arg = 't', .val = TZSET },
+    { .arg = 'l', .val = LOCALTIME },
+    { .arg = 'g', .val = GMTIME },
+    { .arg = 'o', .val = OFFTIME },
+    { .arg = 'e', .val = GETPWENT },
+    { .arg = 'n', .val = GETPWNAM },
+    { .arg = 'u', .val = GETPWUID },
+    { .arg = 'p', .val = SETPASSENT },
+    { .arg = 'f', .val = ENDPWENT },
 };
 
 struct passwd *getandfixpw(void);
-void getb(int, char *, size_t);
-void sewer(const char *, int);
+void getb(int, void *, size_t);
+void sewer(char , int);
 void XXctime(void);
-void ctimed_commands(const char *, int);
+void ctimed_commands(char , int);
 void ctimed_usage(void);
 
 char *
@@ -64,7 +65,7 @@ ctime(const time_t *t)
 {
 	u_char	fnc = CTIME;
 
-	sewer("-c", fnc);
+	sewer('c', fnc);
 	write(SEND_FD, &fnc, sizeof fnc);
 	write(SEND_FD, t, sizeof (*t));
 	getb(RECV_FD, result, 26);
@@ -72,11 +73,11 @@ ctime(const time_t *t)
 }
 
 char *
-asctime(struct tm *tp)
+asctime(const struct tm *tp)
 {
 	u_char	fnc = ASCTIME;
 
-	sewer("-a", fnc);
+	sewer('a', fnc);
 	write(SEND_FD, &fnc, sizeof fnc);
 	write(SEND_FD, tp, sizeof (*tp));
 	getb(RECV_FD, result, 26);
@@ -88,7 +89,7 @@ tzset(void)
 {
 	u_char	fnc = TZSET;
 
-	sewer("-t", fnc);
+	sewer('t', fnc);
 	write(SEND_FD, &fnc, sizeof fnc);
 }
 
@@ -97,7 +98,7 @@ localtime(const time_t *tp)
 {
 	u_char	fnc = LOCALTIME;
 
-	sewer("-l", fnc);
+	sewer('l', fnc);
 	write(SEND_FD, &fnc, sizeof fnc);
 	write(SEND_FD, tp, sizeof (*tp));
 	getb(RECV_FD, &tmtmp, sizeof tmtmp);
@@ -111,7 +112,7 @@ gmtime(const time_t *tp)
 {
 	u_char	fnc = GMTIME;
 
-	sewer("-g", fnc);
+	sewer('g', fnc);
 	write(SEND_FD, &fnc, sizeof fnc);
 	write(SEND_FD, tp, sizeof (*tp));
 	getb(RECV_FD, &tmtmp, sizeof tmtmp);
@@ -125,12 +126,12 @@ offtime(const time_t *clock, long offset)
 {
 	u_char	fnc = OFFTIME;
 
-	sewer("-o", fnc);
+	sewer('o', fnc);
 	write(SEND_FD, &fnc, sizeof fnc);
 	write(SEND_FD, clock, sizeof (*clock));
 	write(SEND_FD, &offset, sizeof offset);
 	getb(RECV_FD, &tmtmp, sizeof tmtmp);
-	tmtmp.tm_zone = "";
+	tmtmp.tm_zone = NULL;
 	return (&tmtmp);
 }
 
@@ -139,25 +140,26 @@ getpwent(void)
 {
 	u_char	fnc = GETPWENT;
 
-	sewer("-e", fnc);
+	sewer('e', fnc);
 	write(SEND_FD, &fnc, sizeof fnc);
 	return (getandfixpw());
 }
 
 struct passwd *
-getpwnam(char *nam)
+getpwnam(const char *nam)
 {
 	u_char	fnc = GETPWNAM;
-	char	lnam[UT_NAMESIZE + 1];
+	char lnam[UT_NAMESIZE + 1];
 	int	len;
 
 	len = strlen(nam);
-	if	(len > UT_NAMESIZE)
+	if	(len > UT_NAMESIZE) {
 		len = UT_NAMESIZE;
+    }
 	bcopy(nam, lnam, len);
 	lnam[len] = '\0';
 
-	sewer("-n", fnc);
+	sewer('n', fnc);
 	write(SEND_FD, &fnc, 1);
 	write(SEND_FD, &len, sizeof (int));
 	write(SEND_FD, lnam, len);
@@ -169,16 +171,16 @@ getpwuid(uid_t uid)
 {
 	u_char	fnc = GETPWUID;
 
-	sewer("-u", fnc);
+	sewer('u', fnc);
 	write(SEND_FD, &fnc, sizeof fnc);
 	write(SEND_FD, &uid, sizeof (uid_t));
 	return (getandfixpw());
 }
 
-int
+void
 setpwent(void)
 {
-	return (setpassent(0));
+	(void)setpassent(0);
 }
 
 int
@@ -187,7 +189,7 @@ setpassent(int stayopen)
 	u_char	fnc = SETPASSENT;
 	int	sts;
 
-	sewer("-p", fnc);
+	sewer('p', fnc);
 	write(SEND_FD, &fnc, sizeof fnc);
 	write(SEND_FD, &stayopen, sizeof (int));
 	getb(RECV_FD, &sts, sizeof (int));
@@ -199,14 +201,14 @@ endpwent(void)
 {
 	u_char	fnc = ENDPWENT;
 
-	sewer("-f", fnc);
+	sewer('f', fnc);
 	write(SEND_FD, &fnc, sizeof (fnc));
 	return;
 }
 
 /* setpwfile() is deprecated */
 void
-setpwfile(char * file)
+setpwfile(const char *file)
 {
 	return;
 }
@@ -232,21 +234,24 @@ getandfixpw(void)
 }
 
 void
-getb(int f, char *p, size_t n)
+getb(int f, void *p, size_t n)
 {
 	int i;
+    char *b;
 
+    b = (char *)p;
 	while (n) {
-		i = read(f, p, n);
-		if (i <= 0)
+		i = read(f, b, n);
+		if (i <= 0) {
 			return;
-		p += i;
+        }
+		b += i;
 		n -= (size_t)i;
 	}
 }
 
 void
-sewer(const char *arg, int func)
+sewer(char arg, int func)
 {
 	register int pid, ourpid = getpid();
 
@@ -291,16 +296,14 @@ XXctime(void)
 
 /* ctimed fix: allows stubs to run as expected */
 void
-ctimed_commands(const char *arg, int val)
+ctimed_commands(char arg, int val)
 {
 	struct commands *cmd;
 
-    	cmd = &command[val];
-    	if (cmd != NULL) {
+    cmd = &command[val];
+    if (cmd != NULL) {
 		if ((cmd->arg == arg) && (cmd->val == val)) {
-			(void)execl(_PATH_CTIMED, "ctimed", cmd->arg, NULL);
-		} else {
-			ctimed_usage();
+			(void)execl(_PATH_CTIMED, "ctimed", cmd->arg, (char *)NULL);
 		}
 	}
 }
