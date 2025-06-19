@@ -5,9 +5,6 @@
 SUBDIR= byacc expat fetch file flex gnu libevent 	\
 	less liblzf lua mdocml nawk ntp sqlite
 
-# Has alot of missing dependencies!
-#SUBDIR+= libarchive 
-
 SUBDIR+= pkg_install
 
 .if (${MKLDAP} != "no")
