@@ -2,7 +2,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= bc byacc expat fetch file flex gnu libevent 	\
+SUBDIR= byacc expat fetch file flex gnu libevent 	\
 	less liblzf lua mdocml nawk ntp sqlite
 
 # Has alot of missing dependencies!
@@ -37,3 +37,7 @@ SUBDIR+= xz
 SUBDIR+= nvi
 
 .include <bsd.subdir.mk>
+
+# Disabled: (Lack config options)
+# - Unable to currently compile
+# - bc, libarchive
