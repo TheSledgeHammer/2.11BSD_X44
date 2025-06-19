@@ -28,8 +28,10 @@ static char sccsid[] = "@(#)field.c	5.8 (Berkeley) 3/16/89";
 #include <grp.h>
 #include <strings.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <paths.h>
+#include <unistd.h>
 
 #include "chpass.h"
 
@@ -72,7 +74,7 @@ p_passwd(p, pw, ep)
 	struct entry *ep;
 {
 	if (!*p)
-		pw->pw_passwd = ""; /* "NOLOGIN"; */
+		pw->pw_passwd = __UNCONST(""); /* "NOLOGIN"; */
 	else if (!(pw->pw_passwd = strdup(p))) {
 		(void) fprintf(stderr, "chpass: can't save password entry.\n");
 		return (1);
@@ -148,7 +150,7 @@ p_class(p, pw, ep)
 	struct entry *ep;
 {
 	if (!*p)
-		pw->pw_class = "";
+		pw->pw_class = __UNCONST("");
 	else if (!(pw->pw_class = strdup(p))) {
 		(void) fprintf(stderr, "chpass: can't save entry.\n");
 		return (1);
@@ -173,7 +175,7 @@ p_change(p, pw, ep)
 /* ARGSUSED */
 int
 p_expire(p, pw, ep)
-	char *p;
+	const char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
@@ -227,7 +229,7 @@ p_shell(p, pw, ep)
 	register char *sh, *t;
 
 	if (!*p) {
-		pw->pw_shell = _PATH_BSHELL;
+		pw->pw_shell = __UNCONST(_PATH_BSHELL);
 		return (0);
 	}
 	setusershell();

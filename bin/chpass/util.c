@@ -28,14 +28,16 @@ static char sccsid[] = "@(#)util.c	5.9.1 (2.11BSD) 1996/1/12";
 #include <pwd.h>
 #include <stdio.h>
 #include <strings.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <paths.h>
+#include <unistd.h>
 
 #include "chpass.h"
 
 static char dmsize[] =
 	{ -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-static char *months[] =
+static const char *months[] =
 	{ "January", "February", "March", "April", "May", "June",
 	  "July", "August", "September", "October", "November",
 	  "December", NULL };
@@ -58,7 +60,7 @@ ttoa(tval)
 
 int
 atot(p, store)
-	char *p;
+	const char *p;
 	time_t *store;
 {
 	register char *t, **mp;
@@ -75,7 +77,7 @@ atot(p, store)
 		(void) time(&tval);
 		lt = localtime(&tval);
 	}
-	if (!(t = strtok(p, " \t")))
+	if (!(t = strtok(__UNCONST(p), " \t")))
 		goto bad;
 	for (mp = months;; ++mp) {
 		if (!*mp)

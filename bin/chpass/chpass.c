@@ -77,23 +77,22 @@ uid_t uid;
 static int info(struct passwd *);
 static int check(FILE *, struct passwd *);
 static int copy(struct passwd *, FILE *);
-static int makedb(char *);
-static int edit(char *);
+static int makedb(const char *);
+static int edit(const char *);
 static void loadpw(char *, struct passwd *);
 static int  prompt(void);
 static void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	register char *p;
 	struct passwd lpw, *pw;
 	struct rlimit rlim;
 	FILE *temp_fp;
 	int aflag, ch, fd;
-	char *fend, *passwd, *temp, *tend;
+	char *fend, *tend;
+    const char *passwd, *temp;
 	char from[MAXPATHLEN], to[MAXPATHLEN];
 
 	uid = getuid();
@@ -251,10 +250,10 @@ info(pw)
 	struct stat begin, end;
 	FILE *fp;
 	int fd, rval;
-	char tfile[];
+	const char *tfile;
 
 	tfile = "/tmp/passwd.XXXXXX";
-	if ((fd = mkstemp(tfile)) == -1 || !(fp = fdopen(fd, "w+"))) {
+	if ((fd = mkstemp(__UNCONST(tfile))) == -1 || !(fp = fdopen(fd, "w+"))) {
 		(void) fprintf(stderr, "chpass: no temporary file");
 		return (0);
 	}
@@ -399,12 +398,12 @@ copy(pw, fp)
 
 static int
 makedb(file)
-	char *file;
+	const char *file;
 {
 	int status, pid, w;
 
 	if (!(pid = vfork())) {
-		execl(_PATH_MKPASSWD, "mkpasswd", "-p", file, NULL);
+		execl(_PATH_MKPASSWD, "mkpasswd", "-p", file, (char *)NULL);
 		_exit(127);
 	}
 	while ((w = wait(&status)) != pid && w != -1)
@@ -414,7 +413,7 @@ makedb(file)
 
 static int
 edit(file)
-	char *file;
+	const char *file;
 {
 	int status, pid, w;
 	const char *p, *editor;
