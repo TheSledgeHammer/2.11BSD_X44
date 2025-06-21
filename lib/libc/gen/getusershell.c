@@ -33,6 +33,12 @@ static char sccsid[] = "@(#)getusershell.c	5.5 (Berkeley) 7/21/88";
 #include <unistd.h>
 #include <paths.h>
 
+#ifdef __weak_alias
+__weak_alias(getusershell,_getusershell)
+__weak_alias(endusershell,_endusershell)
+__weak_alias(setusershell,_setusershell)
+#endif
+
 /*
  * Do not add local shells here.  They should be added in /etc/shells
  */
