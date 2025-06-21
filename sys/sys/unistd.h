@@ -118,10 +118,11 @@
 #define	_SC_PAGESIZE			28
 #define	_SC_PAGE_SIZE			_SC_PAGESIZE	/* 1170 compatibility */
 #define	_SC_FSYNC				29
+#define	_SC_LOGIN_NAME_MAX		37
 
 /* Extensions found in Solaris and Linux. */
-#define	_SC_PHYS_PAGES		    	500
-#define	_SC_AVPHYS_PAGES	    	501
+#define	_SC_PHYS_PAGES		    500
+#define	_SC_AVPHYS_PAGES	    501
 
 /* configurable system strings */
 #define	_CS_PATH		 		1
