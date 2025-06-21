@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)setenv.c	1.3 (Berkeley) 6/16/87";
 
 #ifdef __weak_alias
 __weak_alias(setenv,_setenv)
+__weak_alias(unsetenv,_unsetenv)
 #endif
 
 extern char	**environ;
