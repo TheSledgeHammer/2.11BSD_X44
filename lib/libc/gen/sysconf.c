@@ -126,7 +126,6 @@ sysconf(name)
         	break;
 /* 1003.1j */
 /* 1003.2 */
-/* 1003.2 */
 	case _SC_BC_BASE_MAX:
 		mib[0] = CTL_USER;
 		mib[1] = USER_BC_BASE_MAX;
