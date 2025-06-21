@@ -11,12 +11,14 @@ USE_FORT?= yes	# cryptographic software
 
 PROG=	openssl
 
+LCRYPTO_SRC= ${LIBRESSLSRC}/crypto
 LCRYPTO_INC= ${LIBRESSLSRC}/include
 LAPPS_SRC= ${LIBRESSLSRC}/apps
 
 CPPFLAGS+= -DLIBRESSL_INTERNAL
 CPPFLAGS+= -I${LIBRESSLSRC}
 CPPFLAGS+= -I${LCRYPTO_INC}
+CPPFLAGS+= -I${LCRYPTO_SRC}/compat
 CPPFLAGS+= -I${LAPPS_SRC}
 CPPFLAGS+= -I${LAPPS_SRC}/openssl
 
@@ -26,8 +28,12 @@ DPADD+=	${LIBSSL} ${LIBCRYPTO} ${LIBCRYPT}
 CRYPTODIST=	${NETBSDSRCDIR}/crypto
 
 .include "${NETBSDSRCDIR}/crypto/Makefile.libressl"
+.PATH:  ${LCRYPTO_SRC}/compat
 .PATH:	${LAPPS_SRC}
 .PATH:	${LAPPS_SRC}/openssl
+
+# Compat
+SRCS += strtonum.c
 
 # This list is built from the contents of the dist/apps/openssl/Makefile.am
 # in the LibreSSL source distribution.
