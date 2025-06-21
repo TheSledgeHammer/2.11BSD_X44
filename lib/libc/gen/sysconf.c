@@ -118,7 +118,14 @@ sysconf(name)
 		mib[0] = CTL_KERN;
 		mib[1] = KERN_POSIX1;
 		break;
-
+/* 1003.1b */
+/* 1003.1c */
+	case _SC_LOGIN_NAME_MAX:
+//        	mib[0] = CTL_KERN;
+//        	mib[1] = KERN_LOGIN_NAME_MAX;
+        	break;
+/* 1003.1j */
+/* 1003.2 */
 /* 1003.2 */
 	case _SC_BC_BASE_MAX:
 		mib[0] = CTL_USER;
