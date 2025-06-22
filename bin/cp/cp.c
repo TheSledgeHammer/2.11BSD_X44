@@ -36,13 +36,17 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1988, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)cp.c	8.5 (Berkeley) 4/29/95";
+#endif
 #endif /* not lint */
 
 /*
@@ -79,19 +83,20 @@ static char sccsid[] = "@(#)cp.c	8.5 (Berkeley) 4/29/95";
 
 #define	STRIP_TRAILING_SLASH(p) {					\
         while ((p).p_end > (p).p_path && (p).p_end[-1] == '/')		\
-                *--(p).p_end = 0;					\
+                *--(p).p_end = '\0';					\
 }
 
-PATH_T to = { to.p_path, "" };
+static char empty[] = "";
+PATH_T to = { .p_end = to.p_path, .p_targt_end = empty };
 
 uid_t myuid;
-int Rflag, iflag, pflag, rflag;
+int Hflag, Lflag, Pflag, Rflag, iflag, pflag, rflag;
 int myumask;
 
 enum op { FILE_TO_FILE, FILE_TO_DIR, DIR_TO_DNE };
 
-int copy __P((char *[], enum op, int));
-int mastercmp __P((const FTSENT **, const FTSENT **));
+int copy(char *[], enum op, int);
+int mastercmp(const FTSENT **, const FTSENT **);
 
 int
 main(argc, argv)
@@ -100,23 +105,26 @@ main(argc, argv)
 {
 	struct stat to_stat, tmp_stat;
 	enum op type;
-	int Hflag, Lflag, Pflag, ch, fts_options, r;
+	int ch, fts_options, r;
 	char *target;
 
 	Hflag = Lflag = Pflag = Rflag = 0;
-	while ((ch = getopt(argc, argv, "HLPRfipr")) != EOF) 
+	while ((ch = getopt(argc, argv, "HLPRfipr")) != EOF)
 		switch (ch) {
 		case 'H':
 			Hflag = 1;
-			Lflag = Pflag = 0;
+			Lflag = 0;
+			Pflag = 0;
 			break;
 		case 'L':
 			Lflag = 1;
-			Hflag = Pflag = 0;
+			Hflag = 0;
+			Pflag = 0;
 			break;
 		case 'P':
 			Pflag = 1;
-			Hflag = Lflag = 0;
+			Hflag = 0;
+			Lflag = 0;
 			break;
 		case 'R':
 			Rflag = 1;
@@ -177,13 +185,13 @@ main(argc, argv)
 	target = argv[--argc];
 	if (strlen(target) > MAXPATHLEN)
 		errx(1, "%s: name too long", target);
-	(void)strcpy(to.p_path, target);
+	(void) strcpy(to.p_path, target);
 	to.p_end = to.p_path + strlen(to.p_path);
-        if (to.p_path == to.p_end) {
+	if (to.p_path == to.p_end) {
 		*to.p_end++ = '.';
 		*to.p_end = 0;
 	}
-        STRIP_TRAILING_SLASH(to);
+	STRIP_TRAILING_SLASH(to);
 	to.target_end = to.p_end;
 
 	/* Set end of argument list for fts(3). */
@@ -209,7 +217,7 @@ main(argc, argv)
 	if (r == -1 || !S_ISDIR(to_stat.st_mode)) {
 		/*
 		 * Case (1).  Target is not a directory.
-		 */ 
+		 */
 		if (argc > 1) {
 			usage();
 			exit(1);
@@ -226,7 +234,7 @@ main(argc, argv)
 				stat(*argv, &tmp_stat);
 			else
 				lstat(*argv, &tmp_stat);
-			
+
 			if (S_ISDIR(tmp_stat.st_mode) && (Rflag || rflag))
 				type = DIR_TO_DNE;
 			else
@@ -239,7 +247,7 @@ main(argc, argv)
 		 */
 		type = FILE_TO_DIR;
 
-	exit (copy(argv, type, fts_options));
+	exit(copy(argv, type, fts_options));
 }
 
 int
@@ -251,7 +259,7 @@ copy(argv, type, fts_options)
 	struct stat to_stat;
 	FTS *ftsp;
 	FTSENT *curr;
-	int base, dne, nlen, rval;
+	int base, dne, nlen, rval, sval;
 	char *p;
 
 	if ((ftsp = fts_open(argv, fts_options, mastercmp)) == NULL)
@@ -329,8 +337,9 @@ copy(argv, type, fts_options)
 			STRIP_TRAILING_SLASH(to);
 		}
 
+		sval = Pflag ? lstat(to.p_path, &to_stat) : stat(to.p_path, &to_stat);
 		/* Not an error but need to remember it happened */
-		if (stat(to.p_path, &to_stat) == -1)
+		if (sval == -1)
 			dne = 1;
 		else {
 			if (to_stat.st_dev == curr->fts_statp->st_dev &&
@@ -374,7 +383,7 @@ copy(argv, type, fts_options)
 			 * umask blocks owner writes, we fail..
 			 */
 			if (dne) {
-				if (mkdir(to.p_path, 
+				if (mkdir(to.p_path,
 				    curr->fts_statp->st_mode | S_IRWXU) < 0)
 					err(1, "%s", to.p_path);
 			} else if (!S_ISDIR(to_stat.st_mode)) {
@@ -384,13 +393,13 @@ copy(argv, type, fts_options)
 			/*
 			 * If not -p and directory didn't exist, set it to be
 			 * the same as the from directory, umodified by the 
-                         * umask; arguably wrong, but it's been that way 
+                         * umask; arguably wrong, but it's been that way
                          * forever.
 			 */
 			if (pflag && setfile(curr->fts_statp, 0))
 				rval = 1;
 			else if (dne)
-				(void)chmod(to.p_path, 
+				(void)chmod(to.p_path,
 				    curr->fts_statp->st_mode);
 			break;
 		case S_IFBLK:
@@ -406,7 +415,7 @@ copy(argv, type, fts_options)
 			if (Rflag) {
 				if (copy_fifo(curr->fts_statp, !dne))
 					rval = 1;
-			} else 
+			} else
 				if (copy_file(curr, dne))
 					rval = 1;
 			break;

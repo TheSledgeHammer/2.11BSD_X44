@@ -9,12 +9,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	- Compile Issues/Errors:
 		- Linker: None atm, Yay! :)
 		- Compiler: None atm, Yay! :)
-- Fix:
-- Stand includes: Not being placed in
-  correct destination directory
-  during build process (should be
-  in usr/includes not the root of
-  the destination directory
 
 ### Documentation:
 - Manpages:
@@ -83,6 +77,12 @@ A General todo list. Don't hesitate to add to this list. :)
 		- needs acpica.
 
 ## usr.bin:
+- Ar (2.11BSD): Do not recommend using.
+	- 
+- Tar (2.11BSD): Do not recommend using. 
+	- Produces segmentation faults and memory buffer overflows. When appending, creating and extracting .tar archives with
+	any sort of contents.
+	- Can deal with empty .tar archives though. :)
 - Add: More critical software
 	- Generic:
 		- calendar, tr

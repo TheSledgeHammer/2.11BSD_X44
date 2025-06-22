@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)util.c	5.9.1 (2.11BSD) 1996/1/12";
 
 static char dmsize[] =
 	{ -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
 static const char *months[] =
 	{ "January", "February", "March", "April", "May", "June",
 	  "July", "August", "September", "October", "November",

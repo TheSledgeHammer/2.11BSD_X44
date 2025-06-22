@@ -19,7 +19,6 @@ static char sccsid[] = "@(#)ndbm.c	5.3 (Berkeley) 3/9/86";
 #include <stdio.h>
 #include <unistd.h>
 
-#include "dbm.h"
 #include "ndbm.h"
 
 #define BYTESIZ 8
@@ -405,12 +404,12 @@ static  int hitab[16]
 	010,064,077,000,035,027,025,071,
 };
 */
- = {    61, 57, 53, 49, 45, 41, 37, 33,
-	29, 25, 21, 17, 13,  9,  5,  1,
+ = {
+		 61, 57, 53, 49, 45, 41, 37, 33,
+		 29, 25, 21, 17, 13,  9,  5,  1,
 };
 
-static  long hltab[64]
- = {
+static  long hltab[64] = {
 	06100151277L,06106161736L,06452611562L,05001724107L,
 	02614772546L,04120731531L,04665262210L,07347467531L,
 	06735253126L,06042345173L,03072226605L,01464164730L,
@@ -459,11 +458,11 @@ dcalchash(item)
 
 	hashl = 0;
 	hashi = 0;
-	for (cp = item.dptr, s=item.dsize; --s >= 0; ) {
+	for (cp = item.dptr, s = item.dsize; --s >= 0;) {
 		c = *cp++;
-		for (j=0; j<BYTESIZ; j+=4) {
-			hashi += hitab[c&017];
-			hashl += hltab[hashi&63];
+		for (j = 0; j < BYTESIZ; j += 4) {
+			hashi += hitab[c & 017];
+			hashl += hltab[hashi & 63];
 			c >>= 4;
 		}
 	}

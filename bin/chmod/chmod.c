@@ -391,9 +391,7 @@ newmode(msp, omode, oct, set, ump, nm)
 	unsigned int nm;
 {
 	register int o, m, b;
-//	int savem;
 
-//	savem = nm;
 	m = abs_filemode(msp);
 	if (*msp == '\0') {
 		return (m);

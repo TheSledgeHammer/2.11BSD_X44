@@ -7,7 +7,7 @@ MKLIBNDBM?= 	no
 MKLIBFORTRAN?= 	no
 MKLIBMP?= 		no
 MKLIBOM?= 		no
-MKLIBSTUBS?= 	no
+MKLIBSTUBS?= 	yes
 MKLIBTERMCAP?= 	no
 MKLIBVMF?= 		no
 

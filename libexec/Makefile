@@ -3,9 +3,8 @@
 
 .include <bsd.own.mk>
 
-# Note: atrun: to be compiled with usr.bin/at
 SUBDIR= acctd \
-		comsat ctimed \
+		comsat \
 		fingerd ftpd \
 		getty \
 		httpd \
@@ -20,3 +19,14 @@ SUBDIR+= getNAME makewhatis
 .endif
 
 .include <bsd.subdir.mk>
+
+#
+# TODO:
+# Below cannot be built. Will halt compilation once
+# reached, if added to SUBDIR.
+# fix: 
+# - atrun: 
+#	- compiler will output cannot make atrun.1
+# - ctimed: 
+# 	- compiler will output cannot make ctimed.1
+#

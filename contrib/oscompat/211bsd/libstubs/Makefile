@@ -11,6 +11,6 @@ WARNS?=		5
 
 CPPFLAGS+=	-I${.CURDIR}
 
-SRCS=		stubs.c stubtest.c
+SRCS=		cmds.c stubs.c stubtest.c
 
 .include <bsd.lib.mk>

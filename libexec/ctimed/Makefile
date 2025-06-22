@@ -13,4 +13,15 @@ BINDIR=	/usr/libexec
 BINOWN=		root
 BINMODE=	755
 
+STUBS_DIR:= ${NETBSDSRCDIR}/contrib/oscompat/211bsd/libstubs
+
+.PATH: ${STUBS_DIR}
+
+CPPFLAGS+= -I${STUBS_DIR}
+
+SRCS+= cmds.c
+
+DPADD+=	${LIBSTUBS}
+LDADD+= -lstubs
+
 .include <bsd.prog.mk>

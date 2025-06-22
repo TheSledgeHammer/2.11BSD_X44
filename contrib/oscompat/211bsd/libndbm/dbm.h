@@ -9,7 +9,7 @@
 #ifndef _LIBDBM_DBM_H_
 #define _LIBDBM_DBM_H_
 
-#include <sys/cdefs.h>
+#include "ndbm.h"
 
 __BEGIN_DECLS
 datum	fetch(datum);
@@ -21,4 +21,5 @@ long	dcalchash(datum);
 long	hashinc(DBM *, long);
 #endif
 __END_DECLS
+
 #endif /* _LIBDBM_DBM_H_ */

@@ -13,55 +13,62 @@
 #include <utmp.h>
 #include <varargs.h>
 
-#define	SEND_FD	W[1]
-#define	RECV_FD	R[0]
+#include "ctimed.h"
 
-#define	CTIME			1
-#define	ASCTIME			2
-#define	TZSET			3
-#define	LOCALTIME 		4
-#define	GMTIME			5
-#define	OFFTIME			6
+#define	CTIME			CTIME_VAL
+#define	ASCTIME			ASCTIME_VAL
+#define	TZSET			TZSET_VAL
+#define	LOCALTIME 		LOCALTIME_VAL
+#define	GMTIME			GMTIME_VAL
+#define	OFFTIME			OFFTIME_VAL
+#define GETPWENT        GETPWENT_VAL
+#define GETPWNAM        GETPWNAM_VAL
+#define GETPWUID        GETPWUID_VAL
+#define SETPASSENT      SETPASSENT_VAL
+#define ENDPWENT        ENDPWENT_VAL
 
-#define GETPWENT        7
-#define GETPWNAM        8
-#define GETPWUID        9
-#define SETPASSENT      10
-#define ENDPWENT        11
-
-static int R[2], W[2], inited;
+static int R[2], W[2];
 static char	result[256 + 4];
 static struct tm tmtmp;
-static struct passwd _pw;
+static int inited;
+struct passwd _pw;
 
-/* ctimed stubs command table */
+char *ctime_stub(const time_t *);
+char *asctime_stub(const struct tm *);
+void tzset_stub(void);
+struct tm *localtime_stub(const time_t *);
+struct tm *gmtime_stub(const time_t *);
+struct tm *offtime_stub(const time_t *, long);
+struct passwd *getpwent_stub(void);
+struct passwd *getpwnam_stub(const char *);
+struct passwd *getpwuid_stub(uid_t uid);
+void setpwent_stub(void);
+int setpassent_stub(int);
+void endpwent_stub(void);
+void setpwfile_stub(const char *);
 
-struct commands {
-    char  arg;
-    int   val;
-} command[] = {
-    { .arg = 'c', .val = CTIME },
-    { .arg = 'a', .val = ASCTIME },
-    { .arg = 't', .val = TZSET },
-    { .arg = 'l', .val = LOCALTIME },
-    { .arg = 'g', .val = GMTIME },
-    { .arg = 'o', .val = OFFTIME },
-    { .arg = 'e', .val = GETPWENT },
-    { .arg = 'n', .val = GETPWNAM },
-    { .arg = 'u', .val = GETPWUID },
-    { .arg = 'p', .val = SETPASSENT },
-    { .arg = 'f', .val = ENDPWENT },
-};
-
-struct passwd *getandfixpw(void);
 void getb(int, void *, size_t);
+struct passwd *getandfixpw(void);
 void sewer(char , int);
 void XXctime(void);
-void ctimed_commands(char , int);
-void ctimed_usage(void);
+
+struct cmd_ops stub_ops = {
+		.cmd_ctime = ctime_stub,
+		.cmd_asctime = asctime_stub,
+		.cmd_tzset = tzset_stub,
+		.cmd_localtime = localtime_stub,
+		.cmd_gmtime = gmtime_stub,
+		.cmd_offtime = offtime_stub,
+		.cmd_getpwent = getpwent_stub,
+		.cmd_getpwnam = getpwnam_stub,
+		.cmd_getpwuid = getpwuid_stub,
+		.cmd_setpwent = setpwent_stub,
+		.cmd_setpassent = setpassent_stub,
+		.cmd_endpwent = endpwent_stub,
+};
 
 char *
-ctime(const time_t *t)
+ctime_stub(const time_t *t)
 {
 	u_char	fnc = CTIME;
 
@@ -73,7 +80,7 @@ ctime(const time_t *t)
 }
 
 char *
-asctime(const struct tm *tp)
+asctime_stub(const struct tm *tp)
 {
 	u_char	fnc = ASCTIME;
 
@@ -85,7 +92,7 @@ asctime(const struct tm *tp)
 }
 
 void
-tzset(void)
+tzset_stub(void)
 {
 	u_char	fnc = TZSET;
 
@@ -94,7 +101,7 @@ tzset(void)
 }
 
 struct tm *
-localtime(const time_t *tp)
+localtime_stub(const time_t *tp)
 {
 	u_char	fnc = LOCALTIME;
 
@@ -108,7 +115,7 @@ localtime(const time_t *tp)
 }
 
 struct tm *
-gmtime(const time_t *tp)
+gmtime_stub(const time_t *tp)
 {
 	u_char	fnc = GMTIME;
 
@@ -122,7 +129,7 @@ gmtime(const time_t *tp)
 }
 
 struct tm *
-offtime(const time_t *clock, long offset)
+offtime_stub(const time_t *clock, long offset)
 {
 	u_char	fnc = OFFTIME;
 
@@ -136,7 +143,7 @@ offtime(const time_t *clock, long offset)
 }
 
 struct passwd *
-getpwent(void)
+getpwent_stub(void)
 {
 	u_char	fnc = GETPWENT;
 
@@ -146,7 +153,7 @@ getpwent(void)
 }
 
 struct passwd *
-getpwnam(const char *nam)
+getpwnam_stub(const char *nam)
 {
 	u_char	fnc = GETPWNAM;
 	char lnam[UT_NAMESIZE + 1];
@@ -167,7 +174,7 @@ getpwnam(const char *nam)
 }
 
 struct passwd *
-getpwuid(uid_t uid)
+getpwuid_stub(uid_t uid)
 {
 	u_char	fnc = GETPWUID;
 
@@ -178,13 +185,13 @@ getpwuid(uid_t uid)
 }
 
 void
-setpwent(void)
+setpwent_stub(void)
 {
 	(void)setpassent(0);
 }
 
 int
-setpassent(int stayopen)
+setpassent_stub(int stayopen)
 {
 	u_char	fnc = SETPASSENT;
 	int	sts;
@@ -197,7 +204,7 @@ setpassent(int stayopen)
 }
 
 void
-endpwent(void)
+endpwent_stub(void)
 {
 	u_char	fnc = ENDPWENT;
 
@@ -208,7 +215,7 @@ endpwent(void)
 
 /* setpwfile() is deprecated */
 void
-setpwfile(const char *file)
+setpwfile_stub(const char *file)
 {
 	return;
 }
@@ -253,10 +260,18 @@ getb(int f, void *p, size_t n)
 void
 sewer(char arg, int func)
 {
-	register int pid, ourpid = getpid();
+	register int pid, ourpid;
+    struct cmds *cmds;
+    
+	ourpid = getpid();
 
-	if (inited == ourpid)
+    cmds = ctimed_cmds_get(arg, func);
+    if (cmds == NULL) {
+        return;
+    }
+	if (inited == ourpid) {
 		return;
+	}
 	if (inited) {
 		close(SEND_FD);
 		close(RECV_FD);
@@ -270,7 +285,7 @@ sewer(char arg, int func)
 		dup2(R[1], 1); 	/* parent read side to our stdout */
 		close(SEND_FD); /* copies made, close the... */
 		close(RECV_FD); /* originals now */
-		ctimed_commands(arg, func);
+		(void)execl(_PATH_CTIMED, "ctimed", (char *)NULL);
 		_exit(EX_OSFILE);
 	}
 	if (pid == -1) {
@@ -292,25 +307,4 @@ XXctime(void)
 	}
 	SEND_FD = RECV_FD = 0;
 	inited = 0;
-}
-
-/* ctimed fix: allows stubs to run as expected */
-void
-ctimed_commands(char arg, int val)
-{
-	struct commands *cmd;
-
-    cmd = &command[val];
-    if (cmd != NULL) {
-		if ((cmd->arg == arg) && (cmd->val == val)) {
-			(void)execl(_PATH_CTIMED, "ctimed", cmd->arg, (char *)NULL);
-		}
-	}
-}
-
-void
-ctimed_usage(void)
-{
-	(void)fprintf(stderr, "usage: ctimed stubs [-c ctime] [-a asctime] [-t tzet] [-l localtime] [-g gmtime] [-o offtime]\n");
-	(void)fprintf(stderr, "usage: ctimed stubs [-e getpwent] [-n getpwnam] [-u getpwuid] [-p setpassent ] [-f endpwent]\n");
 }
