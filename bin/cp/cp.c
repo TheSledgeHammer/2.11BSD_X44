@@ -99,9 +99,7 @@ int copy(char *[], enum op, int);
 int mastercmp(const FTSENT **, const FTSENT **);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	struct stat to_stat, tmp_stat;
 	enum op type;
@@ -262,7 +260,7 @@ copy(argv, type, fts_options)
 	int base, dne, nlen, rval, sval;
 	char *p;
 
-	base = 0;
+    base = 0;
 	if ((ftsp = fts_open(argv, fts_options, mastercmp)) == NULL)
 		err(1, NULL);
 	for (rval = 0; (curr = fts_read(ftsp)) != NULL;) {
@@ -313,7 +311,7 @@ copy(argv, type, fts_options)
 			 * Since the first level MUST be FTS_ROOTLEVEL, base
 			 * is always initialized.
 			 */
-			if (curr->fts_level == FTS_ROOTLEVEL)
+			if (curr->fts_level == FTS_ROOTLEVEL) {
 				if (type != DIR_TO_DNE) {
 					p = strrchr(curr->fts_path, '/');
 					base = (p == NULL) ? 0 : 
@@ -322,9 +320,10 @@ copy(argv, type, fts_options)
 					if (!strcmp(&curr->fts_path[base], 
 					    ".."))
 						base += 1;
-				} else
+				} else {
 					base = curr->fts_pathlen;
-
+                }
+            }
 			if (to.target_end[-1] != '/') {
 				*to.target_end = '/';
 				*(to.target_end + 1) = 0;

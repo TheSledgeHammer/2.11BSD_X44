@@ -152,7 +152,7 @@ copy_file(entp, dne)
 		return (1);
 	}
 
-	if (pflag && setfile(fs, to_fd))
+	if (pflag && setfile(fs, to_fd)) {
 		rval = 1;
 	/*
 	 * If the source was setuid or setgid, lose the bits unless the
@@ -160,7 +160,7 @@ copy_file(entp, dne)
 	 */
 #define	RETAINBITS \
 	(S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)
-	else if ((fs->st_mode & (S_ISUID | S_ISGID)) && fs->st_uid == myuid)
+	} else if ((fs->st_mode & (S_ISUID | S_ISGID)) && fs->st_uid == myuid) {
 		if (fstat(to_fd, &to_stat)) {
 			warn("%s", to.p_path);
 			rval = 1;
@@ -169,6 +169,7 @@ copy_file(entp, dne)
 			warn("%s", to.p_path);
 			rval = 1;
 		}
+    }
 	(void)close(from_fd);
 	if (close(to_fd)) {
 		warn("%s", to.p_path);
@@ -245,8 +246,8 @@ setfile(fs, fd)
 	rval = 0;
 	fs->st_mode &= S_ISUID | S_ISGID | S_IRWXU | S_IRWXG | S_IRWXO;
 
-	TIMESPEC_TO_TIMEVAL(&tv[0], &fs->st_atime);
-	TIMESPEC_TO_TIMEVAL(&tv[1], &fs->st_mtime);
+	TIMESPEC_TO_TIMEVAL(&tv[0], &fs->st_atimespec);
+	TIMESPEC_TO_TIMEVAL(&tv[1], &fs->st_mtimespec);
 	if (utimes(to.p_path, tv)) {
 		warn("utimes: %s", to.p_path);
 		rval = 1;
