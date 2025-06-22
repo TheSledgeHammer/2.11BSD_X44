@@ -64,7 +64,8 @@ atot(p, store)
 	const char *p;
 	time_t *store;
 {
-	register char *t, **mp;
+	register char *t;
+	const char **mp;
 	static struct tm *lt;
 	time_t tval;
 	int day, month, year;
