@@ -262,6 +262,7 @@ copy(argv, type, fts_options)
 	int base, dne, nlen, rval, sval;
 	char *p;
 
+	base = 0;
 	if ((ftsp = fts_open(argv, fts_options, mastercmp)) == NULL)
 		err(1, NULL);
 	for (rval = 0; (curr = fts_read(ftsp)) != NULL;) {
