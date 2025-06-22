@@ -87,7 +87,7 @@ static char sccsid[] = "@(#)cp.c	8.5 (Berkeley) 4/29/95";
 }
 
 static char empty[] = "";
-PATH_T to = { .p_end = to.p_path, .p_targt_end = empty };
+PATH_T to = { .p_end = to.p_path, .target_end = empty };
 
 uid_t myuid;
 int Hflag, Lflag, Pflag, Rflag, iflag, pflag, rflag;
