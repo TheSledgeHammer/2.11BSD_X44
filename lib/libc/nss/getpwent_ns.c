@@ -865,7 +865,7 @@ _pws_compat_start(nsrv, nscb, ap)
 		bf[1] = '+';
 		_pw_setkey(&pkey, bf, 2);
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-		ret = (_pw_getdb(state->db, &key, &data &state->rewind) == 0 || _pw_getdb(state->db, &pkey, &pdata, &state->rewind) == 0);
+		ret = (_pw_getdb(state->db, &key, &data, &state->rewind) == 0 || _pw_getdb(state->db, &pkey, &pdata, &state->rewind) == 0);
 #else
 		ret = (_pw_getdb(state->db, &key, &data, 0) == 0
 				|| _pw_getdb(state->db, &pkey, &pdata, 0) == 0);
@@ -1049,7 +1049,7 @@ _pws_compat_is_excluded(state, name)
 	_pw_setkey(&key, __UNCONST(name), strlen(name));
 
 #if defined(RUN_NDBM) && (RUN_NDBM == 0)
-	ret = _pw_getdb(state->exclude, &key, &data, 0);
+	ret = _pw_getdb(state->exclude, &key, &data, &state->rewind);
 #else
 	ret = _pw_getdb(state->exclude, &key, &data, 0);
 #endif
