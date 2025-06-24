@@ -195,7 +195,6 @@ _pw_version(db, key, value, version)
 	key->data = __UNCONST("VERSION");
 	key->size = strlen((char *)key->data) + 1;
 	switch (_pw_getdb(*db, key, value, 0)) {
-	//switch ((*(*db)->get)(*db, key, value, 0)) {
 	case 0:
 		if (sizeof(*version) != value->size) {
 			return (NS_UNAVAIL);

@@ -146,6 +146,7 @@ __RCSID("$NetBSD: getpwent.c,v 1.66.2.3 2006/07/13 09:29:40 ghen Exp $");
 
 static int _pw_version(DBM **, datum *, datum *, int *, int *);
 static int _pw_opendb(DBM **, FILE *, int *, int *);
+static int _pw_search(DBM *, datum *, datum *, int *);
 static int _pw_hashdb(datum *, struct passwd *, char *, char *, char *, int);
 static int _pw_fetch(DBM *, datum *, struct passwd *, char *, size_t, int *, int *, int);
 
@@ -219,7 +220,7 @@ _pw_version(db, key, value, rew, version)
 {
 	key->dptr = __UNCONST("VERSION");
 	key->dsize = strlen((char *)key->dptr) + 1;
-	switch (_pw_getdb(*db, key, rew)) {
+	switch (_pw_getdb(*db, key, value, rew)) {
 	case 0:
 		if (sizeof(*version) != value->dsize) {
 			return (NS_UNAVAIL);
@@ -287,7 +288,7 @@ _pw_opendb(db, fp, rew, version)
 
 	return (_pw_version(db, &key, &value, rew, version));
 }
-
+/*
 int
 _pw_getdb(db, key, rew)
 	DBM *db;
@@ -320,6 +321,61 @@ _pw_getdb(db, key, rew)
 			ret = -1;
 		}
 	}
+out:
+	(void)flock(dbm_dirfno(db), LOCK_UN);
+	return (ret);
+}
+*/
+
+static int
+_pw_search(db, key, data, rew)
+	DBM *db;
+	datum *key, *data;
+	int *rew;
+{
+	datum f_key, f_data;
+	int ret;
+
+	ret = 0;
+	for (f_key = dbm_firstkey(db); f_key.dptr; f_key = dbm_nextkey(db)) {
+		if (!f_key.dptr) {
+			*rew = 0;
+		}
+		if (f_key.dptr) {
+			f_data = dbm_fetch(db, f_key);
+			if (f_data != NULL) {
+				key->dptr = &f_key.dptr;
+				key->dsize = &f_key.dsize;
+				data->dptr = &f_data.dptr;
+				data->dsize = &f_data.dsize;
+				ret = 0;
+				break;
+			} else if (f_data == NULL) {
+				ret = 1;
+				break;
+			} else {
+				ret = -1;
+				break;
+			}
+		}
+	}
+	return (ret);
+}
+
+int
+_pw_getdb(db, key, data, rew)
+	DBM *db;
+	datum *key, *data;
+	int *rew;
+{
+	int ret;
+
+	ret = 0;
+	if (flock(dbm_dirfno(db), LOCK_SH)) {
+		ret = -1;
+		goto out;
+	}
+	ret = _pw_search(db, key, data, rew);
 out:
 	(void)flock(dbm_dirfno(db), LOCK_UN);
 	return (ret);
@@ -404,7 +460,7 @@ _pw_fetch(db, key, pw, buffer, buflen, pwflags, rew, version)
 	register char *p, *t;
 	datum data;
 
-	switch (_pw_getdb(db, key, rew)) {
+	switch (_pw_getdb(db, key, &data, rew)) {
 	case 0:
 		break; 					/* found */
 	case 1:
