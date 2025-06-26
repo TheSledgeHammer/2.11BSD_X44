@@ -1,5 +1,12 @@
 #	$NetBSD: Makefile,v 1.2.2.2 2000/06/20 06:00:28 thorpej Exp $
 
+# Experimental RCS METALOG versioning
+# (Needs host's rcs(1) commands)
+#
+# TODO:
+# - In 'build.sh distribution', print diff to previous
+#RCSMETALOG=1
+
 # The `all' target must appear before bsd.own.mk is pulled in.
 all:
 	@echo "Please understand what you are doing, first."
@@ -8,16 +15,16 @@ all:
 .include <bsd.own.mk>
 .include "${NETBSDSRCDIR}/distrib/common/Makefile.distrib"
 
-SETSENV=    DESTDIR=${DESTDIR:Q} \
-            MACHINE=${MACHINE:Q} \
-            MACHINE_ARCH=${MACHINE_ARCH:Q} \
-		    AWK=${TOOL_AWK:Q} \
+SETSENV=    	DESTDIR=${DESTDIR:Q} \
+            	MACHINE=${MACHINE:Q} \
+            	MACHINE_ARCH=${MACHINE_ARCH:Q} \
+		AWK=${TOOL_AWK:Q} \
     		CKSUM=${TOOL_CKSUM:Q} \
-		    HOST_SH=${HOST_SH:Q} \
+		HOST_SH=${HOST_SH:Q} \
     		MAKE=${MAKE:Q} \
     		MKTEMP=${TOOL_MKTEMP:Q} \
     		MTREE=${TOOL_MTREE:Q} \
-            PAX=${TOOL_PAX:Q} \
+            	PAX=${TOOL_PAX:Q} \
 
 SETSCMD=	cd ${.CURDIR} && \
     		${SETSENV} \
