@@ -303,7 +303,8 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 # 	b) Removing folders that contained headers required to compile.
 distrib-dirs: .PHONY check_DESTDIR
 	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
-	cat ${NETBSDSRCDIR}/etc/dlist/bsd.dlist ${NETBSDSRCDIR}/etc/dlist/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
+	sh ${NETBSDSRCDIR}/distrib/sets/makedlist -setd ${NETBSDSRCDIR}/distrib/sets
+#	cat ${NETBSDSRCDIR}/etc/dlist/bsd.dlist ${NETBSDSRCDIR}/etc/dlist/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
 #	cat ${NETBSDSRCDIR}/etc/etc.${MACHINE}/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
 
 # release, snapshot --
