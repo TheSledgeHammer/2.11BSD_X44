@@ -3,7 +3,7 @@
 # $NetBSD: makesums,v 1.1.10.3 2000/08/20 22:30:43 toddpw Exp $
 #
 # Make checksum files for files in ``tardir''.  Usage:
-# makesums [-t tardir] [ -all ] [setname ...]
+# makesums [-tars tardir] [ -all ] [setname ...]
 #
 # If -t is omitted, RELEASEDIR must be set and not empty.
 # The ``setname'' arguments comprise a list of files to checksum,
@@ -23,22 +23,19 @@ tars=$RELEASEDIR
 dash_all=no
 
 # handle args
-while : ; do
+while :
+do
 	case $1 in
 	-all)
 		dash_all=yes
 		break
 		;;
 	-t*)	
-		tars=$2; shift
+		tars=$2;
+        shift
 		;;
 	-*)
-		cat 1>&2 <<USAGE
-Usage: $0 [-t tars] [-all] [setname ...]
-	-t tars		\$RELEASEDIR		[$tars]
-	[setname ...]	sets to checksum 	[*.tar.gz]
-	-all		do all plain files instead of [setname ...]
-USAGE
+        echo "bad option";
 		exit 1
 		;;
 	*)
@@ -58,11 +55,13 @@ pat="$*"
 if [ $dash_all = yes ]; then
 	pat='*'
 elif [ -z "$pat" ]; then
-	pat='*.tar.gz'
+	pat='*.tgz'
 fi
-lists="$(${FIND} ${pat} -prune \( -type f -o -type l \) \
-	\! -name '*SUM' \! -name MD5 \! -name SHA512 2>/dev/null)"
-if [ -n "${lists}" ]; then
-	eval ${CKSUM} -a md5  ${lists} MD5
-	eval ${CKSUM} -a sha512  ${lists} SHA512
+lists=`find $pat -prune -type f \! -name '*SUM' \! -name MD5 2>/dev/null`
+if [ -n "$lists" ]; then
+	cksum -o1 $lists > BSDSUM
+    cksum -o2 $lists > SYSVSUM
+	cksum     $lists > CKSUM
+	cksum -a md5  $lists > MD5
+    cksum -a sha512  $lists > SHA512
 fi

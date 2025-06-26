@@ -3,11 +3,12 @@
 # $NetBSD: makeflist,v 1.2.4.4 1997/11/09 21:03:17 mellon Exp $
 #
 # Print out the files in some or all lists.  Usage:
-# makeflist [-arch arch] [-setd setsdir] [setname ...]
+# makeflist [-arch arch] [-machine machine] [-setd setsdir] [setname ...]
 #
 
 # set defaults
-arch=${MACHINE:-`uname -m`}
+machine=${MACHINE:-`uname -m`}
+arch=${MACHINE_ARCH:-`uname -m`}
 setd=`pwd`
 lists="base comp etc games man misc text"
 
@@ -15,11 +16,28 @@ lists="base comp etc games man misc text"
 while :
 do
 	case $1 in
-	-arch)	arch=$2; shift;;
-	-setd)	setd=$2; shift;;
-	-both)  lists="$lists";;
-	-*)	echo "bad option"; exit 1;;
-	*)	break;;
+	-arch)	
+        arch=$2;
+        shift
+        ;;
+	-machine)	
+        machine=$2;
+        shift
+        ;;
+	-setd)	
+        setd=$2;
+        shift
+        ;;
+	-both)  
+        lists="$lists"
+        ;;
+	-*)	
+        echo "bad option";
+        exit 1
+        ;;
+	*)	
+        break
+        ;;
 	esac
 	shift
 done

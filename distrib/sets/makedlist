@@ -1,0 +1,42 @@
+#! /bin/sh
+#
+# Generate the $DESTDIR directories.
+
+# set defaults
+machine=${MACHINE:-`uname -m`}
+arch=${MACHINE_ARCH:-`uname -m`}
+setd=`pwd`
+lists="base"
+
+# handle args
+while :
+do
+	case $1 in
+	-arch)	
+        arch=$2;
+        shift
+        ;;
+	-machine)	
+        machine=$2;
+        shift
+        ;;
+	-setd)	
+        setd=$2;
+        shift
+        ;;
+	-*)	
+        echo "bad option";
+        exit 1
+        ;;
+	*)	
+        break
+        ;;
+	esac
+	shift
+done
+[ "$@" ] && lists="$@"
+
+for setname in $lists
+do
+    cat $setd/dlist/$setname.dlist $setd/dlist/$arch.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
+done

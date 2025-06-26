@@ -8,26 +8,56 @@
 #
 
 # set defaults
-arch=${MACHINE:-`uname -m`}
+machine=${MACHINE:-`uname -m`}
+arch=${MACHINE_ARCH:-`uname -m`}
 setd=`pwd`
 lists="base comp etc games man misc text"
 tars=$RELEASEDIR
 dest=$DESTDIR
+metalog=
 
 # handle args
 while :
 do
 	case $1 in
-	-arch)	arch=$2; shift;;
-	-setd)	setd=$2; shift;;
-	-dest)	dest=$2; shift;;
-	-tars)	tars=$2; shift;;
-	-both)	lists="$lists";;
-	-*)	echo "bad option"; exit 1;;
-	*)	break;;
+	-arch)	
+        arch=$2;
+        shift
+        ;;
+	-machine)	
+        machine=$2;
+        shift
+        ;;
+    -metalog)
+        metalog=$2;
+        shift
+        ;;
+	-setd)	
+        setd=$2;
+        shift
+        ;;
+	-dest)	
+        dest=$2;
+        shift
+        ;;
+	-tars)	
+        tars=$2;
+        shift
+        ;;
+	-both)	
+        lists="$lists"
+        ;;
+	-*)	
+        echo "bad option";
+        exit 1
+        ;;
+	*)	
+        break
+        ;;
 	esac
 	shift
 done
+
 [ "$@" ] && lists="$@"
 
 [ "$tars" ] || {
@@ -39,6 +69,16 @@ done
 	echo DESTDIR must be set
 	exit 1
 }
+
+if [ -n "$metalog" ]; then
+	echo "parsing $metalog"
+	(
+		cat ${DESTDIR}/etc/mtree/TwoBSD.dist
+		echo "/unset all"
+		sed -e "s,^\.$dest,.," < $metalog
+	) | ${MTREE} -D -k all -N ${DESTDIR}/etc | \
+	    sed -e 's,\(.*\) \(\..*\),\2 \1,' > $SDIR/metalog
+fi
 
 set -x
 for setname in $lists

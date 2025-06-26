@@ -1,4 +1,4 @@
-#! /bin/sh --
+#! /bin/sh
 #
 #	$NetBSD: checkflist,v 1.3.2.2 1997/11/09 21:04:16 mellon Exp $
 #
@@ -9,11 +9,67 @@
 	exit 1
 }
 
-if [ "$1" = "-both" ]; then
-	sh makeflist -both > /tmp/_CHECK.$$
-else
-	sh makeflist > /tmp/_CHECK.$$
+origin=.
+tmpname=/tmp/_CHECK.$$
+
+xargs=""
+dargs=""
+metalog=
+diffargs=""
+
+# handle args
+while :
+do
+	case $1 in
+	-both)  
+        xargs="-both";
+        shift
+        ;;
+    -metalog)
+        metalog=$2;
+        shift
+        ;;
+    -udiff)
+        diffargs="-udiff";
+        shift
+        ;;
+    -cdiff)
+        diffargs="-cdiff";
+        shift
+        ;;
+	-*)	
+        echo "bad option"; 
+        exit 1
+        ;;
+	*)	
+        break
+        ;;
+	esac
+	shift
+done
+
+if [ -n "$metalog" ]; then
+	case "$metalog" in
+	${DESTDIR}/*)
+		# Metalog would be noticed, so make sure it gets
+		# ignored.
+		metalog="./${metalog#${DESTDIR}/}"
+		;;
+	*)
+		metalog=""
+	esac
 fi
-( cd $DESTDIR ; find . \( -type d -o -type f -o -type l \) ) | sort | \
-    diff /tmp/_CHECK.$$ -
-/bin/rm -f /tmp/_CHECK.$$
+
+if [ $xargs = "-both" ]; then
+	sh makeflist $xargs > $tmpname
+else
+	sh makeflist > $tmpname
+fi
+( cd $DESTDIR ; find $origin \( -type d -o -type f -o -type l \) 
+) | (
+    while read line; do
+    		test "$metalog" = "$line" || echo $line
+	done
+)| sort | \
+    diff $diffargs $tmpname -
+/bin/rm -f $tmpname

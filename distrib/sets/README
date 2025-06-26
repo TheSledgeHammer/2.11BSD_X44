@@ -25,6 +25,10 @@ of files.
 
 the scripts should be run from the directory where they reside.
 
+makedlist: output and make the directories ready for compiling
+           the distribution, according to the contents of the 'dlist'
+           directory.            
+
 makeflist:	output the list of files that should be in a
 		distribution, according to the contents of the
 		'lists' directory.
