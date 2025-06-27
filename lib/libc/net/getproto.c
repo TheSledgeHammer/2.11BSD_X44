@@ -85,7 +85,7 @@ getprotobynumber(proto)
 	struct protoent *p;
 	int rval;
 
-	rval = getprotobynumber_r(&_pvs_proto, &_pvs_protod, proto, _pvs_protobuf, sizeof(_pvs_protobuf), &p);
+	rval = getprotobynumber_r(&_pts_proto, &_pts_protod, proto, _pts_protobuf, sizeof(_pts_protobuf), &p);
 	return ((rval == 1) ? p : NULL);
 }
 
