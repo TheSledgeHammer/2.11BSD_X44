@@ -38,9 +38,9 @@ struct hostent_data {
 
 #define _GETHTENT_R_SIZE_MAX 1024
 
-extern struct hostent_data 	_hvs_hostd;
-extern struct hostent 		_hvs_host;
-extern char 			_hvs_hostbuf[_GETHTENT_R_SIZE_MAX];
+extern struct hostent_data 	_hts_hostd;
+extern struct hostent 		_hts_host;
+extern char 			_hts_hostbuf[_GETHTENT_R_SIZE_MAX];
 
 /*
  * gethnamadr.c

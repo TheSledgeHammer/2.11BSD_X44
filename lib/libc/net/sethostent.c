@@ -102,7 +102,7 @@ sethostent(stayopen)
 	res_state statp;
 
 	statp = &_res;
-	sethostent_r(&_hvs_hostd, statp, stayopen);
+	sethostent_r(&_hts_hostd, statp, stayopen);
 }
 
 void
@@ -111,12 +111,12 @@ endhostent(void)
 	res_state statp;
 
 	statp = &_res;
-	endhostent_r(&_hvs_hostd, statp);
+	endhostent_r(&_hts_hostd, statp);
 }
 
 void
 sethostfile(name)
 	const char *name;
 {
-	sethostfile_r(&_hvs_hostd, name);
+	sethostfile_r(&_hts_hostd, name);
 }

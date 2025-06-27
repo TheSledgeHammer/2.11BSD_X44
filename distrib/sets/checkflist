@@ -22,28 +22,28 @@ while :
 do
 	case $1 in
 	-both)  
-        xargs="-both";
-        shift
-        ;;
-    -metalog)
-        metalog=$2;
-        shift
-        ;;
-    -udiff)
-        diffargs="-udiff";
-        shift
-        ;;
-    -cdiff)
-        diffargs="-cdiff";
-        shift
-        ;;
+        	xargs="-both";
+        	shift
+        	;;
+    	-metalog)
+        	metalog=$2;
+        	shift
+        	;;
+    	-udiff)
+        	diffargs="-udiff";
+        	shift
+        	;;
+    	-cdiff)
+        	diffargs="-cdiff";
+        	shift
+        	;;
 	-*)	
-        echo "bad option"; 
-        exit 1
-        ;;
+        	echo "bad option"; 
+        	exit 1
+        	;;
 	*)	
-        break
-        ;;
+        	break
+        	;;
 	esac
 	shift
 done

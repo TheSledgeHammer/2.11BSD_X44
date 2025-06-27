@@ -85,7 +85,7 @@ getnetbyname(name)
 	struct netent *p;
 	int rval;
 
-	rval = getnetbyname_r(&_nvs_net, &_nvs_netd, name, _nvs_netbuf, sizeof(_nvs_netbuf), &p);
+	rval = getnetbyname_r(&_nts_net, &_nts_netd, name, _nts_netbuf, sizeof(_nts_netbuf), &p);
 	return ((rval == 1) ? p : NULL);
 }
 

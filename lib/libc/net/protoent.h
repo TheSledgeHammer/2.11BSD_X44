@@ -43,9 +43,9 @@ struct protoent_data {
 
 #define _GETPENT_R_SIZE_MAX 	1024
 
-extern struct protoent_data 	_pvs_protod;
-extern struct protoent 			_pvs_proto;
-extern char 					_pvs_protobuf[_GETPENT_R_SIZE_MAX];
+extern struct protoent_data 	_pts_protod;
+extern struct protoent 			_pts_proto;
+extern char 					_pts_protobuf[_GETPENT_R_SIZE_MAX];
 
 int  getprotoent_r(struct protoent *, struct protoent_data *, char *, size_t, struct protoent **);
 int	 getprotobyname_r(struct protoent *, struct protoent_data *, const char *, char *, size_t, struct protoent **);

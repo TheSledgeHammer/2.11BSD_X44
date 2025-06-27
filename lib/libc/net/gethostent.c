@@ -74,6 +74,6 @@ gethostent(void)
 	struct hostent *result;
 	int rval;
 
-	rval = gethostent_r(&_hvs_host, &_hvs_hostd, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethostent_r(&_hts_host, &_hts_hostd, _hts_hostbuf, sizeof(_hts_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }

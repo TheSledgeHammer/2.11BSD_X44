@@ -135,7 +135,7 @@ __weak_alias(gethostbyname,_gethostbyname)
 #endif
 
 #ifdef _REENTRANT
-static 	mutex_t		_hvsmutex = MUTEX_INITIALIZER;
+static 	mutex_t		_htsmutex = MUTEX_INITIALIZER;
 #endif
 
 #define	MAXALIASES	35
@@ -148,9 +148,9 @@ static struct in6_addr host6_addr;		/* IPv6 */
 static char *hostaddr[MAXADDRS + 1]; 	/* h_addr_ptrs equivalent */
 static char *host_addrs[4];				/* IPv4 or IPv6 */
 
-struct hostent_data 	_hvs_hostd;
-struct hostent 			_hvs_host;
-char 					_hvs_hostbuf[_GETHTENT_R_SIZE_MAX];
+struct hostent_data 	_hts_hostd;
+struct hostent 			_hts_host;
+char 					_hts_hostbuf[_GETHTENT_R_SIZE_MAX];
 
 #if PACKETSZ > 1024
 #define	MAXPACKET	PACKETSZ
@@ -171,17 +171,17 @@ typedef union {
 extern int h_errno;
 
 static int addalias(char **, char *, struct hostent_data *);
-static int _hvs_getanswer(struct hostent *, struct hostent_data *, res_state, querybuf *, int, int, char *, size_t);
-static int _hvs_gethostbyname(struct hostent *, struct hostent_data *, res_state, querybuf *, const char *, int, char *, size_t, struct hostent **);
-static int _hvs_gethostbyaddr(struct hostent *, struct hostent_data *, res_state, querybuf *, const char *, int, int, char *, size_t, struct hostent **);
+static int _hts_getanswer(struct hostent *, struct hostent_data *, res_state, querybuf *, int, int, char *, size_t);
+static int _hts_gethostbyname(struct hostent *, struct hostent_data *, res_state, querybuf *, const char *, int, char *, size_t, struct hostent **);
+static int _hts_gethostbyaddr(struct hostent *, struct hostent_data *, res_state, querybuf *, const char *, int, int, char *, size_t, struct hostent **);
 
-static int _hvs_parsehtent(struct hostent *, struct hostent_data *, char *, size_t);
-static int _hvs_start(struct hostent_data *);
-static int _hvs_end(struct hostent_data *);
-static int _hvs_sethtent(struct hostent_data *, int);
-static int _hvs_endhtent(struct hostent_data *);
-static void _hvs_sethtfile(struct hostent_data *, const char *);
-static int _hvs_gethtent(struct hostent *, struct hostent_data *, char *, size_t, struct hostent **);
+static int _hts_parsehtent(struct hostent *, struct hostent_data *, char *, size_t);
+static int _hts_start(struct hostent_data *);
+static int _hts_end(struct hostent_data *);
+static int _hts_sethtent(struct hostent_data *, int);
+static int _hts_endhtent(struct hostent_data *);
+static void _hts_sethtfile(struct hostent_data *, const char *);
+static int _hts_gethtent(struct hostent *, struct hostent_data *, char *, size_t, struct hostent **);
 
 static int getanswer_r(struct hostent *, struct hostent_data *, res_state, querybuf *, int, int, char *, size_t, struct hostent **);
 static struct hostent *getanswer(querybuf *, int, int);
@@ -216,7 +216,7 @@ addalias(ap, bp, hostd)
 }
 
 static int
-_hvs_getanswer(host, hostd, statp, answer, anslen, iquery, buffer, buflen)
+_hts_getanswer(host, hostd, statp, answer, anslen, iquery, buffer, buflen)
 	struct hostent *host;
 	struct hostent_data *hostd;
 	res_state statp;
@@ -408,7 +408,7 @@ _hvs_getanswer(host, hostd, statp, answer, anslen, iquery, buffer, buflen)
 }
 
 static int
-_hvs_gethostbyname(host, hostd, statp, buf, name, af, buffer, buflen, result)
+_hts_gethostbyname(host, hostd, statp, buf, name, af, buffer, buflen, result)
 	struct hostent *host;
 	struct hostent_data *hostd;
 	res_state statp;
@@ -559,7 +559,7 @@ _hvs_gethostbyname(host, hostd, statp, buf, name, af, buffer, buflen, result)
 }
 
 static int
-_hvs_gethostbyaddr(host, hostd, statp, buf, addr, len, type, buffer, buflen, result)
+_hts_gethostbyaddr(host, hostd, statp, buf, addr, len, type, buffer, buflen, result)
 	struct hostent *host;
 	struct hostent_data *hostd;
 	res_state statp;
@@ -634,7 +634,7 @@ _hvs_gethostbyaddr(host, hostd, statp, buf, addr, len, type, buffer, buflen, res
 }
 
 static int
-_hvs_parsehtent(hp, hd, buffer, buflen)
+_hts_parsehtent(hp, hd, buffer, buflen)
 	struct hostent *hp;
 	struct hostent_data *hd;
 	char *buffer;
@@ -726,7 +726,7 @@ again:
 }
 
 static int
-_hvs_start(hd)
+_hts_start(hd)
 	struct hostent_data *hd;
 {
 	int rval;
@@ -742,7 +742,7 @@ _hvs_start(hd)
 }
 
 static int
-_hvs_end(hd)
+_hts_end(hd)
 	struct hostent_data *hd;
 {
 	if (hd->hostf && !hd->stayopen) {
@@ -758,24 +758,24 @@ _hvs_end(hd)
 }
 
 static int
-_hvs_sethtent(hd, stayopen)
+_hts_sethtent(hd, stayopen)
 	struct hostent_data *hd;
 	int stayopen;
 {
 	hd->stayopen |= stayopen;
-	return (_hvs_start(hd));
+	return (_hts_start(hd));
 }
 
 static int
-_hvs_endhtent(hd)
+_hts_endhtent(hd)
 	struct hostent_data *hd;
 {
 	hd->stayopen = 0;
-	return (_hvs_end(hd));
+	return (_hts_end(hd));
 }
 
 static void
-_hvs_sethtfile(hd, file)
+_hts_sethtfile(hd, file)
 	struct hostent_data *hd;
 	const char *file;
 {
@@ -786,7 +786,7 @@ _hvs_sethtfile(hd, file)
 }
 
 static int
-_hvs_gethtent(hp, hd, buffer, buflen, result)
+_hts_gethtent(hp, hd, buffer, buflen, result)
 	struct hostent *hp;
 	struct hostent_data *hd;
 	char *buffer;
@@ -795,12 +795,12 @@ _hvs_gethtent(hp, hd, buffer, buflen, result)
 {
 	int rval;
 
-	rval = _hvs_start(hd);
+	rval = _hts_start(hd);
 	if (rval != 1) {
 		return (rval);
 	}
 
-	rval = _hvs_parsehtent(hp, hd, buffer, buflen);
+	rval = _hts_parsehtent(hp, hd, buffer, buflen);
 	if (rval == 1) {
 		result = &hp;
 	}
@@ -821,7 +821,7 @@ gethostbyname_internal(hp, hd, statp, buf, name, af, buffer, buflen, result)
 {
 	int rval;
 
-	rval = _hvs_gethostbyname(hp, hd, statp, buf, name, af, buffer, buflen, result);
+	rval = _hts_gethostbyname(hp, hd, statp, buf, name, af, buffer, buflen, result);
 	if (rval == 1) {
 		result = &hp;
 	}
@@ -842,7 +842,7 @@ gethostbyaddr_internal(hp, hd, statp, buf, addr, len, type, buffer, buflen, resu
 {
 	int rval;
 
-	rval = _hvs_gethostbyaddr(hp, hd, statp, buf, addr, len, type, buffer, buflen, result);
+	rval = _hts_gethostbyaddr(hp, hd, statp, buf, addr, len, type, buffer, buflen, result);
 	if (rval == 1) {
 		result = &hp;
 	}
@@ -863,7 +863,7 @@ getanswer_r(hp, hd, statp, answer, anslen, iquery, buffer, buflen, result)
 {
 	int rval;
 
-	rval = _hvs_getanswer(hp, hd, statp, answer, anslen, iquery, buffer, buflen);
+	rval = _hts_getanswer(hp, hd, statp, answer, anslen, iquery, buffer, buflen);
 	if (rval == 1) {
 		result = &hp;
 	}
@@ -884,7 +884,7 @@ getanswer(answer, anslen, iquery)
 	if (statp == NULL) {
 		return (0);
 	}
-	rval = getanswer_r(&_hvs_host, &_hvs_hostd, statp, answer, anslen, iquery, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = getanswer_r(&_hts_host, &_hts_hostd, statp, answer, anslen, iquery, _hts_hostbuf, sizeof(_hts_hostbuf), &result);
 	__res_put_state(statp);
 	return ((rval == 1) ? result : NULL);
 }
@@ -925,7 +925,7 @@ gethostbyname2(name, af)
 	struct hostent *result;
 	int rval;
 
-	rval = gethostbyname2_r(&_hvs_host, &_hvs_hostd, name, af, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethostbyname2_r(&_hts_host, &_hts_hostd, name, af, _hts_hostbuf, sizeof(_hts_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }
 
@@ -963,7 +963,7 @@ gethostbyname(name)
 	struct hostent *result;
 	int rval;
 
-	rval = gethostbyname_r(&_hvs_host, &_hvs_hostd, name, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethostbyname_r(&_hts_host, &_hts_hostd, name, _hts_hostbuf, sizeof(_hts_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }
 
@@ -1000,7 +1000,7 @@ gethostbyaddr(addr, len, type)
 	struct hostent *result;
 	int rval;
 
-	rval = gethostbyaddr_r(&_hvs_host, &_hvs_hostd, addr, len, type, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethostbyaddr_r(&_hts_host, &_hts_hostd, addr, len, type, _hts_hostbuf, sizeof(_hts_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }
 
@@ -1014,9 +1014,9 @@ gethtent_r(host, hostd, buffer, buflen, result)
 {
 	int rval;
 
-	mutex_lock(&_hvsmutex);
-	rval = _hvs_gethtent(host, hostd, buffer, buflen, result);
-	mutex_unlock(&_hvsmutex);
+	mutex_lock(&_htsmutex);
+	rval = _hts_gethtent(host, hostd, buffer, buflen, result);
+	mutex_unlock(&_htsmutex);
 	return (rval);
 }
 
@@ -1026,7 +1026,7 @@ gethtent(void)
 	struct hostent *result;
 	int rval;
 
-	rval = gethtent_r(&_hvs_host, &_hvs_hostd, _hvs_hostbuf, sizeof(_hvs_hostbuf), &result);
+	rval = gethtent_r(&_hts_host, &_hts_hostd, _hts_hostbuf, sizeof(_hts_hostbuf), &result);
 	return ((rval == 1) ? result : NULL);
 }
 
@@ -1035,18 +1035,18 @@ sethtent_r(f, hostd)
 	int f;
 	struct hostent_data *hostd;
 {
-	mutex_lock(&_hvsmutex);
-	(void)_hvs_sethtent(hostd, f);
-	mutex_unlock(&_hvsmutex);
+	mutex_lock(&_htsmutex);
+	(void)_hts_sethtent(hostd, f);
+	mutex_unlock(&_htsmutex);
 }
 
 void
 endhtent_r(hostd)
 	struct hostent_data *hostd;
 {
-	mutex_lock(&_hvsmutex);
-	(void)_hvs_endhtent(hostd);
-	mutex_unlock(&_hvsmutex);
+	mutex_lock(&_htsmutex);
+	(void)_hts_endhtent(hostd);
+	mutex_unlock(&_htsmutex);
 }
 
 void
@@ -1054,27 +1054,27 @@ sethtfile_r(name, hostd)
 	const char *name;
 	struct hostent_data *hostd;
 {
-	_hvs_sethtfile(hostd, name);
+	_hts_sethtfile(hostd, name);
 }
 
 void
 sethtent(f)
 	int f;
 {
-	sethtent_r(f, &_hvs_hostd);
+	sethtent_r(f, &_hts_hostd);
 }
 
 void
 endhtent(void)
 {
-	endhtent_r(&_hvs_hostd);
+	endhtent_r(&_hts_hostd);
 }
 
 void
 sethtfile(name)
 	const char *name;
 {
-	sethtfile_r(name, &_hvs_hostd);
+	sethtfile_r(name, &_hts_hostd);
 }
 
 int
@@ -1134,7 +1134,7 @@ gethtbyname(name)
 	struct hostent *p;
 	int rval;
 
-	rval = gethtbyname_r(&_hvs_host, &_hvs_hostd, name, _hvs_hostbuf, sizeof(_hvs_hostbuf), &p);
+	rval = gethtbyname_r(&_hts_host, &_hts_hostd, name, _hts_hostbuf, sizeof(_hts_hostbuf), &p);
 	return ((rval == 1) ? p : NULL);
 }
 
@@ -1146,7 +1146,7 @@ gethtbyaddr(addr, len, type)
 	struct hostent *p;
 	int rval;
 
-	rval = gethtbyaddr_r(&_hvs_host, &_hvs_hostd, addr, len, type, _hvs_hostbuf, sizeof(_hvs_hostbuf), &p);
+	rval = gethtbyaddr_r(&_hts_host, &_hts_hostd, addr, len, type, _hts_hostbuf, sizeof(_hts_hostbuf), &p);
 	return ((rval == 1) ? p : NULL);
 }
 

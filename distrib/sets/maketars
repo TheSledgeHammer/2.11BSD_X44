@@ -21,39 +21,39 @@ while :
 do
 	case $1 in
 	-arch)	
-        arch=$2;
-        shift
-        ;;
+        	arch=$2;
+        	shift
+        	;;
 	-machine)	
-        machine=$2;
-        shift
-        ;;
-    -metalog)
-        metalog=$2;
-        shift
-        ;;
+        	machine=$2;
+        	shift
+        	;;
+    	-metalog)
+        	metalog=$2;
+        	shift
+        	;;
 	-setd)	
-        setd=$2;
-        shift
-        ;;
+        	setd=$2;
+        	shift
+        	;;
 	-dest)	
-        dest=$2;
-        shift
-        ;;
+        	dest=$2;
+        	shift
+        	;;
 	-tars)	
-        tars=$2;
-        shift
-        ;;
+        	tars=$2;
+        	shift
+        	;;
 	-both)	
-        lists="$lists"
-        ;;
+        	lists="$lists"
+        	;;
 	-*)	
-        echo "bad option";
-        exit 1
-        ;;
+        	echo "bad option";
+        	exit 1
+        	;;
 	*)	
-        break
-        ;;
+        	break
+        	;;
 	esac
 	shift
 done

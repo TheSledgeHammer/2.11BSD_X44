@@ -40,9 +40,9 @@ struct netent_data {
 
 #define _GETNENT_R_SIZE_MAX 1024
 
-extern struct netent_data 	_nvs_netd;
-extern struct netent 		_nvs_net;
-extern char 			_nvs_netbuf[_GETNENT_R_SIZE_MAX];
+extern struct netent_data 	_nts_netd;
+extern struct netent 		_nts_net;
+extern char 			_nts_netbuf[_GETNENT_R_SIZE_MAX];
 
 int getnetent_r(struct netent *, struct netent_data *, char *, size_t, struct netent **);
 void setnetent_r(int, struct netent_data *);

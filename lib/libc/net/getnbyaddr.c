@@ -79,7 +79,7 @@ getnetbyaddr(net, type)
 	struct netent *p;
 	int rval;
 
-	rval = getnetbyaddr_r(&_nvs_net, &_nvs_netd, net, type, _nvs_netbuf, sizeof(_nvs_netbuf), &p);
+	rval = getnetbyaddr_r(&_nts_net, &_nts_netd, net, type, _nts_netbuf, sizeof(_nts_netbuf), &p);
 	return ((rval == 1) ? p : NULL);
 }
 

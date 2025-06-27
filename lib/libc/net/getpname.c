@@ -93,7 +93,7 @@ getprotobyname(name)
 	struct protoent *p;
 	int rval;
 
-	rval = getprotobyname_r(&_pvs_proto, &_pvs_protod, name, _pvs_protobuf, sizeof(_pvs_protobuf), &p);
+	rval = getprotobyname_r(&_pts_proto, &_pts_protod, name, _pts_protobuf, sizeof(_pts_protobuf), &p);
 	return ((rval == 1) ? p : NULL);
 }
 

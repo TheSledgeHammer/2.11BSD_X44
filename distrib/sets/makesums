@@ -32,10 +32,10 @@ do
 		;;
 	-t*)	
 		tars=$2;
-        shift
+        	shift
 		;;
 	-*)
-        echo "bad option";
+        	echo "bad option";
 		exit 1
 		;;
 	*)
@@ -60,8 +60,8 @@ fi
 lists=`find $pat -prune -type f \! -name '*SUM' \! -name MD5 2>/dev/null`
 if [ -n "$lists" ]; then
 	cksum -o1 $lists > BSDSUM
-    cksum -o2 $lists > SYSVSUM
+    	cksum -o2 $lists > SYSVSUM
 	cksum     $lists > CKSUM
 	cksum -a md5  $lists > MD5
-    cksum -a sha512  $lists > SHA512
+    	cksum -a sha512  $lists > SHA512
 fi

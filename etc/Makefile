@@ -286,7 +286,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 			/dev/null ${DESTDIR}${file}; \
 	else true; fi
 .endfor
-.for subdir in . defaults dlist mtree namedb rc.d root skel ssh
+.for subdir in . defaults mtree namedb rc.d root skel ssh
 	${MAKEDIRTARGET} ${subdir} configinstall
 .endfor
 .if (${MKPF} != "no")
@@ -311,8 +311,8 @@ distrib-dirs: .PHONY check_DESTDIR
 #	Build a full distribution including kernels & install media.
 #
 release snapshot: .PHONY .MAKE check_DESTDIR check_RELEASEDIR snap_md_post
-	sh ${NETBSDSRCDIR}/distrib/sets/maketars -s ${NETBSDSRCDIR}/distrib/sets \
-		-d ${DESTDIR} -t ${RELEASEDIR}/binary/sets
+	sh ${NETBSDSRCDIR}/distrib/sets/maketars -setd ${NETBSDSRCDIR}/distrib/sets \
+		-dest ${DESTDIR} -tars ${RELEASEDIR}/binary/sets
 	${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/sets
 	${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/kernel '*.gz'
 
@@ -348,7 +348,7 @@ snap_md_post: .PHONY check_DESTDIR check_RELEASEDIR snap_post
 #	(empty -- look in the machine-dependent Makefile.inc)
 
 
-SUBDIR=	defaults periodic rc.d mtree dlist
+SUBDIR=	defaults periodic rc.d mtree
 
 .include <bsd.prog.mk>
 .include <bsd.subdir.mk>
