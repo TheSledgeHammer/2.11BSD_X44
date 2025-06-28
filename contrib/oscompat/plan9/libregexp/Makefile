@@ -27,9 +27,12 @@ CFILES=\
 	rregexec.c\
 	rregsub.c\
 
+HFILES=\
+	regexp9.h
+	
 SRCS= ${CFILES}
 
-INCS+=    regexp9.h
+INCS+=    ${HFILES}
 INCSDIR=  /usr/include
 
 .include <bsd.lib.mk>

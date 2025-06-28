@@ -5,6 +5,7 @@
  *
  *	@(#)mtab.h	5.1 (Berkeley) 5/30/85
  */
+
 #ifndef _MTAB_H_
 #define _MTAB_H_
 

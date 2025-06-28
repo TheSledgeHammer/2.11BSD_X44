@@ -36,10 +36,13 @@ CFILES=\
 	bread.c\
 	bseek.c\
 	bwrite.c\
+	
+HFILES=\
+	bio.h
 
 SRCS= ${CFILES}
 
-INCS+=    bio.h
+INCS+=    ${HFILES}
 INCSDIR=  /usr/include
 
 .include <bsd.lib.mk>

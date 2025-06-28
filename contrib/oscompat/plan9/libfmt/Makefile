@@ -58,10 +58,13 @@ CFILES=\
 	vseprint.c\
 	vsmprint.c\
 	vsnprint.c\
+	
+HFILES=\
+	fmt.h
 
 SRCS= ${CFILES} ${NUM} ${NAN}
 
-INCS+=    fmt.h
+INCS+=    ${HFILES}
 INCSDIR=  /usr/include
 
 .include <bsd.lib.mk>

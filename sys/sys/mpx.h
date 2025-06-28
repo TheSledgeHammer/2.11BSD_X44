@@ -58,7 +58,7 @@ struct mpx {
 };
 
 /*
- * mpx options for mpx syscalls
+ * cmd options for mpx syscalls
  * - create, destroy, put, remove, get
  */
 enum mpx_cmdops {

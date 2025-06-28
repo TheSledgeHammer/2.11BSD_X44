@@ -6,3 +6,5 @@
 #include <stddef.h>
 
 #include <lib9.h>
+
+#define	exits(x) exit(x && *x ? 1 : 0)

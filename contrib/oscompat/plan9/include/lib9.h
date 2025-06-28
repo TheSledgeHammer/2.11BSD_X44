@@ -31,20 +31,6 @@ extern "C" {
 #endif
 
 /*
-#include <inttypes.h>
-
-#include <utf.h>
-#include <fmt.h>
-
-#include <fcntl.h>
-#include <setjmp.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stddef.h>
-*/
-
-/*
  * compiler directive on Plan 9
  */
 #ifndef USED
@@ -101,10 +87,6 @@ typedef s8int 		    int8;
 #define	OCEXEC 		0
 #define	ORCLOSE		0
 #define	OTRUNC		0
-
-#define seek(fd, offset, whence) lseek(fd, offset, whence)
-#define create(name, mode, perm) creat(name, perm)
-#define	exits(x)		 exit(x && *x ? 1 : 0)
 
 #if defined(__cplusplus)
 }

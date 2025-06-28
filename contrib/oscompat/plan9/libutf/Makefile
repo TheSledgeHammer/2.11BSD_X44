@@ -36,9 +36,13 @@ CFILES=\
 	utfrune.c\
 	utfutf.c\
 
+HFILES=\
+	lib9.h\
+	utf.h
+	
 SRCS= ${CFILES}
 
-INCS+=    lib9.h utf.h
+INCS+=    ${HFILES}
 INCSDIR=  /usr/include
 
 .include <bsd.lib.mk>
