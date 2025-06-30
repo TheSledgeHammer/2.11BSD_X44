@@ -51,4 +51,6 @@ ftpd.o ftpcmd.o: version.h
 #
 #.endif
 
+COPTS.ftpd.c+=		${GCC_NO_STRINGOP_TRUNCATION} ${GCC_NO_FORMAT_TRUNCATION}
+
 .include <bsd.prog.mk>
