@@ -127,7 +127,6 @@ int main(int argc, char *argv[])
 	char nextch;
 	char *format;
 	int ch;
-	int error;
 
 #if !defined(SHELL) && !defined(BUILTIN)
 	(void)setlocale (LC_ALL, "");
