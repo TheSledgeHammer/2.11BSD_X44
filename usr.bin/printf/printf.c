@@ -127,6 +127,7 @@ int main(int argc, char *argv[])
 	char nextch;
 	char *format;
 	int ch;
+	int error;
 
 #if !defined(SHELL) && !defined(BUILTIN)
 	(void)setlocale (LC_ALL, "");
@@ -452,6 +453,7 @@ conv_escape(char *str, char *conv_ch)
 static char *
 conv_expand(const char *str)
 {
+	static char no_memory[] = "<no memory>";
 	static char *conv_str;
 	char *cp;
 	int ch;
@@ -461,10 +463,10 @@ conv_expand(const char *str)
 	/* get a buffer that is definitely large enough.... */
 	conv_str = malloc(4 * strlen(str) + 1);
 	if (!conv_str)
-		return "<no memory>";
+		return no_memory;
 	cp = conv_str;
 
-	while ((ch = *(unsigned char *)str++)) {
+	while ((ch = *(const char *)str++)) {
 		switch (ch) {
 		/* Use C escapes for expected control characters */
 		case '\\':	ch = '\\';	break;	/* backslash */
@@ -541,8 +543,10 @@ getchr(void)
 static char *
 getstr(void)
 {
+	static char empty[] = "";
+
 	if (!*gargv)
-		return ("");
+		return (empty);
 	return (*gargv++);
 }
 
