@@ -38,13 +38,17 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1980, 1990, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)df.c	8.9 (Berkeley) 5/8/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,14 +64,14 @@ static char sccsid[] = "@(#)df.c	8.9 (Berkeley) 5/8/95";
 #include <string.h>
 #include <unistd.h>
 
-int	  checkvfsname __P((const char *, char **));
-char	**makevfslist __P((char *));
-long	  regetmntinfo __P((struct statfs **, long, char **));
-int	  bread __P((off_t, void *, int));
-char	 *getmntpt __P((char *));
-void	  prtstat __P((struct statfs *, int));
-void	  ufs_df __P((char *, int));
-void	  usage __P((void));
+int	  checkvfsname(const char *, char **);
+char	**makevfslist(char *);
+long	  regetmntinfo(struct statfs **, long, char **);
+int	  bread(off_t, void *, int);
+char	 *getmntpt(char *);
+void	  prtstat(struct statfs *, int);
+void	  ufs_df(char *, int);
+void	  usage(void);
 
 int	iflag, nflag;
 struct	ufs_args mdev;

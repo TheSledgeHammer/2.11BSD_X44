@@ -33,13 +33,17 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1987, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)ln.c	8.2 (Berkeley) 3/31/94";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>

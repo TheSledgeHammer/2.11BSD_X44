@@ -34,13 +34,17 @@
  */
 #include <sys/cdefs.h>
 #if defined(DOSCCS) & !defined(lint)
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1988, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #if defined(DOSCCS) & !defined(lint)
+#if 0
 static char sccsid[] = "@(#)hostname.c	8.1.1 (R.Birch) 8/2/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>

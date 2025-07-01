@@ -33,7 +33,9 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)fmt.c	8.5 (Berkeley) 4/27/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>

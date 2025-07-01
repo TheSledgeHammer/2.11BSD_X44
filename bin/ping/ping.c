@@ -35,11 +35,13 @@
  */
 
 #if	!defined(lint) && defined(DOSCCS)
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1989, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
 
 static char sccsid[] = "@(#)ping.c	8.1.2 (2.11BSD) 1996/1/18";
+#endif
 #endif /* not lint */
 
 /*

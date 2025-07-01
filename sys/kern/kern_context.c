@@ -54,7 +54,7 @@ proc_getucontext(p, ucp)
 	ucp->uc_flags = 0;
 	ucp->uc_link = p->p_ctxlink;
 
-	(void)sigprocmask(p, 0, NULL, &ucp->uc_sigmask);
+	(void)sigprocmask(0, NULL, &ucp->uc_sigmask);
 	ucp->uc_flags |= _UC_SIGMASK;
 
 	/*
@@ -88,7 +88,7 @@ proc_setucontext(p, ucp)
 	p->p_ctxlink = ucp->uc_link;
 
 	if ((ucp->uc_flags & _UC_SIGMASK) != 0) {
-		sigprocmask(p, SIG_SETMASK, &ucp->uc_sigmask, NULL);
+		sigprocmask(SIG_SETMASK, &ucp->uc_sigmask, NULL);
 	}
 
 	/*
@@ -136,27 +136,3 @@ setcontext()
 	}
 	return (EJUSTRETURN);
 }
-
-/*
-void
-thread_getucontext(td, ucp)
-	struct thread *td;
-	ucontext_t *ucp;
-{
-	struct proc *p;
-
-	p = td->td_procp;
-	proc_getucontext(p, ucp);
-}
-
-void
-thread_setucontext(td, ucp)
-	struct thread *td;
-	ucontext_t *ucp;
-{
-	struct proc *p;
-
-	p = td->td_procp;
-	proc_setucontext(p, ucp);
-}
-*/

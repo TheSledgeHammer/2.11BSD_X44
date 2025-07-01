@@ -12,7 +12,9 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 __RCSID("$NetBSD: test.c,v 1.43 2018/09/13 22:00:58 kre Exp $");
+#endif
 #endif
 
 #include <sys/stat.h>

@@ -33,13 +33,17 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1983, 1992, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)mkdir.c	8.2 (Berkeley) 1/25/94";
+#endif
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -52,8 +56,8 @@ static char sccsid[] = "@(#)mkdir.c	8.2 (Berkeley) 1/25/94";
 #include <string.h>
 #include <unistd.h>
 
-int	build __P((char *));
-void	usage __P((void));
+int	build(char *);
+void usage(void);
 
 int
 main(argc, argv)
