@@ -2,7 +2,8 @@
 #	from: @(#)Makefile	8.1 (Berkeley) 6/6/93
 
 PROG=	printf
-WFORMAT=1		# hopeless!
-WARNS=	2
+WARNS=	3
+
+COPTS.printf.c = -Wno-format-nonliteral
 
 .include <bsd.prog.mk>

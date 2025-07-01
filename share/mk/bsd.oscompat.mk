@@ -11,7 +11,7 @@ MKDRAGONFLYBSD=	no
 MKFREEBSD=		  no
 MKNETBSD=		    yes
 MKOPENBSD=		  no
-MKPLAN9= 		    no
+MKPLAN9= 		    yes
 MKLINUX=		    no
 MKSOLARIS=		  no	
 
