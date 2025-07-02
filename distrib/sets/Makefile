@@ -160,7 +160,7 @@ maketarsetup: .EXEC
 	${MAKE} checkflist
 .endif
 	mkdir -p ${TARDIR}
-	for i in BSDSUM CKSUM MD5 SYSVSUM; do \
+	for i in BSDSUM CKSUM MD5 SYSVSUM SHA512; do \
 		rm -f ${TARDIR}/$$i ${TARDIR}/$$i.tmp; \
 	done
 
@@ -178,14 +178,14 @@ do-${tar}: .PHONY
 
 makesums: .PRECIOUS .PHONY check_RELEASEDIR .WAIT \
 		${MAKETARSETS:@.TARS.@do-sum-${.TARS.}@}
-	for i in BSDSUM CKSUM MD5 SYSVSUM; do \
+	for i in BSDSUM CKSUM MD5 SYSVSUM SHA512; do \
 		mv ${TARDIR}/$$i.tmp ${TARDIR}/$$i; \
 	done
 
 .for tar in ${MAKETARSETS}
 do-sum-${tar}: .PHONY do-${tar}
 	${MAKESUMS} -t ${TARDIR} ${tar}.tgz
-	for i in BSDSUM CKSUM MD5 SYSVSUM; do \
+	for i in BSDSUM CKSUM MD5 SYSVSUM SHA512; do \
 		${TOOL_CAT} ${TARDIR}/$$i >> ${TARDIR}/$$i.tmp; \
 	done
 .endfor
