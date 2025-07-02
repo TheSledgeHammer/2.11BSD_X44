@@ -266,24 +266,24 @@ extern const int sys_nerr;			/* perror(3) external variables */
 extern const char *sys_errlist[];
 #endif
 void 	perror(const char *);
-int	 	printf(const char * __restrict, ...);
+int	 	printf(const char * __restrict, ...) __printflike(1, 2);
 int	 	putc(int, FILE *);
 int	 	putchar(int);
 int	 	puts(const char *);
 int	 	remove(const char *);
 int	 	rename(const char *, const char *);
 void 	rewind(FILE *);
-int	 	scanf(const char * __restrict, ...);
+int	 	scanf(const char * __restrict, ...) __scanflike(1, 2);
 void	setbuf(FILE * __restrict, char * __restrict);
 int	    setvbuf(FILE * __restrict, char * __restrict, int, size_t);
-int	    sscanf(const char * __restrict, const char * __restrict, ...);
-int	    sprintf(char * __restrict, const char * __restrict, ...);
+int	    sscanf(const char * __restrict, const char * __restrict, ...) __scanflike(2, 3);
+int	    sprintf(char * __restrict, const char * __restrict, ...) __printflike(2, 3);
 FILE 	*tmpfile(void);
 char 	*tmpnam(char *);
 int	 	ungetc(int, FILE *);
-int	 	vfprintf(FILE * __restrict, const char * __restrict, __va_list);
-int	 	vprintf(const char * __restrict, __va_list);
-int	 	vsprintf(char * __restrict, const char * __restrict, __va_list);
+int	 	vfprintf(FILE * __restrict, const char * __restrict, __va_list) __printflike(2, 0);
+int	 	vprintf(const char * __restrict, __va_list) __printflike(1, 0);
+int	 	vsprintf(char * __restrict, const char * __restrict, __va_list) __printflike(2, 0);
 __END_DECLS
 
 /*
@@ -337,7 +337,7 @@ __END_DECLS
 #define	FPARSELN_UNESCALL	0x0f
 
 __BEGIN_DECLS
-int	    asprintf(char ** __restrict, const char * __restrict, ...);
+int	    asprintf(char ** __restrict, const char * __restrict, ...) __printflike(2, 3);
 char	*fgetln(FILE * __restrict, size_t * __restrict);
 char	*fparseln(FILE *, size_t *, size_t *, const char[3], int);
 int	 	fpurge(FILE *);
@@ -348,12 +348,12 @@ int	 	putw(int, FILE *);
 void	setbuffer(FILE *, char *, int);
 int	 	setlinebuf(FILE *);
 char	*tempnam(const char *, const char *);
-int	    snprintf(char * __restrict, size_t, const char * __restrict, ...);
-int	    vsnprintf(char * __restrict, size_t, const char * __restrict, __va_list);
-int	    vasprintf(char ** __restrict, const char * __restrict, __va_list);
-int		vfscanf(FILE * __restrict, const char * __restrict, __va_list);
-int	    vscanf(const char * __restrict, __va_list);
-int	    vsscanf(const char * __restrict, const char * __restrict, __va_list);
+int	    snprintf(char * __restrict, size_t, const char * __restrict, ...) __printflike(3, 4);
+int	    vsnprintf(char * __restrict, size_t, const char * __restrict, __va_list);// __printflike(3, 0);
+int	    vasprintf(char ** __restrict, const char * __restrict, __va_list); //__printflike(2, 0);
+int		vfscanf(FILE * __restrict, const char * __restrict, __va_list) __scanflike(2, 0);
+int	    vscanf(const char * __restrict, __va_list) __scanflike(1, 0);
+int	    vsscanf(const char * __restrict, const char * __restrict, __va_list) __scanflike(2, 0);
 __END_DECLS
 
 /*
