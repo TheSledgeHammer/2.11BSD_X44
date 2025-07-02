@@ -134,7 +134,7 @@ static char		wildabbr[] = WILDABBR;
 ** The ISO C 1999 and POSIX 1003.1-2004 standards prohibit padding the year,
 ** but many implementations pad anyway; most likely the standards are buggy.
 */
-#define ASCTIME_FMT	"%.3s %.3s%3d %2.2d:%2.2d:%2.2d %-4s\n"
+#define ASCTIME_FMT	"%.3s %.3s%3d %2.2d:%2.2d:%2.2d %-4d\n"
                       
 /*
 ** For years that are more than four digits we put extra spaces before the year
@@ -142,7 +142,7 @@ static char		wildabbr[] = WILDABBR;
 ** a digit within a year and truncating the year (operating on the assumption
 ** that no output is better than wrong output).
 */
-#define ASCTIME_FMT_B	"%.3s %.3s%3d %2.2d:%2.2d:%2.2d     %s\n"
+#define ASCTIME_FMT_B	"%.3s %.3s%3d %2.2d:%2.2d:%2.2d     %d\n"
 
 #define STD_ASCTIME_BUF_SIZE	26
 /*
