@@ -473,7 +473,7 @@ _hts_gethostbyname(host, hostd, statp, buf, name, af, buffer, buflen, result)
 				 * Fake up a hostent as if we'd actually
 				 * done a lookup.
 				 */
-				if (inet_pton(type, name, host_addrs) <= 0) {
+				if (inet_pton(af, name, host_addrs) <= 0) {
 					h_errno = HOST_NOT_FOUND;
 					return (0);
 				}
@@ -481,7 +481,7 @@ _hts_gethostbyname(host, hostd, statp, buf, name, af, buffer, buflen, result)
 				host->h_name = __UNCONST(name);
 				host->h_aliases = hostd->aliases;
 				hostd->aliases[0] = NULL;
-				switch (type) {
+				switch (af) {
 				case AF_INET:
 					hostaddr[0] = (char *)&host_addr;
 					hostaddr[1] = (char *)NULL;
@@ -516,7 +516,7 @@ _hts_gethostbyname(host, hostd, statp, buf, name, af, buffer, buflen, result)
 				 * Fake up a hostent as if we'd actually
 				 * done a lookup.
 				 */
-				if (inet_pton(type, name, host_addrs) <= 0) {
+				if (inet_pton(af, name, host_addrs) <= 0) {
 					h_errno = HOST_NOT_FOUND;
 					return (0);
 				}
@@ -524,7 +524,7 @@ _hts_gethostbyname(host, hostd, statp, buf, name, af, buffer, buflen, result)
 				host->h_name = __UNCONST(name);
 				host->h_aliases = hostd->aliases;
 				hostd->aliases[0] = NULL;
-				switch (type) {
+				switch (af) {
 				case AF_INET:
 					hostaddr[0] = (char *)&host_addr;
 					hostaddr[1] = (char *)NULL;
