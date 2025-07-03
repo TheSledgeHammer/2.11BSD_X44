@@ -369,8 +369,6 @@ escape(char *fmt)
 			--fmt;
 			*store = value;
 			break;
-
-
 		default:
 			*store = *fmt;
 			break;
