@@ -34,8 +34,14 @@
 #include <sys/fnv_hash.h>
 #include <sys/malloc.h>
 #include <sys/null.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+
+#include <net/route.h>
 
 #include <tpi_pcb.h>
+#include <tpi_protosw.h>
 
 /* Transport Generic Network Hash */
 /* fnv-1a Hash Algorithm is a placeholder */
@@ -80,6 +86,19 @@ tpi_pcballoc(struct socket *so, void *v, int af)
 	return (0);
 }
 
+tpi_tselinuse()
+{
+	struct tpipcbtable *table;
+	struct tpipcb *tpp;
+
+	//for (tpp = CIRCLEQ_FIRST(&table->tppt_queue); tpp != )
+	CIRCLEQ_FOREACH(&tpp->tpp_head, &table->tppt_queue, tpph_queue) {
+		if (tpp != CIRCLEQ_NEXT(&tpp->tpp_head, tpph_queue)) {
+			tpt =
+		}
+	}
+}
+
 int
 tpi_pcbbind()
 {
@@ -93,26 +112,138 @@ tpi_pcbconnect()
 }
 
 int
-tpi_pcbdisconnect()
+tpi_set_npcb(struct tpipcb *tpp)
+{
+	struct socket *so;
+	int error;
+
+	so = tpp->tpp_socket;
+	if (tpp->tpp_tpproto && tpp->tpp_npcb) {
+		short so_state = so->so_state;
+		so->so_state &= ~SS_NOFDREF;
+		tpp->tpp_tpproto->tpi_pcbdetach(tpp->tpp_npcb);
+		so->so_state = so_state;
+	}
+	tpp->tpp_tpproto = &tpi_protosw[tpp->tpp_netservice];
+	/* xx_pcballoc sets so_pcb */
+	error = tpp->tpp_tpproto->tpi_pcballoc(so, tpp->tpp_tpproto->tpi_pcblist);
+	tpp->tpp_npcb = so->so_pcb;
+	so->so_pcb = (caddr_t)tpp;
+	return (error);
+}
+
+union tpi_addr_union zeroin_addr;
+
+void
+tpi_pcbdisconnect(struct tpipcb *tpp, int which, int af)
+{
+	if (tpp->tpp_af != af) {
+		return;
+	}
+
+	switch (which) {
+	case TPI_LOCAL:
+		tpp->tpp_laddr = zeroin_addr;
+		tpp->tpp_lport = 0;
+		break;
+	case TPI_FOREIGN:
+		tpp->tpp_faddr = zeroin_addr;
+		tpp->tpp_fport = 0;
+		break;
+	}
+	tpi_pcbstate(tpp, TPI_BOUND, which, af);
+	// tpproto ipsec pcbdisconn??
+	if (tpp->tpp_socket->so_state & SS_NOFDREF) {
+		tpi_pcbdetach(tpp, which, af);
+	}
+}
+
+void
+tpi_pcbdetach(struct tpipcb *tpp, int which, int af)
+{
+	struct socket *so;
+	int s;
+
+	so = tpp->tpp_socket;
+	if (tpp->tpp_af != af) {
+		return;
+	}
+	// tpproto detach pcbpolicy??
+	so->so_pcb = 0;
+	sofree(so);
+	// tpproto pcbdetach??
+	s = splnet();
+	switch (which) {
+	case TPI_LOCAL:
+		tpi_local_remove(&tpp->tpp_table, tpp->tpp_laddr, tpp->tpp_lport);
+		break;
+	case TPI_FOREIGN:
+		tpi_foreign_remove(&tpp->tpp_table, tpp->tpp_faddr, tpp->tpp_fport);
+		break;
+	}
+	CIRCLEQ_REMOVE(&tpp->tpp_table->tppt_queue, &tpp->tpp_head, tpph_queue);
+	splx(s);
+	FREE(tpp, M_PCB);
+}
+
+void
+tpi_setusockaddr(struct tpipcb *tpp, union tpi_sockaddr_union *tsu, void *addr, uint16_t port, int which)
+{
+	switch (which) {
+	case TPI_LOCAL:
+		struct tpi_local *tpl;
+
+		tpl = &tpp->tpp_local;
+		if (tpl != NULL) {
+			tpi_local_set_lsockaddr(tpl, tsu, addr, port);
+		}
+		break;
+	case TPI_FOREIGN:
+		struct tpi_foreign *tpf;
+
+		tpf = &tpp->tpp_foreign;
+		if (tpf != NULL) {
+			tpi_foreign_set_fsockaddr(tpf, tsu, addr, port);
+		}
+		break;
+	}
+}
+
+union tpi_sockaddr_union *
+tpi_getusockaddr(struct tpipcbtable *table, void *addr, uint16_t port, int which)
+{
+	union tpi_sockaddr_union *tsu;
+
+	switch (which) {
+	case TPI_LOCAL:
+		struct tpi_local   *tpl;
+
+		tpl = tpi_local_lookup(table, addr, port);
+		if (tpl != NULL) {
+			tsu = &tpl->tpl_lsockaddr;
+		}
+		break;
+	case TPI_FOREIGN:
+		struct tpi_foreign *tpf;
+
+		tpf = tpi_foreign_lookup(table, addr, port);
+		if (tpf != NULL) {
+			tsu = &tpf->tpf_fsockaddr;
+		}
+		break;
+	}
+	return (tsu);
+}
+
+void
+tpi_setpeeraddr(struct mbuf *nam)
 {
 
 }
 
-void
-tpi_pcbdetach()
-{
-
-}
 
 void
-tpi_setsockaddr()
-{
-	tpi_local_set_lsockaddr();
-	tpi_foreign_set_fsockaddr();
-}
-
-void
-tpi_setpeeraddr()
+tpi_setsockaddr(void *pcb, struct mbuf *nam)
 {
 
 }
@@ -120,6 +251,7 @@ tpi_setpeeraddr()
 int
 tpi_pcbnotify()
 {
+	struct tpipcbhead *head;
 
 }
 
@@ -142,15 +274,47 @@ tpi_pcbpurgeif0()
 }
 
 void
-tpi_losing()
+tpi_losing(struct tpipcb *tpp, int af)
 {
+	struct rtentry *rt;
+	struct rt_addrinfo info;
 
+	if (tpp->tpp_af != af) {
+		return;
+	}
+
+	if ((rt = tpp->tpp_route.ro_rt)) {
+		tpp->tpp_route.ro_rt = 0;
+		bzero((caddr_t)&info, sizeof(info));
+		info.rti_info[RTAX_DST] = &tpp->tpp_route.ro_dst;
+		info.rti_info[RTAX_GATEWAY] = rt->rt_gateway;
+		info.rti_info[RTAX_NETMASK] = rt_mask(rt);
+		rt_missmsg(RTM_LOSING, &info, rt->rt_flags, 0);
+		if (rt->rt_flags & RTF_DYNAMIC) {
+			(void) rtrequest(RTM_DELETE, rt_key(rt),
+				rt->rt_gateway, rt_mask(rt), rt->rt_flags,
+				(struct rtentry **)0);
+		} else {
+			/*
+			 * A new route can be allocated
+			 * the next time output is attempted.
+			 */
+			rtfree(rt);
+		}
+	}
 }
 
 void
-tpi_rtchange()
+tpi_rtchange(struct tpipcb *tpp, int af)
 {
+	if (tpp->tpp_af != af) {
+		return;
+	}
 
+	if (tpp->tpp_route.ro_rt) {
+		rtfree(tpp->tpp_route.ro_rt);
+		tpp->tpp_route.ro_rt = 0;
+	}
 }
 
 struct tpipcb *
@@ -160,9 +324,48 @@ tpi_pcblookup()
 }
 
 void
-tpi_pcbstate()
+tpi_pcbstate(struct tpipcb *tpp, int state, int which, int af)
 {
+	if (tpp->tpp_af != af) {
+		return;
+	}
 
+	if (tpp->tpp_state > TPI_ATTACHED) {
+		switch (state) {
+		case TPI_BOUND: {
+			switch (which) {
+			case TPI_LOCAL:
+				tpi_local_remove(&tpp->tpp_table, tpp->tpp_laddr, tpp->tpp_lport);
+				break;
+			case TPI_FOREIGN:
+				tpi_foreign_remove(&tpp->tpp_table, tpp->tpp_faddr, tpp->tpp_fport);
+				break;
+			}
+			break;
+		case TPI_CONNECTED:
+			tpi_local_remove(&tpp->tpp_table, tpp->tpp_laddr, tpp->tpp_lport);
+			tpi_foreign_remove(&tpp->tpp_table, tpp->tpp_faddr, tpp->tpp_fport);
+			break;
+		}
+	}
+
+	switch (state) {
+	case TPI_BOUND:
+		switch (which) {
+		case TPI_LOCAL:
+			tpi_local_insert(&tpp->tpp_table, tpp->tpp_laddr, tpp->tpp_lport);
+			break;
+		case TPI_FOREIGN:
+			tpi_foreign_insert(&tpp->tpp_table, tpp->tpp_faddr, tpp->tpp_fport);
+			break;
+		}
+		break;
+	case TPI_CONNECTED:
+		tpi_local_insert(&tpp->tpp_table, tpp->tpp_laddr, tpp->tpp_lport);
+		tpi_foreign_insert(&tpp->tpp_table, tpp->tpp_faddr, tpp->tpp_fport);
+		break;
+	}
+	tpp->tpp_state = state;
 }
 
 struct rtentry *

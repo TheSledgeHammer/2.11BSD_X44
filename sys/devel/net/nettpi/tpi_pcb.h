@@ -45,6 +45,19 @@
 
 #include <sys/queue.h>
 
+struct tp_ref {
+	struct tpipcb 	*tpr_pcb;	/* back ptr to PCB */
+};
+
+/* PER system stuff (one static structure instead of a bunch of names) */
+struct tp_refinfo {
+	struct tp_ref	*tpr_base;
+	int				tpr_size;
+	int				tpr_maxopen;
+	int				tpr_numopen;
+};
+
+
 /* sockaddr union structure */
 union tpi_sockaddr_union {
 	struct sockaddr_in 			tsu_sin4;	/* ipv4 */
@@ -126,12 +139,29 @@ struct tpipcb {
 	caddr_t				tpp_npcb;		/* to lower layer pcb */
 	struct tpi_protosw	*tpp_tpproto;	/* lower-layer dependent routines */
 	struct rtentry		**tpp_routep;	/* obtain mtu; inside npcb */
+
+	struct route 		tpp_route;
 };
 
+/* flags for which */
 #define TPI_LOCAL 		0x01
 #define TPI_FOREIGN 	0x02
 
+#define TPI_ATTACHED	0
+#define TPI_BOUND		1
+#define TPI_CONNECTED	2
 
+/* Transport Interface */
 uint32_t tpi_pcbnethash(void *, uint16_t);
+void tpi_setusockaddr(struct tpipcb *, union tpi_sockaddr_union *, void *, uint16_t, int);
+union tpi_sockaddr_union *tpi_getusockaddr(struct tpipcbtable *, void *, uint16_t, int);
+
+/* Transport Local */
+void tpi_local_set_lsockaddr(struct tpi_local *, void *, void *, uint16_t);
+void *tpi_local_get_lsockaddr(struct tpi_local *);
+
+/* Transport Foreign */
+void tpi_foreign_set_fsockaddr(struct tpi_foreign *, void *, void *, uint16_t);
+void *tpi_foreign_get_fsockaddr(struct tpi_foreign *);
 
 #endif /* _NETTPI_TPI_PCB_H_ */

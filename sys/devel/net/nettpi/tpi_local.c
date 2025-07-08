@@ -34,6 +34,8 @@
 #include <sys/malloc.h>
 #include <sys/null.h>
 
+#include <sys/socket.h>
+
 #include <tpi_pcb.h>
 
 /* Local Hash Table */
@@ -100,9 +102,11 @@ tpi_local_compare(struct tpi_local *tpl_a, struct tpi_local *tpl_b)
 }
 
 void
-tpi_local_set_lsockaddr(struct tpi_local *tpl, void *lsockaddr)
+tpi_local_set_lsockaddr(struct tpi_local *tpl, void *lsockaddr, void *laddr, uint16_t lport)
 {
 	tpl->tpl_lsockaddr = lsockaddr;
+	tpl->tpl_lport = lport;
+	tpl->tpl_laddr = laddr;
 }
 
 void *

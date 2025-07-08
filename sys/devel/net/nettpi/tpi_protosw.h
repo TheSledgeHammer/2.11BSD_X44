@@ -93,4 +93,5 @@ struct tpi_protosw {
 	caddr_t	tpi_pcblist;			/* list of xx_pcb's for connections */
 };
 
+extern struct tpi_protosw *tpi_protosw;
 #endif /* _NETTPI_TPI_PROTOSW_H_ */

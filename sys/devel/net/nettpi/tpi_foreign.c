@@ -100,9 +100,11 @@ tpi_foreign_compare(struct tpi_foreign *tpf_a, struct tpi_foreign *tpf_b)
 }
 
 void
-tpi_foreign_set_fsockaddr(struct tpi_foreign *tpf, void *fsockaddr)
+tpi_foreign_set_fsockaddr(struct tpi_foreign *tpf, void *fsockaddr, void *faddr, uint16_t fport)
 {
 	tpf->tpf_fsockaddr = fsockaddr;
+	tpf->tpf_fport = fport;
+	tpf->tpf_faddr = faddr;
 }
 
 void *
