@@ -113,8 +113,8 @@ struct sockaddr_ns {
 	u_char			sns_family;
 	struct ns_addr	sns_addr;
 	char			sns_zero[2];
+#define sns_port 	sns_addr.x_port
 };
-#define sns_port sns_addr.x_port
 
 #define ns_neteqnn(a,b) (((a).s_net[0]==(b).s_net[0]) && \
 					((a).s_net[1]==(b).s_net[1]))
