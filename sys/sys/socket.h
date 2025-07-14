@@ -88,12 +88,12 @@
 #include <sys/ansi.h>
 #ifndef sa_family_t
 typedef __sa_family_t	sa_family_t;
-#define sa_family_t		__sa_family_t
+#define sa_family_t	__sa_family_t
 #endif
 
 #ifndef socklen_t
-typedef __socklen_t		socklen_t;
-#define socklen_t		__socklen_t
+typedef __socklen_t	socklen_t;
+#define socklen_t	__socklen_t
 #endif
 
 #include <machine/ansi.h>
@@ -117,22 +117,22 @@ typedef	_BSD_SSIZE_T_	ssize_t;
 #define	SOCK_DGRAM		2		/* datagram socket */
 #define	SOCK_RAW		3		/* raw-protocol interface */
 #define	SOCK_RDM		4		/* reliably-delivered message */
-#define	SOCK_SEQPACKET	5		/* sequenced packet stream */
+#define	SOCK_SEQPACKET		5		/* sequenced packet stream */
 
 /*
  * Option flags per-socket.
  */
 #define	SO_DEBUG		0x0001		/* turn on debugging info recording */
-#define	SO_ACCEPTCONN	0x0002		/* socket has had listen() */
-#define	SO_REUSEADDR	0x0004		/* allow local address reuse */
-#define	SO_KEEPALIVE	0x0008		/* keep connections alive */
-#define	SO_DONTROUTE	0x0010		/* just use interface addresses */
-#define	SO_BROADCAST	0x0020		/* permit sending of broadcast msgs */
-#define	SO_USELOOPBACK	0x0040		/* bypass hardware when possible */
+#define	SO_ACCEPTCONN		0x0002		/* socket has had listen() */
+#define	SO_REUSEADDR		0x0004		/* allow local address reuse */
+#define	SO_KEEPALIVE		0x0008		/* keep connections alive */
+#define	SO_DONTROUTE		0x0010		/* just use interface addresses */
+#define	SO_BROADCAST		0x0020		/* permit sending of broadcast msgs */
+#define	SO_USELOOPBACK		0x0040		/* bypass hardware when possible */
 #define	SO_LINGER		0x0080		/* linger on close if data present */
-#define	SO_OOBINLINE	0x0100		/* leave received OOB data in line */
-#define	SO_REUSEPORT	0x0200		/* allow local address & port reuse */
-#define	SO_TIMESTAMP	0x2000		/* timestamp received dgram traffic */
+#define	SO_OOBINLINE		0x0100		/* leave received OOB data in line */
+#define	SO_REUSEPORT		0x0200		/* allow local address & port reuse */
+#define	SO_TIMESTAMP		0x2000		/* timestamp received dgram traffic */
 
 /*
  * Additional options, not kept in so_options.
@@ -162,36 +162,38 @@ struct	linger {
 /*
  * Address families.
  */
-#define	AF_UNSPEC			0		/* unspecified */
-#define	AF_UNIX				1		/* local to host (pipes, portals) */
-#define	AF_LOCAL			AF_UNIX		/* draft POSIX compatibility */
-#define	AF_INET				2		/* internetwork: UDP, TCP, etc. */
-#define	AF_IMPLINK			3		/* arpanet imp addresses */
-#define	AF_PUP				4		/* pup protocols: e.g. BSP */
-#define	AF_CHAOS			5		/* mit CHAOS protocols */
-#define	AF_NS				6		/* XEROX NS protocols */
-#define	AF_ISO				7		/* ISO protocols */
-#define	AF_OSI				AF_ISO
-#define	AF_NBS				8		/* nbs protocols */
-#define	AF_ECMA				9		/* european computer manufacturers */
-#define	AF_DATAKIT			10		/* datakit protocols */
-#define	AF_CCITT			11		/* CCITT protocols, X.25 etc */
-#define	AF_SNA				12		/* IBM SNA */
-#define AF_DECnet			13		/* DECnet */
-#define AF_DLI				14		/* Direct data link interface */
-#define AF_LAT				15		/* LAT */
-#define	AF_HYLINK			16		/* NSC Hyperchannel */
+#define	AF_UNSPEC		0		/* unspecified */
+#define	AF_UNIX			1		/* local to host (pipes, portals) */
+#define	AF_LOCAL		AF_UNIX		/* draft POSIX compatibility */
+#define	AF_INET			2		/* internetwork: UDP, TCP, etc. */
+#define	AF_IMPLINK		3		/* arpanet imp addresses */
+#define	AF_PUP			4		/* pup protocols: e.g. BSP */
+#define	AF_CHAOS		5		/* mit CHAOS protocols */
+#define	AF_NS			6		/* XEROX NS protocols */
+#define	AF_ISO			7		/* ISO protocols */
+#define	AF_OSI			AF_ISO
+#define	AF_NBS			8		/* nbs protocols */
+#define	AF_ECMA			9		/* european computer manufacturers */
+#define	AF_DATAKIT		10		/* datakit protocols */
+#define	AF_CCITT		11		/* CCITT protocols, X.25 etc */
+#define	AF_SNA			12		/* IBM SNA */
+#define AF_DECnet		13		/* DECnet */
+#define AF_DLI			14		/* Direct data link interface */
+#define AF_LAT			15		/* LAT */
+#define	AF_HYLINK		16		/* NSC Hyperchannel */
 #define	AF_APPLETALK		17		/* Apple Talk */
 #define	AF_ROUTE	        18		/* Internal Routing Protocol */
-#define	AF_LINK		        19		/* Link layer interface */
-#define	AF_INET6			20		/* IP version 6 */
-#define AF_ARP				21		/* (rev.) addr. res. prot. (RFC 826) */
-#define pseudo_AF_KEY		22		/* Internal key management protocol  */
-#define	pseudo_AF_HDRCMPLT 	23		/* Used by BPF to not rewrite hdrs
-					          	  	  in interface output routine */
-#define	AF_MPLS				24		/* MultiProtocol Label Switching */
+#define	AF_IPX			19		/* Novell Internet Protocol */
+#define	AF_LINK		        20		/* Link layer interface */
+#define	AF_INET6		21		/* IP version 6 */
+#define AF_NATM			22		/* native ATM access */
+#define AF_ARP			23		/* (rev.) addr. res. prot. (RFC 826) */
+#define pseudo_AF_KEY		24		/* Internal key management protocol  */
+#define	pseudo_AF_HDRCMPLT 	25		/* Used by BPF to not rewrite hdrs
+				         	  	  in interface output routine */
+#define	AF_MPLS			26		/* MultiProtocol Label Switching */
 
-#define	AF_MAX				25
+#define	AF_MAX			26
 
 /*
  * Structure used by kernel to store most
@@ -216,15 +218,15 @@ struct sockproto {
  * RFC 2553: protocol-independent placeholder for socket addresses
  */
 #define _SS_MAXSIZE		128
-#define _SS_ALIGNSIZE	(sizeof(__int64_t))
-#define _SS_PAD1SIZE	(_SS_ALIGNSIZE - 2)
-#define _SS_PAD2SIZE	(_SS_MAXSIZE - 2 - _SS_PAD1SIZE - _SS_ALIGNSIZE)
+#define _SS_ALIGNSIZE		(sizeof(__int64_t))
+#define _SS_PAD1SIZE		(_SS_ALIGNSIZE - 2)
+#define _SS_PAD2SIZE		(_SS_MAXSIZE - 2 - _SS_PAD1SIZE - _SS_ALIGNSIZE)
 
 struct sockaddr_storage {
 	__uint8_t		ss_len;		/* address length */
 	sa_family_t		ss_family;	/* address family */
 	char			__ss_pad1[_SS_PAD1SIZE];
-	__int64_t   	__ss_align;/* force desired structure storage alignment */
+	__int64_t   		__ss_align;	/* force desired structure storage alignment */
 	char			__ss_pad2[_SS_PAD2SIZE];
 };
 
@@ -249,12 +251,14 @@ struct sockaddr_storage {
 #define PF_DLI			AF_DLI
 #define PF_LAT			AF_LAT
 #define	PF_HYLINK		AF_HYLINK
-#define	PF_APPLETALK	AF_APPLETALK
+#define	PF_APPLETALK		AF_APPLETALK
 #define	PF_ROUTE		AF_ROUTE
+#define	PF_IPX 			AF_IPX
 #define	PF_LINK			AF_LINK
 #define	PF_INET6		AF_INET6
+#define PF_NATM 		AF_NATM
 #define PF_ARP			AF_ARP
-#define PF_KEY 		    pseudo_AF_KEY	/* like PF_ROUTE, only for key mgmt */
+#define PF_KEY 		    	pseudo_AF_KEY	/* like PF_ROUTE, only for key mgmt */
 #define	PF_MPLS			AF_MPLS
 #define	PF_MAX			AF_MAX
 
