@@ -175,8 +175,23 @@ struct tpipcb {
 
 /* Transport Interface */
 uint32_t tpi_pcbnethash(void *, uint16_t);
+void tpi_pcbinit(struct tpipcbtable *, int);
+int tpi_pcballoc(struct socket *, void *, int);
+int tpi_tselinuse(struct tpipcbtable *, struct tpipcb *, u_short, char *, struct sockaddr_iso *, int);
+
+int tpi_pcbbind(void *, struct mbuf *, struct proc *);
+int tpi_pcbconnect(void *, struct mbuf *, int, int);
+void tpi_pcbdisconnect(void *, int, int);
+void tpi_pcbdetach(void *, int, int);
 void tpi_setusockaddr(struct tpipcb *, union tpi_sockaddr_union *, void *, uint16_t, int);
 union tpi_sockaddr_union *tpi_getusockaddr(struct tpipcbtable *, void *, uint16_t, int);
+
+struct tpipcb *tpi_pcblookup(struct tpipcbtable *, void *, uint16_t, int, int);
+struct tpipcb *tpi_pcblookup_connect(struct tpipcbtable *, void *, u_int16_t, void *, u_int16_t, int, int);
+struct tpipcb *tpi_pcblookup_bind(struct tpipcbtable *, void *, u_int16_t, int);
+void tpi_pcbstate(struct tpipcb *, int, int, int);
+int tpi_pcbisvalid(void *, void *, u_int16_t, void *, u_int16_t, int, int);
+int tpi_pcbisvalid_sockaddr(union tpi_sockaddr_union *, void *, int);
 
 /* Transport Local */
 struct tpipcbhead *tpi_local_hash(struct tpipcbtable *, void *, uint16_t);

@@ -131,6 +131,7 @@ tpi_tselinuse(struct tpipcbtable *table, struct tpipcb *tpcb, u_short tlen, char
 int
 tpi_attach(struct socket *so, void *v, int af, int protocol)
 {
+	struct tpipcb *tpp;
 	int error;
 
 	if (so->so_pcb != NULL) {
@@ -138,12 +139,29 @@ tpi_attach(struct socket *so, void *v, int af, int protocol)
 	}
 
 	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
-
+		error = soreserve(so, tpi_sendspace, tpi_recvspace);
 	}
-
-	if ((error = tpi_pcballoc(so, v, af))) {
-
+	if (error) {
+		goto bad2;
 	}
+	error = tpi_pcballoc(so, v, af);
+	if (error != 0) {
+		goto bad3;
+	}
+	tpp = v;
+	tpp->tpp_lref = lref;
+	tpp->tpp_socket =  so;
+	tpp->tpp_domain = dom;
+	tpp->tpp_rhiwat = so->so_rcv.sb_hiwat;
+
+	if (dom == AF_INET ) {
+		sotoinpcb(so)->inp_ppcb = (caddr_t) tpcb;
+	}
+bad3:
+	free((caddr_t)tpp, M_PCB); /* never a cluster  */
+bad2:
+	so->so_pcb = NULL;
+	return (error);
 }
 
 void
@@ -164,7 +182,7 @@ tpi_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 	int error;
 
 	tpp = v;
-	table = tpp->tpp_table;
+	table = &tpp->tpp_table;
 	tlen = 0;
 	wrapped = 0;
 	if (nam) {
@@ -237,26 +255,73 @@ tpi_pcbconnect(void *v, struct mbuf *nam, int which, int af)
 
 	tpp = v;
 	tsu = &tpi_sockaddr;
-
+	if (tpp->tpp_af != af) {
+		return (EINVAL);
+	}
 	switch (af) {
 	case AF_INET:
 		tsu->tsu_sin4 = mtod(nam, struct sockaddr_in);
+		if (nam->m_len != sizeof(tsu->tsu_sin4)) {
+			return (EINVAL);
+		}
+		if (tsu->tsu_sin4.sin_family != AF_INET) {
+			return (EAFNOSUPPORT);
+		}
+		if (tsu->tsu_sin4.sin_port == 0) {
+			return (EADDRNOTAVAIL);
+		}
 		tpi_setusockaddr(tpp, tsu, tsu->tsu_sin4.sin_addr, tsu->tsu_sin4.sin_port, which);
 		break;
 	case AF_INET6:
 		tsu->tsu_sin6 = mtod(nam, struct sockaddr_in6);
+		if (nam->m_len != sizeof(tsu->tsu_sin6)) {
+			return (EINVAL);
+		}
+		if (tsu->tsu_sin6.sin6_family != AF_INET6) {
+			return (EAFNOSUPPORT);
+		}
+		if (tsu->tsu_sin6.sin6_port == 0) {
+			return (EADDRNOTAVAIL);
+		}
 		tpi_setusockaddr(tpp, tsu, tsu->tsu_sin6.sin6_addr, tsu->tsu_sin6.sin6_port, which);
 		break;
 	case AF_ISO:
 		tsu->tsu_siso = mtod(nam, struct sockaddr_iso);
+		if (nam->m_len != sizeof(tsu->tsu_siso)) {
+			return (EINVAL);
+		}
+		if (tsu->tsu_siso.siso_family != AF_ISO) {
+			return (EAFNOSUPPORT);
+		}
+		if (tsu->tsu_siso.siso_len == 0) {
+			return (EADDRNOTAVAIL);
+		}
 		tpi_setusockaddr(tpp, tsu, tsu->tsu_siso.siso_addr, tsu->tsu_siso.siso_len, which); /* port not correct variable */
 		break;
 	case AF_NS:
 		tsu->tsu_sns = mtod(nam, struct sockaddr_ns);
+		if (nam->m_len != sizeof(tsu->tsu_sns)) {
+			return (EINVAL);
+		}
+		if (tsu->tsu_sns.sns_family != AF_NS) {
+			return (EAFNOSUPPORT);
+		}
+		if (tsu->tsu_sns.sns_port == 0) {
+			return (EADDRNOTAVAIL);
+		}
 		tpi_setusockaddr(tpp, tsu, tsu->tsu_sns.sns_addr, tsu->tsu_sns.sns_port, which);
 		break;
 	case AF_CCITT:
 		tsu->tsu_sx25 = mtod(nam, struct sockaddr_x25);
+		if (nam->m_len != sizeof(tsu->tsu_sx25)) {
+			return (EINVAL);
+		}
+		if (tsu->tsu_sx25.x25_family != AF_CCITT) {
+			return (EAFNOSUPPORT);
+		}
+		if (tsu->tsu_sx25.x25_len == 0) {
+			return (EADDRNOTAVAIL);
+		}
 		tpi_setusockaddr(tpp, tsu, tsu->tsu_sx25.x25_addr, tsu->tsu_sx25.x25_len, which);  /* port not correct variable */
 		break;
 /* Others: Not implemented */
@@ -269,13 +334,21 @@ tpi_pcbconnect(void *v, struct mbuf *nam, int which, int af)
 	case AF_IPX:
 		break;
 	}
-	return (0);
+	tpi_pcbstate(tpp, TPI_CONNECTED, which, af);
+	if (tpp->tpp_socket->so_type == SOCK_STREAM) {
+		(tpp->tpp_tpproto->tpi_secconn)(tpp->tpp_npcb);
+	}
+	return ((tpp->tpp_tpproto->tpi_pcbconn)(tpp->tpp_npcb, nam));
 }
 
 void
-tpi_pcbdisconnect(struct tpipcb *tpp, int which, int af)
+tpi_pcbdisconnect(void *v, int which, int af)
 {
+	struct tpipcb *tpp;
+
+	tpp = v;
 	if (tpp->tpp_af != af) {
+
 		return;
 	}
 
@@ -296,11 +369,13 @@ tpi_pcbdisconnect(struct tpipcb *tpp, int which, int af)
 }
 
 void
-tpi_pcbdetach(struct tpipcb *tpp, int which, int af)
+tpi_pcbdetach(void *v, int which, int af)
 {
+	struct tpipcb *tpp;
 	struct socket *so;
 	int s;
 
+	tpp = v;
 	so = tpp->tpp_socket;
 	if (tpp->tpp_af != af) {
 		return;
@@ -378,82 +453,13 @@ tpi_getusockaddr(struct tpipcbtable *table, void *addr, uint16_t port, int which
 void
 tpi_setpeeraddr(struct mbuf *nam)
 {
-
+	tpi_pcbconnect();
 }
 
 void
 tpi_setsockaddr(void *pcb, struct mbuf *nam)
 {
 
-}
-
-int
-tpi_pcbnotify()
-{
-	struct tpipcbhead *head;
-
-}
-
-void
-tpi_pcbnotifyall()
-{
-
-}
-
-void
-tpi_pcbpurgeif()
-{
-
-}
-
-void
-tpi_pcbpurgeif0()
-{
-
-}
-
-void
-tpi_losing(struct tpipcb *tpp, int af)
-{
-	struct rtentry *rt;
-	struct rt_addrinfo info;
-
-	if (tpp->tpp_af != af) {
-		return;
-	}
-
-	if ((rt = tpp->tpp_route.ro_rt)) {
-		tpp->tpp_route.ro_rt = 0;
-		bzero((caddr_t)&info, sizeof(info));
-		info.rti_info[RTAX_DST] = &tpp->tpp_route.ro_dst;
-		info.rti_info[RTAX_GATEWAY] = rt->rt_gateway;
-		info.rti_info[RTAX_NETMASK] = rt_mask(rt);
-		rt_missmsg(RTM_LOSING, &info, rt->rt_flags, 0);
-		if (rt->rt_flags & RTF_DYNAMIC) {
-			(void) rtrequest(RTM_DELETE, rt_key(rt),
-				rt->rt_gateway, rt_mask(rt), rt->rt_flags,
-				(struct rtentry **)0);
-		} else {
-			/*
-			 * A new route can be allocated
-			 * the next time output is attempted.
-			 */
-			rtfree(rt);
-		}
-	}
-}
-
-void
-tpi_rtchange(struct tpipcb *tpp, int af)
-{
-	if (tpp->tpp_af != af) {
-		return;
-	}
-
-	if (tpp->tpp_route.ro_rt) {
-		rtfree(tpp->tpp_route.ro_rt);
-		tpp->tpp_route.ro_rt = 0;
-	}
 }
 
 struct tpipcb *
@@ -505,6 +511,34 @@ out:
 	return (tpp);
 }
 
+struct tpipcb *
+tpi_pcblookup_connect(struct tpipcbtable *table, void *faddr_arg, u_int16_t fport_arg, void *laddr_arg, u_int16_t lport_arg, int which, int af)
+{
+	struct tpipcb *tpp;
+	void *laddr, *faddr;
+	u_int16_t lport, fport;
+
+	faddr = faddr_arg;
+	fport = fport_arg;
+	laddr = laddr_arg;
+	lport = lport_arg;
+	switch (which) {
+	case TPI_LOCAL:
+		tpp = tpi_pcblookup(table, laddr, lport, TPI_LOCAL, af);
+		break;
+	case TPI_FOREIGN:
+		tpp = tpi_pcblookup(table, faddr, fport, TPI_FOREIGN, af);
+		break;
+	}
+	return (tpp);
+}
+
+struct tpipcb *
+tpi_pcblookup_bind(struct tpipcbtable *table, void *laddr, u_int16_t lport, int af)
+{
+	return (tpi_pcblookup(table, laddr, lport, TPI_LOCAL, af));
+}
+
 void
 tpi_pcbstate(struct tpipcb *tpp, int state, int which, int af)
 {
@@ -524,6 +558,7 @@ tpi_pcbstate(struct tpipcb *tpp, int state, int which, int af)
 				break;
 			}
 			break;
+		}
 		case TPI_CONNECTED:
 			tpi_local_remove(&tpp->tpp_table, tpp->tpp_laddr, tpp->tpp_lport);
 			tpi_foreign_remove(&tpp->tpp_table, tpp->tpp_faddr, tpp->tpp_fport);
@@ -532,7 +567,7 @@ tpi_pcbstate(struct tpipcb *tpp, int state, int which, int af)
 	}
 
 	switch (state) {
-	case TPI_BOUND:
+	case TPI_BOUND: {
 		switch (which) {
 		case TPI_LOCAL:
 			tpi_local_insert(&tpp->tpp_table, tpp->tpp_laddr, tpp->tpp_lport);
@@ -542,6 +577,7 @@ tpi_pcbstate(struct tpipcb *tpp, int state, int which, int af)
 			break;
 		}
 		break;
+	}
 	case TPI_CONNECTED:
 		tpi_local_insert(&tpp->tpp_table, tpp->tpp_laddr, tpp->tpp_lport);
 		tpi_foreign_insert(&tpp->tpp_table, tpp->tpp_faddr, tpp->tpp_fport);
@@ -550,8 +586,176 @@ tpi_pcbstate(struct tpipcb *tpp, int state, int which, int af)
 	tpp->tpp_state = state;
 }
 
-struct rtentry *
-tpi_pcbrtentry()
+int
+tpi_pcbisvalid(void *pcb, void *faddr_arg, u_int16_t fport_arg, void *laddr_arg, u_int16_t lport_arg, int which, int af)
 {
+	struct tpipcb *tpp;
+	struct tpipcbtable *table;
+	union tpi_sockaddr_union *tsu;
+	void *laddr, *faddr;
+	u_int16_t lport, fport;
+	int error;
 
+	faddr = faddr_arg;
+	fport = fport_arg;
+	laddr = laddr_arg;
+	lport = lport_arg;
+
+	tpp = pcb;
+	table = &tpp->tpp_table;
+	switch (which) {
+	case TPI_LOCAL:
+		if (tpp != NULL) {
+			if (tpp->tpp_af != af) {
+				error = 1;
+				break;
+			}
+			if (laddr == tpp->tpp_laddr && lport == tpp->tpp_lport) {
+				tsu = tpi_getusockaddr(table, tpp->tpp_laddr, tpp->tpp_lport, TPI_LOCAL);
+			} else {
+				tsu = tpi_getusockaddr(table, laddr, lport, TPI_LOCAL);
+			}
+			if (tsu != NULL) {
+				if (tsu == &tpp->tpp_local.tpl_lsockaddr) {
+					error = 0;
+					break;
+				}
+			}
+		}
+		error = -1;
+		break;
+
+	case TPI_FOREIGN:
+		if (tpp != NULL) {
+			if (tpp->tpp_af != af) {
+				error = 1;
+				break;
+			}
+			if (faddr == tpp->tpp_faddr && fport == tpp->tpp_fport) {
+				tsu = tpi_getusockaddr(table, tpp->tpp_faddr, tpp->tpp_fport, TPI_FOREIGN);
+			} else {
+				tsu = tpi_getusockaddr(table, faddr, fport, TPI_FOREIGN);
+			}
+			if (tsu != NULL) {
+				if (tsu == &tpp->tpp_foreign.tpf_fsockaddr) {
+					error = 0;
+					break;
+				}
+			}
+
+		}
+		error = 1;
+		break;
+	}
+	return (error);
+}
+
+int
+tpi_pcbisvalid_sockaddr(union tpi_sockaddr_union *tsu, void *sockaddr, int af)
+{
+	int error;
+
+	if (tsu == NULL || sockaddr == NULL) {
+		return (1);
+	}
+
+	switch (af) {
+	case AF_INET:
+		struct sockaddr_in *sin4 = &tsu->tsu_sin4;
+		if (sockaddr == sin4) {
+			error = 0;
+		} else {
+			error = 1;
+		}
+		break;
+	case AF_INET6:
+		struct sockaddr_in6 *sin6 = &tsu->tsu_sin6;
+		if (sockaddr == sin6) {
+			error = 0;
+		} else {
+			error = 1;
+		}
+		break;
+	case AF_ISO:
+		struct sockaddr_iso *siso = &tsu->tsu_siso;
+		if (sockaddr == siso) {
+			error = 0;
+		} else {
+			error = 1;
+		}
+		break;
+	case AF_NS:
+		struct sockaddr_ns *sns = &tsu->tsu_sns;
+		if (sockaddr == sns) {
+			error = 0;
+		} else {
+			error = 1;
+		}
+		break;
+	case AF_CCITT:
+		struct sockaddr_x25 *sx25 = &tsu->tsu_sx25;
+		if (sockaddr == sx25) {
+			error = 0;
+		} else {
+			error = 1;
+		}
+		break;
+
+	/* Others: Not implemented */
+	case AF_APPLETALK:
+		break;
+	case AF_SNA:
+		break;
+	case AF_NATM:
+		break;
+	case AF_IPX:
+		break;
+	}
+	return (error);
+}
+
+void
+tpi_getsufx(void *v, u_short *lenp, caddr_t data_out, int which, int af)
+{
+	struct tpipcbtable *table;
+	struct tpipcb *tpp;
+	union tpi_sockaddr_union *tsu;
+	void *laddr, *faddr;
+	u_int16_t lport, fport;
+
+	tpp = v;
+	table = &tpp->tpp_table;
+	if (tpp->tpp_af != af) {
+		return;
+	}
+
+	*lenp = sizeof(u_short);
+	switch (which) {
+	case TPI_LOCAL:
+		tsu = tpi_getusockaddr(table, tpp->tpp_laddr, tpp->tpp_lport, TPI_LOCAL);
+		if (tsu == NULL || &tpp->tpp_local.tpl_lsockaddr == NULL) {
+			data_out = NULL;
+			break;
+		} else {
+			if (tsu == &tpp->tpp_local.tpl_lsockaddr) {
+				laddr = tpp->tpp_laddr;
+				lport = tpp->tpp_lport;
+			}
+		}
+		*(u_short *)data_out = lport;
+		break;
+	case TPI_FOREIGN:
+		tsu = tpi_getusockaddr(table, tpp->tpp_faddr, tpp->tpp_fport, TPI_FOREIGN);
+		if (tsu == NULL || &tpp->tpp_foreign.tpf_fsockaddr == NULL) {
+			data_out = NULL;
+			break;
+		} else {
+			if (tsu == &tpp->tpp_foreign.tpf_fsockaddr) {
+				faddr = tpp->tpp_faddr;
+				fport = tpp->tpp_fport;
+			}
+		}
+		*(u_short *)data_out = fport;
+		break;
+	}
 }
