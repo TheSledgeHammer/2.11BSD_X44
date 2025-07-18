@@ -58,6 +58,7 @@ static char sccsid[] = "@(#)date.c	8.2 (Berkeley) 4/28/95";
 #include <err.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -79,7 +80,7 @@ static void badformat(void);
 static void usage(void);
 
 int
-main(int argc, char argv[])
+main(int argc, char *argv[])
 {
 	struct timezone tz;
 	int ch, Rflag, rflag;
