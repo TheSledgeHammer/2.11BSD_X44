@@ -73,25 +73,11 @@ tpi_pcballoc(struct socket *so, void *v, int af)
 	int s, error;
 
 	table = v;
-	MALLOC(tpp, struct tpipcb *, sizeof(*tpp), M_PCB, M_WAITOK);
-	if (tpp == NULL) {
-		return (ENOBUFS);
+	error = tpi_set_npcb(&tpp, so, af);
+	if (error != 0) {
+		return (error);
 	}
-	bzero((caddr_t)tpp, sizeof(*tpp));
-	tpp->tpp_af = af;
 	tpp->tpp_table = table;
-	tpp->tpp_socket = so;
-	if (tpp->tpp_tpproto && tpp->tpp_npcb) {
-		short so_state = so->so_state;
-		so->so_state &= ~SS_NOFDREF;
-		(tpp->tpp_tpproto->tpi_pcbdetach)(tpp->tpp_npcb);
-		so->so_state = so_state;
-	}
-	tpp->tpp_tpproto = &tpi_protosw[tpp->tpp_netservice];
-	/* xx_pcballoc sets so_pcb */
-	error = (tpp->tpp_tpproto->tpi_pcballoc)(so, tpp->tpp_tpproto->tpi_pcblist);
-	tpp->tpp_npcb = so->so_pcb;
-	so->so_pcb = tpp;
 	s = splnet();
 	CIRCLEQ_INSERT_HEAD(&table->tppt_queue, &tpp->tpp_head, tpph_queue);
 	tpi_local_insert(table, tpp->tpp_laddr, tpp->tpp_lport);
@@ -129,6 +115,38 @@ tpi_tselinuse(struct tpipcbtable *table, struct tpipcb *tpcb, u_short tlen, char
 }
 
 int
+tpi_set_npcb(struct tpipcb **tpcb, struct socket *so, int af)
+{
+	struct tpipcb *tpp;
+	int error;
+
+	MALLOC(tpp, struct tpipcb *, sizeof(*tpp), M_PCB, M_WAITOK);
+	if (tpp == NULL) {
+		return (ENOBUFS);
+	}
+	bzero((caddr_t)tpp, sizeof(*tpp));
+	tpp->tpp_af = af;
+	tpp->tpp_socket = so;
+	if (tpp->tpp_tpproto && tpp->tpp_npcb) {
+		short so_state = so->so_state;
+		so->so_state &= ~SS_NOFDREF;
+		(tpp->tpp_tpproto->tpi_pcbdetach)(tpp->tpp_npcb);
+		so->so_state = so_state;
+	}
+	tpp->tpp_tpproto = &tpi_protosw[tpp->tpp_netservice];
+	/* xx_pcballoc sets so_pcb */
+	error = (tpp->tpp_tpproto->tpi_pcballoc)(so, tpp->tpp_tpproto->tpi_pcblist);
+	tpp->tpp_npcb = so->so_pcb;
+	so->so_pcb = tpp;
+	if (error == 0) {
+		tpcb = &tpp;
+	} else {
+		*tpcb = NULL;
+	}
+	return (error);
+}
+
+int
 tpi_attach(struct socket *so, void *v, int af, int protocol)
 {
 	struct tpipcb *tpp;
@@ -144,11 +162,11 @@ tpi_attach(struct socket *so, void *v, int af, int protocol)
 	if (error) {
 		goto bad2;
 	}
-	error = tpi_pcballoc(so, v, af);
+
+	error = tpi_set_npcb(&tpp, so, af);
 	if (error != 0) {
 		goto bad3;
 	}
-	tpp = v;
 	tpp->tpp_lref = lref;
 	tpp->tpp_socket =  so;
 	tpp->tpp_domain = dom;
@@ -348,7 +366,6 @@ tpi_pcbdisconnect(void *v, int which, int af)
 
 	tpp = v;
 	if (tpp->tpp_af != af) {
-
 		return;
 	}
 
@@ -451,15 +468,68 @@ tpi_getusockaddr(struct tpipcbtable *table, void *addr, uint16_t port, int which
 }
 
 void
-tpi_setpeeraddr(struct mbuf *nam)
+tpi_setpeeraddr(struct tpipcb *tpp, struct mbuf *nam)
 {
-	tpi_pcbconnect();
+	union tpi_sockaddr_union *tsu;
+
+	tsu = &tpi_sockaddr;
+	switch (tpp->tpp_af) {
+	case AF_INET:
+		struct sockaddr_in *sin;
+
+		nam->m_len = sizeof(*sin);
+		sin = mtod(nam, struct sockaddr_in *);
+		bzero((caddr_t)sin, sizeof (*sin));
+		sin->sin_family = AF_INET;
+		sin->sin_len = sizeof(*sin);
+		sin->sin_port = tpp->tpp_fport;
+		sin->sin_addr = tpp->tpp_faddr;
+		break;
+	case AF_INET6:
+	case AF_ISO:
+	case AF_NS:
+	case AF_CCITT:
+	/* Others: Not implemented */
+	case AF_APPLETALK:
+		break;
+	case AF_SNA:
+		break;
+	case AF_NATM:
+		break;
+	case AF_IPX:
+		break;
+	}
 }
 
 void
-tpi_setsockaddr(void *pcb, struct mbuf *nam)
+tpi_setsockaddr(struct tpipcb *tpp, struct mbuf *nam)
 {
+	switch (tpp->tpp_af) {
+	case AF_INET:
+		struct sockaddr_in *sin;
 
+		nam->m_len = sizeof(*sin);
+		sin = mtod(nam, struct sockaddr_in *);
+		bzero((caddr_t)sin, sizeof (*sin));
+		sin->sin_family = AF_INET;
+		sin->sin_len = sizeof(*sin);
+		sin->sin_port = tpp->tpp_lport;
+		sin->sin_addr = tpp->tpp_laddr;
+		break;
+	case AF_INET6:
+	case AF_ISO:
+	case AF_NS:
+	case AF_CCITT:
+	/* Others: Not implemented */
+	case AF_APPLETALK:
+		break;
+	case AF_SNA:
+		break;
+	case AF_NATM:
+		break;
+	case AF_IPX:
+		break;
+	}
 }
 
 struct tpipcb *
@@ -622,7 +692,7 @@ tpi_pcbisvalid(void *pcb, void *faddr_arg, u_int16_t fport_arg, void *laddr_arg,
 				}
 			}
 		}
-		error = -1;
+		error = 1;
 		break;
 
 	case TPI_FOREIGN:

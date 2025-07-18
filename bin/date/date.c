@@ -78,28 +78,25 @@ static void setthetime(char *);
 static void badformat(void);
 static void usage(void);
 
-int logwtmp(char *, char *, char *);
-
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char argv[])
 {
-	extern int optind;
-	extern char *optarg;
 	struct timezone tz;
 	int ch, rflag;
 	char *format, buf[1024];
 
 	tz.tz_dsttime = tz.tz_minuteswest = 0;
 	rflag = 0;
-	while ((ch = getopt(argc, argv, "d:nr:ut:")) != -1)
+	while ((ch = getopt(argc, argv, "d:nr:ut:")) != -1) {
 		switch((char)ch) {
 		case 'd':		/* daylight savings time */
 			tz.tz_dsttime = atoi(optarg) ? 1 : 0;
 			break;
 		case 'n':		/* don't set network */
 			nflag = 1;
+			break;
+		case 'R':
+			Rflag = 1;
 			break;
 		case 'r':		/* user specified seconds */
 			rflag = 1;
@@ -118,6 +115,7 @@ main(argc, argv)
 		default:
 			usage();
 		}
+	}
 	argc -= optind;
 	argv += optind;
 
@@ -132,7 +130,16 @@ main(argc, argv)
 	if (!rflag && time(&tval) == -1)
 		err(1, "time");
 
-	format = "%a %b %e %H:%M:%S %Z %Y";
+	/* allow the operands in any order */
+	if (*argv && **argv == '+') {
+		format = *argv;
+		++argv;
+	} else if (Rflag) {
+		(void)setlocale(LC_TIME, "C");
+		format = "+%a, %-e %b %Y %H:%M:%S %z";
+	} else {
+		format = "+%a %b %e %H:%M:%S %Z %Y";
+	}
 
 	/* allow the operands in any order */
 	if (*argv && **argv == '+') {
@@ -155,8 +162,7 @@ main(argc, argv)
 
 #define	ATOI2(ar)	((ar)[0] - '0') * 10 + ((ar)[1] - '0'); (ar) += 2;
 void
-setthetime(p)
-	register char *p;
+setthetime(char *p)
 {
 	register struct tm *lt;
 	struct timeval tv;
@@ -220,6 +226,12 @@ setthetime(p)
 		badformat();
 
 	/* set the time */
+#ifndef HAVE_NBTOOL_CONFIG_H
+	struct utmpx utx;
+	memset(&utx, 0, sizeof(utx));
+	utx.ut_type = OLD_TIME;
+	(void)gettimeofday(&utx.ut_tv, NULL);
+	pututxline(&utx);
 	if (nflag || netsettime(tval)) {
 		logwtmp("|", "date", "");
 		tv.tv_sec = tval;
@@ -230,21 +242,27 @@ setthetime(p)
 		}
 		logwtmp("{", "date", "");
 	}
+	utx.ut_type = NEW_TIME;
+	(void)gettimeofday(&utx.ut_tv, NULL);
+	pututxline(&utx);
 
 	if ((p = getlogin()) == NULL)
 		p = "???";
 	syslog(LOG_AUTH | LOG_NOTICE, "date set by %s", p);
+#else
+	errx(EXIT_FAILURE, "Can't set the time in the tools version");
+#endif
 }
 
 static void
-badformat()
+badformat(void)
 {
 	warnx("illegal time format");
 	usage();
 }
 
 static void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr,
 	    "usage: date [-nu] [-d dst] [-r seconds] [-t west] [+format]\n");

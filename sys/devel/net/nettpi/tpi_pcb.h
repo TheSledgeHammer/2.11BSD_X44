@@ -178,7 +178,7 @@ uint32_t tpi_pcbnethash(void *, uint16_t);
 void tpi_pcbinit(struct tpipcbtable *, int);
 int tpi_pcballoc(struct socket *, void *, int);
 int tpi_tselinuse(struct tpipcbtable *, struct tpipcb *, u_short, char *, struct sockaddr_iso *, int);
-
+int tpi_set_npcb(struct tpipcb **, struct socket *, int);
 int tpi_pcbbind(void *, struct mbuf *, struct proc *);
 int tpi_pcbconnect(void *, struct mbuf *, int, int);
 void tpi_pcbdisconnect(void *, int, int);
