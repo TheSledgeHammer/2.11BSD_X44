@@ -1,3 +1,5 @@
+/* $NetBSD: time.c,v 1.14 2003/08/07 09:05:07 agc Exp $ */
+
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,16 +29,18 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)time.c	8.1 (Berkeley) 5/31/93";
+#else
+__RCSID("$NetBSD: time.c,v 1.14 2003/08/07 09:05:07 agc Exp $");
+#endif
 #endif /* not lint */
 
 #include <sys/types.h>
-#if __STDC__
-# include <stdarg.h>
-#else
-# include <varargs.h>
-#endif
+
+#include <stdarg.h>
 
 #include "csh.h"
 #include "extern.h"
@@ -48,16 +48,17 @@ static char sccsid[] = "@(#)time.c	8.1 (Berkeley) 5/31/93";
 /*
  * C Shell - routines handling process timing and niceing
  */
-static void	pdeltat __P((struct timeval *, struct timeval *));
+static void pdeltat(struct timeval *, struct timeval *);
+extern char *strpct(u_long num, u_long denom, u_int digits);
 
 void
-settimes()
+settimes(void)
 {
     struct rusage ruch;
 
-    (void) gettimeofday(&time0, NULL);
-    (void) getrusage(RUSAGE_SELF, &ru0);
-    (void) getrusage(RUSAGE_CHILDREN, &ruch);
+    (void)gettimeofday(&time0, NULL);
+    (void)getrusage(RUSAGE_SELF, &ru0);
+    (void)getrusage(RUSAGE_CHILDREN, &ruch);
     ruadd(&ru0, &ruch);
 }
 
@@ -67,17 +68,15 @@ settimes()
  */
 void
 /*ARGSUSED*/
-dotime(v, t)
-    Char **v;
-    struct command *t;
+dotime(Char **v, struct command *t)
 {
-    struct timeval timedol;
     struct rusage ru1, ruch;
+    struct timeval timedol;
 
-    (void) getrusage(RUSAGE_SELF, &ru1);
-    (void) getrusage(RUSAGE_CHILDREN, &ruch);
+    (void)getrusage(RUSAGE_SELF, &ru1);
+    (void)getrusage(RUSAGE_CHILDREN, &ruch);
     ruadd(&ru1, &ruch);
-    (void) gettimeofday(&timedol, NULL);
+    (void)gettimeofday(&timedol, NULL);
     prusage(&ru0, &ru1, &timedol, &time0);
 }
 
@@ -86,27 +85,26 @@ dotime(v, t)
  */
 void
 /*ARGSUSED*/
-donice(v, t)
-    Char **v;
-    struct command *t;
+donice(Char **v, struct command *t)
 {
-    register Char *cp;
-    int     nval = 0;
+    Char *cp;
+    int nval;
 
-    v++, cp = *v++;
+    nval = 0;
+    v++;
+    cp = *v++;
     if (cp == 0)
 	nval = 4;
     else if (*v == 0 && any("+-", cp[0]))
 	nval = getn(cp);
-    (void) setpriority(PRIO_PROCESS, 0, nval);
+    (void)setpriority(PRIO_PROCESS, 0, nval);
 }
 
 void
-ruadd(ru, ru2)
-    register struct rusage *ru, *ru2;
+ruadd(struct rusage *ru, struct rusage *ru2)
 {
-    tvadd(&ru->ru_utime, &ru2->ru_utime);
-    tvadd(&ru->ru_stime, &ru2->ru_stime);
+    timeradd(&ru->ru_utime, &ru2->ru_utime, &ru->ru_utime);
+    timeradd(&ru->ru_stime, &ru2->ru_stime, &ru->ru_stime);
     if (ru2->ru_maxrss > ru->ru_maxrss)
 	ru->ru_maxrss = ru2->ru_maxrss;
 
@@ -126,23 +124,22 @@ ruadd(ru, ru2)
 }
 
 void
-prusage(r0, r1, e, b)
-    register struct rusage *r0, *r1;
-    struct timeval *e, *b;
+prusage(struct rusage *r0, struct rusage *r1, struct timeval *e,
+        struct timeval *b)
 {
-    register time_t t =
-    (r1->ru_utime.tv_sec - r0->ru_utime.tv_sec) * 100 +
-    (r1->ru_utime.tv_usec - r0->ru_utime.tv_usec) / 10000 +
-    (r1->ru_stime.tv_sec - r0->ru_stime.tv_sec) * 100 +
-    (r1->ru_stime.tv_usec - r0->ru_stime.tv_usec) / 10000;
-    register char *cp;
-    register long i;
-    register struct varent *vp = adrof(STRtime);
-
-    int     ms =
-    (e->tv_sec - b->tv_sec) * 100 + (e->tv_usec - b->tv_usec) / 10000;
+    struct varent *vp;
+    char *cp;
+    long i;
+    time_t t;
+    int ms;
 
     cp = "%Uu %Ss %E %P %X+%Dk %I+%Oio %Fpf+%Ww";
+    ms = (e->tv_sec - b->tv_sec) * 100 + (e->tv_usec - b->tv_usec) / 10000;
+    t = (r1->ru_utime.tv_sec - r0->ru_utime.tv_sec) * 100 +
+        (r1->ru_utime.tv_usec - r0->ru_utime.tv_usec) / 10000 +
+        (r1->ru_stime.tv_sec - r0->ru_stime.tv_sec) * 100 +
+        (r1->ru_stime.tv_usec - r0->ru_stime.tv_usec) / 10000;
+    vp = adrof(STRtime);
 
     if (vp && vp->vec[0] && vp->vec[1])
 	cp = short2str(vp->vec[1]);
@@ -152,165 +149,125 @@ prusage(r0, r1, e, b)
 	    (void) fputc(*cp, cshout);
 	else if (cp[1])
 	    switch (*++cp) {
-
-	    case 'U':		/* user CPU time used */
-		pdeltat(&r1->ru_utime, &r0->ru_utime);
-		break;
-
-	    case 'S':		/* system CPU time used */
-		pdeltat(&r1->ru_stime, &r0->ru_stime);
-		break;
-
-	    case 'E':		/* elapsed (wall-clock) time */
-		pcsecs((long) ms);
-		break;
-
-	    case 'P':		/* percent time spent running */
-		/* check if it did not run at all */
-		i = (ms == 0) ? 0 : (t * 1000 / ms);
-		/* nn.n% */
-		(void) fprintf(cshout, "%ld.%01ld%%", i / 10, i % 10);
-		break;
-
-	    case 'W':		/* number of swaps */
-		i = r1->ru_nswap - r0->ru_nswap;
-		(void) fprintf(cshout, "%ld", i);
-		break;
-
-	    case 'X':		/* (average) shared text size */
-		(void) fprintf(cshout, "%ld", t == 0 ? 0L : 
-			       (r1->ru_ixrss - r0->ru_ixrss) / t);
-		break;
-
 	    case 'D':		/* (average) unshared data size */
-		(void) fprintf(cshout, "%ld", t == 0 ? 0L :
+		(void)fprintf(cshout, "%ld", t == 0 ? 0L :
 			(r1->ru_idrss + r1->ru_isrss -
 			 (r0->ru_idrss + r0->ru_isrss)) / t);
 		break;
-
+	    case 'E':		/* elapsed (wall-clock) time */
+		pcsecs((long) ms);
+		break;
+	    case 'F':		/* page faults */
+		(void)fprintf(cshout, "%ld", r1->ru_majflt - r0->ru_majflt);
+		break;
+	    case 'I':		/* FS blocks in */
+		(void)fprintf(cshout, "%ld", r1->ru_inblock - r0->ru_inblock);
+		break;
 	    case 'K':		/* (average) total data memory used  */
-		(void) fprintf(cshout, "%ld", t == 0 ? 0L :
+		(void)fprintf(cshout, "%ld", t == 0 ? 0L :
 			((r1->ru_ixrss + r1->ru_isrss + r1->ru_idrss) -
 			 (r0->ru_ixrss + r0->ru_idrss + r0->ru_isrss)) / t);
 		break;
-
 	    case 'M':		/* max. Resident Set Size */
-		(void) fprintf(cshout, "%ld", r1->ru_maxrss / 2L);
+		(void)fprintf(cshout, "%ld", r1->ru_maxrss / 2L);
 		break;
-
-	    case 'F':		/* page faults */
-		(void) fprintf(cshout, "%ld", r1->ru_majflt - r0->ru_majflt);
-		break;
-
-	    case 'R':		/* page reclaims */
-		(void) fprintf(cshout, "%ld", r1->ru_minflt - r0->ru_minflt);
-		break;
-
-	    case 'I':		/* FS blocks in */
-		(void) fprintf(cshout, "%ld", r1->ru_inblock - r0->ru_inblock);
-		break;
-
 	    case 'O':		/* FS blocks out */
-		(void) fprintf(cshout, "%ld", r1->ru_oublock - r0->ru_oublock);
+		(void)fprintf(cshout, "%ld", r1->ru_oublock - r0->ru_oublock);
 		break;
-
-	    case 'r':		/* socket messages recieved */
-		(void) fprintf(cshout, "%ld", r1->ru_msgrcv - r0->ru_msgrcv);
+	    case 'P':		/* percent time spent running */
+		/* check if it did not run at all */
+		if (ms == 0) {
+			(void)fputs("0.0%", cshout);
+		} else {
+			(void)fputs(strpct((ulong)t, (ulong)ms, 1), cshout);
+		}
 		break;
-
-	    case 's':		/* socket messages sent */
-		(void) fprintf(cshout, "%ld", r1->ru_msgsnd - r0->ru_msgsnd);
+	    case 'R':		/* page reclaims */
+		(void)fprintf(cshout, "%ld", r1->ru_minflt - r0->ru_minflt);
 		break;
-
-	    case 'k':		/* number of signals recieved */
-		(void) fprintf(cshout, "%ld", r1->ru_nsignals-r0->ru_nsignals);
+	    case 'S':		/* system CPU time used */
+		pdeltat(&r1->ru_stime, &r0->ru_stime);
 		break;
-
-	    case 'w':		/* num. voluntary context switches (waits) */
-		(void) fprintf(cshout, "%ld", r1->ru_nvcsw - r0->ru_nvcsw);
+	    case 'U':		/* user CPU time used */
+		pdeltat(&r1->ru_utime, &r0->ru_utime);
 		break;
-
+	    case 'W':		/* number of swaps */
+		i = r1->ru_nswap - r0->ru_nswap;
+		(void)fprintf(cshout, "%ld", i);
+		break;
+	    case 'X':		/* (average) shared text size */
+		(void)fprintf(cshout, "%ld", t == 0 ? 0L : 
+			       (r1->ru_ixrss - r0->ru_ixrss) / t);
+		break;
 	    case 'c':		/* num. involuntary context switches */
-		(void) fprintf(cshout, "%ld", r1->ru_nivcsw - r0->ru_nivcsw);
+		(void)fprintf(cshout, "%ld", r1->ru_nivcsw - r0->ru_nivcsw);
+		break;
+	    case 'k':		/* number of signals received */
+		(void)fprintf(cshout, "%ld", r1->ru_nsignals-r0->ru_nsignals);
+		break;
+	    case 'r':		/* socket messages received */
+		(void)fprintf(cshout, "%ld", r1->ru_msgrcv - r0->ru_msgrcv);
+		break;
+	    case 's':		/* socket messages sent */
+		(void)fprintf(cshout, "%ld", r1->ru_msgsnd - r0->ru_msgsnd);
+		break;
+	    case 'w':		/* num. voluntary context switches (waits) */
+		(void)fprintf(cshout, "%ld", r1->ru_nvcsw - r0->ru_nvcsw);
 		break;
 	    }
-    (void) fputc('\n', cshout);
+    (void)fputc('\n', cshout);
 }
 
 static void
-pdeltat(t1, t0)
-    struct timeval *t1, *t0;
+pdeltat(struct timeval *t1, struct timeval *t0)
 {
     struct timeval td;
 
-    tvsub(&td, t1, t0);
-    (void) fprintf(cshout, "%d.%01d", td.tv_sec, td.tv_usec / 100000);
+    timersub(t1, t0, &td);
+    (void)fprintf(cshout, "%ld.%01ld", (long)td.tv_sec,
+	(long)(td.tv_usec / 100000));
 }
 
-void
-tvadd(tsum, t0)
-    struct timeval *tsum, *t0;
-{
-
-    tsum->tv_sec += t0->tv_sec;
-    tsum->tv_usec += t0->tv_usec;
-    if (tsum->tv_usec > 1000000)
-	tsum->tv_sec++, tsum->tv_usec -= 1000000;
-}
+#define  P2DIG(i) (void)fprintf(cshout, "%d%d", (i) / 10, (i) % 10)
 
 void
-tvsub(tdiff, t1, t0)
-    struct timeval *tdiff, *t1, *t0;
+psecs(long l)
 {
-
-    tdiff->tv_sec = t1->tv_sec - t0->tv_sec;
-    tdiff->tv_usec = t1->tv_usec - t0->tv_usec;
-    if (tdiff->tv_usec < 0)
-	tdiff->tv_sec--, tdiff->tv_usec += 1000000;
-}
-
-#define  P2DIG(i) (void) fprintf(cshout, "%d%d", (i) / 10, (i) % 10)
-
-void
-psecs(l)
-    long    l;
-{
-    register int i;
+    int i;
 
     i = l / 3600;
     if (i) {
-	(void) fprintf(cshout, "%d:", i);
+	(void)fprintf(cshout, "%d:", i);
 	i = l % 3600;
 	P2DIG(i / 60);
 	goto minsec;
     }
     i = l;
-    (void) fprintf(cshout, "%d", i / 60);
+    (void)fprintf(cshout, "%d", i / 60);
 minsec:
     i %= 60;
-    (void) fputc(':', cshout);
+    (void)fputc(':', cshout);
     P2DIG(i);
 }
 
 void
-pcsecs(l)			/* PWP: print mm:ss.dd, l is in sec*100 */
-    long    l;
+pcsecs(long l)			/* PWP: print mm:ss.dd, l is in sec*100 */
 {
-    register int i;
+    int i;
 
     i = l / 360000;
     if (i) {
-	(void) fprintf(cshout, "%d:", i);
+	(void)fprintf(cshout, "%d:", i);
 	i = (l % 360000) / 100;
 	P2DIG(i / 60);
 	goto minsec;
     }
     i = l / 100;
-    (void) fprintf(cshout, "%d", i / 60);
+    (void)fprintf(cshout, "%d", i / 60);
 minsec:
     i %= 60;
-    (void) fputc(':', cshout);
+    (void)fputc(':', cshout);
     P2DIG(i);
-    (void) fputc('.', cshout);
+    (void)fputc('.', cshout);
     P2DIG((int) (l % 100));
 }

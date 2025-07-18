@@ -1,3 +1,5 @@
+/* $NetBSD: dir.h,v 1.8 2003/08/07 09:05:04 agc Exp $ */
+
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,6 +31,9 @@
  *	@(#)dir.h	8.1 (Berkeley) 5/31/93
  */
 
+#ifndef _DIR_H_
+#define _DIR_H_
+
 /*
  * Structure for entries in directory stack.
  */
@@ -43,3 +44,5 @@ struct directory {
     Char   *di_name;		/* actual name */
 };
 struct directory *dcwd;		/* the one we are in now */
+
+#endif /* !_DIR_H_ */

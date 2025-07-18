@@ -1,3 +1,5 @@
+/* $NetBSD: char.h,v 1.8 2003/08/07 09:05:03 agc Exp $ */
+
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -32,6 +30,9 @@
  *
  *	@(#)char.h	8.1 (Berkeley) 5/31/93
  */
+
+#ifndef _CHAR_H_
+#define _CHAR_H_
 
 #include <ctype.h>
 
@@ -87,10 +88,12 @@ extern unsigned char _cmap_lower[], _cmap_upper[];
 #define Isalpha(c)	(cmap(c,_LET) && !(((c) & META) && AsciiOnly))
 #define Islower(c)	(cmap(c,_LOW) && !(((c) & META) && AsciiOnly))
 #define Isupper(c)	(cmap(c, _UP) && !(((c) & META) && AsciiOnly))
-#define Tolower(c)  (_cmap_lower[(unsigned char)(c)])
-#define Toupper(c)  (_cmap_upper[(unsigned char)(c)])
+#define Tolower(c)	(_cmap_lower[(unsigned char)(c)])
+#define Toupper(c)	(_cmap_upper[(unsigned char)(c)])
 #define Isxdigit(c)	cmap(c, _XD)
 #define Isalnum(c)	(cmap(c, _DIG|_LET) && !(((c) & META) && AsciiOnly))
-#define Iscntrl(c)  (cmap(c,_CTR) && !(((c) & META) && AsciiOnly))
-#define Isprint(c)  (!cmap(c,_CTR) && !(((c) & META) && AsciiOnly))
+#define Iscntrl(c)	(cmap(c,_CTR) && !(((c) & META) && AsciiOnly))
+#define Isprint(c)	(!cmap(c,_CTR) && !(((c) & META) && AsciiOnly))
 #endif
+
+#endif /* !_CHAR_H_ */

@@ -82,11 +82,11 @@ int
 main(int argc, char argv[])
 {
 	struct timezone tz;
-	int ch, rflag;
+	int ch, Rflag, rflag;
 	char *format, buf[1024];
 
 	tz.tz_dsttime = tz.tz_minuteswest = 0;
-	rflag = 0;
+	Rflag = rflag = 0;
 	while ((ch = getopt(argc, argv, "d:nr:ut:")) != -1) {
 		switch((char)ch) {
 		case 'd':		/* daylight savings time */
