@@ -57,6 +57,10 @@ static char sccsid[] = "@(#)printf.c	8.2 (Berkeley) 3/22/95";
 #include <string.h>
 #include <unistd.h>
 
+#ifdef BUILTIN
+#define main progprintf
+#endif /* BUILTIN */
+
 #ifdef SHELL		/* sh (aka ash) builtin */
 #define main printfcmd
 #include "../../bin/sh/bltin/bltin.h"
@@ -89,10 +93,7 @@ static void usage(void);
 
 static char **gargv;
 
-#ifdef BUILTIN
-#define main progprintf
-#endif /* BUILTIN */
-
+int main(int, char **);
 int
 main(int argc, char *argv[])
 {
