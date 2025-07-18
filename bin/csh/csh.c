@@ -98,7 +98,7 @@ static fpos_t seekf(void *, fpos_t, int);
 static int writef(void *, const char *, int);
 static int closef(void *);
 static int srccat(Char *, Char *);
-static int srcfile(char *, bool, bool);
+static int srcfile(const char *, bool, bool);
 static void phup(int);
 static void srcunit(int, bool, bool);
 static void mailchk(void);
@@ -645,7 +645,7 @@ srccat(Char *cp, Char *dp)
  * Source to a file putting the file descriptor in a safe place (> 2).
  */
 static int
-srcfile(char *f, bool onlyown, bool flag)
+srcfile(const char *f, bool onlyown, bool flag)
 {
     int unit;
 

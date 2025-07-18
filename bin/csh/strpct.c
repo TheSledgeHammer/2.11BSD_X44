@@ -62,7 +62,7 @@ strpct(u_long numerator, u_long denominator, u_int digits)
 
 	/* I should check for digit overflow here, too XXX */
 	factor = 100L;
-	for (i = 0; i < digits; i++) {
+	for (i = 0; i < (int)digits; i++) {
 		factor *= 10;
 	}
 

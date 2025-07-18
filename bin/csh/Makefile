@@ -51,6 +51,7 @@ SUBDIR+=USD.doc
 COPTS.err.c = -Wno-format-nonliteral
 COPTS.printf.c = -Wno-format-nonliteral
 COPTS.proc.c = -Wno-format-nonliteral
+COPTS.strpct.c = -Wno-format-nonliteral
 
 .include <bsd.prog.mk>
 .include <bsd.subdir.mk>
