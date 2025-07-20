@@ -84,7 +84,8 @@ main(int argc, char *argv[])
 {
 	struct timezone tz;
 	int ch, Rflag, rflag;
-	char *format, buf[1024];
+	const char *format;
+	char buf[1024];
 
 	tz.tz_dsttime = tz.tz_minuteswest = 0;
 	Rflag = rflag = 0;
