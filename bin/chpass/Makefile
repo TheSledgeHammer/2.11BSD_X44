@@ -18,7 +18,7 @@
 #
 
 WARNS= 	3
-PROG=	chflags
+PROG=	chpass
 SRCS=	chpass.c field.c util.c
 MAN=	chpass.1
 
