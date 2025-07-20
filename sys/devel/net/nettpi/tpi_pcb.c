@@ -41,8 +41,12 @@
 
 #include <net/route.h>
 
+#include <netiso/tp_meas.h>
+#include <netiso/tp_param.h>
+
 #include <tpi_pcb.h>
 #include <tpi_protosw.h>
+#include <tpi_user.h>
 
 union tpi_sockaddr_union tpi_sockaddr;
 union tpi_addr_union tpi_zero_addr;
@@ -84,6 +88,115 @@ tpi_pcballoc(struct socket *so, void *v, int af)
 	tpi_foreign_insert(table, tpp->tpp_faddr, tpp->tpp_fport);
 	splx(s);
 	return (error);
+}
+
+void
+tpi_soisdisconnecting(struct socket *so)
+{
+	soisdisconnecting(so);
+	so->so_state &= ~SS_CANTSENDMORE;
+
+	struct tpipcb *tpcb;
+	u_int fsufx, lsufx;
+
+	tpcb = sototpcb(so);
+	bcopy((caddr_t)tpcb->tpp_fsuffix, (caddr_t)&fsufx, sizeof(u_int));
+	bcopy((caddr_t)tpcb->tpp_lsuffix, (caddr_t)&lsufx, sizeof(u_int));
+	tpmeas(tpcb->tpp_lref, TPtime_close, &time, fsufx, lsufx, tpcb->tpp_fref);
+	tpcb->tpp_perf_on = 0; /* turn perf off */
+}
+
+void
+tpi_soisdisconnected(struct tpipcb *tpp)
+{
+	struct socket *so;
+
+	so = tpp->tpp_socket;
+	soisdisconnecting(so);
+	so->so_state &= ~SS_CANTSENDMORE;
+
+	tpp->tpp_refstate = REF_FROZEN;
+	tp_recycle_tsuffix(tpp);
+	tp_etimeout(tpp, TM_reference, (int)tpp->tpp_refer_ticks);
+}
+
+void
+tpi_freeref(struct tpi_ref **tpref, struct tpi_refinfo *tprefinfo, RefNum n)
+{
+	struct tpi_ref *r;
+	struct tpipcb *tpp;
+
+	r = *tpref + n;
+	tpp = r->tpr_pcb;
+	if (tpp == 0) {
+		return;
+	}
+
+	r->tpr_pcb = (struct tp_pcb *)0;
+	tpp->tpp_refstate = REF_FREE;
+
+	for (r = *tpref + tprefinfo->tpr_maxopen; r > *tpref; r--) {
+		if (r->tpr_pcb) {
+			break;
+		}
+	}
+	tprefinfo->tpr_maxopen = r - *tpref;
+	tprefinfo->tpr_numopen--;
+}
+
+u_long
+tpi_getref(struct tpi_ref **tpref, struct tpi_refinfo *tprefinfo, struct tpipcb *tpp)
+{
+	struct tpi_ref *r, *rlim;
+	int i;
+	caddr_t obase;
+	unsigned int size;
+
+
+	if (++tprefinfo->tpr_numopen < tprefinfo->tpr_size) {
+		for (r = tprefinfo->tpr_base, rlim = r + tprefinfo->tpr_size;
+				++r < rlim;) { /* tp_ref[0] is never used */
+			if (r->tpr_pcb == 0) {
+				goto got_one;
+			}
+		}
+	}
+
+	/* else have to allocate more space */
+
+	obase = (caddr_t) tprefinfo->tpr_base;
+	size = tprefinfo->tpr_size * sizeof(struct tpi_ref);
+	r = (struct tpi_ref*) malloc(size + size, M_PCB, M_NOWAIT);
+	if (r == 0) {
+		return (--tprefinfo->tpr_numopen, TP_ENOREF);
+	}
+	tprefinfo->tpr_base = *tpref = r;
+	tprefinfo->tpr_size *= 2;
+	bcopy(obase, (caddr_t) r, size);
+	free(obase, M_PCB);
+	r = (struct tpi_ref*) (size + (caddr_t) r);
+	bzero((caddr_t) r, size);
+
+got_one:
+	r->tpr_pcb = tpp;
+	tpp->tpp_refstate = REF_OPENING;
+	i = r - tprefinfo->tpr_base;
+	if (tprefinfo->tpr_maxopen < i) {
+		tprefinfo->tpr_maxopen = i;
+	}
+	return ((u_long)i);
+}
+
+void
+tp_freeref(RefNum n)
+{
+	tpi_freeref(&tpi_ref, &tpi_refinfo, n);
+}
+
+u_long
+tp_getref(struct tpipcb *tpcb)
+{
+	return (tpi_getref(&tpi_ref, &tpi_refinfo, tpcb));
 }
 
 int
@@ -147,11 +260,14 @@ tpi_set_npcb(struct tpipcb **tpcb, struct socket *so, int af)
 }
 
 int
-tpi_attach(struct socket *so, void *v, int af, int protocol)
+tpi_attach(struct socket *so, int af, int protocol)
 {
 	struct tpipcb *tpp;
-	int error;
+	int error, dom;
+	u_long lref;
 
+	error = 0;
+	dom = so->so_proto->pr_domain->dom_family;
 	if (so->so_pcb != NULL) {
 		return (EISCONN);	/* socket already part of a connection*/
 	}
@@ -165,20 +281,71 @@ tpi_attach(struct socket *so, void *v, int af, int protocol)
 
 	error = tpi_set_npcb(&tpp, so, af);
 	if (error != 0) {
+		if (error == ENOBUFS) {
+			goto bad2;
+		}
+		goto bad4;
+	}
+
+	lref = tpi_getref(&tpi_ref, &tpi_refinfo, tpp);
+	if ((lref & TP_ENOREF) != 0) {
+		error = ETOOMANYREFS;
 		goto bad3;
 	}
 	tpp->tpp_lref = lref;
-	tpp->tpp_socket =  so;
+//	tpp->tpp_socket = so; /* already setup in tpi_set_npcb */
 	tpp->tpp_domain = dom;
 	tpp->tpp_rhiwat = so->so_rcv.sb_hiwat;
-
-	if (dom == AF_INET ) {
-		sotoinpcb(so)->inp_ppcb = (caddr_t) tpcb;
+	/* tpcb->tp_proto = protocol; someday maybe? */
+	if (protocol && protocol < ISOPROTO_TP4) {
+		tpp->tpp_netservice = ISO_CONS;
+		tpp->tpp_snduna = (SeqNum) - 1;/* kludge so the pseudo-ack from the CR/CC
+		 * will generate correct fake-ack values
+		 */
+	} else {
+		tpp->tpp_netservice = (dom == AF_INET) ? IN_CLNS : ISO_CLNS;
+		/* the default */
 	}
+	tpp->tpp_param = tpi_conn_param[tpp->tpp_netservice];
+
+	tpp->tpp_state = TPI_CLOSED;
+	tpp->tpp_vers = TPI_VERSION;
+	tpp->tpp_notdetached = 1;
+
+	/* Spec says default is 128 octets,
+	 * that is, if the tpdusize argument never appears, use 128.
+	 * As the initiator, we will always "propose" the 2048
+	 * size, that is, we will put this argument in the CR
+	 * always, but accept what the other side sends on the CC.
+	 * If the initiator sends us something larger on a CR,
+	 * we'll respond w/ this.
+	 * Our maximum is 4096.  See tp_chksum.c comments.
+	 */
+	tpp->tpp_cong_win = tpp->tpp_l_tpdusize = 1 << tpp->tpp_tpdusize;
+
+	tpp->tpp_seqmask = TP_NML_FMT_MASK;
+	tpp->tpp_seqbit = TP_NML_FMT_BIT;
+	tpp->tpp_seqhalf = tpp->tpp_seqbit >> 1;
+
+	/* attach to a network-layer protoswitch */
+	KASSERT(tpp->tpp_tpproto->tpi_afamily == tpp->tpp_domain);
+	if (dom == AF_INET ) {
+		struct inpcb *inp;
+
+		inp = sotoinpcb(so);
+		inp->inp_ppcb = (caddr_t)tpp;
+	}
+	return (0);
+
+bad4:
+	tpi_freeref(&tpi_ref, &tpi_refinfo, tpp->tpp_lref);
+
 bad3:
 	free((caddr_t)tpp, M_PCB); /* never a cluster  */
+
 bad2:
 	so->so_pcb = NULL;
+
 	return (error);
 }
 

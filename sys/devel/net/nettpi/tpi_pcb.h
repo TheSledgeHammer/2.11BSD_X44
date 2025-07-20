@@ -45,13 +45,20 @@
 
 #include <sys/queue.h>
 
-struct tp_ref {
+#define REF_FROZEN 		3	/* has ref timer only */
+#define REF_OPEN 		2	/* has timers, possibly active */
+#define REF_OPENING 		1	/* in use (has a pcb) but no timers */
+#define REF_FREE 		0	/* free to reallocate */
+
+#define TM_NTIMERS 		6
+
+struct tpi_ref {
 	struct tpipcb 			*tpr_pcb;	/* back ptr to PCB */
 };
 
 /* PER system stuff (one static structure instead of a bunch of names) */
-struct tp_refinfo {
-	struct tp_ref			*tpr_base;
+struct tpi_refinfo {
+	struct tpi_ref			*tpr_base;
 	int				tpr_size;
 	int				tpr_maxopen;
 	int				tpr_numopen;
@@ -138,40 +145,100 @@ struct tpipcb {
 #define	tpp_faddr 		tpp_foreign.tpf_faddr
 #define	tpp_fport 		tpp_foreign.tpf_fport
 
-	short 			tpp_retrans;	/* # times can still retrans */
-	caddr_t			tpp_npcb;	/* to lower layer pcb */
+	short 				tpp_retrans;	/* # times can still retrans */
+	caddr_t				tpp_npcb;	/* to lower layer pcb */
 	struct tpi_protosw	*tpp_tpproto;	/* lower-layer dependent routines */
 	struct rtentry		**tpp_routep;	/* obtain mtu; inside npcb */
 
-	struct route 		tpp_route;
+	RefNum				tpp_lref;	 	/* local reference */
+	RefNum 				tpp_fref;		/* foreign reference */
 
-	int tpp_netservice;
+	u_int				tpp_seqmask;	/* mask for seq space */
+	u_int				tpp_seqbit;		/* bit for seq number wraparound */
+	u_int				tpp_seqhalf;	/* half the seq space */
 
+	u_long				tpp_cong_win;	/* congestion window in bytes.
+										 * see profuse comments in TCP code
+										 */
 
-	u_char			 tpp_flags;		/* values: */
+	u_long				tpp_rhiwat;		/* remember original RCVBUF size */
+
+	/* parameters per-connection controllable by user */
+	struct tpi_conn_param tpp_param;
+#define	tpp_Nretrans 		tpp_param.p_Nretrans
+#define	tpp_dr_ticks 		tpp_param.p_dr_ticks
+#define	tpp_cc_ticks 		tpp_param.p_cc_ticks
+#define	tpp_dt_ticks 		tpp_param.p_dt_ticks
+#define	tpp_xpd_ticks		tpp_param.p_x_ticks
+#define	tpp_cr_ticks 		tpp_param.p_cr_ticks
+#define	tpp_keepalive_ticks tpp_param.p_keepalive_ticks
+#define	tpp_sendack_ticks 	tpp_param.p_sendack_ticks
+#define	tpp_refer_ticks 	tpp_param.p_ref_ticks
+#define	tpp_inact_ticks 	tpp_param.p_inact_ticks
+#define	tpp_xtd_format 		tpp_param.p_xtd_format
+#define	tpp_xpd_service 	tpp_param.p_xpd_service
+#define	tpp_ack_strat 		tpp_param.p_ack_strat
+#define	tpp_rx_strat 		tpp_param.p_rx_strat
+#define	tpp_use_checksum 	tpp_param.p_use_checksum
+#define	tpp_use_efc 		tpp_param.p_use_efc
+#define	tpp_use_nxpd 		tpp_param.p_use_nxpd
+#define	tpp_use_rcc 		tpp_param.p_use_rcc
+#define	tpp_tpdusize 		tpp_param.p_tpdusize
+#define	tpp_class 			tpp_param.p_class
+#define	tpp_winsize 		tpp_param.p_winsize
+#define	tpp_no_disc_indications tpp_param.p_no_disc_indications
+#define	tpp_dont_change_params 	tpp_param.p_dont_change_params
+#define	tpp_netservice 		tpp_param.p_netservice
+#define	tpp_version 		tpp_param.p_version
+#define	tpp_ptpdusize 		tpp_param.p_ptpdusize
+
+	int					tpp_l_tpdusize;
+
+	u_char			 	tpp_flags;		/* values: */
+
+	unsigned int 	 	tpp_perf_on:1;			/* 0/1 -> performance measuring on  */
+	unsigned int	 	tpp_notdetached:1;		/* Call tp_detach before freeing XXXXXXX */
+
 	/* addressing */
-	u_short			 tpp_domain;		/* domain (INET, ISO) */
+	u_short			 	tpp_domain;		/* domain (INET, ISO) */
 	/* for compatibility with the *old* way and with INET, be sure that
 	 * that lsuffix and fsuffix are aligned to a short addr.
 	 * having them follow the u_short *suffixlen should suffice (choke)
 	 */
-	u_short			 tpp_fsuffixlen;	/* foreign suffix */
-	char			 tpp_fsuffix[MAX_TSAP_SEL_LEN];
-	u_short			 tpp_lsuffixlen;	/* local suffix */
-	char			 tpp_lsuffix[MAX_TSAP_SEL_LEN];
+	u_short			 	tpp_fsuffixlen;	/* foreign suffix */
+	char			 	tpp_fsuffix[MAX_TSAP_SEL_LEN];
+	u_short			 	tpp_lsuffixlen;	/* local suffix */
+	char			 	tpp_lsuffix[MAX_TSAP_SEL_LEN];
+
+	/* Timer stuff */
+	u_char 			 	tpp_vers;			/* protocol version */
+
+	u_char	 		 	tpp_refstate;		/* values REF_FROZEN, etc. above */
 };
+
+typedef unsigned short RefNum;
+typedef unsigned int SeqNum;
 
 /* flags for which */
 #define TPI_LOCAL 		0x01
-#define TPI_FOREIGN 	0x02
+#define TPI_FOREIGN 		0x02
 
-#define TPI_ATTACHED	0
+/* states */
+#define TPI_ATTACHED		0
 #define TPI_BOUND		1
-#define TPI_CONNECTED	2
+#define TPI_CONNECTED		2
 
-#define TPI_CLOSED
-#define TPI_OPEN
+#define TPI_CLOSED		3
+#define TPI_OPEN		4
 
+#define	sototpcb(so) 	((struct tpipcb *)(so->so_pcb))
+#define	sototpref(so)	((sototpcb(so)->tp_ref))
+#define	tpcbtoso(tp)	((struct socket *)((tp)->tpp_socket))
+#define	tpcbtoref(tp)	((struct tpi_ref *)((tp)->tp_ref))
+
+
+extern struct tpi_refinfo 	tpi_refinfo;
+extern struct tpi_ref		*tpi_ref;
 
 /* Transport Interface */
 uint32_t tpi_pcbnethash(void *, uint16_t);
