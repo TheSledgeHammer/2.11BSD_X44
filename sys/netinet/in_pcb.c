@@ -1009,3 +1009,116 @@ in_selectsrc(sin, ro, soopts, mopts, errorp)
 	}
 	return satosin(&ia->ia_addr);
 }
+
+/* Contemplating: Reverting to a single pcblookup */
+#ifdef notyet
+#include <sys/fnv_hash.h>
+
+struct inpcbhead *
+in_pcbhash(struct inpcbtable *table, struct in_addr laddr, u_int lport, struct in_addr faddr, u_int fport)
+{
+	struct inpcbhead *inhash;
+	uint32_t nethash;
+
+	uint32_t lahash = fnva_32_buf(laddr, sizeof(*laddr), FNV1_32_INIT);	/* laddr hash */
+	uint32_t lphash = fnva_32_buf(&lport, sizeof(lport), FNV1_32_INIT);	/* lport hash */
+	uint32_t fahash = fnva_32_buf(faddr, sizeof(*faddr), FNV1_32_INIT);	/* faddr hash */
+	uint32_t fphash = fnva_32_buf(&fport, sizeof(fport), FNV1_32_INIT);	/* fport hash */
+
+	nethash = ntohl(laddr.s_addr) + ntohs(lport) + ntohl(faddr.s_addr) + ntohs(fport);
+	inhash = &table->inpt_connecthashtbl[nethash & table->inpt_connecthash];
+	return (inhash);
+}
+
+struct inpcb *
+in_pcblookup(table, laddr, lport_arg, faddr, fport_arg, lookup_wildcard)
+	struct inpcbtable *table;
+	struct in_addr laddr, faddr;
+	u_int lport_arg, fport_arg;
+	int lookup_wildcard;
+{
+	struct inpcbhead *head;
+	struct inpcb_hdr *inph;
+	struct inpcb *inp, *match;
+	int matchwild = 3, wildcard;
+	u_int16_t lport = lport_arg;
+	u_int16_t fport = fport_arg;
+
+	head = in_pcbhash(table, laddr, lport, faddr, fport);
+	LIST_FOREACH(inph, head, inph_lhash) {
+		inp = (struct inpcb*) inph;
+		if (inp->inp_af != AF_INET) {
+			continue;
+		}
+		if (inp->inp_lport != lport) {
+			continue;
+		}
+		if (inp->inp_lport == lport && in_hosteq(inp->inp_laddr, laddr)) {
+			goto out;
+		}
+		if (in_hosteq(inp->inp_faddr, faddr) && inp->inp_fport == fport
+				&& inp->inp_lport == lport
+				&& in_hosteq(inp->inp_laddr, laddr)) {
+			goto out;
+		}
+		wildcard = 0;
+		if (!in_nullhost(inp->inp_faddr)) {
+			wildcard++;
+		}
+		if (in_nullhost(inp->inp_laddr)) {
+			if (!in_nullhost(laddr)) {
+				wildcard++;
+			}
+		} else {
+			if (in_nullhost(laddr)) {
+				wildcard++;
+			} else {
+				if (!in_hosteq(inp->inp_laddr, laddr)) {
+					continue;
+				}
+			}
+		}
+		if (wildcard && !lookup_wildcard) {
+			continue;
+		}
+		if (wildcard < matchwild) {
+			match = inp;
+			matchwild = wildcard;
+			if (matchwild == 0) {
+				goto match;
+				//break;
+			}
+			goto match;
+		}
+	}
+    head = in_pcbhash(table, zeroin_addr, lport, faddr, fport);
+	LIST_FOREACH(inph, head, inph_hash) {
+		inp = (struct inpcb *)inph;
+		if (inp->inp_af != AF_INET) {
+			continue;
+		}
+		if (inp->inp_lport == lport && in_hosteq(inp->inp_laddr, zeroin_addr)) {
+			goto out;
+		}
+	}
+#ifdef DIAGNOSTIC
+	if (in_pcbnotifymiss) {
+		printf("in_pcblookup: laddr=%08x lport=%d\n",
+		    ntohl(laddr.s_addr), ntohs(lport));
+	}
+#endif
+	return (0);
+
+out:
+	/* Move this PCB to the head of hash chain. */
+	inph = &inp->inp_head;
+	if (inph != LIST_FIRST(head)) {
+		LIST_REMOVE(inph, inph_hash);
+		LIST_INSERT_HEAD(head, inph, inph_hash);
+	}
+	return (inp);
+
+match:
+	return (match);
+}
+#endif /* notyet */

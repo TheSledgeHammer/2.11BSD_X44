@@ -260,6 +260,57 @@ tpi_set_npcb(struct tpipcb **tpcb, struct socket *so, int af)
 }
 
 int
+tpi_get_npcb(struct tpipcb *tpp, struct socket *so, int af)
+{
+	switch (af) {
+	case AF_INET:
+		struct inpcb *inp;
+
+		inp = sotoinpcb(so);
+		inp->inp_ppcb = (caddr_t)tpp;
+		break;
+	case AF_INET6:
+		struct in6pcb *in6p;
+
+		in6p = sotoin6pcb(so);
+		in6p->in6p_ppcb = (caddr_t)tpp;
+		break;
+	case AF_ISO:
+		struct isopcb *isop;
+
+		isop = sotoisopcb(so);
+		isop->isop_ppcb = (caddr_t)tpp;
+		break;
+	case AF_NS:
+		struct nspcb *nsp;
+
+		nsp = sotonspcb(so);
+		nsp->nsp_pcb = (caddr_t)tpp;
+		break;
+	case AF_CCITT:
+		goto bad;
+		//break;
+	/* Others: Not implemented */
+	case AF_APPLETALK:
+		goto bad;
+		//break;
+	case AF_SNA:
+		goto bad;
+		//break;
+	case AF_NATM:
+		goto bad;
+		//break;
+	case AF_IPX:
+		goto bad;
+		//break;
+	default:
+bad:
+		return (EPROTONOSUPPORT);
+	}
+	return (0);
+}
+
+int
 tpi_attach(struct socket *so, int af, int protocol)
 {
 	struct tpipcb *tpp;
@@ -329,11 +380,11 @@ tpi_attach(struct socket *so, int af, int protocol)
 
 	/* attach to a network-layer protoswitch */
 	KASSERT(tpp->tpp_tpproto->tpi_afamily == tpp->tpp_domain);
-	if (dom == AF_INET ) {
-		struct inpcb *inp;
-
-		inp = sotoinpcb(so);
-		inp->inp_ppcb = (caddr_t)tpp;
+	if (dom == af) {
+		error = tpi_get_npcb(tpp, so, dom);
+		if (error != 0) {
+			return (error);
+		}
 	}
 	return (0);
 
@@ -478,10 +529,10 @@ tpi_pcbconnect(void *v, struct mbuf *nam, int which, int af)
 		if (tsu->tsu_siso.siso_family != AF_ISO) {
 			return (EAFNOSUPPORT);
 		}
-		if (tsu->tsu_siso.siso_len == 0) {
+		if (tsu->tsu_siso.siso_nlen == 0) {
 			return (EADDRNOTAVAIL);
 		}
-		tpi_setusockaddr(tpp, tsu, tsu->tsu_siso.siso_addr, tsu->tsu_siso.siso_len, which); /* port not correct variable */
+		tpi_setusockaddr(tpp, tsu, tsu->tsu_siso.siso_addr, tsu->tsu_siso.siso_nlen, which);
 		break;
 	case AF_NS:
 		tsu->tsu_sns = mtod(nam, struct sockaddr_ns);
@@ -632,71 +683,6 @@ tpi_getusockaddr(struct tpipcbtable *table, void *addr, uint16_t port, int which
 		break;
 	}
 	return (tsu);
-}
-
-void
-tpi_setpeeraddr(struct tpipcb *tpp, struct mbuf *nam)
-{
-	union tpi_sockaddr_union *tsu;
-
-	tsu = &tpi_sockaddr;
-	switch (tpp->tpp_af) {
-	case AF_INET:
-		struct sockaddr_in *sin;
-
-		nam->m_len = sizeof(*sin);
-		sin = mtod(nam, struct sockaddr_in *);
-		bzero((caddr_t)sin, sizeof (*sin));
-		sin->sin_family = AF_INET;
-		sin->sin_len = sizeof(*sin);
-		sin->sin_port = tpp->tpp_fport;
-		sin->sin_addr = tpp->tpp_faddr;
-		break;
-	case AF_INET6:
-	case AF_ISO:
-	case AF_NS:
-	case AF_CCITT:
-	/* Others: Not implemented */
-	case AF_APPLETALK:
-		break;
-	case AF_SNA:
-		break;
-	case AF_NATM:
-		break;
-	case AF_IPX:
-		break;
-	}
-}
-
-void
-tpi_setsockaddr(struct tpipcb *tpp, struct mbuf *nam)
-{
-	switch (tpp->tpp_af) {
-	case AF_INET:
-		struct sockaddr_in *sin;
-
-		nam->m_len = sizeof(*sin);
-		sin = mtod(nam, struct sockaddr_in *);
-		bzero((caddr_t)sin, sizeof (*sin));
-		sin->sin_family = AF_INET;
-		sin->sin_len = sizeof(*sin);
-		sin->sin_port = tpp->tpp_lport;
-		sin->sin_addr = tpp->tpp_laddr;
-		break;
-	case AF_INET6:
-	case AF_ISO:
-	case AF_NS:
-	case AF_CCITT:
-	/* Others: Not implemented */
-	case AF_APPLETALK:
-		break;
-	case AF_SNA:
-		break;
-	case AF_NATM:
-		break;
-	case AF_IPX:
-		break;
-	}
 }
 
 struct tpipcb *

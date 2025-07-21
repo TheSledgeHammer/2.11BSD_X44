@@ -90,7 +90,7 @@ tuba_callout(tc)
 }
 
 void
-tuba_table_init()
+tuba_table_init(void)
 {
 	rn_inithead((void **)&tuba_tree, 0);
 	//timeout(tuba_timer, (caddr_t)0, arpt_prune * hz);
