@@ -92,7 +92,7 @@ u_long	vm_page_alloc_memory_npages;
 #endif
 
 static void vm_page_add_memory(vm_page_t, struct pglist *);
-static void vm_page_add_segmented_memory(vm_segment_t, struct pglist, struct seglist *);
+static void vm_page_add_segmented_memory(vm_segment_t, struct seglist *);
 static int vm_pagelist_alloc_memory(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *);
 static int vm_pagelist_alloc_memory_contig(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *);
 
@@ -155,16 +155,20 @@ vm_page_add_memory(m, seg, rlist)
 	TAILQ_REMOVE(pgfree, m, pageq);
 	cnt.v_page_free_count--;
 	m->flags = PG_CLEAN;
-	m->segment = seg;
+	if (seg != NULL) {
+		seg->object = NULL;
+		m->segment = seg;
+	} else {
+		m->segment->object = NULL;
+	}
 	m->anon = NULL;
 	m->wire_count = 0;
 	TAILQ_INSERT_TAIL(rlist, m, pageq);
 }
 
 static void
-vm_page_add_segmented_memory(seg, pgfree, slist)
+vm_page_add_segmented_memory(seg, slist)
 	vm_segment_t seg;
-	struct pglist pgfree;
 	struct seglist *slist;
 {
 	struct seglist *sgfree;
@@ -188,7 +192,6 @@ vm_page_add_segmented_memory(seg, pgfree, slist)
 	seg->flags = SEG_CLEAN;
 	seg->object = NULL;
 	seg->anon = NULL;
-	seg->memq = pgfree;
 	CIRCLEQ_INSERT_TAIL(slist, seg, segmentq);
 }
 
@@ -338,6 +341,7 @@ vm_pagelist_alloc_segmented_memory(size, low, high, alignment, boundary, slist, 
 	 */
 	s = splimp();
 	simple_lock(&vm_segment_list_free_lock);
+
 	/* Are there even any free pages? */
 	if (CIRCLEQ_FIRST(&vm_segment_list_free) == NULL) {
 		goto out;
@@ -418,18 +422,23 @@ vm_pagelist_alloc_segmented_memory(size, low, high, alignment, boundary, slist, 
 	idx = tryidx;
 	while (idx < end) {
 		seg = &vm_segment_array[idx];
-		vm_page_add_segmented_memory(seg, vm_page_queue_free, slist);
+		vm_page_add_segmented_memory(seg, slist);
+		/* page free lock ?? */
+		if (TAILQ_FIRST(&seg->memq) == NULL) {
+			goto out;
+		}
 		TAILQ_FOREACH(pg, &seg->memq, pageq) {
 			if (pg->segment == seg) {
+				/* TODO: check page flags */
 				if (pg->wire_count > 0) {
 					/*
 					 * Segment Contains Wired Down Pages.
 					 */
-					break;
-				} else {
-					vm_page_add_memory(pg, seg, rlist);
-					STAT_INCR(vm_page_alloc_memory_npages);
+					goto out;
 				}
+				/* Finally add memory */
+				vm_page_add_memory(pg, seg, rlist);
+				STAT_INCR(vm_page_alloc_memory_npages);
 			}
 		}
 		idx++;
