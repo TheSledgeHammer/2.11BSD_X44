@@ -810,6 +810,10 @@ u_long	vm_page_alloc_memory_npages;
 #define	STAT_DECR(v)
 #endif
 
+static void vm_page_add_memory(vm_page_t, struct pglist *);
+static int vm_pagelist_alloc_memory(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *);
+static int vm_pagelist_alloc_memory_contig(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *);
+
 /*
  *	vm_page_alloc_memory:
  *
@@ -843,46 +847,50 @@ u_long	vm_page_alloc_memory_npages;
  *	XXX This implementation could be improved.  It only
  *	XXX allocates a single segment.
  */
-int
-vm_page_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok)
+
+static void
+vm_page_add_memory(m, rlist)
+	vm_page_t m;
+	struct pglist *rlist;
+{
+	struct pglist *pgfree;
+#ifdef DEBUG
+	vm_page_t tp;
+#endif
+
+	pgfree = &vm_page_queue_free;
+#ifdef DEBUG
+	TAILQ_FOREACH(tp, pgfree, pageq) {
+		if (tp == m) {
+			break;
+		}
+	}
+	if (tp == NULL) {
+		panic("vm_page_alloc_memory: page not on freelist");
+	}
+#endif
+	TAILQ_REMOVE(pgfree, m, pageq);
+	cnt.v_page_free_count--;
+	m->flags = PG_CLEAN;
+	m->segment->object = NULL;
+	m->anon = NULL;
+	m->wire_count = 0;
+	TAILQ_INSERT_TAIL(rlist, m, pageq);
+}
+
+static int
+vm_pagelist_alloc_memory(size, low, high, alignment, boundary, rlist)
 	vm_size_t size;
 	vm_offset_t low, high, alignment, boundary;
 	struct pglist *rlist;
-	int nsegs, waitok;
 {
 	vm_offset_t try, idxpa, lastidxpa;
 	int s, tryidx, idx, end, error;
 	vm_page_t m;
 	u_long pagemask;
 
-#ifdef DEBUG
-	vm_page_t tp;
-#endif
-
-#ifdef DIAGNOSTIC
-	if ((alignment & (alignment - 1)) != 0) {
-		panic("vm_page_alloc_memory: alignment must be power of 2");
-	}
-
-	if ((boundary & (boundary - 1)) != 0) {
-		panic("vm_page_alloc_memory: boundary must be power of 2");
-	}
-#endif
-
-	/*
-	 * Our allocations are always page granularity, so our alignment
-	 * must be, too.
-	 */
-	if (alignment < PAGE_SIZE) {
-		alignment = PAGE_SIZE;
-	}
-
 	size = round_page(size);
 	try = roundup(low, alignment);
-
-	if (boundary != 0 && boundary < size) {
-		return (EINVAL);
-	}
 
 	pagemask = ~(boundary - 1);
 
@@ -928,7 +936,7 @@ vm_page_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok)
 		 * Found a suitable starting page.  See of the range
 		 * is free.
 		 */
-		for (; idx < end; idx++) {
+		for (idx = tryidx; idx < end; idx++) {
 			if (VM_PAGE_IS_FREE(&vm_page_array[idx]) == 0) {
 				/*
 				 * Page not available.
@@ -948,8 +956,7 @@ vm_page_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok)
 			}
 
 			if (idx > tryidx) {
-				lastidxpa =
-				    VM_PAGE_TO_PHYS(&vm_page_array[idx - 1]);
+				lastidxpa = VM_PAGE_TO_PHYS(&vm_page_array[idx - 1]);
 
 				if ((lastidxpa + PAGE_SIZE) != idxpa) {
 					/*
@@ -957,8 +964,7 @@ vm_page_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok)
 					 */
 					break;
 				}
-				if (boundary != 0 &&
-				    ((lastidxpa ^ idxpa) & pagemask) != 0) {
+				if (boundary != 0 && ((lastidxpa ^ idxpa) & pagemask) != 0) {
 					/*
 					 * Region crosses boundary.
 					 */
@@ -966,7 +972,6 @@ vm_page_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok)
 				}
 			}
 		}
-
 		if (idx == end) {
 			/*
 			 * Woo hoo!  Found one.
@@ -982,30 +987,77 @@ vm_page_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok)
 	idx = tryidx;
 	while (idx < end) {
 		m = &vm_page_array[idx];
-#ifdef DEBUG
-		TAILQ_FOREACH(tp, &vm_page_queue_free, pageq) {
-			if (tp == m) {
-				break;
-			}
-		}
-		if (tp == NULL) {
-			panic("vm_page_alloc_memory: page not on freelist");
-		}
-#endif
-		TAILQ_REMOVE(&vm_page_queue_free, m, pageq);
-		cnt.v_page_free_count--;
-		m->flags = PG_CLEAN;
-		m->segment->object = NULL;
-		m->wire_count = 0;
-		TAILQ_INSERT_TAIL(rlist, m, pageq);
+		vm_page_add_memory(m, rlist);
 		idx++;
 		STAT_INCR(vm_page_alloc_memory_npages);
 	}
 	error = 0;
 
- out:
+out:
 	simple_unlock(&vm_page_queue_free_lock);
 	splx(s);
+	return (error);
+}
+
+static int
+vm_pagelist_alloc_memory_contig(size, low, high, alignment, boundary, rlist)
+	vm_size_t size;
+	vm_offset_t low, high, alignment, boundary;
+	struct pglist *rlist;
+{
+	int s, error;
+
+	/*
+	 * Block all memory allocation and lock the free list.
+	 */
+	s = splimp();
+	error = vm_pagelist_alloc_memory(size, low, high, alignment, boundary,
+			rlist);
+	splx(s);
+	return (error);
+}
+
+int
+vm_page_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok)
+	vm_size_t size;
+	vm_offset_t low, high, alignment, boundary;
+	struct pglist *rlist;
+	int nsegs, waitok;
+{
+	int error;
+
+#ifdef DIAGNOSTIC
+	if ((alignment & (alignment - 1)) != 0) {
+		panic("vm_page_alloc_memory: alignment must be power of 2");
+	}
+
+	if ((boundary & (boundary - 1)) != 0) {
+		panic("vm_page_alloc_memory: boundary must be power of 2");
+	}
+#endif
+
+	/*
+	 * Our allocations are always page granularity, so our alignment
+	 * must be, too.
+	 */
+	if (alignment < PAGE_SIZE) {
+		alignment = PAGE_SIZE;
+	}
+
+	if (boundary != 0 && boundary < size) {
+		return (EINVAL);
+	}
+
+	TAILQ_INIT(rlist);
+
+	if ((nsegs < size >> PAGE_SHIFT) || (alignment != PAGE_SIZE)
+			|| (boundary != 0)) {
+		error = vm_pagelist_alloc_memory_contig(size, low, high, alignment,
+				boundary, rlist);
+	} else {
+		error = vm_pagelist_alloc_memory(size, low, high, alignment, boundary,
+				rlist);
+	}
 	return (error);
 }
 

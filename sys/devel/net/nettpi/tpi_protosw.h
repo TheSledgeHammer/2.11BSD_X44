@@ -85,7 +85,7 @@ struct tpi_protosw {
 	int		(*tpi_pcbbind)(void *);			/* bind to pcb for net level */
 	int		(*tpi_pcbconn)(void *, struct mbuf *);	/* connect for net level */
 	void		(*tpi_pcbdisc)(void *);			/* disconnect net level */
-	int 	(*tpi_attach)(struct socket *, int);/* attach net level pcb */
+	int 		(*tpi_attach)(struct socket *, int);	/* attach net level pcb */
 	void		(*tpi_pcbdetach)(void *);		/* detach net level pcb */
 	int		(*tpi_pcballoc)(struct socket *, void *);/* allocate a net level pcb */
 	int		(*tpi_output)();			/* prepare a packet to give to tpi */

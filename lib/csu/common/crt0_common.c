@@ -145,8 +145,8 @@ handle_argv(int argc, char *argv[], char **env)
 			}
 		}
 	} else {
-        __progname = empty_string;
-    }
+		__progname = empty_string;
+	}
 }
 
 #if defined(HAS_IPLTA)

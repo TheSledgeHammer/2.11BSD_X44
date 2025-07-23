@@ -1091,7 +1091,7 @@ in_pcblookup(table, laddr, lport_arg, faddr, fport_arg, lookup_wildcard)
 			goto match;
 		}
 	}
-    head = in_pcbhash(table, zeroin_addr, lport, faddr, fport);
+	head = in_pcbhash(table, zeroin_addr, lport, faddr, fport);
 	LIST_FOREACH(inph, head, inph_hash) {
 		inp = (struct inpcb *)inph;
 		if (inp->inp_af != AF_INET) {

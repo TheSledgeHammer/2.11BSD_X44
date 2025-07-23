@@ -53,7 +53,9 @@ CFOPS_DECL(cpu, cpu_match, cpu_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, cpu, DV_CPU);
 CFATTACH_DECL(cpu, &cpu_cd, &cpu_cops, sizeof(struct cpu_softc));
 
+#ifdef SMP
 void cpu_smp_init(struct cpu_info *);
+#endif
 
 struct cpu_info *cpu_info;
 int *apic_cpuids;
