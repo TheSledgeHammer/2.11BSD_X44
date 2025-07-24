@@ -168,7 +168,7 @@ setthetime(const char *p)
 {
 	register struct tm *lt;
 	struct timeval tv;
-	char *dot, *t;
+	const char *dot, *t;
 
 	for (t = p, dot = NULL; *t; ++t) {
 		if (isdigit(*t))
@@ -183,7 +183,8 @@ setthetime(const char *p)
 	lt = localtime(&tval);
 
 	if (dot != NULL) {			/* .ss */
-		*dot++ = '\0';
+		/* *dot++ = '\0'; */
+		dot++;
 		if (strlen(dot) != 2)
 			badformat();
 		lt->tm_sec = ATOI2(dot);
