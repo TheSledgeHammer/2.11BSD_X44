@@ -46,6 +46,10 @@ static char sccsid[] = "@(#)mmap.c	8.1 (Berkeley) 6/17/93";
 
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(mmap,_mmap)
+#endif
+
 /*
  * This function provides 64-bit offset padding that
  * is not supplied by GCC 1.X but is supplied by GCC 2.X.
