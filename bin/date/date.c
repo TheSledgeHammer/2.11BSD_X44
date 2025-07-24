@@ -75,7 +75,7 @@ static char sccsid[] = "@(#)date.c	8.2 (Berkeley) 4/28/95";
 time_t tval;
 int retval, nflag;
 
-static void setthetime(char *);
+static void setthetime(const char *);
 static void badformat(void);
 static void usage(void);
 
@@ -164,7 +164,7 @@ main(int argc, char *argv[])
 
 #define	ATOI2(ar)	((ar)[0] - '0') * 10 + ((ar)[1] - '0'); (ar) += 2;
 void
-setthetime(char *p)
+setthetime(const char *p)
 {
 	register struct tm *lt;
 	struct timeval tv;
