@@ -6,9 +6,7 @@
 #                      \___/_/\_\ .__/ \__,_|\__|
 #                               |_| XML parser
 #
-# Copyright (c) 2017-2022 Sebastian Pipping <sebastian@pipping.org>
-# Copyright (c) 2017      Stephen Groat <stephen@groat.us>
-# Copyright (c) 2017      Joe Orton <jorton@redhat.com>
+# Copyright (c) 2017 Expat development team
 # Licensed under the MIT license:
 #
 # Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -54,7 +52,8 @@ clean-local-check:
 	$(RM) xmlwf.1
 
 EXTRA_DIST = \
-    ok.min.css \
+    expat.png \
     reference.html \
     style.css \
+    valid-xhtml10.png \
     xmlwf.xml

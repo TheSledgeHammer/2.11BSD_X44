@@ -1,8 +1,8 @@
-#	$NetBSD: Makefile.inc,v 1.2 2022/02/23 19:07:35 martin Exp $
+#	$NetBSD: Makefile.inc,v 1.1 2012/02/29 20:07:56 tron Exp $
 
 BINDIR?=	/usr/bin
 
-CPPFLAGS+=	-I ${EXPATSRCDIR}/lib -I ${EXPATSRCDIR}/../lib/libexpat
+CPPFLAGS+=	-I${EXPATSRCDIR}/lib
 
 LDADD+=	-L${EXPATOBJDIR.expat} -lexpat
 DPADD+=	${EXPATLIB.expat}

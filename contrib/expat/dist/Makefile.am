@@ -6,8 +6,7 @@
 #                      \___/_/\_\ .__/ \__,_|\__|
 #                               |_| XML parser
 #
-# Copyright (c) 2017-2021 Sebastian Pipping <sebastian@pipping.org>
-# Copyright (c) 2018      KangLin <kl222@126.com>
+# Copyright (c) 2017 Expat development team
 # Licensed under the MIT license:
 #
 # Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -54,28 +53,13 @@ pkgconfig_DATA = expat.pc
 pkgconfigdir = $(libdir)/pkgconfig
 
 
-dist_cmake_DATA = \
-    cmake/autotools/expat.cmake
-
-nodist_cmake_DATA = \
-    cmake/autotools/expat-config-version.cmake \
-    cmake/autotools/expat-noconfig.cmake \
-    cmake/expat-config.cmake
-
-cmakedir = $(libdir)/cmake/expat-@PACKAGE_VERSION@
-
-
 _EXTRA_DIST_CMAKE = \
-    cmake/autotools/expat-noconfig__linux.cmake.in \
-    cmake/autotools/expat-noconfig__macos.cmake.in \
-    cmake/autotools/expat-noconfig__windows.cmake.in \
-    cmake/autotools/expat-package-init.cmake \
+    cmake/expat-config.cmake.in \
     cmake/mingw-toolchain.cmake \
     \
     CMakeLists.txt \
     CMake.README \
     ConfigureChecks.cmake \
-    expat.pc.cmake \
     expat_config.h.cmake
 
 _EXTRA_DIST_WINDOWS = \
@@ -90,14 +74,11 @@ EXTRA_DIST = \
     \
     conftools/expat.m4 \
     conftools/get-version.sh \
-    \
-    fuzz/xml_parsebuffer_fuzzer.c \
-    fuzz/xml_parse_fuzzer.c \
+    conftools/PrintPath \
     \
     xmlwf/xmlwf_helpgen.py \
     xmlwf/xmlwf_helpgen.sh \
     \
-    buildconf.sh \
     Changes \
     README.md \
     \

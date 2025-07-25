@@ -6,9 +6,7 @@
 #                      \___/_/\_\ .__/ \__,_|\__|
 #                               |_| XML parser
 #
-# Copyright (c) 2017-2021 Sebastian Pipping <sebastian@pipping.org>
-# Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
-# Copyright (c) 2020      Jeffrey Walton <noloader@gmail.com>
+# Copyright (c) 2017 Expat development team
 # Licensed under the MIT license:
 #
 # Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -32,7 +30,7 @@
 
 SUBDIRS = . benchmark
 
-AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(srcdir)/../lib
+AM_CPPFLAGS = -I$(srcdir)/../lib
 
 noinst_LIBRARIES = libruntests.a
 
@@ -54,11 +52,8 @@ runtests_SOURCES = \
 runtestspp_SOURCES = \
     runtestspp.cpp
 
-runtests_LDADD = libruntests.a ../lib/libexpatinternal.la
-runtestspp_LDADD = libruntests.a ../lib/libexpatinternal.la
-
-runtests_LDFLAGS = @AM_LDFLAGS@ @LIBM@
-runtestspp_LDFLAGS = @AM_LDFLAGS@ @LIBM@
+runtests_LDADD = libruntests.a ../lib/libexpat.la
+runtestspp_LDADD = libruntests.a ../lib/libexpat.la
 
 EXTRA_DIST = \
     chardata.h \

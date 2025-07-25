@@ -6,8 +6,7 @@
 #                      \___/_/\_\ .__/ \__,_|\__|
 #                               |_| XML parser
 #
-# Copyright (c) 2017 Rhodri James <rhodri@wildebeest.org.uk>
-# Copyright (c) 2017 Sebastian Pipping <sebastian@pipping.org>
+# Copyright (c) 2017 Expat development team
 # Licensed under the MIT license:
 #
 # Permission is  hereby granted,  free of charge,  to any  person obtaining
