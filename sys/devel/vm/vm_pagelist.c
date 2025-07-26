@@ -108,7 +108,7 @@ u_long  vm_page_alloc_memory_nsegments;
     }    											\
 }
 
-static void vm_pagelist_add_paged_memory(vm_page_t, struct pglist *);
+static void vm_pagelist_add_paged_memory(vm_page_t, vm_segment_t, struct pglist *);
 static void vm_pagelist_add_segmented_memory(vm_segment_t, struct seglist *);
 static int vm_pagelist_alloc_memory(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *);
 static int vm_pagelist_alloc_memory_contig(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *);
