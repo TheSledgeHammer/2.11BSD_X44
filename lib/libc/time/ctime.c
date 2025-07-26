@@ -71,6 +71,8 @@ static char sccsid[] = "@(#)ctime.c	8.2 (Berkeley) 3/20/94";
 #include "private.h"
 
 #ifdef __weak_alias
+__weak_alias(asctime_r,_asctime_r)
+__weak_alias(ctime_r,_ctime_r)
 __weak_alias(gmtime_r,_gmtime_r)
 __weak_alias(localtime_r,_localtime_r)
 __weak_alias(offtime, _offtime)
