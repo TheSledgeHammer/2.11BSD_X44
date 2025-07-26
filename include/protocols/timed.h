@@ -22,9 +22,7 @@ struct tsp {
 	u_short	tsp_seq;
 	union {
 		struct timeval 	tspu_time;
-#define tv_sec 			tspu_time.tv_sec
-#define tv_usec 		tspu_time.tv_usec
-		char 			tspu_hopcnt;
+		char 		tspu_hopcnt;
 	} tsp_u;
 	char tsp_name[MAXHOSTNAMELEN];
 };
@@ -64,7 +62,7 @@ struct tsp {
 #define	TSPTYPENUMBER	25
 
 #ifdef TSPTYPES
-char *tsptype[TSPTYPENUMBER] =
+const char *tsptype[TSPTYPENUMBER] =
   { "ANY", "ADJTIME", "ACK", "MASTERREQ", "MASTERACK", "SETTIME", "MASTERUP", 
   "SLAVEUP", "ELECTION", "ACCEPT", "REFUSE", "CONFLICT", "RESOLVE", "QUIT", 
   "DATE", "DATEREQ", "DATEACK", "TRACEON", "TRACEOFF", "MSITE", "MSITEREQ",
