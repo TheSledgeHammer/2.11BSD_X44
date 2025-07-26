@@ -489,12 +489,12 @@ vm_pagelist_found_chunk(idx, end, segmented, slist, rlist)
 						/*
 						 * Segment Contains Wired Down Pages.
 						 */
-						return (1);
+						return (ENOMEM);
 					} else if ((pg->flags & PG_FREE) == 0) {
 						/*
 						 * Page not available.
 						 */
-						return (1);
+						return (ENOMEM);
 					} else {
 						vm_pagelist_add_paged_memory(pg, seg, rlist);
 						STAT_INCR(vm_page_alloc_memory_npages);
