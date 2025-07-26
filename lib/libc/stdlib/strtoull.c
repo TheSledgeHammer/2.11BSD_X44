@@ -38,14 +38,17 @@ __RCSID("$NetBSD: strtoull.c,v 1.5 2003/08/07 16:43:45 agc Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#ifdef _LIBC
 #include "namespace.h"
+#endif
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
 
-#ifdef __weak_alias
+#ifdef _LIBC
 __weak_alias(strtoull, _strtoull)
 #endif
 
