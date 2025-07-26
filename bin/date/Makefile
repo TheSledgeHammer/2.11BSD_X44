@@ -9,6 +9,7 @@ DPADD+=	${LIBUTIL}
 LDADD+=	-lutil
 .endif
 CPPFLAGS+=-I${.CURDIR}
+CPPFLAGS+=-D__SELECT_DECLARED
 
 COPTS.date.c = -Wno-format-nonliteral
 
