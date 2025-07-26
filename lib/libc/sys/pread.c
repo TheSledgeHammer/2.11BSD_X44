@@ -35,6 +35,10 @@
 
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(pread,_pread)
+#endif
+
 ssize_t
 pread(fdes, buf, nbyte, offset)
 	int fdes;
