@@ -158,19 +158,33 @@ vm_pageout_scan_segment(object, pages_free, pages_freed)
 	register vm_segment_t		segment, next;
 	register struct pglist 		*pglst;
 
+
 	/* scan segment inactive list */
 	for (segment = CIRCLEQ_FIRST(&vm_segment_list_inactive); segment != NULL; segment = next) {
 
 		next = CIRCLEQ_NEXT(segment, listq);
 
 		/*
-		 * If segments pglist equals the inactive pages.
-		 * Run through inactive queues
+		 * check segments page list is not empty.
 		 */
-		pglst = &segment->memq;
-		if (pglst == &vm_page_queue_inactive) {
+		if (segment->memq != NULL) {
+			vm_page_t page;
+			int inactive;
+
+			/*
+			 * check if segments contains inactive pages.
+			 */
+			inactive = 0;
+			TAILQ_FOREACH(page, &segment->memq, pageq) {
+				if ((page->flags & PG_INACTIVE) == 0) {
+					inactive++;
+				}
+			}
 			/* Scan top-down on a per segment basis. */
-			vm_pageout_scan_page(pglst, segment, object, pages_free, pages_freed);
+			if (inactive > 0) {
+				pglst = &segment->memq;
+				vm_pageout_scan_page(pglst, segment, object, pages_free, pages_freed);
+			}
 		} else {
 			/* Scan bottom-up on a per page basis. */
 			pglst = &vm_page_queue_inactive;

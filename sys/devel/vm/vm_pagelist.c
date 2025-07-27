@@ -85,14 +85,14 @@
 		}															\
 	} while (0);
 
-u_long	vm_page_alloc_memory_npages;
-u_long  vm_page_alloc_memory_nsegments;
+u_long vm_page_alloc_memory_npages;
+u_long vm_page_alloc_memory_nsegments;
 #else
 #define	STAT_INCR(v)
 #define	STAT_DECR(v)
 #endif
 
-#define pagelist_lock(segmented) {               	\
+#define vm_pagelist_lock(segmented) {               \
     if ((segmented) == TRUE) {                      \
         simple_lock(&vm_segment_list_free_lock);    \
     } else {                                        \
@@ -100,7 +100,7 @@ u_long  vm_page_alloc_memory_nsegments;
     }												\
 }
 
-#define pagelist_unlock(segmented) {              	\
+#define vm_pagelist_unlock(segmented) {              \
     if ((segmented) == TRUE) {                      \
         simple_lock(&vm_segment_list_free_lock);    \
     } else {                                        \
@@ -245,7 +245,7 @@ vm_pagelist_alloc_memory(size, low, high, alignment, boundary, segmented, slist,
 	 * Block all memory allocation and lock the free list.
 	 */
 	s = splimp();
-	pagelist_lock(segmented);
+	vm_pagelist_lock(segmented);
 
 	/* Are there even any free pages / segments ? */
 	if (vm_pagelist_first(segmented) == 0) {
@@ -340,7 +340,7 @@ vm_pagelist_alloc_memory(size, low, high, alignment, boundary, segmented, slist,
 	error = vm_pagelist_found_chunk(idx, end, segmented, slist, rlist);
 
 out:
-	pagelist_unlock(segmented);
+	vm_pagelist_unlock(segmented);
 	splx(s);
 	return (error);
 }
@@ -391,8 +391,8 @@ vm_pagelist_alloc_memory_contig(size, low, high, alignment, boundary, rlist)
 	s = splimp();
 
 	/* Check if number of pages expands beyond a single segment */
-
-	if (vm_pagelist_check_memory(size)) {
+	rval = vm_pagelist_check_memory(size);
+	if (rval != 0) {
 		if (rval > 0) {
 			segmented = TRUE;
 		}
@@ -519,15 +519,15 @@ vm_pagelist_check_memory(size)
 {
     vm_offset_t nsegs, npgs;
 
-    nsegs = num_segments(size);
+	nsegs = num_segments(size);
 	npgs = num_pages(size);
-    if ((nsegs > 1) || (npgs > (SEGMENT_SIZE/PAGE_SIZE))) {
-        return (1);
-    } else if ((nsegs <= 1) || (npgs <= (SEGMENT_SIZE/PAGE_SIZE))) {
-        return (-1);
-    } else {
-         return (0);
-    }
+	if ((nsegs > 1) || (npgs > (SEGMENT_SIZE / PAGE_SIZE))) {
+		return (1);
+	} else if ((nsegs <= 1) || (npgs <= (SEGMENT_SIZE / PAGE_SIZE))) {
+		return (-1);
+	} else {
+		return (0);
+	}
 }
 
 static int
