@@ -764,5 +764,6 @@
 #define dlsym					__dlsym
 #define dlerror					__dlerror
 #define dladdr					__dladdr
+#define fmtcheck		        __fmtcheck
 #endif /* __weak_alias */
 #endif /* _NAMESPACE_H_ */
