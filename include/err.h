@@ -50,21 +50,21 @@
 #include <stdarg.h>
 
 __BEGIN_DECLS
-__dead void	err(int, const char *, ...)  __attribute__((__noreturn__, __format__(__printf__, 2, 3)));
-__dead void	errc(int, int, const char *, ...)  __attribute__((__noreturn__, __format__(__printf__, 3, 4)));
-__dead void	errx(int, const char *, ...)  __attribute__((__noreturn__, __format__(__printf__, 2, 3)));
+__dead void	err(int, const char *, ...) __printflike(2, 3); //__attribute__((__noreturn__, __format__(__printf__, 2, 3)));
+__dead void	errc(int, int, const char *, ...) __printflike(3, 4); //__attribute__((__noreturn__, __format__(__printf__, 3, 4)));
+__dead void	errx(int, const char *, ...) __printflike(2, 3); //__attribute__((__noreturn__, __format__(__printf__, 2, 3)));
 
-__dead void	verr(int, const char *, va_list)  __attribute__((__noreturn__, __format__(__printf__, 2, 0)));
-__dead void	verrc(int, int, const char *, va_list)  __attribute__((__noreturn__, __format__(__printf__, 3, 0)));
-__dead void	verrx(int, const char *, va_list)  __attribute__((__noreturn__, __format__(__printf__, 2, 0)));
+__dead void	verr(int, const char *, va_list) __printflike(2, 0); //__attribute__((__noreturn__, __format__(__printf__, 2, 0)));
+__dead void	verrc(int, int, const char *, va_list) __printflike(3, 0); //__attribute__((__noreturn__, __format__(__printf__, 3, 0)));
+__dead void	verrx(int, const char *, va_list) __printflike(2, 0); //__attribute__((__noreturn__, __format__(__printf__, 2, 0)));
 
-void		warn(const char *, ...) __attribute__((__format__(__printf__, 1, 2)));
-void 		warnc(int, const char *, ...) __attribute__((__format__(__printf__, 2, 3)));
-void		warnx(const char *, ...) __attribute__((__format__(__printf__, 1, 2)));
+void		warn(const char *, ...) __printflike(1, 2); //__attribute__((__format__(__printf__, 1, 2)));
+void 		warnc(int, const char *, ...) __printflike(2, 3); //__attribute__((__format__(__printf__, 2, 3)));
+void		warnx(const char *, ...) __printflike(1, 2); //__attribute__((__format__(__printf__, 1, 2)));
 
-void		vwarn(const char *, va_list) __attribute__((__format__(__printf__, 1, 0)));
-void		vwarnc(int, const char *, va_list) __attribute__((__format__(__printf__, 2, 0)));
-void		vwarnx(const char *, va_list) __attribute__((__format__(__printf__, 1, 0)));
+void		vwarn(const char *, va_list) __printflike(1, 0); //__attribute__((__format__(__printf__, 1, 0)));
+void		vwarnc(int, const char *, va_list) __printflike(2, 0); //__attribute__((__format__(__printf__, 2, 0)));
+void		vwarnx(const char *, va_list) __printflike(1, 0); //__attribute__((__format__(__printf__, 1, 0)));
 __END_DECLS
 
 #endif /* !_ERR_H_ */
