@@ -167,7 +167,7 @@ vm_pageout_scan_segment(object, pages_free, pages_freed)
 		/*
 		 * check segments page list is not empty.
 		 */
-		if (segment->memq != NULL) {
+		if (TAILQ_EMPTY(&segment->memq) != NULL) {
 			vm_page_t page;
 			int inactive;
 
