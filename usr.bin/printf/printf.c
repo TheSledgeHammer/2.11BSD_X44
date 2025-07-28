@@ -78,7 +78,7 @@ static char sccsid[] = "@(#)printf.c	8.2 (Berkeley) 3/22/95";
 		(void)printf(f, func); \
 }
 
-static char *mklong(const char *, int);
+static char *mklong(const char *, char);
 static void escape(char *);
 static int getchr(void);
 static char *getstr(void);
@@ -218,7 +218,7 @@ next:
 		case 'c': {
 			char p;
 
-			p = getchr();
+			p = (char)getchr();
 			PF(start, p);
 			break;
 		}
@@ -286,7 +286,7 @@ next:
 }
 
 static char *
-mklong(const char *str, int ch)
+mklong(const char *str, char ch)
 {
 	static char copy[64];
 	size_t len;
@@ -309,8 +309,8 @@ mklong(const char *str, int ch)
 static void
 escape(char *fmt)
 {
-	char *store;
-	int value, c;
+	char *store, c;
+	int value;
 
 	for (store = fmt; (c = *fmt) != '\0'; ++fmt, ++store) {
 		if (c != '\\') {
@@ -368,7 +368,7 @@ escape(char *fmt)
 				value += *fmt - '0';
 			}
 			--fmt;
-			*store = value;
+			*store = (char)value;
 			break;
 		default:
 			*store = *fmt;
