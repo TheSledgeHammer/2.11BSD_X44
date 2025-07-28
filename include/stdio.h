@@ -354,6 +354,7 @@ int	    vasprintf(char ** __restrict, const char * __restrict, __va_list); //__p
 int		vfscanf(FILE * __restrict, const char * __restrict, __va_list) __scanflike(2, 0);
 int	    vscanf(const char * __restrict, __va_list) __scanflike(1, 0);
 int	    vsscanf(const char * __restrict, const char * __restrict, __va_list) __scanflike(2, 0);
+const char  *fmtcheck(const char *, const char *);
 __END_DECLS
 
 /*
