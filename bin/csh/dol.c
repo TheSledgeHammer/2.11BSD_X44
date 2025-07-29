@@ -1,4 +1,4 @@
-/* $NetBSD: dol.c,v 1.21 2003/08/07 09:05:04 agc Exp $ */
+/* $NetBSD: dol.c,v 1.26 2007/07/16 18:26:09 christos Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)dol.c	8.1 (Berkeley) 5/31/93";
 #else
-__RCSID("$NetBSD: dol.c,v 1.21 2003/08/07 09:05:04 agc Exp $");
+__RCSID("$NetBSD: dol.c,v 1.26 2007/07/16 18:26:09 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -213,7 +213,7 @@ Dword(void)
 {
     Char wbuf[BUFSIZE], *wp;
     int c, c1, i;
-    bool dolflg, done, sofar;
+    int dolflg, done, sofar;
     
     done = 0;
     i = MAXWLEN;
@@ -389,7 +389,7 @@ Dgetdol(void)
     struct varent *vp;
     Char *np;
     int c, lwb, sc, subscr, upb;
-    bool dimen, bitset;
+    int dimen, bitset;
     char tnp;
     
     bitset = 0;
@@ -763,8 +763,10 @@ setDolp(Char *cp)
 	addla(dp);
 	xfree((ptr_t) dp);
     }
-    else
+    else {
 	addla(cp);
+	xfree((ptr_t) cp);
+    }
 
     dolp = STRNULL;
     if (seterr)
@@ -817,7 +819,7 @@ heredoc(Char *term)
     Char *Dv[2], *lbp, *obp, *mbp, **vp;
     char *tmp;
     int c, ocnt, lcnt, mcnt;
-    bool quoted;
+    int quoted;
 
 again:
     tmp = short2str(shtemp);
@@ -825,8 +827,10 @@ again:
 	if (errno == EEXIST) {
 	    if (unlink(tmp) == -1) {
 		(void)gettimeofday(&tv, NULL);
-		shtemp = Strspl(STRtmpsh, putn((((int)tv.tv_sec) ^ 
-		    ((int)tv.tv_usec) ^ ((int)getpid())) & 0x00ffffff));
+		mbp = putn((((int)tv.tv_sec) ^ 
+		    ((int)tv.tv_usec) ^ ((int)getpid())) & 0x00ffffff);
+		shtemp = Strspl(STRtmpsh, mbp);
+		xfree((ptr_t)mbp);
 	    }
 	    goto again;
 	}

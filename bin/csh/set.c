@@ -1,4 +1,4 @@
-/* $NetBSD: set.c,v 1.20 2003/08/07 09:05:07 agc Exp $ */
+/* $NetBSD: set.c,v 1.29 2007/07/16 18:26:11 christos Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)set.c	8.1 (Berkeley) 5/31/93";
 #else
-__RCSID("$NetBSD: set.c,v 1.20 2003/08/07 09:05:07 agc Exp $");
+__RCSID("$NetBSD: set.c,v 1.29 2007/07/16 18:26:11 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -70,8 +70,8 @@ void
 doset(Char **v, struct command *t)
 {
     Char op, *p, **vecp, *vp;
-    int subscr;
-    bool hadsub;
+    int subscr = 0;	/* XXX: GCC */
+    int hadsub;
 
     v++;
     p = *v++;
@@ -129,8 +129,13 @@ doset(Char **v, struct command *t)
 	else
 	    set(vp, Strsave(p));
 	if (eq(vp, STRpath)) {
-	    exportpath(adrof(STRpath)->vec);
-	    dohash(NULL, NULL);
+	    struct varent *pt = adrof(STRpath); 
+	    if (pt == NULL)
+		stderror(ERR_NAME | ERR_UNDVAR);
+	    else {
+		exportpath(pt->vec);
+		dohash(NULL, NULL);
+	    }
 	}
 	else if (eq(vp, STRhistchars)) {
 	    Char *pn = value(STRhistchars);
@@ -153,7 +158,7 @@ doset(Char **v, struct command *t)
 	    cp = Strsave(value(vp));	/* get the old value back */
 
 	    /*
-	     * convert to cononical pathname (possibly resolving symlinks)
+	     * convert to canonical pathname (possibly resolving symlinks)
 	     */
 	    cp = dcanon(cp, cp);
 
@@ -212,8 +217,8 @@ void
 dolet(Char **v, struct command *t)
 {
     Char c, op, *p, *vp;
-    int subscr;
-    bool hadsub;
+    int subscr = 0;	/* XXX: GCC */
+    int hadsub;
 
     v++;
     p = *v++;
@@ -282,8 +287,13 @@ dolet(Char **v, struct command *t)
 	else
 	    set(vp, operate(op, value(vp), p));
 	if (eq(vp, STRpath)) {
-	    exportpath(adrof(STRpath)->vec);
-	    dohash(NULL, NULL);
+	    struct varent *pt = adrof(STRpath); 
+	    if (pt == NULL)
+		stderror(ERR_NAME | ERR_UNDVAR);
+	    else {
+		exportpath(pt->vec);
+		dohash(NULL, NULL);
+	    }
 	}
 	xfree((ptr_t) vp);
 	if (c != '=')
@@ -336,29 +346,16 @@ Char *
 putn(int n)
 {
     static Char numbers[15];
-    int num;
 
     putp = numbers;
     if (n < 0) {
 	n = -n;
 	*putp++ = '-';
     }
-    num = 2;			/* confuse lint */
-    if (sizeof(int) == num && ((unsigned int) n) == 0x8000) {
-	*putp++ = '3';
-	n = 2768;
-#ifdef pdp11
+    if ((unsigned int)n == 0x80000000U) {
+	*putp++ = '2';
+	n = 147483648;
     }
-#else
-    }
-    else {
-	num = 4;		/* confuse lint */
-	if (sizeof(int) == num && ((unsigned int) n) == 0x80000000) {
-	    *putp++ = '2';
-	    n = 147483648;
-	}
-    }
-#endif
     putn1(n);
     *putp = 0;
     return (Strsave(numbers));
@@ -548,7 +545,7 @@ unsetv1(struct varent *p)
     /*
      * If p is missing one child, then we can move the other into where p is.
      * Otherwise, we find the predecessor of p, which is guaranteed to have no
-     * right child, copy it into p, and move it's left child into it.
+     * right child, copy it into p, and move its left child into it.
      */
     if (p->v_right == 0)
 	c = p->v_left;
@@ -672,7 +669,7 @@ balance(struct varent *p, int f, int d)
     int ff;
 
     /*
-     * Ok, from here on, p is the node we're operating on; pp is it's parent; f
+     * Ok, from here on, p is the node we're operating on; pp is its parent; f
      * is the branch of p from which we have come; ff is the branch of pp which
      * is p.
      */
@@ -688,7 +685,7 @@ balance(struct varent *p, int f, int d)
 		break;
 	    case 1:		/* was already right heavy */
 		switch (p->v_right->v_bal) {
-		case 1:	/* sigle rotate */
+		case 1:	/* single rotate */
 		    pp->v_link[ff] = rleft(p);
 		    p->v_left->v_bal = 0;
 		    p->v_bal = 0;
@@ -726,7 +723,7 @@ balance(struct varent *p, int f, int d)
 		    p->v_right->v_bal = 0;
 		    p->v_bal = 0;
 		    break;
-		case 0:	/* signle rotate */
+		case 0:	/* single rotate */
 		    pp->v_link[ff] = rright(p);
 		    p->v_right->v_bal = -1;
 		    p->v_bal = 1;

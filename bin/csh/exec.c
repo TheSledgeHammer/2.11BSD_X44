@@ -1,4 +1,4 @@
-/* $NetBSD: exec.c,v 1.22 2005/02/17 16:07:53 xtraeme Exp $ */
+/* $NetBSD: exec.c,v 1.27 2007/12/15 19:44:37 perry Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)exec.c	8.3 (Berkeley) 5/23/95";
 #else
-__RCSID("$NetBSD: exec.c,v 1.22 2005/02/17 16:07:53 xtraeme Exp $");
+__RCSID("$NetBSD: exec.c,v 1.27 2007/12/15 19:44:37 perry Exp $");
 #endif
 #endif /* not lint */
 
@@ -97,11 +97,11 @@ static int hits, misses;
 /* Dummy search path for just absolute search when no path */
 static Char *justabs[] = {STRNULL, 0};
 
-static void pexerr(void) __attribute__((noreturn));
+static void pexerr(void) __dead;
 static void texec(Char *, Char **);
 static int hashname(Char *);
 static int tellmewhat(struct wordent *, Char *);
-static int executable(Char *, Char *, bool);
+static int executable(Char *, Char *, int);
 static int iscommand(Char *);
 
 void
@@ -112,7 +112,7 @@ doexec(Char **v, struct command *t)
     Char *blk[2], **av, *dp, **pv, *sav;
     int i, hashval, hashval1;
     sigset_t nsigset;
-    bool slash;
+    int slash;
 
     hashval = 0;
     /*
@@ -269,7 +269,7 @@ texec(Char *sf, Char **st)
     Char *lastsh[2], **vp, *st0, **ost;
     char *f, **t;
     int fd;
-    unsigned char c;
+    unsigned char c = '\0';
 
     /* The order for the conversions is significant */
     t = short2blk(st);
@@ -506,7 +506,7 @@ iscommand(Char *name)
     struct varent *v;
     Char **pv, *sav;
     int hashval, hashval1, i;
-    bool slash;
+    int slash;
 
     hashval = 0;
     slash = any(short2str(name), '/');
@@ -563,7 +563,7 @@ cont:
  * This is a bit kludgy, but in the name of optimization...
  */
 static int
-executable(Char *dir, Char *name, bool dir_ok)
+executable(Char *dir, Char *name, int dir_ok)
 {
     struct stat stbuf;
     Char path[MAXPATHLEN + 1], *dp, *sp;
@@ -638,7 +638,7 @@ tellmewhat(struct wordent *lexp, Char *str)
     struct wordent *sp;
     Char *cmd, *s0, *s1, *s2;
     int i;
-    bool aliased, found;
+    int aliased, found;
     Char qc;
 
     aliased = 0;
@@ -697,7 +697,7 @@ tellmewhat(struct wordent *lexp, Char *str)
     if ((i = iscommand(sp->word)) != 0) {
 	Char **pv;
 	struct varent *v;
-	bool    slash = any(short2str(sp->word), '/');
+	int    slash = any(short2str(sp->word), '/');
 
 	v = adrof(STRpath);
 	if (v == 0 || v->vec[0] == 0 || slash)

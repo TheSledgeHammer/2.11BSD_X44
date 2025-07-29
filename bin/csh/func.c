@@ -1,4 +1,4 @@
-/* $NetBSD: func.c,v 1.29 2004/05/13 15:25:58 christos Exp $ */
+/* $NetBSD: func.c,v 1.36.12.1 2009/04/01 00:25:20 snj Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)func.c	8.1 (Berkeley) 5/31/93";
 #else
-__RCSID("$NetBSD: func.c,v 1.29 2004/05/13 15:25:58 christos Exp $");
+__RCSID("$NetBSD: func.c,v 1.36.12.1 2009/04/01 00:25:20 snj Exp $");
 #endif
 #endif /* not lint */
 
@@ -47,6 +47,7 @@ __RCSID("$NetBSD: func.c,v 1.29 2004/05/13 15:25:58 christos Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "csh.h"
 #include "extern.h"
@@ -433,7 +434,7 @@ void
 dowhile(Char **v, struct command *t)
 {
     int status;
-    bool again;
+    int again;
 
     again = whyles != 0 && SEEKEQ(&whyles->w_start, &lineloc) &&
         whyles->w_fename == 0;
@@ -1105,12 +1106,13 @@ static const struct limits {
     { RLIMIT_NPROC,	"maxproc",	1,	"" },
     { RLIMIT_NOFILE,	"openfiles",	1,	"" },
     { RLIMIT_SBSIZE,	"sbsize",	1,	"bytes" },
+    { RLIMIT_AS,	"vmemoryuse",	1024,	"kbytes" },
     { -1,		NULL,		0,	NULL }
 };
 
 static const struct limits *findlim(Char *);
 static RLIM_TYPE getval(const struct limits *, Char **);
-static void limtail(Char *, char *);
+static void limtail(Char *, const char *);
 static void plim(const struct limits *, Char);
 static int setlim(const struct limits *, Char, RLIM_TYPE);
 
@@ -1232,7 +1234,7 @@ getval(const struct limits *lp, Char **v)
 }
 
 static void
-limtail(Char *cp, char *str)
+limtail(Char *cp, const char *str)
 {
     while (*cp && *cp == *str)
 	cp++, str++;
@@ -1352,7 +1354,7 @@ retry:
 /* This is the dreaded EVAL built-in.
  *   If you don't fiddle with file descriptors, and reset didfds,
  *   this command will either ignore redirection inside or outside
- *   its aguments, e.g. eval "date >x"  vs.  eval "date" >x
+ *   its arguments, e.g. eval "date >x"  vs.  eval "date" >x
  *   The stuff here seems to work, but I did it by trial and error rather
  *   than really knowing what was going on.  If tpgrp is zero, we are
  *   probably a background eval, e.g. "eval date &", and we want to
@@ -1418,9 +1420,12 @@ doeval(Char **v, struct command *t)
     evalp = oevalp;
     doneinp = 0;
     didfds = odidfds;
-    (void)close(SHIN);
-    (void)close(SHOUT);
-    (void)close(SHERR);
+    if (SHIN != -1)
+	(void)close(SHIN);
+    if (SHOUT != -1)
+	(void)close(SHOUT);
+    if (SHERR != -1)
+	(void)close(SHERR);
     SHIN = dmove(saveIN, oSHIN);
     SHOUT = dmove(saveOUT, oSHOUT);
     SHERR = dmove(saveERR, oSHERR);

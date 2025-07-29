@@ -1,4 +1,4 @@
-/* $NetBSD: sem.c,v 1.24 2004/09/28 16:07:01 christos Exp $ */
+/* $NetBSD: sem.c,v 1.28 2007/07/16 18:26:10 christos Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)sem.c	8.1 (Berkeley) 5/31/93";
 #else
-__RCSID("$NetBSD: sem.c,v 1.24 2004/09/28 16:07:01 christos Exp $");
+__RCSID("$NetBSD: sem.c,v 1.28 2007/07/16 18:26:10 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -59,14 +59,15 @@ static void doio(struct command *t, int *, int *);
 static void chkclob(char *);
 
 void
-execute(struct command *t, int wanttty, int *pipein, int *pipeout)
+execute(struct command *t, int wtty, int *pipein, int *pipeout)
 {
     static sigset_t csigset, ocsigset; 
     static int nosigchld = 0, onosigchld = 0;
-    struct biltins *bifunc;
+    volatile int wanttty = wtty;
+    struct biltins * volatile bifunc;
     int pv[2], pid;
     sigset_t nsigset;
-    bool forked;
+    int forked;
 
     UNREGISTER(forked);
     UNREGISTER(bifunc);
@@ -290,7 +291,7 @@ execute(struct command *t, int wanttty, int *pipein, int *pipeout)
 		else {		/* child */
 		    /* this is from pfork() */
 		    int pgrp;
-		    bool ignint = 0;
+		    int ignint = 0;
 
 		    if (nosigchld) {
 		        (void)sigprocmask(SIG_SETMASK, &csigset, NULL);

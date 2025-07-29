@@ -90,6 +90,7 @@ static int getnum(intmax_t *, uintmax_t *, int);
 static int getfloating(double *, long double *, int);
 static int asciicode(void);
 static void usage(void);
+static void pf_warnx(const char *fmt, ...);
 
 static char **gargv;
 
@@ -143,7 +144,7 @@ next:
 			if (!*fmt) {
 				/* avoid infinite loop */
 				if (end == 1) {
-					warnx("missing format character");
+					pf_warnx("missing format character");
 					return (1);
 				}
 				end = 1;
@@ -190,7 +191,7 @@ next:
 		/* skip to conversion char */
 		fmt += strspn(fmt, SKIP2);
 		if (!*fmt) {
-			warnx("missing format character");
+			pf_warnx("missing format character");
 			return (1);
 		}
 
@@ -205,7 +206,7 @@ next:
 			start[strlen(start) - 1] = 's';
 			p = strdup(getstr());
 			if (p == NULL) {
-				warnx("%s", strerror(ENOMEM));
+				pf_warnx("%s", strerror(ENOMEM));
 				return (1);
 			}
 			escape(p);
@@ -277,7 +278,7 @@ next:
 			break;
 		}
 		default:
-			warnx("illegal format character");
+			pf_warnx("illegal format character");
 			return (1);
 		}
 		*fmt = nextch;
@@ -296,7 +297,7 @@ mklong(const char *str, char ch)
 	}
 	len = strlen(str) + 2;
 	if (len > sizeof(copy)) {
-		warnx("format %s too complex\n", str);
+		pf_warnx("format %s too complex\n", str);
 		len = 4;
 	}
 	(void)memmove(copy, str, len - 3);
@@ -406,7 +407,7 @@ getint(int *ip)
 		return (1);
 	}
 	if (val < INT_MIN || val > INT_MAX) {
-		warnx("%s: %s", *gargv, strerror(ERANGE));
+		pf_warnx("%s: %s", *gargv, strerror(ERANGE));
 		return (1);
 	}
 	*ip = (int)val;
@@ -423,7 +424,7 @@ getlong(long *lp)
 		return (1);
 	}
 	if (val < LONG_MIN || val > LONG_MAX) {
-		warnx("%s: %s", *gargv, strerror(ERANGE));
+		pf_warnx("%s: %s", *gargv, strerror(ERANGE));
 		return (1);
 	}
 	*lp = (long)val;
@@ -440,7 +441,7 @@ getulong(unsigned long *ulp)
 		return (1);
 	}
 	if (uval > ULONG_MAX) {
-		warnx("%s: %s", *gargv, strerror(ERANGE));
+		pf_warnx("%s: %s", *gargv, strerror(ERANGE));
 		return (1);
 	}
 	*ulp = (unsigned long)uval;
@@ -458,7 +459,7 @@ getdouble(double *dp)
 	}
 
 	if (val < DBL_MIN || val > DBL_MAX) {
-		warnx("%s: %s", *gargv, strerror(ERANGE));
+		pf_warnx("%s: %s", *gargv, strerror(ERANGE));
 		return (1);
 	}
 	*dp = val;
@@ -494,11 +495,11 @@ getnum(intmax_t *lp, uintmax_t *ulp, int signedconv)
 			*ulp = strtoumax(*gargv, &ep, 0);
 		}
 		if (*ep != '\0') {
-			warnx("%s: illegal number", *gargv);
+			pf_warnx("%s: illegal number", *gargv);
 			return (1);
 		}
 		if (errno == ERANGE) {
-			warnx("%s: %s", *gargv, strerror(ERANGE));
+			pf_warnx("%s: %s", *gargv, strerror(ERANGE));
 			return (1);
 		}
 		++gargv;
@@ -533,11 +534,11 @@ getfloating(double *dp, long double *ldp, int mod_ldbl)
 			*ldp = strtold(*gargv, &ep);
 		}
 		if (*ep != '\0') {
-			warnx("%s: illegal number", *gargv);
+			pf_warnx("%s: illegal number", *gargv);
 			return (1);
 		}
 		if (errno == ERANGE) {
-			warnx("%s: %s", *gargv, strerror(ERANGE));
+			pf_warnx("%s: %s", *gargv, strerror(ERANGE));
 			return (1);
 		}
 		++gargv;
@@ -556,6 +557,22 @@ asciicode(void)
 	}
 	++gargv;
 	return (ch);
+}
+
+/*
+ * Workaround for csh progprinf.
+ * Not liking warnx.
+ */
+static void
+pf_warnx(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	if (fmt != NULL) {
+		(void)doprnt(stderr, fmt, ap);
+	}
+	va_end(ap);
 }
 
 static void

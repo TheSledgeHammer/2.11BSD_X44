@@ -1,4 +1,4 @@
-/* $NetBSD: exp.c,v 1.14 2003/08/07 09:05:05 agc Exp $ */
+/* $NetBSD: exp.c,v 1.19 2007/07/16 18:26:10 christos Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)exp.c	8.1 (Berkeley) 5/31/93";
 #else
-__RCSID("$NetBSD: exp.c,v 1.14 2003/08/07 09:05:05 agc Exp $");
+__RCSID("$NetBSD: exp.c,v 1.19 2007/07/16 18:26:10 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -69,16 +69,16 @@ __RCSID("$NetBSD: exp.c,v 1.14 2003/08/07 09:05:05 agc Exp $");
 #define EQMATCH 7
 #define NOTEQMATCH 8
 
-static int exp1(Char ***, bool);
-static int exp2(Char ***, bool);
-static int exp2a(Char ***, bool);
-static int exp2b(Char ***, bool);
-static int exp2c(Char ***, bool);
-static Char *exp3(Char ***, bool);
-static Char *exp3a(Char ***, bool);
-static Char *exp4(Char ***, bool);
-static Char *exp5(Char ***, bool);
-static Char *exp6(Char ***, bool);
+static int exp1(Char ***, int);
+static int csh_exp2(Char ***, int);
+static int exp2a(Char ***, int);
+static int exp2b(Char ***, int);
+static int exp2c(Char ***, int);
+static Char *exp3(Char ***, int);
+static Char *exp3a(Char ***, int);
+static Char *exp4(Char ***, int);
+static Char *exp5(Char ***, int);
+static Char *exp6(Char ***, int);
 static void evalav(Char **);
 static int isa(Char *, int);
 static int egetn(Char *);
@@ -95,7 +95,7 @@ expr(Char ***vp)
 }
 
 int
-exp0(Char ***vp, bool ignore)
+exp0(Char ***vp, int ignore)
 {
     int p1;
 
@@ -117,11 +117,11 @@ exp0(Char ***vp, bool ignore)
 }
 
 static int
-exp1(Char ***vp, bool ignore)
+exp1(Char ***vp, int ignore)
 {
     int p1;
 
-    p1 = exp2(vp, ignore);
+    p1 = csh_exp2(vp, ignore);
 #ifdef EDEBUG
     etraci("exp1 p1", p1, vp);
 #endif
@@ -139,7 +139,7 @@ exp1(Char ***vp, bool ignore)
 }
 
 static int
-exp2(Char ***vp, bool ignore)
+csh_exp2(Char ***vp, int ignore)
 {
     int p1;
 
@@ -151,7 +151,7 @@ exp2(Char ***vp, bool ignore)
 	int p2;
 
 	(*vp)++;
-	p2 = exp2(vp, ignore);
+	p2 = csh_exp2(vp, ignore);
 #ifdef EDEBUG
 	etraci("exp3 p2", p2, vp);
 #endif
@@ -161,7 +161,7 @@ exp2(Char ***vp, bool ignore)
 }
 
 static int
-exp2a(Char ***vp, bool ignore)
+exp2a(Char ***vp, int ignore)
 {
     int p1;
 
@@ -183,7 +183,7 @@ exp2a(Char ***vp, bool ignore)
 }
 
 static int
-exp2b(Char ***vp, bool ignore)
+exp2b(Char ***vp, int ignore)
 {
     int p1;
 
@@ -205,7 +205,7 @@ exp2b(Char ***vp, bool ignore)
 }
 
 static int
-exp2c(Char ***vp, bool ignore)
+exp2c(Char ***vp, int ignore)
 {
     Char *p1, *p2;
     int i;
@@ -247,7 +247,7 @@ exp2c(Char ***vp, bool ignore)
 }
 
 static Char *
-exp3(Char ***vp, bool ignore)
+exp3(Char ***vp, int ignore)
 {
     Char *p1, *p2;
     int i;
@@ -287,7 +287,7 @@ exp3(Char ***vp, bool ignore)
 }
 
 static Char *
-exp3a(Char ***vp, bool ignore)
+exp3a(Char ***vp, int ignore)
 {
     Char *op, *p1, *p2;
     int i;
@@ -315,7 +315,7 @@ exp3a(Char ***vp, bool ignore)
 }
 
 static Char *
-exp4(Char ***vp, bool ignore)
+exp4(Char ***vp, int ignore)
 {
     Char *p1, *p2;
     int i;
@@ -350,7 +350,7 @@ exp4(Char ***vp, bool ignore)
 }
 
 static Char *
-exp5(Char ***vp, bool ignore)
+exp5(Char ***vp, int ignore)
 {
     Char *p1, *p2;
     int i;
@@ -394,7 +394,7 @@ exp5(Char ***vp, bool ignore)
 }
 
 static Char *
-exp6(Char ***vp, bool ignore)
+exp6(Char ***vp, int ignore)
 {
     Char *cp, *dp, *ep;
     int ccode, i;
@@ -428,7 +428,7 @@ exp6(Char ***vp, bool ignore)
 #ifdef EDEBUG
 	etraci("exp6 () ccode", ccode, vp);
 #endif
-	if (*vp == 0 || **vp == 0 || ***vp != ')')
+	if (**vp == 0 || ***vp != ')')
 	    stderror(ERR_NAME | ERR_EXPRESSION);
 	(*vp)++;
 	return (putn(ccode));

@@ -1,4 +1,4 @@
-/* $NetBSD: misc.c,v 1.16 2004/01/06 00:20:16 christos Exp $ */
+/* $NetBSD: misc.c,v 1.19 2006/03/18 06:24:26 christos Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)misc.c	8.1 (Berkeley) 5/31/93";
 #else
-__RCSID("$NetBSD: misc.c,v 1.16 2004/01/06 00:20:16 christos Exp $");
+__RCSID("$NetBSD: misc.c,v 1.19 2006/03/18 06:24:26 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -52,7 +52,7 @@ __RCSID("$NetBSD: misc.c,v 1.16 2004/01/06 00:20:16 christos Exp $");
 static int renum(int, int);
 
 int
-any(char *s, int c)
+any(const char *s, int c)
 {
     if (!s)
 	return (0);		/* Check for nil pointer */
@@ -63,18 +63,19 @@ any(char *s, int c)
 }
 
 char *
-strsave(char *s)
+strsave(const char *s)
 {
-    char *n, *p;
+    const char *n;
+    char *p, *r;
 
     if (s == NULL)
 	s = "";
-    for (p = s; *p++;)
+    for (n = s; *n++;)
 	continue;
-    n = p = (char *)xmalloc((size_t)((p - s) * sizeof(char)));
+    r = p = (char *)xmalloc((size_t)((n - s) * sizeof(char)));
     while ((*p++ = *s++) != '\0')
 	continue;
-    return (n);
+    return (r);
 }
 
 Char **
@@ -142,6 +143,9 @@ Char **
 saveblk(Char **v)
 {
     Char **newv, **onewv;
+
+    if (v == NULL)
+	return NULL;
 
     newv = (Char **)xcalloc((size_t)(blklen(v) + 1), sizeof(Char **));
     onewv = newv;
@@ -281,7 +285,6 @@ dcopy(int i, int j)
 	(void)dup2(i, j);
 	return (j);
     }
-    (void)close(j);
     return (renum(i, j));
 }
 

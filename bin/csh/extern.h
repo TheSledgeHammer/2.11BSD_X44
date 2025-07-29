@@ -1,4 +1,4 @@
-/* $NetBSD: extern.h,v 1.16 2005/02/17 16:07:53 xtraeme Exp $ */
+/* $NetBSD: extern.h,v 1.22 2007/12/24 16:11:50 perry Exp $ */
 
 /*-
  * Copyright (c) 1991, 1993
@@ -41,22 +41,22 @@
  */
 int gethdir(Char *);
 void dosource(Char **, struct command *);
-__dead void exitstat(void) __attribute__((noreturn));
+__dead void exitstat(void);
 void goodbye(void);
 void importpath(Char *);
 void initdesc(void);
 void pintr(int);
-void pintr1(bool) __attribute__((noreturn));
+__dead void pintr1(int);
 void printprompt(void);
-void process(bool);
+void process(int);
 void rechist(void);
 void untty(void);
 int vis_fputc(int, FILE *);
 
 #ifdef PROF
-__dead void done(int) __attribute__((noreturn));
+__dead void done(int);
 #else
-__dead void xexit(int) __attribute__((noreturn));
+__dead void xexit(int);
 #endif
 
 /*
@@ -85,12 +85,12 @@ void heredoc(Char *);
  * err.c
  */
 void seterror(int, ...);
-__dead void stderror(int, ...) __attribute__((noreturn));
+__dead void stderror(int, ...);
 
 /*
  * exec.c
  */
-void doexec(Char **, struct command *) __attribute__((noreturn));
+__dead void doexec(Char **, struct command *);
 void dohash(Char **, struct command *);
 void dounhash(Char **, struct command *);
 void dowhich(Char **, struct command *);
@@ -102,7 +102,7 @@ void xechoit(Char **);
  * exp.c
  */
 int expr(Char ***);
-int exp0(Char ***, bool);
+int exp0(Char ***, int);
 
 /*
  * file.c
@@ -154,7 +154,7 @@ void wfree(void);
 /*
  * glob.c
  */
-Char **dobackp(Char *, bool);
+Char **dobackp(Char *, int);
 void Gcat(Char *, Char *);
 Char *globone(Char *, int);
 int  Gmatch(Char *, Char *);
@@ -171,7 +171,7 @@ int sortscmp(const ptr_t, const ptr_t);
  * hist.c
  */
 void dohist(Char **, struct command *);
-struct Hist *enthist(int, struct wordent *, bool);
+struct Hist *enthist(int, struct wordent *, int);
 void savehist(struct wordent *);
 
 /*
@@ -186,14 +186,14 @@ Char *domod(Char *, int);
 void freelex(struct wordent *);
 int lex(struct wordent *);
 void prlex(FILE *, struct wordent *);
-int readc(bool);
+int readc(int);
 void settell(void);
 void unreadc(int);
 
 /*
  * misc.c
  */
-int any(char *, int);
+int any(const char *, int);
 Char **blkcat(Char **, Char **);
 Char **blkcpy(Char **, Char **);
 Char **blkend(Char **);
@@ -213,9 +213,9 @@ int prefix(Char *, Char *);
 Char **saveblk(Char **);
 Char *strip(Char *);
 Char *quote(Char *);
-char *strsave(char *);
+char *strsave(const char *);
 char *strspl(char *, char *);
-void udvar(Char *) __attribute__((noreturn));
+__dead void udvar(Char *);
 
 #ifndef	SHORT_STRINGS
 # ifdef NOTUSED
@@ -245,7 +245,7 @@ void donotify(Char **, struct command *);
 void dostop(Char **, struct command *);
 void dowait(Char **, struct command *);
 void palloc(int, struct command *);
-void panystop(bool);
+void panystop(int);
 void pchild(int);
 void pendjob(void);
 struct process *pfind(Char *);
@@ -288,11 +288,10 @@ void plist(struct varent *);
  */
 void donice(Char **, struct command *);
 void dotime(Char **, struct command *);
-void prusage(struct rusage *, struct rusage *, struct timeval *,
+void prusage(FILE *, struct rusage *, struct rusage *, struct timeval *,
              struct timeval *);
 void ruadd(struct rusage *, struct rusage *);
 void settimes(void);
-void pcsecs(long);
 void psecs(long);
 
 /*

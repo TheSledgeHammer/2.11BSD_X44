@@ -137,9 +137,13 @@ struct stat {
 
 #ifndef _POSIX_SOURCE
 #define st_atime            	st_atimespec.tv_sec
+#define st_atimensec	    	st_atimespec.tv_nsec
 #define st_mtime            	st_mtimespec.tv_sec
+#define st_mtimensec	    	st_mtimespec.tv_nsec
 #define st_ctime            	st_ctimespec.tv_sec
+#define st_ctimensec		st_ctimensec.tv_nsec
 #define	st_birthtime		st_birthtimespec.tv_sec
+#define st_birthtimensec    	st_birthtimespec.tv_nsec
 #endif  /* !_POSIX_SOURCE */
 #endif /* _KERNEL */
 

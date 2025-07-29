@@ -1,4 +1,4 @@
-/* $NetBSD: dir.c,v 1.23 2004/05/10 19:11:31 christos Exp $ */
+/* $NetBSD: dir.c,v 1.29 2007/07/16 18:26:09 christos Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)dir.c	8.1 (Berkeley) 5/31/93";
 #else
-__RCSID("$NetBSD: dir.c,v 1.23 2004/05/10 19:11:31 christos Exp $");
+__RCSID("$NetBSD: dir.c,v 1.29 2007/07/16 18:26:09 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -57,7 +57,7 @@ static struct directory *dfind(Char *);
 static Char *dfollow(Char *);
 static void printdirs(void);
 static Char *dgoto(Char *);
-static void skipargs(Char ***, char *);
+static void skipargs(Char ***, const char *);
 static void dnewcwd(struct directory *);
 static void dset(Char *);
 
@@ -87,7 +87,7 @@ dinit(Char *hp)
 	    if (chdir(ecp) == -1)
 		cp = NULL;
 	    else
-		cp = hp;
+		cp = Strsave(hp);
 	    (void)fprintf(csherr, emsg, vis_str(hp));
 	}
 	else
@@ -110,7 +110,7 @@ dinit(Char *hp)
 	if (hp && *hp &&
 	    stat(ecp, &swd) != -1 && stat(short2str(hp), &shp) != -1 &&
 	    swd.st_dev == shp.st_dev && swd.st_ino == shp.st_ino)
-	    cp = hp;
+	    cp = Strsave(hp);
 	else {
 	    const char *cwd;
 
@@ -127,7 +127,7 @@ dinit(Char *hp)
     }
 
     dp = (struct directory *)xcalloc(1, sizeof(struct directory));
-    dp->di_name = Strsave(cp);
+    dp->di_name = cp;
     dp->di_count = 0;
     dhead.di_next = dhead.di_prev = dp;
     dp->di_next = dp->di_prev = &dhead;
@@ -157,7 +157,7 @@ dset(Char *dp)
 #define DIR_LINE 4
 
 static void
-skipargs(Char ***v, char *str)
+skipargs(Char ***v, const char *str)
 {
     Char  **n, *s;
 
@@ -614,7 +614,7 @@ dcanon(Char *cp, Char *p)
     Char *newcp, *sp;
     Char *p1, *p2;	/* general purpose */
     int cc;
-    bool slash;
+    int slash;
 
     /*
      * christos: if the path given does not start with a slash prepend cwd. If

@@ -1,4 +1,4 @@
-/* $NetBSD: csh.c,v 1.35 2004/08/19 22:31:38 christos Exp $ */
+/* $NetBSD: csh.c,v 1.41 2008/07/20 00:52:39 lukem Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -31,15 +31,15 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
-__COPYRIGHT("@(#) Copyright (c) 1980, 1991, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n");
+__COPYRIGHT("@(#) Copyright (c) 1980, 1991, 1993\
+ The Regents of the University of California.  All rights reserved.");
 #endif /* not lint */
 
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)csh.c	8.2 (Berkeley) 10/12/93";
 #else
-__RCSID("$NetBSD: csh.c,v 1.35 2004/08/19 22:31:38 christos Exp $");
+__RCSID("$NetBSD: csh.c,v 1.41 2008/07/20 00:52:39 lukem Exp $");
 #endif
 #endif /* not lint */
 
@@ -81,15 +81,15 @@ Char *dumphist[] = {STRhistory, STRmh, 0, 0};
 Char *loadhist[] = {STRsource, STRmh, STRtildothist, 0};
 
 int nofile = 0;
-bool batch = 0;
-bool enterhist = 0;
-bool fast = 0;
-bool mflag = 0;
-bool nexececho = 0;
-bool nverbose = 0;
-bool prompt = 1;
-bool quitit = 0;
-bool reenter = 0;
+int batch = 0;
+int enterhist = 0;
+int fast = 0;
+int mflag = 0;
+int nexececho = 0;
+int nverbose = 0;
+int prompt = 1;
+int quitit = 0;
+int reenter = 0;
 
 extern char **environ;
 
@@ -98,9 +98,9 @@ static fpos_t seekf(void *, fpos_t, int);
 static int writef(void *, const char *, int);
 static int closef(void *);
 static int srccat(Char *, Char *);
-static int srcfile(const char *, bool, bool);
+static int srcfile(const char *, int, int);
 static void phup(int);
-static void srcunit(int, bool, bool);
+static void srcunit(int, int, int);
 static void mailchk(void);
 #ifndef _PATH_DEFPATH
 static Char **defaultpath(void);
@@ -645,7 +645,7 @@ srccat(Char *cp, Char *dp)
  * Source to a file putting the file descriptor in a safe place (> 2).
  */
 static int
-srcfile(const char *f, bool onlyown, bool flag)
+srcfile(const char *f, int onlyown, int flag)
 {
     int unit;
 
@@ -665,7 +665,7 @@ srcfile(const char *f, bool onlyown, bool flag)
 int insource;
 
 static void
-srcunit(int unit, bool onlyown, bool hflg)
+srcunit(int unit, int onlyown, int hflg)
 {
     /* We have to push down a lot of state here */
     /* All this could go into a structure */
@@ -676,7 +676,7 @@ srcunit(int unit, bool onlyown, bool hflg)
     Char *oarginp, *oevalp, **oevalvec, *ogointr;
     char OHIST;
     int oSHIN, oinsource, oldintty, oonelflg; 
-    bool oenterhist, otell;      
+    int oenterhist, otell;      
     /* The (few) real local variables */
     int my_reenter;
 
@@ -889,7 +889,7 @@ phup(int sig)
 	    do
 		/*
 		 * If a process is in the foreground; we try to kill
-		 * it's process group. If we succeed, then the 
+		 * its process group. If we succeed, then the 
 		 * whole job is gone. Otherwise we keep going...
 		 * But avoid sending HUP to the shell again.
 		 */
@@ -924,7 +924,7 @@ pintr(int notused)
 }
 
 void
-pintr1(bool wantnl)
+pintr1(int wantnl)
 {
     Char **v;
     sigset_t nsigset, osigset;
@@ -986,7 +986,7 @@ pintr1(bool wantnl)
 static struct command *savet = NULL;
 
 void
-process(bool catch)
+process(int catch)
 {
     struct command *t;
     jmp_buf osetexit;
@@ -1129,7 +1129,7 @@ void
 dosource(Char **v, struct command *t)
 {
     Char buf[BUFSIZE], *f;
-    bool hflg;
+    int hflg;
 
     hflg = 0;
     v++;
@@ -1163,7 +1163,7 @@ mailchk(void)
     Char **vp;
     time_t t;
     int cnt, intvl;
-    bool new;
+    int new;
 
     v = adrof(STRmail);
     if (v == 0)

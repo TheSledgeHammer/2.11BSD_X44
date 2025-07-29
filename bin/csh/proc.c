@@ -1,4 +1,4 @@
-/* $NetBSD: proc.c,v 1.28 2003/09/19 05:31:11 itojun Exp $ */
+/* $NetBSD: proc.c,v 1.34 2007/07/16 18:26:10 christos Exp $ */
 
 /*-
  * Copyright (c) 1980, 1991, 1993
@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)proc.c	8.1 (Berkeley) 5/31/93";
 #else
-__RCSID("$NetBSD: proc.c,v 1.28 2003/09/19 05:31:11 itojun Exp $");
+__RCSID("$NetBSD: proc.c,v 1.34 2007/07/16 18:26:10 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -636,13 +636,13 @@ pendjob(void)
  * pprint - print a job
  */
 static int
-pprint(struct process *pp, bool flag)
+pprint(struct process *pp, int flag)
 {
     static struct rusage zru;
     struct process *tp;
-    char *format;
+    const char *format;
     int jobflags, pstatus, reason, status;
-    bool hadnl;
+    int hadnl;
 
     hadnl = 1; /* did we just have a newline */
     (void)fpurge(cshout);
@@ -769,7 +769,7 @@ prcomd:
 	if (pp->p_flags & PPTIME && !(status & (PSTOPPED | PRUNNING))) {
 	    if (!hadnl)
 		(void)fprintf(cshout, "\n\t");
-	    prusage(&zru, &pp->p_rusage, &pp->p_etime,
+	    prusage(cshout, &zru, &pp->p_rusage, &pp->p_etime,
 		    &pp->p_btime);
 	    hadnl = 1;
 	}
@@ -814,7 +814,7 @@ ptprint(struct process *tp)
 	if (timercmp(&diff, &tetime, >))
 	    tetime = diff;
     } while ((pp = pp->p_friends) != tp);
-    prusage(&zru, &ru, &tetime, &ztime);
+    prusage(cshout, &zru, &ru, &tetime, &ztime);
 }
 
 /*
@@ -1115,7 +1115,7 @@ pstart(struct process *pp, int foregnd)
 }
 
 void
-panystop(bool neednl)
+panystop(int neednl)
 {
     struct process *pp;
 
@@ -1224,7 +1224,7 @@ pfork(struct command *t /* command we are forking for */, int wanttty)
 {
     int pgrp, pid;
     sigset_t osigset, nsigset;
-    bool ignint;
+    int ignint;
 
     ignint = 0;
     /*
