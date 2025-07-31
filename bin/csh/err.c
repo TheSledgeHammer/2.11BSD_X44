@@ -333,7 +333,7 @@ stderror(int id, ...)
     if ((flags & ERR_OLD) && seterr == NULL)
 	abort();
 
-    if (id < 0 || id > (int)sizeof(errorlist) / sizeof(errorlist[0]))
+    if (id < 0 || id > (int)(sizeof(errorlist) / sizeof(errorlist[0])))
 	id = ERR_INVALID;
 
     (void)fflush(cshout);

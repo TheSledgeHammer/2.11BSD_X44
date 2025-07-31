@@ -446,7 +446,7 @@ dohash(Char **v, struct command *t)
     havhash = 1;
     pathv = adrof(STRpath);
 
-    for (cnt = 0; cnt < sizeof xhash; cnt++)
+    for (cnt = 0; cnt < (int)sizeof xhash; cnt++)
 	xhash[cnt] = 0;
     if (pathv == 0)
 	return;

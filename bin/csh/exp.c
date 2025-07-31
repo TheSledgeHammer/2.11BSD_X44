@@ -523,7 +523,7 @@ exp6(Char ***vp, int ignore)
 #endif
 		break;
 	    case 'o':
-		i = stb.st_uid == uid;
+		i = stb.st_uid == (uid_t)uid;
 		break;
 	    case 'p':
 #ifdef S_ISFIFO
