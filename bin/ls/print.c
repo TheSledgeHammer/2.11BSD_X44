@@ -61,6 +61,8 @@ __RCSID("$NetBSD: print.c,v 1.57 2020/05/17 23:34:11 christos Exp $");
 #include "ls.h"
 #include "extern.h"
 
+extern int termwidth;
+
 static int	printaname(FTSENT *, int, int);
 static void	printlink(FTSENT *);
 static void	printtime(time_t);
@@ -69,8 +71,7 @@ static int	printtype(u_int);
 #define	IS_NOPRINT(p)	((p)->fts_number == NO_PRINT)
 
 void
-printscol(dp)
-	DISPLAY *dp;
+printscol(DISPLAY *dp)
 {
 	FTSENT *p;
 
@@ -83,8 +84,7 @@ printscol(dp)
 }
 
 void
-printlong(dp)
-	DISPLAY *dp;
+printlong(DISPLAY *dp)
 {
 	struct stat *sp;
 	FTSENT *p;
@@ -92,14 +92,14 @@ printlong(dp)
 	char buf[20];
 
 	if (dp->list->fts_level != FTS_ROOTLEVEL && (f_longform || f_size))
-		(void)printf("total %lu\n", howmany(dp->btotal, blocksize));
+		(void)printf("total %llu\n", howmany(dp->btotal, blocksize));
 
 	for (p = dp->list; p; p = p->fts_link) {
 		if (IS_NOPRINT(p))
 			continue;
 		sp = p->fts_statp;
 		if (f_inode)
-			(void)printf("%*lu ", dp->s_inode, sp->st_ino);
+			(void)printf("%*lu ", dp->s_inode, (unsigned long)sp->st_ino);
 		if (f_size)
 			(void)printf("%*qd ",
 			    dp->s_block, howmany(sp->st_blocks, blocksize));
@@ -131,13 +131,11 @@ printlong(dp)
 	}
 }
 
-#define	TAB	8
+#define	DISPTAB	8
 
 void
-printcol(dp)
-	DISPLAY *dp;
+printcol(DISPLAY *dp)
 {
-	extern int termwidth;
 	static FTSENT **array;
 	static int lastentries = -1;
 	FTSENT *p;
@@ -168,7 +166,7 @@ printcol(dp)
 	if (f_type)
 		colwidth += 1;
 
-	colwidth = (colwidth + TAB) & ~(TAB - 1);
+	colwidth = (colwidth + DISPTAB) & ~(DISPTAB - 1);
 	if (termwidth < 2 * colwidth) {
 		printscol(dp);
 		return;
@@ -180,7 +178,7 @@ printcol(dp)
 		++numrows;
 
 	if (dp->list->fts_level != FTS_ROOTLEVEL && (f_longform || f_size))
-		(void)printf("total %lu\n", howmany(dp->btotal, blocksize));
+		(void)printf("total %llu\n", (long long)howmany(dp->btotal, blocksize));
 	for (row = 0; row < numrows; ++row) {
 		endcol = colwidth;
 		for (base = row, chcnt = col = 0; col < numcols; ++col) {
@@ -188,7 +186,7 @@ printcol(dp)
 			    dp->s_block);
 			if ((base += numrows) >= num)
 				break;
-			while ((cnt = (chcnt + TAB & ~(TAB - 1))) <= endcol) {
+			while ((cnt = ((chcnt + DISPTAB) & ~(DISPTAB - 1))) <= endcol) {
 				(void)putchar('\t');
 				chcnt = cnt;
 			}
@@ -209,10 +207,7 @@ printacol(DISPLAY *dp)
 	if (f_inode)
 		colwidth += dp->s_inode + 1;
 	if (f_size) {
-		if (f_humanize)
-			colwidth += dp->s_size + 1;
-		else
-			colwidth += dp->s_block + 1;
+		colwidth += dp->s_block + 1;
 	}
 	if (f_type || f_typedir)
 		colwidth += 1;
@@ -227,7 +222,10 @@ printacol(DISPLAY *dp)
 	numcols = termwidth / colwidth;
 	colwidth = termwidth / numcols;		/* spread out if possible */
 
-	printtotal(dp);				/* "total: %u\n" */
+	if (dp->list->fts_level != FTS_ROOTLEVEL && (f_longform || f_size)) {
+		(void)printf("total %llu\n",
+		    (long long)(howmany(dp->btotal, blocksize)));
+	}
 
 	chcnt = col = 0;
 	for (p = dp->list; p; p = p->fts_link) {
@@ -237,8 +235,7 @@ printacol(DISPLAY *dp)
 			chcnt = col = 0;
 			(void)putchar('\n');
 		}
-		chcnt = printaname(p, dp->s_inode,
-		    f_humanize ? dp->s_size : dp->s_block);
+		chcnt = printaname(p, dp->s_inode, dp->s_block);
 		while (chcnt++ < colwidth)
 			(void)putchar(' ');
 		col++;
@@ -257,10 +254,7 @@ printstream(DISPLAY *dp)
 	if (f_inode)
 		extwidth += dp->s_inode + 1;
 	if (f_size) {
-		if (f_humanize)
-			extwidth += dp->s_size + 1;
-		else
-			extwidth += dp->s_block + 1;
+		extwidth += dp->s_block + 1;
 	}
 	if (f_type)
 		extwidth += 1;
@@ -275,8 +269,7 @@ printstream(DISPLAY *dp)
 			else
 				(void)putchar(' '), col++;
 		}
-		col += printaname(p, dp->s_inode,
-		    f_humanize ? dp->s_size : dp->s_block);
+		col += printaname(p, dp->s_inode, dp->s_block);
 	}
 	(void)putchar('\n');
 }
@@ -287,9 +280,7 @@ printstream(DISPLAY *dp)
  * return # of characters printed, no trailing characters.
  */
 static int
-printaname(p, inodefield, sizefield)
-	FTSENT *p;
-	u_long sizefield, inodefield;
+printaname(FTSENT *p, int inodefield, int sizefield)
 {
 	struct stat *sp;
 	int chcnt;
@@ -297,10 +288,10 @@ printaname(p, inodefield, sizefield)
 	sp = p->fts_statp;
 	chcnt = 0;
 	if (f_inode)
-		chcnt += printf("%*lu ", (int)inodefield, sp->st_ino);
+		chcnt += printf("%*lu ", inodefield, (unsigned long)sp->st_ino);
 	if (f_size)
 		chcnt += printf("%*qd ",
-		    (int)sizefield, howmany(sp->st_blocks, blocksize));
+		    sizefield, (long long)howmany(sp->st_blocks, blocksize));
 	chcnt += printf("%s", p->fts_name);
 	if (f_type)
 		chcnt += printtype(sp->st_mode);
@@ -308,8 +299,7 @@ printaname(p, inodefield, sizefield)
 }
 
 static void
-printtime(ftime)
-	time_t ftime;
+printtime(time_t ftime)
 {
 	int i;
 	char *longstring;
@@ -334,8 +324,7 @@ printtime(ftime)
 }
 
 static int
-printtype(mode)
-	u_int mode;
+printtype(u_int mode)
 {
 	switch (mode & S_IFMT) {
 	case S_IFDIR:
@@ -362,8 +351,7 @@ printtype(mode)
 }
 
 static void
-printlink(p)
-	FTSENT *p;
+printlink(FTSENT *p)
 {
 	int lnklen;
 	char name[MAXPATHLEN + 1], path[MAXPATHLEN + 1];

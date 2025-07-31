@@ -41,7 +41,6 @@ extern long blocksize;		/* block size units */
 extern int f_accesstime;	/* use time of last access */
 extern int f_flags;			/* show flags associated with a file */
 extern int f_grouponly;		/* long listing without owner */
-extern int f_humanize;		/* humanize size field */
 extern int f_commas;        /* separate size field with commas */
 extern int f_inode;			/* print inode */
 extern int f_longform;		/* long listing format */
