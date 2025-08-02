@@ -55,7 +55,7 @@ static char sccsid[] = "@(#)misc.c	8.3 (Berkeley) 4/2/94";
 #include "extern.h"
 
 void
-summary()
+summary(void)
 {
 	time_t secs;
 	char buf[100];
@@ -86,8 +86,7 @@ summary()
 
 /* ARGSUSED */
 void
-summaryx(notused)
-	int notused;
+summaryx(int notused)
 {
 
 	summary();
@@ -95,8 +94,7 @@ summaryx(notused)
 
 /* ARGSUSED */
 void
-terminate(notused)
-	int notused;
+terminate(int notused)
 {
 
 	exit(0);

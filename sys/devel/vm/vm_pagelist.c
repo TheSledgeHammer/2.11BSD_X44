@@ -517,7 +517,7 @@ static int
 vm_pagelist_check_memory(size)
     vm_size_t size;
 {
-    vm_offset_t nsegs, npgs;
+	vm_offset_t nsegs, npgs;
 
 	nsegs = num_segments(size);
 	npgs = num_pages(size);

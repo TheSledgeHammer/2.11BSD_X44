@@ -57,7 +57,7 @@ static char sccsid[] = "@(#)conv.c	8.3 (Berkeley) 4/2/94";
  * Worst case buffer calculation is (ibs + obs - 1).
  */
 void
-def()
+def(void)
 {
 	int cnt;
 	u_char *inp, *t;
@@ -85,7 +85,7 @@ def()
 }
 
 void
-def_close()
+def_close(void)
 {
 	/* Just update the count, everything is already in the buffer. */
 	if (in.dbcnt)
@@ -100,7 +100,7 @@ def_close()
  * max out buffer: obs + cbsz
  */
 void
-block()
+block(void)
 {
 	static int intrunc;
 	int ch, cnt, maxlen;
@@ -183,7 +183,7 @@ block()
 }
 
 void
-block_close()
+block_close(void)
 {
 	/*
 	 * Copy any remaining data into the output buffer and pad to a record.
@@ -210,7 +210,7 @@ block_close()
  * max out buffer: obs + cbsz
  */
 void
-unblock()
+unblock(void)
 {
 	int cnt;
 	u_char *inp, *t;
@@ -243,7 +243,7 @@ unblock()
 }
 
 void
-unblock_close()
+unblock_close(void)
 {
 	int cnt;
 	u_char *t;

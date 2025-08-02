@@ -39,23 +39,23 @@
 
 #include <sys/cdefs.h>
 
-void block (void);
-void block_close (void);
-void dd_out (int);
-void def (void);
-void def_close (void);
-void jcl (char **);
-void pos_in (void);
-void pos_out (void);
-void summary (void);
-void summaryx (int);
-void terminate (int);
-void unblock (void);
-void unblock_close (void);
+void block(void);
+void block_close(void);
+void dd_out(int);
+void def(void);
+void def_close(void);
+void jcl(char **);
+void pos_in(void);
+void pos_out(void);
+void summary(void);
+void summaryx(int);
+void terminate(int);
+void unblock(void);
+void unblock_close(void);
 
 extern IO in, out;
 extern STAT st;
-extern void (*cfunc)();
+extern void (*cfunc)(void);
 extern u_long cpy_cnt;
 extern u_int cbsz;
 extern u_int ddflags;

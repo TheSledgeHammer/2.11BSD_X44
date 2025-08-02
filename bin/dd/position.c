@@ -62,7 +62,7 @@ static char sccsid[] = "@(#)position.c	8.3 (Berkeley) 4/2/94";
  * output.
  */
 void
-pos_in()
+pos_in(void)
 {
 	int bcnt, cnt, nr, warned;
 
@@ -116,7 +116,7 @@ pos_in()
 }
 
 void
-pos_out()
+pos_out(void)
 {
 	struct mtop t_op;
 	int cnt, n;

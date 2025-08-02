@@ -83,9 +83,7 @@ u_int	files_cnt = 1;		/* # of files to copy */
 u_char	*ctab;			/* conversion table */
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	jcl(argv);
 	setup();
@@ -103,7 +101,7 @@ main(argc, argv)
 }
 
 static void
-setup()
+setup(void)
 {
 	u_int cnt;
 
@@ -204,8 +202,7 @@ setup()
 }
 
 static void
-getfdtype(io)
-	IO *io;
+getfdtype(IO *io)
 {
 	struct mtget mt;
 	struct stat sb;
@@ -219,7 +216,7 @@ getfdtype(io)
 }
 
 static void
-dd_in()
+dd_in(void)
 {
 	int flags, n;
 
@@ -318,7 +315,7 @@ dd_in()
  * is truncated.
  */
 static void
-dd_close()
+dd_close(void)
 {
 	if (cfunc == def)
 		def_close();
@@ -335,8 +332,7 @@ dd_close()
 }
 
 void
-dd_out(force)
-	int force;
+dd_out(int force)
 {
 	static int warned;
 	int cnt, n, nw;

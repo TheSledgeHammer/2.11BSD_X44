@@ -70,7 +70,7 @@ static void	f_skip (char *);
 static u_long	get_bsz (char *);
 
 static struct arg {
-	char *name;
+	const char *name;
 	void (*f) (char *);
 	u_int set, noset;
 } args[] = {
@@ -93,8 +93,7 @@ static char *oper;
  * args -- parse JCL syntax of dd.
  */
 void
-jcl(argv)
-	char **argv;
+jcl(char **argv)
 {
 	struct arg *ap, tmp;
 	char *arg;
@@ -176,32 +175,28 @@ jcl(argv)
 }
 
 static int
-c_arg(a, b)
-	const void *a, *b;
+c_arg(const void *a, const void *b)
 {
 
 	return (strcmp(((struct arg *)a)->name, ((struct arg *)b)->name));
 }
 
 static void
-f_bs(arg)
-	char *arg;
+f_bs(char *arg)
 {
 
 	in.dbsz = out.dbsz = (int)get_bsz(arg);
 }
 
 static void
-f_cbs(arg)
-	char *arg;
+f_cbs(char *arg)
 {
 
 	cbsz = (int)get_bsz(arg);
 }
 
 static void
-f_count(arg)
-	char *arg;
+f_count(char *arg)
 {
 
 	cpy_cnt = (u_int)get_bsz(arg);
@@ -210,16 +205,14 @@ f_count(arg)
 }
 
 static void
-f_files(arg)
-	char *arg;
+f_files(char *arg)
 {
 
 	files_cnt = (int)get_bsz(arg);
 }
 
 static void
-f_ibs(arg)
-	char *arg;
+f_ibs(char *arg)
 {
 
 	if (!(ddflags & C_BS))
@@ -227,16 +220,14 @@ f_ibs(arg)
 }
 
 static void
-f_if(arg)
-	char *arg;
+f_if(char *arg)
 {
 
 	in.name = arg;
 }
 
 static void
-f_obs(arg)
-	char *arg;
+f_obs(char *arg)
 {
 
 	if (!(ddflags & C_BS))
@@ -244,31 +235,28 @@ f_obs(arg)
 }
 
 static void
-f_of(arg)
-	char *arg;
+f_of(char *arg)
 {
 
 	out.name = arg;
 }
 
 static void
-f_seek(arg)
-	char *arg;
+f_seek(char *arg)
 {
 
 	out.offset = (u_int)get_bsz(arg);
 }
 
 static void
-f_skip(arg)
-	char *arg;
+f_skip(char *arg)
 {
 
 	in.offset = (u_int)get_bsz(arg);
 }
 
 static struct conv {
-	char *name;
+	const char *name;
 	u_int set, noset;
 	u_char *ctab;
 } clist[] = {
@@ -290,8 +278,7 @@ static struct conv {
 };
 
 static void
-f_conv(arg)
-	char *arg;
+f_conv(char *arg)
 {
 	struct conv *cp, tmp;
 
@@ -310,8 +297,7 @@ f_conv(arg)
 }
 
 static int
-c_conv(a, b)
-	const void *a, *b;
+c_conv(const void *a, const void *b)
 {
 
 	return (strcmp(((struct conv *)a)->name, ((struct conv *)b)->name));
@@ -329,8 +315,7 @@ c_conv(a, b)
  *	   the product of the indicated values.
  */
 static u_long
-get_bsz(val)
-	char *val;
+get_bsz(char *val)
 {
 	u_long num, t;
 	char *expr;
