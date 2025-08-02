@@ -90,7 +90,6 @@ int f_column;			/* columnated format */
 int f_columnacross;		/* columnated format, sorted across */
 int f_flags;			/* show flags associated with a file */
 int f_grouponly;		/* long listing without owner */
-int f_humanize;			/* humanize the size field */
 int f_commas;			/* separate size field with comma */
 int f_inode;			/* print inode */
 int f_listdir;			/* list actual directory, not contents */
@@ -239,16 +238,13 @@ ls_main(int argc, char *argv[])
 		case 'k':
 			blocksize = 1024;
 			kflag = 1;
-			f_humanize = 0;
 			break;
 		/* The -h option forces all sizes to be measured in bytes. */
 		case 'h':
-			f_humanize = 1;
 			kflag = 0;
 			f_commas = 0;
 			break;
 		case 'M':
-			f_humanize = 0;
 			f_commas = 1;
 			break;
 		case 'n':
@@ -630,14 +626,11 @@ display(FTSENT *p, FTSENT *list)
 	if (needstats) {
 		d.btotal = btotal;
 		d.stotal = stotal;
-		if (f_humanize) {
-			d.s_block = 4; /* min buf length for humanize_number */
-		} else {
-			(void)snprintf(buf, sizeof(buf), "%lld",
-			    (long long)howmany(maxblock, blocksize));
-			d.s_block = strlen(buf);
-			if (f_commas) /* allow for commas before every third digit */
-				d.s_block += (d.s_block - 1) / 3;
+		(void)snprintf(buf, sizeof(buf), "%lld",
+		    (long long)howmany(maxblock, blocksize));
+		d.s_block = strlen(buf);
+		if (f_commas) { /* allow for commas before every third digit */
+			d.s_block += (d.s_block - 1) / 3;
 		}
 		d.s_flags = maxflags;
 		d.s_group = maxgroup;
@@ -646,14 +639,11 @@ display(FTSENT *p, FTSENT *list)
 		d.s_inode = strlen(buf);
 		(void)snprintf(buf, sizeof(buf), "%u", maxnlink);
 		d.s_nlink = strlen(buf);
-		if (f_humanize) {
-			d.s_size = 4; /* min buf length for humanize_number */
-		} else {
-			(void)snprintf(buf, sizeof(buf), "%lld",
-			    (long long)maxsize);
-			d.s_size = strlen(buf);
-			if (f_commas) /* allow for commas before every third digit */
-				d.s_size += (d.s_size - 1) / 3;
+		(void)snprintf(buf, sizeof(buf), "%lld",
+		    (long long)maxsize);
+		d.s_size = strlen(buf);
+		if (f_commas) { /* allow for commas before every third digit */
+			d.s_size += (d.s_size - 1) / 3;
 		}
 		d.s_user = maxuser;
 		if (bcfile) {
@@ -661,10 +651,11 @@ display(FTSENT *p, FTSENT *list)
 			d.s_major = strlen(buf);
 			(void)snprintf(buf, sizeof(buf), "%d", maxminor);
 			d.s_minor = strlen(buf);
-			if (d.s_major + d.s_minor + 2 > d.s_size)
+			if (d.s_major + d.s_minor + 2 > d.s_size) {
 				d.s_size = d.s_major + d.s_minor + 2;
-			else if (d.s_size - d.s_minor - 2 > d.s_major)
+			} else if (d.s_size - d.s_minor - 2 > d.s_major) {
 				d.s_major = d.s_size - d.s_minor - 2;
+            }
 		} else {
 			d.s_major = 0;
 			d.s_minor = 0;

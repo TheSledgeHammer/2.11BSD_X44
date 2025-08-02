@@ -50,18 +50,17 @@ static char sccsid[] = "@(#)cmp.c	8.1 (Berkeley) 5/31/93";
 #include "ls.h"
 #include "extern.h"
 
-#if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) || \
-    defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
-#define ATIMENSEC_CMP(x, op, y) ((x)->st_atimensec op (y)->st_atimensec)
-#define CTIMENSEC_CMP(x, op, y) ((x)->st_ctimensec op (y)->st_ctimensec)
-#define MTIMENSEC_CMP(x, op, y) ((x)->st_mtimensec op (y)->st_mtimensec)
-#else
+#ifndef _POSIX_SOURCE
 #define ATIMENSEC_CMP(x, op, y) \
 	((x)->st_atimespec.tv_nsec op (y)->st_atimespec.tv_nsec)
 #define CTIMENSEC_CMP(x, op, y) \
 	((x)->st_ctimespec.tv_nsec op (y)->st_ctimespec.tv_nsec)
 #define MTIMENSEC_CMP(x, op, y) \
 	((x)->st_mtimespec.tv_nsec op (y)->st_mtimespec.tv_nsec)
+#else
+#define ATIMENSEC_CMP(x, op, y) ((x)->st_atimensec op (y)->st_atimensec)
+#define CTIMENSEC_CMP(x, op, y) ((x)->st_ctimensec op (y)->st_ctimensec)
+#define MTIMENSEC_CMP(x, op, y) ((x)->st_mtimensec op (y)->st_mtimensec)
 #endif
 
 int
