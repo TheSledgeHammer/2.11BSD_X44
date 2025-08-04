@@ -49,6 +49,7 @@ union wait	{
 #define w_stopsig	w_S.w_Stopsig
 
 #define	WSTOPPED	0177				/* value of s.stopval if process is stopped */
+#define	WCOREFLAG	0200
 
 /*
  * Option bits for the second argument of wait3.  WNOHANG causes the
@@ -76,11 +77,16 @@ union wait	{
 #define	_W_INT(w)	        (*(int *)&(w))	/* convert union wait to int */
 #define	_WSTATUS(x)	        (_W_INT(x) & 0177)
 #define	_WSTOPPED           	WSTOPPED
+#define	_WCOREFLAG          	WCOREFLAG
 
+#define WIFSTOPPED(x)	    	(_WSTATUS(x) == _WSTOPPED)
+#define WSTOPSIG(x)	        (_W_INT(x) >> 8)
 #define WIFSIGNALED(x)	    	(_WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0)
 #define WTERMSIG(x)	        (_WSTATUS(x))
 #define WIFEXITED(x)	    	(_WSTATUS(x) == 0)
 #define WEXITSTATUS(x)	    	(_W_INT(x) >> 8)
+
+#define WCOREDUMP(x)	    	(_W_INT(x) & _WCOREFLAG)
 
 #endif
 
