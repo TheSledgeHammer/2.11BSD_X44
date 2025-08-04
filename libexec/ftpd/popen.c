@@ -1,7 +1,7 @@
-/*	$NetBSD: popen.c,v 1.37 2010/03/20 18:23:30 christos Exp $	*/
+/*	$NetBSD: popen.c,v 1.34.4.1 2010/04/12 02:28:16 snj Exp $	*/
 
 /*-
- * Copyright (c) 1999-2009 The NetBSD Foundation, Inc.
+ * Copyright (c) 1999-2008 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -67,7 +67,7 @@
 #if 0
 static char sccsid[] = "@(#)popen.c	8.3 (Berkeley) 4/6/94";
 #else
-__RCSID("$NetBSD: popen.c,v 1.37 2010/03/20 18:23:30 christos Exp $");
+__RCSID("$NetBSD: popen.c,v 1.34.4.1 2010/04/12 02:28:16 snj Exp $");
 #endif
 #endif /* not lint */
 
@@ -105,11 +105,10 @@ static int fds;
 extern int ls_main(int, char *[]);
 
 FILE *
-ftpd_popen(const char *argv[], const char *ptype, int stderrfd)
+ftpd_popen(char *argv[], const char *ptype, int stderrfd)
 {
 	FILE *iop;
-	int argc, pdes[2], pid;
-	volatile int isls;
+	int argc, pdes[2], pid, isls;
 	char **pop;
 	StringList *sl;
 

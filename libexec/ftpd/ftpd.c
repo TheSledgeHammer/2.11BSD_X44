@@ -1,7 +1,7 @@
-/*	$NetBSD: ftpd.c,v 1.197 2011/09/16 16:13:17 plunky Exp $	*/
+/*	$NetBSD: ftpd.c,v 1.189 2008/10/28 08:05:26 lukem Exp $	*/
 
 /*
- * Copyright (c) 1997-2009 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997-2008 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -97,7 +97,7 @@ __COPYRIGHT("@(#) Copyright (c) 1985, 1988, 1990, 1992, 1993, 1994\
 #if 0
 static char sccsid[] = "@(#)ftpd.c	8.5 (Berkeley) 4/28/95";
 #else
-__RCSID("$NetBSD: ftpd.c,v 1.197 2011/09/16 16:13:17 plunky Exp $");
+__RCSID("$NetBSD: ftpd.c,v 1.189 2008/10/28 08:05:26 lukem Exp $");
 #endif
 #endif /* not lint */
 
@@ -249,9 +249,9 @@ static char	*gunique(const char *);
 static void	 login_utmp(const char *, const char *, const char *,
 		     struct sockinet *);
 static void	 logremotehost(struct sockinet *);
-__dead static void	 lostconn(int);
-__dead static void	 toolong(int);
-__dead static void	 sigquit(int);
+static void	 lostconn(int);
+static void	 toolong(int);
+static void	 sigquit(int);
 static void	 sigurg(int);
 static int	 handleoobcmd(void);
 static int	 receive_data(FILE *, FILE *);
@@ -601,8 +601,7 @@ main(int argc, char *argv[])
 	memset((char *)&his_addr, 0, sizeof(his_addr));
 	addrlen = sizeof(his_addr.si_su);
 	if (getpeername(0, (struct sockaddr *)&his_addr.si_su, &addrlen) < 0) {
-		syslog((errno == ENOTCONN) ? LOG_NOTICE : LOG_ERR,
-		    "getpeername (%s): %m",argv[0]);
+		syslog(LOG_ERR, "getpeername (%s): %m",argv[0]);
 		exit(1);
 	}
 	his_addr.su_len = addrlen;
@@ -912,7 +911,7 @@ user(const char *name)
 			if (logging)
 				syslog(LOG_NOTICE,
 				    "ANONYMOUS FTP LOGIN REFUSED FROM %s",
-				    remoteloghost);
+				    remotehost);
 			end_login();
 			goto cleanup_user;
 		}
@@ -984,7 +983,7 @@ user(const char *name)
 		reply(530, "User %s may not use FTP.", curname);
 		if (logging)
 			syslog(LOG_NOTICE, "FTP LOGIN REFUSED FROM %s, %s",
-			    remoteloghost, curname);
+			    remotehost, curname);
 		end_login();
 		goto cleanup_user;
 	}
@@ -1403,16 +1402,16 @@ do_pass(int pass_checked, int pass_rval, const char *passwd)
 			    "Login incorrect.");
 			if (logging) {
 				syslog(LOG_NOTICE,
-				    "FTP LOGIN FAILED FROM %s", remoteloghost);
+				    "FTP LOGIN FAILED FROM %s", remotehost);
 				syslog(LOG_AUTHPRIV | LOG_NOTICE,
 				    "FTP LOGIN FAILED FROM %s, %s",
-				    remoteloghost, curname);
+				    remotehost, curname);
 			}
 			pw = NULL;
 			if (login_attempts++ >= 5) {
 				syslog(LOG_NOTICE,
 				    "repeated login failures from %s",
-				    remoteloghost);
+				    remotehost);
 				exit(0);
 			}
 			return;
@@ -1424,7 +1423,7 @@ do_pass(int pass_checked, int pass_rval, const char *passwd)
 		reply(530, "User %s may not use FTP.", pw->pw_name);
 		if (logging)
 			syslog(LOG_NOTICE, "FTP LOGIN REFUSED FROM %s, %s",
-			    remoteloghost, pw->pw_name);
+			    remotehost, pw->pw_name);
 		goto bad;
 	}
 
@@ -1642,7 +1641,7 @@ do_pass(int pass_checked, int pass_rval, const char *passwd)
 		if (logging)
 			syslog(LOG_INFO,
 			"ANONYMOUS FTP LOGIN FROM %s, %s (class: %s, type: %s)",
-			    remoteloghost, passwd,
+			    remotehost, passwd,
 			    curclass.classname, CURCLASSTYPE);
 			/* store guest password reply into pw_passwd */
 		REASSIGN(pw->pw_passwd, ftpd_strdup(passwd));
@@ -1659,7 +1658,7 @@ do_pass(int pass_checked, int pass_rval, const char *passwd)
 		if (logging)
 			syslog(LOG_INFO,
 			    "FTP LOGIN FROM %s as %s (class: %s, type: %s)",
-			    remoteloghost, pw->pw_name,
+			    remotehost, pw->pw_name,
 			    curclass.classname, CURCLASSTYPE);
 	}
 	(void) umask(curclass.umask);
@@ -1677,7 +1676,7 @@ do_pass(int pass_checked, int pass_rval, const char *passwd)
 }
 
 void
-retrieve(const char *argv[], const char *name)
+retrieve(char *argv[], const char *name)
 {
 	FILE *fin, *dout;
 	struct stat st;
@@ -1686,7 +1685,7 @@ retrieve(const char *argv[], const char *name)
 	struct timeval start, finish, td, *tdp;
 	struct rusage rusage_before, rusage_after;
 	const char *dispname;
-	const char *error;
+	char *error;
 
 	sendrv = closerv = stderrfd = -1;
 	isconversion = isdata = isls = dolog = 0;
@@ -1825,7 +1824,7 @@ store(const char *name, const char *fmode, int unique)
 	struct stat st;
 	int (*closefunc)(FILE *);
 	struct timeval start, finish, td, *tdp;
-	const char *desc, *error;
+	char *desc, *error;
 
 	din = NULL;
 	desc = (*fmode == 'w') ? "put" : "append";
@@ -2131,14 +2130,14 @@ send_data_with_read(int filefd, int netfd, const struct stat *st, int isdata)
 {
 	struct timeval then;
 	off_t bufrem;
-	ssize_t readsize;
+	size_t readsize;
 	char *buf;
 	int c, error;
 
-	if (curclass.readsize > 0)
+	if (curclass.readsize)
 		readsize = curclass.readsize;
 	else
-		readsize = st->st_blksize;
+		readsize = (size_t)st->st_blksize;
 	if ((buf = malloc(readsize)) == NULL) {
 		perror_reply(451, "Local resource failure: malloc");
 		return (SS_NO_TRANSFER);
@@ -2147,8 +2146,7 @@ send_data_with_read(int filefd, int netfd, const struct stat *st, int isdata)
 	if (curclass.rateget) {
 		bufrem = curclass.rateget;
 		(void)gettimeofday(&then, NULL);
-	} else
-		bufrem = readsize;
+	}
 	while (1) {
 		(void) alarm(curclass.timeout);
 		c = read(filefd, buf, readsize);
@@ -2173,11 +2171,10 @@ send_data_with_mmap(int filefd, int netfd, const struct stat *st, int isdata)
 {
 	struct timeval then;
 	off_t bufrem, filesize, off, origoff;
-	ssize_t mapsize, winsize;
+	size_t mapsize, winsize;
 	int error, sendbufsize, sendlowat;
 	void *win;
 
-	bufrem = 0;
 	if (curclass.sendbufsize) {
 		sendbufsize = curclass.sendbufsize;
 		if (setsockopt(netfd, SOL_SOCKET, SO_SNDBUF,
@@ -2197,9 +2194,9 @@ send_data_with_mmap(int filefd, int netfd, const struct stat *st, int isdata)
 	winsize = curclass.mmapsize;
 	filesize = st->st_size;
 	if (ftpd_debug)
-		syslog(LOG_INFO, "mmapsize = " LLF ", writesize = " LLF,
-		    (LLT)winsize, (LLT)curclass.writesize);
-	if (winsize <= 0)
+		syslog(LOG_INFO, "mmapsize = %ld, writesize = %ld",
+		    (long)winsize, (long)curclass.writesize);
+	if (winsize == 0)
 		goto try_read;
 
 	off = lseek(filefd, (off_t)0, SEEK_CUR);
@@ -2210,8 +2207,7 @@ send_data_with_mmap(int filefd, int netfd, const struct stat *st, int isdata)
 	if (curclass.rateget) {
 		bufrem = curclass.rateget;
 		(void)gettimeofday(&then, NULL);
-	} else
-		bufrem = winsize;
+	}
 	while (1) {
 		mapsize = MIN(filesize - off, winsize);
 		if (mapsize == 0)
@@ -2357,7 +2353,7 @@ receive_data(FILE *instr, FILE *outstr)
 	int	volatile bare_lfs;
 	off_t	byteswritten;
 	char	*buf;
-	ssize_t	readsize;
+	size_t	readsize;
 	struct sigaction sa, sa_saved;
 	struct stat st;
 
@@ -2393,7 +2389,7 @@ receive_data(FILE *instr, FILE *outstr)
 		if (curclass.readsize)
 			readsize = curclass.readsize;
 		else if (fstat(filefd, &st))
-			readsize = (ssize_t)st.st_blksize;
+			readsize = (size_t)st.st_blksize;
 		else
 			readsize = BUFSIZ;
 		if ((buf = malloc(readsize)) == NULL) {
@@ -2547,7 +2543,7 @@ statcmd(void)
 	int ispassive, af;
 	off_t otbi, otbo, otb;
 
-	a = p = NULL;
+	a = p = (unsigned char *)NULL;
 
 	reply(-211, "%s FTP server status:", hostname);
 	reply(0, "Version: %s", EMPTYSTR(version) ? "<suppressed>" : version);
@@ -2850,29 +2846,18 @@ static void
 logremotehost(struct sockinet *who)
 {
 
-#if defined(HAVE_SOCKADDR_SNPRINTF)
-	char abuf[BUFSIZ];
-#endif
-
-	struct sockaddr *sa = (struct sockaddr *)&who->si_su;
-	if (getnameinfo(sa, who->su_len, remotehost, sizeof(remotehost), NULL,
-	    0, getnameopts))
+	if (getnameinfo((struct sockaddr *)&who->si_su,
+	    who->su_len, remotehost, sizeof(remotehost), NULL, 0, 
+	    getnameopts))
 		strlcpy(remotehost, "?", sizeof(remotehost));
-#if defined(HAVE_SOCKADDR_SNPRINTF)
-	sockaddr_snprintf(abuf, sizeof(abuf), "%a", sa);
-	snprintf(remoteloghost, sizeof(remoteloghost), "%s(%s)", remotehost,
-	    abuf);
-#else
-	strlcpy(remoteloghost, remotehost, sizeof(remoteloghost));
-#endif
-	
+
 #if defined(HAVE_SETPROCTITLE)
 	snprintf(proctitle, sizeof(proctitle), "%s: connected", remotehost);
 	setproctitle("%s", proctitle);
 #endif /* defined(HAVE_SETPROCTITLE) */
 	if (logging)
 		syslog(LOG_INFO, "connection from %s to %s",
-		    remoteloghost, hostname);
+		    remotehost, hostname);
 }
 
 /*
@@ -3019,8 +3004,7 @@ bind_pasv_addr(void)
 void
 passive(void)
 {
-	socklen_t len;
-	int recvbufsize;
+	socklen_t len, recvbufsize;
 	char *p, *a;
 
 	if (pdata >= 0)
@@ -3138,7 +3122,7 @@ af2epsvproto(int af)
  * 229 Entering Extended Passive Mode (|||port|)
  */
 void
-long_passive(const char *cmd, int pf)
+long_passive(char *cmd, int pf)
 {
 	socklen_t len;
 	char *p, *a;
@@ -3381,7 +3365,7 @@ perror_reply(int code, const char *string)
 }
 
 static char *onefile[] = {
-	NULL,
+	"",
 	0
 };
 
@@ -3440,7 +3424,7 @@ send_file_list(const char *whichf)
 			/* XXX: nuke this support? */
 			if (dirname[0] == '-' && *dirlist == NULL &&
 			    transflag == 0) {
-				const char *argv[] = { INTERNAL_LS, "", NULL };
+				char *argv[] = { INTERNAL_LS, "", NULL };
 
 				argv[1] = dirname;
 				retrieve(argv, dirname);
@@ -3592,9 +3576,8 @@ logxfer(const char *command, off_t bytes, const char *file1, const char *file2,
 			    " %s", r2);
 		if (elapsed != NULL)
 			len += snprintf(buf + len, sizeof(buf) - len,
-			    " in " LLF ".%.03ld seconds",
-			    (LLT)elapsed->tv_sec,
-			    (long)(elapsed->tv_usec / 1000));
+			    " in %ld.%.03d seconds", elapsed->tv_sec,
+			    (int)(elapsed->tv_usec / 1000));
 		if (error != NULL)
 			len += snprintf(buf + len, sizeof(buf) - len,
 			    ": %s", error);
@@ -3616,7 +3599,7 @@ logxfer(const char *command, off_t bytes, const char *file1, const char *file2,
 
 	time(&now);
 	len = snprintf(buf, sizeof(buf),
-	    "%.24s " LLF " %s " LLF " %s %c %s %c %c %s FTP 0 * %c\n",
+	    "%.24s %ld %s " LLF " %s %c %s %c %c %s FTP 0 * %c\n",
 
 /*
  * XXX: wu-ftpd puts ' (send)' or ' (recv)' in the syslog message, and removes
@@ -3624,8 +3607,7 @@ logxfer(const char *command, off_t bytes, const char *file1, const char *file2,
  *	given that syslog messages don't contain the full date.
  */
 	    ctime(&now),
-	    (LLT)
-	    (elapsed == NULL ? 0 : elapsed->tv_sec + (elapsed->tv_usec > 0)),
+	    elapsed == NULL ? 0 : elapsed->tv_sec + (elapsed->tv_usec > 0),
 	    remotehost,
 	    (LLT) bytes,
 	    r1,
@@ -3665,9 +3647,9 @@ logrusage(const struct rusage *rusage_before,
 
 	timersub(&rusage_after->ru_utime, &rusage_before->ru_utime, &usrtime);
 	timersub(&rusage_after->ru_stime, &rusage_before->ru_stime, &systime);
-	syslog(LOG_INFO, LLF ".%.03ldu " LLF ".%.03lds %ld+%ldio %ldpf+%ldw",
-	    (LLT)usrtime.tv_sec, (long)(usrtime.tv_usec / 1000),
-	    (LLT)systime.tv_sec, (long)(systime.tv_usec / 1000),
+	syslog(LOG_INFO, "%ld.%.03du %ld.%.03ds %ld+%ldio %ldpf+%ldw",
+	    usrtime.tv_sec, (int)(usrtime.tv_usec / 1000),
+	    systime.tv_sec, (int)(systime.tv_usec / 1000),
 	    rusage_after->ru_inblock - rusage_before->ru_inblock,
 	    rusage_after->ru_oublock - rusage_before->ru_oublock,
 	    rusage_after->ru_majflt - rusage_before->ru_majflt,

@@ -1,6 +1,6 @@
-/*	$NetBSD: version.h,v 1.74 2010/03/21 20:27:26 lukem Exp $	*/
+/*	$NetBSD: version.h,v 1.70.4.1 2010/04/12 02:30:12 snj Exp $	*/
 /*-
- * Copyright (c) 1999-2009 The NetBSD Foundation, Inc.
+ * Copyright (c) 1999-2008 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation

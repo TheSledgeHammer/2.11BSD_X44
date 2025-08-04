@@ -1,4 +1,4 @@
-#	$NetBSD: Makefile,v 1.63 2011/08/14 11:46:28 christos Exp $
+#	$NetBSD: Makefile,v 1.59 2008/09/16 12:23:28 lukem Exp $
 #	@(#)Makefile	8.2 (Berkeley) 4/4/94
 
 .include <bsd.own.mk>
@@ -23,6 +23,8 @@ SRCS+=	ls.c cmp.c print.c util.c
 CPPFLAGS+=-DINET6
 .endif
 
+WARNS=2
+
 .if (${USE_PAM} != "no")
 CPPFLAGS+=-DUSE_PAM
 DPADD+= ${LIBPAM} ${PAM_STATIC_DPADD}
@@ -43,6 +45,7 @@ ftpd.o ftpcmd.o: version.h
 #
 #SRCS+=	k5login.c
 #CPPFLAGS+=-DKERBEROS5
+#CPPFLAGS+=-DKERBEROS5 -I${DESTDIR}/usr/include/krb5
 #DPADD+=	${LIBKRB5} ${LIBASN1}
 #LDADD+= -lkrb5 -lasn1
 #
@@ -51,7 +54,7 @@ ftpd.o ftpcmd.o: version.h
 #
 #.endif
 
-COPTS.ftpd.c+=		${GCC_NO_STRINGOP_TRUNCATION} ${GCC_NO_FORMAT_TRUNCATION}
-COPTS.logwtmp.c+=	${GCC_NO_STRINGOP_TRUNCATION}
+COPTS.ftpd.c+= ${GCC_NO_STRINGOP_TRUNCATION}
+COPTS.logwtmp.c+= ${GCC_NO_STRINGOP_TRUNCATION}
 
 .include <bsd.prog.mk>

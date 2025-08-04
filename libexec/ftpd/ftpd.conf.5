@@ -1,4 +1,4 @@
-.\"	$NetBSD: ftpd.conf.5,v 1.37 2009/04/09 02:25:45 joerg Exp $
+.\"	$NetBSD: ftpd.conf.5,v 1.36 2008/09/13 02:41:52 lukem Exp $
 .\"
 .\" Copyright (c) 1997-2008 The NetBSD Foundation, Inc.
 .\" All rights reserved.
@@ -209,7 +209,9 @@ Set the class type of
 to
 .Ar type
 (see above).
-.It Sy conversion Ar class Ar suffix Op Ar "type disable command"
+.It Xo Sy conversion Ar class
+.Ar suffix Op Ar "type disable command"
+.Xc
 Define an automatic in-line file conversion.
 If a file to retrieve ends in
 .Ar suffix ,
@@ -342,7 +344,9 @@ for
 and
 .Sy CHROOT
 users.
-.It Sy limit Ar class Op Ar count Op Ar file
+.It Xo Sy limit Ar class
+.Op Ar count Op Ar file
+.Xc
 Limit the maximum number of concurrent connections for
 .Ar class
 to
@@ -471,7 +475,9 @@ and
 .Sy EPSV )
 connections.
 Otherwise, enable them.
-.It Sy portrange Ar class Op Ar min Ar max
+.It Sy portrange Ar class Oo
+.Ar min Ar max
+.Oc
 Set the range of port number which will be used for the passive data port.
 .Ar max
 must be greater than

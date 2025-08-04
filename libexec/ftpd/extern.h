@@ -1,4 +1,4 @@
-/*	$NetBSD: extern.h,v 1.62 2011/08/29 20:41:06 joerg Exp $	*/
+/*	$NetBSD: extern.h,v 1.58 2008/09/13 03:30:35 lukem Exp $	*/
 
 /*-
  * Copyright (c) 1992, 1993
@@ -32,7 +32,7 @@
  */
 
 /*-
- * Copyright (c) 1997-2009 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997-2008 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -114,8 +114,10 @@
 #define FTP_BUFLEN	512
 
 void	abor(void);
+void	blkfree(char **);
 void	closedataconn(FILE *);
 char   *conffilename(const char *);
+char  **copyblk(char **);
 void	count_users(void);
 void	cprintf(FILE *, const char *, ...)
 	    __attribute__((__format__(__printf__, 2, 3)));
@@ -123,13 +125,13 @@ void	cwd(const char *);
 FILE   *dataconn(const char *, off_t, const char *);
 void	delete(const char *);
 int	display_file(const char *, int);
-const char **do_conversion(const char *);
-__dead void	dologout(int);
-__dead void	fatal(const char *);
+char  **do_conversion(const char *);
+void	dologout(int);
+void	fatal(const char *);
 void	feat(void);
 void	format_path(char *, const char *);
 int	ftpd_pclose(FILE *);
-FILE   *ftpd_popen(const char *[], const char *, int);
+FILE   *ftpd_popen(char *[], const char *, int);
 int	get_line(char *, int, FILE *);
 void	init_curclass(void);
 void	logxfer(const char *, off_t, const char *, const char *,
@@ -146,7 +148,7 @@ int	lpsvproto2af(int);
 int	af2lpsvproto(int);
 int	epsvproto2af(int);
 int	af2epsvproto(int);
-void	long_passive(const char *, int);
+void	long_passive(char *, int);
 int	extended_port(const char *);
 void	epsv_protounsupp(const char *);
 void	perror_reply(int, const char *);
@@ -156,7 +158,7 @@ void	renamecmd(const char *, const char *);
 char   *renamefrom(const char *);
 void	reply(int, const char *, ...)
 	    __attribute__((__format__(__printf__, 2, 3)));
-void	retrieve(const char *[], const char *);
+void	retrieve(char *[], const char *);
 void	send_file_list(const char *);
 void	show_chdir_messages(int);
 void	sizecmd(const char *);
@@ -166,7 +168,7 @@ void	statxfer(void);
 void	store(const char *, const char *, int);
 void	user(const char *);
 char   *ftpd_strdup(const char *);
-void	yyerror(const char *);
+void	yyerror(char *);
 
 #ifdef SUPPORT_UTMP
 struct utmp;
@@ -193,7 +195,6 @@ int	ftpd_logoutx(const char *, int, int);
 #if defined(__NetBSD__)
 # define HAVE_SETPROCTITLE		1
 # define HAVE_STRUCT_SOCKADDR_SA_LEN	1
-# define HAVE_SOCKADDR_SNPRINTF		1
 #endif
 
 struct sockinet {
@@ -222,18 +223,18 @@ struct sockinet {
 #endif
 
 struct tab {
-	const char	*name;
-	short	 	token;
-	short	 	state;
-	short	 	flags;	/* 1 if command implemented, 2 if has options,
-				   4 if can occur OOB */
-	const char	*help;
-	char		*options;
+	char	*name;
+	short	 token;
+	short	 state;
+	short	 flags;	/* 1 if command implemented, 2 if has options,
+	                   4 if can occur OOB */
+	char	*help;
+	char	*options;
 };
 
 struct ftpconv {
 	struct ftpconv	*next;
-	char 		*suffix;	/* Suffix of requested name */
+	char		*suffix;	/* Suffix of requested name */
 	char		*types;		/* Valid file types */
 	char		*disable;	/* File to disable conversions */
 	char		*command;	/* Command to do the conversion */
@@ -330,7 +331,6 @@ GLOBAL	char		proctitle[BUFSIZ];	/* initial part of title */
 GLOBAL	struct passwd  *pw;
 GLOBAL	int		quietmessages;
 GLOBAL	char		remotehost[MAXHOSTNAMELEN+1];
-GLOBAL	char		remoteloghost[2 * MAXHOSTNAMELEN+1];
 GLOBAL	off_t		restart_point;
 GLOBAL	char		tmpline[FTP_BUFLEN];
 GLOBAL	int		type;

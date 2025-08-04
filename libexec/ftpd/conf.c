@@ -1,7 +1,7 @@
-/*	$NetBSD: conf.c,v 1.63 2011/08/14 11:46:28 christos Exp $	*/
+/*	$NetBSD: conf.c,v 1.61 2008/06/09 00:33:39 lukem Exp $	*/
 
 /*-
- * Copyright (c) 1997-2009 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997-2008 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -31,7 +31,7 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
-__RCSID("$NetBSD: conf.c,v 1.63 2011/08/14 11:46:28 christos Exp $");
+__RCSID("$NetBSD: conf.c,v 1.61 2008/06/09 00:33:39 lukem Exp $");
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -372,27 +372,27 @@ parse_conf(const char *findclass)
 
 		} else if (strcasecmp(word, "mmapsize") == 0) {
 			curclass.mmapsize = 0;
-			CONF_LL(mmapsize, arg, 0, SSIZE_MAX);
+			CONF_LL(mmapsize, arg, 0, LLTMAX);
 
 		} else if (strcasecmp(word, "readsize") == 0) {
 			curclass.readsize = 0;
-			CONF_LL(readsize, arg, 0, SSIZE_MAX);
+			CONF_LL(readsize, arg, 0, LLTMAX);
 
 		} else if (strcasecmp(word, "writesize") == 0) {
 			curclass.writesize = 0;
-			CONF_LL(writesize, arg, 0, SSIZE_MAX);
+			CONF_LL(writesize, arg, 0, LLTMAX);
 
 		} else if (strcasecmp(word, "recvbufsize") == 0) {
 			curclass.recvbufsize = 0;
-			CONF_LL(recvbufsize, arg, 0, INT_MAX);
+			CONF_LL(recvbufsize, arg, 0, LLTMAX);
 
 		} else if (strcasecmp(word, "sendbufsize") == 0) {
 			curclass.sendbufsize = 0;
-			CONF_LL(sendbufsize, arg, 0, INT_MAX);
+			CONF_LL(sendbufsize, arg, 0, LLTMAX);
 
 		} else if (strcasecmp(word, "sendlowat") == 0) {
 			curclass.sendlowat = 0;
-			CONF_LL(sendlowat, arg, 0, INT_MAX);
+			CONF_LL(sendlowat, arg, 0, LLTMAX);
 
 		} else if (strcasecmp(word, "modify") == 0) {
 			CONF_FLAG(modify);
@@ -803,15 +803,14 @@ filetypematch(char *types, int mode)
  * routine doesn't need to be re-entrant unless we start using a
  * multi-threaded ftpd, and that's not likely for a while...
  */
-const char **
+char **
 do_conversion(const char *fname)
 {
 	struct ftpconv	*cp;
 	struct stat	 st;
 	int		 o_errno;
 	char		*base = NULL;
-	char		*cmd, *p, *lp;
-	char	       **argv;
+	char		*cmd, *p, *lp, **argv;
 	StringList	*sl;
 
 	o_errno = errno;
@@ -863,7 +862,7 @@ do_conversion(const char *fname)
 	argv = sl->sl_str;
 	free(cmd);
 	free(sl);
-	return (void *)(intptr_t)argv;
+	return(argv);
 
  cleanup_do_conv:
 	if (sl)
@@ -885,9 +884,8 @@ void
 count_users(void)
 {
 	char	fn[MAXPATHLEN];
-	int	fd;
-	size_t	i, last, count;
-	ssize_t	scount;
+	int	fd, i, last;
+	size_t	count;
 	pid_t  *pids, mypid;
 	struct stat sb;
 	struct flock fl;
@@ -910,11 +908,10 @@ count_users(void)
 		goto cleanup_count;
 	if ((pids = malloc(sb.st_size + sizeof(pid_t))) == NULL)
 		goto cleanup_count;
-/* XXX: implement a better read loop */
-	scount = read(fd, pids, sb.st_size);
-	if (scount == -1 || scount != sb.st_size || scount < 0)
+	count = read(fd, pids, sb.st_size);
+	if ((ssize_t)count == -1 || count != sb.st_size)
 		goto cleanup_count;
-	count = (size_t)scount / sizeof(pid_t);
+	count /= sizeof(pid_t);
 	mypid = getpid();
 	last = 0;
 	for (i = 0; i < count; i++) {
@@ -939,9 +936,7 @@ count_users(void)
 	count = (last + 1) * sizeof(pid_t);
 	if (lseek(fd, 0, SEEK_SET) == -1)
 		goto cleanup_count;
-/* XXX: implement a better write loop */
-	scount = write(fd, pids, count);
-	if (scount == -1 || (size_t)scount != count)
+	if (write(fd, pids, count) == -1)
 		goto cleanup_count;
 	(void)ftruncate(fd, count);
 
