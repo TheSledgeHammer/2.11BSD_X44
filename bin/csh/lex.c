@@ -1294,7 +1294,7 @@ top:
 	}
     }
     if (alvec) {
-	if ((alvecp = *alvec) != '\0') {
+	if ((alvecp = *alvec) != NULL) {
 	    alvec++;
 	    goto top;
 	}
@@ -1317,7 +1317,7 @@ top:
 	    doneinp = 1;
 	    reset();
 	}
-	if ((evalp = *evalvec) != '\0') {
+	if ((evalp = *evalvec) != NULL) {
 	    evalvec++;
 	    goto top;
 	}
