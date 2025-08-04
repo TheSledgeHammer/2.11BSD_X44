@@ -516,7 +516,7 @@ again:				/* search for matches */
 	    !looking_for_lognames)
 	    continue;
 	if (command == LIST) {
-	    if (numitems >= maxitems) {
+	    if (numitems >= (int)maxitems) {
 		maxitems += 1024;
 		if (items == NULL)
 			items = (Char **) xmalloc(sizeof(*items) * maxitems);
