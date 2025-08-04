@@ -83,6 +83,11 @@ static char sccsid[] = "@(#)glob.c	8.3 (Berkeley) 10/13/93";
 #include <string.h>
 #include <unistd.h>
 
+#ifdef __weak_alias
+__weak_alias(glob,_glob)
+__weak_alias(globfree,_globfree)
+#endif
+
 #define	DOLLAR		'$'
 #define	DOT		    '.'
 #define	EOS		    '\0'
