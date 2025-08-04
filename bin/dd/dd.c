@@ -68,14 +68,14 @@ static char sccsid[] = "@(#)dd.c	8.5 (Berkeley) 4/2/94";
 #include "dd.h"
 #include "extern.h"
 
-static void dd_close (void);
-static void dd_in (void);
-static void getfdtype (IO *);
-static void setup (void);
+static void dd_close(void);
+static void dd_in(void);
+static void getfdtype(IO *);
+static void setup(void);
 
 IO	in, out;		/* input/output state */
 STAT	st;			/* statistics */
-void	(*cfunc) (void);	/* conversion function */
+void	(*cfunc)(void);	/* conversion function */
 u_long	cpy_cnt;		/* # of blocks to copy */
 u_int	ddflags;		/* conversion options */
 u_int	cbsz;			/* conversion block size */
@@ -167,7 +167,7 @@ setup(void)
 	 * Truncate the output file; ignore errors because it fails on some
 	 * kinds of output files, tapes, for example.
 	 */
-	if (ddflags & (C_OF | C_SEEK | C_NOTRUNC) == (C_OF | C_SEEK))
+	if ((ddflags & (C_OF | C_SEEK | C_NOTRUNC)) == (C_OF | C_SEEK))
 		(void)ftruncate(out.fd, (off_t)out.offset * out.dbsz);
 
 	/*
@@ -175,7 +175,7 @@ setup(void)
 	 * table that does both at once.  If just converting case, use the
 	 * built-in tables.
 	 */
-	if (ddflags & (C_LCASE|C_UCASE))
+	if ((ddflags & (C_LCASE|C_UCASE)))
 		if (ddflags & C_ASCII)
 			if (ddflags & C_LCASE) {
 				for (cnt = 0; cnt < 0377; ++cnt)
@@ -229,11 +229,12 @@ dd_in(void)
 		 * lose the minimum amount of data.  If doing block operations
 		 * use spaces.
 		 */
-		if ((flags & (C_NOERROR|C_SYNC)) == (C_NOERROR|C_SYNC))
+		if ((flags & (C_NOERROR|C_SYNC)) == (C_NOERROR|C_SYNC)) {
 			if (flags & (C_BLOCK|C_UNBLOCK))
 				memset(in.dbp, ' ', in.dbsz);
 			else
 				memset(in.dbp, 0, in.dbsz);
+        }
 
 		n = read(in.fd, in.dbp, in.dbsz);
 		if (n == 0) {
@@ -271,7 +272,7 @@ dd_in(void)
 			++st.in_full;
 
 		/* Handle full input blocks. */
-		} else if (n == in.dbsz) {
+		} else if (n == (int)in.dbsz) {
 			in.dbcnt += in.dbrcnt = n;
 			++st.in_full;
 
@@ -368,7 +369,7 @@ dd_out(int force)
 			outp += nw;
 			st.bytes += nw;
 			if (nw == n) {
-				if (n != out.dbsz)
+				if (n != (int)out.dbsz)
 					++st.out_part;
 				else
 					++st.out_full;

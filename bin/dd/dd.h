@@ -51,7 +51,7 @@ typedef struct {
 #define	NOREAD		0x08		/* not readable */
 	u_int	flags;
 
-	char 	*name;			/* name */
+	const char 	*name;			/* name */
 	int	fd;			/* file descriptor */
 	u_long	offset;			/* # of blocks to skip */
 

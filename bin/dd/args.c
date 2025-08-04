@@ -55,23 +55,23 @@ static char sccsid[] = "@(#)args.c	8.3 (Berkeley) 4/2/94";
 #include "extern.h"
 
 static int	c_arg (const void *, const void *);
-static int	c_conv (const void *, const void *);
-static void	f_bs (char *);
-static void	f_cbs (char *);
-static void	f_conv (char *);
-static void	f_count (char *);
-static void	f_files (char *);
-static void	f_ibs (char *);
-static void	f_if (char *);
-static void	f_obs (char *);
-static void	f_of (char *);
-static void	f_seek (char *);
-static void	f_skip (char *);
-static u_long	get_bsz (char *);
+static int	c_conv(const void *, const void *);
+static void	f_bs(char *);
+static void	f_cbs(char *);
+static void	f_conv(char *);
+static void	f_count(char *);
+static void	f_files(char *);
+static void	f_ibs(char *);
+static void	f_if(char *);
+static void	f_obs(char *);
+static void	f_of(char *);
+static void	f_seek(char *);
+static void	f_skip(char *);
+static u_long	get_bsz(char *);
 
 static struct arg {
 	const char *name;
-	void (*f) (char *);
+	void (*f)(char *);
 	u_int set, noset;
 } args[] = {
 	{ "bs",		f_bs,		C_BS,	 C_BS|C_IBS|C_OBS|C_OSYNC },
@@ -87,7 +87,7 @@ static struct arg {
 	{ "skip",	f_skip,		C_SKIP,	 C_SKIP },
 };
 
-static char *oper;
+static const char *oper;
 
 /*
  * args -- parse JCL syntax of dd.
@@ -100,7 +100,7 @@ jcl(char **argv)
 
 	in.dbsz = out.dbsz = 512;
 
-	while (oper == *++argv) {
+	while ((oper = *++argv)) {
 		if ((arg = strchr(oper, '=')) == NULL)
 			errx(1, "unknown operand %s", oper);
 		*arg++ = '\0';
@@ -178,7 +178,7 @@ static int
 c_arg(const void *a, const void *b)
 {
 
-	return (strcmp(((struct arg *)a)->name, ((struct arg *)b)->name));
+	return (strcmp(((const struct arg *)a)->name, ((const struct arg *)b)->name));
 }
 
 static void
@@ -300,7 +300,7 @@ static int
 c_conv(const void *a, const void *b)
 {
 
-	return (strcmp(((struct conv *)a)->name, ((struct conv *)b)->name));
+	return (strcmp(((const struct conv *)a)->name, ((const struct conv *)b)->name));
 }
 
 /*
@@ -365,7 +365,8 @@ get_bsz(char *val)
 			t = num;
 			num *= get_bsz(expr + 1);
 			if (t > num)
-erange:				errx(1, "%s: %s", oper, strerror(ERANGE));
+erange:				
+                errx(1, "%s: %s", oper, strerror(ERANGE));
 			break;
 		default:
 			errx(1, "%s: illegal numeric value", oper);
