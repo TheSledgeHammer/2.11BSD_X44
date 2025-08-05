@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if	!defined(lint) && defined(DOSCCS)
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
@@ -24,6 +25,7 @@ static char sccsid[] = "@(#)main.c	5.5.1 (2.11BSD GTE) 12/9/94";
 #include <setjmp.h>
 #include <syslog.h>
 #include <sys/file.h>
+
 #include "gettytab.h"
 
 extern	char **environ;
@@ -50,8 +52,6 @@ char	name[16];
 char	dev[] = "/dev/";
 char	ctty[] = "/dev/console";
 char	ttyn[32];
-char	*portselector();
-char	*ttyname();
 
 #define	OBUFSIZ		128
 #define	TABBUFSIZ	512
@@ -84,11 +84,12 @@ char partab[] = {
 
 #define	ERASE	tmode.sg_erase
 #define	KILL	tmode.sg_kill
-#define	EOT	tc.t_eofc
+#define	EOT		tc.t_eofc
 
 jmp_buf timeout;
 
-dingdong()
+static void
+dingdong(void)
 {
 
 	alarm(0);
@@ -98,15 +99,24 @@ dingdong()
 
 jmp_buf	intrupt;
 
-interrupt()
+static void
+interrupt(void)
 {
 
 	signal(SIGINT, interrupt);
 	longjmp(intrupt, 1);
 }
 
-main(argc, argv)
-	char *argv[];
+static int	getname(void);
+static void	oflush(void);
+static void	prompt(void);
+static void	putchr(int);
+static void	putf(char *);
+static void	putpad(char *);
+static void	puts(char *);
+
+int
+main(int argc, char *argv[])
 {
 	register char *tname;
 	long allflags;
@@ -241,7 +251,8 @@ main(argc, argv)
 	}
 }
 
-getname()
+static int
+getname(void)
 {
 	register char *np;
 	register c;
@@ -320,13 +331,12 @@ getname()
 	return (1);
 }
 
-static
-short	tmspc10[] = {
-	0, 2000, 1333, 909, 743, 666, 500, 333, 166, 83, 55, 41, 20, 10, 5, 15
+static short tmspc10[] = {
+		0, 2000, 1333, 909, 743, 666, 500, 333, 166, 83, 55, 41, 20, 10, 5, 15
 };
 
-putpad(s)
-	register char *s;
+void
+putpad(char *s)
 {
 	register pad = 0;
 	register mspc10;
@@ -367,8 +377,8 @@ putpad(s)
 		putchr(*PC);
 }
 
-puts(s)
-	register char *s;
+void
+puts(char *s)
 {
 
 	while (*s)
@@ -378,7 +388,8 @@ puts(s)
 char	outbuf[OBUFSIZ];
 int	obufcnt = 0;
 
-putchr(cc)
+void
+putchr(int cc)
 {
 	char c;
 
@@ -394,14 +405,16 @@ putchr(cc)
 		write(1, &c, 1);
 }
 
-oflush()
+void
+oflush(void)
 {
 	if (obufcnt)
 		write(1, outbuf, obufcnt);
 	obufcnt = 0;
 }
 
-prompt()
+void
+prompt(void)
 {
 
 	putf(LM);
@@ -409,13 +422,12 @@ prompt()
 		putchr('\n');
 }
 
-putf(cp)
-	register char *cp;
+void
+putf(char *cp)
 {
 	char *ttyn, *slash;
 	char datebuffer[60];
 	extern char editedhost[];
-	extern char *ttyname(), *rindex();
 
 	while (*cp) {
 		if (*cp != '%') {

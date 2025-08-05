@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if	!defined(lint) && defined(DOSCCS)
 static char sccsid[] = "@(#)subr.c	5.4.2 (2.11BSD GTE) 1997/3/28";
 #endif
@@ -21,6 +22,7 @@ extern	struct ltchars ltc;
 /*
  * Get a table entry.
  */
+void
 gettable(name, buf, area)
 	char *name, *buf, *area;
 {
@@ -55,7 +57,8 @@ gettable(name, buf, area)
 	}
 }
 
-gendefaults()
+void
+gendefaults(void)
 {
 	register struct gettystrs *sp;
 	register struct gettynums *np;
@@ -74,7 +77,8 @@ gendefaults()
 			fp->defalt = fp->invrt;
 }
 
-setdefaults()
+void
+setdefaults(void)
 {
 	register struct gettystrs *sp;
 	register struct gettynums *np;
@@ -91,22 +95,21 @@ setdefaults()
 			fp->value = fp->defalt;
 }
 
-static char **
-charnames[] = {
-	&ER, &KL, &IN, &QU, &XN, &XF, &ET, &BK,
-	&SU, &DS, &RP, &FL, &WE, &LN, 0
+static char **charnames[] = {
+		&ER, &KL, &IN, &QU, &XN, &XF, &ET, &BK,
+		&SU, &DS, &RP, &FL, &WE, &LN, 0
 };
 
-static char *
-charvars[] = {
-	&tmode.sg_erase, &tmode.sg_kill, &tc.t_intrc,
-	&tc.t_quitc, &tc.t_startc, &tc.t_stopc,
-	&tc.t_eofc, &tc.t_brkc, &ltc.t_suspc,
-	&ltc.t_dsuspc, &ltc.t_rprntc, &ltc.t_flushc,
-	&ltc.t_werasc, &ltc.t_lnextc, 0
+static char *charvars[] = {
+		&tmode.sg_erase, &tmode.sg_kill, &tc.t_intrc,
+		&tc.t_quitc, &tc.t_startc, &tc.t_stopc,
+		&tc.t_eofc, &tc.t_brkc, &ltc.t_suspc,
+		&ltc.t_dsuspc, &ltc.t_rprntc, &ltc.t_flushc,
+		&ltc.t_werasc, &ltc.t_lnextc, 0
 };
 
-setchars()
+void
+setchars(void)
 {
 	register int i;
 	register char *p;
@@ -121,7 +124,7 @@ setchars()
 }
 
 long
-setflags(n)
+setflags(int n)
 {
 	register long f;
 
@@ -184,8 +187,8 @@ setflags(n)
 
 char	editedhost[32];
 
-edithost(pat)
-	register char *pat;
+void
+edithost(char *pat)
 {
 	register char *host = HN;
 	register char *res = editedhost;
@@ -227,29 +230,29 @@ struct speedtab {
 	int	speed;
 	int	uxname;
 } speedtab[] = {
-	50,	B50,
-	75,	B75,
-	110,	B110,
-	134,	B134,
-	150,	B150,
-	200,	B200,
-	300,	B300,
-	600,	B600,
-	1200,	B1200,
-	1800,	B1800,
-	2400,	B2400,
-	4800,	B4800,
-	9600,	B9600,
-	19200,	EXTA,
-	19,	EXTA,		/* for people who say 19.2K */
-	38400,	EXTB,
-	38,	EXTB,
-	7200,	EXTB,		/* alternative */
-	0
+	{ 50,	  B50 },
+	{ 75,	  B75 },
+	{ 110,	 B110 },
+	{ 134,	 B134 },
+	{ 150,	 B150 },
+	{ 200,	 B200 },
+	{ 300,	 B300 },
+	{ 600,	 B600 },
+	{ 1200,	B1200 },
+	{ 1800,	B1800 },
+	{ 2400,	B2400 },
+	{ 4800,	B4800 },
+	{ 9600,	B9600 },
+	{ 19200, EXTA },
+	{ 19,	 EXTA },	/* for people who say 19.2K */
+	{ 38400, EXTB },
+	{ 38,	 EXTB },
+	{ 7200,	 EXTB },	/* alternative */
+	{ 0 }
 };
 
-speed(val)
-	long val;
+int
+speed(long val)
 {
 	register struct speedtab *sp;
 
@@ -263,22 +266,21 @@ speed(val)
 	return (B300);		/* default in impossible cases */
 }
 
-makeenv(env)
-	char *env[];
+void
+makeenv(char *env[])
 {
 	static char termbuf[128] = "TERM=";
 	register char *p, *q;
 	register char **ep;
-	char *index();
 
 	ep = env;
 	if (TT && *TT) {
 		strcat(termbuf, TT);
 		*ep++ = termbuf;
 	}
-	if (p = EV) {
+	if ((p = EV)) {
 		q = p;
-		while (q = index(q, ',')) {
+		while ((q = index(q, ','))) {
 			*q++ = '\0';
 			*ep++ = p;
 			p = q;
@@ -296,8 +298,8 @@ makeenv(env)
  * The routine below returns the terminal type mapped from derived speed.
  */
 struct	portselect {
-	char	*ps_baud;
-	char	*ps_type;
+	const char	*ps_baud;
+	const char	*ps_type;
 } portspeeds[] = {
 	{ "B110",	"std.110" },
 	{ "B134",	"std.134" },
@@ -313,9 +315,10 @@ struct	portselect {
 };
 
 char *
-portselector()
+portselector(void)
 {
-	char c, baud[20], *type = "default";
+	char c, baud[20];
+	const char *type = "default";
 	register struct portselect *ps;
 	int len;
 
@@ -348,11 +351,12 @@ portselector()
 #include <sys/time.h>
 
 char *
-autobaud()
+autobaud(void)
 {
 	long rfds;
 	struct timeval timeout;
-	char c, *type = "1200-baud";
+	char c;
+	const char *type = "1200-baud";
 	int null = 0;
 
 	ioctl(0, TIOCFLUSH, &null);

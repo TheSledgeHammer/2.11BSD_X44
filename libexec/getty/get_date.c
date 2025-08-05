@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if	!defined(lint) && defined(DOSCCS)
 static char sccsid[] = "@(#)get_date.c	5.1.1 (2.11BSD GTE) 12/9/94";
 #endif
@@ -24,8 +25,7 @@ static char *months[] = {
 #define PM "pm"
 
 void
-get_date(datebuffer)
-	char *datebuffer;
+get_date(char *datebuffer)
 {
 	register struct tm *tmp;
 	struct timeval tv;

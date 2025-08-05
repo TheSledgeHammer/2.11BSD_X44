@@ -157,9 +157,9 @@ ftpd_popen(char *argv[], const char *ptype, int stderrfd)
 	if (sl_add(sl, NULL) == -1)
 		goto pfree;
 
-#ifndef NO_INTERNAL_LS
+//#ifndef NO_INTERNAL_LS
 	isls = (strcmp(sl->sl_str[0], INTERNAL_LS) == 0);
-#endif
+//#endif
 
 	pid = isls ? fork() : vfork();
 	switch (pid) {
@@ -186,13 +186,13 @@ ftpd_popen(char *argv[], const char *ptype, int stderrfd)
 			}
 			(void)close(pdes[1]);
 		}
-#ifndef NO_INTERNAL_LS
+//#ifndef NO_INTERNAL_LS
 		if (isls) {	/* use internal ls */
 			optreset = optind = optopt = 1;
 			closelog();
 			exit(ls_main(sl->sl_cur - 1, sl->sl_str));
 		}
-#endif
+//#endif
 
 		execv(sl->sl_str[0], sl->sl_str);
 		_exit(1);

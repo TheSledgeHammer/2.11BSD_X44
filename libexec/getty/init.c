@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if	!defined(lint) && defined(DOSCCS)
 static char sccsid[] = "@(#)init.c	5.2.2 (2.11BSD GTE) 1997/3/28";
 #endif

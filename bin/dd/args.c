@@ -357,19 +357,19 @@ get_bsz(char *val)
 		break;
 	}
 
-	switch(*expr) {
-		case '\0':
-			break;
-		case '*':			/* Backward compatible. */
-		case 'x':
-			t = num;
-			num *= get_bsz(expr + 1);
-			if (t > num)
-erange:				
-                errx(1, "%s: %s", oper, strerror(ERANGE));
-			break;
-		default:
-			errx(1, "%s: illegal numeric value", oper);
+	switch (*expr) {
+	case '\0':
+		break;
+	case '*': /* Backward compatible. */
+	case 'x':
+		t = num;
+		num *= get_bsz(expr + 1);
+		if (t > num)
+erange:
+			errx(1, "%s: %s", oper, strerror(ERANGE));
+		break;
+	default:
+		errx(1, "%s: illegal numeric value", oper);
 	}
 	return (num);
 }

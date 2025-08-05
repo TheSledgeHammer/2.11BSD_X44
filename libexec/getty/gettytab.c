@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
 static char sccsid[] = "@(#)gettytab.c	5.1 (Berkeley) 4/29/85";
 #endif not lint
@@ -14,17 +15,19 @@ static char sccsid[] = "@(#)gettytab.c	5.1 (Berkeley) 4/29/85";
 
 static	char *tbuf;
 int	hopcount;	/* detect infinite loops in termcap, init 0 */
-char	*skip();
-char	*getstr();
-char	*decode();
+
+int nchktc(void);
+int namatch(char *np);
+static char *skip(char *bp);
+static char *decode(char *str, char **area);
 
 /*
  * Get an entry for terminal name in buffer bp,
  * from the termcap file.  Parse is very rudimentary;
  * we just notice escaped newlines.
  */
-getent(bp, name)
-	char *bp, *name;
+int
+getent(char *bp, char *name)
 {
 	register char *cp;
 	register int c;
@@ -69,7 +72,7 @@ getent(bp, name)
 		 */
 		if (namatch(name)) {
 			close(tf);
-			return(nchktc());
+			return (nchktc());
 		}
 	}
 }
@@ -82,7 +85,9 @@ getent(bp, name)
  * Note that this works because of the left to right scan.
  */
 #define	MAXHOP	32
-nchktc()
+
+int
+nchktc(void)
 {
 	register char *p, *q;
 	char tcname[16];	/* name of similar terminal */
@@ -120,7 +125,7 @@ nchktc()
 	}
 	strcpy(p, q+1);
 	tbuf = holdtbuf;
-	return(1);
+	return (1);
 }
 
 /*
@@ -129,8 +134,8 @@ nchktc()
  * against each such name.  The normal : terminator after the last
  * name (before the first field) stops us.
  */
-namatch(np)
-	char *np;
+int
+namatch(char *np)
 {
 	register char *Np, *Bp;
 
@@ -156,8 +161,7 @@ namatch(np)
  * into the termcap file in octal.
  */
 static char *
-skip(bp)
-	register char *bp;
+skip(char *bp)
 {
 
 	while (*bp && *bp != ':')
@@ -176,8 +180,7 @@ skip(bp)
  * Note that we handle octal numbers beginning with 0.
  */
 long
-getnum(id)
-	char *id;
+getnum(char *id)
 {
 	register long i, base;
 	register char *bp = tbuf;
@@ -209,8 +212,8 @@ getnum(id)
  * of the buffer.  Return 1 if we find the option, or 0 if it is
  * not given.
  */
-getflag(id)
-	char *id;
+int
+getflag(char *id)
 {
 	register char *bp = tbuf;
 
@@ -238,8 +241,7 @@ getflag(id)
  * No checking on area overflow.
  */
 char *
-getstr(id, area)
-	char *id, **area;
+getstr(char *id, char **area)
 {
 	register char *bp = tbuf;
 
@@ -263,9 +265,7 @@ getstr(id, area)
  * string capability escapes.
  */
 static char *
-decode(str, area)
-	register char *str;
-	char **area;
+decode(char *str, char **area)
 {
 	register char *cp;
 	register int c;
