@@ -56,8 +56,10 @@ struct nbpf_d {
 	/* bpf information: needed by the nbpf */
 	struct bpf_d		*nbd_bpf; 			/* bpf back-pointer */
 #define nbd_sbuf		nbd_bpf->bd_sbuf
+#define nbd_hbuf		nbd_bpf->bd_hbuf
 #define nbd_fbuf		nbd_bpf->bd_fbuf
 #define nbd_slen		nbd_bpf->bd_slen
+#define nbd_hlen		nbd_bpf->bd_hlen
 
 #define nbd_bufsize		nbd_bpf->bd_bufsize /* absolute length of buffers */
 

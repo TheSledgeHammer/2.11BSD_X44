@@ -258,6 +258,13 @@ nbpf_filtncatch(nd, nd, pkt, pktlen, slen, cpfn)
 	}
 }
 
+#define ROTATE_BUFFERS(nd) 				\
+	(nd)->nbd_hbuf = (nd)->nbd_sbuf; 	\
+	(nd)->nbd_hlen = (nd)->nbd_slen; 	\
+	(nd)->nbd_sbuf = (nd)->nbd_fbuf; 	\
+	(nd)->nbd_slen = 0; 				\
+	(nd)->nbd_fbuf = 0;
+
 /*
  * TODO:
  * - updating the bpf
@@ -273,6 +280,7 @@ nbpf_catchpacket(nd, pkt, pktlen, snaplen, flags, cpfn)
 	void *nptr;
 	int totlen, hdrlen, curlen;
 	int mflags, error;
+	struct bpf_hdr *hp;
 
 	mflags = (nd->nbd_state->nbs_info & flags);
 	nptr = nbpf_dataptr(pkt);
@@ -283,21 +291,34 @@ nbpf_catchpacket(nd, pkt, pktlen, snaplen, flags, cpfn)
 	}
 	curlen = BPF_WORDALIGN(nd->nbd_slen);
 	if (curlen + totlen > nd->nbd_bufsize) {
-		ROTATE_BUFFERS(nd->nbd_bpf);
+		if (nd->nbd_fbuf == 0) {
+			++nd->nbd_dcount;
+			return;
+		}
+		ROTATE_BUFFERS(nd);
 		curlen = 0;
 	}
-	nbpf_set_d(nd, pkt, nptr, totlen, hdrlen);
+
+	/*
+	 * Append the bpf header.
+	 */
+	hp = (struct bpf_hdr *)(nd->nbd_sbuf + curlen);
+	microtime(&hp->bh_tstamp);
+	hp->bh_datalen = pktlen;
+	hp->bh_hdrlen = hdrlen;
+	hp->bh_caplen = (totlen - hdrlen);
+
+	/*
+	 * Append the nbpf buffer
+	 */
+	nbpf_set_d(nd, pkt, (u_char *)(hp + hdrlen), hp->bh_caplen, hp->bh_hdrlen);
 	error = nbpf_advcache(nd->nbd_state, nd->nbd_nbuf, nd->nbd_nptr, nd->nbd_nlen, nd->nbd_nsize, pkt, cpfn);
 	if (error == mflags) {
 		nd->nbd_state->nbs_info = 0;
 	}
-	nd->nbd_slen = curlen + totlen;
+	nd->nbd_slen = (curlen + totlen);
 }
 
-/*
- * TODO:
- * - cpfn: adjust, as it does not account for the bpf_hdr
- */
 static int
 nbpf_advcache(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, u_int hdrlen, size_t size, void *buf, void *(*cpfn)(void *, const void *, size_t))
 {
