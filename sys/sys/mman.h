@@ -83,7 +83,7 @@ typedef	__off_t		off_t;		/* file offset */
  */
 #define MAP_FILE			    0x0000	/* for backward source compatibility */
 #define	MAP_ANON			    0x1000	/* allocated from memory, swap space */
-#define	MAP_ANONYMOUS     MAP_ANON
+#define	MAP_ANONYMOUS           MAP_ANON
 
 /*
  * Alignment (expressed in log2).  Must be >= log2(PAGE_SIZE) and
