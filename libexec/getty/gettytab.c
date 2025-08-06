@@ -11,6 +11,8 @@ static char sccsid[] = "@(#)gettytab.c	5.1 (Berkeley) 4/29/85";
 
 #include <ctype.h>
 
+#include "extern.h"
+
 #define	TABBUFSIZ	512
 
 static	char *tbuf;

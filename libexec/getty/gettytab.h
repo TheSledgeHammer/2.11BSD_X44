@@ -100,13 +100,6 @@ struct gettyflags {
 #define DX	gettyflags[18].value
 #define	HF	gettyflags[19].value
 
-int		getent(char *, char *);
-long	getnum(char *);
-int		getflag(char *);
-char	*getstr(char *, char **);
-
-long	setflags(int);
-
 extern	struct gettyflags gettyflags[];
 extern	struct gettynums gettynums[];
 extern	struct gettystrs gettystrs[];

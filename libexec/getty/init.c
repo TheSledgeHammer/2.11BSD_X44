@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)init.c	5.2.2 (2.11BSD GTE) 1997/3/28";
  */
 #include <sgtty.h>
 #include "gettytab.h"
+#include "extern.h"
 
 extern	struct sgttyb tmode;
 extern	struct tchars tc;

@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)main.c	5.5.1 (2.11BSD GTE) 12/9/94";
 #include <sys/file.h>
 
 #include "gettytab.h"
+#include "extern.h"
 
 extern	char **environ;
 
