@@ -6,15 +6,25 @@
 
 #include <sys/cdefs.h>
 #if	!defined(lint) && defined(DOSCCS)
+#if 0
 static char sccsid[] = "@(#)subr.c	5.4.2 (2.11BSD GTE) 1997/3/28";
 #endif
+#endif
+
+#include <sys/termios.h>
 
 /*
  * Melbourne getty.
  */
 #include <sgtty.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <select.h>
+
 #include "gettytab.h"
 #include "extern.h"
+#include "pathnames.h"
 
 extern	struct sgttyb tmode;
 extern	struct tchars tc;
@@ -24,8 +34,7 @@ extern	struct ltchars ltc;
  * Get a table entry.
  */
 void
-gettable(name, buf, area)
-	char *name, *buf, *area;
+gettable(char *name, char *buf, char *area)
 {
 	register struct gettystrs *sp;
 	register struct gettynums *np;
@@ -36,22 +45,23 @@ gettable(name, buf, area)
 	if (getent(buf, name) != 1)
 		return;
 
-	for (sp = gettystrs; sp->field; sp++)
-		sp->value = getstr(sp->field, &area);
+	for (sp = gettystrs; sp->field; sp++) {
+		sp->value = getstr(buf, sp->field, &area);
+	}
 	for (np = gettynums; np->field; np++) {
-		n = getnum(np->field);
-		if (n == -1)
+		n = getnum(buf, np->field);
+		if (n == -1) {
 			np->set = 0;
-		else {
+		} else {
 			np->set = 1;
 			np->value = n;
 		}
 	}
 	for (fp = gettyflags; fp->field; fp++) {
-		n = getflag(fp->field);
-		if (n == -1)
+		n = getflag(buf, fp->field);
+		if (n == -1) {
 			fp->set = 0;
-		else {
+		} else {
 			fp->set = 1;
 			fp->value = n ^ fp->invrt;
 		}
@@ -108,7 +118,15 @@ static char *charvars[] = {
 		&ltc.t_dsuspc, &ltc.t_rprntc, &ltc.t_flushc,
 		&ltc.t_werasc, &ltc.t_lnextc, 0
 };
-
+/*
+static char *charvars[] = {
+		&tmode.c_cc[VERASE], &tmode.c_cc[VKILL], &tmode.c_cc[VINTR],
+		&tmode.c_cc[VQUIT], &tmode.c_cc[VSTART], &tmode.c_cc[VSTOP],
+		&tmode.c_cc[VEOF], &tmode.c_cc[VEOL], &tmode.c_cc[VSUSP],
+		&tmode.c_cc[VDSUSP], &tmode.c_cc[VREPRINT], &tmode.c_cc[VDISCARD],
+		&tmode.c_cc[VWERASE], &tmode.c_cc[VLNEXT], 0
+};
+*/
 void
 setchars(void)
 {
@@ -315,7 +333,7 @@ struct	portselect {
 	{ 0 }
 };
 
-char *
+const char *
 portselector(void)
 {
 	char c, baud[20];
@@ -351,7 +369,7 @@ portselector(void)
  */
 #include <sys/time.h>
 
-char *
+const char *
 autobaud(void)
 {
 	long rfds;

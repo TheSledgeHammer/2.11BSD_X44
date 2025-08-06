@@ -6,11 +6,15 @@
 
 #include <sys/cdefs.h>
 #if	!defined(lint) && defined(DOSCCS)
+#if 0
 static char sccsid[] = "@(#)get_date.c	5.1.1 (2.11BSD GTE) 12/9/94";
 #endif
+#endif
+
+#include <sys/time.h>
 
 #include <stdio.h>
-#include <sys/time.h>
+#include <string.h>
 
 #include "extern.h"
 

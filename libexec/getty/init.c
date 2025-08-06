@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)init.c	5.2.2 (2.11BSD GTE) 1997/3/28";
  */
 #include <sgtty.h>
 #include "gettytab.h"
+#include "pathnames.h"
 #include "extern.h"
 
 extern	struct sgttyb tmode;
@@ -34,7 +35,7 @@ struct	gettystrs gettystrs[] = {
 	{ "pc", "" },			/* pad character */
 	{ "tt" },			/* terminal type */
 	{ "ev" },			/* enviroment */
-	{ "lo", "/bin/login" },		/* login program */
+	{ "lo", _PATH_LOGIN },		/* login program */
 	{ "hn", hostname },		/* host name */
 	{ "he" },			/* host name edit */
 	{ "in", &tc.t_intrc },		/* interrupt char */
@@ -55,6 +56,11 @@ struct	gettynums gettynums[] = {
 	{ "is" },			/* input speed */
 	{ "os" },			/* output speed */
 	{ "sp" },			/* both speeds */
+	{ "nd" },			/* newline delay */
+	{ "cd" },			/* carriage-return delay */
+	{ "td" },			/* tab delay */
+	{ "fd" },			/* form-feed delay */
+	{ "bd" },			/* backspace delay */
 	{ "to" },			/* timeout */
 	{ "f0" },			/* output flags */
 	{ "f1" },			/* input flags */
@@ -77,12 +83,14 @@ struct	gettyflags gettyflags[] = {
 	{ "pe",	0 },			/* printer erase */
 	{ "rw",	1 },			/* don't use raw */
 	{ "xc",	1 },			/* don't ^X ctl chars */
+	{ "lc",	0 },			/* terminal las lower case */
+	{ "uc",	0 },			/* terminal has no lower case */
 	{ "ig",	0 },			/* ignore garbage */
 	{ "ps",	0 },			/* do port selector speed select */
 	{ "hc",	1 },			/* don't set hangup on close */
 	{ "ub", 0 },			/* unbuffered output */
 	{ "ab", 0 },			/* auto-baud detect with '\r' */
 	{ "dx", 0 },			/* set decctlq */
-	{ "hf", 0 },			/* set HardwareFlowcontrol */
+	{ "np", 0 },			/* no parity at all (8bit chars) */
 	{ 0 }
 };

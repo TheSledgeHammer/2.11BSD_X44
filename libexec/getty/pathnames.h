@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1993
+ * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,7 +10,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -26,27 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)extern.h	8.1 (Berkeley) 6/4/93
+ *	@(#)pathnames.h	8.1 (Berkeley) 6/4/93
  */
 
-/* get_date.c */
-void    get_date(char *);
+#include <paths.h>
 
-/* gettytab.c */
-int		getent(char *, const char *);
-long	getnum(char *, const char *);
-int		getflag(char *, const char *);
-char	*getstr(char *, const char *, char **);
-void	set_ttydefaults(int);
-
-/* subr.c */
-void	gettable(char *, char *, char *);
-void	gendefaults(void);
-void	setdefaults(void);
-void	setchars(void);
-long	setflags(int);
-void 	edithost(char *);
-int		speed(long);
-void	makeenv(char *[]);
-const char 	*portselector(void);
-const char 	*autobaud(void);
+#define	_PATH_LOGIN		"/usr/bin/login"

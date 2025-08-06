@@ -9,8 +9,9 @@
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-
+#if 0
 static char sccsid[] = "@(#)main.c	5.5.1 (2.11BSD GTE) 12/9/94";
+#endif
 #endif
 
 /*
@@ -19,28 +20,50 @@ static char sccsid[] = "@(#)main.c	5.5.1 (2.11BSD GTE) 12/9/94";
  * Melbourne getty, June 83, kre.
  */
 
-#include <sgtty.h>
-#include <signal.h>
-#include <ctype.h>
-#include <setjmp.h>
-#include <syslog.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/resource.h>
 #include <sys/file.h>
 
+#include <ctype.h>
+#include <fcntl.h>
+#include <setjmp.h>
+#include <sgtty.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "gettytab.h"
+#include "pathnames.h"
 #include "extern.h"
 
-extern	char **environ;
+//extern char **environ;
 
-struct	sgttyb tmode = {
-	0, 0, CERASE, CKILL, 0
+struct sgttyb tmode = {
+		.sg_ispeed = 0,
+		.sg_ospeed = 0,
+		.sg_erase = CERASE,
+		.sg_kill = CKILL,
+		.sg_flags = 0
 };
-struct	tchars tc = {
-	CINTR, CQUIT, CSTART,
-	CSTOP, CEOF, CBRK,
+struct tchars tc = {
+		.t_intrc = CINTR,
+		.t_quitc = CQUIT,
+		.t_startc = CSTART,
+		.t_stopc = CSTOP,
+		.t_eofc = CEOF,
+		.t_brkc = CBRK
 };
-struct	ltchars ltc = {
-	CSUSP, CDSUSP, CRPRNT,
-	CFLUSH, CWERASE, CLNEXT
+struct ltchars ltc = {
+		.t_suspc = CSUSP,
+		.t_dsuspc = CDSUSP,
+		.t_rprntc = CRPRNT,
+		.t_flushc = CFLUSH,
+		.t_werasc = CWERASE,
+		.t_lnextc = CLNEXT
 };
 
 int	crmod;
@@ -48,10 +71,10 @@ int	upper;
 int	lower;
 int	digit;
 
-char	hostname[32];
+char	hostname[MAXHOSTNAMELEN];
 char	name[16];
-char	dev[] = "/dev/";
-char	ctty[] = "/dev/console";
+char	dev[] = _PATH_DEV;
+char	ctty[] = _PATH_CONSOLE;
 char	ttyn[32];
 
 #define	OBUFSIZ		128
@@ -65,22 +88,22 @@ char	tabstrs[TABBUFSIZ];
 char	*env[128];
 
 char partab[] = {
-	0001,0201,0201,0001,0201,0001,0001,0201,
-	0202,0004,0003,0205,0005,0206,0201,0001,
-	0201,0001,0001,0201,0001,0201,0201,0001,
-	0001,0201,0201,0001,0201,0001,0001,0201,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0000,0200,0200,0000,0200,0000,0000,0201
+		0001,0201,0201,0001,0201,0001,0001,0201,
+		0202,0004,0003,0205,0005,0206,0201,0001,
+		0201,0001,0001,0201,0001,0201,0201,0001,
+		0001,0201,0201,0001,0201,0001,0001,0201,
+		0200,0000,0000,0200,0000,0200,0200,0000,
+		0000,0200,0200,0000,0200,0000,0000,0200,
+		0000,0200,0200,0000,0200,0000,0000,0200,
+		0200,0000,0000,0200,0000,0200,0200,0000,
+		0200,0000,0000,0200,0000,0200,0200,0000,
+		0000,0200,0200,0000,0200,0000,0000,0200,
+		0000,0200,0200,0000,0200,0000,0000,0200,
+		0200,0000,0000,0200,0000,0200,0200,0000,
+		0000,0200,0200,0000,0200,0000,0000,0200,
+		0200,0000,0000,0200,0000,0200,0200,0000,
+		0200,0000,0000,0200,0000,0200,0200,0000,
+		0000,0200,0200,0000,0200,0000,0000,0201
 };
 
 #define	ERASE	tmode.sg_erase
@@ -108,6 +131,19 @@ interrupt(void)
 	longjmp(intrupt, 1);
 }
 
+
+/*
+ * Action to take when getty is running too long.
+ */
+void
+timeoverrun(signo)
+	int signo;
+{
+
+	syslog(LOG_ERR, "getty exiting due to excessive running time\n");
+	exit(1);
+}
+
 static int	getname(void);
 static void	oflush(void);
 static void	prompt(void);
@@ -123,6 +159,7 @@ main(int argc, char *argv[])
 	long allflags;
 	int repcnt = 0;
 	int someflags;
+	struct rlimit limit;
 
 	signal(SIGINT, SIG_IGN);
 /*
@@ -132,6 +169,14 @@ main(int argc, char *argv[])
 	gethostname(hostname, sizeof(hostname));
 	if (hostname[0] == '\0')
 		strcpy(hostname, "Amnesiac");
+
+	/*
+	 * Limit running time to deal with broken or dead lines.
+	 */
+	(void)signal(SIGXCPU, timeoverrun);
+	limit.rlim_max = RLIM_INFINITY;
+	limit.rlim_cur = GETTY_TIMEOUT;
+	(void)setrlimit(RLIMIT_CPU, &limit);
 	/*
 	 * The following is a work around for vhangup interactions
 	 * which cause great problems getting window systems started.
@@ -140,33 +185,39 @@ main(int argc, char *argv[])
 	 * J. Gettys - MIT Project Athena.
 	 */
 	if (argc <= 2 || strcmp(argv[2], "-") == 0)
-	    strcpy(ttyn, ttyname(0));
+		strcpy(ttyn, ttyname(0));
 	else {
-	    strcpy(ttyn, dev);
-	    strncat(ttyn, argv[2], sizeof(ttyn)-sizeof(dev));
-	    if (strcmp(argv[0], "+") != 0) {
-		chown(ttyn, 0, 0);
-		chmod(ttyn, 0622);
-		/*
-		 * Delay the open so DTR stays down long enough to be detected.
-		 */
-		sleep(2);
-		while (open(ttyn, O_RDWR) != 0) {
-			if (repcnt % 10 == 0) {
-				syslog(LOG_ERR, "%s: %m", ttyn);
-				closelog();
+		int i;
+
+		strcpy(ttyn, dev);
+		strncat(ttyn, argv[2], sizeof(ttyn) - sizeof(dev));
+		if (strcmp(argv[0], "+") != 0) {
+			chown(ttyn, 0, 0);
+			chmod(ttyn, 0600);
+			revoke(ttyn);
+			/*
+			 * Delay the open so DTR stays down long enough to be detected.
+			 */
+			sleep(2);
+			while ((i = open(ttyn, O_RDWR)) != 0) {
+				if (repcnt % 10 == 0) {
+					syslog(LOG_ERR, "%s: %m", ttyn);
+					closelog();
+				}
+				repcnt++;
+				sleep(60);
 			}
-			repcnt++;
-			sleep(60);
+			/*
+			signal(SIGHUP, SIG_IGN);
+			vhangup();
+			(void) open(ttyn, O_RDWR);
+			close(0);
+			dup(1);
+			dup(0);
+			signal(SIGHUP, SIG_DFL);
+			*/
+			login_tty(i);
 		}
-		signal(SIGHUP, SIG_IGN);
-		vhangup();
-		(void) open(ttyn, O_RDWR);
-		close(0);
-		dup(1);
-		dup(0);
-		signal(SIGHUP, SIG_DFL);
-	    }
 	}
 
 	gettable("default", defent, defstrs);
@@ -182,14 +233,16 @@ main(int argc, char *argv[])
 			APset++, OPset++, EPset++;
 		setdefaults();
 		ioctl(0, TIOCFLUSH, 0);		/* clear out the crap */
-		if (IS)
+		if (IS) {
 			tmode.sg_ispeed = speed(IS);
-		else if (SP)
+		} else if (SP) {
 			tmode.sg_ispeed = speed(SP);
-		if (OS)
+		}
+		if (OS) {
 			tmode.sg_ospeed = speed(OS);
-		else if (SP)
+		} else if (SP) {
 			tmode.sg_ospeed = speed(SP);
+		}
 		tmode.sg_flags = setflags(0);
 		ioctl(0, TIOCSETP, &tmode);
 		setchars();
@@ -198,8 +251,6 @@ main(int argc, char *argv[])
 		if (HC)
 			ioctl(0, TIOCHPCL, 0);
 		if (AB) {
-			extern char *autobaud();
-
 			tname = autobaud();
 			continue;
 		}
@@ -207,11 +258,13 @@ main(int argc, char *argv[])
 			tname = portselector();
 			continue;
 		}
-		if (CL && *CL)
+		if (CL && *CL) {
 			putpad(CL);
+		}
 		edithost(HE);
-		if (IM && *IM)
+		if (IM && *IM) {
 			putf(IM);
+		}
 		if (setjmp(timeout)) {
 			tmode.sg_ispeed = tmode.sg_ospeed = 0;
 			ioctl(0, TIOCSETP, &tmode);
@@ -241,14 +294,19 @@ main(int argc, char *argv[])
 			for (i = 0; environ[i] != (char *)0; i++)
 				env[i] = environ[i];
 			makeenv(&env[i]);
+			set_ttydefaults(0);
+			limit.rlim_max = RLIM_INFINITY;
+			limit.rlim_cur = RLIM_INFINITY;
+			(void)setrlimit(RLIMIT_CPU, &limit);
 			execle(LO, "login", "-p", name, (char *) 0, env);
 			exit(1);
 		}
 		alarm(0);
 		signal(SIGALRM, SIG_DFL);
 		signal(SIGINT, SIG_IGN);
-		if (NX && *NX)
+		if (NX && *NX) {
 			tname = NX;
+		}
 	}
 }
 
@@ -386,7 +444,7 @@ puts(char *s)
 		putchr(*s++);
 }
 
-char	outbuf[OBUFSIZ];
+char outbuf[OBUFSIZ];
 int	obufcnt = 0;
 
 void

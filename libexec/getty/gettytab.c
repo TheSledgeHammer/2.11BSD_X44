@@ -6,12 +6,86 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)gettytab.c	5.1 (Berkeley) 4/29/85";
-#endif not lint
+#endif
+#endif /* not lint */
+
+#include <sys/termios.h>
 
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
+#include "gettytab.h"
+#include "pathnames.h"
 #include "extern.h"
+
+int
+getent(char *bp, const char *name)
+{
+	const char *dba[2];
+	dba[0] = _PATH_GETTYTAB;
+	dba[1] = NULL;
+
+	return (cgetent(&bp, dba, name));
+}
+
+long
+getnum(char *bp, const char *id)
+{
+	long num;
+
+	return ((long)cgetnum(&bp, id, &num));
+}
+
+char *
+getstr(char *bp, const char *id, char **area)
+{
+	char *buf;
+	int rval;
+
+	rval = cgetstr(&bp, id, area);
+	if (rval >= 0) {
+		buf = bp;
+	} else {
+		buf = NULL;
+	}
+	return (buf);
+}
+
+int
+getflag(char *bp, const char *id)
+{
+	char *buf;
+	int rval;
+
+	buf = cgetcap(&bp, id, ':');
+	if (!buf || buf == ':') {
+		rval = 1;
+	} else if (buf == '!') {
+		rval = 0;
+	} else if (buf == '@') {
+		rval = -1;
+	}
+	return (rval);
+}
+
+void
+set_ttydefaults(int fd)
+{
+	struct termios term;
+
+	tcgetattr(fd, &term);
+	term.c_iflag = TTYDEF_IFLAG;
+	term.c_oflag = TTYDEF_OFLAG;
+	term.c_lflag = TTYDEF_LFLAG;
+	term.c_cflag = TTYDEF_CFLAG;
+	tcsetattr(fd, TCSAFLUSH, &term);
+}
+
+#ifdef OLD_TTYENT
 
 #define	TABBUFSIZ	512
 
@@ -39,7 +113,7 @@ getent(char *bp, char *name)
 	int tf;
 
 	tbuf = bp;
-	tf = open("/etc/gettytab", 0);
+	tf = open(_PATH_GETTYTAB, 0);
 	if (tf < 0)
 		return (-1);
 	for (;;) {
@@ -308,3 +382,4 @@ nextc:
 	*area = cp;
 	return (str);
 }
+#endif
