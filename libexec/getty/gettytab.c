@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)gettytab.c	5.1 (Berkeley) 4/29/85";
 int
 getent(char *bp, const char *name)
 {
-	const char *dba[2];
+	char *dba[2];
 	dba[0] = _PATH_GETTYTAB;
 	dba[1] = NULL;
 
@@ -37,7 +37,7 @@ getnum(char *bp, const char *id)
 {
 	long num;
 
-	return ((long)cgetnum(&bp, id, &num));
+	return ((long)cgetnum(bp, id, &num));
 }
 
 char *
@@ -46,7 +46,7 @@ getstr(char *bp, const char *id, char **area)
 	char *buf;
 	int rval;
 
-	rval = cgetstr(&bp, id, area);
+	rval = cgetstr(bp, id, area);
 	if (rval >= 0) {
 		buf = bp;
 	} else {
@@ -61,12 +61,13 @@ getflag(char *bp, const char *id)
 	char *buf;
 	int rval;
 
-	buf = cgetcap(&bp, id, ':');
-	if (!buf || buf == ':') {
+	rval = 0;
+	buf = cgetcap(bp, id, ':');
+	if (!*buf || *buf == ':') {
 		rval = 1;
-	} else if (buf == '!') {
+	} else if (*buf == '!') {
 		rval = 0;
-	} else if (buf == '@') {
+	} else if (*buf == '@') {
 		rval = -1;
 	}
 	return (rval);
