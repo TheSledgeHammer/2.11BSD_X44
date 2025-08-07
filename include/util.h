@@ -37,7 +37,6 @@
 #define _UTIL_H_
 
 #include <sys/cdefs.h>
-#include <sys/tty.h>
 #include <sys/types.h>
 #include <sys/inttypes.h>
 #include <stdio.h>
