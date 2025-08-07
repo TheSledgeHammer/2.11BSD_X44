@@ -493,7 +493,7 @@ prompt(void)
 static void
 putf(const char *cp)
 {
-	char *ttyn, *slash;
+	char *ttyns, *slash;
 	char datebuffer[60];
 	extern char editedhost[];
 
@@ -505,10 +505,10 @@ putf(const char *cp)
 		switch (*++cp) {
 
 		case 't':
-			ttyn = ttyname(0);
+			ttyns = ttyname(0);
 			slash = rindex(ttyn, '/');
 			if (slash == (char *) 0)
-				xputs(ttyn);
+				xputs(ttyns);
 			else
 				xputs(&slash[1]);
 			break;
