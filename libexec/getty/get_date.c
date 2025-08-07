@@ -18,11 +18,11 @@ static char sccsid[] = "@(#)get_date.c	5.1.1 (2.11BSD GTE) 12/9/94";
 
 #include "extern.h"
 
-static char *days[] = {
+static const char *days[] = {
 	"Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"
 };
 
-static char *months[] = {
+static const char *months[] = {
 	"Jan", "Feb", "Mar", "Apr", "May", "June",
 	"July", "Aug", "Sept", "Oct", "Nov", "Dec"
 };
@@ -36,7 +36,7 @@ get_date(char *datebuffer)
 	register struct tm *tmp;
 	struct timeval tv;
 	int realhour;
-	register char *zone;
+	register const char *zone;
 
 	gettimeofday(&tv, 0);
 	tmp = localtime(&tv.tv_sec);
