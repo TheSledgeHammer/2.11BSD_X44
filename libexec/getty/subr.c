@@ -34,14 +34,14 @@ extern	struct ltchars ltc;
  * Get a table entry.
  */
 void
-gettable(char *name, char *buf, char *area)
+gettable(const char *name, char *buf, char *area)
 {
 	register struct gettystrs *sp;
 	register struct gettynums *np;
 	register struct gettyflags *fp;
-	register n;
+	register int n;
 
-	hopcount = 0;		/* new lookup, start fresh */
+//	hopcount = 0;		/* new lookup, start fresh */
 	if (getent(buf, name) != 1)
 		return;
 
@@ -372,7 +372,7 @@ portselector(void)
 const char *
 autobaud(void)
 {
-	long rfds;
+	int rfds;
 	struct timeval timeout;
 	char c;
 	const char *type = "1200-baud";
@@ -382,13 +382,13 @@ autobaud(void)
 	rfds = 1 << 0;
 	timeout.tv_sec = 30;
 	timeout.tv_usec = 0;
-	if (select(32, &rfds, (int *)0, (int *)0, &timeout) <= 0)
+	if (select(32, (fd_set *)&rfds, (fd_set *)NULL, (fd_set *)NULL, &timeout) <= 0)
 		return (type);
 	if (read(0, &c, sizeof(char)) != sizeof(char))
 		return (type);
 	timeout.tv_sec = 0;
 	timeout.tv_usec = 20;
-	(void) select(32, (int *)0, (int *)0, (int *)0, &timeout);
+	(void) select(32, (fd_set *)NULL, (fd_set *)NULL, (fd_set *)NULL, &timeout);
 	ioctl(0, TIOCFLUSH, &null);
 	switch (c & 0377) {
 

@@ -11,11 +11,10 @@ static char sccsid[] = "@(#)gettytab.c	5.1 (Berkeley) 4/29/85";
 #endif
 #endif /* not lint */
 
-#include <sys/termios.h>
-
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <unistd.h>
 
 #include "gettytab.h"
@@ -61,7 +60,7 @@ getflag(char *bp, const char *id)
 	char *buf;
 	int rval;
 
-	rval = 0;
+    rval = 0;
 	buf = cgetcap(bp, id, ':');
 	if (!*buf || *buf == ':') {
 		rval = 1;

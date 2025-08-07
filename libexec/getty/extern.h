@@ -40,7 +40,7 @@ char	*getstr(char *, const char *, char **);
 void	set_ttydefaults(int);
 
 /* subr.c */
-void	gettable(char *, char *, char *);
+void	gettable(const char *, char *, char *);
 void	gendefaults(void);
 void	setdefaults(void);
 void	setchars(void);

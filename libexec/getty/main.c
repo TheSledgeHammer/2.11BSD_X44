@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)main.c	5.5.1 (2.11BSD GTE) 12/9/94";
 #include <sys/file.h>
 
 #include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <setjmp.h>
 #include <sgtty.h>
@@ -33,21 +34,31 @@ static char sccsid[] = "@(#)main.c	5.5.1 (2.11BSD GTE) 12/9/94";
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <term.h>
+#include <termios.h>
 #include <time.h>
+#include <ttyent.h>
 #include <unistd.h>
+#include <util.h>
 
 #include "gettytab.h"
 #include "pathnames.h"
 #include "extern.h"
 
-//extern char **environ;
+extern char **environ;
+
+/*
+ * Set the amount of running time that getty should accumulate
+ * before deciding that something is wrong and exit.
+ */
+#define GETTY_TIMEOUT	60 /* seconds */
 
 struct sgttyb tmode = {
 		.sg_ispeed = 0,
 		.sg_ospeed = 0,
 		.sg_erase = CERASE,
 		.sg_kill = CKILL,
-		.sg_flags = 0
+		.sg_flags = 0,
 };
 struct tchars tc = {
 		.t_intrc = CINTR,
@@ -55,7 +66,7 @@ struct tchars tc = {
 		.t_startc = CSTART,
 		.t_stopc = CSTOP,
 		.t_eofc = CEOF,
-		.t_brkc = CBRK
+		.t_brkc = CBRK,
 };
 struct ltchars ltc = {
 		.t_suspc = CSUSP,
@@ -63,7 +74,7 @@ struct ltchars ltc = {
 		.t_rprntc = CRPRNT,
 		.t_flushc = CFLUSH,
 		.t_werasc = CWERASE,
-		.t_lnextc = CLNEXT
+		.t_lnextc = CLNEXT,
 };
 
 int	crmod;
@@ -113,7 +124,7 @@ char partab[] = {
 jmp_buf timeout;
 
 static void
-dingdong(void)
+dingdong(int signo)
 {
 
 	alarm(0);
@@ -124,20 +135,18 @@ dingdong(void)
 jmp_buf	intrupt;
 
 static void
-interrupt(void)
+interrupt(int signo)
 {
 
 	signal(SIGINT, interrupt);
 	longjmp(intrupt, 1);
 }
 
-
 /*
  * Action to take when getty is running too long.
  */
-void
-timeoverrun(signo)
-	int signo;
+static void
+timeoverrun(int signo)
 {
 
 	syslog(LOG_ERR, "getty exiting due to excessive running time\n");
@@ -148,14 +157,14 @@ static int	getname(void);
 static void	oflush(void);
 static void	prompt(void);
 static void	putchr(int);
-static void	putf(char *);
+static void	putf(const char *);
 static void	putpad(char *);
-static void	puts(char *);
+static void	xputs(const char *);
 
 int
 main(int argc, char *argv[])
 {
-	register char *tname;
+	register const char *tname;
 	long allflags;
 	int repcnt = 0;
 	int someflags;
@@ -314,7 +323,7 @@ static int
 getname(void)
 {
 	register char *np;
-	register c;
+	register int c;
 	char cs;
 
 	/*
@@ -360,7 +369,7 @@ getname(void)
 			if (np > name) {
 				np--;
 				if (tmode.sg_ospeed >= B1200)
-					puts("\b \b");
+					xputs("\b \b");
 				else
 					putchr(cs);
 			}
@@ -372,7 +381,7 @@ getname(void)
 				putchr('\n');
 			/* this is the way they do it down under ... */
 			else if (np > name)
-				puts("                                     \r");
+				xputs("                                     \r");
 			prompt();
 			np = name;
 			continue;
@@ -394,11 +403,11 @@ static short tmspc10[] = {
 		0, 2000, 1333, 909, 743, 666, 500, 333, 166, 83, 55, 41, 20, 10, 5, 15
 };
 
-void
+static void
 putpad(char *s)
 {
-	register pad = 0;
-	register mspc10;
+	register int pad = 0;
+	register int mspc10;
 
 	if (isdigit(*s)) {
 		while (isdigit(*s)) {
@@ -412,7 +421,7 @@ putpad(char *s)
 		}
 	}
 
-	puts(s);
+	xputs(s);
 	/*
 	 * If no delay needed, or output speed is
 	 * not comprehensible, then don't try to delay.
@@ -430,14 +439,14 @@ putpad(char *s)
 	 * Transmitting pad characters slows many
 	 * terminals down and also loads the system.
 	 */
-	mspc10 = tmspc10[tmode.sg_ospeed];
+	mspc10 = tmspc10[(short)tmode.sg_ospeed];
 	pad += mspc10 / 2;
 	for (pad /= mspc10; pad > 0; pad--)
 		putchr(*PC);
 }
 
-void
-puts(char *s)
+static void
+xputs(const char *s)
 {
 
 	while (*s)
@@ -447,7 +456,7 @@ puts(char *s)
 char outbuf[OBUFSIZ];
 int	obufcnt = 0;
 
-void
+static void
 putchr(int cc)
 {
 	char c;
@@ -464,7 +473,7 @@ putchr(int cc)
 		write(1, &c, 1);
 }
 
-void
+static void
 oflush(void)
 {
 	if (obufcnt)
@@ -472,7 +481,7 @@ oflush(void)
 	obufcnt = 0;
 }
 
-void
+static void
 prompt(void)
 {
 
@@ -481,8 +490,8 @@ prompt(void)
 		putchr('\n');
 }
 
-void
-putf(char *cp)
+static void
+putf(const char *cp)
 {
 	char *ttyn, *slash;
 	char datebuffer[60];
@@ -499,18 +508,18 @@ putf(char *cp)
 			ttyn = ttyname(0);
 			slash = rindex(ttyn, '/');
 			if (slash == (char *) 0)
-				puts(ttyn);
+				xputs(ttyn);
 			else
-				puts(&slash[1]);
+				xputs(&slash[1]);
 			break;
 
 		case 'h':
-			puts(editedhost);
+			xputs(editedhost);
 			break;
 
 		case 'd':
 			get_date(datebuffer);
-			puts(datebuffer);
+			xputs(datebuffer);
 			break;
 
 		case '%':
