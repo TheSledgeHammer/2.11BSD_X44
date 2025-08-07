@@ -175,29 +175,39 @@ setup(void)
 	 * table that does both at once.  If just converting case, use the
 	 * built-in tables.
 	 */
-	if ((ddflags & (C_LCASE|C_UCASE)))
-		if (ddflags & C_ASCII)
+	if ((ddflags & (C_LCASE|C_UCASE))) {
+		if (ddflags & C_ASCII) {
 			if (ddflags & C_LCASE) {
-				for (cnt = 0; cnt < 0377; ++cnt)
-					if (isupper(ctab[cnt]))
+				for (cnt = 0; cnt < 0377; ++cnt) {
+					if (isupper(ctab[cnt])) {
 						ctab[cnt] = tolower(ctab[cnt]);
+                    }
+                }
 			} else {
-				for (cnt = 0; cnt < 0377; ++cnt)
-					if (islower(ctab[cnt]))
+				for (cnt = 0; cnt < 0377; ++cnt) {
+					if (islower(ctab[cnt])) {
 						ctab[cnt] = toupper(ctab[cnt]);
+                    }
+                }
 			}
-		else if (ddflags & C_EBCDIC)
+		} else if (ddflags & C_EBCDIC) {
 			if (ddflags & C_LCASE) {
-				for (cnt = 0; cnt < 0377; ++cnt)
-					if (isupper(cnt))
+				for (cnt = 0; cnt < 0377; ++cnt) {
+					if (isupper(cnt)) {
 						ctab[cnt] = ctab[tolower(cnt)];
+                    }
+                }
 			} else {
-				for (cnt = 0; cnt < 0377; ++cnt)
-					if (islower(cnt))
+				for (cnt = 0; cnt < 0377; ++cnt) {
+					if (islower(cnt)) {
 						ctab[cnt] = ctab[toupper(cnt)];
+                    }
+                }
 			}
-		else
+		} else {
 			ctab = ddflags & C_LCASE ? u2l : l2u;
+        }
+    }
 	(void)time(&st.start);			/* Statistics timestamp. */
 }
 
