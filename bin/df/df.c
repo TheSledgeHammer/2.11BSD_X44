@@ -77,14 +77,12 @@ int	iflag, nflag;
 struct	ufs_args mdev;
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
 	long mntsize;
-	int ch, err, i, maxwidth, width;
+	int ch, i, maxwidth, width;
 	char *mntpt, **vfslist;
 
 	vfslist = NULL;
@@ -149,7 +147,7 @@ main(argc, argv)
 					warn("%s", mntpt);
 					continue;
 				}
-				if (mount("ufs", mntpt, MNT_RDONLY,
+				if (mount(MOUNT_FFS, mntpt, MNT_RDONLY,
 				    &mdev) != 0) {
 					ufs_df(*argv, maxwidth);
 					(void)rmdir(mntpt);
@@ -181,8 +179,7 @@ main(argc, argv)
 }
 
 char *
-getmntpt(name)
-	char *name;
+getmntpt(char *name)
 {
 	long mntsize, i;
 	struct statfs *mntbuf;
@@ -201,10 +198,7 @@ getmntpt(name)
  * current (not cached) info.  Returns the new count of valid statfs bufs.
  */
 long
-regetmntinfo(mntbufp, mntsize, vfslist)
-	struct statfs **mntbufp;
-	long mntsize;
-	char **vfslist;
+regetmntinfo(struct statfs **mntbufp, long mntsize, char **vfslist)
 {
 	int i, j;
 	struct statfs *mntbuf;
@@ -237,9 +231,7 @@ regetmntinfo(mntbufp, mntsize, vfslist)
  * Print out status about a filesystem.
  */
 void
-prtstat(sfsp, maxwidth)
-	struct statfs *sfsp;
-	int maxwidth;
+prtstat(struct statfs *sfsp, int maxwidth)
 {
 	static long blocksize;
 	static int headerlen, timesthrough;
@@ -293,13 +285,11 @@ union {
 int	rfd;
 
 void
-ufs_df(file, maxwidth)
-	char *file;
-	int maxwidth;
+ufs_df(char *file, int maxwidth)
 {
 	struct statfs statfsbuf;
 	struct statfs *sfsp;
-	char *mntpt;
+	const char *mntpt;
 	static int synced;
 
 	if (synced++ == 0)
@@ -339,10 +329,7 @@ ufs_df(file, maxwidth)
 }
 
 int
-bread(off, buf, cnt)
-	off_t off;
-	void *buf;
-	int cnt;
+bread(off_t off, void *buf, int cnt)
 {
 	int nr;
 
