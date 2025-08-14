@@ -242,7 +242,7 @@ int	 			setreuid(uid_t, uid_t);
 int	 			setrgid(gid_t);
 int	 			setruid(uid_t);
 void	 		setusershell(void);
-void	 		swab(const void * __restrict, void * __restrict, ssize_t);
+void	 		swab(const void *, void *, ssize_t);
 int	 			symlink(const char *, const char *);
 void	 		sync(void);
 int	 			swapctl(int, void *, int);
