@@ -189,7 +189,7 @@ struct termios {
 	cc_t		c_cc[NCCS];	/* control chars */
 	long		c_ispeed;	/* input speed */
 	long		c_ospeed;	/* output speed */
-};
+
 #define c_verase	c_cc[VERASE]
 #define c_vkill		c_cc[VKILL]
 #define c_vintr		c_cc[VINTR]
@@ -198,12 +198,15 @@ struct termios {
 #define c_vstop		c_cc[VSTOP]
 #define c_veof		c_cc[VEOF]
 #define c_veol		c_cc[VEOL]
+#define c_veol2		c_cc[VEOL2]
 #define c_vsusp		c_cc[VSUSP]
 #define c_vdsusp	c_cc[VDSUSP]
 #define c_vreprint	c_cc[VREPRINT]
 #define c_vdiscard	c_cc[VDISCARD]
 #define c_vwerase	c_cc[VWERASE]
 #define c_vlnext	c_cc[VLNEXT]
+#define c_vstatus	c_cc[VSTATUS]
+};
 
 /* 
  * Commands passed to tcsetattr() for setting the termios structure.
