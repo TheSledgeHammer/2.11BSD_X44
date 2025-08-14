@@ -119,7 +119,8 @@ void
 pos_out(void)
 {
 	struct mtop t_op;
-	int cnt, n;
+	int n;
+	u_long cnt;
 
 	/*
 	 * If not a tape, try seeking on the file.  Seeking on a pipe is
@@ -162,7 +163,7 @@ pos_out(void)
 			err(1, "%s", out.name);
 
 		while (cnt++ < out.offset)
-			if ((n = write(out.fd, out.db, out.dbsz)) != out.dbsz)
+			if ((u_long)(n = write(out.fd, out.db, out.dbsz)) != out.dbsz)
 				err(1, "%s", out.name);
 		break;
 	}
