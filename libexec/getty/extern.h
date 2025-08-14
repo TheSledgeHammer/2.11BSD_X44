@@ -37,14 +37,17 @@ int		getent(char *, const char *);
 long	getnum(char *, const char *);
 int		getflag(char *, const char *);
 char	*getstr(char *, const char *, char **);
-void	set_ttydefaults(int);
 
 /* subr.c */
+struct delayval;
+
+int	 	adelay(int, struct delayval *);
+int	 	delaybits(void);
 void	gettable(const char *, char *, char *);
 void	gendefaults(void);
 void	setdefaults(void);
 void	setchars(void);
-long	setflags(int);
+void	setflags(int);
 void 	edithost(char *);
 int		speed(long);
 void	makeenv(char *[]);

@@ -1,3 +1,33 @@
+/*	$NetBSD: main.c,v 1.68 2021/10/12 23:40:38 jmcneill Exp $	*/
+
+/*-
+ * Copyright (c) 1980, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
 /*
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -28,8 +58,9 @@ static char sccsid[] = "@(#)main.c	5.5.1 (2.11BSD GTE) 12/9/94";
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <setjmp.h>
-#include <sgtty.h>
+//#include <sgtty.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +84,19 @@ extern char **environ;
  */
 #define GETTY_TIMEOUT	60 /* seconds */
 
+/* defines for auto detection of incoming PPP calls (->PAP/CHAP) */
+
+#define PPP_FRAME           0x7e  /* PPP Framing character */
+#define PPP_STATION         0xff  /* "All Station" character */
+#define PPP_ESCAPE          0x7d  /* Escape Character */
+#define PPP_CONTROL         0x03  /* PPP Control Field */
+#define PPP_CONTROL_ESCAPED 0x23  /* PPP Control Field, escaped */
+#define PPP_LCP_HI          0xc0  /* LCP protocol - high byte */
+#define PPP_LCP_LOW         0x21  /* LCP protocol - low byte */
+
+struct termios tmode, omode;
+
+/*
 struct sgttyb tmode = {
 		.sg_ispeed = 0,
 		.sg_ospeed = 0,
@@ -76,17 +120,19 @@ struct ltchars ltc = {
 		.t_werasc = CWERASE,
 		.t_lnextc = CLNEXT,
 };
+*/
 
 int	crmod;
 int	upper;
 int	lower;
 int	digit;
 
-char	hostname[MAXHOSTNAMELEN];
-char	name[16];
+char	hostname[MAXHOSTNAMELEN + 1];
+char	name[LOGIN_NAME_MAX];
 char	dev[] = _PATH_DEV;
 char	ctty[] = _PATH_CONSOLE;
 char	ttyn[32];
+char	*rawttyn;
 
 #define	OBUFSIZ		128
 #define	TABBUFSIZ	512
@@ -117,9 +163,11 @@ char partab[] = {
 		0000,0200,0200,0000,0200,0000,0000,0201
 };
 
-#define	ERASE	tmode.sg_erase
-#define	KILL	tmode.sg_kill
-#define	EOT		tc.t_eofc
+#define	ERASE	tmode.c_verase
+#define	KILL	tmode.c_vkill
+#define	EOT		tmode.c_veof
+
+static void	clearscreen(void);
 
 jmp_buf timeout;
 
@@ -156,19 +204,19 @@ timeoverrun(int signo)
 static int	getname(void);
 static void	oflush(void);
 static void	prompt(void);
-static void	putchr(int);
+static int	putchr(int);
 static void	putf(const char *);
-static void	putpad(char *);
+static void	putpad(const char *);
 static void	xputs(const char *);
 
 int
 main(int argc, char *argv[])
 {
 	register const char *tname;
-	long allflags;
 	int repcnt = 0;
-	int someflags;
+	volatile int first_time = 1;
 	struct rlimit limit;
+	int rval;
 
 	signal(SIGINT, SIG_IGN);
 /*
@@ -176,6 +224,7 @@ main(int argc, char *argv[])
 */
 	openlog("getty", LOG_ODELAY|LOG_CONS, LOG_AUTH);
 	gethostname(hostname, sizeof(hostname));
+	hostname[sizeof(hostname) - 1] = '\0';
 	if (hostname[0] == '\0')
 		strcpy(hostname, "Amnesiac");
 
@@ -216,15 +265,6 @@ main(int argc, char *argv[])
 				repcnt++;
 				sleep(60);
 			}
-			/*
-			signal(SIGHUP, SIG_IGN);
-			vhangup();
-			(void) open(ttyn, O_RDWR);
-			close(0);
-			dup(1);
-			dup(0);
-			signal(SIGHUP, SIG_DFL);
-			*/
 			login_tty(i);
 		}
 	}
@@ -235,30 +275,30 @@ main(int argc, char *argv[])
 	if (argc > 1)
 		tname = argv[1];
 	for (;;) {
-		int ldisp = OTTYDISC;
+        int off;
 
 		gettable(tname, tabent, tabstrs);
 		if (OPset || EPset || APset)
 			APset++, OPset++, EPset++;
 		setdefaults();
-		ioctl(0, TIOCFLUSH, 0);		/* clear out the crap */
-		if (IS) {
-			tmode.sg_ispeed = speed(IS);
-		} else if (SP) {
-			tmode.sg_ispeed = speed(SP);
-		}
-		if (OS) {
-			tmode.sg_ospeed = speed(OS);
-		} else if (SP) {
-			tmode.sg_ospeed = speed(SP);
-		}
-		tmode.sg_flags = setflags(0);
-		ioctl(0, TIOCSETP, &tmode);
+        off = 0;
+		(void)tcflush(0, TCIOFLUSH);	/* clear out the crap */
+		(void)ioctl(0, FIONBIO, &off);	/* turn off non-blocking mode */
+		(void)ioctl(0, FIOASYNC, &off);	/* ditto for async mode */
+		if (IS)
+			(void)cfsetispeed(&tmode, (speed_t)IS);
+		else if (SP)
+			(void)cfsetispeed(&tmode, (speed_t)SP);
+		if (OS)
+			(void)cfsetospeed(&tmode, (speed_t)OS);
+		else if (SP)
+			(void)cfsetospeed(&tmode, (speed_t)SP);
+		setflags(0);
 		setchars();
-		ioctl(0, TIOCSETC, &tc);
-		ioctl(0, TIOCSETD, &ldisp);
-		if (HC)
-			ioctl(0, TIOCHPCL, 0);
+		if (tcsetattr(0, TCSANOW, &tmode) < 0) {
+			syslog(LOG_ERR, "%s: %m", ttyn);
+			exit(1);
+		}
 		if (AB) {
 			tname = autobaud();
 			continue;
@@ -267,47 +307,110 @@ main(int argc, char *argv[])
 			tname = portselector();
 			continue;
 		}
+		if (CS) {
+			clearscreen();
+		}
 		if (CL && *CL) {
 			putpad(CL);
 		}
 		edithost(HE);
+
+		/*
+		 * If this is the first time through this, and an
+		 * issue file has been given, then send it.
+		 */
+		if (first_time != 0 && IF != NULL) {
+			char buf[_POSIX2_LINE_MAX];
+			FILE *fp;
+
+			if ((fp = fopen(IF, "r")) != NULL) {
+				while (fgets(buf, sizeof(buf) - 1, fp) != NULL)
+					putf(buf);
+				(void)fclose(fp);
+			}
+		}
+		first_time = 0;
+
 		if (IM && *IM) {
 			putf(IM);
 		}
 		if (setjmp(timeout)) {
-			tmode.sg_ispeed = tmode.sg_ospeed = 0;
-			ioctl(0, TIOCSETP, &tmode);
+			tmode.c_ispeed = tmode.c_ospeed = 0;
+			(void)tcsetattr(0, TCSANOW, &tmode);
 			exit(1);
 		}
 		if (TO) {
 			signal(SIGALRM, dingdong);
 			alarm((int)TO);
 		}
-		if (getname()) {
+		if (NN) {
+			name[0] = '\0';
+			lower = 1;
+			upper = 0;
+			digit = 0;
+		} else if (AL) {
+			const char *p = AL;
+			char *q = name;
+
+			while (*p && q < &name[sizeof name - 1]) {
+				if (isupper((unsigned char)*p)) {
+					upper = 1;
+				} else if (islower((unsigned char)*p)) {
+					lower = 1;
+				} else if (isdigit((unsigned char)*p)) {
+					digit = 1;
+				}
+				*q++ = *p++;
+			}
+		} else if ((rval = getname()) == 2) {
+			setflags(2);
+			(void)execle(PP, "ppplogin", ttyn, (char *) 0, env);
+			syslog(LOG_ERR, "%s: %m", PP);
+			exit(1);
+		}
+
+		if (rval || AL|| NN) {
 			register int i;
 
 			oflush();
-			alarm(0);
-			signal(SIGALRM, SIG_DFL);
-			if (!(upper || lower || digit))
+			(void)alarm(0);
+			(void)signal(SIGALRM, SIG_DFL);
+			if (name[0] == '-') {
+				xputs("user names may not start with '-'.");
 				continue;
-			allflags = setflags(2);
-			tmode.sg_flags = allflags & 0xffff;
-			someflags = allflags >> 16;
-			if (crmod || NL)
-				tmode.sg_flags |= CRMOD;
-			ioctl(0, TIOCSETP, &tmode);
-			ioctl(0, TIOCSLTC, &ltc);
-			ioctl(0, TIOCLSET, &someflags);
+			}
+			if (!(upper || lower || digit)) {
+				continue;
+			}
+			setflags(2);
+			if (crmod) {
+				tmode.c_iflag |= ICRNL;
+				tmode.c_oflag |= ONLCR;
+			}
+#if XXX
+			if (upper || UC)
+				tmode.sg_flags |= LCASE;
+			if (lower || LC)
+				tmode.sg_flags &= ~LCASE;
+#endif
+			if (tcsetattr(0, TCSANOW, &tmode) < 0) {
+				syslog(LOG_ERR, "%s: %m", ttyn);
+				exit(1);
+			}
 			signal(SIGINT, SIG_DFL);
 			for (i = 0; environ[i] != (char *)0; i++)
 				env[i] = environ[i];
 			makeenv(&env[i]);
-			set_ttydefaults(0);
 			limit.rlim_max = RLIM_INFINITY;
 			limit.rlim_cur = RLIM_INFINITY;
 			(void)setrlimit(RLIMIT_CPU, &limit);
-			execle(LO, "login", "-p", name, (char *) 0, env);
+			if (NN)
+				(void)execle(LO, "login", AL ? "-fp" : "-p",
+				    (char *) 0, env);
+			else
+				(void)execle(LO, "login", AL ? "-fp" : "-p",
+				    "--", name, (char *) 0, env);
+			syslog(LOG_ERR, "%s: %m", LO);
 			exit(1);
 		}
 		alarm(0);
@@ -325,25 +428,27 @@ getname(void)
 	register char *np;
 	register int c;
 	char cs;
+	int ppp_state, ppp_connection;
 
 	/*
 	 * Interrupt may happen if we use CBREAK mode
 	 */
 	if (setjmp(intrupt)) {
-		signal(SIGINT, SIG_IGN);
+		(void)signal(SIGINT, SIG_IGN);
 		return (0);
 	}
 	signal(SIGINT, interrupt);
-	tmode.sg_flags = setflags(0);
-	ioctl(0, TIOCSETP, &tmode);
-	tmode.sg_flags = setflags(1);
+	setflags(1);
 	prompt();
 	if (PF > 0) {
 		oflush();
 		sleep((int)PF);
 		PF = 0;
 	}
-	ioctl(0, TIOCSETP, &tmode);
+	if (tcsetattr(0, TCSANOW, &tmode) < 0) {
+		syslog(LOG_ERR, "%s: %m", ttyn);
+		exit(1);
+	}
 	crmod = 0;
 	upper = 0;
 	lower = 0;
@@ -351,13 +456,42 @@ getname(void)
 	np = name;
 	for (;;) {
 		oflush();
-		if (read(0, &cs, 1) <= 0)
+		if (read(STDIN_FILENO, &cs, 1) <= 0)
 			exit(0);
 		if ((c = cs&0177) == 0)
 			return (0);
+
+		/*
+		 * PPP detection state machine..
+		 * Look for sequences:
+		 * PPP_FRAME, PPP_STATION, PPP_ESCAPE, PPP_CONTROL_ESCAPED or
+		 * PPP_FRAME, PPP_STATION, PPP_CONTROL (deviant from RFC)
+		 * See RFC1662.
+		 * Derived from code from Michael Hancock <michaelh@cet.co.jp>
+		 * and Erik 'PPP' Olson <eriko@wrq.com>
+		 */
+		if (PP && cs == PPP_FRAME) {
+			ppp_state = 1;
+		} else if (ppp_state == 1 && cs == PPP_STATION) {
+			ppp_state = 2;
+		} else if (ppp_state == 2 && cs == PPP_ESCAPE) {
+			ppp_state = 3;
+		} else if ((ppp_state == 2 && cs == PPP_CONTROL) ||
+		    (ppp_state == 3 && cs == PPP_CONTROL_ESCAPED)) {
+			ppp_state = 4;
+		} else if (ppp_state == 4 && cs == PPP_LCP_HI) {
+			ppp_state = 5;
+		} else if (ppp_state == 5 && cs == PPP_LCP_LOW) {
+			ppp_connection = 1;
+			break;
+		} else {
+			ppp_state = 0;
+		}
+
 		if (c == EOT)
 			exit(1);
-		if (c == '\r' || c == '\n' || np >= &name[sizeof name]) {
+		if (c == '\r' || c == '\n' || np >= &name[LOGIN_NAME_MAX - 1]) {
+			*np = '\0';
 			putf("\r\n");
 			break;
 		}
@@ -368,7 +502,7 @@ getname(void)
 		else if (c == ERASE || c == '#' || c == '\b') {
 			if (np > name) {
 				np--;
-				if (tmode.sg_ospeed >= B1200)
+				if (cfgetospeed(&tmode) >= 1200)
 					xputs("\b \b");
 				else
 					putchr(cs);
@@ -377,7 +511,7 @@ getname(void)
 		} else if (c == KILL || c == '@') {
 			putchr(cs);
 			putchr('\r');
-			if (tmode.sg_ospeed < B1200)
+			if (cfgetospeed(&tmode) < 1200)
 				putchr('\n');
 			/* this is the way they do it down under ... */
 			else if (np > name)
@@ -385,20 +519,40 @@ getname(void)
 			prompt();
 			np = name;
 			continue;
-		} else if (isdigit(c))
+		} else if (isdigit(c) || c == '_')
 			digit++;
 		if (IG && (c <= ' ' || c > 0176))
 			continue;
 		*np++ = c;
 		putchr(cs);
+
+		/*
+		 * An MS-Windows direct connect PPP "client" won't send its
+		 * first PPP packet until we respond to its "CLIENT" poll
+		 * with a CRLF sequence.  We cater to yet another broken
+		 * implementation of a previously-standard protocol...
+		 */
+		*np = '\0';
+		if (strstr(name, "CLIENT"))
+			putf("\r\n");
 	}
 	signal(SIGINT, SIG_IGN);
 	*np = 0;
 	if (c == '\r')
 		crmod++;
-	return (1);
+	if ((upper && !lower && !LC) || UC)
+		for (np = name; *np; np++)
+			*np = tolower((unsigned char)*np);
+	return (1 + ppp_connection);
 }
 
+static void
+putpad(const char *s)
+{
+	tputs(s, 1, putchr);
+}
+
+#ifdef OLD_GETTY
 static short tmspc10[] = {
 		0, 2000, 1333, 909, 743, 666, 500, 333, 166, 83, 55, 41, 20, 10, 5, 15
 };
@@ -444,6 +598,7 @@ putpad(char *s)
 	for (pad /= mspc10; pad > 0; pad--)
 		putchr(*PC);
 }
+#endif
 
 static void
 xputs(const char *s)
@@ -456,11 +611,13 @@ xputs(const char *s)
 char outbuf[OBUFSIZ];
 int	obufcnt = 0;
 
-static void
+static int
 putchr(int cc)
 {
 	char c;
-
+    int rval;
+    
+    rval = 0;
 	c = cc;
 	c |= partab[c&0177] & 0200;
 	if (OP)
@@ -469,8 +626,11 @@ putchr(int cc)
 		outbuf[obufcnt++] = c;
 		if (obufcnt >= OBUFSIZ)
 			oflush();
+        rval = 1;
+        return (rval);
 	} else
-		write(1, &c, 1);
+		rval = write(1, &c, 1);
+    return (rval);
 }
 
 static void
@@ -528,4 +688,29 @@ putf(const char *cp)
 		}
 		cp++;
 	}
+}
+
+static void
+clearscreen(void)
+{
+	struct ttyent *typ;
+	int err;
+
+	if (rawttyn == NULL)
+		return;
+
+	typ = getttynam(rawttyn);
+
+	if ((typ == NULL) || (typ->ty_type == NULL) ||
+	    (typ->ty_type[0] == 0))
+		return;
+
+	if (setupterm(typ->ty_type, 0, &err) == ERR)
+		return;
+
+	if (clear_screen)
+		putpad(clear_screen);
+
+	del_curterm(cur_term);
+	cur_term = NULL;
 }

@@ -7,8 +7,8 @@
 #
 
 PROG=	getty
-SRCS=	get_date.c gettytab.c main.c init.c subr.c
-CPPFLAGS+= -DUSE_OLD_TTY
+SRCS=	main.c init.c subr.c get_date.c gettytab.c
+#CPPFLAGS+= -DUSE_OLD_TTY
 CPPFLAGS+= -D__SELECT_DECLARED
 
 DPADD+=	${LIBUTIL} ${LIBTERMINFO}
