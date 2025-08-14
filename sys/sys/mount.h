@@ -388,7 +388,7 @@ int		fstatfs(int, struct statfs *);
 int		getfh(const char *, fhandle_t *);
 int		getfsstat(struct statfs *, long, int);
 int		getmntinfo(struct statfs **, int);
-int		mount(int, const char *, int, void *);
+int		mount(const char *, const char *, int, void *);
 int		statfs(const char *, struct statfs *);
 int		unmount(const char *, int);
 __END_DECLS
