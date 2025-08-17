@@ -290,6 +290,7 @@
 #define execlp					_execlp
 #define execv					_execv
 #define execvp					_execvp
+#define execvpe					_execvpe
 #define explicit_bzero			_explicit_bzero
 #define explicit_memset			_explicit_memset
 #define fdopen					_fdopen

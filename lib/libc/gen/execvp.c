@@ -61,6 +61,7 @@ __weak_alias(execle,_execle)
 __weak_alias(execlp,_execlp)
 __weak_alias(execv,_execv)
 __weak_alias(execvp,_execvp)
+__weak_alias(execvpe,_execvpe)
 #endif
 
 /*
@@ -76,56 +77,56 @@ int
 execl(const char *name, const char *arg, ...)
 {
 	va_list ap;
-	int sverrno;
+	int sverrno, error;
 	char **argv;
 
 	va_start(ap, arg);
 
 	if ((argv = buildargv(ap, arg, NULL))) {
-		(void)execve(name, argv, environ);
+		error = execve(name, argv, environ);
 	}
 	va_end(ap);
 	sverrno = errno;
 	free(argv);
 	errno = sverrno;
-	return (-1);
+	return (error);
 }
 
 int
 execle(const char *name, const char *arg, ...)
 {
 	va_list ap;
-	int sverrno;
+	int sverrno, error;
 	char **argv, **envp;
 
 	va_start(ap, arg);
 
 	if ((argv = buildargv(ap, arg, &envp))) {
-		(void)execve(name, argv, envp);
+		error = execve(name, argv, envp);
 	}
 	va_end(ap);
 	sverrno = errno;
 	free(argv);
 	errno = sverrno;
-	return (-1);
+	return (error);
 }
 
 int
 execlp(const char *name, const char *arg, ...)
 {
 	va_list ap;
-	int sverrno;
+	int sverrno, error;
 	char **argv;
 	
 	va_start(ap, arg);
 	if ((argv = buildargv(ap, arg, NULL))) {
-		(void)execvp(name, argv);
+		error = execvp(name, argv);
 	}
 	va_end(ap);
 	sverrno = errno;
 	free(argv);
 	errno = sverrno;
-	return (-1);
+	return (error);
 }
 
 int
@@ -136,21 +137,21 @@ execv(const char *name, char * const *argv)
 }
 
 int
-execvp(const char *name, char * const *argv)
+execvpe(const char *name, char * const *argv, char * const *envp)
 {
 	static int memsize;
-	static char **newargs;
+	static const char **newargs;
 	register int cnt;
 	register char *cp, *p;
 	int eacces, etxtbsy;
-	char *fname, *cur, *pathstr, buf[MAXPATHLEN];
-
+	char buf[MAXPATHLEN];
+	const char *fname, *cur, *pathstr;
 	etxtbsy = 1;
 	eacces = 0;
 
 	/* If it's an absolute or relative path name, it's easy. */
 	if (index(name, '/')) {
-		fname = (char *)&name;
+		fname = name;
 		cur = pathstr = NULL;
 		goto retry;
 	}
@@ -158,21 +159,21 @@ execvp(const char *name, char * const *argv)
 
 	/* Get the path we're searching. */
 	if (!(pathstr = getenv("PATH"))) {
-		pathstr = (char *)&_PATH_DEFPATH;
+		pathstr = _PATH_DEFPATH;
 	}
-	cur = pathstr = strdup(pathstr);
+	cur = pathstr = __UNCONST(strdup(pathstr));
 
 	while (cp == strsep(&cur, ":")) {
 		p = execat(name, cp, buf);
 		cp = p;
 retry:
-		(void) execve(fname, argv, environ);
+		(void)execve(fname, argv, envp);
 		switch (errno) {
 		case ENOEXEC:
 			for (cnt = 0; argv[cnt]; ++cnt);
 			if ((cnt + 2) * sizeof(char *) > memsize) {
 				memsize = (cnt + 2) * sizeof(char *);
-				if ((newargs = realloc(newargs, memsize)) == NULL) {
+				if ((newargs = alloca(memsize)) == NULL) {
 					memsize = 0;
 					goto done;
 				}
@@ -180,7 +181,7 @@ retry:
 			newargs[0] = __UNCONST("sh");
 			newargs[1] = fname;
 			bcopy(argv + 1, newargs + 2, cnt * sizeof(char *));
-			(void) execve(_PATH_BSHELL, newargs, environ);
+			(void)execve(_PATH_BSHELL, newargs, envp);
 			return (-1);
 		case ETXTBSY:
 			if (++etxtbsy > 5) {
@@ -194,6 +195,10 @@ retry:
 		case ENOENT:
 			break;
 		case ENOMEM:
+		case ENOTDIR:
+		case EISDIR:
+		case ELOOP:
+		case ENAMETOOLONG:
 		case E2BIG:
 			goto done;
 		default:
@@ -210,6 +215,12 @@ done:
 		free(pathstr);
 	}
 	return (-1);
+}
+
+int
+execvp(const char *name, char * const *argv)
+{
+	return (execvpe(name, argv, environ));
 }
 
 static char *
@@ -235,7 +246,6 @@ execat(const char *s1, char *si, char *buf)
 	buf[lp] = '/';
 	bcopy(s1, buf + lp + 1, ln);
 	buf[lp + ln + 1] = '\0';
-
     return (si);
 }
 
@@ -251,12 +261,12 @@ buildargv(va_list ap, const char *arg, char ***envpp)
 		if (off >= memsize) {
 			memsize += 50;	/* Starts out at 0. */
 			memsize *= 2;	/* Ramp up fast. */
-			if (!(argv = realloc(argv, memsize * sizeof(char *)))) {
+			if (!(argv = alloca(memsize * sizeof(char *)))) {
 				memsize = 0;
 				return (NULL);
 			}
 			if (off == 0) {
-				argv[0] = (char *)&arg;
+				argv[0] = __UNCONST(arg);
 				off = 1;
 			}
 		}

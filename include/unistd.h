@@ -188,6 +188,7 @@ int	 			des_setkey(const char *);
 int	 			encrypt(char *, int);
 void	 		endusershell(void);
 int	 			exect(const char *, char * const *, char * const *);
+int	 			execvpe(const char *, char * const *, char * const *);
 int	 			fchdir(int);
 int	 			fchown(int, int, int);
 int	 			fsync(int);

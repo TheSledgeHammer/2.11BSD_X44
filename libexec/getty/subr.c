@@ -160,7 +160,7 @@ static unsigned char *charvars[] = {
 		&tmode.c_veof, &tmode.c_veol, &tmode.c_vsusp,
 		&tmode.c_vdsusp, &tmode.c_vreprint, &tmode.c_vdiscard,
 		&tmode.c_vwerase, &tmode.c_vlnext, &tmode.c_vstatus,
-        &tmode.c_veol2, 0
+		&tmode.c_veol2, 0
 };
 
 void

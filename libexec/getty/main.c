@@ -275,13 +275,13 @@ main(int argc, char *argv[])
 	if (argc > 1)
 		tname = argv[1];
 	for (;;) {
-        int off;
+		int off;
 
 		gettable(tname, tabent, tabstrs);
 		if (OPset || EPset || APset)
 			APset++, OPset++, EPset++;
 		setdefaults();
-        off = 0;
+		off = 0;
 		(void)tcflush(0, TCIOFLUSH);	/* clear out the crap */
 		(void)ioctl(0, FIONBIO, &off);	/* turn off non-blocking mode */
 		(void)ioctl(0, FIOASYNC, &off);	/* ditto for async mode */
