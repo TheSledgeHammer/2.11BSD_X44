@@ -178,7 +178,7 @@ retry:
 					goto done;
 				}
 			}
-			newargs[0] = __UNCONST("sh");
+			newargs[0] = "sh";
 			newargs[1] = fname;
 			bcopy(argv + 1, newargs + 2, cnt * sizeof(char *));
 			(void)execve(_PATH_BSHELL, newargs, envp);
