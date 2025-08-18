@@ -62,7 +62,7 @@
 extern void syscall();
 extern char	sigcode[], esigcode[];
 
-static int doexecve(struct proc *, struct execa_args *, register_t *);
+static int doexecve(struct execa_args *);
 
 struct emul emul_211bsd = {
 		.e_name 		= "211bsd",
@@ -88,12 +88,10 @@ struct emul emul_211bsd = {
  * the execa_args from the user args pointer.
  */
 int
-execa(p, args, retval)
-	struct proc *p;
+execa(args)
 	struct execa_args *args;
-	register_t *retval;
 {
-	return (doexecve(p, args, retval));
+	return (doexecve(args));
 }
 
 /*
@@ -135,10 +133,7 @@ doexecve(p, args, retval)
 	} else {
 		error = -1;
 	}
-	u.u_procp = p;
 	u.u_error = error;
-	u.u_r.r_val1 = retval[0];
-	u.u_r.r_val2 = retval[1];
 	return (error);
 }
 
