@@ -80,6 +80,7 @@ execl(const char *name, const char *arg, ...)
 	int sverrno, error;
 	char **argv;
 
+    error = -1;
 	va_start(ap, arg);
 
 	if ((argv = buildargv(ap, arg, NULL))) {
@@ -99,6 +100,7 @@ execle(const char *name, const char *arg, ...)
 	int sverrno, error;
 	char **argv, **envp;
 
+    error = -1;
 	va_start(ap, arg);
 
 	if ((argv = buildargv(ap, arg, &envp))) {
@@ -117,7 +119,8 @@ execlp(const char *name, const char *arg, ...)
 	va_list ap;
 	int sverrno, error;
 	char **argv;
-	
+
+    error = -1;
 	va_start(ap, arg);
 	if ((argv = buildargv(ap, arg, NULL))) {
 		error = execvp(name, argv);
@@ -163,7 +166,7 @@ execvpe(const char *name, char * const *argv, char * const *envp)
 	}
 	cur = pathstr = __UNCONST(strdup(pathstr));
 
-	while (cp == strsep(&cur, ":")) {
+	while ((cp = strsep(__UNCONST(&cur), ":"))) {
 		p = execat(name, cp, buf);
 		cp = p;
 retry:
@@ -173,7 +176,7 @@ retry:
 			for (cnt = 0; argv[cnt]; ++cnt);
 			if ((cnt + 2) * sizeof(char *) > memsize) {
 				memsize = (cnt + 2) * sizeof(char *);
-				if ((newargs = alloca(memsize)) == NULL) {
+				if ((newargs = realloc(newargs, memsize)) == NULL) {
 					memsize = 0;
 					goto done;
 				}
@@ -181,7 +184,7 @@ retry:
 			newargs[0] = "sh";
 			newargs[1] = fname;
 			bcopy(argv + 1, newargs + 2, cnt * sizeof(char *));
-			(void)execve(_PATH_BSHELL, newargs, envp);
+			(void)execve(_PATH_BSHELL, __UNCONST(newargs), envp);
 			return (-1);
 		case ETXTBSY:
 			if (++etxtbsy > 5) {
@@ -261,7 +264,7 @@ buildargv(va_list ap, const char *arg, char ***envpp)
 		if (off >= memsize) {
 			memsize += 50;	/* Starts out at 0. */
 			memsize *= 2;	/* Ramp up fast. */
-			if (!(argv = alloca(memsize * sizeof(char *)))) {
+			if (!(argv = realloc(argv, memsize * sizeof(char *)))) {
 				memsize = 0;
 				return (NULL);
 			}
