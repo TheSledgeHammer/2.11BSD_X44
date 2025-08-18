@@ -145,7 +145,7 @@ execvpe(const char *name, char * const *argv, char * const *envp)
 	static int memsize;
 	static const char **newargs;
 	register int cnt;
-	register char *cp, *p;
+	register char *cp;
 	int eacces, etxtbsy;
 	char buf[MAXPATHLEN];
 	const char *fname, *cur, *pathstr;
@@ -167,8 +167,7 @@ execvpe(const char *name, char * const *argv, char * const *envp)
 	cur = pathstr = __UNCONST(strdup(pathstr));
 
 	while ((cp = strsep(__UNCONST(&cur), ":"))) {
-		p = execat(name, cp, buf);
-		cp = p;
+		cp = execat(name, cp, buf);
 retry:
 		(void)execve(fname, argv, envp);
 		switch (errno) {
