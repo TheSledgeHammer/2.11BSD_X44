@@ -62,6 +62,8 @@
 extern void syscall();
 extern char	sigcode[], esigcode[];
 
+static int doexecve(struct proc *, struct execa_args *, register_t *);
+
 struct emul emul_211bsd = {
 		.e_name 		= "211bsd",
 		.e_path 		= NULL,				/* emulation path */
@@ -86,41 +88,30 @@ struct emul emul_211bsd = {
  * the execa_args from the user args pointer.
  */
 int
-execa(args)
+execa(p, args, retval)
+	struct proc *p;
 	struct execa_args *args;
+	register_t *retval;
 {
-	if((args == execa_get()) != NULL) {
-		return (execve());
-	}
-	return (ENOMEM);
+	return (doexecve(p, args, retval));
 }
 
-/* setup execa_args.
- * set user args pointer to execa_args
+/*
+ * setup execa_args.
  */
 void
-execa_set(args, fname, argp, envp)
+doexeca(args, fname, argp, envp)
 	struct execa_args 	*args;
 	char				*fname;
 	char				**argp;
 	char				**envp;
 {
-	SCARG(args, fname) = fname;
-	SCARG(args, argp) = argp;
-	SCARG(args, envp) = envp;
-
-	u.u_ap = args;
-}
-
-/* return execa_args if user args pointer is not null */
-struct execa_args 	*
-execa_get(void)
-{
-    struct execa_args *args = (struct execa_args *)u.u_ap;
-    if(args != NULL) {
-        return (args);
-    }
-    return (NULL);
+	args = (struct execa_args *)u.u_ap;
+	if (args != NULL) {
+		SCARG(args, fname) = fname;
+		SCARG(args, argp) = argp;
+		SCARG(args, envp) = envp;
+	}
 }
 
 int
@@ -128,8 +119,27 @@ execv()
 {
 	struct execa_args *uap = (struct execa_args *)u.u_ap;
 	SCARG(uap, envp) = NULL;
+	return (execve(SCARG(uap, fname), SCARG(uap, argp), NULL));
+}
 
-	return (execve());
+static int
+doexecve(p, args, retval)
+	struct proc *p;
+	struct execa_args *args;
+	register_t *retval;
+{
+	int error;
+
+	if (args != NULL) {
+		error = execve(SCARG(args, fname), SCARG(args, argp), SCARG(args, envp));
+	} else {
+		error = -1;
+	}
+	u.u_procp = p;
+	u.u_error = error;
+	u.u_r.r_val1 = retval[0];
+	u.u_r.r_val2 = retval[1];
+	return (error);
 }
 
 int
@@ -150,7 +160,7 @@ execve()
 	char *dp, *sp;
 	char **tmpfap;
 
-	uap = (struct execa_args *) u.u_ap;
+	uap = (struct execa_args *)u.u_ap;
 	
 	p = u.u_procp;
 	p->p_flag |= P_INEXEC;
@@ -261,6 +271,8 @@ execve()
 	fdcloseexec(); 	    /* handle close on exec */
 	execsigs(p); 	    /* reset catched signals */
 
+	p->p_ctxlink = NULL; /* reset ucontext link */
+
 	/* set command name & other accounting info */
 	len = min(ndp.ni_cnd.cn_namelen, MAXCOMLEN);
 	memcpy(p->p_comm, ndp.ni_cnd.cn_nameptr, len);
@@ -366,7 +378,13 @@ exec_abort:
 int
 fexecve()
 {
+	register struct fexeca_args {
+		syscallarg(int) 	fd;
+		syscallarg(char	**) argp;
+		syscallarg(char	**) envp;
+	} *uap = (struct fexeca_args *)u.u_ap;
 
+	return (0);
 }
 */
 

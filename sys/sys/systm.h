@@ -129,9 +129,8 @@ struct execa_args {
 	syscallarg(char	**) envp;
 };
 
-int 			execa(struct execa_args *);
-void			execa_set(struct execa_args *, char *, char **, char **);
-struct execa_args 	*execa_get(void);
+void doexeca(struct execa_args *, char *, char **, char **);
+int  execa(struct proc *, struct execa_args *, register_t *);
 
 /*
  * Structure of the system-entry table
