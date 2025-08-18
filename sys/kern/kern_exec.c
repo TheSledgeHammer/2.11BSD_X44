@@ -121,10 +121,8 @@ execv()
 }
 
 static int
-doexecve(p, args, retval)
-	struct proc *p;
+doexecve(args)
 	struct execa_args *args;
-	register_t *retval;
 {
 	int error;
 
