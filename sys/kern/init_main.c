@@ -564,7 +564,7 @@ start_init(p, framep)
 		 * Now try to exec the program.  If can't for any reason
 		 * other than it doesn't exist, complain.
 		 */
-		error = execa(p, &args, retval);
+		error = execa(&args);
 		if (error == 0) {
 			return;
 		}
