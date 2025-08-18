@@ -71,8 +71,9 @@ new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vnode, offset)
 	vcp->ev_prot = prot;
 	vcp->ev_maxprot = maxprot;
 	vcp->ev_flags = flags;
-	if ((vcp->ev_vnodep = vnode) != NULL)
+	if ((vcp->ev_vnodep = vnode) != NULL) {
 		vref(vnode);
+	}
 	vcp->ev_offset = offset;
 }
 
@@ -110,11 +111,57 @@ kill_vmcmd(evsp)
 
 	for (i = 0; i < evsp->evs_used; i++) {
 		vcp = &evsp->evs_cmds[i];
-		if (vcp->ev_vnodep != NULL)
+		if (vcp->ev_vnodep != NULL) {
 			vrele(vcp->ev_vnodep);
+		}
 	}
 	evsp->evs_used = evsp->evs_cnt = 0;
 	free(evsp->evs_cmds, M_EXEC);
+}
+
+int
+vmcmd_map_object(p, cmd)
+	struct proc *p;
+	struct exec_vmcmd *cmd;
+{
+	struct vmspace *vmspace;
+	struct vnode *vp;
+	struct pager_struct *vpgr;
+	struct vm_object *vobj;
+	int error, anywhere;
+
+	vmspace = p->p_vmspace;
+	vp = cmd->ev_vnodep;
+	anywhere = 0;
+	/* vm pager */
+	vpgr = vm_pager_allocate(PG_VNODE, (caddr_t)vp, cmd->ev_size,
+			VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
+	if (vpgr == NULL) {
+		error = ENOMEM;
+		goto bad;
+	}
+	/* vm object */
+	vobj = vm_object_lookup(vpgr);
+	if (vobj == NULL) {
+		vobj = vm_object_allocate(cmd->ev_size);
+		vm_object_enter(vobj, vpgr);
+	}
+	/* vm map */
+	error = vm_map_find(&vmspace->vm_map, vobj, cmd->ev_offset, cmd->ev_addr, cmd->ev_size, anywhere);
+	if (error != 0) {
+		vm_object_deallocate(vobj);
+		goto bad;
+	}
+	if (vpgr != NULL) {
+		vm_object_setpager(vobj, vpgr, 0, TRUE);
+	}
+	return (error);
+
+bad:
+	if (vpgr != NULL) {
+		vm_pager_deallocate(vpgr);
+	}
+	return (error);
 }
 
 int
@@ -124,8 +171,6 @@ vmcmd_map_pagedvn(p, cmd)
 {
 	struct vmspace *vmspace;
 	struct vnode *vp;
-	struct vm_object *vobj;
-	struct pager_struct *vpgr;
 	int error;
 	vm_prot_t prot, maxprot;
 
@@ -145,36 +190,28 @@ vmcmd_map_pagedvn(p, cmd)
 	if (cmd->ev_size & PAGE_MASK)
 		return (EINVAL);
 
-	vpgr = vm_pager_allocate(PG_VNODE, (caddr_t)vp, cmd->ev_size, VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
-	if(vpgr == NULL) {
-		return (ENOMEM);
-	}
-	vobj = vm_object_lookup(vpgr);
-	if (vobj == NULL) {
-		return (ENOMEM);
-	}
-
-	VREF(vp);
-
-	if (vp->v_flag == 0) {
-		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
-		vm_object_lock(vobj);
-		vm_object_unlock(vobj);
-		VOP_UNLOCK(vp, 0, p);
-	}
-
 	prot = cmd->ev_prot;
 	maxprot = VM_PROT_ALL;
 
 	/*
-	 * do the map
+	 * check the file system's opinion about mmapping the file
 	 */
-	error = vm_map_insert(&vmspace->vm_map, vobj, cmd->ev_offset, cmd->ev_addr, cmd->ev_size);
+	error = VOP_MMAP(vp, prot, p->p_ucred, p);
 	if (error) {
-		vm_pager_deallocate(vpgr);
+		return (error);
 	}
 
-	return (error);
+	if (vp->v_flag == 0) {
+		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
+		VOP_UNLOCK(vp, 0, p);
+	}
+
+	vref(vp);
+
+	/*
+	 * do the map
+	 */
+	return (vmcmd_map_object(p, cmd));
 }
 
 int
@@ -188,20 +225,20 @@ vmcmd_map_readvn(p, cmd)
 
 	vmspace = p->p_vmspace;
 
-	if (cmd->ev_size == 0)
+	if (cmd->ev_size == 0) {
 		return (KERN_SUCCESS);
+	}
 
 	diff = cmd->ev_addr - trunc_page(cmd->ev_addr);
 	cmd->ev_addr -= diff;
 	cmd->ev_offset -= diff;
 	cmd->ev_size += diff;
 
-	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
-
-	if (error) {
+	error = vmcmd_map_object(p, cmd);
+	//error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
+	if (error != 0) {
 		return (error);
 	}
-
 	return (vmcmd_readvn(p, cmd));
 }
 
@@ -265,9 +302,8 @@ vmcmd_map_zero(p, cmd)
 	prot = cmd->ev_prot;
 	maxprot = VM_PROT_ALL;
 
-	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
-
-	return (error);
+	//error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
+	return (vmcmd_map_object(p, cmd));
 }
 
 /*
@@ -300,8 +336,9 @@ vmcmd_create_vmspace(elp)
 
 	/* create the new process's VM space by running the vmcmds */
 #ifdef DIAGNOSTIC
-	if(elp->el_vmcmds.evs_used == 0)
+	if (elp->el_vmcmds.evs_used == 0) {
 		panic("execve: no vmcmds");
+	}
 #endif
 	for (i = 0; i < elp->el_vmcmds.evs_used && !error; i++) {
 		struct exec_vmcmd *vcp;

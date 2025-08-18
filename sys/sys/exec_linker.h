@@ -139,6 +139,7 @@ extern int exec_maxhdrsz;
 
 void 	vmcmd_extend(struct exec_vmcmd_set *);
 void 	kill_vmcmd(struct exec_vmcmd_set *);
+int	vmcmd_map_object(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_map_pagedvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_map_readvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_readvn(struct proc *, struct exec_vmcmd *);

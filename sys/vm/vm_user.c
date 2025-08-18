@@ -150,10 +150,10 @@ vm_deallocate(map, start, size)
 	vm_size_t		size;
 {
 	if (map == NULL)
-		return(KERN_INVALID_ARGUMENT);
+		return (KERN_INVALID_ARGUMENT);
 
 	if (size == (vm_offset_t) 0)
-		return(KERN_SUCCESS);
+		return (KERN_SUCCESS);
 
 	return (vm_map_remove(map, trunc_page(start), round_page(start+size)));
 }
