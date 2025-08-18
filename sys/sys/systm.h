@@ -130,7 +130,7 @@ struct execa_args {
 };
 
 void doexeca(struct execa_args *, char *, char **, char **);
-int  execa(struct proc *, struct execa_args *, register_t *);
+int  execa(struct execa_args *);
 
 /*
  * Structure of the system-entry table
