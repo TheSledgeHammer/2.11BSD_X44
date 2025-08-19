@@ -394,10 +394,10 @@ void
 execsigs(p)
 	register struct proc *p;
 {
-    register struct sigacts *ps;
+    	register struct sigacts *ps;
 	register int nc, mask;
 
-    ps = p->p_sigacts;
+    	ps = p->p_sigacts;
 
 	/*
 	 * Reset caught signals.  Held signals remain held
@@ -430,11 +430,11 @@ int
 check_exec(elp)
 	struct exec_linker *elp;
 {
-	int					error, i;
-	struct vnode		*vp;
-	struct nameidata 	*ndp;
-	size_t				resid;
-	struct proc 		*p;
+	int	error, i;
+	struct vnode *vp;
+	struct nameidata *ndp;
+	size_t resid;
+	struct proc *p;
 
 	p = elp->el_proc;
 	ndp = &elp->el_ndp;

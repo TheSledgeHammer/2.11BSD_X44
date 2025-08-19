@@ -59,11 +59,27 @@
 #include <machine/cpu.h>
 #include <machine/reg.h>
 
+int execve_load(struct proc *, struct execa_args *, struct exec_linker *, register_t *);
+
 int
-execve_load(p, uap, elp)
+execve()
+{
+	struct proc *p;
+	struct execa_args *uap;
+	struct exec_linker elp;
+	register_t *retval;
+
+	p = u.u_procp;
+	uap = (struct execa_args *)u.u_ap;
+	return (execve_load(p, uap, &elp, retval));
+}
+
+int
+execve_load(p, uap, elp, retval)
 	struct proc *p;
 	struct execa_args *uap;
 	struct exec_linker *elp;
+	register_t *retval;
 {
 	struct nameidata ndp;
 	struct ps_strings arginfo;
@@ -83,6 +99,7 @@ execve_load(p, uap, elp)
 
 	/* Initialize a few constants in the common area */
 	elp->el_name = SCARG(uap, fname);
+	MALLOC(elp->el_image_hdr, void *, exec_maxhdrsz, M_EXEC, M_WAITOK);
 	elp->el_hdrlen = exec_maxhdrsz;
 	elp->el_hdrvalid = 0;
 	elp->el_proc = p;
@@ -97,23 +114,22 @@ execve_load(p, uap, elp)
 	elp->el_vmcmds.evs_used = 0;
 	elp->el_flags = 0;
 
+	/* see if we can run it. */
+	if ((error = check_exec(&elp)) != 0) {
+		goto freehdr;
+	}
+
 	/* allocate an argument buffer */
-	elp->el_stringspace = (char *)kmem_alloc_wait(exec_map, exec_maxhdrsz);
+	elp->el_stringbase = (char *)kmem_alloc_wait(exec_map, exec_maxhdrsz);
 	if (elp->el_stringbase == NULL) {
 		error = ENOMEM;
 		goto exec_abort;
 	}
 	elp->el_stringp = elp->el_stringbase;
 	elp->el_stringspace = exec_maxhdrsz;
-	MALLOC(elp->el_image_hdr, void *, (elp->el_stringspace + exec_maxhdrsz), M_EXEC, M_WAITOK);
 
-	/* see if we can run it. */
-	if ((error = check_exec(&elp)) != 0) {
-		goto freehdr;
-	}
-
-	error = exec_extract_strings(&elp, dp);
-	if (error != 0) {
+	dp = exec_extract_strings(&elp, SCARG(uap, argp), SCARG(uap, envp), len, &error);
+	if ((dp == NULL) && (error != 0)) {
 		goto bad;
 	}
 
@@ -122,11 +138,11 @@ execve_load(p, uap, elp)
 	if (elp->el_flags & EXEC_32) {
 		len = ((elp->el_argc + elp->el_envc + 2 + elp->el_es->ex_arglen) * sizeof(int)
 				+ sizeof(int) + dp + STACKGAPLEN + szsigcode
-				+ sizeof(struct ps_strings)) - elp->el_stringspace;
+				+ sizeof(struct ps_strings)) - elp->el_stringbase;
 	} else {
 		len = ((elp->el_argc + elp->el_envc + 2 + elp->el_es->ex_arglen) * sizeof(int)
 				+ sizeof(char *) + dp + STACKGAPLEN + szsigcode
-				+ sizeof(struct ps_strings)) - elp->el_stringspace;
+				+ sizeof(struct ps_strings)) - elp->el_stringbase;
 	}
 
 	len = ALIGN(len); /* make the stack "safely" aligned */
@@ -139,6 +155,9 @@ execve_load(p, uap, elp)
 	/* adjust "active stack depth" for process VSZ */
 	elp->el_ssize = len;
 
+	vm_deallocate(&vm->vm_map, VM_MIN_ADDRESS,
+			VM_MAXUSER_ADDRESS - VM_MIN_ADDRESS);
+
 	/* Map address Space  & create new process's VM space */
 	error = vmcmd_create_vmspace(p, elp, base_vcp);
 	if (error != 0) {
@@ -147,7 +166,7 @@ execve_load(p, uap, elp)
 
 	stack_base = (char *)exec_copyout_strings(&elp, &arginfo);
 	/* Now copy argc, args & environ to new stack */
-	error = (*elp->el_es->ex_copyargs)(&elp, &arginfo, stack_base, argp);
+	error = (*elp->el_es->ex_copyargs)(&elp, &arginfo, stack_base, elp->el_stringbase);
 	if (error) {
 		goto exec_abort;
 	}
@@ -248,9 +267,6 @@ bad:
 
 freehdr:
 	p->p_flag &= ~P_INEXEC;
-	if (elp->el_stringbase != NULL) {
-		kmem_free_wakeup(exec_map, elp->el_stringbase, exec_maxhdrsz);
-	}
 	FREE(elp->el_image_hdr, M_EXEC);
 	return (error);
 
@@ -266,10 +282,172 @@ exec_abort:
 	VOP_CLOSE(elp->el_vnodep, FREAD, p->p_ucred, p);
 	vput(elp->el_vnodep);
 	if (elp->el_stringbase != NULL) {
-		kmem_free_wakeup(exec_map, elp->el_stringbase, exec_maxhdrsz);
+		kmem_free_wakeup(exec_map, (vm_offset_t)elp->el_stringbase, exec_maxhdrsz);
 	}
 	FREE(elp->el_image_hdr, M_EXEC);
 	exit(W_EXITCODE(0, SIGABRT));
 	exit(-1);
 	return (0);
+}
+
+/*
+ * Copy out argument and environment strings from the old process
+ *	address space into the temporary string buffer.
+ */
+char *
+exec_extract_strings(elp, argp, envp, length, retval)
+	struct exec_linker *elp;
+	char **argp, **envp;
+	int length, *retval;
+{
+	char **argv, **envv, **tmpfap;
+	char *dp, *sp;
+	int error;
+
+	dp = elp->el_stringbase;
+
+	/* copy the fake args list, if there's one, freeing it as we go */
+	if (elp->el_flags & EXEC_HASARGL) {
+		tmpfap = elp->el_fa;
+		while (*tmpfap != NULL) {
+			char *cp;
+
+			cp = *tmpfap;
+			while (*cp) {
+				*dp++ = *cp++;
+			}
+			dp++;
+			FREE(*tmpfap, M_EXEC);
+			tmpfap++;
+			elp->el_argc++;
+		}
+		FREE(elp->el_fa, M_EXEC);
+		elp->el_flags &= ~EXEC_HASARGL;
+	}
+
+	/* extract arguments first */
+	argv = argp;
+	if (argv) {
+		if (elp->el_flags & EXEC_SKIPARG) {
+			argv++;
+		}
+		while (1) {
+			length = elp->el_stringbase + ARG_MAX - dp;
+			if ((error = copyin(argv, &sp, sizeof(sp))) != 0) {
+				error = EFAULT;
+				goto bad;
+			}
+			if (!sp) {
+				break;
+			}
+			if ((error = copyinstr(sp, dp, length, &length)) != 0) {
+				if (error == ENAMETOOLONG) {
+					error = E2BIG;
+				}
+				goto bad;
+			}
+			dp += length;
+			argv++;
+			elp->el_argc++;
+		}
+	} else {
+		error = EINVAL;
+		goto bad;
+	}
+
+	/* extract environment strings */
+	envv = envp;
+	if (envv) {
+		while (1) {
+			length = elp->el_stringbase + ARG_MAX - dp;
+			if ((error = copyin(envv, &sp, sizeof(sp))) != 0) {
+				error = EFAULT;
+				goto bad;
+			}
+			if (!sp) {
+				break;
+			}
+			if ((error = copyinstr(sp, dp, length, &length)) != 0) {
+				if (error == ENAMETOOLONG) {
+					error = E2BIG;
+				}
+				goto bad;
+			}
+			dp += length;
+			envv++;
+			elp->el_envc++;
+		}
+	} else {
+		error = EINVAL;
+		goto bad;
+	}
+
+	retval = &error;
+	dp = (char *)ALIGN(dp);
+	return (dp);
+
+bad:
+	retval = &error;
+	dp = (char *)NULL;
+	return (dp);
+}
+
+/*
+ * Copy strings out to the new process address space, constructing
+ * new arg and env vector tables. Return a pointer to the base
+ * so that it can be used as the initial stack pointer.
+ */
+int *
+exec_copyout_strings(elp, arginfo)
+	struct exec_linker *elp;
+	struct ps_strings *arginfo;
+{
+	long argc, envc;
+	char **vectp;
+	char *stringp, *destp;
+	int *stack_base;
+
+	/* Calculate string base and vector table pointers. */
+	arginfo = PS_STRINGS;
+	destp = (caddr_t)arginfo - roundup((ARG_MAX - elp->el_stringspace), sizeof(char *));
+
+	/* The '+ 2' is for the null pointers at the end of each of the arg and	env vector sets */
+	vectp = (char **)(destp - (elp->el_argc + elp->el_envc + 2) * sizeof(char *));
+
+	/* vectp also becomes our initial stack base */
+	stack_base = (int *)vectp;
+
+	stringp = elp->el_stringbase;
+	argc = elp->el_argc;
+	envc = elp->el_envc;
+
+	/* Fill in "ps_strings" struct for ps, w, etc. */
+	arginfo->ps_argvstr = destp;
+	arginfo->ps_nargvstr = argc;
+
+	/* Copy the arg strings and fill in vector table as we go. */
+	for (; argc > 0; --argc) {
+		*(vectp++) = destp;
+		while ((*destp++ = *stringp++)) {
+			;
+		}
+	}
+
+	/* a null vector table pointer seperates the argp's from the envp's */
+	*(vectp++) = NULL;
+
+	arginfo->ps_envstr = destp;
+	arginfo->ps_nenvstr = envc;
+
+	/* Copy the env strings and fill in vector table as we go. */
+	for (; envc > 0; --envc) {
+		*(vectp++) = destp;
+		while ((*destp++ = *stringp++)) {
+			;
+		}
+	}
+
+	/* end of vector table is a null pointer */
+	*vectp = NULL;
+	return (stack_base);
 }
