@@ -87,16 +87,17 @@ vmcmd_extend(evsp)
 	if (evsp->evs_used < evsp->evs_cnt)
 		panic("vmcmdset_extend: not necessary");
 #endif
-	ocnt = evsp->evs_cnt;
 	if ((ocnt = evsp->evs_cnt) != 0) {
 		evsp->evs_cnt += ocnt;
-		nvcp = malloc(sizeof(struct exec_vmcmd), M_EXEC, M_WAITOK);
-		if (ocnt) {
-			bcopy(evsp->evs_cmds, nvcp, (ocnt * sizeof(struct exec_vmcmd)));
-			free(evsp->evs_cmds, M_EXEC);
-		}
-		evsp->evs_cmds = nvcp;
+	} else {
+		evsp->evs_cnt = EXEC_DEFAULT_VMCMD_SETSIZE;
 	}
+	MALLOC(nvcp, struct exec_vmcmd *, (evsp->evs_cnt * sizeof(struct exec_vmcmd)), M_EXEC, M_WAITOK);
+	if (ocnt) {
+		bcopy(evsp->evs_cmds, nvcp, (ocnt * sizeof(struct exec_vmcmd)));
+		FREE(evsp->evs_cmds, M_EXEC);
+	}
+	evsp->evs_cmds = nvcp;
 }
 
 void
@@ -116,7 +117,7 @@ kill_vmcmd(evsp)
 		}
 	}
 	evsp->evs_used = evsp->evs_cnt = 0;
-	free(evsp->evs_cmds, M_EXEC);
+	FREE(evsp->evs_cmds, M_EXEC);
 }
 
 int
@@ -211,7 +212,7 @@ vmcmd_map_pagedvn(p, cmd)
 	/*
 	 * do the map
 	 */
-	return (vmcmd_map_object(p, cmd));
+	return (vm_mmap(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_len, prot, maxprot, (MAP_FIXED | MAP_COPY), (caddr_t)vp, cmd->ev_offset));
 }
 
 int
@@ -221,22 +222,15 @@ vmcmd_map_readvn(p, cmd)
 {
 	struct vmspace *vmspace;
 	int error;
-	long diff;
 
 	vmspace = p->p_vmspace;
 
 	if (cmd->ev_size == 0) {
-		return (KERN_SUCCESS);
+		return (0);
 	}
 
-	diff = cmd->ev_addr - trunc_page(cmd->ev_addr);
-	cmd->ev_addr -= diff;
-	cmd->ev_offset -= diff;
-	cmd->ev_size += diff;
-
-	error = vmcmd_map_object(p, cmd);
-	//error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
-	if (error != 0) {
+	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
+	if (error) {
 		return (error);
 	}
 	return (vmcmd_readvn(p, cmd));
@@ -248,7 +242,6 @@ vmcmd_readvn(p, cmd)
 	struct exec_vmcmd *cmd;
 {
 	struct vmspace *vmspace;
-
 	int error;
 	vm_prot_t prot, maxprot;
 
@@ -256,8 +249,9 @@ vmcmd_readvn(p, cmd)
 	error = vn_rdwr(UIO_READ, cmd->ev_vnodep, (caddr_t) cmd->ev_addr,
 			cmd->ev_size, cmd->ev_offset, UIO_USERSPACE, IO_UNIT, p->p_ucred,
 			NULL, p);
-	if (error)
+	if (error) {
 		return (error);
+	}
 
 	prot = cmd->ev_prot;
 	maxprot = VM_PROT_ALL;
@@ -265,15 +259,17 @@ vmcmd_readvn(p, cmd)
 	if (maxprot != VM_PROT_ALL) {
 		error = vm_map_protect(&vmspace->vm_map, trunc_page(cmd->ev_addr),
 				round_page(cmd->ev_addr + cmd->ev_size), maxprot, TRUE);
-		if (error)
+		if (error) {
 			return (error);
+		}
 	}
 
 	if (prot != maxprot) {
 		error = vm_map_protect(&vmspace->vm_map, trunc_page(cmd->ev_addr),
 				round_page(cmd->ev_addr + cmd->ev_size), prot, FALSE);
-		if (error)
+		if (error) {
 			return (error);
+		}
 	}
 	return (0);
 }
@@ -289,21 +285,16 @@ vmcmd_map_zero(p, cmd)
 	struct exec_vmcmd *cmd;
 {
 	struct vmspace *vmspace;
-
 	int error;
-	long diff;
-	vm_prot_t prot, maxprot;
+	vm_prot_t prot;
 
 	vmspace = p->p_vmspace;
-	diff = cmd->ev_addr - trunc_page(cmd->ev_addr);
-	cmd->ev_addr -= diff; /* required by vm_map */
-	cmd->ev_size += diff;
-
 	prot = cmd->ev_prot;
-	maxprot = VM_PROT_ALL;
-
-	//error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
-	return (vmcmd_map_object(p, cmd));
+	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
+	if (error) {
+		return (error);
+	}
+	return (vm_map_protect(&vmspace->vm_map, trunc_page(cmd->ev_addr), round_page(cmd->ev_addr + cmd->ev_size), prot, FALSE));
 }
 
 /*
@@ -313,17 +304,15 @@ vmcmd_map_zero(p, cmd)
  * vmspace with another!
  */
 int
-vmcmd_create_vmspace(elp)
-	struct exec_linker *elp;
-{
+vmcmd_create_vmspace(p, elp, base_vcp)
 	struct proc *p;
-	struct vmspace *vmspace;
+	struct exec_linker *elp;
 	struct exec_vmcmd *base_vcp;
+{
+	struct vmspace *vmspace;
 	int error, i;
 
-	p = elp->el_proc;
 	vmspace = p->p_vmspace;
-	base_vcp = NULL;
 
 	/*  Now map address space */
 	vmspace->vm_tsize = btoc(elp->el_tsize);
@@ -364,8 +353,9 @@ vmcmd_create_vmspace(elp)
 			printf("vmcmd[%d] = %#lx/%#lx @ %#lx\n", i, vcp->ev_addr, vcp->ev_size, vcp->ev_offset);
 		}
 #endif
-		if (vcp->ev_flags & VMCMD_BASE)
+		if (vcp->ev_flags & VMCMD_BASE) {
 			base_vcp = vcp;
+		}
 	}
 
 	/* free the vmspace-creation commands, and release their references */
@@ -388,16 +378,25 @@ exec_read_from(p, vp, off, bf, size)
 	int error;
 	size_t resid;
 
-	if ((error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_ucred, &resid, NULL)) != 0)
+	if ((error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_ucred, &resid, NULL)) != 0) {
 		return (error);
+	}
 	/*
 	 * See if we got all of it
 	 */
-	if (resid != 0)
+	if (resid != 0) {
 		return (ENOEXEC);
+	}
 	return (0);
 }
 
+/*
+ * TODO:
+ * Fix:
+ * - argp is NULL as dp is NULL in execve
+ * - does not work correctly with current execve setup
+ *
+ */
 /*
  * Copy out argument and environment strings from the old process
  *	address space into the temporary string buffer.
@@ -473,6 +472,11 @@ exec_extract_strings(elp, dp)
 }
 
 /*
+ * TODO:
+ * Fix:
+ * - is essentially a duplicate of copyargs in kern_exec.c
+ */
+/*
  * Copy strings out to the new process address space, constructing
  * new arg and env vector tables. Return a pointer to the base
  * so that it can be used as the initial stack pointer.
@@ -496,10 +500,10 @@ exec_copyout_strings(elp, arginfo)
 
 	/* The '+ 2' is for the null pointers at the end of each of the arg and	env vector sets */
 	vectp =
-			(char**) (destp - (elp->el_argc + elp->el_envc + 2) * sizeof(char*));
+			(char **)(destp - (elp->el_argc + elp->el_envc + 2) * sizeof(char*));
 
 	/* vectp also becomes our initial stack base */
-	stack = (int*) vectp;
+	stack = (int *)vectp;
 
 	stringp = elp->el_stringbase;
 	argc = elp->el_argc;
@@ -525,8 +529,9 @@ exec_copyout_strings(elp, arginfo)
 	/* Copy the env strings and fill in vector table as we go. */
 	for (; envc > 0; --envc) {
 		*(vectp++) = destp;
-		while ((*destp++ = *stringp++))
+		while ((*destp++ = *stringp++)) {
 			;
+		}
 	}
 
 	/* end of vector table is a null pointer */

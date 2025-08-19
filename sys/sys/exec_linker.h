@@ -139,12 +139,12 @@ extern int exec_maxhdrsz;
 
 void 	vmcmd_extend(struct exec_vmcmd_set *);
 void 	kill_vmcmd(struct exec_vmcmd_set *);
-int	vmcmd_map_object(struct proc *, struct exec_vmcmd *);
+int		vmcmd_map_object(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_map_pagedvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_map_readvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_readvn(struct proc *, struct exec_vmcmd *);
 int		vmcmd_map_zero(struct proc *, struct exec_vmcmd *);
-int 	vmcmd_create_vmspace(struct exec_linker *);
+int 	vmcmd_create_vmspace(struct proc *, struct exec_linker *, struct exec_vmcmd *);
 int		exec_read_from(struct proc *, struct vnode *, u_long, void *, size_t);
 int 	exec_extract_strings(struct exec_linker *, char *);
 int 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *);

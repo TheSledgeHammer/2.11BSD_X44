@@ -256,16 +256,18 @@ exec_init(void)
 	 * at runtime.
 	 */
 	list = NULL;
-	for(i = 0; i < nexecs; i++) {
+	for (i = 0; i < nexecs; i++) {
 		link_exec(&list, &execsw[i]);
 	}
 
 	/*
 	 * figure out the maximum size of an exec header.
 	 */
-	for (i = 0; i < nexecs; i++) {
-		if (execsw[i].ex_makecmds != NULL && execsw[i].ex_hdrsz > exec_maxhdrsz) {
-			exec_maxhdrsz = execsw[i].ex_hdrsz;
+	if (exec_maxhdrsz == 0) {
+		for (i = 0; i < nexecs; i++) {
+			if (execsw[i].ex_makecmds != NULL && execsw[i].ex_hdrsz > exec_maxhdrsz) {
+				exec_maxhdrsz = execsw[i].ex_hdrsz;
+			}
 		}
 	}
 }
