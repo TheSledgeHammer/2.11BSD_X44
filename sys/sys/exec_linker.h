@@ -146,7 +146,7 @@ int		vmcmd_map_zero(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_create_vmspace(struct proc *, struct exec_linker *, struct exec_vmcmd *);
 int		exec_read_from(struct proc *, struct vnode *, u_long, void *, size_t);
 int 	exec_setup_stack(struct exec_linker *);
-int 	exec_extract_strings(struct exec_linker *, char **, char **, int, int *);
+char 	*exec_extract_strings(struct exec_linker *, char **, char **, int, int *);
 char 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *, struct vmspace *, int, int, int *);
 
 int 	copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
