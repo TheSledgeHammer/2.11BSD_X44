@@ -59,127 +59,202 @@
 #include <machine/cpu.h>
 #include <machine/reg.h>
 
-int execve_load(struct proc *, struct execa_args *, struct exec_linker *, register_t *);
+extern void syscall();
+extern char	sigcode[], esigcode[];
+
+static int 	doexecve(struct execa_args *);
+static int 	execve_load(struct proc *, struct execa_args *, register_t *);
+
+int   		exec_extract_strings(struct exec_linker *, char **, char **, int, int *);
+char  		*exec_copyout_strings(struct exec_linker *, struct ps_strings *, struct vmspace *, int, int, int *);
+
+struct emul emul_211bsd = {
+		.e_name 		= "211bsd",
+		.e_path 		= NULL,				/* emulation path */
+		.e_nsysent		= SYS_MAXSYSCALL,
+		.e_sysent 		= sysent,
+#ifdef SYSCALL_DEBUG
+		.e_syscallnames = syscallnames,
+#else
+		.e_syscallnames = NULL,
+#endif
+		.e_arglen 		= 0,
+		.e_sendsig		= sendsig,
+		.e_setregs 		= setregs,
+		.e_sigcode 		= sigcode,
+		.e_esigcode 	= esigcode,
+		.e_syscall		= syscall
+};
+
+/*
+ * Execa: (on startup only)
+ * Serves a special purpose during startup of loading
+ * the execa_args from the user args pointer.
+ */
+int
+execa(args)
+	struct execa_args *args;
+{
+	return (doexecve(args));
+}
+
+/*
+ * setup execa_args.
+ */
+void
+doexeca(args, fname, argp, envp)
+	struct execa_args 	*args;
+	char				*fname;
+	char				**argp;
+	char				**envp;
+{
+	args = (struct execa_args *)u.u_ap;
+	if (args != NULL) {
+		SCARG(args, fname) = fname;
+		SCARG(args, argp) = argp;
+		SCARG(args, envp) = envp;
+	}
+}
+
+int
+execv()
+{
+	struct execa_args *uap = (struct execa_args *)u.u_ap;
+	SCARG(uap, envp) = NULL;
+	return (execve(SCARG(uap, fname), SCARG(uap, argp), NULL));
+}
+
+static int
+doexecve(args)
+	struct execa_args *args;
+{
+	int error;
+
+	if (args != NULL) {
+		error = execve(SCARG(args, fname), SCARG(args, argp), SCARG(args, envp));
+	} else {
+		error = -1;
+	}
+	u.u_error = error;
+	return (error);
+}
 
 int
 execve()
 {
 	struct proc *p;
 	struct execa_args *uap;
-	struct exec_linker elp;
 	register_t *retval;
 
 	p = u.u_procp;
 	uap = (struct execa_args *)u.u_ap;
-	return (execve_load(p, uap, &elp, retval));
+	return (execve_load(p, uap, retval));
 }
 
-int
-execve_load(p, uap, elp, retval)
+static int
+execve_load(p, uap, retval)
 	struct proc *p;
 	struct execa_args *uap;
-	struct exec_linker *elp;
 	register_t *retval;
 {
+	struct exec_linker pack;
 	struct nameidata ndp;
 	struct ps_strings arginfo;
 	struct vmspace	*vm;
 	struct vattr attr;
 	struct exec_vmcmd *base_vcp;
-	int error, szsigcode;
+	int i, error, szsigcode;
 	size_t len;
-	char *stack_base;
-	char *dp;
+	char *stack_base, *dp;
 
+	vm = p->p_vmspace;
 	p->p_flag |= P_INEXEC;
-    base_vcp = NULL;
-    vm = p->p_vmspace;
+	base_vcp = NULL;
 
+	/*
+	 * figure out the maximum size of an exec header, if necessary.
+	 * XXX should be able to keep LKM code from modifying exec switch
+	 * when we're still using it, but...
+	 */
+	if (exec_maxhdrsz == 0) {
+		for (i = 0; i < nexecs; i++) {
+			if (execsw[i].ex_makecmds != NULL
+					&& execsw[i].ex_hdrsz > exec_maxhdrsz) {
+				exec_maxhdrsz = execsw[i].ex_hdrsz;
+			}
+		}
+	}
+
+	/* init the namei data to point the file user's program name */
+	/* XXX cgd 960926: why do this here?  most will be clobbered. */
 	NDINIT(&ndp, LOOKUP, NOFOLLOW, UIO_USERSPACE, SCARG(uap, fname), p);
 
 	/* Initialize a few constants in the common area */
-	elp->el_name = SCARG(uap, fname);
-	MALLOC(elp->el_image_hdr, void *, exec_maxhdrsz, M_EXEC, M_WAITOK);
-	elp->el_hdrlen = exec_maxhdrsz;
-	elp->el_hdrvalid = 0;
-	elp->el_proc = p;
-	elp->el_uap = uap;
-	elp->el_attr = &attr;
-	elp->el_argc = 0;
-	elp->el_envc = 0;
-	elp->el_entry = 0;
-	elp->el_ndp = ndp;
-	elp->el_emul_arg = NULL;
-	elp->el_vmcmds.evs_cnt = 0;
-	elp->el_vmcmds.evs_used = 0;
-	elp->el_flags = 0;
+	pack.el_name = SCARG(uap, fname);
+	MALLOC(pack.el_image_hdr, void *, exec_maxhdrsz, M_EXEC, M_WAITOK);
+	pack.el_hdrlen = exec_maxhdrsz;
+	pack.el_hdrvalid = 0;
+	pack.el_proc = p;
+	pack.el_attr = &attr;
+	pack.el_argc = 0;
+	pack.el_envc = 0;
+	pack.el_entry = 0;
+	pack.el_ndp = ndp;
+	pack.el_emul_arg = NULL;
+	pack.el_vmcmds.evs_cnt = 0;
+	pack.el_vmcmds.evs_used = 0;
+	pack.el_flags = 0;
 
 	/* see if we can run it. */
-	if ((error = check_exec(&elp)) != 0) {
+	if ((error = check_exec(&pack)) != 0) {
 		goto freehdr;
 	}
 
 	/* allocate an argument buffer */
-	elp->el_stringbase = (char *)kmem_alloc_wait(exec_map, exec_maxhdrsz);
-	if (elp->el_stringbase == NULL) {
+	pack.el_stringbase = (char *)kmem_alloc_wait(exec_map, exec_maxhdrsz);
+	if (pack.el_stringbase == NULL) {
 		error = ENOMEM;
 		goto exec_abort;
 	}
-	elp->el_stringp = elp->el_stringbase;
-	elp->el_stringspace = exec_maxhdrsz;
 
-	dp = exec_extract_strings(&elp, SCARG(uap, argp), SCARG(uap, envp), len, &error);
+	dp = exec_extract_strings(&pack, SCARG(uap, argp), SCARG(uap, envp), len, &error);
 	if ((dp == NULL) && (error != 0)) {
 		goto bad;
 	}
 
-	szsigcode = elp->el_es->ex_emul->e_esigcode - elp->el_es->ex_emul->e_sigcode;
+	szsigcode = pack.el_es->ex_emul->e_esigcode - pack.el_es->ex_emul->e_sigcode;
 
-	if (elp->el_flags & EXEC_32) {
-		len = ((elp->el_argc + elp->el_envc + 2 + elp->el_es->ex_arglen) * sizeof(int)
+	if (pack.el_flags & EXEC_32) {
+		len = ((pack.el_argc + pack.el_envc + 2 + pack.el_es->ex_arglen) * sizeof(int)
 				+ sizeof(int) + dp + STACKGAPLEN + szsigcode
-				+ sizeof(struct ps_strings)) - elp->el_stringbase;
+				+ sizeof(struct ps_strings)) - pack.el_stringbase;
 	} else {
-		len = ((elp->el_argc + elp->el_envc + 2 + elp->el_es->ex_arglen) * sizeof(int)
+		len = ((pack.el_argc + pack.el_envc + 2 + pack.el_es->ex_arglen) * sizeof(int)
 				+ sizeof(char *) + dp + STACKGAPLEN + szsigcode
-				+ sizeof(struct ps_strings)) - elp->el_stringbase;
+				+ sizeof(struct ps_strings)) - pack.el_stringbase;
 	}
 
 	len = ALIGN(len); /* make the stack "safely" aligned */
 
-	if (len > elp->el_ssize) {
+	if (len > pack.el_ssize) {
 		error = ENOMEM;
 		goto bad;
 	}
 
 	/* adjust "active stack depth" for process VSZ */
-	elp->el_ssize = len;
+	pack.el_ssize = len;
 
 	vm_deallocate(&vm->vm_map, VM_MIN_ADDRESS,
 			VM_MAXUSER_ADDRESS - VM_MIN_ADDRESS);
 
 	/* Map address Space  & create new process's VM space */
-	error = vmcmd_create_vmspace(p, elp, base_vcp);
+	error = vmcmd_create_vmspace(p, &pack, base_vcp);
 	if (error != 0) {
 		goto exec_abort;
 	}
 
-	stack_base = (char *)exec_copyout_strings(&elp, &arginfo);
-	/* Now copy argc, args & environ to new stack */
-	error = (*elp->el_es->ex_copyargs)(&elp, &arginfo, stack_base, elp->el_stringbase);
+	stack_base = exec_copyout_strings(&pack, &arginfo, vm, len, szsigcode, &error);
 	if (error) {
-		goto exec_abort;
-	}
-
-	/* copy out the process's ps_strings structure */
-	if (copyout(&arginfo, (char *)PS_STRINGS, sizeof(arginfo))) {
-		goto exec_abort;
-	}
-
-	/* copy out the process's signal trapoline code */
-	if (szsigcode
-			&& copyout((char *)elp->el_es->ex_emul->e_sigcode,
-					((char *)PS_STRINGS) - szsigcode, szsigcode)) {
 		goto exec_abort;
 	}
 
@@ -198,8 +273,8 @@ execve_load(p, uap, elp, retval)
 	if (p->p_textvp) {
 		vrele(p->p_textvp);
 	}
-	VREF(elp->el_vnodep);
-	p->p_textvp = elp->el_vnodep;
+	VREF(pack.el_vnodep);
+	p->p_textvp = pack.el_vnodep;
 
 	p->p_flag |= P_EXEC;
 	if (p->p_pptr && (p->p_flag & P_PPWAIT)) {
@@ -228,66 +303,238 @@ execve_load(p, uap, elp, retval)
 	p->p_cred->p_svuid = p->p_ucred->cr_uid;
 	p->p_cred->p_svgid = p->p_ucred->cr_gid;
 
-	kmem_free_wakeup(exec_map, (vm_offset_t)elp->el_stringbase, exec_maxhdrsz);
+	kmem_free_wakeup(exec_map, (vm_offset_t)pack.el_stringbase, exec_maxhdrsz);
 
 	FREE(ndp.ni_cnd.cn_pnbuf, M_NAMEI);
-	vn_lock(elp->el_vnodep, LK_EXCLUSIVE | LK_RETRY, p);
-	VOP_CLOSE(elp->el_vnodep, FREAD, p->p_ucred, p);
-	vput(elp->el_vnodep);
+	vn_lock(pack.el_vnodep, LK_EXCLUSIVE | LK_RETRY, p);
+	VOP_CLOSE(pack.el_vnodep, FREAD, p->p_ucred, p);
+	vput(pack.el_vnodep);
 
 	/* setup new registers and do misc. setup. */
-	(*elp->el_es->ex_emul->e_setregs)(p, &elp, (u_long)stack_base);
+	(*pack.el_es->ex_emul->e_setregs)(p, &pack, (u_long)stack_base);
 
 	if (p->p_flag & P_TRACED) {
 		psignal(p, SIGTRAP);
 	}
 
 	/* update p_emul, the old value is no longer needed */
-	p->p_emul = elp->el_es->ex_emul;
+	p->p_emul = pack.el_es->ex_emul;
 	/* ...and the same for p_execsw */
-	p->p_execsw = elp->el_es;
-	FREE(elp->el_image_hdr, M_EXEC);
+	p->p_execsw = pack.el_es;
+	FREE(pack.el_image_hdr, M_EXEC);
 
 	return (EJUSTRETURN);
 
 bad:
 	p->p_flag &= ~P_INEXEC;
 	/* free the vmspace-creation commands, and release their references */
-	kill_vmcmd(&elp->el_vmcmds);
+	kill_vmcmd(&pack.el_vmcmds);
 	/* kill any opened file descriptor, if necessary */
-	if (elp->el_flags & EXEC_HASFD) {
-		elp->el_flags &= ~EXEC_HASFD;
-		(void)fdrelease(elp->el_fd);
+	if (pack.el_flags & EXEC_HASFD) {
+		pack.el_flags &= ~EXEC_HASFD;
+		(void)fdrelease(pack.el_fd);
 	}
 	/* close and put the exec'd file */
-	vn_lock(elp->el_vnodep, LK_EXCLUSIVE | LK_RETRY, p);
-	VOP_CLOSE(elp->el_vnodep, FREAD, p->p_ucred, p);
-	vput(elp->el_vnodep);
+	vn_lock(pack.el_vnodep, LK_EXCLUSIVE | LK_RETRY, p);
+	VOP_CLOSE(pack.el_vnodep, FREAD, p->p_ucred, p);
+	vput(pack.el_vnodep);
 	FREE(ndp.ni_cnd.cn_pnbuf, M_NAMEI);
 
 freehdr:
 	p->p_flag &= ~P_INEXEC;
-	FREE(elp->el_image_hdr, M_EXEC);
+	FREE(pack.el_image_hdr, M_EXEC);
 	return (error);
 
 exec_abort:
 	p->p_flag &= ~P_INEXEC;
 	vm_deallocate(&vm->vm_map, VM_MIN_ADDRESS,
 			VM_MAXUSER_ADDRESS - VM_MIN_ADDRESS);
-	if (elp->el_emul_arg) {
-		FREE(elp->el_emul_arg, M_TEMP);
+	if (pack.el_emul_arg) {
+		FREE(pack.el_emul_arg, M_TEMP);
 	}
 	FREE(ndp.ni_cnd.cn_pnbuf, M_NAMEI);
-	vn_lock(elp->el_vnodep, LK_EXCLUSIVE | LK_RETRY, p);
-	VOP_CLOSE(elp->el_vnodep, FREAD, p->p_ucred, p);
-	vput(elp->el_vnodep);
-	if (elp->el_stringbase != NULL) {
-		kmem_free_wakeup(exec_map, (vm_offset_t)elp->el_stringbase, exec_maxhdrsz);
+	vn_lock(pack.el_vnodep, LK_EXCLUSIVE | LK_RETRY, p);
+	VOP_CLOSE(pack.el_vnodep, FREAD, p->p_ucred, p);
+	vput(pack.el_vnodep);
+	if (pack.el_stringbase != NULL) {
+		kmem_free_wakeup(exec_map, (vm_offset_t)pack.el_stringbase, exec_maxhdrsz);
 	}
-	FREE(elp->el_image_hdr, M_EXEC);
+	FREE(pack.el_image_hdr, M_EXEC);
 	exit(W_EXITCODE(0, SIGABRT));
 	exit(-1);
 	return (0);
+}
+
+/*
+ * Reset signals for an exec of the specified process.  In 4.4 this function
+ * was in kern_sig.c but since in 2.11 kern_sig and kern_exec will likely be
+ * in different overlays placing this here potentially saves a kernel overlay
+ * switch.
+ */
+
+extern char sigprop[NSIG + 1];
+
+void
+execsigs(p)
+	register struct proc *p;
+{
+	register struct sigacts *ps;
+	register int nc, mask;
+
+	ps = p->p_sigacts;
+
+	/*
+	 * Reset caught signals.  Held signals remain held
+	 * through p_sigmask (unless they were caught,
+	 * and are now ignored by default).
+	 */
+	while (p->p_sigcatch) {
+		nc = ffs((long)p->p_sigcatch);
+		mask = sigmask(nc);
+		p->p_sigcatch &= ~mask;
+		if (sigprop[nc] & SA_IGNORE) {
+			if (nc != SIGCONT) {
+				p->p_sigignore |= mask;
+			}
+			p->p_sig &= ~mask;
+		}
+        u.u_signal[nc] = SIG_DFL;
+	}
+
+	/*
+	 * Reset stack state to the user stack (disable the alternate stack).
+	 */
+	ps->ps_sigstk = u.u_sigstk;
+	u.u_sigstk.ss_flags = SA_DISABLE;
+	u.u_sigstk.ss_size = 0;
+	u.u_sigstk.ss_base = 0;
+	u.u_psflags = 0;
+}
+
+int
+check_exec(elp)
+	struct exec_linker *elp;
+{
+	int	error, i;
+	struct vnode *vp;
+	struct nameidata *ndp;
+	size_t resid;
+	struct proc *p;
+
+	p = elp->el_proc;
+	ndp = &elp->el_ndp;
+	ndp->ni_cnd.cn_nameiop = LOOKUP;
+	ndp->ni_cnd.cn_flags = FOLLOW | LOCKLEAF | SAVENAME;
+	/* first get the vnode */
+	if ((error = namei(ndp)) != 0) {
+		return error;
+	}
+	elp->el_vnodep = vp = ndp->ni_vp;
+
+	/* check access and type */
+	if (vp->v_type != VREG) {
+		error = EACCES;
+		goto bad1;
+	}
+	if ((error = VOP_ACCESS(vp, VEXEC, p->p_ucred, p)) != 0) {
+		goto bad1;
+	}
+
+	/* get attributes */
+	if ((error = VOP_GETATTR(vp, elp->el_attr, p->p_ucred, p)) != 0) {
+		goto bad1;
+	}
+
+	/* Check mount point */
+	if (vp->v_mount->mnt_flag & MNT_NOEXEC) {
+		error = EACCES;
+		goto bad1;
+	}
+	if (vp->v_mount->mnt_flag & MNT_NOSUID) {
+		elp->el_attr->va_mode &= ~(S_ISUID | S_ISGID);
+	}
+
+	/* try to open it */
+	if ((error = VOP_OPEN(vp, FREAD, p->p_ucred, p)) != 0) {
+		goto bad1;
+	}
+
+	/* unlock vp, since we need it unlocked from here on out. */
+	VOP_UNLOCK(vp, 0, p);
+
+	error = vn_rdwr(UIO_READ, vp, elp->el_image_hdr, elp->el_hdrlen, 0,
+				UIO_SYSSPACE, 0, p->p_ucred, &resid, NULL);
+
+	if (error) {
+		goto bad2;
+	}
+	elp->el_hdrvalid = elp->el_hdrlen - resid;
+
+	/*
+	 * Set up default address space limits.  Can be overridden
+	 * by individual exec packages.
+	 *
+	 * XXX probably should be all done in the exec pakages.
+	 */
+	elp->el_vm_minaddr = (caddr_t)VM_MIN_ADDRESS;
+	elp->el_vm_maxaddr = (caddr_t)VM_MAXUSER_ADDRESS;
+	/*
+	 * set up the vmcmds for creation of the process
+	 * address space
+	 */
+	error = ENOEXEC;
+	for (i = 0; i < nexecs && error != 0; i++) {
+		int newerror;
+
+		elp->el_esch = &execsw[i];
+		newerror = (*execsw[i].ex_makecmds)(elp);
+		/* make sure the first "interesting" error code is saved. */
+		if (!newerror || error == ENOEXEC)
+			error = newerror;
+
+		/* if es_makecmds call was successful, update epp->ep_es */
+		if (!newerror && (elp->el_flags & EXEC_HASES) == 0)
+			elp->el_es = &execsw[i];
+
+		if ((elp->el_flags & EXEC_DESTR) && error != 0)
+			return error;
+	}
+	if (!error) {
+		/* check that entry point is sane */
+		if (elp->el_entry > VM_MAXUSER_ADDRESS)
+			error = ENOEXEC;
+
+		/* check limits */
+		if ((elp->el_tsize > MAXTSIZ) ||
+				(elp->el_dsize > (u_quad_t)u.u_rlimit[RLIMIT_DATA].rlim_cur))
+			error = ENOMEM;
+
+		if (!error)
+			return (0);
+	}
+	/*
+	 * free any vmspace-creation commands,
+	 * and release their references
+	 */
+	kill_vmcmd(&elp->el_vmcmds);
+
+bad2:
+	/*
+	 * close and release the vnode, restore the old one, free the
+	 * pathname buf, and punt.
+	 */
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
+	VOP_CLOSE(vp, FREAD, p->p_ucred, p);
+	vput(vp);
+	return (error);
+
+bad1:
+	/*
+	 * free the namei pathname buffer, and put the vnode
+	 * (which we don't yet have open).
+	 */
+	vput(vp);				/* was still locked */
+	return (error);
 }
 
 /*
@@ -397,57 +644,101 @@ bad:
  * new arg and env vector tables. Return a pointer to the base
  * so that it can be used as the initial stack pointer.
  */
-int *
-exec_copyout_strings(elp, arginfo)
+char *
+exec_copyout_strings(elp, arginfo, vm, length, szsigcode, retval)
 	struct exec_linker *elp;
 	struct ps_strings *arginfo;
+	struct vmspace *vm;
+	int length, szsigcode, *retval;
 {
-	long argc, envc;
-	char **vectp;
-	char *stringp, *destp;
-	int *stack_base;
+	char *stack_base;
+	int error;
 
 	/* Calculate string base and vector table pointers. */
-	arginfo = PS_STRINGS;
-	destp = (caddr_t)arginfo - roundup((ARG_MAX - elp->el_stringspace), sizeof(char *));
+	stack_base = (caddr_t)(vm->vm_minsaddr - length);
 
-	/* The '+ 2' is for the null pointers at the end of each of the arg and	env vector sets */
-	vectp = (char **)(destp - (elp->el_argc + elp->el_envc + 2) * sizeof(char *));
+	/* Now copy argc, args & environ to new stack */
+	error = (*elp->el_es->ex_copyargs)(elp, arginfo, stack_base, elp->el_stringbase);
+	if (!error) {
+		goto out;
+	}
 
-	/* vectp also becomes our initial stack base */
-	stack_base = (int *)vectp;
+	/* copy out the process's ps_strings structure */
+	error = copyout(&arginfo, (char *)PS_STRINGS, sizeof(arginfo));
+	if (error) {
+		goto out;
+	}
 
-	stringp = elp->el_stringbase;
+	/* copy out the process's signal trapoline code */
+	error = copyout((char *)elp->el_es->ex_emul->e_sigcode, ((char *)PS_STRINGS) - szsigcode, szsigcode);
+	if (szsigcode && error) {
+		goto out;
+	}
+
+out:
+	retval = &error;
+	return (stack_base);
+}
+
+int
+copyargs(elp, arginfo, stack, argp)
+	struct exec_linker *elp;
+	struct ps_strings *arginfo;
+	void *stack;
+	void *argp;
+{
+	char **cpp;
+	char *dp, *sp;
+	size_t len;
+	void *nullp;
+	long argc, envc;
+	int error;
+
+	cpp = (char **)stack;
+	nullp = NULL;
 	argc = elp->el_argc;
 	envc = elp->el_envc;
-
-	/* Fill in "ps_strings" struct for ps, w, etc. */
-	arginfo->ps_argvstr = destp;
 	arginfo->ps_nargvstr = argc;
-
-	/* Copy the arg strings and fill in vector table as we go. */
-	for (; argc > 0; --argc) {
-		*(vectp++) = destp;
-		while ((*destp++ = *stringp++)) {
-			;
-		}
-	}
-
-	/* a null vector table pointer seperates the argp's from the envp's */
-	*(vectp++) = NULL;
-
-	arginfo->ps_envstr = destp;
 	arginfo->ps_nenvstr = envc;
 
-	/* Copy the env strings and fill in vector table as we go. */
-	for (; envc > 0; --envc) {
-		*(vectp++) = destp;
-		while ((*destp++ = *stringp++)) {
-			;
+	dp = (char *)(cpp +  1 + argc + 1+ envc) + elp->el_es->ex_emul->e_arglen;
+	sp = argp;
+
+	if ((error = copyout(&argc, cpp++, sizeof(argc))) != 0) {
+		return (error);
+	}
+
+	/* XXX don't copy them out, remap them! */
+	arginfo->ps_argvstr = *cpp; /* remember location of argv for later */
+
+	for (; --argc >= 0; sp += len, dp += len) {
+		if (copyout(&dp, cpp++, sizeof(dp)) != 0) {
+			return (error);
+		}
+		if (copyoutstr(sp, dp, ARG_MAX, &len) != 0) {
+			return (error);
 		}
 	}
 
-	/* end of vector table is a null pointer */
-	*vectp = NULL;
-	return (stack_base);
+	if ((error = copyout(&nullp, cpp++, sizeof(nullp))) != 0) {
+		return (error);
+	}
+
+	arginfo->ps_envstr = *cpp; /* remember location of envp for later */
+
+	for (; --envc >= 0; sp += len, dp += len) {
+		if (copyout(&dp, cpp++, sizeof(dp)) != 0) {
+			return (error);
+		}
+		if (copyoutstr(sp, dp, ARG_MAX, &len) != 0) {
+			return (error);
+		}
+	}
+
+	if ((error = copyout(&nullp, cpp++, sizeof(nullp))) != 0) {
+		return (error);
+	}
+
+	stack = (char*) cpp;
+	return (0);
 }

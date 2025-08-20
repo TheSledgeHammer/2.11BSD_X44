@@ -562,8 +562,10 @@ copyargs(elp, arginfo, stack, argp)
 
 	cpp = (char **)stack;
 	nullp = NULL;
-	argc = arginfo->ps_nargvstr;
-	envc = arginfo->ps_nenvstr;
+	argc = elp->el_argc;
+	envc = elp->el_envc;
+	arginfo->ps_nargvstr = argc;
+	arginfo->ps_nenvstr = envc;
 
 	dp = (char *)(cpp +  1 + argc + 1+ envc) + elp->el_es->ex_emul->e_arglen;
 	sp = argp;

@@ -61,7 +61,6 @@ struct exec_vmcmd_set {
 struct exec_linker {
 	const char 				*el_name;				/* file's name */
 	struct 	proc 		    *el_proc;			    /* our process struct */
-	struct 	execa_args	    *el_uap; 			    /* syscall arguments */
 	const struct execsw     *el_es;	                /* appropriate execsw entry */
 	const struct execsw 	*el_esch;				/* checked execsw entry  */
 
@@ -95,8 +94,8 @@ struct exec_linker {
 	uint32_t 				el_pax_flags;			/* pax flags */
 
 	char 				    *el_stringbase;			/* base address of tmp string storage */
-	char 				    *el_stringp;			/* current 'end' pointer of tmp strings */
-	int 				    el_stringspace;			/* space left in tmp string storage area */
+	//char 				    *el_stringp;			/* current 'end' pointer of tmp strings */
+	//int 				    el_stringspace;			/* space left in tmp string storage area */
 	long 				    el_argc;				/* count of environment strings */
 	long					el_envc;				/* count of argument strings */
 };
@@ -148,7 +147,7 @@ int 	vmcmd_create_vmspace(struct proc *, struct exec_linker *, struct exec_vmcmd
 int		exec_read_from(struct proc *, struct vnode *, u_long, void *, size_t);
 int 	exec_setup_stack(struct exec_linker *);
 int 	exec_extract_strings(struct exec_linker *, char **, char **, int, int *);
-int 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *);
+char 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *, struct vmspace *, int, int, int *);
 
 int 	copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 void 	setregs(struct proc *, struct exec_linker *, u_long);
