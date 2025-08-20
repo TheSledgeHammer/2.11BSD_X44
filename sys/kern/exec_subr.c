@@ -121,51 +121,6 @@ kill_vmcmd(evsp)
 }
 
 int
-vmcmd_map_object(p, cmd)
-	struct proc *p;
-	struct exec_vmcmd *cmd;
-{
-	struct vmspace *vmspace;
-	struct vnode *vp;
-	struct pager_struct *vpgr;
-	struct vm_object *vobj;
-	int error, anywhere;
-
-	vmspace = p->p_vmspace;
-	vp = cmd->ev_vnodep;
-	anywhere = 0;
-	/* vm pager */
-	vpgr = vm_pager_allocate(PG_VNODE, (caddr_t)vp, cmd->ev_size,
-			VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
-	if (vpgr == NULL) {
-		error = ENOMEM;
-		goto bad;
-	}
-	/* vm object */
-	vobj = vm_object_lookup(vpgr);
-	if (vobj == NULL) {
-		vobj = vm_object_allocate(cmd->ev_size);
-		vm_object_enter(vobj, vpgr);
-	}
-	/* vm map */
-	error = vm_map_find(&vmspace->vm_map, vobj, cmd->ev_offset, cmd->ev_addr, cmd->ev_size, anywhere);
-	if (error != 0) {
-		vm_object_deallocate(vobj);
-		goto bad;
-	}
-	if (vpgr != NULL) {
-		vm_object_setpager(vobj, vpgr, 0, TRUE);
-	}
-	return (error);
-
-bad:
-	if (vpgr != NULL) {
-		vm_pager_deallocate(vpgr);
-	}
-	return (error);
-}
-
-int
 vmcmd_map_pagedvn(p, cmd)
 	struct proc *p;
 	struct exec_vmcmd *cmd;
@@ -212,7 +167,7 @@ vmcmd_map_pagedvn(p, cmd)
 	/*
 	 * do the map
 	 */
-	return (vm_mmap(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_len, prot, maxprot, (MAP_FIXED | MAP_COPY), (caddr_t)vp, cmd->ev_offset));
+	return (vm_mmap(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, prot, maxprot, (MAP_FIXED | MAP_COPY), (caddr_t)vp, cmd->ev_offset));
 }
 
 int
@@ -422,3 +377,50 @@ exec_setup_stack(elp)
 
 	return (0);
 }
+
+#ifdef notyet
+int
+vmcmd_map_object(p, cmd)
+	struct proc *p;
+	struct exec_vmcmd *cmd;
+{
+	struct vmspace *vmspace;
+	struct vnode *vp;
+	struct pager_struct *vpgr;
+	struct vm_object *vobj;
+	int error, anywhere;
+
+	vmspace = p->p_vmspace;
+	vp = cmd->ev_vnodep;
+	anywhere = 0;
+	/* vm pager */
+	vpgr = vm_pager_allocate(PG_VNODE, (caddr_t)vp, cmd->ev_size,
+			VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
+	if (vpgr == NULL) {
+		error = ENOMEM;
+		goto bad;
+	}
+	/* vm object */
+	vobj = vm_object_lookup(vpgr);
+	if (vobj == NULL) {
+		vobj = vm_object_allocate(cmd->ev_size);
+		vm_object_enter(vobj, vpgr);
+	}
+	/* vm map */
+	error = vm_map_find(&vmspace->vm_map, vobj, cmd->ev_offset, cmd->ev_addr, cmd->ev_size, anywhere);
+	if (error != 0) {
+		vm_object_deallocate(vobj);
+		goto bad;
+	}
+	if (vpgr != NULL) {
+		vm_object_setpager(vobj, vpgr, 0, TRUE);
+	}
+	return (error);
+
+bad:
+	if (vpgr != NULL) {
+		vm_pager_deallocate(vpgr);
+	}
+	return (error);
+}
+#endif
