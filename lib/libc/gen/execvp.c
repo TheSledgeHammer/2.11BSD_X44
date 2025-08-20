@@ -214,7 +214,7 @@ retry:
 	}
 done:
 	if (pathstr) {
-		free(pathstr);
+		free(__UNCONST(pathstr));
 	}
 	return (-1);
 }
