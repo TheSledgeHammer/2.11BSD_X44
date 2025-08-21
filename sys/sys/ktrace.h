@@ -130,6 +130,12 @@ struct ktr_csw {
 };
 
 /*
+ * KTR_EMUL - emulation change
+ */
+#define KTR_EMUL	7
+	/* record contains emulation name */
+
+/*
  * KTR_USER - user record
  */
 #define	KTR_USER	        8
@@ -152,6 +158,7 @@ struct ktr_user {
 #define KTRFAC_GENIO	(1<<KTR_GENIO)
 #define	KTRFAC_PSIG		(1<<KTR_PSIG)
 #define KTRFAC_CSW		(1<<KTR_CSW)
+#define KTRFAC_EMUL	    (1<<KTR_EMUL)
 #define	KTRFAC_USER	    (1<<KTR_USER)
 
 /*
@@ -173,6 +180,7 @@ __END_DECLS
 #else
 
 void ktrcsw(struct proc *, int, int);
+void ktremul(struct proc *, char *);
 void ktrgenio(struct proc *, int, enum uio_rw, struct iovec *, int, int);
 void ktrnamei(struct proc *, char *);
 void ktrpsig(struct proc *, int, sig_t, int, int);
