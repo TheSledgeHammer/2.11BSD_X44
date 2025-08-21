@@ -107,6 +107,7 @@ int			raise_default_signal(int);
 int			secure_path(const char *);
 int			snprintb(char *, size_t, const char *, uint64_t);
 int			sockaddr_snprintf(char *, size_t, const char *, const struct sockaddr *);
+int			ttyaction(const char *, const char *, const char *);
 char	    *ttymsg(struct iovec *, int, const char *, int);
 
 /* stat_flags.c */

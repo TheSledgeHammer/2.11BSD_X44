@@ -303,8 +303,7 @@ exec_setup_stack(p, elp)
 	}
 
 	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, access_size, noaccess_linear_min,
-			(VM_PROT_READ | VM_PROT_EXECUTE),
-			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
+			(VM_PROT_READ | VM_PROT_EXECUTE), VM_PROT_ALL, NULL, 0);
 
 	return (0);
 }

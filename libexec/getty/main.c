@@ -169,25 +169,25 @@ char partab[] = {
 
 static void	clearscreen(void);
 
-jmp_buf timeout;
+sigjmp_buf timeout;
 
 static void
 dingdong(int signo)
 {
 
-	alarm(0);
-	signal(SIGALRM, SIG_DFL);
-	longjmp(timeout, 1);
+	(void)alarm(0);
+	(void)signal(SIGALRM, SIG_DFL);
+	siglongjmp(timeout, 1);
 }
 
-jmp_buf	intrupt;
+sigjmp_buf	intrupt;
 
 static void
 interrupt(int signo)
 {
 
-	signal(SIGINT, interrupt);
-	longjmp(intrupt, 1);
+	(void)signal(SIGINT, interrupt);
+	siglongjmp(intrupt, 1);
 }
 
 /*
@@ -196,7 +196,6 @@ interrupt(int signo)
 static void
 timeoverrun(int signo)
 {
-
 	syslog(LOG_ERR, "getty exiting due to excessive running time\n");
 	exit(1);
 }
@@ -213,20 +212,21 @@ int
 main(int argc, char *argv[])
 {
 	register const char *tname;
-	int repcnt = 0;
+	int repcnt = 0, failopenlogged = 0;
 	volatile int first_time = 1;
 	struct rlimit limit;
 	int rval;
 
-	signal(SIGINT, SIG_IGN);
+	(void)signal(SIGINT, SIG_IGN);
 /*
 	signal(SIGQUIT, SIG_DFL);
 */
-	openlog("getty", LOG_ODELAY|LOG_CONS, LOG_AUTH);
-	gethostname(hostname, sizeof(hostname));
+	openlog("getty", LOG_PID|LOG_ODELAY|LOG_CONS, LOG_AUTH);
+	(void)gethostname(hostname, sizeof(hostname));
 	hostname[sizeof(hostname) - 1] = '\0';
-	if (hostname[0] == '\0')
-		strcpy(hostname, "Amnesiac");
+	if (hostname[0] == '\0') {
+		(void)strlcpy(hostname, "Amnesiac", sizeof(hostname));
+	}
 
 	/*
 	 * Limit running time to deal with broken or dead lines.
@@ -242,13 +242,14 @@ main(int argc, char *argv[])
 	 * that the file descriptors are already set up for us. 
 	 * J. Gettys - MIT Project Athena.
 	 */
-	if (argc <= 2 || strcmp(argv[2], "-") == 0)
-		strcpy(ttyn, ttyname(0));
-	else {
+	if (argc <= 2 || strcmp(argv[2], "-") == 0) {
+		(void)strlcpy(ttyn, ttyname(0), sizeof(ttyn));
+	} else {
 		int i;
 
-		strcpy(ttyn, dev);
-		strncat(ttyn, argv[2], sizeof(ttyn) - sizeof(dev));
+		rawttyn = argv[2];
+		(void)strlcpy(ttyn, dev, sizeof(ttyn));
+		(void)strlcat(ttyn, argv[2], sizeof(ttyn));
 		if (strcmp(argv[0], "+") != 0) {
 			chown(ttyn, 0, 0);
 			chmod(ttyn, 0600);
@@ -257,15 +258,19 @@ main(int argc, char *argv[])
 			 * Delay the open so DTR stays down long enough to be detected.
 			 */
 			sleep(2);
+			if (ttyaction(ttyn, "getty", "root")) {
+				syslog(LOG_WARNING, "%s: ttyaction failed", ttyn);
+			}
 			while ((i = open(ttyn, O_RDWR)) != 0) {
-				if (repcnt % 10 == 0) {
+				if ((repcnt % 10 == 0) && (errno != ENXIO || !failopenlogged)) {
 					syslog(LOG_ERR, "%s: %m", ttyn);
 					closelog();
+					failopenlogged = 1;
 				}
 				repcnt++;
-				sleep(60);
+				(void)sleep(60);
 			}
-			login_tty(i);
+			(void)login_tty(i);
 		}
 	}
 
@@ -277,6 +282,7 @@ main(int argc, char *argv[])
 	for (;;) {
 		int off;
 
+		rval = 0;
 		gettable(tname, tabent, tabstrs);
 		if (OPset || EPset || APset)
 			APset++, OPset++, EPset++;
@@ -334,14 +340,16 @@ main(int argc, char *argv[])
 		if (IM && *IM) {
 			putf(IM);
 		}
-		if (setjmp(timeout)) {
-			tmode.c_ispeed = tmode.c_ospeed = 0;
+		oflush();
+		if (sigsetjmp(timeout, 1)) {
+			tmode.c_ispeed = 0;
+			tmode.c_ospeed = 0;
 			(void)tcsetattr(0, TCSANOW, &tmode);
 			exit(1);
 		}
 		if (TO) {
-			signal(SIGALRM, dingdong);
-			alarm((int)TO);
+			(void)signal(SIGALRM, dingdong);
+			(void)alarm((int)TO);
 		}
 		if (NN) {
 			name[0] = '\0';
@@ -397,7 +405,7 @@ main(int argc, char *argv[])
 				syslog(LOG_ERR, "%s: %m", ttyn);
 				exit(1);
 			}
-			signal(SIGINT, SIG_DFL);
+			(void)signal(SIGINT, SIG_DFL);
 			for (i = 0; environ[i] != (char *)0; i++)
 				env[i] = environ[i];
 			makeenv(&env[i]);
@@ -413,9 +421,9 @@ main(int argc, char *argv[])
 			syslog(LOG_ERR, "%s: %m", LO);
 			exit(1);
 		}
-		alarm(0);
-		signal(SIGALRM, SIG_DFL);
-		signal(SIGINT, SIG_IGN);
+		(void)alarm(0);
+		(void)signal(SIGALRM, SIG_DFL);
+		(void)signal(SIGINT, SIG_IGN);
 		if (NX && *NX) {
 			tname = NX;
 		}
@@ -433,16 +441,16 @@ getname(void)
 	/*
 	 * Interrupt may happen if we use CBREAK mode
 	 */
-	if (setjmp(intrupt)) {
+	if (sigsetjmp(intrupt, 1)) {
 		(void)signal(SIGINT, SIG_IGN);
 		return (0);
 	}
-	signal(SIGINT, interrupt);
+	(void)signal(SIGINT, interrupt);
 	setflags(1);
 	prompt();
 	if (PF > 0) {
 		oflush();
-		sleep((int)PF);
+		(void)sleep((int)PF);
 		PF = 0;
 	}
 	if (tcsetattr(0, TCSANOW, &tmode) < 0) {
@@ -453,6 +461,8 @@ getname(void)
 	upper = 0;
 	lower = 0;
 	digit = 0;
+	ppp_state = 0;
+	ppp_connection = 0;
 	np = name;
 	for (;;) {
 		oflush();
@@ -536,7 +546,7 @@ getname(void)
 		if (strstr(name, "CLIENT"))
 			putf("\r\n");
 	}
-	signal(SIGINT, SIG_IGN);
+	(void)signal(SIGINT, SIG_IGN);
 	*np = 0;
 	if (c == '\r')
 		crmod++;
@@ -624,20 +634,22 @@ putchr(int cc)
 		c ^= 0200;
 	if (!UB) {
 		outbuf[obufcnt++] = c;
-		if (obufcnt >= OBUFSIZ)
+		if (obufcnt >= OBUFSIZ) {
 			oflush();
+		}
         rval = 1;
-        return (rval);
-	} else
-		rval = write(1, &c, 1);
+	} else {
+		rval = write(STDOUT_FILENO, &c, 1);
+	}
     return (rval);
 }
 
 static void
 oflush(void)
 {
-	if (obufcnt)
-		write(1, outbuf, obufcnt);
+	if (obufcnt) {
+		(void)write(STDOUT_FILENO, outbuf, obufcnt);
+	}
 	obufcnt = 0;
 }
 
@@ -686,7 +698,9 @@ putf(const char *cp)
 			putchr('%');
 			break;
 		}
-		cp++;
+		if (*cp) {
+			cp++;
+		}
 	}
 }
 

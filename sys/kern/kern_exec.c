@@ -793,21 +793,21 @@ copyargs(elp, arginfo, stack, argp)
 	arginfo->ps_nargvstr = argc;
 	arginfo->ps_nenvstr = envc;
 
-	dp = (char *)(cpp +  1 + argc + 1+ envc) + elp->el_es->ex_arglen;
-	sp = argp;
-
 	if ((error = copyout(&argc, cpp++, sizeof(argc))) != 0) {
 		return (error);
 	}
+
+	dp = (char *)(cpp +  1 + argc + 1+ envc) + elp->el_es->ex_arglen;
+	sp = argp;
 
 	/* XXX don't copy them out, remap them! */
 	arginfo->ps_argvstr = *cpp; /* remember location of argv for later */
 
 	for (; --argc >= 0; sp += len, dp += len) {
-		if (copyout(&dp, cpp++, sizeof(dp)) != 0) {
+		if ((error = copyout(&dp, cpp++, sizeof(dp))) != 0) {
 			return (error);
 		}
-		if (copyoutstr(sp, dp, ARG_MAX, &len) != 0) {
+		if ((error = copyoutstr(sp, dp, ARG_MAX, &len)) != 0) {
 			return (error);
 		}
 	}
@@ -819,10 +819,10 @@ copyargs(elp, arginfo, stack, argp)
 	arginfo->ps_envstr = *cpp; /* remember location of envp for later */
 
 	for (; --envc >= 0; sp += len, dp += len) {
-		if (copyout(&dp, cpp++, sizeof(dp)) != 0) {
+		if ((error = copyout(&dp, cpp++, sizeof(dp))) != 0) {
 			return (error);
 		}
-		if (copyoutstr(sp, dp, ARG_MAX, &len) != 0) {
+		if ((error = copyoutstr(sp, dp, ARG_MAX, &len)) != 0) {
 			return (error);
 		}
 	}

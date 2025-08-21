@@ -553,7 +553,7 @@ adelay(int ms, struct delayval *dp)
 }
 #endif
 
-char	editedhost[32];
+char	editedhost[MAXHOSTNAMELEN];
 
 void
 edithost(char *pat)
@@ -588,7 +588,7 @@ edithost(char *pat)
 		pat++;
 	}
 	if (*host)
-		strncpy(res, host, sizeof editedhost - (res - editedhost) - 1);
+		(void)strncpy(res, host, sizeof editedhost - (res - editedhost) - 1);
 	else
 		*res = '\0';
 	editedhost[sizeof editedhost - 1] = '\0';
@@ -643,7 +643,7 @@ makeenv(char *env[])
 
 	ep = env;
 	if (TT && *TT) {
-		strcat(termbuf, TT);
+		(void)strlcat(termbuf, TT, sizeof(termbuf));
 		*ep++ = termbuf;
 	}
 	if ((p = EV)) {
@@ -679,7 +679,7 @@ struct	portselect {
 	{ "B4800",	"std.4800" },
 	{ "B9600",	"std.9600" },
 	{ "B19200",	"std.19200" },
-	{ 0 }
+	{ NULL, NULL }
 };
 
 const char *
