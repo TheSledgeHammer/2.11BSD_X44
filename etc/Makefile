@@ -296,16 +296,9 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 
 # distrib-dirs --
 #	Populate $DESTDIR with directories needed by 211BSD.
-# Notes:
-# 	files in etc.dlist (THIS IS STATICALLY GENERATED!)
-# 	Only edit this file when: (Incorrectly editing this file will prevent compilation!)
-# 	a) Adding new folders that contain headers required to compile.
-# 	b) Removing folders that contained headers required to compile.
 distrib-dirs: .PHONY check_DESTDIR
 	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
 	sh ${NETBSDSRCDIR}/distrib/sets/makedlist -setd ${NETBSDSRCDIR}/distrib/sets
-#	cat ${NETBSDSRCDIR}/etc/dlist/bsd.dlist ${NETBSDSRCDIR}/etc/dlist/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
-#	cat ${NETBSDSRCDIR}/etc/etc.${MACHINE}/${MACHINE}.dlist | xargs -I§ mkdir -p ${DESTDIR}/§/
 
 # release, snapshot --
 #	Build a full distribution including kernels & install media.
