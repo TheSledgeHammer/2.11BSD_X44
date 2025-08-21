@@ -172,6 +172,22 @@ ktrnamei(p, path)
 }
 
 void
+ktremul(p, emul)
+	struct proc *p;
+	char *emul;
+{
+	struct ktr_header kth;
+
+	p->p_traceflag |= KTRFAC_ACTIVE;
+	ktrinitheader(&kth, p, KTR_EMUL);
+	kth.ktr_len = strlen(emul);
+	kth.ktr_buf = emul;
+
+	(void) ktrwrite(p, &kth);
+	p->p_traceflag &= ~KTRFAC_ACTIVE;
+}
+
+void
 ktrgenio(p, fd, rw, iov, len, error)
 	struct proc *p;
 	int fd;
