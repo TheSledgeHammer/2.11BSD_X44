@@ -59,7 +59,7 @@ static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
 __weak_alias(execl,_execl)
 __weak_alias(execle,_execle)
 __weak_alias(execlp,_execlp)
-__weak_alias(execv,_execv)
+//__weak_alias(execv,_execv)
 __weak_alias(execvp,_execvp)
 __weak_alias(execvpe,_execvpe)
 #endif
@@ -132,12 +132,14 @@ execlp(const char *name, const char *arg, ...)
 	return (error);
 }
 
+/*
 int
 execv(const char *name, char * const *argv)
 {
 	(void)execve(name, argv, environ);
 	return (-1);
 }
+*/
 
 int
 execvpe(const char *name, char * const *argv, char * const *envp)
