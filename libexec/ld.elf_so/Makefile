@@ -58,6 +58,8 @@ COPTS+=		-fvisibility=hidden
 .if defined(MLIBDIR)
 PROG=		ld.elf_so-${MLIBDIR}
 CPPFLAGS+=	-DRTLD_ARCH_SUBDIR=\"${MLIBDIR}\"
+.	if ${MLIBDIR} == "o32"
+.	endif
 .else
 PROG=		ld.elf_so
 .endif
@@ -78,7 +80,7 @@ SRCS+=  paths.c
 SRCS+=  expand.c
 
 #.if ${USE_FORT} == "yes"
-#.PATH.c: ${NETBSDSRCDIR}/lib/libc/misc
+#.PATH.c: ${NETBSDSRCDIR}/lib/libc/ssp
 #SRCS+=		stack_protector.c
 #.endif
 
@@ -92,7 +94,7 @@ CPPFLAGS+=	-I${.CURDIR} -I. -D_KERNTYPES
 CPPFLAGS+=	-DRTLD_LOADER
 CPPFLAGS+=	-DGNU_RELRO
 CPPFLAGS+=	-D_RTLD_SOURCE
-CPPFLAGS+=	-DCOMBRELOC
+#CPPFLAGS+=	-DCOMBRELOC
 #CPPFLAGS+=	-DDEBUG
 #CPPFLAGS+=	-DRTLD_DEBUG
 #CPPFLAGS+=	-DRTLD_DEBUG_RELOC
