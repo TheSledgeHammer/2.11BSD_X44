@@ -85,6 +85,7 @@ main(int argc, char *argv[])
 	int ch, err, i, maxwidth, width;
 	char *mntpt, **vfslist;
 
+	err = 0;
 	vfslist = NULL;
 	while ((ch = getopt(argc, argv, "int:")) != EOF)
 		switch (ch) {
