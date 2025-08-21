@@ -82,7 +82,7 @@ main(int argc, char *argv[])
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
 	long mntsize;
-	int ch, i, maxwidth, width;
+	int ch, err, i, maxwidth, width;
 	char *mntpt, **vfslist;
 
 	vfslist = NULL;
