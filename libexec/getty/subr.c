@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)subr.c	5.4.2 (2.11BSD GTE) 1997/3/28";
 #endif
 #endif
 
+#include <sys/param.h>
+
 /*
  * Melbourne getty.
  */
@@ -763,3 +765,4 @@ autobaud(void)
 	}
 	return (type);
 }
+
