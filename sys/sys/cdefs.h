@@ -235,6 +235,12 @@
 #define	__pure
 #endif
 
+#if __GNUC_PREREQ__(4, 0) || defined(__lint__)
+#define	__null_sentinel	__attribute__((__sentinel__))
+#else
+#define	__null_sentinel	/* nothing */
+#endif
+
 /*
  * __unused: Note that item or function might be unused.
  */
