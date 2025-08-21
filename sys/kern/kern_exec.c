@@ -330,12 +330,12 @@ execve_load(p, uap, retval)
 	if (p->p_flag & P_TRACED) {
 		psignal(p, SIGTRAP);
 	}
-	FREE(pack.el_image_hdr, M_EXEC);
 
 	/* update p_emul, the old value is no longer needed */
 	p->p_emul = pack.el_es->ex_emul;
 	/* ...and the same for p_execsw */
 	p->p_execsw = pack.el_es;
+	FREE(pack.el_image_hdr, M_EXEC);
 
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_EMUL)) {
