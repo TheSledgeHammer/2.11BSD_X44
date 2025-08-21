@@ -425,10 +425,10 @@ typedef struct xcoff64_ldrsyms {
 #ifdef _KERNEL
 struct exec_linker;
 
-int	 exec_xcoff_linker(struct exec_linker *);
-int	 exec_xcoff_prep_zmagic(struct exec_linker *, xcoff_exechdr *, struct vnode *);
-int	 exec_xcoff_prep_nmagic(struct exec_linker *, xcoff_exechdr *, struct vnode *);
-int	 exec_xcoff_prep_omagic(struct exec_linker *, xcoff_exechdr *, struct vnode *);
+int	 exec_xcoff_linker(struct proc *, struct exec_linker *);
+int	 exec_xcoff_prep_zmagic(struct proc *, struct exec_linker *, xcoff_exechdr *, struct vnode *);
+int	 exec_xcoff_prep_nmagic(struct proc *, struct exec_linker *, xcoff_exechdr *, struct vnode *);
+int	 exec_xcoff_prep_omagic(struct proc *, struct exec_linker *, xcoff_exechdr *, struct vnode *);
 #endif /* _KERNEL */
 
 #endif /* _SYS_EXEC_XCOFF_H_ */

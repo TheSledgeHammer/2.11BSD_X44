@@ -48,7 +48,8 @@
 #include <sys/namei.h>
 
 int
-exec_coff_linker(elp)
+exec_coff_linker(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	int error;
@@ -64,13 +65,13 @@ exec_coff_linker(elp)
 	ap = (void *)((char *)elp->el_image_hdr + sizeof(struct coff_filehdr));
 	switch (ap->a_magic) {
 	case COFF_OMAGIC:
-		error = exec_coff_prep_omagic(elp, fp, ap);
+		error = exec_coff_prep_omagic(p, elp, fp, ap);
 		break;
 	case COFF_NMAGIC:
-		error = exec_coff_prep_nmagic(elp, fp, ap);
+		error = exec_coff_prep_nmagic(p, elp, fp, ap);
 		break;
 	case COFF_ZMAGIC:
-		error = exec_coff_prep_zmagic(elp, fp, ap);
+		error = exec_coff_prep_zmagic(p, elp, fp, ap);
 		break;
 	default:
 		return ENOEXEC;
@@ -130,7 +131,8 @@ coff_find_section(p, vp, fp, sh, s_type)
  * text, data, bss, and stack segments.
  */
 int
-exec_coff_prep_zmagic(elp, fp, ap)
+exec_coff_prep_zmagic(p, elp, fp, ap)
+	struct proc *p;
 	struct exec_linker *elp;
 	struct coff_filehdr *fp;
 	struct coff_aouthdr *ap;
@@ -140,7 +142,6 @@ exec_coff_prep_zmagic(elp, fp, ap)
 	long dsize;
 	long  baddr, bsize;
 	struct coff_scnhdr sh;
-	struct proc *p = elp->el_proc;
 
 	DPRINTF(("enter exec_coff_prep_zmagic\n"));
 
@@ -212,7 +213,7 @@ exec_coff_prep_zmagic(elp, fp, ap)
 	/* set up entry point */
 	elp->el_entry = ap->a_entry;
 
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }
 
 
@@ -221,7 +222,8 @@ exec_coff_prep_zmagic(elp, fp, ap)
  *                          package.
  */
 int
-exec_coff_prep_nmagic(elp, fp, ap)
+exec_coff_prep_nmagic(p, elp, fp, ap)
+	struct proc *p;
 	struct exec_linker *elp;
 	struct coff_filehdr *fp;
 	struct coff_aouthdr *ap;
@@ -252,14 +254,15 @@ exec_coff_prep_nmagic(elp, fp, ap)
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
 				NULL, 0);
 
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }
 
 /*
  * exec_coff_prep_omagic(): Prepare a COFF OMAGIC binary's exec package
  */
 int
-exec_coff_prep_omagic(elp, fp, ap)
+exec_coff_prep_omagic(p, elp, fp, ap)
+	struct proc *p;
 	struct exec_linker *elp;
 	struct coff_filehdr *fp;
 	struct coff_aouthdr *ap;
@@ -284,5 +287,5 @@ exec_coff_prep_omagic(elp, fp, ap)
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
 				NULL, 0);
 
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }

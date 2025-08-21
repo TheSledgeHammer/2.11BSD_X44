@@ -134,9 +134,9 @@ struct coff_exechdr {
 #ifdef _KERNEL
 struct exec_linker;
 
-int	exec_coff_linker(struct exec_linker *);
-int	exec_coff_prep_zmagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
-int	exec_coff_prep_nmagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
-int	exec_coff_prep_omagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
+int	exec_coff_linker(struct proc *, struct exec_linker *);
+int	exec_coff_prep_zmagic(struct proc *, struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
+int	exec_coff_prep_nmagic(struct proc *, struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
+int	exec_coff_prep_omagic(struct proc *, struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
 #endif /* _KERNEL */
 #endif /* _SYS_EXEC_COFF_H_ */

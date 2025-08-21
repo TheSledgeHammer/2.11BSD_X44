@@ -60,17 +60,12 @@ struct exec_vmcmd_set {
 
 struct exec_linker {
 	const char 				*el_name;				/* file's name */
-	struct 	proc 		    *el_proc;			    /* our process struct */
-	const struct execsw     *el_es;	                /* appropriate execsw entry */
-	const struct execsw 	*el_esch;				/* checked execsw entry  */
 
 	struct	vnode 		    *el_vnodep;			    /* executable's vnode */
 	struct	vattr 		    *el_attr;			    /* executable's attributes */
 	struct 	exec_vmcmd_set  el_vmcmds;			    /* executable's vmcmd_set */
 
 	struct 	nameidata		el_ndp;					/* executable's nameidata */
-
-	void					*el_emul_arg;			/* emulation argument */
 
 	void				    *el_image_hdr;			/* file's exec header */
 	u_int				    el_hdrlen;				/* length of el_hdr */
@@ -90,6 +85,10 @@ struct exec_linker {
 	u_int				    el_flags;				/* flags */
 	int						el_fd;					/* a file descriptor we're holding */
 	char					**el_fa;				/* a fake args vector for scripts */
+
+	void					*el_emul_arg;			/* emulation argument */
+	const struct execsw     *el_es;	                /* appropriate execsw entry */
+	const struct execsw 	*el_esch;				/* checked execsw entry  */
 
 	uint32_t 				el_pax_flags;			/* pax flags */
 
@@ -137,21 +136,17 @@ extern struct lock 	exec_lock;
 extern int exec_maxhdrsz;
 
 void 	vmcmd_extend(struct exec_vmcmd_set *);
-void 	kill_vmcmd(struct exec_vmcmd_set *);
-int		vmcmd_map_object(struct proc *, struct exec_vmcmd *);
+void 	kill_vmcmds(struct exec_vmcmd_set *);
 int 	vmcmd_map_pagedvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_map_readvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_readvn(struct proc *, struct exec_vmcmd *);
 int		vmcmd_map_zero(struct proc *, struct exec_vmcmd *);
-int 	vmcmd_create_vmspace(struct proc *, struct exec_linker *, struct exec_vmcmd *);
 int		exec_read_from(struct proc *, struct vnode *, u_long, void *, size_t);
-int 	exec_setup_stack(struct exec_linker *);
-char 	*exec_extract_strings(struct exec_linker *, char **, char **, int, int *);
-char 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *, struct vmspace *, int, int, int *);
+int 	exec_setup_stack(struct proc *, struct exec_linker *);
 
 int 	copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 void 	setregs(struct proc *, struct exec_linker *, u_long);
-int		check_exec(struct exec_linker *);
+int		check_exec(struct proc *, struct exec_linker *);
 void	exec_init(void);
 void 	new_vmcmd(struct exec_vmcmd_set *, int (*)(struct proc *, struct exec_vmcmd *), u_long, u_long, u_int, u_int, int, struct vnode *, u_long);
 

@@ -49,7 +49,8 @@
 #include <sys/resourcevar.h>
 
 int
-exec_xcoff_linker(elp)
+exec_xcoff_linker(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	xcoff_exechdr *xcoff = (xcoff_exechdr *) elp->el_image_hdr;
@@ -67,13 +68,13 @@ exec_xcoff_linker(elp)
 
 	switch (xcoff->a.magic) {
 	case XCOFF_OMAGIC:
-		error = exec_xcoff_prep_omagic(elp, xcoff, elp->el_vnodep);
+		error = exec_xcoff_prep_omagic(p, elp, xcoff, elp->el_vnodep);
 		break;
 	case XCOFF_NMAGIC:
-		error = exec_xcoff_prep_nmagic(elp, xcoff, elp->el_vnodep);
+		error = exec_xcoff_prep_nmagic(p, elp, xcoff, elp->el_vnodep);
 		break;
 	case XCOFF_ZMAGIC:
-		error = exec_xcoff_prep_zmagic(elp, xcoff, elp->el_vnodep);
+		error = exec_xcoff_prep_zmagic(p, elp, xcoff, elp->el_vnodep);
 		break;
 	default:
 		return ENOEXEC;
@@ -81,23 +82,24 @@ exec_xcoff_linker(elp)
 
 	/* set up the stack */
 	if (!error) {
-		error = (*elp->el_esch->ex_setup_stack)(elp);
+		error = (*elp->el_esch->ex_setup_stack)(p, elp);
 	}
 
 	if (error)
-			kill_vmcmds(&elp->el_vmcmds);
+		kill_vmcmds(&elp->el_vmcmds);
 
 	return error;
 }
 
 int
-exec_xcoff_prep_zmagic(elp, xcoff, vp)
+exec_xcoff_prep_zmagic(p, elp, xcoff, vp)
+	struct proc *p;
 	struct exec_linker *elp;
 	xcoff_exechdr *xcoff;
 	struct vnode *vp;
 {
 	xcoff_aouthdr *xcoff_aout = &xcoff->a;
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
+	struct vmspace *vmspace = p->p_vmspace;
 
 	elp->el_taddr = XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->text_start);
 	elp->el_tsize = xcoff_aout->tsize;
@@ -122,7 +124,8 @@ exec_xcoff_prep_zmagic(elp, xcoff, vp)
 }
 
 int
-exec_xcoff_prep_nmagic(elp, xcoff, vp)
+exec_xcoff_prep_nmagic(p, elp, xcoff, vp)
+	struct proc *p;
 	struct exec_linker *elp;
 	xcoff_exechdr *xcoff;
 	struct vnode *vp;
@@ -158,7 +161,8 @@ exec_xcoff_prep_nmagic(elp, xcoff, vp)
 }
 
 int
-exec_xcoff_prep_omagic(elp, xcoff, vp)
+exec_xcoff_prep_omagic(p, elp, xcoff, vp)
+	struct proc *p;
 	struct exec_linker *elp;
 	xcoff_exechdr *xcoff;
 	struct vnode *vp;
@@ -176,7 +180,7 @@ exec_xcoff_prep_omagic(elp, xcoff, vp)
 			(VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE), (VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE), vp, XCOFF_TXTOFF(xcoff));
 
 	/* set up for bss segment */
-	if(xcoff_aout->bsize > 0) {
+	if (xcoff_aout->bsize > 0) {
 		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, xcoff_aout->bsize, XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->bss_start),
 				(VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 	}

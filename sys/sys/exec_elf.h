@@ -1183,13 +1183,13 @@ struct ps_strings;
 struct exec_linker;
 struct exec_vmcmd_set;
 
-int		exec_elf_linker(struct exec_linker *);
+int		exec_elf_linker(struct proc *, struct exec_linker *);
 int		elf_copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 int		elf_check_header(Elf_Ehdr *, int);
-int		elf_load_file(struct exec_linker *, char *, struct exec_vmcmd_set *, u_long *, struct elf_args *, Elf_Addr *);
+int		elf_load_file(struct proc *, struct exec_linker *, char *, struct exec_vmcmd_set *, u_long *, struct elf_args *, Elf_Addr *);
 void	elf_load_psection(struct exec_vmcmd_set *, struct vnode *, const Elf_Phdr *, Elf_Addr *, u_long *, int *, int);
-int		twoelevenbsd_elf_signature(struct exec_linker *, Elf_Ehdr *);
-int		twoelevenbsd_elf_probe(struct exec_linker *, void *, char *, caddr_t *);
+int		twoelevenbsd_elf_signature(struct proc *, struct exec_linker *, Elf_Ehdr *);
+int		twoelevenbsd_elf_probe(struct proc *, struct exec_linker *, void *, char *, caddr_t *);
 
 #endif /* _KERNEL */
 #endif /* _SYS_EXEC_ELF_H_ */

@@ -101,7 +101,7 @@ vmcmd_extend(evsp)
 }
 
 void
-kill_vmcmd(evsp)
+kill_vmcmds(evsp)
 	struct exec_vmcmd_set *evsp;
 {
 	struct exec_vmcmd *vcp;
@@ -252,76 +252,6 @@ vmcmd_map_zero(p, cmd)
 	return (vm_map_protect(&vmspace->vm_map, trunc_page(cmd->ev_addr), round_page(cmd->ev_addr + cmd->ev_size), prot, FALSE));
 }
 
-/*
- * Creates new vmspace from running vmcmd
- * Do whatever is necessary to prepare the address space
- * for remapping.  Note that this might replace the current
- * vmspace with another!
- */
-int
-vmcmd_create_vmspace(p, elp, base_vcp)
-	struct proc *p;
-	struct exec_linker *elp;
-	struct exec_vmcmd *base_vcp;
-{
-	struct vmspace *vmspace;
-	int error, i;
-
-	vmspace = p->p_vmspace;
-
-	/*  Now map address space */
-	vmspace->vm_tsize = btoc(elp->el_tsize);
-	vmspace->vm_dsize = btoc(elp->el_dsize);
-	vmspace->vm_taddr = (caddr_t) elp->el_taddr;
-	vmspace->vm_daddr = (caddr_t) elp->el_daddr;
-	vmspace->vm_ssize = btoc(elp->el_ssize);
-	vmspace->vm_minsaddr = (caddr_t) elp->el_minsaddr;
-	vmspace->vm_maxsaddr = (caddr_t) elp->el_maxsaddr;
-
-	/* create the new process's VM space by running the vmcmds */
-#ifdef DIAGNOSTIC
-	if (elp->el_vmcmds.evs_used == 0) {
-		panic("execve: no vmcmds");
-	}
-#endif
-	for (i = 0; i < elp->el_vmcmds.evs_used && !error; i++) {
-		struct exec_vmcmd *vcp;
-
-		vcp = &elp->el_vmcmds.evs_cmds[i];
-		if (vcp->ev_flags & VMCMD_RELATIVE) {
-#ifdef DIAGNOSTIC
-			if (base_vcp == NULL)
-				panic("execve: relative vmcmd with no base");
-			if (vcp->ev_flags & VMCMD_BASE)
-				panic("execve: illegal base & relative vmcmd");
-#endif
-			vcp->ev_addr += base_vcp->ev_addr;
-		}
-		error = (*vcp->ev_proc)(elp->el_proc, vcp);
-#ifdef DEBUG
-		if (error) {
-			if (i > 0) {
-				printf("vmcmd[%d] = %#lx/%#lx @ %#lx\n", i-1,
-								       vcp[-1].ev_addr, vcp[-1].ev_size,
-								       vcp[-1].ev_offset);
-			}
-			printf("vmcmd[%d] = %#lx/%#lx @ %#lx\n", i, vcp->ev_addr, vcp->ev_size, vcp->ev_offset);
-		}
-#endif
-		if (vcp->ev_flags & VMCMD_BASE) {
-			base_vcp = vcp;
-		}
-	}
-
-	/* free the vmspace-creation commands, and release their references */
-	kill_vmcmd(&elp->el_vmcmds);
-	if (error) {
-		return (error);
-	} else {
-		return (0);
-	}
-}
-
 int
 exec_read_from(p, vp, off, bf, size)
 	struct proc *p;
@@ -346,7 +276,8 @@ exec_read_from(p, vp, off, bf, size)
 }
 
 int
-exec_setup_stack(elp)
+exec_setup_stack(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	u_long max_stack_size;
@@ -357,7 +288,7 @@ exec_setup_stack(elp)
 	elp->el_minsaddr = (caddr_t)USRSTACK;
 	elp->el_maxsaddr = elp->el_minsaddr + max_stack_size;
 
-	elp->el_ssize = u.u_rlimit[RLIMIT_STACK].rlim_cur;
+	elp->el_ssize = p->p_rlimit[RLIMIT_STACK].rlim_cur;
 
 	access_size = elp->el_ssize;
 	access_linear_min = (u_long) (elp->el_minsaddr - access_size);
@@ -377,50 +308,3 @@ exec_setup_stack(elp)
 
 	return (0);
 }
-
-#ifdef notyet
-int
-vmcmd_map_object(p, cmd)
-	struct proc *p;
-	struct exec_vmcmd *cmd;
-{
-	struct vmspace *vmspace;
-	struct vnode *vp;
-	struct pager_struct *vpgr;
-	struct vm_object *vobj;
-	int error, anywhere;
-
-	vmspace = p->p_vmspace;
-	vp = cmd->ev_vnodep;
-	anywhere = 0;
-	/* vm pager */
-	vpgr = vm_pager_allocate(PG_VNODE, (caddr_t)vp, cmd->ev_size,
-			VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
-	if (vpgr == NULL) {
-		error = ENOMEM;
-		goto bad;
-	}
-	/* vm object */
-	vobj = vm_object_lookup(vpgr);
-	if (vobj == NULL) {
-		vobj = vm_object_allocate(cmd->ev_size);
-		vm_object_enter(vobj, vpgr);
-	}
-	/* vm map */
-	error = vm_map_find(&vmspace->vm_map, vobj, cmd->ev_offset, cmd->ev_addr, cmd->ev_size, anywhere);
-	if (error != 0) {
-		vm_object_deallocate(vobj);
-		goto bad;
-	}
-	if (vpgr != NULL) {
-		vm_object_setpager(vobj, vpgr, 0, TRUE);
-	}
-	return (error);
-
-bad:
-	if (vpgr != NULL) {
-		vm_pager_deallocate(vpgr);
-	}
-	return (error);
-}
-#endif

@@ -46,14 +46,14 @@
 #include <sys/exec_elf.h>
 
 int
-exec_script_linker(elp)
+exec_script_linker(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	int error, hdrlinelen, shellnamelen, shellarglen;
 	char *hdrstr = elp->el_image_hdr;
 	char *cp, *shellname, *shellarg, *oldpnbuf;
 	char **shellargp, **tmpsap;
-	struct proc *p = elp->el_proc;
 	struct vnode *scriptvp;
 
 	uid_t script_uid = (uid_t) -1;
@@ -306,7 +306,7 @@ fail:
      * free any vmspace-creation commands,
      * and release their references
      */
-    kill_vmcmd(&elp->el_vmcmds);
+    kill_vmcmds(&elp->el_vmcmds);
 
 	return (error);
 }

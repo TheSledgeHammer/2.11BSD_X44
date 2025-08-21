@@ -72,9 +72,9 @@ struct ps_strings {
 #define	STACKGAPLEN	(2*1024)	/* plenty enough for now */
 
 struct exec_linker;
-typedef int (*exec_makecmds_fcn)(struct exec_linker *);
+typedef int (*exec_makecmds_fcn)(struct proc *, struct exec_linker *);
 typedef int (*exec_copyargs_fcn)(struct exec_linker *, struct ps_strings *, void *, void *);
-typedef int (*exec_setup_stack_fcn)(struct exec_linker *);
+typedef int (*exec_setup_stack_fcn)(struct proc *, struct exec_linker *);
 
 struct execsw {
 	u_int					ex_hdrsz;		/* size of header for this format */

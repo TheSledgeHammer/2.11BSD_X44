@@ -115,7 +115,8 @@ pecoff_signature(p, vp, pecoff_dos)
  * load(mmap) file.  for dynamic linker (ld.so.dll)
  */
 int
-pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
+pecoff_load_file(p, elp, path, vcset, entry, pecoff_arg)
+	struct proc *p;
 	struct exec_linker *elp;
 	const char *path;
 	struct exec_vmcmd_set *vcset;
@@ -123,7 +124,6 @@ pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
 	struct pecoff_args *pecoff_arg;
 {
 	int error, peofs, scnsiz, i;
-	struct proc *p = elp->el_proc;
 	struct nameidata nd;
 	struct vnode *vp;
 	struct vattr attr;
@@ -132,29 +132,14 @@ pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
 	struct coff_aouthdr *coff_aout;
 	struct pecoff_opthdr *pecoff_opt;
 	struct coff_scnhdr *coff_sh = 0;
-	const char *bp;
 
 	/*
-	 * Following has ~same effect as emul_find_interp(), but the code
-	 * needs to do some more checks while having the vnode open.
-	 * emul_find_interp() wouldn't really simplify handling here.
+	 * 1. open file
+	 * 2. read filehdr
+	 * 3. map text, data, and bss out of it using VM_*
 	 */
-	if ((error = emul_find(NULL, elp->el_esch->ex_emul->e_path, path, &bp, 0))) {
-		char *ptr;
-		int len;
-
-		len = strlen(path) + 1;
-		if (len > MAXPATHLEN)
-			return error;
-		ptr = malloc(len, M_TEMP, M_WAITOK);
-		copystr(path, ptr, len, 0);
-		bp = ptr;
-	}
-
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_SYSSPACE, bp, p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_SYSSPACE, path, p);
 	if ((error = namei(&nd)) != 0) {
-		/*XXXUNCONST*/
-		free(__UNCONST(bp), M_TEMP);
 		return error;
 	}
 	vp = nd.ni_vp;
@@ -167,11 +152,11 @@ pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
 		error = EACCES;
 		goto badunlock;
 	}
-	if ((error = VOP_ACCESS(vp, VEXEC, p->p_cred, p)) != 0)
+	if ((error = VOP_ACCESS(vp, VEXEC, p->p_ucred, p)) != 0)
 		goto badunlock;
 
 	/* get attributes */
-	if ((error = VOP_GETATTR(vp, &attr, p->p_cred, p)) != 0)
+	if ((error = VOP_GETATTR(vp, &attr, p->p_ucred, p)) != 0)
 		goto badunlock;
 	/*
 	 * Check mount point.  Though we're not trying to exec this binary,
@@ -239,8 +224,6 @@ pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
 
 	free(coff_fp, M_TEMP);
 	free(coff_sh, M_TEMP);
-	/*XXXUNCONST*/
-	free(__UNCONST(bp), M_TEMP);
 	vrele(vp);
 	return 0;
 
@@ -252,8 +235,6 @@ bad:
 		free(coff_fp, M_TEMP);
 	if (coff_sh != 0)
 		free(coff_sh, M_TEMP);
-	/*XXXUNCONST*/
-	free(__UNCONST(bp), M_TEMP);
 	vrele(vp);
 	return error;
 }
@@ -298,7 +279,8 @@ pecoff_load_section(vcset, vp, coff_sh, addr, size, prot)
 }
 
 int
-exec_pecoff_linker(elp)
+exec_pecoff_linker(p, elp)
+	struct proc *p;
     struct exec_linker *elp;
 {
     int error, peofs;
@@ -314,7 +296,7 @@ exec_pecoff_linker(elp)
     if (elp->el_hdrvalid < PECOFF_DOS_HDR_SIZE) {
 		return ENOEXEC;
 	}
-	if ((error = pecoff_signature(elp->el_proc, elp->el_vnodep, pecoff_dos)) != 0)
+	if ((error = pecoff_signature(p, elp->el_vnodep, pecoff_dos)) != 0)
 		return error;
 
 	if ((error = vn_marktext(elp->el_vnodep)) != 0)
@@ -322,12 +304,12 @@ exec_pecoff_linker(elp)
 
 	peofs = pecoff_dos->d_peofs + sizeof(signature) - 1;
 	coff_fp = malloc(PECOFF_HDR_SIZE, M_TEMP, M_WAITOK);
-	error = exec_read_from(elp->el_proc, elp->el_vnodep, peofs, coff_fp, PECOFF_HDR_SIZE);
+	error = exec_read_from(p, elp->el_vnodep, peofs, coff_fp, PECOFF_HDR_SIZE);
 	if (error) {
 		free(coff_fp, M_TEMP);
 		return error;
 	}
-	error = exec_pecoff_coff_linker(elp, coff_fp, peofs);
+	error = exec_pecoff_coff_linker(p, elp, coff_fp, peofs);
 
 	if (error != 0)
 		kill_vmcmds(&elp->el_vmcmds);
@@ -337,7 +319,8 @@ exec_pecoff_linker(elp)
 }
 
 int
-exec_pecoff_coff_linker(elp, coff_fp, peofs)
+exec_pecoff_coff_linker(p, elp, coff_fp, peofs)
+	struct proc *p;
 	struct exec_linker *elp;
     struct coff_filehdr *coff_fp;
     int peofs;
@@ -353,13 +336,13 @@ exec_pecoff_coff_linker(elp, coff_fp, peofs)
 
 	switch (coff_aout->a_magic) {
 	case COFF_OMAGIC:
-		error = exec_pecoff_prep_omagic(elp, coff_aout, coff_fp, peofs);
+		error = exec_pecoff_prep_omagic(p, elp, coff_aout, coff_fp, peofs);
 		break;
 	case COFF_NMAGIC:
-		error = exec_pecoff_prep_nmagic(elp, coff_aout, coff_fp, peofs);
+		error = exec_pecoff_prep_nmagic(p, elp, coff_aout, coff_fp, peofs);
 		break;
 	case COFF_ZMAGIC:
-		error = exec_pecoff_prep_zmagic(elp, coff_aout, coff_fp, peofs);
+		error = exec_pecoff_prep_zmagic(p, elp, coff_aout, coff_fp, peofs);
 		break;
 	default:
 		return ENOEXEC;
@@ -369,7 +352,8 @@ exec_pecoff_coff_linker(elp, coff_fp, peofs)
 }
 
 int
-exec_pecoff_prep_zmagic(elp, coff_aout, coff_fp, peofs)
+exec_pecoff_prep_zmagic(p, elp, coff_aout, coff_fp, peofs)
+	struct proc *p;
 	struct exec_linker *elp;
 	struct coff_aouthdr *coff_aout;
     struct coff_filehdr *coff_fp;
@@ -390,7 +374,7 @@ exec_pecoff_prep_zmagic(elp, coff_aout, coff_fp, peofs)
 	elp->el_dsize = 0;
 	/* read section header */
 	coff_sh = malloc(scnsiz, M_TEMP, M_WAITOK);
-	error = exec_read_from(elp->el_proc, elp->el_vnodep, peofs + PECOFF_HDR_SIZE, coff_sh,
+	error = exec_read_from(p, elp->el_vnodep, peofs + PECOFF_HDR_SIZE, coff_sh,
 	    scnsiz);
 	if (error) {
 		free(coff_sh, M_TEMP);
@@ -448,7 +432,7 @@ exec_pecoff_prep_zmagic(elp, coff_aout, coff_fp, peofs)
 	/*
 	 * load dynamic linker
 	 */
-	error = pecoff_load_file(elp, "/usr/libexec/ld.so.dll",
+	error = pecoff_load_file(p, elp, "/usr/libexec/ld.so.dll",
 				&elp->el_vmcmds, &elp->el_entry, pecoff_arg);
 	if (error) {
 		free(coff_sh, M_TEMP);
@@ -463,11 +447,12 @@ exec_pecoff_prep_zmagic(elp, coff_aout, coff_fp, peofs)
 #endif
 
 	free(coff_sh, M_TEMP);
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }
 
 int
-exec_pecoff_prep_nmagic(elp, coff_aout, coff_fp, peofs)
+exec_pecoff_prep_nmagic(p, elp, coff_aout, coff_fp, peofs)
+	struct proc *p;
 	struct exec_linker *elp;
 	struct coff_aouthdr *coff_aout;
     struct coff_filehdr *coff_fp;
@@ -477,7 +462,8 @@ exec_pecoff_prep_nmagic(elp, coff_aout, coff_fp, peofs)
 }
 
 int
-exec_pecoff_prep_omagic(elp, coff_aout, coff_fp, peofs)
+exec_pecoff_prep_omagic(p, elp, coff_aout, coff_fp, peofs)
+	struct proc *p;
 	struct exec_linker *elp;
 	struct coff_aouthdr *coff_aout;
     struct coff_filehdr *coff_fp;

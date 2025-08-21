@@ -239,7 +239,7 @@ struct proc;
 struct ps_strings;
 
 struct emul {
-	const char			*e_name[8];			/* Symbolic name */
+	char				e_name[8];			/* Symbolic name */
 	const char			*e_path;			/* Extra emulation path (NULL if none)*/
 	int					e_nosys;			/* Offset of the nosys() syscall */
 	int					e_nsysent;			/* Number of system call entries */

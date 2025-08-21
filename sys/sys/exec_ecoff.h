@@ -219,9 +219,9 @@ enum strclass {
 
 #ifdef _KERNEL
 
-int	 exec_ecoff_linker(struct exec_linker *);
-int	 exec_ecoff_prep_zmagic(struct exec_linker *, struct ecoff_exechdr *, struct vnode *);
-int	 exec_ecoff_prep_nmagic(struct exec_linker *, struct ecoff_exechdr *, struct vnode *);
-int	 exec_ecoff_prep_omagic(struct exec_linker *, struct ecoff_exechdr *, struct vnode *);
+int	 exec_ecoff_linker(struct proc *, struct exec_linker *);
+int	 exec_ecoff_prep_zmagic(struct proc *, struct exec_linker *, struct ecoff_exechdr *, struct vnode *);
+int	 exec_ecoff_prep_nmagic(struct proc *, struct exec_linker *, struct ecoff_exechdr *, struct vnode *);
+int	 exec_ecoff_prep_omagic(struct proc *, struct exec_linker *, struct ecoff_exechdr *, struct vnode *);
 #endif /* _KERNEL */
 #endif /* _SYS_EXEC_ECOFF_H_ */

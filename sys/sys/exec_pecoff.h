@@ -124,13 +124,13 @@ struct pecoff_args {
 #define DPRINTF(a)
 #endif
 
-int pecoff_signature(struct vnode *, struct pecoff_dos_filehdr *);
-int pecoff_load_file(struct exec_linker *, const char *, struct exec_vmcmd_set *, u_long *, struct pecoff_args *);
-int exec_pecoff_linker(struct exec_linker *);
-int exec_pecoff_coff_linker(struct exec_linker *, struct coff_filehdr *, int);
-int exec_pecoff_prep_omagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *, int);
-int exec_pecoff_prep_mmagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *, int);
-int exec_pecoff_prep_zmagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *, int);
+int pecoff_signature(struct proc *, struct vnode *, struct pecoff_dos_filehdr *);
+int pecoff_load_file(struct proc *, struct exec_linker *, const char *, struct exec_vmcmd_set *, u_long *, struct pecoff_args *);
+int exec_pecoff_linker(struct proc *, struct exec_linker *);
+int exec_pecoff_coff_linker(struct proc *, struct exec_linker *, struct coff_filehdr *, int);
+int exec_pecoff_prep_omagic(struct proc *, struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *, int);
+int exec_pecoff_prep_mmagic(struct proc *, struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *, int);
+int exec_pecoff_prep_zmagic(struct proc *, struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *, int);
 int	pecoff_copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 #endif /* KERNEL */
 #endif /* SYS_PECOFF_EXEC_H_ */

@@ -273,6 +273,7 @@ main(framep)
 	u.u_rlimit[RLIMIT_RSS].rlim_max = i;
 	u.u_rlimit[RLIMIT_MEMLOCK].rlim_max = i;
 	u.u_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
+	bcopy(u.u_rlimit, p->p_rlimit, sizeof(u.u_rlimit));
 	limit0.p_refcnt = 1;
 
 	bcopy("root", u.u_login, sizeof ("root"));

@@ -259,14 +259,14 @@ struct exec_macho_emul_arg {
 #define DPRINTF(a)
 #endif
 int 	exec_macho_load_segment(struct exec_linker *, struct vnode *, u_long, struct exec_macho_segment_command *, int);
-int 	exec_macho_load_dylinker(struct exec_linker *, struct exec_macho_dylinker_command *, u_long *, int);
-int 	exec_macho_load_dylib(struct exec_linker *, struct exec_macho_dylib_command *, int);
+int 	exec_macho_load_dylinker(struct proc *, struct exec_linker *, struct exec_macho_dylinker_command *, u_long *, int);
+int 	exec_macho_load_dylib(struct proc *, struct exec_linker *, struct exec_macho_dylib_command *, int);
 u_long 	exec_macho_load_thread(struct exec_macho_thread_command *);
-int 	exec_macho_load_file(struct exec_linker *, const char *, u_long *, int, int, int);
-int 	exec_macho_load_vnode(struct exec_linker *, struct vnode *, struct exec_macho_fat_header *, u_long *, int, int, int);
+int 	exec_macho_load_file(struct proc *, struct exec_linker *, const char *, u_long *, int, int, int);
+int 	exec_macho_load_vnode(struct proc *, struct exec_linker *, struct vnode *, struct exec_macho_fat_header *, u_long *, int, int, int);
 
 u_long	exec_macho_thread_entry(struct exec_macho_thread_command *);
-int		exec_macho_linker(struct exec_linker *);
+int		exec_macho_linker(struct proc *, struct exec_linker *);
 int		macho_copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 #endif /* _KERNEL */
 

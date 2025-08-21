@@ -43,7 +43,8 @@
 #include <sys/resourcevar.h>
 
 int
-exec_aout_linker(elp)
+exec_aout_linker(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	struct exec *a_out = elp->el_image_hdr;
@@ -60,32 +61,32 @@ exec_aout_linker(elp)
 	 */
 	switch ((int)(a_out->a_magic & 0xffff)) {
 	case ZMAGIC:
-		error = exec_aout_prep_zmagic(elp);
+		error = exec_aout_prep_zmagic(p, elp);
 		break;
 	case NMAGIC:
-		error = exec_aout_prep_nmagic(elp);
+		error = exec_aout_prep_nmagic(p, elp);
 		break;
 	case OMAGIC:
-		error = exec_aout_prep_omagic(elp);
+		error = exec_aout_prep_omagic(p, elp);
 		break;
 	default:
 		/* NetBSD compatibility */
 		switch ((int)(ntohl(a_out->a_magic) & 0xffff)) {
 		case ZMAGIC:
-			error = exec_aout_prep_zmagic(elp);
+			error = exec_aout_prep_zmagic(p, elp);
 			break;
 		case NMAGIC:
-			error = exec_aout_prep_nmagic(elp);
+			error = exec_aout_prep_nmagic(p, elp);
 			break;
 		case OMAGIC:
-			error = exec_aout_prep_omagic(elp);
+			error = exec_aout_prep_omagic(p, elp);
 			break;
 		default:
-			error = cpu_exec_aout_linker(elp); /* For CPU Architecture */
+			error = cpu_exec_aout_linker(p, elp); /* For CPU Architecture */
 		}
 	}
 	if (error) {
-		kill_vmcmd(&elp->el_vmcmds);
+		kill_vmcmds(&elp->el_vmcmds);
 	}
 	return (error);
 }
@@ -100,7 +101,8 @@ exec_aout_linker(elp)
  * text, data, bss, and stack segments.
  */
 int
-exec_aout_prep_zmagic(elp)
+exec_aout_prep_zmagic(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	struct exec *a_out = (struct exec *) elp->el_image_hdr;
@@ -130,17 +132,18 @@ exec_aout_prep_zmagic(elp)
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 	}
 
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }
 
 
 /* exec_aout_prep_nmagic(): Prepare a 'native' NMAGIC binary's exec linker */
 int
-exec_aout_prep_nmagic(elp)
+exec_aout_prep_nmagic(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	struct exec *a_out = (struct exec *) elp->el_image_hdr;
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
+	struct vmspace *vmspace = p->p_vmspace;
 	long bsize, baddr;
 
 	elp->el_taddr = USRTEXT;
@@ -170,16 +173,17 @@ exec_aout_prep_nmagic(elp)
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 	}
 
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }
 
 /* exec_aout_prep_omagic(): Prepare a 'native' OMAGIC binary's exec linker */
 int
-exec_aout_prep_omagic(elp)
+exec_aout_prep_omagic(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	struct exec *a_out = (struct exec *) elp->el_image_hdr;
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
+	struct vmspace *vmspace = p->p_vmspace;
 	long dsize, bsize, baddr;
 
 	elp->el_taddr = USRTEXT;
@@ -214,5 +218,5 @@ exec_aout_prep_omagic(elp)
 	dsize = elp->el_dsize + a_out->a_text - roundup(a_out->a_text, NBPG);
 	elp->el_dsize = (dsize > 0) ? dsize : 0;
 
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }

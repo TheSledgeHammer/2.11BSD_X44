@@ -83,7 +83,8 @@
 #include <sys/exec_linker.h>
 
 static int
-exec_nomid(elp)
+exec_nomid(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	int error;
@@ -104,7 +105,7 @@ exec_nomid(elp)
 
 	switch (midmag) {
 	case (MID_ZERO << 16) | QMAGIC:
-			error = exec_aout_prep_zmagic(elp);
+			error = exec_aout_prep_zmagic(p, elp);
 			break;
 	default:
 		error = ENOEXEC;
@@ -113,11 +114,12 @@ exec_nomid(elp)
 }
 
 int
-cpu_exec_aout_linker(elp)
+cpu_exec_aout_linker(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	int error = ENOEXEC;
-	if((error == exec_nomid(elp)) == 0) {
+	if((error == exec_nomid(p, elp)) == 0) {
 		return error;
 	}
 	return error;

@@ -104,7 +104,6 @@ elf_copyargs(elp, arginfo, stackp, argp)
 	void *stackp;
 	void *argp;
 {
-	struct proc *p = elp->el_proc;
 	size_t len;
 	AuxInfo ai[ELF_AUX_ENTRIES], *a;
 	struct elf_args *ap;
@@ -296,7 +295,8 @@ elf_load_psection(vcset, vp, ph, addr, size, prot, flags)
  * so it might be used externally.
  */
 int
-elf_load_file(elp, path, vcset, entryoff, ap, last)
+elf_load_file(p, elp, path, vcset, entryoff, ap, last)
+	struct proc *p;
 	struct exec_linker *elp;
 	char *path;
 	struct exec_vmcmd_set *vcset;
@@ -315,9 +315,6 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 	const Elf_Phdr *last_ph;
 	u_long phsize;
 	Elf_Addr addr = *last;
-	struct proc *p;
-
-	p = elp->el_proc;
 
 	/*
 	 * 1. open file
@@ -513,10 +510,10 @@ bad:
 }
 
 int
-exec_elf_linker(elp)
+exec_elf_linker(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
-	struct proc *p = elp->el_proc;
 	Elf_Ehdr *eh = elp->el_image_hdr;
 	Elf_Phdr *ph, *pp;
 	Elf_Addr phdr = 0, pos = 0;
@@ -532,7 +529,7 @@ exec_elf_linker(elp)
 	 * XXX allow for executing shared objects. It seems silly
 	 * but other ELF-based systems allow it as well.
 	 */
-	if(elf_check_header(eh, ET_EXEC) != 0 && elf_check_header(eh, ET_DYN) != 0)
+	if (elf_check_header(eh, ET_EXEC) != 0 && elf_check_header(eh, ET_DYN) != 0)
 		return ENOEXEC;
 
 	if (eh->e_phnum > MAXPHNUM)
@@ -634,7 +631,7 @@ exec_elf_linker(elp)
 		u_long interp_offset;
 
 		MALLOC(ap, struct elf_args *, sizeof(struct elf_args), M_TEMP, M_WAITOK);
-		if ((error = elf_load_file(elp, interp, &elp->el_vmcmds, &interp_offset, ap, &pos)) != 0) {
+		if ((error = elf_load_file(p, elp, interp, &elp->el_vmcmds, &interp_offset, ap, &pos)) != 0) {
 			FREE(ap, M_TEMP);
 			goto bad;
 		}
@@ -655,16 +652,16 @@ exec_elf_linker(elp)
 
 bad:
 	free(ph, M_TEMP);
-	kill_vmcmd(&elp->el_vmcmds);
+	kill_vmcmds(&elp->el_vmcmds);
 	return ENOEXEC;
 }
 
 int
-twoelevenbsd_elf_signature(elp, eh)
+twoelevenbsd_elf_signature(p, elp, eh)
+	struct proc *p;
 	struct exec_linker *elp;
 	Elf_Ehdr *eh;
 {
-	struct proc *p = elp->el_proc;
 	size_t i;
 	Elf_Phdr *ph;
 	size_t phsize;
@@ -730,14 +727,15 @@ out:
 }
 
 int
-twoelevenbsd_elf_probe(elp, eh, itp, pos)
+twoelevenbsd_elf_probe(p, elp, eh, itp, pos)
+	struct proc *p;
 	struct exec_linker *elp;
 	void *eh;
 	char *itp;
 	caddr_t *pos;
 {
 	int error;
-	if ((error = twoelevenbsd_elf_signature(elp, eh)) != 0)
+	if ((error = twoelevenbsd_elf_signature(p, elp, eh)) != 0)
 		return error;
 #ifdef ELF_INTERP_NON_RELOCATABLE
 	*pos = ELF_LINK_ADDR;

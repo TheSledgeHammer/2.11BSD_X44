@@ -206,14 +206,14 @@ struct xexec {
 
 #ifdef _KERNEL
 /* the "a.out" format's entry in the exec switch */
-int	exec_aout_linker(struct exec_linker *);
-int	exec_aout_prep_zmagic(struct exec_linker *);
-int	exec_aout_prep_nmagic(struct exec_linker *);
-int	exec_aout_prep_omagic(struct exec_linker *);
+int	exec_aout_linker(struct proc *, struct exec_linker *);
+int	exec_aout_prep_zmagic(struct proc *, struct exec_linker *);
+int	exec_aout_prep_nmagic(struct proc *, struct exec_linker *);
+int	exec_aout_prep_omagic(struct proc *, struct exec_linker *);
 
 /*
  * MD portion
  */
-int cpu_exec_aout_linker(struct exec_linker *);
+int cpu_exec_aout_linker(struct proc *, struct exec_linker *);
 #endif /* KERNEL */
 #endif /*_SYS_EXEC_AOUT_H_ */

@@ -147,7 +147,7 @@ exec_macho_print_thread_command(th)
 
 #endif /* DEBUG_MACHO */
 
-static int
+int
 exec_macho_load_segment(elp, vp, foff, ls, type)
 	struct exec_linker *elp;
 	struct vnode *vp;
@@ -225,8 +225,9 @@ exec_macho_load_segment(elp, vp, foff, ls, type)
 }
 
 
-static int
-exec_macho_load_dylinker(elp, dy, entry, depth)
+int
+exec_macho_load_dylinker(p, elp, dy, entry, depth)
+	struct proc *p;
 	struct exec_package *elp;
 	struct exec_macho_dylib_command *dy;
 	u_long *entry;
@@ -243,14 +244,15 @@ exec_macho_load_dylinker(elp, dy, entry, depth)
 
 	(void)snprintf(path, sizeof(path), "%s%s", emea->path, name);
 	DPRINTF(("loading linker %s\n", path));
-	if ((error = exec_macho_load_file(elp, path, entry,
+	if ((error = exec_macho_load_file(p, elp, path, entry,
 	    MACHO_MOH_DYLINKER, 1, depth)) != 0)
 		return error;
 	return 0;
 }
 
-static int
-exec_macho_load_dylib(elp, dy, depth)
+int
+exec_macho_load_dylib(p, elp, dy, depth)
+	struct proc *p;
 	struct exec_package *elp;
 	struct exec_macho_dylib_command *dy;
 	int depth;
@@ -266,7 +268,7 @@ exec_macho_load_dylib(elp, dy, depth)
 	emea = (struct exec_macho_emul_arg *)elp->el_emul_arg;
 	(void)snprintf(path, sizeof(path), "%s%s", emea->path, name);
 	DPRINTF(("loading library %s\n", path));
-	if ((error = exec_macho_load_file(elp, path, &entry,
+	if ((error = exec_macho_load_file(p, elp, path, &entry,
 	    MACHO_MOH_DYLIB, 0, depth)) != 0)
 		return error;
 	return 0;
@@ -286,14 +288,14 @@ exec_macho_load_thread(th)
  * exec_macho_load_file(): Load a macho-binary. This is used
  * for the dynamic linker and library recursive loading.
  */
-static int
-exec_macho_load_file(elp, path, entry, type, recursive, depth)
+int
+exec_macho_load_file(p, elp, path, entry, type, recursive, depth)
+	struct proc *p;
 	struct exec_linker *elp;
 	const char *path;
 	u_long *entry;
 	int type, recursive, depth;
 {
-	struct proc *p = elp->el_proc;
 	int error;
 	struct nameidata nd;
 	struct vnode *vp;
@@ -329,11 +331,11 @@ exec_macho_load_file(elp, path, entry, type, recursive, depth)
 	if (error)
 		return (error);
 
-	if ((error = VOP_ACCESS(vp, VEXEC, p->p_cred, p)) != 0)
+	if ((error = VOP_ACCESS(vp, VEXEC, p->p_ucred, p)) != 0)
 		goto badunlock;
 
 	/* get attributes */
-	if ((error = VOP_GETATTR(vp, &attr,p->p_cred, p)) != 0)
+	if ((error = VOP_GETATTR(vp, &attr,p->p_ucred, p)) != 0)
 		goto badunlock;
 
 #ifdef notyet /* XXX cgd 960926 */
@@ -344,7 +346,7 @@ exec_macho_load_file(elp, path, entry, type, recursive, depth)
 	if ((error = exec_read_from(p, vp, 0, &fat, sizeof(fat))) != 0)
 		goto bad;
 
-	if ((error = exec_macho_load_vnode(elp, vp, &fat, entry, type, recursive, depth)) != 0)
+	if ((error = exec_macho_load_vnode(p, elp, vp, &fat, entry, type, recursive, depth)) != 0)
 		goto bad;
 
 	vrele(vp);
@@ -370,14 +372,14 @@ bad:
  * the entry point.
  */
 static int
-exec_macho_load_vnode(elp, vp, fat, entry, type, recursive, depth)
+exec_macho_load_vnode(p, elp, vp, fat, entry, type, recursive, depth)
+	struct proc *p;
 	struct exec_linker *elp;
 	struct vnode *vp;
 	struct exec_macho_fat_header *fat;
 	u_long *entry;
 	int type, recursive, depth;
 {
-	struct proc *p = elp->el_proc;
 	u_long aoffs, offs;
 	struct exec_macho_fat_arch arch;
 	struct exec_macho_object_header hdr;
@@ -497,7 +499,7 @@ exec_macho_load_vnode(elp, vp, fat, entry, type, recursive, depth)
 			}
 			break;
 		case MACHO_LC_LOAD_DYLINKER:
-			if ((error = exec_macho_load_dylinker(elp,
+			if ((error = exec_macho_load_dylinker(p, elp,
 					(struct exec_macho_dylinker_command *)bf,
 					entry, depth)) != 0) {
 				DPRINTF(("load linker failed\n"));
@@ -514,7 +516,7 @@ exec_macho_load_vnode(elp, vp, fat, entry, type, recursive, depth)
 			 */
 			if (recursive == 0)
 				break;
-			if ((error = exec_macho_load_dylib(elp,
+			if ((error = exec_macho_load_dylib(p, elp,
 			    (struct exec_macho_dylib_command *)bf,
 			    depth)) != 0) {
 				DPRINTF(("load dylib failed\n"));
@@ -562,10 +564,10 @@ bad:
  * text, data, bss, and stack segments.
  */
 int
-exec_macho_linker(elp)
+exec_macho_linker(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
-	struct proc *p = elp->el_proc;
 	struct exec_macho_fat_header *fat = elp->el_image_hdr;
 	struct exec_macho_emul_arg *emea;
 	int error;
@@ -606,7 +608,7 @@ exec_macho_linker(elp)
 	 */
 	elp->el_entry = 0;
 
-	if ((error = exec_macho_load_vnode(elp, elp->el_vnodep, fat,
+	if ((error = exec_macho_load_vnode(p, elp, elp->el_vnodep, fat,
 	    &elp->el_entry, MACHO_MOH_EXECUTE, 1, 0)) != 0)
 		goto bad;
 
@@ -618,7 +620,7 @@ exec_macho_linker(elp)
 		DPRINTF(("Copyinstr %p failed\n", elp->el_name));
 		goto bad;
 	}
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 bad:
 	kill_vmcmds(&elp->el_vmcmds);
 bad2:

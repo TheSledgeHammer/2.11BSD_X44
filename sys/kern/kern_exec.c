@@ -65,6 +65,10 @@ extern char	sigcode[], esigcode[];
 static int 	doexecve(struct execa_args *);
 static int 	execve_load(struct proc *, struct execa_args *, register_t *);
 
+static int 	exec_create_vmspace(struct proc *, struct exec_linker *, struct exec_vmcmd *);
+static char	*exec_extract_strings(struct exec_linker *, char **, char **, int, int *);
+static char 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *, struct vmspace *, int, int, int *);
+
 struct emul emul_211bsd = {
 		.e_name 		= "211bsd",
 		.e_path 		= NULL,				/* emulation path */
@@ -205,7 +209,6 @@ execve_load(p, uap, retval)
 	MALLOC(pack.el_image_hdr, void *, exec_maxhdrsz, M_EXEC, M_WAITOK);
 	pack.el_hdrlen = exec_maxhdrsz;
 	pack.el_hdrvalid = 0;
-	pack.el_proc = p;
 	pack.el_attr = &attr;
 	pack.el_argc = 0;
 	pack.el_envc = 0;
@@ -217,7 +220,7 @@ execve_load(p, uap, retval)
 	pack.el_flags = 0;
 
 	/* see if we can run it. */
-	if ((error = check_exec(&pack)) != 0) {
+	if ((error = check_exec(p, &pack)) != 0) {
 		goto freehdr;
 	}
 
@@ -259,7 +262,7 @@ execve_load(p, uap, retval)
 			VM_MAXUSER_ADDRESS - VM_MIN_ADDRESS);
 
 	/* Map address Space  & create new process's VM space */
-	error = vmcmd_create_vmspace(p, &pack, base_vcp);
+	error = exec_create_vmspace(p, &pack, base_vcp);
 	if (error != 0) {
 		goto exec_abort;
 	}
@@ -327,19 +330,26 @@ execve_load(p, uap, retval)
 	if (p->p_flag & P_TRACED) {
 		psignal(p, SIGTRAP);
 	}
+	FREE(pack.el_image_hdr, M_EXEC);
 
 	/* update p_emul, the old value is no longer needed */
 	p->p_emul = pack.el_es->ex_emul;
 	/* ...and the same for p_execsw */
 	p->p_execsw = pack.el_es;
-	FREE(pack.el_image_hdr, M_EXEC);
 
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_EMUL)) {
+		ktremul(p, p->p_emul->e_name);
+	}
+#endif
+
+	p->p_flag &= ~P_INEXEC;
 	return (EJUSTRETURN);
 
 bad:
 	p->p_flag &= ~P_INEXEC;
 	/* free the vmspace-creation commands, and release their references */
-	kill_vmcmd(&pack.el_vmcmds);
+	kill_vmcmds(&pack.el_vmcmds);
 	/* kill any opened file descriptor, if necessary */
 	if (pack.el_flags & EXEC_HASFD) {
 		pack.el_flags &= ~EXEC_HASFD;
@@ -423,16 +433,15 @@ execsigs(p)
 }
 
 int
-check_exec(elp)
+check_exec(p, elp)
+	struct proc *p;
 	struct exec_linker *elp;
 {
 	int	error, i;
 	struct vnode *vp;
 	struct nameidata *ndp;
 	size_t resid;
-	struct proc *p;
 
-	p = elp->el_proc;
 	ndp = &elp->el_ndp;
 	ndp->ni_cnd.cn_nameiop = LOOKUP;
 	ndp->ni_cnd.cn_flags = FOLLOW | LOCKLEAF | SAVENAME;
@@ -517,7 +526,7 @@ check_exec(elp)
 
 		/* check limits */
 		if ((elp->el_tsize > MAXTSIZ) ||
-				(elp->el_dsize > (u_quad_t)u.u_rlimit[RLIMIT_DATA].rlim_cur))
+				(elp->el_dsize > (u_quad_t)p->p_rlimit[RLIMIT_DATA].rlim_cur))
 			error = ENOMEM;
 
 		if (!error)
@@ -527,7 +536,7 @@ check_exec(elp)
 	 * free any vmspace-creation commands,
 	 * and release their references
 	 */
-	kill_vmcmd(&elp->el_vmcmds);
+	kill_vmcmds(&elp->el_vmcmds);
 
 bad2:
 	/*
@@ -549,10 +558,82 @@ bad1:
 }
 
 /*
+ * Creates new vmspace from running vmcmd
+ * Do whatever is necessary to prepare the address space
+ * for remapping.  Note that this might replace the current
+ * vmspace with another!
+ */
+static int
+exec_create_vmspace(p, elp, base_vcp)
+	struct proc *p;
+	struct exec_linker *elp;
+	struct exec_vmcmd *base_vcp;
+{
+	struct vmspace *vmspace;
+	int error, i;
+
+	vmspace = p->p_vmspace;
+
+	/*  Now map address space */
+	vmspace->vm_tsize = btoc(elp->el_tsize);
+	vmspace->vm_dsize = btoc(elp->el_dsize);
+	vmspace->vm_taddr = (caddr_t) elp->el_taddr;
+	vmspace->vm_daddr = (caddr_t) elp->el_daddr;
+	vmspace->vm_ssize = btoc(elp->el_ssize);
+	vmspace->vm_minsaddr = (caddr_t) elp->el_minsaddr;
+	vmspace->vm_maxsaddr = (caddr_t) elp->el_maxsaddr;
+
+	/* create the new process's VM space by running the vmcmds */
+#ifdef DIAGNOSTIC
+	if (elp->el_vmcmds.evs_used == 0) {
+		panic("execve: no vmcmds");
+	}
+#endif
+	for (i = 0; i < elp->el_vmcmds.evs_used && !error; i++) {
+		struct exec_vmcmd *vcp;
+
+		vcp = &elp->el_vmcmds.evs_cmds[i];
+		if (vcp->ev_flags & VMCMD_RELATIVE) {
+#ifdef DIAGNOSTIC
+			if (base_vcp == NULL) {
+				panic("execve: relative vmcmd with no base");
+			}
+			if (vcp->ev_flags & VMCMD_BASE) {
+				panic("execve: illegal base & relative vmcmd");
+			}
+#endif
+			vcp->ev_addr += base_vcp->ev_addr;
+		}
+		error = (*vcp->ev_proc)(p, vcp);
+#ifdef DEBUG
+		if (error) {
+			if (i > 0) {
+				printf("vmcmd[%d] = %#lx/%#lx @ %#lx\n", i - 1, vcp[-1].ev_addr,
+						vcp[-1].ev_size, vcp[-1].ev_offset);
+			}
+			printf("vmcmd[%d] = %#lx/%#lx @ %#lx\n", i, vcp->ev_addr,
+					vcp->ev_size, vcp->ev_offset);
+		}
+#endif
+		if (vcp->ev_flags & VMCMD_BASE) {
+			base_vcp = vcp;
+		}
+	}
+
+	/* free the vmspace-creation commands, and release their references */
+	kill_vmcmds(&elp->el_vmcmds);
+	if (error) {
+		return (error);
+	} else {
+		return (0);
+	}
+}
+
+/*
  * Copy out argument and environment strings from the old process
  *	address space into the temporary string buffer.
  */
-char *
+static char *
 exec_extract_strings(elp, argp, envp, length, retval)
 	struct exec_linker *elp;
 	char **argp, **envp;
@@ -655,7 +736,7 @@ bad:
  * new arg and env vector tables. Return a pointer to the base
  * so that it can be used as the initial stack pointer.
  */
-char *
+static char *
 exec_copyout_strings(elp, arginfo, vm, length, szsigcode, retval)
 	struct exec_linker *elp;
 	struct ps_strings *arginfo;
@@ -712,7 +793,7 @@ copyargs(elp, arginfo, stack, argp)
 	arginfo->ps_nargvstr = argc;
 	arginfo->ps_nenvstr = envc;
 
-	dp = (char *)(cpp +  1 + argc + 1+ envc) + elp->el_es->ex_emul->e_arglen;
+	dp = (char *)(cpp +  1 + argc + 1+ envc) + elp->el_es->ex_arglen;
 	sp = argp;
 
 	if ((error = copyout(&argc, cpp++, sizeof(argc))) != 0) {

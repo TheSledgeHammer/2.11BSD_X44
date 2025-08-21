@@ -91,7 +91,7 @@ exec_aout_prep_overlay(elp)
 		}
 	}
 	if (error) {
-		kill_vmcmd(&elp->el_vmcmds);
+		kill_vmcmds(&elp->el_vmcmds);
 	}
 	return (error);
 }

@@ -42,7 +42,7 @@
 #ifdef _KERNEL
 
 /* the shell script handler's entry in the exec switch */
-int	exec_script_linker(struct exec_linker *);
+int	exec_script_linker(struct proc *, struct exec_linker *);
 
 #endif /* _KERNEL */
 #endif /* !_SYS_EXEC_SCRIPT_H_ */
