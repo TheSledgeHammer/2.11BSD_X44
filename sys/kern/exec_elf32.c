@@ -648,7 +648,7 @@ exec_elf_linker(p, elp)
 		elp->el_entry = eh->e_entry;
 	}
 	free(ph, M_TEMP);
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 
 bad:
 	free(ph, M_TEMP);

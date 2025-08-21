@@ -241,7 +241,7 @@ check_shell:
 	scriptvp = elp->el_vnodep;
 	oldpnbuf = elp->el_ndp.ni_cnd.cn_pnbuf;
 
-	if ((error = check_exec(elp)) == 0) {
+	if ((error = check_exec(p, elp)) == 0) {
 		/* note that we've clobbered the header */
 		elp->el_flags |= EXEC_DESTR|EXEC_HASES;
 

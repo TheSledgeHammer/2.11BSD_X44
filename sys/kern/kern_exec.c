@@ -507,7 +507,7 @@ check_exec(p, elp)
 		int newerror;
 
 		elp->el_esch = &execsw[i];
-		newerror = (*execsw[i].ex_makecmds)(elp);
+		newerror = (*execsw[i].ex_makecmds)(p, elp);
 		/* make sure the first "interesting" error code is saved. */
 		if (!newerror || error == ENOEXEC)
 			error = newerror;
