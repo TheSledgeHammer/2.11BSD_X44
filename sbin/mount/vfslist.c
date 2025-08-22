@@ -48,9 +48,7 @@ __RCSID("$NetBSD: vfslist.c,v 1.4 2003/08/07 10:04:26 agc Exp $");
 static int	  skipvfs;
 
 int
-checkvfsname(vfsname, vfslist)
-	const char *vfsname;
-	const char **vfslist;
+checkvfsname(const char *vfsname, const char **vfslist)
 {
 
 	if (vfslist == NULL)
@@ -64,8 +62,7 @@ checkvfsname(vfsname, vfslist)
 }
 
 const char **
-makevfslist(fslist)
-	char *fslist;
+makevfslist(char *fslist)
 {
 	const char **av;
 	int i;
