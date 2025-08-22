@@ -21,20 +21,21 @@
 
 /* Default search path. */
 #ifdef RESCUEDIR
-#define	_PATH_DEFPATH	RESCUEDIR ":/usr/bin:/bin:/usr/local/bin"
+#define	_PATH_DEFPATH	RESCUEDIR ":/usr/bin:/bin:/usr/pkg/bin:/usr/local/bin"
 #else
-#define	_PATH_DEFPATH	"/usr/bin:/bin:/usr/local/bin"
+#define	_PATH_DEFPATH	"/usr/bin:/bin:/usr/pkg/bin:/usr/local/bin"
 #endif
 
 /* All standard utilities path. */
+//#define	_PATH_STDPATH \
+//	"/usr/bin:/bin:/usr/sbin:/sbin:/usr/contrib/bin:"
+
 #define	_PATH_STDPATH \
-	"/usr/bin:/bin:/usr/sbin:/sbin:/usr/contrib/bin:/usr/old/bin"
+	"/usr/bin:/bin:/usr/sbin:/sbin:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin"
 
 #define _PATH_DEVTAB_PATHS \
 	"/usr/local/etc:/etc:/etc/defaults"
 
-#define	_PATH_BSHELL	"/bin/sh"
-#define	_PATH_CSHELL	"/bin/csh"
 #define	_PATH_CP	"/bin/cp"
 //#define	_PATH_RSH		"/usr/ucb/rsh"
 //#define	_PATH_VI		"/usr/ucb/vi"
@@ -84,7 +85,6 @@
  * See the __CONCAT() macro from <sys/cdefs.h> for cpp examples.
  */
 #define	_PATH_DEV	"/dev/"
-#define	_PATH_DEV_PTS	"/dev/pts/"
 #define	_PATH_EMUL_AOUT	"/emul/aout/"
 #define	_PATH_TMP	"/tmp/"
 #define	_PATH_VARDB	"/var/db/"

@@ -233,10 +233,7 @@ static void	md_relocate_simple(struct relocation_info *, long, char *);
  * and dp (our __DYNAMIC).
  */
 int
-rtld(version, crtp, dp)
-	int			version;
-	struct crt_ldso		*crtp;
-	struct _dynamic		*dp;
+rtld(int version, struct crt_ldso *crtp, struct _dynamic *dp)
 {
 	int			n;
 	int			nreloc;		/* # of ld.so relocations */
@@ -410,8 +407,7 @@ rtld(version, crtp, dp)
 
 
 static int
-load_subs(smp)
-	struct so_map	*smp;
+load_subs(struct so_map *smp)
 {
 	int flag = 0;
 
@@ -455,8 +451,7 @@ load_subs(smp)
 }
 
 void
-ld_trace(smp)
-	struct so_map	*smp;
+ld_trace(struct so_map *smp)
 {
 	char	*fmt1, *fmt2, *fmt, *main_local;
 	int	c;
@@ -544,13 +539,7 @@ ld_trace(smp)
  * result of the presence of link object LOP in the link map PARENT.
  */
 static struct so_map *
-alloc_link_map(path, sodp, parent, addr, size, dp)
-	char		*path;
-	struct sod	*sodp;
-	struct so_map	*parent;
-	caddr_t		addr;
-	size_t		size;
-	struct _dynamic	*dp;
+alloc_link_map(char *path, struct sod *sodp, struct so_map *parent, caddr_t addr, size_t size, struct _dynamic	*dp)
 {
 	struct so_map		*smp;
 	struct somap_private	*smpp;
@@ -600,8 +589,7 @@ alloc_link_map(path, sodp, parent, addr, size, dp)
  * after it's been unmapped.
  */
 static void
-free_link_map(smp)
-	struct so_map	*smp;
+free_link_map(struct so_map *smp)
 {
 
 	if ((LM_PRIVATE(smp)->spd_flags & _RTLD_DL) != 0) {
@@ -622,9 +610,7 @@ free_link_map(smp)
  * in link map SMP.
  */
 static struct so_map *
-map_object(sodp, smp)
-	struct sod	*sodp;
-	struct so_map	*smp;
+map_object(struct sod *sodp, struct so_map *smp)
 {
 	char		*name;
 	struct _dynamic	*dp;
@@ -739,8 +725,7 @@ again:
  * Unmap a mapped object.
  */
 static void
-unmap_object(smp)
-	struct so_map	*smp;
+unmap_object(struct so_map *smp)
 {
 	struct so_map *p, **pp;
 	struct rt_symbol *rtsp, *rtp;
@@ -781,8 +766,7 @@ unmap_object(smp)
 }
 
 void
-init_maps(head)
-	struct so_map	*head;
+init_maps(struct so_map *head)
 {
 	struct so_map	*smp;
 
@@ -810,10 +794,7 @@ init_maps(head)
 }
 
 static inline void
-check_text_reloc(r, smp, addr)
-	struct relocation_info	*r;
-	struct so_map		*smp;
-	caddr_t			addr;
+check_text_reloc(struct relocation_info *r, struct so_map *smp, caddr_t addr)
 {
 	char	*sym;
 
@@ -843,8 +824,7 @@ check_text_reloc(r, smp, addr)
 }
 
 static void
-reloc_map(smp)
-	struct so_map		*smp;
+reloc_map(struct so_map *smp)
 {
 	struct _dynamic		*dp = smp->som_dynamic;
 	struct relocation_info	*r = LM_REL(smp);
@@ -944,8 +924,7 @@ reloc_map(smp)
 }
 
 static void
-reloc_copy(smp)
-	struct so_map		*smp;
+reloc_copy(struct so_map *smp)
 {
 	struct rt_symbol	*rtsp;
 
@@ -958,9 +937,7 @@ reloc_copy(smp)
 }
 
 static void
-call_map(smp, sym)
-	struct so_map		*smp;
-	char			*sym;
+call_map(struct so_map *smp, char *sym)
 {
 	struct so_map		*src_map = smp;
 	struct nzlist		*np;
@@ -992,8 +969,7 @@ static struct rt_symbol 	*rt_symtab[RTC_TABSIZE];
  * Compute hash value for run-time symbol table
  */
 static inline int
-hash_string(key)
-	const char *key;
+hash_string(const char *key)
 {
 	const char *cp;
 	int k;
@@ -1011,8 +987,7 @@ hash_string(key)
  */
 
 static inline struct rt_symbol *
-lookup_rts(key)
-	const char *key;
+lookup_rts(const char *key)
 {
 	register int			hashval;
 	register struct rt_symbol	*rtsp;
@@ -1031,13 +1006,7 @@ lookup_rts(key)
 }
 
 static struct rt_symbol *
-enter_rts(name, value, type, srcaddr, size, smp)
-	const char	*name;
-	long		value;
-	int		type;
-	caddr_t		srcaddr;
-	long		size;
-	struct so_map	*smp;
+enter_rts(const char *name, long value, int type, caddr_t srcaddr, long size, struct so_map *smp)
 {
 	register int			hashval;
 	register struct rt_symbol	*rtsp, **rpp;
@@ -1070,8 +1039,7 @@ enter_rts(name, value, type, srcaddr, size, smp)
 }
 
 static void
-clear_rts(rtp)
-	struct rt_symbol *rtp;
+clear_rts(struct rt_symbol *rtp)
 {
 	struct rt_symbol *lrt;
 	int hashval = hash_string(rtp->rt_sp->nz_name) % RTC_TABSIZE;
@@ -1098,11 +1066,7 @@ clear_rts(rtp)
  * have a proper type (used by binder()).
  */
 static struct nzlist *
-lookup(name, ref_map, src_map, strong)
-	const char	*name;
-	struct so_map	*ref_map;	/* map cont. the reference */
-	struct so_map	**src_map;	/* map cont. the definition IN/OUT */
-	int		strong;
+lookup(const char *name, struct so_map *ref_map /* map cont. the reference */, struct so_map **src_map /* map cont. the definition IN/OUT */, int strong)
 {
 	long			common_size = 0;
 	struct so_map		*smp, *weak_smp;
@@ -1255,9 +1219,7 @@ xprintf("Allocating common: %s size %d at %#x\n", name, common_size, rtsp->rt_sp
  * exceeds, the given address.
  */
 static int
-__dladdr(addr, dli)
-	const void *addr;
-	Dl_info	*dli;
+__dladdr(const void *addr, Dl_info *dli)
 {
 	struct so_map		*smp;
 	struct rt_symbol	*rtsp;
@@ -1370,8 +1332,7 @@ __dladdr(addr, dli)
  * procedure calls to shared objects.
  */
 long
-binder(jsp)
-	jmpslot_t	*jsp;
+binder(jmpslot_t *jsp)
 {
 	struct so_map	*smp, *src_map = NULL;
 	long		addr;
@@ -1426,7 +1387,7 @@ static char			*hint_search_path = "";
 #define HINTS_VALID (hheader != NULL && hheader != (struct hints_header *)-1)
 
 static void
-maphints()
+maphints(void)
 {
 	caddr_t		addr;
 	struct stat	statbuf;
@@ -1471,7 +1432,7 @@ nohints:
 }
 
 static void
-unmaphints()
+unmaphints(void)
 {
 
 	if (HINTS_VALID) {
@@ -1482,9 +1443,7 @@ unmaphints()
 }
 
 int
-hinthash(cp, vmajor, vminor)
-	char	*cp;
-	int	vmajor, vminor;
+hinthash(char *cp, int vmajor, int vminor)
 {
 	int	k = 0;
 
@@ -1502,10 +1461,7 @@ hinthash(cp, vmajor, vminor)
 #undef minor
 
 static char *
-findhint(name, major, minor, prefered_path)
-	char	*name;
-	int	major, minor;
-	char	*prefered_path;
+findhint(char *name, int major, int minor, char *prefered_path)
 {
 	struct hints_bucket	*bp;
 
@@ -1550,11 +1506,7 @@ findhint(name, major, minor, prefered_path)
 }
 
 static char *
-rtfindlib(name, major, minor, usehints, ipath)
-	char	*name;
-	int	major, minor;
-	int	*usehints;
-	char	*ipath;
+rtfindlib(char *name, int major, int minor, int *usehints, char *ipath)
 {
 	register char	*cp;
 	int		realminor;
@@ -1619,8 +1571,7 @@ lose:
 }
 
 void
-preload(paths)
-	char		*paths;
+preload(char *paths)
 {
 	struct so_map	*nsmp;
 	struct sod	*sodp;
@@ -1678,9 +1629,7 @@ static int dlerrno;
  * Populate sod struct for dlopen's call to map_object
  */
 void
-build_sod(name, sodp)
-	const char	*name;
-	struct sod	*sodp;
+build_sod(const char *name, struct sod *sodp)
 {
 	unsigned int	tuplet;
 	int		major, minor;
@@ -1751,9 +1700,7 @@ backout:
 }
 
 static void *
-__dlopen(name, mode)
-	const char	*name;
-	int		mode;
+__dlopen(const char *name, int mode)
 {
 	struct sod	*sodp;
 	struct so_map	*smp;
@@ -1807,8 +1754,7 @@ xprintf("%s: %s\n", name, strerror(errno));
 }
 
 static int
-__dlclose(fd)
-	void	*fd;
+__dlclose(void *fd)
 {
 	struct so_map	*smp;
 
@@ -1836,9 +1782,7 @@ xprintf("dlclose(%s): refcount = %d\n", smp->som_path, LM_PRIVATE(smp)->spd_refc
 }
 
 static void *
-__dlsym(fd, sym)
-	void		*fd;
-	const char	*sym;
+__dlsym(void *fd, const char *sym)
 {
 	struct so_map	*smp, *src_map = NULL;
 	struct nzlist	*np;
@@ -1865,10 +1809,7 @@ __dlsym(fd, sym)
 }
 
 static int
-__dlctl(fd, cmd, arg)
-	void *fd;
-	int cmd;
-	void *arg;
+__dlctl(void *fd, int cmd, void *arg)
 {
 
 	switch (cmd) {
@@ -1884,7 +1825,7 @@ __dlctl(fd, cmd, arg)
 }
 
 static void
-__dlexit()
+__dlexit(void)
 {
 	struct so_map	*smp;
 

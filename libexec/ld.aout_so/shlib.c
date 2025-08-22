@@ -63,7 +63,7 @@ int	isdigit();
  * Actual vector of library search directories,
  * including `-L'ed and LD_LIBRARY_PATH spec'd ones.
  */
-char	 **search_dirs;
+char **search_dirs;
 int	n_search_dirs;
 
 const char	*standard_search_dirs[] = {
@@ -71,8 +71,7 @@ const char	*standard_search_dirs[] = {
 };
 
 void
-add_search_dir(name)
-	const char	*name;
+add_search_dir(const char *name)
 {
 	n_search_dirs += 2;
 	search_dirs = (char **)
@@ -85,8 +84,7 @@ add_search_dir(name)
 }
 
 void
-remove_search_dir(name)
-	char	*name;
+remove_search_dir(char *name)
 {
 	int	n;
 
@@ -103,8 +101,7 @@ remove_search_dir(name)
 }
 
 void
-add_search_path(path)
-char	*path;
+add_search_path(char *path)
 {
 	register char	*cp, *dup;
 
@@ -119,8 +116,7 @@ char	*path;
 }
 
 void
-remove_search_path(path)
-char	*path;
+remove_search_path(char *path)
 {
 	register char	*cp, *dup;
 
@@ -135,7 +131,7 @@ char	*path;
 }
 
 void
-std_search_path()
+std_search_path(void)
 {
 	int	i, n;
 
@@ -224,10 +220,7 @@ int	n1, n2;
 #undef minor
 
 char *
-findshlib(name, majorp, minorp, do_dot_a)
-char	*name;
-int	*majorp, *minorp;
-int	do_dot_a;
+findshlib(char *name, int *majorp, int *minorp, int do_dot_a)
 {
 	int		dewey[MAXDEWEY];
 	int		ndewey;
@@ -258,16 +251,15 @@ int	do_dot_a;
 			continue;
 
 		while ((dp = readdir(dd)) != NULL) {
-			int	n;
+			int n;
 			struct exec ex;
 			char *xpath;
 			FILE *fp;
 
-			if (do_dot_a && path == NULL &&
-					dp->d_namlen == len + 2 &&
-					strncmp(dp->d_name, lname, len) == 0 &&
-					(dp->d_name+len)[0] == '.' &&
-					(dp->d_name+len)[1] == 'a') {
+			if (do_dot_a && path == NULL && dp->d_namlen == len + 2
+					&& strncmp(dp->d_name, lname, len) == 0
+					&& (dp->d_name + len)[0] == '.'
+					&& (dp->d_name + len)[1] == 'a') {
 
 				path = concat(search_dirs[i], "/", dp->d_name);
 				found_dot_a = 1;
@@ -277,10 +269,10 @@ int	do_dot_a;
 				continue;
 			if (strncmp(dp->d_name, lname, len) != 0)
 				continue;
-			if (strncmp(dp->d_name+len, ".so.", 4) != 0)
+			if (strncmp(dp->d_name + len, ".so.", 4) != 0)
 				continue;
 
-			if ((n = getdewey(tmp, dp->d_name+len+4)) == 0)
+			if ((n = getdewey(tmp, dp->d_name + len + 4)) == 0)
 				continue;
 
 			if (major != -1 && found_dot_a) { /* XXX */
@@ -301,8 +293,7 @@ int	do_dot_a;
 				continue;
 			}
 			fclose(fp);
-			if (N_GETMAGIC(ex) != ZMAGIC
-			    || (N_GETFLAG(ex) & EX_DYNAMIC) == 0) {
+			if (N_GETMAGIC(ex) != ZMAGIC || (N_GETFLAG(ex) & EX_DYNAMIC) == 0) {
 				continue;
 			}
 
@@ -360,10 +351,9 @@ int	do_dot_a;
  * Like malloc but get fatal error if memory is exhausted.
  */
 void *
-xmalloc(size)
-	size_t size;
+xmalloc(size_t size)
 {
-	void	*result = (void *)malloc(size);
+	void *result = (void *)malloc(size);
 
 	if (!result)
 		errx(1, "virtual memory exhausted");
@@ -375,9 +365,7 @@ xmalloc(size)
  * Like realloc but get fatal error if memory is exhausted.
  */
 void *
-xrealloc(ptr, size)
-	void *ptr;
-	size_t size;
+xrealloc(void *ptr, size_t size)
 {
 	void	*result;
 
@@ -393,8 +381,7 @@ xrealloc(ptr, size)
  * the strings S1, S2, S3.
  */
 char *
-concat(s1, s2, s3)
-	const char *s1, *s2, *s3;
+concat(const char *s1, const char *s2, const char *s3)
 {
 	int	len1 = strlen(s1),
 		len2 = strlen(s2),

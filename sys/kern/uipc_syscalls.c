@@ -905,16 +905,17 @@ pipe()
 	if (rf == NULL) {
 		goto free2;
 	}
-	retval[0] = fd;
-	u.u_r.r_val1 = retval[0];
 	pipe_read(rf, rso);
+	fd = u.u_r.r_val1;
+	retval[0] = fd;
 	wf = falloc();
 	if (wf == NULL) {
 		goto free3;
 	}
 	pipe_write(wf, wso);
+	u.u_r.r_val2 = u.u_r.r_val1;
+	u.u_r.r_val1 = fd;
 	retval[1] = fd;
-	u.u_r.r_val2 = retval[1];
 	error = unp_connect2(wso, rso);
 	if (error) {
 		goto free4;

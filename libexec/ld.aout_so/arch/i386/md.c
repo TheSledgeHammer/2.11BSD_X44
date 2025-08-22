@@ -50,9 +50,7 @@
  * from address ADDR
  */
 long
-md_get_addend(rp, addr)
-	struct relocation_info	*rp;
-	unsigned char		*addr;
+md_get_addend(struct relocation_info *rp, unsigned char *addr)
 {
 	switch (RELOC_TARGET_SIZE(rp)) {
 	case 0:
@@ -71,11 +69,7 @@ md_get_addend(rp, addr)
  * Put RELOCATION at ADDR according to relocation record RP.
  */
 void
-md_relocate(rp, relocation, addr, relocatable_output)
-	struct relocation_info	*rp;
-	long			relocation;
-	unsigned char		*addr;
-	int			relocatable_output;
+md_relocate(struct relocation_info *rp, long relocation, unsigned char *addr, int relocatable_output)
 {
 	switch (RELOC_TARGET_SIZE(rp)) {
 	case 0:
@@ -94,9 +88,7 @@ md_relocate(rp, relocation, addr, relocatable_output)
 }
 
 void
-md_set_breakpoint(where, savep)
-	long	where;
-	long	*savep;
+md_set_breakpoint(long where, long *savep)
 {
 	*savep = *(long *)where;
 	*(char *)where = TRAP;
@@ -110,11 +102,7 @@ md_set_breakpoint(where, savep)
  * further RRS relocations will be necessary for such a jmpslot.
  */
 void
-md_fix_jmpslot(sp, offset, addr, first)
-	jmpslot_t	*sp;
-	long		offset;
-	u_long		addr;
-	int		first;
+md_fix_jmpslot(jmpslot_t *sp, long offset, u_long addr, int first)
 {
 	u_long	fudge = addr - (sizeof(sp->opcode) + sizeof(sp->addr) + offset);
 
@@ -136,9 +124,7 @@ md_fix_jmpslot(sp, offset, addr, first)
  * Set RRS relocation type.
  */
 int
-md_make_reloc(rp, r, type)
-	struct relocation_info	*rp, *r;
-	int			type;
+md_make_reloc(struct relocation_info *rp, struct relocation_info *r, int type)
 {
 	/* Relocation size */
 	r->r_length = rp->r_length;
@@ -160,10 +146,7 @@ md_make_reloc(rp, r, type)
  * to the binder slot (which is at offset 0 of the PLT).
  */
 void
-md_make_jmpslot(sp, offset, index)
-	jmpslot_t	*sp;
-	long		offset;
-	long		index;
+md_make_jmpslot(jmpslot_t *sp, long offset, long index)
 {
 	/*
 	 * i386 PC-relative "fixed point" is located right after the
@@ -185,9 +168,7 @@ md_make_jmpslot(sp, offset, index)
  * Update the relocation record for a RRS jmpslot.
  */
 void
-md_make_jmpreloc(rp, r, type)
-	struct relocation_info	*rp, *r;
-	int			type;
+md_make_jmpreloc(struct relocation_info *rp, struct relocation_info *r, int type)
 {
 	jmpslot_t	*sp;
 
@@ -211,9 +192,7 @@ md_make_jmpreloc(rp, r, type)
  * Set relocation type for a RRS GOT relocation.
  */
 void
-md_make_gotreloc(rp, r, type)
-	struct relocation_info	*rp, *r;
-	int			type;
+md_make_gotreloc(struct relocation_info *rp, struct relocation_info *r, int type)
 {
 	r->r_baserel = 1;
 	if (type & RELTYPE_RELATIVE)
@@ -227,8 +206,7 @@ md_make_gotreloc(rp, r, type)
  * Set relocation type for a RRS copy operation.
  */
 void
-md_make_cpyreloc(rp, r)
-	struct relocation_info	*rp, *r;
+md_make_cpyreloc(struct relocation_info *rp, struct relocation_info *r)
 {
 	/* Relocation size */
 	r->r_length = 2;
@@ -245,9 +223,7 @@ int	netzmagic;
  * obtained from subsequent N_*() macro evaluations.
  */
 void
-md_init_header(hp, magic, flags)
-	struct exec	*hp;
-	int		magic, flags;
+md_init_header(struct exec *hp, int magic, int flags)
 {
 #ifdef __NetBSD__
 	if (oldmagic || magic == QMAGIC)
@@ -277,8 +253,7 @@ md_init_header(hp, magic, flags)
  */
 
 void
-md_swapin_exec_hdr(h)
-	struct exec *h;
+md_swapin_exec_hdr(struct exec *h)
 {
 	int skip = 0;
 
@@ -289,8 +264,7 @@ md_swapin_exec_hdr(h)
 }
 
 void
-md_swapout_exec_hdr(h)
-	struct exec *h;
+md_swapout_exec_hdr(struct exec *h)
 {
 	/* NetBSD: Always leave magic alone */
 	int skip = 1;
@@ -304,9 +278,7 @@ md_swapout_exec_hdr(h)
 
 
 void
-md_swapin_reloc(r, n)
-	struct relocation_info *r;
-	int n;
+md_swapin_reloc(struct relocation_info *r, int n)
 {
 	int	bits;
 
@@ -327,9 +299,7 @@ md_swapin_reloc(r, n)
 }
 
 void
-md_swapout_reloc(r, n)
-	struct relocation_info *r;
-	int n;
+md_swapout_reloc(struct relocation_info *r, int n)
 {
 	int	bits;
 
@@ -350,9 +320,7 @@ md_swapout_reloc(r, n)
 }
 
 void
-md_swapout_jmpslot(j, n)
-	jmpslot_t	*j;
-	int		n;
+md_swapout_jmpslot(jmpslot_t *j, int n)
 {
 	for (; n; n--, j++) {
 		j->opcode = md_swap_short(j->opcode);

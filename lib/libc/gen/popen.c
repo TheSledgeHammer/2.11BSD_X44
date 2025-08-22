@@ -103,7 +103,7 @@ popen(program, type)
 			}
 			(void) close(pdes[1]);
 		}
-		execl("/bin/sh", "sh", "-c", program, NULL);
+		execl(_PATH_BSHELL, "sh", "-c", program, NULL);
 		_exit(127);
 		/* NOTREACHED */
 	}
@@ -125,7 +125,7 @@ pclose(iop)
 {
 	register int fdes;
 	sigset_t omask, nmask;
-	union wait pstat;
+	int pstat;
 	register int pid;
 
 	/*
@@ -142,9 +142,9 @@ pclose(iop)
 	sigaddset(&nmask, SIGHUP);
 	(void) sigprocmask(SIG_BLOCK, &nmask, &omask);
 	do {
-		pid = waitpid(pids[fdes], (int*) &pstat, 0);
+		pid = waitpid(pids[fdes], &pstat, 0);
 	} while (pid == -1 && errno == EINTR);
 	(void) sigprocmask(SIG_SETMASK, &omask, NULL);
 	pids[fdes] = 0;
-	return (pid == -1 ? -1 : pstat.w_status);
+	return (pid == -1 ? -1 : pstat);
 }

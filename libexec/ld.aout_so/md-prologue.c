@@ -14,9 +14,7 @@ extern void	(*rtld)();
 extern void	(*binder())();
 
 void
-rtld_entry(version, crtp)
-int version;
-struct crt *crtp;
+rtld_entry(int version, struct crt *crtp)
 {
 	register struct link_dynamic	*dp;
 	register void			(*f)();
@@ -29,7 +27,7 @@ struct crt *crtp;
 }
 
 void
-binder_entry()
+binder_entry(void)
 {
 	extern int PC;
 	struct jmpslot	*sp;

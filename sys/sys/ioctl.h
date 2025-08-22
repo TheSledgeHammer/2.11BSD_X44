@@ -132,12 +132,15 @@ struct ttysize {
  * tty ioctl commands
  */
 #ifdef USE_OLD_TTY
-#define	TIOCGETD			_IOR('t', 0, int)						/* get line discipline */
-#define	TIOCSETD			_IOW('t', 1, int)						/* set line discipline */
+#define	TIOCGETD			_IOR('t', 0, int)					/* get line discipline */
+#define	TIOCSETD			_IOW('t', 1, int)					/* set line discipline */
 #define	TIOCHPCL			_IO('t', 2)							/* hang up on last close */
+//#else
+//# define OTIOCGETD			_IOR('t', 0, int)					/* get line discipline */
+//# define OTIOCSETD			_IOW('t', 1, int)					/* set line discipline */
 #endif /* USE_OLD_TTY */
-#define	TIOCMODG			_IOR('t', 3, int)						/* get modem control state */
-#define	TIOCMODS			_IOW('t', 4, int)						/* set modem control state */
+#define	TIOCMODG			_IOR('t', 3, int)					/* get modem control state */
+#define	TIOCMODS			_IOW('t', 4, int)					/* set modem control state */
 #define	TIOCM_LE			0001								/* line enable */
 #define	TIOCM_DTR			0002								/* data terminal ready */
 #define	TIOCM_RTS			0004								/* request to send */
@@ -150,23 +153,24 @@ struct ttysize {
 #define	TIOCM_RI			TIOCM_RNG
 #define	TIOCM_DSR			0400								/* data set ready */
 #ifdef USE_OLD_TTY
-#define	TIOCGETP			_IOR('t', 8,struct sgttyb)			/* get parameters -- gtty */
-#define	TIOCSETP			_IOW('t', 9,struct sgttyb)			/* set parameters -- stty */
-#define	TIOCSETN			_IOW('t', 10,struct sgttyb)			/* as above, but no flushtty */
+#define	TIOCGETP			_IOR('t', 8, struct sgttyb)			/* get parameters -- gtty */
+#define	TIOCSETP			_IOW('t', 9, struct sgttyb)			/* set parameters -- stty */
+#define	TIOCSETN			_IOW('t', 10, struct sgttyb)		/* as above, but no flushtty */
 #endif /* USE_OLD_TTY */
 #define	TIOCEXCL			_IO('t', 13)						/* set exclusive use of tty */
 #define	TIOCNXCL			_IO('t', 14)						/* reset exclusive use of tty */
 #define	TIOCFLUSH			_IOW('t', 16, int)					/* flush buffers */
 #ifdef USE_OLD_TTY
-#define	TIOCSETC			_IOW('t', 17,struct tchars)			/* set special characters */
-#define	TIOCGETC			_IOR('t', 18,struct tchars)			/* get special characters */
+#define	TIOCSETC			_IOW('t', 17, struct tchars)		/* set special characters */
+#define	TIOCGETC			_IOR('t', 18, struct tchars)		/* get special characters */
 #endif /* USE_OLD_TTY */
 #define	TIOCGETA			_IOR('t', 19, struct termios) 		/* get termios struct */
 #define	TIOCSETA			_IOW('t', 20, struct termios) 		/* set termios struct */
 #define	TIOCSETAW			_IOW('t', 21, struct termios) 		/* drain output, set */
 #define	TIOCSETAF			_IOW('t', 22, struct termios) 		/* drn out, fls in, set */
-/* 4.4BSD's TIOCGETD		_IOR('t', 26, int) 				 get line discipline */
-/* 4.4BSD's TIOCSETD		_IOW('t', 27, int)				 set line discipline */
+//#define	TIOCGETD			_IOR('t', 26, int)					/* get line discipline 4.4BSD (deprecated) */
+//#define	TIOCSETD			_IOW('t', 27, int)					/* set line discipline 4.4BSD (deprecated) */
+
 #ifdef USE_OLD_TTY
 #define	TANDEM				0x00000001							/* send stopc on out q full */
 #define	CBREAK				0x00000002							/* half-cooked mode */
@@ -222,6 +226,7 @@ struct ttysize {
 #define	LDECCTQ				((int)(DECCTQ>>16))
 #define	LNOFLSH				((int)(NOFLSH>>16))
 #endif /* USE_OLD_TTY */
+
 #define	TIOCSBRK			_IO('t', 123)						/* set break bit */
 #define	TIOCCBRK			_IO('t', 122)						/* clear break bit */
 #define	TIOCSDTR			_IO('t', 121)						/* set data terminal ready */
@@ -229,8 +234,8 @@ struct ttysize {
 #define	TIOCGPGRP			_IOR('t', 119, int)					/* get pgrp of tty */
 #define	TIOCSPGRP			_IOW('t', 118, int)					/* set pgrp of tty */
 #ifdef USE_OLD_TTY
-#define	TIOCSLTC			_IOW('t', 117,struct ltchars)		/* set local special chars */
-#define	TIOCGLTC			_IOR('t', 116,struct ltchars)		/* get local special chars */
+#define	TIOCSLTC			_IOW('t', 117, struct ltchars)		/* set local special chars */
+#define	TIOCGLTC			_IOR('t', 116, struct ltchars)		/* get local special chars */
 #endif /* USE_OLD_TTY */
 #define	TIOCOUTQ			_IOR('t', 115, int)					/* output queue size */
 #define	TIOCSTI				_IOW('t', 114, char)				/* simulate terminal input */

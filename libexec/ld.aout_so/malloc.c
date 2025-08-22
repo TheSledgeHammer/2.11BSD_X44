@@ -148,8 +148,7 @@ botch(s)
 #endif
 
 void *
-malloc(nbytes)
-	size_t nbytes;
+malloc(size_t nbytes)
 {
   	register union overhead *op;
   	register int bucket, n;
@@ -234,8 +233,7 @@ malloc(nbytes)
  * Allocate more memory to the indicated bucket.
  */
 static void
-morecore(bucket)
-	int bucket;
+morecore(int bucket)
 {
   	register union overhead *op;
 	register int sz;		/* size of desired block */
@@ -275,8 +273,7 @@ morecore(bucket)
 }
 
 void
-free(cp)
-	void *cp;
+free(void *cp)
 {   
   	register int size;
 	register union overhead *op;
@@ -317,9 +314,7 @@ free(cp)
 int realloc_srchlen = 4;	/* 4 should be plenty, -1 =>'s whole list */
 
 void *
-realloc(cp, nbytes)
-	void *cp; 
-	size_t nbytes;
+realloc(void *cp, size_t nbytes)
 {   
   	register u_int onb;
 	register int i;
@@ -388,9 +383,7 @@ realloc(cp, nbytes)
  * Return bucket number, or -1 if not found.
  */
 static int
-findbucket(freep, srchlen)
-	union overhead *freep;
-	int srchlen;
+findbucket(union overhead *freep, int srchlen)
 {
 	register union overhead *p;
 	register int i, j;
@@ -414,8 +407,7 @@ findbucket(freep, srchlen)
  * for each size category, the second showing the number of mallocs -
  * frees for each size category.
  */
-mstats(s)
-	char *s;
+mstats(char *s)
 {
   	register int i, j;
   	register union overhead *p;

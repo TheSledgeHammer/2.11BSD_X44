@@ -6,12 +6,9 @@
  */
 
 static void
-md_relocate_simple(r, relocation, addr)
-struct relocation_info	*r;
-long			relocation;
-char			*addr;
+md_relocate_simple(struct relocation_info *r, long relocation, char *addr)
 {
-if (r->r_relative)
-	*(long *)addr += relocation;
+	if (r->r_relative)
+		*(long*) addr += relocation;
 }
 
