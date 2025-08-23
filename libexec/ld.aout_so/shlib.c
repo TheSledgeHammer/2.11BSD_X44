@@ -148,9 +148,7 @@ std_search_path(void)
  */
 
 int
-getdewey(dewey, cp)
-int	dewey[];
-char	*cp;
+getdewey(int dewey[], char *cp)
 {
 	int	i, n;
 
@@ -179,9 +177,7 @@ char	*cp;
  * Return  0 if equal.
  */
 int
-cmpndewey(d1, n1, d2, n2)
-int	d1[], d2[];
-int	n1, n2;
+cmpndewey(int d1[], int n1, int d2[], int n2)
 {
 	register int	i;
 
