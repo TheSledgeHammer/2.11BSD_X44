@@ -27,9 +27,10 @@
 #endif
 
 /* All standard utilities path. */
-//#define	_PATH_STDPATH \
-//	"/usr/bin:/bin:/usr/sbin:/sbin:/usr/contrib/bin:"
-
+/*
+#define	_PATH_STDPATH \
+	"/usr/bin:/bin:/usr/sbin:/sbin:/usr/contrib/bin:"
+*/
 #define	_PATH_STDPATH \
 	"/usr/bin:/bin:/usr/sbin:/sbin:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin"
 

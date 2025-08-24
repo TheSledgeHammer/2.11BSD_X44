@@ -261,7 +261,7 @@ main(int argc, char *argv[])
 			if (ttyaction(ttyn, "getty", "root")) {
 				syslog(LOG_WARNING, "%s: ttyaction failed", ttyn);
 			}
-			while ((i = open(ttyn, O_RDWR)) != 0) {
+			while ((i = open(ttyn, O_RDWR)) == -1) {
 				if ((repcnt % 10 == 0) && (errno != ENXIO || !failopenlogged)) {
 					syslog(LOG_ERR, "%s: %m", ttyn);
 					closelog();
@@ -273,6 +273,13 @@ main(int argc, char *argv[])
 			(void)login_tty(i);
 		}
 	}
+
+	/* Start with default tty settings */
+	if (tcgetattr(0, &tmode) < 0) {
+		syslog(LOG_ERR, "%s: %m", ttyn);
+		exit(1);
+	}
+	omode = tmode;
 
 	gettable("default", defent, defstrs);
 	gendefaults();
@@ -530,7 +537,7 @@ getname(void)
 			np = name;
 			continue;
 		} else if (isdigit(c) || c == '_')
-			digit++;
+			digit = 1;
 		if (IG && (c <= ' ' || c > 0176))
 			continue;
 		*np++ = c;
@@ -549,7 +556,7 @@ getname(void)
 	(void)signal(SIGINT, SIG_IGN);
 	*np = 0;
 	if (c == '\r')
-		crmod++;
+		crmod = 1;
 	if ((upper && !lower && !LC) || UC)
 		for (np = name; *np; np++)
 			*np = tolower((unsigned char)*np);

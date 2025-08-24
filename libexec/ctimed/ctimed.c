@@ -22,6 +22,7 @@
 #include	<time.h>
 #include	<utmp.h>
 #include	<unistd.h>
+#include	<paths.h>
 
 #include	"ctimed.h"
 
@@ -92,7 +93,7 @@ main(int argc, char **argv)
 	signal(SIGALRM, ctimeout);
 	setitimer(ITIMER_REAL, &it, (struct itimerval*) NULL);
 	if (setjmp(env) == 0) {
-		i = open("/dev/tty", 0);
+		i = open(_PATH_TTY, 0);
 		if (i >= 0) {
 			ioctl(i, TIOCNOTTY, NULL);
 			close(i);
