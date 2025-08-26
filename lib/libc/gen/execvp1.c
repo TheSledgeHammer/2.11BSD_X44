@@ -79,7 +79,7 @@ execl(const char *name, const char *arg, ...)
 	for (off = 2; va_arg(ap, char *) != NULL; off++);
 	va_end(ap);
 
-	argv = alloca(off * sizeof (char *));
+	argv = alloca(off * sizeof(char *));
 	if (argv == NULL) {
 		errno = ENOMEM;
 		return (-1);
@@ -91,6 +91,9 @@ execl(const char *name, const char *arg, ...)
 	va_end(ap);
 
 	error = execve(name, argv, environ);
+	sverrno = errno;
+	free(argv);
+	errno = sverrno;
 	return (error);
 }
 
@@ -105,7 +108,7 @@ execle(const char *name, const char *arg, ...)
 	for (off = 2; va_arg(ap, char *) != NULL; off++);
 	va_end(ap);
 
-	argv = alloca(off * sizeof (char *));
+	argv = alloca(off * sizeof(char *));
 	if (argv == NULL) {
 		errno = ENOMEM;
 		return (-1);
@@ -128,14 +131,14 @@ int
 execlp(const char *name, const char *arg, ...)
 {
 	va_list ap;
-	int sverrno, error;
+	int sverrno, error, off;
 	char **argv;
 
 	va_start(ap, arg);
 	for (off = 2; va_arg(ap, char *) != NULL; off++);
 	va_end(ap);
 
-	argv = alloca(off * sizeof (char *));
+	argv = alloca(off * sizeof(char *));
 	if (argv == NULL) {
 		errno = ENOMEM;
 		return (-1);
@@ -170,7 +173,7 @@ execvpe(const char *name, char * const *argv, char * const *envp)
 	/* "" is not a valid filename; check this before traversing PATH. */
 	if (name[0] == '\0') {
 		errno = ENOENT;
-		goto done;
+		return (-1);
 	}
 
 	/* If it's an absolute or relative path name, it's easy. */
