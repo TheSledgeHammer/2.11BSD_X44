@@ -49,7 +49,11 @@ static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
 #include <stdio.h>
 #include <paths.h>
 
+#if __STDC__
 #include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 
 #ifdef __weak_alias
 __weak_alias(execl,_execl)
@@ -252,7 +256,7 @@ execvp(const char *name, char * const *argv)
 static char *
 execat(const char *s1, char *si, char *buf)
 {
-    register size_t lp, ln;
+	register size_t lp, ln;
 
 	if (!*si) {
 		si = __UNCONST(".");
@@ -260,17 +264,17 @@ execat(const char *s1, char *si, char *buf)
 	} else {
 		lp = strlen(si);
 	}
-    ln = strlen(s1);
+	ln = strlen(s1);
 
-    if (lp + ln + 2 > sizeof(buf)) {
+	if (lp + ln + 2 > sizeof(buf)) {
 		(void) write(STDERR_FILENO, "execvp: ", 8);
 		(void) write(STDERR_FILENO, si, lp);
 		(void) write(STDERR_FILENO, ": path too long\n", 16);
-    }
+	}
 
 	bcopy(si, buf, lp);
 	buf[lp] = '/';
 	bcopy(s1, buf + lp + 1, ln);
 	buf[lp + ln + 1] = '\0';
-    return (si);
+	return (si);
 }

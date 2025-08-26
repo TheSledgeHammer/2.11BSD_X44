@@ -179,12 +179,13 @@ execvpe(const char *name, char * const *argv, char * const *envp)
 	while ((cp = strsep(__UNCONST(&cur), ":"))) {
 		cp = execat(name, cp, buf);
 retry:
-		(void)execve(fname, argv, envp);
+		(void) execve(fname, argv, envp);
 		switch (errno) {
 		case ENOEXEC:
-			for (cnt = 0; argv[cnt]; ++cnt);
-			if ((cnt + 2) * sizeof(char *) > memsize) {
-				memsize = (cnt + 2) * sizeof(char *);
+			for (cnt = 0; argv[cnt]; ++cnt)
+				;
+			if ((cnt + 2) * sizeof(char*) > memsize) {
+				memsize = (cnt + 2) * sizeof(char*);
 				if ((newargs = realloc(newargs, memsize)) == NULL) {
 					memsize = 0;
 					goto done;
@@ -192,8 +193,8 @@ retry:
 			}
 			newargs[0] = "sh";
 			newargs[1] = fname;
-			bcopy(argv + 1, newargs + 2, cnt * sizeof(char *));
-			(void)execve(_PATH_BSHELL, __UNCONST(newargs), envp);
+			bcopy(argv + 1, newargs + 2, cnt * sizeof(char*));
+			(void) execve(_PATH_BSHELL, __UNCONST(newargs), envp);
 			free(__UNCONST(newargs));
 			//return (-1);
 			goto done;
@@ -241,7 +242,7 @@ execvp(const char *name, char * const *argv)
 static char *
 execat(const char *s1, char *si, char *buf)
 {
-    register size_t lp, ln;
+	register size_t lp, ln;
 
 	if (!*si) {
 		si = __UNCONST(".");
@@ -249,19 +250,19 @@ execat(const char *s1, char *si, char *buf)
 	} else {
 		lp = strlen(si);
 	}
-    ln = strlen(s1);
+	ln = strlen(s1);
 
-    if (lp + ln + 2 > sizeof(buf)) {
+	if (lp + ln + 2 > sizeof(buf)) {
 		(void) write(STDERR_FILENO, "execvp: ", 8);
 		(void) write(STDERR_FILENO, si, lp);
 		(void) write(STDERR_FILENO, ": path too long\n", 16);
-    }
+	}
 
 	bcopy(si, buf, lp);
 	buf[lp] = '/';
 	bcopy(s1, buf + lp + 1, ln);
 	buf[lp + ln + 1] = '\0';
-    return (si);
+	return (si);
 }
 
 static char **
@@ -274,9 +275,9 @@ buildargv(va_list ap, const char *arg, char ***envpp)
 	argv = NULL;
 	for (off = 0;; ++off) {
 		if (off >= memsize) {
-			memsize += 50;	/* Starts out at 0. */
-			memsize *= 2;	/* Ramp up fast. */
-			if (!(argv = realloc(argv, memsize * sizeof(char *)))) {
+			memsize += 50; /* Starts out at 0. */
+			memsize *= 2; /* Ramp up fast. */
+			if (!(argv = realloc(argv, memsize * sizeof(char*)))) {
 				memsize = 0;
 				return (NULL);
 			}
@@ -285,13 +286,13 @@ buildargv(va_list ap, const char *arg, char ***envpp)
 				off = 1;
 			}
 		}
-		if (!(argv[off] = va_arg(ap, char *))) {
+		if (!(argv[off] = va_arg(ap, char*))) {
 			break;
 		}
 	}
 	/* Get environment pointer if user supposed to provide one. */
 	if (envpp) {
-		*envpp = va_arg(ap, char **);
+		*envpp = va_arg(ap, char**);
 	}
 	return (argv);
 }
