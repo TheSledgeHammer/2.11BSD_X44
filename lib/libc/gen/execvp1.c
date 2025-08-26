@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
- 
+
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
@@ -49,11 +49,7 @@ static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
 #include <stdio.h>
 #include <paths.h>
 
-#if __STDC__
 #include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
 
 #ifdef __weak_alias
 __weak_alias(execl,_execl)
@@ -71,28 +67,30 @@ __weak_alias(execvpe,_execvpe)
 
 extern char **environ;
 static char *execat(const char *, char *, char *);
-static char **buildargv(va_list, const char *, char ***);
 
 int
 execl(const char *name, const char *arg, ...)
 {
 	va_list ap;
-	int sverrno, error;
+	int sverrno, error, off;
 	char **argv;
 
-    error = -1;
-
 	va_start(ap, arg);
-	argv = buildargv(ap, arg, NULL);
+	for (off = 2; va_arg(ap, char *) != NULL; off++);
+	va_end(ap);
+
+	argv = alloca(off * sizeof (char *));
 	if (argv == NULL) {
+		errno = ENOMEM;
 		return (-1);
 	}
+
+	va_start(ap, arg);
+	argv[0] = __UNCONST(arg);
+	for (off = 1; (argv[off] = va_arg(ap, char *)) != NULL; off++);
 	va_end(ap);
 
 	error = execve(name, argv, environ);
-	sverrno = errno;
-	free(argv);
-	errno = sverrno;
 	return (error);
 }
 
@@ -100,16 +98,23 @@ int
 execle(const char *name, const char *arg, ...)
 {
 	va_list ap;
-	int sverrno, error;
+	int sverrno, error, off;
 	char **argv, **envp;
 
-    error = -1;
-
 	va_start(ap, arg);
-	argv = buildargv(ap, arg, &envp);
+	for (off = 2; va_arg(ap, char *) != NULL; off++);
+	va_end(ap);
+
+	argv = alloca(off * sizeof (char *));
 	if (argv == NULL) {
+		errno = ENOMEM;
 		return (-1);
 	}
+
+	va_start(ap, arg);
+	argv[0] = __UNCONST(arg);
+	for (off = 1; (argv[off] = va_arg(ap, char *)) != NULL; off++);
+	envp = va_arg(ap, char **);
 	va_end(ap);
 
 	error = execve(name, argv, envp);
@@ -126,13 +131,19 @@ execlp(const char *name, const char *arg, ...)
 	int sverrno, error;
 	char **argv;
 
-    error = -1;
-
 	va_start(ap, arg);
-	argv = buildargv(ap, arg, NULL);
+	for (off = 2; va_arg(ap, char *) != NULL; off++);
+	va_end(ap);
+
+	argv = alloca(off * sizeof (char *));
 	if (argv == NULL) {
+		errno = ENOMEM;
 		return (-1);
 	}
+
+	va_start(ap, arg);
+	argv[0] = __UNCONST(arg);
+	for (off = 1; (argv[off] = va_arg(ap, char *)) != NULL; off++);
 	va_end(ap);
 
 	error = execvp(name, argv);
@@ -146,7 +157,7 @@ int
 execvpe(const char *name, char * const *argv, char * const *envp)
 {
 	static int memsize;
-	static const char **newargs;
+	const char **newargs;
 	register int cnt;
 	register char *cp;
 	int eacces, etxtbsy;
@@ -174,8 +185,6 @@ execvpe(const char *name, char * const *argv, char * const *envp)
 	if (!(pathstr = getenv("PATH"))) {
 		pathstr = _PATH_DEFPATH;
 	}
-	cur = pathstr = __UNCONST(strdup(pathstr));
-
 	while ((cp = strsep(__UNCONST(&cur), ":"))) {
 		cp = execat(name, cp, buf);
 retry:
@@ -183,12 +192,9 @@ retry:
 		switch (errno) {
 		case ENOEXEC:
 			for (cnt = 0; argv[cnt]; ++cnt);
-			if ((cnt + 2) * sizeof(char *) > memsize) {
-				memsize = (cnt + 2) * sizeof(char *);
-				if ((newargs = realloc(newargs, memsize)) == NULL) {
-					memsize = 0;
-					goto done;
-				}
+			memsize = (cnt + 2) * sizeof(char *);
+			if ((newargs = alloca(memsize)) == NULL) {
+				goto done;
 			}
 			newargs[0] = "sh";
 			newargs[1] = fname;
@@ -196,11 +202,13 @@ retry:
 			(void)execve(_PATH_BSHELL, __UNCONST(newargs), envp);
 			free(__UNCONST(newargs));
 			goto done;
+			//return (-1);
 		case ETXTBSY:
 			if (++etxtbsy > 5) {
 				goto done;
+				//return (-1);
 			}
-			sleep(etxtbsy);
+			(void)sleep(etxtbsy);
 			goto retry;
 		case EACCES:
 			eacces++;
@@ -260,36 +268,4 @@ execat(const char *s1, char *si, char *buf)
 	bcopy(s1, buf + lp + 1, ln);
 	buf[lp + ln + 1] = '\0';
     return (si);
-}
-
-static char **
-buildargv(va_list ap, const char *arg, char ***envpp)
-{
-	static int memsize;
-	static char **argv;
-	register int off;
-
-	argv = NULL;
-	for (off = 0;; ++off) {
-		if (off >= memsize) {
-			memsize += 50;	/* Starts out at 0. */
-			memsize *= 2;	/* Ramp up fast. */
-			if (!(argv = realloc(argv, memsize * sizeof(char *)))) {
-				memsize = 0;
-				return (NULL);
-			}
-			if (off == 0) {
-				argv[0] = __UNCONST(arg);
-				off = 1;
-			}
-		}
-		if (!(argv[off] = va_arg(ap, char *))) {
-			break;
-		}
-	}
-	/* Get environment pointer if user supposed to provide one. */
-	if (envpp) {
-		*envpp = va_arg(ap, char **);
-	}
-	return (argv);
 }

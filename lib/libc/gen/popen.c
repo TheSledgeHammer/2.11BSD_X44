@@ -71,9 +71,10 @@ popen(program, type)
 	register FILE *iop;
 	int pdes[2], fds, pid;
 
-	if ((*type != 'r' && *type != 'w') || type[1])
+	if ((*type != 'r' && *type != 'w')
+			|| (type[1] && (type[1] != 'e' || type[2]))) {
 		return (NULL);
-
+	}
 	if (pids == NULL) {
 		if ((fds = getdtablesize()) <= 0)
 			return (NULL);
@@ -103,17 +104,17 @@ popen(program, type)
 			}
 			(void) close(pdes[1]);
 		}
-		execl(_PATH_BSHELL, "sh", "-c", program, NULL);
+		execl(_PATH_BSHELL, "sh", "-c", program, (char *)NULL);
 		_exit(127);
 		/* NOTREACHED */
 	}
 	/* parent; assume fdopen can't fail...  */
 	if (*type == 'r') {
 		iop = fdopen(pdes[0], type);
-		(void) close(pdes[1]);
+		(void)close(pdes[1]);
 	} else {
 		iop = fdopen(pdes[1], type);
-		(void) close(pdes[0]);
+		(void)close(pdes[0]);
 	}
 	pids[fileno(iop)] = pid;
 	return (iop);
@@ -133,8 +134,10 @@ pclose(iop)
 	 * `popened' command, if already `pclosed', or waitpid
 	 * returns an error.
 	 */
-	if (pids == NULL || pids[fdes = fileno(iop)] == 0)
+	fdes = fileno(iop);
+	if (pids == NULL || pids[fdes] == 0) {
 		return (-1);
+	}
 	(void) fclose(iop);
 	sigemptyset(&nmask);
 	sigaddset(&nmask, SIGINT);

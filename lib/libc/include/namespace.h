@@ -288,7 +288,7 @@
 #define execl					_execl
 #define execle					_execle
 #define execlp					_execlp
-//#define execv					_execv
+#define execv					_execv
 #define execvp					_execvp
 #define execvpe					_execvpe
 #define explicit_bzero			_explicit_bzero

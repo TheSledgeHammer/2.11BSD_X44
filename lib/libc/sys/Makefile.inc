@@ -17,7 +17,7 @@ SRCS+=      	Ovfork.S brk.S exect.S fork.S pipe.S \
 
 #acl_file.S acl_filedesc.S
 # glue to provide compatibility between GCC 1.X and 2.X
-GLUE+=          acl_file.c acl_filedesc.c \
+GLUE+=          acl_file.c acl_filedesc.c execv.c \
                 extattr_file.c extattr_filedesc.c \
                 ftruncate.c lseek.c mmap.c mpx.c \
 				pread.c preadv.c pwrite.c pwritev.c \
@@ -78,7 +78,7 @@ ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
                 symlink.S undelete.S unlink.S unmount.S utimes.S utrace.S \
 		uuidgen.S vtrace.S __sysctl.S
 
-WEAKASM=        accept.S close.S connect.S execv.S execve.S fcntl.S fsync.S kill.S \
+WEAKASM=        accept.S close.S connect.S execve.S fcntl.S fsync.S kill.S \
                 open.S poll.S pselect.S read.S readlink.S readv.S recvfrom.S \
                 recvmsg.S select.S sendmsg.S sendto.S setcontext.S \
                 sysarch.S wait4.S write.S writev.S

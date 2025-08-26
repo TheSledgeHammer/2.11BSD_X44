@@ -318,10 +318,10 @@ socketpair()
 	struct socket *so1, *so2;
 	int sv[2];
 
-	if	(netoff)
+	if (netoff)
 		return (u.u_error = ENETDOWN);
 	u.u_error = socreate(SCARG(uap, domain), &so1, SCARG(uap, type), SCARG(uap, protocol));
-	if	(u.u_error)
+	if (u.u_error)
 		return (u.u_error);;
 	u.u_error = socreate(SCARG(uap, domain), &so2, SCARG(uap, type), SCARG(uap, protocol));
 	if	(u.u_error)
