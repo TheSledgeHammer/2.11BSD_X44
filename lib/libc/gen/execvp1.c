@@ -185,6 +185,8 @@ execvpe(const char *name, char * const *argv, char * const *envp)
 	if (!(pathstr = getenv("PATH"))) {
 		pathstr = _PATH_DEFPATH;
 	}
+	cur = pathstr = __UNCONST(strdup(pathstr));
+
 	while ((cp = strsep(__UNCONST(&cur), ":"))) {
 		cp = execat(name, cp, buf);
 retry:
