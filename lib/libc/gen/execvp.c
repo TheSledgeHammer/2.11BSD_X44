@@ -159,7 +159,7 @@ execvpe(const char *name, char * const *argv, char * const *envp)
 	/* "" is not a valid filename; check this before traversing PATH. */
 	if (name[0] == '\0') {
 		errno = ENOENT;
-		goto done;
+		return (-1);
 	}
 
 	/* If it's an absolute or relative path name, it's easy. */
@@ -195,9 +195,11 @@ retry:
 			bcopy(argv + 1, newargs + 2, cnt * sizeof(char *));
 			(void)execve(_PATH_BSHELL, __UNCONST(newargs), envp);
 			free(__UNCONST(newargs));
+			//return (-1);
 			goto done;
 		case ETXTBSY:
 			if (++etxtbsy > 5) {
+				//return (-1);
 				goto done;
 			}
 			sleep(etxtbsy);
