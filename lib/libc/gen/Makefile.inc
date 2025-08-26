@@ -50,6 +50,9 @@ SRCS+=	alarm.c arc4random.c assert.c basename.c bswap.c closedir.c confstr.c cte
 	telldir.c time.c timezone.c ttyname.c ttyslot.c ualarm.c usleep.c utmp.c utmpx.c valloc.c 	\
 	vis.c uname.c unvis.c wait.c wait3.c waitpid.c
 
+# uses alloca
+#COPTS.execvp1.c = -Wno-stack-protector
+
 # Removed: frexp.c
 
 # machine-dependent gen sources
