@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>		# for MKDYNAMICROOT definition
 
-WARNS?=		5
+WARNS?=		3
 BINDIR?=	/bin
 
 .if (${MKDYNAMICROOT} == "no")
