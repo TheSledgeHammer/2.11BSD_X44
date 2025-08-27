@@ -82,10 +82,9 @@ main(int argc, char *argv[])
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
 	long mntsize;
-	int ch, err, i, maxwidth, width;
+	int ch, i, maxwidth, width;
 	char *mntpt, **vfslist;
 
-	err = 0;
 	vfslist = NULL;
 	while ((ch = getopt(argc, argv, "int:")) != EOF)
 		switch (ch) {
@@ -132,7 +131,6 @@ main(int argc, char *argv[])
 
 	for (; *argv; argv++) {
 		if (stat(*argv, &stbuf) < 0) {
-			err = errno;
 			if ((mntpt = getmntpt(*argv)) == 0) {
 				warn("%s", *argv);
 				continue;
