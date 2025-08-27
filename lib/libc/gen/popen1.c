@@ -194,7 +194,7 @@ pclose(iop)
 	FILE *iop;
 {
 	register struct pid *cur, *last;
-	sigset_t omask, nmask;
+	//sigset_t omask, nmask;
 	int pstat;
 	pid_t pid;
 
