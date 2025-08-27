@@ -53,6 +53,7 @@ static char sccsid[] = "@(#)popen.c	8.3 (Berkeley) 5/3/95";
 
 #include <signal.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
