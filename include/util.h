@@ -92,10 +92,11 @@ void		logwtmpx(const char *, const char *, const char *, int, int);
 int			opendisk(const char *, int, char *, size_t, int);
 int			openpty(int *, int *, char *, struct termios *, struct winsize *);
 pid_t		forkpty(int *, char *, struct termios *, struct winsize *);
-time_t	parsedate(const char *, const time_t *, const int *);
+time_t	    parsedate(const char *, const time_t *, const int *);
 int			pidfile(const char *);
 int			pw_lock(int);
 int			pw_mkdb(void);
+int		    pidlock(const char *, int, pid_t *, const char *);
 int			pw_abort(void);
 void		pw_init(void);
 void		pw_edit(int, const char *);
@@ -108,7 +109,9 @@ int			secure_path(const char *);
 int			snprintb(char *, size_t, const char *, uint64_t);
 int			sockaddr_snprintf(char *, size_t, const char *, const struct sockaddr *);
 int			ttyaction(const char *, const char *, const char *);
+int		    ttylock(const char *, int, pid_t *);
 char	    *ttymsg(struct iovec *, int, const char *, int);
+int		    ttyunlock(const char *);
 
 /* stat_flags.c */
 char 		*flags_to_string(u_long, const char *);
