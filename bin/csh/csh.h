@@ -92,7 +92,7 @@ typedef void *ptr_t;
 #define xfree(p) Free(p)
 
 #include <stdio.h>
-extern FILE *cshin, *cshout, *csherr;
+FILE *cshin, *cshout, *csherr;
 
 #define	isdir(d) (S_ISDIR(d.st_mode))
 
@@ -137,26 +137,36 @@ extern int onelflg;			/* 2 -> need line for -t, 1 -> exit on read */
 extern char *seterr;		/* Error message from scanner/parser */
 extern Char *shtemp;			/* Temp name for << shell files in /tmp */
 
+/*
+ * Global i/o info
+ */
+Char *arginp;			/* Argument input for sh -c and internal `xx` */
+Char *ffile;			/* Name of shell file for $0 */
+int onelflg;			/* 2 -> need line for -t, 1 -> exit on read */
+
+extern char *seterr;		/* Error message from scanner/parser */
+Char *shtemp;			/* Temp name for << shell files in /tmp */
+
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
 
-extern struct timeval time0;		/* Time at which the shell started */
-extern struct rusage ru0;
+struct timeval time0;		/* Time at which the shell started */
+struct rusage ru0;
 
 /*
  * Miscellany
  */
-extern time_t chktim;			/* Time mail last checked */
-extern Char *doldol;			/* Character pid for $$ */
-extern int backpid;			/* Pid of the last background process */
-extern int egid, gid;			/* Invokers gid */
-extern int euid, uid;			/* Invokers uid */
-extern int shpgrp;			/* Pgrp of shell */
-extern int tpgrp;			/* Terminal process group */
+time_t chktim;			/* Time mail last checked */
+Char *doldol;			/* Character pid for $$ */
+int backpid;			/* Pid of the last background process */
+int egid, gid;			/* Invokers gid */
+int euid, uid;			/* Invokers uid */
+int shpgrp;			/* Pgrp of shell */
+int tpgrp;			/* Terminal process group */
 
 /* If tpgrp is -1, leave tty alone! */
-extern int opgrp;			/* Initial pgrp and tty pgrp */
+int opgrp;			/* Initial pgrp and tty pgrp */
 
 
 /*
@@ -166,10 +176,10 @@ extern int opgrp;			/* Initial pgrp and tty pgrp */
  * (this saves work) but for version 6, this is not usually possible.
  * The desired initial values for these descriptors are F{SHIN,...}.
  */
-extern int SHIN;			/* Current shell input (script) */
-extern int SHOUT;			/* Shell output */
-extern int SHERR;			/* Diagnostic output... shell errs go here */
-extern int OLDSTD;			/* Old standard input (def for cmds) */
+int SHIN;			/* Current shell input (script) */
+int SHOUT;			/* Shell output */
+int SHERR;			/* Diagnostic output... shell errs go here */
+int OLDSTD;			/* Old standard input (def for cmds) */
 
 /*
  * Error control
@@ -180,7 +190,7 @@ extern int OLDSTD;			/* Old standard input (def for cmds) */
  */
 
 #include <setjmp.h>
-extern jmp_buf reslab;
+jmp_buf reslab;
 
 #define	setexit() (setjmp(reslab))
 #define	reset()	longjmp(reslab, 1)
@@ -188,11 +198,11 @@ extern jmp_buf reslab;
 #define	getexit(a) (void)memcpy((a), reslab, sizeof reslab)
 #define	resexit(a) (void)memcpy(reslab, (a), sizeof reslab)
 
-extern Char *gointr;			/* Label for an onintr transfer */
+Char *gointr;			/* Label for an onintr transfer */
 
 #include <signal.h>
-extern sig_t parintr;			/* Parents interrupt catch */
-extern sig_t parterm;			/* Parents terminate catch */
+sig_t parintr;			/* Parents interrupt catch */
+sig_t parterm;			/* Parents terminate catch */
 
 /*
  * Lexical definitions.
@@ -213,7 +223,7 @@ extern sig_t parterm;			/* Parents terminate catch */
 #define	TRIM 0177		/* Mask to strip quote bit */
 #endif
 
-extern int AsciiOnly;			/* If set only 7 bits is expected in characters */
+int AsciiOnly;			/* If set only 7 bits is expected in characters */
 
 /*
  * Each level of input has a buffered input structure.
@@ -263,9 +273,9 @@ extern int aret;		/* What was the last character returned */
  * For whiles, in particular, it reseeks to the beginning of the
  * line the while was on; hence the while placement restrictions.
  */
-extern struct Ain lineloc;
+struct Ain lineloc;
 
-extern int cantell;			/* Is current source tellable ? */
+int cantell;			/* Is current source tellable ? */
 
 /*
  * Input lines are parsed into doubly linked circular
@@ -297,7 +307,7 @@ struct wordent {
  * process id's from `$$', and modified variable values (from qualifiers
  * during expansion in sh.dol.c) here.
  */
-extern Char *lap;
+Char *lap;
 
 /*
  * Parser structure
@@ -427,14 +437,14 @@ struct varent {
  * The following are for interfacing redo substitution in
  * aliases to the lexical routines.
  */
-extern struct wordent *alhistp;	/* Argument list (first) */
-extern struct wordent *alhistt;	/* Node after last in arg list */
+struct wordent *alhistp;	/* Argument list (first) */
+struct wordent *alhistt;	/* Node after last in arg list */
 extern Char **alvec, *alvecp;	/* The (remnants of) alias vector */
 
 /*
  * Filename/command name expansion variables
  */
-extern int gflag;			/* After tglob -> is globbing needed? */
+int gflag;			/* After tglob -> is globbing needed? */
 
 #define MAXVARLEN 30		/* Maximum number of char in a variable name */
 
@@ -449,9 +459,9 @@ extern Char **gargv;		/* Pointer to the (stack) arglist */
  */
 extern Char **pargv;		/* Pointer to the argv list space */
 extern long pargc;		/* Count of arguments in pargv */
-extern long pnleft;			/* Number of chars left in pargs */
-extern Char *pargs;			/* Pointer to start current word */
-extern Char *pargcp;			/* Current index into pargs */
+long pnleft;			/* Number of chars left in pargs */
+Char *pargs;			/* Pointer to start current word */
+Char *pargcp;			/* Current index into pargs */
 
 /*
  * History list
@@ -471,12 +481,12 @@ struct Hist {
     struct Hist *Hnext;
 } Histlist;
 
-extern struct wordent paraml;		/* Current lexical word list */
-extern int eventno;			/* Next events number */
-extern int lastev;			/* Last event reference (default) */
+struct wordent paraml;		/* Current lexical word list */
+int eventno;			/* Next events number */
+int lastev;			/* Last event reference (default) */
 
-extern Char HIST;			/* history invocation character */
-extern Char HISTSUB;			/* auto-substitute character */
+Char HIST;			/* history invocation character */
+Char HISTSUB;			/* auto-substitute character */
 
 /*
  * strings.h:
@@ -521,32 +531,32 @@ extern Char HISTSUB;			/* auto-substitute character */
 /*
  * setname is a macro to save space (see sh.err.c)
  */
-extern const char *bname;
+const char *bname;
 
 #define	setname(a) (bname = (a))
 
-extern Char *Vsav;
-extern Char *Vdp;
-extern Char *Vexpath;
-extern char **Vt;
+Char *Vsav;
+Char *Vdp;
+Char *Vexpath;
+char **Vt;
 
-extern Char **evalvec;
-extern Char *evalp;
+Char **evalvec;
+Char *evalp;
 
 /* word_chars is set by default to WORD_CHARS but can be overridden by
    the worchars variable--if unset, reverts to WORD_CHARS */
 
-extern Char *word_chars;
+Char *word_chars;
 
 #define WORD_CHARS "*?_-.[]~="	/* default chars besides alnums in words */
 
-extern Char *STR_SHELLPATH;
+Char *STR_SHELLPATH;
 
 #include <paths.h>
 #ifdef _PATH_BSHELL
-extern Char *STR_BSHELL;
+Char *STR_BSHELL;
 #endif
-extern Char *STR_WORD_CHARS;
-extern Char **STR_environ;
+Char *STR_WORD_CHARS;
+Char **STR_environ;
 
 #endif /* !_CSH_H_ */
