@@ -379,7 +379,7 @@ main(int argc, char *argv[])
 			}
 		} else if ((rval = getname()) == 2) {
 			setflags(2);
-			(void)execle(PP, "ppplogin", ttyn, (char *) 0, env);
+			(void)execle(PP, "ppplogin", ttyn, (char *)0, env);
 			syslog(LOG_ERR, "%s: %m", PP);
 			exit(1);
 		}
@@ -420,11 +420,9 @@ main(int argc, char *argv[])
 			limit.rlim_cur = RLIM_INFINITY;
 			(void)setrlimit(RLIMIT_CPU, &limit);
 			if (NN)
-				(void)execle(LO, "login", AL ? "-fp" : "-p",
-				    (char *) 0, env);
+				(void)execle(LO, "login", AL ? "-fp" : "-p", (char *)0, env);
 			else
-				(void)execle(LO, "login", AL ? "-fp" : "-p",
-				    "--", name, (char *) 0, env);
+				(void)execle(LO, "login", AL ? "-fp" : "-p", name, (char *)0, env);
 			syslog(LOG_ERR, "%s: %m", LO);
 			exit(1);
 		}
@@ -636,9 +634,12 @@ putchr(int cc)
     
     rval = 0;
 	c = cc;
-	c |= partab[c&0177] & 0200;
-	if (OP)
-		c ^= 0200;
+   	if (!NP) {
+    	c |= partab[c&0177] & 0200;
+    	if (OP) {
+            c ^= 0200;
+        }
+    }
 	if (!UB) {
 		outbuf[obufcnt++] = c;
 		if (obufcnt >= OBUFSIZ) {

@@ -41,7 +41,7 @@ static char sccsid[] = "@(#)subr.c	5.4.2 (2.11BSD GTE) 1997/3/28";
 #endif
 #endif
 
-#include <sys/param.h>
+//#include <sys/param.h>
 
 /*
  * Melbourne getty.
@@ -555,7 +555,7 @@ adelay(int ms, struct delayval *dp)
 }
 #endif
 
-char	editedhost[MAXHOSTNAMELEN];
+char	editedhost[256];
 
 void
 edithost(char *pat)

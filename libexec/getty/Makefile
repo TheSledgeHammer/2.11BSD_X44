@@ -13,6 +13,6 @@ CPPFLAGS+= -D__SELECT_DECLARED
 
 DPADD+=	${LIBUTIL} ${LIBTERMINFO}
 LDADD+=	-lutil -lterminfo
-#MAN=
+MAN=	getty.8 gettytab.5 ttys.5
 
 .include <bsd.prog.mk>
