@@ -55,23 +55,22 @@ __RCSID("$NetBSD: domainname.c,v 1.11 1998/07/28 05:31:24 mycroft Exp $");
 #include <string.h>
 #include <unistd.h>
 
-void usage (void);
-int main (int, char *[]);
+void usage(void);
+int main(int, char *[]);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int ch;
 	char domainname[MAXHOSTNAMELEN];
 
-	while ((ch = getopt(argc, argv, "")) != -1)
+	while ((ch = getopt(argc, argv, "")) != -1) {
 		switch (ch) {
 		case '?':
 		default:
 			usage();
 		}
+	}
 	argc -= optind;
 	argv += optind;
 
@@ -91,7 +90,7 @@ main(argc, argv)
 }
 
 void
-usage()
+usage(void)
 {
 
 	(void)fprintf(stderr, "usage: domainname [name-of-domain]\n");
