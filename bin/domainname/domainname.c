@@ -63,6 +63,8 @@ main(int argc, char *argv[])
 {
 	int ch;
 	char domainname[MAXHOSTNAMELEN];
+	
+	setprogname(argv[0]);
 
 	while ((ch = getopt(argc, argv, "")) != -1) {
 		switch (ch) {
