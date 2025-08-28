@@ -77,6 +77,92 @@ __RCSID("$NetBSD: csh.c,v 1.41 2008/07/20 00:52:39 lukem Exp $");
  * June, 1991
  */
 
+FILE *cshin, *cshout, *csherr;
+struct timeval time0;
+struct rusage ru0;
+struct varent shvhed, aliases;
+Char HISTSUB;
+int editing;
+
+int child;
+int chkstop;
+int didfds;
+int doneinp;
+int exiterr;
+int haderr;
+int havhash;
+int intact;
+int intty;
+int justpr;
+int loginsh;
+int neednote;
+int noexec;
+int pjobs;
+int setintr;
+int timflg;
+
+Char *arginp;
+Char *ffile;
+int onelflg;
+Char *shtemp;
+
+time_t chktim;
+Char *doldol;
+int backpid;
+int egid, gid;
+int euid, uid;
+int shpgrp;
+int tpgrp;
+
+int opgrp;
+
+int SHIN;
+int SHOUT;
+int SHERR;
+int OLDSTD;
+
+jmp_buf reslab;
+
+Char *gointr;
+
+sig_t parintr;
+sig_t parterm;
+
+struct Bin B;
+
+struct Ain lineloc;
+int cantell;
+Char *lap;
+struct whyle *whyles;
+
+struct wordent *alhistp,*alhistt;
+
+int AsciiOnly;
+int gflag;
+long pnleft;
+Char *pargs;
+Char *pargcp;
+struct Hist Histlist;
+struct wordent paraml;
+int eventno;
+int lastev;
+Char HIST;
+Char HISTSUB;
+const char *bname;
+Char *Vsav;
+Char *Vdp;
+Char *Vexpath;
+char **Vt;
+Char **evalvec;
+Char *evalp;
+Char *word_chars;
+Char *STR_SHELLPATH;
+#ifdef _PATH_BSHELL
+Char *STR_BSHELL;
+#endif
+Char *STR_WORD_CHARS;
+Char **STR_environ;
+
 Char *dumphist[] = {STRhistory, STRmh, 0, 0};
 Char *loadhist[] = {STRsource, STRmh, STRtildothist, 0};
 

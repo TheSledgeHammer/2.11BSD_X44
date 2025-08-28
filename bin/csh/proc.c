@@ -56,6 +56,17 @@ __RCSID("$NetBSD: proc.c,v 1.34 2007/07/16 18:26:10 christos Exp $");
 
 extern int insource;
 
+struct process proclist;
+int pnoprocesses;
+
+struct process *pholdjob;
+
+struct process *pcurrjob;
+struct process *pcurrent;
+struct process *pprevious;
+
+int pmaxindex;
+
 static void pflushall(void);
 static void pflush(struct process *);
 static void pclrcurr(struct process *);

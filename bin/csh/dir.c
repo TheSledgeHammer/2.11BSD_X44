@@ -66,6 +66,8 @@ int printd;			/* force name to be printed */
 
 static int dirflag = 0;
 
+struct directory *dcwd;
+
 /*
  * dinit - initialize current working directory
  */

@@ -43,6 +43,6 @@ struct directory {
     unsigned short *di_count;	/* refcount of processes */
     Char   *di_name;		/* actual name */
 };
-struct directory *dcwd;		/* the one we are in now */
+extern struct directory *dcwd;		/* the one we are in now */
 
 #endif /* !_DIR_H_ */
