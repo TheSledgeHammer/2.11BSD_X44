@@ -37,7 +37,7 @@ RUN_SGTTY?= 0
 RUN_SGTTY?= 1
 .endif
 
-SRCS+=	alarm.c arc4random.c assert.c basename.c bswap.c closedir.c confstr.c ctermid.c daemon.c devname.c  	\
+SRCS+=	alarm.c arc4random.c assert.c basename.c bswap.c clock.c closedir.c confstr.c ctermid.c daemon.c devname.c  	\
         dirname.c disklabel.c ecvt.c err.c errlst.c errno.c execvp1.c fabs.c fmtcheck.c fnmatch.c fstab.c fts.c gcvt.c 		\
 	getbsize.c getcap.c getcwd.c getdevpath.c getdomainname.c getentropy.c getgrent.c getlogin.c        \
         getgrouplist.c gethostname.c getpagesize.c getpass.c getprogname.c getpwent.c getloadavg.c \
@@ -58,7 +58,7 @@ COPTS.execvp1.c = -Wno-stack-protector
 # machine-dependent gen sources
 .include "${ARCHDIR}/gen/Makefile.inc"
 
-MAN+=	alarm.3 arc4random.3 basename.3 confstr.3 ctermid.3 daemon.3 devname.3 dirname.3 err.3 		\
+MAN+=	alarm.3 arc4random.3 basename.3 clock.3 confstr.3 ctermid.3 daemon.3 devname.3 dirname.3 err.3 		\
 	fmtcheck.3 fts.3 getcap.3 getcwd.3 getdevpath.3 gethostname.3 getloadavg.3 getmntinfo.3 getnetgrent.3 	\
 	getpass.3 getpwent.3 getttyent.3 getusershell.3 glob.3 initgroups.3 nlist.3 popen.3 		\
 	psignal.3 pwcache.3 raise.3 scandir.3 setmode.3 setproctitle.3 shquote.3 siginterrupt.3 	\
