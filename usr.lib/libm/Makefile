@@ -193,10 +193,8 @@ COMMON_SRCS = e_acos.c e_acosf.c e_acosh.c e_acoshf.c e_asin.c e_asinf.c \
 	w_sinh.c w_sinhf.c w_sqrt.c w_sqrtf.c \
 	lrint.c lrintf.c llrint.c llrintf.c lround.c lroundf.c llround.c \
 	llroundf.c \
+	s_frexp.c s_ldexp.c s_modf.c \
 	s_fmax.c s_fmaxf.c s_fmaxl.c s_fmin.c s_fminf.c s_fminl.c s_fdim.c
-
-# Also in libc.
-#COMMON_SRCS += s_frexp.c s_ldexp.c s_modf.c
 
 .PATH:	${.CURDIR}/compat
 COMMON_SRCS+= compat_cabs.c compat_cabsf.c
