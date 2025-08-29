@@ -76,6 +76,7 @@ __weak_alias(ctime_r,_ctime_r)
 __weak_alias(gmtime_r,_gmtime_r)
 __weak_alias(localtime_r,_localtime_r)
 __weak_alias(offtime, _offtime)
+__weak_alias(timegm, _timegm)
 __weak_alias(tzset, _tzset)
 #endif
 
