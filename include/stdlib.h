@@ -136,6 +136,7 @@ void	srand(unsigned);
 double	strtod(const char * __restrict, char ** __restrict);
 long	strtol(const char * __restrict, char ** __restrict, int);
 unsigned long strtoul(const char * __restrict, char ** __restrict, int);
+long long strtonum(const char *, long long, long long, const char **);
 int	 system(const char *);
 
 /* Floating output conversion */
