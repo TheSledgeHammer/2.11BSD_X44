@@ -10,12 +10,12 @@
 .PATH: ${ARCHDIR}/stdlib ${.CURDIR}/stdlib
 
 SRCS+=	a64l.c abort.c abs.c aligned_alloc.c atexit.c atof.c atoi.c atol.c bsearch.c div.c drand48.c 			\
-	erand48.c exit.c freezero.c getenv.c getopt.c getopt_long.c getsubopt.c hcreate.c heapsort.c       		\
+	    erand48.c exit.c freezero.c getenv.c getopt.c getopt_long.c getsubopt.c hcreate.c heapsort.c       		\
         jrand48.c l64a.c labs.c lcong48.c ldiv.c llabs.c lldiv.c lrand48.c merge.c  \
-	mi_vector_hash.c mrand48.c nrand48.c putenv.c qabs.c qdiv.c qsort.c radixsort.c rand48.c random.c	\
-	reallocarr.c reallocarray.c recallocarray.c seed48.c setenv.c srand48.c strsuftoll.c strtoi.c 			\
-        strtoimax.c strtol.c strtoq.c strtoll.c strtou.c strtoul.c strtoull.c strtoumax.c strtouq.c system.c 		\
-	tdelete.c tfind.c tsearch.c twalk.c
+	    mi_vector_hash.c mrand48.c nrand48.c putenv.c qabs.c qdiv.c qsort.c radixsort.c rand48.c random.c	\
+	    reallocarr.c reallocarray.c recallocarray.c seed48.c setenv.c srand48.c strsuftoll.c strtoi.c 			\
+        strtoimax.c strtol.c strtoq.c strtoll.c strtou.c strtoul.c strtoull.c strtoumax.c strtouq.c strtonum.c \
+        system.c tdelete.c tfind.c tsearch.c twalk.c
 
 .if (${USE_JEMALLOC} == "no")
 SRCS+= calloc.c malloc.c
@@ -24,9 +24,10 @@ SRCS+= calloc.c malloc.c
 .include "${ARCHDIR}/stdlib/Makefile.inc"
 
 MAN+= 	a64l.3 abort.3 abs.3 atexit.3 atof.3 atoi.3 atol.3 bsearch.3 calloc.3 div.3 exit.3	\
-	getopt_long.3 getopt.3 getsubopt.3 hcreate.3 labs.3 ldiv.3 llabs.3 lldiv.3 malloc.3     \
+	    getopt_long.3 getopt.3 getsubopt.3 hcreate.3 labs.3 ldiv.3 llabs.3 lldiv.3 malloc.3     \
         mi_vector_hash.3 posix_memalign.3 qabs.3 qdiv.3 qsort.3 radixsort.3 rand48.3 random.3 \
-		reallocarr.3 reallocarray.3 strtol.3 strtoul.3 strsuftoll.3 strtod.3 system.3 tsearch.3
+		reallocarr.3 reallocarray.3 strtol.3 strtoul.3 strsuftoll.3 strtod.3 strtonum.3 system.3 \
+        tsearch.3
 
 MLINKS+=a64l.3 l64a.3
 MLINKS+=a64l.3 l64a_r.3
