@@ -17,7 +17,7 @@ __RCSID("$NetBSD: pf.c,v 1.2 2005/06/14 12:18:24 peter Exp $");
 
 #include <net/if.h>
 #include <netinet/in.h>
-#include <net/pfvar.h>
+#include <net/pf/pfvar.h>
 
 #include <stdlib.h>
 #include <string.h>
