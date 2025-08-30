@@ -35,7 +35,7 @@ CRYPTODIST=	${NETBSDSRCDIR}/crypto
 .PATH:	${LAPPS_SRC}/openssl
 
 # Compat
-SRCS += strtonum.c
+#SRCS += strtonum.c
 
 # This list is built from the contents of the dist/apps/openssl/Makefile.am
 # in the LibreSSL source distribution.
