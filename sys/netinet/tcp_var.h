@@ -140,7 +140,9 @@
 #ifndef _NETINET_TCP_VAR_H_
 #define _NETINET_TCP_VAR_H_
 
+#ifdef _KERNEL
 #include "opt_inet.h"
+#endif
 
 /*
  * Kernel variables for tcp.
