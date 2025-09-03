@@ -62,8 +62,10 @@ LIBSSH_SRCS= \
 SK_SRCS= ssh-sk-client.c
 
 OPENBSD_COMPAT_SRCS= \
+        bcrypt_pbkdf.c \
         openssl-compat.c \
 	    libressl-api-compat.c \
+        xcrypt.c
 
 SRCS+= ${LIBOPENSSH_SRCS} ${XMSS_SRCS} ${LIBSSH_SRCS} ${SK_SRCS} \
        ${OPENBSD_COMPAT_SRCS}
