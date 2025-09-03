@@ -337,7 +337,7 @@ parse(string, flags)
 		if (mib[1] == CPU_CONSDEV)
 			special |= CONSDEV;
 #endif
-		/*
+#ifdef notyet
 		if (mib[1] == CPU_TMSCP) {
 			len = sysctl_tmscp(string, &bufp, mib, flags, &type);
 			if (len >= 0)
@@ -350,7 +350,7 @@ parse(string, flags)
 				goto doit;
 			return;
 		}
-		*/
+#endif
 		break;
 
 	case CTL_VFS:
@@ -556,7 +556,7 @@ sysctl_mscp(string, bufpp, mib, flags, typep)
  * Initialize the set of debugging names
  */
 void
-debuginit()
+debuginit(void)
 {
 	int mib[3], size, loc, i;
 
@@ -717,7 +717,7 @@ findname(string, level, bufp, namelist)
 }
 
 void
-usage()
+usage(void)
 {
 
 	(void)fprintf(stderr, "usage:\t%s\n\t%s\n\t%s\n\t%s\n",

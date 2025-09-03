@@ -20,8 +20,4 @@ void maybe_syslog(int, const char *, ...);
 int pf_natlookup(struct sockaddr_storage *, struct sockaddr *, int *);
 #endif
 
-#ifdef WITH_IPF
-int ipf_natlookup(struct sockaddr_storage *, struct sockaddr *, int *);
-#endif
-
 #endif /* !_IDENTD_H_ */
