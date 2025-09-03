@@ -46,7 +46,7 @@ __RCSID("$NetBSD: identd.c,v 1.31 2006/09/29 17:02:04 christos Exp $");
 #define	TIMEOUT			30	/* seconds */
 
 static int   idhandle(int, const char *, const char *, const char *,
-		const char *, struct sockaddr *, int);
+		const char *, int);
 static void  idparse(int, int, int, const char *, const char *, const char *);
 static void  iderror(int, int, int, const char *);
 static const char *gethost(struct sockaddr *);
@@ -81,11 +81,10 @@ static const struct {
 int
 main(int argc, char *argv[])
 {
-	int IPv4or6, ch, error, i, *socks, timeout;
+	int IPv4or6, ch, i, *socks, timeout;
 	const char *filter, *osname, *portno;
 	char *address, *charset, *fmt, *p;
 	char user[LOGIN_NAME_MAX];
-	struct addrinfo *ai, hints;
 	struct group *grp;
 	struct passwd *pw;
 	gid_t gid;
@@ -338,7 +337,7 @@ idhandle(int fd, const char *charset, const char *fmt, const char *osname,
 		 * complete until we get a CRLF _at the end of the buffer_.
 		 */
 		qlen += n;
-		if (qlen >= sizeof(buf)) {
+		if (qlen >= (ssize_t)sizeof(buf)) {
 			maybe_syslog(LOG_NOTICE, "recv: message too long");
 			exit(0);
 		}
