@@ -47,10 +47,6 @@ __RCSID("$NetBSD: tls.c,v 1.6 2011/04/07 02:19:28 matt Exp $");
 #include <string.h>
 #include <unistd.h>
 
-#include "dlfcn_private.h"
-
-extern int _DYNAMIC;
-
 static const void *tls_initaddr;
 static size_t tls_initsize;
 static size_t tls_size;
@@ -68,7 +64,6 @@ __weak_alias(_rtld_tls_free, __libc_rtld_tls_free)
 void *
 __libc_tls_get_addr(void)
 {
-
 	abort();
 	/* NOTREACHED */
 }
@@ -77,7 +72,7 @@ struct tls_tcb *
 _rtld_tls_allocate(void)
 {
 	struct tls_tcb *tcb;
-	uint8_t *p;
+	char *p;
 
 	if (initial_thread_tcb == NULL) {
 		tls_allocation = tls_size + sizeof(*tcb);
@@ -102,9 +97,9 @@ _rtld_tls_allocate(void)
 void
 _rtld_tls_free(struct tls_tcb *tcb)
 {
-	uint8_t *p;
+	char *p;
 
-	p = (uint8_t *)tcb - tls_size;
+	p = (char *)tcb - tls_size;
 	if (p == initial_thread_tcb) {
 		munmap(p, tls_allocation);
 	} else {
@@ -135,10 +130,6 @@ void
 __static_tls_setup(void)
 {
 	struct tls_tcb *tcb;
-
-	if (&_DYNAMIC != NULL) {
-		return;
-	}
 
 	dl_iterate_phdr(__static_tls_setup_cb, NULL);
 
