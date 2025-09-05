@@ -26,8 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* to be placed into libc/sys */
-
 #include <sys/cdefs.h>
 
 #include <sys/types.h>
