@@ -51,6 +51,7 @@
 #include <sys/trace.h>
 #include <sys/malloc.h>
 #include <sys/user.h>
+#include <sys/tls.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/pmap.h>
@@ -547,4 +548,23 @@ sysarch()
 		break;
 	}
 	return (error);
+}
+
+/* MD tls (set and get) */
+int
+cpu_get_tls_tcb(p, arg, which)
+	struct proc *p;
+	void *arg;
+	char which;
+{
+	return (i386_get_sdbase(p, arg, which));
+}
+
+int
+cpu_set_tls_tcb(p, arg, which)
+	struct proc *p;
+	void *arg;
+	char which;
+{
+	return (i386_set_sdbase(p, arg, which));
 }

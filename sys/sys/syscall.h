@@ -181,4 +181,5 @@
 #define	SYS_extattr_filedesc	172
 #define	SYS_preadv	173
 #define	SYS_pwritev	174
-#define	SYS_MAXSYSCALL	175
+#define	SYS_tls	175
+#define	SYS_MAXSYSCALL	176

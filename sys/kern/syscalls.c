@@ -192,4 +192,5 @@ char *syscallnames[] = {
 	"extattr_filedesc",			/* 172 = extattr_filedesc */
 	"preadv",			/* 173 = preadv */
 	"pwritev",			/* 174 = pwritev */
+	"tls",			/* 175 = tls */
 };

@@ -43,17 +43,31 @@
 #include <sys/sysdecl.h>
 #include <sys/user.h>
 #include <sys/proc.h>
+#include <sys/thread.h>
 #include <sys/ucontext.h>
 #include <sys/wait.h>
 
 void
-proc_getucontext(p, ucp)
+kern_getucontext(p, ucp)
 	struct proc *p;
 	ucontext_t *ucp;
 {
+	struct thread *td;
+
+	/* check proc for thread's */
+	if (LIST_EMPTY(p->p_allthread) != NULL) {
+		td = tdfind(p->p_threado->td_tid);
+		if (td != NULL) {
+			if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+				thread_swtch(p);
+				/* signals?? (for pthread) */
+				return;
+			}
+		}
+	}
+
 	ucp->uc_flags = 0;
 	ucp->uc_link = p->p_ctxlink;
-
 	(void)sigprocmask(0, NULL, &ucp->uc_sigmask);
 	ucp->uc_flags |= _UC_SIGMASK;
 
@@ -76,11 +90,23 @@ proc_getucontext(p, ucp)
 }
 
 int
-proc_setucontext(p, ucp)
+kern_setucontext(p, ucp)
 	struct proc *p;
 	const ucontext_t *ucp;
 {
-	int		error;
+	struct thread *td;
+	int	error;
+
+	/* check proc for thread's */
+	if (LIST_EMPTY(p->p_allthread) != NULL) {
+		td = tdfind(p->p_threado->td_tid);
+		if (td != NULL) {
+			if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
+				/* signals?? (for pthread) */
+				return (0);
+			}
+		}
+	}
 
 	if ((error = cpu_setmcontext(p, &ucp->uc_mcontext, ucp->uc_flags)) != 0) {
 		return (error);
@@ -102,7 +128,6 @@ proc_setucontext(p, ucp)
 			p->p_sigacts->ps_sigstk.ss_flags &= ~SS_ONSTACK;
 		}
 	}
-
 	return (0);
 }
 
@@ -112,10 +137,11 @@ getcontext()
 	register struct getcontext_args {
 		syscallarg(struct __ucontext *) ucp;
 	} *uap = (struct getcontext_args *)u.u_ap;
+	register struct proc *p;
 	ucontext_t uc;
 
-	proc_getucontext(u.u_procp, &uc);
-
+	p = u.u_procp;
+	kern_getucontext(p, &uc);
 	return (copyout(&uc, SCARG(uap, ucp), sizeof (*SCARG(uap, ucp))));
 }
 
@@ -125,13 +151,15 @@ setcontext()
 	register struct setcontext_args {
 		syscallarg(struct __ucontext *) ucp;
 	} *uap = (struct setcontext_args *)u.u_ap;
+	register struct proc *p;
 	ucontext_t uc;
 	int error;
 
+	p = u.u_procp;
 	if (SCARG(uap, ucp) == NULL) {
 		exit(W_EXITCODE(0, 0));
 	} else if ((error = copyin(SCARG(uap, ucp), &uc, sizeof(uc))) != 0
-			|| (error = proc_setucontext(u.u_procp, &uc)) != 0) {
+			|| (error = kern_setucontext(p, &uc)) != 0) {
 		return (error);
 	}
 	return (EJUSTRETURN);

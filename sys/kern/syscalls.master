@@ -228,3 +228,4 @@
 172 STD		{ int extattr_filedesc(); }
 173 STD		{ int preadv(); }
 174 STD		{ int pwritev(); }
+175 STD		{ int tls(); }

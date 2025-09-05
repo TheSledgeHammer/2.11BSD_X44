@@ -20,7 +20,7 @@ INCS=		acct.h acl.h agpio.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h 	
 			select.h signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h 		\
 			stdbool.h stddef.h stdint.h syscall.h sysctl.h sysdecl.h syslimits.h		\
 			syslog.h systm.h tablet.h termios.h thread.h time.h timeb.h timepps.h 		\
-			times.h timetc.h tprintf.h trace.h tree.h tty.h ttychars.h ttydefaults.h 	\
+			times.h timetc.h tls.h tprintf.h trace.h tree.h tty.h ttychars.h ttydefaults.h 	\
 			ttydev.h types.h ucontext.h ucred.h uio.h un.h unistd.h unpcb.h user.h 		\
 			utsname.h uuid.h vcmd.h videoio.h vlimit.h vmmeter.h vmsystm.h vnode_if.h 	\
 			vnode.h wait.h		

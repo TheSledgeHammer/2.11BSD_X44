@@ -1,6 +1,6 @@
 /*
  * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+ * Copyright (c) 2025 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,13 @@
 #ifndef SYS_TLS_H_
 #define SYS_TLS_H_
 
-struct tls_tcb {
+#include <sys/cdefs.h>
+#include <machine/types.h>
 
+struct tls_tcb {
+	void	*tcb_self;
+	void	**tcb_dtv;
+	void	*tcb_pthread;
 };
 
 /* which args */
@@ -46,7 +51,10 @@ enum tls_cmdops {
 	SETTLS,
 };
 
-#ifndef _KERNEL
+#ifdef _KERNEL
+int cpu_get_tls_tcb(struct proc *, void *, char);
+int cpu_set_tls_tcb(struct proc *, void *, char);
+#else
 __BEGIN_DECLS
 /* kernel tls syscall callback */
 int tls(int, void *, char);
@@ -54,6 +62,8 @@ int tls(int, void *, char);
 int gettls(void *, char);
 /* set tls */
 int settls(void *, char);
+struct tls_tcb *_rtld_tls_allocate(void);
+void _rtld_tls_free(struct tls_tcb *);
 __END_DECLS
 #endif /* !_KERNEL */
 

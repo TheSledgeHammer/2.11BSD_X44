@@ -6,4 +6,4 @@ CPPFLAGS+=	-I${NETBSDSRCDIR}/libexec/ld.elf_so
 CPPFLAGS+=	-I${.CURDIR}/dlfcn
 
 SRCS+=   dlfcn_elf.c elf_reloc.c
-SRCS+=   libc_init.c
+SRCS+=   libc_init.c tls.c

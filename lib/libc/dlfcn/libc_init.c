@@ -45,6 +45,7 @@ void	_libc_init(void) __attribute__((__constructor__, __used__));
 
 void	__guard_setup(void);
 void	__atexit_init(void);
+void 	__static_tls_setup(void);
 
 static int libc_initialised;
 
@@ -65,6 +66,9 @@ _libc_init(void)
 
 	/* For -fstack-protector */
 	__guard_setup();
+
+	/* Initialize TLS for statically linked programs. */
+	__static_tls_setup();
 
 	/* Initialize the atexit mutexes */
 	__atexit_init();

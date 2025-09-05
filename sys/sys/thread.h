@@ -74,7 +74,7 @@ struct thread {
 };
 
 /* Steal counter max */
-#define TD_STEALCOUNTMAX 10			/* Threads flagged as stealable will iterate
+#define TD_STEALCOUNTMAX 4			/* Threads flagged as stealable will iterate
  	 	 	 	 	 	 	 	 	 "TD_STEALCOUNTMAX" times through the schedcpu before
  	 	 	 	 	 	 	 	 	 being unflagged */
 

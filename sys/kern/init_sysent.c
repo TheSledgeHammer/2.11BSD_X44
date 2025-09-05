@@ -188,6 +188,7 @@ int	extattr_file();
 int	extattr_filedesc();
 int	preadv();
 int	pwritev();
+int	tls();
 #define	s(type)	sizeof(type)
 
 struct sysent sysent[] = {
@@ -553,6 +554,8 @@ struct sysent sysent[] = {
 	    preadv },				/* 173 = preadv */
 	{ 0, 0,
 	    pwritev },				/* 174 = pwritev */
+	{ 0, 0,
+	    tls },				/* 175 = tls */
 };
 
 int	nsysent= sizeof(sysent) / sizeof(sysent[0]);
