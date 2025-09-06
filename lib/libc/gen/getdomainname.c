@@ -52,9 +52,7 @@ __weak_alias(getdomainname,_getdomainname)
 #endif
 
 int
-getdomainname(name, namelen)
-	char *name;
-	size_t namelen;
+getdomainname(char *name, size_t namelen)
 {
 	int mib[2];
 	size_t size;
