@@ -41,7 +41,7 @@ _rtld_relocate_nonplt_self(Elf_Dyn *dynp, Elf_Addr relocbase)
 	}
 	if (rel == 0 || relsz == 0)
 		return;
-	rellim = (const Elf_Rel *)((const caddr_t)rel + relsz);
+	rellim = (const Elf_Rel *)(rel + relsz);
 	for (; rel < rellim; rel++) {
 		where = (Elf_Addr *)(relocbase + rel->r_offset);
 		*where += (Elf_Addr)relocbase;
@@ -188,7 +188,7 @@ _rtld_relocate_plt_object(const Obj_Entry *obj, const Elf_Rel *rel,
 caddr_t
 _rtld_bind(const Obj_Entry *obj, Elf_Word reloff)
 {
-	const Elf_Rel *rel = (const Elf_Rel *)((const caddr_t)obj->pltrel + reloff);
+	const Elf_Rel *rel = (const Elf_Rel *)(obj->pltrel + reloff);
 	Elf_Addr new_value;
 	int err;
 
