@@ -51,9 +51,7 @@ __weak_alias(setdomainname,_setdomainname)
 #endif
 
 int
-setdomainname(name, namelen)
-	const char *name;
-	size_t namelen;
+setdomainname(const char *name, size_t namelen)
 {
 	int mib[2];
 
