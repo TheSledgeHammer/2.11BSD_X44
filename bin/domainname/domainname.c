@@ -63,8 +63,6 @@ main(int argc, char *argv[])
 {
 	int ch;
 	char domainname[MAXHOSTNAMELEN];
-	
-	setprogname(argv[0]);
 
 	while ((ch = getopt(argc, argv, "")) != -1) {
 		switch (ch) {
@@ -94,7 +92,7 @@ main(int argc, char *argv[])
 void
 usage(void)
 {
-	(void)fprintf(stderr, "usage: %s [name-of-domain]\n", getprogname());
+	(void)fprintf(stderr, "usage: domainname [name-of-domain]\n");
 	exit(1);
 	/* NOTREACHED */
 }
