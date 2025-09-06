@@ -171,6 +171,7 @@ tdfind(tid)
 	return (NULL);
 }
 
+#ifdef deprecated
 struct thread *
 proc_tdfind(p, tid)
 	struct proc *p;
@@ -179,6 +180,23 @@ proc_tdfind(p, tid)
 	p->p_threado = tdfind(tid);
 	if (p->p_threado != NULL) {
 		return (p->p_threado);
+	}
+	return (NULL);
+}
+#endif
+
+struct thread *
+proc_tdfind(p, tid)
+	struct proc *p;
+	tid_t tid;
+{
+	register struct thread *td;
+
+	td = tdfind(tid);
+	if (td != NULL) {
+		if (((td->td_procp == p) && (td->td_ptid == p->p_pid))) {
+			return (td);
+		}
 	}
 	return (NULL);
 }

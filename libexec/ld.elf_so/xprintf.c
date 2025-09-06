@@ -37,6 +37,7 @@ __RCSID("$NetBSD: xprintf.c,v 1.19 2007/11/24 18:32:26 christos Exp $");
 #include <unistd.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "rtldenv.h"
 
@@ -44,6 +45,29 @@ __RCSID("$NetBSD: xprintf.c,v 1.19 2007/11/24 18:32:26 christos Exp $");
 #define	SZ_LONG		0x01
 #define	SZ_UNSIGNED	0x02
 #define SZ_SIZE_T	0x04
+
+unsigned long xarg(int, va_list);
+
+unsigned long
+xarg(int size, va_list ap)
+{
+    long va_long;
+    unsigned long va_ulong;
+    int va_int;
+    unsigned int va_uint;
+    size_t va_size;
+    unsigned long sarg, uarg, arg;
+
+    va_int = va_arg(ap, int);
+    va_uint = va_arg(ap, unsigned int);
+    va_long = va_arg(ap, long);
+    va_ulong = va_arg(ap, unsigned long);
+    va_size = va_arg(ap, size_t);
+	sarg = (size & SZ_LONG ? va_long : (size & SZ_SIZE_T ? va_size : va_int));
+    uarg = (size & SZ_LONG ? va_ulong : (size & SZ_SIZE_T ? va_size : va_uint));
+    arg = (size & SZ_UNSIGNED ? uarg : sarg);
+    return (arg);
+}
 
 /*
  * Non-mallocing printf, for use by malloc and rtld itself.
@@ -68,7 +92,7 @@ xvsnprintf(char *buf, size_t buflen, const char *fmt, va_list ap)
 		case '%':{
 			size = 0;
 			prec = -1;
-	rflag:		switch (fmt[1]) {
+	rflag:	switch (fmt[1]) {
 			case '*':
 				prec = va_arg(ap, int);
 				/* FALLTHROUGH */
@@ -90,16 +114,22 @@ xvsnprintf(char *buf, size_t buflen, const char *fmt, va_list ap)
 				long sval;
 				unsigned long uval;
 				char digits[sizeof(int) * 3], *dp = digits;
-#define	SARG() \
-(size & SZ_LONG ? va_arg(ap, long) : \
-((size & SZ_SIZE_T ? va_arg(ap, size_t) : \
-va_arg(ap, int))))
-#define	UARG() \
-(size & SZ_LONG ? va_arg(ap, unsigned long) : \
-((size & SZ_SIZE_T ? va_arg(ap, size_t) : \
-va_arg(ap, unsigned int))))
-#define	ARG()	(size & SZ_UNSIGNED ? UARG() : SARG())
 
+#define	ARG() \
+	xarg(size, ap);
+
+#ifdef deprecated
+#define	SARG() \
+		(size & SZ_LONG ? va_arg(ap, long) : \
+				((size & SZ_SIZE_T ? va_arg(ap, size_t) : \
+						va_arg(ap, int))))
+#define	UARG() \
+	(size & SZ_LONG ? va_arg(ap, unsigned long) : \
+			((size & SZ_SIZE_T ? va_arg(ap, size_t) : \
+					va_arg(ap, unsigned int))))
+#define	ARG() \
+	(size & SZ_UNSIGNED ? UARG() : SARG())
+#endif
 				if (fmt[1] == 'd') {
 					sval = ARG();
 					if (sval < 0) {

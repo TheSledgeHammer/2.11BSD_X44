@@ -47,23 +47,50 @@
 #include <sys/ucontext.h>
 #include <sys/wait.h>
 
+static int thread_ucontext(struct proc *);
+
+static int
+thread_ucontext(p)
+	struct proc *p;
+{
+	struct thread *td, *curthread;
+
+	/* check proc thread list */
+	if (LIST_EMPTY(p->p_allthread) != NULL) {
+		td = proc_tdfind(p, p->p_threado->td_tid);
+		curthread = proc_tdfind(p, p->p_curthread->td_tid);
+
+		/*  thread doesn't exist return and context switch */
+		if ((td == NULL) || (curthread == NULL)) {
+			return (1);
+		}
+		/*  thread does exist, check curthread and thread are the same */
+		if ((td != NULL) && (curthread != NULL)) {
+			/*
+			 * thread is the curthread. The proc in question and it's
+			 * threads are not responsible for the current execution stack,
+			 * return and context switch.
+			 */
+			if (td == curthread) {
+				return (1);
+			}
+		}
+		return (0);
+	}
+	return (1);
+}
+
 void
 kern_getucontext(p, ucp)
 	struct proc *p;
 	ucontext_t *ucp;
 {
-	struct thread *td;
+	int error;
 
-	/* check proc for thread's */
-	if (LIST_EMPTY(p->p_allthread) != NULL) {
-		td = tdfind(p->p_threado->td_tid);
-		if (td != NULL) {
-			if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-				thread_swtch(p);
-				/* signals?? (for pthread) */
-				return;
-			}
-		}
+	error = thread_ucontext(p);
+	if (error == 0) {
+		thread_swtch(p);
+		return;
 	}
 
 	ucp->uc_flags = 0;
@@ -94,21 +121,15 @@ kern_setucontext(p, ucp)
 	struct proc *p;
 	const ucontext_t *ucp;
 {
-	struct thread *td;
 	int	error;
 
-	/* check proc for thread's */
-	if (LIST_EMPTY(p->p_allthread) != NULL) {
-		td = tdfind(p->p_threado->td_tid);
-		if (td != NULL) {
-			if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-				/* signals?? (for pthread) */
-				return (0);
-			}
-		}
+	error = thread_ucontext(p);
+	if (error == 0) {
+		return (0);
 	}
 
-	if ((error = cpu_setmcontext(p, &ucp->uc_mcontext, ucp->uc_flags)) != 0) {
+	error = cpu_setmcontext(p, &ucp->uc_mcontext, ucp->uc_flags);
+	if (error != 0) {
 		return (error);
 	}
 	p->p_ctxlink = ucp->uc_link;
