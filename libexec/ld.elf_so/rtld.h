@@ -318,6 +318,7 @@ void _rtld_combreloc_reset(const Obj_Entry *);
 #endif
 
 /* map_object.c */
+struct stat;
 Obj_Entry *_rtld_map_object(const char *, int, const struct stat *);
 void _rtld_obj_free(Obj_Entry *);
 Obj_Entry *_rtld_obj_new(void);

@@ -912,7 +912,7 @@ dlsym(void *handle, const char *name)
 
 			/* Search the object and all the libraries loaded by it. */
 			fake.next = NULL;
-			fake.obj = (Obj_Entry *)obj;
+			fake.obj = __UNCONST(obj);
 			fake.name = 0;
 
 			_rtld_donelist_init(&depth);
