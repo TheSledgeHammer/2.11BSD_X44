@@ -188,7 +188,7 @@ proc_tdfind(p, tid)
 struct thread *
 proc_tdfind(p, tid)
 	struct proc *p;
-	tid_t tid;
+	pid_t tid;
 {
 	register struct thread *td;
 
