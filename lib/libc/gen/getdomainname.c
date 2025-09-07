@@ -56,21 +56,14 @@ getdomainname(char *name, size_t namelen)
 {
 	int mib[2];
 	size_t size;
-	int olderrno;
 
 	_DIAGASSERT(name != NULL);
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_DOMAINNAME;
 	size = namelen;
-	olderrno = errno;
 	if (sysctl(mib, 2, name, &size, NULL, 0) == -1) {
-		if (errno == ENOMEM) {
-			errno = olderrno;
-			return (0);
-		}
 		return (-1);
 	}
-
 	return (0);
 }
