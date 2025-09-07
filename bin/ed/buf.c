@@ -211,7 +211,7 @@ int
 open_sbuf()
 {
 	int u, fd;
-	char *tmp;
+	const char *tmp;
 	size_t s;
 
 	isbinary = newline_added = 0;
