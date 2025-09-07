@@ -232,8 +232,8 @@ _rtld_digest_dynamic(const char *execname, Obj_Entry *obj)
 		}
 	}
 
-	obj->rellim = (const Elf_Rel *)((caddr_t)obj->rel + relsz);
-	obj->relalim = (const Elf_Rela *)((caddr_t)obj->rela + relasz);
+	obj->rellim = (const Elf_Rel *)(obj->rel + relsz);
+	obj->relalim = (const Elf_Rela *)(obj->rela + relasz);
 	if (plttype == DT_REL) {
 		obj->pltrel = (const Elf_Rel *)(obj->relocbase + pltrel);
 		obj->pltrellim = (const Elf_Rel *)(obj->relocbase + pltrel + pltrelsz);

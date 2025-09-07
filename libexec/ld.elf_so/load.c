@@ -55,6 +55,7 @@ __RCSID("$NetBSD: load.c,v 1.35.12.1 2012/03/17 18:28:33 bouyer Exp $");
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/sysctl.h>
+#include <sys/stat.h>
 #include <dirent.h>
 
 #include "debug.h"
@@ -201,7 +202,7 @@ _rtld_load_by_name(const char *name, Obj_Entry *obj, Needed_Entry **needed, int 
 			continue;
 
 		j = sizeof(val);
-		if ((i = _rtld_sysctl(x->ctlname, &val, &j)) == -1) {
+		if ((i = _rtld_sysctl(x->ctlname, &val, &j)) == (size_t)-1) {
 			xwarnx(_PATH_LD_HINTS ": invalid/unknown sysctl for %s (%d)",
 			    name, errno);
 			break;

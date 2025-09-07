@@ -63,7 +63,7 @@ xarg(int size, va_list ap)
     va_long = va_arg(ap, long);
     va_ulong = va_arg(ap, unsigned long);
     va_size = va_arg(ap, size_t);
-	sarg = (size & SZ_LONG ? va_long : (size & SZ_SIZE_T ? va_size : va_int));
+	sarg = (size & SZ_LONG ? va_long : (size & SZ_SIZE_T ? (long)va_size : (long)va_int));
     uarg = (size & SZ_LONG ? va_ulong : (size & SZ_SIZE_T ? va_size : va_uint));
     arg = (size & SZ_UNSIGNED ? uarg : sarg);
     return (arg);
@@ -118,18 +118,6 @@ xvsnprintf(char *buf, size_t buflen, const char *fmt, va_list ap)
 #define	ARG() \
 	xarg(size, ap);
 
-#ifdef deprecated
-#define	SARG() \
-		(size & SZ_LONG ? va_arg(ap, long) : \
-				((size & SZ_SIZE_T ? va_arg(ap, size_t) : \
-						va_arg(ap, int))))
-#define	UARG() \
-	(size & SZ_LONG ? va_arg(ap, unsigned long) : \
-			((size & SZ_SIZE_T ? va_arg(ap, size_t) : \
-					va_arg(ap, unsigned int))))
-#define	ARG() \
-	(size & SZ_UNSIGNED ? UARG() : SARG())
-#endif
 				if (fmt[1] == 'd') {
 					sval = ARG();
 					if (sval < 0) {
@@ -336,7 +324,6 @@ xwarnx(const char *fmt, ...)
 void
 xassert(const char *file, int line, const char *failedexpr)
 {
-
 	xprintf("assertion \"%s\" failed: file \"%s\", line %d\n",
 		failedexpr, file, line);
 	abort();

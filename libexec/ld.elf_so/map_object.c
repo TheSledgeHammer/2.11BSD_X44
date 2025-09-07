@@ -111,7 +111,7 @@ _rtld_map_object(const char *path, int fd, const struct stat *sb)
 		obj->ino = sb->st_ino;
 	}
 
-	ehdr = mmap(NULL, _rtld_pagesz, PROT_READ, MAP_FILE | MAP_SHARED, fd,
+	ehdr = (void *)mmap(NULL, _rtld_pagesz, PROT_READ, MAP_FILE | MAP_SHARED, fd,
 	    (off_t)0);
 	obj->ehdr = ehdr;
 	if (ehdr == MAP_FAILED) {
@@ -271,8 +271,8 @@ _rtld_map_object(const char *path, int fd, const struct stat *sb)
 	     obj->phdr_loaded ? "loaded" : "allocated"));
 
 	/* Unmap header if it overlaps the first load section. */
-	if (base_offset < _rtld_pagesz) {
-		munmap(ehdr, _rtld_pagesz);
+	if (base_offset < (Elf32_Off)_rtld_pagesz) {
+		munmap((caddr_t)ehdr, _rtld_pagesz);
 		obj->ehdr = MAP_FAILED;
 	}
 
@@ -281,7 +281,7 @@ _rtld_map_object(const char *path, int fd, const struct stat *sb)
 	 */
 	mapflags = 0;
 #ifdef MAP_ALIGNED
-	if (base_alignment > _rtld_pagesz) {
+	if (base_alignment > (Elf32_Off)_rtld_pagesz) {
 		unsigned int log2 = 0;
 		for (; base_alignment > 1; base_alignment >>= 1)
 			log2++;

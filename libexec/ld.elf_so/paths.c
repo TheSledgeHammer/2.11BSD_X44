@@ -357,7 +357,7 @@ _rtld_process_hints(const char *execname, Search_Path **path_p,
 		(void)close(fd);
 		return;
 	}
-	if (sz >= sizeof(small)) {
+	if (sz >= (ssize_t)sizeof(small)) {
 		if (fstat(fd, &st) == -1) {
 			/* Complain */
 			xwarn("fstat: %s", fname);

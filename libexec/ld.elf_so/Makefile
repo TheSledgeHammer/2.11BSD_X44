@@ -117,8 +117,9 @@ CPPFLAGS+=	-DRTLD_DEFAULT_LIBRARY_PATH=\"${SHLIBDIR}:${LIBDIR}\"
 .endif
 
 # rtld.c and symbol.c use alloca, so disable SSP warnings.
-COPTS.rtld.c+=	-Wno-stack-protector -Wno-unused-but-set-variable
-COPTS.symbol.c+=-Wno-stack-protector
+COPTS.rtld.c+=	 -Wno-stack-protector -Wno-unused-but-set-variable
+COPTS.symbol.c+= -Wno-stack-protector
+COPTS.search.c+= ${GCC_NO_STRINGOP_TRUNCATION}
 
 LDADD+=		-L${CLIBOBJ} -L${DESTDIR}${LIBDIR}
 .if ${MKPICLIB} != "no"
