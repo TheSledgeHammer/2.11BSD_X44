@@ -134,6 +134,7 @@ void thread_rqinit(struct proc *);
 void thread_sqinit(struct proc *);
 
 struct thread *tdfind(pid_t);			/* find thread by tidmask */
+struct thread *proc_tdfind(struct proc *, pid_t);
 struct proc *thread_pfind(struct thread *);
 void thread_add(struct proc *, struct thread *);
 void thread_remove(struct proc *, struct thread *);
