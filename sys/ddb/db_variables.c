@@ -105,14 +105,13 @@ db_rw_internal_variable(vp, valp, rw)
  * sysctl(3) access to the DDB variables defined above.
  */
 int
-ddb_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+ddb_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int	*name;
 	u_int	namelen;
 	void	*oldp;
 	size_t	*oldlenp;
 	void	*newp;
 	size_t	newlen;
-	struct proc *p;
 {
 
 	/* All sysctl names at this level are terminal. */
