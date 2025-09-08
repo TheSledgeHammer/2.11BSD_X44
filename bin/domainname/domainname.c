@@ -92,7 +92,7 @@ main(int argc, char *argv[])
 void
 usage(void)
 {
-	(void)fprintf(stderr, "usage: domainname [name-of-domain]\n");
+	(void)fprintf(stderr, "usage: domainname [domainname]\n");
 	exit(1);
 	/* NOTREACHED */
 }
