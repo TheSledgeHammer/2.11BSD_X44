@@ -101,7 +101,7 @@ struct ctlname {
 #define	CTL_HW		6		/* generic cpu/io */
 #define	CTL_MACHDEP	7		/* machine dependent */
 #define	CTL_USER	8		/* user-level */
-#define	CTL_DDB		9
+#define	CTL_DDB		9		/* in-kernel debugger */
 #define	CTL_MAXID	10		/* number of valid top-level ids */
 
 #define CTL_NAMES { \
@@ -348,6 +348,18 @@ struct kinfo_proc {
 #define	DDBCTL_TABSTOPS		5	/* int: tab width */
 #define	DDBCTL_ONPANIC		6	/* int: DDB on panic if non-zero */
 #define	DDBCTL_FROMCONSOLE	7	/* int: DDB via console if non-zero */
+#define	DDBCTL_MAXID		8	/* number of valid DDB ids */
+
+#define	CTL_DDB_NAMES { \
+	{ 0, 0 }, \
+	{ "radix", CTLTYPE_INT }, \
+	{ "maxoff", CTLTYPE_INT }, \
+	{ "maxwidth", CTLTYPE_INT }, \
+	{ "lines", CTLTYPE_INT }, \
+	{ "tabstops", CTLTYPE_INT }, \
+	{ "onpanic", CTLTYPE_INT }, \
+	{ "fromconsole", CTLTYPE_INT }, \
+}
 
 /*
  * CTL_DEBUG definitions

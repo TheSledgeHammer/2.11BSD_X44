@@ -77,7 +77,7 @@ struct ctlname netname[] = CTL_NET_NAMES;
 #endif
 struct ctlname hwname[] = CTL_HW_NAMES;
 struct ctlname username[] = CTL_USER_NAMES;
-//struct ctlname ddbname[] = CTL_DDB_NAMES;
+struct ctlname ddbname[] = CTL_DDB_NAMES;
 struct ctlname debugname[CTL_DEBUG_MAXID];
 struct ctlname *vfsname;
 #ifdef CTL_MACHDEP_NAMES
@@ -87,7 +87,7 @@ char names[BUFSIZ];
 int lastused;
 
 struct list {
-	struct	ctlname *list;
+	struct ctlname *list;
 	int	size;
 };
 struct list toplist = { topname, CTL_MAXID };
@@ -114,8 +114,8 @@ struct list secondlevel[] = {
 
 int	Aflag, aflag, nflag, wflag;
 
-extern char *optarg;
-extern int optind, errno;
+//extern char *optarg;
+//extern int optind, errno;
 
 /*
  * Variables requiring special processing.

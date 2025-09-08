@@ -113,11 +113,13 @@ struct statfs {
 	MOUNT_NONE,				\
 	MOUNT_UFS,				\
 	MOUNT_FFS,				\
+	MOUNT_NFS				\
 	MOUNT_MFS,				\
 	MOUNT_LFS,  			\
 	MOUNT_MSDOS, 			\
 	MOUNT_FDESC,			\
 	MOUNT_LOFS,				\
+	MOUNT_CD9660			\
 	MOUNT_UNION,			\
 	MOUNT_UFS211,			\
 	MOUNT_UFML, 			\

@@ -46,7 +46,6 @@
 #include <ddb/db_sym.h>
 #include <ddb/db_extern.h>
 
-
 /*
  * If this is non-zero, the DDB will be entered when the system
  * panics.  Initialize it so that it's patchable.

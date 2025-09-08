@@ -58,6 +58,10 @@
 
 #include <vm/include/vm.h>
 
+#if defined(DDB)
+#include <ddb/ddbvar.h>
+#endif
+
 sysctlfn 		kern_sysctl;
 sysctlfn 		hw_sysctl;
 #ifdef DEBUG
@@ -114,7 +118,7 @@ __sysctl()
 	case CTL_VM:
 		fn = vm_sysctl;
 		break;
-#ifdef	INET
+#ifdef INET
 	case CTL_NET:
 		fn = net_sysctl;
 		break;
@@ -128,6 +132,11 @@ __sysctl()
 #ifdef DEBUG
 	case CTL_DEBUG:
 		fn = debug_sysctl;
+		break;
+#endif
+#ifdef DDB
+	case CTL_DDB:
+		fn = ddb_sysctl;
 		break;
 #endif
 	default:
