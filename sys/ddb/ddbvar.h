@@ -46,7 +46,7 @@
 extern	int db_onpanic;			/* enter ddb on panic */
 extern	int db_fromconsole;		/* can be entered from the console */
 
-int ddb_sysctl(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
+int ddb_sysctl(int *, u_int, void *, size_t *, void *, size_t);
 int	read_symtab_from_file(struct proc *,struct vnode *,const char *);
 
 #endif	/* !_DDBVAR_H_ */
