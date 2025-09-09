@@ -154,7 +154,7 @@
 #define	__COPYRIGHT(_s)				__SECTIONSTRING(.copyright,_s)
 
 /* FreeBSD ID */
-#define	__FBSDID(_s)				__IDSTRING(rcsid, _s)
+#define	__FBSDID(_s)				__IDSTRING(rcsid,_s)
 
 #define	__KERNEL_RCSID(_n, _s)		__RCSID(_s)
 #define	__KERNEL_SCCSID(_n, _s)

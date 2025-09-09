@@ -1444,38 +1444,32 @@ vfs_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	struct ctldebug *cdp;
 	struct vfsconf *vfsp;
+	struct ctlname *vfsnames;
 
 	/* all sysctl names at this level are at least name and field */
-	if (namelen < 2)
+	if (namelen < 2) {
 		return (ENOTDIR);		/* overloaded */
+	}
 	if (name[0] != VFS_GENERIC) {
-		LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
-			if (vfsp->vfc_typenum == name[0]) {
-				break;
-			}
-		}
-		if (vfsp == NULL)
+		vfsp = vfsconf_find_by_typenum(name[0]);
+		if (vfsp == NULL) {
 			return (EOPNOTSUPP);
-		return ((*vfsp->vfc_vfsops->vfs_sysctl)(&name[1], namelen - 1,
-		    oldp, oldlenp, newp, newlen, u.u_procp));
+		}
+		return ((*vfsp->vfc_vfsops->vfs_sysctl)(&name[1], namelen - 1, oldp, oldlenp, newp, newlen, u.u_procp));
 	}
 	switch (name[1]) {
 	case VFS_MAXTYPENUM:
 		return (sysctl_rdint(oldp, oldlenp, newp, maxvfsconf));
 	case VFS_CONF:
-		if (namelen < 3)
+		if (namelen < 3) {
 			return (ENOTDIR);	/* overloaded */
-		LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
-			if (vfsp->vfc_typenum == name[2]) {
-				break;
-			}
 		}
-		if (vfsp == NULL)
+		vfsp = vfsconf_find_by_typenum(name[2]);
+		if (vfsp == NULL) {
 			return (EOPNOTSUPP);
-		return (sysctl_rdstruct(oldp, oldlenp, newp, vfsp,
-		    sizeof(struct vfsconf)));
+		}
+		return (sysctl_rdstruct(oldp, oldlenp, newp, vfsp, sizeof(struct vfsconf)));
 	}
 	return (EOPNOTSUPP);
 }
@@ -1483,6 +1477,7 @@ vfs_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 int kinfo_vdebug = 1;
 int kinfo_vgetfailed;
 #define KINFO_VNODESLOP	10
+
 /*
  * Dump vnode list (via sysctl).
  * Copyout address of vnode followed by vnode.

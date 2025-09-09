@@ -668,15 +668,15 @@ ttioctl_sc(tp, com, data, flag)
 		tp->t_kill = sg->sg_kill;
 		tp->t_ispeed = sg->sg_ispeed;
 		tp->t_ospeed = sg->sg_ospeed;
-		newflags = (tp->t_flags&0xffff0000) | (sg->sg_flags&0xffffL);
+		newflags = (tp->t_flags & 0xffff0000) | (sg->sg_flags & 0xffffL);
 
 		s = spltty();
 		TTY_LOCK(tp);
-		if ((tp->t_flags&RAW) || (newflags&RAW) || com == TIOCSETP) {
+		if ((tp->t_flags & RAW) || (newflags & RAW) || com == TIOCSETP) {
 			ttywait(tp);
 			ttyflush(tp, FREAD);
-		} else if ((tp->t_flags&CBREAK) != (newflags&CBREAK)) {
-			if (newflags&CBREAK) {
+		} else if ((tp->t_flags & CBREAK) != (newflags & CBREAK)) {
+			if (newflags & CBREAK) {
 				struct clist tq;
 
 				catq(&tp->t_rawq, &tp->t_canq);
@@ -702,7 +702,7 @@ ttioctl_sc(tp, com, data, flag)
 	case TIOCSTART: 		/* start output, like ^Q */
 		s = spltty();
 		TTY_LOCK(tp);
-		if ((tp->t_state&TS_TTSTOP) || (tp->t_flags&FLUSHO)) {
+		if ((tp->t_state & TS_TTSTOP) || (tp->t_flags & FLUSHO)) {
 			tp->t_state &= ~TS_TTSTOP;
 			tp->t_flags &= ~FLUSHO;
 			ttstart(tp);

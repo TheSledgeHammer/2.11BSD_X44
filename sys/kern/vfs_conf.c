@@ -163,7 +163,7 @@ vfsconf_find_by_name(name)
 {
 	struct vfsconf *vfsp;
 	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
-		if (name == vfsp->vfc_name) {
+		if (strcmp(name, vfsp->vfc_name) == 0) {
 			break;
 		}
 	}
@@ -177,8 +177,9 @@ vfsconf_find_by_typenum(typenum)
 	struct vfsconf *vfsp;
 
 	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
-		if (typenum == vfsp->vfc_typenum)
+		if (typenum == vfsp->vfc_typenum) {
 			break;
+		}
 	}
 	return (vfsp);
 }

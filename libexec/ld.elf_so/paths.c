@@ -409,26 +409,26 @@ _rtld_process_hints(const char *execname, Search_Path **path_p,
 }
 
 struct sysctl_list {
-	const struct ctlname *ctl;
+	struct ctlname *ctl;
 	int numentries;
 };
 
 #ifdef CTL_MACHDEP_NAMES
-static const struct ctlname ctl_machdep[] = CTL_MACHDEP_NAMES;
+static struct ctlname ctl_machdep[] = CTL_MACHDEP_NAMES;
 #endif
-static const struct ctlname ctl_toplevel[] = CTL_NAMES;
-static const struct ctlname ctl_kern[] = CTL_KERN_NAMES;
-static const struct ctlname ctl_vm[] = CTL_VM_NAMES;
+static struct ctlname ctl_toplevel[] = CTL_NAMES;
+static struct ctlname ctl_kern[] = CTL_KERN_NAMES;
+static struct ctlname ctl_vm[] = CTL_VM_NAMES;
 #ifdef	CTL_VFS_NAMES
-static const struct ctlname ctl_vfs[] = CTL_VFS_NAMES;
+static struct ctlname ctl_vfs[] = CTL_VFS_NAMES;
 #endif
 #ifdef	CTL_NET_NAMES
-static const struct ctlname ctl_net[] = CTL_NET_NAMES;
+static struct ctlname ctl_net[] = CTL_NET_NAMES;
 #endif
-static const struct ctlname ctl_debug[CTL_DEBUG_MAXID];
-static const struct ctlname ctl_hw[] = CTL_HW_NAMES;
-static const struct ctlname ctl_user[] = CTL_USER_NAMES;
-static const struct ctlname ctl_ddb[] = CTL_DDB_NAMES;
+static struct ctlname ctl_debug[CTL_DEBUG_MAXID];
+static struct ctlname ctl_hw[] = CTL_HW_NAMES;
+static struct ctlname ctl_user[] = CTL_USER_NAMES;
+static struct ctlname ctl_ddb[] = CTL_DDB_NAMES;
 
 const struct sysctl_list toplevel[] = {
 		{ 0, 0 },
@@ -479,18 +479,18 @@ _rtld_sysctl(const char *name, void *oldp, size_t *oldlen)
 	for (i = 0; i < CTL_TOPLEVEL_SIZE; i++) {
 		if (toplevel[i].numentries > 0) {
 			for (j = 0; j < toplevel[i].numentries; j++) {
-				 if (secondlevel[j].numentries > 0) {
-					  if (toplevel[i].ctl == NULL) {
-						  continue;
-					  }
-					  if (matchstr(toplevel[i].ctl[j].ctl_name, node, name)) {
-						  break;
-					  }
-		              mib[j] = j;
-		              miblen++;
-				 } else {
-					 goto bad;
-				 }
+				if (secondlevel[j].numentries > 0) {
+					if (toplevel[i].ctl == NULL) {
+						continue;
+					}
+					if (matchstr(toplevel[i].ctl[j].ctl_name, node, name)) {
+						break;
+					}
+					mib[j] = j;
+					miblen++;
+				} else {
+					goto bad;
+				}
 			}
 		} else {
 			goto bad;
