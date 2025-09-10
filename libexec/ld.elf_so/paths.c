@@ -419,10 +419,10 @@ static struct ctlname ctl_machdep[] = CTL_MACHDEP_NAMES;
 static struct ctlname ctl_toplevel[] = CTL_NAMES;
 static struct ctlname ctl_kern[] = CTL_KERN_NAMES;
 static struct ctlname ctl_vm[] = CTL_VM_NAMES;
-#ifdef	CTL_VFS_NAMES
+#ifdef CTL_VFS_NAMES
 static struct ctlname ctl_vfs[] = CTL_VFS_NAMES;
 #endif
-#ifdef	CTL_NET_NAMES
+#ifdef CTL_NET_NAMES
 static struct ctlname ctl_net[] = CTL_NET_NAMES;
 #endif
 static struct ctlname ctl_debug[CTL_DEBUG_MAXID];
@@ -440,8 +440,12 @@ const struct sysctl_list secondlevel[] = {
 		{ 0, 0 },						/* CTL_UNSPEC */
 		{ ctl_kern, KERN_MAXID },		/* CTL_KERN */
 		{ ctl_vm, VM_MAXID },			/* CTL_VM */
+#ifdef CTL_VFS_NAMES
+		{ ctl_vfs, VFS_MAXID },			/* CTL_VFS */
+#else
 		{ 0, 0 },						/* CTL_VFS */
-#ifdef	CTL_NET_NAMES
+#endif
+#ifdef CTL_NET_NAMES
 		{ ctl_net, NET_MAXID },			/* CTL_NET */
 #else
 		{ 0, 0 },						/* CTL_NET */
@@ -460,7 +464,7 @@ const struct sysctl_list secondlevel[] = {
 };
 
 #define CTL_MACHDEP_SIZE 	(sizeof(ctl_machdep) / sizeof(ctl_machdep[0]))
-#define CTL_TOPLEVEL_SIZE 	(sizeof(toplevel)/sizeof(toplevel[0]))
+#define CTL_TOPLEVEL_SIZE 	(sizeof(toplevel) / sizeof(toplevel[0]))
 
 /* Basic name -> sysctl MIB translation */
 int
@@ -488,12 +492,10 @@ _rtld_sysctl(const char *name, void *oldp, size_t *oldlen)
 					}
 					mib[j] = j;
 					miblen++;
-				} else {
-					goto bad;
 				}
 			}
 		} else {
-			goto bad;
+			return (-1);
 		}
 	}
 	if (miblen > CTL_MAXNAME) {
@@ -504,7 +506,4 @@ _rtld_sysctl(const char *name, void *oldp, size_t *oldlen)
 		return (-1);
 	}
 	return (r);
-
-bad:
-	return (-1);
 }
