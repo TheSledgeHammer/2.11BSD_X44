@@ -35,8 +35,10 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 __COPYRIGHT("@(#) Copyright (c) 1988, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n");
+#endif
 #endif /* not lint */
 
 #ifndef lint
