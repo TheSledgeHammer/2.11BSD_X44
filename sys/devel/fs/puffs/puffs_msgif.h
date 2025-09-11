@@ -211,7 +211,6 @@ struct puffs_startreq {
 	struct stat		psr_sb;			/* IN: statvfs buffer */
 };
 
-
 #ifdef _KERNEL
 #define PUFFS_VFSREQ(a)							\
 	struct puffs_vfsreq_##a a##_arg;			\

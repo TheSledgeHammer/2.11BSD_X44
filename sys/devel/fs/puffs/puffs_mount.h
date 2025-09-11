@@ -65,9 +65,9 @@ struct puffs_park {
 #define PUFFS_SIZEOPREQ_BUF_OUT 4
 
 #define PUFFS_SIZEOP_UIO(a)	\
-	(((a)==PUFFS_SIZEOPREQ_UIO_IN)||(a)==PUFFS_SIZEOPREQ_UIO_OUT)
+	(((a) == PUFFS_SIZEOPREQ_UIO_IN)||(a) == PUFFS_SIZEOPREQ_UIO_OUT)
 #define PUFFS_SIZEOP_BUF(a)	\
-	(((a)==PUFFS_SIZEOPREQ_BUF_IN)||(a)==PUFFS_SIZEOPREQ_BUF_OUT)
+	(((a) == PUFFS_SIZEOPREQ_BUF_IN)||(a) == PUFFS_SIZEOPREQ_BUF_OUT)
 
 /* XXX: alignment-optimization */
 struct puffs_sizepark {
@@ -93,11 +93,11 @@ struct puffs_sizepark {
 #define FPTOPI(fp) 		((struct puffs_instance *)fp->f_data)
 
 #define EXISTSOP(pmp, op) \
-	(((pmp)->pmp_flags&PUFFS_KFLAG_ALLOPS) || ((pmp)->pmp_vnopmask[PUFFS_VN_##op]))
+	(((pmp)->pmp_flags & PUFFS_KFLAG_ALLOPS) || ((pmp)->pmp_vnopmask[PUFFS_VN_##op]))
 
 TAILQ_HEAD(puffs_wq, puffs_park);
 struct puffs_mount {
-	struct simplelock				pmp_lock;
+	struct lock_object				pmp_lock;
 
 	struct puffs_args				pmp_args;
 #define pmp_flags 		pmp_args.pa_flags

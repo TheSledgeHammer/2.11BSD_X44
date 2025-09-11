@@ -304,12 +304,15 @@ vfs_timestamp(tsp)
 		tsp->tv_nsec = 0;
 		break;
 	case TSP_HZ:
+		getnanotime(tsp);
+		break;
 	case TSP_USEC:
 		microtime(&tv);
 		TIMEVAL_TO_TIMESPEC(&tv, tsp);
 		break;
 	case TSP_NSEC:
 	default:
+		nanotime(tsp);
 		break;
 	}
 }
