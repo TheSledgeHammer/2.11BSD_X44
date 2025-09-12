@@ -148,6 +148,7 @@ int 	copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 void 	setregs(struct proc *, struct exec_linker *, u_long);
 int		check_exec(struct proc *, struct exec_linker *);
 void	exec_init(void);
+void 	exec_maxhdrsize(bool_t);
 void 	new_vmcmd(struct exec_vmcmd_set *, int (*)(struct proc *, struct exec_vmcmd *), u_long, u_long, u_int, u_int, int, struct vnode *, u_long);
 
 #define	NEW_VMCMD(evsp, proc, size, addr, prot, maxprot, vp, offset) 		\

@@ -134,10 +134,17 @@ struct user {
 /* 1.4 - descriptor management */
 	struct filedesc		*u_fd;					/* file descriptor structure. */
 	struct file 		**u_ofile;		        /* file structures for open files */
+#ifdef notyet
 	char				*u_pofile;		        /* per-process flags of open files */
 	int                	u_nfiles;               /* number of open files allocated */
 	int					u_lastfile;				/* high-water mark of u_ofile */
 	int					u_freefile;				/* approx. next free file */
+#endif
+
+#define u_pofile		u_fd->fd_ofileflags		/* per-process flags of open files */
+#define u_nfiles		u_fd->fd_nfiles			/* number of open files allocated */
+#define u_lastfile		u_fd->fd_lastfile		/* high-water mark of u_ofile */
+#define u_freefile		u_fd->fd_freefile		/* approx. next free file */
 #define u_cdir			u_fd->fd_cdir			/* current directory */
 #define u_rdir			u_fd->fd_rdir			/* root directory of current process */
 #define u_cmask			u_fd->fd_cmask			/* mask for file creation */

@@ -180,6 +180,8 @@ extern int				errno;	/* global error number */
 #define	EJUSTRETURN		-2		/* don't modify regs, just return */
 #define	ENOIOCTL		  -3		/* ioctl not handled by this layer (aka EPASSTHROUGH) */
 #define EPASSTHROUGH	ENOIOCTL
+#define	EDUPFD			-4		/* Dup given fd */
+#define	EMOVEFD			-5		/* Move given fd */
 #endif
 
 #endif /* _SYS_ERRNO_H_ */

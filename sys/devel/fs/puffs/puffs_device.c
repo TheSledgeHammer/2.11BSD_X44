@@ -51,7 +51,6 @@ __KERNEL_RCSID(0, "$NetBSD: puffs_msgif.c,v 1.8 2006/11/21 01:53:33 pooka Exp $"
 #include <fs/puffs/puffs_mount.h>
 #include <fs/puffs/puffs.h>
 
-
 int	puffscdopen(dev_t, int, int, struct proc *);
 int	puffscdclose(dev_t, int, int, struct proc *);
 
@@ -203,7 +202,7 @@ puffscdopen(dev_t dev, int flags, int fmt, struct proc *p)
 	if (idx == PUFFS_CLONER) {
 		simple_unlock(&pi_lock);
 		FREE(pi);
-		FILE_UNUSE(fp, p);
+		FILE_UNUSE(fp);
 		ffree(fp);
 		return (EBUSY);
 	}
@@ -215,7 +214,7 @@ puffscdopen(dev_t dev, int flags, int fmt, struct proc *p)
 	DPRINTF(("puffscdopen: registered embryonic pmp for pid: %d\n",
 	    pi->pi_pid));
 
-	return (fdclone(p, fp, fd, FREAD|FWRITE, &puffs_fileops, pi));
+	return (fdclone(fp, fd, FREAD|FWRITE, &puffs_fileops, pi));
 }
 
 int

@@ -263,11 +263,5 @@ exec_init(void)
 	/*
 	 * figure out the maximum size of an exec header.
 	 */
-	exec_maxhdrsz = 0;
-	for (i = 0; i < nexecs; i++) {
-		if ((execsw[i].ex_makecmds != NULL)
-				&& (execsw[i].ex_hdrsz > exec_maxhdrsz)) {
-			exec_maxhdrsz = execsw[i].ex_hdrsz;
-		}
-	}
+	exec_maxhdrsize(TRUE);
 }

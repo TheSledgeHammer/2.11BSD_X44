@@ -792,7 +792,7 @@ pollscan(fds, nfd, retval)
 				if (fds->revents != 0) {
 					n++;
 				}
-				FILE_UNUSE(fp, u.u_procp);
+				FILE_UNUSE(fp);
 			}
 		}
 	}

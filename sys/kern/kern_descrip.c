@@ -1006,6 +1006,25 @@ fdfree(fdp)
 	FREE(fdp, M_FILEDESC);
 }
 
+int
+fdclone(fp, fd, flag, fops, data)
+	struct file *fp;
+	int fd, flag;
+	struct fileops *fops;
+	void *data;
+{
+	fp->f_flag = flag;
+	fp->f_type = DTYPE_MISC;
+	fp->f_ops = fops;
+	fp->f_data = data;
+
+	u.u_dupfd = fd;
+
+	FILE_SET_MATURE(fp);
+	FILE_UNUSE(fp);
+	return (EMOVEFD);
+}
+
 /* sync to filedesc tables from user */
 void
 fdsync(fdp)

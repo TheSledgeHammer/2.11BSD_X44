@@ -65,9 +65,10 @@ extern char	sigcode[], esigcode[];
 static int 	doexecve(struct execa_args *);
 static int 	execve_load(struct proc *, struct execa_args *, register_t *);
 
+static int exec_szsigcode(struct exec_linker *);
 static int 	exec_create_vmspace(struct proc *, struct exec_linker *, struct exec_vmcmd *);
 static char	*exec_extract_strings(struct exec_linker *, char **, char **, int, int *);
-static char 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *, struct vmspace *, int, int, int *);
+static char *exec_copyout_strings(struct exec_linker *, struct ps_strings *, struct vmspace *, int, int, int *);
 
 struct emul emul_211bsd = {
 		.e_name 		= "211bsd",
@@ -186,19 +187,7 @@ execve_load(p, uap, retval)
 	p->p_flag |= P_INEXEC;
 	base_vcp = NULL;
 
-	/*
-	 * figure out the maximum size of an exec header, if necessary.
-	 * XXX should be able to keep LKM code from modifying exec switch
-	 * when we're still using it, but...
-	 */
-	if (exec_maxhdrsz == 0) {
-		for (i = 0; i < nexecs; i++) {
-			if (execsw[i].ex_makecmds != NULL
-					&& execsw[i].ex_hdrsz > exec_maxhdrsz) {
-				exec_maxhdrsz = execsw[i].ex_hdrsz;
-			}
-		}
-	}
+	exec_maxhdrsize(FALSE);
 
 	/* init the namei data to point the file user's program name */
 	/* XXX cgd 960926: why do this here?  most will be clobbered. */
@@ -236,7 +225,7 @@ execve_load(p, uap, retval)
 		goto bad;
 	}
 
-	szsigcode = pack.el_es->ex_emul->e_esigcode - pack.el_es->ex_emul->e_sigcode;
+	szsigcode = exec_szsigcode(&pack);
 
 	if (pack.el_flags & EXEC_32) {
 		len = ((pack.el_argc + pack.el_envc + 2 + pack.el_es->ex_arglen) * sizeof(int)
@@ -384,6 +373,43 @@ exec_abort:
 	exit(W_EXITCODE(0, SIGABRT));
 	exit(-1);
 	return (0);
+}
+
+void
+exec_maxhdrsize(isinit)
+	bool_t isinit;
+{
+	int i;
+
+	if (isinit == TRUE) {
+		exec_maxhdrsz = 0;
+		goto setup;
+	}
+
+	/*
+	 * figure out the maximum size of an exec header, if necessary.
+	 * XXX should be able to keep LKM code from modifying exec switch
+	 * when we're still using it, but...
+	 */
+	if (exec_maxhdrsz == 0) {
+setup:
+		for (i = 0; i < nexecs; i++) {
+			if (execsw[i].ex_makecmds != NULL
+					&& execsw[i].ex_hdrsz > exec_maxhdrsz) {
+				exec_maxhdrsz = execsw[i].ex_hdrsz;
+			}
+		}
+	}
+}
+
+static int
+exec_szsigcode(elp)
+	struct exec_linker *elp;
+{
+	int szsigcode;
+
+	szsigcode = (elp->el_es->ex_emul->e_esigcode - elp->el_es->ex_emul->e_sigcode);
+	return (szsigcode);
 }
 
 /*

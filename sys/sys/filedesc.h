@@ -116,6 +116,7 @@ int					closef(struct file *);
 int					fdopen(dev_t, int, int);
 int                 dupfdopen(struct filedesc *, int, int, int, int);
 void				fdfree(struct filedesc *);
+int					fdclone(struct file *, int, int, struct fileops *, void *);
 struct filedesc 	*fdcopy(struct filedesc *);
 void 				ufdsync(struct filedesc *);
 void 				fdsync(struct filedesc *);

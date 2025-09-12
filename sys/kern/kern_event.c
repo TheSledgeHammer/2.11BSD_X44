@@ -677,7 +677,7 @@ kqueue()
 		fdp->fd_knlistsize = 0; 		/* this process has a kq */
 	kq->kq_fdp = fdp;
 	fp->f_flag &= ~FIF_LARVAL;
-	FILE_UNUSE(fp, p); 					/* falloc() does FILE_USE() */
+	FILE_UNUSE(fp); 					/* falloc() does FILE_USE() */
 	return (error);
 }
 
@@ -769,7 +769,7 @@ kevent()
 	error = kqueue_scan(fp, SCARG(uap, nevents), SCARG(uap, eventlist),
 			SCARG(uap, timeout), p, retval);
 done:
-	FILE_UNUSE(fp, p);
+	FILE_UNUSE(fp);
 	return (error);
 }
 
@@ -910,7 +910,7 @@ kqueue_register(kq, kev, p)
 
  done:
 	if (fp != NULL)
-		FILE_UNUSE(fp, p);
+		FILE_UNUSE(fp);
 	return (error);
 }
 
@@ -1252,7 +1252,7 @@ kqueue_close(fp, p)
 			kn0 = SIMPLEQ_NEXT(kn, kn_link);
 			if (kq == kn->kn_kq) {
 				kn->kn_fop->f_detach(kn);
-				FILE_UNUSE(kn->kn_fp, p);
+				FILE_UNUSE(kn->kn_fp);
 				kn = &kern_knote;
 				*knp = kn0;
 			} else {
@@ -1453,7 +1453,7 @@ knote_drop(kn, p, fdp)
 	if (kn->kn_status & KN_QUEUED)
 		knote_dequeue(kn);
 	if (kn->kn_fop->f_isfd)
-		FILE_UNUSE(kn->kn_fp, p);
+		FILE_UNUSE(kn->kn_fp);
 	kern_knote = *kn;
 }
 

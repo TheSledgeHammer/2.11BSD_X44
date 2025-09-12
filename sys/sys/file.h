@@ -152,7 +152,7 @@ extern int 				nfiles;		/* actual number of open files */
 	simple_unlock(&(fp)->f_slock);										\
 } while (/* CONSTCOND */ 0)
 
-#define	FILE_UNUSE(fp, p) do {											\
+#define	FILE_UNUSE(fp) do {												\
 	simple_lock(&(fp)->f_slock);										\
 	if ((fp)->f_iflags & FIF_WANTCLOSE) {								\
 		simple_unlock(&(fp)->f_slock);									\
@@ -171,6 +171,7 @@ extern int 				nfiles;		/* actual number of open files */
 #define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */
 #define	DTYPE_KQUEUE	4	/* event queue */
 #define DTYPE_CRYPTO 	5	/* crypto */
+#define	DTYPE_MISC		6	/* misc file descriptor type */
 
 int                 fset(struct file *, int, int);
 int                 fgetown(struct file *, int *);

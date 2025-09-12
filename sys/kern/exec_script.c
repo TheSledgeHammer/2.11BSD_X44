@@ -176,7 +176,7 @@ check_shell:
 		fp->f_data = (caddr_t) elp->el_vnodep;
 		fp->f_flag = FREAD;
 		FILE_SET_MATURE(fp);
-		FILE_UNUSE(fp, p);
+		FILE_UNUSE(fp);
 	}
 #endif
 

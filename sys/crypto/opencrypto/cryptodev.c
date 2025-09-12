@@ -677,7 +677,7 @@ cryptof_close(struct file *fp, struct proc *p)
 
 	fp->f_data = NULL;
 #if 0
-	FILE_UNUSE(fp, p);	/* release file */
+	FILE_UNUSE(fp);		/* release file */
 	fdrelease(p, fd); 	/* release fd table slot */
 #endif
 
@@ -800,7 +800,7 @@ cryptoioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 		f->f_data = (caddr_t) fcr;
 		*(u_int32_t *)data = fd;
 		FILE_SET_MATURE(f);
-		FILE_UNUSE(f, p);
+		FILE_UNUSE(f);
 		break;
 	default:
 		error = EINVAL;

@@ -463,7 +463,7 @@ done:
 	if (vp != NULL)
 		(void) vn_close(vp, FWRITE, curp->p_ucred, curp);
 	if (fp != NULL) {
-		FILE_UNUSE(fp, curp); 	/* release file */
+		FILE_UNUSE(fp); 		/* release file */
 		fdrelease(fd); 			/* release fd table slot */
 	}
 	return (error);
@@ -564,7 +564,7 @@ ktrwrite(p, kth)
 
 	FILE_USE(fp);
 	error = (*fp->f_ops->fo_write)(fp, &auio, fp->f_cred);
-	FILE_UNUSE(fp, NULL);
+	FILE_UNUSE(fp);
 
 	if (error == 0) {
 		return (0);
