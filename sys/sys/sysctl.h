@@ -104,17 +104,17 @@ struct ctlname {
 #define	CTL_DDB		9		/* in-kernel debugger */
 #define	CTL_MAXID	10		/* number of valid top-level ids */
 
-#define CTL_NAMES { \
-	{ 0, 0 }, \
-	{ "kern", CTLTYPE_NODE }, \
-	{ "vm", CTLTYPE_NODE }, \
-	{ "vfs", CTLTYPE_NODE }, \
-	{ "net", CTLTYPE_NODE }, \
-	{ "debug", CTLTYPE_NODE }, \
-	{ "hw", CTLTYPE_NODE }, \
-	{ "machdep", CTLTYPE_NODE }, \
-	{ "user", CTLTYPE_NODE }, \
-	{ "ddb", CTLTYPE_NODE }, \
+#define CTL_NAMES { 				\
+	{ 0, 0 }, 						\
+	{ "kern", CTLTYPE_NODE }, 		\
+	{ "vm", CTLTYPE_NODE }, 		\
+	{ "vfs", CTLTYPE_NODE }, 		\
+	{ "net", CTLTYPE_NODE }, 		\
+	{ "debug", CTLTYPE_NODE }, 		\
+	{ "hw", CTLTYPE_NODE }, 		\
+	{ "machdep", CTLTYPE_NODE }, 	\
+	{ "user", CTLTYPE_NODE }, 		\
+	{ "ddb", CTLTYPE_NODE }, 		\
 }
 
 /*
@@ -350,14 +350,14 @@ struct kinfo_proc {
 #define	DDBCTL_FROMCONSOLE	7	/* int: DDB via console if non-zero */
 #define	DDBCTL_MAXID		8	/* number of valid DDB ids */
 
-#define	CTL_DDB_NAMES { \
-	{ 0, 0 }, \
-	{ "radix", CTLTYPE_INT }, \
-	{ "maxoff", CTLTYPE_INT }, \
-	{ "maxwidth", CTLTYPE_INT }, \
-	{ "lines", CTLTYPE_INT }, \
-	{ "tabstops", CTLTYPE_INT }, \
-	{ "onpanic", CTLTYPE_INT }, \
+#define	CTL_DDB_NAMES { 			\
+	{ 0, 0 }, 						\
+	{ "radix", CTLTYPE_INT }, 		\
+	{ "maxoff", CTLTYPE_INT }, 		\
+	{ "maxwidth", CTLTYPE_INT }, 	\
+	{ "lines", CTLTYPE_INT }, 		\
+	{ "tabstops", CTLTYPE_INT }, 	\
+	{ "onpanic", CTLTYPE_INT }, 	\
 	{ "fromconsole", CTLTYPE_INT }, \
 }
 
