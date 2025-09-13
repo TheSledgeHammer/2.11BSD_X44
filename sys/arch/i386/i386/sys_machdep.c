@@ -568,3 +568,12 @@ cpu_set_tls_tcb(p, arg, which)
 {
 	return (i386_set_sdbase(p, arg, which));
 }
+
+void *
+cpu_get_tls_addr(void)
+{
+	void *tmp;
+
+	__asm volatile("movl %%gs:0, %0" : "=r" (tmp));
+	return (tmp);
+}

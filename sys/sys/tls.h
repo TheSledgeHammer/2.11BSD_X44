@@ -54,7 +54,15 @@ enum tls_cmdops {
 #ifdef _KERNEL
 int cpu_get_tls_tcb(struct proc *, void *, char);
 int cpu_set_tls_tcb(struct proc *, void *, char);
+void *cpu_get_tls_addr(void);
 #else
+
+static inline void *
+gettlsaddr(void)
+{
+	return (cpu_get_tls_addr());
+}
+
 __BEGIN_DECLS
 /* kernel tls syscall callback */
 int tls(int, void *, char);

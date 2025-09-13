@@ -66,6 +66,8 @@ static int 	doexecve(struct execa_args *);
 static int 	execve_load(struct proc *, struct execa_args *, register_t *);
 
 static int exec_szsigcode(struct exec_linker *);
+static void exec_permissions(struct proc *, struct vattr *);
+static size_t exec_stacklen(struct exec_linker *, char *, int, int *);
 static int 	exec_create_vmspace(struct proc *, struct exec_linker *, struct exec_vmcmd *);
 static char	*exec_extract_strings(struct exec_linker *, char **, char **, int, int *);
 static char *exec_copyout_strings(struct exec_linker *, struct ps_strings *, struct vmspace *, int, int, int *);
@@ -227,25 +229,10 @@ execve_load(p, uap, retval)
 
 	szsigcode = exec_szsigcode(&pack);
 
-	if (pack.el_flags & EXEC_32) {
-		len = ((pack.el_argc + pack.el_envc + 2 + pack.el_es->ex_arglen) * sizeof(int)
-				+ sizeof(int) + dp + STACKGAPLEN + szsigcode
-				+ sizeof(struct ps_strings)) - pack.el_stringbase;
-	} else {
-		len = ((pack.el_argc + pack.el_envc + 2 + pack.el_es->ex_arglen) * sizeof(int)
-				+ sizeof(char *) + dp + STACKGAPLEN + szsigcode
-				+ sizeof(struct ps_strings)) - pack.el_stringbase;
-	}
-
-	len = ALIGN(len); /* make the stack "safely" aligned */
-
-	if (len > pack.el_ssize) {
-		error = ENOMEM;
+	len = exec_stacklen(&pack, dp, szsigcode, &error);
+	if ((len == 0) && (error != 0)) {
 		goto bad;
 	}
-
-	/* adjust "active stack depth" for process VSZ */
-	pack.el_ssize = len;
 
 	vm_deallocate(&vm->vm_map, VM_MIN_ADDRESS,
 			VM_MAXUSER_ADDRESS - VM_MIN_ADDRESS);
@@ -286,25 +273,7 @@ execve_load(p, uap, retval)
 	}
 
 	/* Turn off kernel tracing for set-id programs, except for root. */
-#ifdef KTRACE
-	if (p->p_tracep && !(p->p_traceflag & KTRFAC_ROOT) && (attr.va_mode & (VSUID | VSGID))
-			&& suser1(p->p_ucred, &p->p_acflag)) {
-	    ktrderef(p);
-	}
-#endif
-	if ((attr.va_mode & VSUID) && (p->p_flag & P_TRACED) == 0) {
-		p->p_ucred = crcopy(p->p_ucred);
-		p->p_ucred->cr_uid = attr.va_uid;
-		p->p_flag |= P_SUGID;
-	}
-	if ((attr.va_mode & VSGID) && (p->p_flag & P_TRACED) == 0) {
-		p->p_ucred = crcopy(p->p_ucred);
-		p->p_ucred->cr_groups[0] = attr.va_gid;
-		p->p_flag |= P_SUGID;
-	}
-
-	p->p_cred->p_svuid = p->p_ucred->cr_uid;
-	p->p_cred->p_svgid = p->p_ucred->cr_gid;
+	exec_permissions(p, &attr);
 
 	kmem_free_wakeup(exec_map, (vm_offset_t)pack.el_stringbase, exec_maxhdrsz);
 
@@ -373,43 +342,6 @@ exec_abort:
 	exit(W_EXITCODE(0, SIGABRT));
 	exit(-1);
 	return (0);
-}
-
-void
-exec_maxhdrsize(isinit)
-	bool_t isinit;
-{
-	int i;
-
-	if (isinit == TRUE) {
-		exec_maxhdrsz = 0;
-		goto setup;
-	}
-
-	/*
-	 * figure out the maximum size of an exec header, if necessary.
-	 * XXX should be able to keep LKM code from modifying exec switch
-	 * when we're still using it, but...
-	 */
-	if (exec_maxhdrsz == 0) {
-setup:
-		for (i = 0; i < nexecs; i++) {
-			if (execsw[i].ex_makecmds != NULL
-					&& execsw[i].ex_hdrsz > exec_maxhdrsz) {
-				exec_maxhdrsz = execsw[i].ex_hdrsz;
-			}
-		}
-	}
-}
-
-static int
-exec_szsigcode(elp)
-	struct exec_linker *elp;
-{
-	int szsigcode;
-
-	szsigcode = (elp->el_es->ex_emul->e_esigcode - elp->el_es->ex_emul->e_sigcode);
-	return (szsigcode);
 }
 
 /*
@@ -581,6 +513,109 @@ bad1:
 	 */
 	vput(vp);				/* was still locked */
 	return (error);
+}
+
+void
+exec_maxhdrsize(isinit)
+	bool_t isinit;
+{
+	int i;
+
+	if (isinit == TRUE) {
+		exec_maxhdrsz = 0;
+		goto setup;
+	}
+
+	/*
+	 * figure out the maximum size of an exec header, if necessary.
+	 * XXX should be able to keep LKM code from modifying exec switch
+	 * when we're still using it, but...
+	 */
+	if (exec_maxhdrsz == 0) {
+setup:
+		for (i = 0; i < nexecs; i++) {
+			if (execsw[i].ex_makecmds != NULL
+					&& execsw[i].ex_hdrsz > exec_maxhdrsz) {
+				exec_maxhdrsz = execsw[i].ex_hdrsz;
+			}
+		}
+	}
+}
+
+static int
+exec_szsigcode(elp)
+	struct exec_linker *elp;
+{
+	int szsigcode;
+
+	szsigcode = (elp->el_es->ex_emul->e_esigcode - elp->el_es->ex_emul->e_sigcode);
+	return (szsigcode);
+}
+
+static void
+exec_permissions(p, attr)
+	struct proc *p;
+	struct vattr *attr;
+{
+	/* Turn off kernel tracing for set-id programs, except for root. */
+#ifdef KTRACE
+	if (p->p_tracep && !(p->p_traceflag & KTRFAC_ROOT)
+			&& (attr->va_mode & (VSUID | VSGID))
+			&& suser1(p->p_ucred, &p->p_acflag)) {
+		ktrderef(p);
+	}
+#endif
+	if ((attr->va_mode & VSUID) && (p->p_flag & P_TRACED) == 0) {
+		p->p_ucred = crcopy(p->p_ucred);
+		p->p_ucred->cr_uid = attr->va_uid;
+		p->p_flag |= P_SUGID;
+	}
+	if ((attr->va_mode & VSGID) && (p->p_flag & P_TRACED) == 0) {
+		p->p_ucred = crcopy(p->p_ucred);
+		p->p_ucred->cr_groups[0] = attr->va_gid;
+		p->p_flag |= P_SUGID;
+	}
+
+	p->p_cred->p_svuid = p->p_ucred->cr_uid;
+	p->p_cred->p_svgid = p->p_ucred->cr_gid;
+}
+
+static size_t
+exec_stacklen(elp, dp, szsigcode, retval)
+	struct exec_linker *elp;
+	char *dp;
+	int szsigcode, *retval;
+{
+	size_t len;
+	int error;
+
+	error = 0;
+	if (elp->el_flags & EXEC_32) {
+		len = ((elp->el_argc + elp->el_envc + 2 + elp->el_es->ex_arglen) * sizeof(int)
+				+ sizeof(int) + dp + STACKGAPLEN + szsigcode
+				+ sizeof(struct ps_strings)) - elp->el_stringbase;
+	} else {
+		len = ((elp->el_argc + elp->el_envc + 2 + elp->el_es->ex_arglen) * sizeof(int)
+				+ sizeof(char *) + dp + STACKGAPLEN + szsigcode
+				+ sizeof(struct ps_strings)) - elp->el_stringbase;
+	}
+
+	len = ALIGN(len); /* make the stack "safely" aligned */
+
+	if (len > elp->el_ssize) {
+		error = ENOMEM;
+		goto bad;
+	}
+
+	/* adjust "active stack depth" for process VSZ */
+	elp->el_ssize = len;
+
+	retval = &error;
+	return (len);
+
+bad:
+	retval = &error;
+	return (0);
 }
 
 /*
