@@ -409,26 +409,26 @@ _rtld_process_hints(const char *execname, Search_Path **path_p,
 }
 
 struct sysctl_list {
-	struct ctlname *ctl;
+	const struct ctlname *ctl;
 	int numentries;
 };
 
 #ifdef CTL_MACHDEP_NAMES
-static struct ctlname ctl_machdep[] = CTL_MACHDEP_NAMES;
+static const struct ctlname ctl_machdep[] = CTL_MACHDEP_NAMES;
 #endif
-static struct ctlname ctl_toplevel[] = CTL_NAMES;
-static struct ctlname ctl_kern[] = CTL_KERN_NAMES;
-static struct ctlname ctl_vm[] = CTL_VM_NAMES;
+static const struct ctlname ctl_toplevel[] = CTL_NAMES;
+static const struct ctlname ctl_kern[] = CTL_KERN_NAMES;
+static const struct ctlname ctl_vm[] = CTL_VM_NAMES;
 #ifdef CTL_VFS_NAMES
-static struct ctlname ctl_vfs[] = CTL_VFS_NAMES;
+static const struct ctlname ctl_vfs[] = CTL_VFS_NAMES;
 #endif
 #ifdef CTL_NET_NAMES
-static struct ctlname ctl_net[] = CTL_NET_NAMES;
+static const struct ctlname ctl_net[] = CTL_NET_NAMES;
 #endif
-static struct ctlname ctl_debug[CTL_DEBUG_MAXID];
-static struct ctlname ctl_hw[] = CTL_HW_NAMES;
-static struct ctlname ctl_user[] = CTL_USER_NAMES;
-static struct ctlname ctl_ddb[] = CTL_DDB_NAMES;
+static const struct ctlname ctl_debug[CTL_DEBUG_MAXID];
+static const struct ctlname ctl_hw[] = CTL_HW_NAMES;
+static const struct ctlname ctl_user[] = CTL_USER_NAMES;
+static const struct ctlname ctl_ddb[] = CTL_DDB_NAMES;
 
 const struct sysctl_list toplevel[] = {
 		{ 0, 0 },
