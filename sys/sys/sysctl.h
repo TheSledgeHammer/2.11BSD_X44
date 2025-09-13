@@ -77,8 +77,8 @@
  * pairs to be used by sysctl(1) in manipulating the subsystem.
  */
 struct ctlname {
-	char	*ctl_name;	/* subsystem name */
-	int		ctl_type;	/* type of name */
+	const char	*ctl_name;	/* subsystem name */
+	int			ctl_type;	/* type of name */
 };
 
 #define	CTLTYPE_NODE	1	/* name is a node */
