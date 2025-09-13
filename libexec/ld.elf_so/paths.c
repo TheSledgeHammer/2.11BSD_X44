@@ -480,7 +480,7 @@ _rtld_sysctl(const char *name, void *oldp, size_t *oldlen)
 		return (-1);
 	}
 
-	for (i = 0; i < CTL_TOPLEVEL_SIZE; i++) {
+	for (i = 0; i < (int)CTL_TOPLEVEL_SIZE; i++) {
 		if (toplevel[i].numentries > 0) {
 			for (j = 0; j < toplevel[i].numentries; j++) {
 				if (secondlevel[j].numentries > 0) {
