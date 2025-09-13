@@ -56,13 +56,6 @@ int cpu_get_tls_tcb(struct proc *, void *, char);
 int cpu_set_tls_tcb(struct proc *, void *, char);
 void *cpu_get_tls_addr(void);
 #else
-
-static inline void *
-gettlsaddr(void)
-{
-	return (cpu_get_tls_addr());
-}
-
 __BEGIN_DECLS
 /* kernel tls syscall callback */
 int tls(int, void *, char);
@@ -70,6 +63,8 @@ int tls(int, void *, char);
 int gettls(void *, char);
 /* set tls */
 int settls(void *, char);
+/* get tls addr */
+void *gettlsaddr(void);
 struct tls_tcb *_rtld_tls_allocate(void);
 void _rtld_tls_free(struct tls_tcb *);
 __END_DECLS
