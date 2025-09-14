@@ -80,11 +80,11 @@
 
 extern int securelevel;				/* system security level */
 extern const char *panicstr;		/* panic message */
-extern char version[];				/* system version */
-extern char ostype[];
-extern char osversion[];
-extern char osrelease[];
-extern long osrevision[];
+extern char version[];				/* system (kernel) version */
+extern char ostype[];				/* system (kernel) type */
+extern char osversion[];            /* OS version */
+extern char osrelease[];            /* OS release */
+extern long osrevision[];           /* OS revision */
 
 extern int nblkdev;					/* number of entries in bdevsw */
 extern int nchrdev;					/* number of entries in cdevsw */
