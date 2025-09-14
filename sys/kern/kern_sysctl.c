@@ -309,7 +309,7 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	extern char machine[], cpu_model[128];
+	extern char machine[], machine_arch[], cpu_model[128];
 
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1)
@@ -318,6 +318,8 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	switch (name[0]) {
 	case HW_MACHINE:
 		return (sysctl_rdstring(oldp, oldlenp, newp, machine));
+	case HW_MACHINE_ARCH:
+        return (sysctl_rdstring(oldp, oldlenp, newp, machine_arch));
 	case HW_MODEL:
 		return (sysctl_rdstring(oldp, oldlenp, newp, cpu_model));
 	case HW_NCPU:
@@ -332,6 +334,9 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, PAGE_SIZE));
 	case HW_DISKNAMES:
 		return (sysctl_disknames(oldp, oldlenp));
+	case HW_DISKSTATS: 
+		/* TODO: Implement diskstats */
+        return (EOPNOTSUPP); 
 	case HW_CNMAGIC:
 		return (sysctl_cnmagic(oldp, oldlenp, newp, newlen));
 	default:
