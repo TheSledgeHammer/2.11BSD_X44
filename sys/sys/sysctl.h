@@ -269,9 +269,10 @@ struct kinfo_proc {
 #define	HW_PAGESIZE	 	7		/* int: software page size */
 #define	HW_DISKNAMES	8		/* strings: disk drive names */
 #define	HW_DISKSTATS	9		/* struct: diskstats[] */
-#define HW_DEVCONF		10		/* node: device configuration */
-#define HW_CNMAGIC		11		/* node: device configuration */
-#define	HW_MAXID		12		/* number of valid hw ids */
+#define	HW_MACHINE_ARCH	10		/* string: machine architecture */
+#define HW_DEVCONF		11		/* node: device configuration */
+#define HW_CNMAGIC		12		/* string: console magic sequence(s) */
+#define	HW_MAXID		13		/* number of valid hw ids */
 
 #define CTL_HW_NAMES { 					\
 	{ 0, 0 }, 							\
@@ -284,7 +285,7 @@ struct kinfo_proc {
 	{ "pagesize", CTLTYPE_INT }, 		\
 	{ "disknames", CTLTYPE_STRUCT }, 	\
 	{ "diskstats", CTLTYPE_STRUCT }, 	\
-	{ "floatingpoint", CTLTYPE_INT }, 	\
+	{ "machine_arch", CTLTYPE_STRING }, \
 	{ "devconf", CTLTYPE_NODE }, 		\
 	{ "cnmagic", CTLTYPE_STRING }, 		\
 }
