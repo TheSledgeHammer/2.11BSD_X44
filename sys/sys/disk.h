@@ -188,6 +188,20 @@ struct disksort_stats {
 #endif
 
 /*
+ * stats for disk.
+ */
+struct disk_stats {
+	char 			*ds_name;
+	int 			ds_busy;
+	int				ds_bps;
+	u_int64_t 		ds_seek;
+	u_int64_t 		ds_bytes;
+	struct timeval	ds_attachtime;
+	struct timeval	ds_timestamp;
+	struct timeval	ds_time;
+};
+
+/*
  * Bad sector lists per fixed disk
  */
 struct dkbadsectors {

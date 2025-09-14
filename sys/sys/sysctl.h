@@ -423,6 +423,7 @@ int sysctl_file(char *, size_t *);
 int	sysctl_clockrate(char *, size_t *);
 int	sysctl_doproc(int *, u_int, char *, size_t *);
 int	sysctl_disknames(char *, size_t *);
+int	sysctl_diskstats(int *, u_int, char *, size_t *);
 int sysctl_cnmagic(char *, size_t *, void *, size_t);
 int	sysctl_vnode(char *, size_t *, struct proc *);
 int sysctl_text(char *, size_t *);

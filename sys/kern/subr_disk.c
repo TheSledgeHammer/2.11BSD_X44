@@ -653,6 +653,58 @@ sysctl_disknames(where, sizep)
 	return (error);
 }
 
+int
+sysctl_diskstats(name, namelen, where, sizep)
+	int *name;
+	u_int namelen;
+	char *where;
+	size_t *sizep;
+{
+	struct disk_stats sdisk;
+	struct dkdevice *diskp;
+	size_t left, slen;
+	int error;
+
+	if (where == NULL) {
+		*sizep = disk_count * sizeof(struct disk_stats);
+		return (0);
+	}
+
+	if (namelen == 0) {
+		slen = sizeof(sdisk);
+	} else {
+		slen = name[0];
+	}
+
+	error = 0;
+	left = *sizep;
+	memset(&sdisk, 0, sizeof(sdisk));
+	*sizep = 0;
+
+	TAILQ_FOREACH(diskp, &disklist, dk_link) {
+		if (left < sizeof(struct disk_stats)) {
+			break;
+		}
+		strncpy(sdisk.ds_name, diskp->dk_name, sizeof(sdisk.ds_name));
+		sdisk.ds_bps = diskp->dk_bps;
+		sdisk.ds_seek = diskp->dk_seek;
+		sdisk.ds_bytes = diskp->dk_bytes;
+		sdisk.ds_attachtime = diskp->dk_attachtime;
+		sdisk.ds_timestamp = diskp->dk_timestamp;
+		sdisk.ds_time = diskp->dk_time;
+		sdisk.ds_busy = diskp->dk_busy;
+
+		error = copyout(&sdisk, where, min(slen, sizeof(sdisk)));
+		if (error) {
+			break;
+		}
+		where += slen;
+		*sizep += slen;
+		left -= slen;
+	}
+	return (error);
+}
+
 /* dkdriver */
 static dev_t disk_pdev(dev_t);
 static void  disk_bufio(struct dkdevice *, struct buf *);

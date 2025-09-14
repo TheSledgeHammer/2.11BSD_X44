@@ -45,7 +45,7 @@ char errmsg[MAXPATHLEN + 40] = "";
 /* get_compiled_pattern: return pointer to compiled pattern from command 
    buffer */
 pattern_t *
-get_compiled_pattern()
+get_compiled_pattern(void)
 {
 	static pattern_t *expr = NULL;
 
@@ -82,8 +82,7 @@ get_compiled_pattern()
 /* extract_pattern: copy a pattern string from the command buffer; return
    pointer to the copy */
 char *
-extract_pattern(delimiter)
-	int delimiter;
+extract_pattern(int delimiter)
 {
 	static char *lhbuf = NULL;	/* buffer */
 	static int lhbufsz = 0;		/* buffer size */
@@ -119,8 +118,7 @@ extract_pattern(delimiter)
 
 /* parse_char_class: expand a POSIX character class */
 char *
-parse_char_class(s)
-	char *s;
+parse_char_class(char *s)
 {
 	int c, d;
 

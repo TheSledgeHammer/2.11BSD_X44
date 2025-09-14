@@ -319,7 +319,7 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case HW_MACHINE:
 		return (sysctl_rdstring(oldp, oldlenp, newp, machine));
 	case HW_MACHINE_ARCH:
-        return (sysctl_rdstring(oldp, oldlenp, newp, machine_arch));
+		return (sysctl_rdstring(oldp, oldlenp, newp, machine_arch));
 	case HW_MODEL:
 		return (sysctl_rdstring(oldp, oldlenp, newp, cpu_model));
 	case HW_NCPU:
@@ -334,9 +334,8 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, PAGE_SIZE));
 	case HW_DISKNAMES:
 		return (sysctl_disknames(oldp, oldlenp));
-	case HW_DISKSTATS: 
-		/* TODO: Implement diskstats */
-        return (EOPNOTSUPP); 
+	case HW_DISKSTATS:
+		return (sysctl_diskstats(name + 1, namelen - 1, oldp, oldlenp));
 	case HW_CNMAGIC:
 		return (sysctl_cnmagic(oldp, oldlenp, newp, newlen));
 	default:
