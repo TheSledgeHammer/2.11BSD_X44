@@ -61,17 +61,17 @@ static char sccsid[] = "@(#)getpass.c	8.1 (Berkeley) 6/4/93";
 __weak_alias(getpass,_getpass)
 #endif
 
-static void getpass_common(FILE *, FILE *, char *, char *);
+static void getpass_common(FILE *, FILE *, char *, const char *);
 
 #if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
-static void getpass_sgtty(struct sgttyb *, FILE *, FILE *, long, char *, char *);
+static void getpass_sgtty(struct sgttyb *, FILE *, FILE *, long, char *, const char *);
 #else
-static void getpass_termios(struct termios *, FILE *, FILE *, long, char *, char *);
+static void getpass_termios(struct termios *, FILE *, FILE *, long, char *, const char *);
 #endif
 
 char *
 getpass(prompt)
-	char *prompt;
+	const char *prompt;
 {
 #if defined(RUN_SGTTY) && (RUN_SGTTY == 0)
     struct sgttyb ttyb;
@@ -106,7 +106,8 @@ getpass(prompt)
 static void
 getpass_common(fi, fo, pbuf, prompt)
     FILE *fi, *fo;
-    char *pbuf, *prompt;
+    char *pbuf;
+	const char *prompt;
 {
     register char *p;
     register int c;
@@ -129,7 +130,8 @@ getpass_sgtty(ttyb, fi, fo, omask, pbuf, prompt)
     struct sgttyb *ttyb;
     FILE *fi, *fo;
     long omask;
-    char *pbuf, *prompt;
+    char *pbuf;
+	const char *prompt;
 {
     int flags;
 
@@ -152,7 +154,8 @@ getpass_termios(term, fi, fo, omask, pbuf, prompt)
     struct termios *term;
     FILE *fi, *fo;
     long omask;
-    char *pbuf, *prompt;
+    char *pbuf;
+	const char *prompt;
 {
     int flags;
 
