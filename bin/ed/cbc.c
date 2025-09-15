@@ -139,7 +139,7 @@ char bits[] = {				/* used to extract bits from a char */
 };
 int pflag;				/* 1 to preserve parity bits */
 
-unsigned char des_buf[8];	/* shared buffer for get_des_char/put_des_char */
+char des_buf[8];	/* shared buffer for get_des_char/put_des_char */
 int des_ct = 0;			/* count for get_des_char/put_des_char */
 int des_n = 0;			/* index for put_des_char/get_des_char */
 #endif
@@ -244,7 +244,7 @@ get_keyword(void)
  * print a warning message and, possibly, terminate
  */
 void
-des_error(char *s  /* the message */)
+des_error(const char *s  /* the message */)
 {
 	(void)sprintf(errmsg, "%s", s ? s : strerror(errno));
 }

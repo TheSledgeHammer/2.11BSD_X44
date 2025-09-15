@@ -67,7 +67,7 @@ build_active_list(int isgcmd)
 			return ERR;
 		if (isbinary)
 			NUL_TO_NEWLINE(s, lp->len);
-		if (!regexec(pat, s, 0, NULL, 0) == isgcmd &&
+		if ((!regexec(pat, s, 0, NULL, 0)) == isgcmd &&
 		    set_active_node(lp) < 0)
 			return ERR;
 	}
@@ -89,9 +89,11 @@ exec_global(int interact, int gflag)
 	char *cmd = NULL;
 
 #ifdef BACKWARDS
+    char cmdp[] = "p\n";
+
 	if (!interact) {
 		if (!strcmp(ibufp, "\n"))
-			cmd = "p\n";		/* null cmd-list == `p' */
+			cmd = cmdp;		/* null cmd-list == `p' */
 		else if ((cmd = get_extended_line(&n, 0)) == NULL)
 			return ERR;
 	}
@@ -136,7 +138,7 @@ exec_global(int interact, int gflag)
 			if ((status = extract_addr_range()) < 0 ||
 			    (status = exec_command()) < 0 ||
 			    (status > 0 && (status = display_lines(
-			    current_addr, current_addr, status))) < 0)
+			    current_addr, current_addr, status)) < 0))
 				return status;
 	}
 	return 0;

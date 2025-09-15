@@ -202,7 +202,7 @@ void clear_undo_stack(void);
 int close_sbuf(void);
 int copy_lines(long);
 int delete_lines(long, long);
-void des_error(char *);
+void des_error(const char *);
 int display_lines(long, long, int);
 line_t *dup_line_node(line_t *);
 int exec_command(void);

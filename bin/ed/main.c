@@ -110,9 +110,7 @@ int main(int, char *[]);
 
 /* ed: line editor */
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int c, n;
 	long status = 0;
@@ -227,11 +225,13 @@ top:
 		}
 		isglobal = 0;
 		if ((status = extract_addr_range()) >= 0 &&
-		    (status = exec_command()) >= 0)
-			if (!status || (status &&
-			    (status = display_lines(current_addr, current_addr,
-			        status))) >= 0)
+		    (status = exec_command()) >= 0) {
+            if (status == 0)
+                continue;
+            status = display_lines(current_addr, current_addr, status);
+            if (status >= 0)
 				continue;
+        }
 		switch (status) {
 		case EOF:
 			quit(0);
