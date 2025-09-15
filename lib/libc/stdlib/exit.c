@@ -65,7 +65,9 @@ exit(code)
 		}
 	}
 */
+#ifdef _LIBC
 	__cxa_finalize(NULL);
+#endif
 	if (__cleanup) {
 		(*__cleanup)();
 	}
