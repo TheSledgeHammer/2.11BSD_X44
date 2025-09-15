@@ -200,7 +200,7 @@ unsigned long	gethostid(void);
 mode_t	 		getmode(const void *, mode_t);
 int	 	        getpagesize(void) __attribute__((__pure__));
 pid_t			getpgid(pid_t);
-char			*getpass(char *);
+char			*getpass(const char *);
 char			*getusershell(void);
 char			*getwd(char *);
 int	 			initgroups(const char *, gid_t);
