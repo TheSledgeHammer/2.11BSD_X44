@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)nice.c	5.2 (Berkeley) 3/9/86";
 
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <errno.h>
 #include <unistd.h>
 
 #ifdef __weak_alias
@@ -33,7 +34,6 @@ nice(incr)
 #endif
 {
 	int prio;
-	//extern int errno;
 
 	errno = 0;
 	prio = getpriority(PRIO_PROCESS, 0);
