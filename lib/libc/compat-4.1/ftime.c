@@ -14,8 +14,6 @@ static char sccsid[] = "@(#)ftime.c	5.2 (Berkeley) 3/9/86";
 #include <sys/types.h>
 #include <sys/timeb.h>
 
-#include "compat_41.h"
-
 /*
  * Backwards compatible ftime.
  */

@@ -307,6 +307,7 @@ thread_stacklimit(td)
 }
 
 /* find process from thread */
+#ifdef deprecated
 struct proc *
 thread_pfind(td)
 	register struct thread *td;
@@ -316,6 +317,22 @@ thread_pfind(td)
 		return (td->td_procp);
 	}
 	return (NULL);
+}
+#endif
+struct proc *
+thread_pfind(td, pid)
+	struct thread *td;
+	pid_t pid;
+{
+    register struct proc *p;
+
+    p = pfind(pid);
+    if (p != NULL) {
+        if (((p->p_threado == td) && (p->p_pid == td->td_ptid))) {
+        	return (p);
+        }
+    }
+    return (NULL);
 }
 
 /* thread priority mask */

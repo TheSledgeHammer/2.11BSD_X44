@@ -107,7 +107,7 @@ static void
 getpass_common(fi, fo, pbuf, prompt)
     FILE *fi, *fo;
     char *pbuf;
-	const char *prompt;
+    const char *prompt;
 {
     register char *p;
     register int c;
@@ -131,7 +131,7 @@ getpass_sgtty(ttyb, fi, fo, omask, pbuf, prompt)
     FILE *fi, *fo;
     long omask;
     char *pbuf;
-	const char *prompt;
+    const char *prompt;
 {
     int flags;
 
@@ -155,7 +155,7 @@ getpass_termios(term, fi, fo, omask, pbuf, prompt)
     FILE *fi, *fo;
     long omask;
     char *pbuf;
-	const char *prompt;
+    const char *prompt;
 {
     int flags;
 

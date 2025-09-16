@@ -224,14 +224,14 @@ top:
 			continue;
 		}
 		isglobal = 0;
-		if ((status = extract_addr_range()) >= 0 &&
-		    (status = exec_command()) >= 0) {
-            if (status == 0)
-                continue;
-            status = display_lines(current_addr, current_addr, status);
-            if (status >= 0)
+		if ((status = extract_addr_range()) >= 0
+				&& (status = exec_command()) >= 0) {
+			if (status == 0)
 				continue;
-        }
+			status = display_lines(current_addr, current_addr, status);
+			if (status >= 0)
+				continue;
+		}
 		switch (status) {
 		case EOF:
 			quit(0);

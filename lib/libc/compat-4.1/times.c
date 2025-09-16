@@ -11,6 +11,8 @@ static char sccsid[] = "@(#)times.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/times.h>
@@ -19,8 +21,6 @@ static char sccsid[] = "@(#)times.c	5.2 (Berkeley) 3/9/86";
 #include <assert.h>
 #include <errno.h>
 #include <time.h>
-
-#include "compat_41.h"
 
 static long scale60(register struct timeval *tvp);
 

@@ -39,12 +39,45 @@ __RCSID("$NetBSD: aliasname.c,v 1.1 2002/02/13 07:45:52 yamt Exp $");
 #include "aliasname_local.h"
 
 /*
+ * case insensitive comparison between two C strings.
+ */
+int
+_bcs_strcasecmp(const char * str1, const char * str2)
+{
+	int c1 = 1, c2 = 1;
+
+	while (c1 && c2 && c1 == c2) {
+		c1 = _bcs_toupper(*str1++);
+		c2 = _bcs_toupper(*str2++);
+	}
+
+	return ((c1 == c2) ? 0 : ((c1 > c2) ? 1 : -1));
+}
+
+/*
+ * case insensitive comparison between two C strings with limitation of length.
+ */
+int
+_bcs_strncasecmp(const char * str1, const char * str2, size_t sz)
+{
+	int c1 = 1, c2 = 1;
+
+	while (c1 && c2 && c1 == c2 && sz != 0) {
+		c1 = _bcs_toupper(*str1++);
+		c2 = _bcs_toupper(*str2++);
+		sz--;
+	}
+
+	return ((c1 == c2) ? 0 : ((c1 > c2) ? 1 : -1));
+}
+
+/*
  * skip white space characters.
  */
 const char *
 _bcs_skip_ws(const char *p)
 {
-	while (*p && isspace(*p)) {
+	while (*p && _bcs_isspace(*p)) {
 		p++;
 	}
 
@@ -58,7 +91,7 @@ const char *
 _bcs_skip_nonws(const char *p)
 {
 
-	while (*p && !isspace(*p)) {
+	while (*p && !_bcs_isspace(*p)) {
 		p++;
 	}
 
@@ -72,7 +105,7 @@ const char *
 _bcs_skip_ws_len(const char *p, size_t *len)
 {
 
-	while (*p && *len > 0 && isspace(*p)) {
+	while (*p && *len > 0 && _bcs_isspace(*p)) {
 		p++;
 		(*len)--;
 	}
@@ -87,7 +120,7 @@ const char *
 _bcs_skip_nonws_len(const char *p, size_t *len)
 {
 
-	while (*p && *len > 0 && !isspace(*p)) {
+	while (*p && *len > 0 && !_bcs_isspace(*p)) {
 		p++;
 		(*len)--;
 	}
@@ -102,7 +135,7 @@ void
 _bcs_trunc_rws_len(const char *p, size_t *len)
 {
 
-	while (*len > 0 && isspace(p[*len - 1]))
+	while (*len > 0 && _bcs_isspace(p[*len - 1]))
 		(*len)--;
 }
 
@@ -113,7 +146,7 @@ void
 _bcs_convert_to_lower(char *s)
 {
 	while (*s) {
-		*s = tolower(*s);
+		*s = _bcs_tolower(*s);
 		s++;
 	}
 }
@@ -125,7 +158,7 @@ void
 _bcs_convert_to_upper(char *s)
 {
 	while (*s) {
-		*s = toupper(*s);
+		*s = _bcs_toupper(*s);
 		s++;
 	}
 }

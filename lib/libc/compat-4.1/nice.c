@@ -11,10 +11,15 @@ static char sccsid[] = "@(#)nice.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <unistd.h>
 
-#include "compat_41.h"
+#ifdef __weak_alias
+__weak_alias(nice,_nice)
+#endif
 
 /*
  * Backwards compatible nice.
@@ -28,7 +33,7 @@ nice(incr)
 #endif
 {
 	int prio;
-	extern int errno;
+	//extern int errno;
 
 	errno = 0;
 	prio = getpriority(PRIO_PROCESS, 0);

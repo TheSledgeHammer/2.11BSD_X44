@@ -29,7 +29,39 @@
 #ifndef _ALIASNAME_LOCAL_H_
 #define _ALIASNAME_LOCAL_H_
 
+/*
+ * predicate/conversion for basic character set.
+ */
+
+#define _BCS_PRED(_name_, _cond_) \
+static __inline int _bcs_##_name_(u_int8_t ch) { return (_cond_); }
+
+_BCS_PRED(isblank, ch == ' ' || ch == '\t')
+_BCS_PRED(iseol, ch == '\n' || ch == '\r')
+_BCS_PRED(isspace, _bcs_isblank(ch) || _bcs_iseol(ch) || ch == '\f' || ch == '\v')
+_BCS_PRED(isdigit, ch >= '0' && ch <= '9')
+_BCS_PRED(isupper, ch >= 'A' && ch <= 'Z')
+_BCS_PRED(islower, ch >= 'a' && ch <= 'z')
+_BCS_PRED(isalpha, _bcs_isupper(ch) || _bcs_islower(ch))
+_BCS_PRED(isalnum, _bcs_isdigit(ch) || _bcs_isalpha(ch))
+_BCS_PRED(isxdigit, _bcs_isdigit(ch) || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f'))
+
+static __inline u_int8_t
+_bcs_toupper(u_int8_t ch)
+{
+	return (_bcs_islower(ch) ? (ch - 'a' + 'A') : ch);
+}
+
+static __inline u_int8_t
+_bcs_tolower(u_int8_t ch)
+{
+	return (_bcs_isupper(ch) ? (ch - 'A' + 'a') : ch);
+}
+
 /* citrus_bcs */
+__BEGIN_DECLS
+int		_bcs_strcasecmp(const char *, const char *);
+int		_bcs_strncasecmp(const char *, const char *, size_t);
 const char 	*_bcs_skip_ws(const char *);
 const char 	*_bcs_skip_nonws(const char *);
 const char 	*_bcs_skip_ws_len(const char *, size_t *);
@@ -38,8 +70,8 @@ void 	 	_bcs_trunc_rws_len(const char *, size_t *);
 void		_bcs_convert_to_lower(char *);
 void		_bcs_convert_to_upper(char *);
 void		_bcs_ignore_case(int, char *);
-int         _bcs_is_ws(const char);
+int        	_bcs_is_ws(const char);
 const char 	*__unaliasname(const char *, const char *, void *, size_t);
 int 		__isforcemapping(const char *);
-
+__END_DECLS
 #endif /*_ALIASNAME_LOCAL_H_*/

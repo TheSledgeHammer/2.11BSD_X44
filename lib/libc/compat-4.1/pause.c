@@ -11,15 +11,19 @@ static char sccsid[] = "@(#)pause.c	5.2.1 (2.11BSD) 1997/9/9";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <signal.h>
+#include <unistd.h>
 
-#include "compat_41.h"
+#ifdef __weak_alias
+__weak_alias(pause,_pause)
+#endif
 
 /*
  * Backwards compatible pause.
  */
 
-void
+int
 #if __STDC__
 pause(void)
 #else
@@ -29,5 +33,9 @@ pause()
 	sigset_t set;
 
 	sigemptyset(&set);
-	sigsuspend(&set);
+
+	if (sigprocmask(SIG_BLOCK, NULL, &set) == -1) {
+		return (-1);
+	}
+	return (sigsuspend(&set));
 }

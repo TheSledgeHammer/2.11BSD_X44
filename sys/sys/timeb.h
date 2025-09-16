@@ -9,7 +9,8 @@
 #ifndef _SYS_TIMEB_H_
 #define _SYS_TIMEB_H_
 
-#include <sys/time.h>
+//#include <sys/time.h>
+
 /*
  * Structure returned by ftime system call
  */
@@ -19,4 +20,13 @@ struct timeb {
 	short			timezone;		/* minutes west of CUT */
 	short			dstflag;		/* DST == non-zero */
 };
+
+#ifndef _KERNEL
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int ftime(struct timeb *);
+__END_DECLS
+#endif /* _KERNEL */
+
 #endif /* _SYS_TIMEB_H_ */

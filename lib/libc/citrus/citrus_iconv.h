@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_iconv_std_local.h,v 1.2 2003/07/01 09:42:16 tshiozak Exp $	*/
+/*	$NetBSD: citrus_iconv_local.h,v 1.3 2008/02/09 14:56:20 junyoung Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -29,57 +29,69 @@
 #ifndef _CITRUS_ICONV_H_
 #define _CITRUS_ICONV_H_
 
-/*
- * encoding
- */
-struct _citrus_iconv_std_encoding {
-	struct _citrus_frune_encoding 	*se_handle;
-	void 					*se_ps;
-	void 					*se_pssaved;
+struct _citrus_iconv_ops {
+	int (*io_init_shared)(struct _citrus_iconv_std_shared *,
+			const char *__restrict, const char *__restrict, const char *__restrict,
+			const void *__restrict, size_t);
+	void (*io_uninit_shared)(struct _citrus_iconv_std_shared *);
+	int (*io_convert)(const struct _citrus_iconv_std_shared *,
+			struct _citrus_iconv_std_context *, const char *__restrict *__restrict,
+			size_t *__restrict, char *__restrict *__restrict, size_t *__restrict,
+			u_int32_t, size_t *__restrict);
+	int (*io_init_context)(struct _citrus_iconv_std_shared *, struct _citrus_iconv_std_context *);
+	void (*io_uninit_context)(struct _citrus_iconv_std_shared *);
 };
 
-/*
- * dst
- */
-struct _citrus_iconv_std_dst {
-	TAILQ_ENTRY(_citrus_iconv_std_dst)	sd_entry;
-	_citrus_csid_t				sd_csid;
-	unsigned long				sd_norm;
-	struct _citrus_csmapper			*sd_mapper;
-};
-TAILQ_HEAD(_citrus_iconv_std_dst_list, _citrus_iconv_std_dst);
-
-/*
- * src
- */
-struct _citrus_iconv_std_src {
-	TAILQ_ENTRY(_citrus_iconv_std_src)	ss_entry;
-	_citrus_csid_t				ss_csid;
-	struct _citrus_iconv_std_dst_list	ss_dsts;
-};
-TAILQ_HEAD(_citrus_iconv_std_src_list, _citrus_iconv_std_src);
-
-/*
- * iconv_std handle
- */
-struct _citrus_iconv_std_shared {
-	struct _citrus_frune_encoding 		*is_src_encoding;
-	struct _citrus_frune_encoding 		*is_dst_encoding;
-	struct _citrus_iconv_std_src_list	is_srcs;
-	int					is_use_invalid;
-	_citrus_wc_t				is_invalid;
+struct _citrus_iconv_shared {
+	struct _citrus_iconv_ops *ci_ops;
+	void					 *ci_closure;
 };
 
-/*
- * iconv_std context
- */
-struct _citrus_iconv_std_context {
-	struct _citrus_iconv_std_encoding	sc_src_encoding;
-	struct _citrus_iconv_std_encoding	sc_dst_encoding;
+struct _citrus_iconv {
+	struct _citrus_iconv_shared *cv_shared;
+	void					 *cv_closure;
 };
 
-/* prototypes */
-__BEGIN_DECLS
-int init_encoding(struct _citrus_iconv_std_encoding *, struct frune_encoding *, void *, void *);
-__END_DECLS
+#define _CITRUS_ICONV_F_HIDE_INVALID	0x0001
+
+extern struct _citrus_iconv_ops iconv_std;
+
+static __inline int
+_citrus_io_init_shared(struct _citrus_iconv_shared *ci,
+		struct _citrus_iconv_std_shared *is, const char *__restrict curdir,
+		const char *__restrict src, const char *__restrict dst,
+		const void *__restrict var, size_t lenvar)
+{
+	return ((*ci->ci_ops->io_init_shared)(is, curdir, src, dst, var, lenvar));
+}
+
+static __inline void
+_citrus_io_uninit_shared(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is)
+{
+	(*ci->ci_ops->io_init_shared)(is);
+}
+
+static __inline int
+_citrus_io_convert(struct _citrus_iconv_shared *ci,
+		const struct _citrus_iconv_std_shared *is,
+		struct _citrus_iconv_std_context *sc,
+		const char *__restrict* __restrict in, size_t *__restrict inbytes,
+		char *__restrict * __restrict out, size_t *__restrict outbytes,
+		u_int32_t flags, size_t *__restrict invalids)
+{
+	return ((*ci->ci_ops->io_convert)(is, sc, in, inbytes, out, outbytes, flags, invalids));
+}
+
+static __inline int
+_citrus_io_init_context(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is, , struct _citrus_iconv_std_context *sc)
+{
+	return ((*ci->ci_ops->io_init_context)(is, sc));
+}
+
+static __inline void
+_citrus_io_uninit_context(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is)
+{
+	(*ci->ci_ops->io_uninit_context)(is);
+}
+
 #endif /* _CITRUS_ICONV_H_ */
