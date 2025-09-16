@@ -12,6 +12,7 @@ static char sccsid[] = "@(#)ftime.c	5.2 (Berkeley) 3/9/86";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/timeb.h>
 
 /*
