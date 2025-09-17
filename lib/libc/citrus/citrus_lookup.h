@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_iconv_std_local.h,v 1.2 2003/07/01 09:42:16 tshiozak Exp $	*/
+/*	$NetBSD: citrus_lookup.h,v 1.2 2004/07/21 14:16:34 tshiozak Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,60 +26,27 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_ICONV_STD_H_
-#define _CITRUS_ICONV_STD_H_
+#ifndef _CITRUS_LOOKUP_H_
+#define _CITRUS_LOOKUP_H_
+
+#define _CITRUS_LOOKUP_CASE_SENSITIVE	0
+#define _CITRUS_LOOKUP_CASE_IGNORE		1
 
 /*
- * encoding
+ * Temporary hold over
  */
-struct _citrus_iconv_std_encoding {
-	struct _citrus_frune_encoding 	*se_handle;
-	void 					*se_ps;
-	void 					*se_pssaved;
-};
+static __inline char *
+_citrus_lookup_simple(const char *name, const char *key, char *linebuf, size_t linebufsize, int ignore_case)
+{
+	switch (ignore_case) {
+	case _CITRUS_LOOKUP_CASE_SENSITIVE:
+		ignore_case = 0;
+		break;
+	case _CITRUS_LOOKUP_CASE_IGNORE:
+		ignore_case = 1;
+		break;
+	}
+	return (__unaliasname(name, key, linebuf, linebufsize));
+}
 
-/*
- * dst
- */
-struct _citrus_iconv_std_dst {
-	TAILQ_ENTRY(_citrus_iconv_std_dst)	sd_entry;
-	_citrus_csid_t				sd_csid;
-	unsigned long				sd_norm;
-	struct _citrus_csmapper			*sd_mapper;
-};
-TAILQ_HEAD(_citrus_iconv_std_dst_list, _citrus_iconv_std_dst);
-
-/*
- * src
- */
-struct _citrus_iconv_std_src {
-	TAILQ_ENTRY(_citrus_iconv_std_src)	ss_entry;
-	_citrus_csid_t				ss_csid;
-	struct _citrus_iconv_std_dst_list	ss_dsts;
-};
-TAILQ_HEAD(_citrus_iconv_std_src_list, _citrus_iconv_std_src);
-
-/*
- * iconv_std handle
- */
-struct _citrus_iconv_std_shared {
-	struct _citrus_frune_encoding 		*is_src_encoding;
-	struct _citrus_frune_encoding 		*is_dst_encoding;
-	struct _citrus_iconv_std_src_list	is_srcs;
-	int					is_use_invalid;
-	_citrus_wc_t				is_invalid;
-};
-
-/*
- * iconv_std context
- */
-struct _citrus_iconv_std_context {
-	struct _citrus_iconv_std_encoding	sc_src_encoding;
-	struct _citrus_iconv_std_encoding	sc_dst_encoding;
-};
-
-/* prototypes */
-__BEGIN_DECLS
-int _citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *, size_t, u_int32_t);
-__END_DECLS
-#endif /* _CITRUS_ICONV_STD_H_ */
+#endif /* _CITRUS_LOOKUP_H_ */

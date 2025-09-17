@@ -58,7 +58,8 @@ static int wctombx(struct _citrus_iconv_std_encoding *, char *, size_t, _wc_t, s
 static int put_state_resetx(struct _citrus_iconv_std_encoding *, char *, size_t, size_t *);
 static int get_state_desc_gen(struct _citrus_iconv_std_encoding *, int *);
 static int init_encoding(struct _citrus_iconv_std_encoding *, struct _citrus_frune_encoding *, void *, void *);
-#ifdef notyet
+
+
 static int open_csmapper(struct _citrus_csmapper **, const char *, const char *, unsigned long *);
 static void close_dsts(struct _citrus_iconv_std_dst_list *);
 static int open_dsts(struct _citrus_iconv_std_dst_list *, const struct _citrus_esdb_charset *, const struct _citrus_esdb *);
@@ -77,37 +78,51 @@ static int _citrus_iconv_std_iconv_convert(
 static int _citrus_iconv_std_iconv_init_context(struct _citrus_iconv_std_shared *, struct _citrus_iconv_std_context *);
 static void _citrus_iconv_std_iconv_uninit_context(struct _citrus_iconv_std_shared *);
 
-struct _citrus_iconv_ops iconv_std = {
+
+struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops = {
+		.io_abi_version = _CITRUS_ICONV_ABI_VERSION,
 		.io_init_shared = _citrus_iconv_std_iconv_init_shared,
 		.io_uninit_shared = _citrus_iconv_std_iconv_uninit_shared,
 		.io_convert = _citrus_iconv_std_iconv_convert,
 		.io_init_context = _citrus_iconv_std_iconv_init_context,
 		.io_uninit_context = _citrus_iconv_std_iconv_uninit_context
 };
-#endif
+
+int
+_citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *ops, size_t lenops,
+			       u_int32_t expected_version)
+{
+	if (expected_version < _CITRUS_ICONV_ABI_VERSION || lenops < sizeof(*ops)) {
+		return (EINVAL);
+	}
+
+	memcpy(ops, &_citrus_iconv_std_iconv_ops, sizeof(_citrus_iconv_std_iconv_ops));
+
+	return (0);
+}
 
 /*
  * convenience routines for frune.
  */
-static void
+static __inline void
 save_encoding_state(struct _citrus_iconv_std_encoding *se)
 {
 	_citrus_frune_save_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
 }
 
-static void
+static __inline void
 restore_encoding_state(struct _citrus_iconv_std_encoding *se)
 {
 	_citrus_frune_restore_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
 }
 
-static void
+static __inline void
 init_encoding_state(struct _citrus_iconv_std_encoding *se)
 {
 	_citrus_frune_init_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
 }
 
-static int
+static __inline int
 mbtocsx(struct _citrus_iconv_std_encoding *se, _csid_t *csid, _index_t *idx, const char **s, size_t n,	size_t *nresult)
 {
 	struct _citrus_frune_encoding *fe;
@@ -117,7 +132,7 @@ mbtocsx(struct _citrus_iconv_std_encoding *se, _csid_t *csid, _index_t *idx, con
 	return (_citrus_frune_mbtocsx(fe, csid, idx, s, n, nresult));
 }
 
-static int
+static __inline int
 cstombx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, _csid_t csid, _index_t idx, size_t *nresult)
 {
 	struct _citrus_frune_encoding *fe;
@@ -127,7 +142,7 @@ cstombx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, _csid_t csid, 
 	return (_citrus_frune_cstombx(fe, s, n, csid, idx, nresult));
 }
 
-static int
+static __inline int
 wctombx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, _wc_t wc, size_t *nresult)
 {
 	struct _citrus_frune_encoding *fe;
@@ -137,7 +152,7 @@ wctombx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, _wc_t wc, size
 	return (_citrus_frune_wctombx(fe, s, n, wc, nresult));
 }
 
-static int
+static __inline int
 put_state_resetx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, size_t *nresult)
 {
 	struct _citrus_frune_encoding *fe;
@@ -147,7 +162,7 @@ put_state_resetx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, size_
 	return (_citrus_frune_put_state_resetx(fe, s, n, nresult));
 }
 
-static int
+static __inline int
 get_state_desc_gen(struct _citrus_iconv_std_encoding *se, int *rstate)
 {
 	struct _citrus_frune_encoding *fe;
@@ -184,7 +199,6 @@ out:
 	return (ret);
 }
 
-#ifdef notyet
 static int
 open_csmapper(struct _citrus_csmapper **rcm, const char *src, const char *dst, unsigned long *rnorm)
 {
@@ -590,4 +604,3 @@ err_norestore:
 	*invalids = inval;
 	return ret;
 }
-#endif
