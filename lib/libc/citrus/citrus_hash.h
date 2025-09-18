@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_lookup.h,v 1.2 2004/07/21 14:16:34 tshiozak Exp $	*/
+/*	$NetBSD: citrus_hash.h,v 1.4 2022/04/19 20:32:14 rillig Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,36 +26,40 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_LOOKUP_H_
-#define _CITRUS_LOOKUP_H_
+#ifndef _CITRUS_HASH_H_
+#define _CITRUS_HASH_H_
 
-#define _CITRUS_LOOKUP_CASE_SENSITIVE	0
-#define _CITRUS_LOOKUP_CASE_IGNORE		1
+#define _CITRUS_HASH_ENTRY(type) 										\
+	LIST_ENTRY(type)
 
-/*
- * Temporary hold over
- */
-static __inline char *
-_citrus_lookup_simple(const char *name, const char *key, char *linebuf, size_t linebufsize, int ignore_case)
-{
-	const char *cskey = strdup(key);
-
-	if (ignore_case) {
-		_bcs_convert_to_lower(cskey);
-	}
-	return (__unaliasname(name, cskey, linebuf, linebufsize));
+#define _CITRUS_HASH_HEAD(headname, type, hashsize)						\
+struct headname {														\
+	LIST_HEAD(, type)	chh_table[hashsize];							\
 }
 
-static __inline const char *
-_citrus_lookup_alias(const char *path, const char *key, char *buf, size_t n, int ignore_case)
-{
-	const char *ret;
+#define _CITRUS_HASH_INIT(head, hashsize)								\
+do {																	\
+	int _ch_loop;														\
+	for (_ch_loop = 0; _ch_loop < hashsize; _ch_loop++)					\
+		LIST_INIT(&(head)->chh_table[_ch_loop]);						\
+} while (0)
 
-	ret = _citrus_lookup_simple(path, key, buf, n, ignore_case);
-	if (ret == NULL) {
-		ret = key;
-	}
-	return (ret);
-}
+#define _CITRUS_HASH_REMOVE(elm, field) 								\
+	LIST_REMOVE(elm, field)
 
-#endif /* _CITRUS_LOOKUP_H_ */
+#define _CITRUS_HASH_INSERT(head, elm, field, hashval)					\
+	LIST_INSERT_HEAD(&(head)->chh_table[hashval], elm, field)
+
+#define _CITRUS_HASH_SEARCH(head, elm, field, matchfunc, key, hashval)	\
+do {																	\
+	LIST_FOREACH((elm), &(head)->chh_table[hashval], field) {			\
+		if (matchfunc((elm), key)==0)									\
+			break;														\
+	}																	\
+} while (0)
+
+__BEGIN_DECLS
+int	_citrus_string_hash_func(const char *, int);
+__END_DECLS
+
+#endif /* _CITRUS_HASH_H_ */

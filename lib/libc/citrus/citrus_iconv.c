@@ -307,7 +307,7 @@ err:
 static __inline int
 hash_func(const char *key)
 {
-	return _string_hash_func(key, CI_HASH_SIZE);
+	return _citrus_string_hash_func(key, CI_HASH_SIZE);
 }
 
 static __inline int
@@ -403,8 +403,8 @@ _citrus_iconv_open(struct _citrus_iconv * __restrict * __restrict rcv,
 
 	/* resolve codeset name aliases */
 	snprintf(path, sizeof(path), "%s/%s", basedir, _CITRUS_ICONV_ALIAS);
-	strlcpy(realsrc, _lookup_alias(path, src, buf, (size_t)PATH_MAX, _CITRUS_LOOKUP_CASE_IGNORE), (size_t)PATH_MAX);
-	strlcpy(realdst, _lookup_alias(path, dst, buf, (size_t)PATH_MAX, _CITRUS_LOOKUP_CASE_IGNORE), (size_t)PATH_MAX);
+	strlcpy(realsrc, _citrus_lookup_alias(path, src, buf, (size_t)PATH_MAX, _CITRUS_LOOKUP_CASE_IGNORE), (size_t)PATH_MAX);
+	strlcpy(realdst, _citrus_lookup_alias(path, dst, buf, (size_t)PATH_MAX, _CITRUS_LOOKUP_CASE_IGNORE), (size_t)PATH_MAX);
 
 	/* sanity check */
 	if (strchr(realsrc, '/') != NULL || strchr(realdst, '/')) {

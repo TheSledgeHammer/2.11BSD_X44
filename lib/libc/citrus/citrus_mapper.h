@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_lookup.h,v 1.2 2004/07/21 14:16:34 tshiozak Exp $	*/
+/*	$NetBSD: citrus_mapper.h,v 1.3 2003/07/12 15:39:19 tshiozak Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,36 +26,15 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_LOOKUP_H_
-#define _CITRUS_LOOKUP_H_
+#ifndef _CITRUS_MAPPER_H_
+#define _CITRUS_MAPPER_H_
 
-#define _CITRUS_LOOKUP_CASE_SENSITIVE	0
-#define _CITRUS_LOOKUP_CASE_IGNORE		1
+/* return values of _citrus_mapper_convert */
+#define _CITRUS_MAPPER_CONVERT_SUCCESS		(0)
+#define _CITRUS_MAPPER_CONVERT_NONIDENTICAL	(1)
+#define _CITRUS_MAPPER_CONVERT_SRC_MORE		(2)
+#define _CITRUS_MAPPER_CONVERT_DST_MORE		(3)
+#define _CITRUS_MAPPER_CONVERT_ILSEQ		(4)
+#define _CITRUS_MAPPER_CONVERT_FATAL		(5)
 
-/*
- * Temporary hold over
- */
-static __inline char *
-_citrus_lookup_simple(const char *name, const char *key, char *linebuf, size_t linebufsize, int ignore_case)
-{
-	const char *cskey = strdup(key);
-
-	if (ignore_case) {
-		_bcs_convert_to_lower(cskey);
-	}
-	return (__unaliasname(name, cskey, linebuf, linebufsize));
-}
-
-static __inline const char *
-_citrus_lookup_alias(const char *path, const char *key, char *buf, size_t n, int ignore_case)
-{
-	const char *ret;
-
-	ret = _citrus_lookup_simple(path, key, buf, n, ignore_case);
-	if (ret == NULL) {
-		ret = key;
-	}
-	return (ret);
-}
-
-#endif /* _CITRUS_LOOKUP_H_ */
+#endif /* _CITRUS_MAPPER_H_ */

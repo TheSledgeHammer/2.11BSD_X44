@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_lookup.h,v 1.2 2004/07/21 14:16:34 tshiozak Exp $	*/
+/*	$NetBSD: citrus_db_hash.c,v 1.4 2004/01/02 21:49:35 itojun Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,36 +26,45 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_LOOKUP_H_
-#define _CITRUS_LOOKUP_H_
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
 
-#define _CITRUS_LOOKUP_CASE_SENSITIVE	0
-#define _CITRUS_LOOKUP_CASE_IGNORE		1
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+__RCSID("$NetBSD: citrus_db_hash.c,v 1.4 2004/01/02 21:49:35 itojun Exp $");
+#endif /* LIBC_SCCS and not lint */
 
-/*
- * Temporary hold over
- */
-static __inline char *
-_citrus_lookup_simple(const char *name, const char *key, char *linebuf, size_t linebufsize, int ignore_case)
+#ifndef HOSTPROG
+#include "namespace.h"
+#endif
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+
+#include "citrus_types.h"
+#include "citrus_bcs.h"
+#include "citrus_region.h"
+#include "citrus_db_hash.h"
+
+/*ARGSUSED*/
+u_int32_t
+_citrus_db_hash_std(void *closure, struct _region *r)
 {
-	const char *cskey = strdup(key);
+	const u_int8_t *p = _citrus_region_head(r);
+	u_int32_t hash = 0, tmp;
+	size_t i;
 
-	if (ignore_case) {
-		_bcs_convert_to_lower(cskey);
+	for (i = _citrus_region_size(r); i > 0; i--) {
+		hash <<= 4;
+		hash += _bcs_tolower(*p);
+		tmp = hash & 0xF0000000;
+		if (tmp != 0) {
+			hash ^= tmp;
+			hash ^= tmp >> 24;
+		}
+		p++;
 	}
-	return (__unaliasname(name, cskey, linebuf, linebufsize));
+	return hash;
 }
-
-static __inline const char *
-_citrus_lookup_alias(const char *path, const char *key, char *buf, size_t n, int ignore_case)
-{
-	const char *ret;
-
-	ret = _citrus_lookup_simple(path, key, buf, n, ignore_case);
-	if (ret == NULL) {
-		ret = key;
-	}
-	return (ret);
-}
-
-#endif /* _CITRUS_LOOKUP_H_ */

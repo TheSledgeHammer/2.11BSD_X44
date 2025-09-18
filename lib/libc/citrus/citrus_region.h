@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_lookup.h,v 1.2 2004/07/21 14:16:34 tshiozak Exp $	*/
+/*	$NetBSD: citrus_region.h,v 1.4 2003/10/27 00:12:42 lukem Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -24,38 +24,74 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
  */
 
-#ifndef _CITRUS_LOOKUP_H_
-#define _CITRUS_LOOKUP_H_
+#ifndef _CITRUS_REGION_H_
+#define _CITRUS_REGION_H_
 
-#define _CITRUS_LOOKUP_CASE_SENSITIVE	0
-#define _CITRUS_LOOKUP_CASE_IGNORE		1
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
 
-/*
- * Temporary hold over
- */
-static __inline char *
-_citrus_lookup_simple(const char *name, const char *key, char *linebuf, size_t linebufsize, int ignore_case)
+struct _citrus_region {
+/* private: */
+	void	*r_head;
+	size_t	r_size;
+};
+
+static __inline void
+_citrus_region_init(struct _citrus_region *r, void *h, size_t sz)
 {
-	const char *cskey = strdup(key);
-
-	if (ignore_case) {
-		_bcs_convert_to_lower(cskey);
-	}
-	return (__unaliasname(name, cskey, linebuf, linebufsize));
+	_DIAGASSERT(r);
+	r->r_head = h;
+	r->r_size = sz;
 }
 
-static __inline const char *
-_citrus_lookup_alias(const char *path, const char *key, char *buf, size_t n, int ignore_case)
+static __inline void *
+_citrus_region_head(const struct _citrus_region *r)
 {
-	const char *ret;
-
-	ret = _citrus_lookup_simple(path, key, buf, n, ignore_case);
-	if (ret == NULL) {
-		ret = key;
-	}
-	return (ret);
+	return r->r_head;
 }
 
-#endif /* _CITRUS_LOOKUP_H_ */
+static __inline size_t
+_citrus_region_size(const struct _citrus_region *r)
+{
+	return r->r_size;
+}
+
+static __inline int
+_citrus_region_check(const struct _citrus_region *r, size_t ofs, size_t sz)
+{
+	return r->r_size >= ofs + sz ? 0 : -1;
+}
+
+static __inline void *
+_citrus_region_offset(const struct _citrus_region *r, size_t pos)
+{
+	return (void *)((u_int8_t *)r->r_head + pos);
+}
+
+static __inline u_int8_t
+_citrus_region_peek8(const struct _citrus_region *r, size_t pos)
+{
+	return *(u_int8_t *)_citrus_region_offset(r, pos);
+}
+
+static __inline u_int16_t
+_citrus_region_peek16(const struct _citrus_region *r, size_t pos)
+{
+	u_int16_t val;
+	memcpy(&val, _citrus_region_offset(r, pos), 2);
+	return val;
+}
+
+static __inline u_int32_t
+_citrus_region_peek32(const struct _citrus_region *r, size_t pos)
+{
+	u_int32_t val;
+	memcpy(&val, _citrus_region_offset(r, pos), 4);
+	return val;
+}
+
+#endif

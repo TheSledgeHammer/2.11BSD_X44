@@ -48,6 +48,7 @@
 #include "citrus_frune.h"
 #include "citrus_iconv.h"
 #include "citrus_iconv_std.h"
+#include "citrus_mapper.h"
 
 static void save_encoding_state(struct _citrus_iconv_std_encoding *);
 static void restore_encoding_state(struct _citrus_iconv_std_encoding *);
@@ -341,19 +342,19 @@ do_conv(const struct _citrus_iconv_std_shared *is, struct _citrus_iconv_std_cont
 			TAILQ_FOREACH(sd, &ss->ss_dsts, sd_entry) {
 				ret = _citrus_csmapper_convert(sd->sd_mapper, &tmpidx, *idx, NULL);
 				switch (ret) {
-				case _MAPPER_CONVERT_SUCCESS:
+				case _CITRUS_MAPPER_CONVERT_SUCCESS:
 					*csid = sd->sd_csid;
 					*idx = tmpidx;
 					return 0;
-				case _MAPPER_CONVERT_NONIDENTICAL:
+				case _CITRUS_MAPPER_CONVERT_NONIDENTICAL:
 					break;
-				case _MAPPER_CONVERT_SRC_MORE:
+				case _CITRUS_MAPPER_CONVERT_SRC_MORE:
 					/*FALLTHROUGH*/
-				case _MAPPER_CONVERT_DST_MORE:
+				case _CITRUS_MAPPER_CONVERT_DST_MORE:
 					/*FALLTHROUGH*/
-				case _MAPPER_CONVERT_FATAL:
+				case _CITRUS_MAPPER_CONVERT_FATAL:
 					return EINVAL;
-				case _MAPPER_CONVERT_ILSEQ:
+				case _CITRUS_MAPPER_CONVERT_ILSEQ:
 					return EILSEQ;
 				}
 			}
@@ -371,10 +372,8 @@ _citrus_iconv_std_iconv_init_shared(
 		const void *__restrict var, size_t lenvar)
 {
 	int ret;
-	//struct _citrus_iconv_std_shared *is;
 	struct _citrus_esdb esdbsrc, esdbdst;
 
-	//is = malloc(sizeof(*is));
 	if (is == NULL) {
 		ret = errno;
 		goto err0;
@@ -406,7 +405,6 @@ _citrus_iconv_std_iconv_init_shared(
 	}
 	_citrus_esdb_close(&esdbsrc);
 	_citrus_esdb_close(&esdbdst);
-	//ci->ci_closure = is;
 
 	return (0);
 
@@ -427,8 +425,6 @@ err0:
 static void
 _citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_std_shared *is)
 {
-	//struct _citrus_iconv_std_shared *is = ci->ci_closure;
-
 	if (is == NULL) {
 		return;
 	}
@@ -469,8 +465,6 @@ _citrus_iconv_std_iconv_init_context(struct _citrus_iconv_std_shared *is, struct
 		init_encoding(&sc->sc_dst_encoding, is->is_dst_encoding, NULL, NULL);
 	}
 
-	//cv->cv_closure = (void*) sc;
-
 	return 0;
 }
 
@@ -487,8 +481,6 @@ _citrus_iconv_std_iconv_convert(
 		char *__restrict* __restrict out, size_t *__restrict outbytes,
 		u_int32_t flags, size_t *__restrict invalids)
 {
-	//const struct _citrus_iconv_std_shared *is;
-	//struct _citrus_iconv_std_context *sc;
 	_index_t idx;
 	_csid_t csid;
 	int ret, state;

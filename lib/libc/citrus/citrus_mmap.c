@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_lookup.h,v 1.2 2004/07/21 14:16:34 tshiozak Exp $	*/
+/*	$NetBSD: citrus_mmap.c,v 1.1.4.1 2005/01/16 14:17:15 he Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,36 +26,70 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_LOOKUP_H_
-#define _CITRUS_LOOKUP_H_
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+__RCSID("$NetBSD: citrus_mmap.c,v 1.1.4.1 2005/01/16 14:17:15 he Exp $");
+#endif /* LIBC_SCCS and not lint */
 
-#define _CITRUS_LOOKUP_CASE_SENSITIVE	0
-#define _CITRUS_LOOKUP_CASE_IGNORE		1
+#include "namespace.h"
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <sys/mman.h>
 
-/*
- * Temporary hold over
- */
-static __inline char *
-_citrus_lookup_simple(const char *name, const char *key, char *linebuf, size_t linebufsize, int ignore_case)
+#include "citrus_region.h"
+#include "citrus_mmap.h"
+
+int
+_citrus_map_file(struct _citrus_region * __restrict r,
+    const char * __restrict path)
 {
-	const char *cskey = strdup(key);
+	int fd, ret = 0;
+	struct stat st;
+	void *head;
 
-	if (ignore_case) {
-		_bcs_convert_to_lower(cskey);
+	_DIAGASSERT(r != NULL);
+
+	_citrus_region_init(r, NULL, 0);
+
+	if ((fd = open(path, O_RDONLY)) == -1)
+		return errno;
+
+	if (fstat(fd, &st)  == -1) {
+		ret = errno;
+		goto error;
 	}
-	return (__unaliasname(name, cskey, linebuf, linebufsize));
+	if (!S_ISREG(st.st_mode)) {
+		ret = EOPNOTSUPP;
+		goto error;
+	}
+
+	head = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_FILE|MAP_PRIVATE,
+	    fd, (off_t)0);
+	if (head == MAP_FAILED) {
+		ret = errno;
+		goto error;
+	}
+	_citrus_region_init(r, head, (size_t)st.st_size);
+
+error:
+	(void)close(fd);
+	return ret;
 }
 
-static __inline const char *
-_citrus_lookup_alias(const char *path, const char *key, char *buf, size_t n, int ignore_case)
+void
+_citrus_unmap_file(struct _citrus_region *r)
 {
-	const char *ret;
 
-	ret = _citrus_lookup_simple(path, key, buf, n, ignore_case);
-	if (ret == NULL) {
-		ret = key;
+	_DIAGASSERT(r != NULL);
+
+	if (_citrus_region_head(r) != NULL) {
+		(void)munmap(_citrus_region_head(r), _citrus_region_size(r));
+		_citrus_region_init(r, NULL, 0);
 	}
-	return (ret);
 }
-
-#endif /* _CITRUS_LOOKUP_H_ */
