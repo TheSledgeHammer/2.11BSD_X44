@@ -90,16 +90,9 @@ struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops = {
 };
 
 int
-_citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *ops, size_t lenops,
-			       u_int32_t expected_version)
+_citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *ops, size_t lenops, u_int32_t expected_version)
 {
-	if (expected_version < _CITRUS_ICONV_ABI_VERSION || lenops < sizeof(*ops)) {
-		return (EINVAL);
-	}
-
-	memcpy(ops, &_citrus_iconv_std_iconv_ops, sizeof(_citrus_iconv_std_iconv_ops));
-
-	return (0);
+	return (_citrus_getops(op, &_citrus_iconv_std_iconv_ops, lenops, _CITRUS_ICONV_ABI_VERSION, expected_version));
 }
 
 /*
@@ -208,15 +201,15 @@ open_csmapper(struct _citrus_csmapper **rcm, const char *src, const char *dst, u
 
 	ret = _citrus_csmapper_open(&cm, src, dst, 0, rnorm);
 	if (ret)
-		return ret;
+		return (ret);
 	if ( _citrus_csmapper_get_src_max(cm) != 1 ||  _citrus_csmapper_get_dst_max(cm) != 1 || _citrus_csmapper_get_state_size(cm) != 0) {
 		 _citrus_citrus_csmapper_close(cm);
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	*rcm = cm;
 
-	return 0;
+	return (0);
 }
 
 static void
@@ -262,16 +255,16 @@ open_dsts(struct _citrus_iconv_std_dst_list *dl, const struct _citrus_esdb_chars
 			if (sd == NULL) {
 				ret = errno;
 				close_dsts(dl);
-				return ret;
+				return (ret);
 			}
 		} else if (ret != ENOENT) {
 			close_dsts(dl);
 			free(sd);
-			return ret;
+			return (ret);
 		}
 	}
 	free(sd);
-	return 0;
+	return (0);
 }
 
 static void
@@ -294,7 +287,7 @@ open_srcs(struct _citrus_iconv_std_src_list *sl, const struct _citrus_esdb *dbsr
 
 	ss = malloc(sizeof(*ss));
 	if (ss == NULL)
-		return errno;
+		return (errno);
 
 	TAILQ_INIT(&ss->ss_dsts);
 
@@ -322,7 +315,7 @@ open_srcs(struct _citrus_iconv_std_src_list *sl, const struct _citrus_esdb *dbsr
 err:
 	free(ss);
 	close_srcs(sl);
-	return ret;
+	return (ret);
 }
 
 /* do convert a character */
@@ -345,7 +338,7 @@ do_conv(const struct _citrus_iconv_std_shared *is, struct _citrus_iconv_std_cont
 				case _CITRUS_MAPPER_CONVERT_SUCCESS:
 					*csid = sd->sd_csid;
 					*idx = tmpidx;
-					return 0;
+					return (0);
 				case _CITRUS_MAPPER_CONVERT_NONIDENTICAL:
 					break;
 				case _CITRUS_MAPPER_CONVERT_SRC_MORE:
@@ -353,16 +346,16 @@ do_conv(const struct _citrus_iconv_std_shared *is, struct _citrus_iconv_std_cont
 				case _CITRUS_MAPPER_CONVERT_DST_MORE:
 					/*FALLTHROUGH*/
 				case _CITRUS_MAPPER_CONVERT_FATAL:
-					return EINVAL;
+					return (EINVAL);
 				case _CITRUS_MAPPER_CONVERT_ILSEQ:
-					return EILSEQ;
+					return (EILSEQ);
 				}
 			}
 			break;
 		}
 	}
 
-	return E_NO_CORRESPONDING_CHAR;
+	return (E_NO_CORRESPONDING_CHAR);
 }
 
 static int
@@ -447,7 +440,7 @@ _citrus_iconv_std_iconv_init_context(struct _citrus_iconv_std_shared *is, struct
 	sz = (szpssrc + szpsdst) * 2 + sizeof(struct _citrus_iconv_std_context);
 	sc = malloc(sz);
 	if (sc == NULL) {
-		return errno;
+		return (errno);
 	}
 
 	ptr = (char *)&sc[1];
@@ -465,7 +458,7 @@ _citrus_iconv_std_iconv_init_context(struct _citrus_iconv_std_shared *is, struct
 		init_encoding(&sc->sc_dst_encoding, is->is_dst_encoding, NULL, NULL);
 	}
 
-	return 0;
+	return (0);
 }
 
 static void
@@ -515,7 +508,7 @@ _citrus_iconv_std_iconv_convert(
 			init_encoding_state(&sc->sc_dst_encoding);
 		init_encoding_state(&sc->sc_src_encoding);
 		*invalids = 0;
-		return 0;
+		return (0);
 	}
 
 	/* normal case */
@@ -587,12 +580,12 @@ next:
 	}
 	*invalids = inval;
 
-	return 0;
+	return (0);
 
 err:
 	restore_encoding_state(&sc->sc_src_encoding);
 	restore_encoding_state(&sc->sc_dst_encoding);
 err_norestore:
 	*invalids = inval;
-	return ret;
+	return (ret);
 }

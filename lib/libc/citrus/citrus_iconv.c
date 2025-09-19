@@ -190,7 +190,7 @@ lookup_iconv_entry(const char *curdir, const char *key,
 	cp = p = _citrus_lookup_simple(path, key, linebuf, linebufsize, _CITRUS_LOOKUP_CASE_IGNORE);
 
 	if (p == NULL) {
-		return ENOENT;
+		return (ENOENT);
 	}
 
 	/* get module name */
@@ -207,7 +207,7 @@ lookup_iconv_entry(const char *curdir, const char *key,
 	cq = _bcs_skip_nonws(cp);
 	p[cq-cp] = '\0';
 
-	return 0;
+	return (0);
 }
 
 static __inline void
@@ -246,7 +246,7 @@ open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci,
 						 /*&module,*/ &variable);
 		}
 		if (ret) {
-			return ret;
+			return (ret);
 		}
 	}
 
@@ -298,23 +298,23 @@ open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci,
 
 	*rci = ci;
 
-	return 0;
+	return (0);
 err:
 	close_shared(ci);
-	return ret;
+	return (ret);
 }
 
 static __inline int
 hash_func(const char *key)
 {
-	return _citrus_string_hash_func(key, CI_HASH_SIZE);
+	return (_citrus_string_hash_func(key, CI_HASH_SIZE));
 }
 
 static __inline int
 match_func(struct _citrus_iconv_shared * __restrict ci,
 	   const char * __restrict key)
 {
-	return strcmp(ci->ci_convname, key);
+	return (strcmp(ci->ci_convname, key));
 }
 
 static int
@@ -357,7 +357,7 @@ get_shared(struct _citrus_iconv_shared * __restrict * __restrict rci,
 quit:
 	rwlock_unlock(&lock);
 
-	return ret;
+	return (ret);
 }
 
 static void
@@ -408,13 +408,13 @@ _citrus_iconv_open(struct _citrus_iconv * __restrict * __restrict rcv,
 
 	/* sanity check */
 	if (strchr(realsrc, '/') != NULL || strchr(realdst, '/')) {
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	/* get shared record */
 	ret = get_shared(&ci, basedir, realsrc, realdst);
 	if (ret) {
-		return ret;
+		return (ret);
 	}
 
 	/* create/init context */
@@ -422,18 +422,18 @@ _citrus_iconv_open(struct _citrus_iconv * __restrict * __restrict rcv,
 	if (cv == NULL) {
 		ret = errno;
 		release_shared(ci);
-		return ret;
+		return (ret);
 	}
 	cv->cv_shared = ci;
 	ret = _citrus_iconv_init_context(cv, ci);
 	if (ret) {
 		release_shared(ci);
 		free(cv);
-		return ret;
+		return (ret);
 	}
 	*rcv = cv;
 
-	return 0;
+	return (0);
 }
 
 /*

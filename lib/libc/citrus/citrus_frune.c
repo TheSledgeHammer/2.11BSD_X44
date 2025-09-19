@@ -163,3 +163,17 @@ _citrus_frune_get_state_desc_gen(struct _citrus_frune_encoding *fe, int *rstate)
 	}
 	return (ret);
 }
+
+/*
+ * getops
+ */
+int
+_citrus_getops(void *toops, const void *fromops, size_t lenops, u_int32_t abi_version, u_int32_t expected_version)
+{
+	if (expected_version < abi_version || lenops < sizeof(*ops)) {
+		return (EINVAL);
+	}
+
+	memcpy(toops, fromops, sizeof(fromops));
+	return (0);
+}
