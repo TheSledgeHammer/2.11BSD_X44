@@ -29,6 +29,41 @@
 #ifndef _CITRUS_MAPPER_H_
 #define _CITRUS_MAPPER_H_
 
+struct _citrus_mapper_area;
+
+/*
+ * ABI version change log
+ *   0x00000001
+ *     initial version
+ */
+#define _CITRUS_MAPPER_ABI_VERSION	0x00000001
+struct _citrus_mapper_ops {
+	uint32_t mo_abi_version;
+	int 	(*mo_init)(struct _citrus_mapper_area *__restrict, struct _citrus_mapper *__restrict,
+			const char *__restrict, const void *__restrict, size_t,
+			struct _citrus_mapper_traits * __restrict, size_t);
+	void 	(*mo_uninit)(struct _citrus_mapper *);
+	int		(*mo_convert)(struct _citrus_mapper * __restrict, _citrus_index_t * __restrict,
+			_citrus_index_t, void * __restrict);
+	void	(*mo_init_state)(struct _citrus_mapper * __restrict, void * __restrict);
+};
+
+struct _citrus_mapper_traits {
+	/* version 0x00000001 */
+	size_t					 mt_state_size;
+	size_t					 mt_src_max;
+	size_t					 mt_dst_max;
+};
+
+struct _citrus_mapper {
+	struct _citrus_mapper_ops		 *cm_ops;
+	void					 *cm_closure;
+	struct _citrus_mapper_traits		 *cm_traits;
+	_CITRUS_HASH_ENTRY(_citrus_mapper)	 cm_entry;
+	int					 cm_refcount;
+	char					 *cm_key;
+};
+
 /* return values of _citrus_mapper_convert */
 #define _CITRUS_MAPPER_CONVERT_SUCCESS		(0)
 #define _CITRUS_MAPPER_CONVERT_NONIDENTICAL	(1)
