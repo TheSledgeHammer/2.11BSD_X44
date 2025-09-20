@@ -74,7 +74,7 @@ __END_DECLS
 #define _CITRUS_ICONV_F_HIDE_INVALID	0x0001
 
 static __inline int
-_citrus_io_init_shared(struct _citrus_iconv_shared *ci,
+_citrus_io_iconv_init_shared(struct _citrus_iconv_shared *ci,
 		struct _citrus_iconv_std_shared *is, const char *__restrict curdir,
 		const char *__restrict src, const char *__restrict dst,
 		const void *__restrict var, size_t lenvar)
@@ -85,7 +85,7 @@ _citrus_io_init_shared(struct _citrus_iconv_shared *ci,
 }
 
 static __inline void
-_citrus_io_uninit_shared(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is)
+_citrus_io_iconv_uninit_shared(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is)
 {
 	_DIAGASSERT(ci && ci->ci_ops && ci->ci_ops->io_uninit_shared);
 
@@ -93,7 +93,7 @@ _citrus_io_uninit_shared(struct _citrus_iconv_shared *ci, struct _citrus_iconv_s
 }
 
 static __inline int
-_citrus_io_convert(struct _citrus_iconv_shared *ci,
+_citrus_io_iconv_convert(struct _citrus_iconv_shared *ci,
 		const struct _citrus_iconv_std_shared *is,
 		struct _citrus_iconv_std_context *sc,
 		const char *__restrict* __restrict in, size_t *__restrict inbytes,
@@ -107,7 +107,7 @@ _citrus_io_convert(struct _citrus_iconv_shared *ci,
 }
 
 static __inline int
-_citrus_io_init_context(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is, , struct _citrus_iconv_std_context *sc)
+_citrus_io_iconv_init_context(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is, , struct _citrus_iconv_std_context *sc)
 {
 	_DIAGASSERT(ci && ci->ci_ops && ci->ci_ops->io_init_context);
 
@@ -115,7 +115,7 @@ _citrus_io_init_context(struct _citrus_iconv_shared *ci, struct _citrus_iconv_st
 }
 
 static __inline void
-_citrus_io_uninit_context(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is)
+_citrus_io_iconv_uninit_context(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is)
 {
 	_DIAGASSERT(ci && ci->ci_ops && ci->ci_ops->io_uninit_context);
 

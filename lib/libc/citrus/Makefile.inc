@@ -2,9 +2,27 @@
 
 .PATH: ${ARCHDIR}/citrus ${.CURDIR}/citrus
 
+# citrus base
 SRCS+=	citrus_ctype.c citrus_stdenc.c
+SRCS+=  citrus_frune.c citrus_hash.c citrus_memstream.c \
+		citrus_mmap.c
 
 
 #SRCS+= citrus_ctype.c citrus_db_hash.c citrus_frune.c 		\
 #		citrus_hash.c citrus_iconv_std.c citrus_iconv.c 	\
 #		citrus_memstream.c citrus_mmap.c citrus_stdenc.c
+
+# citrus db
+SRCS+= citrus_db_factory.c citrus_db_hash.c citrus_db.c
+
+# citrus lookup
+SRCS+= citrus_lookup_factory.c citrus_lookup.c
+
+# citrus esdb
+#SRCS+= citrus_esdb.c
+
+# citrus mapper
+#SRCS+= citrus_mapper_std.c citrus_mapper.c
+
+# citrus iconv
+#SRCS+= citrus_iconv_std.c citrus_iconv.c

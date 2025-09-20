@@ -88,7 +88,7 @@ _citrus_iconv_init_shared(struct _citrus_iconv_shared *ci,
 	int ret;
 
 	is = malloc(sizeof(*is));
-	return (citrus_io_init_shared(ci, is, curdir, src, dst, var, lenvar));
+	return (citrus_io_iconv_init_shared(ci, is, curdir, src, dst, var, lenvar));
 }
 
 static __inline void
@@ -96,7 +96,7 @@ _citrus_iconv_uninit_shared(struct _citrus_iconv_shared *ci)
 {
 	struct _citrus_iconv_std_shared *is = ci->ci_closure;
 
-	_citrus_io_uninit_shared(ci, is);
+	_citrus_io_iconv_uninit_shared(ci, is);
 }
 
 int
@@ -113,7 +113,7 @@ _citrus_iconv_convert(struct _citrus_iconv * __restrict cv,
 
 	_DIAGASSERT(cv && cv->cv_shared);
 
-	return (_citrus_io_convert(ci, is, sc, in, inbytes, out, outbytes, flags,
+	return (_citrus_io_iconv_convert(ci, is, sc, in, inbytes, out, outbytes, flags,
 			nresults));
 }
 
@@ -126,7 +126,7 @@ _citrus_iconv_init_context(struct _citrus_iconv *cv, struct _citrus_iconv_shared
 
 	_DIAGASSERT(cv && cv->cv_shared);
 
-	ret = _citrus_io_init_context(is, sc);
+	ret = _citrus_io_iconv_init_context(is, sc);
 	if (ret != 0) {
 		return (ret);
 	}
@@ -141,7 +141,7 @@ _citrus_iconv_uninit_context(struct _citrus_iconv *cv, struct _citrus_iconv_shar
 
 	_DIAGASSERT(cv && cv->cv_shared);
 
-	_citrus_io_uninit_context(ci, is);
+	_citrus_io_iconv_uninit_context(ci, is);
 	cv->cv_closure = is;
 }
 
@@ -307,14 +307,14 @@ err:
 static __inline int
 hash_func(const char *key)
 {
-	return (_citrus_string_hash_func(key, CI_HASH_SIZE));
+	return (_citrus_hash_func(key, CI_HASH_SIZE));
 }
 
 static __inline int
 match_func(struct _citrus_iconv_shared * __restrict ci,
 	   const char * __restrict key)
 {
-	return (strcmp(ci->ci_convname, key));
+	return (_citrus_match_func(ci->ci_convname, key));
 }
 
 static int

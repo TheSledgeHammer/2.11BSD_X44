@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_hash.h,v 1.4 2022/04/19 20:32:14 rillig Exp $	*/
+/*	$NetBSD: citrus_db_file.h,v 1.2 2003/06/30 17:54:13 christos Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,52 +26,59 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_HASH_H_
-#define _CITRUS_HASH_H_
+#ifndef _CITRUS_DB_FILE_H_
+#define _CITRUS_DB_FILE_H_
 
-#define _CITRUS_HASH_ENTRY(type) 										\
-	LIST_ENTRY(type)
+/*
+ * db format:
+ *  +---
+ *  | header
+ *  |  - magic
+ *  |  - num entries
+ *  +---
+ *  | entry directory
+ *  |  +------------
+ *  |  | entry0
+ *  |  |  - hash value
+ *  |  |  - next entry
+ *  |  |  - key offset
+ *  |  |  - key len
+ *  |  |  - data offset
+ *  |  |  - data size
+ *  |  |---
+ *  |  | entry1
+ *  |  | ..
+ *  |  | entryN
+ *  |  +---
+ *  +---
+ *  | key table
+ *  |  - key0
+ *  |   ...
+ *  |  - keyN
+ *  +---
+ *  | data table
+ *  |  - data0
+ *  |   ...
+ *  |  - dataN
+ *  +---
+ */
 
-#define _CITRUS_HASH_HEAD(headname, type, hashsize)						\
-struct headname {														\
-	LIST_HEAD(, type)	chh_table[hashsize];							\
-}
+#define _CITRUS_DB_MAGIC_SIZE	8
+#define _CITRUS_DB_HEADER_SIZE	16
+struct _citrus_db_header_x {
+	char		dhx_magic[_CITRUS_DB_MAGIC_SIZE];
+	u_int32_t	dhx_num_entries;
+	u_int32_t	dhx_entry_offset;
+} __attribute__((__packed__));
 
-#define _CITRUS_HASH_INIT(head, hashsize)								\
-do {																	\
-	int _ch_loop;														\
-	for (_ch_loop = 0; _ch_loop < hashsize; _ch_loop++)					\
-		LIST_INIT(&(head)->chh_table[_ch_loop]);						\
-} while (0)
+struct _citrus_db_entry_x {
+	u_int32_t	dex_hash_value;
+	u_int32_t	dex_next_offset;
+	u_int32_t	dex_key_offset;
+	u_int32_t	dex_key_size;
+	u_int32_t	dex_data_offset;
+	u_int32_t	dex_data_size;
+} __attribute__((__packed__));
+#define _CITRUS_DB_ENTRY_SIZE	24
 
-#define _CITRUS_HASH_REMOVE(elm, field) 								\
-	LIST_REMOVE(elm, field)
-
-#define _CITRUS_HASH_INSERT(head, elm, field, hashval)					\
-	LIST_INSERT_HEAD(&(head)->chh_table[hashval], elm, field)
-
-#define _CITRUS_HASH_SEARCH(head, elm, field, matchfunc, key, hashval)	\
-do {																	\
-	LIST_FOREACH((elm), &(head)->chh_table[hashval], field) {			\
-		if (matchfunc((elm), key)==0)									\
-			break;														\
-	}																	\
-} while (0)
-
-__BEGIN_DECLS
-int	_citrus_string_hash_func(const char *, int);
-__END_DECLS
-
-static __inline int
-_citrus_hash_func(const char *key, int size)
-{
-	return (_citrus_string_hash_func(key, size));
-}
-
-static __inline int
-_citrus_match_func(const char *convname, const char *key)
-{
-	return (strcmp(convname, key));
-}
-
-#endif /* _CITRUS_HASH_H_ */
+#endif

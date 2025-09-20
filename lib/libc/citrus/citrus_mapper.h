@@ -39,13 +39,13 @@ struct _citrus_mapper_area;
 #define _CITRUS_MAPPER_ABI_VERSION	0x00000001
 struct _citrus_mapper_ops {
 	uint32_t mo_abi_version;
-	int 	(*mo_init)(struct _citrus_mapper_area *__restrict, struct _citrus_mapper *__restrict,
+	int 	(*mo_init)(struct _citrus_mapper_area *__restrict, struct _citrus_mapper_std *,
 			const char *__restrict, const void *__restrict, size_t,
 			struct _citrus_mapper_traits * __restrict, size_t);
-	void 	(*mo_uninit)(struct _citrus_mapper *);
-	int		(*mo_convert)(struct _citrus_mapper * __restrict, _citrus_index_t * __restrict,
+	void 	(*mo_uninit)(struct _citrus_mapper_std *);
+	int		(*mo_convert)(struct _citrus_mapper_std *, _citrus_index_t * __restrict,
 			_citrus_index_t, void * __restrict);
-	void	(*mo_init_state)(struct _citrus_mapper * __restrict, void * __restrict);
+	void	(*mo_init_state)(struct _citrus_mapper_std *, void * __restrict);
 };
 
 struct _citrus_mapper_traits {
@@ -56,12 +56,12 @@ struct _citrus_mapper_traits {
 };
 
 struct _citrus_mapper {
-	struct _citrus_mapper_ops		 *cm_ops;
-	void					 *cm_closure;
-	struct _citrus_mapper_traits		 *cm_traits;
-	_CITRUS_HASH_ENTRY(_citrus_mapper)	 cm_entry;
-	int					 cm_refcount;
-	char					 *cm_key;
+	struct _citrus_mapper_ops		 	*cm_ops;
+	void					 			*cm_closure;
+	struct _citrus_mapper_traits		*cm_traits;
+	_CITRUS_HASH_ENTRY(_citrus_mapper)	cm_entry;
+	int					 				cm_refcount;
+	char					 			*cm_key;
 };
 
 /* return values of _citrus_mapper_convert */
@@ -71,5 +71,63 @@ struct _citrus_mapper {
 #define _CITRUS_MAPPER_CONVERT_DST_MORE		(3)
 #define _CITRUS_MAPPER_CONVERT_ILSEQ		(4)
 #define _CITRUS_MAPPER_CONVERT_FATAL		(5)
+
+/*
+ * _citrus_mapper_convert:
+ *	convert an index.
+ *	- if the converter supports M:1 converter, the function may return
+ *	  _CITRUS_MAPPER_CONVERT_SRC_MORE and the storage pointed by dst
+ *	  may be unchanged in this case, although the internal status of
+ *	  the mapper is affected.
+ *	- if the converter supports 1:N converter, the function may return
+ *	  _CITRUS_MAPPER_CONVERT_DST_MORE. In this case, the contiguous
+ *	  call of this function ignores src and changes the storage pointed
+ *	  by dst.
+ *	- if the converter supports M:N converter, the function may behave
+ *	  the combination of the above.
+ *
+ */
+static __inline int
+_citrus_io_mapper_convert(struct _citrus_mapper * __restrict cm,
+			struct _citrus_mapper_std *ms,
+		_citrus_index_t *__restrict dst, _citrus_index_t src,
+		void *__restrict ps)
+{
+	_DIAGASSERT(cm && cm->cm_ops && cm->cm_ops->mo_convert && dst);
+
+	return (*cm->cm_ops->mo_convert)(ms, dst, src, ps);
+}
+
+/*
+ * _citrus_mapper_init_state:
+ *	initialize the state.
+ */
+static __inline void
+_citrus_io_mapper_init_state(struct _citrus_mapper * __restrict cm, struct _citrus_mapper_std *ms, void *__restrict ps)
+{
+	_DIAGASSERT(cm && cm->cm_ops && cm->cm_ops->mo_init_state);
+
+	(*cm->cm_ops->mo_init_state)(ms, ps);
+}
+
+static __inline int
+_citrus_io_mapper_init(struct _citrus_mapper_area *__restrict ma,
+		struct _citrus_mapper *__restrict cm, struct _citrus_mapper_std *ms,
+		const char *__restrict curdir, const void *__restrict var,
+		size_t lenvar, struct _citrus_mapper_traits *__restrict mt,
+		size_t lenmt)
+{
+	_DIAGASSERT(cm && cm->cm_ops && cm->cm_ops->mo_init);
+
+	return ((*cm->cm_ops->mo_init)(ma, ms, curdir, var, lenvar, mt, lenmt));
+}
+
+static __inline void
+_citrus_io_mapper_uninit(struct _citrus_mapper *cm, struct _citrus_mapper_std *ms)
+{
+	_DIAGASSERT(cm && cm->cm_ops && cm->cm_ops->mo_uninit);
+
+	(*cm->cm_ops->mo_uninit)(ms);
+}
 
 #endif /* _CITRUS_MAPPER_H_ */

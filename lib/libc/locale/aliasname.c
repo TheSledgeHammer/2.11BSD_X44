@@ -177,6 +177,28 @@ _bcs_is_ws(const char ch)
 	return (ch == ' ' || ch == '\t');
 }
 
+#include "citrus/citrus_lookup.h"
+
+const char *
+__unaliasname(const char *dbname, const char *alias, void *buf, size_t bufsize)
+{
+	return (_citrus_lookup_simple(dbname, alias, buf, bufsize, _CITRUS_LOOKUP_CASE_SENSITIVE));
+}
+
+int
+__isforcemapping(const char *name)
+{
+	/* don't use strcasecmp, it owes locale. */
+	return name[0] == '/'
+			&& (name[1] == 'F' || name[1] == 'f')
+			&& (name[2] == 'O' || name[2] == 'o')
+			&& (name[3] == 'R' || name[3] == 'r')
+			&& (name[4] == 'C' || name[4] == 'c')
+			&& (name[5] == 'E' || name[5] == 'e')
+			&& name[6] == '\0';
+}
+
+#ifdef nocitruslookup
 const char *
 __unaliasname(const char *dbname, const char *alias, void *buf, size_t bufsize)
 {
@@ -268,16 +290,4 @@ quit:
 
 	return result;
 }
-
-int
-__isforcemapping(const char *name)
-{
-	/* don't use strcasecmp, it owes locale. */
-	return name[0] == '/'
-			&& (name[1] == 'F' || name[1] == 'f')
-			&& (name[2] == 'O' || name[2] == 'o')
-			&& (name[3] == 'R' || name[3] == 'r')
-			&& (name[4] == 'C' || name[4] == 'c')
-			&& (name[5] == 'E' || name[5] == 'e')
-			&& name[6] == '\0';
-}
+#endif

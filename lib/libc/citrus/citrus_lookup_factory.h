@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_lookup.h,v 1.2 2004/07/21 14:16:34 tshiozak Exp $	*/
+/*	$NetBSD: citrus_lookup_factory.h,v 1.1 2003/06/25 09:51:35 tshiozak Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,48 +26,11 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_LOOKUP_H_
-#define _CITRUS_LOOKUP_H_
+#ifndef _CITRUS_LOOKUP_FACTORY_H_
+#define _CITRUS_LOOKUP_FACTORY_H_
 
-#define _CITRUS_LOOKUP_CASE_SENSITIVE	0
-#define _CITRUS_LOOKUP_CASE_IGNORE		1
-
-struct _citrus_lookup;
 __BEGIN_DECLS
-char *_citrus_lookup_simple(const char *, const char *, char *, size_t, int);
-int _citrus_lookup_seq_open(struct _citrus_lookup **, const char *, int);
-void _citrus_lookup_seq_rewind(struct _citrus_lookup *);
-int _citrus_lookup_seq_next(struct _citrus_lookup *,
-			    struct _citrus_region *, struct _citrus_region *);
-int _citrus_lookup_seq_lookup(struct _citrus_lookup *, const char *,
-			      struct _citrus_region *);
-int _citrus_lookup_get_number_of_entries(struct _citrus_lookup *);
-void _citrus_lookup_seq_close(struct _citrus_lookup *);
+int	_citrus_lookup_factory_convert(FILE *, FILE *);
 __END_DECLS
 
-static __inline const char *
-_citrus_lookup_alias(const char *path, const char *key, char *buf, size_t n, int ignore_case)
-{
-	const char *ret;
-
-	ret = _citrus_lookup_simple(path, key, buf, n, ignore_case);
-	if (ret == NULL) {
-		ret = key;
-	}
-	return (ret);
-}
-
-#ifdef nocitruslookup
-static __inline char *
-_citrus_lookup_simple(const char *name, const char *key, char *linebuf, size_t linebufsize, int ignore_case)
-{
-	const char *cskey = strdup(key);
-
-	if (ignore_case) {
-		_bcs_convert_to_lower(cskey);
-	}
-	return (__unaliasname(name, cskey, linebuf, linebufsize));
-}
 #endif
-
-#endif /* _CITRUS_LOOKUP_H_ */

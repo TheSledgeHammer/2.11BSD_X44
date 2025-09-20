@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_lookup.h,v 1.2 2004/07/21 14:16:34 tshiozak Exp $	*/
+/*	$NetBSD: citrus_mapper_std_local.h,v 1.2 2003/07/12 15:39:21 tshiozak Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,48 +26,46 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_LOOKUP_H_
-#define _CITRUS_LOOKUP_H_
+#ifndef _CITRUS_MAPPER_STD_H_
+#define _CITRUS_MAPPER_STD_H_
 
-#define _CITRUS_LOOKUP_CASE_SENSITIVE	0
-#define _CITRUS_LOOKUP_CASE_IGNORE		1
+#define _CITRUS_MAPPER_STD_MAGIC		"MAPPER\0\0"
 
-struct _citrus_lookup;
+#define _CITRUS_MAPPER_STD_SYM_TYPE		"type"
+#define _CITRUS_MAPPER_STD_SYM_INFO		"info"
+#define _CITRUS_MAPPER_STD_SYM_TABLE	"table"
+
+
+#define _CITRUS_MAPPER_STD_TYPE_ROWCOL	"rowcol"
+
+struct _citrus_mapper_std_rowcol {
+	struct _citrus_region	rc_table;
+	int					rc_src_col_bits;
+	_citrus_index_t		rc_dst_invalid;
+	_citrus_index_t		rc_src_row_begin;
+	_citrus_index_t		rc_src_row_end;
+	_citrus_index_t		rc_src_col_begin;
+	_citrus_index_t		rc_src_col_end;
+	_citrus_index_t		rc_src_col_width;
+	_citrus_index_t		rc_dst_unit_bits;
+	int					rc_oob_mode;
+	_citrus_index_t		rc_dst_ilseq;
+};
+
+struct _citrus_mapper_std {
+	struct _citrus_region	ms_file;
+	struct _citrus_db		*ms_db;
+	int (*ms_convert)(struct _citrus_mapper_std *__restrict,
+			_index_t *__restrict, _index_t, void *__restrict);
+	void (*ms_uninit)(struct _citrus_mapper_std *);
+	union {
+		struct _citrus_mapper_std_rowcol rowcol;
+	} u;
+#define ms_rowcol			u.rowcol
+};
+
+/* prototypes */
 __BEGIN_DECLS
-char *_citrus_lookup_simple(const char *, const char *, char *, size_t, int);
-int _citrus_lookup_seq_open(struct _citrus_lookup **, const char *, int);
-void _citrus_lookup_seq_rewind(struct _citrus_lookup *);
-int _citrus_lookup_seq_next(struct _citrus_lookup *,
-			    struct _citrus_region *, struct _citrus_region *);
-int _citrus_lookup_seq_lookup(struct _citrus_lookup *, const char *,
-			      struct _citrus_region *);
-int _citrus_lookup_get_number_of_entries(struct _citrus_lookup *);
-void _citrus_lookup_seq_close(struct _citrus_lookup *);
+int _citrus_mapper_std_mapper_getops(struct _citrus_mapper_ops *, size_t, u_int32_t);
 __END_DECLS
-
-static __inline const char *
-_citrus_lookup_alias(const char *path, const char *key, char *buf, size_t n, int ignore_case)
-{
-	const char *ret;
-
-	ret = _citrus_lookup_simple(path, key, buf, n, ignore_case);
-	if (ret == NULL) {
-		ret = key;
-	}
-	return (ret);
-}
-
-#ifdef nocitruslookup
-static __inline char *
-_citrus_lookup_simple(const char *name, const char *key, char *linebuf, size_t linebufsize, int ignore_case)
-{
-	const char *cskey = strdup(key);
-
-	if (ignore_case) {
-		_bcs_convert_to_lower(cskey);
-	}
-	return (__unaliasname(name, cskey, linebuf, linebufsize));
-}
-#endif
-
-#endif /* _CITRUS_LOOKUP_H_ */
+#endif /* _CITRUS_MAPPER_STD_H_ */
