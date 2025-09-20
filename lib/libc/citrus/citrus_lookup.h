@@ -33,6 +33,7 @@
 #define _CITRUS_LOOKUP_CASE_IGNORE		1
 
 struct _citrus_lookup;
+struct _citrus_region;
 __BEGIN_DECLS
 char *_citrus_lookup_simple(const char *, const char *, char *, size_t, int);
 int _citrus_lookup_seq_open(struct _citrus_lookup **, const char *, int);

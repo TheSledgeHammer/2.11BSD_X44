@@ -63,7 +63,7 @@ struct _citrus_lookup {
 		} db;
 		struct {
 			struct _citrus_region r;
-			struct _citrus_memstream ms;
+			struct _citrus_memory_stream ms;
 		} plain;
 	} u;
 #define cl_db			u.db.db
@@ -73,6 +73,7 @@ struct _citrus_lookup {
 #define cl_dblocator	u.db.locator
 #define cl_plainr		u.plain.r
 #define cl_plainms		u.plain.ms
+    int cl_ignore_case;
 	int cl_rewind;
 	char *cl_key;
 	size_t cl_keylen;
@@ -98,7 +99,7 @@ seq_next_db(struct _citrus_lookup *cl,
 	if (cl->cl_key) {
 		if (key)
 			_citrus_region_init(key, cl->cl_key, cl->cl_keylen);
-		return _citrus_db_lookup_by_s(cl->cl_db, cl->cl_key, data,
+		return _citrus_db_lookup_by_string(cl->cl_db, cl->cl_key, data,
 				       &cl->cl_dblocator);
 	}
 
@@ -118,10 +119,11 @@ seq_lookup_db(struct _citrus_lookup *cl, const char *key, struct _citrus_region 
 	cl->cl_rewind = 0;
 	free(cl->cl_key);
 	cl->cl_key = strdup(key);
-	_bcs_convert_to_lower(cl->cl_key);
+    if (cl->cl_ignore_case)
+	    _bcs_convert_to_lower(cl->cl_key);
 	cl->cl_keylen = strlen(cl->cl_key);
 	_citrus_db_locator_init(&cl->cl_dblocator);
-	return _citrus_db_lookup_by_s(cl->cl_db, cl->cl_key, data, &cl->cl_dblocator);
+	return _citrus_db_lookup_by_string(cl->cl_db, cl->cl_key, data, &cl->cl_dblocator);
 }
 
 static void
@@ -146,12 +148,12 @@ seq_open_db(struct _citrus_lookup *cl, const char *name)
 	ret = _citrus_db_open(&cl->cl_db, &r, _CITRUS_LOOKUP_MAGIC,
 			_citrus_db_hash_std, NULL);
 	if (ret) {
-		_citrus_citrus_unmap_file(&r);
+		_citrus_unmap_file(&r);
 		return ret;
 	}
 
 	cl->cl_dbfile = r;
-	cl->cl_dbnum = _citrus_db_get_num_entries(cl->cl_db);
+	cl->cl_dbnum = _citrus_db_get_number_of_entries(cl->cl_db);
 	cl->cl_dbidx = 0;
 	cl->cl_rewind = 1;
 	cl->cl_lookup = &seq_lookup_db;
@@ -171,11 +173,11 @@ seq_next_plain(struct _citrus_lookup *cl, struct _citrus_region *key,
 	size_t len;
 
 	if (cl->cl_rewind)
-		_citrus_memstream_bind(&cl->cl_plainms, &cl->cl_plainr);
+		_citrus_memory_stream_bind(&cl->cl_plainms, &cl->cl_plainr);
 	cl->cl_rewind = 0;
 
 retry:
-	p = _citrus_memstream_getln(&cl->cl_plainms, &len);
+	p = _citrus_memory_stream_getln(&cl->cl_plainms, &len);
 	if (p == NULL)
 		return ENOENT;
 	/* ignore comment */
@@ -196,11 +198,11 @@ retry:
 	/* found a entry */
 	if (key)
 		/* LINTED: discard const */
-		_citrus_region_init(key, (char *)p, q-p);
+		_citrus_region_init(key, __UNCONST(p), q-p);
 	p = _bcs_skip_ws_len(q, &len);
 	if (data)
 		/* LINTED: discard const */
-		_citrus_region_init(data, len ? (char *)p : NULL, len);
+		_citrus_region_init(data, len ? __UNCONST(p) : NULL, len);
 
 	return 0;
 }
@@ -227,15 +229,16 @@ seq_lookup_plain(struct _citrus_lookup *cl, const char *key,
 	cl->cl_rewind = 0;
 	free(cl->cl_key);
 	cl->cl_key = strdup(key);
-	_bcs_convert_to_lower(cl->cl_key);
+    if (cl->cl_ignore_case)
+	    _bcs_convert_to_lower(cl->cl_key);
 	cl->cl_keylen = strlen(cl->cl_key);
-	_citrus_memstream_bind(&cl->cl_plainms, &cl->cl_plainr);
-	p = _citrus_memstream_matchline(&cl->cl_plainms, cl->cl_key, &len, 0);
+	_citrus_memory_stream_bind(&cl->cl_plainms, &cl->cl_plainr);
+	p = _citrus_memory_stream_matchline(&cl->cl_plainms, cl->cl_key, &len, 0);
 	if (p == NULL)
 		return ENOENT;
 	if (data)
 		/* LINTED: discard const */
-		_citrus_region_init(data, (char *)p, len);
+		_citrus_region_init(data, __UNCONST(p), len);
 
 	return 0;
 }
@@ -266,7 +269,7 @@ seq_open_plain(struct _citrus_lookup *cl, const char *name)
 }
 
 int
-_citrus_lookup_seq_open(struct _citrus_lookup **rcl, const char *name)
+_citrus_lookup_seq_open(struct _citrus_lookup **rcl, const char *name, int ignore_case)
 {
 	int ret;
 	struct _citrus_lookup *cl;
@@ -277,6 +280,7 @@ _citrus_lookup_seq_open(struct _citrus_lookup **rcl, const char *name)
 
 	cl->cl_key = NULL;
 	cl->cl_keylen = 0;
+    cl->cl_ignore_case = ignore_case;
 	ret = seq_open_db(cl, name);
 	if (ret == ENOENT)
 		ret = seq_open_plain(cl, name);
@@ -306,7 +310,7 @@ _citrus_lookup_seq_next(struct _citrus_lookup *cl,
 
 int
 _citrus_lookup_seq_lookup(struct _citrus_lookup *cl, const char *key,
-			  struct _region *data)
+			  struct _citrus_region *data)
 {
 	return (*cl->cl_lookup)(cl, key, data);
 }
@@ -326,13 +330,13 @@ _citrus_lookup_seq_close(struct _citrus_lookup *cl)
 
 char *
 _citrus_lookup_simple(const char *name, const char *key,
-		      char *linebuf, size_t linebufsize)
+		      char *linebuf, size_t linebufsize, int ignore_case)
 {
 	int ret;
 	struct _citrus_lookup *cl;
 	struct _citrus_region data;
 
-	ret = _citrus_lookup_seq_open(&cl, name);
+	ret = _citrus_lookup_seq_open(&cl, name, ignore_case);
 	if (ret)
 		return NULL;
 

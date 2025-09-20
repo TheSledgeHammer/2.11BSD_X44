@@ -37,7 +37,7 @@
 struct _citrus_frune_encoding {
 	_ENCODING_INFO 		*fe_info;
 	_ENCODING_STATE 	*fe_state;
-	_RuneLocale		*fe_runelocale;
+	_RuneLocale		    *fe_runelocale;
 };
 
 /* prototypes */
@@ -52,7 +52,7 @@ int _citrus_frune_cstombx(struct _citrus_frune_encoding *, char *, size_t, _csid
 int _citrus_frune_wctombx(struct _citrus_frune_encoding *, char *, size_t, _wc_t, size_t *);
 int _citrus_frune_put_state_resetx(struct _citrus_frune_encoding *, char *, size_t, size_t *);
 int _citrus_frune_get_state_desc_gen(struct _citrus_frune_encoding *, int *);
-int _citrus_getops(void *, const void *, size_t, u_int32_t, u_int32_t);
+int _citrus_getops(void *, size_t, void *, size_t, size_t, u_int32_t, u_int32_t);
 __END_DECLS
 
 #endif /* _CITRUS_FRUNE_H_ */

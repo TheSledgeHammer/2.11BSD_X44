@@ -30,8 +30,13 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
+#include <errno.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "locale/setlocale.h"
 
 #include "citrus_ctype.h"
 #include "citrus_types.h"
@@ -49,7 +54,7 @@ _citrus_frune_open(struct _citrus_frune_encoding **rfe, char *encoding, void *va
 
 	fe = malloc(sizeof(*fe));
 	if (fe == NULL) {
-		frune_close(fe);
+		_citrus_frune_close(fe);
 		return (errno);
 	}
 
@@ -59,7 +64,7 @@ _citrus_frune_open(struct _citrus_frune_encoding **rfe, char *encoding, void *va
 
 	fe->fe_runelocale = findrunelocale(encoding);
 	if (fe->fe_runelocale == NULL) {
-		frune_close(fe);
+		_citrus_frune_close(fe);
 		return (errno);
 	}
 	ret = validrunelocale(fe->fe_runelocale, encoding, variable, lenvar);
@@ -69,13 +74,13 @@ _citrus_frune_open(struct _citrus_frune_encoding **rfe, char *encoding, void *va
 
 	fe->fe_info = malloc(sizeof(*fe->fe_info));
 	if (fe->fe_info == NULL) {
-		frune_close(fe);
+		_citrus_frune_close(fe);
 		return (errno);
 	}
 
 	fe->fe_state = malloc(sizeof(*fe->fe_state));
 	if (fe->fe_state == NULL) {
-		frune_close(fe);
+		_citrus_frune_close(fe);
 		return (errno);
 	}
 
@@ -159,7 +164,7 @@ _citrus_frune_get_state_desc_gen(struct _citrus_frune_encoding *fe, int *rstate)
 
 	ret = _citrus_stdenc_get_state_desc(fe->fe_info, fe->fe_state, _CITRUS_STDENC_SDID_GENERIC, &state);
 	if (!ret) {
-		*rstate = &state;
+		rstate = &state;
 	}
 	return (ret);
 }
@@ -168,12 +173,12 @@ _citrus_frune_get_state_desc_gen(struct _citrus_frune_encoding *fe, int *rstate)
  * getops
  */
 int
-_citrus_getops(void *toops, const void *fromops, size_t lenops, u_int32_t abi_version, u_int32_t expected_version)
+_citrus_getops(void *toops, size_t tolen, void *fromops, size_t fromlen, size_t lenops, u_int32_t abi_version, u_int32_t expected_version)
 {
-	if (expected_version < abi_version || lenops < sizeof(*ops)) {
+	if (expected_version < abi_version || lenops < tolen) {
 		return (EINVAL);
 	}
 
-	memcpy(toops, fromops, sizeof(fromops));
+	memcpy(toops, fromops, fromlen);
 	return (0);
 }

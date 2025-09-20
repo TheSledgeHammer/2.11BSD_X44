@@ -37,6 +37,7 @@ __RCSID("$NetBSD: citrus_hash.c,v 1.3 2008/02/09 14:56:20 junyoung Exp $");
 #include <string.h>
 #include <sys/types.h>
 
+#include "citrus_rune.h"
 #include "citrus_types.h"
 #include "citrus_region.h"
 #include "citrus_hash.h"
@@ -45,7 +46,7 @@ __RCSID("$NetBSD: citrus_hash.c,v 1.3 2008/02/09 14:56:20 junyoung Exp $");
 int
 _citrus_string_hash_func(const char *key, int hashsize)
 {
-	struct _region r;
+	struct _citrus_region r;
 
 	_citrus_region_init(&r, __UNCONST(key), strlen(key));
 

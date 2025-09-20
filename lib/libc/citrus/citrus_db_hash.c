@@ -43,6 +43,7 @@ __RCSID("$NetBSD: citrus_db_hash.c,v 1.4 2004/01/02 21:49:35 itojun Exp $");
 #include <string.h>
 #include <sys/types.h>
 
+#include "citrus_rune.h"
 #include "citrus_types.h"
 #include "citrus_bcs.h"
 #include "citrus_region.h"
@@ -50,7 +51,7 @@ __RCSID("$NetBSD: citrus_db_hash.c,v 1.4 2004/01/02 21:49:35 itojun Exp $");
 
 /*ARGSUSED*/
 u_int32_t
-_citrus_db_hash_std(void *closure, struct _region *r)
+_citrus_db_hash_std(void *closure, struct _citrus_region *r)
 {
 	const u_int8_t *p = _citrus_region_head(r);
 	u_int32_t hash = 0, tmp;

@@ -92,7 +92,7 @@ struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops = {
 int
 _citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *ops, size_t lenops, u_int32_t expected_version)
 {
-	return (_citrus_getops(op, &_citrus_iconv_std_iconv_ops, lenops, _CITRUS_ICONV_ABI_VERSION, expected_version));
+	return (_citrus_getops(ops, sizeof(ops), &_citrus_iconv_std_iconv_ops, sizeof(_citrus_iconv_std_iconv_ops), lenops, _CITRUS_ICONV_ABI_VERSION, expected_version));
 }
 
 /*

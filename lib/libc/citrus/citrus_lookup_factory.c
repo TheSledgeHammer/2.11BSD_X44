@@ -77,7 +77,7 @@ convert_line(struct _citrus_db_factory *df, const char *line, size_t len)
 	_bcs_trunc_rws_len(line, &len);
 	snprintf(data, sizeof(data), "%.*s", (int)len, line);
 
-	return _citrus_db_factory_addstr_by_s(df, key, data);
+	return _citrus_db_factory_add_string_by_string(df, key, data);
 }
 
 static int

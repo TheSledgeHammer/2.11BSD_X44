@@ -41,6 +41,7 @@ __RCSID("$NetBSD: citrus_mmap.c,v 1.1.4.1 2005/01/16 14:17:15 he Exp $");
 #include <fcntl.h>
 #include <limits.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 #include "citrus_region.h"
 #include "citrus_mmap.h"

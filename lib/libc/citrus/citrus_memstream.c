@@ -32,6 +32,7 @@ __RCSID("$NetBSD: citrus_memstream.c,v 1.2 2004/01/02 21:49:35 itojun Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,9 +126,9 @@ _citrus_memory_stream_chr(struct _citrus_memory_stream *ms,
 		return NULL;
 
 	head = _citrus_region_offset(&ms->ms_region, ms->ms_pos);
-	chr = memchr(head, ch, _citrus_memstream_remainder(ms));
+	chr = memchr(head, ch, _citrus_memory_stream_remainder(ms));
 	if (chr == NULL) {
-		_citrus_region_init(r, head, _citrus_memstream_remainder(ms));
+		_citrus_region_init(r, head, _citrus_memory_stream_remainder(ms));
 		ms->ms_pos = _citrus_region_size(&ms->ms_region);
 		return NULL;
 	}
@@ -144,9 +145,9 @@ _citrus_memory_stream_skip_ws(struct _citrus_memory_stream *ms)
 {
 	int ch;
 
-	while ((ch = _citrus_memstream_peek(ms)) != EOF) {
+	while ((ch = _citrus_memory_stream_peek(ms)) != EOF) {
 		if (!_bcs_isspace(ch))
 			break;
-		_citrus_memstream_getc(ms);
+		_citrus_memory_stream_getc(ms);
 	}
 }
