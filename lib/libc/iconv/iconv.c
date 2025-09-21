@@ -34,14 +34,10 @@ __RCSID("$NetBSD: iconv.c,v 1.14 2019/10/24 18:17:59 kamil Exp $");
 #include <assert.h>
 #include <errno.h>
 #include <paths.h>
+#include <string.h>
 #include <sys/queue.h>
 
 #include <iconv.h>
-
-#ifdef CITRUS_ICONV
-#include <sys/types.h>
-
-#define ISBADF(_h_)	(!(_h_) || (_h_) == (iconv_t)-1)
 
 #ifdef __weak_alias
 __weak_alias(iconv, _iconv)
@@ -49,12 +45,26 @@ __weak_alias(iconv_open, _iconv_open)
 __weak_alias(iconv_close, _iconv_close)
 #endif
 
+#ifdef CITRUS_ICONV
+
+#define _PATH_ICONV "/usr/share/i18n/iconv"
+
+#include <sys/types.h>
+#include "citrus/citrus_rune.h"
+#include "citrus/citrus_types.h"
+#include "citrus/citrus_esdb.h"
+#include "citrus/citrus_hash.h"
+#include "citrus/citrus_iconv.h"
+
+#define ISBADF(_h_)	(!(_h_) || (_h_) == (iconv_t)-1)
+
 iconv_t
 iconv_open(out, in)
     const char *out;
     const char *in;
 {
     int ret;
+    struct _citrus_iconv *handle;
 
     ret = _citrus_iconv_open(&handle, _PATH_ICONV, in, out);
 	if (ret) {
@@ -132,6 +142,27 @@ __iconv(handle, in, szin, out, szout, flags, invalids)
 
 	return (ret);
 }
+
+int
+__iconv_get_list(char ***rlist, size_t *rsz)
+{
+	int ret;
+
+	ret = _citrus_esdb_get_list(rlist, rsz);
+	if (ret) {
+		errno = ret;
+		return -1;
+	}
+
+	return 0;
+}
+
+void
+__iconv_free_list(char **list, size_t sz)
+{
+	_citrus_esdb_free_list(list, sz);
+}
+
 #else
 
 iconv_t
@@ -163,22 +194,6 @@ iconv(handle, in, szin, out, szout)
     return ((size_t)-1);
 }
 
-/*
-size_t
-__iconv(handle, in, szin, out, szout, flags, invalids)
-    iconv_t handle;
-    const char **in;
-    size_t *szin;
-    char **out;
-    size_t *szout;
-    u_int32_t flags;
-    size_t *invalids;
-{
-	errno = EBADF;
-	return ((size_t)-1);
-}
-*/
-
 int
 /*ARGSUSED*/
 __iconv_get_list(char ***rlist, size_t *rsz)
@@ -193,4 +208,5 @@ __iconv_free_list(char **list, size_t sz)
 {
 
 }
+
 #endif

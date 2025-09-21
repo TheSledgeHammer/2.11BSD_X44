@@ -6,6 +6,6 @@ SRCS+=	iconv.c
 MAN+=	iconv.3
 MLINKS+=iconv.3 iconv_open.3 iconv.3 iconv_close.3
 
-#.if ${CITRUS} == "yes"
-#CPPFLAGS+= -DCITRUS_ICONV
-#.endif
+.if ${CITRUS} == "yes"
+CPPFLAGS+= -DCITRUS_ICONV
+.endif
