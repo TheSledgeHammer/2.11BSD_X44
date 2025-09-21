@@ -138,7 +138,7 @@ _citrus_mapper_init(struct _citrus_mapper_area *__restrict ma,
 {
 	_DIAGASSERT(cm && cm->cm_ops && cm->cm_ops->mo_init);
 
-	return ((*cm->cm_ops->mo_init)(ma, curdir, var, lenvar, mt, lenmt));
+	return ((*cm->cm_ops->mo_init)(ma, cm, curdir, var, lenvar, mt, lenmt));
 }
 
 static __inline void

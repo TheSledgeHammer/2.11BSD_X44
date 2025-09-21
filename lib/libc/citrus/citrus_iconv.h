@@ -102,7 +102,7 @@ _citrus_iconv_convert(struct _citrus_iconv * __restrict cv,
 					&& cv->cv_shared->ci_ops->io_convert);
 	_DIAGASSERT(out || outbytes == 0);
 
-	return ((*cv->cv_shared->ci_ops->io_convert)(cv, sc, in, inbytes, out, outbytes, flags, invalids));
+	return ((*cv->cv_shared->ci_ops->io_convert)(cv, in, inbytes, out, outbytes, flags, invalids));
 }
 
 static __inline int

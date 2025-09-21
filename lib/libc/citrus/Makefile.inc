@@ -2,8 +2,13 @@
 
 .PATH: ${ARCHDIR}/citrus ${.CURDIR}/citrus
 
+CITRUS?=	yes
+
 # citrus base
 SRCS+=	citrus_ctype.c citrus_stdenc.c
+
+.if ${CITRUS} == "yes"
+# citrus support
 SRCS+=  citrus_frune.c citrus_hash.c citrus_memstream.c \
 		citrus_mmap.c
 
@@ -24,3 +29,4 @@ SRCS+= citrus_iconv_std.c citrus_iconv.c
 
 # citrus esdb
 SRCS+= citrus_esdb.c
+.endif

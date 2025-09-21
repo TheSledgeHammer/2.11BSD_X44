@@ -41,6 +41,7 @@ __RCSID("$NetBSD: citrus_mapper_std.c,v 1.3 2003/07/12 15:39:20 tshiozak Exp $")
 #include <sys/endian.h>
 #include <sys/queue.h>
 
+#include "citrus_rune.h"
 #include "citrus_types.h"
 #include "citrus_region.h"
 #include "citrus_memstream.h"

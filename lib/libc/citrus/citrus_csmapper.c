@@ -43,6 +43,7 @@ __RCSID("$NetBSD: citrus_csmapper.c,v 1.12 2019/10/09 23:23:41 christos Exp $");
 #include <sys/types.h>
 #include <sys/queue.h>
 
+#include "citrus_rune.h"
 #include "citrus_types.h"
 #include "citrus_bcs.h"
 #include "citrus_region.h"
@@ -205,7 +206,7 @@ parse_line(struct parse_arg *pa, struct _citrus_region *r)
 		 "%.*s", (int)(z1.end-z1.begin), z1.begin);
 	snprintf(buf, sizeof(buf),
 		 "%.*s", (int)(z2.end-z2.begin), z2.begin);
-	pa->norm = _bcs_strtoul(buf, NULL, 0);
+	pa->norm = strtoul(buf, NULL, 0);
 
 	return 0;
 }
@@ -305,7 +306,7 @@ open_serial_mapper(struct _citrus_mapper_area *__restrict ma,
 
 	snprintf(buf, sizeof(buf), "%s/%s,%s/%s", src, pivot, pivot, dst);
 
-	return _citrus_mapper_open_direct(ma, rcm, "mapper_serial", buf);
+	return _citrus_mapper_open_direct(ma, rcm, buf);
 }
 
 static struct _citrus_csmapper *csm_none = NULL;
@@ -322,7 +323,7 @@ get_none(struct _citrus_mapper_area *__restrict ma,
 		goto quit;
 	}
 
-	ret = _citrus_mapper_open_direct(ma, &csm_none, "mapper_none", "");
+	ret = _citrus_mapper_open_direct(ma, &csm_none, "");
 	if (ret)
 		goto quit;
 	_citrus_mapper_set_persistent(csm_none);

@@ -52,6 +52,8 @@ __RCSID("$NetBSD: citrus_iconv.c,v 1.11 2019/10/09 23:24:00 christos Exp $");
 #include <string.h>
 #include <unistd.h>
 
+#include "citrus_rune.h"
+#include "citrus_types.h"
 #include "citrus_bcs.h"
 #include "citrus_region.h"
 #include "citrus_memstream.h"
@@ -61,12 +63,12 @@ __RCSID("$NetBSD: citrus_iconv.c,v 1.11 2019/10/09 23:24:00 christos Exp $");
 #include "citrus_iconv.h"
 #include "citrus_iconv_std.h"
 
-#define _CITRUS_ICONV_DIR	"iconv.dir"
-#define _CITRUS_ICONV_ALIAS	"iconv.alias"
+#define _CITRUS_ICONV_DIR	    "iconv.dir"
+#define _CITRUS_ICONV_ALIAS	    "iconv.alias"
 
-#define CI_HASH_SIZE 101
+#define CI_HASH_SIZE            101
 #define CI_INITIAL_MAX_REUSE	5
-#define CI_ENV_MAX_REUSE	"ICONV_MAX_REUSE"
+#define CI_ENV_MAX_REUSE	    "ICONV_MAX_REUSE"
 
 #ifdef _REENTRANT
 static rwlock_t lock = RWLOCK_INITIALIZER;
@@ -126,13 +128,12 @@ lookup_iconv_entry(const char *curdir, const char *key,
 	}
 
 	/* get module name */
-/*
-	*module = p;
+//	*module = p;
 	cq = _bcs_skip_nonws(cp);
 	p[cq-cp] = '\0';
 	p += cq-cp+1;
 	cq++;
-*/
+
 	/* get variable */
 	cp = _bcs_skip_ws(cq);
 	*variable = p += cp - cq;

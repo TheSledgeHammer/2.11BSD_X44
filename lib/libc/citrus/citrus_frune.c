@@ -110,6 +110,12 @@ _citrus_frune_close(struct _citrus_frune_encoding *fe)
  * convenience routines for translating frunes to stdenc.
  */
 void
+_citrus_frune_uninit(struct _citrus_frune_encoding *fe)
+{
+    _citrus_stdenc_uninit(fe->fe_info);
+}
+
+void
 _citrus_frune_save_encoding_state(struct _citrus_frune_encoding *fe, void *ps, void *pssaved)
 {
 	if (ps) {
@@ -126,7 +132,7 @@ _citrus_frune_restore_encoding_state(struct _citrus_frune_encoding *fe, void *ps
 }
 
 void
-_citrus_frune_init_encoding_state(struct _citrus_frune_encoding *fe, void *ps)
+_citrus_frune_init_encoding_state(struct _citrus_frune_encoding *fe, void *ps, void *pssaved)
 {
 	if (ps) {
 		_citrus_stdenc_init_state(fe->fe_info, fe->fe_state);
@@ -149,6 +155,18 @@ int
 _citrus_frune_wctombx(struct _citrus_frune_encoding *fe, char *s, size_t n, _wc_t wc, size_t *nresult)
 {
 	return (_citrus_stdenc_wctomb(fe->fe_info, s, n, wc, fe->fe_state, nresult));
+}
+
+size_t
+_citrus_frune_get_state_size(struct _citrus_frune_encoding *fe)
+{
+    return (_citrus_stdenc_get_state_size(fe->fe_info));
+}
+
+size_t
+_citrus_frune_get_mb_cur_max(struct _citrus_frune_encoding *fe)
+{
+    return (_citrus_stdenc_get_mb_cur_max(fe->fe_info));
 }
 
 int

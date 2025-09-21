@@ -159,7 +159,7 @@ convert_line(struct src_head *sh, const char *line, size_t len)
 }
 
 static int
-dump_db(struct src_head *sh, struct _region *r)
+dump_db(struct src_head *sh, struct _citrus_region *r)
 {
 	int ret;
 	struct _citrus_db_factory *df;
@@ -168,7 +168,7 @@ dump_db(struct src_head *sh, struct _region *r)
 	void *ptr;
 	struct _citrus_region subr;
 
-	ret = _citrus_db_factory_create(&df, &_db_hash_std, NULL);
+	ret = _citrus_db_factory_create(&df, &_citrus_db_hash_std, NULL);
 	if (ret)
 		return ret;
 

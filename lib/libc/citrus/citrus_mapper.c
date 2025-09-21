@@ -43,6 +43,7 @@ __RCSID("$NetBSD: citrus_mapper.c,v 1.5 2004/01/08 19:23:19 christos Exp $");
 #include <sys/stat.h>
 #include <sys/queue.h>
 
+#include "citrus_rune.h"
 #include "citrus_types.h"
 #include "citrus_region.h"
 #include "citrus_memstream.h"
@@ -130,7 +131,7 @@ lookup_mapper_entry(const char *dir, const char *mapname,
 		    /*const char **module,*/ const char **variable)
 {
 	struct _citrus_region r;
-	struct _citrus_memstream ms;
+	struct _citrus_memory_stream ms;
 	int ret;
 	const char *cp, *cq;
 	char *p;
@@ -141,7 +142,7 @@ lookup_mapper_entry(const char *dir, const char *mapname,
 	snprintf(path, PATH_MAX, "%s/%s", dir, _CITRUS_MAPPER_DIR);
 
 	/* open read stream */
-	ret = _map_file(&r, path);
+	ret = _citrus_map_file(&r, path);
 	if (ret)
 		return ret;
 
@@ -160,12 +161,10 @@ lookup_mapper_entry(const char *dir, const char *mapname,
 
 	p = linebuf;
 	/* get module name */
-	/*
-	*module = p;
+	//*module = p;
 	cq = _bcs_skip_nonws_len(cp, &len);
 	strlcpy(p, cp, (size_t)(cq-cp+1));
 	p += cq-cp+1;
-	*/
 
 	/* get variable */
 	*variable = p;
@@ -175,7 +174,7 @@ lookup_mapper_entry(const char *dir, const char *mapname,
 	ret = 0;
 
 quit:
-	_unmap_file(&r);
+	_citrus_unmap_file(&r);
 	return ret;
 }
 
@@ -203,7 +202,7 @@ mapper_close(struct _citrus_mapper *cm)
 static int
 mapper_open(struct _citrus_mapper_area *__restrict ma,
 	    struct _citrus_mapper * __restrict * __restrict rcm,
-	   /* const char * __restrict module */,
+	   /* const char * __restrict module, */
 	    const char * __restrict variable)
 {
 	int ret;
@@ -333,7 +332,7 @@ _citrus_mapper_open(struct _citrus_mapper_area *__restrict ma,
 	if (cm->cm_key == NULL) {
 		ret = errno;
 		rwlock_unlock(&lock);
-		_mapper_close(cm);
+		mapper_close(cm);
 		return ret;
 	}
 

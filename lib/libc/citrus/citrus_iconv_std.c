@@ -42,13 +42,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "citrus_ctype.h"
+#include "citrus_rune.h"
 #include "citrus_types.h"
+#include "citrus_region.h"
+#include "citrus_mmap.h"
+#include "citrus_hash.h"
 #include "citrus_stdenc.h"
 #include "citrus_frune.h"
 #include "citrus_iconv.h"
-#include "citrus_iconv_std.h"
 #include "citrus_mapper.h"
+#include "citrus_csmapper.h"
+#include "citrus_memstream.h"
+#include "citrus_iconv_std.h"
+#include "citrus_esdb.h"
 
 static int init_encoding(struct _citrus_iconv_std_encoding *, struct _citrus_frune_encoding *, void *, void *);
 static int open_csmapper(struct _citrus_csmapper **, const char *, const char *, unsigned long *);
@@ -113,7 +119,7 @@ mbtocsx(struct _citrus_iconv_std_encoding *se, _csid_t *csid, _index_t *idx, con
 	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
-	fe->fe_state = TO_STATE(se->se_ps);
+	fe->fe_state = se->se_ps;
 	return (_citrus_frune_mbtocsx(fe, csid, idx, s, n, nresult));
 }
 
@@ -123,7 +129,7 @@ cstombx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, _csid_t csid, 
 	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
-	fe->fe_state = TO_STATE(se->se_ps);
+	fe->fe_state = se->se_ps;
 	return (_citrus_frune_cstombx(fe, s, n, csid, idx, nresult));
 }
 
@@ -133,7 +139,7 @@ wctombx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, _wc_t wc, size
 	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
-	fe->fe_state = TO_STATE(se->se_ps);
+	fe->fe_state = se->se_ps;
 	return (_citrus_frune_wctombx(fe, s, n, wc, nresult));
 }
 
@@ -143,7 +149,7 @@ put_state_resetx(struct _citrus_iconv_std_encoding *se, char *s, size_t n, size_
 	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
-	fe->fe_state = TO_STATE(se->se_ps);
+	fe->fe_state = se->se_ps;
 	return (_citrus_frune_put_state_resetx(fe, s, n, nresult));
 }
 
@@ -153,7 +159,7 @@ get_state_desc_gen(struct _citrus_iconv_std_encoding *se, int *rstate)
 	struct _citrus_frune_encoding *fe;
 
 	fe = se->se_handle;
-	fe->fe_state = TO_STATE(se->se_ps);
+	fe->fe_state = se->se_ps;
 	return (_citrus_frune_get_state_desc_gen(fe, rstate));
 }
 
@@ -169,11 +175,11 @@ init_encoding(struct _citrus_iconv_std_encoding *se, struct _citrus_frune_encodi
 	se->se_ps = ps1;
 	se->se_pssaved = ps2;
 	if (se->se_ps) {
-		fe->fe_state = TO_STATE(se->se_ps);
+		fe->fe_state = se->se_ps;
 		goto out;
 	}
 	if (!ret && se->se_pssaved) {
-		fe->fe_state = TO_STATE(se->se_pssaved);
+		fe->fe_state = se->se_pssaved;
 		goto out;
 	}
 	ret = -1;
@@ -194,7 +200,7 @@ open_csmapper(struct _citrus_csmapper **rcm, const char *src, const char *dst, u
 	if (ret)
 		return (ret);
 	if ( _citrus_csmapper_get_src_max(cm) != 1 ||  _citrus_csmapper_get_dst_max(cm) != 1 || _citrus_csmapper_get_state_size(cm) != 0) {
-		 _citrus_citrus_csmapper_close(cm);
+		 _citrus_csmapper_close(cm);
 		return (EINVAL);
 	}
 
@@ -418,8 +424,8 @@ _citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_shared *ci)
 		return;
 	}
 
-	_citrus_stdenc_uninit(is->is_src_encoding);
-	_citrus_stdenc_uninit(is->is_dst_encoding);
+	_citrus_frune_uninit(is->is_src_encoding);
+	_citrus_frune_uninit(is->is_dst_encoding);
 	close_srcs(&is->is_srcs);
 	free(is);
 }
@@ -429,12 +435,11 @@ _citrus_iconv_std_iconv_init_context(struct _citrus_iconv *cv)
 {
 	const struct _citrus_iconv_std_shared *is = cv->cv_shared->ci_closure;
 	struct _citrus_iconv_std_context *sc;
-	int ret;
 	size_t szpssrc, szpsdst, sz;
 	char *ptr;
 
-	szpssrc = _citrus_stdenc_get_state_size(is->is_src_encoding);
-	szpsdst = _citrus_stdenc_get_state_size(is->is_dst_encoding);
+	szpssrc = _citrus_frune_get_state_size(is->is_src_encoding);
+	szpsdst = _citrus_frune_get_state_size(is->is_dst_encoding);
 
 	sz = (szpssrc + szpsdst) * 2 + sizeof(struct _citrus_iconv_std_context);
 	sc = malloc(sz);
@@ -586,7 +591,7 @@ next:
 err:
 	restore_encoding_state(&sc->sc_src_encoding);
 	restore_encoding_state(&sc->sc_dst_encoding);
-err_norestore:
+//err_norestore:
 	*invalids = inval;
 	return (ret);
 }

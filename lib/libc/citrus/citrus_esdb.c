@@ -41,6 +41,7 @@ __RCSID("$NetBSD: citrus_esdb.c,v 1.3 2004/01/02 12:19:25 itojun Exp $");
 #include <paths.h>
 #include <sys/types.h>
 
+#include "citrus_rune.h"
 #include "citrus_types.h"
 #include "citrus_bcs.h"
 #include "citrus_region.h"
@@ -276,17 +277,17 @@ _citrus_esdb_get_list(char ***rlist, size_t *rnum)
 
 	num = 0;
 
-	ret = _citrus_lookup_seq_open(&cla, _PATH_ESDB "/" ESDB_ALIAS);
+	ret = _citrus_lookup_seq_open(&cla, _PATH_ESDB "/" ESDB_ALIAS, _CITRUS_LOOKUP_CASE_IGNORE);
 	if (ret)
 		goto quit0;
 
-	ret = _citrus_lookup_seq_open(&cld, _PATH_ESDB "/" ESDB_DIR);
+	ret = _citrus_lookup_seq_open(&cld, _PATH_ESDB "/" ESDB_DIR, _CITRUS_LOOKUP_CASE_IGNORE);
 	if (ret)
 		goto quit1;
 
 	/* count number of entries */
-	num = _citrus_lookup_get_num_entries(cla)
-			+ _citrus_lookup_get_num_entries(cld);
+	num = _citrus_lookup_get_number_of_entries(cla)
+			+ _citrus_lookup_get_number_of_entries(cld);
 
 	_citrus_lookup_seq_rewind(cla);
 	_citrus_lookup_seq_rewind(cld);
