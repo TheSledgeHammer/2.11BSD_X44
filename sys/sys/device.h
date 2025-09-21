@@ -246,6 +246,13 @@ struct deferred_config {
 			.ca_list = { 0 },							\
 	}
 
+/*
+ * Attach a static event counter.  This uses a link set to do the work.
+ * NOTE: "ev" should not be a pointer to the object, but rather a direct
+ * reference to the object itself.
+ */
+#define	EVCNT_ATTACH_STATIC(ev)		__link_set_add_data(evcnts, ev)
+
 extern struct devicelist			alldevs;				/* head of list of all devices */
 extern struct cfattachlist			allattachs;				/* head of list of all attachments */
 extern struct deferred_config_head	deferred_config_queue;	/* head of deferred queue */

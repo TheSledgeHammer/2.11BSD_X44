@@ -346,6 +346,7 @@ typedef int (*vocall_func_t)(struct vop_generic_args *);
 #define VCALL(VP, AP) 		(VOCALL((VP)->v_op,(AP)))
 #define VDESC(OP) 			(&(OP##_desc))
 #define VOFFSET(OP) 		(VDESC(OP)->vdesc_offset)
+
 /*
  * Finally, include the default set of vnode operations.
  */

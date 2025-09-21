@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_mapper_std_local.h,v 1.2 2003/07/12 15:39:21 tshiozak Exp $	*/
+/*	$NetBSD: citrus_esdb_file.h,v 1.1 2003/06/25 09:51:32 tshiozak Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,42 +26,21 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_MAPPER_STD_H_
-#define _CITRUS_MAPPER_STD_H_
+#ifndef _CITRUS_ESDB_FILE_H_
+#define _CITRUS_ESDB_FILE_H_
 
-typedef u_int32_t (*_citrus_mapper_std_getvalfunc_t)(const void *, u_int32_t);
+#define	_PATH_ESDB					"/usr/share/i18n/esdb"
 
-struct _citrus_mapper_std_linear_zone {
-	_citrus_index_t		begin;
-	_citrus_index_t		end;
-	_citrus_index_t		width;
-};
+#define _CITRUS_ESDB_MAGIC			"ESDB\0\0\0\0"
 
-struct _citrus_mapper_std_rowcol {
-	struct _citrus_region	rc_table;
-	size_t					rc_src_rowcol_len;
-	struct _citrus_mapper_std_linear_zone *rc_src_rowcol;
-	_citrus_index_t		rc_src_rowcol_bits;
-	_citrus_index_t		rc_src_rowcol_mask;
-	_citrus_index_t		rc_dst_invalid;
-	_citrus_index_t		rc_dst_unit_bits;
-	int					rc_oob_mode;
-	_citrus_index_t		rc_dst_ilseq;
-};
+#define _CITRUS_ESDB_SYM_VERSION		"version"
+#define _CITRUS_ESDB_SYM_ENCODING		"encoding"
+#define _CITRUS_ESDB_SYM_VARIABLE		"variable"
+#define _CITRUS_ESDB_SYM_NUM_CHARSETS		"num_charsets"
+#define _CITRUS_ESDB_SYM_INVALID		"invalid"
+#define _CITRUS_ESDB_SYM_CSNAME_PREFIX		"csname_"
+#define _CITRUS_ESDB_SYM_CSID_PREFIX		"csid_"
 
-struct _citrus_mapper_std {
-	struct _citrus_region	ms_file;
-	struct _citrus_db		*ms_db;
-	int  (*ms_convert)(struct _citrus_mapper_std *__restrict, _index_t *__restrict, _index_t, void *__restrict);
-	void (*ms_uninit)(struct _citrus_mapper_std *);
-	union {
-		struct _citrus_mapper_std_rowcol rowcol;
-	} u;
-#define ms_rowcol			u.rowcol
-};
+#define _CITRUS_ESDB_VERSION 			0x00000001
 
-/* prototypes */
-__BEGIN_DECLS
-int _citrus_mapper_std_mapper_getops(struct _citrus_mapper_ops *, size_t, u_int32_t);
-__END_DECLS
-#endif /* _CITRUS_MAPPER_STD_H_ */
+#endif

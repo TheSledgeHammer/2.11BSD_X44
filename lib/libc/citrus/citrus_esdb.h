@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_mapper_std_local.h,v 1.2 2003/07/12 15:39:21 tshiozak Exp $	*/
+/*	$NetBSD: citrus_esdb.h,v 1.1 2003/06/25 09:51:32 tshiozak Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,42 +26,30 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_MAPPER_STD_H_
-#define _CITRUS_MAPPER_STD_H_
+#ifndef _CITRUS_ESDB_H_
+#define _CITRUS_ESDB_H_
 
-typedef u_int32_t (*_citrus_mapper_std_getvalfunc_t)(const void *, u_int32_t);
-
-struct _citrus_mapper_std_linear_zone {
-	_citrus_index_t		begin;
-	_citrus_index_t		end;
-	_citrus_index_t		width;
+struct _citrus_esdb_charset {
+	_citrus_csid_t			ec_csid;
+	char					*ec_csname;
 };
 
-struct _citrus_mapper_std_rowcol {
-	struct _citrus_region	rc_table;
-	size_t					rc_src_rowcol_len;
-	struct _citrus_mapper_std_linear_zone *rc_src_rowcol;
-	_citrus_index_t		rc_src_rowcol_bits;
-	_citrus_index_t		rc_src_rowcol_mask;
-	_citrus_index_t		rc_dst_invalid;
-	_citrus_index_t		rc_dst_unit_bits;
-	int					rc_oob_mode;
-	_citrus_index_t		rc_dst_ilseq;
+struct _citrus_esdb {
+	char				*db_encname;
+	void				*db_variable;
+	size_t				db_len_variable;
+	int					db_num_charsets;
+	struct _citrus_esdb_charset	*db_charsets;
+	int					db_use_invalid;
+	_citrus_wc_t		db_invalid;
 };
 
-struct _citrus_mapper_std {
-	struct _citrus_region	ms_file;
-	struct _citrus_db		*ms_db;
-	int  (*ms_convert)(struct _citrus_mapper_std *__restrict, _index_t *__restrict, _index_t, void *__restrict);
-	void (*ms_uninit)(struct _citrus_mapper_std *);
-	union {
-		struct _citrus_mapper_std_rowcol rowcol;
-	} u;
-#define ms_rowcol			u.rowcol
-};
-
-/* prototypes */
 __BEGIN_DECLS
-int _citrus_mapper_std_mapper_getops(struct _citrus_mapper_ops *, size_t, u_int32_t);
+const char	*_citrus_esdb_alias(const char *, char *, size_t);
+int			_citrus_esdb_open(struct _citrus_esdb *, const char *);
+void		_citrus_esdb_close(struct _citrus_esdb *);
+void		_citrus_esdb_free_list(char **, size_t);
+int			_citrus_esdb_get_list(char ***, size_t *);
 __END_DECLS
-#endif /* _CITRUS_MAPPER_STD_H_ */
+
+#endif

@@ -30,6 +30,8 @@
 #define _CITRUS_MAPPER_H_
 
 struct _citrus_mapper_area;
+struct _citrus_mapper;
+struct _citrus_mapper_traits;
 
 /*
  * ABI version change log
@@ -39,14 +41,29 @@ struct _citrus_mapper_area;
 #define _CITRUS_MAPPER_ABI_VERSION	0x00000001
 struct _citrus_mapper_ops {
 	uint32_t mo_abi_version;
-	int 	(*mo_init)(struct _citrus_mapper_area *__restrict, struct _citrus_mapper_std *,
+	int 	(*mo_init)(struct _citrus_mapper_area *__restrict, struct _citrus_mapper *__restrict,
 			const char *__restrict, const void *__restrict, size_t,
 			struct _citrus_mapper_traits * __restrict, size_t);
-	void 	(*mo_uninit)(struct _citrus_mapper_std *);
-	int		(*mo_convert)(struct _citrus_mapper_std *, _citrus_index_t * __restrict,
+	void 	(*mo_uninit)(struct _citrus_mapper *);
+	int		(*mo_convert)(struct _citrus_mapper *__restrict, _citrus_index_t * __restrict,
 			_citrus_index_t, void * __restrict);
-	void	(*mo_init_state)(struct _citrus_mapper_std *, void * __restrict);
+	void	(*mo_init_state)(struct _citrus_mapper *__restrict, void * __restrict);
 };
+
+__BEGIN_DECLS
+int	_citrus_mapper_create_area(
+		struct _citrus_mapper_area *__restrict *__restrict,
+		const char *__restrict);
+int	_citrus_mapper_open(struct _citrus_mapper_area *__restrict,
+			    struct _citrus_mapper *__restrict *__restrict,
+			    const char *__restrict);
+int	_citrus_mapper_open_direct(
+		struct _citrus_mapper_area *__restrict,
+		struct _citrus_mapper *__restrict *__restrict,
+		const char *__restrict);
+void	_citrus_mapper_close(struct _citrus_mapper *);
+void	_citrus_mapper_set_persistent(struct _citrus_mapper * __restrict);
+__END_DECLS
 
 struct _citrus_mapper_traits {
 	/* version 0x00000001 */
@@ -88,14 +105,14 @@ struct _citrus_mapper {
  *
  */
 static __inline int
-_citrus_io_mapper_convert(struct _citrus_mapper * __restrict cm,
-			struct _citrus_mapper_std *ms,
-		_citrus_index_t *__restrict dst, _citrus_index_t src,
-		void *__restrict ps)
+_citrus_mapper_convert(struct _citrus_mapper * __restrict cm,
+		       _citrus_index_t * __restrict dst,
+		       _citrus_index_t src,
+		       void * __restrict ps)
 {
 	_DIAGASSERT(cm && cm->cm_ops && cm->cm_ops->mo_convert && dst);
 
-	return (*cm->cm_ops->mo_convert)(ms, dst, src, ps);
+	return ((*cm->cm_ops->mo_convert)(cm, dst, src, ps));
 }
 
 /*
@@ -103,31 +120,72 @@ _citrus_io_mapper_convert(struct _citrus_mapper * __restrict cm,
  *	initialize the state.
  */
 static __inline void
-_citrus_io_mapper_init_state(struct _citrus_mapper * __restrict cm, struct _citrus_mapper_std *ms, void *__restrict ps)
+_citrus_mapper_init_state(struct _citrus_mapper * __restrict cm,
+			  void * __restrict ps)
 {
 	_DIAGASSERT(cm && cm->cm_ops && cm->cm_ops->mo_init_state);
 
-	(*cm->cm_ops->mo_init_state)(ms, ps);
+	(*cm->cm_ops->mo_init_state)(cm, ps);
 }
 
+
 static __inline int
-_citrus_io_mapper_init(struct _citrus_mapper_area *__restrict ma,
-		struct _citrus_mapper *__restrict cm, struct _citrus_mapper_std *ms,
+_citrus_mapper_init(struct _citrus_mapper_area *__restrict ma,
+		struct _citrus_mapper *__restrict cm,
 		const char *__restrict curdir, const void *__restrict var,
 		size_t lenvar, struct _citrus_mapper_traits *__restrict mt,
 		size_t lenmt)
 {
 	_DIAGASSERT(cm && cm->cm_ops && cm->cm_ops->mo_init);
 
-	return ((*cm->cm_ops->mo_init)(ma, ms, curdir, var, lenvar, mt, lenmt));
+	return ((*cm->cm_ops->mo_init)(ma, curdir, var, lenvar, mt, lenmt));
 }
 
 static __inline void
-_citrus_io_mapper_uninit(struct _citrus_mapper *cm, struct _citrus_mapper_std *ms)
+_citrus_mapper_uninit(struct _citrus_mapper *cm)
 {
 	_DIAGASSERT(cm && cm->cm_ops && cm->cm_ops->mo_uninit);
 
-	(*cm->cm_ops->mo_uninit)(ms);
+	(*cm->cm_ops->mo_uninit)(cm);
+}
+
+/*
+ * _citrus_mapper_get_state_size:
+ *	get the size of state storage.
+ */
+static __inline size_t
+_citrus_mapper_get_state_size(struct _citrus_mapper * __restrict cm)
+{
+
+	_DIAGASSERT(cm && cm->cm_traits);
+
+	return (cm->cm_traits->mt_state_size);
+}
+
+/*
+ * _citrus_mapper_get_src_max:
+ *	get the maximum number of suspended sources.
+ */
+static __inline size_t
+_citrus_mapper_get_src_max(struct _citrus_mapper * __restrict cm)
+{
+
+	_DIAGASSERT(cm && cm->cm_traits);
+
+	return (cm->cm_traits->mt_src_max);
+}
+
+/*
+ * _citrus_mapper_get_dst_max:
+ *	get the maximum number of suspended destinations.
+ */
+static __inline size_t
+_citrus_mapper_get_dst_max(struct _citrus_mapper * __restrict cm)
+{
+
+	_DIAGASSERT(cm && cm->cm_traits);
+
+	return (cm->cm_traits->mt_dst_max);
 }
 
 #endif /* _CITRUS_MAPPER_H_ */

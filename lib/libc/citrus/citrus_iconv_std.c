@@ -50,35 +50,24 @@
 #include "citrus_iconv_std.h"
 #include "citrus_mapper.h"
 
-static void save_encoding_state(struct _citrus_iconv_std_encoding *);
-static void restore_encoding_state(struct _citrus_iconv_std_encoding *);
-static void init_encoding_state(struct _citrus_iconv_std_encoding *);
-static int mbtocsx(struct _citrus_iconv_std_encoding *, _csid_t *, _index_t *, const char **, size_t ,	size_t *);
-static int cstombx(struct _citrus_iconv_std_encoding *, char *, size_t, _csid_t, _index_t, size_t *);
-static int wctombx(struct _citrus_iconv_std_encoding *, char *, size_t, _wc_t, size_t *);
-static int put_state_resetx(struct _citrus_iconv_std_encoding *, char *, size_t, size_t *);
-static int get_state_desc_gen(struct _citrus_iconv_std_encoding *, int *);
 static int init_encoding(struct _citrus_iconv_std_encoding *, struct _citrus_frune_encoding *, void *, void *);
-
-
 static int open_csmapper(struct _citrus_csmapper **, const char *, const char *, unsigned long *);
 static void close_dsts(struct _citrus_iconv_std_dst_list *);
 static int open_dsts(struct _citrus_iconv_std_dst_list *, const struct _citrus_esdb_charset *, const struct _citrus_esdb *);
 static void close_srcs(struct _citrus_iconv_std_src_list *);
 static int open_srcs(struct _citrus_iconv_std_src_list *, const struct _citrus_esdb *, const struct _citrus_esdb *);
 static int do_conv(const struct _citrus_iconv_std_shared *, struct _citrus_iconv_std_context *, _csid_t *, _index_t *);
-static int _citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_std_shared *,
+static int _citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_shared *,
 		const char *__restrict, const char *__restrict, const char *__restrict,
 		const void *__restrict, size_t);
-static void _citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_std_shared *);
-static int _citrus_iconv_std_iconv_convert(
-		const struct _citrus_iconv_std_shared *,
-		struct _citrus_iconv_std_context *, const char*__restrict* __restrict,
-		size_t *__restrict, char *__restrict * __restrict, size_t *__restrict,
+static void _citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_shared *);
+static int _citrus_iconv_std_iconv_init_context(struct _citrus_iconv *);
+static void _citrus_iconv_std_iconv_uninit_context(struct _citrus_iconv *);
+static int
+_citrus_iconv_std_iconv_convert(struct _citrus_iconv *__restrict,
+		const char *__restrict* __restrict, size_t *__restrict,
+		char *__restrict* __restrict, size_t *__restrict,
 		u_int32_t, size_t *__restrict);
-static int _citrus_iconv_std_iconv_init_context(struct _citrus_iconv_std_shared *, struct _citrus_iconv_std_context *);
-static void _citrus_iconv_std_iconv_uninit_context(struct _citrus_iconv_std_shared *);
-
 
 struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops = {
 		.io_abi_version = _CITRUS_ICONV_ABI_VERSION,
@@ -92,7 +81,9 @@ struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops = {
 int
 _citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *ops, size_t lenops, u_int32_t expected_version)
 {
-	return (_citrus_getops(ops, sizeof(ops), &_citrus_iconv_std_iconv_ops, sizeof(_citrus_iconv_std_iconv_ops), lenops, _CITRUS_ICONV_ABI_VERSION, expected_version));
+	return (_citrus_getops(ops, sizeof(ops), &_citrus_iconv_std_iconv_ops,
+			sizeof(_citrus_iconv_std_iconv_ops), lenops,
+			_CITRUS_ICONV_ABI_VERSION, expected_version));
 }
 
 /*
@@ -360,13 +351,15 @@ do_conv(const struct _citrus_iconv_std_shared *is, struct _citrus_iconv_std_cont
 
 static int
 _citrus_iconv_std_iconv_init_shared(
-		struct _citrus_iconv_std_shared *is, const char *__restrict curdir,
+		struct _citrus_iconv_shared *ci, const char *__restrict curdir,
 		const char *__restrict src, const char *__restrict dst,
 		const void *__restrict var, size_t lenvar)
 {
 	int ret;
+	struct _citrus_iconv_std_shared *is;
 	struct _citrus_esdb esdbsrc, esdbdst;
 
+	is = malloc(sizeof(*is));
 	if (is == NULL) {
 		ret = errno;
 		goto err0;
@@ -398,6 +391,7 @@ _citrus_iconv_std_iconv_init_shared(
 	}
 	_citrus_esdb_close(&esdbsrc);
 	_citrus_esdb_close(&esdbdst);
+	ci->ci_closure = is;
 
 	return (0);
 
@@ -416,8 +410,10 @@ err0:
 }
 
 static void
-_citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_std_shared *is)
+_citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_shared *ci)
 {
+	struct _citrus_iconv_std_shared *is = ci->ci_closure;
+
 	if (is == NULL) {
 		return;
 	}
@@ -429,14 +425,17 @@ _citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_std_shared *is)
 }
 
 static int
-_citrus_iconv_std_iconv_init_context(struct _citrus_iconv_std_shared *is, struct _citrus_iconv_std_context *sc)
+_citrus_iconv_std_iconv_init_context(struct _citrus_iconv *cv)
 {
+	const struct _citrus_iconv_std_shared *is = cv->cv_shared->ci_closure;
+	struct _citrus_iconv_std_context *sc;
 	int ret;
 	size_t szpssrc, szpsdst, sz;
 	char *ptr;
 
 	szpssrc = _citrus_stdenc_get_state_size(is->is_src_encoding);
 	szpsdst = _citrus_stdenc_get_state_size(is->is_dst_encoding);
+
 	sz = (szpssrc + szpsdst) * 2 + sizeof(struct _citrus_iconv_std_context);
 	sc = malloc(sz);
 	if (sc == NULL) {
@@ -458,22 +457,24 @@ _citrus_iconv_std_iconv_init_context(struct _citrus_iconv_std_shared *is, struct
 		init_encoding(&sc->sc_dst_encoding, is->is_dst_encoding, NULL, NULL);
 	}
 
+	cv->cv_closure = (void *)sc;
 	return (0);
 }
 
 static void
-_citrus_iconv_std_iconv_uninit_context(struct _citrus_iconv_std_shared *is)
+_citrus_iconv_std_iconv_uninit_context(struct _citrus_iconv *cv)
 {
-	free(is);
+	free(cv->cv_closure);
 }
 
 static int
-_citrus_iconv_std_iconv_convert(
-		const struct _citrus_iconv_std_shared *is, struct _citrus_iconv_std_context *sc,
+_citrus_iconv_std_iconv_convert(struct _citrus_iconv *__restrict cv,
 		const char *__restrict* __restrict in, size_t *__restrict inbytes,
 		char *__restrict* __restrict out, size_t *__restrict outbytes,
 		u_int32_t flags, size_t *__restrict invalids)
 {
+	const struct _citrus_iconv_std_shared *is = cv->cv_shared->ci_closure;
+	struct _citrus_iconv_std_context *sc = cv->cv_closure;
 	_index_t idx;
 	_csid_t csid;
 	int ret, state;

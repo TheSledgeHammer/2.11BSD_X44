@@ -1005,7 +1005,7 @@ count_lock_queue()
  * in vfs_syscalls.c using sysctl.
  */
 void
-vfs_bufstats()
+vfs_bufstats(void)
 {
 	int s, i, j, count;
 	register struct buf *bp;

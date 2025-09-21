@@ -76,27 +76,28 @@ vfsconf_fs_init(void)
 {
 	/* Fast Filesystem */
 #ifdef FFS
-    	vfsconf_fs_create(&ufs_vfsops, "ufs", VT_UFS, 0, MNT_LOCAL, ffs_mountroot);
+	vfsconf_fs_create(&ufs_vfsops, "ufs", VT_UFS, 0, MNT_LOCAL, ffs_mountroot);
 #endif
 
 	/* Log-based Filesystem */
 #ifdef LFS
-    	vfsconf_fs_create(&lfs_vfsops, "lfs", VT_LFS, 0, MNT_LOCAL, lfs_mountroot);
+	vfsconf_fs_create(&lfs_vfsops, "lfs", VT_LFS, 0, MNT_LOCAL, lfs_mountroot);
 #endif
 
 	/* Memory-based Filesystem */
 #ifdef MFS
-    	vfsconf_fs_create(&mfs_vfsops, "mfs", VT_MFS, 0, MNT_LOCAL, mfs_mountroot);
+	vfsconf_fs_create(&mfs_vfsops, "mfs", VT_MFS, 0, MNT_LOCAL, mfs_mountroot);
 #endif
 
 	/* 2.11BSD UFS Filesystem  */
 #ifdef UFS211
-    vfsconf_fs_create(&ufs211_vfsops, "ufs211", VT_UFS211, 0, MNT_LOCAL, NULL);
+	vfsconf_fs_create(&ufs211_vfsops, "ufs211", VT_UFS211, 0, MNT_LOCAL, NULL);
 #endif
 
 	/* ISO9660 (aka CDROM) Filesystem */
 #ifdef CD9660
-    	vfsconf_fs_create(&cd9660_vfsops, "cd9660", VT_ISOFS, 0, MNT_LOCAL, cd9660_mountroot);
+	vfsconf_fs_create(&cd9660_vfsops, "cd9660", VT_ISOFS, 0, MNT_LOCAL,
+			cd9660_mountroot);
 #endif
 
 	/* MSDOS Filesystem */

@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_mapper_std_local.h,v 1.2 2003/07/12 15:39:21 tshiozak Exp $	*/
+/*	$NetBSD: citrus_csmapper.h,v 1.3 2013/06/24 17:28:35 joerg Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,42 +26,25 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_MAPPER_STD_H_
-#define _CITRUS_MAPPER_STD_H_
+#ifndef _CITRUS_CSMAPPER_H_
+#define _CITRUS_CSMAPPER_H_
 
-typedef u_int32_t (*_citrus_mapper_std_getvalfunc_t)(const void *, u_int32_t);
+#define	_PATH_CSMAPPER	"/usr/share/i18n/csmapper"
 
-struct _citrus_mapper_std_linear_zone {
-	_citrus_index_t		begin;
-	_citrus_index_t		end;
-	_citrus_index_t		width;
-};
+#define _citrus_csmapper				_citrus_mapper
+#define _citrus_csmapper_close			_citrus_mapper_close
+#define _citrus_csmapper_convert		_citrus_mapper_convert
+#define _citrus_csmapper_init_state		_citrus_mapper_init_state
+#define _citrus_csmapper_get_state_size	_citrus_mapper_get_state_size
+#define _citrus_csmapper_get_src_max	_citrus_mapper_get_src_max
+#define _citrus_csmapper_get_dst_max	_citrus_mapper_get_dst_max
 
-struct _citrus_mapper_std_rowcol {
-	struct _citrus_region	rc_table;
-	size_t					rc_src_rowcol_len;
-	struct _citrus_mapper_std_linear_zone *rc_src_rowcol;
-	_citrus_index_t		rc_src_rowcol_bits;
-	_citrus_index_t		rc_src_rowcol_mask;
-	_citrus_index_t		rc_dst_invalid;
-	_citrus_index_t		rc_dst_unit_bits;
-	int					rc_oob_mode;
-	_citrus_index_t		rc_dst_ilseq;
-};
-
-struct _citrus_mapper_std {
-	struct _citrus_region	ms_file;
-	struct _citrus_db		*ms_db;
-	int  (*ms_convert)(struct _citrus_mapper_std *__restrict, _index_t *__restrict, _index_t, void *__restrict);
-	void (*ms_uninit)(struct _citrus_mapper_std *);
-	union {
-		struct _citrus_mapper_std_rowcol rowcol;
-	} u;
-#define ms_rowcol			u.rowcol
-};
-
-/* prototypes */
+#define _CITRUS_CSMAPPER_F_PREVENT_PIVOT	0x00000001
 __BEGIN_DECLS
-int _citrus_mapper_std_mapper_getops(struct _citrus_mapper_ops *, size_t, u_int32_t);
+int	_citrus_csmapper_open(struct _citrus_csmapper *__restrict *__restrict,
+			      const char *__restrict,
+			      const char *__restrict, uint32_t,
+			      unsigned long *);
 __END_DECLS
-#endif /* _CITRUS_MAPPER_STD_H_ */
+
+#endif

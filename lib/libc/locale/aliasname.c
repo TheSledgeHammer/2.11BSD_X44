@@ -37,6 +37,7 @@ __RCSID("$NetBSD: aliasname.c,v 1.1 2002/02/13 07:45:52 yamt Exp $");
 #include <string.h>
 
 #include "aliasname_local.h"
+#include "citrus/citrus_lookup.h"
 
 /*
  * case insensitive comparison between two C strings.
@@ -176,8 +177,6 @@ _bcs_is_ws(const char ch)
 {
 	return (ch == ' ' || ch == '\t');
 }
-
-#include "citrus/citrus_lookup.h"
 
 const char *
 __unaliasname(const char *dbname, const char *alias, void *buf, size_t bufsize)

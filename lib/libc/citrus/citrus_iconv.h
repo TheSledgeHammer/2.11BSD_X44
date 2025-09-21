@@ -29,18 +29,29 @@
 #ifndef _CITRUS_ICONV_H_
 #define _CITRUS_ICONV_H_
 
+struct _citrus_iconv_shared;
+struct _citrus_iconv_ops;
+struct _citrus_iconv;
+
+__BEGIN_DECLS
+int	_citrus_iconv_open(struct _citrus_iconv * __restrict * __restrict,
+			   const char * __restrict,
+			   const char * __restrict, const char * __restrict);
+void _citrus_iconv_close(struct _citrus_iconv *);
+__END_DECLS
+
 struct _citrus_iconv_ops {
 	uint32_t io_abi_version;
-	int (*io_init_shared)(struct _citrus_iconv_std_shared *,
+	int (*io_init_shared)(struct _citrus_iconv_shared *__restrict,
 			const char *__restrict, const char *__restrict, const char *__restrict,
 			const void *__restrict, size_t);
-	void (*io_uninit_shared)(struct _citrus_iconv_std_shared *);
-	int (*io_convert)(const struct _citrus_iconv_std_shared *,
-			struct _citrus_iconv_std_context *, const char *__restrict *__restrict,
-			size_t *__restrict, char *__restrict *__restrict, size_t *__restrict,
+	void (*io_uninit_shared)(struct _citrus_iconv_shared *);
+	int (*io_convert)(struct _citrus_iconv *__restrict,
+			const char *__restrict *__restrict,size_t *__restrict,
+			char *__restrict *__restrict, size_t *__restrict,
 			u_int32_t, size_t *__restrict);
-	int (*io_init_context)(struct _citrus_iconv_std_shared *, struct _citrus_iconv_std_context *);
-	void (*io_uninit_context)(struct _citrus_iconv_std_shared *);
+	int (*io_init_context)(struct _citrus_iconv *);
+	void (*io_uninit_context)(struct _citrus_iconv *);
 };
 #define _CITRUS_ICONV_ABI_VERSION	2
 
@@ -59,67 +70,59 @@ struct _citrus_iconv {
 	void					 					*cv_closure;
 };
 
-__BEGIN_DECLS
-int	_citrus_iconv_open(struct _citrus_iconv * __restrict * __restrict,
-			   const char * __restrict,
-			   const char * __restrict, const char * __restrict);
-void	_citrus_iconv_close(struct _citrus_iconv *);
-int _citrus_iconv_convert(struct _citrus_iconv * __restrict,
-	      const char * __restrict * __restrict,
-	      size_t * __restrict, char * __restrict * __restrict,
-		  size_t * __restrict, uint32_t,
-	      size_t * __restrict);
-__END_DECLS
-
 #define _CITRUS_ICONV_F_HIDE_INVALID	0x0001
 
 static __inline int
-_citrus_io_iconv_init_shared(struct _citrus_iconv_shared *ci,
-		struct _citrus_iconv_std_shared *is, const char *__restrict curdir,
+_citrus_iconv_init_shared(struct _citrus_iconv_shared *__restrict ci,
+		const char *__restrict curdir,
 		const char *__restrict src, const char *__restrict dst,
 		const void *__restrict var, size_t lenvar)
 {
 	_DIAGASSERT(ci && ci->ci_ops && ci->ci_ops->io_init_shared);
 
-	return ((*ci->ci_ops->io_init_shared)(is, curdir, src, dst, var, lenvar));
+	return ((*ci->ci_ops->io_init_shared)(ci, curdir, src, dst, var, lenvar));
 }
 
 static __inline void
-_citrus_io_iconv_uninit_shared(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is)
+_citrus_iconv_uninit_shared(struct _citrus_iconv_shared *ci)
 {
 	_DIAGASSERT(ci && ci->ci_ops && ci->ci_ops->io_uninit_shared);
 
-	(*ci->ci_ops->io_uninit_shared)(is);
+	(*ci->ci_ops->io_uninit_shared)(ci);
 }
 
 static __inline int
-_citrus_io_iconv_convert(struct _citrus_iconv_shared *ci,
-		const struct _citrus_iconv_std_shared *is,
-		struct _citrus_iconv_std_context *sc,
+_citrus_iconv_convert(struct _citrus_iconv * __restrict cv,
 		const char *__restrict* __restrict in, size_t *__restrict inbytes,
 		char *__restrict * __restrict out, size_t *__restrict outbytes,
 		u_int32_t flags, size_t *__restrict invalids)
 {
-	_DIAGASSERT(ci && ci->ci_ops && ci->ci_ops->io_convert);
+	_DIAGASSERT(
+			cv && cv->cv_shared && cv->cv_shared->ci_ops
+					&& cv->cv_shared->ci_ops->io_convert);
 	_DIAGASSERT(out || outbytes == 0);
 
-	return ((*ci->ci_ops->io_convert)(is, sc, in, inbytes, out, outbytes, flags, invalids));
+	return ((*cv->cv_shared->ci_ops->io_convert)(cv, sc, in, inbytes, out, outbytes, flags, invalids));
 }
 
 static __inline int
-_citrus_io_iconv_init_context(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is, , struct _citrus_iconv_std_context *sc)
+_citrus_iconv_init_context(struct _citrus_iconv *cv)
 {
-	_DIAGASSERT(ci && ci->ci_ops && ci->ci_ops->io_init_context);
+	_DIAGASSERT(
+			cv && cv->cv_shared && cv->cv_shared->ci_ops
+					&& cv->cv_shared->ci_ops->io_init_context);
 
-	return ((*ci->ci_ops->io_init_context)(is, sc));
+	return ((*cv->cv_shared->ci_ops->io_init_context)(cv));
 }
 
 static __inline void
-_citrus_io_iconv_uninit_context(struct _citrus_iconv_shared *ci, struct _citrus_iconv_std_shared *is)
+_citrus_iconv_uninit_context(struct _citrus_iconv *cv)
 {
-	_DIAGASSERT(ci && ci->ci_ops && ci->ci_ops->io_uninit_context);
+	_DIAGASSERT(
+			cv && cv->cv_shared && cv->cv_shared->ci_ops
+					&& cv->cv_shared->ci_ops->io_uninit_context);
 
-	(*ci->ci_ops->io_uninit_context)(is);
+	(*cv->cv_shared->ci_ops->io_uninit_context)(cv);
 }
 
 #endif /* _CITRUS_ICONV_H_ */

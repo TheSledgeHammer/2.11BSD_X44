@@ -66,70 +66,10 @@ struct _citrus_mapper_area {
 	char												*ma_dir;
 };
 
-static __inline int
-_citrus_mapper_convert(struct _citrus_mapper * __restrict cm,
-		_citrus_index_t * __restrict dst,
-	       _citrus_index_t src,
-	       void * __restrict ps)
-{
-	struct _citrus_mapper_std *ms;
-
-	_DIAGASSERT(cm != NULL && cm->cm_closure != NULL);
-
-	ms = cm->cm_closure;
-
-	return (_citrus_io_mapper_convert(cm, ms, dst, src, ps));
-}
-
-static __inline void
-_citrus_mapper_init_state(struct _citrus_mapper * __restrict cm, void *__restrict ps)
-{
-	struct _citrus_mapper_std *ms;
-
-	ms = cm->cm_closure;
-	/* alloc mapper std structure */
-	if (ms == NULL) {
-		ms = malloc(sizeof(*ms));
-		cm->cm_closure = ms;
-	}
-	_citrus_io_mapper_init_state(cm, ms, ps);
-}
-
-static __inline int
-_citrus_mapper_init(struct _citrus_mapper_area *__restrict ma,
-		struct _citrus_mapper *__restrict cm, const char *__restrict curdir,
-		const void *__restrict var, size_t lenvar,
-		struct _citrus_mapper_traits *__restrict mt, size_t lenmt)
-{
-	struct _citrus_mapper_std *ms;
-	int ret;
-
-	/* alloc mapper std structure */
-	ms = malloc(sizeof(*ms));
-	ret = _citrus_io_mapper_init(ma, cm, ms, curdir, var, lenvar, mt, lenmt);
-	if (ret != 0) {
-		return (ret);
-	}
-	cm->cm_closure = ms;
-	return (ret);
-}
-
-static __inline void
-_citrus_mapper_uninit(struct _citrus_mapper *cm)
-{
-	struct _citrus_mapper_std *ms;
-
-	_DIAGASSERT(cm != NULL & cm->cm_closure != NULL);
-
-	ms = cm->cm_closure;
-	_citrus_io_mapper_uninit(cm, ms);
-}
-
 /*
  * _citrus_mapper_create_area:
  *	create mapper area
  */
-
 int
 _citrus_mapper_create_area(struct _citrus_mapper_area *__restrict *__restrict rma,
 	const char *__restrict area)
@@ -187,7 +127,7 @@ quit:
 static int
 lookup_mapper_entry(const char *dir, const char *mapname,
 		    void *linebuf, size_t linebufsize,
-		    const char **module, const char **variable)
+		    /*const char **module,*/ const char **variable)
 {
 	struct _citrus_region r;
 	struct _citrus_memstream ms;
@@ -205,10 +145,10 @@ lookup_mapper_entry(const char *dir, const char *mapname,
 	if (ret)
 		return ret;
 
-	_citrus_memstream_bind(&ms, &r);
+	_citrus_memory_stream_bind(&ms, &r);
 
 	/* search the line matching to the map name */
-	cp = _citrus_memstream_matchline(&ms, mapname, &len, 0);
+	cp = _citrus_memory_stream_matchline(&ms, mapname, &len, 0);
 	if (!cp) {
 		ret = ENOENT;
 		goto quit;
@@ -263,7 +203,7 @@ mapper_close(struct _citrus_mapper *cm)
 static int
 mapper_open(struct _citrus_mapper_area *__restrict ma,
 	    struct _citrus_mapper * __restrict * __restrict rcm,
-	    const char * __restrict module,
+	   /* const char * __restrict module */,
 	    const char * __restrict variable)
 {
 	int ret;
@@ -279,6 +219,8 @@ mapper_open(struct _citrus_mapper_area *__restrict ma,
 	cm->cm_traits = NULL;
 	cm->cm_refcount = 0;
 	cm->cm_key = NULL;
+
+	/* load module */
 
 	/* get operators */
 	cm->cm_ops = malloc(sizeof(*cm->cm_ops));
@@ -326,10 +268,10 @@ err:
 int
 _citrus_mapper_open_direct(struct _citrus_mapper_area *__restrict ma,
 			   struct _citrus_mapper * __restrict * __restrict rcm,
-			   const char * __restrict module,
+			   /*const char * __restrict module,*/
 			   const char * __restrict variable)
 {
-	return mapper_open(ma, rcm, module, variable);
+	return mapper_open(ma, rcm, variable);
 }
 
 /*
@@ -361,7 +303,7 @@ _citrus_mapper_open(struct _citrus_mapper_area *__restrict ma,
 {
 	int ret;
 	char linebuf[PATH_MAX];
-	const char *module, *variable;
+	const char /**module,*/ *variable;
 	struct _citrus_mapper *cm;
 	int hashval;
 
@@ -379,13 +321,12 @@ _citrus_mapper_open(struct _citrus_mapper_area *__restrict ma,
 	}
 
 	/* search mapper entry */
-	ret = lookup_mapper_entry(ma->ma_dir, mapname, linebuf, PATH_MAX,
-				  &module, &variable);
+	ret = lookup_mapper_entry(ma->ma_dir, mapname, linebuf, PATH_MAX, &variable);
 	if (ret)
 		goto quit;
 
 	/* open mapper */
-	ret = mapper_open(ma, &cm, module, variable);
+	ret = mapper_open(ma, &cm, variable);
 	if (ret)
 		goto quit;
 	cm->cm_key = strdup(mapname);
