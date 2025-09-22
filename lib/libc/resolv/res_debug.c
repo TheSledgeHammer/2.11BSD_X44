@@ -305,7 +305,7 @@ const char *_res_optioncodes[] = {
 };
 
 static char symbuf[20];
-static const char *sym_name_lookup(const char **, int, int, int *);
+static const char *p_name_lookup(const char **, int, int, int *);
 
 void
 p_query(msg)
@@ -638,7 +638,7 @@ p_rr(cp, msg, file)
 }
 
 static const char *
-sym_name_lookup(array, number, length, success)
+p_name_lookup(array, number, length, success)
 	const char **array;
 	int number, length;
 	int *success;
@@ -672,7 +672,7 @@ p_type(type)
 	int len, success;
 
 	len = (sizeof(_res_typecodes)/sizeof(_res_typecodes[0]));
-	ptype = sym_name_lookup(_res_typecodes, type, len, &success);
+	ptype = p_name_lookup(_res_typecodes, type, len, &success);
 	if (success) {
 		return (ptype);
 	}
@@ -692,7 +692,7 @@ p_class(class)
 	int len, success;
 
 	len = (sizeof(_res_classcodes)/sizeof(_res_classcodes[0]));
-	pclass = sym_name_lookup(_res_classcodes, class, len, &success);
+	pclass = p_name_lookup(_res_classcodes, class, len, &success);
 	if (success) {
 		return (pclass);
 	}
@@ -712,7 +712,7 @@ p_option(option)
 	int len, success;
 
 	len = (sizeof(_res_optioncodes)/sizeof(_res_optioncodes[0]));
-	poption = sym_name_lookup(_res_optioncodes, option, len, &success);
+	poption = p_name_lookup(_res_optioncodes, option, len, &success);
 	if (success) {
 		return (poption);
 	}
