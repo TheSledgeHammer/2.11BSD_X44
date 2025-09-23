@@ -73,7 +73,7 @@ struct _citrus_lookup {
 #define cl_dblocator	u.db.locator
 #define cl_plainr		u.plain.r
 #define cl_plainms		u.plain.ms
-    int cl_ignore_case;
+	int cl_ignore_case;
 	int cl_rewind;
 	char *cl_key;
 	size_t cl_keylen;
@@ -119,8 +119,8 @@ seq_lookup_db(struct _citrus_lookup *cl, const char *key, struct _citrus_region 
 	cl->cl_rewind = 0;
 	free(cl->cl_key);
 	cl->cl_key = strdup(key);
-    if (cl->cl_ignore_case)
-	    _bcs_convert_to_lower(cl->cl_key);
+	if (cl->cl_ignore_case)
+		_bcs_convert_to_lower(cl->cl_key);
 	cl->cl_keylen = strlen(cl->cl_key);
 	_citrus_db_locator_init(&cl->cl_dblocator);
 	return _citrus_db_lookup_by_string(cl->cl_db, cl->cl_key, data, &cl->cl_dblocator);
@@ -229,8 +229,8 @@ seq_lookup_plain(struct _citrus_lookup *cl, const char *key,
 	cl->cl_rewind = 0;
 	free(cl->cl_key);
 	cl->cl_key = strdup(key);
-    if (cl->cl_ignore_case)
-	    _bcs_convert_to_lower(cl->cl_key);
+	if (cl->cl_ignore_case)
+		_bcs_convert_to_lower(cl->cl_key);
 	cl->cl_keylen = strlen(cl->cl_key);
 	_citrus_memory_stream_bind(&cl->cl_plainms, &cl->cl_plainr);
 	p = _citrus_memory_stream_matchline(&cl->cl_plainms, cl->cl_key, &len, 0);
@@ -280,7 +280,7 @@ _citrus_lookup_seq_open(struct _citrus_lookup **rcl, const char *name, int ignor
 
 	cl->cl_key = NULL;
 	cl->cl_keylen = 0;
-    cl->cl_ignore_case = ignore_case;
+	cl->cl_ignore_case = ignore_case;
 	ret = seq_open_db(cl, name);
 	if (ret == ENOENT)
 		ret = seq_open_plain(cl, name);

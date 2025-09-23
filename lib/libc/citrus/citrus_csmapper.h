@@ -29,8 +29,6 @@
 #ifndef _CITRUS_CSMAPPER_H_
 #define _CITRUS_CSMAPPER_H_
 
-#define	_PATH_CSMAPPER	"/usr/share/i18n/csmapper"
-
 #define _citrus_csmapper				_citrus_mapper
 #define _citrus_csmapper_close			_citrus_mapper_close
 #define _citrus_csmapper_convert		_citrus_mapper_convert

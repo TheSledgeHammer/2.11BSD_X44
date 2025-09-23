@@ -13,6 +13,10 @@ SRCS+=	aliasname.c ctype.c euc.c isctype.c iso2022.c lconv.c localeconv.c	\
 SRCS+=	collate.c ldpart.c lmessages.c lmonetary.c lnumeric.c ltime.c       \
         locale_local.c
 
+.if ${CITRUS} == "yes"
+CPPFLAGS+= -DCITRUS_UNALIASNAME
+.endif
+
 # citrus multibyte locale support
 # we have quirk for libc.a - see the last part of lib/libc/Makefile
 

@@ -58,17 +58,4 @@ _citrus_lookup_alias(const char *path, const char *key, char *buf, size_t n, int
 	return (ret);
 }
 
-#ifdef nocitruslookup
-static __inline char *
-_citrus_lookup_simple(const char *name, const char *key, char *linebuf, size_t linebufsize, int ignore_case)
-{
-	const char *cskey = strdup(key);
-
-	if (ignore_case) {
-		_bcs_convert_to_lower(cskey);
-	}
-	return (__unaliasname(name, cskey, linebuf, linebufsize));
-}
-#endif
-
 #endif /* _CITRUS_LOOKUP_H_ */

@@ -132,7 +132,7 @@ _citrus_frune_restore_encoding_state(struct _citrus_frune_encoding *fe, void *ps
 }
 
 void
-_citrus_frune_init_encoding_state(struct _citrus_frune_encoding *fe, void *ps, void *pssaved)
+_citrus_frune_init_encoding_state(struct _citrus_frune_encoding *fe, void *ps)
 {
 	if (ps) {
 		_citrus_stdenc_init_state(fe->fe_info, fe->fe_state);

@@ -47,8 +47,6 @@ __weak_alias(iconv_close, _iconv_close)
 
 #ifdef CITRUS_ICONV
 
-#define _PATH_ICONV "/usr/share/i18n/iconv"
-
 #include <sys/types.h>
 #include "citrus/citrus_rune.h"
 #include "citrus/citrus_types.h"

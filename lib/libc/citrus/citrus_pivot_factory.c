@@ -51,7 +51,6 @@ __RCSID("$NetBSD: citrus_pivot_factory.c,v 1.7 2009/04/12 14:20:19 lukem Exp $")
 #include "citrus_pivot_file.h"
 #include "citrus_pivot_factory.h"
 
-
 struct src_entry {
 	char *se_name;
 	struct _citrus_db_factory *se_df;

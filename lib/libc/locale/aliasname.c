@@ -37,7 +37,13 @@ __RCSID("$NetBSD: aliasname.c,v 1.1 2002/02/13 07:45:52 yamt Exp $");
 #include <string.h>
 
 #include "aliasname_local.h"
+#ifdef CITRUS_UNALIASNAME
 #include "citrus/citrus_lookup.h"
+#else
+static const char *__unaliasname_orig(const char *, const char *, void *, size_t);
+#endif
+
+static const char *__unaliasname_common(const char *, const char *, void *, size_t);
 
 /*
  * case insensitive comparison between two C strings.
@@ -181,7 +187,7 @@ _bcs_is_ws(const char ch)
 const char *
 __unaliasname(const char *dbname, const char *alias, void *buf, size_t bufsize)
 {
-	return (_citrus_lookup_simple(dbname, alias, buf, bufsize, _CITRUS_LOOKUP_CASE_SENSITIVE));
+	return (__unaliasname_common(dbname, alias, buf, bufsize));
 }
 
 int
@@ -197,9 +203,10 @@ __isforcemapping(const char *name)
 			&& name[6] == '\0';
 }
 
-#ifdef nocitruslookup
-const char *
-__unaliasname(const char *dbname, const char *alias, void *buf, size_t bufsize)
+#ifndef CITRUS_UNALIASNAME
+
+static const char *
+__unaliasname_orig(const char *dbname, const char *alias, void *buf, size_t bufsize)
 {
 	FILE *fp = NULL;
 	const char *result = alias;
@@ -289,4 +296,21 @@ quit:
 
 	return result;
 }
+
+#endif /* !CITRUS_UNALIASNAME */
+
+static const char *
+__unaliasname_common(const char *dbname, const char *alias, void *buf, size_t bufsize)
+{
+	const char *result = NULL;
+
+#ifndef CITRUS_UNALIASNAME
+	const char *csalias = strdup(alias);
+
+	_bcs_convert_to_lower(csalias);
+	result = __unaliasname_orig(dbname, csalias, buf, bufsize);
+#else
+	result = _citrus_lookup_simple(dbname, alias, buf, bufsize, _CITRUS_LOOKUP_CASE_SENSITIVE);
 #endif
+	return (result);
+}

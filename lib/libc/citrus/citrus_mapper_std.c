@@ -49,7 +49,6 @@ __RCSID("$NetBSD: citrus_mapper_std.c,v 1.3 2003/07/12 15:39:20 tshiozak Exp $")
 #include "citrus_frune.h"
 #include "citrus_mmap.h"
 #include "citrus_hash.h"
-
 #include "citrus_db.h"
 #include "citrus_db_hash.h"
 #include "citrus_mapper.h"

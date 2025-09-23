@@ -110,7 +110,7 @@ restore_encoding_state(struct _citrus_iconv_std_encoding *se)
 static __inline void
 init_encoding_state(struct _citrus_iconv_std_encoding *se)
 {
-	_citrus_frune_init_encoding_state(se->se_handle, se->se_ps, se->se_pssaved);
+	_citrus_frune_init_encoding_state(se->se_handle, se->se_ps);
 }
 
 static __inline int

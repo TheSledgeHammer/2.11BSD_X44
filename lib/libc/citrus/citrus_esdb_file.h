@@ -29,8 +29,6 @@
 #ifndef _CITRUS_ESDB_FILE_H_
 #define _CITRUS_ESDB_FILE_H_
 
-#define	_PATH_ESDB					"/usr/share/i18n/esdb"
-
 #define _CITRUS_ESDB_MAGIC			"ESDB\0\0\0\0"
 
 #define _CITRUS_ESDB_SYM_VERSION		"version"

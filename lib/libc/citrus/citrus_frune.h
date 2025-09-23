@@ -47,7 +47,7 @@ void _citrus_frune_close(struct _citrus_frune_encoding *);
 void _citrus_frune_uninit(struct _citrus_frune_encoding *);
 void _citrus_frune_save_encoding_state(struct _citrus_frune_encoding *, void *, void *);
 void _citrus_frune_restore_encoding_state(struct _citrus_frune_encoding *, void *, void *);
-void _citrus_frune_init_encoding_state(struct _citrus_frune_encoding *, void *, void *);
+void _citrus_frune_init_encoding_state(struct _citrus_frune_encoding *, void *);
 int _citrus_frune_mbtocsx(struct _citrus_frune_encoding *, _csid_t *, _index_t *, const char **, size_t, size_t *);
 int _citrus_frune_cstombx(struct _citrus_frune_encoding *, char *, size_t, _csid_t, _index_t, size_t *);
 int _citrus_frune_wctombx(struct _citrus_frune_encoding *, char *, size_t, _wc_t, size_t *);

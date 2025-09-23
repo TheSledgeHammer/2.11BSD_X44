@@ -124,7 +124,6 @@ quit:
  * module : mapper module name.
  * arg    : argument for the module (generally, description file name)
  */
-
 static int
 lookup_mapper_entry(const char *dir, const char *mapname,
 		    void *linebuf, size_t linebufsize,
