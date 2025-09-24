@@ -79,6 +79,8 @@ struct _citrus_iconv_std_context {
 };
 
 /* prototypes */
+extern struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops;
+
 __BEGIN_DECLS
 int _citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *, size_t, u_int32_t);
 __END_DECLS

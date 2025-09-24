@@ -49,6 +49,7 @@ __RCSID("$NetBSD: citrus_mapper.c,v 1.5 2004/01/08 19:23:19 christos Exp $");
 #include "citrus_memstream.h"
 #include "citrus_bcs.h"
 #include "citrus_mmap.h"
+#include "citrus_module.h"
 #include "citrus_hash.h"
 #include "citrus_mapper.h"
 #include "citrus_mapper_std.h"
@@ -127,7 +128,7 @@ quit:
 static int
 lookup_mapper_entry(const char *dir, const char *mapname,
 		    void *linebuf, size_t linebufsize,
-		    /*const char **module,*/ const char **variable)
+		    const char **module, const char **variable)
 {
 	struct _citrus_region r;
 	struct _citrus_memory_stream ms;
@@ -160,7 +161,7 @@ lookup_mapper_entry(const char *dir, const char *mapname,
 
 	p = linebuf;
 	/* get module name */
-	//*module = p;
+	*module = p;
 	cq = _bcs_skip_nonws_len(cp, &len);
 	strlcpy(p, cp, (size_t)(cq-cp+1));
 	p += cq-cp+1;
@@ -201,11 +202,12 @@ mapper_close(struct _citrus_mapper *cm)
 static int
 mapper_open(struct _citrus_mapper_area *__restrict ma,
 	    struct _citrus_mapper * __restrict * __restrict rcm,
-	   /* const char * __restrict module, */
+	    const char * __restrict module,
 	    const char * __restrict variable)
 {
 	int ret;
 	struct _citrus_mapper *cm;
+	struct _citrus_mapper_ops *getops;
 
 	/* initialize mapper handle */
 	cm = malloc(sizeof(*cm));
@@ -221,12 +223,17 @@ mapper_open(struct _citrus_mapper_area *__restrict ma,
 	/* load module */
 
 	/* get operators */
+	getops = (struct _citrus_mapper_ops *)_citrus_find_getops(module, "mapper");
+	if (!getops) {
+		ret = EOPNOTSUPP;
+		goto err;
+	}
 	cm->cm_ops = malloc(sizeof(*cm->cm_ops));
 	if (!cm->cm_ops) {
 		ret = errno;
 		goto err;
 	}
-	ret = _citrus_mapper_std_mapper_getops(cm->cm_ops, sizeof(*cm->cm_ops), _CITRUS_MAPPER_ABI_VERSION);
+	ret = _citrus_mapper_getops(cm->cm_ops, sizeof(*cm->cm_ops), _CITRUS_MAPPER_ABI_VERSION);
 	if (ret)
 		goto err;
 
@@ -266,10 +273,10 @@ err:
 int
 _citrus_mapper_open_direct(struct _citrus_mapper_area *__restrict ma,
 			   struct _citrus_mapper * __restrict * __restrict rcm,
-			   /*const char * __restrict module,*/
+			   const char * __restrict module,
 			   const char * __restrict variable)
 {
-	return mapper_open(ma, rcm, variable);
+	return mapper_open(ma, rcm, module, variable);
 }
 
 /*
@@ -301,7 +308,7 @@ _citrus_mapper_open(struct _citrus_mapper_area *__restrict ma,
 {
 	int ret;
 	char linebuf[PATH_MAX];
-	const char /**module,*/ *variable;
+	const char *module, *variable;
 	struct _citrus_mapper *cm;
 	int hashval;
 
@@ -319,12 +326,12 @@ _citrus_mapper_open(struct _citrus_mapper_area *__restrict ma,
 	}
 
 	/* search mapper entry */
-	ret = lookup_mapper_entry(ma->ma_dir, mapname, linebuf, PATH_MAX, &variable);
+	ret = lookup_mapper_entry(ma->ma_dir, mapname, linebuf, PATH_MAX, &module, &variable);
 	if (ret)
 		goto quit;
 
 	/* open mapper */
-	ret = mapper_open(ma, &cm, variable);
+	ret = mapper_open(ma, &cm, module, variable);
 	if (ret)
 		goto quit;
 	cm->cm_key = strdup(mapname);

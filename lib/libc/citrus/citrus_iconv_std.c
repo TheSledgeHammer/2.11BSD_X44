@@ -87,9 +87,7 @@ struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops = {
 int
 _citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *ops, size_t lenops, u_int32_t expected_version)
 {
-	return (_citrus_getops(ops, sizeof(ops), &_citrus_iconv_std_iconv_ops,
-			sizeof(_citrus_iconv_std_iconv_ops), lenops,
-			_CITRUS_ICONV_ABI_VERSION, expected_version));
+	return (_citrus_iconv_getops(ops, &_citrus_iconv_std_iconv_ops, lenops, expected_version));
 }
 
 /*
@@ -424,8 +422,8 @@ _citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_shared *ci)
 		return;
 	}
 
-	_citrus_frune_uninit(is->is_src_encoding);
-	_citrus_frune_uninit(is->is_dst_encoding);
+	_citrus_frune_close(is->is_src_encoding);
+	_citrus_frune_close(is->is_dst_encoding);
 	close_srcs(&is->is_srcs);
 	free(is);
 }

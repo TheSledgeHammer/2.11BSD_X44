@@ -78,9 +78,7 @@ struct _citrus_mapper_ops _citrus_mapper_std_mapper_ops = {
 int
 _citrus_mapper_std_mapper_getops(struct _citrus_mapper_ops *ops, size_t lenops, u_int32_t expected_version)
 {
-	return (_citrus_getops(ops, sizeof(ops), &_citrus_mapper_std_mapper_ops,
-			sizeof(_citrus_mapper_std_mapper_ops), lenops,
-			_CITRUS_MAPPER_ABI_VERSION, expected_version));
+	return (_citrus_mapper_getops(ops, &_citrus_mapper_std_mapper_ops, lenops, expected_version));
 }
 
 /*ARGSUSED*/

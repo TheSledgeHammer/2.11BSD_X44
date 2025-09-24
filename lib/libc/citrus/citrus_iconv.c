@@ -58,6 +58,7 @@ __RCSID("$NetBSD: citrus_iconv.c,v 1.11 2019/10/09 23:24:00 christos Exp $");
 #include "citrus_region.h"
 #include "citrus_memstream.h"
 #include "citrus_mmap.h"
+#include "citrus_module.h"
 #include "citrus_lookup.h"
 #include "citrus_hash.h"
 #include "citrus_iconv.h"
@@ -112,7 +113,7 @@ init_cache(void)
 static __inline int
 lookup_iconv_entry(const char *curdir, const char *key,
 		   char *linebuf, size_t linebufsize,
-		   /*const char **module,*/ const char **variable)
+		   const char **module, const char **variable)
 {
 	const char *cp, *cq;
 	char *p, path[PATH_MAX];
@@ -128,7 +129,7 @@ lookup_iconv_entry(const char *curdir, const char *key,
 	}
 
 	/* get module name */
-//	*module = p;
+	*module = p;
 	cq = _bcs_skip_nonws(cp);
 	p[cq-cp] = '\0';
 	p += cq-cp+1;
@@ -164,19 +165,20 @@ open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci,
 {
 	int ret;
 	struct _citrus_iconv_shared *ci;
+	struct _citrus_iconv_ops *getops;
 	char linebuf[LINE_MAX];
-	const char /* *module,*/ *variable;
+	const char *module, *variable;
 	size_t len_convname;
 
 	/* search converter entry */
 	ret = lookup_iconv_entry(basedir, convname, linebuf, sizeof(linebuf),
-				 /*&module,*/ &variable);
+				 &module, &variable);
 	if (ret) {
 		if (ret == ENOENT) {
 			/* fallback */
 			ret = lookup_iconv_entry(basedir, "*",
 						 linebuf, sizeof(linebuf),
-						 /*&module,*/ &variable);
+						 &module, &variable);
 		}
 		if (ret) {
 			return (ret);
@@ -194,15 +196,21 @@ open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci,
 	ci->ci_closure = NULL;
 	ci->ci_convname = (void *)&ci[1];
 	memcpy(ci->ci_convname, convname, len_convname+1);
+
 	/* load module */
 
 	/* get operators */
+	getops = (struct _citrus_iconv_ops *)_citrus_find_getops(module, "iconv");
+	if (!getops) {
+		ret = EOPNOTSUPP;
+		goto err;
+	}
 	ci->ci_ops = malloc(sizeof(*ci->ci_ops));
 	if (!ci->ci_ops) {
 		ret = errno;
 		goto err;
 	}
-	ret = _citrus_iconv_std_iconv_getops(ci->ci_ops, sizeof(*ci->ci_ops), _CITRUS_ICONV_ABI_VERSION);
+	ret = _citrus_iconv_getops(ci->ci_ops, sizeof(*ci->ci_ops), _CITRUS_ICONV_ABI_VERSION);
 	if (ret) {
 		goto err;
 	}

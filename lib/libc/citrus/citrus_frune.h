@@ -44,7 +44,6 @@ struct _citrus_frune_encoding {
 __BEGIN_DECLS
 int _citrus_frune_open(struct _citrus_frune_encoding **, char *, void *, size_t);
 void _citrus_frune_close(struct _citrus_frune_encoding *);
-void _citrus_frune_uninit(struct _citrus_frune_encoding *);
 void _citrus_frune_save_encoding_state(struct _citrus_frune_encoding *, void *, void *);
 void _citrus_frune_restore_encoding_state(struct _citrus_frune_encoding *, void *, void *);
 void _citrus_frune_init_encoding_state(struct _citrus_frune_encoding *, void *);
@@ -55,7 +54,6 @@ size_t _citrus_frune_get_state_size(struct _citrus_frune_encoding *);
 size_t _citrus_frune_get_mb_cur_max(struct _citrus_frune_encoding *);
 int _citrus_frune_put_state_resetx(struct _citrus_frune_encoding *, char *, size_t, size_t *);
 int _citrus_frune_get_state_desc_gen(struct _citrus_frune_encoding *, int *);
-int _citrus_getops(void *, size_t, void *, size_t, size_t, u_int32_t, u_int32_t);
 __END_DECLS
 
 #endif /* _CITRUS_FRUNE_H_ */

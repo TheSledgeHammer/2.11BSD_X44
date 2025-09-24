@@ -10,7 +10,7 @@ SRCS+=	citrus_ctype.c citrus_stdenc.c
 .if ${CITRUS} == "yes"
 # citrus support
 SRCS+=  citrus_frune.c citrus_hash.c citrus_memstream.c \
-		citrus_mmap.c
+		citrus_mmap.c citrus_module.c
 
 # citrus db
 SRCS+= citrus_db_factory.c citrus_db_hash.c citrus_db.c

@@ -64,28 +64,38 @@ _citrus_frune_open(struct _citrus_frune_encoding **rfe, char *encoding, void *va
 
 	fe->fe_runelocale = findrunelocale(encoding);
 	if (fe->fe_runelocale == NULL) {
-		_citrus_frune_close(fe);
-		return (errno);
+		ret = errno;
+		goto bad;
 	}
+
 	ret = validrunelocale(fe->fe_runelocale, encoding, variable, lenvar);
 	if (ret != 0) {
-		return (ret);
+		goto bad;
 	}
 
 	fe->fe_info = malloc(sizeof(*fe->fe_info));
 	if (fe->fe_info == NULL) {
-		_citrus_frune_close(fe);
-		return (errno);
+		ret = errno;
+		goto bad;
+	}
+
+	ret = _citrus_stdenc_init(fe->fe_info, variable, lenvar);
+	if (ret != 0) {
+		goto bad;
 	}
 
 	fe->fe_state = malloc(sizeof(*fe->fe_state));
 	if (fe->fe_state == NULL) {
-		_citrus_frune_close(fe);
-		return (errno);
+		ret = errno;
+		goto bad;
 	}
 
 	*rfe = fe;
 	return (0);
+
+bad:
+	_citrus_frune_close(fe);
+	return (ret);
 }
 
 /*
@@ -96,6 +106,7 @@ _citrus_frune_close(struct _citrus_frune_encoding *fe)
 {
 	if (fe->fe_runelocale != NULL) {
 		if (fe->fe_info != NULL) {
+			_citrus_stdenc_uninit(fe->fe_info);
 			if (fe->fe_state != NULL) {
 				free(fe->fe_state);
 			}
@@ -109,12 +120,6 @@ _citrus_frune_close(struct _citrus_frune_encoding *fe)
 /*
  * convenience routines for translating frunes to stdenc.
  */
-void
-_citrus_frune_uninit(struct _citrus_frune_encoding *fe)
-{
-    _citrus_stdenc_uninit(fe->fe_info);
-}
-
 void
 _citrus_frune_save_encoding_state(struct _citrus_frune_encoding *fe, void *ps, void *pssaved)
 {
@@ -185,18 +190,4 @@ _citrus_frune_get_state_desc_gen(struct _citrus_frune_encoding *fe, int *rstate)
 		rstate = &state;
 	}
 	return (ret);
-}
-
-/*
- * getops
- */
-int
-_citrus_getops(void *toops, size_t tolen, void *fromops, size_t fromlen, size_t lenops, u_int32_t abi_version, u_int32_t expected_version)
-{
-	if (expected_version < abi_version || lenops < tolen) {
-		return (EINVAL);
-	}
-
-	memcpy(toops, fromops, fromlen);
-	return (0);
 }
