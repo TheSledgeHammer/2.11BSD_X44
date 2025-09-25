@@ -31,24 +31,51 @@
 
 struct _citrus_mapper_area;
 struct _citrus_mapper;
+struct _citrus_mapper_ops;
 struct _citrus_mapper_traits;
 
-/*
- * ABI version change log
- *   0x00000001
- *     initial version
- */
-#define _CITRUS_MAPPER_ABI_VERSION	0x00000001
-struct _citrus_mapper_ops {
-	uint32_t mo_abi_version;
-	int 	(*mo_init)(struct _citrus_mapper_area *__restrict, struct _citrus_mapper *__restrict,
-			const char *__restrict, const void *__restrict, size_t,
-			struct _citrus_mapper_traits * __restrict, size_t);
-	void 	(*mo_uninit)(struct _citrus_mapper *);
-	int		(*mo_convert)(struct _citrus_mapper *__restrict, _citrus_index_t * __restrict,
-			_citrus_index_t, void * __restrict);
-	void	(*mo_init_state)(struct _citrus_mapper *__restrict, void * __restrict);
-};
+#define _CITRUS_MAPPER_GETOPS_FUNC_BASE(_n_)				    \
+int _n_(struct _citrus_mapper_ops *, size_t, uint32_t)
+
+#define _CITRUS_MAPPER_GETOPS_FUNC(_n_)					        \
+_CITRUS_MAPPER_GETOPS_FUNC_BASE(_citrus_##_n_##_mapper_getops)
+
+#define _CITRUS_MAPPER_DECLS(_m_)					            \
+static int	_citrus_##_m_##_mapper_init				            \
+	(struct _citrus_mapper_area *__restrict,			        \
+	 struct _citrus_mapper * __restrict, const char * __restrict,	\
+	 const void * __restrict, size_t,				            \
+	 struct _citrus_mapper_traits * __restrict, size_t);		\
+static void	_citrus_##_m_##_mapper_uninit(struct _citrus_mapper *);	\
+static int	_citrus_##_m_##_mapper_convert				        \
+	(struct _citrus_mapper * __restrict,				        \
+	 _citrus_index_t * __restrict, _citrus_index_t,			    \
+	 void * __restrict);						                \
+static void	_citrus_##_m_##_mapper_init_state			        \
+	(struct _citrus_mapper * __restrict, void * __restrict);
+
+#define _CITRUS_MAPPER_DEF_OPS(_m_)					            \
+struct _citrus_mapper_ops _citrus_##_m_##_mapper_ops = {		\
+	/* mo_abi_version */	_CITRUS_MAPPER_ABI_VERSION,		    \
+	/* mo_init */		    &_citrus_##_m_##_mapper_init,		\
+	/* mo_uninit */		    &_citrus_##_m_##_mapper_uninit,		\
+	/* mo_convert */	    &_citrus_##_m_##_mapper_convert,	\
+	/* mo_init_state */	    &_citrus_##_m_##_mapper_init_state	\
+}
+
+typedef _CITRUS_MAPPER_GETOPS_FUNC_BASE((*_citrus_mapper_getops_t));
+typedef	int	(*_citrus_mapper_init_t)(
+	struct _citrus_mapper_area *__restrict,
+	struct _citrus_mapper *__restrict, const char *__restrict,
+	const void *__restrict, size_t,
+	struct _citrus_mapper_traits * __restrict, size_t);
+typedef void	(*_citrus_mapper_uninit_t)(struct _citrus_mapper *);
+typedef int	(*_citrus_mapper_convert_t)(struct _citrus_mapper * __restrict,
+					    _citrus_index_t * __restrict,
+					    _citrus_index_t,
+					    void * __restrict);
+typedef void	(*_citrus_mapper_init_state_t)(
+	struct _citrus_mapper * __restrict, void * __restrict);
 
 __BEGIN_DECLS
 int	_citrus_mapper_create_area(
@@ -64,6 +91,21 @@ int	_citrus_mapper_open_direct(
 void	_citrus_mapper_close(struct _citrus_mapper *);
 void	_citrus_mapper_set_persistent(struct _citrus_mapper * __restrict);
 __END_DECLS
+
+/*
+ * ABI version change log
+ *   0x00000001
+ *     initial version
+ */
+#define _CITRUS_MAPPER_ABI_VERSION	0x00000001
+struct _citrus_mapper_ops {
+	uint32_t			mo_abi_version;
+	/* version 0x00000001 */
+	_citrus_mapper_init_t		mo_init;
+	_citrus_mapper_uninit_t		mo_uninit;
+	_citrus_mapper_convert_t	mo_convert;
+	_citrus_mapper_init_state_t	mo_init_state;
+};
 
 struct _citrus_mapper_traits {
 	/* version 0x00000001 */

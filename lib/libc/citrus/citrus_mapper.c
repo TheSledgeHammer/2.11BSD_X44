@@ -207,7 +207,7 @@ mapper_open(struct _citrus_mapper_area *__restrict ma,
 {
 	int ret;
 	struct _citrus_mapper *cm;
-	struct _citrus_mapper_ops *getops;
+	_citrus_mapper_getops_t getops;
 
 	/* initialize mapper handle */
 	cm = malloc(sizeof(*cm));
@@ -223,7 +223,7 @@ mapper_open(struct _citrus_mapper_area *__restrict ma,
 	/* load module */
 
 	/* get operators */
-	getops = (struct _citrus_mapper_ops *)_citrus_find_getops(module, "mapper");
+	getops = (_citrus_mapper_getops_t)_citrus_find_getops(module, "mapper");
 	if (!getops) {
 		ret = EOPNOTSUPP;
 		goto err;
@@ -233,7 +233,7 @@ mapper_open(struct _citrus_mapper_area *__restrict ma,
 		ret = errno;
 		goto err;
 	}
-	ret = _citrus_mapper_getops(cm->cm_ops, sizeof(*cm->cm_ops), _CITRUS_MAPPER_ABI_VERSION);
+	ret = (*getops)(cm->cm_ops, sizeof(*cm->cm_ops), _CITRUS_MAPPER_ABI_VERSION);
 	if (ret)
 		goto err;
 

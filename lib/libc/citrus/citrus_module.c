@@ -92,11 +92,10 @@
 __RCSID("$NetBSD: citrus_module.c,v 1.14 2024/06/09 18:55:00 mrg Exp $");
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/cdefs.h>
-
 #include <sys/types.h>
 
 #include <assert.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,57 +103,54 @@ __RCSID("$NetBSD: citrus_module.c,v 1.14 2024/06/09 18:55:00 mrg Exp $");
 #include <unistd.h>
 
 #include "citrus_rune.h"
+#include "citrus_types.h"
+#include "citrus_hash.h"
 #include "citrus_iconv.h"
 #include "citrus_mapper.h"
 #include "citrus_module.h"
 
+extern struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops;
+extern struct _citrus_mapper_ops _citrus_mapper_std_mapper_ops;
+
 struct _citrus_table {
 	const char 	*ct_name;
-	void 		*ct_ops;
+	void	    *ct_ops;
 };
 
 /* citrus_iconv ops */
-static struct _citrus_iconv_ops _iconv_none_ops = NULL;
-static struct _citrus_iconv_ops _iconv_std_ops = _citrus_iconv_std_iconv_ops;
-
 const struct _citrus_table _citrus_iconvtab[] = {
 		{		/* iconv_none */
 				.ct_name = "_citrus_iconv_none_iconv_ops",
-				.ct_ops =  &_iconv_none_ops,
+				.ct_ops =  NULL,
 		},
 		{		/* iconv_std */
 				.ct_name = "_citrus_iconv_std_iconv_ops",
-				.ct_ops =  &_iconv_std_ops,
+				.ct_ops =  &_citrus_iconv_std_iconv_ops,
 		}
 };
 
 /* citrus_mapper ops */
-static struct _citrus_mapper_ops _mapper_646_ops = NULL;
-static struct _citrus_mapper_ops _mapper_none_ops = NULL;
-static struct _citrus_mapper_ops _mapper_serial_ops = NULL;
-static struct _citrus_mapper_ops _mapper_std_ops = _citrus_mapper_std_mapper_ops;
-static struct _citrus_mapper_ops _mapper_zone_ops = NULL;
-
 const struct _citrus_table _citrus_mappertab[] = {
+
 		{		/* mapper_646 */
 				.ct_name = "_citrus_mapper_646_mapper_ops",
-				.ct_ops = &_mapper_646_ops,
+				.ct_ops = NULL,
 		},
 		{		/* mapper_none */
 				.ct_name = "_citrus_mapper_none_mapper_ops",
-				.ct_ops = &_mapper_none_ops,
+				.ct_ops = NULL,
 		},
 		{		/* mapper_serial */
 				.ct_name = "_citrus_mapper_serial_mapper_ops",
-				.ct_ops = &_mapper_serial_ops,
+				.ct_ops = NULL,
 		},
 		{		/* mapper_std */
 				.ct_name = "_citrus_mapper_std_mapper_ops",
-				.ct_ops = &_mapper_std_ops,
+				.ct_ops = &_citrus_mapper_std_mapper_ops,
 		},
 		{		/* mapper_zone */
 				.ct_name = "_citrus_mapper_zone_mapper_ops",
-				.ct_ops = &_mapper_zone_ops,
+				.ct_ops = NULL,
 		},
 };
 
@@ -197,7 +193,7 @@ _citrus_find_getops(const char *modname, const char *ifname)
  * getops
  */
 static __inline int
-_citrus_getops(void *toops, size_t tolen, void *fromops, size_t fromlen, size_t lenops, u_int32_t abi_version, u_int32_t expected_version)
+_citrus_getops(void *toops, size_t tolen, void *fromops, size_t fromlen, size_t lenops, uint32_t abi_version, uint32_t expected_version)
 {
 	if (expected_version < abi_version || lenops < tolen) {
 		return (EINVAL);
@@ -207,13 +203,13 @@ _citrus_getops(void *toops, size_t tolen, void *fromops, size_t fromlen, size_t 
 }
 
 int
-_citrus_iconv_getops(struct _citrus_iconv_ops *toops, struct _citrus_iconv_ops *fromops, size_t lenops, u_int32_t expected_version)
+_citrus_iconv_getops(struct _citrus_iconv_ops *toops, struct _citrus_iconv_ops *fromops, size_t lenops, uint32_t expected_version)
 {
-	return (_citrus_getops(toops, sizeof(toops), ops, sizeof(fromops), lenops, _CITRUS_ICONV_ABI_VERSION, expected_version));
+	return (_citrus_getops(toops, sizeof(toops), fromops, sizeof(fromops), lenops, _CITRUS_ICONV_ABI_VERSION, expected_version));
 }
 
 int
-_citrus_mapper_getops(struct _citrus_mapper_ops *toops, struct _citrus_mapper_ops *fromops, size_t lenops, u_int32_t expected_version)
+_citrus_mapper_getops(struct _citrus_mapper_ops *toops, struct _citrus_mapper_ops *fromops, size_t lenops, uint32_t expected_version)
 {
-	return (_citrus_getops(toops, sizeof(toops), ops, sizeof(fromops), lenops, _CITRUS_MAPPER_ABI_VERSION, expected_version));
+	return (_citrus_getops(toops, sizeof(toops), fromops, sizeof(fromops), lenops, _CITRUS_MAPPER_ABI_VERSION, expected_version));
 }

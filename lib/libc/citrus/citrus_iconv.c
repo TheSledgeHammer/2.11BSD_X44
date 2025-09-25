@@ -165,7 +165,7 @@ open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci,
 {
 	int ret;
 	struct _citrus_iconv_shared *ci;
-	struct _citrus_iconv_ops *getops;
+	_citrus_iconv_getops_t getops;
 	char linebuf[LINE_MAX];
 	const char *module, *variable;
 	size_t len_convname;
@@ -200,7 +200,7 @@ open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci,
 	/* load module */
 
 	/* get operators */
-	getops = (struct _citrus_iconv_ops *)_citrus_find_getops(module, "iconv");
+	getops = (_citrus_iconv_getops_t)_citrus_find_getops(module, "iconv");
 	if (!getops) {
 		ret = EOPNOTSUPP;
 		goto err;
@@ -210,7 +210,7 @@ open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci,
 		ret = errno;
 		goto err;
 	}
-	ret = _citrus_iconv_getops(ci->ci_ops, sizeof(*ci->ci_ops), _CITRUS_ICONV_ABI_VERSION);
+	ret = (*getops)(ci->ci_ops, sizeof(*ci->ci_ops), _CITRUS_ICONV_ABI_VERSION);
 	if (ret) {
 		goto err;
 	}

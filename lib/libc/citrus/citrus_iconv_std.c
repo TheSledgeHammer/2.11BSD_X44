@@ -46,6 +46,7 @@
 #include "citrus_types.h"
 #include "citrus_region.h"
 #include "citrus_mmap.h"
+#include "citrus_module.h"
 #include "citrus_hash.h"
 #include "citrus_stdenc.h"
 #include "citrus_frune.h"
@@ -56,36 +57,11 @@
 #include "citrus_iconv_std.h"
 #include "citrus_esdb.h"
 
-static int init_encoding(struct _citrus_iconv_std_encoding *, struct _citrus_frune_encoding *, void *, void *);
-static int open_csmapper(struct _citrus_csmapper **, const char *, const char *, unsigned long *);
-static void close_dsts(struct _citrus_iconv_std_dst_list *);
-static int open_dsts(struct _citrus_iconv_std_dst_list *, const struct _citrus_esdb_charset *, const struct _citrus_esdb *);
-static void close_srcs(struct _citrus_iconv_std_src_list *);
-static int open_srcs(struct _citrus_iconv_std_src_list *, const struct _citrus_esdb *, const struct _citrus_esdb *);
-static int do_conv(const struct _citrus_iconv_std_shared *, struct _citrus_iconv_std_context *, _csid_t *, _index_t *);
-static int _citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_shared *,
-		const char *__restrict, const char *__restrict, const char *__restrict,
-		const void *__restrict, size_t);
-static void _citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_shared *);
-static int _citrus_iconv_std_iconv_init_context(struct _citrus_iconv *);
-static void _citrus_iconv_std_iconv_uninit_context(struct _citrus_iconv *);
-static int
-_citrus_iconv_std_iconv_convert(struct _citrus_iconv *__restrict,
-		const char *__restrict* __restrict, size_t *__restrict,
-		char *__restrict* __restrict, size_t *__restrict,
-		u_int32_t, size_t *__restrict);
-
-struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops = {
-		.io_abi_version = _CITRUS_ICONV_ABI_VERSION,
-		.io_init_shared = _citrus_iconv_std_iconv_init_shared,
-		.io_uninit_shared = _citrus_iconv_std_iconv_uninit_shared,
-		.io_convert = _citrus_iconv_std_iconv_convert,
-		.io_init_context = _citrus_iconv_std_iconv_init_context,
-		.io_uninit_context = _citrus_iconv_std_iconv_uninit_context
-};
+_CITRUS_ICONV_DECLS(iconv_std);
+_CITRUS_ICONV_DEF_OPS(iconv_std);
 
 int
-_citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *ops, size_t lenops, u_int32_t expected_version)
+_citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *ops, size_t lenops, uint32_t expected_version)
 {
 	return (_citrus_iconv_getops(ops, &_citrus_iconv_std_iconv_ops, lenops, expected_version));
 }
@@ -354,10 +330,11 @@ do_conv(const struct _citrus_iconv_std_shared *is, struct _citrus_iconv_std_cont
 }
 
 static int
-_citrus_iconv_std_iconv_init_shared(
-		struct _citrus_iconv_shared *ci, const char *__restrict curdir,
-		const char *__restrict src, const char *__restrict dst,
-		const void *__restrict var, size_t lenvar)
+_citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_shared *ci,
+				    const char * __restrict curdir,
+				    const char * __restrict src,
+				    const char * __restrict dst,
+				    const void * __restrict var, size_t lenvar)
 {
 	int ret;
 	struct _citrus_iconv_std_shared *is;
@@ -471,10 +448,12 @@ _citrus_iconv_std_iconv_uninit_context(struct _citrus_iconv *cv)
 }
 
 static int
-_citrus_iconv_std_iconv_convert(struct _citrus_iconv *__restrict cv,
-		const char *__restrict* __restrict in, size_t *__restrict inbytes,
-		char *__restrict* __restrict out, size_t *__restrict outbytes,
-		u_int32_t flags, size_t *__restrict invalids)
+_citrus_iconv_std_iconv_convert(struct _citrus_iconv * __restrict cv,
+				const char * __restrict * __restrict in,
+				size_t * __restrict inbytes,
+				char * __restrict * __restrict out,
+				size_t * __restrict outbytes, u_int32_t flags,
+				size_t * __restrict invalids)
 {
 	const struct _citrus_iconv_std_shared *is = cv->cv_shared->ci_closure;
 	struct _citrus_iconv_std_context *sc = cv->cv_closure;

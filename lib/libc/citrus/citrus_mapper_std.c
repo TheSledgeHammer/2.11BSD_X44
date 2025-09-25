@@ -48,6 +48,7 @@ __RCSID("$NetBSD: citrus_mapper_std.c,v 1.3 2003/07/12 15:39:20 tshiozak Exp $")
 #include "citrus_bcs.h"
 #include "citrus_frune.h"
 #include "citrus_mmap.h"
+#include "citrus_module.h"
 #include "citrus_hash.h"
 #include "citrus_db.h"
 #include "citrus_db_hash.h"
@@ -55,28 +56,11 @@ __RCSID("$NetBSD: citrus_mapper_std.c,v 1.3 2003/07/12 15:39:20 tshiozak Exp $")
 #include "citrus_mapper_std.h"
 #include "citrus_mapper_std_file.h"
 
-static int rowcol_convert(struct _citrus_mapper_std * __restrict, _index_t * __restrict, _index_t, void * __restrict);
-static int rowcol_init(struct _citrus_mapper_std *);
-static int
-_citrus_mapper_std_mapper_init(struct _citrus_mapper_area *__restrict,
-			       struct _citrus_mapper *__restrict, const char * __restrict,
-				   const void * __restrict, size_t,
-				   struct _citrus_mapper_traits * __restrict, size_t);
-static void _citrus_mapper_std_mapper_uninit(struct _citrus_mapper *);
-static void _citrus_mapper_std_mapper_init_state(struct _citrus_mapper * __restrict, void * __restrict);
-static int _citrus_mapper_std_mapper_convert(struct _citrus_mapper * __restrict, _index_t * __restrict,
-		_index_t, void * __restrict);
-
-struct _citrus_mapper_ops _citrus_mapper_std_mapper_ops = {
-		.mo_abi_version = _CITRUS_MAPPER_ABI_VERSION,
-		.mo_init = _citrus_mapper_std_mapper_init,
-		.mo_uninit = _citrus_mapper_std_mapper_uninit,
-		.mo_convert = _citrus_mapper_std_mapper_convert,
-		.mo_init_state = _citrus_mapper_std_mapper_init_state
-};
+_CITRUS_MAPPER_DECLS(mapper_std);
+_CITRUS_MAPPER_DEF_OPS(mapper_std);
 
 int
-_citrus_mapper_std_mapper_getops(struct _citrus_mapper_ops *ops, size_t lenops, u_int32_t expected_version)
+_citrus_mapper_std_mapper_getops(struct _citrus_mapper_ops *ops, size_t lenops, uint32_t expected_version)
 {
 	return (_citrus_mapper_getops(ops, &_citrus_mapper_std_mapper_ops, lenops, expected_version));
 }

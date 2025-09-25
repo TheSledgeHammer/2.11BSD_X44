@@ -34,8 +34,8 @@ struct _citrus_iconv_ops;
 struct _citrus_mapper_ops;
 __BEGIN_DECLS
 void *_citrus_find_getops(const char *__restrict, const char *__restrict);
-int _citrus_module_iconv_getops(struct _citrus_iconv_ops *, struct _citrus_iconv_ops *, size_t, u_int32_t);
-int _citrus_module_mapper_getops(struct _citrus_mapper_ops *, struct _citrus_mapper_ops *, size_t, u_int32_t);
+int _citrus_iconv_getops(struct _citrus_iconv_ops *, struct _citrus_iconv_ops *, size_t, uint32_t);
+int _citrus_mapper_getops(struct _citrus_mapper_ops *, struct _citrus_mapper_ops *, size_t, uint32_t);
 __END_DECLS
 
 #endif /* LIB_LIBC_CITRUS_MAPPER_CITRUS_MODULE_H_ */

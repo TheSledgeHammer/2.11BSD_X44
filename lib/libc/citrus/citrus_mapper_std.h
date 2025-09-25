@@ -60,10 +60,8 @@ struct _citrus_mapper_std {
 #define ms_rowcol			u.rowcol
 };
 
-extern struct _citrus_mapper_ops _citrus_mapper_std_mapper_ops;
-
 /* prototypes */
 __BEGIN_DECLS
-int _citrus_mapper_std_mapper_getops(struct _citrus_mapper_ops *, size_t, u_int32_t);
+_CITRUS_MAPPER_GETOPS_FUNC(mapper_std);
 __END_DECLS
 #endif /* _CITRUS_MAPPER_STD_H_ */
