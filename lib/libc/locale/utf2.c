@@ -108,7 +108,7 @@ _UTF2_init(rl)
 	if (ret != 0) {
 		return (ret);
 	}
-
+	rl->variable_len = sizeof(_UTF2EncodingInfo);
 	_CurrentRuneLocale = rl;
 
 	return (0);

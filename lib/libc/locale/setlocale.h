@@ -38,7 +38,7 @@
 #define ENCODING_NONE 		"NONE"
 #define ENCODING_EUC 		"EUC"
 
-#define _C_LOCALE		"C"
+#define _C_LOCALE			"C"
 #define _POSIX_LOCALE		"POSIX"
 
 #define ENCODING_LEN 		31

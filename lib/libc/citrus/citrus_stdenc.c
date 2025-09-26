@@ -58,6 +58,7 @@ _citrus_stdenc_init(void ** __restrict cl, void * __restrict var, size_t lenvar)
 	_ENCODING_TRAITS 	*et;
 	int ret;
 
+	/* stdenc_init */
 	_DIAGASSERT(cl != NULL);
 
 	ei = NULL;
@@ -69,22 +70,23 @@ _citrus_stdenc_init(void ** __restrict cl, void * __restrict var, size_t lenvar)
 	}
 
 	ret = _citrus_ctype_module_init(ei, var, lenvar);
-	if (ret) {
+	if (ret != 0) {
 		free((void *)ei);
 		return (ret);
 	}
 
 	et = malloc(sizeof(*et));
 	if (et == NULL) {
-		free((void*) et);
+		free((void *)et);
 		return (errno);
 	}
 
 	et->state_size = sizeof(_ENCODING_STATE);
 	et->mb_cur_max = _ENCODING_MB_CUR_MAX(ei);
 	ei->traits = et;
-
-	*cl = (void *)ei;
+	if (cl == NULL) {
+		cl = (void *)ei;
+	}
 	return (0);
 }
 

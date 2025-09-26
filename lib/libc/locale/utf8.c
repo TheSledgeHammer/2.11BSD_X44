@@ -174,7 +174,7 @@ _UTF8_init(_RuneLocale *rl)
 	if (ret != 0) {
 		return (ret);
 	}
-
+	rl->variable_len = sizeof(_UTF8EncodingInfo);
 	_CurrentRuneLocale = rl;
 
 	return (0);

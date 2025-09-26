@@ -168,24 +168,24 @@ _citrus_find_getops(const char *modname, const char *ifname)
 	_DIAGASSERT(modname != NULL);
 	_DIAGASSERT(ifname != NULL);
 
-    (void)snprintf(name, sizeof(name), "_citrus_%s_%s_ops", modname, ifname);
-    if (strncmp(ifname, "iconv", sizeof(*ifname)) == 0) {
-    	handle = _citrus_iconvtab;
-        len = _CITRUS_ICONV_TABLE_SIZE;
-    }
-    if (strncmp(ifname, "mapper", sizeof(*ifname)) == 0) {
-    	handle = _citrus_mappertab;
-        len = _CITRUS_MAPPER_TABLE_SIZE;
-    }
-    if ((handle == NULL) || (len == 0)) {
-        return (NULL);
-    }
-    for (i = 0; i < len; i++) {
-        if (strncmp(name, handle[i].ct_name, sizeof(name)) == 0) {
-            p = handle[i].ct_ops;
-            return (p);
-        }
-    }
+	(void)snprintf(name, sizeof(name), "_citrus_%s_%s_ops", modname, ifname);
+	if (strncmp(ifname, "iconv", sizeof(*ifname)) == 0) {
+		handle = _citrus_iconvtab;
+		len = _CITRUS_ICONV_TABLE_SIZE;
+	}
+	if (strncmp(ifname, "mapper", sizeof(*ifname)) == 0) {
+		handle = _citrus_mappertab;
+		len = _CITRUS_MAPPER_TABLE_SIZE;
+	}
+	if ((handle == NULL) || (len == 0)) {
+		return (NULL);
+	}
+	for (i = 0; i < len; i++) {
+		if (strncmp(name, handle[i].ct_name, sizeof(name)) == 0) {
+			p = handle[i].ct_ops;
+			return (p);
+		}
+	}
     return (NULL);
 }
 

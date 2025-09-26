@@ -180,7 +180,7 @@ _UES_init(rl)
 	if (ret != 0) {
 		return (ret);
 	}
-
+	rl->variable_len = sizeof(_UESEncodingInfo);
 	_CurrentRuneLocale = rl;
 
 	return (0);

@@ -26,11 +26,6 @@
  * SUCH DAMAGE.
  */
 
-/*
- * File currently a Work in Progress (WIP).
- * Not ready for use.
- */
-
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/queue.h>

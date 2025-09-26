@@ -340,6 +340,7 @@ _ISO2022_init(rl)
 		return (ret);
 	}
 
+	rl->variable_len = sizeof(_ISO2022EncodingInfo);
 	_CurrentRuneLocale = rl;
 
 	return (0);

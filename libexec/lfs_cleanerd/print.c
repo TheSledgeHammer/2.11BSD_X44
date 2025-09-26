@@ -32,7 +32,9 @@
  */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)print.c	8.2 (Berkeley) 5/24/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>

@@ -164,6 +164,7 @@ _EUC_init(rl)
 	if (ret != 0) {
 		return (ret);
 	}
+	rl->variable_len = sizeof(_EUCEncodingInfo);
 	_CurrentRuneLocale = rl;
 
 	return (0);

@@ -26,10 +26,6 @@
  * SUCH DAMAGE.
  */
 
-/*
- * File currently a Work in Progress (WIP).
- * Not ready for use.
- */
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 __RCSID("$NetBSD: citrus_iconv.c,v 1.11 2019/10/09 23:24:00 christos Exp $");

@@ -416,10 +416,9 @@ _citrus_ctype_encoding_uninit(_ENCODING_INFO * __restrict ei)
 }
 
 int
-_citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar /*size_t lenps,*/)
+_citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar /* size_t lenps */)
 {
 	_CTYPE_INFO  *cei;
-	int ret;
 
 	/* ctype_init */
 	_DIAGASSERT(cl != NULL);
@@ -436,9 +435,15 @@ _citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar /
 		return (ENOMEM);
 	}
 
-	*cl = (void *)cei;
-	ret = _citrus_ctype_module_init(_CEI_TO_EI(cei), var, lenvar);
-	return (ret);
+	if (sizeof(_CTYPE_INFO) < lenvar) {
+		memcpy(var, cei, sizeof(_CTYPE_INFO));
+	} else {
+		var = cei;
+	}
+	if (cl == NULL) {
+		cl = (void *)cei;
+	}
+	return (_citrus_ctype_module_init(_CEI_TO_EI(cei), var, lenvar));
 }
 
 void

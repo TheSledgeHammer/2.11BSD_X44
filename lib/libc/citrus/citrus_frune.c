@@ -79,7 +79,7 @@ _citrus_frune_open(struct _citrus_frune_encoding **rfe, char *encoding, void *va
 		goto bad;
 	}
 
-	ret = _citrus_stdenc_init((void **)&fe->fe_info, variable, lenvar);
+	ret = _citrus_stdenc_init((void **)&fe->fe_runelocale, variable, lenvar);
 	if (ret != 0) {
 		goto bad;
 	}
