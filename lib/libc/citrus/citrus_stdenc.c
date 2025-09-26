@@ -84,9 +84,7 @@ _citrus_stdenc_init(void ** __restrict cl, void * __restrict var, size_t lenvar)
 	et->state_size = sizeof(_ENCODING_STATE);
 	et->mb_cur_max = _ENCODING_MB_CUR_MAX(ei);
 	ei->traits = et;
-	if (cl == NULL) {
-		cl = (void *)ei;
-	}
+
 	return (0);
 }
 

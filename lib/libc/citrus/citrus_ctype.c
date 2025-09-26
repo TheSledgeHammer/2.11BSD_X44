@@ -440,9 +440,6 @@ _citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar /
 	} else {
 		var = cei;
 	}
-	if (cl == NULL) {
-		cl = (void *)cei;
-	}
 	return (_citrus_ctype_module_init(_CEI_TO_EI(cei), var, lenvar));
 }
 

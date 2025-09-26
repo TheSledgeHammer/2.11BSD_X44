@@ -6,7 +6,7 @@
 # To Fix: frune.c
 
 SRCS+=	aliasname.c ctype.c euc.c isctype.c iso2022.c lconv.c localeconv.c	\
-		mbrune.c __mb_cur_max.c none.c rune.c setlocale.c 		            \
+		mbrune.c __mb_cur_max.c nl_langinfo.c none.c rune.c setlocale.c 	\
 		setrunelocale.c srune.c table.c ues.c utf1632.c utf2.c utf8.c 		\
 		wcscoll.c wcstod.c wcstof.c wcstold.c wcstol.c wcstoll.c wcstoimax.c \
 		wcstoul.c wcstoull.c wcstoumax.c wcsxfrm.c
@@ -33,8 +33,8 @@ SRCS+=	_wctype_local.c _wctrans.c iswctype_l.c iswctype.c multibyte.c
 
 MAN+=	ctype.3 isalnum.3 isalpha.3 isascii.3 isblank.3 iscntrl.3 		\
 		isdigit.3 isgraph.3 islower.3 isprint.3 ispunct.3 isspace.3 	\
-		isupper.3 isxdigit.3 mbrune.3 multibyte.3 rune.3 setlocale.3 	\
-		toascii.3 tolower.3 toupper.3
+		isupper.3 isxdigit.3 mbrune.3 multibyte.3 nl_langinfo.3 rune.3 	\
+		setlocale.3 toascii.3 tolower.3 toupper.3
 MAN+=	btowc.3 iswalnum.3 iswctype.3 towctrans.3 mblen.3 	            \
 		mbrlen.3 mbrtowc.3 mbsinit.3 mbsrtowcs.3 mbstowcs.3 mbtowc.3 	\
 		wcrtomb.3 wcsrtombs.3 wcstombs.3 wctob.3 wctomb.3 wctrans.3		\
