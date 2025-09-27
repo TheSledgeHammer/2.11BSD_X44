@@ -58,7 +58,7 @@ extern struct _RuneOps _none_runeops;
 
 _RuneLocale _DefaultRuneLocale = {
     _RUNE_MAGIC_1,
-    "none",
+    "NONE",
 	0xFFFD,
 	{/*00*/	_CTYPE_C,
 			_CTYPE_C,

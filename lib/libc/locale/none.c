@@ -92,34 +92,34 @@ typedef _Encoding_Info				_NONEEncodingInfo;
 typedef _Encoding_TypeInfo 			_NONECTypeInfo;
 typedef _Encoding_State				_NONEState;
 
-#define _FUNCNAME(m)				_none_##m
+#define _FUNCNAME(m)				_NONE_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	1
 
-rune_t		_none_sgetrune(const char *, size_t, char const **);
-int			_none_sputrune(rune_t, char *, size_t, char **);
-int		    _none_sgetmbrune(_NONEEncodingInfo * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _NONEState * __restrict, size_t * __restrict);
-int 		_none_sputmbrune(_NONEEncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _NONEState * __restrict, size_t * __restrict);
-int			_none_sgetcsrune(_NONEEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
-int			_none_sputcsrune(_NONEEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
-int			_none_module_init(_NONEEncodingInfo * __restrict, const void * __restrict, size_t);
-void		_none_module_uninit(_NONEEncodingInfo *);
+rune_t		_NONE_sgetrune(const char *, size_t, char const **);
+int			_NONE_sputrune(rune_t, char *, size_t, char **);
+int		    _NONE_sgetmbrune(_NONEEncodingInfo * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _NONEState * __restrict, size_t * __restrict);
+int 		_NONE_sputmbrune(_NONEEncodingInfo * __restrict, char * __restrict, size_t, wchar_t, _NONEState * __restrict, size_t * __restrict);
+int			_NONE_sgetcsrune(_NONEEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
+int			_NONE_sputcsrune(_NONEEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+int			_NONE_module_init(_NONEEncodingInfo * __restrict, const void * __restrict, size_t);
+void		_NONE_module_uninit(_NONEEncodingInfo *);
 
 _RuneOps _none_runeops = {
-		.ro_sgetrune 	=  	_none_sgetrune,
-		.ro_sputrune 	=  	_none_sputrune,
-		.ro_sgetmbrune 	=  	_none_sgetmbrune,
-		.ro_sputmbrune 	=  	_none_sputmbrune,
-		.ro_sgetcsrune  =	_none_sgetcsrune,
-		.ro_sputcsrune	= 	_none_sputcsrune,
-		.ro_module_init = 	_none_module_init,
-		.ro_module_uninit = 	_none_module_uninit,
+		.ro_sgetrune 	=  	_NONE_sgetrune,
+		.ro_sputrune 	=  	_NONE_sputrune,
+		.ro_sgetmbrune 	=  	_NONE_sgetmbrune,
+		.ro_sputmbrune 	=  	_NONE_sputmbrune,
+		.ro_sgetcsrune  =	_NONE_sgetcsrune,
+		.ro_sputcsrune	= 	_NONE_sputcsrune,
+		.ro_module_init = 	_NONE_module_init,
+		.ro_module_uninit = 	_NONE_module_uninit,
 };
 
 int
-_none_init(rl)
+_NONE_init(rl)
 	_RuneLocale *rl;
 {
-	rl->ops = &_none_runeops;
+	rl->ops = &_NONE_runeops;
 	rl->variable_len = sizeof(_NONEEncodingInfo);
 	_CurrentRuneLocale = rl;
 
@@ -127,7 +127,7 @@ _none_init(rl)
 }
 
 int
-_none_sgetmbrune(_NONEEncodingInfo * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _NONEState * __restrict psenc, size_t * __restrict nresult)
+_NONE_sgetmbrune(_NONEEncodingInfo * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _NONEState * __restrict psenc, size_t * __restrict nresult)
 {
     const char *s0;
 
@@ -149,7 +149,7 @@ _none_sgetmbrune(_NONEEncodingInfo * __restrict ei, wchar_t * __restrict pwc, co
 }
 
 int
-_none_sputmbrune(_NONEEncodingInfo * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _NONEState * __restrict psenc, size_t * __restrict nresult)
+_NONE_sputmbrune(_NONEEncodingInfo * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _NONEState * __restrict psenc, size_t * __restrict nresult)
 {
 	if ((wc & ~0xFFU) != 0) {
 		*nresult = (size_t) - 1;
@@ -165,37 +165,37 @@ _none_sputmbrune(_NONEEncodingInfo * __restrict ei, char * __restrict s, size_t 
 }
 
 rune_t
-_none_sgetrune(const char *string, size_t n, char const **result)
+_NONE_sgetrune(const char *string, size_t n, char const **result)
 {
 	return (emulated_sgetrune(string, n, result));
 }
 
 int
-_none_sputrune(rune_t c, char *string, size_t n, char **result)
+_NONE_sputrune(rune_t c, char *string, size_t n, char **result)
 {
 	return (emulated_sputrune(c, string, n, result));
 }
 
 int
-_none_sgetcsrune(_NONEEncodingInfo * __restrict cl, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
+_NONE_sgetcsrune(_NONEEncodingInfo * __restrict cl, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
 {
 	return (0);
 }
 
 int
-_none_sputcsrune(_NONEEncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+_NONE_sputcsrune(_NONEEncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
 {
 	return (0);
 }
 
 int
-_none_module_init(_NONEEncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+_NONE_module_init(_NONEEncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	return (0);
 }
 
 void
-_none_module_uninit(_NONEEncodingInfo *ei)
+_NONE_module_uninit(_NONEEncodingInfo *ei)
 {
 
 }

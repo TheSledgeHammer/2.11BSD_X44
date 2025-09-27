@@ -50,6 +50,7 @@
 #define _RUNE_LOCALE(loc) 	((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))
 #define _REL(BASE) 			((int)item-BASE)
 
+static void find_codeset(char *);
 static void nl_buffer(char *, char *, char, int);
 
 char *
@@ -72,24 +73,14 @@ nl_langinfo_l(nl_item item, locale_t loc)
 	switch (item) {
 	case CODESET:
 		s = _RUNE_LOCALE(loc)->encoding;
-		if (strcmp(s, "EUC-CN") == 0)
-			ret = "eucCN";
-		else if (strcmp(s, "EUC-JP") == 0)
-			ret = "eucJP";
-		else if (strcmp(s, "EUC-KR") == 0)
-			ret = "eucKR";
-		else if (strcmp(s, "EUC-TW") == 0)
-			ret = "eucTW";
-		else if (strcmp(s, "BIG5") == 0)
-			ret = "Big5";
-		else if (strcmp(s, "MSKanji") == 0)
-			ret = "SJIS";
-		else if (strcmp(s, "NONE") == 0)
-			ret = "US-ASCII";
-		else if (strncmp(s, "NONE:", 5) == 0)
-			ret = (char *)(s + 5);
-		else
-			ret = (char *)s;
+		if (s != NULL) {
+			find_codeset(s);
+		} else {
+			s = setlocale(LC_CTYPE, NULL);
+			if (s != NULL) {
+				find_codeset(s);
+			}
+		}
 		break;
 	case D_T_FMT:
 		ret = (char *) time->c_fmt;
@@ -213,6 +204,23 @@ char *
 nl_langinfo(nl_item item)
 {
 	return (nl_langinfo_l(item, __get_locale()));
+}
+
+
+/* nl_langinfo codeset */
+static void
+find_codeset(char *s)
+{
+	char *ret, *cs;
+
+	if (s != NULL) {
+		cs = strchr(s, '.');
+		if (cs != NULL) {
+			ret = cs + 1;
+		} else if (strcmp(s, _C_LOCALE) == 0 || strcmp(s, _POSIX_LOCALE) == 0) {
+			ret = "US-ASCII";
+		}
+	}
 }
 
 /* nl_langinfo buffer */
