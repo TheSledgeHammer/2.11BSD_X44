@@ -50,7 +50,7 @@
 #define _RUNE_LOCALE(loc) 	((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))
 #define _REL(BASE) 			((int)item-BASE)
 
-static void find_codeset(char *);
+static void find_codeset(char *, char *);
 static void nl_buffer(char *, char *, char, int);
 
 char *
@@ -74,11 +74,11 @@ nl_langinfo_l(nl_item item, locale_t loc)
 	case CODESET:
 		s = _RUNE_LOCALE(loc)->encoding;
 		if (s != NULL) {
-			find_codeset(s);
+			find_codeset(ret, s);
 		} else {
 			s = setlocale(LC_CTYPE, NULL);
 			if (s != NULL) {
-				find_codeset(s);
+				find_codeset(ret, s);
 			}
 		}
 		break;
@@ -209,17 +209,15 @@ nl_langinfo(nl_item item)
 
 /* nl_langinfo codeset */
 static void
-find_codeset(char *s)
+find_codeset(char *ret, char *s)
 {
-	char *ret, *cs;
+	char *cs;
 
-	if (s != NULL) {
-		cs = strchr(s, '.');
-		if (cs != NULL) {
-			ret = cs + 1;
-		} else if (strcmp(s, _C_LOCALE) == 0 || strcmp(s, _POSIX_LOCALE) == 0) {
-			ret = "US-ASCII";
-		}
+	cs = strchr(s, '.');
+	if (cs != NULL) {
+		ret = cs + 1;
+	} else if (strcmp(s, _C_LOCALE) == 0 || strcmp(s, _POSIX_LOCALE) == 0) {
+		ret = "US-ASCII";
 	}
 }
 
