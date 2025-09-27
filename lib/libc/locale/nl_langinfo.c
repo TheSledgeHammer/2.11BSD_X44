@@ -50,8 +50,8 @@
 #define _RUNE_LOCALE(loc) 	((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))
 #define _REL(BASE) 			((int)item-BASE)
 
-static void find_codeset(char *, char *);
-static void nl_buffer(char *, char *, char, int);
+static void find_codeset(const char *, char *);
+static void nl_buffer(const char *, char *, char, int);
 
 char *
 nl_langinfo_l(nl_item item, locale_t loc)
@@ -61,14 +61,15 @@ nl_langinfo_l(nl_item item, locale_t loc)
 	messages_locale_t *messages;
 	monetary_locale_t *monetary;
 	struct lconv *lconv;
-	char *ret, *cs;
-	const char *s;
+	char *s, *cs;
+	const char *ret;
 
 	time = __get_current_time_locale();
 	numeric = __get_current_numeric_locale();
 	messages = __get_current_messages_locale();
 	monetary = __get_current_monetary_locale();
 	lconv = localeconv_l(loc);
+    ret = "";
 
 	switch (item) {
 	case CODESET:
@@ -83,45 +84,45 @@ nl_langinfo_l(nl_item item, locale_t loc)
 		}
 		break;
 	case D_T_FMT:
-		ret = (char *) time->c_fmt;
+		ret = time->c_fmt;
 		break;
 	case D_FMT:
-		ret = (char *) time->x_fmt;
+		ret = time->x_fmt;
 		break;
 	case T_FMT:
-		ret = (char *) time->X_fmt;
+		ret = time->X_fmt;
 		break;
 	case T_FMT_AMPM:
-		ret = (char *) time->ampm_fmt;
+		ret = time->ampm_fmt;
 		break;
 	case AM_STR:
-		ret = (char *) time->am;
+		ret = time->am;
 		break;
 	case PM_STR:
-		ret = (char *) time->pm;
+		ret = time->pm;
 		break;
 	case DAY_1: case DAY_2: case DAY_3:
 	case DAY_4: case DAY_5: case DAY_6: case DAY_7:
-		ret = (char *) time->weekday[_REL(DAY_1)];
+		ret = time->weekday[_REL(DAY_1)];
 		break;
 	case ABDAY_1: case ABDAY_2: case ABDAY_3:
 	case ABDAY_4: case ABDAY_5: case ABDAY_6: case ABDAY_7:
-		ret = (char *) time->wday[_REL(ABDAY_1)];
+		ret = time->wday[_REL(ABDAY_1)];
 		break;
 	case MON_1: case MON_2: case MON_3: case MON_4:
 	case MON_5: case MON_6: case MON_7: case MON_8:
 	case MON_9: case MON_10: case MON_11: case MON_12:
-		ret = (char *) time->month[_REL(MON_1)];
+		ret = time->month[_REL(MON_1)];
 		break;
 	case ABMON_1: case ABMON_2: case ABMON_3: case ABMON_4:
 	case ABMON_5: case ABMON_6: case ABMON_7: case ABMON_8:
 	case ABMON_9: case ABMON_10: case ABMON_11: case ABMON_12:
-		ret = (char *) time->mon[_REL(ABMON_1)];
+		ret = time->mon[_REL(ABMON_1)];
 		break;
 	case ALTMON_1: case ALTMON_2: case ALTMON_3: case ALTMON_4:
 	case ALTMON_5: case ALTMON_6: case ALTMON_7: case ALTMON_8:
 	case ALTMON_9: case ALTMON_10: case ALTMON_11: case ALTMON_12:
-		ret = (char *) time->alt_month[_REL(ALTMON_1)];
+		ret = time->alt_month[_REL(ALTMON_1)];
 		break;
 	case ERA:
 		/* XXX: need to be implemented  */
@@ -144,16 +145,16 @@ nl_langinfo_l(nl_item item, locale_t loc)
 		ret = "";
 		break;
 	case RADIXCHAR:
-		ret = (char *) numeric->decimal_point;
+		ret = numeric->decimal_point;
 		break;
 	case THOUSEP:
-		ret = (char *) numeric->thousands_sep;
+		ret = numeric->thousands_sep;
 		break;
 	case YESEXPR:
-		ret = (char *) messages->yesexpr;
+		ret = messages->yesexpr;
 		break;
 	case NOEXPR:
-		ret = (char *) messages->noexpr;
+		ret = messages->noexpr;
 		break;
 	/*
 	 * YESSTR and NOSTR items marked with LEGACY are available, but not
@@ -161,17 +162,17 @@ nl_langinfo_l(nl_item item, locale_t loc)
 	 * they're subject to remove in future specification editions.
 	 */
 	case YESSTR:            /* LEGACY  */
-		ret = (char *) messages->yesstr;
+		ret = messages->yesstr;
 		break;
 	case NOSTR:             /* LEGACY  */
-		ret = (char *) messages->nostr;
+		ret = messages->nostr;
 		break;
 	/*
 	 * SUSv2 special formatted currency string
 	 */
 	case CRNCYSTR:
 		ret = "";
-		cs = (char *) monetary->currency_symbol;
+		cs = __UNCONST(monetary->currency_symbol);
 		if (*cs != '\0') {
 			char pos = lconv->p_cs_precedes;
 
@@ -192,12 +193,12 @@ nl_langinfo_l(nl_item item, locale_t loc)
 		}
 		break;
 	case D_MD_ORDER:        /* FreeBSD local extension */
-		ret = (char *) time->md_order;
+		ret = time->md_order;
 		break;
 	default:
 		ret = "";
 	}
-	return (ret);
+	return (__UNCONST(ret));
 }
 
 char *
@@ -209,7 +210,7 @@ nl_langinfo(nl_item item)
 
 /* nl_langinfo codeset */
 static void
-find_codeset(char *ret, char *s)
+find_codeset(const char *ret, char *s)
 {
 	char *cs;
 
@@ -223,11 +224,12 @@ find_codeset(char *ret, char *s)
 
 /* nl_langinfo buffer */
 static void
-nl_buffer(char *ret, char *cs, char psn, int clen)
+nl_buffer(const char *ret, char *cs, char psn, int clen)
 {
 	char *buf;
 
-	buf = reallocf(buf, clen + 2);
+    buf = NULL;
+	buf = realloc(buf, clen + 2);
 	if (buf != NULL) {
 		*buf = psn;
 		strcpy(buf + 1, cs);

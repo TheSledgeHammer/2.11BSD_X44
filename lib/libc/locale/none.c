@@ -119,7 +119,7 @@ int
 _NONE_init(rl)
 	_RuneLocale *rl;
 {
-	rl->ops = &_NONE_runeops;
+	rl->ops = &_none_runeops;
 	rl->variable_len = sizeof(_NONEEncodingInfo);
 	_CurrentRuneLocale = rl;
 

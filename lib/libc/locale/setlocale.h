@@ -64,7 +64,7 @@ __BEGIN_DECLS
 
 #include <runetype.h>
 
-int			_none_init(_RuneLocale *);
+int			_NONE_init(_RuneLocale *);
 int			_UES_init(_RuneLocale *);
 int			_UTF1632_init(_RuneLocale *);
 int			_UTF2_init(_RuneLocale *);

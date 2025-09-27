@@ -101,7 +101,7 @@ loadlocaletable(rl)
 	addrunelocale(rl, ENCODING_UES, _UES_init);
 	addrunelocale(rl, ENCODING_UTF2, _UTF2_init);
 	addrunelocale(rl, ENCODING_ISO2022, _ISO2022_init);
-	addrunelocale(rl, ENCODING_NONE, _none_init);
+	addrunelocale(rl, ENCODING_NONE, _NONE_init);
 	addrunelocale(rl, ENCODING_EUC, _EUC_init);
 }
 
