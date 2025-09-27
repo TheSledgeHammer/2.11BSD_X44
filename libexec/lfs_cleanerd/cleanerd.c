@@ -73,7 +73,7 @@ struct cleaner_stats {
 	int	segs_error;
 } cleaner_stats;
 
-struct seglist { 
+struct lfs_seglist { 
 	int sl_id;	/* segment number */
 	int sl_cost; 	/* cleaning cost */
 	char sl_bytes;	/* bytes in segment */
@@ -94,7 +94,7 @@ int	 lfs_markv(fsid_t *, BLOCK_INFO *, int);
 
 /* function prototypes */
 int	 bi_tossold(const void *, const void *, const void *);
-int	 choose_segments(FS_INFO *, struct seglist *, int (*)(FS_INFO *, SEGUSE *));
+int	 choose_segments(FS_INFO *, struct lfs_seglist *, int (*)(FS_INFO *, SEGUSE *));
 void	 clean_fs(FS_INFO	*, int (*)(FS_INFO *, SEGUSE *), int, long);
 int	 clean_loop(FS_INFO *, int, long);
 int	 clean_segment(FS_INFO *, int);
@@ -115,9 +115,7 @@ void	 sig_report(int);
  */
 
 int
-cost_benefit(fsp, su)
-	FS_INFO *fsp;		/* file system information */
-	SEGUSE *su;
+cost_benefit(FS_INFO *fsp /* file system information */, SEGUSE *su)
 {
 	struct lfs *lfsp;
 	struct timeval t;
@@ -153,9 +151,7 @@ cost_benefit(fsp, su)
 }
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	FS_INFO	*fsp;
 	struct statfs *lstatfsp;	/* file system stats */
@@ -245,10 +241,7 @@ main(argc, argv)
 
 /* return the number of segments cleaned */
 int
-clean_loop(fsp, nsegs, options)
-	FS_INFO	*fsp;	/* file system information */
-	int nsegs;
-	long options;
+clean_loop(FS_INFO *fsp /* file system information */, int nsegs, long options)
 {
 	double loadavg[MAXLOADS];
 	time_t	now;
@@ -278,12 +271,12 @@ clean_loop(fsp, nsegs, options)
 	    (fsp->fi_cip->clean < max_free_segs &&
 	    (fsp->fi_cip->clean <= MIN_SEGS(&fsp->fi_lfs) ||
 	    fsp->fi_cip->clean < max_free_segs * BUSY_LIM))) {
-		printf("Cleaner Running  at %s (%d of %d segments available)\n",
+		printf("Cleaner Running  at %s (%d of %ld segments available)\n",
 		    ctime(&now), fsp->fi_cip->clean, max_free_segs);
 		clean_fs(fsp, cost_benefit, nsegs, options);
 		return (1);
 	} else {
-	        /* 
+	    /* 
 		 * We will also clean if the system is reasonably idle and
 		 * the total clean space is less then IDLE_LIM % of possible
 		 * clean space.
@@ -306,18 +299,14 @@ clean_loop(fsp, nsegs, options)
 
 
 void
-clean_fs(fsp, cost_func, nsegs, options)
-	FS_INFO	*fsp;	/* file system information */
-	int (*cost_func)(FS_INFO *, SEGUSE *);
-	int nsegs;
-	long options;
+clean_fs(FS_INFO *fsp /* file system information */, int (*cost_func)(FS_INFO *, SEGUSE *), int nsegs, long options)
 {
-	struct seglist *segs, *sp;
+	struct lfs_seglist *segs, *sp;
 	int to_clean, cleaned_bytes;
 	int i;
 
 	if ((segs =
-	    malloc(fsp->fi_lfs.lfs_nseg * sizeof(struct seglist))) == NULL) {
+	    malloc(fsp->fi_lfs.lfs_nseg * sizeof(struct lfs_seglist))) == NULL) {
 		err(0, "malloc failed");
 		return;
 	}
@@ -363,27 +352,22 @@ clean_fs(fsp, cost_func, nsegs, options)
  * cost/benefit than any utilized segment.
  */
 int
-cost_compare(a, b)
-	const void *a;
-	const void *b;
+cost_compare(const void *a, const void *b)
 {
-	return (((struct seglist *)b)->sl_cost -
-	    ((struct seglist *)a)->sl_cost);
+	return (((struct lfs_seglist *)b)->sl_cost -
+	    ((struct lfs_seglist *)a)->sl_cost);
 }
 
 
 /*
- * Returns the number of segments to be cleaned with the elements of seglist
+ * Returns the number of segments to be cleaned with the elements of lfs_seglist
  * filled in.
  */
 int
-choose_segments(fsp, seglist, cost_func)
-	FS_INFO *fsp;
-	struct seglist *seglist;
-	int (*cost_func)(FS_INFO *, SEGUSE *);
+choose_segments(FS_INFO *fsp, struct lfs_seglist *lfs_seglist, int (*cost_func)(FS_INFO *, SEGUSE *))
 {
 	struct lfs *lfsp;
-	struct seglist *sp;
+	struct lfs_seglist *sp;
 	SEGUSE *sup;
 	int i, nsegs;
 
@@ -410,7 +394,7 @@ choose_segments(fsp, seglist, cost_func)
 		++sp;
 	}
 	nsegs = sp - seglist;
-	qsort(seglist, nsegs, sizeof(struct seglist), cost_compare);
+	qsort(seglist, nsegs, sizeof(struct lfs_seglist), cost_compare);
 #ifdef VERBOSE
 	(void)printf("Returning %d segments\n", nsegs);
 #endif
@@ -419,9 +403,7 @@ choose_segments(fsp, seglist, cost_func)
 
 
 int
-clean_segment(fsp, id)
-	FS_INFO *fsp;	/* file system information */
-	int id;		/* segment number */
+clean_segment(FS_INFO *fsp/* file system information */, int id/* segment number */)
 {
 	BLOCK_INFO *block_array, *bp;
 	SEGUSE *sp;
@@ -528,10 +510,7 @@ clean_segment(fsp, id)
 
 
 int
-bi_tossold(client, a, b)
-	const void *client;
-	const void *a;
-	const void *b;
+bi_tossold(const void *client, const void *a, const void *b)
 {
 	const struct tossstruct *t;
 
@@ -542,8 +521,7 @@ bi_tossold(client, a, b)
 }
 
 void
-sig_report(sig)
-	int sig;
+sig_report(int sig)
 {
 	double avg;
 
