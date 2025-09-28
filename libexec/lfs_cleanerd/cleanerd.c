@@ -45,6 +45,7 @@ static char sccsid[] = "@(#)cleanerd.c	8.5 (Berkeley) 6/10/95";
 #endif
 #endif /* not lint */
 
+#include <sys/syslog.h>
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/time.h>
@@ -100,7 +101,9 @@ int	 clean_loop(FS_INFO *, int, long);
 int	 clean_segment(FS_INFO *, int);
 int	 cost_benefit(FS_INFO *, SEGUSE *);
 int	 cost_compare(const void *, const void *);
+void sig_exit(int sig);
 void	 sig_report(int);
+void usage(void);
 
 /*
  * Cleaning Cost Functions:
@@ -158,7 +161,7 @@ main(int argc, char *argv[])
 	struct timeval timeout;		/* sleep timeout */
 	fsid_t fsid;
 	long clean_opts;		/* cleaning options */
-	int i, nodaemon, segs_per_clean;
+	int nodaemon, segs_per_clean;
 	int opt, cmd_err;
 	char *fs_name;			/* name of filesystem to clean */
 	extern int optind;
@@ -191,12 +194,14 @@ main(int argc, char *argv[])
 				break;
 			default:
 				++cmd_err;
+			    usage();
 		}
 	}
 	argc -= optind;
 	argv += optind;
-	if (cmd_err || (argc != 1))
-		err(1, "usage: lfs_cleanerd [-smd] fs_name");
+	if (cmd_err || (argc != 1)) {
+		usage();
+	}
 
 	fs_name = argv[0];
 
@@ -208,9 +213,16 @@ main(int argc, char *argv[])
 		err(1, "lfs_cleanerd: filesystem %s isn't an LFS!", fs_name);
 	}
 
-	if (!nodaemon)	/* should we become a daemon, chdir to / & close fd's */
-		if (daemon(0, 0) == -1)
+	if (!nodaemon) {	/* should we become a daemon, chdir to / & close fd's */
+		if (daemon(0, 0) == -1) {
 			err(1, "lfs_cleanerd: couldn't become a daemon!");
+		}
+		openlog("lfs_cleanerd", LOG_NDELAY | LOG_PID, LOG_DAEMON);
+		signal(SIGINT, sig_exit);
+	} else {
+		openlog("lfs_cleanerd", LOG_NDELAY | LOG_PID | LOG_PERROR, LOG_DAEMON);
+		signal(SIGINT, sig_report);
+	}
 
 	timeout.tv_sec = 5*60; /* five minutes */
 	timeout.tv_usec = 0;
@@ -364,7 +376,7 @@ cost_compare(const void *a, const void *b)
  * filled in.
  */
 int
-choose_segments(FS_INFO *fsp, struct lfs_seglist *lfs_seglist, int (*cost_func)(FS_INFO *, SEGUSE *))
+choose_segments(FS_INFO *fsp, struct lfs_seglist *seglist, int (*cost_func)(FS_INFO *, SEGUSE *))
 {
 	struct lfs *lfsp;
 	struct lfs_seglist *sp;
@@ -520,11 +532,20 @@ bi_tossold(const void *client, const void *a, const void *b)
 	    datosn(t->lfs, ((BLOCK_INFO *)a)->bi_daddr) != t->seg);
 }
 
+
+void
+sig_exit(int sig)
+{
+	exit(0);
+}
+
 void
 sig_report(int sig)
 {
-	double avg;
+	double avg = 0.0, stddev;
 
+	avg = cleaner_stats.util_tot / MAX(cleaner_stats.segs_cleaned, 1.0);
+	stddev = cleaner_stats.util_sos / MAX(cleaner_stats.segs_cleaned - avg * avg, 1.0);
 	printf("lfs_cleanerd:\t%s%d\n\t\t%s%d\n\t\t%s%d\n\t\t%s%d\n\t\t%s%d\n",
 		"blocks_read    ", cleaner_stats.blocks_read,
 		"blocks_written ", cleaner_stats.blocks_written,
@@ -535,19 +556,20 @@ sig_report(int sig)
 		"util_tot       ", cleaner_stats.util_tot,
 		"util_sos       ", cleaner_stats.util_sos);
 	printf("\t\tavg util: %4.2f std dev: %9.6f\n",
-		avg = cleaner_stats.util_tot / cleaner_stats.segs_cleaned,
-		cleaner_stats.util_sos / cleaner_stats.segs_cleaned - avg * avg);
-		
+			avg,
+			stddev);
 		
 	if (sig == SIGUSR2) {
-		cleaner_stats.blocks_read = 0;
-		cleaner_stats.blocks_written = 0;
-		cleaner_stats.segs_cleaned = 0;
-		cleaner_stats.segs_empty = 0;
-		cleaner_stats.segs_error = 0;
-		cleaner_stats.util_tot = 0.0;
-		cleaner_stats.util_sos = 0.0;
+		memset(&cleaner_stats, 0, sizeof(cleaner_stats));
 	}
-	if (sig == SIGINT)
+	if (sig == SIGINT) {
 		exit(0);
+	}
+}
+
+void
+usage(void)
+{
+	fprintf(stderr, "usage: lfs_cleanerd [-bdms]"
+	     "[-n nsegs] [-r report_freq] fs_name ...");
 }

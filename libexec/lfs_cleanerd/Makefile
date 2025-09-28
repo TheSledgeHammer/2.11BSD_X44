@@ -9,6 +9,6 @@ SRCS=	cleanerd.c lfs_cksum.c library.c misc.c print.c
 DPADD+=  ${LIBUTIL}
 LDADD+=  -lutil
 
-CFLAGS+=-I${NETBSDSRCDIR}/sys/ufs/lfs -I${.CURDIR} -DDIAGNOSTIC
+CPPFLAGS+= -I${NETBSDSRCDIR}/sys/ufs/lfs -I${.CURDIR} -DDIAGNOSTIC
 
 .include <bsd.prog.mk>

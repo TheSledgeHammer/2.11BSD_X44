@@ -38,12 +38,12 @@ __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.3 2013/02/08 19:18:10 riz Exp $"
 #include <net/bpf.h>
 #include <net/bpfdesc.h>
 
+#include <netinet/ip_var.h>
+#include <netinet6/ip6_var.h>
+
 #include "nbpf.h"
 #include "nbpf_ncode.h"
 #include "nbpfdesc.h"
-
-#include <netinet/ip_var.h>
-#include <netinet6/ip6_var.h>
 
 int nbpf_setf(struct nbpf_d *, struct nbpf_program *, int *);
 
@@ -258,7 +258,7 @@ nbpf_filtncatch(nd, nd, pkt, pktlen, slen, cpfn)
 	}
 }
 
-#define ROTATE_BUFFERS(nd) 				\
+#define BPF_ROTATE_BUFFERS(nd) 			\
 	(nd)->nbd_hbuf = (nd)->nbd_sbuf; 	\
 	(nd)->nbd_hlen = (nd)->nbd_slen; 	\
 	(nd)->nbd_sbuf = (nd)->nbd_fbuf; 	\
@@ -295,7 +295,7 @@ nbpf_catchpacket(nd, pkt, pktlen, snaplen, flags, cpfn)
 			++nd->nbd_dcount;
 			return;
 		}
-		ROTATE_BUFFERS(nd);
+		BPF_ROTATE_BUFFERS(nd);
 		curlen = 0;
 	}
 

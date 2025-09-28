@@ -79,11 +79,7 @@ err(fmt, va_alist)
 }
 
 void
-get(fd, off, p, len)
-	int fd;
-	off_t off;
-	void *p;
-	size_t len;
+get(int fd, off_t off, void *p, size_t len)
 {
 	int rbytes;
 

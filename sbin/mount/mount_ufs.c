@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright (c) 1993, 1994\n\
@@ -71,7 +72,6 @@ mount_ufs(argc, argv)
 	int argc;
 	char * const argv[];
 {
-	extern int optreset;
 	struct ufs_args args;
 	int ch, mntflags;
 	char *fs_name;

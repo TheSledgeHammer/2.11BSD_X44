@@ -80,10 +80,7 @@ int	 	pseg_valid(FS_INFO *, SEGSUM *);
  * a non-zero value is returned.
  */
 int
-fs_getmntinfo(buf, name, type)
-	struct	statfs	**buf;
-	char	*name;
-	char	*type;
+fs_getmntinfo(struct statfs	**buf, char	*name, char	*type)
 {
 	/* allocate space for the filesystem info */
 	*buf = (struct statfs *)malloc(sizeof(struct statfs));
@@ -112,9 +109,8 @@ fs_getmntinfo(buf, name, type)
  * Returns an pointer to an FS_INFO structure, NULL on error.
  */
 FS_INFO *
-get_fs_info(lstatfsp, use_mmap)
-	struct statfs *lstatfsp;	/* IN: pointer to statfs struct */
-	int use_mmap;			/* IN: mmap or read */
+get_fs_info(struct statfs *lstatfsp /* IN: pointer to statfs struct */,
+		int use_mmap /* IN: mmap or read */)
 {
 	FS_INFO	*fsp;
 	int	i;
@@ -125,11 +121,11 @@ get_fs_info(lstatfsp, use_mmap)
 	bzero(fsp, sizeof(FS_INFO));
 
 	fsp->fi_statfsp = lstatfsp;
-	if (get_superblock (fsp, &fsp->fi_lfs))
+	if (get_superblock(fsp, &fsp->fi_lfs))
 		err(1, "get_fs_info: get_superblock failed");
 	fsp->fi_daddr_shift =
 	     fsp->fi_lfs.lfs_bshift - fsp->fi_lfs.lfs_fsbtodb;
-	get_ifile (fsp, use_mmap);
+	get_ifile(fsp, use_mmap);
 	return (fsp);
 }
 
@@ -139,27 +135,24 @@ get_fs_info(lstatfsp, use_mmap)
  * refresh the file system information (statfs) info.
  */
 void
-reread_fs_info(fsp, use_mmap)
-	FS_INFO *fsp;	/* IN: prointer fs_infos to reread */
-	int use_mmap;
+reread_fs_info(FS_INFO *fsp /* IN: prointer fs_infos to reread */,
+		int use_mmap)
 {
 	int i;
 	
 	if (statfs(fsp->fi_statfsp->f_mntonname, fsp->fi_statfsp))
 		err(1, "reread_fs_info: statfs failed");
-	get_ifile (fsp, use_mmap);
+	get_ifile(fsp, use_mmap);
 }
 
 /* 
  * Gets the superblock from disk (possibly in face of errors) 
  */
 int
-get_superblock(fsp, sbp)
-	FS_INFO *fsp;		/* local file system info structure */
-	struct lfs *sbp;
+get_superblock(FS_INFO *fsp /* local file system info structure */, struct lfs *sbp)
 {
 	char mntfromname[MNAMELEN+1];
-        int fid;
+	int fid;
 
 	strcpy(mntfromname, "/dev/r");
 	strcat(mntfromname, fsp->fi_statfsp->f_mntfromname+5);
@@ -180,10 +173,7 @@ get_superblock(fsp, sbp)
  * fatal error on failure.
  */
 void
-get_ifile(fsp, use_mmap)
-	FS_INFO	*fsp;
-	int use_mmap;
-
+get_ifile(FS_INFO *fsp, int use_mmap)
 {
 	struct stat file_stat;
 	caddr_t ifp;
@@ -260,12 +250,11 @@ redo_read:
  * pair will be listed at most once.
  */
 int 
-lfs_segmapv(fsp, seg, seg_buf, blocks, bcount)
-	FS_INFO *fsp;		/* pointer to local file system information */
-	int seg;		/* the segment number */
-	caddr_t seg_buf;	/* the buffer containing the segment's data */
-	BLOCK_INFO **blocks;	/* OUT: array of block_info for live blocks */
-	int *bcount;		/* OUT: number of active blocks in segment */
+lfs_segmapv(FS_INFO *fsp /* pointer to local file system information */,
+		int seg /* the segment number */,
+		caddr_t seg_buf /* the buffer containing the segment's data */,
+		BLOCK_INFO **blocks /* OUT: array of block_info for live blocks */,
+		int *bcount /* OUT: number of active blocks in segment */)
 {
 	BLOCK_INFO *bip;
 	SEGSUM *sp;
@@ -367,14 +356,13 @@ err0:	*bcount = 0;
  * blocks or inodes from files with new version numbers.  
  */
 void
-add_blocks(fsp, bip, countp, sp, seg_buf, segaddr, psegaddr)
-	FS_INFO *fsp;		/* pointer to super block */
-	BLOCK_INFO *bip;	/* Block info array */
-	int *countp;		/* IN/OUT: number of blocks in array */
-	SEGSUM	*sp;		/* segment summmary pointer */
-	caddr_t seg_buf;	/* buffer containing segment */
-	daddr_t segaddr;	/* address of this segment */
-	daddr_t psegaddr;	/* address of this partial segment */
+add_blocks(FS_INFO *fsp /* pointer to super block */,
+	BLOCK_INFO *bip /* Block info array */,
+	int *countp /* IN/OUT: number of blocks in array */,
+	SEGSUM	*sp /* segment summmary pointer */,
+	caddr_t seg_buf /* buffer containing segment */,
+	daddr_t segaddr /* address of this segment */,
+	daddr_t psegaddr	/* address of this partial segment */)
 {
 	IFILE	*ifp;
 	FINFO	*fip;
@@ -445,13 +433,12 @@ long *lp;
  * actually added.
  */
 void
-add_inodes(fsp, bip, countp, sp, seg_buf, seg_addr)
-	FS_INFO *fsp;		/* pointer to super block */
-	BLOCK_INFO *bip;	/* block info array */
-	int *countp;		/* pointer to current number of inodes */
-	SEGSUM *sp;		/* segsum pointer */
-	caddr_t	seg_buf;	/* the buffer containing the segment's data */
-	daddr_t	seg_addr;	/* disk address of seg_buf */
+add_inodes(FS_INFO *fsp /* pointer to super block */,
+	BLOCK_INFO *bip /* block info array */,
+	int *countp /* pointer to current number of inodes */,
+	SEGSUM *sp /* segsum pointer */,
+	caddr_t	seg_buf /* the buffer containing the segment's data */,
+	daddr_t	seg_addr /* disk address of seg_buf */)
 {
 	union dinode *di;
 	struct lfs *lfsp;
@@ -526,9 +513,8 @@ add_inodes(fsp, bip, countp, sp, seg_buf, seg_addr)
  * the partial as well as whether or not the checksum is valid.
  */	 
 int
-pseg_valid(fsp, ssp)
-	FS_INFO *fsp;   /* pointer to file system info */
-	SEGSUM *ssp;	/* pointer to segment summary block */
+pseg_valid(FS_INFO *fsp /* pointer to file system info */,
+		SEGSUM *ssp /* pointer to segment summary block */)
 {
 	caddr_t	p;
 	int i, nblocks;
@@ -560,11 +546,10 @@ pseg_valid(fsp, ssp)
  * read a segment into a memory buffer
  */
 int
-mmap_segment(fsp, segment, segbuf, use_mmap)
-	FS_INFO *fsp;		/* file system information */
-	int segment;		/* segment number */
-	caddr_t *segbuf;	/* pointer to buffer area */
-	int use_mmap;		/* mmap instead of read */
+mmap_segment(FS_INFO *fsp /* file system information */,
+	int segment /* segment number */,
+	caddr_t *segbuf /* pointer to buffer area */,
+	int use_mmap /* mmap instead of read */)
 {
 	struct lfs *lfsp;
 	int fid;		/* fildes for file system device */
@@ -626,10 +611,9 @@ mmap_segment(fsp, segment, segbuf, use_mmap)
 }
 
 void
-munmap_segment (fsp, seg_buf, use_mmap)
-	FS_INFO *fsp;		/* file system information */
-	caddr_t seg_buf;	/* pointer to buffer area */
-	int use_mmap;		/* mmap instead of read/write */
+munmap_segment(FS_INFO *fsp /* file system information */,
+	caddr_t seg_buf /* pointer to buffer area */,
+	int use_mmap /* mmap instead of read/write */)
 {
 	if (use_mmap)
 		munmap (seg_buf, seg_size(&fsp->fi_lfs));
@@ -642,9 +626,7 @@ munmap_segment (fsp, seg_buf, use_mmap)
  * USEFUL DEBUGGING TOOLS:
  */
 void
-print_SEGSUM (lfsp, p)
-	struct lfs *lfsp;
-	SEGSUM	*p;
+print_SEGSUM(struct lfs *lfsp, SEGSUM *p)
 {
 	if (p)
 		(void) dump_summary(lfsp, p, DUMP_ALL, NULL);
@@ -653,9 +635,7 @@ print_SEGSUM (lfsp, p)
 }
 
 int
-bi_compare(a, b)
-	const void *a;
-	const void *b;
+bi_compare(const void *a, const void *b)
 {
 	const BLOCK_INFO *ba, *bb;
 	int diff;
@@ -684,10 +664,7 @@ bi_compare(a, b)
 }	
 
 int
-bi_toss(dummy, a, b)
-	const void *dummy;
-	const void *a;
-	const void *b;
+bi_toss(const void *dummy, const void *a, const void *b)
 {
 	const BLOCK_INFO *ba, *bb;
 
@@ -698,12 +675,7 @@ bi_toss(dummy, a, b)
 }
 
 void
-toss(p, nump, size, dotoss, client)
-	void *p;
-	int *nump;
-	size_t size;
-	int (*dotoss)(const void *, const void *, const void *);
-	void *client;
+toss(void *p, int *nump, size_t size, int (*dotoss)(const void *, const void *, const void *), void *client)
 {
 	int i;
 	void *p1;

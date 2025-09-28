@@ -55,11 +55,7 @@ static char sccsid[] = "@(#)print.c	8.2 (Berkeley) 5/24/95";
  * Returns a pointer to the array of inode addresses.
  */
 int
-dump_summary(lfsp, sp, flags, iaddrp)
-	struct lfs *lfsp;
-	SEGSUM *sp;
-	u_long flags;
-	daddr_t **iaddrp;
+dump_summary(struct lfs *lfsp, SEGSUM *sp, u_long flags, daddr_t **iaddrp)
 {
 	int i, j, numblocks;
 	daddr_t *dp;
@@ -134,8 +130,7 @@ dump_summary(lfsp, sp, flags, iaddrp)
 
 #ifdef VERBOSE
 void
-dump_cleaner_info(ipage)
-	void *ipage;
+dump_cleaner_info(void *ipage)
 {
 	CLEANERINFO *cip;
 
@@ -145,8 +140,7 @@ dump_cleaner_info(ipage)
 }
 
 void
-dump_super(lfsp)
-	struct lfs *lfsp;
+dump_super(struct lfs *lfsp)
 {
 	int i;
 
