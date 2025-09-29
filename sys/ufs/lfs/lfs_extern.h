@@ -49,7 +49,6 @@ struct uio;
 struct mbuf;
 
 __BEGIN_DECLS
-u_long	cksum(void *, size_t);				/* XXX */
 int	lfs_balloc(struct vnode *, int, u_long, daddr_t, struct buf **);
 int	lfs_blkatoff(struct vop_blkatoff_args *);
 int	lfs_bwrite(struct vop_bwrite_args *);
