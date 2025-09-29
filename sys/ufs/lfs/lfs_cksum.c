@@ -35,6 +35,8 @@
 
 #include <sys/types.h>
 
+#include <ufs/lfs/lfs_extern.h>
+
 /*
  * Simple, general purpose, fast checksum.  Data must be short-aligned.
  * Returns a u_long in case we ever want to do something more rigorous.
