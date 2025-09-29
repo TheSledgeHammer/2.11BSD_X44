@@ -11,7 +11,12 @@ static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#include "namespace.h"
+/* 
+ * Enable old regex used in 2.11BSD.
+ * Caveats: Compatability with all software,
+ * is not guaranteed or tested.
+ */
+//#define USE_OLD_REGEX
 
 #include <sys/types.h>
 #include <stddef.h>
@@ -88,6 +93,56 @@ static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
  *	    regular expression encountered.
  */
 
+#ifndef USE_OLD_REGEX
+
+static regexp *re_regexp;
+static int re_goterr;
+static char *re_errstr;
+
+char *
+re_comp(sp)
+    const char *sp;
+{
+	if (sp == NULL || *sp == '\0') {
+		return (NULL);
+    }
+	if (re_regexp) {
+		free(re_regexp);
+    }
+	if (re_errstr) {
+		free(re_errstr);
+    }
+    re_goterr = 0;    
+    re_regexp = regcomp(sp);
+    return (re_goterr ? re_errstr : NULL);
+}
+
+int
+re_exec(p1)
+    const char *p1;
+{
+    int rc;
+
+    re_goterr = 0;
+    rc = regexec(re_regexp, p1);
+    return (re_goterr ? -1 : rc);
+}
+
+void
+regerror(s)
+	const char *s;
+{
+	_DIAGASSERT(s != NULL);
+
+	re_goterr = 1;
+	if (re_errstr) {
+		free(re_errstr);
+    }
+	re_errstr = strdup(s);
+}
+
+#else /* USE_OLD_REGEX */
+
 /*
  * constants for re's
  */
@@ -109,6 +164,8 @@ static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
 static int advance(char *, char *);
 int backref(int, char *);
 int cclass(char *, char, int);
+char *__re_comp(char *);
+int __re_exec(char *);
 
 static  const char *retnoprev = "No previous regular expression";
 static	const char *retoolong = "Regular expression too long";
@@ -120,6 +177,14 @@ static	char	circf;
  */
 char *
 re_comp(sp)
+	const char *sp;
+{
+	char *s1 = __UNCONST(sp);
+	return (__re_comp(s1));
+}
+
+char *
+__re_comp(sp)
 	register char	*sp;
 {
 	register int	c;
@@ -247,6 +312,14 @@ re_comp(sp)
  */
 int
 re_exec(p1)
+	const char *p1;
+{
+	char *s1 = __UNCONST(p1);
+	return (__re_exec(s1));
+}
+
+int
+__re_exec(p1)
 	register char	*p1;
 {
 	register char	*p2 = expbuf;
@@ -423,3 +496,5 @@ cclass(set, c, af)
 			return(af);
 	return(!af);
 }
+
+#endif /* USE_OLD_REGEX */
