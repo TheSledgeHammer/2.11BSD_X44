@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
 #if 0
 static char copyright[] =
@@ -56,6 +57,7 @@ static char sccsid[] = "@(#)cleanerd.c	8.5 (Berkeley) 6/10/95";
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "clean.h"

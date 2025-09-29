@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)library.c	8.3 (Berkeley) 5/24/95";
@@ -46,6 +47,7 @@ static char sccsid[] = "@(#)library.c	8.3 (Berkeley) 5/24/95";
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/lfs/lfs.h>
+#include <ufs/lfs/lfs_extern.h>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -113,7 +115,6 @@ get_fs_info(struct statfs *lstatfsp /* IN: pointer to statfs struct */,
 		int use_mmap /* IN: mmap or read */)
 {
 	FS_INFO	*fsp;
-	int	i;
 	
 	fsp = (FS_INFO *)malloc(sizeof(FS_INFO));
 	if (fsp == NULL)
@@ -137,9 +138,7 @@ get_fs_info(struct statfs *lstatfsp /* IN: pointer to statfs struct */,
 void
 reread_fs_info(FS_INFO *fsp /* IN: prointer fs_infos to reread */,
 		int use_mmap)
-{
-	int i;
-	
+{	
 	if (statfs(fsp->fi_statfsp->f_mntonname, fsp->fi_statfsp))
 		err(1, "reread_fs_info: statfs failed");
 	get_ifile(fsp, use_mmap);
@@ -235,8 +234,8 @@ redo_read:
 	 * and segment usage table multiplied by the number of ifile
 	 * entries per page.
 	 */
-	fsp->fi_ifile_count = (fsp->fi_ifile_length >> fsp->fi_lfs.lfs_bshift -
-	    fsp->fi_lfs.lfs_cleansz - fsp->fi_lfs.lfs_segtabsz) *
+	fsp->fi_ifile_count = (fsp->fi_ifile_length >> (fsp->fi_lfs.lfs_bshift -
+	    fsp->fi_lfs.lfs_cleansz - fsp->fi_lfs.lfs_segtabsz)) *
 	    fsp->fi_lfs.lfs_ifpb;
 
 	free (ifile_name);
@@ -261,7 +260,7 @@ lfs_segmapv(FS_INFO *fsp /* pointer to local file system information */,
 	SEGUSE *sup;
 	FINFO *fip;
 	struct lfs *lfsp;
-	caddr_t s, segend;
+	caddr_t s/*, segend*/;
 	daddr_t pseg_addr, seg_addr;
 	int i, nelem, nblocks, nsegs, sumsize;
 	time_t timestamp;
@@ -285,7 +284,7 @@ lfs_segmapv(FS_INFO *fsp /* pointer to local file system information */,
 
 		nblocks = pseg_valid(fsp, sp);
 		if (nblocks <= 0) {
-			printf("Warning: invalid segment summary at 0x%x\n",
+			printf("Warning: invalid segment summary at 0x%lx\n",
 			    pseg_addr);
 			break;
 		}
@@ -371,7 +370,7 @@ add_blocks(FS_INFO *fsp /* pointer to super block */,
 	int db_per_block, i, j;
 	int db_frag;
 	u_long page_size;
-long *lp;
+//    long *lp;
 
 #ifdef VERBOSE
 	printf("FILE INFOS\n");
@@ -390,7 +389,7 @@ long *lp;
 		PRINT_FINFO(fip, ifp);
 		if (ifp->if_version > fip->fi_version)
 			continue;
-		dp = &(fip->fi_blocks[0]);
+		dp = (int32_t)&(fip->fi_blocks[0]);
 		for (j = 0; j < fip->fi_nblocks; j++, dp++) {
 			while (psegaddr == *iaddrp) {
 				psegaddr += db_per_block;
@@ -408,9 +407,9 @@ long *lp;
 				psegaddr += db_per_block;
 				bp += page_size;
 			} else {
-				db_frag = fragstodb(&(fsp->fi_lfs), 
+				db_frag = (fragstodb(&(fsp->fi_lfs), 
 				    numfrags(&(fsp->fi_lfs),
-				    fip->fi_lastlength));
+				    fip->fi_lastlength)));
 #ifdef VERBOSE
 				printf("lastlength, frags: %d, %d, %d\n", 
 				    fip->fi_lastlength, temp,
@@ -470,9 +469,9 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 		if (i % INOPB(lfsp) == 0) {
 			--daddrp;
 			if (is_ufs2) {
-				di->dp2 =  (struct ufs2_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+				*di->dp2 = (struct ufs2_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
 			} else {
-				di->dp1 =  (struct ufs1_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+				*di->dp1 = (struct ufs1_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
 			}
 		} else {
 			++di;
@@ -483,9 +482,9 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 		bp->bi_inode = inum;
 		bp->bi_daddr = *daddrp;
 		if (is_ufs2) {
-			bp->bi_bp = di->dp2;
+			bp->bi_bp = &di->dp2;
 		} else {
-			bp->bi_bp = di->dp1;
+			bp->bi_bp = &di->dp1;
 		}
 		bp->bi_segcreate = sp->ss_create;
 
