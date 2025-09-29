@@ -151,7 +151,13 @@
 #define	__RCSID(_s)					__IDSTRING(rcsid,_s)
 #define	__SCCSID(_s)
 #define __SCCSID2(_s)
-#define	__COPYRIGHT(_s)				__SECTIONSTRING(.copyright,_s)
+/* 
+ * Note: Cannot use "__SECTIONSTRING" here until the following compiler error
+ * is fixed for some files.
+ * Issue:
+ * Assembler: "Warning unterminated string newline inserted"
+ */
+#define	__COPYRIGHT(_s)				//__SECTIONSTRING(.copyright,_s)
 
 /* FreeBSD ID */
 #define	__FBSDID(_s)				__IDSTRING(rcsid,_s)
