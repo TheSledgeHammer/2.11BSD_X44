@@ -35,28 +35,27 @@ enum token	token;
 struct val     *tokval;
 char          **av;
 
-struct val *make_int (int);
-struct val *make_str (char *);
-void free_value (struct val *);
-int is_integer (struct val *, int *);
-int to_integer (struct val *);
-void to_string (struct val *);
-int is_zero_or_null (struct val *);
-void nexttoken (void);
-void error (void)) __attribute__((__noreturn__);
-struct val *eval6 (void);
-struct val *eval5 (void);
-struct val *eval4 (void);
-struct val *eval3 (void);
-struct val *eval2 (void);
-struct val *eval1 (void);
-struct val *eval0 (void);
-int main (int, char **);
+struct val *make_int(int);
+struct val *make_str(char *);
+void free_value(struct val *);
+int is_integer(struct val *, int *);
+int to_integer(struct val *);
+void to_string(struct val *);
+int is_zero_or_null(struct val *);
+void nexttoken(void);
+void expr_error(void) __attribute__((__noreturn__));
+struct val *eval6(void);
+struct val *eval5(void);
+struct val *eval4(void);
+struct val *eval3(void);
+struct val *eval2(void);
+struct val *eval1(void);
+struct val *eval0(void);
+int main(int, char **);
 
 
 struct val *
-make_int(i)
-	int             i;
+make_int(int i)
 {
 	struct val     *vp;
 
@@ -71,8 +70,7 @@ make_int(i)
 
 
 struct val *
-make_str(s)
-	char           *s;
+make_str(char *s)
 {
 	struct val     *vp;
 
@@ -86,8 +84,7 @@ make_str(s)
 
 
 void
-free_value(vp)
-	struct val     *vp;
+free_value(struct val *vp)
 {
 	if (vp->type == string)
 		free(vp->u.s);
@@ -97,9 +94,7 @@ free_value(vp)
 
 /* determine if vp is an integer; if so, return it's value in *r */
 int
-is_integer(vp, r)
-	struct val     *vp;
-	int	       *r;
+is_integer(struct val *vp, int *r)
 {
 	char           *s;
 	int             neg;
@@ -141,8 +136,7 @@ is_integer(vp, r)
 
 /* coerce to vp to an integer */
 int
-to_integer(vp)
-	struct val     *vp;
+to_integer(struct val *vp)
 {
 	int             r;
 
@@ -162,8 +156,7 @@ to_integer(vp)
 
 /* coerce to vp to an string */
 void
-to_string(vp)
-	struct val     *vp;
+to_string(struct val *vp)
 {
 	char           *tmp;
 
@@ -191,7 +184,7 @@ is_zero_or_null(vp)
 }
 
 void
-nexttoken()
+nexttoken(void)
 {
 	char           *p;
 
@@ -230,14 +223,14 @@ nexttoken()
 }
 
 void
-error()
+expr_error(void)
 {
 	errx(2, "syntax error");
 	/* NOTREACHED */
 }
 
 struct val *
-eval6()
+eval6(void)
 {
 	struct val     *v;
 
@@ -250,18 +243,19 @@ eval6()
 		v = eval0();
 
 		if (token != LP)
-			error();
+			expr_error();
 		nexttoken();
 		return v;
 	} else {
-		error();
+		expr_error();
 	}
 	/* NOTREACHED */
+	return NULL;
 }
 
 /* Parse and evaluate match (regex) expressions */
 struct val *
-eval5()
+eval5(void)
 {
 	regex_t         rp;
 	regmatch_t      rm[2];
@@ -299,7 +293,7 @@ eval5()
 			if (rp.re_nsub == 0) {
 				v = make_int(0);
 			} else {
-				v = make_str("");
+				v = make_str(__UNCONST(""));
 			}
 		}
 
@@ -316,7 +310,7 @@ eval5()
 
 /* Parse and evaluate multiplication and division expressions */
 struct val *
-eval4()
+eval4(void)
 {
 	struct val     *l, *r;
 	enum token	op;
@@ -351,7 +345,7 @@ eval4()
 
 /* Parse and evaluate addition and subtraction expressions */
 struct val *
-eval3()
+eval3(void)
 {
 	struct val     *l, *r;
 	enum token	op;
@@ -379,7 +373,7 @@ eval3()
 
 /* Parse and evaluate comparison expressions */
 struct val *
-eval2()
+eval2(void)
 {
 	struct val     *l, *r;
 	enum token	op;
@@ -478,7 +472,7 @@ eval2()
 
 /* Parse and evaluate & expressions */
 struct val *
-eval1()
+eval1(void)
 {
 	struct val     *l, *r;
 
@@ -501,7 +495,7 @@ eval1()
 
 /* Parse and evaluate | expressions */
 struct val *
-eval0()
+eval0(void)
 {
 	struct val     *l, *r;
 
@@ -523,9 +517,7 @@ eval0()
 
 
 int
-main(argc, argv)
-	int             argc;
-	char          **argv;
+main(int argc, char **argv)
 {
 	struct val     *vp;
 
@@ -536,7 +528,7 @@ main(argc, argv)
 	vp = eval0();
 
 	if (token != EOI)
-		error();
+		expr_error();
 
 	if (vp->type == integer)
 		(void)printf("%d\n", vp->u.i);

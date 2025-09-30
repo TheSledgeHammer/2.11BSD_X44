@@ -28,6 +28,7 @@
 
 #include <sys/types.h>
 #include <sys/sysctl.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -113,7 +114,7 @@ main(int argc, char **argv)
 }
 
 static int
-kdumpenv()
+kdumpenv(void)
 {
 	char *buf, *cp;
 	int len;

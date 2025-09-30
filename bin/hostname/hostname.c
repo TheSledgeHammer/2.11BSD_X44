@@ -49,30 +49,31 @@ static char sccsid[] = "@(#)hostname.c	8.1.1 (R.Birch) 8/2/95";
 
 #include <sys/param.h>
 
+#include <err.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+void usage(void);
 
 int
-main(argc,argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
-	extern int optind;
 	int ch, sflag;
 	char *p, hostname[MAXHOSTNAMELEN];
 
 	sflag = 0;
-	while ((ch = getopt(argc, argv, "s")) != EOF)
+	while ((ch = getopt(argc, argv, "s")) != EOF) {
 		switch (ch) {
 		case 's':
 			sflag = 1;
 			break;
 		case '?':
 		default:
-			(void)fprintf(stderr,
-			    "usage: hostname [-s] [hostname]\n");
-			exit(1);
+			usage();
 		}
+	}
 	argc -= optind;
 	argv += optind;
 
@@ -87,4 +88,13 @@ main(argc,argv)
 		(void)printf("%s\n", hostname);
 	}
 	exit(0);
+	/* NOTREACHED */
+}
+
+void
+usage(void)
+{
+	(void)fprintf(stderr, "usage: hostname [-s] [hostname]\n");
+	exit(1);
+	/* NOTREACHED */
 }
