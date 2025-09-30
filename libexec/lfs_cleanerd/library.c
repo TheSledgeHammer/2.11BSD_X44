@@ -69,6 +69,7 @@ union dinode {
 
 void	add_blocks(FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t, daddr_t, daddr_t);
 void	add_inodes(FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t, daddr_t);
+void    dinode_init(FS_INFO *, struct ufs1_dinode *, struct ufs2_dinode *, int32_t *, caddr_t, daddr_t);
 int	 	bi_compare(const void *, const void *);
 int	 	bi_toss(const void *, const void *, const void *);
 void	get_ifile(FS_INFO *, int);
@@ -366,7 +367,7 @@ add_blocks(FS_INFO *fsp /* pointer to super block */,
 	IFILE	*ifp;
 	FINFO	*fip;
 	caddr_t	bp;
-	daddr_t	*dp, *iaddrp;
+	int32_t	*dp, *iaddrp;
 	int db_per_block, i, j;
 	int db_frag;
 	u_long page_size;
@@ -380,7 +381,7 @@ add_blocks(FS_INFO *fsp /* pointer to super block */,
 	bp = seg_buf + datobyte(fsp, psegaddr - segaddr) + LFS_SUMMARY_SIZE;
 	bip += *countp;
 	psegaddr += bytetoda(fsp, LFS_SUMMARY_SIZE);
-	iaddrp = (daddr_t *)((caddr_t)sp + LFS_SUMMARY_SIZE);
+	iaddrp = (int32_t *)((caddr_t)sp + LFS_SUMMARY_SIZE);
 	--iaddrp;
 	for (fip = (FINFO *)(sp + 1), i = 0; i < sp->ss_nfinfo;
 	    ++i, fip = (FINFO *)(&fip->fi_blocks[fip->fi_nblocks])) {
@@ -439,11 +440,11 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 	caddr_t	seg_buf /* the buffer containing the segment's data */,
 	daddr_t	seg_addr /* disk address of seg_buf */)
 {
-	union dinode *di;
+	union dinode *di = NULL;
 	struct lfs *lfsp;
 	IFILE *ifp;
 	BLOCK_INFO *bp;
-	daddr_t	*daddrp;
+	int32_t	*daddrp;
 	ino_t inum;
 	int i;
 	
@@ -464,21 +465,14 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 		is_ufs2 = 0;
 		break;
 	}
-	daddrp = (daddr_t *)((caddr_t)sp + LFS_SUMMARY_SIZE);
+	daddrp = (int32_t *)((caddr_t)sp + LFS_SUMMARY_SIZE);
 	for (i = 0; i < sp->ss_ninos; ++i) {
 		if (i % INOPB(lfsp) == 0) {
 			--daddrp;
-			if (is_ufs2) {
-                void *dp2 = (seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
-				di->dp2 = dp2;
-			} else {
-                void *dp1 = (seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
-				di->dp1 = dp1;
-			}
+            dinode_init(fsp, &di->dp1, &di->dp2, daddrp, seg_buf, seg_addr);
 		} else {
 			++di;
 		}
-		
 		inum = DIP(di, inumber);
 		bp->bi_lbn = LFS_UNUSED_LBN;
 		bp->bi_inode = inum;
@@ -504,6 +498,16 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 				++(*countp);
 			} 
 		}
+	}
+}
+
+void
+dinode_init(FS_INFO *fsp, struct ufs1_dinode *dp1, struct ufs2_dinode *dp2, int32_t *daddrp, caddr_t seg_buf, daddr_t seg_addr)
+{
+    if (is_ufs2) {
+        dp2 = (struct ufs2_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+	} else {
+        dp1 = (struct ufs1_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
 	}
 }
 
