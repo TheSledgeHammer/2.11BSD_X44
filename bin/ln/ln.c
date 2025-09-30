@@ -60,17 +60,14 @@ int	dirflag;			/* Undocumented directory flag. */
 int	fflag;				/* Unlink existing files. */
 int	sflag;				/* Symbolic, not hard, link. */
 					/* System link call. */
-int (*linkf) (const char *, const char *);
+int (*linkf)(const char *, const char *);
 
-int	linkit (char *, char *, int);
-void	usage (void);
+int	linkit(char *, const char *, int);
+void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
-	extern int optind;
 	struct stat sb;
 	int ch, exitval;
 	char *sourcedir;
@@ -116,9 +113,7 @@ main(argc, argv)
 }
 
 int
-linkit(target, source, isdir)
-	char *target, *source;
-	int isdir;
+linkit(char *target, const char *source, int isdir)
 {
 	struct stat sb;
 	int exists;
@@ -161,7 +156,7 @@ linkit(target, source, isdir)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr,
 	    "usage:\tln [-fs] file1 file2\n\tln [-fs] file ... directory\n");
