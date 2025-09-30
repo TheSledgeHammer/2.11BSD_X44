@@ -56,8 +56,12 @@ __RCSID("$NetBSD: citrus_mapper_std.c,v 1.3 2003/07/12 15:39:20 tshiozak Exp $")
 #include "citrus_mapper_std.h"
 #include "citrus_mapper_std_file.h"
 
+/* ---------------------------------------------------------------------- */
+
 _CITRUS_MAPPER_DECLS(mapper_std);
 _CITRUS_MAPPER_DEF_OPS(mapper_std);
+
+/* ---------------------------------------------------------------------- */
 
 int
 _citrus_mapper_std_mapper_getops(struct _citrus_mapper_ops *ops, size_t lenops, uint32_t expected_version)

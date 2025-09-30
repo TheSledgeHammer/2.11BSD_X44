@@ -54,8 +54,8 @@ _citrus_frune_open(struct _citrus_frune_encoding **rfe, char *encoding, void *va
 
 	fe = malloc(sizeof(*fe));
 	if (fe == NULL) {
-		_citrus_frune_close(fe);
-		return (errno);
+		ret = errno;
+		goto bad;
 	}
 
 	fe->fe_info = NULL;

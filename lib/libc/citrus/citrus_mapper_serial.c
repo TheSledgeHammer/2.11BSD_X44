@@ -69,7 +69,6 @@ _CITRUS_MAPPER_DEF_OPS(mapper_parallel);
 #undef _citrus_mapper_parallel_mapper_uninit
 #undef _citrus_mapper_parallel_mapper_init_state
 
-
 /* ---------------------------------------------------------------------- */
 
 

@@ -52,8 +52,12 @@
 #include "citrus_iconv_std.h"
 #include "citrus_esdb.h"
 
+/* ---------------------------------------------------------------------- */
+
 _CITRUS_ICONV_DECLS(iconv_std);
 _CITRUS_ICONV_DEF_OPS(iconv_std);
+
+/* ---------------------------------------------------------------------- */
 
 int
 _citrus_iconv_std_iconv_getops(struct _citrus_iconv_ops *ops, size_t lenops, uint32_t expected_version)
