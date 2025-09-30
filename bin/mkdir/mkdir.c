@@ -60,9 +60,7 @@ int	build(char *);
 void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int ch, exitval, oct, omode, pflag;
 	mode_t *set;
@@ -117,8 +115,7 @@ main(argc, argv)
 }
 
 int
-build(path)
-	char *path;
+build(char *path)
 {
 	struct stat sb;
 	mode_t numask, oumask;
@@ -167,7 +164,7 @@ build(path)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr, "usage: mkdir [-p] [-m mode] directory ...\n");
 	exit (1);

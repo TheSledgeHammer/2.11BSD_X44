@@ -107,9 +107,12 @@ __RCSID("$NetBSD: citrus_module.c,v 1.14 2024/06/09 18:55:00 mrg Exp $");
 #include "citrus_hash.h"
 #include "citrus_iconv.h"
 #include "citrus_mapper.h"
+#include "citrus_mapper_serial.h"
 #include "citrus_module.h"
 
 extern struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops;
+extern struct _citrus_mapper_ops _citrus_mapper_parallel_mapper_ops;
+extern struct _citrus_mapper_ops _citrus_mapper_serial_mapper_ops;
 extern struct _citrus_mapper_ops _citrus_mapper_std_mapper_ops;
 
 struct _citrus_table {
@@ -140,9 +143,13 @@ const struct _citrus_table _citrus_mappertab[] = {
 				.ct_name = "_citrus_mapper_none_mapper_ops",
 				.ct_ops = NULL,
 		},
+		{		/* mapper_parallel */
+				.ct_name = "_citrus_mapper_parallel_mapper_ops",
+				.ct_ops = &_citrus_mapper_parallel_mapper_ops,
+		},
 		{		/* mapper_serial */
 				.ct_name = "_citrus_mapper_serial_mapper_ops",
-				.ct_ops = NULL,
+				.ct_ops = &_citrus_mapper_serial_mapper_ops,
 		},
 		{		/* mapper_std */
 				.ct_name = "_citrus_mapper_std_mapper_ops",

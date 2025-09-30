@@ -72,7 +72,7 @@ __dead static void usage(void);
 int
 main(int argc, char *argv[])
 {
-    pid_t pid;
+	pid_t pid;
 	int errors, numsig;
 	char *ep;
 
@@ -135,7 +135,7 @@ main(int argc, char *argv[])
 		usage();
 
 	for (errors = 0; argc; argc--, argv++) {
-        pid = (pid_t)strtoimax(*argv, &ep, 10);
+		pid = (pid_t) strtoimax(*argv, &ep, 10);
 		if (!*argv || *ep) {
 			warnx("illegal process id: %s", *argv);
 			errors = 1;
@@ -194,41 +194,42 @@ printsignals(FILE *fp, int len)
 
 		if (ioctl(fileno(fp), TIOCGWINSZ, &win) == 0 && win.ws_col > 0) {
 			termwidth = win.ws_col;
-        }
+		}
 	}
 
 	pad = (len | 7) + 1 - len;
 	if (posix && pad) {
 		pad = 1;
-    }
+	}
 
 	for (n = 1; n < NSIG; n++) {
-        name = sys_signame[n];
-        if (name == NULL) {
-            continue;
-        }
-        nl = strlen(name);
-        if ((n == (NSIG / 2)) || (n == (NSIG - 1)) || ((len > 0) && (nl + len + pad >= termwidth))) {
-            fprintf(fp, "\n");
+		name = sys_signame[n];
+		if (name == NULL) {
+			continue;
+		}
+		nl = strlen(name);
+		if ((n == (NSIG / 2)) || (n == (NSIG - 1))
+				|| ((len > 0) && (nl + len + pad >= termwidth))) {
+			fprintf(fp, "\n");
 			len = 0;
 			pad = 0;
-        } else if (pad > 0 && len != 0) {
+		} else if (pad > 0 && len != 0) {
 			fprintf(fp, "%*s", pad, "");
 		} else {
 			pad = 0;
-        }
+		}
 
 		len += nl + pad;
 		pad = (nl | 7) + 1 - nl;
 		if (posix && pad) {
 			pad = 1;
-        }
+		}
 
 		fprintf(fp, "%s", name);
-    }
+	}
 	if (len != 0) {
 		fprintf(fp, "\n");
-    }
+	}
 }
 #endif
 

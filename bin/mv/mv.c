@@ -62,15 +62,13 @@ static char sccsid[] = "@(#)mv.c	8.2 (Berkeley) 4/2/94";
 
 int fflg, iflg;
 
-int	copy __P((char *, char *));
-int	do_move __P((char *, char *));
-int	fastcopy __P((char *, char *, struct stat *));
-void	usage __P((void));
+int	copy(char *, char *);
+int	do_move(char *, char *);
+int	fastcopy(char *, char *, struct stat *);
+void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	register int baselen, len, rval;
 	register char *p, *endp;
@@ -132,8 +130,7 @@ endarg:	argc -= optind;
 }
 
 int
-do_move(from, to)
-	char *from, *to;
+do_move(char *from, char *to)
 {
 	struct stat sb;
 	int ask, ch;
@@ -186,9 +183,7 @@ do_move(from, to)
 }
 
 int
-fastcopy(from, to, sbp)
-	char *from, *to;
-	struct stat *sbp;
+fastcopy(char *from, char *to, struct stat *sbp)
 {
 	struct timeval tval[2];
 	static u_int blen;
@@ -248,8 +243,7 @@ err:		if (unlink(to))
 }
 
 int
-copy(from, to)
-	char *from, *to;
+copy(char *from, char *to)
 {
 	int pid, status;
 
@@ -293,7 +287,7 @@ copy(from, to)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr,
 "usage: mv [-if] src target;\n   or: mv [-if] src1 ... srcN directory\n");

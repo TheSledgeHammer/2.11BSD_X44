@@ -469,7 +469,7 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 	for (i = 0; i < sp->ss_ninos; ++i) {
 		if (i % INOPB(lfsp) == 0) {
 			--daddrp;
-            dinode_init(fsp, &di->dp1, &di->dp2, daddrp, seg_buf, seg_addr);
+			dinode_init(fsp, &di->dp1, &di->dp2, daddrp, seg_buf, seg_addr);
 		} else {
 			++di;
 		}
@@ -504,10 +504,12 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 void
 dinode_init(FS_INFO *fsp, struct ufs1_dinode *dp1, struct ufs2_dinode *dp2, int32_t *daddrp, caddr_t seg_buf, daddr_t seg_addr)
 {
-    if (is_ufs2) {
-        dp2 = (struct ufs2_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+	if (is_ufs2) {
+		dp2 = (struct ufs2_dinode*) (seg_buf
+				+ ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
 	} else {
-        dp1 = (struct ufs1_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+		dp1 = (struct ufs1_dinode*) (seg_buf
+				+ ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
 	}
 }
 
