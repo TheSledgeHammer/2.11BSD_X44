@@ -263,8 +263,8 @@ struct segsum {
 	((int)((loc) & (fs)->lfs_ffmask))
 #define	fsbtodb(fs, b)		((b) << (fs)->lfs_fsbtodb)
 #define	dbtofsb(fs, b)		((b) >> (fs)->lfs_fsbtodb)
-#define	fragstodb(fs, b)	((b) << (fs)->lfs_fsbtodb - (fs)->lfs_fbshift)
-#define	dbtofrags(fs, b)	((b) >> (fs)->lfs_fsbtodb - (fs)->lfs_fbshift)
+#define	fragstodb(fs, b)	((b) << ((fs)->lfs_fsbtodb - (fs)->lfs_fbshift))
+#define	dbtofrags(fs, b)	((b) >> ((fs)->lfs_fsbtodb - (fs)->lfs_fbshift))
 #define	lblkno(fs, loc)		((loc) >> (fs)->lfs_bshift)
 #define	lblktosize(fs, blk)	((blk) << (fs)->lfs_bshift)
 #define numfrags(fs, loc)	/* calculates (loc / fs->lfs_fsize) */ 				\
