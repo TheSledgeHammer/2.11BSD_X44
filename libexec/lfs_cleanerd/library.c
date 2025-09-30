@@ -389,7 +389,7 @@ add_blocks(FS_INFO *fsp /* pointer to super block */,
 		PRINT_FINFO(fip, ifp);
 		if (ifp->if_version > fip->fi_version)
 			continue;
-		dp = (int32_t)&(fip->fi_blocks[0]);
+		dp = &(fip->fi_blocks[0]);
 		for (j = 0; j < fip->fi_nblocks; j++, dp++) {
 			while (psegaddr == *iaddrp) {
 				psegaddr += db_per_block;
@@ -469,9 +469,11 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 		if (i % INOPB(lfsp) == 0) {
 			--daddrp;
 			if (is_ufs2) {
-				*di->dp2 = (struct ufs2_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+                void *dp2 = (seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+				di->dp2 = dp2;
 			} else {
-				*di->dp1 = (struct ufs1_dinode *)(seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+                void *dp1 = (seg_buf + ((*daddrp - seg_addr) << fsp->fi_daddr_shift));
+				di->dp1 = dp1;
 			}
 		} else {
 			++di;
@@ -624,6 +626,7 @@ munmap_segment(FS_INFO *fsp /* file system information */,
 /*
  * USEFUL DEBUGGING TOOLS:
  */
+#ifdef VERBOSE
 void
 print_SEGSUM(struct lfs *lfsp, SEGSUM *p)
 {
@@ -632,6 +635,7 @@ print_SEGSUM(struct lfs *lfsp, SEGSUM *p)
 	else printf("0x0");
 	fflush(stdout);
 }
+#endif
 
 int
 bi_compare(const void *a, const void *b)
@@ -678,16 +682,21 @@ toss(void *p, int *nump, size_t size, int (*dotoss)(const void *, const void *, 
 {
 	int i;
 	void *p1;
+    size_t s1, s2;
 
 	if (*nump == 0)
 		return;
 
 	for (i = *nump; --i > 0;) {
-		p1 = p + size;
+        s1 = (size_t)p;
+        s2 = (s1 + size);
+		p1 = &s2;
 		if (dotoss(client, p, p1)) {
 			memmove(p, p1, i * size);
 			--(*nump);
-		} else 
-			p += size;
+		} else {
+            s1 += size;
+            p = &s1;
+        }
 	}
 }

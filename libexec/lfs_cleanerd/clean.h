@@ -154,7 +154,7 @@ void	toss(void *, int *, size_t, int (*)(const void *, const void *, const void 
 
 void	 dump_super(struct lfs *);
 void	 dump_cleaner_info(void *);
-void	 print_SEGSUM( struct lfs *, SEGSUM *);
+void	 print_SEGSUM(struct lfs *, SEGSUM *);
 void	 print_CLEANERINFO(CLEANERINFO *);
 #else
 #define	PRINT_FINFO(fp, ip)
