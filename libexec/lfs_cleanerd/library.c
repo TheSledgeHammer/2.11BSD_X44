@@ -652,9 +652,9 @@ bi_compare(const void *a, const void *b)
 	ba = a;
 	bb = b;
 
-	if (diff == (int)(ba->bi_inode - bb->bi_inode))
+	if ((diff = (int)(ba->bi_inode - bb->bi_inode)))
 		return (diff);
-	if (diff == (int)(ba->bi_lbn - bb->bi_lbn)) {
+	if ((diff = (int)(ba->bi_lbn - bb->bi_lbn))) {
 		if (ba->bi_lbn == LFS_UNUSED_LBN)
 			return(-1);
 		else if (bb->bi_lbn == LFS_UNUSED_LBN)
@@ -666,7 +666,7 @@ bi_compare(const void *a, const void *b)
 		else
 			return (diff);
 	}
-	if (diff == (int)(ba->bi_segcreate - bb->bi_segcreate))
+	if ((diff = (int)(ba->bi_segcreate - bb->bi_segcreate)))
 		return (diff);
 	diff = (int)(ba->bi_daddr - bb->bi_daddr);
 	return (diff);
