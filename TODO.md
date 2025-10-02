@@ -78,7 +78,6 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## usr.bin:
 - Ar (2.11BSD): Do not recommend using.
-	- 
 - Tar (2.11BSD): Do not recommend using. 
 	- Produces segmentation faults and memory buffer overflows. When appending, creating and extracting .tar archives with
 	any sort of contents.
