@@ -2,6 +2,6 @@
 
 INCSDIR= 	/usr/include/ufs/lfs
 
-INCS= 		lfs_extern.h lfs.h
+INCS= 		lfs_cksum.h lfs_extern.h lfs.h
 
 .include <bsd.kinc.mk>

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,32 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)lfs_cksum.c	8.2 (Berkeley) 10/9/94
+ *	@(#)lfs_extern.h	8.6 (Berkeley) 5/8/95
  */
 
-#include <sys/cdefs.h>
-#include <sys/types.h>
-
-#include <ufs/lfs/lfs_cksum.h>
-
-/*
- * Simple, general purpose, fast checksum.  Data must be short-aligned.
- * Returns a u_long in case we ever want to do something more rigorous.
- *
- * XXX
- * Use the TCP/IP checksum instead.
- */
-u_long
-cksum(str, len)
-	register void *str;
-	register size_t len;
-{
-	register u_long sum;
-	
-	len &= ~(sizeof(u_short) - 1);
-	for (sum = 0; len; len -= sizeof(u_short)) {
-		sum ^= *(u_short *)str;
-		str = (void *)((u_short *)str + 1);
-	}
-	return (sum);
-}
+__BEGIN_DECLS
+u_long	cksum(void *, size_t);				/* XXX */
+__END_DECLS

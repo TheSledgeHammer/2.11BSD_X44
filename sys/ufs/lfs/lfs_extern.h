@@ -36,6 +36,8 @@
 #ifndef _UFS_LFS_EXTERN_H
 #define	_UFS_LFS_EXTERN_H
 
+#include <ufs/lfs/lfs_cksum.h>
+
 #ifdef _KERNEL
 
 struct fid;
@@ -116,8 +118,4 @@ extern struct vnodeops lfs_specops;
 extern struct vnodeops lfs_fifoops;
 #endif
 #endif /* _KERNEL */
-
-__BEGIN_DECLS
-u_long	cksum(void *, size_t);				/* XXX */
-__END_DECLS
 #endif /* !_UFS_LFS_EXTERN_H */
