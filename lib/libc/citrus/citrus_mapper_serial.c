@@ -110,7 +110,7 @@ uninit(struct _citrus_mapper_serial *sr)
 
 static int
 parse_var(struct _citrus_mapper_area *__restrict ma,
-	  struct _citrus_mapper_serial *sr, struct _memstream *ms)
+	  struct _citrus_mapper_serial *sr, struct _citrus_memory_stream *ms)
 {
 	int ret;
 	struct _citrus_region r;
@@ -172,7 +172,7 @@ _citrus_mapper_serial_mapper_init(struct _citrus_mapper_area *__restrict ma,
 	if (sr == NULL)
 		return errno;
 
-	_citrus_region_init(&r, (void *)var, lenvar);
+	_citrus_region_init(&r, __UNCONST(var), lenvar);
 	_citrus_memory_stream_bind(&ms, &r);
 	if (parse_var(ma, sr, &ms)) {
 		uninit(sr);
