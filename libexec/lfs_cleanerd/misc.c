@@ -39,12 +39,19 @@ static char sccsid[] = "@(#)misc.c	8.1 (Berkeley) 6/4/93";
 #endif /* not lint */
 
 #include <sys/types.h>
+#include <sys/param.h>
+#include <sys/mount.h>
 
-#include <unistd.h>
+#include <ufs/ufs/dinode.h>
+#include <ufs/lfs/lfs.h>
+
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
+#include "clean.h"
 
 extern char *special;
 
