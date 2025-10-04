@@ -153,7 +153,7 @@ struct tpdu_cc {
 #define cc_li           cc_tpduf.fd_li
 #define cc_type         cc_tpduf.fd_type
 #define cc_cdt          cc_tpduf.fd_cdt
-#define cc_dref_0       cc_tpduf.fd_dref
+#define cc_dref       	cc_tpduf.fd_dref
 #define cc_sref         cc_crcc.crcc_sref
 #define cc_class        cc_crcc.crcc_class
 #define cc_options      cc_crcc.crcc_opt
@@ -247,7 +247,7 @@ union tpdu_fixed_rest {
 #define tpdu_CRli       _tpdufr_cr.cr_li
 #define tpdu_CRtype     _tpdufr_cr.cr_type
 #define tpdu_CRcdt      _tpdufr_cr.cr_cdt
-#define tpdu_CRdref_0   _tpdufr_cr.cr_dref
+#define tpdu_CRdref_0   _tpdufr_cr.cr_dref_0
 #define tpdu_CRsref     _tpdufr_cr.cr_sref
 #define tpdu_sref       _tpdufr_cr.cr_tpdu_sref
 #define tpdu_CRclass    _tpdufr_cr.cr_class
