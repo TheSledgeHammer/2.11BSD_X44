@@ -26,49 +26,84 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* TPKT: RFC1006 [ISO8072] & ITOT: RFC2126 */
+#include <sys/malloc.h>
 
-#ifndef _NETTPI_TPI_TPKT_H_
-#define _NETTPI_TPI_TPKT_H_
+#include "tpi_tpdu.h"
+#include "tpi_tpkt.h"
 
-#define TPKT_VERSION 	3
-#define TPKT_RESERVED	0
-#define TPKT_MINLEN 	7
-#define TPKT_MAXLEN 	65535
+/*
+ * TCP: Functions
+ * tcp_input
+ * tcp_output
+ * tcp_disconnect
+ */
 
-/* TPKT */
-struct tpkt {
-    unsigned short	pkt_vers:8;     /* version (8-bits)(vers:3) */
-    unsigned int	pkt_len:16;     /* length in octets including packet header (16-bits)(min: 7 max: 65635)  */
-    unsigned short	pkt_reserved:8; /* reserved (8-bits)(val:0) */
-    struct tpdu_xpd  	*pkt_tpdu;  	/* TPDU Expedited Data Only */
-};
+struct tpkt *
+tpkt_alloc(unsigned int size)
+{
+	struct tpkt *pkt;
 
-/* Primitives */
-/* connection establishment */
-#define TPKT_CONNECT_REQUEST		0x01	/* open completes */
-#define TPKT_CONNECT_INDICATION		0x02	/* listen finishes (passive) */
-#define TPKT_CONNECT_RESPONSE		0x04	/* listen completes */
-#define TPKT_CONNECT_CONFIRMATION	0x06	/* open finishes (active) */
-/* data transfer */
-#define TPKT_DATA_REQUEST			0x01	/* send data */
-#define TPKT_DATA_INDICATION		0x02	/* data ready followed by read data */
-/* connection release (disconnect) */
-#define TPKT_DISCONNECT_REQUEST		0x01	/* close */
-#define TPKT_DISCONNECT_INDICATION 	0x02	/* connection closes or errors */
+	MALLOC(pkt, struct tpkt *, sizeof(*pkt), M_PCB, M_WAITOK);
+	if (pkt == NULL) {
+		return (NULL);
+	}
+	bzero(pkt, sizeof(*pkt));
+	pkt->pkt_vers = TPKT_VERSION;
+	pkt->pkt_reserved = TPKT_RESERVED;
+	if (size < TPKT_MINLEN) {
+		pkt->pkt_len = TPKT_MINLEN;
+	} else if (size > TPKT_MAXLEN) {
+		pkt->pkt_len = TPKT_MAXLEN;
+	} else {
+		pkt->pkt_len = size;
+	}
+	/* initialize as empty */
+	pkt->pkt_tpdu = NULL;
+	return (pkt);
+}
 
-/* Actions */
-#define T_CONNECT_REQUEST
-#define T_CONNECT_RESPONSE
-#define T_DISCONNECT_REQUEST
-#define T_DATA_REQUEST
-#define T_XPD_DATA_REQUEST
+void
+tpkt_free(struct tpkt *pkt)
+{
+	if (pkt != NULL) {
+		FREE(pkt, M_PCB);
+	}
+}
 
-/* Events */
-#define N_CONNECT_INDICATION
-#define N_CONNECT_CONFIRMATION
-#define N_DISCONNECT_INDICATION
-#define N_DATA_INDICATION
-#define N_XPD_DATA_INDICATION
+int
+tpkt_connect(struct tpkt *pkt, int cmd)
+{
+	int error;
 
-#endif /* _NETTPI_TPI_TPKT_H_ */
+	switch (cmd) {
+	case TPKT_CONNECT_REQUEST:
+	case TPKT_CONNECT_INDICATION:
+	case TPKT_CONNECT_RESPONSE:
+	case TPKT_CONNECT_CONFIRMATION:
+	}
+	return (error);
+}
+
+int
+tpkt_data_transfer(struct tpkt *pkt, int cmd)
+{
+	int error;
+
+	switch (cmd) {
+	case TPKT_DATA_REQUEST:
+	case TPKT_DATA_INDICATION:
+	}
+	return (error);
+}
+
+int
+tpkt_disconnect(struct tpkt *pkt, int cmd)
+{
+	int error;
+
+	switch (cmd) {
+	case TPKT_DISCONNECT_REQUEST:
+	case TPKT_DISCONNECT_INDICATION:
+	}
+	return (error);
+}
