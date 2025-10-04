@@ -296,22 +296,22 @@ union tpdu_fixed_rest {
 #define tpdu_XPDseqX    _tpdufr_xpd.xpd_Xseq
 #define tpdu_XPDeotX    _tpdufr_xpd.xpd_Xeot
 
-    struct tpdu_ak      _tpdufr_at;
-#define tpdu_AKli       _tpdufr_at.ak_li
-#define tpdu_AKtype     _tpdufr_at.ak_type
-#define tpdu_AKdref     _tpdufr_at.ak_dref
-#define tpdu_AKseq      _tpdufr_at.ak_seq
-#define tpdu_AKseqX     _tpdufr_at.ak_yrseq
+    struct tpdu_ak      _tpdufr_ak;
+#define tpdu_AKli       _tpdufr_ak.ak_li
+#define tpdu_AKtype     _tpdufr_ak.ak_type
+#define tpdu_AKdref     _tpdufr_ak.ak_dref
+#define tpdu_AKseq      _tpdufr_ak.ak_seq
+#define tpdu_AKseqX     _tpdufr_ak.ak_yrseq
 	/* location of cdt depends on size of seq. numbers */
-#define tpdu_AKcdt      _tpdufr_at.ak_cdt
-#define tpdu_AKcdtX     _tpdufr_at.ak_cdtX
+#define tpdu_AKcdt      _tpdufr_ak.ak_cdt
+#define tpdu_AKcdtX     _tpdufr_ak.ak_cdtX
 
-    struct tpdu_xak     _tpdufr_xat;
-#define tpdu_XAKli      _tpdufr_xat.xat_li
-#define tpdu_XAKtype    _tpdufr_xat.xat_type
-#define tpdu_XAKdref    _tpdufr_xat.xat_dref
-#define tpdu_XAKseq     _tpdufr_xat.xat_seq
-#define tpdu_XAKseqX    _tpdufr_xat.xat_Xseq
+    struct tpdu_xak     _tpdufr_xak;
+#define tpdu_XAKli      _tpdufr_xak.xak_li
+#define tpdu_XAKtype    _tpdufr_xak.xak_type
+#define tpdu_XAKdref    _tpdufr_xak.xak_dref
+#define tpdu_XAKseq     _tpdufr_xak.xak_seq
+#define tpdu_XAKseqX    _tpdufr_xak.xak_Xseq
 
     struct tpdu_er      _tpdufr_er;
 #define tpdu_ERli       _tpdufr_er.er_li
