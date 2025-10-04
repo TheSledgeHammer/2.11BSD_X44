@@ -324,7 +324,7 @@ get_none(struct _citrus_mapper_area *__restrict ma,
 		goto quit;
 	}
 
-	ret = _citrus_mapper_open_direct(ma, &csm_none,  "mapper_none", "");
+	ret = _citrus_mapper_open_direct(ma, &csm_none, "mapper_none", "");
 	if (ret)
 		goto quit;
 	_citrus_mapper_set_persistent(csm_none);

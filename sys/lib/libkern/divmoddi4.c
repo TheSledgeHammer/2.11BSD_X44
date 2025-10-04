@@ -27,6 +27,7 @@
 #include <sys/cdefs.h>
 
 #include "quad.h"
+
 /*
  * Implementation of 64-bit signed division/modulo for 32-bit machines.
  */

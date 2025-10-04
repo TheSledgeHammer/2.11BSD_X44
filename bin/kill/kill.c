@@ -182,7 +182,7 @@ void
 printsignals(FILE *fp, int len)
 {
 	int n, nl, pad;
-    const char *name;
+	const char *name;
 	int termwidth = 80;
 	int posix;
 

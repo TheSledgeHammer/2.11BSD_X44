@@ -193,7 +193,7 @@ _citrus_find_getops(const char *modname, const char *ifname)
 			return (p);
 		}
 	}
-    return (NULL);
+	return (NULL);
 }
 
 /*

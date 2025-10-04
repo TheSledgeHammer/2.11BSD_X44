@@ -231,7 +231,7 @@ typedef unsigned int SeqNum;
 #define TPI_CLOSED		3
 #define TPI_OPEN		4
 
-#define	sototpcb(so) 	((struct tpipcb *)(so->so_pcb))
+#define	sototpcb(so) 	((struct tpipcb *)(so)->so_pcb))
 #define	sototpref(so)	((sototpcb(so)->tp_ref))
 #define	tpcbtoso(tp)	((struct socket *)((tp)->tpp_socket))
 #define	tpcbtoref(tp)	((struct tpi_ref *)((tp)->tp_ref))

@@ -371,7 +371,6 @@ add_blocks(FS_INFO *fsp /* pointer to super block */,
 	int db_per_block, i, j;
 	int db_frag;
 	u_long page_size;
-//    long *lp;
 
 #ifdef VERBOSE
 	printf("FILE INFOS\n");
@@ -444,13 +443,13 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 	struct lfs *lfsp;
 	IFILE *ifp;
 	BLOCK_INFO *bp;
-	int32_t	*daddrp;
+	int32_t *daddrp;
 	ino_t inum;
 	int i;
-	
+
 	if (sp->ss_ninos <= 0)
 		return;
-	
+
 	bp = bip + *countp;
 	lfsp = &fsp->fi_lfs;
 #ifdef VERBOSE
@@ -465,7 +464,7 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 		is_ufs2 = 0;
 		break;
 	}
-	daddrp = (int32_t *)((caddr_t)sp + LFS_SUMMARY_SIZE);
+	daddrp = (int32_t *)((caddr_t) sp + LFS_SUMMARY_SIZE);
 	for (i = 0; i < sp->ss_ninos; ++i) {
 		if (i % INOPB(lfsp) == 0) {
 			--daddrp;
@@ -485,7 +484,7 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 		bp->bi_segcreate = sp->ss_create;
 
 		if (inum == LFS_IFILE_INUM) {
-			bp->bi_version = 1;	/* Ifile version should be 1 */
+			bp->bi_version = 1; /* Ifile version should be 1 */
 			bp++;
 			++(*countp);
 			PRINT_INODE(1, bp);
@@ -496,7 +495,7 @@ add_inodes(FS_INFO *fsp /* pointer to super block */,
 			if (ifp->if_daddr == *daddrp) {
 				bp++;
 				++(*countp);
-			} 
+			}
 		}
 	}
 }
