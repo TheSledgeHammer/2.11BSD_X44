@@ -175,7 +175,6 @@ in_getnetaddr(void *v, struct mbuf *name, int which)
 	sin->sin_family = AF_INET;
 }
 
-
 tpip_mtu(tpcb)
 {
 
@@ -197,31 +196,15 @@ tpip_input()
 }
 
 void
-tpi_quench(struct tpipcb *tpcb, int cmd)
-{
-	switch (cmd) {
-	case PRC_QUENCH:
-		tpcb->tpp_cong_win = tpcb->tpp_l_tpdusize;
-		IncStat(ts_quench);
-		break;
-	case PRC_QUENCH2:
-		tpcb->tpp_cong_win = tpcb->tpp_l_tpdusize; /* might as well quench source also */
-		tpcb->tpp_decbit = TP_DECBIT_CLEAR_COUNT;
-		IncStat(ts_rcvdecbit);
-		break;
-	}
-}
-
-void
 tpip_quench(struct inpcb *inp, int cmd)
 {
 	tpi_quench((struct tpipcb *)sotoinpcb(inp->inp_socket), cmd);
 }
 
 void
-tpin_quench(struct inpcb *inp)
+tpip_abort(struct inpcb *inp, int cmd)
 {
-	tpip_quench(inp, PRC_QUENCH);
+	tpi_abort((struct tpipcb *)inp->inp_ppcb, cmd);
 }
 
 void *
@@ -269,13 +252,19 @@ tpip_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	case PRC_PARAMPROB:
 */
 
-		in_pcbnotify(&tp_inpcb, (struct sockaddr*) sin, 0, zeroin_addr, 0, cmd, tpin_abort);
+		in_pcbnotify(&tp_inpcb, (struct sockaddr*) sin, 0, zeroin_addr, 0, cmd, tpip_abort);
 	}
 	return (NULL);
 }
 
 void
-tpip_abort(struct inpcb *inp, int cmd)
+tpin_quench(struct inpcb *inp)
 {
+	tpip_quench(inp, PRC_QUENCH);
+}
 
+void
+tpin_abort(struct inpcb *inp)
+{
+	tpip_abort(inp, 0);
 }

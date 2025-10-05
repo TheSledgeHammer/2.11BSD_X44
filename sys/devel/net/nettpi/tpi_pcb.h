@@ -197,6 +197,7 @@ struct tpipcb {
 	u_char			 	tpp_flags;		/* values: */
 
 	unsigned int 	 	tpp_perf_on:1;			/* 0/1 -> performance measuring on  */
+	unsigned int	 	tpp_decbit:3;			/* dec bit was set, we're in reneg mode  */
 	unsigned int	 	tpp_notdetached:1;		/* Call tp_detach before freeing XXXXXXX */
 
 	/* addressing */
@@ -260,6 +261,8 @@ struct tpipcb *tpi_pcblookup_bind(struct tpipcbtable *, void *, u_int16_t, int);
 void tpi_pcbstate(struct tpipcb *, int, int, int);
 int tpi_pcbisvalid(void *, void *, u_int16_t, void *, u_int16_t, int, int);
 int tpi_pcbisvalid_sockaddr(union tpi_sockaddr_union *, void *, int);
+void tpi_quench(struct tpipcb *, int);
+void tpi_abort(struct tpipcb *, int);
 
 /* Transport Local */
 struct tpipcbhead *tpi_local_hash(struct tpipcbtable *, void *, uint16_t);

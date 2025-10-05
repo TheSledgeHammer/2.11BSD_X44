@@ -26,50 +26,59 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* TPKT: RFC1006 [ISO8072] & ITOT: RFC2126 */
+#include "tpi_tpdu.h"
+#include "tpdu_var.h"
 
-#ifndef _NETTPI_TPI_TPKT_H_
-#define _NETTPI_TPI_TPKT_H_
+#define TPDU_COMMAND(tpdu_kind, cmd) ((tpdu_kind) + (cmd))
 
-#define TPKT_VERSION 	3
-#define TPKT_RESERVED	0
-#define TPKT_MINLEN 	7
-#define TPKT_MAXLEN 	65535
+int
+tpdu_statehandler(struct tpdu *tpdu, int tpdu_kind, int cmd)
+{
+    register int action = 0;
 
-/* TPKT */
-struct tpkt {
-    unsigned short	pkt_vers:8;     /* version (8-bits)(vers:3) */
-    unsigned int	pkt_len:16;     /* length in octets including packet header (16-bits)(min: 7 max: 65635)  */
-    unsigned short	pkt_reserved:8; /* reserved (8-bits)(val:0) */
-    struct tpdu_xpd  	*pkt_tpdu;  	/* TPDU Expedited Data Only */
-};
-
-/* Primitives */
-/* connection establishment */
-#define TPKT_CONNECT_REQUEST		0x01	/* open completes */
-#define TPKT_CONNECT_INDICATION		0x02	/* listen finishes (passive) */
-#define TPKT_CONNECT_RESPONSE		0x04	/* listen completes */
-#define TPKT_CONNECT_CONFIRMATION	0x06	/* open finishes (active) */
-/* data transfer */
-#define TPKT_DATA_REQUEST			0x01	/* send data */
-#define TPKT_DATA_INDICATION		0x02	/* data ready followed by read data */
-/* connection release (disconnect) */
-#define TPKT_DISCONNECT_REQUEST		0x01	/* close */
-#define TPKT_DISCONNECT_INDICATION 	0x02	/* connection closes or errors */
-
-/* Actions */
-#define T_CONNECT_REQUEST
-#define T_CONNECT_RESPONSE
-#define T_DISCONNECT_REQUEST
-#define T_DATA_REQUEST
-#define T_XPD_DATA_REQUEST
-
-/* Events */
-#define N_CONNECT_INDICATION
-#define N_CONNECT_CONFIRMATION
-#define N_DISCONNECT_INDICATION
-#define N_DATA_INDICATION
-#define N_XPD_DATA_INDICATION
+	switch (action) {
+	case TPDU_CONNECT_INDICATION:
+	case TPDU_CONNECT_CONFIRM:
+	case TPDU_DISCONNECT_INDICATION:
+	case TPDU_DATA_INDICATION:
+	case TPDU_XPD_DATA_INDICATION:
+	}
+    return (action);
+}
 
 
-#endif /* _NETTPI_TPI_TPKT_H_ */
+tpdu_state_error()
+{
+
+}
+
+tpdu_state_open()
+{
+
+}
+
+tpdu_state_close()
+{
+
+}
+
+
+tpdu_state_confirm()
+{
+
+}
+
+
+int
+tpdu_class(int tpdu_kind, int cmd)
+{
+	int command = TPDU_COMMAND(tpdu_kind, cmd);
+	switch (command) {
+	case TPDU_CLASS0 + TPDU_CMD:
+	case TPDU_CLASS1 + TPDU_CMD:
+	case TPDU_CLASS2 + TPDU_CMD:
+	case TPDU_CLASS3 + TPDU_CMD:
+	case TPDU_CLASS4 + TPDU_CMD:
+	}
+	return (0);
+}

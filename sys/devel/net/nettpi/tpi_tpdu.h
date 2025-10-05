@@ -88,13 +88,13 @@ union seq_type {
 };
 
 struct seqeot7 {
-    unsigned char 		eot:1;			/* end-of-tsdu */
-    unsigned char 		seq:7;			/* 7 bit sequence number */
+    unsigned char 	eot:1;		/* end-of-tsdu */
+    unsigned char 	seq:7;		/* 7 bit sequence number */
 };
 
 struct seqeot31 {
-    unsigned int 		Xeot:1;			/* end-of-tsdu */
-    unsigned int 		Xseq:31;		/* 31 bit sequence number */
+    unsigned int 	Xeot:1;		/* end-of-tsdu */
+    unsigned int 	Xseq:31;	/* 31 bit sequence number */
 };
 
 /*
@@ -107,32 +107,36 @@ struct tpdu_fixed {
     unsigned char       fd_type:4;    	/* type of tpdu (DT, CR, etc.) */
     unsigned short      fd_dref;      	/* destination ref; not in DT in class 0 */
 };
+#define tpdu_li 	_tpduf.fd_li
+#define tpdu_type 	_tpduf.fd_type
+#define tpdu_cdt 	_tpduf.fd_cdt
+#define tpdu_dref 	_tpduf.fd_dref
 
 struct tpdu_crcc {
     unsigned short      crcc_sref;       /* source reference */
     unsigned short      crcc_opt:4;
     unsigned short      crcc_class:4;
-    unsigned short		crcc_xx:8;		/* unused */
+    unsigned short	crcc_xx:8;	/* unused */
 };
 
 struct tpdu_ak31 {
     unsigned int        ak31_yrseq0:1;	/* always zero */
     unsigned int        ak31_yrseq:31;	/* [ ISO 8073 13.9.3.d ] */
-    unsigned short      ak31_cdt;		/* [ ISO 8073 13.9.3.b ] */
+    unsigned short      ak31_cdt;	/* [ ISO 8073 13.9.3.b ] */
 };
 
 
 /* public tpdu structures */
 struct tp0du {
-	unsigned char       tp0_li;			/* same as in tpdu_fixed */
-	unsigned char       tp0_cdt_type;	/* same as in tpdu_fixed */
-	unsigned char		tp0_eot:1;		/* eot */
-	unsigned char		tp0_mbz:7;		/* must be zero */
-	unsigned char		tp0_notused:8;	/* data begins on this octet */
+	unsigned char   tp0_li;		/* same as in tpdu_fixed */
+	unsigned char   tp0_cdt_type;	/* same as in tpdu_fixed */
+	unsigned char	tp0_eot:1;	/* eot */
+	unsigned char	tp0_mbz:7;	/* must be zero */
+	unsigned char	tp0_notused:8;	/* data begins on this octet */
 };
 
-#define tp0du_eot 		tp0_eot
-#define tp0du_mbz 		tp0_mbz
+#define tp0du_eot 	tp0_eot
+#define tp0du_mbz 	tp0_mbz
 
 struct tpdu_cr {
     struct tpdu_fixed   cr_tpduf;
@@ -321,15 +325,15 @@ union tpdu_fixed_rest {
 };
 
 /* OPTIONS and ADDL OPTIONS bits */
-#define TPO_USE_EFC	 			0x1
-#define TPO_XTD_FMT	 			0x2
-#define TPAO_USE_TXPD 			0x1
-#define TPAO_NO_CSUM 			0x2
-#define TPAO_USE_RCC 			0x4
-#define TPAO_USE_NXPD 			0x8
+#define TPO_USE_EFC	0x1
+#define TPO_XTD_FMT	0x2
+#define TPAO_USE_TXPD 	0x1
+#define TPAO_NO_CSUM 	0x2
+#define TPAO_USE_RCC 	0x4
+#define TPAO_USE_NXPD 	0x8
 
 struct tpdu {
-	struct tpdu_fixed       _tpduf;
+	struct tpdu_fixed   	_tpduf;
 	union tpdu_fixed_rest   _tpdufr;
 };
 

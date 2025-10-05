@@ -938,47 +938,28 @@ tpi_pcbisvalid_sockaddr(union tpi_sockaddr_union *tsu, void *sockaddr, int af)
 }
 
 void
-tpi_getsufx(void *v, u_short *lenp, caddr_t data_out, int which, int af)
+tpi_quench(struct tpipcb *tpcb, int cmd)
 {
-	struct tpipcbtable *table;
-	struct tpipcb *tpp;
-	union tpi_sockaddr_union *tsu;
-	void *laddr, *faddr;
-	u_int16_t lport, fport;
-
-	tpp = v;
-	table = &tpp->tpp_table;
-	if (tpp->tpp_af != af) {
-		return;
-	}
-
-	*lenp = sizeof(u_short);
-	switch (which) {
-	case TPI_LOCAL:
-		tsu = tpi_getusockaddr(table, tpp->tpp_laddr, tpp->tpp_lport, TPI_LOCAL);
-		if (tsu == NULL || &tpp->tpp_local.tpl_lsockaddr == NULL) {
-			data_out = NULL;
-			break;
-		} else {
-			if (tsu == &tpp->tpp_local.tpl_lsockaddr) {
-				laddr = tpp->tpp_laddr;
-				lport = tpp->tpp_lport;
-			}
-		}
-		*(u_short *)data_out = lport;
+	switch (cmd) {
+	case PRC_QUENCH:
+		tpcb->tpp_cong_win = tpcb->tpp_l_tpdusize;
+		IncStat(ts_quench);
 		break;
-	case TPI_FOREIGN:
-		tsu = tpi_getusockaddr(table, tpp->tpp_faddr, tpp->tpp_fport, TPI_FOREIGN);
-		if (tsu == NULL || &tpp->tpp_foreign.tpf_fsockaddr == NULL) {
-			data_out = NULL;
-			break;
-		} else {
-			if (tsu == &tpp->tpp_foreign.tpf_fsockaddr) {
-				faddr = tpp->tpp_faddr;
-				fport = tpp->tpp_fport;
-			}
-		}
-		*(u_short *)data_out = fport;
+	case PRC_QUENCH2:
+		tpcb->tpp_cong_win = tpcb->tpp_l_tpdusize; /* might as well quench source also */
+		tpcb->tpp_decbit = TP_DECBIT_CLEAR_COUNT;
+		IncStat(ts_rcvdecbit);
 		break;
 	}
+}
+
+void
+tpi_abort(struct tpipcb *tpcb, int cmd)
+{
+	struct tp_event e;
+
+	e.ev_number = ER_TPDU;
+	e.ATTR(ER_TPDU).e_reason = ENETRESET;
+	tp_driver(tpcb, &e);
+	return;
 }
