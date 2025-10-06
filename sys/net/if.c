@@ -127,7 +127,7 @@ __KERNEL_RCSID(0, "$NetBSD: if.c,v 1.139.2.1.4.1 2006/11/19 17:30:11 bouyer Exp 
 #include <net/route.h>
 #include <net/netisr.h>
 
-#include <net/pf/ifg_group.h>
+#include <net/pf/if_group.h>
 
 #ifdef INET6
 #include <netinet/in.h>

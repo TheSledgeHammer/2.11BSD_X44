@@ -2,6 +2,6 @@
 
 INCSDIR= /usr/include/net/pf
 
-INCS=	ifg_group.h if_pflog.h if_pfsync.h pfvar.h
+INCS=	if_group.h if_pflog.h if_pfsync.h pfvar.h
 
 .include <bsd.kinc.mk>

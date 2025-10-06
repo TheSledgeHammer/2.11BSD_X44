@@ -45,7 +45,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp_fsm.h>
 
-#include <net/pf/ifg_group.h>
+#include <net/pf/if_group.h>
 
 union sockaddr_union {
 	struct sockaddr         sa;

@@ -32,8 +32,8 @@
  *	@(#)if.h	8.1 (Berkeley) 6/10/93
  */
 
-#ifndef _NET_IFG_GROUP_H_
-#define _NET_IFG_GROUP_H_
+#ifndef _NET_IF_GROUP_H_
+#define _NET_IF_GROUP_H_
 
 #include <sys/queue.h>
 //#include <net/if.h>
@@ -104,4 +104,4 @@ void	if_group_routechange(struct sockaddr *, struct sockaddr *);
 int		ifgioctl_get(u_long, caddr_t);
 #endif /* _KERNEL */
 
-#endif /* _NET_IFG_GROUP_H_ */
+#endif /* _NET_IF_GROUP_H_ */

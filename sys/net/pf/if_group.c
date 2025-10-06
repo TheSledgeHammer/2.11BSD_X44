@@ -79,7 +79,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_compat.c,v 1.2 2008/06/18 09:06:27 yamt Exp $");
 #include <netinet/in_var.h>
 
 #if NPF > 0
-#include <net/pf/ifg_group.h>
+#include <net/pf/if_group.h>
 #include <net/pf/pfvar.h>
 #endif
 

@@ -77,7 +77,7 @@
 
 #include <net/pf/pfvar.h>
 #include <net/pf/if_pflog.h>
-#include <net/pf/ifg_group.h>
+#include <net/pf/if_group.h>
 
 #if NPFSYNC > 0
 #include <net/pf/if_pfsync.h>

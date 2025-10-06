@@ -12,7 +12,7 @@ file	net/pf/pf_table.c	pf
 file	net/pf/pf_ruleset.c	pf
 file	net/pf/pf_osfp.c	pf
 
-file	net/pf/ifg_group.c	pf
+file	net/pf/if_group.c	pf
 
 file	net/pf/if_pflog.c	pflog		needs-flag
 file	net/pf/if_pfsync.c	pfsync		needs-flag

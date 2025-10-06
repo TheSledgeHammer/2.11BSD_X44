@@ -42,43 +42,74 @@ tpdu_statehandler(struct tpdu *tpdu, int tpdu_kind, int cmd)
 	case TPDU_DISCONNECT_INDICATION:
 	case TPDU_DATA_INDICATION:
 	case TPDU_XPD_DATA_INDICATION:
+	case TPDU_XPD_DATA_RECEIVED:
 	}
     return (action);
 }
 
 
-tpdu_state_error()
+tpdu_state_timer(int tpdu_timer)
 {
-
-}
-
-tpdu_state_open()
-{
-
-}
-
-tpdu_state_close()
-{
-
-}
-
-
-tpdu_state_confirm()
-{
-
-}
-
-
-int
-tpdu_class(int tpdu_kind, int cmd)
-{
-	int command = TPDU_COMMAND(tpdu_kind, cmd);
-	switch (command) {
-	case TPDU_CLASS0 + TPDU_CMD:
-	case TPDU_CLASS1 + TPDU_CMD:
-	case TPDU_CLASS2 + TPDU_CMD:
-	case TPDU_CLASS3 + TPDU_CMD:
-	case TPDU_CLASS4 + TPDU_CMD:
+	switch (tpdu_timer) {
+	case TPDU_INACT:
+	case TPDU_RETRANS:
+	case TPDU_SENDACK:
+	case TPDU_NOTUSED:
+	case TPDU_REFERENCE:
+	case TPDU_DATA_RETRANS:
 	}
-	return (0);
+}
+
+tpdu_state_types(int tpdu_kind)
+{
+	switch (tpdu_kind) {
+	case TPDUT_CC:
+	case TPDUT_CR:
+	case TPDUT_ER:
+	case TPDUT_DR:
+	case TPDUT_DC:
+	case TPDUT_AK:
+	case TPDUT_DT:
+	case TPDUT_XPD:
+	case TPDUT_XAK:
+	case TPDUT_RJ:
+	}
+}
+
+
+tpdu_state_class(int tpdu_class, int tpdu_kind)
+{
+	switch (tpdu_class) {
+	case TPDU_CLASS0:
+		/* Not valid in TP0 */
+		if ((tpdu_kind == (TPDUT_DC | TPDUT_AK | TPDUT_XPD | TPDUT_XAK | TPDUT_RJ))) {
+			break;
+		}
+		break;
+	case TPDU_CLASS1:
+		/* Not valid in TP1:
+		 * - with receipt confirmation option enabled
+		 */
+		int confirm = 0;
+		if ((tpdu_kind == (TPDUT_AK) && confirm == 0)) {
+			break;
+		}
+		break;
+	case TPDU_CLASS2:
+		/* Not valid in TP2:
+		 * - with explicit flow control option enabled
+		 */
+		int flow_control = 0;
+		if ((tpdu_kind == TPDUT_RJ) || (tpdu_kind == (TPDUT_AK | TPDUT_XPD | TPDUT_XAK) && (flow_control == 0))) {
+			break;
+		}
+		break;
+	case TPDU_CLASS3:
+	case TPDU_CLASS4:
+		/* Not valid in TP4: */
+		if ((tpdu_kind == TPDUT_RJ)) {
+			break;
+		}
+		break;
+	}
 }

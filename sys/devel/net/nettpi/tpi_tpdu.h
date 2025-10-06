@@ -240,6 +240,17 @@ struct tpdu_er {
 #define er_dref         er_tpduf.fd_dref
 };
 
+struct tpdu_rj {
+	struct tpdu_fixed   rj_tpduf;
+    struct seqeot7      rj_seq7;
+    struct seqeot31     rj_seq31;
+#define rj_li           rj_tpduf.fd_li
+#define rj_type         rj_tpduf.fd_type
+#define rj_dref         rj_tpduf.fd_dref
+#define rj_seq         	rj_seq7.seq
+#define rj_seqX        	rj_seq31.seq
+};
+
 /* Compatability with tp_tpdu.h */
 
 /*

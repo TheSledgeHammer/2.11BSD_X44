@@ -39,31 +39,36 @@
 #define TPDU_CMDCLASS(val) 		((val) * TPDU_MAXCMDCLASS)
 
 /* TPDU types */
-#define TPDUT_CC			TPDU_CMDCLASS(0)	/* CC_TPDU */
-#define TPDUT_CR			TPDU_CMDCLASS(1)	/* CR_TPDU */
-#define TPDUT_ER			TPDU_CMDCLASS(2)	/* ER_TPDU */
-#define TPDUT_DR			TPDU_CMDCLASS(3)	/* DR_TPDU */
-#define TPDUT_DC			TPDU_CMDCLASS(4)	/* DC_TPDU */
-#define TPDUT_AK			TPDU_CMDCLASS(5)	/* AK_TPDU */
-#define TPDUT_DT			TPDU_CMDCLASS(6)	/* DT_TPDU */
-#define TPDUT_XPD			TPDU_CMDCLASS(7)	/* XPD_TPDU */
-#define TPDUT_XAK			TPDU_CMDCLASS(8)	/* XAK_TPDU */
+#define TPDUT_CC			TPDU_CMDCLASS(0)	/* CC_TPDU: connect confirm */
+#define TPDUT_CR			TPDU_CMDCLASS(1)	/* CR_TPDU: connect request */
+#define TPDUT_ER			TPDU_CMDCLASS(2)	/* ER_TPDU: error */
+#define TPDUT_DR			TPDU_CMDCLASS(3)	/* DR_TPDU: disconnect request */
+#define TPDUT_DC			TPDU_CMDCLASS(4)	/* DC_TPDU: disconnect confirm */
+#define TPDUT_AK			TPDU_CMDCLASS(5)	/* AK_TPDU: data acknowledge */
+#define TPDUT_DT			TPDU_CMDCLASS(6)	/* DT_TPDU: data */
+#define TPDUT_XPD			TPDU_CMDCLASS(7)	/* XPD_TPDU: expedited data */
+#define TPDUT_XAK			TPDU_CMDCLASS(8)	/* XAK_TPDU: expedited data acknowledge */
+#define TPDUT_RJ			TPDU_CMDCLASS(9)	/* RJ_TPDU: reject */
 
 /* TPDU timer events */
-#define TPDU_INACT			TPDU_CMDCLASS(9)	/* TM_inact */
-#define TPDU_RETRANS			TPDU_CMDCLASS(10)	/* TM_retrans */
-#define TPDU_SENDACK			TPDU_CMDCLASS(11)	/* TM_sendack */
-#define TPDU_NOTUSED			TPDU_CMDCLASS(12)	/* TM_notused */
-#define TPDU_REFERENCE			TPDU_CMDCLASS(13)	/* TM_reference */
-#define TPDU_DATA_RETRANS		TPDU_CMDCLASS(14)	/* TM_data_retrans */
+#define TPDU_INACT				TPDU_CMDCLASS(10)	/* TM_inact */
+#define TPDU_RETRANS			TPDU_CMDCLASS(12)	/* TM_retrans */
+#define TPDU_SENDACK			TPDU_CMDCLASS(13)	/* TM_sendack */
+#define TPDU_NOTUSED			TPDU_CMDCLASS(14)	/* TM_notused */
+#define TPDU_REFERENCE			TPDU_CMDCLASS(15)	/* TM_reference */
+#define TPDU_DATA_RETRANS		TPDU_CMDCLASS(16)	/* TM_data_retrans */
 
 /* TS-user requests */
-#define TSU_CONNECT_REQUEST		TPDU_CMDCLASS(15)	/* T_CONN_req */
-#define TSU_CONNECT_RESPONSE		TPDU_CMDCLASS(16)
-#define TSU_DISCONNECT_REQUEST		TPDU_CMDCLASS(17)	/* T_DISC_req */
-#define TSU_DATA_REQUEST		TPDU_CMDCLASS(18)	/* T_DATA_req */
-#define TSU_XPD_DATA_REQUEST		TPDU_CMDCLASS(19)	/* T_XPD_req */
-#define TSU_NETRESET			TPDU_CMDCLASS(20)	/* T_NETRESET */
+#define TSU_CONNECT_REQUEST		TPDU_CMDCLASS(17)	/* T_CONN_req */
+#define TSU_CONNECT_RESPONSE	TPDU_CMDCLASS(18)	/* T_LISTEN_req */
+#define TSU_DISCONNECT_REQUEST	TPDU_CMDCLASS(19)	/* T_DISC_req */
+#define TSU_DATA_REQUEST		TPDU_CMDCLASS(20)	/* T_DATA_req */
+#define TSU_XPD_DATA_REQUEST	TPDU_CMDCLASS(21)	/* T_XPD_req */
+#define TSU_NETRESET			TPDU_CMDCLASS(22)	/* T_NETRESET */
+/* Currently Missing */
+/* T_USR_rcvd */
+/* T_USR_Xrcvd */
+/* T_ACPT_req */
 
 /* state handlers */
 #define TPDU_CONNECT_INDICATION		1
@@ -72,4 +77,7 @@
 #define TPDU_DATA_INDICATION		4
 #define TPDU_XPD_DATA_INDICATION	5
 
+#define TPDU_DATA_RECEIVED			6		/* T_USR_rcvd */
+#define TPDU_XPD_DATA_RECEIVED		7		/* T_USR_Xrcvd */
+#define TPDU_ACCEPT_REQUEST			8		/* T_ACPT_req */
 #endif /* _NETTPI_TPI_VAR_H_ */
