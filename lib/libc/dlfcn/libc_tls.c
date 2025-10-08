@@ -127,7 +127,7 @@ __static_tls_setup(void)
 	tcb = _rtld_tls_allocate();
 
 	/*
-	 * This Okay for i386, but
+	 * This is okay for i386, but
 	 * will need to change
 	 * when other architectures
 	 * come into play.

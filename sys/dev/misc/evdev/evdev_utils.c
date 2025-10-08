@@ -316,11 +316,7 @@ evdev_push_repeats(struct evdev_dev *evdev, struct wskbd_keyrepeat_data *kbd)
 }
 
 int
-evdev_wskbd_ioctl(evdev, kbd, cmd, data)
-	struct evdev_dev 	*evdev;
-	struct wskbd_keyrepeat_data *kbd;
-	u_long 				cmd;
-	caddr_t 			data;
+evdev_wskbd_ioctl(struct evdev_dev *evdev, struct wskbd_keyrepeat_data *kbd, u_long cmd, caddr_t data)
 {
 	switch (cmd) {
 	case WSKBDIO_SETKEYREPEAT:

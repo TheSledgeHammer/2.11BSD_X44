@@ -30,4 +30,4 @@ MKLIBVMF?= 		no
 #           results in failing to compile
 # libvmf:
 #     - Disk Based Virtual Memory Routines
-#         - Was used in 2.11BSD's linker program
+#         - Was used in 2.11BSD's linker program (ld)
