@@ -26,25 +26,38 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <netiso/tp_events.h>
+
 #include "tpi_tpdu.h"
 #include "tpdu_var.h"
 
 #define TPDU_COMMAND(tpdu_kind, cmd) ((tpdu_kind) + (cmd))
 
 int
-tpdu_statehandler(struct tpdu *tpdu, int tpdu_kind, int cmd)
+tpdu_statehandler(struct tpipcb *tp, struct tp_event *evnt, int tpdu_kind, int cmd, int poll)
 {
     register int action = 0;
 
 	switch (action) {
 	case TPDU_CONNECT_INDICATION:
+
 	case TPDU_CONNECT_CONFIRM:
+
 	case TPDU_DISCONNECT_INDICATION:
+
 	case TPDU_DATA_INDICATION:
+
 	case TPDU_XPD_DATA_INDICATION:
-	case TPDU_XPD_DATA_RECEIVED:
+
+    	case TPDU_RESET_CONFIRM:
+
+    	case TPDU_DATA_RECEIVED:
+
+    	case TPDU_XPD_DATA_RECEIVED:
+
+    	case TPDU_ACCEPT_REQUEST:
 	}
-    return (action);
+    	return (action);
 }
 
 

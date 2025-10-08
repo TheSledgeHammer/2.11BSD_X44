@@ -113,9 +113,9 @@
 
 /* Miscellaneous definitions. */
 
-#define DATA_PACKET_DESIGNATOR		0x01
-#define RR_OR_RNR_PACKET_DESIGNATOR	0x02
-#define RR_PACKET_DESIGNATOR		0x04
+#define DATA_PACKET_DESIGNATOR				0x01
+#define RR_OR_RNR_PACKET_DESIGNATOR			0x02
+#define RR_PACKET_DESIGNATOR				0x04
 
 #define DEFAULT_WINDOW_SIZE		2
 #define MODULUS					8

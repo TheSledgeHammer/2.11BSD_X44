@@ -113,7 +113,7 @@ struct tpdu_fixed {
 #define tpdu_dref 	_tpduf.fd_dref
 
 struct tpdu_crcc {
-    unsigned short      crcc_sref;       /* source reference */
+    unsigned short      crcc_sref;      /* source reference */
     unsigned short      crcc_opt:4;
     unsigned short      crcc_class:4;
     unsigned short	crcc_xx:8;	/* unused */
@@ -241,7 +241,7 @@ struct tpdu_er {
 };
 
 struct tpdu_rj {
-	struct tpdu_fixed   rj_tpduf;
+    struct tpdu_fixed   rj_tpduf;
     struct seqeot7      rj_seq7;
     struct seqeot31     rj_seq31;
 #define rj_li           rj_tpduf.fd_li

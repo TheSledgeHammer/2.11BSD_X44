@@ -145,6 +145,8 @@ struct tpipcb {
 #define	tpp_faddr 		tpp_foreign.tpf_faddr
 #define	tpp_fport 		tpp_foreign.tpf_fport
 
+	struct tpipcb		*tpp_nextlisten; /* chain all listeners */
+
 	short 				tpp_retrans;	/* # times can still retrans */
 	caddr_t				tpp_npcb;	/* to lower layer pcb */
 	struct tpi_protosw	*tpp_tpproto;	/* lower-layer dependent routines */
@@ -157,14 +159,21 @@ struct tpipcb {
 	u_int				tpp_seqbit;		/* bit for seq number wraparound */
 	u_int				tpp_seqhalf;	/* half the seq space */
 
+	struct mbuf			*tpp_ucddata;	/* user connect/disconnect data */
+
 	u_long				tpp_cong_win;	/* congestion window in bytes.
 										 * see profuse comments in TCP code
 										 */
 
+	/* credit & sequencing info for RECEIVING */
+	SeqNum				tpp_rcvnxt;		/* next DT seq # expect to recv */
+
+	u_short				tpp_lcredit;	/* current local credit in # packets */
+
 	u_long				tpp_rhiwat;		/* remember original RCVBUF size */
 
 	/* parameters per-connection controllable by user */
-	struct tpi_conn_param tpp_param;
+	struct tpi_conn_param 	tpp_param;
 #define	tpp_Nretrans 		tpp_param.p_Nretrans
 #define	tpp_dr_ticks 		tpp_param.p_dr_ticks
 #define	tpp_cc_ticks 		tpp_param.p_cc_ticks
@@ -194,6 +203,13 @@ struct tpipcb {
 
 	int					tpp_l_tpdusize;
 
+	int					tpp_rtv;		/* max round-trip time variance */
+	int					tpp_rtt; 		/* smoothed round-trip time */
+	SeqNum				tpp_rttseq;		/* packet being timed */
+	int					tpp_rttemit;	/* when emitted, in ticks */
+	int					tpp_idle;		/* last activity, in ticks */
+	short				tpp_rxtcur;		/* current retransmit value */
+	short				tpp_rxtshift;	/* log(2) of rexmt exp. backoff */
 	u_char			 	tpp_flags;		/* values: */
 
 	unsigned int 	 	tpp_perf_on:1;			/* 0/1 -> performance measuring on  */
@@ -215,6 +231,10 @@ struct tpipcb {
 	u_char 			 	tpp_vers;			/* protocol version */
 
 	u_char	 		 	tpp_refstate;		/* values REF_FROZEN, etc. above */
+
+	SeqNum				tpp_Xrcvnxt;	/* next XPD seq # expect to recv */
+
+	int 				(*tpp_statehandler)(struct tpipcb *, struct tp_event *, int, int, int);
 };
 
 typedef unsigned short RefNum;
@@ -222,12 +242,12 @@ typedef unsigned int SeqNum;
 
 /* flags for which */
 #define TPI_LOCAL 		0x01
-#define TPI_FOREIGN 		0x02
+#define TPI_FOREIGN 	0x02
 
 /* states */
-#define TPI_ATTACHED		0
+#define TPI_ATTACHED	0
 #define TPI_BOUND		1
-#define TPI_CONNECTED		2
+#define TPI_CONNECTED	2
 
 #define TPI_CLOSED		3
 #define TPI_OPEN		4

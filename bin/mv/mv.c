@@ -57,6 +57,9 @@ static char sccsid[] = "@(#)mv.c	8.2 (Berkeley) 4/2/94";
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <grp.h>
+#include <locale.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,7 +83,7 @@ main(int argc, char *argv[])
 	int ch;
 	char path[MAXPATHLEN + 1];
 
-	while ((ch = getopt(argc, argv, "-if")) != EOF)
+	while ((ch = getopt(argc, argv, "-if")) != EOF) {
 		switch (ch) {
 		case 'i':
 			iflg = 1;
@@ -94,7 +97,9 @@ main(int argc, char *argv[])
 		default:
 			usage();
 		}
-endarg:	argc -= optind;
+	}
+endarg:
+	argc -= optind;
 	argv += optind;
 
 	if (argc < 2)
@@ -173,12 +178,19 @@ do_move(char *from, char *to)
 		return (1);
 	}
 
+	if (!lstat(to, &sb)) {
+		if ((S_ISDIR(sb.st_mode)) ? rmdir(to) : unlink(to)) {
+			warn("can't remove %s", to);
+			return (1);
+		}
+	}
+
 	/*
 	 * If rename fails because we're trying to cross devices, and
 	 * it's a regular file, do the copy internally; otherwise, use
 	 * cp and rm.
 	 */
-	if (stat(from, &sb)) {
+	if (lstat(from, &sb)) {
 		warn("%s", from);
 		return (1);
 	}

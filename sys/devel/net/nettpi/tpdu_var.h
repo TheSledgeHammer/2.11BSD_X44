@@ -76,8 +76,8 @@
 #define TPDU_DISCONNECT_INDICATION	3
 #define TPDU_DATA_INDICATION		4
 #define TPDU_XPD_DATA_INDICATION	5
-
-#define TPDU_DATA_RECEIVED			6		/* T_USR_rcvd */
-#define TPDU_XPD_DATA_RECEIVED		7		/* T_USR_Xrcvd */
-#define TPDU_ACCEPT_REQUEST			8		/* T_ACPT_req */
+#define TPDU_RESET_CONFIRM          6
+#define TPDU_DATA_RECEIVED			7		/* T_USR_rcvd */
+#define TPDU_XPD_DATA_RECEIVED		8		/* T_USR_Xrcvd */
+#define TPDU_ACCEPT_REQUEST			9		/* T_ACPT_req */
 #endif /* _NETTPI_TPI_VAR_H_ */
