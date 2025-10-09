@@ -45,9 +45,11 @@ static char sccsid[] = "@(#)print.c	8.2 (Berkeley) 5/24/95";
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/lfs/lfs.h>
+#include <ufs/lfs/lfs_extern.h>
 
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "clean.h"
 
 /*
@@ -59,7 +61,7 @@ int
 dump_summary(struct lfs *lfsp, SEGSUM *sp, u_long flags, daddr_t **iaddrp)
 {
 	int i, j, numblocks;
-	daddr_t *dp;
+	int32_t *dp;
 
 	FINFO *fp;
 	int ck;
@@ -115,7 +117,7 @@ dump_summary(struct lfs *lfsp, SEGSUM *sp, u_long flags, daddr_t **iaddrp)
 			    fp->fi_version, fp->fi_nblocks);
 			dp = &(fp->fi_blocks[0]);
 			for (j = 0; j < fp->fi_nblocks; j++, dp++) {
-				(void)printf("\t%d", *dp);
+				(void)printf("\t%ld", *dp);
 				if ((j % 8) == 7)
 					(void)printf("\n");
 			}
