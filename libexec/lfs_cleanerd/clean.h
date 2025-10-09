@@ -107,7 +107,7 @@ __BEGIN_DECLS
 int	 	dump_summary(struct lfs *, SEGSUM *, u_long, daddr_t **);
 void	err(const int, const char *, ...);
 int	 	fs_getmntinfo(struct statfs **, char *, char *);
-int	 	get(int, off_t, void *, size_t);
+void 	get(int, off_t, void *, size_t);
 FS_INFO	*get_fs_info(struct statfs *, int);
 int 	lfs_segmapv(FS_INFO *, int, caddr_t, BLOCK_INFO **, int *);
 int	 	mmap_segment(FS_INFO *, int, caddr_t *, int);
