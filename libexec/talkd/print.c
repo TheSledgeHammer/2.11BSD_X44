@@ -81,7 +81,7 @@ print_request(cp, mp)
 	} else
 		tp = types[mp->type];
 	syslog(debug ? LOG_DEBUG : LOG_INFO,
-	    "%s: %s: id %d, l_user %s, r_user %s, r_tty %s",
+	    "%s: %s: id %ld, l_user %s, r_user %s, r_tty %s",
 	    cp, tp, mp->id_num, mp->l_name, mp->r_name, mp->r_tty);
 }
 
