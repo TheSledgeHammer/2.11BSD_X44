@@ -96,16 +96,16 @@ dump_summary(struct lfs *lfsp, SEGSUM *sp, u_long flags, daddr_t **iaddrp)
 	if (flags & DUMP_INODE_ADDRS)
 		printf("    Inode addresses:");
 
-	dp = (daddr_t *)((caddr_t)sp + LFS_SUMMARY_SIZE);
+	dp = (int32_t *)((caddr_t)sp + LFS_SUMMARY_SIZE);
 	for (--dp, i = 0; i < sp->ss_ninos; --dp)
 		if (flags & DUMP_INODE_ADDRS) {
-			(void)printf("\t0x%lx", *dp);
+			(void)printf("\t0x%x", *dp);
 			if (++i % 7 == 0)
 				(void)printf("\n");
 		} else
 			++i;
 	if (iaddrp)
-		*iaddrp = ++dp;
+		*iaddrp = (daddr_t *)++dp;
 	if (flags & DUMP_INODE_ADDRS)
 		printf("\n");
 
@@ -117,7 +117,7 @@ dump_summary(struct lfs *lfsp, SEGSUM *sp, u_long flags, daddr_t **iaddrp)
 			    fp->fi_version, fp->fi_nblocks);
 			dp = &(fp->fi_blocks[0]);
 			for (j = 0; j < fp->fi_nblocks; j++, dp++) {
-				(void)printf("\t%ld", *dp);
+				(void)printf("\t%d", *dp);
 				if ((j % 8) == 7)
 					(void)printf("\n");
 			}
