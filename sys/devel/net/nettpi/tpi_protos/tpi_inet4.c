@@ -29,14 +29,28 @@
  *	@(#)tp_iso.c	8.2 (Berkeley) 9/22/94
  */
 
+#include <sys/cdefs.h>
+
+#include <sys/param.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/time.h>
 
-#include <netinet/in_pcb.h>
+#include <net/if.h>
 
 #include <tpi_pcb.h>
 #include <tpi_protosw.h>
+#include <tpi_ip.h>
+
+#include <netinet/in_var.h>
+#include <netinet/ip_icmp.h>
+
+#ifndef ISO
+#include <netiso/iso_chksum.c>
+#endif
 
 struct tpi_protosw tpin4_protosw = {
 	.tpi_afamily = AF_INET,
@@ -175,24 +189,152 @@ in_getnetaddr(void *v, struct mbuf *name, int which)
 	sin->sin_family = AF_INET;
 }
 
-tpip_mtu(tpcb)
+/* tpip */
+int
+tpip_mtu(struct tpipcb *tpcb)
 {
-
+	struct inpcb *inp = (struct inpcb *)tpcb->tpp_npcb;
+	return (tpi_mtu(tpcb, inp->inp_route.ro_rt, sizeof(struct ip)));
 }
 
-tpip_output()
+int
+tpip_output(void *v, struct mbuf *m0, int datalen, int nochksum)
 {
+	struct inpcb *inp;
 
+	inp = (struct inpcb *)v;
+	return (tpip_output_dg(&inp->inp_laddr, &inp->inp_faddr, m0, datalen, &inp->inp_route, nochksum));
 }
 
-tpip_output_dg()
+int
+tpip_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen, void *ro_arg, int nochksum)
 {
+	struct in_addr *laddr, *faddr;
+	struct route *ro;
+	register struct mbuf *m;
+	register struct ip *ip;
+	int error;
 
+	laddr = (struct in_addr *)laddr_arg;
+	faddr = (struct in_addr *)faddr_arg;
+	ro = (struct route *)ro_arg;
+
+	MGETHDR(m, M_DONTWAIT, TPMT_IPHDR);
+	if (m == 0) {
+		error = ENOBUFS;
+		goto bad;
+	}
+	m->m_next = m0;
+	MH_ALIGN(m, sizeof(struct ip));
+	m->m_len = sizeof(struct ip);
+
+	ip = mtod(m, struct ip *);
+	bzero((caddr_t)ip, sizeof *ip);
+
+	ip->ip_p = IPPROTO_TP;
+	m->m_pkthdr.len = ip->ip_len = sizeof(struct ip) + datalen;
+	ip->ip_ttl = MAXTTL;
+		/* don't know why you need to set ttl;
+		 * overlay doesn't even make this available
+		 */
+
+	ip->ip_src = *laddr;
+	ip->ip_dst = *faddr;
+
+	IncStat(ts_tpdu_sent);
+	IFDEBUG(D_EMIT)
+		dump_mbuf(m, "tpip_output_dg before ip_output\n");
+	ENDDEBUG
+
+	error = ip_output(m, (struct mbuf *)0, ro, IP_ALLOWBROADCAST, NULL);
+	return (error);
+
+bad:
+	m_freem(m);
+	IncStat(ts_send_drop);
+	return (error);
 }
 
-tpip_input()
+int
+tpip_input(struct mbuf *m, int iplen)
 {
+	struct sockaddr_in src, dst;
+	register struct ip 	*ip;
+	int	s, hdrlen;
 
+	s = splnet();
+	IncStat(ts_pkt_rcvd);
+
+	/*
+	 * IP layer has already pulled up the IP header,
+	 * but the first byte after the IP header may not be there,
+	 * e.g. if you came in via loopback, so you have to do an
+	 * m_pullup to before you can even look to see how much you
+	 * really need.  The good news is that m_pullup will round
+	 * up to almost the next mbuf's worth.
+	 */
+
+	if((m = m_pullup(m, iplen + 1)) == MNULL)
+		goto discard;
+	CHANGE_MTYPE(m, TPMT_DATA);
+
+	/*
+	 * Now pull up the whole tp header:
+	 * Unfortunately, there may be IP options to skip past so we
+	 * just fetch it as an unsigned char.
+	 */
+	hdrlen = iplen + 1 + mtod(m, u_char *)[iplen];
+
+	if( m->m_len < hdrlen ) {
+		if((m = m_pullup(m, hdrlen)) == MNULL){
+			IFDEBUG(D_TPINPUT)
+				printf("tp_input, pullup 2!\n");
+			ENDDEBUG
+			goto discard;
+		}
+	}
+
+	/*
+	 * cannot use tp_inputprep() here 'cause you don't
+	 * have quite the same situation
+	 */
+
+	IFDEBUG(D_TPINPUT)
+		dump_mbuf(m, "after tpip_input both pullups");
+	ENDDEBUG
+	/*
+	 * m_pullup may have returned a different mbuf
+	 */
+	ip = mtod(m, struct ip *);
+
+	/*
+	 * drop the ip header from the front of the mbuf
+	 * this is necessary for the tp checksum
+	 */
+	m->m_len -= iplen;
+	m->m_data += iplen;
+
+	src.sin_addr = *(struct in_addr *)&(ip->ip_src);
+	src.sin_family  = AF_INET;
+	src.sin_len  = sizeof(src);
+	dst.sin_addr = *(struct in_addr *)&(ip->ip_dst);
+	dst.sin_family  = AF_INET;
+	dst.sin_len  = sizeof(dst);
+
+	(void)tp_input(m, (struct sockaddr *)&src, (struct sockaddr *)&dst, 0, tpip_output_dg, 0);
+	return (0);
+
+discard:
+	IFDEBUG(D_TPINPUT)
+		printf("tpip_input DISCARD\n");
+	ENDDEBUG
+	IFTRACE(D_TPINPUT)
+		tptrace(TPPTmisc, "tpip_input DISCARD m", m, 0, 0, 0);
+	ENDTRACE
+	m_freem(m);
+	IncStat(ts_recv_drop);
+	splx(s);
+	return (0);
 }
 
 void
@@ -256,6 +398,8 @@ tpip_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	}
 	return (NULL);
 }
+
+/* tpin */
 
 void
 tpin_quench(struct inpcb *inp)

@@ -937,6 +937,13 @@ tpi_pcbisvalid_sockaddr(union tpi_sockaddr_union *tsu, void *sockaddr, int af)
 	return (error);
 }
 
+int
+tpi_mtu(struct tpipcb *tpcb, struct	rtentry *rt, int size)
+{
+	tpcb->tpp_routep = &rt;
+	return (size);
+}
+
 void
 tpi_quench(struct tpipcb *tpcb, int cmd)
 {

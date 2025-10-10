@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_pcb.h	8.2 (Berkeley) 9/22/94
+ *	@(#)tp_ip.h	8.1 (Berkeley) 6/10/93
  */
 
 /***********************************************************
@@ -62,50 +62,43 @@ SOFTWARE.
 /*
  * ARGO TP
  *
- * $Header: tp_pcb.h,v 5.2 88/11/18 17:09:32 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.h,v $
+ * $Header: tp_ip.h,v 5.1 88/10/12 12:19:47 root Exp $
+ * $Source: /usr/argo/sys/netiso/RCS/tp_ip.h,v $
  *
+ * internet IP-dependent structures and include files
  *
- * This file defines the transport protocol control block (tpcb).
- * and a bunch of #define values that are used in the tpcb.
  */
 
-#ifndef _NETTPI_TPI_PROTOSW_H_
-#define _NETTPI_TPI_PROTOSW_H_
+#ifndef _NETTPI_IP_H_
+#define _NETTPI_IP_H_
 
-struct tpi_protosw {
-	int		tpi_afamily;											/* address family */
-	void	(*tpi_putnetaddr)(void *, struct sockaddr *, int);		/* puts addresses in tpi pcb */
-	void	(*tpi_getnetaddr)(void *, struct mbuf *, int);			/* gets addresses from tpi pcb */
-	int		(*tpi_cmpnetaddr)(void *, struct sockaddr *, int);		/* compares address in pcb with sockaddr */
-	int		(*tpi_putsufx)(void *, caddr_t, int, int);				/* puts transport suffixes in tpi pcb */
-	int		(*tpi_getsufx)(void *, u_short *, caddr_t, int);		/* gets transport suffixes from tpi pcb */
-	int		(*tpi_recycle_suffix)(void *);							/* clears suffix from tpi pcb */
-	int		(*tpi_mtu)(void *);										/* figures out mtu based on tpi used */
-	int		(*tpi_pcbbind)(void *);									/* bind to pcb for net level */
-	int		(*tpi_pcbconn)(void *, struct mbuf *);					/* connect for net level */
-	void	(*tpi_pcbdisc)(void *);									/* disconnect net level */
-	int 	(*tpi_attach)(struct socket *, int);					/* attach net level pcb */
-	void	(*tpi_pcbdetach)(void *);								/* detach net level pcb */
-	int		(*tpi_pcballoc)(struct socket *, void *);				/* allocate a net level pcb */
-	int		(*tpi_output)(void *, struct mbuf *, int, int);			/* prepare a packet to give to tpi */
-	int		(*tpi_dgoutput)(void *, void *, struct mbuf *, int, void *, int); /* prepare a packet to give to tpi */
-	int		(*tpi_ctloutput)(int, struct sockaddr *, void *);		/* hook for network set/get options */
-	caddr_t	tpi_pcblist;											/* list of xx_pcb's for connections */
+#ifndef SOCK_STREAM
+#include <sys/socket.h>
+#endif
 
-	int 	(*tpi_secconn)(void *); 								/* connect net security (if any: i.e. ipsec) */
-	void 	(*tpi_secdisc)(void *); 								/* disconnect net security (if any: i.e. ipsec) */
-	int 	(*tpi_polconn)(struct socket *, void *);				/* connect net pcb policy (if any) */
-	void 	(*tpi_poldisc)(void *);									/* disconnect net pcb policy (if any) */
-};
+#include <net/route.h>
 
-extern struct tpi_protosw *tpi_protosw;
+#include <netinet/in.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
 
-/* network protocols */
-extern struct tpi_protosw tpin4_protosw;
-extern struct tpi_protosw tpin6_protosw;
-extern struct tpi_protosw tpiso_protosw;
-extern struct tpi_protosw tpns_protosw;
-extern struct tpi_protosw tpx25_protosw;
+struct inpcb tp_inpcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
 
-#endif /* _NETTPI_TPI_PROTOSW_H_ */
+void in_getsufx(void *, u_short *, caddr_t, int);
+void in_putsufx(void *, caddr_t, int, int);
+void in_recycle_tsuffix(void *);
+void in_putnetaddr(void *, struct sockaddr *, int);
+int in_cmpnetaddr(void *, struct sockaddr *, int);
+void in_getnetaddr(void *, struct mbuf *, int);
+
+int tpip_mtu(struct tpipcb *);
+int tpip_output(void *, struct mbuf *, int, int);
+int tpip_output_dg(void *, void *, struct mbuf *, int, void *, int);
+int tpip_input(struct mbuf *, int);
+void tpip_quench(struct inpcb *, int);
+void tpip_abort(struct inpcb *, int);
+void *tpip_ctlinput(int, struct sockaddr *, void *);
+
+void tpin_quench(struct inpcb *);
+void tpin_abort(struct inpcb *);
+#endif /* _NETTPI_IP_H_ */

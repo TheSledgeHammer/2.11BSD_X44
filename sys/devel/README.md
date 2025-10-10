@@ -48,7 +48,7 @@ an offical release is made.)
 		* Add TPKT which would enable ITOT (TCP-like streams) to be implemented.
 		* Redo tp_driver.c: Implement a statehandler similar to the one used in the LLC.
 			* Improve readability and interpretation.
-				* Current version is very hard to understand what is happening.
+			* Current version is very hard to understand what is happening.
 		* Add support for additional protocols (i.e. ipv6)
 		* Interopability with XTI/TLI?
 

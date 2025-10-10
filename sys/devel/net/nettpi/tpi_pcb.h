@@ -281,6 +281,8 @@ struct tpipcb *tpi_pcblookup_bind(struct tpipcbtable *, void *, u_int16_t, int);
 void tpi_pcbstate(struct tpipcb *, int, int, int);
 int tpi_pcbisvalid(void *, void *, u_int16_t, void *, u_int16_t, int, int);
 int tpi_pcbisvalid_sockaddr(union tpi_sockaddr_union *, void *, int);
+
+int  tpi_mtu(struct tpipcb *, struct rtentry *, int);
 void tpi_quench(struct tpipcb *, int);
 void tpi_abort(struct tpipcb *, int);
 
