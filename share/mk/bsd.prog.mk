@@ -88,6 +88,24 @@ LIBCRTI=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o
 #     etc..
 #
 
+_LIB211BSD= \
+            fortran \
+            mp \
+            ndbm \
+            om \
+            stubs \
+            vmf
+            
+
+_LIBNETBSD= \
+            netbsd
+
+_LIBPLAN9=  \
+            bio \
+            fmt \
+            regexp \
+            utf \
+
 _LIBLIST=   \
             archive \
             bz2 \
@@ -102,15 +120,16 @@ _LIBLIST=   \
             m magic menu mp \
             netbsd ns \
             objc om \
-            panel pcap pci plan9 pthread \
-            resolv rpcsvs \
+            panel pcap pci pthread \
+            resolv rmt rpcsvs \
             skey sqlite3 ssh ssl ssp stdc++ stubs supc++ \
             terminfo \
             util \
             vmf \
             wrap \
             y \
-            z
+            z \
+            ${_LIB211BSD} ${_LIBNETBSD} ${_LIBPLAN9}
 
 .for _var in ${_LIBLIST}
 .ifndef LIB${_var:tu}
