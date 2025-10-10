@@ -40,6 +40,7 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 		\
 		${USRLIBDIR}/libkvm 		\
 		${USRLIBDIR}/libm 		\
 		${USRLIBDIR}/libresolv 		\
+        ${USRLIBDIR}/librmt      	\
         ${USRLIBDIR}/librpcsvc      	\
 		${USRLIBDIR}/libpci		\
 		${USRLIBDIR}/libpthread 	\
