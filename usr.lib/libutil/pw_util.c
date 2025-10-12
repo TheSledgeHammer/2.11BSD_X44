@@ -258,9 +258,6 @@ pw_pwd_mkdb(const char *file)
 int
 pw_edit(const char *file, int notsetuid)
 {
-	if (rval == -1) {
-		editpid = -1;
-	}
 	return (edit(file, notsetuid));
 }
 
