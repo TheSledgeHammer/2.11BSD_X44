@@ -59,13 +59,9 @@ struct entry list[] = {
 	{ "Class",		p_class,  1,   5, e1,   },
 	{ "Change",		p_change, 1,   6, NULL, },
 	{ "Expire",		p_expire, 1,   6, NULL, },
-#define	E_NAME		7
 	{ "Full Name",		p_gecos,  0,   9, e2,   },
-#define	E_BPHONE	8
 	{ "Office Phone",	p_gecos,  0,  12, e2,   },
-#define	E_HPHONE	9
 	{ "Home Phone",		p_gecos,  0,  10, e2,   },
-#define	E_LOCATE	10
 	{ "Location",		p_gecos,  0,   8, e2,   },
 	{ "Home directory",	p_hdir,   1,  14, e1,   },
 	{ "Shell",		p_shell,  0,   5, e1,   },
@@ -192,13 +188,14 @@ main(int argc, char **argv)
 		(void)fprintf(stderr, "chpass: can't read %s; ", passwd);
 		goto bad;
 	}
-	if (!copy(pw, temp_fp))
+	if (!copy(pw, temp_fp)) {
 		goto bad;
+	}
 
 	(void)fclose(temp_fp);
 	(void)fclose(stdin);
 
-	switch(fork()) {
+	switch (fork()) {
 	case 0:
 		break;
 	case -1:
@@ -212,7 +209,8 @@ main(int argc, char **argv)
 
 	if (makedb(temp)) {
 		(void)fprintf(stderr, "chpass: mkpasswd failed; ");
-bad:		(void)fprintf(stderr, "%s unchanged.\n", _PATH_MASTERPASSWD);
+bad:
+		(void)fprintf(stderr, "%s unchanged.\n", _PATH_MASTERPASSWD);
 		(void)unlink(temp);
 		exit(1);
 	}
@@ -244,8 +242,7 @@ bad:		(void)fprintf(stderr, "%s unchanged.\n", _PATH_MASTERPASSWD);
 }
 
 static int
-info(pw)
-	struct passwd *pw;
+info(struct passwd *pw)
 {
 	struct stat begin, end;
 	FILE *fp;
@@ -259,43 +256,42 @@ info(pw)
 	}
 
 	print(fp, pw);
-	(void) fflush(fp);
+	(void)fflush(fp);
 
 	/*
 	 * give the file to the real user; setuid permissions
 	 * are discarded in edit()
 	 */
-	(void) fchown(fd, getuid(), getgid());
+	(void)fchown(fd, getuid(), getgid());
 
 	for (rval = 0;;) {
-		(void) fstat(fd, &begin);
+		(void)fstat(fd, &begin);
 		if (edit(tfile)) {
 			(void) fprintf(stderr, "chpass: edit failed; ");
 			break;
 		}
-		(void) fstat(fd, &end);
+		(void)fstat(fd, &end);
 		if (begin.st_mtime == end.st_mtime) {
-			(void) fprintf(stderr, "chpass: no changes made; ");
+			(void)fprintf(stderr, "chpass: no changes made; ");
 			break;
 		}
-		(void) rewind(fp);
+		(void)rewind(fp);
 		if (check(fp, pw)) {
 			rval = 1;
 			break;
 		}
-		(void) fflush(stderr);
-		if (prompt())
+		(void)fflush(stderr);
+		if (prompt()) {
 			break;
+		}
 	}
-	(void) fclose(fp);
-	(void) unlink(tfile);
+	(void)fclose(fp);
+	(void)unlink(tfile);
 	return (rval);
 }
 
 static int
-check(fp, pw)
-	FILE *fp;
-	struct passwd *pw;
+check(FILE *fp, struct passwd *pw)
 {
 	register struct entry *ep;
 	register char *p;
@@ -348,57 +344,55 @@ check(fp, pw)
 		(void) fprintf(stderr, "chpass: gecos field too large.\n");
 		exit(1);
 	}
-	(void) sprintf(pw->pw_gecos = buf, "%s,%s,%s,%s", list[E_NAME].save,
+	(void)sprintf(pw->pw_gecos = buf, "%s,%s,%s,%s", list[E_NAME].save,
 			list[E_LOCATE].save, list[E_BPHONE].save, list[E_HPHONE].save);
 	return (1);
 }
 
 static int
-copy(pw, fp)
-	struct passwd *pw;
-	FILE *fp;
+copy(struct passwd *pw, FILE *fp)
 {
 	register int done;
 	register char *p;
-	char buf[256];
+	char buf[8192];
 
 	for (done = 0; fgets(buf, sizeof(buf), stdin);) {
 		/* skip lines that are too big */
 		if (!index(buf, '\n')) {
-			(void) fprintf(stderr, "chpass: line too long; ");
+			(void)fprintf(stderr, "chpass: line too long; ");
 			return (0);
 		}
 		if (done) {
-			(void) fprintf(fp, "%s", buf);
+			(void)fprintf(fp, "%s", buf);
 			continue;
 		}
 		if (!(p = index(buf, ':'))) {
-			(void) fprintf(stderr, "chpass: corrupted entry; ");
+			(void)fprintf(stderr, "chpass: corrupted entry; ");
 			return (0);
 		}
 		*p = '\0';
 		if (strcmp(buf, pw->pw_name)) {
 			*p = ':';
-			(void) fprintf(fp, "%s", buf);
+			(void)fprintf(fp, "%s", buf);
 			continue;
 		}
-		(void) fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n", pw->pw_name,
+		(void)fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n", pw->pw_name,
 				pw->pw_passwd, pw->pw_uid, pw->pw_gid, pw->pw_class,
 				pw->pw_change, pw->pw_expire, pw->pw_gecos, pw->pw_dir,
 				pw->pw_shell);
 		done = 1;
 	}
-	if (!done)
-		(void) fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n", pw->pw_name,
+	if (!done) {
+		(void)fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n", pw->pw_name,
 				pw->pw_passwd, pw->pw_uid, pw->pw_gid, pw->pw_class,
 				pw->pw_change, pw->pw_expire, pw->pw_gecos, pw->pw_dir,
 				pw->pw_shell);
+	}
 	return (1);
 }
 
 static int
-makedb(file)
-	const char *file;
+makedb(const char *file)
 {
 	int status, pid, w;
 
@@ -406,14 +400,12 @@ makedb(file)
 		execl(_PATH_MKPASSWD, "mkpasswd", "-p", file, (char *)NULL);
 		_exit(127);
 	}
-	while ((w = wait(&status)) != pid && w != -1)
-		;
+	while ((w = wait(&status)) != pid && w != -1);
 	return (w == -1 || status);
 }
 
 static int
-edit(file)
-	const char *file;
+edit(const char *file)
 {
 	int status, pid, w;
 	const char *p, *editor;
@@ -437,27 +429,29 @@ edit(file)
 }
 
 static void
-loadpw(arg, pw)
-	char *arg;
-	register struct passwd *pw;
+loadpw(char *arg, struct passwd *pw)
 {
 	register char *cp;
 	char	*bp = arg;
 
 	pw->pw_name = strsep(&bp, ":");
 	pw->pw_passwd = strsep(&bp, ":");
-	if (!(cp = strsep(&bp, ":")))
+	if (!(cp = strsep(&bp, ":"))) {
 		goto bad;
+	}
 	pw->pw_uid = atoi(cp);
-	if (!(cp = strsep(&bp, ":")))
+	if (!(cp = strsep(&bp, ":"))) {
 		goto bad;
+	}
 	pw->pw_gid = atoi(cp);
 	pw->pw_class = strsep(&bp, ":");
-	if (!(cp = strsep(&bp, ":")))
+	if (!(cp = strsep(&bp, ":"))) {
 		goto bad;
+	}
 	pw->pw_change = atol(cp);
-	if (!(cp = strsep(&bp, ":")))
+	if (!(cp = strsep(&bp, ":"))) {
 		goto bad;
+	}
 	pw->pw_expire = atol(cp);
 	pw->pw_gecos = strsep(&bp, ":");
 	pw->pw_dir = strsep(&bp, ":");
@@ -475,12 +469,14 @@ prompt(void)
 	register int c;
 
 	for (;;) {
-		(void) printf("re-edit the password file? [y]: ");
-		(void) fflush(stdout);
+		(void)printf("re-edit the password file? [y]: ");
+		(void)fflush(stdout);
 		c = getchar();
-		if (c != EOF && c != (int) '\n')
-			while (getchar() != (int) '\n')
+		if (c != EOF && c != (int) '\n') {
+			while (getchar() != (int) '\n') {
 				;
+			}
+		}
 		return (c == (int) 'n');
 	}
 	/* NOTREACHED */

@@ -37,10 +37,7 @@ static char sccsid[] = "@(#)field.c	5.8 (Berkeley) 3/16/89";
 
 /* ARGSUSED */
 int
-p_login(p, pw, ep)
-	const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_login(const char *p, struct passwd *pw, struct entry *ep)
 {
 	if (!*p) {
 		(void) fprintf(stderr, "chpass: empty login field.\n");
@@ -68,10 +65,7 @@ p_login(p, pw, ep)
 
 /* ARGSUSED */
 int
-p_passwd(p, pw, ep)
-	const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_passwd(const char *p, struct passwd *pw, struct entry *ep)
 {
 	if (!*p)
 		pw->pw_passwd = __UNCONST(""); /* "NOLOGIN"; */
@@ -85,10 +79,7 @@ p_passwd(p, pw, ep)
 
 /* ARGSUSED */
 int
-p_uid(p, pw, ep)
-	register const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_uid(const char *p, struct passwd *pw, struct entry *ep)
 {
 	int id;
 
@@ -112,10 +103,7 @@ p_uid(p, pw, ep)
 
 /* ARGSUSED */
 int
-p_gid(p, pw, ep)
-	register const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_gid(const char *p, struct passwd *pw, struct entry *ep)
 {
 	struct group *gr;
 	int id;
@@ -144,10 +132,7 @@ p_gid(p, pw, ep)
 
 /* ARGSUSED */
 int
-p_class(p, pw, ep)
-	const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_class(const char *p, struct passwd *pw, struct entry *ep)
 {
 	if (!*p)
 		pw->pw_class = __UNCONST("");
@@ -161,10 +146,7 @@ p_class(p, pw, ep)
 
 /* ARGSUSED */
 int
-p_change(p, pw, ep)
-	const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_change(const char *p, struct passwd *pw, struct entry *ep)
 {
 	if (!atot(p, &pw->pw_change))
 		return (0);
@@ -174,10 +156,7 @@ p_change(p, pw, ep)
 
 /* ARGSUSED */
 int
-p_expire(p, pw, ep)
-	const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_expire(const char *p, struct passwd *pw, struct entry *ep)
 {
 	if (!atot(p, &pw->pw_expire))
 		return (0);
@@ -187,10 +166,7 @@ p_expire(p, pw, ep)
 
 /* ARGSUSED */
 int
-p_gecos(p, pw, ep)
-	const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_gecos(const char *p, struct passwd *pw, struct entry *ep)
 {
 	if (!*p)
 		ep->save = "";
@@ -203,10 +179,7 @@ p_gecos(p, pw, ep)
 
 /* ARGSUSED */
 int
-p_hdir(p, pw, ep)
-	const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_hdir(const char *p, struct passwd *pw, struct entry *ep)
 {
 	if (!*p) {
 		(void) fprintf(stderr, "chpass: empty home directory field.\n");
@@ -221,10 +194,7 @@ p_hdir(p, pw, ep)
 
 /* ARGSUSED */
 int
-p_shell(p, pw, ep)
-	register const char *p;
-	struct passwd *pw;
-	struct entry *ep;
+p_shell(const char *p, struct passwd *pw, struct entry *ep)
 {
 	register char *sh, *t;
 

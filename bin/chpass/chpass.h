@@ -17,6 +17,7 @@
  *	@(#)chpass.h	5.1 (Berkeley) 2/22/89
  */
 
+struct passwd;
 struct entry {
 	const char *prompt;
 	int  (*func)(const char *, struct passwd *, struct entry *);
@@ -26,6 +27,16 @@ struct entry {
 	const char *save;
 };
 
+typedef struct entry ENTRY;
+
+/* Field numbers. */
+#define	E_NAME		7
+#define	E_BPHONE	8
+#define	E_HPHONE	9
+#define	E_LOCATE	10
+#define	E_SHELL		12
+
+extern struct entry list[];
 extern uid_t uid;
 
 /* field.c */

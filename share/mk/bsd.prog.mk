@@ -96,7 +96,6 @@ _LIB211BSD= \
             stubs \
             vmf
             
-
 _LIBNETBSD= \
             netbsd
 
@@ -106,30 +105,30 @@ _LIBPLAN9=  \
             regexp \
             utf \
 
-_LIBLIST=   \
+_LIBGENERIC=   \
             archive \
             bz2 \
             c c_pic compat crypto curses cxx \
             dbm des \
             edit execinfo event event_openssl event_pthreads expat \
-            fetch fl form fortran \
+            fetch fl form \
             g2c gcc gnuctf gnumalloc \
             intl ipsec \
             l lua \
             kvm \
-            m magic menu mp \
-            netbsd ns \
-            objc om \
+            m magic menu \
+            ns \
+            objc \
             panel pcap pci pthread \
             resolv rmt rpcsvs \
             skey sqlite3 ssh ssl ssp stdc++ stubs supc++ \
             terminfo \
             util \
-            vmf \
             wrap \
             y \
-            z \
-            ${_LIB211BSD} ${_LIBNETBSD} ${_LIBPLAN9}
+            z
+            
+_LIBLIST= 	${_LIBGENERIC} ${_LIB211BSD} ${_LIBNETBSD} ${_LIBPLAN9}
 
 .for _var in ${_LIBLIST}
 .ifndef LIB${_var:tu}

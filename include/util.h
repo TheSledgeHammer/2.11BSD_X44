@@ -80,42 +80,48 @@ struct utmpx;
 struct winsize;
 
 const char 	*getbootfile(void);
-int			getmaxpartitions(void);
-int			getrawpartition(void);
+int		getmaxpartitions(void);
+int		getrawpartition(void);
 void		login(const struct utmp *);
 void		loginx(const struct utmpx *);
-int			login_tty(int);
-int			logout(const char *);
-int			logoutx(const char *, int, int);
+int		login_tty(int);
+int		logout(const char *);
+int		logoutx(const char *, int, int);
 void		logwtmp(const char *, const char *, const char *);
 void		logwtmpx(const char *, const char *, const char *, int, int);
-int			opendisk(const char *, int, char *, size_t, int);
-int			openpty(int *, int *, char *, struct termios *, struct winsize *);
+int		opendisk(const char *, int, char *, size_t, int);
+int		openpty(int *, int *, char *, struct termios *, struct winsize *);
 pid_t		forkpty(int *, char *, struct termios *, struct winsize *);
-time_t	    parsedate(const char *, const time_t *, const int *);
-int			pidfile(const char *);
-int			pw_lock(int);
-int			pw_mkdb(void);
-int		    pidlock(const char *, int, pid_t *, const char *);
-int			pw_abort(void);
-void		pw_init(void);
-void		pw_edit(int, const char *);
-void		pw_prompt(void);
+time_t	    	parsedate(const char *, const time_t *, const int *);
+int		pidfile(const char *);
+int		pidlock(const char *, int, pid_t *, const char *);
+int		pw_abort(void);
 void		pw_copy(int, int, struct passwd *);
-int			pw_scan(char *, struct passwd *, int *);
+int		pw_copyf(struct passwd *, FILE *);
+int 		pw_copyx(int, int, struct passwd *);
+void		pw_dirpag(const char *, const char *);
+int		pw_edit(const char *, int);
 void		pw_error(const char *, int, int);
-int			raise_default_signal(int);
-int			secure_path(const char *);
-int			snprintb(char *, size_t, const char *, uint64_t);
-int			sockaddr_snprintf(char *, size_t, const char *, const struct sockaddr *);
-int			ttyaction(const char *, const char *, const char *);
-int		    ttylock(const char *, int, pid_t *);
-char	    *ttymsg(struct iovec *, int, const char *, int);
-int		    ttyunlock(const char *);
+const char  	*pw_getprefix(void);
+void		pw_init(void);
+int		pw_lock(int);
+int		pw_mkdb(const char *);
+void		pw_prompt(void);
+int		pw_scan(char *, struct passwd *, int *);
+int		pw_setprefix(const char *);
+int 		pw_tmp(const char *);
+int		raise_default_signal(int);
+int		secure_path(const char *);
+int		snprintb(char *, size_t, const char *, uint64_t);
+int		sockaddr_snprintf(char *, size_t, const char *, const struct sockaddr *);
+int		ttyaction(const char *, const char *, const char *);
+int		ttylock(const char *, int, pid_t *);
+char	    	*ttymsg(struct iovec *, int, const char *, int);
+int		ttyunlock(const char *);
 
 /* stat_flags.c */
 char 		*flags_to_string(u_long, const char *);
-int			string_to_flags(char **, u_long *, u_long *);
+int		string_to_flags(char **, u_long *, u_long *);
 
 /* efun.c: Error checked functions */
 void		(*esetfunc(void (*)(int, const char *, ...)))(int, const char *, ...);
@@ -130,8 +136,8 @@ void 		*emalloc(size_t);
 void 		*erealloc(void *, size_t);
 void 		ereallocarr(void *, size_t, size_t);
 struct __siobuf	*efopen(const char *, const char *);
-int	 		easprintf(char ** __restrict, const char * __restrict, ...)	__printflike(2, 3);
-int			evasprintf(char ** __restrict, const char * __restrict, __va_list) __printflike(2, 0);
+int	 	easprintf(char ** __restrict, const char * __restrict, ...)	__printflike(2, 3);
+int		evasprintf(char ** __restrict, const char * __restrict, __va_list) __printflike(2, 0);
 __END_DECLS
 
 #endif /* !_UTIL_H_ */

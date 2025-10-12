@@ -328,9 +328,9 @@ out:
 */
 
 static int
-_pw_search(db, key, data, rew)
+_pw_search(db, t_key, t_data, rew)
 	DBM *db;
-	datum *key, *data;
+	datum *t_key, *t_data;
 	int *rew;
 {
 	datum f_key, f_data;
@@ -344,10 +344,10 @@ _pw_search(db, key, data, rew)
 		if (f_key.dptr) {
 			f_data = dbm_fetch(db, f_key);
 			if (f_data != NULL) {
-				key->dptr = &f_key.dptr;
-				key->dsize = &f_key.dsize;
-				data->dptr = &f_data.dptr;
-				data->dsize = &f_data.dsize;
+				t_key->dptr = &f_key.dptr;
+				t_key->dsize = &f_key.dsize;
+				t_data->dptr = &f_data.dptr;
+				t_data->dsize = &f_data.dsize;
 				ret = 0;
 				break;
 			} else if (f_data == NULL) {

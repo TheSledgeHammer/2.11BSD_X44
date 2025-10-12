@@ -44,8 +44,7 @@ static const char *months[] =
 	  "December", NULL };
 
 char *
-ttoa(tval)
-	time_t tval;
+ttoa(time_t tval)
 {
 	register struct tm *tp;
 	static char tbuf[50];
@@ -60,9 +59,7 @@ ttoa(tval)
 } 
 
 int
-atot(p, store)
-	const char *p;
-	time_t *store;
+atot(const char *p, time_t *store)
 {
 	register char *t;
 	const char **mp;
@@ -127,9 +124,7 @@ bad:
 }
 
 void
-print(fp, pw)
-	register FILE *fp;
-	struct passwd *pw;
+print(FILE *fp, struct passwd *pw)
 {
 	register char *p;
 	char	*bp;
