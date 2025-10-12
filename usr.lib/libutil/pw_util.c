@@ -86,6 +86,11 @@ static char sccsid[] = "@(#)chpass.c	5.10.1 (2.11BSD) 1996/1/12";
 
 static const char *pw_filename(const char *file);
 static void pw_cont(int sig);
+#ifdef USE_MKPASSWD
+static int pw_mkpasswd(const char *file);
+#else
+static int pw_pwd_mkdb(const char *file);
+#endif
 static int copy(struct passwd *pw, FILE *fp);
 static int makedb(const char *path, const char *arg, const char *file);
 static int edit(const char *file, int notsetuid);
@@ -225,19 +230,6 @@ pw_lock(void)
 	return (lockfd);
 }
 
-int
-pw_mkdb(const char *file)
-{
-	int rval;
-
-#ifdef USE_MKPASSWD
-	rval = pw_mkpasswd(file);
-#else
-	rval = pw_pwd_mkdb(file);
-#endif
-	return (rval);
-}
-
 #ifdef USE_MKPASSWD
 static int
 pw_mkpasswd(const char *file)
@@ -254,6 +246,19 @@ pw_pwd_mkdb(const char *file)
 }
 
 #endif
+
+int
+pw_mkdb(const char *file)
+{
+	int rval;
+
+#ifdef USE_MKPASSWD
+	rval = pw_mkpasswd(file);
+#else
+	rval = pw_pwd_mkdb(file);
+#endif
+	return (rval);
+}
 
 int
 pw_edit(const char *file, int notsetuid)
