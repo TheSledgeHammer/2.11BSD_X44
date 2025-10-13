@@ -34,7 +34,7 @@ SRCS+=	efun.c 														\
         if_media.c                                                  \
 		login.c loginx.c login_cap.c login_tty.c logout.c logoutx.c \
 		logwtmp.c logwtmpx.c parsedate.y pidfile.c pidlock.c pty.c 	\
-		raise_default_signal.c secure_path.c snprintb.c 			\
+		pw_util.c raise_default_signal.c secure_path.c snprintb.c 	\
 		sockaddr_snprintf.c stat_flags.c ttyaction.c ttymsg.c
 
 MAN=	efun.3 														\

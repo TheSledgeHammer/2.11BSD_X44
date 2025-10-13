@@ -69,6 +69,7 @@ static char sccsid[] = "@(#)chpass.c	5.10.1 (2.11BSD) 1996/1/12";
 #include <sys/resource.h>
 #include <sys/wait.h>
 
+#include <assert.h>
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
@@ -261,16 +262,15 @@ pw_lkopen(struct passwd *pw)
 	const char *passwd, *temp;
 	int rval;
 
-	rval = 2;
 	passwd = pw_filename(_PATH_MASTERPASSWD);
 	if (passwd == NULL) {
-		warnx("%s:", passwd);
+		warnx("%s:", tempname);
 	}
 
 	/* Acquire the lock file. */
 	temp = pw_filename(_PATH_MASTERPASSWD_LOCK);
 	if (temp == NULL) {
-		warnx("%s:", temp);
+		warnx("%s:", tempname);
 	}
 
 	if (pw == NULL) {
@@ -305,7 +305,7 @@ pw_lkopenpw(struct passwd *pw, const char *passwd, const char *temp)
 	fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0600);
 	if (fd < 0) {
 		if (errno == EEXIST) {
-			errx(1, "chpass: password file busy -- try again later.\n");
+			errx(1, "password file busy -- try again later.\n");
 		}
 		err(1, "%s: ", temp);
 	}
@@ -570,8 +570,8 @@ edit(const char *file, int notsetuid)
 	int status, w;
 	const char *p, *editor;
 
-	if (editor == getenv("EDITOR")) {
-		if (p == strrchr(editor, '/')) {
+	if ((editor = getenv("EDITOR"))) {
+		if ((p = strrchr(editor, '/'))) {
 			++p;
 		} else {
 			p = editor;
