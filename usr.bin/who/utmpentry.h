@@ -36,10 +36,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if defined(SUPPORT_UTMPX)
+# include <utmpx.h>
+# define WHO_NAME_LEN		_UTX_USERSIZE
+# define WHO_LINE_LEN		_UTX_LINESIZE
+# define WHO_HOST_LEN		_UTX_HOSTSIZE
+#elif defined(SUPPORT_UTMP)
+# include <utmp.h>
+# define WHO_NAME_LEN		UT_NAMESIZE
+# define WHO_LINE_LEN		UT_LINESIZE
+# define WHO_HOST_LEN		UT_HOSTSIZE
+#else
+# error Either SUPPORT_UTMPX or SUPPORT_UTMP must be defined!
+#endif
+
 struct utmpentry {
-	char name[65];
-	char line[65];
-	char host[257];
+	char name[WHO_NAME_LEN + 1];
+	char line[WHO_LINE_LEN + 1];
+	char host[WHO_HOST_LEN + 1];
 	struct timeval tv;
 	struct utmpentry *next;
 };

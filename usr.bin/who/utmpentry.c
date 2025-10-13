@@ -57,6 +57,10 @@ __RCSID("$NetBSD: utmpentry.c,v 1.4 2003/02/12 17:39:36 christos Exp $");
 
 #include "utmpentry.h"
 
+/* Fail the compile if x is not true, by constructing an illegal type. */
+#define COMPILE_ASSERT(x) /*LINTED null effect */ \
+	((void)sizeof(struct { unsigned : ((x) ? 1 : -1); }))
+
 
 #ifdef SUPPORT_UTMP
 static void getentry(struct utmpentry *, struct utmp *);
@@ -250,12 +254,22 @@ getutentries(const char *fname, struct utmpentry **epp)
 static void
 getentry(struct utmpentry *e, struct utmp *up)
 {
-	(void)strncpy(e->name, up->ut_name, sizeof(up->ut_name));
-	e->name[sizeof(e->name) - 1] = '\0';
-	(void)strncpy(e->line, up->ut_line, sizeof(up->ut_line));
-	e->line[sizeof(e->line) - 1] = '\0';
-	(void)strncpy(e->host, up->ut_host, sizeof(up->ut_host));
-	e->name[sizeof(e->host) - 1] = '\0';
+	COMPILE_ASSERT(sizeof(e->name) > sizeof(up->ut_name));
+	COMPILE_ASSERT(sizeof(e->line) > sizeof(up->ut_line));
+	COMPILE_ASSERT(sizeof(e->host) > sizeof(up->ut_host));
+
+	/*
+	 * e has just been calloc'd. We don't need to clear it or
+	 * append null-terminators, because its length is strictly
+	 * greater than the source string. Use memcpy to _read_
+	 * up->ut_* because they may not be terminated. For this
+	 * reason we use the size of the _source_ as the length
+	 * argument.
+	 */
+	memcpy(e->name, up->ut_name, sizeof(up->ut_name));
+	memcpy(e->line, up->ut_line, sizeof(up->ut_line));
+	memcpy(e->host, up->ut_host, sizeof(up->ut_host));
+
 	e->tv.tv_sec = up->ut_time;
 	e->tv.tv_usec = 0;
 	adjust_size(e);
@@ -266,12 +280,22 @@ getentry(struct utmpentry *e, struct utmp *up)
 static void
 getentryx(struct utmpentry *e, struct utmpx *up)
 {
-	(void)strncpy(e->name, up->ut_name, sizeof(up->ut_name));
-	e->name[sizeof(e->name) - 1] = '\0';
-	(void)strncpy(e->line, up->ut_line, sizeof(up->ut_line));
-	e->line[sizeof(e->line) - 1] = '\0';
-	(void)strncpy(e->host, up->ut_host, sizeof(up->ut_host));
-	e->name[sizeof(e->host) - 1] = '\0';
+	COMPILE_ASSERT(sizeof(e->name) > sizeof(up->ut_name));
+	COMPILE_ASSERT(sizeof(e->line) > sizeof(up->ut_line));
+	COMPILE_ASSERT(sizeof(e->host) > sizeof(up->ut_host));
+
+	/*
+	 * e has just been calloc'd. We don't need to clear it or
+	 * append null-terminators, because its length is strictly
+	 * greater than the source string. Use memcpy to _read_
+	 * up->ut_* because they may not be terminated. For this
+	 * reason we use the size of the _source_ as the length
+	 * argument.
+	 */
+	memcpy(e->name, up->ut_name, sizeof(up->ut_name));
+	memcpy(e->line, up->ut_line, sizeof(up->ut_line));
+	memcpy(e->host, up->ut_host, sizeof(up->ut_host));
+
 	e->tv = up->ut_tv;
 	adjust_size(e);
 }
