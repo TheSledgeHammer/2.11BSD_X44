@@ -91,6 +91,7 @@ static int pw_mkpasswd(const char *file);
 #else
 static int pw_pwd_mkdb(const char *file);
 #endif
+static int compare(const char *a, const char *b);
 static int copy(struct passwd *pw, FILE *fp);
 static int makedb(const char *path, const char *arg, const char *file);
 static int edit(const char *file, int notsetuid);
@@ -211,6 +212,7 @@ pw_init(void)
 	(void)umask(0);
 }
 
+#ifdef deprecated
 int
 pw_lock(void)
 {
@@ -228,6 +230,117 @@ pw_lock(void)
 		errx(1, "the password db file is busy");
 	}
 	return (lockfd);
+}
+#endif
+
+int
+pw_lock(int retries)
+{
+	return (pw_lockpw(NULL, retries));
+}
+
+int
+pw_lockpw(struct passwd *pw, int retries)
+{
+	int lockcntl, i;
+
+	lockfd = pw_lkopen(pw);
+	lockcntl = fcntl(lockfd, F_SETFD, 1);
+	if ((lockfd < 0 || lockcntl == -1) && (flock(lockfd, LOCK_EX|LOCK_NB) == -1 || errno == EEXIST)) {
+		for (i = 0; i < retries; i++) {
+			sleep(1);
+			lockfd = pw_lkopen(pw);
+		}
+	}
+	return (lockfd);
+}
+
+int
+pw_lkopen(struct passwd *pw)
+{
+	const char *passwd, *temp;
+	int rval;
+
+	rval = 2;
+	passwd = pw_filename(_PATH_MASTERPASSWD);
+	if (passwd == NULL) {
+		warnx("%s:", passwd);
+	}
+
+	/* Acquire the lock file. */
+	temp = pw_filename(_PATH_MASTERPASSWD_LOCK);
+	if (temp == NULL) {
+		warnx("%s:", temp);
+	}
+
+	if (pw == NULL) {
+		rval = compare(passwd, temp);
+		switch (rval) {
+		case 0:
+			rval = -1;
+			break;
+		case 1:
+			rval = open(passwd, O_RDONLY, 0);
+			break;
+		case 2:
+			rval = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0600);
+			break;
+		default:
+			rval = -1;
+			break;
+		}
+		return (rval);
+	}
+	return (pw_lkopenpw(pw, passwd, temp));
+}
+
+int
+pw_lkopenpw(struct passwd *pw, const char *passwd, const char *temp)
+{
+	register char *p;
+	FILE *temp_fp;
+	int fd;
+
+	/* temp = _PATH_PTMP or _PATH_MASTERPASSWD_LOCK */
+	fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0600);
+	if (fd < 0) {
+		if (errno == EEXIST) {
+			errx(1, "chpass: password file busy -- try again later.\n");
+		}
+		err(1, "%s: ", temp);
+	}
+	if (!(temp_fp = fdopen(fd, "w"))) {
+		err(1, "can't write %s; ", temp);
+	}
+
+	/* root should have a 0 uid and a reasonable shell */
+	if (!strcmp(pw->pw_name, "root")) {
+		if (pw->pw_uid) {
+			(void)fprintf(stderr, "root uid should be 0.");
+			exit(1);
+		}
+		setusershell();
+		for (;;) {
+			if (!(p = getusershell())) {
+				(void)fprintf(stderr, "warning, unknown root shell.");
+				break;
+			} else if (!strcmp(pw->pw_shell, p)) {
+				break;
+			}
+		}
+	}
+
+	/* passwd = _PATH_MASTERPASSWD */
+	if (!freopen(passwd, "r", stdin)) {
+		err(1, "can't read %s; ", passwd);
+	}
+	if (!copy(pw, temp_fp)) {
+		pw_error(_PATH_MASTERPASSWD, 1, 1);
+	}
+	(void)fclose(temp_fp);
+	(void)fclose(stdin);
+
+	return (fd);
 }
 
 #ifdef USE_MKPASSWD
@@ -373,6 +486,18 @@ pw_error(const char *name, int error, int eval)
 	warnx("%s: unchanged", _PATH_MASTERPASSWD);
 	pw_abort();
 	exit(eval);
+}
+
+static int
+compare(const char *a, const char *b)
+{
+	if ((a == NULL) && (b != NULL)) {
+		return (2);
+	} else if ((a != NULL) && (b == NULL)) {
+		return (1);
+	} else {
+		return (0);
+	}
 }
 
 static int

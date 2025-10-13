@@ -689,19 +689,20 @@ toss(void *p, int *nump, size_t size, int (*dotoss)(const void *, const void *, 
 	void *p1;
     size_t s1, s2;
 
-	if (*nump == 0)
+	if (*nump == 0) {
 		return;
+	}
 
 	for (i = *nump; --i > 0;) {
-        s1 = (size_t)p;
-        s2 = (s1 + size);
+		s1 = (size_t)p;
+		s2 = (s1 + size);
 		p1 = &s2;
 		if (dotoss(client, p, p1)) {
 			memmove(p, p1, i * size);
 			--(*nump);
 		} else {
-            s1 += size;
-            p = &s1;
-        }
+			s1 += size;
+			p = &s1;
+		}
 	}
 }
