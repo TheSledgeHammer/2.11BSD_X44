@@ -167,4 +167,34 @@ main(int argc, char **argv)
 	pw_init();
 	pfd = pw_lockpw(pw, 0);
 	tfd = pw_tmp();
+
+	if (op == EDITENTRY) {
+		display(tfd, pw);
+		edit(pw);
+		(void)unlink(tempname);
+		tfd = pw_tmp();
+	}
+
+	pw_copy(pfd, tfd, pw);
+
+	switch (fork()) {
+	case 0:
+		break;
+	case -1:
+		pw_error((char *)NULL, 0, 1);
+		break;
+		/* NOTREACHED */
+	default:
+		exit(0);
+		/* NOTREACHED */
+	}
+
+	if (pw_mkdb(tempname)) {
+		pw_error(tempname, 0, 1);
+	}
+#ifdef USE_NDBM
+	pw_dirpag_rename();
+#else
+	exit(0);
+#endif
 }

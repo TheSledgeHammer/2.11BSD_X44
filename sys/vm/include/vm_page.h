@@ -253,7 +253,7 @@ void		 vm_page_wire(vm_page_t);
 bool_t	 	 vm_page_zero_fill(vm_page_t);
 vm_page_t	 vm_page_anon_alloc(vm_segment_t, vm_offset_t, vm_anon_t);
 void		 vm_page_anon_free(vm_page_t);
-int		 	 vm_page_alloc_memory(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *, int, int);
+int		 vm_page_alloc_memory(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *, int, int, int);
 void		 vm_page_free_memory(struct pglist *);
 
 #endif /* KERNEL */

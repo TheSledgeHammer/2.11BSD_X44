@@ -428,11 +428,22 @@ pw_copyf(struct passwd *pw, FILE *fp)
 
 /* specific to ndbm only */
 void
-pw_dirpag(const char *passwd, const char *temp)
+pw_dirpag_rename(void)
 {
 	int fd;
 	char *fend, *tend;
 	char from[MAXPATHLEN], to[MAXPATHLEN];
+	const char *passwd, *temp;
+
+	passwd = pw_filename(_PATH_MASTERPASSWD);
+	if (passwd == NULL) {
+		exit(1);
+	}
+
+	temp = pw_filename(_PATH_MASTERPASSWD_LOCK);
+	if (temp == NULL) {
+		exit(1);
+	}
 
 	/*
 	 * possible race; have to rename four files, and someone could slip

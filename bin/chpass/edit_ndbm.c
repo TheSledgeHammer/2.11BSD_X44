@@ -41,7 +41,7 @@ static int info(char *tempname, struct passwd *pw, struct entry list[]);
 static void loadpw(char *arg, struct passwd *pw);
 
 void
-chpass_ndbm(struct passwd *pw, const char *passwd, const char *temp)
+chpass_ndbm(char *tempname, struct passwd *pw)
 {
 	int pfd, tfd;
 
@@ -66,11 +66,11 @@ chpass_ndbm(struct passwd *pw, const char *passwd, const char *temp)
 		/* NOTREACHED */
 	}
 
-	if (!pw_mkdb(arg)) {
+	if (!pw_mkdb(tempname)) {
 bad:
 		pw_error(NULL, 0, 1);
 	}
-	pw_dirpag(passwd, temp);
+	pw_dirpag_rename();
 }
 
 static int

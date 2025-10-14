@@ -264,7 +264,50 @@ _bus_dmamap_load_raw(t, map, segs, nsegs, size0, flags)
 	bus_size_t size0;
 	int flags;
 {
-	panic("bus_dmamap_load_raw: not implemented");
+	//panic("bus_dmamap_load_raw: not implemented");
+
+	u_long lastaddr;
+	bus_size_t size;
+	int seg, i, error, first;
+
+	/*
+	 * Make sure that on error condition we return "no valid mappings."
+	 */
+	map->dm_mapsize = 0;
+	map->dm_nsegs = 0;
+
+	if (size0 > map->_dm_size) {
+		return EINVAL;
+	}
+
+	first = 1;
+	seg = 0;
+	error = 0;
+	for (i = 0, size = size0; i < nsegs && size > 0; i++) {
+		bus_dma_segment_t *ds = &segs[i];
+		bus_size_t sgsize;
+
+		sgsize = MIN(ds->ds_len, size);
+		if (sgsize == 0) {
+			continue;
+		}
+		error = _bus_dmamap_load_buffer(t, map, ds->ds_addr, sgsize, NULL, flags, &lastaddr, &seg, first);
+		if (error != 0) {
+			break;
+		}
+		size -= sgsize;
+	}
+
+	if (error != 0) {
+		map->dm_mapsize = 0;
+		map->dm_nsegs = 0;
+		return error;
+	}
+
+	/* XXX TBD bounce */
+
+	map->dm_mapsize = size0;
+	return 0;
 }
 
 /*
@@ -485,7 +528,7 @@ _bus_dmamap_load_buffer(t, map, buf, buflen, p, flags, lastaddrp, segp, first)
 		/*
 		 * Get the physical address for this segment.
 		 */
-		(void) pmap_extract(pmap, vaddr);
+		(void)pmap_extract(pmap, vaddr);
 
 		/*
 		 * If we're beyond the bounce threshold, notify
@@ -575,7 +618,8 @@ _bus_dmamem_alloc_range(t, size, alignment, boundary, segs, nsegs, rsegs, flags,
 	/*
 	 * Allocate pages from the VM system.
 	 */
-	error = vm_page_alloc_memory(size, low, high, alignment, boundary, &mlist, nsegs, (flags & BUS_DMA_NOWAIT) == 0);
+
+	error = vm_page_alloc_memory(size, low, high, alignment, boundary, &mlist, nsegs, (flags & BUS_DMA_NOWAIT) == 0, 1);
 
 	if (error)
 		return (error);

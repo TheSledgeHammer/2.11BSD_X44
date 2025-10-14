@@ -791,6 +791,8 @@ vm_page_anon_free(mem)
 	vm_page_free(mem);
 }
 
+#ifdef deprecated
+
 #define	VM_PAGE_ALLOC_MEMORY_STATS
 
 #ifdef VM_PAGE_ALLOC_MEMORY_STATS
@@ -1091,3 +1093,4 @@ vm_page_free_memory(list)
 	simple_unlock(&vm_page_queue_free_lock);
 	splx(s);
 }
+#endif
