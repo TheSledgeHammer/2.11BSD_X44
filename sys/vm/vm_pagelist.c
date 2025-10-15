@@ -102,7 +102,7 @@ bool_t issegmented;
     }												\
 }
 
-#define vm_pagelist_unlock(segmented) {              \
+#define vm_pagelist_unlock(segmented) {             \
     if ((segmented) == TRUE) {                      \
         simple_lock(&vm_segment_list_free_lock);    \
     } else {                                        \
@@ -116,8 +116,11 @@ static void vm_pagelist_add_segmented_memory(vm_segment_t, struct seglist *);
 static void vm_pagelist_free_segmented_memory(struct seglist *);
 
 static int vm_pagelist_alloc(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, bool_t, struct seglist *, struct pglist *);
-static void vm_pagelist_free(vm_offset_t, vm_size_t, vm_size_t, int, bool_t, struct seglist *, struct pglist *);
-static int vm_pagelist_alloc_contig(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *, int);
+static void vm_pagelist_free(vm_offset_t, vm_size_t, vm_size_t, bool_t, struct seglist *, struct pglist *);
+static int vm_pagelist_alloc_contig(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, bool_t, struct seglist *, struct pglist *);
+
+static void vm_pagelist_alloc_page_range(vm_offset_t *, vm_size_t *, vm_size_t, int *, vm_offset_t, vm_offset_t, struct pglist *);
+static void vm_pagelist_alloc_segment_range(vm_offset_t *, vm_size_t *, vm_size_t, int *, vm_offset_t, vm_offset_t, struct seglist *);
 
 static int vm_pagelist_first(bool_t);
 static int vm_pagelist_index(bool_t, vm_offset_t);
@@ -125,6 +128,7 @@ static long vm_pagelist_array_size(bool_t);
 static vm_offset_t vm_pagelist_to_phys(bool_t, int);
 static int vm_pagelist_is_physaddr(bool_t, vm_offset_t);
 static int vm_pagelist_is_free(bool_t, int);
+static bool_t vm_pagelist_is_segmented(vm_size_t, bool_t);
 static int vm_pagelist_check_memory(vm_size_t);
 static int vm_pagelist_found_chunk(int, int, bool_t, struct seglist *, struct pglist *);
 
@@ -405,10 +409,9 @@ out:
 }
 
 static void
-vm_pagelist_free(addr, size, addrsize, num, segmented, slist, rlist)
+vm_pagelist_free(addr, len, size, segmented, slist, rlist)
 	vm_offset_t addr;
-	vm_size_t size, addrsize;
-	int num;
+	vm_size_t len, size;
 	bool_t segmented;
 	struct seglist *slist;
 	struct pglist *rlist;
@@ -416,19 +419,17 @@ vm_pagelist_free(addr, size, addrsize, num, segmented, slist, rlist)
 	vm_segment_t seg;
 	vm_page_t pg;
 	vm_offset_t curaddr;
-	int curnum, s;
+	int s;
 
-	//for (curnum = 0; curnum < num; curnum++) {
-		for (curaddr = addr; curaddr < (addr + size); addr += addrsize) {
-			if (segmented == TRUE) {
-				seg = PHYS_TO_VM_SEGMENT(curaddr);
-				CIRCLEQ_INSERT_TAIL(slist, seg, segmentq);
-			} else {
-				pg = PHYS_TO_VM_PAGE(curaddr);
-				TAILQ_INSERT_TAIL(rlist, m, pageq);
-			}
+	for (curaddr = addr; curaddr < (addr + len); addr += size) {
+		if (segmented == TRUE) {
+			seg = PHYS_TO_VM_SEGMENT(curaddr);
+			CIRCLEQ_INSERT_TAIL(slist, seg, segmentq);
+		} else {
+			pg = PHYS_TO_VM_PAGE(curaddr);
+			TAILQ_INSERT_TAIL(rlist, m, pageq);
 		}
-	//}
+	}
 	s = splimp();
     if (segmented == TRUE) {
         vm_pagelist_free_segmented_memory(slist);
@@ -439,42 +440,20 @@ vm_pagelist_free(addr, size, addrsize, num, segmented, slist, rlist)
 }
 
 static int
-vm_pagelist_alloc_contig(size, low, high, alignment, boundary, rlist, forced)
+vm_pagelist_alloc_contig(size, low, high, alignment, boundary, segmented, slist, rlist)
 	vm_size_t size;
 	vm_offset_t low, high, alignment, boundary;
-	struct pglist *rlist;
-	int forced;
-{
-	int s, error, rval;
 	bool_t segmented;
-	struct seglist slist;
+	struct seglist *slist;
+	struct pglist *rlist;
+{
+	int s, error;
 
 	/*
 	 * Block all memory allocation and lock the free list.
 	 */
 	s = splimp();
-
-	/* Check if number of pages expands beyond a single segment */
-	rval = vm_pagelist_check_memory(size);
-	if (rval != 0) {
-		if (rval > 0) {
-			segmented = TRUE;
-		}
-		if (rval < 0) {
-			segmented = FALSE;
-		}
-	} else {
-		segmented = FALSE;
-	}
-	if (forced == 0) {
-		segmented = TRUE;
-	}
-	if (segmented == TRUE) {
-		CIRCLEQ_INIT(&slist);
-		error = vm_pagelist_alloc(size, low, high, alignment, boundary, segmented, &slist, rlist);
-	} else {
-		error = vm_pagelist_alloc(size, low, high, alignment, boundary, segmented, NULL, rlist);
-	}
+	error = vm_pagelist_alloc(size, low, high, alignment, boundary, segmented, slist, rlist);
 	splx(s);
 	return (error);
 }
@@ -488,12 +467,15 @@ vm_pagelist_alloc_contig(size, low, high, alignment, boundary, rlist, forced)
  * 			 segments (4mb chunks). (Recommended)
  */
 int
-vm_pagelist_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok, forced)
-	vm_size_t size;
+vm_pagelist_alloc_memory(addr, len, size, num, low, high, alignment, boundary, nsegs, waitok, forced)
+	vm_offset_t *addr;
+	vm_size_t *len, size;
 	vm_offset_t low, high, alignment, boundary;
-	struct pglist *rlist;
-	int nsegs, waitok, forced;
+	int *num, nsegs, waitok, forced;
 {
+	struct seglist slist;
+	struct pglist rlist;
+	bool_t segmented;
 	int error;
 
 #ifdef DIAGNOSTIC
@@ -518,14 +500,27 @@ vm_pagelist_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, wai
 		return (EINVAL);
 	}
 
-	TAILQ_INIT(rlist);
+	segmented = vm_pagelist_is_segmented(size, forced);
+	if (segmented == TRUE) {
+		CIRCLEQ_INIT(&slist);
+		TAILQ_INIT(&rlist);
+	} else {
+		TAILQ_INIT(&rlist);
+	}
 
 	if ((nsegs < size >> PAGE_SHIFT) || (alignment != PAGE_SIZE)
 			|| (boundary != 0)) {
-		error = vm_pagelist_alloc_contig(size, low, high, alignment,
-				boundary, rlist, forced);
-	} else {
-		error = ENOMEM;
+		if (segmented == TRUE) {
+			error = vm_pagelist_alloc_contig(size, low, high, alignment, boundary, &slist, &rlist);
+			if (error) {
+				vm_pagelist_alloc_segment_range(addr, len, SEGMENT_SIZE, num, low, high, &slist);
+			}
+		} else {
+			error = vm_pagelist_alloc_contig(size, low, high, alignment, boundary, NULL, &rlist);
+			if (error) {
+				vm_pagelist_alloc_page_range(addr, len, PAGE_SIZE, num, low, high, &rlist);
+			}
+		}
 	}
 	return (error);
 }
@@ -537,37 +532,104 @@ vm_pagelist_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, wai
  *	The pages are assumed to have no mappings.
  */
 void
-vm_pagelist_free_memory(addr, size, num, forced)
+vm_pagelist_free_memory(addr, len, forced)
 	vm_offset_t addr;
-	vm_size_t size;
-	int num, forced;
+	vm_size_t len;
+	int forced;
 {
-	int rval;
 	bool_t segmented;
 	struct seglist slist;
 	struct pglist rlist;
 
-	rval = vm_pagelist_check_memory(size);
-	if (rval != 0) {
-		if (rval > 0) {
-			segmented = TRUE;
-		}
-		if (rval < 0) {
-			segmented = FALSE;
-		}
+	segmented = vm_pagelist_is_segmented(len, forced);
+	if (segmented == TRUE) {
+		CIRCLEQ_INIT(&slist);
+		TAILQ_INIT(&rlist);
+		vm_pagelist_free(addr, len, SEGMENT_SIZE, segmented, &slist, &rlist);
 	} else {
-		segmented = FALSE;
+		TAILQ_INIT(&rlist);
+		vm_pagelist_free(addr, len, PAGE_SIZE, segmented, NULL, &rlist);
 	}
-	if (forced == 0) {
-		segmented = TRUE;
-	}
-	 if (segmented == TRUE) {
-		 CIRCLEQ_INIT(&slist);
-		 vm_pagelist_free(addr, size, SEGMENT_SIZE, num, segmented, &slist, &rlist);
-	 } else {
-		 TAILQ_INIT(&rlist);
-		 vm_pagelist_free(addr, size, PAGE_SIZE, num, segmented, NULL, &rlist);
-	 }
+}
+
+static void
+vm_pagelist_alloc_page_range(addr, len, size, num, low, high, rlist)
+    vm_offset_t *addr;
+    vm_size_t *len, size;
+    int *num;
+    vm_offset_t low, high;
+    struct pglist *rlist;
+{
+    vm_page_t pg;
+    vm_offset_t curaddr, lastaddr;
+    int curnum;
+
+    pg = TAILQ_FIRST(rlist);
+    curnum = 0;
+    lastaddr = VM_PAGE_TO_PHYS(pg);
+    addr = &lastaddr;
+    len = size;
+    pg = TAILQ_NEXT(pg, pageq);
+
+    for (; pg != NULL; pg = TAILQ_NEXT(pg, pageq)) {
+        curaddr = VM_PAGE_TO_PHYS(pg);
+        if (curaddr < low || curaddr >= high) {
+#ifdef DIAGNOSTIC
+            printf("vm_pagelist_alloc_memory returned non-sensical"
+			    " address 0x%lx\n", curaddr);
+			panic("_bus_dmamem_alloc_range");
+#endif
+        }
+        if (curaddr == (lastaddr + size)) {
+            len += &size;
+        } else {
+        	curnum++;
+            addr = &curaddr;
+            len = &size;
+        }
+        lastaddr = curaddr;
+    }
+    num = &curnum;
+}
+
+static void
+vm_pagelist_alloc_segment_range(addr, len, size, num, low, high, slist)
+    vm_offset_t *addr;
+    vm_size_t *len, size;
+    int *num;
+    vm_offset_t low, high;
+    struct seglist *slist;
+{
+    vm_segment_t seg;
+    vm_offset_t curaddr, lastaddr;
+    int curnum;
+
+    seg = CIRCLEQ_FIRST(slist);
+    curnum = 0;
+    lastaddr = VM_SEGMENT_TO_PHYS(seg);
+    addr = &lastaddr;
+    len = size;
+    seg = CIRCLEQ_NEXT(seg, segmentq);
+
+    for (; seg != NULL; seg = CIRCLEQ_NEXT(seg, segmentq)) {
+        curaddr = VM_SEGMENT_TO_PHYS(seg);
+        if (curaddr < low || curaddr >= high) {
+#ifdef DIAGNOSTIC
+            printf("vm_pagelist_alloc_memory returned non-sensical"
+			    " address 0x%lx\n", curaddr);
+			panic("_bus_dmamem_alloc_range");
+#endif
+        }
+        if (curaddr == (lastaddr + size)) {
+            len += &size;
+        } else {
+        	curnum++;
+            addr = &curaddr;
+            len = &size;
+        }
+        lastaddr = curaddr;
+    }
+    num = &curnum;
 }
 
 /* Utility routines */
@@ -631,6 +693,32 @@ vm_pagelist_check_memory(size)
 	} else {
 		return (0);
 	}
+}
+
+static bool_t
+vm_pagelist_is_segmented(size, forced)
+	vm_size_t size;
+	int forced;
+{
+	int rval;
+	bool_t segmented;
+
+	/* Check if number of pages expands beyond a single segment */
+	rval = vm_pagelist_check_memory(size);
+	if (rval != 0) {
+		if (rval > 0) {
+			segmented = TRUE;
+		}
+		if (rval < 0) {
+			segmented = FALSE;
+		}
+	} else {
+		segmented = FALSE;
+	}
+	if (forced == 0) {
+		segmented = TRUE;
+	}
+	return (segmented);
 }
 
 static int

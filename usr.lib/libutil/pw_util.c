@@ -273,23 +273,24 @@ pw_lkopen(struct passwd *pw)
 		warnx("%s:", tempname);
 	}
 
+	rval = compare(passwd, temp);
 	if (pw == NULL) {
-		rval = compare(passwd, temp);
-		switch (rval) {
-		case 0:
+		if ((rval == -1) || (rval == 0)) {
 			rval = -1;
-			break;
-		case 1:
-			rval = open(passwd, O_RDONLY, 0);
-			break;
-		case 2:
-			rval = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0600);
-			break;
-		default:
-			rval = -1;
-			break;
+		} else {
+			switch (rval) {
+			case 1:
+				rval = open(passwd, O_RDONLY, 0);
+				break;
+			case 2:
+				rval = open(temp, O_WRONLY | O_CREAT | O_EXCL, 0600);
+				break;
+			}
 		}
 		return (rval);
+	}
+	if (rval == -1) {
+		return (-1);
 	}
 	return (pw_lkopenpw(pw, passwd, temp));
 }
@@ -506,6 +507,8 @@ compare(const char *a, const char *b)
 		return (2);
 	} else if ((a != NULL) && (b == NULL)) {
 		return (1);
+	} else if ((a == NULL) && (b == NULL)) {
+		return (-1);
 	} else {
 		return (0);
 	}
