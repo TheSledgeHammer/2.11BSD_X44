@@ -291,7 +291,7 @@ _bus_dmamap_load_raw(t, map, segs, nsegs, size0, flags)
 		if (sgsize == 0) {
 			continue;
 		}
-		error = _bus_dmamap_load_buffer(t, map, ds->ds_addr, sgsize, NULL, flags, &lastaddr, &seg, first);
+		error = _bus_dmamap_load_buffer(t, map, (void *)ds->ds_addr, sgsize, NULL, flags, &lastaddr, &seg, first);
 		if (error != 0) {
 			break;
 		}
