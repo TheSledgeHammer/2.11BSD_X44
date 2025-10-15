@@ -369,25 +369,19 @@ _bus_dmamem_free(t, segs, nsegs)
 	bus_dma_segment_t *segs;
 	int nsegs;
 {
-	struct vm_page *m;
 	bus_addr_t addr;
-	struct pglist mlist;
+	bus_size_t size;
 	int curseg;
 
 	/*
 	 * Build a list of pages to free back to the VM system.
 	 */
-	TAILQ_INIT(&mlist);
 	for (curseg = 0; curseg < nsegs; curseg++) {
-		for (addr = segs[curseg].ds_addr;
-		    addr < (segs[curseg].ds_addr + segs[curseg].ds_len);
-		    addr += PAGE_SIZE) {
-			m = PHYS_TO_VM_PAGE(addr);
-			TAILQ_INSERT_TAIL(&mlist, m, pageq);
-		}
+		addr = segs[curseg].ds_addr;
+		size = segs[curseg].ds_len;
 	}
 
-	vm_page_free_memory(&mlist);
+	vm_pagelist_free_memory(addr, size, nsegs, 1);
 }
 
 /*
@@ -619,7 +613,7 @@ _bus_dmamem_alloc_range(t, size, alignment, boundary, segs, nsegs, rsegs, flags,
 	 * Allocate pages from the VM system.
 	 */
 
-	error = vm_page_alloc_memory(size, low, high, alignment, boundary, &mlist, nsegs, (flags & BUS_DMA_NOWAIT) == 0, 1);
+	error = vm_pagelist_alloc_memory(size, low, high, alignment, boundary, &mlist, nsegs, (flags & BUS_DMA_NOWAIT) == 0, 1);
 
 	if (error)
 		return (error);
@@ -638,7 +632,7 @@ _bus_dmamem_alloc_range(t, size, alignment, boundary, segs, nsegs, rsegs, flags,
 		curaddr = VM_PAGE_TO_PHYS(m);
 #ifdef DIAGNOSTIC
 		if (curaddr < low || curaddr >= high) {
-			printf("vm_page_alloc_memory returned non-sensical"
+			printf("vm_pagelist_alloc_memory returned non-sensical"
 			    " address 0x%lx\n", curaddr);
 			panic("_bus_dmamem_alloc_range");
 		}
