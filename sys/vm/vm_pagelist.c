@@ -563,7 +563,7 @@ vm_pagelist_free_memory(addr, size, num, forced)
 	}
 	 if (segmented == TRUE) {
 		 CIRCLEQ_INIT(&slist);
-		 vm_pagelist_free(addr, size, PAGE_SIZE, num, segmented, &slist, &rlist);
+		 vm_pagelist_free(addr, size, SEGMENT_SIZE, num, segmented, &slist, &rlist);
 	 } else {
 		 TAILQ_INIT(&rlist);
 		 vm_pagelist_free(addr, size, PAGE_SIZE, num, segmented, NULL, &rlist);
