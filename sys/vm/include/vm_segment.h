@@ -139,6 +139,7 @@ struct vm_segment {
 #define	SEG_CLEAN		0x080	/* segment has not been modified */
 #define	SEG_RELEASED	0x100	/* segment to be freed when unbusied */
 #define	SEG_WANTED		0x200	/* someone is waiting for segment (O) */
+#define	SEG_FREE		0x400	/* segment is on free list */
 
 #if	VM_SEGMENT_DEBUG
 #define	VM_SEGMENT_CHECK(seg) { 											\
@@ -165,6 +166,9 @@ extern
 vm_segment_t		vm_segment_array;			/* First segment in table */
 
 extern
+long				vm_segment_array_size;      /* Size of Segment table */
+
+extern
 long 				first_segment;				/* first logical segment number */
 
 extern
@@ -186,6 +190,8 @@ vm_offset_t			last_logical_addr;			/* logical address for last_segment */
 
 #define PHYS_TO_VM_SEGMENT(pa) 							\
 		(&vm_segment_array[VM_SEGMENT_INDEX(pa)])
+
+#define VM_SEGMENT_IS_FREE(entry)  ((entry)->flags & SEG_FREE)
 		
 extern
 simple_lock_data_t	vm_segment_list_lock;
