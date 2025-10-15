@@ -276,6 +276,7 @@ vm_page_startup(start, end)
 	 */
 
 	cnt.v_page_free_count = npages = (*end - *start + sizeof(struct vm_page)) / (PAGE_SIZE + sizeof(struct vm_page));
+    vm_page_array_size = npages;
 
 	/*
 	 *	Record the extent of physical memory that the
@@ -283,7 +284,7 @@ vm_page_startup(start, end)
 	 */
 
 	first_page = *start;
-	first_page += npages*sizeof(struct vm_page);
+	first_page += npages * sizeof(struct vm_page);
 	first_page = atop(round_page(first_page));
 	last_page  = first_page + npages - 1;
 
