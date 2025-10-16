@@ -127,7 +127,7 @@ static long vm_pagelist_array_size(bool_t);
 static vm_offset_t vm_pagelist_to_phys(bool_t, int);
 static int vm_pagelist_is_physaddr(bool_t, vm_offset_t);
 static int vm_pagelist_is_free(bool_t, int);
-static bool_t vm_pagelist_is_segmented(vm_size_t, bool_t);
+static bool_t vm_pagelist_is_segmented(vm_size_t, int);
 static int vm_pagelist_check_memory(vm_size_t);
 static int vm_pagelist_found_chunk(int, int, bool_t, struct seglist *, struct pglist *);
 
@@ -420,7 +420,7 @@ vm_pagelist_free(addr, len, size, segmented, slist, rlist)
 			CIRCLEQ_INSERT_TAIL(slist, seg, segmentq);
 		} else {
 			pg = PHYS_TO_VM_PAGE(curaddr);
-			TAILQ_INSERT_TAIL(rlist, m, pageq);
+			TAILQ_INSERT_TAIL(rlist, pg, pageq);
 		}
 	}
 	s = splimp();
@@ -506,14 +506,14 @@ vm_pagelist_alloc_memory(addr, len, size, num, low, high, alignment, boundary, n
 			|| (boundary != 0)) {
 		if (segmented == TRUE) {
 			error = vm_pagelist_alloc_contig(size, low, high, alignment,
-					boundary, &slist, &rlist);
+					boundary, segmented, &slist, &rlist);
 			if (error) {
 				vm_pagelist_alloc_segment_range(addr, len, SEGMENT_SIZE, num,
 						low, high, &slist);
 			}
 		} else {
 			error = vm_pagelist_alloc_contig(size, low, high, alignment,
-					boundary, NULL, &rlist);
+					boundary, segmented, NULL, &rlist);
 			if (error) {
 				vm_pagelist_alloc_page_range(addr, len, PAGE_SIZE, num, low,
 						high, &rlist);
@@ -566,7 +566,7 @@ vm_pagelist_alloc_page_range(addr, len, size, num, low, high, rlist)
 	curnum = 0;
 	lastaddr = VM_PAGE_TO_PHYS(pg);
 	addr = &lastaddr;
-	len = size;
+	*len = size;
 	pg = TAILQ_NEXT(pg, pageq);
 
 	for (; pg != NULL; pg = TAILQ_NEXT(pg, pageq)) {
@@ -579,15 +579,15 @@ vm_pagelist_alloc_page_range(addr, len, size, num, low, high, rlist)
 #endif
 		}
 		if (curaddr == (lastaddr + size)) {
-			len += &size;
+			*len += size;
 		} else {
 			curnum++;
 			addr = &curaddr;
-			len = &size;
+			*len = size;
 		}
 		lastaddr = curaddr;
 	}
-	num = &curnum;
+	*num = curnum;
 }
 
 static void
@@ -606,7 +606,7 @@ vm_pagelist_alloc_segment_range(addr, len, size, num, low, high, slist)
 	curnum = 0;
 	lastaddr = VM_SEGMENT_TO_PHYS(seg);
 	addr = &lastaddr;
-	len = size;
+	*len = size;
 	seg = CIRCLEQ_NEXT(seg, segmentq);
 
 	for (; seg != NULL; seg = CIRCLEQ_NEXT(seg, segmentq)) {
@@ -619,15 +619,15 @@ vm_pagelist_alloc_segment_range(addr, len, size, num, low, high, slist)
 #endif
 		}
 		if (curaddr == (lastaddr + size)) {
-			len += &size;
+			*len += size;
 		} else {
 			curnum++;
 			addr = &curaddr;
-			len = &size;
+			*len = size;
 		}
 		lastaddr = curaddr;
 	}
-	num = &curnum;
+	*num = curnum;
 }
 
 /* Utility routines */
