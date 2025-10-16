@@ -274,25 +274,33 @@ pw_lkopen(struct passwd *pw)
 	}
 
 	rval = compare(passwd, temp);
-	if (pw == NULL) {
-		if ((rval == -1) || (rval == 0)) {
+	switch (rval) {
+	case -1:
+		rval = -1;
+		break;
+	case 0:
+		if (pw == NULL) {
 			rval = -1;
 		} else {
-			switch (rval) {
-			case 1:
-				rval = open(passwd, O_RDONLY, 0);
-				break;
-			case 2:
-				rval = open(temp, O_WRONLY | O_CREAT | O_EXCL, 0600);
-				break;
-			}
+			rval = pw_lkopenpw(pw, passwd, temp);
 		}
-		return (rval);
+		break;
+	case 1:
+		if (pw == NULL) {
+			rval = open(passwd, O_RDONLY, 0);
+		} else {
+			rval = -1;
+		}
+		break;
+	case 2:
+		if (pw == NULL) {
+			rval = open(temp, O_WRONLY | O_CREAT | O_EXCL, 0600);
+		} else {
+			rval = -1;
+		}
+		break;
 	}
-	if (rval == -1) {
-		return (-1);
-	}
-	return (pw_lkopenpw(pw, passwd, temp));
+	return (rval);
 }
 
 int

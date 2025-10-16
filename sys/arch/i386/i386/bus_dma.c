@@ -285,17 +285,17 @@ _bus_dmamap_load_raw(t, map, segs, nsegs, size0, flags)
 	error = 0;
 	for (i = 0, size = size0; i < nsegs && size > 0; i++) {
 		bus_dma_segment_t *ds = &segs[i];
-		bus_size_t sgsize;
+		bus_size_t segsize;
 
-		sgsize = MIN(ds->ds_len, size);
-		if (sgsize == 0) {
+		segsize = MIN(ds->ds_len, size);
+		if (segsize == 0) {
 			continue;
 		}
-		error = _bus_dmamap_load_buffer(t, map, (void *)ds->ds_addr, sgsize, NULL, flags, &lastaddr, &seg, first);
+		error = _bus_dmamap_load_buffer(t, map, (void *)ds->ds_addr, segsize, NULL, flags, &lastaddr, &seg, first);
 		if (error != 0) {
 			break;
 		}
-		size -= sgsize;
+		size -= segsize;
 	}
 
 	if (error != 0) {
@@ -504,7 +504,7 @@ _bus_dmamap_load_buffer(t, map, buf, buflen, p, flags, lastaddrp, segp, first)
 	int *segp;
 	int first;
 {
-	bus_size_t sgsize;
+	bus_size_t segsize;
 	bus_addr_t curaddr, lastaddr, baddr, bmask;
 	u_long vaddr = (u_long)buf;
 	int seg;
@@ -534,17 +534,17 @@ _bus_dmamap_load_buffer(t, map, buf, buflen, p, flags, lastaddrp, segp, first)
 		/*
 		 * Compute the segment size, and adjust counts.
 		 */
-		sgsize = PAGE_SIZE - ((u_long) vaddr & PGOFSET);
-		if (buflen < sgsize)
-			sgsize = buflen;
+		segsize = PAGE_SIZE - ((u_long) vaddr & PGOFSET);
+		if (buflen < segsize)
+			segsize = buflen;
 
 		/*
 		 * Make sure we don't cross any boundaries.
 		 */
 		if (map->_dm_boundary > 0) {
 			baddr = (curaddr + map->_dm_boundary) & bmask;
-			if (sgsize > (baddr - curaddr))
-				sgsize = (baddr - curaddr);
+			if (segsize > (baddr - curaddr))
+				segsize = (baddr - curaddr);
 		}
 
 		/*
@@ -553,26 +553,26 @@ _bus_dmamap_load_buffer(t, map, buf, buflen, p, flags, lastaddrp, segp, first)
 		 */
 		if (first) {
 			map->dm_segs[seg].ds_addr = curaddr;
-			map->dm_segs[seg].ds_len = sgsize;
+			map->dm_segs[seg].ds_len = segsize;
 			first = 0;
 		} else {
 			if (curaddr == lastaddr
-					&& (map->dm_segs[seg].ds_len + sgsize) <= map->_dm_maxsegsz
+					&& (map->dm_segs[seg].ds_len + segsize) <= map->_dm_maxsegsz
 					&& (map->_dm_boundary == 0
 							|| (map->dm_segs[seg].ds_addr & bmask)
 									== (curaddr & bmask)))
-				map->dm_segs[seg].ds_len += sgsize;
+				map->dm_segs[seg].ds_len += segsize;
 			else {
 				if (++seg >= map->_dm_segcnt)
 					break;
 				map->dm_segs[seg].ds_addr = curaddr;
-				map->dm_segs[seg].ds_len = sgsize;
+				map->dm_segs[seg].ds_len = segsize;
 			}
 		}
 
-		lastaddr = curaddr + sgsize;
-		vaddr += sgsize;
-		buflen -= sgsize;
+		lastaddr = curaddr + segsize;
+		vaddr += segsize;
+		buflen -= segsize;
 	}
 
 	*segp = seg;

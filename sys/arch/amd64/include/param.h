@@ -69,12 +69,12 @@
 #endif
 
 /* segments */
-#define	NBSEG			4194304				/* bytes/segment (SEGMENT SIZE) */
+#define	NBSG			4194304				/* bytes/segment (SEGMENT SIZE) */
 
-#define	SEGOFSET		(NBSEG-1)			/* byte offset into segment */
-#define	SEGSHIFT		22					/* LOG2(NBSEG) */
-#define	SEGSIZE			(1 << SEGSHIFT)		/* bytes/segment (SEGMENT SIZE) */
-#define SEGMASK			SEGOFSET			/* SEGOFSET (SEGSIZE - 1) */
+#define	SGOFSET			(NBSG-1)			/* byte offset into segment */
+#define	SGSHIFT			22					/* LOG2(NBSG) */
+#define	SGSIZE			(1 << SGSHIFT)		/* bytes/segment (SEGMENT SIZE) */
+#define SGMASK			SGOFSET				/* SGOFSET (SGSIZE - 1) */
 
 /* pages */
 #define	NBPG			4096				/* bytes/page (PAGE SIZE) */
@@ -101,7 +101,7 @@
 /* Size of the level 5 page-map level-5 table units */
 #define	NPML5EPG		(NBPG/(sizeof(pml5_entry_t)))
 
-#define	PD_SHIFT		(SEGSHIFT-1)		/* LOG2(NBPDR) (21) */
+#define	PD_SHIFT		(SGSHIFT-1)			/* LOG2(NBPDR) (21) */
 #define NBPDR			(1 << PD_SHIFT)		/* bytes/page dir */
 
 #define	KERNBASE		0xFFFFFFFF80000000	/* start of kernel virtual (i.e. SYSTEM) */
@@ -113,12 +113,12 @@
 #define amd64_btod(x)			((unsigned long)(x) >> (PD_SHIFT))
 #define amd64_dtob(x)			((unsigned long)(x) << (PD_SHIFT))
 
-#define amd64_round_segment(x)	((((unsigned long)(x)) + NBSEG - 1) & ~(NBSEG-1))
-#define amd64_trunc_segment(x)	((unsigned long)(x) & ~(NBSEG-1))
+#define amd64_round_segment(x)	((((unsigned long)(x)) + NBSG - 1) & ~(NBSG-1))
+#define amd64_trunc_segment(x)	((unsigned long)(x) & ~(NBSG-1))
 #define amd64_round_page(x)		((((unsigned long)(x)) + NBPG - 1) & ~(NBPG-1))
 #define amd64_trunc_page(x)		((unsigned long)(x) & ~(NBPG-1))
-#define amd64_btos(x)			((unsigned long)(x) >> SEGSHIFT)
-#define amd64_stob(x)			((unsigned long)(x) << SEGSHIFT)
+#define amd64_btos(x)			((unsigned long)(x) >> SGSHIFT)
+#define amd64_stob(x)			((unsigned long)(x) << SGSHIFT)
 #define amd64_btop(x)			((unsigned long)(x) >> PGSHIFT)
 #define amd64_ptob(x)			((unsigned long)(x) << PGSHIFT)
 #endif /* _AMD64_PARAM_H_ */

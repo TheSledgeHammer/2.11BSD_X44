@@ -87,7 +87,6 @@
 
 u_long vm_page_alloc_memory_npages;
 u_long vm_page_alloc_memory_nsegments;
-bool_t issegmented;
 
 #else
 #define	STAT_INCR(v)
@@ -237,18 +236,15 @@ vm_pagelist_free_paged_memory(rlist)
 {
     vm_page_t pg;
 
-	/*
-	 * Block all memory allocation and lock the free list.
-	 */
-    simple_lock(&vm_page_queue_free_lock);
-    while ((pg = TAILQ_FIRST(rlist)) != NULL) {
+	simple_lock(&vm_page_queue_free_lock);
+	while ((pg = TAILQ_FIRST(rlist)) != NULL) {
 		TAILQ_REMOVE(rlist, pg, pageq);
 		pg->flags = PG_FREE;
 		TAILQ_INSERT_TAIL(&vm_page_queue_free, pg, pageq);
 		cnt.v_page_free_count++;
 		STAT_DECR(vm_page_alloc_memory_npages);
 	}
-    simple_unlock(&vm_page_queue_free_lock);
+	simple_unlock(&vm_page_queue_free_lock);
 }
 
 static void
@@ -258,30 +254,27 @@ vm_pagelist_free_segmented_memory(slist)
     vm_segment_t seg;
     vm_page_t pg;
 
-	/*
-	 * Block all memory allocation and lock the free list.
-	 */
-    simple_lock(&vm_segment_list_free_lock);
-    while ((seg = CIRCLEQ_FIRST(slist)) != NULL) {
-        /* check if list of pages is empty */
+	simple_lock(&vm_segment_list_free_lock);
+	while ((seg = CIRCLEQ_FIRST(slist)) != NULL) {
+		/* check if list of pages is empty */
 		if (TAILQ_FIRST(&seg->memq) != NULL) {
-            simple_lock(&vm_page_queue_free_lock);
-            while ((pg = TAILQ_FIRST(&seg->memq)) != NULL) {
-                TAILQ_REMOVE(&seg->memq, pg, pageq);
-        		pg->flags = PG_FREE;
-		        TAILQ_INSERT_TAIL(&vm_page_queue_free, pg, pageq);
-        		cnt.v_page_free_count++;
-		        STAT_DECR(vm_page_alloc_memory_npages);
-            }
-            simple_unlock(&vm_page_queue_free_lock);
-        }
-        CIRCLEQ_REMOVE(slist, seg, listq);
-        seg->flags = SEG_FREE;
-        CIRCLEQ_INSERT_TAIL(&vm_segment_list_free, seg, segmentq);
-        cnt.v_segment_free_count++;
-        STAT_DECR(vm_page_alloc_memory_nsegments);
-    }
-    simple_unlock(&vm_segment_list_free_lock);
+			simple_lock(&vm_page_queue_free_lock);
+			while ((pg = TAILQ_FIRST(&seg->memq)) != NULL) {
+				TAILQ_REMOVE(&seg->memq, pg, pageq);
+				pg->flags = PG_FREE;
+				TAILQ_INSERT_TAIL(&vm_page_queue_free, pg, pageq);
+				cnt.v_page_free_count++;
+				STAT_DECR(vm_page_alloc_memory_npages);
+			}
+			simple_unlock(&vm_page_queue_free_lock);
+		}
+		CIRCLEQ_REMOVE(slist, seg, listq);
+		seg->flags = SEG_FREE;
+		CIRCLEQ_INSERT_TAIL(&vm_segment_list_free, seg, segmentq);
+		cnt.v_segment_free_count++;
+		STAT_DECR(vm_page_alloc_memory_nsegments);
+	}
+	simple_unlock(&vm_segment_list_free_lock);
 }
 
 static int
@@ -431,11 +424,11 @@ vm_pagelist_free(addr, len, size, segmented, slist, rlist)
 		}
 	}
 	s = splimp();
-    if (segmented == TRUE) {
-        vm_pagelist_free_segmented_memory(slist);
-    } else {
-        vm_pagelist_free_paged_memory(rlist);
-    }
+	if (segmented == TRUE) {
+		vm_pagelist_free_segmented_memory(slist);
+	} else {
+		vm_pagelist_free_paged_memory(rlist);
+	}
 	splx(s);
 }
 
@@ -453,7 +446,8 @@ vm_pagelist_alloc_contig(size, low, high, alignment, boundary, segmented, slist,
 	 * Block all memory allocation and lock the free list.
 	 */
 	s = splimp();
-	error = vm_pagelist_alloc(size, low, high, alignment, boundary, segmented, slist, rlist);
+	error = vm_pagelist_alloc(size, low, high, alignment, boundary, segmented,
+			slist, rlist);
 	splx(s);
 	return (error);
 }
@@ -511,14 +505,18 @@ vm_pagelist_alloc_memory(addr, len, size, num, low, high, alignment, boundary, n
 	if ((nsegs < size >> PAGE_SHIFT) || (alignment != PAGE_SIZE)
 			|| (boundary != 0)) {
 		if (segmented == TRUE) {
-			error = vm_pagelist_alloc_contig(size, low, high, alignment, boundary, &slist, &rlist);
+			error = vm_pagelist_alloc_contig(size, low, high, alignment,
+					boundary, &slist, &rlist);
 			if (error) {
-				vm_pagelist_alloc_segment_range(addr, len, SEGMENT_SIZE, num, low, high, &slist);
+				vm_pagelist_alloc_segment_range(addr, len, SEGMENT_SIZE, num,
+						low, high, &slist);
 			}
 		} else {
-			error = vm_pagelist_alloc_contig(size, low, high, alignment, boundary, NULL, &rlist);
+			error = vm_pagelist_alloc_contig(size, low, high, alignment,
+					boundary, NULL, &rlist);
 			if (error) {
-				vm_pagelist_alloc_page_range(addr, len, PAGE_SIZE, num, low, high, &rlist);
+				vm_pagelist_alloc_page_range(addr, len, PAGE_SIZE, num, low,
+						high, &rlist);
 			}
 		}
 	}
@@ -564,32 +562,32 @@ vm_pagelist_alloc_page_range(addr, len, size, num, low, high, rlist)
     vm_offset_t curaddr, lastaddr;
     int curnum;
 
-    pg = TAILQ_FIRST(rlist);
-    curnum = 0;
-    lastaddr = VM_PAGE_TO_PHYS(pg);
-    addr = &lastaddr;
-    len = size;
-    pg = TAILQ_NEXT(pg, pageq);
+	pg = TAILQ_FIRST(rlist);
+	curnum = 0;
+	lastaddr = VM_PAGE_TO_PHYS(pg);
+	addr = &lastaddr;
+	len = size;
+	pg = TAILQ_NEXT(pg, pageq);
 
-    for (; pg != NULL; pg = TAILQ_NEXT(pg, pageq)) {
-        curaddr = VM_PAGE_TO_PHYS(pg);
-        if (curaddr < low || curaddr >= high) {
+	for (; pg != NULL; pg = TAILQ_NEXT(pg, pageq)) {
+		curaddr = VM_PAGE_TO_PHYS(pg);
+		if (curaddr < low || curaddr >= high) {
 #ifdef DIAGNOSTIC
             printf("vm_pagelist_alloc_memory returned non-sensical"
 			    " address 0x%lx\n", curaddr);
 			panic("_bus_dmamem_alloc_range");
 #endif
-        }
-        if (curaddr == (lastaddr + size)) {
-            len += &size;
-        } else {
-        	curnum++;
-            addr = &curaddr;
-            len = &size;
-        }
-        lastaddr = curaddr;
-    }
-    num = &curnum;
+		}
+		if (curaddr == (lastaddr + size)) {
+			len += &size;
+		} else {
+			curnum++;
+			addr = &curaddr;
+			len = &size;
+		}
+		lastaddr = curaddr;
+	}
+	num = &curnum;
 }
 
 static void
@@ -604,32 +602,32 @@ vm_pagelist_alloc_segment_range(addr, len, size, num, low, high, slist)
     vm_offset_t curaddr, lastaddr;
     int curnum;
 
-    seg = CIRCLEQ_FIRST(slist);
-    curnum = 0;
-    lastaddr = VM_SEGMENT_TO_PHYS(seg);
-    addr = &lastaddr;
-    len = size;
-    seg = CIRCLEQ_NEXT(seg, segmentq);
+	seg = CIRCLEQ_FIRST(slist);
+	curnum = 0;
+	lastaddr = VM_SEGMENT_TO_PHYS(seg);
+	addr = &lastaddr;
+	len = size;
+	seg = CIRCLEQ_NEXT(seg, segmentq);
 
-    for (; seg != NULL; seg = CIRCLEQ_NEXT(seg, segmentq)) {
-        curaddr = VM_SEGMENT_TO_PHYS(seg);
-        if (curaddr < low || curaddr >= high) {
+	for (; seg != NULL; seg = CIRCLEQ_NEXT(seg, segmentq)) {
+		curaddr = VM_SEGMENT_TO_PHYS(seg);
+		if (curaddr < low || curaddr >= high) {
 #ifdef DIAGNOSTIC
             printf("vm_pagelist_alloc_memory returned non-sensical"
 			    " address 0x%lx\n", curaddr);
 			panic("_bus_dmamem_alloc_range");
 #endif
-        }
-        if (curaddr == (lastaddr + size)) {
-            len += &size;
-        } else {
-        	curnum++;
-            addr = &curaddr;
-            len = &size;
-        }
-        lastaddr = curaddr;
-    }
-    num = &curnum;
+		}
+		if (curaddr == (lastaddr + size)) {
+			len += &size;
+		} else {
+			curnum++;
+			addr = &curaddr;
+			len = &size;
+		}
+		lastaddr = curaddr;
+	}
+	num = &curnum;
 }
 
 /* Utility routines */

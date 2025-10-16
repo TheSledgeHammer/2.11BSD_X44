@@ -101,7 +101,7 @@
 #ifndef PMAP_PAE_COMP /* PMAP_NOPAE */
 
 /* NOPAE Constants */
-#define	PD_SHIFT				SEGSHIFT			/* LOG2(NBPDR) (22) */
+#define	PD_SHIFT				SGSHIFT				/* LOG2(NBPDR) (22) */
 
 #define	NTRPPTD					1
 #define	LOWPTDI					1
@@ -144,7 +144,7 @@ typedef uint32_t 				ovl_entry_t;		/* OVL */
 #else /* PMAP_PAE */
 
 /* PAE Constants  */
-#define	PD_SHIFT				(SEGSHIFT-1)		 /* LOG2(NBPDR) (21) */
+#define	PD_SHIFT				(SGSHIFT-1)		 	/* LOG2(NBPDR) (21) */
 
 #define	NTRPPTD					2					/* Number of PTDs for trampoline mapping */
 #define	LOWPTDI					2					/* low memory map pde */

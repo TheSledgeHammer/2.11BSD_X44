@@ -83,12 +83,12 @@
 #define	_ALIGNED_POINTER(p,t)	((((unsigned long)(p)) & (__alignof(t) - 1)) == 0)
 
 /* segments */
-#define	NBSEG			4194304					/* bytes/segment (SEGMENT SIZE) */
+#define	NBSG			4194304					/* bytes/segment (SEGMENT SIZE) */
 
-#define	SEGOFSET		(NBSEG-1)				/* byte offset into segment */
-#define	SEGSHIFT		22						/* LOG2(NBSEG) */
-#define	SEGSIZE			(1 << SEGSHIFT)			/* bytes/segment (SEGMENT SIZE) */
-#define SEGMASK			SEGOFSET				/* SEGOFSET (SEGSIZE - 1) */
+#define	SGOFSET			(NBSG-1)				/* byte offset into segment */
+#define	SGSHIFT			22						/* LOG2(NBSG) */
+#define	SGSIZE			(1 << SGSHIFT)			/* bytes/segment (SEGMENT SIZE) */
+#define SGMASK			SGOFSET					/* SGOFSET (SGSIZE - 1) */
 
 /* pages */
 #define	NBPG			4096					/* bytes/page (PAGE SIZE) */
@@ -162,8 +162,8 @@
  * Some macros for units conversion
  */
 /* Core clicks (4096 bytes) to segments and vice versa */
-#define	ctos(x)			(x)	//((x)<<SEGSHIFT)
-#define	stoc(x)			(x) //(((unsigned)(x)+(SEGOFSET))>>SEGSHIFT)
+#define	ctos(x)			(x)	//((x)<<SGSHIFT)
+#define	stoc(x)			(x) //(((unsigned)(x)+(SGOFSET))>>SGSHIFT)
 
 /* Core clicks (4096 bytes) to disk blocks */
 #define	ctod(x)			((x)<<(PGSHIFT-DEV_BSHIFT))
@@ -196,12 +196,12 @@
 #define i386_btod(x)			((unsigned)(x) >> PDRSHIFT)
 #define i386_dtob(x)			((unsigned)(x) << PDRSHIFT)
 
-#define i386_round_segment(x)	((((unsigned)(x)) + NBSEG - 1) & ~(NBSEG-1))
-#define i386_trunc_segment(x)	((unsigned)(x) & ~(NBSEG-1))
+#define i386_round_segment(x)	((((unsigned)(x)) + NBSG - 1) & ~(NBSG-1))
+#define i386_trunc_segment(x)	((unsigned)(x) & ~(NBSG-1))
 #define i386_round_page(x)		((((unsigned)(x)) + NBPG - 1) & ~(NBPG-1))
 #define i386_trunc_page(x)		((unsigned)(x) & ~(NBPG-1))
-#define i386_btos(x)			((unsigned)(x) >> SEGSHIFT)
-#define i386_stob(x)			((unsigned)(x) << SEGSHIFT)
+#define i386_btos(x)			((unsigned)(x) >> SGSHIFT)
+#define i386_stob(x)			((unsigned)(x) << SGSHIFT)
 #define i386_btop(x)			((unsigned)(x) >> PGSHIFT)
 #define i386_ptob(x)			((unsigned)(x) << PGSHIFT)
 
