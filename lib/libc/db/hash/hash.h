@@ -38,6 +38,13 @@
 #include "nbtool_config.h"
 #endif
 
+/* 
+ * A temporary solution that resolves machine/param.h SGSIZE conflict.
+ */
+#ifdef SGSIZE
+#undef SGSIZE
+#endif
+
 /* Operations */
 typedef enum {
 	HASH_GET, HASH_PUT, HASH_PUTNEW, HASH_DELETE, HASH_FIRST, HASH_NEXT
