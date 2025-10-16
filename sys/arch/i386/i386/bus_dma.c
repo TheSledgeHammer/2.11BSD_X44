@@ -611,7 +611,7 @@ _bus_dmamem_alloc_range(t, size, alignment, boundary, segs, nsegs, rsegs, flags,
 	/*
 	 * Allocate pages from the VM system.
 	 */
-	error = vm_pagelist_alloc_memory(&addr, &len, &curseg, low, high, alignment, boundary, nsegs, (flags & BUS_DMA_NOWAIT) == 0, 1);
+	error = vm_pagelist_alloc_memory(&addr, &len, size, &curseg, low, high, alignment, boundary, nsegs, (flags & BUS_DMA_NOWAIT) == 0, 1);
 	if (error) {
 		return (error);
 	}
