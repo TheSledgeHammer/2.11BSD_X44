@@ -58,6 +58,9 @@
 #include "nbpf.h"
 #include "nbpf_ncode.h"
 
+#define increment_word(val, ptr) ((val) = (ptr)++)
+#define decrement_word(val, ptr) ((val) = (ptr)--)
+
 /*
  * nc_fetch_word: fetch a word (32 bits) from the n-code and increase
  * instruction pointer by one word.
@@ -68,7 +71,10 @@ nc_fetch_word(const void *iptr, uint32_t *a)
 	const uint32_t *tptr = (const uint32_t*) iptr;
 
 	KASSERT(ALIGNED_POINTER(iptr, uint32_t));
+	increment_word(*a, *tptr);
+	/*
 	*a = *tptr++;
+	*/
 	return tptr;
 }
 
@@ -82,8 +88,12 @@ nc_fetch_double(const void *iptr, uint32_t *a, uint32_t *b)
 	const uint32_t *tptr = (const uint32_t*) iptr;
 
 	KASSERT(ALIGNED_POINTER(iptr, uint32_t));
+	increment_word(*a, *tptr);
+	increment_word(*b, *tptr);
+	/*
 	*a = *tptr++;
 	*b = *tptr++;
+	*/
 	return tptr;
 }
 
