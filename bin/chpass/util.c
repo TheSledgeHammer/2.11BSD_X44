@@ -124,10 +124,10 @@ bad:
 }
 
 void
-print(FILE *fp, struct passwd *pw)
+display(FILE *fp, struct passwd *pw, struct entry list[])
 {
 	register char *p;
-	char	*bp;
+	char *bp;
 
 	fprintf(fp, "#Changing user database information for %s.\n", pw->pw_name);
 	if (!uid) {
@@ -140,17 +140,24 @@ print(FILE *fp, struct passwd *pw)
 		fprintf(fp, "Class: %s\n", pw->pw_class);
 		fprintf(fp, "Home directory: %s\n", pw->pw_dir);
 		fprintf(fp, "Shell: %s\n", *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
+	}
+	/* only admin can change "restricted" shells */
+	else if (ok_shell(pw->pw_shell)) {
+		fprintf(fp, "Shell: %s\n", *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
 	} else {
-		/* only admin can change "restricted" shells */
+		list[E_SHELL].restricted = 1;
+		/*
 		setusershell();
-		for (;;)
-			if (!(p = getusershell()))
+		for (;;) {
+			if (!(p = getusershell())) {
 				break;
-			else if (!strcmp(pw->pw_shell, p)) {
+			} else if (!strcmp(pw->pw_shell, p)) {
 				fprintf(fp, "Shell: %s\n",
 						*pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
 				break;
 			}
+		}
+		*/
 	}
 	bp = pw->pw_gecos;
 	p = strsep(&bp, ",");
@@ -161,4 +168,23 @@ print(FILE *fp, struct passwd *pw)
 	fprintf(fp, "Office Phone: %s\n", p ? p : "");
 	p = strsep(&bp, ",");
 	fprintf(fp, "Home Phone: %s\n", p ? p : "");
+}
+
+const char *
+ok_shell(const char *name)
+{
+	char *p;
+	const char *sh;
+
+	setusershell();
+	while ((sh = getusershell())) {
+		if (!strcmp(name, sh)) {
+			return (name);
+		}
+		/* allow just shell name, but use "real" path */
+		if ((p = strrchr(sh, '/')) && strcmp(name, p + 1) == 0) {
+			return (sh);
+		}
+	}
+	return (NULL);
 }

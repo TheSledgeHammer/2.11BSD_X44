@@ -30,128 +30,83 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+/*
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
 
 #include <unistd.h>
 #include <util.h>
 
 #include "chpass.h"
 
+int info(char *tempname, int fd, struct passwd *pw, struct entry list[]);
 static int check(FILE *fp, struct passwd *pw, struct entry list[]);
-static void loadpw(char *arg, struct passwd *pw);
 
-
-void
-chpass_db(struct passwd *pw, int pfd, int tfd)
+int
+info(char *tempname, int fd, struct passwd *pw, struct entry list[])
 {
-	if (!pw_mkdb(arg)) {
-		pw_error(NULL, 0, 1);
+	struct stat sb, begin, end;
+	FILE *fp;
+	int rval;
+
+	if ((fd == -1) || !(fp = fdopen(fd, "w+"))) {
+		(void)fprintf(stderr, "chpass: no temporary file: %s; ", tempname);
+		unlink(tempname);
+		fclose(fp);
+		return (0);
 	}
-	exit(0);
-}
 
-static int check(FILE *fp, struct passwd *pw, struct entry list[]);
+	display(fp, pw, list);
+	(void)fflush(fp);
 
-
-void
-edit(char *tempname, struct passwd *pw, struct entry list[])
-{
-	struct stat begin, end;
+	/*
+	 * give the file to the real user; setuid permissions
+	 * are discarded in edit()
+	 */
+	(void)fchown(fd, getuid(), getgid());
 
 	for (rval = 0;;) {
-		if (stat(tempname, &begin)) {
-			pw_error(tempname, 1, 1);
-		}
+		(void)fstat(fd, &begin);
 		if (pw_edit(tempname, 1)) {
 			(void)fprintf(stderr, "chpass: edit failed; ");
 			break;
 		}
+		(void)fstat(fd, &end);
 		if (begin.st_mtime == end.st_mtime) {
 			(void)fprintf(stderr, "chpass: no changes made; ");
 			break;
 		}
-		if (verify(tempname, pw, list)) {
+		if (fstat(fd, &sb)) {
 			break;
 		}
+		if (sb.st_size == 0 || sb.st_nlink != 1) {
+			(void)fprintf(stderr, "chpass: corrupted temporary file: ");
+			break;
+		}
+		(void)rewind(fp);
+		if (check(fp, pw, list)) {
+			rval = 1;
+			break;
+		}
+		(void)fflush(stderr);
 		pw_prompt();
 	}
-}
-
-/*
- * display --
- *	print out the file for the user to edit; strange side-effect:
- *	set conditional flag if the user gets to edit the shell.
- */
-void
-display(char *tempname, int fd, struct passwd *pw,  struct entry list[])
-{
-	FILE *fp;
-	char *bp, *p;
-
-	if (!(fp = fdopen(fd, "w+"))) {
-		pw_error(tempname, 1, 1);
-	}
-
-	(void)fprintf(fp,
-	    "#Changing user database information for %s.\n", pw->pw_name);
-	if (!uid) {
-		(void)fprintf(fp, "Login: %s\n", pw->pw_name);
-		(void)fprintf(fp, "Password: %s\n", pw->pw_passwd);
-		(void)fprintf(fp, "Uid [#]: %d\n", pw->pw_uid);
-		(void)fprintf(fp, "Gid [# or name]: %d\n", pw->pw_gid);
-		(void)fprintf(fp, "Change [month day year]: %s\n",
-		    ttoa(pw->pw_change));
-		(void)fprintf(fp, "Expire [month day year]: %s\n",
-		    ttoa(pw->pw_expire));
-		(void)fprintf(fp, "Class: %s\n", pw->pw_class);
-		(void)fprintf(fp, "Home directory: %s\n", pw->pw_dir);
-		(void)fprintf(fp, "Shell: %s\n",
-		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
-	}
-	/* Only admin can change "restricted" shells. */
-	else if (ok_shell(pw->pw_shell)) {
-		/*
-		 * Make shell a restricted field.  Ugly with a
-		 * necklace, but there's not much else to do.
-		 */
-		(void)fprintf(fp, "Shell: %s\n",
-		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
-	} else {
-		list[E_SHELL].restricted = 1;
-	}
-	bp = pw->pw_gecos;
-	p = strsep(&bp, ",");
-	(void)fprintf(fp, "Full Name: %s\n", p ? p : "");
-	p = strsep(&bp, ",");
-	(void)fprintf(fp, "Location: %s\n", p ? p : "");
-	p = strsep(&bp, ",");
-	(void)fprintf(fp, "Office Phone: %s\n", p ? p : "");
-	p = strsep(&bp, ",");
-	(void)fprintf(fp, "Home Phone: %s\n", p ? p : "");
-
-	(void)fchown(fd, getuid(), getgid());
 	(void)fclose(fp);
-}
-
-
-int
-verify(char *tempname, struct passwd *pw, struct entry list[])
-{
-	struct stat sb;
-	FILE *fp;
-	int fd;
-
-	fp = NULL;
-	if ((fd = open(tempname, O_RDONLY|O_NOFOLLOW)) == -1 || !(fp = fdopen(fd, "r"))) {
-		pw_error(tempname, 1, 1);
-	}
-	if (fstat(fd, &sb)) {
-		pw_error(tempname, 1, 1);
-	}
-	if (sb.st_size == 0 || sb.st_nlink != 1) {
-		(void)fclose(fp);
-		return (0);
-	}
-	return (check(fp, pw, list));
+	(void)unlink(tempname);
+	return (rval);
 }
 
 static int

@@ -255,7 +255,7 @@ info(struct passwd *pw)
 		return (0);
 	}
 
-	print(fp, pw);
+	display(fp, pw, list);
 	(void)fflush(fp);
 
 	/*

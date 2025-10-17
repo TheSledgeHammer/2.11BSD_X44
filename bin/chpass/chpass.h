@@ -54,4 +54,5 @@ int p_shell(const char *, struct passwd *, struct entry *);
 /* util.c */
 char *ttoa(time_t);
 int  atot(const char *, time_t *);
-void print(FILE *, struct passwd *);
+void display(FILE *, struct passwd *, struct entry *);
+const char *ok_shell(const char *);

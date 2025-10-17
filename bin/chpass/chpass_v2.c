@@ -73,6 +73,8 @@ struct entry list[] = {
 static char tempname[] = "/tmp/passwd.XXXXXX";
 uid_t uid;
 
+static void usage(void);
+
 int
 main(int argc, char **argv)
 {
@@ -166,12 +168,20 @@ main(int argc, char **argv)
 	 */
 	pw_init();
 	pfd = pw_lockpw(pw, 0);
-	tfd = pw_tmp();
+	tfd = pw_tmp(tempname);
+	if (pfd < 0) {
+		warnx("The passwd file is busy, waiting...");
+		pfd = pw_lockpw(pw, 10);
+		if (pfd < 0) {
+			errx(1, "The passwd file is still busy, "
+					"try again later.");
+		}
+	}
 
 	if (op == EDITENTRY) {
-		display(tfd, pw);
-		edit(pw);
-		(void)unlink(tempname);
+		if (!info(tempname, tfd, pw, list)) {
+			pw_error(tempname, 1, 1);
+		}
 		tfd = pw_tmp();
 	}
 
@@ -181,7 +191,7 @@ main(int argc, char **argv)
 	case 0:
 		break;
 	case -1:
-		pw_error((char *)NULL, 0, 1);
+		pw_error("chpass: can't fork; ", 1, 1);
 		break;
 		/* NOTREACHED */
 	default:
@@ -189,12 +199,19 @@ main(int argc, char **argv)
 		/* NOTREACHED */
 	}
 
-	if (pw_mkdb(tempname)) {
-		pw_error(tempname, 0, 1);
+	if (!pw_mkdb(tempname)) {
+		pw_error("chpass: passwd failed; ", 1, 1);
 	}
 #ifdef USE_NDBM
 	pw_dirpag_rename();
 #else
 	exit(0);
 #endif
+}
+
+static void
+usage(void)
+{
+	(void)fprintf(stderr, "usage: chpass [-a list] [-s shell] [user]\n");
+	exit(1);
 }
