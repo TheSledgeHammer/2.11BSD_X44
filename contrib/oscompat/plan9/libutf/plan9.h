@@ -8,4 +8,5 @@
 #define uint	_utfuint
 #define ulong	_utfulong
 
-#include <lib9.h>
+#include <u.h>
+#include <libc.h>
