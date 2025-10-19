@@ -45,6 +45,7 @@ CRYPTODIST=	${NETBSDSRCDIR}/crypto
 # in the LibreSSL source distribution.
 
 SRCS += apps.c
+SRCS += apps_posix.c
 SRCS += asn1pars.c
 SRCS += ca.c
 SRCS += ciphers.c
