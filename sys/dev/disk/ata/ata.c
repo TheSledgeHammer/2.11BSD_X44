@@ -357,7 +357,7 @@ int
 ata_get_params(struct ata_drive_datas *drvp, u_int8_t flags,
     struct ataparams *prms)
 {
-	char tb[DEV_BSIZE];
+	char *tb;
 	struct wdc_command wdc_c;
 
 #if BYTE_ORDER == LITTLE_ENDIAN

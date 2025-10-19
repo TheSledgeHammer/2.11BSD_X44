@@ -311,7 +311,6 @@ wdattach(struct device *parent, struct device *self, void *aux)
 	u_int32_t firstaligned = 0, alignment = 1;
 	char buf[41], pbuf[9], c, *p, *q;
 	const struct wd_quirk *wdq;
-	int dtype = DTYPE_UNKNOWN;
 
 	WDCDEBUG_PRINT(("wdattach\n"), DEBUG_FUNCS | DEBUG_PROBE);
 
@@ -466,7 +465,7 @@ wdattach(struct device *parent, struct device *self, void *aux)
 
 	if (wd->sc_blksize <= 0 || !powerof2(wd->sc_blksize) ||
 	    wd->sc_blksize < DEV_BSIZE || wd->sc_blksize > MAXPHYS) {
-		aprint_normal_dev(self, "WARNING: block size %u "
+		printf("WARNING: block size %u "
 		    "might not actually work\n", wd->sc_blksize);
 	}
 
