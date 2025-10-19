@@ -23,72 +23,10 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _LIB9_H_
-#define _LIB9_H_ 1
+#ifndef _LIB9TYPES_H_
+#define _LIB9TYPES_H_ 1
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+#include <u.h>
+#include <libc.h>
 
-/*
- * compiler directive on Plan 9
- */
-#ifndef USED
-#define USED(x) if(x); else
-#endif
-
-/*
- * Plan 9 Type definitions
- * easiest way to make sure these are defined
- */
-typedef unsigned char	uchar;
-typedef unsigned short	ushort;
-typedef unsigned int    uint;
-typedef unsigned long	ulong;
-typedef unsigned long long uvlong;
-typedef long long 	    vlong;
-typedef uintptr_t 	    uintptr;
-
-typedef uvlong 		    u64int;
-typedef vlong 		    s64int;
-typedef uint8_t 	    u8int;
-typedef int8_t 		    s8int;
-typedef uint16_t 	    u16int;
-typedef int16_t 	    s16int;
-typedef uintptr_t 	    uintptr;
-typedef intptr_t 	    intptr;
-typedef uint 		    u32int;
-typedef int 		    s32int;
-
-typedef u32int 		    uint32;
-typedef s32int 		    int32;
-typedef u16int 		    uint16;
-typedef s16int 		    int16;
-typedef u64int 		    uint64;
-typedef s64int 		    int64;
-typedef u8int 		    uint8;
-typedef s8int 		    int8;
-
-/*
- * nil cannot be ((void*)0) on ANSI C,
- * because it is used for function pointers
- */
-#ifndef	nil
-#define nil 		0
-#endif
-
-#ifndef	nelem
-#define	nelem(x)	(sizeof (x)/sizeof (x)[0])
-#endif
-
-#define OREAD		O_RDONLY
-#define OWRITE		O_WRONLY
-
-#define	OCEXEC 		0
-#define	ORCLOSE		0
-#define	OTRUNC		0
-
-#if defined(__cplusplus)
-}
-#endif
-#endif	/* _LIB9_H_ */
+#endif	/* _LIB9TYPES_H_ */
