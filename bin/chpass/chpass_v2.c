@@ -83,7 +83,10 @@ main(int argc, char **argv)
     int ch, pfd, tfd;
     char *arg;
 
+    pw = NULL;
+    arg = NULL;
 	uid = getuid();
+    op = EDITENTRY;
 	while ((ch = getopt(argc, argv, "a:s:")) != EOF) {
 		switch (ch) {
 		case 'a':
@@ -136,7 +139,7 @@ main(int argc, char **argv)
 			errx(1, "chpass: %s\n", strerror(EACCES));
 		}
 		pw = &lpw;
-		if (!pw_scan(arg, pw)) {
+		if (!pw_scan(arg, pw, NULL)) {
 			exit(1);
 		}
 	}

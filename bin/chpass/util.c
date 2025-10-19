@@ -168,7 +168,7 @@ bad:
 }
 
 void
-display(FILE *fp, struct passwd *pw, struct entry list[])
+display(FILE *fp, struct passwd *pw, struct entry *elist)
 {
 	register char *p;
 	char *bp;
@@ -189,7 +189,7 @@ display(FILE *fp, struct passwd *pw, struct entry list[])
 	else if (ok_shell(pw->pw_shell)) {
 		fprintf(fp, "Shell: %s\n", *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
 	} else {
-		list[E_SHELL].restricted = 1;
+		elist[E_SHELL].restricted = 1;
 		/*
 		setusershell();
 		for (;;) {

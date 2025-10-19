@@ -19,8 +19,15 @@
 
 WARNS= 	3
 PROG=	chpass
-SRCS=	chpass.c field.c util.c
+SRCS=	chpass_v2.c edit.c field.c util.c pw_scan.c
 MAN=	chpass.1
+
+.PATH:	${NETBSDSRCDIR}/lib/libc/gen
+
+CPPFLAGS+=-I${NETBSDSRCDIR}/lib/libc/gen
+
+DPADD+= ${LIBUTIL}
+LDADD+= -lutil
 
 .include <bsd.prog.mk>
 

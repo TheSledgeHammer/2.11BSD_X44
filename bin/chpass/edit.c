@@ -48,8 +48,11 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/stat.h>
 
 #include <ctype.h>
+#include <err.h>
+#include <fcntl.h>
 #include <paths.h>
 #include <pwd.h>
 #include <stdio.h>
@@ -60,19 +63,19 @@
 
 #include "chpass.h"
 
-static int info(char *tempname, int fd, struct passwd *pw, struct entry list[]);
-static int check(FILE *fp, struct passwd *pw, struct entry list[]);
+static int info(char *tempname, int fd, struct passwd *pw, struct entry *ep);
+static int check(FILE *fp, struct passwd *pw, struct entry *elist);
 
 void
-edit(char *tempname, int fd, struct passwd *pw, struct entry list[])
+edit(char *tempname, int fd, struct passwd *pw, struct entry *ep)
 {
-	if (!info(tempname, fd, pw, list)) {
+	if (!info(tempname, fd, pw, ep)) {
 		pw_error(tempname, 1, 1);
 	}
 }
 
 static int
-info(char *tempname, int fd, struct passwd *pw, struct entry list[])
+info(char *tempname, int fd, struct passwd *pw, struct entry *ep)
 {
 	struct stat sb, begin, end;
 	FILE *fp;
@@ -85,7 +88,7 @@ info(char *tempname, int fd, struct passwd *pw, struct entry list[])
 		return (0);
 	}
 
-	display(fp, pw, list);
+	display(fp, pw, ep);
 	(void)fflush(fp);
 
 	/*
@@ -113,7 +116,7 @@ info(char *tempname, int fd, struct passwd *pw, struct entry list[])
 			break;
 		}
 		(void)rewind(fp);
-		if (check(fp, pw, list)) {
+		if (check(fp, pw, ep)) {
 			rval = 1;
 			break;
 		}
@@ -126,7 +129,7 @@ info(char *tempname, int fd, struct passwd *pw, struct entry list[])
 }
 
 static int
-check(FILE *fp, struct passwd *pw, struct entry list[])
+check(FILE *fp, struct passwd *pw, struct entry *elist)
 {
 	register struct entry *ep;
 	register char *p;
@@ -141,7 +144,7 @@ check(FILE *fp, struct passwd *pw, struct entry list[])
 			return (0);
 		}
 		*p = '\0';
-		for (ep = list;; ++ep) {
+		for (ep = elist;; ++ep) {
 			if (!ep->prompt) {
 				warnx("chpass: unrecognized field.\n");
 				return (0);
@@ -180,13 +183,13 @@ check(FILE *fp, struct passwd *pw, struct entry list[])
 	 */
 
 	/* Build the gecos field. */
-	len = strlen(list[E_NAME].save) + strlen(list[E_BPHONE].save) +
-	    strlen(list[E_HPHONE].save) + strlen(list[E_LOCATE].save) + 4;
+	len = strlen(elist[E_NAME].save) + strlen(elist[E_BPHONE].save) +
+	    strlen(elist[E_HPHONE].save) + strlen(elist[E_LOCATE].save) + 4;
 	if (!(p = malloc(len))) {
 		err(1, NULL);
 	}
-	(void)sprintf(pw->pw_gecos = p, "%s,%s,%s,%s", list[E_NAME].save,
-	    list[E_LOCATE].save, list[E_BPHONE].save, list[E_HPHONE].save);
+	(void)sprintf(pw->pw_gecos = p, "%s,%s,%s,%s", elist[E_NAME].save,
+	    elist[E_LOCATE].save, elist[E_BPHONE].save, elist[E_HPHONE].save);
 
 	if (snprintf(buf, sizeof(buf),
 	    "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s",
@@ -196,5 +199,5 @@ check(FILE *fp, struct passwd *pw, struct entry list[])
 		warnx("entries too long");
 		return (0);
 	}
-	return (pw_scan(buf, pw));
+	return (pw_scan(buf, pw, (int *)NULL));
 }
