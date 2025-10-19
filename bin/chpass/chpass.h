@@ -39,6 +39,9 @@ typedef struct entry ENTRY;
 extern struct entry list[];
 extern uid_t uid;
 
+/* edit.c */
+void edit(char *, int, struct passwd *, struct entry *);
+
 /* field.c */
 int p_login(const char *, struct passwd *, struct entry *);
 int p_passwd(const char *, struct passwd *, struct entry *);

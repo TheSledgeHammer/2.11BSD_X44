@@ -59,7 +59,10 @@ struct wd_softc {
 #define WDF_LBA					0x040 			/* using LBA mode */
 #define WDF_KLABEL				0x080 			/* retain label after 'full' close */
 #define WDF_LBA48				0x100 			/* using 48-bit LBA mode */
-	u_int64_t 					sc_capacity;
+	u_int64_t 					sc_capacity;	/* full capacity of the device */
+	u_int64_t 					sc_capacity512; /* ... in DEV_BSIZE blocks */
+	u_int32_t 					sc_capacity28; 	/* capacity accessible with LBA28 commands */
+	u_int32_t 					sc_blksize; 	/* logical block size, in bytes */
 	int 						cyl; 			/* actual drive parameters */
 	int 						heads;
 	int 						sectors;

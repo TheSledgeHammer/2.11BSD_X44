@@ -131,6 +131,14 @@
 #define	WDCC_STANDBY_IMMED	0xe0	/* enter standby mode */
 #define	WDCC_CHECK_PWR		0xe5	/* check power mode */
 
+/* Security feature set */
+#define	WDCC_SECURITY_SET_PASSWORD		0xf1
+#define	WDCC_SECURITY_UNLOCK			0xf2
+#define	WDCC_SECURITY_ERASE_PREPARE		0xf3
+#define	WDCC_SECURITY_ERASE_UNIT		0xf4
+#define	WDCC_SECURITY_FREEZE			0xf5
+#define	WDCC_SECURITY_DISABLE_PASSWORD	0xf6
+
 /* Big Drive support */
 #define	WDCC_READ_EXT		0x24	/* read 48-bit addressing */
 #define	WDCC_WRITE_EXT		0x34	/* write 48-bit addressing */
@@ -145,6 +153,8 @@
 #define	WDSF_WRITE_CACHE_EN	0x02
 #define	WDSF_SET_MODE		0x03
 #define	WDSF_REASSIGN_EN	0x04
+#define	WDSF_APM_EN			0x05
+
 #define	WDSF_RETRY_DS		0x33
 #define	WDSF_SET_CACHE_SGMT	0x54
 #define	WDSF_READAHEAD_DS	0x55
@@ -152,6 +162,7 @@
 #define	WDSF_ECC_DS			0x77
 #define	WDSF_WRITE_CACHE_DS	0x82
 #define	WDSF_REASSIGN_DS	0x84
+#define	WDSF_APM_DS			0x85
 #define	WDSF_ECC_EN			0x88
 #define	WDSF_RETRY_EN		0x99
 #define	WDSF_SET_CURRENT	0x9a
@@ -302,13 +313,17 @@ struct ataparams {
     u_int16_t   atap_sata_caps;/* 76: */
 #define SATA_SIGNAL_GEN1	0x02
 #define SATA_SIGNAL_GEN2	0x04
+#define SATA_SIGNAL_GEN3	0x08
 #define SATA_NATIVE_CMDQ	0x0100
 #define SATA_HOST_PWR_MGMT	0x0200
+#define SATA_PHY_EVNT_CNT	0x0400	/* supp. SATA Phy Event Counters log */
     u_int16_t   atap_sata_reserved;    /* 77: */
     u_int16_t   atap_sata_features_supp;    /* 78: */
 #define SATA_NONZERO_OFFSETS	0x02
 #define SATA_DMA_SETUP_AUTO	0x04
 #define SATA_DRIVE_PWR_MGMT	0x08
+#define SATA_IN_ORDER_DATA	0x10
+#define SATA_SW_STTNGS_PRS	0x40
     u_int16_t   atap_sata_features_en;    /* 79: */
     u_int16_t	atap_ata_major;  	/* 80: Major version number */
 #define	WDC_VER_ATA1	0x0002
@@ -380,7 +395,19 @@ struct ataparams {
     u_int16_t	atap_seu_time;		/* 89: Sec. Erase Unit compl. time */
     u_int16_t	atap_eseu_time;		/* 90: Enhanced SEU compl. time */
     u_int16_t	atap_apm_val;		/* 91: current APM value */
-    u_int16_t	__reserved6[35];	/* 92-126: reserved */
+    uint16_t	__reserved5[8];		/* 92-99: reserved */
+    uint16_t	atap_max_lba[4];	/* 100-103: Max. user LBA addr */
+    u_int16_t	__reserved6;		/* 104: reserved */
+    uint16_t	max_dsm_blocks;		/* 105: DSM (ATA-8/ACS-2) */
+    uint16_t	atap_secsz;			/* 106: physical/logical sector size */
+#define ATA_SECSZ_VALID_MASK 0xc000
+#define ATA_SECSZ_VALID      0x4000
+#define ATA_SECSZ_LPS        0x2000	/* long physical sectors */
+#define ATA_SECSZ_LLS        0x1000	/* long logical sectors */
+#define ATA_SECSZ_LPS_SZMSK  0x000f	/* 2**N logical per physical */
+    uint16_t	__reserved7[9];		/* 107-116 */
+    uint16_t	atap_lls_secsz[2];	/* 117-118: long logical sector size */
+    u_int16_t	__reserved8[19];	/* 107-126: reserved */
     u_int16_t	atap_rmsn_supp;		/* 127: remov. media status notif. */
 #define WDC_RMSN_SUPP_MASK 0x0003
 #define WDC_RMSN_SUPP 0x0001
@@ -392,6 +419,15 @@ struct ataparams {
 #define WDC_SEC_LOCKED	0x0004
 #define WDC_SEC_EN	0x0002
 #define WDC_SEC_SUPP	0x0001
+    u_int16_t	__reserved9[79];	/* 129-208: reserved */
+    uint16_t	atap_logical_align;	/* 209: logical/physical alignment */
+#define ATA_LA_VALID_MASK 0xc000
+#define ATA_LA_VALID      0x4000
+#define ATA_LA_MASK       0x3fff	/* offset of sector LBA 0 in PBA 0 */
+    uint16_t	__reserved10[45];	/* 210-254: */
+    uint16_t	atap_integrity;		/* 255: Integrity word */
+#define WDC_INTEGRITY_MAGIC_MASK 0x00ff
+#define WDC_INTEGRITY_MAGIC      0x00a5
 };
 
 /*

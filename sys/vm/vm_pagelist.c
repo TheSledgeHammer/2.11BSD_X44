@@ -85,8 +85,8 @@
 		}															\
 	} while (0);
 
-u_long vm_page_alloc_memory_npages;
-u_long vm_page_alloc_memory_nsegments;
+u_long vm_pagelist_alloc_memory_npages;
+u_long vm_pagelist_alloc_memory_nsegments;
 
 #else
 #define	STAT_INCR(v)
@@ -184,7 +184,7 @@ vm_pagelist_add_paged_memory(m, seg, rlist)
 		}
 	}
 	if (tp == NULL) {
-		panic("vm_page_alloc_memory: page not on freelist");
+		panic("vm_pagelist_alloc_memory: page not on freelist");
 	}
 #endif
 	TAILQ_REMOVE(pgfree, m, pageq);
@@ -219,7 +219,7 @@ vm_pagelist_add_segmented_memory(seg, slist)
 		}
 	}
 	if (ts == NULL) {
-		panic("vm_page_add_segmented_memory: segment not on freelist");
+		panic("vm_pagelist_add_segmented_memory: segment not on freelist");
 	}
 #endif
 	CIRCLEQ_REMOVE(sgfree, seg, segmentq);
@@ -242,7 +242,7 @@ vm_pagelist_free_paged_memory(rlist)
 		pg->flags = PG_FREE;
 		TAILQ_INSERT_TAIL(&vm_page_queue_free, pg, pageq);
 		cnt.v_page_free_count++;
-		STAT_DECR(vm_page_alloc_memory_npages);
+		STAT_DECR(vm_pagelist_alloc_memory_npages);
 	}
 	simple_unlock(&vm_page_queue_free_lock);
 }
@@ -264,7 +264,7 @@ vm_pagelist_free_segmented_memory(slist)
 				pg->flags = PG_FREE;
 				TAILQ_INSERT_TAIL(&vm_page_queue_free, pg, pageq);
 				cnt.v_page_free_count++;
-				STAT_DECR(vm_page_alloc_memory_npages);
+				STAT_DECR(vm_pagelist_alloc_memory_npages);
 			}
 			simple_unlock(&vm_page_queue_free_lock);
 		}
@@ -272,7 +272,7 @@ vm_pagelist_free_segmented_memory(slist)
 		seg->flags = SEG_FREE;
 		CIRCLEQ_INSERT_TAIL(&vm_segment_list_free, seg, segmentq);
 		cnt.v_segment_free_count++;
-		STAT_DECR(vm_page_alloc_memory_nsegments);
+		STAT_DECR(vm_pagelist_alloc_memory_nsegments);
 	}
 	simple_unlock(&vm_segment_list_free_lock);
 }
@@ -474,11 +474,11 @@ vm_pagelist_alloc_memory(addr, len, size, num, low, high, alignment, boundary, n
 
 #ifdef DIAGNOSTIC
 	if ((alignment & (alignment - 1)) != 0) {
-		panic("vm_page_alloc_memory: alignment must be power of 2");
+		panic("vm_pagelist_alloc_memory: alignment must be power of 2");
 	}
 
 	if ((boundary & (boundary - 1)) != 0) {
-		panic("vm_page_alloc_memory: boundary must be power of 2");
+		panic("vm_pagelist_alloc_memory: boundary must be power of 2");
 	}
 #endif
 
@@ -507,17 +507,13 @@ vm_pagelist_alloc_memory(addr, len, size, num, low, high, alignment, boundary, n
 		if (segmented == TRUE) {
 			error = vm_pagelist_alloc_contig(size, low, high, alignment,
 					boundary, segmented, &slist, &rlist);
-			if (error) {
-				vm_pagelist_alloc_segment_range(addr, len, SEGMENT_SIZE, num,
-						low, high, &slist);
-			}
+			vm_pagelist_alloc_segment_range(addr, len, SEGMENT_SIZE, num, low,
+					high, &slist);
 		} else {
 			error = vm_pagelist_alloc_contig(size, low, high, alignment,
 					boundary, segmented, NULL, &rlist);
-			if (error) {
-				vm_pagelist_alloc_page_range(addr, len, PAGE_SIZE, num, low,
-						high, &rlist);
-			}
+			vm_pagelist_alloc_page_range(addr, len, PAGE_SIZE, num, low, high,
+					&rlist);
 		}
 	}
 	return (error);
@@ -660,17 +656,17 @@ vm_pagelist_found_chunk(idx, end, segmented, slist, rlist)
 						return (ENOMEM);
 					} else {
 						vm_pagelist_add_paged_memory(pg, seg, rlist);
-						STAT_INCR(vm_page_alloc_memory_npages);
+						STAT_INCR(vm_pagelist_alloc_memory_npages);
 					}
 				}
 			}
 			idx++;
-			STAT_INCR(vm_page_alloc_memory_nsegments);
+			STAT_INCR(vm_pagelist_alloc_memory_nsegments);
 		} else {
 			pg = &vm_page_array[idx];
 			vm_pagelist_add_paged_memory(pg, NULL, rlist);
 			idx++;
-			STAT_INCR(vm_page_alloc_memory_npages);
+			STAT_INCR(vm_pagelist_alloc_memory_npages);
 		}
 	}
 	return (0);

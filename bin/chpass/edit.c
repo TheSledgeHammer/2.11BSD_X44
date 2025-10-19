@@ -47,15 +47,31 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <sys/cdefs.h>
+
+#include <ctype.h>
+#include <paths.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <util.h>
 
 #include "chpass.h"
 
-int info(char *tempname, int fd, struct passwd *pw, struct entry list[]);
+static int info(char *tempname, int fd, struct passwd *pw, struct entry list[]);
 static int check(FILE *fp, struct passwd *pw, struct entry list[]);
 
-int
+void
+edit(char *tempname, int fd, struct passwd *pw, struct entry list[])
+{
+	if (!info(tempname, fd, pw, list)) {
+		pw_error(tempname, 1, 1);
+	}
+}
+
+static int
 info(char *tempname, int fd, struct passwd *pw, struct entry list[])
 {
 	struct stat sb, begin, end;

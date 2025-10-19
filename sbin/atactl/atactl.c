@@ -148,13 +148,6 @@ static const struct command device_commands[] = {
 	{ NULL,		NULL,			NULL },
 };
 
-static void	bus_reset(int, char *[]);
-
-static const struct command bus_commands[] = {
-	{ "reset",	"",			bus_reset },
-	{ NULL,		NULL,			NULL },
-};
-
 /*
  * Tables containing bitmasks used for error reporting and
  * device identification.
@@ -235,10 +228,10 @@ static const struct bitinfo ata_cmd_ext[] = {
 static const struct bitinfo ata_sata_caps[] = {
 	{ SATA_SIGNAL_GEN1, "1.5Gb/s signaling" },
 	{ SATA_SIGNAL_GEN2, "3.0Gb/s signaling" },
-	//{ SATA_SIGNAL_GEN3, "6.0Gb/s signaling" },
+	{ SATA_SIGNAL_GEN3, "6.0Gb/s signaling" },
 	{ SATA_NATIVE_CMDQ, "Native Command Queuing" },
 	{ SATA_HOST_PWR_MGMT, "Host-Initiated Interface Power Management" },
-	//{ SATA_PHY_EVNT_CNT, "PHY Event Counters" },
+	{ SATA_PHY_EVNT_CNT, "PHY Event Counters" },
 	{ 0, NULL },
 };
 
@@ -246,8 +239,8 @@ static const struct bitinfo ata_sata_feat[] = {
 	{ SATA_NONZERO_OFFSETS, "Non-zero Offset DMA" },
 	{ SATA_DMA_SETUP_AUTO, "DMA Setup Auto Activate" },
 	{ SATA_DRIVE_PWR_MGMT, "Device-Initiated Interface Power Managment" },
-	//{ SATA_IN_ORDER_DATA, "In-order Data Delivery" },
-	//{ SATA_SW_STTNGS_PRS, "Software Settings Preservation" },
+	{ SATA_IN_ORDER_DATA, "In-order Data Delivery" },
+	{ SATA_SW_STTNGS_PRS, "Software Settings Preservation" },
 	{ 0, NULL },
 };
 
@@ -367,14 +360,6 @@ main(int argc, char *argv[])
 			break;
 		}
 	}
-	if (commands == NULL) {
-		for (i = 0; bus_commands[i].cmd_name != NULL; i++) {
-			if (strcmp(cmdname, bus_commands[i].cmd_name) == 0) {
-				commands = &bus_commands[i];
-				break;
-			}
-		}
-	}
 	if (commands == NULL)
 		errx(1, "unknown command: %s", cmdname);
 
@@ -394,11 +379,6 @@ usage(void)
 	for (i=0; device_commands[i].cmd_name != NULL; i++)
 		fprintf(stderr, "\t%s %s\n", device_commands[i].cmd_name,
 					    device_commands[i].arg_names);
-
-	fprintf(stderr, "   Available bus commands:\n");
-	for (i=0; bus_commands[i].cmd_name != NULL; i++)
-		fprintf(stderr, "\t%s %s\n", bus_commands[i].cmd_name,
-					    bus_commands[i].arg_names);
 
 	exit(1);
 }
@@ -477,9 +457,10 @@ static void
 device_smart_temp(const struct ata_smart_attr *attr, uint64_t raw_value)
 {
 	printf("%" PRIu8, attr->raw[0]);
-	if (attr->raw[0] != raw_value)
+	if (attr->raw[0] != raw_value) {
 		printf(" Lifetime min/max %" PRIu8 "/%" PRIu8,
 		    attr->raw[2], attr->raw[4]);
+	}
 }
 
 
@@ -552,10 +533,11 @@ print_smart_status(void *vbuf, void *tbuf)
 		for (j = 0, raw_value = 0; j < 6; j++)
 			raw_value += ((uint64_t)attr->raw[j]) << (8*j);
 
-		if (smart_attrs[aid].special)
+		if (smart_attrs[aid].special) {
 			(*smart_attrs[aid].special)(attr, raw_value);
-		else
+		} else {
 			printf("%" PRIu64, raw_value);
+		}
 		printf("\n");
 	}
 }
@@ -770,7 +752,7 @@ getataparams(void)
 
 	req.flags = ATACMD_READ;
 	req.command = WDCC_IDENTIFY;
-	req.databuf = &inbuf;
+	req.databuf = (caddr_t)&inbuf;
 	req.datalen = sizeof(inbuf);
 	req.timeout = 1000;
 
@@ -852,35 +834,28 @@ extract_string(char *buf, size_t bufmax,
 }
 
 /*
- * DEVICE COMMANDS
- */
-
-/*
- * device_identify:
- *
- *	Display the identity of the device
+ * identify_fixup() - Given an obtained ataparams, fix up the endian and
+ * other issues before using them.
  */
 static void
-device_identify(int argc, char *argv[])
+identify_fixup(const struct ataparams *inqbuf)
 {
-	const struct ataparams *inqbuf;
 	char model[sizeof(inqbuf->atap_model)+1];
 	char revision[sizeof(inqbuf->atap_revision)+1];
 	char serial[sizeof(inqbuf->atap_serial)+1];
-	char hnum[12];
-	uint64_t capacity;
-	uint64_t sectors;
-	uint32_t secsize;
-	int lb_per_pb;
 	int needswap = 0;
 	int i;
 	uint8_t checksum;
 
-	/* No arguments. */
-	if (argc != 0)
-		usage();
-
-	inqbuf = getataparams();
+	if ((inqbuf->atap_integrity & WDC_INTEGRITY_MAGIC_MASK) ==
+		    WDC_INTEGRITY_MAGIC) {
+		for (i = checksum = 0; i < 512; i++) {
+			checksum += ((const uint8_t *)inqbuf)[i];
+		}
+		if (checksum != 0) {
+			puts("IDENTIFY DEVICE data checksum invalid\n");
+		}
+	}
 
 #if BYTE_ORDER == LITTLE_ENDIAN
 	/*
@@ -913,10 +888,104 @@ device_identify(int argc, char *argv[])
 
 	printf("Model: %s, Rev: %s, Serial #: %s\n",
 		model, revision, serial);
+}
+
+
+static void
+compute_capacity(const struct ataparams *inqbuf, uint64_t *capacityp, uint64_t *sectorsp, uint32_t *secsizep)
+{
+	uint64_t capacity;
+	uint64_t sectors;
+	uint32_t secsize;
+
+	if (inqbuf->atap_cmd2_en != 0 && inqbuf->atap_cmd2_en != 0xffff &&
+	    (inqbuf->atap_cmd2_en & ATA_CMD2_LBA48)) {
+		sectors =
+		    ((uint64_t)inqbuf->atap_max_lba[3] << 48) |
+		    ((uint64_t)inqbuf->atap_max_lba[2] << 32) |
+		    ((uint64_t)inqbuf->atap_max_lba[1] << 16) |
+		    ((uint64_t)inqbuf->atap_max_lba[0] <<  0);
+	} else if (inqbuf->atap_capabilities1 & WDC_CAP_LBA) {
+		sectors = (inqbuf->atap_capacity[1] << 16) |
+		    inqbuf->atap_capacity[0];
+	} else {
+		sectors = inqbuf->atap_cylinders *
+		    inqbuf->atap_heads * inqbuf->atap_sectors;
+	}
+
+	secsize = 512;
+
+	if ((inqbuf->atap_secsz & ATA_SECSZ_VALID_MASK) == ATA_SECSZ_VALID) {
+		if (inqbuf->atap_secsz & ATA_SECSZ_LLS) {
+			secsize = 2 *		/* words to bytes */
+			    (inqbuf->atap_lls_secsz[1] << 16 |
+			    inqbuf->atap_lls_secsz[0] <<  0);
+		}
+	}
+
+	capacity = sectors * secsize;
+
+	if (capacityp) {
+		*capacityp = capacity;
+	}
+	if (sectorsp) {
+		*sectorsp = sectors;
+	}
+	if (secsizep) {
+		*secsizep = secsize;
+	}
+}
+
+/*
+ * DEVICE COMMANDS
+ */
+
+/*
+ * device_identify:
+ *
+ *	Display the identity of the device
+ */
+static void
+device_identify(int argc, char *argv[])
+{
+	const struct ataparams *inqbuf;
+	//char hnum[12];
+	uint64_t capacity;
+	uint64_t sectors;
+	uint32_t secsize;
+	int lb_per_pb;
+
+	/* No arguments. */
+	if (argc != 0)
+		usage();
+
+	inqbuf = getataparams();
+	identify_fixup(inqbuf);
 
 	printf("Device type: %s, %s\n", inqbuf->atap_config & WDC_CFG_ATAPI ?
 	       "ATAPI" : "ATA", inqbuf->atap_config & ATA_CFG_FIXED ? "fixed" :
 	       "removable");
+
+	compute_capacity(inqbuf, &capacity, &sectors, &secsize);
+
+	printf("Cylinders: %d, heads: %d, sec/track: %d\n",
+		inqbuf->atap_cylinders, inqbuf->atap_heads,
+		inqbuf->atap_sectors);
+
+	lb_per_pb = 1;
+
+	if ((inqbuf->atap_secsz & ATA_SECSZ_VALID_MASK) == ATA_SECSZ_VALID) {
+		if (inqbuf->atap_secsz & ATA_SECSZ_LPS) {
+			lb_per_pb <<= inqbuf->atap_secsz & ATA_SECSZ_LPS_SZMSK;
+			printf("Physical sector size: %d bytes\n",
+			    lb_per_pb * secsize);
+			if ((inqbuf->atap_logical_align &
+			    ATA_LA_VALID_MASK) == ATA_LA_VALID) {
+				printf("First physically aligned sector: %d\n",
+				    inqbuf->atap_logical_align & ATA_LA_MASK);
+			}
+		}
+	}
 
 	if (((inqbuf->atap_sata_caps & SATA_NATIVE_CMDQ) ||
 	    (inqbuf->atap_cmd_set2 & ATA_CMD2_RWQ)) &&
@@ -1312,23 +1381,4 @@ device_security(int argc, char *argv[])
 		usage();
 
 	return;
-}
-
-/*
- * bus_reset:
- *	Reset an ATA bus (will reset all devices on the bus)
- */
-static void
-bus_reset(int argc, char *argv[])
-{
-	int error;
-
-	/* no args */
-	if (argc != 0)
-		usage();
-
-	error = ioctl(fd, ATABUSIORESET, NULL);
-
-	if (error == -1)
-		err(1, "ATABUSIORESET failed");
 }

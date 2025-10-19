@@ -179,10 +179,8 @@ main(int argc, char **argv)
 	}
 
 	if (op == EDITENTRY) {
-		if (!info(tempname, tfd, pw, list)) {
-			pw_error(tempname, 1, 1);
-		}
-		tfd = pw_tmp();
+		edit(tempname, tfd, pw, list);
+		tfd = pw_tmp(tempname);
 	}
 
 	pw_copy(pfd, tfd, pw);
@@ -192,7 +190,6 @@ main(int argc, char **argv)
 		break;
 	case -1:
 		pw_error("chpass: can't fork; ", 1, 1);
-		break;
 		/* NOTREACHED */
 	default:
 		exit(0);

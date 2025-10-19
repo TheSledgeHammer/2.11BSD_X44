@@ -308,8 +308,11 @@ wdattach(struct device *parent, struct device *self, void *aux)
 	struct wd_softc *wd = (void *)self;
 	struct ata_device *adev= aux;
 	int i, blank;
+	u_int32_t firstaligned = 0, alignment = 1;
 	char buf[41], pbuf[9], c, *p, *q;
 	const struct wd_quirk *wdq;
+	int dtype = DTYPE_UNKNOWN;
+
 	WDCDEBUG_PRINT(("wdattach\n"), DEBUG_FUNCS | DEBUG_PROBE);
 
 	lockinit(&wd->sc_lock, PRIBIO | PCATCH, "wdlock", 0, 0);
@@ -381,22 +384,63 @@ wdattach(struct device *parent, struct device *self, void *aux)
 	if ((wd->sc_flags & WDF_LBA48) != 0) {
 		printf(" LBA48 addressing\n");
 		wd->sc_capacity =
-		    ((u_int64_t) wd->sc_params.__reserved6[11] << 48) |
-		    ((u_int64_t) wd->sc_params.__reserved6[10] << 32) |
-		    ((u_int64_t) wd->sc_params.__reserved6[9]  << 16) |
-		    ((u_int64_t) wd->sc_params.__reserved6[8]  << 0);
+		    ((u_int64_t) wd->sc_params.atap_max_lba[3] << 48) |
+		    ((u_int64_t) wd->sc_params.atap_max_lba[2] << 32) |
+		    ((u_int64_t) wd->sc_params.atap_max_lba[1]  << 16) |
+		    ((u_int64_t) wd->sc_params.atap_max_lba[0]  << 0);
+		wd->sc_capacity28 = (wd->sc_params.atap_capacity[1] << 16)
+				| wd->sc_params.atap_capacity[0];
+		/*
+		 * Force LBA48 addressing for invalid numbers.
+		 */
+		if (wd->sc_capacity28 > 0xfffffff)
+			wd->sc_capacity28 = 0xfffffff;
 	} else if ((wd->sc_flags & WDF_LBA) != 0) {
 		printf(" LBA addressing\n");
-		wd->sc_capacity =
+		wd->sc_capacity28 =
 		    (wd->sc_params.atap_capacity[1] << 16) |
 		    wd->sc_params.atap_capacity[0];
+		/*
+		 * Limit capacity to LBA28 numbers to avoid overflow.
+		 */
+		if (wd->sc_capacity28 > 0xfffffff)
+			wd->sc_capacity28 = 0xfffffff;
+		wd->sc_capacity = wd->sc_capacity28;
 	} else {
 		printf(" chs addressing\n");
 		wd->sc_capacity =
 		    wd->sc_params.atap_cylinders *
 		    wd->sc_params.atap_heads *
 		    wd->sc_params.atap_sectors;
+		/*
+		 * LBA28 size is ignored for CHS addressing. Use a reasonable
+		 * value for debugging. The CHS values may be artificial and
+		 * are mostly ignored.
+		 */
+		if (wd->sc_capacity < 0xfffffff)
+			wd->sc_capacity28 = wd->sc_capacity;
+		else
+			wd->sc_capacity28 = 0xfffffff;
 	}
+	if ((wd->sc_params.atap_secsz & ATA_SECSZ_VALID_MASK) == ATA_SECSZ_VALID
+	    && ((wd->sc_params.atap_secsz & ATA_SECSZ_LLS) != 0)) {
+		wd->sc_blksize = 2ULL *
+		    ((uint32_t)((wd->sc_params.atap_lls_secsz[1] << 16) |
+		    wd->sc_params.atap_lls_secsz[0]));
+	} else {
+		wd->sc_blksize = 512;
+	}
+	if ((wd->sc_params.atap_secsz & ATA_SECSZ_VALID_MASK) == ATA_SECSZ_VALID
+	    && ((wd->sc_params.atap_secsz & ATA_SECSZ_LPS) != 0)) {
+		alignment = 1 <<
+		    (wd->sc_params.atap_secsz & ATA_SECSZ_LPS_SZMSK);
+		if ((wd->sc_params.atap_logical_align & ATA_LA_VALID_MASK) ==
+		    ATA_LA_VALID) {
+			firstaligned =
+			    wd->sc_params.atap_logical_align & ATA_LA_MASK;
+		}
+	}
+	wd->sc_capacity512 = (wd->sc_capacity * wd->sc_blksize) / DEV_BSIZE;
 	//format_bytes(pbuf, sizeof(pbuf), wd->sc_capacity * DEV_BSIZE);
 	printf("%s: %s, %d cyl, %d head, %d sec, "
 			"%d bytes/sect x %llu sectors\n", self->dv_xname, pbuf,
@@ -407,10 +451,25 @@ wdattach(struct device *parent, struct device *self, void *aux)
 					wd->sc_params.atap_cylinders, wd->sc_params.atap_heads,
 			wd->sc_params.atap_sectors, DEV_BSIZE,
 			(unsigned long long) wd->sc_capacity);
-
+	if (alignment != 1) {
+		printf(" (%d bytes/physsect",
+		    alignment * wd->sc_blksize);
+		if (firstaligned != 0) {
+			printf("; first aligned sector: %jd",
+			    (intmax_t)firstaligned);
+		}
+		printf(")");
+	}
 	WDCDEBUG_PRINT(
 			("%s: atap_dmatiming_mimi=%d, atap_dmatiming_recom=%d\n", self->dv_xname, wd->sc_params.atap_dmatiming_mimi, wd->sc_params.atap_dmatiming_recom),
 			DEBUG_PROBE);
+
+	if (wd->sc_blksize <= 0 || !powerof2(wd->sc_blksize) ||
+	    wd->sc_blksize < DEV_BSIZE || wd->sc_blksize > MAXPHYS) {
+		aprint_normal_dev(self, "WARNING: block size %u "
+		    "might not actually work\n", wd->sc_blksize);
+	}
+
 	/*
 	 * Initialize and attach the disk structure.
 	 */
