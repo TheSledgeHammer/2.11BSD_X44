@@ -11,4 +11,5 @@
 #define uvlong	_fmtuvlong
 #define uintptr	_fmtuintptr
 
-#include <lib9.h>
+#include <u.h>
+#include <libc.h>
