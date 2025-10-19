@@ -1,7 +1,7 @@
 /*
- * Copyright © 2021 Plan 9 Foundation
- * Portions Copyright © 2001-2008 Russ Cox
- * Portions Copyright © 2008-2009 Google Inc.
+ * Copyright Â© 2021 Plan 9 Foundation
+ * Portions Copyright Â© 2001-2008 Russ Cox
+ * Portions Copyright Â© 2008-2009 Google Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -23,10 +23,11 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _LIB9TYPES_H_
-#define _LIB9TYPES_H_ 1
+#ifndef _LIB9_H_
+#define _LIB9_H_ 1
 
 #include <u.h>
 #include <libc.h>
 
-#endif	/* _LIB9TYPES_H_ */
+#endif	/* _LIB9_H_ */
+
