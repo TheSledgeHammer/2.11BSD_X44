@@ -26,9 +26,9 @@ MAN=	chpass.1
 BINOWN=	root
 BINMODE=4555
 
-.if (${USE_NDBM} != "no")
-CPPFLAGS+=-DUSE_NDBM -DUSE_MKPASSWD
-.endif
+#.if (${USE_NDBM} != "no")
+#CPPFLAGS+=-DUSE_NDBM -DUSE_MKPASSWD
+#.endif
 
 .PATH:	${NETBSDSRCDIR}/lib/libc/gen
 LINKS=	${BINDIR}/chpass ${BINDIR}/chfn ${BINDIR}/chpass ${BINDIR}/chsh
