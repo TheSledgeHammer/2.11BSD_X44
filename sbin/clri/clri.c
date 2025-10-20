@@ -68,9 +68,7 @@ static off_t sblock_try[] = SBLOCKSEARCH;
 off_t sblockloc;
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	register struct fs *sbp;
 	register struct ufs1_dinode *ip1;

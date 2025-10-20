@@ -50,8 +50,7 @@ static char sccsid[] = "@(#)dkcksum.c	8.1 (Berkeley) 6/5/93";
 #include "dkcksum.h"
 
 u_short
-dkcksum(lp)
-	register struct disklabel *lp;
+dkcksum(struct disklabel *lp)
 {
 	register u_short *start, *end;
 	register u_short sum = 0;

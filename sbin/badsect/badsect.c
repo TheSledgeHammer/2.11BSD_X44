@@ -90,9 +90,7 @@ int		chkuse(daddr_t, int);
 const off_t sblock_try[] = SBLOCKSEARCH;
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	daddr_t number;
 	struct stat stbuf, devstat;
@@ -173,9 +171,7 @@ main(argc, argv)
 }
 
 int
-chkuse(blkno, cnt)
-	daddr_t blkno;
-	int cnt;
+chkuse(daddr_t blkno, int cnt)
 {
 	int cg;
 	daddr_t fsbn, bn;
@@ -216,10 +212,7 @@ chkuse(blkno, cnt)
  * read a block from the file system
  */
 void
-rdfs(bno, size, bf)
-	daddr_t bno;
-	int size;
-	char *bf;
+rdfs(daddr_t bno, int size, char *bf)
 {
 	int n;
 
