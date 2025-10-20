@@ -152,7 +152,7 @@ Cross-Compiler Compatability Table:
 	
 ### Known OS's Supported:
 - Ubuntu (20.04 to 23.04)
-- Mint	 (21.x to 22)
+- Mint	 (21.x to 22.x)
 
 ## Contribution:
 
