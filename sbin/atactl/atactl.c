@@ -38,7 +38,6 @@
 __RCSID("$NetBSD: atactl.c,v 1.66.4.1 2013/02/18 19:06:10 riz Exp $");
 #endif
 
-
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <err.h>

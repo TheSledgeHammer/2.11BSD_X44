@@ -17,13 +17,22 @@
 #	@(#)Makefile	5.1.2 (2.11BSD) 1996/12/1
 #
 
+USE_FORT?= yes	# setuid
 WARNS= 	3
 PROG=	chpass
-SRCS=	chpass_v2.c edit.c field.c util.c pw_scan.c
+SRCS=	chpass.c edit.c field.c pw_scan.c util.c
 MAN=	chpass.1
 
-.PATH:	${NETBSDSRCDIR}/lib/libc/gen
+BINOWN=	root
+BINMODE=4555
 
+.if (${USE_NDBM} != "no")
+CPPFLAGS+=-DUSE_NDBM -DUSE_MKPASSWD
+.endif
+
+.PATH:	${NETBSDSRCDIR}/lib/libc/gen
+LINKS=	${BINDIR}/chpass ${BINDIR}/chfn ${BINDIR}/chpass ${BINDIR}/chsh
+MLINKS=	chpass.1 chfn.1 chpass.1 chsh.1
 CPPFLAGS+=-I${NETBSDSRCDIR}/lib/libc/gen
 
 DPADD+= ${LIBUTIL}
