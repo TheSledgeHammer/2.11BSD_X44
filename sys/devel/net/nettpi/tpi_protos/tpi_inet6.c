@@ -36,6 +36,7 @@
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
+#include <sys/stdarg.h>
 #include <sys/errno.h>
 #include <sys/time.h>
 
@@ -45,27 +46,28 @@
 #include <tpi_protosw.h>
 #include <tpi_ip6.h>
 
+#include <netinet/in.h>
 #include <netinet/ip6.h>
 #include <netinet6/in6_var.h>
 
 struct tpi_protosw tpin6_protosw = {
- 	.tpi_afamily = AF_INET6,
- 	.tpi_putnetaddr = in6_putnetaddr,
- 	.tpi_getnetaddr = in6_getnetaddr,
- 	.tpi_cmpnetaddr = in6_cmpnetaddr,
- 	.tpi_putsufx = in6_putsufx,
- 	.tpi_getsufx = in6_getsufx,
- 	.tpi_recycle_suffix = in6_recycle_tsuffix,
-	.tpi_mtu = tpip6_mtu,
-	.tpi_pcbbind = in6_pcbbind,
-	.tpi_pcbconn = in6_pcbconnect,
-	.tpi_pcbdisc = in6_pcbdisconnect,
-	.tpi_pcbdetach = in6_pcbdetach,
-	.tpi_pcballoc = in6_pcballoc,
-	.tpi_output = tpip6_output,
-	.tpi_dgoutput = tpip6_output_dg,
-	.tpi_ctloutput = 0,
-	.tpi_pcblist = &tp_in6pcb,
+		.tpi_afamily = AF_INET6,
+		.tpi_putnetaddr = in6_putnetaddr,
+		.tpi_getnetaddr = in6_getnetaddr,
+		.tpi_cmpnetaddr = in6_cmpnetaddr,
+		.tpi_putsufx = in6_putsufx,
+		.tpi_getsufx = in6_getsufx,
+		.tpi_recycle_suffix = in6_recycle_tsuffix,
+		.tpi_mtu = tpip6_mtu,
+		.tpi_pcbbind = in6_pcbbind,
+		.tpi_pcbconn = in6_pcbconnect,
+		.tpi_pcbdisc = in6_pcbdisconnect,
+		.tpi_pcbdetach = in6_pcbdetach,
+		.tpi_pcballoc = in6_pcballoc,
+		.tpi_output = tpip6_output,
+		.tpi_dgoutput = tpip6_output_dg,
+		.tpi_ctloutput = 0,
+		.tpi_pcblist = &tp_in6pcb,
 };
 
 
@@ -209,18 +211,65 @@ tpip6_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen, 
 	struct in6_addr *laddr, *faddr;
 	struct route_in6 *ro;
 	register struct mbuf *m;
-	register struct ip6_hdr *ip;
+	register struct ip6_hdr *ip6;
 	int error;
 
 	laddr = (struct in6_addr *)laddr_arg;
 	faddr = (struct in6_addr *)faddr_arg;
 	ro = (struct route_in6 *)ro_arg;
 
+	MGETHDR(m, M_DONTWAIT, TPMT_IPHDR);
+	if (m == 0) {
+		error = ENOBUFS;
+		goto bad;
+	}
+	m->m_next = m0;
+	MH_ALIGN(m, sizeof(struct ip6_hdr));
+	m->m_len = sizeof(struct ip6_hdr);
 
-	error = ip6_output(m, opt, ro, flags, im6o, so, ifpp);
+	ip6 = mtod(m, struct ip6_hdr *);
+	bzero((caddr_t)ip6, sizeof *ip6);
+
+	ip6->ip6_vfc = IPPROTO_TP & IPV6_VERSION_MASK;
+	m->m_pkthdr.len = ip6->ip6_plen = sizeof(struct ip6_hdr) + datalen;
+
+	ip6->ip6_src = *laddr;
+	ip6->ip6_dst = *faddr;
+
+	IncStat(ts_tpdu_sent);
+	IFDEBUG(D_EMIT)
+		dump_mbuf(m, "tpip6_output_dg before ip6_output\n");
+	ENDDEBUG
+
+	error = tpip6_output_sc(m, NULL, ro, IP_ALLOWBROADCAST, NULL, NULL, NULL);
 	return (error);
 
+bad:
+	m_freem(m);
+	IncStat(ts_send_drop);
 	return (error);
+}
+
+int
+tpip6_output_sc(struct mbuf *m0, ...)
+{
+	struct ip6_pktopts *opt;
+	struct route_in6 *ro;
+	int flags;
+	struct ip6_moptions *im6o;
+	struct socket *so;
+	struct ifnet **ifpp;
+	va_list ap;
+
+	va_start(ap, m0);
+	opt = va_arg(ap, struct ip6_pktopts *);
+	ro = va_arg(ap, struct route_in6 *);
+	flags = va_arg(ap, int);
+	im6o = va_arg(ap, struct ip6_moptions *);
+	so = va_arg(ap, struct socket *);
+	ifpp = va_arg(ap, struct ifnet **);
+	va_end(ap);
+	return (ip6_output(m, opt, ro, flags, im6o, so, ifpp));
 }
 
 int
@@ -366,6 +415,7 @@ tpip6_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	}
 	return (NULL);
 }
+
 /* tpin6 */
 void
 tpin6_quench(struct in6pcb *in6p)

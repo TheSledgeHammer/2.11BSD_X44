@@ -51,7 +51,7 @@ __KERNEL_RCSID(0, "$NetBSD: ns_pcb.c,v 1.20 2004/02/24 15:22:01 wiz Exp $");
 #include <netns/ns_pcb.h>
 #include <netns/ns_var.h>
 
-static const struct	ns_addr zerons_addr;
+struct ns_addr zerons_addr;
 
 int
 ns_pcballoc(so, head)

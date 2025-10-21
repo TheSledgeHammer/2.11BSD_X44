@@ -151,24 +151,33 @@ idp_drop(nsp, errno)
 }
 
 int
-idp_output(struct mbuf *m0, ...)
+idp_output2(struct mbuf *m0, ...)
 {
-	struct nspcb *nsp;
-	struct mbuf *m;
 	struct idp *idp;
-	int len = m0->m_pkthdr.len;
-	struct mbuf *mprev = NULL;
-	extern int idpcksum;
+	struct mbuf *m, *mprev;
+	int len;
+	struct route *ro;
+	int flags;
+	struct ns_addr *laddr, *faddr;
+	u_int8_t dpt;
+	struct socket *so;
 	va_list ap;
+	extern int idpcksum;
 
+	mprev = NULL;
+	len = m0->m_pkthdr.len;
 	va_start(ap, m0);
-	nsp = va_arg(ap, struct nspcb *);
+	ro = va_arg(ap, struct route *);
+	flags = va_arg(ap, int);
+	dpt = va_arg(ap, u_int8_t);
+	laddr = va_arg(ap, struct ns_addr *);
+	faddr = va_arg(ap, struct ns_addr *);
+	so = va_arg(ap, struct socket *);
 	va_end(ap);
 
 	/*
 	 * Make sure packet is actually of even length.
 	 */
-	
 	if (len & 1) {
 		m = mprev;
 		if ((m->m_flags & M_EXT) == 0 &&
@@ -193,17 +202,18 @@ idp_output(struct mbuf *m0, ...)
 	 * and addresses and length put into network format.
 	 */
 	m = m0;
-	if (nsp->nsp_flags & NSP_RAWOUT) {
+	if (flags & NSP_RAWOUT) {
 		idp = mtod(m, struct idp *);
 	} else {
 		M_PREPEND(m, sizeof (struct idp), M_DONTWAIT);
-		if (m == 0)
+		if (m == 0) {
 			return (ENOBUFS);
+		}
 		idp = mtod(m, struct idp *);
 		idp->idp_tc = 0;
-		idp->idp_pt = nsp->nsp_dpt;
-		idp->idp_sna = nsp->nsp_laddr;
-		idp->idp_dna = nsp->nsp_faddr;
+		idp->idp_pt = dpt;
+		idp->idp_sna = laddr;
+		idp->idp_dna = faddr;
 		len += sizeof (struct idp);
 	}
 
@@ -213,8 +223,9 @@ idp_output(struct mbuf *m0, ...)
 		idp->idp_sum = 0;
 		len = ((len - 1) | 1) + 1;
 		idp->idp_sum = ns_cksum(m, len);
-	} else
+	} else {
 		idp->idp_sum = 0xffff;
+	}
 
 	/*
 	 * Use cached route for previous datagram if
@@ -226,9 +237,26 @@ idp_output(struct mbuf *m0, ...)
 	 * NB: We don't handle broadcasts because that
 	 *     would require 3 subroutine calls.
 	 */
-	return (ns_output(m, &nsp->nsp_route,
-	    nsp->nsp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST)));
+	return (ns_output(m, ro, flags & (SO_DONTROUTE | SO_BROADCAST)));
 }
+
+int
+idp_output(struct mbuf *m0, ...)
+{
+	struct nspcb *nsp;
+	struct route *ro;
+	struct socket *so;
+	va_list ap;
+
+	va_start(ap, m0);
+	nsp = va_arg(ap, struct nspcb *);
+	va_end(ap);
+
+	ro = &nsp->nsp_route;
+	so = nsp->nsp_socket;
+	return (idp_output2(m0, ro, so->so_options, nsp->nsp_dpt, nsp->nsp_laddr, nsp->nsp_faddr, so));
+}
+
 /* ARGSUSED */
 int
 idp_ctloutput(req, so, level, name, value)

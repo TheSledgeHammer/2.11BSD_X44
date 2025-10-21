@@ -93,6 +93,7 @@ void in6_getnetaddr(void *, struct mbuf *, int);
 int tpip6_mtu(struct tpipcb *);
 int tpip6_output(void *, struct mbuf *, int, int);
 int tpip6_output_dg(void *, void *, struct mbuf *, int, void *, int);
+int  tpip6_output_sc(struct mbuf *m0, ...);
 int tpip6_input(struct mbuf *, int);
 void tpip6_quench(struct in6pcb *, int);
 void tpip6_abort(struct in6pcb *, int);

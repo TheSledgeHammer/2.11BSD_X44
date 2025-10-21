@@ -1,7 +1,5 @@
-/*	$NetBSD: idp_var.h,v 1.12 2003/08/07 16:33:44 agc Exp $	*/
-
-/*
- * Copyright (c) 1984, 1985, 1986, 1987, 1993
+/*-
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,34 +26,40 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)idp_var.h	8.1 (Berkeley) 6/10/93
+ *	@(#)tp_iso.c	8.2 (Berkeley) 9/22/94
  */
 
-/*
- * IDP Kernel Structures and Variables
- */
-struct	idpstat {
-	int	idps_badsum;		/* checksum bad */
-	int	idps_tooshort;		/* packet too short */
-	int	idps_toosmall;		/* not enough data */
-	int	idps_badhlen;		/* ip header length < data size */
-	int	idps_badlen;		/* ip length < ip header length */
-};
+#ifndef _NETTPI_NS_H_
+#define _NETTPI_NS_H_
 
-#ifdef _KERNEL
-struct nspcb;
-struct mbuf;
-struct socket;
-extern struct idpstat	idpstat;
-
-void idp_input(struct mbuf *, ...);
-void idp_abort(struct nspcb *);
-void idp_drop(struct nspcb *, int);
-int idp_output(struct mbuf *, ...);
-int idp_output2(struct mbuf *, ...);
-int idp_ctloutput(int, struct socket *, int , int, struct mbuf **);
-int idp_usrreq(struct socket *, int, struct mbuf *, struct mbuf *,
-		    struct mbuf *, struct proc *);
-int idp_raw_usrreq(struct socket *, int, struct mbuf *, struct mbuf *,
-			struct mbuf *, struct proc *);
+#ifndef SOCK_STREAM
+#include <sys/socket.h>
 #endif
+
+#include <net/route.h>
+
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/ns_var.h>
+
+struct nspcb tp_nspcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
+
+void in_getsufx(void *, u_short *, caddr_t, int);
+void in_putsufx(void *, caddr_t, int, int);
+void in_recycle_tsuffix(void *);
+void in_putnetaddr(void *, struct sockaddr *, int);
+int in_cmpnetaddr(void *, struct sockaddr *, int);
+void in_getnetaddr(void *, struct mbuf *, int);
+
+int tpidp_mtu(struct tpipcb *);
+int tpidp_output(void *, struct mbuf *, int, int);
+int tpidp_output_dg(void *, void *, struct mbuf *, int, void *, int);
+int tpidp_input(struct mbuf *, int);
+void tpidp_quench(struct nspcb *, int);
+void tpidp_abort(struct nspcb *, int);
+void *tpidp_ctlinput(int, struct sockaddr *, void *);
+
+void tpns_quench(struct nspcb *);
+void tpns_abort(struct nspcb *);
+
+#endif /* _NETTPI_NS_H_ */

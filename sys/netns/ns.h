@@ -133,6 +133,7 @@ extern union ns_host ns_zerohost;
 extern union ns_host ns_broadhost;
 extern union ns_net ns_zeronet;
 extern union ns_net ns_broadnet;
+extern struct ns_addr zerons_addr;
 
 #define	satosns(sa)	((struct sockaddr_ns *)(sa))
 #define	snstosa(sns)	((struct sockaddr *)(sns))
