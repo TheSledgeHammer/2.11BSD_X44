@@ -1031,7 +1031,7 @@ in_pcbhash(struct inpcbtable *table, struct in_addr laddr, u_int lport, struct i
 }
 
 struct inpcb *
-in_pcblookup(table, laddr, lport_arg, faddr, fport_arg, lookup_wildcard)
+in_pcblookup(table, faddr, fport_arg, laddr, lport_arg, lookup_wildcard)
 	struct inpcbtable *table;
 	struct in_addr laddr, faddr;
 	u_int lport_arg, fport_arg;
@@ -1121,4 +1121,5 @@ out:
 match:
 	return (match);
 }
+
 #endif /* notyet */

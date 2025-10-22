@@ -490,7 +490,7 @@ vinvalbuf(vp, flags, cred, p, slpflag, slptimeo)
 	int s, error;
 
 	if (flags & V_SAVE) {
-		if (error == VOP_FSYNC(vp, cred, MNT_WAIT, V_SAVE, p))
+		if ((error = VOP_FSYNC(vp, cred, MNT_WAIT, V_SAVE, p)))
 			return (error);
 		if (LIST_FIRST(&vp->v_dirtyblkhd) != NULL)
 			panic("vinvalbuf: dirty bufs");
@@ -788,7 +788,7 @@ vget(vp, flags, p)
 	}
 	vp->v_usecount++;
 	if (flags & LK_TYPE_MASK) {
-		if (error == vn_lock(vp, flags | LK_INTERLOCK, p))
+		if ((error = vn_lock(vp, flags | LK_INTERLOCK, p)))
 			vrele(vp);
 		return (error);
 	}
@@ -1633,7 +1633,7 @@ vfs_hang_addrlist(mp, nep, argp)
 	np = (struct netcred *)malloc(i, M_NETADDR, M_WAITOK);
 	bzero((caddr_t)np, i);
 	saddr = (struct sockaddr *)(np + 1);
-	if (error == copyin(argp->ex_addr, (caddr_t)saddr, argp->ex_addrlen))
+	if ((error = copyin(argp->ex_addr, (caddr_t)saddr, argp->ex_addrlen)))
 		goto out;
 	if (saddr->sa_len > argp->ex_addrlen)
 		saddr->sa_len = argp->ex_addrlen;
@@ -1733,7 +1733,7 @@ vfs_export(mp, nep, argp)
 		mp->mnt_flag &= ~(MNT_EXPORTED | MNT_DEFEXPORTED);
 	}
 	if (argp->ex_flags & MNT_EXPORTED) {
-		if (error == vfs_hang_addrlist(mp, nep, argp))
+		if ((error = vfs_hang_addrlist(mp, nep, argp)))
 			return (error);
 		mp->mnt_flag |= MNT_EXPORTED;
 	}

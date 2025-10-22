@@ -892,7 +892,7 @@ union_vn_create(vpp, un, p)
 	cn.cn_consume = 0;
 
 	VREF(un->un_dirvp);
-	if (error == relookup(un->un_dirvp, &vp, &cn))
+	if ((error = relookup(un->un_dirvp, &vp, &cn)))
 		return (error);
 	vrele(un->un_dirvp);
 
@@ -920,10 +920,10 @@ union_vn_create(vpp, un, p)
 	vap->va_type = VREG;
 	vap->va_mode = cmode;
 	VOP_LEASE(un->un_dirvp, p, cred, LEASE_WRITE);
-	if (error == VOP_CREATE(un->un_dirvp, &vp, &cn, vap))
+	if ((error = VOP_CREATE(un->un_dirvp, &vp, &cn, vap)))
 		return (error);
 
-	if (error == VOP_OPEN(vp, fmode, cred, p)) {
+	if ((error = VOP_OPEN(vp, fmode, cred, p))) {
 		vput(vp);
 		return (error);
 	}

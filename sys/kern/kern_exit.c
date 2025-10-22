@@ -130,7 +130,7 @@ exit(rv)
 		(void) vm_map_remove(&vm->vm_map, VM_MIN_ADDRESS, VM_MAXUSER_ADDRESS);
 	}
 
-	if(SESS_LEADER(p)) {
+	if (SESS_LEADER(p)) {
 		register struct session *sp = p->p_session;
 		struct tty *tp;
 
@@ -330,7 +330,7 @@ loop:
 		}
 		if (SCARG(uap, rusage)) {
 			rucvt(&ru, &p->p_kru);
-			if (error == copyout(&ru, SCARG(uap, rusage), sizeof(ru))) {
+			if ((error = copyout(&ru, SCARG(uap, rusage), sizeof(ru)))) {
 				return (error);
 			}
 		}

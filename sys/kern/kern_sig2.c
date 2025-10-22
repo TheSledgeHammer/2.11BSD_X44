@@ -361,7 +361,7 @@ sigwait()
 		error = EINVAL;
 		goto out;
 	}
-	if (error == copyin(SCARG(uap, set), &wanted, sizeof(sigset_t)))
+	if ((error = copyin(SCARG(uap, set), &wanted, sizeof(sigset_t))))
 		goto out;
 
 	wanted |= sigcantmask;
@@ -399,7 +399,7 @@ sigtimedwait()
 		error = EINVAL;
 		goto out;
 	}
-	if (error == copyin(SCARG(uap, set), &wanted, sizeof(sigset_t))) {
+	if ((error = copyin(SCARG(uap, set), &wanted, sizeof(sigset_t)))) {
 		goto out;
 	}
 

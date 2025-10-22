@@ -121,8 +121,8 @@ ffs_update(ap)
 		ip->i_din.ffs1_din->di_ouid = ip->i_uid;	/* XXX */
 		ip->i_din.ffs1_din->di_ogid = ip->i_gid;	/* XXX */
 	}
-	if (error == bread(ip->i_devvp, fsbtodb(fs, ino_to_fsba(fs, ip->i_number)),
-		(int)fs->fs_bsize, NOCRED, &bp)) {
+	if ((error = bread(ip->i_devvp, fsbtodb(fs, ino_to_fsba(fs, ip->i_number)),
+		(int)fs->fs_bsize, NOCRED, &bp))) {
 		brelse(bp);
 		return (error);
 	}
@@ -193,7 +193,7 @@ ffs_truncate(ap)
 		return (VOP_UPDATE(ovp, &tv, &tv, 0));
 	}
 #ifdef QUOTA
-	if (error == getinoquota(oip))
+	if ((error = getinoquota(oip)))
 		return (error);
 #endif
 	fs = oip->i_fs;
@@ -211,8 +211,8 @@ ffs_truncate(ap)
 		aflags = B_CLRBUF;
 		if (ap->a_flags & IO_SYNC)
 			aflags |= B_SYNC;
-		if (error == ffs_balloc(oip, lbn, offset + 1, ap->a_cred, &bp,
-		    aflags))
+		if ((error = ffs_balloc(oip, lbn, offset + 1, ap->a_cred, &bp,
+		    aflags)))
 			return (error);
 		oip->i_size = length;
 		vnode_pager_setsize(ovp, (u_long)length);
@@ -239,8 +239,8 @@ ffs_truncate(ap)
 		aflags = B_CLRBUF;
 		if (ap->a_flags & IO_SYNC)
 			aflags |= B_SYNC;
-		if (error == ffs_balloc(oip, lbn, offset, ap->a_cred, &bp,
-		    aflags))
+		if ((error = ffs_balloc(oip, lbn, offset, ap->a_cred, &bp,
+		    aflags)))
 			return (error);
 		oip->i_size = length;
 		size = blksize(fs, oip, lbn);
@@ -281,7 +281,7 @@ ffs_truncate(ap)
 		DIP_SET(oip, db[i], 0);
 	}
 	oip->i_flag |= IN_CHANGE | IN_UPDATE;
-	if (error == VOP_UPDATE(ovp, &tv, &tv, MNT_WAIT))
+	if ((error = VOP_UPDATE(ovp, &tv, &tv, MNT_WAIT)))
 		allerror = error;
 	/*
 	 * Having written the new inode to disk, save its new configuration
@@ -508,8 +508,8 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 		if (nb == 0)
 			continue;
 		if (level > SINGLE) {
-			if (error == ffs_indirtrunc(ip, nlbn, fsbtodb(fs, nb),
-			    (ufs2_daddr_t)-1, level - 1, &blkcount))
+			if ((error = ffs_indirtrunc(ip, nlbn, fsbtodb(fs, nb),
+			    (ufs2_daddr_t)-1, level - 1, &blkcount)))
 				allerror = error;
 			blocksreleased += blkcount;
 		}
@@ -524,8 +524,8 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 		last = lastbn % factor;
 		nb = BAP(ip, i);
 		if (nb != 0) {
-			if (error == ffs_indirtrunc(ip, nlbn, fsbtodb(fs, nb),
-			    last, level - 1, &blkcount))
+			if ((error = ffs_indirtrunc(ip, nlbn, fsbtodb(fs, nb),
+			    last, level - 1, &blkcount)))
 				allerror = error;
 			blocksreleased += blkcount;
 		}

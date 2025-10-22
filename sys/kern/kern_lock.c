@@ -349,8 +349,8 @@ lockmgr(lkp, flags, interlkp, pid)
 		     lkp->lk_sharecount != 0 || lkp->lk_waitcount != 0); ) {
 			lkp->lk_flags |= LK_WAITDRAIN;
 			lkp_unlock(lkp);
-			if (error == tsleep((void *)&lkp->lk_flags, lkp->lk_prio,
-			    lkp->lk_wmesg, lkp->lk_timo))
+			if ((error = tsleep((void *)&lkp->lk_flags, lkp->lk_prio,
+			    lkp->lk_wmesg, lkp->lk_timo)))
 				return (error);
 			if ((extflags) & LK_SLEEPFAIL)
 				return (ENOLCK);

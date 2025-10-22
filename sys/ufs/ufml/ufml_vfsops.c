@@ -86,7 +86,7 @@ ufmlfs_mount(mp, path, data, ndp, p)
 	/*
 	 * Get argument
 	 */
-	if (error == copyin(data, (caddr_t)&args, sizeof(struct ufml_args)))
+	if ((error = copyin(data, (caddr_t)&args, sizeof(struct ufml_args))))
 		return (error);
 
 	/*
@@ -94,7 +94,7 @@ ufmlfs_mount(mp, path, data, ndp, p)
 	 */
 	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT|LOCKLEAF,
 		UIO_USERSPACE, args.target, p);
-	if (error == namei(ndp))
+	if ((error = namei(ndp)))
 		return (error);
 
 	/*
@@ -201,7 +201,7 @@ ufmlfs_unmount(mp, mntflags, p)
 #endif
 	if (ufmlm_rootvp->v_usecount > 1)
 		return (EBUSY);
-	if (error == vflush(mp, ufmlm_rootvp, flags))
+	if ((error = vflush(mp, ufmlm_rootvp, flags)))
 		return (error);
 
 #ifdef UFMLFS_DIAGNOSTIC

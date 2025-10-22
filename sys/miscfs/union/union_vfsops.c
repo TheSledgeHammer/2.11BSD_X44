@@ -99,7 +99,7 @@ union_mount(mp, path, data, ndp, p)
 	/*
 	 * Get argument
 	 */
-	if (error == copyin(data, (caddr_t)&args, sizeof(struct union_args)))
+	if ((error = copyin(data, (caddr_t)&args, sizeof(struct union_args))))
 		goto bad;
 
 	lowerrootvp = mp->mnt_vnodecovered;
@@ -111,7 +111,7 @@ union_mount(mp, path, data, ndp, p)
 	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT,
 	       UIO_USERSPACE, args.target, p);
 
-	if (error == namei(ndp))
+	if ((error = namei(ndp)))
 		goto bad;
 
 	upperrootvp = ndp->ni_vp;
@@ -279,7 +279,7 @@ union_unmount(mp, mntflags, p)
 	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
 
-	if (error == union_root(mp, &um_rootvp))
+	if ((error = union_root(mp, &um_rootvp)))
 		return (error);
 
 	/*

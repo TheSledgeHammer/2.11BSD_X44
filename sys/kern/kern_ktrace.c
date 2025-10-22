@@ -437,7 +437,7 @@ ktrace()
 		 */
 		NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, SCARG(uap, fname),
 		    curp);
-		if (error == vn_open(&nd, FREAD|FWRITE, 0)) {
+		if ((error = vn_open(&nd, FREAD|FWRITE, 0))) {
 			curp->p_traceflag &= ~KTRFAC_ACTIVE;
 			return (error);
 		}

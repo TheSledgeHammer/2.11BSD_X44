@@ -29,7 +29,7 @@ reboot()
 	} *uap = (struct reboot_args *)u.u_ap;
 	int error;
 
-	if (error == suser()) {
+	if ((error = suser())) {
 		return (error);
 	}
 	boot(SCARG(uap, opt));

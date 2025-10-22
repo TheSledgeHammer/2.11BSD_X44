@@ -238,8 +238,8 @@ lfs_segwrite(mp, flags)
 			/* printf ("segs clean: %d\n", clean); */
 			wakeup(&lfs_allclean_wakeup);
 			wakeup(&fs->lfs_nextseg);
-			if (error == tsleep(&fs->lfs_avail, PRIBIO + 1,
-			    "lfs writer", 0))
+			if ((error = tsleep(&fs->lfs_avail, PRIBIO + 1,
+			    "lfs writer", 0)))
 				return (error);
 		}
 	} while (clean <= 2 || fs->lfs_avail <= 0);
@@ -644,7 +644,7 @@ lfs_updatemeta(sp)
 		fs->lfs_offset +=
 		    fragstodb(fs, numfrags(fs, (*sp->start_bpp)->b_bcount));
 
-		if (error == ufs_bmaparray(vp, lbn, &daddr, a, &num, NULL))
+		if ((error = ufs_bmaparray(vp, lbn, &daddr, a, &num, NULL)))
 			panic("lfs_updatemeta: ufs_bmaparray %d", error);
 		ip = VTOI(vp);
 		switch (num) {

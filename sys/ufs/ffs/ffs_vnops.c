@@ -287,7 +287,7 @@ ffs_reclaim(ap)
 	register struct vnode *vp = ap->a_vp;
 	int error;
 
-	if (error == ufs_reclaim(vp, ap->a_p))
+	if ((error = ufs_reclaim(vp, ap->a_p)))
 		return (error);
 	FREE(vp->v_data, VFSTOUFS(vp->v_mount)->um_devvp->v_tag == VT_MFS ? M_MFSNODE : M_FFSNODE);
 	vp->v_data = NULL;

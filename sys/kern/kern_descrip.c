@@ -344,7 +344,7 @@ fgetlk(fp, value)
 	p = pfind(value);
 	if (fl.l_whence == SEEK_CUR)
 		fl.l_start += fp->f_offset;
-	if (error == VOP_ADVLOCK(vp, (caddr_t) p, F_GETLK, &fl, F_POSIX))
+	if ((error = VOP_ADVLOCK(vp, (caddr_t) p, F_GETLK, &fl, F_POSIX)))
 		return (error);
 	return (copyout((caddr_t) &fl, (caddr_t) value, sizeof(fl)));
 }

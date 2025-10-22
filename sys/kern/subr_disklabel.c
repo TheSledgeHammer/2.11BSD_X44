@@ -176,7 +176,7 @@ writedisklabel(dev, strat, lp)
 	bp->b_bcount = lp->d_secsize;
 	bp->b_flags = B_READ;
 	(*strat)(bp);
-	if (error == biowait(bp)) {
+	if ((error = biowait(bp))) {
 		goto done;
 	}
 	for (dlp = (struct disklabel*) bp->b_data; dlp <= (struct disklabel*) ((char*) bp->b_data + lp->d_secsize - sizeof(*dlp)); dlp = (struct disklabel*) ((char*) dlp + sizeof(long))) {

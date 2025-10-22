@@ -133,7 +133,7 @@ swapinit(void)
 #endif
 	if (nswap == 0) {
 		printf("WARNING: no swap space found\n");
-	} else if (error == swfree(p, 0, 1)) {
+	} else if ((error = swfree(p, 0, 1))) {
 		printf("swfree errno %d\n", error); /* XXX */
 		panic("swapinit swfree 0");
 	}
@@ -266,7 +266,7 @@ swfree(p, index, nslots)
 	sdp = swp->sw_swapdev;
 	sdp->swd_swdevt = swp;
 	vp = swp->sw_vp;
-	if (error == VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p)) {
+	if ((error = VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p))) {
 		return (error);
 	}
 	swp->sw_flags |= SW_FREED;

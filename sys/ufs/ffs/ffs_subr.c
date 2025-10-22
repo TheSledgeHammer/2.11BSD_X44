@@ -73,7 +73,7 @@ ffs_blkatoff(ap)
 	bsize = blksize(fs, ip, lbn);
 
 	*ap->a_bpp = NULL;
-	if (error == bread(ap->a_vp, lbn, bsize, NOCRED, &bp)) {
+	if ((error = bread(ap->a_vp, lbn, bsize, NOCRED, &bp))) {
 		brelse(bp);
 		return (error);
 	}

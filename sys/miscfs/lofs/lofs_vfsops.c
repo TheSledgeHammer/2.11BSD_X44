@@ -87,14 +87,14 @@ lofs_mount(mp, path, data, ndp, p)
 	/*
 	 * Get argument
 	 */
-	if (error == copyin(data, (caddr_t)&args, sizeof(struct lofs_args)))
+	if ((error = copyin(data, (caddr_t)&args, sizeof(struct lofs_args))))
 		return (error);
 
 	/*
 	 * Find target node
 	 */
 	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT|LOCKLEAF,	UIO_USERSPACE, args.target, p);
-	if (error == namei(ndp))
+	if ((error = namei(ndp)))
 		return (error);
 
 	/*
@@ -212,7 +212,7 @@ lofs_unmount(mp, mntflags, p)
 	 */
 	if (rootvp->v_usecount > 1)
 		return (EBUSY);
-	if (error == vflush(mp, rootvp, flags))
+	if ((error = vflush(mp, rootvp, flags)))
 		return (error);
 
 #ifdef LOFS_DIAGNOSTIC

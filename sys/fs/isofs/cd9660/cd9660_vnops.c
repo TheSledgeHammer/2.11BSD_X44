@@ -560,7 +560,7 @@ iso_uiodir(idp,dp,off)
 		--idp->ncookies;
 	}
 
-	if (error == uiomove((caddr_t)dp, dp->d_reclen, idp->uio))
+	if ((error = uiomove((caddr_t)dp, dp->d_reclen, idp->uio)))
 		return (error);
 	idp->uio_off = off;
 	return (0);
@@ -592,12 +592,12 @@ iso_shipdir(idp)
 	if (sl > 0) {
 		if (sl != cl || bcmp(sname, cname, sl)) {
 			if (idp->assocent.d_namlen) {
-				if (error == iso_uiodir(idp, &idp->assocent, idp->assocoff))
+				if ((error = iso_uiodir(idp, &idp->assocent, idp->assocoff)))
 					return (error);
 				idp->assocent.d_namlen = 0;
 			}
 			if (idp->saveent.d_namlen) {
-				if (error == iso_uiodir(idp, &idp->saveent, idp->saveoff))
+				if ((error = iso_uiodir(idp, &idp->saveent, idp->saveoff)))
 					return (error);
 				idp->saveent.d_namlen = 0;
 			}
@@ -687,7 +687,7 @@ cd9660_readdir(ap)
 		if ((idp->curroff & bmask) == 0) {
 			if (bp != NULL)
 				brelse(bp);
-			if (error == VOP_BLKATOFF(vdp, (off_t )idp->curroff, NULL, &bp))
+			if ((error = VOP_BLKATOFF(vdp, (off_t )idp->curroff, NULL, &bp)))
 				break;
 			entryoffsetinblock = 0;
 		}
@@ -996,7 +996,7 @@ cd9660_strategy(ap)
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
 		panic("cd9660_strategy: spec");
 	if (bp->b_blkno == bp->b_lblkno) {
-		if (error == VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL)) {
+		if ((error = VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL))) {
 			bp->b_error = error;
 			bp->b_flags |= B_ERROR;
 			biodone(bp);

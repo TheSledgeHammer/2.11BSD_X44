@@ -255,7 +255,7 @@ fdesc_lookup(ap)
 
 	case FDEVFD:
 		if (cnp->cn_namelen == 2 && bcmp(pname, "..", 2) == 0) {
-			if (error == fdesc_root(dvp->v_mount, vpp))
+			if ((error = fdesc_root(dvp->v_mount, vpp)))
 				goto bad;
 			return (0);
 		}

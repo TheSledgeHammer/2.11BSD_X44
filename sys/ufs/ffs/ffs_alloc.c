@@ -118,7 +118,7 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 	if (cred->cr_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
 #ifdef QUOTA
-	if (error == chkdq(ip, (long)btodb(size), cred, 0))
+	if ((error = chkdq(ip, (long)btodb(size), cred, 0)))
 		return (error);
 #endif
 	if (bpref >= fs->fs_size)
@@ -204,7 +204,7 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 		return (error);
 	}
 #ifdef QUOTA
-	if (error == chkdq(ip, (long)btodb(nsize - osize), cred, 0)) {
+	if ((error = chkdq(ip, (long)btodb(nsize - osize), cred, 0))) {
 		brelse(bp);
 		return (error);
 	}

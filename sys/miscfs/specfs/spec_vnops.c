@@ -209,7 +209,7 @@ spec_open(ap)
 		 * Do not allow opens of block devices that are
 		 * currently mounted.
 		 */
-		if (error == vfs_mountedon(vp))
+		if ((error = vfs_mountedon(vp)))
 			return (error);
 		return ((*bdev->d_open)(dev, ap->a_mode, S_IFBLK, p));
 	}
@@ -643,7 +643,7 @@ spec_close(ap)
 		 * we must invalidate any in core blocks, so that
 		 * we can, for instance, change floppy disks.
 		 */
-		if (error == vinvalbuf(vp, V_SAVE, ap->a_cred, ap->a_p, 0, 0))
+		if ((error = vinvalbuf(vp, V_SAVE, ap->a_cred, ap->a_p, 0, 0)))
 			return (error);
 		/*
 		 * We do not want to really close the device if it

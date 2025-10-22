@@ -187,7 +187,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 	 * Determine the number of levels of indirection.
 	 */
 	pref = 0;
-	if (error == ufs_getlbns(vp, lbn, indirs, &num))
+	if ((error = ufs_getlbns(vp, lbn, indirs, &num)))
 		return (error);
 #ifdef DIAGNOSTIC
 	if (num < 1)
@@ -202,7 +202,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 	allocblk = allociblk;
 	if (nb == 0) {
 		pref = ffs_blkpref_ufs1(ip, lbn, 0, (ufs1_daddr_t*) 0);
-		if (error == ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb))
+		if ((error = ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)))
 			return (error);
 		nb = newb;
 		*allocblk++ = nb;
@@ -213,7 +213,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 		 * Write synchronously so that indirect blocks
 		 * never point at garbage.
 		 */
-		if (error == bwrite(bp))
+		if ((error = bwrite(bp)))
 			goto fail;
 		allocib = &dp->di_ib[indirs[0].in_off];
 		*allocib = nb;
@@ -239,7 +239,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 		}
 		if (pref == 0)
 			pref = ffs_blkpref_ufs1(ip, lbn, 0, (ufs1_daddr_t*) 0);
-		if (error == ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
+		if ((error = ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb))) {
 			brelse(bp);
 			goto fail;
 		}
@@ -252,7 +252,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 		 * Write synchronously so that indirect blocks
 		 * never point at garbage.
 		 */
-		if (error == bwrite(nbp)) {
+		if ((error = bwrite(nbp))) {
 			brelse(bp);
 			goto fail;
 		}
@@ -272,7 +272,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 	 */
 	if (nb == 0) {
 		pref = ffs_blkpref_ufs1(ip, lbn, indirs[i].in_off, &bap[0]);
-		if (error == ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
+		if ((error = ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb))) {
 			brelse(bp);
 			goto fail;
 		}
@@ -440,7 +440,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 	 * Determine the number of levels of indirection.
 	 */
 	pref = 0;
-	if (error == ufs_getlbns(vp, lbn, indirs, &num))
+	if ((error = ufs_getlbns(vp, lbn, indirs, &num)))
 		return (error);
 #ifdef DIAGNOSTIC
 	if (num < 1)
@@ -455,7 +455,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 	allocblk = allociblk;
 	if (nb == 0) {
 		pref = ffs_blkpref_ufs2(ip, lbn, 0, (ufs2_daddr_t*) 0);
-		if (error == ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb))
+		if ((error = ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)))
 			return (error);
 		nb = newb;
 		*allocblk++ = nb;
@@ -466,7 +466,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 		 * Write synchronously so that indirect blocks
 		 * never point at garbage.
 		 */
-		if (error == bwrite(bp))
+		if ((error = bwrite(bp)))
 			goto fail;
 		allocib = &dp->di_ib[indirs[0].in_off];
 		*allocib = nb;
@@ -492,7 +492,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 		}
 		if (pref == 0)
 			pref = ffs_blkpref_ufs2(ip, lbn, 0, (ufs2_daddr_t*) 0);
-		if (error == ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
+		if ((error = ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb))) {
 			brelse(bp);
 			goto fail;
 		}
@@ -505,7 +505,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 		 * Write synchronously so that indirect blocks
 		 * never point at garbage.
 		 */
-		if (error == bwrite(nbp)) {
+		if ((error = bwrite(nbp))) {
 			brelse(bp);
 			goto fail;
 		}
@@ -525,7 +525,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 	 */
 	if (nb == 0) {
 		pref = ffs_blkpref_ufs2(ip, lbn, indirs[i].in_off, &bap[0]);
-		if (error == ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
+		if ((error = ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb))) {
 			brelse(bp);
 			goto fail;
 		}

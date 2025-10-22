@@ -102,8 +102,8 @@ lfs_bwrite(ap)
 			/* Out of space, need cleaner to run */
 			wakeup(&lfs_allclean_wakeup);
 			wakeup(&fs->lfs_nextseg);
-			if (error == tsleep(&fs->lfs_avail, PCATCH | PUSER,
-			    "cleaner", NULL)) {
+			if ((error = tsleep(&fs->lfs_avail, PCATCH | PUSER,
+			    "cleaner", NULL))) {
 				brelse(bp);
 				return (error);
 			}

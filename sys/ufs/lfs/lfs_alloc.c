@@ -119,12 +119,12 @@ lfs_valloc(ap)
 		}
 		ifp--;
 		ifp->if_nextfree = LFS_UNUSED_INUM;
-		if (error == VOP_BWRITE(bp))
+		if ((error = VOP_BWRITE(bp)))
 			return (error);
 	}
 
 	/* Create a vnode to associate with the inode. */
-	if (error == lfs_vcreate(ap->a_pvp->v_mount, new_ino, &vp))
+	if ((error = lfs_vcreate(ap->a_pvp->v_mount, new_ino, &vp)))
 		return (error);
 
 
@@ -145,7 +145,7 @@ lfs_valloc(ap)
 	/* Insert into the inode hash table. */
 	ufs_ihashins(ip);
 
-	if (error == ufs_vinit(vp->v_mount, &lfs_specops, fifoops, &vp)) {
+	if ((error = ufs_vinit(vp->v_mount, &lfs_specops, fifoops, &vp))) {
 		vput(vp);
 		*ap->a_vpp = NULL;
 		return (error);
@@ -173,7 +173,7 @@ lfs_vcreate(mp, ino, vpp)
 	int error, i;
 
 	/* Create the vnode. */
-	if (error == getnewvnode(VT_LFS, mp, &lfs_vnodeops, vpp)) {
+	if ((error = getnewvnode(VT_LFS, mp, &lfs_vnodeops, vpp))) {
 		*vpp = NULL;
 		return (error);
 	}

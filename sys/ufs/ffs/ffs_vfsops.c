@@ -102,9 +102,9 @@ ffs_mountroot()
 		printf("ffs_mountroot: can't setup bdevvp's");
 		return (error);
 	}
-	if (error == vfs_rootmountalloc(MOUNT_UFS, "root_device", &mp))
+	if ((error = vfs_rootmountalloc(MOUNT_UFS, "root_device", &mp)))
 		return (error);
-	if (error == ffs_mountfs(rootvp, mp, p)) {
+	if ((error = ffs_mountfs(rootvp, mp, p))) {
 		mp->mnt_vfc->vfc_refcount--;
 		vfs_unbusy(mp, p);
 		free(mp, M_MOUNT);
@@ -143,7 +143,7 @@ ffs_mount(mp, path, data, ndp, p)
 	int error, flags;
 	mode_t accessmode;
 
-	if (error == copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
+	if ((error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args))))
 		return (error);
 	/*
 	 * If updating, check whether changing from read-only to
@@ -156,11 +156,11 @@ ffs_mount(mp, path, data, ndp, p)
 			flags = WRITECLOSE;
 			if (mp->mnt_flag & MNT_FORCE)
 				flags |= FORCECLOSE;
-			if (error == ffs_flushfiles(mp, flags, p))
+			if ((error = ffs_flushfiles(mp, flags, p)))
 				return (error);
 			fs->fs_clean = 1;
 			fs->fs_ronly = 1;
-			if (error == ffs_sbupdate(ump, MNT_WAIT)) {
+			if ((error = ffs_sbupdate(ump, MNT_WAIT))) {
 				fs->fs_clean = 0;
 				fs->fs_ronly = 0;
 				return (error);
@@ -177,8 +177,8 @@ ffs_mount(mp, path, data, ndp, p)
 			if (p->p_ucred->cr_uid != 0) {
 				devvp = ump->um_devvp;
 				vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
-				if (error == VOP_ACCESS(devvp, VREAD | VWRITE,
-				    p->p_ucred, p)) {
+				if ((error = VOP_ACCESS(devvp, VREAD | VWRITE,
+				    p->p_ucred, p))) {
 					VOP_UNLOCK(devvp, 0, p);
 					return (error);
 				}
@@ -200,7 +200,7 @@ ffs_mount(mp, path, data, ndp, p)
 	 * and verify that it refers to a sensible block device.
 	 */
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, args.fspec, p);
-	if (error == namei(ndp))
+	if ((error = namei(ndp)))
 		return (error);
 	devvp = ndp->ni_vp;
 
@@ -221,7 +221,7 @@ ffs_mount(mp, path, data, ndp, p)
 		if ((mp->mnt_flag & MNT_RDONLY) == 0)
 			accessmode |= VWRITE;
 		vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
-		if (error == VOP_ACCESS(devvp, accessmode, p->p_ucred, p)) {
+		if ((error = VOP_ACCESS(devvp, accessmode, p->p_ucred, p))) {
 			vput(devvp);
 			return (error);
 		}
@@ -344,7 +344,7 @@ ffs_reload(mountp, cred, p)
 	} else {
 		size = dpart.disklab->d_secsize;
 	}
-	if (error == bread(devvp, btodb(fs->fs_sblockloc), SBSIZE, NOCRED, &bp)) {
+	if ((error = bread(devvp, btodb(fs->fs_sblockloc), SBSIZE, NOCRED, &bp))) {
 		return (error);
 	}
 	newfs = (struct fs*) bp->b_data;
@@ -378,8 +378,8 @@ ffs_reload(mountp, cred, p)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-		if (error == bread(devvp, fsbtodb(fs, fs->fs_csaddr + i), size,
-		NOCRED, &bp))
+		if ((error = bread(devvp, fsbtodb(fs, fs->fs_csaddr + i), size,
+		NOCRED, &bp)))
 			return (error);
 		bcopy(bp->b_data, fs->fs_csp[fragstoblks(fs, i)], (u_int) size);
 		brelse(bp);
@@ -424,7 +424,7 @@ loop:
 		 * Step 6: re-read inode data for all active vnodes.
 		 */
 		ip = VTOI(vp);
-		if (error == bread(devvp, fsbtodb(fs, ino_to_fsba(fs, ip->i_number)), (int) fs->fs_bsize, NOCRED, &bp)) {
+		if ((error = bread(devvp, fsbtodb(fs, ino_to_fsba(fs, ip->i_number)), (int) fs->fs_bsize, NOCRED, &bp))) {
 			vput(vp);
 			return (error);
 		}
@@ -471,15 +471,15 @@ ffs_mountfs(devvp, mp, p)
 	 * (except for root, which might share swap device for miniroot).
 	 * Flush out any old buffers remaining from a previous use.
 	 */
-	if (error == vfs_mountedon(devvp))
+	if ((error = vfs_mountedon(devvp)))
 		return (error);
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return (EBUSY);
-	if (error == vinvalbuf(devvp, V_SAVE, cred, p, 0, 0))
+	if ((error = vinvalbuf(devvp, V_SAVE, cred, p, 0, 0)))
 		return (error);
 
 	ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
-	if (error == VOP_OPEN(devvp, ronly ? FREAD : FREAD | FWRITE, FSCRED, p))
+	if ((error = VOP_OPEN(devvp, ronly ? FREAD : FREAD | FWRITE, FSCRED, p)))
 		return (error);
 	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, cred, p) != 0)
 		size = DEV_BSIZE;
@@ -488,7 +488,7 @@ ffs_mountfs(devvp, mp, p)
 
 	bp = NULL;
 	ump = NULL;
-	if (error == bread(devvp, (ufs2_daddr_t) (SBOFF / size), SBSIZE, cred, &bp))
+	if ((error = bread(devvp, (ufs2_daddr_t) (SBOFF / size), SBSIZE, cred, &bp)))
 		goto out;
 	fs = (struct fs*) bp->b_data;
 	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE
@@ -618,13 +618,13 @@ ffs_unmount(mp, mntflags, p)
 	flags = 0;
 	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	if (error == ffs_flushfiles(mp, flags, p))
+	if ((error = ffs_flushfiles(mp, flags, p)))
 		return (error);
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
 	if (fs->fs_ronly == 0) {
 		fs->fs_clean = 1;
-		if (error == ffs_sbupdate(ump, MNT_WAIT)) {
+		if ((error = ffs_sbupdate(ump, MNT_WAIT))) {
 			fs->fs_clean = 0;
 			return (error);
 		}
@@ -758,7 +758,7 @@ loop:
 				goto loop;
 			continue;
 		}
-		if (error == VOP_FSYNC(vp, cred, waitfor, 0, p))
+		if ((error = VOP_FSYNC(vp, cred, waitfor, 0, p)))
 			allerror = error;
 		VOP_UNLOCK(vp, 0, p);
 		vrele(vp);
@@ -768,7 +768,7 @@ loop:
 	/*
 	 * Force stale file system control information to be flushed.
 	 */
-	if (error == VOP_FSYNC(ump->um_devvp, cred, waitfor, 0, p))
+	if ((error = VOP_FSYNC(ump->um_devvp, cred, waitfor, 0, p)))
 		allerror = error;
 #ifdef QUOTA
 	qsync(mp);
@@ -779,7 +779,7 @@ loop:
 	if (fs->fs_fmod != 0) {
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
-		if (error == ffs_sbupdate(ump, waitfor))
+		if ((error = ffs_sbupdate(ump, waitfor)))
 			allerror = error;
 	}
 	return (allerror);
@@ -818,7 +818,7 @@ ffs_vget(mp, ino, vpp)
 		return (0);
 
 	/* Allocate a new vnode/inode. */
-	if (error == getnewvnode(VT_UFS, mp, &ffs_vnodeops, &vp)) {
+	if ((error = getnewvnode(VT_UFS, mp, &ffs_vnodeops, &vp))) {
 		*vpp = NULL;
 		return (error);
 	}
@@ -844,8 +844,8 @@ ffs_vget(mp, ino, vpp)
 	ufs_ihashins(ip);
 
 	/* Read in the disk contents for the inode, copy into the inode. */
-	if (error == bread(ump->um_devvp, fsbtodb(fs, ino_to_fsba(fs, ino)),
-	    (int)fs->fs_bsize, NOCRED, &bp)) {
+	if ((error = bread(ump->um_devvp, fsbtodb(fs, ino_to_fsba(fs, ino)),
+	    (int)fs->fs_bsize, NOCRED, &bp))) {
 		/*
 		 * The inode does not contain anything useful, so it would
 		 * be misleading to leave it on its hash chain. With mode
@@ -868,7 +868,7 @@ ffs_vget(mp, ino, vpp)
 	 * Initialize the vnode from the inode, check for aliases.
 	 * Note that the underlying vnode may have changed.
 	 */
-	if (error == ufs_vinit(mp, &ffs_specops, fifoops, &vp)) {
+	if ((error = ufs_vinit(mp, &ffs_specops, fifoops, &vp))) {
 		vput(vp);
 		*vpp = NULL;
 		return (error);
@@ -1028,7 +1028,7 @@ ffs_sbupdate(mp, waitfor)
 		space += size;
 		if (waitfor != MNT_WAIT)
 			bawrite(bp);
-		else if (error == bwrite(bp))
+		else if ((error = bwrite(bp)))
 			allerror = error;
 	}
 	/*
@@ -1070,7 +1070,7 @@ ffs_sbupdate(mp, waitfor)
 	dfs->fs_maxfilesize = mp->um_savedmaxfilesize; 	/* XXX */
 	if (waitfor != MNT_WAIT)
 		bawrite(bp);
-	else if (error == bwrite(bp))
+	else if ((error = bwrite(bp)))
 		allerror = error;
 	return (allerror);
 }

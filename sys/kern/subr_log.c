@@ -186,7 +186,7 @@ logread(dev, uio, flag)
 			return (EWOULDBLOCK);
 		}
 		lp->sc_state |= LOG_RDWAIT;
-		if (error == tsleep((caddr_t) mp, LOG_RDPRI | PCATCH, "klog", 0)) {
+		if ((error = tsleep((caddr_t) mp, LOG_RDPRI | PCATCH, "klog", 0))) {
 			splx(0);
 			return (error);
 		}

@@ -251,8 +251,8 @@ static void
 vm_pagelist_free_segmented_memory(slist)
     struct seglist *slist;
 {
-    vm_segment_t seg;
-    vm_page_t pg;
+	vm_segment_t seg;
+	vm_page_t pg;
 
 	simple_lock(&vm_segment_list_free_lock);
 	while ((seg = CIRCLEQ_FIRST(slist)) != NULL) {
@@ -554,9 +554,9 @@ vm_pagelist_alloc_page_range(addr, len, size, num, low, high, rlist)
     vm_offset_t low, high;
     struct pglist *rlist;
 {
-    vm_page_t pg;
-    vm_offset_t curaddr, lastaddr;
-    int curnum;
+	vm_page_t pg;
+	vm_offset_t curaddr, lastaddr;
+	int curnum;
 
 	pg = TAILQ_FIRST(rlist);
 	curnum = 0;
@@ -594,9 +594,9 @@ vm_pagelist_alloc_segment_range(addr, len, size, num, low, high, slist)
     vm_offset_t low, high;
     struct seglist *slist;
 {
-    vm_segment_t seg;
-    vm_offset_t curaddr, lastaddr;
-    int curnum;
+	vm_segment_t seg;
+	vm_offset_t curaddr, lastaddr;
+	int curnum;
 
 	seg = CIRCLEQ_FIRST(slist);
 	curnum = 0;

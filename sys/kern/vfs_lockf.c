@@ -417,7 +417,7 @@ lf_setlock(lock, sparelock, interlock)
 			lf_printlist("lf_setlock", block);
 		}
 #endif /* LOCKF_DEBUG */
-		if (error == tsleep((caddr_t)lock, priority, lockstr, 0)) {
+		if ((error = tsleep((caddr_t)lock, priority, lockstr, 0))) {
 			/*
 			 * We may have been awakened by a signal (in
 			 * which case we must remove ourselves from the
@@ -445,7 +445,7 @@ lf_setlock(lock, sparelock, interlock)
 	block = *head;
 	needtolink = 1;
 	for (;;) {
-		if (ovcase == lf_findoverlap(block, lock, SELF, &prev, &overlap))
+		if ((ovcase = lf_findoverlap(block, lock, SELF, &prev, &overlap)))
 			block = overlap->lf_next;
 		/*
 		 * Six cases:
@@ -828,7 +828,7 @@ lf_wakelock(listhead)
 {
 	register struct lockf *wakelock;
 
-	while (wakelock == TAILQ_FIRST(&listhead->lf_blkhd)) {
+	while ((wakelock = TAILQ_FIRST(&listhead->lf_blkhd))) {
 		TAILQ_REMOVE(&listhead->lf_blkhd, wakelock, lf_block);
 		wakelock->lf_next = NOLOCKF;
 #ifdef LOCKF_DEBUG

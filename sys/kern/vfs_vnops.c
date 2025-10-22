@@ -86,7 +86,7 @@ vn_open(ndp, fmode, cmode)
 		ndp->ni_cnd.cn_flags = LOCKPARENT | LOCKLEAF;
 		if ((fmode & O_EXCL) == 0)
 			ndp->ni_cnd.cn_flags |= FOLLOW;
-		if (error == namei(ndp))
+		if ((error = namei(ndp)))
 			return (error);
 		if (ndp->ni_vp == NULL) {
 			VATTR_NULL(vap);
@@ -95,7 +95,7 @@ vn_open(ndp, fmode, cmode)
 			if (fmode & O_EXCL)
 				vap->va_vaflags |= VA_EXCLUSIVE;
 			VOP_LEASE(ndp->ni_dvp, p, cred, LEASE_WRITE);
-			if (error == VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, vap))
+			if ((error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, vap)))
 				return (error);
 			fmode &= ~O_TRUNC;
 			vp = ndp->ni_vp;
@@ -116,7 +116,7 @@ vn_open(ndp, fmode, cmode)
 	} else {
 		ndp->ni_cnd.cn_nameiop = LOOKUP;
 		ndp->ni_cnd.cn_flags = FOLLOW | LOCKLEAF;
-		if (error == namei(ndp))
+		if ((error = namei(ndp)))
 			return (error);
 		vp = ndp->ni_vp;
 	}
@@ -126,7 +126,7 @@ vn_open(ndp, fmode, cmode)
 	}
 	if ((fmode & O_CREAT) == 0) {
 		if (fmode & FREAD) {
-			if (error == VOP_ACCESS(vp, VREAD, cred, p))
+			if ((error = VOP_ACCESS(vp, VREAD, cred, p)))
 				goto bad;
 		}
 		if (fmode & (FWRITE | O_TRUNC)) {
@@ -145,10 +145,10 @@ vn_open(ndp, fmode, cmode)
 		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p); /* XXX */
 		VATTR_NULL(vap);
 		vap->va_size = 0;
-		if (error == VOP_SETATTR(vp, vap, cred, p))
+		if ((error = VOP_SETATTR(vp, vap, cred, p)))
 			goto bad;
 	}
-	if (error == VOP_OPEN(vp, fmode, cred, p))
+	if ((error = VOP_OPEN(vp, fmode, cred, p)))
 		goto bad;
 	if (fmode & FWRITE)
 		vp->v_writecount++;
@@ -419,7 +419,7 @@ vn_ioctl(fp, com, data, p)
 	case VREG:
 	case VDIR:
 		if (com == FIONREAD) {
-			if (error == VOP_GETATTR(vp, &vattr, p->p_ucred, p))
+			if ((error = VOP_GETATTR(vp, &vattr, p->p_ucred, p)))
 				break;
 			*(int *)data = vattr.va_size - fp->f_offset;
 		} else if (com == FIONBIO || com == FIOASYNC)	/* XXX */

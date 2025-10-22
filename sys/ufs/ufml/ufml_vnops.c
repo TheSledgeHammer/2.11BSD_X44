@@ -446,7 +446,7 @@ ufml_getattr(ap)
 {
 	int error;
 
-	if (error == VOP_GETATTR(UFMLVPTOLOWERVP(ap->a_vp), ap->a_vap, ap->a_cred, ap->a_p))
+	if ((error = VOP_GETATTR(UFMLVPTOLOWERVP(ap->a_vp), ap->a_vap, ap->a_cred, ap->a_p)))
 		return (error);
 
 	/* Requires that arguments be restored. */

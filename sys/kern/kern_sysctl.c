@@ -105,7 +105,7 @@ __sysctl()
 	 */
 	if (SCARG(uap, namelen) > CTL_MAXNAME || SCARG(uap, namelen) < 2)
 		return (u.u_error = EINVAL);
-	if (error == copyin(SCARG(uap, name), &name, SCARG(uap, namelen) * sizeof(int)))
+	if ((error = copyin(SCARG(uap, name), &name, SCARG(uap, namelen) * sizeof(int))))
 		return (u.u_error = error);
 
 	switch (name[0]) {
@@ -833,11 +833,11 @@ again:
 		}
 		if (buflen >= sizeof(struct kinfo_proc)) {
 			fill_eproc(p, &eproc);
-			if (error == copyout((caddr_t)p, &dp->kp_proc,
-			    sizeof(struct proc)))
+			if ((error = copyout((caddr_t)p, &dp->kp_proc,
+			    sizeof(struct proc))))
 				return (error);
-			if (error == copyout((caddr_t)&eproc, &dp->kp_eproc,
-			    sizeof(eproc)))
+			if ((error = copyout((caddr_t)&eproc, &dp->kp_eproc,
+			    sizeof(eproc))))
 				return (error);
 			dp++;
 			buflen -= sizeof(struct kinfo_proc);

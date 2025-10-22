@@ -489,7 +489,7 @@ ttioctl_sc(tp, com, data, flag)
 				return error;
 
 #ifndef	UCONSOLE
-			if (error == suser())
+			if (error = suser())
 				return (error);
 #endif
 			constty = tp;
@@ -498,7 +498,7 @@ ttioctl_sc(tp, com, data, flag)
 		break;
 
 	case TIOCDRAIN: 		/* wait till output drained */
-		if (error == ttywait(tp))
+		if (error = ttywait(tp))
 			return (error);
 		break;
 
@@ -574,7 +574,7 @@ ttioctl_sc(tp, com, data, flag)
 
 		s = spltty();
 		if (com == TIOCSETAW || com == TIOCSETAF) {
-			if (error == ttywait(tp)) {
+			if ((error = ttywait(tp))) {
 				splx(s);
 				return (error);
 			}

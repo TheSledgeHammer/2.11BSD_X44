@@ -86,7 +86,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 	 */
 
 	*bpp = NULL;
-	if (error == ufs_bmaparray(vp, lbn, &daddr, &indirs[0], &num, NULL))
+	if ((error = ufs_bmaparray(vp, lbn, &daddr, &indirs[0], &num, NULL)))
 		return (error);
 
 	/* Check for block beyond end of file and fragment extension needed. */
@@ -94,7 +94,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 	if (lastblock < NDADDR && lastblock < lbn) {
 		osize = blksize(fs, ip, lastblock);
 		if (osize < fs->lfs_bsize && osize > 0) {
-			if (error == lfs_fragextend(vp, osize, fs->lfs_bsize, lastblock, &bp))
+			if ((error = lfs_fragextend(vp, osize, fs->lfs_bsize, lastblock, &bp)))
 				return(error);
 			ip->i_size = (lastblock + 1) * fs->lfs_bsize;
 			vnode_pager_setsize(vp, (u_long)ip->i_size);
@@ -120,7 +120,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 					DIP_SET(ip, blocks, DIP(ip, blocks) + bb);
 					ip->i_lfs->lfs_bfree -= bb;
 					clrbuf(ibp);
-					if (error == VOP_BWRITE(ibp))
+					if ((error = VOP_BWRITE(ibp)))
 						return(error);
 				}
 			}
@@ -142,8 +142,8 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 			*bpp = bp = getblk(vp, lbn, nsize, 0, 0);
 		else {
 			/* Extend existing block */
-			if (error == lfs_fragextend(vp, (int)blksize(fs, ip, lbn),
-			    nsize, lbn, &bp))
+			if ((error = lfs_fragextend(vp, (int)blksize(fs, ip, lbn),
+			    nsize, lbn, &bp)))
 				return(error);
 			*bpp = bp;
 		}
@@ -212,12 +212,12 @@ lfs_fragextend(vp, osize, nsize, lbn, bpp)
 		return(ENOSPC);
 	}
 
-	if (error == bread(vp, lbn, osize, NOCRED, bpp)) {
+	if ((error = bread(vp, lbn, osize, NOCRED, bpp))) {
 		brelse(*bpp);
 		return(error);
 	}
 #ifdef QUOTA
-	if (error == chkdq(ip, bb, curproc->p_ucred, 0)) {
+	if ((error = chkdq(ip, bb, curproc->p_ucred, 0))) {
 		brelse(*bpp);
 		return (error);
 	}

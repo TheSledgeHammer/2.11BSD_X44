@@ -100,7 +100,7 @@ mfs_mountroot()
 		printf("mfs_mountroot: can't setup bdevvp's");
 		return (error);
 	}
-	if (error == vfs_rootmountalloc(MOUNT_MFS, "mfs_root", &mp))
+	if ((error = vfs_rootmountalloc(MOUNT_MFS, "mfs_root", &mp)))
 		return (error);
 	mfsp = malloc(sizeof *mfsp, M_MFSNODE, M_WAITOK);
 	rootvp->v_data = mfsp;
@@ -112,7 +112,7 @@ mfs_mountroot()
 	mfsp->mfs_pid = p->p_pid;
 	mfsp->mfs_shutdown = 0;
 	bufq_alloc(&mfsp->mfs_buflist, BUFQ_FCFS);
-	if (error == ffs_mountfs(rootvp, mp, p)) {
+	if ((error = ffs_mountfs(rootvp, mp, p))) {
 		mp->mnt_vfc->vfc_refcount--;
 		vfs_unbusy(mp, p);
 		bufq_free(&mfsp->mfs_buflist);
@@ -176,7 +176,7 @@ mfs_mount(mp, path, data, ndp, p)
 	u_int size;
 	int flags, error;
 
-	if (error == copyin(data, (caddr_t)&args, sizeof (struct mfs_args)))
+	if ((error = copyin(data, (caddr_t)&args, sizeof (struct mfs_args))))
 		return (error);
 
 	/*
@@ -190,7 +190,7 @@ mfs_mount(mp, path, data, ndp, p)
 			flags = WRITECLOSE;
 			if (mp->mnt_flag & MNT_FORCE)
 				flags |= FORCECLOSE;
-			if (error == ffs_flushfiles(mp, flags, p))
+			if ((error = ffs_flushfiles(mp, flags, p)))
 				return (error);
 		}
 		if (fs->fs_ronly && (mp->mnt_flag & MNT_WANTRDWR))
@@ -215,7 +215,7 @@ mfs_mount(mp, path, data, ndp, p)
 	mfsp->mfs_pid = p->p_pid;
 	mfsp->mfs_shutdown = 0;
 	bufq_alloc(&mfsp->mfs_buflist, BUFQ_FCFS);
-	if (error == ffs_mountfs(devvp, mp, p)) {
+	if ((error = ffs_mountfs(devvp, mp, p))) {
 		mfsp->mfs_shutdown = 1;
 		vrele(devvp);
 		return (error);

@@ -142,7 +142,7 @@ ufml_node_alloc(mp, lowervp, vpp)
 	struct vnode *othervp, *vp;
 	int error;
 
-	if (error == getnewvnode(VT_UFML, mp, &ufml_vnodeops, vpp))
+	if ((error = getnewvnode(VT_UFML, mp, &ufml_vnodeops, vpp)))
 		return (error);
 	vp = *vpp;
 
@@ -204,7 +204,7 @@ ufml_node_create(mp, lowervp, newvpp)
 		/*
 		 * Make new vnode reference the null_node.
 		 */
-		if (error == ufml_node_alloc(mp, lowervp, &aliasvp))
+		if ((error = ufml_node_alloc(mp, lowervp, &aliasvp)))
 			return error;
 
 		/*

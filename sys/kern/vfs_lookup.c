@@ -145,7 +145,7 @@ namei(ndp)
 			VREF(dp);
 		}
 		ndp->ni_startdir = dp;
-		if (error == lookup(ndp)) {
+		if ((error = lookup(ndp))) {
 			FREE(cnp->cn_pnbuf, M_NAMEI);
 			return (error);
 		}
@@ -179,7 +179,7 @@ namei(ndp)
 		auio.uio_segflg = UIO_SYSSPACE;
 		auio.uio_procp = (struct proc *)0;
 		auio.uio_resid = MAXPATHLEN;
-		if (error == VOP_READLINK(ndp->ni_vp, &auio, cnp->cn_cred)) {
+		if ((error = VOP_READLINK(ndp->ni_vp, &auio, cnp->cn_cred))) {
 			if (ndp->ni_pathlen > 1)
 				free(cp, M_NAMEI);
 			break;
@@ -378,7 +378,7 @@ dirloop:
 unionlookup:
 	ndp->ni_dvp = dp;
 	ndp->ni_vp = NULL;
-	if (error == VOP_LOOKUP(dp, &ndp->ni_vp, cnp)) {
+	if ((error = VOP_LOOKUP(dp, &ndp->ni_vp, cnp))) {
 #ifdef DIAGNOSTIC
 		if (ndp->ni_vp != NULL)
 			panic("leaf should be empty");
@@ -584,7 +584,7 @@ relookup(dvp, vpp, cnp)
 	/*
 	 * We now have a segment name to search for, and a directory to search.
 	 */
-	if (error == VOP_LOOKUP(dp, vpp, cnp)) {
+	if ((error = VOP_LOOKUP(dp, vpp, cnp))) {
 #ifdef DIAGNOSTIC
 		if (*vpp != NULL)
 			panic("leaf should be empty");
