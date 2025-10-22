@@ -723,8 +723,6 @@ chroot()
 	return (0);
 }
 
-/* TODO: Add syscall and incomplete */
-#ifdef notyet
 int
 fchroot()
 {
@@ -746,17 +744,20 @@ fchroot()
 		return (error);
 	}
 	vp = (struct vnode *)fp->f_data;
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
 	if (vp->v_type == VBAD) {
 		return (EBADF);
 	}
 	if ((error = change_chroot(vp, p))) {
 		return (error);
 	}
-	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
+	if (fdp->fd_rdir != NULL) {
+		vrele(fdp->fd_rdir);
+	}
+	fdp->fd_rdir = vp;
 	vref(vp);
 	return (0);
 }
-#endif
 
 /*
  * Common routine for chroot and chdir.

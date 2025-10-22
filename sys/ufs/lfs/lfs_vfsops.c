@@ -100,9 +100,9 @@ lfs_mountroot()
 		printf("lfs_mountroot: can't setup bdevvp's");
 		return (error);
 	}
-	if (error == vfs_rootmountalloc(MOUNT_LFS, "root_device", &mp))
+	if ((error = vfs_rootmountalloc(MOUNT_LFS, "root_device", &mp)))
 		return (error);
-	if (error == lfs_mountfs(rootvp, mp, p)) {
+	if ((error = lfs_mountfs(rootvp, mp, p))) {
 		mp->mnt_vfc->vfc_refcount--;
 		vfs_unbusy(mp, p);
 		free(mp, M_MOUNT);
@@ -137,7 +137,7 @@ lfs_mount(mp, path, data, ndp, p)
 	int error;
 	mode_t accessmode;
 
-	if (error == copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
+	if ((error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args))))
 		return (error);
 
 	/* Until LFS can do NFS right.		XXX */
@@ -158,7 +158,7 @@ lfs_mount(mp, path, data, ndp, p)
 			if (p->p_ucred->cr_uid != 0) {
 				vn_lock(ump->um_devvp, LK_EXCLUSIVE | LK_RETRY,
 				    p);
-				if (error == VOP_ACCESS(ump->um_devvp, VREAD | VWRITE, p->p_ucred, p)) {
+				if ((error = VOP_ACCESS(ump->um_devvp, VREAD | VWRITE, p->p_ucred, p))) {
 					VOP_UNLOCK(ump->um_devvp, 0, p);
 					return (error);
 				}
@@ -178,7 +178,7 @@ lfs_mount(mp, path, data, ndp, p)
 	 * and verify that it refers to a sensible block device.
 	 */
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, args.fspec, p);
-	if (error == namei(ndp))
+	if ((error = namei(ndp)))
 		return (error);
 	devvp = ndp->ni_vp;
 	if (devvp->v_type != VBLK) {
@@ -198,7 +198,7 @@ lfs_mount(mp, path, data, ndp, p)
 		if ((mp->mnt_flag & MNT_RDONLY) == 0)
 			accessmode |= VWRITE;
 		vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
-		if (error == VOP_ACCESS(devvp, accessmode, p->p_ucred, p)) {
+		if ((error = VOP_ACCESS(devvp, accessmode, p->p_ucred, p))) {
 			vput(devvp);
 			return (error);
 		}
@@ -267,15 +267,15 @@ lfs_mountfs(devvp, mp, p)
 	 * (except for root, which might share swap device for miniroot).
 	 * Flush out any old buffers remaining from a previous use.
 	 */
-	if (error == vfs_mountedon(devvp))
+	if ((error = vfs_mountedon(devvp)))
 		return (error);
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return (EBUSY);
-	if (error == vinvalbuf(devvp, V_SAVE, cred, p, 0, 0))
+	if ((error = vinvalbuf(devvp, V_SAVE, cred, p, 0, 0)))
 		return (error);
 
 	ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
-	if (error == VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, FSCRED, p))
+	if ((error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, FSCRED, p)))
 		return (error);
 
 	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, cred, p) != 0)
@@ -295,7 +295,7 @@ lfs_mountfs(devvp, mp, p)
 	ump = NULL;
 
 	/* Read in the superblock. */
-	if (error == bread(devvp, LFS_LABELPAD / size, LFS_SBPAD, cred, &bp))
+	if ((error = bread(devvp, LFS_LABELPAD / size, LFS_SBPAD, cred, &bp)))
 		goto out;
 	fs = (struct lfs *)bp->b_data;
 
@@ -352,7 +352,7 @@ lfs_mountfs(devvp, mp, p)
 	 * artificially increment the reference count and keep a pointer
 	 * to it in the incore copy of the superblock.
 	 */
-	if (error == VFS_VGET(mp, LFS_IFILE_INUM, &vp))
+	if ((error = VFS_VGET(mp, LFS_IFILE_INUM, &vp)))
 		goto out;
 	fs->lfs_ivnode = vp;
 	VREF(vp);
@@ -406,10 +406,10 @@ lfs_unmount(mp, mntflags, p)
 		 */
 	}
 #endif
-	if (error == vflush(mp, fs->lfs_ivnode, flags))
+	if ((error = vflush(mp, fs->lfs_ivnode, flags)))
 		return (error);
 	fs->lfs_clean = 1;
-	if (error == VFS_SYNC(mp, 1, p->p_ucred, p))
+	if ((error = VFS_SYNC(mp, 1, p->p_ucred, p)))
 		return (error);
 	if (LIST_FIRST(&fs->lfs_ivnode->v_dirtyblkhd))
 		panic("lfs_unmount: still dirty blocks on ifile vnode\n");
@@ -541,7 +541,7 @@ lfs_vget(mp, ino, vpp)
 	}
 
 	/* Allocate new vnode/inode. */
-	if (error == lfs_vcreate(mp, ino, &vp)) {
+	if ((error = lfs_vcreate(mp, ino, &vp))) {
 		*vpp = NULL;
 		return (error);
 	}
@@ -566,7 +566,7 @@ lfs_vget(mp, ino, vpp)
 	/* Read in the disk contents for the inode, copy into the inode. */
 	retries = 0;
 again:
-	if (error == bread(ump->um_devvp, daddr, (int)fs->lfs_bsize, NOCRED, &bp)) {
+	if ((error = bread(ump->um_devvp, daddr, (int)fs->lfs_bsize, NOCRED, &bp))) {
 		/*
 		 * The inode does not contain anything useful, so it would
 		 * be misleading to leave it on its hash chain. With mode
@@ -610,7 +610,7 @@ end:
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, &lfs_specops, fifoops, &vp)) {
+	if ((error = ufs_vinit(mp, &lfs_specops, fifoops, &vp))) {
 		vput(vp);
 		*vpp = NULL;
 		return (error);

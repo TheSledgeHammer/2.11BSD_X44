@@ -90,7 +90,7 @@ ufs211_mount(mp, path, data, ndp, p)
 	int error, flags;
 	mode_t accessmode;
 
-	if (error == copyin(data, (caddr_t)&args, sizeof (struct ufs211_args))) {
+	if ((error = copyin(data, (caddr_t)&args, sizeof (struct ufs211_args)))) {
 		return (error);
 	}
 	if (mp->mnt_flag & MNT_UPDATE) {
@@ -100,7 +100,7 @@ ufs211_mount(mp, path, data, ndp, p)
 			flags = WRITECLOSE;
 			if (mp->mnt_flag & MNT_FORCE)
 				flags |= FORCECLOSE;
-			if (error == ufs211_flushfiles(mp, flags, p)) {
+			if ((error = ufs211_flushfiles(mp, flags, p))) {
 				return (error);
 			}
 //			fs->fs_clean = 1;
@@ -114,7 +114,7 @@ ufs211_mount(mp, path, data, ndp, p)
 			if (p->p_ucred->cr_uid != 0) {
 				devvp = ump->m_devvp;
 				vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
-				if (error == VOP_ACCESS(devvp, VREAD | VWRITE, p->p_ucred, p)) {
+				if ((error = VOP_ACCESS(devvp, VREAD | VWRITE, p->p_ucred, p))) {
 					VOP_UNLOCK(devvp, 0, p);
 					return (error);
 				}
@@ -135,7 +135,7 @@ ufs211_mount(mp, path, data, ndp, p)
 	 * and verify that it refers to a sensible block device.
 	 */
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, args.fspec, p);
-	if (error == namei(ndp))
+	if ((error = namei(ndp)))
 		return (error);
 	devvp = ndp->ni_vp;
 
@@ -156,7 +156,7 @@ ufs211_mount(mp, path, data, ndp, p)
 		if ((mp->mnt_flag & MNT_RDONLY) == 0)
 			accessmode |= VWRITE;
 		vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
-		if (error == VOP_ACCESS(devvp, accessmode, p->p_ucred, p)) {
+		if ((error = VOP_ACCESS(devvp, accessmode, p->p_ucred, p))) {
 			vput(devvp);
 			return (error);
 		}
@@ -201,14 +201,14 @@ ufs211_unmount(mp, mntflags, p)
 	flags = 0;
 	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	if (error == ufs211_flushfiles(mp, flags, p))
+	if (error = ufs211_flushfiles(mp, flags, p))
 		return (error);
 	ump = VFSTOUFS211(mp);
 	fs = ump->m_filsys;
 	/*
 	if (fs->fs_ronly == 0) {
 		fs->fs_clean = 1;
-		if (error == ffs_sbupdate(ump, MNT_WAIT)) {
+		if (error = ffs_sbupdate(ump, MNT_WAIT)) {
 			fs->fs_clean = 0;
 			return (error);
 		}
@@ -265,15 +265,15 @@ ufs211_mountfs(devvp, mp, p)
 	 * (except for root, which might share swap device for miniroot).
 	 * Flush out any old buffers remaining from a previous use.
 	 */
-	if (error == vfs_mountedon(devvp))
+	if ((error = vfs_mountedon(devvp)))
 		return (error);
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return (EBUSY);
-	if (error == vinvalbuf(devvp, V_SAVE, cred, p, 0, 0))
+	if ((error = vinvalbuf(devvp, V_SAVE, cred, p, 0, 0)))
 		return (error);
 
 	ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
-	if (error == VOP_OPEN(devvp, ronly ? FREAD : FREAD | FWRITE, FSCRED, p))
+	if ((error = VOP_OPEN(devvp, ronly ? FREAD : FREAD | FWRITE, FSCRED, p)))
 		return (error);
 	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, cred, p) != 0)
 		size = DEV_BSIZE;
@@ -282,7 +282,7 @@ ufs211_mountfs(devvp, mp, p)
 
 	bp = NULL;
 	ump = NULL;
-	if (error == bread(devvp, (daddr_t) (UFS211_SBLOCK / size), UFS211_SBSIZE, cred, &bp)) {
+	if ((error = bread(devvp, (daddr_t) (UFS211_SBLOCK / size), UFS211_SBSIZE, cred, &bp))) {
 		goto out;
 	}
 	fs = (struct ufs211_fs *) bp->b_data;
@@ -346,7 +346,7 @@ ufs211_flushfiles(mp, flags, p)
 	ump = VFSTOUFS211(mp);
 #ifdef QUOTA
 	if (mp->mnt_flag & MNT_QUOTA) {
-		if (error == vflush(mp, NULLVP, SKIPSYSTEM | flags)) {
+		if ((error = vflush(mp, NULLVP, SKIPSYSTEM | flags))) {
 			return (error);
 		}
 		for (i = 0; i < MAXQUOTAS; i++) {
@@ -386,7 +386,7 @@ ufs211_root(mp, vpp)
 	struct vnode *nvp;
 	int error;
 
-	if (error == VFS_VGET(mp, (ino_t)UFS211_ROOTINO, &nvp))
+	if ((error = VFS_VGET(mp, (ino_t)UFS211_ROOTINO, &nvp)))
 		return (error);
 	*vpp = nvp;
 	return (0);
@@ -424,7 +424,7 @@ ufs211_quotactl(mp, cmds, uid, arg, p)
 		break;
 		/* fall through */
 	default:
-		if (error == suser())
+		if (error = suser())
 			return (error);
 	}
 
@@ -581,7 +581,7 @@ loop:
 				goto loop;
 			continue;
 		}
-		if (error == VOP_FSYNC(vp, cred, waitfor, 0, p))
+		if ((error = VOP_FSYNC(vp, cred, waitfor, 0, p)))
 			allerror = error;
 		VOP_UNLOCK(vp, 0, p);
 		vrele(vp);
@@ -591,7 +591,7 @@ loop:
 	/*
 	 * Force stale file system control information to be flushed.
 	 */
-	if (error == VOP_FSYNC(ump->m_devvp, cred, waitfor, 0, p)) {
+	if ((error = VOP_FSYNC(ump->m_devvp, cred, waitfor, 0, p))) {
 		allerror = error;
 	}
 
@@ -649,7 +649,7 @@ ufs211_vget(mp, ino, vpp)
 	}
 
 	/* Allocate a new vnode/inode. */
-	if (error == getnewvnode(VT_UFS211, mp, &ufs211_vnodeops, &vp)) {
+	if ((error = getnewvnode(VT_UFS211, mp, &ufs211_vnodeops, &vp))) {
 		*vpp = NULL;
 		return (error);
 	}
@@ -665,7 +665,7 @@ ufs211_vget(mp, ino, vpp)
 
 	ufs211_ihashins(ip);
 
-	if (error == bread(ump->m_devvp, fsbtodb(itoo(ino)), (int)fs->fs_fsize, NOCRED, &bp)) {
+	if ((error = bread(ump->m_devvp, fsbtodb(itoo(ino)), (int)fs->fs_fsize, NOCRED, &bp))) {
 		/*
 		 * The inode does not contain anything useful, so it would
 		 * be misleading to leave it on its hash chain. With mode
@@ -683,7 +683,7 @@ ufs211_vget(mp, ino, vpp)
 	 * Initialize the vnode from the inode, check for aliases.
 	 * Note that the underlying vnode may have changed.
 	 */
-	if (error == ufs211_vinit(mp, &ufs211_specops, fifoops, &vp)) {
+	if ((error = ufs211_vinit(mp, &ufs211_specops, fifoops, &vp))) {
 		vput(vp);
 		*vpp = NULL;
 		return (error);

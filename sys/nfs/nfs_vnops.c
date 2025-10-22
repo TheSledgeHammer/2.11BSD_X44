@@ -822,7 +822,7 @@ nfs_lookup(ap)
 			m_freem(mrep);
 			return (EISDIR);
 		}
-		if (error == nfs_nget(dvp->v_mount, fhp, fhsize, &np)) {
+		if ((error = nfs_nget(dvp->v_mount, fhp, fhsize, &np))) {
 			m_freem(mrep);
 			return (error);
 		}
@@ -842,7 +842,7 @@ nfs_lookup(ap)
 		VREF(dvp);
 		newvp = dvp;
 	} else {
-		if (error == nfs_nget(dvp->v_mount, fhp, fhsize, &np)) {
+		if ((error = nfs_nget(dvp->v_mount, fhp, fhsize, &np))) {
 			m_freem(mrep);
 			return (error);
 		}
@@ -1152,7 +1152,7 @@ nfs_mknodrpc(dvp, vpp, cnp, vap)
 		vput(dvp);
 		return (EOPNOTSUPP);
 	}
-	if (error == VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc)) {
+	if ((error = VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc))) {
 		VOP_ABORTOP(dvp, cnp);
 		vput(dvp);
 		return (error);
@@ -1272,7 +1272,7 @@ nfs_create(ap)
 	if (vap->va_type == VSOCK)
 		return (nfs_mknodrpc(dvp, ap->a_vpp, cnp, vap));
 
-	if (error == VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc)) {
+	if ((error = VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc))) {
 		VOP_ABORTOP(dvp, cnp);
 		vput(dvp);
 		return (error);
@@ -1765,7 +1765,7 @@ nfs_mkdir(ap)
 	struct vattr vattr;
 	int v3 = NFS_ISV3(dvp);
 
-	if (error = VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc)) {
+	if ((error = VOP_GETATTR(dvp, &vattr, cnp->cn_cred, cnp->cn_proc))) {
 		VOP_ABORTOP(dvp, cnp);
 		vput(dvp);
 		return (error);
@@ -2248,54 +2248,51 @@ nfs_readdirplusrpc(vp, uiop, cred)
 			 */
 			attrflag = fxdr_unsigned(int, *tl);
 			if (attrflag) {
-			    dpossav1 = dpos;
-			    mdsav1 = md;
-			    nfsm_adv(NFSX_V3FATTR);
-			    nfsm_dissect(tl, u_long *, NFSX_UNSIGNED);
-			    doit = fxdr_unsigned(int, *tl);
-			    if (doit) {
-				nfsm_getfh(fhp, fhsize, 1);
-				if (NFS_CMPFH(dnp, fhp, fhsize)) {
-				    VREF(vp);
-				    newvp = vp;
-				    np = dnp;
-				} else {
-				    if (error == nfs_nget(vp->v_mount, fhp,
-					fhsize, &np))
-					doit = 0;
-				    else
-					newvp = NFSTOV(np);
+				dpossav1 = dpos;
+				mdsav1 = md;
+				nfsm_adv(NFSX_V3FATTR);
+				nfsm_dissect(tl, u_long*, NFSX_UNSIGNED);
+				doit = fxdr_unsigned(int, *tl);
+				if (doit) {
+					nfsm_getfh(fhp, fhsize, 1);
+					if (NFS_CMPFH(dnp, fhp, fhsize)) {
+						VREF(vp);
+						newvp = vp;
+						np = dnp;
+					} else {
+						if ((error = nfs_nget(vp->v_mount, fhp, fhsize, &np)))
+							doit = 0;
+						else
+							newvp = NFSTOV(np);
+					}
 				}
-			    }
-			    if (doit) {
-				dpossav2 = dpos;
-				dpos = dpossav1;
-				mdsav2 = md;
-				md = mdsav1;
-				nfsm_loadattr(newvp, (struct vattr *)0);
-				dpos = dpossav2;
-				md = mdsav2;
-				dp->d_type =
-				    IFTODT(VTTOIF(np->n_vattr.va_type));
-				ndp->ni_vp = newvp;
-				cnp->cn_hash = 0;
-				for (cp = cnp->cn_nameptr, i = 1; i <= len;
-				    i++, cp++)
-				    cnp->cn_hash += (unsigned char)*cp * i;
-				if (cnp->cn_namelen <= NCHNAMLEN)
-				    cache_enter(ndp->ni_dvp, ndp->ni_vp, cnp);
-			    }
+				if (doit) {
+					dpossav2 = dpos;
+					dpos = dpossav1;
+					mdsav2 = md;
+					md = mdsav1;
+					nfsm_loadattr(newvp, (struct vattr* )0);
+					dpos = dpossav2;
+					md = mdsav2;
+					dp->d_type = IFTODT(VTTOIF(np->n_vattr.va_type));
+					ndp->ni_vp = newvp;
+					cnp->cn_hash = 0;
+					for (cp = cnp->cn_nameptr, i = 1; i <= len; i++, cp++)
+						cnp->cn_hash += (unsigned char) *cp * i;
+					if (cnp->cn_namelen <= NCHNAMLEN)
+						cache_enter(ndp->ni_dvp, ndp->ni_vp, cnp);
+				}
 			} else {
-			    /* Just skip over the file handle */
-			    nfsm_dissect(tl, u_long *, NFSX_UNSIGNED);
-			    i = fxdr_unsigned(int, *tl);
-			    nfsm_adv(nfsm_rndup(i));
+				/* Just skip over the file handle */
+				nfsm_dissect(tl, u_long*, NFSX_UNSIGNED);
+				i = fxdr_unsigned(int, *tl);
+				nfsm_adv(nfsm_rndup(i));
 			}
 			if (newvp != NULLVP) {
-			    vrele(newvp);
-			    newvp = NULLVP;
+				vrele(newvp);
+				newvp = NULLVP;
 			}
-			nfsm_dissect(tl, u_long *, NFSX_UNSIGNED);
+			nfsm_dissect(tl, u_long*, NFSX_UNSIGNED);
 			more_dirs = fxdr_unsigned(int, *tl);
 		}
 		/*
@@ -2387,7 +2384,7 @@ nfs_sillyrename(dvp, vp, cnp)
 			goto bad;
 		}
 	}
-	if (error == nfs_renameit(dvp, cnp, sp))
+	if ((error = nfs_renameit(dvp, cnp, sp)))
 		goto bad;
 	error = nfs_lookitup(dvp, sp->s_name, sp->s_namlen, sp->s_cred,
 		cnp->cn_proc, &np);

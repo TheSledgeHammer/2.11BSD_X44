@@ -182,4 +182,5 @@
 #define	SYS_preadv	173
 #define	SYS_pwritev	174
 #define	SYS_tls	175
-#define	SYS_MAXSYSCALL	176
+#define	SYS_fchroot	176
+#define	SYS_MAXSYSCALL	177

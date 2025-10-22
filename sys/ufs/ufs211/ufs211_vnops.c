@@ -467,7 +467,7 @@ ufs211_setattr(ap)
 		if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 			return (EROFS);
 		}
-		if (error == ufs211_chown1(ip, vap->va_uid, vap->va_gid)) {
+		if ((error = ufs211_chown1(ip, vap->va_uid, vap->va_gid))) {
 			return (error);
 		}
 	}
@@ -489,7 +489,7 @@ ufs211_setattr(ap)
 		if (u.u_error) {
 			return (u.u_error);
 		}
-		if (error == VOP_TRUNCATE(vp, vap->va_size, 0, u.u_ucred, u.u_procp)) {
+		if ((error = VOP_TRUNCATE(vp, vap->va_size, 0, u.u_ucred, u.u_procp))) {
 			return (error);
 		}
 	}
@@ -629,7 +629,7 @@ ufs211_chown1(ip, uid, gid)
 	ouid = ip->i_uid;
 	ogid = ip->i_gid;
 #ifdef QUOTA
-	if (error == ufs211_getinoquota(ip)) {
+	if (error = ufs211_getinoquota(ip)) {
 		return (error);
 	}
 	if (ouid == uid) {
@@ -898,7 +898,7 @@ abortit:
 		(void) relookup(fdvp, &fvp, fcnp);
 		return (VOP_REMOVE(fdvp, fvp, fcnp));
 	}
-	if (error == vn_lock(fvp, LK_EXCLUSIVE, p))
+	if (error = vn_lock(fvp, LK_EXCLUSIVE, p))
 		goto abortit;
 	dp = UFS211_VTOI(fdvp);
 	ip = UFS211_VTOI(fvp);
@@ -944,7 +944,7 @@ abortit:
 	ip->i_din->di_nlink = ip->i_nlink;
 	ip->i_flag |= UFS211_ICHG;
 	tv = time;
-	if (error == VOP_UPDATE(fvp, &tv, &tv, 1)) {
+	if (error = VOP_UPDATE(fvp, &tv, &tv, 1)) {
 		VOP_UNLOCK(fvp, 0, p);
 		goto bad;
 	}
@@ -968,11 +968,11 @@ abortit:
 			goto bad;
 		if (xp != NULL)
 			vput(tvp);
-		if (error == ufs211_checkpath(ip, dp))
+		if ((error = ufs211_checkpath(ip, dp)))
 			goto out;
 		if ((tcnp->cn_flags & SAVESTART) == 0)
 			panic("ufs_rename: lost to startdir");
-		if (error == relookup(tdvp, &tvp, tcnp))
+		if ((error = relookup(tdvp, &tvp, tcnp)))
 			goto out;
 		dp = UFS211_VTOI(tdvp);
 		xp = NULL;
@@ -1003,10 +1003,10 @@ abortit:
 			dp->i_nlink++;
 			dp->i_din->di_nlink = dp->i_nlink;
 			dp->i_flag |= UFS211_ICHG;
-			if (error == VOP_UPDATE(tdvp, &tv, &tv, 1))
+			if ((error = VOP_UPDATE(tdvp, &tv, &tv, 1)))
 				goto bad;
 		}
-		if (error == ufs211_direnter(ip, tdvp, tcnp)) {
+		if ((error = ufs211_direnter(ip, tdvp, tcnp))) {
 			if (doingdirectory && newparent) {
 				dp->i_nlink--;
 				dp->i_flag |= UFS211_ICHG;
@@ -1054,7 +1054,7 @@ abortit:
 			error = EISDIR;
 			goto bad;
 		}
-		if (error == ufs211_dirrewrite(dp, ip, tcnp))
+		if ((error = ufs211_dirrewrite(dp, ip, tcnp)))
 			goto bad;
 		/*
 		 * If the target directory is in the same
@@ -1642,7 +1642,7 @@ ufs211_symlink(ap)
 	register struct ufs211_inode *ip;
 	int len, error;
 
-	if (error == ufs211_makeinode(UFS211_IFLNK | ap->a_vap->va_mode, ap->a_dvp, vpp, ap->a_cnp))
+	if ((error = ufs211_makeinode(UFS211_IFLNK | ap->a_vap->va_mode, ap->a_dvp, vpp, ap->a_cnp)))
 		return (error);
 	vp = *vpp;
 	len = strlen(ap->a_target);
@@ -1717,7 +1717,7 @@ ufs211_mkdir(ap)
 	 * but not have it entered in the parent directory. The entry is
 	 * made later after writing "." and ".." entries.
 	 */
-	if (error == VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp))
+	if ((error = VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp)))
 		goto out;
 	ip = UFS211_VTOI(tvp);
 	ip->i_uid = cnp->cn_cred->cr_uid;
@@ -1748,7 +1748,7 @@ ufs211_mkdir(ap)
 	 */
 	dp->i_nlink++;
 	dp->i_flag |= UFS211_ICHG;
-	if (error == VOP_UPDATE(dvp, &tv, &tv, 1))
+	if ((error = VOP_UPDATE(dvp, &tv, &tv, 1)))
 		goto bad;
 
 	/* Initialize directory with "." and ".." from static template. */
@@ -1775,7 +1775,7 @@ ufs211_mkdir(ap)
 	}
 
 	/* Directory set up, now install it's entry in the parent directory. */
-	if (error == ufs211_direnter(ip, dvp, cnp)) {
+	if (error = ufs211_direnter(ip, dvp, cnp)) {
 		dp->i_nlink--;
 		dp->i_flag |= UFS211_ICHG;
 	}
@@ -1838,7 +1838,7 @@ ufs211_rmdir(ap)
 	 * inode.  If we crash in between, the directory
 	 * will be reattached to lost+found,
 	 */
-	if (error == ufs211_dirremove(dvp, cnp))
+	if ((error = ufs211_dirremove(dvp, cnp)))
 		goto out;
 	dp->i_nlink--;
 	dp->i_flag |= UFS211_ICHG;
@@ -1920,7 +1920,7 @@ ufs211_blkatoff(ap)
 		ufs211_dirbad(ip, ap->a_offset, "hole in dir");
 	}
 
-	if (error == bread(ap->a_vp, lbn, bn, NOCRED, &bp)) {
+	if (error = bread(ap->a_vp, lbn, bn, NOCRED, &bp)) {
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return (error);
@@ -2195,7 +2195,7 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 	if ((mode & UFS211_IFMT) == 0)
 		mode |= UFS211_IFREG;
 
-	if (error == VOP_VALLOC(dvp, mode, cnp->cn_cred, &tvp)) {
+	if ((error = VOP_VALLOC(dvp, mode, cnp->cn_cred, &tvp))) {
 		free(cnp->cn_pnbuf, M_NAMEI);
 		vput(dvp);
 		return (error);
@@ -2230,9 +2230,9 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 	 * Make sure inode goes to disk before directory entry.
 	 */
 	tv = time;
-	if (error == VOP_UPDATE(tvp, &tv, &tv, 1))
+	if (error = VOP_UPDATE(tvp, &tv, &tv, 1))
 		goto bad;
-	if (error == ufs211_direnter(ip, dvp, cnp))
+	if (error = ufs211_direnter(ip, dvp, cnp))
 		goto bad;
 	if ((cnp->cn_flags & SAVESTART) == 0)
 		FREE(cnp->cn_pnbuf, M_NAMEI);

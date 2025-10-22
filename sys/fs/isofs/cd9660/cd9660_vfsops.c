@@ -102,13 +102,13 @@ cd9660_mountroot()
 		return (error);
 	}
 
-	if (error == vfs_rootmountalloc(MOUNT_CD9660, "root_device", &mp)) {
+	if ((error = vfs_rootmountalloc(MOUNT_CD9660, "root_device", &mp))) {
 		vrele(rootvp);
 		return (error);
 	}
 
 	args.flags = ISOFSMNT_ROOT;
-	if (error == iso_mountfs(rootvp, mp, p, &args)) {
+	if ((error = iso_mountfs(rootvp, mp, p, &args))) {
 		mp->mnt_vfc->vfc_refcount--;
 		vfs_unbusy(mp, p);
 		free(mp, M_MOUNT);
@@ -143,7 +143,7 @@ cd9660_mount(mp, path, data, ndp, p)
 	int error;
 	struct iso_mnt *imp;
 	
-	if (error == copyin(data, (caddr_t) & args, sizeof(struct iso_args)))
+	if ((error = copyin(data, (caddr_t) & args, sizeof(struct iso_args))))
 		return (error);
 
 	if ((mp->mnt_flag & MNT_RDONLY) == 0)
@@ -163,7 +163,7 @@ cd9660_mount(mp, path, data, ndp, p)
 	 * and verify that it refers to a sensible block device.
 	 */
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, args.fspec, p);
-	if (error == namei(ndp))
+	if ((error = namei(ndp)))
 		return (error);
 	devvp = ndp->ni_vp;
 
@@ -233,14 +233,14 @@ iso_mountfs(devvp, mp, p, argp)
 	 * (except for root, which might share swap device for miniroot).
 	 * Flush out any old buffers remaining from a previous use.
 	 */
-	if (error == vfs_mountedon(devvp))
+	if ((error = vfs_mountedon(devvp)))
 		return error;
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return EBUSY;
-	if (error == vinvalbuf(devvp, V_SAVE, p->p_ucred, p, 0, 0))
+	if ((error = vinvalbuf(devvp, V_SAVE, p->p_ucred, p, 0, 0)))
 		return (error);
 
-	if (error == VOP_OPEN(devvp, ronly ? FREAD : FREAD | FWRITE, FSCRED, p))
+	if ((error = VOP_OPEN(devvp, ronly ? FREAD : FREAD | FWRITE, FSCRED, p)))
 		return error;
 	needclose = 1;
 
@@ -251,8 +251,8 @@ iso_mountfs(devvp, mp, p, argp)
 	iso_bsize = ISO_DEFAULT_BLOCK_SIZE;
 
 	for (iso_blknum = 16; iso_blknum < 100; iso_blknum++) {
-		if (error == bread(devvp, iso_blknum * btodb(iso_bsize), iso_bsize,
-		NOCRED, &bp))
+		if ((error = bread(devvp, iso_blknum * btodb(iso_bsize), iso_bsize,
+		NOCRED, &bp)))
 			goto out;
 
 		vdp = (struct iso_volume_descriptor*) bp->b_data;
@@ -401,7 +401,7 @@ cd9660_unmount(mp, mntflags, p)
 	if (mntinvalbuf(mp))
 		return EBUSY;
 #endif
-	if (error == vflush(mp, NULLVP, flags))
+	if ((error = vflush(mp, NULLVP, flags)))
 		return (error);
 
 	isomp = VFSTOISOFS(mp);
@@ -549,7 +549,7 @@ cd9660_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	if (np == NULL)
 		return (EACCES);
 
-	if (error == VFS_VGET(mp, ifhp->ifid_ino, &nvp)) {
+	if ((error = VFS_VGET(mp, ifhp->ifid_ino, &nvp))) {
 		*vpp = NULLVP;
 		return (error);
 	}
@@ -609,7 +609,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		return (0);
 
 	/* Allocate a new vnode/iso_node. */
-	if (error == getnewvnode(VT_ISOFS, mp, &cd9660_vnodeops, &vp)) {
+	if ((error = getnewvnode(VT_ISOFS, mp, &cd9660_vnodeops, &vp))) {
 		*vpp = NULLVP;
 		return (error);
 	}
@@ -694,7 +694,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		ip->iso_start = ino >> imp->im_bshift;
 		if (bp != 0)
 			brelse(bp);
-		if (error == VOP_BLKATOFF(vp, (off_t)0, NULL, &bp)) {
+		if ((error = VOP_BLKATOFF(vp, (off_t)0, NULL, &bp))) {
 			vput(vp);
 			return (error);
 		}

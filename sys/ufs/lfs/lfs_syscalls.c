@@ -119,17 +119,17 @@ lfs_markv()
 	uap = u.u_ap;
 	p = u.u_procp;
 
-	if (error == suser1(p->p_ucred, &p->p_acflag))
+	if ((error = suser1(p->p_ucred, &p->p_acflag)))
 		return (error);
 
-	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
+	if ((error = copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t))))
 		return (error);
 	if ((mntp = vfs_getvfs(&fsid)) == NULL)
 		return (EINVAL);
 
 	cnt = SCARG(uap, blkcnt);
 	start = calloc(cnt, sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
-	if (error == copyin(SCARG(uap, blkiov), start, cnt * sizeof(BLOCK_INFO)))
+	if ((error = copyin(SCARG(uap, blkiov), start, cnt * sizeof(BLOCK_INFO))))
 		goto err1;
 
 	/* Mark blocks/inodes dirty.  */
@@ -221,7 +221,7 @@ lfs_markv()
 			    (error = copyin(blkp->bi_bp, bp->b_data,
 			    blkp->bi_size)))
 				goto err2;
-			if (error == VOP_BWRITE(bp))
+			if ((error = VOP_BWRITE(bp)))
 				goto err2;
 		}
 		while (lfs_gatherblock(sp, bp, NULL));
@@ -295,17 +295,17 @@ lfs_bmapv()
 	uap = u.u_ap;
 	p = u.u_procp;
 
-	if (error == suser1(p->p_ucred, &p->p_acflag))
+	if ((error = suser1(p->p_ucred, &p->p_acflag)))
 		return (error);
 
-	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
+	if ((error = copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t))))
 		return (error);
 	if ((mntp = vfs_getvfs(&fsid)) == NULL)
 		return (EINVAL);
 
 	cnt = SCARG(uap, blkcnt);
 	start = blkp = calloc(cnt, sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
-	if (error == copyin(SCARG(uap, blkiov), blkp, cnt * sizeof(BLOCK_INFO))) {
+	if ((error = copyin(SCARG(uap, blkiov), blkp, cnt * sizeof(BLOCK_INFO)))) {
 		free(blkp, M_SEGMENT);
 		return (error);
 	}
@@ -365,10 +365,10 @@ lfs_segclean()
 	uap = u.u_ap;
 	p = u.u_procp;
 
-	if (error == suser1(p->p_ucred, &p->p_acflag))
+	if ((error = suser1(p->p_ucred, &p->p_acflag)))
 		return (error);
 
-	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
+	if ((error = copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t))))
 		return (error);
 	if ((mntp = vfs_getvfs(&fsid)) == NULL)
 		return (EINVAL);
@@ -429,11 +429,11 @@ lfs_segwait()
 	uap = u.u_ap;
 	p = u.u_procp;
 
-	if (error == suser1(p->p_ucred, &p->p_acflag)) {
+	if ((error = suser1(p->p_ucred, &p->p_acflag))) {
 		return (error);
 }
 #ifdef WHEN_QUADS_WORK
-	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
+	if ((error = copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t))))
 		return (error);
 	if (fsid == (fsid_t)-1)
 		addr = &lfs_allclean_wakeup;
@@ -443,7 +443,7 @@ lfs_segwait()
 		addr = &VFSTOUFS(mntp)->um_lfs->lfs_nextseg;
 	}
 #else
-	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
+	if ((error = copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t))))
 		return (error);
 	if ((mntp = vfs_getvfs(&fsid)) == NULL)
 		addr = &lfs_allclean_wakeup;
@@ -452,7 +452,7 @@ lfs_segwait()
 #endif
 
 	if (SCARG(uap, tv)) {
-		if (error == copyin(SCARG(uap, tv), &atv, sizeof(struct timeval)))
+		if ((error = copyin(SCARG(uap, tv), &atv, sizeof(struct timeval))))
 			return (error);
 		if (itimerfix(&atv))
 			return (EINVAL);
@@ -552,7 +552,7 @@ lfs1_fastvget(mp, ino, daddr, vpp, dinp)
 	}
 
 	/* Allocate new vnode/inode. */
-	if (error == lfs_vcreate(mp, ino, &vp)) {
+	if ((error = lfs_vcreate(mp, ino, &vp))) {
 		*vpp = NULL;
 		return (error);
 	}
@@ -576,14 +576,14 @@ lfs1_fastvget(mp, ino, daddr, vpp, dinp)
 
 	/* Read in the disk contents for the inode, copy into the inode. */
 	if (dinp) {
-		if (error == copyin(dinp, ip->i_din.ffs1_din, sizeof(struct ufs1_dinode))) {
+		if ((error = copyin(dinp, ip->i_din.ffs1_din, sizeof(struct ufs1_dinode)))) {
 			return (error);
 		}
 	} else {
 		retries = 0;
 	again:
-		if (error == bread(ump->um_devvp, daddr,
-		    (int)ump->um_lfs->lfs_bsize, NOCRED, &bp)) {
+		if ((error = bread(ump->um_devvp, daddr,
+		    (int)ump->um_lfs->lfs_bsize, NOCRED, &bp))) {
 			/*
 			 * The inode does not contain anything useful, so it
 			 * would be misleading to leave it on its hash chain.
@@ -617,7 +617,7 @@ lfs1_fastvget(mp, ino, daddr, vpp, dinp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, &lfs_specops, fifoops, &vp)) {
+	if ((error = ufs_vinit(mp, &lfs_specops, fifoops, &vp))) {
 		lfs_vunref(vp);
 		*vpp = NULL;
 		return (error);
@@ -678,7 +678,7 @@ lfs2_fastvget(mp, ino, daddr, vpp, dinp)
 	}
 
 	/* Allocate new vnode/inode. */
-	if (error == lfs_vcreate(mp, ino, &vp)) {
+	if ((error = lfs_vcreate(mp, ino, &vp))) {
 		*vpp = NULL;
 		return (error);
 	}
@@ -702,14 +702,14 @@ lfs2_fastvget(mp, ino, daddr, vpp, dinp)
 
 	/* Read in the disk contents for the inode, copy into the inode. */
 	if (dinp) {
-		if (error == copyin(dinp, ip->i_din.ffs2_din, sizeof(struct ufs2_dinode))) {
+		if ((error = copyin(dinp, ip->i_din.ffs2_din, sizeof(struct ufs2_dinode)))) {
 			return (error);
 		}
 	} else {
 		retries = 0;
 	again:
-		if (error == bread(ump->um_devvp, daddr,
-		    (int)ump->um_lfs->lfs_bsize, NOCRED, &bp)) {
+		if ((error = bread(ump->um_devvp, daddr,
+		    (int)ump->um_lfs->lfs_bsize, NOCRED, &bp))) {
 			/*
 			 * The inode does not contain anything useful, so it
 			 * would be misleading to leave it on its hash chain.
@@ -743,7 +743,7 @@ lfs2_fastvget(mp, ino, daddr, vpp, dinp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, &lfs_specops, fifoops, &vp)) {
+	if ((error = ufs_vinit(mp, &lfs_specops, fifoops, &vp))) {
 		lfs_vunref(vp);
 		*vpp = NULL;
 		return (error);

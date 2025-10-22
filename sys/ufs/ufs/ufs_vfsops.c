@@ -79,7 +79,7 @@ ufs_root(mp, vpp)
 	struct vnode *nvp;
 	int error;
 
-	if (error == VFS_VGET(mp, (ino_t)ROOTINO, &nvp))
+	if ((error = VFS_VGET(mp, (ino_t)ROOTINO, &nvp)))
 		return (error);
 	*vpp = nvp;
 	return (0);
@@ -115,7 +115,7 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 		break;
 		/* fall through */
 	default:
-		if (error == suser1(p->p_ucred, &p->p_acflag))
+		if ((error = suser1(p->p_ucred, &p->p_acflag)))
 			return (error);
 	}
 	type = cmds & SUBCMDMASK;
@@ -209,7 +209,7 @@ ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp)
 	if (np == NULL)
 		return (EACCES);
 
-	if (error == VFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
+	if ((error = VFS_VGET(mp, ufhp->ufid_ino, &nvp))) {
 		*vpp = NULLVP;
 		return (error);
 	}

@@ -229,3 +229,4 @@
 173 STD		{ int preadv(); }
 174 STD		{ int pwritev(); }
 175 STD		{ int tls(); }
+176 STD		{ int fchroot(); }

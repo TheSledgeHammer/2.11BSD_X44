@@ -74,7 +74,7 @@ ufs211_lookup(ap)
 	 */
 	if ((dp->i_mode & UFS211_IFMT) != UFS211_IFDIR)
 		return (ENOTDIR);
-	if (error == VOP_ACCESS(vdp, VEXEC, cred, cnp->cn_proc))
+	if ((error = VOP_ACCESS(vdp, VEXEC, cred, cnp->cn_proc)))
 		return (error);
 	if ((flags & ISLASTCN) && (vdp->v_mount->mnt_flag & MNT_RDONLY)	&& (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME))
 		return (EROFS);
@@ -89,7 +89,7 @@ ufs211_lookup(ap)
 	 * holding long names (which would either waste space, or
 	 * add greatly to the complexity).
 	 */
-	if (error == cache_lookup(vdp, vpp, cnp)) {
+	if ((error = cache_lookup(vdp, vpp, cnp))) {
 		int vpid; /* capability number of vnode */
 		if (error == ENOENT)
 			return (error);
@@ -126,7 +126,7 @@ ufs211_lookup(ap)
 			if (lockparent && pdp != vdp && (flags & ISLASTCN))
 				VOP_UNLOCK(pdp, 0, p);
 		}
-		if (error == vn_lock(pdp, LK_EXCLUSIVE, p))
+		if ((error = vn_lock(pdp, LK_EXCLUSIVE, p)))
 			return (error);
 		vdp = pdp;
 		dp = UFS211_VTOI(pdp);
@@ -182,7 +182,7 @@ searchloop:
 		if ((dp->i_offset & bmask) == 0) {
 			if (bp != NULL)
 				brelse(bp);
-			if (error == VOP_BLKATOFF(vdp, (off_t) dp->i_offset, NULL, &bp))
+			if ((error = VOP_BLKATOFF(vdp, (off_t) dp->i_offset, NULL, &bp)))
 				return (error);
 			entryoffsetinblock = 0;
 		}
@@ -303,7 +303,7 @@ notfound:
 		 * Access for write is interpreted as allowing
 		 * creation of files in the directory.
 		 */
-		if (error == VOP_ACCESS(vdp, VWRITE, cred, cnp->cn_proc))
+		if ((error = VOP_ACCESS(vdp, VWRITE, cred, cnp->cn_proc)))
 			return (error);
 		/*
 		 * Return an indication of where the new directory
@@ -389,7 +389,7 @@ notfound:
 		/*
 		 * Write access to directory required to delete files.
 		 */
-		if (error == VOP_ACCESS(vdp, VWRITE, cred, cnp->cn_proc))
+		if ((error = VOP_ACCESS(vdp, VWRITE, cred, cnp->cn_proc)))
 			return (error);
 		/*
 		 * Return pointer to current entry in dp->i_offset,
@@ -406,7 +406,7 @@ notfound:
 			*vpp = vdp;
 			return (0);
 		}
-		if (error == VFS_VGET(vdp->v_mount, dp->i_ino, &tdp))
+		if ((error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp)))
 			return (error);
 		/*
 		 * If directory is "sticky", then user must own
@@ -432,7 +432,7 @@ notfound:
 	 * regular file, or empty directory.
 	 */
 	if (nameiop == RENAME && wantparent && (flags & ISLASTCN)) {
-		if (error == VOP_ACCESS(vdp, VWRITE, cred, cnp->cn_proc))
+		if ((error = VOP_ACCESS(vdp, VWRITE, cred, cnp->cn_proc)))
 			return (error);
 		/*
 		 * Careful about locking second inode.
@@ -440,7 +440,7 @@ notfound:
 		 */
 		if (dp->i_number == dp->i_ino)
 			return (EISDIR);
-		if (error == VFS_VGET(vdp->v_mount, dp->i_ino, &tdp))
+		if ((error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp)))
 			return (error);
 		*vpp = tdp;
 		cnp->cn_flags |= SAVENAME;
@@ -471,7 +471,7 @@ notfound:
 	pdp = vdp;
 	if (flags & ISDOTDOT) {
 		VOP_UNLOCK(pdp, 0, p); /* race to get the inode */
-		if (error == VFS_VGET(vdp->v_mount, dp->i_ino, &tdp)) {
+		if ((error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp))) {
 			vn_lock(pdp, LK_EXCLUSIVE | LK_RETRY, p);
 			return (error);
 		}
@@ -485,7 +485,7 @@ notfound:
 		VREF(vdp); /* we want ourself, ie "." */
 		*vpp = vdp;
 	} else {
-		if (error == VFS_VGET(vdp->v_mount, dp->i_ino, &tdp))
+		if ((error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp)))
 			return (error);
 		if (!lockparent || !(flags & ISLASTCN))
 			VOP_UNLOCK(pdp, 0, p);
@@ -689,7 +689,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	 * Get the block containing the space for the new directory
 	 * entry.  Should return error by result instead of u.u_error.
 	 */
-	if (error == VOP_BLKATOFF(dvp, (off_t)dp->i_offset, &dirbuf, &bp))
+	if ((error = VOP_BLKATOFF(dvp, (off_t)dp->i_offset, &dirbuf, &bp)))
 			return (u.u_error);
 
 	/*
@@ -940,7 +940,7 @@ ufs211_checkpath(source, target)
 		if (dirbuf.dotdot_ino == rootino)
 			break;
 		vput(vp);
-		if (error == VFS_VGET(vp->v_mount, dirbuf.dotdot_ino, &vp)) {
+		if (error = VFS_VGET(vp->v_mount, dirbuf.dotdot_ino, &vp)) {
 			error = u.u_error;
 			vp = NULL;
 			break;

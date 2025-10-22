@@ -143,7 +143,7 @@ cd9660_lookup(ap)
 	 */
 	if (vdp->v_type != VDIR)
 		return (ENOTDIR);
-	if (error == VOP_ACCESS(vdp, VEXEC, cred, cnp->cn_proc))
+	if ((error = VOP_ACCESS(vdp, VEXEC, cred, cnp->cn_proc)))
 		return (error);
 	if ((flags & ISLASTCN) && (vdp->v_mount->mnt_flag & MNT_RDONLY)
 			&& (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME))
@@ -156,7 +156,7 @@ cd9660_lookup(ap)
 	 * check the name cache to see if the directory/name pair
 	 * we are looking for is known already.
 	 */
-	if (error == cache_lookup(vdp, vpp, cnp)) {
+	if ((error = cache_lookup(vdp, vpp, cnp))) {
 		int vpid; /* capability number of vnode */
 
 		if (error == ENOENT)
@@ -198,7 +198,7 @@ cd9660_lookup(ap)
 			if (lockparent && pdp != vdp && (flags & ISLASTCN))
 				VOP_UNLOCK(pdp, 0, p);
 		}
-		if (error == vn_lock(pdp, LK_EXCLUSIVE, p))
+		if ((error = vn_lock(pdp, LK_EXCLUSIVE, p)))
 			return (error);
 		vdp = pdp;
 		dp = VTOI(pdp);
@@ -251,7 +251,7 @@ searchloop:
 		if ((dp->i_offset & bmask) == 0) {
 			if (bp != NULL)
 				brelse(bp);
-			if (error == VOP_BLKATOFF(vdp, (off_t )dp->i_offset, NULL, &bp))
+			if ((error = VOP_BLKATOFF(vdp, (off_t )dp->i_offset, NULL, &bp)))
 				return (error);
 			entryoffsetinblock = 0;
 		}
@@ -338,7 +338,7 @@ foundino:
 			if (lblkno(imp, dp->i_offset) != lblkno(imp, saveoffset)) {
 				if (bp != NULL)
 					brelse(bp);
-				if (error == VOP_BLKATOFF(vdp, (off_t )saveoffset, NULL, &bp))
+				if ((error = VOP_BLKATOFF(vdp, (off_t )saveoffset, NULL, &bp)))
 					return (error);
 			}
 			entryoffsetinblock = saveoffset & bmask;
@@ -470,7 +470,7 @@ cd9660_blkatoff(ap)
 	lbn = lblkno(imp, ap->a_offset);
 	bsize = blksize(imp, ip, lbn);
 
-	if (error == bread(ap->a_vp, lbn, bsize, NOCRED, &bp)) {
+	if ((error = bread(ap->a_vp, lbn, bsize, NOCRED, &bp))) {
 		brelse(bp);
 		*ap->a_bpp = NULL;
 		return (error);

@@ -143,8 +143,8 @@ READ(ap)
 				break;
 			xfersize = size;
 		}
-		if (error ==
-		    uiomove((char *)bp->b_data + blkoffset, (int)xfersize, uio))
+		if ((error =
+		    uiomove((char *)bp->b_data + blkoffset, (int)xfersize, uio)))
 			break;
 
 		if (S_ISREG(mode) && (xfersize + blkoffset == fs->fs_bsize ||

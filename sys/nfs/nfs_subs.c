@@ -1168,7 +1168,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 
 	md = *mdp;
 	t1 = (mtod(md, caddr_t) + md->m_len) - *dposp;
-	if (error == nfsm_disct(mdp, dposp, NFSX_FATTR(v3), t1, &cp2))
+	if ((error = nfsm_disct(mdp, dposp, NFSX_FATTR(v3), t1, &cp2)))
 		return (error);
 	fp = (struct nfs_fattr *)cp2;
 	if (v3) {
@@ -1391,7 +1391,7 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, retdirp, p, kerbflag)
 	if (len > 0) {
 		if (rem >= len)
 			*dposp += len;
-		else if (error == nfs_adv(mdp, dposp, len, rem))
+		else if ((error = nfs_adv(mdp, dposp, len, rem)))
 			goto out;
 	}
 	ndp->ni_pathlen = tocp - cnp->cn_pnbuf;
@@ -1399,8 +1399,8 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, retdirp, p, kerbflag)
 	/*
 	 * Extract and set starting directory.
 	 */
-	if (error == nfsrv_fhtovp(fhp, FALSE, &dp, ndp->ni_cnd.cn_cred, slp,
-	    nam, &rdonly, kerbflag))
+	if ((error = nfsrv_fhtovp(fhp, FALSE, &dp, ndp->ni_cnd.cn_cred, slp,
+	    nam, &rdonly, kerbflag)))
 		goto out;
 	if (dp->v_type != VDIR) {
 		vrele(dp);
@@ -1418,7 +1418,7 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, retdirp, p, kerbflag)
 	 * And call lookup() to do the real work
 	 */
 	cnp->cn_proc = p;
-	if (error == lookup(ndp))
+	if ((error = lookup(ndp)))
 		goto out;
 	/*
 	 * Check for encountering a symbolic link

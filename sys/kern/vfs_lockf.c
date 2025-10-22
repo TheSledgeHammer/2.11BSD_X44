@@ -296,7 +296,7 @@ lf_getlock(lock, fl)
 		lf_print("lf_getlock", lock);
 #endif /* LOCKF_DEBUG */
 
-	if (block == lf_getblock(lock)) {
+	if ((block = lf_getblock(lock))) {
 		fl->l_type = block->lf_type;
 		fl->l_whence = SEEK_SET;
 		fl->l_start = block->lf_start;
@@ -344,7 +344,7 @@ lf_setlock(lock, sparelock, interlock)
 	/*
 	 * Scan lock list for this file looking for locks that would block us.
 	 */
-	while (block == lf_getblock(lock)) {
+	while ((block = lf_getblock(lock))) {
 		/*
 		 * Free the structure and return if nonblocking.
 		 */
@@ -504,7 +504,7 @@ lf_setlock(lock, sparelock, interlock)
 			    overlap->lf_type == F_WRLCK) {
 				lf_wakelock(overlap);
 			} else {
-				while (ltmp == overlap->lf_blkhd.tqh_first) {
+				while ((ltmp = TAILQ_FIRST(&overlap->lf_blkhd))) {
 					TAILQ_REMOVE(&overlap->lf_blkhd, ltmp,
 					    lf_block);
 					TAILQ_INSERT_TAIL(&lock->lf_blkhd,
@@ -584,7 +584,7 @@ lf_clearlock(unlock, sparelock)
 		lf_print("lf_clearlock", unlock);
 #endif /* LOCKF_DEBUG */
 	prev = head;
-	while (ovcase == lf_findoverlap(lf, unlock, SELF, &prev, &overlap)) {
+	while ((ovcase = lf_findoverlap(lf, unlock, SELF, &prev, &overlap))) {
 		/*
 		 * Wakeup the list of locks to be retried.
 		 */

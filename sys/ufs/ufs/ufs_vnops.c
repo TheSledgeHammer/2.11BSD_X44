@@ -117,7 +117,7 @@ ufs_create(ap)
 {
 	int error;
 
-	if (error == ufs_makeinode(MAKEIMODE(ap->a_vap->va_type, ap->a_vap->va_mode), ap->a_dvp, ap->a_vpp, ap->a_cnp))
+	if ((error = ufs_makeinode(MAKEIMODE(ap->a_vap->va_type, ap->a_vap->va_mode), ap->a_dvp, ap->a_vpp, ap->a_cnp)))
 		return (error);
 	return (0);
 }
@@ -141,8 +141,8 @@ ufs_mknod(ap)
 	ino_t ino;
 	int error;
 
-	if (error ==
-	    ufs_makeinode(MAKEIMODE(vap->va_type, vap->va_mode), ap->a_dvp, vpp, ap->a_cnp))
+	if ((error =
+	    ufs_makeinode(MAKEIMODE(vap->va_type, vap->va_mode), ap->a_dvp, vpp, ap->a_cnp)))
 		return (error);
 	ip = VTOI(*vpp);
 	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
@@ -414,7 +414,7 @@ ufs_setattr(ap)
 	if (vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL) {
 		if (vp->v_mount->mnt_flag & MNT_RDONLY)
 			return (EROFS);
-		if (error == ufs_chown(vp, vap->va_uid, vap->va_gid, cred, p))
+		if ((error = ufs_chown(vp, vap->va_uid, vap->va_gid, cred, p)))
 			return (error);
 	}
 	if (vap->va_size != VNOVAL) {
@@ -432,7 +432,7 @@ ufs_setattr(ap)
 				return (EROFS);
 			break;
 		}
-		if (error == VOP_TRUNCATE(vp, vap->va_size, 0, cred, p))
+		if ((error = VOP_TRUNCATE(vp, vap->va_size, 0, cred, p)))
 			return (error);
 	}
 	ip = VTOI(vp);
@@ -462,7 +462,7 @@ ufs_setattr(ap)
 		atimeval.tv_usec = vap->va_atime.tv_nsec / 1000;
 		mtimeval.tv_sec = vap->va_mtime.tv_sec;
 		mtimeval.tv_usec = vap->va_mtime.tv_nsec / 1000;
-		if (error == VOP_UPDATE(vp, &atimeval, &mtimeval, 1))
+		if ((error = VOP_UPDATE(vp, &atimeval, &mtimeval, 1)))
 			return (error);
 	}
 	error = 0;
@@ -545,7 +545,7 @@ ufs_chown(vp, uid, gid, cred, p)
 	ogid = ip->i_gid;
 	ouid = ip->i_uid;
 #ifdef QUOTA
-	if (error == getinoquota(ip))
+	if (error = getinoquota(ip))
 		return (error);
 	if (ouid == uid) {
 		dqrele(vp, ip->i_dquot[USRQUOTA]);
@@ -971,7 +971,7 @@ abortit:
 		(void) relookup(fdvp, &fvp, fcnp);
 		return (VOP_REMOVE(fdvp, fvp, fcnp));
 	}
-	if (error == vn_lock(fvp, LK_EXCLUSIVE, p))
+	if (error = vn_lock(fvp, LK_EXCLUSIVE, p))
 		goto abortit;
 	dp = VTOI(fdvp);
 	ip = VTOI(fvp);
@@ -1017,7 +1017,7 @@ abortit:
 	DIP_SET(ip, nlink, ip->i_nlink);
 	ip->i_flag |= IN_CHANGE;
 	tv = time;
-	if (error == VOP_UPDATE(fvp, &tv, &tv, 1)) {
+	if ((error = VOP_UPDATE(fvp, &tv, &tv, 1))) {
 		VOP_UNLOCK(fvp, 0, p);
 		goto bad;
 	}
@@ -1041,11 +1041,11 @@ abortit:
 			goto bad;
 		if (xp != NULL)
 			vput(tvp);
-		if (error == ufs_checkpath(ip, dp, tcnp->cn_cred))
+		if ((error = ufs_checkpath(ip, dp, tcnp->cn_cred)))
 			goto out;
 		if ((tcnp->cn_flags & SAVESTART) == 0)
 			panic("ufs_rename: lost to startdir");
-		if (error == relookup(tdvp, &tvp, tcnp))
+		if ((error = relookup(tdvp, &tvp, tcnp)))
 			goto out;
 		dp = VTOI(tdvp);
 		xp = NULL;
@@ -1076,10 +1076,10 @@ abortit:
 			dp->i_nlink++;
 			DIP_SET(dp, nlink, dp->i_nlink);
 			dp->i_flag |= IN_CHANGE;
-			if (error == VOP_UPDATE(tdvp, &tv, &tv, 1))
+			if ((error = VOP_UPDATE(tdvp, &tv, &tv, 1)))
 				goto bad;
 		}
-		if (error == ufs_direnter(ip, tdvp, tcnp)) {
+		if ((error = ufs_direnter(ip, tdvp, tcnp))) {
 			if (doingdirectory && newparent) {
 				dp->i_nlink--;
 				dp->i_flag |= IN_CHANGE;
@@ -1128,7 +1128,7 @@ abortit:
 			error = EISDIR;
 			goto bad;
 		}
-		if (error == ufs_dirrewrite(dp, ip, tcnp))
+		if ((error = ufs_dirrewrite(dp, ip, tcnp)))
 			goto bad;
 		/*
 		 * If the target directory is in the same
@@ -1319,7 +1319,7 @@ ufs_mkdir(ap)
 	 * but not have it entered in the parent directory. The entry is
 	 * made later after writing "." and ".." entries.
 	 */
-	if (error == VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp))
+	if ((error = VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp)))
 		goto out;
 	ip = VTOI(tvp);
 	ip->i_uid = cnp->cn_cred->cr_uid;
@@ -1360,7 +1360,7 @@ ufs_mkdir(ap)
 	dp->i_nlink++;
 	DIP_SET(dp, nlink, dp->i_nlink);
 	dp->i_flag |= IN_CHANGE;
-	if (error == VOP_UPDATE(dvp, &tv, &tv, 1))
+	if ((error = VOP_UPDATE(dvp, &tv, &tv, 1)))
 		goto bad;
 
 	/* Initialize directory with "." and ".." from static template. */
@@ -1387,7 +1387,7 @@ ufs_mkdir(ap)
 	}
 
 	/* Directory set up, now install it's entry in the parent directory. */
-	if (error == ufs_direnter(ip, dvp, cnp)) {
+	if ((error = ufs_direnter(ip, dvp, cnp))) {
 		dp->i_nlink--;
 		dp->i_flag |= IN_CHANGE;
 	}
@@ -1521,8 +1521,8 @@ ufs_symlink(ap)
 	register struct inode *ip;
 	int len, error;
 
-	if (error == ufs_makeinode(IFLNK | ap->a_vap->va_mode, ap->a_dvp,
-	    vpp, ap->a_cnp))
+	if ((error = ufs_makeinode(IFLNK | ap->a_vap->va_mode, ap->a_dvp,
+	    vpp, ap->a_cnp)))
 		return (error);
 	vp = *vpp;
 	len = strlen(ap->a_target);
@@ -2151,9 +2151,9 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 	 * Make sure inode goes to disk before directory entry.
 	 */
 	tv = time;
-	if (error == VOP_UPDATE(tvp, &tv, &tv, 1))
+	if (error = VOP_UPDATE(tvp, &tv, &tv, 1))
 		goto bad;
-	if (error == ufs_direnter(ip, dvp, cnp))
+	if (error = ufs_direnter(ip, dvp, cnp))
 		goto bad;
 	if ((cnp->cn_flags & SAVESTART) == 0)
 		FREE(cnp->cn_pnbuf, M_NAMEI);

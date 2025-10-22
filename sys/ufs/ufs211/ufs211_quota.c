@@ -273,7 +273,7 @@ ufs211_chkiq(ip, change, cred, flags)
 		for (i = 0; i < MAXQUOTAS; i++) {
 			if ((dq = ip->i_dquot[i]) == NODQUOT)
 				continue;
-			if (error == ufs211_chkiqchg(ip, change, cred, i))
+			if ((error = ufs211_chkiqchg(ip, change, cred, i)))
 				return (error);
 		}
 	}
@@ -438,7 +438,7 @@ again:
 			continue;
 		if (vget(vp, LK_EXCLUSIVE, p))
 			goto again;
-		if (error == ufs211_getinoquota(UFS211_VTOI(vp))) {
+		if ((error = ufs211_getinoquota(UFS211_VTOI(vp)))) {
 			vput(vp);
 			break;
 		}
@@ -525,7 +525,7 @@ ufs211_getquota(mp, id, type, addr)
 	struct ufs211_dquot *dq;
 	int error;
 
-	if (error == ufs211_dqget(NULLVP, id, VFSTOUFS211(mp), type, &dq))
+	if (error = ufs211_dqget(NULLVP, id, VFSTOUFS211(mp), type, &dq))
 		return (error);
 	error = copyout((caddr_t)&dq->dq_dqb, addr, sizeof (struct ufs211_dqblk));
 	ufs211_dqrele(NULLVP, dq);
@@ -548,9 +548,9 @@ ufs211_setquota(mp, id, type, addr)
 	struct ufs211_dqblk newlim;
 	int error;
 
-	if (error == copyin(addr, (caddr_t)&newlim, sizeof (struct ufs211_dqblk)))
+	if (error = copyin(addr, (caddr_t)&newlim, sizeof (struct ufs211_dqblk)))
 		return (error);
-	if (error == ufs211_dqget(NULLVP, id, ump, type, &ndq))
+	if (error = ufs211_dqget(NULLVP, id, ump, type, &ndq))
 		return (error);
 	dq = ndq;
 	while (dq->dq_flags & DQ_LOCK) {
@@ -612,9 +612,9 @@ ufs211_setuse(mp, id, type, addr)
 	struct ufs211_dqblk usage;
 	int error;
 
-	if (error == copyin(addr, (caddr_t)&usage, sizeof (struct ufs211_dqblk)))
+	if (error = copyin(addr, (caddr_t)&usage, sizeof (struct ufs211_dqblk)))
 		return (error);
-	if (error == ufs211_dqget(NULLVP, id, ump, type, &ndq))
+	if (error = ufs211_dqget(NULLVP, id, ump, type, &ndq))
 		return (error);
 	dq = ndq;
 	while (dq->dq_flags & DQ_LOCK) {
@@ -948,7 +948,7 @@ ufs211_setwarn(mp, id, type, addr)
 	int error;
 
 	ump = VFSTOUFS211(mp);
-	if (error == ufs211_dqget(NULLVP, id, ump, type, &ndq)) {
+	if ((error = ufs211_dqget(NULLVP, id, ump, type, &ndq))) {
 		return (error);
 	}
 	dq = ndq;
@@ -959,7 +959,7 @@ ufs211_setwarn(mp, id, type, addr)
 		dq->dq_flags |= DQ_WANT;
 		sleep((caddr_t)dq, PINOD+1);
 	}
-	if (error == copyin(addr, (caddr_t)&warn, sizeof(struct ufs211_dqwarn))) {
+	if ((error = copyin(addr, (caddr_t)&warn, sizeof(struct ufs211_dqwarn)))) {
 		dq->dq_iwarn = warn.dw_iwarn;
 		dq->dq_bwarn = warn.dw_bwarn;
 		dq->dq_flags &= ~(DQ_INODS | DQ_BLKS);
@@ -1057,7 +1057,7 @@ ufs211_setduse(mp, id, type, addr)
 	int error;
 
 	ump = VFSTOUFS211(mp);
-	if (error == ufs211_dqget(NULLVP, id, ump, type, &ndq)) {
+	if (error = ufs211_dqget(NULLVP, id, ump, type, &ndq)) {
 		return (error);
 	}
 	dq = ndq;
@@ -1068,7 +1068,7 @@ ufs211_setduse(mp, id, type, addr)
 		dq->dq_flags |= DQ_WANT;
 		sleep((caddr_t)dq, PINOD+1);
 	}
-	if (error == copyin(addr, (caddr_t)&usage, sizeof(struct ufs211_dqusage))) {
+	if (error = copyin(addr, (caddr_t)&usage, sizeof(struct ufs211_dqusage))) {
 		dq->dq_curinodes = usage.du_curinodes;
 		dq->dq_curblocks = usage.du_curblocks;
 		if (dq->dq_curinodes < dq->dq_isoftlimit) {

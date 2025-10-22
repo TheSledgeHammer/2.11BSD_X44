@@ -137,7 +137,7 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 	xap = ap == NULL ? a : ap;
 	if (!nump)
 		nump = &num;
-	if (error == ufs_getlbns(vp, bn, xap, nump))
+	if ((error = ufs_getlbns(vp, bn, xap, nump)))
 		return (error);
 
 	num = *nump;
@@ -190,7 +190,7 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 			bp->b_flags &= ~B_INVAL;
 			VOP_STRATEGY(bp);
 			curproc->p_stats->p_ru.ru_inblock++;	/* XXX */
-			if (error == biowait(bp)) {
+			if ((error = biowait(bp))) {
 				brelse(bp);
 				return (error);
 			}

@@ -179,3 +179,4 @@ extern int	extattr_filedesc();
 extern int	preadv();
 extern int	pwritev();
 extern int	tls();
+extern int	fchroot();

@@ -33,13 +33,17 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1981, 1983, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)badsect.c	8.2 (Berkeley) 5/4/95";
+#endif
 #endif /* not lint */
 
 /*
@@ -58,13 +62,16 @@ static char sccsid[] = "@(#)badsect.c	8.2 (Berkeley) 5/4/95";
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
-#include <ufs/ffs/ffs_extern.h>
+//#include <ufs/ffs/ffs_extern.h>
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <paths.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <err.h>
 
 union {
 	struct	fs fs;
@@ -86,6 +93,7 @@ char buf[MAXBSIZE];
 
 void 	rdfs(daddr_t, int, char *);
 int		chkuse(daddr_t, int);
+static void usage(void);
 
 const off_t sblock_try[] = SBLOCKSEARCH;
 
@@ -100,8 +108,7 @@ main(int argc, char *argv[])
 	char name[BUFSIZ];
 
 	if (argc < 3) {
-		fprintf(stderr, "usage: badsect bbdir blkno [ blkno ]\n");
-		exit(1);
+		usage();
 	}
 	if (chdir(argv[1]) < 0 || stat(".", &stbuf) < 0) {
 		perror(argv[1]);
@@ -124,7 +131,7 @@ main(int argc, char *argv[])
 	}
 	closedir(dirp);
 	if (dp == NULL) {
-		printf("Cannot find dev 0%o corresponding to %s\n",
+		printf("Cannot find dev 0%lo corresponding to %s\n",
 			stbuf.st_rdev, argv[1]);
 		exit(5);
 	}
@@ -136,7 +143,7 @@ main(int argc, char *argv[])
 	for (i = 0; ; i++) {
 		if (sblock_try[i] == -1)
 			errx(1, "%s: bad superblock", name);
-		rdfs(sblock_try[i], SBLOCKSIZE, fs);
+		rdfs(sblock_try[i], SBLOCKSIZE,  (char *)ffs);
 		switch (fs->fs_magic) {
 		case FS_UFS2_MAGIC:
 			is_ufs2 = 1;
@@ -175,22 +182,24 @@ chkuse(daddr_t blkno, int cnt)
 {
 	int cg;
 	daddr_t fsbn, bn;
+	int32_t fsbe;
 
 	fsbn = dbtofsb(fs, blkno);
-	if ((unsigned)(fsbn+cnt) > fs->fs_size) {
-		printf("block %d out of range of file system\n", blkno);
+	fsbe = (int32_t)(fsbn+cnt);
+	if (fsbe > fs->fs_size) {
+		printf("block %ld out of range of file system\n", blkno);
 		return (1);
 	}
 	cg = dtog(fs, fsbn);
 	if (fsbn < cgdmin(fs, cg)) {
-		if (cg == 0 || (fsbn+cnt) > cgsblock(fs, cg)) {
-			printf("block %d in non-data area: cannot attach\n",
+		if (cg == 0 || fsbe > cgsblock(fs, cg)) {
+			printf("block %ld in non-data area: cannot attach\n",
 				blkno);
 			return (1);
 		}
 	} else {
-		if ((fsbn+cnt) > cgbase(fs, cg+1)) {
-			printf("block %d in non-data area: cannot attach\n",
+		if (fsbe > cgbase(fs, cg+1)) {
+			printf("block %ld in non-data area: cannot attach\n",
 				blkno);
 			return (1);
 		}
@@ -204,7 +213,7 @@ chkuse(daddr_t blkno, int cnt)
 	}
 	bn = dtogd(fs, fsbn);
 	if (isclr(cg_blksfree(&acg), bn))
-		printf("Warning: sector %d is in use\n", blkno);
+		printf("Warning: sector %ld is in use\n", blkno);
 	return (0);
 }
 
@@ -227,4 +236,11 @@ rdfs(daddr_t bno, int size, char *bf)
 		perror("rdfs");
 		exit(1);
 	}
+}
+
+static void
+usage(void)
+{
+	fprintf(stderr, "usage: badsect bbdir blkno [ blkno ]\n");
+	exit(1);
 }
