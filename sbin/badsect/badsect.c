@@ -143,7 +143,7 @@ main(int argc, char *argv[])
 	for (i = 0; ; i++) {
 		if (sblock_try[i] == -1)
 			errx(1, "%s: bad superblock", name);
-		rdfs(sblock_try[i], SBLOCKSIZE,  (char *)ffs);
+		rdfs(sblock_try[i], SBLOCKSIZE,  (char *)fs);
 		switch (fs->fs_magic) {
 		case FS_UFS2_MAGIC:
 			is_ufs2 = 1;
