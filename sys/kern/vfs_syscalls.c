@@ -699,7 +699,7 @@ chdir()
 int
 chroot()
 {
-	struct chroot_args {
+	register struct chroot_args {
 		syscallarg(char *) path;
 	} *uap = (struct chroot_args *) u.u_ap;
 
@@ -726,12 +726,12 @@ chroot()
 int
 fchroot()
 {
-	struct fchroot_args {
+	register struct fchroot_args {
 		syscallarg(int) fd;
 	} *uap = (struct fchroot_args *) u.u_ap;
 	register struct proc *p;
 	register struct filedesc *fdp;
-	register struct file *fp;
+	struct file *fp;
 	struct vnode *vp;
 	int error;
 
@@ -744,7 +744,7 @@ fchroot()
 		return (error);
 	}
 	vp = (struct vnode *)fp->f_data;
-	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_type == VBAD) {
 		return (EBADF);
 	}
@@ -797,7 +797,7 @@ change_dir(ndp, p)
 		return (error);
 	}
 	vp = ndp->ni_vp;
-	return (change_root(vp, p));
+	return (change_chroot(vp, p));
 }
 
 /*
