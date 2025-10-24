@@ -117,10 +117,11 @@
 #define	_DEV_CCDVAR_H_
 
 #ifdef _KERNEL
-#include <sys/buf.h>
 #include <sys/lock.h>
 #include <sys/queue.h>
 #endif
+
+#include <sys/buf.h>
 
 /*
  * Dynamic configuration and disklabel support by:
