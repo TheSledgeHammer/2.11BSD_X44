@@ -126,6 +126,8 @@ struct dkdevice {
 
 #define	DK_DISKNAMELEN	16
 
+#ifdef _KERNEL
+
 struct dkdriver {
 	void				(*d_strategy)(struct buf *);
 	void				(*d_minphys)(struct buf *);
@@ -138,7 +140,6 @@ struct dkdriver {
 };
 
 /* dkdriver ops */
-#ifdef _KERNEL
 void 	dkdriver_strategy(struct dkdevice *, struct buf *);
 void 	dkdriver_minphys(struct dkdevice *, struct buf *);
 int 	dkdriver_open(struct dkdevice *, dev_t, int, int, struct proc *);
@@ -147,7 +148,6 @@ int 	dkdriver_ioctl(struct dkdevice *, dev_t, u_long, void *, int, struct proc *
 int		dkdriver_dump(struct dkdevice *, dev_t);
 void 	dkdriver_start(struct dkdevice *, struct buf *);
 int		dkdriver_mklabel(struct dkdevice *);
-#endif
 
 #define DKOP_STRATEGY(diskp, bp)			((dkdriver_strategy)(diskp, bp))
 #define DKOP_MINPHYS(diskp, bp)				((dkdriver_minphys)(diskp, bp))
@@ -157,6 +157,8 @@ int		dkdriver_mklabel(struct dkdevice *);
 #define DKOP_DUMP(diskp, dev)				((dkdriver_dump)(diskp, dev))
 #define DKOP_START(diskp, bp)				((dkdriver_start)(diskp, bp))
 #define DKOP_MKLABEL(diskp) 				((dkdriver_mklabel)(diskp))
+
+#endif /* _KERNEL */
 
 /* states */
 #define	DKF_OPENING			0x0001				/* drive is being opened */
