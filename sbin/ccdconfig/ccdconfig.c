@@ -47,6 +47,7 @@ __RCSID("$NetBSD: ccdconfig.c,v 1.58 2020/10/06 18:47:07 mlelstv Exp $");
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <kvm.h>
 #include <limits.h>
 #include <nlist.h>
 #include <stdio.h>
@@ -58,7 +59,6 @@ __RCSID("$NetBSD: ccdconfig.c,v 1.58 2020/10/06 18:47:07 mlelstv Exp $");
 #include <dev/disk/ccd/ccdvar.h>
 
 #include "pathnames.h"
-
 
 static	size_t lineno;
 static	gid_t egid;
@@ -424,8 +424,7 @@ pathtounit(char *path, int *unitp)
 static char *
 resolve_ccdname(char *name)
 {
-	char *path, *buf;
-	const char *p;
+	char *path;
 	char c;
 	size_t len;
 	int rawpart;
@@ -498,6 +497,7 @@ dump_ccd(int argc, char **argv, int action)
 	int i, error, numccd, numconfiged = 0;
 	kvm_t *kd;
 
+    i = 0;
 	memset(errbuf, 0, sizeof(errbuf));
 
 	(void)setegid(egid);
@@ -538,7 +538,7 @@ dump_ccd(int argc, char **argv, int action)
 		free(cs);
 		KVM_ABORT(kd, "can't find pointer to configuration data");
 	}
-	if (kvm_read(kd, (u_long) kcs, (char *)cs, readsize) != readsize) {
+	if (kvm_read(kd, (u_long) kcs, (char *)cs, readsize) != (ssize_t)readsize) {
 		free(cs);
 		KVM_ABORT(kd, "can't read configuration data");
 	}
@@ -619,8 +619,8 @@ print_ccd_info(struct ccd_softc *cs, kvm_t *kd)
 	fflush(stdout);
 
 	/* Read in the component info. */
-	if (kvm_read(kd, (u_long) cs->sc_cinfo, (char *)cip, readsize)
-			!= readsize) {
+	if (kvm_read(kd, (u_long)cs->sc_cinfo, (char *)cip, readsize)
+			!= (ssize_t)readsize) {
 		printf("\n");
 		warnx("can't read component info");
 		warnx("%s", kvm_geterr(kd));
@@ -628,16 +628,16 @@ print_ccd_info(struct ccd_softc *cs, kvm_t *kd)
 	}
 
 	/* Read component pathname and display component info. */
-	for (i = 0; i < cs->sc_nccdisks; ++i) {
+	for (i = 0; i < (int)cs->sc_nccdisks; ++i) {
 		if (kvm_read(kd, (u_long)cip[i].ci_path, (char *)path,
-				cip[i].ci_pathlen) != cip[i].ci_pathlen) {
+				cip[i].ci_pathlen) != (ssize_t)cip[i].ci_pathlen) {
 			printf("\n");
 			warnx("can't read component pathname");
 			warnx("%s", kvm_geterr(kd));
 			goto done;
 		}
 		fputs(path, stdout);
-		fputc((i + 1 < cs->sc_nccdisks) ? ' ' : '\n', stdout);
+		fputc((i + 1 < (int)cs->sc_nccdisks) ? ' ' : '\n', stdout);
 		fflush(stdout);
 	}
 
