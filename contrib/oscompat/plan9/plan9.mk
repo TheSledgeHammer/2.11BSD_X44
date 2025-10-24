@@ -9,7 +9,7 @@ MKLIBFMT?= no
 MKLIBUTF?= no
 MKLIBBIO?= no
 MKLIBREGEXP?= no
-MKMK?= no
+MKMK?= no # See Notes/Info below for issues
 
 # 
 # Notes/Info:
@@ -24,5 +24,6 @@ MKMK?= no
 # 	- Plan 9 regular expression library
 # mk:
 # 	- Plan 9 make program
+#	- Issues: Unresovled compile issues, 
+# 	which prevent it compiling.
 #
-

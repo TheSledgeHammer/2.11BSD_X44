@@ -42,6 +42,7 @@ __RCSID("$NetBSD: ccdconfig.c,v 1.58 2020/10/06 18:47:07 mlelstv Exp $");
 #include <sys/disk.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>
+
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
@@ -64,6 +65,9 @@ static	gid_t egid;
 static	int verbose;
 static	const char *ccdconf = _PATH_CCDCONF;
 
+static	char *core;
+static	char *kernel;
+
 static struct	flagval {
 	const char *fv_flag;
 	int	fv_val;
@@ -71,6 +75,14 @@ static struct	flagval {
 	{ "CCDF_UNIFORM",	CCDF_UNIFORM },
 	{ "CCDF_NOLABEL",	CCDF_NOLABEL },
 	{ NULL,			0 },
+};
+
+static struct nlist nl[] = {
+		{ "_ccd_softc" },
+#define SYM_CCDSOFTC	0
+		{ "_numccd" },
+#define SYM_NUMCCD		1
+		{ NULL },
 };
 
 #define CCD_CONFIG		0	/* configure a device */
@@ -86,6 +98,7 @@ static	int do_all(int);
 static	int dump_ccd(int, char **, int);
 static	int flags_to_val(char *);
 static	int pathtounit(char *, int *);
+static	void print_ccd_info(struct ccd_softc *, kvm_t *);
 static	char *resolve_ccdname(char *);
 __dead static	void usage(void);
 
@@ -96,7 +109,7 @@ main(int argc, char *argv[])
 
 	egid = getegid();
 	setegid(getgid());
-	while ((ch = getopt(argc, argv, "cCf:guUv")) != -1) {
+	while ((ch = getopt(argc, argv, "cCf:gM:N:uUv")) != -1) {
 		switch (ch) {
 		case 'c':
 			action = CCD_CONFIG;
@@ -114,6 +127,14 @@ main(int argc, char *argv[])
 
 		case 'g':
 			action = CCD_DUMP;
+			break;
+
+		case 'M':
+			core = optarg;
+			break;
+
+		case 'N':
+			kernel = optarg;
 			break;
 
 		case 'u':
@@ -139,6 +160,18 @@ main(int argc, char *argv[])
 
 	if (options > 1)
 		usage();
+
+	/*
+	 * Discard setgid privileges.  If not the running kernel, we toss
+	 * them away totally so that bad guys can't print interesting stuff
+	 * from kernel memory, otherwise switch back to kmem for the
+	 * duration of the kvm_openfiles() call.
+	 *
+	 * We also do this if we aren't just looking...
+	 */
+	if (core != NULL || kernel != NULL || action != CCD_DUMP) {
+		setgid(getgid());
+	}
 
 	switch (action) {
 		case CCD_CONFIG:
@@ -383,7 +416,7 @@ pathtounit(char *path, int *unitp)
 	if (!S_ISBLK(st.st_mode) && !S_ISCHR(st.st_mode))
 		return (EINVAL);
 
-	*unitp = DISKUNIT(st.st_rdev);
+	*unitp = dkunit(st.st_rdev);
 
 	return (0);
 }
@@ -449,127 +482,168 @@ do_io(char *path, u_long cmd, struct ccd_ioctl *cciop)
 	return (0);
 }
 
-static void
-print_ccd_info(int u, struct ccd_softc *ccd, char *str)
-{
-	static int header_printed = 0;
-
-	if (header_printed == 0 && verbose) {
-		printf("# ccd\t\tileave\tflags\t\tsize\tcomponent devices\n");
-		header_printed = 1;
-	}
-
-	/* Dump out softc information. */
-	printf("ccd%d\t\t%d\t0x%x\t%ju\t", u, ccd->sc_ileave,
-	    ccd->sc_flags & CCDF_USERMASK,
-	    (uintmax_t)ccd->sc_size * DEV_BSIZE);
-
-	/* Read component pathname and display component info. */
-	for (size_t i = 0; i < ccd->sc_ndisks; ++i) {
-		fputs(str, stdout);
-		fputc((i + 1 < ccd->sc_ndisks) ? ' ' : '\n', stdout);
-		str += strlen(str) + 1;
-	}
-	fflush(stdout);
-}
-
-static int
-printccdinfo(int u)
-{
-	struct ccd_softc ccd;
-	size_t s = sizeof(ccd);
-	size_t len;
-	const char *str;
-
-	if (sysctlbyname(str = "kern.ccd.info", &ccd, &s, &u, sizeof(u))
-	    == -1) {
-		if (errno == ENOENT)
-			warnx("ccd unit %d not configured", u);
-		else
-			warn("error getting %s for ccd%d", str, u);
-		return 1;
-	}
-
-	if (sysctlbyname(str = "kern.ccd.components", NULL, &len, &u, sizeof(u))
-	    == -1) {
-		warn("Error getting %s for ccd%d", str, u);
-		return 1;
-	}
-
-	char *names;
-	names = emalloc(len);
-	if (sysctlbyname(str = "kern.ccd.components", names, &len, &u,
-	    sizeof(u)) == -1) {
-		warn("error getting %s for ccd%d", str, u);
-		free(names);
-		return 1;
-	}
-	print_ccd_info(u, &ccd, names);
-	free(names);
-	return 0;
+#define KVM_ABORT(kd, str) {			\
+	(void)kvm_close((kd));				\
+	warnx("%s", (str));					\
+	warnx("%s", kvm_geterr((kd)));		\
+	return (1);							\
 }
 
 static int
 dump_ccd(int argc, char **argv, int action)
 {
-	const char *sys;
-	int errs = 0;
+	char errbuf[_POSIX2_LINE_MAX], *ccd, *cp;
+	struct ccd_softc *cs, *kcs;
+	size_t readsize;
+	int i, error, numccd, numconfiged = 0;
+	kvm_t *kd;
+
+	memset(errbuf, 0, sizeof(errbuf));
+
+	(void)setegid(egid);
+	if ((kd = kvm_openfiles(kernel, core, NULL, O_RDONLY, errbuf)) == NULL) {
+		warnx("can't open kvm: %s", errbuf);
+		return (1);
+	}
+	(void)setgid(getgid());
+
+	if (kvm_nlist(kd, nl)) {
+		KVM_ABORT(kd, "ccd-related symbols not available");
+	}
+
+	/* Check to see how many ccds are currently configured. */
+	if (kvm_read(kd, nl[SYM_NUMCCD].n_value, (char *)&numccd, sizeof(numccd))
+			!= sizeof(numccd))
+		KVM_ABORT(kd, "can't determine number of configured ccds");
+
+	if (numccd == 0) {
+		printf("ccd driver in kernel, but is uninitialized\n");
+		goto done;
+	}
+
+	/* Allocate space for the configuration data. */
+	readsize = numccd * sizeof(struct ccd_softc);
+	if ((cs = malloc(readsize)) == NULL) {
+		warnx("no memory for configuration data");
+		goto bad;
+	}
+	memset(cs, 0, readsize);
+
+	/*
+	 * Read the ccd configuration data from the kernel and dump
+	 * it to stdout.
+	 */
+	if (kvm_read(kd, nl[SYM_CCDSOFTC].n_value, (char *)&kcs, sizeof(kcs))
+			!= sizeof(kcs)) {
+		free(cs);
+		KVM_ABORT(kd, "can't find pointer to configuration data");
+	}
+	if (kvm_read(kd, (u_long) kcs, (char *)cs, readsize) != readsize) {
+		free(cs);
+		KVM_ABORT(kd, "can't read configuration data");
+	}
+
 	if (argc == 0) {
-		int *units;
-		size_t nunits = 0;
-		if (sysctlbyname(sys = "kern.ccd.units", NULL, &nunits, NULL, 0)
-		    == -1) {
-			switch (errno) {
-			case ENOENT:
-				warnx("no ccd driver in the kernel");
-				return 1;
-			case ENOMEM:
-				break;
-			default:
-				err(EXIT_FAILURE, "1 error getting %s", sys);
+		for (i = 0; i < numccd; ++i) {
+			if (cs[i].sc_flags & CCDF_INITED) {
+				++numconfiged;
+				print_ccd_info(&cs[i], kd);
 			}
-		    }
-
-		if (nunits == 0) {
-			warnx("no concatenated disks configured");
-			return 1;
 		}
 
-		units = emalloc(nunits);
-
-		if (sysctlbyname(sys, units, &nunits, NULL, 0) == -1)
-			err(EXIT_FAILURE, "2 error getting %s", sys);
-		nunits /= sizeof(*units);
-		for (size_t i = 0; i < nunits; i++)
-			errs += printccdinfo(units[i]);
-		free(units);
-		return errs;
+		if (numconfiged == 0) {
+			printf("# no concatenated disks configured\n");
+		}
+	} else {
+		while (argc) {
+			cp = *argv++;
+			--argc;
+			if ((ccd = resolve_ccdname(cp)) == NULL) {
+				warnx("invalid ccd name: %s", cp);
+				free(ccd);
+				continue;
+			}
+			if ((error = pathtounit(ccd, &i)) != 0) {
+				warn("%s", ccd);
+				free(ccd);
+				continue;
+			}
+			if (i >= numccd) {
+				warnx("ccd%d not configured", i);
+				free(ccd);
+				continue;
+			}
+			if (cs[i].sc_flags & CCDF_INITED) {
+				print_ccd_info(&cs[i], kd);
+			} else {
+				printf("# ccd%d not configured\n", i);
+			}
+		}
 	}
 
-	/* Dump ccd configuration to stdout. */
-	while (argc) {
-		int i = 0;	/* XXX: vax gcc */
-		int error;
-		char *cp = *argv++; --argc;
-		char *ccd;
+	free(cs);
 
-		if ((ccd = resolve_ccdname(cp)) == NULL) {
-			warnx("invalid ccd name: %s", cp);
-			errs++;
-			continue;
-		}
-		if ((error = pathtounit(ccd, &i)) != 0) {
-			warn("%s", ccd);
-			free(ccd);
-			errs++;
-			continue;
-		}
-		errs += printccdinfo(i);
-		free(ccd);
-	}
-	return errs;
+done:
+	(void) kvm_close(kd);
+	return (0);
+
+bad:
+	(void) kvm_close(kd);
+	return (1);
 }
 
+static void
+print_ccd_info(struct ccd_softc *cs, kvm_t *kd)
+{
+	static int header_printed = 0;
+	struct ccdcinfo *cip;
+	size_t readsize;
+	char path[MAXPATHLEN];
+	int i;
+
+	if (header_printed == 0 && verbose) {
+		printf("# ccd\t\tileave\tflags\tcompnent devices\n");
+		header_printed = 1;
+	}
+
+	readsize = cs->sc_nccdisks * sizeof(struct ccdcinfo);
+	if ((cip = malloc(readsize)) == NULL) {
+		warn("%s: can't allocate memory for component info", cs->sc_xname);
+		return;
+	}
+	memset(cip, 0, readsize);
+
+	/* Dump out softc information. */
+	printf("%s\t\t%d\t%d\t", cs->sc_xname, cs->sc_ileave,
+			cs->sc_flags & CCDF_USERMASK);
+	fflush(stdout);
+
+	/* Read in the component info. */
+	if (kvm_read(kd, (u_long) cs->sc_cinfo, (char *)cip, readsize)
+			!= readsize) {
+		printf("\n");
+		warnx("can't read component info");
+		warnx("%s", kvm_geterr(kd));
+		goto done;
+	}
+
+	/* Read component pathname and display component info. */
+	for (i = 0; i < cs->sc_nccdisks; ++i) {
+		if (kvm_read(kd, (u_long)cip[i].ci_path, (char *)path,
+				cip[i].ci_pathlen) != cip[i].ci_pathlen) {
+			printf("\n");
+			warnx("can't read component pathname");
+			warnx("%s", kvm_geterr(kd));
+			goto done;
+		}
+		fputs(path, stdout);
+		fputc((i + 1 < cs->sc_nccdisks) ? ' ' : '\n', stdout);
+		fflush(stdout);
+	}
+
+ done:
+	free(cip);
+}
 
 static int
 flags_to_val(char *flags)
@@ -638,7 +712,7 @@ usage(void)
 	fprintf(stderr, "       %s -C [-v] [-f config_file]\n", progname);
 	fprintf(stderr, "       %s -u [-v] ccd [...]\n", progname);
 	fprintf(stderr, "       %s -U [-v] [-f config_file]\n", progname);
-	fprintf(stderr, "       %s -g [ccd [...]]\n",
+	fprintf(stderr, "       %s -g [-M core] [-N system] [ccd [...]]\n",
 	    progname);
 	exit(1);
 }

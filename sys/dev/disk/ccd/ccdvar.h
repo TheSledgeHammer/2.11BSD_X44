@@ -113,9 +113,14 @@
  *	@(#)cdvar.h	8.1 (Berkeley) 6/10/93
  */
 
+#ifndef _DEV_CCDVAR_H_
+#define	_DEV_CCDVAR_H_
+
+#ifdef _KERNEL
 #include <sys/buf.h>
 #include <sys/lock.h>
 #include <sys/queue.h>
+#endif
 
 /*
  * Dynamic configuration and disklabel support by:
@@ -235,3 +240,5 @@ struct ccd_softc {
  */
 #define CCDIOCSET	_IOWR('F', 16, struct ccd_ioctl)   /* enable ccd */
 #define CCDIOCCLR	_IOW('F', 17, struct ccd_ioctl)    /* disable ccd */
+
+#endif /* _DEV_CCDVAR_H_ */

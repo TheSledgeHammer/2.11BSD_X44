@@ -5,7 +5,10 @@ USE_FORT?=yes	# setgid
 PROG=	ccdconfig
 MAN=	ccdconfig.8 ccd.conf.5
 
-DPADD=	${LIBUTIL}
-LDADD=	-lutil
+BINGRP=	kmem
+BINMODE=2555
+
+DPADD=	${LIBKVM} ${LIBUTIL}
+LDADD=	-lkvm -lutil
 
 .include <bsd.prog.mk>
