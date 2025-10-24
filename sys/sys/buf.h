@@ -263,8 +263,6 @@ extern struct bqueues 	bufqueues[];
 #define	B_VFLUSH		0x10000000		/* Buffer is being synced. */
 #define	B_XXX			0x20000000		/* Debugging flag. */
 
-//simple_lock_init(&(bp)->b_interlock);	\
-
 #define	BUF_INIT(bp) do {					\
 	(bp)->b_dev = NODEV;					\
 	BIO_SETPRIO((bp), BPRIO_DEFAULT);		\
