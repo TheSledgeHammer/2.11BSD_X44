@@ -542,7 +542,7 @@ finddkbasename(char *dkbasename, char *np)
 		if (strcmp(np, boot0) != 0) {
 			np = boot0;
 		}
-		(void)sprintf(np, "%s/%sboot0", _PATH_BOOTDIR, *dkbasename);
+		(void)sprintf(np, "%s/%sboot0", _PATH_BOOTDIR, dkbasename);
 		if (access(np, F_OK) < 0 && dkbasename[0] == 'r') {
 			dkbasename++;
 		}
@@ -928,7 +928,7 @@ getasciilabel(FILE *f, struct disklabel *lp)
 	const char *const *cpp, *s; 
     register char *cp;
 	char line[BUFSIZ];
-	const char *tp;
+	char *tp;
 	int v, lineno = 0, errors = 0;
 	u_int part;
 
@@ -951,7 +951,7 @@ getasciilabel(FILE *f, struct disklabel *lp)
 		*tp++ = '\0', tp = skip(tp);
 		if (streq(cp, "type")) {
 			if (tp == NULL)
-				tp = "unknown";
+				tp = __UNCONST("unknown");
 			cpp = dktypenames;
 			for (; cpp < &dktypenames[DKMAXTYPES]; cpp++)
 				if ((s = *cpp) && streq(s, tp)) {
@@ -1001,7 +1001,7 @@ getasciilabel(FILE *f, struct disklabel *lp)
 			continue;
 		}
 		if (tp == NULL)
-			tp = "";
+			tp = __UNCONST("");
 		if (streq(cp, "disk")) {
 			strncpy(lp->d_typename, tp, sizeof(lp->d_typename));
 			continue;
