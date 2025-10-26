@@ -43,42 +43,44 @@
  * Tunable constants for nfs
  */
 
-#define	NFS_MAXIOVEC	34
-#define NFS_TICKINTVL	5		/* Desired time for a tick (msec) */
-#define NFS_HZ		(hz / nfs_ticks) /* Ticks/sec */
-#define	NFS_TIMEO	(1 * NFS_HZ)	/* Default timeout = 1 second */
-#define	NFS_MINTIMEO	(1 * NFS_HZ)	/* Min timeout to use */
-#define	NFS_MAXTIMEO	(60 * NFS_HZ)	/* Max timeout to backoff to */
-#define	NFS_MINIDEMTIMEO (5 * NFS_HZ)	/* Min timeout for non-idempotent ops*/
-#define	NFS_MAXREXMIT	100		/* Stop counting after this many */
-#define	NFS_MAXWINDOW	1024		/* Max number of outstanding requests */
-#define	NFS_RETRANS	10		/* Num of retrans for soft mounts */
-#define	NFS_MAXGRPS	16		/* Max. size of groups list */
+#define	NFS_MAXIOVEC		34
+#define NFS_TICKINTVL		5				/* Desired time for a tick (msec) */
+#define NFS_HZ				(hz / nfs_ticks) /* Ticks/sec */
+#define	NFS_TIMEO			(1 * NFS_HZ)	/* Default timeout = 1 second */
+#define	NFS_MINTIMEO		(1 * NFS_HZ)	/* Min timeout to use */
+#define	NFS_MAXTIMEO		(60 * NFS_HZ)	/* Max timeout to backoff to */
+#define	NFS_MINIDEMTIMEO 	(5 * NFS_HZ)	/* Min timeout for non-idempotent ops*/
+#define	NFS_MAXREXMIT		100				/* Stop counting after this many */
+#define	NFS_MAXWINDOW		1024			/* Max number of outstanding requests */
+#define	NFS_RETRANS			10				/* Num of retrans for soft mounts */
+#define	NFS_MAXGRPS			16				/* Max. size of groups list */
 #ifndef NFS_MINATTRTIMO
-#define	NFS_MINATTRTIMO 5		/* Attribute cache timeout in sec */
+#define	NFS_MINATTRTIMO 	5				/* Attribute cache timeout in sec */
 #endif
 #ifndef NFS_MAXATTRTIMO
-#define	NFS_MAXATTRTIMO 60
+#define	NFS_MAXATTRTIMO 	60
 #endif
-#define	NFS_WSIZE	8192		/* Def. write data size <= 8192 */
-#define	NFS_RSIZE	8192		/* Def. read data size <= 8192 */
-#define NFS_READDIRSIZE	8192		/* Def. readdir size */
-#define	NFS_DEFRAHEAD	1		/* Def. read ahead # blocks */
-#define	NFS_MAXRAHEAD	4		/* Max. read ahead # blocks */
-#define	NFS_MAXUIDHASH	64		/* Max. # of hashed uid entries/mp */
-#define	NFS_MAXASYNCDAEMON 	20	/* Max. number async_daemons runable */
-#define NFS_MAXGATHERDELAY	100	/* Max. write gather delay (msec) */
+#define	NFS_WSIZE			8192		/* Def. write data size <= 8192 */
+#define	NFS_RSIZE			8192		/* Def. read data size <= 8192 */
+#define NFS_READDIRSIZE		8192		/* Def. readdir size */
+#define	NFS_DEFRAHEAD		1			/* Def. read ahead # blocks */
+#define	NFS_MAXRAHEAD		4			/* Max. read ahead # blocks */
+#define	NFS_MAXUIDHASH		64			/* Max. # of hashed uid entries/mp */
+#define	NFS_MAXASYNCDAEMON 	20			/* Max. number async_daemons runable */
+#define NFS_MAXGATHERDELAY	100			/* Max. write gather delay (msec) */
 #ifndef NFS_GATHERDELAY
-#define NFS_GATHERDELAY		10	/* Default write gather delay (msec) */
+#define NFS_GATHERDELAY		10			/* Default write gather delay (msec) */
 #endif
-#define	NFS_DIRBLKSIZ	4096		/* Must be a multiple of DIRBLKSIZ */
+#define	NFS_DIRBLKSIZ		4096		/* Must be a multiple of DIRBLKSIZ */
 
 /*
  * Oddballs
  */
 #define	NMOD(a)		((a) % nfs_asyncdaemons)
+
 #define NFS_CMPFH(n, f, s) \
 	((n)->n_fhsize == (s) && !bcmp((caddr_t)(n)->n_fhp, (caddr_t)(f), (s)))
+
 #define NFS_ISV3(v)	(VFSTONFS((v)->v_mount)->nm_flag & NFSMNT_NFSV3)
 #define NFS_SRVMAXDATA(n) \
 		(((n)->nd_flag & ND_NFSV3) ? (((n)->nd_nam2) ? \

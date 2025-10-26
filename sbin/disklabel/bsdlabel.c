@@ -40,14 +40,18 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1987, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -81,20 +85,24 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #include "pathnames.h"
 #include "dkcksum.h"
 
-static int		  writelabel(int, char *, struct disklabel *);
+static int writelabel(int, char *, struct disklabel *);
 static struct disklabel  *readlabel(int);
-static void  	          l_perror(char *);
-static void              makelabel(const char *, const char *, struct disklabel *);
+static void l_perror(const char *);
+static void fixlabel(int, struct disklabel *, int);
+static void makelabel(const char *, const char *, struct disklabel *);
+static void finddkbasename(char *, char *);
 static struct disklabel  *makebootarea(char *, struct disklabel *, int);
-static void	          display(FILE *, struct disklabel *);
-static int		  edit(struct disklabel *, int);
-static int		  editit(void);
-static int               checklabel(struct disklabel *);
-static int		  getasciilabel(FILE *, struct disklabel *);
-static int		  getasciipartspec(char *, struct disklabel *, int, int);
-static void	          	setbootflag(struct disklabel *);
-static void  	          Warning(const char *fmt, ...);
-static void 	          usage(void);
+static void	display(FILE *, struct disklabel *);
+static int edit(struct disklabel *, int);
+static int editit(void);
+static int checklabel(struct disklabel *);
+static char *skip(char *);
+static char *word(char *);
+static int getasciilabel(FILE *, struct disklabel *);
+static int getasciipartspec(char *, struct disklabel *, int, int);
+static void	setbootflag(struct disklabel *);
+static void Warning(const char *fmt, ...);
+static void usage(void);
 
 /*
  * Disklabel: read and write disklabels.
@@ -118,11 +126,12 @@ static void 	          usage(void);
 #define	DEFEDITOR	_PATH_VI
 #define	streq(a,b)	(strcmp(a,b) == 0)
 
+static char namebuf[MAXPATHLEN];
 static char	*dkname;
 static char	*specname;
 static char	tmpfil[] = PATH_TMPFILE;
 
-static struct	disklabel lab;
+static struct disklabel lab;
 static char	bootarea[BBSIZE];
 static int	rflag;
 static int	forceflag;
@@ -343,9 +352,7 @@ main(int argc, char *argv[])
 }
 
 static void
-fixlabel(f, lp, writeadj)
-  struct disklabel *lp;
-  int f, writeadj;
+fixlabel(int f, struct disklabel *lp, int writeadj)
 {
 	struct partition *dp;
 	int i;
@@ -368,9 +375,7 @@ fixlabel(f, lp, writeadj)
  * if specified.
  */
 static void
-makelabel(type, name, lp)
-	const char *type, *name;
-	register struct disklabel *lp;
+makelabel(const char *type, const char *name, struct disklabel *lp)
 {
 	struct disklabel *dp;
 
@@ -387,10 +392,7 @@ makelabel(type, name, lp)
 }
 
 static int
-writelabel(f, boot, lp)
-	int f;
-	char *boot;
-	register struct disklabel *lp;
+writelabel(int f, char *boot, struct disklabel *lp)
 {
 	int flag;
 	int i;
@@ -454,8 +456,7 @@ writelabel(f, boot, lp)
 }
 
 static void
-l_perror(s)
-	char *s;
+l_perror(const char *s)
 {
 	fprintf(stderr, "disklabel: %s: ", s);
 
@@ -490,8 +491,7 @@ l_perror(s)
  * Use ioctl to get label unless -r flag is given.
  */
 static struct disklabel *
-readlabel(f)
-	int f;
+readlabel(int f)
 {
 	register struct disklabel *lp;
 	int r;
@@ -523,20 +523,59 @@ readlabel(f)
 	return (lp);
 }
 
+static void
+finddkbasename(char *dkbasename, char *np)
+{
+	register char *p;
+
+	if ((p = rindex(dkname, '/')) == NULL) {
+		p = dkname;
+	} else {
+		p++;
+	}
+	while (*p && !isdigit(*p)) {
+		*np++ = *p++;
+	}
+	*np++ = '\0';
+
+	if (!xxboot) {
+		if (strcmp(np, boot0) != 0) {
+			np = boot0;
+		}
+		(void)sprintf(np, "%s/%sboot0", _PATH_BOOTDIR, *dkbasename);
+		if (access(np, F_OK) < 0 && dkbasename[0] == 'r') {
+			dkbasename++;
+		}
+		xxboot = np;
+		(void)sprintf(xxboot, "%s/%sboot0", _PATH_BOOTDIR, dkbasename);
+	}
+#if NUMBOOT > 1
+	if (!bootxx) {
+		if (strcmp(np, boot1) != 0) {
+			np = boot1;
+		}
+		(void)sprintf(np, "%s/%sboot1", _PATH_BOOTDIR, dkbasename);
+		if (access(np, F_OK) < 0 && dkbasename[0] == 'r') {
+			dkbasename++;
+		}
+		bootxx = np;
+		(void)sprintf(bootxx, "%s/%sboot1", _PATH_BOOTDIR, dkbasename);
+	}
+#endif
+}
+
 /*
  * Construct a bootarea (d_bbsize bytes) in the specified buffer ``boot''
  * Returns a pointer to the disklabel portion of the bootarea.
  */
 static struct disklabel *
-makebootarea(boot, dp, f)
-	char *boot;
-	register struct disklabel *dp;
-	int f;
+makebootarea(char *boot, struct disklabel *dp, int f)
 {
 	struct disklabel *lp;
 	register char *p;
 	int b;
 #if NUMBOOT > 0
+	char *np;
 	char *dkbasename;
 	struct stat sb;
 #endif
@@ -567,6 +606,10 @@ makebootarea(boot, dp, f)
 	 * read them into the appropriate places in the boot area.
 	 */
 	if (!xxboot || !bootxx) {
+		np = namebuf;
+		dkbasename = np;
+		finddkbasename(dkbasename, np);
+/*
 		if (!xxboot) {
 			sprintf(boot0, "%s/boot1", _PATH_BOOTDIR);
 			xxboot = boot0;
@@ -577,6 +620,7 @@ makebootarea(boot, dp, f)
 			bootxx = boot1;
 		}
 #endif
+*/
 	}
 #ifdef DEBUG
 	if (debug)
@@ -615,17 +659,17 @@ makebootarea(boot, dp, f)
 		err(4, "%s", bootxx);
 	}
 #else
-	if (read(b, boot, (int) dp->d_bbsize) < 0)
+	if (read(b, boot, (int)dp->d_bbsize) < 0)
 		err(4, "%s", xxboot);
 	if (fstat(b, &sb) != 0) {
 		err(4, "%s", xxboot);
 	}
-	bootsize = (int) sb.st_size - dp->d_bbsize;
+	bootsize = (int)sb.st_size - dp->d_bbsize;
 	if (bootsize > 0) {
 		/* XXX assume d_secsize is a power of two */
 		//bootsize = (bootsize + dp->d_secsize - 1) & ~(dp->d_secsize - 1);
 		bootsize = roundup2(bootsize, dp->d_secsize);
-		bootbuf = (char*) malloc((size_t) bootsize);
+		bootbuf = (char *)malloc((size_t) bootsize);
 		if (bootbuf == 0)
 			err(4, "%s", xxboot);
 		if (read(b, bootbuf, bootsize) < 0) {
@@ -640,17 +684,16 @@ makebootarea(boot, dp, f)
 	 * Make sure no part of the bootstrap is written in the area
 	 * reserved for the label.
 	 */
-	for (p = (char*) lp; p < (char*) lp + sizeof(struct disklabel); p++)
+	for (p = (char *)lp; p < (char *)lp + sizeof(struct disklabel); p++) {
 		if (*p) {
 			errx(2, "Bootstrap doesn't leave room for disk label");
 		}
+	}
 	return (lp);
 }
 
 static void
-display(f, lp)
-	FILE *f;
-	register struct disklabel *lp;
+display(FILE *f, struct disklabel *lp)
 {
 	register int i, j;
 	register struct partition *pp;
@@ -739,9 +782,7 @@ display(f, lp)
 }
 
 static int
-edit(lp, f)
-	struct disklabel *lp;
-	int f;
+edit(struct disklabel *lp, int f)
 {
 	register int c, fp;
 	struct disklabel label;
@@ -791,7 +832,7 @@ editit(void)
 {
 	register int pid, xpid;
 	int stat, retval;
-	register char *ed;
+	const char *ed;
 	sigset_t set, oset;
 
 	sigemptyset(&set);
@@ -811,11 +852,11 @@ editit(void)
 		sigprocmask(SIG_SETMASK, &oset, NULL);
 		setgid(getgid());
 		setuid(getuid());
-		if ((ed = getenv("EDITOR")) == (char*) 0)
+		if ((ed = getenv("EDITOR")) == (char *)0)
 			ed = DEFEDITOR;
 		retval = execlp(ed, ed, tmpfil, (void *)0);
 		if (retval == -1) {
-		  err(1, "%s", ed);
+			err(1, "%s", ed);
 		}
 	}
 	while ((xpid = wait(&stat)) >= 0)
@@ -826,8 +867,7 @@ editit(void)
 }
 
 static char *
-skip(cp)
-	register char *cp;
+skip(char *cp)
 {
 	while (*cp != '\0' && isspace(*cp))
 		cp++;
@@ -837,8 +877,7 @@ skip(cp)
 }
 
 static char *
-word(cp)
-	register char *cp;
+word(char *cp)
 {
 	register char c;
 
@@ -858,7 +897,7 @@ word(cp)
 		return (1); 		                                            \
 	} else { 				                                            \
 		cp = tp, tp = word(cp);                                         \
-		(n) = atoi(cp);                                                 \
+		(n) =  strtoul(cp, NULL, 10);                                   \
 	} 						                                            \
 } while (0)
 
@@ -869,10 +908,12 @@ word(cp)
 		fprintf(stderr, "line %d: too few numeric fields\n", lineno);   \
 		return (1);                                                     \
 	} else {                                                            \
-		char *tmp;                                                      \
+		char *tmp = NULL;                                               \
 		cp = tp, tp = word(cp);                                         \
-		(n) = atoi(cp);                                                 \
-		if (tmp) (w) = *tmp;                                            \
+		(n) = strtoul(cp, &tmp, 10);                                    \
+		if (tmp) {														\
+			(w) = *tmp;                                            		\
+		}																\
 	}                                                                   \
 } while (0)
 
@@ -882,17 +923,16 @@ word(cp)
  * and fill in lp.
  */
 static int
-getasciilabel(f, lp)
-	FILE	*f;
-	register struct disklabel *lp;
+getasciilabel(FILE *f, struct disklabel *lp)
 {
 	const char *const *cpp, *s; 
     register char *cp;
-	register struct partition *pp;
-	char *tp, line[BUFSIZ];
+	char line[BUFSIZ];
+	const char *tp;
 	int v, lineno = 0, errors = 0;
 	u_int part;
 
+	cp = NULL;
 	lp->d_bbsize = BBSIZE; /* XXX */
 	lp->d_sbsize = SBSIZE; /* XXX */
 	while (fgets(line, sizeof(line) - 1, f)) {
@@ -1099,12 +1139,9 @@ getasciilabel(f, lp)
  * Return 0 on success, 1 on failure.
  */
 static int
-getasciipartspec(tp, lp, part, lineno)
-	char *tp;
-	struct disklabel *lp;
-	int part, lineno;
+getasciipartspec(char *tp, struct disklabel *lp, int part, int lineno)
 {
-	struct partition *pp;
+	register struct partition *pp;
 	char *cp, *endp;
 	const char *const *cpp;
 	u_long v;
@@ -1181,8 +1218,7 @@ getasciipartspec(tp, lp, part, lineno)
  * derived fields according to supplied values.
  */
 static int
-checklabel(lp)
-	register struct disklabel *lp;
+checklabel(struct disklabel *lp)
 {
 	register struct partition *pp, *pp2;
 	int i, j, errors = 0;
@@ -1510,8 +1546,7 @@ checklabel(lp)
  * clobber bootstrap code.
  */
 static void
-setbootflag(lp)
-	register struct disklabel *lp;
+setbootflag(struct disklabel *lp)
 {
 	register struct partition *pp;
 	int i, errors = 0;

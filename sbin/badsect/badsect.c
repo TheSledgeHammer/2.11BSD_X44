@@ -62,7 +62,6 @@ static char sccsid[] = "@(#)badsect.c	8.2 (Berkeley) 5/4/95";
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
-//#include <ufs/ffs/ffs_extern.h>
 
 #include <dirent.h>
 #include <fcntl.h>

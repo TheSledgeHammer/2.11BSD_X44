@@ -497,7 +497,7 @@ dump_ccd(int argc, char **argv, int action)
 	int i, error, numccd, numconfiged = 0;
 	kvm_t *kd;
 
-    i = 0;
+	i = 0;
 	memset(errbuf, 0, sizeof(errbuf));
 
 	(void)setegid(egid);
