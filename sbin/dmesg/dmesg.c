@@ -32,13 +32,17 @@
  */
 
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1991, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)dmesg.c	8.1 (Berkeley) 6/5/93";
+#endif
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -56,8 +60,8 @@ static char sccsid[] = "@(#)dmesg.c	8.1 (Berkeley) 6/5/93";
 
 struct nlist nl[] = {
 #define	X_MSGBUF	0
-	{ "_msgbufp" },
-	{ NULL },
+		{ "_msgbufp" },
+		{ NULL },
 };
 
 void usage(void);
@@ -66,9 +70,7 @@ void usage(void);
 	kvm_read(kd, addr, &var, sizeof(var)) != sizeof(var)
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	register int ch, newl, skip;
 	register char *p, *ep;
@@ -151,7 +153,7 @@ main(argc, argv)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr, "usage: dmesg [-M core] [-N system]\n", getprogname());
 	exit(1);

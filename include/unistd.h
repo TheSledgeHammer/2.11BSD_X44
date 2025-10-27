@@ -191,7 +191,7 @@ int	 			exect(const char *, char * const *, char * const *);
 int	 			execvpe(const char *, char * const *, char * const *);
 int	 			fchdir(int);
 int	 			fchown(int, int, int);
-int             fchroot(int);
+int             		fchroot(int);
 int	 			fsync(int);
 int	 			ftruncate(int, off_t);
 int	 			getdomainname(char *, size_t);
