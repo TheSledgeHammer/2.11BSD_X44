@@ -48,6 +48,7 @@ static char sccsid[] = "@(#)dmesg.c	8.1 (Berkeley) 6/5/93";
 #include <sys/cdefs.h>
 #include <sys/msgbuf.h>
 
+#include <err.h>
 #include <fcntl.h>
 #include <kvm.h>
 #include <limits.h>
@@ -155,6 +156,6 @@ main(int argc, char *argv[])
 void
 usage(void)
 {
-	(void)fprintf(stderr, "usage: dmesg [-M core] [-N system]\n", getprogname());
+	(void)fprintf(stderr, "usage: dmesg [-M core] [-N system]\n");
 	exit(1);
 }
