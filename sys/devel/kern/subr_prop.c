@@ -49,7 +49,6 @@ int propdebug = 0;
 #define	DPRINTF(v, t)
 #endif
 
-#define M_PROP 93
 //MALLOC_DEFINE(M_PROP, "prop", "Kernel properties structures");
 
 /* 
@@ -594,7 +593,7 @@ propdb_copy(propdb_t db, opaque_t source, opaque_t dest, int wait)
 }
 
 int
-propdb_obj_type(opaque_t obj)
+propdb_type(opaque_t obj)
 {
     struct kdbprop *kp;
 
@@ -603,43 +602,4 @@ propdb_obj_type(opaque_t obj)
         return (PROP_UNKNOWN);
     }
     return (kp->kp_type);
-}
-
-void
-propdb_add(propdb_t db, opaque_t obj, char *name, void *val, size_t len, int type)
-{
-	int ret;
-
-	ret = propdb_set(db, obj, name, val, len, &type, M_NOWAIT);
-    if (ret) {
-        printf("propdb_add: successful \n");
-        return;
-    }
-    printf("propdb_add: unsucessful \n");
-}
-
-void
-propdb_remove(propdb_t db, opaque_t obj, char *name)
-{
-    int ret;
-
-    ret = propdb_delete(db, obj, name);
-    if (ret != 0) {
-        printf("propdb_delete: successful \n");
-        return;
-    }
-    printf("propdb_delete: unsucessful \n");
-}
-
-void
-propdb_lookup(propdb_t db, opaque_t obj, char *name, void *val, size_t len, int type)
-{
-	size_t ret;
-
-	ret = propdb_get(db, obj, name, val, len, type);
-	if ((ret == len) && (propdb_obj_type(val) == type)) {
-		printf("propdb_lookup: successful \n");
-		return;
-	}
-	printf("propdb_lookup: unsucessful \n");
 }

@@ -108,3 +108,23 @@ prop_object_release(opaque_t obj)
 		prop_object_release_emergency(obj);
 	}
 }
+
+
+prop_object_t
+prop_object_iterator_next(prop_object_iterator_t pi)
+{
+	return ((*pi->pi_next_object)(pi));
+}
+
+void
+prop_object_iterator_reset(prop_object_iterator_t pi)
+{
+	(*pi->pi_reset)(pi);
+}
+
+void
+prop_object_iterator_release(prop_object_iterator_t pi)
+{
+	prop_object_release(pi->pi_obj);
+	_PROP_FREE(pi, M_TEMP);
+}

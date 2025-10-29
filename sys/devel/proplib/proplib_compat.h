@@ -27,8 +27,8 @@
  *
  */
 
-#ifndef _PROPLIB_PROPLIB_COMPAT_H_
-#define _PROPLIB_PROPLIB_COMPAT_H_
+#ifndef _PROPLIB_COMPAT_H_
+#define _PROPLIB_COMPAT_H_
 
 /* prop type names */
 #define PROP_NAME_BOOL					"PROP_BOOL"
@@ -37,6 +37,7 @@
 #define	PROP_NAME_DATA					"PROP_DATA"
 #define PROP_NAME_DICTIONARY			"PROP_DICTIONARY"
 #define PROP_NAME_DICT_KEYSYM			"PROP_DICT_KEYSYM"
+#define PROP_NAME_SYMBOL				"PROP_SYMBOL"
 #define PROP_NAME_ARRAY					"PROP_ARRAY"
 
 /* prop types */
@@ -45,9 +46,10 @@
 #define	PROP_TYPE_NUMBER				PROP_NUMBER
 #define	PROP_TYPE_STRING				PROP_STRING
 #define	PROP_TYPE_DATA					PROP_DATA
-#define PROP_TYPE_DICTIONARY			PROP_DICTIONARY
-#define PROP_TYPE_DICT_KEYSYM			PROP_DICT_KEYSYM
 #define PROP_TYPE_ARRAY					PROP_ARRAY
+#define PROP_TYPE_DICTIONARY			0x070000000
+#define PROP_TYPE_DICT_KEYSYM			0x080000000
+#define PROP_TYPE_SYMBOL				0x090000000
 
 /* prop tags */
 #define PROP_TAG_TYPE_START				0
@@ -55,10 +57,10 @@
 #define PROP_TAG_TYPE_EITHER			2
 
 /* prop malloc types */
-#define M_PROP_DATA						96
-#define M_PROP_DICT						97
-#define M_PROP_STRING					98
-#define M_PROP_ARRAY					99
+#define M_PROP_DATA						M_PROP
+#define M_PROP_DICT						M_PROP
+#define M_PROP_STRING					M_PROP
+#define M_PROP_ARRAY					M_PROP
 
 #define	_PROP_ASSERT(x)					KASSERT(x)
 
@@ -74,6 +76,7 @@
 #define	_PROP_RWLOCK_WRLOCK(x)			//rw_enter(&(x), RW_WRITER)
 #define	_PROP_RWLOCK_UNLOCK(x)			//rw_exit(&(x))
 
+typedef void 							*prop_object_t;
 typedef struct prop_array				*prop_array_t;
 typedef struct prop_bool				*prop_bool_t;
 typedef struct prop_number				*prop_number_t;
@@ -148,4 +151,9 @@ struct prop_dictionary {
 	u_int32_t				pd_version;
 };
 
-#endif /* _PROPLIB_PROPLIB_COMPAT_H_ */
+struct prop_symbol {
+	propdb_t				ps_db;
+	struct prop_object		ps_obj;
+};
+
+#endif /* _PROPLIB_COMPAT_H_ */
