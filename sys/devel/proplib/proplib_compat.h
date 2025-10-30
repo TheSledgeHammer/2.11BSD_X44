@@ -76,7 +76,6 @@
 #define	_PROP_RWLOCK_WRLOCK(x)			//rw_enter(&(x), RW_WRITER)
 #define	_PROP_RWLOCK_UNLOCK(x)			//rw_exit(&(x))
 
-typedef void 							*prop_object_t;
 typedef struct prop_array				*prop_array_t;
 typedef struct prop_bool				*prop_bool_t;
 typedef struct prop_number				*prop_number_t;

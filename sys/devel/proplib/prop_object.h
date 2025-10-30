@@ -35,10 +35,10 @@ struct prop_object {
 };
 
 struct prop_object_iterator {
-	prop_object_t	(*pi_next_object)(void *);
-	void			(*pi_reset)(void *);
-	prop_object_t	pi_obj;
-	uint32_t		pi_version;
+	opaque_t	(*pi_next_object)(void *);
+	void		(*pi_reset)(void *);
+	opaque_t	pi_obj;
+	uint32_t	pi_version;
 };
 
 typedef struct prop_object_iterator *prop_object_iterator_t;
@@ -47,7 +47,7 @@ int	 	 prop_object_type(opaque_t);
 void 	 prop_object_retain(opaque_t);
 void 	 prop_object_release(opaque_t);
 
-prop_object_t prop_object_iterator_next(prop_object_iterator_t);
+opaque_t prop_object_iterator_next(prop_object_iterator_t);
 void prop_object_iterator_reset(prop_object_iterator_t);
 void prop_object_iterator_release(prop_object_iterator_t);
 

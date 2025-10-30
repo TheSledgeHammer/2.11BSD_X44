@@ -53,7 +53,7 @@ struct ksyms_symtab {
 	int 						sd_symsize;		/* Size in bytes of symbol table */
 	int 						sd_strsize;		/* Size of string table */
 	int 						sd_nglob;		/* Number of global symbols */
-	bool 						sd_gone;		/* dead but around for open() */
+	bool_t 						sd_gone;		/* dead but around for open() */
 	void 						*sd_ctfstart;	/* Address of CTF contents */
 	int 						sd_ctfsize;		/* Size in bytes of CTF contents */
 	uint32_t 					*sd_nmap;		/* Name map for sorted symbols */
@@ -101,6 +101,7 @@ extern int 			ksyms_ctfsz;	/* this is not currently used by savecore(8) */
 extern struct ksyms_symhead 	ksyms_symtabs;
 
 static void ksyms_sizes_calc(void);
+
 #endif	/* _KSYMS_PRIVATE */
 #if defined(_KERNEL)
 /*

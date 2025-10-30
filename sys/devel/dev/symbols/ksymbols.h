@@ -36,11 +36,23 @@
 #include <sys/exec_elf.h>
 #include <sys/exec_xcoff.h>
 
+enum ksymbol_types {
+	KSYM_AOUT,
+	KSYM_COFF,
+	KSYM_ECOFF,
+	KSYM_ELF32,
+	KSYM_ELF64,
+	KSYM_MACHO,
+	KSYM_PE,
+	KSYM_XCOFF32,
+	KSYM_XCOFF64,
+};
+
 typedef struct ksymbol_header 	ksymbol_header_t;
 typedef struct ksymbol 			ksymbol_t;
 
 /*
- * Kernel Symbol Headers
+ * Kernel Symbol Header
  */
 struct ksymbol_header {
 	union aout_hdr {
@@ -94,13 +106,7 @@ struct ksymbol {
 	struct exec 		k_aout;
 	struct coff_symtab 	k_coff;
 	struct ecoff_symhdr	k_ecoff;
-	Elf_Sym			k_elf;
-	xcoff_syms		k_xcoff;
+	Elf_Sym				k_elf;
+	xcoff_syms			k_xcoff;
 };
-
-struct ksymbols {
-	ksymbol_t 		*k_symtab;
-	ksymbol_header_t 	*k_symhdr;
-};
-
 #endif /* SYS_KSYMBOLS_H_ */

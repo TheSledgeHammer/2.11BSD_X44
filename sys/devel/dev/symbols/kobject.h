@@ -90,7 +90,7 @@ typedef enum kobjtype {
 	KT_MEMORY
 } kobjtype_t;
 
-/* kobj sections */
+/* sections */
 typedef struct {
 	progent_t			*ko_progtab;
 	relaent_t			*ko_relatab;
@@ -100,7 +100,22 @@ typedef struct {
 	int					ko_nprogtab;
 } kobject_section_t;
 
-struct ksymbol_segment_t;
+/*
+ * segments (If applicable)
+ */
+typedef struct {
+	/* segment address */
+	caddr_t				ko_text_address;	/* Address of text segment */
+	caddr_t				ko_data_address;	/* Address of data segment */
+	caddr_t				ko_stack_address;	/* Address of stack segment */
+	caddr_t				ko_rodata_address;	/* Address of rodata segment */
+	/* segment size */
+	size_t				ko_text_size;		/* Size of text segment */
+	size_t				ko_data_size;		/* Size of data/bss segment */
+	size_t				ko_stack_size;		/* Size of stack(bss) segment */
+	size_t				ko_rodata_size;		/* Size of rodata segment */
+} kobject_segment_t;
+
 struct ksymbol_string_t;
 
 typedef struct {
@@ -108,49 +123,13 @@ typedef struct {
 	kobjtype_t			ko_type;
 	void				*ko_source;
 	ssize_t				ko_memsize;
-	ksymbol_segment_t 	*ko_segs;
-	ksymbol_string_t 	*ko_strs;
-	ksymbol_header_t 	*ko_hdr;
+	kobject_segment_t 	*ko_segs;
 	kobject_section_t  	*ko_sects;
+	ksymbol_header_t 	*ko_hdr;
 	ksymbol_t 			*ko_symtab;
 	size_t				ko_symcnt;			/* Number of symbols */
 	bool				ko_ksyms;
 	bool				ko_loaded;
 } kobject_t;
-
-/*
- * Kernel Symbol Segment (If applicable)
- */
-typedef struct {
-	/* segment address */
-	caddr_t		ks_text_address;	/* Address of text segment */
-	caddr_t		ks_data_address;	/* Address of data segment */
-	caddr_t		ks_stack_address;	/* Address of stack segment */
-	caddr_t		ks_rodata_address;	/* Address of rodata segment */
-	/* segment size */
-	size_t		ks_text_size;		/* Size of text segment */
-	size_t		ks_data_size;		/* Size of data/bss segment */
-	size_t		ks_stack_size;		/* Size of stack(bss) segment */
-	size_t		ks_rodata_size;		/* Size of rodata segment */
-} ksymbol_segment_t;
-
-/*
- * Kernel Symbol String (If applicable)
- */
-typedef struct {
-	char		*ks_strtab;			/* String table */
-	char 		*ks_strstart;		/* Address of corresponding string table */
-	char		*ks_shstrtab;		/* Section name string table */
-	size_t		ks_strtabsz;		/* Number of bytes in string table */
-	size_t		ks_shstrtabsz;		/* Number of bytes in scn str table */
-} ksymbol_string_t;
-
-/*
- * Kernel Symbol CTF (If applicable)
- */
-typedef struct {
-	void 		*ks_ctfstart;		/* Address of CTF contents */
-	int 		ks_ctfsize;			/* Size in bytes of CTF contents */
-} ksymbol_ctf_t;
 
 #endif /* SYS_KOBJECT_H_ */

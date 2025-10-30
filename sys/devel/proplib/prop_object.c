@@ -29,7 +29,7 @@ prop_object_type(opaque_t obj)
 	struct prop_object *po;
 
 	po = (struct prop_object *)obj;
-	if (obj == NULL) {
+	if (obj == NULL || propdb_type(obj)) {
 		return (PROP_TYPE_UNKNOWN);
 	}
 	return (po->po_type->pot_type);
@@ -110,7 +110,7 @@ prop_object_release(opaque_t obj)
 }
 
 
-prop_object_t
+opaque_t
 prop_object_iterator_next(prop_object_iterator_t pi)
 {
 	return ((*pi->pi_next_object)(pi));

@@ -127,6 +127,11 @@ int 			ksyms_symsz;
 int 			ksyms_strsz;
 int 			ksyms_ctfsz;
 struct ksyms_symhead 	ksyms_symtabs;
+
+static void symtab_add(struct ksyms_symtab *tab, const char *name,
+		void *symstart, size_t symsize, void *strstart, size_t strsize,
+		void *ctfstart, size_t ctfsize, bool_t, int nsyms, uint32_t *nmap);
+static void symbtab_pack(struct ksyms_symtab *tab, void *newstart, int nsyms);
 static void ksyms_hdr_init(const void *hdraddr);
 
 /* symtab and note name */
@@ -153,7 +158,8 @@ ksyms_verify(const void *symstart, const void *strstart)
   * Finds a certain symbol name in a certain symbol table.
   */
 static Elf_Sym*
-findsym(const char *name, struct ksyms_symtab *table, int type) {
+findsym(const char *name, struct ksyms_symtab *table, int type)
+{
 	Elf_Sym *sym, *maxsym;
 	int low, mid, high, nglob;
 	char *str, *cmp;
@@ -256,53 +262,39 @@ addsymtab_compar(const void *a, const void *b)
 }
 
 static void
-addsymtab(const char *name, void *symstart, size_t symsize,
-	  void *strstart, size_t strsize, struct ksyms_symtab *tab,
-	  void *newstart, void *ctfstart, size_t ctfsize, uint32_t *nmap)
+symtab_add(struct ksyms_symtab *tab, const char *name,
+		void *symstart, size_t symsize, void *strstart, size_t strsize,
+		void *ctfstart, size_t ctfsize, bool_t gone, int nsyms, uint32_t *nmap)
+{
+	tab->sd_name = name;
+	tab->sd_symstart = symstart;
+	tab->sd_minsym = UINTPTR_MAX;
+	tab->sd_maxsym = 0;
+	tab->sd_usroffset = 0;
+	tab->sd_symsize = symsize;
+	tab->sd_nglob = 0;
+	tab->sd_gone = gone;
+	tab->sd_nmap = nmap;
+	tab->sd_nmapsize = nsyms;
+	tab->sd_strstart = strstart;
+	tab->sd_strsize = strsize;
+	tab->sd_ctfstart = ctfstart;
+	tab->sd_ctfsize = ctfsize;
+}
+
+static void
+symbtab_pack(struct ksyms_symtab *tab, void *newstart, int nsyms)
 {
 	Elf_Sym *sym, *nsym, ts;
 	int i, j, n, nglob;
 	char *str;
-	int nsyms = symsize / sizeof(Elf_Sym);
-
-	/* Sanity check for pre-allocated map table used during startup. */
-	if ((nmap == ksyms_nmap) && (nsyms >= KSYMS_MAX_ID)) {
-		printf("kern_ksyms: ERROR %d > %d, increase KSYMS_MAX_ID\n",
-		    nsyms, KSYMS_MAX_ID);
-
-		/* truncate for now */
-		nsyms = KSYMS_MAX_ID - 1;
-	}
-
-	tab->sd_symstart = symstart;
-	tab->sd_symsize = symsize;
-	tab->sd_strstart = strstart;
-	tab->sd_strsize = strsize;
-	tab->sd_name = name;
-	tab->sd_minsym = UINTPTR_MAX;
-	tab->sd_maxsym = 0;
-	tab->sd_usroffset = 0;
-	tab->sd_gone = FALSE;
-	tab->sd_ctfstart = ctfstart;
-	tab->sd_ctfsize = ctfsize;
-	tab->sd_nmap = nmap;
-	tab->sd_nmapsize = nsyms;
-
-#ifdef KSYMS_DEBUG
-	printf("newstart %p sym %p ksyms_symsz %zu str %p strsz %zu send %p\n",
-	    newstart, symstart, symsize, strstart, strsize,
-	    tab->sd_strstart + tab->sd_strsize);
-#endif
-
-	if (nmap) {
-		memset(nmap, 0, nsyms * sizeof(uint32_t));
-	}
 
 	/* Pack symbol table by removing all file name references. */
 	sym = tab->sd_symstart;
-	nsym = (Elf_Sym*) newstart;
+	nsym = (Elf_Sym *)newstart;
 	str = tab->sd_strstart;
 	nglob = 0;
+
 	for (i = n = 0; i < nsyms; i++) {
 
 		/* Save symbol. Set it as an absolute offset */
@@ -339,8 +331,41 @@ addsymtab(const char *name, void *symstart, size_t symsize,
 
 	addsymtab_strstart = str;
 	qsort(nsym, n, sizeof(Elf_Sym), addsymtab_compar);
-	if (nsym != 0)
+	if (nsym != 0) {
 		panic("addsymtab");
+	}
+}
+
+static void
+addsymtab(const char *name, void *symstart, size_t symsize,
+	  void *strstart, size_t strsize, struct ksyms_symtab *tab,
+	  void *newstart, void *ctfstart, size_t ctfsize, uint32_t *nmap)
+{
+	int nsyms = (symsize / sizeof(Elf_Sym));
+
+	/* Sanity check for pre-allocated map table used during startup. */
+	if ((nmap == ksyms_nmap) && (nsyms >= KSYMS_MAX_ID)) {
+		printf("kern_ksyms: ERROR %d > %d, increase KSYMS_MAX_ID\n",
+		    nsyms, KSYMS_MAX_ID);
+
+		/* truncate for now */
+		nsyms = KSYMS_MAX_ID - 1;
+	}
+
+	symtab_add(tab, name, symstart, symsize, strstart, strsize, ctfstart, ctfsize, FALSE, nsyms, nmap);
+
+#ifdef KSYMS_DEBUG
+	printf("newstart %p sym %p ksyms_symsz %zu str %p strsz %zu send %p\n",
+	    newstart, symstart, symsize, strstart, strsize,
+	    tab->sd_strstart + tab->sd_strsize);
+#endif
+
+	if (nmap) {
+		memset(nmap, 0, nsyms * sizeof(uint32_t));
+	}
+
+	/* Pack symbol table by removing all file name references. */
+	symbtab_pack(tab, newstart, nsyms);
 
 	/* ksymsread() is unlocked, so membar. */
 	TAILQ_INSERT_TAIL(&ksyms_symtabs, tab, sd_queue);
