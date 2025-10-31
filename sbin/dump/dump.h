@@ -109,15 +109,14 @@ void	timeest(void);
 time_t	unctime(char *str);
 
 /* mapping rouintes */
-struct	dinode;
-long	blockest(struct dinode *dp);
+long	blockest(union dinode *dp);
 int		mapfiles(ino_t maxino, long *tapesize);
 int		mapdirs(ino_t maxino, long *tapesize);
 
 /* file dumping routines */
 void	blksout(ufs2_daddr_t *blkp, int frags, ino_t ino);
 void	bread(ufs2_daddr_t blkno, char *buf, int size);
-void	dumpino(struct dinode *dp, ino_t ino);
+void	dumpino(union dinode *dp, ino_t ino);
 void	dumpmap(char *map, int type, ino_t ino);
 void	writeheader(ino_t ino);
 
@@ -176,7 +175,7 @@ struct dthead;
 SLIST_HEAD(dthead, dumptime);
 struct dumptime {
 	struct	dumpdates dt_value;
-	SLIST_ENTRY(duptime) dt_list;
+	SLIST_ENTRY(dumptime) dt_list;
 };
 extern struct dthead dthead; /* head of the list version */
 int	nddates;		/* number of records (might be zero) */

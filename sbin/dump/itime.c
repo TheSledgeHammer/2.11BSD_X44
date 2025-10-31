@@ -97,8 +97,7 @@ initdumptimes(void)
 }
 
 static void
-readdumptimes(df)
-	FILE *df;
+readdumptimes(FILE *df)
 {
 	register int i;
 	register struct	dumptime *dtwalk;
@@ -175,7 +174,7 @@ putdumptime(void)
 	free((char *)ddatev);
 	ddatev = 0;
 	nddates = 0;
-	dthead = 0;
+//	dthead = (struct dthead)0;
 	ddates_in = 0;
 	readdumptimes(df);
 	if (fseek(df, 0L, 0) < 0)
@@ -208,15 +207,13 @@ putdumptime(void)
 		quit("%s: %s\n", dumpdates, strerror(errno));
 	if (ftruncate(fd, ftell(df)))
 		quit("ftruncate (%s): %s\n", dumpdates, strerror(errno));
-	(void) fclose(df);
+	(void)fclose(df);
 	msg("level %c dump on %s", level,
-		spcl.c_date == 0 ? "the epoch\n" : ctime(&spcl.c_date));
+		spcl.c_date == 0 ? "the epoch\n" : ctime((time_t *)&spcl.c_date));
 }
 
 static void
-dumprecout(file, what)
-	FILE *file;
-	struct dumpdates *what;
+dumprecout(FILE *file, struct dumpdates *what)
 {
 
 	if (fprintf(file, DUMPOUTFMT,
@@ -229,9 +226,7 @@ dumprecout(file, what)
 int	recno;
 
 static int
-getrecord(df, ddatep)
-	FILE *df;
-	struct dumpdates *ddatep;
+getrecord(FILE *df, struct dumpdates *ddatep)
 {
 	char tbuf[BUFSIZ];
 
@@ -251,9 +246,7 @@ getrecord(df, ddatep)
 }
 
 static int
-makedumpdate(ddp, tbuf)
-	struct dumpdates *ddp;
-	char *tbuf;
+makedumpdate(struct dumpdates *ddp, char *tbuf)
 {
 	char un_buf[128];
 

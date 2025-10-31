@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)optr.c	8.2 (Berkeley) 1/6/94";
@@ -76,8 +77,7 @@ static	int timeout;
 static	char *attnmessage;		/* attention message */
 
 int
-query(question)
-	char	*question;
+query(char *question)
 {
 	char	replybuffer[64];
 	int	back, errcount;
@@ -150,8 +150,7 @@ alarmcatch(void)
  *	Here if an inquisitive operator interrupts the dump program
  */
 void
-interrupt(signo)
-	int signo;
+interrupt(int signo)
 {
 	msg("Interrupt received.\n");
 	if (query("Do you want to abort dump?"))
@@ -189,8 +188,7 @@ struct tm *localclock;
  *	that the process control groups are not messed up
  */
 void
-broadcast(message)
-	char	*message;
+broadcast(char *message)
 {
 	time_t		clock;
 	FILE	*f_utmp;
@@ -245,8 +243,7 @@ broadcast(message)
 }
 
 static void
-sendmes(tty, message)
-	char *tty, *message;
+sendmes(char *tty, char *message)
 {
 	char t[50], buf[BUFSIZ];
 	register char *cp;
@@ -358,8 +355,7 @@ quit(const char *fmt, ...)
  */
 
 struct fstab *
-allocfsent(fs)
-	register struct fstab *fs;
+allocfsent(struct fstab *fs)
 {
 	register struct fstab *new;
 
@@ -418,8 +414,7 @@ getfstab(void)
  * The file name can omit the leading '/'.
  */
 struct fstab *
-fstabsearch(key)
-	char *key;
+fstabsearch(char *key)
 {
 	register struct pfstab *pf;
 	register struct fstab *fs;
@@ -449,8 +444,7 @@ fstabsearch(key)
  *	Tell the operator what to do
  */
 void
-lastdump(arg)
-	char	arg;	/* w ==> just what to do; W ==> most recent dumps */
+lastdump(char arg /* w ==> just what to do; W ==> most recent dumps */)
 {
 	register int i;
 	register struct fstab *dt;
@@ -492,8 +486,7 @@ lastdump(arg)
 }
 
 int
-datesort(a1, a2)
-	const void *a1, *a2;
+datesort(const void *a1, const void *a2)
 {
 	struct dumpdates *d1 = *(struct dumpdates **)a1;
 	struct dumpdates *d2 = *(struct dumpdates **)a2;

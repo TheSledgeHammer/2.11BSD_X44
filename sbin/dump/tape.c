@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)tape.c	8.4 (Berkeley) 5/1/95";
@@ -156,9 +157,7 @@ alloctape(void)
 }
 
 void
-writerec(dp, isspcl)
-	char *dp;
-	int isspcl;
+writerec(char *dp, int isspcl)
 {
 
 	slp->req[trecno].dblk = (ufs2_daddr_t )0;
@@ -173,9 +172,7 @@ writerec(dp, isspcl)
 }
 
 void
-dumpblock(blkno, size)
-	ufs2_daddr_t  blkno;
-	int size;
+dumpblock(ufs2_daddr_t blkno, int size)
 {
 	int avail, tpblks, dblkno;
 
@@ -196,8 +193,7 @@ dumpblock(blkno, size)
 int	nogripe = 0;
 
 void
-tperror(signo)
-	int signo;
+tperror(int signo)
 {
 
 	if (pipeout) {
@@ -218,8 +214,7 @@ tperror(signo)
 }
 
 void
-sigpipe(signo)
-	int signo;
+sigpipe(int signo)
 {
 
 	quit("Broken pipe\n");
@@ -488,8 +483,7 @@ rollforward(void)
  * everything continues as if nothing had happened.
  */
 void
-startnewtape(top)
-	int top;
+startnewtape(int top)
 {
 	int	parentpid;
 	int	childpid;
@@ -623,8 +617,7 @@ restore_check_point:
 }
 
 void
-dumpabort(signo)
-	int signo;
+dumpabort(int signo)
 {
 
 	if (master != 0 && master != getpid())
@@ -655,8 +648,7 @@ Exit(status)
  * proceed - handler for SIGUSR2, used to synchronize IO between the slaves.
  */
 void
-proceed(signo)
-	int signo;
+proceed(int signo)
 {
 
 	if (ready)
@@ -665,7 +657,7 @@ proceed(signo)
 }
 
 void
-enslave()
+enslave(void)
 {
 	int cmd[2];
 	register int i, j;
@@ -709,7 +701,7 @@ enslave()
 }
 
 void
-killall()
+killall(void)
 {
 	register int i;
 
@@ -726,9 +718,7 @@ killall()
  * get the lock back for the next cycle by swapping descriptors.
  */
 static void
-doslave(cmd, slave_number)
-	register int cmd;
-        int slave_number;
+doslave(int cmd, int slave_number)
 {
 	register int nread;
 	int nextslave, size, wrote, eot_count;
@@ -838,10 +828,7 @@ doslave(cmd, slave_number)
  * loop until the count is satisfied (or error).
  */
 static int
-atomic(func, fd, buf, count)
-	int (*func)(), fd;
-	char *buf;
-	int count;
+atomic(int (*func)(int, char *, int), int fd, char *buf, int count)
 {
 	int got, need = count;
 
