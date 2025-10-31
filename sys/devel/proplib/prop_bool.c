@@ -20,6 +20,10 @@ struct prop_bool {
 static struct prop_bool _prop_bool_true;
 static struct prop_bool _prop_bool_false;
 
+struct prop_object_type _prop_object_type_bool = {
+
+};
+
 bool_t
 prop_object_is_bool(prop_bool_t pb)
 {

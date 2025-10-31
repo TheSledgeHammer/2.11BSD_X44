@@ -4,8 +4,11 @@
  *  Created on: 18 Mar 2023
  *      Author: marti
  */
+#include <sys/cdefs.h>
+#include <sys/stddef.h>
 #include <sys/atomic.h>
 #include <sys/malloc.h>
+
 #include <devel/sys/properties.h>
 
 #include "proplib_compat.h"
@@ -21,18 +24,6 @@ prop_object_init(struct prop_object *po, const struct prop_object_type *pot)
 {
 	po->po_type = pot;
 	po->po_refcnt = 1;
-}
-
-int
-prop_object_type(opaque_t obj)
-{
-	struct prop_object *po;
-
-	po = (struct prop_object *)obj;
-	if (obj == NULL || propdb_type(obj)) {
-		return (PROP_TYPE_UNKNOWN);
-	}
-	return (po->po_type->pot_type);
 }
 
 void
@@ -109,6 +100,17 @@ prop_object_release(opaque_t obj)
 	}
 }
 
+int
+prop_object_type(opaque_t obj)
+{
+	struct prop_object *po;
+
+	po = (struct prop_object *)obj;
+	if (obj == NULL || propdb_type(obj)) {
+		return (PROP_TYPE_UNKNOWN);
+	}
+	return (po->po_type->pot_type);
+}
 
 opaque_t
 prop_object_iterator_next(prop_object_iterator_t pi)
@@ -127,4 +129,91 @@ prop_object_iterator_release(prop_object_iterator_t pi)
 {
 	prop_object_release(pi->pi_obj);
 	_PROP_FREE(pi, M_TEMP);
+}
+
+/*
+ * propdb object
+ */
+
+struct propdb_object_type {
+	const char 	*pot_name;
+	uint32_t	pot_type;
+	int			(*pot_db_set)(opaque_t);
+	int			(*pot_db_get)(opaque_t);
+	int			(*pot_db_delete)(opaque_t);
+};
+
+struct propdb_object {
+	const struct propdb_object_type *po_type;
+	opaque_t 						po_obj;
+	uint32_t						po_refcnt;		/* reference count */
+};
+
+typedef struct propdb_object_type 	propdb_object_type_t;
+typedef struct propdb_object 		propdb_object_t;
+
+/* propdb */
+propdb_t propdb_object_create(opaque_t, struct prop_object *, const struct prop_object_type *);
+int		propdb_object_set(propdb_t, opaque_t, struct prop_object *, const struct prop_object_type *, void *, size_t);
+int		propdb_object_delete(propdb_t, opaque_t, struct prop_object *, struct prop_object_type *);
+size_t	propdb_object_get(propdb_t, opaque_t, struct prop_object *, struct prop_object_type *, void *, size_t);
+size_t 	propdb_object_objs(propdb_t, struct prop_object *, size_t);
+size_t 	propdb_object_list(propdb_t, struct prop_object *, struct prop_object_type *, size_t);
+int		propdb_object_copy(propdb_t, struct prop_object *, struct prop_object *);
+
+propdb_t
+propdb_object_create(opaque_t obj, struct prop_object *po, const struct prop_object_type *type)
+{
+	propdb_t db;
+
+	db = propdb_create(type->pot_name);
+	po->po_type = type;
+	po->po_obj = obj;
+	po->po_refcnt = 1;
+	return (db);
+}
+
+int
+propdb_object_set(propdb_t db, opaque_t obj, struct prop_object *po, const struct prop_object_type *type, void *val, size_t len)
+{
+	if ((obj != NULL) && (po != NULL)) {
+		return (propdb_set(db, obj, type->pot_name, val, len, type->pot_type, M_WAITOK));
+	}
+	return (-1);
+}
+
+int
+propdb_object_delete(propdb_t db, opaque_t obj, struct prop_object *po, struct prop_object_type *type)
+{
+	if ((obj != NULL) && (po != NULL)) {
+		return (propdb_delete(db, obj, type->pot_name));
+	}
+	return (-1);
+}
+
+size_t
+propdb_object_get(propdb_t db, opaque_t obj, struct prop_object *po, struct prop_object_type *type, void *val, size_t len)
+{
+	if ((obj != NULL) && (po != NULL)) {
+		return (propdb_get(db, obj, type->pot_name, val, len, type->pot_type));
+	}
+	return (-1);
+}
+
+size_t
+propdb_object_objs(propdb_t db, struct prop_object *po, size_t len)
+{
+	return (propdb_objs(db, &po->po_obj, len));
+}
+
+size_t
+propdb_object_list(propdb_t db, struct prop_object *po, struct prop_object_type *type, size_t len)
+{
+	return (propdb_list(db, po->po_obj, type->pot_name, len));
+}
+
+int
+propdb_object_copy(propdb_t db, struct prop_object *source, struct prop_object *dest)
+{
+	return (propdb_copy(db, source->po_obj, dest->po_obj, M_WAITOK));
 }

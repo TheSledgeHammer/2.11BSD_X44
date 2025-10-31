@@ -32,7 +32,9 @@
  */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)unctime.c	8.2 (Berkeley) 6/14/94";
+#endif
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -57,8 +59,7 @@ static char sccsid[] = "@(#)unctime.c	8.2 (Berkeley) 6/14/94";
 static	int lookup(char *, struct tm *);
 
 time_t
-unctime(str)
-	char *str;
+unctime(char *str)
 {
 	struct tm then;
 	char dbuf[26];
@@ -72,9 +73,7 @@ unctime(str)
 }
 
 static int
-lookup(str, then)
-	char *str;
-	struct tm *then;
+lookup(char *str, struct tm *then)
 {
 	str = strptime(str, "%a %b %e %H:%M:%S %Y", then);
 	if (str == NULL || (*str != '\n' && *str != '\0')) {
@@ -94,8 +93,7 @@ lookup(str, then)
 static	int lookup(char *);
 
 time_t
-unctime1(str)
-	char *str;
+unctime1(char *str)
 {
 	struct tm then;
 	char dbuf[26];
@@ -118,8 +116,7 @@ static char months[] =
 	"JanFebMarAprMayJunJulAugSepOctNovDec";
 
 static int
-lookup(str)
-	char *str;
+lookup(char *str)
 {
 	register char *cp, *cp2;
 	for (cp = months, cp2 = str; *cp != '\0'; cp += 3)

@@ -32,13 +32,17 @@
  */
 
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1983, 1992, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)dumpfs.c	8.5 (Berkeley) 4/29/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -76,9 +80,7 @@ void	pbits(void *, int);
 void	usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	register struct fstab *fs;
 	int ch, eval;
@@ -104,8 +106,7 @@ main(argc, argv)
 }
 
 int
-dumpfs(name)
-	char *name;
+dumpfs(char *name)
 {
 	int fd, c, i, j, k, size;
 
@@ -224,9 +225,7 @@ err:	if (fd != -1)
 };
 
 int
-dumpcg(name, fd, c)
-	char *name;
-	int fd, c;
+dumpcg(char *name, int fd, int c)
 {
 	off_t cur;
 	int i, j;
@@ -291,9 +290,7 @@ dumpcg(name, fd, c)
 };
 
 void
-pbits(vp, max)
-	register void *vp;
-	int max;
+pbits(void *vp, int max)
 {
 	register int i;
 	register char *p;
@@ -315,7 +312,7 @@ pbits(vp, max)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr, "usage: dumpfs filesys | device\n");
 	exit(1);
