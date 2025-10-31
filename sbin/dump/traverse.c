@@ -82,8 +82,7 @@ static	int searchdir(ino_t ino, ufs2_daddr_t blkno, long size, long filesize);
  * hence the estimate may be high.
  */
 long
-blockest(dp)
-	register union dinode *dp;
+blockest(union dinode *dp)
 {
 	long blkest, sizeest;
 
@@ -135,9 +134,7 @@ blockest(dp)
  * the directories in the filesystem.
  */
 int
-mapfiles(maxino, tapesize)
-	ino_t maxino;
-	long *tapesize;
+mapfiles(ino_t maxino, long *tapesize)
 {
 	register int mode;
 	register ino_t ino;
@@ -183,9 +180,7 @@ mapfiles(maxino, tapesize)
  * pass using this algorithm.
  */
 int
-mapdirs(maxino, tapesize)
-	ino_t maxino;
-	long *tapesize;
+mapdirs(ino_t maxino, long *tapesize)
 {
 	register union	dinode *dp;
 	register int i, isdir;
@@ -241,11 +236,7 @@ mapdirs(maxino, tapesize)
  * require the directory to be dumped.
  */
 static int
-dirindir(ino, blkno, ind_level, filesize)
-	ino_t ino;
-	ufs2_daddr_t blkno;
-	int ind_level;
-	long *filesize;
+dirindir(ino_t ino, ufs2_daddr_t blkno, int ind_level, long *filesize)
 {
 	int ret = 0;
 	register int i;
@@ -291,11 +282,7 @@ dirindir(ino, blkno, ind_level, filesize)
  * contains any subdirectories.
  */
 static int
-searchdir(ino, blkno, size, filesize)
-	ino_t ino;
-	ufs2_daddr_t  blkno;
-	register long size;
-	long filesize;
+searchdir(ino_t ino, ufs2_daddr_t blkno, long size, long filesize)
 {
 	register struct direct *dp;
 	register long loc, ret = 0;
@@ -341,9 +328,7 @@ searchdir(ino, blkno, size, filesize)
  * Dump the contents of an inode to tape.
  */
 void
-dumpino(dp, ino)
-	register union dinode *dp;
-	ino_t ino;
+dumpino(union dinode *dp, ino_t ino)
 {
 	int ind_level, cnt;
 	fsizeT size;
@@ -435,11 +420,7 @@ dumpino(dp, ino)
  * Read indirect blocks, and pass the data blocks to be dumped.
  */
 static void
-dmpindir(ino, blk, ind_level, size)
-	ino_t ino;
-	ufs2_daddr_t blk;
-	int ind_level;
-	fsizeT *size;
+dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
 {
 	union {
 		ufs1_daddr_t ufs1[MAXBSIZE / sizeof(ufs1_daddr_t)];
@@ -483,10 +464,7 @@ dmpindir(ino, blk, ind_level, size)
  * Collect up the data into tape record sized buffers and output them.
  */
 void
-blksout(blkp, frags, ino)
-	ufs2_daddr_t *blkp;
-	int frags;
-	ino_t ino;
+blksout(ufs2_daddr_t *blkp, int frags, ino_t ino)
 {
 	register ufs2_daddr_t *bp;
 	int i, j, count, blks, tbperdb;
@@ -520,10 +498,7 @@ blksout(blkp, frags, ino)
  * Dump a map to the tape.
  */
 void
-dumpmap(map, type, ino)
-	char *map;
-	int type;
-	ino_t ino;
+dumpmap(char *map, int type, ino_t ino)
 {
 	register int i;
 	char *cp;
@@ -539,8 +514,7 @@ dumpmap(map, type, ino)
  * Write a header record to the dump tape.
  */
 void
-writeheader(ino)
-	ino_t ino;
+writeheader(ino_t ino)
 {
 	register long sum, cnt, *lp;
 
@@ -565,9 +539,7 @@ writeheader(ino)
 }
 
 union dinode *
-getino(inum, modep)
-	ino_t inum;
-	int *modep;
+getino(ino_t inum, int *modep)
 {
 	static daddr_t minino, maxino;
 	static caddr_t inoblock;
@@ -606,10 +578,7 @@ int	breaderrors = 0;
 #define	BREADEMAX 32
 
 void
-bread(blkno, buf, size)
-	ufs2_daddr_t blkno;
-	char *buf;
-	int size;	
+bread(ufs2_daddr_t blkno, char *buf, int size)	
 {
 	int cnt, i;
 	extern int errno;

@@ -187,6 +187,7 @@ extern union u_spcl {
 		int32_t	c_spare[24];	    /* reserved for future uses */
 	} s_spcl;
 } u_spcl;
+#define spcl 	u_spcl.s_spcl
 
 #define c_dinode		__c_ino.__uc_dinode
 #define c_mode			__c_ino.__uc_ino.__uc_mode
