@@ -819,11 +819,13 @@ set_ftime(char *fnm, time_t mtime, time_t atime, int frc, int slk)
 	/*
 	 * set the times
 	 */
+#ifdef notyet
 #if HAVE_LUTIMES
 	if (lutimes(fnm, tv) == 0)
 		return;
 	if (errno != ENOSYS)	/* XXX linux: lutimes is per-FS */
 		goto bad;
+#endif
 #endif
 	if (slk)
 		return;
