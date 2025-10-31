@@ -156,11 +156,26 @@ soisdisconnected(so)
 }
 
 /*
+ * soconnstatus: external static declaration of connstatus.
+ * - compatibility with 4.4BSD-lite2 and later. That
+ * provides the missing "connstatus" argument in 2.11BSD's sonewconn function.
+ *
+ * Notes:
+ * Calling sonewconn will always default the connstatus to 0.
+ * This means that you must call sonewconn1 if the connstatus
+ * should be anything other than 0.
+ */
+static int soconnstatus = 0;
+
+/*
  * When an attempt at a new connection is noted on a socket
  * which accepts connections, sonewconn is called.  If the
  * connection is possible (subject to space constraints, etc.)
  * then we allocate a new structure, properly linked into the
  * data structure of the original socket, and return this.
+ */
+/*
+ * For appending the missing second argument. use sonewconn1
  */
 struct socket *
 sonewconn(head)
@@ -183,10 +198,10 @@ sonewconn(head)
 	so->so_timeo = head->so_timeo;
 	so->so_pgrp = head->so_pgrp;
 	(void) soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat);
-	soqinsque(head, so, 0);
+	soqinsque(head, so, soconnstatus);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
 	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0, u.u_procp)) {
-		(void) soqremque(so, 0);
+		(void) soqremque(so, soconnstatus);
 		(void) m_free(m);
 		goto bad;
 	}
@@ -195,6 +210,13 @@ bad:
 	return ((struct socket *)0);
 }
 
+/*
+ * Should use sonewconn1 whenever the 'connstatus'
+ * (i.e. the missing second argument) is not 0.
+ * Example:
+ * - calling 'sonewconn(head)' is equal
+ *  	to calling 'sonewconn1(head, 0)'
+ */
 struct socket *
 sonewconn1(head, connstatus)
 	register struct socket *head;
@@ -204,6 +226,11 @@ sonewconn1(head, connstatus)
 	int		soqueue;
 
 	soqueue = connstatus ? 1 : 0;
+	if (soqueue != 0) {
+		soconnstatus = 1;
+	} else {
+		soconnstatus = 0;
+	}
 	so = sonewconn(head);
 	if (connstatus) {
 		sorwakeup(head);

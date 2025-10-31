@@ -306,6 +306,7 @@ void	soisconnected(struct socket *);
 void	soisdisconnecting(struct socket *);
 void	soisdisconnected(struct socket *);
 struct socket *sonewconn(struct socket *);
+/* use sonewconn1 when appending the second argument (i.e 'connstatus') */
 struct socket *sonewconn1(struct socket *, int);
 void	soqinsque(struct socket *, struct socket *, int);
 int		soqremque(struct socket *, int);
