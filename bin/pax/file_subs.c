@@ -845,7 +845,8 @@ int
 set_ids(char *fnm, uid_t uid, gid_t gid)
 {
 	if (geteuid() == 0)
-		if (lchown(fnm, uid, gid)) {
+//        if (lchown(fnm, uid, gid)) {
+		if (chown(fnm, uid, gid) < 0) {
 			(void)fflush(listf);
 			syswarn(1, errno, "Cannot set file uid/gid of %s",
 			    fnm);
@@ -863,7 +864,8 @@ void
 set_pmode(char *fnm, mode_t mode)
 {
 	mode &= A_BITS;
-	if (lchmod(fnm, mode)) {
+//    if (lchmod(fnm, mode)) {
+	if (chmod(fnm, mode) < 0) {
 		(void)fflush(listf);
 		syswarn(1, errno, "Cannot set permissions on %s", fnm);
 	}
