@@ -68,10 +68,6 @@ static char sccsid[] = "@(#)main.c	8.6 (Berkeley) 5/1/95";
 #include "dump.h"
 #include "pathnames.h"
 
-#ifndef SBOFF
-#define SBOFF (SBLOCK * DEV_BSIZE)
-#endif
-
 int	notify = 0;		/* notify operator flag */
 int	blockswritten = 0;	/* number of blocks written on current tape */
 int	tapeno = 0;		/* current tape number */

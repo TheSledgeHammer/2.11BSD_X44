@@ -70,6 +70,9 @@ typedef	quad_t fsizeT;
 typedef	long fsizeT;
 #endif
 
+#ifndef SBOFF
+#define SBOFF (SBLOCK * DEV_BSIZE)
+#endif
 static off_t sblock_try[] = SBLOCKSEARCH;
 
 static	int dirindir(ino_t ino, ufs2_daddr_t blkno, int level, long *size);
@@ -93,7 +96,7 @@ read_sblock(char *superblock)
 			if (sblock_try[i] == -1) {
 				quit("can't find superblock\n");
 			}
-			bread(sblock_try[i], superblock, SBSIZE);
+			bread(sblock_try[i], (char *)fs, SBSIZE);
 			switch (fs->fs_magic) {
 			case FS_UFS2_MAGIC:
 				if (sblock_try[i] == SBLOCK_UFS2) {

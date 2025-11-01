@@ -83,13 +83,6 @@ typedef struct {
 	size_t		size;
 } relaent_t;
 
-
-typedef enum kobjtype {
-	KT_UNSET,
-	KT_VNODE,
-	KT_MEMORY
-} kobjtype_t;
-
 /* sections */
 typedef struct {
 	progent_t			*ko_progtab;
@@ -116,11 +109,8 @@ typedef struct {
 	size_t				ko_rodata_size;		/* Size of rodata segment */
 } kobject_segment_t;
 
-struct ksymbol_string_t;
-
 typedef struct {
 	char				ko_name[MAXMODNAME];
-	kobjtype_t			ko_type;
 	void				*ko_source;
 	ssize_t				ko_memsize;
 	kobject_segment_t 	*ko_segs;

@@ -46,8 +46,6 @@ static const struct prop_object_type prop_object_type_symbol = {
         .pot_db_delete  =  prop_db_symbol_delete,
 };
 
-
-
 prop_symbol_t
 prop_symbol_alloc(u_int capacity)
 {
