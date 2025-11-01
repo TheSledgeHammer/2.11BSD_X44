@@ -100,6 +100,7 @@ __RCSID("$NetBSD: pwcache.c,v 1.32 2018/11/08 06:43:52 msaitoh Exp $");
 #ifdef __weak_alias
 __weak_alias(user_from_uid,_user_from_uid)
 __weak_alias(group_from_gid,_group_from_gid)
+__weak_alias(pwcache_userdb,_pwcache_userdb)
 __weak_alias(pwcache_groupdb,_pwcache_groupdb)
 #endif
 
