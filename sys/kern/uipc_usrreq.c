@@ -678,7 +678,7 @@ extern	struct domain unixdomain;
 void
 unp_gc(void)
 {
-	register struct file *fp;
+	struct file *fp;
 	register struct socket *so;
 	struct file xf;
 
