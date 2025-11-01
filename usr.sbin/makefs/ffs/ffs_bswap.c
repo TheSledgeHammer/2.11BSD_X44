@@ -113,7 +113,7 @@ ffs_sb_swap(struct fs *o, struct fs *n)
 	n->fs_flags = bswap32(o->fs_flags);
 	n->fs_contigsumsize = bswap32(o->fs_contigsumsize);
 	n->fs_maxsymlinklen = bswap32(o->fs_maxsymlinklen);
-	n->fs_old_inodefmt = bswap32(o->fs_old_inodefmt);
+	n->fs_inodefmt = bswap32(o->fs_inodefmt);
 	n->fs_maxfilesize = bswap64(o->fs_maxfilesize);
 	n->fs_qbmask = bswap64(o->fs_qbmask);
 	n->fs_qfmask = bswap64(o->fs_qfmask);

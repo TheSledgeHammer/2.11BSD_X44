@@ -117,7 +117,7 @@ ffs_update(ap)
 	 * Ensure that uid and gid are correct. This is a temporary
 	 * fix until fsck has been changed to do the update.
 	 */
-	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_old_inodefmt < FS_44INODEFMT) {
+	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_inodefmt < FS_44INODEFMT) {
 		ip->i_din.ffs1_din->di_ouid = ip->i_uid;	/* XXX */
 		ip->i_din.ffs1_din->di_ogid = ip->i_gid;	/* XXX */
 	}

@@ -188,7 +188,7 @@ struct tm *localclock;
  *	that the process control groups are not messed up
  */
 void
-broadcast(char *message)
+broadcast(const char *message)
 {
 	time_t		clock;
 	FILE	*f_utmp;
@@ -378,7 +378,7 @@ struct	pfstab {
 static	SLIST_HEAD(, pfstab) table;
 
 void
-getfstab(void)
+dump_getfstab(void)
 {
 	register struct fstab *fs;
 	register struct pfstab *pf;
@@ -454,7 +454,7 @@ lastdump(char arg /* w ==> just what to do; W ==> most recent dumps */)
 	time_t tnow;
 
 	(void) time(&tnow);
-	getfstab();		/* /etc/fstab input */
+	dump_getfstab();		/* /etc/fstab input */
 	initdumptimes();	/* /etc/dumpdates input */
 	qsort((char *) ddatev, nddates, sizeof(struct dumpdates *), datesort);
 

@@ -306,7 +306,7 @@ void	soisconnected(struct socket *);
 void	soisdisconnecting(struct socket *);
 void	soisdisconnected(struct socket *);
 struct socket *sonewconn(struct socket *);
-/* use sonewconn1 when appending the second argument (i.e 'connstatus') */
+/* see sonewconn1 for appending the second argument (i.e 'connstatus') */
 struct socket *sonewconn1(struct socket *, int);
 void	soqinsque(struct socket *, struct socket *, int);
 int		soqremque(struct socket *, int);
@@ -349,7 +349,7 @@ int		fpfetch(struct file *, struct file *);
 void	unpdet(struct vnode *);
 int		unpbind(char *, int, struct vnode **, struct socket *);
 int		unpconn(char *, int, struct socket **, struct vnode **);
-void	unpgc1(struct file **, struct file **);
+void	unpgc1(struct file **);
 int		unpdisc(struct file *);
 
 /*

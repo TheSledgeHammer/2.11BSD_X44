@@ -268,7 +268,7 @@ struct fs {
 	int64_t	 		fs_sblockloc;		/* byte offset of standard superblock */
 	int32_t	 		fs_contigsumsize;	/* size of cluster summary array */
 	int32_t	 		fs_maxsymlinklen;	/* max length of an internal symlink */
-	int32_t	 		fs_old_inodefmt;		/* format of on-disk inodes */
+	int32_t	 		fs_inodefmt;		/* format of on-disk inodes */
 	u_int64_t 		fs_maxfilesize;		/* maximum representable file size */
 	int64_t	 		fs_qbmask;			/* ~fs_bmask for use with 64-bit size */
 	int64_t	 		fs_qfmask;			/* ~fs_fmask for use with 64-bit size */

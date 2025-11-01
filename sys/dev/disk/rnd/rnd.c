@@ -634,7 +634,7 @@ random_poll(dev, events, p)
 	entcnt = rndpool_get_entropy_count(&rnd_pool);
 	splx(s);
 
-	if (entcnt >= RND_ENTROPY_THRESHOLD * 8) {
+	if (entcnt >= RND_ENTROPY_THRESHOLD_MAX) {
 		revents |= events & (POLLIN | POLLRDNORM);
 	} else {
 		selrecord(p, &rnd_selq);

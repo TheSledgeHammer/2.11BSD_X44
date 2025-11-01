@@ -157,10 +157,10 @@ mkfs(pp, fsys, fi, fo, mfsmode, mfsuid, mfsgid)
 	fsi = fi;
 	fso = fo;
 	if (Oflag) {
-		sblock.fs_old_inodefmt = FS_42INODEFMT;
+		sblock.fs_inodefmt = FS_42INODEFMT;
 		sblock.fs_maxsymlinklen = 0;
 	} else {
-		sblock.fs_old_inodefmt = FS_44INODEFMT;
+		sblock.fs_inodefmt = FS_44INODEFMT;
 		sblock.fs_maxsymlinklen = (Oflag == 1 ? UFS1_MAXSYMLINKLEN : UFS2_MAXSYMLINKLEN);
 	}
 

@@ -151,11 +151,11 @@ ffs_mkfs(const char *fsys, const fsinfo_t *fsopts)
 	sbsize =        SBLOCKSIZE;
 
 	if (Oflag == 0) {
-		sblock.fs_old_inodefmt = FS_42INODEFMT;
+		sblock.fs_inodefmt = FS_42INODEFMT;
 		sblock.fs_maxsymlinklen = 0;
 		//sblock.fs_old_flags = 0;
 	} else {
-		sblock.fs_old_inodefmt = FS_44INODEFMT;
+		sblock.fs_inodefmt = FS_44INODEFMT;
 		sblock.fs_maxsymlinklen = (Oflag == 1 ? UFS1_MAXSYMLINKLEN : UFS2_MAXSYMLINKLEN);
 		//sblock.fs_old_flags = FS_FLAGS_UPDATED;
 		sblock.fs_flags = 0;
@@ -268,7 +268,7 @@ ffs_mkfs(const char *fsys, const fsinfo_t *fsopts)
 		sblock.fs_nindir = sblock.fs_bsize / sizeof(int32_t);
 		sblock.fs_inopb = sblock.fs_bsize / sizeof(struct ufs1_dinode);
 		sblock.fs_maxsymlinklen = ((NDADDR + NIADDR) * sizeof (int32_t));
-		sblock.fs_old_inodefmt = FS_44INODEFMT;
+		sblock.fs_inodefmt = FS_44INODEFMT;
 #ifdef notyet
 		sblock.fs_old_cgoffset = 0;
 		sblock.fs_old_cgmask = 0xffffffff;

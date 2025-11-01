@@ -689,9 +689,12 @@ unp_gc(void)
 restart:
 	unp_defer = 0;
 	/* get limits AND clear FMARK|FDEFER in all file table entries */
+	/*
 	LIST_FOREACH(fp, &filehead, f_list) {
 		fp->f_flag &= ~(FMARK|FDEFER);
 	}
+	*/
+	unpgc1(&fp);
 	do {
 		LIST_FOREACH(fp, &filehead, f_list) {
 			/* get file table entry, the return value is f_count */

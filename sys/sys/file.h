@@ -44,7 +44,7 @@
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 #include <sys/queue.h>
 #include <sys/lock.h>
 

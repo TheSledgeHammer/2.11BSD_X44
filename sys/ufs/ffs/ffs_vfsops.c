@@ -588,7 +588,7 @@ ffs_oldfscompat(fs)
 	fs->fs_interleave = max(fs->fs_interleave, 1);		/* XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT)			/* XXX */
 		fs->fs_nrpos = 8;								/* XXX */
-	if (fs->fs_old_inodefmt < FS_44INODEFMT) {			/* XXX */
+	if (fs->fs_inodefmt < FS_44INODEFMT) {			/* XXX */
 		u_int64_t sizepb = fs->fs_bsize;				/* XXX */
 								/* XXX */
 		fs->fs_maxfilesize = fs->fs_bsize * NDADDR - 1;	/* XXX */
@@ -896,7 +896,7 @@ ffs_vget(mp, ino, vpp)
 	 * Ensure that uid and gid are correct. This is a temporary
 	 * fix until fsck has been changed to do the update.
 	 */
-	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_old_inodefmt < FS_44INODEFMT) {		/* XXX */
+	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_inodefmt < FS_44INODEFMT) {		/* XXX */
 		ip->i_uid = ip->i_din.ffs1_din->di_ouid;								/* XXX */
 		ip->i_gid = ip->i_din.ffs1_din->di_ogid;								/* XXX */
 	}																			/* XXX */
@@ -1058,7 +1058,7 @@ ffs_sbupdate(mp, waitfor)
 	dfs = (struct fs*) bp->b_data; 					/* XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT) 		/* XXX */
 		dfs->fs_nrpos = -1; /* XXX */
-	if (fs->fs_old_inodefmt < FS_44INODEFMT) { 		/* XXX */
+	if (fs->fs_inodefmt < FS_44INODEFMT) { 		/* XXX */
 		int32_t *lp, tmp; /* XXX */
 		/* XXX */
 		lp = (int32_t*) &dfs->fs_qbmask; 			/* XXX */

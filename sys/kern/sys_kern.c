@@ -169,13 +169,13 @@ unpconn(path, len, so2, vpp)
 	struct vnode **vpp;
 {
 	register struct vnode *vp;
-	register struct vattr *vap;
+	//register struct vattr *vap;
 	char pth[MLEN];
 	int error;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-	VATTR_NULL(vap);
+	//VATTR_NULL(vap);
 	bcopy(path, pth, len);
 	if (!len) {
 		return (EINVAL); /* paranoia */
@@ -203,6 +203,18 @@ unpconn(path, len, so2, vpp)
 		return (ECONNREFUSED);
 	}
 	return (0);
+}
+
+void
+unpgc1(beginf)
+	struct file **beginf;
+{
+	register struct file *fp;
+
+	LIST_FOREACH(fp, &filehead, f_list) {
+		*beginf = fp;
+		fp->f_flag &= ~(FMARK|FDEFER);
+	}
 }
 
 int

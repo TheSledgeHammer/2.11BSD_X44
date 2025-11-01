@@ -82,7 +82,7 @@ long dev_bsize = 1;	/* recalculated below */
 long blocksperfile;	/* output blocks per file */
 char *host = NULL;	/* remote host (if any) */
 
-static long numarg(char *, long, long);
+static long numarg(const char *, long, long);
 static void obsolete(int *, char **[]);
 static void usage(void);
 
@@ -95,7 +95,7 @@ main(int argc, char *argv[])
 	register struct	fstab *dt;
 	register char *map;
 	register int ch;
-	int i, anydirskipped, bflag = 0, Tflag = 0, honorlevel = 1;
+	int i, mode, anydirskipped, bflag = 0, Tflag = 0, honorlevel = 1;
 	ino_t maxino;
 
 	spcl.c_date = 0;
@@ -252,7 +252,7 @@ main(int argc, char *argv[])
 		signal(SIGINT, SIG_IGN);
 
 	set_operators();	/* /etc/group snarfed */
-	getfstab();		/* /etc/fstab snarfed */
+	dump_getfstab();		/* /etc/fstab snarfed */
 	/*
 	 *	disk can be either the full special file name,
 	 *	the suffix of the special file name,
@@ -277,9 +277,9 @@ main(int argc, char *argv[])
 	        getdumptime();		/* /etc/dumpdates snarfed */
 
 	msg("Date of this level %c dump: %s", level,
-		spcl.c_date == 0 ? "the epoch\n" : ctime(&spcl.c_date));
+		spcl.c_date == 0 ? "the epoch\n" : ctime((time_t)&spcl.c_date));
  	msg("Date of last level %c dump: %s", lastlevel,
-		spcl.c_ddate == 0 ? "the epoch\n" : ctime(&spcl.c_ddate));
+		spcl.c_ddate == 0 ? "the epoch\n" : ctime((time_t)&spcl.c_ddate));
 	msg("Dumping %s ", disk);
 	if (dt != NULL)
 		msgtail("(%s) ", dt->fs_file);
@@ -293,11 +293,16 @@ main(int argc, char *argv[])
 		exit(X_ABORT);
 	}
 	sync();
+	sblock = read_sblock(sblock_buf);
+	if (sblock == NULL || is_ufs2 == -1) {
+		quit("bad sblock magic number\n");
+	}
+	/*
 	sblock = (struct fs *)sblock_buf;
 	bread(SBOFF, (char *) sblock, SBSIZE);
 	if (sblock->fs_magic != FS_MAGIC)
 		quit("bad sblock magic number\n");
-
+	 */
 	dev_bsize = sblock->fs_fsize / fsbtodb(sblock, 1);
 	dev_bshift = ffs(dev_bsize) - 1;
 	if (dev_bsize != (1 << dev_bshift))
@@ -402,8 +407,6 @@ main(int argc, char *argv[])
 
 	msg("dumping (Pass IV) [regular files]\n");
 	for (map = dumpinomap, ino = 1; ino < maxino; ino++) {
-		int mode;
-
 		if (((ino - 1) % NBBY) == 0)	/* map is offset by 1 */
 			dirty = *map++;
 		else
@@ -414,8 +417,7 @@ main(int argc, char *argv[])
 		 * Skip inodes deleted and reallocated as directories.
 		 */
 		dp = getino(ino, &mode);
-		mode = DIP(dp, mode) & IFMT;
-		if (mode == IFDIR)
+		if ((DIP(dp, mode) & IFMT) == IFDIR)
 			continue;
 		(void)dumpino(dp, ino);
 	}
@@ -450,7 +452,7 @@ usage(void)
  * range (except that a vmax of 0 means unlimited).
  */
 static long
-numarg(char *meaning, long vmin, long vmax)
+numarg(const char *meaning, long vmin, long vmax)
 {
 	char *p;
 	long val;
@@ -527,8 +529,9 @@ obsolete(int *argcp, char **argvp[])
 
 	/* Allocate space for new arguments. */
 	if ((*argvp = nargv = malloc((argc + 1) * sizeof(char *))) == NULL ||
-	    (p = flagsp = malloc(strlen(ap) + 2)) == NULL)
+	    (p = flagsp = malloc(strlen(ap) + 2)) == NULL) {
 		err(1, NULL);
+	}
 
 	*nargv++ = *argv;
 	argv += 2;
@@ -571,7 +574,7 @@ obsolete(int *argcp, char **argvp[])
 	}
 
 	/* Copy remaining arguments. */
-	while (*nargv++ = *argv++);
+	while ((*nargv++ = *argv++));
 
 	/* Update argument count. */
 	*argcp = nargv - *argvp - 1;

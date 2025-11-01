@@ -38,6 +38,8 @@ union dinode {
 	struct ufs2_dinode dp2;
 };
 
+int	is_ufs2;
+
 #define DIP(dp, field) \
 	(is_ufs2 ? (dp)->dp2.di_##field : (dp)->dp1.di_##field)
 
@@ -69,9 +71,9 @@ char	*dumpinomap;	/* map of files to be dumped */
  *	All calculations done in 0.1" units!
  */
 char	*disk;		/* name of the disk file */
-char	*tape;		/* name of the tape file */
-char	*dumpdates;	/* name of the file containing dump date information*/
-char	*temp;		/* name of the file for doing rewrite of dumpdates */
+const char	*tape;		/* name of the tape file */
+const char	*dumpdates;	/* name of the file containing dump date information*/
+const char	*temp;		/* name of the file for doing rewrite of dumpdates */
 char	lastlevel;	/* dump level of previous dump */
 char	level;		/* dump level of this dump */
 int		uflag;		/* update flag */
@@ -98,7 +100,7 @@ int		dev_bshift;	/* log2(dev_bsize) */
 int		tp_bshift;	/* log2(TP_BSIZE) */
 
 /* operator interface functions */
-void	broadcast(char *message);
+void	broadcast(const char *message);
 void	lastdump(int arg);	/* int should be char */
 void	msg(const char *fmt, ...);
 void	msgtail(const char *fmt, ...);
@@ -130,10 +132,11 @@ void	writerec(char *dp, int isspcl);
 
 __dead void Exit(int status);
 void	dumpabort(int signo);
-void	getfstab(void);
+void	dump_getfstab(void);
 
 char	*rawname(char *cp);
 union	dinode *getino(ino_t inum, int *);
+struct fs *read_sblock(char *superblock);
 
 /* rdump routines */
 #ifdef RDUMP

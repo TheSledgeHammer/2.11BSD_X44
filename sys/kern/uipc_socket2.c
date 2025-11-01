@@ -174,9 +174,6 @@ static int soconnstatus = 0;
  * then we allocate a new structure, properly linked into the
  * data structure of the original socket, and return this.
  */
-/*
- * For appending the missing second argument. use sonewconn1
- */
 struct socket *
 sonewconn(head)
 	register struct socket *head;

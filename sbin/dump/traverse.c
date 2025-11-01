@@ -45,7 +45,7 @@ static char sccsid[] = "@(#)traverse.c	8.7 (Berkeley) 6/15/95";
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
-#include <ufs/ffs/ffs_extern.h>
+//#include <ufs/ffs/ffs_extern.h>
 
 #include <protocols/dumprestor.h>
 
@@ -70,9 +70,54 @@ typedef	quad_t fsizeT;
 typedef	long fsizeT;
 #endif
 
+static off_t sblock_try[] = SBLOCKSEARCH;
+
 static	int dirindir(ino_t ino, ufs2_daddr_t blkno, int level, long *size);
 static	void dmpindir(ino_t ino, ufs2_daddr_t blk, int level, fsizeT *size);
 static	int searchdir(ino_t ino, ufs2_daddr_t blkno, long size, long filesize);
+
+/*
+ * read sblock, search for superblock. Determine sblocksize and
+ * fs_magic for whether its ufs1 or ufs2. If cannot determine
+ * fs_magic, 'is_ufs2' will equal -1;
+ */
+struct fs *
+read_sblock(char *superblock)
+{
+	struct fs *fs;
+	int i;
+
+	fs = (struct fs *)superblock;
+	for (i = 0; ; i++) {
+		for (i = 0; ; i++) {
+			if (sblock_try[i] == -1) {
+				quit("can't find superblock\n");
+			}
+			bread(sblock_try[i], superblock, SBSIZE);
+			switch (fs->fs_magic) {
+			case FS_UFS2_MAGIC:
+				if (sblock_try[i] == SBLOCK_UFS2) {
+					is_ufs2 = 0;
+				} else {
+					is_ufs2 = -1;
+				}
+				break;
+			case FS_UFS1_MAGIC:
+				if (sblock_try[i] == SBLOCK_UFS1) {
+					is_ufs2 = 1;
+				} else {
+					is_ufs2 = -1;
+				}
+				break;
+			default:
+				is_ufs2 = -1;
+				break;
+			}
+		}
+		break;
+	}
+	return (fs);
+}
 
 /*
  * This is an estimation of the number of TP_BSIZE blocks in the file.
@@ -136,29 +181,84 @@ blockest(union dinode *dp)
 int
 mapfiles(ino_t maxino, long *tapesize)
 {
-	register int mode;
+	register struct cg *cgp;
 	register ino_t ino;
+	register int mode;
 	register union dinode *dp;
 	int anydirskipped = 0;
+	int i, cg, inosused;
+	char *cp;
 
-	for (ino = ROOTINO; ino < maxino; ino++) {
-		dp = getino(ino, &mode);
-		if ((mode =  (DIP(dp, mode) & IFMT)) == 0)
-			continue;
-		SETINO(ino, usedinomap);
-		if (mode == IFDIR)
-			SETINO(ino, dumpdirmap);
-		if (WANTTODUMP(dp)) {
-			SETINO(ino, dumpinomap);
-			if (mode != IFREG && mode != IFDIR && mode != IFLNK)
-				*tapesize += 1;
-			else
-				*tapesize += blockest(dp);
-			continue;
-		}
-		if (mode == IFDIR)
-			anydirskipped = 1;
+	if ((cgp = malloc(sblock->fs_cgsize)) == NULL) {
+		quit("fs_mapinodes: cannot allocate memory.\n");
 	}
+	for (cg = 0; cg < sblock->fs_ncg; cg++) {
+		ino = cg * sblock->fs_ipg;
+		bread(fsbtodb(sblock, cgtod(sblock, cg)), (char *)cgp,
+				sblock->fs_cgsize);
+		if (sblock->fs_magic == FS_UFS2_MAGIC) {
+			inosused = cgp->cg_initediblk;
+		} else {
+			inosused = sblock->fs_ipg;
+		}
+#ifdef nosoftdeps
+		/*
+		 * If we are using soft updates, then we can trust the
+		 * cylinder group inode allocation maps to tell us which
+		 * inodes are allocated. We will scan the used inode map
+		 * to find the inodes that are really in use, and then
+		 * read only those inodes in from disk.
+		 */
+
+		if (sblock->fs_flags & FS_DOSOFTDEP) {
+			if (!cg_chkmagic(cgp)) {
+				quit("mapfiles: cg %d: bad magic number\n", cg);
+			}
+			cp = &cg_inosused(cgp)[(inosused - 1) / CHAR_BIT];
+			for (; inosused > 0; inosused -= CHAR_BIT, cp--) {
+				if (*cp == 0) {
+					continue;
+				}
+				for (i = 1 << (CHAR_BIT - 1); i > 0; i >>= 1) {
+					if (*cp & i) {
+						break;
+					}
+					inosused--;
+				}
+				break;
+			}
+			if (inosused <= 0) {
+				continue;
+			}
+		}
+#endif
+		for (i = 0; i < inosused; i++, ino++) {
+			if (ino < ROOTINO || ino < maxino) {
+				continue;
+			}
+			dp = getino(ino, &mode);
+			if ((mode = (DIP(dp, mode) & IFMT)) == 0) {
+				continue;
+			}
+			SETINO(ino, usedinomap);
+			if (mode == IFDIR) {
+				SETINO(ino, dumpdirmap);
+			}
+			if (WANTTODUMP(dp)) {
+				SETINO(ino, dumpinomap);
+				if (mode != IFREG && mode != IFDIR && mode != IFLNK) {
+					*tapesize += 1;
+				} else {
+					*tapesize += blockest(dp);
+				}
+				continue;
+			}
+			if (mode == IFDIR) {
+				anydirskipped = 1;
+			}
+		}
+	}
+
 	/*
 	 * Restore gets very upset if the root is not dumped,
 	 * so ensure that it always is dumped.
@@ -182,7 +282,7 @@ mapfiles(ino_t maxino, long *tapesize)
 int
 mapdirs(ino_t maxino, long *tapesize)
 {
-	register union	dinode *dp;
+	register union dinode *dp, di;
 	register int i, isdir;
 	register char *map;
 	register ino_t ino;
@@ -191,32 +291,42 @@ mapdirs(ino_t maxino, long *tapesize)
 
 	isdir = 0;		/* XXX just to get gcc to shut up */
 	for (map = dumpdirmap, ino = 1; ino < maxino; ino++) {
-		if (((ino - 1) % NBBY) == 0)	/* map is offset by 1 */
+		if (((ino - 1) % NBBY) == 0) {	/* map is offset by 1 */
 			isdir = *map++;
-		else
+		} else {
 			isdir >>= 1;
-		if ((isdir & 1) == 0 || TSTINO(ino, dumpinomap))
+		}
+		if ((isdir & 1) == 0 || TSTINO(ino, dumpinomap)) {
 			continue;
+		}
 		dp = getino(ino, &i);
-		filesize = DIP(dp, size);
+		if (is_ufs2) {
+			di.dp2 = dp->dp2;
+		} else {
+			di.dp1 = dp->dp1;
+		}
+		filesize = DIP(&di, size);
 		for (ret = 0, i = 0; filesize > 0 && i < NDADDR; i++) {
-			if (DIP(dp, db[i]) != 0)
-				ret |= searchdir(ino, DIP(dp, db[i]),
-					(long)dblksize(sblock, dp, i),
+			if (DIP(&di, db[i]) != 0) {
+				ret |= searchdir(ino, DIP(&di, db[i]),
+					(long)dblksize(sblock, &di, i),
 					filesize);
-			if (ret & HASDUMPEDFILE)
+			}
+			if (ret & HASDUMPEDFILE) {
 				filesize = 0;
-			else
+			} else {
 				filesize -= sblock->fs_bsize;
+			}
 		}
 		for (i = 0; filesize > 0 && i < NIADDR; i++) {
-			if (DIP(dp, ib[i]) == 0)
+			if (DIP(&di, ib[i]) == 0) {
 				continue;
-			ret |= dirindir(ino, DIP(dp, ib[i]), i, &filesize);
+			}
+			ret |= dirindir(ino, DIP(&di, ib[i]), i, &filesize);
 		}
 		if (ret & HASDUMPEDFILE) {
 			SETINO(ino, dumpinomap);
-			*tapesize += blockest(dp);
+			*tapesize += blockest(&di);
 			change = 1;
 			continue;
 		}
@@ -253,13 +363,15 @@ dirindir(ino_t ino, ufs2_daddr_t blkno, int ind_level, long *filesize)
 			} else {
 				blkno = idblk.ufs1[i];
 			}
-			if (blkno != 0)
+			if (blkno != 0) {
 				ret |= searchdir(ino, blkno, sblock->fs_bsize,
 					*filesize);
-			if (ret & HASDUMPEDFILE)
+			}
+			if (ret & HASDUMPEDFILE) {
 				*filesize = 0;
-			else
+			} else {
 				*filesize -= sblock->fs_bsize;
+			}
 		}
 		return (ret);
 	}
@@ -270,8 +382,9 @@ dirindir(ino_t ino, ufs2_daddr_t blkno, int ind_level, long *filesize)
 		} else {
 			blkno = idblk.ufs1[i];
 		}
-		if (blkno != 0)
+		if (blkno != 0) {
 			ret |= dirindir(ino, blkno, ind_level, filesize);
+		}
 	}
 	return (ret);
 }
@@ -288,11 +401,13 @@ searchdir(ino_t ino, ufs2_daddr_t blkno, long size, long filesize)
 	register long loc, ret = 0;
 	char dblk[MAXBSIZE];
 
-	if (dblk == NULL && (dblk = malloc(sblock->fs_bsize)) == NULL)
+	if (dblk == NULL && (dblk = malloc(sblock->fs_bsize)) == NULL) {
 		quit("searchdir: cannot allocate indirect memory.\n");
+	}
 	bread(fsbtodb(sblock, blkno), dblk, (int)size);
-	if (filesize < size)
+	if (filesize < size) {
 		size = filesize;
+	}
 	for (loc = 0; loc < size; ) {
 		dp = (struct direct *)(dblk + loc);
 		if (dp->d_reclen == 0) {
@@ -300,13 +415,16 @@ searchdir(ino_t ino, ufs2_daddr_t blkno, long size, long filesize)
 			break;
 		}
 		loc += dp->d_reclen;
-		if (dp->d_ino == 0)
+		if (dp->d_ino == 0) {
 			continue;
+		}
 		if (dp->d_name[0] == '.') {
-			if (dp->d_name[1] == '\0')
+			if (dp->d_name[1] == '\0') {
 				continue;
-			if (dp->d_name[1] == '.' && dp->d_name[2] == '\0')
+			}
+			if (dp->d_name[1] == '.' && dp->d_name[2] == '\0') {
 				continue;
+			}
 		}
 		if (TSTINO(dp->d_ino, dumpinomap)) {
 			ret |= HASDUMPEDFILE;
@@ -387,8 +505,9 @@ dumpino(union dinode *dp, ino_t ino)
 
 	case S_IFDIR:
 	case S_IFREG:
-		if (DIP(dp, size) > 0)
+		if (DIP(dp, size) > 0) {
 			break;
+		}
 		/* fall through */
 
 	case S_IFIFO:
@@ -402,17 +521,20 @@ dumpino(union dinode *dp, ino_t ino)
 		msg("Warning: undefined file type 0%o\n", DIP(dp, mode) & IFMT);
 		return;
 	}
-	if (DIP(dp, size) > NDADDR * sblock->fs_bsize)
+	if (DIP(dp, size) > NDADDR * sblock->fs_bsize) {
 		cnt = NDADDR * sblock->fs_frag;
-	else
+	} else {
 		cnt = howmany(DIP(dp, size), sblock->fs_fsize);
+	}
 	blksout(DIP(dp, db[0]), cnt, ino);
-	if ((size = DIP(dp, size) - NDADDR * sblock->fs_bsize) <= 0)
+	if ((size = DIP(dp, size) - NDADDR * sblock->fs_bsize) <= 0) {
 		return;
+	}
 	for (ind_level = 0; ind_level < NIADDR; ind_level++) {
 		dmpindir(ino, DIP(dp, ib[ind_level]), ind_level, &size);
-		if (size <= 0)
+		if (size <= 0) {
 			return;
+		}
 	}
 }
 
@@ -429,22 +551,23 @@ dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
 	int i, cnt;
 	//daddr_t idblk[MAXNINDIR];
 
-	if (blk != 0)
+	if (blk != 0) {
 		bread(fsbtodb(sblock, blk), (char *)idblk, (int) sblock->fs_bsize);
-	else
+	} else {
 		memset(&idblk, 0, (int)sblock->fs_bsize);
+	}
 	if (ind_level <= 0) {
-		if (*size < NINDIR(sblock) * sblock->fs_bsize)
+		if (*size < NINDIR(sblock) * sblock->fs_bsize) {
 			cnt = howmany(*size, sblock->fs_fsize);
-		else
+		} else {
 			cnt = NINDIR(sblock) * sblock->fs_frag;
+		}
 		*size -= NINDIR(sblock) * sblock->fs_bsize;
 		if (is_ufs2) {
 			blksout(&idblk.ufs2, cnt, ino);
 		} else {
 			blksout(&idblk.ufs1, cnt, ino);
 		}
-
 		return;
 	}
 	ind_level--;
@@ -455,8 +578,9 @@ dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
 			dmpindir(ino, idblk.ufs1[i], ind_level, size);
 		}
 
-		if (*size <= 0)
+		if (*size <= 0) {
 			return;
+		}
 	}
 }
 
@@ -472,24 +596,30 @@ blksout(ufs2_daddr_t *blkp, int frags, ino_t ino)
 	blks = howmany(frags * sblock->fs_fsize, TP_BSIZE);
 	tbperdb = sblock->fs_bsize >> tp_bshift;
 	for (i = 0; i < blks; i += TP_NINDIR) {
-		if (i + TP_NINDIR > blks)
+		if (i + TP_NINDIR > blks) {
 			count = blks;
-		else
+		} else {
 			count = i + TP_NINDIR;
-		for (j = i; j < count; j++)
-			if (blkp[j / tbperdb] != 0)
+		}
+		for (j = i; j < count; j++) {
+			if (blkp[j / tbperdb] != 0) {
 				spcl.c_addr[j - i] = 1;
-			else
+			} else {
 				spcl.c_addr[j - i] = 0;
+			}
+		}
 		spcl.c_count = count - i;
 		writeheader(ino);
 		bp = &blkp[i / tbperdb];
-		for (j = i; j < count; j += tbperdb, bp++)
-			if (*bp != 0)
-				if (j + tbperdb <= count)
+		for (j = i; j < count; j += tbperdb, bp++) {
+			if (*bp != 0) {
+				if (j + tbperdb <= count) {
 					dumpblock(*bp, (int)sblock->fs_bsize);
-				else
+				} else {
 					dumpblock(*bp, (count - j) * TP_BSIZE);
+				}
+			}
+		}
 		spcl.c_type = TS_ADDR;
 	}
 }
@@ -506,8 +636,9 @@ dumpmap(char *map, int type, ino_t ino)
 	spcl.c_type = type;
 	spcl.c_count = howmany(mapsize * sizeof(char), TP_BSIZE);
 	writeheader(ino);
-	for (i = 0, cp = map; i < spcl.c_count; i++, cp += TP_BSIZE)
+	for (i = 0, cp = map; i < spcl.c_count; i++, cp += TP_BSIZE) {
 		writerec(cp, 0);
+	}
 }
 
 /*
@@ -557,6 +688,7 @@ getino(ino_t inum, int *modep)
 	bread(fsbtodb(sblock, ino_to_fsba(sblock, inum)), (char *)inoblock, (int)sblock->fs_bsize);
 	minino = inum - (inum % INOPB(sblock));
 	maxino = minino + INOPB(sblock);
+
 gotit:
 	if (is_ufs2) {
 		dp2 = &((struct ufs2_dinode*) inoblock)[inum - minino];
@@ -602,12 +734,13 @@ loop:
 		size -= dev_bsize;
 		goto loop;
 	}
-	if (cnt == -1)
+	if (cnt == -1) {
 		msg("read error from %s: %s: [block %d]: count=%d\n",
 			disk, strerror(errno), blkno, size);
-	else
+	} else {
 		msg("short read error from %s: [block %d]: count=%d, got=%d\n",
 			disk, blkno, size, cnt);
+	}
 	if (++breaderrors > BREADEMAX) {
 		msg("More than %d block read errors from %d\n",
 			BREADEMAX, disk);
@@ -616,8 +749,9 @@ loop:
 		if (!query("Do you want to attempt to continue?")){
 			dumpabort(0);
 			/*NOTREACHED*/
-		} else
+		} else {
 			breaderrors = 0;
+		}
 	}
 	/*
 	 * Zero buffer, then try to read each sector of buffer separately.
