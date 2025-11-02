@@ -76,7 +76,7 @@ int	ntrec = NTREC;	/* # tape blocks in each tape record */
 int	cartridge = 0;	/* Assume non-cartridge tape */
 long dev_bsize = 1;	/* recalculated below */
 long blocksperfile;	/* output blocks per file */
-char *host = NULL;	/* remote host (if any) */
+const char *host = NULL;	/* remote host (if any) */
 
 static long numarg(const char *, long, long);
 static void obsolete(int *, char **[]);
@@ -219,9 +219,11 @@ main(int argc, char *argv[])
 	}
 
 	if (strchr(tape, ':')) {
-		host = tape;
-		tape = strchr(host, ':');
-		*tape++ = '\0';
+        char *ehost;
+        host = tape;
+        ehost = strchr(host, ':');
+		*ehost++ = '\0';
+        tape = ehost;
 #ifdef RDUMP
 		if (rmthost(host) == 0)
 			exit(X_ABORT);
@@ -248,7 +250,7 @@ main(int argc, char *argv[])
 		signal(SIGINT, SIG_IGN);
 
 	set_operators();	/* /etc/group snarfed */
-	dump_getfstab();		/* /etc/fstab snarfed */
+	dump_getfstab();	/* /etc/fstab snarfed */
 	/*
 	 *	disk can be either the full special file name,
 	 *	the suffix of the special file name,
@@ -273,9 +275,9 @@ main(int argc, char *argv[])
 	        getdumptime();		/* /etc/dumpdates snarfed */
 
 	msg("Date of this level %c dump: %s", level,
-		spcl.c_date == 0 ? "the epoch\n" : ctime((time_t)&spcl.c_date));
+		spcl.c_date == 0 ? "the epoch\n" : ctime((time_t *)&spcl.c_date));
  	msg("Date of last level %c dump: %s", lastlevel,
-		spcl.c_ddate == 0 ? "the epoch\n" : ctime((time_t)&spcl.c_ddate));
+		spcl.c_ddate == 0 ? "the epoch\n" : ctime((time_t *)&spcl.c_ddate));
 	msg("Dumping %s ", disk);
 	if (dt != NULL)
 		msgtail("(%s) ", dt->fs_file);

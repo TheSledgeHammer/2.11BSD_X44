@@ -53,6 +53,7 @@ static char sccsid[] = "@(#)dumprmt.c	8.3 (Berkeley) 4/28/95";
 
 #include <ctype.h>
 #include <err.h>
+#include <errno.h>
 #include <netdb.h>
 #include <pwd.h>
 #include <signal.h>
@@ -72,24 +73,30 @@ static	int rmtape;
 static	char *rmtpeer;
 
 static	int okname(char *);
-static	int rmtcall(char *, char *);
-static	void rmtconnaborted(/* int, int */);
+static	int rmtcall(const char *, const char *);
+static	void rmtconnaborted(int);
 static	int rmtgetb(void);
 static	void rmtgetconn(void);
 static	void rmtgets(char *, int);
-static	int rmtreply(char *);
+static	int rmtreply(const char *);
+
+struct mtget *rmtstatus(void);
+
+int rmtread(char *, int);
+int rmtseek(int, int);
+int rmtioctl(int, int);
 
 extern	int ntrec;		/* blocking factor on tape */
 
 int
-rmthost(char *host)
+rmthost(const char *host)
 {
 
 	rmtpeer = malloc(strlen(host) + 1);
 	if (rmtpeer)
 		strcpy(rmtpeer, host);
 	else
-		rmtpeer = host;
+		rmtpeer = __UNCONST(host);
 	signal(SIGPIPE, rmtconnaborted);
 	rmtgetconn();
 	if (rmtape < 0)
@@ -98,10 +105,9 @@ rmthost(char *host)
 }
 
 static void
-rmtconnaborted(void)
+rmtconnaborted(int signo)
 {
-
-	errx(1, "Lost connection to remote host.");
+	errx(X_ABORT, "Lost connection to remote host.");
 }
 
 void
@@ -172,13 +178,13 @@ okname(char *cp0)
 }
 
 int
-rmtopen(char *tape, int mode)
+rmtopen(const char *tapedev, int mode)
 {
 	char buf[256];
 
-	(void)sprintf(buf, "O%s\n%d\n", tape, mode);
+	(void)sprintf(buf, "O%s\n%d\n", tapedev, mode);
 	rmtstate = TS_OPEN;
-	return (rmtcall(tape, buf));
+	return (rmtcall(tapedev, buf));
 }
 
 void
@@ -196,7 +202,6 @@ rmtread(char *buf, int count)
 {
 	char line[30];
 	int n, i, cc;
-	extern errno;
 
 	(void)sprintf(line, "R%d\n", count);
 	n = rmtcall("read", line);
@@ -207,7 +212,7 @@ rmtread(char *buf, int count)
 	for (i = 0; i < n; i += cc) {
 		cc = read(rmtape, buf+i, n - i);
 		if (cc <= 0) {
-			rmtconnaborted();
+			rmtconnaborted(0);
 		}
 	}
 	return (n);
@@ -221,29 +226,6 @@ rmtwrite(char *buf, int count)
 	(void)sprintf(line, "W%d\n", count);
 	write(rmtape, line, strlen(line));
 	write(rmtape, buf, count);
-	return (rmtreply("write"));
-}
-
-void
-rmtwrite0(int count)
-{
-	char line[30];
-
-	(void)sprintf(line, "W%d\n", count);
-	write(rmtape, line, strlen(line));
-}
-
-void
-rmtwrite1(char *buf, int count)
-{
-
-	write(rmtape, buf, count);
-}
-
-int
-rmtwrite2(void)
-{
-
 	return (rmtreply("write"));
 }
 
@@ -267,7 +249,7 @@ rmtstatus(void)
 	if (rmtstate != TS_OPEN)
 		return (NULL);
 	rmtcall("status", "S\n");
-	for (i = 0, cp = (char *)&mts; i < sizeof(mts); i++)
+	for (i = 0, cp = (char *)&mts; i < (int)sizeof(mts); i++)
 		*cp++ = rmtgetb();
 	return (&mts);
 }
@@ -284,16 +266,16 @@ rmtioctl(int cmd, int count)
 }
 
 static int
-rmtcall(char *cmd, char *buf)
+rmtcall(const char *cmd, const char *buf)
 {
 
-	if (write(rmtape, buf, strlen(buf)) != strlen(buf))
-		rmtconnaborted();
+	if (write(rmtape, buf, strlen(buf)) != (ssize_t)strlen(buf))
+		rmtconnaborted(0);
 	return (rmtreply(cmd));
 }
 
 static int
-rmtreply(char *cmd)
+rmtreply(const char *cmd)
 {
 	register char *cp;
 	char code[30], emsg[BUFSIZ];
@@ -316,7 +298,7 @@ rmtreply(char *cmd)
 
 		msg("Protocol to remote tape server botched (code \"%s\").\n",
 		    code);
-		rmtconnaborted();
+		rmtconnaborted(0);
 	}
 	return (atoi(code + 1));
 }
@@ -327,7 +309,7 @@ rmtgetb(void)
 	char c;
 
 	if (read(rmtape, &c, 1) != 1)
-		rmtconnaborted();
+		rmtconnaborted(0);
 	return (c);
 }
 
@@ -349,5 +331,5 @@ rmtgets(char *line, int len)
 	*cp = '\0';
 	msg("Protocol to remote tape server botched.\n");
 	msg("(rmtgets got \"%s\").\n", line);
-	rmtconnaborted();
+	rmtconnaborted(0);
 }

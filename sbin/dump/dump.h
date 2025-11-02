@@ -101,10 +101,10 @@ int		tp_bshift;	/* log2(TP_BSIZE) */
 
 /* operator interface functions */
 void	broadcast(const char *message);
-void	lastdump(int arg);	/* int should be char */
+void	lastdump(char arg);	/* int should be char */
 void	msg(const char *fmt, ...);
 void	msgtail(const char *fmt, ...);
-int		query(char *question);
+int		query(const char *question);
 void	quit(const char *fmt, ...);
 void	set_operators(void);
 void	timeest(void);
@@ -123,7 +123,7 @@ void	dumpmap(char *map, int type, ino_t ino);
 void	writeheader(ino_t ino);
 
 /* tape writing routines */
-int	alloctape(void);
+int	    alloctape(void);
 void	close_rewind(void);
 void	dumpblock(ufs2_daddr_t blkno, int size);
 void	startnewtape(int top);
@@ -136,14 +136,16 @@ void	dump_getfstab(void);
 
 char	*rawname(char *cp);
 union	dinode *getino(ino_t inum, int *);
+
+/* filestore-specific hooks */
 struct fs *read_sblock(char *superblock);
 
 /* rdump routines */
 #ifdef RDUMP
-void	rmtclose(void);
-int	rmthost(char *host);
-int	rmtopen(char *tape, int mode);
-int	rmtwrite(char *buf, int count);
+void    rmtclose(void);
+int	    rmthost(const char *host);
+int	    rmtopen(const char *tapedev, int mode);
+int	    rmtwrite(char *buf, int count);
 #endif /* RDUMP */
 
 void	interrupt(int signo);	/* in case operator bangs on console */

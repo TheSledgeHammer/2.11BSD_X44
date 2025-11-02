@@ -70,12 +70,17 @@ extern	int cartridge;
 extern	char *host;
 char	*nexttape;
 
-static	int atomic(int (*)(), int, char *, int);
+static	ssize_t atomic(ssize_t (*)(int, const void *, int), int, const void *, int);
 static	void doslave(int, int);
 static	void enslave(void);
 static	void flushtape(void);
 static	void killall(void);
 static	void rollforward(void);
+
+void tperror(int);
+void sigpipe(int);
+void proceed(int);
+
 
 /*
  * Concurrent dump mods (Caltech) - disk block reading and tape writing
@@ -634,8 +639,7 @@ dumpabort(int signo)
 }
 
 __dead void
-Exit(status)
-	int status;
+Exit(int status)
 {
 
 #ifdef TDEBUG
@@ -827,10 +831,10 @@ doslave(int cmd, int slave_number)
  * or a write may not write all we ask if we get a signal,
  * loop until the count is satisfied (or error).
  */
-static int
-atomic(int (*func)(int, char *, int), int fd, char *buf, int count)
+static ssize_t
+atomic(ssize_t (*func)(int, const void *, int), int fd, const void *buf, int count)
 {
-	int got, need = count;
+	ssize_t got, need = count;
 
 	while ((got = (*func)(fd, buf, need)) > 0 && (need -= got) > 0)
 		buf += got;

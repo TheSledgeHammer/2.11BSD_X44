@@ -43,6 +43,8 @@ static char sccsid[] = "@(#)optr.c	8.2 (Berkeley) 1/6/94";
 #include <sys/time.h>
 #include <sys/queue.h>
 
+#include <ufs/ufs/dinode.h>
+
 #include <errno.h>
 #include <fstab.h>
 #include <grp.h>
@@ -58,9 +60,10 @@ static char sccsid[] = "@(#)optr.c	8.2 (Berkeley) 1/6/94";
 #include "dump.h"
 #include "pathnames.h"
 
-void	alarmcatch(/* int, int */);
-int		datesort(const void *, const void *);
-static	void sendmes(char *, char *);
+static void alarmcatch(int);
+static int datesort(const void *, const void *);
+static void sendmes(char *, const char *);
+struct fstab *allocfsent(struct fstab *fs);
 
 /*
  *	Query the operator; This previously-fascist piece of code
@@ -74,10 +77,10 @@ static	void sendmes(char *, char *);
  *	that dump needs attention.
  */
 static	int timeout;
-static	char *attnmessage;		/* attention message */
+static	const char *attnmessage;		/* attention message */
 
 int
-query(char *question)
+query(const char *question)
 {
 	char	replybuffer[64];
 	int	back, errcount;
@@ -87,7 +90,7 @@ query(char *question)
 		quit("fopen on %s fails: %s\n", _PATH_TTY, strerror(errno));
 	attnmessage = question;
 	timeout = 0;
-	alarmcatch();
+	alarmcatch(0);
 	back = -1;
 	errcount = 0;
 	do {
@@ -123,8 +126,8 @@ char lastmsg[100];
  *	Alert the console operator, and enable the alarm clock to
  *	sleep for 2 minutes in case nobody comes to satisfy dump
  */
-void
-alarmcatch(void)
+static void
+alarmcatch(int sig)
 {
 	if (notify == 0) {
 		if (timeout == 0)
@@ -243,10 +246,10 @@ broadcast(const char *message)
 }
 
 static void
-sendmes(char *tty, char *message)
+sendmes(char *tty, const char *message)
 {
 	char t[50], buf[BUFSIZ];
-	register char *cp;
+	register const char *cp;
 	int lmsg = 1;
 	FILE *f_tty;
 
@@ -449,12 +452,13 @@ lastdump(char arg /* w ==> just what to do; W ==> most recent dumps */)
 	register int i;
 	register struct fstab *dt;
 	register struct dumpdates *dtwalk;
-	char *lastname, *date;
+    const char *lastname;
+	char *date;
 	int dumpme;
 	time_t tnow;
 
 	(void) time(&tnow);
-	dump_getfstab();		/* /etc/fstab input */
+	dump_getfstab();	/* /etc/fstab input */
 	initdumptimes();	/* /etc/dumpdates input */
 	qsort((char *) ddatev, nddates, sizeof(struct dumpdates *), datesort);
 
@@ -485,11 +489,11 @@ lastdump(char arg /* w ==> just what to do; W ==> most recent dumps */)
 	}
 }
 
-int
+static int
 datesort(const void *a1, const void *a2)
 {
-	struct dumpdates *d1 = *(struct dumpdates **)a1;
-	struct dumpdates *d2 = *(struct dumpdates **)a2;
+	const struct dumpdates *d1 = *(const struct dumpdates * const *)a1;
+	const struct dumpdates *d2 = *(const struct dumpdates * const *)a2;
 	int diff;
 
 	diff = strncmp(d1->dd_name, d2->dd_name, sizeof(d1->dd_name));

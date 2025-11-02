@@ -21,4 +21,6 @@ SRCS=	itime.c main.c optr.c dumprmt.c tape.c traverse.c unctime.c
 MAN=	dump.8
 MLINKS+=dump.8 rdump.8
 
+COPTS.main.c+= ${GCC_NO_STRINGOP_TRUNCATION}
+
 .include <bsd.prog.mk>
