@@ -51,15 +51,14 @@ static char sccsid[] = "@(#)fmt.c	8.5 (Berkeley) 4/27/95";
 #include "ps.h"
 
 static char *cmdpart(char *);
-static char *fmt_put(char **);
+static char *fmt_shquote(char **);
 
 /*
  * XXX
  * This is a stub until marc does the real one.
  */
 static char *
-fmt_put(argv)
-	char **argv;
+fmt_shquote(char **argv)
 {
 	char **p, *dst, *src;
 	static char buf[4096];	/* XXX */
@@ -87,22 +86,19 @@ fmt_put(argv)
 }
 
 static char *
-cmdpart(arg0)
-	char *arg0;
+cmdpart(char *arg0)
 {
 	char *cp;
 
 	return ((cp = strrchr(arg0, '/')) != NULL ? cp + 1 : arg0);
 }
 
-char *
-fmt_argv(argv, cmd, maxlen)
-	char **argv;
-	char *cmd;
-	int maxlen;
+const char *
+fmt_argv(char **argv, char *cmd, int maxlen)
 {
 	int len;
-	char *ap, *cp;
+	char *ap;
+    char *cp;
 
 	if (argv == 0 || argv[0] == 0) {
 		if (cmd == NULL) {
@@ -111,19 +107,18 @@ fmt_argv(argv, cmd, maxlen)
 		ap = NULL;
 		len = maxlen + 3;
 	} else {
-		ap = fmt_put(argv);
+		ap = fmt_shquote(argv);
 		len = strlen(ap) + maxlen + 4;
 	}
 	if ((cp = malloc(len)) == NULL) {
 		return (NULL);
 	}
-	shquote(ap, cp, len);
 	if (ap == NULL) {
 		sprintf(cp, "(%.*s)", maxlen, cmd);
 	} else if (strncmp(cmdpart(argv[0]), cmd, maxlen) != 0) {
 		sprintf(cp, "%s (%.*s)", ap, maxlen, cmd);
 	} else {
-		(void) strcpy(cp, ap);
+		(void)strcpy(cp, ap);
 	}
 	return (cp);
 }
