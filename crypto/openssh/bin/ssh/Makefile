@@ -23,4 +23,6 @@ LDADD+=	-lgssapi -lheimntlm ${LIBKRB5_LDADD}
 DPADD+=	${LIBGSSAPI} ${LIBHEIMNTLM} ${LIBKRB5_DPADD}
 .endif
 
+COPTS.clientloop.c += ${GCC_NO_FORMAT_OVERFLOW}
+
 .include <bsd.prog.mk>
