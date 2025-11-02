@@ -11,6 +11,7 @@ SRCS=	ssh.c readconf.c clientloop.c sshtty.c \
 COPTS.auth.c=		-DHOST_ONLY
 COPTS.mux.c=		-Wno-pointer-sign
 COPTS.sshconnect2.c=	-Wno-pointer-sign
+COPTS.clientloop.c += ${GCC_NO_FORMAT_OVERFLOW}
 
 LINKS=	${BINDIR}/ssh ${BINDIR}/slogin
 MAN=	ssh.1 ssh_config.5
@@ -22,7 +23,5 @@ SRCS +=	gss-genr.c
 LDADD+=	-lgssapi -lheimntlm ${LIBKRB5_LDADD}
 DPADD+=	${LIBGSSAPI} ${LIBHEIMNTLM} ${LIBKRB5_DPADD}
 .endif
-
-COPTS.clientloop.c += ${GCC_NO_FORMAT_OVERFLOW}
 
 .include <bsd.prog.mk>
