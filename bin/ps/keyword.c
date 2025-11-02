@@ -353,5 +353,5 @@ vcmp(const void *a, const void *b)
 
 	va = a;
 	vb = b;
-	return (strcmp(va->name, va->name));
+	return (strcmp(va->name, vb->name));
 }
