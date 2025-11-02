@@ -61,8 +61,8 @@ static char sccsid[] = "@(#)keyword.c	8.5 (Berkeley) 4/2/94";
 #include <sys/sysctl.h>
 #endif
 
-static VAR *findvar (char *);
-static int  vcmp (const void *, const void *);
+static VAR *findvar(char *);
+static int  vcmp(const void *, const void *);
 
 #ifdef NOTINUSE
 int	utime(), stime(), ixrss(), idrss(), isrss();
@@ -264,11 +264,11 @@ VAR var[] = {
 };
 
 void
-showkey()
+showkey(void)
 {
 	VAR *v;
 	int i;
-	char *p, *sep;
+	const char *p, *sep;
 
 	i = 0;
 	sep = "";
@@ -285,8 +285,7 @@ showkey()
 }
 
 void
-parsefmt(p)
-	char *p;
+parsefmt(char *p)
 {
 	static struct varent *vtail;
 
@@ -316,12 +315,10 @@ parsefmt(p)
 }
 
 static VAR *
-findvar(p)
-	char *p;
+findvar(const char *p)
 {
 	VAR *v, key;
 	char *hp;
-	int vcmp();
 
 	key.name = p;
 
@@ -350,8 +347,11 @@ findvar(p)
 }
 
 static int
-vcmp(a, b)
-        const void *a, *b;
+vcmp(const void *a, const void *b)
 {
-        return (strcmp(((VAR *)a)->name, ((VAR *)b)->name));
+	const VAR *va, *vb;
+
+	va = a;
+	vb = b;
+	return (strcmp(va->name, va->name));
 }

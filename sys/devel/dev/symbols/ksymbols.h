@@ -108,8 +108,8 @@ struct ksymbol_map {
 		},
 };
 
-typedef struct ksymbol_map 		ksymbol_map_t;
-typedef struct ksymbol 			ksymbol_t;
+typedef struct ksymbol_map 	ksymbol_map_t;
+typedef struct ksymbol 		ksymbol_t;
 typedef struct ksymbol_common 	ksymbol_common_t;
 typedef struct ksymbol_file 	ksymbol_file_t;
 typedef struct ksymbol_header 	ksymbol_header_t;
@@ -128,10 +128,10 @@ struct ksymbol {
 /* Common Symbol Format */
 struct ksymbol_common {
 	const char  *si_name;   /* Format Name */
-	int        	si_type;    /* Format Type (i.e. aout, ecoff, elf, etc) */
-    uint64_t    si_value;   /* Format value (i.e address) */
-    uint64_t    si_size;    /* Format size */
-    LIST_ENTRY(ksymbol_common) si_link;
+	int         si_type;    /* Format Type (i.e. aout, ecoff, elf, etc) */
+    	uint64_t    si_value;   /* Format value (i.e address) */
+    	uint64_t    si_size;    /* Format size */
+    	LIST_ENTRY(ksymbol_common) si_link;
 };
 
 /*
@@ -188,7 +188,7 @@ struct ksymbol_header {
 		xcoff_aouthdr si_ahdr;
 		xcoff_scnhdr si_shdr;
 	} u_xcoff;
-#define si_aout 		u_aout.si_aout
+#define si_aout 	u_aout.si_aout
 #define si_coff_fhdr 	u_coff.si_fhdr
 #define si_coff_ahdr 	u_coff.si_ahdr
 #define si_coff_shdr 	u_coff.si_shdr

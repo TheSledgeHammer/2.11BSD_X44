@@ -86,12 +86,12 @@ static int needuser, needcomm, needenv;
 
 enum sort { DEFAULT, SORTMEM, SORTCPU } sortby = DEFAULT;
 
-static char	*fmt (char **(*)(kvm_t *, const struct kinfo_proc *, int), KINFO *, char *, int);
-static char	*kludge_oldps_options (char *);
-static int	 pscomp (const void *, const void *);
-static void	 saveuser (KINFO *);
-static void	 scanvars (void);
-static void	 usage (void);
+static char	*fmt(char **(*)(kvm_t *, const struct kinfo_proc *, int), KINFO *, char *, int);
+static char	*kludge_oldps_options(char *);
+static int	 pscomp(const void *, const void *);
+static void	 saveuser(KINFO *);
+static void	 scanvars(void);
+static void	 usage(void);
 
 char dfmt[] = "pid tt state time command";
 char jfmt[] = "user pid ppid pgid sess jobc state tt time command";
@@ -104,9 +104,7 @@ char vfmt[] = "pid state time sl re pagein vsz rss lim tsiz %cpu %mem command";
 kvm_t *kd;
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	struct kinfo_proc *kp;
 	struct varent *vent;
@@ -342,7 +340,7 @@ main(argc, argv)
 }
 
 static void
-scanvars()
+scanvars(void)
 {
 	struct varent *vent;
 	VAR *v;
@@ -363,11 +361,7 @@ scanvars()
 }
 
 static char *
-fmt(fn, ki, comm, maxlen)
-	char **(*fn)(kvm_t *, const struct kinfo_proc *, int);
-	KINFO *ki;
-	char *comm;
-	int maxlen;
+fmt(char **(*fn)(kvm_t *, const struct kinfo_proc *, int), KINFO *, char *comm, int maxlen)
 {
 	char *s;
 
@@ -378,8 +372,7 @@ fmt(fn, ki, comm, maxlen)
 }
 
 static void
-saveuser(ki)
-	KINFO *ki;
+saveuser(KINFO *ki)
 {
 	struct pstats pstats;
 	struct usave *usp;
@@ -414,8 +407,7 @@ saveuser(ki)
 }
 
 static int
-pscomp(a, b)
-	const void *a, *b;
+pscomp(const void *a, const void *b)
 {
 	int i;
 #ifdef NEWVM
@@ -447,8 +439,7 @@ pscomp(a, b)
  * feature is available with the option 'T', which takes no argument.
  */
 static char *
-kludge_oldps_options(s)
-	char *s;
+kludge_oldps_options(char *s)
 {
 	size_t len;
 	char *newopts, *ns, *cp;
@@ -496,7 +487,7 @@ kludge_oldps_options(s)
 }
 
 static void
-usage()
+usage(void)
 {
 
 	(void)fprintf(stderr,

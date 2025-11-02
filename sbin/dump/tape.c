@@ -841,13 +841,13 @@ atomic(int atrw, int fd, void *buf, int count)
 	ssize_t got, need = count;
     
     switch (atrw) {
-    case ATRW_READ:
-        got = read(fd, buf, count);
-        break;
-    case ATRW_WRITE:
-        got = write(fd, buf, count);
-        break;
-    }
+	case ATRW_READ:
+		got = read(fd, buf, count);
+		break;
+	case ATRW_WRITE:
+		got = write(fd, buf, count);
+		break;
+	}
 	while (got > 0 && (need -= got) > 0)
 		buf += got;
 	return (got < 0 ? got : count - need);

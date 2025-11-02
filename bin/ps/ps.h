@@ -34,7 +34,10 @@
  */
 
 #define	UNLIMITED	0	/* unlimited terminal width */
-enum type { CHAR, UCHAR, SHORT, USHORT, LONG, ULONG, KPTR };
+enum type {
+	CHAR, UCHAR, SHORT, USHORT, INT, UINT, LONG, ULONG, KPTR,
+	INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64
+};
 
 struct usave {
 	struct	timeval 	u_start;
@@ -44,8 +47,8 @@ struct usave {
 	char				u_valid;
 };
 
-#define KI_PROC(ki) (&(ki)->ki_p->kp_proc)
-#define KI_EPROC(ki) (&(ki)->ki_p->kp_eproc)
+#define KI_PROC(ki) 	(&(ki)->ki_p->kp_proc)
+#define KI_EPROC(ki) 	(&(ki)->ki_p->kp_eproc)
 
 typedef struct kinfo {
 	struct kinfo_proc 	*ki_p;		/* proc structure */
@@ -61,8 +64,8 @@ typedef struct varent {
 } VARENT;
 
 typedef struct var {
-	char		*name;		/* name(s) of variable */
-	char		*header;	/* default header */
+	const char	*name;		/* name(s) of variable */
+	const char	*header;	/* default header */
 	char		*alias;		/* aliases */
 #define	COMM	0x01		/* needs exec arguments and environment (XXX) */
 #define	LJUST	0x02		/* left adjust on output (trailing blanks) */
@@ -78,7 +81,7 @@ typedef struct var {
 	 */
 	int			off;		/* offset in structure */
 	enum type 	type;		/* type of element */
-	char		*fmt;		/* printf format */
+	const  char	*fmt;		/* printf format */
 	char		*time;		/* time format */
 	/*
 	 * glue to link selected fields together

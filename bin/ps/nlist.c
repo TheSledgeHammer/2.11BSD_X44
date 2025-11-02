@@ -84,7 +84,7 @@ extern kvm_t *kd;
 	kvm_read(kd, psnl[x].n_value, (char *)&v, sizeof v) != sizeof(v)
 
 int
-donlist()
+donlist(void)
 {
 	int rval;
 #ifdef NEWVM
@@ -126,8 +126,7 @@ donlist()
 }
 
 void
-nlisterr(nl)
-	struct nlist nl[];
+nlisterr(struct nlist nl[])
 {
 	int i;
 
