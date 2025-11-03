@@ -105,7 +105,7 @@ _LIBPLAN9=  \
             regexp \
             utf \
 
-_LIBGENERIC=   \
+_LIBBASE=   \
             archive \
             bz2 \
             c c_pic compat crypto curses cxx \
@@ -128,7 +128,7 @@ _LIBGENERIC=   \
             y \
             z
             
-_LIBLIST= 	${_LIBGENERIC} ${_LIB211BSD} ${_LIBNETBSD} ${_LIBPLAN9}
+_LIBLIST= 	${_LIBBASE} ${_LIB211BSD} ${_LIBNETBSD} ${_LIBPLAN9}
 
 .for _var in ${_LIBLIST}
 .ifndef LIB${_var:tu}
