@@ -849,6 +849,6 @@ atomic(int atrw, int fd, void *buf, int count)
 		break;
 	}
 	while (got > 0 && (need -= got) > 0)
-		buf += got;
+		buf = (uint8_t *)buf + got;
 	return (got < 0 ? got : count - need);
 }
