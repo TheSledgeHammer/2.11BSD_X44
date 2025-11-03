@@ -21,3 +21,8 @@ CPPFLAGS+=-DOPENSSL_API_COMPAT=0x10100000L
 .PATH: ${SSHDIR}/include
 
 CPPFLAGS+=-DLIBWRAP
+
+LINTFLAGS+=	-X 117	# nonportable '>>' on signed integer type
+LINTFLAGS+=	-X 231	# parameter unused
+LINTFLAGS+=	-X 247	# pointer cast to unrelated type
+LINTFLAGS+=	-X 351	# missing header declaration
