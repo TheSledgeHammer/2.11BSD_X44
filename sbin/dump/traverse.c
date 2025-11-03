@@ -152,7 +152,7 @@ blockest(union dinode *dp)
 	sizeest = howmany(DIP(dp, size), TP_BSIZE);
 	if (blkest > sizeest)
 		blkest = sizeest;
-	if (DIP(dp, size) > sblock->fs_bsize * UFS_NDADDR) {
+	if (DIP(dp, size) > (unsigned)sblock->fs_bsize * UFS_NDADDR) {
 		/* calculate the number of indirect blocks on the dump tape */
 		blkest +=
 			howmany(sizeest - UFS_NDADDR * sblock->fs_bsize / TP_BSIZE,
@@ -182,12 +182,12 @@ blockest(union dinode *dp)
  * the directories in the filesystem.
  */
 int
-mapfiles(ino_t maxino, long *tapesize)
+mapfiles(ino_t maxino, long *tape_size)
 {
 	register struct cg *cgp;
 	register ino_t ino;
 	register int mode;
-	register union dinode *dp;
+	union dinode *dp;
 	int anydirskipped = 0;
 	int i, cg, inosused;
 	char *cp;
@@ -250,9 +250,9 @@ mapfiles(ino_t maxino, long *tapesize)
 			if (WANTTODUMP(dp)) {
 				SETINO(ino, dumpinomap);
 				if (mode != IFREG && mode != IFDIR && mode != IFLNK) {
-					*tapesize += 1;
+					*tape_size += 1;
 				} else {
-					*tapesize += blockest(dp);
+					*tape_size += blockest(dp);
 				}
 				continue;
 			}
@@ -283,9 +283,9 @@ mapfiles(ino_t maxino, long *tapesize)
  * pass using this algorithm.
  */
 int
-mapdirs(ino_t maxino, long *tapesize)
+mapdirs(ino_t maxino, long *tape_size)
 {
-	register union dinode *dp, di;
+	union dinode *dp, di;
 	register int i, isdir;
 	register char *map;
 	register ino_t ino;
@@ -329,7 +329,7 @@ mapdirs(ino_t maxino, long *tapesize)
 		}
 		if (ret & HASDUMPEDFILE) {
 			SETINO(ino, dumpinomap);
-			*tapesize += blockest(&di);
+			*tape_size += blockest(&di);
 			change = 1;
 			continue;
 		}
@@ -400,8 +400,8 @@ dirindir(ino_t ino, ufs2_daddr_t blkno, int ind_level, long *filesize)
 static int
 searchdir(ino_t ino, ufs2_daddr_t blkno, long size, long filesize)
 {
-	register struct direct *dp;
-	register long loc, ret = 0;
+	struct direct *dp;
+	long loc, ret = 0;
 	char dblk[MAXBSIZE];
 
 	if (dblk == NULL && (dblk = malloc(sblock->fs_bsize)) == NULL) {
@@ -454,7 +454,7 @@ dumpino(union dinode *dp, ino_t ino)
 	int ind_level, cnt;
 	fsizeT size;
 	char buf[TP_BSIZE];
-
+    
 	if (newtape) {
 		newtape = 0;
 		dumpmap(dumpinomap, TS_BITS, ino);
@@ -494,12 +494,12 @@ dumpino(union dinode *dp, ino_t ino)
 		 */
 #ifdef FS_44INODEFMT
 		if (DIP(dp, size) > 0 &&
-				DIP(dp, size) < sblock->fs_maxsymlinklen) {
+				DIP(dp, size) < (unsigned)sblock->fs_maxsymlinklen) {
 			spcl.c_addr[0] = 1;
 			spcl.c_count = 1;
 			writeheader(ino);
-			memmove(buf, DIP(dp, shortlink), (u_long)DIP(dp, size));
-			buf[DIP(dp, size) = '\0';
+			memmove(buf, DIP(dp, db), (u_long)DIP(dp, size));
+			buf[DIP(dp, size)] = '\0';
 			writerec(buf, 0);
 			return;
 		}
@@ -593,7 +593,7 @@ dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
 void
 blksout(ufs2_daddr_t *blkp, int frags, ino_t ino)
 {
-	register ufs2_daddr_t *bp;
+	ufs2_daddr_t *bp;
 	int i, j, count, blks, tbperdb;
 
 	blks = howmany(frags * sblock->fs_fsize, TP_BSIZE);
@@ -716,7 +716,6 @@ void
 bread(ufs2_daddr_t blkno, char *buf, int size)	
 {
 	int cnt, i;
-	extern int errno;
 
 loop:
 	if ((int)lseek(diskfd, ((off_t)blkno << dev_bshift), 0) == -1)

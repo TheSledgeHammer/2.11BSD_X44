@@ -112,8 +112,8 @@ time_t	unctime(char *str);
 
 /* mapping rouintes */
 long	blockest(union dinode *dp);
-int		mapfiles(ino_t maxino, long *tapesize);
-int		mapdirs(ino_t maxino, long *tapesize);
+int		mapfiles(ino_t maxino, long *tape_size);
+int		mapdirs(ino_t maxino, long *tape_size);
 
 /* file dumping routines */
 void	blksout(ufs2_daddr_t *blkp, int frags, ino_t ino);
