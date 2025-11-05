@@ -940,7 +940,8 @@ free1:
 }
 
 static int
-pipe1(int *fildes, int flags)
+pipe1(fildes, flags)
+	int *fildes, flags;
 {
 	if (flags &~(O_CLOEXEC | O_NONBLOCK)) {
 		return (EINVAL);

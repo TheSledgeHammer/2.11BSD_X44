@@ -52,49 +52,39 @@ __KERNEL_RCSID(0, "$NetBSD: ns_pcb.c,v 1.20 2004/02/24 15:22:01 wiz Exp $");
 //#include <netns/ns_pcb.h>
 #include <netns/ns_var.h>
 
-struct nspcb_hdr {
-	LIST_ENTRY(nspcb_hdr) 		nsph_hash;
-	LIST_ENTRY(nspcb_hdr) 		nsph_lhash;
-	CIRCLEQ_ENTRY(nspcb_hdr) 	nsph_queue;
-	int 						nsph_state;		/* bind/connect state */
-	struct socket 				*nsph_socket;	/* back pointer to socket */
-	struct nspcbtable			*nsph_table;
+struct nspcb {
+	LIST_ENTRY(nspcb) 	 	nsp_hash;
+	LIST_ENTRY(nspcb) 	 	nsp_lhash;
+	CIRCLEQ_ENTRY(nspcb) 		nsp_queue;
+	struct nspcbtable		*nsp_table;
+	int 				nsp_state;		/* bind/connect state */
+	struct socket 			*nsp_socket;		/* back pointer to socket */
+	struct ns_addr 			nsp_faddr;		/* destination address */
+	struct ns_addr 			nsp_laddr;		/* socket's address */
+	caddr_t				nsp_pcb;		/* protocol specific stuff */
+	struct route 			nsp_route;		/* routing information */
+	struct ns_addr 			nsp_lastdst;		/* validate cached route for dg socks*/
+	long				nsp_notify_param;	/* extra info passed via ns_pcbnotify*/
+	short				nsp_flags;
+	u_int8_t 			nsp_dpt;		/* default packet type for idp_output*/
+	u_int8_t 			nsp_rpt;		/* last received packet type by idp_input() */
 };
+#define nsp_lport 			nsp_laddr.x_port
+#define nsp_fport 			nsp_faddr.x_port
 
-#define	sotonspcb_hdr(so)	((struct nspcb_hdr *)(so)->so_pcb)
-
-LIST_HEAD(nspcbhead, nspcb_hdr);
-CIRCLEQ_HEAD(nspcbqueue, nspcb_hdr);
+LIST_HEAD(nspcbhead, nspcb);
+CIRCLEQ_HEAD(nspcbqueue, nspcb);
 
 struct nspcbtable {
-	struct nspcbqueue 	nspt_queue;
-	struct nspcbhead 	*nspt_porthashtbl;
-	struct nspcbhead 	*nspt_bindhashtbl;
-	struct nspcbhead 	*nspt_connecthashtbl;
+	struct nspcbqueue 		nspt_queue;
+	struct nspcbhead 		*nspt_hashtbl;
+	struct nspcbhead 		*nspt_porthashtbl;
+	struct nspcbhead 		*nspt_bindhashtbl;
+	struct nspcbhead 		*nspt_connecthashtbl;
 	u_long 				nspt_porthash;
 	u_long 				nspt_bindhash;
 	u_long 				nspt_connecthash;
 };
-
-struct nspcb {
-	struct nspcb_hdr 	nsp_head;
-#define nsp_hash		nsp_head.nsph_hash
-#define nsp_queue		nsp_head.nsph_queue
-#define nsp_table		nsp_head.nsph_table
-#define nsp_state		nsp_head.nsph_state
-#define nsp_socket		nsp_head.nsph_socket
-	struct ns_addr 		nsp_faddr;				/* destination address */
-	struct ns_addr 		nsp_laddr;				/* socket's address */
-	caddr_t				nsp_pcb;				/* protocol specific stuff */
-	struct route 		nsp_route;				/* routing information */
-	struct ns_addr 		nsp_lastdst;			/* validate cached route for dg socks*/
-	long				nsp_notify_param;		/* extra info passed via ns_pcbnotify*/
-	short				nsp_flags;
-	u_int8_t 			nsp_dpt;				/* default packet type for idp_output*/
-	u_int8_t 			nsp_rpt;				/* last received packet type by idp_input() */
-};
-#define nsp_lport 		nsp_laddr.x_port
-#define nsp_fport 		nsp_faddr.x_port
 
 /* states in nsp_state: */
 #define	NSP_ATTACHED	0
@@ -113,13 +103,32 @@ static const struct	ns_addr zerons_addr;
 	    ((ntohl((faddr).x_port) + ntohs(fport)) + \
 	     (ntohl((laddr).x_port) + ntohs(lport))) & (table)->nspt_connecthash]
 
+struct nspcbhead *
+ns_pcbhash(table, laddr, lport, faddr, fport)
+	struct nspcbtable *table;
+	struct ns_addr laddr, faddr;
+	uint16_t lport, fport;
+{
+	struct nspcbhead *nshash;
+	uint32_t nethash;
+
+	uint32_t lahash = fnva_32_buf(laddr, sizeof(*laddr), FNV1_32_INIT);	/* laddr hash */
+	uint32_t lphash = fnva_32_buf(&lport, sizeof(lport), FNV1_32_INIT);	/* lport hash */
+	uint32_t fahash = fnva_32_buf(faddr, sizeof(*faddr), FNV1_32_INIT);	/* faddr hash */
+	uint32_t fphash = fnva_32_buf(&fport, sizeof(fport), FNV1_32_INIT);	/* fport hash */
+
+	nethash = ntohl(laddr.x_port) + ntohs(lport) + ntohl(faddr.x_port) + ntohs(fport);
+	nshash = &table->nspt_hashtbl[nethash & table->nspt_hashtbl];
+	return (nshash);
+}
+
 void
 ns_pcbinit(table, bindhashsize, connecthashsize)
 	struct nspcbtable *table;
 	int bindhashsize, connecthashsize;
 {
 	CIRCLEQ_INIT(&table->nspt_queue);
-	table->nspt_porthashtbl = hashinit(bindhashsize, M_PCB, &table->nspt_porthash);
+	table->nspt_hashtbl = hashinit(bindhashsize, M_PCB, &table->nspt_hashtbl);
 	table->nspt_bindhashtbl = hashinit(bindhashsize, M_PCB, &table->nspt_bindhash);
 	table->nspt_connecthashtbl = hashinit(connecthashsize, M_PCB, &table->nspt_connecthash);
 }
@@ -140,10 +149,54 @@ ns_pcballoc(so, v)
 	nsp->nsp_table = table;
 	nsp->nsp_socket = so;
 	so->so_pcb = nsp;
-	CIRCLEQ_INSERT_HEAD(&table->nspt_queue, &nsp->nsp_head, nsph_queue);
-	LIST_INSERT_HEAD(NSPCBHASH_PORT(table, nsp->nsp_lport), &nsp->nsp_head, nsph_lhash);
+	ns_pcbhash(table, nsp->nsp_laddr, nsp->nsp_lport, nsp->nsp_faddr, nsp->nsp_lport);
+	CIRCLEQ_INSERT_HEAD(&table->nspt_queue, nsp, nsp_queue);
+	LIST_INSERT_HEAD(ns_pcbhash(table, nsp->nsp_laddr, nsp->nsp_lport, nsp->nsp_faddr, nsp->nsp_lport), nsp, nsp_lhash);
 	ns_pcbstate(nsp, NSP_ATTACHED);
 	return (0);
+}
+
+struct nspcb *
+ns_pcblookup(table, faddr, fport_arg, laddr, lport_arg, wildp)
+	struct nspcbtable *table;
+	struct ns_addr faddr, laddr;
+	u_int lport_arg, fport_arg;
+	int wildp;
+{
+	struct nspcbhead *head;
+	struct nspcb *nsp;
+	int matchwild = 3, wildcard;
+	u_int16_t lport = lport_arg;
+	u_int16_t fport = fport_arg;
+
+	head = ns_pcbhash(table, laddr, lport, faddr, fport);
+	LIST_FOREACH(nsp, head, nsp_lhash) {
+		if (nsp->nsp_lport != lport) {
+
+		}
+		if (ns_nullhost(nsp->nsp_faddr)) {
+			if (!ns_nullhost(faddr))
+				wildcard++;
+		} else {
+			if (ns_nullhost(*faddr))
+				wildcard++;
+			else {
+				if (!ns_hosteq(nsp->nsp_faddr, faddr))
+					continue;
+				if (nsp->nsp_fport != fport) {
+					if (nsp->nsp_fport != 0)
+						continue;
+					else
+						wildcard++;
+				}
+			}
+		}
+	}
+
+	head = ns_pcbhash(table, zerons_addr, lport, faddr, fport);
+	LIST_FOREACH(nsp, head, nsp_hash) {
+
+	}
 }
 
 int
@@ -208,9 +261,9 @@ noname:
 		} while (ns_pcblookup_port(table, &zerons_addr, lport, wild));
 	}
 	nsp->nsp_lport = lport;
-	LIST_REMOVE(&nsp->nsp_head, nsph_lhash);
+	LIST_REMOVE(&nsp->nsp_head, nsp_lhash);
 	head = NSPCBHASH_PORT(table, nsp->nsp_lport);
-	LIST_INSERT_HEAD(head, &nsp->nsp_head, nsph_lhash);
+	LIST_INSERT_HEAD(head, &nsp->nsp_head, nsp_lhash);
 	ns_pcbstate(nsp, NSP_BOUND);
 	return (0);
 }

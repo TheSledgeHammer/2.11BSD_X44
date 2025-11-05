@@ -49,15 +49,15 @@ tpdu_statehandler(struct tpipcb *tp, struct tp_event *evnt, int tpdu_kind, int c
 
 	case TPDU_XPD_DATA_INDICATION:
 
-    	case TPDU_RESET_CONFIRM:
+	case TPDU_RESET_CONFIRM:
 
-    	case TPDU_DATA_RECEIVED:
+	case TPDU_DATA_RECEIVED:
 
-    	case TPDU_XPD_DATA_RECEIVED:
+	case TPDU_XPD_DATA_RECEIVED:
 
-    	case TPDU_ACCEPT_REQUEST:
+	case TPDU_ACCEPT_REQUEST:
 	}
-    	return (action);
+	return (action);
 }
 
 

@@ -190,7 +190,9 @@ mapfiles(ino_t maxino, long *tape_size)
 	union dinode *dp;
 	int anydirskipped = 0;
 	int i, cg, inosused;
+#ifdef nosoftdeps
 	char *cp;
+#endif
 
 	if ((cgp = malloc(sblock->fs_cgsize)) == NULL) {
 		quit("fs_mapinodes: cannot allocate memory.\n");
@@ -286,10 +288,10 @@ int
 mapdirs(ino_t maxino, long *tape_size)
 {
 	union dinode *dp, di;
-	register int i, isdir;
+	int i, isdir;
 	register char *map;
 	register ino_t ino;
-	long filesize;
+	long filesize, blocksize;
 	int ret, change = 0;
 
 	isdir = 0;		/* XXX just to get gcc to shut up */
@@ -311,9 +313,12 @@ mapdirs(ino_t maxino, long *tape_size)
 		filesize = DIP(&di, size);
 		for (ret = 0, i = 0; filesize > 0 && i < NDADDR; i++) {
 			if (DIP(&di, db[i]) != 0) {
-				ret |= searchdir(ino, DIP(&di, db[i]),
-					(long)dblksize(sblock, &di, i),
-					filesize);
+				if (is_ufs2) {
+					blocksize = (long)dblksize(sblock, &di.dp2, i);
+				} else {
+					blocksize = (long)dblksize(sblock, &di.dp1, i);
+				}
+				ret |= searchdir(ino, DIP(&di, db[i]), blocksize, filesize);
 			}
 			if (ret & HASDUMPEDFILE) {
 				filesize = 0;
@@ -367,8 +372,7 @@ dirindir(ino_t ino, ufs2_daddr_t blkno, int ind_level, long *filesize)
 				blkno = idblk.ufs1[i];
 			}
 			if (blkno != 0) {
-				ret |= searchdir(ino, blkno, sblock->fs_bsize,
-					*filesize);
+				ret |= searchdir(ino, blkno, sblock->fs_bsize, *filesize);
 			}
 			if (ret & HASDUMPEDFILE) {
 				*filesize = 0;
@@ -402,9 +406,10 @@ searchdir(ino_t ino, ufs2_daddr_t blkno, long size, long filesize)
 {
 	struct direct *dp;
 	long loc, ret = 0;
-	char dblk[MAXBSIZE];
+	char *dblk;
 
-	if (dblk == NULL && (dblk = malloc(sblock->fs_bsize)) == NULL) {
+	dblk = malloc(sblock->fs_bsize);
+	if (dblk == NULL) {
 		quit("searchdir: cannot allocate indirect memory.\n");
 	}
 	bread(fsbtodb(sblock, blkno), dblk, (int)size);
@@ -454,6 +459,7 @@ dumpino(union dinode *dp, ino_t ino)
 	int ind_level, cnt;
 	fsizeT size;
 	char buf[TP_BSIZE];
+	void *shortlink;
     
 	if (newtape) {
 		newtape = 0;
@@ -498,7 +504,12 @@ dumpino(union dinode *dp, ino_t ino)
 			spcl.c_addr[0] = 1;
 			spcl.c_count = 1;
 			writeheader(ino);
-			memmove(buf, DIP(dp, db), (u_long)DIP(dp, size));
+			if (is_ufs2) {
+				shortlink = dp->dp2.di_db;
+			} else {
+				shortlink = dp->dp1.di_db;
+			}
+			memmove(buf, shortlink, (u_long)DIP(dp, size));
 			buf[DIP(dp, size)] = '\0';
 			writerec(buf, 0);
 			return;
@@ -524,12 +535,16 @@ dumpino(union dinode *dp, ino_t ino)
 		msg("Warning: undefined file type 0%o\n", DIP(dp, mode) & IFMT);
 		return;
 	}
-	if (DIP(dp, size) > NDADDR * sblock->fs_bsize) {
+	if (DIP(dp, size) > (int32_t)NDADDR * sblock->fs_bsize) {
 		cnt = NDADDR * sblock->fs_frag;
 	} else {
 		cnt = howmany(DIP(dp, size), sblock->fs_fsize);
 	}
-	blksout(DIP(dp, db[0]), cnt, ino);
+	if (is_ufs2) {
+		blksout64(&dp->dp2.di_db[0], cnt, ino);
+	} else {
+		blksout32(&dp->dp1.di_db[0], cnt, ino);
+	}
 	if ((size = DIP(dp, size) - NDADDR * sblock->fs_bsize) <= 0) {
 		return;
 	}
@@ -552,7 +567,6 @@ dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
 		ufs2_daddr_t ufs2[MAXBSIZE / sizeof(ufs2_daddr_t)];
 	} idblk;
 	int i, cnt;
-	//daddr_t idblk[MAXNINDIR];
 
 	if (blk != 0) {
 		bread(fsbtodb(sblock, blk), (char *)idblk, (int) sblock->fs_bsize);
@@ -567,9 +581,9 @@ dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
 		}
 		*size -= NINDIR(sblock) * sblock->fs_bsize;
 		if (is_ufs2) {
-			blksout(&idblk.ufs2, cnt, ino);
+			blksout64(&idblk.ufs2, cnt, ino);
 		} else {
-			blksout(&idblk.ufs1, cnt, ino);
+			blksout32(&idblk.ufs1, cnt, ino);
 		}
 		return;
 	}
@@ -591,7 +605,47 @@ dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
  * Collect up the data into tape record sized buffers and output them.
  */
 void
-blksout(ufs2_daddr_t *blkp, int frags, ino_t ino)
+blksout32(ufs1_daddr_t *blkp, int frags, ino_t ino)
+{
+	ufs1_daddr_t *bp;
+	int i, j, count, blks, tbperdb;
+
+	blks = howmany(frags * sblock->fs_fsize, TP_BSIZE);
+	tbperdb = sblock->fs_bsize >> tp_bshift;
+	for (i = 0; i < blks; i += TP_NINDIR) {
+		if (i + TP_NINDIR > blks) {
+			count = blks;
+		} else {
+			count = i + TP_NINDIR;
+		}
+		for (j = i; j < count; j++) {
+			if (blkp[j / tbperdb] != 0) {
+				spcl.c_addr[j - i] = 1;
+			} else {
+				spcl.c_addr[j - i] = 0;
+			}
+		}
+		spcl.c_count = count - i;
+		writeheader(ino);
+		bp = &blkp[i / tbperdb];
+		for (j = i; j < count; j += tbperdb, bp++) {
+			if (*bp != 0) {
+				if (j + tbperdb <= count) {
+					dumpblock(*bp, (int)sblock->fs_bsize);
+				} else {
+					dumpblock(*bp, (count - j) * TP_BSIZE);
+				}
+			}
+		}
+		spcl.c_type = TS_ADDR;
+	}
+}
+
+/*
+ * Collect up the data into tape record sized buffers and output them.
+ */
+void
+blksout64(ufs2_daddr_t *blkp, int frags, ino_t ino)
 {
 	ufs2_daddr_t *bp;
 	int i, j, count, blks, tbperdb;
@@ -675,7 +729,7 @@ writeheader(ino_t ino)
 union dinode *
 getino(ino_t inum, int *modep)
 {
-	static daddr_t minino, maxino;
+	static ino_t  minino, maxino;
 	static caddr_t inoblock;
 	struct ufs1_dinode *dp1;
 	struct ufs2_dinode *dp2;

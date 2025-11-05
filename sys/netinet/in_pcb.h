@@ -83,7 +83,7 @@ struct inpcb {
 #define inp_socket	inp_head.inph_socket
 #define inp_table	inp_head.inph_table
 #define inp_sp		inp_head.inph_sp
-	struct	  route inp_route;	/* placeholder for routing entry */
+	struct route inp_route;		/* placeholder for routing entry */
 	u_int16_t inp_fport;		/* foreign port */
 	u_int16_t inp_lport;		/* local port */
 	int	  inp_flags;		/* generic IP/datagram flags */

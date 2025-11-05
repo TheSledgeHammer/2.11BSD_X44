@@ -116,7 +116,8 @@ int		mapfiles(ino_t maxino, long *tape_size);
 int		mapdirs(ino_t maxino, long *tape_size);
 
 /* file dumping routines */
-void	blksout(ufs2_daddr_t *blkp, int frags, ino_t ino);
+void	blksout32(ufs1_daddr_t *blkp, int frags, ino_t ino);
+void	blksout64(ufs2_daddr_t *blkp, int frags, ino_t ino);
 void	bread(ufs2_daddr_t blkno, char *buf, int size);
 void	dumpino(union dinode *dp, ino_t ino);
 void	dumpmap(char *map, int type, ino_t ino);
