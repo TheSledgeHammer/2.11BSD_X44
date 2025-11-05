@@ -45,7 +45,6 @@ static char sccsid[] = "@(#)traverse.c	8.7 (Berkeley) 6/15/95";
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
-//#include <ufs/ffs/ffs_extern.h>
 
 #include <protocols/dumprestor.h>
 
@@ -185,8 +184,8 @@ int
 mapfiles(ino_t maxino, long *tape_size)
 {
 	register struct cg *cgp;
-	register ino_t ino;
-	register int mode;
+	ino_t ino;
+	int mode;
 	union dinode *dp;
 	int anydirskipped = 0;
 	int i, cg, inosused;
@@ -290,8 +289,8 @@ mapdirs(ino_t maxino, long *tape_size)
 	union dinode *dp, di;
 	int i, isdir;
 	register char *map;
-	register ino_t ino;
-	long filesize, blocksize;
+	ino_t ino;
+	long filesize;
 	int ret, change = 0;
 
 	isdir = 0;		/* XXX just to get gcc to shut up */
@@ -314,11 +313,10 @@ mapdirs(ino_t maxino, long *tape_size)
 		for (ret = 0, i = 0; filesize > 0 && i < NDADDR; i++) {
 			if (DIP(&di, db[i]) != 0) {
 				if (is_ufs2) {
-					blocksize = (long)dblksize(sblock, &di.dp2, i);
+					ret |= searchdir(ino, DIP(&di, db[i]), (unsigned)dblksize(sblock, &di.dp2, i), filesize);
 				} else {
-					blocksize = (long)dblksize(sblock, &di.dp1, i);
+					ret |= searchdir(ino, DIP(&di, db[i]), (unsigned)dblksize(sblock, &di.dp1, i), filesize);
 				}
-				ret |= searchdir(ino, DIP(&di, db[i]), blocksize, filesize);
 			}
 			if (ret & HASDUMPEDFILE) {
 				filesize = 0;
@@ -535,7 +533,7 @@ dumpino(union dinode *dp, ino_t ino)
 		msg("Warning: undefined file type 0%o\n", DIP(dp, mode) & IFMT);
 		return;
 	}
-	if (DIP(dp, size) > (int32_t)NDADDR * sblock->fs_bsize) {
+	if (DIP(dp, size) > (unsigned)NDADDR * sblock->fs_bsize) {
 		cnt = NDADDR * sblock->fs_frag;
 	} else {
 		cnt = howmany(DIP(dp, size), sblock->fs_fsize);
@@ -569,7 +567,7 @@ dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
 	int i, cnt;
 
 	if (blk != 0) {
-		bread(fsbtodb(sblock, blk), (char *)idblk, (int) sblock->fs_bsize);
+		bread(fsbtodb(sblock, blk), (char *)&idblk, (int)sblock->fs_bsize);
 	} else {
 		memset(&idblk, 0, (int)sblock->fs_bsize);
 	}
@@ -581,9 +579,9 @@ dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
 		}
 		*size -= NINDIR(sblock) * sblock->fs_bsize;
 		if (is_ufs2) {
-			blksout64(&idblk.ufs2, cnt, ino);
+			blksout64(idblk.ufs2, cnt, ino);
 		} else {
-			blksout32(&idblk.ufs1, cnt, ino);
+			blksout32(idblk.ufs1, cnt, ino);
 		}
 		return;
 	}
@@ -734,6 +732,8 @@ getino(ino_t inum, int *modep)
 	struct ufs1_dinode *dp1;
 	struct ufs2_dinode *dp2;
 
+    dp1 = NULL;
+    dp2 = NULL;
 	if (inoblock == NULL && (inoblock = malloc(sblock->fs_bsize)) == NULL) {
 		quit("cannot allocate inode memory.\n");
 	}
@@ -748,11 +748,11 @@ getino(ino_t inum, int *modep)
 
 gotit:
 	if (is_ufs2) {
-		dp2 = &((struct ufs2_dinode*) inoblock)[inum - minino];
+		dp2 = &((struct ufs2_dinode *)inoblock)[inum - minino];
 		*modep = (dp1->di_mode & IFMT);
-		return (union dinode*) dp2;
+		return (union dinode *)dp2;
 	}
-	dp1 = &((struct ufs1_dinode*) inoblock)[inum - minino];
+	dp1 = &((struct ufs1_dinode *)inoblock)[inum - minino];
 	*modep = (dp2->di_mode & IFMT);
 	return ((union dinode *)dp1);
 }
