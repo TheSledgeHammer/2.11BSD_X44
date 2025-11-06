@@ -81,8 +81,8 @@ typedef struct var {
 	 */
 	int			off;		/* offset in structure */
 	enum type 	type;		/* type of element */
-	const  char	*fmt;		/* printf format */
-	char		*time;		/* time format */
+	const char	*fmt;		/* printf format */
+	const char	*time;		/* time format */
 	/*
 	 * glue to link selected fields together
 	 */
