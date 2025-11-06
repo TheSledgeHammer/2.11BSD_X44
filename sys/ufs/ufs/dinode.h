@@ -77,13 +77,13 @@ typedef int64_t 	ufs_time_t;
 #define UFS_NIADDR	 NIADDR
 
 struct ufs1_dinode {
-	u_int16_t		di_mode;		/*   0: IFMT, permissions; see below. */
+	uint16_t		di_mode;		/*   0: IFMT, permissions; see below. */
 	int16_t			di_nlink;		/*   2: File link count. */
 	union {
-		u_int16_t 	oldids[2];		/*   4: FFS: old user and group ids. */
+		uint16_t 	oldids[2];		/*   4: FFS: old user and group ids. */
 		int32_t	  	inumber;		/*   4: LFS: inode number. 32-Bit */
 	} di_u;
-	u_int64_t		di_size;		/*   8: File byte count. */
+	uint64_t		di_size;		/*   8: File byte count. */
 	int32_t			di_atime;		/*  16: Last access time. */
 	int32_t			di_atimensec;	/*  20: Last access time. */
 	int32_t			di_mtime;		/*  24: Last modified time. */
@@ -92,11 +92,11 @@ struct ufs1_dinode {
 	int32_t			di_ctimensec;	/*  36: Last inode change time. */
 	int32_t			di_db[NDADDR];	/*  40: Direct disk blocks. */
 	int32_t			di_ib[NIADDR];	/*  88: Indirect disk blocks. */
-	u_int32_t		di_flags;		/* 100: Status flags (chflags). */
-	u_int32_t		di_blocks;		/* 104: Blocks actually held. */
+	uint32_t		di_flags;		/* 100: Status flags (chflags). */
+	uint32_t		di_blocks;		/* 104: Blocks actually held. */
 	int32_t			di_gen;			/* 108: Generation number. */
-	u_int32_t		di_uid;			/* 112: File owner. */
-	u_int32_t		di_gid;			/* 116: File group. */
+	uint32_t		di_uid;			/* 112: File owner. */
+	uint32_t		di_gid;			/* 116: File group. */
 	int32_t			di_spare[2];	/* 120: Reserved; currently unused */
 };
 
