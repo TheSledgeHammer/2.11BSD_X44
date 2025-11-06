@@ -61,7 +61,7 @@ static char sccsid[] = "@(#)keyword.c	8.5 (Berkeley) 4/2/94";
 #include <sys/sysctl.h>
 #endif
 
-static VAR *findvar(char *);
+static VAR *findvar(const char *);
 static int  vcmp(const void *, const void *);
 
 #ifdef NOTINUSE
