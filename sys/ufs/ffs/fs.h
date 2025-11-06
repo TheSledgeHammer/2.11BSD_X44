@@ -529,6 +529,12 @@ struct ocg {
 	    ? (fs)->fs_bsize 															\
 	    : (fragroundup(fs, blkoff(fs, (dip)->di_size))))
 
+
+#define sblksize(fs, size, lbn) 													\
+	(((lbn) >= NDADDR || (size) >= ((lbn) + 1) << (fs)->fs_bshift) 			        \
+	    ? (fs)->fs_bsize 															\
+	    : (fragroundup(fs, blkoff(fs, (size)))))
+
 /*
  * Number of disk sectors per block/fragment; assumes DEV_BSIZE byte
  * sector size.
