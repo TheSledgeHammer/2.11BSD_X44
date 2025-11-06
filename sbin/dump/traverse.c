@@ -74,9 +74,9 @@ typedef	long fsizeT;
 #endif
 static off_t sblock_try[] = SBLOCKSEARCH;
 
-static	int dirindir(ino_t ino, ufs2_daddr_t blkno, int level, long *size);
-static	void dmpindir(ino_t ino, ufs2_daddr_t blk, int level, fsizeT *size);
-static	int searchdir(ino_t ino, ufs2_daddr_t blkno, long size, long filesize);
+static	int dirindir(ino_t ino, daddr_t blkno, int level, long *size);
+static	void dmpindir(ino_t ino, daddr_t blk, int level, fsizeT *size);
+static	int searchdir(ino_t ino, daddr_t blkno, long size, long filesize);
 
 /*
  * read sblock, search for superblock. Determine sblocksize and
@@ -312,11 +312,7 @@ mapdirs(ino_t maxino, long *tape_size)
 		filesize = DIP(&di, size);
 		for (ret = 0, i = 0; filesize > 0 && i < NDADDR; i++) {
 			if (DIP(&di, db[i]) != 0) {
-				if (is_ufs2) {
-					ret |= searchdir(ino, DIP(&di, db[i]), (unsigned)dblksize(sblock, &di.dp2, i), filesize);
-				} else {
-					ret |= searchdir(ino, DIP(&di, db[i]), (unsigned)dblksize(sblock, &di.dp1, i), filesize);
-				}
+                ret |= searchdir(ino, DIP(&di, db[i]), (long)sblksize(sblock, DIP(&di, size), i), filesize);
 			}
 			if (ret & HASDUMPEDFILE) {
 				filesize = 0;
@@ -352,7 +348,7 @@ mapdirs(ino_t maxino, long *tape_size)
  * require the directory to be dumped.
  */
 static int
-dirindir(ino_t ino, ufs2_daddr_t blkno, int ind_level, long *filesize)
+dirindir(ino_t ino, daddr_t blkno, int ind_level, long *filesize)
 {
 	int ret = 0;
 	register int i;
@@ -400,17 +396,17 @@ dirindir(ino_t ino, ufs2_daddr_t blkno, int ind_level, long *filesize)
  * contains any subdirectories.
  */
 static int
-searchdir(ino_t ino, ufs2_daddr_t blkno, long size, long filesize)
+searchdir(ino_t ino, daddr_t blkno, long size, long filesize)
 {
-	struct direct *dp;
-	long loc, ret = 0;
-	char *dblk;
+	register struct direct *dp;
+	register long loc, ret = 0;
+    char *dblk;
 
-	dblk = malloc(sblock->fs_bsize);
+    dblk = malloc(size);
 	if (dblk == NULL) {
 		quit("searchdir: cannot allocate indirect memory.\n");
 	}
-	bread(fsbtodb(sblock, blkno), dblk, (int)size);
+    bread(fsbtodb(sblock, blkno), dblk, (int)size);
 	if (filesize < size) {
 		size = filesize;
 	}
@@ -558,7 +554,7 @@ dumpino(union dinode *dp, ino_t ino)
  * Read indirect blocks, and pass the data blocks to be dumped.
  */
 static void
-dmpindir(ino_t ino, ufs2_daddr_t blk, int ind_level, fsizeT *size)
+dmpindir(ino_t ino, daddr_t blk, int ind_level, fsizeT *size)
 {
 	union {
 		ufs1_daddr_t ufs1[MAXBSIZE / sizeof(ufs1_daddr_t)];
@@ -767,7 +763,7 @@ int	breaderrors = 0;
 #define	BREADEMAX 32
 
 void
-bread(ufs2_daddr_t blkno, char *buf, int size)	
+bread(daddr_t blkno, char *buf, int size)	
 {
 	int cnt, i;
 

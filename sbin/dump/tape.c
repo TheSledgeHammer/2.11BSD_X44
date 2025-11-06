@@ -169,7 +169,7 @@ void
 writerec(char *dp, int isspcl)
 {
 
-	slp->req[trecno].dblk = (ufs2_daddr_t )0;
+	slp->req[trecno].dblk = (daddr_t)0;
 	slp->req[trecno].count = 1;
 	*(union u_spcl *)(*(nextblock)++) = *(union u_spcl *)dp;
 	if (isspcl)
@@ -181,7 +181,7 @@ writerec(char *dp, int isspcl)
 }
 
 void
-dumpblock(ufs2_daddr_t blkno, int size)
+dumpblock(daddr_t blkno, int size)
 {
 	int avail, tpblks, dblkno;
 

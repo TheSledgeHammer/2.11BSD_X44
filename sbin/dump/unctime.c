@@ -31,12 +31,14 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)unctime.c	8.2 (Berkeley) 6/14/94";
 #endif
 #endif /* not lint */
 
+#include <sys/param.h>
 #include <sys/types.h>
 
 #include <stdio.h>
@@ -44,6 +46,8 @@ static char sccsid[] = "@(#)unctime.c	8.2 (Berkeley) 6/14/94";
 
 #include <stdlib.h>
 #include <string.h>
+
+#include "dump.h"
 
 /*
  * Convert a ctime(3) format string into a system format date.
@@ -62,13 +66,12 @@ time_t
 unctime(char *str)
 {
 	struct tm then;
-	char dbuf[26];
 
 	then.tm_mon = lookup(str, &then);
 	if (then.tm_mon != 0) {
 		return (-1);
 	}
-	then->tm_isdst = -1;
+	then.tm_isdst = -1;
 	return (mktime(&then));
 }
 
@@ -83,6 +86,7 @@ lookup(char *str, struct tm *then)
 }
 
 #ifdef notyet
+
 #define	E_MONTH		4
 #define	E_DAY		8
 #define	E_HOUR		11

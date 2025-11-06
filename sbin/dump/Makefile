@@ -12,6 +12,8 @@
 #	DEBUG			use local directory to find ddate and dumpdates
 #	TDEBUG			trace out the process forking
 
+WARNS?=	3	# XXX: sign-compare issues
+
 .include <bsd.own.mk>
 
 PROG=	dump
@@ -22,5 +24,6 @@ MAN=	dump.8
 MLINKS+=dump.8 rdump.8
 
 COPTS.main.c+= ${GCC_NO_STRINGOP_TRUNCATION}
+#COPTS.traverse.c+=	${GCC_NO_FORMAT_TRUNCATION}
 
 .include <bsd.prog.mk>

@@ -44,8 +44,6 @@ static char sccsid[] = "@(#)dumprmt.c	8.3 (Berkeley) 4/28/95";
 #include <sys/socket.h>
 #include <sys/time.h>
 
-#include <ufs/ufs/dinode.h>
-
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 

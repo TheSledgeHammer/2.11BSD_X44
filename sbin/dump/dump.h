@@ -33,6 +33,8 @@
  *	@(#)dump.h	8.2 (Berkeley) 4/28/95
  */
 
+#include <ufs/ufs/dinode.h>
+
 union dinode {
 	struct ufs1_dinode dp1;
 	struct ufs2_dinode dp2;
@@ -118,7 +120,7 @@ int		mapdirs(ino_t maxino, long *tape_size);
 /* file dumping routines */
 void	blksout32(ufs1_daddr_t *blkp, int frags, ino_t ino);
 void	blksout64(ufs2_daddr_t *blkp, int frags, ino_t ino);
-void	bread(ufs2_daddr_t blkno, char *buf, int size);
+void	bread(daddr_t blkno, char *buf, int size);
 void	dumpino(union dinode *dp, ino_t ino);
 void	dumpmap(char *map, int type, ino_t ino);
 void	writeheader(ino_t ino);
@@ -126,7 +128,7 @@ void	writeheader(ino_t ino);
 /* tape writing routines */
 int	    alloctape(void);
 void	close_rewind(void);
-void	dumpblock(ufs2_daddr_t blkno, int size);
+void	dumpblock(daddr_t blkno, int size);
 void	startnewtape(int top);
 void	trewind(void);
 void	writerec(char *dp, int isspcl);
