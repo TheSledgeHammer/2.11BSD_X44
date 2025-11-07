@@ -258,7 +258,7 @@ static void usage(void);
 int
 main(int argc, char *argv[])
 {
-	struct stat sb;
+//	struct stat sb;
 	struct dos_partition *partp;
 	int	partition = -1;
 	int	ch, i;
@@ -451,7 +451,7 @@ main(int argc, char *argv[])
 }
 
 static void
-usage()
+usage(void)
 {
 	fprintf(stderr, "%s%s",
 		"usage: fdisk [-BIFaipqstu] [-b bootcode] [-1234] [disk]\n",
@@ -622,7 +622,7 @@ change_part(int i)
 }
 
 static void
-print_params()
+print_params(void)
 {
 	printf("parameters extracted from in-core disklabel are:\n");
 	printf("cylinders=%d heads=%d sectors/track=%d (%d blks/cyl)\n\n", cyls,
@@ -673,14 +673,14 @@ setactive:
 }
 
 static void
-change_code()
+change_code(void)
 {
 	if (ok("Do you want to change the boot code?"))
 		init_boot();
 }
 
 void
-get_params_to_use()
+get_params_to_use(void)
 {
 	int	tmp;
 	print_params();
@@ -781,7 +781,7 @@ static int
 write_disk(off_t sector, void *buf)
 {
 	int error;
-	const char *q;
+//	const char *q;
 	char fbuf[BUFSIZ];
 	int i, fdw;
 
@@ -933,7 +933,7 @@ dos_partition_enc(void *pp, struct dos_partition *d)
 }
 
 static int
-read_s0()
+read_s0(void)
 {
 	int i;
 
@@ -961,7 +961,7 @@ read_s0()
 }
 
 static int
-write_s0()
+write_s0(void)
 {
 	int	sector, i;
 
