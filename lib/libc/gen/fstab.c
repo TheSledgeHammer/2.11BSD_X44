@@ -198,7 +198,7 @@ getfsent(void)
 
 struct fstab *
 getfsspec(name)
-	register char *name;
+	register const char *name;
 {
 	if (setfsent())
 		while (fstabscan())
@@ -209,7 +209,7 @@ getfsspec(name)
 
 struct fstab *
 getfsfile(name)
-	register char *name;
+	register const char *name;
 {
 	if (setfsent())
 		while (fstabscan())
