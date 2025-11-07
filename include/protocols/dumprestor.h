@@ -48,8 +48,8 @@
 #ifndef _PROTOCOLS_DUMPRESTORE_H_
 #define _PROTOCOLS_DUMPRESTORE_H_
 
-#include <stdint.h>
-#include <ufs/ufs/dinode.h>
+//#include <stdint.h>
+//#include <ufs/ufs/dinode.h>
 
 /*
  * TP_BSIZE is the size of file blocks on the dump tapes.
@@ -72,12 +72,15 @@
 #define MLEN			16
 #define MSIZ			4096
 
-#define TS_TAPE			1
-#define TS_INODE		2
-#define TS_BITS			3
-#define TS_ADDR			4
-#define TS_END			5
-#define TS_CLRI			6
+/*
+ * special record types
+ */
+#define TS_TAPE			1   /* dump tape header */
+#define TS_INODE		2   /* beginning of file record */
+#define TS_BITS			3   /* map of inodes on tape */
+#define TS_ADDR			4   /* continuation of file record */
+#define TS_END			5   /* end of volume marker */
+#define TS_CLRI			6   /* map of inodes deleted since last dump */
 
 #define OFS_MAGIC		(int)60011
 #define NFS_MAGIC		(int)60012
@@ -107,32 +110,6 @@ struct	idates {
 	char	id_incno;
 	time_t	id_ddate;
 };
-
-union u_spcl {
-	char dummy[TP_BSIZE];
-	struct	s_spcl {
-		long	c_type;		    		/* record type (see below) */
-		time_t	c_date;		    		/* date of this dump */
-		time_t	c_ddate;	    		/* date of previous dump */
-		long	c_volume;	    		/* dump volume number */
-		daddr_t	c_tapea;	    		/* logical block of this record */
-		ino_t	c_inumber;	    		/* number of inode */
-		long	c_magic;	    		/* magic number (see above) */
-		long	c_checksum;	    		/* record checksum */
-		struct ufs1_dinode	c_dinode;   /* ownership and mode of inode */
-		long	c_count;	    		/* number of valid c_addr entries */
-		char	c_addr[TP_NINDIR];  	/* 1 => data; 0 => hole in inode */
-		char	c_label[LBLSIZE];   	/* dump label */
-		long	c_level;	    		/* level of this dump */
-		char	c_filesys[NAMELEN]; 	/* name of dumpped file system */
-		char	c_dev[NAMELEN];	    	/* name of dumpped device */
-		char	c_host[NAMELEN];    	/* name of dumpped host */
-		long	c_flags;	    		/* additional information */
-		long	c_firstrec;	    		/* first record on volume */
-		long	c_spare[32];	    	/* reserved for future uses */
-	} s_spcl;
-} u_spcl;
-#define spcl u_spcl.s_spcl
 #endif
 
 extern union u_spcl {
@@ -146,31 +123,51 @@ extern union u_spcl {
 		uint32_t c_inumber;	    	/* number of inode */
 		int32_t	c_magic;	    	/* magic number (see above) */
 		int32_t	c_checksum;	    	/* record checksum */
+
 		union {
-			struct ufs1_dinode __uc_dinode;
+			struct ufs1_dinode uc_dinode;
 			struct {
-				uint16_t __uc_mode;
-				int16_t __uc_spare1[3];
-				uint64_t __uc_size;
-				int32_t __uc_old_atime;
-				int32_t __uc_atimensec;
-				int32_t __uc_old_mtime;
-				int32_t __uc_mtimensec;
-				int32_t __uc_spare2[2];
-				int32_t __uc_rdev;
-				int32_t __uc_birthtimensec;
-				int64_t __uc_birthtime;
-				int64_t __uc_atime;
-				int64_t __uc_mtime;
-				int32_t __uc_extsize;
-				int32_t __uc_spare4[6];
-				uint32_t __uc_file_flags;
-				int32_t __uc_spare5[2];
-				uint32_t __uc_uid;
-				uint32_t __uc_gid;
-				int32_t __uc_spare6[2];
-			} __uc_ino;
-		} __c_ino;
+				uint16_t uc_mode;
+				int16_t uc_spare1[3];
+				uint64_t uc_size;
+				int32_t uc_old_atime;
+				int32_t uc_atimensec;
+				int32_t uc_old_mtime;
+				int32_t uc_mtimensec;
+				int32_t uc_spare2[2];
+				int32_t uc_rdev;
+				int32_t uc_birthtimensec;
+				int64_t uc_birthtime;
+				int64_t uc_atime;
+				int64_t uc_mtime;
+				int32_t uc_extsize;
+				int32_t uc_spare4[6];
+				uint32_t uc_file_flags;
+				int32_t uc_spare5[2];
+				uint32_t uc_uid;
+				uint32_t uc_gid;
+				int32_t uc_spare6[2];
+			} s_ino;
+		} c_ino;
+
+#define c_dinode		c_ino.uc_dinode
+#define c_mode			c_ino.s_ino.uc_mode
+#define c_spare1		c_ino.s_ino.uc_spare1
+#define c_size			c_ino.s_ino.uc_size
+#define c_extsize		c_ino.s_ino.uc_extsize
+#define c_old_atime		c_ino.s_ino.uc_old_atime
+#define c_atime			c_ino.s_ino.uc_atime
+#define c_atimensec		c_ino.s_ino.uc_atimensec
+#define c_mtime			c_ino.s_ino.uc_mtime
+#define c_mtimensec		c_ino.s_ino.uc_mtimensec
+#define c_birthtime		c_ino.s_ino.uc_birthtime
+#define c_birthtimensec	c_ino.s_ino.uc_birthtimensec
+#define c_old_mtime		c_ino.s_ino.uc_old_mtime
+#define c_rdev			c_ino.s_ino.uc_rdev
+#define c_file_flags	c_ino.s_ino.uc_file_flags
+#define c_uid			c_ino.s_ino.uc_uid
+#define c_gid			c_ino.s_ino.uc_gid
+
 		int32_t	c_count;	    	/* number of valid c_addr entries */
 		char	c_addr[TP_NINDIR];  /* 1 => data; 0 => hole in inode */
 		char	c_label[LBLSIZE];   /* dump label */
@@ -189,34 +186,6 @@ extern union u_spcl {
 } u_spcl;
 #define spcl 	u_spcl.s_spcl
 
-#define c_dinode		__c_ino.__uc_dinode
-#define c_mode			__c_ino.__uc_ino.__uc_mode
-#define c_spare1		__c_ino.__uc_ino.__uc_spare1
-#define c_size			__c_ino.__uc_ino.__uc_size
-#define c_extsize		__c_ino.__uc_ino.__uc_extsize
-#define c_old_atime		__c_ino.__uc_ino.__uc_old_atime
-#define c_atime			__c_ino.__uc_ino.__uc_atime
-#define c_atimensec		__c_ino.__uc_ino.__uc_atimensec
-#define c_mtime			__c_ino.__uc_ino.__uc_mtime
-#define c_mtimensec		__c_ino.__uc_ino.__uc_mtimensec
-#define c_birthtime		__c_ino.__uc_ino.__uc_birthtime
-#define c_birthtimensec	__c_ino.__uc_ino.__uc_birthtimensec
-#define c_old_mtime		__c_ino.__uc_ino.__uc_old_mtime
-#define c_rdev			__c_ino.__uc_ino.__uc_rdev
-#define c_file_flags	__c_ino.__uc_ino.__uc_file_flags
-#define c_uid			__c_ino.__uc_ino.__uc_uid
-#define c_gid			__c_ino.__uc_ino.__uc_gid
-
-/*
- * special record types
- */
-#define TS_TAPE 	1	/* dump tape header */
-#define TS_INODE	2	/* beginning of file record */
-#define TS_ADDR 	4	/* continuation of file record */
-#define TS_BITS 	3	/* map of inodes on tape */
-#define TS_CLRI 	6	/* map of inodes deleted since last dump */
-#define TS_END  	5	/* end of volume marker */
-
 /*
  * flag values
  */
@@ -226,5 +195,10 @@ extern union u_spcl {
 #define	DUMPOUTFMT	"%-18s %c %s"		/* for printf */
 										/* name, incno, ctime(date) */
 #define	DUMPINFMT	"%18s %c %[^\n]\n"	/* inverse for scanf */
+
+/* 2.11BSD: DUMPOUTFMT */
+#define	OLD_DUMPOUTFMT	"%-16s %c %s"		/* for printf */
+						                    /* name, incno, ctime(date) */
+#define	OLD_DUMPINFMT	"%16s %c %[^\n]\n"	/* inverse for scanf */
 
 #endif /* !_PROTOCOLS_DUMPRESTORE_H_ */
