@@ -44,7 +44,6 @@ __RCSID("$NetBSD: fsck.c,v 1.33 2004/03/20 20:28:44 christos Exp $");
 #include <sys/queue.h>
 #include <sys/wait.h>
 #define FSTYPENAMES
-#define FSCKNAMES
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
 
@@ -309,7 +308,7 @@ checkfs(const char *vfstype, const char *spec, const char *mntpt, void *auxarg,
 		do {
 			(void)snprintf(execname,
 			    sizeof(execname), "%s/%s", *edir, execbase);
-			execv(execname, (char * const *)argv);
+			execv(execname, (char * const *)__UNCONST(argv));
 			if (errno != ENOENT) {
 				if (spec)
 					warn("exec %s for %s", execname, spec);
@@ -518,7 +517,7 @@ getfslab(const char *str)
 		errx(1, "partition `%s' is not of a legal vfstype",
 		    str);
 
-	if ((vfstype = fscknames[t]) == NULL)
+	if ((vfstype = fstypenames[t+1]) == NULL)
 		errx(1, "vfstype `%s' on partition `%s' is not supported",
 		    fstypenames[t], str);
 
