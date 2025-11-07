@@ -40,7 +40,6 @@ struct fstab {
 	int		fs_passno;		/* pass number on parallel dump */
 };
 
-
 /* getdevpath(3) */
 #define _HAVE_GETDEVPATH	1	/* allow code conditionalization */
 #define GETDEVPATH_RAWDEV	0x0001
@@ -49,12 +48,12 @@ struct fstab {
 
 __BEGIN_DECLS
 struct	fstab 	*getfsent(void);
-struct	fstab 	*getfsspec(char *name);
-struct	fstab 	*getfsfile(char *name);
+struct	fstab 	*getfsspec(const char *);
+struct	fstab 	*getfsfile(const char *);
 struct	fstab 	*getfstype(void);
-char			*getdevpath(const char *devname, int flags);
+char			*getdevpath(const char *, int);
 const char      *getfstab(void);
-void            setfstab(const char *file);
+void            setfstab(const char *);
 int				setfsent(void);
 void			endfsent(void);
 __END_DECLS
