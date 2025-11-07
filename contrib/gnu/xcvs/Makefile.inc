@@ -13,6 +13,7 @@ CWARNFLAGS.clang+=	-Wno-tautological-compare -Wno-parentheses \
 BINDIR?= /usr/bin
 IDIST:=	${.PARSEDIR}/dist
 
+CPPFLAGS+= -D__SELECT_DECLARED
 .if !defined(SUBDIR)
 CPPFLAGS+= -DSETXID_SUPPORT -DHAVE_CONFIG_H \
 	-I${.CURDIR}/../../include -I${IDIST}/lib \
