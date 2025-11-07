@@ -68,6 +68,35 @@ static char sccsid[] = "@(#)main.c	8.6 (Berkeley) 5/1/95";
 #include "dump.h"
 #include "pathnames.h"
 
+union u_spcl u_spcl;
+int	mapsize;
+char *usedinomap;
+char *dumpdirmap;
+char *dumpinomap;
+char *disk;
+const char *tape;
+const char *dumpdates;
+const char *temp;
+char lastlevel;
+char level;
+int uflag;
+int diskfd;
+int tapefd;
+int pipeout;
+ino_t curino;
+int newtape;
+long tapesize;
+long tsize;
+long asize;
+int etapes;
+int nonodump;
+time_t tstart_writing;
+struct fs *sblock;
+char sblock_buf[MAXBSIZE];
+int dev_bshift;
+int tp_bshift;
+int is_ufs2;
+
 int	notify = 0;		/* notify operator flag */
 int	blockswritten = 0;	/* number of blocks written on current tape */
 int	tapeno = 0;		/* current tape number */

@@ -43,6 +43,8 @@ static char sccsid[] = "@(#)itime.c	8.1 (Berkeley) 6/5/93";
 #include <sys/time.h>
 #include <sys/queue.h>
 
+#include <ufs/ufs/dinode.h>
+
 #include <protocols/dumprestor.h>
 
 #include <errno.h>
@@ -59,10 +61,10 @@ int	nddates = 0;
 int	ddates_in = 0;
 struct dthead dthead = SLIST_HEAD_INITIALIZER(dthead);
 
-static	void dumprecout(FILE *, struct dumpdates *);
-static	int getrecord(FILE *, struct dumpdates *);
-static	int makedumpdate(struct dumpdates *, char *);
-static	void readdumptimes(FILE *);
+static void dumprecout(FILE *, struct dumpdates *);
+static int getrecord(FILE *, struct dumpdates *);
+static int makedumpdate(struct dumpdates *, char *);
+static void readdumptimes(FILE *);
 
 void
 initdumptimes(void)

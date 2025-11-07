@@ -61,14 +61,14 @@ static char sccsid[] = "@(#)tape.c	8.4 (Berkeley) 5/1/95";
 #include "pathnames.h"
 
 int	writesize;		/* size of malloc()ed buffer for tape */
-long	lastspclrec = -1;	/* tape block number of last written header */
+long lastspclrec = -1;	/* tape block number of last written header */
 int	trecno = 0;		/* next record to write in current block */
-extern	long blocksperfile;	/* number of blocks per output file */
-long	blocksthisvol;		/* number of blocks on current output file */
-extern	int ntrec;		/* blocking factor on tape */
-extern	int cartridge;
-extern	char *host;
-char	*nexttape;
+extern long blocksperfile;	/* number of blocks per output file */
+long blocksthisvol;		/* number of blocks on current output file */
+extern int ntrec;		/* blocking factor on tape */
+extern int cartridge;
+extern char *host;
+char *nexttape;
 
 /* atomic int atrw flags */
 #define ATRW_READ    0

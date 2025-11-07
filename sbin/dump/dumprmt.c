@@ -47,6 +47,8 @@ static char sccsid[] = "@(#)dumprmt.c	8.3 (Berkeley) 4/28/95";
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
+#include <ufs/ufs/dinode.h>
+
 #include <protocols/dumprestor.h>
 
 #include <ctype.h>

@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)unctime.c	8.2 (Berkeley) 6/14/94";
 #include <sys/param.h>
 #include <sys/types.h>
 
+#include <ufs/ufs/dinode.h>
+
 #include <stdio.h>
 #include <time.h>
 

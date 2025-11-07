@@ -33,14 +33,10 @@
  *	@(#)dump.h	8.2 (Berkeley) 4/28/95
  */
 
-#include <ufs/ufs/dinode.h>
-
 union dinode {
 	struct ufs1_dinode dp1;
 	struct ufs2_dinode dp2;
 };
-
-int	is_ufs2;
 
 #define DIP(dp, field) \
 	(is_ufs2 ? (dp)->dp2.di_##field : (dp)->dp1.di_##field)
@@ -55,10 +51,10 @@ int	is_ufs2;
 /*
  * Dump maps used to describe what is to be dumped.
  */
-int	mapsize;	/* size of the state maps */
-char	*usedinomap;	/* map of allocated inodes */
-char	*dumpdirmap;	/* map of directories to be dumped */
-char	*dumpinomap;	/* map of files to be dumped */
+extern int	mapsize;	    /* size of the state maps */
+extern char *usedinomap;	/* map of allocated inodes */
+extern char *dumpdirmap;	/* map of directories to be dumped */
+extern char *dumpinomap;	/* map of files to be dumped */
 /*
  * Map manipulation macros.
  */
@@ -72,34 +68,35 @@ char	*dumpinomap;	/* map of files to be dumped */
 /*
  *	All calculations done in 0.1" units!
  */
-char	*disk;		/* name of the disk file */
-const char	*tape;		/* name of the tape file */
-const char	*dumpdates;	/* name of the file containing dump date information*/
-const char	*temp;		/* name of the file for doing rewrite of dumpdates */
-char	lastlevel;	/* dump level of previous dump */
-char	level;		/* dump level of this dump */
-int		uflag;		/* update flag */
-int		diskfd;		/* disk file descriptor */
-int		tapefd;		/* tape file descriptor */
-int		pipeout;	/* true => output to standard output */
-ino_t	curino;		/* current inumber; used globally */
-int		newtape;	/* new tape flag */
-int		density;	/* density in 0.1" units */
-long	tapesize;	/* estimated tape size, blocks */
-long	tsize;		/* tape size in 0.1" units */
-long	asize;		/* number of 0.1" units written on current tape */
-int		etapes;		/* estimated number of tapes */
-int		nonodump;	/* if set, do not honor UF_NODUMP user flags */
+extern char *disk;		        /* name of the disk file */
+extern const char *tape;		/* name of the tape file */
+extern const char *dumpdates;	/* name of the file containing dump date information*/
+extern const char *temp;		/* name of the file for doing rewrite of dumpdates */
+extern char	lastlevel;	        /* dump level of previous dump */
+extern char	level;		        /* dump level of this dump */
+extern int uflag;		        /* update flag */
+extern int diskfd;		        /* disk file descriptor */
+extern int tapefd;		        /* tape file descriptor */
+extern int pipeout;	            /* true => output to standard output */
+extern ino_t curino;	        /* current inumber; used globally */
+extern int newtape;	            /* new tape flag */
+extern int density;	            /* density in 0.1" units */
+extern long	tapesize;	        /* estimated tape size, blocks */
+extern long	tsize;		        /* tape size in 0.1" units */
+extern long	asize;		        /* number of 0.1" units written on current tape */
+extern int etapes;		        /* estimated number of tapes */
+extern int nonodump;	        /* if set, do not honor UF_NODUMP user flags */
 
-int		notify;		/* notify operator flag */
-int		blockswritten;	/* number of blocks written on current tape */
-int		tapeno;		/* current tape number */
-time_t	tstart_writing;	/* when started writing the first tape block */
-struct	fs *sblock;	/* the file system super block */
-char	sblock_buf[MAXBSIZE];
-long	dev_bsize;	/* block size of underlying disk device */
-int		dev_bshift;	/* log2(dev_bsize) */
-int		tp_bshift;	/* log2(TP_BSIZE) */
+extern int notify;		        /* notify operator flag */
+extern int blockswritten;	    /* number of blocks written on current tape */
+extern int tapeno;		        /* current tape number */
+extern time_t tstart_writing;	/* when started writing the first tape block */
+extern struct fs *sblock;	    /* the file system super block */
+extern char	sblock_buf[MAXBSIZE];
+extern long	dev_bsize;	        /* block size of underlying disk device */
+extern int dev_bshift;	        /* log2(dev_bsize) */
+extern int tp_bshift;	        /* log2(TP_BSIZE) */
+extern int is_ufs2;
 
 /* operator interface functions */
 void	broadcast(const char *message);
@@ -108,7 +105,7 @@ void	msg(const char *fmt, ...);
 void	msgtail(const char *fmt, ...);
 int		query(const char *question);
 void	quit(const char *fmt, ...);
-void	set_operators(void);
+void	set_operators(void);        
 void	timeest(void);
 time_t	unctime(char *str);
 
@@ -185,13 +182,16 @@ struct dumptime {
 	struct	dumpdates dt_value;
 	SLIST_ENTRY(dumptime) dt_list;
 };
-extern struct dthead dthead; /* head of the list version */
-int	nddates;		/* number of records (might be zero) */
-int	ddates_in;		/* we have read the increment file */
-struct	dumpdates **ddatev;	/* the arrayfied version */
+
+extern struct dthead dthead;        /* head of the list version */
+extern int nddates;		            /* number of records (might be zero) */
+extern int ddates_in;		        /* we have read the increment file */
+extern struct dumpdates **ddatev;	/* the arrayfied version */
+
 void	initdumptimes(void);
 void	getdumptime(void);
 void	putdumptime(void);
+
 #define	ITITERATE(i, ddp) \
 	for (ddp = ddatev[i = 0]; i < nddates; ddp = ddatev[++i])
 
