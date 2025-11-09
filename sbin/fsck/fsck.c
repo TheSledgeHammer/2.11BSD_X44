@@ -490,7 +490,6 @@ mangle(char *opts, int *argcp, const char ***argvp, int *maxargcp)
 	*maxargcp = maxargc;
 }
 
-
 const static char *
 getfslab(const char *str)
 {
@@ -517,7 +516,6 @@ getfslab(const char *str)
 	if ((t = dl.d_partitions[p - 'a'].p_fstype) >= FSMAXTYPES) 
 		errx(1, "partition `%s' is not of a legal vfstype",
 		    str);
-
 	
 	if ((vfstype = fscknames(t)) == NULL)
 		errx(1, "vfstype `%s' on partition `%s' is not supported",
@@ -530,7 +528,7 @@ static const char *
 fscknames(u_char t)
 {
     const char *vfstype;
-    int i;
+    u_int i;
 
     for (i = 0; i < FSMAXTYPES; i++) {
         vfstype = fstypenames[i];
