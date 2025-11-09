@@ -19,19 +19,21 @@ static char sccsid[] = "@(#)time.c	5.3 (Berkeley) 3/9/86";
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include <time.h>
+
 #ifdef __weak_alias
 __weak_alias(time, _time)
 #endif
 
-long
+time_t
 time(t)
 	time_t *t;
 {
 	struct timeval tt;
 
 	if (gettimeofday(&tt, (struct timezone *)0) < 0)
-		return (-1);
+		return ((time_t)-1);
 	if (t)
-		*t = tt.tv_sec;
-	return (tt.tv_sec);
+		*t = (time_t)tt.tv_sec;
+	return ((time_t)tt.tv_sec);
 }
