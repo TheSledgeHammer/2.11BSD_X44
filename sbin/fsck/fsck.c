@@ -86,6 +86,7 @@ static void maketypelist(char *);
 static void catopt(char **, const char *);
 static void mangle(char *, int *, const char ***, int *);
 static const char *getfslab(const char *);
+static const char *fscknames(u_char);
 static void usage(void);
 static void *isok(struct fstab *);
 
@@ -517,13 +518,28 @@ getfslab(const char *str)
 		errx(1, "partition `%s' is not of a legal vfstype",
 		    str);
 
-	if ((vfstype = fstypenames[t+1]) == NULL)
+	
+	if ((vfstype = fscknames(t)) == NULL)
 		errx(1, "vfstype `%s' on partition `%s' is not supported",
 		    fstypenames[t], str);
 
 	return vfstype;
 }
 
+static const char *
+fscknames(u_char t)
+{
+    const char *vfstype;
+    int i;
+
+    for (i = 0; i < FSMAXTYPES; i++) {
+        vfstype = fstypenames[i];
+        if ((vfstype != NULL) && (t == i)) {
+            return (vfstype);
+        }
+    }
+    return (NULL);
+}
 
 static void
 usage(void)

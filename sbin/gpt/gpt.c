@@ -48,15 +48,15 @@ __FBSDID("$FreeBSD$");
 #include "map.h"
 #include "gpt.h"
 
-char	device_path[MAXPATHLEN];
-char	*device_name;
+char device_path[MAXPATHLEN];
+char *device_name;
 
-off_t	mediasz;
+off_t mediasz;
+u_int parts;
+u_int secsz;
 
-u_int	parts;
-u_int	secsz;
-
-int	readonly, verbose;
+int	readonly;
+int verbose;
 
 static uint32_t crc32_tab[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
@@ -119,13 +119,145 @@ crc32(const void *buf, size_t size)
 	return crc ^ ~0U;
 }
 
+/*
+ * Produce a NUL-terminated utf-8 string from the non-NUL-terminated
+ * utf16 string.
+ */
+void
+utf16_to_utf8(const uint16_t *s16, size_t s16len, uint8_t *s8, size_t s8len)
+{
+	size_t s8idx, s16idx;
+	uint32_t utfchar;
+	unsigned int c;
+
+	for (s16idx = 0; s16idx < s16len; s16idx++)
+		if (s16[s16idx] == 0)
+			break;
+
+	s16len = s16idx;
+	s8idx = s16idx = 0;
+	while (s16idx < s16len) {
+		utfchar = le16toh(s16[s16idx++]);
+		if ((utfchar & 0xf800) == 0xd800) {
+			c = le16toh(s16[s16idx]);
+			if ((utfchar & 0x400) != 0 || (c & 0xfc00) != 0xdc00)
+				utfchar = 0xfffd;
+			else
+				s16idx++;
+		}
+		if (utfchar < 0x80) {
+			if (s8idx + 1 >= s8len)
+				break;
+			s8[s8idx++] = (uint8_t)utfchar;
+		} else if (utfchar < 0x800) {
+			if (s8idx + 2 >= s8len)
+				break;
+			s8[s8idx++] = (uint8_t)(0xc0 | (utfchar >> 6));
+			s8[s8idx++] = (uint8_t)(0x80 | (utfchar & 0x3f));
+		} else if (utfchar < 0x10000) {
+			if (s8idx + 3 >= s8len)
+				break;
+			s8[s8idx++] = (uint8_t)(0xe0 | (utfchar >> 12));
+			s8[s8idx++] = (uint8_t)(0x80 | ((utfchar >> 6) & 0x3f));
+			s8[s8idx++] = (uint8_t)(0x80 | (utfchar & 0x3f));
+		} else if (utfchar < 0x200000) {
+			if (s8idx + 4 >= s8len)
+				break;
+			s8[s8idx++] = (uint8_t)(0xf0 | (utfchar >> 18));
+			s8[s8idx++] = (uint8_t)(0x80 | ((utfchar >> 12) & 0x3f));
+			s8[s8idx++] = (uint8_t)(0x80 | ((utfchar >> 6) & 0x3f));
+			s8[s8idx++] = (uint8_t)(0x80 | (utfchar & 0x3f));
+		}
+	}
+	s8[s8idx] = 0;
+}
+
+
+/*
+ * Produce a non-NUL-terminated utf-16 string from the NUL-terminated
+ * utf8 string.
+ */
+void
+utf8_to_utf16(const uint8_t *s8, uint16_t *s16, size_t s16len)
+{
+	size_t s16idx, s8idx, s8len;
+	uint32_t utfchar = 0;
+	unsigned int c, utfbytes;
+
+	s8len = 0;
+	while (s8[s8len++] != 0)
+		;
+	s8idx = s16idx = 0;
+	utfbytes = 0;
+	do {
+		c = s8[s8idx++];
+		if ((c & 0xc0) != 0x80) {
+			/* Initial characters. */
+			if (utfbytes != 0) {
+				/* Incomplete encoding. */
+				s16[s16idx++] = htole16(0xfffd);
+				if (s16idx == s16len) {
+					s16[--s16idx] = 0;
+					return;
+				}
+			}
+			if ((c & 0xf8) == 0xf0) {
+				utfchar = c & 0x07;
+				utfbytes = 3;
+			} else if ((c & 0xf0) == 0xe0) {
+				utfchar = c & 0x0f;
+				utfbytes = 2;
+			} else if ((c & 0xe0) == 0xc0) {
+				utfchar = c & 0x1f;
+				utfbytes = 1;
+			} else {
+				utfchar = c & 0x7f;
+				utfbytes = 0;
+			}
+		} else {
+			/* Followup characters. */
+			if (utfbytes > 0) {
+				utfchar = (utfchar << 6) + (c & 0x3f);
+				utfbytes--;
+			} else if (utfbytes == 0)
+				utfbytes = (u_int)~0;
+		}
+		if (utfbytes == 0) {
+			if (utfchar >= 0x10000 && s16idx + 2 >= s16len)
+				utfchar = 0xfffd;
+			if (utfchar >= 0x10000) {
+				s16[s16idx++] = htole16((uint16_t)
+				    (0xd800 | ((utfchar>>10) - 0x40)));
+				s16[s16idx++] = htole16((uint16_t)
+				    (0xdc00 | (utfchar & 0x3ff)));
+			} else
+				s16[s16idx++] = htole16((uint16_t)utfchar);
+			if (s16idx == s16len) {
+				return;
+			}
+		}
+	} while (c != 0);
+
+	while (s16idx < s16len)
+		s16[s16idx++] = 0;
+}
+
 void
 unicode16(short *dst, const wchar_t *src, size_t len)
 {
+	/*
 	while (len-- && *src != 0)
 		*dst++ = *src++;
 	if (len)
 		*dst = 0;
+	*/
+	utf8_to_utf16(dst, (wchar_t *)src, len);
+}
+
+void
+unicode8(int *dst, const wchar_t *src, size_t len)
+{
+	utf16_to_utf8(dst, 36, (wchar_t *)src, len);
 }
 
 void
@@ -160,7 +292,7 @@ le_uuid_enc(void *buf, uuid_t const *uuid)
 		p[10 + i] = uuid->node[i];
 }
 
-void*
+void *
 gpt_read(int fd, off_t lba, size_t count)
 {
 	off_t ofs;

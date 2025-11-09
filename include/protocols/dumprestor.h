@@ -48,9 +48,6 @@
 #ifndef _PROTOCOLS_DUMPRESTORE_H_
 #define _PROTOCOLS_DUMPRESTORE_H_
 
-//#include <stdint.h>
-//#include <ufs/ufs/dinode.h>
-
 /*
  * TP_BSIZE is the size of file blocks on the dump tapes.
  * Note that TP_BSIZE must be a multiple of DEV_BSIZE.
@@ -92,17 +89,17 @@
 
 #ifdef notyet
 struct	spcl {
-	int					c_type;
-	time_t				c_date;
-	time_t				c_ddate;
-	int					c_volume;
-	daddr_t				c_tapea;
-	ino_t				c_inumber;
-	int					c_magic;
-	int					c_checksum;
+	int			c_type;
+	time_t			c_date;
+	time_t			c_ddate;
+	int			c_volume;
+	daddr_t			c_tapea;
+	ino_t			c_inumber;
+	int			c_magic;
+	int			c_checksum;
 	struct ufs1_dinode	c_dinode;
-	int					c_count;
-	char				c_addr[DEV_BSIZE];
+	int			c_count;
+	char			c_addr[DEV_BSIZE];
 } spcl;
 
 struct	idates {
@@ -115,14 +112,14 @@ struct	idates {
 extern union u_spcl {
 	char dummy[TP_BSIZE];
 	struct	s_spcl {
-		int32_t	c_type;		    	/* record type (see below) */
-		int32_t	c_old_date;	    	/* date of this dump */
+		int32_t	c_type;		    /* record type (see below) */
+		int32_t	c_old_date;	    /* date of this dump */
 		int32_t	c_old_ddate;	    /* date of previous dump */
-		int32_t	c_volume;	    	/* dump volume number */
+		int32_t	c_volume;	    /* dump volume number */
 		int32_t	c_old_tapea;	    /* logical block of this record */
-		uint32_t c_inumber;	    	/* number of inode */
-		int32_t	c_magic;	    	/* magic number (see above) */
-		int32_t	c_checksum;	    	/* record checksum */
+		uint32_t c_inumber;	    /* number of inode */
+		int32_t	c_magic;	    /* magic number (see above) */
+		int32_t	c_checksum;	    /* record checksum */
 
 		union {
 			struct ufs1_dinode uc_dinode;
@@ -150,41 +147,41 @@ extern union u_spcl {
 			} s_ino;
 		} c_ino;
 
-#define c_dinode		c_ino.uc_dinode
-#define c_mode			c_ino.s_ino.uc_mode
-#define c_spare1		c_ino.s_ino.uc_spare1
-#define c_size			c_ino.s_ino.uc_size
-#define c_extsize		c_ino.s_ino.uc_extsize
-#define c_old_atime		c_ino.s_ino.uc_old_atime
-#define c_atime			c_ino.s_ino.uc_atime
-#define c_atimensec		c_ino.s_ino.uc_atimensec
-#define c_mtime			c_ino.s_ino.uc_mtime
-#define c_mtimensec		c_ino.s_ino.uc_mtimensec
-#define c_birthtime		c_ino.s_ino.uc_birthtime
+#define c_dinode	c_ino.uc_dinode
+#define c_mode		c_ino.s_ino.uc_mode
+#define c_spare1	c_ino.s_ino.uc_spare1
+#define c_size		c_ino.s_ino.uc_size
+#define c_extsize	c_ino.s_ino.uc_extsize
+#define c_old_atime	c_ino.s_ino.uc_old_atime
+#define c_atime		c_ino.s_ino.uc_atime
+#define c_atimensec	c_ino.s_ino.uc_atimensec
+#define c_mtime		c_ino.s_ino.uc_mtime
+#define c_mtimensec	c_ino.s_ino.uc_mtimensec
+#define c_birthtime	c_ino.s_ino.uc_birthtime
 #define c_birthtimensec	c_ino.s_ino.uc_birthtimensec
-#define c_old_mtime		c_ino.s_ino.uc_old_mtime
-#define c_rdev			c_ino.s_ino.uc_rdev
+#define c_old_mtime	c_ino.s_ino.uc_old_mtime
+#define c_rdev		c_ino.s_ino.uc_rdev
 #define c_file_flags	c_ino.s_ino.uc_file_flags
-#define c_uid			c_ino.s_ino.uc_uid
-#define c_gid			c_ino.s_ino.uc_gid
+#define c_uid		c_ino.s_ino.uc_uid
+#define c_gid		c_ino.s_ino.uc_gid
 
 		int32_t	c_count;	    	/* number of valid c_addr entries */
-		char	c_addr[TP_NINDIR];  /* 1 => data; 0 => hole in inode */
-		char	c_label[LBLSIZE];   /* dump label */
+		char	c_addr[TP_NINDIR];  	/* 1 => data; 0 => hole in inode */
+		char	c_label[LBLSIZE];   	/* dump label */
 		int32_t	c_level;	    	/* level of this dump */
-		char	c_filesys[NAMELEN]; /* name of dumpped file system */
-		char	c_dev[NAMELEN];	    /* name of dumpped device */
-		char	c_host[NAMELEN];    /* name of dumpped host */
+		char	c_filesys[NAMELEN]; 	/* name of dumpped file system */
+		char	c_dev[NAMELEN];	    	/* name of dumpped device */
+		char	c_host[NAMELEN];    	/* name of dumpped host */
 		int32_t	c_flags;	    	/* additional information */
-		int32_t	c_old_firstrec;	    /* first record on volume */
+		int32_t	c_old_firstrec;	    	/* first record on volume */
 		int64_t c_date;		    	/* date of this dump */
 		int64_t c_ddate;	    	/* date of previous dump */
 		int64_t c_tapea;	    	/* logical block of this record */
 		int64_t c_firstrec;	    	/* first record on volume */
-		int32_t	c_spare[24];	    /* reserved for future uses */
+		int32_t	c_spare[24];	    	/* reserved for future uses */
 	} s_spcl;
 } u_spcl;
-#define spcl 	u_spcl.s_spcl
+#define spcl 		u_spcl.s_spcl
 
 /*
  * flag values

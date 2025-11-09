@@ -29,7 +29,7 @@
 #ifndef _MAP_H_
 #define	_MAP_H_
 
-typedef struct map {
+struct map {
 	off_t	map_start;
 	off_t	map_size;
 	struct map *map_next;
@@ -46,8 +46,8 @@ typedef struct map {
 #define	MAP_TYPE_PMBR		8
 	unsigned int map_index;
 	void 	*map_data;
-} map_t;
-
+};
+typedef struct map map_t;
 extern int lbawidth;
 
 map_t *map_add(off_t, off_t, int, void*);

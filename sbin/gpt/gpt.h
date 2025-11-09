@@ -53,9 +53,9 @@ struct mbr_part {
 };
 
 struct mbr {
-	uint16_t	mbr_code[223];
+	uint16_t		mbr_code[223];
 	struct mbr_part	mbr_part[4];
-	uint16_t	mbr_sig;
+	uint16_t		mbr_sig;
 #define	MBR_SIG		0xAA55
 };
 
@@ -65,12 +65,16 @@ extern u_int parts;
 extern u_int secsz;
 extern int readonly, verbose;
 
-uint32_t crc32(const void *, size_t);
 void	gpt_close(int);
 int		gpt_open(const char *);
 void	*gpt_read(int, off_t, size_t);
 int		gpt_write(int, map_t *);
+
+uint32_t crc32(const void *, size_t);
+void	utf16_to_utf8(const uint16_t *, size_t, uint8_t *, size_t);
+void	utf8_to_utf16(const uint8_t *, uint16_t *, size_t);
 void	unicode16(short *, const wchar_t *, size_t);
+void	unicode8(int *, const wchar_t *, size_t);
 
 int	cmd_add(int, char *[]);
 int	cmd_create(int, char *[]);

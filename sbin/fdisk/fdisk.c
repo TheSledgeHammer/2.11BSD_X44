@@ -258,7 +258,6 @@ static void usage(void);
 int
 main(int argc, char *argv[])
 {
-//	struct stat sb;
 	struct dos_partition *partp;
 	int	partition = -1;
 	int	ch, i;

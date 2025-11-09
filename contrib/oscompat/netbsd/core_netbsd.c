@@ -62,36 +62,42 @@ __KERNEL_RCSID(0, "$NetBSD: core_netbsd.c,v 1.24 2019/11/20 19:37:53 pgoyette Ex
 #endif
 
 struct coredump_state {
-	struct coredump_iostate *iocookie;
+	void *iocookie;
 	struct CORENAME(core) core;
+	off_t offset;
 };
 
-static int coredump_internal(char *, struct siginfo *, struct coredump_state *, struct coredump_iostate *);
-int coredump_netbsd(void *, struct coredump_iostate *);
+static int coredump_internal(char *, struct siginfo *, struct coredump_state *, void *);
+int coredump_netbsd(void *, void *);
 
 static int
-coredump_internal(char *name, struct siginfo *sig, struct coredump_state *cs, struct coredump_iostate *iocookie)
+coredump_internal(char *name, struct siginfo *sig, struct coredump_state *cs, void *iocookie)
 {
-	if (cs == NULL) {
-		cs = (struct coredump_state *)malloc(sizeof(*cs));
-	}
 	cs->iocookie = iocookie;
 	cs->core.c_midmag = 0;
 	if (name != NULL) {
 		strncpy(cs->core.c_name, name, MAXCOMLEN);
-    	}
+	}
 	cs->core.c_nseg = 0;
 	cs->core.c_signo = sig->si_signo;
 	cs->core.c_ucode = sig->si_code;
 	cs->core.c_cpusize = 0;
-	
+
 	return (0);
 }
 
 int
-coredump_netbsd(void *arg, struct coredump_iostate *iocookie)
+coredump_netbsd(void *arg, void *iocookie)
 {
-	struct coredump_state cs;
+	struct coredump_state *cs, css;
 	
-	return (coredump_internal(NULL, (struct siginfo *)arg, &cs, iocookie));
+	cs = (struct coredump_state *)iocookie;
+	if (cs == NULL) {
+		cs = (struct coredump_state *)malloc(sizeof(*cs));
+		if (cs == NULL) {
+			return (-1);
+		}
+	}
+	css = *cs;
+	return (coredump_internal(NULL, (struct siginfo *)arg, &css, iocookie));
 }
