@@ -2135,8 +2135,8 @@ fill_prlist(oldp, oldlenp, ol)
 				time_t maxexpire;
 
 				/* XXX: we assume time_t is signed. */
-				maxexpire = (-1) &
-					~(1 << ((sizeof(maxexpire) * 8) - 1));
+			    maxexpire = ((time_t)~0) &
+			        (time_t)~(1ULL << ((sizeof(maxexpire) * 8) - 1));
 				if (pr->ndpr_vltime <
 				    maxexpire - pr->ndpr_lastupdate) {
 					p->expire = pr->ndpr_lastupdate +
