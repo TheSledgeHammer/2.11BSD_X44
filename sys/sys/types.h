@@ -144,7 +144,7 @@ typedef	long				daddr_t;	/* disk address */
 typedef	char 				*caddr_t;	/* core address */
 typedef	u_long				ino_t;		/* inode number*/
 typedef	long				swblk_t;	/* swap offset */
-typedef	long				time_t;		/* time? */
+//typedef	long				time_t;		/* time? */
 typedef	u_long				dev_t;		/* device number */
 typedef	quad_t				off_t;		/* file offset */
 typedef	u_short				mode_t;		/* permissions */
@@ -168,7 +168,7 @@ typedef __daddr_t			daddr_t;	/* disk address */
 typedef __caddr_t 			caddr_t;	/* core address */
 typedef __ino_t				ino_t;		/* inode number*/
 typedef	__swblk_t 			swblk_t;	/* swap offset */
-typedef	long 			    time_t;		/* time? */
+//typedef	long 			    time_t;		/* time? */
 typedef __dev_t				dev_t;		/* device number */
 typedef __off_t 			off_t;		/* file offset */
 typedef __mode_t 			mode_t;		/* permissions */
