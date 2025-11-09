@@ -251,13 +251,24 @@ unicode16(short *dst, const wchar_t *src, size_t len)
 	if (len)
 		*dst = 0;
 	*/
-	utf8_to_utf16(dst, (wchar_t *)src, len);
+
+    const uint8_t *s8;
+    uint16_t *s16;
+
+    s8 = __UNCONST(dst);
+    s16 = __UNCONST(src);
+	utf8_to_utf16(s8, s16, len);
 }
 
 void
 unicode8(int *dst, const wchar_t *src, size_t len)
 {
-	utf16_to_utf8(dst, 36, (wchar_t *)src, len);
+    const uint16_t *s16;
+    uint8_t *s8;
+
+    s16 = __UNCONST(dst);
+    s8 = __UNCONST(src);
+	utf16_to_utf8(s16, 36, s8, len);
 }
 
 void
