@@ -49,11 +49,11 @@
 #include "map.h"
 #include "gpt.h"
 
-#define DEFAULT_BOOTDIR     "/usr/mdec/boot0"
+//#define DEFAULT_BOOTDIR     "/usr/mdec/boot0"
 #define DEFAULT_BOOTPMBR    "/usr/mdec/pmbr"
 #define DEFAULT_BOOTGPT     "/usr/mdec/gptboot"
 
-static const char *bootpath = DEFAULT_BOOTDIR;
+//static const char *bootpath = DEFAULT_BOOTDIR;
 static const char *pmbrpath = DEFAULT_BOOTPMBR;
 static const char *gptpath = DEFAULT_BOOTGPT;
 
@@ -66,9 +66,8 @@ usage_boot(void)
 }
 
 static map_t *
-bootmap(int fd, unsigned int entry)
+bootmap(int fd, uuid_t *uuid, unsigned int entry)
 {
-	uuid_t uuid;
 	off_t  block;
 	off_t  size;
 	map_t *gpt, *tpg;
@@ -107,130 +106,174 @@ bootmap(int fd, unsigned int entry)
 		return (NULL);
 	}
 
-	if (!gpt_write_crc(fd, map, gpt, tbl, &uuid, entry)) {
+	if (!gpt_write_crc(fd, map, gpt, tbl, uuid, entry)) {
 		return (NULL);
 	}
-	if (!gpt_write_crc(fd, map, lbt, tpg, &uuid, entry)) {
+
+	if (!gpt_write_crc(fd, map, lbt, tpg, uuid, entry)) {
 		return (NULL);
 	}
 	return (map);
 }
 
-#ifdef notyet
-
 static int
-gpt_find(map_t **mapp)
+gpt_find(map_t *gpt, map_t **mapp, uuid_t *uuid)
 {
-    struct gpt_hdr *hdr;
-    struct gpt_ent *ent;
-    map_t *map;
-    unsigned int i;
+	struct gpt_hdr *hdr;
+	struct gpt_ent *ent;
+	map_t *map;
+	unsigned int i;
 
-    for (i = 0; i < le32toh(hdr->hdr_entries); i++) {
-        ent = gpt_ent(hdr, tbl, i);
-        if (uuid_equal(&ent->ent_type, type, NULL)) {
-            break;
-        }
-    }
-
-    if (i == le32toh(hdr->hdr_entries)) {
-        *mapp = NULL;
-        return (0);
-    }
-
-    for (map = map_find(MAP_TYPE_GPT_PART); map != NULL;
-	     map = map->map_next) {
-        if (map->map_type != MAP_TYPE_GPT_PART) {
-            if (map->map_start == (off_t)le64toh(ent->ent_lba_start)) {
-                *mapp = map;
-                return (0);
-            }
-        }
-    }
-   	errx(1, "internal map list is corrupted");
-}
-
-static void
-bootgpt(int fd)
-{
-    unsigned int entry;
-    map_t *gptboot;
-    int bfd;
-
-    bfd = open(gptpath, O_RDONLY);
-    if (bfd < 0 || fstat(bfd, &st) < 0) {
-		errx(1, "unable to open GPT boot loader");
+	for (i = 0; i < le32toh(hdr->hdr_entries); i++) {
+		ent = gpt_ent(hdr, gpt, i);
+		if (uuid_equal(&ent->ent_type, uuid, NULL)) {
+			break;
+		}
 	}
 
-    if (!gpt_find(&gptboot)) {
-        errx(1, "error: GPT not found");
-    }
-    if (gptboot != NULL) {
-        if (gptboot->map_size * secsz < st.st_size) {
-            errx(1, "%s: error: boot partition is too small", 
-                device_name);
-        }
-    } else {
-        gptboot = bootmap(fd, entry);
-        if (gptboot == NULL) {
-             errx(1, "error: GPT not found");
-        }
-    }
+	if (i == le32toh(hdr->hdr_entries)) {
+		*mapp = NULL;
+		return (0);
+	}
 
-	close(bfd);
-	gpt_write(fd, gptboot);
-
-    
+	for (map = map_find(MAP_TYPE_GPT_PART); map != NULL; map = map->map_next) {
+		if (map->map_type != MAP_TYPE_GPT_PART) {
+			if (map->map_start == (off_t)le64toh(ent->ent_lba_start)) {
+				*mapp = map;
+				return (0);
+			}
+		}
+	}
+	warnx("internal map list is corrupted");
+	return (1);
 }
 
-#endif
+static u_long boot_size;
 
 static void
-bootset(int fd)
+bootgpt(int fd, map_t *map, uuid_t *uuid, unsigned int entry)
 {
-	struct stat st;
+	struct stat sb;
+	off_t bootsize, ofs;
+    map_t *gptboot;
+    char *buf;
+    ssize_t nbytes;
+    int bfd;
+
+	if (boot_size == 0) {
+		/* Default to 64k. */
+		bootsize = 65536 / secsz;
+	} else {
+		if (boot_size * secsz < 16384) {
+			warnx("invalid boot partition size %lu", boot_size);
+			return;
+		}
+		bootsize = boot_size;
+	}
+
+	bfd = open(gptpath, O_RDONLY);
+	if (bfd < 0 || fstat(bfd, &sb) < 0) {
+		warn("unable to open GPT boot loader");
+		return;
+	}
+
+	if (!gpt_find(map, &gptboot, uuid)) {
+		warn("error: GPT not found");
+		return;
+	}
+	if (gptboot != NULL) {
+		if (gptboot->map_size * secsz < sb.st_size) {
+			warnx("%s: error: boot partition is too small", device_name);
+			return;
+		}
+	} else if (bootsize * secsz < sb.st_size) {
+		warnx("%s: error: proposed size for boot partition is too small",
+				device_name);
+		return;
+	} else {
+		gptboot = bootmap(fd, uuid, entry);
+		if (gptboot == NULL) {
+			warn("error: GPT not found");
+			return;
+		}
+	}
+
+	bootsize = (sb.st_size + secsz - 1) / secsz * secsz;
+	buf = calloc(1, bootsize);
+	nbytes = read(bfd, buf, sb.st_size);
+	if (nbytes < 0) {
+		warn("unable to read GPT boot loader");
+		return;
+	}
+	if (nbytes != sb.st_size) {
+		warnx("short read of GPT boot loader");
+		return;
+	}
+	close(bfd);
+	ofs = gptboot->map_start * secsz;
+	if (lseek(fd, ofs, SEEK_SET) != ofs) {
+		warnx("%s: error: unable to seek to boot partition", device_name);
+		return;
+	}
+	nbytes = write(fd, buf, bootsize);
+	if (nbytes < 0) {
+		warn("unable to write GPT boot loader");
+		return;
+	}
+	if (nbytes != bootsize) {
+		warnx("short write of GPT boot loader");
+		return;
+	}
+	gpt_write(fd, gptboot);
+	free(buf);
+}
+
+static void
+bootpmbr(int fd, map_t *map, unsigned int entry)
+{
+	struct stat sb;
 	off_t  block;
 	off_t  size;
-	unsigned int entry;
-	map_t *map, *pmbrboot;
+	map_t *pmbrboot;
 	struct mbr *mbr;
 	ssize_t nbytes;
 	int bfd;
 
-	entry = 0;
-	map = bootmap(fd, entry);
-	if (map == NULL) {
-		return;
-	}
 	block = map->map_start;
-	size  = map->map_size;
+	size = map->map_size;
 
 	pmbrboot = map_find(MAP_TYPE_PMBR);
 	if (pmbrboot == NULL) {
-		errx(1, "error: PMBR not found");
+		warn("error: PMBR not found");
+		return;
 	}
 
 	bfd = open(pmbrpath, O_RDONLY);
-	if (bfd < 0 || fstat(bfd, &st) < 0) {
-		errx(1, "unable to open PMBR boot loader");
+	if (bfd < 0 || fstat(bfd, &sb) < 0) {
+		warn("unable to open PMBR boot loader");
+		return;
 	}
 
-	if (st.st_size != secsz) {
-		errx(1, "invalid PMBR boot loader");
+	if (sb.st_size != secsz) {
+		warnx("invalid PMBR boot loader");
+		return;
 	}
 
 	mbr = pmbrboot->map_data;
 	if (mbr == NULL) {
-		errx(1, "No PMBR data!");
+		warn("No PMBR data!");
+		return;
 	}
 
 	nbytes = read(bfd, mbr->mbr_code, sizeof(mbr->mbr_code));
 	if (nbytes < 0) {
-		errx(1, "unable to read PMBR boot loader");
+		warn("unable to read PMBR boot loader");
+		return;
 	}
 
 	if (nbytes != sizeof(mbr->mbr_code)) {
-		errx(1, "short read of PMBR boot loader");
+		warnx("short read of PMBR boot loader");
+		return;
 	}
 	close(bfd);
 	gpt_write(fd, pmbrboot);
@@ -239,6 +282,24 @@ bootset(int fd)
 	 * Generate partition #1
 	 */
 	gpt_create_pmbr_part(mbr->mbr_part[1], block, size);
+}
+
+static void
+bootset(int fd)
+{
+	uuid_t uuid;
+	unsigned int entry;
+	map_t *map;
+
+	entry = 0;
+	map = bootmap(fd, &uuid, entry);
+	if (map == NULL) {
+		return;
+	}
+	/* PMBR */
+	bootpmbr(fd, map, entry);
+	/* GPT */
+	bootgpt(fd, map, &uuid, entry);
 
 	gpt_write(fd, map);
 }
@@ -247,23 +308,33 @@ int
 cmd_boot(int argc, char *argv[])
 {
 	int ch, fd;
+	char *p;
 
 	while ((ch = getopt(argc, argv, "b:g:s:")) != -1) {
-		switch(ch) {
-        case 'b':
-            pmbrpath = optarg;
-            break;
-        case 'g':
-//            gptpath = optarg;
-//            break;
-        case 's':
+		switch (ch) {
+		case 'b':
+			pmbrpath = optarg;
+			break;
+		case 'g':
+			gptpath = optarg;
+			break;
+		case 's':
+			if (boot_size > 0) {
+				usage_boot();
+			}
+			boot_size = strtol(optarg, &p, 10);
+			if (*p != '\0' || boot_size < 1) {
+				usage_boot();
+			}
+			break;
 		default:
 			usage_boot();
 		}
 	}
 
-	if (argc == optind)
+	if (argc == optind) {
 		usage_boot();
+	}
 
 	while (optind < argc) {
 		fd = gpt_open(argv[optind++]);
@@ -272,6 +343,7 @@ cmd_boot(int argc, char *argv[])
 			continue;
 		}
 		bootset(fd);
+
 		gpt_close(fd);
 	}
 	return (0);

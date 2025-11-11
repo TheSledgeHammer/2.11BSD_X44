@@ -462,13 +462,15 @@ gpt_read(int fd, off_t lba, size_t count)
 
 	count *= secsz;
 	buf = malloc(count);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return (NULL);
+	}
 
 	ofs = lba * secsz;
-	if (lseek(fd, ofs, SEEK_SET) == ofs &&
-	    read(fd, buf, count) == (ssize_t)count)
+	if (lseek(fd, ofs, SEEK_SET) == ofs
+			&& read(fd, buf, count) == (ssize_t)count) {
 		return (buf);
+	}
 
 	free(buf);
 	return (NULL);
@@ -482,9 +484,10 @@ gpt_write(int fd, map_t *map)
 
 	count = map->map_size * secsz;
 	ofs = map->map_start * secsz;
-	if (lseek(fd, ofs, SEEK_SET) == ofs &&
-	    write(fd, map->map_data, count) == (ssize_t)count)
+	if (lseek(fd, ofs, SEEK_SET) == ofs
+			&& write(fd, map->map_data, count) == (ssize_t)count) {
 		return (0);
+	}
 	return (-1);
 }
 
@@ -517,7 +520,7 @@ gpt_mbr(int fd, off_t lba)
 	for (i = 0; i < 4; i++) {
 		if (mbr->mbr_part[i].part_typ == 0)
 			continue;
-		if (mbr->mbr_part[i].part_typ == 0xee)
+		if (mbr->mbr_part[i].part_typ == DOSPTYP_PMBR)
 			pmbr++;
 		else
 			break;
@@ -543,7 +546,7 @@ gpt_mbr(int fd, off_t lba)
 		return (-1);
 	for (i = 0; i < 4; i++) {
 		if (mbr->mbr_part[i].part_typ == 0 ||
-		    mbr->mbr_part[i].part_typ == 0xee)
+		    mbr->mbr_part[i].part_typ == DOSPTYP_PMBR)
 			continue;
 		start = le16toh(mbr->mbr_part[i].part_start_hi);
 		start = (start << 16) + le16toh(mbr->mbr_part[i].part_start_lo);
