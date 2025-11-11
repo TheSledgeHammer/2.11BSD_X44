@@ -84,7 +84,7 @@ dump_tm(const char *str, struct tm *tm)
 void
 dump_pw(struct passwd *p)
 {
-	printf("%s:%s:%u:%u:%s:%ld:%ld:%s:%s:%s\n",
+	printf("%s:%s:%u:%u:%s:%lld:%lld:%s:%s:%s\n",
 		p->pw_name,
 		p->pw_passwd,
 		p->pw_uid, p->pw_gid,
