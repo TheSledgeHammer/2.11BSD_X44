@@ -551,14 +551,14 @@ copy(struct passwd *pw, FILE *fp)
 			(void)fprintf(fp, "%s", buf);
 			continue;
 		}
-		(void)fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n", pw->pw_name,
+		(void)fprintf(fp, "%s:%s:%d:%d:%s:%lld:%lld:%s:%s:%s\n", pw->pw_name,
 				pw->pw_passwd, pw->pw_uid, pw->pw_gid, pw->pw_class,
 				pw->pw_change, pw->pw_expire, pw->pw_gecos, pw->pw_dir,
 				pw->pw_shell);
 		done = 1;
 	}
 	if (!done) {
-		(void)fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n", pw->pw_name,
+		(void)fprintf(fp, "%s:%s:%d:%d:%s:%lld:%lld:%s:%s:%s\n", pw->pw_name,
 				pw->pw_passwd, pw->pw_uid, pw->pw_gid, pw->pw_class,
 				pw->pw_change, pw->pw_expire, pw->pw_gecos, pw->pw_dir,
 				pw->pw_shell);
