@@ -192,7 +192,7 @@ check(FILE *fp, struct passwd *pw, struct entry *elist)
 	    elist[E_LOCATE].save, elist[E_BPHONE].save, elist[E_HPHONE].save);
 
 	if (snprintf(buf, sizeof(buf),
-	    "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s",
+	    "%s:%s:%d:%d:%s:%lld:%lld:%s:%s:%s",
 	    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid, pw->pw_class,
 	    pw->pw_change, pw->pw_expire, pw->pw_gecos, pw->pw_dir,
 	    pw->pw_shell) >= sizeof(buf)) {
