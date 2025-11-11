@@ -3576,7 +3576,7 @@ logxfer(const char *command, off_t bytes, const char *file1, const char *file2,
 			    " %s", r2);
 		if (elapsed != NULL)
 			len += snprintf(buf + len, sizeof(buf) - len,
-			    " in %ld.%.03d seconds", elapsed->tv_sec,
+			    " in %lld.%.03d seconds", elapsed->tv_sec,
 			    (int)(elapsed->tv_usec / 1000));
 		if (error != NULL)
 			len += snprintf(buf + len, sizeof(buf) - len,
@@ -3599,7 +3599,7 @@ logxfer(const char *command, off_t bytes, const char *file1, const char *file2,
 
 	time(&now);
 	len = snprintf(buf, sizeof(buf),
-	    "%.24s %ld %s " LLF " %s %c %s %c %c %s FTP 0 * %c\n",
+	    "%.24s %lld %s " LLF " %s %c %s %c %c %s FTP 0 * %c\n",
 
 /*
  * XXX: wu-ftpd puts ' (send)' or ' (recv)' in the syslog message, and removes
@@ -3647,7 +3647,7 @@ logrusage(const struct rusage *rusage_before,
 
 	timersub(&rusage_after->ru_utime, &rusage_before->ru_utime, &usrtime);
 	timersub(&rusage_after->ru_stime, &rusage_before->ru_stime, &systime);
-	syslog(LOG_INFO, "%ld.%.03du %ld.%.03ds %ld+%ldio %ldpf+%ldw",
+	syslog(LOG_INFO, "%lld.%.03du %lld.%.03ds %ld+%ldio %ldpf+%ldw",
 	    usrtime.tv_sec, (int)(usrtime.tv_usec / 1000),
 	    systime.tv_sec, (int)(systime.tv_usec / 1000),
 	    rusage_after->ru_inblock - rusage_before->ru_inblock,
