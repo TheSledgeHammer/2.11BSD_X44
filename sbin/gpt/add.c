@@ -185,23 +185,8 @@ cmd_add(int argc, char *argv[])
 		case 't':
 			if (!uuid_is_nil(&type, NULL))
 				usage_add();
-			uuid_from_string(optarg, &type, &status);
-			if (status != uuid_s_ok) {
-				if (strcmp(optarg, "efi") == 0) {
-					uuid_t efi = GPT_ENT_TYPE_EFI;
-					type = efi;
-				} else if (strcmp(optarg, "swap") == 0) {
-					uuid_t sw = GPT_ENT_TYPE_FREEBSD_SWAP;
-					type = sw;
-				} else if (strcmp(optarg, "ufs") == 0) {
-					uuid_t ufs = GPT_ENT_TYPE_FREEBSD_UFS;
-					type = ufs;
-				} else if (strcmp(optarg, "linux") == 0 ||
-				    strcmp(optarg, "windows") == 0) {
-					uuid_t m = GPT_ENT_TYPE_MS_BASIC_DATA;
-					type = m;
-				} else
-					usage_add();
+			if (!parse_uuid(optarg, &type)) {
+				usage_add();
 			}
 			break;
 		default:

@@ -70,11 +70,13 @@ struct gpt_ent {
 	uint64_t	ent_lba_start;
 	uint64_t	ent_lba_end;
 	uint64_t	ent_attr;
-#define	GPT_ENT_ATTR_PLATFORM		(1ULL << 0)
-#define	GPT_ENT_ATTR_BOOTME			(1ULL << 59)
-#define	GPT_ENT_ATTR_BOOTONCE		(1ULL << 58)
-#define	GPT_ENT_ATTR_BOOTFAILED		(1ULL << 57)
-	uint16_t	ent_name[36];		/* UTF-16. */
+#define	GPT_ENT_ATTR_PLATFORM		(1ULL << 0)	/* required for platform to function */
+#define	GPT_ENT_ATTR_NO_PROTOCOL	(1ULL << 1)	/* UEFI won't recognize file system */
+#define	GPT_ENT_ATTR_LEGACY		(1ULL << 2)	/* legacy BIOS boot partition */
+#define	GPT_ENT_ATTR_BOOTME		(1ULL << 59)	/* indicates a bootable partition */
+#define	GPT_ENT_ATTR_BOOTONCE		(1ULL << 58)	/* attempt to boot this partition only once */
+#define	GPT_ENT_ATTR_BOOTFAILED		(1ULL << 57)	/* partition that was marked bootonce but failed to boot */
+	uint16_t	ent_name[36];			/* UTF-16. */
 };
 #ifdef CTASSERT
 CTASSERT(sizeof(struct gpt_ent) == 128);

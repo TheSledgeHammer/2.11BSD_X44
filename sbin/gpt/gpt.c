@@ -303,6 +303,157 @@ le_uuid_enc(void *buf, uuid_t const *uuid)
 		p[10 + i] = uuid->node[i];
 }
 
+static const struct {
+	const char *alias;
+	uuid_t uuid;
+} uuid_aliases[] = {
+	{ "efi",		GPT_ENT_TYPE_EFI },
+	{ "bios",		GPT_ENT_TYPE_BIOS_BOOT },
+	{ "swap",		GPT_ENT_TYPE_FREEBSD_SWAP },
+	{ "ufs",		GPT_ENT_TYPE_FREEBSD_UFS },
+	/* DragonFly */
+	{ "ccd",		GPT_ENT_TYPE_DRAGONFLY_CCD },
+	{ "label32",		GPT_ENT_TYPE_DRAGONFLY_LABEL32 },
+	{ "label64",		GPT_ENT_TYPE_DRAGONFLY_LABEL64 },
+	{ "dfly",		GPT_ENT_TYPE_DRAGONFLY_LABEL64 },
+	{ "dragonfly",		GPT_ENT_TYPE_DRAGONFLY_LABEL64 },
+	{ "hammer",		GPT_ENT_TYPE_DRAGONFLY_HAMMER },
+	{ "hammer2",		GPT_ENT_TYPE_DRAGONFLY_HAMMER2 },
+	{ "vinum",		GPT_ENT_TYPE_DRAGONFLY_VINUM },
+	/* FreeBSD */
+	{ "freebsd-legacy",	GPT_ENT_TYPE_FREEBSD },
+	{ "freebsd-boot",	GPT_ENT_TYPE_FREEBSD_BOOT },
+	{ "freebsd-swap",	GPT_ENT_TYPE_FREEBSD_SWAP },
+	{ "freebsd-ufs",	GPT_ENT_TYPE_FREEBSD_UFS },
+	{ "freebsd-zfs",	GPT_ENT_TYPE_FREEBSD_ZFS },
+	/* NetBSD */
+	{ "netbsd-ccd",		GPT_ENT_TYPE_NETBSD_CCD },
+	{ "netbsd-cgd",		GPT_ENT_TYPE_NETBSD_CGD },
+	{ "netbsd-ffs",		GPT_ENT_TYPE_NETBSD_FFS },
+	{ "netbsd-lfs",		GPT_ENT_TYPE_NETBSD_LFS },
+	{ "netbsd-swap",	GPT_ENT_TYPE_NETBSD_SWAP },
+	/* OpenBSD */
+	{ "openbsd",		GPT_ENT_TYPE_OPENBSD_DATA },
+	/* Apple */
+	{ "apple-apfs",		GPT_ENT_TYPE_APPLE_APFS },
+	{ "apple-hfs",		GPT_ENT_TYPE_APPLE_HFS },
+	{ "apple-ufs",		GPT_ENT_TYPE_APPLE_UFS },
+	{ "apple-zfs",		GPT_ENT_TYPE_APPLE_ZFS },
+	/* Linux */
+	{ "linux",		GPT_ENT_TYPE_LINUX_DATA },
+	{ "linux-lvm",		GPT_ENT_TYPE_LINUX_LVM },
+	{ "linux-raid",		GPT_ENT_TYPE_LINUX_RAID },
+	{ "linux-swap",		GPT_ENT_TYPE_LINUX_SWAP },
+	/* Windows */
+	{ "windows",		GPT_ENT_TYPE_MS_BASIC_DATA },
+	{ "windows-reserved",	GPT_ENT_TYPE_MS_RESERVED },
+	{ "windows-recovery",	GPT_ENT_TYPE_MS_RECOVERY },
+};
+
+int
+parse_uuid(const char *s, uuid_t *uuid)
+{
+	uint32_t status;
+	uuid_t tmp;
+	size_t i;
+
+#define nelems(x) (sizeof(x) / sizeof(x[0]-1))
+
+	uuid_from_string(s, uuid, &status);
+	if (status == uuid_s_ok) {
+		return (0);
+	}
+
+	for (i = 0; i < nelems(uuid_aliases); i++) {
+		if (strcmp(s, uuid_aliases[i].alias) == 0) {
+			*uuid = uuid_aliases[i].uuid;
+			return (0);
+		}
+	}
+
+	warnx("unknown partition type: %s", s);
+	return (EINVAL);
+}
+
+int
+gpt_write_crc(int fd, map_t *map, map_t *gpt, map_t *tbl, uuid_t *uuid, unsigned int entry)
+{
+	struct gpt_hdr *hdr;
+	struct gpt_ent *ent;
+	int ret;
+
+	hdr = gpt->map_data;
+	ent = gpt_ent(gpt, tbl, entry);
+	if (ent == NULL) {
+		warnx("%s: error: no entry", device_name);
+		return (-1);
+	}
+	if (entry > le32toh(hdr->hdr_entries)) {
+		warnx("%s: error: index %u out of range (%u max)", device_name, entry, le32toh(hdr->hdr_entries));
+		return (-1);
+	}
+	if (!uuid_is_nil(&ent->ent_type, NULL)) {
+		warnx("%s: error: entry at index %d is not free", device_name, entry);
+		return (-1);
+	}
+	uuid_enc_le(&ent->ent_type, uuid);
+	ent->ent_lba_start = htole64(map->map_start);
+	ent->ent_lba_end = htole64(map->map_start + map->map_size - 1LL);
+
+	hdr->hdr_crc_table = htole32(crc32(tbl->map_data,
+					le32toh(hdr->hdr_entries) * le32toh(hdr->hdr_entsz)));
+	hdr->hdr_crc_self = 0;
+	hdr->hdr_crc_self = htole32(crc32(hdr, le32toh(hdr->hdr_size)));
+
+	ret = gpt_write(fd, gpt);
+	if (ret == -1) {
+		return (ret);
+	}
+	ret = gpt_write(fd, tbl);
+	if (ret == -1) {
+		return (ret);
+	}
+	return (0);
+}
+
+void
+gpt_create_pmbr_part(struct mbr_part *part, off_t block, off_t size)
+{
+	part->part_shd = 0xff;
+	part->part_ssect = 0xff;
+	part->part_scyl = 0xff;
+	part->part_ehd = 0xff;
+	part->part_esect = 0xff;
+	part->part_ecyl = 0xff;
+	part->part_start_lo = htole16(block);
+	part->part_start_hi = htole16((block) >> 16);
+	part->part_size_lo = htole16(size);
+	part->part_size_hi = htole16(size >> 16);
+
+	part->part_typ = DOSPTYP_PMBR;
+	part->part_flag = 0x80;
+}
+
+struct gpt_ent *
+gpt_ent(struct gpt_hdr *hdr, map_t *tbl, unsigned int entry)
+{
+	return ((void *)((char *)tbl->map_data + entry * le32toh(hdr->hdr_entsz)));
+}
+
+struct gpt_ent *
+gpt_ent_primary(map_t *gpt, map_t *tbl, unsigned int entry)
+{
+	struct gpt_hdr *hdr = gpt->map_data;
+	return (gpt_ent(hdr, tbl, entry));
+}
+
+struct gpt_ent *
+gpt_ent_secondary(map_t *tpg, map_t *lbt, unsigned int entry)
+{
+	struct gpt_hdr *hdr = tpg->map_data;
+	return (gpt_ent(hdr, lbt, entry));
+}
+
 void *
 gpt_read(int fd, off_t lba, size_t count)
 {
@@ -598,8 +749,10 @@ static struct {
 	const char *name;
 } cmdsw[] = {
 	{ cmd_add, "add" },
+	{ cmd_boot, "boot" },
 	{ cmd_create, "create" },
 	{ cmd_destroy, "destroy" },
+	{ cmd_expand, "expand" },
 	{ NULL, "help" },
 	{ cmd_migrate, "migrate" },
 	{ cmd_recover, "recover" },

@@ -31,11 +31,9 @@
 
 #include <sys/endian.h>
 #include <sys/diskgpt.h>
+#include <sys/diskmbr.h>
 
 #include <uuid.h>
-
-void	le_uuid_dec(void const *, uuid_t *);
-void	le_uuid_enc(void *, uuid_t const *);
 
 struct mbr_part {
 	uint8_t		part_flag;		/* bootstrap flags */
@@ -65,10 +63,20 @@ extern u_int parts;
 extern u_int secsz;
 extern int readonly, verbose;
 
+void	le_uuid_dec(void const *, uuid_t *);
+void	le_uuid_enc(void *, uuid_t const *);
+int 	parse_uuid(const char *, uuid_t *);
+
+int gpt_write_crc(int, map_t *, map_t *, map_t *, uuid_t *, unsigned int);
+void gpt_create_pmbr_part(struct mbr_part *, off_t, off_t);
+struct gpt_ent *gpt_ent(struct gpt_hdr *, map_t *, unsigned int);
+struct gpt_ent *gpt_ent_primary(map_t *, map_t *, unsigned int);
+struct gpt_ent *gpt_ent_secondary(map_t *, map_t *, unsigned int);
+
 void	gpt_close(int);
-int		gpt_open(const char *);
+int	gpt_open(const char *);
 void	*gpt_read(int, off_t, size_t);
-int		gpt_write(int, map_t *);
+int	gpt_write(int, map_t *);
 
 uint32_t crc32(const void *, size_t);
 void	utf16_to_utf8(const uint16_t *, size_t, uint8_t *, size_t);
@@ -77,8 +85,10 @@ void	unicode16(short *, const wchar_t *, size_t);
 void	unicode8(int *, const wchar_t *, size_t);
 
 int	cmd_add(int, char *[]);
+int	cmd_boot(int, char *[]);
 int	cmd_create(int, char *[]);
 int	cmd_destroy(int, char *[]);
+int 	cmd_expand(int, char *[]);
 int	cmd_migrate(int, char *[]);
 int	cmd_recover(int, char *[]);
 int	cmd_remove(int, char *[]);
