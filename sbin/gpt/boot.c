@@ -56,7 +56,7 @@
 //static const char *bootpath = DEFAULT_BOOTDIR;
 static const char *pmbrpath = DEFAULT_BOOTPMBR;
 static const char *gptpath = DEFAULT_BOOTGPT;
-
+static u_long boot_size;
 
 static void
 usage_boot(void)
@@ -147,8 +147,6 @@ gpt_find(map_t *gpt, map_t **mapp, uuid_t *uuid)
 	warnx("internal map list is corrupted");
 	return (1);
 }
-
-static u_long boot_size;
 
 static void
 bootgpt(int fd, map_t *map, uuid_t *uuid, unsigned int entry)
