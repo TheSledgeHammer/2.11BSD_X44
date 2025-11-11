@@ -20,7 +20,7 @@ main_test(int argc, char **argv)
 
 	l = time(0);
 	cp = ctime(&l);
-	printf("ctime(%ld) = %s", l, cp);
+	printf("ctime(%lld) = %s", l, cp);
 	tm = gmtime(&l);
 	dump_tm("gmtime", tm);
 	cp = asctime(tm);
