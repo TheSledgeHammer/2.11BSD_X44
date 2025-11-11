@@ -156,7 +156,7 @@ cmd_add(int argc, char *argv[])
 {
 	char *p;
 	int ch, fd;
-	uint32_t status;
+//	uint32_t status;
 
 	/* Get the migrate options */
 	while ((ch = getopt(argc, argv, "b:i:s:t:")) != -1) {

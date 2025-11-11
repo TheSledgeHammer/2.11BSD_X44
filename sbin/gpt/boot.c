@@ -49,18 +49,24 @@
 #include "map.h"
 #include "gpt.h"
 
-#define DEFAULT_BOOTDIR0 "/usr/mdec/boot0"	/* current default boot path */
-#define DEFAULT_BOOTDIR1 "/boot/boot0"
+#define DEFAULT_BOOTDIR     "/usr/mdec/boot0"
+#define DEFAULT_BOOTPMBR    "/usr/mdec/pmbr"
+#define DEFAULT_BOOTGPT     "/usr/mdec/gptboot"
+
+static const char *bootpath = DEFAULT_BOOTDIR;
+static const char *pmbrpath = DEFAULT_BOOTPMBR;
+static const char *gptpath = DEFAULT_BOOTGPT;
+
 
 static void
 usage_boot(void)
 {
-	fprintf(stderr, "usage: %s device\n", getprogname());
+	fprintf(stderr, "usage: %s [-b pmbr] [-g gptboot] [-s count] device\n", getprogname());
 	exit(1);
 }
 
 static map_t *
-bootgpt(int fd, unsigned int entry)
+bootmap(int fd, unsigned int entry)
 {
 	uuid_t uuid;
 	off_t  block;
@@ -110,32 +116,101 @@ bootgpt(int fd, unsigned int entry)
 	return (map);
 }
 
+#ifdef notyet
+
+static int
+gpt_find(map_t **mapp)
+{
+    struct gpt_hdr *hdr;
+    struct gpt_ent *ent;
+    map_t *map;
+    unsigned int i;
+
+    for (i = 0; i < le32toh(hdr->hdr_entries); i++) {
+        ent = gpt_ent(hdr, tbl, i);
+        if (uuid_equal(&ent->ent_type, type, NULL)) {
+            break;
+        }
+    }
+
+    if (i == le32toh(hdr->hdr_entries)) {
+        *mapp = NULL;
+        return (0);
+    }
+
+    for (map = map_find(MAP_TYPE_GPT_PART); map != NULL;
+	     map = map->map_next) {
+        if (map->map_type != MAP_TYPE_GPT_PART) {
+            if (map->map_start == (off_t)le64toh(ent->ent_lba_start)) {
+                *mapp = map;
+                return (0);
+            }
+        }
+    }
+   	errx(1, "internal map list is corrupted");
+}
+
 static void
-bootset(int fd, const char *bootpath)
+bootgpt(int fd)
+{
+    unsigned int entry;
+    map_t *gptboot;
+    int bfd;
+
+    bfd = open(gptpath, O_RDONLY);
+    if (bfd < 0 || fstat(bfd, &st) < 0) {
+		errx(1, "unable to open GPT boot loader");
+	}
+
+    if (!gpt_find(&gptboot)) {
+        errx(1, "error: GPT not found");
+    }
+    if (gptboot != NULL) {
+        if (gptboot->map_size * secsz < st.st_size) {
+            errx(1, "%s: error: boot partition is too small", 
+                device_name);
+        }
+    } else {
+        gptboot = bootmap(fd, entry);
+        if (gptboot == NULL) {
+             errx(1, "error: GPT not found");
+        }
+    }
+
+	close(bfd);
+	gpt_write(fd, gptboot);
+
+    
+}
+
+#endif
+
+static void
+bootset(int fd)
 {
 	struct stat st;
 	off_t  block;
 	off_t  size;
 	unsigned int entry;
-	map_t *map, *pmbr;
+	map_t *map, *pmbrboot;
 	struct mbr *mbr;
 	ssize_t nbytes;
 	int bfd;
 
 	entry = 0;
-	map = bootgpt(fd, entry);
+	map = bootmap(fd, entry);
 	if (map == NULL) {
 		return;
 	}
 	block = map->map_start;
 	size  = map->map_size;
 
-	pmbr = map_find(MAP_TYPE_PMBR);
-	if (pmbr == NULL) {
+	pmbrboot = map_find(MAP_TYPE_PMBR);
+	if (pmbrboot == NULL) {
 		errx(1, "error: PMBR not found");
 	}
 
-	bfd = open(bootpath, O_RDONLY);
+	bfd = open(pmbrpath, O_RDONLY);
 	if (bfd < 0 || fstat(bfd, &st) < 0) {
 		errx(1, "unable to open PMBR boot loader");
 	}
@@ -144,7 +219,7 @@ bootset(int fd, const char *bootpath)
 		errx(1, "invalid PMBR boot loader");
 	}
 
-	mbr = pmbr->map_data;
+	mbr = pmbrboot->map_data;
 	if (mbr == NULL) {
 		errx(1, "No PMBR data!");
 	}
@@ -158,7 +233,7 @@ bootset(int fd, const char *bootpath)
 		errx(1, "short read of PMBR boot loader");
 	}
 	close(bfd);
-	gpt_write(fd, pmbr);
+	gpt_write(fd, pmbrboot);
 
 	/*
 	 * Generate partition #1
@@ -173,8 +248,15 @@ cmd_boot(int argc, char *argv[])
 {
 	int ch, fd;
 
-	while ((ch = getopt(argc, argv, "")) != -1) {
+	while ((ch = getopt(argc, argv, "b:g:s:")) != -1) {
 		switch(ch) {
+        case 'b':
+            pmbrpath = optarg;
+            break;
+        case 'g':
+//            gptpath = optarg;
+//            break;
+        case 's':
 		default:
 			usage_boot();
 		}
@@ -189,7 +271,7 @@ cmd_boot(int argc, char *argv[])
 			warn("unable to open device '%s'", device_name);
 			continue;
 		}
-		bootset(fd, DEFAULT_BOOTDIR0);
+		bootset(fd);
 		gpt_close(fd);
 	}
 	return (0);
