@@ -61,14 +61,14 @@
 struct passwd {
 	char	*pw_name;			/* user name */
 	char	*pw_passwd;			/* encrypted password */
-	int	pw_uid;				/* user uid */
-	int	pw_gid;				/* user gid */
-	long	pw_change;			/* password change time */
+	int		pw_uid;				/* user uid */
+	int		pw_gid;				/* user gid */
+	time_t	pw_change;			/* password change time */
 	char	*pw_class;			/* user access class */
 	char	*pw_gecos;			/* Honeywell login info */
 	char	*pw_dir;			/* home directory */
 	char	*pw_shell;			/* default shell */
-	long	pw_expire;			/* account expiration */
+	time_t	pw_expire;			/* account expiration */
 };
 
 __BEGIN_DECLS
