@@ -79,7 +79,7 @@ summary(void)
 		(void)write(STDERR_FILENO, buf, strlen(buf));
 	}
 	(void)snprintf(buf, sizeof(buf),
-	    "%lu bytes transferred in %lu secs (%lu bytes/sec)\n",
+	    "%lu bytes transferred in %llu secs (%llu bytes/sec)\n",
 	    st.bytes, secs, st.bytes / secs);
 	(void)write(STDERR_FILENO, buf, strlen(buf));
 }
