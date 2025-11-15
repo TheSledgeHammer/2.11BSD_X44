@@ -61,8 +61,8 @@ static char sccsid[] = "@(#)keyword.c	8.5 (Berkeley) 4/2/94";
 #include <sys/sysctl.h>
 #endif
 
-static VAR *findvar(const char *);
-static int  vcmp(const void *, const void *);
+static VAR* findvar(const char*);
+static int vcmp(const void*, const void*);
 
 #ifdef NOTINUSE
 int	utime(), stime(), ixrss(), idrss(), isrss();
@@ -135,7 +135,7 @@ VAR var[] = {
 	{"re", "RE", NULL, 0, pvar, 3, POFF(p_swtime), ULONG, "d"},
 	{"rgid", "RGID", NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_rgid),
 		ULONG, UIDFMT},
-	{"rlink", "RLINK", NULL, 0, pvar, 8, POFF(p_back), KPTR, "x"},
+	{"rlink", "RLINK", NULL, 0, pvar, 8, POFF(p_link.tqe_prev), KPTR, "x"},
 	{"rss", "RSS", NULL, 0, p_rssize, 4},
 	{"rssize", "", "rsz"},
 	{"rsz", "RSZ", NULL, 0, rssize, 4},
@@ -143,7 +143,7 @@ VAR var[] = {
 		ULONG, UIDFMT},
 	{"ruser", "RUSER", NULL, LJUST, runame, USERLEN},
 	{"sess", "SESS", NULL, 0, evar, 6, EOFF(e_sess), KPTR, "x"},
-	{"sig", "PENDING", NULL, 0, pvar, 8, POFF(p_siglist), LONG, "x"},
+	{"sig", "PENDING", NULL, 0, pvar, 8, POFF(p_sig), LONG, "x"},
 	{"sigcatch", "CAUGHT", NULL, 0, pvar, 8, POFF(p_sigcatch), LONG, "x"},
 	{"sigignore", "IGNORED",
 		NULL, 0, pvar, 8, POFF(p_sigignore), LONG, "x"},
@@ -285,9 +285,14 @@ showkey(void)
 }
 
 void
-parsefmt(char *p)
+parsefmt(const char *fmt)
 {
 	static struct varent *vtail;
+	char *p, *op;
+
+	op = p = strdup(fmt);
+	if (op == NULL)
+		errx(1, "Not enough memory");
 
 #define	FMTSEP	" \t,\n"
 	while (p && *p) {
@@ -312,6 +317,8 @@ parsefmt(char *p)
 	}
 	if (!vhead)
 		errx(1, "no valid keywords");
+
+	free(op);
 }
 
 static VAR *

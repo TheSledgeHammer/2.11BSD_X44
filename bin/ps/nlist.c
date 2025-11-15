@@ -57,20 +57,20 @@ static char sccsid[] = "@(#)nlist.c	8.4 (Berkeley) 4/2/94";
 #endif
 
 struct	nlist psnl[] = {
-	{"_fscale"},
-#define	X_FSCALE	0
-	{"_ccpu"},
-#define	X_CCPU		1
+		{ .n_name = "_fscale" },
+#define	X_FSCALE		0
+		{ .n_name = "_ccpu" },
+#define	X_CCPU			1
 #ifdef NEWVM
-	{"_avail_start"},
+		{ .n_name = "_avail_start" },
 #define	X_AVAILSTART	2
-	{"_avail_end"},
-#define	X_AVAILEND	3
+		{ .n_name = "_avail_end" },
+#define	X_AVAILEND		3
 #else
-	{"_ecmx"},
-#define	X_ECMX		2
+		{ .n_name = "_ecmx" },
+#define	X_ECMX			2
 #endif
-	{NULL}
+		{ .n_name = NULL }
 };
 
 fixpt_t	ccpu;				/* kernel _ccpu variable */

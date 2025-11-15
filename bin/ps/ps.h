@@ -66,7 +66,7 @@ typedef struct varent {
 typedef struct var {
 	const char	*name;		/* name(s) of variable */
 	const char	*header;	/* default header */
-	char		*alias;		/* aliases */
+	const char	*alias;		/* aliases */
 #define	COMM	0x01		/* needs exec arguments and environment (XXX) */
 #define	LJUST	0x02		/* left adjust on output (trailing blanks) */
 #define	USER	0x04		/* needs user structure */

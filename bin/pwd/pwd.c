@@ -56,9 +56,9 @@ __RCSID("$NetBSD: pwd.c,v 1.11 1998/11/03 21:38:19 wsanchez Exp $");
 #include <errno.h>
 #include <string.h>
 
-char *getcwd_logical (char *, size_t);
-void  usage (void);
-int   main (int, char *[]);
+char *getcwd_logical(char *, size_t);
+void  usage(void);
+int   main(int, char *[]);
 
 int
 main(argc, argv)

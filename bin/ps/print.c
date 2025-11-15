@@ -48,15 +48,9 @@ static char sccsid[] = "@(#)print.c	8.6 (Berkeley) 4/16/94";
 #define NEWVM
 #endif
 
-#ifdef NEWVM
 #include <sys/ucred.h>
 #include <sys/sysctl.h>
 #include <vm/include/vm.h>
-#else
-#include <machine/pte.h>
-#include <sys/vmparam.h>
-#include <sys/vm.h>
-#endif
 
 #include <err.h>
 #include <math.h>
@@ -151,11 +145,7 @@ logname(KINFO *k, VARENT *ve)
 	VAR *v;
 
 	v = ve->var;
-#ifndef NEWVM
-	(void)printf("%-*s", v->width, KI_PROC(k)->p_logname);
-#else
 	(void)printf("%-*s", v->width, KI_EPROC(k)->e_login);
-#endif
 }
 
 void
@@ -209,27 +199,17 @@ state(KINFO *k, VARENT *ve)
 		*cp++ = '<';
 	else if (p->p_nice > NZERO)
 		*cp++ = 'N';
-#ifndef NEWVM
-	if (flag & SUANOM)
-		*cp++ = 'A';
-	else if (flag & SSEQL)
-		*cp++ = 'S';
-#endif
 	if (flag & P_TRACED)
 		*cp++ = 'X';
-	if (flag & P_WEXIT && p->p_stat != SZOMB)
+	if ((flag & P_WEXIT) && (p->p_stat != SZOMB))
 		*cp++ = 'E';
-#ifdef NEWVM
 	if (flag & P_PPWAIT)
-#else
-	if (flag & SVFORK)
-#endif
 		*cp++ = 'V';
-#ifdef NEWVM
+	if (flag & P_SVFORK)
+		*cp++ = 'V';
 	if (flag & (P_SYSTEM | P_NOSWAP | P_PHYSIO))
-#else
-	if (flag & (SSYS|SLOCK|SULOCK|SKEEP|SPHYSIO))
-#endif
+		*cp++ = 'L';
+	if (flag & (P_SSYS | P_SLOCK| P_SULOCK))
 		*cp++ = 'L';
 	if (KI_EPROC(k)->e_flag & EPROC_SLEADER)
 		*cp++ = 's';
@@ -393,7 +373,7 @@ wchan(KINFO *k, VARENT *ve)
 		(void)printf("%-*s", v->width, "-");
 }
 
-#define pgtok(a)        (((a)*NBPG)/1024)
+#define pgtok(a)        (((a) * NBPG) / 1024)
 
 void
 vsize(KINFO *k, VARENT *ve)
@@ -629,11 +609,41 @@ printval(char *bp, VAR *v)
 	case USHORT:
 		(void)printf(ofmt, v->width, *(u_short *)bp);
 		break;
+	case INT:
+		(void)printf(ofmt, v->width, *(int *)bp);
+		break;
+	case UINT:
+		(void)printf(ofmt, v->width, *(u_int *)bp);
+		break;
 	case LONG:
 		(void)printf(ofmt, v->width, *(long *)bp);
 		break;
 	case ULONG:
 		(void)printf(ofmt, v->width, *(u_long *)bp);
+		break;
+	case INT8:
+		(void)printf(ofmt, v->width, *(int8_t *)bp);
+		break;
+	case UINT8:
+		(void)printf(ofmt, v->width, *(uint8_t *)bp);
+		break;
+	case INT16:
+		(void)printf(ofmt, v->width, *(int16_t *)bp);
+		break;
+	case UINT16:
+		(void)printf(ofmt, v->width, *(uint16_t *)bp);
+		break;
+	case INT32:
+		(void)printf(ofmt, v->width, *(int32_t *)bp);
+		break;
+	case UINT32:
+		(void)printf(ofmt, v->width, *(uint32_t *)bp);
+		break;
+	case INT64:
+		(void)printf(ofmt, v->width, *(int64_t *)bp);
+		break;
+	case UINT64:
+		(void)printf(ofmt, v->width, *(uint64_t *)bp);
 		break;
 	case KPTR:
 		(void)printf(ofmt, v->width, *(u_long *)bp &~ KERNBASE);

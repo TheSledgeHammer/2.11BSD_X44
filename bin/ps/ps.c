@@ -84,6 +84,8 @@ int	totwidth;		/* calculated width of requested variables */
 
 static int needuser, needcomm, needenv;
 
+#define	GETOPTSTR	"aCeghjLlM:mN:O:o:p:rSTt:uvW:wx"
+
 enum sort { DEFAULT, SORTMEM, SORTCPU } sortby = DEFAULT;
 
 static char	*fmt(char **(*)(kvm_t *, const struct kinfo_proc *, int), KINFO *, char *, int);
@@ -132,8 +134,7 @@ main(int argc, char *argv[])
 	uid = (uid_t) -1;
 	ttydev = NODEV;
 	memf = nlistf = swapf = NULL;
-	while ((ch = getopt(argc, argv,
-	    "aCeghjLlM:mN:O:o:p:rSTt:uvW:wx")) != EOF)
+	while ((ch = getopt(argc, argv, GETOPTSTR)) != EOF)
 		switch((char)ch) {
 		case 'a':
 			all = 1;

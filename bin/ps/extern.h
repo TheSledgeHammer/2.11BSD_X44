@@ -59,7 +59,7 @@ void	 maxrss(KINFO *, VARENT *);
 void	 nlisterr(struct nlist *);
 void	 p_rssize(KINFO *, VARENT *);
 void	 pagein(KINFO *, VARENT *);
-void	 parsefmt(char *);
+void	 parsefmt(const char *);
 void	 pcpu(KINFO *, VARENT *);
 void	 pmem(KINFO *, VARENT *);
 void	 pri(KINFO *, VARENT *);
