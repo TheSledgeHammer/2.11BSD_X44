@@ -50,7 +50,8 @@ struct map {
 typedef struct map map_t;
 extern int lbawidth;
 
-map_t *map_add(off_t, off_t, int, void*);
+map_t *mkmap(off_t, off_t, int);
+map_t *map_add(off_t, off_t, int, void *);
 map_t *map_alloc(off_t, off_t);
 map_t *map_find(int);
 map_t *map_first(void);

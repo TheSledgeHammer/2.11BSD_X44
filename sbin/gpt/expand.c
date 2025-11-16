@@ -70,7 +70,7 @@ expand(int fd)
 	map_t *pmbr;
 	map_t *gpt, *gpt2;
 	map_t *tbl, *tbl2;
-	map_t *map;
+	//map_t *map;
 	struct mbr *mbr;
 	off_t last;
 	off_t blocks;
@@ -180,12 +180,12 @@ expand(int fd)
 
 		if (le64toh(lent->ent_lba_end) ==
 		    le64toh(lent->ent_lba_start) + nblocks - 1) {
-			printf("entry %d type=%s %ld,%ld unchanged\n",
+			printf("entry %d type=%s %lld,%lld unchanged\n",
 				li, name,
 				le64toh(lent->ent_lba_start),
 				le64toh(lent->ent_lba_end));
 		} else {
-			printf("expand entry %d type=%s %ld,%ld to %ld\n",
+			printf("expand entry %d type=%s %lld,%lld to %lld\n",
 				li, name,
 				le64toh(lent->ent_lba_start),
 				le64toh(lent->ent_lba_end),

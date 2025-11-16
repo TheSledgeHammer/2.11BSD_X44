@@ -354,10 +354,9 @@ int
 parse_uuid(const char *s, uuid_t *uuid)
 {
 	uint32_t status;
-	uuid_t tmp;
 	size_t i;
 
-#define nelems(x) (sizeof(x) / sizeof(x[0]-1))
+#define nelems(x) (sizeof(x) / sizeof((x)[0]))
 
 	uuid_from_string(s, uuid, &status);
 	if (status == uuid_s_ok) {
@@ -383,7 +382,7 @@ gpt_write_crc(int fd, map_t *map, map_t *gpt, map_t *tbl, uuid_t *uuid, unsigned
 	int ret;
 
 	hdr = gpt->map_data;
-	ent = gpt_ent(gpt, tbl, entry);
+	ent = gpt_ent(hdr, tbl, entry);
 	if (ent == NULL) {
 		warnx("%s: error: no entry", device_name);
 		return (-1);
