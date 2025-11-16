@@ -34,8 +34,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-
-#include <sys/diskmbr.h>
+#include <sys/stat.h>
 
 #include <err.h>
 #include <errno.h>
@@ -279,7 +278,7 @@ bootpmbr(int fd, map_t *map, unsigned int entry)
 	/*
 	 * Generate partition #1
 	 */
-	gpt_create_pmbr_part(mbr->mbr_part[1], block, size);
+	gpt_create_pmbr_part(&mbr->mbr_part[1], block, size);
 }
 
 static void
