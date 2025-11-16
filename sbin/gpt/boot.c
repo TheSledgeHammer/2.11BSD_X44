@@ -122,7 +122,8 @@ gpt_find(map_t *gpt, map_t **mapp, uuid_t *uuid)
 	struct gpt_ent *ent;
 	map_t *map;
 	unsigned int i;
-
+	
+	hdr = gpt->map_data;
 	for (i = 0; i < le32toh(hdr->hdr_entries); i++) {
 		ent = gpt_ent(hdr, gpt, i);
 		if (uuid_equal(&ent->ent_type, uuid, NULL)) {
@@ -168,6 +169,7 @@ bootgpt(int fd, map_t *map, uuid_t *uuid, unsigned int entry)
 		bootsize = boot_size;
 	}
 
+	gptboot = NULL;
 	bfd = open(gptpath, O_RDONLY);
 	if (bfd < 0 || fstat(bfd, &sb) < 0) {
 		warn("unable to open GPT boot loader");
