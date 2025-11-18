@@ -67,8 +67,8 @@ usage_boot(void)
 static map_t *
 bootmap(int fd, uuid_t *uuid, unsigned int entry)
 {
-	off_t  block;
-	off_t  size;
+	off_t block;
+	off_t size;
 	map_t *gpt, *tpg;
 	map_t *tbl, *lbt;
 	map_t *map;
@@ -153,10 +153,10 @@ bootgpt(int fd, map_t *map, uuid_t *uuid, unsigned int entry)
 {
 	struct stat sb;
 	off_t bootsize, ofs;
-    map_t *gptboot;
-    char *buf;
-    ssize_t nbytes;
-    int bfd;
+	map_t *gptboot;
+	char *buf;
+	ssize_t nbytes;
+	int bfd;
 
 	if (boot_size == 0) {
 		/* Default to 64k. */
@@ -231,8 +231,8 @@ static void
 bootpmbr(int fd, map_t *map, unsigned int entry)
 {
 	struct stat sb;
-	off_t  block;
-	off_t  size;
+	off_t block;
+	off_t size;
 	map_t *pmbrboot;
 	struct mbr *mbr;
 	ssize_t nbytes;

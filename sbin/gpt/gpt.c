@@ -245,15 +245,8 @@ utf8_to_utf16(const uint8_t *s8, uint16_t *s16, size_t s16len)
 void
 unicode16(short *dst, const wchar_t *src, size_t len)
 {
-	/*
-	while (len-- && *src != 0)
-		*dst++ = *src++;
-	if (len)
-		*dst = 0;
-	*/
-
-    const uint8_t *s8;
-    uint16_t *s16;
+	const uint8_t *s8;
+	uint16_t *s16;
 
     s8 = __UNCONST(dst);
     s16 = __UNCONST(src);
@@ -263,8 +256,8 @@ unicode16(short *dst, const wchar_t *src, size_t len)
 void
 unicode8(int *dst, const wchar_t *src, size_t len)
 {
-    const uint16_t *s16;
-    uint8_t *s8;
+	const uint16_t *s16;
+	uint8_t *s8;
 
     s16 = __UNCONST(dst);
     s8 = __UNCONST(src);

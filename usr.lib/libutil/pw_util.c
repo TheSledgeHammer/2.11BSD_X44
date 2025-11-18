@@ -437,7 +437,7 @@ pw_copyf(struct passwd *pw, FILE *fp)
 
 /* specific to ndbm only */
 void
-pw_dirpag_rename(void)
+pw_dirpag_rename(int eval)
 {
 	int fd;
 	char *fend, *tend;
@@ -478,7 +478,7 @@ pw_dirpag_rename(void)
 	(void)rename(from, _PATH_PASSWD);
 	(void)rename(temp, passwd);
 	/* done! */
-	exit(0);
+	exit(eval);
 }
 
 void

@@ -203,7 +203,7 @@ main(int argc, char **argv)
 		pw_error("chpass: passwd failed; ", 1, 1);
 	}
 #ifdef USE_NDBM
-	pw_dirpag_rename();
+	pw_dirpag_rename(0);
 #else
 	exit(0);
 #endif

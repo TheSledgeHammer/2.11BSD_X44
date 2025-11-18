@@ -35,6 +35,7 @@ static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) 3/16/89";
 #include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
 #include <errno.h>
 #include <pwd.h>
 #include <stdio.h>
@@ -44,9 +45,7 @@ static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) 3/16/89";
 uid_t uid;
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	extern int errno;
 	struct passwd *pw;
@@ -166,10 +165,7 @@ bad:
 }
 
 int
-copy(name, np, fp, pw)
-	char *name, *np;
-	FILE *fp;
-	struct passwd *pw;
+copy(char *name, char *np, FILE *fp, struct passwd *pw)
 {
 	register int done;
 	register char *p;
@@ -213,9 +209,7 @@ copy(name, np, fp, pw)
 }
 
 char *
-getnewpasswd(pw, temp)
-	register struct passwd *pw;
-	char *temp;
+getnewpasswd(struct passwd *pw, char *temp)
 {
 	register char *p, *t;
 	char buf[10], salt[2], *crypt(), *getpass();
@@ -262,8 +256,7 @@ getnewpasswd(pw, temp)
 }
 
 int
-makedb(file)
-	char *file;
+makedb(char *file)
 {
 	int status, pid, w;
 

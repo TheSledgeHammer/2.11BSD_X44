@@ -99,7 +99,7 @@ int		pw_abort(void);
 void		pw_copy(int, int, struct passwd *);
 int		pw_copyf(struct passwd *, FILE *);
 int 		pw_copyx(int, int, struct passwd *);
-void		pw_dirpag_rename(void);
+void		pw_dirpag_rename(int);
 int		pw_edit(const char *, int);
 void		pw_error(const char *, int, int);
 const char  	*pw_getprefix(void);

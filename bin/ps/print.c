@@ -55,6 +55,7 @@ static char sccsid[] = "@(#)print.c	8.6 (Berkeley) 4/16/94";
 #include <err.h>
 #include <math.h>
 #include <nlist.h>
+#include <pwd.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -225,7 +226,7 @@ pri(KINFO *k, VARENT *ve)
 	VAR *v;
 
 	v = ve->var;
-	(void)printf("%*d", v->width, KI_PROC(k)->p_priority - PZERO);
+	(void)printf("%*d", v->width, KI_PROC(k)->p_pri - PZERO);
 }
 
 void
@@ -386,8 +387,8 @@ vsize(KINFO *k, VARENT *ve)
 	    pgtok(KI_PROC(k)->p_dsize +
 	        KI_PROC(k)->p_ssize + KI_EPROC(k)->e_xsize));
 #else
-	    pgtok(KI_EPROC(k)->e_vm.vm_dsize + KI_EPROC(k)->e_vm.vm_ssize +
-		KI_EPROC(k)->e_vm.vm_tsize));
+	    pgtok(KI_EPROC(k).e_vm.vm_dsize + KI_EPROC(k).e_vm.vm_ssize +
+		KI_EPROC(k).e_vm.vm_tsize));
 #endif
 }
 
@@ -403,7 +404,7 @@ rssize(KINFO *k, VARENT *ve)
 	    (KI_EPROC(k)->e_xrssize / KI_EPROC(k)->e_xccount) : 0)));
 #else
 	/* XXX don't have info about shared */
-	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_vm.vm_rssize));
+	(void)printf("%*d", v->width, pgtok(KI_EPROC(k).e_vm.vm_rssize));
 #endif
 }
 
@@ -416,7 +417,7 @@ p_rssize(KINFO *k, VARENT *ve)		/* doesn't account for text */
 #ifndef NEWVM
 	(void)printf("%*d", v->width, pgtok(KI_PROC(k)->p_rssize));
 #else
-	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_vm.vm_rssize));
+	(void)printf("%*d", v->width, pgtok(KI_EPROC(k).e_vm.vm_rssize));
 #endif
 }
 
@@ -537,7 +538,7 @@ pagein(KINFO *k, VARENT *ve)
 	VAR *v;
 
 	v = ve->var;
-	(void)printf("%*d", v->width, 
+	(void)printf("%*ld", v->width,
 	    k->ki_u.u_valid ? k->ki_u.u_ru.ru_majflt : 0);
 }
 
@@ -564,7 +565,7 @@ tsize(KINFO *k, VARENT *ve)
 #ifndef NEWVM
 	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_xsize));
 #else
-	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_vm.vm_tsize));
+	(void)printf("%*d", v->width, pgtok(KI_EPROC(k).e_vm.vm_tsize));
 #endif
 }
 
@@ -587,7 +588,8 @@ static void
 printval(char *bp, VAR *v)
 {
 	static char ofmt[32] = "%";
-	char *fcp, *cp;
+	const char *fcp;
+	char *cp;
 
 	cp = ofmt + 1;
 	fcp = v->fmt;
