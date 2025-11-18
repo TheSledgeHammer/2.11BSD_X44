@@ -115,7 +115,7 @@ valid:
 		if (!strcasecmp(optarg, "old")) {
 			option = "old";
 		} else if (!strcasecmp(optarg, "new")) {
-			option = "old";
+			option = "new";
 		} else if (!strcasecmp(optarg, "md5")) {
 			option = "md5";
 		} else if (!strcasecmp(optarg, "blowfish")) {
