@@ -97,7 +97,7 @@ static int use_yp = 1;
 
 static int use_default = 1;
 
-static void pwd_algorithm(const char *type, const char *option, int flags);
+static void pwd_algorithm(const char *arg, int flags);
 static void usage(void);
 
 static const char *default_type = NULL;
@@ -156,13 +156,9 @@ main(int argc, char **argv)
     }
 
     if (aflag) {
-        pwd_algorithm(default_type, default_option, use_default);
+        pwd_algorithm(optarg, use_default);
     } else {
-       if (!use_default) {
-           pwd_algorithm(default_type, default_option, use_default);
-       } else {
-           pwd_algorithm(default_type, default_option, use_default);
-       }
+    	pwd_algorithm(optarg, use_default);
     }
 
 	switch (argc) {
@@ -243,83 +239,46 @@ getnewpasswd(struct passwd *pw, int min_pw_len, const char *temp, const char *ty
 	return (crypt(buf, salt));
 }
 
-/* Not ready: incomplete */
 static void
-pwd_algorithm(const char *type, const char *option, int flags)
+pwd_algorithm(const char *arg, int flags)
 {
+	const char *type, *option;
 	int rval;
 
+	type = NULL;
+	option = NULL;
 	rval = pwd_conf(&type, &option);
-	if (rval) {
-		if (flags == 1) {
-
-		}
-	}
-
-	/*
-	const char *type;
-	const char *option;
-
-	rval = pwd_conf(&type, &option);
-	if (rval) {
-		if (type != NULL && option != NULL) {
+	if (rval == 0) {
+		if (flags != 0) {
 			default_type = type;
 			default_option = option;
-		}
-	}
-	*/
-/*
-	int i;
-
-	if (flags == 1) {
-		if (type != NULL) {
-			if (!strcasecmp(type, optarg)) {
-				goto valid;
-			}
 		} else {
-			goto lookup;
+            if (!strcasecmp(arg, "old")) {
+                type = "old";
+            } else if (!strcasecmp(arg, "new")) {
+                type = "new";
+            } else if (!strcasecmp(arg, "md5")) {
+                type = "md5";
+            } else if (!strcasecmp(arg, "blowfish")) {
+                type = "blowfish";
+            } else if (!strcasecmp(arg, "sha1")) {
+                type = "sha1";
+            } else {
+                warnx("illegal argument to -a option\n");
+                usage();
+            }
+        	default_type = type;
+        	default_option = option;
 		}
 	} else {
-lookup:
-		type = &pw_types[0];
-		for (i = 0; i < nelems(pw_types); i++) {
-			type = &pw_types[i];
-			if (type != NULL) {
-				if (!strcasecmp(type, optarg)) {
-					break;
-				}
-			}
-		}
+		errx(1, "passwd: No gensalt algorithm and/or cipher has been specified\n");
 	}
-
-valid:
-	if (type == NULL) {
-		if (!strcasecmp(optarg, "old")) {
-			type = "old";
-		} else if (!strcasecmp(optarg, "new")) {
-			type = "new";
-		} else if (!strcasecmp(optarg, "md5")) {
-			type = "md5";
-		} else if (!strcasecmp(optarg, "blowfish")) {
-			type = "blowfish";
-		} else if (!strcasecmp(optarg, "sha1")) {
-			type = "sha1";
-		} else {
-			warnx("illegal argument to -a option");
-			usage();
-		}
-	}
-*/
 }
 
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: passwd [-a algorithm] [-k] [-l] [-p] [-y] [user]\n");
-	(void)fprintf(stderr, "       old\n");
-	(void)fprintf(stderr, "       new\n");
-	(void)fprintf(stderr, "       md5\n");
-	(void)fprintf(stderr, "       blowfish\n");
-	(void)fprintf(stderr, "       sha1\n");
+	(void)fprintf(stderr, "usage: passwd [-a algorithm] [-k] [-l] [-p] [-y] [user]\n");
+	(void)fprintf(stderr, "       algorithms: old new md5 blowfish sha1\n");
 	exit(1);
 }

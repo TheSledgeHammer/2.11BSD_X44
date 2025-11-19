@@ -66,49 +66,59 @@ static int pwd_local_compare(const char *type, const char *option);
 const char *
 pwd_crypto(const char *type)
 {
-    const char *crypto;
-    int i;
+	const char *crypto;
+	int i;
 
-    crypto = pw_types[0];
-    for (i = 0; i < nelems(pw_types); i++) {
-        crypto = pw_types[i];
-        if (crypto != NULL) {
-            if (type != NULL) {
-                if (strcasecmp(crypto, type)) {
-                    crypto = pw_types[i];
-                }
-            } else {
-                /* sets crypto to default: blowfish */
-                crypto = pwd_default_local_type;
-            }
-            return (crypto);
-        }
-    }
-    return (NULL);
+	crypto = pw_types[0];
+	for (i = 0; i < nelems(pw_types); i++) {
+		crypto = pw_types[i];
+		if (crypto != NULL) {
+			if (type != NULL) {
+				if (strcasecmp(crypto, type)) {
+					crypto = pw_types[i];
+				}
+			} else {
+#ifdef USE_YP
+				/* sets crypto to default: old */
+				crypto = pwd_default_yp_type;
+#else
+				/* sets crypto to default: blowfish */
+				crypto = pwd_default_local_type;
+#endif
+			}
+			return (crypto);
+		}
+	}
+	return (NULL);
 }
 
 const char *
 pwd_cipher(const char *option)
 {
-    const char *cipher;
-    int i;
+	const char *cipher;
+	int i;
 
-    cipher = pw_options[0];
-    for (i = 0; i < nelems(pw_options); i++) {
-        cipher = pw_options[i];
-        if (cipher != NULL) {
-            if (option != NULL) {
-                if (strcasecmp(cipher, option)) {
-                    cipher = pw_options[i];
-                }
-            } else {
-                /* sets cipher to default: localcipher */
-                cipher = pwd_default_local_option;
-            }
-            return (cipher);
-        }
-    }
-    return (NULL);
+	cipher = pw_options[0];
+	for (i = 0; i < nelems(pw_options); i++) {
+		cipher = pw_options[i];
+		if (cipher != NULL) {
+			if (option != NULL) {
+				if (strcasecmp(cipher, option)) {
+					cipher = pw_options[i];
+				}
+			} else {
+#ifdef USE_YP
+				/* sets cipher to default: ypcipher */
+				cipher = pwd_default_yp_option;
+#else
+				/* sets cipher to default: localcipher */
+				cipher = pwd_default_local_option;
+#endif
+			}
+			return (cipher);
+		}
+	}
+	return (NULL);
 }
 
 int
