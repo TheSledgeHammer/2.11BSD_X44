@@ -53,121 +53,32 @@ __RCSID("$NetBSD: pwd_gensalt.c,v 1.10 2003/07/14 11:54:06 itojun Exp $");
 static unsigned char itoa64[] =		/* 0 ... 63 => ascii - 64 */
 	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-static int pwd_gensalt_old(char *salt, int max, struct passwd *pw, const char *option);
+static int pwd_gensalt_old(char *salt, int max, const char *type, const char *option);
 static void to64(char *s, long v, int n);
-static int new_salt(char *salt, int max, struct passwd *pw, const char *option);
-static int old_salt(char *salt, int max, struct passwd *pw, const char *option);
-static int md5_salt(char *salt, int max, struct passwd *pw, const char *option);
-static int blowfish_salt(char *salt, int max, struct passwd *pw, const char *option);
-static int sha1_salt(char *salt, int max, struct passwd *pw, const char *option);
+static int new_salt(char *salt, int max, const char *type, const char *option);
+static int old_salt(char *salt, int max, const char *type, const char *option);
+static int md5_salt(char *salt, int max, const char *type, const char *option);
+static int blowfish_salt(char *salt, int max, const char *type, const char *option);
+static int sha1_salt(char *salt, int max, const char *type, const char *option);
 #endif
-static void pwd_usage(void);
 
-/* pw_gensalt options available */
-const char *pw_options[] = { "old", "new", "md5", "blowfish", "sha1" };
-
-#define nelems(x) (sizeof(x) / sizeof((x)[0]))
-
-const char *
-pwd_crypto(const char *option)
+int
+pwd_gensalt(char *salt, int max, const char *type, const char *option)
 {
-	const char *crypt;
-    int i;
+	int rval;
 
-    crypt = &pw_options[0];
-    for (i = 0; i < nelems(pw_options); i++) {
-        crypt = &pw_options[i];
-        if (strcmp(crypt, option) == 0) {
-        	return (crypt);
-        }
-    }
-    return (NULL);
-}
-
-void
-pwd_algorithm(const char *option, int flags)
-{
-	int i;
-
-	if (flags == 1) {
-		if (option != NULL) {
-			if (!strcasecmp(option, optarg)) {
-				goto valid;
-			}
-		} else {
-			goto lookup;
-		}
-	} else {
-lookup:
-		option = &pw_options[0];
-		for (i = 0; i < nelems(pw_options); i++) {
-			option = &pw_options[i];
-			if (option != NULL) {
-				if (!strcasecmp(option, optarg)) {
-					break;
-				}
-			}
-		}
-	}
-
-valid:
-	if (option == NULL) {
-		if (!strcasecmp(optarg, "old")) {
-			option = "old";
-		} else if (!strcasecmp(optarg, "new")) {
-			option = "new";
-		} else if (!strcasecmp(optarg, "md5")) {
-			option = "md5";
-		} else if (!strcasecmp(optarg, "blowfish")) {
-			option = "blowfish";
-		} else if (!strcasecmp(optarg, "sha1")) {
-			option = "sha1";
-		} else {
-			warnx("illegal argument to -a option");
-			pwd_usage();
-		}
-	}
-}
-
-static void
-pwd_usage(void)
-{
-	fprintf(stderr, "usage: passwd [-a] [type] [user]\n");
-	(void)fprintf(stderr, "       old\n");
-	(void)fprintf(stderr, "       new\n");
-	(void)fprintf(stderr, "       md5\n");
-	(void)fprintf(stderr, "       blowfish\n");
-	(void)fprintf(stderr, "       sha1\n");
-	exit(1);
-}
-
-void
-pwd_gensalt(char *salt, int max, struct passwd *pw, const char *option)
-{
-	const char *crypto;
-
-	crypto = pwd_crypto(option);
-	if (crypto == NULL) {
-		(void)printf("Couldn't find specified cryptographic algorithm.\n");
-	}
-
-	if (crypto == NULL) {
-		goto bad;
-	}
-
+	rval = pwd_conf(&type, &option);
+	if (rval != 1) {
 #ifdef NOPWGENSALT
-	*salt = '\0';
-
-	/* grab a random printable character that isn't a colon */
-	(void)srandom((int)time((time_t *)NULL));
-	rval = pwd_gensalt_old(salt, max, pw, crypto);
+		*salt = '\0';
+		/* grab a random printable character that isn't a colon */
+		(void)srandom((int)time((time_t *)NULL));
+		rval = pwd_gensalt_old(salt, max, type, option);
 #else
-	rval = pw_gensalt(salt, max, pw, crypto);
+		rval = pw_gensalt(salt, max, type, option);
 #endif
-	if (!rval) {
-bad:
-		(void)printf("Couldn't generate salt.\n");
 	}
+	return (rval);
 }
 
 #ifdef NOPWGENSALT
@@ -182,33 +93,26 @@ to64(char *s, long v, int n)
 }
 
 static int
-pwd_gensalt_old(char *salt, int max, struct passwd *pw, const char *option)
+pwd_gensalt_old(char *salt, int max, const char *type, const char *option)
 {
-	const char *crypto;
 	int i, rval;
 
-	crypto = pwd_crypto(option);
-	if (crypto == NULL) {
-		(void)printf("Couldn't find specified cryptographic algorithm.\n");
-		(void)printf("Known cryptographic algorithms: old, new, md5, sha1.\n");
-	}
-
-	for (i = 0; i < nelems(pw_options); i++) {
+	for (i = 0; i < 5; i++) {
 		switch (i) {
 		case 0:
-			rval = old_salt(salt, max, pw, crypto);
+			rval = old_salt(salt, max, type, option);
 			break;
 		case 1:
-			rval = new_salt(salt, max, pw, crypto);
+			rval = new_salt(salt, max, type, option);
 			break;
 		case 2:
-			rval = md5_salt(salt, max, pw, crypto);
+			rval = md5_salt(salt, max, type, option);
 			break;
 		case 3:
-			rval = blowfish_salt(salt, max, pw, crypto);
+			rval = blowfish_salt(salt, max, type, option);
 			break;
 		case 4:
-			rval = sha1_salt(salt, max, pw, crypto);
+			rval = sha1_salt(salt, max, type, option);
 			break;
 		default:
 			rval = -1;
@@ -216,17 +120,17 @@ pwd_gensalt_old(char *salt, int max, struct passwd *pw, const char *option)
 		}
 		break;
 	}
-
+bad:
 	return (rval);
 }
 
 static int
-new_salt(char *salt, int max, struct passwd *pw, const char *option)
+new_salt(char *salt, int max, const char *type, const char *option)
 {
 	int rounds;
 
 	rounds = 0;
-	if (strcmp(option, "new") == 0) {
+	if (strcmp(type, "new") == 0) {
 		rounds = atol(option);
 		if (max < 10) {
 			return (0);
@@ -249,13 +153,13 @@ new_salt(char *salt, int max, struct passwd *pw, const char *option)
 }
 
 static int
-old_salt(char *salt, int max, struct passwd *pw, const char *option)
+old_salt(char *salt, int max, const char *type, const char *option)
 {
 	/*
 	while ((salt[0] = random() % 93 + 33) == ':');
 	while ((salt[1] = random() % 93 + 33) == ':');
 	*/
-	if (strcmp(option, "old") == 0) {
+	if (strcmp(type, "old") == 0) {
 		if (max < 3) {
 			return (0);
 		}
@@ -267,9 +171,9 @@ old_salt(char *salt, int max, struct passwd *pw, const char *option)
 }
 
 static int
-md5_salt(char *salt, int max, struct passwd *pw, const char *option)
+md5_salt(char *salt, int max, const char *type, const char *option)
 {
-	if (strcmp(option, "md5") == 0) {
+	if (strcmp(type, "md5") == 0) {
 		if (max < 13) {  /* $1$8salt$\0 */
 			return (0);
 		}
@@ -286,12 +190,12 @@ md5_salt(char *salt, int max, struct passwd *pw, const char *option)
 }
 
 static int
-blowfish_salt(char *salt, int max, struct passwd *pw, const char *option)
+blowfish_salt(char *salt, int max, const char *type, const char *option)
 {
 	int rounds;
 
 	rounds = 0;
-	if (strcmp(option, "blowfish") == 0) {
+	if (strcmp(type, "blowfish") == 0) {
 		rounds = atoi(option);
 		if (rounds < 4) {
 			rounds = 4;
@@ -303,9 +207,9 @@ blowfish_salt(char *salt, int max, struct passwd *pw, const char *option)
 }
 
 static int
-sha1_salt(char *salt, int max, struct passwd *pw, const char *option)
+sha1_salt(char *salt, int max, const char *type, const char *option)
 {
-	if (strcmp(option, "sha1") == 0) {
+	if (strcmp(type, "sha1") == 0) {
 		(void)printf("sha1 is not implemented.\n");
 		return (0);
 	}

@@ -33,9 +33,20 @@
  *	@(#)extern.h	8.1 (Berkeley) 4/2/94
  */
 
+/* pw_gensalt defaults */
+#define pwd_default_yp_type         "old"
+#define pwd_default_yp_option       "ypcipher"
+#define pwd_default_local_type      "blowfish"
+#define pwd_default_local_option    "localcipher"
+
+/* pwd_conf.c */
+int pwd_conf(const char **, const char **);
+
 /* pwd_gensalt.c */
-void pwd_gensalt(char *, int, struct passwd *, const char *);
-void pwd_algorithm(const char *, int);
+int pwd_gensalt(char *, int, const char *, const char *);
 
 /* local_passwd.c */
-int	local_passwd(const char *, const char *, const char *);
+int	local_passwd(const char *, const char *, const char *, const char *);
+
+/* passwd.c */
+char *getnewpasswd(struct passwd *, int, const char *, const char *, const char *);

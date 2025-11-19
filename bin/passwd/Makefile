@@ -21,7 +21,8 @@ USE_FORT?= yes	# setuid
 
 PROG= 	passwd
 SRCS=	passwd.c
-#SRCS+=	local_passwd.c pwd_gensalt.c
+#SRCS=	passwd_v2.c
+#SRCS+=	local_passwd.c pwd_conf.c pwd_gensalt.c
 MAN=	passwd.1
 
 #CPPFLAGS+=-I${.CURDIR} -DLOGIN_CAP
@@ -40,8 +41,6 @@ BINMODE=4555
 #LINKS+=	${BINDIR}/passwd ${BINDIR}/yppasswd
 #MAN+=	yppasswd.1
 #.endif
-
-
 
 #.if (${USE_PAM} != "no")
 #CPPFLAGS+=-DUSE_PAM

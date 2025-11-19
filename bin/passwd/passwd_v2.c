@@ -95,27 +95,30 @@ static int use_pam = 1;
 static int use_yp = 1;
 #endif
 
-static char tempname[] = "/tmp/passwd.XXXXXX";
-static const char *default_option = "blowfish";
-static int use_default = 0;
+static int use_default = 1;
 
-void usage(void);
+static void pwd_algorithm(const char *type, const char *option, int flags);
+static void usage(void);
+
+static const char *default_type = NULL;
+static const char *default_option = NULL;
 
 int
 main(int argc, char **argv)
 {
-	struct passwd *pw;
-	const char *uname, *option;
-	char *arg;
+//	struct passwd *pw;
+	const char *uname, *username;
+	char *aflag;
 	int ch, eval;
 
-	option = default_option;
+    option = uname = NULL;
+    //arg = NULL;
+    aflag = NULL;
 	while ((ch = getopt(argc, argv, "a:l:")) != EOF) {
 		switch (ch) {
 		case 'a':
-			use_default = 1;
-			pwd_algorithm(option, use_default);
-			arg = optarg;
+			use_default = 0;
+			aflag = optarg;
 			break;
 #ifdef USE_KERBEROS
 		case 'k':
@@ -123,8 +126,8 @@ main(int argc, char **argv)
 			arg = optarg;
 			break;
 #endif
-		case 'l':
-			arg = optarg;
+		case 'l':            
+//			arg = optarg;
 			break;
 #ifdef USE_PAM
 		case 'p':
@@ -147,6 +150,21 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+    username = getlogin();
+    if (username == NULL) {
+        errx(1, "who are you ??");
+    }
+
+    if (aflag) {
+        pwd_algorithm(default_type, default_option, use_default);
+    } else {
+       if (!use_default) {
+           pwd_algorithm(default_type, default_option, use_default);
+       } else {
+           pwd_algorithm(default_type, default_option, use_default);
+       }
+    }
+
 	switch (argc) {
 	case 0:
 		break;
@@ -168,7 +186,7 @@ main(int argc, char **argv)
 		/* NOTREACHED */
 	}
 
-	eval = local_passwd(uname, tempname, option);
+	eval = local_passwd(uname, username, default_type, default_option);
 #ifdef USE_NDBM
 	pw_dirpag_rename(eval);
 #else
@@ -176,18 +194,132 @@ main(int argc, char **argv)
 #endif
 }
 
-void
+char *
+getnewpasswd(struct passwd *pw, int min_pw_len, const char *temp, const char *type, const char *option)
+{
+	register char *p, *t;
+	int rval, tries;
+	char buf[_PASSWORD_LEN+1], salt[_PASSWORD_LEN+1];
+
+	(void)printf("Changing local password for %s.\n", pw->pw_name);
+
+	if (uid && pw->pw_passwd[0]
+			&& strcmp(crypt(getpass("Old password:"), pw->pw_passwd),
+					pw->pw_passwd)) {
+		(void)printf("passwd: %s.\n", strerror(EACCES));
+		pw_error(temp, 0, 1);
+	}
+
+	for (buf[0] = '\0', tries = 0;;) {
+		p = getpass("New password:");
+		if (!*p) {
+			(void)printf("Password unchanged.\n");
+			pw_error(temp, 0, 0);
+		}
+		if (min_pw_len > 0 && (int)strlen(p) < min_pw_len) {
+			(void)printf("Password is too short.\n");
+			continue;
+		}
+		if (strlen(p) <= 5 && (uid != 0 || ++tries < 2)) {
+			(void)printf("Please enter a longer password.\n");
+			continue;
+		}
+		for (t = p; *t && islower(*t); ++t)	;
+		if (!*t && (uid != 0 || ++tries < 2)) {
+			(void)printf(
+					"Please don't use an all-lower case password.\nUnusual capitalization, control characters or digits are suggested.\n");
+			continue;
+		}
+		(void)strcpy(buf, p);
+		if (!strcmp(buf, getpass("Retype new password:"))) {
+			break;
+		}
+		(void)printf("Mismatch; try again, EOF to quit.\n");
+	}
+	rval = pwd_gensalt(salt, _PASSWORD_LEN, type, option);
+	if (!rval) {
+		(void)printf("Couldn't generate salt.\n");
+	}
+	return (crypt(buf, salt));
+}
+
+/* Not ready: incomplete */
+static void
+pwd_algorithm(const char *type, const char *option, int flags)
+{
+	int rval;
+
+	rval = pwd_conf(&type, &option);
+	if (rval) {
+		if (flags == 1) {
+
+		}
+	}
+
+	/*
+	const char *type;
+	const char *option;
+
+	rval = pwd_conf(&type, &option);
+	if (rval) {
+		if (type != NULL && option != NULL) {
+			default_type = type;
+			default_option = option;
+		}
+	}
+	*/
+/*
+	int i;
+
+	if (flags == 1) {
+		if (type != NULL) {
+			if (!strcasecmp(type, optarg)) {
+				goto valid;
+			}
+		} else {
+			goto lookup;
+		}
+	} else {
+lookup:
+		type = &pw_types[0];
+		for (i = 0; i < nelems(pw_types); i++) {
+			type = &pw_types[i];
+			if (type != NULL) {
+				if (!strcasecmp(type, optarg)) {
+					break;
+				}
+			}
+		}
+	}
+
+valid:
+	if (type == NULL) {
+		if (!strcasecmp(optarg, "old")) {
+			type = "old";
+		} else if (!strcasecmp(optarg, "new")) {
+			type = "new";
+		} else if (!strcasecmp(optarg, "md5")) {
+			type = "md5";
+		} else if (!strcasecmp(optarg, "blowfish")) {
+			type = "blowfish";
+		} else if (!strcasecmp(optarg, "sha1")) {
+			type = "sha1";
+		} else {
+			warnx("illegal argument to -a option");
+			usage();
+		}
+	}
+*/
+}
+
+static void
 usage(void)
 {
-#ifdef USE_KERBEROS
-	fprintf(stderr, "usage: passwd [-k] [user]\n");
-#endif
-	fprintf(stderr, "usage: passwd [-l] [user]\n");
-#ifdef USE_PAM
-	fprintf(stderr, "usage: passwd [-p] [user]\n");
-#endif
-#ifdef USE_YP
-	fprintf(stderr, "usage: passwd [-y] [user]\n");
-#endif
+	fprintf(stderr, "usage: passwd [-a algorithm] [-k] [-l] [-p] [-y] [user]\n");
+	(void)fprintf(stderr, "       old\n");
+	(void)fprintf(stderr, "       new\n");
+	(void)fprintf(stderr, "       md5\n");
+	(void)fprintf(stderr, "       blowfish\n");
+	(void)fprintf(stderr, "       sha1\n");
 	exit(1);
 }

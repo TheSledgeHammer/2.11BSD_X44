@@ -70,6 +70,9 @@ static char sccsid[] = "@(#)local_passwd.c	8.3 (Berkeley) 4/2/94";
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
+#ifdef LOGIN_CAP
+#include <login_cap.h>
+#endif
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,50 +85,8 @@ static char sccsid[] = "@(#)local_passwd.c	8.3 (Berkeley) 4/2/94";
 
 uid_t uid;
 
-char *
-getnewpasswd(struct passwd *pw, const char *temp, const char *option)
-{
-	register char *p, *t;
-	int tries;
-	char buf[_PASSWORD_LEN+1], salt[_PASSWORD_LEN+1];
-
-	(void)printf("Changing local password for %s.\n", pw->pw_name);
-
-	if (uid && pw->pw_passwd[0]
-			&& strcmp(crypt(getpass("Old password:"), pw->pw_passwd),
-					pw->pw_passwd)) {
-		(void)printf("passwd: %s.\n", strerror(EACCES));
-		pw_error(temp, 0, 1);
-	}
-
-	for (buf[0] = '\0', tries = 0;;) {
-		p = getpass("New password:");
-		if (!*p) {
-			(void)printf("Password unchanged.\n");
-			pw_error(temp, 0, 0);
-		}
-		if (strlen(p) <= 5 && (uid != 0 || ++tries < 2)) {
-			printf("Please enter a longer password.\n");
-			continue;
-		}
-		for (t = p; *t && islower(*t); ++t)	;
-		if (!*t && (uid != 0 || ++tries < 2)) {
-			printf(
-					"Please don't use an all-lower case password.\nUnusual capitalization, control characters or digits are suggested.\n");
-			continue;
-		}
-		(void)strcpy(buf, p);
-		if (!strcmp(buf, getpass("Retype new password:"))) {
-			break;
-		}
-		printf("Mismatch; try again, EOF to quit.\n");
-	}
-	pwd_gensalt(salt, _PASSWORD_LEN, pw, option);
-	return (crypt(buf, salt));
-}
-
 int
-local_passwd(const char *uname, const char *temp, const char *option)
+local_passwd(const char *uname, const char *temp, const char *type, const char *option)
 {
 	struct passwd *pw;
 	int pfd, tfd;
@@ -139,17 +100,17 @@ local_passwd(const char *uname, const char *temp, const char *option)
 	pw_expiry = 0;
 	uid = getuid();
 	if (!(pw = getpwuid(uid))) {
-		fprintf(stderr, "passwd: unknown user: uid %u\n", uid);
+		(void)fprintf(stderr, "passwd: unknown user: uid %u\n", uid);
 		exit(1);
 	}
 
 	if (!(pw = getpwnam(uname))) {
-		fprintf(stderr, "passwd: unknown user %s.\n", uname);
+		(void)fprintf(stderr, "passwd: unknown user %s.\n", uname);
 		exit(1);
 	}
 
 	if (uid && uid != pw->pw_uid) {
-		fprintf(stderr, "passwd: %s\n", strerror(EACCES));
+		(void)fprintf(stderr, "passwd: %s\n", strerror(EACCES));
 		exit(1);
 	}
 
@@ -181,7 +142,7 @@ local_passwd(const char *uname, const char *temp, const char *option)
 	 * classes are implemented, go and get the "offset" value for this
 	 * class and reset the timer.
 	 */
-	pw->pw_passwd = getnewpasswd(pw, temp, option);
+	pw->pw_passwd = getnewpasswd(pw, min_pw_len, temp, type, option);
 	pw->pw_change = pw_expiry ? pw_expiry + time((time_t *) NULL) : 0;
 	pw_copy(pfd, tfd, pw);
 
