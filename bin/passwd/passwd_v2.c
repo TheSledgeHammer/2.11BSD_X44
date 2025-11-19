@@ -97,7 +97,7 @@ static int use_yp = 1;
 
 static int use_default = 1;
 
-static void pwd_algorithm(const char *arg, int flags);
+static void passwd_conf(const char *arg, int flags);
 static void usage(void);
 
 static const char *default_type = NULL;
@@ -108,17 +108,16 @@ main(int argc, char **argv)
 {
 //	struct passwd *pw;
 	const char *uname, *username;
-	char *aflag;
+	char *arg;
 	int ch, eval;
 
-    option = uname = NULL;
-    //arg = NULL;
-    aflag = NULL;
+	uname = NULL;
+	arg = NULL;
 	while ((ch = getopt(argc, argv, "a:l:")) != EOF) {
 		switch (ch) {
 		case 'a':
 			use_default = 0;
-			aflag = optarg;
+			arg = optarg;
 			break;
 #ifdef USE_KERBEROS
 		case 'k':
@@ -150,16 +149,12 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-    username = getlogin();
-    if (username == NULL) {
-        errx(1, "who are you ??");
-    }
+	username = getlogin();
+	if (username == NULL) {
+		errx(1, "who are you ??");
+	}
 
-    if (aflag) {
-        pwd_algorithm(optarg, use_default);
-    } else {
-    	pwd_algorithm(optarg, use_default);
-    }
+	passwd_conf(arg, use_default);
 
 	switch (argc) {
 	case 0:
@@ -220,7 +215,8 @@ getnewpasswd(struct passwd *pw, int min_pw_len, const char *temp, const char *ty
 			(void)printf("Please enter a longer password.\n");
 			continue;
 		}
-		for (t = p; *t && islower(*t); ++t)	;
+		for (t = p; *t && islower(*t); ++t)
+			;
 		if (!*t && (uid != 0 || ++tries < 2)) {
 			(void)printf(
 					"Please don't use an all-lower case password.\nUnusual capitalization, control characters or digits are suggested.\n");
@@ -240,7 +236,7 @@ getnewpasswd(struct passwd *pw, int min_pw_len, const char *temp, const char *ty
 }
 
 static void
-pwd_algorithm(const char *arg, int flags)
+passwd_conf(const char *arg, int flags)
 {
 	const char *type, *option;
 	int rval;
