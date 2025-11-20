@@ -378,7 +378,7 @@ vsize(KINFO *k, VARENT *ve)
 	VAR *v;
 
 	v = ve->var;
-	(void)printf("%*d", v->width,
+	(void)printf("%*ld", v->width,
 #ifndef NEWVM
 	    pgtok(KI_PROC(k)->p_dsize +
 	        KI_PROC(k)->p_ssize + KI_EPROC(k)->e_xsize));
@@ -400,7 +400,7 @@ rssize(KINFO *k, VARENT *ve)
 	    (KI_EPROC(k)->e_xrssize / KI_EPROC(k)->e_xccount) : 0)));
 #else
 	/* XXX don't have info about shared */
-	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_vm->vm_rssize));
+	(void)printf("%*ld", v->width, pgtok(KI_EPROC(k)->e_vm->vm_rssize));
 #endif
 }
 
@@ -413,7 +413,7 @@ p_rssize(KINFO *k, VARENT *ve)		/* doesn't account for text */
 #ifndef NEWVM
 	(void)printf("%*d", v->width, pgtok(KI_PROC(k)->p_rssize));
 #else
-	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_vm->vm_rssize));
+	(void)printf("%*ld", v->width, pgtok(KI_EPROC(k)->e_vm->vm_rssize));
 #endif
 }
 
@@ -514,7 +514,7 @@ getpmem(KINFO *k)
 	/* XXX want pmap ptpages, segtab, etc. (per architecture) */
 	szptudot = UPAGES;
 	/* XXX don't have info about shared */
-	fracmem = ((float)e->e_vm.vm_rssize + szptudot)/CLSIZE/mempages;
+	fracmem = ((float)e->e_vm->vm_rssize + szptudot)/CLSIZE/mempages;
 #endif
 	return (100.0 * fracmem);
 }
@@ -561,7 +561,7 @@ tsize(KINFO *k, VARENT *ve)
 #ifndef NEWVM
 	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_xsize));
 #else
-	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_vm->vm_tsize));
+	(void)printf("%*ld", v->width, pgtok(KI_EPROC(k)->e_vm->vm_tsize));
 #endif
 }
 
