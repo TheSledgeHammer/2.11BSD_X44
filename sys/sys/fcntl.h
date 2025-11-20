@@ -59,10 +59,10 @@
  * Open/fcntl flags begin with O_; kernel-internal flags begin with F.
  */
 /* open-only flags */
-#define	O_RDONLY	0x0000		/* open for reading only */
-#define	O_WRONLY	0x0001		/* open for writing only */
-#define	O_RDWR		0x0002		/* open for reading and writing */
-#define	O_ACCMODE	0x0003		/* mask for above modes */
+#define	O_RDONLY	0x00000		/* open for reading only */
+#define	O_WRONLY	0x00001		/* open for writing only */
+#define	O_RDWR		0x00002		/* open for reading and writing */
+#define	O_ACCMODE	0x00003		/* mask for above modes */
 
 /*
  * Kernel encoding of open mode; separate read and write bits that are
@@ -73,31 +73,32 @@
  * which was documented to use FREAD/FWRITE, continues to work.
  */
 #ifndef _POSIX_SOURCE
-#define	FREAD		0x0001
-#define	FWRITE		0x0002
+#define	FREAD		0x00001
+#define	FWRITE		0x00002
 #endif
-#define	O_NONBLOCK	0x0004		/* no delay */
-#define	O_APPEND	0x0008		/* set append mode */
+#define	O_NONBLOCK	0x00004		/* no delay */
+#define	O_APPEND	0x00008		/* set append mode */
 #ifndef _POSIX_SOURCE
-#define	O_SHLOCK	0x0010		/* open with shared file lock */
-#define	O_EXLOCK	0x0020		/* open with exclusive file lock */
-#define	O_ASYNC		0x0040		/* signal pgrp when data ready */
-#define	O_FSYNC		0x0080		/* synchronous writes */
+#define	O_SHLOCK	0x00010		/* open with shared file lock */
+#define	O_EXLOCK	0x00020		/* open with exclusive file lock */
+#define	O_ASYNC		0x00040		/* signal pgrp when data ready */
+#define	O_FSYNC		0x00080		/* synchronous writes */
 #endif
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
-#define	O_NOFOLLOW	0x0100	/* don't follow symlinks on the last */
+#define	O_NOFOLLOW	0x00100	/* don't follow symlinks on the last */
 					/* path component */
 #endif
-#define	O_CREAT		0x0200		/* create if nonexistant */
-#define	O_TRUNC		0x0400		/* truncate to zero length */
-#define	O_EXCL		0x0800		/* error if already exists */
+#define	O_CREAT		0x00200		/* create if nonexistant */
+#define	O_TRUNC		0x00400		/* truncate to zero length */
+#define	O_EXCL		0x00800		/* error if already exists */
 #ifdef _KERNEL
-#define	FMARK		0x1000		/* mark during gc() */
-#define	FDEFER		0x2000		/* defer for next gc pass */
-#define	FHASLOCK	0x4000		/* descriptor holds advisory lock */
+#define	FMARK		0x01000		/* mark during gc() */
+#define	FDEFER		0x02000		/* defer for next gc pass */
+#define	FHASLOCK	0x04000		/* descriptor holds advisory lock */
 #endif
 
-#define	O_CLOEXEC	0x8000	    	/* set close on exec */
+#define	O_DIRECTORY	0x08000	    /* fail if not a directory */
+#define	O_CLOEXEC	0x10000	    /* set close on exec */
 
 /* defined by POSIX 1003.1; BSD default, so no bit required */
 #define	O_NOCTTY	0		/* don't assign controlling terminal */
