@@ -49,4 +49,4 @@ int pwd_gensalt(char *, int, const char *, const char *);
 int	local_passwd(const char *, const char *, const char *, const char *);
 
 /* passwd.c */
-char *getnewpasswd(struct passwd *, int, const char *, const char *, const char *);
+char *getnewpasswd(struct passwd *, uid_t, const char *, int, const char *, const char *, const char *);

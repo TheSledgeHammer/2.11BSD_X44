@@ -83,6 +83,8 @@ static char sccsid[] = "@(#)local_passwd.c	8.3 (Berkeley) 4/2/94";
 
 #include "extern.h"
 
+static const char *local_msg = "Changing local password for";
+
 uid_t uid;
 
 int
@@ -142,7 +144,7 @@ local_passwd(const char *uname, const char *temp, const char *type, const char *
 	 * classes are implemented, go and get the "offset" value for this
 	 * class and reset the timer.
 	 */
-	pw->pw_passwd = getnewpasswd(pw, min_pw_len, temp, type, option);
+	pw->pw_passwd = getnewpasswd(pw, uid, local_msg, min_pw_len, temp, type, option);
 	pw->pw_change = pw_expiry ? pw_expiry + time((time_t *) NULL) : 0;
 	pw_copy(pfd, tfd, pw);
 

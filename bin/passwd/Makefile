@@ -20,18 +20,18 @@
 USE_FORT?= yes	# setuid
 
 PROG= 	passwd
-SRCS=	passwd.c
-#SRCS=	passwd_v2.c
-#SRCS+=	local_passwd.c pwd_conf.c pwd_gensalt.c
+#SRCS=	passwd.c
+SRCS=	passwd_v2.c
+SRCS+=	local_passwd.c pwd_conf.c pwd_gensalt.c
 MAN=	passwd.1
 
-#CPPFLAGS+=-I${.CURDIR} -DLOGIN_CAP
+CPPFLAGS+=-I${.CURDIR} -DLOGIN_CAP
 
 BINOWN=	root
 BINMODE=4555
 
-#LDADD+= -lcrypt -lutil
-#DPADD+= ${LIBCRYPT} ${LIBUTIL}
+LDADD+= -lcrypt -lutil
+DPADD+= ${LIBCRYPT} ${LIBUTIL}
 
 #.if (${USE_YP} != "no")
 #SRCS+=	yp_passwd.c

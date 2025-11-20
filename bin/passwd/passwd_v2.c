@@ -186,13 +186,13 @@ main(int argc, char **argv)
 }
 
 char *
-getnewpasswd(struct passwd *pw, int min_pw_len, const char *temp, const char *type, const char *option)
+getnewpasswd(struct passwd *pw, uid_t uid, const char *msg, int min_pw_len, const char *temp, const char *type, const char *option)
 {
 	register char *p, *t;
 	int rval, tries;
 	char buf[_PASSWORD_LEN+1], salt[_PASSWORD_LEN+1];
 
-	(void)printf("Changing local password for %s.\n", pw->pw_name);
+	(void)printf("%s %s.\n", msg, pw->pw_name);
 
 	if (uid && pw->pw_passwd[0]
 			&& strcmp(crypt(getpass("Old password:"), pw->pw_passwd),
