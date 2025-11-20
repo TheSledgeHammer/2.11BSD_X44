@@ -242,17 +242,19 @@ utf8_to_utf16(const uint8_t *s8, uint16_t *s16, size_t s16len)
 		s16[s16idx++] = 0;
 }
 
-void
-unicode16(short *dst, const wchar_t *src, size_t len)
-{
-	const uint8_t *s8;
-	uint16_t *s16;
 
-    s8 = __UNCONST(dst);
-    s16 = __UNCONST(src);
+void
+unicode16(const char *src, uint16_t *dst, size_t len)
+{
+    const uint8_t *s8;
+    uint16_t *s16;
+
+    s8 = (const uint8_t *)src;
+    s16 = dst;
 	utf8_to_utf16(s8, s16, len);
 }
 
+/*
 void
 unicode8(int *dst, const wchar_t *src, size_t len)
 {
@@ -263,6 +265,7 @@ unicode8(int *dst, const wchar_t *src, size_t len)
     s8 = __UNCONST(src);
 	utf16_to_utf8(s16, 36, s8, len);
 }
+*/
 
 void
 le_uuid_dec(void const *buf, uuid_t *uuid)

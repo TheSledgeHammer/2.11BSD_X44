@@ -74,21 +74,20 @@ struct gpt_ent *gpt_ent_primary(map_t *, map_t *, unsigned int);
 struct gpt_ent *gpt_ent_secondary(map_t *, map_t *, unsigned int);
 
 void	gpt_close(int);
-int	gpt_open(const char *);
+int	    gpt_open(const char *);
 void	*gpt_read(int, off_t, size_t);
-int	gpt_write(int, map_t *);
+int	    gpt_write(int, map_t *);
 
 uint32_t crc32(const void *, size_t);
 void	utf16_to_utf8(const uint16_t *, size_t, uint8_t *, size_t);
 void	utf8_to_utf16(const uint8_t *, uint16_t *, size_t);
-void	unicode16(short *, const wchar_t *, size_t);
-void	unicode8(int *, const wchar_t *, size_t);
+void    unicode16(const char *, uint16_t *, size_t);
 
 int	cmd_add(int, char *[]);
 int	cmd_boot(int, char *[]);
 int	cmd_create(int, char *[]);
 int	cmd_destroy(int, char *[]);
-int 	cmd_expand(int, char *[]);
+int cmd_expand(int, char *[]);
 int	cmd_migrate(int, char *[]);
 int	cmd_recover(int, char *[]);
 int	cmd_remove(int, char *[]);

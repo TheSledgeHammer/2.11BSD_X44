@@ -145,7 +145,7 @@ cmd_remove(int argc, char *argv[])
 {
 	char *p;
 	int ch, fd;
-	uint32_t status;
+//	uint32_t status;
 
 	/* Get the remove options */
 	while ((ch = getopt(argc, argv, "ab:i:s:t:")) != -1) {
