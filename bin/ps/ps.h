@@ -42,7 +42,7 @@ enum type {
 struct usave {
 	struct	timeval 	u_start;
 	struct	rusage 		u_ru;
-	struct	k_rusage 	u_cru;
+	struct	rusage 	    u_cru;
 	char				u_acflag;
 	char				u_valid;
 };

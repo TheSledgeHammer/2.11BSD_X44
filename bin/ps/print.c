@@ -329,13 +329,9 @@ started(KINFO *k, VARENT *ve)
 	if (!now)
 		(void)time(&now);
 	if (now - k->ki_u.u_start.tv_sec < 24 * SECSPERHOUR) {
-		/* I *hate* SCCS... */
-		static char fmt[] = __CONCAT("%l:%", "M%p");
-		(void)strftime(buf, sizeof(buf) - 1, fmt, tp);
+		(void)strftime(buf, sizeof(buf) - 1, "%l:%M%p", tp);
 	} else if (now - k->ki_u.u_start.tv_sec < 7 * SECSPERDAY) {
-		/* I *hate* SCCS... */
-		static char fmt[] = __CONCAT("%a%", "I%p");
-		(void)strftime(buf, sizeof(buf) - 1, fmt, tp);
+		(void)strftime(buf, sizeof(buf) - 1, "%l:%M%p", tp);
 	} else
 		(void)strftime(buf, sizeof(buf) - 1, "%e%b%y", tp);
 	(void)printf("%-*s", v->width, buf);
@@ -368,7 +364,7 @@ wchan(KINFO *k, VARENT *ve)
 			(void)printf("%-*.*s", v->width, v->width, 
 				      KI_EPROC(k)->e_wmesg);
 		else
-			(void)printf("%-*x", v->width,
+			(void)printf("%-*lx", v->width,
 			    (int)KI_PROC(k)->p_wchan &~ KERNBASE);
 	} else
 		(void)printf("%-*s", v->width, "-");
@@ -387,8 +383,8 @@ vsize(KINFO *k, VARENT *ve)
 	    pgtok(KI_PROC(k)->p_dsize +
 	        KI_PROC(k)->p_ssize + KI_EPROC(k)->e_xsize));
 #else
-	    pgtok(KI_EPROC(k).e_vm.vm_dsize + KI_EPROC(k).e_vm.vm_ssize +
-		KI_EPROC(k).e_vm.vm_tsize));
+	    pgtok(KI_EPROC(k)->e_vm->vm_dsize + KI_EPROC(k)->e_vm->vm_ssize +
+		KI_EPROC(k)->e_vm->vm_tsize));
 #endif
 }
 
@@ -404,7 +400,7 @@ rssize(KINFO *k, VARENT *ve)
 	    (KI_EPROC(k)->e_xrssize / KI_EPROC(k)->e_xccount) : 0)));
 #else
 	/* XXX don't have info about shared */
-	(void)printf("%*d", v->width, pgtok(KI_EPROC(k).e_vm.vm_rssize));
+	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_vm->vm_rssize));
 #endif
 }
 
@@ -417,7 +413,7 @@ p_rssize(KINFO *k, VARENT *ve)		/* doesn't account for text */
 #ifndef NEWVM
 	(void)printf("%*d", v->width, pgtok(KI_PROC(k)->p_rssize));
 #else
-	(void)printf("%*d", v->width, pgtok(KI_EPROC(k).e_vm.vm_rssize));
+	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_vm->vm_rssize));
 #endif
 }
 
@@ -565,7 +561,7 @@ tsize(KINFO *k, VARENT *ve)
 #ifndef NEWVM
 	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_xsize));
 #else
-	(void)printf("%*d", v->width, pgtok(KI_EPROC(k).e_vm.vm_tsize));
+	(void)printf("%*d", v->width, pgtok(KI_EPROC(k)->e_vm->vm_tsize));
 #endif
 }
 
