@@ -72,7 +72,7 @@ pwd_gensalt(char *salt, int max, const char *type, const char *option)
 #ifdef NOPWGENSALT
 		*salt = '\0';
 		/* grab a random printable character that isn't a colon */
-		(void)srandom((int)time((time_t *)NULL));
+		(void)srandom((int)time((time_t *) NULL));
 		rval = pwd_gensalt_old(salt, max, type, option);
 #else
 		rval = pw_gensalt(salt, max, type, option);
@@ -120,7 +120,6 @@ pwd_gensalt_old(char *salt, int max, const char *type, const char *option)
 		}
 		break;
 	}
-bad:
 	return (rval);
 }
 
@@ -174,7 +173,7 @@ static int
 md5_salt(char *salt, int max, const char *type, const char *option)
 {
 	if (strcmp(type, "md5") == 0) {
-		if (max < 13) {  /* $1$8salt$\0 */
+		if (max < 13) { /* $1$8salt$\0 */
 			return (0);
 		}
 		salt[0] = _PASSWORD_NONDES;

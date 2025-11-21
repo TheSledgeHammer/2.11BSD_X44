@@ -1,4 +1,36 @@
 /*
+ * Copyright (c) 1988, 1993, 1994
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+/*
  * Copyright (c) 1988 The Regents of the University of California.
  * All rights reserved.
  *
@@ -21,18 +53,19 @@
 char copyright[] =
 "@(#) Copyright (c) 1988 The Regents of the University of California.\n\
  All rights reserved.\n";
+"@(#) Copyright (c) 1988, 1993, 1994\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif
 #endif /* not lint */
 
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) 3/16/89";
+static char sccsid[] = "@(#)passwd.c	8.3 (Berkeley) 4/2/94";
 #endif
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/file.h>
-#include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -41,230 +74,178 @@ static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) 3/16/89";
 #include <stdio.h>
 #include <ctype.h>
 #include <strings.h>
+#include <util.h>
 
-uid_t uid;
+#include <err.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <util.h>
+
+#include "extern.h"
+
+static int use_crypto = 1;
+
+static void passwd_conf(const char *arg, int flags);
+static void usage(void);
+
+static const char *crypto_type = NULL;
+static const char *crypto_option = NULL;
 
 int
 main(int argc, char **argv)
 {
-	extern int errno;
-	struct passwd *pw;
-	struct rlimit rlim;
-	FILE *temp_fp;
-	int fd;
-	char *fend, *np, *passwd, *temp, *tend;
-	char from[MAXPATHLEN], to[MAXPATHLEN];
+//	struct passwd *pw;
+	const char *uname, *username;
+	char *arg;
+	int ch, eval;
 
-	uid = getuid();
-	switch(--argc) {
-		case 0:
-		if (!(pw = getpwuid(uid))) {
-			fprintf(stderr, "passwd: unknown user: uid %u\n", uid);
-			exit(1);
-		}
-		break;
-		case 1:
-		if (!(pw = getpwnam(argv[1]))) {
-			fprintf(stderr, "passwd: unknown user %s.\n", argv[1]);
-			exit(1);
-		}
-		if (uid && uid != pw->pw_uid) {
-			fprintf(stderr, "passwd: %s\n", strerror(EACCES));
-			exit(1);
-		}
-		break;
+	uname = NULL;
+	arg = NULL;
+	while ((ch = getopt(argc, argv, "a:l:")) != EOF) {
+		switch (ch) {
+		case 'a':
+			use_crypto = 0;
+			arg = optarg;
+			break;
+		case 'l':
+		case '?':
 		default:
-		fprintf(stderr, "usage: passwd [user]\n");
-		exit(1);
-	}
-
-	(void)signal(SIGHUP, SIG_IGN);
-	(void)signal(SIGINT, SIG_IGN);
-	(void)signal(SIGQUIT, SIG_IGN);
-	(void)signal(SIGTSTP, SIG_IGN);
-
-	rlim.rlim_cur = rlim.rlim_max = RLIM_INFINITY;
-	(void)setrlimit(RLIMIT_CPU, &rlim);
-	(void)setrlimit(RLIMIT_FSIZE, &rlim);
-
-	(void)umask(0);
-
-	temp = _PATH_PTMP;
-	if ((fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0600)) < 0) {
-		if (errno == EEXIST) {
-			fprintf(stderr,
-					"passwd: password file busy -- try again later.\n");
-			exit(0);
+			usage();
 		}
-		fprintf(stderr, "passwd: %s: %s", temp, strerror(errno));
-		goto bad;
-	}
-	if (!(temp_fp = fdopen(fd, "w"))) {
-		fprintf(stderr, "passwd: can't write %s\n", temp);
-		goto bad;
-	}
-	passwd = _PATH_MASTERPASSWD;
-	if (!freopen(passwd, "r", stdin)) {
-		fprintf(stderr, "passwd: can't read %s\n", passwd);
-		goto bad;
 	}
 
-	printf("Changing password for %s.\n", pw->pw_name);
-	np = getnewpasswd(pw, temp);
+	argc -= optind;
+	argv += optind;
 
-	if (!copy(pw->pw_name, np, temp_fp, pw))
-	goto bad;
+	username = getlogin();
+	if (username == NULL) {
+		errx(1, "who are you ??");
+	}
 
-	(void)fclose(temp_fp);
-	(void)fclose(stdin);
+	passwd_conf(arg, use_crypto);
 
-	switch(fork()) {
-		case 0:
+	switch (argc) {
+	case 0:
 		break;
-		case -1:
-		fprintf(stderr, "passwd: can't fork");
-		goto bad;
+	case 1:
+		uname = argv[0];
+		break;
+	default:
+		usage();
+	}
+
+	switch (fork()) {
+	case 0:
+		break;
+	case -1:
+		pw_error("passwd: can't fork", 1, 1);
 		/* NOTREACHED */
-		default:
+	default:
 		exit(0);
 		/* NOTREACHED */
 	}
 
-	if (makedb(temp)) {
-		fprintf(stderr, "passwd: mkpasswd failed");
-bad:
-		fprintf(stderr, "; password unchanged.\n");
-		(void)unlink(temp);
-		exit(1);
-	}
-
-	/*
-	 * possible race; have to rename four files, and someone could slip
-	 * in between them.  LOCK_EX and rename the ``passwd.dir'' file first
-	 * so that getpwent(3) can't slip in; the lock should never fail and
-	 * it's unclear what to do if it does.  Rename ``ptmp'' last so that
-	 * passwd/vipw/chpass can't slip in.
-	 */
-	(void)setpriority(PRIO_PROCESS, 0, -20);
-	fend = strcpy(from, temp) + strlen(temp);
-	tend = strcpy(to, _PATH_PASSWD) + strlen(_PATH_PASSWD);
-	bcopy(".dir", fend, 5);
-	bcopy(".dir", tend, 5);
-	if ((fd = open(from, O_RDONLY, 0)) >= 0)
-	(void)flock(fd, LOCK_EX);
-	/* here we go... */
-	(void)rename(from, to);
-	bcopy(".pag", fend, 5);
-	bcopy(".pag", tend, 5);
-	(void)rename(from, to);
-	bcopy(".orig", fend, 6);
-	(void)rename(from, _PATH_PASSWD);
-	(void)rename(temp, passwd);
-	/* done! */
-	exit(0);
-}
-
-int
-copy(char *name, char *np, FILE *fp, struct passwd *pw)
-{
-	register int done;
-	register char *p;
-	char buf[256];
-
-	for (done = 0; fgets(buf, sizeof(buf), stdin);) {
-		/* skip lines that are too big */
-		if (!index(buf, '\n')) {
-			fprintf(stderr, "passwd: line too long.\n");
-			return (0);
-		}
-		if (done) {
-			fprintf(fp, "%s", buf);
-			continue;
-		}
-		if (!(p = index(buf, ':'))) {
-			fprintf(stderr, "passwd: corrupted entry.\n");
-			return (0);
-		}
-		*p = '\0';
-		if (strcmp(buf, name)) {
-			*p = ':';
-			fprintf(fp, "%s", buf);
-			continue;
-		}
-		if (!(p = index(++p, ':'))) {
-			fprintf(stderr, "passwd: corrupted entry.\n");
-			return (0);
-		}
-		/*
-		 * reset change time to zero; when classes are implemented,
-		 * go and get the "offset" value for this class and reset
-		 * the timer.
-		 */
-		fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n", pw->pw_name, np,
-				pw->pw_uid, pw->pw_gid, pw->pw_class, 0L, pw->pw_expire,
-				pw->pw_gecos, pw->pw_dir, pw->pw_shell);
-		done = 1;
-	}
-	return (1);
+	eval = local_passwd(uname, username, crypto_type, crypto_option);
+#ifdef USE_NDBM
+	pw_dirpag_rename(eval);
+#else
+	exit(eval);
+#endif
 }
 
 char *
-getnewpasswd(struct passwd *pw, char *temp)
+getnewpasswd(struct passwd *pw, uid_t uid, const char *msg, int min_pw_len, const char *temp, const char *type, const char *option)
 {
 	register char *p, *t;
-	char buf[10], salt[2], *crypt(), *getpass();
-	time_t time();
+	int rval, tries;
+	char buf[_PASSWORD_LEN + 1], salt[_PASSWORD_LEN + 1];
 
-	if (uid && pw->pw_passwd
+	(void)printf("%s %s.\n", msg, pw->pw_name);
+
+	if (uid && pw->pw_passwd[0]
 			&& strcmp(crypt(getpass("Old password:"), pw->pw_passwd),
 					pw->pw_passwd)) {
-		(void) printf("passwd: %s.\n", strerror(EACCES));
-		(void) unlink(temp);
-		exit(1);
+		(void)printf("passwd: %s.\n", strerror(EACCES));
+		pw_error(temp, 0, 1);
 	}
 
-	for (buf[0] = '\0';;) {
+	for (buf[0] = '\0', tries = 0;;) {
 		p = getpass("New password:");
 		if (!*p) {
-			(void) printf("Password unchanged.\n");
-			(void) unlink(temp);
-			exit(0);
+			(void)printf("Password unchanged.\n");
+			pw_error(temp, 0, 0);
 		}
-		if (strlen(p) <= 5) {
-			printf("Please enter a longer password.\n");
+		if (min_pw_len > 0 && (int) strlen(p) < min_pw_len) {
+			(void)printf("Password is too short.\n");
+			continue;
+		}
+		if (strlen(p) <= 5 && (uid != 0 || ++tries < 2)) {
+			(void)printf("Please enter a longer password.\n");
 			continue;
 		}
 		for (t = p; *t && islower(*t); ++t)
 			;
-		if (!*t) {
-			printf(
+		if (!*t && (uid != 0 || ++tries < 2)) {
+			(void)printf(
 					"Please don't use an all-lower case password.\nUnusual capitalization, control characters or digits are suggested.\n");
 			continue;
 		}
-		(void) strcpy(buf, p);
-		if (!strcmp(buf, getpass("Retype new password:")))
+		(void)strcpy(buf, p);
+		if (!strcmp(buf, getpass("Retype new password:"))) {
 			break;
-		printf("Mismatch; try again, EOF to quit.\n");
+		}
+		(void)printf("Mismatch; try again, EOF to quit.\n");
 	}
-	/* grab a random printable character that isn't a colon */
-	(void) srandom((int) time((time_t*) NULL));
-	while ((salt[0] = random() % 93 + 33) == ':')
-		;
-	while ((salt[1] = random() % 93 + 33) == ':')
-		;
+	rval = pwd_gensalt(salt, _PASSWORD_LEN, type, option);
+	if (!rval) {
+		(void)printf("Couldn't generate salt.\n");
+	}
 	return (crypt(buf, salt));
 }
 
-int
-makedb(char *file)
+static void
+passwd_conf(const char *arg, int flags)
 {
-	int status, pid, w;
+	const char *type, *option;
+	int rval;
 
-	if (!(pid = vfork())) {
-		execl(_PATH_MKPASSWD, "mkpasswd", "-p", file, NULL);
-		_exit(127);
+	type = NULL;
+	option = NULL;
+	rval = pwd_conf(&type, &option);
+	if (rval == 0) {
+		if (flags != 0) {
+			crypto_type = type;
+			crypto_option = option;
+		} else {
+			if (!strcasecmp(arg, "old")) {
+				type = "old";
+			} else if (!strcasecmp(arg, "new")) {
+				type = "new";
+			} else if (!strcasecmp(arg, "md5")) {
+				type = "md5";
+			} else if (!strcasecmp(arg, "blowfish")) {
+				type = "blowfish";
+			} else if (!strcasecmp(arg, "sha1")) {
+				type = "sha1";
+			} else {
+				warnx("illegal argument to -a option\n");
+				usage();
+			}
+			crypto_type = type;
+			crypto_option = option;
+		}
+	} else {
+		errx(1,
+				"passwd: No gensalt algorithm and/or cipher has been specified\n");
 	}
-	while ((w = wait(&status)) != pid && w != -1)
-		;
-	return (w == -1 || status);
+}
+
+static void
+usage(void)
+{
+	(void)fprintf(stderr, "usage: passwd [-a algorithm] [-l] [user]\n");
+	(void)fprintf(stderr, "       algorithms: old new md5 blowfish sha1\n");
+	exit(1);
 }

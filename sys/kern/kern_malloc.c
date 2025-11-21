@@ -158,8 +158,8 @@ slabcache_create(map, size)
 {
 	struct kmemslabs_cache *cache;
 
-	CIRCLEQ_INIT(&cache->ksc_head);
 	cache = (struct kmemslabs_cache *)kmem_alloc(map, (vm_size_t)(size * sizeof(struct kmemslabs_cache)));
+	CIRCLEQ_INIT(&cache->ksc_head);
 	cache->ksc_refcount = 0;
 	return (cache);
 }
@@ -308,7 +308,7 @@ slabinit(cache, map, size)
 	struct kmemslabs_cache *ksc;
 
 	ksc = slabcache_create(map, size);
-	cache = &ksc;
+	*cache = ksc;
 }
 
 /* kmembucket functions */
@@ -783,7 +783,7 @@ kmeminit(void)
 		npg = VM_KMEM_SIZE / NBPG;
 
 		slabinit(&slabcache, kernel_map, npg);
-		kmemusage = (struct kmemusage *) kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
+		kmemusage = (struct kmemusage *)kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
 		kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
 
 #ifdef OVERLAY
@@ -820,7 +820,7 @@ kmalloc(size, flags)
 		allocsize = 1 << indx;
 	}
 	npg = clrnd(btoc(allocsize));
-	va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
+	va = (caddr_t)kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
 
 	return (va);
 }
@@ -831,7 +831,7 @@ kfree(addr, size)
 	void *addr;
 	short size;
 {
-	kmem_free(kmem_map, (vm_offset_t) addr, size);
+	kmem_free(kmem_map, (vm_offset_t)addr, size);
 }
 
 #ifdef OVERLAY

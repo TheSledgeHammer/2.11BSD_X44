@@ -141,17 +141,17 @@ pwd_yp_conf(const char **type, const char **option)
 	const char *cipher, *crypto;
 	int rval;
 
-    cipher = pwd_cipher(*option);
-    if (cipher == NULL) {
-    	errx(1, "Couldn't find specified cipher.\n");
-    }
+	cipher = pwd_cipher(*option);
+	if (cipher == NULL) {
+		errx(1, "Couldn't find specified cipher.\n");
+	}
 
-    crypto = pwd_crypto(*type);
-    if (crypto == NULL) {
-    	errx(1, "Couldn't find specified algorithm.\n");
-    }
+	crypto = pwd_crypto(*type);
+	if (crypto == NULL) {
+		errx(1, "Couldn't find specified algorithm.\n");
+	}
 
-    rval = pwd_yp_compare(crypto, cipher);
+	rval = pwd_yp_compare(crypto, cipher);
 	switch (rval) {
 	case 0:
 		*type = crypto;
@@ -191,17 +191,17 @@ pwd_local_conf(const char **type, const char **option)
 	const char *cipher, *crypto;
 	int rval;
 
-    cipher = pwd_cipher(*option);
-    if (cipher == NULL) {
-    	errx(1, "Couldn't find specified cipher.\n");
-    }
+	cipher = pwd_cipher(*option);
+	if (cipher == NULL) {
+		errx(1, "Couldn't find specified cipher.\n");
+	}
 
-    crypto = pwd_crypto(*type);
-    if (crypto == NULL) {
-    	errx(1, "Couldn't find specified algorithm.\n");
-    }
+	crypto = pwd_crypto(*type);
+	if (crypto == NULL) {
+		errx(1, "Couldn't find specified algorithm.\n");
+	}
 
-    rval = pwd_local_compare(crypto, cipher);
+	rval = pwd_local_compare(crypto, cipher);
 	switch (rval) {
 	case 0:
 		*type = crypto;
@@ -224,13 +224,15 @@ pwd_local_conf(const char **type, const char **option)
 static int
 pwd_local_compare(const char *type, const char *option)
 {
-    if (strcasecmp(type, pwd_default_local_type) && !strcasecmp(option, pwd_default_local_option)) {
-        return (1);
-    } else if (!strcasecmp(type, pwd_default_local_type) && strcasecmp(option, pwd_default_local_option)) {
-        return (-1);
-    } else {
-    	 return (0);
-    }
+	if (strcasecmp(type, pwd_default_local_type)
+			&& !strcasecmp(option, pwd_default_local_option)) {
+		return (1);
+	} else if (!strcasecmp(type, pwd_default_local_type)
+			&& strcasecmp(option, pwd_default_local_option)) {
+		return (-1);
+	} else {
+		return (0);
+	}
 }
 
 #endif

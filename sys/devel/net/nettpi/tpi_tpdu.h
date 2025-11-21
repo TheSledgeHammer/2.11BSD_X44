@@ -116,7 +116,7 @@ struct tpdu_crcc {
     unsigned short      crcc_sref;      /* source reference */
     unsigned short      crcc_opt:4;
     unsigned short      crcc_class:4;
-    unsigned short	crcc_xx:8;	/* unused */
+    unsigned short		crcc_xx:8;	/* unused */
 };
 
 struct tpdu_ak31 {
@@ -138,6 +138,7 @@ struct tp0du {
 #define tp0du_eot 	tp0_eot
 #define tp0du_mbz 	tp0_mbz
 
+/* TPDU connect request */
 struct tpdu_cr {
     struct tpdu_fixed   cr_tpduf;
     struct tpdu_crcc    cr_crcc;
@@ -151,6 +152,7 @@ struct tpdu_cr {
 #define cr_options      cr_crcc.crcc_opt
 };
 
+/* TPDU connect confirm */
 struct tpdu_cc {
     struct tpdu_fixed   cc_tpduf;
     struct tpdu_crcc    cc_crcc;
@@ -163,6 +165,7 @@ struct tpdu_cc {
 #define cc_options      cc_crcc.crcc_opt
 };
 
+/* TPDU disconnect request */
 struct tpdu_dr {
     struct tpdu_fixed   dr_tpduf;
     unsigned short      dr_sref;
@@ -172,6 +175,7 @@ struct tpdu_dr {
 #define dr_dref         dr_tpduf.fd_dref
 };
 
+/* TPDU disconnect confirm */
 struct tpdu_dc {
     struct tpdu_fixed   dc_tpduf;
     unsigned short      dc_sref;
@@ -180,6 +184,7 @@ struct tpdu_dc {
 #define dc_dref         dc_tpduf.fd_dref
 };
 
+/* TPDU data */
 struct tpdu_dt {
     struct tpdu_fixed   dt_tpduf;
     struct seqeot7      dt_seq7;
@@ -193,6 +198,7 @@ struct tpdu_dt {
 #define dt_eotX         dt_seq31.Xeot
 };
 
+/* TPDU expedited data */
 struct tpdu_xpd {
     struct tpdu_fixed   xpd_tpduf;
     struct seqeot7      xpd_seq7;
@@ -206,6 +212,7 @@ struct tpdu_xpd {
 #define xpd_eotX        xpd_seq31.Xeot
 };
 
+/* TPDU data acknowledge */
 struct tpdu_ak {
     struct tpdu_fixed   ak_tpduf;
     struct tpdu_ak31    ak_ak31;
@@ -221,6 +228,7 @@ struct tpdu_ak {
 #define ak_cdtX         ak_ak31.ak31_cdt
 };
 
+/* TPDU expedited data acknowledge */
 struct tpdu_xak {
     struct tpdu_fixed   xak_tpduf;
     struct seqeot7      xak_seq7;
@@ -232,6 +240,7 @@ struct tpdu_xak {
 #define xak_seqX        xak_seq31.seq
 };
 
+/* TPDU error */
 struct tpdu_er {
     struct tpdu_fixed   er_tpduf;
     unsigned char       er_reason;			/* [ ISO 8073 13.12.3.c ] */
@@ -240,6 +249,7 @@ struct tpdu_er {
 #define er_dref         er_tpduf.fd_dref
 };
 
+/* TPDU reject */
 struct tpdu_rj {
     struct tpdu_fixed   rj_tpduf;
     struct seqeot7      rj_seq7;
@@ -333,11 +343,18 @@ union tpdu_fixed_rest {
 #define tpdu_ERtype     _tpdufr_er.er_type
 #define tpdu_ERdref     _tpdufr_er.er_dref
 #define tpdu_ERreason   _tpdufr_er.er_reason
+
+    struct tpdu_rj      _tpdufr_rj;
+#define tpdu_RJli       _tpdufr_rj.rj_li
+#define tpdu_RJtype     _tpdufr_rj.rj_type
+#define tpdu_RJdref     _tpdufr_rj.rj_dref
+#define tpdu_RJseq     	_tpdufr_rj.rj_seq
+#define tpdu_RJseqX    	_tpdufr_rj.rj_Xseq
 };
 
 /* OPTIONS and ADDL OPTIONS bits */
-#define TPO_USE_EFC	0x1
-#define TPO_XTD_FMT	0x2
+#define TPO_USE_EFC		0x1
+#define TPO_XTD_FMT		0x2
 #define TPAO_USE_TXPD 	0x1
 #define TPAO_NO_CSUM 	0x2
 #define TPAO_USE_RCC 	0x4

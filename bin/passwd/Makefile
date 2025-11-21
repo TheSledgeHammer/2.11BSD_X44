@@ -20,8 +20,7 @@
 USE_FORT?= yes	# setuid
 
 PROG= 	passwd
-#SRCS=	passwd.c
-SRCS=	passwd_v2.c
+SRCS=	passwd.c
 SRCS+=	local_passwd.c pwd_conf.c pwd_gensalt.c
 MAN=	passwd.1
 
@@ -32,21 +31,5 @@ BINMODE=4555
 
 LDADD+= -lcrypt -lutil
 DPADD+= ${LIBCRYPT} ${LIBUTIL}
-
-#.if (${USE_YP} != "no")
-#SRCS+=	yp_passwd.c
-#CPPFLAGS+=-DUSE_YP
-#LDADD+=	-lrpcsvc
-#DPADD+=	${LIBRPCSVC}
-#LINKS+=	${BINDIR}/passwd ${BINDIR}/yppasswd
-#MAN+=	yppasswd.1
-#.endif
-
-#.if (${USE_PAM} != "no")
-#CPPFLAGS+=-DUSE_PAM
-#SRCS+= pam_passwd.c
-#LDADD+=-lpam ${PAM_STATIC_LDADD}
-#DPADD+=${LIBPAM} ${PAM_STATIC_DPADD}
-#.endif
 
 .include <bsd.prog.mk>

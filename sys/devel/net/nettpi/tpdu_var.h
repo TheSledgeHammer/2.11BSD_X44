@@ -29,14 +29,18 @@
 #ifndef _NETTPI_TPI_VAR_H_
 #define _NETTPI_TPI_VAR_H_
 
-#define TPDU_CMD 			0
 #define TPDU_CLASS0			1	/* TP_CLASS_0 */
 #define TPDU_CLASS1			2	/* TP_CLASS_1 */
 #define TPDU_CLASS2			3	/* TP_CLASS_2 */
 #define TPDU_CLASS3			4	/* TP_CLASS_3 */
 #define TPDU_CLASS4			5	/* TP_CLASS_4 */
-#define TPDU_MAXCMDCLASS		6
-#define TPDU_CMDCLASS(val) 		((val) * TPDU_MAXCMDCLASS)
+
+/* Re-Think: Ignore Classes in state handler. Class specific logic can be managed externally */
+#define TPDU_CMD 			0
+#define TPDU_RSP			1
+#define TPDU_MAXCMDRSP			2
+#define TPDU_CMDRSP(val) 		((val) * TPDU_MAXCMDRSP)
+#define TPDU_CMDCLASS(val) 		TPDU_CMDRSP(val)
 
 /* TPDU types */
 #define TPDUT_CC			TPDU_CMDCLASS(0)	/* CC_TPDU: connect confirm */
@@ -51,7 +55,7 @@
 #define TPDUT_RJ			TPDU_CMDCLASS(9)	/* RJ_TPDU: reject */
 
 /* TPDU timer events */
-#define TPDU_INACT				TPDU_CMDCLASS(10)	/* TM_inact */
+#define TPDU_INACT			TPDU_CMDCLASS(10)	/* TM_inact */
 #define TPDU_RETRANS			TPDU_CMDCLASS(12)	/* TM_retrans */
 #define TPDU_SENDACK			TPDU_CMDCLASS(13)	/* TM_sendack */
 #define TPDU_NOTUSED			TPDU_CMDCLASS(14)	/* TM_notused */
@@ -60,10 +64,10 @@
 
 /* TS-user requests */
 #define TSU_CONNECT_REQUEST		TPDU_CMDCLASS(17)	/* T_CONN_req */
-#define TSU_CONNECT_RESPONSE	TPDU_CMDCLASS(18)	/* T_LISTEN_req */
-#define TSU_DISCONNECT_REQUEST	TPDU_CMDCLASS(19)	/* T_DISC_req */
+#define TSU_CONNECT_RESPONSE		TPDU_CMDCLASS(18)	/* T_LISTEN_req */
+#define TSU_DISCONNECT_REQUEST		TPDU_CMDCLASS(19)	/* T_DISC_req */
 #define TSU_DATA_REQUEST		TPDU_CMDCLASS(20)	/* T_DATA_req */
-#define TSU_XPD_DATA_REQUEST	TPDU_CMDCLASS(21)	/* T_XPD_req */
+#define TSU_XPD_DATA_REQUEST		TPDU_CMDCLASS(21)	/* T_XPD_req */
 #define TSU_NETRESET			TPDU_CMDCLASS(22)	/* T_NETRESET */
 /* Currently Missing */
 /* T_USR_rcvd */
@@ -76,8 +80,8 @@
 #define TPDU_DISCONNECT_INDICATION	3
 #define TPDU_DATA_INDICATION		4
 #define TPDU_XPD_DATA_INDICATION	5
-#define TPDU_RESET_CONFIRM          6
-#define TPDU_DATA_RECEIVED			7		/* T_USR_rcvd */
+#define TPDU_RESET_CONFIRM          	6
+#define TPDU_DATA_RECEIVED		7		/* T_USR_rcvd */
 #define TPDU_XPD_DATA_RECEIVED		8		/* T_USR_Xrcvd */
-#define TPDU_ACCEPT_REQUEST			9		/* T_ACPT_req */
+#define TPDU_ACCEPT_REQUEST		9		/* T_ACPT_req */
 #endif /* _NETTPI_TPI_VAR_H_ */

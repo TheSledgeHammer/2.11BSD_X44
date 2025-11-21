@@ -33,8 +33,13 @@
 
 #define TPDU_COMMAND(tpdu_kind, cmd) ((tpdu_kind) + (cmd))
 
+/*
+ * State Handler Methods:
+ * - adm, conn, reset, setup, d_conn, error, busy, reject, await
+ */
+
 int
-tpdu_statehandler(struct tpipcb *tp, struct tp_event *evnt, int tpdu_kind, int cmd, int poll)
+tpdu_statehandler(struct tpipcb *tp, struct tp_event *evnt, int tpdu_kind, int cmdrsp, int poll)
 {
     register int action = 0;
 

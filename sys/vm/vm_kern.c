@@ -207,7 +207,7 @@ kmem_alloc(map, size)
 	 *	And finally, mark the data as non-pageable.
 	 */
 
-	(void) vm_map_pageable(map, (vm_offset_t) addr, addr + size, FALSE);
+	(void)vm_map_pageable(map, (vm_offset_t) addr, addr + size, FALSE);
 
 	/*
 	 *	Try to coalesce the map
@@ -231,7 +231,7 @@ kmem_free(map, addr, size)
 	register vm_offset_t	addr;
 	vm_size_t				size;
 {
-	(void) vm_map_remove(map, trunc_page(addr), round_page(addr + size));
+	(void)vm_map_remove(map, trunc_page(addr), round_page(addr + size));
 }
 
 /*
@@ -259,7 +259,7 @@ kmem_suballoc(parent, min, max, size, pageable)
 
 	size = round_page(size);
 
-	*min = (vm_offset_t) vm_map_min(parent);
+	*min = (vm_offset_t)vm_map_min(parent);
 	ret = vm_map_find(parent, NULL, (vm_offset_t) 0, min, size, TRUE);
 	if (ret != KERN_SUCCESS) {
 		printf("kmem_suballoc: bad status return of %d.\n", ret);
@@ -430,7 +430,7 @@ kmem_malloc(map, size, canwait)
 	 */
 	if (canwait) {
 		vm_map_unlock(map);
-		(void) vm_map_pageable(map, (vm_offset_t) addr, addr + size, FALSE);
+		(void)vm_map_pageable(map, (vm_offset_t) addr, addr + size, FALSE);
 		vm_map_simplify(map, addr);
 		return (addr);
 	}
@@ -520,7 +520,7 @@ kmem_free_wakeup(map, addr, size)
 	vm_size_t	size;
 {
 	vm_map_lock(map);
-	(void) vm_map_delete(map, trunc_page(addr), round_page(addr + size));
+	(void)vm_map_delete(map, trunc_page(addr), round_page(addr + size));
 	vm_thread_wakeup(map);
 	vm_map_unlock(map);
 }
@@ -541,7 +541,7 @@ kmem_init(start, end)
 	vm_map_lock(m);
 	/* N.B.: cannot use kgdb to debug, starting with this assignment ... */
 	kernel_map = m;
-	(void) vm_map_insert(m, NULL, (vm_offset_t)0, VM_MIN_KERNEL_ADDRESS, start);
+	(void)vm_map_insert(m, NULL, (vm_offset_t)0, VM_MIN_KERNEL_ADDRESS, start);
 	/* ... and ending with the completion of the above `insert' */
 	vm_map_unlock(m);
 }
