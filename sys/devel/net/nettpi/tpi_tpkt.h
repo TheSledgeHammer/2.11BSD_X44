@@ -31,12 +31,12 @@
 #ifndef _NETTPI_TPI_TPKT_H_
 #define _NETTPI_TPI_TPKT_H_
 
+/* TPKT */
 #define TPKT_VERSION 	3
 #define TPKT_RESERVED	0
 #define TPKT_MINLEN 	7
-#define TPKT_MAXLEN 	65535
+#define TPKT_MAXLEN 	65635
 
-/* TPKT */
 struct tpkt {
     unsigned short	pkt_vers:8;     /* version (8-bits)(vers:3) */
     unsigned int	pkt_len:16;     /* length in octets including packet header (16-bits)(min: 7 max: 65635)  */

@@ -26,10 +26,65 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/mbuf.h>
+#include <sys/queue.h>
+#include <sys/null.h>
+
 #include <netiso/tp_events.h>
+#include <netiso/tp_param.h>
 
 #include "tpi_tpdu.h"
 #include "tpdu_var.h"
+
+void
+tpduv_variable_add(struct tpdu *tpdu, struct mbuf *m, unsigned char type, unsigned char reglen, unsigned char xtdlen, unsigned char class, unsigned char maxlength)
+{
+	tpdu->_tpduv = mtod(m, struct tpdu_variable *);
+	tpdu->_tpduv->ve_type = type;
+	tpdu->_tpduv->ve_class = class;
+	tpdu->_tpduv->ve_rf_length = reglen;
+	tpdu->_tpduv->ve_xf_length = xtdlen;
+	tpdu->_tpduv->ve_max_length = maxlength;
+    LIST_INSERT_HEAD(&tpdu->_tpduvh, tpdu->_tpduv, ve_link);
+}
+
+/*
+ * Derived from tpdu_info[][4] in tp_input.c
+ */
+void
+tpdu_variable_init(struct tpdu *tpdu, struct mbuf *m)
+{
+	LIST_INIT(&tpdu->_tpduvh);
+
+	tpduv_variable_add(tpdu, m, XPD_TPDU_type, 0x5, 0x8, 0x0, TP_MAX_XPD_DATA);
+	tpduv_variable_add(tpdu, m, XAK_TPDU_type, 0x5, 0x8, 0x0, 0x0);
+	tpduv_variable_add(tpdu, m, GR_TPDU_type, 0x0, 0x0, 0x0, 0x0);
+	tpduv_variable_add(tpdu, m, AK_TPDU_type, 0x5, 0xa, 0x0, 0x0);
+	tpduv_variable_add(tpdu, m, ER_TPDU_type, 0x5, 0x5, 0x0, 0x0);
+	tpduv_variable_add(tpdu, m, DR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_DR_DATA);
+	tpduv_variable_add(tpdu, m, DC_TPDU_type, 0x6, 0x6, 0x0, 0x0);
+	tpduv_variable_add(tpdu, m, CC_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CC_DATA);
+	tpduv_variable_add(tpdu, m, CR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CR_DATA);
+	tpduv_variable_add(tpdu, m, DT_TPDU_type, 0x5, 0x8, 0x3, 0x0);
+	/*
+	 * Missing RJ_TPDU_TYPE. As this was not originally available.
+	 * As well as not being present into tp_driver.
+	 */
+}
+
+/*
+ * Search for tpdu variables by tpdu_type
+ */
+struct tpdu_variable *
+tpdu_variable_lookup(struct tpdu *tpdu, unsigned char type)
+{
+	LIST_FOREACH(tpdu->_tpduv, &tpdu->_tpduvh, ve_link) {
+		if (tpdu->_tpduv->ve_type == type) {
+			return (tpdu->_tpduv);
+		}
+	}
+	return (NULL);
+}
 
 #define TPDU_COMMAND(tpdu_kind, cmd) ((tpdu_kind) + (cmd))
 

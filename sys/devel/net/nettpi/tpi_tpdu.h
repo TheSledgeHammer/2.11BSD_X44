@@ -98,6 +98,21 @@ struct seqeot31 {
 };
 
 /*
+ * variable part of tpdu
+ * Derived from tpdu_info[][4] in tp_input.c
+ */
+struct tpdu_variable_head;
+LIST_HEAD(tpdu_variable_head, tpdu_variable);
+struct tpdu_variable {
+	unsigned char 		ve_rf_length;    /* length: regular format */
+	unsigned char 		ve_xf_length;    /* length: extended format */
+	unsigned char  		ve_type;         /* tpdu type (DT, CR, etc.) */
+	unsigned char  		ve_class;        /* tpdu class (0, 4, etc.) */
+    unsigned char 		ve_max_length;   /* max length */
+    LIST_ENTRY(tpdu_variable) ve_link;	 /* variable list */
+};
+
+/*
  * This much of a tpdu is the same for all types of tpdus  (except DT tpdus
  * in class 0; their exceptions are handled by the data structure below
  */
@@ -361,8 +376,10 @@ union tpdu_fixed_rest {
 #define TPAO_USE_NXPD 	0x8
 
 struct tpdu {
-	struct tpdu_fixed   	_tpduf;
-	union tpdu_fixed_rest   _tpdufr;
+	struct tpdu_fixed   		_tpduf;
+	union tpdu_fixed_rest   	_tpdufr;
+	struct tpdu_variable 		*_tpduv;	/* variable back-pointer */
+	struct tpdu_variable_head 	_tpduvh;	/* variable list head */
 };
 
 #endif /* _NETTPI_TPI_TPDU_H_ */
