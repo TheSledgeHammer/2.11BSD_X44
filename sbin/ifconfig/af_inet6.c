@@ -76,8 +76,6 @@
 
 #include <netinet/in.h>
 #include <netinet/in_var.h>
-
-#include <netinet6/in6.h>
 #include <netinet6/nd6.h>
 
 #include <err.h>
