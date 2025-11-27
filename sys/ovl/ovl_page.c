@@ -150,7 +150,7 @@ ovl_pmap_bootinit(item, size, nitems)
 	result = (free - totsize);
 	itemsize = (sizeof(item) + size);
 	if ((free < totsize) || (itemsize > result)) {
-		panic("vm_pmap_bootinit: not enough space allocated");
+		panic("ovl_pmap_bootinit: not enough space allocated");
 	}
 	bzero(item, totsize);
 	item = (void *)(vm_size_t)itemsize;
