@@ -37,7 +37,7 @@
 #include "tpdu_var.h"
 
 void
-tpduv_variable_add(struct tpdu *tpdu, struct mbuf *m, unsigned char type, unsigned char reglen, unsigned char xtdlen, unsigned char class, unsigned char maxlength)
+tpdu_variable_add(struct tpdu *tpdu, struct mbuf *m, unsigned char type, unsigned char reglen, unsigned char xtdlen, unsigned char class, unsigned char maxlength)
 {
 	tpdu->_tpduv = mtod(m, struct tpdu_variable *);
 	tpdu->_tpduv->ve_type = type;
@@ -56,19 +56,19 @@ tpdu_variable_init(struct tpdu *tpdu, struct mbuf *m)
 {
 	LIST_INIT(&tpdu->_tpduvh);
 
-	tpduv_variable_add(tpdu, m, XPD_TPDU_type, 0x5, 0x8, 0x0, TP_MAX_XPD_DATA);
-	tpduv_variable_add(tpdu, m, XAK_TPDU_type, 0x5, 0x8, 0x0, 0x0);
-	tpduv_variable_add(tpdu, m, GR_TPDU_type, 0x0, 0x0, 0x0, 0x0);
-	tpduv_variable_add(tpdu, m, AK_TPDU_type, 0x5, 0xa, 0x0, 0x0);
-	tpduv_variable_add(tpdu, m, ER_TPDU_type, 0x5, 0x5, 0x0, 0x0);
-	tpduv_variable_add(tpdu, m, DR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_DR_DATA);
-	tpduv_variable_add(tpdu, m, DC_TPDU_type, 0x6, 0x6, 0x0, 0x0);
-	tpduv_variable_add(tpdu, m, CC_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CC_DATA);
-	tpduv_variable_add(tpdu, m, CR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CR_DATA);
-	tpduv_variable_add(tpdu, m, DT_TPDU_type, 0x5, 0x8, 0x3, 0x0);
+	tpdu_variable_add(tpdu, m, XPD_TPDU_type, 0x5, 0x8, 0x0, TP_MAX_XPD_DATA);
+	tpdu_variable_add(tpdu, m, XAK_TPDU_type, 0x5, 0x8, 0x0, 0x0);
+	tpdu_variable_add(tpdu, m, GR_TPDU_type, 0x0, 0x0, 0x0, 0x0);
+	tpdu_variable_add(tpdu, m, AK_TPDU_type, 0x5, 0xa, 0x0, 0x0);
+	tpdu_variable_add(tpdu, m, ER_TPDU_type, 0x5, 0x5, 0x0, 0x0);
+	tpdu_variable_add(tpdu, m, DR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_DR_DATA);
+	tpdu_variable_add(tpdu, m, DC_TPDU_type, 0x6, 0x6, 0x0, 0x0);
+	tpdu_variable_add(tpdu, m, CC_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CC_DATA);
+	tpdu_variable_add(tpdu, m, CR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CR_DATA);
+	tpdu_variable_add(tpdu, m, DT_TPDU_type, 0x5, 0x8, 0x3, 0x0);
 	/*
 	 * Missing RJ_TPDU_TYPE. As this was not originally available.
-	 * As well as not being present into tp_driver.
+	 * As well as not being present in tp_driver.
 	 */
 }
 

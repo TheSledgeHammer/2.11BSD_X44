@@ -83,7 +83,6 @@ __RCSID("$NetBSD: ifconfig.c,v 1.141.4.2 2005/07/24 01:58:38 snj Exp $");
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/queue.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -132,8 +131,8 @@ struct ifcapreq g_ifcr;
 int	g_ifcr_updated;
 
 struct afswtch *afp;
-struct cmd_head cmdlist = LIST_HEAD_INITIALIZER(cmdlist);
-struct afswtch_head aflist = LIST_HEAD_INITIALIZER(aflist);
+struct cmds *cmdlist = NULL;
+struct afswtch *aflist = NULL;
 
 void 	notealias(const char *, int);
 void 	notrailers(const char *, int);
@@ -206,42 +205,10 @@ const struct cmd if_cmds[] = {
 void		printall(const char *);
 void		list_cloners(void);
 void 		status(const struct sockaddr_dl *);
+void 		usage(void);
 const char 	*get_string(const char *, const char *, u_int8_t *, int *);
 void		print_string(const u_int8_t *, int);
 struct afswtch *lookup_af(const char *);
-
-void
-usage(void)
-{
-	const char *progname = getprogname();
-
-	fprintf(stderr,
-	    "usage: %s [-m] [-v] [-z] "
-#ifdef INET6
-		"[-L] "
-#endif
-		"interface\n"
-		"\t[ af [ address [ dest_addr ] ] [ netmask mask ] [ prefixlen n ]\n"
-		"\t\t[ alias | -alias ] ]\n"
-		"\t[ up ] [ down ] [ metric n ] [ mtu n ]\n"
-		"\t[ nwid network_id ] [ nwkey network_key | -nwkey ]\n"
-		"\t[ powersave | -powersave ] [ powersavesleep duration ]\n"
-		"\t[ [ af ] tunnel src_addr dest_addr ] [ deletetunnel ]\n"
-		"\t[ arp | -arp ]\n"
-		"\t[ media type ] [ mediaopt opts ] [ -mediaopt opts ] "
-		"[ instance minst ]\n"
-		"\t[ vlan n vlanif i ]\n"
-		"\t[ anycast | -anycast ] [ deprecated | -deprecated ]\n"
-		"\t[ tentative | -tentative ] [ pltime n ] [ vltime n ] [ eui64 ]\n"
-		"\t[ link0 | -link0 ] [ link1 | -link1 ] [ link2 | -link2 ]\n"
-		"       %s -a [-b] [-m] [-d] [-u] [-v] [-z] [ af ]\n"
-		"       %s -l [-b] [-d] [-u] [-s]\n"
-		"       %s -C\n"
-		"       %s interface create\n"
-		"       %s interface destroy\n",
-		progname, progname, progname, progname, progname, progname);
-	exit(1);
-}
 
 int
 main(int argc, char *argv[])
@@ -427,7 +394,7 @@ main(int argc, char *argv[])
 	while (argc > 0) {
 		const struct cmd *p;
 
-		LIST_FOREACH(p, &cmdlist, c_next) {
+		for (p = cmdlist; p != NULL; p = p->c_next) {
 			if (strcmp(argv[0], p->c_name) == 0) {
 				break;
 			}
@@ -539,15 +506,19 @@ cmds_init(void)
 #endif
 	media_init();
 	ieee80211_init();
+#ifndef INET_ONLY
+	carp_init();
+#endif
 	tunnel_init();
 	xns_init();
-	//vlan_init();
+	vlan_init();
 }
 
 void
 af_register(struct afswtch *p)
 {
-	LIST_INSERT_HEAD(&aflist, p, af_next);
+	p->af_next = aflist;
+	aflist = p;
 }
 
 struct afswtch *
@@ -555,7 +526,7 @@ af_getbyname(const char *name)
 {
 	struct afswtch *afp;
 
-	LIST_FOREACH(afp, &aflist, af_next) {
+	for (afp = aflist; afp !=  NULL; afp = afp->af_next) {
 		if (strcmp(afp->af_name, name) == 0) {
 			return (afp);
 		}
@@ -568,7 +539,7 @@ af_getbyfamily(int af)
 {
 	struct afswtch *afp;
 
-	LIST_FOREACH(afp, &aflist, af_next) {
+	for (afp = aflist; afp !=  NULL; afp = afp->af_next) {
 		if (afp->af_af == af) {
 			return (afp);
 		}
@@ -588,7 +559,8 @@ lookup_af(const char *cp)
 void
 cmd_register(const struct cmd *p)
 {
-	LIST_INSERT_HEAD(&cmdlist, p, c_next);
+	p->c_next = cmds;
+	cmdlist = p;
 }
 
 const struct cmd *
@@ -596,7 +568,7 @@ cmd_lookup(const char *name)
 {
 	const struct cmd *p;
 
-	LIST_FOREACH(p, &cmdlist, c_next) {
+	for (p = cmdlist; p != NULL; p = p->c_next) {
 		if (strcmp(name, p->c_name) == 0) {
 			return (p);
 		}
@@ -768,7 +740,7 @@ void
 clone_destroy(const char *addr, int param)
 {
 
-	(void) strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	(void)strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
 	if (ioctl(s, SIOCIFDESTROY, &ifr) == -1)
 		err(EXIT_FAILURE, "SIOCIFDESTROY");
 }
@@ -789,7 +761,7 @@ setifaddr(const char *addr, int param)
 		newaddr = 1;
 	if (doalias == 0 && afp->af_gifaddr != 0) {
 		siifr = (struct ifreq *)afp->af_ridreq;
-		(void) strncpy(siifr->ifr_name, name, sizeof(siifr->ifr_name));
+		(void)strncpy(siifr->ifr_name, name, sizeof(siifr->ifr_name));
 		siifr->ifr_addr.sa_family = afp->af_af;
 		if (ioctl(s, afp->af_gifaddr, afp->af_ridreq) == 0) {
 			clearaddr = 1;
@@ -1039,7 +1011,10 @@ status(const struct sockaddr_dl *sdl)
 	}
 
 	ieee80211_status();
-	//vlan_status();
+	vlan_status();
+#ifndef INET_ONLY
+	carp_status();
+#endif
 	tunnel_status();
 
 	if (sdl != NULL &&
@@ -1184,10 +1159,10 @@ status(const struct sockaddr_dl *sdl)
 #undef PLURAL
 	}
 
- proto_status:
+proto_status:
 	if ((p = afp) != NULL) {
 		(*p->af_status)(1);
-	} else for (p = afs; p->af_name; p++) {
+	} else for (p = aflist; p->af_name; p++) {
 		ifr.ifr_addr.sa_family = p->af_af;
 		(*p->af_status)(0);
 	}
@@ -1200,4 +1175,37 @@ setifprefixlen(const char *addr, int d)
 		(*afp->af_getprefix)(addr, MASK);
 	}
 	explicit_prefix = 1;
+}
+
+void
+usage(void)
+{
+	const char *progname = getprogname();
+
+	fprintf(stderr,
+	    "usage: %s [-m] [-v] [-z] "
+#ifdef INET6
+		"[-L] "
+#endif
+		"interface\n"
+		"\t[ af [ address [ dest_addr ] ] [ netmask mask ] [ prefixlen n ]\n"
+		"\t\t[ alias | -alias ] ]\n"
+		"\t[ up ] [ down ] [ metric n ] [ mtu n ]\n"
+		"\t[ nwid network_id ] [ nwkey network_key | -nwkey ]\n"
+		"\t[ powersave | -powersave ] [ powersavesleep duration ]\n"
+		"\t[ [ af ] tunnel src_addr dest_addr ] [ deletetunnel ]\n"
+		"\t[ arp | -arp ]\n"
+		"\t[ media type ] [ mediaopt opts ] [ -mediaopt opts ] "
+		"[ instance minst ]\n"
+		"\t[ vlan n vlanif i ]\n"
+		"\t[ anycast | -anycast ] [ deprecated | -deprecated ]\n"
+		"\t[ tentative | -tentative ] [ pltime n ] [ vltime n ] [ eui64 ]\n"
+		"\t[ link0 | -link0 ] [ link1 | -link1 ] [ link2 | -link2 ]\n"
+		"       %s -a [-b] [-m] [-d] [-u] [-v] [-z] [ af ]\n"
+		"       %s -l [-b] [-d] [-u] [-s]\n"
+		"       %s -C\n"
+		"       %s interface create\n"
+		"       %s interface destroy\n",
+		progname, progname, progname, progname, progname, progname);
+	exit(1);
 }

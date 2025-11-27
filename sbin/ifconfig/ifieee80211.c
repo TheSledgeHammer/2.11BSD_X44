@@ -108,13 +108,6 @@ const struct cmd ieee80211_cmds[] = {
 		{ "-powersave",	0,		0,		setifpowersave },
 		{ "powersavesleep", NEXTARG,	0,		setifpowersavesleep },
 };
-/*
-struct afswtch af_ieee80211 = {
-		.af_name	= "af_ieee80211",
-		.af_af		= AF_UNSPEC,
-		.af_status = ieee80211_status,
-};
-*/
 
 void
 ieee80211_init(void)
@@ -124,7 +117,6 @@ ieee80211_init(void)
 	for (i = 0; i < nitems(ieee80211_cmds);  i++) {
 		cmd_register(&ieee80211_cmds[i]);
 	}
-	//af_register(&af_ieee80211);
 }
 
 void

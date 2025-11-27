@@ -72,24 +72,18 @@
 #define	NEXTARG			0xffffff
 #define	NEXTARG2		0xfffffe
 
-struct cmd_head;
-LIST_HEAD(cmd_head, cmd);
 const struct cmd {
 	const char 	*c_name;
 	int			c_parameter;	/* NEXTARG means next argv */
 	int			c_action;		/* defered action */
 	void		(*c_func)(const char *, int);
 	void		(*c_func2)(const char *, const char *);
-
-	//struct cmd 	*c_next;
-	LIST_ENTRY(cmd) c_next;
+	struct cmd 	*c_next;
 };
 
 void cmd_register(const struct cmd *p);
 const struct cmd *cmd_lookup(const char *name);
 
-struct afswtch_head;
-LIST_HEAD(afswtch_head, afswtch);
 /* Known address families */
 struct afswtch {
 	const char 		*af_name;
@@ -102,8 +96,7 @@ struct afswtch {
 	u_long 			af_gifaddr;
 	void 			*af_ridreq;
 	void 			*af_addreq;
-	//struct afswtch 	*af_next;
-	LIST_ENTRY(afswtch) af_next;
+	struct afswtch 	*af_next;
 };
 
 void af_register(struct afswtch *);
@@ -155,6 +148,10 @@ void in6_status(int);
 void xns_init(void);
 void xns_status(int);
 
+/* ifcarp */
+void carp_init(void);
+void carp_status(void);
+
 /* ifieee80211 */
 void ieee80211_init(void);
 void ieee80211_status(void);
@@ -164,7 +161,7 @@ void media_init(void);
 void process_media_commands(void);
 int  carrier(void);
 
-/* tunnel */
+/* iftunnel */
 void tunnel_init(void);
 void tunnel_status(void);
 

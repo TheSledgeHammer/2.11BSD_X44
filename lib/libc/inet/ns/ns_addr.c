@@ -25,7 +25,7 @@ static struct ns_addr addr, zero_addr;
 static void Field(char *, u_char *, int);
 static void cvtbase(long, int, int *, int, unsigned char *, int);
 
-struct ns_addr 
+struct ns_addr
 ns_addr(name)
 	const char *name;
 {
@@ -176,7 +176,7 @@ Field(buf, out, len)
 }
 
 static void
-cvtbase(oldbase,newbase,input,inlen,result,reslen)
+cvtbase(oldbase, newbase, input, inlen, result, reslen)
 	long oldbase;
 	int newbase;
 	int input[];

@@ -96,13 +96,7 @@ const struct cmd vlan_cmds[] = {
 		{ "vlanif",	NEXTARG,	0,		setvlanif } ,
 		{ "-vlanif",	0,		0,		unsetvlanif } ,
 };
-/*
-struct afswtch af_vlan = {
-		.af_name	= "af_vlan",
-		.af_af		= AF_UNSPEC,
-		.af_status = vlan_status,
-};
-*/
+
 void
 vlan_init(void)
 {
@@ -110,7 +104,6 @@ vlan_init(void)
 	for (i = 0; i < nitems(vlan_cmds);  i++) {
 		cmd_register(&vlan_cmds[i]);
 	}
-//	af_register(&af_vlan);
 }
 
 void

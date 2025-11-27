@@ -7,8 +7,8 @@ PROG=	ifconfig
 MAN=	ifconfig.8
 
 INCS=	ifconfig.h	
-SRCS=	af_inet.c af_ns.c ifconfig.c \
-		ifieee80211.c ifmedia.c iftunnel.c
+SRCS=	af_inet.c af_ns.c ifcarp.c ifconfig.c \
+	ifieee80211.c ifmedia.c iftunnel.c ifvlan.c
 
 .if (${USE_INET6} != "no")
 CPPFLAGS+=	-DINET6

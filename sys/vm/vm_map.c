@@ -632,7 +632,7 @@ vm_map_deallocate(map)
 
 	vm_map_lock_drain_interlock(map);
 
-	(void) vm_map_delete(map, map->min_offset, map->max_offset);
+	(void)vm_map_delete(map, map->min_offset, map->max_offset);
 
 	pmap_destroy(map->pmap);
 

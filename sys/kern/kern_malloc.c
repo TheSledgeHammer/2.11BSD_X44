@@ -895,7 +895,7 @@ ofree(addr, size, type)
 	short size;
 	int type;
 {
-	if(type & M_OVERLAY) {
+	if (type & M_OVERLAY) {
 		omem_free(omem_map, (vm_offset_t) addr, size);
 	}
 }

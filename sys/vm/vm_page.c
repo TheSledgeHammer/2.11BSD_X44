@@ -117,8 +117,7 @@ void
 vm_pmap_bootstrap(void)
 {
     extern vm_offset_t	kentry_data;
-	vm_size_t			kentry_data_size;
-	vm_size_t 			kmap_size, kentry_size;
+	vm_size_t kentry_data_size, kmap_size, kentry_size;
 
     kmap_size = (MAX_KMAP * sizeof(struct vm_map));
 	kentry_size = (MAX_KMAPENT * sizeof(struct vm_map_entry));
@@ -137,21 +136,19 @@ vm_pmap_bootinit(item, size, nitems)
 	vm_size_t 	size;
 	int 		nitems;
 {
-	extern vm_offset_t	kentry_data;
-	vm_size_t 			free;
-	vm_size_t 			totsize;
-	vm_size_t 			result;
+	extern vm_offset_t kentry_data;
+	vm_size_t free, totsize, result, itemsize;
 
 	free = kentry_data;
 	totsize = (size * nitems);
-	result = free - totsize;
-	if (free < totsize) {
+	result = (free - totsize);
+	itemsize = (sizeof(item) + size);
+	if ((free < totsize) || (itemsize > result)) {
 		panic("vm_pmap_bootinit: not enough space allocated");
 	}
 	bzero(item, totsize);
-	item = (item + size);
+	item = (void *)(vm_size_t)itemsize;
 	kentry_data = result;
-
 	return (item);
 }
 

@@ -83,11 +83,18 @@ iso_addr(addr)
 			*cp++ = byte;
 			/*FALLTHROUGH*/
 		case VIRGIN | DIGIT:
-			state = GOTONE; byte = newaddr; continue;
+			state = GOTONE;
+			byte = newaddr;
+			continue;
 		case GOTONE | DIGIT:
-			state = GOTTWO; byte = newaddr + (byte << 4); continue;
+			state = GOTTWO;
+			byte = newaddr + (byte << 4);
+			continue;
 		default: /* | DELIM */
-			state = VIRGIN; *cp++ = byte; byte = 0; continue;
+			state = VIRGIN;
+			*cp++ = byte;
+			byte = 0;
+			continue;
 		case GOTONE | END:
 		case GOTTWO | END:
 			*cp++ = byte;

@@ -80,6 +80,7 @@
 
 #include <err.h>
 #include <errno.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -96,8 +97,8 @@ void 	in_getaddr(const char *, int);
 void 	in_getprefix(const char *, int);
 
 struct afswtch af_inet = {
-		.af_name	= "inet",
-		.af_af		= AF_INET,
+		.af_name = "inet",
+		.af_af = AF_INET,
 		.af_status  = in_status,
 		.af_getaddr = in_getaddr,
 		.af_getprefix = in_getprefix,
@@ -132,8 +133,8 @@ in_alias(struct ifreq *creq)
 			return;
 		err(EXIT_FAILURE, "socket");
 	}
-	(void) memset(&ifr, 0, sizeof(ifr));
-	(void) strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	(void)memset(&ifr, 0, sizeof(ifr));
+	(void)strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
 	if (ioctl(s, SIOCGIFADDR, &ifr) == -1) {
 		if (errno == EADDRNOTAVAIL || errno == EAFNOSUPPORT) {
 			return;
@@ -144,8 +145,8 @@ in_alias(struct ifreq *creq)
 	if (memcmp(&ifr.ifr_addr, &creq->ifr_addr,
 		   sizeof(creq->ifr_addr)) == 0)
 		alias = 0;
-	(void) memset(&in_addreq, 0, sizeof(in_addreq));
-	(void) strncpy(in_addreq.ifra_name, name, sizeof(in_addreq.ifra_name));
+	(void)memset(&in_addreq, 0, sizeof(in_addreq));
+	(void)strncpy(in_addreq.ifra_name, name, sizeof(in_addreq.ifra_name));
 	memcpy(&in_addreq.ifra_addr, &creq->ifr_addr,
 	    sizeof(in_addreq.ifra_addr));
 	if (ioctl(s, SIOCGIFALIAS, &in_addreq) == -1) {
