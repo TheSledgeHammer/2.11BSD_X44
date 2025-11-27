@@ -123,8 +123,7 @@ void
 ovl_pmap_bootstrap(void)
 {
 	extern vm_offset_t	oentry_data;
-	vm_size_t			oentry_data_size;
-	vm_size_t 			omap_size, oentry_size;
+	vm_size_t oentry_data_size, omap_size, oentry_size;
 
 	omap_size = (MAX_OMAP * sizeof(struct ovl_map));
 	oentry_data = (MAX_OMAPENT * sizeof(struct ovl_map_entry));
@@ -143,21 +142,19 @@ ovl_pmap_bootinit(item, size, nitems)
 	vm_size_t 	size;
 	int 		nitems;
 {
-	extern vm_offset_t	oentry_data;
-	vm_size_t 			free;
-	vm_size_t 			totsize;
-	vm_size_t 			result;
+	extern vm_offset_t oentry_data;
+	vm_size_t free, totsize, result, itemsize;
 
 	free = oentry_data;
 	totsize = (size * nitems);
-	result = free - totsize;
-	if (free < totsize) {
-		panic("ovl_pmap_bootinit: not enough space allocated");
+	result = (free - totsize);
+	itemsize = (sizeof(item) + size);
+	if ((free < totsize) || (itemsize > result)) {
+		panic("vm_pmap_bootinit: not enough space allocated");
 	}
 	bzero(item, totsize);
-	item = (item + size);
+	item = (void *)(vm_size_t)itemsize;
 	oentry_data = result;
-
 	return (item);
 }
 
