@@ -92,7 +92,6 @@
 struct in_aliasreq in_addreq;
 
 void	in_alias(struct ifreq *);
-void	in_status(int);
 void 	in_getaddr(const char *, int);
 void 	in_getprefix(const char *, int);
 
@@ -225,7 +224,7 @@ in_getaddr(const char *str, int which)
 
 	if (inet_aton(str, &gasin->sin_addr) == 0) {
 		if ((hp = gethostbyname(str)) != NULL)
-			(void) memcpy(&gasin->sin_addr, hp->h_addr, hp->h_length);
+			(void)memcpy(&gasin->sin_addr, hp->h_addr, hp->h_length);
 		else if ((np = getnetbyname(str)) != NULL)
 			gasin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
 		else

@@ -21,4 +21,7 @@ CPPFLAGS+=-DKAME_SCOPEID
 DPADD+=${LIBUTIL}
 LDADD+=-lutil
 
+COPTS.af_inet.c+= ${GCC_NO_STRINGOP_TRUNCATION}
+COPTS.af_ns.c+= ${GCC_NO_STRINGOP_TRUNCATION}
+
 .include <bsd.prog.mk>

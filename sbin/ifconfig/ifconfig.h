@@ -72,7 +72,7 @@
 #define	NEXTARG			0xffffff
 #define	NEXTARG2		0xfffffe
 
-const struct cmd {
+struct cmd {
 	const char 	*c_name;
 	int			c_parameter;	/* NEXTARG means next argv */
 	int			c_action;		/* defered action */

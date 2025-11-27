@@ -138,8 +138,8 @@ xns_status(int force)
 			return;
 		err(EXIT_FAILURE, "socket");
 	}
-	(void) memset(&ifr, 0, sizeof(ifr));
-	(void) strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	(void)memset(&ifr, 0, sizeof(ifr));
+	(void)strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
 	if (ioctl(s, SIOCGIFADDR, &ifr) == -1) {
 		if (errno == EADDRNOTAVAIL || errno == EAFNOSUPPORT) {
 			if (!force)
@@ -148,7 +148,7 @@ xns_status(int force)
 		} else
 			warn("SIOCGIFADDR");
 	}
-	(void) strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
+	(void)strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
 	sns = (struct sockaddr_ns *)&ifr.ifr_addr;
 	printf("\tns %s ", ns_ntoa(sns->sns_addr));
 	if (flags & IFF_POINTOPOINT) { /* by W. Nesheim@Cornell */
@@ -158,7 +158,7 @@ xns_status(int force)
 			else
 			    warn("SIOCGIFDSTADDR");
 		}
-		(void) strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+		(void)strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
 		sns = (struct sockaddr_ns *)&ifr.ifr_dstaddr;
 		printf("--> %s ", ns_ntoa(sns->sns_addr));
 	}
