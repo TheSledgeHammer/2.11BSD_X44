@@ -45,23 +45,23 @@
 #include <sys/malloctypes.h>
 
 struct kmemstats {
-	long				ks_inuse;		/* # of packets of this type currently in use */
-	long				ks_calls;		/* total packets of this type ever allocated */
-	long 				ks_memuse;		/* total memory held in bytes */
+	long				ks_inuse;	/* # of packets of this type currently in use */
+	long				ks_calls;	/* total packets of this type ever allocated */
+	long 				ks_memuse;	/* total memory held in bytes */
 	u_short				ks_limblocks;	/* number of times blocked for hitting limit */
 	u_short				ks_mapblocks;	/* number of times blocked for kernel map */
-	long				ks_maxused;		/* maximum number ever used */
-	long				ks_limit;		/* most that are allowed to exist */
-	long				ks_size;		/* sizes of this thing that are allocated */
+	long				ks_maxused;	/* maximum number ever used */
+	long				ks_limit;	/* most that are allowed to exist */
+	long				ks_size;	/* sizes of this thing that are allocated */
 	long				ks_spare;
 };
 
 /* Array of descriptors that describe the contents of each page */
 struct kmemusage {
-	short 				ku_indx;		/* bucket index */
+	short 				ku_indx;	/* bucket index */
 	union {
-		u_short 		freecnt;		/* for small allocations, free pieces in page */
-		u_short 		pagecnt;		/* for large allocations, pages alloced */
+		u_short 		freecnt;	/* for small allocations, free pieces in page */
+		u_short 		pagecnt;	/* for large allocations, pages alloced */
 	} ku_un;
 };
 #define ku_freecnt 		ku_un.freecnt
@@ -69,47 +69,62 @@ struct kmemusage {
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
-	caddr_t 			kb_next;		/* list of free blocks */
-	caddr_t 			kb_last;		/* last free block */
+	caddr_t 			kb_next;	/* list of free blocks */
+	caddr_t 			kb_last;	/* last free block */
 
-	long				kb_calls;		/* total calls to allocate this size */
-	long				kb_total;		/* total number of blocks allocated */
+	long				kb_calls;	/* total calls to allocate this size */
+	long				kb_total;	/* total number of blocks allocated */
 	long				kb_totalfree;	/* # of free elements in this bucket */
 	long				kb_elmpercl;	/* # of elements in this sized allocation */
-	long				kb_highwat;		/* high water mark */
+	long				kb_highwat;	/* high water mark */
 	long				kb_couldfree;	/* over high water mark and could free */
 };
 
 /* Per-Slab Metadata */
 struct kmemmeta {
-	int                 ksm_bslots;     /* bucket slots available */
-	int					ksm_aslots;		/* bucket slots to be allocated */
-	int                 ksm_fslots;     /* bucket slots free */
-	u_long 				ksm_bsize; 		/* bucket size */
-	u_long 				ksm_bindx;	 	/* bucket index */
-	u_long 				ksm_min;		/* bucket minimum boundary */
-	u_long 				ksm_max;		/* bucket maximum boundary */
+	int                 		ksm_bslots;     /* bucket slots available */
+	int				ksm_aslots;	/* bucket slots to be allocated */
+	int                 		ksm_fslots;     /* bucket slots free */
+	u_long 				ksm_bsize; 	/* bucket size */
+	u_long 				ksm_bindx;	/* bucket index */
+	u_long 				ksm_min;	/* bucket minimum boundary */
+	u_long 				ksm_max;	/* bucket maximum boundary */
 };
 
 /* A Slab for each set of buckets */
 struct kmemslabs {
 	CIRCLEQ_ENTRY(kmemslabs) ksl_list;
-    struct kmembuckets	*ksl_bucket;	/* slab kmembucket */
-    struct kmemmeta     ksl_meta;       /* slab metadata */
+    struct kmembuckets			*ksl_bucket;	/* slab kmembucket */
+    struct kmemmeta     		ksl_meta;       /* slab metadata */
 
-    u_long              ksl_size;		/* slab size */
+    u_long              		ksl_size;	/* slab size */
     int					ksl_mtype;      /* malloc type */
-    int                 ksl_stype;      /* slab type: see below */
+    int                 		ksl_stype;      /* slab type: see below */
 
-    int					ksl_flags;		/* slab flags */
-    int                 ksl_usecount;   /* usage counter for slab caching */
+    int					ksl_flags;	/* slab flags */
+    int                 		ksl_usecount;   /* usage counter for slab caching */
+};
+
+/* WIP */
+/* Slab Magazine */
+struct kmemslabs_magazine {
+    CIRCLEQ_ENTRY(kmemslabs_magazine) ksm_empty;    	/* slab empty list */
+    CIRCLEQ_ENTRY(kmemslabs_magazine) ksm_partial;  	/* slab partial list */
+    CIRCLEQ_ENTRY(kmemslabs_magazine) ksm_full;     	/* slab full list */
+    int 				ksm_stype;      /* slab type: see below */
+    int 				ksm_bslots;     /* bucket slots available counter */
+    int 				ksm_aslots;     /* bucket slots allocated counter */
+    int 				ksm_fslots;     /* bucket slots free counter */
+    int 				ksm_refcount;   /* number of magazines counter */
 };
 
 /* Slab Cache */
 struct kmemslabs_cache {
-	CIRCLEQ_HEAD(, kmemslabs) ksc_head;
-	struct kmemslabs	ksc_slab;
-	int                	ksc_refcount;	/* number of slabs counter */
+	CIRCLEQ_HEAD(, kmemslabs) 	ksc_slablist;	/* slab list head */
+	CIRCLEQ_HEAD(, kmemslabs_magazine) ksc_maglist;	/* magazine list head */
+	struct kmemslabs 		ksc_slab;	/* slab back-pointer */
+	struct kmemslabs_magazine 	ksc_magazine;	/* magazine back-pointer */
+	int                		ksc_refcount;	/* number of slabs counter */
 };
 
 /* slab flags */

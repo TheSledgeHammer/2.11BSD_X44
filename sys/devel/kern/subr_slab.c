@@ -36,6 +36,12 @@
  * Splitting of slab allocator from kern_malloc, with slab subroutines to
  * interface between kern_malloc and the vm memory management and vmem (future implementation).
  */
+/*
+ * TODO: Slab Magazines:
+ * - pop/push routines
+ * - slots counter on each magazine list
+ * - rotating magazines when full
+ */
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
@@ -106,6 +112,93 @@ kmemslab_meta(slab, size)
 	}
 }
 
+/* slab magazine functions */
+struct kmemslabs_magazine *
+kmemslab_magazine_create(cache, size)
+	struct kmemslabs_cache *cache;
+	vm_size_t size;
+{
+	struct kmemslabs_magazine *mag;
+#ifdef OVERLAY
+	mag = (struct kmemslabs_magazine *)omem_alloc(overlay_map, (vm_size_t)(size * sizeof(struct kmemslabs_magazine)));
+#else
+	mag = (struct kmemslabs_magazine *)kmem_alloc(kernel_map, (vm_size_t)(size * sizeof(struct kmemslabs_magazine)));
+#endif
+	CIRCLEQ_INIT(&cache->ksc_maglist);
+	mag->ksm_refcount = 0;
+	return (mag);
+}
+
+void
+kmemslab_magazine_destroy(cache, mag)
+	struct kmemslabs_cache *cache;
+	struct kmemslabs_magazine *mag;
+{
+	if (mag != NULL) {
+#ifdef OVERLAY
+		omem_free(overlay_map, (vm_offset_t)mag, (vm_size_t)sizeof(struct kmemslabs_magazine));
+#else
+		kmem_free(kernel_map, (vm_offset_t)mag, (vm_size_t)sizeof(struct kmemslabs_magazine));
+#endif
+	}
+}
+
+void
+kmemslab_magazine_insert(cache, mag, flags, stype)
+	struct kmemslabs_cache *cache;
+	struct kmemslabs_magazine *mag;
+	int flags, stype;
+{
+	simple_lock(&malloc_slock);
+	switch (flags) {
+	case SLAB_FULL:
+		if (stype == SLAB_SMALL) {
+			CIRCLEQ_INSERT_HEAD(&cache->ksc_maglist, mag, ksm_full);
+		} else {
+			CIRCLEQ_INSERT_TAIL(&cache->ksc_maglist, mag, ksm_full);
+		}
+		break;
+	case SLAB_PARTIAL:
+		if (stype == SLAB_SMALL) {
+			CIRCLEQ_INSERT_HEAD(&cache->ksc_maglist, mag, ksm_partial);
+		} else {
+			CIRCLEQ_INSERT_TAIL(&cache->ksc_maglist, mag, ksm_partial);
+		}
+		break;
+	case SLAB_EMPTY:
+		if (stype == SLAB_SMALL) {
+			CIRCLEQ_INSERT_HEAD(&cache->ksc_maglist, mag, ksm_empty);
+		} else {
+			CIRCLEQ_INSERT_TAIL(&cache->ksc_maglist, mag, ksm_empty);
+		}
+		break;
+	}
+	simple_unlock(&malloc_slock);
+    mag->ksm_refcount++;
+}
+
+void
+kmemslab_magazine_remove(cache, mag, flags)
+	struct kmemslabs_cache *cache;
+	struct kmemslabs_magazine *mag;
+	int flags;
+{
+	simple_lock(&malloc_slock);
+	switch (flags) {
+	case SLAB_FULL:
+		CIRCLEQ_REMOVE(&cache->ksc_maglist, mag, ksm_full);
+		break;
+	case SLAB_PARTIAL:
+		CIRCLEQ_REMOVE(&cache->ksc_maglist, mag, ksm_partial);
+		break;
+	case SLAB_EMPTY:
+		CIRCLEQ_REMOVE(&cache->ksc_maglist, mag, ksm_empty);
+		break;
+	}
+	simple_unlock(&malloc_slock);
+	mag->ksm_refcount--;
+}
+
 /* slabcache functions */
 struct kmemslabs_cache *
 kmemslab_cache_create(size)
@@ -117,7 +210,7 @@ kmemslab_cache_create(size)
 #else
 	cache = (struct kmemslabs_cache *)kmem_alloc(kernel_map, (vm_size_t)(size * sizeof(struct kmemslabs_cache)));
 #endif
-	CIRCLEQ_INIT(&cache->ksc_head);
+	CIRCLEQ_INIT(&cache->ksc_slablist);
 	cache->ksc_refcount = 0;
 	return (cache);
 }
@@ -127,10 +220,6 @@ kmemslab_cache_destroy(cache)
 	struct kmemslabs_cache *cache;
 {
 	if (cache != NULL) {
-		if (!CIRCLEQ_EMPTY(&cache->ksc_head)) {
-			/* Cannot destroy slab cache with slabs allocated */
-			return;
-		}
 #ifdef OVERLAY
 		omem_free(overlay_map, (vm_offset_t)cache, (vm_size_t)sizeof(struct kmemslabs_cache));
 #else
@@ -155,10 +244,10 @@ kmemslab_cache_alloc(cache, size, index, mtype)
 	simple_lock(&malloc_slock);
 	if (index < 10) {
 		slab->ksl_stype = SLAB_SMALL;
-		CIRCLEQ_INSERT_HEAD(&cache->ksc_head, slab, ksl_list);
+		CIRCLEQ_INSERT_HEAD(&cache->ksc_slablist, slab, ksl_list);
 	} else {
 		slab->ksl_stype = SLAB_LARGE;
-		CIRCLEQ_INSERT_TAIL(&cache->ksc_head, slab, ksl_list);
+		CIRCLEQ_INSERT_TAIL(&cache->ksc_slablist, slab, ksl_list);
 	}
 	simple_unlock(&malloc_slock);
 	cache->ksc_slab = *slab;
@@ -179,7 +268,7 @@ kmemslab_cache_free(cache, size, index)
 	slab = &slabbucket[index];
 
 	simple_lock(&malloc_slock);
-	CIRCLEQ_REMOVE(&cache->ksc_head, slab, ksl_list);
+	CIRCLEQ_REMOVE(&cache->ksc_slablist, slab, ksl_list);
 	simple_unlock(&malloc_slock);
 	cache->ksc_slab = *slab;
 	cache->ksc_refcount--;
@@ -199,7 +288,7 @@ kmemslab_cache_lookup(cache, size, index, mtype)
 
 	simple_lock(&malloc_slock);
 	if (LARGE_OBJECT(size)) {
-		CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_head, ksl_list) {
+		CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_slablist, ksl_list) {
 			if (slab == &slabbucket[index]) {
 				if ((slab->ksl_size == size) && (slab->ksl_mtype == mtype)) {
 					simple_unlock(&malloc_slock);
@@ -208,7 +297,7 @@ kmemslab_cache_lookup(cache, size, index, mtype)
 			}
 		}
 	} else {
-		CIRCLEQ_FOREACH(slab, &cache->ksc_head, ksl_list) {
+		CIRCLEQ_FOREACH(slab, &cache->ksc_slablist, ksl_list) {
 			if (slab == &slabbucket[index]) {
 				if ((slab->ksl_size == size) && (slab->ksl_mtype == mtype)) {
 					simple_unlock(&malloc_slock);
@@ -222,24 +311,6 @@ kmemslab_cache_lookup(cache, size, index, mtype)
 }
 
 /* slab functions */
-struct kmemslabs *
-kmemslab_get_by_size(cache, size, mtype)
-	struct kmemslabs_cache 	*cache;
-	long    		size;
-	int 			mtype;
-{
-	return (kmemslab_cache_lookup(cache, size, BUCKETINDX(size), mtype));
-}
-
-struct kmemslabs *
-kmemslab_get_by_index(cache, index, mtype)
-	struct kmemslabs_cache 	*cache;
-	u_long index;
-	int mtype;
-{
-	return (kmemslab_cache_lookup(cache, BUCKETSIZE(index), index, mtype));
-}
-
 struct kmemslabs *
 kmemslab_create(cache, size, mtype)
 	struct kmemslabs_cache 	*cache;
@@ -260,8 +331,52 @@ kmemslab_destroy(cache, size)
 {
 	register struct kmemslabs *slab;
 
+	slab = &cache->ksc_slab;
+	if (slab != NULL) {
+		slab = NULL;
+		cache->ksc_slab = *slab;
+	}
+}
+
+void
+kmemslab_alloc(cache, size, mtype)
+	struct kmemslabs_cache *cache;
+	vm_size_t size;
+	int	mtype;
+{
+	register struct kmemslabs *slab;
+
+	slabcache_alloc(cache, size, BUCKETINDX(size), mtype);
+	slab = &cache->ksc_slab;
+}
+
+void
+kmemslab_free(cache, size)
+	struct kmemslabs_cache 	*cache;
+	long  size;
+{
+	register struct kmemslabs *slab;
+
 	kmemslab_cache_free(cache, size, BUCKETINDX(size));
 	slab = &cache->ksc_slab;
+}
+
+struct kmemslabs *
+kmemslab_get_by_size(cache, size, mtype)
+	struct kmemslabs_cache 	*cache;
+	long    		size;
+	int 			mtype;
+{
+	return (kmemslab_cache_lookup(cache, size, BUCKETINDX(size), mtype));
+}
+
+struct kmemslabs *
+kmemslab_get_by_index(cache, index, mtype)
+	struct kmemslabs_cache 	*cache;
+	u_long index;
+	int mtype;
+{
+	return (kmemslab_cache_lookup(cache, BUCKETSIZE(index), index, mtype));
 }
 
 struct kmembuckets *

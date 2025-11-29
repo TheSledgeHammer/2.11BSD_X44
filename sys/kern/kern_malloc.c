@@ -159,7 +159,7 @@ slabcache_create(map, size)
 	struct kmemslabs_cache *cache;
 
 	cache = (struct kmemslabs_cache *)kmem_alloc(map, (vm_size_t)(size * sizeof(struct kmemslabs_cache)));
-	CIRCLEQ_INIT(&cache->ksc_head);
+	CIRCLEQ_INIT(&cache->ksc_slablist);
 	cache->ksc_refcount = 0;
 	return (cache);
 }
@@ -180,10 +180,10 @@ slabcache_alloc(cache, size, index, mtype)
     simple_lock(&malloc_slock);
 	if (index < 10) {
 		slab->ksl_stype = SLAB_SMALL;
-		CIRCLEQ_INSERT_HEAD(&cache->ksc_head, slab, ksl_list);
+		CIRCLEQ_INSERT_HEAD(&cache->ksc_slablist, slab, ksl_list);
 	} else {
 		slab->ksl_stype = SLAB_LARGE;
-		CIRCLEQ_INSERT_TAIL(&cache->ksc_head, slab, ksl_list);
+		CIRCLEQ_INSERT_TAIL(&cache->ksc_slablist, slab, ksl_list);
 	}
 	simple_unlock(&malloc_slock);
 	cache->ksc_slab = *slab;
@@ -204,7 +204,7 @@ slabcache_free(cache, size, index)
 	slab = &slabbucket[index];
 
 	simple_lock(&malloc_slock);
-	CIRCLEQ_REMOVE(&cache->ksc_head, slab, ksl_list);
+	CIRCLEQ_REMOVE(&cache->ksc_slablist, slab, ksl_list);
 	simple_unlock(&malloc_slock);
 	cache->ksc_slab = *slab;
 	cache->ksc_refcount--;
@@ -224,7 +224,7 @@ slabcache_lookup(cache, size, index, mtype)
 
     simple_lock(&malloc_slock);
     if (LARGE_OBJECT(size)) {
-    	CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_head, ksl_list) {
+    	CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_slablist, ksl_list) {
     		if (slab == &slabbucket[index]) {
     			if ((slab->ksl_size == size) && (slab->ksl_mtype == mtype)) {
     				simple_unlock(&malloc_slock);
@@ -233,7 +233,7 @@ slabcache_lookup(cache, size, index, mtype)
     		}
     	}
     } else {
-    	CIRCLEQ_FOREACH(slab, &cache->ksc_head, ksl_list) {
+    	CIRCLEQ_FOREACH(slab, &cache->ksc_slablist, ksl_list) {
     		if (slab == &slabbucket[index]) {
     			if ((slab->ksl_size == size) && (slab->ksl_mtype == mtype)) {
     				simple_unlock(&malloc_slock);
@@ -339,7 +339,7 @@ kmembucket_search(cache, meta, size, mtype)
 	switch (slab->ksl_flags) {
 	case SLAB_FULL:
 		next = CIRCLEQ_NEXT(slab, ksl_list);
-		CIRCLEQ_FOREACH(next, &cache->ksc_head, ksl_list) {
+		CIRCLEQ_FOREACH(next, &cache->ksc_slablist, ksl_list) {
 			if ((next != slab) && (next->ksl_flags != SLAB_FULL)) {
 				switch (next->ksl_flags) {
 				case SLAB_PARTIAL:
