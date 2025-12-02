@@ -160,7 +160,7 @@ slabcache_create(map, size)
 
 	cache = (struct kmemslabs_cache *)kmem_alloc(map, (vm_size_t)(size * sizeof(struct kmemslabs_cache)));
 	CIRCLEQ_INIT(&cache->ksc_slablist);
-	cache->ksc_refcount = 0;
+	cache->ksc_slabcount = 0;
 	return (cache);
 }
 
@@ -187,7 +187,7 @@ slabcache_alloc(cache, size, index, mtype)
 	}
 	simple_unlock(&malloc_slock);
 	cache->ksc_slab = *slab;
-	cache->ksc_refcount++;
+	cache->ksc_slabcount++;
 
     /* update metadata */
 	slabmeta(slab, size);
@@ -207,7 +207,7 @@ slabcache_free(cache, size, index)
 	CIRCLEQ_REMOVE(&cache->ksc_slablist, slab, ksl_list);
 	simple_unlock(&malloc_slock);
 	cache->ksc_slab = *slab;
-	cache->ksc_refcount--;
+	cache->ksc_slabcount--;
 
     /* update metadata */
 	slabmeta(slab, size);
