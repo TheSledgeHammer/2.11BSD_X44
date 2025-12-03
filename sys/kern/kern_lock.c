@@ -37,6 +37,16 @@
  *	@(#)kern_lock.c	8.18 (Berkeley) 5/21/95
  */
 
+/*
+ * Lock-Object Implementation:
+ * The lock-object used is a ABQL/CLH hybrid algorithm.
+ * The algorithm implements an ABQL for it's scalability
+ * on multiprocessor systems, but uses a CLH-like algorithm
+ * for node traversal, acquiring and releasing the lock.
+ * This is help mitigate the latency pitfall when running threads
+ * that can be suspended with an ABQL algorithm.
+ */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -439,7 +449,7 @@ lock_acquire(lkp, error, extflags, wanted)
 }
 
 /*
- * Lock-Object Implementation: Array-Based-Queuing-Lock.
+ * Lock-Object Implementation: ABQL/CLH.
  */
 
 /*
