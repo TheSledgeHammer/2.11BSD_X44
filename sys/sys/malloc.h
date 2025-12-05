@@ -205,7 +205,7 @@ struct kmemslabs_cache {
 
 #else /* do not collect statistics */
 #define	MALLOC(space, cast, size, type, flags) { 					\
-	register struct kmembuckets *kbp = &slabbucket[BUCKETINDX(size)].ksl_bucket; 	\
+	register struct kmembuckets *kbp = slabbucket[BUCKETINDX(size)].ksl_bucket; 	\
 	long s = splimp(); 								\
 	if (kbp->kb_next == NULL) { 							\
 		(space) = (cast)malloc((u_long)(size), type, flags); 			\
@@ -223,7 +223,7 @@ struct kmemslabs_cache {
 	if (1 << kup->ku_indx > MAXALLOCSAVE) { 					\
 		free((caddr_t)(addr), type); 						\
 	} else { 									\
-		kbp = &slabbucket[kup->ku_indx].ksl_bucket; 				\
+		kbp = slabbucket[kup->ku_indx].ksl_bucket; 				\
 		if (kbp->kb_next == NULL) 						\
 			kbp->kb_next = (caddr_t)(addr); 				\
 		else 									\

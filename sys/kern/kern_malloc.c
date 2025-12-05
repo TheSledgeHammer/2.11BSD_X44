@@ -65,6 +65,8 @@
 
 struct kmemslabs_cache  *slabcache;
 struct kmemslabs		slabbucket[MINBUCKET + 16];
+
+struct kmembucket 		kmembucket[MINBUCKET + 16];
 struct kmemstats 		kmemstats[M_LAST];
 struct kmemusage 		*kmemusage;
 struct lock_object 		malloc_slock;
@@ -306,12 +308,19 @@ slabinit(cache, map, size)
 	vm_size_t size;
 {
 	struct kmemslabs_cache *ksc;
+	long indx;
 
+	/* Initialize slabs kmembuckets */
+	for (indx = 0; indx < MINBUCKET + 16; indx++) {
+		slabbucket[indx].ksl_bucket = &kmembucket[indx];
+	}
+	/* Initialize slab cache */
 	ksc = slabcache_create(map, size);
 	*cache = ksc;
 }
 
 /* kmembucket functions */
+
 /*
  * search array for an empty bucket or partially full bucket that can fit
  * block of memory to be allocated

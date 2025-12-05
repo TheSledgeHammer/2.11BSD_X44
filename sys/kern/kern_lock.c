@@ -43,8 +43,8 @@
  * The algorithm implements an ABQL for it's scalability
  * on multiprocessor systems, but uses a CLH-like algorithm
  * for node traversal, acquiring and releasing the lock.
- * This is help mitigate the latency pitfall when running threads
- * that can be suspended with an ABQL algorithm.
+ * CLH helps mitigate latency with the ABQL algorithm.
+ * e.g. Suspended thread's.
  */
 
 #include <sys/cdefs.h>

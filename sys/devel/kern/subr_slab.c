@@ -74,13 +74,15 @@ void kmem_ovl_free(void*, unsigned long, int);
 #endif
 
 static float bucket_percentage(float, float);
-
+static int slab_check(struct kmemmeta *);
+static void kmemslab_meta(struct kmemslabs *, u_long, u_long);
 static void slabcache_insert(struct kmemslabs_cache *, struct kmemslabs *, u_long, u_long, int, int);
 static void slabcache_remove(struct kmemslabs_cache *, struct kmemslabs *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup(struct kmemslabs_cache *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup_normal(struct kmemslabs_cache *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup_reverse(struct kmemslabs_cache *, u_long, u_long, int, int);
 
+/* slab's kmembucket percentage */
 static float
 bucket_percentage(float x, float y)
 {
@@ -88,8 +90,27 @@ bucket_percentage(float x, float y)
     return (p);
 }
 
-/* slab metadata */
-void
+/* check and update slab allocation flags */
+static int
+slab_check(meta)
+	struct kmemmeta *meta;
+{
+    /* Partial */
+    /* test if free bucket slots is greater than 0 and less than 95% */
+    if ((meta->ksm_fslots > meta->ksm_min) && (meta->ksm_fslots < meta->ksm_max)) {
+        return (SLAB_PARTIAL);
+        /* Full */
+        /* test if free bucket slots is greater than or equal to 95% */
+    } else if ((meta->ksm_fslots >= meta->ksm_max)) {
+        return (SLAB_FULL);
+    } else {
+        /* Empty */
+        return (SLAB_EMPTY);
+    }
+}
+
+/* calculate slab metadata */
+static void
 kmemslab_meta(slab, size, index)
 	struct kmemslabs *slab;
 	u_long size, index;
@@ -112,36 +133,12 @@ kmemslab_meta(slab, size, index)
 		meta->ksm_fslots = 0;
 	}
 
+	/* set the minimum and maximum bucket boundaries */
 	meta->ksm_min = (u_long)bucket_percentage((u_long)meta->ksm_bslots, (u_long)0); 	/* lower bucket boundary */
 	meta->ksm_max = (u_long)bucket_percentage((u_long)meta->ksm_bslots, (u_long)95);  	/* upper bucket boundary */
 
-	/* test if free bucket slots is greater than 0 and less than 95% */
-	if ((meta->ksm_fslots > meta->ksm_min) && (meta->ksm_fslots < meta->ksm_max)) {
-		slab->ksl_flags = SLAB_PARTIAL;
-	/* test if free bucket slots is greater than or equal to 95% */
-	} else if (meta->ksm_fslots >= meta->ksm_max) {
-		slab->ksl_flags = SLAB_FULL;
-	} else {
-		slab->ksl_flags = SLAB_EMPTY;
-	}
-}
-
-int
-slab_check(meta)
-	struct kmemmeta *meta;
-{
-    /* Partial */
-    /* test if free bucket slots is greater than 0 and less than 95% */
-    if ((meta->ksm_fslots > meta->ksm_min) && (meta->ksm_fslots < meta->ksm_max)) {
-        return (SLAB_PARTIAL);
-        /* Full */
-        /* test if free bucket slots is greater than or equal to 95% */
-    } else if ((meta->ksm_fslots >= meta->ksm_max)) {
-        return (SLAB_FULL);
-    } else {
-        /* Empty */
-        return (SLAB_EMPTY);
-    }
+	/* check and update slab allocation flags */
+	slab->ksl_flags = slab_check(meta);
 }
 
 /* slab magazine functions */
@@ -188,7 +185,6 @@ kmemslab_magazine_insert(cache, mag, flags, stype)
 	int flags, stype;
 {
 	simple_lock(&malloc_slock);
-
 	if (stype == SLAB_SMALL) {
 		CIRCLEQ_INSERT_HEAD(&cache->ksc_maglist, mag, ksm_list);
 	} else {
@@ -243,6 +239,7 @@ kmemslab_cache_destroy(cache)
 	}
 }
 
+/* slab cache functions: original */
 void
 kmemslab_cache_alloc(cache, size, index, mtype)
 	struct kmemslabs_cache 	*cache;
@@ -257,7 +254,7 @@ kmemslab_cache_alloc(cache, size, index, mtype)
 
 void
 kmemslab_cache_free(cache, size, index, mtype)
-	struct kmemslabs_cache 	*cache;
+	struct kmemslabs_cache *cache;
 	u_long size, index;
 	int mtype;
 {
@@ -267,43 +264,7 @@ kmemslab_cache_free(cache, size, index, mtype)
 	slabcache_remove(cache, slab, size, index, mtype, slab->ksl_flags);
 }
 
-struct kmemslabs *
-kmemslab_cache_lookup(cache, size, index, mtype, flags)
-	struct kmemslabs_cache 	*cache;
-	u_long size, index;
-	int mtype, flags;
-{
-	return (slabcache_lookup(cache, size, index, mtype, flags));
-}
-
-/* slab functions: original base */
-struct kmemslabs *
-kmemslab_create(cache, size, mtype)
-	struct kmemslabs_cache 	*cache;
-	long size;
-	int mtype;
-{
-	register struct kmemslabs *slab;
-
-	kmemslab_cache_alloc(cache, size, BUCKETINDX(size), mtype);
-	slab = &cache->ksc_slab;
-	return (slab);
-}
-
-void
-kmemslab_destroy(cache, size)
-	struct kmemslabs_cache 	*cache;
-	long  size;
-{
-	register struct kmemslabs *slab;
-
-	slab = &cache->ksc_slab;
-	if (slab != NULL) {
-		slab = NULL;
-		cache->ksc_slab = *slab;
-	}
-}
-
+/* slab functions: original */
 void
 kmemslab_alloc(cache, size, mtype)
 	struct kmemslabs_cache *cache;
@@ -327,7 +288,7 @@ kmemslab_free(cache, size)
 	slab = &cache->ksc_slab;
 }
 
-/* slab functions: new base */
+/* slab functions: new */
 struct kmemslabs *
 kmemslab_create(cache, size, index, mtype)
 	struct kmemslabs_cache *cache;
@@ -337,18 +298,40 @@ kmemslab_create(cache, size, index, mtype)
 	register struct kmemslabs *slab;
 
 	slab = &slabbucket[index];
-    slab->ksl_size = size;
-    slab->ksl_mtype = mtype;
-    slab->ksl_flags = SLAB_EMPTY;
-    if (index < 10) {
-        slab->ksl_stype = SLAB_SMALL;
-    } else {
-        slab->ksl_stype = SLAB_LARGE;
-    }
+	slab->ksl_size = size;
+	slab->ksl_mtype = mtype;
+	if (index < 10) {
+		slab->ksl_stype = SLAB_SMALL;
+	} else {
+		slab->ksl_stype = SLAB_LARGE;
+	}
 	/* update metadata */
-    slabmeta(slab, size, index);
-    cache->ksc_slab = *slab;
-    return (slab);
+	slabmeta(slab, size, index);
+	cache->ksc_slab = *slab;
+	return (slab);
+}
+
+void
+kmemslab_destroy(cache, size, index)
+	struct kmemslabs_cache *cache;
+	u_long size, index;
+{
+	register struct kmemslabs *slab, *destroy;
+
+	slab = &cache->ksc_slab;
+	destroy = NULL;
+	if (slab != NULL) {
+		destroy = kmemslab_lookup(cache, &slab->ksl_meta, size, index,
+				slab->ksl_mtype);
+	}
+	if (destroy != NULL) {
+		destroy = NULL;
+		slab = destroy;
+		cache->ksc_slab = *slab;
+	} else {
+		slab = NULL;
+		cache->ksc_slab = *slab;
+	}
 }
 
 void
@@ -358,18 +341,44 @@ kmemslab_insert(cache, slab, size, index, mtype)
 	u_long size, index;
 	int mtype;
 {
+	struct kmemmeta *meta;
 	int rval;
 
-	rval = slab_check(&slab->ksl_meta);
+	meta = &slab->ksl_meta;
+	rval = slab_check(meta);
 	switch (rval) {
 	case SLAB_FULL:
-		slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
+		if ((meta->ksm_fslots > meta->ksm_min)
+				&& (meta->ksm_fslots < meta->ksm_max)) {
+			/* full -> partial */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
+		} else {
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
+		}
 		break;
 	case SLAB_PARTIAL:
-		slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		if (meta->ksm_fslots == meta->ksm_min) {
+			/* partial -> full */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		} else if (meta->ksm_fslots >= meta->ksm_max) {
+			/* partial -> empty */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		} else {
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		}
 		break;
 	case SLAB_EMPTY:
-		slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
+		if ((meta->ksm_fslots > meta->ksm_min)
+				&& (meta->ksm_fslots < meta->ksm_max)) {
+			/* empty -> partial */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
+		} else {
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
+		}
 		break;
 	}
 }
@@ -381,18 +390,44 @@ kmemslab_remove(cache, slab, size, index, mtype)
 	u_long size, index;
 	int mtype;
 {
+	struct kmemmeta *meta;
 	int rval;
 
-	rval = slab_check(&slab->ksl_meta);
+	meta = &slab->ksl_meta;
+	rval = slab_check(meta);
 	switch (rval) {
 	case SLAB_FULL:
-		slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
+		if ((meta->ksm_fslots > meta->ksm_min)
+				&& (meta->ksm_fslots < meta->ksm_max)) {
+			/* full -> partial */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
+		} else {
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
+		}
 		break;
 	case SLAB_PARTIAL:
-		slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		if (meta->ksm_fslots == meta->ksm_min) {
+			/* partial -> full */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		} else if (meta->ksm_fslots >= meta->ksm_max) {
+			/* partial -> empty */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		} else {
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		}
 		break;
 	case SLAB_EMPTY:
-		slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
+		if ((meta->ksm_fslots > meta->ksm_min)
+				&& (meta->ksm_fslots < meta->ksm_max)) {
+			/* empty -> partial */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
+		} else {
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
+		}
 		break;
 	}
 }
@@ -449,6 +484,41 @@ kmemslab_bucket(slab)
         return (slab->ksl_bucket);
     }
     return (NULL);
+}
+
+struct kmembuckets *
+kmemslab_bucket_search(cache, meta, size, index, mtype)
+{
+	register struct kmemslabs *slab;
+	register struct kmembuckets *kbp;
+
+	slab = kmemslab_lookup(cache, size, index, mtype);
+	switch (slab->ksl_flags) {
+	case SLAB_FULL:
+		kbp = kmemslab_bucket(slab);
+		if (kbp != NULL) {
+			kmemslab_meta(slab, size, index);
+			return (kbp);
+		}
+		break;
+
+	case SLAB_PARTIAL:
+		kbp = kmemslab_bucket(slab);
+		if (kbp != NULL) {
+			kmemslab_meta(slab, size, index);
+			return (kbp);
+		}
+		break;
+
+	case SLAB_EMPTY:
+		kbp = kmemslab_bucket(slab);
+		if (kbp != NULL) {
+			kmemslab_meta(slab, size, index);
+			return (kbp);
+		}
+		break;
+	}
+	return (NULL);
 }
 
 /* internal slabcache functions */
