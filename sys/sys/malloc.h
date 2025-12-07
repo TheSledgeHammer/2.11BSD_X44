@@ -82,13 +82,17 @@ struct kmembuckets {
 
 /* Per-Slab Metadata */
 struct kmemmeta {
-	int                		ksm_bslots;     /* bucket slots available */
-	int				ksm_aslots;	/* bucket slots to be allocated */
-	int                 		ksm_fslots;	/* bucket slots free */
+	int                	ksm_bslots;     /* bucket slots available */
+	int					ksm_aslots;	/* bucket slots to be allocated */
+	int                 ksm_fslots;	/* bucket slots free */
 	u_long 				ksm_bsize;	/* bucket size */
 	u_long 				ksm_bindx;	/* bucket index */
 	u_long 				ksm_min;	/* bucket minimum boundary */
 	u_long 				ksm_max;	/* bucket maximum boundary */
+#ifdef NEWSLAB
+	LIST_ENTRY(kmemmeta) ksm_list;	/* list of slab metadata */
+	struct kmemslabs    *ksm_slab; /* what slab i am in */
+#endif
 };
 
 /* A Slab for each set of buckets */
@@ -97,12 +101,12 @@ struct kmemslabs {
 	CIRCLEQ_ENTRY(kmemslabs) 	ksl_empty;	/* slab empty list */
 	CIRCLEQ_ENTRY(kmemslabs) 	ksl_partial;  	/* slab partial list */
 	CIRCLEQ_ENTRY(kmemslabs) 	ksl_full;     	/* slab full list */
+    struct kmemmeta			*ksl_meta;	/* slab metadata */
 #endif
 	CIRCLEQ_ENTRY(kmemslabs) 	ksl_list;
 
     struct kmembuckets			*ksl_bucket;	/* slab kmembucket */
     struct kmemmeta			ksl_meta;	/* slab metadata */
-
     u_long				ksl_size;	/* slab size */
     int					ksl_mtype;	/* malloc type */
     int					ksl_stype;	/* slab type: see below */
@@ -188,9 +192,17 @@ struct kmemslabs_cache {
 #define LARGE_OBJECT(s)        	(BUCKETINDX((s)) >= 10)
 
 /* slot macros */
-#define BUCKET_SLOTS(bsize)     ((bsize)/BUCKETINDX(bsize))       		/* Number of slots in a bucket */
-#define ALLOCATED_SLOTS(size)	(BUCKET_SLOTS(size)/BUCKETINDX(size))		/* Number slots taken by space to be allocated */
-#define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket */
+/* Number of slots in a bucket */
+#define BUCKET_SLOTS(bsize, size)     	((bsize)/BUCKETINDX(size))
+/* Number slots taken by space to be allocated */
+#define ALLOCATED_SLOTS(bsize, size)	(BUCKET_SLOTS(bsize, size)/BUCKETINDX(size))
+/* free slots in bucket */
+#define SLOTSFREE(bsize, size)  		(BUCKET_SLOTS(bsize, size) - ALLOCATED_SLOTS(bsize, size))
+
+//#define BUCKET_SLOTS(bsize)     ((bsize)/BUCKETINDX(bsize))       		/* Number of slots in a bucket */
+//#define ALLOCATED_SLOTS(size)	(BUCKET_SLOTS(size)/BUCKETINDX(size))		/* Number slots taken by space to be allocated */
+//#define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket */
+
 
 #if defined(KMEMSTATS) || defined(DIAGNOSTIC)
 #define	MALLOC(space, cast, size, type, flags) 						\

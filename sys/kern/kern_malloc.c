@@ -131,8 +131,8 @@ slabmeta(slab, size)
 	meta = &slab->ksl_meta;
 	meta->ksm_bsize = bsize;
 	meta->ksm_bindx = indx;
-	meta->ksm_bslots = BUCKET_SLOTS(bsize);
-	meta->ksm_aslots = ALLOCATED_SLOTS(size);
+	meta->ksm_bslots = BUCKET_SLOTS(bsize, size);
+	meta->ksm_aslots = ALLOCATED_SLOTS(bsize, size);
 	meta->ksm_fslots = SLOTSFREE(bsize, size);
 	if (meta->ksm_fslots < 0) {
 		meta->ksm_fslots = 0;
@@ -341,8 +341,8 @@ kmembucket_search(cache, meta, size, mtype)
 
 	indx = BUCKETINDX(size);
 	bsize = BUCKETSIZE(indx);
-	bslots = BUCKET_SLOTS(bsize);
-	aslots = ALLOCATED_SLOTS(slab->ksl_size);
+	bslots = BUCKET_SLOTS(bsize, size);
+	aslots = ALLOCATED_SLOTS(bsize, slab->ksl_size);
 	fslots = SLOTSFREE(bsize, slab->ksl_size);
 
 	switch (slab->ksl_flags) {
