@@ -63,20 +63,20 @@
 #include <ovl/include/ovl.h>
 #endif
 
-struct kmemslabs_cache  *slabcache;
-struct kmemslabs		slabbucket[MINBUCKET + 16];
+struct kmemcache *slabcache;
+struct kmemslabs slabbucket[MINBUCKET + 16];
 
-struct kmembucket 		kmembucket[MINBUCKET + 16];
-struct kmemstats 		kmemstats[M_LAST];
-struct kmemusage 		*kmemusage;
-struct lock_object 		malloc_slock;
-vm_map_t				kmem_map;
-char 					*kmembase;
-char 					*kmemlimit;
+struct kmembuckets bucket[MINBUCKET + 16];
+struct kmemstats kmemstats[M_LAST];
+struct kmemusage *kmemusage;
+struct lock_object malloc_slock;
+vm_map_t kmem_map;
+char *kmembase;
+char *kmemlimit;
 char *memname[] = INITKMEMNAMES;
 
 #ifdef OVERLAY
-ovl_map_t				omem_map;
+ovl_map_t omem_map;
 #endif
 
 /* [internal use only] */
@@ -117,7 +117,7 @@ struct freelist {
 void
 slabmeta(slab, size)
 	struct kmemslabs *slab;
-	u_long  size;
+	u_long size;
 {
 	register struct kmemmeta *meta;
 	u_long indx;
@@ -158,9 +158,9 @@ slabcache_create(map, size)
 	vm_map_t  map;
 	vm_size_t size;
 {
-	struct kmemslabs_cache *cache;
+	struct kmemcache *cache;
 
-	cache = (struct kmemslabs_cache *)kmem_alloc(map, (vm_size_t)(size * sizeof(struct kmemslabs_cache)));
+	cache = (struct kmemcache *)kmem_alloc(map, (vm_size_t)(size * sizeof(struct kmemcache)));
 	CIRCLEQ_INIT(&cache->ksc_slablist);
 	cache->ksc_slabcount = 0;
 	return (cache);
@@ -168,10 +168,10 @@ slabcache_create(map, size)
 
 void
 slabcache_alloc(cache, size, index, mtype)
-	struct kmemslabs_cache 	*cache;
-	long    		size;
-	u_long 			index;
-	int 			mtype;
+	struct kmemcache *cache;
+	long size;
+	u_long index;
+	int mtype;
 {
 	register struct kmemslabs *slab;
 
@@ -197,9 +197,9 @@ slabcache_alloc(cache, size, index, mtype)
 
 void
 slabcache_free(cache, size, index)
-	struct kmemslabs_cache 	*cache;
-	long    		size;
-	u_long 			index;
+	struct kmemcache *cache;
+	long size;
+	u_long index;
 {
 	register struct kmemslabs *slab;
 
@@ -217,10 +217,10 @@ slabcache_free(cache, size, index)
 
 struct kmemslabs *
 slabcache_lookup(cache, size, index, mtype)
-	struct kmemslabs_cache 	*cache;
-	long    		size;
-	u_long    		index;
-	int 			mtype;
+	struct kmemcache *cache;
+	long size;
+	u_long index;
+	int mtype;
 {
 	register struct kmemslabs *slab;
 
@@ -251,27 +251,27 @@ slabcache_lookup(cache, size, index, mtype)
 /* slab functions */
 struct kmemslabs *
 slab_get_by_size(cache, size, mtype)
-	struct kmemslabs_cache 	*cache;
-	long    		size;
-	int 			mtype;
+	struct kmemcache *cache;
+	long size;
+	int mtype;
 {
     return (slabcache_lookup(cache, size, BUCKETINDX(size), mtype));
 }
 
 struct kmemslabs *
 slab_get_by_index(cache, index, mtype)
-	struct kmemslabs_cache 	*cache;
-	u_long    		index;
-	int 			mtype;
+	struct kmemcache *cache;
+	u_long index;
+	int mtype;
 {
     return (slabcache_lookup(cache, BUCKETSIZE(index), index, mtype));
 }
 
 struct kmemslabs *
 slab_create(cache, size, mtype)
-	struct kmemslabs_cache 	*cache;
-    long  size;
-    int	  mtype;
+	struct kmemcache *cache;
+    long size;
+    int mtype;
 {
     register struct kmemslabs *slab;
 
@@ -282,8 +282,8 @@ slab_create(cache, size, mtype)
 
 void
 slab_destroy(cache, size)
-	struct kmemslabs_cache 	*cache;
-	long  size;
+	struct kmemcache *cache;
+	long size;
 {
 	register struct kmemslabs *slab;
 
@@ -303,16 +303,16 @@ slab_kmembucket(slab)
 
 void
 slabinit(cache, map, size)
-	struct kmemslabs_cache **cache;
-	vm_map_t  map;
+	struct kmemcache **cache;
+	vm_map_t map;
 	vm_size_t size;
 {
-	struct kmemslabs_cache *ksc;
+	struct kmemcache *ksc;
 	long indx;
 
 	/* Initialize slabs kmembuckets */
 	for (indx = 0; indx < MINBUCKET + 16; indx++) {
-		slabbucket[indx].ksl_bucket = &kmembucket[indx];
+		slabbucket[indx].ksl_bucket = &bucket[indx];
 	}
 	/* Initialize slab cache */
 	ksc = slabcache_create(map, size);
@@ -327,7 +327,7 @@ slabinit(cache, map, size)
  */
 struct kmembuckets *
 kmembucket_search(cache, meta, size, mtype)
-	struct kmemslabs_cache 	*cache;
+	struct kmemcache *cache;
 	struct kmemmeta *meta;
 	long size;
 	int mtype;
