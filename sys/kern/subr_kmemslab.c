@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @(#)subr_slab.c	1.0 (Martin Kelly) 12/8/25
+ * @(#)subr_kmemslab.c	1.0 (Martin Kelly) 12/8/25
  */
 /*
  * Splitting of slab allocator from kern_malloc, with slab subroutines to

@@ -82,6 +82,9 @@ struct kmembuckets {
 
 /* Per-Slab Metadata */
 struct kmemmeta {
+	LIST_ENTRY(kmemmeta) ksm_list;	/* list of slab metadata */
+	struct kmemslabs 	*ksm_slab; 	/* what slab i am in */
+
 	int 				ksm_bslots;  /* bucket slots (per bucket) */
 	int 				ksm_aslots;	/* allocated slots (per bucket) */
 	int 				ksm_fslots;	/* slots free (per bucket) */
@@ -89,30 +92,20 @@ struct kmemmeta {
 	u_long 				ksm_bindx;	/* bucket index */
 	u_long 				ksm_min;	/* bucket minimum boundary */
 	u_long 				ksm_max;	/* bucket maximum boundary */
-#ifdef NEWSLAB
-
-	LIST_ENTRY(kmemmeta) ksm_list;	/* list of slab metadata */
-	struct kmemslabs 	*ksm_slab; 	/* what slab i am in */
 
 	int 				ksm_tbslots;/* total bucket slots */
 	int 				ksm_taslots;/* total allocated slots  */
 	int 				ksm_tfslots;/* total free slots  */
 	int 				ksm_refcnt; /* meta refcnt */
-#endif
 };
 
 /* A Slab for each set of buckets */
 struct kmemslabs {
-#ifdef NEWSLAB
 	CIRCLEQ_ENTRY(kmemslabs) ksl_empty;	/* slab empty list */
 	CIRCLEQ_ENTRY(kmemslabs) ksl_partial;  	/* slab partial list */
 	CIRCLEQ_ENTRY(kmemslabs) ksl_full;     	/* slab full list */
-    struct kmemmeta			*ksl_meta;	/* slab metadata */
-#endif
-	CIRCLEQ_ENTRY(kmemslabs) ksl_list;
-
     struct kmembuckets	*ksl_bucket;	/* slab kmembucket */
-    struct kmemmeta		ksl_meta;	/* slab metadata */
+    struct kmemmeta		*ksl_meta;	/* slab metadata */
     u_long				ksl_size;	/* slab size */
     int					ksl_mtype;	/* malloc type */
     int					ksl_stype;	/* slab type: see below */
@@ -129,18 +122,13 @@ struct kmemmagazine {
 
 /* Slab Cache */
 struct kmemcache {
-	CIRCLEQ_HEAD(, kmemslabs) 	ksc_slablist;	/* slab list head (old list) */
-#ifdef NEWSLAB
-	CIRCLEQ_HEAD(, kmemslabs) 	ksc_slablist_empty;	/* slab empty list */
-	CIRCLEQ_HEAD(, kmemslabs) 	ksc_slablist_partial;	/* slab partial list */
-	CIRCLEQ_HEAD(, kmemslabs) 	ksc_slablist_full;	/* slab full list */
-#endif
-
-	CIRCLEQ_HEAD(, kmemmagazine) ksc_maglist;	/* magazine list head */
+	CIRCLEQ_HEAD(, kmemslabs) ksc_slablist_empty;	/* slab empty list */
+	CIRCLEQ_HEAD(, kmemslabs) ksc_slablist_partial;	/* slab partial list */
+	CIRCLEQ_HEAD(, kmemslabs) ksc_slablist_full;	/* slab full list */
 	struct kmemslabs 	ksc_slab;		/* slab back-pointer */
+	int 				ksc_slabcount; 	/* number of slabs counter */
 	struct kmemmagazine ksc_magazine;	/* magazine back-pointer */
 	int 				ksc_magcount; 	/* number of magazines counter */
-	int 				ksc_slabcount; 	/* number of slabs counter */
 };
 
 /* slab flags */
@@ -216,6 +204,7 @@ struct kmemcache {
 #endif
 
 #else /* do not collect statistics */
+
 #define	MALLOC(space, cast, size, type, flags) { 					\
 	register struct kmembuckets *kbp = slabbucket[BUCKETINDX(size)].ksl_bucket; 	\
 	long s = splimp(); 								\
@@ -248,11 +237,14 @@ struct kmemcache {
 
 #endif /* do not collect statistics */
 
-extern struct kmemcache *slabcache;
-extern struct kmemslabs	slabbucket[];
+extern struct kmemcache slabcache;
 extern struct kmembuckets bucket[];
+extern struct kmemslabs	slabbucket[];
+extern struct kmemmeta metabucket[];
+extern struct kmemmagazine magazinebucket[];
 extern struct kmemusage *kmemusage;
-extern char 			*kmembase;
+extern char *kmembase;
+extern struct lock_object malloc_slock;
 
 extern void *malloc(unsigned long, int, int);
 extern void free(void *, int);
@@ -265,6 +257,14 @@ extern void overlay_free(void *, int);
 extern void *overlay_realloc(void *, unsigned long, int, int);
 extern void *overlay_calloc(int, unsigned long, int, int);
 #endif
+
+/* subr_slab.c */
+void kmemslab_init(struct kmemcache *, vm_size_t);
+struct kmemslabs *kmemslab_create(struct kmemcache *, u_long, u_long, int);
+void kmemslab_destroy(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
+void kmemslab_insert(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
+void kmemslab_remove(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
+struct kmemslabs *kmemslab_lookup(struct kmemcache *, u_long, u_long, int);
 #endif /* KERNEL */
 
 #endif /* !_SYS_MALLOC_H_ */

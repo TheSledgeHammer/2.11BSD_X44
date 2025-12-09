@@ -33,7 +33,18 @@
  *	@(#)kern_malloc.c	8.4 (Berkeley) 5/20/95
  */
 
-#ifdef NEWSLAB
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+
+#include <vm/include/vm_kern.h>
+#include <vm/include/vm.h>
+
+//#ifdef NEWSLAB
 
 struct kmemcache *slabcache;
 /* buckets */
@@ -41,11 +52,6 @@ struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemslabs slabbucket[MINBUCKET + 16];
 struct kmemmeta metabucket[MINBUCKET + 16];
 struct kmemmagazine magazinebucket[MINBUCKET + 16];
-
-vm_map_t kmem_map;
-#ifdef OVERLAY
-ovl_map_t omem_map;
-#endif
 
 void
 kmembucket_init(void)
@@ -127,9 +133,9 @@ kmembucket_destroy(cache, kbp, size, index, mtype)
 	}
 
 destroy:
-	kmemslab_remove(cache, slab, size, index, mtype);
 	skbp = kbp;
 	slab->ksl_bucket = skbp;
+	kmemslab_destroy(cache, slab, size, index, mtype);
 }
 
 /* allocate memory to vm/ovl */
@@ -209,3 +215,338 @@ kmeminit(void)
 }
 */
 #endif
+
+#ifdef OLDSLAB
+/* slab metadata */
+void
+slabmeta(slab, size)
+	struct kmemslabs *slab;
+	u_long size;
+{
+	register struct kmemmeta *meta;
+	u_long indx;
+	u_long bsize;
+
+	/* bucket's index and size */
+	indx = BUCKETINDX(size);
+	bsize = BUCKETSIZE(indx);
+
+	/* slab metadata */
+	meta = &slab->ksl_meta;
+	meta->ksm_bsize = bsize;
+	meta->ksm_bindx = indx;
+	meta->ksm_bslots = BUCKET_SLOTS(bsize, size);
+	meta->ksm_aslots = ALLOCATED_SLOTS(bsize, size);
+	meta->ksm_fslots = SLOTSFREE(bsize, size);
+	if (meta->ksm_fslots < 0) {
+		meta->ksm_fslots = 0;
+	}
+
+	meta->ksm_min = percent(meta->ksm_bslots, 0); 		/* lower bucket boundary */
+	meta->ksm_max = percent(meta->ksm_bslots, 95);  	/* upper bucket boundary */
+
+	/* test if free bucket slots is greater than 0 and less than 95% */
+	if ((meta->ksm_fslots > meta->ksm_min) && (meta->ksm_fslots < meta->ksm_max)) {
+		slab->ksl_flags |= SLAB_PARTIAL;
+	/* test if free bucket slots is greater than or equal to 95% */
+	} else if (meta->ksm_fslots >= meta->ksm_max) {
+		slab->ksl_flags |= SLAB_FULL;
+	} else {
+		slab->ksl_flags |= SLAB_EMPTY;
+	}
+}
+
+/* slabcache functions */
+struct kmemcache *
+slabcache_create(map, size)
+	vm_map_t  map;
+	vm_size_t size;
+{
+	struct kmemcache *cache;
+
+	cache = (struct kmemcache *)kmem_alloc(map, (vm_size_t)(size * sizeof(struct kmemcache)));
+	CIRCLEQ_INIT(&cache->ksc_slablist);
+	cache->ksc_slabcount = 0;
+	return (cache);
+}
+
+void
+slabcache_alloc(cache, size, index, mtype)
+	struct kmemcache *cache;
+	long size;
+	u_long index;
+	int mtype;
+{
+	register struct kmemslabs *slab;
+
+	slab = &slabbucket[index];
+	slab->ksl_size = size;
+	slab->ksl_mtype = mtype;
+
+    simple_lock(&malloc_slock);
+	if (index < 10) {
+		slab->ksl_stype = SLAB_SMALL;
+		CIRCLEQ_INSERT_HEAD(&cache->ksc_slablist, slab, ksl_list);
+	} else {
+		slab->ksl_stype = SLAB_LARGE;
+		CIRCLEQ_INSERT_TAIL(&cache->ksc_slablist, slab, ksl_list);
+	}
+	simple_unlock(&malloc_slock);
+	cache->ksc_slab = *slab;
+	cache->ksc_slabcount++;
+
+    /* update metadata */
+	slabmeta(slab, size);
+}
+
+void
+slabcache_free(cache, size, index)
+	struct kmemcache *cache;
+	long size;
+	u_long index;
+{
+	register struct kmemslabs *slab;
+
+	slab = &slabbucket[index];
+
+	simple_lock(&malloc_slock);
+	CIRCLEQ_REMOVE(&cache->ksc_slablist, slab, ksl_list);
+	simple_unlock(&malloc_slock);
+	cache->ksc_slab = *slab;
+	cache->ksc_slabcount--;
+
+    /* update metadata */
+	slabmeta(slab, size);
+}
+
+struct kmemslabs *
+slabcache_lookup(cache, size, index, mtype)
+	struct kmemcache *cache;
+	long size;
+	u_long index;
+	int mtype;
+{
+	register struct kmemslabs *slab;
+
+    simple_lock(&malloc_slock);
+    if (LARGE_OBJECT(size)) {
+    	CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_slablist, ksl_list) {
+    		if (slab == &slabbucket[index]) {
+    			if ((slab->ksl_size == size) && (slab->ksl_mtype == mtype)) {
+    				simple_unlock(&malloc_slock);
+    	    		return (slab);
+    			}
+    		}
+    	}
+    } else {
+    	CIRCLEQ_FOREACH(slab, &cache->ksc_slablist, ksl_list) {
+    		if (slab == &slabbucket[index]) {
+    			if ((slab->ksl_size == size) && (slab->ksl_mtype == mtype)) {
+    				simple_unlock(&malloc_slock);
+    	    		return (slab);
+    			}
+    		}
+    	}
+    }
+	simple_unlock(&malloc_slock);
+    return (NULL);
+}
+
+/* slab functions */
+struct kmemslabs *
+slab_get_by_size(cache, size, mtype)
+	struct kmemcache *cache;
+	long size;
+	int mtype;
+{
+    return (slabcache_lookup(cache, size, BUCKETINDX(size), mtype));
+}
+
+struct kmemslabs *
+slab_get_by_index(cache, index, mtype)
+	struct kmemcache *cache;
+	u_long index;
+	int mtype;
+{
+    return (slabcache_lookup(cache, BUCKETSIZE(index), index, mtype));
+}
+
+struct kmemslabs *
+slab_create(cache, size, mtype)
+	struct kmemcache *cache;
+    long size;
+    int mtype;
+{
+    register struct kmemslabs *slab;
+
+	slabcache_alloc(cache, size, BUCKETINDX(size), mtype);
+	slab = &cache->ksc_slab;
+	return (slab);
+}
+
+void
+slab_destroy(cache, size)
+	struct kmemcache *cache;
+	long size;
+{
+	register struct kmemslabs *slab;
+
+	slabcache_free(cache, size, BUCKETINDX(size));
+	slab = &cache->ksc_slab;
+}
+
+struct kmembuckets *
+slab_kmembucket(slab)
+	struct kmemslabs *slab;
+{
+    if (slab->ksl_bucket != NULL) {
+        return (slab->ksl_bucket);
+    }
+    return (NULL);
+}
+
+void
+slabinit(cache, map, size)
+	struct kmemcache **cache;
+	vm_map_t map;
+	vm_size_t size;
+{
+	struct kmemcache *ksc;
+	long indx;
+
+	/* Initialize slabs kmembuckets */
+	for (indx = 0; indx < MINBUCKET + 16; indx++) {
+		slabbucket[indx].ksl_bucket = &bucket[indx];
+	}
+	/* Initialize slab cache */
+	ksc = slabcache_create(map, size);
+	*cache = ksc;
+}
+
+/* kmembucket functions */
+
+/*
+ * search array for an empty bucket or partially full bucket that can fit
+ * block of memory to be allocated
+ */
+struct kmembuckets *
+kmembucket_search(cache, meta, size, mtype)
+	struct kmemcache *cache;
+	struct kmemmeta *meta;
+	long size;
+	int mtype;
+{
+	register struct kmemslabs *slab, *next;
+	register struct kmembuckets *kbp;
+	long indx, bsize;
+	int bslots, aslots, fslots;
+
+	slab = slab_get_by_size(cache, size, mtype);
+
+	indx = BUCKETINDX(size);
+	bsize = BUCKETSIZE(indx);
+	bslots = BUCKET_SLOTS(bsize, size);
+	aslots = ALLOCATED_SLOTS(bsize, slab->ksl_size);
+	fslots = SLOTSFREE(bsize, slab->ksl_size);
+
+	switch (slab->ksl_flags) {
+	case SLAB_FULL:
+		next = CIRCLEQ_NEXT(slab, ksl_list);
+		CIRCLEQ_FOREACH(next, &cache->ksc_slablist, ksl_list) {
+			if ((next != slab) && (next->ksl_flags != SLAB_FULL)) {
+				switch (next->ksl_flags) {
+				case SLAB_PARTIAL:
+					slab = next;
+					goto partial;
+
+				case SLAB_EMPTY:
+					slab = next;
+					goto empty;
+				}
+			}
+			return (NULL);
+		}
+		break;
+
+	case SLAB_PARTIAL:
+partial:
+		if ((bsize > meta->ksm_bsize) && (bslots > meta->ksm_bslots) && (fslots > meta->ksm_fslots)) {
+			kbp = slab_kmembucket(slab);
+			slabmeta(slab, slab->ksl_size);
+			return (kbp);
+		}
+		break;
+
+	case SLAB_EMPTY:
+empty:
+		kbp = slab_kmembucket(slab);
+		slabmeta(slab, slab->ksl_size);
+		return (kbp);
+	}
+	return (NULL);
+}
+
+
+/* allocate memory to vm [internal use only] */
+caddr_t
+kmalloc(size, flags)
+	unsigned long size;
+	int flags;
+{
+	long indx, npg, allocsize;
+	caddr_t  va;
+
+	if (size > MAXALLOCSAVE) {
+		allocsize = roundup(size, CLBYTES);
+	} else {
+		allocsize = 1 << indx;
+	}
+	npg = clrnd(btoc(allocsize));
+	va = (caddr_t)kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
+
+	return (va);
+}
+
+/* free memory from vm [internal use only] */
+void
+kfree(addr, size)
+	void *addr;
+	short size;
+{
+	kmem_free(kmem_map, (vm_offset_t)addr, size);
+}
+
+#ifdef OVERLAY
+/* allocate memory to ovl [internal use only] */
+caddr_t
+omalloc(size, flags)
+	unsigned long size;
+	int flags;
+{
+	long indx, npg, allocsize;
+	caddr_t  va;
+
+	if (size > MAXALLOCSAVE) {
+		allocsize = roundup(size, CLBYTES);
+	} else {
+		allocsize = 1 << indx;
+	}
+	npg = clrnd(btoc(allocsize));
+	va = (caddr_t)omem_malloc(omem_map, (vm_size_t)ctob(npg), (M_OVERLAY & !(flags & (M_NOWAIT | M_CANFAIL))));
+	return (va);
+}
+
+/* free memory from ovl [internal use only] */
+void
+ofree(addr, size, type)
+	void *addr;
+	short size;
+	int type;
+{
+	if (type & M_OVERLAY) {
+		omem_free(omem_map, (vm_offset_t) addr, size);
+	}
+}
+#endif
+#endif
+

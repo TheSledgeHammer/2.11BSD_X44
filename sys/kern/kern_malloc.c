@@ -35,7 +35,27 @@
 
 /*
  * A Simple Slab Allocator.
- * The Slab allocator treats each bucket in kmembuckets as a pool with "x" slots available.
+ * The Slab allocator is in split into two parts between this file and subr_kmemslab.c.
+ * subr_kmemslab.c is the slab allocator back-end, which is closer to your typical slab
+ * allocator (As described by Bonwick et al.) and kern_malloc.c which is the front-end
+ * to the slab-allocator.
+ *
+ * subr_kmemslab.c:
+ * The slab allocator consists of 3 circular lists full, partial and empty.
+ * Each list will insert and/or remove from the head or tail of that list depending on the
+ * object's size. Transitions between each list also occur during insertion and/or removal,
+ * these transitions are dictated by the slab's meta-data.
+ *
+ * The Metadata keeps track of the slab's current allocation state, the bucket slot's
+ * (i.e. available, allocated and free), running totals of those bucket slots, bucket size,
+ * bucket index, and the slab it corresponds too.
+ *
+ * kern_malloc.c:
+ * Uses the Segregated-fit allocator from 4.4BSD-Lite2. Which has been lightly modified
+ * to work with the above slab allocator. Where kmembuckets is directed by the
+ * slab allocator.
+ *
+ * Each slab treats each bucket in kmembuckets as a pool with "x" slots available.
  *
  * Slots are determined by the bucket index and the object size being allocated.
  * Slab metadata is responsible for retaining all slot related data and some slab information
@@ -63,10 +83,11 @@
 #include <ovl/include/ovl.h>
 #endif
 
-struct kmemcache *slabcache;
-struct kmemslabs slabbucket[MINBUCKET + 16];
-
+struct kmemcache slabcache;
 struct kmembuckets bucket[MINBUCKET + 16];
+struct kmemslabs slabbucket[MINBUCKET + 16];
+struct kmemmeta metabucket[MINBUCKET + 16];
+struct kmemmagazine magazinebucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
 struct lock_object malloc_slock;
@@ -80,13 +101,8 @@ ovl_map_t omem_map;
 #endif
 
 /* [internal use only] */
-caddr_t	kmalloc(unsigned long, int);
-void	kfree(void *, short);
-
-#ifdef OVERLAY
-caddr_t	omalloc(unsigned long, int);
-void	ofree(void *, short, int);
-#endif
+vm_offset_t vmembucket_malloc(unsigned long, int);
+void vmembucket_free(void *, unsigned long, int);
 
 #ifdef DIAGNOSTIC
 
@@ -113,273 +129,89 @@ struct freelist {
 };
 #endif /* DIAGNOSTIC */
 
-/* slab metadata */
 void
-slabmeta(slab, size)
-	struct kmemslabs *slab;
-	u_long size;
+kmembucket_init(void)
 {
-	register struct kmemmeta *meta;
-	u_long indx;
-	u_long bsize;
+	register long indx;
 
-	/* bucket's index and size */
-	indx = BUCKETINDX(size);
-	bsize = BUCKETSIZE(indx);
-
-	/* slab metadata */
-	meta = &slab->ksl_meta;
-	meta->ksm_bsize = bsize;
-	meta->ksm_bindx = indx;
-	meta->ksm_bslots = BUCKET_SLOTS(bsize, size);
-	meta->ksm_aslots = ALLOCATED_SLOTS(bsize, size);
-	meta->ksm_fslots = SLOTSFREE(bsize, size);
-	if (meta->ksm_fslots < 0) {
-		meta->ksm_fslots = 0;
-	}
-
-	meta->ksm_min = percent(meta->ksm_bslots, 0); 		/* lower bucket boundary */
-	meta->ksm_max = percent(meta->ksm_bslots, 95);  	/* upper bucket boundary */
-
-	/* test if free bucket slots is greater than 0 and less than 95% */
-	if ((meta->ksm_fslots > meta->ksm_min) && (meta->ksm_fslots < meta->ksm_max)) {
-		slab->ksl_flags |= SLAB_PARTIAL;
-	/* test if free bucket slots is greater than or equal to 95% */
-	} else if (meta->ksm_fslots >= meta->ksm_max) {
-		slab->ksl_flags |= SLAB_FULL;
-	} else {
-		slab->ksl_flags |= SLAB_EMPTY;
+	/* Initialize buckets */
+	for (indx = 0; indx < MINBUCKET + 16; indx++) {
+		/* slabs */
+		slabbucket[indx].ksl_bucket = &bucket[indx];
+		slabbucket[indx].ksl_meta = &metabucket[indx];
+		/* meta */
+		metabucket[indx].ksm_slab = &slabbucket[indx];
 	}
 }
 
-/* slabcache functions */
-struct kmemcache *
-slabcache_create(map, size)
-	vm_map_t  map;
-	vm_size_t size;
-{
+struct kmembuckets *
+kmembucket_alloc(cache, size, index, mtype)
 	struct kmemcache *cache;
-
-	cache = (struct kmemcache *)kmem_alloc(map, (vm_size_t)(size * sizeof(struct kmemcache)));
-	CIRCLEQ_INIT(&cache->ksc_slablist);
-	cache->ksc_slabcount = 0;
-	return (cache);
-}
-
-void
-slabcache_alloc(cache, size, index, mtype)
-	struct kmemcache *cache;
-	long size;
-	u_long index;
+	unsigned long size, index;
 	int mtype;
-{
-	register struct kmemslabs *slab;
-
-	slab = &slabbucket[index];
-	slab->ksl_size = size;
-	slab->ksl_mtype = mtype;
-
-    simple_lock(&malloc_slock);
-	if (index < 10) {
-		slab->ksl_stype = SLAB_SMALL;
-		CIRCLEQ_INSERT_HEAD(&cache->ksc_slablist, slab, ksl_list);
-	} else {
-		slab->ksl_stype = SLAB_LARGE;
-		CIRCLEQ_INSERT_TAIL(&cache->ksc_slablist, slab, ksl_list);
-	}
-	simple_unlock(&malloc_slock);
-	cache->ksc_slab = *slab;
-	cache->ksc_slabcount++;
-
-    /* update metadata */
-	slabmeta(slab, size);
-}
-
-void
-slabcache_free(cache, size, index)
-	struct kmemcache *cache;
-	long size;
-	u_long index;
-{
-	register struct kmemslabs *slab;
-
-	slab = &slabbucket[index];
-
-	simple_lock(&malloc_slock);
-	CIRCLEQ_REMOVE(&cache->ksc_slablist, slab, ksl_list);
-	simple_unlock(&malloc_slock);
-	cache->ksc_slab = *slab;
-	cache->ksc_slabcount--;
-
-    /* update metadata */
-	slabmeta(slab, size);
-}
-
-struct kmemslabs *
-slabcache_lookup(cache, size, index, mtype)
-	struct kmemcache *cache;
-	long size;
-	u_long index;
-	int mtype;
-{
-	register struct kmemslabs *slab;
-
-    simple_lock(&malloc_slock);
-    if (LARGE_OBJECT(size)) {
-    	CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_slablist, ksl_list) {
-    		if (slab == &slabbucket[index]) {
-    			if ((slab->ksl_size == size) && (slab->ksl_mtype == mtype)) {
-    				simple_unlock(&malloc_slock);
-    	    		return (slab);
-    			}
-    		}
-    	}
-    } else {
-    	CIRCLEQ_FOREACH(slab, &cache->ksc_slablist, ksl_list) {
-    		if (slab == &slabbucket[index]) {
-    			if ((slab->ksl_size == size) && (slab->ksl_mtype == mtype)) {
-    				simple_unlock(&malloc_slock);
-    	    		return (slab);
-    			}
-    		}
-    	}
-    }
-	simple_unlock(&malloc_slock);
-    return (NULL);
-}
-
-/* slab functions */
-struct kmemslabs *
-slab_get_by_size(cache, size, mtype)
-	struct kmemcache *cache;
-	long size;
-	int mtype;
-{
-    return (slabcache_lookup(cache, size, BUCKETINDX(size), mtype));
-}
-
-struct kmemslabs *
-slab_get_by_index(cache, index, mtype)
-	struct kmemcache *cache;
-	u_long index;
-	int mtype;
-{
-    return (slabcache_lookup(cache, BUCKETSIZE(index), index, mtype));
-}
-
-struct kmemslabs *
-slab_create(cache, size, mtype)
-	struct kmemcache *cache;
-    long size;
-    int mtype;
 {
     register struct kmemslabs *slab;
+    register struct kmembuckets *kbp;
 
-	slabcache_alloc(cache, size, BUCKETINDX(size), mtype);
-	slab = &cache->ksc_slab;
-	return (slab);
-}
-
-void
-slab_destroy(cache, size)
-	struct kmemcache *cache;
-	long size;
-{
-	register struct kmemslabs *slab;
-
-	slabcache_free(cache, size, BUCKETINDX(size));
-	slab = &cache->ksc_slab;
-}
-
-struct kmembuckets *
-slab_kmembucket(slab)
-	struct kmemslabs *slab;
-{
-    if (slab->ksl_bucket != NULL) {
-        return (slab->ksl_bucket);
+    slab = kmemslab_create(cache, size, index, mtype);
+    if (slab != NULL) {
+        kbp = slab->ksl_bucket;
+    }
+    if (kbp != NULL) {
+        kmemslab_insert(cache, slab, size, index, mtype);
+        return (kbp);
     }
     return (NULL);
 }
 
-void
-slabinit(cache, map, size)
-	struct kmemcache **cache;
-	vm_map_t map;
-	vm_size_t size;
-{
-	struct kmemcache *ksc;
-	long indx;
-
-	/* Initialize slabs kmembuckets */
-	for (indx = 0; indx < MINBUCKET + 16; indx++) {
-		slabbucket[indx].ksl_bucket = &bucket[indx];
-	}
-	/* Initialize slab cache */
-	ksc = slabcache_create(map, size);
-	*cache = ksc;
-}
-
-/* kmembucket functions */
-
-/*
- * search array for an empty bucket or partially full bucket that can fit
- * block of memory to be allocated
- */
 struct kmembuckets *
-kmembucket_search(cache, meta, size, mtype)
+kmembucket_free(cache, size, index, mtype)
 	struct kmemcache *cache;
-	struct kmemmeta *meta;
-	long size;
+	unsigned long size, index;
 	int mtype;
 {
-	register struct kmemslabs *slab, *next;
+	register struct kmemslabs *slab;
 	register struct kmembuckets *kbp;
-	long indx, bsize;
-	int bslots, aslots, fslots;
 
-	slab = slab_get_by_size(cache, size, mtype);
-
-	indx = BUCKETINDX(size);
-	bsize = BUCKETSIZE(indx);
-	bslots = BUCKET_SLOTS(bsize, size);
-	aslots = ALLOCATED_SLOTS(bsize, slab->ksl_size);
-	fslots = SLOTSFREE(bsize, slab->ksl_size);
-
-	switch (slab->ksl_flags) {
-	case SLAB_FULL:
-		next = CIRCLEQ_NEXT(slab, ksl_list);
-		CIRCLEQ_FOREACH(next, &cache->ksc_slablist, ksl_list) {
-			if ((next != slab) && (next->ksl_flags != SLAB_FULL)) {
-				switch (next->ksl_flags) {
-				case SLAB_PARTIAL:
-					slab = next;
-					goto partial;
-
-				case SLAB_EMPTY:
-					slab = next;
-					goto empty;
-				}
-			}
-			return (NULL);
-		}
-		break;
-
-	case SLAB_PARTIAL:
-partial:
-		if ((bsize > meta->ksm_bsize) && (bslots > meta->ksm_bslots) && (fslots > meta->ksm_fslots)) {
-			kbp = slab_kmembucket(slab);
-			slabmeta(slab, slab->ksl_size);
-			return (kbp);
-		}
-		break;
-
-	case SLAB_EMPTY:
-empty:
-		kbp = slab_kmembucket(slab);
-		slabmeta(slab, slab->ksl_size);
+	slab = kmemslab_lookup(cache, size, index, mtype);
+	if (slab != NULL) {
+		kbp = slab->ksl_bucket;
+	}
+	if (kbp != NULL) {
+		kmemslab_remove(cache, slab, size, index, mtype);
 		return (kbp);
 	}
 	return (NULL);
+}
+
+void
+kmembucket_destroy(cache, kbp, size, index, mtype)
+	struct kmemcache *cache;
+	struct kmembuckets *kbp;
+	unsigned long size, index;
+	int mtype;
+{
+    register struct kmemslabs *slab;
+    register struct kmembuckets *skbp;
+
+    slab = kmemslab_lookup(cache, size, index, mtype);
+    if (slab != NULL) {
+        skbp = slab->ksl_bucket;
+    }
+	if (skbp != NULL) {
+		if (kbp != NULL) {
+			if (skbp == kbp) {
+				return;
+			}
+		} else {
+			goto destroy;
+		}
+	}
+
+destroy:
+	skbp = kbp;
+	slab->ksl_bucket = skbp;
+	kmemslab_destroy(cache, slab, size, index, mtype);
 }
 
 /* Allocate a block of memory */
@@ -388,7 +220,6 @@ malloc(size, type, flags)
     unsigned long size;
     int type, flags;
 {
-    register struct kmemslabs *slab;
     register struct kmembuckets *kbp;
     register struct kmemusage *kup;
     register struct freelist *freep;
@@ -405,8 +236,8 @@ malloc(size, type, flags)
 	if (((unsigned long)type) > M_LAST)
 		panic("malloc - bogus type");
 #endif
-	slab = slab_create(&slabcache, size, type);
-    kbp = kmembucket_search(&slabcache, slab->ksl_meta, size, type);
+
+	kbp = kmembucket_alloc(&slabcache, size, BUCKETINDX(size), type);
     s = splimp();
     simple_lock(&malloc_slock);
 #ifdef KMEMSTATS
@@ -431,15 +262,13 @@ malloc(size, type, flags)
     if (kbp->kb_next == NULL) {
     	kbp->kb_last = NULL;
     	simple_unlock(&malloc_slock);
-#ifdef OVERLAY
-		if (flags & M_OVERLAY) {
-			va = omalloc(size, flags);
+		if (size > MAXALLOCSAVE) {
+			allocsize = roundup(size, CLBYTES);
 		} else {
-			va = kmalloc(size, flags);
+			allocsize = 1 << indx;
 		}
-#else
-    	va = kmalloc(size, flags);
-#endif
+    	npg = clrnd(btoc(allocsize));
+    	va = (caddr_t)vmembucket_malloc(size, flags);
         if (va == NULL) {
         	splx(s);
 #ifdef DEBUG
@@ -550,7 +379,6 @@ free(addr, type)
 	void *addr;
 	int type;
 {
-	register struct kmemslabs 	*slab;
 	register struct kmembuckets *kbp;
 	register struct kmemusage 	*kup;
 	register struct freelist 	*freep;
@@ -565,12 +393,7 @@ free(addr, type)
 #endif
 	kup = btokup(addr);
 	size = 1 << kup->ku_indx;
-	slab = slab_get_by_index(&slabcache, kup->ku_indx, type);
-	if (BUCKETINDX(size) != kup->ku_indx) {
-		kbp = kmembucket_search(&slabcache, slab->ksl_meta, BUCKETSIZE(kup->ku_indx), type);
-	} else {
-		kbp = kmembucket_search(&slabcache, slab->ksl_meta, size, type);
-	}
+	kbp = kmembucket_free(&slabcache, size, kup->ku_indx, type);
 	s = splimp();
 	simple_lock(&malloc_slock);
 #ifdef DIAGNOSTIC
@@ -582,15 +405,7 @@ free(addr, type)
 		panic("free: unaligned addr 0x%x, size %d, type %s, mask %d\n", addr, size, memname[type], alloc);
 #endif /* DIAGNOSTIC */
 	if (size > MAXALLOCSAVE) {
-#ifdef OVERLAY
-		if(type & M_OVERLAY) {
-			ofree(addr, ctob(kup->ku_pagecnt), (type & M_OVERLAY));
-		} else {
-			kfree(addr, ctob(kup->ku_pagecnt));
-		}
-#else
-		kfree(addr, ctob(kup->ku_pagecnt));
-#endif
+		vmembucket_free(addr, ctob(kup->ku_pagecnt), type);
 #ifdef KMEMSTATS
 		size = kup->ku_pagecnt << PGSHIFT;
 		ksp->ks_memuse -= size;
@@ -643,9 +458,8 @@ free(addr, type)
 		((struct freelist*) kbp->kb_last)->next = addr;
 	freep->next = NULL;
 	kbp->kb_last = addr;
-	if(slab->ksl_flags == SLAB_EMPTY && kbp == NULL) {
-		slab->ksl_bucket = kbp;
-		slab_destroy(&slabcache, size);
+	if (kbp == NULL) {
+		kmembucket_destroy(&slabcache, kbp, size, kup->ku_indx, type);
 	}
 	simple_unlock(&malloc_slock);
 	splx(s);
@@ -781,66 +595,71 @@ kmeminit(void)
 	simple_lock_init(&malloc_slock, "malloc_slock");
 
 #if	((MAXALLOCSAVE & (MAXALLOCSAVE - 1)) != 0)
-		ERROR!_kmeminit:_MAXALLOCSAVE_not_power_of_2
+	ERROR!_kmeminit:_MAXALLOCSAVE_not_power_of_2
 #endif
 #if	(MAXALLOCSAVE > MINALLOCSIZE * 32768)
-		ERROR!_kmeminit:_MAXALLOCSAVE_too_big
+	ERROR!_kmeminit:_MAXALLOCSAVE_too_big
 #endif
 #if	(MAXALLOCSAVE < CLBYTES)
-		ERROR!_kmeminit:_MAXALLOCSAVE_too_small
+	ERROR!_kmeminit:_MAXALLOCSAVE_too_small
 #endif
-		npg = VM_KMEM_SIZE / NBPG;
+	npg = VM_KMEM_SIZE / NBPG;
 
-		slabinit(&slabcache, kernel_map, npg);
-		kmemusage = (struct kmemusage *)kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
-		kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
+	kmemslab_init(&slabcache, npg);
+	kmembucket_init();
+	kmemusage = (struct kmemusage *)kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
+	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
 
 #ifdef OVERLAY
-		omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG));
+	omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG));
 #endif
 
 #ifdef KMEMSTATS
-		for(indx = 0; indx < MINBUCKET + 16; indx++) {
-			if (1 << indx >= CLBYTES) {
-				slabbucket[indx].ksl_bucket->kb_elmpercl = 1;
-			} else {
-				slabbucket[indx].ksl_bucket->kb_elmpercl = CLBYTES / (1 << indx);
-			}
-			slabbucket[indx].ksl_bucket->kb_highwat = 5 * slabbucket[indx].ksl_bucket->kb_elmpercl;
+	for (indx = 0; indx < MINBUCKET + 16; indx++) {
+		if (1 << indx >= CLBYTES) {
+			slabbucket[indx].ksl_bucket->kb_elmpercl = 1;
+		} else {
+			slabbucket[indx].ksl_bucket->kb_elmpercl = CLBYTES / (1 << indx);
 		}
-		for (indx = 0; indx < M_LAST; indx++) {
-			kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
-		}
+		slabbucket[indx].ksl_bucket->kb_highwat = 5	* slabbucket[indx].ksl_bucket->kb_elmpercl;
+	}
+	for (indx = 0; indx < M_LAST; indx++) {
+		kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
+	}
 #endif
 }
 
-/* allocate memory to vm [internal use only] */
-caddr_t
-kmalloc(size, flags)
+/* allocate memory to vm/ovl */
+vm_offset_t
+vmembucket_malloc(size, flags)
 	unsigned long size;
 	int flags;
 {
-	long indx, npg, allocsize;
-	caddr_t  va;
-
-	if (size > MAXALLOCSAVE) {
-		allocsize = roundup(size, CLBYTES);
-	} else {
-		allocsize = 1 << indx;
-	}
-	npg = clrnd(btoc(allocsize));
-	va = (caddr_t)kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
-
+	vm_offset_t va;
+#ifdef OVERLAY
+	va = omem_malloc(omem_map, (vm_size_t) size,
+			(M_OVERLAY & !(flags & (M_NOWAIT | M_CANFAIL))));
+#else
+	va = kmem_malloc(kmem_map, (vm_size_t) size,
+			!(flags & (M_NOWAIT | M_CANFAIL)));
+#endif
 	return (va);
 }
 
-/* free memory from vm [internal use only] */
+/* free memory from vm/ovl */
 void
-kfree(addr, size)
+vmembucket_free(addr, size, type)
 	void *addr;
-	short size;
+	unsigned long size;
+	int type;
 {
+#ifdef OVERLAY
+	if (type & M_OVERLAY) {
+		omem_free(omem_map, (vm_offset_t)addr, size);
+	}
+#else
 	kmem_free(kmem_map, (vm_offset_t)addr, size);
+#endif
 }
 
 #ifdef OVERLAY
@@ -878,34 +697,4 @@ overlay_calloc(nitems, size, type, flags)
 	return (calloc(nitems, size, type, flags | M_OVERLAY));
 }
 
-/* allocate memory to ovl [internal use only] */
-caddr_t
-omalloc(size, flags)
-	unsigned long size;
-	int flags;
-{
-	long indx, npg, allocsize;
-	caddr_t  va;
-
-	if (size > MAXALLOCSAVE) {
-		allocsize = roundup(size, CLBYTES);
-	} else {
-		allocsize = 1 << indx;
-	}
-	npg = clrnd(btoc(allocsize));
-	va = (caddr_t)omem_malloc(omem_map, (vm_size_t)ctob(npg), (M_OVERLAY & !(flags & (M_NOWAIT | M_CANFAIL))));
-	return (va);
-}
-
-/* free memory from ovl [internal use only] */
-void
-ofree(addr, size, type)
-	void *addr;
-	short size;
-	int type;
-{
-	if (type & M_OVERLAY) {
-		omem_free(omem_map, (vm_offset_t) addr, size);
-	}
-}
 #endif
