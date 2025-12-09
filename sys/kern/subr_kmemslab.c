@@ -54,7 +54,7 @@
 #endif
 
 LIST_HEAD(, kmemmeta) metalist = LIST_HEAD_INITIALIZER(metalist);
-CIRCLEQ_HEAD(, kmemmagazine) maglist = CIRCLEQ_HEAD_INITIALIZER(maglist);
+CIRCLEQ_HEAD(, kmemmagazine) maglist;// = CIRCLEQ_HEAD_INITIALIZER(maglist);
 
 static int slab_check(struct kmemmeta *);
 /* slabmeta */
@@ -184,7 +184,8 @@ kmemslab_magazine_create(cache, size, index)
 	register struct kmemmagazine *mag;
 
 	mag = &magazinebucket[index];
-	mag->ksm_maxslots = SLOTSFREE(bsize, size);
+	CIRCLEQ_INIT(&maglist);
+	//mag->ksm_maxslots = SLOTSFREE(bsize, size);
 	mag->ksm_freeslots = mag->ksm_maxslots;
 	cache->ksc_magazine = *mag;
 	return (mag);
