@@ -153,7 +153,7 @@ slabmeta(slab, size)
 }
 
 /* slabcache functions */
-struct kmemslabs_cache *
+struct kmemcache *
 slabcache_create(map, size)
 	vm_map_t  map;
 	vm_size_t size;
