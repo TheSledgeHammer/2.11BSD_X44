@@ -38,6 +38,8 @@
  * - rotating magazines when full
  */
 
+//#define NEWSLAB
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -53,24 +55,27 @@
 #include <ovl/include/ovl.h>
 #endif
 
-struct kmemcache *slabcache;
+//struct kmemcache *slabcache;
 /* buckets */
-struct kmembuckets bucket[MINBUCKET + 16];
-struct kmemslabs slabbucket[MINBUCKET + 16];
+//struct kmembuckets bucket[MINBUCKET + 16];
+//struct kmemslabs slabbucket[MINBUCKET + 16];
 struct kmemmeta metabucket[MINBUCKET + 16];
 struct kmemmagazine magazinebucket[MINBUCKET + 16];
 
+extern struct lock_object malloc_slock;
+/*
 vm_map_t kmem_map;
 #ifdef OVERLAY
 ovl_map_t omem_map;
 #endif
+*/
 
 LIST_HEAD(, kmemmeta) metalist = LIST_HEAD_INITIALIZER(metalist);
 
 static int slab_check(struct kmemmeta *);
 /* slabmeta */
 static void kmemslab_meta_insert(struct kmemslabs *, u_long, u_long);
-static struct kmemmeta *kmemslab_meta_lookup(struct kmemslabs *, u_long, u_long);
+static struct kmemmeta *kmemslab_meta_lookup(u_long, u_long);
 static void kmemslab_meta_remove(struct kmemslabs *, u_long, u_long);
 /* slabcache */
 static void slabcache_insert(struct kmemcache *, struct kmemslabs *, u_long, u_long, int, int);
@@ -78,8 +83,16 @@ static void slabcache_remove(struct kmemcache *, struct kmemslabs *, u_long, u_l
 static struct kmemslabs *slabcache_lookup(struct kmemcache *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup_normal(struct kmemcache *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup_reverse(struct kmemcache *, u_long, u_long, int, int);
-static float bucket_percentage(float, float);
+//static float bucket_percentage(float, float);
 static int slots_check(int, int, u_long, u_long);
+
+void kmemslab_init(struct kmemcache **, vm_size_t);
+struct kmemslabs *kmemslab_create(struct kmemcache *, u_long, u_long, int);
+void kmemslab_destroy(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
+void kmemslab_insert(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
+void kmemslab_remove(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
+struct kmemslabs *kmemslab_lookup(struct kmemcache *, u_long, u_long, int);
+
 
 /* check and update slab allocation flags */
 static int
@@ -132,10 +145,10 @@ kmemslab_meta_insert(slab, size, index)
 	meta->ksm_taslots += meta->ksm_aslots;
 
 	/* set the minimum and maximum bucket boundaries */
-	meta->ksm_min = (u_long) bucket_percentage((u_long) meta->ksm_bslots,
-			(u_long) 0); /* lower bucket boundary */
-	meta->ksm_max = (u_long) bucket_percentage((u_long) meta->ksm_bslots,
-			(u_long) 95); /* upper bucket boundary */
+	meta->ksm_min = (u_long)percent((u_long)meta->ksm_bslots,
+			(u_long)0); /* lower bucket boundary */
+	meta->ksm_max = (u_long)percent((u_long)meta->ksm_bslots,
+			(u_long)95); /* upper bucket boundary */
 
 	/* set slab meta to meta */
 	slab->ksl_meta = meta;
@@ -199,9 +212,9 @@ kmemslab_magazine_create(cache, size)
 	index = BUCKETINDX(size);
 	bsize = BUCKETSIZE(index);
 #ifdef OVERLAY
-	mag = (struct kmemslabs_magazine *)omem_alloc(overlay_map, (vm_size_t)(size * sizeof(struct kmemmagazine)));
+	mag = (struct kmemmagazine *)omem_alloc(overlay_map, (vm_size_t)(size * sizeof(struct kmemmagazine)));
 #else
-	mag = (struct kmemslabs_magazine *)kmem_alloc(kernel_map, (vm_size_t)(size * sizeof(struct kmemmagazine)));
+	mag = (struct kmemmagazine *)kmem_alloc(kernel_map, (vm_size_t)(size * sizeof(struct kmemmagazine)));
 #endif
 	CIRCLEQ_INIT(&cache->ksc_maglist);
 	cache->ksc_magcount = 0;
@@ -288,14 +301,14 @@ kmemslab_cache_destroy(cache)
 /* slab functions: new */
 void
 kmemslab_init(cache, size)
-	struct kmemcache *cache;
+	struct kmemcache **cache;
 	vm_size_t size;
 {
 	struct kmemcache *ksc;
 
 	ksc = kmemslab_cache_create(size);
 	if (ksc != NULL) {
-		cache = ksc;
+		*cache = ksc;
 	}
 }
 
@@ -322,12 +335,13 @@ kmemslab_create(cache, size, index, mtype)
 }
 
 void
-kmemslab_destroy(cache, slab, size, index)
+kmemslab_destroy(cache, slab, size, index, mtype)
 	struct kmemcache *cache;
     struct kmemslabs *slab;
 	u_long size, index;
+    int mtype;
 {
-    kmemslab_remove(cache, slab, size, index, slab->ksl_mtype);
+    kmemslab_remove(cache, slab, size, index, mtype);
     slab = NULL;
     cache->ksc_slab = *slab;
 }
@@ -663,12 +677,14 @@ slabcache_lookup_reverse(cache, size, index, mtype, flags)
 }
 
 /* slab's kmembucket percentage */
+/*
 static float
 bucket_percentage(float x, float y)
 {
     float p = ((x / 100) * y);
     return (p);
 }
+*/
 
 /* check slots and return matching slab allocation flags */
 static int
