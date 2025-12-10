@@ -137,8 +137,8 @@ struct kmemcache {
 #define SLAB_EMPTY              0x04        	/* slab empty */
 
 /* slab object types */
-#define SLAB_SMALL              0x08        	/* slab contains small objects */
-#define SLAB_LARGE              0x16        	/* slab contains large objects */
+#define SLAB_SMALL              0x06        	/* slab contains small objects */
+#define SLAB_LARGE              0x08        	/* slab contains large objects */
 
 #ifdef _KERNEL
 #define BUCKETSIZE(indx)	(powertwo(indx))
@@ -186,11 +186,11 @@ struct kmemcache {
 
 /* slot macros */
 /* Number of slots in a bucket */
-#define BUCKET_SLOTS(bsize, size)     	((bsize)/BUCKETINDX(size))
+#define BUCKET_SLOTS(bsize, size)     		((bsize)/BUCKETINDX(size))
 /* Number slots taken by space to be allocated */
-#define ALLOCATED_SLOTS(bsize, size)	(BUCKET_SLOTS(bsize, size)/BUCKETINDX(size))
+#define BUCKET_SLOTS_ALLOCATED(bsize, size)	(BUCKET_SLOTS(bsize, size)/BUCKETINDX(size))
 /* free slots in bucket */
-#define SLOTSFREE(bsize, size)  		(BUCKET_SLOTS(bsize, size) - ALLOCATED_SLOTS(bsize, size))
+#define BUCKET_SLOTS_FREE(bsize, size)  	(BUCKET_SLOTS(bsize, size) - BUCKET_SLOTS_ALLOCATED(bsize, size))
 
 #if defined(KMEMSTATS) || defined(DIAGNOSTIC)
 #define	MALLOC(space, cast, size, type, flags) 						\

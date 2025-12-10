@@ -108,8 +108,8 @@ kmemslab_meta_insert(slab, size, index)
 	meta->ksm_bsize = bsize;
 	meta->ksm_bindx = bindex;
 	meta->ksm_bslots = BUCKET_SLOTS(bsize, size);
-	meta->ksm_aslots = ALLOCATED_SLOTS(bsize, size);
-	meta->ksm_fslots = SLOTSFREE(bsize, size);
+	meta->ksm_aslots = BUCKET_SLOTS_ALLOCATED(bsize, size);
+	meta->ksm_fslots = BUCKET_SLOTS_FREE(bsize, size);
 	if (meta->ksm_fslots < 0) {
 		meta->ksm_fslots = 0;
 	}
@@ -141,13 +141,15 @@ kmemslab_meta_lookup(size, index)
 	u_long size, index;
 {
 	struct kmemmeta *meta;
+
 	simple_lock(&malloc_slock);
 	LIST_FOREACH(meta, &metalist, ksm_list) {
-		if ((meta == &metabucket[index])
-				&& (meta->ksm_bindx == BUCKETINDX(size))
-				&& (meta->ksm_bsize == BUCKETSIZE(index))) {
-			simple_unlock(&malloc_slock);
-			return (meta);
+		if (meta == &metabucket[index]) {
+			if ((meta->ksm_bindx == BUCKETINDX(size))
+					&& (meta->ksm_bsize == BUCKETSIZE(index))) {
+				simple_unlock(&malloc_slock);
+				return (meta);
+			}
 		}
 	}
 	simple_unlock(&malloc_slock);
@@ -166,10 +168,10 @@ kmemslab_meta_remove(slab, size, index)
 		meta->ksm_tbslots -= meta->ksm_bslots;
 		meta->ksm_tfslots -= meta->ksm_fslots;
 		meta->ksm_taslots -= meta->ksm_aslots;
-        /* remove meta from slab */
-        if (meta->ksm_slab == slab) {
-            slab->ksl_meta = meta;
-        }
+		/* remove meta from slab */
+		if (meta->ksm_slab == slab) {
+			slab->ksl_meta = meta;
+		}
 		LIST_REMOVE(meta, ksm_list);
 		meta->ksm_refcnt--;
 	}

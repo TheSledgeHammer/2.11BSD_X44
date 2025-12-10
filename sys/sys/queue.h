@@ -91,8 +91,9 @@ struct name {															\
 	struct type *slh_first;	/* first element */							\
 }
 
-#define	SLIST_HEAD_INITIALIZER(head)									\
-	{ NULL }
+#define	SLIST_HEAD_INITIALIZER(head) { 									\
+	NULL 																\
+}
 
 #define	SLIST_ENTRY(type)												\
 struct {																\
@@ -191,9 +192,9 @@ struct {																\
 }
 
 #define LIST_INSERT_BEFORE(listelm, elm, field) {						\
-        (elm)->field.le_prev = (listelm)->field.le_prev;                    \
-        (elm)->field.le_next = (listelm);				\
-	*(listelm)->field.le_prev = (elm);					\
+        (elm)->field.le_prev = (listelm)->field.le_prev;                \
+        (elm)->field.le_next = (listelm);								\
+	*(listelm)->field.le_prev = (elm);									\
 	(listelm)->field.le_prev = &(elm)->field.le_next;					\
 }
 
@@ -461,10 +462,11 @@ struct {																\
 #define	TAILQ_END(head)				(NULL)
 #define	TAILQ_NEXT(elm, field)		((elm)->field.tqe_next)
 //#define	TAILQ_PREV(elm, field)		((elm)->field.tqe_prev)
-#define	TAILQ_LAST(head, headname) \
+
+#define	TAILQ_LAST(head, headname) 										\
 		(*(((struct headname *)(void *)((head)->tqh_last))->tqh_last))
 
-#define	TAILQ_PREV(elm, headname, field) \
+#define	TAILQ_PREV(elm, headname, field) 								\
 		(*(((struct headname *)(void *)((elm)->field.tqe_prev))->tqh_last))
 #define	TAILQ_EMPTY(head)			(TAILQ_FIRST(head) == TAILQ_END(head))
 
@@ -558,7 +560,7 @@ struct name {															\
 }
 
 #define	CIRCLEQ_HEAD_INITIALIZER(head)	{ 								\
-	NULL, &(head).cqh_first												\
+	NULL, (void *)&(head).cqh_first										\
 }
 
 #define CIRCLEQ_ENTRY(type)												\
@@ -654,6 +656,7 @@ struct {																\
 	(((elm)->field.cqe_next == CIRCLEQ_END(head))						\
 	    ? ((head)->cqh_first)											\
 	    : (elm->field.cqe_next))
+
 #define CIRCLEQ_LOOP_PREV(head, elm, field)								\
 	(((elm)->field.cqe_prev == CIRCLEQ_END(head))						\
 	    ? ((head)->cqh_last)											\

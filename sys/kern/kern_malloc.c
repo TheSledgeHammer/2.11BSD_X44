@@ -129,39 +129,24 @@ struct freelist {
 };
 #endif /* DIAGNOSTIC */
 
-void
-kmembucket_init(void)
-{
-	register long indx;
-
-	/* Initialize buckets */
-	for (indx = 0; indx < MINBUCKET + 16; indx++) {
-		/* slabs */
-		slabbucket[indx].ksl_bucket = &bucket[indx];
-		slabbucket[indx].ksl_meta = &metabucket[indx];
-		/* meta */
-		metabucket[indx].ksm_slab = &slabbucket[indx];
-	}
-}
-
 struct kmembuckets *
 kmembucket_alloc(cache, size, index, mtype)
 	struct kmemcache *cache;
 	unsigned long size, index;
 	int mtype;
 {
-    register struct kmemslabs *slab;
-    register struct kmembuckets *kbp;
+	register struct kmemslabs *slab;
+	register struct kmembuckets *kbp;
 
-    slab = kmemslab_create(cache, size, index, mtype);
-    if (slab != NULL) {
-        kbp = slab->ksl_bucket;
-    }
-    if (kbp != NULL) {
-        kmemslab_insert(cache, slab, size, index, mtype);
-        return (kbp);
-    }
-    return (NULL);
+	slab = kmemslab_create(cache, size, index, mtype);
+	if (slab != NULL) {
+		kbp = slab->ksl_bucket;
+	}
+	if (kbp != NULL) {
+		kmemslab_insert(cache, slab, size, index, mtype);
+		return (kbp);
+	}
+	return (NULL);
 }
 
 struct kmembuckets *
@@ -191,13 +176,13 @@ kmembucket_destroy(cache, kbp, size, index, mtype)
 	unsigned long size, index;
 	int mtype;
 {
-    register struct kmemslabs *slab;
-    register struct kmembuckets *skbp;
+	register struct kmemslabs *slab;
+	register struct kmembuckets *skbp;
 
-    slab = kmemslab_lookup(cache, size, index, mtype);
-    if (slab != NULL) {
-        skbp = slab->ksl_bucket;
-    }
+	slab = kmemslab_lookup(cache, size, index, mtype);
+	if (slab != NULL) {
+		skbp = slab->ksl_bucket;
+	}
 	if (skbp != NULL) {
 		if (kbp != NULL) {
 			if (skbp == kbp) {
@@ -238,19 +223,19 @@ malloc(size, type, flags)
 #endif
 
 	kbp = kmembucket_alloc(&slabcache, size, BUCKETINDX(size), type);
-    s = splimp();
-    simple_lock(&malloc_slock);
+	s = splimp();
+	simple_lock(&malloc_slock);
 #ifdef KMEMSTATS
-    while (ksp->ks_memuse >= ksp->ks_limit) {
-    	if (flags & M_NOWAIT) {
-    		splx(s);
-    		return ((void *) NULL);
-    	}
-    	if (ksp->ks_limblocks < 65535)
-    		ksp->ks_limblocks++;
-    	tsleep((caddr_t)ksp, PSWP+2, memname[type], 0);
-    }
-    ksp->ks_size |= 1 << indx;
+	while (ksp->ks_memuse >= ksp->ks_limit) {
+		if (flags & M_NOWAIT) {
+			splx(s);
+			return ((void *)NULL);
+		}
+		if (ksp->ks_limblocks < 65535)
+			ksp->ks_limblocks++;
+		tsleep((caddr_t)ksp, PSWP + 2, memname[type], 0);
+	}
+	ksp->ks_size |= 1 << indx;
 #endif
 #ifdef DIAGNOSTIC
     copysize = 1 << indx < MAX_COPY ? 1 << indx : MAX_COPY;
@@ -267,17 +252,17 @@ malloc(size, type, flags)
 		} else {
 			allocsize = 1 << indx;
 		}
-    	npg = clrnd(btoc(allocsize));
-    	va = (caddr_t)vmembucket_malloc(size, flags);
-        if (va == NULL) {
+		npg = clrnd(btoc(allocsize));
+		va = (caddr_t)vmembucket_malloc(size, flags);
+		if (va == NULL) {
         	splx(s);
 #ifdef DEBUG
         if (flags & (M_NOWAIT | M_CANFAIL))
         	panic("malloc: out of space in kmem_map");
 #endif
-        	return ((void *) NULL);
+        	return ((void *)NULL);
         }
-        simple_lock(&malloc_slock);
+		simple_lock(&malloc_slock);
 #ifdef KMEMSTATS
 		kbp->kb_total += kbp->kb_elmpercl;
 #endif
@@ -315,7 +300,7 @@ malloc(size, type, flags)
 		freep->next = savedlist;
 		if (kbp->kb_last == NULL)
 			kbp->kb_last = (caddr_t)freep;
-    }
+	}
     va = kbp->kb_next;
     kbp->kb_next = ((struct freelist *)va)->next;
 #ifdef DIAGNOSTIC
@@ -370,7 +355,7 @@ out:
 	splx(s);
 	if ((flags & M_ZERO) && va != NULL)
 		bzero(va, size);
-	return ((void *) va);
+	return ((void *)va);
 }
 
 /* Free a block of memory allocated by malloc */
@@ -449,13 +434,13 @@ free(addr, type)
 	ksp->ks_memuse -= size;
 	if (ksp->ks_memuse + size >= ksp->ks_limit
 			&& ksp->ks_memuse < ksp->ks_limit)
-		wakeup((caddr_t) ksp);
+		wakeup((caddr_t)ksp);
 	ksp->ks_inuse--;
 #endif
 	if (kbp->kb_next == NULL)
 		kbp->kb_next = addr;
 	else
-		((struct freelist*) kbp->kb_last)->next = addr;
+		((struct freelist *)kbp->kb_last)->next = addr;
 	freep->next = NULL;
 	kbp->kb_last = addr;
 	if (kbp == NULL) {
@@ -585,6 +570,19 @@ calloc(nitems, size, type, flags)
 	return (addr);
 }
 
+/* Initialize buckets */
+void
+kmembucket_init(void)
+{
+	for (indx = 0; indx < MINBUCKET + 16; indx++) {
+		/* slabs */
+		slabbucket[indx].ksl_bucket = &bucket[indx];
+		slabbucket[indx].ksl_meta = &metabucket[indx];
+		/* meta */
+		metabucket[indx].ksm_slab = &slabbucket[indx];
+	}
+}
+
 /* Initialize the kernel memory allocator */
 void
 kmeminit(void)
@@ -609,7 +607,6 @@ kmeminit(void)
 	kmembucket_init();
 	kmemusage = (struct kmemusage *)kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
 	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
-
 #ifdef OVERLAY
 	omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG));
 #endif
@@ -617,11 +614,12 @@ kmeminit(void)
 #ifdef KMEMSTATS
 	for (indx = 0; indx < MINBUCKET + 16; indx++) {
 		if (1 << indx >= CLBYTES) {
-			slabbucket[indx].ksl_bucket->kb_elmpercl = 1;
+			bucket[indx].kb_elmpercl = 1;
 		} else {
-			slabbucket[indx].ksl_bucket->kb_elmpercl = CLBYTES / (1 << indx);
+			bucket[indx].kb_elmpercl = CLBYTES / (1 << indx);
 		}
-		slabbucket[indx].ksl_bucket->kb_highwat = 5	* slabbucket[indx].ksl_bucket->kb_elmpercl;
+		bucket[indx].kb_highwat = 5	* bucket[indx].kb_elmpercl;
+		slabbucket[indx].ksl_bucket = &bucket[indx];
 	}
 	for (indx = 0; indx < M_LAST; indx++) {
 		kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
