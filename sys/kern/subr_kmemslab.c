@@ -67,7 +67,7 @@ static void slabcache_remove(struct kmemcache *, struct kmemslabs *, u_long, u_l
 static struct kmemslabs *slabcache_lookup(struct kmemcache *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup_normal(struct kmemcache *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup_reverse(struct kmemcache *, u_long, u_long, int, int);
-static int slots_check(int, int, u_long, u_long);
+static int slab_state(int, int, u_long, u_long);
 
 /* check and update slab allocation flags */
 static int
@@ -76,9 +76,9 @@ slab_check(meta)
 {
 	int fslotchk, aslotchk, bslotchk;
 
-	bslotchk = slots_check(meta->ksm_bslots, meta->ksm_tbslots, meta->ksm_min, meta->ksm_max);
-	fslotchk = slots_check(meta->ksm_fslots, meta->ksm_tfslots, meta->ksm_min, meta->ksm_max);
-	aslotchk = slots_check(meta->ksm_aslots, meta->ksm_taslots, meta->ksm_min, meta->ksm_max);
+	bslotchk = slab_state(meta->ksm_bslots, meta->ksm_tbslots, meta->ksm_min, meta->ksm_max);
+	fslotchk = slab_state(meta->ksm_fslots, meta->ksm_tfslots, meta->ksm_min, meta->ksm_max);
+	aslotchk = slab_state(meta->ksm_aslots, meta->ksm_taslots, meta->ksm_min, meta->ksm_max);
 	return (bslotchk ? fslotchk : aslotchk);
 }
 
@@ -649,7 +649,7 @@ slabcache_lookup_reverse(cache, size, index, mtype, flags)
 
 /* check slots and return matching slab allocation flags */
 static int
-slots_check(slots, tslots, min, max)
+slab_state(slots, tslots, min, max)
 	int slots, tslots;
 	u_long min, max;
 {
