@@ -396,9 +396,12 @@ retry:
 		return (mag->ksm_object);
 	}
 	if (retries < 2) {
-		if (mp->kscp_rounds_current == 0 || mp->kscp_rounds_previous == 0) {
-			retries++;
-			goto retry;
+		if (mag != mp->kscp_magazine_current
+				|| mag != mp->kscp_magazine_previous) {
+			if (mp->kscp_rounds_current == 0 || mp->kscp_rounds_previous == 0) {
+				retries++;
+				goto retry;
+			}
 		}
 	}
 	return (NULL);
