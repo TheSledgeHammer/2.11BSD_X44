@@ -177,66 +177,6 @@ kmemslab_meta_remove(slab, size, index)
 	}
 }
 
-/* slab magazine functions */
-struct kmemmagazine *
-kmemslab_magazine_create(cache, size, index)
-	struct kmemcache *cache;
-	u_long size, index;
-{
-	register struct kmemmagazine *mag;
-
-	mag = &magazinebucket[index];
-	CIRCLEQ_INIT(&maglist);
-	//mag->ksm_maxslots = SLOTSFREE(bsize, size);
-	mag->ksm_freeslots = mag->ksm_maxslots;
-	cache->ksc_magazine = *mag;
-	return (mag);
-}
-
-void
-kmemslab_magazine_destroy(cache, mag)
-	struct kmemcache *cache;
-	struct kmemmagazine *mag;
-{
-	if (mag != NULL) {
-#ifdef OVERLAY
-		omem_free(overlay_map, (vm_offset_t)mag, (vm_size_t)sizeof(struct kmemmagazine));
-#else
-		kmem_free(kernel_map, (vm_offset_t)mag, (vm_size_t)sizeof(struct kmemmagazine));
-#endif
-	}
-}
-
-void
-kmemslab_magazine_insert(cache, mag, flags, stype)
-	struct kmemcache *cache;
-	struct kmemmagazine *mag;
-	int flags, stype;
-{
-	simple_lock(&malloc_slock);
-	if (stype == SLAB_SMALL) {
-		CIRCLEQ_INSERT_HEAD(&maglist, mag, ksm_list);
-	} else {
-		CIRCLEQ_INSERT_TAIL(&maglist, mag, ksm_list);
-	}
-	mag->ksm_freeslots--;
-	simple_unlock(&malloc_slock);
-	cache->ksc_magcount++;
-}
-
-void
-kmemslab_magazine_remove(cache, mag, flags)
-	struct kmemcache *cache;
-	struct kmemmagazine *mag;
-	int flags;
-{
-	simple_lock(&malloc_slock);
-	CIRCLEQ_REMOVE(&maglist, mag, ksm_list);
-	mag->ksm_freeslots++;
-	simple_unlock(&malloc_slock);
-	cache->ksc_magcount--;
-}
-
 /* slabcache functions */
 struct kmemcache *
 kmemslab_cache_create(size)
@@ -252,7 +192,7 @@ kmemslab_cache_create(size)
 	CIRCLEQ_INIT(&cache->ksc_slablist_partial);
 	CIRCLEQ_INIT(&cache->ksc_slablist_full);
 	cache->ksc_slabcount = 0;
-	cache->ksc_magcount = 0;
+	cache->ksc_depotcount = 0;
 	return (cache);
 }
 
@@ -443,26 +383,6 @@ kmemslab_lookup(cache, size, index, mtype)
 	}
 	return (slab);
 }
-
-/*
-struct kmemslabs *
-kmemslab_get_by_size(cache, size, mtype)
-	struct kmemcache *cache;
-	u_long size;
-	int	mtype;
-{
-	return (kmemslab_lookup(cache, size, BUCKETINDX(size), mtype));
-}
-
-struct kmemslabs *
-kmemslab_get_by_index(cache, index, mtype)
-	struct kmemcache *cache;
-	u_long index;
-	int mtype;
-{
-	return (kmemslab_lookup(cache, BUCKETSIZE(index), index, mtype));
-}
-*/
 
 /* internal slabcache functions */
 static void

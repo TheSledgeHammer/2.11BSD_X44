@@ -44,61 +44,15 @@
 #include <sys/systm.h>
 #include <sys/map.h>
 #include <sys/kernel.h>
+#include <sys/queue.h>
+#include <sys/malloc.h>
 
 #include <arch/i386/include/param.h>
 
-/* magazine flags */
-#define MAGAZINE_FULL		0x10	/* magazine full ((i.e. space left) rounds is greater than 0) */
-#define MAGAZINE_EMPTY		0x12	/* magazine empty ((i.e. no space left) rounds equals 0)*/
-
-#define MAGAZINE_CAPACITY       64      /* magazine capacity (number of rounds in each magazine) */
-#define MAGAZINE_DEPOT_MAX	2 	/* number of active depots in use at once per cpu */
-
-/* magazines */
-struct kmemmagazine {
-    	LIST_ENTRY(kmemmagazine) ksm_list;   	/* magazine list */
-	void		 	*ksm_object; 	/* magazine object */
-	u_long			ksm_size;	/* magazine size */
-	u_long			ksm_index;   	/* magazine index */
-	int 			ksm_flags;	/* magazine flags */
-    	int 			ksm_rounds; 	/* magazine rounds */
-};
-
-struct kmemmagazine_depot {
-	LIST_HEAD(, kmemmagazine) ksmd_magazinelist_empty;	/* magazine empty list */
-	LIST_HEAD(, kmemmagazine) ksmd_magazinelist_full;	/* magazine full list */
-	int 			ksmd_capacity;			/* capacity per magazine */
-	struct kmemmagazine     ksmd_magazine;			/* magazine back-pointer */
-	int 			ksmd_magcount; 		    	/* number of magazines counter */
-};
-
-struct kmemcache_percpu {
-	struct kmemmagazine 	*kscp_magazine_current;
-	struct kmemmagazine 	*kscp_magazine_previous;
-	int 			kscp_rounds_current;
-	int			kscp_rounds_previous;
-};
-
-struct kmem_ops {
-	void (*kmops_init)(struct kmemcache *, vm_size_t);
-	void (*kmops_alloc)(struct kmemcache *, void *, u_long, u_long, int);
-	void (*kmops_free)(struct kmemcache *, void *, u_long, u_long, int);
-	void (*kmops_destroy)(struct kmemcache *, void *, u_long, u_long, int);
-};
-
-struct kmemcache {
-	CIRCLEQ_HEAD(, kmemslabs) ksc_slablist_empty;	/* slab empty list */
-	CIRCLEQ_HEAD(, kmemslabs) ksc_slablist_partial;	/* slab partial list */
-	CIRCLEQ_HEAD(, kmemslabs) ksc_slablist_full;	/* slab full list */
-	struct kmemslabs 	ksc_slab;		/* slab back-pointer */
-	int 			ksc_slabcount; 		/* number of slabs counter */
-
-	struct kmemmagazine_depot ksc_depot; 		/* magazine depot */
-	int 			ksc_depotcount; 	/* number of magazine depot counter */
-
-	struct kmem_ops 	*ksc_ops;
-	struct kmemcache_percpu *ksc_percpu;
-};
+void kmemslab_init(struct kmemcache *, vm_size_t);
+void *kmemslab_alloc(struct kmemcache *, void *, u_long, u_long, int);
+void kmemslab_free(struct kmemcache *, void *, u_long, u_long, int);
+void kmemslab_destroy(struct kmemcache *, void *, u_long, u_long, int);
 
 struct kmem_ops kmemslab_ops = {
 		.kmops_init = kmemslab_init,
@@ -108,16 +62,16 @@ struct kmem_ops kmemslab_ops = {
 };
 
 struct kmemmagazine_depot magazinedepot[MAGAZINE_DEPOT_MAX];
-struct kmemcache_percpu slabcachemp[NCPUS];
+struct kmemcpu_cache slabcachemp[NCPUS];
 
 static int magazine_state(int);
 
-struct kmemcache_percpu *
+struct kmemcpu_cache *
 slabcache_mp_create(mag, ncpus, capacity)
 	struct kmemmagazine *mag;
 	int ncpus, capacity;
 {
-	struct kmemcache_percpu *cachemp;
+	struct kmemcpu_cache *cachemp;
 
 	cachemp = &slabcachemp[ncpus];
 	cachemp->kscp_rounds_current = capacity;
@@ -378,39 +332,6 @@ magazine_state(nrounds)
 	return (rval);
 }
 
-void *
-cache_alloc(cache, object, size, index)
-	struct kmemcache *cache;
-	void *object;
-	unsigned long size, index;
-{
-	struct kmemmagazine_depot *depot, *depots[MAGAZINE_DEPOT_MAX];
-	struct kmemcache_percpu *cachemp;
-	int ndepots, cpuid, roundsleft;
-
-	for (ndepots = 0; ndepots < MAGAZINE_DEPOT_MAX; ndepots++) {
-		depots[ndepots] = depot_create(cache, ndepots, MAGAZINE_CAPACITY);
-	}
-
-	roundsleft = 0;
-	depot = depots[0];
-	for (cpuid = 0; cpuid < NCPUS; cpuid++) {
-		cachemp = &cache->ksc_percpu[cpuid];
-		cachemp->kscp_magazine_current = magazine_create(depot, object, size,
-				index, MAGAZINE_EMPTY);
-		cachemp->kscp_magazine_previous = magazine_create(depot, object, size,
-				index, MAGAZINE_EMPTY);
-	}
-	struct kmemmagazine *mag;
-
-	for (ndepots = 0; ndepots < MAGAZINE_DEPOT_MAX; ndepots++) {
-		mag = magazine_create(depot, object, size, index, MAGAZINE_EMPTY);
-		if (mag != NULL) {
-			magazine_insert(depot, mag, object, size, index, &roundsleft);
-		}
-	}
-}
-
 struct kmemmeta *
 magazine_check(size, index)
 	unsigned long size, index;
@@ -425,6 +346,110 @@ magazine_check(size, index)
 }
 
 void
+object_alloc(cache, depot, object, size, index, ndepots)
+	struct kmemcache *cache;
+	struct kmemmagazine_depot **depot;
+	void *object;
+	unsigned long size, index;
+	int ndepots;
+{
+	register struct kmemmagazine_depot *dep;
+	register struct kmemcpu_cache *mp;
+	int cpuid;
+
+	dep = depot_create(cache, ndepots, MAGAZINE_CAPACITY);
+	for (cpuid = 0; cpuid < NCPUS; cpuid++) {
+		mp = &cache->ksc_percpu[cpuid];
+		mp->kscp_magazine_current = magazine_create(dep, object, size, index,
+				MAGAZINE_EMPTY);
+		mp->kscp_magazine_previous = magazine_create(dep, object, size, index,
+				MAGAZINE_EMPTY);
+	}
+	*depot = dep;
+}
+
+void *
+object_put(cache, depot, object, size, index, cpuid)
+	struct kmemcache *cache;
+	struct kmemmagazine_depot *depot;
+	void *object;
+	unsigned long size, index;
+	int cpuid;
+{
+	register struct kmemmagazine *mag;
+	register struct kmemcpu_cache *mp;
+	int retries;
+
+	retries = 0;
+	mp = &cache->ksc_percpu[cpuid];
+retry:
+	if (mp->kscp_rounds_current > 0) {
+		mag = mp->kscp_magazine_current;
+		magazine_insert(depot, mag, object, size, index,
+				&mp->kscp_rounds_current);
+		return (mag->ksm_object);
+	}
+	if (mp->kscp_rounds_previous > 0) {
+		mag = mp->kscp_magazine_previous;
+		magazine_insert(depot, mag, object, size, index,
+				&mp->kscp_rounds_previous);
+		return (mag->ksm_object);
+	}
+	if (retries < 2) {
+		if (mp->kscp_rounds_current == 0 || mp->kscp_rounds_previous == 0) {
+			retries++;
+			goto retry;
+		}
+	}
+	return (NULL);
+}
+
+void *
+object_get(cache, depot, object, size, index, cpuid)
+	struct kmemcache *cache;
+	struct kmemmagazine_depot *depot;
+	void *object;
+	unsigned long size, index;
+	int cpuid;
+{
+	register struct kmemmagazine *mag;
+	register struct kmemcpu_cache *mp;
+	int retries;
+
+	retries = 0;
+	mp = &cache->ksc_percpu[cpuid];
+retry:
+	if (mp->kscp_magazine_current != NULL) {
+		mag = magazine_lookup(depot, object, size, index,
+				&mp->kscp_rounds_current);
+		if (mag == mp->kscp_magazine_current) {
+			magazine_remove(depot, mag, object, size, index,
+					&mp->kscp_rounds_current);
+			return (mag->ksm_object);
+		}
+	}
+	if (mp->kscp_magazine_previous != NULL) {
+		mag = magazine_lookup(depot, object, size, index,
+				&mp->kscp_rounds_previous);
+		if (mag == mp->kscp_magazine_previous) {
+			magazine_remove(depot, mag, object, size, index,
+					&mp->kscp_rounds_previous);
+			return (mag->ksm_object);
+		}
+	}
+	if (retries < 2) {
+		if (mag != mp->kscp_magazine_current
+				|| mag != mp->kscp_magazine_previous) {
+			if (mp->kscp_rounds_current > 0 || mp->kscp_rounds_previous > 0) {
+				retries++;
+				goto retry;
+			}
+		}
+	}
+	return (NULL);
+}
+
+void
 slab_alloc(cache, object, size, index, mtype)
 	struct kmemcache *cache;
 	void *object;
@@ -432,7 +457,9 @@ slab_alloc(cache, object, size, index, mtype)
 	int mtype;
 {
 	register struct kmemslabs *slab;
+	register struct kmemmagazine *mag;
 	register struct kmembuckets *kbp;
+
 	struct kmemmeta *meta;
 
 	/* create & allocate slab */
@@ -460,6 +487,60 @@ slab_alloc(cache, object, size, index, mtype)
 	if (kbp != NULL) {
 		kmemslab_insert(cache, slab, size, index, mtype);
 	}
+}
+
+void
+kmemslab_init(cache, size)
+	struct kmemcache *cache;
+	vm_size_t size;
+{
+	struct kmem_ops *ops;
+
+	op = &cache->ksc_ops;
+
+	(*ops->kmops_init)(cache, size);
+}
+
+void *
+kmemslab_alloc(cache, object, size, index, mtype)
+	struct kmemcache *cache;
+	void *object;
+	unsigned long size, index;
+	int mtype;
+{
+	struct kmem_ops *ops;
+
+	op = &cache->ksc_ops;
+
+	return ((*ops->kmops_alloc)(cache, object, size, index, mtype));
+}
+
+void
+kmemslab_free(cache, object, size, index, mtype)
+	struct kmemcache *cache;
+	void *object;
+	unsigned long size, index;
+	int mtype;
+{
+	struct kmem_ops *ops;
+
+	op = &cache->ksc_ops;
+
+	(*ops->kmops_free)(cache, object, size, index, mtype);
+}
+
+void
+kmemslab_destroy(cache, object, size, index, mtype)
+	struct kmemcache *cache;
+	void *object;
+	unsigned long size, index;
+	int mtype;
+{
+	struct kmem_ops *ops;
+
+	op = &cache->ksc_ops;
+
+	(*ops->kmops_destroy)(cache, object, size, index, mtype);
 }
 
 void *

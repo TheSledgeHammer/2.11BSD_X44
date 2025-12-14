@@ -82,10 +82,10 @@ struct kmembuckets {
 
 /* Per-Slab Metadata */
 struct kmemmeta {
-	LIST_ENTRY(kmemmeta) ksm_list;	/* list of slab metadata */
-	struct kmemslabs 	*ksm_slab; 	/* what slab i am in */
+	LIST_ENTRY(kmemmeta) 		ksm_list;	/* list of slab metadata */
+	struct kmemslabs 		*ksm_slab; 	/* what slab i am in */
 
-	int 				ksm_bslots;  /* bucket slots (per bucket) */
+	int 				ksm_bslots;  	/* bucket slots (per bucket) */
 	int 				ksm_aslots;	/* allocated slots (per bucket) */
 	int 				ksm_fslots;	/* slots free (per bucket) */
 	u_long 				ksm_bsize;	/* bucket size  */
@@ -93,42 +93,79 @@ struct kmemmeta {
 	u_long 				ksm_min;	/* bucket minimum boundary */
 	u_long 				ksm_max;	/* bucket maximum boundary */
 
-	int 				ksm_tbslots;/* total bucket slots */
-	int 				ksm_taslots;/* total allocated slots  */
-	int 				ksm_tfslots;/* total free slots  */
-	int 				ksm_refcnt; /* meta refcnt */
+	int 				ksm_tbslots;	/* total bucket slots */
+	int 				ksm_taslots;	/* total allocated slots  */
+	int 				ksm_tfslots;	/* total free slots  */
+	int 				ksm_refcnt; 	/* meta refcnt */
 };
 
 /* A Slab for each set of buckets */
 struct kmemslabs {
-	CIRCLEQ_ENTRY(kmemslabs) ksl_empty;	/* slab empty list */
-	CIRCLEQ_ENTRY(kmemslabs) ksl_partial;  	/* slab partial list */
-	CIRCLEQ_ENTRY(kmemslabs) ksl_full;     	/* slab full list */
-    struct kmembuckets	*ksl_bucket;	/* slab kmembucket */
-    struct kmemmeta		*ksl_meta;	/* slab metadata */
-    u_long				ksl_size;	/* slab size */
-    int					ksl_mtype;	/* malloc type */
-    int					ksl_stype;	/* slab type: see below */
-    int					ksl_flags;	/* slab flags */
+	CIRCLEQ_ENTRY(kmemslabs) 	ksl_empty;	/* slab empty list */
+	CIRCLEQ_ENTRY(kmemslabs) 	ksl_partial;  	/* slab partial list */
+	CIRCLEQ_ENTRY(kmemslabs) 	ksl_full;  	/* slab full list */
+    	struct kmembuckets		*ksl_bucket;	/* slab kmembucket */
+    	struct kmemmeta			*ksl_meta;	/* slab metadata */
+    	u_long				ksl_size;	/* slab size */
+    	int				ksl_mtype;	/* malloc type */
+    	int				ksl_stype;	/* slab type: see below */
+    	int				ksl_flags;	/* slab flags */
 };
 
 /* WIP */
-/* Slab Magazine */
+/* Slab Magazine's */
 struct kmemmagazine {
-    CIRCLEQ_ENTRY(kmemmagazine) ksm_list;    	/* slab magazine list */
-    int 				ksm_maxslots;   /* maxslots available in magazine list   */
-    int 				ksm_freeslots;  /* freeslots available int magazine list  */
+	LIST_ENTRY(kmemmagazine) 	ksm_list;	/* slab magazine list */
+    	void 				*ksm_object;	/* magazine object */
+	u_long				ksm_size;	/* magazine size */
+	u_long				ksm_index;	/* magazine index */
+	int 				ksm_flags;	/* magazine flags */
+	int 				ksm_rounds; 	/* magazine rounds */
+};
+
+/* magazine flags */
+#define MAGAZINE_FULL		0x10	/* magazine full ((i.e. space left) rounds is greater than 0) */
+#define MAGAZINE_EMPTY		0x12	/* magazine empty ((i.e. no space left) rounds equals 0)*/
+
+#define MAGAZINE_CAPACITY 	64      /* magazine capacity (number of rounds in each magazine) */
+#define MAGAZINE_DEPOT_MAX	2 	/* number of active depots in use at once per cpu */
+
+/* Slab Magazine Depot */
+struct kmemmagazine_depot {
+	LIST_HEAD(, kmemmagazine) 	ksmd_magazinelist_empty; /* magazine empty list */
+	LIST_HEAD(, kmemmagazine) 	ksmd_magazinelist_full; /* magazine full list */
+	struct kmemmagazine 		ksmd_magazine;	/* magazine back-pointer */
+	int 				ksmd_capacity;	/* capacity per magazine */
+	int 				ksmd_magcount; 	/* number of magazines counter */
+};
+
+/* Slab CPU Cache */
+struct kmemcpu_cache {
+	struct kmemmagazine 		*kscp_magazine_current;	/* cpu's currently loaded magazine */
+	struct kmemmagazine 		*kscp_magazine_previous;/* cpu's previously loaded magazine */
+	int 				kscp_rounds_current;	/* rounds left in current magazine */
+	int 				kscp_rounds_previous;	/* rounds left in previous magazine */
+};
+
+/* Slab Cache Operations */
+struct kmem_ops {
+	void (*kmops_init)(struct kmemcache *, vm_size_t);
+	void (*kmops_alloc)(struct kmemcache *, void *, u_long, u_long, int);
+	void (*kmops_free)(struct kmemcache *, void *, u_long, u_long, int);
+	void (*kmops_destroy)(struct kmemcache *, void *, u_long, u_long, int);
 };
 
 /* Slab Cache */
 struct kmemcache {
-	CIRCLEQ_HEAD(, kmemslabs) ksc_slablist_empty;	/* slab empty list */
-	CIRCLEQ_HEAD(, kmemslabs) ksc_slablist_partial;	/* slab partial list */
-	CIRCLEQ_HEAD(, kmemslabs) ksc_slablist_full;	/* slab full list */
-	struct kmemslabs 	ksc_slab;		/* slab back-pointer */
-	int 				ksc_slabcount; 	/* number of slabs counter */
-	struct kmemmagazine ksc_magazine;	/* magazine back-pointer */
-	int 				ksc_magcount; 	/* number of magazines counter */
+	CIRCLEQ_HEAD(, kmemslabs) 	ksc_slablist_empty;	/* slab empty list */
+	CIRCLEQ_HEAD(, kmemslabs) 	ksc_slablist_partial;	/* slab partial list */
+	CIRCLEQ_HEAD(, kmemslabs) 	ksc_slablist_full;	/* slab full list */
+	struct kmemslabs 		ksc_slab;		/* slab back-pointer */
+	int 				ksc_slabcount; 		/* number of slabs counter */
+	struct kmemmagazine_depot 	ksc_depot;		/* magazine depot */
+	int				ksc_depotcount; 	/* number of magazine depot counter */
+	struct kmem_ops 		*ksc_ops;		/* cache ops */
+	struct kmemcpu_cache 		*ksc_percpu;		/* percpu cache */
 };
 
 /* slab flags */
