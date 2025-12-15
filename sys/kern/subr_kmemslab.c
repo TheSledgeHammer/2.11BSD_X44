@@ -856,7 +856,7 @@ magazine_check(slab, mag)
 {
 	struct kmemmeta *meta;
 
-	meta = kmemslab_meta_lookup(mag->ksm_size, mag->ksm_index);
+	meta = slabmeta_lookup(mag->ksm_size, mag->ksm_index);
 	if (meta != NULL) {
 		if (meta == slab->ksl_meta) {
 			return (meta);
