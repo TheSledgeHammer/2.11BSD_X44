@@ -96,9 +96,9 @@ static void *cpucache_free(struct kmemcache *, struct kmemmagazine_depot *, void
 
 /* kmemslabs: interface */
 void kmemslab_init(struct kmemcache *, vm_size_t);
-void *kmemslab_alloc(struct kmemcache *, void *, u_long, u_long, int, int);
-void *kmemslab_free(struct kmemcache *, void *, u_long, u_long, int, int);
-void kmemslab_destroy(struct kmemcache *, void *, u_long, u_long, int, int);
+void *kmemslab_alloc(struct kmemcache *, void *, u_long, u_long, int);
+void *kmemslab_free(struct kmemcache *, void *, u_long, u_long, int);
+void kmemslab_destroy(struct kmemcache *, void *, u_long, u_long, int);
 
 struct kmem_ops kmemslab_ops = {
 		.kmops_init = kmemslab_init,
