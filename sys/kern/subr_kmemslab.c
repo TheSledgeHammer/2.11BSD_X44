@@ -31,12 +31,6 @@
  * Splitting of slab allocator from kern_malloc, with slab subroutines to
  * interface between kern_malloc and the vm memory management and vmem (future implementation).
  */
-/*
- * TODO: Slab Magazines:
- * - pop/push routines
- * - slots counter on each magazine list
- * - rotating magazines when full
- */
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
@@ -53,40 +47,71 @@
 #include <ovl/include/ovl.h>
 #endif
 
-LIST_HEAD(, kmemmeta) metalist = LIST_HEAD_INITIALIZER(metalist);
-CIRCLEQ_HEAD(, kmemmagazine) maglist;// = CIRCLEQ_HEAD_INITIALIZER(maglist);
+#include <machine/param.h>
 
-static int slab_check(struct kmemmeta *);
+LIST_HEAD(, kmemmeta) metalist = LIST_HEAD_INITIALIZER(metalist);
+
 /* slabmeta */
-static void kmemslab_meta_insert(struct kmemslabs *, u_long, u_long);
-static struct kmemmeta *kmemslab_meta_lookup(u_long, u_long);
-static void kmemslab_meta_remove(struct kmemslabs *, u_long, u_long);
+static void slabmeta_insert(struct kmemslabs *, u_long, u_long);
+static struct kmemmeta *slabmeta_lookup(u_long, u_long);
+static void slabmeta_remove(struct kmemslabs *, u_long, u_long);
+
+/* slab */
+static struct kmemslabs *slab_create(struct kmemcache *, u_long, u_long, int);
+static void slab_destroy(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
+static void slab_insert(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
+static void slab_remove(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
+static struct kmemslabs *slab_lookup(struct kmemcache *, u_long, u_long, int);
+static int slab_state(int, int, u_long, u_long);
+static int slab_check(struct kmemmeta *);
+
 /* slabcache */
+static struct kmemcache *slabcache_create(vm_size_t);
+static void slabcache_destroy(struct kmemcache *);
 static void slabcache_insert(struct kmemcache *, struct kmemslabs *, u_long, u_long, int, int);
 static void slabcache_remove(struct kmemcache *, struct kmemslabs *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup(struct kmemcache *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup_normal(struct kmemcache *, u_long, u_long, int, int);
 static struct kmemslabs *slabcache_lookup_reverse(struct kmemcache *, u_long, u_long, int, int);
-static int slab_state(int, int, u_long, u_long);
 
-/* check and update slab allocation flags */
-static int
-slab_check(meta)
-	struct kmemmeta *meta;
-{
-	int fslotchk, aslotchk, bslotchk;
+/* depot */
+static struct kmemmagazine_depot *depot_create(struct kmemcache *, int, int);
+static void depot_insert(struct kmemmagazine_depot *, struct kmemmagazine *, void *, u_long, u_long, int *, int);
+static struct kmemmagazine *depot_lookup(struct kmemmagazine_depot *, void *, u_long, u_long, int);
+static void depot_remove(struct kmemmagazine_depot *, struct kmemmagazine *, void *, u_long, u_long, int *, int);
 
-	bslotchk = slab_state(meta->ksm_bslots, meta->ksm_tbslots, meta->ksm_min, meta->ksm_max);
-	fslotchk = slab_state(meta->ksm_fslots, meta->ksm_tfslots, meta->ksm_min, meta->ksm_max);
-	aslotchk = slab_state(meta->ksm_aslots, meta->ksm_taslots, meta->ksm_min, meta->ksm_max);
-	return (bslotchk ? fslotchk : aslotchk);
-}
+/* magazine */
+static struct kmemmagazine *magazine_create(struct kmemmagazine_depot *, void *, u_long, u_long, int);
+static void magazine_insert(struct kmemmagazine_depot *, struct kmemmagazine *, void *, u_long, u_long, int *);
+static void magazine_remove(struct kmemmagazine_depot *, struct kmemmagazine *, void *, u_long, u_long, int *);
+static struct kmemmagazine *magazine_lookup(struct kmemmagazine_depot *, void *, u_long, u_long, int *);
+static int magazine_state(int);
+static struct kmemmeta *magazine_check(struct kmemslabs *, struct kmemmagazine *);
+
+/* cpucache */
+static struct kmemcpu_cache *cpucache_create(struct kmemmagazine *, int, int);
+static void cpucache_magazine_alloc(struct kmemcache *, struct kmemmagazine_depot **, void *, u_long, u_long, int);
+static void *cpucache_alloc(struct kmemcache *, struct kmemmagazine_depot *, void *, u_long, u_long, int);
+static void *cpucache_free(struct kmemcache *, struct kmemmagazine_depot *, void *, u_long, u_long, int);
+
+/* kmemslabs: interface */
+void kmemslab_init(struct kmemcache *, vm_size_t);
+void *kmemslab_alloc(struct kmemcache *, void *, u_long, u_long, int, int);
+void *kmemslab_free(struct kmemcache *, void *, u_long, u_long, int, int);
+void kmemslab_destroy(struct kmemcache *, void *, u_long, u_long, int, int);
+
+struct kmem_ops kmemslab_ops = {
+		.kmops_init = kmemslab_init,
+		.kmops_alloc = kmemslab_alloc,
+		.kmops_free = kmemslab_free,
+		.kmops_destroy = kmemslab_destroy,
+};
 
 /* slab metadata functions */
 
 /* calculate slab metadata */
 static void
-kmemslab_meta_insert(slab, size, index)
+slabmeta_insert(slab, size, index)
 	struct kmemslabs *slab;
 	u_long size, index;
 {
@@ -137,7 +162,7 @@ kmemslab_meta_insert(slab, size, index)
 }
 
 static struct kmemmeta *
-kmemslab_meta_lookup(size, index)
+slabmeta_lookup(size, index)
 	u_long size, index;
 {
 	struct kmemmeta *meta;
@@ -157,13 +182,13 @@ kmemslab_meta_lookup(size, index)
 }
 
 static void
-kmemslab_meta_remove(slab, size, index)
+slabmeta_remove(slab, size, index)
 	struct kmemslabs *slab;
 	u_long size, index;
 {
 	struct kmemmeta *meta;
 
-	meta = kmemslab_meta_lookup(size, index);
+	meta = slabmeta_lookup(size, index);
 	if (meta != NULL) {
 		meta->ksm_tbslots -= meta->ksm_bslots;
 		meta->ksm_tfslots -= meta->ksm_fslots;
@@ -178,26 +203,31 @@ kmemslab_meta_remove(slab, size, index)
 }
 
 /* slabcache functions */
-struct kmemcache *
-kmemslab_cache_create(size)
+static struct kmemcache *
+slabcache_create(size)
 	vm_size_t size;
 {
 	struct kmemcache *cache;
+	int cpuid;
 #ifdef OVERLAY
 	cache = (struct kmemcache *)omem_alloc(overlay_map, (vm_size_t)(size * sizeof(struct kmemcache)));
 #else
 	cache = (struct kmemcache *)kmem_alloc(kernel_map, (vm_size_t)(size * sizeof(struct kmemcache)));
 #endif
+	for (cpuid = 0; cpuid < NCPUS; cpuid++) {
+		cache->ksc_percpu = cpucache_create(NULL, cpuid, MAGAZINE_CAPACITY);
+	}
 	CIRCLEQ_INIT(&cache->ksc_slablist_empty);
 	CIRCLEQ_INIT(&cache->ksc_slablist_partial);
 	CIRCLEQ_INIT(&cache->ksc_slablist_full);
+	cache->ksc_ops = &kmemslab_ops;
 	cache->ksc_slabcount = 0;
 	cache->ksc_depotcount = 0;
 	return (cache);
 }
 
-void
-kmemslab_cache_destroy(cache)
+static void
+slabcache_destroy(cache)
 	struct kmemcache *cache;
 {
 	if (cache != NULL) {
@@ -207,181 +237,6 @@ kmemslab_cache_destroy(cache)
 		kmem_free(kernel_map, (vm_offset_t)cache, (vm_size_t)sizeof(struct kmemcache));
 #endif
 	}
-}
-
-/* slab functions: new */
-void
-kmemslab_init(cache, size)
-	struct kmemcache *cache;
-	vm_size_t size;
-{
-	struct kmemcache *ksc;
-
-	ksc = kmemslab_cache_create(size);
-	if (ksc != NULL) {
-		cache = ksc;
-	}
-}
-
-struct kmemslabs *
-kmemslab_create(cache, size, index, mtype)
-	struct kmemcache *cache;
-	u_long size, index;
-	int mtype;
-{
-	register struct kmemslabs *slab;
-
-	slab = &slabbucket[index];
-	slab->ksl_size = size;
-	slab->ksl_mtype = mtype;
-	if (index < 10) {
-		slab->ksl_stype = SLAB_SMALL;
-	} else {
-		slab->ksl_stype = SLAB_LARGE;
-	}
-	/* update metadata */
-	kmemslab_meta_insert(slab, size, index);
-	cache->ksc_slab = *slab;
-	return (slab);
-}
-
-void
-kmemslab_destroy(cache, slab, size, index, mtype)
-	struct kmemcache *cache;
-	struct kmemslabs *slab;
-	u_long size, index;
-	int mtype;
-{
-	kmemslab_remove(cache, slab, size, index, mtype);
-	slab = NULL;
-	cache->ksc_slab = *slab;
-}
-
-void
-kmemslab_insert(cache, slab, size, index, mtype)
-	struct kmemcache *cache;
-	struct kmemslabs *slab;
-	u_long size, index;
-	int mtype;
-{
-	register struct kmemmeta *meta;
-	int rval;
-
-	meta = kmemslab_meta_lookup(size, index);
-	rval = slab_check(meta);
-	switch (rval) {
-	case SLAB_FULL:
-		if ((meta->ksm_tfslots > meta->ksm_min)
-				&& (meta->ksm_tfslots < meta->ksm_max)) {
-			/* full -> partial */
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
-		} else {
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
-		}
-		break;
-	case SLAB_PARTIAL:
-		if (meta->ksm_tfslots >= meta->ksm_max) {
-			/* partial -> full */
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
-		} else if (meta->ksm_tfslots == meta->ksm_min) {
-			/* partial -> empty */
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
-		} else {
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
-		}
-		break;
-	case SLAB_EMPTY:
-		if ((meta->ksm_tfslots > meta->ksm_min)
-				&& (meta->ksm_tfslots < meta->ksm_max)) {
-			/* empty -> partial */
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
-		} else {
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
-		}
-		break;
-	}
-}
-
-void
-kmemslab_remove(cache, slab, size, index, mtype)
-	struct kmemcache *cache;
-	struct kmemslabs *slab;
-	u_long size, index;
-	int mtype;
-{
-	register struct kmemmeta *meta;
-	int rval;
-
-	meta = kmemslab_meta_lookup(size, index);
-	rval = slab_check(meta);
-	switch (rval) {
-	case SLAB_FULL:
-		if ((meta->ksm_tfslots > meta->ksm_min)
-				&& (meta->ksm_tfslots < meta->ksm_max)) {
-			/* full -> partial */
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
-		} else {
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
-		}
-		break;
-	case SLAB_PARTIAL:
-		if (meta->ksm_tfslots >= meta->ksm_max) {
-			/* partial -> full */
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
-		} else if (meta->ksm_tfslots == meta->ksm_min) {
-			/* partial -> empty */
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
-		} else {
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
-		}
-		break;
-	case SLAB_EMPTY:
-		if ((meta->ksm_tfslots > meta->ksm_min)
-				&& (meta->ksm_tfslots < meta->ksm_max)) {
-			/* empty -> partial */
-			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
-		} else {
-			slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
-		}
-		break;
-	}
-}
-
-struct kmemslabs *
-kmemslab_lookup(cache, size, index, mtype)
-	struct kmemcache *cache;
-	u_long size, index;
-	int mtype;
-{
-	register struct kmemslabs *slab;
-	register struct kmemmeta *meta;
-	int rval;
-
-	meta = kmemslab_meta_lookup(size, index);
-	rval = slab_check(meta);
-	switch (rval) {
-	case SLAB_FULL:
-		slab = slabcache_lookup(cache, size, index, mtype, SLAB_FULL);
-		break;
-	case SLAB_PARTIAL:
-		slab = slabcache_lookup(cache, size, index, mtype, SLAB_PARTIAL);
-		break;
-	case SLAB_EMPTY:
-		slab = slabcache_lookup(cache, size, index, mtype, SLAB_EMPTY);
-		break;
-	}
-	if (slab->ksl_meta != meta) {
-		return (NULL);
-	}
-	return (slab);
 }
 
 /* internal slabcache functions */
@@ -429,7 +284,7 @@ slabcache_insert(cache, slab, size, index, mtype, flags)
 	cache->ksc_slabcount++;
 
 	/* update metadata */
-	kmemslab_meta_insert(slab, size, index);
+	slabmeta_insert(slab, size, index);
 }
 
 static void
@@ -458,23 +313,7 @@ slabcache_remove(cache, slab, size, index, mtype, flags)
 	cache->ksc_slabcount--;
 
 	/* update metadata */
-	kmemslab_meta_remove(slab, size, index);
-}
-
-static struct kmemslabs *
-slabcache_lookup(cache, size, index, mtype, flags)
-	struct kmemcache *cache;
-	u_long size, index;
-	int mtype, flags;
-{
-	register struct kmemslabs *slab;
-
-	if (LARGE_OBJECT(size)) {
-		slab = slabcache_lookup_reverse(cache, size, index, mtype, flags);
-	} else {
-		slab = slabcache_lookup_normal(cache, size, index, mtype, flags);
-	}
-	return (slab);
+	slabmeta_remove(slab, size, index);
 }
 
 static struct kmemslabs *
@@ -567,6 +406,184 @@ slabcache_lookup_reverse(cache, size, index, mtype, flags)
 	return (NULL);
 }
 
+static struct kmemslabs *
+slabcache_lookup(cache, size, index, mtype, flags)
+	struct kmemcache *cache;
+	u_long size, index;
+	int mtype, flags;
+{
+	register struct kmemslabs *slab;
+
+	if (LARGE_OBJECT(size)) {
+		slab = slabcache_lookup_reverse(cache, size, index, mtype, flags);
+	} else {
+		slab = slabcache_lookup_normal(cache, size, index, mtype, flags);
+	}
+	return (slab);
+}
+
+/* slab functions: */
+static struct kmemslabs *
+slab_create(cache, size, index, mtype)
+	struct kmemcache *cache;
+	u_long size, index;
+	int mtype;
+{
+	register struct kmemslabs *slab;
+
+	slab = &slabbucket[index];
+	slab->ksl_size = size;
+	slab->ksl_mtype = mtype;
+	if (index < 10) {
+		slab->ksl_stype = SLAB_SMALL;
+	} else {
+		slab->ksl_stype = SLAB_LARGE;
+	}
+	/* update metadata */
+	slabmeta_insert(slab, size, index);
+	cache->ksc_slab = *slab;
+	return (slab);
+}
+
+static void
+slab_destroy(cache, slab, size, index, mtype)
+	struct kmemcache *cache;
+	struct kmemslabs *slab;
+	u_long size, index;
+	int mtype;
+{
+	slab_remove(cache, slab, size, index, mtype);
+	slab = NULL;
+	cache->ksc_slab = *slab;
+}
+
+static void
+slab_insert(cache, slab, size, index, mtype)
+	struct kmemcache *cache;
+	struct kmemslabs *slab;
+	u_long size, index;
+	int mtype;
+{
+	register struct kmemmeta *meta;
+	int rval;
+
+	meta = slabmeta_lookup(size, index);
+	rval = slab_check(meta);
+	switch (rval) {
+	case SLAB_FULL:
+		if ((meta->ksm_tfslots > meta->ksm_min)
+				&& (meta->ksm_tfslots < meta->ksm_max)) {
+			/* full -> partial */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
+		} else {
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
+		}
+		break;
+	case SLAB_PARTIAL:
+		if (meta->ksm_tfslots >= meta->ksm_max) {
+			/* partial -> full */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		} else if (meta->ksm_tfslots == meta->ksm_min) {
+			/* partial -> empty */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		} else {
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		}
+		break;
+	case SLAB_EMPTY:
+		if ((meta->ksm_tfslots > meta->ksm_min)
+				&& (meta->ksm_tfslots < meta->ksm_max)) {
+			/* empty -> partial */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
+		} else {
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
+		}
+		break;
+	}
+}
+
+static void
+slab_remove(cache, slab, size, index, mtype)
+	struct kmemcache *cache;
+	struct kmemslabs *slab;
+	u_long size, index;
+	int mtype;
+{
+	register struct kmemmeta *meta;
+	int rval;
+
+	meta = slabmeta_lookup(size, index);
+	rval = slab_check(meta);
+	switch (rval) {
+	case SLAB_FULL:
+		if ((meta->ksm_tfslots > meta->ksm_min)
+				&& (meta->ksm_tfslots < meta->ksm_max)) {
+			/* full -> partial */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
+		} else {
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_FULL);
+		}
+		break;
+	case SLAB_PARTIAL:
+		if (meta->ksm_tfslots >= meta->ksm_max) {
+			/* partial -> full */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_FULL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		} else if (meta->ksm_tfslots == meta->ksm_min) {
+			/* partial -> empty */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_EMPTY);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		} else {
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_PARTIAL);
+		}
+		break;
+	case SLAB_EMPTY:
+		if ((meta->ksm_tfslots > meta->ksm_min)
+				&& (meta->ksm_tfslots < meta->ksm_max)) {
+			/* empty -> partial */
+			slabcache_insert(cache, slab, size, index, mtype, SLAB_PARTIAL);
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
+		} else {
+			slabcache_remove(cache, slab, size, index, mtype, SLAB_EMPTY);
+		}
+		break;
+	}
+}
+
+static struct kmemslabs *
+slab_lookup(cache, size, index, mtype)
+	struct kmemcache *cache;
+	u_long size, index;
+	int mtype;
+{
+	register struct kmemslabs *slab;
+	register struct kmemmeta *meta;
+	int rval;
+
+	meta = slabmeta_lookup(size, index);
+	rval = slab_check(meta);
+	switch (rval) {
+	case SLAB_FULL:
+		slab = slabcache_lookup(cache, size, index, mtype, SLAB_FULL);
+		break;
+	case SLAB_PARTIAL:
+		slab = slabcache_lookup(cache, size, index, mtype, SLAB_PARTIAL);
+		break;
+	case SLAB_EMPTY:
+		slab = slabcache_lookup(cache, size, index, mtype, SLAB_EMPTY);
+		break;
+	}
+	if (slab->ksl_meta != meta) {
+		return (NULL);
+	}
+	return (slab);
+}
+
 /* check slots and return matching slab allocation flags */
 static int
 slab_state(slots, tslots, min, max)
@@ -590,4 +607,490 @@ slab_state(slots, tslots, min, max)
 		rval = SLAB_EMPTY;
 	}
 	return (rval);
+}
+
+/* check and update slab allocation flags */
+static int
+slab_check(meta)
+	struct kmemmeta *meta;
+{
+	int fslotchk, aslotchk, bslotchk;
+
+	bslotchk = slab_state(meta->ksm_bslots, meta->ksm_tbslots, meta->ksm_min, meta->ksm_max);
+	fslotchk = slab_state(meta->ksm_fslots, meta->ksm_tfslots, meta->ksm_min, meta->ksm_max);
+	aslotchk = slab_state(meta->ksm_aslots, meta->ksm_taslots, meta->ksm_min, meta->ksm_max);
+	return (bslotchk ? fslotchk : aslotchk);
+}
+
+/* magazine depot functions */
+static struct kmemmagazine_depot *
+depot_create(cache, num, capacity)
+	struct kmemcache *cache;
+	int num, capacity;
+{
+	register struct kmemmagazine_depot *depot;
+
+	depot = &magazinedepot[num];
+	LIST_INIT(&depot->ksmd_magazinelist_empty);
+	LIST_INIT(&depot->ksmd_magazinelist_full);
+	depot->ksmd_capacity = capacity;
+	depot->ksmd_magcount = 0;
+	cache->ksc_depot = depot;
+	cache->ksc_depotcount++;
+	return (depot);
+}
+
+static void
+depot_insert(depot, mag, object, size, index, nrounds, flags)
+	struct kmemmagazine_depot *depot;
+	struct kmemmagazine *mag;
+	void *object;
+	u_long size, index;
+	int *nrounds, flags;
+{
+	mag->ksm_object = object;
+	mag->ksm_size = size;
+	mag->ksm_index = index;
+	mag->ksm_flags = flags;
+	simple_lock(&malloc_slock);
+	switch (flags) {
+	case MAGAZINE_FULL:
+		LIST_INSERT_HEAD(&depot->ksmd_magazinelist_full, mag, ksm_list);
+		break;
+	case MAGAZINE_EMPTY:
+		LIST_INSERT_HEAD(&depot->ksmd_magazinelist_empty, mag, ksm_list);
+		break;
+	}
+	simple_unlock(&malloc_slock);
+	mag->ksm_rounds--;
+	*nrounds = mag->ksm_rounds;
+	/* depot update */
+	depot->ksmd_magazine = *mag;
+	depot->ksmd_magcount++;
+}
+
+static struct kmemmagazine *
+depot_lookup(depot, object, size, index, flags)
+	struct kmemmagazine_depot *depot;
+	void *object;
+	u_long size, index;
+	int flags;
+{
+	register struct kmemmagazine *mag;
+
+	simple_lock(&malloc_slock);
+	switch (flags) {
+	case MAGAZINE_FULL:
+		LIST_FOREACH(mag, &depot->ksmd_magazinelist_full, ksm_list) {
+			if (mag == &magazinebucket[index]) {
+				if ((mag->ksm_object == object) && (mag->ksm_size == size)
+						&& (mag->ksm_index == index)) {
+					simple_unlock(&malloc_slock);
+					return (mag);
+				}
+			}
+		}
+		break;
+	case MAGAZINE_EMPTY:
+		LIST_FOREACH(mag, &depot->ksmd_magazinelist_empty, ksm_list) {
+			if (mag == &magazinebucket[index]) {
+				if ((mag->ksm_object == object) && (mag->ksm_size == size)
+						&& (mag->ksm_index == index)) {
+					simple_unlock(&malloc_slock);
+					return (mag);
+				}
+			}
+		}
+		break;
+	}
+	simple_unlock(&malloc_slock);
+	return (NULL);
+}
+
+static void
+depot_remove(depot, mag, object, size, index, nrounds, flags)
+	struct kmemmagazine_depot *depot;
+	struct kmemmagazine *mag;
+	void *object;
+	u_long size, index;
+	int *nrounds, flags;
+{
+	simple_lock(&malloc_slock);
+	if ((mag->ksm_object == object) && (mag->ksm_size == size)
+			&& (mag->ksm_index == index)) {
+		if (flags == (MAGAZINE_FULL | MAGAZINE_EMPTY)) {
+			LIST_REMOVE(mag, ksm_list);
+		}
+	}
+	simple_unlock(&malloc_slock);
+	mag->ksm_rounds++;
+	*nrounds = mag->ksm_rounds;
+	/* depot update */
+	depot->ksmd_magazine = *mag;
+	depot->ksmd_magcount--;
+}
+
+/* magazine functions */
+static struct kmemmagazine *
+magazine_create(depot, object, size, index, flags)
+	struct kmemmagazine_depot *depot;
+	void *object;
+	u_long size, index;
+	int flags;
+{
+	struct kmemmagazine *mag;
+
+	mag = &magazinebucket[index];
+	mag->ksm_object = object;
+	mag->ksm_size = size;
+	mag->ksm_index = index;
+	mag->ksm_flags = flags;
+	mag->ksm_rounds = depot->ksmd_capacity;
+	depot->ksmd_magazine = *mag;
+	return (mag);
+}
+
+static void
+magazine_insert(depot, mag, object, size, index, nrounds)
+	struct kmemmagazine_depot *depot;
+	struct kmemmagazine *mag;
+	void *object;
+	u_long size, index;
+	int *nrounds;
+{
+	int rval;
+
+	rval = magazine_state(*nrounds);
+	switch (rval) {
+	case MAGAZINE_FULL:
+		if (mag->ksm_rounds == 0) {
+			/* full -> empty */
+			depot_insert(depot, mag, object, size, index, nrounds, MAGAZINE_EMPTY);
+		} else {
+			depot_insert(depot, mag, object, size, index, nrounds, MAGAZINE_FULL);
+		}
+		break;
+	case MAGAZINE_EMPTY:
+		if (mag->ksm_rounds > 0) {
+			/* empty -> full */
+			depot_insert(depot, mag, object, size, index, nrounds, MAGAZINE_FULL);
+		} else {
+			depot_insert(depot, mag, object, size, index, nrounds, MAGAZINE_EMPTY);
+		}
+		break;
+	}
+}
+
+static void
+magazine_remove(depot, mag, object, size, index, nrounds)
+	struct kmemmagazine_depot *depot;
+	struct kmemmagazine *mag;
+	void *object;
+	u_long size, index;
+	int *nrounds;
+{
+	int rval;
+
+	rval = magazine_state(*nrounds);
+	switch (rval) {
+	case MAGAZINE_FULL:
+		if (mag->ksm_rounds == 0) {
+			/* full -> empty */
+			depot_remove(depot, mag, object, size, index, nrounds, MAGAZINE_EMPTY);
+		} else {
+			depot_remove(depot, mag, object, size, index, nrounds, MAGAZINE_FULL);
+		}
+		break;
+	case MAGAZINE_EMPTY:
+		if (mag->ksm_rounds > 0) {
+			/* empty -> full */
+			depot_remove(depot, mag, object, size, index, nrounds, MAGAZINE_FULL);
+		} else {
+			depot_remove(depot, mag, object, size, index, nrounds, MAGAZINE_EMPTY);
+		}
+		break;
+	}
+}
+
+static struct kmemmagazine *
+magazine_lookup(depot, object, size, index, nrounds)
+	struct kmemmagazine_depot *depot;
+	void *object;
+	u_long size, index;
+	int *nrounds;
+{
+	struct kmemmagazine *mag;
+	int rval;
+
+	rval = magazine_state(*nrounds);
+	switch (rval) {
+	case MAGAZINE_FULL:
+		mag = depot_lookup(depot, object, size, index, MAGAZINE_FULL);
+		break;
+	case MAGAZINE_EMPTY:
+		mag = depot_lookup(depot, object, size, index, MAGAZINE_EMPTY);
+		break;
+	}
+	return (depot);
+}
+
+static int
+magazine_state(nrounds)
+	int nrounds;
+{
+	int rval;
+
+	rval = 0;
+	if (nrounds > 0) {
+		rval = MAGAZINE_FULL;
+	} else {
+		rval = MAGAZINE_EMPTY;
+	}
+	return (rval);
+}
+
+static struct kmemmeta *
+magazine_check(slab, mag)
+	struct kmemslabs *slab;
+	struct kmemmagazine *mag;
+{
+	struct kmemmeta *meta;
+
+	meta = kmemslab_meta_lookup(mag->ksm_size, mag->ksm_index);
+	if (meta != NULL) {
+		if (meta == slab->ksl_meta) {
+			return (meta);
+		}
+	}
+	return (NULL);
+}
+
+/* cpucache functions */
+static struct kmemcpu_cache *
+cpucache_create(mag, ncpus, capacity)
+	struct kmemmagazine *mag;
+	int ncpus, capacity;
+{
+	register struct kmemcpu_cache *mp;
+
+	mp = &slabcachemp[ncpus];
+	mp->kscp_rounds_current = capacity;
+	mp->kscp_magazine_previous = capacity;
+	mp->kscp_magazine_current = mag;
+	mp->kscp_magazine_previous = mag;
+	return (mp);
+}
+
+static void
+cpucache_magazine_alloc(cache, depot, object, size, index, ndepots)
+	struct kmemcache *cache;
+	struct kmemmagazine_depot **depot;
+	void *object;
+	u_long size, index;
+	int ndepots;
+{
+	register struct kmemcpu_cache *mp;
+	int cpuid;
+
+	for (cpuid = 0; cpuid < NCPUS; cpuid++) {
+		mp = &cache->ksc_percpu[cpuid];
+		mp->kscp_magazine_current = magazine_create(*depot, object, size, index,
+				MAGAZINE_EMPTY);
+		mp->kscp_magazine_previous = magazine_create(*depot, object, size, index,
+				MAGAZINE_EMPTY);
+	}
+}
+
+static void *
+cpucache_alloc(cache, depot, object, size, index, cpuid)
+	struct kmemcache *cache;
+	struct kmemmagazine_depot *depot;
+	void *object;
+	u_long size, index;
+	int cpuid;
+{
+	register struct kmemmagazine *mag;
+	register struct kmemcpu_cache *mp;
+
+	mp = &cache->ksc_percpu[cpuid];
+retry:
+	if (mp->kscp_rounds_current > 0) {
+		mag = mp->kscp_magazine_current;
+		magazine_insert(depot, mag, object, size, index,
+				&mp->kscp_rounds_current);
+		cache->ksc_depot = depot;
+		return (mag->ksm_object);
+	}
+	if (mp->kscp_rounds_previous > 0) {
+		mag = mp->kscp_magazine_previous;
+		magazine_insert(depot, mag, object, size, index,
+				&mp->kscp_rounds_previous);
+		cache->ksc_depot = depot;
+		return (mag->ksm_object);
+	}
+	if (mag != mp->kscp_magazine_current || mag != mp->kscp_magazine_previous) {
+		if (mp->kscp_rounds_current > 0 || mp->kscp_rounds_previous > 0) {
+			goto retry;
+		} else {
+			return (NULL);
+		}
+	}
+	return (NULL);
+}
+
+static void *
+cpucache_free(cache, depot, object, size, index, cpuid)
+	struct kmemcache *cache;
+	struct kmemmagazine_depot *depot;
+	void *object;
+	u_long size, index;
+	int cpuid;
+{
+	register struct kmemmagazine *mag;
+	register struct kmemcpu_cache *mp;
+
+	mp = &cache->ksc_percpu[cpuid];
+retry:
+	if (mp->kscp_magazine_current != NULL) {
+		mag = magazine_lookup(depot, object, size, index,
+				&mp->kscp_rounds_current);
+		if (mag == mp->kscp_magazine_current) {
+			magazine_remove(depot, mag, object, size, index,
+					&mp->kscp_rounds_current);
+			cache->ksc_depot = depot;
+			return (mag->ksm_object);
+		}
+	}
+	if (mp->kscp_magazine_previous != NULL) {
+		mag = magazine_lookup(depot, object, size, index,
+				&mp->kscp_rounds_previous);
+		if (mag == mp->kscp_magazine_previous) {
+			magazine_remove(depot, mag, object, size, index,
+					&mp->kscp_rounds_previous);
+			cache->ksc_depot = depot;
+			return (mag->ksm_object);
+		}
+	}
+	if (mag != mp->kscp_magazine_current || mag != mp->kscp_magazine_previous) {
+		if (mp->kscp_rounds_current == 0 || mp->kscp_rounds_previous == 0) {
+			goto retry;
+		} else {
+			return (NULL);
+		}
+	}
+	return (NULL);
+}
+
+void
+kmemslab_init(cache, size)
+	struct kmemcache *cache;
+	vm_size_t size;
+{
+	register struct kmemcache *ksc;
+
+	ksc = slabcache_create(size);
+	if (ksc != NULL) {
+		cache = ksc;
+	}
+}
+
+void *
+kmemslab_alloc(cache, object, size, index, mtype)
+	struct kmemcache *cache;
+	void *object;
+	u_long size, index;
+	int mtype;
+{
+	register struct kmemslabs *slab;
+	register struct kmemmagazine_depot *depot;
+	register struct kmemmagazine *mag;
+	struct kmemmeta *meta;
+	void *obj;
+	int ndepot;
+
+	ndepot = 0;
+	/* create & allocate slab */
+	slab = slab_create(cache, size, index, mtype);
+	if (slab != NULL) {
+		slab_insert(cache, slab, size, index, mtype);
+retry:
+		if (ndepot < MAGAZINE_DEPOT_MAX) {
+			/* create magazine depot */
+			depot = depot_create(cache, ndepot, MAGAZINE_CAPACITY);
+			if (depot != NULL) {
+				/* allocated cpucache magazines */
+				cpucache_magazine_alloc(cache, &depot, object, size, index);
+				/* allocated magazine object */
+				obj = cpucache_alloc(cache, depot, object, size, index, cpu_number());
+				if (obj != NULL) {
+					mag = &depot->ksmd_magazine;
+					/* check magazine size and index against meta */
+					meta = magazine_check(slab, mag);
+					if (meta != NULL) {
+						return (obj);
+					}
+					ndepot += 1;
+					goto retry;
+				}
+			}
+		}
+	}
+	return (NULL);
+}
+
+void *
+kmemslab_free(cache, object, size, index, mtype)
+	struct kmemcache *cache;
+	void *object;
+	u_long size, index;
+	int mtype;
+{
+	register struct kmemslabs *slab;
+	register struct kmemmagazine_depot *depot;
+	register struct kmemmagazine *mag;
+	struct kmemmeta *meta;
+	void *obj;
+	int ndepot;
+
+	ndepot = 0;
+	slab = slab_lookup(cache, size, index, mtype);
+	if (slab != NULL) {
+		slab_remove(cache, slab, size, index, mtype);
+retry:
+		if (ndepot < MAGAZINE_DEPOT_MAX) {
+			depot = &cache->ksc_depot[ndepot];
+			if (depot != NULL) {
+				obj = cpucache_free(cache, depot, object, size, index, cpu_number());
+				if (obj != NULL) {
+					meta = magazine_check(slab, mag);
+					if (meta != NULL) {
+						return (obj);
+					}
+					ndepot += 1;
+					goto retry;
+				}
+			}
+		}
+	}
+	return (NULL);
+}
+
+void
+kmemslab_destroy(cache, object, size, index, mtype)
+	struct kmemcache *cache;
+	void *object;
+	u_long size, index;
+	int mtype;
+{
+	register struct kmemslabs *slab;
+	void *obj;
+
+	slab = slab_lookup(cache, size, index, mtype);
+	if (slab != NULL) {
+		obj = kmemslab_free(cache, object, size, index, mtype, cpu_number());
+		if (obj != NULL) {
+			obj = NULL;
+		}
+		slab_destroy(cache, slab, size, index, mtype);
+	}
 }

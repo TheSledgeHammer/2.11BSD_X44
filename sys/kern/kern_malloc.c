@@ -129,6 +129,7 @@ struct freelist {
 };
 #endif /* DIAGNOSTIC */
 
+#ifdef NOMAGAZINE
 struct kmembuckets *
 kmembucket_alloc(cache, size, index, mtype)
 	struct kmemcache *cache;
@@ -198,6 +199,54 @@ destroy:
 	slab->ksl_bucket = skbp;
 	kmemslab_destroy(cache, slab, size, index, mtype);
 }
+
+#else
+
+void
+kmembucket_init(cache, size)
+	struct kmemcache *cache;
+	vm_size_t size;
+{
+	kmemops_init(cache, size);
+}
+
+struct kmembuckets *
+kmembucket_alloc(cache, size, index, mtype)
+	struct kmemcache *cache;
+	unsigned long size, index;
+	int mtype;
+{
+	register struct kmembuckets *kbp;
+
+	kbp = &bucket[index];
+	return (kmemops_alloc(cache, kbp, size, index, mtype));
+}
+
+struct kmembuckets *
+kmembucket_free(cache, size, index, mtype)
+	struct kmemcache *cache;
+	unsigned long size, index;
+	int mtype;
+{
+	register struct kmembuckets *kbp;
+
+	kbp = &bucket[index];
+	return (kmemops_free(cache, kbp, size, index, mtype));
+}
+
+void
+kmembucket_destroy(cache, size, index, mtype)
+	struct kmemcache *cache;
+	unsigned long size, index;
+	int mtype;
+{
+	register struct kmembuckets *kbp;
+
+	kbp = &bucket[index];
+	kmemops_destroy(cache, kbp, size, index, mtype);
+}
+
+#endif
 
 /* Allocate a block of memory */
 void *

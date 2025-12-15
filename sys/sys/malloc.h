@@ -123,10 +123,6 @@ struct kmemmagazine {
 	int 				ksm_rounds; 	/* magazine rounds */
 };
 
-/* magazine flags */
-#define MAGAZINE_FULL		0x10	/* magazine full ((i.e. space left) rounds is greater than 0) */
-#define MAGAZINE_EMPTY		0x12	/* magazine empty ((i.e. no space left) rounds equals 0)*/
-
 #define MAGAZINE_CAPACITY 	64      /* magazine capacity (number of rounds in each magazine) */
 #define MAGAZINE_DEPOT_MAX	2 	/* number of active depots in use at once per cpu */
 
@@ -150,10 +146,23 @@ struct kmemcpu_cache {
 /* Slab Cache Operations */
 struct kmem_ops {
 	void (*kmops_init)(struct kmemcache *, vm_size_t);
-	void (*kmops_alloc)(struct kmemcache *, void *, u_long, u_long, int);
-	void (*kmops_free)(struct kmemcache *, void *, u_long, u_long, int);
+	void *(*kmops_alloc)(struct kmemcache *, void *, u_long, u_long, int);
+	void *(*kmops_free)(struct kmemcache *, void *, u_long, u_long, int);
 	void (*kmops_destroy)(struct kmemcache *, void *, u_long, u_long, int);
 };
+
+/* kmem_ops macros */
+#define kmemops_init(cache, size) \
+	(((cache)->ksc_ops->kmops_init)(cache, size))
+
+#define kmemops_alloc(cache, object, size, index, mtype) \
+	(((cache)->ksc_ops->kmops_alloc)(cache, object, size, index, mtype))
+
+#define kmemops_free(cache, object, size, index, mtype) \
+	(((cache)->ksc_ops->kmops_free)(cache, object, size, index, mtype))
+
+#define kmemops_destroy(cache, object, size, index, mtype) \
+	(((cache)->ksc_ops->kmops_destroy)(cache, object, size, index, mtype))
 
 /* Slab Cache */
 struct kmemcache {
@@ -162,7 +171,7 @@ struct kmemcache {
 	CIRCLEQ_HEAD(, kmemslabs) 	ksc_slablist_full;	/* slab full list */
 	struct kmemslabs 		ksc_slab;		/* slab back-pointer */
 	int 				ksc_slabcount; 		/* number of slabs counter */
-	struct kmemmagazine_depot 	ksc_depot;		/* magazine depot */
+	struct kmemmagazine_depot 	*ksc_depot;		/* magazine depot */
 	int				ksc_depotcount; 	/* number of magazine depot counter */
 	struct kmem_ops 		*ksc_ops;		/* cache ops */
 	struct kmemcpu_cache 		*ksc_percpu;		/* percpu cache */
@@ -176,6 +185,10 @@ struct kmemcache {
 /* slab object types */
 #define SLAB_SMALL              0x06        	/* slab contains small objects */
 #define SLAB_LARGE              0x08        	/* slab contains large objects */
+
+/* magazine flags */
+#define MAGAZINE_FULL			0x10			/* magazine full ((i.e. space left) rounds is greater than 0) */
+#define MAGAZINE_EMPTY			0x12			/* magazine empty ((i.e. no space left) rounds equals 0)*/
 
 #ifdef _KERNEL
 #define BUCKETSIZE(indx)	(powertwo(indx))
@@ -294,14 +307,6 @@ extern void overlay_free(void *, int);
 extern void *overlay_realloc(void *, unsigned long, int, int);
 extern void *overlay_calloc(int, unsigned long, int, int);
 #endif
-
-/* subr_slab.c */
-void kmemslab_init(struct kmemcache *, vm_size_t);
-struct kmemslabs *kmemslab_create(struct kmemcache *, u_long, u_long, int);
-void kmemslab_destroy(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
-void kmemslab_insert(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
-void kmemslab_remove(struct kmemcache *, struct kmemslabs *, u_long, u_long, int);
-struct kmemslabs *kmemslab_lookup(struct kmemcache *, u_long, u_long, int);
 #endif /* KERNEL */
 
 #endif /* !_SYS_MALLOC_H_ */
