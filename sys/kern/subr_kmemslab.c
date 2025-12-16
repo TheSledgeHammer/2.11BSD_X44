@@ -49,6 +49,8 @@
 
 #include <machine/param.h>
 
+struct kmemmagazine_depot magazinedepot[MAGAZINE_DEPOT_MAX];
+struct kmemcpu_cache cpucache[NCPUS];
 LIST_HEAD(, kmemmeta) metalist = LIST_HEAD_INITIALIZER(metalist);
 
 /* slabmeta */
@@ -90,7 +92,7 @@ static struct kmemmeta *magazine_check(struct kmemslabs *, struct kmemmagazine *
 
 /* cpucache */
 static struct kmemcpu_cache *cpucache_create(struct kmemmagazine *, int, int);
-static void cpucache_magazine_alloc(struct kmemcache *, struct kmemmagazine_depot **, void *, u_long, u_long, int);
+static void cpucache_magazine_alloc(struct kmemcache *, struct kmemmagazine_depot **, void *, u_long, u_long);
 static void *cpucache_alloc(struct kmemcache *, struct kmemmagazine_depot *, void *, u_long, u_long, int);
 static void *cpucache_free(struct kmemcache *, struct kmemmagazine_depot *, void *, u_long, u_long, int);
 
@@ -831,7 +833,7 @@ magazine_lookup(depot, object, size, index, nrounds)
 		mag = depot_lookup(depot, object, size, index, MAGAZINE_EMPTY);
 		break;
 	}
-	return (depot);
+	return (mag);
 }
 
 static int
@@ -873,21 +875,20 @@ cpucache_create(mag, ncpus, capacity)
 {
 	register struct kmemcpu_cache *mp;
 
-	mp = &slabcachemp[ncpus];
+	mp = &cpucache[ncpus];
 	mp->kscp_rounds_current = capacity;
-	mp->kscp_magazine_previous = capacity;
+	mp->kscp_rounds_previous = capacity;
 	mp->kscp_magazine_current = mag;
 	mp->kscp_magazine_previous = mag;
 	return (mp);
 }
 
 static void
-cpucache_magazine_alloc(cache, depot, object, size, index, ndepots)
+cpucache_magazine_alloc(cache, depot, object, size, index)
 	struct kmemcache *cache;
 	struct kmemmagazine_depot **depot;
 	void *object;
 	u_long size, index;
-	int ndepots;
 {
 	register struct kmemcpu_cache *mp;
 	int cpuid;
@@ -1002,8 +1003,8 @@ kmemslab_alloc(cache, object, size, index, mtype)
 	int mtype;
 {
 	register struct kmemslabs *slab;
-	register struct kmemmagazine_depot *depot;
-	register struct kmemmagazine *mag;
+	struct kmemmagazine_depot *depot;
+	struct kmemmagazine *mag;
 	struct kmemmeta *meta;
 	void *obj;
 	int ndepot;
@@ -1046,8 +1047,8 @@ kmemslab_free(cache, object, size, index, mtype)
 	int mtype;
 {
 	register struct kmemslabs *slab;
-	register struct kmemmagazine_depot *depot;
-	register struct kmemmagazine *mag;
+	struct kmemmagazine_depot *depot;
+	struct kmemmagazine *mag;
 	struct kmemmeta *meta;
 	void *obj;
 	int ndepot;
@@ -1087,7 +1088,7 @@ kmemslab_destroy(cache, object, size, index, mtype)
 
 	slab = slab_lookup(cache, size, index, mtype);
 	if (slab != NULL) {
-		obj = kmemslab_free(cache, object, size, index, mtype, cpu_number());
+		obj = kmemslab_free(cache, object, size, index, mtype);
 		if (obj != NULL) {
 			obj = NULL;
 		}

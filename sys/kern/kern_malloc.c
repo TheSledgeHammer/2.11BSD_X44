@@ -621,8 +621,10 @@ calloc(nitems, size, type, flags)
 
 /* Initialize buckets */
 void
-kmembucket_init(void)
+bucket_init(void)
 {
+    long indx;
+
 	for (indx = 0; indx < MINBUCKET + 16; indx++) {
 		/* slabs */
 		slabbucket[indx].ksl_bucket = &bucket[indx];
@@ -652,8 +654,8 @@ kmeminit(void)
 #endif
 	npg = VM_KMEM_SIZE / NBPG;
 
-	kmemslab_init(&slabcache, npg);
-	kmembucket_init();
+	kmembucket_init(&slabcache, npg);
+	bucket_init();
 	kmemusage = (struct kmemusage *)kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
 	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
 #ifdef OVERLAY
