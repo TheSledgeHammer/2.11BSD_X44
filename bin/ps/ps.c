@@ -204,7 +204,7 @@ main(int argc, char *argv[])
 			if (strcmp(optarg, "co") == 0)
 				ttypath = _PATH_CONSOLE;
 			else if (*optarg != '/')
-				(void)snprintf(ttypath = pathbuf,
+				(void)snprintf(__UNCONST(ttypath = pathbuf),
 				    sizeof(pathbuf), "%s%s", _PATH_TTY, optarg);
 			else
 				ttypath = optarg;
@@ -389,7 +389,7 @@ saveuser(KINFO *ki)
 		 */
 		usp->u_start = pstats.p_start;
 		usp->u_ru = pstats.p_ru;
-		usp->u_cru = pstats.p_kcru;
+		usp->u_cru = pstats.p_cru;
 		usp->u_valid = 1;
 	} else
 		usp->u_valid = 0;
