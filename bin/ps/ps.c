@@ -199,7 +199,7 @@ main(int argc, char *argv[])
 			/* FALLTHROUGH */
 		case 't': {
 			struct stat sb;
-			char *ttypath, pathbuf[MAXPATHLEN];
+			const char *ttypath, pathbuf[MAXPATHLEN];
 
 			if (strcmp(optarg, "co") == 0)
 				ttypath = _PATH_CONSOLE;
@@ -362,14 +362,14 @@ scanvars(void)
 }
 
 static char *
-fmt(char **(*fn)(kvm_t *, const struct kinfo_proc *, int), KINFO *, char *comm, int maxlen)
+fmt(char **(*fn)(kvm_t *, const struct kinfo_proc *, int), KINFO *ki, char *comm, int maxlen)
 {
-	char *s;
+	const char *s;
 
 	if ((s =
 	    fmt_argv((*fn)(kd, ki->ki_p, termwidth), comm, maxlen)) == NULL)
 		err(1, NULL);
-	return (s);
+	return (__UNCONST(s));
 }
 
 static void
@@ -410,21 +410,25 @@ saveuser(KINFO *ki)
 static int
 pscomp(const void *a, const void *b)
 {
+    KINFO *ka, *kb;
 	int i;
 #ifdef NEWVM
-#define VSIZE(k) (KI_EPROC(k)->e_vm.vm_dsize + KI_EPROC(k)->e_vm.vm_ssize + \
-		  KI_EPROC(k)->e_vm.vm_tsize)
+#define VSIZE(k) (KI_EPROC(k)->e_vm->vm_dsize + KI_EPROC(k)->e_vm->vm_ssize + \
+		  KI_EPROC(k)->e_vm->vm_tsize)
 #else
 #define VSIZE(k) ((k)->ki_p->p_dsize + (k)->ki_p->p_ssize + (k)->ki_e->e_xsize)
 #endif
 
+    ka = (KINFO *)__UNCONST(a);
+    kb = (KINFO *)__UNCONST(b);
+
 	if (sortby == SORTCPU)
-		return (getpcpu((KINFO *)b) - getpcpu((KINFO *)a));
+		return (getpcpu(kb) - getpcpu(ka));
 	if (sortby == SORTMEM)
-		return (VSIZE((KINFO *)b) - VSIZE((KINFO *)a));
-	i =  KI_EPROC((KINFO *)a)->e_tdev - KI_EPROC((KINFO *)b)->e_tdev;
+		return (VSIZE(kb) - VSIZE(ka));
+	i =  KI_EPROC(ka)->e_tdev - KI_EPROC(kb)->e_tdev;
 	if (i == 0)
-		i = KI_PROC((KINFO *)a)->p_pid - KI_PROC((KINFO *)b)->p_pid;
+		i = KI_PROC(ka)->p_pid - KI_PROC(kb)->p_pid;
 	return (i);
 }
 
