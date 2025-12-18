@@ -46,6 +46,7 @@ __KERNEL_RCSID(0, "$NetBSD: idp_usrreq.c,v 1.22 2003/08/07 16:33:44 agc Exp $");
 #include <sys/errno.h>
 #include <sys/stat.h>
 #include <sys/proc.h>
+#include <sys/types.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -159,7 +160,7 @@ idp_output2(struct mbuf *m0, ...)
 	struct route *ro;
 	int flags;
 	struct ns_addr *laddr, *faddr;
-	u_int8_t dpt;
+	uint8_t dpt;
 	struct socket *so;
 	va_list ap;
 	extern int idpcksum;
@@ -169,7 +170,7 @@ idp_output2(struct mbuf *m0, ...)
 	va_start(ap, m0);
 	ro = va_arg(ap, struct route *);
 	flags = va_arg(ap, int);
-	dpt = va_arg(ap, u_int8_t);
+	dpt = va_arg(ap, int);
 	laddr = va_arg(ap, struct ns_addr *);
 	faddr = va_arg(ap, struct ns_addr *);
 	so = va_arg(ap, struct socket *);
@@ -212,8 +213,8 @@ idp_output2(struct mbuf *m0, ...)
 		idp = mtod(m, struct idp *);
 		idp->idp_tc = 0;
 		idp->idp_pt = dpt;
-		idp->idp_sna = laddr;
-		idp->idp_dna = faddr;
+		idp->idp_sna = *laddr;
+		idp->idp_dna = *faddr;
 		len += sizeof (struct idp);
 	}
 

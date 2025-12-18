@@ -295,7 +295,7 @@ nsipoutput(ifp, m, dst, rt)
 		m0->m_next = m;
 		m0->m_len = sizeof (struct ip);
 		m0->m_pkthdr.len = m0->m_len + m->m_len;
-		m_tag_delete_chain(m, NULL);
+		m_tag_delete_chain(m);
 		m->m_flags &= ~M_PKTHDR;
 	} else {
 		M_PREPEND(m, sizeof (struct ip), M_DONTWAIT);

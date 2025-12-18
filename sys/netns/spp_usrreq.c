@@ -495,7 +495,7 @@ update_window:
 	 * Loop through all packets queued up to insert in
 	 * appropriate sequence.
 	 */
-	for (p = NULL, q = LIST_FIRST(cb->s_q); q != NULL; p = q, q = LIST_NEXT(q, si_q)) {
+	for (p = NULL, q = LIST_FIRST(&cb->s_q); q != NULL; p = q, q = LIST_NEXT(q, si_q)) {
 		if (si->si_seq == q->si_spidp->si_seq) {
 			sppstat.spps_rcvduppack++;
 			return (1);
@@ -534,7 +534,7 @@ present:
 	 * number, and present all acknowledged data to user;
 	 * If in packet interface mode, show packet headers.
 	 */
-	for (q = LIST_FIRST(cb->s_q); q != NULL; q = p) {
+	for (q = LIST_FIRST(&cb->s_q); q != NULL; q = p) {
 		if (q->si_spidp->si_seq == cb->s_ack) {
 			cb->s_ack++;
 			m = q->si_m;
@@ -1596,7 +1596,7 @@ spp_close(cb)
 	struct socket *so = nsp->nsp_socket;
 	struct mbuf *m;
 
-	for (s = LIST_FIRST(cb->s_q); s != NULL; s = n) {
+	for (s = LIST_FIRST(&cb->s_q); s != NULL; s = n) {
 		n = LIST_NEXT(s, si_q);
 		m = s->si_m;
 		LIST_REMOVE(s, si_q);
