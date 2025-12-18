@@ -147,6 +147,7 @@ void in6_status(int);
 /* af_ns */
 void xns_init(void);
 void xns_status(int);
+void xns_nsip(int, int);
 
 /* ifcarp */
 void carp_init(void);
@@ -159,6 +160,7 @@ void ieee80211_status(void);
 /* ifmedia */
 void media_init(void);
 void process_media_commands(void);
+void print_media_word(int, const char *);
 int  carrier(void);
 
 /* iftunnel */

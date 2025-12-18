@@ -90,8 +90,8 @@ options		    	FAST_IPSEC    		# IP security with opencrypto
 #options 		IPSEC_DEBUG			# debug for IP security
 #options 		MPLS			# MultiProtocol Label Switching
 #options 		MROUTING			# IP multicast routing
-#options 		NS			     	# XNS
-#options 		NSIP				# XNS tunneling over IP
+options 		NS			     	# XNS
+options 		NSIP				# XNS tunneling over IP
 options 		PPP_BSDCOMP			# BSD-Compress compression support for PPP
 options 		PPP_DEFLATE			# Deflate compression support for PPP
 options 		PPP_FILTER			# Active filter support for PPP (requires bpf)

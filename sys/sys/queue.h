@@ -560,7 +560,7 @@ struct name {															\
 }
 
 #define	CIRCLEQ_HEAD_INITIALIZER(head)	{ 								\
-	NULL, (void *)&(head).cqh_first										\
+	(void *)&(head).cqh_first, (void *)&(head).cqh_last					\
 }
 
 #define CIRCLEQ_ENTRY(type)												\

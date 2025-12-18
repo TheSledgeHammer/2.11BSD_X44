@@ -37,7 +37,7 @@
  * A Simple Slab Allocator.
  * The Slab allocator is in split into two parts between this file and subr_kmemslab.c.
  * subr_kmemslab.c is the slab allocator back-end, which is closer to your typical slab
- * allocator (As described by Bonwick et al.) and kern_malloc.c which is the front-end
+ * allocator with magazines (As described by Bonwick et al.) and kern_malloc.c which is the front-end
  * to the slab-allocator.
  *
  * subr_kmemslab.c:
@@ -129,79 +129,6 @@ struct freelist {
 };
 #endif /* DIAGNOSTIC */
 
-#ifdef NOMAGAZINE
-struct kmembuckets *
-kmembucket_alloc(cache, size, index, mtype)
-	struct kmemcache *cache;
-	unsigned long size, index;
-	int mtype;
-{
-	register struct kmemslabs *slab;
-	register struct kmembuckets *kbp;
-
-	slab = kmemslab_create(cache, size, index, mtype);
-	if (slab != NULL) {
-		kbp = slab->ksl_bucket;
-	}
-	if (kbp != NULL) {
-		kmemslab_insert(cache, slab, size, index, mtype);
-		return (kbp);
-	}
-	return (NULL);
-}
-
-struct kmembuckets *
-kmembucket_free(cache, size, index, mtype)
-	struct kmemcache *cache;
-	unsigned long size, index;
-	int mtype;
-{
-	register struct kmemslabs *slab;
-	register struct kmembuckets *kbp;
-
-	slab = kmemslab_lookup(cache, size, index, mtype);
-	if (slab != NULL) {
-		kbp = slab->ksl_bucket;
-	}
-	if (kbp != NULL) {
-		kmemslab_remove(cache, slab, size, index, mtype);
-		return (kbp);
-	}
-	return (NULL);
-}
-
-void
-kmembucket_destroy(cache, kbp, size, index, mtype)
-	struct kmemcache *cache;
-	struct kmembuckets *kbp;
-	unsigned long size, index;
-	int mtype;
-{
-	register struct kmemslabs *slab;
-	register struct kmembuckets *skbp;
-
-	slab = kmemslab_lookup(cache, size, index, mtype);
-	if (slab != NULL) {
-		skbp = slab->ksl_bucket;
-	}
-	if (skbp != NULL) {
-		if (kbp != NULL) {
-			if (skbp == kbp) {
-				return;
-			}
-		} else {
-			goto destroy;
-		}
-	}
-
-destroy:
-	skbp = kbp;
-	slab->ksl_bucket = skbp;
-	kmemslab_destroy(cache, slab, size, index, mtype);
-}
-
-#else
-
 void
 kmembucket_init(cache, size)
 	struct kmemcache *cache;
@@ -245,8 +172,6 @@ kmembucket_destroy(cache, size, index, mtype)
 	kbp = &bucket[index];
 	kmemops_destroy(cache, kbp, size, index, mtype);
 }
-
-#endif
 
 /* Allocate a block of memory */
 void *
@@ -669,8 +594,7 @@ kmeminit(void)
 		} else {
 			bucket[indx].kb_elmpercl = CLBYTES / (1 << indx);
 		}
-		bucket[indx].kb_highwat = 5	* bucket[indx].kb_elmpercl;
-		slabbucket[indx].ksl_bucket = &bucket[indx];
+		bucket[indx].kb_highwat = 5 * bucket[indx].kb_elmpercl;
 	}
 	for (indx = 0; indx < M_LAST; indx++) {
 		kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;

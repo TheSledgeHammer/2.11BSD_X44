@@ -131,7 +131,7 @@ struct ifcapreq g_ifcr;
 int	g_ifcr_updated;
 
 struct afswtch *afp;
-struct cmds *cmdlist = NULL;
+struct cmd *cmdlist = NULL;
 struct afswtch *aflist = NULL;
 
 void 	notealias(const char *, int);
@@ -450,17 +450,7 @@ main(int argc, char *argv[])
 
 #ifndef INET_ONLY
 
-	if (setipdst && af == AF_NS) {
-		struct nsip_req rq;
-		int size = sizeof(rq);
-
-		rq.rq_ns = addreq.ifra_addr;
-		rq.rq_ip = addreq.ifra_dstaddr;
-
-		if (setsockopt(s, 0, SO_NSIP_ROUTE, &rq, size) < 0) {
-			warn("encapsulation routing");
-		}
-	}
+	xns_nsip(setipdst, AF_NS);
 
 #endif	/* INET_ONLY */
 
@@ -522,26 +512,26 @@ af_register(struct afswtch *p)
 }
 
 struct afswtch *
-af_getbyname(const char *name)
+af_getbyname(const char *afname)
 {
-	struct afswtch *afp;
+	struct afswtch *a;
 
-	for (afp = aflist; afp !=  NULL; afp = afp->af_next) {
-		if (strcmp(afp->af_name, name) == 0) {
-			return (afp);
+	for (a = aflist; a !=  NULL; a = a->af_next) {
+		if (strcmp(a->af_name, afname) == 0) {
+			return (a);
 		}
 	}
 	return (NULL);
 }
 
 struct afswtch *
-af_getbyfamily(int af)
+af_getbyfamily(int affamily)
 {
-	struct afswtch *afp;
+	struct afswtch *a;
 
-	for (afp = aflist; afp !=  NULL; afp = afp->af_next) {
-		if (afp->af_af == af) {
-			return (afp);
+	for (a = aflist; a != NULL; a = a->af_next) {
+		if (afp->af_af == affamily) {
+			return (a);
 		}
 	}
 	return (NULL);
@@ -564,12 +554,12 @@ cmd_register(const struct cmd *p)
 }
 
 const struct cmd *
-cmd_lookup(const char *name)
+cmd_lookup(const char *cmdname)
 {
 	const struct cmd *p;
 
 	for (p = cmdlist; p != NULL; p = p->c_next) {
-		if (strcmp(name, p->c_name) == 0) {
+		if (strcmp(cmdname, p->c_name) == 0) {
 			return (p);
 		}
 	}
@@ -791,7 +781,7 @@ setifbroadaddr(const char *addr, int d)
 void
 setifipdst(const char *addr, int d)
 {
-	in_getaddr(addr, DSTADDR);
+	(*afp->af_getaddr)(addr, DSTADDR);
 	setipdst++;
 	clearaddr = 0;
 	newaddr = 0;
@@ -1018,7 +1008,7 @@ status(const struct sockaddr_dl *sdl)
 	tunnel_status();
 
 	if (sdl != NULL &&
-	    getnameinfo((struct sockaddr *)sdl, sdl->sdl_len,
+	    getnameinfo((const struct sockaddr *)sdl, sdl->sdl_len,
 		hbuf, sizeof(hbuf), NULL, 0, NI_NUMERICHOST) == 0 &&
 	    hbuf[0] != '\0')
 		printf("\taddress: %s\n", hbuf);

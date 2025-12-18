@@ -82,7 +82,7 @@
  */
 
 void
-vm_mem_init()
+vm_mem_init(void)
 {
 	/*
 	 *	Initializes resident memory structures.

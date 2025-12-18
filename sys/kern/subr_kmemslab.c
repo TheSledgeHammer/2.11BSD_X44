@@ -228,6 +228,7 @@ slabcache_create(size)
 	return (cache);
 }
 
+/* UNUSED */
 static void
 slabcache_destroy(cache)
 	struct kmemcache *cache;
@@ -241,7 +242,7 @@ slabcache_destroy(cache)
 	}
 }
 
-/* internal slabcache functions */
+/* slabcache functions */
 static void
 slabcache_insert(cache, slab, size, index, mtype, flags)
 	struct kmemcache *cache;
@@ -915,14 +916,14 @@ cpucache_alloc(cache, depot, object, size, index, cpuid)
 
 	mp = &cache->ksc_percpu[cpuid];
 retry:
-	if (mp->kscp_rounds_current > 0) {
+	if (mp->kscp_magazine_current != NULL) {
 		mag = mp->kscp_magazine_current;
 		magazine_insert(depot, mag, object, size, index,
 				&mp->kscp_rounds_current);
 		cache->ksc_depot = depot;
 		return (mag->ksm_object);
 	}
-	if (mp->kscp_rounds_previous > 0) {
+	if (mp->kscp_magazine_previous != NULL) {
 		mag = mp->kscp_magazine_previous;
 		magazine_insert(depot, mag, object, size, index,
 				&mp->kscp_rounds_previous);

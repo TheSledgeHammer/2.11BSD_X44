@@ -128,6 +128,22 @@ xns_getaddr(const char *addr, int which)
 }
 
 void
+xns_nsip(int dst, int af)
+{
+	if (dst && af == AF_NS) {
+		struct nsip_req rq;
+		int size = sizeof(rq);
+
+		rq.rq_ns = addreq.ifra_addr;
+		rq.rq_ip = addreq.ifra_dstaddr;
+
+		if (setsockopt(s, 0, SO_NSIP_ROUTE, &rq, size) < 0) {
+			warn("encapsulation routing");
+		}
+	}
+}
+
+void
 xns_status(int force)
 {
 	struct sockaddr_ns *sns;
