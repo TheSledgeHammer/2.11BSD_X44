@@ -227,7 +227,7 @@ malloc(size, type, flags)
 			allocsize = 1 << indx;
 		}
 		npg = clrnd(btoc(allocsize));
-		va = (caddr_t)vmembucket_malloc(size, flags);
+		va = (caddr_t)vmembucket_malloc(ctob(npg), flags);
 		if (va == NULL) {
         	splx(s);
 #ifdef DEBUG
