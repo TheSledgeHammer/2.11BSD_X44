@@ -56,7 +56,7 @@ void	unsetcarpdev(const char *, int);
 
 static const char *carp_states[] = { CARP_STATES };
 
-const struct cmd carp_cmds[] = {
+struct cmd carp_cmds[] = {
 		{ "advbase",	NEXTARG,	0,		setcarp_advbase },
 		{ "advskew",	NEXTARG,	0,		setcarp_advskew },
 		{ "pass",	NEXTARG,	0,		setcarp_passwd },

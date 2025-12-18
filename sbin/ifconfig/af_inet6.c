@@ -100,7 +100,7 @@ void	setia6lifetime(const char *, const char *);
 void	setia6eui64(const char *, int);
 char	*sec2str(time_t);
 
-const struct cmd inet6_cmds[] = {
+struct cmd inet6_cmds[] = {
 		{ "anycast",	IN6_IFF_ANYCAST,	0,	setia6flags },
 		{ "-anycast",	-IN6_IFF_ANYCAST,	0,	setia6flags },
 		{ "tentative",	IN6_IFF_TENTATIVE,	0,	setia6flags },
@@ -112,7 +112,7 @@ const struct cmd inet6_cmds[] = {
 		{ "eui64",	0,		0,		setia6eui64 },
 };
 
-void	in6_fillscopeid(struct sockaddr_in6 *);
+int     prefix(void *, int);
 void	in6_alias(struct in6_ifreq *);
 void 	in6_getaddr(const char *, int);
 void 	in6_getprefix(const char *, int);
@@ -146,6 +146,30 @@ in6_init(void)
 {
 	in6_addreq.ifra_lifetime.ia6t_pltime = ND6_INFINITE_LIFETIME;
 	in6_addreq.ifra_lifetime.ia6t_vltime = ND6_INFINITE_LIFETIME;
+}
+
+int
+prefix(void *val, int size)
+{
+	register u_char *pname = (u_char *)val;
+	register int byte, bit, plen = 0;
+
+	for (byte = 0; byte < size; byte++, plen += 8)
+		if (pname[byte] != 0xff)
+			break;
+	if (byte == size)
+		return (plen);
+	for (bit = 7; bit != 0; bit--, plen++)
+		if (!(pname[byte] & (1 << bit)))
+			break;
+	for (; bit != 0; bit--)
+		if (pname[byte] & (1 << bit))
+			return(0);
+	byte++;
+	for (; byte < size; byte++)
+		if (pname[byte])
+			return(0);
+	return (plen);
 }
 
 void
@@ -474,8 +498,7 @@ in6_getprefix(const char *plen, int which)
 }
 
 char *
-sec2str(total)
-	time_t total;
+sec2str(time_t total)
 {
 	static char result[256];
 	int days, hours, mins, secs;

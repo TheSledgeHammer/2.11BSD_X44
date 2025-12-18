@@ -114,7 +114,7 @@ int	media_current;
 int	mediaopt_set;
 int	mediaopt_clear;
 
-const struct cmd media_cmds[] = {
+struct cmd media_cmds[] = {
 		{ "media",	NEXTARG,	A_MEDIA,	setmedia },
 		{ "mediaopt",	NEXTARG,	A_MEDIAOPTSET,	setmediaopt },
 		{ "-mediaopt",	NEXTARG,	A_MEDIAOPTCLR,	unsetmediaopt },
@@ -309,7 +309,7 @@ setmediainst(const char *val, int d)
 	options = IFM_OPTIONS(media_current);
 
 	inst = atoi(val);
-	if (inst < 0 || inst > IFM_INST_MAX)
+	if (inst < 0 || inst > (int)IFM_INST_MAX)
 		errx(EXIT_FAILURE, "invalid media instance: %s", val);
 
 	media_current = IFM_MAKEWORD(type, subtype, options, inst);

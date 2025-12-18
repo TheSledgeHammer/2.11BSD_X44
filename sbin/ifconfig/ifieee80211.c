@@ -95,7 +95,7 @@ void	setifchan(const char *, int);
 void	setifpowersave(const char *, int);
 void	setifpowersavesleep(const char *, int);
 
-const struct cmd ieee80211_cmds[] = {
+struct cmd ieee80211_cmds[] = {
 		{ "bssid",	NEXTARG,	0,		setifbssid },
 		{ "-bssid",	-1,		0,		setifbssid },
 		{ "chan",	NEXTARG,	0,		setifchan },
@@ -332,7 +332,7 @@ ieee80211_status(void)
 			    nwkey.i_key[0].i_keydat[1] == ':')
 				nwkey_verbose = 1;
 			else if (nwkey.i_key[0].i_keylen >= 7 &&
-			    strncasecmp("persist", nwkey.i_key[0].i_keydat, 7)
+			    strncasecmp("persist", (const char *)nwkey.i_key[0].i_keydat, 7)
 			    == 0)
 				nwkey_verbose = 1;
 		}

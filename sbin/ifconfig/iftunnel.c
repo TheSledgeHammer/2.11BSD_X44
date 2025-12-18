@@ -91,7 +91,7 @@
 void settunnel(const char *, const char *);
 void deletetunnel(const char *, int);
 
-const struct cmd tunnel_cmds[] = {
+struct cmd tunnel_cmds[] = {
 		{ "tunnel",	NEXTARG2,	0,		NULL, settunnel } ,
 		{ "deletetunnel", 0,		0,		deletetunnel },
 };
@@ -129,8 +129,8 @@ settunnel(const char *src, const char *dst)
 		errx(EXIT_FAILURE,
 		    "source and destination address families do not match");
 
-	if (srcres->ai_addrlen > sizeof(req.addr) ||
-	    dstres->ai_addrlen > sizeof(req.dstaddr))
+	if (srcres->ai_addrlen > (int)sizeof(req.addr) ||
+	    dstres->ai_addrlen > (int)sizeof(req.dstaddr))
 		errx(EXIT_FAILURE, "invalid sockaddr");
 
 	memset(&req, 0, sizeof(req));

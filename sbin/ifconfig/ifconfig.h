@@ -81,8 +81,8 @@ struct cmd {
 	struct cmd 	*c_next;
 };
 
-void cmd_register(const struct cmd *p);
-const struct cmd *cmd_lookup(const char *name);
+void cmd_register(struct cmd *p);
+struct cmd *cmd_lookup(const char *name);
 
 /* Known address families */
 struct afswtch {
@@ -132,6 +132,8 @@ extern int 					Lflag;
 
 void getsock(int);
 int  getinfo(struct ifreq *);
+const char *get_string(const char *, const char *, u_int8_t *, int *);
+void print_string(const u_int8_t *, int);
 
 /* af_inet */
 void inet_init(void);
@@ -139,9 +141,11 @@ void in_status(int);
 
 /* af_inet6 */
 #ifdef INET6
+struct sockaddr_in6;
 void inet6_init(void);
 void in6_init(void);
 void in6_status(int);
+void in6_fillscopeid(struct sockaddr_in6 *);
 #endif
 
 /* af_ns */

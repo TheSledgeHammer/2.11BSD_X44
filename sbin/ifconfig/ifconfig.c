@@ -150,12 +150,13 @@ void	setifprefixlen(const char *, int);
 void	clone_create(const char *, int);
 void	clone_destroy(const char *, int);
 
+void    if_init(void);
 void	cmds_init(void);
 int		main(int, char *[]);
 
 int		actions;			/* Actions performed */
 
-const struct cmd if_cmds[] = {
+struct cmd if_cmds[] = {
 		{ "up",		IFF_UP,		0,		setifflags } ,
 		{ "down",	-IFF_UP,	0,		setifflags },
 		{ "trailers",	-1,		0,		notrailers },
@@ -547,16 +548,16 @@ lookup_af(const char *cp)
 }
 
 void
-cmd_register(const struct cmd *p)
+cmd_register(struct cmd *p)
 {
-	p->c_next = cmds;
+	p->c_next = cmdlist;
 	cmdlist = p;
 }
 
-const struct cmd *
+struct cmd *
 cmd_lookup(const char *cmdname)
 {
-	const struct cmd *p;
+	struct cmd *p;
 
 	for (p = cmdlist; p != NULL; p = p->c_next) {
 		if (strcmp(cmdname, p->c_name) == 0) {

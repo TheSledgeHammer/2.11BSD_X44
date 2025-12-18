@@ -91,7 +91,7 @@ void	setvlan(const char *, int);
 void	setvlanif(const char *, int);
 void	unsetvlanif(const char *, int);
 
-const struct cmd vlan_cmds[] = {
+struct cmd vlan_cmds[] = {
 		{ "vlan",	NEXTARG,	0,		setvlan } ,
 		{ "vlanif",	NEXTARG,	0,		setvlanif } ,
 		{ "-vlanif",	0,		0,		unsetvlanif } ,
