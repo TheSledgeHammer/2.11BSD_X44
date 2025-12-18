@@ -46,6 +46,7 @@ struct pstats {
 	struct	k_rusage 	p_ksru;		/* stats for this proc */
 	struct	k_rusage 	p_kcru;		/* sum of stats for reaped children */
 	struct	rusage	 	p_ru;
+	struct	rusage	 	p_cru;
 #define	pstat_endzero	pstat_startcopy
 
 #define	pstat_startcopy	p_timer
