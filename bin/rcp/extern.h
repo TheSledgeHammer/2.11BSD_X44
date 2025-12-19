@@ -40,11 +40,11 @@ typedef struct {
 
 extern int iamremote;
 
-BUF		*allocbuf (BUF *, int, int);
-char	*colon (char *);
-void	lostconn (int);
-void	nospace (void);
-int	 	okname (char *);
-void	run_err (const char *, ...);
-int	 	susystem (char *, int);
-void	verifydir (char *);
+BUF		*allocbuf(BUF *, int, int);
+char	*colon(char *);
+void	lostconn(int);
+void	nospace(void);
+int	 	okname(char *);
+void	run_err(const char *, ...);
+int	 	susystem(char *, int);
+void	verifydir(char *);

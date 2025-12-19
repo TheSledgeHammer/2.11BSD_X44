@@ -94,11 +94,11 @@ void *nsip_ctlinput(int, struct sockaddr *, void *);
 int ns_output(struct mbuf *, ...);
 
 /* ns_pcb.c */
-int ns_pcballoc(struct socket *, struct nspcb *);
-int ns_pcbbind(struct nspcb *, struct mbuf *, struct proc *);
-int ns_pcbconnect(struct nspcb *, struct mbuf *);
-void ns_pcbdisconnect(struct nspcb *);
-void ns_pcbdetach(struct nspcb *);
+int ns_pcballoc(struct socket *, void *);
+int ns_pcbbind(void *, struct mbuf *, struct proc *);
+int ns_pcbconnect(void *, struct mbuf *);
+void ns_pcbdisconnect(void *);
+void ns_pcbdetach(void *);
 void ns_setsockaddr(struct nspcb *, struct mbuf *);
 void ns_setpeeraddr(struct nspcb *, struct mbuf *);
 void ns_pcbnotify(struct ns_addr *, int, void (*)(struct nspcb *), long);

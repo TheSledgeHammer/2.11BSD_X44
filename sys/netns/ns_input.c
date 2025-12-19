@@ -302,8 +302,7 @@ idp_ctlinput(cmd, sa, arg)
 		break;
 
 	case NS_ERR_NOSOCK:
-		nsp = ns_pcblookup(ns, errp->ns_err_idp.idp_sna.x_port,
-				   NS_WILDCARD);
+		nsp = ns_pcblookup(ns, errp->ns_err_idp.idp_sna.x_port, NS_WILDCARD);
 		if(nsp && idp_donosocks && ! ns_nullhost(nsp->nsp_faddr))
 			(void) idp_drop(nsp, (int)nsctlerrmap[cmd]);
 	}

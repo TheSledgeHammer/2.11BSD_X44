@@ -42,6 +42,7 @@ __KERNEL_RCSID(0, "$NetBSD: ns_pcb.c,v 1.20 2004/02/24 15:22:01 wiz Exp $");
 #include <sys/socketvar.h>
 #include <sys/protosw.h>
 #include <sys/proc.h>
+#include <sys/queue.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -54,12 +55,13 @@ __KERNEL_RCSID(0, "$NetBSD: ns_pcb.c,v 1.20 2004/02/24 15:22:01 wiz Exp $");
 struct ns_addr zerons_addr;
 
 int
-ns_pcballoc(so, head)
+ns_pcballoc(so, v)
 	struct socket *so;
-	struct nspcb *head;
+	void *v;
 {
-	struct nspcb *nsp;
+	struct nspcb *nsp, *head;
 
+	head = v;
 	nsp = malloc(sizeof(*nsp), M_PCB, M_NOWAIT);
 	if (nsp == 0) {
 		return (ENOBUFS);
@@ -72,20 +74,22 @@ ns_pcballoc(so, head)
 }
 	
 int
-ns_pcbbind(nsp, nam, p)
-	struct nspcb *nsp;
+ns_pcbbind(v, nam, p)
+	void *v;
 	struct mbuf *nam;
 	struct proc *p;
 {
+	struct nspcb *nsp;
 	struct sockaddr_ns *sns;
 	u_int16_t lport = 0;
 
+	nsp = v;
 	if (nsp->nsp_lport || !ns_nullhost(nsp->nsp_laddr))
 		return (EINVAL);
 	if (nam == 0)
 		goto noname;
 	sns = mtod(nam, struct sockaddr_ns *);
-	if (nam->m_len != sizeof (*sns))
+	if (nam->m_len != sizeof(*sns))
 		return (EINVAL);
 	if (!ns_nullhost(sns->sns_addr)) {
 		int tport = sns->sns_port;
@@ -98,8 +102,8 @@ ns_pcbbind(nsp, nam, p)
 	lport = sns->sns_port;
 	if (lport) {
 
-		if (ntohs(lport) < NSPORT_RESERVED &&
-		    (p == 0 || suser(p->p_ucred, &p->p_acflag)))
+		if (ntohs(lport) < NSPORT_RESERVED
+				&& (p == 0 || suser(p->p_ucred, &p->p_acflag)))
 			return (EACCES);
 		if (ns_pcblookup(&zerons_addr, lport, 0))
 			return (EADDRINUSE);
@@ -123,16 +127,18 @@ noname:
  * then pick one.
  */
 int
-ns_pcbconnect(nsp, nam)
-	struct nspcb *nsp;
+ns_pcbconnect(v, nam)
+	void *v;
 	struct mbuf *nam;
 {
+	struct nspcb *nsp;
 	struct ns_ifaddr *ia;
 	struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
 	struct ns_addr *dst;
 	struct route *ro;
 	struct ifnet *ifp;
 
+	nsp = v;
 	if (nam->m_len != sizeof (*sns))
 		return (EINVAL);
 	if (sns->sns_family != AF_NS)
@@ -192,8 +198,8 @@ ns_pcbconnect(nsp, nam)
 		 * corresponding to the outgoing interface
 		 */
 		if (ro->ro_rt && (ifp = ro->ro_rt->rt_ifp)) {
-			for (ia = ns_ifaddr.tqh_first; ia != 0;
-			    ia = ia->ia_list.tqe_next) {
+			for (ia = TAILQ_FIRST(&ns_ifaddr); ia != 0;
+			    ia = TAILQ_NEXT(ia, ia_list)) {
 				if (ia->ia_ifp == ifp)
 					break;
 			}
@@ -207,7 +213,7 @@ ns_pcbconnect(nsp, nam)
 			if (ia == 0)
 				ia = ns_iaonnetof(&sns->sns_addr);
 			if (ia == 0)
-				ia = ns_ifaddr.tqh_first;
+				ia = TAILQ_FIRST(&ns_ifaddr);
 			if (ia == 0)
 				return (EADDRNOTAVAIL);
 		}
@@ -217,7 +223,7 @@ ns_pcbconnect(nsp, nam)
 		return (EADDRINUSE);
 	if (ns_nullhost(nsp->nsp_laddr)) {
 		if (nsp->nsp_lport == 0)
-			(void) ns_pcbbind(nsp, (struct mbuf *)0,
+			(void)ns_pcbbind(nsp, (struct mbuf *)0,
 			    (struct proc *)0);
 		nsp->nsp_laddr.x_host = ns_thishost;
 	}
@@ -227,21 +233,25 @@ ns_pcbconnect(nsp, nam)
 }
 
 void
-ns_pcbdisconnect(nsp)
-	struct nspcb *nsp;
+ns_pcbdisconnect(v)
+	void *v;
 {
+	struct nspcb *nsp;
 
+	nsp = v;
 	nsp->nsp_faddr = zerons_addr;
 	if (nsp->nsp_socket->so_state & SS_NOFDREF)
 		ns_pcbdetach(nsp);
 }
 
 void
-ns_pcbdetach(nsp)
-	struct nspcb *nsp;
+ns_pcbdetach(v)
+	void *v;
 {
+	struct nspcb *nsp;
 	struct socket *so = nsp->nsp_socket;
 
+	nsp = v;
 	so->so_pcb = 0;
 	sofree(so);
 	if (nsp->nsp_route.ro_rt)
@@ -366,7 +376,7 @@ ns_pcblookup(faddr, lport, wildp)
 				}
 			}
 		}
-		if (wildcard && wildp==0)
+		if (wildcard && wildp == 0)
 			continue;
 		if (wildcard < matchwild) {
 			match = nsp;

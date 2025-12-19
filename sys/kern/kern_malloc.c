@@ -424,6 +424,21 @@ free(addr, type)
 	splx(s);
 }
 
+/* Allocate zeroed wired memory */
+void *
+zalloc(size, type, flags)
+    unsigned long size;
+    int type, flags;
+{
+	void *va;
+
+	va = malloc(size, type, flags);
+	if (va != NULL) {
+		bzero(va, size);
+	}
+	return (va);
+}
+
 /*
  * Change the size of a block of memory.
  */
@@ -540,7 +555,9 @@ calloc(nitems, size, type, flags)
 	/*
 	 * clear contents
 	 */
-	bzero(addr, newsize);
+	if (addr != NULL) {
+		bzero(addr, newsize);
+	}
 	return (addr);
 }
 
@@ -643,6 +660,14 @@ overlay_malloc(size, type, flags)
 	int type, flags;
 {
 	return (malloc(size, type, flags | M_OVERLAY));
+}
+
+void *
+overlay_zalloc(size, type, flags)
+	unsigned long size;
+	int type, flags;
+{
+	return (zalloc(size, type, flags | M_OVERLAY));
 }
 
 void

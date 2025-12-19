@@ -35,8 +35,10 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 __COPYRIGHT("@(#) Copyright (c) 1991, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n");
+#endif
 #endif /* not lint */
 
 #ifndef lint
@@ -61,9 +63,7 @@ void  usage(void);
 int   main(int, char *[]);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int ch;
 	int lFlag=0;
@@ -101,9 +101,7 @@ main(argc, argv)
 }
 
 char *
-getcwd_logical(pt, size)
-        char *pt;
-        size_t size;
+getcwd_logical(char *pt, size_t size)
 {
         char *pwd;
         size_t pwdlen;
@@ -138,9 +136,8 @@ getcwd_logical(pt, size)
 }
 
 void
-usage()
+usage(void)
 {
-
 	(void)fprintf(stderr, "usage: pwd\n");
 	exit(1);
 	/* NOTREACHED */

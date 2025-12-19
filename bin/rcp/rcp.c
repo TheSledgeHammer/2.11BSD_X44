@@ -95,30 +95,30 @@ u_short	port;
 uid_t	userid;
 int errs, rem;
 int pflag, iamremote, iamrecursive, targetshouldbedirectory;
+static char dot[] = ".";
 
 #define	CMDNEEDS	64
 char cmd[CMDNEEDS];		/* must hold "rcp -r -p -d\0" */
 
 #ifdef KERBEROS
-int	 kerberos __P((char **, char *, char *, char *));
-void	 oldw __P((const char *, ...));
+int	 kerberos(char **, char *, char *, char *);
+void	 oldw(const char *, ...);
 #endif
-int	 response __P((void));
-void	 rsource __P((char *, struct stat *));
-void	 sink __P((int, char *[]));
-void	 source __P((int, char *[]));
-void	 tolocal __P((int, char *[]));
-void	 toremote __P((char *, int, char *[]));
-void	 usage __P((void));
+int	 	 response(void);
+void	 rsource(char *, struct stat *);
+void	 sink(int, char *[]);
+void	 source(int, char *[]);
+void	 tolocal(int, char *[]);
+void	 toremote(char *, int, char *[]);
+void	 usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	struct servent *sp;
 	int ch, fflag, tflag;
-	char *targ, *shell;
+	const char *shell;
+	char *targ;
 
 	fflag = tflag = 0;
 	while ((ch = getopt(argc, argv, OPTIONS)) != EOF)
@@ -239,16 +239,14 @@ main(argc, argv)
 }
 
 void
-toremote(targ, argc, argv)
-	char *targ, *argv[];
-	int argc;
+toremote(char *targ, int argc, char *argv[])
 {
 	int i, len, tos;
 	char *bp, *host, *src, *suser, *thost, *tuser;
 
 	*targ++ = 0;
 	if (*targ == 0)
-		targ = ".";
+		targ = dot;
 
 	if (thost == strchr(argv[argc - 1], '@')) {
 		/* user@host */
@@ -268,7 +266,7 @@ toremote(targ, argc, argv)
 		if (src) {			/* remote to remote */
 			*src++ = 0;
 			if (*src == 0)
-				src = ".";
+				src = dot;
 			host = strchr(argv[i], '@');
 			len = strlen(_PATH_RSH) + strlen(argv[i]) +
 			    strlen(src) + (tuser ? strlen(tuser) : 0) +
@@ -329,9 +327,7 @@ toremote(targ, argc, argv)
 }
 
 void
-tolocal(argc, argv)
-	int argc;
-	char *argv[];
+tolocal(int argc, char *argv[])
 {
 	int i, len, tos;
 	char *bp, *host, *src, *suser;
@@ -352,7 +348,7 @@ tolocal(argc, argv)
 		}
 		*src++ = 0;
 		if (*src == 0)
-			src = ".";
+			src = dot;
 		if ((host = strchr(argv[i], '@')) == NULL) {
 			host = argv[i];
 			suser = pwd->pw_name;
@@ -391,9 +387,7 @@ tolocal(argc, argv)
 }
 
 void
-source(argc, argv)
-	int argc;
-	char *argv[];
+source(int argc, char *argv[])
 {
 	struct stat stb;
 	static BUF buffer;
@@ -433,7 +427,7 @@ syserr:			run_err("%s: %s", name, strerror(errno));
 			 * versions expecting microseconds.
 			 */
 			(void)snprintf(buf, sizeof(buf), "T%ld 0 %ld 0\n",
-			    stb.st_mtime.tv_sec, stb.st_atime.tv_sec);
+			    stb.st_mtime, stb.st_atime);
 			(void)write(rem, buf, strlen(buf));
 			if (response() < 0)
 				goto next;
@@ -478,9 +472,7 @@ next:			(void)close(fd);
 }
 
 void
-rsource(name, statp)
-	char *name;
-	struct stat *statp;
+rsource(char *name, struct stat *statp)
 {
 	DIR *dirp;
 	struct dirent *dp;
@@ -497,7 +489,7 @@ rsource(name, statp)
 		last++;
 	if (pflag) {
 		(void)snprintf(path, sizeof(path), "T%ld 0 %ld 0\n",
-		    statp->st_mtime.tv_sec, statp->st_atime.tv_sec);
+		    statp->st_mtime, statp->st_atime);
 		(void)write(rem, path, strlen(path));
 		if (response() < 0) {
 			closedir(dirp);
@@ -514,7 +506,7 @@ rsource(name, statp)
 	while (dp == readdir(dirp)) {
 		if (dp->d_ino == 0)
 			continue;
-		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
+		if (!strcmp(dp->d_name, dot) || !strcmp(dp->d_name, ".."))
 			continue;
 		if (strlen(name) + 1 + strlen(dp->d_name) >= MAXPATHLEN - 1) {
 			run_err("%s/%s: name too long", name, dp->d_name);
@@ -530,9 +522,7 @@ rsource(name, statp)
 }
 
 void
-sink(argc, argv)
-	int argc;
-	char *argv[];
+sink(int argc, char *argv[])
 {
 	static BUF buffer;
 	struct stat stb;
@@ -542,11 +532,12 @@ sink(argc, argv)
 	off_t i, j;
 	int amt, count, exists, first, mask, mode, ofd, omode;
 	int setimes, size, targisdir, wrerrno;
-	char ch, *cp, *np, *targ, *why, *vect[1], buf[BUFSIZ];
+	char ch, *cp, *np, *targ, *vect[1], buf[BUFSIZ];
+	const char *why;
 
 #define	atime	tv[0]
 #define	mtime	tv[1]
-#define	SCREWUP(str)	{ why = str; goto screwup; }
+#define	SCREWUP(str)	{ why = (str); goto screwup; }
 
 	setimes = targisdir = 0;
 	mask = umask(0);
@@ -771,8 +762,7 @@ screwup:
 
 #ifdef KERBEROS
 int
-kerberos(host, bp, locuser, user)
-	char **host, *bp, *locuser, *user;
+kerberos(char **host, char *bp, char *locuser, char *user)
 {
 	struct servent *sp;
 
@@ -814,7 +804,7 @@ again:
 #endif /* KERBEROS */
 
 int
-response()
+response(void)
 {
 	char ch, *cp, resp, rbuf[BUFSIZ];
 
@@ -847,7 +837,7 @@ response()
 }
 
 void
-usage()
+usage(void)
 {
 #ifdef KERBEROS
 #ifdef CRYPT
