@@ -1091,7 +1091,7 @@ kmemslab_destroy(cache, object, size, index, mtype)
 	if (slab != NULL) {
 		obj = kmemslab_free(cache, object, size, index, mtype);
 		if (obj != NULL) {
-			obj = NULL;
+			panic("kmemslab_destroy: failed to free object");
 		}
 		slab_destroy(cache, slab, size, index, mtype);
 	}
