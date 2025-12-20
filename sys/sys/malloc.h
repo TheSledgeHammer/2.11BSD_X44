@@ -297,14 +297,14 @@ extern char *kmembase;
 extern struct lock_object malloc_slock;
 
 extern void *malloc(unsigned long, int, int);
-extern void *zalloc(unsigned long, int, int);
+extern void *mzalloc(unsigned long, int, int);
 extern void free(void *, int);
 extern void *realloc(void *, unsigned long, int, int);
 extern void *calloc(int, unsigned long, int, int);
 
 #ifdef OVERLAY
 extern void *overlay_malloc(unsigned long, int, int);
-extern void *overlay_zalloc(unsigned long, int, int);
+extern void *overlay_mzalloc(unsigned long, int, int);
 extern void overlay_free(void *, int);
 extern void *overlay_realloc(void *, unsigned long, int, int);
 extern void *overlay_calloc(int, unsigned long, int, int);
