@@ -236,7 +236,7 @@ slabcache_create(size)
  * 
  * Potential Changes:
  * 1) Allocate slabcache dynamically within malloc. Instead of once during kmeminit.
- * 2) Allow slabcache to be reinitalized after destuction.
+ * 2) Allow slabcache to be reinitalized after destruction.
  */
 static void
 slabcache_destroy(cache)
