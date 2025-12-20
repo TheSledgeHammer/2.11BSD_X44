@@ -162,14 +162,12 @@ kmembucket_free(cache, size, index, mtype)
 }
 
 void
-kmembucket_destroy(cache, size, index, mtype)
+kmembucket_destroy(cache, kbp, size, index, mtype)
 	struct kmemcache *cache;
+	struct kmembuckets *kbp;
 	unsigned long size, index;
 	int mtype;
 {
-	register struct kmembuckets *kbp;
-
-	kbp = &bucket[index];
 	kmemops_destroy(cache, kbp, size, index, mtype);
 }
 
