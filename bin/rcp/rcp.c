@@ -228,7 +228,7 @@ main(int argc, char *argv[])
 
 	(void)signal(SIGPIPE, lostconn);
 
-	if (targ == colon(argv[argc - 1]))	/* Dest is remote host. */
+	if ((targ = colon(argv[argc - 1])) != NULL)	/* Dest is remote host. */
 		toremote(targ, argc, argv);
 	else {
 		tolocal(argc, argv);		/* Dest is local host. */
@@ -248,7 +248,7 @@ toremote(char *targ, int argc, char *argv[])
 	if (*targ == 0)
 		targ = dot;
 
-	if (thost == strchr(argv[argc - 1], '@')) {
+	if ((thost = strchr(argv[argc - 1], '@')) != NULL) {
 		/* user@host */
 		*thost++ = 0;
 		tuser = argv[argc - 1];
@@ -426,7 +426,7 @@ syserr:			run_err("%s: %s", name, strerror(errno));
 			 * Make it compatible with possible future
 			 * versions expecting microseconds.
 			 */
-			(void)snprintf(buf, sizeof(buf), "T%ld 0 %ld 0\n",
+			(void)snprintf(buf, sizeof(buf), "T%lld 0 %lld 0\n",
 			    stb.st_mtime, stb.st_atime);
 			(void)write(rem, buf, strlen(buf));
 			if (response() < 0)
@@ -488,7 +488,7 @@ rsource(char *name, struct stat *statp)
 	else
 		last++;
 	if (pflag) {
-		(void)snprintf(path, sizeof(path), "T%ld 0 %ld 0\n",
+		(void)snprintf(path, sizeof(path), "T%lld 0 %lld 0\n",
 		    statp->st_mtime, statp->st_atime);
 		(void)write(rem, path, strlen(path));
 		if (response() < 0) {
@@ -503,7 +503,7 @@ rsource(char *name, struct stat *statp)
 		closedir(dirp);
 		return;
 	}
-	while (dp == readdir(dirp)) {
+	while ((dp = readdir(dirp)) != NULL) {
 		if (dp->d_ino == 0)
 			continue;
 		if (!strcmp(dp->d_name, dot) || !strcmp(dp->d_name, ".."))
@@ -539,7 +539,7 @@ sink(int argc, char *argv[])
 #define	mtime	tv[1]
 #define	SCREWUP(str)	{ why = (str); goto screwup; }
 
-	setimes = targisdir = 0;
+	setimes = targisdir = wrerrno = 0;
 	mask = umask(0);
 	if (!pflag)
 		(void)umask(mask);
