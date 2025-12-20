@@ -229,6 +229,15 @@ slabcache_create(size)
 }
 
 /* UNUSED */
+/*
+ * Caution:
+ * Using slabcache_destroy could have run on effects in kern_malloc.c, that could lead to
+ * memory starvation or a kernel panic, without changing or addressing slabcache initialization.
+ * 
+ * Potential Changes:
+ * 1) Allocate slabcache dynamically within malloc. Instead of once during kmeminit.
+ * 2) Allow slabcache to be reinitalized after destuction.
+ */
 static void
 slabcache_destroy(cache)
 	struct kmemcache *cache;
@@ -983,6 +992,7 @@ retry:
 	return (NULL);
 }
 
+/* Run's once only during startup within kmeminit (see kern_malloc.c) */
 void
 kmemslab_init(cache, size)
 	struct kmemcache *cache;
