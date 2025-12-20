@@ -426,7 +426,7 @@ free(addr, type)
 
 /* Allocate zeroed wired memory */
 void *
-zalloc(size, type, flags)
+mzalloc(size, type, flags)
     unsigned long size;
     int type, flags;
 {
@@ -663,11 +663,11 @@ overlay_malloc(size, type, flags)
 }
 
 void *
-overlay_zalloc(size, type, flags)
+overlay_mzalloc(size, type, flags)
 	unsigned long size;
 	int type, flags;
 {
-	return (zalloc(size, type, flags | M_OVERLAY));
+	return (mzalloc(size, type, flags | M_OVERLAY));
 }
 
 void
