@@ -1339,10 +1339,10 @@ get_state(int num)
 	state_handle_t *state;
 
 	state = state_handler(num);
-    if (state != NULL) {
-        return (state->state);
-    }
-    return (NULL);
+	if (state != NULL) {
+		return (state->state);
+	}
+	return (NULL);
 }
 
 /*
