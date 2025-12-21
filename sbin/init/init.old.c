@@ -24,7 +24,9 @@ static char sccsid[] = "@(#)init.c	5.6.4 (2.11BSD) 1999/2/23";
 #include <sys/reboot.h>
 #include <errno.h>
 #include <ttyent.h>
-#include <paths.h>
+//#include <paths.h>
+
+#include "pathnames.h"
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
 #define	CMDSIZ	200	/* max string length for getty or window command*/
@@ -35,25 +37,24 @@ static char sccsid[] = "@(#)init.c	5.6.4 (2.11BSD) 1999/2/23";
 
 char	shell[]	= _PATH_BSHELL;
 char	minus[]	= "-";
-char	runc[]	= "/etc/rc";
+char	runc[]	= _PATH_RUNCOM;
 char	utmpf[]	= _PATH_UTMP;
 char	wtmpf[]	= _PATH_WTMP;
 char	ctty[]	= _PATH_CONSOLE;
 
 struct utmp wtmp;
-struct	tab
-{
-	char	line[LINSIZ];
-	char	comn[CMDSIZ];
-	char	xflag;
-	int	pid;
-	int	wpid;		/* window system pid for SIGHUP	*/
-	char	wcmd[CMDSIZ];	/* command to start window system process */
+struct tab {
+	char line[LINSIZ];
+	char comn[CMDSIZ];
+	char xflag;
+	int	 pid;
+	int	 wpid;			/* window system pid for SIGHUP	*/
+	char wcmd[CMDSIZ];	/* command to start window system process */
 	time_t	gettytime;
 	int	gettycnt;
 	time_t	windtime;
 	int	windcnt;
-	struct	tab *next;
+	struct tab *next;
 } *itab;
 
 int	fi;

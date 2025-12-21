@@ -77,35 +77,34 @@
 /*
  * Sleep times; used to prevent thrashing.
  */
-#define	GETTY_SPACING		5	/* N secs minimum getty spacing */
-#define	GETTY_SLEEP			30	/* sleep N secs after spacing problem */
-#define	GETTY_NSPACE		3	/* max. spacing count to bring reaction */
-#define	WINDOW_WAIT			3	/* wait N secs after starting window */
-#define	STALL_TIMEOUT		30	/* wait N secs after warning */
-#define	DEATH_WATCH			10	/* wait N secs for procs to die */
-#define	DEATH_SCRIPT		120	/* wait for 2min for /etc/rc.shutdown */
+#define	GETTY_SPACING	5	/* N secs minimum getty spacing */
+#define	GETTY_SLEEP	30	/* sleep N secs after spacing problem */
+#define	GETTY_NSPACE	3	/* max. spacing count to bring reaction */
+#define	WINDOW_WAIT	3	/* wait N secs after starting window */
+#define	STALL_TIMEOUT	30	/* wait N secs after warning */
+#define	DEATH_WATCH	10	/* wait N secs for procs to die */
+#define	DEATH_SCRIPT	120	/* wait for 2min for /etc/rc.shutdown */
 
 /*
  * User-based resource limits.
  */
-#define RESOURCE_RC			"daemon"
-#define RESOURCE_WINDOW		"default"
-#define RESOURCE_GETTY		"default"
+#define RESOURCE_RC	"daemon"
+#define RESOURCE_WINDOW	"default"
+#define RESOURCE_GETTY	"default"
 
 #ifndef DEFAULT_STATE
-#define DEFAULT_STATE		runcom
+#define DEFAULT_STATE	runcom
 #endif
 
-static void	 handle(sig_t, ...);
-static void	 delset(sigset_t *, ...);
+static void handle(sig_t, ...);
+static void delset(sigset_t *, ...);
 
-static void	 stall(const char *, ...) __printflike(1, 2);
-static void	 warning(const char *, ...) __printflike(1, 2);
-static void	 emergency(const char *, ...) __printflike(1, 2);
-static void	 disaster(int);
-static void revoke_ttys(void);
-static int	 runshutdown(void);
-static char	*strk(char *);
+static void stall(const char *, ...) __printflike(1, 2);
+static void warning(const char *, ...) __printflike(1, 2);
+static void emergency(const char *, ...) __printflike(1, 2);
+static void badsys(int);
+static void disaster(int);
+static char *strk(char *);
 
 #define	DEATH		'd'
 #define	SINGLE_USER	's'
@@ -124,30 +123,30 @@ typedef enum {
 	clean_ttys,
 	catatonia,
 	death,
-	run_script
 } state_t;
-typedef state_t (*state_func_t)(void);
 
-static state_t f_single_user(void);
-static state_t f_runcom(void);
-static state_t f_read_ttys(void);
-static state_t f_multi_user(void);
-static state_t f_clean_ttys(void);
-static state_t f_catatonia(void);
-static state_t f_death(void);
+typedef long (*state_func_t)(void);
+typedef state_func_t (*state_t)(void);
 
-static state_t f_run_script(const char *);
+static state_func_t f_single_user(void);
+static state_func_t f_runcom(void);
+static state_func_t f_read_ttys(void);
+static state_func_t f_multi_user(void);
+static state_func_t f_clean_ttys(void);
+static state_func_t f_catatonia(void);
+static state_func_t f_death(void);
+
+static state_func_t f_run_script(const char *);
 
 state_func_t state_funcs[] = {
-	NULL,
-	f_single_user,
-	f_runcom,
-	f_read_ttys,
-	f_multi_user,
-	f_clean_ttys,
-	f_catatonia,
-	f_death,
-	f_run_script
+		invalid_state = NULL,
+		single_user = f_single_user,
+		runcom = f_runcom,
+		read_ttys = f_read_ttys,
+		multi_user = f_multi_user,
+		clean_ttys = f_clean_ttys,
+		catatonia = f_catatonia,
+		death = f_death,
 };
 
 enum { AUTOBOOT, FASTBOOT } runcom_mode = AUTOBOOT;
@@ -161,52 +160,52 @@ static char *init_path_argv0;
 
 static void transition(state_t);
 static state_t requested_transition = DEFAULT_STATE;
-state_t current_state = death;
 
 static void execute_script(char *argv[]);
 static const char *get_shell(void);
 static void replace_init(char *path);
 
 typedef struct init_session {
-	int						se_index;				/* index of entry in ttys file */
-	pid_t					se_process;				/* controlling process */
-	struct timeval			se_started;				/* used to avoid thrashing */
-	int						se_flags;				/* status of session */
-#define	SE_SHUTDOWN			0x1						/* session won't be restarted */
-#define	SE_PRESENT			0x2						/* session is in /etc/ttys */
-#define	SE_IFEXISTS			0x4						/* session defined as "onifexists" */
-#define	SE_IFCONSOLE		0x8						/* session defined as "onifconsole" */
-	int     				se_nspace;              /* spacing count */
-	char					*se_device;				/* filename of port */
-	char					*se_getty;				/* what to run on that port */
-	char    				*se_getty_argv_space;   /* pre-parsed argument array space */
-	char					**se_getty_argv;		/* pre-parsed argument array */
-	char					*se_window;				/* window system (started only once) */
-	char    				*se_window_argv_space;  /* pre-parsed argument array space */
-	char					**se_window_argv;		/* pre-parsed argument array */
-	char    				*se_type;               /* default terminal type */
-	struct	init_session 	*se_prev;
-	struct	init_session 	*se_next;
+	int		se_index;		/* index of entry in ttys file */
+	pid_t		se_process;		/* controlling process */
+	struct timeval	se_started;		/* used to avoid thrashing */
+	int		se_flags;		/* status of session */
+#define	SE_SHUTDOWN	0x1			/* session won't be restarted */
+#define	SE_PRESENT	0x2			/* session is in /etc/ttys */
+#define	SE_IFEXISTS	0x4			/* session defined as "onifexists" */
+#define	SE_IFCONSOLE	0x8			/* session defined as "onifconsole" */
+	int     	se_nspace;              /* spacing count */
+	char		*se_device;		/* filename of port */
+	char		*se_getty;		/* what to run on that port */
+	char    	*se_getty_argv_space;   /* pre-parsed argument array space */
+	char		**se_getty_argv;	/* pre-parsed argument array */
+	char		*se_window;		/* window system (started only once) */
+	char    	*se_window_argv_space;  /* pre-parsed argument array space */
+	char		**se_window_argv;	/* pre-parsed argument array */
+	char    	*se_type;               /* default terminal type */
+	struct	init_session *se_prev;
+	struct	init_session *se_next;
 } session_t;
 
-static void		free_session(session_t *);
+static void	free_session(session_t *);
 static session_t *new_session(session_t *, int, struct ttyent *);
 static session_t *sessions;
 
-static char		**construct_argv(char *);
-static void		start_window_system(session_t *);
-static void		collect_child(pid_t, int);
+static char	**construct_argv(char *);
+static void	start_window_system(session_t *);
+static void	collect_child(pid_t, int);
 static pid_t 	start_getty(session_t *);
-static void		transition_handler(int);
-static void		alrm_handler(int);
-static void		setsecuritylevel(int);
-static int		getsecuritylevel(void);
-static int		setupargv(session_t *, struct ttyent *);
+static void	transition_handler(int);
+static void	lrm_handler(int);
+static void	setsecuritylevel(int);
+static int	getsecuritylevel(void);
+static int	setupargv(session_t *, struct ttyent *);
 #ifdef LOGIN_CAP
-static void		setprocresources(const char *);
+static void	setprocresources(const char *);
 #endif
+static int 	clang;
 
-static int clang;
+static void clear_session_logs(session_t *);
 
 static int start_session_db(void);
 static void add_session(session_t *);
@@ -232,47 +231,13 @@ main(int argc, char *argv[])
 
 	/* System V users like to reexec init. */
 	if (getpid() != 1) {
-#ifdef COMPAT_SYSV_INIT
-		/* So give them what they want */
-		if (argc > 1) {
-			if (strlen(argv[1]) == 1) {
-				char runlevel = *argv[1];
-				int sig;
-
-				switch (runlevel) {
-				case '0': /* halt + poweroff */
-					sig = SIGUSR2;
-					break;
-				case '1': /* single-user */
-					sig = SIGTERM;
-					break;
-				case '6': /* reboot */
-					sig = SIGINT;
-					break;
-				case 'c': /* block further logins */
-					sig = SIGTSTP;
-					break;
-				case 'q': /* rescan /etc/ttys */
-					sig = SIGHUP;
-					break;
-				case 'r': /* remount root */
-					sig = SIGEMT;
-					break;
-				default:
-					goto invalid;
-				}
-				kill(1, sig);
-				_exit(0);
-			} else
-				invalid: errx(1, "invalid run-level ``%s''", argv[1]);
-		} else
-#endif
-			errx(1, "already running");
+		errx(1, "already running");
 	}
 
 	init_path_argv0 = strdup(argv[0]);
-	if (init_path_argv0 == NULL)
+	if (init_path_argv0 == NULL) {
 		err(1, "strdup");
+	}
 
 	/*
 	 * Note that this does NOT open a file...
@@ -297,11 +262,8 @@ main(int argc, char *argv[])
 	 * This code assumes that we always get arguments through flags,
 	 * never through bits set in some random machine register.
 	 */
-	while ((c = getopt(argc, argv, "dsf")) != -1)
+	while ((c = getopt(argc, argv, "sf")) != -1)
 		switch (c) {
-		case 'd':
-			/* We don't support DEVFS. */
-			break;
 		case 's':
 			initial_transition = single_user;
 			break;
@@ -320,6 +282,7 @@ main(int argc, char *argv[])
 	 * We catch or block signals rather than ignore them,
 	 * so that they get reset on exec.
 	 */
+	handle(badsys, SIGSYS, 0);
 	handle(disaster, SIGABRT, SIGFPE, SIGILL, SIGSEGV, SIGBUS, SIGSYS,
 			SIGXCPU, SIGXFSZ, 0);
 	handle(transition_handler, SIGHUP, SIGINT, SIGEMT, SIGTERM, SIGTSTP,
@@ -333,8 +296,8 @@ main(int argc, char *argv[])
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
-	sigaction(SIGTTIN, &sa, NULL);
-	sigaction(SIGTTOU, &sa, NULL);
+	(void)sigaction(SIGTTIN, &sa, NULL);
+	(void)sigaction(SIGTTOU, &sa, NULL);
 
 	/*
 	 * Paranoia.
@@ -348,14 +311,12 @@ main(int argc, char *argv[])
 		_exit(0); /* reboot */
 	}
 
-
 	if (kenv(KENV_GET, "init_script", kenv_value, sizeof(kenv_value)) > 0) {
 		state_func_t next_transition;
 
 		if ((next_transition = f_run_script(kenv_value)) != NULL)
-			initial_transition = (state_t) next_transition;
+			initial_transition = (state_t)next_transition;
 	}
-
 
 	if (kenv(KENV_GET, "init_chroot", kenv_value, sizeof(kenv_value)) > 0) {
 		if (chdir(kenv_value) != 0 || chroot(".") != 0)
@@ -460,6 +421,22 @@ emergency(const char *message, ...)
 }
 
 /*
+ * Catch a SIGSYS signal.
+ *
+ * These may arise if a system does not support sysctl.
+ * We tolerate up to 25 of these, then throw in the towel.
+ */
+static void
+badsys(int sig)
+{
+	static int badcount = 0;
+
+	if (badcount++ < 25)
+		return;
+	disaster(sig);
+}
+
+/*
  * Catch an unexpected signal.
  */
 static void
@@ -528,10 +505,22 @@ setsecuritylevel(int newlevel)
 static void
 transition(state_t s)
 {
+	for (;;) {
+		s = (state_t)(*s)();
+	}
+}
 
-	current_state = s;
-	for (;;)
-		current_state = (state_t) (*current_state)();
+/*
+ * Close out the accounting files for a login session.
+ * NB: should send a message to the session logger to avoid blocking.
+ */
+static void
+clear_session_logs(session_t *sp)
+{
+	char *line = sp->se_device + sizeof(_PATH_DEV) - 1;
+
+	if (logout(line))
+		logwtmp(line, "", "");
 }
 
 static const char *
@@ -539,10 +528,11 @@ get_shell(void)
 {
 	static char kenv_value[PATH_MAX];
 
-	if (kenv(KENV_GET, "init_shell", kenv_value, sizeof(kenv_value)) > 0)
+	if (kenv(KENV_GET, "init_shell", kenv_value, sizeof(kenv_value)) > 0) {
 		return kenv_value;
-	else
+	} else {
 		return _PATH_BSHELL;
+	}
 }
 
 /*
@@ -554,7 +544,7 @@ setctty(const char *name)
 {
 	int fd;
 
-	revoke(name);
+	(void)revoke(name);
 	if ((fd = open(name, O_RDWR)) == -1) {
 		stall("can't open %s: %m", name);
 		_exit(1);
@@ -568,7 +558,7 @@ setctty(const char *name)
 /*
  * Bring the system up single user.
  */
-static state_t
+static state_func_t
 f_single_user(void)
 {
 	pid_t pid, wpid;
@@ -598,6 +588,13 @@ f_single_user(void)
 		}
 		warning("reboot(%#x) returned", howto);
 		_exit(0); /* panic as well */
+	}
+
+	/*
+	 * If the kernel is in secure mode, downgrade it to insecure mode.
+	 */
+	if (getsecuritylevel() > 0) {
+		setsecuritylevel(0);
 	}
 
 	shell = get_shell();
@@ -635,12 +632,13 @@ f_single_user(void)
 
 #ifdef DEBUGSHELL
 		{
-			char *cp = altshell;
+			char altshell[128], *cp = altshell;
 			int num;
 
 #define	SHREQUEST \
-	"Enter full pathname of shell or RETURN for " _PATH_BSHELL ": "
-			write(STDERR_FILENO, SHREQUEST, sizeof(SHREQUEST) - 1);
+	"Enter pathname of shell or RETURN for sh: "
+			(void)write(STDERR_FILENO,
+			    SHREQUEST, sizeof(SHREQUEST) - 1);
 			while ((num = read(STDIN_FILENO, cp, 1)) != -1 &&
 			    num != 0 && *cp != '\n' && cp < &altshell[127])
 					cp++;
@@ -681,7 +679,7 @@ f_single_user(void)
 		emergency("can't fork single-user shell, trying again");
 		while (waitpid(-1, NULL, WNOHANG) > 0)
 			continue;
-		return single_user;
+		return (state_func_t) single_user;
 	}
 
 	requested_transition = 0;
@@ -692,7 +690,7 @@ f_single_user(void)
 			if (errno == EINTR)
 				continue;
 			warning("wait for single-user shell failed: %m; restarting");
-			return single_user;
+			return (state_func_t) single_user;
 		}
 		if (wpid == pid && WIFSTOPPED(status)) {
 			warning("init: shell stopped, restarting\n");
@@ -702,7 +700,7 @@ f_single_user(void)
 	} while (wpid != pid && !requested_transition);
 
 	if (requested_transition)
-		return requested_transition;
+		return (state_func_t) requested_transition;
 
 	if (!WIFEXITED(status)) {
 		if (WTERMSIG(status) == SIGKILL) {
@@ -710,41 +708,40 @@ f_single_user(void)
 			 *  reboot(8) killed shell?
 			 */
 			warning("single user shell terminated.");
-			tn = tv;
-			tv.tv_sec += STALL_TIMEOUT;
-			while (tv.tv_sec > tn.tv_sec || (tv.tv_sec ==
-			    tn.tv_sec && tv.tv_usec > tn.tv_usec)) {
-				sleep(1);
-				gettimeofday(&tn, NULL);
-			}
+			sleep(STALL_TIMEOUT);
 			_exit(0);
 		} else {
 			warning("single user shell terminated, restarting");
-			return single_user;
+			return (state_func_t) single_user;
 		}
 	}
 
 	runcom_mode = FASTBOOT;
-	return runcom;
+	return (state_func_t) runcom;
 }
 
 /*
  * Run the system startup script.
  */
-static state_t
+static state_func_t
 f_runcom(void)
 {
-	state_t next_transition;
+	state_func_t next_transition;
 
-	if ((next_transition = run_script(_PATH_RUNCOM)) != NULL)
+	next_transition = f_run_script(_PATH_RUNCOM);
+	if (next_transition != NULL) {
 		return next_transition;
+	}
 
-	runcom_mode = AUTOBOOT; /* the default */
-	return read_ttys;
+	runcom_mode = AUTOBOOT;		/* the default */
+	/* NB: should send a message to the session logger to avoid blocking. */
+	logwtmp("~", "reboot", "");
+	return (state_func_t) read_ttys;
 }
 
+
 static void
-execute_script(char *argv[])
+execute_script(const char *argv[4])
 {
 	struct sigaction sa;
 	const char *shell, *script;
@@ -753,31 +750,26 @@ execute_script(char *argv[])
 	bzero(&sa, sizeof(sa));
 	sigemptyset(&sa.sa_mask);
 	sa.sa_handler = SIG_IGN;
-	sigaction(SIGTSTP, &sa, NULL);
-	sigaction(SIGHUP, &sa, NULL);
+	(void)sigaction(SIGTSTP, &sa, NULL);
+	(void)sigaction(SIGHUP, &sa, NULL);
 
-	//open_console();
+	setctty(_PATH_CONSOLE);
+
+	argv[0] = "sh";
+	argv[1] = _PATH_RUNCOM;
+	argv[2] = (runcom_mode == AUTOBOOT ? "autoboot" : 0);
+	argv[3] = NULL;
 
 	sigprocmask(SIG_SETMASK, &sa.sa_mask, NULL);
-#ifdef LOGIN_CAP
-	setprocresources(RESOURCE_RC);
-#endif
 
-	/*
-	 * Try to directly execute the script first.  If it
-	 * fails, try the old method of passing the script path
-	 * to sh(1).  Don't complain if it fails because of
-	 * the missing execute bit.
-	 */
-	script = argv[1];
+	script = argv[0];
 	error = access(script, X_OK);
 	if (error == 0) {
-		execv(script, argv + 1);
+		execv(script, argv);
 		warning("can't directly exec %s: %m", script);
 	} else if (errno != EACCES) {
 		warning("can't access %s: %m", script);
 	}
-
 	shell = get_shell();
 	execv(shell, argv);
 	stall("can't exec %s for %s: %m", shell, script);
@@ -789,12 +781,13 @@ execute_script(char *argv[])
 static void
 replace_init(char *path)
 {
-	char *argv[3];
+	char *argv[4];
 	char sh[] = "sh";
 
 	argv[0] = sh;
 	argv[1] = path;
-	argv[2] = NULL;
+	argv[2] = (runcom_mode == AUTOBOOT ? "autoboot" : 0);
+	argv[3] = NULL;
 
 	execute_script(argv);
 }
@@ -806,7 +799,7 @@ replace_init(char *path)
  *    terminated with a signal or exit code != 0.
  *  - death_single if a SIGTERM was delivered to init(8).
  */
-static state_t
+static state_func_t
 f_run_script(const char *script)
 {
 	pid_t pid, wpid;
@@ -817,13 +810,6 @@ f_run_script(const char *script)
 	shell = get_shell();
 
 	if ((pid = fork()) == 0) {
-		setctty(_PATH_CONSOLE);
-
-		argv[0] = "sh";
-		argv[1] = _PATH_RUNCOM;
-		argv[2] = runcom_mode == AUTOBOOT ? "autoboot" : 0;
-		argv[3] = NULL;
-
 		execute_script(argv);
 		sleep(STALL_TIMEOUT);
 		_exit(1); /* force single user mode */
@@ -834,7 +820,7 @@ f_run_script(const char *script)
 		while (waitpid(-1, (int*) 0, WNOHANG) > 0)
 			continue;
 		sleep(STALL_TIMEOUT);
-		return single_user;
+		return (state_func_t) single_user;
 	}
 
 	/*
@@ -846,11 +832,11 @@ f_run_script(const char *script)
 			collect_child(wpid);
 		if (wpid == -1) {
 			if (requested_transition == death)
-				return death;
+				return (state_func_t) death;
 			if (errno == EINTR)
 				continue;
 			warning("wait for %s on %s failed: %m; going to single user mode", shell, script);
-			return single_user;
+			return (state_func_t) single_user;
 		}
 		if (wpid == pid && WIFSTOPPED(status)) {
 			warning("init: %s on %s stopped, restarting\n", shell, script);
@@ -870,13 +856,13 @@ f_run_script(const char *script)
 
 	if (!WIFEXITED(status)) {
 		warning("%s on %s terminated abnormally, going to single user mode", shell, script);
-		return single_user;
+		return (state_func_t) single_user;
 	}
 
 	if (WEXITSTATUS(status))
-		return single_user;
+		return (state_func_t) single_user;
 
-	return 0;
+	return (state_func_t) 0;
 }
 
 /*
@@ -894,7 +880,6 @@ start_session_db(void)
 		return (1);
 	}
 	return (0);
-
 }
 
 /*
@@ -941,7 +926,7 @@ find_session(pid_t pid)
 	session_t *ret;
 
 	key.data = &pid;
-	key.size = sizeof pid;
+	key.size = sizeof(pid);
 	if ((*session_db->get)(session_db, &key, &data, 0) != 0)
 		return 0;
 	bcopy(data.data, (char*) &ret, sizeof(ret));
@@ -997,31 +982,26 @@ static session_t *
 new_session(session_t *sprev, int session_index, struct ttyent *typ)
 {
 	session_t *sp;
-	int fd;
 
-	if (typ->ty_name == NULL || typ->ty_getty == NULL)
-		return 0;
+	if ((typ->ty_status & TTY_ON) == 0 ||
+			typ->ty_name == NULL || typ->ty_getty == NULL) {
+		return NULL;
+	}
 
-	if ((typ->ty_status & TTY_ON) == 0)
-		return 0;
+	sp = (session_t *)malloc(sizeof (session_t));
+	if (sp == NULL) {
+		return NULL;
+	}
+	memset(sp, 0, sizeof *sp);
 
-	sp = (session_t *) calloc(1, sizeof (session_t));
-
-	asprintf(&sp->se_device, "%s%s", _PATH_DEV, typ->ty_name);
 	sp->se_index = session_index;
 	sp->se_flags |= SE_PRESENT;
 
-	/*
-	 * Attempt to open the device, if we get "device not configured"
-	 * then don't add the device to the session list.
-	 */
-	if ((fd = open(sp->se_device, O_RDONLY | O_NONBLOCK, 0)) < 0) {
-		if (errno == ENXIO) {
-			free_session(sp);
-			return (0);
-		}
-	} else
-		close(fd);
+	asprintf(&sp->se_device, "%s%s", _PATH_DEV, typ->ty_name);
+	if (!sp->se_device) {
+		free_session(sp);
+		return NULL;
+	}
 
 	if (setupargv(sp, typ) == 0) {
 		free_session(sp);
@@ -1091,9 +1071,10 @@ setupargv(session_t *sp, struct ttyent *typ)
 /*
  * Walk the list of ttys and create sessions for each active line.
  */
-static state_t
+static state_func_t
 f_read_ttys(void)
 {
+	int session_index = 0;
 	session_t *sp, *snext;
 	struct ttyent *typ;
 
@@ -1102,24 +1083,26 @@ f_read_ttys(void)
 	 * There shouldn't be any, but just in case...
 	 */
 	for (sp = sessions; sp; sp = snext) {
+		if (sp->se_process)
+			clear_session_logs(sp);
 		snext = sp->se_next;
 		free_session(sp);
 	}
 	sessions = 0;
 	if (start_session_db())
-		return single_user;
+		return (state_func_t) single_user;
 
 	/*
 	 * Allocate a session entry for each active port.
 	 * Note that sp starts at 0.
 	 */
 	while ((typ = getttyent()) != NULL)
-		if ((snext = new_session(sp, typ)) != NULL)
+		if ((snext = new_session(sp, ++session_index, typ)) != NULL)
 			sp = snext;
 
 	endttyent();
 
-	return multi_user;
+	return (state_func_t) multi_user;
 }
 
 /*
@@ -1159,18 +1142,15 @@ start_window_system(session_t *sp)
 	if (setsid() < 0)
 		emergency("setsid failed (window) %m");
 
-#ifdef LOGIN_CAP
-	setprocresources(RESOURCE_WINDOW);
-#endif
 	if (sp->se_type) {
 		/* Don't use malloc after fork */
 		strcpy(term, "TERM=");
 		strlcat(term, sp->se_type, sizeof(term));
 		env[0] = term;
 		env[1] = NULL;
-	}
-	else
+	} else {
 		env[0] = NULL;
+	}
 	execve(sp->se_window_argv[0], sp->se_window_argv, env);
 	stall("can't exec window system '%s' for port %s: %m",
 			sp->se_window_argv[0], sp->se_device);
@@ -1223,45 +1203,19 @@ start_getty(session_t *sp)
 	sigemptyset(&mask);
 	sigprocmask(SIG_SETMASK, &mask, NULL);
 
-#ifdef LOGIN_CAP
-	setprocresources(RESOURCE_GETTY);
-#endif
 	if (sp->se_type) {
 		/* Don't use malloc after fork */
 		strcpy(term, "TERM=");
 		strlcat(term, sp->se_type, sizeof(term));
 		env[0] = term;
 		env[1] = NULL;
-	} else
+	} else {
 		env[0] = NULL;
+	}
 	execve(sp->se_getty_argv[0], sp->se_getty_argv, env);
 	stall("can't exec getty '%s' for port %s: %m", sp->se_getty_argv[0],
 			sp->se_device);
 	_exit(1);
-}
-
-/*
- * Return 1 if the session is defined as "onifexists"
- * or "onifconsole" and the device node does not exist.
- */
-static int
-session_has_no_tty(session_t *sp)
-{
-	int fd;
-
-	if ((sp->se_flags & SE_IFEXISTS) == 0 &&
-	    (sp->se_flags & SE_IFCONSOLE) == 0)
-		return (0);
-
-	fd = open(sp->se_device, O_RDONLY | O_NONBLOCK, 0);
-	if (fd < 0) {
-		if (errno == ENOENT)
-			return (1);
-		return (0);
-	}
-
-	close(fd);
-	return (0);
 }
 
 /*
@@ -1279,10 +1233,11 @@ collect_child(pid_t pid)
 	if (!(sp = find_session(pid)))
 		return;
 
+	clear_session_logs(sp);
 	del_session(sp);
 	sp->se_process = 0;
 
-	if ((sp->se_flags & SE_SHUTDOWN) || session_has_no_tty(sp)) {
+	if ((sp->se_flags & SE_SHUTDOWN)) {
 		if ((sprev = sp->se_prev) != NULL)
 			sprev->se_next = sp->se_next;
 		else
@@ -1300,7 +1255,7 @@ collect_child(pid_t pid)
 	}
 
 	sp->se_process = pid;
-	gettimeofday(&sp->se_started, NULL);
+	sp->se_started = time((time_t *) 0);
 	add_session(sp);
 }
 
@@ -1314,8 +1269,8 @@ transition_handler(int sig)
 	case SIGHUP:
 		requested_transition = clean_ttys;
 		break;
-	case SIGUSR2:
-		howto = RB_POWEROFF;
+	//case SIGUSR2:
+		//howto = RB_POWEROFF;
 		/* FALLTHROUGH */
 	case SIGUSR1:
 		howto |= RB_HALT;
@@ -1338,7 +1293,7 @@ transition_handler(int sig)
 /*
  * Take the system multiuser.
  */
-static state_t
+static state_func_t
 f_multi_user(void)
 {
 	pid_t pid;
@@ -1365,7 +1320,7 @@ f_multi_user(void)
 			break;
 		}
 		sp->se_process = pid;
-		gettimeofday(&sp->se_started, NULL);
+		sp->se_started = time((time_t *) 0);
 		add_session(sp);
 	}
 
@@ -1373,13 +1328,13 @@ f_multi_user(void)
 		if ((pid = waitpid(-1, &status, 0)) != -1)
 			collect_child(pid, status);
 
-	return requested_transition;
+	return (state_func_t) requested_transition;
 }
 
 /*
  * This is an (n*2)+(n^2) algorithm.  We hope it isn't run often...
  */
-static state_t
+static state_func_t
 f_clean_ttys(void)
 {
 	session_t *sp, *sprev;
@@ -1389,7 +1344,7 @@ f_clean_ttys(void)
 	char *old_getty, *old_window, *old_type;
 
 	if (!sessions)
-		return multi_user;
+		return (state_func_t) multi_user;
 
 	/*
 	 * mark all sessions for death, (!SE_PRESENT)
@@ -1403,7 +1358,6 @@ f_clean_ttys(void)
 	while ((typ = getttyent()) != NULL) {
 		++session_index;
 
-		adjttyent(typ);
 		for (sprev = NULL, sp = sessions; sp; sprev = sp, sp = sp->se_next)
 			if (strcmp(typ->ty_name, sp->se_device + devlen) == 0)
 				break;
@@ -1466,13 +1420,13 @@ f_clean_ttys(void)
 		}
 	}
 
-	return multi_user;
+	return (state_func_t) multi_user;
 }
 
 /*
  * Block further logins.
  */
-static state_t
+static state_func_t
 f_catatonia(void)
 {
 	session_t *sp;
@@ -1480,7 +1434,7 @@ f_catatonia(void)
 	for (sp = sessions; sp; sp = sp->se_next)
 		sp->se_flags |= SE_SHUTDOWN;
 
-	return multi_user;
+	return (state_func_t) multi_user;
 }
 
 /*
@@ -1489,165 +1443,46 @@ f_catatonia(void)
 static void
 alrm_handler(int sig)
 {
-	(void)sig;
 	clang = 1;
 }
 
 /*
  * Bring the system down to single user.
  */
-static state_t
+static state_func_t
 f_death(void)
 {
-	int block, blocked;
-	size_t len;
-
-	/* Temporarily block suspend. */
-	len = sizeof(blocked);
-	block = 1;
-	if (sysctlbyname("kern.suspend_blocked", &blocked, &len, &block, sizeof(block)) == -1)
-		blocked = 0;
-
-	/*
-	 * Also revoke the TTY here.  Because runshutdown() may reopen
-	 * the TTY whose getty we're killing here, there is no guarantee
-	 * runshutdown() will perform the initial open() call, causing
-	 * the terminal attributes to be misconfigured.
-	 */
-	revoke_ttys();
-
-	/* Try to run the rc.shutdown script within a period of time */
-	runshutdown();
-
-	/* Unblock suspend if we blocked it. */
-	if (!blocked)
-		sysctlbyname("kern.suspend_blocked", NULL, NULL, &blocked, sizeof(blocked));
-
-	return single_user;
-}
-
-static void
-revoke_ttys(void)
-{
 	session_t *sp;
+	int i;
+	pid_t pid;
+	int block, blocked;
+	static const int death_sigs[3] = { SIGHUP, SIGTERM, SIGKILL };
 
-	for (sp = sessions; sp; sp = sp->se_next) {
-		sp->se_flags |= SE_SHUTDOWN;
-		kill(sp->se_process, SIGHUP);
-		revoke(sp->se_device);
+	for (sp = sessions; sp; sp = sp->se_next)
+			sp->se_flags |= SE_SHUTDOWN;
+
+	/* NB: should send a message to the session logger to avoid blocking. */
+	logwtmp("~", "shutdown", "");
+
+	for (i = 0; i < 3; ++i) {
+		if (kill(-1, death_sigs[i]) == -1 && errno == ESRCH) {
+			return (state_func_t) single_user;
+		}
+		clang = 0;
+		alarm(DEATH_WATCH);
+		do
+			if ((pid = waitpid(-1, (int *)0, 0)) != -1)
+				collect_child(pid);
+		while (clang == 0 && errno != ECHILD);
+
+		if (errno == ECHILD)
+			return (state_func_t) single_user;
 	}
+
+	warning("some processes would not die; ps axl advised");
+
+	return (state_func_t) single_user;
 }
-
-/*
- * Run the system shutdown script.
- *
- * Exit codes:      XXX I should document more
- * -2       shutdown script terminated abnormally
- * -1       fatal error - can't run script
- * 0        good.
- * >0       some error (exit code)
- */
-static int
-runshutdown(void)
-{
-	pid_t pid, wpid;
-	int status;
-	int shutdowntimeout;
-	size_t len;
-	char *argv[4];
-	struct stat sb;
-
-	/*
-	 * rc.shutdown is optional, so to prevent any unnecessary
-	 * complaints from the shell we simply don't run it if the
-	 * file does not exist. If the stat() here fails for other
-	 * reasons, we'll let the shell complain.
-	 */
-	if (stat(_PATH_RUNDOWN, &sb) == -1 && errno == ENOENT)
-		return 0;
-
-	if ((pid = fork()) == 0) {
-		char _sh[] = "sh";
-		char _reboot[] = "reboot";
-		char _single[] = "single";
-		char _path_rundown[] = _PATH_RUNDOWN;
-
-		argv[0] = _sh;
-		argv[1] = _path_rundown;
-		argv[2] = Reboot ? _reboot : _single;
-		argv[3] = NULL;
-
-		execute_script(argv);
-		_exit(1); /* force single user mode */
-	}
-
-	if (pid == -1) {
-		emergency("can't fork for %s: %m", _PATH_RUNDOWN);
-		while (waitpid(-1, (int*) 0, WNOHANG) > 0)
-			continue;
-		sleep(STALL_TIMEOUT);
-		return -1;
-	}
-
-	len = sizeof(shutdowntimeout);
-	if (sysctlbyname("kern.init_shutdown_timeout", &shutdowntimeout, &len, NULL, 0) == -1 || shutdowntimeout < 2)
-		shutdowntimeout = DEATH_SCRIPT;
-	alarm(shutdowntimeout);
-	clang = 0;
-	/*
-	 * Copied from single_user().  This is a bit paranoid.
-	 * Use the same ALRM handler.
-	 */
-	do {
-		if ((wpid = waitpid(-1, &status, WUNTRACED)) != -1)
-			collect_child(wpid);
-		if (clang == 1) {
-			/* we were waiting for the sub-shell */
-			kill(wpid, SIGTERM);
-			warning("timeout expired for %s: %m; going to single user mode", _PATH_RUNDOWN);
-			return -1;
-		}
-		if (wpid == -1) {
-			if (errno == EINTR)
-				continue;
-			warning("wait for %s failed: %m; going to single user mode", _PATH_RUNDOWN);
-			return -1;
-		}
-		if (wpid == pid && WIFSTOPPED(status)) {
-			warning("init: %s stopped, restarting\n",
-			_PATH_RUNDOWN);
-			kill(pid, SIGCONT);
-			wpid = -1;
-		}
-	} while (wpid != pid && !clang);
-
-	/* Turn off the alarm */
-	alarm(0);
-
-	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM
-			&& requested_transition == catatonia) {
-		/*
-		 * /etc/rc.shutdown executed /sbin/reboot;
-		 * wait for the end quietly
-		 */
-		sigset_t s;
-
-		sigfillset(&s);
-		for (;;)
-			sigsuspend(&s);
-	}
-
-	if (!WIFEXITED(status)) {
-		warning("%s terminated abnormally, going to single user mode", _PATH_RUNDOWN);
-		return -2;
-	}
-
-	if ((status = WEXITSTATUS(status)) != 0)
-		warning("%s returned status %d", _PATH_RUNDOWN, status);
-
-	return status;
-}
-
 
 static char *
 strk(char *p)
@@ -1687,7 +1522,6 @@ strk(char *p)
 	}
 	return q;
 }
-
 
 #ifdef LOGIN_CAP
 static void

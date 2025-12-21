@@ -207,8 +207,6 @@ void		printall(const char *);
 void		list_cloners(void);
 void 		status(const struct sockaddr_dl *);
 void 		usage(void);
-const char 	*get_string(const char *, const char *, u_int8_t *, int *);
-void		print_string(const u_int8_t *, int);
 struct afswtch *lookup_af(const char *);
 
 int
