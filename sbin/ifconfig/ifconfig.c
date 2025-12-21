@@ -156,8 +156,6 @@ int	main(int, char *[]);
 
 int	actions;			/* Actions performed */
 
-#define nitems(x) (sizeof(x) / sizeof((x)[0]))
-
 struct cmd if_cmds[] = {
 		{ "up",		IFF_UP,		0,		setifflags } ,
 		{ "down",	-IFF_UP,	0,		setifflags },
