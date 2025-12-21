@@ -152,9 +152,11 @@ void	clone_destroy(const char *, int);
 
 void    if_init(void);
 void	cmds_init(void);
-int		main(int, char *[]);
+int	main(int, char *[]);
 
-int		actions;			/* Actions performed */
+int	actions;			/* Actions performed */
+
+#define nitems(x) (sizeof(x) / sizeof((x)[0]))
 
 struct cmd if_cmds[] = {
 		{ "up",		IFF_UP,		0,		setifflags } ,

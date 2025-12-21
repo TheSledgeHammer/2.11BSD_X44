@@ -105,7 +105,7 @@ static void emergency(const char *, ...) __printflike(1, 2);
 static void badsys(int);
 static void disaster(int);
 static char *strk(char *);
-
+/*
 #define	DEATH		'd'
 #define	SINGLE_USER	's'
 #define	RUNCOM		'r'
@@ -113,8 +113,8 @@ static char *strk(char *);
 #define	MULTI_USER	'm'
 #define	CLEAN_TTYS	'T'
 #define	CATATONIA	'c'
-
-typedef enum {
+*/
+typedef enum state_enum {
 	invalid_state,
 	single_user,
 	runcom,
@@ -123,7 +123,7 @@ typedef enum {
 	clean_ttys,
 	catatonia,
 	death,
-} state_t;
+} state;
 
 typedef long (*state_func_t)(void);
 typedef state_func_t (*state_t)(void);
@@ -138,16 +138,39 @@ static state_func_t f_death(void);
 
 static state_func_t f_run_script(const char *);
 
-state_func_t state_funcs[] = {
-		invalid_state = NULL,
-		single_user = f_single_user,
-		runcom = f_runcom,
-		read_ttys = f_read_ttys,
-		multi_user = f_multi_user,
-		clean_ttys = f_clean_ttys,
-		catatonia = f_catatonia,
-		death = f_death,
+typedef struct state_handle {
+	state_t state;
+} state_handle_t;
+
+state_handle_t state_funcs[] = {
+		{	/* invalid_state */
+				.state = NULL,
+		},
+		{	/* single_user */
+				.state = f_single_user,
+		},
+		{	/* runcom */
+				.state = f_runcom,
+		},
+		{	/* read_ttys */
+				.state = f_read_ttys,
+		},
+		{	/* multi_user */
+				.state = f_multi_user,
+		},
+		{	/* clean_ttys */
+				.state = f_clean_ttys,
+		},
+		{	/* catatonia */
+				.state = f_catatonia,
+		},
+		{	/* death */
+				.state = f_death,
+		},
 };
+
+static state_handle_t *state_handler(int);
+static state_t get_state(int);
 
 enum { AUTOBOOT, FASTBOOT } runcom_mode = AUTOBOOT;
 #define FALSE	0
@@ -196,7 +219,7 @@ static void	start_window_system(session_t *);
 static void	collect_child(pid_t, int);
 static pid_t 	start_getty(session_t *);
 static void	transition_handler(int);
-static void	lrm_handler(int);
+static void	alrm_handler(int);
 static void	setsecuritylevel(int);
 static int	getsecuritylevel(void);
 static int	setupargv(session_t *, struct ttyent *);
@@ -265,7 +288,7 @@ main(int argc, char *argv[])
 	while ((c = getopt(argc, argv, "sf")) != -1)
 		switch (c) {
 		case 's':
-			initial_transition = single_user;
+			initial_transition = get_state(single_user);
 			break;
 		case 'f':
 			runcom_mode = FASTBOOT;
@@ -679,7 +702,7 @@ f_single_user(void)
 		emergency("can't fork single-user shell, trying again");
 		while (waitpid(-1, NULL, WNOHANG) > 0)
 			continue;
-		return (state_func_t) single_user;
+		return (state_func_t) get_state(single_user);
 	}
 
 	requested_transition = 0;
@@ -690,7 +713,7 @@ f_single_user(void)
 			if (errno == EINTR)
 				continue;
 			warning("wait for single-user shell failed: %m; restarting");
-			return (state_func_t) single_user;
+			return (state_func_t) get_state(single_user);
 		}
 		if (wpid == pid && WIFSTOPPED(status)) {
 			warning("init: shell stopped, restarting\n");
@@ -712,12 +735,12 @@ f_single_user(void)
 			_exit(0);
 		} else {
 			warning("single user shell terminated, restarting");
-			return (state_func_t) single_user;
+			return (state_func_t) get_state(single_user);
 		}
 	}
 
 	runcom_mode = FASTBOOT;
-	return (state_func_t) runcom;
+	return (state_func_t) get_state(runcom);
 }
 
 /*
@@ -736,7 +759,7 @@ f_runcom(void)
 	runcom_mode = AUTOBOOT;		/* the default */
 	/* NB: should send a message to the session logger to avoid blocking. */
 	logwtmp("~", "reboot", "");
-	return (state_func_t) read_ttys;
+	return (state_func_t) get_state(read_ttys);
 }
 
 
@@ -745,6 +768,7 @@ execute_script(const char *argv[4])
 {
 	struct sigaction sa;
 	const char *shell, *script;
+	char sh[] = "sh";
 	int error;
 
 	bzero(&sa, sizeof(sa));
@@ -755,7 +779,7 @@ execute_script(const char *argv[4])
 
 	setctty(_PATH_CONSOLE);
 
-	argv[0] = "sh";
+	argv[0] = sh;
 	argv[1] = _PATH_RUNCOM;
 	argv[2] = (runcom_mode == AUTOBOOT ? "autoboot" : 0);
 	argv[3] = NULL;
@@ -820,7 +844,7 @@ f_run_script(const char *script)
 		while (waitpid(-1, (int*) 0, WNOHANG) > 0)
 			continue;
 		sleep(STALL_TIMEOUT);
-		return (state_func_t) single_user;
+		return (state_func_t) get_state(single_user);
 	}
 
 	/*
@@ -831,12 +855,12 @@ f_run_script(const char *script)
 		if ((wpid = waitpid(-1, &status, WUNTRACED)) != -1)
 			collect_child(wpid);
 		if (wpid == -1) {
-			if (requested_transition == death)
-				return (state_func_t) death;
+			if (requested_transition == get_state(death))
+				return (state_func_t) get_state(death);
 			if (errno == EINTR)
 				continue;
 			warning("wait for %s on %s failed: %m; going to single user mode", shell, script);
-			return (state_func_t) single_user;
+			return (state_func_t) get_state(single_user);
 		}
 		if (wpid == pid && WIFSTOPPED(status)) {
 			warning("init: %s on %s stopped, restarting\n", shell, script);
@@ -845,7 +869,7 @@ f_run_script(const char *script)
 		}
 	} while (wpid != pid);
 
-	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM && requested_transition == catatonia) {
+	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM && requested_transition == get_state(catatonia)) {
 		/* /etc/rc executed /sbin/reboot; wait for the end quietly */
 		sigset_t s;
 
@@ -856,11 +880,11 @@ f_run_script(const char *script)
 
 	if (!WIFEXITED(status)) {
 		warning("%s on %s terminated abnormally, going to single user mode", shell, script);
-		return (state_func_t) single_user;
+		return (state_func_t) get_state(single_user);
 	}
 
 	if (WEXITSTATUS(status))
-		return (state_func_t) single_user;
+		return (state_func_t) get_state(single_user);
 
 	return (state_func_t) 0;
 }
@@ -1090,7 +1114,7 @@ f_read_ttys(void)
 	}
 	sessions = 0;
 	if (start_session_db())
-		return (state_func_t) single_user;
+		return (state_func_t) get_state(single_user);
 
 	/*
 	 * Allocate a session entry for each active port.
@@ -1102,7 +1126,7 @@ f_read_ttys(void)
 
 	endttyent();
 
-	return (state_func_t) multi_user;
+	return (state_func_t) get_state(multi_user);
 }
 
 /*
@@ -1250,7 +1274,7 @@ collect_child(pid_t pid)
 
 	if ((pid = start_getty(sp)) == -1) {
 		/* serious trouble */
-		requested_transition = clean_ttys;
+		requested_transition = get_state(clean_ttys);
 		return;
 	}
 
@@ -1267,7 +1291,7 @@ transition_handler(int sig)
 {
 	switch (sig) {
 	case SIGHUP:
-		requested_transition = clean_ttys;
+		requested_transition = get_state(clean_ttys);
 		break;
 	//case SIGUSR2:
 		//howto = RB_POWEROFF;
@@ -1279,15 +1303,46 @@ transition_handler(int sig)
 		Reboot = TRUE;
 		/* FALLTHROUGH */
 	case SIGTERM:
-		requested_transition = death;
+		requested_transition = get_state(death);
 		break;
 	case SIGTSTP:
-		requested_transition = catatonia;
+		requested_transition = get_state(catatonia);
 		break;
 	default:
 		requested_transition = 0;
 		break;
 	}
+}
+
+/* Return state_handle_t from state enumerator */
+static state_handle_t *
+state_handler(int num)
+{
+	state_handle_t *handle;
+	int i;
+
+#define nelems(x) (sizeof(x) / sizeof((x)[0]))
+
+	handle = &state_funcs[0];
+	for (i = 0; i < nelems(state_funcs); i++) {
+		handle = &state_funcs[i];
+		if ((handle != NULL) && (num == i)) {
+			return (handle);
+		}
+	}
+	return (NULL);
+}
+
+static state_t
+get_state(int num)
+{
+	state_handle_t *state;
+
+	state = state_handler(num);
+    if (state != NULL) {
+        return (state->state);
+    }
+    return (NULL);
 }
 
 /*
@@ -1316,7 +1371,7 @@ f_multi_user(void)
 			continue;
 		if ((pid = start_getty(sp)) == -1) {
 			/* serious trouble */
-			requested_transition = clean_ttys;
+			requested_transition = get_state(clean_ttys);
 			break;
 		}
 		sp->se_process = pid;
@@ -1344,7 +1399,7 @@ f_clean_ttys(void)
 	char *old_getty, *old_window, *old_type;
 
 	if (!sessions)
-		return (state_func_t) multi_user;
+		return (state_func_t) get_state(multi_user);
 
 	/*
 	 * mark all sessions for death, (!SE_PRESENT)
@@ -1420,7 +1475,7 @@ f_clean_ttys(void)
 		}
 	}
 
-	return (state_func_t) multi_user;
+	return (state_func_t) get_state(multi_user);
 }
 
 /*
@@ -1434,7 +1489,7 @@ f_catatonia(void)
 	for (sp = sessions; sp; sp = sp->se_next)
 		sp->se_flags |= SE_SHUTDOWN;
 
-	return (state_func_t) multi_user;
+	return (state_func_t) get_state(multi_user);
 }
 
 /*
@@ -1466,7 +1521,7 @@ f_death(void)
 
 	for (i = 0; i < 3; ++i) {
 		if (kill(-1, death_sigs[i]) == -1 && errno == ESRCH) {
-			return (state_func_t) single_user;
+			return (state_func_t) get_state(single_user);
 		}
 		clang = 0;
 		alarm(DEATH_WATCH);
@@ -1476,12 +1531,12 @@ f_death(void)
 		while (clang == 0 && errno != ECHILD);
 
 		if (errno == ECHILD)
-			return (state_func_t) single_user;
+			return (state_func_t) get_state(single_user);
 	}
 
 	warning("some processes would not die; ps axl advised");
 
-	return (state_func_t) single_user;
+	return (state_func_t) get_state(single_user);
 }
 
 static char *
