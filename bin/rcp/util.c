@@ -106,7 +106,7 @@ int
 susystem(char *s, int userid)
 {
 	sig_t istat, qstat;
-	int status, w;
+	int status;
 	pid_t pid;
 
 	pid = vfork();
@@ -116,7 +116,7 @@ susystem(char *s, int userid)
 	
 	case 0:
 		(void)setuid(userid);
-		execl(_PATH_BSHELL, "sh", "-c", s, NULL);
+		(void)execl(_PATH_BSHELL, "sh", "-c", s, (char *)NULL);
 		_exit(127);
 	}
 	istat = signal(SIGINT, SIG_IGN);
