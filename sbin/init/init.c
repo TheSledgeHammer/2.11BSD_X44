@@ -37,20 +37,22 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
+//#include <sys/mman.h>
 #include <sys/mount.h>
-#include <sys/signal.h>
+#include <sys/reboot.h>
+//#include <sys/signal.h>
 #include <sys/sysctl.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include <sys/uio.h>
+//#include <sys/uio.h>
 
 #include <db.h>
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <kenv.h>
-#include <paths.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,10 +60,8 @@
 #include <time.h>
 #include <ttyent.h>
 #include <unistd.h>
-#include <sys/reboot.h>
-#include <err.h>
-
-#include <stdarg.h>
+#include <util.h>
+#include <utmp.h>
 
 #ifdef SECURE
 #include <pwd.h>
@@ -85,23 +85,12 @@
 #define	DEATH_WATCH	10	/* wait N secs for procs to die */
 #define	DEATH_SCRIPT	120	/* wait for 2min for /etc/rc.shutdown */
 
-/*
- * User-based resource limits.
- */
-#define RESOURCE_RC	"daemon"
-#define RESOURCE_WINDOW	"default"
-#define RESOURCE_GETTY	"default"
-
-#ifndef DEFAULT_STATE
-#define DEFAULT_STATE	runcom
-#endif
-
 static void handle(sig_t, ...);
 static void delset(sigset_t *, ...);
 
-static void stall(const char *, ...) __printflike(1, 2);
-static void warning(const char *, ...) __printflike(1, 2);
-static void emergency(const char *, ...) __printflike(1, 2);
+static void stall(const char *, ...) __sysloglike(1, 2);
+static void warning(const char *, ...) __sysloglike(1, 2);
+static void emergency(const char *, ...) __sysloglike(1, 2);
 static void badsys(int);
 static void disaster(int);
 static char *strk(char *);
@@ -123,7 +112,7 @@ typedef enum state_enum {
 	clean_ttys,
 	catatonia,
 	death,
-} state;
+} state_enum;
 
 typedef long (*state_func_t)(void);
 typedef state_func_t (*state_t)(void);
@@ -182,7 +171,7 @@ static int howto = RB_AUTOBOOT;
 static char *init_path_argv0;
 
 static void transition(state_t);
-static state_t requested_transition = DEFAULT_STATE;
+static state_t requested_transition = f_runcom;
 
 static void execute_script(char *argv[]);
 static const char *get_shell(void);
@@ -191,12 +180,10 @@ static void replace_init(char *path);
 typedef struct init_session {
 	int		se_index;		/* index of entry in ttys file */
 	pid_t		se_process;		/* controlling process */
-	struct timeval	se_started;		/* used to avoid thrashing */
+	time_t	se_started;		/* used to avoid thrashing */
 	int		se_flags;		/* status of session */
 #define	SE_SHUTDOWN	0x1			/* session won't be restarted */
 #define	SE_PRESENT	0x2			/* session is in /etc/ttys */
-#define	SE_IFEXISTS	0x4			/* session defined as "onifexists" */
-#define	SE_IFCONSOLE	0x8			/* session defined as "onifconsole" */
 	int     	se_nspace;              /* spacing count */
 	char		*se_device;		/* filename of port */
 	char		*se_getty;		/* what to run on that port */
@@ -216,7 +203,7 @@ static session_t *sessions;
 
 static char	**construct_argv(char *);
 static void	start_window_system(session_t *);
-static void	collect_child(pid_t, int);
+static void	collect_child(pid_t);
 static pid_t 	start_getty(session_t *);
 static void	transition_handler(int);
 static void	alrm_handler(int);
@@ -242,9 +229,9 @@ static DB *session_db;
 int
 main(int argc, char *argv[])
 {
-	state_t initial_transition = runcom;
+	state_t initial_transition = get_state(runcom);
 	char kenv_value[PATH_MAX];
-	int c, error;
+	int c;
 	struct sigaction sa;
 	sigset_t mask;
 
@@ -589,7 +576,6 @@ f_single_user(void)
 	sigset_t mask;
 	const char *shell;
 	const char *argv[2];
-	struct timeval tv, tn;
 #ifdef SECURE
 	struct ttyent *typ;
 	struct passwd *pp;
@@ -708,7 +694,7 @@ f_single_user(void)
 	requested_transition = 0;
 	do {
 		if ((wpid = waitpid(-1, &status, WUNTRACED)) != -1)
-			collect_child(wpid, status);
+			collect_child(wpid);
 		if (wpid == -1) {
 			if (errno == EINTR)
 				continue;
@@ -764,7 +750,7 @@ f_runcom(void)
 
 
 static void
-execute_script(const char *argv[4])
+execute_script(char *argv[])
 {
 	struct sigaction sa;
 	const char *shell, *script;
@@ -1193,7 +1179,7 @@ start_getty(session_t *sp)
 	int too_quick = 0;
 	char term[64], *env[2];
 
-	if (current_time >= sp->se_started&&
+	if (current_time >= sp->se_started &&
 	current_time - sp->se_started < GETTY_SPACING) {
 		if (++sp->se_nspace > GETTY_NSPACE) {
 			sp->se_nspace = 0;
@@ -1447,7 +1433,7 @@ f_clean_ttys(void)
 					|| (old_type && strcmp(old_type, sp->se_type) != 0)) {
 				/* Don't set SE_SHUTDOWN here */
 				sp->se_nspace = 0;
-				sp->se_started.tv_sec = sp->se_started.tv_usec = 0;
+				sp->se_started = 0;
 				kill(sp->se_process, SIGHUP);
 			}
 			if (old_getty)
@@ -1510,7 +1496,6 @@ f_death(void)
 	session_t *sp;
 	int i;
 	pid_t pid;
-	int block, blocked;
 	static const int death_sigs[3] = { SIGHUP, SIGTERM, SIGKILL };
 
 	for (sp = sessions; sp; sp = sp->se_next)
