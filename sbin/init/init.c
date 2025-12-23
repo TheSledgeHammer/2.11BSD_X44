@@ -180,7 +180,7 @@ static void replace_init(char *path);
 typedef struct init_session {
 	int		se_index;		/* index of entry in ttys file */
 	pid_t		se_process;		/* controlling process */
-	time_t	se_started;		/* used to avoid thrashing */
+	time_t		se_started;		/* used to avoid thrashing */
 	int		se_flags;		/* status of session */
 #define	SE_SHUTDOWN	0x1			/* session won't be restarted */
 #define	SE_PRESENT	0x2			/* session is in /etc/ttys */

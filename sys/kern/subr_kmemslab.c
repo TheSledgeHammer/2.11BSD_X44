@@ -1035,12 +1035,14 @@ retry:
 				/* allocated magazine object */
 				obj = cpucache_alloc(cache, depot, object, size, index, cpu_number());
 				if (obj != NULL) {
+					/* retrieve magazine from depot */
 					mag = &depot->ksmd_magazine;
 					/* check magazine size and index against meta */
 					meta = magazine_check(slab, mag);
 					if (meta != NULL) {
 						return (obj);
 					}
+					/* retry in alternative depot */
 					ndepot += 1;
 					goto retry;
 				}
@@ -1065,19 +1067,26 @@ kmemslab_free(cache, object, size, index, mtype)
 	int ndepot;
 
 	ndepot = 0;
+	/* lookup & free slab */
 	slab = slab_lookup(cache, size, index, mtype);
 	if (slab != NULL) {
 		slab_remove(cache, slab, size, index, mtype);
 retry:
 		if (ndepot < MAGAZINE_DEPOT_MAX) {
+			/* retrieve magazine depot */
 			depot = &cache->ksc_depot[ndepot];
 			if (depot != NULL) {
+				/* free magazine object */
 				obj = cpucache_free(cache, depot, object, size, index, cpu_number());
 				if (obj != NULL) {
+					/* retrieve magazine from depot */
+					mag = &depot->ksmd_magazine;
+					/* check magazine size and index against meta */
 					meta = magazine_check(slab, mag);
 					if (meta != NULL) {
 						return (obj);
 					}
+					/* retry in alternative depot */
 					ndepot += 1;
 					goto retry;
 				}
@@ -1097,12 +1106,16 @@ kmemslab_destroy(cache, object, size, index, mtype)
 	register struct kmemslabs *slab;
 	void *obj;
 
+	/* lookup slab */
 	slab = slab_lookup(cache, size, index, mtype);
 	if (slab != NULL) {
+		/* free slab */
 		obj = kmemslab_free(cache, object, size, index, mtype);
 		if (obj != NULL) {
+			/* slab object was not freed */
 			panic("kmemslab_destroy: failed to free object");
 		}
+		/* destroy slab */
 		slab_destroy(cache, slab, size, index, mtype);
 	}
 }

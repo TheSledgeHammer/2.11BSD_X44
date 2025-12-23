@@ -87,7 +87,9 @@ struct	in6pcb {
 #define in6p_table	in6p_head.inph_table
 #define in6p_sp		in6p_head.inph_sp
 	struct	route_in6 in6p_route;	/* placeholder for routing entry */
+	struct in6_addr in6p_faddr;	/* foreign host table entry */
 	u_int16_t in6p_fport;		/* foreign port */
+	struct in6_addr in6p_laddr;	/* local host table entry */
 	u_int16_t in6p_lport;		/* local port */
 	u_int32_t in6p_flowinfo;	/* priority and flowlabel */
 	int	in6p_flags;		/* generic IP6/datagram flags */
@@ -99,9 +101,8 @@ struct	in6pcb {
 	struct icmp6_filter *in6p_icmp6filt;
 	int	in6p_cksum;		/* IPV6_CHECKSUM setsockopt */
 };
-
-#define in6p_faddr	in6p_ip6.ip6_dst
-#define in6p_laddr	in6p_ip6.ip6_src
+//#define in6p_faddr	in6p_ip6.ip6_dst
+//#define in6p_laddr	in6p_ip6.ip6_src
 
 /* states in inp_state: */
 #define	IN6P_ATTACHED		INP_ATTACHED

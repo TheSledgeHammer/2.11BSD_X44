@@ -220,7 +220,7 @@ ip6intr()
 	}
 }
 
-extern struct	route_in6 ip6_forward_rt;
+extern struct route_in6 ip6_forward_rt;
 
 void
 ip6_input(m)

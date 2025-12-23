@@ -58,7 +58,7 @@
 struct	mbuf;
 struct	ifnet;
 
-struct	domain {
+struct domain {
 	int		dom_family;							/* AF_xxx */
 	char	*dom_name;
 	void	(*dom_init)(void);					/* initialize domain data structures */

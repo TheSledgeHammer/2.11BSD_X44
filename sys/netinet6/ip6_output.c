@@ -1333,7 +1333,7 @@ ip6_ctloutput(op, so, level, optname, mp)
 				    m, so));
 			case IPV6_HOPOPTS:
 			case IPV6_DSTOPTS:
-				if (p == 0 || suser(p->p_ucred, &p->p_acflag)) {
+				if (p == 0 || suser1(p->p_ucred, &p->p_acflag)) {
 					error = EPERM;
 					break;
 				}

@@ -84,7 +84,9 @@ struct inpcb {
 #define inp_table	inp_head.inph_table
 #define inp_sp		inp_head.inph_sp
 	struct route inp_route;		/* placeholder for routing entry */
+	struct in_addr inp_faddr;	/* foreign host table entry */
 	u_int16_t inp_fport;		/* foreign port */
+	struct in_addr inp_laddr;	/* local host table entry */
 	u_int16_t inp_lport;		/* local port */
 	int	  inp_flags;		/* generic IP/datagram flags */
 	struct ip inp_ip;		/* header prototype; should have more */
@@ -92,8 +94,8 @@ struct inpcb {
 	struct ip_moptions *inp_moptions; /* IP multicast options */
 	int	  inp_errormtu;		/* MTU of last xmit status = EMSGSIZE */
 };
-#define	inp_faddr	inp_ip.ip_dst
-#define	inp_laddr	inp_ip.ip_src
+//#define	inp_faddr	inp_ip.ip_dst
+//#define	inp_laddr	inp_ip.ip_src
 
 /* flags in inp_flags: */
 #define	INP_RECVOPTS		0x01	/* receive incoming IP options */
