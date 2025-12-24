@@ -606,6 +606,5 @@ usage(void)
 static void
 progress(int sig __unused)
 {
-	
 	pinfo++;
 }

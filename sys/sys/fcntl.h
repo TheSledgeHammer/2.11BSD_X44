@@ -83,6 +83,7 @@
 #define	O_EXLOCK	0x00020		/* open with exclusive file lock */
 #define	O_ASYNC		0x00040		/* signal pgrp when data ready */
 #define	O_FSYNC		0x00080		/* synchronous writes */
+#define	O_SYNC		O_FSYNC		/* synchronous writes */
 #endif
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #define	O_NOFOLLOW	0x00100	/* don't follow symlinks on the last */
@@ -102,6 +103,12 @@
 
 /* defined by POSIX 1003.1; BSD default, so no bit required */
 #define	O_NOCTTY	0		/* don't assign controlling terminal */
+
+#if (_POSIX_C_SOURCE - 0) >= 199309L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
+#define	O_DSYNC		0x20000	/* write: I/O data completion */
+#define	O_RSYNC		0x40000	/* read: I/O completion as for write */
+#endif
 
 #ifdef _KERNEL
 /* convert from open() flags to/from fflags; convert O_RD/WR to FREAD/FWRITE */
