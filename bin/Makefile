@@ -3,7 +3,9 @@
 
 SUBDIR=	cat chflags chio chmod chpass cp csh date dd df domainname 		\
 		echo ed expr hostname kenv kill ln ls mkdir mv passwd pax ps \
-		pwd rcp rm rmail rmdir sh sleep stty sync sysctl tcsh test
+		pwd rcp rm rmdir sh sleep stty sync sysctl tcsh test
+
+# rmail: no uucp mail server
 
 .include <bsd.subdir.mk>
 
