@@ -61,7 +61,12 @@
 #include <ttyent.h>
 #include <unistd.h>
 #include <util.h>
+#ifdef SUPPORT_UTMP
 #include <utmp.h>
+#endif
+#ifdef SUPPORT_UTMPX
+#include <utmpx.h>
+#endif
 
 #ifdef SECURE
 #include <pwd.h>
@@ -94,7 +99,7 @@ static void emergency(const char *, ...) __sysloglike(1, 2);
 static void badsys(int);
 static void disaster(int);
 static char *strk(char *);
-/*
+
 #define	DEATH		'd'
 #define	SINGLE_USER	's'
 #define	RUNCOM		'r'
@@ -102,7 +107,7 @@ static char *strk(char *);
 #define	MULTI_USER	'm'
 #define	CLEAN_TTYS	'T'
 #define	CATATONIA	'c'
-*/
+
 typedef enum state_enum {
 	invalid_state,
 	single_user,
@@ -112,6 +117,7 @@ typedef enum state_enum {
 	clean_ttys,
 	catatonia,
 	death,
+	run_script,
 } state_enum;
 
 typedef long (*state_func_t)(void);
@@ -124,8 +130,7 @@ static state_func_t f_multi_user(void);
 static state_func_t f_clean_ttys(void);
 static state_func_t f_catatonia(void);
 static state_func_t f_death(void);
-
-static state_func_t f_run_script(const char *);
+static state_func_t f_run_script(void);
 
 typedef struct state_handle {
 	state_t state;
@@ -156,24 +161,21 @@ state_handle_t state_funcs[] = {
 		{	/* death */
 				.state = f_death,
 		},
+		{	/* run_script */
+				.state = f_run_script,
+		},
 };
-
-static state_handle_t *state_handler(int);
-static state_t get_state(int);
 
 enum { AUTOBOOT, FASTBOOT } runcom_mode = AUTOBOOT;
 #define FALSE	0
 #define TRUE	1
-
-static int Reboot = FALSE;
-static int howto = RB_AUTOBOOT;
 
 static char *init_path_argv0;
 
 static void transition(state_t);
 static state_t requested_transition = f_runcom;
 
-static void execute_script(char *argv[]);
+static void execute_script(const char *argv[]);
 static const char *get_shell(void);
 static void replace_init(char *path);
 
@@ -203,25 +205,38 @@ static session_t *sessions;
 
 static char	**construct_argv(char *);
 static void	start_window_system(session_t *);
-static void	collect_child(pid_t);
-static pid_t 	start_getty(session_t *);
+static void	collect_child(pid_t, int);
+static pid_t start_getty(session_t *);
 static void	transition_handler(int);
 static void	alrm_handler(int);
 static void	setsecuritylevel(int);
 static int	getsecuritylevel(void);
 static int	setupargv(session_t *, struct ttyent *);
+static state_func_t get_next_transition(const char *script);
+static state_handle_t *state_handler(int);
+static state_t get_state(int);
 #ifdef LOGIN_CAP
 static void	setprocresources(const char *);
 #endif
 static int 	clang;
 
-static void clear_session_logs(session_t *);
+static void clear_session_logs(session_t *, int);
 
 static int start_session_db(void);
 static void add_session(session_t *);
 static void del_session(session_t *);
 static session_t *find_session(pid_t);
 static DB *session_db;
+
+#ifdef SUPPORT_UTMPX
+static struct timeval boot_time;
+static state_t current_state = f_death;
+static void session_utmpx(const session_t *, int);
+static void make_utmpx(const char *, const char *, int, pid_t,
+    const struct timeval *, int);
+static char get_runlevel(const state_t);
+static void utmpx_set_runlevel(char, char);
+#endif
 
 /*
  * The mother of all processes.
@@ -234,6 +249,10 @@ main(int argc, char *argv[])
 	int c;
 	struct sigaction sa;
 	sigset_t mask;
+
+#ifdef SUPPORT_UTMPX
+	(void)gettimeofday(&boot_time, NULL);
+#endif /* SUPPORT_UTMPX */
 
 	/* Dispose of random users. */
 	if (getuid() != 0)
@@ -324,7 +343,7 @@ main(int argc, char *argv[])
 	if (kenv(KENV_GET, "init_script", kenv_value, sizeof(kenv_value)) > 0) {
 		state_func_t next_transition;
 
-		if ((next_transition = f_run_script(kenv_value)) != NULL)
+		if ((next_transition = get_next_transition(kenv_value)) != NULL)
 			initial_transition = (state_t)next_transition;
 	}
 
@@ -516,6 +535,10 @@ static void
 transition(state_t s)
 {
 	for (;;) {
+#ifdef SUPPORT_UTMPX
+		utmpx_set_runlevel(get_runlevel(current_state), get_runlevel(s));
+		current_state = s;
+#endif
 		s = (state_t)(*s)();
 	}
 }
@@ -525,12 +548,20 @@ transition(state_t s)
  * NB: should send a message to the session logger to avoid blocking.
  */
 static void
-clear_session_logs(session_t *sp)
+clear_session_logs(session_t *sp, int status)
 {
+#if defined(SUPPORT_UTMP) || defined(SUPPORT_UTMPX)
 	char *line = sp->se_device + sizeof(_PATH_DEV) - 1;
+#endif
 
+#ifdef SUPPORT_UTMPX
+	if (logoutx(line, status, DEAD_PROCESS))
+		logwtmpx(line, "", "", status, DEAD_PROCESS);
+#endif
+#ifdef SUPPORT_UTMP
 	if (logout(line))
 		logwtmp(line, "", "");
+#endif
 }
 
 static const char *
@@ -587,6 +618,7 @@ f_single_user(void)
 	char altshell[128];
 #endif
 
+#ifdef noreboot
 	if (Reboot) {
 		/* Instead of going single user, let's reboot the machine */
 		sync();
@@ -598,6 +630,7 @@ f_single_user(void)
 		warning("reboot(%#x) returned", howto);
 		_exit(0); /* panic as well */
 	}
+#endif
 
 	/*
 	 * If the kernel is in secure mode, downgrade it to insecure mode.
@@ -673,9 +706,9 @@ f_single_user(void)
 
 		argv[0] = name;
 		argv[1] = NULL;
-		execv(shell, argv);
+		execv(shell, __UNCONST(argv));
 		emergency("can't exec %s for single user: %m", shell);
-		execv(_PATH_BSHELL, argv);
+		execv(_PATH_BSHELL, __UNCONST(argv));
 		emergency("can't exec %s for single user: %m", _PATH_BSHELL);
 		sleep(STALL_TIMEOUT);
 		_exit(1);
@@ -737,7 +770,7 @@ f_runcom(void)
 {
 	state_func_t next_transition;
 
-	next_transition = f_run_script(_PATH_RUNCOM);
+	next_transition = get_state(run_script);
 	if (next_transition != NULL) {
 		return next_transition;
 	}
@@ -748,9 +781,12 @@ f_runcom(void)
 	return (state_func_t) get_state(read_ttys);
 }
 
+#define	RESOURCE_RC		"daemon"
+#define	RESOURCE_WINDOW		"default"
+#define	RESOURCE_GETTY		"default"
 
 static void
-execute_script(char *argv[])
+execute_script(const char *argv[])
 {
 	struct sigaction sa;
 	const char *shell, *script;
@@ -771,6 +807,9 @@ execute_script(char *argv[])
 	argv[3] = NULL;
 
 	sigprocmask(SIG_SETMASK, &sa.sa_mask, NULL);
+#ifdef LOGIN_CAP
+	setprocresources(RESOURCE_RC);
+#endif
 
 	script = argv[0];
 	error = access(script, X_OK);
@@ -791,7 +830,7 @@ execute_script(char *argv[])
 static void
 replace_init(char *path)
 {
-	char *argv[4];
+	const char *argv[4];
 	char sh[] = "sh";
 
 	argv[0] = sh;
@@ -809,14 +848,20 @@ replace_init(char *path)
  *    terminated with a signal or exit code != 0.
  *  - death_single if a SIGTERM was delivered to init(8).
  */
+
 static state_func_t
-f_run_script(const char *script)
+f_run_script(void)
+{
+	return (get_next_transition(_PATH_RUNCOM));
+}
+
+static state_func_t
+get_next_transition(const char *script)
 {
 	pid_t pid, wpid;
 	int status;
-	char *argv[4];
+	const char *argv[4];
 	const char *shell;
-	struct sigaction sa;
 	shell = get_shell();
 
 	if ((pid = fork()) == 0) {
@@ -874,6 +919,7 @@ f_run_script(const char *script)
 
 	return (state_func_t) 0;
 }
+
 
 /*
  * Open the session database.
@@ -1088,13 +1134,33 @@ f_read_ttys(void)
 	session_t *sp, *snext;
 	struct ttyent *typ;
 
+#ifdef SUPPORT_UTMPX
+	if (sessions == NULL) {
+		struct stat st;
+
+		make_utmpx("", BOOT_MSG, BOOT_TIME, 0, &boot_time, 0);
+
+		/*
+		 * If wtmpx is not empty, pick the down time from there
+		 */
+		if (stat(_PATH_WTMPX, &st) != -1 && st.st_size != 0) {
+			struct timeval down_time;
+
+			TIMESPEC_TO_TIMEVAL(&down_time,
+			    st.st_atime > st.st_mtime ?
+			    &st.st_atimespec : &st.st_mtimespec);
+			make_utmpx("", DOWN_MSG, DOWN_TIME, 0, &down_time, 0);
+		}
+	}
+#endif
+
 	/*
 	 * Destroy any previous session state.
 	 * There shouldn't be any, but just in case...
 	 */
 	for (sp = sessions; sp; sp = snext) {
 		if (sp->se_process)
-			clear_session_logs(sp);
+			clear_session_logs(sp, 0);
 		snext = sp->se_next;
 		free_session(sp);
 	}
@@ -1152,6 +1218,10 @@ start_window_system(session_t *sp)
 	if (setsid() < 0)
 		emergency("setsid failed (window) %m");
 
+
+#ifdef LOGIN_CAP
+	setprocresources(RESOURCE_WINDOW);
+#endif
 	if (sp->se_type) {
 		/* Don't use malloc after fork */
 		strcpy(term, "TERM=");
@@ -1213,6 +1283,9 @@ start_getty(session_t *sp)
 	sigemptyset(&mask);
 	sigprocmask(SIG_SETMASK, &mask, NULL);
 
+#ifdef LOGIN_CAP
+	setprocresources(RESOURCE_GETTY);
+#endif
 	if (sp->se_type) {
 		/* Don't use malloc after fork */
 		strcpy(term, "TERM=");
@@ -1228,12 +1301,97 @@ start_getty(session_t *sp)
 	_exit(1);
 }
 
+#ifdef SUPPORT_UTMPX
+
+static void
+session_utmpx(const session_t *sp, int add)
+{
+	const char *name = sp->se_getty ? sp->se_getty :
+	    (sp->se_window ? sp->se_window : "");
+	const char *line = sp->se_device + sizeof(_PATH_DEV) - 1;
+
+	make_utmpx(name, line, add ? LOGIN_PROCESS : DEAD_PROCESS,
+	    sp->se_process, &sp->se_started, sp->se_index);
+}
+
+static void
+make_utmpx(const char *name, const char *line, int type, pid_t pid,
+    const struct timeval *tv, int session)
+{
+	struct utmpx ut;
+	const char *eline;
+
+	(void)memset(&ut, 0, sizeof(ut));
+	(void)strlcpy(ut.ut_name, name, sizeof(ut.ut_name));
+	ut.ut_type = type;
+	(void)strlcpy(ut.ut_line, line, sizeof(ut.ut_line));
+	ut.ut_pid = pid;
+	if (tv)
+		ut.ut_tv = *tv;
+	else
+		(void)gettimeofday(&ut.ut_tv, NULL);
+	ut.ut_session = session;
+
+	eline = line + strlen(line);
+	if ((size_t)(eline - line) >= sizeof(ut.ut_id))
+		line = eline - sizeof(ut.ut_id);
+	(void)strncpy(ut.ut_id, line, sizeof(ut.ut_id));
+
+	if (pututxline(&ut) == NULL)
+		warning("can't add utmpx record for `%s': %m", ut.ut_line);
+	endutxent();
+}
+
+static char
+get_runlevel(const state_t s)
+{
+	if (s == (state_t)get_state(single_user))
+		return SINGLE_USER;
+	if (s == (state_t)get_state(runcom))
+		return RUNCOM;
+	if (s == (state_t)get_state(read_ttys))
+		return READ_TTYS;
+	if (s == (state_t)get_state(multi_user))
+		return MULTI_USER;
+	if (s == (state_t)get_state(clean_ttys))
+		return CLEAN_TTYS;
+	if (s == (state_t)get_state(catatonia))
+		return CATATONIA;
+	return DEATH;
+}
+
+static void
+utmpx_set_runlevel(char old, char new)
+{
+	struct utmpx ut;
+
+	/*
+	 * Don't record any transitions until we did the first transition
+	 * to read ttys, which is when we are guaranteed to have a read-write
+	 * /var. Perhaps use a different variable for this?
+	 */
+	if (sessions == NULL)
+		return;
+
+	(void)memset(&ut, 0, sizeof(ut));
+	(void)snprintf(ut.ut_line, sizeof(ut.ut_line), RUNLVL_MSG, new);
+	ut.ut_type = RUN_LVL;
+	(void)gettimeofday(&ut.ut_tv, NULL);
+	ut.ut_exit.e_exit = old;
+	ut.ut_exit.e_termination = new;
+	if (pututxline(&ut) == NULL)
+		warning("can't add utmpx record for `runlevel': %m");
+	endutxent();
+}
+
+#endif
+
 /*
  * Collect exit status for a child.
  * If an exiting login, start a new login running.
  */
 static void
-collect_child(pid_t pid)
+collect_child(pid_t pid, int status)
 {
 	session_t *sp, *sprev, *snext;
 
@@ -1243,7 +1401,7 @@ collect_child(pid_t pid)
 	if (!(sp = find_session(pid)))
 		return;
 
-	clear_session_logs(sp);
+	clear_session_logs(sp, status);
 	del_session(sp);
 	sp->se_process = 0;
 
@@ -1269,37 +1427,6 @@ collect_child(pid_t pid)
 	add_session(sp);
 }
 
-/*
- * Catch a signal and request a state transition.
- */
-static void
-transition_handler(int sig)
-{
-	switch (sig) {
-	case SIGHUP:
-		requested_transition = get_state(clean_ttys);
-		break;
-	//case SIGUSR2:
-		//howto = RB_POWEROFF;
-		/* FALLTHROUGH */
-	case SIGUSR1:
-		howto |= RB_HALT;
-		/* FALLTHROUGH */
-	case SIGINT:
-		Reboot = TRUE;
-		/* FALLTHROUGH */
-	case SIGTERM:
-		requested_transition = get_state(death);
-		break;
-	case SIGTSTP:
-		requested_transition = get_state(catatonia);
-		break;
-	default:
-		requested_transition = 0;
-		break;
-	}
-}
-
 /* Return state_handle_t from state enumerator */
 static state_handle_t *
 state_handler(int num)
@@ -1310,7 +1437,7 @@ state_handler(int num)
 #define nelems(x) (sizeof(x) / sizeof((x)[0]))
 
 	handle = &state_funcs[0];
-	for (i = 0; i < nelems(state_funcs); i++) {
+	for (i = 0; i < (int)nelems(state_funcs); i++) {
 		handle = &state_funcs[i];
 		if ((handle != NULL) && (num == i)) {
 			return (handle);
@@ -1329,6 +1456,28 @@ get_state(int num)
 		return (state->state);
 	}
 	return (NULL);
+}
+
+/*
+ * Catch a signal and request a state transition.
+ */
+static void
+transition_handler(int sig)
+{
+	switch (sig) {
+	case SIGHUP:
+		requested_transition = get_state(clean_ttys);
+		break;
+	case SIGTERM:
+		requested_transition = get_state(death);
+		break;
+	case SIGTSTP:
+		requested_transition = get_state(catatonia);
+		break;
+	default:
+		requested_transition = 0;
+		break;
+	}
 }
 
 /*
@@ -1494,7 +1643,7 @@ static state_func_t
 f_death(void)
 {
 	session_t *sp;
-	int i;
+	int i, status;
 	pid_t pid;
 	static const int death_sigs[3] = { SIGHUP, SIGTERM, SIGKILL };
 
@@ -1511,8 +1660,8 @@ f_death(void)
 		clang = 0;
 		alarm(DEATH_WATCH);
 		do
-			if ((pid = waitpid(-1, (int *)0, 0)) != -1)
-				collect_child(pid);
+			if ((pid = waitpid(-1, &status, 0)) != -1)
+				collect_child(pid, status);
 		while (clang == 0 && errno != ECHILD);
 
 		if (errno == ECHILD)
