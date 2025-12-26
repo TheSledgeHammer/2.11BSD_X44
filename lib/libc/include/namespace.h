@@ -179,7 +179,7 @@
 #define a64l					_a64l
 #define adjtime					_adjtime
 #define alarm					_alarm
-#define alphasort				_alphasort
+//#define alphasort				_alphasort
 #define arc4random				_arc4random
 #define arc4random_addrandom			_arc4random_addrandom
 #define arc4random_buf				_arc4random_buf
