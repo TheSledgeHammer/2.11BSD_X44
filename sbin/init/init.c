@@ -1311,7 +1311,7 @@ session_utmpx(const session_t *sp, int add)
 
     (void)gettimeofday(&session_time, NULL);
     if (session_time.tv_sec != sp->se_started) {
-        session_time.tv_sec = sp->se_started
+        session_time.tv_sec = sp->se_started;
     }
 	make_utmpx(name, line, add ? LOGIN_PROCESS : DEAD_PROCESS,
 	    sp->se_process, &session_time, sp->se_index);
