@@ -54,13 +54,17 @@ static char sccsid[] = "@(#)merge.c	8.2 (Berkeley) 2/14/94";
 /* #define NATURAL to get hybrid natural merge.
  * (The default is pairwise merging.)
  */
-
+#include "namespace.h"
 #include <sys/types.h>
 
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __weak_alias
+__weak_alias(mergesort,_mergesort)
+#endif
+	
 static void setup(u_char *, u_char *, size_t, size_t, int (*)(const void *, const void *));
 static void insertionsort(u_char *, size_t, size_t, int (*)(const void *, const void *));
 
