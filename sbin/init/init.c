@@ -731,7 +731,7 @@ f_single_user(void)
 	requested_transition = 0;
 	do {
 		if ((wpid = waitpid(-1, &status, WUNTRACED)) != -1)
-			collect_child(wpid);
+			collect_child(wpid, status);
 		if (wpid == -1) {
 			if (errno == EINTR)
 				continue;
@@ -774,7 +774,7 @@ f_runcom(void)
 {
 	state_func_t next_transition;
 
-	next_transition = get_state(run_script);
+	next_transition = (state_func_t)get_state(run_script);
 	if (next_transition != NULL) {
 		return next_transition;
 	}
@@ -814,13 +814,13 @@ execute_script(const char *argv[])
 	script = argv[0];
 	error = access(script, X_OK);
 	if (error == 0) {
-		execv(script, argv);
+		execv(script, __UNCONST(argv));
 		warning("can't directly exec %s: %m", script);
 	} else if (errno != EACCES) {
 		warning("can't access %s: %m", script);
 	}
 	shell = get_shell();
-	execv(shell, argv);
+	execv(shell, __UNCONST(argv));
 	stall("can't exec %s for %s: %m", shell, script);
 }
 
@@ -884,7 +884,7 @@ get_next_transition(const char *script)
 	requested_transition = 0;
 	do {
 		if ((wpid = waitpid(-1, &status, WUNTRACED)) != -1)
-			collect_child(wpid);
+			collect_child(wpid, status);
 		if (wpid == -1) {
 			if (requested_transition == get_state(death))
 				return (state_func_t) get_state(death);
@@ -919,7 +919,6 @@ get_next_transition(const char *script)
 
 	return (state_func_t) 0;
 }
-
 
 /*
  * Open the session database.
@@ -1076,7 +1075,6 @@ new_session(session_t *sprev, int session_index, struct ttyent *typ)
 	return sp;
 }
 
-
 /*
  * Calculate getty and if useful window argv vectors.
  */
@@ -1218,7 +1216,6 @@ start_window_system(session_t *sp)
 	if (setsid() < 0)
 		emergency("setsid failed (window) %m");
 
-
 #ifdef LOGIN_CAP
 	setprocresources(RESOURCE_WINDOW);
 #endif
@@ -1306,12 +1303,18 @@ start_getty(session_t *sp)
 static void
 session_utmpx(const session_t *sp, int add)
 {
+    struct timeval session_time;
+
 	const char *name = sp->se_getty ? sp->se_getty :
 	    (sp->se_window ? sp->se_window : "");
 	const char *line = sp->se_device + sizeof(_PATH_DEV) - 1;
 
+    (void)gettimeofday(&session_time, NULL);
+    if (session_time.tv_sec != sp->se_started) {
+        session_time.tv_sec = sp->se_started
+    }
 	make_utmpx(name, line, add ? LOGIN_PROCESS : DEAD_PROCESS,
-	    sp->se_process, &sp->se_started, sp->se_index);
+	    sp->se_process, &session_time, sp->se_index);
 }
 
 static void
