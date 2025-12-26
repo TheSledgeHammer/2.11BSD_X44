@@ -90,6 +90,10 @@
 #define	DEATH_WATCH	10	/* wait N secs for procs to die */
 #define	DEATH_SCRIPT	120	/* wait for 2min for /etc/rc.shutdown */
 
+#define	RESOURCE_RC		"daemon"
+#define	RESOURCE_WINDOW	"default"
+#define	RESOURCE_GETTY	"default"
+
 static void handle(sig_t, ...);
 static void delset(sigset_t *, ...);
 
@@ -780,10 +784,6 @@ f_runcom(void)
 	logwtmp("~", "reboot", "");
 	return (state_func_t) get_state(read_ttys);
 }
-
-#define	RESOURCE_RC		"daemon"
-#define	RESOURCE_WINDOW		"default"
-#define	RESOURCE_GETTY		"default"
 
 static void
 execute_script(const char *argv[])
