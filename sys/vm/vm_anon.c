@@ -202,9 +202,15 @@ vm_anon_free(anon)
 	 * now that we've stripped the data areas from the anon, free the anon
 	 * itself!
 	 */
-	KASSERT(anon->u.an_segment == NULL);
-	KASSERT(anon->u.an_page == NULL);
-	KASSERT(anon->an_swslot == 0);
+	if (anon->u.an_segment != NULL) {
+		 vm_anon_free_segment(anon->u.an_segment, anon);
+	}
+	if (anon->u.an_page != NULL) {
+		 vm_anon_free_page(anon->u.an_page, anon);
+	}
+	if (anon->an_swslot != 0) {
+		anon->an_swslot = 0;
+	}
 
 	simple_lock(&anon->u.an_freelock);
 	anon->u.an_nxt = anon->u.an_free;
@@ -244,10 +250,12 @@ vm_anon_release(anon)
 		vm_anon_release_page(anon, segment, page);
 	}
 	vm_anon_release_segment(anon, segment);
-
-	KASSERT(anon->u.an_segment == NULL);
-	KASSERT(anon->u.an_page == NULL);
-
+	if (anon->u.an_segment != NULL) {
+		 vm_anon_free_segment(anon->u.an_segment, anon);
+	}
+	if (anon->u.an_page != NULL) {
+		 vm_anon_free_page(anon->u.an_page, anon);
+	}
 	vm_anon_free(anon);
 }
 
@@ -361,8 +369,8 @@ vm_anon_free_segment(segment, anon)
 
 	asg = anon->u.an_segment;
 
-	if(asg == segment) {
-		if(segment->object) {
+	if (asg == segment) {
+		if (segment->object) {
 			vm_segment_lock_lists();
 			segment->anon = NULL;
 			vm_segment_unlock_lists();

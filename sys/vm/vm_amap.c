@@ -1270,6 +1270,95 @@ vm_amap_unref(entry, all)
 	amap_unlock(amap);
 }
 
+void
+vm_amap_cleaner_segment(amap, anon, segment)
+	vm_amap_t 	 	amap;
+	vm_anon_t 		anon;
+	vm_segment_t 	segment;
+{
+    vm_page_t 		page;
+
+	if (!TAILQ_EMPTY(&segment->memq)) {
+		TAILQ_FOREACH(page, &segment->memq, pageq) {
+			if (page->segment == segment) {
+				if (anon->u.an_page != page) {
+					simple_unlock(&anon->an_lock);
+				}
+				if (amap_refs(amap) > 1) {
+					vm_page_lock_queues();
+					if (page->wire_count != 0) {
+						vm_page_unlock_queues();
+						simple_unlock(&anon->an_lock);
+					}
+					if (page->anon != anon) {
+						simple_unlock(&anon->an_lock);
+					}
+					vm_page_lock_queues();
+					vm_page_deactivate(page);
+					vm_page_unlock_queues();
+				}
+				if (page->wire_count != 0) {
+					simple_unlock(&anon->an_lock);
+				}
+			}
+		}
+	} else {
+		if (amap_refs(amap) > 1) {
+			vm_segment_lock_lists();
+			if (segment->wire_tracker != 0) {
+				vm_segment_unlock_lists();
+				simple_unlock(&anon->an_lock);
+			}
+			if (segment->anon != anon) {
+				simple_unlock(&anon->an_lock);
+			}
+			vm_segment_lock_lists();
+			vm_segment_deactivate(segment);
+			vm_segment_unlock_lists();
+		}
+		if (segment->wire_tracker != 0) {
+			simple_unlock(&anon->an_lock);
+		}
+	}
+}
+
+void
+vm_amap_cleaner_page(amap, anon, segment, page)
+	vm_amap_t 	 	amap;
+	vm_anon_t 		anon;
+	vm_segment_t 	segment;
+	vm_page_t 		page;
+{
+    vm_page_t chkpage;
+
+	if (page->segment != segment) {
+		chkpage = vm_page_lookup(segment, page->offset);
+		if (chkpage != NULL) {
+			if (chkpage->segment == segment) {
+				if (chkpage != page) {
+					page = chkpage;
+				}
+			}
+		}
+	}
+	if (amap_refs(amap) > 1) {
+		vm_page_lock_queues();
+		if (page->wire_count != 0) {
+			vm_page_unlock_queues();
+			simple_unlock(&anon->an_lock);
+		}
+		if (page->anon != anon) {
+			simple_unlock(&anon->an_lock);
+		}
+		vm_page_lock_queues();
+		vm_page_deactivate(page);
+		vm_page_unlock_queues();
+	}
+	if (page->wire_count != 0) {
+		simple_unlock(&anon->an_lock);
+	}
+}
+
 /*
  *	vm_amap_cleaner:		[ internal use only ]
  */
@@ -1284,40 +1373,11 @@ vm_amap_cleaner(amap, anon)
 	simple_lock(&anon->an_lock);
 	segment = anon->u.an_segment;
 	page = anon->u.an_page;
-	if (page != NULL) {
-		KASSERT(!TAILQ_EMPTY(&segment->memq));
-		KASSERT(page->segment == segment);
-
-		if (amap_refs(amap) > 1) {
-			vm_page_lock_queues();
-			if (page->wire_count != 0) {
-				vm_page_unlock_queues();
-				simple_unlock(&anon->an_lock);
-			}
-			KASSERT(page->anon == anon);
-
-			vm_page_lock_queues();
-			vm_page_deactivate(page);
-			vm_page_unlock_queues();
-		}
-		if (page->wire_count != 0) {
-			simple_unlock(&anon->an_lock);
-		}
-	} else {
-		KASSERT(TAILQ_EMPTY(&segment->memq));
-
-		if (segment == NULL) {
-			simple_unlock(&anon->an_lock);
-		}
-		if (amap_refs(amap) > 1) {
-			KASSERT(segment->anon == anon);
-
-			vm_segment_lock_lists();
-			vm_segment_deactivate(segment);
-			vm_segment_unlock_lists();
-		}
-		if (segment->wire_tracker != 0) {
-			simple_unlock(&anon->an_lock);
+	if (segment != NULL) {
+		if (page != NULL) {
+			vm_amap_cleaner_page(amap, anon, segment, page);
+		} else {
+			vm_amap_cleaner_segment(amap, anon, segment);
 		}
 	}
 }
@@ -1334,10 +1394,7 @@ vm_amap_clean(current, size, offset, amap)
 	vm_size_t 		size;
 	vm_offset_t 	offset;
 	vm_amap_t 	 	amap;
-
 {
-	vm_segment_t 	segment;
-	vm_page_t 		page;
 	vm_anon_t 		anon;
 	int 			refs;
 

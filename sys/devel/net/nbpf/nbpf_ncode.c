@@ -257,8 +257,10 @@ make_jump:
 		break;
 	default:
 		/* Invalid instruction. */
-		KASSERT(FALSE);
+		goto fail;
 	}
+	/* Success */
+	return (0);
 
 fail:
 	/* Failure case. */
@@ -342,8 +344,10 @@ nbpf_cisc_ncode(nbpf_state_t *state, struct nbpf_ncode *ncode, nbpf_buf_t *nbuf,
 		break;
 	default:
 		/* Invalid instruction. */
-		KASSERT(false);
+		goto fail;
 	}
+	/* Success */
+	return (0);
 
 fail:
 	/* Failure case. */
@@ -388,7 +392,7 @@ process_next:
 	} else {
 		error = nbpf_risc_ncode(state, ncode, nbuf, nptr, cmpval, layer);
 	}
-	if (error) {
+	if (error != -1) {
 		goto process_next;
 	}
 	return (error);
