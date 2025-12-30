@@ -53,8 +53,8 @@
 vm_anon_t vm_anon_allocate(int);
 static void vm_anon_release_segment(vm_anon_t, vm_segment_t);
 static void vm_anon_release_page(vm_anon_t, vm_segment_t, vm_page_t);
-static void vm_anon_free_segment(vm_segment_t, vm_anon_t);
-static void vm_anon_free_page(vm_segment_t, vm_page_t, vm_anon_t);
+static void vm_anon_free_segment(vm_anon_t, vm_segment_t);
+static void vm_anon_free_page(vm_anon_t, vm_segment_t, vm_page_t);
 
 /*
  * initialize anons
@@ -180,9 +180,9 @@ vm_anon_free(anon)
 				 * if the page is busy, mark it as PG_RELEASED
 				 * so that uvm_anon_release will release it later.
 				 */
-			 vm_anon_free_page(segment, page, anon);
+			 vm_anon_free_page(anon, segment, page);
 		 } else {
-			 vm_anon_free_segment(segment, anon);
+			 vm_anon_free_segment(anon, segment);
 		 }
 	}
 	if (anon->an_swslot != 0) {
@@ -203,10 +203,10 @@ vm_anon_free(anon)
 	 * itself!
 	 */
 	if (anon->u.an_segment != NULL) {
-		 vm_anon_free_segment(anon->u.an_segment, anon);
+		 vm_anon_free_segment(anon, anon->u.an_segment);
 	}
 	if (anon->u.an_page != NULL) {
-		 vm_anon_free_page(anon->u.an_page, anon);
+		 vm_anon_free_page(anon, anon->u.an_segment, anon->u.an_page);
 	}
 	if (anon->an_swslot != 0) {
 		anon->an_swslot = 0;
@@ -251,10 +251,10 @@ vm_anon_release(anon)
 	}
 	vm_anon_release_segment(anon, segment);
 	if (anon->u.an_segment != NULL) {
-		 vm_anon_free_segment(anon->u.an_segment, anon);
+		 vm_anon_free_segment(anon, anon->u.an_segment);
 	}
 	if (anon->u.an_page != NULL) {
-		 vm_anon_free_page(anon->u.an_page, anon);
+		 vm_anon_free_page(anon, anon->u.an_segment, anon->u.an_page);
 	}
 	vm_anon_free(anon);
 }
@@ -361,9 +361,9 @@ vm_anon_release_page(anon, segment, page)
 }
 
 static void
-vm_anon_free_segment(segment, anon)
+vm_anon_free_segment(anon, segment)
+    vm_anon_t 		anon;
 	vm_segment_t 	segment;
-	vm_anon_t 		anon;
 {
 	vm_segment_t asg;
 
@@ -396,10 +396,10 @@ vm_anon_free_segment(segment, anon)
 }
 
 static void
-vm_anon_free_page(segment, page, anon)
+vm_anon_free_page(anon, segment, page)
+	vm_anon_t 		anon;
 	vm_segment_t 	segment;
 	vm_page_t 		page;
-	vm_anon_t 		anon;
 {
 	vm_page_t 		apg;
 
