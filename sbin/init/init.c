@@ -953,6 +953,9 @@ add_session(session_t *sp)
 
 	if ((*session_db->put)(session_db, &key, &data, 0))
 		emergency("insert %d: %s", sp->se_process, strerror(errno));
+#ifdef SUPPORT_UTMPX
+	session_utmpx(sp, 1);
+#endif
 }
 
 /*
@@ -968,6 +971,9 @@ del_session(session_t *sp)
 
 	if ((*session_db->del)(session_db, &key, 0))
 		emergency("delete %d: %s", sp->se_process, strerror(errno));
+#ifdef SUPPORT_UTMPX
+	session_utmpx(sp, 0);
+#endif
 }
 
 /*
