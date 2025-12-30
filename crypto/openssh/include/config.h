@@ -573,13 +573,13 @@
 #define HAVE_FCHMOD 1
 
 /* Define to 1 if you have the `fchmodat' function. */
-#undef HAVE_FCHMODAT
+/* #undef HAVE_FCHMODAT */
 
 /* Define to 1 if you have the `fchown' function. */
 #define HAVE_FCHOWN 1
 
 /* Define to 1 if you have the `fchownat' function. */
-#undef HAVE_FCHOWNAT
+/* #undef HAVE_FCHOWNAT */
 
 /* Use F_CLOSEM fcntl for closefrom */
 /* #undef HAVE_FCNTL_CLOSEM */
@@ -651,7 +651,7 @@
 #define HAVE_FSTATVFS 1
 
 /* Define to 1 if you have the `futimes' function. */
-#define HAVE_FUTIMES 1
+/* #undef HAVE_FUTIMES */
 
 /* Define to 1 if you have the `gai_strerror' function. */
 #define HAVE_GAI_STRERROR 1
@@ -1614,7 +1614,7 @@
 #define HAVE_UTIL_H 1
 
 /* Define to 1 if you have the `utimensat' function. */
-#define HAVE_UTIMENSAT 1
+/* #undef HAVE_UTIMENSAT */
 
 /* Define to 1 if you have the `utimes' function. */
 #define HAVE_UTIMES 1
@@ -1914,10 +1914,10 @@
 #define SSH_TUN_COMPAT_AF 1
 
 /* Open tunnel devices the FreeBSD way */
-/* #undef SSH_TUN_FREEBSD */
+#define SSH_TUN_FREEBSD 1
 
 /* Open tunnel devices the Linux tun/tap way */
-#define SSH_TUN_LINUX 1
+/* #undef SSH_TUN_LINUX */
 
 /* No layer 2 tunnel support */
 /* #undef SSH_TUN_NO_L2 */

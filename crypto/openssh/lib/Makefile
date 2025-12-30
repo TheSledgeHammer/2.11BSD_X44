@@ -7,8 +7,6 @@
 
 LIB=	ssh
 
-OPENBSD_COMPAT?= ${SSHDIST}/openbsd-compat
-
 # SRCS built from /usr/src/crypto/openssh/Makefile.in,
 #	XMSS_OBJS
 #	LIBOPENSSH_OBJS
@@ -63,6 +61,8 @@ SK_SRCS= ssh-sk-client.c
 
 OPENBSD_COMPAT_SRCS= \
         bcrypt_pbkdf.c \
+        blowfish.c \
+        bsd-misc.c \
         openssl-compat.c \
 	    libressl-api-compat.c \
         xcrypt.c
