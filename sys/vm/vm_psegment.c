@@ -50,7 +50,7 @@
 */
 void
 vm_psegment_init(pseg)
-    vm_psegment_t pseg;
+    vm_pseudo_segment_t pseg;
 {
 	pseg = (struct vm_pseudo_segment *)rmalloc(coremap, sizeof(struct vm_pseudo_segment));
 	pseg->ps_data = (struct vm_data *)rmalloc(coremap, sizeof(struct vm_data));
@@ -71,7 +71,7 @@ vm_psegment_init(pseg)
 */
 void
 vm_psegment_release(pseg)
-    vm_psegment_t pseg;
+	vm_pseudo_segment_t pseg;
 {
 	if (pseg == NULL) {
 		return;
@@ -88,7 +88,7 @@ vm_psegment_release(pseg)
  */
 void
 vm_psegment_expand(pseg, newsize, newaddr, type)
-	vm_psegment_t 	pseg;
+	vm_pseudo_segment_t pseg;
 	segsz_t 		newsize;
 	caddr_t 		newaddr;
 	int 			type;
@@ -131,7 +131,7 @@ vm_psegment_expand(pseg, newsize, newaddr, type)
  */
 void
 vm_psegment_shrink(pseg, newsize, newaddr, type)
-	vm_psegment_t 	pseg;
+	vm_pseudo_segment_t 	pseg;
 	segsz_t 		newsize;
 	caddr_t 		newaddr;
 	int	 			type;
@@ -171,7 +171,7 @@ vm_psegment_shrink(pseg, newsize, newaddr, type)
 
 void
 vm_psegment_alloc(pseg, mp, size, addr, type, mapsize)
-	vm_psegment_t 	pseg;
+	vm_pseudo_segment_t 	pseg;
 	struct map 		*mp;
 	segsz_t 		size;
 	caddr_t			addr;
@@ -223,7 +223,7 @@ vm_psegment_alloc(pseg, mp, size, addr, type, mapsize)
 
 void
 vm_psegment_free(pseg, mp, size, addr, type)
-	vm_psegment_t 	pseg;
+	vm_pseudo_segment_t 	pseg;
 	struct map 		*mp;
 	segsz_t 		size;
 	caddr_t			addr;

@@ -424,10 +424,10 @@ vm_cl_remove(map, entry)
     head = CIRCLEQ_FIRST(&map->cl_header);
     tail = CIRCLEQ_LAST(&map->cl_header);
 
-    if(head && vm_cl_space(map, entry)) {
+    if (head && vm_cl_space(map, entry)) {
         CIRCLEQ_REMOVE(&map->cl_header, head, cl_entry);
     }
-    if(tail && vm_cl_space(map, entry)) {
+    if (tail && vm_cl_space(map, entry)) {
         CIRCLEQ_REMOVE(&map->cl_header, tail, cl_entry);
     }
 }
@@ -493,6 +493,20 @@ vm_map_init(map, min, max, pageable)
 	simple_lock_init(&map->hint_lock, "vm_map_hint_lock");
 }
 
+#ifdef DEBUG
+void
+vm_map_entry_isspecial(map)
+	vm_map_t map;
+{
+	bool_t isspecial;
+
+	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
+	if ((isspecial && map->entries_pageable) || (!isspecial && !map->entries_pageable)) {
+		panic("vm_map_entry_dispose: bogus map");
+	}
+}
+#endif
+
 /*
  *	vm_map_entry_create:	[ internal use only ]
  *
@@ -504,13 +518,9 @@ vm_map_entry_create(map)
 	vm_map_t	map;
 {
 	vm_map_entry_t	entry;
-#ifdef DEBUG
-	bool_t				isspecial;
 
-	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
-	if (isspecial && map->entries_pageable || !isspecial && !map->entries_pageable) {
-		panic("vm_map_entry_create: bogus map");
-	}
+#ifdef DEBUG
+	vm_map_entry_isspecial(map);
 #endif
 	if (map->entries_pageable) {
 		MALLOC(entry, struct vm_map_entry *, sizeof(struct vm_map_entry *), M_VMMAPENT, M_WAITOK);
@@ -536,14 +546,6 @@ vm_map_entry_dispose(map, entry)
 	vm_map_t	map;
 	vm_map_entry_t	entry;
 {
-#ifdef DEBUG
-	bool_t				isspecial;
-
-	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
-	if (isspecial && map->entries_pageable || !isspecial && !map->entries_pageable) {
-		panic("vm_map_entry_dispose: bogus map");
-	}
-#endif
 	if (map->entries_pageable) {
 		FREE(entry, M_VMMAPENT);
 	} else {

@@ -85,7 +85,8 @@ typedef struct vm_aref 		*vm_aref_t;
  * VM Pseudo-Segmentation with Data, Stack & Text Management
  */
 struct vm_pseudo_segment;
-typedef struct vm_pseudo_segment *vm_psegment_t;
+//typedef struct vm_pseudo_segment *vm_psegment_t;
+typedef struct vm_pseudo_segment *vm_pseudo_segment_t;
 
 struct vm_data;
 typedef struct vm_data  		*vm_data_t;

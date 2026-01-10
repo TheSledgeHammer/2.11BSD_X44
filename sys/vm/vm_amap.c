@@ -1276,7 +1276,7 @@ vm_amap_cleaner_segment(amap, anon, segment)
 	vm_anon_t 		anon;
 	vm_segment_t 	segment;
 {
-    vm_page_t 		page;
+	vm_page_t page;
 
 	if (!TAILQ_EMPTY(&segment->memq)) {
 		TAILQ_FOREACH(page, &segment->memq, pageq) {
@@ -1329,7 +1329,7 @@ vm_amap_cleaner_page(amap, anon, segment, page)
 	vm_segment_t 	segment;
 	vm_page_t 		page;
 {
-    vm_page_t chkpage;
+	vm_page_t chkpage;
 
 	if (page->segment != segment) {
 		chkpage = vm_page_lookup(segment, page->offset);
@@ -1367,8 +1367,8 @@ vm_amap_cleaner(amap, anon)
 	vm_amap_t 	 	amap;
 	vm_anon_t 		anon;
 {
-	vm_segment_t 	segment;
-	vm_page_t 		page;
+	vm_segment_t segment;
+	vm_page_t page;
 
 	simple_lock(&anon->an_lock);
 	segment = anon->u.an_segment;
@@ -1395,11 +1395,11 @@ vm_amap_clean(current, size, offset, amap)
 	vm_offset_t 	offset;
 	vm_amap_t 	 	amap;
 {
-	vm_anon_t 		anon;
-	int 			refs;
+	vm_anon_t anon;
+	int refs;
 
 	amap_lock(amap);
-	for ( ; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
+	for (; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
 		anon = vm_amap_lookup(&current->aref, offset);
 		vm_amap_cleaner(amap, anon);
 		vm_amap_unadd(current->aref.ar_amap, offset);

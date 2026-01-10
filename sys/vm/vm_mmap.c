@@ -91,6 +91,7 @@ sbrk()
 	struct proc *p;
 	register_t *retval;
 	register segsz_t n, d;
+	int error;
 
 	p = u.u_procp;
 	n = btoc(SCARG(uap, incr));
@@ -112,8 +113,9 @@ sbrk()
 	if (n < 0) {
 		n = 0;
 	}
-	if (vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
-		return (0);
+	error = vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO);
+	if (error != 0) {
+		return (error);
 	}
 	vm_expand(p, n, S_DATA);
 	/* set d to (new - old) */
@@ -137,6 +139,7 @@ sstk()
 	struct proc *p;
 	register_t *retval;
 	register segsz_t n, s;
+	int error;
 	
 	p = u.u_procp;
 	n = btoc(SCARG(uap, incr));
@@ -158,8 +161,9 @@ sstk()
 	if (n < 0) {
 		n = 0;
 	}
-	if (vm_estabur(p, p->p_dsize, n, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
-		return (0);
+	error = vm_estabur(p, p->p_dsize, n, p->p_tsize, SCARG(uap, sep), SEG_RO);
+	if (error != 0) {
+		return (error);
 	}
 	vm_expand(p, n, S_STACK);
 	/* set s to (new - old) */

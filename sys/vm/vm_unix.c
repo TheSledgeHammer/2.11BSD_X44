@@ -85,14 +85,14 @@ obreak()
 	old = (vm_offset_t)vm->vm_daddr;
 	new = (vm_offset_t)round_page(SCARG(uap, nsiz));
 	if ((int)(new - old) > p->p_rlimit[RLIMIT_DATA].rlim_cur)
-		return(ENOMEM);
+		return (ENOMEM);
 	old = round_page(old + ctob(vm->vm_dsize));
 	diff = new - old;
 	if (diff > 0) {
 		rv = vm_allocate(&vm->vm_map, &old, diff, FALSE);
 		if (rv != KERN_SUCCESS) {
 			uprintf("sbrk: grow failed, return = %d\n", rv);
-			return(ENOMEM);
+			return (ENOMEM);
 		}
 		vm->vm_dsize += btoc(diff);
 	} else if (diff < 0) {
@@ -122,7 +122,7 @@ nostk()
 	p = u.u_procp;
 	vm = p->p_vmspace;
 	if (vm_estabur(p, 0, u.u_ssize, u.u_tsize, u.u_sep, SEG_RO)) {
-		return (0);
+		return (1);
 	}
 	vm_expand(p, 0, PSEG_STACK);
 	vm->vm_ssize = 0;
@@ -235,7 +235,7 @@ vm_expand(p, newsize, type)
 	vm_size_t 	 	newsize;
 	int 			type;
 {
-	register vm_psegment_t 	pseg;
+	register vm_pseudo_segment_t pseg;
 	register vm_size_t i, n;
 	caddr_t a1, a2;
 
@@ -340,17 +340,17 @@ vm_estabur(p, dsize, ssize, tsize, sep, flags)
 	int 	 		sep, flags;
 {
 	register struct vmspace *vm;
-	vm_psegment_t	pseg;
+	vm_pseudo_segment_t	pseg;
 
 	vm = p->p_vmspace;
 	pseg = &vm->vm_psegment;
 	if (pseg == NULL) {
-		return (1);
+		return (ENOMEM);
 	}
 	if (estabur(pseg->ps_data, pseg->ps_stack, pseg->ps_text, dsize, ssize, tsize, sep, flags)) {
 		return (0);
 	}
-	return (1);
+	return (ENOMEM);
 }
 
 static int
@@ -361,8 +361,8 @@ estabur(data, stack, text, dsize, ssize, tsize, sep, flags)
 	segsz_t			dsize, ssize, tsize;
 	int 			sep, flags;
 {
-	if(data == NULL || stack == NULL || text == NULL) {
-		return (1);
+	if (data == NULL || stack == NULL || text == NULL) {
+		return (ENOMEM);
 	}
 	switch (sep) {
 	case PSEG_NOSEP:
@@ -385,7 +385,7 @@ estabur(data, stack, text, dsize, ssize, tsize, sep, flags)
 		STACK_SEGMENT(stack, ssize, stack->psx_saddr, SEG_RW);
 		return (0);
 	}
-	return (1);
+	return (ENOMEM);
 }
 
 /*

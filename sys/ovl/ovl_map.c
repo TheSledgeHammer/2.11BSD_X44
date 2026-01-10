@@ -441,17 +441,28 @@ ovl_map_init(map, min, max)
 	simple_lock_init(&map->hint_lock, "ovl_map_hint_lock");
 }
 
+#ifdef DEBUG
+void
+ovl_map_entry_isspecial(map)
+	vm_map_t map;
+{
+	bool_t isspecial;
+
+	isspecial = (map == overlay_map || map == omem_map);
+	if ((isspecial && map->entries_pageable) || (!isspecial && !map->entries_pageable)) {
+		panic("ovl_map_entry_create: bogus map");
+	}
+}
+#endif
+
 ovl_map_entry_t
 ovl_map_entry_create(map)
 	ovl_map_t	map;
 {
 	ovl_map_entry_t	entry;
+
 #ifdef DEBUG
-	bool_t	 isspecial;
-	isspecial = (map == overlay_map || map == omem_map);
-	if (isspecial || !isspecial) {
-		panic("ovl_map_entry_create: bogus map");
-	}
+	ovl_map_entry_isspecial(map);
 #endif
 	OVERLAY_MALLOC(entry, struct ovl_map_entry *, sizeof(struct ovl_map_entry *), M_OVLMAPENT, M_WAITOK);
 	if (entry == oentry_free) {
