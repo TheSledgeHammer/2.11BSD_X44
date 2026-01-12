@@ -205,9 +205,9 @@ void		res_put_state(res_state);
 
 int	 	res_init(void);
 int	 	res_mkquery(int, const char *, int, int, const u_char *, int, const u_char *, u_char *, int);
-int	 	res_query(char *, int, int, u_char *, int);
-int	 	res_querydomain(char *, char *, int, int, u_char *, int);
-int	 	res_search(char *, int, int, u_char *, int);
+int	 	res_query(const char *, int, int, u_char *, int);
+int	 	res_querydomain(const char *, const char *, int, int, u_char *, int);
+int	 	res_search(const char *, int, int, u_char *, int);
 int	 	res_send(const u_char *, int, u_char *, int);
 void    	res_close(void);
 void    	res_destroy(void);
