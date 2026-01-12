@@ -28,6 +28,8 @@
 
 /* Virtual I & D Space */
 
+/* Code is based on 2.11BSD's PDP-11 code */
+
 /* Work In Progress! */
 
 #ifndef _VM_IDSPACE_H_

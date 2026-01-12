@@ -26,6 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* Code is based on 2.11BSD's PDP-11 code */
+
 #include <vm_idspace.h>
 
  /* kspace */
