@@ -107,10 +107,13 @@ void 	selnotify(struct selinfo *, long);
 #else
 __BEGIN_DECLS
 struct timeval;
+struct timespec;
+typedef unsigned long sigset_t;
 
 /* must define __SELECT_DECLARED to use select */
 #ifdef __SELECT_DECLARED
 int select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+int	pselect(int, fd_set *, fd_set *, fd_set *, const struct timespec *, const sigset_t *);
 #endif /* __SELECT_DECLARED */
 __END_DECLS
 #endif /* !KERNEL */
