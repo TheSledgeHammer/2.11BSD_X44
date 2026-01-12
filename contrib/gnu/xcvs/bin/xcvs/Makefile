@@ -33,5 +33,5 @@ SRCS+=	gssapi-client.c
 DPADD+= ${LIBCRYPT} ${LIBZ}
 LDADD+= -lcrypt -lz
 
-COPTS.commit.c+= ${GCC_NO_STRINGOP_TRUNCATION} {GCC_NO_STRINGOP_OVERFLOW}
+COPTS.commit.c+= ${GCC_NO_STRINGOP_TRUNCATION} ${GCC_NO_STRINGOP_OVERFLOW}
 .include <bsd.prog.mk>
