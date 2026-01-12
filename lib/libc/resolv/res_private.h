@@ -54,10 +54,10 @@
 __BEGIN_DECLS
 int	    res_ninit(res_state);
 int		res_nmkquery(res_state, int, const char *, int, int, const u_char *, int, const u_char *, u_char *, int);
-int		res_nquery(res_state, char *, int, int, u_char *, int);
-int		res_nquerydomain(res_state, char *, char *, int, int, u_char *, int);
+int		res_nquery(res_state, const char *, int, int, u_char *, int);
+int		res_nquerydomain(res_state, const char *, const char *, int, int, u_char *, int);
 const char *res_hostalias(res_state, const char *, char *, size_t);
-int		res_nsearch(res_state, char *, int, int, u_char *, int);
+int		res_nsearch(res_state, const char *, int, int, u_char *, int);
 int		res_nsend(res_state, const u_char *, int, u_char *, int);
 void	res_nclose(res_state);
 void	res_ndestroy(res_state);

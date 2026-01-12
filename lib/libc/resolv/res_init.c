@@ -190,7 +190,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr_in, buf, buflen)
 
 int
 res_search(name, class, type, answer, anslen)
-	char *name;
+	const char *name;
 	int class, type;
 	u_char *answer;
 	int anslen;
@@ -216,7 +216,7 @@ res_send(buf, buflen, answer, anslen)
 
 int
 res_query(name, class, type, answer, anslen)
-	char *name;
+	const char *name;
 	int class, type;
 	u_char *answer;
 	int anslen;
@@ -229,7 +229,7 @@ res_query(name, class, type, answer, anslen)
 
 int
 res_querydomain(name, domain, class, type, answer, anslen)
-	char *name, *domain;
+	const char *name, *domain;
 	int class, type;
 	u_char *answer;
 	int anslen;

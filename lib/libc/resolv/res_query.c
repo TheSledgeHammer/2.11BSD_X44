@@ -116,7 +116,7 @@ int h_errno;
 int
 res_nquery(statp, name, class, type, answer, anslen)
 	res_state statp;
-	char *name;		/* domain name */
+	const char *name;		/* domain name */
 	int class, type;	/* class and type of query */
 	u_char *answer;		/* buffer to put answer */
 	int anslen;		/* size of answer buffer */
@@ -191,12 +191,13 @@ res_nquery(statp, name, class, type, answer, anslen)
 int
 res_nsearch(statp, name, class, type, answer, anslen)
 	res_state statp;	/* res state */
-	char *name;			/* domain name */
+	const char *name;			/* domain name */
 	int class, type;	/* class and type of query */
 	u_char *answer;		/* buffer to put answer */
 	int anslen;		/* size of answer */
 {
-	register char *cp, **domain;
+	register const char *cp;
+    register char **domain;
 	int n, ret;
 
 	if ((statp->options & RES_INIT) == 0 && res_ninit(statp) == -1)
@@ -258,13 +259,13 @@ res_nsearch(statp, name, class, type, answer, anslen)
 int
 res_nquerydomain(statp, name, domain, class, type, answer, anslen)
 	res_state statp;	/* res state */
-	char *name, *domain;
+	const char *name, *domain;
 	int class, type;	/* class and type of query */
 	u_char *answer;		/* buffer to put answer */
 	int anslen;			/* size of answer */
 {
 	char nbuf[2*MAXDNAME+2];
-	char *longname = nbuf;
+	const char *longname = nbuf;
 	int n;
 
 #ifdef DEBUG
