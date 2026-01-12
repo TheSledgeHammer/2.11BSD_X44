@@ -22,7 +22,7 @@ CPPFLAGS+=-DOPENSSL_API_COMPAT=0x10100000L
 .PATH: ${SSHDIST}
 .PATH: ${SSHDIR}/include
 
-CPPFLAGS+=-DLIBWRAP
+CPPFLAGS+=-DLIBWRAP -D__SELECT_DECLARED
 
 LINTFLAGS+=	-X 117	# nonportable '>>' on signed integer type
 LINTFLAGS+=	-X 231	# parameter unused

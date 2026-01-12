@@ -40,7 +40,7 @@ LIBSSH_SRCS= \
         authfd.c authfile.c \
         canohost.c channels.c cipher.c cipher-aes.c cipher-aesctr.c \
 	    cleanup.c \
-    	compat.c fatal.c hostfile.c \
+    	compat.c fatal.c hostfile.c groupaccess.c \
 	    log.c match.c moduli.c nchan.c packet.c \
     	readpass.c ttymodes.c xmalloc.c addr.c addrmatch.c \
 	    atomicio.c dispatch.c mac.c misc.c utf8.c \
@@ -55,16 +55,26 @@ LIBSSH_SRCS= \
 	    kexgexc.c kexgexs.c \
 	    kexsntrup761x25519.c kexmlkem768x25519.c sntrup761.c kexgen.c \
 	    sftp-realpath.c platform-pledge.c platform-tracing.c platform-misc.c \
-	    sshbuf-io.c
+	    sshbuf-io.c uidswap.c
 
-SK_SRCS= ssh-sk-client.c
+SK_SRCS= \
+        ssh-sk-client.c
 
 OPENBSD_COMPAT_SRCS= \
+        base64.c \
         bcrypt_pbkdf.c \
         blowfish.c \
+        bsd-closefrom.c \
+        bsd-getpeereid.c \
         bsd-misc.c \
+        bsd-poll.c \
+        bsd-setres_id.c \
+        getrrsetbyname.c \
+        libressl-api-compat.c \
+        memmem.c \
         openssl-compat.c \
-	    libressl-api-compat.c \
+        port-net.c \
+        readpassphrase.c \
         xcrypt.c
 
 SRCS+= ${LIBOPENSSH_SRCS} ${XMSS_SRCS} ${LIBSSH_SRCS} ${SK_SRCS} \

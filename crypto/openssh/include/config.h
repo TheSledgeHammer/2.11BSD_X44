@@ -702,7 +702,7 @@
 #define HAVE_GETPAGESIZE 1
 
 /* Define to 1 if you have the `getpeereid' function. */
-#define HAVE_GETPEEREID 1
+/* #undef HAVE_GETPEEREID */
 
 /* Define to 1 if you have the `getpeerucred' function. */
 /* #undef HAVE_GETPEERUCRED */
@@ -1070,7 +1070,7 @@
 #define HAVE_POLL_H 1
 
 /* Define to 1 if you have the `ppoll' function. */
-#define HAVE_PPOLL 1
+/* #undef HAVE_PPOLL */
 
 /* Define to 1 if you have the `prctl' function. */
 /* #undef HAVE_PRCTL */
