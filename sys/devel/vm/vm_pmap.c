@@ -113,3 +113,15 @@ vm_pmap_bootinit(item, size, nitems)
 	kentry_data = result;
 	return (item);
 }
+
+
+void
+vm_pmap_bootstrap(vm_offset_t *data, vm_size_t map_size, unsigned long map_number, vm_size_t entry_size, unsigned long entry_number)
+{
+	vm_size_t entry_data_size, mapsize, entrysize;
+
+    mapsize = (map_number * map_size);
+	entrysize = (entry_number * entry_size);
+	entry_data_size = round_page(mapsize + entrysize);
+	*data = (vm_offset_t)pmap_bootstrap_alloc(entry_data_size);
+}
