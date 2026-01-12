@@ -195,7 +195,7 @@ int             		fchroot(int);
 int	 			fsync(int);
 int	 			ftruncate(int, off_t);
 int	 			getdomainname(char *, size_t);
-int	            getgrouplist(char *, gid_t, gid_t *, int *);
+int	            getgrouplist(const char *, gid_t, gid_t *, int *);
 int	 			getdtablesize(void);
 unsigned long	gethostid(void);
 mode_t	 		getmode(const void *, mode_t);
