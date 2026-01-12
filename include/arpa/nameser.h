@@ -205,7 +205,9 @@ typedef struct {
 			/* fields in fourth byte */
 	u_char	ra:1;		/* recursion available */
 	u_char	pr:1;		/* primary server required (non standard) */
-	u_char	unused:2;	/* unused bits */
+    u_char	ad: 1;		/* authentic data from named */
+    u_char	cd: 1;		/* checking disabled by resolver */
+	u_char	unused:1;	/* unused bits */
 	u_char	rcode:4;	/* response code */
 #endif
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -217,7 +219,9 @@ typedef struct {
 	u_char	qr:1;		/* response flag */
 			/* fields in fourth byte */
 	u_char	rcode:4;	/* response code */
-	u_char	unused:2;	/* unused bits */
+	u_char	ad: 1;		/* authentic data from named */
+    u_char	cd: 1;		/* checking disabled by resolver */
+	u_char	unused:1;	/* unused bits */
 	u_char	pr:1;		/* primary server required (non standard) */
 	u_char	ra:1;		/* recursion available */
 #endif
@@ -231,7 +235,9 @@ typedef struct {
 	u_int	qr:1;		/* response flag */
 			/* fields in fourth byte */
 	u_int	rcode:4;	/* response code */
-	u_int	unused:2;	/* unused bits */
+	u_int	ad: 1;		/* authentic data from named */
+    u_int	cd: 1;		/* checking disabled by resolver */
+	u_int	unused:1;	/* unused bits */
 	u_int	pr:1;		/* primary server required (non standard) */
 	u_int	ra:1;		/* recursion available */
 #endif
