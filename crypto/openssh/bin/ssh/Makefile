@@ -6,7 +6,7 @@ BINDIR = /usr/bin
 
 PROG=	ssh
 SRCS=	ssh.c readconf.c clientloop.c sshtty.c \
-	sshconnect.c sshconnect2.c mux.c auth.c
+	sshconnect.c sshconnect2.c mux.c auth.c auth-options.c
 
 COPTS.auth.c=		-DHOST_ONLY
 COPTS.clientloop.c= ${GCC_NO_STRINGOP_OVERFLOW}
