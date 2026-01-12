@@ -54,7 +54,7 @@ __weak_alias(getgrouplist,_getgrouplist)
 
 int
 getgrouplist(uname, agroup, groups, grpcnt)
-	char *uname;
+	const char *uname;
 	gid_t agroup;
 	register gid_t *groups;
 	int *grpcnt;
