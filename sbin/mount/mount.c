@@ -81,6 +81,10 @@ static void	usage(void);
 
 int	main(int, char *[]);
 
+
+/* From mount_ufs.c. */
+int	mount_ufs(int, char * const *);
+
 /* Map from mount otions to printable formats. */
 static const struct opt {
 	int o_opt;
@@ -102,6 +106,7 @@ static const struct opt {
 };
 
 static char ffs_fstype[] = "ffs";
+static char ufs_fstype[] = "ufs"; /* backwards compatability */
 
 int
 main(int argc, char *argv[])
@@ -429,6 +434,10 @@ mountfs(const char *vfstype, const char *spec, const char *name,
 	case 0:					/* Child. */
 		if (debug)
 			_exit(0);
+
+        if (strcmp(vfstype, ufs_fstype) == 0) {
+            _exit(mount_ufs(argc, (char * const *)argv));
+        }
 
 		if (buf) {
 			(void)close(pfd[0]);

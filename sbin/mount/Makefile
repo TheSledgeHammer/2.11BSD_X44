@@ -4,8 +4,9 @@
 .include <bsd.own.mk>
 
 PROG=	mount
-MAN=	mount.8
 SRCS=	mount.c vfslist.c
+SRCS+=  mount_ufs.c getmntopts.c
+MAN=	mount.8
 
 .if defined(RESCUEDIR)
 CPPFLAGS+= -D_PATH_RESCUE=\"${RESCUEDIR}\"
