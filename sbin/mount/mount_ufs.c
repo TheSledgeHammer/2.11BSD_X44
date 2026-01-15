@@ -68,9 +68,7 @@ static struct mntopt mopts[] = {
 };
 
 int
-mount_ufs(argc, argv)
-	int argc;
-	char * const argv[];
+mount_ufs(int argc, char * const argv[])
 {
 	struct ufs_args args;
 	int ch, mntflags;
@@ -127,7 +125,7 @@ mount_ufs(argc, argv)
 }
 
 void
-ufs_usage()
+ufs_usage(void)
 {
 	(void)fprintf(stderr, "usage: mount_ufs [-o options] special node\n");
 	exit(1);

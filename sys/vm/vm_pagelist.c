@@ -153,6 +153,12 @@ static int vm_pagelist_found_chunk(int, int, bool_t, struct seglist *, struct pg
  *				cross this power-of-two boundary
  *				(relative to zero).
  *
+ *		forced		Overrides memory allocation alignment.
+ *				 0) sets memory be to be in segments (4mb)
+ *				 1) sets memory to be according to size requested.
+ *				 	this can be in pages (4kb) or segments (4mb).
+ *				 	(Recommended)
+ *
  *	The allocated pages are placed at the tail of `rlist'; `rlist'
  *	is assumed to be properly initialized by the caller.  The
  *	number of memory segments that the allocated memory may
@@ -452,14 +458,6 @@ vm_pagelist_alloc_contig(size, low, high, alignment, boundary, segmented, slist,
 	return (error);
 }
 
-/*
- * vm_page_alloc_memory:
- * forced: (Below Assumes the parameters are met.)
- * 		- 0) will allocate in segments (4mb chunks).
- * 		- 1) will allocate according to size requested,
- * 			 this could be in pages (4kb chunks) or
- * 			 segments (4mb chunks). (Recommended)
- */
 int
 vm_pagelist_alloc_memory(addr, len, size, num, low, high, alignment, boundary, nsegs, waitok, forced)
 	vm_offset_t *addr;

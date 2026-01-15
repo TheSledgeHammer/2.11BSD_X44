@@ -57,7 +57,7 @@ __RCSID("$NetBSD: mount.c,v 1.68 2004/03/27 06:11:48 cgd Exp $");
 #include <string.h>
 #include <unistd.h>
 
-#define MOUNTNAMES
+#define FSTYPENAMES
 #include <fcntl.h>
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
@@ -69,6 +69,7 @@ static int	debug, verbose;
 
 static void	catopt(char **, const char *);
 static const char *getfslab(const char *str);
+static const char *getfstypenames(u_char t);
 static struct statfs *getmntpt(const char *);
 static int 	getmntargs(struct statfs *, char *, size_t);
 static int	hasopt(const char *, const char *);
@@ -86,15 +87,24 @@ static const struct opt {
 	int o_silent;
 	const char *o_name;
 } optnames[] = {
-	__MNT_FLAGS
+		{ MNT_ASYNC,		"asynchronous" },
+		{ MNT_EXPORTED,		"NFS exported" },
+		{ MNT_NOATIME,		"noaccesstime" },
+		{ MNT_LOCAL,		"local" },
+		{ MNT_NODEV,		"nodev" },
+		{ MNT_NOEXEC,		"noexec" },
+		{ MNT_NOSUID,		"nosuid" },
+		{ MNT_QUOTA,		"with quotas" },
+		{ MNT_RDONLY,		"read-only" },
+		{ MNT_SYNCHRONOUS,	"synchronous" },
+		{ MNT_UNION,		"union" },
+		{ NULL }
 };
 
 static char ffs_fstype[] = "ffs";
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	const char *mntfromname, *mntonname, **vfslist, *vfstype;
 	struct fstab *fs;
@@ -187,7 +197,7 @@ main(argc, argv)
 				err(1, "getmntinfo");
 			for (i = 0; i < mntsize; i++) {
 				if (checkvfsname(mntbuf[i].f_fstypename,
-				    vfslist))
+				    vfslist) || checkvfstype(mntbuf[i].f_type, vfslist))
 					continue;
 				prmount(&mntbuf[i]);
 			}
@@ -281,8 +291,7 @@ main(argc, argv)
 }
 
 int
-hasopt(mntopts, option)
-	const char *mntopts, *option;
+hasopt(const char *mntopts, const char *option)
 {
 	int negative, found;
 	char *opt, *optbuf;
@@ -306,12 +315,9 @@ hasopt(mntopts, option)
 }
 
 static int
-mountfs(vfstype, spec, name, flags, options, mntopts, skipmounted, buf, buflen)
-	const char *vfstype, *spec, *name, *options, *mntopts;
-	int flags, skipmounted;
-	char *buf;
-	size_t buflen;
-{
+mountfs(const char *vfstype, const char *spec, const char *name,
+		int flags, const char *options, const char *mntopts, int skipmounted,
+		char *buf, size_t buflen) {
 	/* List of directories containing mount_xxx subcommands. */
 	static const char *edirs[] = {
 #ifdef _PATH_RESCUE
@@ -506,8 +512,7 @@ mountfs(vfstype, spec, name, flags, options, mntopts, skipmounted, buf, buflen)
 }
 
 static void
-prmount(sfp)
-	struct statfs *sfp;
+prmount(struct statfs *sfp)
 {
 	int flags;
 	const struct opt *o;
@@ -518,43 +523,36 @@ prmount(sfp)
 	    sfp->f_mntonname, MFSNAMELEN, sfp->f_fstypename);
 
 	flags = sfp->f_flags & MNT_VISFLAGMASK;
-	for (f = 0, o = optnames; flags && o < 
-	    &optnames[sizeof(optnames)/sizeof(optnames[0])]; o++)
+	for (f = 0, o = optnames; flags && o->o_opt; o++) {
 		if (flags & o->o_opt) {
-			if (!o->o_silent || verbose)
-				(void)printf("%s%s", !f++ ? " (" : ", ",
-				    o->o_name);
+			(void)printf("%s%s", !f++ ? " (" : ", ", o->o_name);
 			flags &= ~o->o_opt;
 		}
-	if (flags)
-		(void)printf("%sunknown flag%s %#x", !f++ ? " (" : ", ",
-		    flags & (flags - 1) ? "s" : "", flags);
+	}
+	if (flags) {
+		(void) printf("%sunknown flag%s %#x", !f++ ? " (" : ", ",
+				flags & (flags - 1) ? "s" : "", flags);
+	}
 	if (sfp->f_owner) {
 		(void)printf("%smounted by ", !f++ ? " (" : ", ");
-		if ((pw = getpwuid(sfp->f_owner)) != NULL)
+		if ((pw = getpwuid(sfp->f_owner)) != NULL) {
 			(void)printf("%s", pw->pw_name);
-		else
+		} else {
 			(void)printf("%d", sfp->f_owner);
+		}
 	}
 	if (verbose) {
-		(void)printf("%swrites: sync %ld async %ld",
-		    !f++ ? " (" : ", ", sfp->f_syncwrites, sfp->f_asyncwrites);
-		if (verbose > 1) {
-			char buf[2048];
+		char buf[2048];
 
-			if (getmntargs(sfp, buf, sizeof(buf)))
-				printf(", [%s: %s]", sfp->f_fstypename, buf);
+		if (getmntargs(sfp, buf, sizeof(buf))) {
+			printf(", [%s: %s]", sfp->f_fstypename, buf);
 		}
-		printf(")\n");
-	} else
-		(void)printf("%s", f ? ")\n" : "\n");
+	}
+	(void)printf("%s", f ? ")\n" : "\n");
 }
 
 static int
-getmntargs(sfs, buf, buflen)
-	struct statfs *sfs;
-	char *buf;
-	size_t buflen;
+getmntargs(struct statfs *sfs, char *buf, size_t buflen)
 {
 
 	if (mountfs(sfs->f_fstypename, sfs->f_mntfromname, sfs->f_mntonname, 0,
@@ -570,8 +568,7 @@ getmntargs(sfs, buf, buflen)
 }
 
 static struct statfs *
-getmntpt(name)
-	const char *name;
+getmntpt(const char *name)
 {
 	struct statfs *mntbuf;
 	int i, mntsize;
@@ -585,9 +582,7 @@ getmntpt(name)
 }
 
 static void
-catopt(sp, o)
-	char **sp;
-	const char *o;
+catopt(char **sp, const char *o)
 {
 	char *s, *n;
 
@@ -603,10 +598,7 @@ catopt(sp, o)
 }
 
 static void
-mangle(options, argcp, argvp, maxargcp)
-	char *options;
-	int *argcp, *maxargcp;
-	const char ***argvp;
+mangle(char *options, int *argcp, const char ***argvp, int *maxargcp)
 {
 	char *p, *s;
 	int argc, maxargc;
@@ -647,8 +639,7 @@ mangle(options, argcp, argvp, maxargcp)
 
 /* Deduce the filesystem type from the disk label. */
 static const char *
-getfslab(str)
-	const char *str;
+getfslab(const char *str)
 {
 	struct disklabel dl;
 	int fd;
@@ -692,16 +683,31 @@ getfslab(str)
 		return (NULL);
 
 	/* Return NULL for unknown types - caller can fall back to ffs */
-	if ((fstype = dl.d_partitions[part].p_fstype) >= FSMAXMOUNTNAMES)
+	if ((fstype = dl.d_partitions[part].p_fstype) >= FSMAXTYPES)
 		vfstype = NULL;
 	else
-		vfstype = mountnames[fstype];
+		vfstype = getfstypenames(fstype);
 
 	return (vfstype);
 }
 
+static const char *
+getfstypenames(u_char t)
+{
+    const char *vfstype;
+    u_int i;
+
+    for (i = 0; i < FSMAXTYPES; i++) {
+        vfstype = fstypenames[i];
+        if ((vfstype != NULL) && (t == i)) {
+            return (vfstype);
+        }
+    }
+    return (NULL);
+}
+
 static void
-usage()
+usage(void)
 {
 
 	(void)fprintf(stderr,

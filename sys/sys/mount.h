@@ -95,36 +95,43 @@ struct statfs {
 /*
  * File system types.
  */
-#define	MOUNT_NONE		"none"
-#define	MOUNT_FFS		"ffs"		/* UNIX "Fast" Filesystem */
-#define	MOUNT_UFS		"ufs"		/* for compatibility */
-#define	MOUNT_NFS		"nfs"		/* Network Filesystem */
-#define	MOUNT_MFS		"mfs"		/* Memory Filesystem */
-#define	MOUNT_MSDOS		"msdos"		/* MSDOS Filesystem */
-#define	MOUNT_LFS		"lfs"		/* Log-based Filesystem */
-#define	MOUNT_FDESC		"fdesc"		/* File Descriptor Filesystem */
+/*
+ * Note: If you add more file system types, please
+ * append the MOUNT_MAXTYPE to reflect the new number
+ * of mountable file system types.
+ */
+#define	MOUNT_NONE	"none"
+#define	MOUNT_FFS	"ffs"		/* UNIX "Fast" Filesystem */
+#define	MOUNT_UFS	"ufs"		/* for compatibility */
+#define	MOUNT_NFS	"nfs"		/* Network Filesystem */
+#define	MOUNT_MFS	"mfs"		/* Memory Filesystem */
+#define	MOUNT_MSDOS	"msdos"		/* MSDOS Filesystem */
+#define	MOUNT_LFS	"lfs"		/* Log-based Filesystem */
+#define	MOUNT_FDESC	"fdesc"		/* File Descriptor Filesystem */
 #define	MOUNT_CD9660	"cd9660"	/* ISO9660 (aka CDROM) Filesystem */
-#define	MOUNT_LOFS		"lofs"		/* Loopback Filesystem */
-#define	MOUNT_UNION		"union"		/* Union (translucent) Filesystem */
+#define	MOUNT_LOFS	"lofs"		/* Loopback Filesystem */
+#define	MOUNT_UNION	"union"		/* Union (translucent) Filesystem */
 #define	MOUNT_UFS211	"ufs211"	/* 2.11BSD UFS Filesystem */
-#define	MOUNT_UFML		"ufml"		/* UFML Filesystem */
+#define	MOUNT_UFML	"ufml"		/* UFML Filesystem */
 
 #define	INITMOUNTNAMES { 	\
-	MOUNT_NONE,				\
-	MOUNT_UFS,				\
-	MOUNT_FFS,				\
-	MOUNT_NFS				\
-	MOUNT_MFS,				\
-	MOUNT_LFS,  			\
-	MOUNT_MSDOS, 			\
-	MOUNT_FDESC,			\
-	MOUNT_LOFS,				\
-	MOUNT_CD9660			\
-	MOUNT_UNION,			\
-	MOUNT_UFS211,			\
-	MOUNT_UFML, 			\
-	0,						\
+	MOUNT_NONE, 	/* 0 */	\
+	MOUNT_UFS, 	/* 1 */	\
+	MOUNT_FFS, 	/* 2 */	\
+	MOUNT_NFS,	/* 3 */	\
+	MOUNT_MFS, 	/* 4 */	\
+	MOUNT_LFS, 	/* 5 */	\
+	MOUNT_MSDOS, 	/* 6 */ \
+	MOUNT_FDESC, 	/* 7 */	\
+	MOUNT_LOFS, 	/* 8 */	\
+	MOUNT_CD9660, 	/* 9 */	\
+	MOUNT_UNION, 	/* 10 */\
+	MOUNT_UFS211, 	/* 11 */\
+	MOUNT_UFML, 	/* 12 */\
+	0,			\
 }
+
+#define	MOUNT_MAXTYPE	12
 
 /*
  * Mount structure.

@@ -77,18 +77,14 @@ static const struct mntopt mopts[] = {
 
 #ifndef MOUNT_NOMAIN
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	return mount_ffs(argc, argv);
 }
 #endif
 
 int
-mount_ffs(argc, argv)
-	int argc;
-	char *argv[];
+mount_ffs(int argc, char *argv[])
 {
 	struct ufs_args args;
 	int ch, mntflags;
@@ -145,7 +141,7 @@ mount_ffs(argc, argv)
 }
 
 static void
-ffs_usage()
+ffs_usage(void)
 {
 	(void)fprintf(stderr, "usage: mount_ffs [-o options] special node\n");
 	exit(1);

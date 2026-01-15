@@ -38,6 +38,8 @@ __RCSID("$NetBSD: vfslist.c,v 1.4 2003/08/07 10:04:26 agc Exp $");
 #endif
 #endif /* not lint */
 
+#include <sys/mount.h>
+
 #include <err.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,7 +47,7 @@ __RCSID("$NetBSD: vfslist.c,v 1.4 2003/08/07 10:04:26 agc Exp $");
 
 #include "vfslist.h"
 
-static int	  skipvfs;
+static int skipvfs;
 
 int
 checkvfsname(const char *vfsname, const char **vfslist)
@@ -59,6 +61,17 @@ checkvfsname(const char *vfsname, const char **vfslist)
 		++vfslist;
 	}
 	return (!skipvfs);
+}
+
+int
+checkvfstype(int vfstype, const char **vfslist)
+{
+	static char *vfsnames[] = INITMOUNTNAMES;
+
+	if ((vfstype < 0) || (vfstype > MOUNT_MAXTYPE)) {
+		return (0);
+	}
+	return (checkvfsname(vfsnames[vfstype], vfslist));
 }
 
 const char **

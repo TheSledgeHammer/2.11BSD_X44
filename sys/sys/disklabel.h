@@ -302,16 +302,17 @@ static const char *const dktypenames[] = {
  * Used to interpret other filesystem-specific
  * per-partition information.
  */
-/*
- * 2.11BSD uses type 5 filesystems even though block numbers are 4 bytes
- * (rather than the packed 3 byte format) and the directory structure is
- * that of 4.3BSD (long filenames).
-*/
+
 #define	FS_UNUSED			0		/* unused */
 #define	FS_SWAP				1		/* swap */
 #define	FS_V6				2		/* Sixth Edition */
 #define	FS_V7				3		/* Seventh Edition */
 #define	FS_SYSV				4		/* System V */
+/*
+ * 2.11BSD uses type 5 filesystems even though block numbers are 4 bytes
+ * (rather than the packed 3 byte format) and the directory structure is
+ * that of 4.3BSD (long filenames).
+ */
 #define	FS_V71K				5		/* V7 with 1K blocks (4.1, 2.9) */
 #define	FS_V8				6		/* Eighth Edition, 4K blocks */
 #define	FS_BSDFFS			7		/* 4.2BSD fast filesystem */
@@ -337,38 +338,38 @@ static const char *const dktypenames[] = {
 
 #ifdef	FSTYPENAMES
 static const char *const fstypenames[] = {
-	"unused",
-	"swap",
-	"Version 6",
-	"Version 7",
-	"System V",
-	"2.11BSD",
-	"Eighth Edition",
-	"4.2BSD",
-	"MSDOS",
-	"4.4LFS",
-	"unknown",
-	"HPFS",
-	"ISO9660",
-	"boot",
-	"Vinum",
-	"Raid",
-	"Filecore",
-	"EXT2FS",
-	"NTFS",
-	"?",
-	"ccd",
-	"jfs",
-	"HAMMER",
-	"HAMMER2",
-	"UDF",
-	"?",
-	"EFS",
-	"ZFS",
-	"?",
-	"?",
-	"nandfs",
-	NULL
+		"unused",
+		"swap",
+		"Version 6",
+		"Version 7",
+		"System V",
+		"2.11BSD",
+		"Eighth Edition",
+		"4.2BSD",
+		"MSDOS",
+		"4.4LFS",
+		"unknown",
+		"HPFS",
+		"ISO9660",
+		"boot",
+		"Vinum",
+		"Raid",
+		"Filecore",
+		"EXT2FS",
+		"NTFS",
+		"?",
+		"ccd",
+		"jfs",
+		"HAMMER",
+		"HAMMER2",
+		"UDF",
+		"?",
+		"EFS",
+		"ZFS",
+		"?",
+		"?",
+		"nandfs",
+		NULL
 };
 #define FSMAXTYPES	(sizeof(fstypenames) / sizeof(fstypenames[0]) - 1)
 #endif

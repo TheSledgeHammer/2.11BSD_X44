@@ -131,3 +131,78 @@ vm_uspace_object_create(size)
 	}
 	return (NULL);
 }
+
+/* vm_segment_map */
+#define M_VMSEGMAP 103
+
+void
+vm_segment_map_insert(segment_register, segment_number)
+	vm_segment_register_t segment_register;
+	int segment_number;
+{
+	vm_segment_map_t segm;
+
+	segm = (vm_segment_map_t)malloc((u_long)sizeof(struct vm_segment_map), M_VMSEGMAP, M_WAITOK);
+	segm->segment_register = segment_register;
+	segm->segment_number = segment_number;
+	//lock
+	LIST_INSERT_HEAD(&segmaplist, segm, segmlist);
+	//unlock
+}
+
+vm_segment_map_t
+vm_segment_map_lookup(segment_register, segment_number)
+	vm_segment_register_t segment_register;
+	int segment_number;
+{
+	vm_segment_map_t segm;
+
+	//lock
+	LIST_FOREACH(segm, &segmaplist, segmlist) {
+		if ((segm->segment_register == segment_register) && (segm->segment_number == segment_number)) {
+			//unlock
+			return (segm);
+		}
+	}
+	//unlock
+	return (NULL);
+}
+
+void
+vm_segment_map_remove(segment_register, segment_number)
+	vm_segment_register_t segment_register;
+	int segment_number;
+{
+	vm_segment_map_t segm;
+
+	segm = vm_segment_map_lookup(segment_register, segment_number);
+	if (segm != NULL) {
+		LIST_REMOVE(segm, segmlist);
+	}
+}
+
+/* vm_segment_register */
+void
+vm_segment_register_save(segment_register, segment_number, addr, desc)
+	vm_segment_register_t segment_register;
+	int segment_number;
+	vm_offset_t addr, desc;
+{
+	segment_register[segment_number].desc = desc;
+	segment_register[segment_number].addr = addr;
+}
+
+void
+vm_segment_register_restore(segment_register, segment_number)
+	vm_segment_register_t segment_register;
+	int segment_number;
+{
+	vm_segment_register_t segr;
+
+	segr = segment_register;
+	if (segr != NULL) {
+		segr[segment_number] = segment_register[segment_number];
+		segr[segment_number].desc = segment_register[segment_number].desc;
+		segr[segment_number].addr = segment_register[segment_number].addr;
+	}
+}

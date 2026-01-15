@@ -62,11 +62,11 @@ struct vm_segmap_head;
 LIST_HEAD(vm_segmap_head, vm_segment_map);
 struct vm_segment_map {
 	LIST_ENTRY(vm_segment_map) segmlist; 	/* register list */
-	vm_segment_register_t segm[NOVL]; 		/* segment registers */
-	int segnum; 							/* segment register number */
+	vm_segment_register_t segment_register[NOVL]; 		/* segment registers */
+	int segment_number; 							/* segment register number */
 	int flags;
 };
-extern struct vm_segmap_head segmapinfo;
+extern struct vm_segmap_head segmaplist;
 
 /* virtual kernel I & D space */
 char *kispace_min, *kispace_max; /* kernel i-space vm_map range */

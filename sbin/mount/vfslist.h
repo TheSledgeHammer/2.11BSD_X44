@@ -30,4 +30,5 @@
  */
 
 int checkvfsname(const char *, const char **);
+int checkvfstype(int, const char **);
 const char **makevfslist(char *);
