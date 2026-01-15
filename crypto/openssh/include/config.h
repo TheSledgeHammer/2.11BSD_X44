@@ -170,10 +170,10 @@
 #define GLOB_HAS_ALTDIRFUNC 1
 
 /* Define if your system glob() function has gl_matchc options in glob_t */
-/* #undef GLOB_HAS_GL_MATCHC */
+#define GLOB_HAS_GL_MATCHC 1
 
 /* Define if your system glob() function has gl_statv options in glob_t */
-/* #undef GLOB_HAS_GL_STATV */
+#define GLOB_HAS_GL_STATV 1
 
 /* Define this if you want GSSAPI support in the version 2 protocol */
 /* #undef GSSAPI */

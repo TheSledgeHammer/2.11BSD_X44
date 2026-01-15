@@ -54,7 +54,7 @@ LIBSSH_SRCS= \
 	    kex.c kex-names.c kexdh.c kexgex.c kexecdh.c kexc25519.c \
 	    kexgexc.c kexgexs.c \
 	    kexsntrup761x25519.c kexmlkem768x25519.c sntrup761.c kexgen.c \
-	    sftp-realpath.c platform-pledge.c platform-tracing.c platform-misc.c \
+	    sftp-realpath.c platform.c platform-pledge.c platform-tracing.c platform-misc.c \
 	    sshbuf-io.c uidswap.c
 
 SK_SRCS= \
@@ -69,6 +69,7 @@ OPENBSD_COMPAT_SRCS= \
         bsd-misc.c \
         bsd-poll.c \
         bsd-setres_id.c \
+        fmt_scaled.c \
         getrrsetbyname.c \
         libressl-api-compat.c \
         memmem.c \
@@ -81,16 +82,16 @@ SRCS+= ${LIBOPENSSH_SRCS} ${XMSS_SRCS} ${LIBSSH_SRCS} ${SK_SRCS} \
        ${OPENBSD_COMPAT_SRCS}
 
 COPTS.addr.c+= -Wno-sign-compare
-COPTS.channels.c+= -Wno-pointer-sign
+COPTS.bcrypt_pbkdf.c+= -Wno-pointer-sign
+COPTS.channels.c+= -Wno-pointer-sign -fno-strict-aliasing
+#COPTS.channels.c+= -fno-strict-aliasing
+COPTS.fmt_scaled.c+= -Wno-format-truncation
 COPTS.kex.c+= -Wno-pointer-sign
 COPTS.log.c+= -Wno-format-truncation
 COPTS.misc.c+= -Wno-format-truncation
 COPTS.packet.c+= -Wno-pointer-sign
 COPTS.ssh-pkcs11.c+= -Wno-pointer-sign
 COPTS.sshkey.c+= -Wno-pointer-sign
-COPTS.bcrypt_pbkdf.c+= -Wno-pointer-sign
-
-COPTS.channels.c+= -fno-strict-aliasing
 
 CPPFLAGS+= -I${SSHDIST}
 CPPFLAGS+= -I${OPENBSD_COMPAT}
