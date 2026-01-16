@@ -201,6 +201,10 @@ extern void *ckmalloc(size_t);
 #else
 static void error(const char *, ...) __dead __printflike(1, 2);
 
+#ifndef __arraycount
+# define __arraycount(a) (sizeof(a) / sizeof(*(a)))
+#endif
+
 static void
 error(const char *msg, ...)
 {
@@ -882,7 +886,7 @@ newerf(const char *f1, const char *f2)
 
 	return (stat(f1, &b1) == 0 &&
 		stat(f2, &b2) == 0 &&
-		timespeccmp(&b1.st_mtim, &b2.st_mtim, >));
+		timespeccmp(&b1.st_mtime, &b2.st_mtime, >));
 }
 
 static int
@@ -892,7 +896,7 @@ olderf(const char *f1, const char *f2)
 
 	return (stat(f1, &b1) == 0 &&
 		stat(f2, &b2) == 0 &&
-		timespeccmp(&b1.st_mtim, &b2.st_mtim, <));
+		timespeccmp(&b1.st_mtime, &b2.st_mtime, <));
 }
 
 static int
