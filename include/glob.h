@@ -42,6 +42,7 @@
 #define	_GLOB_H_
 
 #include <sys/cdefs.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 
 typedef struct {
@@ -51,18 +52,18 @@ typedef struct {
 	int 			gl_flags;		/* Copy of flags parameter to glob. */
 	char 			**gl_pathv;		/* List of paths matching pattern. */
 									/* Copy of errfunc parameter to glob. */
-	int 			(*gl_errfunc) (const char *, int);
+	int 			(*gl_errfunc)(const char *, int);
 
 	/*
 	 * Alternate filesystem access methods for glob; replacement
 	 * versions of closedir(3), readdir(3), opendir(3), stat(2)
 	 * and lstat(2).
 	 */
-	void 			(*gl_closedir) (void *);
-	struct dirent 	*(*gl_readdir) (void *);
-	void 			*(*gl_opendir) (const char *);
-	int 			(*gl_lstat) (const char *, struct stat *);
-	int 			(*gl_stat) (const char *, struct stat *);
+	void 			(*gl_closedir)(void *);
+	struct dirent 	*(*gl_readdir)(void *);
+	void 			*(*gl_opendir)(const char *);
+	int 			(*gl_lstat)(const char *, struct stat *);
+	int 			(*gl_stat)(const char *, struct stat *);
 } glob_t;
 
 #define	GLOB_APPEND		 0x00001    /* Append to output from previous call. */
@@ -72,14 +73,14 @@ typedef struct {
 #define	GLOB_NOCHECK	 0x00010    /* Return pattern itself if nothing matches. */
 #define	GLOB_NOSORT		 0x00020    /* Don't sort. */
 
-#ifndef _POSIX_SOURCE
+//#ifndef _POSIX_SOURCE
 #define	GLOB_ALTDIRFUNC	 0x00040    /* Use alternately specified directory funcs. */
 #define	GLOB_BRACE		 0x00080    /* Expand braces ala csh. */
 #define	GLOB_MAGCHAR	 0x00100    /* Pattern had globbing characters. */
 #define	GLOB_NOMAGIC	 0x00200    /* GLOB_NOCHECK without magic chars (csh). */
 #define	GLOB_QUOTE		 0x00400    /* Quote special chars with \. */
 #define	GLOB_TILDE		 0x00800    /* Expand tilde names from the passwd file. */
-#endif
+//#endif
 #define	GLOB_LIMIT	     0x01000    /* Limit memory used by matches to ARG_MAX */
 #define	GLOB_PERIOD	     0x02000    /* Allow metachars to match leading periods. */
 #define	GLOB_NO_DOTDIRS	 0x04000    /* Make . and .. vanish from wildcards. */
@@ -95,6 +96,7 @@ typedef struct {
 __BEGIN_DECLS
 int		glob(const char *, int, int (*)(const char *, int), glob_t *);
 void 	globfree(glob_t *);
+int	    glob_pattern_p(const char *, int);
 __END_DECLS
 
 #endif /* !_GLOB_H_ */
