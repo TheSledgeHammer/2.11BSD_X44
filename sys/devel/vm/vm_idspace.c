@@ -135,6 +135,15 @@ vm_uspace_object_create(size)
 /* vm_segment_map */
 #define M_VMSEGMAP 103
 
+struct vm_segmap_head segmaplist;
+
+void
+vm_segment_map_init(void)
+{
+	LIST_INIT(&segmaplist);
+	//lock_init
+}
+
 void
 vm_segment_map_insert(segment_register, segment_number)
 	vm_segment_register_t segment_register;
@@ -182,6 +191,31 @@ vm_segment_map_remove(segment_register, segment_number)
 }
 
 /* vm_segment_register */
+
+struct vm_segment_register seginfo[NOVL];
+
+void
+vm_segment_register_put(segment_number, addr, desc)
+	int segment_number;
+	vm_offset_t addr, desc;
+{
+	seginfo[segment_number].addr = addr;
+	seginfo[segment_number].addr = desc;
+}
+
+vm_segment_register_t
+vm_segment_register_get(segment_number)
+	int segment_number;
+{
+	vm_segment_register_t segm;
+
+	segm = &seginfo[segment_number];
+	if (segm != NULL) {
+		return (segm);
+	}
+	return (NULL);
+}
+
 void
 vm_segment_register_save(segment_register, segment_number, addr, desc)
 	vm_segment_register_t segment_register;
@@ -197,12 +231,9 @@ vm_segment_register_restore(segment_register, segment_number)
 	vm_segment_register_t segment_register;
 	int segment_number;
 {
-	vm_segment_register_t segr;
-
-	segr = segment_register;
-	if (segr != NULL) {
-		segr[segment_number] = segment_register[segment_number];
-		segr[segment_number].desc = segment_register[segment_number].desc;
-		segr[segment_number].addr = segment_register[segment_number].addr;
+	if (segment_register != NULL) {
+		seginfo[segment_number] = segment_register[segment_number];
+		seginfo[segment_number].desc = segment_register[segment_number].desc;
+		seginfo[segment_number].addr = segment_register[segment_number].addr;
 	}
 }

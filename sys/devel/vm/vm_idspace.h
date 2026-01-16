@@ -32,6 +32,48 @@
 
 /* Work In Progress! */
 
+/*
+ * vm_maps:
+ * Additions: address space layout
+ * USPACE_MIN: USRSTACK
+ * USPACE_MAX: VM_MAXUSER_ADDRESS
+ * KSPACE_MIN: VM_MIN_KERNEL_ADDRESS
+ * KSPACE_MAX: VM_MAX_KERNEL_ADDRESS
+ *
+ * Changes:
+ * - perform checks on min and max range in vm_map_init and vm_map_create
+ *      - initialize kspace and uspace structures
+ *      - kspace vm_maps should be within above kspace min and max if successful
+ *      - uspace vm_maps should be within above uspace min and max if successful
+ */
+
+/*
+ * segment_register:
+ * 2.11BSD on the PDP-11: Serves the base kernel and user mapping
+ * - saves and restores to 2 segments (5 and 6: i.e KDSA5, KDSD5, KDSD6, KDSA6)
+ * 		- with each set at a predefined address.
+ * - each segment has access bits and flags
+ * - when saving: KDSA6 is checked, stored in variable kdsa6 and the protection bits applied
+ *
+ * 2.11BSD_X44:
+ * Current:
+ * Can Perform:
+ * - save and restore any number (up to NOVL) of segments to seginfo[NOVL]
+ * - can set address and descriptors
+ *
+ * Cannot Perform:
+ * - segment protection bits (will be determined from vmspace)
+ * - prevention from a non-empty segment being overwritten
+ * - no reserved segments like 5 and 6, all are available...!
+ *
+ * TODO:
+ * - defining an address:
+ * 		- statically: setting a base address for each segment from above vm_map??
+ * 		- dynamically: let the vm_map define the base address for each segment??
+ * - protect non-empty segments
+ * - provide reserved segments
+ */
+
 #ifndef _VM_IDSPACE_H_
 #define _VM_IDSPACE_H_
 
@@ -56,6 +98,8 @@ struct vm_segment_register {
 };
 
 #define NOVL 32
+
+extern struct vm_segment_register seginfo[NOVL];
 
 /* virtual segmentation map */
 struct vm_segmap_head;
