@@ -33,13 +33,17 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)mount_ufs.c	8.4 (Berkeley) 4/26/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,7 +60,9 @@ static char sccsid[] = "@(#)mount_ufs.c	8.4 (Berkeley) 4/26/95";
 
 #include "mntopts.h"
 
+
 void	ufs_usage(void);
+int     mount_ufs(int, char * const *);
 
 static struct mntopt mopts[] = {
 	MOPT_STDOPTS,

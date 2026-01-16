@@ -42,6 +42,7 @@ struct mntopt {
 
 /* User-visible MNT_ flags. */
 #define MOPT_ASYNC		{ "async",	0, MNT_ASYNC, 0 }
+#define	MOPT_NOATIME	{ "accesstime",	1, MNT_NOATIME, 0 }
 #define MOPT_NODEV		{ "dev",	1, MNT_NODEV, 0 }
 #define MOPT_NOEXEC		{ "exec",	1, MNT_NOEXEC, 0 }
 #define MOPT_NOSUID		{ "suid",	1, MNT_NOSUID, 0 }
@@ -52,17 +53,20 @@ struct mntopt {
 #define MOPT_GROUPQUOTA	{ "groupquota",	0, 0, 0 }
 
 /* Control flags. */
-#define MOPT_FORCE		{ "force",	0, MNT_FORCE, 0 }
+#define MOPT_FORCE		{ "force",	1, MNT_FORCE, 0 }
 #define MOPT_UPDATE		{ "update",	0, MNT_UPDATE, 0 }
 #define MOPT_RO			{ "ro",		0, MNT_RDONLY, 0 }
 #define MOPT_RW			{ "rw",		1, MNT_RDONLY, 0 }
+#define MOPT_RQ			{ "rq",		1, MNT_RDONLY, 0 }
 
 /* This is parsed by mount(8), but is ignored by specific mount_*(8)s. */
 #define MOPT_AUTO		{ "auto",	0, 0, 0 }
+#define	MOPT_NOAUTO     { "na",     0, 0, 0 }
 
 #define MOPT_FSTAB_COMPAT					\
 	MOPT_RO,								\
 	MOPT_RW,								\
+    MOPT_RQ,                                \
 	MOPT_AUTO
 
 /* Standard options which all mounts can understand. */
@@ -70,6 +74,8 @@ struct mntopt {
 	MOPT_USERQUOTA,							\
 	MOPT_GROUPQUOTA,						\
 	MOPT_FSTAB_COMPAT,						\
+    MOPT_NOATIME,                           \
+    MOPT_NOAUTO,                            \
 	MOPT_NODEV,								\
 	MOPT_NOEXEC,							\
 	MOPT_NOSUID,							\

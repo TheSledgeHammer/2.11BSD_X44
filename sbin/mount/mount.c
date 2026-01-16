@@ -88,7 +88,6 @@ int	mount_ufs(int, char * const *);
 /* Map from mount otions to printable formats. */
 static const struct opt {
 	int o_opt;
-	int o_silent;
 	const char *o_name;
 } optnames[] = {
 		{ MNT_ASYNC,		"asynchronous" },
@@ -184,6 +183,8 @@ main(int argc, char *argv[])
 					continue;
 				if (hasopt(fs->fs_mntops, "noauto"))
 					continue;
+                if (hasopt(fs->fs_mntops, "na"))
+                    continue;
 				if (strcmp(fs->fs_spec, "from_mount") == 0) {
 					if ((mntbuf = getmntpt(fs->fs_file)) == NULL)
 						errx(1,
@@ -436,7 +437,7 @@ mountfs(const char *vfstype, const char *spec, const char *name,
 			_exit(0);
 
         if (strcmp(vfstype, ufs_fstype) == 0) {
-            _exit(mount_ufs(argc, (char * const *)argv));
+            _exit(mount_ufs(argc, __UNCONST(argv)));
         }
 
 		if (buf) {
@@ -451,7 +452,7 @@ mountfs(const char *vfstype, const char *spec, const char *name,
 		do {
 			(void)snprintf(execname,
 			    sizeof(execname), "%s/%s", *edir, execbase);
-			(void)execv(execname, (char * const *)argv);
+			(void)execv(execname, __UNCONST(argv));
 			if (errno != ENOENT)
 				warn("exec %s for %s", execname, name);
 		} while (*++edir != NULL);

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)getmntopts.c	8.3 (Berkeley) 3/29/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
