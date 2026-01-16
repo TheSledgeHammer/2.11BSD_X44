@@ -751,6 +751,37 @@ globfree(pglob)
 	}
 }
 
+int
+glob_pattern_p(const char *pattern, int quote)
+{
+	int range = 0;
+
+	for (; *pattern; pattern++)
+		switch (*pattern) {
+		case QUESTION:
+		case STAR:
+			return 1;
+
+		case QUOTE:
+			if (quote && pattern[1] != EOS)
+			      ++pattern;
+			break;
+
+		case LBRACKET:
+			range = 1;
+			break;
+
+		case RBRACKET:
+			if (range)
+			      return 1;
+			break;
+		default:
+			break;
+		}
+
+	  return 0;
+}
+
 static DIR *
 g_opendir(str, pglob)
 	register Char *str;
