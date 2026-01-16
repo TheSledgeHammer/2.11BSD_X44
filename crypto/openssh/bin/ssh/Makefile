@@ -6,9 +6,8 @@ BINDIR = /usr/bin
 
 PROG=	ssh
 SRCS=	ssh.c readconf.c clientloop.c sshtty.c \
-	sshconnect.c sshconnect2.c mux.c auth.c auth-options.c
+	    sshconnect.c sshconnect2.c mux.c
 
-COPTS.auth.c=		-DHOST_ONLY
 COPTS.clientloop.c= ${GCC_NO_STRINGOP_OVERFLOW}
 COPTS.mux.c=		-Wno-pointer-sign
 COPTS.sshconnect2.c=	-Wno-pointer-sign

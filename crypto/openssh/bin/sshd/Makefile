@@ -7,17 +7,21 @@ MAN=	sshd.8 sshd_config.5 moduli.5
 
 BINDIR=	/usr/sbin
 
-SRCS=	sshd.c auth-rhosts.c auth-passwd.c \
-	sshpty.c sshlogin.c servconf.c serverloop.c \
-	auth.c auth2.c auth-options.c session.c \
-	auth-krb5.c auth2-chall.c groupaccess.c \
-	auth-bsdauth.c auth2-hostbased.c auth2-kbdint.c \
-	auth2-none.c auth2-passwd.c auth2-pubkey.c \
-	monitor.c monitor_wrap.c \
-	kexgexs.c sftp-server.c sftp-common.c \
-	sandbox-rlimit.c pfilter.c
+SRCS=   sshd.c platform-listen.c \
+	    servconf.c sshpty.c srclimit.c groupaccess.o auth2-methods.c \
+	    dns.c fatal.c compat.c utf8.c authfd.c canohost.c
 
-COPTS.auth-options.c+=	-Wno-pointer-sign
+#SRCS=	sshd.c auth-rhosts.c auth-passwd.c \
+#	sshpty.c sshlogin.c servconf.c serverloop.c \
+#	auth.c auth2.c auth-options.c session.c \
+#	auth-krb5.c auth2-chall.c groupaccess.c \
+#	auth-bsdauth.c auth2-hostbased.c auth2-kbdint.c \
+#	auth2-none.c auth2-passwd.c auth2-pubkey.c \
+#	monitor.c monitor_wrap.c \
+#	kexgexs.c sftp-server.c sftp-common.c \
+#	sandbox-rlimit.c pfilter.c
+
+#COPTS.auth-options.c+=	-Wno-pointer-sign
 COPTS.ldapauth.c+=	-Wno-format-nonliteral	# XXX: should fix
 
 .if (${USE_PAM} != "no")

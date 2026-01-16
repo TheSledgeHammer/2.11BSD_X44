@@ -167,13 +167,13 @@
 /* #undef GETSPNAM_CONFLICTING_DEFS */
 
 /* Define if your system glob() function has the GLOB_ALTDIRFUNC extension */
-#define GLOB_HAS_ALTDIRFUNC 1
+//#define GLOB_HAS_ALTDIRFUNC 1
 
 /* Define if your system glob() function has gl_matchc options in glob_t */
-#define GLOB_HAS_GL_MATCHC 1
+//#define GLOB_HAS_GL_MATCHC 1
 
 /* Define if your system glob() function has gl_statv options in glob_t */
-#define GLOB_HAS_GL_STATV 1
+//#define GLOB_HAS_GL_STATV 1
 
 /* Define this if you want GSSAPI support in the version 2 protocol */
 /* #undef GSSAPI */
@@ -354,7 +354,7 @@
 
 /* Define to 1 if you have the declaration of `GLOB_NOMATCH', and to 0 if you
    don't. */
-#define HAVE_DECL_GLOB_NOMATCH 1
+//#define HAVE_DECL_GLOB_NOMATCH 1
 
 /* Define to 1 if you have the declaration of `GSS_C_NT_HOSTBASED_SERVICE',
    and to 0 if you don't. */
@@ -762,10 +762,10 @@
 /* #undef HAVE_GET_DEFAULT_CONTEXT_WITH_LEVEL */
 
 /* Define to 1 if you have the `glob' function. */
-#define HAVE_GLOB 1
+//#define HAVE_GLOB 1
 
 /* Define to 1 if you have the <glob.h> header file. */
-#define HAVE_GLOB_H 1
+//#define HAVE_GLOB_H 1
 
 /* Define to 1 if you have the `group_from_gid' function. */
 #define HAVE_GROUP_FROM_GID 1
@@ -1097,7 +1097,7 @@
 /* #undef HAVE_PSTAT */
 
 /* Define to 1 if you have the <pty.h> header file. */
-#define HAVE_PTY_H 1
+/* #undef HAVE_PTY_H */
 
 /* Define to 1 if you have the `pututline' function. */
 #define HAVE_PUTUTLINE 1

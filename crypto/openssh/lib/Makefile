@@ -71,8 +71,9 @@ OPENBSD_COMPAT_SRCS= \
         bsd-setres_id.c \
         fmt_scaled.c \
         getrrsetbyname.c \
-        libressl-api-compat.c \
+        glob.c \
         memmem.c \
+        mktemp.c \
         openssl-compat.c \
         port-net.c \
         readpassphrase.c \
@@ -84,7 +85,6 @@ SRCS+= ${LIBOPENSSH_SRCS} ${XMSS_SRCS} ${LIBSSH_SRCS} ${SK_SRCS} \
 COPTS.addr.c+= -Wno-sign-compare
 COPTS.bcrypt_pbkdf.c+= -Wno-pointer-sign
 COPTS.channels.c+= -Wno-pointer-sign -fno-strict-aliasing
-#COPTS.channels.c+= -fno-strict-aliasing
 COPTS.fmt_scaled.c+= -Wno-format-truncation
 COPTS.kex.c+= -Wno-pointer-sign
 COPTS.log.c+= -Wno-format-truncation
@@ -98,7 +98,7 @@ CPPFLAGS+= -I${OPENBSD_COMPAT}
 .PATH:		${SSHDIST}
 .PATH:      ${OPENBSD_COMPAT}
 
-LIBDPLIBS+=	crypto	${NETBSDSRCDIR}/crypto/${EXTERNAL_OPENSSL_SUBDIR}/lib/libcrypto \
+LIBDPLIBS+=	crypto	${NETBSDSRCDIR}/crypto/${EXTERNAL_LIBRESSL_SUBDIR}/lib/libcrypto \
 			crypt	${NETBSDSRCDIR}/usr.lib/libcrypt \
             util    ${NETBSDSRCDIR}/usr.lib/libutil \
 			z		${NETBSDSRCDIR}/usr.lib/libz
