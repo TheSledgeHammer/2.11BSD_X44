@@ -45,7 +45,6 @@
 
 #ifndef _KERNEL
 #include <sys/ucred.h>
-#include <sys/user.h>
 #endif
 #include <sys/queue.h>
 #include <sys/lock.h>
