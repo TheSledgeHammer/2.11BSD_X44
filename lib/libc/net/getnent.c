@@ -59,6 +59,12 @@ static char sccsid[] = "@(#)getnetent.c	5.3 (Berkeley) 5/19/86";
 
 #include "netent.h"
 
+#ifdef __weak_alias
+__weak_alias(getnetent,_getnetent)
+__weak_alias(setnetent,_setnetent)
+__weak_alias(endnetent,_endnetent)
+#endif
+
 #ifdef _REENTRANT
 static 	mutex_t		_ntsmutex = MUTEX_INITIALIZER;
 #endif
