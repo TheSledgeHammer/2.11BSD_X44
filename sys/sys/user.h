@@ -12,19 +12,6 @@
 #include <machine/param.h>
 #include <machine/pcb.h>
 
-#ifdef _KERNEL
-/*
-#include <sys/fperr.h>
-#include <sys/exec.h>
-#include <sys/exec_aout.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/resourcevar.h>
-*/
-#include <sys/ucred.h>
-#include <sys/uio.h>
-#endif
 #include <sys/fperr.h>
 #include <sys/exec.h>
 #include <sys/exec_aout.h>
@@ -36,6 +23,8 @@
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
 #include <sys/sysctl.h>
+#include <sys/ucred.h>
+#include <sys/uio.h>
 
 #include <vm/include/vm.h>
 
