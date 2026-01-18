@@ -41,13 +41,13 @@ static char copyright[] =
 "@(#) Copyright (c) 1989, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)mountd.c	8.15 (Berkeley) 5/1/95";
 #endif
-#endif not lint
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/file.h>
@@ -62,10 +62,15 @@ static char sccsid[] = "@(#)mountd.c	8.15 (Berkeley) 5/1/95";
 #include <rpc/pmap_clnt.h>
 #include <rpc/pmap_prot.h>
 
+#ifdef ISO
+#include <netiso/iso.h>
+#endif
+
 #include <nfs/rpcv2.h>
 #include <nfs/nfsproto.h>
 #include <ufs/ufs/ufsmount.h>
-//#include <sys/../isofs/cd9660/cd9660_mount.h>	/* XXX need isofs in include */
+#include <fs/msdosfs/msdosfsmount.h>	        /* XXX need msdosfs in include */
+#include <fs/isofs/cd9660/cd9660_mount.h>	/* XXX need isofs in include */
 
 #include <arpa/inet.h>
 
@@ -73,12 +78,14 @@ static char sccsid[] = "@(#)mountd.c	8.15 (Berkeley) 5/1/95";
 #include <errno.h>
 #include <grp.h>
 #include <netdb.h>
+#include <netgroup.h>
 #include <pwd.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 #include "pathnames.h"
 
 #ifdef DEBUG
@@ -194,20 +201,15 @@ int		xdr_explist(XDR *, caddr_t);
 int		xdr_fhs(XDR *, caddr_t);
 int		xdr_mlist(XDR *, caddr_t);
 
-/* C library */
-int		getnetgrent();
-void	endnetgrent();
-void	setnetgrent();
-
 struct exportlist *exphead;
 struct mountlist *mlhead;
 struct grouplist *grphead;
 char exname[MAXPATHLEN];
 struct ucred def_anon = {
-	1,
-	(uid_t) -2,
-	1,
-	{ (gid_t) -2 }
+	.cr_ref = 1,
+	.cr_uid = (uid_t) -2,
+	.cr_ngroups = 1,
+    .cr_groups = { (gid_t) -2 }
 };
 int resvport_only = 1;
 int dir_only = 1;
@@ -229,6 +231,15 @@ void	SYSLOG(int, const char *, ...));
 #else
 int debug = 0;
 #endif
+
+int     nfs_getfh(char *, fhandle_t *);
+
+/* NFS Syscall Workaround: No NFS Support currently */
+int
+nfs_getfh(char *fname, fhandle_t *fhp)
+{
+    return (ENOSYS);
+}
 
 /*
  * Mountd server for NFS mount protocol as described in:
@@ -378,7 +389,7 @@ mntsrv(struct svc_req *rqstp, SVCXPRT *transp)
 			fhr.fhr_vers = rqstp->rq_vers;
 			/* Get the file handle */
 			memset(&fhr.fhr_fh, 0, sizeof(nfsfh_t));
-			if (getfh(dirpath, (fhandle_t *)&fhr.fhr_fh) < 0) {
+			if (nfs_getfh(dirpath, (fhandle_t *)&fhr.fhr_fh) < 0) {
 				bad = errno;
 				syslog(LOG_ERR, "Can't get fh for %s", dirpath);
 				if (!svc_sendreply(transp, xdr_long,
@@ -612,6 +623,12 @@ put_exlist(struct dirlist *dp, XDR *xdrsp, struct dirlist *adp, int *putdefp)
 #define LINESIZ	10240
 char line[LINESIZ];
 FILE *exp_file;
+static char fs_mfs[] = "mfs";
+static char fs_ffs[] = "ffs";
+static char fs_ufs[] = "ufs";
+static char fs_msdos[] = "msdos";
+static char fs_cd9660[] = "cd9660";
+static char hostent_default[] = "Default";
 
 /*
  * Get the export list
@@ -626,8 +643,12 @@ get_exportlist(void)
 	struct statfs fsb, *fsp;
 	struct hostent *hpe;
 	struct ucred anon;
-	char *cp, *endcp, *dirp, *hst, *usr, *dom, savedc;
+    const char *hst, *usr, *dom;
+	char *cp, *endcp, *dirp, savedc;
 	int len, has_host, exflags, got_nondir, dirplen, num, i, netgrp;
+
+    dirp = NULL;
+    dirplen = 0;
 
 	/*
 	 * First, get rid of the old list
@@ -660,11 +681,14 @@ get_exportlist(void)
 			struct ufs_args ua;
 			struct iso_args ia;
 			struct mfs_args ma;
+            struct msdosfs_args ms;
 		} targs;
 
-		if (!strcmp(fsp->f_fstypename, "mfs") ||
-		    !strcmp(fsp->f_fstypename, "ufs") ||
-		    !strcmp(fsp->f_fstypename, "cd9660")) {
+		if (!strcmp(fsp->f_fstypename, fs_mfs) ||
+		    !strcmp(fsp->f_fstypename, fs_ffs) ||
+            !strcmp(fsp->f_fstypename, fs_ufs) ||
+            !strcmp(fsp->f_fstypename, fs_msdos) ||
+		    !strcmp(fsp->f_fstypename, fs_cd9660)) {
 			targs.ua.fspec = NULL;
 			targs.ua.export.ex_flags = MNT_DELEXPORT;
 			if (mount(fsp->f_fstypename, fsp->f_mntonname,
@@ -760,12 +784,12 @@ get_exportlist(void)
 					    out_of_mem();
 					if (debug)
 					  fprintf(stderr,
-					      "Making new ep fs=0x%x,0x%x\n",
+					      "Making new ep fs=0x%lx,0x%lx\n",
 					      fsb.f_fsid.val[0],
 					      fsb.f_fsid.val[1]);
 				    } else if (debug)
 					fprintf(stderr,
-					    "Found ep fs=0x%x,0x%x\n",
+					    "Found ep fs=0x%lx,0x%lx\n",
 					    fsb.f_fsid.val[0],
 					    fsb.f_fsid.val[1]);
 				}
@@ -800,7 +824,7 @@ get_exportlist(void)
 				    grp = grp->gr_next;
 				}
 				if (netgrp) {
-				    if (get_host(hst, grp)) {
+				    if (get_host(__UNCONST(hst), grp)) {
 					syslog(LOG_ERR, "Bad netgroup %s", cp);
 					getexp_err(ep, tgrp);
 					endnetgrent();
@@ -831,7 +855,7 @@ get_exportlist(void)
 			hpe = (struct hostent *)malloc(sizeof(struct hostent));
 			if (hpe == (struct hostent *)NULL)
 				out_of_mem();
-			hpe->h_name = "Default";
+			hpe->h_name = hostent_default;
 			hpe->h_addrtype = AF_INET;
 			hpe->h_length = sizeof (u_long);
 			hpe->h_addr_list = (char **)NULL;
@@ -1183,16 +1207,17 @@ do_opt(char **cpp, char **endcpp, struct exportlist *ep, struct grouplist *grp, 
 	cpopt++;
 	cp = *endcpp;
 	savedc = *cp;
+    savedc2 = 0;
 	*cp = '\0';
 	while (cpopt && *cpopt) {
 		allflag = 1;
 		usedarg = -2;
-		if (cpoptend == strchr(cpopt, ',')) {
+		if ((cpoptend = strchr(cpopt, ','))) {
 			*cpoptend++ = '\0';
-			if (cpoptarg == strchr(cpopt, '='))
+			if ((cpoptarg = strchr(cpopt, '=')))
 				*cpoptarg++ = '\0';
 		} else {
-			if (cpoptarg == strchr(cpopt, '='))
+			if ((cpoptarg = strchr(cpopt, '=')))
 				*cpoptarg++ = '\0';
 			else {
 				*cp = savedc;
@@ -1292,7 +1317,7 @@ get_host(char *cp, struct grouplist *grp)
 	if ((hp = gethostbyname(cp)) == NULL) {
 		if (isdigit(*cp)) {
 			saddr = inet_addr(cp);
-			if (saddr == -1) {
+			if (saddr == (u_long)-1) {
 				syslog(LOG_ERR, "Inet_addr failed for %s", cp);
 				return (1);
 			}
@@ -1391,6 +1416,37 @@ get_ht(void)
 	return (hp);
 }
 
+#ifdef ISO
+/*
+ * Translate an iso address.
+ */
+int
+get_isoaddr(char *cp, struct grouplist *grp)
+{
+	struct iso_addr *isop;
+	struct sockaddr_iso *isoaddr;
+
+	if (grp->gr_type != GT_NULL)
+		return (1);
+	if ((isop = iso_addr(cp)) == NULL) {
+		syslog(LOG_ERR,
+		    "iso_addr failed, ignored");
+		return (1);
+	}
+	isoaddr = (struct sockaddr_iso *)
+	    malloc(sizeof (struct sockaddr_iso));
+	if (isoaddr == (struct sockaddr_iso *)NULL)
+		out_of_mem();
+	memset(isoaddr, 0, sizeof(struct sockaddr_iso));
+	memmove(&isoaddr->siso_addr, isop, sizeof(struct iso_addr));
+	isoaddr->siso_len = sizeof(struct sockaddr_iso);
+	isoaddr->siso_family = AF_ISO;
+	grp->gr_type = GT_ISO;
+	grp->gr_ptr.gt_isoaddr = isoaddr;
+	return (0);
+}
+#endif /* ISO */
+
 /*
  * Out of memory, fatal
  */
@@ -1418,6 +1474,7 @@ do_mount(struct exportlist *ep, struct grouplist *grp, int exflags, struct ucred
 		struct ufs_args ua;
 		struct iso_args ia;
 		struct mfs_args ma;
+        struct msdosfs_args ms;
 	} args;
 	u_long net;
 
@@ -1534,7 +1591,7 @@ get_net(char *cp, struct netmsk *net, int maskflg)
 	struct in_addr inetaddr, inetaddr2;
 	char *name;
 
-	if (np == getnetbyname(cp))
+	if ((np = getnetbyname(cp)))
 		inetaddr = inet_makeaddr(np->n_net, 0);
 	else if (isdigit(*cp)) {
 		if ((netaddr = inet_network(cp)) == -1)
@@ -1549,7 +1606,7 @@ get_net(char *cp, struct netmsk *net, int maskflg)
 		 */
 		if (!maskflg) {
 			setnetent(0);
-			while (np == getnetent()) {
+			while ((np = getnetent())) {
 				inetaddr2 = inet_makeaddr(np->n_net, 0);
 				if (inetaddr2.s_addr == inetaddr.s_addr)
 					break;
@@ -1648,7 +1705,8 @@ parsecred(char *namelist, struct ucred *cr)
 	char *names;
 	struct passwd *pw;
 	struct group *gr;
-	int ngroups, groups[NGROUPS + 1];
+	int ngroups;
+    gid_t groups[NGROUPS + 1];
 
 	/*
 	 * Set up the unpriviledged user.
@@ -1725,7 +1783,6 @@ get_mountlist(void)
 {
 	struct mountlist *mlp, **mlpp;
 	char *host, *dirp, *cp;
-	int len;
 	char str[STRSIZ];
 	FILE *mlfile;
 

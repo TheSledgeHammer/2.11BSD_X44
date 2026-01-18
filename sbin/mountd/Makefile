@@ -4,17 +4,10 @@
 USE_FORT?= yes	# network server
 
 PROG=	mountd
-SRCS=	mountd.c #ipsec.c get_net.c
+SRCS=	mountd.c
 MAN=	exports.5 mountd.8 netgroup.5
 
-#INETDDIR= ${.CURDIR}/../inetd
-
-#CPPFLAGS+= -I${INETDDIR} -DIPSEC
 LDADD+=	-lutil
 DPADD+=	${LIBUTIL}
 
 .include <bsd.prog.mk>
-
-COPTS.mountd.c+=	${CC_WNO_CAST_FUNCTION_TYPE}
-
-#.PATH: ${INETDDIR}
