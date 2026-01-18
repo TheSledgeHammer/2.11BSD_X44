@@ -69,8 +69,8 @@
 #include <rpc/svc_auth.h>	/* service side authenticator */
 
 /* Portmapper client, server, and protocol headers */
-#include <rpc/pmap_clnt.h>
-#include <rpc/pmap_prot.h>
+//#include <rpc/pmap_clnt.h>
+//#include <rpc/pmap_prot.h>
 
 /*
  * COMMENT OUT THE NEXT INCLUDE (or add to the #ifndef) IF RUNNING ON
