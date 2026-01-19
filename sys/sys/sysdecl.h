@@ -180,3 +180,4 @@ extern int	preadv();
 extern int	pwritev();
 extern int	tls();
 extern int	fchroot();
+extern int	getfh();

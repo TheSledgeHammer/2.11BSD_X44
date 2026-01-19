@@ -194,4 +194,5 @@ char *syscallnames[] = {
 	"pwritev",			/* 174 = pwritev */
 	"tls",			/* 175 = tls */
 	"fchroot",			/* 176 = fchroot */
+	"getfh",			/* 177 = getfh */
 };

@@ -2119,6 +2119,47 @@ umask()
 }
 
 /*
+ * Get file handle system call
+ */
+int
+getfh()
+{
+	register struct getfh_args {
+		syscallarg(char	*) fname;
+		syscallarg(fhandle_t *) fhp;
+	} *uap = (struct getfh_args *)u.u_ap;
+
+	struct proc *p;
+	register_t *retval;
+	register struct vnode *vp;
+	fhandle_t fh;
+	int error;
+	struct nameidata nd;
+
+	/*
+	 * Must be super user
+	 */
+	error = suser1(p->p_ucred, &p->p_acflag);
+	if (error)
+		return (error);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, SCARG(uap, fname), p);
+	error = namei(&nd);
+	if (error) {
+		return (error);
+	}
+	vp = nd.ni_vp;
+	bzero((caddr_t)&fh, sizeof(fh));
+	fh.fh_fsid = vp->v_mount->mnt_stat.f_fsid;
+	error = VFS_VPTOFH(vp, &fh.fh_fid);
+	vput(vp);
+	if (error) {
+		return (error);
+	}
+	error = copyout((caddr_t)&fh, (caddr_t)SCARG(uap, fhp), sizeof (fh));
+	return (error);
+}
+
+/*
  * Void all references to file by ripping underlying filesystem
  * away from vnode.
  */

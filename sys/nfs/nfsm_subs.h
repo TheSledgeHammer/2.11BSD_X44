@@ -50,7 +50,7 @@
 /*
  * First define what the actual subs. return
  */
-extern struct mbuf *nfsm_reqh();
+extern struct mbuf *nfsm_reqh(struct vnode *, u_long, int, caddr_t *);
 
 #define	M_HASCL(m)	((m)->m_flags & M_EXT)
 #define	NFSMINOFF(m) \

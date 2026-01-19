@@ -103,6 +103,6 @@ int nfs_statfs(struct mount *mp, struct statfs *sbp, struct proc *p);
 int nfs_sync(struct mount *mp, int waitfor, struct ucred *cred, struct proc *p);
 int nfs_fhtovp(struct mount *mp, struct fid *fhp, struct mbuf *nam, struct vnode **vpp, int *exflagsp, struct ucred **credanonp);
 int nfs_vptofh(struct vnode *vp, struct fid *fhp);
-int	nfs_init();
+int	nfs_init(void);
 
 #endif

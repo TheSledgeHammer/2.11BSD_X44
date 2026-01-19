@@ -60,6 +60,9 @@ static char sccsid[] = "@(#)getnetent.c	5.3 (Berkeley) 5/19/86";
 #include "netent.h"
 
 #ifdef __weak_alias
+//__weak_alias(getnetent_r,_getnetent_r)
+//__weak_alias(setnetent_r,_setnetent_r)
+//__weak_alias(endnetent_r,_endnetent_r)
 __weak_alias(getnetent,_getnetent)
 __weak_alias(setnetent,_setnetent)
 __weak_alias(endnetent,_endnetent)

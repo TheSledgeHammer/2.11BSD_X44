@@ -56,6 +56,8 @@ extern const char *arith_buf, *arith_startbuf;
 #define YY_NO_UNPUT
 %}
 
+%option yylineno nounput noinput
+
 %%
 [ \t\n]	{ ; }
 0x[0-9a-fA-F]+	{ yylval = strtoimax(yytext, 0, 0); return(ARITH_NUM); }

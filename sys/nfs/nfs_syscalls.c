@@ -97,49 +97,6 @@ void nfsrv_slpderef();
 #define	FALSE	0
 
 static int nfs_asyncdaemon[NFS_MAXASYNCDAEMON];
-/*
- * NFS server system calls
- * getfh() lives here too, but maybe should move to kern/vfs_syscalls.c
- */
-
-/*
- * Get file handle system call
- */
-struct getfh_args {
-	char	*fname;
-	fhandle_t *fhp;
-};
-int
-getfh(p, uap, retval)
-	struct proc *p;
-	register struct getfh_args *uap;
-	int *retval;
-{
-	register struct vnode *vp;
-	fhandle_t fh;
-	int error;
-	struct nameidata nd;
-
-	/*
-	 * Must be super user
-	 */
-	error = suser(p->p_ucred, &p->p_acflag);
-	if(error)
-		return (error);
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
-	error = namei(&nd);
-	if (error)
-		return (error);
-	vp = nd.ni_vp;
-	bzero((caddr_t)&fh, sizeof(fh));
-	fh.fh_fsid = vp->v_mount->mnt_stat.f_fsid;
-	error = VFS_VPTOFH(vp, &fh.fh_fid);
-	vput(vp);
-	if (error)
-		return (error);
-	error = copyout((caddr_t)&fh, (caddr_t)uap->fhp, sizeof (fh));
-	return (error);
-}
 
 /*
  * Nfs server psuedo system call for the nfsd's
@@ -149,15 +106,15 @@ getfh(p, uap, retval)
  * - remains in the kernel as an nfsiod
  */
 struct nfssvc_args {
-	int flag;
-	caddr_t argp;
+	syscallarg(int) flag;
+	syscallarg(caddr_t) argp;
 };
 int
-nfssvc(p, uap, retval)
+nfssvc()
+{
 	struct proc *p;
 	register struct nfssvc_args *uap;
 	int *retval;
-{
 	struct nameidata nd;
 	struct file *fp;
 	struct mbuf *nam;
@@ -169,6 +126,9 @@ nfssvc(p, uap, retval)
 	struct nfsuid *nuidp;
 	struct nfsmount *nmp;
 	int error;
+
+	uap = u.u_ap;
+	p = u.u_procp;
 
 	/*
 	 * Must be super user
@@ -758,7 +718,7 @@ nfssvc_iod(p)
 						nbp->b_vp->v_numoutput++;
 					}
 					(void) nfs_doio(bp, bp->b_wcred, (struct proc*) 0);
-				} while (bp = nbp);
+				} while ((bp = nbp));
 		}
 		if (error) {
 			nfs_asyncdaemon[myiod] = 0;

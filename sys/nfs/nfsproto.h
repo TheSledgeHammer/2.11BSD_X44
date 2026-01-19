@@ -238,8 +238,16 @@
 #define	nfsv3tov_type(a)	nv3tov_type[fxdr_unsigned(u_long,(a))&0x7]
 
 /* File types */
-typedef enum { NFNON=0, NFREG=1, NFDIR=2, NFBLK=3, NFCHR=4, NFLNK=5,
-	NFSOCK=6, NFFIFO=7 } nfstype;
+typedef enum {
+	NFNON=0,
+	NFREG=1,
+	NFDIR=2,
+	NFBLK=3,
+	NFCHR=4,
+	NFLNK=5,
+	NFSOCK=6,
+	NFFIFO=7
+} nfstype;
 
 /* Structs for common parts of the rpc's */
 /*

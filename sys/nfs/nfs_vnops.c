@@ -231,8 +231,8 @@ struct vnodeops nfs_fifoops = {
 };
 #endif /* FIFO */
 
-void nqnfs_clientlease();
-int nfs_commit();
+void nqnfs_clientlease(struct nfsmount *, struct nfsnode *, int, int, time_t, u_quad_t);
+int nfs_commit(struct vnode *, u_quad_t, int, struct ucred *, struct proc *);
 
 /*
  * Global variables
@@ -407,19 +407,19 @@ nfs_open(ap)
 			error = VOP_GETATTR(vp, &vattr, ap->a_cred, ap->a_p);
 			if (error)
 				return (error);
-			np->n_mtime = vattr.va_mtime.ts_sec;
+			np->n_mtime = vattr.va_mtime.tv_sec;
 		} else {
 			error = VOP_GETATTR(vp, &vattr, ap->a_cred, ap->a_p);
 			if (error)
 				return (error);
-			if (np->n_mtime != vattr.va_mtime.ts_sec) {
+			if (np->n_mtime != vattr.va_mtime.tv_sec) {
 				if (vp->v_type == VDIR)
 					np->n_direofoffset = 0;
 				if ((error = nfs_vinvalbuf(vp, V_SAVE,
 					ap->a_cred, ap->a_p, 1)) == EINTR)
 					return (error);
 				(void) vnode_pager_uncache(vp);
-				np->n_mtime = vattr.va_mtime.ts_sec;
+				np->n_mtime = vattr.va_mtime.tv_sec;
 			}
 		}
 	}

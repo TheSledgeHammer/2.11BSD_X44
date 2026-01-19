@@ -62,7 +62,7 @@ ASM_GLUENOERR+= tmp_${glue:.c=.S}
 ASM=            access.S acct.S adjtime.S bind.S chdir.S chflags.S chmod.S \
                 chown.S chroot.S clock_gettime.S clock_getres.S clock_settime.S \
 		dup.S dup2.S fchdir.S fchflags.S fchmod.S fchown.S fchroot.S flock.S \
-                fstat.S fstatfs.S getdirentries.S getdtablesize.S \
+                fstat.S fstatfs.S getdirentries.S getdtablesize.S getfh.S \
                 getfsstat.S getgroups.S getitimer.S getpeername.S getpriority.S \
                 getrlimit.S getrusage.S getsockname.S getsockopt.S gettimeofday.S \
                 ioctl.S ktrace.S lfs_bmapv.S lfs_markv.S \

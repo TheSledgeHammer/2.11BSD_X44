@@ -810,7 +810,7 @@ nfs_doio(bp, cr, p)
 							&& np->n_lrev != np->n_brev)
 							|| (!(nmp->nm_flag & NFSMNT_NQNFS)
 									&& np->n_mtime
-											!= np->n_vattr.va_mtime.ts_sec))) {
+											!= np->n_vattr.va_mtime.tv_sec))) {
 				uprintf("Process killed due to text file modification\n");
 				psignal(p, SIGKILL);
 				p->p_flag |= P_NOSWAP;

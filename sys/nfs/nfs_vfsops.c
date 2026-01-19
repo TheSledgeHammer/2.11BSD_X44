@@ -350,8 +350,8 @@ nfs_mountroot()
 			(l >> 24) & 0xff, (l >> 16) & 0xff,
 			(l >>  8) & 0xff, (l >>  0) & 0xff,nd->swap_hostnam);
 		printf("NFS SWAP: %s\n",buf);
-		if (error = nfs_mountdiskless(buf, "/swap", 0,
-		    &nd->swap_saddr, &nd->swap_args, p, &vp, &swap_mp))
+		if ((error = nfs_mountdiskless(buf, "/swap", 0,
+		    &nd->swap_saddr, &nd->swap_args, p, &vp, &swap_mp)))
 			return (error);
 		vfs_unbusy(swap_mp, p);
 
@@ -389,8 +389,8 @@ nfs_mountroot()
 		(l >> 24) & 0xff, (l >> 16) & 0xff,
 		(l >>  8) & 0xff, (l >>  0) & 0xff,nd->root_hostnam);
 	printf("NFS ROOT: %s\n",buf);
-	if (error = nfs_mountdiskless(buf, "/", MNT_RDONLY,
-	    &nd->root_saddr, &nd->root_args, p, &vp, &mp)) {
+	if ((error = nfs_mountdiskless(buf, "/", MNT_RDONLY,
+	    &nd->root_saddr, &nd->root_args, p, &vp, &mp))) {
 		if (swap_mp) {
 			mp->mnt_vfc->vfc_refcount--;
 			free(swap_mp, M_MOUNT);
@@ -437,7 +437,7 @@ nfs_mountdiskless(path, which, mountflag, sin, args, p, vpp, mpp)
 	struct mbuf *m;
 	int error;
 
-	if (error = vfs_rootmountalloc("nfs", path, &mp)) {
+	if ((error = vfs_rootmountalloc("nfs", path, &mp))) {
 		printf("nfs_mountroot: NFS not configured");
 		return (error);
 	}
@@ -445,7 +445,7 @@ nfs_mountdiskless(path, which, mountflag, sin, args, p, vpp, mpp)
 	MGET(m, MT_SONAME, M_WAITOK);
 	bcopy((caddr_t)sin, mtod(m, caddr_t), sin->sin_len);
 	m->m_len = sin->sin_len;
-	if (error = mountnfs(args, mp, m, which, path, vpp)) {
+	if ((error = mountnfs(args, mp, m, which, path, vpp))) {
 		printf("nfs_mountroot: mount %s on %s: %d", path, which, error);
 		mp->mnt_vfc->vfc_refcount--;
 		vfs_unbusy(mp, p);
