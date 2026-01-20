@@ -266,10 +266,10 @@ typedef struct fhandle		fhandle_t;
 struct export_args {
 	int						ex_flags;		/* export related flags */
 	uid_t					ex_root;		/* mapping for root uid */
-	struct	ucred 			ex_anon;		/* mapping for anonymous user */
-	struct	sockaddr 		*ex_addr;		/* net address to which exported */
+	struct ucred 			ex_anon;		/* mapping for anonymous user */
+	struct sockaddr 		*ex_addr;		/* net address to which exported */
 	int						ex_addrlen;		/* and the net address length */
-	struct	sockaddr 		*ex_mask;		/* mask of valid bits in saddr */
+	struct sockaddr 		*ex_mask;		/* mask of valid bits in saddr */
 	int						ex_masklen;		/* and the smask length */
 };
 

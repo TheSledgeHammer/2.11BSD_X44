@@ -125,9 +125,7 @@ int	Aflag, aflag, nflag, wflag;
 #define	CONSDEV		0x00000004
 
 void
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int ch, lvl1;
 
@@ -175,9 +173,7 @@ main(argc, argv)
  * List all variables known to the system.
  */
 void
-listall(prefix, lp)
-	char *prefix;
-	struct list *lp;
+listall(char *prefix, struct list *lp)
 {
 	int lvl2;
 	char *cp, name[BUFSIZ];
@@ -201,9 +197,7 @@ listall(prefix, lp)
  * Set a new value if requested.
  */
 void
-parse(string, flags)
-	char *string;
-	int flags;
+parse(char *string, int flags)
 {
 	int indx, type, state, size, len;
 	int special = 0;
@@ -507,12 +501,7 @@ struct	list mscplist = { mscpname, MSCP_MAXID };
  * Handle machdep.tmscp.x 
 */
 int
-sysctl_tmscp(string, bufpp, mib, flags, typep)
-	char *string;
-	char **bufpp;
-	int mib[];
-	int flags;
-	int *typep;
+sysctl_tmscp(char *string, char **bufpp, int mib[], int flags, int *typep)
 {
 	int indx;
 
@@ -531,12 +520,7 @@ sysctl_tmscp(string, bufpp, mib, flags, typep)
  * Handle machdep.mscp.x 
 */
 int
-sysctl_mscp(string, bufpp, mib, flags, typep)
-	char *string;
-	char **bufpp;
-	int mib[];
-	int flags;
-	int *typep;
+sysctl_mscp(char *string, char **bufpp, int mib[], int flags, int *typep)
 {
 	int indx;
 
@@ -650,12 +634,7 @@ struct list inetvars[] = {
  * handle internet requests
  */
 int
-sysctl_inet(string, bufpp, mib, flags, typep)
-	char *string;
-	char **bufpp;
-	int mib[];
-	int flags;
-	int *typep;
+sysctl_inet(char *string, char **bufpp, int mib[], int flags, int *typep)
 {
 	struct list *lp;
 	int indx;
@@ -691,11 +670,7 @@ sysctl_inet(string, bufpp, mib, flags, typep)
  * Scan a list of names searching for a particular name.
  */
 int
-findname(string, level, bufp, namelist)
-	char *string;
-	char *level;
-	char **bufp;
-	struct list *namelist;
+findname(char *string, char *level, char **bufp, struct list *namelist)
 {
 	char *name;
 	int i;
@@ -719,7 +694,6 @@ findname(string, level, bufp, namelist)
 void
 usage(void)
 {
-
 	(void)fprintf(stderr, "usage:\t%s\n\t%s\n\t%s\n\t%s\n",
 	    "sysctl [-n] variable ...", "sysctl [-n] -w variable=value ...",
 	    "sysctl [-n] -a", "sysctl [-n] -A");

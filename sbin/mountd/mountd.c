@@ -206,10 +206,10 @@ struct mountlist *mlhead;
 struct grouplist *grphead;
 char exname[MAXPATHLEN];
 struct ucred def_anon = {
-	.cr_ref = 1,
-	.cr_uid = (uid_t) -2,
-	.cr_ngroups = 1,
-    .cr_groups = { (gid_t) -2 }
+		.cr_ref = 1,
+		.cr_uid = (uid_t) -2,
+		.cr_ngroups = 1,
+		.cr_groups = { (gid_t) -2 }
 };
 int resvport_only = 1;
 int dir_only = 1;
@@ -231,16 +231,6 @@ void	SYSLOG(int, const char *, ...));
 #else
 int debug = 0;
 #endif
-
-int     nfs_getfh(char *, fhandle_t *);
-
-/* NFS Syscall Workaround: No NFS Support currently */
-int
-nfs_getfh(char *fname, fhandle_t *fhp)
-{
-	return (getfh(fname, fhp));
-	//return (ENOSYS);
-}
 
 /*
  * Mountd server for NFS mount protocol as described in:
@@ -390,7 +380,7 @@ mntsrv(struct svc_req *rqstp, SVCXPRT *transp)
 			fhr.fhr_vers = rqstp->rq_vers;
 			/* Get the file handle */
 			memset(&fhr.fhr_fh, 0, sizeof(nfsfh_t));
-			if (nfs_getfh(dirpath, (fhandle_t*) &fhr.fhr_fh) < 0) {
+			if (getfh(dirpath, (fhandle_t *)&fhr.fhr_fh) < 0) {
 				bad = errno;
 				syslog(LOG_ERR, "Can't get fh for %s", dirpath);
 				if (!svc_sendreply(transp, xdr_long, (caddr_t) &bad))
@@ -628,13 +618,6 @@ static char fs_msdos[] = "msdos";
 static char fs_cd9660[] = "cd9660";
 static char hostent_default[] = "Default";
 
-union targs {
-	struct ufs_args ua;
-	struct iso_args ia;
-	struct mfs_args ma;
-	struct msdosfs_args ms;
-};
-
 /*
  * Get the export list
  */
@@ -686,7 +669,7 @@ get_exportlist(void)
 			struct ufs_args ua;
 			struct iso_args ia;
 			struct mfs_args ma;
-			struct msdosfs_args ms;
+			struct msdosfs_args da;
 		} targs;
 
 		if (!strcmp(fsp->f_fstypename, fs_mfs)
