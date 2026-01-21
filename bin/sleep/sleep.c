@@ -44,6 +44,7 @@ static char sccsid[] = "@(#)sleep.c	8.3 (Berkeley) 4/2/94";
 #endif
 #endif /* not lint */
 
+#include <ctype.h>
 #include <err.h>
 #include <math.h>
 #include <signal.h>
