@@ -200,7 +200,7 @@ struct	linger {
  * addresses.
  */
 struct sockaddr {
-	u_short			sa_len;				/* total length */
+	unsigned short	sa_len;				/* total length */
 	sa_family_t		sa_family;			/* address family */
 	char			sa_data[14];		/* up to 14 bytes of direct address */
 };
@@ -210,8 +210,8 @@ struct sockaddr {
  * information in raw sockets.
  */
 struct sockproto {
-	u_short			sp_family;			/* address family */
-	u_short			sp_protocol;		/* protocol */
+	unsigned short		sp_family;			/* address family */
+	unsigned short		sp_protocol;		/* protocol */
 };
 
 /*
@@ -359,9 +359,9 @@ struct msghdr {
  * of message elements headed by cmsghdr structures.
  */
 struct cmsghdr {
-	u_int	cmsg_len;		/* data byte count, including hdr */
-	int		cmsg_level;		/* originating protocol */
-	int		cmsg_type;		/* protocol-specific type */
+	unsigned int	cmsg_len;		/* data byte count, including hdr */
+	int				cmsg_level;		/* originating protocol */
+	int				cmsg_type;		/* protocol-specific type */
 	/* followed by	u_char  cmsg_data[]; */
 };
 
