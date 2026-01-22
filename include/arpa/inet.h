@@ -51,13 +51,13 @@ int		 		inet_pton(int, const char * __restrict, void * __restrict);
 
 #if __BSD_VISIBLE
 int		 		inet_aton(const char *, struct in_addr *);
-char 			*inet_neta(u_long, char *, size_t);
+char 			*inet_neta(unsigned long, char *, size_t);
 char			*inet_net_ntop(int, const void *, int, char *, size_t);
 int		 		inet_net_pton(int, const char *, void *, size_t);
 char			*inet_cidr_ntop(int, const void *, int, char *, size_t);
 int		 		inet_cidr_pton(int, const char *, void *, int *);
-u_int			inet_nsap_addr(const char *, u_char *, int);
-char			*inet_nsap_ntoa(int, const u_char *, char *);
+unsigned int	inet_nsap_addr(const char *, unsigned char *, int);
+char			*inet_nsap_ntoa(int, const unsigned char *, char *);
 #endif
 __END_DECLS
 
