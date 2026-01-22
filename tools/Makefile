@@ -100,7 +100,7 @@ SUBDIR=	host-mkdep compat binstall date .WAIT mktemp .WAIT sed .WAIT genassym 		
 		${LINT_BITS} 															\
 		makewhatis mtree nbperf .WAIT uudecode 										\
 		cat rpcgen join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
-		${XZ_BITS1} .WAIT grep pax									\
+		${XZ_BITS1} .WAIT grep pax gethost									\
 		.WAIT texinfo 															\
 		.WAIT tic																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
