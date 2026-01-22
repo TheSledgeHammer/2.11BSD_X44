@@ -1,0 +1,14 @@
+# $2.11BSD_X44: Makefile.inc,v 1.0 2026/01/20 19:16:45 martin Exp $
+
+WARNS= 4
+
+TCSHDIR=  ${NETBSDSRCDIR}/contrib/tcsh
+TCSHDIST= ${TCSHDIR}/dist
+TCSHINC=  ${TCSHDIR}/include
+
+CPPFLAGS+= -I${TCSHDIST}
+CPPFLAGS+= -I${TCSHINC}
+
+.PATH: ${TCSHDIST}
+.PATH: ${TCSHINC}
+
