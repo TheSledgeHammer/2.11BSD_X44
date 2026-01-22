@@ -363,10 +363,11 @@ int		ppsratecheck(struct timeval *, int *, int);
 int 	tvtohz(const struct timeval *);
 #else /* !KERNEL */
 
+#include <sys/cdefs.h>
 #include <time.h>
 
-#ifndef _POSIX_SOURCE
-#include <sys/cdefs.h>
+#if (_POSIX_C_SOURCE - 0) >= 200112L || \
+    defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 
 __BEGIN_DECLS
 int	adjtime(const struct timeval *, struct timeval *);
@@ -376,6 +377,7 @@ int	setitimer(int, const struct itimerval *, struct itimerval *);
 int	settimeofday(const struct timeval *, const struct timezone *);
 int	utimes(const char *, const struct timeval *);
 __END_DECLS
-#endif /* !POSIX */
+
+#endif /* !__BSD_VISIBLE */
 #endif /* !KERNEL */
 #endif	/* !_SYS_TIME_H_ */
