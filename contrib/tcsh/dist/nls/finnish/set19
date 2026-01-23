@@ -1,0 +1,22 @@
+$ tc.alloc.c
+$set 19 
+1 nbytes=%d: Muisti loppu\n
+2 free(%lx) kutsuttu ennen kuin mitään on varattu.
+3 free(%lx) arvo on sallitun muistialueen yläpuolella.
+4 free(%lx) arvo on sallitun muistialueen alapuolella.
+5 free(%lx) Virheellinen/viallinen lohko.
+6 free(%lx) Lohko ei ole dynaamisesti varatulla alueella.
+7 free(%lx) Virheellinen lohkon indeksi.
+8 %s tämänhetkinen muistin varauksien tila:\nvapaana:\t
+9 käytössä
+10 \n\tYhteensä käytössä: %d, yhteensä vapaana: %d\n
+11 \tVarattu muisti alueella 0x%lx .. 0x%lx.  Todellinen huippu 0x%lx\n
+12 Varattu muisti alueella 0x%lx .. 0x%lx (%ld).\n
+13 %s tämänhetkinen muistivaraus:\n
+14 Järjestelmältä varattu kokonaistila: %zu\n
+15 Käyttämättömien lohkojen lukumäärä: %zu\n
+16 Muistikartoitettujen alueiden lukumäärä: %zu\n
+17 Muistikartoitettujen alueiden kokonaistila: %zu\n
+18 Varatun tilan kokonaismäärä: %zu\n
+19 Käyttämättömän tilan kokonaismäärä: %zu\n
+20 Päällimmäinen vapautettava tila: %zu\n

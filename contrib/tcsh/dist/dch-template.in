@@ -1,0 +1,11 @@
+@PACKAGE_TARNAME@ (@PACKAGE_VERSION@) unstable; urgency=medium
+
+  * Release @PACKAGE_VERSION@
+  * Please look in the Fixes file for an actual changelog
+  * In packaging tcsh:
+    - Avoid non-default settings in system-wide init files.
+    - Use https://salsa.debian.org/debian/tcsh/debian resources
+      to maintain compatibility with older versions packaged by
+      Debian.
+
+ -- The Tcsh Team <tcsh@astron.com>  @PACKAGE_CHANGELOG_DATE@

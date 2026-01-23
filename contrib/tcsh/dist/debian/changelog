@@ -1,0 +1,11 @@
+tcsh (6.24.16) unstable; urgency=medium
+
+  * Release 6.24.16
+  * Please look in the Fixes file for an actual changelog
+  * In packaging tcsh:
+    - Avoid non-default settings in system-wide init files.
+    - Use https://salsa.debian.org/debian/tcsh/debian resources
+      to maintain compatibility with older versions packaged by
+      Debian.
+
+ -- The Tcsh Team <tcsh@astron.com>  Wed, 09 Jul 2025 00:00:00 +0000

@@ -2,6 +2,8 @@
 
 WARNS= 4
 
+BINDIR?= /usr/bin
+
 TCSHDIR=  ${NETBSDSRCDIR}/contrib/tcsh
 TCSHDIST= ${TCSHDIR}/dist
 TCSHINC=  ${TCSHDIR}/include
