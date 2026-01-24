@@ -1,5 +1,10 @@
 # $2.11BSD_X44: Makefile,v 1.0 2026/01/20 19:16:45 martin Exp $
 
+# TODO: (in no set order)
+# - Compile manpages
+# - Compile contents of tcsh/nls subdir
+# - Fix remaining compile issues
+
 .include <bsd.own.mk>
 
 .include "${.CURDIR}/../Makefile.inc"
@@ -26,7 +31,7 @@ TC_SRCS=	tc.alloc.c tc.bind.c tc.const.c tc.defs.c \
 
 SRCS+=	    dotlock.c dotlock.h
 
-GENSRCS=    tc.defs.c # gethost.c
+GENSRCS=    tc.defs.c
 GENHDRS=    ed.defns.h sh.err.h tc.const.h
 
 SRCS+=      ${SH_SRCS} ${TWO_SRCS} ${ED_SRCS} ${TC_SRCS}
@@ -39,6 +44,7 @@ DFLAGS=     -D_PATH_TCSHELL='"/bin/${PROG}"'
 .endif
 
 CPPFLAGS+= -I. -I${.CURDIR} ${DFLAGS}
+CPPFLAGS+= -D__ICONV_COMPAT
 CPPFLAGS+= -I${TCSHDIST}
 CPPFLAGS+= -I${TCSHINC}
 
@@ -47,11 +53,6 @@ CPPFLAGS+= -I${TCSHINC}
 
 DPADD=	    ${LIBCURSES} ${LIBCRYPT} ${LIBCRYPTO} ${LIBTERMCAP}
 LDADD=	    -lcurses -lcrypt -lcrypto -ltermcap
-
-#gethost: gethost.c sh.err.h tc.const.h sh.h
-#	${_MKTARGET_CREATE}
-#	rm -f ${.TARGET}
-#	${CC} -o gethost ${CPPFLAGS} ${TCSHDIST}/gethost.c
 
 tc.defs.c: ${TOOL_GETHOST} ${TCSHDIST}/host.defs
 	${_MKTARGET_CREATE}
@@ -87,5 +88,22 @@ tc.const.h: tc.const.c sh.char.h config.h config_f.h sh.types.h sh.err.h
 	    ${TOOL_SED} -e 's/Char \([a-zA-Z0-9_]*\)\(.*\)/extern Char \1[];/' | \
 	    sort >> ${.TARGET}
 	echo '#endif /* _h_tc_const */' >> ${.TARGET}
+
+COPTS.dotlock.c+= -Wno-unused-but-set-variable
+COPTS.ed.screen.c+= -Wno-format-nonliteral
+COPTS.ed.xmap.c+= -Wno-format-nonliteral
+COPTS.sh.c+= -Wno-format-nonliteral
+COPTS.sh.dir.c+= -Wno-format-nonliteral
+COPTS.sh.exec.c+= -Wno-format-nonliteral
+COPTS.sh.func.c+= -Wno-format-nonliteral
+COPTS.sh.lex.c+= -Wno-format-nonliteral
+COPTS.sh.proc.c+= -Wno-format-nonliteral
+COPTS.sh.sem.c+= -Wno-format-nonliteral
+COPTS.tc.alloc.c+= -Wno-format-nonliteral
+COPTS.tc.bind.c+= -Wno-format-nonliteral
+COPTS.tc.func.c+= -Wno-format-nonliteral
+COPTS.tc.who.c+= -Wno-format-nonliteral
+COPTS.tw.help.c+= -Wno-format-nonliteral
+COPTS.tw.parse.c+= -Wno-format-nonliteral
 
 .include <bsd.prog.mk>
