@@ -110,6 +110,7 @@ pid_t		 	tcgetpgrp(int);
 int	 			tcsetpgrp(int, pid_t);
 char			*ttyname(int);
 int	 			unlink(const char *);
+int	 		    usleep(long);
 ssize_t			write(int, const void *, size_t);
 
 #ifndef __SYS_SIGLIST_DECLARED
@@ -191,7 +192,7 @@ int	 			exect(const char *, char * const *, char * const *);
 int	 			execvpe(const char *, char * const *, char * const *);
 int	 			fchdir(int);
 int	 			fchown(int, int, int);
-int             		fchroot(int);
+int             fchroot(int);
 int	 			fsync(int);
 int	 			ftruncate(int, off_t);
 int	 			getdomainname(char *, size_t);
@@ -254,7 +255,6 @@ int	 			truncate(const char *, off_t);
 int	 			ttyslot(void);
 int	 			undelete(const char *);
 unsigned int	ualarm(unsigned int, unsigned int);
-void	 		usleep(long);
 pid_t	 		vfork(void);
 
 #endif /* _XOPEN_SOURCE_EXTENDED || _XOPEN_SOURCE >= 500 || __BSD_VISIBLE */
