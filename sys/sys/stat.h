@@ -253,12 +253,12 @@ int		mkdir(const char *, mode_t);
 int		mkfifo(const char *, mode_t);
 int		stat(const char *, struct stat *);
 mode_t	umask(mode_t);
-#ifndef _POSIX_SOURCE
+//#ifndef _POSIX_SOURCE
 int		chflags(const char *, u_long);
 int		fchflags(int, u_long);
 int		fchmod(int, mode_t);
 int		lstat(const char *, struct stat *);
-#endif
+//#endif
 __END_DECLS
 #endif
 #endif /* !_SYS_STAT_H_ */

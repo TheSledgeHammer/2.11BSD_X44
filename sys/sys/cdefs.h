@@ -516,7 +516,11 @@
  * The XPG spec implies a specific value for _POSIX_C_SOURCE.
  */
 #ifdef _XOPEN_SOURCE
-# if (_XOPEN_SOURCE - 0 >= 700)
+# if (_XOPEN_SOURCE - 0 >= 800)
+#  define __XPG_VISIBLE		800
+#  undef _POSIX_C_SOURCE
+#  define _POSIX_C_SOURCE	202405L
+# elif (_XOPEN_SOURCE - 0 >= 700)
 #  define __XPG_VISIBLE		700
 #  undef _POSIX_C_SOURCE
 #  define _POSIX_C_SOURCE	200809L
@@ -552,12 +556,16 @@
  *				and the omnibus ISO/IEC 9945-1:1996
  * _POSIX_C_SOURCE == 200112L   1003.1-2001
  * _POSIX_C_SOURCE == 200809L   1003.1-2008
- *
+ * _POSIX_C_SOURCE == 202405L   1003.1-2024
+ * 
  * The POSIX spec implies a specific value for __ISO_C_VISIBLE, though
  * this may be overridden by the _ISOC99_SOURCE macro later.
  */
 #ifdef _POSIX_C_SOURCE
-# if (_POSIX_C_SOURCE - 0 >= 200809)
+# if (_POSIX_C_SOURCE - 0 >= 202405)
+#  define __POSIX_VISIBLE	202405
+#  define __ISO_C_VISIBLE	2017
+# elif (_POSIX_C_SOURCE - 0 >= 200809)
 #  define __POSIX_VISIBLE	200809
 #  define __ISO_C_VISIBLE	1999
 # elif (_POSIX_C_SOURCE - 0 >= 200112)
