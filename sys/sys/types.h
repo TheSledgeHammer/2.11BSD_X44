@@ -120,7 +120,7 @@ typedef	uint16_t			u_int16_t;
 typedef	uint32_t			u_int32_t;
 typedef	uint64_t			u_int64_t;
 
-#ifndef _POSIX_SOURCE
+#if defined(__BSD_VISIBLE)
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
 typedef	unsigned int		u_int;
@@ -130,7 +130,7 @@ typedef unsigned char		unchar;		/* Sys III/V compatibility */
 typedef	unsigned short		ushort;		/* Sys III/V compatibility */
 typedef	unsigned int		uint;		/* Sys III/V compatibility */
 typedef unsigned long		ulong;		/* Sys III/V compatibility */
-#endif /* _POSIX_SOURCE */
+#endif /* __BSD_VISIBLE */
 
 typedef	uint64_t	 		u_quad_t; 	/* quads */
 typedef	int64_t				quad_t;
