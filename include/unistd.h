@@ -110,7 +110,6 @@ pid_t		 	tcgetpgrp(int);
 int	 			tcsetpgrp(int, pid_t);
 char			*ttyname(int);
 int	 			unlink(const char *);
-int	 		    usleep(long);
 ssize_t			write(int, const void *, size_t);
 
 #ifndef __SYS_SIGLIST_DECLARED
@@ -168,6 +167,7 @@ int	 			pipe2(int *, int);
 #ifdef	__STDC__
 struct timeval;				/* select(2) */
 #endif
+#endif /* !_POSIX_SOURCE */
 
 /*
  * X/Open Portability Guide >= Issue 4 Version 2
@@ -255,6 +255,7 @@ int	 			truncate(const char *, off_t);
 int	 			ttyslot(void);
 int	 			undelete(const char *);
 unsigned int	ualarm(unsigned int, unsigned int);
+int	 		    usleep(long);
 pid_t	 		vfork(void);
 
 #endif /* _XOPEN_SOURCE_EXTENDED || _XOPEN_SOURCE >= 500 || __BSD_VISIBLE */
@@ -267,7 +268,6 @@ pid_t	 		vfork(void);
 ssize_t	     pread(int, void *, size_t, off_t);
 ssize_t	     pwrite(int, const void *, size_t, off_t);
 #endif /* (_POSIX_C_SOURCE - 0) >= 200112L || ... */
-#endif /* !_POSIX_SOURCE */
 __END_DECLS
 
 #endif /* !_UNISTD_H_ */

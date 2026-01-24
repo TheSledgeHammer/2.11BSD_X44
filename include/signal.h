@@ -61,7 +61,7 @@ typedef struct siginfo siginfo_t;
 
 __BEGIN_DECLS
 int		raise(int);
-#ifndef	_ANSI_SOURCE
+#ifdef	__BSD_VISIBLE
 int		kill(pid_t, int);
 int		sigaction(int, const struct sigaction *, struct sigaction *);
 int		sigaddset(sigset_t *, int);
@@ -72,7 +72,10 @@ int		sigismember(const sigset_t *, int);
 int		sigpending(sigset_t *);
 int		sigprocmask(int, const sigset_t *, sigset_t *);
 int		sigsuspend(const sigset_t *);
-#ifndef _POSIX_SOURCE
+#endif	/* __BSD_VISIBLE */
+#if (defined(_XOPEN_SOURCE) && defined(_XOPEN_SOURCE_EXTENDED)) || \
+    (_XOPEN_SOURCE - 0) >= 500 || (_POSIX_C_SOURCE - 0) >= 200809L || \
+    defined(__BSD_VISIBLE)
 int		killpg(pid_t, int);
 int		sigblock(int);
 int		siginterrupt(int, int);
@@ -82,8 +85,8 @@ int		sigsetmask(int);
 int		sigstack(const struct sigstack *, struct sigstack *);
 int		sigvec(int, struct sigvec *, struct sigvec *);
 void	psignal(unsigned int, const char *);
-#endif	/* !_POSIX_SOURCE */
-#endif	/* !_ANSI_SOURCE */
+#endif /* _XOPEN_SOURCE_EXTENDED || _XOPEN_SOURCE >= 500
+	   || _POSIX_C_SOURCE >= 200809L || __BSD_VISIBLE */
 __END_DECLS
 
 #endif	/* !_SIGNAL_H_ */

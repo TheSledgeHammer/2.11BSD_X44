@@ -43,7 +43,11 @@ typedef	struct __tag_iconv_t	*iconv_t;
 
 __BEGIN_DECLS
 iconv_t	iconv_open(const char *, const char *);
-size_t	iconv(iconv_t, const char ** __restrict, size_t * __restrict, char ** __restrict, size_t * __restrict);
+#ifdef __ICONV_COMPAT
+size_t	iconv(iconv_t, char **, size_t *, char **, size_t *);
+#else
+size_t	iconv(iconv_t, const char **, size_t *, char **, size_t *);
+#endif
 int		iconv_close(iconv_t);
 
 /*
