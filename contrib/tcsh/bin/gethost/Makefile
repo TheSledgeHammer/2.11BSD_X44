@@ -39,4 +39,6 @@ tc.const.h: tc.const.c sh.char.h config.h config_f.h sh.types.h sh.err.h
 	    sort >> ${.TARGET}
 	echo '#endif /* _h_tc_const */' >> ${.TARGET}
 
+CLEANFILES+= sh.err.h tc.const.h
+
 .include <bsd.prog.mk>
