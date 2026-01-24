@@ -3,14 +3,14 @@
 
 SUBDIR=	cat chflags chio chmod chpass cp csh date dd df domainname 		\
 		echo ed expr hostname kenv kill ln ls mkdir mv passwd pax ps \
-		pwd rcp rm rmdir sh sleep stty sync sysctl tcsh test
+		pwd rcp rm rmdir sh sleep stty sync sysctl test
 
-# rmail: no uucp mail server
+# SUBDIR= tcsh
 
 .include <bsd.subdir.mk>
 
+# rmail: no uucp mail server
 # Missing:mt
-
 #
 # 2.11BSD Bin Directory:
 # adb ar as chflags chpass csh diff disklabel hostname ld login ls
