@@ -87,6 +87,21 @@ iconv_close(handle)
 	return (0);
 }
 
+#ifdef __ICONV_COMPAT
+
+size_t
+iconv(handle, in, szin, out, szout)
+    iconv_t handle;
+    char **in;
+    size_t *szin;
+    char **out;
+    size_t *szout;
+{
+    return (iconv(handle, __UNCONST(in), szin, out, szout));
+}
+
+#else /* !__ICONV_COMPAT */
+
 size_t
 iconv(handle, in, szin, out, szout)
     iconv_t handle;
@@ -111,6 +126,8 @@ iconv(handle, in, szin, out, szout)
 
     return (ret);
 }
+
+#endif /* !__ICONV_COMPAT */
 
 size_t
 __iconv(handle, in, szin, out, szout, flags, invalids)
