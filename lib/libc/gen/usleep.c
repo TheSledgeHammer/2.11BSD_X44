@@ -42,13 +42,14 @@
 #include <sys/cdefs.h>
 
 #include "namespace.h"
-#include <sys/types.h>
-#include <sys/time.h>
+
 #ifdef __SELECT_DECLARED
-#include <sys/select.h>
+#include <select.h>
 #endif
 
+#include <errno.h>
 #include <stdio.h>	/* For NULL */
+#include <time.h>
 #include <unistd.h>
 
 #ifdef __weak_alias
@@ -66,32 +67,34 @@ __weak_alias(usleep,_usleep)
 
 #ifdef __SELECT_DECLARED
 
-void
+int
 usleep(micros)
-	long micros;
+    long micros;
 {
 	struct timeval s;
 
 	if (micros > 0) {
-		s.tv_sec = micros / 1000000L;
-		s.tv_usec = micros % 1000000L;
+		s.tv_sec = (micros / 1000000L);
+		s.tv_usec = (micros % 1000000L);
 		select(0, NULL, NULL, NULL, &s);
 	}
+    return (0);
 }
 
-#else
+#else /* !__SELECT_DECLARED */
 
-void
+int
 usleep(micros)
-	long micros;
+    long micros;
 {
 	struct timespec s;
 
 	if (micros > 0) {
-		s.tv_sec = micros / 1000000L;
-		s.tv_nsec = micros % 1000000L * 1000;
+		s.tv_sec = (micros / 1000000L);
+		s.tv_nsec = (micros % 1000000L) * 1000;
 		nanosleep(&s, NULL);
 	}
+    return (0);
 }
 
-#endif
+#endif /* !__SELECT_DECLARED */

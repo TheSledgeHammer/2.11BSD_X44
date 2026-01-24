@@ -43,12 +43,13 @@
 
 #include "namespace.h"
 
-#include <sys/types.h>
-#include <sys/time.h>
 #ifdef __SELECT_DECLARED
-#include <sys/select.h>
+#include <select.h>
 #endif
+
+#include <errno.h>
 #include <stdio.h>	        /* For NULL */
+#include <time.h>
 #include <unistd.h>
 
 #ifdef __weak_alias
@@ -90,7 +91,7 @@ sleep(seconds)
 	return (seconds);
 }
 
-#else
+#else /* !__SELECT_DECLARED */
 
 u_int
 sleep(seconds)
@@ -114,4 +115,4 @@ sleep(seconds)
    	return (seconds);
 }
 
-#endif
+#endif /* !__SELECT_DECLARED */
