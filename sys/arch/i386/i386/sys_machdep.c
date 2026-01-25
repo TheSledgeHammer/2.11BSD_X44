@@ -552,21 +552,19 @@ sysarch()
 
 /* MD tls (set and get) */
 int
-cpu_get_tls_tcb(p, arg, which)
+cpu_get_tls_tcb(p, arg)
 	struct proc *p;
 	void *arg;
-	char which;
 {
-	return (i386_get_sdbase(p, arg, which));
+	return (i386_get_sdbase(p, arg, 'g'));
 }
 
 int
-cpu_set_tls_tcb(p, arg, which)
+cpu_set_tls_tcb(p, arg)
 	struct proc *p;
 	void *arg;
-	char which;
 {
-	return (i386_set_sdbase(p, arg, which));
+	return (i386_set_sdbase(p, arg, 'g'));
 }
 
 void *

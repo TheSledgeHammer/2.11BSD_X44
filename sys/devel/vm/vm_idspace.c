@@ -194,6 +194,79 @@ vm_segment_map_remove(segment_register, segment_number)
 
 struct vm_segment_register seginfo[NOVL];
 
+/* vm_segment_register savemaps */
+struct vm_segment_register savemap[2];
+
+static void
+savemap_put(segnum, addr, desc)
+	int segnum;
+	vm_offset_t *addr, *desc;
+{
+	if ((segnum < 0) || (segnum > 1)) {
+		panic("savemap_put: segnum is outside the valid range. Range is between 0 and 1\n");
+		return;
+	}
+	if (&savemap[segnum] != NULL) {
+		*addr = savemap[segnum].addr;
+		*desc = savemap[segnum].desc;
+	}
+}
+
+static void
+savemap_get(segnum, addr, desc)
+	int segnum;
+	vm_offset_t *addr, *desc;
+{
+	if ((segnum < 0) || (segnum > 1)) {
+		panic("savemap_get: segnum is outside the valid range. Range is between 0 and 1\n");
+		return;
+	}
+    if ((addr != NULL) && (desc != NULL)) {
+    	savemap[segnum].addr = *addr;
+        savemap[segnum].desc = *desc;
+    }
+}
+
+/* save registers to SEG5 and SEG6 */
+void
+vm_segment_map_save(map, flags)
+	vm_segment_map_t map;
+	int flags;
+{
+	switch (flags) {
+	case SEGM_SEG5:
+		savemap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		break;
+	case SEGM_SEG6:
+		savemap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		break;
+	case SEGM_SEG56:
+		savemap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		savemap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		break;
+	}
+}
+
+/* restore registers from SEG5 and SEG6 */
+void
+vm_segment_map_restore(map, flags)
+	vm_segment_map_t map;
+	int flags;
+{
+	switch (flags) {
+	case SEGM_SEG5:
+		savemap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		break;
+	case SEGM_SEG6:
+		savemap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		break;
+	case SEGM_SEG56:
+		savemap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		savemap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		break;
+	}
+}
+
 void
 vm_segment_register_put(segment_number, addr, desc)
 	int segment_number;
@@ -214,26 +287,4 @@ vm_segment_register_get(segment_number)
 		return (segm);
 	}
 	return (NULL);
-}
-
-void
-vm_segment_register_save(segment_register, segment_number, addr, desc)
-	vm_segment_register_t segment_register;
-	int segment_number;
-	vm_offset_t addr, desc;
-{
-	segment_register[segment_number].desc = desc;
-	segment_register[segment_number].addr = addr;
-}
-
-void
-vm_segment_register_restore(segment_register, segment_number)
-	vm_segment_register_t segment_register;
-	int segment_number;
-{
-	if (segment_register != NULL) {
-		seginfo[segment_number] = segment_register[segment_number];
-		seginfo[segment_number].desc = segment_register[segment_number].desc;
-		seginfo[segment_number].addr = segment_register[segment_number].addr;
-	}
 }

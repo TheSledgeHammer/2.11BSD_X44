@@ -35,20 +35,18 @@
 #include <unistd.h>
 
 int
-tls(cmd, param, which)
+tls(cmd, param)
 	int cmd;
 	void *param;
-	char which;
 {
-	return (__syscall((quad_t)SYS_tls, cmd, param, which));
+	return (__syscall((quad_t)SYS_tls, cmd, param));
 }
 
 int
-gettls(param, which)
+gettls(param)
 	void *param;
-	char which;
 {
-	return (tls(GETTLS, param, which));
+	return (tls(GETTLS, param));
 }
 
 int
@@ -56,5 +54,5 @@ settls(param, which)
 	void *param;
 	char which;
 {
-	return (tls(SETTLS, param, which));
+	return (tls(SETTLS, param));
 }

@@ -282,7 +282,9 @@ thread_free(p, td)
 	struct thread *td;
 {
 	if (td != NULL) {
-		free(td, M_THREAD);
+		if ((p->p_threado == td) && (td->td_procp == p)) {
+			free(td, M_THREAD);
+		}
 	}
 }
 

@@ -942,8 +942,6 @@ retry:
 	if (mag != mp->kscp_magazine_current || mag != mp->kscp_magazine_previous) {
 		if (mp->kscp_rounds_current > 0 || mp->kscp_rounds_previous > 0) {
 			goto retry;
-		} else {
-			return (NULL);
 		}
 	}
 	return (NULL);
@@ -985,8 +983,6 @@ retry:
 	if (mag != mp->kscp_magazine_current || mag != mp->kscp_magazine_previous) {
 		if (mp->kscp_rounds_current == 0 || mp->kscp_rounds_previous == 0) {
 			goto retry;
-		} else {
-			return (NULL);
 		}
 	}
 	return (NULL);
@@ -1111,11 +1107,12 @@ kmemslab_destroy(cache, object, size, index, mtype)
 	if (slab != NULL) {
 		/* free slab */
 		obj = kmemslab_free(cache, object, size, index, mtype);
-		if (obj != NULL) {
+		if (obj == NULL) {
+			/* destroy slab */
+			slab_destroy(cache, slab, size, index, mtype);
+		} else {
 			/* slab object was not freed */
 			panic("kmemslab_destroy: failed to free object");
 		}
-		/* destroy slab */
-		slab_destroy(cache, slab, size, index, mtype);
 	}
 }

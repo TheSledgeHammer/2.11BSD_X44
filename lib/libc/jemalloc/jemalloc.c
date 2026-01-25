@@ -1214,7 +1214,6 @@ pages_map_align(void *addr, size_t size, int align)
 static void *
 pages_map(void *addr, size_t size)
 {
-
 	return pages_map_align(addr, size, 0);
 }
 
@@ -1251,11 +1250,15 @@ pages_remap(void *old_addr, size_t old_size, void *new_addr, size_t new_size, in
 			}
 			return (ret);
 		}
+		return (NULL);
 	}
 
 done:
 	ret = pages_map_align(new_addr, new_size, align);
-	return (ret);
+	if (ret != NULL) {
+		return (ret);
+	}
+	return (NULL);
 }
 
 static void

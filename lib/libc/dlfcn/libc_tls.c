@@ -126,13 +126,5 @@ __static_tls_setup(void)
 
 	tcb = _rtld_tls_allocate();
 
-	/*
-	 * This is okay for i386, but
-	 * will need to change
-	 * when other architectures
-	 * come into play.
-	 */
-#if defined(i386)
-	settls(tcb, GSBASE);
-#endif
+	settls(tcb);
 }

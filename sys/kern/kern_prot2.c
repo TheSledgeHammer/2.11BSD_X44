@@ -280,49 +280,29 @@ suser()
 }
 
 static int
-kern_get_tls(p, cmd, param, which)
+kern_get_tls(p, cmd, param)
 	struct proc *p;
 	int cmd;
 	void *param;
-	char which;
 {
-	int error;
-
 	if (cmd != GETTLS) {
 		return (EINVAL);
 	}
-	switch (which) {
-	case FSBASE:
-		error = cpu_get_tls_tcb(p, param, which);
-		break;
-	case GSBASE:
-		error = cpu_get_tls_tcb(p, param, which);
-		break;
-	}
-	return (error);
+	return (cpu_get_tls_tcb(p, param));
 }
 
 static int
-kern_set_tls(p, cmd, param, which)
+kern_set_tls(p, cmd, param)
 	struct proc *p;
 	int cmd;
 	void *param;
-	char which;
 {
 	int error;
 
 	if (cmd != SETTLS) {
 		return (EINVAL);
 	}
-	switch (which) {
-	case FSBASE:
-		error = cpu_set_tls_tcb(p, param, which);
-		break;
-	case GSBASE:
-		error = cpu_set_tls_tcb(p, param, which);
-		break;
-	}
-	return (error);
+	return (cpu_set_tls_tcb(p, param));
 }
 
 int
@@ -331,7 +311,6 @@ tls()
 	register struct tls_args {
 		syscallarg(int) cmd;
 		syscallarg(void *) param;
-		syscallarg(char) which;
 	} *uap = (struct tls_args *)u.u_ap;
 	register struct proc *p;
 	int error;
@@ -339,10 +318,10 @@ tls()
 	p = u.u_procp;
 	switch (SCARG(uap, cmd)) {
 	case GETTLS:
-		error = kern_get_tls(p, SCARG(uap, cmd), SCARG(uap, param), SCARG(uap, which));
+		error = kern_get_tls(p, SCARG(uap, cmd), SCARG(uap, param));
 		break;
 	case SETTLS:
-		error = kern_set_tls(p, SCARG(uap, cmd), SCARG(uap, param), SCARG(uap, which));
+		error = kern_set_tls(p, SCARG(uap, cmd), SCARG(uap, param));
 		break;
 	default:
 		error = EINVAL;

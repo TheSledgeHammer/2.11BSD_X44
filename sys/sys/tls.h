@@ -38,10 +38,6 @@ struct tls_tcb {
 	void	*tcb_pthread;
 };
 
-/* which args */
-#define FSBASE 'f'
-#define GSBASE 'g'
-
 /*
  * cmd options for tls syscalls
  * - tls: set, get
@@ -52,17 +48,17 @@ enum tls_cmdops {
 };
 
 #ifdef _KERNEL
-int cpu_get_tls_tcb(struct proc *, void *, char);
-int cpu_set_tls_tcb(struct proc *, void *, char);
+int cpu_get_tls_tcb(struct proc *, void *);
+int cpu_set_tls_tcb(struct proc *, void *);
 void *cpu_get_tls_addr(void);
 #else
 __BEGIN_DECLS
 /* kernel tls syscall callback */
-int tls(int, void *, char);
+int tls(int, void *);
 /* get tls */
-int gettls(void *, char);
+int gettls(void *);
 /* set tls */
-int settls(void *, char);
+int settls(void *);
 /* get tls addr */
 void *gettlsaddr(void);
 struct tls_tcb *_rtld_tls_allocate(void);
