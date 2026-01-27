@@ -49,6 +49,16 @@ struct fps {
 	double				u_fpregs[6];			/* FP registers */
 };
 
+/*
+ * u. area threads.
+ * uthreads are an extension of struct user.
+ */
+struct uthread {
+	struct user 		*utd_addr;				/* u. area */
+	struct thread 		*utd_thread;				/* pointer to thread structure */
+	struct thread 		*utd_threado;			/* thread overseer */
+};
+
 struct user {
 	struct trapframe	*u_frame;
 	struct pcb 			u_pcb;
@@ -56,8 +66,10 @@ struct user {
 	struct fps 			u_fps;
 	short				u_fpsaved;				/* FP regs saved for this proc */
 	struct fperr 		u_fperr;				/* floating point error save */
+
 	struct proc 		*u_procp;				/* pointer to proc structure */
 #define u_threado		u_procp->p_threado		/* pointer to thread structure */
+	struct uthread		*u_uthread;				/* uthread structure */
 
 	int					*u_ar0;					/* address of users saved R0 */
 	char				u_comm[MAXCOMLEN + 1];

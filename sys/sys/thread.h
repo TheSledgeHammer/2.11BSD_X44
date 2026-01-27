@@ -53,7 +53,9 @@ struct thread {
 #define	td_ucred		td_cred->pc_ucred
 
 	struct proc 		*td_procp;				/* pointer to proc */
-	struct user			*td_addr;				/* virtual address of u. area */
+	struct uthread		*td_uthread;			/* u. area thread */
+#define td_addr			td_uthread->utd_addr    /* virtual address of u. area */
+	//struct user		*td_addr;				/* virtual address of u. area */
 
 	LIST_ENTRY(thread)	td_sibling;				/* List of sibling threads. */
 	LIST_ENTRY(thread)	td_hash;				/* Hash chain. */

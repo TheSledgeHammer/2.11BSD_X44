@@ -35,7 +35,7 @@
 /*
  * vm_maps:
  * Additions: address space layout
- * USPACE_MIN: USRSTACK
+ * USPACE_MIN: USRSTACK or USRTEXT
  * USPACE_MAX: VM_MAXUSER_ADDRESS
  * KSPACE_MIN: VM_MIN_KERNEL_ADDRESS
  * KSPACE_MAX: VM_MAX_KERNEL_ADDRESS
@@ -137,8 +137,8 @@ extern struct vm_segmap_head segmaplist;
 #define SEGM_SEG56		(SEGM_SEG5|SEGM_SEG6) /* map both SEG5 and SEG6 */
 
 /* virtual kernel I & D space */
-char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
-char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
+extern char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
+extern char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
 
 struct vm_kspace {
 	/* vm */
@@ -154,8 +154,8 @@ struct vm_kspace {
 extern vm_object_t kspace_object; /* single kspace object */
 
 /* virtual user I & D space */
-char *uispace_min, *uispace_max; /* user i-space vm_map range */
-char *udspace_min, *udspace_max; /* user d-space vm_map range */
+extern char *uispace_min, *uispace_max; /* user i-space vm_map range */
+extern char *udspace_min, *udspace_max; /* user d-space vm_map range */
 
 struct vm_uspace {
 	/* vm */

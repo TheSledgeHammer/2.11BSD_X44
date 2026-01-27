@@ -205,7 +205,7 @@ extern long	sigsetmask(int);
 struct sigcontext;
 
 __BEGIN_DECLS
-void	(*signal (int, void (*) (int))) (int);
+void	(*signal(int, void (*)(int)))(int);
 #define	BADSIG		SIG_ERR
 __END_DECLS
 #endif /* !_KERNEL */

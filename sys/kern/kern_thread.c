@@ -86,6 +86,10 @@ int ppnthreadmax;
 
 int thread_stacklimit(struct thread *);
 
+struct uthread *uthread_alloc(struct thread *);
+void uthread_free(struct thread *, struct uthread *);
+struct thread *uthread_overseer(struct uthread *);
+
 void
 threadinit(p, td)
 	struct proc *p;
@@ -255,7 +259,7 @@ thread_alloc(p, stack)
 {
 	struct thread *td;
 
-	td = (struct thread*) malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
+	td = (struct thread *)malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
 	td->td_procp = p;
 	td->td_stack = (struct thread *)td;
 	td->td_stacksize = stack;
@@ -273,6 +277,7 @@ thread_alloc(p, stack)
 	} else {
 		p->p_threado = td;
 	}
+	td->td_uthread = uthread_alloc(td);
 	return (td);
 }
 
@@ -283,6 +288,7 @@ thread_free(p, td)
 {
 	if (td != NULL) {
 		if ((p->p_threado == td) && (td->td_procp == p)) {
+			uthread_free(td, td->td_uthread);
 			free(td, M_THREAD);
 		}
 	}
@@ -367,7 +373,7 @@ thread_updatepri(p, td)
 {
 	int pri, retry;
 
-    	retry = 0;
+	retry = 0;
 	if ((td->td_ppri != p->p_pri)) {
 check:
 		if (td->td_pri == (td->td_ppri + p->p_nthreads)) {
@@ -744,7 +750,8 @@ thread_exit(ecode, all)
 	struct thread *td;
 
 	p = u.u_procp;
-	td = u.u_threado;
+	td = uthread_overseer(u.u_uthread);
+	//td = u.u_threado;
 	td->td_flag &= (TD_PPWAIT | TD_SULOCK);
 	td->td_flag |= TD_WEXIT;
 	untimeout(realitexpire, (caddr_t)p);
@@ -777,7 +784,8 @@ thread_ltsleep(chan, pri, wmesg, timo, interlock)
 	int sig, catch;
 
 	p = u.u_procp;
-	td = u.u_threado;
+	td = uthread_overseer(u.u_uthread);
+	//td = u.u_threado;
 
 	KASSERT(p->p_pri == pri);
 
@@ -1095,112 +1103,55 @@ loop:
 	pri = n;
 }
 
+/* allocate uthread */
+struct uthread *
+uthread_alloc(td)
+	struct thread *td;
+{
+	struct uthread *utd;
+
+	utd = (struct uthread *)malloc(sizeof(struct uthread), M_THREAD, M_NOWAIT);
+	utd->utd_thread = td;
+	utd->utd_threado = u.u_threado;
+	utd->utd_addr = &u;
+	return (utd);
+}
+
+/* free uthread */
+void
+uthread_free(td, utd)
+	struct thread *td;
+	struct uthread *utd;
+{
+	if (utd != NULL) {
+		if ((td->td_uthread == utd) && (utd->utd_thread == td)) {
+			free(utd, M_THREAD);
+		}
+	}
+}
+
+/* return uthread overseer */
+struct thread *
+uthread_overseer(utd)
+	struct uthread *utd;
+{
+	struct proc *p;
+	struct thread *td;
+
+	p = u.u_procp;
+	if (p != NULL) {
+		utd->utd_threado = u.u_threado;
+		td = utd->utd_threado;
+	}
+	if (td != NULL) {
+		return (td);
+	}
+	return (NULL);
+}
+
 #ifdef notyet
-static int thread_killpg1(struct proc *, int, int, int);
-//int  thread_killpg(struct proc *, int, int)
-int  thread_kill(struct proc *, int, pid_t);
 void thread_yield(struct proc *);
 void thread_preempt(struct proc *, struct thread *);
-
-static int
-thread_killpg1(p, signo, pgrp, all)
-	struct proc *p;
-	int signo, pgrp, all;
-{
-	register struct thread *td;
-	int f, error = 0;
-
-	if (!all && pgrp == 0) {
-		/*
-		 * Zero process id means send to my process group.
-		 */
-		pgrp = u.u_threado->td_pgrp->pg_id;
-		if (pgrp == 0)
-			return (ESRCH);
-	}
-	for (f = 0, td = LIST_FIRST(p->p_allthread); td != NULL; td = LIST_NEXT(td, td_list)) {
-		if ((td->td_pgrp->pg_id != pgrp && !all) || td->td_ptid == 0 ||
-		    (td->td_flag & TD_SYSTEM) || (all && td == u.u_threado))
-			continue;
-		if (!cansignal(p, signo)) {
-			if (!all)
-				error = EPERM;
-			continue;
-		}
-		f++;
-		if (signo) {
-			if (!all) {
-				thread_psignal(p, signo, !all);
-			} else {
-				thread_psignal(p, signo, all);
-			}
-		}
-	}
-	return (error ? error : (f == 0 ? ESRCH : 0));
-}
-
-/* Not Working Properly
-int
-thread_killpg(p, signo, pgrp)
-	struct proc *p;
-	int signo, pgrp;
-{
-	int error = 0;
-
-	if (signo < 0 || signo >= NSIG) {
-		return (EINVAL);
-	}
-	error = thread_killpg1(p, signo, pgrp, 0);
-	return (error);
-}
-*/
-
-int
-thread_kill(p, signo, tid)
-	struct proc *p;
-	int signo;
-	pid_t tid;
-{
-	register struct thread *td;
-	register int error = 0;
-
-	if (signo < 0 || signo >= NSIG) {
-		error = EINVAL;
-		goto out;
-	}
-
-	if (tid > 0) {
-		/* kill single thread */
-		td = tdfind(tid);
-		if (td == 0) {
-			error = ESRCH;
-			goto out;
-		}
-		if (!cansignal(p, signo)) {
-			error = EPERM;
-		} else if (signo) {
-			thread_psignal(p, signo, 0);
-		}
-		goto out;
-	}
-
-	switch (tid) {
-	  /* Fix: can't be -1 for a tid */
-	case -1:		/* broadcast signal */
-		error = thread_killpg1(p, signo, 0, 1);
-		break;
-	case 0:			/* signal own thread group */
-		error = thread_killpg1(p, signo, 0, 0);
-		break;
-	default:		/* negative explicit thread group */
-		error = thread_killpg1(p, signo, -tid, 0);
-		break;
-	}
-
-out:
-	u.u_error = error;
-	return (error);
-}
 
 void
 thread_yield(p)

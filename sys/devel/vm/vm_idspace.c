@@ -30,112 +30,13 @@
 
 #include <vm_idspace.h>
 
- /* kspace */
-vm_object_t kspace_object;
-
-void
-vm_kispace_map_init(kspace, size)
-	vm_kspace_t kspace;
-	vm_size_t size;
-{
-    kisd_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kispace_min, (vm_offset_t *)&kispace_max, size, FALSE);
-    kisa_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kispace_min, (vm_offset_t *)&kispace_max, size, FALSE);
-    kspace->desc_map = kisd_map;
-    kspace->addr_map = kisa_map;
-}
-
-void
-vm_kdspace_map_init(kspace, size)
-	vm_kspace_t kspace;
-	vm_size_t size;
-{
-    kdsd_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kdspace_min, (vm_offset_t *)&kdspace_max, size, FALSE);
-    kdsa_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kdspace_min, (vm_offset_t *)&kdspace_max, size, FALSE);
-    kspace->desc_map = kdsd_map;
-    kspace->addr_map = kdsa_map;
-}
-
-void
-vm_kspace_init(size)
-	vm_size_t size;
-{
-	vm_kspace_t kspace;
-
-	vm_kispace_map_init(kspace, size);
-	vm_kdspace_map_init(kspace, size);
-
-	kspace->object = vm_kspace_object_create(size);
-}
-
-vm_object_t
-vm_kspace_object_create(size)
-	vm_size_t size;
-{
-	vm_object_t result;
-
-	result = vm_object_allocate(size);
-	if (result != NULL) {
-		kspace_object = result;
-		return (result);
-	}
-	return (NULL);
-}
-
-/* uspace */
-vm_object_t uspace_object;
-
-void
-vm_uispace_map_init(uspace, size)
-	vm_uspace_t uspace;
-	vm_size_t size;
-{
-    uisd_map = kmem_suballoc(kernel_map, (vm_offset_t *)&uispace_min, (vm_offset_t *)&uispace_max, size, FALSE);
-    uisa_map = kmem_suballoc(kernel_map, (vm_offset_t *)&uispace_min, (vm_offset_t *)&uispace_max, size, FALSE);
-    uspace->desc_map = uisd_map;
-    uspace->addr_map = uisa_map;
-}
-
-void
-vm_udspace_map_init(uspace, size)
-	vm_uspace_t uspace;
-	vm_size_t size;
-{
-    udsd_map = kmem_suballoc(kernel_map, (vm_offset_t *)&udspace_min, (vm_offset_t *)&udspace_max, size, FALSE);
-    udsa_map = kmem_suballoc(kernel_map, (vm_offset_t *)&udspace_min, (vm_offset_t *)&udspace_max, size, FALSE);
-    uspace->desc_map = udsd_map;
-    uspace->addr_map = udsa_map;
-}
-
-void
-vm_uspace_init(size)
-	vm_size_t size;
-{
-	vm_uspace_t uspace;
-
-	vm_uispace_map_init(uspace, size);
-	vm_udspace_map_init(uspace, size);
-
-	uspace->object = vm_uspace_object_create(size);
-}
-
-vm_object_t
-vm_uspace_object_create(size)
-	vm_size_t size;
-{
-	vm_object_t result;
-
-	result = vm_object_allocate(size);
-	if (result != NULL) {
-		uspace_object = result;
-		return (result);
-	}
-	return (NULL);
-}
-
 /* vm_segment_map */
 #define M_VMSEGMAP 103
 
 struct vm_segmap_head segmaplist;
+
+#define segmap_lock()
+#define segmap_unlock()
 
 void
 vm_segment_map_init(void)
@@ -154,6 +55,8 @@ vm_segment_map_insert(segment_register, segment_number)
 	segm = (vm_segment_map_t)malloc((u_long)sizeof(struct vm_segment_map), M_VMSEGMAP, M_WAITOK);
 	segm->segment_register = segment_register;
 	segm->segment_number = segment_number;
+	//segm->attributes;
+	//segm->flags = flags;
 	//lock
 	LIST_INSERT_HEAD(&segmaplist, segm, segmlist);
 	//unlock
