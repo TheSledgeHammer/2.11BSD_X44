@@ -1114,6 +1114,7 @@ uthread_alloc(td)
 	utd->utd_thread = td;
 	utd->utd_threado = u.u_threado;
 	utd->utd_addr = &u;
+	u.u_uthread = utd;
 	return (utd);
 }
 
