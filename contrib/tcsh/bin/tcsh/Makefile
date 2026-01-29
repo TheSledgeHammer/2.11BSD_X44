@@ -24,8 +24,8 @@ TWO_SRCS=	tw.help.c tw.init.c tw.parse.c tw.spell.c \
 ED_SRCS=	ed.chared.c ed.refresh.c ed.screen.c ed.init.c \
 	        ed.inputl.c ed.defns.c ed.xmap.c ed.term.c
 
-TC_SRCS=	tc.alloc.c tc.bind.c tc.const.c tc.defs.c \
-	        tc.disc.c tc.func.c tc.nls.c tc.os.c tc.printf.c \
+TC_SRCS=	tc.alloc.c tc.bind.c tc.const.c tc.disc.c \
+	        tc.func.c tc.nls.c tc.os.c tc.printf.c \
         	tc.prompt.c tc.sched.c tc.sig.c tc.str.c \
         	tc.vers.c tc.who.c
 
