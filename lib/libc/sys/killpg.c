@@ -34,6 +34,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <limits.h>
+#include <unistd.h>
 
 int
 killpg(pgid, sig)

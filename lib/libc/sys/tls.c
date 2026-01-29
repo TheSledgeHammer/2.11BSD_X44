@@ -50,9 +50,8 @@ gettls(param)
 }
 
 int
-settls(param, which)
+settls(param)
 	void *param;
-	char which;
 {
 	return (tls(SETTLS, param));
 }
