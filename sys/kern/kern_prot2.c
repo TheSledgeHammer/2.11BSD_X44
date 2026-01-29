@@ -48,8 +48,8 @@
 #include <sys/sysdecl.h>
 #include <sys/tls.h>
 
-static int kern_get_tls(struct proc *, int, void *, char);
-static int kern_set_tls(struct proc *, int, void *, char);
+static int kern_get_tls(struct proc *, int, void *);
+static int kern_set_tls(struct proc *, int, void *);
 
 /*
  * This is a helper function used by setuid() above and the 4.3BSD 
