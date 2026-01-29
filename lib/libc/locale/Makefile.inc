@@ -5,7 +5,7 @@
 
 # To Fix: frune.c
 
-SRCS+=	aliasname.c ctype.c euc.c isctype.c iso2022.c lconv.c localeconv.c	\
+SRCS+=	aliasname.c ctype.c euc.c isctype.c frune.c iso2022.c lconv.c localeconv.c	\
 		mbrune.c __mb_cur_max.c nl_langinfo.c none.c rune.c setlocale.c 	\
 		setrunelocale.c srune.c table.c ues.c utf1632.c utf2.c utf8.c 		\
 		wcscoll.c wcstod.c wcstof.c wcstold.c wcstol.c wcstoll.c wcstoimax.c \
