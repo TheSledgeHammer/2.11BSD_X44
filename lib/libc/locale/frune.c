@@ -48,6 +48,7 @@ static char sccsid[] = "@(#)frune.c	8.1 (Berkeley) 6/4/93";
 #include <stddef.h>
 #include <stdio.h>
 
+#include "reentrant.h"
 #include <stdio/local.h>
 
 wint_t
@@ -103,7 +104,7 @@ fgetmbrune(fp)
     if (wc == L'\0') {
         size = 1;
     }
-    fp->_p = buf;
+    fp->_p = (unsigned char *)buf;
     fp->_r = len;
     return (wc);
 }
