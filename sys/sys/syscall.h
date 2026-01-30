@@ -184,4 +184,5 @@
 #define	SYS_tls	175
 #define	SYS_fchroot	176
 #define	SYS_getfh	177
-#define	SYS_MAXSYSCALL	178
+#define	SYS_fpathconf	178
+#define	SYS_MAXSYSCALL	179
