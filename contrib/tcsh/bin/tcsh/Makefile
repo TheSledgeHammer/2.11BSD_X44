@@ -3,7 +3,6 @@
 # TODO: (in no set order)
 # - Compile manpages
 # - Compile contents of tcsh/nls subdir
-# - Fix remaining compile issues
 
 .include <bsd.own.mk>
 
