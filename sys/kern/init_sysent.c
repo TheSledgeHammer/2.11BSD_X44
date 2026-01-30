@@ -191,6 +191,7 @@ int	pwritev();
 int	tls();
 int	fchroot();
 int	getfh();
+int	fpathconf();
 #define	s(type)	sizeof(type)
 
 struct sysent sysent[] = {
@@ -562,6 +563,8 @@ struct sysent sysent[] = {
 	    fchroot },				/* 176 = fchroot */
 	{ 0, 0,
 	    getfh },				/* 177 = getfh */
+	{ 0, 0,
+	    fpathconf },			/* 178 = fpathconf */
 };
 
 int	nsysent= sizeof(sysent) / sizeof(sysent[0]);
