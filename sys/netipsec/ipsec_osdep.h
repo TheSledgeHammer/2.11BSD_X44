@@ -336,7 +336,7 @@ if_handoff(struct ifqueue *ifq, struct mbuf *m, struct ifnet *ifp, int adjust)
 #define IN6PCB_TO_PCB(p) (p)
 #endif	/* __FreeBSD__ */
 
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 #define PCB_T		struct inpcb_hdr
 #define PCB_FAMILY(p)	((p)->inph_af)
 #define PCB_SOCKET(p)	((p)->inph_socket)
@@ -346,7 +346,7 @@ if_handoff(struct ifqueue *ifq, struct mbuf *m, struct ifnet *ifp, int adjust)
 
 #define IN4PCB_TO_PCB(p) ((PCB_T *)(&(p)->inp_head))
 #define IN6PCB_TO_PCB(p) ((PCB_T *)(&(p)->in6p_head))
-#endif	/* __NetBSD__ */
+//#endif	/* __NetBSD__ */
 
 /*
  * Differences that we don't attempt to hide:

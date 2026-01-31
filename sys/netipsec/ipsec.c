@@ -120,7 +120,7 @@ struct secpolicy ip4_def_policy;
 int ip4_ipsec_ecn = 0;		/* ECN ignore(-1)/forbidden(0)/allowed(1) */
 int ip4_esp_randpad = -1;
 
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 u_int ipsec_spdgen = 1;		/* SPD generation # */
 
 static struct secpolicy *ipsec_checkpcbcache(struct mbuf *,
@@ -128,7 +128,7 @@ static struct secpolicy *ipsec_checkpcbcache(struct mbuf *,
 static int ipsec_fillpcbcache(struct inpcbpolicy *, struct mbuf *,
 	struct secpolicy *, int);
 static int ipsec_invalpcbcache(struct inpcbpolicy *, int);
-#endif /* __NetBSD__ */
+//#endif /* __NetBSD__ */
 
 /*
  * Crypto support requirements:
@@ -141,6 +141,8 @@ int	crypto_support = 0;
 
 static struct secpolicy *ipsec_getpolicybysock(struct mbuf *, u_int,
 	PCB_T *, int *);
+
+
 
 #ifdef __FreeBSD__
 SYSCTL_DECL(_net_inet_ipsec);
@@ -230,7 +232,7 @@ static int ipsec_get_policy(struct secpolicy *pcb_sp, struct mbuf **mp);
 static void vshiftl(unsigned char *, int, int);
 static size_t ipsec_hdrsiz(struct secpolicy *);
 
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 /*
  * Try to validate and use cached policy on a PCB.
  */
@@ -402,7 +404,7 @@ ipsec_invalpcbcacheall(void)
 	else
 		ipsec_spdgen++;
 }
-#endif /* __NetBSD__ */
+//#endif /* __NetBSD__ */
 
 /*
  * Return a held reference to the default SP.
@@ -498,7 +500,7 @@ ipsec_getpolicybysock(m, dir, inp, error)
 	IPSEC_ASSERT(af == AF_INET || af == AF_INET6,
 		("ipsec_getpolicybysock: unexpected protocol family %u", af));
 
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 	IPSEC_ASSERT(inp->inph_sp != NULL, ("null PCB policy cache"));
 	/* If we have a cached entry, and if it is still valid, use it. */
 	ipsecstat.ips_spdcache_lookup++;
@@ -508,7 +510,7 @@ ipsec_getpolicybysock(m, dir, inp, error)
 		return currsp;
 	}
 	ipsecstat.ips_spdcache_miss++;
-#endif /* __NetBSD__ */
+//#endif /* __NetBSD__ */
 
 	switch (af) {
 	case AF_INET: {
@@ -602,10 +604,20 @@ ipsec_getpolicybysock(m, dir, inp, error)
 		printf("DP ipsec_getpolicybysock (priv %u policy %u) allocates "
 		       "SP:%p (refcnt %u)\n", pcbsp->priv, currsp->policy,
 		       sp, sp->refcnt));
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 	ipsec_fillpcbcache(pcbsp, m, sp, dir);
-#endif /* __NetBSD__ */
+//#endif /* __NetBSD__ */
 	return sp;
+}
+
+struct secpolicy *
+ipsec6_getpolicybysock(m, dir, inp, error)
+	struct mbuf *m;
+	u_int dir;
+	PCB_T *inp;
+	int *error;
+{
+    return (ipsec_getpolicybysock(m, dir, inp, error));
 }
 
 /*
@@ -652,6 +664,16 @@ ipsec_getpolicybyaddr(m, dir, flag, error)
 		sp = KEY_ALLOCSP_DEFAULT();
 	IPSEC_ASSERT(sp != NULL, ("ipsec_getpolicybyaddr: null SP"));
 	return sp;
+}
+
+struct secpolicy *
+ipsec6_getpolicybyaddr(m, dir, flag, error)
+	struct mbuf *m;
+	u_int dir;
+	int flag;
+	int *error;
+{
+    return (ipsec_getpolicybyaddr(m, dir, flag, error));
 }
 
 struct secpolicy *
@@ -2180,7 +2202,7 @@ xform_init(struct secasvar *sav, int xftype)
 	return EINVAL;
 }
 
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 void
 ipsec_attach(void)
 {
@@ -2191,4 +2213,4 @@ ipsec_attach(void)
 	ipe4_attach();
 	printf(" done\n");
 }
-#endif	/* __NetBSD__ */
+//#endif	/* __NetBSD__ */

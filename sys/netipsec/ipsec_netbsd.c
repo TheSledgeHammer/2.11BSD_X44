@@ -67,6 +67,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipsec_netbsd.c,v 1.8.2.3 2004/08/16 05:51:01 jmc Exp
 #include <netipsec/key.h>
 #include <netipsec/keydb.h>
 #include <netipsec/key_debug.h>
+#include <netipsec/ah.h>
 #include <netipsec/ah_var.h>
 #include <netipsec/esp.h>
 #include <netipsec/esp_var.h>
@@ -202,6 +203,122 @@ esp4_ctlinput(cmd, sa, v)
 }
 
 #ifdef INET6
+
+void
+ah6_ctlinput(cmd, sa, d)
+	int cmd;
+	struct sockaddr *sa;
+	void *d;
+{
+	const struct newah *ahp;
+	struct newah ah;
+	struct ip6ctlparam *ip6cp = NULL, ip6cp1;
+	struct secasvar *sav;
+	struct ip6_hdr *ip6;
+	struct mbuf *m;
+	int off;
+	struct sockaddr_in6 *sa6_src, *sa6_dst;
+
+	if (sa->sa_family != AF_INET6 ||
+	    sa->sa_len != sizeof(struct sockaddr_in6))
+		return;
+	if ((unsigned)cmd >= PRC_NCMDS)
+		return;
+
+	/* if the parameter is from icmp6, decode it. */
+	if (d != NULL) {
+		ip6cp = (struct ip6ctlparam *)d;
+		m = ip6cp->ip6c_m;
+		ip6 = ip6cp->ip6c_ip6;
+		off = ip6cp->ip6c_off;
+	} else {
+		m = NULL;
+		ip6 = NULL;
+		off = 0;
+	}
+
+	if (ip6) {
+		/*
+		 * Notify the error to all possible sockets via pfctlinput2.
+		 * Since the upper layer information (such as protocol type,
+		 * source and destination ports) is embedded in the encrypted
+		 * data and might have been cut, we can't directly call
+		 * an upper layer ctlinput function. However, the pcbnotify
+		 * function will consider source and destination addresses
+		 * as well as the flow info value, and may be able to find
+		 * some PCB that should be notified.
+		 * Although pfctlinput2 will call esp6_ctlinput(), there is
+		 * no possibility of an infinite loop of function calls,
+		 * because we don't pass the inner IPv6 header.
+		 */
+		bzero(&ip6cp1, sizeof(ip6cp1));
+		ip6cp1.ip6c_src = ip6cp->ip6c_src;
+		pfctlinput2(cmd, sa, (void *)&ip6cp1);
+
+		/*
+		 * Then go to special cases that need ESP header information.
+		 * XXX: We assume that when ip6 is non NULL,
+		 * M and OFF are valid.
+		 */
+
+		/* check if we can safely examine src and dst ports */
+		if (m->m_pkthdr.len < off + sizeof(ah))
+			return;
+
+		if (m->m_len < off + sizeof(ah)) {
+			/*
+			 * this should be rare case,
+			 * so we compromise on this copy...
+			 */
+			m_copydata(m, off, sizeof(ah), (caddr_t)&ah);
+			ahp = &ah;
+		} else
+			ahp = (struct newah*)(mtod(m, caddr_t) + off);
+
+		if (cmd == PRC_MSGSIZE) {
+			int valid = 0;
+
+			/*
+			 * Check to see if we have a valid SA corresponding to
+			 * the address in the ICMP message payload.
+			 */
+			sa6_src = ip6cp->ip6c_src;
+			sa6_dst = (struct sockaddr_in6 *)sa;
+#ifdef KAME
+			sav = key_allocsa(AF_INET6,
+					  (caddr_t)&sa6_src->sin6_addr,
+					  (caddr_t)&sa6_dst->sin6_addr,
+					  IPPROTO_AH, ahp->ah_spi);
+#else
+			/* jonathan@netbsd.org: XXX FIXME */ 
+			(void)sa6_src; (void)sa6_dst;
+			sav = KEY_ALLOCSA((union sockaddr_union*)sa,
+					  IPPROTO_AH, ahp->ah_spi);
+
+#endif
+			if (sav) {
+				if (sav->state == SADB_SASTATE_MATURE ||
+				    sav->state == SADB_SASTATE_DYING)
+					valid++;
+				KEY_FREESAV(&sav);
+			}
+
+			/* XXX Further validation? */
+
+			/*
+			 * Depending on the value of "valid" and routing table
+			 * size (mtudisc_{hi,lo}wat), we will:
+			 * - recalcurate the new MTU and create the
+			 *   corresponding routing entry, or
+			 * - ignore the MTU change notification.
+			 */
+			icmp6_mtudisc_update((struct ip6ctlparam *)d, valid);
+		}
+	} else {
+		/* we normally notify any pcb here */
+	}
+}
+
 void
 esp6_ctlinput(cmd, sa, d)
 	int cmd;

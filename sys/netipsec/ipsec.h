@@ -38,7 +38,7 @@
 #ifndef _NETIPSEC_IPSEC_H_
 #define _NETIPSEC_IPSEC_H_
 
-#if defined(_KERNEL) && !defined(_LKM) && !defined(KLD_MODULE)
+#if defined(_KERNEL)
 #include "opt_inet.h"
 #include "opt_ipsec.h"
 #endif
@@ -118,7 +118,7 @@ struct inpcbpolicy {
 	struct secpolicy *sp_out;
 	int priv;			/* privileged socket ? */
 
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 	/* cached policy */
 	struct {
 		struct secpolicy *cachesp;
@@ -131,14 +131,14 @@ struct inpcbpolicy {
 	} sp_cache[3];			/* XXX 3 == IPSEC_DIR_MAX */
 	int sp_cacheflags;
 #define	IPSEC_PCBSP_CONNECTED	1
-#endif /* __NetBSD__ */
+//#endif /* __NetBSD__ */
 };
 
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 #define	IPSEC_PCB_SKIP_IPSEC(inpp, dir)					\
 	((inpp)->sp_cache[(dir)].cachehint == IPSEC_PCBHINT_NO &&	\
 	 (inpp)->sp_cache[(dir)].cachegen == ipsec_spdgen)
-#endif /* __NetBSD__ */
+//#endif /* __NetBSD__ */
 
 /* SP acquiring list table. */
 struct secspacq {
@@ -236,13 +236,13 @@ extern int crypto_support;
 /* for openbsd compatibility */
 #define	DPRINTF(x)	do { if (ipsec_debug) printf x; } while (0)
 
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 extern void ipsec_pcbconn(struct inpcbpolicy *);
 extern void ipsec_pcbdisconn(struct inpcbpolicy *);
 extern void ipsec_invalpcbcacheall(void);
 
 extern u_int ipsec_spdgen;
-#endif /* __NetBSD__ */
+//#endif /* __NetBSD__ */
 
 struct tdb_ident;
 extern struct secpolicy *ipsec_getpolicy(struct tdb_ident*, u_int);
