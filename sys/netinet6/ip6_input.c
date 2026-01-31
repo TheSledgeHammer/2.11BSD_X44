@@ -757,7 +757,7 @@ ip6_input(m)
 		 */
 		if ((inet6sw[ip6_protox[nxt]].pr_flags & PR_LASTHDR) != 0 &&
 		    ipsec6_in_reject(m, NULL)) {
-		    ipsec6stat.in_polvio++;
+		    ipsec6stat.out_polvio++;
 			goto bad;
 		}
 #endif
