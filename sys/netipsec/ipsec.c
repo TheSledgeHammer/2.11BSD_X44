@@ -39,9 +39,6 @@ __KERNEL_RCSID(0, "$NetBSD: ipsec.c,v 1.10.2.1.4.1 2007/12/01 17:32:29 bouyer Ex
  */
 
 #include "opt_inet.h"
-#ifdef __FreeBSD__
-#include "opt_inet6.h"
-#endif
 #include "opt_ipsec.h"
 
 #include <sys/param.h>
@@ -120,7 +117,6 @@ struct secpolicy ip4_def_policy;
 int ip4_ipsec_ecn = 0;		/* ECN ignore(-1)/forbidden(0)/allowed(1) */
 int ip4_esp_randpad = -1;
 
-//#ifdef __NetBSD__
 u_int ipsec_spdgen = 1;		/* SPD generation # */
 
 static struct secpolicy *ipsec_checkpcbcache(struct mbuf *,
@@ -128,7 +124,6 @@ static struct secpolicy *ipsec_checkpcbcache(struct mbuf *,
 static int ipsec_fillpcbcache(struct inpcbpolicy *, struct mbuf *,
 	struct secpolicy *, int);
 static int ipsec_invalpcbcache(struct inpcbpolicy *, int);
-//#endif /* __NetBSD__ */
 
 /*
  * Crypto support requirements:
@@ -142,40 +137,6 @@ int	crypto_support = 0;
 static struct secpolicy *ipsec_getpolicybysock(struct mbuf *, u_int,
 	PCB_T *, int *);
 
-
-
-#ifdef __FreeBSD__
-SYSCTL_DECL(_net_inet_ipsec);
-
-/* net.inet.ipsec */
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_DEF_POLICY,
-	def_policy, CTLFLAG_RW,	&ip4_def_policy.policy,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_DEF_ESP_TRANSLEV, esp_trans_deflev,
-	CTLFLAG_RW, &ip4_esp_trans_deflev,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_DEF_ESP_NETLEV, esp_net_deflev,
-	CTLFLAG_RW, &ip4_esp_net_deflev,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_DEF_AH_TRANSLEV, ah_trans_deflev,
-	CTLFLAG_RW, &ip4_ah_trans_deflev,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_DEF_AH_NETLEV, ah_net_deflev,
-	CTLFLAG_RW, &ip4_ah_net_deflev,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_AH_CLEARTOS,
-	ah_cleartos, CTLFLAG_RW,	&ah_cleartos,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_AH_OFFSETMASK,
-	ah_offsetmask, CTLFLAG_RW,	&ip4_ah_offsetmask,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_DFBIT,
-	dfbit, CTLFLAG_RW,	&ip4_ipsec_dfbit,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_ECN,
-	ecn, CTLFLAG_RW,	&ip4_ipsec_ecn,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_DEBUG,
-	debug, CTLFLAG_RW,	&ipsec_debug,	0, "");
-SYSCTL_INT(_net_inet_ipsec, IPSECCTL_ESP_RANDPAD,
-	esp_randpad, CTLFLAG_RW,	&ip4_esp_randpad,	0, "");
-SYSCTL_INT(_net_inet_ipsec, OID_AUTO,
-	crypto_support,	CTLFLAG_RW,	&crypto_support,0, "");
-SYSCTL_STRUCT(_net_inet_ipsec, OID_AUTO,
-	ipsecstats,	CTLFLAG_RD,	&newipsecstat,	newipsecstat, "");
-#endif /* __FreeBSD__ */
-
 #ifdef INET6
 int ip6_esp_trans_deflev = IPSEC_LEVEL_USE;
 int ip6_esp_net_deflev = IPSEC_LEVEL_USE;
@@ -184,34 +145,7 @@ int ip6_ah_net_deflev = IPSEC_LEVEL_USE;
 struct secpolicy ip6_def_policy;
 int ip6_ipsec_ecn = 0;		/* ECN ignore(-1)/forbidden(0)/allowed(1) */
 int ip6_esp_randpad = -1;
-
-
-#ifdef __FreeBSD__
-SYSCTL_DECL(_net_inet6_ipsec6);
-
-/* net.inet6.ipsec6 */
-#ifdef COMPAT_KAME
-SYSCTL_OID(_net_inet6_ipsec6, IPSECCTL_STATS, stats, CTLFLAG_RD,
-	0,0, compat_ipsecstats_sysctl, "S", "");
-#endif /* COMPAT_KAME */
-SYSCTL_INT(_net_inet6_ipsec6, IPSECCTL_DEF_POLICY,
-	def_policy, CTLFLAG_RW,	&ip4_def_policy.policy,	0, "");
-SYSCTL_INT(_net_inet6_ipsec6, IPSECCTL_DEF_ESP_TRANSLEV, esp_trans_deflev,
-	CTLFLAG_RW, &ip6_esp_trans_deflev,	0, "");
-SYSCTL_INT(_net_inet6_ipsec6, IPSECCTL_DEF_ESP_NETLEV, esp_net_deflev,
-	CTLFLAG_RW, &ip6_esp_net_deflev,	0, "");
-SYSCTL_INT(_net_inet6_ipsec6, IPSECCTL_DEF_AH_TRANSLEV, ah_trans_deflev,
-	CTLFLAG_RW, &ip6_ah_trans_deflev,	0, "");
-SYSCTL_INT(_net_inet6_ipsec6, IPSECCTL_DEF_AH_NETLEV, ah_net_deflev,
-	CTLFLAG_RW, &ip6_ah_net_deflev,	0, "");
-SYSCTL_INT(_net_inet6_ipsec6, IPSECCTL_ECN,
-	ecn, CTLFLAG_RW,	&ip6_ipsec_ecn,	0, "");
-SYSCTL_INT(_net_inet6_ipsec6, IPSECCTL_DEBUG,
-	debug, CTLFLAG_RW,	&ipsec_debug,	0, "");
-SYSCTL_INT(_net_inet6_ipsec6, IPSECCTL_ESP_RANDPAD,
-	esp_randpad, CTLFLAG_RW,	&ip6_esp_randpad,	0, "");
 #endif /* INET6 */
-#endif /* __FreeBSD__ */
 
 static int ipsec4_setspidx_inpcb(struct mbuf *, struct inpcb *pcb);
 #ifdef INET6
@@ -232,7 +166,6 @@ static int ipsec_get_policy(struct secpolicy *pcb_sp, struct mbuf **mp);
 static void vshiftl(unsigned char *, int, int);
 static size_t ipsec_hdrsiz(struct secpolicy *);
 
-//#ifdef __NetBSD__
 /*
  * Try to validate and use cached policy on a PCB.
  */
@@ -404,7 +337,6 @@ ipsec_invalpcbcacheall(void)
 	else
 		ipsec_spdgen++;
 }
-//#endif /* __NetBSD__ */
 
 /*
  * Return a held reference to the default SP.
@@ -500,7 +432,6 @@ ipsec_getpolicybysock(m, dir, inp, error)
 	IPSEC_ASSERT(af == AF_INET || af == AF_INET6,
 		("ipsec_getpolicybysock: unexpected protocol family %u", af));
 
-//#ifdef __NetBSD__
 	IPSEC_ASSERT(inp->inph_sp != NULL, ("null PCB policy cache"));
 	/* If we have a cached entry, and if it is still valid, use it. */
 	ipsecstat.ips_spdcache_lookup++;
@@ -510,7 +441,6 @@ ipsec_getpolicybysock(m, dir, inp, error)
 		return currsp;
 	}
 	ipsecstat.ips_spdcache_miss++;
-//#endif /* __NetBSD__ */
 
 	switch (af) {
 	case AF_INET: {
@@ -604,9 +534,7 @@ ipsec_getpolicybysock(m, dir, inp, error)
 		printf("DP ipsec_getpolicybysock (priv %u policy %u) allocates "
 		       "SP:%p (refcnt %u)\n", pcbsp->priv, currsp->policy,
 		       sp, sp->refcnt));
-//#ifdef __NetBSD__
 	ipsec_fillpcbcache(pcbsp, m, sp, dir);
-//#endif /* __NetBSD__ */
 	return sp;
 }
 
@@ -676,8 +604,8 @@ ipsec6_getpolicybyaddr(m, dir, flag, error)
     return (ipsec_getpolicybyaddr(m, dir, flag, error));
 }
 
-struct secpolicy *
-ipsec4_checkpolicy(m, dir, flag, error, inp)
+static struct secpolicy *
+ipsec_checkpolicy(m, dir, flag, error, inp)
 	struct mbuf *m;
 	u_int dir, flag;
 	int *error;
@@ -687,24 +615,24 @@ ipsec4_checkpolicy(m, dir, flag, error, inp)
 
 	*error = 0;
 
-
 	/* XXX KAME IPv6 calls us with non-null inp but bogus inp_socket? */
 	if (inp == NULL || inp->inp_socket == NULL) {
 		sp = ipsec_getpolicybyaddr(m, dir, flag, error);
-	} else
-		sp = ipsec_getpolicybysock(m, dir, IN4PCB_TO_PCB(inp), error);
+	} else {
+		sp = ipsec_getpolicybysock(m, dir, inp, error);
+	}
 	if (sp == NULL) {
 		IPSEC_ASSERT(*error != 0,
-			("ipsec4_checkpolicy: getpolicy failed w/o error"));
+			("ipsec_checkpolicy: getpolicy failed w/o error"));
 		newipsecstat.ips_out_inval++;
 		return NULL;
 	}
 	IPSEC_ASSERT(*error == 0,
-		("ipsec4_checkpolicy: sp w/ error set to %u", *error));
+		("ipsec_checkpolicy: sp w/ error set to %u", *error));
 	switch (sp->policy) {
 	case IPSEC_POLICY_ENTRUST:
 	default:
-		printf("ipsec4_checkpolicy: invalid policy %u\n", sp->policy);
+		printf("ipsec_checkpolicy: invalid policy %u\n", sp->policy);
 		/* fall thru... */
 	case IPSEC_POLICY_DISCARD:
 		newipsecstat.ips_out_polvio++;
@@ -727,6 +655,28 @@ ipsec4_checkpolicy(m, dir, flag, error, inp)
 	DPRINTF(("ipsecpol: done, sp %p error %d, \n", sp, *error));
 	return sp;
 }
+
+struct secpolicy *
+ipsec4_checkpolicy(m, dir, flag, error, inp)
+	struct mbuf *m;
+	u_int dir, flag;
+	int *error;
+	struct inpcb *inp;
+{
+	return (ipsec_checkpolicy(m, dir, flag, error, IN4PCB_TO_PCB(inp)));
+}
+
+#ifdef INET6
+struct secpolicy *
+ipsec6_checkpolicy(m, dir, flag, error, inp)
+	struct mbuf *m;
+	u_int dir, flag;
+	int *error;
+	struct inpcb *inp;
+{
+	return (ipsec_checkpolicy(m, dir, flag, error, IN6PCB_TO_PCB(inp)));
+}
+#endif
 
 static int
 ipsec4_setspidx_inpcb(m, pcb)
@@ -2103,15 +2053,20 @@ inet_ntoa4(struct in_addr ina)
 char *
 ipsec_address(union sockaddr_union *sa)
 {
+	char *buf;
+
+	buf = NULL;
 	switch (sa->sa.sa_family) {
 #if INET
 	case AF_INET:
-		return inet_ntoa4(sa->sin.sin_addr);
+		buf = ip_print(&sa->sin.sin_addr);
+		return (buf);
 #endif /* INET */
 
 #if INET6
 	case AF_INET6:
-		return (char *)ip6_sprintf(&sa->sin6.sin6_addr);
+		buf = ip6_print(&sa->sin6.sin6_addr);
+		return (buf);
 #endif /* INET6 */
 
 	default:
@@ -2202,7 +2157,6 @@ xform_init(struct secasvar *sav, int xftype)
 	return EINVAL;
 }
 
-//#ifdef __NetBSD__
 void
 ipsec_attach(void)
 {
@@ -2213,4 +2167,3 @@ ipsec_attach(void)
 	ipe4_attach();
 	printf(" done\n");
 }
-//#endif	/* __NetBSD__ */

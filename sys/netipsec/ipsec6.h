@@ -41,9 +41,7 @@
 #include <net/pfkeyv2.h>
 #include <netipsec/ipsec_var.h>
 #include <netipsec/keydb.h>
-//#ifdef __NetBSD__
 #include <netinet6/in6_pcb.h>
-//#endif
 
 #ifdef _KERNEL
 extern int ip6_esp_trans_deflev;
@@ -69,9 +67,10 @@ extern struct secpolicy *ipsec6_getpolicybysock(struct mbuf *, u_int, struct inp
 #define	out_polvio		ips_out_polvio
 #define	key_freesp(_x)		KEY_FREESP(&_x)
 
+extern struct secpolicy *ipsec6_checkpolicy(struct mbuf *, u_int, u_int, int *, struct inpcb *);
+
 extern int ipsec6_delete_pcbpolicy(struct in6pcb *);
-extern int ipsec6_set_policy(struct in6pcb *inp, int optname,
-	caddr_t request, size_t len, int priv);
+extern int ipsec6_set_policy(struct in6pcb *inp, int optname, caddr_t request, size_t len, int priv);
 extern int ipsec6_get_policy(struct in6pcb *inp, caddr_t request, size_t len, struct mbuf **mp);
 extern int ipsec6_in_reject(struct mbuf *, struct in6pcb *);
 /*
@@ -88,11 +87,9 @@ extern size_t ipsec6_hdrsiz_tcp(struct tcpcb*);
 struct ip6_hdr;
 extern const char *ipsec6_logpacketstr(struct ip6_hdr *, u_int32_t);
 
-//#ifdef __NetBSD__
 /* NetBSD protosw ctlin entrypoint */
 extern void esp6_ctlinput(int, struct sockaddr *, void *);
 extern void ah6_ctlinput(int, struct sockaddr *, void *);
-//#endif /* __NetBSD__ */
 
 struct m_tag;
 extern int ipsec6_common_input(struct mbuf **mp, int *offp, int proto);

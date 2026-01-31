@@ -241,14 +241,21 @@ in_fmtaddr(addr)
 }
 */
 
-/* converts in_fmtaddr to use in_print */
 int
-in_fmtaddr(addr)
+ip_print(addr)
 	const struct in_addr *addr;
 {
 	char ipbuf[INET_ADDRSTRLEN];
 
 	return (in_print(ipbuf, sizeof(ipbuf), addr));
+}
+
+/* converts in_fmtaddr to use in_print */
+int
+in_fmtaddr(addr)
+	const struct in_addr *addr;
+{
+	return (ip_print(addr));
 }
 
 /*

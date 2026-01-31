@@ -126,7 +126,7 @@ static int fill_drlist(void *, size_t *, size_t);
 static int fill_prlist(void *, size_t *, size_t);
 
 void
-nd6_init()
+nd6_init(void)
 {
 	static int nd6_init_done = 0;
 	int i;

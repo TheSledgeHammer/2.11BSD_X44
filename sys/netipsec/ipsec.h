@@ -118,7 +118,6 @@ struct inpcbpolicy {
 	struct secpolicy *sp_out;
 	int priv;			/* privileged socket ? */
 
-//#ifdef __NetBSD__
 	/* cached policy */
 	struct {
 		struct secpolicy *cachesp;
@@ -131,14 +130,11 @@ struct inpcbpolicy {
 	} sp_cache[3];			/* XXX 3 == IPSEC_DIR_MAX */
 	int sp_cacheflags;
 #define	IPSEC_PCBSP_CONNECTED	1
-//#endif /* __NetBSD__ */
 };
 
-//#ifdef __NetBSD__
 #define	IPSEC_PCB_SKIP_IPSEC(inpp, dir)					\
 	((inpp)->sp_cache[(dir)].cachehint == IPSEC_PCBHINT_NO &&	\
 	 (inpp)->sp_cache[(dir)].cachegen == ipsec_spdgen)
-//#endif /* __NetBSD__ */
 
 /* SP acquiring list table. */
 struct secspacq {
@@ -236,13 +232,11 @@ extern int crypto_support;
 /* for openbsd compatibility */
 #define	DPRINTF(x)	do { if (ipsec_debug) printf x; } while (0)
 
-//#ifdef __NetBSD__
 extern void ipsec_pcbconn(struct inpcbpolicy *);
 extern void ipsec_pcbdisconn(struct inpcbpolicy *);
 extern void ipsec_invalpcbcacheall(void);
 
 extern u_int ipsec_spdgen;
-//#endif /* __NetBSD__ */
 
 struct tdb_ident;
 extern struct secpolicy *ipsec_getpolicy(struct tdb_ident*, u_int);
@@ -281,19 +275,14 @@ extern int ipsec4_in_reject(struct mbuf *, struct inpcb *);
 #define ipsec4_in_reject_so(m, _so) \
   ipsec4_in_reject(m, ((_so) == NULL? NULL : sotoinpcb(_so)))
 
-
 struct secas;
 struct tcpcb;
 extern int ipsec_chkreplay(u_int32_t, struct secasvar *);
 extern int ipsec_updatereplay(u_int32_t, struct secasvar *);
 
 extern size_t ipsec4_hdrsiz(struct mbuf *, u_int, struct inpcb *);
-#ifdef __FreeBSD__
-extern size_t ipsec_hdrsiz_tcp(struct tcpcb *);
-#else
 extern size_t ipsec4_hdrsiz_tcp(struct tcpcb *);
 #define ipsec4_getpolicybyaddr ipsec_getpolicybyaddr
-#endif
 
 union sockaddr_union;
 extern char * ipsec_address(union sockaddr_union* sa);
@@ -310,8 +299,12 @@ extern void ipsec4_common_input(struct mbuf *m, ...);
 extern int ipsec4_common_input_cb(struct mbuf *m, struct secasvar *sav, int skip, int protoff, struct m_tag *mt);
 extern int ipsec4_process_packet(struct mbuf *, struct ipsecrequest *, int, int);
 extern int ipsec_process_done(struct mbuf *, struct ipsecrequest *);
+
 #define ipsec_indone(m)	\
 	(m_tag_find((m), PACKET_TAG_IPSEC_IN_DONE, NULL) != NULL)
+
+#define ipsec_outdone(m) \
+	(m_tag_find((m), PACKET_TAG_IPSEC_OUT_DONE, NULL) != NULL)
 
 extern struct mbuf *ipsec_copypkt(struct mbuf *);
 

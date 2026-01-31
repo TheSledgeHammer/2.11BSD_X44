@@ -435,9 +435,12 @@ esp6_ctlinput(cmd, sa, d)
 }
 #endif /* INET6 */
 
+/*
+ * System control for IPSEC
+ */
 /* same as sysctl_ipsec from netinet6/ipsec.c ? */
 static int
-sysctl_fast_ipsec(name, namelen, oldp, oldlenp, newp, newlen)
+sysctl_fast_ipsec4(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
 	void *oldp;
@@ -445,6 +448,11 @@ sysctl_fast_ipsec(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
+	/* All sysctl names at this level are terminal. */
+	if (namelen != 1)
+		return ENOTDIR;
+
+	/* common sanity checks */
 	switch (name[0]) {
 	case IPSECCTL_DEF_ESP_TRANSLEV:
 	case IPSECCTL_DEF_ESP_NETLEV:
@@ -459,8 +467,13 @@ sysctl_fast_ipsec(name, namelen, oldp, oldlenp, newp, newlen)
 				return EINVAL;
 			}
 		}
-		ipsec_invalpcbcacheall();
-		break;
+	}
+
+	switch (name[0]) {
+
+		case IPSECCTL_STATS:
+			return sysctl_struct(oldp, oldlenp, newp, newlen, &ipsecstat, sizeof(ipsecstat));
+
 	case IPSECCTL_DEF_POLICY:
 		if (newp != NULL && newlen == sizeof(int)) {
 			switch (*(int *)newp) {
@@ -470,13 +483,156 @@ sysctl_fast_ipsec(name, namelen, oldp, oldlenp, newp, newlen)
 			default:
 				return EINVAL;
 			}
+			ipsec_invalpcbcacheall();
 		}
-		ipsec_invalpcbcacheall();
-		break;
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_def_policy->policy);
+
+	case IPSECCTL_DEF_ESP_TRANSLEV:
+		if (newp != NULL)
+			ipsec_invalpcbcacheall();
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_esp_trans_deflev);
+
+	case IPSECCTL_DEF_ESP_NETLEV:
+		if (newp != NULL)
+			ipsec_invalpcbcacheall();
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_esp_net_deflev);
+
+	case IPSECCTL_DEF_AH_TRANSLEV:
+		if (newp != NULL)
+			ipsec_invalpcbcacheall();
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_ah_trans_deflev);
+
+	case IPSECCTL_DEF_AH_NETLEV:
+		if (newp != NULL)
+			ipsec_invalpcbcacheall();
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_ah_net_deflev);
+
+	case IPSECCTL_AH_CLEARTOS:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_ah_cleartos);
+
+	case IPSECCTL_AH_OFFSETMASK:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_ah_offsetmask);
+
+	case IPSECCTL_DFBIT:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_ipsec_dfbit);
+
+	case IPSECCTL_ECN:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_ipsec_ecn);
+
+	case IPSECCTL_DEBUG:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ipsec_debug);
+
 	default:
-		return (EINVAL);
+		return (EOPNOTSUPP);
 	}
 
+	return (0);
+}
+
+/*
+ * System control for IPSEC6
+ */
+#ifdef INET6
+static int
+sysctl_fast_ipsec6(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+{
+	/* All sysctl names at this level are terminal. */
+	if (namelen != 1)
+		return ENOTDIR;
+
+	/* common sanity checks */
+	switch (name[0]) {
+	case IPSECCTL_DEF_ESP_TRANSLEV:
+	case IPSECCTL_DEF_ESP_NETLEV:
+	case IPSECCTL_DEF_AH_TRANSLEV:
+	case IPSECCTL_DEF_AH_NETLEV:
+		if (newp != NULL && newlen == sizeof(int)) {
+			switch (*(int *)newp) {
+			case IPSEC_LEVEL_USE:
+			case IPSEC_LEVEL_REQUIRE:
+				break;
+			default:
+				return EINVAL;
+			}
+		}
+	}
+
+	switch (name[0]) {
+	case IPSECCTL_STATS:
+		return sysctl_struct(oldp, oldlenp, newp, newlen, &ipsec6stat, sizeof(ipsec6stat));
+
+	case IPSECCTL_DEF_POLICY:
+		if (newp != NULL && newlen == sizeof(int)) {
+			switch (*(int *)newp) {
+			case IPSEC_POLICY_DISCARD:
+			case IPSEC_POLICY_NONE:
+				break;
+			default:
+				return EINVAL;
+			}
+			ipsec_invalpcbcacheall();
+		}
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_def_policy->policy);
+
+	case IPSECCTL_DEF_ESP_TRANSLEV:
+		if (newp != NULL)
+			ipsec_invalpcbcacheall();
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_esp_trans_deflev);
+
+	case IPSECCTL_DEF_ESP_NETLEV:
+		if (newp != NULL)
+			ipsec_invalpcbcacheall();
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_esp_net_deflev);
+
+	case IPSECCTL_DEF_AH_TRANSLEV:
+		if (newp != NULL)
+			ipsec_invalpcbcacheall();
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_ah_trans_deflev);
+
+	case IPSECCTL_DEF_AH_NETLEV:
+		if (newp != NULL)
+			ipsec_invalpcbcacheall();
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_ah_net_deflev);
+
+	case IPSECCTL_ECN:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_ipsec_ecn);
+
+	case IPSECCTL_DEBUG:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ipsec_debug);
+
+	default:
+		return (EOPNOTSUPP);
+	}
+
+	return (0);
+}
+
+#endif /* INET6 */
+
+static int
+sysctl_fast_ipsec(af, name, namelen, oldp, oldlenp, newp, newlen)
+	int af;
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+{
+	switch (af) {
+	case AF_INET:
+		return sysctl_fast_ipsec4(name, namelen, oldp, oldlenp, newp, newlen);
+#ifdef INET6
+	case AF_INET6:
+		return sysctl_fast_ipsec6(name, namelen, oldp, oldlenp, newp, newlen);
+#endif
+	}
 	return (0);
 }
 
