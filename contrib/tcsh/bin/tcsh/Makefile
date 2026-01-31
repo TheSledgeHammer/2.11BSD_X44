@@ -1,7 +1,6 @@
 # $2.11BSD_X44: Makefile,v 1.0 2026/01/20 19:16:45 martin Exp $
 
 # TODO: (in no set order)
-# - Compile manpages
 # - Compile contents of tcsh/nls subdir
 
 .include <bsd.own.mk>
@@ -36,6 +35,8 @@ GENHDRS=    ed.defns.h sh.err.h tc.const.h
 SRCS+=      ${SH_SRCS} ${TWO_SRCS} ${ED_SRCS} ${TC_SRCS}
 SRCS+=      ${GENHDRS} ${GENSRCS}
 
+MAN= 		tcsh.1
+
 .if defined(RESCUE)
 DFLAGS=     -D_PATH_TCSHELL='"/rescue/${PROG}"'
 .else
@@ -52,6 +53,11 @@ CPPFLAGS+= -I${TCSHINC}
 
 DPADD=	    ${LIBCURSES} ${LIBCRYPT} ${LIBCRYPTO} ${LIBTERMCAP}
 LDADD=	    -lcurses -lcrypt -lcrypto -ltermcap
+
+tcsh.1: ${TCSHDIST}/tcsh.man.in
+	${_MKTARGET_CREATE}
+	rm -f ${.TARGET}
+	${TOOL_CAT} ${TCSHDIST}/tcsh.man.in > ${.TARGET}
 
 tc.defs.c: ${TOOL_GETHOST} ${TCSHDIST}/host.defs
 	${_MKTARGET_CREATE}
