@@ -101,6 +101,12 @@ __KERNEL_RCSID(0, "$NetBSD: icmp6.c,v 1.106.2.1.4.1 2005/10/28 23:10:38 riz Exp 
 #include <netkey/key.h>
 #endif
 
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec6.h>
+#include <netipsec/key.h>
+#endif
+
 #include "faith.h"
 #if defined(NFAITH) && 0 < NFAITH
 #include <net/if_faith.h>
@@ -2363,7 +2369,7 @@ icmp6_redirect_input(m, off)
 		sdst.sin6_len = sizeof(struct sockaddr_in6);
 		bcopy(&reddst6, &sdst.sin6_addr, sizeof(struct in6_addr));
 		pfctlinput(PRC_REDIRECT_HOST, (struct sockaddr *)&sdst);
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 		key_sa_routechange((struct sockaddr *)&sdst);
 #endif
 	}

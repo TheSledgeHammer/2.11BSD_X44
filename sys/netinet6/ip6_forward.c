@@ -64,6 +64,12 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_forward.c,v 1.41 2004/01/16 05:12:08 itojun Exp 
 #include <netkey/key.h>
 #endif /* IPSEC */
 
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec6.h>
+#include <netipsec/key.h>
+#endif
+
 #ifdef PFIL_HOOKS
 #include <net/pfil.h>
 #endif
@@ -100,12 +106,12 @@ ip6_forward(m, srcrt)
 	int error, type = 0, code = 0;
 	struct mbuf *mcopy = NULL;
 	struct ifnet *origifp;	/* maybe unnecessary */
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	struct secpolicy *sp = NULL;
 	int ipsecrt = 0;
 #endif
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	/*
 	 * Check AH/ESP integrity.
 	 */
@@ -164,7 +170,7 @@ ip6_forward(m, srcrt)
 	 */
 	mcopy = m_copy(m, 0, imin(m->m_pkthdr.len, ICMPV6_PLD_MAXLEN));
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	/* get a security policy for this packet */
 	sp = ipsec6_getpolicybyaddr(m, IPSEC_DIR_OUTBOUND,
 	    IP_FORWARDING, &error);
@@ -379,7 +385,7 @@ ip6_forward(m, srcrt)
 		}
 	}
 	rt = ip6_forward_rt.ro_rt;
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
     skip_routing:;
 #endif /* IPSEC */
 
@@ -392,7 +398,7 @@ ip6_forward(m, srcrt)
 	 */
 	if (in6_addr2scopeid(m->m_pkthdr.rcvif, &ip6->ip6_src) !=
 	    in6_addr2scopeid(rt->rt_ifp, &ip6->ip6_src)
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	    && !ipsecrt
 #endif
 	    ) {
@@ -421,14 +427,14 @@ ip6_forward(m, srcrt)
 		in6_ifstat_inc(rt->rt_ifp, ifs6_in_toobig);
 		if (mcopy) {
 			u_long mtu;
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 			struct secpolicy *sp;
 			int ipsecerror;
 			size_t ipsechdrsiz;
 #endif
 
 			mtu = IN6_LINKMTU(rt->rt_ifp);
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 			/*
 			 * When we do IPsec tunnel ingress, we need to play
 			 * with the link value (decrement IPsec header size
@@ -471,7 +477,7 @@ ip6_forward(m, srcrt)
 	 * modified by a redirect.
 	 */
 	if (rt->rt_ifp == m->m_pkthdr.rcvif && !srcrt && ip6_sendredirects &&
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	    !ipsecrt &&
 #endif
 	    (rt->rt_flags & (RTF_DYNAMIC|RTF_MODIFIED)) == 0) {

@@ -56,17 +56,17 @@ fgetmbrune(fp)
     FILE *fp;
 {
 	struct wchar_io_data *wcio;
-    mbstate_t *st;
-    wchar_t wc;
-    size_t size;
-    int c, len;
-    char buf[MB_LEN_MAX];
+	mbstate_t *st;
+	wchar_t wc;
+	size_t size;
+	int c, len;
+	char buf[MB_LEN_MAX];
 
 	_SET_ORIENTATION(fp, 1);
 	wcio = WCIO_GET(fp);
 	if (wcio == 0) {
 		errno = ENOMEM;
-		return (WEOF);
+		return (WEOF );
 	}
 
 	/* if there're ungetwc'ed wchars, use them */
@@ -74,20 +74,20 @@ fgetmbrune(fp)
 		wc = wcio->wcio_ungetwc_buf[--wcio->wcio_ungetwc_inbuf];
 		return (wc);
 	}
-    st = &wcio->wcio_mbstate_in;
-    len = 0;
-    do {
-        c = __sgetc(fp);
-        if (c == EOF) {
-            return (WEOF);
-        }
-        buf[len++] = c;
-        size = mbrtowc(&wc, buf, len, st);
-        if (size == (size_t)-1) {
-            fp->_flags |= __SERR;
-            errno = EILSEQ;
-            return (WEOF);
-		} else if (size == (size_t)-2) {
+	st = &wcio->wcio_mbstate_in;
+	len = 0;
+	do {
+		c = __sgetc(fp);
+		if (c == EOF) {
+			return (WEOF );
+		}
+		buf[len++] = c;
+		size = mbrtowc(&wc, buf, len, st);
+		if (size == (size_t) - 1) {
+			fp->_flags |= __SERR;
+			errno = EILSEQ;
+			return (WEOF);
+		} else if (size == (size_t) - 2) {
 			continue;
 		} else if (size == 0) {
 			buf[len]++;
@@ -101,12 +101,12 @@ fgetmbrune(fp)
 		}
 	} while ((__srefill(fp) == 0) && (len < MB_LEN_MAX));
 
-    if (wc == L'\0') {
-        size = 1;
-    }
-    fp->_p = (unsigned char *)buf;
-    fp->_r = len;
-    return (wc);
+	if (wc == L'\0') {
+		size = 1;
+	}
+	fp->_p = (unsigned char *)buf;
+	fp->_r = len;
+	return (wc);
 }
 
 wint_t
@@ -129,18 +129,18 @@ fputmbrune(wc, fp)
 
 	wcio->wcio_ungetwc_inbuf = 0;
 	st = &wcio->wcio_mbstate_out;
-    size = wcrtomb(buf, wc, st);
-    if (size == (size_t)-1) {
+	size = wcrtomb(buf, wc, st);
+	if (size == (size_t) - 1) {
 		errno = EILSEQ;
 		return (WEOF);
 	}
-    for (i = 0; i < size; i++) {
-    	c = putc(buf[i], fp);
+	for (i = 0; i < size; i++) {
+		c = putc(buf[i], fp);
 		if (c == EOF) {
 			return (WEOF);
 		}
-    }
-    return ((wint_t)wc);
+	}
+	return ((wint_t) wc);
 }
 
 wint_t
@@ -155,7 +155,7 @@ fungetmbrune(wc, fp)
 	char buf[MB_LEN_MAX];
 
 	if (wc == WEOF) {
-		return (WEOF);
+		return (WEOF );
 	}
 
 	_SET_ORIENTATION(fp, 1);
@@ -168,7 +168,7 @@ fungetmbrune(wc, fp)
 	wcio->wcio_ungetwc_inbuf = 0;
 	st = &wcio->wcio_mbstate_out;
 	size = wcrtomb(buf, wc, st);
-	if (size == (size_t)-1) {
+	if (size == (size_t) - 1) {
 		return (WEOF);
 	}
 
@@ -180,90 +180,6 @@ fungetmbrune(wc, fp)
 	}
 	return (wc);
 }
-
-#ifdef notused
-
-int
-fgetmbrune(fp, ei, es)
-	FILE *fp;
-	_ENCODING_INFO  *ei;
-	_ENCODING_STATE *es;
-{
-	wchar_t wc;
-	const char buf[MB_LEN_MAX];
-	size_t len, nresult;
-	int ret;
-
-	len = _ENCODING_MB_CUR_MAX(ei);
-	do {
-		wc = (wchar_t)getc(fp);
-		if (wc == EOF) {
-			if (len) {
-				break;
-			}
-			return (EOF);
-		}
-		buf[len++] = wc;
-		ret = sgetmbrune(ei, &wc, &buf, len, es, &nresult);
-		if (ret != _INVALID_RUNE) {
-			return (0);
-		}
-	} while (nresult == buf && len < MB_LEN_MAX);
-
-	while (--len > 0) {
-		ungetc(buf[len], fp);
-	}
-	return (_INVALID_RUNE);
-}
-
-int
-fungetmbrune(fp, ei, es)
-	FILE *fp;
-	_ENCODING_INFO  *ei;
-	_ENCODING_STATE *es;
-{
-	wchar_t wc;
-	const char buf[MB_LEN_MAX];
-	size_t len, nresult;
-	int ret;
-
-	len = _ENCODING_MB_CUR_MAX(ei);
-	ret = sputmbrune(ei, &buf, len, &wc, es, &nresult);
-	if (ret) {
-		while (len-- > 0) {
-			wc = (wchar_t)ungetc(buf[len], fp);
-			if (wc == EOF) {
-				return (EOF);
-			}
-		}
-	}
-	return (0);
-}
-
-int
-fputmbrune(fp, ei, es)
-	FILE *fp;
-	_ENCODING_INFO  *ei;
-	_ENCODING_STATE *es;
-{
-	wchar_t wc;
-	const char buf[MB_LEN_MAX];
-	size_t len, nresult;
-	int i, ret;
-
-    len = _ENCODING_MB_CUR_MAX(ei);
-	ret = sputmbrune(ei, &buf, len, &wc, es, &nresult);
-	if (ret) {
-		  for (i = 0; i < len; ++i) {
-			  wc = (wchar_t)putc(buf[i], fp);
-			  if (wc == EOF) {
-				  return (EOF);
-			  }
-		  }
-	}
-	return (0);
-}
-#endif
 
 long
 fgetrune(fp)

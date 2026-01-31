@@ -45,7 +45,7 @@ netstart(void)
 }
 
 void
-netcrash()
+netcrash(void)
 {
 	panic("Network crashed");
 }

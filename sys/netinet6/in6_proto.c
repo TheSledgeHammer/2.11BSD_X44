@@ -114,6 +114,12 @@ __KERNEL_RCSID(0, "$NetBSD: in6_proto.c,v 1.56 2003/12/04 19:38:24 atatat Exp $"
 #include <netinet6/ipcomp.h>
 #endif /* IPSEC */
 
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec6.h>
+#include <netipsec/key.h>
+#endif
+
 #include "carp.h"
 #if NCARP > 0
 #include <netinet/ip_carp.h>
@@ -326,6 +332,56 @@ struct ip6protosw inet6sw[] = {
 				.pr_wassysctl	= 0,
 		},
 #endif /* IPSEC */
+#ifdef FAST_IPSEC
+        {
+				.pr_type		= SOCK_RAW,
+				.pr_domain		= &inet6domain,
+				.pr_protocol 	= IPPROTO_AH,
+				.pr_flags		= PR_ATOMIC|PR_ADDR,
+				.pr_input 		= ipsec6_common_input,
+				.pr_output		= 0,
+				.pr_ctlinput 	= ah6_ctlinput,
+				.pr_ctloutput	= 0,
+				.pr_usrreq		= 0,
+				.pr_init		= 0,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
+				.pr_wassysctl	= 0,
+		},
+        {
+				.pr_type		= SOCK_RAW,
+				.pr_domain		= &inet6domain,
+				.pr_protocol 	= IPPROTO_ESP,
+				.pr_flags		= PR_ATOMIC|PR_ADDR,
+				.pr_input 		= ipsec6_common_input,
+				.pr_output		= 0,
+				.pr_ctlinput 	= esp6_ctlinput,
+				.pr_ctloutput	= 0,
+				.pr_usrreq		= 0,
+				.pr_init		= 0,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
+				.pr_wassysctl	= 0,
+		},
+        {
+				.pr_type		= SOCK_RAW,
+				.pr_domain		= &inet6domain,
+				.pr_protocol 	= IPPROTO_IPCOMP,
+				.pr_flags		= PR_ATOMIC|PR_ADDR,
+				.pr_input 		= ipsec6_common_input,
+				.pr_output		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput	= 0,
+				.pr_usrreq		= 0,
+				.pr_init		= 0,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
+				.pr_wassysctl	= 0,
+		},
+#endif
 #ifdef INET
         {
 				.pr_type		= SOCK_RAW,

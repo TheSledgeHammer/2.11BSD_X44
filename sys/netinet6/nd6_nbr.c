@@ -69,6 +69,12 @@ __KERNEL_RCSID(0, "$NetBSD: nd6_nbr.c,v 1.53 2004/02/10 20:57:20 itojun Exp $");
 #include <netinet6/ipsec.h>
 #endif
 
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec6.h>
+#include <netipsec/key.h>
+#endif
+
 #include "carp.h"
 #if NCARP > 0
 #include <netinet/ip_carp.h>

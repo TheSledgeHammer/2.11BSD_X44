@@ -98,6 +98,12 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_output.c,v 1.82.2.1 2004/06/14 18:01:09 tron Exp
 #include <netkey/key.h>
 #endif /* IPSEC */
 
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec6.h>
+#include <netipsec/key.h>
+#endif
+
 #include "loop.h"
 
 #include <net/net_osdep.h>
@@ -162,7 +168,7 @@ ip6_output(m0, opt, ro, flags, im6o, so, ifpp)
 	struct route_in6 *ro_pmtu = NULL;
 	int hdrsplit = 0;
 	int needipsec = 0;
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	int needipsectun = 0;
 	struct secpolicy *sp = NULL;
 
@@ -192,7 +198,7 @@ ip6_output(m0, opt, ro, flags, im6o, so, ifpp)
 		MAKE_EXTHDR(opt->ip6po_dest2, &exthdrs.ip6e_dest2);
 	}
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	if ((flags & IPV6_FORWARDING) != 0) {
 		needipsec = 0;
 		goto skippolicycheck;
@@ -355,7 +361,7 @@ ip6_output(m0, opt, ro, flags, im6o, so, ifpp)
 		MAKE_CHAIN(exthdrs.ip6e_rthdr, mprev, nexthdrp,
 		    IPPROTO_ROUTING);
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 		if (!needipsec)
 			goto skip_ipsec2;
 
@@ -482,7 +488,7 @@ skip_ipsec2:;
 		dst->sin6_len = sizeof(struct sockaddr_in6);
 		dst->sin6_addr = ip6->ip6_dst;
 	}
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	if (needipsec && needipsectun) {
 		struct ipsec_output_state state;
 
@@ -874,7 +880,7 @@ skip_ipsec2:;
 			/* Record statistics for this interface address. */
 			ia6->ia_ifa.ifa_data.ifad_outbytes += m->m_pkthdr.len;
 		}
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 		/* clean ipsec history once it goes out of the node */
 		ipsec_delaux(m);
 #endif
@@ -1023,7 +1029,7 @@ sendorfree:
 				ia6->ia_ifa.ifa_data.ifad_outbytes +=
 				    m->m_pkthdr.len;
 			}
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 			/* clean ipsec history once it goes out of the node */
 			ipsec_delaux(m);
 #endif
@@ -1042,7 +1048,7 @@ done:
 		RTFREE(ro_pmtu->ro_rt);
 	}
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	if (sp != NULL)
 		key_freesp(sp);
 #endif /* IPSEC */
@@ -1467,7 +1473,7 @@ do { \
 				}
 				break;
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 			case IPV6_IPSEC_POLICY:
 			    {
 				caddr_t req = NULL;
@@ -1609,7 +1615,7 @@ do { \
 				error = ip6_getmoptions(optname, in6p->in6p_moptions, mp);
 				break;
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 			case IPV6_IPSEC_POLICY:
 			{
 				caddr_t req = NULL;

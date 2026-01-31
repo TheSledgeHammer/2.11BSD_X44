@@ -68,6 +68,12 @@ __KERNEL_RCSID(0, "$NetBSD: nd6.c,v 1.89.4.1 2005/04/07 15:25:59 he Exp $");
 #include <netinet6/ipsec.h>
 #endif
 
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec6.h>
+#include <netipsec/key.h>
+#endif
+
 #include "loop.h"
 extern struct ifnet loif[NLOOP];
 
@@ -1895,7 +1901,7 @@ nd6_output(ifp, origifp, m0, dst, rt0)
 
   sendpkt:
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	/* clean ipsec history once it goes out of the node */
 	ipsec_delaux(m);
 #endif

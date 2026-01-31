@@ -112,6 +112,12 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_input.c,v 1.73.2.1.4.3 2007/06/04 19:26:07 bouye
 #include <netinet6/ipsec.h>
 #endif
 
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec6.h>
+#include <netipsec/key.h>
+#endif
+
 #include <netinet6/ip6protosw.h>
 
 /* we need it for NLOOP. */
@@ -234,7 +240,7 @@ ip6_input(m)
 	struct ifnet *deliverifp = NULL;
 	int srcrt = 0;
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	/*
 	 * should the inner packet be considered authentic?
 	 * see comment in ah4_input().
@@ -312,7 +318,7 @@ ip6_input(m)
 	 * let ipfilter look at packet on the wire,
 	 * not the decapsulated packet.
 	 */
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 	if (!ipsec_getnhist(m))
 #else
 	if (1)
@@ -741,7 +747,7 @@ ip6_input(m)
 			goto bad;
 		}
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(FAST_IPSEC)
 		/*
 		 * enforce IPsec policy checking if we are seeing last header.
 		 * note that we do not visit this with protocols with pcb layer
