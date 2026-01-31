@@ -213,7 +213,11 @@ ip6_output(m0, opt, ro, flags, im6o, so, ifpp)
 			needipsec = 0;
 			goto skippolicycheck;
 		}
+#if defined(FAST_IPSEC)
+        sp = ipsec6_getpolicybysock(m, IPSEC_DIR_OUTBOUND, sotoinpcb_hdr(so), &error);
+#else
 		sp = ipsec6_getpolicybysock(m, IPSEC_DIR_OUTBOUND, so, &error);
+#endif
 	}
 
 	if (sp == NULL) {
@@ -880,7 +884,7 @@ skip_ipsec2:;
 			/* Record statistics for this interface address. */
 			ia6->ia_ifa.ifa_data.ifad_outbytes += m->m_pkthdr.len;
 		}
-#if defined(IPSEC) || defined(FAST_IPSEC)
+#if defined(IPSEC)
 		/* clean ipsec history once it goes out of the node */
 		ipsec_delaux(m);
 #endif
@@ -1029,7 +1033,7 @@ sendorfree:
 				ia6->ia_ifa.ifa_data.ifad_outbytes +=
 				    m->m_pkthdr.len;
 			}
-#if defined(IPSEC) || defined(FAST_IPSEC)
+#if defined(IPSEC)
 			/* clean ipsec history once it goes out of the node */
 			ipsec_delaux(m);
 #endif

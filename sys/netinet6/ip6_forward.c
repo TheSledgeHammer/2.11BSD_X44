@@ -196,7 +196,7 @@ ip6_forward(m, srcrt)
 		/*
 		 * This packet is just discarded.
 		 */
-		ipsec6stat.out_polvio++;
+		ipsec6stat.in_polvio++;
 		ip6stat.ip6s_cantforward++;
 		key_freesp(sp);
 		if (mcopy) {

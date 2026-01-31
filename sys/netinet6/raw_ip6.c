@@ -66,8 +66,6 @@ __KERNEL_RCSID(0, "$NetBSD: raw_ip6.c,v 1.63.2.2 2004/09/11 12:09:08 he Exp $");
 
 #include "opt_ipsec.h"
 
-#define FAST_IPSEC
-
 #include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
@@ -101,8 +99,6 @@ __KERNEL_RCSID(0, "$NetBSD: raw_ip6.c,v 1.63.2.2 2004/09/11 12:09:08 he Exp $");
 #endif /* IPSEC */
 
 #ifdef FAST_IPSEC
-#undef IPSEC
-#define IPSEC FAST_IPSEC
 #include <netipsec/ipsec.h>
 #include <netipsec/ipsec6.h>
 #include <netipsec/key.h>

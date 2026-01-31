@@ -1901,7 +1901,7 @@ nd6_output(ifp, origifp, m0, dst, rt0)
 
   sendpkt:
 
-#if defined(IPSEC) || defined(FAST_IPSEC)
+#if defined(IPSEC)
 	/* clean ipsec history once it goes out of the node */
 	ipsec_delaux(m);
 #endif

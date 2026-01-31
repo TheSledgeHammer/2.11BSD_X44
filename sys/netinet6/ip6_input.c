@@ -318,8 +318,10 @@ ip6_input(m)
 	 * let ipfilter look at packet on the wire,
 	 * not the decapsulated packet.
 	 */
-#if defined(IPSEC) || defined(FAST_IPSEC)
+#if defined(IPSEC)
 	if (!ipsec_getnhist(m))
+#elif defined(FAST_IPSEC)
+	if (!ipsec_indone(m))
 #else
 	if (1)
 #endif
@@ -755,7 +757,7 @@ ip6_input(m)
 		 */
 		if ((inet6sw[ip6_protox[nxt]].pr_flags & PR_LASTHDR) != 0 &&
 		    ipsec6_in_reject(m, NULL)) {
-			ipsec6stat.in_polvio++;
+		    ipsec6stat.in_polvio++;
 			goto bad;
 		}
 #endif
