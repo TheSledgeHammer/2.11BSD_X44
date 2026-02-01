@@ -58,11 +58,6 @@ __KERNEL_RCSID(0, "$NetBSD: ipsec_output.c,v 1.12.2.1.4.1 2007/12/01 17:32:30 bo
 #include <netinet/ip_var.h>
 #include <netinet/in_var.h>
 #include <netinet/ip_ecn.h>
-#ifdef INET6
-#  ifdef __FreeBSD__
-#  include <netinet6/ip6_ecn.h>
-#  endif
-#endif
 
 #include <netinet/ip6.h>
 #ifdef INET6
@@ -179,11 +174,6 @@ ipsec_process_done(struct mbuf *m, struct ipsecrequest *isr)
 	struct ip *ip;
 	case AF_INET:
 		ip = mtod(m, struct ip *);
-#ifdef __FreeBSD__
-		/* FreeBSD ip_output() expects ip_len, ip_off in host endian */
-		ip->ip_len = ntohs(ip->ip_len);
-		ip->ip_off = ntohs(ip->ip_off);
-#endif /* __FreeBSD_ */
 		return ip_output(m, NULL, NULL, IP_RAWOUTPUT,
 		    (struct ip_moptions *)NULL, (struct socket *)NULL);
 
@@ -389,10 +379,6 @@ ipsec4_process_packet(
 				break;
 			default:		/* propagate to outer header */
 				setdf = ip->ip_off;
-#ifndef __FreeBSD__
-		/* On FreeBSD, ip_off and ip_len assumed in host endian. */
-				setdf = ntohs(setdf);
-#endif
 				setdf = htons(setdf & IP_DF);
 				break;
 			}

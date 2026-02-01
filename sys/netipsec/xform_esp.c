@@ -42,9 +42,6 @@
 __KERNEL_RCSID(0, "$NetBSD: xform_esp.c,v 1.5.18.1 2006/03/30 15:31:10 riz Exp $");
 
 #include "opt_inet.h"
-#ifdef __FreeBSD__
-#include "opt_inet6.h"
-#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -73,9 +70,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_esp.c,v 1.5.18.1 2006/03/30 15:31:10 riz Exp $
 #ifdef INET6
 #include <netinet6/ip6_var.h>
 #include <netipsec/ipsec6.h>
-#  ifdef __FreeBSD__
-#  include <netinet6/ip6_ecn.h>
-#  endif
 #endif
 
 #include <netipsec/key.h>
@@ -88,14 +82,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_esp.c,v 1.5.18.1 2006/03/30 15:31:10 riz Exp $
 
 int	esp_enable = 1;
 struct	espstat espstat;
-
-#ifdef __FreeBSD__
-SYSCTL_DECL(_net_inet_esp);
-SYSCTL_INT(_net_inet_esp, OID_AUTO,
-	esp_enable,	CTLFLAG_RW,	&esp_enable,	0, "");
-SYSCTL_STRUCT(_net_inet_esp, IPSECCTL_STATS,
-	stats,		CTLFLAG_RD,	&espstat,	espstat, "");
-#endif /* __FreeBSD__ */
 
 static	int esp_max_ivlen;		/* max iv length over all algorithms */
 
@@ -989,7 +975,3 @@ esp_attach(void)
 	xform_register(&esp_xformsw);
 #undef MAXIV
 }
-#ifdef __FreeBSD__
-SYSINIT(esp_xform_init, SI_SUB_DRIVERS, SI_ORDER_FIRST, esp_attach, NULL)
-#else
-#endif

@@ -1627,7 +1627,7 @@ ifconf(cmd, data)
 	return (error);
 }
 
-#if defined(INET) || defined(INET6)
+#if defined(INET) || defined(INET6) || defined(NS)
 static int
 sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq)
 	int *name;

@@ -73,11 +73,7 @@ struct keycb {
 extern struct pfkeystat pfkeystat;
 
 extern int key_output(struct mbuf *, ...);
-#ifndef __NetBSD__
-extern int key_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *);
-#else
 extern int key_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
-#endif
 
 extern int key_sendup(struct socket *, struct sadb_msg *, u_int, int);
 extern int key_sendup_mbuf(struct socket *, struct mbuf *, int);

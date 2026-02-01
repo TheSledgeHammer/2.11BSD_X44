@@ -560,8 +560,7 @@ asciicode(void)
 }
 
 /*
- * Workaround for csh progprinf.
- * Not liking warnx.
+ * Workaround for csh/sh not liking warnx.
  */
 static void
 pf_warnx(const char *fmt, ...)
@@ -574,7 +573,7 @@ pf_warnx(const char *fmt, ...)
 		(void)doprnt(stderr, fmt, ap);
 	}
 #else
-    vwarnx(fmt, ap);
+	vwarnx(fmt, ap);
 #endif
 	va_end(ap);
 }

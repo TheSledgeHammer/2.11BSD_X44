@@ -37,9 +37,6 @@ __KERNEL_RCSID(0, "$NetBSD: key_debug.c,v 1.3 2003/10/06 22:05:15 tls Exp $");
 #endif
 
 #include "opt_inet.h"
-#ifdef __FreeBSD__
-#include "opt_inet6.h"
-#endif
 #include "opt_ipsec.h"
 
 #include <sys/types.h>

@@ -296,10 +296,6 @@ ipsec4_common_input_cb(struct mbuf *m, struct secasvar *sav,
 
 		ip = mtod(m, struct ip *);
 		ip->ip_len = htons(m->m_pkthdr.len);
-#ifdef __FreeBSD__
-		/* On FreeBSD, ip_off and ip_len assumed in host endian. */
-		ip->ip_off = htons(ip->ip_off);
-#endif
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, ip->ip_hl << 2);
 	} else {
@@ -481,89 +477,6 @@ ipsec6_common_input(struct mbuf **mp, int *offp, int proto)
 	(void) ipsec_common_input(*mp, *offp, protoff, AF_INET6, proto);
 	return IPPROTO_DONE;
 }
-
-/* 
- * NB: ipsec_netbsd.c has a duplicate definition of esp6_ctlinput(),
- * with slightly ore recent multicast tests. These should be merged.
- * For now, ifdef accordingly.
- */
-#ifdef __FreeBSD__
-void
-esp6_ctlinput(int cmd, struct sockaddr *sa, void *d)
-{
-	if (sa->sa_family != AF_INET6 ||
-	    sa->sa_len != sizeof(struct sockaddr_in6))
-		return;
-	if ((unsigned)cmd >= PRC_NCMDS)
-		return;
-
-	/* if the parameter is from icmp6, decode it. */
-	if (d !=  NULL) {
-		struct ip6ctlparam *ip6cp = (struct ip6ctlparam *)d;
-		struct mbuf *m = ip6cp->ip6c_m;
-		int off = ip6cp->ip6c_off;
-
-		struct ip6ctlparam ip6cp1;
-
-		/*
-		 * Notify the error to all possible sockets via pfctlinput2.
-		 * Since the upper layer information (such as protocol type,
-		 * source and destination ports) is embedded in the encrypted
-		 * data and might have been cut, we can't directly call
-		 * an upper layer ctlinput function. However, the pcbnotify
-		 * function will consider source and destination addresses
-		 * as well as the flow info value, and may be able to find
-		 * some PCB that should be notified.
-		 * Although pfctlinput2 will call esp6_ctlinput(), there is
-		 * no possibility of an infinite loop of function calls,
-		 * because we don't pass the inner IPv6 header.
-		 */
-		bzero(&ip6cp1, sizeof(ip6cp1));
-		ip6cp1.ip6c_src = ip6cp->ip6c_src;
-		pfctlinput2(cmd, sa, (void *)&ip6cp1);
-
-		/*
-		 * Then go to special cases that need ESP header information.
-		 * XXX: We assume that when ip6 is non NULL,
-		 * M and OFF are valid.
-		 */
-
-		if (cmd == PRC_MSGSIZE) {
-			struct secasvar *sav;
-			u_int32_t spi;
-			int valid;
-
-			/* check header length before using m_copydata */
-			if (m->m_pkthdr.len < off + sizeof (struct esp))
-				return;
-			m_copydata(m, off + offsetof(struct esp, esp_spi),
-				sizeof(u_int32_t), (caddr_t) &spi);
-			/*
-			 * Check to see if we have a valid SA corresponding to
-			 * the address in the ICMP message payload.
-			 */
-			sav = KEY_ALLOCSA((union sockaddr_union *)sa,
-					IPPROTO_ESP, spi);
-			valid = (sav != NULL);
-			if (sav)
-				KEY_FREESAV(&sav);
-
-			/* XXX Further validation? */
-
-			/*
-			 * Depending on whether the SA is "valid" and
-			 * routing table size (mtudisc_{hi,lo}wat), we will:
-			 * - recalcurate the new MTU and create the
-			 *   corresponding routing entry, or
-			 * - ignore the MTU change notification.
-			 */
-			icmp6_mtudisc_update(ip6cp, valid);
-		}
-	} else {
-		/* we normally notify any pcb here */
-	}
-}
-#endif /* __FreeBSD__ */
 
 extern	struct ip6protosw inet6sw[];
 extern	u_char ip6_protox[];

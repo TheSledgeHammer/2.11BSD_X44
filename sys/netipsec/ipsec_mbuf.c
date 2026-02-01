@@ -33,11 +33,6 @@ __KERNEL_RCSID(0, "$NetBSD: ipsec_mbuf.c,v 1.4.2.1 2004/05/10 15:02:06 tron Exp 
 /*
  * IPsec-specific mbuf routines.
  */
-
-#ifdef __FreeBSD__
-#include "opt_param.h"
-#endif
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>

@@ -34,9 +34,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ipcomp.c,v 1.4 2003/10/06 22:05:15 tls Exp $")
 
 /* IP payload compression protocol (IPComp), see RFC 2393 */
 #include "opt_inet.h"
-#ifdef __FreeBSD__
-#include "opt_inet6.h"
-#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -74,14 +71,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ipcomp.c,v 1.4 2003/10/06 22:05:15 tls Exp $")
 
 int	ipcomp_enable = 0;
 struct	ipcompstat ipcompstat;
-
-#ifdef __FreeBSD__
-SYSCTL_DECL(_net_inet_ipcomp);
-SYSCTL_INT(_net_inet_ipcomp, OID_AUTO,
-	ipcomp_enable,	CTLFLAG_RW,	&ipcomp_enable,	0, "");
-SYSCTL_STRUCT(_net_inet_ipcomp, IPSECCTL_STATS,
-	stats,		CTLFLAG_RD,	&ipcompstat,	ipcompstat, "");
-#endif /* __FreeBSD__ */
 
 static int ipcomp_input_cb(struct cryptop *crp);
 static int ipcomp_output_cb(struct cryptop *crp);
@@ -600,9 +589,9 @@ bad:
 }
 
 static struct xformsw ipcomp_xformsw = {
-	XF_IPCOMP,		XFT_COMP,		"IPcomp",
-	ipcomp_init,		ipcomp_zeroize,		ipcomp_input,
-	ipcomp_output
+		XF_IPCOMP,		XFT_COMP,		"IPcomp",
+		ipcomp_init,		ipcomp_zeroize,		ipcomp_input,
+		ipcomp_output
 };
 
 INITFN void
@@ -610,7 +599,3 @@ ipcomp_attach(void)
 {
 	xform_register(&ipcomp_xformsw);
 }
-
-#ifdef __FreeBSD__
-SYSINIT(ipcomp_xform_init, SI_SUB_DRIVERS, SI_ORDER_FIRST, ipcomp_attach, NULL)
-#endif /* __FreeBSD__ */

@@ -616,7 +616,7 @@ ipsec_checkpolicy(m, dir, flag, error, inp)
 	*error = 0;
 
 	/* XXX KAME IPv6 calls us with non-null inp but bogus inp_socket? */
-	if (inp == NULL || inp->inph_socket == NULL) {
+	if (inp == NULL || PCB_SOCKET(inp) == NULL) {
 		sp = ipsec_getpolicybyaddr(m, dir, flag, error);
 	} else {
         

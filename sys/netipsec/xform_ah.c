@@ -42,9 +42,6 @@
 __KERNEL_RCSID(0, "$NetBSD: xform_ah.c,v 1.6.2.1.4.1 2007/12/01 17:32:28 bouyer Exp $");
 
 #include "opt_inet.h"
-#ifdef __FreeBSD__
-#include "opt_inet6.h"
-#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -71,9 +68,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ah.c,v 1.6.2.1.4.1 2007/12/01 17:32:28 bouyer 
 #ifdef INET6
 #include <netinet6/ip6_var.h>
 #include <netipsec/ipsec6.h>
-#  ifdef __FreeBSD__
-#  include <netinet6/ip6_ecn.h>
-#  endif
 #endif
 
 #include <netipsec/key.h>
@@ -100,17 +94,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ah.c,v 1.6.2.1.4.1 2007/12/01 17:32:28 bouyer 
 int	ah_enable = 1;			/* control flow of packets with AH */
 int	ah_cleartos = 1;		/* clear ip_tos when doing AH calc */
 struct	ahstat ahstat;
-
-#ifdef __FreeBSD__
-SYSCTL_DECL(_net_inet_ah);
-SYSCTL_INT(_net_inet_ah, OID_AUTO,
-	ah_enable,	CTLFLAG_RW,	&ah_enable,	0, "");
-SYSCTL_INT(_net_inet_ah, OID_AUTO,
-	ah_cleartos,	CTLFLAG_RW,	&ah_cleartos,	0, "");
-SYSCTL_STRUCT(_net_inet_ah, IPSECCTL_STATS,
-	stats,		CTLFLAG_RD,	&ahstat,	ahstat, "");
-
-#endif /* __FreeBSD__ */
 
 static unsigned char ipseczeroes[256];	/* larger than an ip6 extension hdr */
 
@@ -305,19 +288,10 @@ ah_massage_headers(struct mbuf **m0, int proto, int skip, int alg, int out)
 		 * (presumably ip_input() deducted it before we got here?)
 		 * whereas on NetBSD, we should not.
 		 */
-#ifdef __FreeBSD__
-  #define TOHOST(x) (x)
-#else
   #define TOHOST(x) (ntohs(x))
-#endif
 		if (!out) {
 			u_int16_t inlen = TOHOST(ip->ip_len);
-
-#ifdef __FreeBSD__
-			ip->ip_len = htons(inlen + skip);
-#else  /*!__FreeBSD__ */
 			ip->ip_len = htons(inlen);
-#endif /*!__FreeBSD__ */
 			DPRINTF(("ip len: skip %d, "
 				 "in %d host %d: new: raw %d host %d\n",
 				 skip,
@@ -1273,7 +1247,3 @@ ah_attach(void)
 {
 	xform_register(&ah_xformsw);
 }
-
-#ifdef __FreeBSD__
-SYSINIT(ah_xform_init, SI_SUB_PROTO_DOMAIN, SI_ORDER_MIDDLE, ah_attach, NULL);
-#endif

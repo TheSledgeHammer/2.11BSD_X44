@@ -45,11 +45,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ipip.c,v 1.9.16.1 2007/12/01 17:32:29 bouyer E
  * IP-inside-IP processing
  */
 #include "opt_inet.h"
-#ifdef __FreeBSD__
-#include "opt_inet6.h"
-#include "opt_random_ip_id.h"	
-#endif /* __FreeBSD__ */
-
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -70,9 +65,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ipip.c,v 1.9.16.1 2007/12/01 17:32:29 bouyer E
 #include <netinet/ip_ecn.h>
 #include <netinet/ip_var.h>
 #include <netinet/ip_encap.h>
-#ifdef __FreeBSD__
-#include <netinet/ipprotosw.h>
-#endif
 
 #include <netipsec/ipsec.h>
 #include <netipsec/xform.h>
@@ -86,9 +78,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ipip.c,v 1.9.16.1 2007/12/01 17:32:29 bouyer E
 #ifdef INET6
 #include <netinet/ip6.h>
 #include <netipsec/ipsec6.h>
-#  ifdef __FreeBSD__
-#  include <netinet6/ip6_ecn.h>
-#  endif
 #include <netinet6/in6_var.h>
 #include <netinet6/ip6protosw.h>
 #endif
@@ -99,11 +88,7 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ipip.c,v 1.9.16.1 2007/12/01 17:32:29 bouyer E
 
 #include <machine/stdarg.h>
 
-#ifdef __FreeBSD__
-typedef void	pr_in_input_t (struct mbuf *, int, int); /* XXX FIX THIS */
-#else
 typedef void	pr_in_input_t (struct mbuf *m, ...);
-#endif
 
 /*
  * We can control the acceptance of IP4 packets by altering the sysctl
@@ -112,19 +97,6 @@ typedef void	pr_in_input_t (struct mbuf *m, ...);
 int	ipip_allow = 0;
 struct	ipipstat ipipstat;
 
-#ifdef SYSCTL_DECL
-SYSCTL_DECL(_net_inet_ipip);
-
-SYSCTL_INT(_net_inet_ipip, OID_AUTO,
-	ipip_allow,	CTLFLAG_RW,	&ipip_allow,	0, "");
-SYSCTL_STRUCT(_net_inet_ipip, IPSECCTL_STATS,
-	stats,		CTLFLAG_RD,	&ipipstat,	ipipstat, "");
-
-#endif
-
-#ifdef __FreeBSD__
-static
-#endif
 void ipe4_attach(void);
 
 
@@ -674,23 +646,22 @@ ipe4_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 }
 
 static struct xformsw ipe4_xformsw = {
-	XF_IP4,		0,		"IPv4 Simple Encapsulation",
-	ipe4_init,	ipe4_zeroize,	ipe4_input,	ipip_output,
+		XF_IP4,		0,		"IPv4 Simple Encapsulation",
+		ipe4_init,	ipe4_zeroize,	ipe4_input,	ipip_output,
 };
 
 extern struct domain inetdomain;
 static struct ipprotosw ipe4_protosw[] = {
-{ SOCK_RAW,	&inetdomain,	IPPROTO_IPV4,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
-  ip4_input,	0, 		0,		rip_ctloutput,
-  rip_usrreq,
-  0,		0,		0,		0,
-},
+		{
+				SOCK_RAW,	&inetdomain,	IPPROTO_IPV4,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+				ip4_input,	0, 		0,		rip_ctloutput, rip_usrreq,
+				0,		0,		0,		0,
+		},
 #ifdef INET6
-{ SOCK_RAW,	&inetdomain,	IPPROTO_IPV6,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
-  ip4_input,	0,	 	0,		rip_ctloutput,
-  rip_usrreq,
-  0,		0,		0,		0,
-},
+		{ SOCK_RAW,	&inetdomain,	IPPROTO_IPV6,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+				ip4_input,	0,	 	0,		rip_ctloutput, rip_usrreq,
+				0,		0,		0,		0,
+		},
 #endif
 };
 
@@ -722,9 +693,5 @@ ipe4_attach(void)
 		ipe4_encapcheck, (struct protosw*) &ipe4_protosw[1], NULL);
 #endif
 }
-
-#ifdef SYSINIT
-SYSINIT(ipe4_xform_init, SI_SUB_PROTO_DOMAIN, SI_ORDER_MIDDLE, ipe4_attach, NULL);
-#endif
 
 #endif	/* FAST_IPSEC */

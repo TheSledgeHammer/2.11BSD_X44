@@ -39,13 +39,8 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.11.2.7 2004/06/17 09:26:57 tron Exp $");
  */
 
 #include "opt_inet.h"
-#ifdef __FreeBSD__
-#include "opt_inet6.h"
-#endif
 #include "opt_ipsec.h"
-#ifdef __NetBSD__
 #include "opt_gateway.h"
-#endif
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -104,7 +99,6 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.11.2.7 2004/06/17 09:26:57 tron Exp $");
 #include <netipsec/ipsec_osdep.h>
 
 #include <machine/stdarg.h>
-
 
 #include <net/net_osdep.h>
 
@@ -210,59 +204,6 @@ static const int maxsize[] = {
 static int ipsec_esp_keymin = 256;
 static int ipsec_esp_auth = 0;
 static int ipsec_ah_keymin = 128;
-
-#ifdef SYSCTL_DECL
-SYSCTL_DECL(_net_key);
-#endif
-
-#ifdef SYSCTL_INT
-SYSCTL_INT(_net_key, KEYCTL_DEBUG_LEVEL,	debug,	CTLFLAG_RW, \
-	&key_debug_level,	0,	"");
-
-/* max count of trial for the decision of spi value */
-SYSCTL_INT(_net_key, KEYCTL_SPI_TRY,		spi_trycnt,	CTLFLAG_RW, \
-	&key_spi_trycnt,	0,	"");
-
-/* minimum spi value to allocate automatically. */
-SYSCTL_INT(_net_key, KEYCTL_SPI_MIN_VALUE,	spi_minval,	CTLFLAG_RW, \
-	&key_spi_minval,	0,	"");
-
-/* maximun spi value to allocate automatically. */
-SYSCTL_INT(_net_key, KEYCTL_SPI_MAX_VALUE,	spi_maxval,	CTLFLAG_RW, \
-	&key_spi_maxval,	0,	"");
-
-/* interval to initialize randseed */
-SYSCTL_INT(_net_key, KEYCTL_RANDOM_INT,	int_random,	CTLFLAG_RW, \
-	&key_int_random,	0,	"");
-
-/* lifetime for larval SA */
-SYSCTL_INT(_net_key, KEYCTL_LARVAL_LIFETIME,	larval_lifetime, CTLFLAG_RW, \
-	&key_larval_lifetime,	0,	"");
-
-/* counter for blocking to send SADB_ACQUIRE to IKEd */
-SYSCTL_INT(_net_key, KEYCTL_BLOCKACQ_COUNT,	blockacq_count,	CTLFLAG_RW, \
-	&key_blockacq_count,	0,	"");
-
-/* lifetime for blocking to send SADB_ACQUIRE to IKEd */
-SYSCTL_INT(_net_key, KEYCTL_BLOCKACQ_LIFETIME,	blockacq_lifetime, CTLFLAG_RW, \
-	&key_blockacq_lifetime,	0,	"");
-
-/* ESP auth */
-SYSCTL_INT(_net_key, KEYCTL_ESP_AUTH,	esp_auth, CTLFLAG_RW, \
-	&ipsec_esp_auth,	0,	"");
-
-/* minimum ESP key length */
-SYSCTL_INT(_net_key, KEYCTL_ESP_KEYMIN,	esp_keymin, CTLFLAG_RW, \
-	&ipsec_esp_keymin,	0,	"");
-
-/* minimum AH key length */
-SYSCTL_INT(_net_key, KEYCTL_AH_KEYMIN,	ah_keymin, CTLFLAG_RW, \
-	&ipsec_ah_keymin,	0,	"");
-
-/* perfered old SA rather than new SA */
-SYSCTL_INT(_net_key, KEYCTL_PREFERED_OLDSA,	prefered_oldsa, CTLFLAG_RW,\
-	&key_prefered_oldsa,	0,	"");
-#endif /* SYSCTL_INT */
 
 #ifndef LIST_FOREACH
 #define LIST_FOREACH(elm, head, field)                                     \
@@ -7697,15 +7638,23 @@ key_setspddump(int *errorp, pid_t pid)
 	*errorp = 0;
 	return (m);
 }
+
 #ifdef notyet
 static int
-sysctl_net_key_dumpsa(SYSCTLFN_ARGS)
+sysctl_net_key_dumpsa(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
 	struct mbuf *m, *n;
 	int err2 = 0;
 	char *p, *ep;
 	size_t len;
 	int s, error;
+	pid_t pid = u.u_procp.p_pid;
 
 	if (newp)
 		return (EPERM);
@@ -7713,7 +7662,7 @@ sysctl_net_key_dumpsa(SYSCTLFN_ARGS)
 		return (EINVAL);
 
 	s = splsoftnet();
-	m = key_setdump(name[0], &error, l->l_proc->p_pid);
+	m = key_setdump(name[0], &error, pid);
 	splx(s);
 	if (!m)
 		return (error);
@@ -7745,13 +7694,19 @@ sysctl_net_key_dumpsa(SYSCTLFN_ARGS)
 }
 
 static int
-sysctl_net_key_dumpsp(SYSCTLFN_ARGS)
+sysctl_net_key_dumpsp(namelen, oldp, oldlenp, newp, newlen)
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
 	struct mbuf *m, *n;
 	int err2 = 0;
 	char *p, *ep;
 	size_t len;
 	int s, error;
+	pid_t pid = u.u_procp.p_pid;
 
 	if (newp)
 		return (EPERM);
@@ -7759,7 +7714,7 @@ sysctl_net_key_dumpsp(SYSCTLFN_ARGS)
 		return (EINVAL);
 
 	s = splsoftnet();
-	m = key_setspddump(&error, l->l_proc->p_pid);
+	m = key_setspddump(&error, pid);
 	splx(s);
 	if (!m)
 		return (error);
@@ -7811,7 +7766,6 @@ sysctl_net_key_dumpsp(SYSCTLFN_ARGS)
 # define FAST_IPSEC_PFKEY_NAME "key"
 #endif
 
-/* same as key_sysctl from netkey/key.c ? */
 int
 keyv2_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
@@ -7821,15 +7775,63 @@ keyv2_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	if (name[0] >= KEYCTL_MAXID) {
+	if (name[0] >= KEYCTL_MAXID)
 		return EOPNOTSUPP;
-	}
 	switch (name[0]) {
+	case KEYCTL_DEBUG_LEVEL:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_debug_level);
+
+	case KEYCTL_SPI_TRY:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_spi_trycnt);
+
+	case KEYCTL_SPI_MIN_VALUE:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_spi_minval);
+
+	case KEYCTL_SPI_MAX_VALUE:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_spi_maxval);
+
+	case KEYCTL_RANDOM_INT:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_int_random);
+
+	case KEYCTL_LARVAL_LIFETIME:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_larval_lifetime);
+
+	case KEYCTL_BLOCKACQ_COUNT:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_blockacq_count);
+
+	case KEYCTL_BLOCKACQ_LIFETIME:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_blockacq_lifetime);
+
+	case KEYCTL_ESP_KEYMIN:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &ipsec_esp_keymin);
+
+	case KEYCTL_ESP_AUTH:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &ipsec_esp_auth);
+
+	case KEYCTL_AH_KEYMIN:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &ipsec_ah_keymin);
+
+	case KEYCTL_DUMPSA:
+	        return sysctl_net_key_dumpsa(name, namelen, oldp, oldlenp, newp, newlen);
+
+	case KEYCTL_DUMPSP:
+	        return sysctl_net_key_dumpsp(namelen, oldp, oldlenp, newp, newlen);
 	default:
 		return EOPNOTSUPP;
 	}
+	/* NOTREACHED */
 }
-
 
 
 
