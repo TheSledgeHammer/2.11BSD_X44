@@ -609,16 +609,17 @@ ipsec_checkpolicy(m, dir, flag, error, inp)
 	struct mbuf *m;
 	u_int dir, flag;
 	int *error;
-	struct inpcb *inp;
+	PCB_T *inp;
 {
 	struct secpolicy *sp;
 
 	*error = 0;
 
 	/* XXX KAME IPv6 calls us with non-null inp but bogus inp_socket? */
-	if (inp == NULL || inp->inp_socket == NULL) {
+	if (inp == NULL || inp->inph_socket == NULL) {
 		sp = ipsec_getpolicybyaddr(m, dir, flag, error);
 	} else {
+        
 		sp = ipsec_getpolicybysock(m, dir, inp, error);
 	}
 	if (sp == NULL) {
@@ -672,7 +673,7 @@ ipsec6_checkpolicy(m, dir, flag, error, inp)
 	struct mbuf *m;
 	u_int dir, flag;
 	int *error;
-	struct inpcb *inp;
+	struct in6pcb *inp;
 {
 	return (ipsec_checkpolicy(m, dir, flag, error, IN6PCB_TO_PCB(inp)));
 }
@@ -2059,13 +2060,12 @@ ipsec_address(union sockaddr_union *sa)
 	switch (sa->sa.sa_family) {
 #if INET
 	case AF_INET:
-		buf = ip_print(&sa->sin.sin_addr);
+		buf = (char *)ip_sprintf(&sa->sin.sin_addr);
 		return (buf);
 #endif /* INET */
-
 #if INET6
 	case AF_INET6:
-		buf = ip6_print(&sa->sin6.sin6_addr);
+		buf = (char *)ip6_sprintf(&sa->sin6.sin6_addr);
 		return (buf);
 #endif /* INET6 */
 

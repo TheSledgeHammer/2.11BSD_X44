@@ -67,7 +67,7 @@ extern struct secpolicy *ipsec6_getpolicybysock(struct mbuf *, u_int, struct inp
 #define	out_polvio		ips_out_polvio
 #define	key_freesp(_x)		KEY_FREESP(&_x)
 
-extern struct secpolicy *ipsec6_checkpolicy(struct mbuf *, u_int, u_int, int *, struct inpcb *);
+extern struct secpolicy *ipsec6_checkpolicy(struct mbuf *, u_int, u_int, int *, struct in6pcb *);
 
 extern int ipsec6_delete_pcbpolicy(struct in6pcb *);
 extern int ipsec6_set_policy(struct in6pcb *inp, int optname, caddr_t request, size_t len, int priv);

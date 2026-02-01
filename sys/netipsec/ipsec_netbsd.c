@@ -485,7 +485,7 @@ sysctl_fast_ipsec4(name, namelen, oldp, oldlenp, newp, newlen)
 			}
 			ipsec_invalpcbcacheall();
 		}
-		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_def_policy->policy);
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip4_def_policy.policy);
 
 	case IPSECCTL_DEF_ESP_TRANSLEV:
 		if (newp != NULL)
@@ -578,7 +578,7 @@ sysctl_fast_ipsec6(name, namelen, oldp, oldlenp, newp, newlen)
 			}
 			ipsec_invalpcbcacheall();
 		}
-		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_def_policy->policy);
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_def_policy.policy);
 
 	case IPSECCTL_DEF_ESP_TRANSLEV:
 		if (newp != NULL)
