@@ -57,7 +57,7 @@ static char sccsid[] = "@(#)printf.c	8.2 (Berkeley) 3/22/95";
 #include <string.h>
 #include <unistd.h>
 
-#ifdef BUILTIN
+#ifdef BUILTIN		 /* csh builtin */
 #define main progprintf
 #endif /* BUILTIN */
 
