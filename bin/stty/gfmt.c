@@ -63,11 +63,11 @@ gprint(struct termios *tp)
 {
 	const struct cchar *cp;
 
-	(void)printf("gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:",
+	(void)printf("gfmt1:cflag=%lx:iflag=%lx:lflag=%lx:oflag=%lx:",
 	    tp->c_cflag, tp->c_iflag, tp->c_lflag, tp->c_oflag);
 	for (cp = cchars1; cp->name; ++cp)
 		(void)printf("%s=%x:", cp->name, tp->c_cc[cp->sub]);
-	(void)printf("ispeed=%d:ospeed=%d\n", cfgetispeed(tp), cfgetospeed(tp));
+	(void)printf("ispeed=%ld:ospeed=%ld\n", cfgetispeed(tp), cfgetospeed(tp));
 }
 
 void
