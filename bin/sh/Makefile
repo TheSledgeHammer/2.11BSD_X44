@@ -83,4 +83,6 @@ COMPATOBJDIR!=	cd ${NETBSDSRCDIR}/tools/compat && ${PRINTOBJDIR}
 NBCOMPATLIB=	-L${COMPATOBJDIR} -lnbcompat
 .endif
 
+COPTS.printf.c = -Wno-format-nonliteral
+
 .include <bsd.prog.mk>
