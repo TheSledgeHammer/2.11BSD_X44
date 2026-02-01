@@ -569,7 +569,7 @@ pf_warnx(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-#if !defined(SHELL) && !defined(BUILTIN)
+#if !defined(SHELL)
 	if (fmt != NULL) {
 		(void)doprnt(stderr, fmt, ap);
 	}
