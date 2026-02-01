@@ -242,7 +242,7 @@ in_fmtaddr(addr)
 */
 
 int
-ip_print(addr)
+ip_sprintf(addr)
 	const struct in_addr *addr;
 {
 	char ipbuf[INET_ADDRSTRLEN];
@@ -255,7 +255,7 @@ int
 in_fmtaddr(addr)
 	const struct in_addr *addr;
 {
-	return (ip_print(addr));
+	return (ip_sprintf(addr));
 }
 
 /*

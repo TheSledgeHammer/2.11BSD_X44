@@ -300,7 +300,7 @@ struct	in_multi *in_addmulti(struct in_addr *, struct ifnet *);
 void	in_delmulti(struct in_multi *);
 void	in_ifscrub(struct ifnet *, struct in_ifaddr *);
 void	in_setmaxmtu(void);
-int		ip_print(const struct in_addr *);
+int		ip_sprintf(const struct in_addr *);
 int		in_fmtaddr(const struct in_addr *);
 int		in_control(struct socket *, u_long, caddr_t, struct ifnet *, struct proc *);
 void	in_purgeaddr(struct ifaddr *, struct ifnet *);
