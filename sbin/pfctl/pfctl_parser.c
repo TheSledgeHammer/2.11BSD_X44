@@ -516,7 +516,8 @@ const char	*pf_scounters[FCNT_MAX+1] = FCNT_NAMES;
 void
 print_status(struct pf_status *s, int opts)
 {
-	char	statline[80], *running;
+	char	statline[80];
+    const char *running;
 	time_t	runtime;
 	int	i;
 
@@ -649,15 +650,15 @@ print_src_node(struct pf_src_node *sn, int opts)
 		printf(", %u pkts, %u bytes", sn->packets, sn->bytes);
 		switch (sn->ruletype) {
 		case PF_NAT:
-			if (sn->rule.nr != -1)
+			if (sn->rule.nr != (unsigned int)-1)
 				printf(", nat rule %u", sn->rule.nr);
 			break;
 		case PF_RDR:
-			if (sn->rule.nr != -1)
+			if (sn->rule.nr != (unsigned int)-1)
 				printf(", rdr rule %u", sn->rule.nr);
 			break;
 		case PF_PASS:
-			if (sn->rule.nr != -1)
+			if (sn->rule.nr != (unsigned int)-1)
 				printf(", filter rule %u", sn->rule.nr);
 			break;
 		}
@@ -895,7 +896,7 @@ print_rule(struct pf_rule *r, const char *anchor_call, int verbose)
 		}
 		for (i = 0; i < PFTM_MAX; ++i)
 			if (r->timeout[i]) {
-				int j;
+				unsigned int j;
 
 				if (!opts)
 					printf(", ");

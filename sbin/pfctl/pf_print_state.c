@@ -178,7 +178,7 @@ print_host(struct pf_state_host *h, sa_family_t af, int opts)
 }
 
 void
-print_seq(struct pf_state_peer *p)
+print_seq(struct pfsync_state_peer *p)
 {
 	if (p->seqdiff)
 		printf("[%u + %u](+%u)", p->seqlo, p->seqhi - p->seqlo,
@@ -188,9 +188,10 @@ print_seq(struct pf_state_peer *p)
 }
 
 void
-print_state(struct pf_state *s, int opts)
+print_state(struct pfsync_state *s, int opts)
 {
-	struct pf_state_peer *src, *dst;
+	struct pfsync_state_peer *src, *dst;
+    struct pfsync_state_key *sk, *nk;
 	struct protoent *p;
 	int min, sec;
 

@@ -87,7 +87,7 @@ char		*rulesopt;
 const char	*showopt;
 const char	*debugopt;
 char		*anchoropt;
-char		*pf_device = "/dev/pf";
+const char	*pf_device = "/dev/pf";
 char		*ifaceopt;
 char		*tableopt;
 const char	*tblcmdopt;
@@ -96,7 +96,7 @@ char		*state_kill[2];
 int		 loadopt;
 int		 altqsupport;
 
-int		 dev = -1;
+int		 devnum = -1;
 int		 first_title = 1;
 int		 labels = 0;
 
@@ -499,7 +499,7 @@ pfctl_print_rule_counters(struct pf_rule *rule, int opts)
 			if (rule->skip[i].nr == rule->nr + 1)
 				continue;
 			printf("%s=", t[i]);
-			if (rule->skip[i].nr == -1)
+			if (rule->skip[i].nr == (unsigned int)-1)
 				printf("end ");
 			else
 				printf("%u ", rule->skip[i].nr);
@@ -518,7 +518,7 @@ pfctl_print_rule_counters(struct pf_rule *rule, int opts)
 }
 
 void
-pfctl_print_title(char *title)
+pfctl_print_title(const char *title)
 {
 	if (!first_title)
 		printf("\n");
@@ -707,7 +707,7 @@ int
 pfctl_show_states(int dev, const char *iface, int opts)
 {
 	struct pfioc_states ps;
-	struct pf_state *p;
+	struct pfsync_state *p;
 	char *inbuf = NULL, *newinbuf = NULL;
 	unsigned len = 0;
 	int i, dotitle = (opts & PF_OPT_SHOWALL);
@@ -737,7 +737,7 @@ pfctl_show_states(int dev, const char *iface, int opts)
 	}
 	p = ps.ps_states;
 	for (i = 0; i < ps.ps_len; i += sizeof(*p), p++) {
-		if (iface != NULL && strcmp(p->u.ifname, iface))
+		if (iface != NULL && strcmp(p->ifname, iface))
 			continue;
 		if (dotitle) {
 			pfctl_print_title("STATES:");
@@ -1229,7 +1229,7 @@ pfctl_set_hostid(struct pfctl *pf, u_int32_t hostid)
 	HTONL(hostid);
 
 	if ((pf->opts & PF_OPT_NOACTION) == 0)
-		if (ioctl(dev, DIOCSETHOSTID, &hostid))
+		if (ioctl(devnum, DIOCSETHOSTID, &hostid))
 			err(1, "DIOCSETHOSTID");
 
 	if (pf->opts & PF_OPT_VERBOSE)
@@ -1260,7 +1260,7 @@ pfctl_set_debug(struct pfctl *pf, char *d)
 	}
 
 	if ((pf->opts & PF_OPT_NOACTION) == 0)
-		if (ioctl(dev, DIOCSETDEBUG, &level))
+		if (ioctl(devnum, DIOCSETDEBUG, &level))
 			err(1, "DIOCSETDEBUG");
 
 	if (pf->opts & PF_OPT_VERBOSE)
@@ -1380,7 +1380,8 @@ main(int argc, char *argv[])
 	int	ch;
 	int	mode = O_RDONLY;
 	int	opts = 0;
-	char	anchorname[MAXPATHLEN];
+	char anchorname[MAXPATHLEN];
+    int dev = devnum;
 
 	if (argc < 2)
 		usage();

@@ -77,7 +77,7 @@ char	*pfr_strerror(int);
 int	 pfi_get_ifaces(const char *, struct pfi_if *, int *, int);
 int	 pfi_clr_istats(const char *, int *, int);
 
-void	 pfctl_print_title(char *);
+void	 pfctl_print_title(const char *);
 int	 pfctl_clear_tables(const char *, int);
 int	 pfctl_show_tables(const char *, int);
 int	 pfctl_command_tables(int, char *[], char *, const char *, char *,
@@ -112,7 +112,7 @@ char		*rate2str(double);
 void	 print_addr(struct pf_addr_wrap *, sa_family_t, int);
 void	 print_host(struct pf_state_host *, sa_family_t, int);
 void	 print_seq(struct pf_state_peer *);
-void	 print_state(struct pf_state *, int);
+void	 print_state(struct pfsync_state *, int);
 int	 unmask(struct pf_addr *, sa_family_t);
 
 int	 pfctl_cmdline_symset(char *);

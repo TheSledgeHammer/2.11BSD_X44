@@ -55,7 +55,7 @@
 #include <limits.h>
 #include <pwd.h>
 #include <grp.h>
-#include <md5.h>
+#include <hash/md5.h>
 
 #include "pfctl_parser.h"
 #include "pfctl.h"
