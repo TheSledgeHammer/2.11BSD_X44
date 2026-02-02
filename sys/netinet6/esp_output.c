@@ -608,8 +608,8 @@ esp_output(m, nexthdrp, md, isr, af)
 		/* total packet length will be computed in ip6_output() */
 		break;
 #endif
+		}
 	}
-    }
 
 noantireplay:
 	if (!m) {

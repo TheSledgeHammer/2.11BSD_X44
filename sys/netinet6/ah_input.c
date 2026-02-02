@@ -164,63 +164,65 @@ ah4_input(m, va_alist)
 	/*
 	 * sanity checks for header, 1.
 	 */
-    {
-	int sizoff;
+	{
+		int sizoff;
 
-	sizoff = (sav->flags & SADB_X_EXT_OLD) ? 0 : 4;
+		sizoff = (sav->flags & SADB_X_EXT_OLD) ? 0 : 4;
 
-	/*
-	 * Here, we do not do "siz1 == siz".  This is because the way
-	 * RFC240[34] section 2 is written.  They do not require truncation
-	 * to 96 bits.
-	 * For example, Microsoft IPsec stack attaches 160 bits of
-	 * authentication data for both hmac-md5 and hmac-sha1.  For hmac-sha1,
-	 * 32 bits of padding is attached.
-	 *
-	 * There are two downsides to this specification.
-	 * They have no real harm, however, they leave us fuzzy feeling.
-	 * - if we attach more than 96 bits of authentication data onto AH,
-	 *   we will never notice about possible modification by rogue
-	 *   intermediate nodes.
-	 *   Since extra bits in AH checksum is never used, this constitutes
-	 *   no real issue, however, it is wacky.
-	 * - even if the peer attaches big authentication data, we will never
-	 *   notice the difference, since longer authentication data will just
-	 *   work.
-	 *
-	 * We may need some clarification in the spec.
-	 */
-	if (siz1 < siz) {
-		ipseclog((LOG_NOTICE, "sum length too short in IPv4 AH input "
-		    "(%lu, should be at least %lu): %s\n",
-		    (u_long)siz1, (u_long)siz,
-		    ipsec4_logpacketstr(ip, spi)));
-		ipsecstat.in_inval++;
-		goto fail;
-	}
-	if ((ah->ah_len << 2) - sizoff != siz1) {
-		ipseclog((LOG_NOTICE, "sum length mismatch in IPv4 AH input "
-		    "(%d should be %lu): %s\n",
-		    (ah->ah_len << 2) - sizoff, (u_long)siz1,
-		    ipsec4_logpacketstr(ip, spi)));
-		ipsecstat.in_inval++;
-		goto fail;
-	}
-	if (siz1 > sizeof(cksum)) {
-		ipseclog((LOG_NOTICE, "sum length too large: %s\n",
-		    ipsec4_logpacketstr(ip, spi)));
-		ipsecstat.in_inval++;
-		goto fail;
-	}
+		/*
+		 * Here, we do not do "siz1 == siz".  This is because the way
+		 * RFC240[34] section 2 is written.  They do not require truncation
+		 * to 96 bits.
+		 * For example, Microsoft IPsec stack attaches 160 bits of
+		 * authentication data for both hmac-md5 and hmac-sha1.  For hmac-sha1,
+		 * 32 bits of padding is attached.
+		 *
+		 * There are two downsides to this specification.
+		 * They have no real harm, however, they leave us fuzzy feeling.
+		 * - if we attach more than 96 bits of authentication data onto AH,
+		 *   we will never notice about possible modification by rogue
+		 *   intermediate nodes.
+		 *   Since extra bits in AH checksum is never used, this constitutes
+		 *   no real issue, however, it is wacky.
+		 * - even if the peer attaches big authentication data, we will never
+		 *   notice the difference, since longer authentication data will just
+		 *   work.
+		 *
+		 * We may need some clarification in the spec.
+		 */
+		if (siz1 < siz) {
+			ipseclog(
+					(LOG_NOTICE, "sum length too short in IPv4 AH input "
+							"(%lu, should be at least %lu): %s\n", (u_long) siz1, (u_long) siz, ipsec4_logpacketstr(
+							ip, spi)));
+			ipsecstat.in_inval++;
+			goto fail;
+		}
+		if ((ah->ah_len << 2) - sizoff != siz1) {
+			ipseclog(
+					(LOG_NOTICE, "sum length mismatch in IPv4 AH input "
+							"(%d should be %lu): %s\n", (ah->ah_len << 2)
+							- sizoff, (u_long) siz1, ipsec4_logpacketstr(ip,
+							spi)));
+			ipsecstat.in_inval++;
+			goto fail;
+		}
+		if (siz1 > sizeof(cksum)) {
+			ipseclog(
+					(LOG_NOTICE, "sum length too large: %s\n", ipsec4_logpacketstr(
+							ip, spi)));
+			ipsecstat.in_inval++;
+			goto fail;
+		}
 
-	IP6_EXTHDR_GET(ah, struct ah *, m, off,
-		sizeof(struct ah) + sizoff + siz1);
-	if (ah == NULL) {
-		ipseclog((LOG_DEBUG, "IPv4 AH input: can't pullup\n"));
-		ipsecstat.in_inval++;
-		goto fail;
+		IP6_EXTHDR_GET(ah, struct ah *, m, off,
+				sizeof(struct ah) + sizoff + siz1);
+		if (ah == NULL) {
+			ipseclog((LOG_DEBUG, "IPv4 AH input: can't pullup\n"));
+			ipsecstat.in_inval++;
+			goto fail;
+		}
 	}
-    }
 
 	/*
 	 * check for sequence number.
@@ -242,48 +244,48 @@ ah4_input(m, va_alist)
 	 * cryptographic checksum.
 	 */
 
-    {
+	{
 #if 0
-	/*
-	 * some of IP header fields are flipped to the host endian.
-	 * convert them back to network endian.  VERY stupid.
-	 */
-	ip->ip_len = htons(ip->ip_len);
-	ip->ip_off = htons(ip->ip_off);
+		/*
+		 * some of IP header fields are flipped to the host endian.
+		 * convert them back to network endian.  VERY stupid.
+		 */
+		ip->ip_len = htons(ip->ip_len);
+		ip->ip_off = htons(ip->ip_off);
 #endif
-	if (ah4_calccksum(m, cksum, siz1, algo, sav)) {
-		ipsecstat.in_inval++;
-		goto fail;
-	}
-	ipsecstat.in_ahhist[sav->alg_auth]++;
+		if (ah4_calccksum(m, cksum, siz1, algo, sav)) {
+			ipsecstat.in_inval++;
+			goto fail;
+		}
+		ipsecstat.in_ahhist[sav->alg_auth]++;
 #if 0
-	/*
-	 * flip them back.
-	 */
-	ip->ip_len = ntohs(ip->ip_len);
-	ip->ip_off = ntohs(ip->ip_off);
+		/*
+		 * flip them back.
+		 */
+		ip->ip_len = ntohs(ip->ip_len);
+		ip->ip_off = ntohs(ip->ip_off);
 #endif
-    }
-
-    {
-	caddr_t sumpos = NULL;
-
-	if (sav->flags & SADB_X_EXT_OLD) {
-		/* RFC 1826 */
-		sumpos = (caddr_t)(ah + 1);
-	} else {
-		/* RFC 2402 */
-		sumpos = (caddr_t)(((struct newah *)ah) + 1);
 	}
 
-	if (bcmp(sumpos, cksum, siz) != 0) {
-		ipseclog((LOG_WARNING,
-		    "checksum mismatch in IPv4 AH input: %s %s\n",
-		    ipsec4_logpacketstr(ip, spi), ipsec_logsastr(sav)));
-		ipsecstat.in_ahauthfail++;
-		goto fail;
+	{
+		caddr_t sumpos = NULL;
+
+		if (sav->flags & SADB_X_EXT_OLD) {
+			/* RFC 1826 */
+			sumpos = (caddr_t) (ah + 1);
+		} else {
+			/* RFC 2402 */
+			sumpos = (caddr_t) (((struct newah*) ah) + 1);
+		}
+
+		if (bcmp(sumpos, cksum, siz) != 0) {
+			ipseclog(
+					(LOG_WARNING, "checksum mismatch in IPv4 AH input: %s %s\n", ipsec4_logpacketstr(
+							ip, spi), ipsec_logsastr(sav)));
+			ipsecstat.in_ahauthfail++;
+			goto fail;
+		}
 	}
-    }
 
 	m->m_flags |= M_AUTHIPHDR;
 	m->m_flags |= M_AUTHIPDGM;
@@ -621,47 +623,50 @@ ah6_input(mp, offp, proto)
 	/*
 	 * sanity checks for header, 1.
 	 */
-    {
-	int sizoff;
+	{
+		int sizoff;
 
-	sizoff = (sav->flags & SADB_X_EXT_OLD) ? 0 : 4;
+		sizoff = (sav->flags & SADB_X_EXT_OLD) ? 0 : 4;
 
-	/*
-	 * Here, we do not do "siz1 == siz".  See ah4_input() for complete
-	 * description.
-	 */
-	if (siz1 < siz) {
-		ipseclog((LOG_NOTICE, "sum length too short in IPv6 AH input "
-		    "(%lu, should be at least %lu): %s\n",
-		    (u_long)siz1, (u_long)siz,
-		    ipsec6_logpacketstr(ip6, spi)));
-		ipsec6stat.in_inval++;
-		goto fail;
-	}
-	if ((ah->ah_len << 2) - sizoff != siz1) {
-		ipseclog((LOG_NOTICE, "sum length mismatch in IPv6 AH input "
-		    "(%d should be %lu): %s\n",
-		    (ah->ah_len << 2) - sizoff, (u_long)siz1,
-		    ipsec6_logpacketstr(ip6, spi)));
-		ipsec6stat.in_inval++;
-		goto fail;
-	}
-	if (siz1 > sizeof(cksum)) {
-		ipseclog((LOG_NOTICE, "sum length too large: %s\n",
-		    ipsec6_logpacketstr(ip6, spi)));
-		ipsec6stat.in_inval++;
-		goto fail;
-	}
+		/*
+		 * Here, we do not do "siz1 == siz".  See ah4_input() for complete
+		 * description.
+		 */
+		if (siz1 < siz) {
+			ipseclog(
+					(LOG_NOTICE, "sum length too short in IPv6 AH input "
+							"(%lu, should be at least %lu): %s\n", (u_long) siz1, (u_long) siz, ipsec6_logpacketstr(
+							ip6, spi)));
+			ipsec6stat.in_inval++;
+			goto fail;
+		}
+		if ((ah->ah_len << 2) - sizoff != siz1) {
+			ipseclog(
+					(LOG_NOTICE, "sum length mismatch in IPv6 AH input "
+							"(%d should be %lu): %s\n", (ah->ah_len << 2)
+							- sizoff, (u_long) siz1, ipsec6_logpacketstr(ip6,
+							spi)));
+			ipsec6stat.in_inval++;
+			goto fail;
+		}
+		if (siz1 > sizeof(cksum)) {
+			ipseclog(
+					(LOG_NOTICE, "sum length too large: %s\n", ipsec6_logpacketstr(
+							ip6, spi)));
+			ipsec6stat.in_inval++;
+			goto fail;
+		}
 
-	IP6_EXTHDR_GET(ah, struct ah *, m, off,
-		sizeof(struct ah) + sizoff + siz1);
-	if (ah == NULL) {
-		ipseclog((LOG_NOTICE, "couldn't pullup gather IPv6 AH checksum part"));
-		ipsec6stat.in_inval++;
-		m = NULL;
-		goto fail;
+		IP6_EXTHDR_GET(ah, struct ah *, m, off,
+				sizeof(struct ah) + sizoff + siz1);
+		if (ah == NULL) {
+			ipseclog(
+					(LOG_NOTICE, "couldn't pullup gather IPv6 AH checksum part"));
+			ipsec6stat.in_inval++;
+			m = NULL;
+			goto fail;
+		}
 	}
-    }
 
 	/*
 	 * check for sequence number.
@@ -690,25 +695,25 @@ ah6_input(mp, offp, proto)
 	}
 	ipsec6stat.in_ahhist[sav->alg_auth]++;
 
-    {
-	caddr_t sumpos = NULL;
+	{
+		caddr_t sumpos = NULL;
 
-	if (sav->flags & SADB_X_EXT_OLD) {
-		/* RFC 1826 */
-		sumpos = (caddr_t)(ah + 1);
-	} else {
-		/* RFC 2402 */
-		sumpos = (caddr_t)(((struct newah *)ah) + 1);
-	}
+		if (sav->flags & SADB_X_EXT_OLD) {
+			/* RFC 1826 */
+			sumpos = (caddr_t) (ah + 1);
+		} else {
+			/* RFC 2402 */
+			sumpos = (caddr_t) (((struct newah*) ah) + 1);
+		}
 
-	if (bcmp(sumpos, cksum, siz) != 0) {
-		ipseclog((LOG_WARNING,
-		    "checksum mismatch in IPv6 AH input: %s %s\n",
-		    ipsec6_logpacketstr(ip6, spi), ipsec_logsastr(sav)));
-		ipsec6stat.in_ahauthfail++;
-		goto fail;
+		if (bcmp(sumpos, cksum, siz) != 0) {
+			ipseclog(
+					(LOG_WARNING, "checksum mismatch in IPv6 AH input: %s %s\n", ipsec6_logpacketstr(
+							ip6, spi), ipsec_logsastr(sav)));
+			ipsec6stat.in_ahauthfail++;
+			goto fail;
+		}
 	}
-    }
 
 	m->m_flags |= M_AUTHIPHDR;
 	m->m_flags |= M_AUTHIPDGM;

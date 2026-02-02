@@ -86,7 +86,7 @@ tpdu_variable_lookup(struct tpdu *tpdu, unsigned char type)
 	return (NULL);
 }
 
-#define TPDU_COMMAND(tpdu_kind, cmd) ((tpdu_kind) + (cmd))
+#define TPDU_COMMAND(tpdu_kind, cmdrsp) ((tpdu_kind) + (cmdrsp))
 
 /*
  * State Handler Methods:
@@ -185,4 +185,172 @@ tpdu_state_class(int tpdu_class, int tpdu_kind)
 		}
 		break;
 	}
+}
+
+/* primitive cmds */
+#define TPDU_CONNECT			0
+#define TPDU_DISCONNECT			1
+#define TPDU_DATA				2
+#define TPDU_EXPEDITED_DATA		3
+#define TPDU_ERROR				4
+#define TPDU_REJECT				5
+
+/* transport layer user requests */
+#define TL_CONNECT_REQUEST		6		//CR
+#define TL_CONNECT_CONFIRM		7		//CC
+#define TL_DISCONNECT_REQUEST	8		//DR
+#define TL_DISCONNECT_CONFIRM	9		//DC
+#define TL_ACKNOWLEDGE_SEND		10		//DT, AK, XPD, XAK
+#define TL_ACKNOWLEDGE_RECEIVE	11		//DT, AK, XPD, XAK
+
+
+/* state function */
+tp_state_connect(tpdu, tpdu_kind, cmdrsp)
+{
+	int command;
+
+	command = TPDU_COMMAND(tpdu_kind, cmdrsp);
+	switch (command) {
+	case TL_CONNECT_REQUEST:
+	case TL_CONNECT_CONFIRM:
+
+	/* connect confirm */
+	case TPDUT_CC + TPDU_CMD:
+	/* connect request */
+	case TPDUT_CR + TPDU_CMD:
+	/* disconnect confirm */
+	case TPDUT_DC + TPDU_CMD:
+	/* disconnect request */
+	case TPDUT_DR + TPDU_CMD:
+	/* data acknowledge */
+	case TPDUT_AK + TPDU_CMD:
+	/* expedited data acknowledge */
+	case TPDUT_XAK + TPDU_CMD:
+	/* reject */
+	case TPDUT_RJ + TPDU_CMD:
+	/* error */
+	case TPDUT_ER + TPDU_CMD:
+		break;
+
+	}
+}
+
+tp_state_disconnect(tpdu, tpdu_kind, cmdrsp)
+{
+	int command;
+
+	command = TPDU_COMMAND(tpdu_kind, cmdrsp);
+	switch (command) {
+	case TL_DISCONNECT_REQUEST:
+	case TL_DISCONNECT_CONFIRM:
+	}
+}
+
+tp_state_data(tpdu, tpdu_kind, cmdrsp)
+{
+	int command;
+
+	command = TPDU_COMMAND(tpdu_kind, cmdrsp);
+	switch (command) {
+	case TL_ACKNOWLEDGE_SEND:
+	case TL_ACKNOWLEDGE_RECEIVE:
+	}
+}
+
+tp_state_expedited_data(tpdu, tpdu_kind, cmdrsp)
+{
+	int command;
+
+	command = TPDU_COMMAND(tpdu_kind, cmdrsp);
+	switch (command) {
+	case TL_ACKNOWLEDGE_SEND:
+	case TL_ACKNOWLEDGE_RECEIVE:
+	}
+}
+
+
+tp_state_reject(tpdu, tpdu_kind, cmdrsp)
+{
+	int command;
+
+	command = TPDU_COMMAND(tpdu_kind, cmdrsp);
+}
+
+tp_state_error(tpdu, tpdu_kind, cmdrsp)
+{
+	int command;
+
+	command = TPDU_COMMAND(tpdu_kind, cmdrsp);
+}
+
+tp_state_handler(tpdu, tpdu_kind, cmdrsp)
+{
+	switch () {
+	case TPDU_CONNECT:
+		tp_state_connect();
+	case TPDU_DISCONNECT:
+		tp_state_disconnect();
+	case TPDU_DATA:
+		tp_state_data();
+	case TPDU_EXPEDITED_DATA:
+		tp_state_expedited_data();
+	case TPDU_ERROR:
+		tp_state_error();
+	case TPDU_REJECT:
+		tp_state_reject();
+	default:
+	}
+}
+
+tp_state_reset()
+{
+
+}
+
+tp_state_await()
+{
+
+}
+
+tp_state_retransmit()
+{
+
+}
+
+tp_state_inact()
+{
+
+}
+
+/* state action/event handle */
+connect_confirm()
+{
+	//TPDUT_CC+TPDU_CMD
+}
+
+connect_request()
+{
+	//TPDUT_CR+TPDU_CMD
+}
+
+disconnect_confirm()
+{
+	//TPDUT_DC+TPDU_CMD
+}
+
+disconnect_request()
+{
+	//TPDUT_DR+TPDU_CMD
+}
+
+send_acknowledge()
+{
+	//TPDUT_AK+TPDU_CMD
+	//TPDUT_XAK+TPDU_CMD
+}
+
+receive_acknowledge()
+{
+	//TPDUT_AK+TPDU_CMD
+	//TPDUT_XAK+TPDU_CMD
 }

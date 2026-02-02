@@ -36,9 +36,7 @@
 #include <net/if.h>
 #define TCPSTATES
 #include <netinet/tcp_fsm.h>
-#ifdef __NetBSD__
 #include <netinet/in.h>
-#endif
 #include <net/pf/pfvar.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -119,6 +117,7 @@ void
 print_name(struct pf_addr *addr, sa_family_t af)
 {
 	char host[NI_MAXHOST];
+	struct sockaddr_storage	 ss;
 
 	strlcpy(host, "?", sizeof(host));
 	switch (af) {
@@ -129,8 +128,9 @@ print_name(struct pf_addr *addr, sa_family_t af)
 		sin.sin_len = sizeof(sin);
 		sin.sin_family = AF_INET;
 		sin.sin_addr = addr->v4;
-		getnameinfo((struct sockaddr *)&sin, sin.sin_len,
-		    host, sizeof(host), NULL, 0, NI_NOFQDN);
+		getnameinfo((struct sockaddr*) &sin, sin.sin_len, host, sizeof(host),
+				NULL, 0, NI_NOFQDN);
+		memcpy(&ss, &sin, sizeof(sin));
 		break;
 	}
 	case AF_INET6: {
@@ -140,8 +140,9 @@ print_name(struct pf_addr *addr, sa_family_t af)
 		sin6.sin6_len = sizeof(sin6);
 		sin6.sin6_family = AF_INET6;
 		sin6.sin6_addr = addr->v6;
-		getnameinfo((struct sockaddr *)&sin6, sin6.sin6_len,
-		    host, sizeof(host), NULL, 0, NI_NOFQDN);
+		getnameinfo((struct sockaddr*) &sin6, sin6.sin6_len, host, sizeof(host),
+				NULL, 0, NI_NOFQDN);
+		memcpy(&ss, &sin6, sizeof(sin6));
 		break;
 	}
 	}
@@ -181,17 +182,16 @@ void
 print_seq(struct pfsync_state_peer *p)
 {
 	if (p->seqdiff)
-		printf("[%u + %u](+%u)", p->seqlo, p->seqhi - p->seqlo,
-		    p->seqdiff);
+		printf("[%u + %u](+%u)", ntohl(p->seqlo), ntohl(p->seqhi) - ntohl(p->seqlo),
+				ntohl(p->seqdiff));
 	else
-		printf("[%u + %u]", p->seqlo, p->seqhi - p->seqlo);
+		printf("[%u + %u]", ntohl(p->seqlo), ntohl(p->seqhi) - ntohl(p->seqlo));
 }
 
 void
 print_state(struct pfsync_state *s, int opts)
 {
 	struct pfsync_state_peer *src, *dst;
-    struct pfsync_state_key *sk, *nk;
 	struct protoent *p;
 	int min, sec;
 
@@ -202,7 +202,7 @@ print_state(struct pfsync_state *s, int opts)
 		src = &s->dst;
 		dst = &s->src;
 	}
-	printf("%s ", s->u.ifname);
+	printf("%s ", s->ifname);
 	if ((p = getprotobynumber(s->proto)) != NULL)
 		printf("%s ", p->p_name);
 	else
@@ -278,13 +278,19 @@ print_state(struct pfsync_state *s, int opts)
 		printf(", expires in %.2u:%.2u:%.2u", s->expire, min, sec);
 		printf(", %u:%u pkts, %u:%u bytes",
 		    s->packets[0], s->packets[1], s->bytes[0], s->bytes[1]);
-		if (s->anchor.nr != -1)
-			printf(", anchor %u", s->anchor.nr);
-		if (s->rule.nr != -1)
-			printf(", rule %u", s->rule.nr);
-		if (s->src_node != NULL)
+		if (ntohl(s->anchor) != -1)
+			printf(", anchor %u", ntohl(s->anchor));
+		if (ntohl(s->rule) != -1)
+			printf(", rule %u", ntohl(s->rule));
+		/*
+		if (ntohs(s->state_flags) & PFSTATE_SLOPPY)
+			printf(", sloppy");
+		if (ntohs(s->state_flags) & PFSTATE_PFLOW)
+			printf(", pflow");
+		*/
+		if (s->sync_flags & PFSYNC_FLAG_SRCNODE)
 			printf(", source-track");
-		if (s->nat_src_node != NULL)
+		if (s->sync_flags & PFSYNC_FLAG_NATSRCNODE)
 			printf(", sticky-address");
 		printf("\n");
 	}
