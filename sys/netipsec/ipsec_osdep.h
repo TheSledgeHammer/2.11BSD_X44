@@ -110,6 +110,8 @@ if_handoff(struct ifqueue *ifq, struct mbuf *m, struct ifnet *ifp, int adjust)
 
 #define ia_link ia_list
 
+#define rawcb_list rawcb
+
 #define INITFN extern
 
 #define IP_OFF_CONVERT(x) (htons(x))
