@@ -3228,7 +3228,7 @@ ipsec4_splithdr(m)
 		}
 		m_copy_pkthdr(mh, m);
 		MH_ALIGN(mh, hlen);
-		m_tag_delete_chain(m, NULL);
+		m_tag_delete_chain(m);
 		m->m_flags &= ~M_PKTHDR;
 		m->m_len -= hlen;
 		m->m_data += hlen;
@@ -3266,7 +3266,7 @@ ipsec6_splithdr(m)
 		}
 		m_copy_pkthdr(mh, m);
 		MH_ALIGN(mh, hlen);
-		m_tag_delete_chain(m, NULL);
+		m_tag_delete_chain(m);
 		m->m_flags &= ~M_PKTHDR;
 		m->m_len -= hlen;
 		m->m_data += hlen;
