@@ -49,7 +49,6 @@ read_random(void *bufp, u_int len)
 #define M_EXT_WRITABLE(m) (!M_READONLY(m))
 #define M_MOVE_PKTHDR(_f, _t) m_copy_pkthdr(_f, _t)
 
-
 static __inline struct mbuf *
 m_getcl(int how, short type, int flags)
 {
