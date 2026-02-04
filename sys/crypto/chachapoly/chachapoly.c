@@ -260,36 +260,3 @@ xchacha20poly1305_decrypt(
 
 	return ret;
 }
-
-void
-chacha20_poly1305_encrypt(CHACHA20_POLY1305_CTX *ctx,  const uint8_t key[CHACHA20POLY1305_KEY_SIZE])
-{
-	union {
-		uint8_t b0[CHACHA20POLY1305_KEY_SIZE];
-		uint64_t lens[2];
-	} b = { { 0 } };
-	uint64_t le_nonce = htole64(nonce);
-
-
-
-	chacha_keysetup(&ctx->chacha, key, CHACHA20POLY1305_KEY_SIZE * 8);
-	chacha_ivsetup(&ctx->chacha, (uint8_t *) &le_nonce, NULL);
-	chacha_encrypt_bytes(&ctx->chacha, b.b0, b.b0, sizeof(b.b0));
-	poly1305_init(&ctx->poly, b.b0);
-
-	poly1305_update(&ctx->poly, ad, ad_len);
-	poly1305_update(&ctx->poly, pad0, (0x10 - ad_len) & 0xf);
-
-	chacha_encrypt_bytes(&ctx->chacha, (uint8_t *)src, dst, src_len);
-
-	poly1305_update(&ctx->poly, dst, src_len);
-	poly1305_update(&ctx->poly, pad0, (0x10 - src_len) & 0xf);
-
-	b.lens[0] = htole64(ad_len);
-	b.lens[1] = htole64(src_len);
-	poly1305_update(&ctx->poly, (uint8_t *)b.lens, sizeof(b.lens));
-
-	poly1305_finish(&ctx->poly, dst + src_len);
-	explicit_bzero(&ctx->chacha, sizeof(chacha_ctx));
-	explicit_bzero(&b, sizeof(b));
-}
