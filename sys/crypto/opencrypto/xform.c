@@ -50,6 +50,7 @@
 #include <crypto/sha2/sha2.h>
 #include <crypto/blowfish/blowfish.h>
 #include <crypto/cast128/cast128.h>
+#include <crypto/chachapoly/chachapoly.h>
 #include <crypto/aes/aes.h>
 #include <crypto/des/des.h>
 #include <crypto/mars/mars.h>
@@ -386,6 +387,20 @@ const struct enc_xform enc_xform_mars_xts  = {
 	.reinit		= mars_xts_reinit,
 };
 
+const struct enc_xform enc_xform_chacha20_poly1305  = {
+	.type		= CRYPTO_CHACHA20_POLY1305,
+	.name		= "CHACHA20-POLY1305",
+	.blocksize	= 1,
+	.ivsize		= 8,
+	.minkey		= 32+4,
+	.maxkey		= 32+4,
+	.encrypt	= chachapoly_encrypt,
+	.decrypt	= chachapoly_decrypt,
+	.setkey		= chachapoly_setkey,
+	.zerokey	= chachapoly_zerokey,
+	.reinit		= chachapoly_reinit,
+};
+
 /* Authentication instances */
 const struct auth_hash auth_hash_null = {
 	.type		= CRYPTO_NULL_HMAC,
@@ -655,6 +670,21 @@ const struct auth_hash auth_hash_gmac_aes_256 = {
 	.Reinit		= (void (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Reinit,
 	.Update		= (int (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Update,
 	.Final		= (void (*)(u_int8_t *, void *))AES_GMAC_Final,
+};
+
+const struct auth_hash auth_hash_chacha20_poly1305 = {
+	.type		= CRYPTO_CHACHA20_POLY1305_MAC,
+	.name		= "CHACHA20-POLY1305",
+	.keysize	= 32+4,
+	.hashsize	= 16,
+	.authsize	= 16,
+	.blocksize	= 64, /* ??? */
+	.ctxsize	= sizeof(CHACHA20_POLY1305_CTX),
+	.Init		= (void (*)(void *))Chacha20_Poly1305_Init,
+	.Setkey		= (void (*)(void *, const u_int8_t *, u_int16_t))Chacha20_Poly1305_Setkey,
+	.Reinit		= (void (*)(void *, const u_int8_t *, u_int16_t))Chacha20_Poly1305_Reinit,
+	.Update		= (int (*)(void *, const u_int8_t *, u_int16_t))Chacha20_Poly1305_Update,
+	.Final		= (void (*)(u_int8_t *, void *))Chacha20_Poly1305_Final,
 };
 
 /* Compression instance */

@@ -7,7 +7,7 @@
 # that use the opencrypto framework, should list opencrypto as a dependency
 # to pull in the framework.
 
-define	opencrypto: blowfish, des, camellia, cast128, gmac, mars, md5, rijndael, 
+define	opencrypto: blowfish, des, camellia, cast128, chachapoly, gmac, mars, md5, rijndael, 
 					ripemd160, serpent, sha1, sha2, skipjack, twofish
 
 

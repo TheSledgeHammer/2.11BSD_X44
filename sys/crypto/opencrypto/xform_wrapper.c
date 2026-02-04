@@ -1007,6 +1007,52 @@ mars_xts_zerokey(u_int8_t **sched)
 	*sched = NULL;
 }
 
+void
+chachapoly_encrypt(caddr_t key, u_int8_t *data)
+{
+	chacha20_crypt(key, data);
+}
+
+void
+chachapoly_decrypt(caddr_t key, u_int8_t *data)
+{
+	chacha20_crypt(key, data);
+}
+
+int
+chachapoly_setkey(u_int8_t **sched, const u_int8_t *key, int len)
+{
+	struct chacha20_ctx *ctx;
+
+	MALLOC(*sched, u_int8_t *, sizeof(struct chacha20_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
+	ctx = (struct chacha20_ctx *)*sched;
+
+	if (len != CHACHA20_KEYSIZE + CHACHA20_SALT) {
+		return (-1);
+	}
+
+	/* initial counter is 1 */
+	ctx->nonce[0] = 1;
+	memcpy(ctx->nonce + CHACHA20_CTR, key + CHACHA20_KEYSIZE, CHACHA20_SALT);
+	chacha_keysetup((chacha_ctx *)&ctx->block, key, CHACHA20_KEYSIZE * 8);
+	return (0);
+}
+
+void
+chachapoly_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(struct chacha20_ctx));
+	FREE(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+void
+chachapoly_reinit(void *key, const u_int8_t *iv, u_int8_t *ivout)
+{
+	chacha20_reinit(key, iv);
+}
+
+
 /*
  * And now for auth.
  */

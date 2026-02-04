@@ -1220,6 +1220,7 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case CRYPTO_TWOFISH_XTS:
 		case CRYPTO_SERPENT_XTS:
 		case CRYPTO_MARS_XTS:
+		case CRYPTO_CHACHA20_POLY1305:
 			if ((crp->crp_etype = swcr_encdec(crd, sw, crp->crp_buf, type))
 					!= 0)
 				goto done;
@@ -1243,6 +1244,7 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case CRYPTO_MD5:
 		case CRYPTO_SHA1:
 		case CRYPTO_AES_XCBC_MAC_96:
+		case CRYPTO_CHACHA20_POLY1305_MAC:
 			if ((crp->crp_etype = swcr_authcompute(crp, crd, sw, crp->crp_buf, type)) != 0)
 				goto done;
 			break;
@@ -1327,6 +1329,8 @@ swcr_init(void)
 	REGISTER(CRYPTO_TWOFISH_XTS);
 	REGISTER(CRYPTO_SERPENT_XTS);
 	REGISTER(CRYPTO_MARS_XTS);
+	REGISTER(CRYPTO_CHACHA20_POLY1305);
+	REGISTER(CRYPTO_CHACHA20_POLY1305_MAC);
 	REGISTER(CRYPTO_DEFLATE_COMP);
 #undef REGISTER
 }

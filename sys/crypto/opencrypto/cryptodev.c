@@ -220,6 +220,9 @@ cryptof_ioctl(struct file *fp, u_long cmd, void *data, struct proc *p)
 		case CRYPTO_MARS_XTS:
 			txform = &enc_xform_mars_xts;
 			break;
+		case CRYPTO_CHACHA20_POLY1305:
+			txform = &enc_xform_chacha20_poly1305;
+			break;
 		default:
 			return (EINVAL);
 		}
@@ -263,6 +266,9 @@ cryptof_ioctl(struct file *fp, u_long cmd, void *data, struct proc *p)
 			break;
 		case CRYPTO_RIPEMD160_HMAC_96:
 			thash = &auth_hash_hmac_ripemd_160_96;
+			break;
+		case CRYPTO_CHACHA20_POLY1305_MAC:
+			thash = &auth_hash_chacha20_poly1305;
 			break;
 		case CRYPTO_MD5:
 			thash = &auth_hash_md5;

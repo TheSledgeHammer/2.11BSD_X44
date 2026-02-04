@@ -1,0 +1,5 @@
+#	$211BSD: files.chacha,v 1.0 2023/01/02
+
+define	poly1305
+
+file	crypto/poly1305/poly1305.c
