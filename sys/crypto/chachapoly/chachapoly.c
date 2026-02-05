@@ -110,7 +110,7 @@ Chacha20_Poly1305_Final(uint8_t tag[POLY1305_TAGLEN], void *xctx)
 	CHACHA20_POLY1305_CTX *ctx = xctx;
 
 	poly1305_finish((poly1305_state *)&ctx->poly, tag);
-	explicit_bzero(ctx, sizeof(*ctx));
+	bzero(ctx, sizeof(*ctx));
 }
 
 static const uint8_t pad0[16] = { 0 };
@@ -152,8 +152,8 @@ chacha20poly1305_encrypt(
 
 	poly1305_finish(&poly1305_ctx, dst + src_len);
 
-	explicit_bzero(&chacha_ctx, sizeof(chacha_ctx));
-	explicit_bzero(&b, sizeof(b));
+	bzero(&chacha_ctx, sizeof(chacha_ctx));
+	bzero(&b, sizeof(b));
 }
 
 int
@@ -198,12 +198,12 @@ chacha20poly1305_decrypt(
 
 	poly1305_finish(&poly1305_ctx, b.mac);
 
-	ret = timingsafe_bcmp(b.mac, src + dst_len, CHACHA20POLY1305_AUTHTAG_SIZE);
+	ret = bcmp(b.mac, src + dst_len, CHACHA20POLY1305_AUTHTAG_SIZE);
 	if (!ret)
 		chacha_encrypt_bytes(&chacha_ctx, (uint8_t *) src, dst, dst_len);
 
-	explicit_bzero(&chacha_ctx, sizeof(chacha_ctx));
-	explicit_bzero(&b, sizeof(b));
+	bzero(&chacha_ctx, sizeof(chacha_ctx));
+	bzero(&b, sizeof(b));
 
 	return !ret;
 }
@@ -231,7 +231,7 @@ xchacha20poly1305_encrypt(
 
 	chacha20poly1305_encrypt(dst, src, src_len, ad, ad_len,
 	    h_nonce, (uint8_t *)derived_key);
-	explicit_bzero(derived_key, CHACHA20POLY1305_KEY_SIZE);
+	bzero(derived_key, CHACHA20POLY1305_KEY_SIZE);
 }
 
 int
@@ -256,7 +256,7 @@ xchacha20poly1305_decrypt(
 
 	ret = chacha20poly1305_decrypt(dst, src, src_len, ad, ad_len,
 	    h_nonce, (uint8_t *)derived_key);
-	explicit_bzero(derived_key, CHACHA20POLY1305_KEY_SIZE);
+	bzero(derived_key, CHACHA20POLY1305_KEY_SIZE);
 
 	return ret;
 }
