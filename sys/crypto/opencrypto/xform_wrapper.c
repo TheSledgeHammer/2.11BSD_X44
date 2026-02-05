@@ -53,6 +53,7 @@
 #include <crypto/sha2/sha2.h>
 #include <crypto/blowfish/blowfish.h>
 #include <crypto/cast128/cast128.h>
+#include <crypto/chachapoly/chachapoly.h>
 #include <crypto/des/des.h>
 #include <crypto/rijndael/rijndael.h>
 #include <crypto/ripemd160/rmd160.h>
@@ -1022,20 +1023,11 @@ chachapoly_decrypt(caddr_t key, u_int8_t *data)
 int
 chachapoly_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 {
-	struct chacha20_ctx *ctx;
+    u_int8_t *blocknum;
 
 	MALLOC(*sched, u_int8_t *, sizeof(struct chacha20_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
-	ctx = (struct chacha20_ctx *)*sched;
-
-	if (len != CHACHA20_KEYSIZE + CHACHA20_SALT) {
-		return (-1);
-	}
-
-	/* initial counter is 1 */
-	ctx->nonce[0] = 1;
-	memcpy(ctx->nonce + CHACHA20_CTR, key + CHACHA20_KEYSIZE, CHACHA20_SALT);
-	chacha_keysetup((chacha_ctx *)&ctx->block, key, CHACHA20_KEYSIZE * 8);
-	return (0);
+    bcopy(key, blocknum, sizeof(key));
+	return (chacha20_setkey(*sched, blocknum, len));
 }
 
 void
@@ -1049,7 +1041,10 @@ chachapoly_zerokey(u_int8_t **sched)
 void
 chachapoly_reinit(void *key, const u_int8_t *iv, u_int8_t *ivout)
 {
-	chacha20_reinit(key, iv);
+    u_int8_t *blocknum;
+    
+    bcopy(iv, blocknum, sizeof(iv));
+	chacha20_reinit(key, blocknum);
 }
 
 
