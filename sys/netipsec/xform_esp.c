@@ -192,7 +192,7 @@ esp_init(struct secasvar *sav, struct xformsw *xsp)
 	sav->iv = (caddr_t) malloc(sav->ivlen, M_XDATA, M_WAITOK);
 	if (sav->iv == NULL) {
 		DPRINTF(("esp_init: no memory for IV\n"));
-		return EINVAL;
+		return (EINVAL);
 	}
 	key_randomfill(sav->iv, sav->ivlen);	/*XXX*/
 
@@ -201,8 +201,9 @@ esp_init(struct secasvar *sav, struct xformsw *xsp)
 	 */
 	if (sav->alg_auth != 0) {
 		error = ah_init0(sav, xsp, &cria);
-		if (error)
-			return error;
+		if (error) {
+			return (error);
+		}
 	}
 
 	/* NB: override anything set in ah_init0 */
@@ -232,7 +233,7 @@ esp_init(struct secasvar *sav, struct xformsw *xsp)
 		DPRINTF(("esp_init: no encoding OR authentication xform!\n"));
 		error = EINVAL;
 	}
-	return error;
+	return (error);
 }
 
 /*
@@ -244,12 +245,13 @@ esp_zeroize(struct secasvar *sav)
 	/* NB: ah_zerorize free's the crypto session state */
 	int error = ah_zeroize(sav);
 
-	if (sav->key_enc)
+	if (sav->key_enc) {
 		bzero(_KEYBUF(sav->key_enc), _KEYLEN(sav->key_enc));
+	}
 	/* NB: sav->iv is freed elsewhere, even though we malloc it! */
 	sav->tdb_encalgxform = NULL;
 	sav->tdb_xform = NULL;
-	return error;
+	return (error);
 }
 
 /*

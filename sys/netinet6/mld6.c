@@ -145,7 +145,7 @@ static struct in6_addr mld_all_routers_linklocal = IN6ADDR_LINKLOCAL_ALLROUTERS_
 static void mld6_sendpkt(struct in6_multi *, int, const struct in6_addr *);
 
 void
-mld6_init()
+mld6_init(void)
 {
 	static u_int8_t hbh_buf[8];
 	struct ip6_hbh *hbh = (struct ip6_hbh *)hbh_buf;
@@ -378,7 +378,7 @@ mld6_input(m, off)
 }
 
 void
-mld6_fasttimeo()
+mld6_fasttimeo(void)
 {
 	struct in6_multi *in6m;
 	struct in6_multistep step;

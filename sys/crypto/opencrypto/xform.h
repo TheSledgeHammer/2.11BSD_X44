@@ -36,8 +36,8 @@ struct auth_hash {
 	u_int16_t 	blocksize;
 	u_int16_t 	ctxsize;
 	void 		(*Init)(void *);
-	void 		(*Setkey)(void *, const uint8_t *, uint16_t);
-	void 		(*Reinit)(void *, const uint8_t *, uint16_t);
+	void 		(*Setkey)(void *, const u_int8_t *, u_int16_t);
+	void 		(*Reinit)(void *, const u_int8_t *, u_int16_t);
 	int  		(*Update)(void *, const u_int8_t *, u_int16_t);
 	void 		(*Final)(u_int8_t *, void *);
 };
@@ -56,7 +56,7 @@ struct enc_xform {
 	void 		(*decrypt)(caddr_t, u_int8_t *);
 	int 		(*setkey)(u_int8_t **, const u_int8_t *, int len);
 	void 		(*zerokey)(u_int8_t **);
-	void 		(*reinit)(void *, const uint8_t *, uint8_t *);
+	void 		(*reinit)(void *, const u_int8_t *, u_int8_t *);
 };
 
 struct comp_algo {

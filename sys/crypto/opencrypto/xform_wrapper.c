@@ -255,7 +255,7 @@ blf_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 	MALLOC(*sched, u_int8_t *, BLF_SIZ, M_CRYPTO_DATA, M_NOWAIT);
 	if (*sched != NULL) {
 		bzero(*sched, BLF_SIZ);
-		BF_set_key((BF_KEY *) *sched, len, key);
+		BF_set_key((BF_KEY *)*sched, len, key);
 		err = 0;
 	} else {
 		err = ENOMEM;
