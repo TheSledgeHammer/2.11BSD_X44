@@ -518,24 +518,70 @@ bad:
 	return (error);
 }
 
-#ifdef INET
-
-static int
-xform_ip4_callback(m, crp, tc)
-	struct mbuf *m;
-	struct cryptop *crp;
-	struct tdb_crypto *tc;
+tdb_get_secasvar(tdb, af)
+	struct tdb *tdb;
 {
 	struct secasvar *sav;
+
+	switch (af) {
+	case AF_INET:
+		sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+		break;
+
+	case AF_INET6:
+		sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+		break;
+	}
+
+	tdb->tdb_sav = sav;
+
+	switch (sproto) {
+	case IPPROTO_ESP:
+
+	}
+}
+
+//#ifdef INET
+
+static int
+xform_ip_callback(m, crp, tdb, af, sproto)
+	struct mbuf *m;
+	struct cryptop *crp;
+	struct tdb *tdb;
+	int af, sproto;
+{
+	struct secasvar *sav;
+	const struct auth_hash *esph;
+	const struct enc_xform *espx;
 	int s, error;
 
 	s = splsoftnet();
-	sav = key_allocsa(AF_INET, (caddr_t)&tc->tc_src.sin.sin_addr, (caddr_t)&tc->tc_dst.sin.sin_addr, tc->tc_proto, tc->tc_spi);
+	switch (af) {
+	case AF_INET:
+		sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+		break;
+
+	case AF_INET6:
+		sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+		break;
+	}
 	if (sav == NULL) {
-		DPRINTF(("xform_ip4_callback: SA expired while in crypto\n"));
+		DPRINTF(("xform_ip_callback: SA expired while in crypto\n"));
 		error = ENOBUFS;		/*XXX*/
 		goto bad;
 	}
+
+	tdb->tdb_sav = sav;
+
+	switch (sproto) {
+	case IPPROTO_ESP:
+		esph = tdb->tdb_authalgxform;
+		espx = tdb->tdb_encalgxform;
+	case IPPROTO_AH:
+		esph = tdb->tdb_authalgxform;
+		espx = tdb->tdb_encalgxform;
+	}
+
 
 	/* Check for crypto errors */
 	if (crp->crp_etype) {
@@ -562,8 +608,8 @@ xform_ip4_callback(m, crp, tc)
 	}
 
 	/* Release the crypto descriptors */
-	free(tc, M_XDATA);
-	tc = NULL;
+	tdb_free(tdb);
+	tdb = NULL;
 	crypto_freereq(crp);
 	crp = NULL;
 
@@ -579,8 +625,8 @@ bad:
 	if (m != NULL) {
 		m_freem(m);
 	}
-	if (tc != NULL) {
-		free(tc, M_XDATA);
+	if (tdb != NULL) {
+		tdb_free(tdb);
 	}
 	if (crp != NULL) {
 		crypto_freereq(crp);
@@ -589,78 +635,6 @@ bad:
 }
 
 #endif /* INET */
-
-#ifdef INET6
-
-static int
-xform_ip6_callback(m, crp, tc)
-	struct mbuf *m;
-	struct cryptop *crp;
-	struct tdb_crypto *tc;
-{
-	struct secasvar *sav;
-	int s, error;
-
-	s = splsoftnet();
-	sav = key_allocsa(AF_INET6, (caddr_t)&tc->tc_src.sin6.sin6_addr, (caddr_t)&tc->tc_dst.sin6.sin6_addr, tc->tc_proto, tc->tc_spi);
-	if (sav == NULL) {
-		DPRINTF(("xform_ip6_callback: SA expired while in crypto\n"));
-		error = ENOBUFS;		/*XXX*/
-		goto bad;
-	}
-
-	/* Check for crypto errors */
-	if (crp->crp_etype) {
-		/* Reset the session ID */
-		if (sav->tdb_cryptoid != 0)
-			sav->tdb_cryptoid = crp->crp_sid;
-
-		if (crp->crp_etype == EAGAIN) {
-			key_freesav(&sav);
-			splx(s);
-			return (crypto_dispatch(crp));
-		}
-
-		DPRINTF(("xform_ip6_callback: crypto error %d\n", crp->crp_etype));
-		error = crp->crp_etype;
-		goto bad;
-	}
-
-	/* Shouldn't happen... */
-	if (m == NULL) {
-		DPRINTF(("xform_ip6_callback: bogus returned buffer from crypto\n"));
-		error = EINVAL;
-		goto bad;
-	}
-
-	/* Release the crypto descriptors */
-	free(tc, M_XDATA);
-	tc = NULL;
-	crypto_freereq(crp);
-	crp = NULL;
-
-	key_freesav(&sav);
-	splx(s);
-	return (error);
-
-bad:
-	if (sav) {
-		key_freesav(&sav);
-	}
-	splx(s);
-	if (m != NULL) {
-		m_freem(m);
-	}
-	if (tc != NULL) {
-		free(tc, M_XDATA);
-	}
-	if (crp != NULL) {
-		crypto_freereq(crp);
-	}
-	return (error);
-}
-
-#endif /* INET6 */
 
 int
 xform_callback(crp)

@@ -205,6 +205,7 @@ ah_init0(sav, xsp, cria)
 	struct xformsw *xsp;
 	struct cryptoini *cria;
 {
+	struct tdb *tdb;
 	const struct auth_hash *thash;
 	int keylen;
 
@@ -241,12 +242,18 @@ ah_init0(sav, xsp, cria)
 		return (EINVAL);
 	}
 
-	sav->tdb_xform = xsp;
-	sav->tdb_authalgxform = thash;
+	tdb = tdb_init(sav, xsp, NULL, thash, NULL, IPPROTO_AH);
+	if (tdb == NULL) {
+		ipseclog((LOG_ERR, "ah_init: no descriptor block key for %s algorithm\n", thash->name));
+		return (EINVAL);
+	}
+
+	tdb->tdb_xform = xsp;
+	tdb->tdb_authalgxform = thash;
 
 	/* Initialize crypto session. */
 	bzero(cria, sizeof(*cria));
-	cria->cri_alg = sav->tdb_authalgxform->type;
+	cria->cri_alg = tdb->tdb_authalgxform->type;
 	cria->cri_klen = _KEYBITS(sav->key_auth);
 	cria->cri_key = _KEYBUF(sav->key_auth);
 

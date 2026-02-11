@@ -63,19 +63,13 @@
 #include <crypto/opencrypto/xform.h>
 
 /* use opencrypto xform */
-
-
 struct secasvar {
 	/*
 	 * NB: Fields with a tdb_ prefix are part of the "glue" used
 	 *     to interface to the OpenBSD crypto support.  This was done
 	 *     to distinguish this code from the mainline KAME code.
 	 */
-	struct xformsw *tdb_xform;	/* transform */
-	const struct enc_xform *tdb_encalgxform;	/* encoding algorithm */
-	const struct auth_hash *tdb_authalgxform;	/* authentication algorithm */
-	const struct comp_algo *tdb_compalgxform;	/* compression algorithm */
-	u_int64_t tdb_cryptoid;		/* crypto session id */
+	struct tdb 				*tdb_tdb;		/* glue */
 };
 
 #define	AH_HMAC_HASHLEN		12	/* 96 bits of authenticator */
@@ -88,6 +82,28 @@ union sockaddr_union {
 	struct sockaddr_in6     sin6;
 };
 
+struct tdb {
+	struct secasvar         *tdb_sav;			/* secasaver */
+
+	struct ipsecrequest 	*tdb_isr;			/* ipsec request state */
+	u_int32_t				tdb_spi;			/* associated SPI */
+
+	u_int16_t				tdb_ivlen;			/* IV length */
+	u_int16_t				tdb_ivoff;			/* IV offset */
+	int 					tdb_derived;		/* derived */
+
+    union sockaddr_union    tdb_src;			/* src addr of packet */
+    union sockaddr_union    tdb_dst;			/* dst addr of packet */
+    u_int8_t	            tdb_proto;			/* current protocol, e.g. AH */
+	int						tdb_skip;			/* data offset */
+
+
+	struct xformsw 			*tdb_xform;			/* transform */
+	const struct enc_xform 	*tdb_encalgxform;	/* encoding algorithm */
+	const struct auth_hash 	*tdb_authalgxform;	/* authentication algorithm */
+	const struct comp_algo 	*tdb_compalgxform;	/* compression algorithm */
+	u_int64_t 				tdb_cryptoid;		/* crypto session id */
+};
 
 /*
  * Packet tag assigned on completion of IPsec processing; used
@@ -96,7 +112,6 @@ union sockaddr_union {
  */
 struct tdb_ident {
 	u_int32_t 				spi;
-	union sockaddr_union 	src;
 	union sockaddr_union 	dst;
 	u_int8_t 				proto;
 };
@@ -107,7 +122,6 @@ struct tdb_ident {
 struct tdb_crypto {
 	struct ipsecrequest		*tc_isr;	/* ipsec request state */
 	u_int32_t				tc_spi;		/* associated SPI */
-	union sockaddr_union	tc_src;		/* src addr of packet */
 	union sockaddr_union	tc_dst;		/* dst addr of packet */
 	u_int8_t				tc_proto;	/* current protocol, e.g. AH */
 	u_int8_t				tc_nxt;		/* next protocol, e.g. IPV4 */
@@ -142,5 +156,11 @@ struct xformsw {
 	int	(*xf_output)(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);	/* output */
 	struct xformsw *xf_next;		/* list of registered xforms */
 };
+
+struct tdb *tdb_alloc(int);
+void tdb_free(struct tdb *);
+struct tdb *tdb_init(struct secasvar *, struct xformsw *, const struct enc_xform *, const struct auth_hash *, const struct comp_algo *, u_int8_t);
+void tdb_zeroize(struct tdb *);
+
 
 #endif /* _KAME_IPSEC_XFORM_H_ */

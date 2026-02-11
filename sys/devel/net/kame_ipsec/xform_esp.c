@@ -105,6 +105,11 @@
 static size_t esp_max_schedlen; /* max sched length over all algorithms */
 static	int esp_max_ivlen;		/* max iv length over all algorithms */
 
+static int esp_input(struct mbuf *, struct secasvar *, int, int);
+static int esp_input_cb(struct cryptop *);
+static int esp_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);
+static int esp_output_cb(struct cryptop *);
+
 const struct enc_xform *
 esp_algorithm_lookup(alg)
 	int alg;
@@ -129,6 +134,62 @@ esp_algorithm_lookup(alg)
 		return (&enc_xform_null);
 	}
 	return (NULL);
+}
+
+u_int16_t
+esp_padbound(sav, thash)
+	struct secasvar *sav;
+	const struct enc_xform *thash;
+{
+	if (!thash) {
+		panic("esp_padbound: unknown algorithm");
+	}
+	return (thash->blocksize);
+}
+
+u_int16_t
+esp_ivlen(sav, thash)
+	struct secasvar *sav;
+	const struct enc_xform *thash;
+{
+	if (!thash) {
+		panic("esp_ivlen: unknown algorithm");
+	}
+	return (thash->ivsize);
+}
+
+int
+esp_encrypt(m, off, plen, sav, thash, ivlen)
+	struct mbuf *m;
+	size_t off, plen;
+	struct secasvar *sav;
+	const struct enc_hash *thash;
+	int ivlen;
+{
+	struct tdb *tdb;
+
+	tdb = sav->tdb_tdb;
+	if (thash != tdb->tdb_encalgxform) {
+		return (ENIVAL);
+	}
+	return (esp_output(m, sav, off, ivlen));
+}
+
+int
+esp_decrypt(m, off, sav, thash, ivlen)
+	struct mbuf *m;
+	size_t off;
+	struct secasvar *sav;
+	const struct enc_hash *thash;
+	int ivlen;
+{
+	struct tdb *tdb;
+
+	tdb = sav->tdb_tdb;
+	if (thash != tdb->tdb_encalgxform) {
+		return (ENIVAL);
+	}
+	return (esp_input(m, sav, skip, ivlen));
 }
 
 /*
@@ -214,6 +275,7 @@ esp_init(sav, xsp)
 	struct secasvar *sav;
 	struct xformsw *xsp;
 {
+	struct tdb *tdb;
 	const struct enc_xform *txform;
 	struct cryptoini cria, crie;
 	int error;
@@ -242,6 +304,12 @@ esp_init(sav, xsp)
 		return (EINVAL);
 	}
 
+	tdb = tdb_init(sav, xsp, txform, NULL, NULL, IPPROTO_ESP);
+	if (tdb == NULL) {
+		ipseclog((LOG_ERR, "esp_init: no descriptor block key for %s algorithm\n", txform->name));
+		return (EINVAL);
+	}
+
 	/*
 	 * NB: The null xform needs a non-zero blocksize to keep the
 	 *      crypto code happy but if we use it to set ivlen then
@@ -254,7 +322,7 @@ esp_init(sav, xsp)
 		ipseclog((LOG_ERR, "esp_init: no memory for IV\n"));
 		return (EINVAL);
 	}
-	key_randomfill(sav->iv, sav->ivlen);	/*XXX*/
+	key_sa_stir_iv(sav);	/*XXX*/
 
 	/*
 	 * Setup AH-related state.
@@ -267,24 +335,24 @@ esp_init(sav, xsp)
 	}
 
 	/* NB: override anything set in ah_init0 */
-	sav->tdb_xform = xsp;
-	sav->tdb_encalgxform = txform;
+	tdb->tdb_xform = xsp;
+	tdb->tdb_encalgxform = txform;
 
 	/* Initialize crypto session. */
 	bzero(&crie, sizeof (crie));
-	crie.cri_alg = sav->tdb_encalgxform->type;
+	crie.cri_alg = tdb->tdb_encalgxform->type;
 	crie.cri_klen = _KEYBITS(sav->key_enc);
 	crie.cri_key = _KEYBUF(sav->key_enc);
 	/* XXX Rounds ? */
 
-	if (sav->tdb_authalgxform && sav->tdb_encalgxform) {
+	if (tdb->tdb_authalgxform && sav->tdb_encalgxform) {
 		/* init both auth & enc */
 		crie.cri_next = &cria;
-		error = crypto_newsession(&sav->tdb_cryptoid, &crie, crypto_support);
-	} else if (sav->tdb_encalgxform) {
-		error = crypto_newsession(&sav->tdb_cryptoid, &crie, crypto_support);
-	} else if (sav->tdb_authalgxform) {
-		error = crypto_newsession(&sav->tdb_cryptoid, &cria, crypto_support);
+		error = crypto_newsession(&tdb->tdb_cryptoid, &crie, crypto_support);
+	} else if (tdb->tdb_encalgxform) {
+		error = crypto_newsession(&tdb->tdb_cryptoid, &crie, crypto_support);
+	} else if (tdb->tdb_authalgxform) {
+		error = crypto_newsession(&tdb->tdb_cryptoid, &cria, crypto_support);
 	} else {
 		/* XXX cannot happen? */
 		ipseclog((LOG_ERR, "esp_newsession: no encoding OR authentication xform!\n"));
@@ -305,13 +373,11 @@ esp_zeroize(struct secasvar *sav)
 	if (sav->key_enc) {
 		bzero(_KEYBUF(sav->key_enc), _KEYLEN(sav->key_enc));
 	}
-	/* NB: sav->iv is freed elsewhere, even though we malloc it! */
-	sav->tdb_encalgxform = NULL;
-	sav->tdb_xform = NULL;
+	tdb_zeroize(sav->tdb_tdb);
 	return (error);
 }
 
-int
+static int
 esp_hash_schedule(sav, txform)
 	struct secasvar *sav;
 	const struct enc_xform *txform;
@@ -319,7 +385,7 @@ esp_hash_schedule(sav, txform)
 	return ((*txform->setkey)(&sav->sched, _KEYLEN(sav->key_enc), _KEYBUF(sav->key_enc)));
 }
 
-void
+static void
 esp_hash_encrypt(sav, txform, key, data)
 	struct secasvar *sav;
 	const struct enc_xform *txform;
@@ -330,7 +396,7 @@ esp_hash_encrypt(sav, txform, key, data)
 	(*txform->encrypt)(key, data);
 }
 
-void
+static void
 esp_hash_decrypt(sav, txform, key, data)
 	struct secasvar *sav;
 	const struct enc_xform *txform;
@@ -395,22 +461,449 @@ esp_schedule(sav, xsp)
 	return (error);
 }
 
+static int
+esp_decrypt_expanded(m, off, sav, thash, ivlen, ivoff, bodyoff, derived)
+	struct mbuf *m;
+	size_t off;
+	struct secasvar *sav;
+	const struct enc_hash *thash;
+	int ivlen, ivoff, bodyoff, derived;
+{
+	struct mbuf *s;
+	struct mbuf *d, *d0, *dp;
+	int soff, doff;	/* offset from the head of chain, to head of this mbuf */
+	int sn, dn;	/* offset from the head of the mbuf, to meat */
+	size_t ivoff;
+	u_int8_t iv[MAXIVLEN], *ivp;
+	u_int8_t sbuf[MAXIVLEN], *sp;
+	u_int8_t *p, *q;
+	struct mbuf *scut;
+	int scutoff, i, blocklen;
+
+	if (ivlen != sav->ivlen || ivlen > sizeof(iv)) {
+		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: "
+		    "unsupported ivlen %d\n", thash->name, ivlen));
+		m_freem(m);
+		return (EINVAL);
+	}
+
+	/* assumes blocklen == padbound */
+	blocklen = thash->blocksize;
+
+#ifdef DIAGNOSTIC
+	if (blocklen > sizeof(iv)) {
+		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: "
+		    "unsupported blocklen %d\n", algo->name, blocklen));
+		m_freem(m);
+		return EINVAL;
+	}
+#endif
+
+	/* grab iv */
+	m_copydata(m, ivoff, ivlen, (caddr_t)iv);
+
+	/* extend iv */
+	if (ivlen == blocklen) {
+		;
+	} else if (ivlen == 4 && blocklen == 8) {
+		bcopy(&iv[0], &iv[4], 4);
+		iv[4] ^= 0xff;
+		iv[5] ^= 0xff;
+		iv[6] ^= 0xff;
+		iv[7] ^= 0xff;
+	} else {
+		ipseclog((LOG_ERR, "esp_cbc_encrypt %s: "
+		    "unsupported ivlen/blocklen: %d %d\n",
+			thash->name, ivlen, blocklen));
+		m_freem(m);
+		return (EINVAL);
+	}
+
+	if (m->m_pkthdr.len < bodyoff) {
+		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: bad len %d/%lu\n",
+				thash->name, m->m_pkthdr.len, (unsigned long)bodyoff));
+		m_freem(m);
+		return (EINVAL);
+	}
+	if ((m->m_pkthdr.len - bodyoff) % blocklen) {
+		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: "
+		    "payload length must be multiple of %d\n",
+			thash->name, blocklen));
+		m_freem(m);
+		return (EINVAL);
+	}
+
+	s = m;
+	d = d0 = dp = NULL;
+	soff = doff = sn = dn = 0;
+	ivp = sp = NULL;
+
+	/* skip bodyoff */
+	while (soff < bodyoff) {
+		if (soff + s->m_len > bodyoff) {
+			sn = bodyoff - soff;
+			break;
+		}
+
+		soff += s->m_len;
+		s = s->m_next;
+	}
+	scut = s;
+	scutoff = sn;
+
+	/* skip over empty mbuf */
+	while (s && s->m_len == 0) {
+		s = s->m_next;
+	}
+
+	while (soff < m->m_pkthdr.len) {
+		/* source */
+		if (sn + blocklen <= s->m_len) {
+			/* body is continuous */
+			sp = mtod(s, u_int8_t *) + sn;
+		} else {
+			/* body is non-continuous */
+			m_copydata(s, sn, blocklen, (caddr_t) sbuf);
+			sp = sbuf;
+		}
+
+		/* destination */
+		if (!d || dn + blocklen > d->m_len) {
+			if (d) {
+				dp = d;
+			}
+			MGET(d, M_DONTWAIT, MT_DATA);
+			i = m->m_pkthdr.len - (soff + sn);
+			if (d && i > MLEN) {
+				MCLGET(d, M_DONTWAIT);
+				if ((d->m_flags & M_EXT) == 0) {
+					m_free(d);
+					d = NULL;
+				}
+			}
+			if (!d) {
+				m_freem(m);
+				if (d0) {
+					m_freem(d0);
+				}
+				return (ENOBUFS);
+			}
+			if (!d0) {
+				d0 = d;
+			}
+			if (dp) {
+				dp->m_next = d;
+			}
+			d->m_len = 0;
+			d->m_len = (M_TRAILINGSPACE(d) / blocklen) * blocklen;
+			if (d->m_len > i) {
+				d->m_len = i;
+			}
+			dn = 0;
+		}
+
+		/* decrypt */
+		esp_hash_decrypt(sav, thash, sp, mtod(d, u_int8_t *) + dn);
+
+		/* xor */
+		p = ivp ? ivp : iv;
+		q = mtod(d, u_int8_t *) + dn;
+		for (i = 0; i < blocklen; i++) {
+			q[i] ^= p[i];
+		}
+
+		/* next iv */
+		if (sp == sbuf) {
+			bcopy(sbuf, iv, blocklen);
+			ivp = NULL;
+		} else {
+			ivp = sp;
+		}
+
+		sn += blocklen;
+		dn += blocklen;
+
+		/* find the next source block */
+		while (s && sn >= s->m_len) {
+			sn -= s->m_len;
+			soff += s->m_len;
+			s = s->m_next;
+		}
+
+		/* skip over empty mbuf */
+		while (s && s->m_len == 0) {
+			s = s->m_next;
+		}
+	}
+
+	m_freem(scut->m_next);
+	scut->m_len = scutoff;
+	scut->m_next = d0;
+
+	/* just in case */
+	bzero(iv, sizeof(iv));
+	bzero(sbuf, sizeof(sbuf));
+
+	return (0);
+}
+
+static int
+esp_encrypt_expanded(m, off, plen, sav, thash, ivlen, ivoff, bodyoff, derived)
+	struct mbuf *m;
+	size_t off;
+	size_t plen;
+	struct secasvar *sav;
+	const struct enc_hash *thash;
+	int ivlen, ivoff, bodyoff, derived;
+{
+	struct mbuf *s;
+	struct mbuf *d, *d0, *dp;
+	int soff, doff;	/* offset from the head of chain, to head of this mbuf */
+	int sn, dn;	/* offset from the head of the mbuf, to meat */
+	u_int8_t iv[MAXIVLEN], *ivp;
+	u_int8_t sbuf[MAXIVLEN], *sp;
+	u_int8_t *p, *q;
+	struct mbuf *scut;
+	int scutoff, i, blocklen;
+
+	if (ivlen != sav->ivlen || ivlen > sizeof(iv)) {
+		ipseclog((LOG_ERR, "esp_cbc_encrypt %s: "
+		    "unsupported ivlen %d\n", thash->name, ivlen));
+		m_freem(m);
+		return (EINVAL);
+	}
+
+	blocklen = thash->blocksize;
+
+#ifdef DIAGNOSTIC
+	if (blocklen > sizeof(iv)) {
+		ipseclog((LOG_ERR, "esp_cbc_encrypt %s: "
+		    "unsupported blocklen %d\n", thash->name, blocklen));
+		m_freem(m);
+		return EINVAL;
+	}
+#endif
+
+	/* put iv into the packet.  if we are in derived mode, use seqno. */
+	if (derived) {
+		m_copydata(m, ivoff, ivlen, (caddr_t)iv);
+	} else {
+		bcopy(sav->iv, iv, ivlen);
+		/* maybe it is better to overwrite dest, not source */
+		m_copyback(m, ivoff, ivlen, (caddr_t)iv);
+	}
+
+	/* extend iv */
+	if (ivlen == blocklen) {
+		;
+	} else if (ivlen == 4 && blocklen == 8) {
+		bcopy(&iv[0], &iv[4], 4);
+		iv[4] ^= 0xff;
+		iv[5] ^= 0xff;
+		iv[6] ^= 0xff;
+		iv[7] ^= 0xff;
+	} else {
+		ipseclog((LOG_ERR, "esp_cbc_encrypt %s: "
+		    "unsupported ivlen/blocklen: %d %d\n",
+			thash->name, ivlen, blocklen));
+		m_freem(m);
+		return (EINVAL);
+	}
+
+	if (m->m_pkthdr.len < bodyoff) {
+		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: bad len %d/%lu\n",
+				thash->name, m->m_pkthdr.len, (unsigned long)bodyoff));
+		m_freem(m);
+		return (EINVAL);
+	}
+	if ((m->m_pkthdr.len - bodyoff) % blocklen) {
+		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: "
+		    "payload length must be multiple of %d\n",
+			thash->name, blocklen));
+		m_freem(m);
+		return (EINVAL);
+	}
+
+	s = m;
+	d = d0 = dp = NULL;
+	soff = doff = sn = dn = 0;
+	ivp = sp = NULL;
+
+	/* skip bodyoff */
+	while (soff < bodyoff) {
+		if (soff + s->m_len > bodyoff) {
+			sn = bodyoff - soff;
+			break;
+		}
+
+		soff += s->m_len;
+		s = s->m_next;
+	}
+	scut = s;
+	scutoff = sn;
+
+	/* skip over empty mbuf */
+	while (s && s->m_len == 0) {
+		s = s->m_next;
+	}
+
+	while (soff < m->m_pkthdr.len) {
+		/* source */
+		if (sn + blocklen <= s->m_len) {
+			/* body is continuous */
+			sp = mtod(s, u_int8_t *) + sn;
+		} else {
+			/* body is non-continuous */
+			m_copydata(s, sn, blocklen, (caddr_t) sbuf);
+			sp = sbuf;
+		}
+
+		/* destination */
+		if (!d || dn + blocklen > d->m_len) {
+			if (d) {
+				dp = d;
+			}
+			MGET(d, M_DONTWAIT, MT_DATA);
+			i = m->m_pkthdr.len - (soff + sn);
+			if (d && i > MLEN) {
+				MCLGET(d, M_DONTWAIT);
+				if ((d->m_flags & M_EXT) == 0) {
+					m_free(d);
+					d = NULL;
+				}
+			}
+			if (!d) {
+				m_freem(m);
+				if (d0) {
+					m_freem(d0);
+				}
+				return (ENOBUFS);
+			}
+			if (!d0) {
+				d0 = d;
+			}
+			if (dp) {
+				dp->m_next = d;
+			}
+			d->m_len = 0;
+			d->m_len = (M_TRAILINGSPACE(d) / blocklen) * blocklen;
+			if (d->m_len > i) {
+				d->m_len = i;
+			}
+			dn = 0;
+		}
+
+		/* xor */
+		p = ivp ? ivp : iv;
+		q = sp;
+		for (i = 0; i < blocklen; i++) {
+			q[i] ^= p[i];
+		}
+
+		/* encrypt */
+		esp_hash_encrypt(sav, thash, sp, mtod(d, u_int8_t *) + dn);
+
+		/* next iv */
+		ivp = mtod(d, u_int8_t *) + dn;
+
+		sn += blocklen;
+		dn += blocklen;
+
+		/* find the next source block */
+		while (s && sn >= s->m_len) {
+			sn -= s->m_len;
+			soff += s->m_len;
+			s = s->m_next;
+		}
+
+		/* skip over empty mbuf */
+		while (s && s->m_len == 0) {
+			s = s->m_next;
+		}
+	}
+
+	m_freem(scut->m_next);
+	scut->m_len = scutoff;
+	scut->m_next = d0;
+
+	/* just in case */
+	bzero(iv, sizeof(iv));
+	bzero(sbuf, sizeof(sbuf));
+
+	key_sa_stir_iv(sav);
+
+	return (0);
+}
+
 /*------------------------------------------------------------*/
 
-void
-esp_decrypt_descriptor(m, sav, crp, skip, alen, hlen)
+static int
+esp_input(m, sav, skip, ivlen)
 	struct mbuf *m;
 	struct secasvar *sav;
-	struct cryptop *crp;
-	int skip, alen, hlen;
+	int skip, ivlen;
 {
 	const struct enc_xform *espx;
 	const struct auth_hash *esph;
-	struct cryptodesc *crda, *crde;
-	uint8_t abuf[32];
+	struct tdb *tdb;
+	struct cryptop *crp;
+	int plen, hlen, alen, ivoff, derived;
 
-	espx = sav->tdb_encalgxform;
-	esph = sav->tdb_authalgxform;
+	struct cryptodesc *crda, *crde;
+
+	tdb = sav->tdb_tdb;
+	espx = tdb->tdb_encalgxform;
+	esph = tdb->tdb_authalgxform;
+
+	/* Determine the ESP header length */
+	if (sav->flags & SADB_X_EXT_OLD) {
+		/* RFC 1827 */
+		ivoff = sizeof(struct esp);
+		hlen = sizeof(struct esp) + ivlen;
+		derived = 0;
+	} else {
+		/* RFC 2406 */
+		if (sav->flags & SADB_X_EXT_DERIV) {
+			ivoff = sizeof(struct esp);
+			hlen = sizeof(struct esp) + sizeof(u_int32_t);
+			ivlen = sizeof(u_int32_t);
+			derived = 1;
+		} else {
+			ivoff = sizeof(struct newesp);
+			hlen = sizeof(struct newesp) + ivlen;
+			derived = 0;
+		}
+	}
+
+	/* Authenticator hash size */
+	alen = esph ? AH_HMAC_HASHLEN : 0;
+	plen = m->m_pkthdr.len - (skip + hlen + alen);
+
+	/* Get crypto descriptors */
+	crp = crypto_getreq(esph && espx ? 2 : 1);
+	if (crp == NULL) {
+		DPRINTF(("esp_input: failed to acquire crypto descriptors\n"));
+		espstat.esps_crypto++;
+		m_freem(m);
+		return (ENOBUFS);
+	}
+
+	/* Get IPsec-specific opaque pointer */
+	if (esph == NULL) {
+		tdb = tdb_alloc(0);
+	} else {
+		tdb = tdb_alloc(alen);
+	}
+	if (tdb == NULL) {
+		crypto_freereq(crp);
+		DPRINTF(("esp_input: failed to allocate tdb_crypto\n"));
+		espstat.esps_crypto++;
+		m_freem(m);
+		return (ENOBUFS);
+	}
+
+	sav->tdb_tdb = tdb;
+
 	if (esph) {
 		crda = crp->crp_desc;
 
@@ -432,31 +925,183 @@ esp_decrypt_descriptor(m, sav, crp, skip, alen, hlen)
 		crde = crp->crp_desc;
 	}
 
+	/* Crypto operation descriptor */
+	crp->crp_ilen = m->m_pkthdr.len; /* Total input length */
+	crp->crp_flags = CRYPTO_F_IMBUF;
+	crp->crp_buf = (caddr_t)m;
+	crp->crp_callback = esp_input_cb;
+	crp->crp_sid = tdb->tdb_cryptoid;
+	crp->crp_opaque = (caddr_t)tdb;
+
+	/* These are passed as-is to the callback. */
+	tdb->tdb_isr = sav->isr;
+	tdb->tdb_spi = sav->spi;
+	tdb->tdb_dst = sav->sah->saidx.dst;
+	tdb->tdb_src = sav->sah->saidx.src;
+	tdb->tdb_proto = sav->sah->saidx.proto;
+	tdb->tdb_skip = skip;
+	tdb->tdb_ivlen = ivlen;
+	tdb->tdb_ivoff = ivoff;
+	tdb->tdb_derived = derived;
+
 	if (espx) {
 		/* Decryption descriptor */
 		crde->crd_skip = skip + hlen;
-		crde->crd_len = m->m_pkthdr.len - (skip + hlen + alen);
-		crde->crd_inject = skip + hlen - sav->ivlen;
+		crde->crd_len = plen;
+		crde->crd_inject = skip + hlen - ivlen;
 
 		crde->crd_alg = espx->type;
 		crde->crd_key = _KEYBUF(sav->key_enc);
 		crde->crd_klen = _KEYBITS(sav->key_enc);
 	}
+	return (esp_input_cb(crp));
 }
 
-void
-esp_encrypt_descriptor(m, sav, crp, skip, alen, hlen)
-	struct mbuf *m;
-	struct secasvar *sav;
+static int
+esp_input_cb(crp)
 	struct cryptop *crp;
-	int skip, alen, hlen;
+{
+	struct secasvar *sav;
+	struct mbuf *m;
+	struct tdb *tdb;
+	const struct auth_hash *esph;
+	const struct enc_xform *espx;
+	int s, error, skip, ivlen, ivoff, derived;
+
+	tdb = (struct tdb *)crp->crp_opaque;
+	m = (struct mbuf *)crp->crp_buf;
+	skip = tdb->tdb_skip;
+	ivlen = tdb->tdb_ivlen;
+	ivoff = tdb->tdb_ivoff;
+	derived = tdb->tdb_derived;
+
+	s = splsoftnet();
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+#else
+	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+	if (sav == NULL) {
+		DPRINTF(("esp_input_cb: SA expired while in crypto\n"));
+		error = ENOBUFS;		/*XXX*/
+		goto bad;
+	}
+
+	esph = tdb->tdb_authalgxform;
+	espx = tdb->tdb_encalgxform;
+
+	/* Check for crypto errors */
+	if (crp->crp_etype) {
+		/* Reset the session ID */
+		if (sav->tdb_cryptoid != 0)
+			sav->tdb_cryptoid = crp->crp_sid;
+
+		if (crp->crp_etype == EAGAIN) {
+			key_freesav(&sav);
+			splx(s);
+			return (crypto_dispatch(crp));
+		}
+
+		DPRINTF(("esp_input_cb: crypto error %d\n", crp->crp_etype));
+		error = crp->crp_etype;
+		goto bad;
+	}
+
+	/* Shouldn't happen... */
+	if (m == NULL) {
+		DPRINTF(("esp_input_cb: bogus returned buffer from crypto\n"));
+		error = EINVAL;
+		goto bad;
+	}
+
+	/* Release the crypto descriptors */
+	tdb_free(tdb);
+	tdb = NULL;
+	crypto_freereq(crp);
+	crp = NULL;
+
+	error = esp_decrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), derived);
+
+	key_freesav(&sav);
+	splx(s);
+	return (error);
+
+bad:
+	if (sav) {
+		key_freesav(&sav);
+	}
+	splx(s);
+	if (m != NULL) {
+		m_freem(m);
+	}
+	if (tdb != NULL) {
+		tdb_free(tdb);
+	}
+	if (crp != NULL) {
+		crypto_freereq(crp);
+	}
+	return (error);
+}
+
+static int
+esp_output(m, isr, mp, skip, ivlen)
+	struct mbuf *m;
+	struct ipsecrequest *isr;
+	struct mbuf **mp;
+	int skip, ivlen;
 {
 	const struct enc_xform *espx;
 	const struct auth_hash *esph;
+	struct tdb *tdb;
+	struct secasvar *sav;
+	struct cryptop *crp;
+	int error, plen, hlen, alen, ivoff, derived;
+
 	struct cryptodesc *crda, *crde;
 
-	espx = sav->tdb_encalgxform;
-	esph = sav->tdb_authalgxform;
+	sav = isr->sav;
+	tdb = sav->tdb_tdb;
+	esph = tdb->tdb_authalgxform;
+	espx = tdb->tdb_encalgxform;
+
+	if (sav->flags & SADB_X_EXT_OLD) {
+		/* RFC 1827 */
+		ivoff = sizeof(struct esp);
+		hlen = sizeof(struct esp) + ivlen;
+		derived = 0;
+	} else {
+		/* RFC 2406 */
+		if (sav->flags & SADB_X_EXT_DERIV) {
+			/*
+			 * draft-ietf-ipsec-ciph-des-derived-00.txt
+			 * uses sequence number field as IV field.
+			 */
+			ivoff = sizeof(struct esp);
+			hlen = sizeof(struct esp) + sizeof(u_int32_t);
+			ivlen = sizeof(u_int32_t);
+			derived = 1;
+		} else {
+			ivoff = sizeof(struct newesp);
+			hlen = sizeof(struct newesp) + ivlen;
+			derived = 0;
+		}
+	}
+
+	if (esph) {
+		alen = AH_HMAC_HASHLEN;
+	} else {
+		alen = 0;
+	}
+
+	/* Get crypto descriptors. */
+	crp = crypto_getreq(esph && espx ? 2 : 1);
+	if (crp == NULL) {
+		DPRINTF(("esp_output: failed to acquire crypto descriptors\n"));
+		espstat.esps_crypto++;
+		error = ENOBUFS;
+		goto bad;
+	}
+
 	if (espx) {
 		crde = crp->crp_desc;
 		crda = crde->crd_next;
@@ -471,9 +1116,41 @@ esp_encrypt_descriptor(m, sav, crp, skip, alen, hlen)
 		crde->crd_alg = espx->type;
 		crde->crd_key = _KEYBUF(sav->key_enc);
 		crde->crd_klen = _KEYBITS(sav->key_enc);
+		/* XXX Rounds ? */
 	} else {
 		crda = crp->crp_desc;
 	}
+
+	/* IPsec-specific opaque crypto info. */
+	tdb = tdb_alloc(0);
+	if (tdb == NULL) {
+		crypto_freereq(crp);
+		DPRINTF(("esp_output: failed to allocate tdb_crypto\n"));
+		espstat.esps_crypto++;
+		error = ENOBUFS;
+		goto bad;
+	}
+
+	sav->tdb_tdb = tdb;
+
+	/* Crypto operation descriptor */
+	crp->crp_ilen = m->m_pkthdr.len; /* Total input length */
+	crp->crp_flags = CRYPTO_F_IMBUF;
+	crp->crp_buf = (caddr_t)m;
+	crp->crp_callback = esp_output_cb;
+	crp->crp_sid = tdb->tdb_cryptoid;
+	crp->crp_opaque = (caddr_t)tdb;
+
+	/* These are passed as-is to the callback. */
+	tdb->tdb_isr = sav->isr;
+	tdb->tdb_spi = sav->spi;
+	tdb->tdb_dst = sav->sah->saidx.dst;
+	tdb->tdb_src = sav->sah->saidx.src;
+	tdb->tdb_proto = sav->sah->saidx.proto;
+	tdb->tdb_skip = skip;
+	tdb->tdb_ivlen = ivlen;
+	tdb->tdb_ivoff = ivoff;
+	tdb->tdb_derived = derived;
 
 	if (esph) {
 		/* Authentication descriptor. */
@@ -486,18 +1163,100 @@ esp_encrypt_descriptor(m, sav, crp, skip, alen, hlen)
 		crda->crd_key = _KEYBUF(sav->key_auth);
 		crda->crd_klen = _KEYBITS(sav->key_auth);
 	}
+
+	return (esp_output_cb(crp));
+
+bad:
+	if (m) {
+		m_freem(m);
+	}
+	return (error);
 }
 
 static int
-esp_input()
+esp_output_cb(crp)
+	struct cryptop *crp;
 {
+	struct secasvar *sav;
+	struct mbuf *m;
+	struct tdb *tdb;
+	const struct auth_hash *esph;
+	const struct enc_xform *espx;
+	int s, error, skip, ivlen, ivoff, derived;
 
-}
+	tdb = (struct tdb *)crp->crp_opaque;
+	m = (struct mbuf *)crp->crp_buf;
+	skip = tdb->tdb_skip;
+	ivlen = tdb->tdb_ivlen;
+	ivoff = tdb->tdb_ivoff;
+	derived = tdb->tdb_derived;
 
-static int
-esp_output()
-{
+	s = splsoftnet();
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+#else
+	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+	if (sav == NULL) {
+		DPRINTF(("esp_output_cb: SA expired while in crypto\n"));
+		error = ENOBUFS;		/*XXX*/
+		goto bad;
+	}
 
+	esph = tdb->tdb_authalgxform;
+	espx = tdb->tdb_encalgxform;
+
+	/* Check for crypto errors */
+	if (crp->crp_etype) {
+		/* Reset the session ID */
+		if (sav->tdb_cryptoid != 0)
+			sav->tdb_cryptoid = crp->crp_sid;
+
+		if (crp->crp_etype == EAGAIN) {
+			key_freesav(&sav);
+			splx(s);
+			return (crypto_dispatch(crp));
+		}
+
+		DPRINTF(("esp_output_cb: crypto error %d\n", crp->crp_etype));
+		error = crp->crp_etype;
+		goto bad;
+	}
+
+	/* Shouldn't happen... */
+	if (m == NULL) {
+		DPRINTF(("esp_output_cb: bogus returned buffer from crypto\n"));
+		error = EINVAL;
+		goto bad;
+	}
+
+	/* Release the crypto descriptors */
+	tdb_free(tdb);
+	tdb = NULL;
+	crypto_freereq(crp);
+	crp = NULL;
+
+	error = esp_encrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), derived);
+
+	key_freesav(&sav);
+	splx(s);
+	return (error);
+
+bad:
+	if (sav) {
+		key_freesav(&sav);
+	}
+	splx(s);
+	if (m != NULL) {
+		m_freem(m);
+	}
+	if (tdb != NULL) {
+		tdb_free(tdb);
+	}
+	if (crp != NULL) {
+		crypto_freereq(crp);
+	}
+	return (error);
 }
 
 static struct xformsw esp_xformsw = {
