@@ -88,9 +88,9 @@
 
 #include <netinet/in.h>
 
-#include <netinet6/ipsec.h>
-#include <netinet6/ah.h>
-#include <netinet6/esp.h>
+#include <kame_ipsec/ipsec.h>
+#include <kame_ipsec/ah.h>
+#include <kame_ipsec/esp.h>
 
 #include <kame_ipsec/xform.h>
 
@@ -163,7 +163,7 @@ esp_encrypt(m, off, plen, sav, thash, ivlen)
 	struct mbuf *m;
 	size_t off, plen;
 	struct secasvar *sav;
-	const struct enc_hash *thash;
+	const struct enc_xform *thash;
 	int ivlen;
 {
 	struct tdb *tdb;
@@ -180,7 +180,7 @@ esp_decrypt(m, off, sav, thash, ivlen)
 	struct mbuf *m;
 	size_t off;
 	struct secasvar *sav;
-	const struct enc_hash *thash;
+	const struct enc_xform *thash;
 	int ivlen;
 {
 	struct tdb *tdb;
@@ -304,12 +304,6 @@ esp_init(sav, xsp)
 		return (EINVAL);
 	}
 
-	tdb = tdb_init(sav, xsp, txform, NULL, NULL, IPPROTO_ESP);
-	if (tdb == NULL) {
-		ipseclog((LOG_ERR, "esp_init: no descriptor block key for %s algorithm\n", txform->name));
-		return (EINVAL);
-	}
-
 	/*
 	 * NB: The null xform needs a non-zero blocksize to keep the
 	 *      crypto code happy but if we use it to set ivlen then
@@ -335,8 +329,11 @@ esp_init(sav, xsp)
 	}
 
 	/* NB: override anything set in ah_init0 */
-	tdb->tdb_xform = xsp;
-	tdb->tdb_encalgxform = txform;
+	tdb = tdb_init(sav, xsp, txform, NULL, NULL, IPPROTO_ESP);
+	if (tdb == NULL) {
+		ipseclog((LOG_ERR, "esp_init: no memory for tunnel descriptor block\n"));
+		return (EINVAL);
+	}
 
 	/* Initialize crypto session. */
 	bzero(&crie, sizeof (crie));
@@ -373,7 +370,7 @@ esp_zeroize(struct secasvar *sav)
 	if (sav->key_enc) {
 		bzero(_KEYBUF(sav->key_enc), _KEYLEN(sav->key_enc));
 	}
-	tdb_zeroize(sav->tdb_tdb);
+	(void)tdb_zeroize(sav->tdb_tdb);
 	return (error);
 }
 
@@ -882,7 +879,7 @@ esp_input(m, sav, skip, ivlen)
 	/* Get crypto descriptors */
 	crp = crypto_getreq(esph && espx ? 2 : 1);
 	if (crp == NULL) {
-		DPRINTF(("esp_input: failed to acquire crypto descriptors\n"));
+		ipseclog((LOG_ERR, "esp_input: failed to acquire crypto descriptors\n"));
 		espstat.esps_crypto++;
 		m_freem(m);
 		return (ENOBUFS);
@@ -896,13 +893,14 @@ esp_input(m, sav, skip, ivlen)
 	}
 	if (tdb == NULL) {
 		crypto_freereq(crp);
-		DPRINTF(("esp_input: failed to allocate tdb_crypto\n"));
+		ipseclog((LOG_ERR, "esp_input: failed to allocate tdb_crypto\n"));
 		espstat.esps_crypto++;
 		m_freem(m);
 		return (ENOBUFS);
 	}
 
 	sav->tdb_tdb = tdb;
+	tdb->tdb_sav = sav;
 
 	if (esph) {
 		crda = crp->crp_desc;
@@ -940,8 +938,8 @@ esp_input(m, sav, skip, ivlen)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
-	tdb->tdb_ivlen = ivlen;
-	tdb->tdb_ivoff = ivoff;
+	tdb->tdb_length = ivlen;
+	tdb->tdb_offset = ivoff;
 	tdb->tdb_derived = derived;
 
 	if (espx) {
@@ -971,18 +969,19 @@ esp_input_cb(crp)
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
-	ivlen = tdb->tdb_ivlen;
-	ivoff = tdb->tdb_ivoff;
+	ivlen = tdb->tdb_length;
+	ivoff = tdb->tdb_offset;
 	derived = tdb->tdb_derived;
 
 	s = splsoftnet();
 #ifdef INET6
 	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
-#else
+#endif
+#ifdef INET
 	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
-		DPRINTF(("esp_input_cb: SA expired while in crypto\n"));
+		ipseclog((LOG_ERR, "esp_input_cb: SA expired while in crypto\n"));
 		error = ENOBUFS;		/*XXX*/
 		goto bad;
 	}
@@ -1002,7 +1001,7 @@ esp_input_cb(crp)
 			return (crypto_dispatch(crp));
 		}
 
-		DPRINTF(("esp_input_cb: crypto error %d\n", crp->crp_etype));
+		ipseclog((LOG_ERR, "esp_input_cb: crypto error %d\n", crp->crp_etype));
 		error = crp->crp_etype;
 		goto bad;
 	}
@@ -1096,7 +1095,7 @@ esp_output(m, isr, mp, skip, ivlen)
 	/* Get crypto descriptors. */
 	crp = crypto_getreq(esph && espx ? 2 : 1);
 	if (crp == NULL) {
-		DPRINTF(("esp_output: failed to acquire crypto descriptors\n"));
+		ipseclog((LOG_ERR, "esp_output: failed to acquire crypto descriptors\n"));
 		espstat.esps_crypto++;
 		error = ENOBUFS;
 		goto bad;
@@ -1110,7 +1109,7 @@ esp_output(m, isr, mp, skip, ivlen)
 		crde->crd_skip = skip + hlen;
 		crde->crd_len = m->m_pkthdr.len - (skip + hlen + alen);
 		crde->crd_flags = CRD_F_ENCRYPT;
-		crde->crd_inject = skip + hlen - sav->ivlen;
+		crde->crd_inject = skip + hlen - ivlen;
 
 		/* Encryption operation. */
 		crde->crd_alg = espx->type;
@@ -1125,13 +1124,14 @@ esp_output(m, isr, mp, skip, ivlen)
 	tdb = tdb_alloc(0);
 	if (tdb == NULL) {
 		crypto_freereq(crp);
-		DPRINTF(("esp_output: failed to allocate tdb_crypto\n"));
+		ipseclog((LOG_ERR, "esp_output: failed to allocate tdb_crypto\n"));
 		espstat.esps_crypto++;
 		error = ENOBUFS;
 		goto bad;
 	}
 
 	sav->tdb_tdb = tdb;
+	tdb->tdb_sav = sav;
 
 	/* Crypto operation descriptor */
 	crp->crp_ilen = m->m_pkthdr.len; /* Total input length */
@@ -1148,8 +1148,8 @@ esp_output(m, isr, mp, skip, ivlen)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
-	tdb->tdb_ivlen = ivlen;
-	tdb->tdb_ivoff = ivoff;
+	tdb->tdb_length = ivlen;
+	tdb->tdb_offset = ivoff;
 	tdb->tdb_derived = derived;
 
 	if (esph) {
@@ -1187,18 +1187,19 @@ esp_output_cb(crp)
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
-	ivlen = tdb->tdb_ivlen;
-	ivoff = tdb->tdb_ivoff;
+	ivlen = tdb->tdb_length;
+	ivoff = tdb->tdb_offset;
 	derived = tdb->tdb_derived;
 
 	s = splsoftnet();
 #ifdef INET6
 	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
-#else
+#endif
+#ifdef INET
 	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
-		DPRINTF(("esp_output_cb: SA expired while in crypto\n"));
+		ipseclog((LOG_ERR, "esp_output_cb: SA expired while in crypto\n"));
 		error = ENOBUFS;		/*XXX*/
 		goto bad;
 	}
@@ -1218,14 +1219,14 @@ esp_output_cb(crp)
 			return (crypto_dispatch(crp));
 		}
 
-		DPRINTF(("esp_output_cb: crypto error %d\n", crp->crp_etype));
+		ipseclog((LOG_ERR, "esp_output_cb: crypto error %d\n", crp->crp_etype));
 		error = crp->crp_etype;
 		goto bad;
 	}
 
 	/* Shouldn't happen... */
 	if (m == NULL) {
-		DPRINTF(("esp_output_cb: bogus returned buffer from crypto\n"));
+		ipseclog((LOG_ERR, "esp_output_cb: bogus returned buffer from crypto\n"));
 		error = EINVAL;
 		goto bad;
 	}

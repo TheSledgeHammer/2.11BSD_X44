@@ -88,9 +88,9 @@
 
 #include <netinet/in.h>
 
-#include <netinet6/ipsec.h>
-#include <netinet6/ah.h>
-#include <netinet6/esp.h>
+#include <kame_ipsec/ipsec.h>
+#include <kame_ipsec/ah.h>
+#include <kame_ipsec/esp.h>
 
 #include <kame_ipsec/xform.h>
 
@@ -105,6 +105,10 @@
 static int ah_sumsiz_1216(struct secasvar *);
 static int ah_sumsiz_zero(struct secasvar *);
 
+static int ah_input(struct mbuf *, struct secasvar *, int, int);
+static int ah_input_cb(struct cryptop *);
+static int ah_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);
+static int ah_output_cb(struct cryptop *);
 static void ah_update_mbuf(struct mbuf *, int, int, struct secasvar *, const struct auth_hash *, struct xform_state *);
 
 const struct auth_hash *
@@ -196,6 +200,30 @@ estimate:
 	return ((sizeof(struct newah) + AH_MAXSUMSIZE));
 }
 
+/* Calculate AH length */
+int
+ah_hdrlen(sav)
+	struct secasvar *sav;
+{
+	const struct auth_hash *thash;
+	int plen, ahlen;
+
+	thash = ah_algorithm_lookup(sav->alg_auth);
+	if (!thash) {
+		return (0);
+	}
+	if (sav->flags & SADB_X_EXT_OLD) {
+		/* RFC 1826 */
+		plen = (ah_sumsiz(sav, thash) + 3) & ~(4 - 1);	/* XXX pad to 8byte? */
+		ahlen = plen + sizeof(struct ah);
+	} else {
+		/* RFC 2402 */
+		plen = (ah_sumsiz(sav, thash) + 3) & ~(4 - 1);	/* XXX pad to 8byte? */
+		ahlen = plen + sizeof(struct newah);
+	}
+	return (ahlen);
+}
+
 /*
  * NB: public for use by esp_init.
  */
@@ -211,8 +239,7 @@ ah_init0(sav, xsp, cria)
 
 	thash = ah_algorithm_lookup(sav->alg_auth);
 	if (thash == NULL) {
-		DPRINTF(
-				("ah_init: unsupported authentication algorithm %u\n", sav->alg_auth));
+		ipseclog((LOG_ERR, "ah_init: unsupported authentication algorithm %u\n", sav->alg_auth));
 		return EINVAL;
 	}
 	/*
@@ -222,34 +249,29 @@ ah_init0(sav, xsp, cria)
 	 */
 	/* NB: replay state is setup elsewhere (sigh) */
 	if (((sav->flags & SADB_X_EXT_OLD) == 0) ^ (sav->replay != NULL)) {
-		DPRINTF(
-				("ah_init: replay state block inconsistency, "
+		ipseclog((LOG_ERR, "ah_init: replay state block inconsistency, "
 						"%s algorithm %s replay state\n",
 						(sav->flags & SADB_X_EXT_OLD) ? "old" : "new",
 						sav->replay == NULL ? "without" : "with"));
 		return (EINVAL);
 	}
 	if (sav->key_auth == NULL) {
-		DPRINTF(("ah_init: no authentication key for %s "
+		ipseclog((LOG_ERR, "ah_init: no authentication key for %s "
 				"algorithm\n", thash->name));
 		return (EINVAL);
 	}
 	keylen = _KEYLEN(sav->key_auth);
 	if (keylen != thash->keysize && thash->keysize != 0) {
-		DPRINTF(
-				("ah_init: invalid keylength %d, algorithm "
+		ipseclog((LOG_ERR, "ah_init: invalid keylength %d, algorithm "
 						"%s requires keysize %d\n", keylen, thash->name, thash->keysize));
 		return (EINVAL);
 	}
 
 	tdb = tdb_init(sav, xsp, NULL, thash, NULL, IPPROTO_AH);
 	if (tdb == NULL) {
-		ipseclog((LOG_ERR, "ah_init: no descriptor block key for %s algorithm\n", thash->name));
+		ipseclog((LOG_ERR, "ah_init: no memory for tunnel descriptor block\n"));
 		return (EINVAL);
 	}
-
-	tdb->tdb_xform = xsp;
-	tdb->tdb_authalgxform = thash;
 
 	/* Initialize crypto session. */
 	bzero(cria, sizeof(*cria));
@@ -281,20 +303,13 @@ ah_init(sav, xsp)
  *
  * NB: public for use by esp_zeroize (XXX).
  */
-int
+static int
 ah_zeroize(struct secasvar *sav)
 {
-	int err;
-
 	if (sav->key_auth) {
 		bzero(_KEYBUF(sav->key_auth), _KEYLEN(sav->key_auth));
 	}
-
-	err = crypto_freesession(sav->tdb_cryptoid);
-	sav->tdb_cryptoid = 0;
-	sav->tdb_authalgxform = NULL;
-	sav->tdb_xform = NULL;
-	return (err);
+	return (tdb_zeroize(sav->tdb_tdb));
 }
 
 static int
@@ -428,17 +443,43 @@ ah_hash_result(state, sav, thash, addr, len)
 
 /*------------------------------------------------------------*/
 
-void
-ah_decrypt_descriptor(m, sav, crp, skip, rplen)
+static int
+ah_input(m, sav, skip, ahlen)
 	struct mbuf *m;
 	struct secasvar *sav;
-	struct cryptop *crp;
-	int skip, rplen;
+	int skip, ahlen;
 {
-	struct cryptodesc *crda;
 	const struct auth_hash *ahx;
+	struct tdb *tdb;
+	struct cryptop *crp;
+	int rplen, ahoff;
 
-	ahx = sav->tdb_authalgxform;
+	struct cryptodesc *crda, *crde;
+
+	tdb = sav->tdb_tdb;
+	ahx = tdb->tdb_authalgxform;
+
+	/* Figure out header size. */
+	rplen = (ah_sumsiz(sav, ahx) + 3) & ~(4 - 1);
+	if (sav->flags & SADB_X_EXT_OLD) {
+		/* RFC 1826 */
+		ahoff = sizeof(struct ah);
+		ahlen = ahoff + rplen;
+	} else {
+		/* RFC 2402 */
+		ahoff = sizeof(struct newah);
+		ahlen = ahoff + rplen;
+	}
+
+	/* Get crypto descriptors. */
+	crp = crypto_getreq(1);
+	if (crp == NULL) {
+		ipseclog((LOG_ERR, "ah_input: failed to acquire crypto descriptor\n"));
+		ahstat.ahs_crypto++;
+		m_freem(m);
+		return (ENOBUFS);
+	}
+
 	if (ahx) {
 		crda = crp->crp_desc;
 		crda->crd_skip = 0;
@@ -450,41 +491,306 @@ ah_decrypt_descriptor(m, sav, crp, skip, rplen)
 		crda->crd_key = _KEYBUF(sav->key_auth);
 		crda->crd_klen = _KEYBITS(sav->key_auth);
 	}
-}
 
-void
-ah_encrypt_descriptor(m, sav, crp, skip, rplen)
-	struct mbuf *m;
-	struct secasvar *sav;
-	struct cryptop *crp;
-	int skip, rplen;
-{
-	const struct auth_hash *ahx;
-	struct cryptodesc *crda;
-
-	ahx = sav->tdb_authalgxform;
-	if (ahx) {
-		crda = crp->crp_desc;
-		crda->crd_skip = 0;
-		crda->crd_len = m->m_pkthdr.len;
-		crda->crd_inject = skip + rplen;
-
-		/* Authentication operation. */
-		crda->crd_alg = ahx->type;
-		crda->crd_key = _KEYBUF(sav->key_auth);
-		crda->crd_klen = _KEYBITS(sav->key_auth);
+	tdb = tdb_alloc(0);
+	if (tdb == NULL) {
+		ipseclog((LOG_ERR, "ah_input: failed to allocate tdb_crypto\n"));
+		ahstat.ahs_crypto++;
+		crypto_freereq(crp);
+		m_freem(m);
+		return (ENOBUFS);
 	}
+
+	sav->tdb_tdb = tdb;
+	tdb->tdb_sav = sav;
+
+	/* Crypto operation descriptor */
+	crp->crp_ilen = m->m_pkthdr.len; /* Total input length */
+	crp->crp_flags = CRYPTO_F_IMBUF;
+	crp->crp_buf = (caddr_t)m;
+	crp->crp_callback = ah_input_cb;
+	crp->crp_sid = tdb->tdb_cryptoid;
+	crp->crp_opaque = (caddr_t)tdb;
+
+	/* These are passed as-is to the callback. */
+	tdb->tdb_isr = sav->isr;
+	tdb->tdb_spi = sav->spi;
+	tdb->tdb_dst = sav->sah->saidx.dst;
+	tdb->tdb_src = sav->sah->saidx.src;
+	tdb->tdb_proto = sav->sah->saidx.proto;
+	tdb->tdb_skip = skip;
+	tdb->tdb_length = ahlen;
+	tdb->tdb_offset = ahoff;
+	tdb->tdb_derived = 0;
+
+	return (ah_input_cb(crp));
 }
 
-
-ah_input()
+static int
+ah_input_cb(crp)
+	struct cryptop *crp;
 {
+	struct secasvar *sav;
+	struct mbuf *m;
+	struct tdb *tdb;
+	const struct auth_hash *ahx;
+	int s, error, skip, ahlen, ahoff;
 
+	tdb = (struct tdb *)crp->crp_opaque;
+	m = (struct mbuf *)crp->crp_buf;
+	skip = tdb->tdb_skip;
+	ahlen = tdb->tdb_length;
+	ahoff = tdb->tdb_offset;
+
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+#ifdef INET
+	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+	if (sav == NULL) {
+		ipseclog((LOG_ERR, "ah_input_cb: SA expired while in crypto\n"));
+		error = ENOBUFS;		/*XXX*/
+		goto bad;
+	}
+
+	ahx = tdb->tdb_authalgxform;
+
+	/* Check for crypto errors */
+	if (crp->crp_etype) {
+		/* Reset the session ID */
+		if (sav->tdb_cryptoid != 0)
+			sav->tdb_cryptoid = crp->crp_sid;
+
+		if (crp->crp_etype == EAGAIN) {
+			key_freesav(&sav);
+			splx(s);
+			return (crypto_dispatch(crp));
+		}
+
+		ipseclog((LOG_ERR, "ah_input_cb: crypto error %d\n", crp->crp_etype));
+		error = crp->crp_etype;
+		goto bad;
+	}
+
+	/* Shouldn't happen... */
+	if (m == NULL) {
+		ipseclog((LOG_ERR, "ah_input_cb: bogus returned buffer from crypto\n"));
+		error = EINVAL;
+		goto bad;
+	}
+
+	/* Release the crypto descriptors */
+	tdb_free(tdb);
+	tdb = NULL;
+	crypto_freereq(crp);
+	crp = NULL;
+
+#ifdef INET6
+	error = ah6_calccksum(m, skip, ahlen, ahx, sav);
+#endif
+#ifdef INET
+	error = ah4_calccksum(m, skip, ahlen, ahx, sav);
+#endif
+
+	key_freesav(&sav);
+	splx(s);
+	return (error);
+
+bad:
+	if (sav) {
+		key_freesav(&sav);
+	}
+	splx(s);
+	if (m != NULL) {
+		m_freem(m);
+	}
+	if (tdb != NULL) {
+		tdb_free(tdb);
+	}
+	if (crp != NULL) {
+		crypto_freereq(crp);
+	}
+	return (error);
 }
 
-ah_output()
+static int
+ah_output(m, isr, mp, skip, ahlen)
+	struct mbuf *m;
+	struct ipsecrequest *isr;
+	struct mbuf **mp;
+	int skip, ahlen;
 {
+	struct secasvar *sav;
+	const struct auth_hash *ahx;
+	struct tdb *tdb;
+	struct cryptop *crp;
+	int error, rplen, ahoff;
+	struct cryptodesc *crda, *crde;
 
+	sav = isr->sav;
+	tdb = sav->tdb_tdb;
+	ahx = tdb->tdb_authalgxform;
+
+	/* Figure out header size. */
+	rplen = (ah_sumsiz(sav, ahx) + 3) & ~(4 - 1);
+	if (sav->flags & SADB_X_EXT_OLD) {
+		/* RFC 1826 */
+		ahoff = sizeof(struct ah);
+		ahlen = ahoff + rplen;
+	} else {
+		/* RFC 2402 */
+		ahoff = sizeof(struct newah);
+		ahlen = ahoff + rplen;
+	}
+
+	/* Get crypto descriptors. */
+	crp = crypto_getreq(1);
+	if (crp == NULL) {
+		ipseclog((LOG_ERR, "ah_output: failed to acquire crypto descriptors\n"));
+		ahstat.ahs_crypto++;
+		error = ENOBUFS;
+		goto bad;
+	}
+
+	crda = crp->crp_desc;
+
+	crda->crd_skip = 0;
+	crda->crd_inject = skip + rplen;
+	crda->crd_len = m->m_pkthdr.len;
+
+	/* Authentication operation. */
+	crda->crd_alg = ahx->type;
+	crda->crd_key = _KEYBUF(sav->key_auth);
+	crda->crd_klen = _KEYBITS(sav->key_auth);
+
+	/* Allocate IPsec-specific opaque crypto info. */
+	tdb = tdb_alloc(skip);
+	if (tdb == NULL) {
+		crypto_freereq(crp);
+		ipseclog((LOG_ERR, "ah_output: failed to allocate tdb_crypto\n"));
+		ahstat.ahs_crypto++;
+		error = ENOBUFS;
+		goto bad;
+	}
+
+	sav->tdb_tdb = tdb;
+	tdb->tdb_sav = sav;
+
+	/* Crypto operation descriptor. */
+	crp->crp_ilen = m->m_pkthdr.len; /* Total input length. */
+	crp->crp_flags = CRYPTO_F_IMBUF;
+	crp->crp_buf = (caddr_t)m;
+	crp->crp_callback = ah_output_cb;
+	crp->crp_sid = tdb->tdb_cryptoid;
+	crp->crp_opaque = (caddr_t)tdb;
+
+	/* These are passed as-is to the callback. */
+	tdb->tdb_isr = sav->isr;
+	tdb->tdb_spi = sav->spi;
+	tdb->tdb_dst = sav->sah->saidx.dst;
+	tdb->tdb_src = sav->sah->saidx.src;
+	tdb->tdb_proto = sav->sah->saidx.proto;
+	tdb->tdb_skip = skip;
+	tdb->tdb_length = ahlen;
+	tdb->tdb_offset = ahoff;
+	tdb->tdb_derived = 0;
+
+	return (crypto_dispatch(crp));
+
+bad:
+	if (m) {
+		m_freem(m);
+	}
+	return (error);
+}
+
+static int
+ah_output_cb(crp)
+	struct cryptop *crp;
+{
+	struct secasvar *sav;
+	struct mbuf *m;
+	struct tdb *tdb;
+	const struct auth_hash *ahx;
+	int s, error, skip, ahlen, ahoff;
+
+	tdb = (struct tdb *)crp->crp_opaque;
+	m = (struct mbuf *)crp->crp_buf;
+	skip = tdb->tdb_skip;
+	ahlen = tdb->tdb_length;
+	ahoff = tdb->tdb_offset;
+
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+#ifdef INET
+	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+	if (sav == NULL) {
+		ipseclog((LOG_ERR, "ah_input_cb: SA expired while in crypto\n"));
+		error = ENOBUFS;		/*XXX*/
+		goto bad;
+	}
+
+	ahx = tdb->tdb_authalgxform;
+
+	/* Check for crypto errors */
+	if (crp->crp_etype) {
+		/* Reset the session ID */
+		if (sav->tdb_cryptoid != 0)
+			sav->tdb_cryptoid = crp->crp_sid;
+
+		if (crp->crp_etype == EAGAIN) {
+			key_freesav(&sav);
+			splx(s);
+			return (crypto_dispatch(crp));
+		}
+
+		ipseclog((LOG_ERR, "ah_input_cb: crypto error %d\n", crp->crp_etype));
+		error = crp->crp_etype;
+		goto bad;
+	}
+
+	/* Shouldn't happen... */
+	if (m == NULL) {
+		ipseclog((LOG_ERR, "ah_input_cb: bogus returned buffer from crypto\n"));
+		error = EINVAL;
+		goto bad;
+	}
+
+	/* Release the crypto descriptors */
+	tdb_free(tdb);
+	tdb = NULL;
+	crypto_freereq(crp);
+	crp = NULL;
+
+#ifdef INET6
+	error = ah6_calccksum(m, skip, ahlen, ahx, sav);
+#endif
+#ifdef INET
+	error = ah4_calccksum(m, skip, ahlen, ahx, sav);
+#endif
+
+	key_freesav(&sav);
+	splx(s);
+	return (error);
+
+bad:
+	if (sav) {
+		key_freesav(&sav);
+	}
+	splx(s);
+	if (m != NULL) {
+		m_freem(m);
+	}
+	if (tdb != NULL) {
+		tdb_free(tdb);
+	}
+	if (crp != NULL) {
+		crypto_freereq(crp);
+	}
+	return (error);
 }
 
 static struct xformsw ah_xformsw = {
@@ -566,7 +872,7 @@ ah_update_mbuf(m, off, len, sav, thash, state)
 int
 ah4_calccksum(m, ahdat, len, thash, sav)
 	struct mbuf *m;
-	u_int8_t * ahdat;
+	u_int8_t *ahdat;
 	size_t len;
 	const struct auth_hash *thash;
 	struct secasvar *sav;
@@ -579,7 +885,7 @@ ah4_calccksum(m, ahdat, len, thash, sav)
 	int error = 0;
 
 	if ((m->m_flags & M_PKTHDR) == 0) {
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	ahseen = 0;
@@ -820,7 +1126,7 @@ fail:
 int
 ah6_calccksum(m, ahdat, len, thash, sav)
 	struct mbuf *m;
-	u_int8_t * ahdat;
+	u_int8_t *ahdat;
 	size_t len;
 	const struct auth_hash *thash;
 	struct secasvar *sav;

@@ -1,0 +1,475 @@
+/*	$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $	*/
+/*	$KAME: ipcomp_core.c,v 1.25 2001/07/26 06:53:17 jinmei Exp $	*/
+
+/*
+ * Copyright (C) 1999 WIDE Project.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the project nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+/*	$NetBSD: xform_ipcomp.c,v 1.4 2003/10/06 22:05:15 tls Exp $	*/
+/*	$FreeBSD: src/sys/netipsec/xform_ipcomp.c,v 1.1.4.1 2003/01/24 05:11:36 sam Exp $	*/
+/* $OpenBSD: ip_ipcomp.c,v 1.1 2001/07/05 12:08:52 jjbg Exp $ */
+
+/*
+ * Copyright (c) 2001 Jean-Jacques Bernard-Gundol (jj@wabbitt.org)
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *   derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * RFC2393 IP payload compression protocol (IPComp).
+ */
+
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $");
+
+#include "opt_inet.h"
+
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
+#include <sys/queue.h>
+
+#include <net/if.h>
+#include <net/route.h>
+#include <net/netisr.h>
+#include <net/zlib.h>
+#include <machine/cpu.h>
+
+#include <kame_ipsec/ipcomp.h>
+#include <kame_ipsec/ipsec.h>
+
+#include <kame_ipsec/xform.h>
+
+#include <machine/stdarg.h>
+
+#include <net/net_osdep.h>
+
+
+int	ipcomp_enable = 0;
+struct	ipcompstat ipcompstat;
+
+static int ipcomp_input_cb(struct cryptop *crp);
+static int ipcomp_output_cb(struct cryptop *crp);
+
+const struct comp_algo *
+ipcomp_algorithm_lookup(alg)
+	int alg;
+{
+	if (alg >= IPCOMP_ALG_MAX) {
+		return (NULL);
+	}
+	switch (alg) {
+	case SADB_X_CALG_DEFLATE:
+		return (&comp_algo_deflate);
+	}
+	return (NULL);
+}
+
+/* mode: 0: compress 1: decompress */
+static int
+ipcomp_deflate_common(m, md, tcomp, data, size, lenp, mode)
+    struct mbuf *m, *md;
+	const struct comp_algo *tcomp;
+    u_int8_t *data;
+    u_int32_t size;
+    u_int8_t **lenp;
+    int mode;
+{
+    struct mbuf *p, *mprev, *n, *n0, **np;
+    u_int8_t *output;
+    u_int32_t result;
+    int error;
+
+	for (mprev = m; mprev && mprev->m_next != md; mprev = mprev->m_next) {
+		;
+	}
+
+	if (!mprev) {
+		panic("md is not in m in deflate_common");
+	}
+
+    n0 = n = NULL;
+    np = &n0;
+    p = md;
+    while (p && p->m_len == 0) {
+		p = p->m_next;
+	}
+    while (p && size == 0) {
+        if (p && size == 0) {
+            data = mtod(p, u_int8_t *);
+            size = p->m_len;
+            p = p->m_next;
+            while (p && p->m_len == 0) {
+				p = p->m_next;
+			}
+        }
+
+		/* compress/decompress */
+		switch (mode) {
+		case 0:
+			result = (*tcomp->compress)(data, size, &output);
+			break;
+		case 1:
+			result = (*tcomp->decompress)(data, size, &output);
+			break;
+		}
+
+        /* check output */
+        if (output == 0) {
+            /* moreblock */
+        	if (n) {
+        		n->m_len = result;
+        		*np = n;
+        		np = &n->m_next;
+        		n = NULL;
+        	}
+            MGET(n, M_DONTWAIT, MT_DATA);
+            if (n) {
+                MCLGET(n, M_DONTWAIT);
+            }
+            if (!n) {
+                error = ENOBUFS;
+                goto fail;
+            }
+            n->m_len = 0;
+	        n->m_len = M_TRAILINGSPACE(n);
+	        n->m_next = NULL;
+            data = mtod(n, u_int8_t *);
+            size = n->m_next;
+			if (*np == NULL) {
+				n->m_len -= sizeof(struct ipcomp);
+				n->m_data += sizeof(struct ipcomp);
+			}
+        }
+        /* check result */
+        if (result != 0) {
+            error = EINVAL;
+            goto fail;
+        }
+    }
+
+    if (n) {
+        n->m_len = result;
+        *np = n;
+        np = &n->m_next;
+        n = NULL;
+    }
+
+    /* switch the mbuf to the new one */
+	mprev->m_next = n0;
+	m_freem(md);
+    *lenp = output;
+    return (0);
+
+fail:
+    if (m) {
+	    m_freem(m);
+    }
+	if (n) {
+		m_freem(n);
+    }
+	if (n0) {
+		m_freem(n0);
+    }
+    return (error);
+}
+
+static int
+ipcomp_deflate_compress(m, md, tcomp, data, size, out)
+	struct mbuf *m, *md;
+	const struct comp_algo *tcomp;
+	u_int8_t *data;
+	u_int32_t size;
+	u_int8_t **out;
+{
+	return (ipcomp_deflate_common(m, md, tcomp, data, size, out, 0));
+}
+
+static int
+ipcomp_deflate_decompress(m, md, tcomp, data, size, out)
+	struct mbuf *m, *md;
+	const struct comp_algo *tcomp;
+	u_int8_t *data;
+	u_int32_t size;
+	u_int8_t **out;
+{
+	return (ipcomp_deflate_common(m, md, tcomp, data, size, out, 1));
+}
+
+/*
+ * ipcomp_init() is called when an CPI is being set up.
+ */
+static int
+ipcomp_init(sav, xsp)
+	struct secasvar *sav;
+	struct xformsw *xsp;
+{
+	struct tdb *tdb;
+	const struct comp_algo *tcomp;
+	struct cryptoini cric;
+
+	/* NB: algorithm really comes in alg_enc and not alg_comp! */
+	tcomp = ipcomp_algorithm_lookup(sav->alg_enc);
+	if (tcomp == NULL) {
+		DPRINTF(("ipcomp_init: unsupported compression algorithm %d\n",
+			 sav->alg_comp));
+		return (EINVAL);
+	}
+
+	sav->alg_comp = sav->alg_enc;		/* set for doing histogram */
+	tdb = tdb_init(sav, xsp, NULL, NULL, tcomp, IPPROTO_IPCOMP);
+	if (tdb == NULL) {
+		ipseclog((LOG_ERR, "ipcomp_init: no memory for tunnel descriptor block\n"));
+		return (EINVAL);
+	}
+
+	/* Initialize crypto session */
+	bzero(&cric, sizeof (cric));
+	cric.cri_alg = tdb->tdb_compalgxform->type;
+	return (crypto_newsession(&tdb->tdb_cryptoid, &cric, crypto_support));
+}
+
+/*
+ * ipcomp_zeroize() used when IPCA is deleted
+ */
+static int
+ipcomp_zeroize(sav)
+	struct secasvar *sav;
+{
+	return (tdb_zeroize(sav->tdb_tdb));
+}
+
+/*
+ * ipcomp_input() gets called to uncompress an input packet
+ */
+static int
+ipcomp_input(m, sav, skip, protoff)
+	struct mbuf *m;
+	struct secasvar *sav;
+	int skip, protoff;
+{
+	struct tdb *tdb;
+	struct cryptodesc *crdc;
+	struct cryptop *crp;
+	int hlen = IPCOMP_HLENGTH;
+
+	tdb = sav->tdb_tdb;
+
+	/* Get crypto descriptors */
+	crp = crypto_getreq(1);
+	if (crp == NULL) {
+		m_freem(m);
+		DPRINTF(("ipcomp_input: no crypto descriptors\n"));
+		ipcompstat.ipcomps_crypto++;
+		return (ENOBUFS);
+	}
+
+	/* Get IPsec-specific opaque pointer */
+	tdb = tdb_alloc(0);
+	if (tdb == NULL) {
+		m_freem(m);
+		crypto_freereq(crp);
+		DPRINTF(("ipcomp_input: cannot allocate tdb_crypto\n"));
+		ipcompstat.ipcomps_crypto++;
+		return (ENOBUFS);
+	}
+	sav->tdb_tdb = tdb;
+	tdb->tdb_sav = sav;
+
+	crdc = crp->crp_desc;
+
+	crdc->crd_skip = skip + hlen;
+	crdc->crd_len = m->m_pkthdr.len - (skip + hlen);
+	crdc->crd_inject = skip;
+
+	/* Decompression operation */
+	crdc->crd_alg = tdb->tdb_compalgxform->type;
+
+	/* Crypto operation descriptor */
+	crp->crp_ilen = m->m_pkthdr.len - (skip + hlen);
+	crp->crp_flags = CRYPTO_F_IMBUF;
+	crp->crp_buf = (caddr_t)m;
+	crp->crp_callback = ipcomp_input_cb;
+	crp->crp_sid = tdb->tdb_cryptoid;
+	crp->crp_opaque = (caddr_t)tdb;
+
+	/* These are passed as-is to the callback */
+	tdb->tdb_isr = sav->isr;
+	tdb->tdb_spi = sav->spi;
+	tdb->tdb_dst = sav->sah->saidx.dst;
+	tdb->tdb_src = sav->sah->saidx.src;
+	tdb->tdb_proto = sav->sah->saidx.proto;
+	tdb->tdb_skip = skip;
+	tdb->tdb_length = protoff;
+	tdb->tdb_offset = hlen;
+
+	return (crypto_dispatch(crp));
+}
+
+static int
+ipcomp_input_cb(crp)
+	struct cryptop *crp;
+{
+
+}
+
+static int
+ipcomp_output(m, isr, mp, skip, protoff)
+	struct mbuf *m;
+	struct ipsecrequest *isr;
+	struct mbuf **mp;
+	int skip, protoff;
+{
+	struct secasvar *sav;
+	const struct comp_algo *ipcompx;
+	int error, ralen, hlen, maxpacketsize, roff;
+	u_int8_t prot;
+	struct cryptodesc *crdc;
+	struct cryptop *crp;
+	struct tdb *tdb;
+	struct mbuf *mo;
+	struct ipcomp *ipcomp;
+
+	sav = isr->sav;
+	tdb = sav->tdb_tdb;
+	ipcompx = tdb->tdb_compalgxform;
+
+	ralen = m->m_pkthdr.len - skip;	/* Raw payload length before comp. */
+	hlen = IPCOMP_HLENGTH;
+
+	/* Ok now, we can pass to the crypto processing */
+
+	/* Get crypto descriptors */
+	crp = crypto_getreq(1);
+	if (crp == NULL) {
+		ipcompstat.ipcomps_crypto++;
+		DPRINTF(("ipcomp_output: failed to acquire crypto descriptor\n"));
+		error = ENOBUFS;
+		goto bad;
+	}
+	crdc = crp->crp_desc;
+
+	/* Compression descriptor */
+	crdc->crd_skip = skip + hlen;
+	crdc->crd_len = m->m_pkthdr.len - (skip + hlen);
+	crdc->crd_flags = CRD_F_COMP;
+	crdc->crd_inject = skip + hlen;
+
+	/* Compression operation */
+	crdc->crd_alg = ipcompx->type;
+
+	/* Get IPsec-specific opaque pointer */
+	tdb = tdb_alloc(0);
+	if (tdb == NULL) {
+		ipcompstat.ipcomps_crypto++;
+		DPRINTF(("ipcomp_output: failed to allocate tdb_crypto\n"));
+		crypto_freereq(crp);
+		error = ENOBUFS;
+		goto bad;
+	}
+	sav->tdb_tdb = tdb;
+	tdb->tdb_sav = sav;
+
+	tdb->tdb_isr = sav->isr;
+	tdb->tdb_spi = sav->spi;
+	tdb->tdb_dst = sav->sah->saidx.dst;
+	tdb->tdb_src = sav->sah->saidx.src;
+	tdb->tdb_proto = sav->sah->saidx.proto;
+	tdb->tdb_skip = skip;
+
+	/* Crypto operation descriptor */
+	crp->crp_ilen = m->m_pkthdr.len;	/* Total input length */
+	crp->crp_flags = CRYPTO_F_IMBUF;
+	crp->crp_buf = (caddr_t) m;
+	crp->crp_callback = ipcomp_output_cb;
+	crp->crp_opaque = (caddr_t)tdb;
+	crp->crp_sid = tdb->tdb_cryptoid;
+
+	return (crypto_dispatch(crp));
+
+bad:
+	if (m) {
+		m_freem(m);
+	}
+	return (error);
+}
+
+static int
+ipcomp_output_cb(crp)
+	struct cryptop *crp;
+{
+	struct tdb *tdb;
+	struct ipsecrequest *isr;
+	struct secasvar *sav;
+	struct mbuf *m;
+
+}
+
+static struct xformsw ipcomp_xformsw = {
+		.xf_type = XF_IPCOMP,
+		.xf_flags = XFT_COMP,
+		.xf_name = "Kame IPsec IPcomp",
+		.xf_init = ipcomp_init,
+		.xf_zeroize = ipcomp_zeroize,
+		.xf_input = ipcomp_input,
+		.xf_output = ipcomp_output,
+};
+
+void
+ipcomp_attach(void)
+{
+	xform_register(&ipcomp_xformsw);
+}

@@ -87,16 +87,14 @@ struct tdb {
 
 	struct ipsecrequest 	*tdb_isr;			/* ipsec request state */
 	u_int32_t				tdb_spi;			/* associated SPI */
-
-	u_int16_t				tdb_ivlen;			/* IV length */
-	u_int16_t				tdb_ivoff;			/* IV offset */
+	u_int16_t				tdb_length; 		/* length */
+	u_int16_t 				tdb_offset;			/* offset */
 	int 					tdb_derived;		/* derived */
 
     union sockaddr_union    tdb_src;			/* src addr of packet */
     union sockaddr_union    tdb_dst;			/* dst addr of packet */
     u_int8_t	            tdb_proto;			/* current protocol, e.g. AH */
 	int						tdb_skip;			/* data offset */
-
 
 	struct xformsw 			*tdb_xform;			/* transform */
 	const struct enc_xform 	*tdb_encalgxform;	/* encoding algorithm */
@@ -157,10 +155,12 @@ struct xformsw {
 	struct xformsw *xf_next;		/* list of registered xforms */
 };
 
+#ifdef _KERNEL
+
 struct tdb *tdb_alloc(int);
 void tdb_free(struct tdb *);
 struct tdb *tdb_init(struct secasvar *, struct xformsw *, const struct enc_xform *, const struct auth_hash *, const struct comp_algo *, u_int8_t);
-void tdb_zeroize(struct tdb *);
+int tdb_zeroize(struct tdb *);
 
-
+#endif /* _KERNEL */
 #endif /* _KAME_IPSEC_XFORM_H_ */

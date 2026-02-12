@@ -1140,7 +1140,7 @@ ah_update_mbuf(m, off, len, algo, algos)
 int
 ah4_calccksum(m, ahdat, len, algo, sav)
 	struct mbuf *m;
-	u_int8_t * ahdat;
+	u_int8_t *ahdat;
 	size_t len;
 	const struct ah_algorithm *algo;
 	struct secasvar *sav;
