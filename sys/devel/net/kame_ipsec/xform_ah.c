@@ -110,6 +110,12 @@ static int ah_input_cb(struct cryptop *);
 static int ah_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);
 static int ah_output_cb(struct cryptop *);
 static void ah_update_mbuf(struct mbuf *, int, int, struct secasvar *, const struct auth_hash *, struct xform_state *);
+#ifdef INET
+static int ah4_calc_cksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
+#endif
+#ifdef INET6
+static int ah6_calc_cksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
+#endif
 
 const struct auth_hash *
 ah_algorithm_lookup(int alg)
@@ -464,11 +470,11 @@ ah_input(m, sav, skip, ahlen)
 	if (sav->flags & SADB_X_EXT_OLD) {
 		/* RFC 1826 */
 		ahoff = sizeof(struct ah);
-		ahlen = ahoff + rplen;
+		ahlen = rplen;
 	} else {
 		/* RFC 2402 */
 		ahoff = sizeof(struct newah);
-		ahlen = ahoff + rplen;
+		ahlen = rplen;
 	}
 
 	/* Get crypto descriptors. */
@@ -542,11 +548,12 @@ ah_input_cb(crp)
 	ahlen = tdb->tdb_length;
 	ahoff = tdb->tdb_offset;
 
-#ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
-#endif
+	s = splsoftnet();
 #ifdef INET
 	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "ah_input_cb: SA expired while in crypto\n"));
@@ -586,11 +593,11 @@ ah_input_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-#ifdef INET6
-	error = ah6_calccksum(m, skip, ahlen, ahx, sav);
-#endif
 #ifdef INET
-	error = ah4_calccksum(m, skip, ahlen, ahx, sav);
+	error = ah4_calc_cksum(m, skip, (ahlen + ahoff), ahx, sav);
+#endif
+#ifdef INET6
+	error = ah6_calc_cksum(m, skip, (ahlen + ahoff), ahx, sav);
 #endif
 
 	key_freesav(&sav);
@@ -637,11 +644,11 @@ ah_output(m, isr, mp, skip, ahlen)
 	if (sav->flags & SADB_X_EXT_OLD) {
 		/* RFC 1826 */
 		ahoff = sizeof(struct ah);
-		ahlen = ahoff + rplen;
+		ahlen = rplen;
 	} else {
 		/* RFC 2402 */
 		ahoff = sizeof(struct newah);
-		ahlen = ahoff + rplen;
+		ahlen = rplen;
 	}
 
 	/* Get crypto descriptors. */
@@ -696,7 +703,7 @@ ah_output(m, isr, mp, skip, ahlen)
 	tdb->tdb_offset = ahoff;
 	tdb->tdb_derived = 0;
 
-	return (crypto_dispatch(crp));
+	return (ah_output_cb(crp));
 
 bad:
 	if (m) {
@@ -709,6 +716,7 @@ static int
 ah_output_cb(crp)
 	struct cryptop *crp;
 {
+	struct ipsecrequest *isr;
 	struct secasvar *sav;
 	struct mbuf *m;
 	struct tdb *tdb;
@@ -721,11 +729,13 @@ ah_output_cb(crp)
 	ahlen = tdb->tdb_length;
 	ahoff = tdb->tdb_offset;
 
-#ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
-#endif
+	s = splsoftnet();
+	isr = tdb->tdb_isr;
 #ifdef INET
 	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "ah_input_cb: SA expired while in crypto\n"));
@@ -765,11 +775,11 @@ ah_output_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-#ifdef INET6
-	error = ah6_calccksum(m, skip, ahlen, ahx, sav);
-#endif
 #ifdef INET
-	error = ah4_calccksum(m, skip, ahlen, ahx, sav);
+	error = ah4_calc_cksum(m, skip, (ahlen + ahoff), ahx, sav);
+#endif
+#ifdef INET6
+	error = ah6_calc_cksum(m, skip, (ahlen + ahoff), ahx, sav);
 #endif
 
 	key_freesav(&sav);
@@ -862,6 +872,60 @@ ah_update_mbuf(m, off, len, sav, thash, state)
 
 #ifdef INET
 
+/* mode: 0: input 1: output */
+int
+ah4_calccksum(m, ahdat, len, thash, sav, mode)
+	struct mbuf *m;
+	u_int8_t *ahdat;
+	size_t len;
+	const struct auth_hash *thash;
+	struct secasvar *sav;
+	int mode;
+{
+	int error;
+
+	switch (mode) {
+	case 0:
+		error = ah_input(m, sav, ahdat, len);
+		break;
+	case 1:
+		error = ah_output(m, sav->isr, &m, ahdat, len);
+		break;
+	}
+	return (error);
+}
+
+#endif
+
+#ifdef INET6
+
+/* mode: 0: input 1: output */
+int
+ah6_calccksum(m, ahdat, len, thash, sav, mode)
+	struct mbuf *m;
+	u_int8_t *ahdat;
+	size_t len;
+	const struct auth_hash *thash;
+	struct secasvar *sav;
+	int mode;
+{
+	int error;
+
+	switch (mode) {
+	case 0:
+		error = ah_input(m, sav, ahdat, len);
+		break;
+	case 1:
+		error = ah_output(m, sav->isr, &m, ahdat, len);
+		break;
+	}
+	return (error);
+}
+
+#endif
+
+#ifdef INET
+
 /*
  * Go generate the checksum. This function won't modify the mbuf chain
  * except AH itself.
@@ -869,8 +933,8 @@ ah_update_mbuf(m, off, len, sav, thash, state)
  * NOTE: the function does not free mbuf on failure.
  * Don't use m_copy(), it will try to share cluster mbuf by using refcnt.
  */
-int
-ah4_calccksum(m, ahdat, len, thash, sav)
+static int
+ah4_calc_cksum(m, ahdat, len, thash, sav)
 	struct mbuf *m;
 	u_int8_t *ahdat;
 	size_t len;
@@ -1123,8 +1187,8 @@ fail:
  * NOTE: the function does not free mbuf on failure.
  * Don't use m_copy(), it will try to share cluster mbuf by using refcnt.
  */
-int
-ah6_calccksum(m, ahdat, len, thash, sav)
+static int
+ah6_calc_cksum(m, ahdat, len, thash, sav)
 	struct mbuf *m;
 	u_int8_t *ahdat;
 	size_t len;

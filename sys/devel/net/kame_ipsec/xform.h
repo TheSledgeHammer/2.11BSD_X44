@@ -82,6 +82,7 @@ union sockaddr_union {
 	struct sockaddr_in6     sin6;
 };
 
+/* tunnel block descriptor */
 struct tdb {
 	struct secasvar         *tdb_sav;			/* secasaver */
 
@@ -89,7 +90,6 @@ struct tdb {
 	u_int32_t				tdb_spi;			/* associated SPI */
 	u_int16_t				tdb_length; 		/* length */
 	u_int16_t 				tdb_offset;			/* offset */
-	int 					tdb_derived;		/* derived */
 
     union sockaddr_union    tdb_src;			/* src addr of packet */
     union sockaddr_union    tdb_dst;			/* dst addr of packet */
@@ -156,6 +156,9 @@ struct xformsw {
 };
 
 #ifdef _KERNEL
+
+void xform_register(struct xformsw*);
+int xform_init(struct secasvar *sav, int xftype);
 
 struct tdb *tdb_alloc(int);
 void tdb_free(struct tdb *);

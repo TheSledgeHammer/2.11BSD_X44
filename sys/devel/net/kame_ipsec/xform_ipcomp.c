@@ -118,6 +118,42 @@ ipcomp_algorithm_lookup(alg)
 	return (NULL);
 }
 
+static int
+ipcomp_deflate_compress(tcomp, data, size, out)
+	const struct comp_algo *tcomp;
+	u_int8_t *data;
+	u_int32_t size;
+	u_int8_t **out;
+{
+	return ((*tcomp->compress)(data, size, out));
+}
+
+static int
+ipcomp_deflate_decompress(tcomp, data, size, out)
+	const struct comp_algo *tcomp;
+	u_int8_t *data;
+	u_int32_t size;
+	u_int8_t *out;
+{
+	return ((*tcomp->decompress)(data, size, out));
+}
+
+int
+ipcomp_compress(m, md, lenp)
+	struct mbuf *m, *md;
+	size_t *lenp;
+{
+	return (0);
+}
+
+int
+ipcomp_decompress(m, md, lenp)
+	struct mbuf *m, *md;
+	size_t *lenp;
+{
+	return (0);
+}
+
 /* mode: 0: compress 1: decompress */
 static int
 ipcomp_deflate_common(m, md, tcomp, data, size, lenp, mode)
@@ -128,36 +164,36 @@ ipcomp_deflate_common(m, md, tcomp, data, size, lenp, mode)
     u_int8_t **lenp;
     int mode;
 {
-    struct mbuf *p, *mprev, *n, *n0, **np;
-    u_int8_t *output;
-    u_int32_t result;
-    int error;
+	struct mbuf *p, *mprev, *n, *n0, **np;
+	u_int8_t *output;
+	u_int32_t result;
+	int error;
 
 	for (mprev = m; mprev && mprev->m_next != md; mprev = mprev->m_next) {
 		;
 	}
 
 	if (!mprev) {
-		panic("md is not in m in deflate_common");
+		panic("md is not in m in ipcomp_deflate_common");
 	}
 
-    n0 = n = NULL;
-    np = &n0;
-    p = md;
-    while (p && p->m_len == 0) {
+	n0 = n = NULL;
+	np = &n0;
+	p = md;
+	while (p && p->m_len == 0) {
 		p = p->m_next;
 	}
-    while (p && size == 0) {
-        if (p && size == 0) {
-            data = mtod(p, u_int8_t *);
-            size = p->m_len;
-            p = p->m_next;
-            while (p && p->m_len == 0) {
+	while (p && size == 0) {
+		if (p && size == 0) {
+			data = mtod(p, u_int8_t*);
+			size = p->m_len;
+			p = p->m_next;
+			while (p && p->m_len == 0) {
 				p = p->m_next;
 			}
-        }
+		}
 
-		/* compress/decompress */
+		/* compress / decompress */
 		switch (mode) {
 		case 0:
 			result = (*tcomp->compress)(data, size, &output);
@@ -167,52 +203,53 @@ ipcomp_deflate_common(m, md, tcomp, data, size, lenp, mode)
 			break;
 		}
 
-        /* check output */
-        if (output == 0) {
-            /* moreblock */
-        	if (n) {
-        		n->m_len = result;
-        		*np = n;
-        		np = &n->m_next;
-        		n = NULL;
-        	}
-            MGET(n, M_DONTWAIT, MT_DATA);
-            if (n) {
-                MCLGET(n, M_DONTWAIT);
-            }
-            if (!n) {
-                error = ENOBUFS;
-                goto fail;
-            }
-            n->m_len = 0;
-	        n->m_len = M_TRAILINGSPACE(n);
-	        n->m_next = NULL;
-            data = mtod(n, u_int8_t *);
-            size = n->m_next;
-			if (*np == NULL) {
-				n->m_len -= sizeof(struct ipcomp);
-				n->m_data += sizeof(struct ipcomp);
+		/* check output */
+		if (output == 0) {
+			/* moreblock */
+			if (n) {
+				n->m_len = result;
+				*np = n;
+				np = &n->m_next;
+				n = NULL;
 			}
-        }
-        /* check result */
-        if (result != 0) {
-            error = EINVAL;
-            goto fail;
-        }
-    }
+			MGET(n, M_DONTWAIT, MT_DATA);
+			if (n) {
+				MCLGET(n, M_DONTWAIT);
+			}
+			if (!n) {
+				error = ENOBUFS;
+				goto fail;
+			}
+			n->m_len = 0;
+			n->m_len = M_TRAILINGSPACE(n);
+			n->m_next = NULL;
 
-    if (n) {
-        n->m_len = result;
-        *np = n;
-        np = &n->m_next;
-        n = NULL;
-    }
+			if (*np == NULL) {
+				n->m_len -= size;
+				n->m_data += size;
+			}
+			data = mtod(n, u_int8_t *);
+			size = n->m_next;
+		}
+		/* check result */
+		if (result == 0) {
+			error = EINVAL;
+			goto fail;
+		}
+	}
 
-    /* switch the mbuf to the new one */
+	if (n) {
+		n->m_len = result;
+		*np = n;
+		np = &n->m_next;
+		n = NULL;
+	}
+
+	/* switch the mbuf to the new one */
 	mprev->m_next = n0;
 	m_freem(md);
-    *lenp = output;
-    return (0);
+	*lenp = output;
+	return (0);
 
 fail:
     if (m) {
@@ -304,7 +341,9 @@ ipcomp_input(m, sav, skip, protoff)
 	struct tdb *tdb;
 	struct cryptodesc *crdc;
 	struct cryptop *crp;
-	int hlen = IPCOMP_HLENGTH;
+	int hlen;
+
+	hlen = sizeof(struct ipcomp);
 
 	tdb = sav->tdb_tdb;
 
@@ -363,7 +402,85 @@ static int
 ipcomp_input_cb(crp)
 	struct cryptop *crp;
 {
+	struct cryptodesc *crd;
+	struct tdb *tdb;
+	struct mbuf *m;
+	struct secasvar *sav;
+	const struct comp_algo *ipcompx;
+	int s, error, hlen, protoff;
 
+	tdb = (struct tdb *)crp->crp_opaque;
+	m = (struct mbuf *)crp->crp_buf;
+	skip = tdb->tdb_skip;
+	protoff = tdb->tdb_length;
+	hlen = tdb->tdb_offset;
+
+	s = splsoftnet();
+#ifdef INET
+	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+	if (sav == NULL) {
+		ipseclog((LOG_ERR, "ipcomp_output_cb: SA expired while in crypto\n"));
+		error = ENOBUFS;		/*XXX*/
+		goto bad;
+	}
+
+	ipcompx = tdb->tdb_compalgxform;
+
+	/* Check for crypto errors */
+	if (crp->crp_etype) {
+		/* Reset the session ID */
+		if (sav->tdb_cryptoid != 0)
+			sav->tdb_cryptoid = crp->crp_sid;
+
+		if (crp->crp_etype == EAGAIN) {
+			key_freesav(&sav);
+			splx(s);
+			return (crypto_dispatch(crp));
+		}
+
+		ipseclog((LOG_ERR, "esp_output_cb: crypto error %d\n", crp->crp_etype));
+		error = crp->crp_etype;
+		goto bad;
+	}
+
+	/* Shouldn't happen... */
+	if (m == NULL) {
+		ipseclog((LOG_ERR, "esp_output_cb: bogus returned buffer from crypto\n"));
+		error = EINVAL;
+		goto bad;
+	}
+
+	/* Release the crypto descriptors */
+	tdb_free(tdb);
+	tdb = NULL;
+	crypto_freereq(crp);
+	crp = NULL;
+
+	error = ipcomp_deflate_decompress(ipcompx, skip, protoff, roff);
+
+	key_freesav(&sav);
+	splx(s);
+	return (error);
+
+bad:
+	if (sav) {
+		key_freesav(&sav);
+	}
+	splx(s);
+	if (m != NULL) {
+		m_freem(m);
+	}
+	if (tdb != NULL) {
+		tdb_free(tdb);
+	}
+	if (crp != NULL) {
+		crypto_freereq(crp);
+	}
+	return (error);
 }
 
 static int
@@ -375,12 +492,11 @@ ipcomp_output(m, isr, mp, skip, protoff)
 {
 	struct secasvar *sav;
 	const struct comp_algo *ipcompx;
-	int error, ralen, hlen, maxpacketsize, roff;
+	int error, ralen, hlen, maxpacketsize;
 	u_int8_t prot;
 	struct cryptodesc *crdc;
 	struct cryptop *crp;
 	struct tdb *tdb;
-	struct mbuf *mo;
 	struct ipcomp *ipcomp;
 
 	sav = isr->sav;
@@ -388,7 +504,7 @@ ipcomp_output(m, isr, mp, skip, protoff)
 	ipcompx = tdb->tdb_compalgxform;
 
 	ralen = m->m_pkthdr.len - skip;	/* Raw payload length before comp. */
-	hlen = IPCOMP_HLENGTH;
+	hlen = sizeof(struct ipcomp);
 
 	/* Ok now, we can pass to the crypto processing */
 
@@ -429,6 +545,8 @@ ipcomp_output(m, isr, mp, skip, protoff)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
+	tdb->tdb_length = ralen;
+	tdb->tdb_offset = hlen;
 
 	/* Crypto operation descriptor */
 	crp->crp_ilen = m->m_pkthdr.len;	/* Total input length */
@@ -451,11 +569,87 @@ static int
 ipcomp_output_cb(crp)
 	struct cryptop *crp;
 {
-	struct tdb *tdb;
 	struct ipsecrequest *isr;
 	struct secasvar *sav;
-	struct mbuf *m;
+	struct mbuf *m, *md;
+	struct tdb *tdb;
+	const struct comp_algo *ipcompx;
+	int s, error, skip, ralen, rlen, hlen;
 
+	tdb = (struct tdb *)crp->crp_opaque;
+	m = (struct mbuf *)crp->crp_buf;
+	skip = tdb->tdb_skip;
+	ralen = tdb->tdb_length;
+	hlen = tdb->tdb_offset;
+	rlen = crp->crp_ilen - (skip + hlen);
+
+	s = splsoftnet();
+	isr = tdb->tdb_isr;
+#ifdef INET
+	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+	if (sav == NULL) {
+		ipseclog((LOG_ERR, "ipcomp_output_cb: SA expired while in crypto\n"));
+		error = ENOBUFS;		/*XXX*/
+		goto bad;
+	}
+
+	ipcompx = tdb->tdb_compalgxform;
+
+	/* Check for crypto errors */
+	if (crp->crp_etype) {
+		/* Reset the session ID */
+		if (sav->tdb_cryptoid != 0)
+			sav->tdb_cryptoid = crp->crp_sid;
+
+		if (crp->crp_etype == EAGAIN) {
+			key_freesav(&sav);
+			splx(s);
+			return (crypto_dispatch(crp));
+		}
+
+		ipseclog((LOG_ERR, "esp_output_cb: crypto error %d\n", crp->crp_etype));
+		error = crp->crp_etype;
+		goto bad;
+	}
+
+	/* Shouldn't happen... */
+	if (m == NULL) {
+		ipseclog((LOG_ERR, "esp_output_cb: bogus returned buffer from crypto\n"));
+		error = EINVAL;
+		goto bad;
+	}
+
+	/* Release the crypto descriptors */
+	tdb_free(tdb);
+	tdb = NULL;
+	crypto_freereq(crp);
+	crp = NULL;
+
+	error = ipcomp_deflate_compress(ipcompx, skip, ralen, roff);
+
+	key_freesav(&sav);
+	splx(s);
+	return (error);
+
+bad:
+	if (sav) {
+		key_freesav(&sav);
+	}
+	splx(s);
+	if (m != NULL) {
+		m_freem(m);
+	}
+	if (tdb != NULL) {
+		tdb_free(tdb);
+	}
+	if (crp != NULL) {
+		crypto_freereq(crp);
+	}
+	return (error);
 }
 
 static struct xformsw ipcomp_xformsw = {

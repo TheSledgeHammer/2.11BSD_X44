@@ -159,7 +159,7 @@ ipcomp4_input(mp, offp, proto)
 
 	olen = m->m_pkthdr.len;
 	newlen = m->m_pkthdr.len - off;
-	error = (*algo->decompress)(m, m->m_next, &newlen);
+	error = ipcomp_decompress(m, m->m_next, &newlen);
 	if (error != 0) {
 		if (error == EINVAL)
 			ipsecstat.in_inval++;
@@ -178,35 +178,35 @@ ipcomp4_input(mp, offp, proto)
 
 	m->m_pkthdr.len = off + newlen;
 	ip = mtod(m, struct ip *);
-    {
-	size_t len;
+	{
+		size_t len;
 #ifdef IPLEN_FLIPPED
-	len = ip->ip_len;
+		len = ip->ip_len;
 #else
-	len = ntohs(ip->ip_len);
+		len = ntohs(ip->ip_len);
 #endif
-	/*
-	 * be careful about underflow.  also, do not assign exact value
-	 * as ip_len is manipulated differently on *BSDs.
-	 */
-	len += m->m_pkthdr.len;
-	len -= olen;
-	if (len & ~0xffff) {
-		/* packet too big after decompress */
-		ipsecstat.in_inval++;
-		goto fail;
+		/*
+		 * be careful about underflow.  also, do not assign exact value
+		 * as ip_len is manipulated differently on *BSDs.
+		 */
+		len += m->m_pkthdr.len;
+		len -= olen;
+		if (len & ~0xffff) {
+			/* packet too big after decompress */
+			ipsecstat.in_inval++;
+			goto fail;
+		}
+#ifdef IPLEN_FLIPPED
+		ip->ip_len = len & 0xffff;
+#else
+		ip->ip_len = htons(len & 0xffff);
+#endif
+		ip->ip_p = nxt;
 	}
-#ifdef IPLEN_FLIPPED
-	ip->ip_len = len & 0xffff;
-#else
-	ip->ip_len = htons(len & 0xffff);
-#endif
-	ip->ip_p = nxt;
-    }
 
 	if (sav) {
 		key_sa_recordxfer(sav, m);
-		if (ipsec_addhist(m, IPPROTO_IPCOMP, (u_int32_t)cpi) != 0) {
+		if (ipsec_addhist(m, IPPROTO_IPCOMP, (u_int32_t) cpi) != 0) {
 			ipsecstat.in_nomem++;
 			goto fail;
 		}
@@ -215,8 +215,8 @@ ipcomp4_input(mp, offp, proto)
 	}
 
 	if (nxt != IPPROTO_DONE) {
-		if ((inetsw[ip_protox[nxt]].pr_flags & PR_LASTHDR) != 0 &&
-		    ipsec4_in_reject(m, NULL)) {
+		if ((inetsw[ip_protox[nxt]].pr_flags & PR_LASTHDR) != 0
+				&& ipsec4_in_reject(m, NULL)) {
 			ipsecstat.in_polvio++;
 			goto fail;
 		}
@@ -297,7 +297,7 @@ ipcomp6_input(mp, offp, proto)
 	m->m_pkthdr.len -= sizeof(struct ipcomp);
 
 	newlen = m->m_pkthdr.len - off;
-	error = (*algo->decompress)(m, md, &newlen);
+	error = ipcomp_decompress(m, md, &newlen);
 	if (error != 0) {
 		if (error == EINVAL)
 			ipsec6stat.in_inval++;
@@ -326,7 +326,7 @@ ipcomp6_input(mp, offp, proto)
 
 	if (sav) {
 		key_sa_recordxfer(sav, m);
-		if (ipsec_addhist(m, IPPROTO_IPCOMP, (u_int32_t)cpi) != 0) {
+		if (ipsec_addhist(m, IPPROTO_IPCOMP, (u_int32_t) cpi) != 0) {
 			ipsec6stat.in_nomem++;
 			goto fail;
 		}

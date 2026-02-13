@@ -150,7 +150,7 @@ ah4_input(mp, offp, proto)
 		goto fail;
 	}
 
-	siz = (*algo->sumsiz)(sav);
+	siz = ah_sumsiz(sav, algo);
 	siz1 = ((siz + 3) & ~(4 - 1));
 
 	/*
@@ -245,7 +245,7 @@ ah4_input(mp, offp, proto)
 		ip->ip_len = htons(ip->ip_len);
 		ip->ip_off = htons(ip->ip_off);
 #endif
-		if (ah4_calccksum(m, cksum, siz1, algo, sav)) {
+		if (ah4_calccksum(m, cksum, siz1, algo, sav, 0)) {
 			ipsecstat.in_inval++;
 			goto fail;
 		}
@@ -609,7 +609,7 @@ ah6_input(mp, offp, proto)
 		goto fail;
 	}
 
-	siz = (*algo->sumsiz)(sav);
+	siz = ah_sumsiz(sav, algo);
 	siz1 = ((siz + 3) & ~(4 - 1));
 
 	/*
@@ -681,7 +681,7 @@ ah6_input(mp, offp, proto)
 	 * cryptographic checksum.
 	 */
 
-	if (ah6_calccksum(m, cksum, siz1, algo, sav)) {
+	if (ah6_calccksum(m, cksum, siz1, algo, sav, 0)) {
 		ipsec6stat.in_inval++;
 		goto fail;
 	}

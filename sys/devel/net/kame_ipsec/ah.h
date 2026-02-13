@@ -75,13 +75,13 @@ int ah_init0(struct secasvar *, struct xformsw *, struct cryptoini *);
 
 void ah4_input(struct mbuf **, int *, int);
 int ah4_output(struct mbuf *, struct ipsecrequest *);
-int ah4_calccksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
+int ah4_calccksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *, int);
 void *ah4_ctlinput(int, struct sockaddr *, void *);
 
 #ifdef INET6
 int ah6_input(struct mbuf **, int *, int);
 int ah6_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *);
-int ah6_calccksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
+int ah6_calccksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *, int);
 void ah6_ctlinput(int, struct sockaddr *, void *);
 #endif /* INET6 */
 

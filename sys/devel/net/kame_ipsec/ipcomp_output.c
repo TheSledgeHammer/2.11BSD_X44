@@ -205,7 +205,7 @@ ipcomp_output(m, nexthdrp, md, isr, af)
 	mprev->m_next = md;
 
 	/* compress data part */
-	if ((*algo->compress)(m, md, &plen) || mprev->m_next == NULL) {
+	if (ipcomp_compress(m, md, &plen) || mprev->m_next == NULL) {
 		ipseclog((LOG_ERR, "packet compression failure\n"));
 		m = NULL;
 		m_freem(md0);
@@ -237,98 +237,96 @@ ipcomp_output(m, nexthdrp, md, isr, af)
 	m->m_pkthdr.len -= plen0;
 	m->m_pkthdr.len += plen;
 
-    {
-	/*
-	 * insert IPComp header.
-	 */
+	{
+		/*
+		 * insert IPComp header.
+		 */
 #ifdef INET
-	struct ip *ip = NULL;
+		struct ip *ip = NULL;
 #endif
 #ifdef INET6
-	struct ip6_hdr *ip6 = NULL;
+		struct ip6_hdr *ip6 = NULL;
 #endif
-	size_t hlen = 0;	/* ip header len */
-	size_t complen = sizeof(struct ipcomp);
+		size_t hlen = 0; /* ip header len */
+		size_t complen = sizeof(struct ipcomp);
 
-	switch (af) {
+		switch (af) {
 #ifdef INET
-	case AF_INET:
-		ip = mtod(m, struct ip *);
+		case AF_INET:
+			ip = mtod(m, struct ip*);
 #ifdef _IP_VHL
-		hlen = IP_VHL_HL(ip->ip_vhl) << 2;
+			hlen = IP_VHL_HL(ip->ip_vhl) << 2;
 #else
-		hlen = ip->ip_hl << 2;
+			hlen = ip->ip_hl << 2;
 #endif
-		break;
+			break;
 #endif
 #ifdef INET6
-	case AF_INET6:
-		ip6 = mtod(m, struct ip6_hdr *);
-		hlen = sizeof(*ip6);
-		break;
+		case AF_INET6:
+			ip6 = mtod(m, struct ip6_hdr*);
+			hlen = sizeof(*ip6);
+			break;
 #endif
-	}
-
-	compoff = m->m_pkthdr.len - plen;
-
-	/*
-	 * grow the mbuf to accomodate ipcomp header.
-	 * before: IP ... payload
-	 * after:  IP ... ipcomp payload
-	 */
-	if (M_LEADINGSPACE(md) < complen) {
-		MGET(n, M_DONTWAIT, MT_DATA);
-		if (!n) {
-			m_freem(m);
-			error = ENOBUFS;
-			goto fail;
 		}
-		n->m_len = complen;
-		mprev->m_next = n;
-		n->m_next = md;
-		m->m_pkthdr.len += complen;
-		ipcomp = mtod(n, struct ipcomp *);
-	} else {
-		md->m_len += complen;
-		md->m_data -= complen;
-		m->m_pkthdr.len += complen;
-		ipcomp = mtod(md, struct ipcomp *);
-	}
 
-	bzero(ipcomp, sizeof(*ipcomp));
-	ipcomp->comp_nxt = *nexthdrp;
-	*nexthdrp = IPPROTO_IPCOMP;
-	ipcomp->comp_cpi = htons(cpi);
-	switch (af) {
+		compoff = m->m_pkthdr.len - plen;
+
+		/*
+		 * grow the mbuf to accomodate ipcomp header.
+		 * before: IP ... payload
+		 * after:  IP ... ipcomp payload
+		 */
+		if (M_LEADINGSPACE(md) < complen) {
+			MGET(n, M_DONTWAIT, MT_DATA);
+			if (!n) {
+				m_freem(m);
+				error = ENOBUFS;
+				goto fail;
+			}
+			n->m_len = complen;
+			mprev->m_next = n;
+			n->m_next = md;
+			m->m_pkthdr.len += complen;
+			ipcomp = mtod(n, struct ipcomp*);
+		} else {
+			md->m_len += complen;
+			md->m_data -= complen;
+			m->m_pkthdr.len += complen;
+			ipcomp = mtod(md, struct ipcomp*);
+		}
+
+		bzero(ipcomp, sizeof(*ipcomp));
+		ipcomp->comp_nxt = *nexthdrp;
+		*nexthdrp = IPPROTO_IPCOMP;
+		ipcomp->comp_cpi = htons(cpi);
+		switch (af) {
 #ifdef INET
-	case AF_INET:
-		if (compoff + complen + plen < IP_MAXPACKET)
-			ip->ip_len = htons(compoff + complen + plen);
-		else {
-			ipseclog((LOG_ERR,
-			    "IPv4 ESP output: size exceeds limit\n"));
-			ipsecstat.out_inval++;
-			m_freem(m);
-			error = EMSGSIZE;
-			goto fail;
-		}
-		break;
+		case AF_INET:
+			if (compoff + complen + plen < IP_MAXPACKET)
+				ip->ip_len = htons(compoff + complen + plen);
+			else {
+				ipseclog((LOG_ERR, "IPv4 ESP output: size exceeds limit\n"));
+				ipsecstat.out_inval++;
+				m_freem(m);
+				error = EMSGSIZE;
+				goto fail;
+			}
+			break;
 #endif
 #ifdef INET6
-	case AF_INET6:
-		/* total packet length will be computed in ip6_output() */
-		break;
+		case AF_INET6:
+			/* total packet length will be computed in ip6_output() */
+			break;
 #endif
+		}
 	}
-    }
 
 	if (!m) {
-		ipseclog((LOG_DEBUG,
-		    "NULL mbuf after compression in ipcomp%d_output",
-		    afnumber));
+		ipseclog(
+				(LOG_DEBUG, "NULL mbuf after compression in ipcomp%d_output", afnumber));
 		stat->out_inval++;
 	}
-		stat->out_success++;
+	stat->out_success++;
 
 	/* compute byte lifetime against original packet */
 	key_sa_recordxfer(sav, mcopy);

@@ -102,8 +102,9 @@
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
 
-static size_t esp_max_schedlen; /* max sched length over all algorithms */
-static	int esp_max_ivlen;		/* max iv length over all algorithms */
+static size_t 	esp_max_schedlen; 	/* max sched length over all algorithms */
+static int 		esp_max_ivlen;		/* max iv length over all algorithms */
+static int		esp_derived;
 
 static int esp_input(struct mbuf *, struct secasvar *, int, int);
 static int esp_input_cb(struct cryptop *);
@@ -844,7 +845,7 @@ esp_input(m, sav, skip, ivlen)
 	const struct auth_hash *esph;
 	struct tdb *tdb;
 	struct cryptop *crp;
-	int plen, hlen, alen, ivoff, derived;
+	int plen, hlen, alen, ivoff;
 
 	struct cryptodesc *crda, *crde;
 
@@ -857,18 +858,18 @@ esp_input(m, sav, skip, ivlen)
 		/* RFC 1827 */
 		ivoff = sizeof(struct esp);
 		hlen = sizeof(struct esp) + ivlen;
-		derived = 0;
+		esp_derived = 0;
 	} else {
 		/* RFC 2406 */
 		if (sav->flags & SADB_X_EXT_DERIV) {
 			ivoff = sizeof(struct esp);
 			hlen = sizeof(struct esp) + sizeof(u_int32_t);
 			ivlen = sizeof(u_int32_t);
-			derived = 1;
+			esp_derived = 1;
 		} else {
 			ivoff = sizeof(struct newesp);
 			hlen = sizeof(struct newesp) + ivlen;
-			derived = 0;
+			esp_derived = 0;
 		}
 	}
 
@@ -940,7 +941,6 @@ esp_input(m, sav, skip, ivlen)
 	tdb->tdb_skip = skip;
 	tdb->tdb_length = ivlen;
 	tdb->tdb_offset = ivoff;
-	tdb->tdb_derived = derived;
 
 	if (espx) {
 		/* Decryption descriptor */
@@ -964,21 +964,20 @@ esp_input_cb(crp)
 	struct tdb *tdb;
 	const struct auth_hash *esph;
 	const struct enc_xform *espx;
-	int s, error, skip, ivlen, ivoff, derived;
+	int s, error, skip, ivlen, ivoff;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
 	ivlen = tdb->tdb_length;
 	ivoff = tdb->tdb_offset;
-	derived = tdb->tdb_derived;
 
 	s = splsoftnet();
-#ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
-#endif
 #ifdef INET
 	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "esp_input_cb: SA expired while in crypto\n"));
@@ -1019,7 +1018,7 @@ esp_input_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = esp_decrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), derived);
+	error = esp_decrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), esp_derived);
 
 	key_freesav(&sav);
 	splx(s);
@@ -1054,7 +1053,7 @@ esp_output(m, isr, mp, skip, ivlen)
 	struct tdb *tdb;
 	struct secasvar *sav;
 	struct cryptop *crp;
-	int error, plen, hlen, alen, ivoff, derived;
+	int error, plen, hlen, alen, ivoff;
 
 	struct cryptodesc *crda, *crde;
 
@@ -1067,7 +1066,7 @@ esp_output(m, isr, mp, skip, ivlen)
 		/* RFC 1827 */
 		ivoff = sizeof(struct esp);
 		hlen = sizeof(struct esp) + ivlen;
-		derived = 0;
+		esp_derived = 0;
 	} else {
 		/* RFC 2406 */
 		if (sav->flags & SADB_X_EXT_DERIV) {
@@ -1078,11 +1077,11 @@ esp_output(m, isr, mp, skip, ivlen)
 			ivoff = sizeof(struct esp);
 			hlen = sizeof(struct esp) + sizeof(u_int32_t);
 			ivlen = sizeof(u_int32_t);
-			derived = 1;
+			esp_derived = 1;
 		} else {
 			ivoff = sizeof(struct newesp);
 			hlen = sizeof(struct newesp) + ivlen;
-			derived = 0;
+			esp_derived = 0;
 		}
 	}
 
@@ -1150,7 +1149,6 @@ esp_output(m, isr, mp, skip, ivlen)
 	tdb->tdb_skip = skip;
 	tdb->tdb_length = ivlen;
 	tdb->tdb_offset = ivoff;
-	tdb->tdb_derived = derived;
 
 	if (esph) {
 		/* Authentication descriptor. */
@@ -1177,26 +1175,27 @@ static int
 esp_output_cb(crp)
 	struct cryptop *crp;
 {
+	struct ipsecrequest *isr;
 	struct secasvar *sav;
 	struct mbuf *m;
 	struct tdb *tdb;
 	const struct auth_hash *esph;
 	const struct enc_xform *espx;
-	int s, error, skip, ivlen, ivoff, derived;
+	int s, error, skip, ivlen, ivoff;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
 	ivlen = tdb->tdb_length;
 	ivoff = tdb->tdb_offset;
-	derived = tdb->tdb_derived;
 
 	s = splsoftnet();
-#ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
-#endif
+	isr = tdb->tdb_isr;
 #ifdef INET
 	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+#endif
+#ifdef INET6
+	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "esp_output_cb: SA expired while in crypto\n"));
@@ -1237,7 +1236,7 @@ esp_output_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = esp_encrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), derived);
+	error = esp_encrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), esp_derived);
 
 	key_freesav(&sav);
 	splx(s);

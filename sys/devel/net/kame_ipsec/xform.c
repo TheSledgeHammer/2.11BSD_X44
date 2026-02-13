@@ -142,3 +142,52 @@ tdb_zeroize(tdb)
 	}
 	return (error);
 }
+
+static struct xformsw* xforms = NULL;
+
+/*
+ * Register a transform; typically at system startup.
+ */
+void
+xform_register(struct xformsw* xsp)
+{
+	xsp->xf_next = xforms;
+	xforms = xsp;
+}
+
+/*
+ * Initialize transform support in an sav.
+ */
+int
+xform_init(struct secasvar *sav, int xftype)
+{
+	struct xformsw *xsp;
+	struct tdb *tdb;
+
+	tdb = sav->tdb_tdb;
+	if (tdb != NULL) {
+		if (tdb->tdb_xform != NULL)	{ /* previously initialized */
+			return (0);
+		}
+	}
+
+	for (xsp = xforms; xsp; xsp = xsp->xf_next) {
+		if (xsp->xf_type == xftype) {
+			return ((*xsp->xf_init)(sav, xsp));
+		}
+	}
+
+	DPRINTF(("xform_init: no match for xform type %d\n", xftype));
+	return (EINVAL);
+}
+
+void
+ipsec_attach(void)
+{
+	printf("initializing IPsec...");
+	ah_attach();
+	esp_attach();
+	ipcomp_attach();
+	//ipe4_attach();
+	printf(" done\n");
+}

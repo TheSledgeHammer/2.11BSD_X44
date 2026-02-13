@@ -53,15 +53,19 @@ struct ipcomp {
 
 #define IPCOMP_CPI_NEGOTIATE_MIN	256
 
-//#if defined(_KERNEL)
+#if defined(_KERNEL)
 
 struct ipsecrequest;
-extern const struct comp_algo *ipcomp_algorithm_lookup(int);
-extern void ipcomp4_input(struct mbuf *, int *, int);
-extern int ipcomp4_output(struct mbuf *, struct ipsecrequest *);
+
+const struct comp_algo *ipcomp_algorithm_lookup(int);
+int ipcomp_compress(struct mbuf *, struct mbuf *, size_t *);
+int ipcomp_decompress(struct mbuf *, struct mbuf *, size_t *);
+
+void ipcomp4_input(struct mbuf *, int *, int);
+int ipcomp4_output(struct mbuf *, struct ipsecrequest *);
 #ifdef INET6
-extern int ipcomp6_input(struct mbuf **, int *, int);
-extern int ipcomp6_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *);
+int ipcomp6_input(struct mbuf **, int *, int);
+int ipcomp6_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *);
 #endif
 #endif /* KERNEL */
 
