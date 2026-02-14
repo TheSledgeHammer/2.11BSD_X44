@@ -87,15 +87,23 @@
 #include <net/route.h>
 
 #include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_ecn.h>
+#include <netinet/ip6.h>
 
 #include <kame_ipsec/ipsec.h>
 #include <kame_ipsec/ah.h>
 #include <kame_ipsec/esp.h>
-
 #include <kame_ipsec/xform.h>
+
+#ifdef INET6
+#include <netinet6/ip6_var.h>
+#endif
 
 #include <net/pfkeyv2.h>
 #include <netkey/key.h>
+//#include <netkey/key_debug.h>
 
 #include <net/net_osdep.h>
 
@@ -111,10 +119,10 @@ static int ah_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, 
 static int ah_output_cb(struct cryptop *);
 static void ah_update_mbuf(struct mbuf *, int, int, struct secasvar *, const struct auth_hash *, struct xform_state *);
 #ifdef INET
-static int ah4_calc_cksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
+static int ah4_calccksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
 #endif
 #ifdef INET6
-static int ah6_calc_cksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
+static int ah6_calccksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
 #endif
 
 const struct auth_hash *
@@ -187,7 +195,7 @@ ah_hdrsiz(isr)
 	 *
 	 * XXX variable size padding support
 	 */
-	hdrsiz = ((ah_sumsiz(isr->sav) + 3) & ~(4 - 1));
+	hdrsiz = ((ah_sumsiz(isr->sav, thash) + 3) & ~(4 - 1));
 	if (isr->sav->flags & SADB_X_EXT_OLD) {
 		hdrsiz += sizeof(struct ah) + sizeof(u_int32_t) + 16;
 	} else {
@@ -301,7 +309,7 @@ ah_init(sav, xsp)
 
 	error = ah_init0(sav, xsp, &cria);
 	return (error ? error :
-		 crypto_newsession(&sav->tdb_cryptoid, &cria, crypto_support));
+		 crypto_newsession(&sav->tdb_tdb->tdb_cryptoid, &cria, crypto_support));
 }
 
 /*
@@ -309,8 +317,9 @@ ah_init(sav, xsp)
  *
  * NB: public for use by esp_zeroize (XXX).
  */
-static int
-ah_zeroize(struct secasvar *sav)
+int
+ah_zeroize(sav)
+    struct secasvar *sav;
 {
 	if (sav->key_auth) {
 		bzero(_KEYBUF(sav->key_auth), _KEYLEN(sav->key_auth));
@@ -330,7 +339,7 @@ ah_sumsiz_1216(sav)
 	if (sav->flags & SADB_X_EXT_OLD) {
 		authsize = 16;
 	} else {
-		authsize = sav->tdb_authalgxform->authsize;
+		authsize = sav->tdb_tdb->tdb_authalgxform->authsize;
 	}
 	return (authsize);
 }
@@ -402,7 +411,7 @@ ah_hash_result(state, sav, thash, addr, len)
 	u_int8_t *addr;
 	size_t len;
 {
-	u_int8_t digest[thash->hashsize];
+	u_int8_t digest[64];
 
 	if (!state || !state->xs_ctx) {
 		panic("xform_ah_result: what?");
@@ -481,7 +490,7 @@ ah_input(m, sav, skip, ahlen)
 	crp = crypto_getreq(1);
 	if (crp == NULL) {
 		ipseclog((LOG_ERR, "ah_input: failed to acquire crypto descriptor\n"));
-		ahstat.ahs_crypto++;
+		//ahstat.ahs_crypto++;
 		m_freem(m);
 		return (ENOBUFS);
 	}
@@ -501,7 +510,7 @@ ah_input(m, sav, skip, ahlen)
 	tdb = tdb_alloc(0);
 	if (tdb == NULL) {
 		ipseclog((LOG_ERR, "ah_input: failed to allocate tdb_crypto\n"));
-		ahstat.ahs_crypto++;
+		//ahstat.ahs_crypto++;
 		crypto_freereq(crp);
 		m_freem(m);
 		return (ENOBUFS);
@@ -519,7 +528,6 @@ ah_input(m, sav, skip, ahlen)
 	crp->crp_opaque = (caddr_t)tdb;
 
 	/* These are passed as-is to the callback. */
-	tdb->tdb_isr = sav->isr;
 	tdb->tdb_spi = sav->spi;
 	tdb->tdb_dst = sav->sah->saidx.dst;
 	tdb->tdb_src = sav->sah->saidx.src;
@@ -527,7 +535,6 @@ ah_input(m, sav, skip, ahlen)
 	tdb->tdb_skip = skip;
 	tdb->tdb_length = ahlen;
 	tdb->tdb_offset = ahoff;
-	tdb->tdb_derived = 0;
 
 	return (ah_input_cb(crp));
 }
@@ -550,10 +557,10 @@ ah_input_cb(crp)
 
 	s = splsoftnet();
 #ifdef INET
-	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET, (caddr_t)tdb_get_in(tdb, 0), (caddr_t)tdb_get_in(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 #ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET6, (caddr_t)tdb_get_in6(tdb, 0), (caddr_t)tdb_get_in6(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "ah_input_cb: SA expired while in crypto\n"));
@@ -566,11 +573,11 @@ ah_input_cb(crp)
 	/* Check for crypto errors */
 	if (crp->crp_etype) {
 		/* Reset the session ID */
-		if (sav->tdb_cryptoid != 0)
-			sav->tdb_cryptoid = crp->crp_sid;
+		if (tdb->tdb_cryptoid != 0)
+			tdb->tdb_cryptoid = crp->crp_sid;
 
 		if (crp->crp_etype == EAGAIN) {
-			key_freesav(&sav);
+			key_freesav(sav);
 			splx(s);
 			return (crypto_dispatch(crp));
 		}
@@ -594,19 +601,19 @@ ah_input_cb(crp)
 	crp = NULL;
 
 #ifdef INET
-	error = ah4_calc_cksum(m, skip, (ahlen + ahoff), ahx, sav);
+	error = ah4_calccksum(m, (u_int8_t *)skip, (ahlen + ahoff), ahx, sav);
 #endif
 #ifdef INET6
-	error = ah6_calc_cksum(m, skip, (ahlen + ahoff), ahx, sav);
+	error = ah6_calccksum(m, (u_int8_t *)skip, (ahlen + ahoff), ahx, sav);
 #endif
 
-	key_freesav(&sav);
+	key_freesav(sav);
 	splx(s);
 	return (error);
 
 bad:
 	if (sav) {
-		key_freesav(&sav);
+		key_freesav(sav);
 	}
 	splx(s);
 	if (m != NULL) {
@@ -655,7 +662,7 @@ ah_output(m, isr, mp, skip, ahlen)
 	crp = crypto_getreq(1);
 	if (crp == NULL) {
 		ipseclog((LOG_ERR, "ah_output: failed to acquire crypto descriptors\n"));
-		ahstat.ahs_crypto++;
+		//ahstat.ahs_crypto++;
 		error = ENOBUFS;
 		goto bad;
 	}
@@ -676,7 +683,7 @@ ah_output(m, isr, mp, skip, ahlen)
 	if (tdb == NULL) {
 		crypto_freereq(crp);
 		ipseclog((LOG_ERR, "ah_output: failed to allocate tdb_crypto\n"));
-		ahstat.ahs_crypto++;
+		//ahstat.ahs_crypto++;
 		error = ENOBUFS;
 		goto bad;
 	}
@@ -693,7 +700,7 @@ ah_output(m, isr, mp, skip, ahlen)
 	crp->crp_opaque = (caddr_t)tdb;
 
 	/* These are passed as-is to the callback. */
-	tdb->tdb_isr = sav->isr;
+	tdb->tdb_isr = isr;
 	tdb->tdb_spi = sav->spi;
 	tdb->tdb_dst = sav->sah->saidx.dst;
 	tdb->tdb_src = sav->sah->saidx.src;
@@ -701,7 +708,6 @@ ah_output(m, isr, mp, skip, ahlen)
 	tdb->tdb_skip = skip;
 	tdb->tdb_length = ahlen;
 	tdb->tdb_offset = ahoff;
-	tdb->tdb_derived = 0;
 
 	return (ah_output_cb(crp));
 
@@ -732,10 +738,10 @@ ah_output_cb(crp)
 	s = splsoftnet();
 	isr = tdb->tdb_isr;
 #ifdef INET
-	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET, (caddr_t)tdb_get_in(tdb, 0), (caddr_t)tdb_get_in(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 #ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET6, (caddr_t)tdb_get_in6(tdb, 0), (caddr_t)tdb_get_in6(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "ah_input_cb: SA expired while in crypto\n"));
@@ -748,11 +754,11 @@ ah_output_cb(crp)
 	/* Check for crypto errors */
 	if (crp->crp_etype) {
 		/* Reset the session ID */
-		if (sav->tdb_cryptoid != 0)
-			sav->tdb_cryptoid = crp->crp_sid;
+		if (tdb->tdb_cryptoid != 0)
+			tdb->tdb_cryptoid = crp->crp_sid;
 
 		if (crp->crp_etype == EAGAIN) {
-			key_freesav(&sav);
+			key_freesav(sav);
 			splx(s);
 			return (crypto_dispatch(crp));
 		}
@@ -776,19 +782,19 @@ ah_output_cb(crp)
 	crp = NULL;
 
 #ifdef INET
-	error = ah4_calc_cksum(m, skip, (ahlen + ahoff), ahx, sav);
+	error = ah4_calccksum(m, (u_int8_t *)skip, (ahlen + ahoff), ahx, sav);
 #endif
 #ifdef INET6
-	error = ah6_calc_cksum(m, skip, (ahlen + ahoff), ahx, sav);
+	error = ah6_calccksum(m, (u_int8_t *)skip, (ahlen + ahoff), ahx, sav);
 #endif
 
-	key_freesav(&sav);
+	key_freesav(sav);
 	splx(s);
 	return (error);
 
 bad:
 	if (sav) {
-		key_freesav(&sav);
+		key_freesav(sav);
 	}
 	splx(s);
 	if (m != NULL) {
@@ -872,54 +878,52 @@ ah_update_mbuf(m, off, len, sav, thash, state)
 
 #ifdef INET
 
-/* mode: 0: input 1: output */
 int
-ah4_calccksum(m, ahdat, len, thash, sav, mode)
+ah4_calccksum_input(m, ahdat, len, thash, sav)
 	struct mbuf *m;
 	u_int8_t *ahdat;
 	size_t len;
 	const struct auth_hash *thash;
 	struct secasvar *sav;
-	int mode;
 {
-	int error;
+    return (ah_input(m, sav, (int)ahdat, (int)len));
+}
 
-	switch (mode) {
-	case 0:
-		error = ah_input(m, sav, ahdat, len);
-		break;
-	case 1:
-		error = ah_output(m, sav->isr, &m, ahdat, len);
-		break;
-	}
-	return (error);
+int
+ah4_calccksum_output(m, ahdat, len, thash, isr)
+	struct mbuf *m;
+	u_int8_t *ahdat;
+	size_t len;
+	const struct auth_hash *thash;
+	struct ipsecrequest *isr;
+{
+    return (ah_output(m, isr, &m, (int)ahdat, (int)len));
 }
 
 #endif
 
 #ifdef INET6
 
-/* mode: 0: input 1: output */
 int
-ah6_calccksum(m, ahdat, len, thash, sav, mode)
+ah6_calccksum_input(m, ahdat, len, thash, sav)
 	struct mbuf *m;
 	u_int8_t *ahdat;
 	size_t len;
 	const struct auth_hash *thash;
 	struct secasvar *sav;
-	int mode;
 {
-	int error;
+    return (ah_input(m, sav, (int)ahdat, (int)len));
+}
 
-	switch (mode) {
-	case 0:
-		error = ah_input(m, sav, ahdat, len);
-		break;
-	case 1:
-		error = ah_output(m, sav->isr, &m, ahdat, len);
-		break;
-	}
-	return (error);
+int
+ah6_calccksum_output(m, ahdat, len, thash, isr)
+	struct mbuf *m;
+	u_int8_t *ahdat;
+	size_t len;
+	const struct auth_hash *thash;
+	struct ipsecrequest *isr;
+{
+	return (ah_output(m, isr, &m, (int)ahdat, (int)len));
 }
 
 #endif
@@ -934,7 +938,7 @@ ah6_calccksum(m, ahdat, len, thash, sav, mode)
  * Don't use m_copy(), it will try to share cluster mbuf by using refcnt.
  */
 static int
-ah4_calc_cksum(m, ahdat, len, thash, sav)
+ah4_calccksum(m, ahdat, len, thash, sav)
 	struct mbuf *m;
 	u_int8_t *ahdat;
 	size_t len;
@@ -1188,7 +1192,7 @@ fail:
  * Don't use m_copy(), it will try to share cluster mbuf by using refcnt.
  */
 static int
-ah6_calc_cksum(m, ahdat, len, thash, sav)
+ah6_calccksum(m, ahdat, len, thash, sav)
 	struct mbuf *m;
 	u_int8_t *ahdat;
 	size_t len;
@@ -1395,7 +1399,7 @@ again:
 		goto again;
 	}
 
-	if (len < (*algo->sumsiz)(sav)) {
+	if (len < ah_sumsiz(sav, thash)) {
 		error = EINVAL;
 		goto fail;
 	}

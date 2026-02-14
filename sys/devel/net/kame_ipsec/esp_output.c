@@ -69,6 +69,7 @@ __KERNEL_RCSID(0, "$NetBSD: esp_output.c,v 1.18 2003/09/07 15:59:36 itojun Exp $
 #include <kame_ipsec/ipsec.h>
 #include <kame_ipsec/ah.h>
 #include <kame_ipsec/esp.h>
+#include <kame_ipsec/xform.h>
 
 #include <netkey/key.h>
 #include <netkey/keydb.h>
@@ -437,9 +438,9 @@ esp_output(m, nexthdrp, md, isr, af)
 	 * encrypt the packet, based on security association
 	 * and the algorithm specified.
 	 */
-	if (!algo->encrypt)
+	if (!esp_encrypt)
 		panic("internal error: no encrypt function");
-	if (esp_encrypt(m, espoff, plen + extendsiz, sav, algo, ivlen)) {
+	if (esp_encrypt(m, espoff, plen + extendsiz, isr, algo, ivlen)) {
 		/* m is already freed */
 		ipseclog((LOG_ERR, "packet encryption failure\n"));
 		stat->out_inval++;

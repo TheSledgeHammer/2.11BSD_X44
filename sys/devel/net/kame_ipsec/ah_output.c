@@ -247,7 +247,7 @@ ah4_output(m, isr)
 	 * calcurate the checksum, based on security association
 	 * and the algorithm specified.
 	 */
-	error = ah4_calccksum(m, ahsumpos, plen, algo, sav, 1);
+	error = ah4_calccksum_output(m, ahsumpos, plen, algo, isr);
 	if (error) {
 		ipseclog((LOG_ERR,
 		    "error after ah4_calccksum, called from ah4_output"));
@@ -405,7 +405,7 @@ ah6_output(m, nexthdrp, md, isr)
 	 * calcurate the checksum, based on security association
 	 * and the algorithm specified.
 	 */
-	error = ah6_calccksum(m, ahsumpos, plen, algo, sav, 1);
+	error = ah6_calccksum_output(m, ahsumpos, plen, algo, isr);
 	if (error) {
 		ipsec6stat.out_inval++;
 		m_freem(m);

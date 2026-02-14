@@ -143,6 +143,98 @@ tdb_zeroize(tdb)
 	return (error);
 }
 
+
+/* output: 0: src 1 : dst */
+struct sockaddr_in *
+tdb_get_sin(tdb, output)
+    struct tdb *tdb;
+    int output;
+{
+    struct sockaddr_in *src, *dst;
+
+    switch (output) {
+    case 0:
+        src = (struct sockaddr_in *)&tdb->tdb_src;
+         return (src);
+    case 1:
+        dst = (struct sockaddr_in *)&tdb->tdb_dst;
+        return (dst);
+    default:
+        break;
+    }
+    return (NULL);
+}
+
+/* output: 0: src 1 : dst */
+struct in_addr *
+tdb_get_in(tdb, output)
+    struct tdb *tdb;
+    int output;
+{
+    struct sockaddr_in *ssin, *dsin;
+    struct in_addr *src, *dst;
+
+    ssin = tdb_get_sin(tdb, 0);
+    dsin = tdb_get_sin(tdb, 1);
+    switch (output) {
+    case 0:
+        src = ssin->sin_addr;
+        return (src);
+    case 1:
+        dst = dsin->sin_addr;
+        return (dst);
+    default:
+        break;
+    }
+    return (NULL);
+}
+
+/* output: 0: src 1 : dst */
+struct sockaddr_in6 *
+tdb_get_sin6(tdb, output)
+    struct tdb *tdb;
+    int output;
+{
+    struct sockaddr_in6 *src, *dst;
+
+    switch (output) {
+    case 0:
+        src = (struct sockaddr_in6 *)&tdb->tdb_src;
+         return (src);
+    case 1:
+        dst = (struct sockaddr_in6 *)&tdb->tdb_dst;
+        return (dst);
+    default:
+        break;
+    }
+    return (NULL);
+}
+
+/* output: 0: src 1 : dst */
+struct in6_addr *
+tdb_get_in6(tdb, output)
+    struct tdb *tdb;
+    int output;
+{
+    struct sockaddr_in6 *ssin, *dsin;
+    struct in6_addr *src, *dst;
+
+    ssin = tdb_get_sin6(tdb, 0);
+    dsin = tdb_get_sin6(tdb, 1);
+    switch (output) {
+    case 0:
+        src = ssin->sin6_addr;
+        return (src);
+    case 1:
+        dst = dsin->sin6_addr;
+        return (dst);
+    default:
+        break;
+    }
+    return (NULL);
+}
+
+
 static struct xformsw* xforms = NULL;
 
 /*

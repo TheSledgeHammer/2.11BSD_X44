@@ -67,8 +67,6 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $");
 
-#include "opt_inet.h"
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -90,17 +88,20 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $
 
 #include <kame_ipsec/ipcomp.h>
 #include <kame_ipsec/ipsec.h>
-
 #include <kame_ipsec/xform.h>
 
 #include <machine/stdarg.h>
 
+#include <net/pfkeyv2.h>
+#include <netkey/key.h>
+//#include <netkey/key_debug.h>
+
 #include <net/net_osdep.h>
 
-int	ipcomp_enable = 0;
-struct	ipcompstat ipcompstat;
+#include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/xform.h>
 
-static int ipcomp_deflate_common(struct mbuf *, struct mbuf *, struct secasvar *, u_int8_t *, int);
+static int ipcomp_deflate_common(struct mbuf *, struct mbuf *, struct secasvar *, struct ipsecrequest *, u_int8_t *, int);
 static int ipcomp_deflate_compress(const struct comp_algo *, u_int8_t *, u_int32_t, u_int8_t **);
 static int ipcomp_deflate_decompress(const struct comp_algo *, u_int8_t *, u_int32_t, u_int8_t **);
 static int ipcomp_input(struct mbuf *, struct secasvar *, int, int);
@@ -159,16 +160,17 @@ ipcomp_deflate_decompress(tcomp, data, size, out)
  * - Potential Issues: missing kame ipcomp's mprev chain.
  */
 static int
-ipcomp_deflate_common(m, md, sav, out, mode)
+ipcomp_deflate_common(m, md, sav, isr, out, mode)
 	struct mbuf *m;
 	struct mbuf *md;
 	struct secasvar *sav;
+	struct ipsecrequest *isr;
 	u_int8_t *out;
 	int mode;	/* 0: compress (output) 1: decompress (input) */
 {
 	struct mbuf *p;
-	uint8_t *data;
-	uint32_t size;
+	u_int8_t *data;
+	u_int32_t size;
 	int error;
 
 	error = 0;
@@ -181,7 +183,7 @@ ipcomp_deflate_common(m, md, sav, out, mode)
 
 	while (p && p->m_len != 0) {
 		if (p->m_len != 0) {
-			data = mtod(p, uint8_t *);
+			data = mtod(p, u_int8_t *);
 			size = p->m_len;
 			p = p->m_next;
 			while (p && p->m_len == 0) {
@@ -197,10 +199,10 @@ ipcomp_deflate_common(m, md, sav, out, mode)
 
 	switch (mode) {
 	case 0:
-		error = ipcomp_output(m, sav->sav_isr, &p, data, size, *out);
+		error = ipcomp_output(m, isr, &p, (int)data, *out);
 		break;
 	case 1:
-		error = ipcomp_input(m, sav, data, size, *out);
+		error = ipcomp_input(m, sav, (int)data, *out);
 		break;
 	}
 	return (error);
@@ -221,7 +223,7 @@ ipcomp_compress(m, md, sav, lenp)
 	if (!lenp) {
 		panic("lenp == NULL in deflate_compress");
 	}
-	return (ipcomp_deflate_common(m, md, sav, lenp, 0));
+	return (ipcomp_deflate_common(m, md, sav, NULL, (u_int8_t *)lenp, 0));
 }
 
 int
@@ -239,7 +241,7 @@ ipcomp_decompress(m, md, sav, lenp)
 	if (!lenp) {
 		panic("lenp == NULL in deflate_decompress");
 	}
-	return (ipcomp_deflate_common(m, md, sav, lenp, 1));
+	return (ipcomp_deflate_common(m, md, sav, NULL, (u_int8_t *)lenp, 1));
 }
 
 /*
@@ -342,7 +344,6 @@ ipcomp_input(m, sav, skip, protoff)
 	crp->crp_opaque = (caddr_t)tdb;
 
 	/* These are passed as-is to the callback */
-	tdb->tdb_isr = sav->isr;
 	tdb->tdb_spi = sav->spi;
 	tdb->tdb_dst = sav->sah->saidx.dst;
 	tdb->tdb_src = sav->sah->saidx.src;
@@ -363,7 +364,7 @@ ipcomp_input_cb(crp)
 	struct mbuf *m;
 	struct secasvar *sav;
 	const struct comp_algo *ipcompx;
-	int s, error, hlen, protoff, roff;
+	int s, error, hlen, skip, protoff, *roff;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
@@ -373,10 +374,10 @@ ipcomp_input_cb(crp)
 
 	s = splsoftnet();
 #ifdef INET
-	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET, (caddr_t)tdb_get_in(tdb, 0), (caddr_t)tdb_get_in(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 #ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET6, (caddr_t)tdb_get_in6(tdb, 0), (caddr_t)tdb_get_in6(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "ipcomp_output_cb: SA expired while in crypto\n"));
@@ -389,11 +390,11 @@ ipcomp_input_cb(crp)
 	/* Check for crypto errors */
 	if (crp->crp_etype) {
 		/* Reset the session ID */
-		if (sav->tdb_cryptoid != 0)
-			sav->tdb_cryptoid = crp->crp_sid;
+		if (tdb->tdb_cryptoid != 0)
+			tdb->tdb_cryptoid = crp->crp_sid;
 
 		if (crp->crp_etype == EAGAIN) {
-			key_freesav(&sav);
+			key_freesav(sav);
 			splx(s);
 			return (crypto_dispatch(crp));
 		}
@@ -416,18 +417,19 @@ ipcomp_input_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = ipcomp_deflate_decompress(ipcompx, skip, hlen, &roff);
+	error = ipcomp_deflate_decompress(ipcompx, (u_int8_t *)skip, hlen, (u_int8_t **)roff);
 	if (roff != 0) {
-		bcopy(roff, protoff, sizeof(roff));
+        protoff = *roff;
+//		bcopy(roff, protoff, sizeof(roff));
 	}
 
-	key_freesav(&sav);
+	key_freesav(sav);
 	splx(s);
 	return (error);
 
 bad:
 	if (sav) {
-		key_freesav(&sav);
+		key_freesav(sav);
 	}
 	splx(s);
 	if (m != NULL) {
@@ -497,7 +499,7 @@ ipcomp_output(m, isr, mp, skip, protoff)
 	sav->tdb_tdb = tdb;
 	tdb->tdb_sav = sav;
 
-	tdb->tdb_isr = sav->isr;
+	tdb->tdb_isr = isr;
 	tdb->tdb_spi = sav->spi;
 	tdb->tdb_dst = sav->sah->saidx.dst;
 	tdb->tdb_src = sav->sah->saidx.src;
@@ -532,8 +534,7 @@ ipcomp_output_cb(crp)
 	struct mbuf *m, *md;
 	struct tdb *tdb;
 	const struct comp_algo *ipcompx;
-	int s, error, hlen, skip, protoff, roff;
-
+	int s, error, hlen, skip, protoff, *roff;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
@@ -544,10 +545,10 @@ ipcomp_output_cb(crp)
 	s = splsoftnet();
 	isr = tdb->tdb_isr;
 #ifdef INET
-	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET, (caddr_t)tdb_get_in(tdb, 0), (caddr_t)tdb_get_in(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 #ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET6, (caddr_t)tdb_get_in6(tdb, 0), (caddr_t)tdb_get_in6(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "ipcomp_output_cb: SA expired while in crypto\n"));
@@ -560,11 +561,11 @@ ipcomp_output_cb(crp)
 	/* Check for crypto errors */
 	if (crp->crp_etype) {
 		/* Reset the session ID */
-		if (sav->tdb_cryptoid != 0)
-			sav->tdb_cryptoid = crp->crp_sid;
+		if (tdb->tdb_cryptoid != 0)
+			tdb->tdb_cryptoid = crp->crp_sid;
 
 		if (crp->crp_etype == EAGAIN) {
-			key_freesav(&sav);
+			key_freesav(sav);
 			splx(s);
 			return (crypto_dispatch(crp));
 		}
@@ -587,18 +588,19 @@ ipcomp_output_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = ipcomp_deflate_compress(ipcompx, skip, hlen, &roff);
+	error = ipcomp_deflate_compress(ipcompx, (u_int8_t *)skip, hlen, (u_int8_t **)roff);
 	if (roff != 0) {
-		bcopy(roff, protoff, sizeof(roff));
+        protoff = *roff;
+//		bcopy(roff, protoff, sizeof(roff));
 	}
 
-	key_freesav(&sav);
+	key_freesav(sav);
 	splx(s);
 	return (error);
 
 bad:
 	if (sav) {
-		key_freesav(&sav);
+		key_freesav(sav);
 	}
 	splx(s);
 	if (m != NULL) {

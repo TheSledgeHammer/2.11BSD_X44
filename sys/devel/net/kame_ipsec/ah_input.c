@@ -97,7 +97,7 @@ ah4_input(mp, offp, proto)
 	struct ip *ip;
 	struct ah *ah;
 	u_int32_t spi;
-	const struct ah_algorithm *algo;
+	const struct auth_hash *algo;
 	size_t siz;
 	size_t siz1;
 	u_int8_t cksum[AH_MAXSUMSIZE];
@@ -245,7 +245,7 @@ ah4_input(mp, offp, proto)
 		ip->ip_len = htons(ip->ip_len);
 		ip->ip_off = htons(ip->ip_off);
 #endif
-		if (ah4_calccksum(m, cksum, siz1, algo, sav, 0)) {
+		if (ah4_calccksum_input(m, cksum, siz1, algo, sav)) {
 			ipsecstat.in_inval++;
 			goto fail;
 		}
@@ -552,7 +552,7 @@ ah6_input(mp, offp, proto)
 	struct ip6_hdr *ip6;
 	struct ah *ah;
 	u_int32_t spi;
-	const struct ah_algorithm *algo;
+	const struct auth_hash *algo;
 	size_t siz;
 	size_t siz1;
 	u_int8_t cksum[AH_MAXSUMSIZE];
@@ -681,7 +681,7 @@ ah6_input(mp, offp, proto)
 	 * cryptographic checksum.
 	 */
 
-	if (ah6_calccksum(m, cksum, siz1, algo, sav, 0)) {
+	if (ah6_calccksum_input(m, cksum, siz1, algo, sav)) {
 		ipsec6stat.in_inval++;
 		goto fail;
 	}

@@ -72,6 +72,8 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_input.c,v 1.22.16.1 2007/12/01 17:30:36 bouye
 
 #include <kame_ipsec/ipcomp.h>
 #include <kame_ipsec/ipsec.h>
+#include <kame_ipsec/xform.h>
+
 #include <netkey/key.h>
 #include <netkey/keydb.h>
 
@@ -90,7 +92,7 @@ ipcomp4_input(mp, offp, proto)
 	struct mbuf *m, *md;
 	struct ip *ip;
 	struct ipcomp *ipcomp;
-	const struct ipcomp_algorithm *algo;
+	const struct comp_algo *algo;
 	u_int16_t cpi;	/* host order */
 	u_int16_t nxt;
 	size_t hlen;
@@ -247,7 +249,7 @@ ipcomp6_input(mp, offp, proto)
 	int off;
 	struct ip6_hdr *ip6;
 	struct ipcomp *ipcomp;
-	const struct ipcomp_algorithm *algo;
+	const struct comp_algo *algo;
 	u_int16_t cpi;	/* host order */
 	u_int16_t nxt;
 	int error;

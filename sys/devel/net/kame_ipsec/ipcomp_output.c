@@ -71,6 +71,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_output.c,v 1.18 2004/02/13 11:36:23 wiz Exp $
 
 #include <kame_ipsec/ipcomp.h>
 #include <kame_ipsec/ipsec.h>
+#include <kame_ipsec/xform.h>
 
 #include <netkey/key.h>
 #include <netkey/keydb.h>
@@ -114,7 +115,7 @@ ipcomp_output(m, nexthdrp, md, isr, af)
 	struct mbuf *mprev;
 	struct ipcomp *ipcomp;
 	struct secasvar *sav = isr->sav;
-	const struct ipcomp_algorithm *algo;
+	const struct comp_algo *algo;
 	u_int16_t cpi;		/* host order */
 	size_t plen0, plen;	/* payload length to be compressed */
 	size_t compoff;
@@ -158,7 +159,7 @@ ipcomp_output(m, nexthdrp, md, isr, af)
 		plen += n->m_len;
 
 	/* if the payload is short enough, we don't need to compress */
-	if (plen < algo->minplen)
+	if (plen < algo->minlen)
 		return 0;
 
 	/*

@@ -39,6 +39,8 @@
 
 #include "opt_inet.h"
 
+#define	IPCOMP_ALG_MAX	8
+
 struct ipcomp {
 	u_int8_t comp_nxt;	/* Next Header */
 	u_int8_t comp_flags;	/* reserved, must be zero */
@@ -53,15 +55,16 @@ struct ipcomp {
 
 #define IPCOMP_CPI_NEGOTIATE_MIN	256
 
-#if defined(_KERNEL)
+#ifdef _KERNEL
 
 struct ipsecrequest;
+struct secasvar;
 
 const struct comp_algo *ipcomp_algorithm_lookup(int);
 int ipcomp_compress(struct mbuf *, struct mbuf *, struct secasvar *, size_t *);
 int ipcomp_decompress(struct mbuf *, struct mbuf *, struct secasvar *, size_t *);
 
-void ipcomp4_input(struct mbuf *, int *, int);
+void ipcomp4_input(struct mbuf **, int *, int);
 int ipcomp4_output(struct mbuf *, struct ipsecrequest *);
 #ifdef INET6
 int ipcomp6_input(struct mbuf **, int *, int);

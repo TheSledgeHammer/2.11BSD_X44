@@ -39,6 +39,8 @@
 
 #include "opt_inet.h"
 
+#define	AH_ALG_MAX	        16
+
 struct ah {
 	u_int8_t	ah_nxt;		/* Next Header */
 	u_int8_t	ah_len;		/* Length of data, in 32bit */
@@ -58,11 +60,14 @@ struct newah {
 
 #ifdef _KERNEL
 
+struct auth_hash;
 struct cryptoini;
+struct xformsw;
+struct xform_state;
 
 #define	AH_MAXSUMSIZE	(512 / 8)
 
-const struct enc_hash *ah_algorithm_lookup(int);
+const struct auth_hash *ah_algorithm_lookup(int);
 int ah_sumsiz(struct secasvar *, const struct auth_hash *);
 int ah_hash_init(struct xform_state *, struct secasvar *, const struct auth_hash *);
 void ah_hash_update(struct xform_state *, struct secasvar *, const struct auth_hash *, const u_int8_t *, u_int16_t);
@@ -72,16 +77,18 @@ void ah_hash_result(struct xform_state *, struct secasvar *, const struct auth_h
 int ah_hdrlen(struct secasvar *);
 size_t ah_hdrsiz(struct ipsecrequest *);
 int ah_init0(struct secasvar *, struct xformsw *, struct cryptoini *);
-
+int ah_zeroize(struct secasvar *);
 void ah4_input(struct mbuf **, int *, int);
 int ah4_output(struct mbuf *, struct ipsecrequest *);
-int ah4_calccksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *, int);
+int ah4_calccksum_input(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
+int ah4_calccksum_output(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct ipsecrequest *);
 void *ah4_ctlinput(int, struct sockaddr *, void *);
 
 #ifdef INET6
 int ah6_input(struct mbuf **, int *, int);
 int ah6_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *);
-int ah6_calccksum(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *, int);
+int ah6_calccksum_input(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct secasvar *);
+int ah6_calccksum_output(struct mbuf *, u_int8_t *, size_t, const struct auth_hash *, struct ipsecrequest *);
 void ah6_ctlinput(int, struct sockaddr *, void *);
 #endif /* INET6 */
 

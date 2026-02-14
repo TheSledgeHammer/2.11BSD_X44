@@ -91,11 +91,11 @@
 #include <kame_ipsec/ipsec.h>
 #include <kame_ipsec/ah.h>
 #include <kame_ipsec/esp.h>
-
 #include <kame_ipsec/xform.h>
 
 #include <net/pfkeyv2.h>
 #include <netkey/key.h>
+//#include <netkey/key_debug.h>
 
 #include <net/net_osdep.h>
 
@@ -110,6 +110,8 @@ static int esp_input(struct mbuf *, struct secasvar *, int, int);
 static int esp_input_cb(struct cryptop *);
 static int esp_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);
 static int esp_output_cb(struct cryptop *);
+
+#define MAXIVLEN	16
 
 const struct enc_xform *
 esp_algorithm_lookup(alg)
@@ -160,20 +162,20 @@ esp_ivlen(sav, thash)
 }
 
 int
-esp_encrypt(m, off, plen, sav, thash, ivlen)
+esp_encrypt(m, off, plen, isr, thash, ivlen)
 	struct mbuf *m;
 	size_t off, plen;
-	struct secasvar *sav;
+	struct ipsecrequest *isr;
 	const struct enc_xform *thash;
 	int ivlen;
 {
 	struct tdb *tdb;
 
-	tdb = sav->tdb_tdb;
+	tdb = isr->sav->tdb_tdb;
 	if (thash != tdb->tdb_encalgxform) {
-		return (ENIVAL);
+		return (EINVAL);
 	}
-	return (esp_output(m, sav, off, ivlen));
+	return (esp_output(m, isr, &m, off, ivlen));
 }
 
 int
@@ -188,9 +190,9 @@ esp_decrypt(m, off, sav, thash, ivlen)
 
 	tdb = sav->tdb_tdb;
 	if (thash != tdb->tdb_encalgxform) {
-		return (ENIVAL);
+		return (EINVAL);
 	}
-	return (esp_input(m, sav, skip, ivlen));
+	return (esp_input(m, sav, off, ivlen));
 }
 
 /*
@@ -202,7 +204,7 @@ esp_hdrsiz(isr)
 {
 	struct secasvar *sav;
 	const struct enc_xform *txform;
-	const struct ah_algorithm *thash;
+	const struct auth_hash *thash;
 	size_t ivlen;
 	size_t authlen;
 	size_t hdrsiz;
@@ -347,7 +349,7 @@ esp_init(sav, xsp)
 	crie.cri_key = _KEYBUF(sav->key_enc);
 	/* XXX Rounds ? */
 
-	if (tdb->tdb_authalgxform && sav->tdb_encalgxform) {
+	if (tdb->tdb_authalgxform && tdb->tdb_encalgxform) {
 		/* init both auth & enc */
 		crie.cri_next = &cria;
 		error = crypto_newsession(&tdb->tdb_cryptoid, &crie, crypto_support);
@@ -367,7 +369,8 @@ esp_init(sav, xsp)
  * Paranoia.
  */
 static int
-esp_zeroize(struct secasvar *sav)
+esp_zeroize(sav)
+    struct secasvar *sav;
 {
 	/* NB: ah_zerorize free's the crypto session state */
 	int error = ah_zeroize(sav);
@@ -384,7 +387,7 @@ esp_hash_schedule(sav, txform)
 	struct secasvar *sav;
 	const struct enc_xform *txform;
 {
-	return ((*txform->setkey)(&sav->sched, _KEYLEN(sav->key_enc), _KEYBUF(sav->key_enc)));
+	return ((*txform->setkey)(sav->sched, _KEYBUF(sav->key_enc), _KEYLEN(sav->key_enc)));
 }
 
 static void
@@ -466,14 +469,13 @@ esp_decrypt_expanded(m, off, sav, thash, ivlen, ivoff, bodyoff, derived)
 	struct mbuf *m;
 	size_t off;
 	struct secasvar *sav;
-	const struct enc_hash *thash;
+	const struct auth_hash *thash;
 	int ivlen, ivoff, bodyoff, derived;
 {
 	struct mbuf *s;
 	struct mbuf *d, *d0, *dp;
 	int soff, doff;	/* offset from the head of chain, to head of this mbuf */
 	int sn, dn;	/* offset from the head of the mbuf, to meat */
-	size_t ivoff;
 	u_int8_t iv[MAXIVLEN], *ivp;
 	u_int8_t sbuf[MAXIVLEN], *sp;
 	u_int8_t *p, *q;
@@ -493,7 +495,7 @@ esp_decrypt_expanded(m, off, sav, thash, ivlen, ivoff, bodyoff, derived)
 #ifdef DIAGNOSTIC
 	if (blocklen > sizeof(iv)) {
 		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: "
-		    "unsupported blocklen %d\n", algo->name, blocklen));
+		    "unsupported blocklen %d\n", thash->name, blocklen));
 		m_freem(m);
 		return EINVAL;
 	}
@@ -653,7 +655,7 @@ esp_encrypt_expanded(m, off, plen, sav, thash, ivlen, ivoff, bodyoff, derived)
 	size_t off;
 	size_t plen;
 	struct secasvar *sav;
-	const struct enc_hash *thash;
+	const struct auth_hash *thash;
 	int ivlen, ivoff, bodyoff, derived;
 {
 	struct mbuf *s;
@@ -848,6 +850,7 @@ esp_input(m, sav, skip, ivlen)
 	struct tdb *tdb;
 	struct cryptop *crp;
 	int plen, hlen, alen, ivoff;
+    uint8_t abuf[AH_HMAC_MAX_HASHLEN];
 
 	struct cryptodesc *crda, *crde;
 
@@ -876,14 +879,14 @@ esp_input(m, sav, skip, ivlen)
 	}
 
 	/* Authenticator hash size */
-	alen = esph ? AH_HMAC_HASHLEN : 0;
+	alen = esph ? AH_HMAC_MAX_HASHLEN : 0;
 	plen = m->m_pkthdr.len - (skip + hlen + alen);
 
 	/* Get crypto descriptors */
 	crp = crypto_getreq(esph && espx ? 2 : 1);
 	if (crp == NULL) {
 		ipseclog((LOG_ERR, "esp_input: failed to acquire crypto descriptors\n"));
-		espstat.esps_crypto++;
+		//espstat.esps_crypto++;
 		m_freem(m);
 		return (ENOBUFS);
 	}
@@ -897,7 +900,7 @@ esp_input(m, sav, skip, ivlen)
 	if (tdb == NULL) {
 		crypto_freereq(crp);
 		ipseclog((LOG_ERR, "esp_input: failed to allocate tdb_crypto\n"));
-		espstat.esps_crypto++;
+		//espstat.esps_crypto++;
 		m_freem(m);
 		return (ENOBUFS);
 	}
@@ -935,7 +938,6 @@ esp_input(m, sav, skip, ivlen)
 	crp->crp_opaque = (caddr_t)tdb;
 
 	/* These are passed as-is to the callback. */
-	tdb->tdb_isr = sav->isr;
 	tdb->tdb_spi = sav->spi;
 	tdb->tdb_dst = sav->sah->saidx.dst;
 	tdb->tdb_src = sav->sah->saidx.src;
@@ -976,10 +978,10 @@ esp_input_cb(crp)
 
 	s = splsoftnet();
 #ifdef INET
-	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET, (caddr_t)tdb_get_in(tdb, 0), (caddr_t)tdb_get_in(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 #ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET6, (caddr_t)tdb_get_in6(tdb, 0), (caddr_t)tdb_get_in6(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "esp_input_cb: SA expired while in crypto\n"));
@@ -993,11 +995,11 @@ esp_input_cb(crp)
 	/* Check for crypto errors */
 	if (crp->crp_etype) {
 		/* Reset the session ID */
-		if (sav->tdb_cryptoid != 0)
-			sav->tdb_cryptoid = crp->crp_sid;
+		if (tdb->tdb_cryptoid != 0)
+			tdb->tdb_cryptoid = crp->crp_sid;
 
 		if (crp->crp_etype == EAGAIN) {
-			key_freesav(&sav);
+			key_freesav(sav);
 			splx(s);
 			return (crypto_dispatch(crp));
 		}
@@ -1009,7 +1011,7 @@ esp_input_cb(crp)
 
 	/* Shouldn't happen... */
 	if (m == NULL) {
-		DPRINTF(("esp_input_cb: bogus returned buffer from crypto\n"));
+		ipseclog((LOG_ERR, "esp_input_cb: bogus returned buffer from crypto\n"));
 		error = EINVAL;
 		goto bad;
 	}
@@ -1022,13 +1024,13 @@ esp_input_cb(crp)
 
 	error = esp_decrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), esp_derived);
 
-	key_freesav(&sav);
+	key_freesav(sav);
 	splx(s);
 	return (error);
 
 bad:
 	if (sav) {
-		key_freesav(&sav);
+		key_freesav(sav);
 	}
 	splx(s);
 	if (m != NULL) {
@@ -1088,7 +1090,7 @@ esp_output(m, isr, mp, skip, ivlen)
 	}
 
 	if (esph) {
-		alen = AH_HMAC_HASHLEN;
+		alen = AH_HMAC_MAX_HASHLEN;
 	} else {
 		alen = 0;
 	}
@@ -1097,7 +1099,7 @@ esp_output(m, isr, mp, skip, ivlen)
 	crp = crypto_getreq(esph && espx ? 2 : 1);
 	if (crp == NULL) {
 		ipseclog((LOG_ERR, "esp_output: failed to acquire crypto descriptors\n"));
-		espstat.esps_crypto++;
+		//espstat.esps_crypto++;
 		error = ENOBUFS;
 		goto bad;
 	}
@@ -1126,7 +1128,7 @@ esp_output(m, isr, mp, skip, ivlen)
 	if (tdb == NULL) {
 		crypto_freereq(crp);
 		ipseclog((LOG_ERR, "esp_output: failed to allocate tdb_crypto\n"));
-		espstat.esps_crypto++;
+		//espstat.esps_crypto++;
 		error = ENOBUFS;
 		goto bad;
 	}
@@ -1143,7 +1145,7 @@ esp_output(m, isr, mp, skip, ivlen)
 	crp->crp_opaque = (caddr_t)tdb;
 
 	/* These are passed as-is to the callback. */
-	tdb->tdb_isr = sav->isr;
+	tdb->tdb_isr = isr;
 	tdb->tdb_spi = sav->spi;
 	tdb->tdb_dst = sav->sah->saidx.dst;
 	tdb->tdb_src = sav->sah->saidx.src;
@@ -1194,10 +1196,10 @@ esp_output_cb(crp)
 	s = splsoftnet();
 	isr = tdb->tdb_isr;
 #ifdef INET
-	sav = key_allocsa(AF_INET, (caddr_t)&tdb->tdb_src.sin.sin_addr, (caddr_t)&tdb->tdb_dst.sin.sin_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET, (caddr_t)tdb_get_in(tdb, 0), (caddr_t)tdb_get_in(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 #ifdef INET6
-	sav = key_allocsa(AF_INET6, (caddr_t)&tdb->tdb_src.sin6.sin6_addr, (caddr_t)&tdb->tdb_dst.sin6.sin6_addr, tdb->tdb_proto, tdb->tdb_spi);
+	sav = key_allocsa(AF_INET6, (caddr_t)tdb_get_in6(tdb, 0), (caddr_t)tdb_get_in6(tdb, 1), tdb->tdb_proto, tdb->tdb_spi);
 #endif
 	if (sav == NULL) {
 		ipseclog((LOG_ERR, "esp_output_cb: SA expired while in crypto\n"));
@@ -1211,11 +1213,11 @@ esp_output_cb(crp)
 	/* Check for crypto errors */
 	if (crp->crp_etype) {
 		/* Reset the session ID */
-		if (sav->tdb_cryptoid != 0)
-			sav->tdb_cryptoid = crp->crp_sid;
+		if (tdb->tdb_cryptoid != 0)
+			tdb->tdb_cryptoid = crp->crp_sid;
 
 		if (crp->crp_etype == EAGAIN) {
-			key_freesav(&sav);
+			key_freesav(sav);
 			splx(s);
 			return (crypto_dispatch(crp));
 		}
@@ -1240,13 +1242,13 @@ esp_output_cb(crp)
 
 	error = esp_encrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), esp_derived);
 
-	key_freesav(&sav);
+	key_freesav(sav);
 	splx(s);
 	return (error);
 
 bad:
 	if (sav) {
-		key_freesav(&sav);
+		key_freesav(sav);
 	}
 	splx(s);
 	if (m != NULL) {

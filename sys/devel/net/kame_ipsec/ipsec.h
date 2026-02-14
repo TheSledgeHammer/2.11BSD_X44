@@ -316,6 +316,7 @@ struct ipsec_history {
 };
 
 extern int ipsec_debug;
+extern int crypto_support;
 
 #ifdef INET
 extern struct ipsecstat ipsecstat;
@@ -423,15 +424,6 @@ extern void ipsec_clearhist(struct mbuf *);
 
 extern int ipsec_sysctl(int *, u_int, void *, size_t *, void *, size_t);
 extern int ipsec6_sysctl(int *, u_int, void *, size_t *, void *, size_t);
-
-
-/* External declarations of per-file init functions */
-extern void ah_attach(void);
-extern void esp_attach(void);
-extern void ipcomp_attach(void);
-//extern void ipe4_attach(void);
-
-extern void ipsec_attach(void);
 #endif /* _KERNEL */
 
 #ifndef _KERNEL

@@ -39,6 +39,8 @@
 
 #include "opt_inet.h"
 
+#define	ESP_ALG_MAX	256		/* NB: could be < but skipjack is 249 */
+
 struct esp {
 	u_int32_t	esp_spi;	/* ESP */
 	/* variable size, 32bit bound */	/* Initialization Vector */
@@ -72,25 +74,26 @@ const struct enc_xform *esp_algorithm_lookup(int);
 u_int16_t esp_padbound(struct secasvar *, const struct enc_xform *);
 u_int16_t esp_ivlen(struct secasvar *, const struct enc_xform *);
 
-int esp_encrypt(struct mbuf *, size_t, size_t, struct secasvar *, const struct enc_xform *, int);
+int esp_encrypt(struct mbuf *, size_t, size_t, struct ipsecrequest *, const struct enc_xform *, int);
 int esp_decrypt(struct mbuf *, size_t, struct secasvar *, const struct enc_xform *, int);
 
 /* crypt routines */
-extern int esp4_output(struct mbuf *, struct ipsecrequest *);
-extern void esp4_input(struct mbuf **, int *, int);
-extern size_t esp_hdrsiz(struct ipsecrequest *);
+int esp4_output(struct mbuf *, struct ipsecrequest *);
+void esp4_input(struct mbuf **, int *, int);
+size_t esp_hdrsiz(struct ipsecrequest *);
 
-extern void *esp4_ctlinput(int, struct sockaddr *, void *);
+void *esp4_ctlinput(int, struct sockaddr *, void *);
 
 #ifdef INET6
-extern int esp6_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *);
-extern int esp6_input(struct mbuf **, int *, int);
+int esp6_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *);
+int esp6_input(struct mbuf **, int *, int);
 
-extern void esp6_ctlinput(int, struct sockaddr *, void *);
+void esp6_ctlinput(int, struct sockaddr *, void *);
 #endif /* INET6 */
 
-extern int esp_schedule(struct secasvar *, const struct enc_xform *);
-extern int esp_auth(struct mbuf *, size_t, size_t, struct secasvar *, u_char *);
+int esp_schedule(struct secasvar *, const struct enc_xform *);
+int esp_auth(struct mbuf *, size_t, size_t, struct secasvar *, u_char *);
+
 #endif /* _KERNEL */
 
 #endif /* _NETINET6_ESP_H_ */

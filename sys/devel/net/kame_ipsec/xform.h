@@ -62,16 +62,14 @@
 #include <netinet/in.h>
 #include <crypto/opencrypto/xform.h>
 
-#define	AH_HMAC_HASHLEN		12	/* 96 bits of authenticator */
+#define	AH_HMAC_MAX_HASHLEN	32	/* 256 bits of authenticator for SHA512 */
 #define	AH_HMAC_INITIAL_RPL	1	/* replay counter initial value */
 
-/*
 union sockaddr_union {
 	struct sockaddr         sa;
 	struct sockaddr_in      sin;
 	struct sockaddr_in6     sin6;
 };
-*/
 
 /* tunnel block descriptor */
 struct tdb {
@@ -82,8 +80,8 @@ struct tdb {
 	u_int16_t				tdb_length; 		/* length */
 	u_int16_t 				tdb_offset;			/* offset */
 
-    union sockaddr_union    tdb_src;			/* src addr of packet */
-    union sockaddr_union    tdb_dst;			/* dst addr of packet */
+    struct sockaddr_storage tdb_src;			/* src addr of packet */
+    struct sockaddr_storage tdb_dst;			/* dst addr of packet */
     u_int8_t	            tdb_proto;			/* current protocol, e.g. AH */
 	int						tdb_skip;			/* data offset */
 
@@ -156,8 +154,20 @@ void tdb_free(struct tdb *);
 struct tdb *tdb_init(struct secasvar *, struct xformsw *, const struct enc_xform *, const struct auth_hash *, const struct comp_algo *, u_int8_t);
 int tdb_zeroize(struct tdb *);
 
+struct sockaddr_in *tdb_get_sin(struct tdb *, int);
+struct sockaddr_in6 *tdb_get_sin6(struct tdb *, int);
+struct in_addr *tdb_get_in(struct tdb *, int);
+struct in6_addr *tdb_get_in6(struct tdb *, int);
+
 void tdb_keycleanup(struct secasvar *);
 int tdb_keysetsav(struct secasvar *, int);
+
+/* External declarations of per-file init functions */
+void ah_attach(void);
+void esp_attach(void);
+void ipcomp_attach(void);
+//extern void ipe4_attach(void);
+void ipsec_attach(void);
 
 #endif /* _KERNEL */
 #endif /* _KAME_IPSEC_XFORM_H_ */
