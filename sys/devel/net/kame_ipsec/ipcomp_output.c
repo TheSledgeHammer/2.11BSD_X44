@@ -205,7 +205,7 @@ ipcomp_output(m, nexthdrp, md, isr, af)
 	mprev->m_next = md;
 
 	/* compress data part */
-	if (ipcomp_compress(m, md, &plen) || mprev->m_next == NULL) {
+	if (ipcomp_compress(m, md, sav, &plen) || mprev->m_next == NULL) {
 		ipseclog((LOG_ERR, "packet compression failure\n"));
 		m = NULL;
 		m_freem(md0);

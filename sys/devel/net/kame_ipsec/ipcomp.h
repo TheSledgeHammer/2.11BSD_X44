@@ -58,8 +58,8 @@ struct ipcomp {
 struct ipsecrequest;
 
 const struct comp_algo *ipcomp_algorithm_lookup(int);
-int ipcomp_compress(struct mbuf *, struct mbuf *, size_t *);
-int ipcomp_decompress(struct mbuf *, struct mbuf *, size_t *);
+int ipcomp_compress(struct mbuf *, struct mbuf *, struct secasvar *, size_t *);
+int ipcomp_decompress(struct mbuf *, struct mbuf *, struct secasvar *, size_t *);
 
 void ipcomp4_input(struct mbuf *, int *, int);
 int ipcomp4_output(struct mbuf *, struct ipsecrequest *);

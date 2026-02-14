@@ -62,25 +62,16 @@
 #include <netinet/in.h>
 #include <crypto/opencrypto/xform.h>
 
-/* use opencrypto xform */
-struct secasvar {
-	/*
-	 * NB: Fields with a tdb_ prefix are part of the "glue" used
-	 *     to interface to the OpenBSD crypto support.  This was done
-	 *     to distinguish this code from the mainline KAME code.
-	 */
-	struct tdb 				*tdb_tdb;		/* glue */
-};
-
 #define	AH_HMAC_HASHLEN		12	/* 96 bits of authenticator */
 #define	AH_HMAC_INITIAL_RPL	1	/* replay counter initial value */
 
-
+/*
 union sockaddr_union {
 	struct sockaddr         sa;
 	struct sockaddr_in      sin;
 	struct sockaddr_in6     sin6;
 };
+*/
 
 /* tunnel block descriptor */
 struct tdb {
@@ -164,6 +155,9 @@ struct tdb *tdb_alloc(int);
 void tdb_free(struct tdb *);
 struct tdb *tdb_init(struct secasvar *, struct xformsw *, const struct enc_xform *, const struct auth_hash *, const struct comp_algo *, u_int8_t);
 int tdb_zeroize(struct tdb *);
+
+void tdb_keycleanup(struct secasvar *);
+int tdb_keysetsav(struct secasvar *, int);
 
 #endif /* _KERNEL */
 #endif /* _KAME_IPSEC_XFORM_H_ */

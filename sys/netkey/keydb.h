@@ -104,6 +104,15 @@ struct secasvar {
 	struct secashead *sah;		/* back pointer to the secashead */
 
 	u_int32_t id;			/* SA id */
+
+#ifdef IPSEC_XFORM
+	/*
+	 * NB: Fields with a tdb_ prefix are part of the "glue" used
+	 *     to interface to the OpenBSD crypto support.  This was done
+	 *     to distinguish this code from the mainline KAME code.
+	 */
+	struct tdb *tdb_tdb; 	/* glue */
+#endif
 };
 
 /* replay prevention */

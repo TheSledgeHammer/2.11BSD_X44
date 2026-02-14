@@ -311,7 +311,11 @@ esp_init(sav, xsp)
 	 *      the ESP header will be processed incorrectly.  The
 	 *      compromise is to force it to zero here.
 	 */
-	sav->ivlen = (txform == &enc_xform_null ? 0 : txform->blocksize);
+
+	sav->ivlen = esp_ivlen(sav, txform);
+	if (sav->ivlen == 0) {
+		sav->ivlen = (txform == &enc_xform_null ? 0 : txform->blocksize);
+	}
 	sav->iv = (caddr_t)malloc(sav->ivlen, M_XDATA, M_WAITOK);
 	if (sav->iv == NULL) {
 		ipseclog((LOG_ERR, "esp_init: no memory for IV\n"));
@@ -406,14 +410,12 @@ esp_hash_decrypt(sav, txform, key, data)
 }
 
 int
-esp_schedule(sav, xsp)
+esp_schedule(sav, txform)
 	struct secasvar *sav;
-	struct xformsw *xsp;
-{
 	const struct enc_xform *txform;
+{
 	int error;
 
-	txform = esp_algorithm_lookup(sav->alg_enc);
 	if (txform == NULL) {
 		ipseclog((LOG_ERR, "esp_schedule: unsupported encryption algorithm %d\n",
 			sav->alg_enc));

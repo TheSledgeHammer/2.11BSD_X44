@@ -84,12 +84,22 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.113.2.1 2004/05/11 14:54:52 tron Exp $");
 #include <netkey/keysock.h>
 #include <netkey/key_debug.h>
 
+#ifdef IPSEC_XFORM
+#include <kame_ipsec/ipsec.h>
+#include <kame_ipsec/ah.h>
+#ifdef IPSEC_ESP
+#include <kame_ipsec/esp.h>
+#endif
+#include <kame_ipsec/ipcomp.h>
+#include <kame_ipsec/xform.h>
+#else
 #include <netinet6/ipsec.h>
 #include <netinet6/ah.h>
 #ifdef IPSEC_ESP
 #include <netinet6/esp.h>
 #endif
 #include <netinet6/ipcomp.h>
+#endif
 
 #ifdef KERNFS
 #include <miscfs/kernfs/kernfs.h>
@@ -923,6 +933,20 @@ key_delsav(sav)
 	if (sav->spihash.le_prev || sav->spihash.le_next)
 		LIST_REMOVE(sav, spihash);
 
+#ifdef IPSEC_XFORM
+
+	tdb_keycleanup(sav);
+	if (sav->key_auth != NULL) {
+		KFREE(sav->key_auth);
+		sav->key_auth = NULL;
+	}
+	if (sav->key_enc != NULL) {
+		KFREE(sav->key_enc);
+		sav->key_enc = NULL;
+	}
+
+#else
+
 	if (sav->key_auth != NULL) {
 		bzero(_KEYBUF(sav->key_auth), _KEYLEN(sav->key_auth));
 		KFREE(sav->key_auth);
@@ -933,6 +957,9 @@ key_delsav(sav)
 		KFREE(sav->key_enc);
 		sav->key_enc = NULL;
 	}
+
+#endif /* IPSEC_XFORM */
+
 	if (sav->sched) {
 		bzero(sav->sched, sav->schedlen);
 		KFREE(sav->sched);
@@ -3060,6 +3087,15 @@ key_setsaval(sav, m, mhp)
 	/* set iv */
 	sav->ivlen = 0;
 
+#ifdef IPSEC_XFORM
+
+	error = tdb_keysetsav(sav, mhp->msg->sadb_msg_satype);
+	if (error != 0) {
+		goto fail;
+	}
+
+#else
+
 	switch (mhp->msg->sadb_msg_satype) {
 	case SADB_SATYPE_ESP:
 #ifdef IPSEC_ESP
@@ -3088,6 +3124,8 @@ key_setsaval(sav, m, mhp)
 		error = EINVAL;
 		goto fail;
 	}
+
+#endif /* IPSEC_XFORM */
 
 	/* reset created */
 	sav->created = time.tv_sec;

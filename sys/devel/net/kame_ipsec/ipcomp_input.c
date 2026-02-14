@@ -159,7 +159,7 @@ ipcomp4_input(mp, offp, proto)
 
 	olen = m->m_pkthdr.len;
 	newlen = m->m_pkthdr.len - off;
-	error = ipcomp_decompress(m, m->m_next, &newlen);
+	error = ipcomp_decompress(m, m->m_next, sav, &newlen);
 	if (error != 0) {
 		if (error == EINVAL)
 			ipsecstat.in_inval++;
@@ -297,7 +297,7 @@ ipcomp6_input(mp, offp, proto)
 	m->m_pkthdr.len -= sizeof(struct ipcomp);
 
 	newlen = m->m_pkthdr.len - off;
-	error = ipcomp_decompress(m, md, &newlen);
+	error = ipcomp_decompress(m, md, sav, &newlen);
 	if (error != 0) {
 		if (error == EINVAL)
 			ipsec6stat.in_inval++;

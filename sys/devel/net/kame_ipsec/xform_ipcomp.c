@@ -97,10 +97,14 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $
 
 #include <net/net_osdep.h>
 
-
 int	ipcomp_enable = 0;
 struct	ipcompstat ipcompstat;
 
+static int ipcomp_deflate_common(struct mbuf *, struct mbuf *, struct secasvar *, u_int8_t *, int);
+static int ipcomp_deflate_compress(const struct comp_algo *, u_int8_t *, u_int32_t, u_int8_t **);
+static int ipcomp_deflate_decompress(const struct comp_algo *, u_int8_t *, u_int32_t, u_int8_t **);
+static int ipcomp_input(struct mbuf *, struct secasvar *, int, int);
+static int ipcomp_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);
 static int ipcomp_input_cb(struct cryptop *crp);
 static int ipcomp_output_cb(struct cryptop *crp);
 
@@ -125,7 +129,13 @@ ipcomp_deflate_compress(tcomp, data, size, out)
 	u_int32_t size;
 	u_int8_t **out;
 {
-	return ((*tcomp->compress)(data, size, out));
+	u_int32_t result;
+
+	result = (*tcomp->compress)(data, size, out);
+	if (result == 0) {
+		return (EINVAL);
+	}
+	return (0);
 }
 
 static int
@@ -133,157 +143,103 @@ ipcomp_deflate_decompress(tcomp, data, size, out)
 	const struct comp_algo *tcomp;
 	u_int8_t *data;
 	u_int32_t size;
-	u_int8_t *out;
+	u_int8_t **out;
 {
-	return ((*tcomp->decompress)(data, size, out));
-}
-
-int
-ipcomp_compress(m, md, lenp)
-	struct mbuf *m, *md;
-	size_t *lenp;
-{
-	return (0);
-}
-
-int
-ipcomp_decompress(m, md, lenp)
-	struct mbuf *m, *md;
-	size_t *lenp;
-{
-	return (0);
-}
-
-/* mode: 0: compress 1: decompress */
-static int
-ipcomp_deflate_common(m, md, tcomp, data, size, lenp, mode)
-    struct mbuf *m, *md;
-	const struct comp_algo *tcomp;
-    u_int8_t *data;
-    u_int32_t size;
-    u_int8_t **lenp;
-    int mode;
-{
-	struct mbuf *p, *mprev, *n, *n0, **np;
-	u_int8_t *output;
 	u_int32_t result;
+
+	result = (*tcomp->decompress)(data, size, out);
+	if (result == 0) {
+		return (EINVAL);
+	}
+	return (0);
+}
+
+/*
+ * Notes:
+ * - Potential Issues: missing kame ipcomp's mprev chain.
+ */
+static int
+ipcomp_deflate_common(m, md, sav, out, mode)
+	struct mbuf *m;
+	struct mbuf *md;
+	struct secasvar *sav;
+	u_int8_t *out;
+	int mode;	/* 0: compress (output) 1: decompress (input) */
+{
+	struct mbuf *p;
+	uint8_t *data;
+	uint32_t size;
 	int error;
 
-	for (mprev = m; mprev && mprev->m_next != md; mprev = mprev->m_next) {
-		;
-	}
-
-	if (!mprev) {
-		panic("md is not in m in ipcomp_deflate_common");
-	}
-
-	n0 = n = NULL;
-	np = &n0;
+	error = 0;
 	p = md;
-	while (p && p->m_len == 0) {
+	data = NULL;
+	size = 0;
+	while (p != NULL && p->m_len == 0) {
 		p = p->m_next;
 	}
-	while (p && size == 0) {
-		if (p && size == 0) {
-			data = mtod(p, u_int8_t*);
+
+	while (p && p->m_len != 0) {
+		if (p->m_len != 0) {
+			data = mtod(p, uint8_t *);
 			size = p->m_len;
 			p = p->m_next;
 			while (p && p->m_len == 0) {
 				p = p->m_next;
 			}
 		}
-
-		/* compress / decompress */
-		switch (mode) {
-		case 0:
-			result = (*tcomp->compress)(data, size, &output);
-			break;
-		case 1:
-			result = (*tcomp->decompress)(data, size, &output);
-			break;
-		}
-
-		/* check output */
-		if (output == 0) {
-			/* moreblock */
-			if (n) {
-				n->m_len = result;
-				*np = n;
-				np = &n->m_next;
-				n = NULL;
-			}
-			MGET(n, M_DONTWAIT, MT_DATA);
-			if (n) {
-				MCLGET(n, M_DONTWAIT);
-			}
-			if (!n) {
-				error = ENOBUFS;
-				goto fail;
-			}
-			n->m_len = 0;
-			n->m_len = M_TRAILINGSPACE(n);
-			n->m_next = NULL;
-
-			if (*np == NULL) {
-				n->m_len -= size;
-				n->m_data += size;
-			}
-			data = mtod(n, u_int8_t *);
-			size = n->m_next;
-		}
-		/* check result */
-		if (result == 0) {
-			error = EINVAL;
-			goto fail;
-		}
+		break;
 	}
 
-	if (n) {
-		n->m_len = result;
-		*np = n;
-		np = &n->m_next;
-		n = NULL;
+	if (data == NULL && size == 0) {
+		return (EINVAL);
 	}
 
-	/* switch the mbuf to the new one */
-	mprev->m_next = n0;
-	m_freem(md);
-	*lenp = output;
-	return (0);
-
-fail:
-    if (m) {
-	    m_freem(m);
-    }
-	if (n) {
-		m_freem(n);
-    }
-	if (n0) {
-		m_freem(n0);
-    }
-    return (error);
+	switch (mode) {
+	case 0:
+		error = ipcomp_output(m, sav->sav_isr, &p, data, size, *out);
+		break;
+	case 1:
+		error = ipcomp_input(m, sav, data, size, *out);
+		break;
+	}
+	return (error);
 }
 
-static int
-ipcomp_deflate_compress(m, md, tcomp, data, size, out)
+int
+ipcomp_compress(m, md, sav, lenp)
 	struct mbuf *m, *md;
-	const struct comp_algo *tcomp;
-	u_int8_t *data;
-	u_int32_t size;
-	u_int8_t **out;
+	struct secasvar *sav;
+	size_t *lenp;
 {
-	return (ipcomp_deflate_common(m, md, tcomp, data, size, out, 0));
+	if (!m) {
+		panic("m == NULL in deflate_compress");
+	}
+	if (!md) {
+		panic("md == NULL in deflate_compress");
+	}
+	if (!lenp) {
+		panic("lenp == NULL in deflate_compress");
+	}
+	return (ipcomp_deflate_common(m, md, sav, lenp, 0));
 }
 
-static int
-ipcomp_deflate_decompress(m, md, tcomp, data, size, out)
+int
+ipcomp_decompress(m, md, sav, lenp)
 	struct mbuf *m, *md;
-	const struct comp_algo *tcomp;
-	u_int8_t *data;
-	u_int32_t size;
-	u_int8_t **out;
+	struct secasvar *sav;
+	size_t *lenp;
 {
-	return (ipcomp_deflate_common(m, md, tcomp, data, size, out, 1));
+	if (!m) {
+		panic("m == NULL in deflate_decompress");
+	}
+	if (!md) {
+		panic("md == NULL in deflate_decompress");
+	}
+	if (!lenp) {
+		panic("lenp == NULL in deflate_decompress");
+	}
+	return (ipcomp_deflate_common(m, md, sav, lenp, 1));
 }
 
 /*
@@ -301,7 +257,7 @@ ipcomp_init(sav, xsp)
 	/* NB: algorithm really comes in alg_enc and not alg_comp! */
 	tcomp = ipcomp_algorithm_lookup(sav->alg_enc);
 	if (tcomp == NULL) {
-		DPRINTF(("ipcomp_init: unsupported compression algorithm %d\n",
+		ipseclog((LOG_ERR, "ipcomp_init: unsupported compression algorithm %d\n",
 			 sav->alg_comp));
 		return (EINVAL);
 	}
@@ -351,8 +307,8 @@ ipcomp_input(m, sav, skip, protoff)
 	crp = crypto_getreq(1);
 	if (crp == NULL) {
 		m_freem(m);
-		DPRINTF(("ipcomp_input: no crypto descriptors\n"));
-		ipcompstat.ipcomps_crypto++;
+		ipseclog((LOG_ERR, "ipcomp_input: no crypto descriptors\n"));
+		//ipcompstat.ipcomps_crypto++;
 		return (ENOBUFS);
 	}
 
@@ -361,8 +317,8 @@ ipcomp_input(m, sav, skip, protoff)
 	if (tdb == NULL) {
 		m_freem(m);
 		crypto_freereq(crp);
-		DPRINTF(("ipcomp_input: cannot allocate tdb_crypto\n"));
-		ipcompstat.ipcomps_crypto++;
+		ipseclog((LOG_ERR, "ipcomp_input: cannot allocate tdb_crypto\n"));
+		//ipcompstat.ipcomps_crypto++;
 		return (ENOBUFS);
 	}
 	sav->tdb_tdb = tdb;
@@ -395,7 +351,7 @@ ipcomp_input(m, sav, skip, protoff)
 	tdb->tdb_length = protoff;
 	tdb->tdb_offset = hlen;
 
-	return (crypto_dispatch(crp));
+	return (ipcomp_input_cb(crp));
 }
 
 static int
@@ -407,7 +363,7 @@ ipcomp_input_cb(crp)
 	struct mbuf *m;
 	struct secasvar *sav;
 	const struct comp_algo *ipcompx;
-	int s, error, hlen, protoff;
+	int s, error, hlen, protoff, roff;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
@@ -442,14 +398,14 @@ ipcomp_input_cb(crp)
 			return (crypto_dispatch(crp));
 		}
 
-		ipseclog((LOG_ERR, "esp_output_cb: crypto error %d\n", crp->crp_etype));
+		ipseclog((LOG_ERR, "ipcomp_input_cb: crypto error %d\n", crp->crp_etype));
 		error = crp->crp_etype;
 		goto bad;
 	}
 
 	/* Shouldn't happen... */
 	if (m == NULL) {
-		ipseclog((LOG_ERR, "esp_output_cb: bogus returned buffer from crypto\n"));
+		ipseclog((LOG_ERR, "ipcomp_input_cb: bogus returned buffer from crypto\n"));
 		error = EINVAL;
 		goto bad;
 	}
@@ -460,7 +416,10 @@ ipcomp_input_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = ipcomp_deflate_decompress(ipcompx, skip, protoff, roff);
+	error = ipcomp_deflate_decompress(ipcompx, skip, hlen, &roff);
+	if (roff != 0) {
+		bcopy(roff, protoff, sizeof(roff));
+	}
 
 	key_freesav(&sav);
 	splx(s);
@@ -503,7 +462,6 @@ ipcomp_output(m, isr, mp, skip, protoff)
 	tdb = sav->tdb_tdb;
 	ipcompx = tdb->tdb_compalgxform;
 
-	ralen = m->m_pkthdr.len - skip;	/* Raw payload length before comp. */
 	hlen = sizeof(struct ipcomp);
 
 	/* Ok now, we can pass to the crypto processing */
@@ -511,8 +469,8 @@ ipcomp_output(m, isr, mp, skip, protoff)
 	/* Get crypto descriptors */
 	crp = crypto_getreq(1);
 	if (crp == NULL) {
-		ipcompstat.ipcomps_crypto++;
-		DPRINTF(("ipcomp_output: failed to acquire crypto descriptor\n"));
+		//ipcompstat.ipcomps_crypto++;
+		ipseclog((LOG_ERR, "ipcomp_output: failed to acquire crypto descriptor\n"));
 		error = ENOBUFS;
 		goto bad;
 	}
@@ -530,8 +488,8 @@ ipcomp_output(m, isr, mp, skip, protoff)
 	/* Get IPsec-specific opaque pointer */
 	tdb = tdb_alloc(0);
 	if (tdb == NULL) {
-		ipcompstat.ipcomps_crypto++;
-		DPRINTF(("ipcomp_output: failed to allocate tdb_crypto\n"));
+		//ipcompstat.ipcomps_crypto++;
+		ipseclog((LOG_ERR, "ipcomp_output: failed to allocate tdb_crypto\n"));
 		crypto_freereq(crp);
 		error = ENOBUFS;
 		goto bad;
@@ -545,7 +503,7 @@ ipcomp_output(m, isr, mp, skip, protoff)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
-	tdb->tdb_length = ralen;
+	tdb->tdb_length = protoff;
 	tdb->tdb_offset = hlen;
 
 	/* Crypto operation descriptor */
@@ -556,7 +514,7 @@ ipcomp_output(m, isr, mp, skip, protoff)
 	crp->crp_opaque = (caddr_t)tdb;
 	crp->crp_sid = tdb->tdb_cryptoid;
 
-	return (crypto_dispatch(crp));
+	return (ipcomp_output_cb(crp));
 
 bad:
 	if (m) {
@@ -574,14 +532,14 @@ ipcomp_output_cb(crp)
 	struct mbuf *m, *md;
 	struct tdb *tdb;
 	const struct comp_algo *ipcompx;
-	int s, error, skip, ralen, rlen, hlen;
+	int s, error, hlen, skip, protoff, roff;
+
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
-	ralen = tdb->tdb_length;
+	protoff = tdb->tdb_length;
 	hlen = tdb->tdb_offset;
-	rlen = crp->crp_ilen - (skip + hlen);
 
 	s = splsoftnet();
 	isr = tdb->tdb_isr;
@@ -611,14 +569,14 @@ ipcomp_output_cb(crp)
 			return (crypto_dispatch(crp));
 		}
 
-		ipseclog((LOG_ERR, "esp_output_cb: crypto error %d\n", crp->crp_etype));
+		ipseclog((LOG_ERR, "ipcomp_output_cb: crypto error %d\n", crp->crp_etype));
 		error = crp->crp_etype;
 		goto bad;
 	}
 
 	/* Shouldn't happen... */
 	if (m == NULL) {
-		ipseclog((LOG_ERR, "esp_output_cb: bogus returned buffer from crypto\n"));
+		ipseclog((LOG_ERR, "ipcomp_output_cb: bogus returned buffer from crypto\n"));
 		error = EINVAL;
 		goto bad;
 	}
@@ -629,7 +587,10 @@ ipcomp_output_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = ipcomp_deflate_compress(ipcompx, skip, ralen, roff);
+	error = ipcomp_deflate_compress(ipcompx, skip, hlen, &roff);
+	if (roff != 0) {
+		bcopy(roff, protoff, sizeof(roff));
+	}
 
 	key_freesav(&sav);
 	splx(s);

@@ -89,7 +89,7 @@ extern int esp6_input(struct mbuf **, int *, int);
 extern void esp6_ctlinput(int, struct sockaddr *, void *);
 #endif /* INET6 */
 
-extern int esp_schedule(struct secasvar *, const struct esp_algorithm *);
+extern int esp_schedule(struct secasvar *, const struct enc_xform *);
 extern int esp_auth(struct mbuf *, size_t, size_t, struct secasvar *, u_char *);
 #endif /* _KERNEL */
 

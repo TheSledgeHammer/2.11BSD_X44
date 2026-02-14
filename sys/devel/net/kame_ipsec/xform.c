@@ -149,7 +149,8 @@ static struct xformsw* xforms = NULL;
  * Register a transform; typically at system startup.
  */
 void
-xform_register(struct xformsw* xsp)
+xform_register(xsp)
+	struct xformsw* xsp;
 {
 	xsp->xf_next = xforms;
 	xforms = xsp;
@@ -159,7 +160,9 @@ xform_register(struct xformsw* xsp)
  * Initialize transform support in an sav.
  */
 int
-xform_init(struct secasvar *sav, int xftype)
+xform_init(sav, xftype)
+	struct secasvar *sav;
+	int xftype;
 {
 	struct xformsw *xsp;
 	struct tdb *tdb;
@@ -177,7 +180,7 @@ xform_init(struct secasvar *sav, int xftype)
 		}
 	}
 
-	DPRINTF(("xform_init: no match for xform type %d\n", xftype));
+	ipseclog((LOG_DEBUG, "xform_init: no match for xform type %d\n", xftype));
 	return (EINVAL);
 }
 
@@ -190,4 +193,59 @@ ipsec_attach(void)
 	ipcomp_attach();
 	//ipe4_attach();
 	printf(" done\n");
+}
+
+
+void
+tdb_keycleanup(sav)
+	struct secasvar *sav;
+{
+	struct tdb *tdb;
+
+	/*
+	 * Cleanup xform state.  Note that zeroize'ing causes the
+	 * keys to be cleared; otherwise we must do it ourself.
+	 */
+	tdb = sav->tdb_tdb;
+	if (tdb != NULL) {
+		if (tdb->tdb_xform != NULL) {
+			(*tdb->tdb_xform->xf_zeroize)(sav);
+			tdb->tdb_xform = NULL;
+		}
+	} else {
+		if (sav->key_auth != NULL) {
+			bzero(_KEYBUF(sav->key_auth), _KEYLEN(sav->key_auth));
+		}
+		if (sav->key_enc != NULL) {
+			bzero(_KEYBUF(sav->key_enc), _KEYLEN(sav->key_enc));
+		}
+	}
+}
+
+int
+tdb_keysetsav(sav, satype)
+	struct secasvar *sav;
+	int satype;
+{
+	int error;
+	switch (satype) {
+	case SADB_SATYPE_AH:
+		error = xform_init(sav, XF_AH);
+		break;
+	case SADB_SATYPE_ESP:
+		error = xform_init(sav, XF_ESP);
+		break;
+	case SADB_X_SATYPE_IPCOMP:
+		error = xform_init(sav, XF_IPCOMP);
+		break;
+	default:
+		ipseclog((LOG_DEBUG, "key_setsaval: invalid SA type.\n"));
+		error = EINVAL;
+		break;
+	}
+	if (error) {
+		ipseclog(
+				(LOG_DEBUG, "key_setsaval: unable to initialize SA type %u.\n", satype));
+	}
+	return (error);
 }
