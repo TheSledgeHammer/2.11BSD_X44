@@ -33,6 +33,8 @@
 #ifndef _NETKEY_KEYDB_H_
 #define _NETKEY_KEYDB_H_
 
+#include "opt_ipsec.h"
+
 #ifdef _KERNEL
 
 #include <netkey/key_var.h>
@@ -81,6 +83,7 @@ struct secasvar {
 
 	u_int8_t alg_auth;		/* Authentication Algorithm Identifier*/
 	u_int8_t alg_enc;		/* Cipher Algorithm Identifier */
+    u_int8_t alg_comp;		/* Compression Algorithm Identifier */
 	u_int32_t spi;			/* SPI Value, network byte order */
 	u_int32_t flags;		/* holder for SADB_KEY_FLAGS */
 

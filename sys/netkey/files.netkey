@@ -1,0 +1,6 @@
+#	$NetBSD: files.ipsec,v 1.2 2003/09/20 05:14:41 itojun Exp $
+
+file	netkey/key.c				ipsec | ipsec_xform
+file	netkey/key_debug.c			ipsec | ipsec_xform
+file	netkey/keydb.c				ipsec | ipsec_xform
+file	netkey/keysock.c			ipsec | ipsec_xform

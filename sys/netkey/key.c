@@ -87,9 +87,7 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.113.2.1 2004/05/11 14:54:52 tron Exp $");
 #ifdef IPSEC_XFORM
 #include <kame_ipsec/ipsec.h>
 #include <kame_ipsec/ah.h>
-#ifdef IPSEC_ESP
 #include <kame_ipsec/esp.h>
-#endif
 #include <kame_ipsec/ipcomp.h>
 #include <kame_ipsec/xform.h>
 #else
