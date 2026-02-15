@@ -87,7 +87,9 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.113.2.1 2004/05/11 14:54:52 tron Exp $");
 #ifdef IPSEC_XFORM
 #include <kame_ipsec/ipsec.h>
 #include <kame_ipsec/ah.h>
+#ifdef IPSEC_ESP
 #include <kame_ipsec/esp.h>
+#endif
 #include <kame_ipsec/ipcomp.h>
 #include <kame_ipsec/xform.h>
 #else
@@ -3453,9 +3455,9 @@ key_mature_xform(sav, mature, mustmask, checkmask)
 			keylen = sav->key_auth->sadb_key_bits;
 		else
 			keylen = 0;
-		if (keylen < thash->minkey || thash->maxkey < keylen) {
+		if (keylen < thash->keysize || thash->keysize < keylen) {
 			ipseclog((LOG_DEBUG, "key_mature: invalid AH key length %d "
-					"(%d-%d allowed)\n", keylen, thash->maxkey, thash->maxkey));
+					"(%d-%d allowed)\n", keylen, thash->keysize, thash->keysize));
 			return EINVAL;
 		}
 
@@ -3476,7 +3478,7 @@ key_mature_xform(sav, mature, mustmask, checkmask)
 	/* check encryption algorithm */
 	if ((checkmask & 1) != 0) {
 #ifdef IPSEC_ESP
-		const struct exc_xform *txform;
+		const struct enc_xform *txform;
 		int keylen;
 
 		txform = esp_algorithm_lookup(sav->alg_enc);
@@ -5801,7 +5803,17 @@ static struct mbuf *
 key_getcomb_esp()
 {
 	struct sadb_comb *comb;
+    	int keymin, keymax;
+#ifdef IPSEC_CRYPTO
 	const struct esp_algorithm *algo;
+    	keymin = algo->keymin;
+    	keymax = algo->keymax;
+#endif
+#ifdef IPSEC_XFORM
+	const struct enc_xform *algo;
+    	keymin = algo->minkey;
+    	keymax = algo->maxkey;
+#endif
 	struct mbuf *result = NULL, *m, *n;
 	int encmin;
 	int i, off, o;
@@ -5814,12 +5826,12 @@ key_getcomb_esp()
 		if (!algo)
 			continue;
 
-		if (algo->keymax < ipsec_esp_keymin)
+		if (keymax < ipsec_esp_keymin)
 			continue;
-		if (algo->keymin < ipsec_esp_keymin)
+		if (keymin < ipsec_esp_keymin)
 			encmin = ipsec_esp_keymin;
 		else
-			encmin = algo->keymin;
+			encmin = keymin;
 
 		if (ipsec_esp_auth)
 			m = key_getcomb_ah();
@@ -5858,7 +5870,7 @@ key_getcomb_esp()
 			key_getcomb_setlifetime(comb);
 			comb->sadb_comb_encrypt = i;
 			comb->sadb_comb_encrypt_minbits = encmin;
-			comb->sadb_comb_encrypt_maxbits = algo->keymax;
+			comb->sadb_comb_encrypt_maxbits = keymax;
 		}
 
 		if (!result)
@@ -5883,7 +5895,17 @@ static struct mbuf *
 key_getcomb_ah()
 {
 	struct sadb_comb *comb;
+    	int keymin, keymax;
+#ifdef IPSEC_CRYPTO
 	const struct ah_algorithm *algo;
+    	keymin = algo->keymin;
+    	keymax = algo->keymax;
+#endif
+#ifdef IPSEC_XFORM
+    	const struct auth_hash *algo;
+    	keymin = 0;
+    	keymax = algo->keysize;
+#endif
 	struct mbuf *m;
 	int min;
 	int i;
@@ -5900,12 +5922,12 @@ key_getcomb_ah()
 		if (!algo)
 			continue;
 
-		if (algo->keymax < ipsec_ah_keymin)
+		if (keymax < ipsec_ah_keymin)
 			continue;
-		if (algo->keymin < ipsec_ah_keymin)
+		if (keymin < ipsec_ah_keymin)
 			min = ipsec_ah_keymin;
 		else
-			min = algo->keymin;
+			min = keymin;
 
 		if (!m) {
 #ifdef DIAGNOSTIC
@@ -5928,7 +5950,7 @@ key_getcomb_ah()
 		key_getcomb_setlifetime(comb);
 		comb->sadb_comb_auth = i;
 		comb->sadb_comb_auth_minbits = min;
-		comb->sadb_comb_auth_maxbits = algo->keymax;
+		comb->sadb_comb_auth_maxbits = keymax;
 	}
 
 	return m;
@@ -5942,7 +5964,12 @@ static struct mbuf *
 key_getcomb_ipcomp()
 {
 	struct sadb_comb *comb;
+#ifdef IPSEC_CRYPTO
 	const struct ipcomp_algorithm *algo;
+#endif
+#ifdef IPSEC_XFORM
+    	const struct comp_algo *algo;
+#endif
 	struct mbuf *m;
 	int i;
 	const int l = PFKEY_ALIGN8(sizeof(struct sadb_comb));
@@ -6568,16 +6595,25 @@ key_register(so, m, mhp)
 		off += PFKEY_ALIGN8(sizeof(*sup));
 
 		for (i = 1; i <= SADB_AALG_MAX; i++) {
+            		int keymin, keymax;
+#ifdef IPSEC_CRYPTO
 			const struct ah_algorithm *aalgo;
-
+           		keymin = aalgo->keymin;
+            		keymax = aalgo->keymax;
+#endif
+#ifdef IPSEC_XFORM
+            		const struct auth_hash *aalgo;
+            		keymin = 0;//aalgo->minkey;
+            		keymax = aalgo->keysize;
+#endif
 			aalgo = ah_algorithm_lookup(i);
 			if (!aalgo)
 				continue;
 			alg = (struct sadb_alg *)(mtod(n, caddr_t) + off);
 			alg->sadb_alg_id = i;
 			alg->sadb_alg_ivlen = 0;
-			alg->sadb_alg_minbits = aalgo->keymin;
-			alg->sadb_alg_maxbits = aalgo->keymax;
+			alg->sadb_alg_minbits = keymin;
+			alg->sadb_alg_maxbits = keymax;
 			off += PFKEY_ALIGN8(sizeof(*alg));
 		}
 	}
@@ -6591,24 +6627,34 @@ key_register(so, m, mhp)
 		off += PFKEY_ALIGN8(sizeof(*sup));
 
 		for (i = 1; i <= SADB_EALG_MAX; i++) {
+		        int keymin, keymax, ivlen;
+#ifdef IPSEC_CRYPTO
 			const struct esp_algorithm *ealgo;
-
+            		keymin = ealgo->keymin;
+            		keymax = ealgo->keymax;
+            		ivlen = (*ealgo->ivlen)(ealgo, NULL);
+#endif
+#ifdef IPSEC_XFORM
+            		const struct enc_xform *ealgo;
+            		keymin = ealgo->minkey;
+            		keymax = ealgo->maxkey;
+            		ivlen = esp_ivlen(NULL, ealgo);
+#endif
 			ealgo = esp_algorithm_lookup(i);
 			if (!ealgo)
 				continue;
 			alg = (struct sadb_alg *)(mtod(n, caddr_t) + off);
 			alg->sadb_alg_id = i;
-			if (ealgo && ealgo->ivlen) {
+			if (ealgo && ivlen) {
 				/*
 				 * give NULL to get the value preferred by
 				 * algorithm XXX SADB_X_EXT_DERIV ?
 				 */
-				alg->sadb_alg_ivlen =
-				    (*ealgo->ivlen)(ealgo, NULL);
+				alg->sadb_alg_ivlen = ivlen;
 			} else
 				alg->sadb_alg_ivlen = 0;
-			alg->sadb_alg_minbits = ealgo->keymin;
-			alg->sadb_alg_maxbits = ealgo->keymax;
+			alg->sadb_alg_minbits = keymin;
+			alg->sadb_alg_maxbits = keymax;
 			off += PFKEY_ALIGN8(sizeof(struct sadb_alg));
 		}
 	}

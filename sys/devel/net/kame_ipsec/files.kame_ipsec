@@ -4,11 +4,11 @@ defflag opt_ipsec.h KAME_IPSEC
 defflag opt_ipsec.h IPSEC_ESP
 
 # Kame in-built
-defflag opt_ipsec.h IPSEC_CRYPTO rijndael, sha2, ripemd160
-defflag opt_ipsec.h IPSEC_ESP_CRYPTO des, blowfish, cast128, rijndael
+defflag opt_ipsec.h IPSEC_CRYPTO: rijndael, sha2, ripemd160
+defflag opt_ipsec.h IPSEC_ESP_CRYPTO: des, blowfish, cast128, rijndael
 # Kame opencrypto
-defflag opt_ipsec.h IPSEC_XFORM opencrypto
-defflag opt_ipsec.h IPSEC_ESP_XFORM opencrypto
+defflag opt_ipsec.h IPSEC_XFORM: opencrypto
+defflag opt_ipsec.h IPSEC_ESP_XFORM: opencrypto
 
 file	kame_ipsec/ipsec.c			kame_ipsec & (ipsec_xform | ipsec_crypto)
 

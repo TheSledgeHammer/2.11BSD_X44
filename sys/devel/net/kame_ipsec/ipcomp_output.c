@@ -69,8 +69,8 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_output.c,v 1.18 2004/02/13 11:36:23 wiz Exp $
 #include <netinet6/ip6_var.h>
 #endif
 
-#include <kame_ipsec/ipcomp.h>
 #include <kame_ipsec/ipsec.h>
+#include <kame_ipsec/ipcomp.h>
 #ifdef IPSEC_XFORM
 #include <kame_ipsec/xform.h>
 #endif
