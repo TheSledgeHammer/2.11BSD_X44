@@ -256,7 +256,7 @@ ah_mature(sav)
 		return (1);
 	}
 
-	if (sav->key_auth->sadb_key_bits < algo->keymin ||
+	if (sav->key_auth->sadb_key_bits < thash->keysize ||
 	    thash->keysize < sav->key_auth->sadb_key_bits) {
 		ipseclog((LOG_ERR,
 		    "ah_mature: invalid key length %d for %s.\n",
@@ -940,7 +940,7 @@ ah6_calccksum_input(m, ahdat, len, thash, sav)
 	const struct auth_hash *thash;
 	struct secasvar *sav;
 {
-    return (ah_input(m, sav, (int)ahdat, (int)len));
+    return (ah_input(m, sav, (int)ahdat, (int)len, 0));
 }
 
 int
