@@ -104,8 +104,8 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $
 static int ipcomp_deflate_common(struct mbuf *, struct mbuf *, struct secasvar *, struct ipsecrequest *, u_int8_t *, int);
 static int ipcomp_deflate_compress(const struct comp_algo *, u_int8_t *, u_int32_t, u_int8_t **);
 static int ipcomp_deflate_decompress(const struct comp_algo *, u_int8_t *, u_int32_t, u_int8_t **);
-static int ipcomp_input(struct mbuf *, struct secasvar *, int, int);
-static int ipcomp_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);
+static int ipcomp_input(struct mbuf *, struct secasvar *, int, int, int);
+static int ipcomp_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int, int);
 static int ipcomp_input_cb(struct cryptop *crp);
 static int ipcomp_output_cb(struct cryptop *crp);
 
@@ -199,10 +199,10 @@ ipcomp_deflate_common(m, md, sav, isr, out, mode)
 
 	switch (mode) {
 	case 0:
-		error = ipcomp_output(m, isr, &p, (int)data, *out);
+		error = ipcomp_output(m, isr, &p, (int)data, (int)size, *out);
 		break;
 	case 1:
-		error = ipcomp_input(m, sav, (int)data, *out);
+		error = ipcomp_input(m, sav, (int)data, (int)size, *out);
 		break;
 	}
 	return (error);
@@ -291,10 +291,10 @@ ipcomp_zeroize(sav)
  * ipcomp_input() gets called to uncompress an input packet
  */
 static int
-ipcomp_input(m, sav, skip, protoff)
+ipcomp_input(m, sav, skip, length, offset)
 	struct mbuf *m;
 	struct secasvar *sav;
-	int skip, protoff;
+	int skip, length, offset;
 {
 	struct tdb *tdb;
 	struct cryptodesc *crdc;
@@ -349,8 +349,8 @@ ipcomp_input(m, sav, skip, protoff)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
-	tdb->tdb_length = protoff;
-	tdb->tdb_offset = hlen;
+	tdb->tdb_length = length;
+	tdb->tdb_offset = offset;
 
 	return (ipcomp_input_cb(crp));
 }
@@ -364,13 +364,13 @@ ipcomp_input_cb(crp)
 	struct mbuf *m;
 	struct secasvar *sav;
 	const struct comp_algo *ipcompx;
-	int s, error, hlen, skip, protoff, *roff;
+	int s, error, skip, length, offset;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
-	protoff = tdb->tdb_length;
-	hlen = tdb->tdb_offset;
+	length = tdb->tdb_length;
+	offset = tdb->tdb_offset;
 
 	s = splsoftnet();
 #ifdef INET
@@ -417,11 +417,7 @@ ipcomp_input_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = ipcomp_deflate_decompress(ipcompx, (u_int8_t *)skip, hlen, (u_int8_t **)roff);
-	if (roff != 0) {
-        protoff = *roff;
-//		bcopy(roff, protoff, sizeof(roff));
-	}
+	error = ipcomp_deflate_decompress(ipcompx, (u_int8_t *)skip, length, (u_int8_t **)offset);
 
 	key_freesav(sav);
 	splx(s);
@@ -445,11 +441,11 @@ bad:
 }
 
 static int
-ipcomp_output(m, isr, mp, skip, protoff)
+ipcomp_output(m, isr, mp, skip, length, offset)
 	struct mbuf *m;
 	struct ipsecrequest *isr;
 	struct mbuf **mp;
-	int skip, protoff;
+	int skip, length, offset;
 {
 	struct secasvar *sav;
 	const struct comp_algo *ipcompx;
@@ -505,8 +501,8 @@ ipcomp_output(m, isr, mp, skip, protoff)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
-	tdb->tdb_length = protoff;
-	tdb->tdb_offset = hlen;
+	tdb->tdb_length = length;
+	tdb->tdb_offset = offset;
 
 	/* Crypto operation descriptor */
 	crp->crp_ilen = m->m_pkthdr.len;	/* Total input length */
@@ -534,13 +530,13 @@ ipcomp_output_cb(crp)
 	struct mbuf *m, *md;
 	struct tdb *tdb;
 	const struct comp_algo *ipcompx;
-	int s, error, hlen, skip, protoff, *roff;
+	int s, error, hlen, skip, length, offset;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
-	protoff = tdb->tdb_length;
-	hlen = tdb->tdb_offset;
+	length = tdb->tdb_length;
+	offset = tdb->tdb_offset;
 
 	s = splsoftnet();
 	isr = tdb->tdb_isr;
@@ -588,11 +584,7 @@ ipcomp_output_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = ipcomp_deflate_compress(ipcompx, (u_int8_t *)skip, hlen, (u_int8_t **)roff);
-	if (roff != 0) {
-        protoff = *roff;
-//		bcopy(roff, protoff, sizeof(roff));
-	}
+	error = ipcomp_deflate_compress(ipcompx, (u_int8_t *)skip, length, (u_int8_t **)offset);
 
 	key_freesav(sav);
 	splx(s);

@@ -92,7 +92,7 @@ __KERNEL_RCSID(0, "$NetBSD: raw_ip.c,v 1.78.2.1 2004/05/10 15:00:12 tron Exp $")
 
 #include <machine/stdarg.h>
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netinet6/ipsec.h>
 #endif /*IPSEC*/
 

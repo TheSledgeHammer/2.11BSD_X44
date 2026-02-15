@@ -363,6 +363,9 @@ static struct secasvar *key_getsavbyspi(struct secashead *, u_int32_t);
 static int key_setsaval(struct secasvar *, struct mbuf *,
 	const struct sadb_msghdr *);
 static int key_mature(struct secasvar *);
+#ifdef IPSEC_XFORM
+static int key_mature_xform(struct secasvar *, int, int, int);
+#endif /* IPSEC_XFORM */
 static struct mbuf *key_setdumpsa(struct secasvar *, u_int8_t,
 	u_int8_t, u_int32_t, u_int32_t);
 static struct mbuf *key_setsadbmsg(u_int8_t, u_int16_t, u_int8_t,
@@ -3316,6 +3319,16 @@ key_mature(sav)
 		return EPROTONOSUPPORT;
 	}
 
+#ifdef IPSEC_XFORM
+	int error;
+
+	error = key_mature_xform(sav, mature, mustmask, checkmask);
+	if (error != 0) {
+		return (error);
+	}
+
+#else /* !IPSEC_XFORM */
+
 	/* check authentication algorithm */
 	if ((checkmask & 2) != 0) {
 		const struct ah_algorithm *algo;
@@ -3410,9 +3423,117 @@ key_mature(sav)
 		}
 	}
 
+#endif /* !IPSEC_XFORM */
+
 	key_sa_chgstate(sav, SADB_SASTATE_MATURE);
 	return (0);
 }
+
+#ifdef IPSEC_XFORM
+
+static int
+key_mature_xform(sav, mature, mustmask, checkmask)
+	struct secasvar *sav;
+	int mature, mustmask, checkmask;
+{
+	/* check authentication algorithm */
+	if ((checkmask & 2) != 0) {
+		const struct auth_hash *thash;
+		int keylen;
+
+		thash = ah_algorithm_lookup(sav->alg_auth);
+		if (!thash) {
+			ipseclog((LOG_DEBUG, "key_mature: "
+					"unknown authentication algorithm.\n"));
+			return EINVAL;
+		}
+
+		/* algorithm-dependent check */
+		if (sav->key_auth)
+			keylen = sav->key_auth->sadb_key_bits;
+		else
+			keylen = 0;
+		if (keylen < thash->minkey || thash->maxkey < keylen) {
+			ipseclog((LOG_DEBUG, "key_mature: invalid AH key length %d "
+					"(%d-%d allowed)\n", keylen, thash->maxkey, thash->maxkey));
+			return EINVAL;
+		}
+
+		if (ah_mature(sav)) {
+			if (ah_mature(sav)) {
+				/* message generated in per-algorithm function*/
+				return EINVAL;
+			} else {
+				mature = SADB_SATYPE_AH;
+			}
+		}
+
+		if ((mustmask & 2) != 0 && mature != SADB_SATYPE_AH) {
+			ipseclog((LOG_DEBUG, "key_mature: no satisfy algorithm for AH\n"));
+			return EINVAL;
+		}
+	}
+	/* check encryption algorithm */
+	if ((checkmask & 1) != 0) {
+#ifdef IPSEC_ESP
+		const struct exc_xform *txform;
+		int keylen;
+
+		txform = esp_algorithm_lookup(sav->alg_enc);
+		if (!txform) {
+			ipseclog((LOG_DEBUG, "key_mature: unknown encryption algorithm.\n"));
+			return EINVAL;
+		}
+
+		/* algorithm-dependent check */
+		if (sav->key_enc) {
+			keylen = sav->key_enc->sadb_key_bits;
+		} else {
+			keylen = 0;
+		}
+		if (keylen < txform->minkey || txform->maxkey < keylen) {
+			ipseclog((LOG_DEBUG,
+			    "key_mature: invalid ESP key length %d "
+			    "(%d-%d allowed)\n",
+			    keylen, txform->minkey, txform->maxkey));
+			return EINVAL;
+		}
+
+		if (esp_mature) {
+			if (esp_mature(sav)) {
+				/* message generated in per-algorithm function*/
+				return EINVAL;
+			} else {
+				mature = SADB_SATYPE_ESP;
+			}
+		}
+
+		if ((mustmask & 1) != 0 &&  mature != SADB_SATYPE_ESP) {
+			ipseclog((LOG_DEBUG, "key_mature: no satisfy algorithm for ESP\n"));
+			return EINVAL;
+		}
+#else /*IPSEC_ESP*/
+		ipseclog((LOG_DEBUG, "key_mature: ESP not supported in this configuration\n"));
+		return EINVAL;
+#endif
+	}
+
+	/* check compression algorithm */
+	if ((checkmask & 4) != 0) {
+		const struct comp_algo *tcomp;
+
+		/* algorithm-dependent check */
+		tcomp = ipcomp_algorithm_lookup(sav->alg_enc);
+		if (!tcomp) {
+			ipseclog((LOG_DEBUG, "key_mature: unknown compression algorithm.\n"));
+			return EINVAL;
+		}
+	}
+
+	return (0);
+}
+
+#endif /* IPSEC_XFORM */
 
 /*
  * subroutine for SADB_GET and SADB_DUMP.

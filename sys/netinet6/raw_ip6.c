@@ -94,7 +94,7 @@ __KERNEL_RCSID(0, "$NetBSD: raw_ip6.c,v 1.63.2.2 2004/09/11 12:09:08 he Exp $");
 #endif
 #include <netinet6/raw_ip6.h>
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netinet6/ipsec.h>
 #endif /* IPSEC */
 

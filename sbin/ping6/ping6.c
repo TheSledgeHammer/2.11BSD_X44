@@ -131,7 +131,7 @@ __RCSID("$NetBSD: ping6.c,v 1.57 2003/08/07 10:04:36 agc Exp $");
 #include <unistd.h>
 #include <poll.h>
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netipsec/ipsec.h>
 #endif
 
@@ -167,14 +167,14 @@ struct tv32 {
 #define	F_RROUTE	0x0020
 #define	F_SO_DEBUG	0x0040
 #define	F_VERBOSE	0x0100
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 #define	F_POLICY	0x0400
 #else
 #define F_AUTHHDR	0x0200
 #define F_ENCRYPT	0x0400
 #endif /*IPSEC_POLICY_IPSEC*/
-#endif /*IPSEC*/
+#endif /*#ifdef KAME_IPSEC*/
 #define F_NODEADDR	0x0800
 #define F_FQDN		0x1000
 #define F_INTERFACE	0x2000
@@ -275,7 +275,7 @@ int	 pr_bitrange(u_int32_t, int, int);
 void	 pr_retip(struct ip6_hdr *, u_char *);
 void	 summary(void);
 void	 tvsub(struct timeval *, struct timeval *);
-#if defined(IPSEC) && defined(IPSEC_POLICY_IPSEC)
+#if defined(KAME_IPSEC) && defined(IPSEC_POLICY_IPSEC)
 int	 setpolicy(int, char *);
 #endif
 char	*nigroup(char *);
@@ -322,7 +322,7 @@ main(argc, argv)
 
 	preload = 0;
 	datap = &outpack[ICMP6ECHOLEN + ICMP6ECHOTMLEN];
-#ifndef IPSEC
+#ifndef KAME_IPSEC
 #define ADDOPTS
 #else
 #ifdef IPSEC_POLICY_IPSEC
@@ -533,7 +533,7 @@ main(argc, argv)
 			options &= ~F_NOUSERDATA;
 			options |= F_FQDNOLD;
 			break;
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 		case 'P':
 			options |= F_POLICY;
@@ -744,7 +744,7 @@ main(argc, argv)
 #endif /* IPV6_RECVPATHMTU */
 #endif /* IPV6_USE_MIN_MTU */
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 	if (options & F_POLICY) {
 		if (setpolicy(s, policy_in) < 0)
@@ -2532,7 +2532,7 @@ pr_retip(ip6, end)
 			hlen = (((struct ip6_rthdr *)cp)->ip6r_len+1) << 3;
 			nh = ((struct ip6_rthdr *)cp)->ip6r_nxt;
 			break;
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 		case IPPROTO_AH:
 			printf("AH ");
 			hlen = (((struct ah *)cp)->ah_len+2) << 2;
@@ -2607,7 +2607,7 @@ fill(bp, patp)
 	}
 }
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 int
 setpolicy(so, policy)
@@ -2689,7 +2689,7 @@ usage()
 #ifdef IPV6_REACHCONF
 	    "R"
 #endif
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 	    "] [-P policy"
 #else

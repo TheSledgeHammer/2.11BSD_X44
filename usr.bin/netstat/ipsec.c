@@ -76,7 +76,7 @@ __RCSID("$NetBSD: ipsec.c,v 1.10 2003/08/07 11:15:19 agc Exp $");
 
 #include <netinet/in.h>
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netinet6/ipsec.h>
 #include <netkey/keysock.h>
 #endif
@@ -87,7 +87,7 @@ __RCSID("$NetBSD: ipsec.c,v 1.10 2003/08/07 11:15:19 agc Exp $");
 
 #include "netstat.h"
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 struct val2str {
 	int val;
 	const char *str;

@@ -37,10 +37,10 @@
 #include <net/route.h>
 #include <net/pfkeyv2.h>
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netkey/keydb.h>
 #endif
-#ifdef IPSEC_FAST
+#ifdef FAST_IPSEC
 #include <netipsec/keydb.h>
 #endif
 

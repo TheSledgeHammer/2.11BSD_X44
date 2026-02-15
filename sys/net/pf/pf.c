@@ -5108,7 +5108,7 @@ pf_route(struct mbuf **m, struct pf_rule *r, int dir, struct ifnet *oifp,
 	}
 
 	/* Copied from ip_output. */
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 	/*
 	 * If deferred crypto processing is needed, check that the
 	 * interface supports it.
@@ -5119,7 +5119,7 @@ pf_route(struct mbuf **m, struct pf_rule *r, int dir, struct ifnet *oifp,
 		ipsp_skipcrypto_unmark((struct tdb_ident *)(mtag + 1));
 		goto bad;
 	}
-#endif /* IPSEC */
+#endif /* KAME_IPSEC */
 
 	/* Catch routing changes wrt. hardware checksumming for TCP or UDP. */
 	if (m0->m_pkthdr.csum_flags & (M_CSUM_TCPv4|M_CSUM_UDPv4)) {

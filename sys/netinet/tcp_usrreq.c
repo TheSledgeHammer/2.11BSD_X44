@@ -148,7 +148,7 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_usrreq.c,v 1.87.2.1 2004/05/28 07:23:55 tron Exp
 
 #include "opt_tcp_space.h"
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netinet6/ipsec.h>
 #endif /*IPSEC*/
 

@@ -65,7 +65,7 @@ __KERNEL_RCSID(0, "$NetBSD: nd6_nbr.c,v 1.53 2004/02/10 20:57:20 itojun Exp $");
 #include <netinet6/nd6.h>
 #include <netinet/icmp6.h>
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netinet6/ipsec.h>
 #endif
 

@@ -74,7 +74,7 @@ __RCSID("$NetBSD: pfkey.c,v 1.1.44.2 2022/09/12 14:23:41 martin Exp $");
 #include <sys/queue.h>
 #include <sys/socket.h>
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netipsec/keysock.h>
 #endif
 
@@ -84,7 +84,7 @@ __RCSID("$NetBSD: pfkey.c,v 1.1.44.2 2022/09/12 14:23:41 martin Exp $");
 #include <unistd.h>
 #include "netstat.h"
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 
 static const char *pfkey_msgtypenames[] = {
 	"reserved", "getspi", "update", "add", "delete",

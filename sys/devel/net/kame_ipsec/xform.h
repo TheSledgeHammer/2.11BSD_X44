@@ -139,8 +139,8 @@ struct xformsw {
 	char 				*xf_name;		/* human-readable name */
 	int	(*xf_init)(struct secasvar*, struct xformsw *);	/* setup */
 	int	(*xf_zeroize)(struct secasvar*);		/* cleanup */
-	int	(*xf_input)(struct mbuf *, struct secasvar*, int, int);/* input */
-	int	(*xf_output)(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);	/* output */
+	int	(*xf_input)(struct mbuf *, struct secasvar*, int, int, int);/* input */
+	int	(*xf_output)(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int, int);	/* output */
 	struct xformsw *xf_next;		/* list of registered xforms */
 };
 

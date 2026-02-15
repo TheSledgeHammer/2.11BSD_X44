@@ -85,9 +85,12 @@ options			QUOTA			# UFS quotas
 options 		INET			    	# IP + ICMP + TCP + UDP
 options 		INET6			    	# IPV6
 options		    	FAST_IPSEC    		# IP security with opencrypto
+#options 		KAME_IPSEC			# IP security (kame ipsec w/IPSEC_CRYPTO/IPSEC_XFORM)
+#options 		IPSEC_ESP			# IP security (encryption part; w/IPSEC_ESP_CRYPTO/IPSEC_ESP_XFORM)
+#options		IPSEC_CRYPTO			# IP security (kame ipsec)
 #options		IPSEC_XFORM			# IP security (kame ipsec with opencrypto)
-#options 		IPSEC				# IP security (kame ipsec)
-#options 		IPSEC_ESP			# IP security (encryption part; define w/IPSEC or IPSEC_XFORM)
+#options 		IPSEC_ESP_CRYPTO		# IP security (encryption part;)
+#options 		IPSEC_ESP_XFORM		# IP security (encryption part; with opencrypto)
 #options 		IPSEC_DEBUG			# debug for IP security
 #options 		MPLS			# MultiProtocol Label Switching
 #options 		MROUTING			# IP multicast routing

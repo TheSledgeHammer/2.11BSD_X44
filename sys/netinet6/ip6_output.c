@@ -93,7 +93,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_output.c,v 1.82.2.1 2004/06/14 18:01:09 tron Exp
 #include <netinet6/nd6.h>
 #include <netinet6/ip6protosw.h>
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netinet6/ipsec.h>
 #include <netkey/key.h>
 #endif /* IPSEC */

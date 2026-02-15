@@ -104,11 +104,11 @@
 
 static size_t 	esp_max_schedlen; 	/* max sched length over all algorithms */
 static int 		esp_max_ivlen;		/* max iv length over all algorithms */
-static int		esp_derived;
+static int		esp_derived;		/* derived 0: no 1: yes */
 
-static int esp_input(struct mbuf *, struct secasvar *, int, int);
+static int esp_input(struct mbuf *, struct secasvar *, int, int, int);
 static int esp_input_cb(struct cryptop *);
-static int esp_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);
+static int esp_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int, int);
 static int esp_output_cb(struct cryptop *);
 
 #define MAXIVLEN	16
@@ -140,59 +140,100 @@ esp_algorithm_lookup(alg)
 }
 
 u_int16_t
-esp_padbound(sav, thash)
+esp_padbound(sav, txform)
 	struct secasvar *sav;
-	const struct enc_xform *thash;
+	const struct enc_xform *txform;
 {
-	if (!thash) {
+	if (!txform) {
 		panic("esp_padbound: unknown algorithm");
 	}
-	return (thash->blocksize);
+	return (txform->blocksize);
 }
 
 u_int16_t
-esp_ivlen(sav, thash)
+esp_ivlen(sav, txform)
 	struct secasvar *sav;
-	const struct enc_xform *thash;
+	const struct enc_xform *txform;
 {
-	if (!thash) {
+	if (!txform) {
 		panic("esp_ivlen: unknown algorithm");
 	}
-	return (thash->ivsize);
+	return (txform->ivsize);
 }
 
 int
-esp_encrypt(m, off, plen, isr, thash, ivlen)
+esp_encrypt(m, off, plen, isr, txform, ivlen)
 	struct mbuf *m;
 	size_t off, plen;
 	struct ipsecrequest *isr;
-	const struct enc_xform *thash;
+	const struct enc_xform *txform;
 	int ivlen;
 {
 	struct tdb *tdb;
 
 	tdb = isr->sav->tdb_tdb;
-	if (thash != tdb->tdb_encalgxform) {
+	if (txform != tdb->tdb_encalgxform) {
 		return (EINVAL);
 	}
-	return (esp_output(m, isr, &m, off, ivlen));
+	return (esp_output(m, isr, &m, off, ivlen, 0));
 }
 
 int
-esp_decrypt(m, off, sav, thash, ivlen)
+esp_decrypt(m, off, sav, txform, ivlen)
 	struct mbuf *m;
 	size_t off;
 	struct secasvar *sav;
-	const struct enc_xform *thash;
+	const struct enc_xform *txform;
 	int ivlen;
 {
 	struct tdb *tdb;
 
-	tdb = sav->tdb_tdb;
-	if (thash != tdb->tdb_encalgxform) {
+	tdb = isr->sav->tdb_tdb;
+	if (txform != tdb->tdb_encalgxform) {
 		return (EINVAL);
 	}
-	return (esp_input(m, sav, off, ivlen));
+	return (esp_input(m, sav, skip, ivlen, 0));
+}
+
+int
+esp_mature(sav)
+	struct secasvar *sav;
+{
+	const struct enc_xform *txform;
+	int keylen;
+
+	if (sav->flags & SADB_X_EXT_OLD) {
+		ipseclog((LOG_ERR,
+		    "esp_mature: algorithm incompatible with esp-old\n"));
+		return (1);
+	}
+	if (sav->flags & SADB_X_EXT_DERIV) {
+		ipseclog((LOG_ERR,
+		    "esp_mature: algorithm incompatible with derived\n"));
+		return (1);
+	}
+
+	if (!sav->key_enc) {
+		ipseclog((LOG_ERR, "esp_mature: no key is given.\n"));
+		return (1);
+	}
+
+	txform = esp_algorithm_lookup(sav->alg_enc);
+	if (!txform) {
+		ipseclog((LOG_ERR,
+		    "esp_mature %s: unsupported algorithm.\n", txform->name));
+		return (1);
+	}
+
+	keylen = sav->key_enc->sadb_key_bits;
+	if (keylen < txform->minkey || txform->maxkey < keylen) {
+		ipseclog((LOG_ERR,
+		    "esp_mature %s: invalid key length %d.\n",
+			txform->name, sav->key_enc->sadb_key_bits));
+		return (1);
+	}
+
+	return (0);
 }
 
 /*
@@ -840,16 +881,16 @@ esp_encrypt_expanded(m, off, plen, sav, thash, ivlen, ivoff, bodyoff, derived)
 /*------------------------------------------------------------*/
 
 static int
-esp_input(m, sav, skip, ivlen)
+esp_input(m, sav, skip, length, offset)
 	struct mbuf *m;
 	struct secasvar *sav;
-	int skip, ivlen;
+	int skip, length, offset;
 {
 	const struct enc_xform *espx;
 	const struct auth_hash *esph;
 	struct tdb *tdb;
 	struct cryptop *crp;
-	int plen, hlen, alen, ivoff;
+	int plen, hlen, alen;
     uint8_t abuf[AH_HMAC_MAX_HASHLEN];
 
 	struct cryptodesc *crda, *crde;
@@ -861,19 +902,19 @@ esp_input(m, sav, skip, ivlen)
 	/* Determine the ESP header length */
 	if (sav->flags & SADB_X_EXT_OLD) {
 		/* RFC 1827 */
-		ivoff = sizeof(struct esp);
-		hlen = sizeof(struct esp) + ivlen;
+		offset = sizeof(struct esp);
+		hlen = sizeof(struct esp) + length;
 		esp_derived = 0;
 	} else {
 		/* RFC 2406 */
 		if (sav->flags & SADB_X_EXT_DERIV) {
-			ivoff = sizeof(struct esp);
+			offset = sizeof(struct esp);
 			hlen = sizeof(struct esp) + sizeof(u_int32_t);
-			ivlen = sizeof(u_int32_t);
+			length = sizeof(u_int32_t);
 			esp_derived = 1;
 		} else {
-			ivoff = sizeof(struct newesp);
-			hlen = sizeof(struct newesp) + ivlen;
+			offset = sizeof(struct newesp);
+			hlen = sizeof(struct newesp) + length;
 			esp_derived = 0;
 		}
 	}
@@ -943,14 +984,14 @@ esp_input(m, sav, skip, ivlen)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
-	tdb->tdb_length = ivlen;
-	tdb->tdb_offset = ivoff;
+	tdb->tdb_length = length;
+	tdb->tdb_offset = offset;
 
 	if (espx) {
 		/* Decryption descriptor */
 		crde->crd_skip = skip + hlen;
 		crde->crd_len = plen;
-		crde->crd_inject = skip + hlen - ivlen;
+		crde->crd_inject = skip + hlen - length;
 
 		crde->crd_alg = espx->type;
 		crde->crd_key = _KEYBUF(sav->key_enc);
@@ -968,13 +1009,13 @@ esp_input_cb(crp)
 	struct tdb *tdb;
 	const struct auth_hash *esph;
 	const struct enc_xform *espx;
-	int s, error, skip, ivlen, ivoff;
+	int s, error, skip, length, offset;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
-	ivlen = tdb->tdb_length;
-	ivoff = tdb->tdb_offset;
+	length = tdb->tdb_length;
+	offset = tdb->tdb_offset;
 
 	s = splsoftnet();
 #ifdef INET
@@ -1022,7 +1063,7 @@ esp_input_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = esp_decrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), esp_derived);
+	error = esp_decrypt_expanded(m, skip, sav, espx, length, (skip + offset), (skip + offset + length), esp_derived);
 
 	key_freesav(sav);
 	splx(s);
@@ -1046,18 +1087,18 @@ bad:
 }
 
 static int
-esp_output(m, isr, mp, skip, ivlen)
+esp_output(m, isr, mp, skip, length, offset)
 	struct mbuf *m;
 	struct ipsecrequest *isr;
 	struct mbuf **mp;
-	int skip, ivlen;
+	int skip, length, offset;
 {
 	const struct enc_xform *espx;
 	const struct auth_hash *esph;
 	struct tdb *tdb;
 	struct secasvar *sav;
 	struct cryptop *crp;
-	int error, plen, hlen, alen, ivoff;
+	int error, plen, hlen, alen;
 
 	struct cryptodesc *crda, *crde;
 
@@ -1068,8 +1109,8 @@ esp_output(m, isr, mp, skip, ivlen)
 
 	if (sav->flags & SADB_X_EXT_OLD) {
 		/* RFC 1827 */
-		ivoff = sizeof(struct esp);
-		hlen = sizeof(struct esp) + ivlen;
+		offset = sizeof(struct esp);
+		hlen = sizeof(struct esp) + length;
 		esp_derived = 0;
 	} else {
 		/* RFC 2406 */
@@ -1078,13 +1119,13 @@ esp_output(m, isr, mp, skip, ivlen)
 			 * draft-ietf-ipsec-ciph-des-derived-00.txt
 			 * uses sequence number field as IV field.
 			 */
-			ivoff = sizeof(struct esp);
+			offset = sizeof(struct esp);
 			hlen = sizeof(struct esp) + sizeof(u_int32_t);
-			ivlen = sizeof(u_int32_t);
+			length = sizeof(u_int32_t);
 			esp_derived = 1;
 		} else {
-			ivoff = sizeof(struct newesp);
-			hlen = sizeof(struct newesp) + ivlen;
+			offset = sizeof(struct newesp);
+			hlen = sizeof(struct newesp) + length;
 			esp_derived = 0;
 		}
 	}
@@ -1112,7 +1153,7 @@ esp_output(m, isr, mp, skip, ivlen)
 		crde->crd_skip = skip + hlen;
 		crde->crd_len = m->m_pkthdr.len - (skip + hlen + alen);
 		crde->crd_flags = CRD_F_ENCRYPT;
-		crde->crd_inject = skip + hlen - ivlen;
+		crde->crd_inject = skip + hlen - length;
 
 		/* Encryption operation. */
 		crde->crd_alg = espx->type;
@@ -1151,8 +1192,8 @@ esp_output(m, isr, mp, skip, ivlen)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
-	tdb->tdb_length = ivlen;
-	tdb->tdb_offset = ivoff;
+	tdb->tdb_length = length;
+	tdb->tdb_offset = offset;
 
 	if (esph) {
 		/* Authentication descriptor. */
@@ -1185,13 +1226,13 @@ esp_output_cb(crp)
 	struct tdb *tdb;
 	const struct auth_hash *esph;
 	const struct enc_xform *espx;
-	int s, error, skip, ivlen, ivoff;
+	int s, error, skip, length, offset;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
-	ivlen = tdb->tdb_length;
-	ivoff = tdb->tdb_offset;
+	length = tdb->tdb_length;
+	offset = tdb->tdb_offset;
 
 	s = splsoftnet();
 	isr = tdb->tdb_isr;
@@ -1240,7 +1281,7 @@ esp_output_cb(crp)
 	crypto_freereq(crp);
 	crp = NULL;
 
-	error = esp_encrypt_expanded(m, skip, sav, espx, ivlen, (skip + ivoff), (skip + ivoff + ivlen), esp_derived);
+	error = esp_encrypt_expanded(m, skip, sav, espx, length, (skip + offset), (skip + offset + length), esp_derived);
 
 	key_freesav(sav);
 	splx(s);

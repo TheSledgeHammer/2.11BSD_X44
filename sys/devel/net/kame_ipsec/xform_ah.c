@@ -113,9 +113,9 @@
 static int ah_sumsiz_1216(struct secasvar *);
 static int ah_sumsiz_zero(struct secasvar *);
 
-static int ah_input(struct mbuf *, struct secasvar *, int, int);
+static int ah_input(struct mbuf *, struct secasvar *, int, int, int);
 static int ah_input_cb(struct cryptop *);
-static int ah_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);
+static int ah_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int, int);
 static int ah_output_cb(struct cryptop *);
 static void ah_update_mbuf(struct mbuf *, int, int, struct secasvar *, const struct auth_hash *, struct xform_state *);
 #ifdef INET
@@ -236,6 +236,34 @@ ah_hdrlen(sav)
 		ahlen = plen + sizeof(struct newah);
 	}
 	return (ahlen);
+}
+
+
+int
+ah_mature(sav)
+	struct secasvar *sav;
+{
+	const struct auth_hash *thash;
+
+	if (!sav->key_auth) {
+		ipseclog((LOG_ERR, "ah_mature: no key is given.\n"));
+		return (1);
+	}
+
+	thash = ah_algorithm_lookup(sav->alg_auth);
+	if (!thash) {
+		ipseclog((LOG_ERR, "ah_mature: unsupported algorithm.\n"));
+		return (1);
+	}
+
+	if (sav->key_auth->sadb_key_bits < algo->keymin ||
+	    thash->keysize < sav->key_auth->sadb_key_bits) {
+		ipseclog((LOG_ERR,
+		    "ah_mature: invalid key length %d for %s.\n",
+		    sav->key_auth->sadb_key_bits, thash->name));
+		return (1);
+	}
+	return (0);
 }
 
 /*
@@ -459,15 +487,15 @@ ah_hash_result(state, sav, thash, addr, len)
 /*------------------------------------------------------------*/
 
 static int
-ah_input(m, sav, skip, ahlen)
+ah_input(m, sav, skip, length, offset)
 	struct mbuf *m;
 	struct secasvar *sav;
-	int skip, ahlen;
+	int skip, length, offset;
 {
 	const struct auth_hash *ahx;
 	struct tdb *tdb;
 	struct cryptop *crp;
-	int rplen, ahoff;
+	int rplen;
 
 	struct cryptodesc *crda, *crde;
 
@@ -478,12 +506,12 @@ ah_input(m, sav, skip, ahlen)
 	rplen = (ah_sumsiz(sav, ahx) + 3) & ~(4 - 1);
 	if (sav->flags & SADB_X_EXT_OLD) {
 		/* RFC 1826 */
-		ahoff = sizeof(struct ah);
-		ahlen = rplen;
+		offset = sizeof(struct ah);
+		length = rplen;
 	} else {
 		/* RFC 2402 */
-		ahoff = sizeof(struct newah);
-		ahlen = rplen;
+		offset = sizeof(struct newah);
+		length = rplen;
 	}
 
 	/* Get crypto descriptors. */
@@ -533,8 +561,8 @@ ah_input(m, sav, skip, ahlen)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
-	tdb->tdb_length = ahlen;
-	tdb->tdb_offset = ahoff;
+	tdb->tdb_length = length;
+	tdb->tdb_offset = offset;
 
 	return (ah_input_cb(crp));
 }
@@ -547,13 +575,13 @@ ah_input_cb(crp)
 	struct mbuf *m;
 	struct tdb *tdb;
 	const struct auth_hash *ahx;
-	int s, error, skip, ahlen, ahoff;
+	int s, error, skip, length, offset;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
-	ahlen = tdb->tdb_length;
-	ahoff = tdb->tdb_offset;
+	length = tdb->tdb_length;
+	offset = tdb->tdb_offset;
 
 	s = splsoftnet();
 #ifdef INET
@@ -601,10 +629,10 @@ ah_input_cb(crp)
 	crp = NULL;
 
 #ifdef INET
-	error = ah4_calccksum(m, (u_int8_t *)skip, (ahlen + ahoff), ahx, sav);
+	error = ah4_calccksum(m, (u_int8_t *)skip, (length + offset), ahx, sav);
 #endif
 #ifdef INET6
-	error = ah6_calccksum(m, (u_int8_t *)skip, (ahlen + ahoff), ahx, sav);
+	error = ah6_calccksum(m, (u_int8_t *)skip, (length + offset), ahx, sav);
 #endif
 
 	key_freesav(sav);
@@ -629,17 +657,17 @@ bad:
 }
 
 static int
-ah_output(m, isr, mp, skip, ahlen)
+ah_output(m, isr, mp, skip, length, offset)
 	struct mbuf *m;
 	struct ipsecrequest *isr;
 	struct mbuf **mp;
-	int skip, ahlen;
+	int skip, length, offset;
 {
 	struct secasvar *sav;
 	const struct auth_hash *ahx;
 	struct tdb *tdb;
 	struct cryptop *crp;
-	int error, rplen, ahoff;
+	int error, rplen;
 	struct cryptodesc *crda, *crde;
 
 	sav = isr->sav;
@@ -650,12 +678,12 @@ ah_output(m, isr, mp, skip, ahlen)
 	rplen = (ah_sumsiz(sav, ahx) + 3) & ~(4 - 1);
 	if (sav->flags & SADB_X_EXT_OLD) {
 		/* RFC 1826 */
-		ahoff = sizeof(struct ah);
-		ahlen = rplen;
+		offset = sizeof(struct ah);
+		length = rplen;
 	} else {
 		/* RFC 2402 */
-		ahoff = sizeof(struct newah);
-		ahlen = rplen;
+		offset = sizeof(struct newah);
+		length = rplen;
 	}
 
 	/* Get crypto descriptors. */
@@ -706,8 +734,8 @@ ah_output(m, isr, mp, skip, ahlen)
 	tdb->tdb_src = sav->sah->saidx.src;
 	tdb->tdb_proto = sav->sah->saidx.proto;
 	tdb->tdb_skip = skip;
-	tdb->tdb_length = ahlen;
-	tdb->tdb_offset = ahoff;
+	tdb->tdb_length = length;
+	tdb->tdb_offset = offset;
 
 	return (ah_output_cb(crp));
 
@@ -727,13 +755,13 @@ ah_output_cb(crp)
 	struct mbuf *m;
 	struct tdb *tdb;
 	const struct auth_hash *ahx;
-	int s, error, skip, ahlen, ahoff;
+	int s, error, skip, length, offset;
 
 	tdb = (struct tdb *)crp->crp_opaque;
 	m = (struct mbuf *)crp->crp_buf;
 	skip = tdb->tdb_skip;
-	ahlen = tdb->tdb_length;
-	ahoff = tdb->tdb_offset;
+	length = tdb->tdb_length;
+	offset = tdb->tdb_offset;
 
 	s = splsoftnet();
 	isr = tdb->tdb_isr;
@@ -782,10 +810,10 @@ ah_output_cb(crp)
 	crp = NULL;
 
 #ifdef INET
-	error = ah4_calccksum(m, (u_int8_t *)skip, (ahlen + ahoff), ahx, sav);
+	error = ah4_calccksum(m, (u_int8_t *)skip, (length + offset), ahx, sav);
 #endif
 #ifdef INET6
-	error = ah6_calccksum(m, (u_int8_t *)skip, (ahlen + ahoff), ahx, sav);
+	error = ah6_calccksum(m, (u_int8_t *)skip, (length + offset), ahx, sav);
 #endif
 
 	key_freesav(sav);
@@ -886,7 +914,7 @@ ah4_calccksum_input(m, ahdat, len, thash, sav)
 	const struct auth_hash *thash;
 	struct secasvar *sav;
 {
-    return (ah_input(m, sav, (int)ahdat, (int)len));
+    return (ah_input(m, sav, (int)ahdat, (int)len, 0));
 }
 
 int
@@ -897,7 +925,7 @@ ah4_calccksum_output(m, ahdat, len, thash, isr)
 	const struct auth_hash *thash;
 	struct ipsecrequest *isr;
 {
-    return (ah_output(m, isr, &m, (int)ahdat, (int)len));
+    return (ah_output(m, isr, &m, (int)ahdat, (int)len, 0));
 }
 
 #endif
@@ -923,7 +951,7 @@ ah6_calccksum_output(m, ahdat, len, thash, isr)
 	const struct auth_hash *thash;
 	struct ipsecrequest *isr;
 {
-	return (ah_output(m, isr, &m, (int)ahdat, (int)len));
+	return (ah_output(m, isr, &m, (int)ahdat, (int)len, 0));
 }
 
 #endif

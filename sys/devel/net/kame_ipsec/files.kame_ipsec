@@ -1,23 +1,28 @@
 #	$211BSD_X44: files.kame_ipsec, v 1.0 2026/02/14 14:57 martin Exp $
 
-defflag opt_ipsec.h IPSEC_XFORM: opencrypto
-#defflag opt_ipsec.h IPSEC_ESP: opencrypto
+defflag opt_ipsec.h KAME_IPSEC
+defflag opt_ipsec.h IPSEC_ESP
 
-file	kame_ipsec/ipsec.c			ipsec_xform 
+# Kame in-built
+defflag opt_ipsec.h IPSEC_CRYPTO rijndael, sha2, ripemd160
+defflag opt_ipsec.h IPSEC_ESP_CRYPTO des, blowfish, cast128, rijndael
+# Kame opencrypto
+defflag opt_ipsec.h IPSEC_XFORM opencrypto
+defflag opt_ipsec.h IPSEC_ESP_XFORM opencrypto
 
-file	kame_ipsec/ah_input.c		ipsec_xform
-file	kame_ipsec/ah_output.c		ipsec_xform
-file	kame_ipsec/xform_ah.c		ipsec_xform
+file	kame_ipsec/ipsec.c			kame_ipsec & (ipsec_xform | ipsec_crypto)
 
-file	kame_ipsec/esp_output.c		ipsec_xform #& ipsec_esp
-file	kame_ipsec/esp_input.c		ipsec_xform #& ipsec_esp
-file	kame_ipsec/xform_esp.c		ipsec_xform #& ipsec_esp
+file	kame_ipsec/ah_core.c		kame_ipsec & ipsec_crypto
+file	kame_ipsec/ah_input.c		kame_ipsec & (ipsec_xform | ipsec_crypto)
+file	kame_ipsec/ah_output.c		kame_ipsec & (ipsec_xform | ipsec_crypto)
+file	kame_ipsec/xform_ah.c		kame_ipsec & ipsec_xform
 
-file	kame_ipsec/ipcomp_input.c	ipsec_xform
-file	kame_ipsec/ipcomp_output.c	ipsec_xform
-file	kame_ipsec/xform_ipcomp.c	ipsec_xform
+file	kame_ipsec/esp_core.c		kame_ipsec & ipsec_esp & ipsec_crypto
+file	kame_ipsec/esp_output.c		kame_ipsec & ipsec_esp & ((ipsec_xform & ipsec_esp_xform) | (ipsec_crypto & ipsec_esp_crypto))
+file	kame_ipsec/esp_input.c		kame_ipsec & ipsec_esp & ((ipsec_xform & ipsec_esp_xform) | (ipsec_crypto & ipsec_esp_crypto))
+file	kame_ipsec/xform_esp.c		kame_ipsec & ipsec_esp & ipsec_xform 
 
-#file	netkey/key.c				ipsec_xform
-#file	netkey/key_debug.c			ipsec_xform
-#file	netkey/keydb.c				ipsec_xform
-#file	netkey/keysock.c			ipsec_xform
+file	kame_ipsec/ipcomp_core.c	kame_ipsec & ipsec_crypto
+file	kame_ipsec/ipcomp_input.c	kame_ipsec & (ipsec_xform | ipsec_crypto)
+file	kame_ipsec/ipcomp_output.c	kame_ipsec & (ipsec_xform | ipsec_crypto)
+file	kame_ipsec/xform_ipcomp.c	kame_ipsec & ipsec_xform

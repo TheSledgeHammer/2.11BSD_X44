@@ -56,13 +56,8 @@ struct ipcomp {
 #define IPCOMP_CPI_NEGOTIATE_MIN	256
 
 #ifdef _KERNEL
-
 struct ipsecrequest;
 struct secasvar;
-
-const struct comp_algo *ipcomp_algorithm_lookup(int);
-int ipcomp_compress(struct mbuf *, struct mbuf *, struct secasvar *, size_t *);
-int ipcomp_decompress(struct mbuf *, struct mbuf *, struct secasvar *, size_t *);
 
 void ipcomp4_input(struct mbuf **, int *, int);
 int ipcomp4_output(struct mbuf *, struct ipsecrequest *);
@@ -70,6 +65,27 @@ int ipcomp4_output(struct mbuf *, struct ipsecrequest *);
 int ipcomp6_input(struct mbuf **, int *, int);
 int ipcomp6_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *);
 #endif
+
+#ifdef IPSEC_CRYPTO
+
+struct ipcomp_algorithm {
+	int (*compress)(struct mbuf *, struct mbuf *, size_t *);
+	int (*decompress)(struct mbuf *, struct mbuf *, size_t *);
+	size_t minplen;		/* minimum required length for compression */
+};
+
+extern const struct ipcomp_algorithm *ipcomp_algorithm_lookup(int);
+
+#endif /* IPSEC_CRYPTO */
+
+#ifdef IPSEC_XFORM
+
+const struct comp_algo *ipcomp_algorithm_lookup(int);
+int ipcomp_compress(struct mbuf *, struct mbuf *, struct secasvar *, size_t *);
+int ipcomp_decompress(struct mbuf *, struct mbuf *, struct secasvar *, size_t *);
+
+#endif /* IPSEC_XFORM */
+
 #endif /* KERNEL */
 
 #endif /* _NETINET6_IPCOMP_H_ */

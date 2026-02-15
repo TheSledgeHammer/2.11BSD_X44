@@ -69,7 +69,9 @@ __KERNEL_RCSID(0, "$NetBSD: esp_output.c,v 1.18 2003/09/07 15:59:36 itojun Exp $
 #include <kame_ipsec/ipsec.h>
 #include <kame_ipsec/ah.h>
 #include <kame_ipsec/esp.h>
+#ifdef IPSEC_XFORM
 #include <kame_ipsec/xform.h>
+#endif
 
 #include <netkey/key.h>
 #include <netkey/keydb.h>

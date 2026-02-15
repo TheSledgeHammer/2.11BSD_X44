@@ -39,8 +39,6 @@
 
 #include "opt_inet.h"
 
-#define	ESP_ALG_MAX	256		/* NB: could be < but skipjack is 249 */
-
 struct esp {
 	u_int32_t	esp_spi;	/* ESP */
 	/* variable size, 32bit bound */	/* Initialization Vector */
@@ -70,29 +68,66 @@ struct esptail {
 #ifdef _KERNEL
 struct secasvar;
 
-const struct enc_xform *esp_algorithm_lookup(int);
-u_int16_t esp_padbound(struct secasvar *, const struct enc_xform *);
-u_int16_t esp_ivlen(struct secasvar *, const struct enc_xform *);
-
-int esp_encrypt(struct mbuf *, size_t, size_t, struct ipsecrequest *, const struct enc_xform *, int);
-int esp_decrypt(struct mbuf *, size_t, struct secasvar *, const struct enc_xform *, int);
-
 /* crypt routines */
+size_t esp_hdrsiz(struct ipsecrequest *);
 int esp4_output(struct mbuf *, struct ipsecrequest *);
 void esp4_input(struct mbuf **, int *, int);
-size_t esp_hdrsiz(struct ipsecrequest *);
-
 void *esp4_ctlinput(int, struct sockaddr *, void *);
 
 #ifdef INET6
 int esp6_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *);
 int esp6_input(struct mbuf **, int *, int);
-
 void esp6_ctlinput(int, struct sockaddr *, void *);
 #endif /* INET6 */
 
-int esp_schedule(struct secasvar *, const struct enc_xform *);
 int esp_auth(struct mbuf *, size_t, size_t, struct secasvar *, u_char *);
+
+#ifdef IPSEC_CRYPTO
+
+struct esp_algorithm {
+	size_t padbound;	/* pad boundary, in byte */
+	int ivlenval;		/* iv length, in byte */
+	int (*mature)(struct secasvar *);
+	int keymin;	/* in bits */
+	int keymax;	/* in bits */
+	size_t (*schedlen)(const struct esp_algorithm *);
+	const char *name;
+	int (*ivlen)(const struct esp_algorithm *, struct secasvar *);
+	int (*decrypt)(struct mbuf *, size_t,
+		struct secasvar *, const struct esp_algorithm *, int);
+	int (*encrypt)(struct mbuf *, size_t, size_t,
+		struct secasvar *, const struct esp_algorithm *, int);
+	/* not supposed to be called directly */
+	int (*schedule)(const struct esp_algorithm *, struct secasvar *);
+	int (*blockdecrypt)(const struct esp_algorithm *,
+		struct secasvar *, u_int8_t *, u_int8_t *);
+	int (*blockencrypt)(const struct esp_algorithm *,
+		struct secasvar *, u_int8_t *, u_int8_t *);
+};
+
+extern const struct esp_algorithm *esp_algorithm_lookup(int);
+extern int esp_max_padbound(void);
+extern int esp_max_ivlen(void);
+
+extern int esp_schedule(const struct esp_algorithm *, struct secasvar *);
+
+#endif /* IPSEC_CRYPTO */
+
+#ifdef IPSEC_XFORM
+
+#define	ESP_ALG_MAX	256		/* NB: could be < but skipjack is 249 */
+
+const struct enc_xform *esp_algorithm_lookup(int);
+u_int16_t esp_padbound(struct secasvar *, const struct enc_xform *);
+u_int16_t esp_ivlen(struct secasvar *, const struct enc_xform *);
+int esp_mature(struct secasvar *);
+
+int esp_encrypt(struct mbuf *, size_t, size_t, struct ipsecrequest *, const struct enc_xform *, int);
+int esp_decrypt(struct mbuf *, size_t, struct secasvar *, const struct enc_xform *, int);
+
+int esp_schedule(struct secasvar *, const struct enc_xform *);
+
+#endif /* IPSEC_XFORM */
 
 #endif /* _KERNEL */
 

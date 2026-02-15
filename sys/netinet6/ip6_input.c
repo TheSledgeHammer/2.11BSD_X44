@@ -108,7 +108,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_input.c,v 1.73.2.1.4.3 2007/06/04 19:26:07 bouye
 #include <netinet6/in6_ifattach.h>
 #include <netinet6/nd6.h>
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netinet6/ipsec.h>
 #endif
 

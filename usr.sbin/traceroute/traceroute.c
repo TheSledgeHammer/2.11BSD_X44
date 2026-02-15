@@ -233,7 +233,7 @@ __RCSID("$NetBSD: traceroute.c,v 1.60 2004/01/05 23:23:39 jmmv Exp $");
 #include <string.h>
 #include <unistd.h>
 #include <poll.h>
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <net/route.h>
 #include <netinet6/ipsec.h>
 #endif
@@ -370,7 +370,7 @@ __dead	void usage(void);
 int		wait_for_reply(int, struct sockaddr_in *, struct timeval *);
 void	frag_err(void);
 int		find_local_ip(struct sockaddr_in *, struct sockaddr_in *);
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 int	setpolicy(int so, char *policy);
 #endif
@@ -638,7 +638,7 @@ main(int argc, char **argv)
 	if (options & SO_DEBUG)
 		(void)setsockopt(s, SOL_SOCKET, SO_DEBUG, (char *)&on,
 		    sizeof(on));
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 	/*
 	 * do not raise error even if setsockopt fails, kernel may have ipsec
@@ -682,7 +682,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 	/*
 	 * do not raise error even if setsockopt fails, kernel may have ipsec
@@ -1677,7 +1677,7 @@ find_local_ip(struct sockaddr_in *from, struct sockaddr_in *to)
 	return (1);
 }
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 int
 setpolicy(so, policy)

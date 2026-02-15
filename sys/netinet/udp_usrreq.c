@@ -121,7 +121,7 @@ __KERNEL_RCSID(0, "$NetBSD: udp_usrreq.c,v 1.116.2.4 2004/05/28 07:24:17 tron Ex
 #endif
 #endif	/* FAST_IPSEC*/
 
-#ifdef IPSEC
+#ifdef KAME_IPSEC
 #include <netinet6/ipsec.h>
 #include <netkey/key.h>
 #endif /*IPSEC*/
