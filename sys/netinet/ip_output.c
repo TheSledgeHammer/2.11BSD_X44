@@ -135,8 +135,8 @@ __KERNEL_RCSID(0, "$NetBSD: ip_output.c,v 1.130 2004/03/02 02:28:28 thorpej Exp 
 
 #include <machine/stdarg.h>
 
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
 #include <netkey/key.h>
 #include <netkey/key_debug.h>
 #endif /*IPSEC*/
@@ -180,7 +180,7 @@ ip_output(struct mbuf *m0, ...)
 	struct ip_moptions *imo;
 	struct socket *so;
 	va_list ap;
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 	struct secpolicy *sp = NULL;
 #endif /*IPSEC*/
 #ifdef FAST_IPSEC
@@ -460,7 +460,7 @@ sendit:
 	/* Remember the current ip_len */
 	ip_len = ntohs(ip->ip_len);
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 	/* get SP for this packet */
 	if (so == NULL)
 		sp = ipsec4_getpolicybyaddr(m, IPSEC_DIR_OUTBOUND,
@@ -773,7 +773,7 @@ spd_done:
 			m->m_pkthdr.csum_flags &= ~(M_CSUM_TCPv4|M_CSUM_UDPv4);
 		}
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 		/* clean ipsec history once it goes out of the node */
 		ipsec_delaux(m);
 #endif
@@ -825,7 +825,7 @@ spd_done:
 				    ntohs(ip->ip_len);
 			}
 #endif
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 			/* clean ipsec history once it goes out of the node */
 			ipsec_delaux(m);
 #endif
@@ -845,7 +845,7 @@ done:
 		ro->ro_rt = 0;
 	}
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 	if (sp != NULL) {
 		KEYDEBUG(KEYDEBUG_IPSEC_STAMP,
 			printf("DP ip_output call free SP:%p\n", sp));

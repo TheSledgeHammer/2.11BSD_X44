@@ -96,8 +96,8 @@ __KERNEL_RCSID(0, "$NetBSD: in6_pcb.c,v 1.61.2.1 2004/04/28 05:56:07 jmc Exp $")
 extern struct ifnet loif[NLOOP];
 #include "faith.h"
 
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
 #include <netkey/key.h>
 #endif /* IPSEC */
 

@@ -118,8 +118,8 @@ __KERNEL_RCSID(0, "$NetBSD: ip_mroute.c,v 1.82 2003/11/19 18:39:34 jonathan Exp 
 #include <netinet/ip_mroute.h>
 #include <netinet/ip_encap.h>
 
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
 #include <netkey/key.h>
 #endif
 

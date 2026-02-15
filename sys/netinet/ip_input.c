@@ -144,8 +144,8 @@ __KERNEL_RCSID(0, "$NetBSD: ip_input.c,v 1.197.2.1 2004/05/28 07:25:05 tron Exp 
 #include <netinet/ip_mroute.h>
 #endif
 
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
 #include <netkey/key.h>
 #endif
 #ifdef FAST_IPSEC

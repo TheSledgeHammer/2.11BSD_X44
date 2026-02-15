@@ -35,7 +35,7 @@ __RCSID("$NetBSD: ipsec.c,v 1.7 2003/02/24 10:10:00 dsl Exp $");
 #include <sys/param.h>
 
 #include <netinet/in.h>
-#include <netinet6/ipsec.h>
+#include <netinet6/ipsec/ipsec.h>
 
 #include <kvm.h>
 #include <string.h>

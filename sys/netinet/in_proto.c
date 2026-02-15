@@ -108,13 +108,13 @@ __KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $")
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
  */
 
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
-#include <netinet6/ah.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec/ah.h>
 #ifdef IPSEC_ESP
-#include <netinet6/esp.h>
+#include <netinet6/ipsec/esp.h>
 #endif
-#include <netinet6/ipcomp.h>
+#include <netinet6/ipsec/ipcomp.h>
 #endif /* IPSEC */
 
 #ifdef FAST_IPSEC
@@ -225,7 +225,7 @@ struct protosw inetsw[] = {
 				.pr_drain		= 0,
 				.pr_sysctl		= icmp_sysctl,
 		},
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 		{
 				.pr_type		= SOCK_RAW,
 				.pr_domain		= &inetdomain,

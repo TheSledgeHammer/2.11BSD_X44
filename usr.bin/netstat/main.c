@@ -204,7 +204,7 @@ struct protox {
 	  icmp_stats,	NULL,		0,	"icmp" },
 	{ -1,		N_IGMPSTAT,	1,	0,
 	  igmp_stats,	NULL,		0,	"igmp" },
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 	{ -1,		N_IPSECSTAT,	1,	0,
 	  ipsec_switch,	NULL,		0,	"ipsec" },
 #endif
@@ -227,7 +227,7 @@ struct protox ip6protox[] = {
 #endif
 	{ N_UDBTABLE,	N_UDP6STAT,	1,	ip6protopr,
 	  udp6_stats,	NULL,		0,	"udp6" },
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 	{ -1,		N_IPSEC6STAT,	1,	0,
 	  ipsec_switch,	NULL,		0,	"ipsec6" },
 #endif
@@ -247,7 +247,7 @@ struct protox arpprotox[] = {
 	  0,		NULL,		0,	0 }
 };
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 struct protox pfkeyprotox[] = {
 	{ -1,		N_PFKEYSTAT,	1,	0,
 	  pfkey_stats,	NULL,		0,	"pfkey" },
@@ -275,7 +275,7 @@ struct protox *protoprotox[] = {
 		ip6protox,
 #endif
 		arpprotox,
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 		pfkeyprotox,
 #endif
 #ifndef SMALL
@@ -578,7 +578,7 @@ main(argc, argv)
 			printproto(tp, tp->pr_name);
 		}
 	}
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 	if (af == PF_KEY || af == AF_UNSPEC) {
 		for (tp = pfkeyprotox; tp->pr_name; tp++) {
 			printproto(tp, tp->pr_name);

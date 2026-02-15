@@ -1,6 +1,6 @@
 #	$211BSD_X44: files.kame_ipsec, v 1.0 2026/02/14 14:57 martin Exp $
 
-defflag opt_ipsec.h KAME_IPSEC
+defflag opt_ipsec.h IPSEC
 defflag opt_ipsec.h IPSEC_ESP
 
 # Kame in-built
@@ -10,21 +10,21 @@ defflag opt_ipsec.h IPSEC_ESP_CRYPTO: des, blowfish, cast128, rijndael
 defflag opt_ipsec.h IPSEC_XFORM: opencrypto
 defflag opt_ipsec.h IPSEC_ESP_XFORM: opencrypto
 
-file	kame_ipsec/ipsec.c			kame_ipsec & (ipsec_xform | ipsec_crypto)
+file	kame_ipsec/ipsec.c			ipsec & (ipsec_xform | ipsec_crypto)
 
-file	kame_ipsec/ah_core.c		kame_ipsec & ipsec_crypto
-file	kame_ipsec/ah_input.c		kame_ipsec & (ipsec_xform | ipsec_crypto)
-file	kame_ipsec/ah_output.c		kame_ipsec & (ipsec_xform | ipsec_crypto)
-file	kame_ipsec/xform_ah.c		kame_ipsec & ipsec_xform
+file	kame_ipsec/ah_core.c		ipsec & ipsec_crypto
+file	kame_ipsec/ah_input.c		ipsec & (ipsec_xform | ipsec_crypto)
+file	kame_ipsec/ah_output.c		ipsec & (ipsec_xform | ipsec_crypto)
+file	kame_ipsec/xform_ah.c		ipsec & ipsec_xform
 
-file	kame_ipsec/esp_core.c		kame_ipsec & ipsec_esp & ipsec_esp_crypto
-file	kame_ipsec/esp_output.c		kame_ipsec & ipsec_esp & (ipsec_esp_xform | ipsec_esp_crypto)
-file	kame_ipsec/esp_input.c		kame_ipsec & ipsec_esp & (ipsec_esp_xform | ipsec_esp_crypto)
-file	kame_ipsec/xform_esp.c		kame_ipsec & ipsec_esp & ipsec_esp_xform 
+file	kame_ipsec/esp_core.c		ipsec & ipsec_esp & ipsec_esp_crypto
+file	kame_ipsec/esp_output.c		ipsec & ipsec_esp & (ipsec_esp_xform | ipsec_esp_crypto)
+file	kame_ipsec/esp_input.c		ipsec & ipsec_esp & (ipsec_esp_xform | ipsec_esp_crypto)
+file	kame_ipsec/xform_esp.c		ipsec & ipsec_esp & ipsec_esp_xform 
 
-file	kame_ipsec/ipcomp_core.c	kame_ipsec & ipsec_crypto
-file	kame_ipsec/ipcomp_input.c	kame_ipsec & (ipsec_xform | ipsec_crypto)
-file	kame_ipsec/ipcomp_output.c	kame_ipsec & (ipsec_xform | ipsec_crypto)
-file	kame_ipsec/xform_ipcomp.c	kame_ipsec & ipsec_xform
+file	kame_ipsec/ipcomp_core.c	ipsec & ipsec_crypto
+file	kame_ipsec/ipcomp_input.c	ipsec & (ipsec_xform | ipsec_crypto)
+file	kame_ipsec/ipcomp_output.c	ipsec & (ipsec_xform | ipsec_crypto)
+file	kame_ipsec/xform_ipcomp.c	ipsec & ipsec_xform
 
-file	kame_ipsec/xform.c		kame_ipsec & ipsec_xform
+file	kame_ipsec/xform.c			ipsec & ipsec_xform

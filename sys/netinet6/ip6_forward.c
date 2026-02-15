@@ -59,8 +59,8 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_forward.c,v 1.41 2004/01/16 05:12:08 itojun Exp 
 #include <netinet/icmp6.h>
 #include <netinet6/nd6.h>
 
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
 #include <netkey/key.h>
 #endif /* IPSEC */
 

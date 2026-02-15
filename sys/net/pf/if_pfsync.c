@@ -357,7 +357,7 @@ pfsync_input(struct mbuf *m, ...)
 	struct pfsync_state_clr *cp;
 	struct pfsync_state_upd_req *rup;
 	struct pfsync_state_bus *bus;
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 	struct pfsync_tdb *pt;
 #endif
 	struct in_addr src;
@@ -843,7 +843,7 @@ pfsync_input(struct mbuf *m, ...)
 			break;
 		}
 		break;
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 	case PFSYNC_ACT_TDB_UPD:
 		if ((mp = m_pulldown(m, iplen + sizeof(*ph),
 		    count * sizeof(*pt), &offp)) == NULL) {
@@ -1629,7 +1629,7 @@ pfsync_sendout_mbuf(struct pfsync_softc *sc, struct mbuf *m)
 	return (0);
 }
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 /* Update an in-kernel tdb. Silently fail if no tdb is found. */
 void
 pfsync_update_net_tdb(struct pfsync_tdb *pt)

@@ -55,7 +55,13 @@
 #include <sys/socket.h>
 
 #include <netinet/in.h>
-#include <netinet6/ipsec.h>
+
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
+#endif
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>

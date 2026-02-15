@@ -79,7 +79,7 @@ void	igmp_stats(u_long, char *);
 void	pim_stats(u_long, char *);
 void	arp_stats(u_long, char *);
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 /* run-time selector for which  implementation (KAME, FAST_IPSEC) to show */
 void	ipsec_switch(u_long, char *);
 /* KAME ipsec version */
@@ -106,7 +106,7 @@ void	mrt6_stats(u_long, u_long);
 char	*routename6(struct sockaddr_in6 *);
 #endif /*INET6*/
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 void	pfkey_stats(u_long, char *);
 #endif
 

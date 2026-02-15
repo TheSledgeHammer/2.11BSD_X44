@@ -206,8 +206,8 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_input.c,v 1.190.2.6.2.2 2005/04/22 06:58:50 tron
 
 #include <machine/stdarg.h>
 
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
 #include <netkey/key.h>
 #endif /*IPSEC*/
 #ifdef INET6
@@ -1430,7 +1430,7 @@ findpcb:
 				}
 #endif
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 				switch (af) {
 				case AF_INET:
 					if (ipsec4_in_reject_so(m, so)) {

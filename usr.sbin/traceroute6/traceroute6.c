@@ -277,9 +277,9 @@ __RCSID("$NetBSD: traceroute6.c,v 1.34 2004/01/25 03:26:30 itojun Exp $");
 #include <netinet/icmp6.h>
 #include <netinet/udp.h>
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #include <net/route.h>
-#include <netinet6/ipsec.h>
+#include <netinet6/ipsec/ipsec.h>
 #endif
 
 #define DUMMY_PORT 10010
@@ -311,7 +311,7 @@ struct opacket	*outpacket;	/* last output (udp) packet */
 
 int	main(int, char *[]);
 int	wait_for_reply(int, struct msghdr *);
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 int	setpolicy(int so, char *policy);
 #endif
@@ -645,7 +645,7 @@ main(argc, argv)
 	if (options & SO_DONTROUTE)
 		(void) setsockopt(rcvsock, SOL_SOCKET, SO_DONTROUTE,
 		    (char *)&on, sizeof(on));
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 	/*
 	 * do not raise error even if setsockopt fails, kernel may have ipsec
@@ -724,7 +724,7 @@ main(argc, argv)
 		}
 	}
 #endif /* USE_RFC2292BIS */
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 	/*
 	 * do not raise error even if setsockopt fails, kernel may have ipsec
@@ -951,7 +951,7 @@ wait_for_reply(sock, mhdr)
 #endif
 }
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 int
 setpolicy(so, policy)

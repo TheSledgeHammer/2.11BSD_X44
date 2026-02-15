@@ -96,8 +96,8 @@ __KERNEL_RCSID(0, "$NetBSD: icmp6.c,v 1.106.2.1.4.1 2005/10/28 23:10:38 riz Exp 
 #include <netinet6/in6_ifattach.h>
 #include <netinet6/ip6protosw.h>
 
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
 #include <netkey/key.h>
 #endif
 
@@ -166,7 +166,7 @@ static void icmp6_mtudisc_timeout(struct rtentry *, struct rttimer *);
 static void icmp6_redirect_timeout(struct rtentry *, struct rttimer *);
 
 void
-icmp6_init()
+icmp6_init(void)
 {
 	mld6_init();
 	icmp6_mtudisc_timeout_q = rt_timer_queue_create(pmtu_expire);

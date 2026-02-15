@@ -178,8 +178,8 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_output.c,v 1.108.2.1 2004/05/11 13:00:20 tron Ex
 #ifdef FAST_IPSEC
 #include <netipsec/ipsec.h>
 #endif	/* FAST_IPSEC*/
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
 #endif
 
 #include <netinet/tcp.h>
@@ -357,7 +357,7 @@ tcp_segsize(struct tcpcb *tp, int *txsegsizep, int *rxsegsizep)
 	} else
 #endif
 	if (in6p && tp->t_family == AF_INET6) {
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 		if (! IPSEC_PCB_SKIP_IPSEC(in6p->in6p_sp, IPSEC_DIR_OUTBOUND))
 			optlen += ipsec6_hdrsiz_tcp(tp);
 #endif

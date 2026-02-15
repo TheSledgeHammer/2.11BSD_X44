@@ -37,7 +37,13 @@ __RCSID("$NetBSD: ipsec_strerror.c,v 1.8 2003/03/09 01:03:55 lukem Exp $");
 #include <sys/param.h>
 
 #include <string.h>
-#include <netinet6/ipsec.h>
+
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
+#endif
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#endif
 
 #include "ipsec_strerror.h"
 

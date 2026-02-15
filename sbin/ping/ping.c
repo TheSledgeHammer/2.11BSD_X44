@@ -88,7 +88,7 @@ __RCSID("$NetBSD: ping.c,v 1.75.6.1 2007/08/11 14:25:43 bouyer Exp $");
 #include <ctype.h>
 #include <netdb.h>
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #include <netinet6/ipsec.h>
 #endif /*IPSEC*/
 
@@ -111,7 +111,7 @@ __RCSID("$NetBSD: ping.c,v 1.75.6.1 2007/08/11 14:25:43 bouyer Exp $");
 #define F_MCAST		0x2000		/* multicast target */
 #define F_MCAST_NOLOOP	0x4000		/* no multicast loopback */
 #define F_AUDIBLE	0x8000		/* audible output */
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 #define F_POLICY	0x10000
 #else
@@ -241,7 +241,7 @@ main(int argc, char *argv[])
 #ifdef SIGINFO
 	struct termios ts;
 #endif
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 	char *policy_in = NULL;
 	char *policy_out = NULL;
@@ -259,7 +259,7 @@ main(int argc, char *argv[])
 
 	setprogname(argv[0]);
 
-#ifndef KAME_IPSEC
+#ifndef IPSEC
 #define IPSECOPT
 #else
 #ifdef IPSEC_POLICY_IPSEC
@@ -369,7 +369,7 @@ main(int argc, char *argv[])
 			if (*p != '\0' || maxwait <= 0)
 				errx(1, "Bad/invalid maxwait time %s", optarg);
 			break;
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 		case 'E':
 			pingflags |= F_POLICY;
@@ -535,7 +535,7 @@ main(int argc, char *argv[])
 			       sizeof(src_addr.sin_addr)) < 0)
 			err(1, "Can't set source interface/address");
 	}
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
     {
 	char *buf;
@@ -1823,7 +1823,7 @@ gethost(const char *arg,
 static void
 usage(void)
 {
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 #define IPSECOPT	"\n     [-E policy] "
 #else

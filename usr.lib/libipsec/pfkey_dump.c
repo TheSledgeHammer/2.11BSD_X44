@@ -36,20 +36,20 @@ __RCSID("$NetBSD: pfkey_dump.c,v 1.17 2003/09/08 10:16:31 itojun Exp $");
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>
-#include <netinet6/ipsec.h>
 #include <net/pfkeyv2.h>
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #include <netkey/key_var.h>
 #include <netkey/key_debug.h>
+#include <netinet6/ipsec/ipsec.h>
 #endif
 #ifdef FAST_IPSEC
 #include <netipsec/key_var.h>
 #include <netipsec/key_debug.h>
+#include <netipsec/ipsec.h>
 #endif
 
 #include <netinet/in.h>
-#include <netinet6/ipsec.h>
 #include <arpa/inet.h>
 
 #include <stdlib.h>

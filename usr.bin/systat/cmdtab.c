@@ -85,7 +85,7 @@ struct cmdtab cmdtab[] = {
 				.c_flags = CF_LOADAV,
 		},
 #endif
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 		{
 				.c_name = "ipsec",
 				.c_refresh = showipsec,

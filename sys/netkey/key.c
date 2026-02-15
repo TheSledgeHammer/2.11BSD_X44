@@ -84,21 +84,14 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.113.2.1 2004/05/11 14:54:52 tron Exp $");
 #include <netkey/keysock.h>
 #include <netkey/key_debug.h>
 
+#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec/ah.h>
+#ifdef IPSEC_ESP
+#include <netinet6/ipsec/esp.h>
+#endif
+#include <netinet6/ipsec/ipcomp.h>
 #ifdef IPSEC_XFORM
-#include <kame_ipsec/ipsec.h>
-#include <kame_ipsec/ah.h>
-#ifdef IPSEC_ESP
-#include <kame_ipsec/esp.h>
-#endif
-#include <kame_ipsec/ipcomp.h>
-#include <kame_ipsec/xform.h>
-#else
-#include <netinet6/ipsec.h>
-#include <netinet6/ah.h>
-#ifdef IPSEC_ESP
-#include <netinet6/esp.h>
-#endif
-#include <netinet6/ipcomp.h>
+#include <netinet6/ipsec/xform.h>
 #endif
 
 #ifdef KERNFS

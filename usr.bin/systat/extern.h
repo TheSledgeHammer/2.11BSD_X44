@@ -99,7 +99,7 @@ WINDOW	*openip(void);
 #ifdef INET6
 WINDOW	*openip6(void);
 #endif
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 WINDOW *openipsec(void);
 #endif
 WINDOW	*openkre(void);
@@ -116,7 +116,7 @@ void	closeip(WINDOW *);
 #ifdef INET6
 void	closeip6(WINDOW *);
 #endif
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 void	closeipsec(WINDOW *);
 #endif
 void	closekre(WINDOW *);
@@ -133,7 +133,7 @@ void	showip(void);
 #ifdef INET6
 void	showip6(void);
 #endif
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 void	showipsec(void);
 #endif
 void	showkre(void);
@@ -151,7 +151,7 @@ void	fetchip(void);
 #ifdef INET6
 void	fetchip6(void);
 #endif
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 void	fetchipsec(void);
 #endif
 void	fetchkre(void);
@@ -168,7 +168,7 @@ void	labelip(void);
 #ifdef INET6
 void	labelip6(void);
 #endif
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 void	labelipsec(void);
 #endif
 void	labelkre(void);
@@ -186,7 +186,7 @@ int		initip(void);
 #ifdef INET6
 int		initip6(void);
 #endif
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 int		initipsec(void);
 #endif
 int	 	initkre(void);

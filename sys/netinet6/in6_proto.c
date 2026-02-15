@@ -105,7 +105,7 @@ __KERNEL_RCSID(0, "$NetBSD: in6_proto.c,v 1.56 2003/12/04 19:38:24 atatat Exp $"
 
 #include <netinet6/nd6.h>
 
-#ifdef KAME_IPSEC
+#ifdef IPSEC
 #include <netinet6/ipsec.h>
 #include <netinet6/ah.h>
 #ifdef IPSEC_ESP
@@ -280,7 +280,7 @@ struct ip6protosw inet6sw[] = {
 				.pr_drain		= 0,
 				.pr_wassysctl	= 0,
 		},
-#ifdef KAME_IPSEC
+#ifdef IPSEC
         {
 				.pr_type		= SOCK_RAW,
 				.pr_domain		= &inet6domain,

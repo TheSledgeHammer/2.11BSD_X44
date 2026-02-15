@@ -131,8 +131,8 @@ __KERNEL_RCSID(0, "$NetBSD: in_pcb.c,v 1.94 2004/03/02 02:26:28 thorpej Exp $");
 #include <netinet6/in6_pcb.h>
 #endif
 
-#ifdef KAME_IPSEC
-#include <netinet6/ipsec.h>
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
 #include <netkey/key.h>
 #elif FAST_IPSEC
 #include <netipsec/ipsec.h>

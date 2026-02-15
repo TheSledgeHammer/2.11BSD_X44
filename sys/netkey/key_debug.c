@@ -50,12 +50,7 @@ __KERNEL_RCSID(0, "$NetBSD: key_debug.c,v 1.28 2003/09/12 07:38:11 itojun Exp $"
 #include <netkey/key_debug.h>
 
 #include <netinet/in.h>
-
-#ifdef IPSEC_XFORM
-#include <kame_ipsec/ipsec.h>
-#else
-#include <netinet6/ipsec.h>
-#endif
+#include <netinet6/ipsec/ipsec.h>
 
 #ifndef _KERNEL
 #include <ctype.h>
