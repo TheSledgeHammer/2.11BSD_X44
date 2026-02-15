@@ -17,12 +17,14 @@ file	kame_ipsec/ah_input.c		kame_ipsec & (ipsec_xform | ipsec_crypto)
 file	kame_ipsec/ah_output.c		kame_ipsec & (ipsec_xform | ipsec_crypto)
 file	kame_ipsec/xform_ah.c		kame_ipsec & ipsec_xform
 
-file	kame_ipsec/esp_core.c		kame_ipsec & ipsec_esp & ipsec_crypto
-file	kame_ipsec/esp_output.c		kame_ipsec & ipsec_esp & ((ipsec_xform & ipsec_esp_xform) | (ipsec_crypto & ipsec_esp_crypto))
-file	kame_ipsec/esp_input.c		kame_ipsec & ipsec_esp & ((ipsec_xform & ipsec_esp_xform) | (ipsec_crypto & ipsec_esp_crypto))
-file	kame_ipsec/xform_esp.c		kame_ipsec & ipsec_esp & ipsec_xform 
+file	kame_ipsec/esp_core.c		kame_ipsec & ipsec_esp & ipsec_esp_crypto
+file	kame_ipsec/esp_output.c		kame_ipsec & ipsec_esp & (ipsec_esp_xform | ipsec_esp_crypto)
+file	kame_ipsec/esp_input.c		kame_ipsec & ipsec_esp & (ipsec_esp_xform | ipsec_esp_crypto)
+file	kame_ipsec/xform_esp.c		kame_ipsec & ipsec_esp & ipsec_esp_xform 
 
 file	kame_ipsec/ipcomp_core.c	kame_ipsec & ipsec_crypto
 file	kame_ipsec/ipcomp_input.c	kame_ipsec & (ipsec_xform | ipsec_crypto)
 file	kame_ipsec/ipcomp_output.c	kame_ipsec & (ipsec_xform | ipsec_crypto)
 file	kame_ipsec/xform_ipcomp.c	kame_ipsec & ipsec_xform
+
+file	kame_ipsec/xform.c		kame_ipsec & ipsec_xform
