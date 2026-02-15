@@ -188,11 +188,11 @@ esp_decrypt(m, off, sav, txform, ivlen)
 {
 	struct tdb *tdb;
 
-	tdb = isr->sav->tdb_tdb;
+	tdb = sav->tdb_tdb;
 	if (txform != tdb->tdb_encalgxform) {
 		return (EINVAL);
 	}
-	return (esp_input(m, sav, skip, ivlen, 0));
+	return (esp_input(m, sav, off, ivlen, 0));
 }
 
 int
@@ -524,7 +524,7 @@ esp_decrypt_expanded(m, off, sav, thash, ivlen, ivoff, bodyoff, derived)
 	int scutoff, i, blocklen;
 
 	if (ivlen != sav->ivlen || ivlen > sizeof(iv)) {
-		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: "
+		ipseclog((LOG_ERR, "esp_decrypt %s: "
 		    "unsupported ivlen %d\n", thash->name, ivlen));
 		m_freem(m);
 		return (EINVAL);
@@ -535,7 +535,7 @@ esp_decrypt_expanded(m, off, sav, thash, ivlen, ivoff, bodyoff, derived)
 
 #ifdef DIAGNOSTIC
 	if (blocklen > sizeof(iv)) {
-		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: "
+		ipseclog((LOG_ERR, "esp_decrypt %s: "
 		    "unsupported blocklen %d\n", thash->name, blocklen));
 		m_freem(m);
 		return EINVAL;
@@ -555,7 +555,7 @@ esp_decrypt_expanded(m, off, sav, thash, ivlen, ivoff, bodyoff, derived)
 		iv[6] ^= 0xff;
 		iv[7] ^= 0xff;
 	} else {
-		ipseclog((LOG_ERR, "esp_cbc_encrypt %s: "
+		ipseclog((LOG_ERR, "esp_decrypt %s: "
 		    "unsupported ivlen/blocklen: %d %d\n",
 			thash->name, ivlen, blocklen));
 		m_freem(m);
@@ -563,13 +563,13 @@ esp_decrypt_expanded(m, off, sav, thash, ivlen, ivoff, bodyoff, derived)
 	}
 
 	if (m->m_pkthdr.len < bodyoff) {
-		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: bad len %d/%lu\n",
+		ipseclog((LOG_ERR, "esp_decrypt %s: bad len %d/%lu\n",
 				thash->name, m->m_pkthdr.len, (unsigned long)bodyoff));
 		m_freem(m);
 		return (EINVAL);
 	}
 	if ((m->m_pkthdr.len - bodyoff) % blocklen) {
-		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: "
+		ipseclog((LOG_ERR, "esp_decrypt %s: "
 		    "payload length must be multiple of %d\n",
 			thash->name, blocklen));
 		m_freem(m);
@@ -710,7 +710,7 @@ esp_encrypt_expanded(m, off, plen, sav, thash, ivlen, ivoff, bodyoff, derived)
 	int scutoff, i, blocklen;
 
 	if (ivlen != sav->ivlen || ivlen > sizeof(iv)) {
-		ipseclog((LOG_ERR, "esp_cbc_encrypt %s: "
+		ipseclog((LOG_ERR, "esp_encrypt %s: "
 		    "unsupported ivlen %d\n", thash->name, ivlen));
 		m_freem(m);
 		return (EINVAL);
@@ -720,7 +720,7 @@ esp_encrypt_expanded(m, off, plen, sav, thash, ivlen, ivoff, bodyoff, derived)
 
 #ifdef DIAGNOSTIC
 	if (blocklen > sizeof(iv)) {
-		ipseclog((LOG_ERR, "esp_cbc_encrypt %s: "
+		ipseclog((LOG_ERR, "esp_encrypt %s: "
 		    "unsupported blocklen %d\n", thash->name, blocklen));
 		m_freem(m);
 		return EINVAL;
@@ -746,7 +746,7 @@ esp_encrypt_expanded(m, off, plen, sav, thash, ivlen, ivoff, bodyoff, derived)
 		iv[6] ^= 0xff;
 		iv[7] ^= 0xff;
 	} else {
-		ipseclog((LOG_ERR, "esp_cbc_encrypt %s: "
+		ipseclog((LOG_ERR, "esp_encrypt %s: "
 		    "unsupported ivlen/blocklen: %d %d\n",
 			thash->name, ivlen, blocklen));
 		m_freem(m);
@@ -754,13 +754,13 @@ esp_encrypt_expanded(m, off, plen, sav, thash, ivlen, ivoff, bodyoff, derived)
 	}
 
 	if (m->m_pkthdr.len < bodyoff) {
-		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: bad len %d/%lu\n",
+		ipseclog((LOG_ERR, "esp_encrypt %s: bad len %d/%lu\n",
 				thash->name, m->m_pkthdr.len, (unsigned long)bodyoff));
 		m_freem(m);
 		return (EINVAL);
 	}
 	if ((m->m_pkthdr.len - bodyoff) % blocklen) {
-		ipseclog((LOG_ERR, "esp_cbc_decrypt %s: "
+		ipseclog((LOG_ERR, "esp_encrypt %s: "
 		    "payload length must be multiple of %d\n",
 			thash->name, blocklen));
 		m_freem(m);
