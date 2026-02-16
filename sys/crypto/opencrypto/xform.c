@@ -64,8 +64,8 @@
 #include <crypto/gmac/gmac.h>
 
 #include <crypto/opencrypto/cryptodev.h>
-#include <crypto/opencrypto/xform.h>
 #include <crypto/opencrypto/xform_wrapper.h>
+#include <crypto/opencrypto/xform.h>
 
 const u_int8_t hmac_ipad_buffer[128] = {
 	0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,

@@ -34,23 +34,56 @@ __KERNEL_RCSID(0, "$NetBSD: cryptosoft.c,v 1.64 2022/05/22 11:39:27 riastradh Ex
 #include <sys/sysctl.h>
 #include <sys/errno.h>
 
-#include <crypto/md5/md5.h>
-#include <crypto/sha1/sha1.h>
-#include <crypto/sha2/sha2.h>
-#include <crypto/ripemd160/rmd160.h>
-
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/cryptosoft.h>
 #include <crypto/opencrypto/xform.h>
 
-union authctx {
-	MD5_CTX 	md5ctx;
-	SHA1_CTX 	sha1ctx;
-	RMD160_CTX 	rmd160ctx;
-	SHA256_CTX 	sha256ctx;
-	SHA384_CTX 	sha384ctx;
-	SHA512_CTX 	sha512ctx;
-};
+const u_int8_t hmac_ipad_buffer[128];
+const u_int8_t hmac_opad_buffer[128];
+
+const struct enc_xform enc_xform_null;
+const struct enc_xform enc_xform_des;
+const struct enc_xform enc_xform_3des;
+const struct enc_xform enc_xform_blf;
+const struct enc_xform enc_xform_cast5;
+const struct enc_xform enc_xform_skipjack;
+const struct enc_xform enc_xform_rijndael128;
+const struct enc_xform enc_xform_aes;
+const struct enc_xform enc_xform_arc4;
+const struct enc_xform enc_xform_camellia;
+const struct enc_xform enc_xform_twofish;
+const struct enc_xform enc_xform_twofish_xts;
+const struct enc_xform enc_xform_serpent;
+const struct enc_xform enc_xform_serpent_xts;
+const struct enc_xform enc_xform_mars;
+const struct enc_xform enc_xform_mars_xts;
+const struct enc_xform enc_xform_aes_ctr;
+const struct enc_xform enc_xform_aes_xts;
+const struct enc_xform enc_xform_aes_gcm;
+const struct enc_xform enc_xform_aes_gmac;
+const struct enc_xform enc_xform_chacha20_poly1305;
+
+const struct auth_hash auth_hash_null;
+const struct auth_hash auth_hash_md5;
+const struct auth_hash auth_hash_sha1;
+const struct auth_hash auth_hash_key_md5;
+const struct auth_hash auth_hash_key_sha1;
+const struct auth_hash auth_hash_hmac_md5;
+const struct auth_hash auth_hash_hmac_sha1;
+const struct auth_hash auth_hash_hmac_ripemd_160;
+const struct auth_hash auth_hash_hmac_md5_96;
+const struct auth_hash auth_hash_hmac_sha1_96;
+const struct auth_hash auth_hash_hmac_ripemd_160_96;
+const struct auth_hash auth_hash_hmac_sha2_256;
+const struct auth_hash auth_hash_hmac_sha2_384;
+const struct auth_hash auth_hash_hmac_sha2_512;
+const struct auth_hash auth_hash_aes_xcbc_mac_96;
+const struct auth_hash auth_hash_gmac_aes_128;
+const struct auth_hash auth_hash_gmac_aes_192;
+const struct auth_hash auth_hash_gmac_aes_256;
+const struct auth_hash auth_hash_chacha20_poly1305;
+
+const struct comp_algo comp_algo_deflate;
 
 struct swcr_data **swcr_sessions = NULL;
 u_int32_t swcr_sesnum = 0;

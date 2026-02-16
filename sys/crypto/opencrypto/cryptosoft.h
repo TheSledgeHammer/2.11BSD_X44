@@ -58,6 +58,10 @@ struct swcr_data {
 };
 
 #ifdef _KERNEL
+struct cryptodesc;
+struct cryptoini;
+struct cryptop;
+
 int		swcr_encdec(struct cryptodesc *, struct swcr_data *, caddr_t, int);
 int		swcr_authcompute(struct cryptop *, struct cryptodesc *, const struct swcr_data *, void *, int);
 int		swcr_combined(struct cryptop *, int);

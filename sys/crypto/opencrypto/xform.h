@@ -26,6 +26,14 @@
 #ifndef _CRYPTO_XFORM_H_
 #define _CRYPTO_XFORM_H_
 
+#include <crypto/md5/md5.h>
+#include <crypto/sha1/sha1.h>
+#include <crypto/sha2/sha2.h>
+#include <crypto/ripemd160/rmd160.h>
+
+/* Provide array-limit for clients (e.g., netipsec) */
+#define	AH_ALEN_MAX	32	/* max authenticator hash length */
+
 /* Declarations */
 struct auth_hash {
 	int 		type;
@@ -41,9 +49,6 @@ struct auth_hash {
 	int  		(*Update)(void *, const u_int8_t *, u_int16_t);
 	void 		(*Final)(u_int8_t *, void *);
 };
-
-/* Provide array-limit for clients (e.g., netipsec) */
-#define	AH_ALEN_MAX	32	/* max authenticator hash length */
 
 struct enc_xform {
 	int 		type;
@@ -65,6 +70,15 @@ struct comp_algo {
 	size_t 		minlen;
 	u_int32_t 	(*compress)(u_int8_t *, u_int32_t, u_int8_t **);
 	u_int32_t 	(*decompress)(u_int8_t *, u_int32_t, u_int8_t **);
+};
+
+union authctx {
+	MD5_CTX 	md5ctx;
+	SHA1_CTX 	sha1ctx;
+	RMD160_CTX 	rmd160ctx;
+	SHA256_CTX 	sha256ctx;
+	SHA384_CTX 	sha384ctx;
+	SHA512_CTX 	sha512ctx;
 };
 
 extern const u_int8_t hmac_ipad_buffer[128];
