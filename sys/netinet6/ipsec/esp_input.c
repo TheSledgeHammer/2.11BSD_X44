@@ -38,6 +38,7 @@
 __KERNEL_RCSID(0, "$NetBSD: esp_input.c,v 1.35 2004/02/11 10:47:28 itojun Exp $");
 
 #include "opt_inet.h"
+#include "opt_ipsec.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -93,14 +94,10 @@ __KERNEL_RCSID(0, "$NetBSD: esp_input.c,v 1.35 2004/02/11 10:47:28 itojun Exp $"
 	(sizeof(struct esp) < sizeof(struct newesp) \
 		? sizeof(struct newesp) : sizeof(struct esp))
 
-//#ifdef INET
+#ifdef INET
 void
-esp4_input(mp, offp, proto)
-	struct mbuf **mp;
-	int *offp, proto;
+esp4_input(struct mbuf *m, ...)
 {
-	struct mbuf *m = *mp;
-	int off = *offp;
 	struct ip *ip;
 	struct esp *esp;
 	struct esptail esptail;
@@ -118,6 +115,13 @@ esp4_input(mp, offp, proto)
 	size_t hlen;
 	size_t esplen;
 	int s;
+	va_list ap;
+	int off;
+
+	va_start(ap, m);
+	off = va_arg(ap, int);
+	(void)va_arg(ap, int);		/* ignore value, advance ap */
+	va_end(ap);
 
 	/* sanity check for alignment. */
 	if (off % 4 != 0 || m->m_pkthdr.len % 4 != 0) {
@@ -303,7 +307,7 @@ noreplaycheck:
 	/*
 	 * pre-compute and cache intermediate key
 	 */
-	if (esp_schedule(sav, algo) != 0) {
+	if (esp_schedule(algo, sav) != 0) {
 		ipsecstat.in_inval++;
 		goto bad;
 	}
@@ -311,9 +315,13 @@ noreplaycheck:
 	/*
 	 * decrypt the packet.
 	 */
-	if (!esp_decrypt) {
+#ifdef IPSEC_XFORM
+	if (!esp_decrypt)
+#endif
+#ifdef IPSEC_CRYPTO
+	if (!algo->decrypt)
+#endif
 		panic("internal error: no decrypt function");
-	}
 	if (esp_decrypt(m, off, sav, algo, ivlen)) {
 		/* m is already freed */
 		m = NULL;
@@ -723,7 +731,7 @@ noreplaycheck:
 	/*
 	 * pre-compute and cache intermediate key
 	 */
-	if (esp_schedule(sav, algo) != 0) {
+	if (esp_schedule(algo, sav) != 0) {
 		ipsec6stat.in_inval++;
 		goto bad;
 	}
@@ -731,7 +739,12 @@ noreplaycheck:
 	/*
 	 * decrypt the packet.
 	 */
+#ifdef IPSEC_XFORM
+	if (!esp_decrypt)
+#endif
+#ifdef IPSEC_CRYPTO
 	if (!algo->decrypt)
+#endif
 		panic("internal error: no decrypt function");
 	if (esp_decrypt(m, off, sav, algo, ivlen)) {
 		/* m is already freed */

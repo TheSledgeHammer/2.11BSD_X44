@@ -38,6 +38,7 @@
 __KERNEL_RCSID(0, "$NetBSD: ipcomp_output.c,v 1.18 2004/02/13 11:36:23 wiz Exp $");
 
 #include "opt_inet.h"
+#include "opt_ipsec.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>

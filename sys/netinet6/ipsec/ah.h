@@ -65,7 +65,7 @@ struct secasvar;
 int ah_hdrlen(struct secasvar *);
 size_t ah_hdrsiz(struct ipsecrequest *);
 
-void ah4_input(struct mbuf **, int *, int);
+void ah4_input(struct mbuf *, ...);
 int ah4_output(struct mbuf *, struct ipsecrequest *);
 void *ah4_ctlinput(int, struct sockaddr *, void *);
 
@@ -111,6 +111,9 @@ int ah6_calccksum(struct mbuf *, u_int8_t *, size_t, const struct ah_algorithm *
 #endif /* IPSEC_CRYPTO */
 
 #ifdef IPSEC_XFORM
+struct cryptoini;
+struct xform_state;
+struct xformsw;
 
 #define	AH_ALG_MAX	        16
 
@@ -124,8 +127,6 @@ int ah_keymin(const struct auth_hash *, int);
 int ah_keymax(const struct auth_hash *, int);
 
 /* cksum routines */
-int ah_hdrlen(struct secasvar *);
-size_t ah_hdrsiz(struct ipsecrequest *);
 int ah_mature(struct secasvar *);
 int ah_init0(struct secasvar *, struct xformsw *, struct cryptoini *);
 int ah_zeroize(struct secasvar *);

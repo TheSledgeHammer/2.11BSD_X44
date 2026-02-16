@@ -38,6 +38,7 @@
 __KERNEL_RCSID(0, "$NetBSD: ipcomp_input.c,v 1.22.16.1 2007/12/01 17:30:36 bouyer Exp $");
 
 #include "opt_inet.h"
+#include "opt_ipsec.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -85,13 +86,11 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_input.c,v 1.22.16.1 2007/12/01 17:30:36 bouye
 
 /*#define IPLEN_FLIPPED*/
 
-//#ifdef INET
+#ifdef INET
 void
-ipcomp4_input(mp, offp, proto)
-	struct mbuf **mp;
-	int *offp, proto;
+ipcomp4_input(struct mbuf *m, ...)
 {
-	struct mbuf *m, *md;
+	struct mbuf *md;
 	struct ip *ip;
 	struct ipcomp *ipcomp;
 #ifdef IPSEC_XFORM
@@ -106,10 +105,13 @@ ipcomp4_input(mp, offp, proto)
 	int error;
 	size_t newlen, olen;
 	struct secasvar *sav = NULL;
-	int off;
+	int off, proto;
+	va_list ap;
 
-	m = *mp;
-	off = *offp;
+	va_start(ap, m);
+	off = va_arg(ap, int);
+	proto = va_arg(ap, int);
+	va_end(ap);
 
 	if (m->m_pkthdr.len < off + sizeof(struct ipcomp)) {
 		ipseclog((LOG_DEBUG, "IPv4 IPComp input: assumption failed "
@@ -261,7 +263,12 @@ ipcomp6_input(mp, offp, proto)
 	int off;
 	struct ip6_hdr *ip6;
 	struct ipcomp *ipcomp;
+#ifdef IPSEC_XFORM
 	const struct comp_algo *algo;
+#endif
+#ifdef IPSEC_CRYPTO
+	const struct ipcomp_algorithm *algo;
+#endif
 	u_int16_t cpi;	/* host order */
 	u_int16_t nxt;
 	int error;

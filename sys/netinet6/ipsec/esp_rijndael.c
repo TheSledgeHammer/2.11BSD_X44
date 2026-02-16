@@ -33,6 +33,8 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: esp_rijndael.c,v 1.17 2003/08/27 14:23:25 itojun Exp $");
 
+#include "opt_ipsec.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/socket.h>
@@ -98,3 +100,4 @@ esp_rijndael_blockencrypt(algo, sav, s, d)
 	rijndael_encrypt(ctx, s, d);
 	return 0;
 }
+

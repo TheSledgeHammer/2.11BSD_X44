@@ -71,6 +71,8 @@
 
 #include <sys/cdefs.h>
 
+#include "opt_inet.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -103,13 +105,11 @@
 
 #include <net/pfkeyv2.h>
 #include <netkey/key.h>
-//#include <netkey/key_debug.h>
+#include <netkey/key_debug.h>
 
 #include <net/net_osdep.h>
 
 #include <crypto/opencrypto/cryptodev.h>
-#include <crypto/opencrypto/cryptosoft.h>
-#include <crypto/opencrypto/xform.h>
 
 static int ah_sumsiz_1216(struct secasvar *);
 static int ah_sumsiz_zero(struct secasvar *);
@@ -334,7 +334,6 @@ ah_hdrlen(sav)
 	}
 	return (ahlen);
 }
-
 
 int
 ah_mature(sav)
@@ -834,7 +833,7 @@ ah_output(m, isr, mp, skip, length, offset)
 	tdb->tdb_length = length;
 	tdb->tdb_offset = offset;
 
-	return (ah_output_cb(crp));
+	return (crypto_dispatch(crp));
 
 bad:
 	if (m) {

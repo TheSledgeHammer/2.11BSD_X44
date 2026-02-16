@@ -204,6 +204,85 @@ esp_max_ivlen()
 	return ivlen;
 }
 
+/*
+ * compute ESP header size.
+ */
+size_t
+esp_hdrsiz(isr)
+	struct ipsecrequest *isr;
+{
+	struct secasvar *sav;
+	const struct esp_algorithm *algo;
+	const struct ah_algorithm *aalgo;
+	size_t ivlen;
+	size_t authlen;
+	size_t hdrsiz;
+
+	/* sanity check */
+	if (isr == NULL) {
+		panic("esp_hdrsiz: NULL was passed.");
+	}
+
+	sav = isr->sav;
+
+	if (isr->saidx.proto != IPPROTO_ESP) {
+		panic("unsupported mode passed to esp_hdrsiz");
+	}
+
+	if (sav == NULL) {
+		goto estimate;
+	}
+	if (sav->state != SADB_SASTATE_MATURE && sav->state != SADB_SASTATE_DYING) {
+		goto estimate;
+	}
+
+	/* we need transport mode ESP. */
+	algo = esp_algorithm_lookup(sav->alg_enc);
+	if (!algo) {
+		goto estimate;
+	}
+	ivlen = sav->ivlen;
+	if (ivlen < 0) {
+		goto estimate;
+	}
+
+	/*
+	 * XXX
+	 * right now we don't calcurate the padding size.  simply
+	 * treat the padding size as constant, for simplicity.
+	 *
+	 * XXX variable size padding support
+	 */
+	if (sav->flags & SADB_X_EXT_OLD) {
+		/* RFC 1827 */
+		hdrsiz = sizeof(struct esp) + ivlen + esp_max_padbound() - 1 + 2;
+	} else {
+		/* RFC 2406 */
+		aalgo = ah_algorithm_lookup(sav->alg_auth);
+		if (aalgo && sav->replay && sav->key_auth) {
+			authlen = ah_sumsiz(sav, aalgo);
+		} else {
+			authlen = 0;
+		}
+		hdrsiz = sizeof(struct newesp) + ivlen + esp_max_padbound() - 1 + 2 + authlen;
+	}
+
+	return (hdrsiz);
+
+estimate:
+	/*
+	 * ASSUMING:
+	 *	sizeof(struct newesp) > sizeof(struct esp).
+	 *	esp_max_ivlen() = max ivlen for CBC mode
+	 *	esp_max_padbound - 1 =
+	 *	   maximum padding length without random padding length
+	 *	2 = (Pad Length field) + (Next Header field).
+	 *	AH_MAXSUMSIZE = maximum ICV we support.
+	 */
+	return (sizeof(struct newesp) + esp_max_ivlen() + esp_max_padbound() - 1 + 2 + AH_MAXSUMSIZE);
+}
+
+
 int
 esp_schedule(algo, sav)
 	const struct esp_algorithm *algo;
@@ -1123,3 +1202,4 @@ esp_auth(m0, skip, length, sav, sum)
 
 	return 0;
 }
+

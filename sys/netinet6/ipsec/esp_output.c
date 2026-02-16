@@ -38,6 +38,7 @@
 __KERNEL_RCSID(0, "$NetBSD: esp_output.c,v 1.18 2003/09/07 15:59:36 itojun Exp $");
 
 #include "opt_inet.h"
+#include "opt_ipsec.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -434,7 +435,7 @@ esp_output(m, nexthdrp, md, isr, af)
 	/*
 	 * pre-compute and cache intermediate key
 	 */
-	error = esp_schedule(sav, algo);
+	error = esp_schedule(algo, sav);
 	if (error) {
 		m_freem(m);
 		stat->out_inval++;
@@ -445,9 +446,20 @@ esp_output(m, nexthdrp, md, isr, af)
 	 * encrypt the packet, based on security association
 	 * and the algorithm specified.
 	 */
+#ifdef IPSEC_XFORM
 	if (!esp_encrypt)
+#endif
+#ifdef IPSEC_CRYPTO
+    if (!algo->encrypt)
+#endif
 		panic("internal error: no encrypt function");
-	if (esp_encrypt(m, espoff, plen + extendsiz, isr, algo, ivlen)) {
+#ifdef IPSEC_XFORM
+	if (esp_encrypt(m, espoff, plen + extendsiz, isr, algo, ivlen))
+#endif
+#ifdef IPSEC_CRYPTO
+	if (esp_encrypt(m, espoff, plen + extendsiz, sav, algo, ivlen))
+#endif
+    {
 		/* m is already freed */
 		ipseclog((LOG_ERR, "packet encryption failure\n"));
 		stat->out_inval++;
@@ -477,7 +489,7 @@ esp_output(m, nexthdrp, md, isr, af)
 		u_char *p;
 		size_t siz;
 #ifdef INET
-	struct ip *ip;
+	    struct ip *ip;
 #endif
 
 		aalgo = ah_algorithm_lookup(sav->alg_auth);

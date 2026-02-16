@@ -71,7 +71,7 @@ struct secasvar;
 /* crypt routines */
 size_t esp_hdrsiz(struct ipsecrequest *);
 int esp4_output(struct mbuf *, struct ipsecrequest *);
-void esp4_input(struct mbuf **, int *, int);
+void esp4_input(struct mbuf *, ...);
 void *esp4_ctlinput(int, struct sockaddr *, void *);
 
 #ifdef INET6
@@ -86,6 +86,7 @@ int esp_auth(struct mbuf *, size_t, size_t, struct secasvar *, u_char *);
 
 struct esp_algorithm {
 	size_t padbound;	/* pad boundary, in byte */
+#define blocksize padbound
 	int ivlenval;		/* iv length, in byte */
 	int (*mature)(struct secasvar *);
 	int keymin;	/* in bits */
@@ -116,7 +117,7 @@ const struct esp_algorithm *esp_algorithm_lookup(int);
 int esp_max_padbound(void);
 int esp_max_ivlen(void);
 
-int esp_schedule(struct secasvar *, const struct esp_algorithm *);
+int esp_schedule(const struct esp_algorithm *, struct secasvar *);
 
 #endif /* IPSEC_CRYPTO */
 
@@ -132,7 +133,7 @@ int esp_mature(struct secasvar *);
 int esp_encrypt(struct mbuf *, size_t, size_t, struct ipsecrequest *, const struct enc_xform *, int);
 int esp_decrypt(struct mbuf *, size_t, struct secasvar *, const struct enc_xform *, int);
 
-int esp_schedule(struct secasvar *, const struct enc_xform *);
+int esp_schedule(const struct enc_xform *, struct secasvar *);
 
 #endif /* IPSEC_XFORM */
 

@@ -38,6 +38,7 @@
 __KERNEL_RCSID(0, "$NetBSD: ah_output.c,v 1.24 2003/09/07 15:59:36 itojun Exp $");
 
 #include "opt_inet.h"
+#include "opt_ipsec.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -259,7 +260,7 @@ ah4_output(m, isr)
 	error = ah4_calccksum_output(m, ahsumpos, plen, algo, isr);
 #endif
 #ifdef IPSEC_CRYPTO
-	error = ah4_calccksum(m, ahsumpos, plen, algo, isr);
+	error = ah4_calccksum(m, ahsumpos, plen, algo, sav);
 #endif
 	if (error) {
 		ipseclog((LOG_ERR,
@@ -427,7 +428,7 @@ ah6_output(m, nexthdrp, md, isr)
 	error = ah6_calccksum_output(m, ahsumpos, plen, algo, isr);
 #endif
 #ifdef IPSEC_CRYPTO
-	error = ah6_calccksum(m, ahsumpos, plen, algo, isr);
+	error = ah6_calccksum(m, ahsumpos, plen, algo, sav);
 #endif
 	if (error) {
 		ipsec6stat.out_inval++;

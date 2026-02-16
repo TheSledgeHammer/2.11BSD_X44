@@ -33,6 +33,8 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: esp_aesctr.c,v 1.1.8.1 2005/10/11 16:29:36 riz Exp $");
 
+#include "opt_ipsec.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/socket.h>
@@ -463,3 +465,4 @@ esp_aesctr_encrypt(m, off, plen, sav, algo, ivlen)
 
 	return 0;
 }
+

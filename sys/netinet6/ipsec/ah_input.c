@@ -38,6 +38,7 @@
 __KERNEL_RCSID(0, "$NetBSD: ah_input.c,v 1.44 2004/02/11 10:47:28 itojun Exp $");
 
 #include "opt_inet.h"
+#include "opt_ipsec.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -91,12 +92,8 @@ __KERNEL_RCSID(0, "$NetBSD: ah_input.c,v 1.44 2004/02/11 10:47:28 itojun Exp $")
 
 #ifdef INET
 void
-ah4_input(mp, offp, proto)
-	struct mbuf **mp;
-	int *offp, proto;
+ah4_input(struct mbuf *m, ...)
 {
-	struct mbuf *m = *mp;
-	int off = *offp;
 	struct ip *ip;
 	struct ah *ah;
 	u_int32_t spi;
@@ -113,7 +110,14 @@ ah4_input(mp, offp, proto)
 	u_int16_t nxt;
 	size_t hlen;
 	int s;
+	int off, proto;
+	va_list ap;
 	size_t stripsiz = 0;
+
+	va_start(ap, m);
+	off = va_arg(ap, int);
+	proto = va_arg(ap, int);
+	va_end(ap);
 
 	ip = mtod(m, struct ip *);
 	IP6_EXTHDR_GET(ah, struct ah *, m, off, sizeof(struct newah));

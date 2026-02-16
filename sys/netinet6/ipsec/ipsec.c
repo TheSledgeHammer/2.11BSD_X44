@@ -82,9 +82,8 @@ __KERNEL_RCSID(0, "$NetBSD: ipsec.c,v 1.95.2.1.2.2 2005/03/16 22:59:09 tron Exp 
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
 #include <netinet6/ipsec/ipcomp.h>
-#ifdef IPSEC_XFORM
 #include <netinet6/ipsec/xform.h>
-#endif
+
 #include <netkey/key.h>
 #include <netkey/keydb.h>
 #include <netkey/key_debug.h>
@@ -96,6 +95,8 @@ int ipsec_debug = 1;
 #else
 int ipsec_debug = 0;
 #endif
+
+int	crypto_support = 0;
 
 struct ipsecstat ipsecstat;
 int ip4_ah_cleartos = 1;

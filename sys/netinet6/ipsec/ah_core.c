@@ -38,7 +38,6 @@
 __KERNEL_RCSID(0, "$NetBSD: ah_core.c,v 1.36 2004/03/10 03:45:04 itojun Exp $");
 
 #include "opt_inet.h"
-#include "opt_ipsec.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -189,6 +188,88 @@ ah_algorithm_lookup(idx)
 	}
 }
 
+/*
+ * compute AH header size.
+ * transport mode only.  for tunnel mode, we should implement
+ * virtual interface, and control MTU/MSS by the interface MTU.
+ */
+size_t
+ah_hdrsiz(isr)
+	struct ipsecrequest *isr;
+{
+	const struct ah_algorithm *algo;
+	size_t hdrsiz;
+
+	/* sanity check */
+	if (isr == NULL)
+		panic("ah_hdrsiz: NULL was passed.");
+
+	if (isr->saidx.proto != IPPROTO_AH)
+		panic("unsupported mode passed to ah_hdrsiz");
+
+	if (isr->sav == NULL) {
+		goto estimate;
+	}
+	if (isr->sav->state != SADB_SASTATE_MATURE
+			&& isr->sav->state != SADB_SASTATE_DYING) {
+		goto estimate;
+	}
+
+	/* we need transport mode AH. */
+	algo = ah_algorithm_lookup(isr->sav->alg_auth);
+	if (!algo) {
+		goto estimate;
+	}
+
+	/*
+	 * XXX
+	 * right now we don't calcurate the padding size.  simply
+	 * treat the padding size as constant, for simplicity.
+	 *
+	 * XXX variable size padding support
+	 */
+	hdrsiz = ((ah_sumsiz(isr->sav, algo) + 3) & ~(4 - 1));
+	if (isr->sav->flags & SADB_X_EXT_OLD) {
+		hdrsiz += sizeof(struct ah) + sizeof(u_int32_t) + 16;
+	} else {
+		hdrsiz += sizeof(struct newah) + sizeof(u_int32_t) + 16;
+	}
+
+	return (hdrsiz);
+
+estimate:
+
+	/*
+	 * ASSUMING:
+	 *	sizeof(struct newah) > sizeof(struct ah).
+	 *	AH_MAXSUMSIZE is multiple of 4.
+	 */
+	return ((sizeof(struct newah) + AH_MAXSUMSIZE));
+}
+
+/* Calculate AH length */
+int
+ah_hdrlen(sav)
+	struct secasvar *sav;
+{
+	const struct ah_algorithm *algo;
+	int plen, ahlen;
+
+	algo = ah_algorithm_lookup(sav->alg_auth);
+	if (!algo) {
+		return (0);
+	}
+	if (sav->flags & SADB_X_EXT_OLD) {
+		/* RFC 1826 */
+		plen = (ah_sumsiz(sav, algo) + 3) & ~(4 - 1);	/* XXX pad to 8byte? */
+		ahlen = plen + sizeof(struct ah);
+	} else {
+		/* RFC 2402 */
+		plen = (ah_sumsiz(sav, algo) + 3) & ~(4 - 1);	/* XXX pad to 8byte? */
+		ahlen = plen + sizeof(struct newah);
+	}
+	return (ahlen);
+}
 
 static int
 ah_sumsiz_1216(sav)

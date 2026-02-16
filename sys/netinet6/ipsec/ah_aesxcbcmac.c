@@ -33,6 +33,8 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: ah_aesxcbcmac.c,v 1.1.8.1 2005/07/28 20:22:35 jdc Exp $");
 
+#include "opt_ipsec.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/socket.h>

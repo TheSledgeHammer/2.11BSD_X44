@@ -59,7 +59,7 @@ struct ipcomp {
 struct ipsecrequest;
 struct secasvar;
 
-void ipcomp4_input(struct mbuf **, int *, int);
+void ipcomp4_input(struct mbuf *, ...);
 int ipcomp4_output(struct mbuf *, struct ipsecrequest *);
 #ifdef INET6
 int ipcomp6_input(struct mbuf **, int *, int);
@@ -72,11 +72,12 @@ struct ipcomp_algorithm {
 	int (*compress)(struct mbuf *, struct mbuf *, size_t *);
 	int (*decompress)(struct mbuf *, struct mbuf *, size_t *);
 	size_t minplen;		/* minimum required length for compression */
+#define minlen minplen
 };
 
 /* ipcomp macros */
-#define ipcomp_compress(algo, m, md, lenp)		(*algo->compress)(m, md, lenp);
-#define ipcomp_decompress(algo, m, md, lenp)  	(*algo->decompress)(m, md, lenp);
+#define ipcomp_compress(algo, m, md, lenp)		(*algo->compress)(m, md, lenp)
+#define ipcomp_decompress(algo, m, md, lenp)  	(*algo->decompress)(m, md, lenp)
 
 const struct ipcomp_algorithm *ipcomp_algorithm_lookup(int);
 

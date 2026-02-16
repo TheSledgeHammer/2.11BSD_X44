@@ -424,15 +424,6 @@ extern void ipsec_clearhist(struct mbuf *);
 
 extern int ipsec_sysctl(int *, u_int, void *, size_t *, void *, size_t);
 extern int ipsec6_sysctl(int *, u_int, void *, size_t *, void *, size_t);
-
-#ifdef IPSEC_XFORM
-/* External declarations of per-file init functions */
-extern void ah_attach(void);
-extern void esp_attach(void);
-extern void ipcomp_attach(void);
-//extern void ipe4_attach(void);
-extern void ipsec_attach(void);
-#endif
 #endif /* _KERNEL */
 
 #ifndef _KERNEL
@@ -442,5 +433,14 @@ extern char *ipsec_dump_policy(caddr_t, char *);
 
 extern const char *ipsec_strerror(void);
 #endif /* !_KERNEL */
+
+#ifdef _KERNEL
+/* External declarations of per-file init functions */
+extern void ah_attach(void);
+extern void esp_attach(void);
+extern void ipcomp_attach(void);
+//extern void ipe4_attach(void);
+extern void ipsec_attach(void);
+#endif
 
 #endif /* _NETINET6_IPSEC_H_ */

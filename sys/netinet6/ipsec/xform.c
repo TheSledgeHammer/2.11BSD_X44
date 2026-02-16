@@ -28,6 +28,8 @@
 
 #include <sys/cdefs.h>
 
+#include "opt_ipsec.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -59,8 +61,6 @@
 #include <net/net_osdep.h>
 
 #include <crypto/opencrypto/cryptodev.h>
-#include <crypto/opencrypto/cryptosoft.h>
-#include <crypto/opencrypto/xform.h>
 
 struct tdb *
 tdb_alloc(size)
@@ -342,3 +342,4 @@ tdb_keysetsaval(sav, satype)
 	}
 	return (error);
 }
+

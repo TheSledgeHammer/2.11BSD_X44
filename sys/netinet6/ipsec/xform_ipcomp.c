@@ -67,6 +67,8 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $");
 
+#include "opt_inet.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -86,21 +88,18 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $
 #include <net/zlib.h>
 #include <machine/cpu.h>
 
-#include <netinet6/ipsec/ipcomp.h>
 #include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec/ipcomp.h>
 #include <netinet6/ipsec/xform.h>
 
 #include <machine/stdarg.h>
 
 #include <net/pfkeyv2.h>
 #include <netkey/key.h>
-//#include <netkey/key_debug.h>
 
 #include <net/net_osdep.h>
 
 #include <crypto/opencrypto/cryptodev.h>
-#include <crypto/opencrypto/cryptosoft.h>
-#include <crypto/opencrypto/xform.h>
 
 static int ipcomp_deflate_common(struct mbuf *, struct mbuf *, struct secasvar *, struct ipsecrequest *, u_int8_t *, int);
 static int ipcomp_deflate_compress(const struct comp_algo *, u_int8_t *, u_int32_t, u_int8_t **);

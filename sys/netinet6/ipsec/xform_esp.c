@@ -71,6 +71,8 @@
 
 #include <sys/cdefs.h>
 
+#include "opt_inet.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -95,13 +97,11 @@
 
 #include <net/pfkeyv2.h>
 #include <netkey/key.h>
-//#include <netkey/key_debug.h>
+#include <netkey/key_debug.h>
 
 #include <net/net_osdep.h>
 
 #include <crypto/opencrypto/cryptodev.h>
-#include <crypto/opencrypto/cryptosoft.h>
-#include <crypto/opencrypto/xform.h>
 
 static size_t 	esp_max_schedlen; 	/* max sched length over all algorithms */
 static int 		esp_max_ivlen;		/* max iv length over all algorithms */
@@ -288,7 +288,7 @@ esp_hdrsiz(isr)
 	 */
 	if (sav->flags & SADB_X_EXT_OLD) {
 		/* RFC 1827 */
-		hdrsiz = sizeof(struct esp) + ivlen + txform->blocksize - 1 + 2;
+		hdrsiz = sizeof(struct esp) + ivlen + esp_padbound(sav, txform) - 1 + 2;
 	} else {
 		/* RFC 2406 */
 		thash = ah_algorithm_lookup(sav->alg_auth);
@@ -297,7 +297,7 @@ esp_hdrsiz(isr)
 		} else {
 			authlen = 0;
 		}
-		hdrsiz = sizeof(struct newesp) + ivlen + txform->blocksize - 1 + 2 + authlen;
+		hdrsiz = sizeof(struct newesp) + ivlen + esp_padbound(sav, txform) - 1 + 2 + authlen;
 	}
 
 	return (hdrsiz);
@@ -312,7 +312,7 @@ estimate:
 	 *	2 = (Pad Length field) + (Next Header field).
 	 *	AH_MAXSUMSIZE = maximum ICV we support.
 	 */
-	return (sizeof(struct newesp) + esp_max_ivlen + txform->blocksize - 1 + 2 + AH_MAXSUMSIZE);
+	return (sizeof(struct newesp) + esp_ivlen(sav, txform) + esp_padbound(sav, txform) - 1 + 2 + AH_MAXSUMSIZE);
 }
 
 static int
@@ -455,9 +455,9 @@ esp_hash_decrypt(sav, txform, key, data)
 }
 
 int
-esp_schedule(sav, txform)
-	struct secasvar *sav;
+esp_schedule(txform, sav)
 	const struct enc_xform *txform;
+    struct secasvar *sav;
 {
 	int error;
 
