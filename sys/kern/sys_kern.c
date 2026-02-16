@@ -24,7 +24,7 @@
 #include <net/if.h>
 
 #ifdef IPSEC
-#include <kame_ipsec/ipsec.h>
+#include <netinet6/ipsec/ipsec.h>
 #endif
 #ifdef FAST_IPSEC
 #include <netipsec/ipsec.h>
@@ -35,7 +35,7 @@ netstart(void)
 {
 	int s;
 
-#ifdef	FAST_IPSEC || IPSEC
+#if defined(FAST_IPSEC) || defined(IPSEC)
 	/* Attach network crypto subsystem */
 	ipsec_attach();
 #endif
