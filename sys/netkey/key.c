@@ -3085,7 +3085,7 @@ key_setsaval(sav, m, mhp)
 
 #ifdef IPSEC_XFORM
 
-	error = tdb_keysetsav(sav, mhp->msg->sadb_msg_satype);
+	error = tdb_keysetsaval(sav, mhp->msg->sadb_msg_satype);
 	if (error != 0) {
 		goto fail;
 	}
@@ -5880,15 +5880,6 @@ key_getcomb_esp()
 	return NULL;
 }
 #endif
-
-static void
-key_getsizes_ah(ah, alg, min, max)
-	const struct auth_hash *ah;
-	int alg;
-	u_int16_t *min *max;
-{
-	*min = *max = ah->keysize;
-}
 
 /*
  * XXX reorder combinations by preference
