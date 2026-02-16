@@ -99,6 +99,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $
 #include <net/net_osdep.h>
 
 #include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptosoft.h>
 #include <crypto/opencrypto/xform.h>
 
 static int ipcomp_deflate_common(struct mbuf *, struct mbuf *, struct secasvar *, struct ipsecrequest *, u_int8_t *, int);

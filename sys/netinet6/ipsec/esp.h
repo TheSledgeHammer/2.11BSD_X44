@@ -105,11 +105,18 @@ struct esp_algorithm {
 		struct secasvar *, u_int8_t *, u_int8_t *);
 };
 
-extern const struct esp_algorithm *esp_algorithm_lookup(int);
-extern int esp_max_padbound(void);
-extern int esp_max_ivlen(void);
+/* esp macros */
+#define esp_mature(algo, sav)						(*algo->mature)(sav)
+#define esp_schedlen(algo)							(*algo->schedlen)(algo)
+#define esp_ivlen(algo, sav)						(*algo->ivlen)(algo, sav)
+#define esp_decrypt(m, off, sav, algo, ivlen)		(*algo->decrypt)(m, off, sav, algo, ivlen)
+#define esp_encrypt(m, off, plen, sav, algo, ivlen)	(*algo->encrypt)(m, off, plen, sav, algo, ivlen)
 
-extern int esp_schedule(const struct esp_algorithm *, struct secasvar *);
+const struct esp_algorithm *esp_algorithm_lookup(int);
+int esp_max_padbound(void);
+int esp_max_ivlen(void);
+
+int esp_schedule(struct secasvar *, const struct esp_algorithm *);
 
 #endif /* IPSEC_CRYPTO */
 

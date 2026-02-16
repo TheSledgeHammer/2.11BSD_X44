@@ -132,9 +132,11 @@ __RCSID("$NetBSD: ping6.c,v 1.57 2003/08/07 10:04:36 agc Exp $");
 #include <poll.h>
 
 #ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
+#endif /*IPSEC*/
+#ifdef FAST_IPSEC
 #include <netipsec/ipsec.h>
-#endif
-
+#endif /*FAST_IPSEC*/
 #include <md5.h>
 
 struct tv32 {

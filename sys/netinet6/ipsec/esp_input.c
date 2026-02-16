@@ -93,7 +93,7 @@ __KERNEL_RCSID(0, "$NetBSD: esp_input.c,v 1.35 2004/02/11 10:47:28 itojun Exp $"
 	(sizeof(struct esp) < sizeof(struct newesp) \
 		? sizeof(struct newesp) : sizeof(struct esp))
 
-#ifdef INET
+//#ifdef INET
 void
 esp4_input(mp, offp, proto)
 	struct mbuf **mp;
@@ -108,7 +108,12 @@ esp4_input(mp, offp, proto)
 	struct secasvar *sav = NULL;
 	size_t taillen;
 	u_int16_t nxt;
+#ifdef IPSEC_XFORM
 	const struct enc_xform *algo;
+#endif
+#ifdef IPSEC_CRYPTO
+	const struct esp_algorithm *algo;
+#endif
 	int ivlen;
 	size_t hlen;
 	size_t esplen;
@@ -201,7 +206,12 @@ esp4_input(mp, offp, proto)
 	{
 		u_int8_t sum0[AH_MAXSUMSIZE];
 		u_int8_t sum[AH_MAXSUMSIZE];
+#ifdef IPSEC_XFORM
 		const struct auth_hash *sumalgo;
+#endif
+#ifdef IPSEC_CRYPTO
+		const struct ah_algorithm *sumalgo;
+#endif
 		size_t siz;
 
 		sumalgo = ah_algorithm_lookup(sav->alg_auth);
@@ -301,7 +311,7 @@ noreplaycheck:
 	/*
 	 * decrypt the packet.
 	 */
-	if (!algo->decrypt) {
+	if (!esp_decrypt) {
 		panic("internal error: no decrypt function");
 	}
 	if (esp_decrypt(m, off, sav, algo, ivlen)) {
@@ -524,7 +534,12 @@ esp6_input(mp, offp, proto)
 	struct secasvar *sav = NULL;
 	size_t taillen;
 	u_int16_t nxt;
+#ifdef IPSEC_XFORM
 	const struct enc_xform *algo;
+#endif
+#ifdef IPSEC_CRYPTO
+	const struct esp_algorithm *algo;
+#endif
 	int ivlen;
 	size_t esplen;
 	int s;
@@ -616,7 +631,12 @@ esp6_input(mp, offp, proto)
 	{
 		u_char sum0[AH_MAXSUMSIZE];
 		u_char sum[AH_MAXSUMSIZE];
+#ifdef IPSEC_XFORM
 		const struct auth_hash *sumalgo;
+#endif
+#ifdef IPSEC_CRYPTO
+		const struct ah_algorithm *sumalgo;
+#endif
 		size_t siz;
 
 		sumalgo = ah_algorithm_lookup(sav->alg_auth);

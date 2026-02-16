@@ -108,6 +108,7 @@
 #include <net/net_osdep.h>
 
 #include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptosoft.h>
 #include <crypto/opencrypto/xform.h>
 
 static int ah_sumsiz_1216(struct secasvar *);
@@ -153,6 +154,102 @@ ah_algorithm_lookup(int alg)
 		return &auth_hash_aes_xcbc_mac_96;
 	}
 	return (NULL);
+}
+
+static int keymin[] = { 0, 128, 160, 256, 384, 512 };
+
+int
+ah_keymin(ah, alg)
+	const struct auth_hash *ah;
+	int alg;
+{
+	int min;
+	if (ah->keysize == 0) {
+		switch (alg) {
+		case SADB_X_AALG_NULL:
+			min = keymin[0];
+			break;
+		case SADB_AALG_MD5HMAC:
+			min = keymin[1];
+			break;
+		case SADB_AALG_SHA1HMAC:
+			min = keymin[2];
+			break;
+		case SADB_X_AALG_RIPEMD160HMAC:
+			min = keymin[2];
+			break;
+		case SADB_X_AALG_MD5:
+			min = keymin[1];
+			break;
+		case SADB_X_AALG_SHA:
+			min = keymin[2];
+			break;
+		case SADB_X_AALG_SHA2_256:
+			min = keymin[3];
+			break;
+		case SADB_X_AALG_SHA2_384:
+			min = keymin[4];
+			break;
+		case SADB_X_AALG_SHA2_512:
+			min = keymin[5];
+			break;
+		case SADB_X_AALG_AES_XCBC_MAC:
+			min = keymin[1];
+			break;
+		default:
+			ipseclog((LOG_ERR, "ah_keymin: unknown AH algorithm %u\n", alg));
+			break;
+		}
+	}
+	return (min);
+}
+
+static int keymax[] = { 128, 160, 256, 384, 512, 2048 };
+
+int
+ah_keymax(ah, alg)
+	const struct auth_hash *ah;
+	int alg;
+{
+	int max;
+	if (ah->keysize == 0) {
+		switch (alg) {
+		case SADB_X_AALG_NULL:
+			max = keymax[5];
+			break;
+		case SADB_AALG_MD5HMAC:
+			max = keymax[0];
+			break;
+		case SADB_AALG_SHA1HMAC:
+			max = keymax[1];
+			break;
+		case SADB_X_AALG_RIPEMD160HMAC:
+			max = keymax[1];
+			break;
+		case SADB_X_AALG_MD5:
+			max = keymax[0];
+			break;
+		case SADB_X_AALG_SHA:
+			max = keymax[1];
+			break;
+		case SADB_X_AALG_SHA2_256:
+			max = keymax[2];
+			break;
+		case SADB_X_AALG_SHA2_384:
+			max = keymax[3];
+			break;
+		case SADB_X_AALG_SHA2_512:
+			max = keymax[4];
+			break;
+		case SADB_X_AALG_AES_XCBC_MAC:
+			max = keymax[0];
+			break;
+		default:
+			ipseclog((LOG_ERR, "ah_keymax: unknown AH algorithm %u\n", alg));
+			break;
+		}
+	}
+	return (max);
 }
 
 /*

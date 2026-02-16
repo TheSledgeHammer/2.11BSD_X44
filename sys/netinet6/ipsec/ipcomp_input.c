@@ -85,7 +85,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_input.c,v 1.22.16.1 2007/12/01 17:30:36 bouye
 
 /*#define IPLEN_FLIPPED*/
 
-#ifdef INET
+//#ifdef INET
 void
 ipcomp4_input(mp, offp, proto)
 	struct mbuf **mp;
@@ -94,7 +94,12 @@ ipcomp4_input(mp, offp, proto)
 	struct mbuf *m, *md;
 	struct ip *ip;
 	struct ipcomp *ipcomp;
+#ifdef IPSEC_XFORM
 	const struct comp_algo *algo;
+#endif
+#ifdef IPSEC_CRYPTO
+	const struct ipcomp_algorithm *algo;
+#endif
 	u_int16_t cpi;	/* host order */
 	u_int16_t nxt;
 	size_t hlen;
@@ -163,7 +168,12 @@ ipcomp4_input(mp, offp, proto)
 
 	olen = m->m_pkthdr.len;
 	newlen = m->m_pkthdr.len - off;
+#ifdef IPSEC_XFORM
 	error = ipcomp_decompress(m, m->m_next, sav, &newlen);
+#endif
+#ifdef IPSEC_CRYPTO
+	error = ipcomp_decompress(algo, m, m->m_next, &newlen);
+#endif
 	if (error != 0) {
 		if (error == EINVAL)
 			ipsecstat.in_inval++;
@@ -301,7 +311,12 @@ ipcomp6_input(mp, offp, proto)
 	m->m_pkthdr.len -= sizeof(struct ipcomp);
 
 	newlen = m->m_pkthdr.len - off;
+#ifdef IPSEC_XFORM
 	error = ipcomp_decompress(m, md, sav, &newlen);
+#endif
+#ifdef IPSEC_CRYPTO
+	error = ipcomp_decompress(algo, m, md, &newlen);
+#endif
 	if (error != 0) {
 		if (error == EINVAL)
 			ipsec6stat.in_inval++;

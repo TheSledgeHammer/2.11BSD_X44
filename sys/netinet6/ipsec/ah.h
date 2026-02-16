@@ -57,7 +57,6 @@ struct newah {
 };
 
 #ifdef _KERNEL
-
 struct secasvar;
 
 #define	AH_MAXSUMSIZE	(512 / 8)
@@ -94,12 +93,19 @@ struct ah_algorithm {
 	void (*result)(struct ah_algorithm_state *, u_int8_t *, size_t);
 };
 
-extern const struct ah_algorithm *ah_algorithm_lookup(int);
+/* ah macros */
+#define ah_sumsiz(sav, algo)				(*algo->sumsiz)(sav)
+#define ah_mature(algo, sav)				(*algo->mature)(sav)
+#define ah_init(algo, state, sav) 			(*algo->init)(state, sav)
+#define ah_update(algo, state, addr, len)	(*algo->update)(state, addr, len)
+#define ah_result(algo, state, addr, len)	(*algo->result)(state, addr, len)
 
-extern int ah4_calccksum(struct mbuf *, u_int8_t *, size_t, const struct ah_algorithm *, struct secasvar *);
+const struct ah_algorithm *ah_algorithm_lookup(int);
+
+int ah4_calccksum(struct mbuf *, u_int8_t *, size_t, const struct ah_algorithm *, struct secasvar *);
 
 #ifdef INET6
-extern int ah6_calccksum(struct mbuf *, u_int8_t *, size_t, const struct ah_algorithm *, struct secasvar *);
+int ah6_calccksum(struct mbuf *, u_int8_t *, size_t, const struct ah_algorithm *, struct secasvar *);
 #endif /* INET6 */
 
 #endif /* IPSEC_CRYPTO */
@@ -113,6 +119,9 @@ int ah_sumsiz(struct secasvar *, const struct auth_hash *);
 int ah_hash_init(struct xform_state *, struct secasvar *, const struct auth_hash *);
 void ah_hash_update(struct xform_state *, struct secasvar *, const struct auth_hash *, const u_int8_t *, u_int16_t);
 void ah_hash_result(struct xform_state *, struct secasvar *, const struct auth_hash *, u_int8_t *, size_t);
+
+int ah_keymin(const struct auth_hash *, int);
+int ah_keymax(const struct auth_hash *, int);
 
 /* cksum routines */
 int ah_hdrlen(struct secasvar *);

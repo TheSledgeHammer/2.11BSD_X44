@@ -160,14 +160,6 @@ struct in_addr *tdb_get_in(struct tdb *, int);
 struct in6_addr *tdb_get_in6(struct tdb *, int);
 
 void tdb_keycleanup(struct secasvar *);
-int tdb_keysetsav(struct secasvar *, int);
-
-/* External declarations of per-file init functions */
-void ah_attach(void);
-void esp_attach(void);
-void ipcomp_attach(void);
-//extern void ipe4_attach(void);
-void ipsec_attach(void);
-
+int tdb_keysetsaval(struct secasvar *, int);
 #endif /* _KERNEL */
 #endif /* _KAME_IPSEC_XFORM_H_ */

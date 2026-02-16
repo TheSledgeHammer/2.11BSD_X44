@@ -117,7 +117,12 @@ ipcomp_output(m, nexthdrp, md, isr, af)
 	struct mbuf *mprev;
 	struct ipcomp *ipcomp;
 	struct secasvar *sav = isr->sav;
+#ifdef IPSEC_XFORM
 	const struct comp_algo *algo;
+#endif
+#ifdef IPSEC_CRYPTO
+	const struct ipcomp_algorithm *algo;
+#endif
 	u_int16_t cpi;		/* host order */
 	size_t plen0, plen;	/* payload length to be compressed */
 	size_t compoff;
@@ -208,7 +213,13 @@ ipcomp_output(m, nexthdrp, md, isr, af)
 	mprev->m_next = md;
 
 	/* compress data part */
-	if (ipcomp_compress(m, md, sav, &plen) || mprev->m_next == NULL) {
+#ifdef IPSEC_XFORM
+	if (ipcomp_compress(m, md, sav, &plen) || mprev->m_next == NULL)
+#endif
+#ifdef IPSEC_CRYPTO
+	if (ipcomp_compress(algo, m, md, &plen) || mprev->m_next == NULL)
+#endif
+	{
 		ipseclog((LOG_ERR, "packet compression failure\n"));
 		m = NULL;
 		m_freem(md0);

@@ -100,6 +100,7 @@
 #include <net/net_osdep.h>
 
 #include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptosoft.h>
 #include <crypto/opencrypto/xform.h>
 
 static size_t 	esp_max_schedlen; 	/* max sched length over all algorithms */

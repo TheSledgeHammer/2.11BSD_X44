@@ -26,6 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -57,6 +59,7 @@
 #include <net/net_osdep.h>
 
 #include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptosoft.h>
 #include <crypto/opencrypto/xform.h>
 
 struct tdb *
@@ -143,8 +146,7 @@ tdb_zeroize(tdb)
 	return (error);
 }
 
-
-/* output: 0: src 1 : dst */
+/* output: 0: src 1: dst */
 struct sockaddr_in *
 tdb_get_sin(tdb, output)
     struct tdb *tdb;
@@ -165,7 +167,7 @@ tdb_get_sin(tdb, output)
     return (NULL);
 }
 
-/* output: 0: src 1 : dst */
+/* output: 0: src 1: dst */
 struct in_addr *
 tdb_get_in(tdb, output)
     struct tdb *tdb;
@@ -174,22 +176,22 @@ tdb_get_in(tdb, output)
     struct sockaddr_in *ssin, *dsin;
     struct in_addr *src, *dst;
 
-    ssin = tdb_get_sin(tdb, 0);
-    dsin = tdb_get_sin(tdb, 1);
     switch (output) {
-    case 0:
-        src = ssin->sin_addr;
-        return (src);
-    case 1:
-        dst = dsin->sin_addr;
-        return (dst);
-    default:
-        break;
-    }
+	case 0:
+		ssin = tdb_get_sin(tdb, 0);
+		src = &ssin->sin_addr;
+		return (src);
+	case 1:
+		dsin = tdb_get_sin(tdb, 1);
+		dst = &dsin->sin_addr;
+		return (dst);
+	default:
+		break;
+	}
     return (NULL);
 }
 
-/* output: 0: src 1 : dst */
+/* output: 0: src 1: dst */
 struct sockaddr_in6 *
 tdb_get_sin6(tdb, output)
     struct tdb *tdb;
@@ -210,7 +212,7 @@ tdb_get_sin6(tdb, output)
     return (NULL);
 }
 
-/* output: 0: src 1 : dst */
+/* output: 0: src 1: dst */
 struct in6_addr *
 tdb_get_in6(tdb, output)
     struct tdb *tdb;
@@ -219,18 +221,18 @@ tdb_get_in6(tdb, output)
     struct sockaddr_in6 *ssin, *dsin;
     struct in6_addr *src, *dst;
 
-    ssin = tdb_get_sin6(tdb, 0);
-    dsin = tdb_get_sin6(tdb, 1);
     switch (output) {
-    case 0:
-        src = ssin->sin6_addr;
-        return (src);
-    case 1:
-        dst = dsin->sin6_addr;
-        return (dst);
-    default:
-        break;
-    }
+	case 0:
+		ssin = tdb_get_sin6(tdb, 0);
+		src = &ssin->sin6_addr;
+		return (src);
+	case 1:
+		dsin = tdb_get_sin6(tdb, 1);
+		dst = &dsin->sin6_addr;
+		return (dst);
+	default:
+		break;
+	}
     return (NULL);
 }
 
@@ -287,7 +289,6 @@ ipsec_attach(void)
 	printf(" done\n");
 }
 
-
 void
 tdb_keycleanup(sav)
 	struct secasvar *sav;
@@ -315,7 +316,7 @@ tdb_keycleanup(sav)
 }
 
 int
-tdb_keysetsav(sav, satype)
+tdb_keysetsaval(sav, satype)
 	struct secasvar *sav;
 	int satype;
 {

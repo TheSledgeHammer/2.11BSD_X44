@@ -97,7 +97,12 @@ ah4_output(m, isr)
 	struct ipsecrequest *isr;
 {
 	struct secasvar *sav = isr->sav;
+#ifdef IPSEC_XFORM
 	const struct auth_hash *algo;
+#endif
+#ifdef IPSEC_CRYPTO
+	const struct ah_algorithm *algo;
+#endif
 	u_int32_t spi;
 	u_char *ahdrpos;
 	u_int8_t *ahsumpos = NULL;
@@ -250,7 +255,12 @@ ah4_output(m, isr)
 	 * calcurate the checksum, based on security association
 	 * and the algorithm specified.
 	 */
+#ifdef IPSEC_XFORM
 	error = ah4_calccksum_output(m, ahsumpos, plen, algo, isr);
+#endif
+#ifdef IPSEC_CRYPTO
+	error = ah4_calccksum(m, ahsumpos, plen, algo, isr);
+#endif
 	if (error) {
 		ipseclog((LOG_ERR,
 		    "error after ah4_calccksum, called from ah4_output"));
@@ -286,7 +296,12 @@ ah6_output(m, nexthdrp, md, isr)
 	struct mbuf *mprev;
 	struct mbuf *mah;
 	struct secasvar *sav = isr->sav;
+#ifdef IPSEC_XFORM
 	const struct auth_hash *algo;
+#endif
+#ifdef IPSEC_CRYPTO
+	const struct ah_algorithm *algo;
+#endif
 	u_int32_t spi;
 	u_int8_t *ahsumpos = NULL;
 	size_t plen;	/* AH payload size in bytes */
@@ -408,7 +423,12 @@ ah6_output(m, nexthdrp, md, isr)
 	 * calcurate the checksum, based on security association
 	 * and the algorithm specified.
 	 */
+#ifdef IPSEC_XFORM
 	error = ah6_calccksum_output(m, ahsumpos, plen, algo, isr);
+#endif
+#ifdef IPSEC_CRYPTO
+	error = ah6_calccksum(m, ahsumpos, plen, algo, isr);
+#endif
 	if (error) {
 		ipsec6stat.out_inval++;
 		m_freem(m);

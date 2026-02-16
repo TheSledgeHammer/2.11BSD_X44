@@ -89,8 +89,11 @@ __RCSID("$NetBSD: ping.c,v 1.75.6.1 2007/08/11 14:25:43 bouyer Exp $");
 #include <netdb.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec.h>
+#include <netinet6/ipsec/ipsec.h>
 #endif /*IPSEC*/
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#endif /*FAST_IPSEC*/
 
 #define FLOOD_INTVL	0.01		/* default flood output interval */
 #define	MAXPACKET	(IP_MAXPACKET-60-8)	/* max packet size */

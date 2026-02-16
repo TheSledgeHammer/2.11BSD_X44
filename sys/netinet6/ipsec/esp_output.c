@@ -113,7 +113,12 @@ esp_output(m, nexthdrp, md, isr, af)
 	struct esp *esp;
 	struct esptail *esptail;
 	struct secasvar *sav = isr->sav;
+#ifdef IPSEC_XFORM
 	const struct enc_xform *algo;
+#endif
+#ifdef IPSEC_CRYPTO
+	const struct esp_algorithm *algo;
+#endif
 	u_int32_t spi;
 	u_int8_t nxt = 0;
 	size_t plen;	/* payload length to be encrypted */
@@ -461,7 +466,12 @@ esp_output(m, nexthdrp, md, isr, af)
 		goto noantireplay;
 
 	{
+#ifdef IPSEC_XFORM
 		const struct auth_hash *aalgo;
+#endif
+#ifdef IPSEC_CRYPTO
+		const struct ah_algorithm *aalgo;
+#endif
 		u_char authbuf[AH_MAXSUMSIZE];
 		struct mbuf *n;
 		u_char *p;

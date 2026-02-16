@@ -74,7 +74,11 @@ struct ipcomp_algorithm {
 	size_t minplen;		/* minimum required length for compression */
 };
 
-extern const struct ipcomp_algorithm *ipcomp_algorithm_lookup(int);
+/* ipcomp macros */
+#define ipcomp_compress(algo, m, md, lenp)		(*algo->compress)(m, md, lenp);
+#define ipcomp_decompress(algo, m, md, lenp)  	(*algo->decompress)(m, md, lenp);
+
+const struct ipcomp_algorithm *ipcomp_algorithm_lookup(int);
 
 #endif /* IPSEC_CRYPTO */
 
