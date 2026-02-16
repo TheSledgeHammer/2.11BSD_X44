@@ -17,19 +17,19 @@ file	netinet6/ipsec/ah_output.c		ipsec
 file	netinet6/ipsec/esp_output.c		ipsec & ipsec_esp
 file	netinet6/ipsec/esp_input.c		ipsec & ipsec_esp
 
-file	netinet6/ipsec/ipcomp_input.c	ipsec
-file	netinet6/ipsec/ipcomp_output.c	ipsec
+file	netinet6/ipsec/ipcomp_input.c		ipsec
+file	netinet6/ipsec/ipcomp_output.c		ipsec
 
 # Kame in-built
 #file	netinet6/ipsec/ah_core.c		ipsec
-#file	netinet6/ipsec/ah_aesxcbcmac.c	ipsec
+#file	netinet6/ipsec/ah_aesxcbcmac.c		ipsec
 #file	netinet6/ipsec/esp_core.c		ipsec & ipsec_esp
-#file	netinet6/ipsec/esp_rijndael.c	ipsec & ipsec_esp
+#file	netinet6/ipsec/esp_rijndael.c		ipsec & ipsec_esp
 #file	netinet6/ipsec/esp_aesctr.c		ipsec & ipsec_esp
-#file	netinet6/ipsec/ipcomp_core.c	ipsec
+#file	netinet6/ipsec/ipcomp_core.c		ipsec
 
 # Kame opencrypto
 file	netinet6/ipsec/xform_ah.c		ipsec
 file	netinet6/ipsec/xform_esp.c		ipsec & ipsec_esp
-file	netinet6/ipsec/xform_ipcomp.c	ipsec
+file	netinet6/ipsec/xform_ipcomp.c		ipsec
 file	netinet6/ipsec/xform.c			ipsec

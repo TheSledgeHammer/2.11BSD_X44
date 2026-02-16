@@ -833,7 +833,7 @@ ah_output(m, isr, mp, skip, length, offset)
 	tdb->tdb_length = length;
 	tdb->tdb_offset = offset;
 
-	return (crypto_dispatch(crp));
+	return (ah_output_cb(crp));
 
 bad:
 	if (m) {
