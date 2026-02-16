@@ -1,37 +1,35 @@
 #	$NetBSD: files.ipsec,v 1.2 2003/09/20 05:14:41 itojun Exp $
 #	$211BSD_X44: files.kame_ipsec, v 1.0 2026/02/14 14:57 martin Exp $
 
-defflag opt_ipsec.h IPSEC
-defflag opt_ipsec.h IPSEC_ESP
+defflag opt_ipsec.h IPSEC: opencrypto, rijndael, sha2, ripemd160
+defflag opt_ipsec.h IPSEC_ESP: opencrypto, des, blowfish, cast128, rijndael
 
 # Kame in-built
-defflag opt_ipsec.h IPSEC_CRYPTO: rijndael, sha2, ripemd160
-defflag opt_ipsec.h IPSEC_ESP_CRYPTO: des, blowfish, cast128, rijndael
+defflag opt_ipsec.h IPSEC_CRYPTO
 # Kame opencrypto
-defflag opt_ipsec.h IPSEC_XFORM: opencrypto
-defflag opt_ipsec.h IPSEC_ESP_XFORM: opencrypto
+defflag opt_ipsec.h IPSEC_XFORM
 
-file	netinet6/ipsec/ipsec.c			ipsec & (ipsec_xform | ipsec_crypto)
+file	netinet6/ipsec/ipsec.c			ipsec needs-flag
 
-file	netinet6/ipsec/ah_input.c		ipsec & (ipsec_xform | ipsec_crypto)
-file	netinet6/ipsec/ah_output.c		ipsec & (ipsec_xform | ipsec_crypto)
+file	netinet6/ipsec/ah_input.c		ipsec
+file	netinet6/ipsec/ah_output.c		ipsec
 
-file	netinet6/ipsec/esp_output.c		ipsec & ipsec_esp & (ipsec_esp_xform | ipsec_esp_crypto)
-file	netinet6/ipsec/esp_input.c		ipsec & ipsec_esp & (ipsec_esp_xform | ipsec_esp_crypto)
+file	netinet6/ipsec/esp_output.c		ipsec & ipsec_esp
+file	netinet6/ipsec/esp_input.c		ipsec & ipsec_esp
 
-file	netinet6/ipsec/ipcomp_input.c		ipsec & (ipsec_xform | ipsec_crypto)
-file	netinet6/ipsec/ipcomp_output.c		ipsec & (ipsec_xform | ipsec_crypto)
+file	netinet6/ipsec/ipcomp_input.c	ipsec
+file	netinet6/ipsec/ipcomp_output.c	ipsec
 
 # Kame in-built
-file	netinet6/ipsec/ah_core.c		ipsec & ipsec_crypto
-file	netinet6/ipsec/ah_aesxcbcmac.c		ipsec & ipsec_crypto
-file	netinet6/ipsec/esp_core.c		ipsec & ipsec_esp & ipsec_esp_crypto
-file	netinet6/ipsec/esp_rijndael.c		ipsec & ipsec_esp & ipsec_esp_crypto
-file	netinet6/ipsec/esp_aesctr.c		ipsec & ipsec_esp & ipsec_esp_crypto
-file	netinet6/ipsec/ipcomp_core.c		ipsec & ipsec_crypto
+#file	netinet6/ipsec/ah_core.c		ipsec
+#file	netinet6/ipsec/ah_aesxcbcmac.c	ipsec
+#file	netinet6/ipsec/esp_core.c		ipsec & ipsec_esp
+#file	netinet6/ipsec/esp_rijndael.c	ipsec & ipsec_esp
+#file	netinet6/ipsec/esp_aesctr.c		ipsec & ipsec_esp
+#file	netinet6/ipsec/ipcomp_core.c	ipsec
 
 # Kame opencrypto
-file	netinet6/ipsec/xform_ah.c		ipsec & ipsec_xform
-file	netinet6/ipsec/xform_esp.c		ipsec & ipsec_esp & ipsec_esp_xform
-file	netinet6/ipsec/xform_ipcomp.c		ipsec & ipsec_xform
-file	netinet6/ipsec/xform.c			ipsec & ipsec_xform
+file	netinet6/ipsec/xform_ah.c		ipsec
+file	netinet6/ipsec/xform_esp.c		ipsec & ipsec_esp
+file	netinet6/ipsec/xform_ipcomp.c	ipsec
+file	netinet6/ipsec/xform.c			ipsec
