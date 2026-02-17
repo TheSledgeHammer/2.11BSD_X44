@@ -33,8 +33,6 @@
 #ifndef _NETKEY_KEYDB_H_
 #define _NETKEY_KEYDB_H_
 
-#include "opt_ipsec.h"
-
 #ifdef _KERNEL
 
 #include <netkey/key_var.h>
