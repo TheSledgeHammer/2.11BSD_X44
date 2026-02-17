@@ -71,7 +71,7 @@ __KERNEL_RCSID(0, "$NetBSD: esp_output.c,v 1.18 2003/09/07 15:59:36 itojun Exp $
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
 #ifdef IPSEC_XFORM
-#include <netinet6/ipsec/xform.h>
+#include <netinet6/ipsec/xform_tdb.h>
 #endif
 
 #include <netkey/key.h>

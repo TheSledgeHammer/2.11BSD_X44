@@ -90,7 +90,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $
 
 #include <netinet6/ipsec/ipsec.h>
 #include <netinet6/ipsec/ipcomp.h>
-#include <netinet6/ipsec/xform.h>
+#include <netinet6/ipsec/xform_tdb.h>
 
 #include <machine/stdarg.h>
 

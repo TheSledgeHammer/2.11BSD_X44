@@ -73,7 +73,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_output.c,v 1.18 2004/02/13 11:36:23 wiz Exp $
 #include <netinet6/ipsec/ipsec.h>
 #include <netinet6/ipsec/ipcomp.h>
 #ifdef IPSEC_XFORM
-#include <netinet6/ipsec/xform.h>
+#include <netinet6/ipsec/xform_tdb.h>
 #endif
 
 #include <netkey/key.h>

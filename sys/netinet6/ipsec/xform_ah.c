@@ -97,7 +97,7 @@
 #include <netinet6/ipsec/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
-#include <netinet6/ipsec/xform.h>
+#include <netinet6/ipsec/xform_tdb.h>
 
 #ifdef INET6
 #include <netinet6/ip6_var.h>

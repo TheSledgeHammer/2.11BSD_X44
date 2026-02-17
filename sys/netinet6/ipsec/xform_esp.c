@@ -93,7 +93,7 @@
 #include <netinet6/ipsec/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
-#include <netinet6/ipsec/xform.h>
+#include <netinet6/ipsec/xform_tdb.h>
 
 #include <net/pfkeyv2.h>
 #include <netkey/key.h>

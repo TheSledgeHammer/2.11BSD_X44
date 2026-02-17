@@ -74,7 +74,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_input.c,v 1.22.16.1 2007/12/01 17:30:36 bouye
 #include <netinet6/ipsec/ipsec.h>
 #include <netinet6/ipsec/ipcomp.h>
 #ifdef IPSEC_XFORM
-#include <netinet6/ipsec/xform.h>
+#include <netinet6/ipsec/xform_tdb.h>
 #endif
 
 #include <netkey/key.h>
