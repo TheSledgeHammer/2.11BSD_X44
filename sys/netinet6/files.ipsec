@@ -9,7 +9,7 @@ defflag opt_ipsec.h IPSEC_CRYPTO
 # Kame opencrypto
 defflag opt_ipsec.h IPSEC_XFORM
 
-file	netinet6/ipsec/ipsec.c			ipsec needs-flag
+file	netinet6/ipsec/ipsec.c			ipsec
 
 file	netinet6/ipsec/ah_input.c		ipsec
 file	netinet6/ipsec/ah_output.c		ipsec
