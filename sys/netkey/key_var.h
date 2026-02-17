@@ -33,8 +33,6 @@
 #ifndef _NETKEY_KEY_VAR_H_
 #define _NETKEY_KEY_VAR_H_
 
-#include "opt_inet.h"
-
 /* sysctl */
 #define KEYCTL_DEBUG_LEVEL		1
 #define KEYCTL_SPI_TRY			2
