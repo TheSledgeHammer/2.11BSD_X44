@@ -6,15 +6,7 @@ USE_SHLIBDIR=	yes
 .include <bsd.own.mk>
 
 LIB=	ipsec
-CPPFLAGS+=-I${.CURDIR} -I. -DIPSEC_DEBUG -DYY_NO_UNPUT
-
-.if defined(IPSEC)
-CPPFLAGS+=-DIPSEC
-.endif
-
-.if defined(FAST_IPSEC)
-CPPFLAGS+=-DFAST_IPSEC
-.endif
+CPPFLAGS+=-I${.CURDIR} -I. -DIPSEC -DFAST_IPSEC -DIPSEC_DEBUG -DYY_NO_UNPUT
 
 .if (${USE_INET6} != "no")
 CPPFLAGS+=-DINET6
