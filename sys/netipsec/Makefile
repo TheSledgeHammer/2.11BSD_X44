@@ -3,6 +3,6 @@
 INCSDIR= /usr/include/netipsec
 
 INCS=	ah_var.h  esp_var.h ipcomp_var.h ipip_var.h ipsec_var.h \
-		keydb.h
-
+		key_var.h ipsec.h keydb.h
+ 
 .include <bsd.kinc.mk>

@@ -44,7 +44,9 @@
 #endif
 
 #include <net/pfkeyv2.h>
+#ifdef _KERNEL
 #include <netipsec/ipsec_osdep.h>
+#endif
 #include <netipsec/keydb.h>
 
 #ifdef _KERNEL
