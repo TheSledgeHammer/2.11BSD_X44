@@ -361,13 +361,12 @@ struct sadb_x_packet {
 #define SADB_X_EALG_BLOWFISHCBC			7
 #define SADB_X_EALG_RIJNDAELCBC			12
 #define SADB_X_EALG_AES					12
-#define SADB_X_EALG_AESCTR    			13
+#define SADB_X_EALG_AESCTR    			13 /* draft-ietf-ipsec-ciph-aes-ctr-03 */
 #define SADB_X_EALG_AESGCM8   			18
 #define SADB_X_EALG_AESGCM12  			19
 #define SADB_X_EALG_AESGCM16  			20
 #define SADB_X_EALG_AESGMAC   			21
 /* private allocations should use 249-255 (RFC2407) */
-#define SADB_X_EALG_AESCTR				249	/* draft-ietf-ipsec-ciph-aes-ctr-03 */
 #define SADB_X_EALG_SKIPJACK    		250
 #define SADB_X_EALG_CHACHA20POLY1305 	251
 #define SADB_X_EALG_SERPENTCBC			252
