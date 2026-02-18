@@ -265,12 +265,16 @@ ip6_output(m0, opt, ro, flags, im6o, so, ifpp)
 	 * Keep the length of the unfragmentable part for fragmentation.
 	 */
 	optlen = 0;
-	if (exthdrs.ip6e_hbh) optlen += exthdrs.ip6e_hbh->m_len;
-	if (exthdrs.ip6e_dest1) optlen += exthdrs.ip6e_dest1->m_len;
-	if (exthdrs.ip6e_rthdr) optlen += exthdrs.ip6e_rthdr->m_len;
+	if (exthdrs.ip6e_hbh)
+		optlen += exthdrs.ip6e_hbh->m_len;
+	if (exthdrs.ip6e_dest1)
+		optlen += exthdrs.ip6e_dest1->m_len;
+	if (exthdrs.ip6e_rthdr)
+		optlen += exthdrs.ip6e_rthdr->m_len;
 	unfragpartlen = optlen + sizeof(struct ip6_hdr);
 	/* NOTE: we don't add AH/ESP length here. do that later. */
-	if (exthdrs.ip6e_dest2) optlen += exthdrs.ip6e_dest2->m_len;
+	if (exthdrs.ip6e_dest2)
+		optlen += exthdrs.ip6e_dest2->m_len;
 
 	/*
 	 * If we need IPsec, or there is at least one extension header,
@@ -2113,7 +2117,7 @@ ip6_freemoptions(im6o)
 	if (im6o == NULL)
 		return;
 
-	while ((imm = im6o->im6o_memberships.lh_first) != NULL) {
+	while ((imm = LIST_FIRST(&im6o->im6o_memberships)) != NULL) {
 		LIST_REMOVE(imm, i6mm_chain);
 		in6_leavegroup(imm);
 	}

@@ -150,7 +150,7 @@ print_name(struct pf_addr *addr, sa_family_t af)
 }
 
 void
-print_host(struct pf_state_host *h, sa_family_t af, int opts)
+print_host(struct pfsync_state_host *h, sa_family_t af, int opts)
 {
 	u_int16_t p = ntohs(h->port);
 
@@ -276,11 +276,11 @@ print_state(struct pfsync_state *s, int opts)
 		min = s->expire % 60;
 		s->expire /= 60;
 		printf(", expires in %.2u:%.2u:%.2u", s->expire, min, sec);
-		printf(", %u:%u pkts, %u:%u bytes",
+		printf(", %ls:%ls pkts, %ls:%ls bytes",
 		    s->packets[0], s->packets[1], s->bytes[0], s->bytes[1]);
-		if (ntohl(s->anchor) != -1)
+		if (ntohl(s->anchor) != (u_int32_t)-1)
 			printf(", anchor %u", ntohl(s->anchor));
-		if (ntohl(s->rule) != -1)
+		if (ntohl(s->rule) != (u_int32_t)-1)
 			printf(", rule %u", ntohl(s->rule));
 		/*
 		if (ntohs(s->state_flags) & PFSTATE_SLOPPY)
@@ -300,7 +300,7 @@ print_state(struct pfsync_state *s, int opts)
 		    betoh64(s->id), ntohl(s->creatorid));
 #else
 		printf("   id: %016llx creatorid: %08x\n",
-		    (unsigned long long)be64toh(s->id), ntohl(s->creatorid));
+		    (u_int64_t)be64toh(s->id), ntohl(s->creatorid));
 #endif
 	}
 }

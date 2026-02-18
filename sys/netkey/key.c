@@ -198,6 +198,9 @@ static const int minsize[] = {
 #ifdef SADB_X_EXT_TAG
 	sizeof(struct sadb_x_tag),	/* SADB_X_TAG */
 #endif
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+	sizeof(struct sadb_x_packet),	/* SADB_X_EXT_PACKET */
+#endif
 };
 static const int maxsize[] = {
 	sizeof(struct sadb_msg),	/* SADB_EXT_RESERVED */
@@ -222,6 +225,9 @@ static const int maxsize[] = {
 	sizeof(struct sadb_x_sa2),	/* SADB_X_SA2 */
 #ifdef SADB_X_EXT_TAG
 	sizeof(struct sadb_x_tag),	/* SADB_X_TAG */
+#endif
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+	0,				/* SADB_X_EXT_PACKET */
 #endif
 };
 
@@ -6233,6 +6239,38 @@ key_acquire(saidx, sp)
 	if (m)
 		m_cat(result, m);
 #endif
+
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+	/*
+	 * add the triggering packet.
+	 */
+	if (pkt) {
+		int copy_len, len;
+		struct sadb_x_packet *ext;
+
+		copy_len = pkt->m_pkthdr.len;
+		if (copy_len > acq_maxpktlen)
+			copy_len = acq_maxpktlen;
+		len = PFKEY_ALIGN8(sizeof(struct sadb_x_packet) + copy_len);
+
+		m = key_alloc_mbuf(len);
+		if (!m || m->m_next) {
+			if (m)
+				m_freem(m);
+			error = ENOBUFS;
+			goto fail;
+		}
+
+		bzero(mtod(m, caddr_t), len);
+		ext = mtod(m, struct sadb_x_packet *);
+		ext->sadb_x_packet_len = PFKEY_UNIT64(len);
+		ext->sadb_x_packet_exttype = SADB_X_EXT_PACKET;
+		ext->sadb_x_packet_copylen = copy_len;
+		m_copydata(pkt, 0, copy_len, (caddr_t)(ext + 1));
+
+		m_cat(result, m);
+	}
+#endif /* PFKEYV2_SADB_X_EXT_PACKET */
 
 	if ((result->m_flags & M_PKTHDR) == 0) {
 		error = EINVAL;

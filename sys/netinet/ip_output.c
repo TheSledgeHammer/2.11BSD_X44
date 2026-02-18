@@ -1480,7 +1480,7 @@ bad:
 /*
  * following RFC1724 section 3.3, 0.0.0.0/8 is interpreted as interface index.
  */
-static struct ifnet *
+struct ifnet *
 ip_multicast_if(a, ifindexp)
 	struct in_addr *a;
 	int *ifindexp;

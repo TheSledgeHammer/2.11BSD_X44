@@ -173,22 +173,21 @@ tdb_get_in(tdb, output)
     struct tdb *tdb;
     int output;
 {
-    struct sockaddr_in *ssin, *dsin;
-    struct in_addr *src, *dst;
+	struct sockaddr_in *sin;
+	struct in_addr *src, *dst;
 
-    switch (output) {
+	sin = tdb_get_sin(tdb, output);
+	switch (output) {
 	case 0:
-		ssin = tdb_get_sin(tdb, 0);
-		src = &ssin->sin_addr;
+		src = &sin->sin_addr;
 		return (src);
 	case 1:
-		dsin = tdb_get_sin(tdb, 1);
-		dst = &dsin->sin_addr;
+		dst = &sin->sin_addr;
 		return (dst);
 	default:
 		break;
 	}
-    return (NULL);
+	return (NULL);
 }
 
 /* output: 0: src 1: dst */
@@ -218,22 +217,21 @@ tdb_get_in6(tdb, output)
     struct tdb *tdb;
     int output;
 {
-    struct sockaddr_in6 *ssin, *dsin;
+    struct sockaddr_in6 *sin6;
     struct in6_addr *src, *dst;
 
-    switch (output) {
+	sin6 = tdb_get_sin6(tdb, output);
+	switch (output) {
 	case 0:
-		ssin = tdb_get_sin6(tdb, 0);
-		src = &ssin->sin6_addr;
+		src = &sin6->sin6_addr;
 		return (src);
 	case 1:
-		dsin = tdb_get_sin6(tdb, 1);
-		dst = &dsin->sin6_addr;
+		dst = &sin6->sin6_addr;
 		return (dst);
 	default:
 		break;
 	}
-    return (NULL);
+	return (NULL);
 }
 
 

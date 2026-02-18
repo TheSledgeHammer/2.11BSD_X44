@@ -122,20 +122,32 @@ esp_algorithm_lookup(alg)
 		return (NULL);
 	}
 	switch (alg) {
+	case SADB_EALG_NULL:
+		return (&enc_xform_null);
 	case SADB_EALG_DESCBC:
 		return (&enc_xform_des);
 	case SADB_EALG_3DESCBC:
 		return (&enc_xform_3des);
 	case SADB_X_EALG_AES:
-		return (&enc_xform_rijndael128);
+		return (&enc_xform_aes);
+	case SADB_X_EALG_AESCTR:
+		return (&enc_xform_aes_ctr);
+	case SADB_X_EALG_AESGCM16:
+		return (&enc_xform_aes_gcm);
+	case SADB_X_EALG_AESGMAC:
+		return (&enc_xform_aes_gmac);
 	case SADB_X_EALG_BLOWFISHCBC:
 		return (&enc_xform_blf);
 	case SADB_X_EALG_CAST128CBC:
 		return (&enc_xform_cast5);
 	case SADB_X_EALG_SKIPJACK:
 		return (&enc_xform_skipjack);
-	case SADB_EALG_NULL:
-		return (&enc_xform_null);
+	case SADB_X_EALG_CHACHA20POLY1305:
+		return (&enc_xform_chacha20_poly1305);
+	case SADB_X_EALG_SERPENTCBC:
+		return (&enc_xform_serpent);
+	case SADB_X_EALG_TWOFISHCBC:
+		return (&enc_xform_twofish);
 	}
 	return (NULL);
 }

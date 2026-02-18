@@ -2151,7 +2151,7 @@ icmp6_reflect(m, off)
 }
 
 void
-icmp6_fasttimo()
+icmp6_fasttimo(void)
 {
 
 	mld6_fasttimeo();

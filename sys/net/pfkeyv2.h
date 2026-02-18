@@ -217,6 +217,16 @@ struct sadb_x_sa2 {
   u_int32_t sadb_x_sa2_reqid;
 };
 
+#if 0	/* not fixed yet */
+struct sadb_x_sa3 {
+  u_int16_t sadb_x_sa3_len;
+  u_int16_t sadb_x_sa3_exttype;
+  u_int32_t sadb_x_sa3_id;			/* SA id */
+  u_int64_t sadb_x_sa3_sequence;	/* 64bit sequence number */
+  u_int64_t sadb_x_sa3_socket;		/* struct socket * */
+};
+#endif
+
 /* XXX Policy Extension */
 /* sizeof(struct sadb_x_policy) == 16 */
 struct sadb_x_policy {
@@ -255,6 +265,26 @@ struct sadb_x_ipsecrequest {
    */
 };
 
+/*
+ * IPsec policy-by-PF-tag extension
+ */
+struct sadb_x_tag {
+  u_int16_t sadb_x_tag_len;
+  u_int16_t sadb_x_tag_exttype;
+  char sadb_x_tag_name[16];
+  u_int32_t sadb_x_tag_reserved;
+};
+
+/* XXX IPsec Triggering Packet Extension */
+/*
+ * This structure is aligned 8 bytes.
+ */
+struct sadb_x_packet {
+  u_int16_t sadb_x_packet_len;
+  u_int16_t sadb_x_packet_exttype;
+  u_int32_t sadb_x_packet_copylen;
+};
+
 #define SADB_EXT_RESERVED             0
 #define SADB_EXT_SA                   1
 #define SADB_EXT_LIFETIME_CURRENT     2
@@ -275,7 +305,10 @@ struct sadb_x_ipsecrequest {
 #define SADB_X_EXT_KMPRIVATE          17
 #define SADB_X_EXT_POLICY             18
 #define SADB_X_EXT_SA2                19
-#define SADB_EXT_MAX                  19
+#define SADB_X_EXT_TAG                20
+#define SADB_X_EXT_SA3                21
+#define SADB_X_EXT_PACKET             22
+#define SADB_EXT_MAX                  22
 
 #define SADB_SATYPE_UNSPEC		0
 #define SADB_SATYPE_AH			2
@@ -286,6 +319,7 @@ struct sadb_x_ipsecrequest {
 #define SADB_SATYPE_MIP			8
 #define SADB_X_SATYPE_IPCOMP	9
 /*#define SADB_X_SATYPE_POLICY	10	obsolete, do not reuse */
+#define SADB_X_SATYPE_TCPSIGNATURE	11
 #define SADB_SATYPE_MAX			11
 
 #define SADB_SASTATE_LARVAL   0
@@ -297,35 +331,48 @@ struct sadb_x_ipsecrequest {
 #define SADB_SAFLAGS_PFS      1
 
 /* RFC2367 numbers - meets RFC2407 */
-#define SADB_AALG_NONE		0
-#define SADB_AALG_MD5HMAC	2
-#define SADB_AALG_SHA1HMAC	3
-#define SADB_AALG_MAX		251
+#define SADB_AALG_NONE					0
+#define SADB_AALG_MD5HMAC				2
+#define SADB_AALG_SHA1HMAC				3
 /* private allocations - based on RFC2407/IANA assignment */
-#define SADB_X_AALG_SHA2_256	5
-#define SADB_X_AALG_SHA2_384	6
-#define SADB_X_AALG_SHA2_512	7
-#define SADB_X_AALG_RIPEMD160HMAC 8
-#define SADB_X_AALG_AES_XCBC_MAC 9 /* draft-ietf-ipsec-ciph-aes-xcbc-mac-04 */
+#define SADB_X_AALG_SHA2_256			5
+#define SADB_X_AALG_SHA2_384			6
+#define SADB_X_AALG_SHA2_512			7
+#define SADB_X_AALG_RIPEMD160HMAC 		8
+#define SADB_X_AALG_AES_XCBC_MAC 		9 /* draft-ietf-ipsec-ciph-aes-xcbc-mac-04 */
+#define SADB_X_AALG_AES128GMAC   		9
+#define SADB_X_AALG_AES192GMAC   		10
+#define SADB_X_AALG_AES256GMAC   		11
 /* private allocations should use 249-255 (RFC2407) */
-#define SADB_X_AALG_MD5		249	/* Keyed MD5 */
-#define SADB_X_AALG_SHA		250	/* Keyed SHA */
-#define SADB_X_AALG_NULL	251	/* null authentication */
+#define SADB_X_AALG_MD5			 		249	/* Keyed MD5 */
+#define SADB_X_AALG_SHA					250	/* Keyed SHA */
+#define SADB_X_AALG_NULL				251	/* null authentication */
+#define SADB_X_AALG_TCP_MD5				252	/* Keyed TCP-MD5 (RFC2385) */
+#define SADB_X_AALG_CHACHA20POLY1305 	253
+#define SADB_AALG_MAX					253
 
 /* RFC2367 numbers - meets RFC2407 */
-#define SADB_EALG_NONE		0
-#define SADB_EALG_DESCBC	2
-#define SADB_EALG_3DESCBC	3
-#define SADB_EALG_NULL		11
-#define SADB_EALG_MAX		250
+#define SADB_EALG_NONE					0
+#define SADB_EALG_DESCBC				2
+#define SADB_EALG_3DESCBC				3
+#define SADB_EALG_NULL					11
 /* private allocations - based on RFC2407/IANA assignment */
-#define SADB_X_EALG_CAST128CBC	6
-#define SADB_X_EALG_BLOWFISHCBC	7
-#define SADB_X_EALG_RIJNDAELCBC	12
-#define SADB_X_EALG_AES		12
+#define SADB_X_EALG_CAST128CBC			6
+#define SADB_X_EALG_BLOWFISHCBC			7
+#define SADB_X_EALG_RIJNDAELCBC			12
+#define SADB_X_EALG_AES					12
+#define SADB_X_EALG_AESCTR    			13
+#define SADB_X_EALG_AESGCM8   			18
+#define SADB_X_EALG_AESGCM12  			19
+#define SADB_X_EALG_AESGCM16  			20
+#define SADB_X_EALG_AESGMAC   			21
 /* private allocations should use 249-255 (RFC2407) */
-#define SADB_X_EALG_AESCTR	249	/* draft-ietf-ipsec-ciph-aes-ctr-03 */
-#define SADB_X_EALG_SKIPJACK    250
+#define SADB_X_EALG_AESCTR				249	/* draft-ietf-ipsec-ciph-aes-ctr-03 */
+#define SADB_X_EALG_SKIPJACK    		250
+#define SADB_X_EALG_CHACHA20POLY1305 	251
+#define SADB_X_EALG_SERPENTCBC			252
+#define SADB_X_EALG_TWOFISHCBC			253	/* draft-ietf-ipsec-ciph-aes-cbc-00 */
+#define SADB_EALG_MAX					253
 
 /* private allocations - based on RFC2407/IANA assignment */
 #define SADB_X_CALG_NONE	0

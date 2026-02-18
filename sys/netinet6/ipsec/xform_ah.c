@@ -133,25 +133,25 @@ ah_algorithm_lookup(int alg)
 		return NULL;
 	switch (alg) {
 	case SADB_X_AALG_NULL:
-		return &auth_hash_null;
+		return (&auth_hash_null);
 	case SADB_AALG_MD5HMAC:
-		return &auth_hash_hmac_md5_96;
+		return (&auth_hash_hmac_md5_96);
 	case SADB_AALG_SHA1HMAC:
-		return &auth_hash_hmac_sha1_96;
+		return (&auth_hash_hmac_sha1_96);
 	case SADB_X_AALG_RIPEMD160HMAC:
-		return &auth_hash_hmac_ripemd_160_96;
+		return (&auth_hash_hmac_ripemd_160_96);
 	case SADB_X_AALG_MD5:
-		return &auth_hash_key_md5;
+		return (&auth_hash_key_md5);
 	case SADB_X_AALG_SHA:
-		return &auth_hash_key_sha1;
+		return (&auth_hash_key_sha1);
 	case SADB_X_AALG_SHA2_256:
-		return &auth_hash_hmac_sha2_256;
+		return (&auth_hash_hmac_sha2_256);
 	case SADB_X_AALG_SHA2_384:
-		return &auth_hash_hmac_sha2_384;
+		return (&auth_hash_hmac_sha2_384);
 	case SADB_X_AALG_SHA2_512:
-		return &auth_hash_hmac_sha2_512;
+		return (&auth_hash_hmac_sha2_512);
 	case SADB_X_AALG_AES_XCBC_MAC:
-		return &auth_hash_aes_xcbc_mac_96;
+		return (&auth_hash_aes_xcbc_mac_96);
 	}
 	return (NULL);
 }

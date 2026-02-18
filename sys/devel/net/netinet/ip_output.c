@@ -1038,7 +1038,6 @@ ip_optlen(inp)
 	}
 }
 
-
 /*
  * Insert IP options into preformed packet.
  * Adjust IP destination as required for IP source routing,

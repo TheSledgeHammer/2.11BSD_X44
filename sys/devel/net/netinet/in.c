@@ -575,6 +575,21 @@ in_control(so, cmd, data, ifp, p)
 		return (mrt_ioctl(so, cmd, data));
 #endif /* MROUTING */
 
+#ifdef IGMPV3
+	case SIOCSIPMSFILTER:
+		/* Set IPv4 Multicast Source Filter */
+		return (ip_setmopt_srcfilter(so, (struct ip_msfilter **)data));
+	case SIOCGIPMSFILTER:
+		/* Get IPv4 Multicast Source Filter */
+		return (ip_getmopt_srcfilter(so, (struct ip_msfilter **)data));
+	case SIOCSMSFILTER:
+		/* Set Protocol-Independent Multicast Source Filter */
+		return (sock_setmopt_srcfilter(so, (struct group_filter **)data));
+	case SIOCGMSFILTER:
+		/* Get Protocol-Independent Multicast Source Filter */
+		return (sock_getmopt_srcfilter(so, (struct group_filter **)data));
+#endif /* IGMPV3 */
+
 	default:
 		if (ifp == 0 || ifp->if_ioctl == 0)
 			return (EOPNOTSUPP);
