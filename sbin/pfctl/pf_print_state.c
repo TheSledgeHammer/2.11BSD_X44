@@ -152,11 +152,14 @@ print_name(struct pf_addr *addr, sa_family_t af)
 void
 print_host(struct pfsync_state_host *h, sa_family_t af, int opts)
 {
+    struct pf_addr *addr;
 	u_int16_t p = ntohs(h->port);
 
-	if (opts & PF_OPT_USEDNS)
-		print_name(&h->addr, af);
-	else {
+	if (opts & PF_OPT_USEDNS) {
+//        addr = &h->addr;
+        memcpy(addr, &h->addr, sizeof(h->addr));
+		print_name(addr, af);
+	} else {
 		struct pf_addr_wrap aw;
 
 		memset(&aw, 0, sizeof(aw));
@@ -192,6 +195,7 @@ void
 print_state(struct pfsync_state *s, int opts)
 {
 	struct pfsync_state_peer *src, *dst;
+    struct pfsync_state_host *lan, *gwy, *ext;
 	struct protoent *p;
 	int min, sec;
 
@@ -209,18 +213,22 @@ print_state(struct pfsync_state *s, int opts)
 		printf("%u ", s->proto);
 	if (PF_ANEQ(&s->lan.addr, &s->gwy.addr, s->af) ||
 	    (s->lan.port != s->gwy.port)) {
-		print_host(&s->lan, s->af, opts);
+        memcpy(lan, &s->lan, sizeof(s->lan));
+		print_host(lan, s->af, opts);
 		if (s->direction == PF_OUT)
 			printf(" -> ");
 		else
 			printf(" <- ");
 	}
-	print_host(&s->gwy, s->af, opts);
+    memcpy(gwy, &s->gwy, sizeof(s->gwy));
+	print_host(gwy, s->af, opts);
 	if (s->direction == PF_OUT)
 		printf(" -> ");
 	else
 		printf(" <- ");
-	print_host(&s->ext, s->af, opts);
+
+    memcpy(ext, &s->ext, sizeof(s->ext));
+	print_host(ext, s->af, opts);
 
 	printf("    ");
 	if (s->proto == IPPROTO_TCP) {
@@ -295,13 +303,11 @@ print_state(struct pfsync_state *s, int opts)
 		printf("\n");
 	}
 	if (opts & PF_OPT_VERBOSE2) {
-#ifdef __OpenBSD__
+        u_int64_t id;
+
+        memcpy(&id, &s->id, sizeof(u_int64_t));
 		printf("   id: %016llx creatorid: %08x\n",
-		    betoh64(s->id), ntohl(s->creatorid));
-#else
-		printf("   id: %016llx creatorid: %08x\n",
-		    (u_int64_t)be64toh(s->id), ntohl(s->creatorid));
-#endif
+		    (u_int64_t)be64toh(id), ntohl(s->creatorid));
 	}
 }
 
