@@ -65,11 +65,15 @@
 #define	AH_HMAC_MAX_HASHLEN	32	/* 256 bits of authenticator for SHA512 */
 #define	AH_HMAC_INITIAL_RPL	1	/* replay counter initial value */
 
+#ifdef SADB_X_EXT_TAG
+#include <net/pf/pfvar.h>
+#else
 union sockaddr_union {
 	struct sockaddr         sa;
 	struct sockaddr_in      sin;
 	struct sockaddr_in6     sin6;
 };
+#endif
 
 /* tunnel block descriptor */
 struct tdb {
