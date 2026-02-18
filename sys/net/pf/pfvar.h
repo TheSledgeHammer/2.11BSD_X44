@@ -790,7 +790,7 @@ struct pfsync_state_host {
 	struct pf_addr	addr;
 	u_int16_t	port;
 	u_int16_t	pad[3];
-} __packed;
+};
 
 struct pfsync_state_peer {
 	struct pfsync_state_scrub scrub;	/* state is scrubbed	*/
