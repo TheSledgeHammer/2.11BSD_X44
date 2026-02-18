@@ -57,6 +57,10 @@ __KERNEL_RCSID(0, "$NetBSD: keydb.c,v 1.15 2003/09/12 07:38:11 itojun Exp $");
 
 #include <net/net_osdep.h>
 
+#ifdef SADB_X_EXT_TAG
+#include <net/pf/pfvar.h>
+#else
+
 /*
  * secpolicy management
  */
@@ -110,7 +114,7 @@ keydb_delsecpolicy(p)
 		free(p->spidx, M_SECA);
 #ifdef SADB_X_EXT_TAG
 	if (p->tag)
-		m_nametag_unref(p->tag);
+		pf_tag_unref(p->tag);
 #endif
 	free(p, M_SECA);
 }
