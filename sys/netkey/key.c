@@ -91,7 +91,7 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.113.2.1 2004/05/11 14:54:52 tron Exp $");
 #endif
 #include <netinet6/ipsec/ipcomp.h>
 #ifdef IPSEC_XFORM
-#include <netinet6/ipsec/xform.h>
+#include <netinet6/ipsec/xform_tdb.h>
 #endif
 
 #ifdef KERNFS
@@ -1694,7 +1694,7 @@ key_spdadd(so, m, mhp)
 		newsp = key_getsp(&spidx, xpl0->sadb_x_policy_dir);
 #ifdef SADB_X_EXT_TAG
 	else {
-		tagvalue = m_nametag_tagname2tag(tag->sadb_x_tag_name);
+		tagvalue = pf_tagname2tag(tag->sadb_x_tag_name);
 		/* tag refcnt++ */
 		newsp = key_getspbytag(tagvalue, xpl0->sadb_x_policy_dir);
 	}
@@ -1722,7 +1722,7 @@ key_spdadd(so, m, mhp)
 			ipseclog((LOG_DEBUG, "key_spdadd: a SP entry exists already.\n"));
 #ifdef SADB_X_EXT_TAG
 			if (!mhp->ext[SADB_EXT_ADDRESS_SRC])
-				m_nametag_unref(tagvalue);
+				pf_tag_unref(tagvalue);
 #endif
 			return key_senderror(so, m, EEXIST);
 		}
@@ -1732,7 +1732,7 @@ key_spdadd(so, m, mhp)
 	if ((newsp = key_msg2sp(xpl0, PFKEY_EXTLEN(xpl0), &error)) == NULL) {
 #ifdef SADB_X_EXT_TAG
 		if (!spidxmode)
-			m_nametag_unref(tagvalue);
+			pf_tag_unref(tagvalue);
 #endif
 		return key_senderror(so, m, error);
 	}
@@ -3915,7 +3915,7 @@ key_setsadbxtag(tag)
 	bzero(p, len);
 	p->sadb_x_tag_len = PFKEY_UNIT64(len);
 	p->sadb_x_tag_exttype = SADB_X_EXT_TAG;
-	m_nametag_tag2tagname(tag, p->sadb_x_tag_name);
+	pf_tag2tagname(tag, p->sadb_x_tag_name);
 
 	return m;
 }
