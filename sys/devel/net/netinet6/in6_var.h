@@ -509,9 +509,9 @@ struct router6_info {
     struct  ifnet *rt6i_ifp;
     int    rt6i_type; /* type of router which is querier on this interface */
     u_int	rt6i_timer1;	/* Older Version Querier Present Timer */
-	struct callout *rt6i_timer1_ch;
+	//struct callout *rt6i_timer1_ch;
 	u_int	rt6i_timer2;	/* Interface Timer */
-	struct callout *rt6i_timer2_ch;
+	//struct callout *rt6i_timer2_ch;
 	u_int	rt6i_qrv;	/* Querier Robustness Variable */
 	u_int	rt6i_qqi;	/* Querier Interval Variable */
 	u_int	rt6i_qri;	/* Querier Response Interval */

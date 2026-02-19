@@ -199,7 +199,7 @@ mld6_start_listening(in6m)
 	 * MLD messages are never sent for multicast addresses whose scope is 0
 	 * (reserved) or 1 (node-local).
 	 */
-	all_in6 = in6addr_linklocal_allnodes;
+	all_in6 = mld_all_nodes_linklocal;
 	all_in6.s6_addr16[1] = htons(in6m->in6m_ifp->if_index); /* XXX */
 	if (in6_setscope(&all_in6, in6m->in6m_ifp, NULL)) {
 		/* XXX: this should not happen! */
@@ -227,7 +227,7 @@ mld6_stop_listening(in6m)
 {
 	struct in6_addr allnode, allrouter;
 
-	allnode = in6addr_linklocal_allnodes;
+	allnode = mld_all_nodes_linklocal;
 	allnode.s6_addr16[1] = htons(in6m->in6m_ifp->if_index); /* XXX */
 	if (in6_setscope(&allnode, in6m->in6m_ifp, NULL)) {
 		/* XXX: this should not happen! */
@@ -317,7 +317,7 @@ mld6_input(m, off)
 			break;	/* print error or log stat? */
 		}
 
-		all_in6 = in6addr_linklocal_allnodes;
+		all_in6 = mld_all_nodes_linklocal;
 		if (in6_setscope(&all_in6, ifp, NULL)) {
 			/* XXX: this should not happen! */
 			break;

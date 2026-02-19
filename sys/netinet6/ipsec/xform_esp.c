@@ -1330,18 +1330,24 @@ static struct xformsw esp_xformsw = {
 void
 esp_attach(void)
 {
-#define	MAXIV(xform)						\
+#define	MAXIV(xform)				\
 	if (xform.blocksize > esp_max_ivlen)	\
-		esp_max_ivlen = xform.blocksize		\
+		esp_max_ivlen = xform.blocksize	\
 
 	esp_max_ivlen = 0;
-	MAXIV(enc_xform_des);		/* SADB_EALG_DESCBC */
-	MAXIV(enc_xform_3des);		/* SADB_EALG_3DESCBC */
-	MAXIV(enc_xform_rijndael128);	/* SADB_X_EALG_AES */
-	MAXIV(enc_xform_blf);		/* SADB_X_EALG_BLOWFISHCBC */
-	MAXIV(enc_xform_cast5);		/* SADB_X_EALG_CAST128CBC */
-	MAXIV(enc_xform_skipjack);	/* SADB_X_EALG_SKIPJACK */
-	MAXIV(enc_xform_null);		/* SADB_EALG_NULL */
+	MAXIV(enc_xform_des);			/* SADB_EALG_DESCBC */
+	MAXIV(enc_xform_3des);			/* SADB_EALG_3DESCBC */
+	MAXIV(enc_xform_aes);			/* SADB_X_EALG_AES */
+	MAXIV(enc_xform_aes_ctr);		/* SADB_X_EALG_AESCTR */
+	MAXIV(enc_xform_aes_gcm);		/* SADB_X_EALG_AESGCM16 */
+	MAXIV(enc_xform_aes_gmac);		/* SADB_X_EALG_AESGMAC */
+	MAXIV(enc_xform_blf);			/* SADB_X_EALG_BLOWFISHCBC */
+	MAXIV(enc_xform_cast5);			/* SADB_X_EALG_CAST128CBC */
+	MAXIV(enc_xform_skipjack);		/* SADB_X_EALG_SKIPJACK */
+	MAXIV(enc_xform_chacha20_poly1305);	/* SADB_X_EALG_CHACHA20POLY1305 */
+	MAXIV(enc_xform_serpent);		/* SADB_X_EALG_SERPENTCBC */
+	MAXIV(enc_xform_twofish);		/* SADB_X_EALG_TWOFISHCBC */
+	MAXIV(enc_xform_null);			/* SADB_EALG_NULL */
 
 	xform_register(&esp_xformsw);
 #undef MAXIV

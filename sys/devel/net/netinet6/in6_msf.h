@@ -95,7 +95,7 @@ struct in6_multi_source {
 	struct	in6_addr_slist *i6ms_blk;  /* pending BLOCK source address */
 	struct	in6_addr_slist *i6ms_toin; /* pending TO_IN source address */
 	struct	in6_addr_slist *i6ms_toex; /* pending TO_EX source address */
-	u_int	i6ms_timer;		 /* state-change report timer	    */
+	u_int	i6ms_timer;		 			/* state-change report timer	    */
 	struct callout *i6ms_timer_ch;
 	u_int	i6ms_robvar;		 /* robustness var. of grp record  */
 };

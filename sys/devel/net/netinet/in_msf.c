@@ -851,11 +851,11 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 			 }
 		}
 
-	free_source_list_2:
+free_source_list_2:
 		in_free_msf_source_list(inmm_src->ims_cur->head);
 		inmm_src->ims_cur->numsrc = 0;
 
-	change_state_2:
+change_state_2:
 		*newmode = MCAST_INCLUDE;
 		*newnumsrc = 0;
 		return 0;

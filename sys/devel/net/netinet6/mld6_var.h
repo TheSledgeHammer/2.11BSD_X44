@@ -93,6 +93,9 @@ void	mld6_stop_listening(struct in6_multi *);
 void	mld6_fasttimeo(void);
 
 #if defined(MLDV2)
+void	mld_start_listening(struct in6_multi *, u_int8_t);
+void	mld_start_state_change_timer(struct in6_multi *);
+void	mld_stop_state_change_timer(struct in6_multi *);
 int		in6_is_mld_target(struct in6_addr *);
 #endif
 #endif /* _KERNEL */

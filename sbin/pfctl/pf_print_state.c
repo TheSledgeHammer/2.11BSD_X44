@@ -152,12 +152,11 @@ print_name(struct pf_addr *addr, sa_family_t af)
 void
 print_host(struct pfsync_state_host *h, sa_family_t af, int opts)
 {
-    struct pf_addr *addr;
+	struct pf_addr *addr;
 	u_int16_t p = ntohs(h->port);
 
 	if (opts & PF_OPT_USEDNS) {
-//        addr = &h->addr;
-        memcpy(addr, &h->addr, sizeof(h->addr));
+		memcpy(addr, &h->addr, sizeof(h->addr));
 		print_name(addr, af);
 	} else {
 		struct pf_addr_wrap aw;
@@ -195,7 +194,7 @@ void
 print_state(struct pfsync_state *s, int opts)
 {
 	struct pfsync_state_peer *src, *dst;
-    struct pfsync_state_host *lan, *gwy, *ext;
+	struct pfsync_state_host *lan, *gwy, *ext;
 	struct protoent *p;
 	int min, sec;
 
@@ -213,21 +212,21 @@ print_state(struct pfsync_state *s, int opts)
 		printf("%u ", s->proto);
 	if (PF_ANEQ(&s->lan.addr, &s->gwy.addr, s->af) ||
 	    (s->lan.port != s->gwy.port)) {
-        memcpy(lan, &s->lan, sizeof(s->lan));
+		memcpy(lan, &s->lan, sizeof(s->lan));
 		print_host(lan, s->af, opts);
 		if (s->direction == PF_OUT)
 			printf(" -> ");
 		else
 			printf(" <- ");
 	}
-    memcpy(gwy, &s->gwy, sizeof(s->gwy));
+	memcpy(gwy, &s->gwy, sizeof(s->gwy));
 	print_host(gwy, s->af, opts);
 	if (s->direction == PF_OUT)
 		printf(" -> ");
 	else
 		printf(" <- ");
 
-    memcpy(ext, &s->ext, sizeof(s->ext));
+	memcpy(ext, &s->ext, sizeof(s->ext));
 	print_host(ext, s->af, opts);
 
 	printf("    ");
@@ -303,9 +302,9 @@ print_state(struct pfsync_state *s, int opts)
 		printf("\n");
 	}
 	if (opts & PF_OPT_VERBOSE2) {
-        u_int64_t id;
+		u_int64_t id;
 
-        memcpy(&id, &s->id, sizeof(u_int64_t));
+		memcpy(&id, &s->id, sizeof(u_int64_t));
 		printf("   id: %016llx creatorid: %08x\n",
 		    (u_int64_t)be64toh(id), ntohl(s->creatorid));
 	}
