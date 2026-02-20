@@ -72,7 +72,7 @@ DPADD+=	${LIBWRAP}
 
 .ifdef CRUNCHEDPROG
 CPPFLAGS+=-DSMALL
-.else
-LDADD+=	-lblacklist
-DPADD+=	${LIBBLACKLIST}
+#.else
+#LDADD+=	-lblacklist
+#DPADD+=	${LIBBLACKLIST}
 .endif
