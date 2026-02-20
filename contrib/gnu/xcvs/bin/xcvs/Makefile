@@ -35,4 +35,5 @@ LDADD+= -lcrypt -lz
 
 COPTS.commit.c+= ${GCC_NO_STRINGOP_TRUNCATION} ${GCC_NO_STRINGOP_OVERFLOW}
 COPTS.logmsg.c+= ${GCC_NO_STRINGOP_OVERFLOW}
+COPTS.ls.c+= ${GCC_NO_STRINGOP_OVERFLOW}
 .include <bsd.prog.mk>
