@@ -465,12 +465,13 @@ cbq_compute_idletime(struct pfctl *pf, struct pf_altq *pa)
 		 * this causes integer overflow in kernel!
 		 * (bandwidth < 6Kbps when max_pkt_size=1500)
 		 */
-		if (pa->bandwidth != 0 && (pf->opts & PF_OPT_QUIET) == 0)
+		if (pa->bandwidth != 0 && (pf->opts & PF_OPT_QUIET) == 0) {
 			warnx("queue bandwidth must be larger than %s",
 			    rate2str(ifnsPerByte * (double)opts->maxpktsize /
 			    (double)INT_MAX * (double)pa->ifbandwidth));
 			fprintf(stderr, "cbq: queue %s is too slow!\n",
 			    pa->qname);
+        }
 		nsPerByte = (double)(INT_MAX / opts->maxpktsize);
 	}
 
@@ -854,15 +855,15 @@ static int
 print_hfsc_opts(const struct pf_altq *a, const struct node_queue_opt *qopts)
 {
 	const struct hfsc_opts		*opts;
-	const struct node_hfsc_sc	*rtsc, *lssc, *ulsc;
+	const struct node_hfsc_sc	*rtscc, *lsscc, *ulscc;
 
 	opts = &a->pq_u.hfsc_opts;
 	if (qopts == NULL)
-		rtsc = lssc = ulsc = NULL;
+		rtscc = lsscc = ulscc = NULL;
 	else {
-		rtsc = &qopts->data.hfsc_opts.realtime;
-		lssc = &qopts->data.hfsc_opts.linkshare;
-		ulsc = &qopts->data.hfsc_opts.upperlimit;
+		rtscc = &qopts->data.hfsc_opts.realtime;
+		lsscc = &qopts->data.hfsc_opts.linkshare;
+		ulscc = &qopts->data.hfsc_opts.upperlimit;
 	}
 
 	if (opts->flags || opts->rtsc_m2 != 0 || opts->ulsc_m2 != 0 ||
@@ -881,14 +882,14 @@ print_hfsc_opts(const struct pf_altq *a, const struct node_queue_opt *qopts)
 			printf(" default");
 		if (opts->rtsc_m2 != 0)
 			print_hfsc_sc("realtime", opts->rtsc_m1, opts->rtsc_d,
-			    opts->rtsc_m2, rtsc);
+			    opts->rtsc_m2, rtscc);
 		if (opts->lssc_m2 != 0 && (opts->lssc_m2 != a->bandwidth ||
 		    opts->lssc_d != 0))
 			print_hfsc_sc("linkshare", opts->lssc_m1, opts->lssc_d,
-			    opts->lssc_m2, lssc);
+			    opts->lssc_m2, lsscc);
 		if (opts->ulsc_m2 != 0)
 			print_hfsc_sc("upperlimit", opts->ulsc_m1, opts->ulsc_d,
-			    opts->ulsc_m2, ulsc);
+			    opts->ulsc_m2, ulscc);
 		printf(" ) ");
 
 		return (1);
