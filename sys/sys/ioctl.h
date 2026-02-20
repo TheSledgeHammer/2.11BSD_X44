@@ -131,14 +131,11 @@ struct ttysize {
 /*
  * tty ioctl commands
  */
-#ifdef USE_OLD_TTY
+//#ifdef USE_OLD_TTY
 #define	TIOCGETD			_IOR('t', 0, int)					/* get line discipline */
 #define	TIOCSETD			_IOW('t', 1, int)					/* set line discipline */
 #define	TIOCHPCL			_IO('t', 2)							/* hang up on last close */
-//#else
-//# define OTIOCGETD			_IOR('t', 0, int)					/* get line discipline */
-//# define OTIOCSETD			_IOW('t', 1, int)					/* set line discipline */
-#endif /* USE_OLD_TTY */
+//#endif /* USE_OLD_TTY */
 #define	TIOCMODG			_IOR('t', 3, int)					/* get modem control state */
 #define	TIOCMODS			_IOW('t', 4, int)					/* set modem control state */
 #define	TIOCM_LE			0001								/* line enable */
@@ -152,18 +149,18 @@ struct ttysize {
 #define	TIOCM_RNG			0200								/* ring */
 #define	TIOCM_RI			TIOCM_RNG
 #define	TIOCM_DSR			0400								/* data set ready */
-#ifdef USE_OLD_TTY
+//#ifdef USE_OLD_TTY
 #define	TIOCGETP			_IOR('t', 8, struct sgttyb)			/* get parameters -- gtty */
 #define	TIOCSETP			_IOW('t', 9, struct sgttyb)			/* set parameters -- stty */
 #define	TIOCSETN			_IOW('t', 10, struct sgttyb)		/* as above, but no flushtty */
-#endif /* USE_OLD_TTY */
+//#endif /* USE_OLD_TTY */
 #define	TIOCEXCL			_IO('t', 13)						/* set exclusive use of tty */
 #define	TIOCNXCL			_IO('t', 14)						/* reset exclusive use of tty */
 #define	TIOCFLUSH			_IOW('t', 16, int)					/* flush buffers */
-#ifdef USE_OLD_TTY
+//#ifdef USE_OLD_TTY
 #define	TIOCSETC			_IOW('t', 17, struct tchars)		/* set special characters */
 #define	TIOCGETC			_IOR('t', 18, struct tchars)		/* get special characters */
-#endif /* USE_OLD_TTY */
+//#endif /* USE_OLD_TTY */
 #define	TIOCGETA			_IOR('t', 19, struct termios) 		/* get termios struct */
 #define	TIOCSETA			_IOW('t', 20, struct termios) 		/* set termios struct */
 #define	TIOCSETAW			_IOW('t', 21, struct termios) 		/* drain output, set */
@@ -233,10 +230,10 @@ struct ttysize {
 #define	TIOCCDTR			_IO('t', 120)						/* clear data terminal ready */
 #define	TIOCGPGRP			_IOR('t', 119, int)					/* get pgrp of tty */
 #define	TIOCSPGRP			_IOW('t', 118, int)					/* set pgrp of tty */
-#ifdef USE_OLD_TTY
+//#ifdef USE_OLD_TTY
 #define	TIOCSLTC			_IOW('t', 117, struct ltchars)		/* set local special chars */
 #define	TIOCGLTC			_IOR('t', 116, struct ltchars)		/* get local special chars */
-#endif /* USE_OLD_TTY */
+//#endif /* USE_OLD_TTY */
 #define	TIOCOUTQ			_IOR('t', 115, int)					/* output queue size */
 #define	TIOCSTI				_IOW('t', 114, char)				/* simulate terminal input */
 #define	TIOCNOTTY			_IO('t', 113)						/* void tty association */
