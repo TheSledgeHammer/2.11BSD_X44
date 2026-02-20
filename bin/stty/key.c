@@ -60,7 +60,7 @@ void	f_columns(struct info *);
 void	f_dec(struct info *);
 void	f_everything(struct info *);
 void	f_extproc(struct info *);
-void	f_insane(struct info *);
+//void	f_insane(struct info *);
 void	f_ispeed(struct info *);
 void	f_nl(struct info *);
 void	f_ospeed(struct info *);
@@ -89,7 +89,7 @@ static const struct key {
 	{ "dec",	f_dec,		0 },
 	{ "everything",	f_everything,	0 },
 	{ "extproc",	f_extproc,	F_OFFOK },
-	{ "insane",	f_insane,	0 },
+	//{ "insane",	f_insane,	0 },
 	{ "ispeed",	f_ispeed,	F_NEEDARG },
 	{ "new",	f_tty,		0 },
 	{ "nl",		f_nl,		F_OFFOK },
@@ -147,7 +147,7 @@ ksearch(char ***argvp, struct info *ip)
 void
 f_all(struct info *ip)
 {
-	print(&ip->t, &ip->win, ip->ldisc, STTY_BSD);
+	print(&ip->t, &ip->win, ip->queue, ip->ldisc, STTY_BSD);
 }
 
 void
@@ -174,9 +174,9 @@ f_columns(struct info *ip)
 void
 f_dec(struct info *ip)
 {
-	ip->t.c_cc[VERASE] = (u_char)0177;
-	ip->t.c_cc[VKILL] = CTRL('u');
-	ip->t.c_cc[VINTR] = CTRL('c');
+	ip->t.c_verase = (u_char)0177;
+	ip->t.c_vkill = CTRL('u');
+	ip->t.c_vintr = CTRL('c');
 	ip->t.c_lflag &= ~ECHOPRT;
 	ip->t.c_lflag |= ECHOE|ECHOKE|ECHOCTL;
 	ip->t.c_iflag &= ~IXANY;
@@ -186,7 +186,7 @@ f_dec(struct info *ip)
 void
 f_everything(struct info *ip)
 {
-	print(&ip->t, &ip->win, ip->ldisc, STTY_BSD);
+	print(&ip->t, &ip->win, ip->queue, ip->ldisc, STTY_BSD);
 }
 
 void
@@ -203,6 +203,8 @@ f_extproc(struct info *ip)
 	ip->set = 1;
 #endif
 }
+
+#ifdef notyet
 
 void
 f_insane(struct info *ip)
@@ -231,6 +233,7 @@ f_insane(struct info *ip)
     
 	ip->set = 1;
 }
+#endif
 
 void
 f_ispeed(struct info *ip)
@@ -301,7 +304,7 @@ f_size(struct info *ip)
 void
 f_speed(struct info *ip)
 {
-	(void)printf("%d\n", cfgetospeed(&ip->t));
+	(void)printf("%ld\n", cfgetospeed(&ip->t));
 }
 
 /* ARGSUSED */

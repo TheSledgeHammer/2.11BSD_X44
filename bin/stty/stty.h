@@ -40,6 +40,7 @@
 struct info {
 	int fd;					/* file descriptor */
 	int ldisc;				/* line discipline */
+	int queue;				/* queue size */
 	int off;				/* turn off */
 	int set;				/* need set */
 	int wset;				/* need window set */

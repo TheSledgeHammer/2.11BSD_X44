@@ -131,6 +131,8 @@ static int in6_lifaddr_ioctl(struct socket *, u_long, caddr_t,
 static int in6_ifinit(struct ifnet *, struct in6_ifaddr *,
 	struct sockaddr_in6 *, int);
 static void in6_unlink_ifa(struct in6_ifaddr *, struct ifnet *);
+struct in6_multi *in6_addmulti1(struct in6_addr *, struct ifnet *, int *, int);
+void in6_delmulti1(struct in6_multi *);
 
 /*
  * This structure is used to keep track of in6_multi chains which belong to
@@ -1865,7 +1867,7 @@ in6_delmulti(in6m)
  * Add an address to the list of IP6 multicast addresses for a
  * given interface.
  */
-struct	in6_multi *
+struct in6_multi *
 in6_addmulti1(maddr6, ifp, errorp, delay)
 	struct in6_addr *maddr6;
 	struct ifnet *ifp;
@@ -2013,10 +2015,15 @@ in6_delmulti1(in6m)
  * mode - requested filter mode by socket
  * init - indicate initial join by socket
  */
-struct	in6_multi *
-in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
-	u_int16_t numsrc, struct sockaddr_storage *src, u_int mode, int init,
-	int delay)
+struct in6_multi *
+in6_addmulti2(maddr6, ifp, errorp, numsrc, src, mode, init, delay)
+	struct in6_addr *maddr6;
+	struct ifnet *ifp;
+	int *errorp;
+	u_int16_t numsrc;
+	struct sockaddr_storage *src;
+	u_int mode;
+	int init, delay;
 {
 	struct	in6_ifaddr *ia;
 	struct	in6_ifreq ifr;
@@ -2062,8 +2069,8 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 		 * Add each source address to in6m_source and get new source
 		 * filter mode and its calculated source list.
 		 */
-		*errorp = in6_addmultisrc(in6m, numsrc, src, mode, init, &newhead,
-				&newmode, &newnumsrc);
+		*errorp = in6_addmultisrc(in6m, numsrc, src, mode, init,
+					  &newhead, &newmode, &newnumsrc);
 		if (*errorp != 0) {
 			splx(s);
 			return NULL;
@@ -2073,7 +2080,8 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 			 * Merge new source list to current pending report's
 			 * source list.
 			 */
-			*errorp = in6_merge_msf_state(in6m, newhead, newmode, newnumsrc);
+			*errorp = in6_merge_msf_state(in6m, newhead, newmode,
+						      newnumsrc);
 			if (*errorp > 0) {
 				/* State-Change Report will not be sent.
 				 * Just return immediately. */
@@ -2081,7 +2089,7 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 				 * curhead, so only newhead is freed. */
 				FREE(newhead, M_MSFILTER);
 				*errorp = 0; /* to make caller behave as
-				 * normal */
+					      * normal */
 				splx(s);
 				return in6m;
 			}
@@ -2101,13 +2109,13 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 		if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
 			if (curmode != newmode || curnumsrc != newnumsrc) {
 				if (curmode != newmode) {
-					if (newmode == MCAST_INCLUDE)
+					if (newmode == MCAST_INCLUDE) {
 						type = CHANGE_TO_INCLUDE_MODE;
-					else
+					} else {
 						type = CHANGE_TO_EXCLUDE_MODE;
+					}
 				}
-				mld_send_state_change_report(in6m, type, 1);
-				mld_start_state_change_timer(in6m);
+				mld6_send_state_change_report(in6m, type, 1);
 			}
 		} else {
 			/*
@@ -2120,14 +2128,16 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 		}
 		*errorp = 0;
 		/* for this group address, init join request by the socket. */
-		if (init)
+		if (init) {
 			in6m->in6m_refcount++;
+		}
 	} else {
 		/*
 		 * New address; allocate a new multicast record
 		 * and link it into the interface's multicast list.
 		 */
-		in6m = (struct in6_multi *)malloc(sizeof(*in6m), M_IPMADDR, M_NOWAIT);
+		in6m = (struct in6_multi *)
+			malloc(sizeof(*in6m), M_IPMADDR, M_NOWAIT);
 		if (in6m == NULL) {
 			splx(s);
 			*errorp = ENOBUFS;
@@ -2138,10 +2148,8 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 		in6m->in6m_addr = *maddr6;
 		in6m->in6m_ifp = ifp;
 		in6m->in6m_refcount = 1;
-		in6m->in6m_timer = 0;
 		IFP_TO_IA6(ifp, ia);
 		if (ia == NULL) {
-			free(in6m->in6m_timer_ch, M_IPMADDR);
 			free(in6m, M_IPMADDR);
 			splx(s);
 			*errorp = EADDRNOTAVAIL; /* appropriate? */
@@ -2159,14 +2167,14 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 		ifr.ifr_addr.sin6_family = AF_INET6;
 		ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
 		ifr.ifr_addr.sin6_addr = *maddr6;
-		if (ifp->if_ioctl == NULL)
+		if (ifp->if_ioctl == NULL) {
 			*errorp = ENXIO; /* XXX: appropriate? */
-		else
+		} else {
 			*errorp = (*ifp->if_ioctl)(ifp, SIOCADDMULTI,
 			    (caddr_t)&ifr);
+		}
 		if (*errorp) {
 			LIST_REMOVE(in6m, in6m_entry);
-			free(in6m->in6m_timer_ch, M_IPMADDR);
 			free(in6m, M_IPMADDR);
 			IFAFREE(&ia->ia_ifa);
 			splx(s);
@@ -2175,7 +2183,6 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 		rt6i = find_rt6i(in6m->in6m_ifp);
 		if (rt6i == NULL) {
 			LIST_REMOVE(in6m, in6m_entry);
-			free(in6m->in6m_timer_ch, M_IPMADDR);
 			free(in6m, M_IPMADDR);
 			*errorp = ENOBUFS;
 			splx(s);
@@ -2192,7 +2199,6 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 		    &newhead, &newmode, &newnumsrc)) != 0) {
 			in6_free_all_msf_source_list(in6m);
 			LIST_REMOVE(in6m, in6m_entry);
-			free(in6m->in6m_timer_ch, M_IPMADDR);
 			free(in6m, M_IPMADDR);
 			splx(s);
 			return NULL;
@@ -2209,28 +2215,29 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
 		 */
 		if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
 			if (curmode != newmode) {
-				if (newmode == MCAST_INCLUDE)
+				if (newmode == MCAST_INCLUDE) {
 					/* never happen? */
 					type = CHANGE_TO_INCLUDE_MODE;
-				else
+				} else {
 					type = CHANGE_TO_EXCLUDE_MODE;
+				}
 			}
 		}
 
 		in6m->in6m_timer = delay;
 		if (in6m->in6m_timer > 0) {
 			in6m->in6m_state = MLD_REPORTPENDING;
-			mld_start_group_timer(in6m);
-
 			splx(s);
 			return (in6m);
 		}
-		mld_start_listening(in6m, type);
+
+		mld6_start_listening(in6m, type);
 	}
-	if (newhead != NULL)
+	if (newhead != NULL) {
 		/* Each ias is linked from new curhead, so only newhead
 		 * is freed */
 		FREE(newhead, M_MSFILTER);
+	}
 
 	splx(s);
 	return (in6m);
@@ -2244,18 +2251,23 @@ in6_addmulti2(struct in6_addr *maddr6, struct ifnet *ifp, int *errorp,
  * final - indicate complete leave by socket
  */
 void
-in6_delmulti2(struct in6_multi *in6m, int *errorp, u_int16_t numsrc,
-	struct sockaddr_stoarge *src, u_int mode, int final)
+in6_delmulti2(in6m, errorp, numsrc, src, mode, final)
+	struct in6_multi *in6m;
+	int *errorp;
+	u_int16_t numsrc;
+	struct sockaddr_stoarge *src;
+	u_int mode;
+	int final;
 {
-	struct	in6_ifreq ifr;
-	struct	in6_ifaddr *ia;
-	struct	i6as_head *newhead = NULL;/* this may become new current head */
-	u_int	curmode;		/* current filter mode */
-	u_int	newmode;		/* newly calculated filter mode */
-	u_int16_t curnumsrc;		/* current i6ms_cur->numsrc */
-	u_int16_t newnumsrc;		/* new i6ms_cur->numsrc */
-	u_int8_t type = 0;		/* State-Change report type */
-	int	s = splsoftnet();
+	struct in6_ifreq ifr;
+	struct in6_ifaddr *ia;
+	struct i6as_head *newhead = NULL;	/* this may become new current head */
+	u_int curmode; 						/* current filter mode */
+	u_int newmode; 						/* newly calculated filter mode */
+	u_int16_t curnumsrc; 				/* current i6ms_cur->numsrc */
+	u_int16_t newnumsrc; 				/* new i6ms_cur->numsrc */
+	u_int8_t type = 0; 					/* State-Change report type */
+	int s = splsoftnet();
 
 	if ((mode == MCAST_INCLUDE) && (numsrc == 0)) {
 		*errorp = EINVAL;
@@ -2280,10 +2292,10 @@ in6_delmulti2(struct in6_multi *in6m, int *errorp, u_int16_t numsrc,
 			 */
 			for (ia = in6_ifaddr; ia; ia = ia->ia_next) {
 				struct in6_multi_mship *imm;
-				LIST_FOREACH(imm, &ia->ia6_memberships,
-				    i6mm_chain) {
-					if (imm->i6mm_maddr == in6m)
+				LIST_FOREACH(imm, &ia->ia6_memberships, i6mm_chain) {
+					if (imm->i6mm_maddr == in6m) {
 						imm->i6mm_maddr = NULL;
+					}
 				}
 			}
 
@@ -2295,9 +2307,9 @@ in6_delmulti2(struct in6_multi *in6m, int *errorp, u_int16_t numsrc,
 			ifr.ifr_addr.sin6_family = AF_INET6;
 			ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
 			ifr.ifr_addr.sin6_addr = in6m->in6m_addr;
-			(*in6m->in6m_ifp->if_ioctl)(in6m->in6m_ifp,
-			    SIOCDELMULTI, (caddr_t)&ifr);
-			mld_stop_group_timer(in6m);
+			(*in6m->in6m_ifp->if_ioctl)(in6m->in6m_ifp, SIOCDELMULTI,
+					(caddr_t) &ifr);
+			mld6_stop_listening(in6m);
 			free(in6m->in6m_timer_ch, M_IPMADDR);
 			free(in6m, M_IPMADDR);
 		}
@@ -2312,14 +2324,14 @@ in6_delmulti2(struct in6_multi *in6m, int *errorp, u_int16_t numsrc,
 	 * filter mode and its calculated source list, and send State-Change
 	 * Report if needed.
 	 */
-	if ((*errorp = in6_delmultisrc(in6m, numsrc, src, mode, final,
-	    &newhead, &newmode, &newnumsrc)) != 0) {
+	if ((*errorp = in6_delmultisrc(in6m, numsrc, src, mode, final, &newhead,
+			&newmode, &newnumsrc)) != 0) {
 		splx(s);
 		return;
 	}
 	if (newhead != NULL) {
-		if ((*errorp = in6_merge_msf_state
-				(in6m, newhead, newmode, newnumsrc)) > 0) {
+		if ((*errorp = in6_merge_msf_state(in6m, newhead, newmode, newnumsrc))
+				> 0) {
 			/* State-Change Report will not be sent. Just return
 			 * immediately. */
 			FREE(newhead, M_MSFILTER);
@@ -2333,20 +2345,23 @@ in6_delmulti2(struct in6_multi *in6m, int *errorp, u_int16_t numsrc,
 	}
 
 	/* for this group address, final leave request by the socket. */
-	if (final)
+	if (final) {
 		--in6m->in6m_refcount;
+	}
 
 	if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
 		if (curmode != newmode || curnumsrc != newnumsrc) {
 			if (curmode != newmode) {
-				if (newmode == MCAST_INCLUDE)
+				if (newmode == MCAST_INCLUDE) {
 					type = CHANGE_TO_INCLUDE_MODE;
-				else
+				} else {
 					type = CHANGE_TO_EXCLUDE_MODE;
+				}
 			}
-			mld_send_state_change_report(in6m, type, 1);
-			if (!final)
-				mld_start_state_change_timer(in6m);
+			mld6_send_state_change_report(in6m, type, 1);
+			if (!final) {
+				mld6_start_listening(in6m, type);
+			}
 		}
 	} else {
 		/*
@@ -2358,7 +2373,7 @@ in6_delmulti2(struct in6_multi *in6m, int *errorp, u_int16_t numsrc,
 		in6_clear_all_pending_report(in6m);
 		if (in6m->in6m_refcount == 0) {
 			in6m->in6m_source->i6ms_robvar = 0;
-			mld_stop_listening(in6m);
+			mld6_stop_listening(in6m);
 		}
 	}
 
@@ -2369,8 +2384,9 @@ in6_delmulti2(struct in6_multi *in6m, int *errorp, u_int16_t numsrc,
 		 * itself will be removed here. So, in this case, report
 		 * retransmission will be done quickly. XXX my spec.
 		 */
-		while (in6m->in6m_source->i6ms_robvar > 0)
-			mld_send_state_change_report(in6m, type, 0);
+		while (in6m->in6m_source->i6ms_robvar > 0) {
+			mld6_send_state_change_report(in6m, type, 0);
+		}
 
 		in6_free_all_msf_source_list(in6m);
 		LIST_REMOVE(in6m, in6m_entry);
@@ -2382,15 +2398,16 @@ in6_delmulti2(struct in6_multi *in6m, int *errorp, u_int16_t numsrc,
 		ifr.ifr_addr.sin6_family = AF_INET6;
 		ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
 		ifr.ifr_addr.sin6_addr = in6m->in6m_addr;
-		(*in6m->in6m_ifp->if_ioctl)(in6m->in6m_ifp,
-		    SIOCDELMULTI, (caddr_t)&ifr);
-		mld_stop_group_timer(in6m);
+		(*in6m->in6m_ifp->if_ioctl)(in6m->in6m_ifp, SIOCDELMULTI,
+				(caddr_t) &ifr);
+		mld6_stop_listening(in6m);
 		free(in6m->in6m_timer_ch, M_IPMADDR);
 		free(in6m, M_IPMADDR);
 	}
 	*errorp = 0;
-	if (newhead != NULL)
+	if (newhead != NULL) {
 		FREE(newhead, M_MSFILTER);
+	}
 	splx(s);
 }
 
@@ -2405,10 +2422,18 @@ in6_delmulti2(struct in6_multi *in6m, int *errorp, u_int16_t numsrc,
  * grpjoin - on/off of (*,G) join by socket
  */
 struct in6_multi *
-in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
-	u_int16_t numsrc, struct sockaddr_storage *src, u_int mode,
-	u_int16_t old_num, struct sockaddr_storage *old_src, u_int old_mode,
-	int init, u_int grpjoin)
+in6_modmulti2(ap, ifp, errorp, numsrc, src, mode, old_num, old_src, old_mode, init, grpjoin)
+	struct in6_addr *ap;
+	struct ifnet *ifp;
+	int *errorp;
+	u_int16_t numsrc;
+	struct sockaddr_storage *src;
+	u_int mode;
+	u_int16_t old_num;
+	struct sockaddr_storage *old_src;
+	u_int old_mode;
+	int init;
+	u_int grpjoin;
 {
 	struct in6_multi *in6m;
 	struct in6_ifreq ifr;
@@ -2430,11 +2455,7 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 	    return NULL;
 	}
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 	s = splsoftnet();
-#else
-	s = splnet();
-#endif
 
 	/*
 	 * See if address already in list.
@@ -2443,15 +2464,15 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 
 	if (in6m != NULL) {
 		/*
-		* If requested multicast address is local address, update
-		* the condition, join or leave, based on a requested filter.
-		*/
+		 * If requested multicast address is local address, update
+		 * the condition, join or leave, based on a requested filter.
+		 */
 		if (!in6_is_mld_target(&in6m->in6m_addr)) {
 			if (numsrc != 0) {
-				mldlog((LOG_DEBUG,
-				    "in6_modmulti: "
-				    "source filter not supported for %s\n",
-				    ip6_sprintf(&in6m->in6m_addr)));
+				mldlog(
+						(LOG_DEBUG, "in6_modmulti: "
+								"source filter not supported for %s\n", ip6_sprintf(
+								&in6m->in6m_addr)));
 				splx(s);
 				*errorp = EINVAL;
 				return NULL;
@@ -2472,14 +2493,12 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 					 * its multicast reception filter.
 					 */
 					ifr.ifr_addr.sin6_family = AF_INET6;
-					ifr.ifr_addr.sin6_len =
-					    sizeof(struct sockaddr_in6);
-					bcopy(&in6m->in6m_addr,
-					    &ifr.ifr_addr.sin6_addr,
-					    sizeof(ifr.ifr_addr.sin6_addr));
-					(*in6m->in6m_ifp->if_ioctl)(in6m->in6m_ifp,
-					    SIOCDELMULTI, (caddr_t)&ifr);
-					mld_stop_group_timer(in6m);
+					ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
+					bcopy(&in6m->in6m_addr, &ifr.ifr_addr.sin6_addr,
+							sizeof(ifr.ifr_addr.sin6_addr));
+					(*in6m->in6m_ifp->if_ioctl)(in6m->in6m_ifp, SIOCDELMULTI,
+							(caddr_t) &ifr);
+					mld6_stop_listening(in6m);
 					free(in6m->in6m_timer_ch, M_IPMADDR);
 					free(in6m, M_IPMADDR);
 				}
@@ -2494,9 +2513,8 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 
 		curmode = in6m->in6m_source->i6ms_mode;
 		curnumsrc = in6m->in6m_source->i6ms_cur->numsrc;
-		*errorp = in6_modmultisrc(in6m, numsrc, src, mode, old_num,
-					 old_src, old_mode, grpjoin,
-					 &newhead, &newmode, &newnumsrc);
+		*errorp = in6_modmultisrc(in6m, numsrc, src, mode, old_num, old_src,
+				old_mode, grpjoin, &newhead, &newmode, &newnumsrc);
 		if (*errorp != 0) {
 			splx(s);
 			return NULL;
@@ -2506,8 +2524,7 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 			 * Merge new source list to current pending report's
 			 * source list.
 			 */
-			*errorp = in6_merge_msf_state(in6m, newhead, newmode,
-						     newnumsrc);
+			*errorp = in6_merge_msf_state(in6m, newhead, newmode, newnumsrc);
 			if (*errorp > 0) {
 				/*
 				 * State-Change Report will not be sent.
@@ -2531,16 +2548,15 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 		 * TO_EX State-Change Report will be sent in any case.
 		 */
 		if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
-			if (curmode != newmode || curnumsrc != newnumsrc ||
-			    old_num) {
+			if (curmode != newmode || curnumsrc != newnumsrc || old_num) {
 				if (curmode != newmode) {
 					if (newmode == MCAST_INCLUDE)
 						type = CHANGE_TO_INCLUDE_MODE;
 					else
 						type = CHANGE_TO_EXCLUDE_MODE;
 				}
-				mld_send_state_change_report(in6m, type, 1);
-				mld_start_state_change_timer(in6m);
+				mld6_send_state_change_report(in6m, type, 1);
+				mld6_start_listening(in6m, type);
 			}
 		} else {
 			/*
@@ -2550,8 +2566,9 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 		}
 		*errorp = 0;
 		/* for this group address, initial join request by the socket */
-		if (init)
+		if (init) {
 			++in6m->in6m_refcount;
+		}
 
 	} else {
 		/*
@@ -2569,8 +2586,7 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 		 * New address; allocate a new multicast record and link it into
 		 * the interface's multicast list.
 		 */
-		in6m = (struct in6_multi *)malloc(sizeof(*in6m), M_IPMADDR,
-		    M_NOWAIT);
+		in6m = (struct in6_multi*) malloc(sizeof(*in6m), M_IPMADDR, M_NOWAIT);
 		if (in6m == NULL) {
 			*errorp = ENOBUFS;
 			splx(s);
@@ -2581,21 +2597,10 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 		in6m->in6m_addr = *ap;
 		in6m->in6m_ifp = ifp;
 		in6m->in6m_refcount = 1;
-		in6m->in6m_timer = IN6M_TIMER_UNDEF;
-		in6m->in6m_timer_ch =
-		    malloc(sizeof(*in6m->in6m_timer_ch), M_IPMADDR, M_NOWAIT);
-		if (in6m->in6m_timer_ch == NULL) {
-			free(in6m, M_IPMADDR);
-			splx(s);
-			return (NULL);
-		}
-
-		callout_init(in6m->in6m_timer_ch);
 
 		IFP_TO_IA6(ifp, ia);
 		if (ia == NULL) {
-			mld_stop_group_timer(in6m);
-			free(in6m->in6m_timer_ch, M_IPMADDR);
+			mld6_stop_listening(in6m);
 			free(in6m, M_IPMADDR);
 			*errorp = ENOBUFS /*???*/;
 			splx(s);
@@ -2612,11 +2617,10 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 		ifr.ifr_addr.sin6_family = AF_INET6;
 		ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
 		ifr.ifr_addr.sin6_addr = *ap;
-		if ((ifp->if_ioctl == NULL) ||
-		    (*ifp->if_ioctl)(ifp, SIOCADDMULTI, (caddr_t)&ifr) != 0) {
-			mld_stop_group_timer(in6m);
+		if ((ifp->if_ioctl == NULL)
+				|| (*ifp->if_ioctl)(ifp, SIOCADDMULTI, (caddr_t) &ifr) != 0) {
+			mld6_stop_listening(in6m);
 			LIST_REMOVE(in6m, in6m_entry);
-			free(in6m->in6m_timer_ch, M_IPMADDR);
 			free(in6m, M_IPMADDR);
 			*errorp = EINVAL /*???*/;
 			splx(s);
@@ -2624,9 +2628,8 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 		}
 		rti = find_rt6i(in6m->in6m_ifp);
 		if (rti == NULL) {
-			mld_stop_group_timer(in6m);
+			mld6_stop_listening(in6m);
 			LIST_REMOVE(in6m, in6m_entry);
-			free(in6m->in6m_timer_ch, M_IPMADDR);
 			free(in6m, M_IPMADDR);
 			*errorp = ENOBUFS;
 			splx(s);
@@ -2640,12 +2643,10 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 		}
 
 		if ((*errorp = in6_modmultisrc(in6m, numsrc, src, mode, 0, NULL,
-		    MCAST_INCLUDE, grpjoin, &newhead, &newmode,
-		    &newnumsrc)) != 0) {
+				MCAST_INCLUDE, grpjoin, &newhead, &newmode, &newnumsrc)) != 0) {
 			in6_free_all_msf_source_list(in6m);
-			mld_stop_group_timer(in6m);
+			mld6_stop_listening(in6m);
 			LIST_REMOVE(in6m, in6m_entry);
-			free(in6m->in6m_timer_ch, M_IPMADDR);
 			free(in6m, M_IPMADDR);
 			splx(s);
 			return NULL;
@@ -2660,37 +2661,63 @@ in6_modmulti2(struct in6_addr *ap, struct ifnet *ifp, int *errorp,
 				if (newmode == MCAST_INCLUDE) {
 					/* never happen??? */
 					type = CHANGE_TO_INCLUDE_MODE;
-				} else
+				} else {
 					type = CHANGE_TO_EXCLUDE_MODE;
+				}
 			}
-			mld_send_state_change_report(in6m, type, 1);
-			mld_start_state_change_timer(in6m);
+			mld6_send_state_change_report(in6m, type, 1);
+			mld6_start_listening(in6m, type);
 		} else {
 			struct in6_multi_mship *imm;
 			/*
 			 * If MSF's pending records exist, they must be deleted.
 			 */
 			in6_clear_all_pending_report(in6m);
-			imm = in6_joingroup(in6m->in6m_ifp, &in6m->in6m_addr,
-			    errorp, 0);
+			imm = in6_joingroup(in6m->in6m_ifp, &in6m->in6m_addr, errorp, 0);
 			if (imm) {
-				LIST_INSERT_HEAD(&ia->ia6_multiaddrs, in6m,
-				    in6m_entry);
+				LIST_INSERT_HEAD(&ia->ia6_multiaddrs, in6m, in6m_entry);
 			} else {
-				mldlog((LOG_WARNING,
-				    "in6_modmulti: addmulti failed for "
-				    "%s on %s (errno=%d)\n",
-				    ip6_sprintf(&in6m->in6m_addr),
-				    if_name(in6m->in6m_ifp), *errorp));
+				mldlog(
+						(LOG_WARNING, "in6_modmulti: addmulti failed for "
+								"%s on %s (errno=%d)\n", ip6_sprintf(
+								&in6m->in6m_addr), if_name(in6m->in6m_ifp), *errorp));
 			}
 		}
 		*errorp = 0;
 	}
-	if (newhead != NULL)
+	if (newhead != NULL) {
 		FREE(newhead, M_MSFILTER);
+	}
 
 	splx(s);
 	return in6m;
+}
+
+/*
+ * check if the given address should be announced via MLDv1/v2.
+ */
+int
+in6_is_mld_target(group)
+	struct in6_addr *group;
+{
+	struct in6_addr tmp = *group;
+
+	if (!IN6_IS_ADDR_MULTICAST(group))
+		return 0;
+
+	if (IPV6_ADDR_MC_SCOPE(group) < IPV6_ADDR_SCOPE_LINKLOCAL)
+		return 0;
+
+	/*
+	 * link index may be embedded into group address, so it has to be
+	 * cleared before being compared to ff02::1.
+	 */
+	in6_clearscope(&tmp);
+	if (IN6_ARE_ADDR_EQUAL(&tmp, &mld_all_nodes_nodelocal)) {
+		return 0;
+	}
+
+	return 1;
 }
 
 #endif /* MLDV2 */

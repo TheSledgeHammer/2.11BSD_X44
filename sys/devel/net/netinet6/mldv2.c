@@ -135,18 +135,6 @@
 #include <net/net_osdep.h>
 
 /*
- * Notes:
- * - This version of mldv2 doesn't use callouts.
- * - As it is based on the current kernel's netinet6/mld6.c with
- * mldv2 extensions.
- * - The following don't run callouts:
- * 	 - struct router6_info
- * 	 - struct in6_multi
- * - The following do run callouts:
- * 	 - struct in6_multi_source
- */
-
-/*
  * Protocol constants
  */
 
@@ -181,16 +169,21 @@ int mld_debug = 1;
 int mld_debug = 0;
 #endif
 
+#ifdef MLDV2
 static struct router6_info *head6;
+#endif
 
 static struct ip6_pktopts ip6_opts;
-static int mld_timers_are_running;
+static int mld_group_timers_are_running;
+#ifdef MLDV2
+static int mld_state_change_timers_are_running;
+static int mld_interface_timers_are_running;
+#endif
 /* XXX: These are necessary for KAME's link-local hack */
 static struct in6_addr mld_all_nodes_linklocal = IN6ADDR_LINKLOCAL_ALLNODES_INIT;
 static struct in6_addr mld_all_routers_linklocal = IN6ADDR_LINKLOCAL_ALLROUTERS_INIT;
 #ifdef MLDV2
 static struct in6_addr mld_all_nodes_nodelocal = IN6ADDR_NODELOCAL_ALLNODES_INIT;
-
 static struct in6_addr mld_all_routersv2_linklocal = IN6ADDR_LINKLOCAL_ALLV2ROUTERS_INIT;
 
 static const int qhdrlen = MLD_V2_QUERY_MINLEN;	/* mldv2 query header */
@@ -203,21 +196,55 @@ static const int addrlen = sizeof(struct in6_addr);
 static struct router6_info *init_rt6i(struct ifnet *);
 static struct router6_info *find_rt6i(struct ifnet *);
 
-static int mld_query_version(struct mbuf *, int, u_int16_t);
-static int mld_query_type(struct mldv2_hdr *, struct in6_addr *, int);
+static int mld6_query_version(struct mbuf *, int, u_int16_t);
+static int mld6_query_type(struct mldv2_hdr *, struct in6_addr *, int);
 
-static void mld_state_change_timeo(struct in6_multi *);
-static int mld_record_queried_source(struct in6_multi *, struct mld_hdr *, u_int16_t);
-static void mld_send_all_current_state_report(struct ifnet *);
-static int mld_send_current_state_report(struct in6_multi *);
-static void mld_send_state_change_report(struct in6_multi *, u_int8_t, int);
-static int mld_create_group_record(struct mbuf *, struct in6_multi *, u_int16_t, u_int16_t *, u_int8_t);
-static void mld_cancel_pending_response(struct ifnet *, struct router6_info *);
-static void mld_sendbuf(struct mbuf *, struct ifnet *);
+static int mld6_record_queried_source(struct in6_multi *, struct mld_hdr *, u_int16_t);
+static void mld6_send_all_current_state_report(struct ifnet *);
+static int mld6_send_current_state_report(struct in6_multi *);
+static int mld6_create_group_record(struct mbuf *, struct in6_multi *, u_int16_t, u_int16_t *, u_int8_t);
+static void mld6_cancel_pending_response(struct ifnet *, struct router6_info *);
+static void mld6_sendbuf(struct mbuf *, struct ifnet *);
+
+static void mld6_state_change_timeo(struct in6_multi *);
+static void mld6_interface_timeo(struct in6_multi *, struct ifnet *);
 #endif
 
-static struct mld_hdr * mld_allocbuf(struct mbuf **, int, struct in6_multi *, int);
-static void mld_sendpkt(struct in6_multi *, int, const struct in6_addr *);
+static void mld6_group_timeo(struct in6_multi *);
+static struct mld_hdr * mld6_allocbuf(struct mbuf **, int, struct in6_multi *, int);
+static void mld6_sendpkt(struct in6_multi *, int, const struct in6_addr *);
+
+void
+mld6_init(void)
+{
+	static u_int8_t hbh_buf[8];
+	struct ip6_hbh *hbh = (struct ip6_hbh *)hbh_buf;
+	u_int16_t rtalert_code = htons((u_int16_t)IP6OPT_RTALERT_MLD);
+
+	mld_group_timers_are_running = 0;
+#ifdef MLDV2
+	mld_state_change_timers_are_running = 0;
+	mld_interface_timers_are_running = 0;
+#endif
+
+	/* ip6h_nxt will be fill in later */
+	hbh->ip6h_len = 0;	/* (8 >> 3) - 1 */
+
+	/* XXX: grotty hard coding... */
+	hbh_buf[2] = IP6OPT_PADN;	/* 2 byte padding */
+	hbh_buf[3] = 0;
+	hbh_buf[4] = IP6OPT_RTALERT;
+	hbh_buf[5] = IP6OPT_RTALERT_LEN - 2;
+	bcopy((caddr_t)&rtalert_code, &hbh_buf[6], sizeof(u_int16_t));
+
+	ip6_opts.ip6po_hbh = hbh;
+	/* We will specify the hoplimit by a multicast option. */
+	ip6_opts.ip6po_hlim = -1;
+
+#ifdef MLDV2
+	head6 = NULL;
+#endif
+}
 
 #ifdef MLDV2
 static struct router6_info *
@@ -270,11 +297,12 @@ find_rt6i(struct ifnet *ifp)
 
 /* type - State-Change report type */
 void
-mld_start_listening(in6m, type)
+mld6_start_listening(in6m, type)
 	struct in6_multi *in6m;
 	u_int8_t type;
 {
 	struct in6_addr all_in6;
+	struct in6_multi_source *i6ms;
 	int s = splsoftnet();
 
 	/*
@@ -296,16 +324,22 @@ mld_start_listening(in6m, type)
 		in6m->in6m_timer = 0;
 		in6m->in6m_state = MLD_OTHERLISTENER;
 	} else {
+		/* Current-State Record timer */
 		if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
-			mld_send_state_change_report(in6m, type, 1);
-			mld_start_state_change_timer(in6m);
+			mld6_send_state_change_report(in6m, type, 1);
+			i6ms = in6m->in6m_source;
+			if (i6ms != NULL) {
+				i6ms->i6ms_timer =
+						MLD_RANDOM_DELAY(MLD_UNSOLICITED_REPORT_INTERVAL * PR_FASTHZ);
+				mld_state_change_timers_are_running = 1;
+			}
 		} else {
 			mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
 			in6m->in6m_timer =
 			    MLD_RANDOM_DELAY(MLD_UNSOLICITED_REPORT_INTERVAL *
 			    PR_FASTHZ);
 			in6m->in6m_state = MLD_IREPORTEDLAST;
-			mld_timers_are_running = 1;
+			mld_group_timers_are_running = 1;
 		}
 
 	}
@@ -315,7 +349,7 @@ mld_start_listening(in6m, type)
 #else
 
 void
-mld_start_listening(in6m)
+mld6_start_listening(in6m)
 	struct in6_multi *in6m;
 {
 	struct in6_addr all_in6;
@@ -345,7 +379,7 @@ mld_start_listening(in6m)
 		    MLD_RANDOM_DELAY(MLD_UNSOLICITED_REPORT_INTERVAL *
 		    PR_FASTHZ);
 		in6m->in6m_state = MLD_IREPORTEDLAST;
-		mld_timers_are_running = 1;
+		mld_group_timers_are_running = 1;
 	}
 	splx(s);
 }
@@ -383,7 +417,7 @@ mld6_stop_listening(in6m)
 #ifdef MLDV2
 
 static int
-mld_query_version(m, off, mldlen)
+mld6_query_version(m, off, mldlen)
 	struct mbuf *m;
 	int off;
 	u_int16_t mldlen;
@@ -402,7 +436,7 @@ mld_query_version(m, off, mldlen)
 }
 
 static int
-mld_query_type(mldv2h, mld_addr, query_ver)
+mld6_query_type(mldv2h, mld_addr, query_ver)
 	struct mldv2_hdr *mldv2h;
 	struct in6_addr *mld_addr;
 	int query_ver;
@@ -436,7 +470,7 @@ mld_query_type(mldv2h, mld_addr, query_ver)
 #endif
 
 void
-mld_input(m, off)
+mld6_input(m, off)
 	struct mbuf *m;
 	int off;
 {
@@ -561,19 +595,19 @@ mld_input(m, off)
 		 * query-type will be MLDv1 regardless of the packet size.
 		 */
 		mldlen = m->m_pkthdr.len - off;
-		query_ver = mld_query_version(m, off, mldlen);
+		query_ver = mld6_query_version(m, off, mldlen);
 		if (query_ver != MLD_V2_ROUTER) {
 			break;
 		}
 		/* no buffer-overrun here, since mldlen >= MLD_V2_QUERY_MINLEN */
 		mldv2h = (struct mldv2_hdr *)mldh;
-		query_type = mld_query_type(mldv2h, &mld_addr, query_ver);
+		query_type = mld6_query_type(mldv2h, &mld_addr, query_ver);
 		if (query_type != 0) {
 			if (rt6i->rt6i_type != MLD_V1_ROUTER) {
 				break;
 			}
 		} else {
-			if (mld_set_timer(ifp, rt6i, mldh, mldlen, query_type) != 0) {
+			if (mld6_set_timer(ifp, rt6i, mldh, mldlen, query_type) != 0) {
 				break;
 			}
 		}
@@ -593,7 +627,7 @@ mld_input(m, off)
 			break;
 		}
 
-		timer = ntohs(mldh->mld_maxdelay) * PR_FASTHZ / MLD_TIMER_SCALE;
+		timer = MLD_FASTTIMER(ntohs(mldh->mld_maxdelay));
 		if (timer == 0 && mldh->mld_maxdelay) {
 			timer = 1;
 		}
@@ -618,7 +652,7 @@ mld_input(m, off)
 				} else if (in6m->in6m_timer == 0 || /*idle state*/
 						in6m->in6m_timer > timer) {
 					in6m->in6m_timer = MLD_RANDOM_DELAY(timer);
-					mld_timers_are_running = 1;
+					mld_group_timers_are_running = 1;
 				}
 			}
 		}
@@ -671,53 +705,24 @@ mld_input(m, off)
 		 * icmp6_input().  But we explicitly disabled this part
 		 * just in case.
 		 */
-		log(LOG_ERR, "mld_input: illegal type(%d)", mldh->mld_type);
+		log(LOG_ERR, "mld6_input: illegal type(%d)", mldh->mld_type);
 #endif
 		break;
 	}
 #ifdef MLDV2
+	/*
+	 * MLDv1 Querier Present is set to Older Version Querier Present
+	 * Timeout seconds whenever an MLDv1 General Query is received.
+	 */
 	if (query_ver == MLD_V1_ROUTER
 			&& IN6_ARE_ADDR_EQUAL(&mld_addr, &in6addr_any)) {
 		if (mld_version == 2) {
 			m_freem(m);
 			return;
 		}
-		if (mld_version == 1) {
-			if (rt6i->rt6i_type != MLD_V1_ROUTER) {
-				rt6i->rt6i_type = MLD_V1_ROUTER;
-			}
-		} else {
-			if (rt6i->rt6i_type != MLD_V2_ROUTER) {
-				rt6i->rt6i_type = MLD_V2_ROUTER;
-			}
-
-		}
-		rt6i->rt6i_timer1 = 0;
-
-		/*
-		 * Set MLD Host Compatibility Mode.
-		 */
 		rt6i->rt6i_timer1 = rt6i->rt6i_qrv * rt6i->rt6i_qqi + rt6i->rt6i_qri;
 		rt6i->rt6i_timer1 *= PR_FASTHZ;
-		switch (rt6i->rt6i_type) {
-		case MLD_V1_ROUTER:
-			/* Keep Older Version Querier Present timer */
-			mldlog((LOG_DEBUG, "mld_set_hostcompat: just keep the timer\n"));
-			break;
-		case MLD_V2_ROUTER:
-			/*
-			 * Check/set host compatibility mode. Whenever a host changes
-			 * its compatability mode, cancel all its pending response and
-			 * retransmission timers.
-			 */
-			mldlog((LOG_DEBUG, "mld_set_hostcompat: "
-					"set timer to MLDv1-compat mode\n"));
-			mld_cancel_pending_response(ifp, rt6i);
-			break;
-		default:
-			/* impossible */
-			break;
-		}
+		mld_interface_timers_are_running = 1;
 	}
 	rt6i->rt6i_type = MLD_V1_ROUTER;
 #endif
@@ -729,7 +734,7 @@ mld_input(m, off)
  * Timer adjustment on reception of an MLDv2 Query.
  */
 static int
-mld_set_timer(ifp, rti, mld, mldlen, query_type)
+mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 	struct ifnet *ifp;
 	struct router6_info *rti;
 	struct mld_hdr *mld;
@@ -778,14 +783,14 @@ mld_set_timer(ifp, rti, mld, mldlen, query_type)
 		 * XXX: this interval prevents an MLD-Report flooding caused
 		 * by an MLD-query with Max-Reponse-Delay=0 (KAME local design)
 		 */
-		timer = 1000;
+		timer = MLD_TIMER_SCALE;
 	} else if (ntohs(mldh->mld_maxdelay) < 32768) {
 		timer = ntohs(mldh->mld_maxdelay);
 	} else {
 		timer = (MLD_MRC_MANT(mldh->mld_maxdelay) | 0x1000)
 				<< (MLD_MRC_EXP(mldh->mld_maxdelay) + 3);
 	}
-	mldlog((LOG_DEBUG, "mld_set_timer: qrv=%d,qqi=%d,qri=%d,timer=%d\n",
+	mldlog((LOG_DEBUG, "mld6_set_timer: qrv=%d,qqi=%d,qri=%d,timer=%d\n",
 		rti->rt6i_qrv, rti->rt6i_qqi, rti->rt6i_qri, timer));
 
 	/*
@@ -793,30 +798,31 @@ mld_set_timer(ifp, rti, mld, mldlen, query_type)
 	 * Get group timer if the query is not Generic Query.
 	 */
 	if (query_type == MLD_V2_GENERAL_QUERY) {
-		timer_i = timer * PR_FASTHZ / MLD_TIMER_SCALE;
+		timer_i = MLD_FASTTIMER(timer);
 		if (timer_i == 0) {
 			timer_i = PR_FASTHZ;
 		}
 		timer_i = MLD_RANDOM_DELAY(timer_i);
 		if (rti->rt6i_timer2 != 0 && rti->rt6i_timer2 < timer_i) {
-			mldlog((LOG_DEBUG, "mld_set_timer: don't do anything "
+			mldlog((LOG_DEBUG, "mld6_set_timer: don't do anything "
 			    "as appropriate I/F timer (%d) is already running"
 			    "(planned=%d)\n",
 			    rti->rt6i_timer2 / PR_FASTHZ, timer_i / PR_FASTHZ));
 			/* don't need to update interface timer */
 		} else {
-			mldlog((LOG_DEBUG, "mld_set_timer: set I/F timer "
+			mldlog((LOG_DEBUG, "mld6_set_timer: set I/F timer "
 			    "to %d\n", timer_i / PR_FASTHZ));
 			rti->rt6i_timer2 = timer_i;
+			mld_interface_timers_are_running = 1;
 		}
 	} else { /* G or SG query */
-		timer_g = timer * PR_FASTHZ / MLD_TIMER_SCALE;
+		timer_g = MLD_FASTTIMER(timer);
 		if (timer_g == 0) {
 			timer_g = PR_FASTHZ;
 		}
 		timer_g = MLD_RANDOM_DELAY(timer_g);
 		mldlog((LOG_DEBUG,
-		    "mld_set_timer: set group timer to %d\n", timer_g / PR_FASTHZ));
+		    "mld6_set_timer: set group timer to %d\n", timer_g / PR_FASTHZ));
 	}
 
 	IN6_FIRST_MULTI(step, in6m);
@@ -847,7 +853,7 @@ mld_set_timer(ifp, rti, mld, mldlen, query_type)
 				goto next_multi; /* no need to consider any timer */
 			}
 			mldlog((LOG_DEBUG,
-			    "mld_set_timer: clears pending response\n"));
+			    "mld6_set_timer: clears pending response\n"));
 			in6m->in6m_state = MLD_OTHERLISTENER;
 			in6m->in6m_timer = 0;
 			in6_free_msf_source_list(in6m->in6m_source->i6ms_rec->head);
@@ -879,7 +885,7 @@ mld_set_timer(ifp, rti, mld, mldlen, query_type)
 			if ((in6m->in6m_state != MLD_G_QUERY_PENDING_MEMBER) &&
 			    (in6m->in6m_state != MLD_SG_QUERY_PENDING_MEMBER)) {
 				in6m->in6m_timer = timer_g;
-				mld_timers_are_running = 1;
+				mld_group_timers_are_running = 1;
 			} else {
 				in6_free_msf_source_list(in6m->in6m_source->i6ms_rec->head);
 				in6m->in6m_source->i6ms_rec->numsrc = 0;
@@ -902,7 +908,7 @@ mld_set_timer(ifp, rti, mld, mldlen, query_type)
 			break;
 		}
 		/* Queried sources are augmented. */
-		error = mld_record_queried_source(in6m, mld, mldlen);
+		error = mld6_record_queried_source(in6m, mld, mldlen);
 		if (error > 0) {
 			/* XXX: ToDo: ICMPv6 error statistics */
 			splx(s);
@@ -917,7 +923,7 @@ mld_set_timer(ifp, rti, mld, mldlen, query_type)
 		} else {
 			in6m->in6m_timer = timer_g;
 		}
-		mld_timers_are_running = 1;
+		mld_group_timers_are_running = 1;
 		break;
 
 next_multi:
@@ -929,7 +935,7 @@ next_multi:
 #endif
 
 void
-mld_fastimeo(void)
+mld6_fastimeo(void)
 {
 	struct in6_multi *in6m;
 	struct in6_multistep step;
@@ -939,109 +945,145 @@ mld_fastimeo(void)
 	 * Quick check to see if any work needs to be done, in order
 	 * to minimize the overhead of fasttimo processing.
 	 */
-	if (!mld_timers_are_running) {
+#ifdef MLDV2
+	if (!mld_group_timers_are_running && !mld_interface_timers_are_running && !mld_state_change_timers_are_running) {
 		return;
 	}
+#else
+	if (!mld_group_timers_are_running) {
+		return;
+	}
+#endif
 
 	s = splsoftnet();
-	mld_timers_are_running = 0;
+	mld_group_timers_are_running = 0;
+#ifdef MLDV2
+	mld_interface_timers_are_running = 0;
+	mld_state_change_timers_are_running = 0;
+#endif
 	IN6_FIRST_MULTI(step, in6m);
 	while (in6m != NULL) {
-		if (mld_send_current_state_report(in6m)) {
-
-		}
-		if (in6m->in6m_timer == 0) {
-			/* do nothing */
-		} else if (--in6m->in6m_timer == 0) {
 #ifdef MLDV2
-			if (in6m->in6m_rti->rt6i_type == MLD_V1_ROUTER) {
-				mld_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
-				in6m->in6m_state = MLD_IREPORTEDLAST;
-			}
-			if (in6m->in6m_state == MLD_G_QUERY_PENDING_MEMBER
-					|| in6m->in6m_state == MLD_SG_QUERY_PENDING_MEMBER) {
-				mld_send_current_state_report(in6m);
-				in6m->in6m_state = MLD_OTHERLISTENER;
-			}
-#else
-			mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
-			in6m->in6m_state = MLD_IREPORTEDLAST;
+		mld6_state_change_timeo(in6m);
+		mld6_interface_timeo(in6m, in6m->in6m_ifp);
 #endif
-		} else {
-			mld_timers_are_running = 1;
-		}
-next_mult:
+		mld6_group_timeo(in6m);
 		IN6_NEXT_MULTI(step, in6m);
 	}
 	splx(s);
 }
 
-#ifdef MLDV2
-
-void
-mld_start_state_change_timer(in6m)
+static void
+mld6_group_timeo(in6m)
 	struct in6_multi *in6m;
 {
-	struct in6_multi_source *i6ms = in6m->in6m_source;
-
-	if (i6ms == NULL) {
-		return;
+	if (in6m->in6m_timer == 0) {
+		/* do nothing */
+	} else if (--in6m->in6m_timer == 0) {
+#ifdef MLDV2
+		if (in6m->in6m_rti->rt6i_type == MLD_V1_ROUTER) {
+			mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
+			in6m->in6m_state = MLD_IREPORTEDLAST;
+		}
+		if (in6m->in6m_state == MLD_G_QUERY_PENDING_MEMBER
+				|| in6m->in6m_state == MLD_SG_QUERY_PENDING_MEMBER) {
+			mld6_send_current_state_report(in6m);
+			in6m->in6m_state = MLD_OTHERLISTENER;
+		}
+#else
+		mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
+		in6m->in6m_state = MLD_IREPORTEDLAST;
+#endif
+	} else {
+		mld_group_timers_are_running = 1;
 	}
-	i6ms->i6ms_timer = MLD_RANDOM_DELAY(
-			MLD_UNSOLICITED_REPORT_INTERVAL * PR_FASTHZ);
-	callout_reset(i6ms->i6ms_timer_ch, i6ms->i6ms_timer,
-			(void (*) (void *))mld_state_change_timeo, in6m);
 }
 
+#ifdef MLDV2
 
-void
-mld_stop_state_change_timer(in6m)
+static void
+mld6_state_change_timeo(in6m)
 	struct in6_multi *in6m;
 {
-	struct in6_multi_source *i6ms = in6m->in6m_source;
+	struct in6_multi_source *i6ms;
 
-	if (i6ms == NULL) {
-		return;
+	i6ms = in6m->in6m_source;
+	if (i6ms != NULL) {
+		if (i6ms->i6ms_timer == 0 && i6ms->i6ms_robvar == 0) {
+			/* do nothing */
+		} else if (--i6ms->i6ms_timer == 0) {
+			/*
+			 * Check if this report was pending Source-List-Change report or not.
+			 * It is only the case that robvar was not reduced here.
+			 * (XXX rarely, QRV may be changed in a same timing.)
+			 */
+			if (i6ms->i6ms_robvar == in6m->in6m_rti->rt6i_qrv) {
+				mld6_send_state_change_report(in6m, 0, 1);
+			} else if (i6ms->i6ms_robvar > 0) {
+				mld6_send_state_change_report(in6m, 0, 0);
+			}
+		} else {
+			/* schedule the next state change report */
+			mld_state_change_timers_are_running = 1;
+		}
 	}
-	i6ms->i6ms_timer = 0;
-	callout_stop(i6ms->i6ms_timer_ch);
 }
 
 static void
-mld_state_change_timeo(struct in6_multi *in6m)
+mld6_interface_timeo(in6m, ifp)
+	struct in6_multi *in6m;
+	struct ifnet *ifp;
 {
-	struct in6_multi_source *i6ms = in6m->in6m_source;
+	struct router6_info *rti;
 
-	if (!in6_is_mld_target(&in6m->in6m_addr)) {
-		return;
-	}
-	if (i6ms == NULL) {
-		return;
-	}
+	rti = find_rt6i(ifp);
+	if (rti != NULL) {
+		if (rti->rt6i_timer1 == 0) {
+			if (mld_version == 1) {
+				if (rti->rt6i_type != MLD_V1_ROUTER) {
+					rti->rt6i_type = MLD_V1_ROUTER;
+				} else {
+					if (rti->rt6i_type != MLD_V2_ROUTER) {
+						rti->rt6i_type = MLD_V2_ROUTER;
+					}
+				}
+			}
+		} else if (--rti->rt6i_timer1 == 0) {
+			switch (rti->rt6i_type) {
+			case MLD_V1_ROUTER:
+				/* Keep Older Version Querier Present timer */
+				break;
+			case MLD_V2_ROUTER:
+				/*
+				 * Check/set host compatibility mode. Whenever a host changes
+				 * its compatability mode, cancel all its pending response and
+				 * retransmission timers.
+				 */
+				mld6_cancel_pending_response(ifp, rti);
+				break;
+			default:
+				/* impossible */
+				break;
+			}
+		} else {
+			goto running;
+		}
 
-	/*
-	 * Check if this report was pending Source-List-Change report or not.
-	 * It is only the case that robvar was not reduced here.
-	 * (XXX rarely, QRV may be changed in a same timing.)
-	 */
-	if (i6ms->i6ms_robvar == in6m->in6m_rti->rt6i_qrv) {
-		mld_send_state_change_report(in6m, 0, 1);
-	} else if (i6ms->i6ms_robvar > 0) {
-		mld_send_state_change_report(in6m, 0, 0);
-	}
-
-	/* schedule the next state change report */
-	if (i6ms->i6ms_robvar != 0) {
-		mld_start_state_change_timer(in6m);
-	} else {
-		mld_stop_state_change_timer(in6m);
+		if (rti->rt6i_timer2 == 0) {
+			/* do nothing */
+		} else if (--rti->rt6i_timer2 == 0) {
+			mld6_send_all_current_state_report(ifp);
+		} else {
+running:
+			mld_interface_timers_are_running = 1;
+		}
 	}
 }
 
 #endif
 
 static struct mld_hdr *
-mld_allocbuf(mh, len, in6m, type)
+mld6_allocbuf(mh, len, in6m, type)
 	struct mbuf **mh;
 	int len, type;
 	struct in6_multi *in6m;
@@ -1100,8 +1142,9 @@ mld_allocbuf(mh, len, in6m, type)
 }
 
 #ifdef MLDV2
+
 static void
-mld_sendbuf(mh, ifp)
+mld6_sendbuf(mh, ifp)
 	struct mbuf *mh;
 	struct ifnet *ifp;
 {
@@ -1132,7 +1175,7 @@ mld_sendbuf(mh, ifp)
 	 * 2nd mbuf respecitively. (done in mld_allocbuf())
 	 */
 	if (mh == NULL) {
-		mldlog((LOG_DEBUG, "mld_sendbuf: mbuf is NULL\n"));
+		mldlog((LOG_DEBUG, "mld6_sendbuf: mbuf is NULL\n"));
 		return;
 	}
 	md = mh->m_next;
@@ -1175,8 +1218,8 @@ mld_sendbuf(mh, ifp)
 
 #endif
 
-void
-mld_sendpkt(in6m, type, dst)
+static void
+mld6_sendpkt(in6m, type, dst)
 	struct in6_multi *in6m;
 	int type;
 	const struct in6_addr *dst;
@@ -1202,7 +1245,7 @@ mld_sendpkt(in6m, type, dst)
 		ia = NULL;
 
 	/* Allocate two mbufs to store IPv6 header and MLD header */
-	mldh = mld_allocbuf(&mh, MLD_MINLEN, in6m, type);
+	mldh = mld6_allocbuf(&mh, MLD_MINLEN, in6m, type);
 	if (mldh == NULL)
 		return;
 
@@ -1249,6 +1292,7 @@ mld_sendpkt(in6m, type, dst)
 }
 
 #ifdef MLDV2
+
 /*
  * Parse source addresses from MLDv2 Group-and-Source-Specific Query message
  * and merge them in a recorded source list as specified in RFC3810 6.3 (3).
@@ -1258,7 +1302,7 @@ mld_sendpkt(in6m, type, dst)
  * return 0.
  */
 static int
-mld_record_queried_source(in6m, mld, mldlen)
+mld6_record_queried_source(in6m, mld, mldlen)
 	struct in6_multi *in6m;
 	struct mld_hdr *mld;
 	u_int16_t mldlen;
@@ -1310,7 +1354,7 @@ mld_record_queried_source(in6m, mld, mldlen)
  * Send Current-State Report for General Query response.
  */
 static void
-mld_send_all_current_state_report(ifp)
+mld6_send_all_current_state_report(ifp)
 	struct ifnet *ifp;
 {
 	struct in6_multi *in6m;
@@ -1336,7 +1380,7 @@ next_multi:
  * response.
  */
 static int
-mld_send_current_state_report(in6m)
+mld6_send_current_state_report(in6m)
 	struct in6_multi *in6m;
 {
 	struct mbuf *m = NULL;
@@ -1386,9 +1430,9 @@ mld_send_current_state_report(in6m)
 			    - rhdrlen - ghdrlen) / addrlen;
 	}
 
-	mldh = mld_allocbuf(&m, rhdrlen, in6m, MLDV2_LISTENER_REPORT);
+	mldh = mld6_allocbuf(&m, rhdrlen, in6m, MLDV2_LISTENER_REPORT);
 	if (mldh == NULL) {
-		mldlog((LOG_DEBUG, "mld_send_current_state_report: "
+		mldlog((LOG_DEBUG, "mld6_send_current_state_report: "
 		    "error preparing new report header\n"));
 		return ENOBUFS;
 	}
@@ -1398,21 +1442,21 @@ mld_send_current_state_report(in6m)
 		 * The number of sources of MODE_IS_EXCLUDE record is already
 		 * adjusted to fit in one buffer.
 		 */
-		if (mld_create_group_record(m, in6m, numsrc,
+		if (mld6_create_group_record(m, in6m, numsrc,
 					   &src_done, type) != numsrc) {
 			mldlog((LOG_DEBUG,
-			    "mld_send_current_state_report: "
+			    "mld6_send_current_state_report: "
 			    "error of sending MODE_IS_EXCLUDE report?\n"));
 			m_freem(m);
 			return EOPNOTSUPP; /* XXX source address insert didn't
 					    * finished. strange... */
 		}
 		if (m != NULL)
-			mld_sendbuf(m, in6m->in6m_ifp);
+			mld6_sendbuf(m, in6m->in6m_ifp);
 	} else {
 		while (1) {
 			/* XXX Some security implication? */
-			src_once = mld_create_group_record(m, in6m,
+			src_once = mld6_create_group_record(m, in6m,
 							   numsrc, &src_done,
 							   type);
 
@@ -1423,19 +1467,19 @@ mld_send_current_state_report(in6m)
 			 * MLD report here and try to make separate message
 			 * with remaining sources.
 			 */
-			mld_sendbuf(m, in6m->in6m_ifp);
-			mldh = mld_allocbuf(&m, rhdrlen, in6m,
+			mld6_sendbuf(m, in6m->in6m_ifp);
+			mldh = mld6_allocbuf(&m, rhdrlen, in6m,
 			    MLDV2_LISTENER_REPORT);
 			if (mldh == NULL) {
 				mldlog((LOG_DEBUG,
-				    "mld_send_current_state_report: "
+				    "mld6_send_current_state_report: "
 				    "error preparing additional report "
 				    "header.\n"));
 				return ENOBUFS;
 			}
 		} /* while */
 		if (m != NULL)
-			mld_sendbuf(m, in6m->in6m_ifp);
+			mld6_sendbuf(m, in6m->in6m_ifp);
 	}
 
 	/*
@@ -1462,8 +1506,8 @@ mld_send_current_state_report(in6m)
  *
  * timer_init - set this when IPMulticastListen() invoked
  */
-static void
-mld_send_state_change_report(in6m, type, timer_init)
+void
+mld6_send_state_change_report(in6m, type, timer_init)
 	struct in6_multi *in6m;
 	u_int8_t type;
 	int timer_init;
@@ -1537,10 +1581,10 @@ mld_send_state_change_report(in6m, type, timer_init)
 			numsrc = in6m->in6m_source->i6ms_toin->numsrc;
 	}
 
-	mldh = mld_allocbuf(&m, rhdrlen, in6m, MLDV2_LISTENER_REPORT);
+	mldh = mld6_allocbuf(&m, rhdrlen, in6m, MLDV2_LISTENER_REPORT);
 	if (mldh == NULL) {
 		mldlog((LOG_DEBUG,
-		    "mld_send_state_change_report: "
+		    "mld6_send_state_change_report: "
 		    "error preparing new report header.\n"));
 		return; /* robvar is not reduced */
 	}
@@ -1551,9 +1595,9 @@ mld_send_state_change_report(in6m, type, timer_init)
 		 * The number of sources of CHANGE_TO_EXCLUDE_MODE
 		 * record is already adjusted to fit in one buffer.
 		 */
-		if (mld_create_group_record(m, in6m, numsrc,
+		if (mld6_create_group_record(m, in6m, numsrc,
 					    &src_done, type) != numsrc) {
-			mldlog((LOG_DEBUG, "mld_send_state_change_report: "
+			mldlog((LOG_DEBUG, "mld6_send_state_change_report: "
 				"error of sending "
 				"CHANGE_TO_EXCLUDE_MODE report?\n"));
 			m_freem(m);
@@ -1563,7 +1607,7 @@ mld_send_state_change_report(in6m, type, timer_init)
 		}
 
 		if (m != NULL) {
-			mld_sendbuf(m, in6m->in6m_ifp);
+			mld6_sendbuf(m, in6m->in6m_ifp);
 			m = NULL;
 		}
 
@@ -1597,25 +1641,25 @@ mld_send_state_change_report(in6m, type, timer_init)
 	if (type == CHANGE_TO_INCLUDE_MODE) {
 		while (1) {
 			/* XXX Some security implication? */
-			src_once = mld_create_group_record(m, in6m, numsrc,
+			src_once = mld6_create_group_record(m, in6m, numsrc,
 					&src_done, type);
 			if (numsrc <= src_done)
 				break;	/* finish insertion */
 
-			mld_sendbuf(m, in6m->in6m_ifp);
+			mld6_sendbuf(m, in6m->in6m_ifp);
 			m = NULL;
-			mldh = mld_allocbuf(&m, rhdrlen, in6m,
+			mldh = mld6_allocbuf(&m, rhdrlen, in6m,
 			    MLDV2_LISTENER_REPORT);
 			if (mldh == NULL) {
 				mldlog((LOG_DEBUG,
-					"mld_send_state_change_report: "
+					"mld6_send_state_change_report: "
 					"error preparing additional report "
 					"header.\n"));
 				return;
 			}
 		}
 		if (m != NULL) {
-			mld_sendbuf(m, in6m->in6m_ifp);
+			mld6_sendbuf(m, in6m->in6m_ifp);
 			m = NULL;
 		}
 
@@ -1657,20 +1701,20 @@ mld_send_state_change_report(in6m, type, timer_init)
 		type = ALLOW_NEW_SOURCES;
 		numsrc = in6m->in6m_source->i6ms_alw->numsrc;
 		while (1) {
-			src_once = mld_create_group_record(m, in6m, numsrc,
+			src_once = mld6_create_group_record(m, in6m, numsrc,
 			    &src_done, type);
-			mld_sendbuf(m, in6m->in6m_ifp);
+			mld6_sendbuf(m, in6m->in6m_ifp);
 			if (numsrc <= src_done)
 				break;
 
 			mldlog((LOG_DEBUG,
-				"mld_send_current_state_report: "
+				"mld6_send_current_state_report: "
 				"re-allocbuf(allow)\n"));
-			mldh = mld_allocbuf(&m, rhdrlen, in6m,
+			mldh = mld6_allocbuf(&m, rhdrlen, in6m,
 				    MLDV2_LISTENER_REPORT);
 			if (mldh == NULL) {
 				mldlog((LOG_DEBUG,
-					"mld_send_state_change_report: "
+					"mld6_send_state_change_report: "
 					"error preparing additional ALLOW"
 					"header.\n"));
 				return;
@@ -1682,20 +1726,20 @@ mld_send_state_change_report(in6m, type, timer_init)
 		type = BLOCK_OLD_SOURCES;
 		numsrc = in6m->in6m_source->i6ms_blk->numsrc;
 		while (1) {
-			src_once = mld_create_group_record(m, in6m, numsrc,
+			src_once = mld6_create_group_record(m, in6m, numsrc,
 			    &src_done, type);
-			mld_sendbuf(m, in6m->in6m_ifp);
+			mld6_sendbuf(m, in6m->in6m_ifp);
 			if (numsrc <= src_done)
 				break;
 
 			mldlog((LOG_DEBUG,
-				"mld_send_current_state_report: "
+				"mld6_send_current_state_report: "
 				"re-allocbuf(block)\n"));
-			mldh = mld_allocbuf(&m, rhdrlen, in6m,
+			mldh = mld6_allocbuf(&m, rhdrlen, in6m,
 			    MLDV2_LISTENER_REPORT);
 			if (mldh == NULL) {
 				mldlog((LOG_DEBUG,
-					"mld_send_state_change_report: "
+					"mld6_send_state_change_report: "
 					"error preparing additional BLOCK"
 					"header.\n"));
 				return;
@@ -1722,7 +1766,7 @@ mld_send_state_change_report(in6m, type, timer_init)
 }
 
 static int
-mld_create_group_record(mh, in6m, numsrc, done, type)
+mld6_create_group_record(mh, in6m, numsrc, done, type)
 	struct mbuf *mh;
 	struct in6_multi *in6m;
 	u_int16_t numsrc, done;
@@ -1809,7 +1853,7 @@ mld_create_group_record(mh, in6m, numsrc, done, type)
  * interface.
  */
 static void
-mld_cancel_pending_response(ifp, rti)
+mld6_cancel_pending_response(ifp, rti)
 	struct ifnet *ifp;
 	struct router6_info *rti;
 {
@@ -1827,7 +1871,7 @@ mld_cancel_pending_response(ifp, rti)
 			goto next_multi;
 
 		in6m->in6m_source->i6ms_robvar = 0;
-		mld_stop_state_change_timer(in6m);
+		i6ms->i6ms_timer = 0;
 		in6_free_msf_source_list(in6m->in6m_source->i6ms_rec->head);
 		in6m->in6m_source->i6ms_rec->numsrc = 0;
 		if (in6m->in6m_source->i6ms_alw != NULL) {
@@ -1856,33 +1900,6 @@ mld_cancel_pending_response(ifp, rti)
 next_multi:
 		IN6_NEXT_MULTI(step, in6m);
 	}
-}
-
-/*
- * check if the given address should be announced via MLDv1/v2.
- */
-int
-in6_is_mld_target(group)
-	struct in6_addr *group;
-{
-	struct in6_addr tmp = *group;
-
-	if (!IN6_IS_ADDR_MULTICAST(group))
-		return 0;
-
-	if (IPV6_ADDR_MC_SCOPE(group) < IPV6_ADDR_SCOPE_LINKLOCAL)
-		return 0;
-
-	/*
-	 * link index may be embedded into group address, so it has to be
-	 * cleared before being compared to ff02::1.
-	 */
-	in6_clearscope(&tmp);
-	if (IN6_ARE_ADDR_EQUAL(&tmp, &mld_all_nodes_nodelocal)) {
-		return 0;
-	}
-
-	return 1;
 }
 
 #endif

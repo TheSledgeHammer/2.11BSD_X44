@@ -613,6 +613,7 @@ void	in6_delmulti2(struct in6_multi *, int *, u_int16_t,
 struct	in6_multi *in6_modmulti2(struct in6_addr *, struct ifnet *,
 	int *, u_int16_t, struct sockaddr_storage *, u_int, u_int16_t,
 	struct sockaddr_storage *, u_int, int, u_int);
+int		in6_is_mld_target(struct in6_addr *);
 #endif
 struct in6_multi_mship *in6_joingroup(struct ifnet *, struct in6_addr *,
 	int *);

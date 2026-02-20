@@ -60,7 +60,6 @@
 /*
  * MLDv2 default variables
  */
-#define MLD_TIMER_SCALE		1000
 #define	MLD_DEF_RV		2	/* Default Robustness Variable */
 #define	MLD_DEF_QI		125	/* Query Interval (125 sec.) */
 #define	MLD_DEF_QRI		10000	/* Query Response Interval (10 sec.) */
@@ -78,6 +77,7 @@ extern int mld_debug;
 
 #define mldlog(x)	do { if (mld_debug) log x; } while (/*CONSTCOND*/ 0)
 
+#define MLD_FASTTIMER(timer) ((timer) * PR_FASTHZ / MLD_TIMER_SCALE)
 #define MLD_RANDOM_DELAY(X)	(arc4random() % (X) + 1)
 
 /*
@@ -93,11 +93,10 @@ void	mld6_stop_listening(struct in6_multi *);
 void	mld6_fasttimeo(void);
 
 #if defined(MLDV2)
-void	mld_start_listening(struct in6_multi *, u_int8_t);
-void	mld_start_state_change_timer(struct in6_multi *);
-void	mld_stop_state_change_timer(struct in6_multi *);
-int		in6_is_mld_target(struct in6_addr *);
+void	mld6_start_listening(struct in6_multi *, u_int8_t);
+void 	mld6_send_state_change_report(struct in6_multi *, u_int8_t, int);
 #endif
+
 #endif /* _KERNEL */
 
 #endif /* _NETINET6_MLD6_VAR_H_ */

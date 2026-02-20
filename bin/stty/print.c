@@ -52,8 +52,7 @@ static void bput(const char *);
 static const char *ccval(const struct cchar *, int);
 
 void
-print(struct termios *tp, struct winsize *wp, int queue, const char *ldisc,
-    enum FMT fmt)
+print(struct termios *tp, struct winsize *wp, int queue, const char *ldisc, enum FMT fmt)
 {
 	const struct cchar *p;
 	long tmp;

@@ -93,9 +93,9 @@
 
 #include <netinet6/in6_msf.h>
 
-#define M_MSFILTER
+#define M_MSFILTER 106
 
-//#ifdef MLDV2
+#ifdef MLDV2
 
 #define I6AS_LIST_ALLOC(iasl) do {								\
 	MALLOC((iasl), struct in6_addr_slist *,						\
@@ -169,14 +169,7 @@ in6_addmultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 			return ENOBUFS;
 		bzero(in6m->in6m_source, sizeof(struct in6_multi_source));
 
-		MALLOC(in6m->in6m_source->i6ms_timer_ch, struct callout *,
-		    sizeof(struct callout), M_MSFILTER, M_NOWAIT);
-		if (in6m->in6m_source->i6ms_timer_ch == NULL) {
-			FREE(in6m->in6m_source, M_MSFILTER);
-			return ENOBUFS;
-		}
-
-		callout_init(in6m->in6m_source->i6ms_timer_ch);
+		in6_msf_state_change_timers_are_running = 0;
 
 		I6AS_LIST_ALLOC(in6m->in6m_source->i6ms_cur);
 		if (error != 0) {
@@ -188,7 +181,6 @@ in6_addmultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 		if (error != 0) {
 			FREE(in6m->in6m_source->i6ms_cur->head, M_MSFILTER);
 			FREE(in6m->in6m_source->i6ms_cur, M_MSFILTER);
-			FREE(in6m->in6m_source->i6ms_timer_ch, M_MSFILTER);
 			FREE(in6m->in6m_source, M_MSFILTER);
 			return error;
 		}
@@ -450,12 +442,7 @@ in6_modmultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 			return ENOBUFS;
 		bzero(in6m->in6m_source, sizeof(struct in6_multi_source));
 
-		MALLOC(in6m->in6m_source->i6ms_timer_ch, struct callout *,
-		    sizeof(struct callout), M_MSFILTER, M_NOWAIT);
-		if (in6m->in6m_source->i6ms_timer_ch == NULL)
-			return ENOBUFS;
-
-		callout_init(in6m->in6m_source->i6ms_timer_ch);
+		in6_msf_state_change_timers_are_running = 0;
 
 		I6AS_LIST_ALLOC(in6m->in6m_source->i6ms_cur);
 		if (error != 0) {
