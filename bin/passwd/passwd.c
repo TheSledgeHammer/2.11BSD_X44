@@ -223,6 +223,8 @@ passwd_conf(const char *arg, int flags)
 				type = "old";
 			} else if (!strcasecmp(arg, "new")) {
 				type = "new";
+			} else if (!strcasecmp(arg, "newsalt")) {
+				type = "newsalt";
 			} else if (!strcasecmp(arg, "md5")) {
 				type = "md5";
 			} else if (!strcasecmp(arg, "blowfish")) {
@@ -246,6 +248,6 @@ static void
 usage(void)
 {
 	(void)fprintf(stderr, "usage: passwd [-a algorithm] [-l] [user]\n");
-	(void)fprintf(stderr, "       algorithms: old new md5 blowfish sha1\n");
+	(void)fprintf(stderr, "       algorithms: old new newsalt md5 blowfish sha1\n");
 	exit(1);
 }

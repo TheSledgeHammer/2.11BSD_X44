@@ -52,7 +52,13 @@ struct sadb_msg;
 struct sadb_x_policy;
 
 extern struct secpolicy *key_allocsp(u_int16_t, struct secpolicyindex *, u_int);
+extern struct secpolicy	*key_gettunnel(struct sockaddr*, struct sockaddr*,
+		struct sockaddr*, struct sockaddr*);
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+extern int key_checkrequest(struct ipsecrequest *isr, struct secasindex *, struct mbuf *);
+#else
 extern int key_checkrequest(struct ipsecrequest *isr, struct secasindex *);
+#endif
 extern struct secasvar *key_allocsa(u_int, caddr_t, caddr_t, u_int, u_int32_t);
 extern struct secpolicy *key_getspbyid(u_int32_t);
 extern void key_freesp(struct secpolicy *);

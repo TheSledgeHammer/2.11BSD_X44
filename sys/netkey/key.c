@@ -137,6 +137,11 @@ static int key_blockacq_count = 10;	/* counter for blocking SADB_ACQUIRE.*/
 static int key_blockacq_lifetime = 20;	/* lifetime for blocking SADB_ACQUIRE.*/
 
 static u_int32_t acq_seq = 0;
+
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+u_int32_t acq_maxpktlen = 512;
+#endif
+
 static int key_tick_init_random = 0;
 
 struct _satailq satailq;		/* list of all SAD entry */
@@ -422,8 +427,12 @@ static struct mbuf *key_getcomb_esp(void);
 static struct mbuf *key_getcomb_ah(void);
 static struct mbuf *key_getcomb_ipcomp(void);
 static struct mbuf *key_getprop(const struct secasindex *);
-
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+static int key_acquire(struct secasindex *, struct secpolicy *,
+	struct mbuf *);
+#else
 static int key_acquire(struct secasindex *, struct secpolicy *);
+#endif
 #ifndef IPSEC_NONBLOCK_ACQUIRE
 static struct secacq *key_newacq(struct secasindex *);
 static struct secacq *key_getacq(struct secasindex *);
@@ -529,15 +538,105 @@ found:
 }
 
 /*
+ * return a policy that matches this particular inbound packet.
+ * XXX slow
+ */
+struct secpolicy *
+key_gettunnel(osrc, odst, isrc, idst)
+	struct sockaddr *osrc, *odst;
+	struct sockaddr *isrc, *idst;
+{
+	struct secpolicy *sp;
+	const int dir = IPSEC_DIR_INBOUND;
+	int s;
+	struct ipsecrequest *r1, *r2, *p;
+	struct sockaddr *os, *od, *is, *id;
+	struct secpolicyindex spidx;
+
+	if (isrc->sa_family != idst->sa_family) {
+		ipseclog((LOG_ERR, "protocol family mismatched %u != %u\n",
+			isrc->sa_family, idst->sa_family));
+		return NULL;
+	}
+
+#ifdef __NetBSD__
+	s = splsoftnet();	/*called from softclock()*/
+#else
+	s = splnet();	/*called from softclock()*/
+#endif
+	LIST_FOREACH(sp, &sptree[dir], chain) {
+		if (sp->state == IPSEC_SPSTATE_DEAD)
+			continue;
+
+		r1 = r2 = NULL;
+		for (p = sp->req; p; p = p->next) {
+			if (p->saidx.mode != IPSEC_MODE_TUNNEL)
+				continue;
+
+			r1 = r2;
+			r2 = p;
+
+			if (!r1) {
+				if (sp->spidx) {
+					/*
+					 * here we look at address matches
+					 * only
+					 */
+					spidx = *sp->spidx;
+					if (isrc->sa_len > sizeof(spidx.src) ||
+					    idst->sa_len > sizeof(spidx.dst))
+						continue;
+					bcopy(isrc, &spidx.src, isrc->sa_len);
+					bcopy(idst, &spidx.dst, idst->sa_len);
+					if (!key_cmpspidx_withmask(sp->spidx,
+					    &spidx))
+						continue;
+				} else
+					; /* can't check for tagged policy */
+			} else {
+				is = (struct sockaddr *)&r1->saidx.src;
+				id = (struct sockaddr *)&r1->saidx.dst;
+				if (key_sockaddrcmp(is, isrc, 0) ||
+				    key_sockaddrcmp(id, idst, 0))
+					continue;
+			}
+
+			os = (struct sockaddr *)&r2->saidx.src;
+			od = (struct sockaddr *)&r2->saidx.dst;
+			if (key_sockaddrcmp(os, osrc, 0) ||
+			    key_sockaddrcmp(od, odst, 0))
+				continue;
+
+			goto found;
+		}
+	}
+	splx(s);
+	return NULL;
+
+found:
+	sp->lastused = time.tv_sec;
+	sp->refcnt++;
+	splx(s);
+	return sp;
+}
+
+/*
  * allocating an SA entry for an *OUTBOUND* packet.
  * checking each request entries in SP, and acquire an SA if need.
  * OUT:	0: there are valid requests.
  *	ENOENT: policy may be valid, but SA with REQUIRE is on acquiring.
  */
 int
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+key_checkrequest(isr, saidx, pkt)
+	struct ipsecrequest *isr;
+	struct secasindex *saidx;
+	struct mbuf *pkt;
+#else
 key_checkrequest(isr, saidx)
 	struct ipsecrequest *isr;
 	struct secasindex *saidx;
+#endif
 {
 	u_int level;
 	int error;
@@ -607,7 +706,11 @@ key_checkrequest(isr, saidx)
 		return 0;
 
 	/* there is no SA */
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+	if ((error = key_acquire(saidx, isr->sp, pkt)) != 0) {
+#else
 	if ((error = key_acquire(saidx, isr->sp)) != 0) {
+#endif
 		/* XXX What should I do ? */
 		ipseclog((LOG_DEBUG, "key_checkrequest: error %d returned "
 			"from key_acquire.\n", error));
@@ -6078,9 +6181,16 @@ key_getprop(saidx)
  *    others: error number
  */
 static int
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+key_acquire(saidx, sp, pkt)
+	struct secasindex *saidx;
+	struct secpolicy *sp;
+	struct mbuf *pkt;
+#else
 key_acquire(saidx, sp)
 	struct secasindex *saidx;
 	struct secpolicy *sp;
+#endif
 {
 	struct mbuf *result = NULL, *m;
 #ifndef IPSEC_NONBLOCK_ACQUIRE
@@ -6501,8 +6611,11 @@ key_acquire2(so, m, mhp)
 		ipseclog((LOG_DEBUG, "key_acquire2: a SA exists already.\n"));
 		return key_senderror(so, m, EEXIST);
 	}
-
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+	error = key_acquire(&saidx, NULL, NULL);
+#else
 	error = key_acquire(&saidx, NULL);
+#endif
 	if (error != 0) {
 		ipseclog((LOG_DEBUG, "key_acquire2: error %d returned "
 			"from key_acquire.\n", mhp->msg->sadb_msg_errno));
@@ -7589,6 +7702,9 @@ key_align(m, mhp)
 		case SADB_X_EXT_SA2:
 #ifdef SADB_X_EXT_TAG
 		case SADB_X_EXT_TAG:
+#endif
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+		case SADB_X_EXT_PACKET:
 #endif
 			/* duplicate check */
 			/*

@@ -46,7 +46,7 @@
 #include "extern.h"
 
 /* pw_gensalt types: */
-const char * const pw_types[] = { "old", "new", "md5", "blowfish", "sha1" };
+const char * const pw_types[] = { "old", "new", "newsalt", "md5", "blowfish", "sha1" };
 /* pw_gensalt options: */
 const char * const pw_options[] = { "localcipher", "ypcipher" };
 

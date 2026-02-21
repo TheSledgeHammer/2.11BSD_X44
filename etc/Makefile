@@ -71,9 +71,9 @@ BINGRP= wheel
 UTMPGRP= utmp
 BIN1+=	changelist csh.cshrc csh.login csh.logout dm.conf floppytab ftpusers gettytab group     \
         hosts hosts.allow hosts.deny inetd.conf locate.conf man.conf mrouted.conf named.conf    \
-		netstart networks nsswitch.conf ntp.conf passwd.conf periodic pf.conf pf.os 		    \
-		printcap phones profile protocols rc rc.conf rc.local rc.shutdown rc.subr remote 	    \
-		rpc services shells shrc syslog.conf wscons.conf 	
+		netstart networks nsswitch.conf ntp.conf periodic pf.conf pf.os printcap phones profile \
+		protocols rc rc.conf rc.local rc.shutdown rc.subr remote rpc services shells shrc 		\
+		syslog.conf wscons.conf 	
 
 # Use machine-specific disktab if it exists, or the MI one otherwise
 .if exists(etc.${MACHINE}/disktab)

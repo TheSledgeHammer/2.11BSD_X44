@@ -75,7 +75,7 @@ union sockaddr_union {
 };
 #endif
 
-/* tunnel block descriptor */
+/* tunnel descriptor block */
 struct tdb {
 	struct secasvar         *tdb_sav;			/* secasaver */
 
@@ -87,7 +87,7 @@ struct tdb {
     struct sockaddr_storage tdb_src;			/* src addr of packet */
     struct sockaddr_storage tdb_dst;			/* dst addr of packet */
     u_int8_t	            tdb_proto;			/* current protocol, e.g. AH */
-	int						tdb_skip;			/* data offset */
+	int						tdb_skip;			/* data */
 
 	struct xformsw 			*tdb_xform;			/* transform */
 	const struct enc_xform 	*tdb_encalgxform;	/* encoding algorithm */
