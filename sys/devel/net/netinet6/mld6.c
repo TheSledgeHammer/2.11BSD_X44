@@ -185,6 +185,82 @@ mld6_init(void)
 	Head6 = NULL;
 }
 
+static void
+mld6_starttimer(in6m)
+	struct in6_multi *in6m;
+{
+	struct timeval now;
+
+	microtime(&now);
+	in6m->in6m_timer_expire.tv_sec = now.tv_sec + in6m->in6m_timer / hz;
+	in6m->in6m_timer_expire.tv_usec = now.tv_usec +
+	    (in6m->in6m_timer % hz) * (1000000 / hz);
+	if (in6m->in6m_timer_expire.tv_usec > 1000000) {
+		in6m->in6m_timer_expire.tv_sec++;
+		in6m->in6m_timer_expire.tv_usec -= 1000000;
+	}
+	callout_reset(in6m->in6m_timer_ch, in6m->in6m_timer,
+			(void (*)(void*)) mld6_timeo, in6m);
+}
+
+static void
+mld6_stoptimer(in6m)
+	struct in6_multi *in6m;
+{
+	if (in6m->in6m_timer == 0) {
+		return;
+	}
+	callout_stop(in6m->in6m_timer_ch);
+
+	in6m->in6m_timer = 0;
+}
+
+static void
+mld6_timeo(in6m)
+	struct in6_multi *in6m;
+{
+	int s = splsoftnet();
+
+	in6m->in6m_timer = 0;
+	callout_stop(in6m->in6m_timer_ch);
+
+	switch (in6m->in6m_state) {
+	case MLD_REPORTPENDING:
+		mld_start_listening(in6m);
+		break;
+	default:
+		mld_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
+		break;
+	}
+
+	splx(s);
+}
+
+static u_long
+mld6_timerresid(in6m)
+	struct in6_multi *in6m;
+{
+	struct timeval now, diff;
+
+	microtime(&now);
+
+	if (now.tv_sec > in6m->in6m_timer_expire.tv_sec ||
+	    (now.tv_sec == in6m->in6m_timer_expire.tv_sec &&
+	    now.tv_usec > in6m->in6m_timer_expire.tv_usec)) {
+		return (0);
+	}
+	diff = in6m->in6m_timer_expire;
+	diff.tv_sec -= now.tv_sec;
+	diff.tv_usec -= now.tv_usec;
+	if (diff.tv_usec < 0) {
+		diff.tv_sec--;
+		diff.tv_usec += 1000000;
+	}
+
+	/* return the remaining time in milliseconds */
+	return (((u_long)(diff.tv_sec * 1000000 + diff.tv_usec)) / 1000);
+}
+
 void
 mld6_start_listening(in6m)
 	struct in6_multi *in6m;
@@ -216,7 +292,7 @@ mld6_start_listening(in6m)
 		    MLD_RANDOM_DELAY(MLD_UNSOLICITED_REPORT_INTERVAL *
 		    PR_FASTHZ);
 		in6m->in6m_state = MLD_IREPORTEDLAST;
-		mld_timers_are_running = 1;
+		mld6_starttimer(in6m);
 	}
 	splx(s);
 }
@@ -346,9 +422,9 @@ mld6_input(m, off)
 		 * the calculated value equals to zero when Max Response
 		 * Delay is positive.
 		 */
-		timer = ntohs(mldh->mld_maxdelay)*PR_FASTHZ/MLD_TIMER_SCALE;
-		if (timer == 0 && mldh->mld_maxdelay)
-			timer = 1;
+		timer = ntohs(mldh->mld_maxdelay);//*PR_FASTHZ/MLD_TIMER_SCALE;
+		//if (timer == 0 && mldh->mld_maxdelay)
+		//	timer = 1;
 		mld_all_nodes_linklocal.s6_addr16[1] =
 			htons(ifp->if_index); /* XXX */
 
@@ -368,16 +444,17 @@ mld6_input(m, off)
 			{
 				if (timer == 0) {
 					/* send a report immediately */
+					mld6_stoptimer(in6m);
 					mld6_sendpkt(in6m, MLD_LISTENER_REPORT,
 					    NULL);
-					in6m->in6m_timer = 0; /* reset timer */
+					//in6m->in6m_timer = 0; /* reset timer */
 					in6m->in6m_state = MLD_IREPORTEDLAST;
 				}
 				else if (in6m->in6m_timer == 0 || /*idle state*/
-				    in6m->in6m_timer > timer) {
+						mld6_timerresid(in6m) > (u_long)timer) {
 					in6m->in6m_timer =
 					    MLD_RANDOM_DELAY(timer);
-					mld_timers_are_running = 1;
+					mld6_starttimer(in6m);
 				}
 			}
 		}
@@ -411,7 +488,8 @@ mld6_input(m, off)
 		 */
 		IN6_LOOKUP_MULTI(mld_addr, ifp, in6m);
 		if (in6m) {
-			in6m->in6m_timer = 0; /* transit to idle state */
+			mld_stoptimer(in6m); /* transit to idle state */
+			//in6m->in6m_timer = 0; /* transit to idle state */
 			in6m->in6m_state = MLD_OTHERLISTENER; /* clear flag */
 		}
 

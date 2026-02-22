@@ -115,7 +115,7 @@ struct icmp6_hdr {
 #define ND_ROUTER_ADVERT		134	/* router advertisment */
 #define ND_NEIGHBOR_SOLICIT		135	/* neighbor solicitation */
 #define ND_NEIGHBOR_ADVERT		136	/* neighbor advertisment */
-#define ND_REDIRECT			137	/* redirect */
+#define ND_REDIRECT				137	/* redirect */
 
 #define ICMP6_ROUTER_RENUMBERING	138	/* router renumbering */
 
@@ -126,14 +126,20 @@ struct icmp6_hdr {
 #define ICMP6_NI_QUERY			139	/* node information request */
 #define ICMP6_NI_REPLY			140	/* node information reply */
 
+/* The belows are not yet defined in 2292bis. They will be renamed */
+#define IND_SOLICIT			141	/* inverse neighbor solicitation */
+#define IND_ADVERT			142	/* inverse neighbor advertisement */
+#define MLDV2_LISTENER_REPORT		143	/* MLDv2 report */
+
 /* The definitions below are experimental. TBA */
 #define MLD_MTRACE_RESP			200	/* mtrace response(to sender) */
 #define MLD_MTRACE			201	/* mtrace messages */
 
 #ifndef _KERNEL
 /* the followings are for backward compatibility to old KAME apps. */
-#define MLD6_MTRACE_RESP	MLD_MTRACE_RESP
-#define MLD6_MTRACE		MLD_MTRACE
+#define MLD6_MTRACE_RESP		MLD_MTRACE_RESP
+#define MLD6_MTRACE			MLD_MTRACE
+#define MLD6V2_LISTENER_REPORT		MLDV2_LISTENER_REPORT
 #endif
 
 #define ICMP6_MAXTYPE			201
@@ -154,13 +160,13 @@ struct icmp6_hdr {
 
 #define ICMP6_INFOMSG_MASK		0x80	/* all informational messages */
 
-#define ICMP6_NI_SUBJ_IPV6	0	/* Query Subject is an IPv6 address */
-#define ICMP6_NI_SUBJ_FQDN	1	/* Query Subject is a Domain name */
-#define ICMP6_NI_SUBJ_IPV4	2	/* Query Subject is an IPv4 address */
+#define ICMP6_NI_SUBJ_IPV6		0	/* Query Subject is an IPv6 address */
+#define ICMP6_NI_SUBJ_FQDN		1	/* Query Subject is a Domain name */
+#define ICMP6_NI_SUBJ_IPV4		2	/* Query Subject is an IPv4 address */
 
-#define ICMP6_NI_SUCCESS	0	/* node information successful reply */
-#define ICMP6_NI_REFUSED	1	/* node information request is refused */
-#define ICMP6_NI_UNKNOWN	2	/* unknown Qtype */
+#define ICMP6_NI_SUCCESS		0	/* node information successful reply */
+#define ICMP6_NI_REFUSED		1	/* node information request is refused */
+#define ICMP6_NI_UNKNOWN		2	/* unknown Qtype */
 
 #define ICMP6_ROUTER_RENUMBERING_COMMAND  0	/* rr command */
 #define ICMP6_ROUTER_RENUMBERING_RESULT   1	/* rr result */
@@ -186,7 +192,7 @@ struct mld_hdr {
 #define mld6_cksum	mld_cksum
 #define mld6_maxdelay	mld_maxdelay
 #define mld6_reserved	mld_reserved
-#define mld6_addr	mld_addr
+#define mld6_addr		mld_addr
 #endif
 
 /* shortcut macro definitions */
@@ -195,6 +201,56 @@ struct mld_hdr {
 #define mld_cksum	mld_icmp6_hdr.icmp6_cksum
 #define mld_maxdelay	mld_icmp6_hdr.icmp6_data16[0]
 #define mld_reserved	mld_icmp6_hdr.icmp6_data16[1]
+
+/*
+ * Multicast Listener Discovery Version 2
+ */
+struct mldv2_hdr {
+	struct icmp6_hdr 	mld_icmp6_hdr;
+	struct in6_addr		mld_addr;	/* multicast address */
+	u_int8_t		mld_rtval;	/* Reserved, S Flag and QRV */
+	u_int8_t	 	mld_qqi;	/* querier's query interval (QQI) */
+	u_int16_t		mld_numsrc;	/* number of sources (0 for general */
+						/* and group-specific queries) */
+	struct in6_addr		mld_src[1];	/* source address list */
+};
+
+#define MLD_MRC_EXP(x)		((ntohs(x) >> 12) & 0x0007)
+#define MLD_MRC_MANT(x)		(ntohs(x) & 0x0fff)
+#define MLD_QQIC_EXP(x)		(((x) >> 4) & 0x07)
+#define MLD_QQIC_MANT(x)	((x) & 0x0f)
+#define MLD_QRESV(x)		(((x) >> 4) & 0x0f)
+#define MLD_SFLAG(x)		(((x) >> 3) & 0x01)
+#define MLD_QRV(x)		((x) & 0x07)	/* querier's robustness variable   */
+
+/*
+ * MLDv2 Membership Report Message header.
+ */
+struct mld_report_hdr {
+	struct icmp6_hdr	mld_icmp6_hdr;	/* version & type of MLD message */
+};
+
+/* shortcut macro definition */
+#define mld_grpnum	mld_icmp6_hdr.icmp6_data16[1]
+
+/*
+ * MLDv2 Group Record header.
+ */
+struct mld_group_record_hdr {
+	u_int8_t	record_type;	/* record types for membership report */
+	u_int8_t	auxlen;		/* aux data length (must be zero)     */
+	u_int16_t       numsrc;         /* number of sources        */
+	struct in6_addr	group;          /* group address            */
+	struct in6_addr rc[1];         	/* source address list      */
+};
+
+#define MLD_V1_QUERY			0
+#define MLD_V2_GENERAL_QUERY		1
+#define MLD_V2_GROUP_QUERY		2
+#define MLD_V2_GROUP_SOURCE_QUERY	3
+
+#define MLD_MINLEN			24
+#define MLD_V2_QUERY_MINLEN		28
 
 /*
  * Neighbor Discovery
@@ -317,7 +373,7 @@ struct nd_opt_mtu {		/* MTU option */
  */
 
 struct icmp6_namelookup {
-	struct icmp6_hdr 	icmp6_nl_hdr;
+	struct icmp6_hdr icmp6_nl_hdr;
 	u_int8_t	icmp6_nl_nonce[8];
 	int32_t		icmp6_nl_ttl;
 #if 0
@@ -633,6 +689,7 @@ struct	in6_multi;
 void	icmp6_init(void);
 void	icmp6_paramerror(struct mbuf *, int);
 void	icmp6_error(struct mbuf *, int, int, int);
+void	icmp6_error2(struct mbuf *, int, int, int, struct ifnet *);
 int	icmp6_input(struct mbuf **, int *, int);
 void	icmp6_fasttimo(void);
 void	icmp6_reflect(struct mbuf *, size_t);

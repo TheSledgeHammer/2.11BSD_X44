@@ -428,13 +428,13 @@ mzalloc(size, type, flags)
     unsigned long size;
     int type, flags;
 {
-	void *va;
+	void *addr;
 
-	va = malloc(size, type, flags);
-	if (va != NULL) {
-		bzero(va, size);
+	addr = malloc(size, type, flags);
+	if (addr != NULL) {
+		bzero(addr, size);
 	}
-	return (va);
+	return (addr);
 }
 
 /*

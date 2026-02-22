@@ -127,6 +127,8 @@ ah_algorithm_lookup(int alg)
 		return &auth_hash_hmac_sha2_384;
 	case SADB_X_AALG_SHA2_512:
 		return &auth_hash_hmac_sha2_512;
+	case SADB_X_AALG_AES_XCBC_MAC:
+		return &auth_hash_aes_xcbc_mac_96;
 	}
 	return NULL;
 }

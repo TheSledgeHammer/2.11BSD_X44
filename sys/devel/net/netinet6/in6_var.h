@@ -528,8 +528,8 @@ struct in6_multi {
 	struct	router6_info *in6m_rti;	/* router info */
 	struct	in6_multi_source *in6m_source;	/* filtered source list */
 	u_int	in6m_timer;		/* MLD6 listener report timer */
-	//struct  timeval in6m_timer_expire; /* when the timer expires */
-	//struct callout *in6m_timer_ch;
+	struct  timeval in6m_timer_expire; /* when the timer expires */
+	struct callout *in6m_timer_ch;
 };
 
 #define IN6M_TIMER_UNDEF 0

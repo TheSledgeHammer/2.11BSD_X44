@@ -255,6 +255,36 @@ icmp6_mtudisc_callback_register(func)
 }
 
 /*
+ * A wrapper function for icmp6_error() necessary when the erroneous packet
+ * may not contain enough scope zone information.
+ */
+void
+icmp6_error2(m, type, code, param, ifp)
+	struct mbuf *m;
+	int type, code, param;
+	struct ifnet *ifp;
+{
+	struct ip6_hdr *ip6;
+	if (ifp == NULL)
+		return;
+
+	if (m->m_len < sizeof(struct ip6_hdr)) {
+		m = m_pullup(m, sizeof(struct ip6_hdr));
+		if (m == NULL)
+			return;
+	}
+
+	ip6 = mtod(m, struct ip6_hdr*);
+
+	if (in6_setscope(&ip6->ip6_src, ifp, NULL) != 0)
+		return;
+	if (in6_setscope(&ip6->ip6_dst, ifp, NULL) != 0)
+		return;
+
+	icmp6_error(m, type, code, param);
+}
+
+/*
  * Generate an error packet of type error in response to bad IP6 packet.
  */
 void
@@ -308,7 +338,8 @@ icmp6_error(m, type, code, param)
 	 * XXX: the case of anycast source?
 	 */
 	if (IN6_IS_ADDR_UNSPECIFIED(&oip6->ip6_src) ||
-	    IN6_IS_ADDR_MULTICAST(&oip6->ip6_src))
+	    IN6_IS_ADDR_MULTICAST(&oip6->ip6_src) ||
+		in6_is_addr_anycast(&oip6->ip6_src))
 		goto freeit;
 
 	/*
@@ -380,10 +411,8 @@ icmp6_error(m, type, code, param)
 	nip6->ip6_src  = oip6->ip6_src;
 	nip6->ip6_dst  = oip6->ip6_dst;
 
-	if (IN6_IS_SCOPE_LINKLOCAL(&oip6->ip6_src))
-		oip6->ip6_src.s6_addr16[1] = 0;
-	if (IN6_IS_SCOPE_LINKLOCAL(&oip6->ip6_dst))
-		oip6->ip6_dst.s6_addr16[1] = 0;
+	in6_clearscope(&oip6->ip6_src);
+	in6_clearscope(&oip6->ip6_dst);
 
 	icmp6 = (struct icmp6_hdr *)(nip6 + 1);
 	icmp6->icmp6_type = type;
@@ -624,7 +653,7 @@ icmp6_input(mp, offp, proto)
 			n->m_next = n0;
 			n0->m_flags &= ~M_PKTHDR;
 		} else {
-	 deliverecho:
+deliverecho:
 			nip6 = mtod(n, struct ip6_hdr *);
 			nicmp6 = (struct icmp6_hdr *)((caddr_t)nip6 + off);
 			noff = off;
@@ -676,8 +705,8 @@ icmp6_input(mp, offp, proto)
 		/* XXX: per-interface statistics? */
 		break;		/* just pass it to applications */
 
-	case ICMP6_WRUREQUEST:	/* ICMP6_FQDN_QUERY */
-	    {
+	case ICMP6_WRUREQUEST: /* ICMP6_FQDN_QUERY */
+	{
 		enum { WRU, FQDN } mode;
 
 		if (!icmp6_nodeinfo)
@@ -751,7 +780,7 @@ icmp6_input(mp, offp, proto)
 			icmp6_reflect(n, noff);
 		}
 		break;
-	    }
+	}
 
 	case ICMP6_WRUREPLY:
 		if (code != 0)
@@ -2435,11 +2464,11 @@ icmp6_redirect_output(m0, rt)
 	 * we almost always ask for an mbuf cluster for simplicity.
 	 * (MHLEN < IPV6_MMTU is almost always true)
 	 */
-	 /*
-#if IPV6_MMTU >= MCLBYTES
-# error assumption failed about IPV6_MMTU and MCLBYTES
-#endif
-*/
+	/*
+	 #if IPV6_MMTU >= MCLBYTES
+	 # error assumption failed about IPV6_MMTU and MCLBYTES
+	 #endif
+	 */
 	MGETHDR(m, M_DONTWAIT, MT_HEADER);
 	if (m && IPV6_MMTU >= MHLEN)
 		MCLGET(m, M_DONTWAIT);

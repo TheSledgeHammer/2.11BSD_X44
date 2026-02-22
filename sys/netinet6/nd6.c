@@ -474,8 +474,8 @@ nd6_llinfo_timer(arg)
 				 */
 				m->m_pkthdr.rcvif = rt->rt_ifp;
 
-				icmp6_error(m, ICMP6_DST_UNREACH,
-				    ICMP6_DST_UNREACH_ADDR, 0);
+				icmp6_error2(m, ICMP6_DST_UNREACH,
+						ICMP6_DST_UNREACH_ADDR, 0, rt->rt_ifp);
 			}
 			(void)nd6_free(rt, 0);
 			ln = NULL;

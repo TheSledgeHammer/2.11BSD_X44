@@ -2956,6 +2956,44 @@ in6_is_addr_deprecated(sa6)
 }
 
 /*
+ * The definition of anycast address in this function is
+ *  1) an interface address with IN6_IFF_ANYCAST bit on
+ *  2) a subnet router anycast address regarding a prefix of an interface
+ *     address
+ * Other anycast address is not checked here, since it is impossible to judge
+ * it within a node.
+ */
+int
+in6_is_addr_anycast(in6)
+	struct in6_addr *in6;
+{
+	struct in6_ifaddr *ia;
+
+	for (ia = in6_ifaddr; ia; ia = ia->ia_next) {
+		struct in6_addr anycast, mask;
+
+		/* case 1. an interface address with IN6_IFF_ANYCAST */
+		if (ia->ia6_flags & IN6_IFF_ANYCAST) {
+			if (IN6_ARE_ADDR_EQUAL(in6, &ia->ia_addr.sin6_addr))
+				return (1);
+			continue;
+		}
+
+		/* case 2. a subnet router anycast address */
+		anycast = ia->ia_addr.sin6_addr;
+		mask = ia->ia_prefixmask.sin6_addr;
+		anycast.s6_addr32[0] &= mask.s6_addr32[0];
+		anycast.s6_addr32[1] &= mask.s6_addr32[1];
+		anycast.s6_addr32[2] &= mask.s6_addr32[2];
+		anycast.s6_addr32[3] &= mask.s6_addr32[3];
+		if (IN6_ARE_ADDR_EQUAL(in6, &anycast))
+			return (1);
+	}
+
+	return (0);
+}
+
+/*
  * return length of part which dst and src are equal
  * hard coding...
  */

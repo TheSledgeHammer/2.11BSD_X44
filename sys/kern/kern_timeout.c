@@ -75,6 +75,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/malloc.h>
 #include <sys/lock.h>
 #include <sys/queue.h>
 #include <sys/callout.h>
@@ -192,6 +193,30 @@ void
 callout_init(struct callout *c)
 {
 	memset(c, 0, sizeof(*c));
+}
+
+/*
+ * Allocate callout structure to memory
+ */
+struct callout *
+callout_alloc(int type)
+{
+	struct callout *c;
+
+	c = malloc(sizeof(struct callout *), type, M_NOWAIT);
+	if (c != NULL) {
+		return (c);
+	}
+	return (NULL);
+}
+
+/*
+ * Free callout structure from memory
+ */
+void
+callout_free(struct callout *c, int type)
+{
+	free(c, type);
 }
 
 /*

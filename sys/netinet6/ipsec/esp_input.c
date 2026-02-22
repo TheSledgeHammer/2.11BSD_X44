@@ -361,7 +361,7 @@ noreplaycheck:
 #endif
 
 	/* was it transmitted over the IPsec tunnel SA? */
-	if (ipsec4_tunnel_validate(ip, nxt, sav)) {
+	if (ipsec4_tunnel_validate(m, off + esplen + ivlen, ip, nxt, sav)) {
 		/*
 		 * strip off all the headers that precedes ESP header.
 		 *	IP4 xx ESP IP4' payload -> IP4' payload
@@ -781,7 +781,7 @@ noreplaycheck:
 	ip6->ip6_plen = htons(ntohs(ip6->ip6_plen) - taillen);
 
 	/* was it transmitted over the IPsec tunnel SA? */
-	if (ipsec6_tunnel_validate(ip6, nxt, sav)) {
+	if (ipsec6_tunnel_validate(m, off + esplen + ivlen, ip6, nxt, sav)) {
 		/*
 		 * strip off all the headers that precedes ESP header.
 		 *	IP6 xx ESP IP6' payload -> IP6' payload

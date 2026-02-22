@@ -662,6 +662,7 @@ struct mbuf;
 
 int	in6_cksum(struct mbuf *, u_int8_t, u_int32_t, u_int32_t);
 int	in6_localaddr(struct in6_addr *);
+int	in6_is_addr_anycast(struct in6_addr *);
 int	in6_addrscope(const struct in6_addr *);
 struct	in6_ifaddr *in6_ifawithscope(struct ifnet *, struct in6_addr *);
 struct	in6_ifaddr *in6_ifawithifp(struct ifnet *, struct in6_addr *);

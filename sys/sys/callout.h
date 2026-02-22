@@ -145,6 +145,9 @@ int		callout_hardclock(int);
 void	callout_softclock(void);
 void	callout_setfunc(struct callout *, void (*)(void *), void *);
 
+struct callout *callout_alloc(int);
+void 	callout_free(struct callout *, int);
+
 #define	callout_pending(c)	((c)->c_flags & CALLOUT_PENDING)
 #define	callout_expired(c)	((c)->c_flags & CALLOUT_FIRED)
 #define	callout_invoking(c)	((c)->c_flags & CALLOUT_INVOKING)

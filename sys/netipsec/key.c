@@ -3689,6 +3689,37 @@ key_setsadbxsa2(mode, seq, reqid)
 	return m;
 }
 
+#if 0
+static struct mbuf *
+key_setsadbxsa3(id, seq, socket)
+	u_int32_t id;
+	u_int64_t seq, socket;
+{
+	struct mbuf *m;
+	struct sadb_x_sa3 *p;
+	size_t len;
+
+	len = PFKEY_ALIGN8(sizeof(struct sadb_x_sa3));
+	m = key_alloc_mbuf(len);
+	if (!m || m->m_next) {	/*XXX*/
+		if (m)
+			m_freem(m);
+		return NULL;
+	}
+
+	p = mtod(m, struct sadb_x_sa3 *);
+
+	bzero(p, len);
+	p->sadb_x_sa3_len = PFKEY_UNIT64(len);
+	p->sadb_x_sa3_exttype = SADB_X_EXT_SA3;
+	p->sadb_x_sa3_id = id;
+	p->sadb_x_sa3_sequence = seq;
+	p->sadb_x_sa3_socket = socket;
+
+	return m;
+}
+#endif
+
 /*
  * set data into sadb_x_policy
  */

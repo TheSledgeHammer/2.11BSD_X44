@@ -370,7 +370,7 @@ ah4_input(struct mbuf *m, ...)
 		/* RFC 2402 */
 		stripsiz = sizeof(struct newah) + siz1;
 	}
-	if (ipsec4_tunnel_validate(ip, nxt, sav)) {
+	if (ipsec4_tunnel_validate(m, off + stripsiz, ip, nxt, sav)) {
 		/*
 		 * strip off all the headers that precedes AH.
 		 *	IP xx AH IP' payload -> IP' payload
@@ -800,7 +800,7 @@ ah6_input(mp, offp, proto)
 		/* RFC 2402 */
 		stripsiz = sizeof(struct newah) + siz1;
 	}
-	if (ipsec6_tunnel_validate(ip6, nxt, sav)) {
+	if (ipsec6_tunnel_validate(m, off + stripsiz, ip6, nxt, sav)) {
 		/*
 		 * strip off all the headers that precedes AH.
 		 *	IP6 xx AH IP6' payload -> IP6' payload

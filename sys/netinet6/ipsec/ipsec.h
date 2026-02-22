@@ -414,9 +414,9 @@ extern int ipsec6_output_trans(struct ipsec_output_state *, u_char *,
 	struct mbuf *, struct secpolicy *, int, int *);
 extern int ipsec6_output_tunnel(struct ipsec_output_state *, struct secpolicy *, int);
 #endif
-extern int ipsec4_tunnel_validate(struct ip *, u_int, struct secasvar *);
+extern int ipsec4_tunnel_validate(struct mbuf *, int, struct ip *, u_int, struct secasvar *);
 #ifdef INET6
-extern int ipsec6_tunnel_validate(struct ip6_hdr *, u_int, struct secasvar *);
+extern int ipsec6_tunnel_validate(struct mbuf *, int, struct ip6_hdr *, u_int, struct secasvar *);
 #endif
 extern struct mbuf *ipsec_copypkt(struct mbuf *);
 extern void ipsec_delaux(struct mbuf *);

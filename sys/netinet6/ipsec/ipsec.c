@@ -160,6 +160,12 @@ static int ipsec4_encapsulate(struct mbuf *, struct secasvar *);
 #ifdef INET6
 static int ipsec6_encapsulate(struct mbuf *, struct secasvar *);
 #endif
+#ifdef INET
+static int ipsec_gettunnel(struct mbuf *, int, struct ip *);
+#endif
+#ifdef INET6
+static int ipsec6_gettunnel(struct mbuf *, int, struct ip6_hdr *);
+#endif
 static struct m_tag *ipsec_addaux(struct mbuf *);
 static struct m_tag *ipsec_findaux(struct mbuf *);
 static void ipsec_optaux(struct mbuf *, struct m_tag *);
@@ -2604,8 +2610,13 @@ ipsec4_checksa(isr, state)
 		bcopy(&ip->ip_dst, &sin->sin_addr, sizeof(sin->sin_addr));
 	}
 
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+	return key_checkrequest(isr, &saidx, state->m);
+#else
 	return key_checkrequest(isr, &saidx);
+#endif
 }
+
 /*
  * IPsec output logic for IPv4.
  */
@@ -2835,7 +2846,11 @@ ipsec6_checksa(isr, state, tunnel)
 			panic("ipsec6_checksa/inconsistent tunnel attribute");
 #endif
 		/* When tunnel mode, SA peers must be specified. */
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+		return key_checkrequest(isr, &isr->saidx, state->m);
+#else
 		return key_checkrequest(isr, &isr->saidx);
+#endif
 	}
 
 	/* make SA index for search proper SA */
@@ -2864,8 +2879,13 @@ ipsec6_checksa(isr, state, tunnel)
 		in6_recoverscope(sin6, &ip6->ip6_dst, NULL);
 	}
 
+#ifdef PFKEYV2_SADB_X_EXT_PACKET
+	return key_checkrequest(isr, &saidx, state->m);
+#else
 	return key_checkrequest(isr, &saidx);
+#endif
 }
+
 /*
  * IPsec output logic for IPv6, transport mode.
  */
@@ -3286,9 +3306,72 @@ ipsec6_splithdr(m)
 }
 #endif
 
+static int
+ipsec4_gettunnel(m, off, oip)
+	struct mbuf *m;
+	int off;
+	struct ip *oip;
+{
+	struct sockaddr_in osrc, odst, isrc, idst;
+	struct secpolicy *sp;
+
+	/* XXX slow */
+	bzero(&osrc, sizeof(osrc));
+	bzero(&odst, sizeof(odst));
+	bzero(&isrc, sizeof(isrc));
+	bzero(&idst, sizeof(idst));
+	osrc.sin_family = odst.sin_family = isrc.sin_family = idst.sin_family =
+	    AF_INET;
+	osrc.sin_len = odst.sin_len = isrc.sin_len = idst.sin_len =
+	    sizeof(struct sockaddr_in);
+	osrc.sin_addr = oip->ip_src;
+	odst.sin_addr = oip->ip_dst;
+	m_copydata(m, off + offsetof(struct ip, ip_src), sizeof(isrc.sin_addr),
+	    (caddr_t)&isrc.sin_addr);
+	m_copydata(m, off + offsetof(struct ip, ip_dst), sizeof(idst.sin_addr),
+	    (caddr_t)&idst.sin_addr);
+
+	/*
+	 * RFC2401 5.2.1 (b): (assume that we are using tunnel mode)
+	 * - if the inner destination is multicast address, there can be
+	 *   multiple permissible inner source address.  implementation
+	 *   may want to skip verification of inner source address against
+	 *   SPD selector.
+	 * - if the inner protocol is ICMP, the packet may be an error report
+	 *   from routers on the other side of the VPN cloud (R in the
+	 *   following diagram).  in this case, we cannot verify inner source
+	 *   address against SPD selector.
+	 *	me -- gw === gw -- R -- you
+	 *
+	 * we consider the first bullet to be users responsibility on SPD entry
+	 * configuration (if you need to encrypt multicast traffic, set
+	 * the source range of SPD selector to 0.0.0.0/0, or have explicit
+	 * address ranges for possible senders).
+	 * the second bullet is not taken care of (yet).
+	 *
+	 * therefore, we do not do anything special about inner source.
+	 */
+
+	sp = key_gettunnel((struct sockaddr *)&osrc, (struct sockaddr *)&odst,
+	    (struct sockaddr *)&isrc, (struct sockaddr *)&idst);
+	/*
+	 * when there is no suitable inbound policy for the packet of the ipsec
+	 * tunnel mode, the kernel never decapsulate the tunneled packet
+	 * as the ipsec tunnel mode even when the system wide policy is "none".
+	 * then the kernel leaves the generic tunnel module to process this
+	 * packet.  if there is no rule of the generic tunnel, the packet
+	 * is rejected and the statistics will be counted up.
+	 */
+	if (!sp) {
+		return 0;
+	}
+	key_freesp(sp);
+	return 1;
+}
+
 /* validate inbound IPsec tunnel packet. */
 int
-ipsec4_tunnel_validate(ip, nxt0, sav)
+ipsec4_tunnel_validate(m, off, ip, nxt0, sav)
 	struct ip *ip;
 	u_int nxt0;
 	struct secasvar *sav;
@@ -3302,7 +3385,11 @@ ipsec4_tunnel_validate(ip, nxt0, sav)
 	/* do not decapsulate if the SA is for transport mode only */
 	if (sav->sah->saidx.mode == IPSEC_MODE_TRANSPORT)
 		return 0;
-	hlen = ip->ip_hl << 2;
+#ifdef _IP_VHL
+	hlen = _IP_VHL_HL(oip->ip_vhl) << 2;
+#else
+	hlen = oip->ip_hl << 2;
+#endif
 	if (hlen != sizeof(struct ip))
 		return 0;
 	switch (((struct sockaddr *)&sav->sah->saidx.dst)->sa_family) {
@@ -3320,13 +3407,56 @@ ipsec4_tunnel_validate(ip, nxt0, sav)
 		return 0;
 	}
 
-	return 1;
+	return ipsec4_gettunnel(m, off, ip);
 }
 
 #ifdef INET6
+
+static int
+ipsec6_gettunnel(m, off, oip6)
+	struct mbuf *m;
+	int off;
+	struct ip6_hdr *oip6;
+{
+	struct sockaddr_in6 osrc, odst, isrc, idst;
+	struct secpolicy *sp;
+
+	bzero(&osrc, sizeof(osrc));
+	bzero(&odst, sizeof(odst));
+	osrc.sin6_family = odst.sin6_family = AF_INET6;
+	osrc.sin6_len = odst.sin6_len = sizeof(struct sockaddr_in6);
+	osrc.sin6_addr = oip6->ip6_src;
+	odst.sin6_addr = oip6->ip6_dst;
+
+	/* XXX slow */
+	bzero(&isrc, sizeof(isrc));
+	bzero(&idst, sizeof(idst));
+	isrc.sin6_family = idst.sin6_family = AF_INET6;
+	isrc.sin6_len = idst.sin6_len = sizeof(struct sockaddr_in6);
+	m_copydata(m, off + offsetof(struct ip6_hdr, ip6_src),
+	    sizeof(isrc.sin6_addr), (caddr_t)&isrc.sin6_addr);
+	m_copydata(m, off + offsetof(struct ip6_hdr, ip6_dst),
+	    sizeof(idst.sin6_addr), (caddr_t)&idst.sin6_addr);
+
+	/*
+	 * regarding to inner source address validation, see a long comment
+	 * in ipsec4_tunnel_validate.
+	 */
+
+	sp = key_gettunnel((struct sockaddr *)&osrc, (struct sockaddr *)&odst,
+	    (struct sockaddr *)&isrc, (struct sockaddr *)&idst);
+	if (!sp) {
+		return 0;
+	}
+	key_freesp(sp);
+	return 1;
+}
+
 /* validate inbound IPsec tunnel packet. */
 int
-ipsec6_tunnel_validate(ip6, nxt0, sav)
+ipsec6_tunnel_validate(m, off, ip6, nxt0, sav)
+	struct mbuf *m;
+	int off;
 	struct ip6_hdr *ip6;
 	u_int nxt0;
 	struct secasvar *sav;
@@ -3354,7 +3484,7 @@ ipsec6_tunnel_validate(ip6, nxt0, sav)
 		return 0;
 	}
 
-	return 1;
+	return ipsec6_gettunnel(m, off, ip6);
 }
 #endif
 

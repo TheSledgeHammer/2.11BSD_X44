@@ -586,6 +586,9 @@ in6_ifattach(ifp, altifp)
 #ifdef IFT_PFSYNC
 	case IFT_PFSYNC:
 #endif
+#ifdef IFT_CARP
+	case IFT_CARP:
+#endif
 		return;
 	}
 
