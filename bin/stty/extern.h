@@ -43,7 +43,7 @@ void	gread(struct termios *, char *);
 int		ksearch(char ***, struct info *);
 int		msearch(char ***, struct info *);
 void	optlist(void);
-void	print(struct termios *, struct winsize *, int, const char *, enum FMT);
+void	print(struct termios *, struct winsize *, int, int, enum FMT);
 __dead void	usage(void);
 
 extern const struct cchar cchars1[], cchars2[];

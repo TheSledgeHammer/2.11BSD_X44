@@ -111,7 +111,7 @@ args:	argc -= optind;
 		/* FALLTHROUGH */
 	case STTY_BSD:
 	case STTY_POSIX:
-		print(&i.t, &i.win, i.ldisc, fmt);
+		print(&i.t, &i.win, i.queue, i.ldisc, fmt);
 		break;
 	case STTY_GFLAG:
 		gprint(&i.t);
