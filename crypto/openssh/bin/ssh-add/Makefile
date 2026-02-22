@@ -5,4 +5,6 @@ BINDIR=/usr/bin
 PROG=	ssh-add
 SRCS=	ssh-add.c
 
+COPTS.ssh-add.c= -Wno-pointer-sign
+
 .include <bsd.prog.mk>
