@@ -114,6 +114,9 @@
 #define ONLCR		0x00000002	/* map NL to CR-NL (ala CRMOD) */
 #define OXTABS		0x00000004	/* expand tabs to spaces */
 #define ONOEOT		0x00000008	/* discard EOT's (^D) on output) */
+#define OCRNL		0x00000010	/* map CR to NL */
+#define ONOCR		0x00000020	/* discard CR's when on column 0 */
+#define ONLRET		0x00000040	/* move to column 0 on CR */
 #endif  /* __BSD_VISIBLE */
 
 /*
