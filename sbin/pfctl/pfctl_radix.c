@@ -497,9 +497,9 @@ pfr_buf_next(struct pfr_buffer *b, const void *prev)
 	if (prev == NULL)
 		return (b->pfrb_caddr);
 	bs = buf_esize[b->pfrb_type];
-	if ((((caddr_t)prev)-((caddr_t)b->pfrb_caddr)) / bs >= b->pfrb_size-1)
+	if ((__UNCONST((prev))-(b->pfrb_caddr)) / bs >= (size_t)b->pfrb_size-1)
 		return (NULL);
-	return (((caddr_t)prev) + bs);
+	return ((prev) + bs);
 }
 
 /*
@@ -530,7 +530,7 @@ pfr_buf_grow(struct pfr_buffer *b, int minsize)
 	} else {
 		if (minsize == 0)
 			minsize = b->pfrb_msize * 2;
-		if (minsize < 0 || minsize >= SIZE_T_MAX / bs) {
+		if (minsize < 0 || (size_t)minsize >= SIZE_T_MAX / bs) {
 			/* msize overflow */
 			errno = ENOMEM;
 			return (-1);
@@ -623,7 +623,7 @@ pfr_next_token(char buf[BUF_SIZE], FILE *fp)
 	return (1);
 }
 
-char *
+const char *
 pfr_strerror(int errnum)
 {
 	switch (errnum) {

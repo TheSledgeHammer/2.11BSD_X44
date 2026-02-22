@@ -15,6 +15,8 @@ MAN=	pfctl.8
 LDADD+=	-lm
 DPADD+=	${LIBM}
 
+COPTS.pfctl_osfp.c+= ${GCC_NO_FORMAT_TRUNCATION}
+
 .include <bsd.prog.mk>
 
 # XXX

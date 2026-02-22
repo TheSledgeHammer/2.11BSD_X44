@@ -73,7 +73,7 @@ void	*pfr_buf_next(struct pfr_buffer *, const void *);
 int	 pfr_buf_grow(struct pfr_buffer *, int);
 int	 pfr_buf_load(struct pfr_buffer *, char *, int,
 	    int (*)(struct pfr_buffer *, char *, int));
-char	*pfr_strerror(int);
+const char	*pfr_strerror(int);
 int	 pfi_get_ifaces(const char *, struct pfi_if *, int *, int);
 int	 pfi_clr_istats(const char *, int *, int);
 

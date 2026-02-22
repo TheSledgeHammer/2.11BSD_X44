@@ -127,7 +127,7 @@ pfctl_file_fingerprints(int dev, int opts, const char *fp_filename)
 		memset(&fp, 0, sizeof(fp));
 
 		/* Chop off comment */
-		for (i = 0; i < len; i++)
+		for (i = 0; i < (int)len; i++)
 			if (line[i] == '#') {
 				len = i;
 				break;
@@ -905,7 +905,7 @@ get_tcpopts(const char *filename, int lineno, const char *tcpopts,
 	if (strcmp(tcpopts, ".") == 0)
 		return (0);
 
-	for (i = 0; tcpopts[i] && *optcnt < PF_OSFP_MAX_OPTS;) {
+	for (i = 0; tcpopts[i] && *optcnt < (int)PF_OSFP_MAX_OPTS;) {
 		switch ((opt = toupper((unsigned char)tcpopts[i++]))) {
 		case 'N':	/* FALLTHROUGH */
 		case 'S':
