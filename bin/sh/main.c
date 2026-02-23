@@ -200,7 +200,7 @@ state3:
 #endif
 		    SIGPIPE
 		};
-#define SIGSSIZE (sizeof(sigs)/sizeof(sigs[0]))
+#define SIGSSIZE ((int)(sizeof(sigs)/sizeof(sigs[0])))
 		int i;
 
 		for (i = 0; i < SIGSSIZE; i++)

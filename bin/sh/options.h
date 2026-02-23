@@ -107,7 +107,7 @@ DEF_OPT( "debug",	0 )	/* enable debug prints */
 #ifdef DEFINE_OPTIONS
 	{ 0, 0, 0, 0 },
 };
-#define NOPTS (sizeof optlist / sizeof optlist[0] - 1)
+#define NOPTS ((int)(sizeof optlist / sizeof optlist[0] - 1))
 int sizeof_optlist = sizeof optlist;
 #else
 extern struct optent optlist[];
