@@ -489,17 +489,18 @@ void *
 pfr_buf_next(struct pfr_buffer *b, const void *prev)
 {
 	size_t bs;
+    void *pprev = __UNCONST(prev);
 
 	if (b == NULL || b->pfrb_type <= 0 || b->pfrb_type >= PFRB_MAX)
 		return (NULL);
 	if (b->pfrb_size == 0)
 		return (NULL);
-	if (prev == NULL)
+	if (pprev == NULL)
 		return (b->pfrb_caddr);
 	bs = buf_esize[b->pfrb_type];
-	if ((__UNCONST((prev))-(b->pfrb_caddr)) / bs >= (size_t)b->pfrb_size-1)
+	if ((((caddr_t)pprev)-((caddr_t)b->pfrb_caddr)) / bs >= (size_t)b->pfrb_size-1)
 		return (NULL);
-	return ((prev) + bs);
+	return (((caddr_t)pprev) + bs);
 }
 
 /*

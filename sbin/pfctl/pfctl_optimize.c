@@ -1038,7 +1038,7 @@ skip_cmp_dst_addr(struct pf_rule *a, struct pf_rule *b)
 		return (0);
 	case PF_ADDR_DYNIFTL:
 		if (strcmp(a->dst.addr.v.ifname, b->dst.addr.v.ifname) != 0 ||
-		    a->dst.addr.iflags != a->dst.addr.iflags ||
+		    a->dst.addr.iflags != b->dst.addr.iflags ||
 		    memcmp(&a->dst.addr.v.a.mask, &b->dst.addr.v.a.mask,
 		    sizeof(a->dst.addr.v.a.mask)))
 			return (1);
@@ -1109,7 +1109,7 @@ skip_cmp_src_addr(struct pf_rule *a, struct pf_rule *b)
 		return (0);
 	case PF_ADDR_DYNIFTL:
 		if (strcmp(a->src.addr.v.ifname, b->src.addr.v.ifname) != 0 ||
-		    a->src.addr.iflags != a->src.addr.iflags ||
+		    a->src.addr.iflags != b->src.addr.iflags ||
 		    memcmp(&a->src.addr.v.a.mask, &b->src.addr.v.a.mask,
 		    sizeof(a->src.addr.v.a.mask)))
 			return (1);
@@ -1143,14 +1143,15 @@ void
 skip_init(void)
 {
 	struct {
-		char *name;
+		const char *name;
 		int skipnum;
 		int (*func)(struct pf_rule *, struct pf_rule *);
 	} comps[] = PF_SKIP_COMPARITORS;
-	int skipnum, i;
+	int skipnum, i, len;
 
+    len = (sizeof(comps)/sizeof(*comps));
 	for (skipnum = 0; skipnum < PF_SKIP_COUNT; skipnum++) {
-		for (i = 0; i < sizeof(comps)/sizeof(*comps); i++)
+		for (i = 0; i < len; i++)
 			if (comps[i].skipnum == skipnum) {
 				skip_comparitors[skipnum] = comps[i].func;
 				skip_comparitors_names[skipnum] = comps[i].name;
@@ -1350,12 +1351,13 @@ int
 superblock_inclusive(struct superblock *block, struct pf_opt_rule *por)
 {
 	struct pf_rule a, b;
-	int i, j;
+	int i, j, len;
 
 	/* First check for hard breaks */
-	for (i = 0; i < sizeof(pf_rule_desc)/sizeof(*pf_rule_desc); i++) {
+    len = (sizeof(pf_rule_desc)/sizeof(*pf_rule_desc));
+	for (i = 0; i < len; i++) {
 		if (pf_rule_desc[i].prf_type == BARRIER) {
-			for (j = 0; j < pf_rule_desc[i].prf_size; j++)
+			for (j = 0; j < (int)pf_rule_desc[i].prf_size; j++)
 				if (((char *)&por->por_rule)[j +
 				    pf_rule_desc[i].prf_offset] != 0)
 					return (0);
@@ -1419,13 +1421,14 @@ superblock_inclusive(struct superblock *block, struct pf_opt_rule *por)
 void
 comparable_rule(struct pf_rule *dst, const struct pf_rule *src, int type)
 {
-	int i;
+	int i, len;
 	/*
 	 * To simplify the comparison, we just zero out the fields that are
 	 * allowed to be different and then do a simple memcmp()
 	 */
 	memcpy(dst, src, sizeof(*dst));
-	for (i = 0; i < sizeof(pf_rule_desc)/sizeof(*pf_rule_desc); i++)
+    len = (sizeof(pf_rule_desc)/sizeof(*pf_rule_desc));
+	for (i = 0; i < len; i++)
 		if (pf_rule_desc[i].prf_type >= type) {
 #ifdef OPT_DEBUG
 			assert(pf_rule_desc[i].prf_type != NEVER ||
