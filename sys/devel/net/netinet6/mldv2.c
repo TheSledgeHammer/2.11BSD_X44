@@ -209,7 +209,7 @@ static void mld6_sendbuf(struct mbuf *, struct ifnet *);
 static void mld6_state_change_timeo(struct in6_multi *);
 static void mld6_interface_timeo(struct in6_multi *, struct ifnet *);
 #endif
-
+static int mld6_check_timer(struct mld_hdr *, int);
 static void mld6_group_timeo(struct in6_multi *);
 static struct mld_hdr * mld6_allocbuf(struct mbuf **, int, struct in6_multi *, int);
 static void mld6_sendpkt(struct in6_multi *, int, const struct in6_addr *);
@@ -385,6 +385,18 @@ mld6_start_listening(in6m)
 }
 
 #endif
+
+static int
+mld6_check_timer(mldh, timer)
+	struct mld_hdr *mldh;
+	int timer;
+{
+	timer = MLD_FASTTIMER(ntohs(mldh->mld_maxdelay));
+	if (timer == 0 && mldh->mld_maxdelay) {
+		timer = 1;
+	}
+	return (timer);
+}
 
 void
 mld6_stop_listening(in6m)
@@ -627,10 +639,7 @@ mld6_input(m, off)
 			break;
 		}
 
-		timer = MLD_FASTTIMER(ntohs(mldh->mld_maxdelay));
-		if (timer == 0 && mldh->mld_maxdelay) {
-			timer = 1;
-		}
+		timer = mld6_check_timer(mldh, timer);
 		mld_all_nodes_linklocal.s6_addr16[1] = htons(ifp->if_index); /* XXX */
 
 		for (in6m = LIST_FIRST(&ia->ia6_multiaddrs);
@@ -798,10 +807,7 @@ mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 	 * Get group timer if the query is not Generic Query.
 	 */
 	if (query_type == MLD_V2_GENERAL_QUERY) {
-		timer_i = MLD_FASTTIMER(timer);
-		if (timer_i == 0) {
-			timer_i = PR_FASTHZ;
-		}
+		timer_i = mld6_check_timer(mldh, timer_i);
 		timer_i = MLD_RANDOM_DELAY(timer_i);
 		if (rti->rt6i_timer2 != 0 && rti->rt6i_timer2 < timer_i) {
 			mldlog((LOG_DEBUG, "mld6_set_timer: don't do anything "
@@ -816,10 +822,7 @@ mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 			mld_interface_timers_are_running = 1;
 		}
 	} else { /* G or SG query */
-		timer_g = MLD_FASTTIMER(timer);
-		if (timer_g == 0) {
-			timer_g = PR_FASTHZ;
-		}
+		timer_g = mld6_check_timer(mldh, timer_g);
 		timer_g = MLD_RANDOM_DELAY(timer_g);
 		mldlog((LOG_DEBUG,
 		    "mld6_set_timer: set group timer to %d\n", timer_g / PR_FASTHZ));

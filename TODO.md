@@ -164,6 +164,11 @@ A General todo list. Don't hesitate to add to this list. :)
 - NFS: Update Me, I'm not working yet!!
 
 ## net / net80211 / netinet / netinet6 / netipsec / netkey / netns :
+- netinet:
+	- add: in_msf.c/.h
+- netinet6:
+	- update: ip6_input.c, ip6_mroute.c, ip6_output.c, in6_src.c, icmp6.c
+	- add: in6_msf.c/.h, mldv2.c
 		
 ## ufs:
 - implement Extended Attributes

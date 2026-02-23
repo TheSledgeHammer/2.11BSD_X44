@@ -112,7 +112,7 @@ struct	udp6stat udp6stat;
 static	void udp6_notify(struct in6pcb *, int);
 
 void
-udp6_init()
+udp6_init(void)
 {
 	/* initialization done in udp_input() due to initialization order */
 }
@@ -252,8 +252,8 @@ udp6_ctlinput(cmd, sa, d)
 	}
 }
 
-extern	int udp6_sendspace;
-extern	int udp6_recvspace;
+extern int udp6_sendspace;
+extern int udp6_recvspace;
 
 int
 udp6_usrreq(so, req, m, addr6, control, p)
