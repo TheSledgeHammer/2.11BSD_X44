@@ -114,8 +114,13 @@ struct list secondlevel[] = {
 
 int	Aflag, aflag, nflag, wflag;
 
-//extern char *optarg;
-//extern int optind, errno;
+void listall(const char *, struct list *);
+void parse(char *, int);
+void debuginit(void);
+void vfsinit(void);
+int sysctl_inet(char *, char **, int *, int, int *);
+int findname(char *, const char *, char **, struct list *);
+void usage(void);
 
 /*
  * Variables requiring special processing.
@@ -124,7 +129,7 @@ int	Aflag, aflag, nflag, wflag;
 #define	BOOTTIME	0x00000002
 #define	CONSDEV		0x00000004
 
-void
+int
 main(int argc, char *argv[])
 {
 	int ch, lvl1;
@@ -173,7 +178,7 @@ main(int argc, char *argv[])
  * List all variables known to the system.
  */
 void
-listall(char *prefix, struct list *lp)
+listall(const char *prefix, struct list *lp)
 {
 	int lvl2;
 	char *cp, name[BUFSIZ];
@@ -199,7 +204,8 @@ listall(char *prefix, struct list *lp)
 void
 parse(char *string, int flags)
 {
-	int indx, type, state, size, len;
+	int indx, type, state, len;
+    size_t size;
 	int special = 0;
 	void *newval = (void *)0;
 	int intval, newsize = 0;
@@ -232,7 +238,7 @@ parse(char *string, int flags)
 		debuginit();
 	lp = &secondlevel[indx];
 	if (lp->list == 0) {
-		fprintf(stderr, "%s: class is not implemented\n", topname[indx]);
+		fprintf(stderr, "%s: class is not implemented\n", topname[indx].ctl_name);
 		return;
 	}
 	if (bufp == NULL) {
@@ -313,7 +319,7 @@ parse(char *string, int flags)
 		if (mib[1] == PF_INET) {
 			len = sysctl_inet(string, &bufp, mib, flags, &type);
 			if (len >= 0)
-				break;
+				goto doit;
 			return;
 		}
 		if (flags == 0)
@@ -375,6 +381,7 @@ parse(char *string, int flags)
 		return;
 
 	}
+
 doit:
 	if (bufp) {
 		fprintf(stderr, "name %s in %s is unknown\n", *bufp, string);
@@ -384,13 +391,13 @@ doit:
 		switch (type) {
 		case CTLTYPE_INT:
 			intval = atoi(newval);
-			newval = (void*) &intval;
+			newval = (void *)&intval;
 			newsize = sizeof intval;
 			break;
 		case CTLTYPE_QUAD:
 		case CTLTYPE_LONG:
 			sscanf(newval, "%ld", &longval);
-			newval = (void*) &longval;
+			newval = (void *)&longval;
 			newsize = sizeof longval;
 			break;
 		}
@@ -670,7 +677,7 @@ sysctl_inet(char *string, char **bufpp, int mib[], int flags, int *typep)
  * Scan a list of names searching for a particular name.
  */
 int
-findname(char *string, char *level, char **bufp, struct list *namelist)
+findname(char *string, const char *level, char **bufp, struct list *namelist)
 {
 	char *name;
 	int i;
