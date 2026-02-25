@@ -59,7 +59,7 @@ __KERNEL_RCSID(0, "$NetBSD: keydb.c,v 1.15 2003/09/12 07:38:11 itojun Exp $");
 
 #ifdef SADB_X_EXT_TAG
 #include <net/pf/pfvar.h>
-#else
+#endif
 
 /*
  * secpolicy management
