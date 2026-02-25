@@ -3372,6 +3372,8 @@ ipsec4_gettunnel(m, off, oip)
 /* validate inbound IPsec tunnel packet. */
 int
 ipsec4_tunnel_validate(m, off, ip, nxt0, sav)
+	struct mbuf *m;
+	int off;
 	struct ip *ip;
 	u_int nxt0;
 	struct secasvar *sav;
@@ -3385,7 +3387,7 @@ ipsec4_tunnel_validate(m, off, ip, nxt0, sav)
 	/* do not decapsulate if the SA is for transport mode only */
 	if (sav->sah->saidx.mode == IPSEC_MODE_TRANSPORT)
 		return 0;
-	hlen = oip->ip_hl << 2;
+	hlen = ip->ip_hl << 2;
 	if (hlen != sizeof(struct ip))
 		return 0;
 	switch (((struct sockaddr *)&sav->sah->saidx.dst)->sa_family) {
