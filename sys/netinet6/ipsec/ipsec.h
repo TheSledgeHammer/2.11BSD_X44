@@ -438,12 +438,14 @@ extern const char *ipsec_strerror(void);
 #endif /* !_KERNEL */
 
 #ifdef _KERNEL
+#ifdef IPSEC_XFORM
 /* External declarations of per-file init functions */
 extern void ah_attach(void);
 extern void esp_attach(void);
 extern void ipcomp_attach(void);
 //extern void ipe4_attach(void);
 extern void ipsec_attach(void);
+#endif /* IPSEC_XFORM */
 #endif
 
 #endif /* _NETINET6_IPSEC_H_ */
