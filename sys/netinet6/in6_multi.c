@@ -117,6 +117,10 @@ struct multi6_kludge {
 struct in6_multi *in6_addmulti1(struct in6_addr *, struct ifnet *, int *, int);
 void in6_delmulti1(struct in6_multi *);
 
+/*
+ * Add an address to the list of IP6 multicast addresses for a
+ * given interface.
+ */
 struct	in6_multi *
 in6_addmulti(maddr6, ifp, errorp)
 	struct in6_addr *maddr6;
@@ -130,6 +134,9 @@ in6_addmulti(maddr6, ifp, errorp)
 #endif
 }
 
+/*
+ * Delete a multicast address record.
+ */
 void
 in6_delmulti(in6m)
 	struct in6_multi *in6m;

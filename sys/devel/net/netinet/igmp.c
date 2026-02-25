@@ -271,13 +271,15 @@ rti_find(ifp)
 	struct router_info *rti;
 
 	LIST_FOREACH(rti, &rti_head, rti_link) {
-		if (rti->rti_ifp == ifp)
+		if (rti->rti_ifp == ifp) {
 			return (rti);
+		}
 	}
 
 	rti = rti_init(ifp);
-	if (rti == NULL)
+	if (rti == NULL) {
 		return NULL;
+	}
 	return (rti);
 }
 
@@ -370,13 +372,7 @@ igmp_get_router_alert(m)
 }
 
 void
-#if __STDC__
 igmp_input(struct mbuf *m, ...)
-#else
-igmp_input(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	int proto;
 	int iphlen, igmplen;
@@ -440,6 +436,12 @@ igmp_input(m, va_alist)
 	}
 	m->m_data -= iphlen;
 	m->m_len += iphlen;
+
+	if ((rti = rti_find(ifp)) == NULL) {
+		++igmpstat.igps_rcv_query_fails;
+		m_freem(m);
+		return; /* XXX */
+	}
 
 	switch (igmp->igmp_type) {
 
@@ -545,7 +547,7 @@ start_v2:
 			 * timers already running, check if they need to be
 			 * reset.
 			 */
-			timer = igmp->igmp_code * PR_FASTHZ / IGMP_TIMER_SCALE;
+			timer = IGMP_TIMER(igmp->igmp_code);
 			if (timer == 0)
 				timer = 1;
 			IN_FIRST_MULTI(step, inm);
@@ -889,6 +891,7 @@ igmp_fasttimo(void)
 	cm = sm = NULL;
 	cbuflen = sbuflen = 0;
 #endif
+	IN_FIRST_MULTI(step, inm);
 	ifp = inm->inm_ifp;
 	while (inm != NULL) {
 		if (inm->inm_timer == 0)
@@ -1232,7 +1235,7 @@ igmp_set_timer(ifp, rti, igmp, igmplen, query_type)
 	 * Get group timer if the query is not Generic Query.
 	 */
 	if (query_type == IGMP_v3_GENERAL_QUERY) {
-		timer_i = timer * PR_FASTHZ / IGMP_TIMER_SCALE;
+		timer_i = IGMP_TIMER(timer);
 		timer_i = IGMP_RANDOM_DELAY(timer_i);
 		if (interface_timers_are_running && (rti->rti_timer3 != 0)
 				&& (rti->rti_timer3 < timer_i))
@@ -1242,7 +1245,7 @@ igmp_set_timer(ifp, rti, igmp, igmplen, query_type)
 			interface_timers_are_running = 1;
 		}
 	} else { /* G or SG query */
-		timer_g = timer * PR_FASTHZ / IGMP_TIMER_SCALE;
+		timer_g = IGMP_TIMER(timer);
 		timer_g = IGMP_RANDOM_DELAY(timer_g);
 	}
 

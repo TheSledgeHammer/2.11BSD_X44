@@ -163,6 +163,9 @@ __KERNEL_RCSID(0, "$NetBSD: in.c,v 1.93.2.1.4.1 2006/04/02 17:48:18 riz Exp $");
 struct in_multi *in_addmulti1(struct in_addr *, struct ifnet *);
 void in_delmulti1(struct in_multi *);
 
+/*
+ * Add an address to the list of IP multicast addresses for a given interface.
+ */
 struct in_multi *
 in_addmulti(ap, ifp)
 	struct in_addr *ap;
@@ -176,6 +179,9 @@ in_addmulti(ap, ifp)
 #endif
 }
 
+/*
+ * Delete a multicast address record.
+ */
 void
 in_delmulti(inm)
 	struct in_multi *inm;

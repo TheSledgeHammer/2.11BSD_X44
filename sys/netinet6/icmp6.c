@@ -2185,6 +2185,12 @@ icmp6_fasttimo(void)
 	mld6_fasttimeo();
 }
 
+void
+icmp6_slowtimo(void)
+{
+	mld6_slowtimeo();
+}
+
 static const char *
 icmp6_redirect_diag(src6, dst6, tgt6)
 	struct in6_addr *src6;

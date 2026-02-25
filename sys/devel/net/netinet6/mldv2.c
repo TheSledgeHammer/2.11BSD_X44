@@ -119,8 +119,8 @@
 #include <netinet/in.h>
 #include <netinet/in_var.h>
 #include <netinet/in_systm.h>
+#include <netinet6/in6_var.h>
 #include <netinet/ip.h>
-#include <netinet/in_pcb.h>
 #include <netinet/ip6.h>
 #include <netinet6/ip6_var.h>
 #include <netinet/icmp6.h>
@@ -160,7 +160,7 @@ int mldsomaxsrc = SO_MAX_SOURCE_FILTER;
 #ifdef MLDV2
 int mld_version = 0;
 #else
-int mld_verion = 1;
+int mld_version = 1;
 #endif
 
 #ifdef MLDV2_DEBUG
@@ -169,16 +169,16 @@ int mld_debug = 1;
 int mld_debug = 0;
 #endif
 
+
 #ifdef MLDV2
-static struct router6_info *head6;
+static LIST_HEAD(, router6_info) rt6i_head = LIST_HEAD_INITIALIZER(rt6i_head);
 #endif
 
 static struct ip6_pktopts ip6_opts;
-static int mld_group_timers_are_running;
-#ifdef MLDV2
+static int mld_timers_are_running;
 static int mld_state_change_timers_are_running;
 static int mld_interface_timers_are_running;
-#endif
+
 /* XXX: These are necessary for KAME's link-local hack */
 static struct in6_addr mld_all_nodes_linklocal = IN6ADDR_LINKLOCAL_ALLNODES_INIT;
 static struct in6_addr mld_all_routers_linklocal = IN6ADDR_LINKLOCAL_ALLROUTERS_INIT;
@@ -193,8 +193,8 @@ static const int addrlen = sizeof(struct in6_addr);
 
 #define	SOURCE_RECORD_LEN(numsrc)	(numsrc * addrlen)
 
-static struct router6_info *init_rt6i(struct ifnet *);
-static struct router6_info *find_rt6i(struct ifnet *);
+static struct router6_info *rt6i_init(struct ifnet *);
+static struct router6_info *rt6i_find(struct ifnet *);
 
 static int mld6_query_version(struct mbuf *, int, u_int16_t);
 static int mld6_query_type(struct mldv2_hdr *, struct in6_addr *, int);
@@ -205,12 +205,8 @@ static int mld6_send_current_state_report(struct in6_multi *);
 static int mld6_create_group_record(struct mbuf *, struct in6_multi *, u_int16_t, u_int16_t *, u_int8_t);
 static void mld6_cancel_pending_response(struct ifnet *, struct router6_info *);
 static void mld6_sendbuf(struct mbuf *, struct ifnet *);
-
-static void mld6_state_change_timeo(struct in6_multi *);
-static void mld6_interface_timeo(struct in6_multi *, struct ifnet *);
 #endif
-static int mld6_check_timer(struct mld_hdr *, int);
-static void mld6_group_timeo(struct in6_multi *);
+
 static struct mld_hdr * mld6_allocbuf(struct mbuf **, int, struct in6_multi *, int);
 static void mld6_sendpkt(struct in6_multi *, int, const struct in6_addr *);
 
@@ -221,11 +217,9 @@ mld6_init(void)
 	struct ip6_hbh *hbh = (struct ip6_hbh *)hbh_buf;
 	u_int16_t rtalert_code = htons((u_int16_t)IP6OPT_RTALERT_MLD);
 
-	mld_group_timers_are_running = 0;
-#ifdef MLDV2
-	mld_state_change_timers_are_running = 0;
-	mld_interface_timers_are_running = 0;
-#endif
+	mld_timers_are_running = 0;
+	mld_state_change_timers_are_running = 0; /* used only by MLDv2 */
+	mld_interface_timers_are_running = 0;  /* used only by MLDv2 */
 
 	/* ip6h_nxt will be fill in later */
 	hbh->ip6h_len = 0;	/* (8 >> 3) - 1 */
@@ -240,20 +234,18 @@ mld6_init(void)
 	ip6_opts.ip6po_hbh = hbh;
 	/* We will specify the hoplimit by a multicast option. */
 	ip6_opts.ip6po_hlim = -1;
-
-#ifdef MLDV2
-	head6 = NULL;
-#endif
 }
+
+#include <sys/queue.h>
 
 #ifdef MLDV2
 static struct router6_info *
-init_rt6i(ifp)
+rt6i_init(ifp)
 	struct ifnet *ifp;
 {
 	struct router6_info *rti;
 
-	MALLOC(rti, struct router6_info *, sizeof *rti, M_MRTABLE, M_NOWAIT);
+	rti = (struct router6_info *)malloc(sizeof(struct router6_info), M_MRTABLE, M_NOWAIT);
 	if (rti == NULL) {
 		return (NULL);
 	}
@@ -263,28 +255,36 @@ init_rt6i(ifp)
 	rti->rt6i_qrv = MLD_DEF_RV;
 	rti->rt6i_qqi = MLD_DEF_QI;
 	rti->rt6i_qri = MLD_DEF_QRI / MLD_TIMER_SCALE;
-	if (mld_version == 1) {
-		rti->rt6i_type = MLD_V1_ROUTER;
-	} else {
+	switch (mld_version) {
+	case 0:
 		rti->rt6i_type = MLD_V2_ROUTER;
+		break;
+	case 1:
+		rti->rt6i_type = MLD_V1_ROUTER;
+		break;
+	case 2:
+		rti->rt6i_type = MLD_V2_ROUTER;
+		break;
+	default:
+		/* impossible */
+		break;
 	}
-	rti->rt6i_next = head6;
-	head6 = rti;
+	LIST_INSERT_HEAD(&rt6i_head, rti, rt6i_link);
 	return (rti);
 }
 
 static struct router6_info *
-find_rt6i(struct ifnet *ifp)
+rt6i_find(struct ifnet *ifp)
 {
-	struct router6_info *rti = head6;
+	struct router6_info *rti;
 
-	while (rti) {
+	LIST_FOREACH(rti, &rt6i_head, rt6i_link) {
 		if (rti->rt6i_ifp == ifp) {
 			return (rti);
 		}
-		rti = rti->rt6i_next;
 	}
-	rti = init_rt6i(ifp);
+
+	rti = rt6i_init(ifp);
 	if (rti == NULL) {
 		return (NULL);
 	}
@@ -339,7 +339,7 @@ mld6_start_listening(in6m, type)
 			    MLD_RANDOM_DELAY(MLD_UNSOLICITED_REPORT_INTERVAL *
 			    PR_FASTHZ);
 			in6m->in6m_state = MLD_IREPORTEDLAST;
-			mld_group_timers_are_running = 1;
+			mld_timers_are_running = 1;
 		}
 
 	}
@@ -379,24 +379,12 @@ mld6_start_listening(in6m)
 		    MLD_RANDOM_DELAY(MLD_UNSOLICITED_REPORT_INTERVAL *
 		    PR_FASTHZ);
 		in6m->in6m_state = MLD_IREPORTEDLAST;
-		mld_group_timers_are_running = 1;
+		mld_timers_are_running = 1;
 	}
 	splx(s);
 }
 
 #endif
-
-static int
-mld6_check_timer(mldh, timer)
-	struct mld_hdr *mldh;
-	int timer;
-{
-	timer = MLD_FASTTIMER(ntohs(mldh->mld_maxdelay));
-	if (timer == 0 && mldh->mld_maxdelay) {
-		timer = 1;
-	}
-	return (timer);
-}
 
 void
 mld6_stop_listening(in6m)
@@ -470,10 +458,8 @@ mld6_query_type(mldv2h, mld_addr, query_ver)
 	if (IN6_IS_ADDR_MULTICAST(mld_addr)) {
 		if (mldv2h->mld_numsrc == 0) {
 			query_type = MLD_V2_GROUP_QUERY;
-			mldlog((LOG_DEBUG, "MLDv2 group Query\n"));
 		} else {
 			query_type = MLD_V2_GROUP_SOURCE_QUERY;
-			mldlog((LOG_DEBUG, "MLDv2 source-group Query\n"));
 		}
 	}
 	return (query_type);
@@ -552,8 +538,7 @@ mld6_input(m, off)
 	}
 
 #ifdef MLDV2
-
-	rt6i = find_rt6i(ifp);
+	rt6i = rt6i_find(ifp);
 	if (rt6i == NULL) {
 		mldlog((LOG_DEBUG,
 			"mld_input(): cannot find router6_info at link#%d\n",
@@ -639,7 +624,10 @@ mld6_input(m, off)
 			break;
 		}
 
-		timer = mld6_check_timer(mldh, timer);
+		timer = MLD_TIMER(ntohs(mldh->mld_maxdelay));
+		if (timer == 0 && mldh->mld_maxdelay) {
+			timer = 1;
+		}
 		mld_all_nodes_linklocal.s6_addr16[1] = htons(ifp->if_index); /* XXX */
 
 		for (in6m = LIST_FIRST(&ia->ia6_multiaddrs);
@@ -661,7 +649,7 @@ mld6_input(m, off)
 				} else if (in6m->in6m_timer == 0 || /*idle state*/
 						in6m->in6m_timer > timer) {
 					in6m->in6m_timer = MLD_RANDOM_DELAY(timer);
-					mld_group_timers_are_running = 1;
+					mld_timers_are_running = 1;
 				}
 			}
 		}
@@ -757,11 +745,7 @@ mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 	int timer_i = 0;		/* interface timer */
 	int timer_g = 0;		/* group timer */
 	int error;
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 	int s = splsoftnet();
-#else
-	int s = splnet();
-#endif
 
 	/*
 	 * Parse QRV, QQI, and QRI timer values.
@@ -799,33 +783,23 @@ mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 		timer = (MLD_MRC_MANT(mldh->mld_maxdelay) | 0x1000)
 				<< (MLD_MRC_EXP(mldh->mld_maxdelay) + 3);
 	}
-	mldlog((LOG_DEBUG, "mld6_set_timer: qrv=%d,qqi=%d,qri=%d,timer=%d\n",
-		rti->rt6i_qrv, rti->rt6i_qqi, rti->rt6i_qri, timer));
 
 	/*
 	 * Set interface timer if the query is Generic Query.
 	 * Get group timer if the query is not Generic Query.
 	 */
 	if (query_type == MLD_V2_GENERAL_QUERY) {
-		timer_i = mld6_check_timer(mldh, timer_i);
+		timer_i = MLD_TIMER(timer);
 		timer_i = MLD_RANDOM_DELAY(timer_i);
-		if (rti->rt6i_timer2 != 0 && rti->rt6i_timer2 < timer_i) {
-			mldlog((LOG_DEBUG, "mld6_set_timer: don't do anything "
-			    "as appropriate I/F timer (%d) is already running"
-			    "(planned=%d)\n",
-			    rti->rt6i_timer2 / PR_FASTHZ, timer_i / PR_FASTHZ));
+		if (mld_interface_timers_are_running && (rti->rt6i_timer2 != 0) && (rti->rt6i_timer2 < timer_i)) {
 			/* don't need to update interface timer */
 		} else {
-			mldlog((LOG_DEBUG, "mld6_set_timer: set I/F timer "
-			    "to %d\n", timer_i / PR_FASTHZ));
 			rti->rt6i_timer2 = timer_i;
 			mld_interface_timers_are_running = 1;
 		}
 	} else { /* G or SG query */
-		timer_g = mld6_check_timer(mldh, timer_g);
+		timer_g = MLD_TIMER(timer);
 		timer_g = MLD_RANDOM_DELAY(timer_g);
-		mldlog((LOG_DEBUG,
-		    "mld6_set_timer: set group timer to %d\n", timer_g / PR_FASTHZ));
 	}
 
 	IN6_FIRST_MULTI(step, in6m);
@@ -847,6 +821,9 @@ mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 			 * pending group timer is not sooner than new
 			 * interface timer.
 			 */
+			if (!mld_timers_are_running) {
+				goto next_multi;
+			}
 			if (in6m->in6m_timer <= rti->rt6i_timer2) {
 				goto next_multi;
 			}
@@ -855,8 +832,6 @@ mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 			    (in6m->in6m_source->i6ms_cur->numsrc == 0)) {
 				goto next_multi; /* no need to consider any timer */
 			}
-			mldlog((LOG_DEBUG,
-			    "mld6_set_timer: clears pending response\n"));
 			in6m->in6m_state = MLD_OTHERLISTENER;
 			in6m->in6m_timer = 0;
 			in6_free_msf_source_list(in6m->in6m_source->i6ms_rec->head);
@@ -871,7 +846,7 @@ mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 		 * If interface timer is sooner than new group timer,
 		 * just ignore this Query for this group address.
 		 */
-		if (rti->rt6i_timer2 < timer_g) {
+		if (mld_interface_timers_are_running && (rti->rt6i_timer2 < timer_g)) {
 			in6m->in6m_state = MLD_OTHERLISTENER;
 			in6m->in6m_timer = 0;
 			break;
@@ -887,8 +862,8 @@ mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 			 */
 			if ((in6m->in6m_state != MLD_G_QUERY_PENDING_MEMBER) &&
 			    (in6m->in6m_state != MLD_SG_QUERY_PENDING_MEMBER)) {
+				mld_timers_are_running = 1;
 				in6m->in6m_timer = timer_g;
-				mld_group_timers_are_running = 1;
 			} else {
 				in6_free_msf_source_list(in6m->in6m_source->i6ms_rec->head);
 				in6m->in6m_source->i6ms_rec->numsrc = 0;
@@ -911,22 +886,19 @@ mld6_set_timer(ifp, rti, mld, mldlen, query_type)
 			break;
 		}
 		/* Queried sources are augmented. */
-		error = mld6_record_queried_source(in6m, mld, mldlen);
-		if (error > 0) {
+		if ((error = mld6_record_queried_source(in6m, mld, mldlen)) > 0) {
 			/* XXX: ToDo: ICMPv6 error statistics */
 			splx(s);
 			return error;
+		} else if (error == 0){
+			if (in6m->in6m_timer != 0) {
+				in6m->in6m_timer = min(in6m->in6m_timer, timer_g);
+			} else {
+				mld_timers_are_running = 1;
+				in6m->in6m_timer = timer_g;
+			}
+			in6m->in6m_state = MLD_SG_QUERY_PENDING_MEMBER;
 		}
-		if (error < 0) {
-			break;	/* no need to do any additional things */
-		}
-		in6m->in6m_state = MLD_SG_QUERY_PENDING_MEMBER;
-		if (in6m->in6m_timer != 0) {
-			in6m->in6m_timer = min(in6m->in6m_timer, timer_g);
-		} else {
-			in6m->in6m_timer = timer_g;
-		}
-		mld_group_timers_are_running = 1;
 		break;
 
 next_multi:
@@ -942,114 +914,136 @@ mld6_fastimeo(void)
 {
 	struct in6_multi *in6m;
 	struct in6_multistep step;
+	struct ifnet *ifp = NULL;
+#ifdef MLDV2
+	struct router6_info *rti;
+#endif
 	int s;
 
 	/*
 	 * Quick check to see if any work needs to be done, in order
 	 * to minimize the overhead of fasttimo processing.
 	 */
-#ifdef MLDV2
-	if (!mld_group_timers_are_running && !mld_interface_timers_are_running && !mld_state_change_timers_are_running) {
+	if (!mld_timers_are_running && !mld_interface_timers_are_running
+			&& !mld_state_change_timers_are_running) {
 		return;
 	}
-#else
-	if (!mld_group_timers_are_running) {
-		return;
-	}
-#endif
 
 	s = splsoftnet();
-	mld_group_timers_are_running = 0;
+
+	if (mld_interface_timers_are_running) {
+		mld_interface_timers_are_running = 0;
+		LIST_FOREACH(rti, &rt6i_head, rti_link) {
+			if (rti->rt6i_timer2 == 0) {
+				/* do nothing */
+			} else if (--rti->rt6i_timer2 == 0) {
+				mld6_send_all_current_state_report(ifp);
+			} else {
+				mld_interface_timers_are_running = 1;
+			}
+		}
+	}
+#ifndef MLDV2
+	if (!mld_timers_are_running) {
+#else
+	if (!mld_interface_timers_are_running && !mld_state_change_timers_are_running) {
+#endif
+		splx(s);
+		return;
+	}
+
+	mld_timers_are_running = 0;
 #ifdef MLDV2
-	mld_interface_timers_are_running = 0;
 	mld_state_change_timers_are_running = 0;
 #endif
 	IN6_FIRST_MULTI(step, in6m);
+	ifp = in6m->in6m_ifp;
 	while (in6m != NULL) {
+		if (in6m->in6m_timer == 0) {
+			goto state_change_timer;
+			/* do nothing */
+		}
+		--in6m->in6m_timer;
+		if (in6m->in6m_timer > 0) {
+			mld_timers_are_running = 1;
+			goto state_change_timer;
+		}
+
+		if (in6m->in6m_rti->rt6i_type == MLD_V1_ROUTER) {
+			mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
+			in6m->in6m_state = MLD_IREPORTEDLAST;
 #ifdef MLDV2
-		mld6_state_change_timeo(in6m);
-		mld6_interface_timeo(in6m, in6m->in6m_ifp);
+		} else if (in6m->in6m_state == MLD_G_QUERY_PENDING_MEMBER
+				|| in6m->in6m_state == MLD_SG_QUERY_PENDING_MEMBER) {
+			mld6_send_current_state_report(in6m);
+			in6m->in6m_state = MLD_OTHERLISTENER;
+			ifp = in6m->in6m_ifp;
 #endif
-		mld6_group_timeo(in6m);
+		}
+
+state_change_timer:
+		if (in6_is_mld_target(&in6m->in6m_addr)) {
+			goto next_in6m;
+		}
+		if (in6m->in6m_source->i6ms_timer == 0) {
+			goto next_in6m;
+		}
+		/* skip */
+
+		--in6m->in6m_source->i6ms_timer;
+		if (in6m->in6m_source->i6ms_timer > 0) {
+			mld_state_change_timers_are_running = 1;
+			goto next_in6m;
+		}
+		/* skip */
+
+		/*
+		 * Check if this report was pending Source-List-Change report or not.
+		 * It is only the case that robvar was not reduced here.
+		 * (XXX rarely, QRV may be changed in a same timing.)
+		 */
+		if (in6m->in6m_source->i6ms_robvar == in6m->in6m_rti->rt6i_qrv) {
+			mld6_send_state_change_report(in6m, 0, 1);
+		} else if (in6m->in6m_source->i6ms_robvar > 0) {
+			mld6_send_state_change_report(in6m, 0, 0);
+			ifp = in6m->in6m_ifp;
+		}
+		if (in6m->in6m_source->i6ms_robvar != 0) {
+			in6m->in6m_source->i6ms_timer = MLD_RANDOM_DELAY(
+					MLD_UNSOLICITED_REPORT_INTERVAL * PR_FASTHZ);
+			mld_state_change_timers_are_running = 1;
+		}
+next_in6m:
 		IN6_NEXT_MULTI(step, in6m);
 	}
 	splx(s);
 }
 
-static void
-mld6_group_timeo(in6m)
-	struct in6_multi *in6m;
-{
-	if (in6m->in6m_timer == 0) {
-		/* do nothing */
-	} else if (--in6m->in6m_timer == 0) {
-#ifdef MLDV2
-		if (in6m->in6m_rti->rt6i_type == MLD_V1_ROUTER) {
-			mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
-			in6m->in6m_state = MLD_IREPORTEDLAST;
-		}
-		if (in6m->in6m_state == MLD_G_QUERY_PENDING_MEMBER
-				|| in6m->in6m_state == MLD_SG_QUERY_PENDING_MEMBER) {
-			mld6_send_current_state_report(in6m);
-			in6m->in6m_state = MLD_OTHERLISTENER;
-		}
-#else
-		mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
-		in6m->in6m_state = MLD_IREPORTEDLAST;
-#endif
-	} else {
-		mld_group_timers_are_running = 1;
-	}
-}
-
-#ifdef MLDV2
-
-static void
-mld6_state_change_timeo(in6m)
-	struct in6_multi *in6m;
-{
-	struct in6_multi_source *i6ms;
-
-	i6ms = in6m->in6m_source;
-	if (i6ms != NULL) {
-		if (i6ms->i6ms_timer == 0 && i6ms->i6ms_robvar == 0) {
-			/* do nothing */
-		} else if (--i6ms->i6ms_timer == 0) {
-			/*
-			 * Check if this report was pending Source-List-Change report or not.
-			 * It is only the case that robvar was not reduced here.
-			 * (XXX rarely, QRV may be changed in a same timing.)
-			 */
-			if (i6ms->i6ms_robvar == in6m->in6m_rti->rt6i_qrv) {
-				mld6_send_state_change_report(in6m, 0, 1);
-			} else if (i6ms->i6ms_robvar > 0) {
-				mld6_send_state_change_report(in6m, 0, 0);
-			}
-		} else {
-			/* schedule the next state change report */
-			mld_state_change_timers_are_running = 1;
-		}
-	}
-}
-
-static void
-mld6_interface_timeo(in6m, ifp)
-	struct in6_multi *in6m;
-	struct ifnet *ifp;
+void
+mld6_slowtimeo(void)
 {
 	struct router6_info *rti;
+	int s;
 
-	rti = find_rt6i(ifp);
-	if (rti != NULL) {
+	s = splsoftnet();
+	LIST_FOREACH(rti, &rt6i_head, rti_link) {
+#ifdef MLDV2
 		if (rti->rt6i_timer1 == 0) {
-			if (mld_version == 1) {
+			switch (mld_version) {
+			case 1:
 				if (rti->rt6i_type != MLD_V1_ROUTER) {
 					rti->rt6i_type = MLD_V1_ROUTER;
-				} else {
-					if (rti->rt6i_type != MLD_V2_ROUTER) {
-						rti->rt6i_type = MLD_V2_ROUTER;
-					}
 				}
+				break;
+			case 2:
+			case 0:
+				if (rti->rt6i_type != MLD_V2_ROUTER) {
+					rti->rt6i_type = MLD_V2_ROUTER;
+				}
+				break;
+			default:
+				/* impossible */
+				break;
 			}
 		} else if (--rti->rt6i_timer1 == 0) {
 			switch (rti->rt6i_type) {
@@ -1068,22 +1062,11 @@ mld6_interface_timeo(in6m, ifp)
 				/* impossible */
 				break;
 			}
-		} else {
-			goto running;
 		}
-
-		if (rti->rt6i_timer2 == 0) {
-			/* do nothing */
-		} else if (--rti->rt6i_timer2 == 0) {
-			mld6_send_all_current_state_report(ifp);
-		} else {
-running:
-			mld_interface_timers_are_running = 1;
-		}
-	}
-}
-
 #endif
+	}
+	splx(s);
+}
 
 static struct mld_hdr *
 mld6_allocbuf(mh, len, in6m, type)
@@ -1494,7 +1477,7 @@ mld6_send_current_state_report(in6m)
 		in6m->in6m_source->i6ms_rec->numsrc = 0;
 	}
 	in6m->in6m_state = MLD_OTHERLISTENER;
-	in6m->in6m_timer = IN6M_TIMER_UNDEF;
+	in6m->in6m_timer = 0;
 
 	return 0;
 }

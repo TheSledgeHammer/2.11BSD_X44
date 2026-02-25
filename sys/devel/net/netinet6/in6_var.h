@@ -509,13 +509,11 @@ struct router6_info {
     struct  ifnet *rt6i_ifp;
     int    rt6i_type; /* type of router which is querier on this interface */
     u_int	rt6i_timer1;	/* Older Version Querier Present Timer */
-	//struct callout *rt6i_timer1_ch;
 	u_int	rt6i_timer2;	/* Interface Timer */
-	//struct callout *rt6i_timer2_ch;
 	u_int	rt6i_qrv;	/* Querier Robustness Variable */
 	u_int	rt6i_qqi;	/* Querier Interval Variable */
 	u_int	rt6i_qri;	/* Querier Response Interval */
-	struct router6_info *rt6i_next;
+	LIST_ENTRY(router6_info) rt6i_link;
 };
 
 struct in6_multi {
@@ -528,8 +526,6 @@ struct in6_multi {
 	struct	router6_info *in6m_rti;	/* router info */
 	struct	in6_multi_source *in6m_source;	/* filtered source list */
 	u_int	in6m_timer;		/* MLD6 listener report timer */
-	struct  timeval in6m_timer_expire; /* when the timer expires */
-	struct callout *in6m_timer_ch;
 };
 
 #define IN6M_TIMER_UNDEF 0

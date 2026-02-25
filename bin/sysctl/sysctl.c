@@ -384,7 +384,7 @@ parse(char *string, int flags)
 
 doit:
 	if (bufp) {
-		fprintf(stderr, "name %s in %s is unknown\n", *bufp, string);
+		fprintf(stderr, "name %s in %s is unknown\n", bufp, string);
 		return;
 	}
 	if (newsize > 0) {
@@ -437,7 +437,7 @@ doit:
 		if (!nflag)
 			fprintf(stdout, "%s = %s", string, ctime(&btp->tv_sec));
 		else
-			fprintf(stdout, "%d\n", btp->tv_sec);
+			fprintf(stdout, "%lld\n", btp->tv_sec);
 		return;
 	}
 	if (special & CONSDEV) {
@@ -446,7 +446,7 @@ doit:
 		if (!nflag)
 			fprintf(stdout, "%s = %s\n", string, devname(dev, S_IFCHR));
 		else
-			fprintf(stdout, "0x%x\n", dev);
+			fprintf(stdout, "0x%lx\n", dev);
 		return;
 	}
 	switch (type) {
@@ -454,11 +454,11 @@ doit:
 		if (newsize == 0) {
 			if (!nflag)
 				fprintf(stdout, "%s = ", string);
-			fprintf(stdout, "%d\n", *(int*) buf);
+			fprintf(stdout, "%d\n", *(int*)buf);
 		} else {
 			if (!nflag)
-				fprintf(stdout, "%s: %d -> ", string, *(int*) buf);
-			fprintf(stdout, "%d\n", *(int*) newval);
+				fprintf(stdout, "%s: %d -> ", string, *(int*)buf);
+			fprintf(stdout, "%d\n", *(int*)newval);
 		}
 		return;
 
@@ -470,7 +470,7 @@ doit:
 		} else {
 			if (!nflag)
 				fprintf(stdout, "%s: %s -> ", string, buf);
-			fprintf(stdout, "%s\n", newval);
+			fprintf(stdout, "%s\n", (char *)newval);
 		}
 		return;
 	case CTLTYPE_QUAD:
@@ -549,7 +549,8 @@ sysctl_mscp(char *string, char **bufpp, int mib[], int flags, int *typep)
 void
 debuginit(void)
 {
-	int mib[3], size, loc, i;
+	int mib[3], loc, i;
+	size_t size;
 
 	if (secondlevel[CTL_DEBUG].list != 0)
 		return;

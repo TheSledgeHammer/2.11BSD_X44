@@ -130,7 +130,7 @@ struct in_ifaddr {
 					   the allhosts multicast group */
 };
 
-struct	in_aliasreq {
+struct in_aliasreq {
 	char	ifra_name[IFNAMSIZ];		/* if name, e.g. "en0" */
 	struct	sockaddr_in ifra_addr;
 	struct	sockaddr_in ifra_dstaddr;
@@ -142,7 +142,6 @@ struct	in_aliasreq {
  * return a pointer to the addr as a sockaddr_in.
  */
 #define	IA_SIN(ia) (&(((struct in_ifaddr *)(ia))->ia_addr))
-
 
 #ifdef	_KERNEL
 #ifndef IN_IFADDR_HASH_SIZE

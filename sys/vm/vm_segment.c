@@ -528,33 +528,84 @@ vm_segment_zero_fill(s)
 }
 
 /*
+ * vm_segment_page_scan:
+ *
+ * Scans one segment worth of pages.
+ * Checks page against the being scanned. Returns scanned page if both pages are equal or
+ * page if not equal.
+ */
+vm_page_t
+vm_segment_page_scan(segment, page)
+	vm_segment_t segment;
+	vm_page_t page;
+{
+	vm_page_t scan;
+
+	if (segment != NULL) {
+		TAILQ_FOREACH(scan, &segment->memq, listq) {
+			if (scan->segment == segment) {
+				if (scan != NULL) {
+					break;
+				}
+			}
+		}
+		if (page != NULL) {
+			if (page->segment == segment) {
+				if (page == scan) {
+					return (scan);
+				} else {
+					return (page);
+				}
+			}
+		} else {
+			return (scan);
+		}
+	}
+	return (NULL);
+}
+
+/*
  *	vm_segment_copy:
  *
  *	Copy one segment to another. Checks if destination segment isn't null and
  *	contains no pages. if pages do exist will run vm_page_copy on all the source segment pages instead.
  */
 void
-vm_segment_copy(src_seg, dest_seg)
-	vm_segment_t src_seg, dest_seg;
+vm_segment_copy(src_segment, dest_segment)
+	vm_segment_t src_segment, dest_segment;
 {
-	vm_page_t src_page;
-	vm_page_t dest_page;
+	vm_page_t src_page, dest_page;
 
-	VM_SEGMENT_CHECK(src_seg);
-	VM_SEGMENT_CHECK(dest_seg);
+	VM_SEGMENT_CHECK(src_segment);
+	VM_SEGMENT_CHECK(dest_segment);
 
-	if (dest_seg != NULL /*&& TAILQ_EMTPY(&dest_seg->memq)*/) {
-		TAILQ_FOREACH(src_page, &src_seg->memq, listq) {
-			if (src_page->segment == src_seg) {
-				if (dest_page == NULL) {
-					dest_page = vm_page_alloc(src_page->segment, src_page->offset);
+	/* check if dest_segment is null */
+	if (dest_segment != NULL) {
+		/* scan src page */
+		src_page = vm_segment_page_scan(src_segment, dest_page);
+		if (src_page != NULL) {
+			/* scan dest page */
+			dest_page = vm_segment_page_scan(dest_segment, src_page);
+			if (dest_page != NULL) {
+				/* check if src and dest pages are equal */
+				if (src_page == dest_page) {
+					panic(
+							"vm_segment_copy: src_page has already been copied to dest_page");
+					return;
+				} else {
+					panic("vm_segment_copy: dest_page is not free");
+					return;
 				}
+			} else {
 				vm_page_copy(src_page, dest_page);
 			}
+		} else {
+			panic("vm_segment_copy: src_page is empty");
+			return;
 		}
 	} else {
-		dest_seg->flags &= ~SEG_CLEAN;
-		pmap_copy_page(VM_SEGMENT_TO_PHYS(src_seg), VM_SEGMENT_TO_PHYS(dest_seg));
+		dest_segment->flags &= ~SEG_CLEAN;
+		pmap_copy_page(VM_SEGMENT_TO_PHYS(src_segment), VM_SEGMENT_TO_PHYS(dest_segment));
 	}
 }
 

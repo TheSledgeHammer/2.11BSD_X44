@@ -25,6 +25,7 @@ file	netinet/ip_gre.c		inet & gre
 
 file	netinet/igmp.c			inet
 file	netinet/in.c			inet
+file	netinet/in_multi.c		inet
 file	netinet/in_pcb.c		inet
 file	netinet/in_print.c
 file	netinet/in_proto.c		inet

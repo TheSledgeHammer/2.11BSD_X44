@@ -75,7 +75,7 @@ static struct router_info *rti_find(struct ifnet *);
 static void rti_delete(struct ifnet *);
 
 void
-igmp_init()
+igmp_init(void)
 {
 	igmp_timers_are_running = 0;
 }
@@ -142,13 +142,7 @@ rti_delete(ifp)
 }
 
 void
-#if __STDC__
 igmp_input(struct mbuf *m, ...)
-#else
-igmp_input(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	int proto;
 	int iphlen;
@@ -470,7 +464,7 @@ igmp_leavegroup(inm)
 }
 
 void
-igmp_fasttimo()
+igmp_fasttimo(void)
 {
 	struct in_multi *inm;
 	struct in_multistep step;
@@ -508,7 +502,7 @@ igmp_fasttimo()
 }
 
 void
-igmp_slowtimo()
+igmp_slowtimo(void)
 {
 	struct router_info *rti;
 	int s;
@@ -591,6 +585,5 @@ void
 igmp_purgeif(ifp)
 	struct ifnet *ifp;
 {
-
 	rti_delete(ifp);
 }

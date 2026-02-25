@@ -77,7 +77,8 @@ extern int mld_debug;
 
 #define mldlog(x)	do { if (mld_debug) log x; } while (/*CONSTCOND*/ 0)
 
-#define MLD_FASTTIMER(timer) ((timer) * PR_FASTHZ / MLD_TIMER_SCALE)
+#define MLD_TIMER(timer) ((timer) * PR_FASTHZ / MLD_TIMER_SCALE)
+
 #define MLD_RANDOM_DELAY(X)	(arc4random() % (X) + 1)
 
 /*
@@ -91,6 +92,7 @@ void	mld6_input(struct mbuf *, int);
 void	mld6_start_listening(struct in6_multi *);
 void	mld6_stop_listening(struct in6_multi *);
 void	mld6_fasttimeo(void);
+void	mld6_slowtimeo(void);
 
 #if defined(MLDV2)
 void	mld6_start_listening(struct in6_multi *, u_int8_t);

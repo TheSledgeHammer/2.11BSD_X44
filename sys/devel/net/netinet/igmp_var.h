@@ -145,12 +145,14 @@ extern	struct igmpstat igmpstat;
 #define igmplog(x)	/* empty */
 #endif
 
+#define IGMP_TIMER(timer) ((timer) * PR_FASTHZ / IGMP_TIMER_SCALE)
+
 /*
  * Macro to compute a random timer value between 1 and (IGMP_MAX_REPORTING_
  * DELAY * countdown frequency).  We assume that the routine random()
  * is defined somewhere (and that it returns a positive number).
  */
-#define	IGMP_RANDOM_DELAY(X)	(random() % (X) + 1)
+#define	IGMP_RANDOM_DELAY(X)	(arc4random() % (X) + 1)
 
 #ifdef __NO_STRICT_ALIGNMENT
 #define	IGMP_HDR_ALIGNED_P(ig)	1
