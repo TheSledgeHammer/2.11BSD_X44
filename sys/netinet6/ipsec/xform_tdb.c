@@ -51,7 +51,7 @@
 #include <netinet6/ipsec/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
-
+#include <netinet6/ipsec/ipcomp.h>
 #include <netinet6/ipsec/xform_tdb.h>
 
 #include <net/pfkeyv2.h>
@@ -281,7 +281,9 @@ ipsec_attach(void)
 {
 	printf("initializing IPsec...");
 	ah_attach();
+#ifdef IPSEC_ESP
 	esp_attach();
+#endif
 	ipcomp_attach();
 	//ipe4_attach();
 	printf(" done\n");
