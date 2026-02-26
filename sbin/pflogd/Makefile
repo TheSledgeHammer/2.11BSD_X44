@@ -1,6 +1,10 @@
 #	$OpenBSD: Makefile,v 1.6 2003/11/20 23:23:09 avsm Exp $
 
-CFLAGS+=-Wall -Wmissing-prototypes -Wshadow
+CPPFLAGS+=-Wall -Wmissing-prototypes -Wshadow
+# for pcap-int.h
+CPPFLAGS+=-I${NETBSDSRCDIR}/usr.lib/libpcap
+.PATH:	${NETBSDSRCDIR}/usr.lib/libpcap
+
 LDADD+= -lpcap -lutil
 DPAPP+=	${LIBPCAP} ${LIBUTIL}
 
