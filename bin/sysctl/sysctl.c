@@ -213,7 +213,7 @@ parse(char *string, int flags)
 	struct list *lp;
 	struct vfsconf vfc;
 	int mib[CTL_MAXNAME];
-	char *cp, *bufp, buf[BUFSIZ], strval[BUFSIZ];
+	char *cp, *bufp, buf[BUFSIZ];// strval[BUFSIZ];
 
 	bufp = buf;
 	strcpy(buf, string);
