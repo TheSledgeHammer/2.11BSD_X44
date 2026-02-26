@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= apply ar asa at 											\
+SUBDIR= apply asa at 												\
 		banner base64 basename bzip2 bzip2recover					\
 		c11 c89 c99 cal cap_mkdb cksum cmp col colcrt colrm column 	\
 		comm compress crontab crunch csplit ctags cut 				\
