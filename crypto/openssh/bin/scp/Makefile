@@ -5,4 +5,6 @@ BINDIR=/usr/bin
 PROG=	scp
 SRCS=	scp.c
 
+COPTS.scp.c= ${GCC_NO_FORMAT_TRUNCATION}
+
 .include <bsd.prog.mk>
