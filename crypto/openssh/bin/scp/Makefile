@@ -3,7 +3,7 @@
 BINDIR=/usr/bin
 
 PROG=	scp
-SRCS=	scp.c
+SRCS=	scp.c sftp-common.c sftp-client.c sftp-glob.c
 
 COPTS.scp.c= ${GCC_NO_FORMAT_TRUNCATION}
 
