@@ -64,10 +64,9 @@ int killcmd(int, char *argv[]);
 #endif /* SHELL */ 
 
 __dead static void nosig(const char *);
-void printsignals(FILE *, int);
+void printsignals(FILE *fp);
 static int signame_to_signum(char *);
 __dead static void usage(void);
-
 
 int
 main(int argc, char *argv[])
@@ -99,7 +98,7 @@ main(int argc, char *argv[])
 			printf("%s\n", sys_signame[numsig]);
 			exit(0);
 		}
-		printsignals(stdout, 0);
+		printsignals(stdout);
 		exit(0);
 	}
 
@@ -135,7 +134,16 @@ main(int argc, char *argv[])
 		usage();
 
 	for (errors = 0; argc; argc--, argv++) {
-		pid = (pid_t) strtoimax(*argv, &ep, 10);
+#ifdef SHELL
+        extern int getjobpgrp(const char *);
+
+        if (**argv == '%') {
+            pid = getjobpgrp(*argv);
+        } else
+#endif
+        {
+            pid = (pid_t)strtoimax(*argv, &ep, 10);
+        }
 		if (!*argv || *ep) {
 			warnx("illegal process id: %s", *argv);
 			errors = 1;
@@ -144,7 +152,6 @@ main(int argc, char *argv[])
 			errors = 1;
 		}
 	}
-
 	exit(errors);
 }
 
@@ -167,71 +174,25 @@ nosig(const char *name)
 {
 
 	warnx("unknown signal %s; valid signals:", name);
-	printsignals(stderr, 0);
-	exit(1);
+	printsignals(stderr);
+    exit(1);
 	/* NOTREACHED */
 }
 
-#ifndef SHELL
-/*
- * Print the names of all the signals (neatly) to fp
- * "len" gives the number of chars already printed to
- * the current output line (in kill.c, always 0)
- */
 void
-printsignals(FILE *fp, int len)
+printsignals(FILE *fp)
 {
-	int n, nl, pad;
-	const char *name;
-	int termwidth = 80;
-	int posix;
+    int n;
 
-	posix = getenv("POSIXLY_CORRECT") != 0;
-	if ((name = getenv("COLUMNS")) != 0) {
-		termwidth = atoi(name);
-	} else if (isatty(fileno(fp))) {
-		struct winsize win;
-
-		if (ioctl(fileno(fp), TIOCGWINSZ, &win) == 0 && win.ws_col > 0) {
-			termwidth = win.ws_col;
-		}
-	}
-
-	pad = (len | 7) + 1 - len;
-	if (posix && pad) {
-		pad = 1;
-	}
-
-	for (n = 1; n < NSIG; n++) {
-		name = sys_signame[n];
-		if (name == NULL) {
-			continue;
-		}
-		nl = strlen(name);
-		if ((n == (NSIG / 2)) || (n == (NSIG - 1))
-				|| ((len > 0) && (nl + len + pad >= termwidth))) {
-			fprintf(fp, "\n");
-			len = 0;
-			pad = 0;
-		} else if (pad > 0 && len != 0) {
-			fprintf(fp, "%*s", pad, "");
-		} else {
-			pad = 0;
-		}
-
-		len += nl + pad;
-		pad = (nl | 7) + 1 - nl;
-		if (posix && pad) {
-			pad = 1;
-		}
-
-		fprintf(fp, "%s", name);
-	}
-	if (len != 0) {
-		fprintf(fp, "\n");
-	}
+    for (n = 1; n < NSIG; n++) {
+        (void)fprintf(fp, "%s", sys_signame[n]);
+        if ((n == (NSIG / 2)) || (n == (NSIG - 1))) {
+            (void)fprintf(fp, "\n");
+        } else {
+            (void)fprintf(fp, " ");
+        }
+    }
 }
-#endif
 
 static void
 usage(void)
