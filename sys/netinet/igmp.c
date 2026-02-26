@@ -69,6 +69,89 @@ struct igmpstat igmpstat;
 int igmp_timers_are_running;
 static LIST_HEAD(, router_info) rti_head = LIST_HEAD_INITIALIZER(rti_head);
 
+int interface_timers_are_running;
+int state_change_timers_are_running;
+#ifdef IGMPV3
+int igmpsendwithra = 1;		/* send packets with no Router Alert option */
+#else
+int igmpsendwithra = 0;
+#endif
+int igmpdropwithnora = 0;	/* accept packets with no Router Alert option */
+int igmpmaxsrcfilter = IP_MAX_SOURCE_FILTER;
+int igmpsomaxsrc = SO_MAX_SOURCE_FILTER;
+
+/*
+ * igmp_version:
+ *	0: igmpv3 with compat-mode
+ *	1: igmpv1 only
+ *	2: igmpv2 only
+ *	3: igmpv3 without compat-mode
+ */
+int igmp_version = 0;
+static struct mbuf *router_alert;
+#ifdef IGMPV3
+static int qhdrlen = IGMP_v3_QUERY_MINLEN;
+static int rhdrlen = IGMP_MINLEN;
+static int ghdrlen = IGMP_MINLEN;
+static int addrlen = sizeof(struct in_addr);
+#endif
+
+#define	SOURCE_RECORD_LEN(numsrc)	(numsrc * (sizeof(u_int32_t)))
+
+#define	GET_REPORT_SOURCE_HEAD(inm, type, iasl) {				\
+	if ((type) == ALLOW_NEW_SOURCES)							\
+		(iasl) = (inm)->inm_source->ims_alw;					\
+	else if ((type) == BLOCK_OLD_SOURCES)						\
+		(iasl) = (inm)->inm_source->ims_blk;					\
+	else if ((type) == CHANGE_TO_INCLUDE_MODE)					\
+		(iasl) = (inm)->inm_source->ims_toin;					\
+	else if ((type) == CHANGE_TO_EXCLUDE_MODE)					\
+		(iasl) = (inm)->inm_source->ims_toex;					\
+	else {														\
+		if ((inm)->inm_state == IGMP_SG_QUERY_PENDING_MEMBER)	\
+			(iasl) = (inm)->inm_source->ims_rec;				\
+		else													\
+			(iasl) = (inm)->inm_source->ims_cur;				\
+	}															\
+}
+
+#define	SET_REPORTHDR(m, numsrc) do {							\
+	MGETHDR((m), M_DONTWAIT, MT_HEADER);						\
+	if ((m) != NULL &&											\
+		MHLEN - max_linkhdr < sizeof(struct ip)					\
+				      + rhdrlen + ghdrlen						\
+				      + SOURCE_RECORD_LEN((numsrc))) {			\
+		MCLGET((m), M_DONTWAIT);								\
+		if (((m)->m_flags & M_EXT) == 0) {						\
+			m_freem((m));										\
+			error = ENOBUFS;									\
+			break;												\
+		}														\
+	}															\
+	if ((m) == NULL) {											\
+		error = ENOBUFS;										\
+		break;													\
+	}															\
+	(m)->m_data += max_linkhdr;									\
+	ip = mtod((m), struct ip *);								\
+	buflen = sizeof(struct ip);									\
+	ip->ip_len = sizeof(struct ip) + rhdrlen;					\
+	ip->ip_tos = 0xc0;											\
+	ip->ip_off = 0;												\
+	ip->ip_p = IPPROTO_IGMP;									\
+	ip->ip_src = zeroin_addr;									\
+	ip->ip_dst.s_addr = INADDR_NEW_ALLRTRS_GROUP;				\
+	igmp_rhdr = (struct igmp_report_hdr *)((char *)ip + buflen);\
+	igmp_rhdr->igmp_type = IGMP_v3_HOST_MEMBERSHIP_REPORT;		\
+	igmp_rhdr->igmp_reserved1 = 0;								\
+	igmp_rhdr->igmp_reserved2 = 0;								\
+	igmp_rhdr->igmp_grpnum = 0;									\
+	buflen += rhdrlen;											\
+	(m)->m_len = sizeof(struct ip) + rhdrlen;					\
+	(m)->m_pkthdr.len = sizeof(struct ip) + rhdrlen;			\
+	(m)->m_pkthdr.rcvif = (struct ifnet *)0;					\
+} while (0)
+
 void igmp_sendpkt(struct in_multi *, int);
 static int rti_fill(struct in_multi *);
 static struct router_info *rti_find(struct ifnet *);
@@ -77,7 +160,66 @@ static void rti_delete(struct ifnet *);
 void
 igmp_init(void)
 {
+	struct ipoption *ra;
+
 	igmp_timers_are_running = 0;
+
+	interface_timers_are_running = 0; /* used only by IGMPv3 */
+	state_change_timers_are_running = 0; /* used only by IGMPv3 */
+
+	/*
+	 * Prepare Router Alert option to use in outgoing packets.
+	 */
+	MGET(router_alert, M_DONTWAIT, MT_DATA);
+	ra = mtod(router_alert, struct ipoption *);
+	ra->ipopt_dst.s_addr = 0;
+	ra->ipopt_list[0] = IPOPT_RA;	/* Router Alert option */
+	ra->ipopt_list[1] = 0x04;	/* 4 bytes long */
+	ra->ipopt_list[2] = 0x00;
+	ra->ipopt_list[3] = 0x00;
+	router_alert->m_len = sizeof(ra->ipopt_dst) + ra->ipopt_list[1];
+}
+
+struct router_info *
+rti_init(ifp)
+	struct ifnet *ifp;
+{
+	struct router_info *rti;
+
+	rti = (struct router_info *)malloc(sizeof(struct router_info), M_MRTABLE, M_NOWAIT);
+	if (rti == NULL)
+		return NULL;
+
+	rti->rti_ifp = ifp;
+#ifndef IGMPV3
+	rti->rti_type = IGMP_v2_ROUTER;
+#else
+	rti->rti_timer1 = 0;
+	rti->rti_timer2 = 0;
+	rti->rti_timer3 = 0;
+	rti->rti_qrv = IGMP_DEF_RV;
+	rti->rti_qqi = IGMP_DEF_QI;
+	rti->rti_qri = IGMP_DEF_QRI / IGMP_TIMER_SCALE;
+	switch (igmp_version) {
+	case 0:
+		rti->rti_type = IGMP_v3_ROUTER;
+		break;
+	case 1:
+		rti->rti_type = IGMP_v1_ROUTER;
+		break;
+	case 2:
+		rti->rti_type = IGMP_v2_ROUTER;
+		break;
+	case 3:
+		rti->rti_type = IGMP_v3_ROUTER;
+		break;
+	default:
+		/* impossible */
+		break;
+	}
+#endif
+	LIST_INSERT_HEAD(&rti_head, rti, rti_link);
+	return (rti);
 }
 
 static int
@@ -89,19 +231,18 @@ rti_fill(inm)
 	LIST_FOREACH(rti, &rti_head, rti_link) {
 		if (rti->rti_ifp == inm->inm_ifp) {
 			inm->inm_rti = rti;
-			if (rti->rti_type == IGMP_v1_ROUTER)
+			if (rti->rti_type == IGMP_v1_ROUTER) {
 				return (IGMP_v1_HOST_MEMBERSHIP_REPORT);
-			else
+			} else {
 				return (IGMP_v2_HOST_MEMBERSHIP_REPORT);
+			}
 		}
 	}
 
-	rti = (struct router_info *)malloc(sizeof(struct router_info), M_MRTABLE, M_NOWAIT);
-	if (rti == NULL)
+	rti = rti_init(inm->inm_ifp);
+	if (rti == NULL) {
 		return 0;
-	rti->rti_ifp = inm->inm_ifp;
-	rti->rti_type = IGMP_v2_ROUTER;
-	LIST_INSERT_HEAD(&rti_head, rti, rti_link);
+	}
 	inm->inm_rti = rti;
 	return (IGMP_v2_HOST_MEMBERSHIP_REPORT);
 }
@@ -117,12 +258,10 @@ rti_find(ifp)
 			return (rti);
 	}
 
-	rti = (struct router_info *)malloc(sizeof(struct router_info), M_MRTABLE, M_NOWAIT);
-	if (rti == NULL)
+	rti = rti_init(ifp);
+	if (rti == NULL) {
 		return NULL;
-	rti->rti_ifp = ifp;
-	rti->rti_type = IGMP_v2_ROUTER;
-	LIST_INSERT_HEAD(&rti_head, rti, rti_link);
+	}
 	return (rti);
 }
 

@@ -83,7 +83,6 @@ struct in6_addr_slist {
 	u_int16_t numsrc;		 /* num of sources of this list	    */
 };
 
-struct callout;
 struct in6_multi_source {
 	u_int	i6ms_mode;		 /* current source filter mode	    */
 	u_int	i6ms_grpjoin;		 /* (*,G) join request bit	    */

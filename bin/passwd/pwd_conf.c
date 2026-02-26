@@ -52,13 +52,11 @@ const char * const pw_options[] = { "localcipher", "ypcipher" };
 
 const char *pwd_crypto(const char *type);
 const char *pwd_cipher(const char *option);
-
+static int pwd_compare(const char *type, const char *option, const char *default_type, const char *default_option);
 #ifdef USE_YP
 static int pwd_yp_conf(const char **type, const char **option);
-static int pwd_yp_compare(const char *type, const char *option);
 #else
 static int pwd_local_conf(const char **type, const char **option);
-static int pwd_local_compare(const char *type, const char *option);
 #endif
 
 #define nelems(x) (sizeof(x) / sizeof((x)[0]))
@@ -134,6 +132,20 @@ pwd_conf(const char **type, const char **option)
 	return (rval);
 }
 
+static int
+pwd_compare(const char *type, const char *option, const char *default_type, const char *default_option)
+{
+	if (strcasecmp(type, default_type)
+			&& !strcasecmp(option, default_option)) {
+		return (1);
+	} else if (!strcasecmp(type, default_type)
+			&& strcasecmp(option, default_option)) {
+		return (-1);
+	} else {
+		return (0);
+	}
+}
+
 #ifdef USE_YP
 static int
 pwd_yp_conf(const char **type, const char **option)
@@ -151,7 +163,7 @@ pwd_yp_conf(const char **type, const char **option)
 		errx(1, "Couldn't find specified algorithm.\n");
 	}
 
-	rval = pwd_yp_compare(crypto, cipher);
+	rval = pwd_compare(crypto, cipher, pwd_default_yp_type, pwd_default_yp_option);
 	switch (rval) {
 	case 0:
 		*type = crypto;
@@ -169,18 +181,6 @@ pwd_yp_conf(const char **type, const char **option)
 		break;
 	}
 	return (0);
-}
-
-static int
-pwd_yp_compare(const char *type, const char *option)
-{
-    if (strcasecmp(type, pwd_default_yp_type) && !strcasecmp(option, pwd_default_yp_option)) {
-        return (1);
-    } else if (!strcasecmp(type, pwd_default_yp_type) && strcasecmp(option, pwd_default_yp_option)) {
-        return (-1);
-    } else {
-    	 return (0);
-    }
 }
 
 #else
@@ -201,7 +201,7 @@ pwd_local_conf(const char **type, const char **option)
 		errx(1, "Couldn't find specified algorithm.\n");
 	}
 
-	rval = pwd_local_compare(crypto, cipher);
+	rval = pwd_compare(crypto, cipher, pwd_default_local_type, pwd_default_local_option);
 	switch (rval) {
 	case 0:
 		*type = crypto;
@@ -219,20 +219,6 @@ pwd_local_conf(const char **type, const char **option)
 		break;
 	}
 	return (0);
-}
-
-static int
-pwd_local_compare(const char *type, const char *option)
-{
-	if (strcasecmp(type, pwd_default_local_type)
-			&& !strcasecmp(option, pwd_default_local_option)) {
-		return (1);
-	} else if (!strcasecmp(type, pwd_default_local_type)
-			&& strcasecmp(option, pwd_default_local_option)) {
-		return (-1);
-	} else {
-		return (0);
-	}
 }
 
 #endif

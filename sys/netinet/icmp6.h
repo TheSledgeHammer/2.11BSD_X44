@@ -221,7 +221,7 @@ struct mldv2_hdr {
 #define MLD_QQIC_MANT(x)	((x) & 0x0f)
 #define MLD_QRESV(x)		(((x) >> 4) & 0x0f)
 #define MLD_SFLAG(x)		(((x) >> 3) & 0x01)
-#define MLD_QRV(x)		((x) & 0x07)	/* querier's robustness variable   */
+#define MLD_QRV(x)			((x) & 0x07)	/* querier's robustness variable   */
 
 /*
  * MLDv2 Membership Report Message header.

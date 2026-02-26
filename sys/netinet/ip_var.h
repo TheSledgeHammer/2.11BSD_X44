@@ -116,6 +116,26 @@ struct ipoption {
 };
 
 /*
+ * Socket argument of multicast source filters.
+ */
+LIST_HEAD(msf_head, sock_msf_source);
+
+struct sock_msf_source {
+	struct	  sockaddr_storage src;	/* source address */
+	LIST_ENTRY(sock_msf_source) list; /* list of source addresses */
+	u_int	refcount;		/* reference count of the source */
+};
+
+struct sock_msf {
+/*	u_int32_t msf_mode;		 * source filter mode */
+	u_int	  msf_grpjoin;			/* number of (*,G) join requests */
+	struct	  msf_head *msf_head;	/* head of joined source list chain */
+	struct	  msf_head *msf_blkhead;/* head of muted source list chain */
+	u_int16_t msf_numsrc;			/* no. of joined src on this socket */
+	u_int16_t msf_blknumsrc;		/* no. of muted src on this socket */
+};
+
+/*
  * Structure attached to inpcb.ip_moptions and
  * passed to ip_output when IP multicast options are in use.
  */

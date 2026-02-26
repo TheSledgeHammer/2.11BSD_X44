@@ -467,7 +467,7 @@ in6_addmulti2(maddr6, ifp, errorp, numsrc, src, mode, init, delay)
 			splx(s);
 			return (NULL);
 		}
-		rt6i = find_rt6i(in6m->in6m_ifp);
+		rt6i = rt6i_find(in6m->in6m_ifp);
 		if (rt6i == NULL) {
 			LIST_REMOVE(in6m, in6m_entry);
 			free(in6m, M_IPMADDR);
@@ -980,6 +980,7 @@ in6_modmulti2(ap, ifp, errorp, numsrc, src, mode, old_num, old_src, old_mode, in
 	return in6m;
 }
 
+
 /*
  * check if the given address should be announced via MLDv1/v2.
  */
@@ -1006,7 +1007,6 @@ in6_is_mld_target(group)
 
 	return 1;
 }
-
 #endif /* MLDV2 */
 
 /*

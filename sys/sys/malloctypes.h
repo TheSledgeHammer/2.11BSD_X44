@@ -146,7 +146,8 @@
 #define	M_MPX			99	/* MPX (Multiplexor) Structure */
 #define	M_THREAD		100	/* Thread Structures */
 #define	M_IPFLOW		101	/* IP flow entries */
-#define	M_TEMP			102	/* misc temporary data buffers */
+#define M_MSFILTER		102 /* multicast source filter */
+#define	M_TEMP			103	/* misc temporary data buffers */
 #define	M_LAST 			M_TEMP+1 	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {									\
@@ -252,6 +253,7 @@
 	"MPX Multiplexor"			/* 99 M_MPX */ 			\
     "thread"			        /* 100 M_THREAD */ 		\
 	"IP flow",					/* 101 M_IPFLOW */ 		\
+	"msfilter",					/* 101 M_MSFILTER */ 	\
 	"temp",						/* 102 M_TEMP */ 		\
 }
 

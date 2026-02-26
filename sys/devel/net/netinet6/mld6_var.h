@@ -81,12 +81,6 @@ extern int mld_debug;
 
 #define MLD_RANDOM_DELAY(X)	(arc4random() % (X) + 1)
 
-/*
- * States for MLD stop-listening processing
- */
-#define MLD_OTHERLISTENER			0
-#define MLD_IREPORTEDLAST			1
-
 void	mld6_init(void);
 void	mld6_input(struct mbuf *, int);
 void	mld6_start_listening(struct in6_multi *);

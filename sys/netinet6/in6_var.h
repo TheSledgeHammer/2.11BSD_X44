@@ -499,7 +499,19 @@ do {																				\
  */
 struct in6_multi_mship {
 	struct	in6_multi *i6mm_maddr;	/* Multicast address pointer */
+	struct	sock_msf *i6mm_msf;	/* Multicast source filters */
 	LIST_ENTRY(in6_multi_mship) i6mm_chain;  /* multicast options chain */
+};
+
+struct router6_info {
+    struct  ifnet *rt6i_ifp;
+    int    rt6i_type; /* type of router which is querier on this interface */
+    u_int	rt6i_timer1;	/* Older Version Querier Present Timer */
+	u_int	rt6i_timer2;	/* Interface Timer */
+	u_int	rt6i_qrv;	/* Querier Robustness Variable */
+	u_int	rt6i_qqi;	/* Querier Interval Variable */
+	u_int	rt6i_qri;	/* Querier Response Interval */
+	LIST_ENTRY(router6_info) rt6i_link;
 };
 
 struct	in6_multi {
@@ -509,6 +521,8 @@ struct	in6_multi {
 	struct	in6_ifaddr *in6m_ia;	/* back pointer to in6_ifaddr */
 	u_int	in6m_refcount;		/* # membership claims by sockets */
 	u_int	in6m_state;		/* state of the membership */
+	struct	router6_info *in6m_rti;	/* router info */
+	struct	in6_multi_source *in6m_source;	/* filtered source list */
 	u_int	in6m_timer;		/* MLD6 listener report timer */
 };
 
@@ -583,6 +597,16 @@ do {									\
 struct	in6_multi *in6_addmulti(struct in6_addr *, struct ifnet *,
 	int *);
 void	in6_delmulti(struct in6_multi *);
+#ifdef MLDV2
+struct	in6_multi *in6_addmulti2(struct in6_addr *, struct ifnet *,
+	int *, u_int16_t, struct sockaddr_storage *, u_int, int, int);
+void	in6_delmulti2(struct in6_multi *, int *, u_int16_t,
+	struct sockaddr_storage *, u_int, int);
+struct	in6_multi *in6_modmulti2(struct in6_addr *, struct ifnet *,
+	int *, u_int16_t, struct sockaddr_storage *, u_int, u_int16_t,
+	struct sockaddr_storage *, u_int, int, u_int);
+int		in6_is_mld_target(struct in6_addr *);
+#endif
 struct in6_multi_mship *in6_joingroup(struct ifnet *, struct in6_addr *,
 	int *);
 int	in6_leavegroup(struct in6_multi_mship *);

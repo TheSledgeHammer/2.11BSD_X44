@@ -93,8 +93,6 @@
 
 #include <netinet6/in6_msf.h>
 
-#define M_MSFILTER 106
-
 #ifdef MLDV2
 
 #define I6AS_LIST_ALLOC(iasl) do {								\
