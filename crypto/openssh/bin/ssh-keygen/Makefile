@@ -3,8 +3,9 @@
 BINDIR=	/usr/bin
 
 PROG=	ssh-keygen
-SRCS=	ssh-keygen.c moduli.c
+SRCS=	ssh-keygen.c sshsig.c
 
-COPTS.ssh-keygen.c=	-Wno-pointer-sign ${GCC_NO_FORMAT_TRUNCATION}
+COPTS.ssh-keygen.c+=	-Wno-pointer-sign ${GCC_NO_FORMAT_TRUNCATION}
+COPTS.sshsig.c+= -Wno-pointer-sign
 
 .include <bsd.prog.mk>
