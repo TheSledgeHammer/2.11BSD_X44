@@ -253,8 +253,8 @@
 	"MPX Multiplexor"			/* 99 M_MPX */ 			\
     "thread"			        /* 100 M_THREAD */ 		\
 	"IP flow",					/* 101 M_IPFLOW */ 		\
-	"msfilter",					/* 101 M_MSFILTER */ 	\
-	"temp",						/* 102 M_TEMP */ 		\
+	"msfilter",					/* 102 M_MSFILTER */ 	\
+	"temp",						/* 103 M_TEMP */ 		\
 }
 
 #endif /* _SYS_MALLOCTYPES_H_ */

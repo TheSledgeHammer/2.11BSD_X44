@@ -57,6 +57,10 @@
 #define MLD_V1_ROUTER			MLD_LISTENER_REPORT
 #define MLD_V2_ROUTER			MLDV2_LISTENER_REPORT
 
+
+/* denotes that the MLD max response delay field specifies time in milliseconds */
+#define MLD_TIMER_SCALE	1000
+
 /*
  * MLDv2 default variables
  */
@@ -82,13 +86,15 @@ extern int mld_debug;
 
 void	mld6_init(void);
 void	mld6_input(struct mbuf *, int);
-void	mld6_start_listening(struct in6_multi *);
-void	mld6_stop_listening(struct in6_multi *);
-void	mld6_fasttimeo(void);
-//void	mld6_slowtimeo(void);
-
 #if defined(MLDV2)
 void	mld6_start_listening(struct in6_multi *, u_int8_t);
+#else
+void	mld6_start_listening(struct in6_multi *);
+#endif
+void	mld6_stop_listening(struct in6_multi *);
+void	mld6_fasttimeo(void);
+void	mld6_slowtimeo(void);
+#if defined(MLDV2)
 void 	mld6_send_state_change_report(struct in6_multi *, u_int8_t, int);
 #endif
 #endif /* _KERNEL */

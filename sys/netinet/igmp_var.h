@@ -120,35 +120,21 @@
 struct igmpstat {
 	u_quad_t igps_rcv_total;	/* total IGMP messages received */
 	u_quad_t igps_rcv_tooshort;	/* received with too few bytes */
+	u_quad_t igps_rcv_toolong;	/* received messages over MTU size */
 	u_quad_t igps_rcv_badsum;	/* received with bad checksum */
-	u_quad_t igps_rcv_queries;	/* received membership queries */
-	u_quad_t igps_rcv_badqueries;	/* received invalid queries */
-	u_quad_t igps_rcv_reports;	/* received membership reports */
-	u_quad_t igps_rcv_badreports;	/* received invalid reports */
-	u_quad_t igps_rcv_ourreports;	/* received reports for our groups */
-	u_quad_t igps_snd_reports;	/* sent membership reports */
-};
-
-#ifdef IGMPV3
-struct igmpstat {
-	u_quad_t igps_rcv_total;		/* total IGMP messages received */
-	u_quad_t igps_rcv_tooshort;		/* received with too few bytes */
-	u_quad_t igps_rcv_toolong;		/* received messages over MTU size */
-	u_quad_t igps_rcv_badsum;		/* received with bad checksum */
-	u_quad_t igps_rcv_badttl;		/* received with bad TTL */
-	u_quad_t igps_rcv_nora;			/* received with no Router Alert */
+	u_quad_t igps_rcv_badttl;	/* received with bad TTL */
+	u_quad_t igps_rcv_nora;		/* received with no Router Alert */
 	u_quad_t igps_rcv_v1_queries;	/* received v1 membership queries */
 	u_quad_t igps_rcv_v2_queries;	/* received v2 membership queries */
 	u_quad_t igps_rcv_v3_queries;	/* received v3 membership queries */
 	u_quad_t igps_rcv_badqueries;	/* received invalid queries */
 	u_quad_t igps_rcv_query_fails;	/* receiving membership query fails */
-	u_quad_t igps_rcv_reports;		/* received v1/v2 membership reports */
+	u_quad_t igps_rcv_reports;	/* received v1/v2 membership reports */
 	u_quad_t igps_rcv_badreports;	/* received invalid v1/v2 reports */
 	u_quad_t igps_rcv_ourreports;	/* received v1/v2 reports for our grp */
 	u_quad_t igps_snd_v1v2_reports;	/* sent v1/v2 membership reports */
 	u_quad_t igps_snd_v3_reports;	/* sent v3 membership reports */
 };
-#endif
 
 #ifdef _KERNEL
 extern	struct igmpstat igmpstat;
@@ -166,7 +152,7 @@ extern	struct igmpstat igmpstat;
  * DELAY * countdown frequency).  We assume that the routine random()
  * is defined somewhere (and that it returns a positive number).
  */
-#define	IGMP_RANDOM_DELAY(X)	(random() % (X) + 1)
+#define	IGMP_RANDOM_DELAY(X)	(arc4random() % (X) + 1)
 
 #ifdef __NO_STRICT_ALIGNMENT
 #define	IGMP_HDR_ALIGNED_P(ig)	1
@@ -175,12 +161,17 @@ extern	struct igmpstat igmpstat;
 #endif
 
 void	igmp_init(void);
+struct	router_info *rti_init(struct ifnet *);
 void	igmp_input(struct mbuf *, ...);
-int		igmp_joingroup(struct in_multi *);
+int	igmp_joingroup(struct in_multi *);
 void	igmp_leavegroup(struct in_multi *);
+void	igmp_sendbuf(struct mbuf *, struct ifnet *);
 void	igmp_fasttimo(void);
 void	igmp_slowtimo(void);
-extern void igmp_purgeif(struct ifnet *);
+int	igmp_get_router_alert(struct mbuf *);
+void	igmp_send_state_change_report(struct mbuf **, int *, struct in_multi *, u_int8_t, int);
+void 	igmp_purgeif(struct ifnet *);
+int	is_igmp_target(struct in_addr *);
 #endif
 
 #endif /* _NETINET_IGMP_VAR_H_ */
