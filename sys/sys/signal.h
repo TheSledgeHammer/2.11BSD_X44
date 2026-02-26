@@ -116,7 +116,10 @@ struct sigaction {
 #define SA_NOCLDSTOP	0x0008	/* do not generate SIGCHLD on child stop */
 #define SA_NODEFER		0x0010	/* don't mask the signal we're delivering */
 #define SA_NOCLDWAIT    0x0020	/* do not generate zombies on unwaited child */
+#if (_POSIX_C_SOURCE - 0) >= 199309L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
 #define SA_SIGINFO		0x0040	/* take sa_sigaction handler */
+#endif /* (_POSIX_C_SOURCE - 0) >= 199309L || ... */
 
 /*
  * Flags for sigprocmask:
