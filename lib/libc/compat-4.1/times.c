@@ -22,6 +22,10 @@ static char sccsid[] = "@(#)times.c	5.2 (Berkeley) 3/9/86";
 #include <errno.h>
 #include <time.h>
 
+#ifdef __weak_alias
+__weak_alias(times,_times)
+#endif
+
 static long scale60(register struct timeval *tvp);
 
 clock_t

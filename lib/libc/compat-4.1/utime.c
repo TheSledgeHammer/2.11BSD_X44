@@ -10,12 +10,18 @@ static char sccsid[] = "@(#)utime.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <sys/time.h>
 
 #include <assert.h>
 #include <errno.h>
 #include <stddef.h>
 #include <utime.h>
+
+#ifdef __weak_alias
+__weak_alias(utime,_utime)
+#endif
 
 /*
  * Backwards compatible utime.
