@@ -241,7 +241,7 @@ struct mld_group_record_hdr {
 	u_int8_t	auxlen;		/* aux data length (must be zero)     */
 	u_int16_t       numsrc;         /* number of sources        */
 	struct in6_addr	group;          /* group address            */
-	struct in6_addr rc[1];         	/* source address list      */
+	struct in6_addr src[1];         	/* source address list      */
 };
 
 #define MLD_V1_QUERY			0
@@ -251,6 +251,18 @@ struct mld_group_record_hdr {
 
 #define MLD_MINLEN			24
 #define MLD_V2_QUERY_MINLEN		28
+
+/*
+ * Group Record Types in the MLD Membership Report
+ */
+#ifndef MODE_IS_INCLUDE
+#define MODE_IS_INCLUDE                 1
+#define MODE_IS_EXCLUDE                 2
+#define CHANGE_TO_INCLUDE_MODE          3
+#define CHANGE_TO_EXCLUDE_MODE          4
+#define ALLOW_NEW_SOURCES               5
+#define BLOCK_OLD_SOURCES               6
+#endif
 
 /*
  * Neighbor Discovery

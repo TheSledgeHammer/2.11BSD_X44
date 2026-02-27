@@ -158,6 +158,8 @@ __KERNEL_RCSID(0, "$NetBSD: in.c,v 1.93.2.1.4.1 2006/04/02 17:48:18 riz Exp $");
 #include <netinet/ip_mroute.h>
 #include <netinet/igmp_var.h>
 
+extern LIST_HEAD(, router_info) rti_head;
+
 #ifdef INET
 
 struct in_multi *in_addmulti1(struct in_addr *, struct ifnet *);

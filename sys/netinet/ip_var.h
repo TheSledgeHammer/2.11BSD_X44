@@ -177,6 +177,7 @@ struct ip_moptions {
 	u_int8_t  imo_multicast_loop;	/* 1 => hear sends if a member */
 	u_int16_t imo_num_memberships;	/* no. memberships this socket */
 	struct	  in_multi *imo_membership[IP_MAX_MEMBERSHIPS];
+    struct	  sock_msf *imo_msf[IP_MAX_MEMBERSHIPS];
 };
 
 struct	ipstat {
@@ -257,8 +258,8 @@ extern int   anonportmax;		/* maximum ephemeral port */
 extern int   lowportmin;		/* minimum reserved port */
 extern int   lowportmax;		/* maximum reserved port */
 extern struct rttimer_queue *ip_mtudisc_timeout_q;
-//extern int   igmpmaxsrcfilter;	/* maximum num. of msf per interface */
-//extern int   igmpsomaxsrc;		/* maximum num. of msf per socket */
+extern int   igmpmaxsrcfilter;	/* maximum num. of msf per interface */
+extern int   igmpsomaxsrc;		/* maximum num. of msf per socket */
 
 
 #ifdef GATEWAY

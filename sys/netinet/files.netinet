@@ -5,7 +5,8 @@ defparam 	opt_tcp_debug.h		TCP_NDEBUG
 defflag 	opt_inet.h			INET INET6 INET6_MD_CKSUM
 defparam 	opt_inet_conf.h		SUBNETSARELOCAL HOSTZEROBROADCAST
 
-defflag							MROUTING IGMPV3 MLDV2
+defflag							MROUTING 
+#IGMPV3 MLDV2
 defflag							TCP_COMPAT_42
 
 defparam 	opt_tcp_space.h		TCP_RECVSPACE TCP_SENDSPACE

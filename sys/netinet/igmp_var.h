@@ -117,6 +117,11 @@
  * MULTICAST 1.3
  */
 
+#include <netinet/igmp.h>
+#ifdef IGMPV3
+#include <netinet/in_msf.h>
+#endif
+
 struct igmpstat {
 	u_quad_t igps_rcv_total;	/* total IGMP messages received */
 	u_quad_t igps_rcv_tooshort;	/* received with too few bytes */

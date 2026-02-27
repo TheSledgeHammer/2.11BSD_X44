@@ -250,6 +250,12 @@ struct router_info {
 	struct	ifnet *rti_ifp;
 	int	rti_type;	/* type of router on this interface */
 	int	rti_age;	/* time since last v1 query */
+	u_int	rti_timer1;	/* IGMPv1 Querier Present timer */
+	u_int	rti_timer2;	/* IGMPv2 Querier Present timer */
+	u_int	rti_timer3;	/* IGMPv3 General Query (interface) timer */
+	u_int	rti_qrv;	/* Querier Robustness Variable */
+	u_int	rti_qqi;	/* Querier Interval Variable */
+	u_int	rti_qri;	/* Querier Response Interval */
 };
 
 /*
@@ -261,11 +267,13 @@ struct router_info {
 struct in_multi {
 	LIST_ENTRY(in_multi) inm_list;	/* list of multicast addresses */
 	struct	router_info *inm_rti;	/* router version info */
-	struct	ifnet *inm_ifp;		/* back pointer to ifnet */
 	struct	in_addr inm_addr;	/* IP multicast address */
+	struct	ifnet *inm_ifp;		/* back pointer to ifnet */
+    struct	in_ifaddr *inm_ia;	/* back pointer to in_ifaddr */
 	u_int	inm_refcount;		/* no. membership claims by sockets */
 	u_int	inm_timer;		/* IGMP membership report timer */
 	u_int	inm_state;		/* state of membership */
+    struct	in_multi_source *inm_source; /* filtered source list */
 };
 
 #ifdef _KERNEL
@@ -328,6 +336,15 @@ void	in_restoremkludge(struct in_ifaddr *, struct ifnet *);
 void	in_purgemkludge(struct ifnet *);
 struct	in_multi *in_addmulti(struct in_addr *, struct ifnet *);
 void	in_delmulti(struct in_multi *);
+#ifdef IGMPV3
+struct	in_multi * in_addmulti2(struct in_addr *, struct ifnet *,
+		u_int16_t, struct sockaddr_storage *, u_int, int, int *);
+void	in_delmulti2(struct in_multi *, u_int16_t,
+		struct sockaddr_storage *, u_int, int, int *);
+struct	in_multi * in_modmulti2(struct in_addr *, struct ifnet *, u_int16_t,
+		struct sockaddr_storage *, u_int, u_int16_t,
+		struct sockaddr_storage *, u_int, int, u_int, int *);
+#endif
 void	in_ifscrub(struct ifnet *, struct in_ifaddr *);
 void	in_setmaxmtu(void);
 int		ip_sprintf(const struct in_addr *);

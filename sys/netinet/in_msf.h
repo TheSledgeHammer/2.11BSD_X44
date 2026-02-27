@@ -245,11 +245,9 @@ int	ip_setmopt_srcfilter(struct socket *, struct ip_msfilter **);
 int	ip_getmopt_srcfilter(struct socket *, struct ip_msfilter **);
 int	sock_setmopt_srcfilter(struct socket *, struct group_filter **);
 int	sock_getmopt_srcfilter(struct socket *, struct group_filter **);
-int	in_getmopt_source_list(struct sock_msf *, u_int16_t *,
-		struct sockaddr_storage **, u_int *);
+int	in_getmopt_source_list(struct sock_msf *, u_int16_t *, struct sockaddr_storage **, u_int *);
 int	in_setmopt_source_addr(struct sockaddr_storage *, struct sock_msf *, int);
-int	in_setmopt_source_list(struct sock_msf *, u_int16_t,
-		struct sockaddr_storage *, u_int, u_int16_t *, u_int16_t *, struct sockaddr_storage *);
+int	in_setmopt_source_list(struct sock_msf *, u_int16_t, struct sockaddr_storage *, u_int, u_int16_t *, u_int16_t *, struct sockaddr_storage *);
 void	in_freemopt_source_list(struct sock_msf *, struct msf_head *, struct msf_head *);
 void	in_cleanmopt_source_addr(struct sock_msf *, int);
 void	in_undomopt_source_addr(struct sock_msf *, int);

@@ -98,7 +98,7 @@ __KERNEL_RCSID(0, "$NetBSD: igmp.c,v 1.36 2003/08/22 21:53:02 itojun Exp $");
 
 struct igmpstat igmpstat;
 int igmp_timers_are_running;
-static LIST_HEAD(, router_info) rti_head = LIST_HEAD_INITIALIZER(rti_head);
+LIST_HEAD(, router_info) rti_head = LIST_HEAD_INITIALIZER(rti_head);
 
 int interface_timers_are_running;
 int state_change_timers_are_running;

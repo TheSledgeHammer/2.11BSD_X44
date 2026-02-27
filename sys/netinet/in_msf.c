@@ -519,12 +519,13 @@ in_modmultisrc(inm, numsrc, ss, mode, old_num, old_ss, old_mode, grpjoin,
 					return error;
 				}
 			}
-			if (mode == MCAST_INCLUDE)
+			if (mode == MCAST_INCLUDE) {
 				LIST_INSERT_HEAD(inm->inm_source->ims_in->head,
 				    ias, ias_list);
-			else
+			} else {
 				LIST_INSERT_HEAD(inm->inm_source->ims_ex->head,
 				    ias, ias_list);
+            }
 			k = 1; /* the number of added source */
 			break;
 		}
