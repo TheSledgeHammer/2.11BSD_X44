@@ -149,8 +149,6 @@ int mldmaxsrcfilter = IP_MAX_SOURCE_FILTER;
 int mldsomaxsrc = SO_MAX_SOURCE_FILTER;
 int mld_verion = 1;
 
-static LIST_HEAD(, router6_info) rt6i_head = LIST_HEAD_INITIALIZER(rt6i_head);
-
 static struct ip6_pktopts ip6_opts;
 static int mld_timers_are_running;
 /* XXX: These are necessary for KAME's link-local hack */
@@ -184,8 +182,6 @@ mld6_init(void)
 	ip6_opts.ip6po_hbh = hbh;
 	/* We will specify the hoplimit by a multicast option. */
 	ip6_opts.ip6po_hlim = -1;
-
-	rt6i_head = NULL;
 }
 
 static void

@@ -105,14 +105,9 @@ int	in6_addmultisrc(struct in6_multi *, u_int16_t,
 int	in6_delmultisrc(struct in6_multi *, u_int16_t,
 		struct sockaddr_storage *, u_int, int, struct i6as_head **,
 		u_int *, u_int16_t *);
-int	in6_modmultisrc(struct in6_multi *, u_int16_t,
-		struct sockaddr_storage *, u_int, u_int16_t,
-		struct sockaddr_storage *, u_int, u_int, struct i6as_head **,
-		u_int *, u_int16_t *);
-void	in6_undomultisrc(struct in6_multi *, u_int16_t,
-		struct sockaddr_storage *, u_int, int);
-int	in6_get_new_msf_state(struct in6_multi *, struct i6as_head **,
-		u_int *, u_int16_t *);
+int	in6_modmultisrc(struct in6_multi *, u_int16_t, struct sockaddr_storage *, u_int, u_int16_t, struct sockaddr_storage *, u_int, u_int, struct i6as_head **, u_int *, u_int16_t *);
+void	in6_undomultisrc(struct in6_multi *, u_int16_t, struct sockaddr_storage *, u_int, int);
+int	in6_get_new_msf_state(struct in6_multi *, struct i6as_head **, u_int *, u_int16_t *);
 int	in6_merge_msf_state(struct in6_multi *, struct i6as_head *, u_int, u_int16_t);
 void	in6_free_all_msf_source_list(struct in6_multi *);
 void	in6_free_msf_source_list(struct i6as_head *);
@@ -121,13 +116,9 @@ void	in6_clear_all_pending_report(struct in6_multi *);
 int	in6_merge_msf_source_addr(struct in6_addr_slist *, struct sockaddr_in6 *, int);
 int	sock6_setmopt_srcfilter(struct socket *, struct group_filter **);
 int	sock6_getmopt_srcfilter(struct socket *, struct group_filter **);
-int	in6_getmopt_source_list(struct sock_msf *, u_int16_t *,
-				struct sockaddr_storage **, u_int *);
-int	in6_setmopt_source_addr(struct sockaddr_storage *,
-				struct sock_msf *, int);
-int	in6_setmopt_source_list(struct sock_msf *, u_int16_t,
-				struct sockaddr_storage *, u_int, u_int16_t *,
-				u_int16_t *, struct sockaddr_storage *);
+int	in6_getmopt_source_list(struct sock_msf *, u_int16_t *, struct sockaddr_storage **, u_int *);
+int	in6_setmopt_source_addr(struct sockaddr_storage *, struct sock_msf *, int);
+int	in6_setmopt_source_list(struct sock_msf *, u_int16_t, struct sockaddr_storage *, u_int, u_int16_t *, u_int16_t *, struct sockaddr_storage *);
 void	in6_freemopt_source_list(struct sock_msf *, struct msf_head *, struct msf_head *);
 void	in6_cleanmopt_source_addr(struct sock_msf *, int);
 void	in6_undomopt_source_addr(struct sock_msf *, int);

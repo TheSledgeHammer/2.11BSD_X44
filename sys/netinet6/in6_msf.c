@@ -167,11 +167,8 @@ in6_addmultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 			return ENOBUFS;
 		bzero(in6m->in6m_source, sizeof(struct in6_multi_source));
 
-		in6_msf_state_change_timers_are_running = 0;
-
 		I6AS_LIST_ALLOC(in6m->in6m_source->i6ms_cur);
 		if (error != 0) {
-			FREE(in6m->in6m_source->i6ms_timer_ch, M_MSFILTER);
 			FREE(in6m->in6m_source, M_MSFILTER);
 			return error;
 		}
@@ -225,12 +222,13 @@ in6_addmultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 					return error;
 				}
 			}
-			if (mode == MCAST_INCLUDE)
+			if (mode == MCAST_INCLUDE) {
 				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_in->head,
 				    ias, i6as_list);
-			else
+			} else {
 				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_ex->head,
 				    ias, i6as_list);
+            }
 			j = 1; /* the number of added source */
 			break;
 		}
@@ -440,8 +438,6 @@ in6_modmultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 			return ENOBUFS;
 		bzero(in6m->in6m_source, sizeof(struct in6_multi_source));
 
-		in6_msf_state_change_timers_are_running = 0;
-
 		I6AS_LIST_ALLOC(in6m->in6m_source->i6ms_cur);
 		if (error != 0) {
 			FREE(in6m->in6m_source, M_MSFILTER);
@@ -510,13 +506,13 @@ in6_modmultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 					return error;
 				}
 			}
-			if (mode == MCAST_INCLUDE)
+			if (mode == MCAST_INCLUDE) {
 				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_in->head,
 				    ias, i6as_list);
-			else
+			} else {
 				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_ex->head,
 				    ias, i6as_list);
-
+            }
 			k = 1; /* the number of added source */
 			break;
 		}
@@ -2572,8 +2568,7 @@ sock6_getmopt_srcfilter(struct socket *sop, struct group_filter **grpfp)
 }
 
 int
-in6_getmopt_source_list(struct sock_msf *msf, u_int16_t *numsrc,
-	struct sockaddr_storage **oss, u_int mode)
+in6_getmopt_source_list(struct sock_msf *msf, u_int16_t *numsrc, struct sockaddr_storage **oss, u_int *mode)
 {
 
 	return (in_getmopt_source_list(msf, numsrc, oss, mode));

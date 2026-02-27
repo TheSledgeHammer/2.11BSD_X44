@@ -242,7 +242,11 @@ extern int   ip6_anonportmax;		/* maximum ephemeral port */
 extern int   ip6_lowportmin;		/* minimum reserved port */
 extern int   ip6_lowportmax;		/* maximum reserved port */
 
-extern int	ip6_rht0;		/* processing routing header type 0 */
+extern int	mldmaxsrcfilter;       /* maximum num .of msf per interface */
+extern int	mldsomaxsrc;           /* maximum num .of msf per socket */
+extern int	mldalways_v2;
+
+extern int	ip6_rht0;		       /* processing routing header type 0 */
 
 
 struct in6pcb;

@@ -1703,7 +1703,7 @@ static int
 mld6_create_group_record(mh, in6m, numsrc, done, type)
 	struct mbuf *mh;
 	struct in6_multi *in6m;
-	u_int16_t numsrc, done;
+	u_int16_t numsrc, *done;
 	u_int8_t type;
 {
 	/* assumes IPv6 header and MLD data are separeted into different mbuf */
@@ -2109,7 +2109,7 @@ in6_delmulti2(in6m, errorp, numsrc, src, mode, final)
 	struct in6_multi *in6m;
 	int *errorp;
 	u_int16_t numsrc;
-	struct sockaddr_stoarge *src;
+	struct sockaddr_storage *src;
 	u_int mode;
 	int final;
 {
@@ -2477,7 +2477,7 @@ in6_modmulti2(ap, ifp, errorp, numsrc, src, mode, old_num, old_src, old_mode, in
 			splx(s);
 			return NULL;
 		}
-		rti = find_rt6i(in6m->in6m_ifp);
+		rti = rt6i_find(in6m->in6m_ifp);
 		if (rti == NULL) {
 			mld6_stop_listening(in6m);
 			LIST_REMOVE(in6m, in6m_entry);
@@ -2524,7 +2524,7 @@ in6_modmulti2(ap, ifp, errorp, numsrc, src, mode, old_num, old_src, old_mode, in
 			 * If MSF's pending records exist, they must be deleted.
 			 */
 			in6_clear_all_pending_report(in6m);
-			imm = in6_joingroup(in6m->in6m_ifp, &in6m->in6m_addr, errorp, 0);
+			imm = in6_joingroup(in6m->in6m_ifp, &in6m->in6m_addr, errorp);
 			if (imm) {
 				LIST_INSERT_HEAD(&ia->ia6_multiaddrs, in6m, in6m_entry);
 			} else {

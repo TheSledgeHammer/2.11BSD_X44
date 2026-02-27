@@ -594,6 +594,29 @@ do {									\
 	IN6_NEXT_MULTI((step), (in6m));		\
 } while (/*CONSTCOND*/ 0)
 
+
+/*
+ * Macros for looking up the in6_multi_mship record for a given IP6 multicast
+ * address on a given interface. If no matching record is found, "imm"
+ * returns NULL.
+ */
+#define IN6_LOOKUP_MSHIP(addr, ifp, imop, imm)				    \
+/* struct in6_addr addr; */						                \
+/* struct ifnet *ifp; */						                \
+/* struct ip6_moptions *imop */						            \
+/* struct in6_multi_mship *imm; */					            \
+do {									                        \
+	for ((imm) = LIST_FIRST(&imop->im6o_memberships);			\
+	     (imm) != NULL; (imm) = LIST_NEXT(imm, i6mm_chain)) {	\
+		if ((imm)->i6mm_maddr->in6m_ifp != (ifp))		        \
+		    	continue;					                    \
+		if (!IN6_ARE_ADDR_EQUAL(&(imm)->i6mm_maddr->in6m_addr,	\
+		    &(addr)))						                    \
+			continue;					                        \
+		break;							                        \
+	}								                            \
+} while (/*CONSTCOND*/ 0)
+
 struct	in6_multi *in6_addmulti(struct in6_addr *, struct ifnet *,
 	int *);
 void	in6_delmulti(struct in6_multi *);

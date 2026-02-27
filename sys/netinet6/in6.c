@@ -95,6 +95,11 @@ __KERNEL_RCSID(0, "$NetBSD: in6.c,v 1.86 2004/03/28 08:28:06 christos Exp $");
 #include <netinet6/in6_ifattach.h>
 #include <netinet6/scope6_var.h>
 
+#ifdef MLDV2
+#include <netinet/icmp6.h>
+#include <netinet6/in6_msf.h>
+#endif
+
 #include <net/net_osdep.h>
 
 /* enable backward compatibility code for obsoleted ioctls */
