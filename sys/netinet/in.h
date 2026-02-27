@@ -115,6 +115,7 @@ typedef __sa_family_t	sa_family_t;
 /* sysctl placeholder for (FAST_)IPSEC */
 #define CTL_IPPROTO_IPSEC	258
 
+#include <sys/socket.h>
 
 /*
  * Local port number conventions:
@@ -354,7 +355,7 @@ struct group_source_req {
 struct group_filter {
 	u_int32_t			gf_interface;	/* interface index */
 	struct	sockaddr_storage	gf_group;	/* multicast address */
-	u_int32_t			gf_fmode;	/* filter mode */
+	u_int32_t			        gf_fmode;	/* filter mode */
 	u_int32_t			gf_numsrc;	/* number of sources */
 	struct	sockaddr_storage	gf_slist[1];	/* source address */
 };

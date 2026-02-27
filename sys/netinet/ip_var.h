@@ -226,6 +226,9 @@ extern int   anonportmax;		/* maximum ephemeral port */
 extern int   lowportmin;		/* minimum reserved port */
 extern int   lowportmax;		/* maximum reserved port */
 extern struct rttimer_queue *ip_mtudisc_timeout_q;
+//extern int   igmpmaxsrcfilter;	/* maximum num. of msf per interface */
+//extern int   igmpsomaxsrc;		/* maximum num. of msf per socket */
+
 
 #ifdef GATEWAY
 extern int ip_maxflows;
@@ -259,6 +262,7 @@ struct mbuf *
 void	 ip_stripoptions(struct mbuf *, struct mbuf *);
 int	 	ip_sysctl(int *, u_int, void *, size_t *, void *, size_t);
 void	 ipintr(void);
+
 void *	 rip_ctlinput(int, struct sockaddr *, void *);
 int	 rip_ctloutput(int, struct socket *, int, int, struct mbuf **);
 void	 rip_init(void);
@@ -266,11 +270,18 @@ void	 rip_input(struct mbuf *, ...);
 int	 rip_output(struct mbuf *, ...);
 int	 rip_usrreq(struct socket *,
 	    int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
+
 void	ipflow_init(void);
 struct	ipflow *ipflow_reap(int);
 void	ipflow_create(const struct route *, struct mbuf *);
 void	ipflow_slowtimo(void);
 void	ipflow_invalidate_all(void);
+
+struct ifnet *
+	 ip_multicast_if(struct in_addr *, int *);
+int	 ip_check_router_alert(struct ip *);
+int	 ip_getmopt_msflist(struct sock_msf *, u_int16_t *,
+			    struct sockaddr_storage **, u_int *);
 
 extern uint16_t	ip_id;
 static __inline uint16_t ip_newid(void);

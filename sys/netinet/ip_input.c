@@ -1823,7 +1823,7 @@ save_rte(option, dst)
  * The first hop is placed before the options, will be removed later.
  */
 struct mbuf *
-ip_srcroute()
+ip_srcroute(void)
 {
 	struct in_addr *p, *q;
 	struct mbuf *m;
@@ -1884,6 +1884,36 @@ ip_srcroute()
 		printf(" %x\n", ntohl(q->s_addr));
 #endif
 	return (m);
+}
+
+/*
+ * Check whether Router Alert option has been set.
+ */
+int
+ip_check_router_alert(ip)
+	struct ip *ip;
+{
+	u_char *cp;
+	int hlen, cnt, opt, optlen;
+
+	cp = (u_char *)(ip + 1);
+	hlen = ip->ip_hl << 2;
+	cnt = hlen - sizeof(struct ip);
+	for (; cnt > 0; cnt -= optlen, cp += optlen) {
+		opt = cp[IPOPT_OPTVAL];
+		if (opt == IPOPT_EOL)
+			break;
+		else if (opt == IPOPT_NOP)
+			optlen = 1;
+		else if (opt == IPOPT_RA)
+			return 0;
+		else {
+			optlen = cp[IPOPT_OLEN];
+			if (optlen < IPOPT_OLEN + sizeof(*cp) || optlen > cnt)
+				break;
+		}
+	}
+	return 1;
 }
 
 /*

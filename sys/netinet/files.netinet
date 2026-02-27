@@ -5,7 +5,7 @@ defparam 	opt_tcp_debug.h		TCP_NDEBUG
 defflag 	opt_inet.h			INET INET6 INET6_MD_CKSUM
 defparam 	opt_inet_conf.h		SUBNETSARELOCAL HOSTZEROBROADCAST
 
-defflag							MROUTING
+defflag							MROUTING IGMPV3 MLDV2
 defflag							TCP_COMPAT_42
 
 defparam 	opt_tcp_space.h		TCP_RECVSPACE TCP_SENDSPACE
@@ -17,7 +17,7 @@ file	netinet/if_arp.c		arp									needs-flag
 file	netinet/if_atm.c		atm
 file	netinet/in_gif.c		gif & inet
 file	netinet/ip_ecn.c		ipsec | fast_ipsec | gif
-file	netinet/ip_carp.c		carp & (inet | inet6)				needs-flag
+file	netinet/ip_carp.c		carp & (inet | inet6)			needs-flag
 file	netinet/ip_etherip.c	inet & etherip
 file	netinet/ip_encap.c		inet | inet6
 file	netinet/ip_gre.c		inet & gre
