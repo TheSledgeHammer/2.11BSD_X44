@@ -570,10 +570,10 @@ mld6_sendpkt(in6m, type, dst)
  * given interface.
  */
 struct in6_multi *
-in6_addmulti(maddr6, ifp, errorp, delay)
+in6_addmulti(maddr6, ifp, errorp)
 	struct in6_addr *maddr6;
 	struct ifnet *ifp;
-	int *errorp, delay;
+	int *errorp;
 {
 	struct	in6_ifaddr *ia;
 	struct	in6_ifreq ifr;
@@ -638,12 +638,7 @@ in6_addmulti(maddr6, ifp, errorp, delay)
 			splx(s);
 			return (NULL);
 		}
-		in6m->in6m_timer = delay;
-		if (in6m->in6m_timer > 0) {
-			in6m->in6m_state = MLD_REPORTPENDING;
-			splx(s);
-			return (in6m);
-		}
+
 		/*
 		 * Let MLD6 know that we have joined a new IP6 multicast
 		 * group.
