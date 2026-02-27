@@ -393,6 +393,11 @@ struct ttysize {
 #define	SIOCSIFGATTR   		_IOW('i', 140, struct ifgroupreq) 	/* set ifgroup attribs */
 #define	SIOCGIFGLIST   		_IOWR('i', 141, struct ifgroupreq) 	/* get ifgroup list */
 
+#define	SIOCSIPMSFILTER	    _IO('s', 150)						/* set src list */
+#define	SIOCGIPMSFILTER	    _IO('s', 151)						/* get src list */
+#define	SIOCSMSFILTER	    _IO('s', 152)						/* set src list */
+#define	SIOCGMSFILTER	    _IO('s', 153)						/* get src list */
+
 #define	SIOCSETPFSYNC		_IOW('i', 247, struct ifreq)		/* set pfsync */
 #define	SIOCGETPFSYNC		_IOWR('i', 248, struct ifreq)		/* get pfsync */
 
