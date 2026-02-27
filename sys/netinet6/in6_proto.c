@@ -228,7 +228,7 @@ struct ip6protosw inet6sw[] = {
 				.pr_usrreq		= rip6_usrreq,
 				.pr_init		= icmp6_init,
 				.pr_fasttimo	= icmp6_fasttimo,
-				.pr_slowtimo	= 0,
+				.pr_slowtimo	= icmp6_slowtimo,
 				.pr_drain		= 0,
 				.pr_wassysctl	= 0,
 		},

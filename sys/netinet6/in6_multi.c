@@ -94,9 +94,9 @@ __KERNEL_RCSID(0, "$NetBSD: in6.c,v 1.86 2004/03/28 08:28:06 christos Exp $");
 #include <netinet6/ip6_mroute.h>
 #include <netinet6/in6_ifattach.h>
 #include <netinet6/scope6_var.h>
+#include <netinet/icmp6.h>
 
 #ifdef MLDV2
-#include <netinet/icmp6.h>
 #include <netinet6/in6_msf.h>
 #endif
 
@@ -1007,6 +1007,7 @@ in6_is_mld_target(group)
 
 	return 1;
 }
+
 #endif /* MLDV2 */
 
 /*

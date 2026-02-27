@@ -88,9 +88,8 @@ void	mld6_init(void);
 void	mld6_input(struct mbuf *, int);
 #if defined(MLDV2)
 void	mld6_start_listening(struct in6_multi *, u_int8_t);
-#else
-void	mld6_start_listening(struct in6_multi *);
 #endif
+void	mld6_start_listening(struct in6_multi *);
 void	mld6_stop_listening(struct in6_multi *);
 void	mld6_fasttimeo(void);
 void	mld6_slowtimeo(void);

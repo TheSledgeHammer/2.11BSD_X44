@@ -87,8 +87,10 @@ __KERNEL_RCSID(0, "$NetBSD: icmp6.c,v 1.106.2.1.4.1 2005/10/28 23:10:38 riz Exp 
 
 #include <netinet/in.h>
 #include <netinet/in_var.h>
+#include <netinet6/in6_var.h>
 #include <netinet/ip6.h>
 #include <netinet6/ip6_var.h>
+#include <netinet6/scope6_var.h>
 #include <netinet/icmp6.h>
 #include <netinet6/mld6_var.h>
 #include <netinet6/in6_pcb.h>
@@ -113,6 +115,10 @@ __KERNEL_RCSID(0, "$NetBSD: icmp6.c,v 1.106.2.1.4.1 2005/10/28 23:10:38 riz Exp 
 #endif
 
 #include <net/net_osdep.h>
+
+#ifdef MLDV2
+#include <netinet6/in6_msf.h>
+#endif
 
 extern struct domain inet6domain;
 
@@ -2185,13 +2191,11 @@ icmp6_fasttimo(void)
 	mld6_fasttimeo();
 }
 
-#ifdef MLDV2
 void
 icmp6_slowtimo(void)
 {
 	mld6_slowtimeo();
 }
-#endif
 
 static const char *
 icmp6_redirect_diag(src6, dst6, tgt6)

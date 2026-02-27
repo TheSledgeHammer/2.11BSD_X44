@@ -101,6 +101,8 @@
  *	@(#)igmp.c	8.1 (Berkeley) 7/19/93
  */
 
+#include <sys/cdefs.h>
+
 #include "opt_inet.h"
 
 #include <sys/param.h>
@@ -119,8 +121,8 @@
 #include <netinet/in.h>
 #include <netinet/in_var.h>
 #include <netinet/in_systm.h>
-#include <netinet6/in6_var.h>
 #include <netinet/ip.h>
+#include <netinet/in_pcb.h>
 #include <netinet/ip6.h>
 #include <netinet6/ip6_var.h>
 #include <netinet/icmp6.h>
@@ -942,7 +944,7 @@ end:
 #endif
 
 void
-mld6_fastimeo(void)
+mld6_fasttimeo(void)
 {
 	struct in6_multi *in6m;
 	struct in6_multistep step;
@@ -962,19 +964,21 @@ mld6_fastimeo(void)
 	}
 
 	s = splsoftnet();
-
+#ifdef MLDV2
 	if (mld_interface_timers_are_running) {
 		mld_interface_timers_are_running = 0;
-		LIST_FOREACH(rti, &rt6i_head, rti_link) {
+		LIST_FOREACH(rti, &rt6i_head, rt6i_link) {
 			if (rti->rt6i_timer2 == 0) {
 				/* do nothing */
 			} else if (--rti->rt6i_timer2 == 0) {
-				mld6_send_all_current_state_report(in6m->in6m_ifp);
+				mld6_send_all_current_state_report(rti->rt6i_ifp);
 			} else {
 				mld_interface_timers_are_running = 1;
 			}
 		}
 	}
+#endif
+
 #ifndef MLDV2
 	if (!mld_timers_are_running) {
 #else
@@ -1014,9 +1018,11 @@ mld6_fastimeo(void)
 		}
 
 state_change_timer:
+#ifdef MLDV2
 		if (in6_is_mld_target(&in6m->in6m_addr)) {
 			goto next_in6m;
 		}
+
 		if (in6m->in6m_source->i6ms_timer == 0) {
 			goto next_in6m;
 		}
@@ -1046,6 +1052,7 @@ state_change_timer:
 			mld_state_change_timers_are_running = 1;
 		}
 next_in6m:
+#endif
 		IN6_NEXT_MULTI(step, in6m);
 	}
 	splx(s);
@@ -1054,12 +1061,12 @@ next_in6m:
 void
 mld6_slowtimeo(void)
 {
+#ifdef MLDV2
 	struct router6_info *rti;
 	int s;
 
 	s = splsoftnet();
-	LIST_FOREACH(rti, &rt6i_head, rti_link) {
-#ifdef MLDV2
+	LIST_FOREACH(rti, &rt6i_head, rt6i_link) {
 		if (rti->rt6i_timer1 == 0) {
 			switch (mld_version) {
 			case 1:
@@ -1078,9 +1085,10 @@ mld6_slowtimeo(void)
 				break;
 			}
 		}
-#endif
+
 	}
 	splx(s);
+#endif
 }
 
 static struct mld_hdr *
@@ -1113,7 +1121,8 @@ mld6_allocbuf(mh, len, in6m, type)
 		}
 	}
 	if (md == NULL) {
-		m_free(mh);
+		m_free(*mh);
+        *mh = NULL;
 		return NULL;
 	}
 	(*mh)->m_next = md;
@@ -1369,7 +1378,7 @@ mld6_send_all_current_state_report(ifp)
 		    !in6_is_mld_target(&in6m->in6m_addr))
 			goto next_multi;
 
-		if (mld_send_current_state_report(in6m) != 0)
+		if (mld6_send_current_state_report(in6m) != 0)
 			return;
 next_multi:
 		IN6_NEXT_MULTI(step, in6m);
