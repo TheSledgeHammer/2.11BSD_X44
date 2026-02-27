@@ -246,7 +246,6 @@ in6_embedscope(in6, sin6, in6p, ifpp)
 /*
  * generate standard sockaddr_in6 from embedded form.
  * touches sin6_addr and sin6_scope_id only.
- *
  */
 int
 in6_recoverscope(sin6, in6, ifp)

@@ -360,10 +360,21 @@ in6_control(so, cmd, data, ifp, p)
 	case SIOCGETSGCNT_IN6:
 	case SIOCGETMIFCNT_IN6:
 		return (mrt6_ioctl(cmd, data));
+#ifdef MLDV2
+	case SIOCSMSFILTER:
+		/* Set Protocol-Independent Multicast Source Filter */
+		return (sock6_setmopt_srcfilter(so, (struct group_filter **)data));
+
+	case SIOCGMSFILTER:
+		/* Get Protocol-Independent Multicast Source Filter */
+		return (sock6_getmopt_srcfilter(so, (struct group_filter **)data));
+#endif
 	}
 
 	if (ifp == NULL)
 		return (EOPNOTSUPP);
+
+
 
 	switch (cmd) {
 	case SIOCSNDFLUSH_IN6:
@@ -1703,15 +1714,32 @@ in6_joingroup(ifp, addr, errorp)
 	int *errorp;
 {
 	struct in6_multi_mship *imm;
+#ifdef MLDv2
+	int error;
+#endif
 
 	imm = malloc(sizeof(*imm), M_IPMADDR, M_NOWAIT);
 	if (!imm) {
 		*errorp = ENOBUFS;
 		return NULL;
 	}
+#ifdef MLDv2
+	bzero(imm, sizeof(*imm));
+	IMO_MSF_ALLOC(imm->i6mm_msf);
+	if (error != 0) {
+		*errorp = error;
+		return NULL;
+	}
+#endif
 	imm->i6mm_maddr = in6_addmulti(addr, ifp, errorp);
+#ifdef MLDv2
+	imm->i6mm_msf->msf_grpjoin++;
+#endif
 	if (!imm->i6mm_maddr) {
 		/* *errorp is alrady set */
+#ifdef MLDv2
+		IMO_MSF_FREE(imm->i6mm_msf);
+#endif
 		free(imm, M_IPMADDR);
 		return NULL;
 	}
@@ -1722,10 +1750,36 @@ int
 in6_leavegroup(imm)
 	struct in6_multi_mship *imm;
 {
+#ifdef MLDV2
+	struct sockaddr_storage *del_ss = NULL;
+	u_int mode;
+	int final = 1;
+	int error;
+	u_int16_t numsrc = 0;
+#endif /* MLDV2 */
 
-	if (imm->i6mm_maddr)
+	if (imm->i6mm_maddr) {
+#ifdef MLDV2
+		struct sock_msf *msf = imm->i6mm_msf;
+		error = in6_getmopt_source_list(msf, &numsrc, &del_ss, &mode);
+		if (error != 0) {
+			/* XXX strange... panic? */
+			if (del_ss != NULL) {
+				FREE(del_ss, M_IPMOPTS);
+			}
+			return error;
+		}
+		in6_delmulti2(imm->i6mm_maddr, &error, numsrc, del_ss, mode, final);
+		if (del_ss != NULL) {
+			FREE(del_ss, M_IPMOPTS);
+		}
+		in6_freemopt_source_list(msf, msf->msf_head, msf->msf_blkhead);
+		IMO_MSF_FREE(msf);
+#else
 		in6_delmulti(imm->i6mm_maddr);
-	free(imm,  M_IPMADDR);
+#endif
+	}
+	free(imm, M_IPMADDR);
 	return 0;
 }
 

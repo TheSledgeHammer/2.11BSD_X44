@@ -211,7 +211,7 @@ ip6_init2(dummy)
  * IP6 input interrupt handling. Just pass the packet to ip6_input.
  */
 void
-ip6intr()
+ip6intr(void)
 {
 	int s;
 	struct mbuf *m;

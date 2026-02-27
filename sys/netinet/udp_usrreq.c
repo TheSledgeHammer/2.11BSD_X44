@@ -86,6 +86,9 @@ __KERNEL_RCSID(0, "$NetBSD: udp_usrreq.c,v 1.116.2.4 2004/05/28 07:24:17 tron Ex
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/in_var.h>
+#if defined(IGMPV3) || defined(MLDV2)
+#include <netinet/in_msf.h>
+#endif
 #include <netinet/ip.h>
 #include <netinet/in_pcb.h>
 #include <netinet/ip_var.h>
@@ -99,6 +102,9 @@ __KERNEL_RCSID(0, "$NetBSD: udp_usrreq.c,v 1.116.2.4 2004/05/28 07:24:17 tron Ex
 #include <netinet6/ip6_var.h>
 #include <netinet6/in6_pcb.h>
 #include <netinet6/udp6_var.h>
+#ifdef MLDV2
+#include <netinet6/in6_msf.h>
+#endif
 #endif
 
 #ifndef INET6
@@ -188,7 +194,7 @@ struct evcnt udp_swcsum = EVCNT_INITIALIZER(EVCNT_TYPE_MISC,
 #endif /* UDP_CSUM_COUNTERS */
 
 void
-udp_init()
+udp_init(void)
 {
 
 	in_pcbinit(&udbtable, udbhashsize, udbhashsize);
@@ -750,6 +756,12 @@ udp4_realinput(src, dst, m, off)
 					continue;
 			}
 
+#ifdef IGMPV3
+			if (match_msf4_per_socket(inp, src4, dst4) == 0) {
+				continue;
+			}
+#endif
+
 			udp4_sendup(m, off, (struct sockaddr *)src,
 				inp->inp_socket);
 			rcvcnt++;
@@ -866,6 +878,16 @@ udp6_realinput(af, src, dst, m, off)
 				    (in6p->in6p_flags & IN6P_IPV6_V6ONLY))
 					continue;
 			}
+
+#ifdef MLDV2
+			/*
+			 * Receive multicast data which fits MSF condition.
+			 */
+			if (match_msf6_per_socket(in6p, &src->sin6_addr, &dst->sin6_addr)
+					== 0) {
+				continue;
+			}
+#endif
 
 			udp6_sendup(m, off, (struct sockaddr *)src,
 				in6p->in6p_socket);

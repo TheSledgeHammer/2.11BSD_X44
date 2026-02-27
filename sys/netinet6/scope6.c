@@ -219,3 +219,25 @@ scope6_addr2default(const struct in6_addr *addr)
 
 	return (id);
 }
+
+#ifdef notyet
+int
+sa6_embedscope(sin6, defaultok)
+	struct sockaddr_in6 *sin6;
+	int defaultok;
+{
+	struct ifnet *ifp;
+
+	return in6_embedscope(&sin6->sin6_addr, sin6, NULL, &ifp);
+}
+
+/*
+ * generate standard sockaddr_in6 from embedded form.
+ */
+int
+sa6_recoverscope(sin6)
+	struct sockaddr_in6 *sin6;
+{
+	return in6_recoverscope(sin6, &sin6->sin6_addr, NULL);
+}
+#endif

@@ -90,8 +90,15 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_output.c,v 1.82.2.1 2004/06/14 18:01:09 tron Exp
 #include <netinet/icmp6.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/in6_pcb.h>
+
+#ifdef MLDV2
+#include <netinet6/mld6_var.h>
+#include <netinet6/in6_msf.h>
+#endif
+
 #include <netinet6/nd6.h>
 #include <netinet6/ip6protosw.h>
+#include <netinet6/scope6_var.h>
 
 #ifdef IPSEC
 #include <netinet6/ipsec/ipsec.h>

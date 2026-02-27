@@ -105,6 +105,14 @@
 
 #include "opt_inet.h"
 
+#ifndef MLDV2
+/*
+ * this file is not used at all if MLDv2 is disabled.
+ * separated from mld6.c (KAME Rev 1.92).
+ * includes part of in6.c (KAME Rev 1.360).
+ */
+#else
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
@@ -127,9 +135,7 @@
 #include <netinet6/ip6_var.h>
 #include <netinet/icmp6.h>
 #include <netinet6/mld6_var.h>
-#ifdef MLDV2
 #include <netinet6/in6_msf.h>
-#endif
 #include <netinet6/scope6_var.h>
 
 #include <net/if_arp.h>
@@ -158,11 +164,7 @@ int mldsomaxsrc = SO_MAX_SOURCE_FILTER;
  * 	1: mldv1-only,
  * 	2: mldv2 without compat-mode
  */
-#ifdef MLDV2
 int mld_version = 0;
-#else
-int mld_version = 1;
-#endif
 
 #ifdef MLDV2_DEBUG
 int mld_debug = 1;
@@ -170,9 +172,7 @@ int mld_debug = 1;
 int mld_debug = 0;
 #endif
 
-#ifdef MLDV2
 static LIST_HEAD(, router6_info) rt6i_head = LIST_HEAD_INITIALIZER(rt6i_head);
-#endif
 
 static struct ip6_pktopts ip6_opts;
 static int mld_timers_are_running;
@@ -182,7 +182,6 @@ static int mld_interface_timers_are_running;
 /* XXX: These are necessary for KAME's link-local hack */
 static struct in6_addr mld_all_nodes_linklocal = IN6ADDR_LINKLOCAL_ALLNODES_INIT;
 static struct in6_addr mld_all_routers_linklocal = IN6ADDR_LINKLOCAL_ALLROUTERS_INIT;
-#ifdef MLDV2
 static struct in6_addr mld_all_nodes_nodelocal = IN6ADDR_NODELOCAL_ALLNODES_INIT;
 static struct in6_addr mld_all_routersv2_linklocal = IN6ADDR_LINKLOCAL_ALLV2ROUTERS_INIT;
 
@@ -196,21 +195,21 @@ static const int addrlen = sizeof(struct in6_addr);
 static struct router6_info *rt6i_init(struct ifnet *);
 static struct router6_info *rt6i_find(struct ifnet *);
 
+static void	mld6_start_listening(struct in6_multi *, u_int8_t);
+static void	mld6_stop_listening(struct in6_multi *);
 static int mld6_query_version(struct mbuf *, int, u_int16_t);
 static int mld6_query_type(struct mldv2_hdr *, struct in6_addr *, int);
-
 static void mld6_sendbuf(struct mbuf *, struct ifnet *);
 static int mld6_set_timer(struct ifnet *, struct router6_info *, struct mld_hdr *, u_int16_t, u_int8_t);
 static void mld6_set_hostcompat(struct router6_info *);
+static struct mld_hdr *mld6_allocbuf(struct mbuf **, int, struct in6_multi *, int);
+static void mld6_sendpkt(struct in6_multi *, int, const struct in6_addr *);
 static int mld6_record_queried_source(struct in6_multi *, struct mld_hdr *, u_int16_t);
 static void mld6_send_all_current_state_report(struct ifnet *);
 static int mld6_send_current_state_report(struct in6_multi *);
+static void	mld6_send_state_change_report(struct in6_multi *, u_int8_t, int);
 static int mld6_create_group_record(struct mbuf *, struct in6_multi *, u_int16_t, u_int16_t *, u_int8_t);
 static void mld6_cancel_pending_response(struct ifnet *, struct router6_info *);
-#endif
-
-static struct mld_hdr *mld6_allocbuf(struct mbuf **, int, struct in6_multi *, int);
-static void mld6_sendpkt(struct in6_multi *, int, const struct in6_addr *);
 
 void
 mld6_init(void)
@@ -238,7 +237,6 @@ mld6_init(void)
 	ip6_opts.ip6po_hlim = -1;
 }
 
-#ifdef MLDV2
 static struct router6_info *
 rt6i_init(ifp)
 	struct ifnet *ifp;
@@ -291,12 +289,8 @@ rt6i_find(struct ifnet *ifp)
 	return (rti);
 }
 
-#endif
-
-#ifdef MLDV2
-
 /* type - State-Change report type */
-void
+static void
 mld6_start_listening(in6m, type)
 	struct in6_multi *in6m;
 	u_int8_t type;
@@ -346,47 +340,8 @@ mld6_start_listening(in6m, type)
 	splx(s);
 }
 
-#else
 
-void
-mld6_start_listening(in6m)
-	struct in6_multi *in6m;
-{
-	struct in6_addr all_in6;
-	int s = splsoftnet();
-
-	/*
-	 * RFC2710 page 10:
-	 * The node never sends a Report or Done for the link-scope all-nodes
-	 * address.
-	 * MLD messages are never sent for multicast addresses whose scope is 0
-	 * (reserved) or 1 (node-local).
-	 */
-	all_in6 = mld_all_nodes_linklocal;
-	all_in6.s6_addr16[1] = htons(in6m->in6m_ifp->if_index); /* XXX */
-	if (in6_setscope(&all_in6, in6m->in6m_ifp, NULL)) {
-		/* XXX: this should not happen! */
-		in6m->in6m_timer = 0;
-		in6m->in6m_state = MLD_OTHERLISTENER;
-	}
-	if (IN6_ARE_ADDR_EQUAL(&in6m->in6m_addr, &all_in6) ||
-	    IPV6_ADDR_MC_SCOPE(&in6m->in6m_addr) < IPV6_ADDR_SCOPE_LINKLOCAL) {
-		in6m->in6m_timer = 0;
-		in6m->in6m_state = MLD_OTHERLISTENER;
-	} else {
-		mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
-		in6m->in6m_timer =
-		    MLD_RANDOM_DELAY(MLD_UNSOLICITED_REPORT_INTERVAL *
-		    PR_FASTHZ);
-		in6m->in6m_state = MLD_IREPORTEDLAST;
-		mld_timers_are_running = 1;
-	}
-	splx(s);
-}
-
-#endif
-
-void
+static void
 mld6_stop_listening(in6m)
 	struct in6_multi *in6m;
 {
@@ -413,8 +368,6 @@ mld6_stop_listening(in6m)
 		    &allrouter);
 	}
 }
-
-#ifdef MLDV2
 
 static int
 mld6_query_version(m, off, mldlen)
@@ -465,8 +418,6 @@ mld6_query_type(mldv2h, mld_addr, query_ver)
 	return (query_type);
 }
 
-#endif
-
 void
 mld6_input(m, off)
 	struct mbuf *m;
@@ -478,15 +429,11 @@ mld6_input(m, off)
 	struct in6_multi *in6m;
 	struct in6_addr mld_addr, all_in6;
 	struct in6_ifaddr *ia;
-#ifdef MLDV2
 	struct mldv2_hdr *mldv2h;
 	struct router6_info *rt6i;
 	int query_type, query_ver;
 	u_int16_t mldlen;
 	int timer = 0;
-#else
-	int timer;
-#endif
 
 	IP6_EXTHDR_GET(mldh, struct mld_hdr *, m, off, sizeof(*mldh));
 	if (mldh == NULL) {
@@ -537,7 +484,6 @@ mld6_input(m, off)
 		return;
 	}
 
-#ifdef MLDV2
 	rt6i = rt6i_find(ifp);
 	if (rt6i == NULL) {
 		mldlog((LOG_DEBUG,
@@ -546,7 +492,6 @@ mld6_input(m, off)
 		m_free(m);
 		return;
 	}
-#endif
 
 	/*
 	 * In the MLD6 specification, there are 3 states and a flag.
@@ -579,8 +524,6 @@ mld6_input(m, off)
 			mldh->mld_addr.s6_addr16[1] = htons(ifp->if_index); /* XXX */
 		}
 
-#ifdef MLDV2
-
 		/*
 		 * MLD version and Query type check.
 		 * MLDv1 Query: length = 24 octets AND Max-Resp-Code = 0
@@ -608,7 +551,7 @@ mld6_input(m, off)
 				break;
 			}
 		}
-#endif
+
 		/*
 		 * - Start the timers in all of our membership records
 		 *   that the query applies to for the interface on
@@ -706,7 +649,6 @@ mld6_input(m, off)
 #endif
 		break;
 	}
-#ifdef MLDV2
 	/*
 	 * MLDv1 Querier Present is set to Older Version Querier Present
 	 * Timeout seconds whenever an MLDv1 General Query is received.
@@ -720,11 +662,9 @@ mld6_input(m, off)
 		mld6_set_hostcompat(rt6i);
 	}
 	rt6i->rt6i_type = MLD_V1_ROUTER;
-#endif
 	m_freem(m);
 }
 
-#ifdef MLDV2
 /*
  * Timer adjustment on reception of an MLDv2 Query.
  */
@@ -941,17 +881,13 @@ end:
 	splx(s);
 }
 
-#endif
-
 void
 mld6_fasttimeo(void)
 {
 	struct in6_multi *in6m;
 	struct in6_multistep step;
 	struct ifnet *ifp = NULL;
-#ifdef MLDV2
 	struct router6_info *rti;
-#endif
 	int s;
 
 	/*
@@ -964,7 +900,6 @@ mld6_fasttimeo(void)
 	}
 
 	s = splsoftnet();
-#ifdef MLDV2
 	if (mld_interface_timers_are_running) {
 		mld_interface_timers_are_running = 0;
 		LIST_FOREACH(rti, &rt6i_head, rt6i_link) {
@@ -977,21 +912,15 @@ mld6_fasttimeo(void)
 			}
 		}
 	}
-#endif
 
-#ifndef MLDV2
-	if (!mld_timers_are_running) {
-#else
-	if (!mld_interface_timers_are_running && !mld_state_change_timers_are_running) {
-#endif
+	if (!mld_timers_are_running && !mld_interface_timers_are_running
+			&& !mld_state_change_timers_are_running) {
 		splx(s);
 		return;
 	}
 
 	mld_timers_are_running = 0;
-#ifdef MLDV2
 	mld_state_change_timers_are_running = 0;
-#endif
 	IN6_FIRST_MULTI(step, in6m);
 	ifp = in6m->in6m_ifp;
 	while (in6m != NULL) {
@@ -1008,17 +937,14 @@ mld6_fasttimeo(void)
 		if (in6m->in6m_rti->rt6i_type == MLD_V1_ROUTER) {
 			mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
 			in6m->in6m_state = MLD_IREPORTEDLAST;
-#ifdef MLDV2
 		} else if (in6m->in6m_state == MLD_G_QUERY_PENDING_MEMBER
 				|| in6m->in6m_state == MLD_SG_QUERY_PENDING_MEMBER) {
 			mld6_send_current_state_report(in6m);
 			in6m->in6m_state = MLD_OTHERLISTENER;
 			ifp = in6m->in6m_ifp;
-#endif
 		}
 
 state_change_timer:
-#ifdef MLDV2
 		if (in6_is_mld_target(&in6m->in6m_addr)) {
 			goto next_in6m;
 		}
@@ -1052,7 +978,6 @@ state_change_timer:
 			mld_state_change_timers_are_running = 1;
 		}
 next_in6m:
-#endif
 		IN6_NEXT_MULTI(step, in6m);
 	}
 	splx(s);
@@ -1061,7 +986,6 @@ next_in6m:
 void
 mld6_slowtimeo(void)
 {
-#ifdef MLDV2
 	struct router6_info *rti;
 	int s;
 
@@ -1088,7 +1012,6 @@ mld6_slowtimeo(void)
 
 	}
 	splx(s);
-#endif
 }
 
 static struct mld_hdr *
@@ -1148,10 +1071,14 @@ mld6_allocbuf(mh, len, in6m, type)
 	mldh = mtod(md, struct mld_hdr *);
 	bzero(mldh, len);
 	mldh->mld_type = type;
+	mldh->mld_code = 0;
+	mldh->mld_cksum = 0;
+	/* XXX: we assume the function will not be called for query messages */
+	mldh->mld_maxdelay = 0;
+	mldh->mld_reserved = 0;
 	return mldh;
 }
 
-#ifdef MLDV2
 
 static void
 mld6_sendbuf(mh, ifp)
@@ -1226,8 +1153,6 @@ mld6_sendbuf(mh, ifp)
 			NULL, NULL);
 }
 
-#endif
-
 static void
 mld6_sendpkt(in6m, type, dst)
 	struct in6_multi *in6m;
@@ -1301,7 +1226,6 @@ mld6_sendpkt(in6m, type, dst)
 			(struct socket*) NULL, NULL);
 }
 
-#ifdef MLDV2
 
 /*
  * Parse source addresses from MLDv2 Group-and-Source-Specific Query message
@@ -1516,7 +1440,7 @@ mld6_send_current_state_report(in6m)
  *
  * timer_init - set this when IPMulticastListen() invoked
  */
-void
+static void
 mld6_send_state_change_report(in6m, type, timer_init)
 	struct in6_multi *in6m;
 	u_int8_t type;
@@ -1881,7 +1805,7 @@ mld6_cancel_pending_response(ifp, rti)
 			goto next_multi;
 
 		in6m->in6m_source->i6ms_robvar = 0;
-		i6ms->i6ms_timer = 0;
+		in6m->in6m_source->i6ms_timer = 0;
 		in6_free_msf_source_list(in6m->in6m_source->i6ms_rec->head);
 		in6m->in6m_source->i6ms_rec->numsrc = 0;
 		if (in6m->in6m_source->i6ms_alw != NULL) {
@@ -1912,4 +1836,738 @@ next_multi:
 	}
 }
 
-#endif
+/*
+ * Add an address to the list of IP6 multicast addresses for a
+ * given interface.
+ */
+struct	in6_multi *
+in6_addmulti(maddr6, ifp, errorp)
+	struct in6_addr *maddr6;
+	struct ifnet *ifp;
+	int *errorp;
+{
+	return (in6_addmulti2(maddr6, ifp, errorp, 0, NULL, MCAST_EXCLUDE, 1, 0));
+}
+
+/*
+ * Delete a multicast address record.
+ */
+void
+in6_delmulti(in6m)
+	struct in6_multi *in6m;
+{
+	int error;
+
+	in6_delmulti2(in6m, &error, 0, NULL, MCAST_EXCLUDE, 1);
+}
+
+/*
+ * Add an address to the list of IP6 multicast addresses for a given interface.
+ * Add source addresses to the list also, if upstream router is MLDv2 capable
+ * and the number of source is not 0.
+ *
+ * mode - requested filter mode by socket
+ * init - indicate initial join by socket
+ */
+struct in6_multi *
+in6_addmulti2(maddr6, ifp, errorp, numsrc, src, mode, init, delay)
+	struct in6_addr *maddr6;
+	struct ifnet *ifp;
+	int *errorp;
+	u_int16_t numsrc;
+	struct sockaddr_storage *src;
+	u_int mode;
+	int init, delay;
+{
+	struct	in6_ifaddr *ia;
+	struct	in6_ifreq ifr;
+	struct	in6_multi *in6m;
+	struct	i6as_head *newhead = NULL;/* this may become new current head */
+	u_int	curmode;		/* current filter mode */
+	u_int	newmode;		/* newly calculated filter mode */
+	u_int16_t curnumsrc;		/* current i6ms_cur->numsrc */
+	u_int16_t newnumsrc;		/* new i6ms_cur->numsrc */
+	u_int8_t type = 0;		/* State-Change report type */
+	struct	router6_info *rt6i;
+	int	s = splsoftnet();
+
+	*errorp = 0;
+
+	/*
+	 * MCAST_INCLUDE with empty source list means (*,G) leave.
+	 */
+	if ((mode == MCAST_INCLUDE) && (numsrc == 0)) {
+		*errorp = EINVAL;
+		splx(s);
+		return NULL;
+	}
+
+	/*
+	 * See if address already in list.
+	 */
+	IN6_LOOKUP_MULTI(*maddr6, ifp, in6m);
+	if (in6m != NULL) {
+		if (!in6_is_mld_target(&in6m->in6m_addr)) {
+			++in6m->in6m_refcount;
+			splx(s);
+			return in6m;
+		}
+
+		/*
+		 * Found it; merge source addresses in in6m_source and send
+		 * State-Change Report.
+		 */
+		curmode = in6m->in6m_source->i6ms_mode;
+		curnumsrc = in6m->in6m_source->i6ms_cur->numsrc;
+		/*
+		 * Add each source address to in6m_source and get new source
+		 * filter mode and its calculated source list.
+		 */
+		*errorp = in6_addmultisrc(in6m, numsrc, src, mode, init,
+					  &newhead, &newmode, &newnumsrc);
+		if (*errorp != 0) {
+			splx(s);
+			return NULL;
+		}
+		if (newhead != NULL) {
+			/*
+			 * Merge new source list to current pending report's
+			 * source list.
+			 */
+			*errorp = in6_merge_msf_state(in6m, newhead, newmode,
+						      newnumsrc);
+			if (*errorp > 0) {
+				/* State-Change Report will not be sent.
+				 * Just return immediately. */
+				/* Each ias linked from newhead is used by new
+				 * curhead, so only newhead is freed. */
+				FREE(newhead, M_MSFILTER);
+				*errorp = 0; /* to make caller behave as
+					      * normal */
+				splx(s);
+				return in6m;
+			}
+		} else {
+			/* Only newhead was merged in a former function. */
+			in6m->in6m_source->i6ms_mode = newmode;
+			in6m->in6m_source->i6ms_cur->numsrc = newnumsrc;
+		}
+
+		/*
+		 * Let MLD know that we have joined an IP multicast group
+		 * with source list if upstream router is MLDv2 capable.
+		 * If there was no pending source list change, an ALLOW or a
+		 * BLOCK State-Change Report will not be sent, but a TO_IN or
+		 * a TO_EX State-Change Report will be sent in any case.
+		 */
+		if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
+			if (curmode != newmode || curnumsrc != newnumsrc) {
+				if (curmode != newmode) {
+					if (newmode == MCAST_INCLUDE) {
+						type = CHANGE_TO_INCLUDE_MODE;
+					} else {
+						type = CHANGE_TO_EXCLUDE_MODE;
+					}
+				}
+				mld6_send_state_change_report(in6m, type, 1);
+			}
+		} else {
+			/*
+			 * If MSF's pending records exist, they must be deleted.
+			 * Otherwise, ALW or BLK record will be blocked or
+			 * pending list will never be clened when upstream
+			 * router switches to MLDv2. XXX
+			 */
+			in6_clear_all_pending_report(in6m);
+		}
+		*errorp = 0;
+		/* for this group address, init join request by the socket. */
+		if (init) {
+			in6m->in6m_refcount++;
+		}
+	} else {
+		/*
+		 * New address; allocate a new multicast record
+		 * and link it into the interface's multicast list.
+		 */
+		in6m = (struct in6_multi *)
+			malloc(sizeof(*in6m), M_IPMADDR, M_NOWAIT);
+		if (in6m == NULL) {
+			splx(s);
+			*errorp = ENOBUFS;
+			return (NULL);
+		}
+
+		bzero(in6m, sizeof(*in6m));
+		in6m->in6m_addr = *maddr6;
+		in6m->in6m_ifp = ifp;
+		in6m->in6m_refcount = 1;
+		IFP_TO_IA6(ifp, ia);
+		if (ia == NULL) {
+			free(in6m, M_IPMADDR);
+			splx(s);
+			*errorp = EADDRNOTAVAIL; /* appropriate? */
+			return (NULL);
+		}
+		in6m->in6m_ia = ia;
+		IFAREF(&ia->ia_ifa); /* gain a reference */
+		LIST_INSERT_HEAD(&ia->ia6_multiaddrs, in6m, in6m_entry);
+
+		/*
+		 * Ask the network driver to update its multicast reception
+		 * filter appropriately for the new address.
+		 */
+		bzero(&ifr.ifr_addr, sizeof(struct sockaddr_in6));
+		ifr.ifr_addr.sin6_family = AF_INET6;
+		ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
+		ifr.ifr_addr.sin6_addr = *maddr6;
+		if (ifp->if_ioctl == NULL) {
+			*errorp = ENXIO; /* XXX: appropriate? */
+		} else {
+			*errorp = (*ifp->if_ioctl)(ifp, SIOCADDMULTI,
+			    (caddr_t)&ifr);
+		}
+		if (*errorp) {
+			LIST_REMOVE(in6m, in6m_entry);
+			free(in6m, M_IPMADDR);
+			IFAFREE(&ia->ia_ifa);
+			splx(s);
+			return (NULL);
+		}
+		rt6i = rt6i_find(in6m->in6m_ifp);
+		if (rt6i == NULL) {
+			LIST_REMOVE(in6m, in6m_entry);
+			free(in6m, M_IPMADDR);
+			*errorp = ENOBUFS;
+			splx(s);
+			return NULL;
+		}
+		in6m->in6m_rti = rt6i;
+		in6m->in6m_source = NULL;
+		if (!in6_is_mld_target(&in6m->in6m_addr)) {
+			splx(s);
+			return in6m;
+		}
+
+		if ((*errorp = in6_addmultisrc(in6m, numsrc, src, mode, init,
+		    &newhead, &newmode, &newnumsrc)) != 0) {
+			in6_free_all_msf_source_list(in6m);
+			LIST_REMOVE(in6m, in6m_entry);
+			free(in6m, M_IPMADDR);
+			splx(s);
+			return NULL;
+		}
+
+		/* Only newhead was merged in a former function. */
+		curmode = in6m->in6m_source->i6ms_mode;
+		in6m->in6m_source->i6ms_mode = newmode;
+		in6m->in6m_source->i6ms_cur->numsrc = newnumsrc;
+
+		/*
+		 * Let MLD know that we have joined a new IP6 multicast
+		 * group (MLD version is checked in mld_start_listening()).
+		 */
+		if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
+			if (curmode != newmode) {
+				if (newmode == MCAST_INCLUDE) {
+					/* never happen? */
+					type = CHANGE_TO_INCLUDE_MODE;
+				} else {
+					type = CHANGE_TO_EXCLUDE_MODE;
+				}
+			}
+		}
+
+		in6m->in6m_timer = delay;
+		if (in6m->in6m_timer > 0) {
+			in6m->in6m_state = MLD_REPORTPENDING;
+			splx(s);
+			return (in6m);
+		}
+
+		mld6_start_listening(in6m, type);
+	}
+	if (newhead != NULL) {
+		/* Each ias is linked from new curhead, so only newhead
+		 * is freed */
+		FREE(newhead, M_MSFILTER);
+	}
+
+	splx(s);
+	return (in6m);
+}
+
+/*
+ * Delete a multicast address record.
+ *
+ * errorp - return code of each sub routine
+ * mode - requested filter mode by socket
+ * final - indicate complete leave by socket
+ */
+void
+in6_delmulti2(in6m, errorp, numsrc, src, mode, final)
+	struct in6_multi *in6m;
+	int *errorp;
+	u_int16_t numsrc;
+	struct sockaddr_stoarge *src;
+	u_int mode;
+	int final;
+{
+	struct in6_ifreq ifr;
+	struct in6_ifaddr *ia;
+	struct i6as_head *newhead = NULL;	/* this may become new current head */
+	u_int curmode; 						/* current filter mode */
+	u_int newmode; 						/* newly calculated filter mode */
+	u_int16_t curnumsrc; 				/* current i6ms_cur->numsrc */
+	u_int16_t newnumsrc; 				/* new i6ms_cur->numsrc */
+	u_int8_t type = 0; 					/* State-Change report type */
+	int s = splsoftnet();
+
+	if ((mode == MCAST_INCLUDE) && (numsrc == 0)) {
+		*errorp = EINVAL;
+		splx(s);
+		return;
+	}
+
+	if (!in6_is_mld_target(&in6m->in6m_addr)) {
+		if (--in6m->in6m_refcount == 0) {
+			/*
+			 * Unlink from list.
+			 */
+			LIST_REMOVE(in6m, in6m_entry);
+			if (in6m->in6m_ia) {
+				/* release reference */
+				IFAFREE(&in6m->in6m_ia->ia_ifa);
+			}
+
+			/*
+			 * Delete all references of this multicasting group
+			 * from the membership arrays
+			 */
+			for (ia = in6_ifaddr; ia; ia = ia->ia_next) {
+				struct in6_multi_mship *imm;
+				LIST_FOREACH(imm, &ia->ia6_memberships, i6mm_chain) {
+					if (imm->i6mm_maddr == in6m) {
+						imm->i6mm_maddr = NULL;
+					}
+				}
+			}
+
+			/*
+			 * Notify the network driver to update its multicast
+			 * reception filter.
+			 */
+			bzero(&ifr.ifr_addr, sizeof(struct sockaddr_in6));
+			ifr.ifr_addr.sin6_family = AF_INET6;
+			ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
+			ifr.ifr_addr.sin6_addr = in6m->in6m_addr;
+			(*in6m->in6m_ifp->if_ioctl)(in6m->in6m_ifp, SIOCDELMULTI,
+					(caddr_t) &ifr);
+			mld6_stop_listening(in6m);
+			free(in6m, M_IPMADDR);
+		}
+		splx(s);
+		return;
+	}
+
+	curmode = in6m->in6m_source->i6ms_mode;
+	curnumsrc = in6m->in6m_source->i6ms_cur->numsrc;
+	/*
+	 * Delete each source address from in6m_source and get new source
+	 * filter mode and its calculated source list, and send State-Change
+	 * Report if needed.
+	 */
+	if ((*errorp = in6_delmultisrc(in6m, numsrc, src, mode, final, &newhead,
+			&newmode, &newnumsrc)) != 0) {
+		splx(s);
+		return;
+	}
+	if (newhead != NULL) {
+		if ((*errorp = in6_merge_msf_state(in6m, newhead, newmode, newnumsrc))
+				> 0) {
+			/* State-Change Report will not be sent. Just return
+			 * immediately. */
+			FREE(newhead, M_MSFILTER);
+			splx(s);
+			return;
+		}
+	} else {
+		/* Only newhead was merged in a former function. */
+		in6m->in6m_source->i6ms_mode = newmode;
+		in6m->in6m_source->i6ms_cur->numsrc = newnumsrc;
+	}
+
+	/* for this group address, final leave request by the socket. */
+	if (final) {
+		--in6m->in6m_refcount;
+	}
+
+	if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
+		if (curmode != newmode || curnumsrc != newnumsrc) {
+			if (curmode != newmode) {
+				if (newmode == MCAST_INCLUDE) {
+					type = CHANGE_TO_INCLUDE_MODE;
+				} else {
+					type = CHANGE_TO_EXCLUDE_MODE;
+				}
+			}
+			mld6_send_state_change_report(in6m, type, 1);
+			if (!final) {
+				mld6_start_listening(in6m, type);
+			}
+		}
+	} else {
+		/*
+		 * If MSF's pending records exist, they must be deleted.
+		 * Otherwise, ALW or BLK record will be blocked or pending
+		 * list will never be clened when upstream router switches
+		 * to MLDv2. XXX
+		 */
+		in6_clear_all_pending_report(in6m);
+		if (in6m->in6m_refcount == 0) {
+			in6m->in6m_source->i6ms_robvar = 0;
+			mld6_stop_listening(in6m);
+		}
+	}
+
+	if (in6m->in6m_refcount == 0) {
+		/*
+		 * We cannot use timer for robstness times report
+		 * transmission when in6m_refcount becomes 0, since in6m
+		 * itself will be removed here. So, in this case, report
+		 * retransmission will be done quickly. XXX my spec.
+		 */
+		while (in6m->in6m_source->i6ms_robvar > 0) {
+			mld6_send_state_change_report(in6m, type, 0);
+		}
+
+		in6_free_all_msf_source_list(in6m);
+		LIST_REMOVE(in6m, in6m_entry);
+		if (in6m->in6m_ia) {
+			/* release reference */
+			IFAFREE(&in6m->in6m_ia->ia_ifa);
+		}
+		bzero(&ifr.ifr_addr, sizeof(struct sockaddr_in6));
+		ifr.ifr_addr.sin6_family = AF_INET6;
+		ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
+		ifr.ifr_addr.sin6_addr = in6m->in6m_addr;
+		(*in6m->in6m_ifp->if_ioctl)(in6m->in6m_ifp, SIOCDELMULTI,
+				(caddr_t) &ifr);
+		mld6_stop_listening(in6m);
+		free(in6m, M_IPMADDR);
+	}
+	*errorp = 0;
+	if (newhead != NULL) {
+		FREE(newhead, M_MSFILTER);
+	}
+	splx(s);
+}
+
+/*
+ * Add an address to the list of IPv6 multicast addresses for a given interface.
+ * Add source addresses to the list also, if upstream router is MLDv2 capable
+ * and the number of source is not 0.
+ *
+ * errorp - return code of each sub routine
+ * mode, old_mode - requested/current filter mode
+ * init - indicate initial join by socket
+ * grpjoin - on/off of (*,G) join by socket
+ */
+struct in6_multi *
+in6_modmulti2(ap, ifp, errorp, numsrc, src, mode, old_num, old_src, old_mode, init, grpjoin)
+	struct in6_addr *ap;
+	struct ifnet *ifp;
+	int *errorp;
+	u_int16_t numsrc;
+	struct sockaddr_storage *src;
+	u_int mode;
+	u_int16_t old_num;
+	struct sockaddr_storage *old_src;
+	u_int old_mode;
+	int init;
+	u_int grpjoin;
+{
+	struct in6_multi *in6m;
+	struct in6_ifreq ifr;
+	struct in6_ifaddr *ia;
+	struct i6as_head *newhead = NULL;/* this becomes new ims_cur->head */
+	u_int curmode;			/* current filter mode */
+	u_int newmode;			/* newly calculated filter mode */
+	u_int16_t newnumsrc;		/* new ims_cur->numsrc */
+	u_int16_t curnumsrc;		/* current ims_cur->numsrc */
+	u_int8_t type = 0;		/* State-Change report type */
+	struct router6_info *rti;
+	int s;
+
+	*errorp = 0; /* initialize */
+
+	if ((mode != MCAST_INCLUDE && mode != MCAST_EXCLUDE) ||
+		(old_mode != MCAST_INCLUDE && old_mode != MCAST_EXCLUDE)) {
+	    *errorp = EINVAL;
+	    return NULL;
+	}
+
+	s = splsoftnet();
+
+	/*
+	 * See if address already in list.
+	 */
+	IN6_LOOKUP_MULTI(*ap, ifp, in6m);
+
+	if (in6m != NULL) {
+		/*
+		 * If requested multicast address is local address, update
+		 * the condition, join or leave, based on a requested filter.
+		 */
+		if (!in6_is_mld_target(&in6m->in6m_addr)) {
+			if (numsrc != 0) {
+				mldlog(
+						(LOG_DEBUG, "in6_modmulti: "
+								"source filter not supported for %s\n", ip6_sprintf(
+								&in6m->in6m_addr)));
+				splx(s);
+				*errorp = EINVAL;
+				return NULL;
+				/*
+				 * source filter is not supported for
+				 * local group address.
+				 */
+			}
+			if (mode == MCAST_INCLUDE) {
+				if (--in6m->in6m_refcount == 0) {
+					/*
+					 * Unlink from list.
+					 */
+					LIST_REMOVE(in6m, in6m_entry);
+					IFAFREE(&in6m->in6m_ia->ia_ifa);
+					/*
+					 * Notify the network driver to update
+					 * its multicast reception filter.
+					 */
+					ifr.ifr_addr.sin6_family = AF_INET6;
+					ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
+					bcopy(&in6m->in6m_addr, &ifr.ifr_addr.sin6_addr,
+							sizeof(ifr.ifr_addr.sin6_addr));
+					(*in6m->in6m_ifp->if_ioctl)(in6m->in6m_ifp, SIOCDELMULTI,
+							(caddr_t) &ifr);
+					mld6_stop_listening(in6m);
+					free(in6m, M_IPMADDR);
+				}
+				splx(s);
+				return NULL; /* not an error! */
+			} else if (mode == MCAST_EXCLUDE) {
+				++in6m->in6m_refcount;
+				splx(s);
+				return in6m;
+			}
+		}
+
+		curmode = in6m->in6m_source->i6ms_mode;
+		curnumsrc = in6m->in6m_source->i6ms_cur->numsrc;
+		*errorp = in6_modmultisrc(in6m, numsrc, src, mode, old_num, old_src,
+				old_mode, grpjoin, &newhead, &newmode, &newnumsrc);
+		if (*errorp != 0) {
+			splx(s);
+			return NULL;
+		}
+		if (newhead != NULL) {
+			/*
+			 * Merge new source list to current pending report's
+			 * source list.
+			 */
+			*errorp = in6_merge_msf_state(in6m, newhead, newmode, newnumsrc);
+			if (*errorp > 0) {
+				/*
+				 * State-Change Report will not be sent.
+				 * Just return immediately.
+				 */
+				FREE(newhead, M_MSFILTER);
+				splx(s);
+				return in6m;
+			}
+		} else {
+			/* Only newhead was merged. */
+			in6m->in6m_source->i6ms_mode = newmode;
+			in6m->in6m_source->i6ms_cur->numsrc = newnumsrc;
+		}
+
+		/*
+		 * Let MLD know that we have joined an IPv6 multicast group with
+		 * source list if upstream router is MLDv2 capable.
+		 * If there was no pending source list change, an ALLOW or a
+		 * BLOCK State-Change Report will not be sent, but a TO_IN or a
+		 * TO_EX State-Change Report will be sent in any case.
+		 */
+		if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
+			if (curmode != newmode || curnumsrc != newnumsrc || old_num) {
+				if (curmode != newmode) {
+					if (newmode == MCAST_INCLUDE)
+						type = CHANGE_TO_INCLUDE_MODE;
+					else
+						type = CHANGE_TO_EXCLUDE_MODE;
+				}
+				mld6_send_state_change_report(in6m, type, 1);
+				mld6_start_listening(in6m, type);
+			}
+		} else {
+			/*
+			 * If MSF's pending records exist, they must be deleted.
+			 */
+			in6_clear_all_pending_report(in6m);
+		}
+		*errorp = 0;
+		/* for this group address, initial join request by the socket */
+		if (init) {
+			++in6m->in6m_refcount;
+		}
+
+	} else {
+		/*
+		 * If there is some sources to be deleted, or if the request is
+		 * join a local group address with some filtered address,
+		 * return.
+		 */
+		if ((old_num != 0) || (!in6_is_mld_target(ap) && numsrc != 0)) {
+			*errorp = EINVAL;
+			splx(s);
+			return NULL;
+		}
+
+		/*
+		 * New address; allocate a new multicast record and link it into
+		 * the interface's multicast list.
+		 */
+		in6m = (struct in6_multi*) malloc(sizeof(*in6m), M_IPMADDR, M_NOWAIT);
+		if (in6m == NULL) {
+			*errorp = ENOBUFS;
+			splx(s);
+			return NULL;
+		}
+
+		bzero(in6m, sizeof(*in6m));
+		in6m->in6m_addr = *ap;
+		in6m->in6m_ifp = ifp;
+		in6m->in6m_refcount = 1;
+
+		IFP_TO_IA6(ifp, ia);
+		if (ia == NULL) {
+			mld6_stop_listening(in6m);
+			free(in6m, M_IPMADDR);
+			*errorp = ENOBUFS /*???*/;
+			splx(s);
+			return NULL;
+		}
+		in6m->in6m_ia = ia;
+		IFAREF(&in6m->in6m_ia->ia_ifa);
+		LIST_INSERT_HEAD(&ia->ia6_multiaddrs, in6m, in6m_entry);
+		/*
+		 * Ask the network driver to update its multicast reception
+		 * filter appropriately for the new address.
+		 */
+		bzero(&ifr.ifr_addr, sizeof(struct sockaddr_in6));
+		ifr.ifr_addr.sin6_family = AF_INET6;
+		ifr.ifr_addr.sin6_len = sizeof(struct sockaddr_in6);
+		ifr.ifr_addr.sin6_addr = *ap;
+		if ((ifp->if_ioctl == NULL)
+				|| (*ifp->if_ioctl)(ifp, SIOCADDMULTI, (caddr_t) &ifr) != 0) {
+			mld6_stop_listening(in6m);
+			LIST_REMOVE(in6m, in6m_entry);
+			free(in6m, M_IPMADDR);
+			*errorp = EINVAL /*???*/;
+			splx(s);
+			return NULL;
+		}
+		rti = find_rt6i(in6m->in6m_ifp);
+		if (rti == NULL) {
+			mld6_stop_listening(in6m);
+			LIST_REMOVE(in6m, in6m_entry);
+			free(in6m, M_IPMADDR);
+			*errorp = ENOBUFS;
+			splx(s);
+			return NULL;
+		}
+		in6m->in6m_rti = rti;
+		in6m->in6m_source = NULL;
+		if (!in6_is_mld_target(&in6m->in6m_addr)) {
+			splx(s);
+			return in6m;
+		}
+
+		if ((*errorp = in6_modmultisrc(in6m, numsrc, src, mode, 0, NULL,
+				MCAST_INCLUDE, grpjoin, &newhead, &newmode, &newnumsrc)) != 0) {
+			in6_free_all_msf_source_list(in6m);
+			mld6_stop_listening(in6m);
+			LIST_REMOVE(in6m, in6m_entry);
+			free(in6m, M_IPMADDR);
+			splx(s);
+			return NULL;
+		}
+		/* Only newhead was merged in a former function. */
+		curmode = in6m->in6m_source->i6ms_mode;
+		in6m->in6m_source->i6ms_mode = newmode;
+		in6m->in6m_source->i6ms_cur->numsrc = newnumsrc;
+
+		if (in6m->in6m_rti->rt6i_type == MLD_V2_ROUTER) {
+			if (curmode != newmode) {
+				if (newmode == MCAST_INCLUDE) {
+					/* never happen??? */
+					type = CHANGE_TO_INCLUDE_MODE;
+				} else {
+					type = CHANGE_TO_EXCLUDE_MODE;
+				}
+			}
+			mld6_send_state_change_report(in6m, type, 1);
+			mld6_start_listening(in6m, type);
+		} else {
+			struct in6_multi_mship *imm;
+			/*
+			 * If MSF's pending records exist, they must be deleted.
+			 */
+			in6_clear_all_pending_report(in6m);
+			imm = in6_joingroup(in6m->in6m_ifp, &in6m->in6m_addr, errorp, 0);
+			if (imm) {
+				LIST_INSERT_HEAD(&ia->ia6_multiaddrs, in6m, in6m_entry);
+			} else {
+				mldlog(
+						(LOG_WARNING, "in6_modmulti: addmulti failed for "
+								"%s on %s (errno=%d)\n", ip6_sprintf(
+								&in6m->in6m_addr), if_name(in6m->in6m_ifp), *errorp));
+			}
+		}
+		*errorp = 0;
+	}
+	if (newhead != NULL) {
+		FREE(newhead, M_MSFILTER);
+	}
+
+	splx(s);
+	return in6m;
+}
+
+/*
+ * check if the given address should be announced via MLDv1/v2.
+ */
+int
+in6_is_mld_target(group)
+	struct in6_addr *group;
+{
+	struct in6_addr tmp = *group;
+
+	if (!IN6_IS_ADDR_MULTICAST(group))
+		return 0;
+
+	if (IPV6_ADDR_MC_SCOPE(group) < IPV6_ADDR_SCOPE_LINKLOCAL)
+		return 0;
+
+	/*
+	 * link index may be embedded into group address, so it has to be
+	 * cleared before being compared to ff02::1.
+	 */
+	in6_clearscope(&tmp);
+	if (IN6_ARE_ADDR_EQUAL(&tmp, &mld_all_nodes_nodelocal)) {
+		return 0;
+	}
+
+	return 1;
+}
+#endif /* MLDV2 */

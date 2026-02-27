@@ -989,7 +989,6 @@ next_inm:
 	splx(s);
 }
 
-
 void
 igmp_slowtimo(void)
 {

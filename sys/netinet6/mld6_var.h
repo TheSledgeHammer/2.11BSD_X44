@@ -86,16 +86,8 @@ extern int mld_debug;
 
 void	mld6_init(void);
 void	mld6_input(struct mbuf *, int);
-#if defined(MLDV2)
-void	mld6_start_listening(struct in6_multi *, u_int8_t);
-#endif
-void	mld6_start_listening(struct in6_multi *);
-void	mld6_stop_listening(struct in6_multi *);
 void	mld6_fasttimeo(void);
 void	mld6_slowtimeo(void);
-#if defined(MLDV2)
-void 	mld6_send_state_change_report(struct in6_multi *, u_int8_t, int);
-#endif
 #endif /* _KERNEL */
 
 #endif /* _NETINET6_MLD6_VAR_H_ */
