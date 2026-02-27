@@ -94,8 +94,8 @@ options		    FAST_IPSEC    		# IP security with opencrypto
 
 #options 		MPLS				# MultiProtocol Label Switching
 #options 		MROUTING			# IP multicast routing
-#option 		IGMPV3				# IPv4 Source-Specific Multicast (SSM)
-#option 		MLDV2				# IPv6 Source-Specific Multicast (SSM)
+#options 		IGMPV3				# IPv4 Source-Specific Multicast (SSM)
+#options 		MLDV2				# IPv6 Source-Specific Multicast (SSM)
 options 		NS			     	# XNS
 options 		NSIP				# XNS tunneling over IP
 options 		PPP_BSDCOMP			# BSD-Compress compression support for PPP
