@@ -219,7 +219,7 @@ struct	ip6stat {
 	u_quad_t ip6s_forward_cachemiss;
 };
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 /*
  * IPv6 onion peeling state.
  * it will be initialized when we come into ip6_input().
