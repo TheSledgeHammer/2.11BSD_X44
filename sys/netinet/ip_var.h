@@ -177,7 +177,7 @@ struct ip_moptions {
 	u_int8_t  imo_multicast_loop;	/* 1 => hear sends if a member */
 	u_int16_t imo_num_memberships;	/* no. memberships this socket */
 	struct	  in_multi *imo_membership[IP_MAX_MEMBERSHIPS];
-    struct	  sock_msf *imo_msf[IP_MAX_MEMBERSHIPS];
+	struct	  sock_msf *imo_msf[IP_MAX_MEMBERSHIPS];
 };
 
 struct	ipstat {

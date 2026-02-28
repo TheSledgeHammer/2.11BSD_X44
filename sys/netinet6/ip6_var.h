@@ -124,15 +124,38 @@ struct	ip6po_rhinfo {
 #define ip6po_rthdr	ip6po_rhinfo.ip6po_rhi_rthdr
 #define ip6po_route	ip6po_rhinfo.ip6po_rhi_route
 
+/* Nexthop related info */
+struct	ip6po_nhinfo {
+	struct	sockaddr *ip6po_nhi_nexthop;
+	struct	route_in6 ip6po_nhi_route; 	/* Route to the nexthop */
+};
+#define ip6po_nexthop	ip6po_nhinfo.ip6po_nhi_nexthop
+#define ip6po_nextroute	ip6po_nhinfo.ip6po_nhi_route
+
 struct	ip6_pktopts {
-	struct	mbuf *ip6po_m;	/* Pointer to mbuf storing the data */
-	int	ip6po_hlim;		/* Hoplimit for outgoing packets */
-	struct	in6_pktinfo *ip6po_pktinfo; /* Outgoing IF/address information */
-	struct	sockaddr *ip6po_nexthop;	/* Next-hop address */
-	struct	ip6_hbh *ip6po_hbh; /* Hop-by-Hop options header */
-	struct	ip6_dest *ip6po_dest1; /* Destination options header(1st part) */
-	struct	ip6po_rhinfo ip6po_rhinfo; /* Routing header related info. */
-	struct	ip6_dest *ip6po_dest2; /* Destination options header(2nd part) */
+	struct	mbuf *ip6po_m;			/* Pointer to mbuf storing the data */
+	int	ip6po_hlim;			/* Hoplimit for outgoing packets */
+	struct	in6_pktinfo *ip6po_pktinfo; 	/* Outgoing IF/address information */
+	struct	ip6po_nhinfo ip6po_nhinfo;	/* Next-hop address information */
+	//struct	sockaddr *ip6po_nexthop;	/* Next-hop address */
+	struct	ip6_hbh *ip6po_hbh; 		/* Hop-by-Hop options header */
+	struct	ip6_dest *ip6po_dest1; 		/* Destination options header(1st part) */
+	struct	ip6po_rhinfo ip6po_rhinfo; 	/* Routing header related info. */
+	struct  ip6_dest *ip6po_hoa;		/* Home Address Destination option */
+	struct	ip6_dest *ip6po_dest2; 		/* Destination options header(2nd part) */
+	int	ip6po_tclass;			/* traffic class */
+	int	ip6po_minmtu; 		 	/* fragment vs PMTU discovery policy */
+#define IP6PO_MINMTU_MCASTONLY	-1 		/* default; send at min MTU for multicast*/
+#define IP6PO_MINMTU_DISABLE	 0 		/* always perform pmtu disc */
+#define IP6PO_MINMTU_ALL	 1 		/* always send at min MTU */
+	int	ip6po_prefer_tempaddr;  	/* whether temporary addresses are preferred as source address */
+#define IP6PO_TEMPADDR_SYSTEM	-1 		/* follow the system default */
+#define IP6PO_TEMPADDR_NOTPREFER 0 		/* not prefer temporary address */
+#define IP6PO_TEMPADDR_PREFER	 1 		/* prefer temporary address */
+	int ip6po_flags;
+#define IP6PO_DONTFRAG	0x04			/* disable fragmentation (IPV6_DONTFRAG) */
+#define IP6PO_USECOA	0x08			/* use care of address */
+#define IP6PO_NOTUSEBCE	0x10			/* Don't use  */
 };
 
 struct	ip6stat {
@@ -195,6 +218,38 @@ struct	ip6stat {
 	u_quad_t ip6s_forward_cachehit;
 	u_quad_t ip6s_forward_cachemiss;
 };
+
+//#ifdef _KERNEL
+/*
+ * IPv6 onion peeling state.
+ * it will be initialized when we come into ip6_input().
+ * XXX do not make it a kitchen sink!
+ */
+struct ip6aux {
+	u_int32_t ip6a_flags;
+#define IP6A_SWAP	0x01		/* swapped home/care-of on packet */
+#define IP6A_HASEEN	0x02		/* HA was present */
+#define IP6A_BRUID	0x04		/* BR Unique Identifier was present */
+#define IP6A_RTALERTSEEN 0x08		/* rtalert present */
+#define IP6A_ROUTEOPTIMIZED 0x10	/* route optimized packet */
+#define IP6A_NOTUSEBC	0x20		/* do not requrie to lookup BC */
+#define IP6A_TEMP_PROXYND_DEL	0x40	/* Marking for resuming proxy nd entry after sending sepcial BA */
+
+	/* ip6.ip6_src */
+	struct in6_addr ip6a_coa;	/* care of address of the peer */
+
+	/* ip6.ip6_dst */
+	struct in6_ifaddr *ip6a_dstia6;	/* my ifaddr that matches ip6_dst */
+
+	/* rtalert */
+	u_int16_t ip6a_rtalert;		/* rtalert option value */
+
+	/*
+	 * decapsulation history will be here.
+	 * with IPsec it may not be accurate.
+	 */
+};
+#endif
 
 #ifdef _KERNEL
 /* flags passed to ip6_output as last parameter */

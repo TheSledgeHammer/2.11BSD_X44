@@ -269,11 +269,11 @@ struct in_multi {
 	struct	router_info *inm_rti;	/* router version info */
 	struct	in_addr inm_addr;	/* IP multicast address */
 	struct	ifnet *inm_ifp;		/* back pointer to ifnet */
-    struct	in_ifaddr *inm_ia;	/* back pointer to in_ifaddr */
+	struct	in_ifaddr *inm_ia;	/* back pointer to in_ifaddr */
 	u_int	inm_refcount;		/* no. membership claims by sockets */
 	u_int	inm_timer;		/* IGMP membership report timer */
 	u_int	inm_state;		/* state of membership */
-    struct	in_multi_source *inm_source; /* filtered source list */
+	struct	in_multi_source *inm_source; /* filtered source list */
 };
 
 #ifdef _KERNEL

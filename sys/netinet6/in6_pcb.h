@@ -95,7 +95,7 @@ struct	in6pcb {
 	int	in6p_flags;		/* generic IP6/datagram flags */
 	int	in6p_hops;		/* default hop limit */
 	struct	ip6_hdr in6p_ip6;	/* header prototype */
-	struct	mbuf *in6p_options;   /* IP6 options */
+	struct	mbuf *in6p_options;   	/* IP6 options */
 	struct	ip6_pktopts *in6p_outputopts; /* IP6 options for outgoing packets */
 	struct	ip6_moptions *in6p_moptions; /* IP6 multicast options */
 	struct icmp6_filter *in6p_icmp6filt;
@@ -124,6 +124,7 @@ struct	in6pcb {
 #define IN6P_DSTOPTS		0x080000 /* receive dst options after rthdr */
 #define IN6P_RTHDR		0x100000 /* receive routing header */
 #define IN6P_RTHDRDSTOPTS	0x200000 /* receive dstoptions before rthdr */
+#define IN6P_TCLASS		0x400000 /* traffic class */
 
 #define IN6P_HIGHPORT		0x1000000 /* user wants "high" port binding */
 #define IN6P_LOWPORT		0x2000000 /* user wants "low" port binding */
@@ -135,8 +136,8 @@ struct	in6pcb {
 #define IN6P_MINMTU		0x20000000 /* use minimum MTU */
 
 #define IN6P_CONTROLOPTS	(IN6P_PKTINFO|IN6P_HOPLIMIT|IN6P_HOPOPTS|\
-				 IN6P_DSTOPTS|IN6P_RTHDR|IN6P_RTHDRDSTOPTS|\
-				 IN6P_MINMTU)
+				 IN6P_DSTOPTS|IN6P_RTHDR|IN6P_RTHDRDSTOPTS|
+				 IN6P_TCLASS\IN6P_MINMTU)
 
 /* compute hash value for foreign and local in6_addr and port */
 #define IN6_HASH(faddr, fport, laddr, lport) 			\

@@ -205,11 +205,9 @@ in_addmultisrc(inm, numsrc, ss, mode, init, newhead, newmode, newnumsrc)
 				}
 			}
 			if (mode == MCAST_INCLUDE) {
-				LIST_INSERT_HEAD(inm->inm_source->ims_in->head,
-				    ias, ias_list);
+				LIST_INSERT_HEAD(inm->inm_source->ims_in->head, ias, ias_list);
 			} else {
-				LIST_INSERT_HEAD(inm->inm_source->ims_ex->head,
-				    ias, ias_list);
+				LIST_INSERT_HEAD(inm->inm_source->ims_ex->head, ias, ias_list);
 			}
 			j = 1; /* the number of added source */
 			break;
@@ -520,12 +518,10 @@ in_modmultisrc(inm, numsrc, ss, mode, old_num, old_ss, old_mode, grpjoin,
 				}
 			}
 			if (mode == MCAST_INCLUDE) {
-				LIST_INSERT_HEAD(inm->inm_source->ims_in->head,
-				    ias, ias_list);
+				LIST_INSERT_HEAD(inm->inm_source->ims_in->head, ias, ias_list);
 			} else {
-				LIST_INSERT_HEAD(inm->inm_source->ims_ex->head,
-				    ias, ias_list);
-            }
+				LIST_INSERT_HEAD(inm->inm_source->ims_ex->head, ias, ias_list);
+			}
 			k = 1; /* the number of added source */
 			break;
 		}
@@ -656,12 +652,13 @@ in_undomultisrc(inm, numsrc, ss, mode, req)
 	struct in_addr_source *ias, *nias;
 	u_int16_t i;
 
-	if (mode == MCAST_INCLUDE)
+	if (mode == MCAST_INCLUDE) {
 		LIST_FIRST(&head) = LIST_FIRST(inm->inm_source->ims_in->head);
-	else if (mode == MCAST_EXCLUDE)
+	} else if (mode == MCAST_EXCLUDE) {
 		LIST_FIRST(&head) = LIST_FIRST(inm->inm_source->ims_ex->head);
-	else
+	} else {
 		return;
+	}
 
 	for (i = 0; i < numsrc && SIN(&ss[i]) != NULL; i++) {
 		sin = SIN(&ss[i]);
@@ -730,18 +727,17 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 	int i;
 	int error = 0;
 
-#define inmm_src inm->inm_source
 #define INM_LIST_EMPTY(name) \
-	((inmm_src->ims_##name == NULL) || \
-	 ((inmm_src->ims_##name != NULL) && (inmm_src->ims_##name->numsrc == 0)))
+	((inm->inm_source->ims_##name == NULL) || \
+	 ((inm->inm_source->ims_##name != NULL) && (inm->inm_source->ims_##name->numsrc == 0)))
 
 	/* Case 1: Some socket requested (*,G) join. */
-	if (inmm_src->ims_grpjoin != 0) {
+	if (inm->inm_source->ims_grpjoin != 0) {
 		igmplog((LOG_DEBUG, "case 1: Some socket requested (*,G) "
 			"join.\n"));
 		/* IN{NULL} -> EX{NULL} */
-		if (LIST_EMPTY(inmm_src->ims_cur->head)) {
-			if (inmm_src->ims_mode == MCAST_INCLUDE) {
+		if (LIST_EMPTY(inm->inm_source->ims_cur->head)) {
+			if (inm->inm_source->ims_mode == MCAST_INCLUDE) {
 				igmplog((LOG_DEBUG,
 					"case 1.1:IN{NULL}->EX{NULL}\n"));
 				in_clear_all_pending_report(inm);
@@ -751,7 +747,7 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 				 * ims_toex is required.
 				 * See igmp_send_state_change_report().
 				 */
-				IAS_LIST_ALLOC(inmm_src->ims_toex);
+				IAS_LIST_ALLOC(inm->inm_source->ims_toex);
 				if (error != 0)
 					; /* XXX give up TO_EX transmission */
 			}
@@ -759,24 +755,24 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 		}
 
 		/* IN{non NULL} -> EX{NULL} */
-		if (inmm_src->ims_mode == MCAST_INCLUDE) {
+		if (inm->inm_source->ims_mode == MCAST_INCLUDE) {
 			igmplog((LOG_DEBUG,
 				"case 1.2:IN{non-NULL}->EX{NULL}\n"));
 			in_clear_all_pending_report(inm);
 
 			/* To make TO_EX transmission */
-			IAS_LIST_ALLOC(inmm_src->ims_toex);
+			IAS_LIST_ALLOC(inm->inm_source->ims_toex);
 			if (error != 0)
 				; /* XXX */
 			goto free_source_list_1;
 		 }
 
 		/* EX{non NULL} -> EX{NULL} */
-		if (inmm_src->ims_ex != NULL) {
+		if (inm->inm_source->ims_ex != NULL) {
 			igmplog((LOG_DEBUG,
 				"case 1.3:EX{non-NULL}->EX{NULL}\n"));
 			filter = REPORT_FILTER2;
-			LIST_FOREACH(ex_ias, inmm_src->ims_ex->head,
+			LIST_FOREACH(ex_ias, inm->inm_source->ims_ex->head,
 				     ias_list) {
 				error = in_merge_pending_report(inm, ex_ias,
 								ALLOW_NEW_SOURCES);
@@ -791,11 +787,11 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 			}
 		}
 
-	free_source_list_1:
-		in_free_msf_source_list(inmm_src->ims_cur->head);
-		inmm_src->ims_cur->numsrc = 0;
+free_source_list_1:
+		in_free_msf_source_list(inm->inm_source->ims_cur->head);
+		inm->inm_source->ims_cur->numsrc = 0;
 
-	change_state_1:
+change_state_1:
 		*newmode = MCAST_EXCLUDE;
 		*newnumsrc = 0;
 		return 0;
@@ -806,8 +802,8 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 		igmplog((LOG_DEBUG,
 			"case 2: there is no member of this group\n"));
 		/* EX{NULL} -> IN{NULL} */
-		if (LIST_EMPTY(inmm_src->ims_cur->head)) {
-			if (inmm_src->ims_mode == MCAST_EXCLUDE) {
+		if (LIST_EMPTY(inm->inm_source->ims_cur->head)) {
+			if (inm->inm_source->ims_mode == MCAST_EXCLUDE) {
 				igmplog((LOG_DEBUG,
 					"case 2.1: EX{NULL}->IN{NULL}\n"));
 				in_clear_all_pending_report(inm);
@@ -817,7 +813,7 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 				 * ims_toin is required.
 				 * See igmp_send_state_change_report().
 				 */
-				IAS_LIST_ALLOC(inmm_src->ims_toin);
+				IAS_LIST_ALLOC(inm->inm_source->ims_toin);
 				if (error != 0)
 					; /* XXX give up TO_IN transmission */
 			}
@@ -825,14 +821,14 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 		}
 
 		/* EX{non NULL} -> IN{NULL} */
-		if (inmm_src->ims_mode == MCAST_EXCLUDE) {
+		if (inm->inm_source->ims_mode == MCAST_EXCLUDE) {
 			igmplog((LOG_DEBUG,
 				"case 2.2: EX{non-NULL}->IN{NULL}\n"));
 			filter = REPORT_FILTER4;
 			in_clear_all_pending_report(inm);
 
 			/* To make TO_IN transmission */
-			IAS_LIST_ALLOC(inmm_src->ims_toin);
+			IAS_LIST_ALLOC(inm->inm_source->ims_toin);
 			if (error != 0)
 				; /* XXX */
 			goto free_source_list_2;
@@ -841,7 +837,7 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 		/* IN{non NULL} -> IN{NULL} */
 		igmplog((LOG_DEBUG, "case 2.3: IN{non-NULL}->IN{NULL}\n"));
 		filter = REPORT_FILTER1;
-		LIST_FOREACH(in_ias, inmm_src->ims_cur->head, ias_list) {
+		LIST_FOREACH(in_ias, inm->inm_source->ims_cur->head, ias_list) {
 			error = in_merge_pending_report(inm, in_ias,
 							BLOCK_OLD_SOURCES);
 			if (error != 0) {
@@ -855,8 +851,8 @@ in_get_new_msf_state(inm, newhead, newmode, newnumsrc)
 		}
 
 free_source_list_2:
-		in_free_msf_source_list(inmm_src->ims_cur->head);
-		inmm_src->ims_cur->numsrc = 0;
+		in_free_msf_source_list(inm->inm_source->ims_cur->head);
+		inm->inm_source->ims_cur->numsrc = 0;
 
 change_state_2:
 		*newmode = MCAST_INCLUDE;
@@ -869,15 +865,15 @@ change_state_2:
 		igmplog((LOG_DEBUG, "case 3: Source list of EXCLUDE filter "
 			"is set for this group\n"));
 		/* IN{NULL} -> EX{non NULL} or EX{NULL} -> EX{non NULL} */
-		if (LIST_EMPTY(inmm_src->ims_cur->head)) {
-			error = in_copy_msf_source_list(inmm_src->ims_ex,
-							inmm_src->ims_cur,
-							inmm_src->ims_excnt);
+		if (LIST_EMPTY(inm->inm_source->ims_cur->head)) {
+			error = in_copy_msf_source_list(inm->inm_source->ims_ex,
+							inm->inm_source->ims_cur,
+							inm->inm_source->ims_excnt);
 			if (error != 0)
 				return error;
 
-			i = inmm_src->ims_cur->numsrc;
-			if (inmm_src->ims_mode == MCAST_INCLUDE) {
+			i = inm->inm_source->ims_cur->numsrc;
+			if (inm->inm_source->ims_mode == MCAST_INCLUDE) {
 				igmplog((LOG_DEBUG,
 					"case 3.1:IN{NULL}->EX{non-NULL}\n"));
 				filter = REPORT_FILTER3;
@@ -889,8 +885,8 @@ change_state_2:
 				filter = REPORT_FILTER2;
 				cmd = BLOCK_OLD_SOURCES;
 			}
-			LIST_FOREACH(ex_ias, inmm_src->ims_ex->head, ias_list) {
-				if (ex_ias->ias_refcount != inmm_src->ims_excnt)
+			LIST_FOREACH(ex_ias, inm->inm_source->ims_ex->head, ias_list) {
+				if (ex_ias->ias_refcount != inm->inm_source->ims_excnt)
 					continue; /* skip */
 				error = in_merge_pending_report(inm, ex_ias,
 								cmd);
@@ -900,8 +896,8 @@ change_state_2:
 					 * pending report, and return error.
 					 */
 					 in_free_msf_source_list
-						(inmm_src->ims_cur->head);
-					 inmm_src->ims_cur->numsrc = 0;
+						(inm->inm_source->ims_cur->head);
+					 inm->inm_source->ims_cur->numsrc = 0;
 					 in_clear_pending_report(inm, filter);
 					 return error;
 				 }
@@ -910,16 +906,16 @@ change_state_2:
 		}
 
 		/* EX{non NULL} -> EX{non NULL} */
-		if (inmm_src->ims_mode == MCAST_EXCLUDE) {
+		if (inm->inm_source->ims_mode == MCAST_EXCLUDE) {
 			igmplog((LOG_DEBUG,
 				"case 3.3:EX{non-NULL}->EX{non-NULL}\n"));
 			filter = REPORT_FILTER2;
-			error = in_merge_msf_head(inm, inmm_src->ims_ex,
-						  inmm_src->ims_excnt, filter);
+			error = in_merge_msf_head(inm, inm->inm_source->ims_ex,
+						  inm->inm_source->ims_excnt, filter);
 			if (error != 0)
 				return error;
 
-			for (i = 0, newias = LIST_FIRST(inmm_src->ims_cur->head);
+			for (i = 0, newias = LIST_FIRST(inm->inm_source->ims_cur->head);
 			     newias; newias = nias) {
 				nias = LIST_NEXT(newias, ias_list);
 				if (newias->ias_refcount == 0) {
@@ -936,17 +932,17 @@ change_state_2:
 		/* IN{non NULL} -> EX{non NULL} */
 		igmplog((LOG_DEBUG, "case 3.4:IN{non-NULL}->EX{non-NULL}\n"));
 		filter = REPORT_FILTER3;
-		in_free_msf_source_list(inmm_src->ims_cur->head);
-		inmm_src->ims_cur->numsrc = 0;
-		error = in_copy_msf_source_list(inmm_src->ims_ex,
-						inmm_src->ims_cur,
-						inmm_src->ims_excnt);
+		in_free_msf_source_list(inm->inm_source->ims_cur->head);
+		inm->inm_source->ims_cur->numsrc = 0;
+		error = in_copy_msf_source_list(inm->inm_source->ims_ex,
+						inm->inm_source->ims_cur,
+						inm->inm_source->ims_excnt);
 		if (error != 0)
 			return error;
-		i = inmm_src->ims_cur->numsrc;
+		i = inm->inm_source->ims_cur->numsrc;
 		in_clear_all_pending_report(inm);
-		LIST_FOREACH(ex_ias, inmm_src->ims_ex->head, ias_list) {
-			if (ex_ias->ias_refcount != inmm_src->ims_excnt)
+		LIST_FOREACH(ex_ias, inm->inm_source->ims_ex->head, ias_list) {
+			if (ex_ias->ias_refcount != inm->inm_source->ims_excnt)
 				continue; /* skip */
 			error = in_merge_pending_report(inm, ex_ias,
 							CHANGE_TO_EXCLUDE_MODE);
@@ -956,8 +952,8 @@ change_state_2:
 				 * report, and return error.
 				 */
 				 in_free_msf_source_list
-						(inmm_src->ims_cur->head);
-				 inmm_src->ims_cur->numsrc = 0;
+						(inm->inm_source->ims_cur->head);
+				 inm->inm_source->ims_cur->numsrc = 0;
 				 in_clear_pending_report(inm, filter);
 				 return error;
 			}
@@ -974,14 +970,14 @@ change_state_2:
 		igmplog((LOG_DEBUG, "case 4: Source list of INCLUDE filter "
 			"is set for this group\n"));
 		/* IN{NULL} -> IN{non NULL} or EX{NULL} -> IN{non NULL} */
-		if (LIST_EMPTY(inmm_src->ims_cur->head)) {
-			error = in_copy_msf_source_list(inmm_src->ims_in,
-							inmm_src->ims_cur,
+		if (LIST_EMPTY(inm->inm_source->ims_cur->head)) {
+			error = in_copy_msf_source_list(inm->inm_source->ims_in,
+							inm->inm_source->ims_cur,
 							(u_int)0);
 			if (error != 0)
 				return error;
 
-			i = inmm_src->ims_cur->numsrc;
+			i = inm->inm_source->ims_cur->numsrc;
 			if (inm->inm_source->ims_mode == MCAST_INCLUDE) {
 				igmplog((LOG_DEBUG, "case 4.1:IN{NULL}->"
 					"IN{non-NULL}\n"));
@@ -994,7 +990,7 @@ change_state_2:
 				cmd = CHANGE_TO_INCLUDE_MODE;
 				in_clear_all_pending_report(inm);
 			}
-			LIST_FOREACH(in_ias, inmm_src->ims_in->head, ias_list) {
+			LIST_FOREACH(in_ias, inm->inm_source->ims_in->head, ias_list) {
 				if (in_ias->ias_refcount == 0)
 					continue; /* skip */
 				error = in_merge_pending_report(inm, in_ias,
@@ -1005,8 +1001,8 @@ change_state_2:
 					 * pending report, and return error.
 					 */
 					 in_free_msf_source_list
-						(inmm_src->ims_cur->head);
-					 inmm_src->ims_cur->numsrc = 0;
+						(inm->inm_source->ims_cur->head);
+					 inm->inm_source->ims_cur->numsrc = 0;
 					 in_clear_pending_report(inm, filter);
 					 return error;
 				}
@@ -1015,15 +1011,15 @@ change_state_2:
 		}
 
 		/* IN{non NULL} -> IN{non NULL} */
-		if (inmm_src->ims_mode == MCAST_INCLUDE) {
+		if (inm->inm_source->ims_mode == MCAST_INCLUDE) {
 			igmplog((LOG_DEBUG, "case 4.3:IN{non NULL}->"
 				"IN{non-NULL}\n"));
 			filter = REPORT_FILTER1;
-			error = in_merge_msf_head(inm, inmm_src->ims_in,
+			error = in_merge_msf_head(inm, inm->inm_source->ims_in,
 						  (u_int)0, filter);
 			if (error != 0)
 				return error;
-			for (i = 0, newias = LIST_FIRST(inmm_src->ims_cur->head);
+			for (i = 0, newias = LIST_FIRST(inm->inm_source->ims_cur->head);
 			     newias; newias = nias) {
 				nias = LIST_NEXT(newias, ias_list);
 				if (newias->ias_refcount == 0) {
@@ -1040,16 +1036,16 @@ change_state_2:
 		/* EX{non NULL} -> IN{non NULL} (since EX list was left) */
 		igmplog((LOG_DEBUG, "case 4.4:EX{non NULL}->IN{non-NULL}\n"));
 		filter = REPORT_FILTER4;
-		in_free_msf_source_list(inmm_src->ims_cur->head);
-		inmm_src->ims_cur->numsrc = 0;
-		error = in_copy_msf_source_list(inmm_src->ims_in,
-						inmm_src->ims_cur, (u_int)0);
+		in_free_msf_source_list(inm->inm_source->ims_cur->head);
+		inm->inm_source->ims_cur->numsrc = 0;
+		error = in_copy_msf_source_list(inm->inm_source->ims_in,
+						inm->inm_source->ims_cur, (u_int)0);
 		if (error != 0)
 			return error;
 
-		i = inmm_src->ims_cur->numsrc;
+		i = inm->inm_source->ims_cur->numsrc;
 		in_clear_all_pending_report(inm);
-		LIST_FOREACH(in_ias, inmm_src->ims_in->head, ias_list) {
+		LIST_FOREACH(in_ias, inm->inm_source->ims_in->head, ias_list) {
 			if (in_ias->ias_refcount == 0)
 				continue; /* skip */
 			error = in_merge_pending_report(inm, in_ias,
@@ -1060,14 +1056,14 @@ change_state_2:
 				 * report, and return error.
 				 */
 				 in_free_msf_source_list
-						(inmm_src->ims_cur->head);
-				 inmm_src->ims_cur->numsrc = 0;
+						(inm->inm_source->ims_cur->head);
+				 inm->inm_source->ims_cur->numsrc = 0;
 				 in_clear_pending_report(inm, filter);
 				 return error;
 			}
 		}
 
-	change_state_4:
+change_state_4:
 		*newmode = MCAST_INCLUDE;
 		*newnumsrc = i;
 		return 0;
@@ -1076,8 +1072,8 @@ change_state_2:
 	/* Case 5: INCLUDE and EXCLUDE source lists coexist with this group. */
 	igmplog((LOG_DEBUG, "case 5: INCLUDE and EXCLUDE source lists "
 		"coexist with this group.\n"));
-	LIST_FIRST(&inhead) = LIST_FIRST(inmm_src->ims_in->head);
-	LIST_FIRST(&exhead) = LIST_FIRST(inmm_src->ims_ex->head);
+	LIST_FIRST(&inhead) = LIST_FIRST(inm->inm_source->ims_in->head);
+	LIST_FIRST(&exhead) = LIST_FIRST(inm->inm_source->ims_ex->head);
 	MALLOC(*newhead, struct ias_head *, sizeof(struct ias_head),
 	       M_MSFILTER, M_NOWAIT);
 	if (*newhead == NULL)
@@ -1086,7 +1082,7 @@ change_state_2:
 	*newnumsrc = 0;
 
 	LIST_FOREACH(ex_ias, &exhead, ias_list) {
-		if (ex_ias->ias_refcount != inmm_src->ims_excnt)
+		if (ex_ias->ias_refcount != inm->inm_source->ims_excnt)
 			continue;
 		sin = &ex_ias->ias_addr;
 		LIST_FOREACH(in_ias, &inhead, ias_list) {
@@ -1151,26 +1147,25 @@ change_state_2:
 
 	*newmode = MCAST_EXCLUDE;
 	if (*newnumsrc == 0) {
-		if (inmm_src->ims_cur->numsrc != 0) {
+		if (inm->inm_source->ims_cur->numsrc != 0) {
 			/* IN{non NULL}/EX{non NULL} -> EX{NULL} */
-			in_free_msf_source_list(inmm_src->ims_cur->head);
+			in_free_msf_source_list(inm->inm_source->ims_cur->head);
 			FREE(*newhead, M_MSFILTER);
 			*newhead = NULL;
 		}
-		if (inmm_src->ims_mode == MCAST_INCLUDE) {
+		if (inm->inm_source->ims_mode == MCAST_INCLUDE) {
 			/*
 			 * To make TO_EX with NULL source list transmission,
 			 * non-null ims_toex is required.
 			 * See igmp_send_state_change_report().
 			 */
-			IAS_LIST_ALLOC(inmm_src->ims_toex);
+			IAS_LIST_ALLOC(inm->inm_source->ims_toex);
 			if (error != 0)
 				; /* XXX give up TO_EX transmission */
 		}
 	}
 
 	return 0;
-#undef inmm_src
 #undef INM_EMPTY_LIST
 }
 

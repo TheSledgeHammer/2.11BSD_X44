@@ -134,6 +134,11 @@ __KERNEL_RCSID(0, "$NetBSD: ip_input.c,v 1.197.2.1 2004/05/28 07:25:05 tron Exp 
 #include <netinet/in_var.h>
 #include <netinet/ip_var.h>
 #include <netinet/ip_icmp.h>
+
+#if defined(IGMPV3) || defined(MROUTING)
+#include <netinet/igmp_var.h>
+#endif
+
 /* just for gif_ttl */
 #include <netinet/in_gif.h>
 #include "gif.h"
@@ -383,7 +388,7 @@ ip_nmbclusters_changed(void)
  * All protocols not implemented in kernel go to raw IP protocol handler.
  */
 void
-ip_init()
+ip_init(void)
 {
 	struct protosw *pr;
 	int i;
@@ -1040,6 +1045,7 @@ ip_reass(ipqe, fp, ipqhead)
 	int hlen = ipqe->ipqe_ip->ip_hl << 2;
 	int ipsecflags = m->m_flags & (M_DECRYPTED|M_AUTHIPHDR);
 	int i, next;
+	u_int8_t ecn, ecn0;
 
 	IPQ_LOCK_CHECK();
 
@@ -1099,6 +1105,22 @@ ip_reass(ipqe, fp, ipqhead)
 	} else {
 		fp->ipq_nfrags++;
 	}
+
+	/*
+	 * Handle ECN by comparing this segment with the first one;
+	 * if CE is set, do not lose CE.
+	 * drop if CE and not-ECT are mixed for the same packet.
+	 */
+	ecn = ipqe->ipqe_ip->ip_tos & IPTOS_ECN_MASK;
+	ecn0 = TAILQ_FIRST(&fp->ipq_fragq)->ipqe_ip->ip_tos & IPTOS_ECN_MASK;
+	if (ecn == IPTOS_ECN_CE) {
+		if (ecn0 == IPTOS_ECN_NOTECT)
+			goto dropfrag;
+		if (ecn0 != IPTOS_ECN_CE)
+			TAILQ_FIRST(&fp->ipq_fragq)->ipqe_ip->ip_tos |= IPTOS_ECN_CE;
+	}
+	if (ecn == IPTOS_ECN_NOTECT && ecn0 != IPTOS_ECN_NOTECT)
+		goto dropfrag;
 
 	/*
 	 * Find a segment which begins after this one does.

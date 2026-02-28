@@ -213,22 +213,23 @@ in6_addmultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 			bcopy(&ss[0], &ias->i6as_addr, ss[0].ss_len);
 			ias->i6as_refcount = 1;
 			if (IN6M_SOURCE_LIST(mode) == NULL) {
-				if (mode == MCAST_INCLUDE)
+				if (mode == MCAST_INCLUDE) {
 					I6AS_LIST_ALLOC(in6m->in6m_source->i6ms_in);
-				else
+				} else {
 					I6AS_LIST_ALLOC(in6m->in6m_source->i6ms_ex);
+				}
 				if (error != 0) {
 					FREE(ias, M_MSFILTER);
 					return error;
 				}
 			}
 			if (mode == MCAST_INCLUDE) {
-				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_in->head,
-				    ias, i6as_list);
+				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_in->head, ias,
+						i6as_list);
 			} else {
-				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_ex->head,
-				    ias, i6as_list);
-            }
+				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_ex->head, ias,
+						i6as_list);
+			}
 			j = 1; /* the number of added source */
 			break;
 		}
@@ -497,22 +498,23 @@ in6_modmultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 			ias->i6as_refcount = 1;
 
 			if (IN6M_SOURCE_LIST(mode) == NULL) {
-				if (mode == MCAST_INCLUDE)
+				if (mode == MCAST_INCLUDE) {
 					I6AS_LIST_ALLOC(in6m->in6m_source->i6ms_in);
-				else
+				} else {
 					I6AS_LIST_ALLOC(in6m->in6m_source->i6ms_ex);
+				}
 				if (error != 0) {
 					FREE(ias, M_MSFILTER);
 					return error;
 				}
 			}
 			if (mode == MCAST_INCLUDE) {
-				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_in->head,
-				    ias, i6as_list);
+				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_in->head, ias,
+						i6as_list);
 			} else {
-				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_ex->head,
-				    ias, i6as_list);
-            }
+				LIST_INSERT_HEAD(in6m->in6m_source->i6ms_ex->head, ias,
+						i6as_list);
+			}
 			k = 1; /* the number of added source */
 			break;
 		}
@@ -634,12 +636,13 @@ in6_undomultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 	struct in6_addr_source *ias, *nias = NULL;
 	u_int16_t i;
 
-	if (mode == MCAST_INCLUDE)
+	if (mode == MCAST_INCLUDE) {
 		LIST_FIRST(&head) = LIST_FIRST(in6m->in6m_source->i6ms_in->head);
-	else if (mode == MCAST_EXCLUDE)
+	} else if (mode == MCAST_EXCLUDE) {
 		LIST_FIRST(&head) = LIST_FIRST(in6m->in6m_source->i6ms_ex->head);
-	else
+	} else {
 		return;
+	}
 
 	for (i = 0; i < numsrc && &ss[i] != NULL; i++) {
 		if (SS_IS_ADDR_UNSPECIFIED(&ss[i]))
@@ -650,11 +653,13 @@ in6_undomultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 			if (ias->i6as_addr.sin6_family != ss[i].ss_family)
 				continue;
 
-			if (SS_CMP(&ias->i6as_addr, <, &ss[i]))
+			if (SS_CMP(&ias->i6as_addr, <, &ss[i])) {
 				continue;
+			}
 			if (SS_CMP(&ias->i6as_addr, >, &ss[i])) {
 				/* XXX strange. this should never occur. */
-				mldlog((LOG_DEBUG, "in6_undomultisrc: list corrupted. panic!\n"));
+				mldlog(
+						(LOG_DEBUG, "in6_undomultisrc: list corrupted. panic!\n"));
 				continue; /* XXX */
 			}
 
@@ -664,8 +669,9 @@ in6_undomultisrc(struct in6_multi *in6m, u_int16_t numsrc,
 					LIST_REMOVE(ias, i6as_list);
 					FREE(ias, M_MSFILTER);
 				}
-			} else /* IMS_DELETE_SOURCE */
+			} else {/* IMS_DELETE_SOURCE */
 				++ias->i6as_refcount;
+			}
 			LIST_FIRST(&head) = nias;
 			break;
 		}
@@ -748,11 +754,11 @@ in6_get_new_msf_state(struct in6_multi *in6m, struct i6as_head **newhead,
 			}
 		}
 
-	free_source_list_1:
+free_source_list_1:
 		in6_free_msf_source_list(in6mm_src->i6ms_cur->head);
 		in6mm_src->i6ms_cur->numsrc = 0;
 
-	change_state_1:
+change_state_1:
 		*newmode = MCAST_EXCLUDE;
 		*newnumsrc = 0;
 		return error;
@@ -1036,8 +1042,9 @@ in6_get_new_msf_state(struct in6_multi *in6m, struct i6as_head **newhead,
 			if (in_ias->i6as_addr.sin6_family != ex_ias->i6as_addr.sin6_family)
 				continue;
 
-			if (SS_CMP(&in_ias->i6as_addr, <, &ex_ias->i6as_addr))
+			if (SS_CMP(&in_ias->i6as_addr, <, &ex_ias->i6as_addr)) {
 				continue;
+			}
 			if (SS_CMP(&ex_ias->i6as_addr, ==, &in_ias->i6as_addr)) {
 				LIST_FIRST(&inhead) = LIST_NEXT(in_ias,
 								i6as_list);
@@ -2058,11 +2065,7 @@ sock6_setmopt_srcfilter(struct socket *sop, struct group_filter **grpfp)
 	if (ifp == NULL || (ifp->if_flags & IFF_MULTICAST) == 0)
 		return EADDRNOTAVAIL;
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 	s = splsoftnet();
-#else
-	s = splnet();
-#endif
 
 	/*
 	 * If there are no multicast options associated with this socket,
