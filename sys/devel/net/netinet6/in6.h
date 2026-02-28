@@ -428,17 +428,12 @@ struct route_in6 {
 #define IPV6_2292RTHDR		24 /* bool; routing header */
 #define IPV6_2292PKTOPTIONS	25 /* buf/cmsghdr; set/get IPv6 options */
 #endif
-#ifdef notyet
-#define IPV6_PKTINFO		19 /* bool; send/rcv if, src/dst addr */
-#define IPV6_HOPLIMIT		20 /* bool; hop limit */
-#define IPV6_NEXTHOP		21 /* bool; next hop addr */
-#define IPV6_HOPOPTS		22 /* bool; hop-by-hop option */
-#define IPV6_DSTOPTS		23 /* bool; destination option */
-#define IPV6_RTHDR			24 /* bool; routing header */
-#define IPV6_PKTOPTIONS		25 /* buf/cmsghdr; set/get IPv6 options */
-#endif
+
 #define IPV6_CHECKSUM		26 /* int; checksum offset for raw socket */
 #define IPV6_V6ONLY			27 /* bool; make AF_INET6 sockets v6 only */
+#ifndef _KERNEL
+#define IPV6_BINDV6ONLY		IPV6_V6ONLY
+#endif
 
 #if 1 /* IPSEC */
 #define IPV6_IPSEC_POLICY	28 /* struct; get/set security policy */
@@ -458,6 +453,15 @@ struct route_in6 {
 #endif
 
 #define IPV6_USE_MIN_MTU	42 /* bool; send packets at the minimum MTU */
+#define IPV6_RECVPATHMTU	43 /* bool; notify an according MTU */
+
+#define IPV6_PATHMTU		44 /* mtuinfo; get the current path MTU (sopt),
+				      	  	  	  4 bytes int; MTU notification (cmsg)
+				      	  	  	*/
+#if 0 /*obsoleted during 2292bis -> 3542*/
+#define IPV6_REACHCONF		45 /* no data; ND reachability confirm
+				      	  	  	  (cmsg only/not in of RFC3542) */
+#endif
 /* to define items, should talk with KAME guys first, for *BSD compatibility */
 
 /* more new socket options introduced in RFC3542 */
@@ -468,15 +472,23 @@ struct route_in6 {
 #define IPV6_DSTOPTS		50 /* ip6_dest; send dst option befor rthdr */
 #define IPV6_RTHDR			51 /* ip6_rthdr; send routing header */
 #if 0
-#define IPV6_PKTOPTIONS		52 /* buf/cmsghdr; set/get IPv6 options */ /* obsoleted by RFC3542 */
+#define IPV6_PKTOPTIONS		52 /* buf/cmsghdr; set/get IPv6 options */
+				   	   	   	   /* obsoleted by RFC3542 */
 #endif
+
+#define IPV6_RECVTCLASS		57 /* bool; recv traffic class values */
+#ifdef _KERNEL
+#define IPV6_OTCLASS		58 /* u_int8_t; send traffic class value */
+#endif
+#define IPV6_AUTOFLOWLABEL	59 /* bool; attach flowlabel automagically */
 
 #define IPV6_TCLASS			61 /* int; send traffic class value */
 #define IPV6_DONTFRAG		62 /* bool; disable IPv6 fragmentation */
 
-#define IPV6_PREFER_TEMPADDR 63 	/* int; prefer temporary addresses as
- 	 	 	 	 	 	 	 	 	 * the source address.
- 	 	 	 	 	 	 	 	 	 */
+#define IPV6_PREFER_TEMPADDR 63 /* int; prefer temporary addresses as
+				    			 * the source address.
+				    			 */
+
 #define IPV6_RTHDR_LOOSE     0 /* this hop need not be a neighbor. XXX old spec */
 #define IPV6_RTHDR_STRICT    1 /* this hop must be a neighbor. XXX old spec */
 #define IPV6_RTHDR_TYPE_0    0 /* IPv6 routing header type 0 */
