@@ -531,7 +531,7 @@ vm_segment_zero_fill(s)
  * vm_segment_page_scan:
  *
  * Scans one segment worth of pages.
- * Checks page against the being scanned. Returns scanned page if both pages are equal or
+ * Checks page against the page being scanned. Returns scanned page if both pages are equal or
  * page if not equal.
  */
 vm_page_t

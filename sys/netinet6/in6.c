@@ -1305,7 +1305,7 @@ in6_purgeaddr(ifa)
 	/*
 	 * leave from multicast groups we have joined for the interface
 	 */
-	while ((imm = ia->ia6_memberships.lh_first) != NULL) {
+	while ((imm = LIST_FIRST(&ia->ia6_memberships)) != NULL) {
 		LIST_REMOVE(imm, i6mm_chain);
 		in6_leavegroup(imm);
 	}
@@ -1339,7 +1339,7 @@ in6_unlink_ifa(ia, ifp)
 		}
 	}
 
-	if (oia->ia6_multiaddrs.lh_first != NULL) {
+	if (LIST_FIRST(&oia->ia6_multiaddrs) != NULL) {
 		/*
 		 * XXX thorpej@NetBSD.org -- if the interface is going
 		 * XXX away, don't save the multicast entries, delete them!
@@ -1662,8 +1662,8 @@ in6_ifinit(ifp, ia, sin6, newhost)
 	 * if this is its first address,
 	 * and to validate the address if necessary.
 	 */
-	for (ifa = ifp->if_addrlist.tqh_first; ifa;
-	     ifa = ifa->ifa_list.tqe_next)
+	for (ifa = TAILQ_FIRST(&ifp->if_addrlist); ifa;
+	     ifa = TAILQ_NEXT(ifa, ifa_list))
 	{
 		if (ifa->ifa_addr == NULL)
 			continue;	/* just for safety */
@@ -1798,7 +1798,7 @@ in6ifa_ifpforlinklocal(ifp, ignoreflags)
 {
 	struct ifaddr *ifa;
 
-	for (ifa = ifp->if_addrlist.tqh_first; ifa; ifa = ifa->ifa_list.tqe_next)
+	for (ifa = TAILQ_FIRST(&ifp->if_addrlist); ifa; ifa = TAILQ_NEXT(ifa, ifa_list))
 	{
 		if (ifa->ifa_addr == NULL)
 			continue;	/* just for safety */
@@ -2330,7 +2330,7 @@ in6_ifawithifp(ifp, dst)
 	 * If two or more, return one which matches the dst longest.
 	 * If none, return one of global addresses assigned other ifs.
 	 */
-	for (ifa = ifp->if_addrlist.tqh_first; ifa; ifa = ifa->ifa_list.tqe_next)
+	for (ifa = TAILQ_FIRST(&ifp->if_addrlist); ifa; ifa = TAILQ_NEXT(ifa, ifa_list))
 	{
 		if (ifa->ifa_addr->sa_family != AF_INET6)
 			continue;
@@ -2365,7 +2365,7 @@ in6_ifawithifp(ifp, dst)
 	if (besta)
 		return (besta);
 
-	for (ifa = ifp->if_addrlist.tqh_first; ifa; ifa = ifa->ifa_list.tqe_next)
+	for (ifa = TAILQ_FIRST(&ifp->if_addrlist); ifa; ifa = TAILQ_NEXT(ifa, ifa_list))
 	{
 		if (ifa->ifa_addr->sa_family != AF_INET6)
 			continue;
@@ -2410,7 +2410,7 @@ in6_if_up(ifp)
 	in6_ifattach(ifp, NULL);
 
 	dad_delay = 0;
-	for (ifa = ifp->if_addrlist.tqh_first; ifa; ifa = ifa->ifa_list.tqe_next)
+	for (ifa = TAILQ_FIRST(&ifp->if_addrlist); ifa; ifa = TAILQ_NEXT(ifa, ifa_list))
 	{
 		if (ifa->ifa_addr->sa_family != AF_INET6)
 			continue;

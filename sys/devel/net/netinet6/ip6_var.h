@@ -327,7 +327,6 @@ void ip6_mloopback(struct ifnet *, struct mbuf *, struct sockaddr_in6 *);
 int	ip6_output(struct mbuf *, struct ip6_pktopts *, struct route_in6 *, int, struct ip6_moptions *, struct socket *, struct ifnet **);
 int	ip6_ctloutput(int, struct socket *, int, int, struct mbuf **);
 int	ip6_raw_ctloutput(int, struct socket *, int, int, struct mbuf **);
-//int	ip6_setpktoptions(struct mbuf *, struct ip6_pktopts *, int);
 int	ip6_optlen(struct in6pcb *);
 
 void ip6_initpktopts(struct ip6_pktopts *);
@@ -353,7 +352,7 @@ int	rip6_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf 
 int	dest6_input(struct mbuf **, int *, int);
 int	none_input(struct mbuf **, int *, int);
 
-struct 	in6_addr *in6_selectsrc(struct sockaddr_in6 *, struct ip6_pktopts *, struct ip6_moptions *, struct route_in6 *, struct in6_addr *, int *);
+struct in6_addr *in6_selectsrc(struct sockaddr_in6 *, struct ip6_pktopts *, struct ip6_moptions *, struct route_in6 *, struct in6_addr *, int *);
 
 u_int32_t ip6_randomid(void);
 u_int32_t ip6_randomflowlabel(void);

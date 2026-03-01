@@ -217,6 +217,9 @@ struct	ip6stat {
 
 	u_quad_t ip6s_forward_cachehit;
 	u_quad_t ip6s_forward_cachemiss;
+
+	/* number of times that each rule of source selection is applied. */
+	u_quad_t ip6s_sources_rule[16];
 };
 
 #ifdef _KERNEL

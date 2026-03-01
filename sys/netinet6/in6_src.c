@@ -1,5 +1,5 @@
 /*	$NetBSD: in6_src.c,v 1.18 2003/12/10 11:46:33 itojun Exp $	*/
-/*	$KAME: in6_src.c,v 1.36 2001/02/06 04:08:17 itojun Exp $	*/
+/*	$KAME: in6_src.c,v 1.163 2007/06/14 13:51:34 itojun Exp $	*/
 
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -61,14 +61,11 @@
  *	@(#)in_pcb.c	8.2 (Berkeley) 1/4/94
  */
 
-/*
- * TODO: Add addrsel_policy
- */
-
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: in6_src.c,v 1.18 2003/12/10 11:46:33 itojun Exp $");
 
 #include "opt_inet.h"
+#include "opt_radix.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -100,7 +97,12 @@ __KERNEL_RCSID(0, "$NetBSD: in6_src.c,v 1.18 2003/12/10 11:46:33 itojun Exp $");
 #include <net/net_osdep.h>
 
 #include "loop.h"
+
 extern struct ifnet loif[NLOOP];
+
+static int selectroute(struct sockaddr_in6 *, struct ip6_pktopts *, struct route_in6 *, struct rtentry *, struct ifnet **);
+static struct rtentry *in6_rtentry(struct ip6_pktopts *, struct ifnet **, int *);
+static int in6_selectif(struct sockaddr_in6 *, struct ip6_pktopts *, struct route_in6 *, struct ifnet **);
 
 /*
  * Return an IPv6 address, which is the most appropriate for a given
@@ -117,6 +119,7 @@ in6_selectsrc(dstsock, opts, mopts, ro, laddr, errorp)
 	struct in6_addr *laddr;
 	int *errorp;
 {
+	struct ifnet *ifp = NULL;
 	struct in6_addr *dst;
 	struct in6_ifaddr *ia6 = 0;
 	struct in6_pktinfo *pi = NULL;
@@ -129,28 +132,48 @@ in6_selectsrc(dstsock, opts, mopts, ro, laddr, errorp)
 	 * use it.
 	 */
 	if (opts && (pi = opts->ip6po_pktinfo) &&
-	    !IN6_IS_ADDR_UNSPECIFIED(&pi->ipi6_addr))
+	    !IN6_IS_ADDR_UNSPECIFIED(&pi->ipi6_addr)) {
+		/* get the outgoing interface */
+		if ((*errorp = in6_selectif(dstsock, opts, ro, &ifp)) != 0) {
+			return (NULL);
+		}
+		if (ifp) {
+			*errorp = in6_setscope(&pi->ipi6_addr, ifp, NULL);
+			if (*errorp != 0) {
+				return (NULL);
+			}
+		}
+		ia6 = in6_ifawithscope(ifp, &pi->ipi6_addr);
+		if (ia6 == NULL ||
+		    (ia6->ia6_flags & (IN6_IFF_ANYCAST | IN6_IFF_NOTREADY))) {
+			*errorp = EADDRNOTAVAIL;
+			return (NULL);
+		}
 		return (&pi->ipi6_addr);
+	}
 
 	/*
 	 * If the source address is not specified but the socket(if any)
 	 * is already bound, use the bound address.
 	 */
-	if (laddr && !IN6_IS_ADDR_UNSPECIFIED(laddr))
+	if (laddr && !IN6_IS_ADDR_UNSPECIFIED(laddr)) {
 		return (laddr);
+	}
 
 	/*
 	 * If the caller doesn't specify the source address but
 	 * the outgoing interface, use an address associated with
 	 * the interface.
 	 */
+	if ((*errorp = in6_selectif(dstsock, opts, ro, &ifp)) != 0) {
+		return (NULL);
+	}
 	if (pi && pi->ipi6_ifindex) {
 		/* XXX boundary check is assumed to be already done. */
-		ia6 = in6_ifawithscope(ifindex2ifnet[pi->ipi6_ifindex],
-				       dst);
-		if (ia6 == 0) {
+		ia6 = in6_ifawithscope(ifindex2ifnet[pi->ipi6_ifindex], dst);
+		if (ia6 == NULL) {
 			*errorp = EADDRNOTAVAIL;
-			return (0);
+			return (NULL);
 		}
 		return (&satosin6(&ia6->ia_addr)->sin6_addr);
 	}
@@ -180,7 +203,7 @@ in6_selectsrc(dstsock, opts, mopts, ro, laddr, errorp)
 				       dst);
 		if (ia6 == 0) {
 			*errorp = EADDRNOTAVAIL;
-			return (0);
+			return (NULL);
 		}
 		return (&satosin6(&ia6->ia_addr)->sin6_addr);
 	}
@@ -203,82 +226,21 @@ in6_selectsrc(dstsock, opts, mopts, ro, laddr, errorp)
 
 		if (ifp) {
 			ia6 = in6_ifawithscope(ifp, dst);
-			if (ia6 == 0) {
+			if (ia6 == NULL) {
 				*errorp = EADDRNOTAVAIL;
-				return (0);
+				return (NULL);
 			}
 			return (&satosin6(&ia6->ia_addr)->sin6_addr);
 		}
 	}
 
-	/*
-	 * If the next hop address for the packet is specified
-	 * by caller, use an address associated with the route
-	 * to the next hop.
-	 */
-	{
-		struct sockaddr_in6 *sin6_next;
-		struct rtentry *rt;
-
-		if (opts && opts->ip6po_nexthop) {
-			sin6_next = satosin6(opts->ip6po_nexthop);
-			rt = nd6_lookup(&sin6_next->sin6_addr, 1, NULL);
-			if (rt) {
-				ia6 = in6_ifawithscope(rt->rt_ifp, dst);
-				if (ia6 == 0)
-					ia6 = ifatoia6(rt->rt_ifa);
-			}
-			if (ia6 == 0) {
-				*errorp = EADDRNOTAVAIL;
-				return (0);
-			}
-			return (&satosin6(&ia6->ia_addr)->sin6_addr);
-		}
-	}
-
-	/*
-	 * If route is known or can be allocated now,
-	 * our src addr is taken from the i/f, else punt.
-	 * Note that we should check the address family of the
-	 * cached destination, in case of sharing the cache with IPv4.
-	 */
 	if (ro) {
-		if (ro->ro_rt &&
-		    (ro->ro_dst.sin6_family != AF_INET6 ||
-		     !IN6_ARE_ADDR_EQUAL(&satosin6(&ro->ro_dst)->sin6_addr, dst))) {
-			RTFREE(ro->ro_rt);
-			ro->ro_rt = (struct rtentry *)0;
+		if ((*errorp = in6_selectif(dstsock, opts, ro, &ifp)) != 0) {
+			return (NULL);
 		}
-		if (ro->ro_rt == (struct rtentry *)0 ||
-		    ro->ro_rt->rt_ifp == (struct ifnet *)0) {
-			struct sockaddr_in6 *sa6;
-
-			/* No route yet, so try to acquire one */
-			bzero(&ro->ro_dst, sizeof(struct sockaddr_in6));
-			sa6 = (struct sockaddr_in6 *)&ro->ro_dst;
-			sa6->sin6_family = AF_INET6;
-			sa6->sin6_len = sizeof(struct sockaddr_in6);
-			sa6->sin6_addr = *dst;
-			sa6->sin6_scope_id = dstsock->sin6_scope_id;
-			if (IN6_IS_ADDR_MULTICAST(dst)) {
-				ro->ro_rt = rtalloc1(&((struct route *)ro)
-						     ->ro_dst, 0);
-			} else {
-				rtalloc((struct route *)ro);
-			}
-		}
-
-		/*
-		 * in_pcbconnect() checks out IFF_LOOPBACK to skip using
-		 * the address. But we don't know why it does so.
-		 * It is necessary to ensure the scope even for lo0
-		 * so doesn't check out IFF_LOOPBACK.
-		 */
-
-		if (ro->ro_rt) {
-			ia6 = in6_ifawithscope(ro->ro_rt->rt_ifa->ifa_ifp, dst);
-			if (ia6 == 0) /* xxx scope error ?*/
-				ia6 = ifatoia6(ro->ro_rt->rt_ifa);
+		ia6 = in6_ifawithscope(ro->ro_rt->rt_ifa->ifa_ifp, dst);
+		if (ia6 == NULL) { /* xxx scope error ?*/
+			ia6 = ifatoia6(ro->ro_rt->rt_ifa);
 		}
 #if 0
 		/*
@@ -299,14 +261,255 @@ in6_selectsrc(dstsock, opts, mopts, ro, laddr, errorp)
 			return (&satosin6(&ia6->ia_addr)->sin6_addr);
 		}
 #endif /* 0 */
-		if (ia6 == 0) {
+		if (ia6 == NULL) {
 			*errorp = EHOSTUNREACH;	/* no route */
-			return (0);
+			return (NULL);
 		}
 		return (&satosin6(&ia6->ia_addr)->sin6_addr);
 	}
 
 	*errorp = EADDRNOTAVAIL;
+	return (NULL);
+}
+
+static int
+selectroute(dstsock, opts, ro, rt, retifp)
+	struct sockaddr_in6 *dstsock;
+	struct ip6_pktopts *opts;
+	struct route_in6 *ro;
+	struct rtentry *rt;
+	struct ifnet **retifp;
+{
+	struct in6_addr *dst;
+	int error = 0;
+
+	dst = &dstsock->sin6_addr;
+
+	/*
+	 * If route is known or can be allocated now,
+	 * our src addr is taken from the i/f, else punt.
+	 * Note that we should check the address family of the
+	 * cached destination, in case of sharing the cache with IPv4.
+	 */
+	if (ro) {
+		if (ro->ro_rt &&
+				(!(ro->ro_rt->rt_flags & RTF_UP) ||
+				((struct sockaddr *)(&ro->ro_dst))->sa_family != AF_INET6 ||
+				!IN6_ARE_ADDR_EQUAL(&satosin6(&ro->ro_dst)->sin6_addr,dst))) {
+			RTFREE(ro->ro_rt);
+			ro->ro_rt = (struct rtentry *)NULL;
+		}
+		if (ro->ro_rt == (struct rtentry *)NULL ||
+		    ro->ro_rt->rt_ifp == (struct ifnet *)NULL) {
+			struct sockaddr_in6 *sa6;
+
+			/* No route yet, so try to acquire one */
+			bzero(&ro->ro_dst, sizeof(struct sockaddr_in6));
+			sa6 = (struct sockaddr_in6 *)&ro->ro_dst;
+			sa6->sin6_family = AF_INET6;
+			sa6->sin6_len = sizeof(struct sockaddr_in6);
+			sa6->sin6_addr = *dst;
+			sa6->sin6_scope_id = dstsock->sin6_scope_id;
+			if (IN6_IS_ADDR_MULTICAST(dst)) {
+#ifdef RADIX_MPATH
+				rtalloc_mpath((struct route *)ro, ntohl(sa6->sin6_addr.s6_addr32[3]));
+#else
+				ro->ro_rt = rtalloc1(&((struct route *)ro)->ro_dst, 0);
+#endif /* RADIX_MPATH */
+			} else {
+#ifdef RADIX_MPATH
+				rtalloc_mpath((struct route *)ro, ntohl(sa6->sin6_addr.s6_addr32[3]));
+#else
+				rtalloc((struct route *)ro);
+#endif /* RADIX_MPATH */
+			}
+		}
+		/*
+		 * do not care about the result if we have the nexthop
+		 * explicitly specified.
+		 */
+		if (opts && opts->ip6po_nexthop) {
+			goto done;
+		}
+
+		if (ro->ro_rt) {
+			*retifp = ro->ro_rt->rt_ifp;
+
+			if (ifp == NULL) { /* can this really happen? */
+				RTFREE(ro->ro_rt);
+				ro->ro_rt = NULL;
+			}
+		}
+		if (ro->ro_rt == NULL) {
+			error = EHOSTUNREACH;
+		}
+		rt = ro->ro_rt;
+
+		/*
+		 * Check if the outgoing interface conflicts with
+		 * the interface specified by ipi6_ifindex (if specified).
+		 * Note that loopback interface is always okay.
+		 * (this may happen when we are sending a packet to one of
+		 *  our own addresses.)
+		 */
+		if (opts && opts->ip6po_pktinfo &&
+		    opts->ip6po_pktinfo->ipi6_ifindex) {
+			if (!(ifp->if_flags & IFF_LOOPBACK) &&
+			    ifp->if_index !=
+			    opts->ip6po_pktinfo->ipi6_ifindex) {
+				error = EHOSTUNREACH;
+				goto done;
+			}
+		}
+	}
+
+done:
+	if (*retifp == NULL && rt == NULL) {
+		/*
+		 * This can happen if the caller did not pass a cached route
+		 * nor any other hints.  We treat this case an error.
+		 */
+		error = EHOSTUNREACH;
+	}
+	if (error == EHOSTUNREACH) {
+		ip6stat.ip6s_noroute++;
+	}
+	return (error);
+}
+
+static struct rtentry *
+in6_rtentry(opts, retifp, errorp)
+	struct ip6_pktopts *opts;
+	struct ifnet **retifp;
+	int *errorp;
+{
+	struct sockaddr_in6 *sin6_next;
+	struct rtentry *rt;
+	struct route_in6 *ron;
+
+	/*
+	 * If the next hop address for the packet is specified by the caller,
+	 * use it as the gateway.
+	 */
+	if (opts && opts->ip6po_nexthop) {
+		sin6_next = satosin6(opts->ip6po_nexthop);
+
+		/* at this moment, we only support AF_INET6 next hops */
+		if (sin6_next->sin6_family != AF_INET6) {
+			*errorp = EAFNOSUPPORT;
+			return (NULL);
+		}
+
+		/*
+		 * If the next hop address for the packet is specified
+		 * by caller, use an address associated with the route
+		 * to the next hop.
+		 */
+		rt = nd6_lookup(&sin6_next->sin6_addr, 1, NULL);
+		if (rt == NULL) {
+			RTFREE(rt);
+			rt = NULL;
+			*errorp = EADDRNOTAVAIL;
+			return (NULL);
+		}
+
+		/*
+		 * If the next hop is an IPv6 address, then the node identified
+		 * by that address must be a neighbor of the sending host.
+		 */
+		ron = &opts->ip6po_nextroute;
+		if ((ron->ro_rt
+				&& (ron->ro_rt->rt_flags & (RTF_UP | RTF_GATEWAY)) !=
+				RTF_UP) ||
+				!IN6_ARE_ADDR_EQUAL(&satosin6(&ron->ro_dst)->sin6_addr,
+						&sin6_next->sin6_addr)) {
+			if (ron->ro_rt) {
+				RTFREE(ron->ro_rt);
+				ron->ro_rt = NULL;
+			}
+			*satosin6(&ron->ro_dst) = *sin6_next;
+		}
+		if (ron->ro_rt == NULL) {
+			rtalloc((struct route *)ron); /* multi path case? */
+			if (ron->ro_rt == NULL ||
+			    (ron->ro_rt->rt_flags & RTF_GATEWAY)) {
+				if (ron->ro_rt) {
+					RTFREE(ron->ro_rt);
+					ron->ro_rt = NULL;
+				}
+				*errorp = EHOSTUNREACH;
+				return (NULL);
+			}
+		}
+		if (!nd6_is_addr_neighbor(sin6_next, ron->ro_rt->rt_ifp)) {
+			RTFREE(ron->ro_rt);
+			ron->ro_rt = NULL;
+			*errorp = EHOSTUNREACH;
+			return (NULL);
+		}
+	}
+
+	if ((rt != NULL) && (ron->ro_rt != NULL)) {
+		if (rt != ron->ro_rt) {
+			rt = ron->ro_rt;
+		}
+	}
+	if ((*retifp == NULL) || (*retifp != rt->rt_ifp)) {
+		*retifp = rt->rt_ifp;
+	}
+	return (rt);
+}
+
+static int
+in6_selectif(dstsock, opts, ro, retifp)
+	struct sockaddr_in6 *dstsock;
+	struct ip6_pktopts *opts;
+	struct route_in6 *ro;
+	struct ifnet **retifp;
+{
+	struct rtentry *rt;
+	int error;
+
+	rt = in6_rtentry(opts, retifp, &error);
+	if (rt == NULL) {
+		return (error);
+	}
+	error = selectroute(dstsock, opts, ro, rt, retifp);
+	if (error != 0) {
+		return (error);
+	}
+
+	/*
+	 * do not use a rejected or black hole route.
+	 * XXX: this check should be done in the L2 output routine.
+	 * However, if we skipped this check here, we'd see the following
+	 * scenario:
+	 * - install a rejected route for a scoped address prefix
+	 *   (like fe80::/10)
+	 * - send a packet to a destination that matches the scoped prefix,
+	 *   with ambiguity about the scope zone.
+	 * - pick the outgoing interface from the route, and disambiguate the
+	 *   scope zone with the interface.
+	 * - ip6_output() would try to get another route with the "new"
+	 *   destination, which may be valid.
+	 * - we'd see no error on output.
+	 * Although this may not be very harmful, it should still be confusing.
+	 * We thus reject the case here.
+	 */
+	if (rt && (rt->rt_flags & (RTF_REJECT | RTF_BLACKHOLE))) {
+		return (rt->rt_flags & RTF_HOST ? EHOSTUNREACH : ENETUNREACH);
+	}
+
+	/*
+	 * Adjust the "outgoing" interface.  If we're going to loop the packet
+	 * back to ourselves, the ifp would be the loopback interface.
+	 * However, we'd rather know the interface associated to the
+	 * destination address (which should probably be one of our own
+	 * addresses.)
+	 */
+	if (rt && rt->rt_ifa && rt->rt_ifa->ifa_ifp) {
+		*retifp = rt->rt_ifa->ifa_ifp;
+	}
 	return (0);
 }
 

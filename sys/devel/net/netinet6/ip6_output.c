@@ -2743,23 +2743,6 @@ ip6_freemoptions(im6o)
 	free(im6o, M_IPMOPTS);
 }
 
-int
-ip6_setpktoptions(control, opt, priv)
-	struct mbuf *control;
-	struct ip6_pktopts *opt;
-	int priv;
-{
-	struct socket *so;
-	struct in6pcb *in6p;
-
-	struct ip6_pktopts *stickyopt = in6p->in6p_outputopts;
-	int uproto = so->so_proto->pr_protocol;
-
-
-
-	return ip6_setpktopts(control, opt, stickyopt, priv, uproto);
-}
-
 /*
  * Set IPv6 outgoing packet options based on advanced API.
  */
@@ -3432,7 +3415,7 @@ ip6_getmopt_sgaddr(m, optname, ifpp, ss_grp, ss_src)
 		sin6_grp->sin6_len = sizeof(*sin6_grp);
 		sin6_grp->sin6_family = AF_INET6;
 		sin6_grp->sin6_scope_id = SIN6(&greq->gr_group)->sin6_scope_id;
-		if ((error = sa6_embedscope(sin6_grp, 0)) != 0)
+		if ((error = in6_embedscope(&sin6_grp->sin6_addr, sin6_grp, NULL, *ifpp)) != 0)
 			break;
 		if (!IN6_IS_ADDR_MULTICAST(&sin6_grp->sin6_addr)) {
 			error = EINVAL;
@@ -3483,7 +3466,7 @@ ip6_getmopt_sgaddr(m, optname, ifpp, ss_grp, ss_src)
 		sin6_grp->sin6_family = AF_INET6;
 		sin6_grp->sin6_scope_id =
 		    SIN6(&gsreq->gsr_group)->sin6_scope_id;
-		if ((error = sa6_embedscope(sin6_grp, 0)) != 0)
+		if ((error = in6_embedscope(&sin6_grp->sin6_addr, sin6_grp, NULL, *ifpp)) != 0)
 			break;
 		if (sin6_grp->sin6_scope_id == 0 &&
 		    (error = in6_setscope(&sin6_grp->sin6_addr, *ifpp, NULL))
@@ -3513,7 +3496,7 @@ ip6_getmopt_sgaddr(m, optname, ifpp, ss_grp, ss_src)
 		sin6_src->sin6_family = AF_INET6;
 		sin6_src->sin6_scope_id =
 		    SIN6(&gsreq->gsr_source)->sin6_scope_id;
-		if ((error = sa6_embedscope(sin6_src, 0)) != 0)
+		if ((error = in6_embedscope(&sin6_src->sin6_addr, sin6_src, NULL, *ifpp)) != 0)
 			break;
 		if (sin6_src->sin6_scope_id == 0 &&
 		    (error = in6_setscope(&sin6_src->sin6_addr, *ifpp, NULL))
