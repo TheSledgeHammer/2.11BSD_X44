@@ -589,7 +589,8 @@ struct m_tag 	*m_tag_next(struct mbuf *, struct m_tag *);
 #define	PACKET_TAG_IPSEC_HISTORY			23 /* IPSEC history */
 
 #define	PACKET_TAG_PF_TRANSLATE_LOCALHOST	24 /* translated to localhost */
-#define	PACKET_TAG_IPSEC_NAT_T_PORTS		25 /* two u_int16_t */
+
+#define PACKET_TAG_INET6			        25 /* IPv6 info */
 
 #ifdef MBTYPES
 int mbtypes[] = {				/* XXX */
