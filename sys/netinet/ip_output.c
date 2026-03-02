@@ -184,13 +184,9 @@ __KERNEL_RCSID(0, "$NetBSD: ip_output.c,v 1.130 2004/03/02 02:28:28 thorpej Exp 
 
 #include "pf.h"
 
-#if NPF > 0
-#include <net/pfvar.h>
-#endif
-
 static struct mbuf *ip_insertoptions(struct mbuf *, struct mbuf *, int *);
-static struct ifnet *ip_multicast_if(struct in_addr *, int *);
 static void ip_mloopback(struct ifnet *, struct mbuf *, struct sockaddr_in *);
+static int ip_getmopt_ifargs(int, struct ifnet **, struct in_addr *, struct in_addr *);
 #ifdef IGMPV3
 static int in_getmopt_ifargs(int, struct ifnet **, struct in_addr *, u_int32_t);
 static int ip_getmopt_sgaddr(struct mbuf *, int, struct ifnet **, struct sockaddr_storage *, struct sockaddr_storage *);
@@ -1531,7 +1527,7 @@ bad:
 /*
  * following RFC1724 section 3.3, 0.0.0.0/8 is interpreted as interface index.
  */
-static struct ifnet *
+struct ifnet *
 ip_multicast_if(a, ifindexp)
 	struct in_addr *a;
 	int *ifindexp;

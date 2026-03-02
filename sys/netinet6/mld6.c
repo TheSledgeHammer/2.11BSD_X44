@@ -179,10 +179,8 @@ mld6_init(void)
 	hbh_buf[5] = IP6OPT_RTALERT_LEN - 2;
 	bcopy((caddr_t)&rtalert_code, &hbh_buf[6], sizeof(u_int16_t));
 
-    ip6_initpktopts(&ip6_opts);
+	ip6_initpktopts(&ip6_opts);
 	ip6_opts.ip6po_hbh = hbh;
-	/* We will specify the hoplimit by a multicast option. */
-    //ip6_opts.ip6po_hlim = -1;
 }
 
 static void

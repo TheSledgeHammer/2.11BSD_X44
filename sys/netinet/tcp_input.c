@@ -3359,6 +3359,10 @@ syn_cache_get(src, dst, th, hlen, tlen, so, m)
 			m_freem(in6p->in6p_options);
 			in6p->in6p_options = 0;
 		}
+		if (oin6p->in6p_outputopts) {
+			in6p->in6p_outputopts = ip6_copypktopts(oin6p->in6p_outputopts,
+					M_NOWAIT);
+		}
 		ip6_savecontrol(in6p, &in6p->in6p_options,
 			mtod(m, struct ip6_hdr *), m);
 	}

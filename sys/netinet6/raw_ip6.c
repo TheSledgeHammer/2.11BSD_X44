@@ -402,7 +402,8 @@ rip6_output(struct mbuf *m, ...)
     }
 	dst = &dstsock->sin6_addr;
 	if (control) {
-		if ((error = ip6_setpktopts(control, &opt, in6p->in6p_outputopts, priv, so->so_proto->pr_protocol)) != 0)
+		if ((error = ip6_setpktopts(control, &opt, in6p->in6p_outputopts, priv,
+				so->so_proto->pr_protocol)) != 0)
 			goto bad;
 		optp = &opt;
 	} else
@@ -529,9 +530,11 @@ rip6_output(struct mbuf *m, ...)
  freectl:
 	if (optp == &opt && optp->ip6po_rthdr && optp->ip6po_route.ro_rt)
 		RTFREE(optp->ip6po_route.ro_rt);
-	if (control)
-        ip6_clearpktopts(&opt, -1);
+
+	if (control) {
+		ip6_clearpktopts(&opt, -1);
 		m_freem(control);
+	}
 	return (error);
 }
 

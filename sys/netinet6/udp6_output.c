@@ -135,7 +135,8 @@ udp6_output(in6p, m, addr6, control, p)
 	if (p && !suser(p->p_ucred, &p->p_acflag))
 		priv = 1;
 	if (control) {
-		if ((error = ip6_setpktopts(control, &opt, in6p->in6p_outputopts, priv, IPPROTO_UDP)) != 0)
+		if ((error = ip6_setpktopts(control, &opt, in6p->in6p_outputopts, priv,
+				IPPROTO_UDP)) != 0)
 			goto release;
 		in6p->in6p_outputopts = &opt;
 	}
@@ -387,7 +388,7 @@ release:
 releaseopt:
 	if (control) {
 		in6p->in6p_outputopts = stickyopt;
-        ip6_clearpktopts(&opt, -1);
+		ip6_clearpktopts(&opt, -1);
 		m_freem(control);
 	}
 	return (error);

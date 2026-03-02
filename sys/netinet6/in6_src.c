@@ -284,7 +284,7 @@ selectroute(dstsock, opts, ro, rt, retifp)
 	struct in6_addr *dst;
 	int error = 0;
 
-    ifp = *retifp;
+	ifp = *retifp;
 	dst = &dstsock->sin6_addr;
 
 	/*
