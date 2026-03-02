@@ -280,9 +280,11 @@ selectroute(dstsock, opts, ro, rt, retifp)
 	struct rtentry *rt;
 	struct ifnet **retifp;
 {
+    struct ifnet *ifp = NULL;
 	struct in6_addr *dst;
 	int error = 0;
 
+    ifp = *retifp;
 	dst = &dstsock->sin6_addr;
 
 	/*
@@ -333,7 +335,7 @@ selectroute(dstsock, opts, ro, rt, retifp)
 		}
 
 		if (ro->ro_rt) {
-			*retifp = ro->ro_rt->rt_ifp;
+			ifp = ro->ro_rt->rt_ifp;
 
 			if (ifp == NULL) { /* can this really happen? */
 				RTFREE(ro->ro_rt);
@@ -364,7 +366,7 @@ selectroute(dstsock, opts, ro, rt, retifp)
 	}
 
 done:
-	if (*retifp == NULL && rt == NULL) {
+	if (ifp == NULL && rt == NULL) {
 		/*
 		 * This can happen if the caller did not pass a cached route
 		 * nor any other hints.  We treat this case an error.
@@ -374,6 +376,9 @@ done:
 	if (error == EHOSTUNREACH) {
 		ip6stat.ip6s_noroute++;
 	}
+	if (retifp != NULL) {
+		*retifp = ifp;
+    }
 	return (error);
 }
 
@@ -407,10 +412,8 @@ in6_rtentry(opts, retifp, errorp)
 		 */
 		rt = nd6_lookup(&sin6_next->sin6_addr, 1, NULL);
 		if (rt == NULL) {
-			RTFREE(rt);
-			rt = NULL;
 			*errorp = EADDRNOTAVAIL;
-			return (NULL);
+			goto fail;
 		}
 
 		/*
@@ -433,19 +436,13 @@ in6_rtentry(opts, retifp, errorp)
 			rtalloc((struct route *)ron); /* multi path case? */
 			if (ron->ro_rt == NULL ||
 			    (ron->ro_rt->rt_flags & RTF_GATEWAY)) {
-				if (ron->ro_rt) {
-					RTFREE(ron->ro_rt);
-					ron->ro_rt = NULL;
-				}
 				*errorp = EHOSTUNREACH;
-				return (NULL);
+				goto fail;
 			}
 		}
 		if (!nd6_is_addr_neighbor(sin6_next, ron->ro_rt->rt_ifp)) {
-			RTFREE(ron->ro_rt);
-			ron->ro_rt = NULL;
 			*errorp = EHOSTUNREACH;
-			return (NULL);
+			goto fail;
 		}
 	}
 
@@ -458,6 +455,17 @@ in6_rtentry(opts, retifp, errorp)
 		*retifp = rt->rt_ifp;
 	}
 	return (rt);
+    
+fail:
+    if (rt) {
+        RTFREE(rt);
+        rt = NULL;
+    }
+    if (ron->ro_rt) {
+        RTFREE(ron->ro_rt);
+        ron->ro_rt = NULL;
+    }    
+    return (NULL);
 }
 
 static int

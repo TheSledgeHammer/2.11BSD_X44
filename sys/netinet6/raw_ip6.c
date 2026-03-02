@@ -368,13 +368,7 @@ rip6_ctlinput(cmd, sa, d)
  * Tack on options user may have setup with control call.
  */
 int
-#if __STDC__
 rip6_output(struct mbuf *m, ...)
-#else
-rip6_output(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	struct socket *so;
 	struct sockaddr_in6 *dstsock;
@@ -408,7 +402,7 @@ rip6_output(m, va_alist)
     }
 	dst = &dstsock->sin6_addr;
 	if (control) {
-		if ((error = ip6_setpktoptions(control, &opt, priv)) != 0)
+		if ((error = ip6_setpktopts(control, &opt, in6p->in6p_outputopts, priv, so->so_proto->pr_protocol)) != 0)
 			goto bad;
 		optp = &opt;
 	} else
@@ -536,6 +530,7 @@ rip6_output(m, va_alist)
 	if (optp == &opt && optp->ip6po_rthdr && optp->ip6po_route.ro_rt)
 		RTFREE(optp->ip6po_route.ro_rt);
 	if (control)
+        ip6_clearpktopts(&opt, -1);
 		m_freem(control);
 	return (error);
 }

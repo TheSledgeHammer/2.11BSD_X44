@@ -108,6 +108,8 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_input.c,v 1.73.2.1.4.3 2007/06/04 19:26:07 bouye
 #include <netinet6/in6_ifattach.h>
 #include <netinet6/nd6.h>
 
+#include <net/if_stf.h>
+
 #ifdef IPSEC
 #include <netinet6/ipsec/ipsec.h>
 #endif
@@ -151,7 +153,7 @@ struct pfil_head inet6_pfil_hook;
 struct ip6stat ip6stat;
 
 static void ip6_init2(void *);
-
+static struct m_tag *ip6_setdstifaddr(struct mbuf *, struct in6_ifaddr *);
 static int ip6_hopopts_input(u_int32_t *, u_int32_t *, struct mbuf **, int *);
 static struct mbuf *ip6_pullexthdr(struct mbuf *, size_t, int);
 
@@ -160,7 +162,7 @@ static struct mbuf *ip6_pullexthdr(struct mbuf *, size_t, int);
  * All protocols not implemented in kernel go to raw IP6 protocol handler.
  */
 void
-ip6_init()
+ip6_init(void)
 {
 	struct ip6protosw *pr;
 	int i;
@@ -531,6 +533,12 @@ ip6_input(m)
 			(struct in6_ifaddr *)ip6_forward_rt.ro_rt->rt_ifa;
 		if (ia6->ia6_flags & IN6_IFF_ANYCAST)
 			m->m_flags |= M_ANYCAST6;
+
+		/*
+		 * record address information into m_tag.
+		 */
+		(void)ip6_setdstifaddr(m, ia6);
+
 		/*
 		 * packets to a tentative, duplicated, or somehow invalid
 		 * address must not be accepted.
@@ -600,6 +608,28 @@ ip6_input(m)
 	}
 
   hbhcheck:
+
+	/*
+	 * record address information into m_tag, if we don't have one yet.
+	 * note that we are unable to record it, if the address is not listed
+	 * as our interface address (e.g. multicast addresses, addresses
+	 * within FAITH prefixes and such).
+	 */
+	if (deliverifp && !ip6_getdstifaddr(m)) {
+		struct in6_ifaddr *ia6;
+
+		ia6 = in6_ifawithifp(deliverifp, &ip6->ip6_dst);
+		if (ia6) {
+			if (!ip6_setdstifaddr(m, ia6)) {
+				/*
+				 * XXX maybe we should drop the packet here,
+				 * as we could not provide enough information
+				 * to the upper layers.
+				 */
+			}
+		}
+	}
+
 	/*
 	 * Process Hop-by-Hop options header if it's contained.
 	 * m may be modified in ip6_hopopts_input().
@@ -767,6 +797,38 @@ ip6_input(m)
 	return;
  bad:
 	m_freem(m);
+}
+
+/*
+ * set/grab in6_ifaddr correspond to IPv6 destination address.
+ * XXX backward compatibility wrapper
+ */
+static struct m_tag *
+ip6_setdstifaddr(m, ia6)
+	struct mbuf *m;
+	struct in6_ifaddr *ia6;
+{
+	struct m_tag *mtag;
+
+	mtag = ip6_addaux(m);
+	if (mtag) {
+		((struct ip6aux *)(mtag + 1))->ip6a_dstia6 = ia6;
+	}
+	return mtag;	/* NULL if failed to set */
+}
+
+struct in6_ifaddr *
+ip6_getdstifaddr(m)
+	struct mbuf *m;
+{
+	struct m_tag *mtag;
+
+	mtag = ip6_findaux(m);
+	if (mtag) {
+		return ((struct ip6aux *)(mtag + 1))->ip6a_dstia6;
+	} else {
+		return NULL;
+	}
 }
 
 /*
@@ -1010,6 +1072,8 @@ ip6_savecontrol(in6p, mp, ip6, m)
 	struct ip6_hdr *ip6;
 	struct mbuf *m;
 {
+#define IS2292(x, y)	((in6p->in6p_flags & IN6P_RFC2292) ? (x) : (y))
+
 	struct proc *p = curproc;	/* XXX */
 	int privileged;
 
@@ -1034,7 +1098,7 @@ ip6_savecontrol(in6p, mp, ip6, m)
 		return;
 
 	if (in6p->in6p_flags & IN6P_RECVDSTADDR) {
-		*mp = sbcreatecontrol((caddr_t) &ip6->ip6_dst,
+		*mp = sbcreatecontrol((caddr_t)&ip6->ip6_dst,
 		    sizeof(struct in6_addr), IPV6_RECVDSTADDR, IPPROTO_IPV6);
 		if (*mp)
 			mp = &(*mp)->m_next;
@@ -1053,24 +1117,38 @@ ip6_savecontrol(in6p, mp, ip6, m)
 	if ((in6p->in6p_flags & IN6P_PKTINFO) != 0) {
 		struct in6_pktinfo pi6;
 		bcopy(&ip6->ip6_dst, &pi6.ipi6_addr, sizeof(struct in6_addr));
-		if (IN6_IS_SCOPE_LINKLOCAL(&pi6.ipi6_addr))
-			pi6.ipi6_addr.s6_addr16[1] = 0;
+		in6_clearscope(&pi6.ipi6_addr);	/* XXX */
 		pi6.ipi6_ifindex = (m && m->m_pkthdr.rcvif)
 					? m->m_pkthdr.rcvif->if_index
 					: 0;
-		*mp = sbcreatecontrol((caddr_t) &pi6,
-		    sizeof(struct in6_pktinfo), IPV6_PKTINFO, IPPROTO_IPV6);
+		*mp = sbcreatecontrol((caddr_t)&pi6, sizeof(struct in6_pktinfo),
+				IS2292(IPV6_2292PKTINFO, IPV6_PKTINFO), IPPROTO_IPV6);
 		if (*mp)
 			mp = &(*mp)->m_next;
 	}
 	if (in6p->in6p_flags & IN6P_HOPLIMIT) {
 		int hlim = ip6->ip6_hlim & 0xff;
-		*mp = sbcreatecontrol((caddr_t) &hlim, sizeof(int),
-		    IPV6_HOPLIMIT, IPPROTO_IPV6);
+		*mp = sbcreatecontrol((caddr_t)&hlim, sizeof(int),
+				IS2292(IPV6_2292HOPLIMIT, IPV6_HOPLIMIT), IPPROTO_IPV6);
 		if (*mp)
 			mp = &(*mp)->m_next;
 	}
 	/* IN6P_NEXTHOP - for outgoing packet only */
+
+
+	if ((in6p->in6p_flags & IN6P_TCLASS) != 0) {
+		u_int32_t flowinfo;
+		int tclass;
+
+		flowinfo = (u_int32_t)ntohl(ip6->ip6_flow & IPV6_FLOWINFO_MASK);
+		flowinfo >>= 20;
+
+		tclass = flowinfo & 0xff;
+		*mp = sbcreatecontrol((caddr_t)&tclass, sizeof(tclass),
+		    IPV6_TCLASS, IPPROTO_IPV6);
+		if (*mp)
+			mp = &(*mp)->m_next;
+	}
 
 	/*
 	 * IPV6_HOPOPTS socket option. We require super-user privilege
@@ -1113,7 +1191,7 @@ ip6_savecontrol(in6p, mp, ip6, m)
 			 * But it's too painful operation...
 			 */
 			*mp = sbcreatecontrol((caddr_t)hbh, hbhlen,
-			    IPV6_HOPOPTS, IPPROTO_IPV6);
+					IS2292(IPV6_2292HOPOPTS, IPV6_HOPOPTS), IPPROTO_IPV6);
 			if (*mp)
 				mp = &(*mp)->m_next;
 			m_freem(ext);
@@ -1182,7 +1260,7 @@ ip6_savecontrol(in6p, mp, ip6, m)
 					break;
 
 				*mp = sbcreatecontrol((caddr_t)ip6e, elen,
-				    IPV6_DSTOPTS, IPPROTO_IPV6);
+						IS2292(IPV6_2292DSTOPTS, IPV6_DSTOPTS), IPPROTO_IPV6);
 				if (*mp)
 					mp = &(*mp)->m_next;
 				break;
@@ -1192,7 +1270,7 @@ ip6_savecontrol(in6p, mp, ip6, m)
 					break;
 
 				*mp = sbcreatecontrol((caddr_t)ip6e, elen,
-				    IPV6_RTHDR, IPPROTO_IPV6);
+						 IS2292(IPV6_2292RTHDR, IPV6_RTHDR), IPPROTO_IPV6);
 				if (*mp)
 					mp = &(*mp)->m_next;
 				break;
@@ -1437,6 +1515,43 @@ ip6_lasthdr(m, off, proto, nxtp)
 
 		off = newoff;
 		proto = *nxtp;
+	}
+}
+
+struct m_tag *
+ip6_addaux(struct mbuf *m)
+{
+	struct m_tag *mtag;
+
+	mtag = m_tag_find(m, PACKET_TAG_INET6, NULL);
+	if (!mtag) {
+		mtag = m_tag_get(PACKET_TAG_INET6, sizeof(struct ip6aux),
+		    M_NOWAIT);
+		if (mtag) {
+			m_tag_prepend(m, mtag);
+			bzero(mtag + 1, sizeof(struct ip6aux));
+		}
+	}
+	return mtag;
+}
+
+struct m_tag *
+ip6_findaux(struct mbuf *m)
+{
+	struct m_tag *mtag;
+
+	mtag = m_tag_find(m, PACKET_TAG_INET6, NULL);
+	return mtag;
+}
+
+void
+ip6_delaux(struct mbuf *m)
+{
+	struct m_tag *mtag;
+
+	mtag = m_tag_find(m, PACKET_TAG_INET6, NULL);
+	if (mtag) {
+		m_tag_delete(m, mtag);
 	}
 }
 
