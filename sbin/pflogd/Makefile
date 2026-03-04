@@ -5,6 +5,8 @@ CPPFLAGS+=-Wall -Wmissing-prototypes -Wshadow
 CPPFLAGS+=-I${NETBSDSRCDIR}/usr.lib/libpcap
 .PATH:	${NETBSDSRCDIR}/usr.lib/libpcap
 
+CPPFLAGS+=-DHAVE_SNPRINTF=1 -DHAVE_STRLCPY=1 -DHAVE_VSNPRINTF=1
+
 LDADD+= -lpcap -lutil
 DPAPP+=	${LIBPCAP} ${LIBUTIL}
 

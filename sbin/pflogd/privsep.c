@@ -252,7 +252,7 @@ may_read(int fd, void *buf, size_t n)
 	char *s = buf;
 	ssize_t res, pos = 0;
 
-	while (n > pos) {
+	while (n > (size_t)pos) {
 		res = read(fd, s + pos, n - pos);
 		switch (res) {
 		case -1:
@@ -275,7 +275,7 @@ must_read(int fd, void *buf, size_t n)
 	char *s = buf;
 	ssize_t res, pos = 0;
 
-	while (n > pos) {
+	while (n > (size_t)pos) {
 		res = read(fd, s + pos, n - pos);
 		switch (res) {
 		case -1:
@@ -297,7 +297,7 @@ must_write(int fd, void *buf, size_t n)
 	char *s = buf;
 	ssize_t res, pos = 0;
 
-	while (n > pos) {
+	while (n > (size_t)pos) {
 		res = write(fd, s + pos, n - pos);
 		switch (res) {
 		case -1:

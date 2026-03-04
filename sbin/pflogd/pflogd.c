@@ -645,7 +645,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		np = pcap_dispatch(hpcap, PCAP_NUM_PKTS,
-		    dump_packet, (u_char *)dpcap);
+		    phandler, (u_char *)dpcap);
 		if (np < 0)
 			logmsg(LOG_NOTICE, "%s", pcap_geterr(hpcap));
 
