@@ -373,8 +373,8 @@ struct cmsghdr {
 #endif
 
 /* given pointer to struct cmsghdr, return pointer to data */
-#define	CMSG_DATA(cmsg)		((unsigned char *)((cmsg) + _CMSG_ALIGN(sizeof(struct cmsghdr))))
-#define	CCMSG_DATA(cmsg)	((const unsigned char *)((cmsg) + _CMSG_ALIGN(sizeof(struct cmsghdr))))
+#define	CMSG_DATA(cmsg)		((unsigned char *)(cmsg) + _CMSG_ALIGN(sizeof(struct cmsghdr)))
+#define	CCMSG_DATA(cmsg)	((const unsigned char *)(cmsg) + _CMSG_ALIGN(sizeof(struct cmsghdr)))
 
 /* given pointer to struct cmsghdr, return pointer to next cmsghdr */
 #define	CMSG_NXTHDR(mhdr, cmsg)										\
