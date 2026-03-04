@@ -257,10 +257,12 @@
 ./usr/bin/rusers
 ./usr/bin/rwall
 ./usr/bin/rwho
+./usr/bin/scp
 ./usr/bin/script
 ./usr/bin/sdiff
 ./usr/bin/sed
 ./usr/bin/send-pr
+./usr/bin/sftp
 ./usr/bin/shar
 ./usr/bin/showmount
 ./usr/bin/size
@@ -270,6 +272,12 @@
 ./usr/bin/skeyinit
 ./usr/bin/sort
 ./usr/bin/split
+./usr/bin/ssh
+./usr/bin/ssh-add
+./usr/bin/ssh-agent
+./usr/bin/ssh-copy-id
+./usr/bin/ssh-keygen
+./usr/bin/ssh-keyscan
 ./usr/bin/strings
 ./usr/bin/su
 ./usr/bin/tail
@@ -393,6 +401,10 @@
 ./usr/libexec/rpc.rwalld
 ./usr/libexec/rpc.sprayd
 ./usr/libexec/rshd
+./usr/libexec/sftp-server
+./usr/libexec/ssh-keysign
+./usr/libexec/ssh-pkcs11-helper
+./usr/libexec/ssh-sk-helper
 ./usr/libexec/telnetd
 ./usr/libexec/tftpd
 ./usr/local
@@ -481,6 +493,7 @@
 ./usr/sbin/sliplogin
 ./usr/sbin/slstats
 ./usr/sbin/spray
+./usr/sbin/sshd
 ./usr/sbin/sysctl
 ./usr/sbin/syslogd
 ./usr/sbin/tcpdump
