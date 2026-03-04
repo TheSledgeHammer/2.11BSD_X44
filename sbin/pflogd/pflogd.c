@@ -57,8 +57,8 @@ static int cur_snaplen = DEF_SNAPLEN;
 
 volatile sig_atomic_t gotsig_close, gotsig_alrm, gotsig_hup;
 
-char *filename = PFLOGD_LOG_FILE;
-char *interface = PFLOGD_DEFAULT_IF;
+const char *filename = PFLOGD_LOG_FILE;
+const char *interface = PFLOGD_DEFAULT_IF;
 char *filter = NULL;
 
 char errbuf[PCAP_ERRBUF_SIZE];
@@ -340,7 +340,7 @@ scan_dump(FILE *fp, off_t size)
 	if (hdr.magic != TCPDUMP_MAGIC ||
 	    hdr.version_major != PCAP_VERSION_MAJOR ||
 	    hdr.version_minor != PCAP_VERSION_MINOR ||
-	    hdr.linktype != hpcap->linktype ||
+	    hdr.linktype != (u_int)hpcap->linktype ||
 	    hdr.snaplen > PFLOGD_MAXSNAPLEN) {
 		logmsg(LOG_ERR, "Invalid/incompatible log file, move it away");
 		return (1);
@@ -366,7 +366,7 @@ scan_dump(FILE *fp, off_t size)
 	if (pos != size)
 		goto error;
 
-	if (hdr.snaplen != cur_snaplen) {
+	if (hdr.snaplen != (u_int)cur_snaplen) {
 		logmsg(LOG_WARNING,
 		       "Existing file has different snaplen %u, using it",
 		       hdr.snaplen);
@@ -427,7 +427,7 @@ dump_packet_nobuf(u_char *user, const struct pcap_pkthdr *h, const u_char *sp)
 		goto error;
 	}
 
-	if (fwrite((char *)sp, h->caplen, 1, f) != 1)
+	if (fwrite((const char *)sp, h->caplen, 1, f) != 1)
 		goto error;
 
 	return;
@@ -501,7 +501,7 @@ dump_packet(u_char *user, const struct pcap_pkthdr *h, const u_char *sp)
 		return;
 	}
 
-	if (len <= bufleft)
+	if (len <= (size_t)bufleft)
 		goto append;
 
 	if (suspended) {
@@ -514,7 +514,7 @@ dump_packet(u_char *user, const struct pcap_pkthdr *h, const u_char *sp)
 		return;
 	}
 
-	if (len > bufleft) {
+	if (len > (size_t)bufleft) {
 		dump_packet_nobuf(user, h, sp);
 		return;
 	}
@@ -548,7 +548,7 @@ main(int argc, char **argv)
 	pcap_handler phandler = dump_packet;
 	const char *errstr = NULL;
 
-	closefrom(STDERR_FILENO + 1);
+	//closefrom(STDERR_FILENO + 1);
 
 	while ((ch = getopt(argc, argv, "Dxd:s:f:")) != -1) {
 		switch (ch) {

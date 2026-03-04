@@ -150,8 +150,8 @@ struct xformsw {
 
 #ifdef _KERNEL
 
-void xform_register(struct xformsw*);
-int xform_init(struct secasvar *sav, int xftype);
+void xform_register(struct xformsw *);
+int xform_init(struct secasvar *, int);
 
 struct tdb *tdb_alloc(int);
 void tdb_free(struct tdb *);

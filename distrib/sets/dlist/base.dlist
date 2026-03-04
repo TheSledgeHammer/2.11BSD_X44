@@ -133,6 +133,7 @@
 ./usr/include/net80211
 ./usr/include/netinet
 ./usr/include/netinet6
+./usr/include/netinet6/ipsec
 ./usr/include/netipsec
 ./usr/include/netkey
 ./usr/include/netmpls

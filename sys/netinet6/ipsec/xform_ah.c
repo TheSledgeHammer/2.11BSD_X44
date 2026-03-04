@@ -111,6 +111,12 @@
 
 #include <crypto/opencrypto/cryptodev.h>
 
+#define	KEYBITS(bytes)	((bytes) << 3)
+
+static int ah_key_compare(int, u_int16_t);
+static void ah_keysize_min(const struct auth_hash *, int, u_int16_t *);
+static void ah_keysize_max(const struct auth_hash *, int, u_int16_t *);
+
 static int ah_sumsiz_1216(struct secasvar *);
 static int ah_sumsiz_zero(struct secasvar *);
 
@@ -164,42 +170,45 @@ ah_keymin(ah, alg)
 	int alg;
 {
 	int min;
-	if (ah->keysize == 0) {
-		switch (alg) {
-		case SADB_X_AALG_NULL:
-			min = keymin[0];
-			break;
-		case SADB_AALG_MD5HMAC:
-			min = keymin[1];
-			break;
-		case SADB_AALG_SHA1HMAC:
-			min = keymin[2];
-			break;
-		case SADB_X_AALG_RIPEMD160HMAC:
-			min = keymin[2];
-			break;
-		case SADB_X_AALG_MD5:
-			min = keymin[1];
-			break;
-		case SADB_X_AALG_SHA:
-			min = keymin[2];
-			break;
-		case SADB_X_AALG_SHA2_256:
-			min = keymin[3];
-			break;
-		case SADB_X_AALG_SHA2_384:
-			min = keymin[4];
-			break;
-		case SADB_X_AALG_SHA2_512:
-			min = keymin[5];
-			break;
-		case SADB_X_AALG_AES_XCBC_MAC:
-			min = keymin[1];
-			break;
-		default:
-			ipseclog((LOG_ERR, "ah_keymin: unknown AH algorithm %u\n", alg));
-			break;
-		}
+	u_int16_t minkeysize;
+
+	switch (alg) {
+	case SADB_X_AALG_NULL:
+		ah_keysize_min(ah, SADB_X_AALG_NULL, &minkeysize);
+		min = ah_key_compare(keymin[0], minkeysize);
+		break;
+	case SADB_AALG_MD5HMAC:
+		min = keymin[1];
+		break;
+	case SADB_AALG_SHA1HMAC:
+		min = keymin[2];
+		break;
+	case SADB_X_AALG_RIPEMD160HMAC:
+		min = keymin[2];
+		break;
+	case SADB_X_AALG_MD5:
+		ah_keysize_min(ah, SADB_X_AALG_MD5, &minkeysize);
+		min = ah_key_compare(keymin[1], minkeysize);
+		break;
+	case SADB_X_AALG_SHA:
+		ah_keysize_min(ah, SADB_X_AALG_SHA, &minkeysize);
+		min = ah_key_compare(keymin[2], minkeysize);
+		break;
+	case SADB_X_AALG_SHA2_256:
+		min = keymin[3];
+		break;
+	case SADB_X_AALG_SHA2_384:
+		min = keymin[4];
+		break;
+	case SADB_X_AALG_SHA2_512:
+		min = keymin[5];
+		break;
+	case SADB_X_AALG_AES_XCBC_MAC:
+		min = keymin[1];
+		break;
+	default:
+		ipseclog((LOG_ERR, "ah_keymin: unknown AH algorithm %u\n", alg));
+		break;
 	}
 	return (min);
 }
@@ -212,44 +221,117 @@ ah_keymax(ah, alg)
 	int alg;
 {
 	int max;
+	u_int16_t maxkeysize;
+
+	switch (alg) {
+	case SADB_X_AALG_NULL:
+		ah_keysize_max(ah, SADB_X_AALG_NULL, &maxkeysize);
+		max = ah_key_compare(keymax[5], maxkeysize);
+		break;
+	case SADB_AALG_MD5HMAC:
+		max = keymax[0];
+		break;
+	case SADB_AALG_SHA1HMAC:
+		max = keymax[1];
+		break;
+	case SADB_X_AALG_RIPEMD160HMAC:
+		max = keymax[1];
+		break;
+	case SADB_X_AALG_MD5:
+		ah_keysize_max(ah, SADB_X_AALG_MD5, &maxkeysize);
+		max = ah_key_compare(keymax[0], maxkeysize);
+		break;
+	case SADB_X_AALG_SHA:
+		ah_keysize_max(ah, SADB_X_AALG_SHA, &maxkeysize);
+		max = ah_key_compare(keymax[1], maxkeysize);
+		break;
+	case SADB_X_AALG_SHA2_256:
+		max = keymax[2];
+		break;
+	case SADB_X_AALG_SHA2_384:
+		max = keymax[3];
+		break;
+	case SADB_X_AALG_SHA2_512:
+		max = keymax[4];
+		break;
+	case SADB_X_AALG_AES_XCBC_MAC:
+		max = keymax[0];
+		break;
+	default:
+		ipseclog((LOG_ERR, "ah_keymax: unknown AH algorithm %u\n", alg));
+		break;
+	}
+	return (max);
+}
+
+/* Compare known keymin or keymax with auth_hash keysize */
+static int
+ah_key_compare(a, b)
+	int a;
+	u_int16_t b;
+{
+	if (a == KEYBITS(b)) {
+		return (a);
+	}
+	return (KEYBITS(b));
+}
+
+static void
+ah_keysize_min(ah, alg, min)
+	const struct auth_hash *ah;
+	int alg;
+	u_int16_t *min;
+{
+	*min = ah->keysize;
 	if (ah->keysize == 0) {
+		/*
+		 * Transform takes arbitrary key size but algorithm
+		 * key size is restricted.  Enforce this here.
+		 */
 		switch (alg) {
-		case SADB_X_AALG_NULL:
-			max = keymax[5];
-			break;
-		case SADB_AALG_MD5HMAC:
-			max = keymax[0];
-			break;
-		case SADB_AALG_SHA1HMAC:
-			max = keymax[1];
-			break;
-		case SADB_X_AALG_RIPEMD160HMAC:
-			max = keymax[1];
-			break;
 		case SADB_X_AALG_MD5:
-			max = keymax[0];
+			*min = 16;
 			break;
 		case SADB_X_AALG_SHA:
-			max = keymax[1];
+			*min = 20;
 			break;
-		case SADB_X_AALG_SHA2_256:
-			max = keymax[2];
-			break;
-		case SADB_X_AALG_SHA2_384:
-			max = keymax[3];
-			break;
-		case SADB_X_AALG_SHA2_512:
-			max = keymax[4];
-			break;
-		case SADB_X_AALG_AES_XCBC_MAC:
-			max = keymax[0];
+		case SADB_X_AALG_NULL:
+			*min = 1;
 			break;
 		default:
-			ipseclog((LOG_ERR, "ah_keymax: unknown AH algorithm %u\n", alg));
+			ipseclog((LOG_ERR, "ah_keysize_min: unknown AH algorithm %u\n", alg));
 			break;
 		}
 	}
-	return (max);
+}
+
+static void
+ah_keysize_max(ah, alg, max)
+	const struct auth_hash *ah;
+	int alg;
+	u_int16_t *max;
+{
+	*max = ah->keysize;
+	if (ah->keysize == 0) {
+		/*
+		 * Transform takes arbitrary key size but algorithm
+		 * key size is restricted.  Enforce this here.
+		 */
+		switch (alg) {
+		case SADB_X_AALG_MD5:
+			*max = 16;
+			break;
+		case SADB_X_AALG_SHA:
+			*max = 20;
+			break;
+		case SADB_X_AALG_NULL:
+			*max = 256;
+			break;
+		default:
+			ipseclog((LOG_ERR, "ah_keysize_max: unknown AH algorithm %u\n", alg));
+			break;
+		}
+	}
 }
 
 /*
@@ -591,7 +673,7 @@ ah_input(m, sav, skip, length, offset)
 	const struct auth_hash *ahx;
 	struct tdb *tdb;
 	struct cryptop *crp;
-	int rplen;
+	int rplen, error;
 
 	struct cryptodesc *crda, *crde;
 
@@ -633,7 +715,7 @@ ah_input(m, sav, skip, length, offset)
 
 	tdb = tdb_alloc(0);
 	if (tdb == NULL) {
-		ipseclog((LOG_ERR, "ah_input: failed to allocate tdb_crypto\n"));
+		ipseclog((LOG_ERR, "ah_input: failed to allocate tdb\n"));
 		//ahstat.ahs_crypto++;
 		crypto_freereq(crp);
 		m_freem(m);
@@ -660,7 +742,11 @@ ah_input(m, sav, skip, length, offset)
 	tdb->tdb_length = length;
 	tdb->tdb_offset = offset;
 
-	return (ah_input_cb(crp));
+	error = ah_input_cb(crp);
+	if (error != 0) {
+		return (crypto_dispatch(crp));
+	}
+	return (error);
 }
 
 static int
@@ -806,7 +892,7 @@ ah_output(m, isr, mp, skip, length, offset)
 	tdb = tdb_alloc(skip);
 	if (tdb == NULL) {
 		crypto_freereq(crp);
-		ipseclog((LOG_ERR, "ah_output: failed to allocate tdb_crypto\n"));
+		ipseclog((LOG_ERR, "ah_output: failed to allocate tdb\n"));
 		//ahstat.ahs_crypto++;
 		error = ENOBUFS;
 		goto bad;
@@ -833,7 +919,7 @@ ah_output(m, isr, mp, skip, length, offset)
 	tdb->tdb_length = length;
 	tdb->tdb_offset = offset;
 
-	return (ah_output_cb(crp));
+	return (crypto_dispatch(crp));
 
 bad:
 	if (m) {

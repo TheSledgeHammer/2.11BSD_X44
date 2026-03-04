@@ -1027,7 +1027,10 @@ chachapoly_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 
 	MALLOC(*sched, u_int8_t *, sizeof(struct chacha20_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
     bcopy(key, blocknum, sizeof(key));
-	return (chacha20_setkey(*sched, blocknum, len));
+
+	chacha20_setkey(*sched, blocknum, len);
+
+	return (0);
 }
 
 void

@@ -98,7 +98,6 @@ tdb_init(sav, xsp, txform, thash, tcomp, proto)
 		return (NULL);
 	}
 
-	sav->tdb_tdb = tdb;
 	tdb->tdb_sav = sav;
 	tdb->tdb_proto = proto;
 	tdb->tdb_xform = xsp;
@@ -117,6 +116,7 @@ tdb_init(sav, xsp, txform, thash, tcomp, proto)
 	} else {
 		tdb->tdb_compalgxform = NULL;
 	}
+	sav->tdb_tdb = tdb;
 	return (tdb);
 }
 
@@ -136,6 +136,10 @@ tdb_zeroize(tdb)
 		error = crypto_freesession(tdb->tdb_cryptoid);
 		tdb->tdb_cryptoid = 0;
 		tdb->tdb_authalgxform = NULL;
+		tdb->tdb_xform = NULL;
+		break;
+	case IPPROTO_IPIP:
+		error = 0;
 		tdb->tdb_xform = NULL;
 		break;
 	case IPPROTO_IPCOMP:
@@ -217,8 +221,8 @@ tdb_get_in6(tdb, output)
     struct tdb *tdb;
     int output;
 {
-    struct sockaddr_in6 *sin6;
-    struct in6_addr *src, *dst;
+	struct sockaddr_in6 *sin6;
+	struct in6_addr *src, *dst;
 
 	sin6 = tdb_get_sin6(tdb, output);
 	switch (output) {

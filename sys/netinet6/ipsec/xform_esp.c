@@ -903,7 +903,7 @@ esp_input(m, sav, skip, length, offset)
 	const struct auth_hash *esph;
 	struct tdb *tdb;
 	struct cryptop *crp;
-	int plen, hlen, alen;
+	int plen, hlen, alen, error;
     uint8_t abuf[AH_HMAC_MAX_HASHLEN];
 
 	struct cryptodesc *crda, *crde;
@@ -953,7 +953,7 @@ esp_input(m, sav, skip, length, offset)
 	}
 	if (tdb == NULL) {
 		crypto_freereq(crp);
-		ipseclog((LOG_ERR, "esp_input: failed to allocate tdb_crypto\n"));
+		ipseclog((LOG_ERR, "esp_input: failed to allocate tdb\n"));
 		//espstat.esps_crypto++;
 		m_freem(m);
 		return (ENOBUFS);
@@ -1010,7 +1010,12 @@ esp_input(m, sav, skip, length, offset)
 		crde->crd_key = _KEYBUF(sav->key_enc);
 		crde->crd_klen = _KEYBITS(sav->key_enc);
 	}
-	return (esp_input_cb(crp));
+
+	error = esp_input_cb(crp);
+	if (error != 0) {
+		return (crypto_dispatch(crp));
+	}
+	return (error);
 }
 
 static int
@@ -1181,7 +1186,7 @@ esp_output(m, isr, mp, skip, length, offset)
 	tdb = tdb_alloc(0);
 	if (tdb == NULL) {
 		crypto_freereq(crp);
-		ipseclog((LOG_ERR, "esp_output: failed to allocate tdb_crypto\n"));
+		ipseclog((LOG_ERR, "esp_output: failed to allocate tdb\n"));
 		//espstat.esps_crypto++;
 		error = ENOBUFS;
 		goto bad;
@@ -1220,7 +1225,7 @@ esp_output(m, isr, mp, skip, length, offset)
 		crda->crd_klen = _KEYBITS(sav->key_auth);
 	}
 
-	return (esp_output_cb(crp));
+	return (crypto_dispatch(crp));
 
 bad:
 	if (m) {

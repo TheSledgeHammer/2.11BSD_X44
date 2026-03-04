@@ -319,7 +319,7 @@ ipcomp_input(m, sav, skip, length, offset)
 	if (tdb == NULL) {
 		m_freem(m);
 		crypto_freereq(crp);
-		ipseclog((LOG_ERR, "ipcomp_input: cannot allocate tdb_crypto\n"));
+		ipseclog((LOG_ERR, "ipcomp_input: cannot allocate tdb\n"));
 		//ipcompstat.ipcomps_crypto++;
 		return (ENOBUFS);
 	}
@@ -352,7 +352,7 @@ ipcomp_input(m, sav, skip, length, offset)
 	tdb->tdb_length = length;
 	tdb->tdb_offset = offset;
 
-	return (ipcomp_input_cb(crp));
+	return (crypto_dispatch(crp));
 }
 
 static int
@@ -487,7 +487,7 @@ ipcomp_output(m, isr, mp, skip, length, offset)
 	tdb = tdb_alloc(0);
 	if (tdb == NULL) {
 		//ipcompstat.ipcomps_crypto++;
-		ipseclog((LOG_ERR, "ipcomp_output: failed to allocate tdb_crypto\n"));
+		ipseclog((LOG_ERR, "ipcomp_output: failed to allocate tdb\n"));
 		crypto_freereq(crp);
 		error = ENOBUFS;
 		goto bad;
@@ -512,7 +512,7 @@ ipcomp_output(m, isr, mp, skip, length, offset)
 	crp->crp_opaque = (caddr_t)tdb;
 	crp->crp_sid = tdb->tdb_cryptoid;
 
-	return (ipcomp_output_cb(crp));
+	return (crypto_dispatch(crp));
 
 bad:
 	if (m) {
