@@ -11,6 +11,7 @@
 ./sbin
 ./stand
 ./usr
+./usr/bin
 ./usr/include/arpa
 ./usr/include/c++
 ./usr/include/c++/experimental
@@ -158,6 +159,9 @@
 ./usr/include/vm/include
 ./usr/lib
 ./usr/lib/pkgconfig
+./usr/libdata
+./usr/libexec
+./usr/sbin
 ./usr/share
 ./usr/share/doc
 ./usr/share/doc/2.10

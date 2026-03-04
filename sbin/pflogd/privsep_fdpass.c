@@ -60,7 +60,7 @@ send_fd(int sock, int fd)
 
 	if (fd >= 0) {
 		msg.msg_control = (caddr_t)tmp;
-		msg.msg_controllen = CMSG_LEN(sizeof(int));
+		msg.msg_controllen = sizeof(tmp);
 		cmsg = CMSG_FIRSTHDR(&msg);
 		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
 		cmsg->cmsg_level = SOL_SOCKET;
@@ -70,7 +70,7 @@ send_fd(int sock, int fd)
 		result = errno;
 	}
 
-	vec.iov_base = &result;
+	vec.iov_base = (char *)&result;
 	vec.iov_len = sizeof(int);
 	msg.msg_iov = &vec;
 	msg.msg_iovlen = 1;
@@ -94,7 +94,7 @@ receive_fd(int sock)
 	int fd;
 
 	memset(&msg, 0, sizeof(msg));
-	vec.iov_base = &result;
+	vec.iov_base = (char *)&result;
 	vec.iov_len = sizeof(int);
 	msg.msg_iov = &vec;
 	msg.msg_iovlen = 1;
