@@ -70,6 +70,7 @@ OPENBSD_COMPAT_SRCS= \
         bsd-poll.c \
         bsd-setres_id.c \
         fmt_scaled.c \
+        fnmatch.c \
         getrrsetbyname.c \
         glob.c \
         memmem.c \
