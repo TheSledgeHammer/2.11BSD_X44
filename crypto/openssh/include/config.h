@@ -167,13 +167,13 @@
 /* #undef GETSPNAM_CONFLICTING_DEFS */
 
 /* Define if your system glob() function has the GLOB_ALTDIRFUNC extension */
-//#define GLOB_HAS_ALTDIRFUNC 1
+/* #undef GLOB_HAS_ALTDIRFUNC */
 
 /* Define if your system glob() function has gl_matchc options in glob_t */
-//#define GLOB_HAS_GL_MATCHC 1
+/* #undef GLOB_HAS_GL_MATCHC */
 
 /* Define if your system glob() function has gl_statv options in glob_t */
-//#define GLOB_HAS_GL_STATV 1
+/* #undef GLOB_HAS_GL_STATV */
 
 /* Define this if you want GSSAPI support in the version 2 protocol */
 /* #undef GSSAPI */
@@ -627,10 +627,10 @@
 /* #undef HAVE_FMT_SCALED */
 
 /* Define to 1 if you have the `fnmatch' function. */
-#define HAVE_FNMATCH 1
+/* #undef HAVE_FNMATCH */
 
 /* Define to 1 if you have the <fnmatch.h> header file. */
-#define HAVE_FNMATCH_H 1
+/* #undef HAVE_FNMATCH_H */
 
 /* Define to 1 if you have the `freeaddrinfo' function. */
 #define HAVE_FREEADDRINFO 1
@@ -762,10 +762,10 @@
 /* #undef HAVE_GET_DEFAULT_CONTEXT_WITH_LEVEL */
 
 /* Define to 1 if you have the `glob' function. */
-//#define HAVE_GLOB 1
+/* #undef HAVE_GLOB */
 
 /* Define to 1 if you have the <glob.h> header file. */
-//#define HAVE_GLOB_H 1
+/* #undef HAVE_GLOB_H */
 
 /* Define to 1 if you have the `group_from_gid' function. */
 #define HAVE_GROUP_FROM_GID 1
