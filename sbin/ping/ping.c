@@ -252,9 +252,9 @@ main(int argc, char *argv[])
 #endif
   
 
-	if ((s = cap_socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
 		err(1, "Cannot create socket");
-	if ((sloop = cap_socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
+	if ((sloop = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
 		err(1, "Cannot create socket");
 
 	if (setuid(getuid()) == -1)
@@ -442,7 +442,7 @@ main(int argc, char *argv[])
 	loc_addr.sin_len = sizeof(struct sockaddr_in);
 	loc_addr.sin_addr.s_addr = htonl((127<<24)+1);
 
-	if (datalen >= PHDR_LEN)	/* can we time them? */
+	if ((u_int)datalen >= PHDR_LEN)	/* can we time them? */
 		pingflags |= F_TIMING;
 	packlen = datalen + 60 + 76;	/* MAXIP + MAXICMP */
 	if ((packet = (u_char *)malloc(packlen)) == NULL)
@@ -564,7 +564,8 @@ main(int argc, char *argv[])
 			free(buf);
 		}
 	}
-	buf = ipsec_set_policy("out bypass", strlen("out bypass"));
+	char bypass[] = "out bypass";
+	buf = ipsec_set_policy(bypass, strlen(bypass));
 	if (buf == NULL)
 		errx(1, "%s", ipsec_strerror());
 	if (setsockopt(sloop, IPPROTO_IP, IP_IPSEC_POLICY,
@@ -574,38 +575,38 @@ main(int argc, char *argv[])
 #else
 		/* ignore it, should be okay */
 #endif
+		}
+		free(buf);
 	}
-	free(buf);
-    }
 #else
-    {
-	int optval;
-	if (pingflags & F_AUTHHDR) {
-		optval = IPSEC_LEVEL_REQUIRE;
+	{
+		int optval;
+		if (pingflags & F_AUTHHDR) {
+			optval = IPSEC_LEVEL_REQUIRE;
 #ifdef IP_AUTH_TRANS_LEVEL
 		(void)setsockopt(s, IPPROTO_IP, IP_AUTH_TRANS_LEVEL,
 			(char *)&optval, sizeof(optval));
 #else
-		(void)setsockopt(s, IPPROTO_IP, IP_AUTH_LEVEL,
-			(char *)&optval, sizeof(optval));
+			(void)setsockopt(s, IPPROTO_IP, IP_AUTH_LEVEL, (char *)&optval,
+					sizeof(optval));
 #endif
-	}
-	if (pingflags & F_ENCRYPT) {
-		optval = IPSEC_LEVEL_REQUIRE;
-		(void)setsockopt(s, IPPROTO_IP, IP_ESP_TRANS_LEVEL,
-			(char *)&optval, sizeof(optval));
-	}
-	optval = IPSEC_LEVEL_BYPASS;
+		}
+		if (pingflags & F_ENCRYPT) {
+			optval = IPSEC_LEVEL_REQUIRE;
+			(void) setsockopt(s, IPPROTO_IP, IP_ESP_TRANS_LEVEL,
+					(char*) &optval, sizeof(optval));
+		}
+		optval = IPSEC_LEVEL_BYPASS;
 #ifdef IP_AUTH_TRANS_LEVEL
-	(void)setsockopt(sloop, IPPROTO_IP, IP_AUTH_TRANS_LEVEL,
-		(char *)&optval, sizeof(optval));
+		(void)setsockopt(sloop, IPPROTO_IP, IP_AUTH_TRANS_LEVEL,
+				(char *)&optval, sizeof(optval));
 #else
-	(void)setsockopt(sloop, IPPROTO_IP, IP_AUTH_LEVEL,
-		(char *)&optval, sizeof(optval));
+		(void) setsockopt(sloop, IPPROTO_IP, IP_AUTH_LEVEL, (char *)&optval,
+				sizeof(optval));
 #endif
-	(void)setsockopt(sloop, IPPROTO_IP, IP_ESP_TRANS_LEVEL,
-		(char *)&optval, sizeof(optval));
-    }
+		(void) setsockopt(sloop, IPPROTO_IP, IP_ESP_TRANS_LEVEL,
+				(char *)&optval, sizeof(optval));
+	}
 #endif /*IPSEC_POLICY_IPSEC*/
 #endif /*IPSEC*/
 
@@ -1041,7 +1042,7 @@ pr_pack(u_char *buf,
 			PR_PACK_SUB();
 
 		/* check the data */
-		if (datalen > PHDR_LEN
+		if ((u_int)datalen > PHDR_LEN
 		    && !(pingflags & F_PING_RANDOM)
 		    && memcmp(&icp->icmp_data[PHDR_LEN],
 			    &opack_icmp.icmp_data[PHDR_LEN],

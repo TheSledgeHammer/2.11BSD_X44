@@ -4,15 +4,20 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
+#include <sys/cdefs.h>
+#if !defined(lint)
+#if 0
 char copyright[] =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif
+#endif /* not lint */
 
-#ifndef lint
+#if !defined(lint)
+#if 0
 static char sccsid[] = "@(#)at.c	5.4 (Berkeley) 5/28/86";
-#endif not lint
+#endif
+#endif /* not lint */
 
 /*
  *	Synopsis:	at [-s] [-c] [-m] time [filename]
@@ -27,6 +32,7 @@ static char sccsid[] = "@(#)at.c	5.4 (Berkeley) 5/28/86";
  *				University of California @ Berkeley
  *
  */
+
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -40,7 +46,7 @@ static char sccsid[] = "@(#)at.c	5.4 (Berkeley) 5/28/86";
 #define FULLDAY		(24 * HOUR)	/* a full day (24 hours) */
 
 #define WEEK		1		/* day requested is 'week' */
-#define DAY		2		/* day requested is a weekday */
+#define DAY			2		/* day requested is a weekday */
 #define MONTH		3		/* day requested is a month */
 
 #define BOURNE		"/bin/sh"	/* run commands with Bourne shell*/
@@ -61,7 +67,7 @@ static char sccsid[] = "@(#)at.c	5.4 (Berkeley) 5/28/86";
  */
 struct datetypes {
 	int type;
-	char *name;
+	const char *name;
 } dates_info[22] = {
 	{ DAY,	 "sunday"    },
 	{ DAY,	 "monday"    },
@@ -121,37 +127,41 @@ struct times {
 } attime, nowtime;
 
 char	atfile[100];			/* name of spoolfile "yy.ddd.hhhh.??" */
-char	*getenv();			/* get info on user's environment */
 char	**environ;			/* user's environment */
 FILE	*spoolfile;			/* spool file */
 FILE	*inputfile;			/* input file ("stdin" or "filename") */
-char	*getwd();			/* used to get current directory info */
 
+void copyenvironment(FILE **);
+void makeatfile(char *, int, int, int, int);
+int istomorrow(void);
+void printit(void);
+void makedayofyear(int, char ***, int *);
+int isnextyear(void);
+int countdays(void);
+int isleap(int);
+int getdateindex(char *);
+int isprefix(char *, char *);
+void getnowtime(struct times *, struct times *);
+void maketime(struct times *, char *);
+char *getname(int);
+void cleanup(void);
+void usage(void);
 
-main(argc, argv)
-int argc;
-char **argv;
+int
+main(int argc, char **argv)
 {
-	int c;				/* scratch variable */
-	int usage();			/* print usage info and exit */
-	int cleanup();			/* do cleanup on an interrupt signal */
-	int dateindex = NODATEFOUND;	/* if a day is specified, what option
-					   is it? (mon day, week, dayofweek) */
-	char *shell = BOURNE;		/* what shell do we use to run job? */
-	int shflag = 0;			/* override the current shell and run
-					   job using the Bourne Shell */
-	int cshflag = 0;		/* override the current shell and run 
-					   job using the Cshell */
-	int mailflag = 0;		/* send mail after a job has been run?*/
-	int standardin = 0;		/* are we reading from stardard input */
-	char *tmp;			/* scratch pointer */
-	char line[LINSIZ];		/* a line from input file */
-	char pwbuf[MAXPATHLEN];		/* the current working directory */
-	char *jobfile = "stdin";	/* file containing job to be run */
-	char *getname();		/* get the login name of a user */
-	int pid;			/* For forking for security reasons */
-
-
+	int c;							/* scratch variable */
+	int dateindex = NODATEFOUND;	/* if a day is specified, what option is it? (mon day, week, dayofweek) */
+	char *shell = BOURNE;			/* what shell do we use to run job? */
+	int shflag = 0;					/* override the current shell and run job using the Bourne Shell */
+	int cshflag = 0;				/* override the current shell and run job using the Cshell */
+	int mailflag = 0;				/* send mail after a job has been run?*/
+	int standardin = 0;				/* are we reading from stardard input */
+	char *tmp;						/* scratch pointer */
+	char line[LINSIZ];				/* a line from input file */
+	char pwbuf[MAXPATHLEN];			/* the current working directory */
+	char *jobfile = "stdin";		/* file containing job to be run */
+	int pid;						/* For forking for security reasons */
 
 	argv++; argc--;
 
@@ -444,7 +454,6 @@ char **argv;
 	fclose(spoolfile);
 
 	exit(0);
-
 }
 
 /*
@@ -452,8 +461,8 @@ char **argv;
  * Bourne shell.  After the environment is set up, the proper shell
  * will be invoked.
  */
-copyenvironment(spoolfile)
-FILE **spoolfile;
+void
+copyenvironment(FILE **spoolfile)
 {
 	char *tmp;			/* scratch pointer */
 	char **environptr = environ;	/* pointer to an environment setting */
@@ -512,12 +521,8 @@ FILE **spoolfile;
  * "mmmm" the hour and minute, and "??" a scratch value used to dis-
  * tinguish between two files that are to be run at the same time.
  */
-makeatfile(atfile,year,dayofyear,hour,minute)
-int year;
-int hour;
-int minute;
-int dayofyear;
-char *atfile;
+void
+makeatfile(char *atfile, int year, int dayofyear, int hour, int minute)
 {
 	int i;				/* scratch variable */
 
@@ -537,7 +542,8 @@ char *atfile;
  * Has the requested time already passed for the currrent day? If so, we
  * will run the job "tomorrow".
  */
-istomorrow()
+int
+istomorrow(void)
 {
 	if (attime.hour < nowtime.hour)
 		return(1);
@@ -550,7 +556,8 @@ istomorrow()
 /*
  * Debugging wreckage.
  */
-printit()
+void
+printit(void)
 {
 	printf("YEAR\tnowtime: %d\tattime: %d\n",nowtime.year,attime.year);
 	printf("YDAY\tnowtime: %d\tattime: %d\n",nowtime.yday,attime.yday);
@@ -565,10 +572,8 @@ printit()
  * Calculate the day of year that the job will be executed.
  * The av,ac arguments are ptrs to argv,argc; updated as necessary.
  */
-makedayofyear(dateindex, av, ac)
-int dateindex;
-char ***av;
-int *ac;
+void
+makedayofyear(int dateindex, char ***av, int *ac)
 {
 	char **argv = *av;	/* imitate argc,argv and update args at end */
 	int argc = *ac;
@@ -681,8 +686,10 @@ int *ac;
  * be run "tomorrow" on Dec. 31 or if they specify a job to be run a
  * 'week' later and the date is at least Dec. 24. (I think so anyway)
  */
-isnextyear()
-{	register daysinyear;
+int
+isnextyear(void)
+{
+	register daysinyear;
 	if (attime.yday < nowtime.yday)
 		return(1);
 
@@ -705,7 +712,8 @@ isnextyear()
 /*
  * Determine the day of year given a month and day of month value.
  */
-countdays()
+int
+countdays(void)
 {
 	int leap;			/* are we dealing with a leap year? */
 	int dayofyear;			/* the day of year after conversion */
@@ -732,15 +740,14 @@ countdays()
 /*
  * Is a year a leap year?
  */
-isleap(year)
-int year;
-
+int
+isleap(int year)
 {
 	return((year%4 == 0 && year%100 != 0) || year%100 == 0);
 }
 
-getdateindex(date)
-char *date;
+int
+getdateindex(char *date)
 {
 	int i = 0;
 	struct datetypes *ptr;
@@ -754,8 +761,8 @@ char *date;
 	return(NODATEFOUND);
 }
 
-isprefix(prefix, fullname)
-char *prefix, *fullname;
+int
+isprefix(char *prefix, char *fullname)
 {
 	char ch;
 	char *ptr;
@@ -777,9 +784,8 @@ char *prefix, *fullname;
 	return(1);
 }
 
-getnowtime(nowtime, attime)
-struct times *nowtime;
-struct times *attime;
+void
+getnowtime(struct times *nowtime, struct times *attime)
 {
 	struct tm *now;
 	struct timeval time;
@@ -805,9 +811,8 @@ struct times *attime;
  * commenting it. It'll give you an idea of what the code looked
  * like when I got it.
  */
-maketime(attime,ptr)
-char *ptr;
-struct times *attime;
+void
+maketime(struct times *attime, char *ptr)
 {
 	int val;
 	char *p;
@@ -898,8 +903,7 @@ struct times *attime;
  * Get the full login name of a person using his/her user id.
  */
 char *
-getname(uid)
-int uid;
+getname(int uid)
 {
 	struct passwd *pwdinfo;			/* password info structure */
 	
@@ -914,7 +918,8 @@ int uid;
 /*
  * Do general cleanup.
  */
-cleanup()
+void
+cleanup(void)
 {
 	if (unlink(atfile) == -1)
 		perror(atfile);
@@ -924,7 +929,8 @@ cleanup()
 /*
  * Print usage info and exit.
  */
-usage()
+void
+usage(void)
 {
 	fprintf(stderr,"usage: at [-csm] time [date] [filename]\n");
 	exit(1);

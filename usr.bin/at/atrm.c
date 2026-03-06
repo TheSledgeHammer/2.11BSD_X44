@@ -4,15 +4,20 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
+#include <sys/cdefs.h>
+#if !defined(lint)
+#if 0
 char copyright[] =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif
+#endif /* not lint */
 
-#ifndef lint
+#if !defined(lint)
+#if 0
 static char sccsid[] = "@(#)atrm.c	5.2 (Berkeley) 5/28/86";
-#endif not lint
+#endif
+#endif /* not lint */
 
 /*
  *	synopsis: atrm [-f] [-i] [-] [[job #] [user] ...]

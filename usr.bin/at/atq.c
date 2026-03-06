@@ -4,15 +4,20 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
+#include <sys/cdefs.h>
+#if !defined(lint)
+#if 0
 char copyright[] =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif
+#endif /* not lint */
 
-#ifndef lint
+#if !defined(lint)
+#if 0
 static char sccsid[] = "@(#)atq.c	5.2 (Berkeley) 5/28/86";
-#endif not lint
+#endif
+#endif /* not lint */
 
 /*
  *
@@ -57,22 +62,32 @@ int namewanted = 0;			/* only print jobs belonging to a
 					   certain person */
 struct direct **queue;			/* the queue itself */
 
+int countfiles(char **);
+void printqueue(char **);
+int isowner(char *, char *);
+void powner(char *);
+int getid(char *);
+void plastrun(void);
+static void printrank(int);
+void printdate(char *);
+void get_mth_day(int , int, int *, int *);
+void printjobname(char *);
+int filewanted(struct direct *);
+int creation(struct direct **, struct direct **);
+void usage(void);
+
 int
-main(argc,argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 
 	int cflag = 0;			/* print in order of creation time */
-	int nflag = 0;			/* just print the number of jobs in 
-					   queue */
-	int usage();			/* print usage info and exit */
-	int creation();			/* sort jobs by date of creation */
-	int alphasort();		/* sort jobs by date of execution */
-	int filewanted();		/* should a file be included in queue?*/
-	int printqueue();		/* print the queue */
-	int countfiles();		/* count the number of files in queue
-					   for a given person */
+	int nflag = 0;			/* just print the number of jobs in queue */
+	//int usage();			/* print usage info and exit */
+	//int creation();			/* sort jobs by date of creation */
+	//int alphasort();		/* sort jobs by date of execution */
+	//int filewanted();		/* should a file be included in queue?*/
+	//int printqueue();		/* print the queue */
+	//int countfiles();		/* count the number of files in queue for a given person */
 	char **namelist = &nullentry;	/* array of specific name(s) requested*/
 
 
@@ -157,8 +172,8 @@ main(argc,argv)
 /*
  * Count the number of jobs in the spooling area owned by a certain person(s).
  */
-countfiles(namelist)
-	char **namelist;
+int
+countfiles(char **namelist)
 {
 	int i;					/* for loop index */
 	int entryfound;				/* found file owned by user(s)*/
@@ -192,8 +207,8 @@ countfiles(namelist)
  * Print the queue. If only jobs belonging to a certain person(s) are requested,
  * only print jobs that belong to that person(s).
  */
-printqueue(namelist)
-	char **namelist;
+void
+printqueue(char **namelist)
 {
 	int i;					/* for loop index */
 	int rank = 1;				/* rank of a job */
@@ -256,9 +271,7 @@ printqueue(namelist)
  * See if "name" owns "job".
  */
 int
-isowner(name,job)
-	char *name;
-	char *job;
+isowner(char *name, char *job)
 {
 	char buf[128];			/* buffer for 1st line of spoolfile 
 					   header */
@@ -283,8 +296,8 @@ isowner(name,job)
  * Print the owner of the job. This is stored on the first line of the
  * spoolfile. If we run into trouble getting the name, we'll just print "???".
  */
-powner(file)
-	char *file;
+void
+powner(char *file)
 {
 	char owner[10];				/* the owner */
 	FILE *infile;				/* I/O stream to spoolfile */
@@ -309,14 +322,13 @@ powner(file)
 	printf("%-10.9s",owner);
 
 }
-	
 
 /*
  * Get the uid of a person using his/her login name. Return -1 if no
  * such account name exists.
  */
-getid(name)
-	char *name;
+int
+getid(char *name)
 {
 
 	struct passwd *pwdinfo;			/* password info structure */
@@ -331,7 +343,8 @@ getid(name)
 /*
  * Print the time the spooling area was updated.
  */
-plastrun()
+void
+plastrun(void)
 {
 	struct timeval now;			/* time it is right now */
 	struct timezone zone;			/* NOT USED */
@@ -371,7 +384,7 @@ plastrun()
  * Print the rank of a job. (I've got to admit it, I stole it from "lpq")
  */
 static void
-printrank(n)
+printrank(int n)
 {
 	static char *r[] = {
 		"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"
@@ -387,8 +400,8 @@ printrank(n)
  * Print the date that a job is to be executed. This takes some manipulation 
  * of the file name.
  */
-printdate(filename)
-char *filename;
+void
+printdate(char *filename)
 {
 	int yday  =  0;				/* day of year file will be 
 						   executed */
@@ -423,9 +436,8 @@ char *filename;
 /*
  * Given a day of the year, calculate the month and day of month.
  */
-get_mth_day(year,dayofyear,month,day)
-int year, dayofyear, *month, *day;
-
+void
+get_mth_day(int year, int dayofyear, int *month, int *day)
 {
 
 	int i = 1;				/* for loop index */
@@ -463,8 +475,8 @@ int year, dayofyear, *month, *day;
  * the three line header that the new version of "at" puts in the spoolfile.
  * Thus, we just print "???".
  */
-printjobname(file)
-char *file;
+void
+printjobname(char *file)
 {
 	char *ptr;				/* scratch pointer */
 	char jobname[28];			/* the job name */
@@ -517,8 +529,8 @@ char *file;
  * the file name has three dots in it. This test will suffice since the only
  * other files in /usr/spool/at don't have any dots in their name.
  */
-filewanted(direntry)
-struct direct *direntry;
+int
+filewanted(struct direct *direntry)
 {
 	int numdot = 0;
 	char *filename;
@@ -532,8 +544,8 @@ struct direct *direntry;
 /*
  * Sort files by time of creation. (used by "scandir")
  */
-creation(d1, d2)
-struct direct **d1, **d2;
+int
+creation(struct direct **d1, struct direct **d2)
 {
 	struct stat stbuf1, stbuf2;
 
@@ -549,7 +561,8 @@ struct direct **d1, **d2;
 /*
  * Print usage info and exit.
  */
-usage() 
+void
+usage(void)
 {
 	fprintf(stderr,"usage:	atq [-c] [-n] [name ...]\n");
 	exit(1);

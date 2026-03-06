@@ -43,7 +43,7 @@ static void asa(FILE *);
 int main(int, char *[]);
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
 	FILE *fp;
 
