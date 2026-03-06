@@ -2,6 +2,6 @@
 
 INCSDIR= /usr/include/netinet6/ipsec
 
-INCS=	ah.h esp.h ipcomp.h ipsec.h
+INCS=	ah.h esp.h ipcomp.h ipip.h ipsec.h
 
 .include <bsd.kinc.mk>

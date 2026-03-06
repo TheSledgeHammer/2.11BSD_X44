@@ -443,7 +443,7 @@ extern const char *ipsec_strerror(void);
 extern void ah_attach(void);
 extern void esp_attach(void);
 extern void ipcomp_attach(void);
-//extern void ipe4_attach(void);
+extern void ipe4_attach(void);
 extern void ipsec_attach(void);
 #endif /* IPSEC_XFORM */
 #endif

@@ -158,10 +158,20 @@ void tdb_free(struct tdb *);
 struct tdb *tdb_init(struct secasvar *, struct xformsw *, const struct enc_xform *, const struct auth_hash *, const struct comp_algo *, u_int8_t);
 int tdb_zeroize(struct tdb *);
 
+/* tdb sockaddr_storage to sockaddr */
+struct sockaddr *tdb_get_sa(struct tdb *, int);
 struct sockaddr_in *tdb_get_sin(struct tdb *, int);
 struct sockaddr_in6 *tdb_get_sin6(struct tdb *, int);
 struct in_addr *tdb_get_in(struct tdb *, int);
 struct in6_addr *tdb_get_in6(struct tdb *, int);
+
+/* these should move to netkey! */
+/* sav via secasindex sockaddr_storage to sockaddr */
+struct sockaddr *sav_get_sa(struct secasvar *, int);
+struct sockaddr_in *sav_get_sin(struct secasvar *, int);
+struct sockaddr_in6 *sav_get_sin6(struct secasvar *, int);
+struct in_addr *sav_get_in(struct secasvar *, int);
+struct in6_addr *sav_get_in6(struct secasvar *, int);
 
 void tdb_keycleanup(struct secasvar *);
 int tdb_keysetsaval(struct secasvar *, int);

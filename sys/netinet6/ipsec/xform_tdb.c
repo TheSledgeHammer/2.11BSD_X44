@@ -51,6 +51,7 @@
 #include <netinet6/ipsec/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
+#include <netinet6/ipsec/ipip.h>
 #include <netinet6/ipsec/ipcomp.h>
 #include <netinet6/ipsec/xform_tdb.h>
 
@@ -150,15 +151,36 @@ tdb_zeroize(tdb)
 	return (error);
 }
 
-/* output: 0: src 1: dst */
-struct sockaddr_in *
-tdb_get_sin(tdb, output)
+/* mode: 0: src 1: dst */
+struct sockaddr *
+tdb_get_sa(tdb, mode)
     struct tdb *tdb;
-    int output;
+    int mode;
+{
+    struct sockaddr *src, *dst;
+
+    switch (mode) {
+    case 0:
+        src = (struct sockaddr *)&tdb->tdb_src;
+         return (src);
+    case 1:
+        dst = (struct sockaddr *)&tdb->tdb_dst;
+        return (dst);
+    default:
+        break;
+    }
+    return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct sockaddr_in *
+tdb_get_sin(tdb, mode)
+    struct tdb *tdb;
+    int mode;
 {
     struct sockaddr_in *src, *dst;
 
-    switch (output) {
+    switch (mode) {
     case 0:
         src = (struct sockaddr_in *)&tdb->tdb_src;
          return (src);
@@ -171,17 +193,17 @@ tdb_get_sin(tdb, output)
     return (NULL);
 }
 
-/* output: 0: src 1: dst */
+/* mode: 0: src 1: dst */
 struct in_addr *
-tdb_get_in(tdb, output)
+tdb_get_in(tdb, mode)
     struct tdb *tdb;
-    int output;
+    int mode;
 {
 	struct sockaddr_in *sin;
 	struct in_addr *src, *dst;
 
-	sin = tdb_get_sin(tdb, output);
-	switch (output) {
+	sin = tdb_get_sin(tdb, mode);
+	switch (mode) {
 	case 0:
 		src = &sin->sin_addr;
 		return (src);
@@ -194,15 +216,15 @@ tdb_get_in(tdb, output)
 	return (NULL);
 }
 
-/* output: 0: src 1: dst */
+/* mode: 0: src 1: dst */
 struct sockaddr_in6 *
-tdb_get_sin6(tdb, output)
+tdb_get_sin6(tdb, mode)
     struct tdb *tdb;
-    int output;
+    int mode;
 {
     struct sockaddr_in6 *src, *dst;
 
-    switch (output) {
+    switch (mode) {
     case 0:
         src = (struct sockaddr_in6 *)&tdb->tdb_src;
          return (src);
@@ -215,17 +237,132 @@ tdb_get_sin6(tdb, output)
     return (NULL);
 }
 
-/* output: 0: src 1: dst */
+/* mode: 0: src 1: dst */
 struct in6_addr *
-tdb_get_in6(tdb, output)
+tdb_get_in6(tdb, mode)
     struct tdb *tdb;
-    int output;
+    int mode;
 {
 	struct sockaddr_in6 *sin6;
 	struct in6_addr *src, *dst;
 
-	sin6 = tdb_get_sin6(tdb, output);
-	switch (output) {
+	sin6 = tdb_get_sin6(tdb, mode);
+	switch (mode) {
+	case 0:
+		src = &sin6->sin6_addr;
+		return (src);
+	case 1:
+		dst = &sin6->sin6_addr;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct sockaddr *
+sav_get_sa(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+    struct sockaddr *src, *dst;
+    struct secasindex *saidx;
+
+    saidx = &sav->sah->saidx;
+    switch (mode) {
+    case 0:
+        src = (struct sockaddr *)&saidx->src;
+         return (src);
+    case 1:
+        dst = (struct sockaddr *)&saidx->dst;
+        return (dst);
+    default:
+        break;
+    }
+    return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct sockaddr_in *
+sav_get_sin(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+    struct sockaddr_in *src, *dst;
+    struct secasindex *saidx;
+
+    saidx = &sav->sah->saidx;
+    switch (mode) {
+    case 0:
+        src = (struct sockaddr_in *)&saidx->src;
+         return (src);
+    case 1:
+        dst = (struct sockaddr_in *)&saidx->dst;
+        return (dst);
+    default:
+        break;
+    }
+    return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct in_addr *
+sav_get_in(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+	struct sockaddr_in *sin;
+	struct in_addr *src, *dst;
+
+	sin = sav_get_sin(sav, mode);
+	switch (mode) {
+	case 0:
+		src = &sin->sin_addr;
+		return (src);
+	case 1:
+		dst = &sin->sin_addr;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct sockaddr_in6 *
+sav_get_sin6(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+    struct sockaddr_in6 *src, *dst;
+    struct secasindex *saidx;
+
+    saidx = &sav->sah->saidx;
+    switch (mode) {
+    case 0:
+        src = (struct sockaddr_in6 *)&saidx->src;
+         return (src);
+    case 1:
+        dst = (struct sockaddr_in6 *)&saidx->dst;
+        return (dst);
+    default:
+        break;
+    }
+    return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct in6_addr *
+sav_get_in6(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+	struct sockaddr_in6 *sin6;
+	struct in6_addr *src, *dst;
+
+	sin6 = sav_get_sin6(sav, mode);
+	switch (mode) {
 	case 0:
 		src = &sin6->sin6_addr;
 		return (src);
@@ -289,7 +426,7 @@ ipsec_attach(void)
 	esp_attach();
 #endif
 	ipcomp_attach();
-	//ipe4_attach();
+	ipe4_attach();
 	printf(" done\n");
 }
 
