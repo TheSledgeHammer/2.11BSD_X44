@@ -222,6 +222,8 @@ void rsvp_input(struct mbuf *, int, int);
 int ip_mforward(struct mbuf *, struct ifnet *);
 #endif
 
+void ipip_mroute_input(struct mbuf *m, ...);
+
 #endif /* _KERNEL */
 
 #endif /* _NETINET_IP_MROUTE_H_ */

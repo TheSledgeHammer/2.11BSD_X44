@@ -172,8 +172,7 @@ extern int rsvp_on;
 extern struct domain inetdomain;
 static void vif_input(struct mbuf *, ...);
 static int vif_encapcheck(const struct mbuf *, int, int, void *);
-static struct protosw vif_protosw =
-{
+static struct protosw vif_protosw = {
 		SOCK_RAW,	&inetdomain,	IPPROTO_IPV4,	PR_ATOMIC|PR_ADDR,
 		vif_input,	rip_output,	0,		rip_ctloutput,
 		rip_usrreq,
@@ -257,7 +256,8 @@ struct ip multicast_encap_iphdr = {
 /*
  * Private variables.
  */
-static vifi_t	   numvifs = 0;
+static vifi_t numvifs = 0;
+static int have_encap_tunnel = 0;
 
 static struct callout expire_upcalls_ch;
 
@@ -530,7 +530,7 @@ ip_mrouter_init(so, m)
  * Disable multicast routing
  */
 int
-ip_mrouter_done()
+ip_mrouter_done(void)
 {
 	vifi_t vifi;
 	struct vif *vifp;
@@ -566,6 +566,9 @@ ip_mrouter_done()
 
 	free(mfchashtbl, M_MRTABLE);
 	mfchashtbl = 0;
+
+	/* Reset de-encapsulation cache. */
+	have_encap_tunnel = 0;
 
 	/* Reset de-encapsulation cache. */
 
@@ -700,6 +703,12 @@ add_vif(m)
 
 		/* Prepare cached route entry. */
 		bzero(&vifp->v_route, sizeof(vifp->v_route));
+
+		/*
+		 * Tell ipip_mroute_input() to start looking at
+		 * encapsulated packets.
+		 */
+		have_encap_tunnel = 1;
 	} else {
 		/* Use the physical interface associated with the address. */
 		ifp = ifa->ifa_ifp;
@@ -1678,6 +1687,85 @@ vif_encapcheck(m, off, proto, arg)
 
 	/* 32bit match, since we have checked ip_src only */
 	return 32;
+}
+
+/*
+ * De-encapsulate a packet and feed it back through ip input (this
+ * routine is called whenever IP gets a packet with proto type
+ * ENCAP_PROTO and a local destination address).
+ */
+void
+ipip_mroute_input(struct mbuf *m, ...)
+{
+	int hlen;
+	struct ip *ip = mtod(m, struct ip *);
+	int s;
+	struct ifqueue *ifq;
+	struct vif *vifp;
+	va_list ap;
+
+	va_start(ap, m);
+	hlen = va_arg(ap, int);
+	va_end(ap);
+
+	if (!have_encap_tunnel) {
+		rip_input(m, 0);
+		return;
+	}
+
+	/*
+	 * dump the packet if we don't have an encapsulating tunnel
+	 * with the source.
+	 * Note:  This code assumes that the remote site IP address
+	 * uniquely identifies the tunnel (i.e., that this site has
+	 * at most one tunnel with the remote site).
+	 */
+	if (ip->ip_src.s_addr != last_encap_src) {
+		struct vif *vife;
+
+		vifp = viftable;
+		vife = vifp + numvifs;
+		for (; vifp < vife; vifp++) {
+			if (vifp->v_flags & VIFF_TUNNEL &&
+					vifp->v_rmt_addr.s_addr == ip->ip_src.s_addr) {
+				break;
+			}
+		}
+		if (vifp == vife) {
+			mrtstat.mrts_cant_tunnel++; /*XXX*/
+			m_freem(m);
+			if (mrtdebug)
+				log(LOG_DEBUG,
+				    "ip_mforward: no tunnel with %x\n",
+				    ntohl(ip->ip_src.s_addr));
+			return;
+		}
+		last_encap_vif = vifp;
+		last_encap_src = ip->ip_src.s_addr;
+	} else {
+		vifp = last_encap_vif;
+	}
+
+	m->m_data += hlen;
+	m->m_len -= hlen;
+	m->m_pkthdr.len -= hlen;
+	m->m_pkthdr.rcvif = vifp->v_ifp;
+	ifq = &ipintrq;
+	s = splimp();
+	if (IF_QFULL(ifq)) {
+		IF_DROP(ifq);
+		m_freem(m);
+	} else {
+		IF_ENQUEUE(ifq, m);
+		/*
+		 * normally we would need a "schednetisr(NETISR_IP)"
+		 * here but we were called by ip_input and it is going
+		 * to loop back & try to dequeue the packet we just
+		 * queued as soon as we return so we avoid the
+		 * unnecessary software interrrupt.
+		 */
+	}
+	splx(s);
 }
 
 /*
