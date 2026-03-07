@@ -443,7 +443,7 @@ ipe4_output(m, isr, mp, skip, length, offset)
 	int error, af;
 
 	sav = isr->sav;
-    sa = sav_get_sa(sav, 1);
+    sa = key_savget_sa(sav, 1);
 	af = sa->sa_family;
 	switch (af) {
 #ifdef INET
