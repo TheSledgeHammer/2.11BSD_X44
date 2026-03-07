@@ -68,6 +68,8 @@ typedef	__uid_t		uid_t;		/* user id */
 #define	uid_t		__uid_t
 #endif
 
+#include <sys/mount.h>
+
 struct statvfs {
 	unsigned long	f_flag;			/* copy of mount exported flags */
 	unsigned long	f_bsize;		/* file system block size */
