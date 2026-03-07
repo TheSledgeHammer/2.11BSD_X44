@@ -2,8 +2,17 @@
 
 USE_FORT?=	yes	# setuid
 
-PROG=		at
-SRCS=		atq.c atrm.c at.c
+PROG_AT= at
+AT_SRCS= at.c
+
+PROG_ATQ= atq
+ATQ_SRCS= atq.c
+
+PROG_ATRM= atrm
+ATRM_SRCS= atrm.c
+
+PROG= ${PROG_AT} ${PROG_ATQ} ${PROG_ATRM}
+SRCS= ${AT_SRCS} ${ATQ_SRCS} ${ATRM_SRCS}
 
 LINKS=	${BINDIR}/at ${BINDIR}/atq \
 		${BINDIR}/at ${BINDIR}/atrm \
@@ -14,5 +23,7 @@ BINMODE=	4555
 
 DPADD+=		${LIBUTIL}
 LDADD+=		-lutil
+
+COPTS.atq.c= ${GCC_NO_FORMAT_OVERFLOW}
 
 .include <bsd.prog.mk>

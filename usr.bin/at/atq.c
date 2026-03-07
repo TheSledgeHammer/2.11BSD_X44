@@ -35,13 +35,23 @@ static char sccsid[] = "@(#)atq.c	5.2 (Berkeley) 5/28/86";
  *
  */
 #include <sys/types.h>
-#include <sys/file.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 
+#include <dirent.h>
+#include <err.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <string.h>
 #include <stdio.h>
 #include <pwd.h>
+#include <signal.h>
+#include <time.h>
+#include <unistd.h>
+#include <util.h>
 #include <ctype.h>
 
 #include "pathnames.h"
@@ -49,7 +59,7 @@ static char sccsid[] = "@(#)atq.c	5.2 (Berkeley) 5/28/86";
 /*
  * Months of the year
  */
-static char *mthnames[12] = {
+static const char *mthnames[12] = {
 	"Jan","Feb","Mar","Apr","May","Jun","Jul",
 	"Aug","Sep","Oct","Nov","Dec",
 };
@@ -71,7 +81,7 @@ void printdate(char *);
 void get_mth_day(int , int, int *, int *);
 void printjobname(char *);
 int filewanted(struct direct *);
-int creation(struct direct **, struct direct **);
+int creation(const void *, const void *);
 void usage(void);
 
 int
@@ -133,8 +143,7 @@ main(int argc, char **argv)
 		perror(ATDIR);
 		exit(1);
 	}
-	if ((numentries = scandir(".",&queue,filewanted, (cflag) ? creation : 
-				alphasort)) < 0) {
+	if ((numentries = scandir(".",&queue,filewanted, (cflag) ? creation : alphasort)) < 0) {
 		perror(ATDIR);
 		exit(1);
 	}
@@ -262,7 +271,7 @@ printqueue(char **namelist)
 		printrank(rank++);
 		printdate(queue[i]->d_name);
 		powner(queue[i]->d_name);
-		printf("%5d",stbuf.st_ino);
+		printf("%5ld",stbuf.st_ino);
 		printjobname(queue[i]->d_name);
 	}
 	++ptr;
@@ -346,14 +355,13 @@ getid(char *name)
 void
 plastrun(void)
 {
-	struct timeval now;			/* time it is right now */
-	struct timezone zone;			/* NOT USED */
+//	struct timeval now;			/* time it is right now */
+//	struct timezone zone;			/* NOT USED */
 	struct tm *loc;				/* detail of time it is right */
-	u_long lasttime;			/* last update time in seconds
+	time_t lasttime;			/* last update time in seconds
 						   since 1/1/70 */
 	FILE *last;				/* file where last update hour
 						   is stored */
-
 
 	/*
 	 * Open the file where the last update time is stored, and grab the
@@ -364,7 +372,7 @@ plastrun(void)
 		perror(LASTFILE);
 		exit(1);
 	}
-	fscanf(last,"%ld", &lasttime);
+	fscanf(last,"%lld", &lasttime);
 	fclose(last);
 
 	/*
@@ -386,7 +394,7 @@ plastrun(void)
 static void
 printrank(int n)
 {
-	static char *r[] = {
+	static const char *r[] = {
 		"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"
 	};
 
@@ -544,14 +552,18 @@ filewanted(struct direct *direntry)
  * Sort files by time of creation. (used by "scandir")
  */
 int
-creation(struct direct **d1, struct direct **d2)
+creation(const void *d1, const void *d2)
 {
+    const struct direct *dir1, *dir2;
 	struct stat stbuf1, stbuf2;
 
-	if (stat((*d1)->d_name,&stbuf1) < 0)
+    dir1 = d1;//__UNCONST(d1);
+    dir2 = d2;//__UNCONST(d2);
+
+	if (stat((dir1)->d_name,&stbuf1) < 0)
 		return(1);
 
-	if (stat((*d2)->d_name,&stbuf2) < 0)
+	if (stat((dir2)->d_name,&stbuf2) < 0)
 		return(1);
 
 	return(stbuf1.st_ctime < stbuf2.st_ctime);

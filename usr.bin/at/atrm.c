@@ -31,7 +31,6 @@ static char sccsid[] = "@(#)atrm.c	5.2 (Berkeley) 5/28/86";
  *		University of California @ Berkeley
  *
  */
-# include <sys/cdefs.h>
 
 #include <stdio.h>
 #include <pwd.h>

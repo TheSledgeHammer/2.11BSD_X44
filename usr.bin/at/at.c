@@ -33,13 +33,24 @@ static char sccsid[] = "@(#)at.c	5.4 (Berkeley) 5/28/86";
  *
  */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <signal.h>
-#include <pwd.h>
 #include <sys/param.h>
-#include <sys/time.h>
-#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+
+#include <dirent.h>
+#include <err.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <string.h>
+#include <ctype.h>
+#include <pwd.h>
+#include <signal.h>
+#include <time.h>
+#include <unistd.h>
+#include <util.h>
 
 #include "pathnames.h"
 
@@ -113,7 +124,7 @@ static int yeartable[2][13] = {
  * "nowtime" will contain info about what time the "at" command is in-
  * voked.
  */
-struct times {
+struct at_times {
 	int year;			/* year that job is to be run */
 	int yday;			/* day of year that job is to be run */
 	int mon;			/* month of year that job is to be run*/
@@ -137,9 +148,9 @@ int isnextyear(void);
 int countdays(void);
 int isleap(int);
 int getdateindex(char *);
-int isprefix(char *, char *);
-void getnowtime(struct times *, struct times *);
-void maketime(struct times *, char *);
+int isprefix(char *, const char *);
+void getnowtime(struct at_times *, struct at_times *);
+void maketime(struct at_times *, char *);
 char *getname(int);
 void cleanup(void);
 void usage(void);
@@ -149,18 +160,19 @@ main(int argc, char **argv)
 {
 	int c;							/* scratch variable */
 	int dateindex = NODATEFOUND;	/* if a day is specified, what option is it? (mon day, week, dayofweek) */
-	char *shell = BOURNE;			/* what shell do we use to run job? */
+	const char *shell = BOURNE;			/* what shell do we use to run job? */
 	int shflag = 0;					/* override the current shell and run job using the Bourne Shell */
 	int cshflag = 0;				/* override the current shell and run job using the Cshell */
 	int mailflag = 0;				/* send mail after a job has been run?*/
 	int standardin = 0;				/* are we reading from stardard input */
-	char *tmp;						/* scratch pointer */
+	//char *tmp;						/* scratch pointer */
 	char line[LINSIZ];				/* a line from input file */
 	char pwbuf[MAXPATHLEN];			/* the current working directory */
-	char *jobfile = "stdin";		/* file containing job to be run */
+	const char *jobfile = "stdin";		/* file containing job to be run */
 	int pid;						/* For forking for security reasons */
 
-	argv++; argc--;
+	argv++;
+    argc--;
 
 	/*
 	 * Interpret command line flags if they exist.
@@ -259,7 +271,7 @@ main(int argc, char **argv)
 	 */
 	if (dateindex == NODATEFOUND) {
 		int daysinyear;
-		if ((argc > 0) && (strcmp(*argv,"week") == 0)) {
+		if ((argc > 0) && (strcmp(*argv, "week") == 0)) {
 			attime.yday += 7;
 			++argv; --argc;
 		} else if (istomorrow())
@@ -296,7 +308,7 @@ main(int argc, char **argv)
 	/*
 	 * Create the filename for the spoolfile.
 	 */
-	makeatfile(atfile,attime.year,attime.yday,attime.hour,attime.min);
+	makeatfile(atfile, attime.year, attime.yday, attime.hour, attime.min);
 
 	/*
 	 * Open the spoolfile for writing.
@@ -465,7 +477,7 @@ main(int argc, char **argv)
  * will be invoked.
  */
 void
-copyenvironment(FILE **spoolfile)
+copyenvironment(FILE **spool)
 {
 	char *tmp;			/* scratch pointer */
 	char **environptr = environ;	/* pointer to an environment setting */
@@ -486,9 +498,9 @@ copyenvironment(FILE **spoolfile)
 		 * Set up the proper syntax.
 		 */
 		while (*tmp != '=')
-			fputc(*tmp++,*spoolfile);
-		fputc('=', *spoolfile);
-		fputc('\'' , *spoolfile);
+			fputc(*tmp++,*spool);
+		fputc('=', *spool);
+		fputc('\'' , *spool);
 		++tmp;
 
 		/*
@@ -496,23 +508,23 @@ copyenvironment(FILE **spoolfile)
 		 */
 		while (*tmp) {
 			if (*tmp == '\'')
-				fputs("'\\''", *spoolfile);
+				fputs("'\\''", *spool);
 			else if (*tmp == '\n')
-				fputs("\\",*spoolfile);
+				fputs("\\",*spool);
 			else
-				fputc(*tmp, *spoolfile);
+				fputc(*tmp, *spool);
 			++tmp;
 		}
-		fputc('\'' , *spoolfile);
+		fputc('\'' , *spool);
 
 		/*
 		 * We need to "export" environment settings.
 		 */
-		fprintf(*spoolfile, "\nexport ");
+		fprintf(*spool, "\nexport ");
 		tmp = *environptr;
 		while (*tmp != '=')
-			fputc(*tmp++,*spoolfile);
-		fputc('\n',*spoolfile);
+			fputc(*tmp++,*spool);
+		fputc('\n',*spool);
 		++environptr;
 	}
 	return;
@@ -525,18 +537,18 @@ copyenvironment(FILE **spoolfile)
  * tinguish between two files that are to be run at the same time.
  */
 void
-makeatfile(char *atfile, int year, int dayofyear, int hour, int minute)
+makeatfile(char *atfiles, int year, int dayofyear, int hour, int minute)
 {
 	int i;				/* scratch variable */
 
 	for (i=0; ; i += 53) {
-		sprintf(atfile, "%s/%02d.%03d.%02d%02d.%02d", ATDIR, year,
+		sprintf(atfiles, "%s/%02d.%03d.%02d%02d.%02d", ATDIR, year,
 			dayofyear, hour, minute, (getpid() + i) % 100);
 
 		/*
 		 * Make sure that the file name that we've created is unique.
 		 */
-		if (access(atfile, F_OK) == -1)
+		if (access(atfiles, F_OK) == -1)
 			return;
 	}
 }
@@ -692,7 +704,7 @@ makedayofyear(int dateindex, char ***av, int *ac)
 int
 isnextyear(void)
 {
-	register daysinyear;
+	register int daysinyear;
 	if (attime.yday < nowtime.yday)
 		return(1);
 
@@ -765,14 +777,14 @@ getdateindex(char *date)
 }
 
 int
-isprefix(char *prefix, char *fullname)
+isprefix(char *prefix, const char *fullname)
 {
 	char ch;
 	char *ptr;
 	char *ptr1;
 
 	ptr = prefix;
-	ptr1 = fullname;
+	ptr1 = __UNCONST(fullname);
 
 	while (*ptr) {
 		ch = *ptr;
@@ -788,7 +800,7 @@ isprefix(char *prefix, char *fullname)
 }
 
 void
-getnowtime(struct times *nowtime, struct times *attime)
+getnowtime(struct at_times *nowtimes, struct at_times *attimes)
 {
 	struct tm *now;
 	struct timeval time;
@@ -800,13 +812,13 @@ getnowtime(struct times *nowtime, struct times *attime)
 	}
 	now = localtime(&time.tv_sec);
 
-	attime->year = nowtime->year = now->tm_year;
-	attime->yday = nowtime->yday = now->tm_yday;
-	attime->mon = nowtime->mon = now->tm_mon;
-	attime->mday = nowtime->mday = now->tm_mday;
-	attime->wday = nowtime->wday = now->tm_wday;
-	attime->hour = nowtime->hour = now->tm_hour;
-	attime->min = nowtime->min = now->tm_min;
+	attimes->year = nowtimes->year = now->tm_year;
+	attimes->yday = nowtimes->yday = now->tm_yday;
+	attimes->mon = nowtimes->mon = now->tm_mon;
+	attimes->mday = nowtimes->mday = now->tm_mday;
+	attimes->wday = nowtimes->wday = now->tm_wday;
+	attimes->hour = nowtimes->hour = now->tm_hour;
+	attimes->min = nowtimes->min = now->tm_min;
 }
 
 /*
@@ -815,7 +827,7 @@ getnowtime(struct times *nowtime, struct times *attime)
  * like when I got it.
  */
 void
-maketime(struct times *attime, char *ptr)
+maketime(struct at_times *attimes, char *ptr)
 {
 	int val;
 	char *p;
@@ -898,8 +910,8 @@ maketime(struct times *attime, char *ptr)
 		fprintf(stderr, "illegal minute field\n");
 		exit(1);
 	}
-	attime->hour = val/HOUR;
-	attime->min = val%HOUR;
+	attimes->hour = val/HOUR;
+	attimes->min = val%HOUR;
 }
 
 /*
@@ -912,7 +924,7 @@ getname(int uid)
 	
 
 	if ((pwdinfo = getpwuid(uid)) == 0) {
-		perror(uid);
+		perror((const char *)uid);
 		exit(1);
 	}
 	return(pwdinfo->pw_name);
