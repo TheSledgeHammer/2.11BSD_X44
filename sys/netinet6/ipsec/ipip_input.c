@@ -98,7 +98,7 @@ ipip4_input(struct mbuf *m, ...)
 #if 0
 	/* If we do not accept IP-in-IP explicitly, drop.  */
 	if (!ipip_allow && (m->m_flags & M_IPSEC) == 0) {
-		DPRINTF(("ipip4_input: dropped due to policy\n"));
+		ipseclog((LOG_DEBUG, "ipip4_input: dropped due to policy\n"));
 		//ipipstat.ipips_pdrops++;
 		m_freem(m);
 		return;
@@ -125,7 +125,7 @@ ipip6_input(mp, offp, proto)
 #if 0
 	/* If we do not accept IP-in-IP explicitly, drop.  */
 	if (!ipip_allow && (m->m_flags & M_IPSEC) == 0) {
-		DPRINTF(("ipip6_input: dropped due to policy\n"));
+		ipseclog((LOG_DEBUG, "ipip6_input: dropped due to policy\n"));
 		//ipipstat.ipips_pdrops++;
 		m_freem(m);
 		return (IPPROTO_DONE);

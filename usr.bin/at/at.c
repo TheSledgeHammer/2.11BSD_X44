@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)at.c	5.4 (Berkeley) 5/28/86";
 #include <sys/time.h>
 #include <sys/file.h>
 
+#include "pathnames.h"
+
 #define HOUR		100		/* 1 hour (using military time) */
 #define HALFDAY		(12 * HOUR)	/* half a day (12 hours) */
 #define FULLDAY		(24 * HOUR)	/* a full day (24 hours) */
@@ -49,12 +51,7 @@ static char sccsid[] = "@(#)at.c	5.4 (Berkeley) 5/28/86";
 #define DAY			2		/* day requested is a weekday */
 #define MONTH		3		/* day requested is a month */
 
-#define BOURNE		"/bin/sh"	/* run commands with Bourne shell*/
-#define CSHELL		"/bin/csh"	/* run commands with C shell */
-
 #define NODATEFOUND	-1		/* no date was given on command line */
-
-#define ATDIR		"/usr/spool/at"		/* spooling area */
 
 #define LINSIZ		256		/* length of input buffer */
 
@@ -94,7 +91,7 @@ struct datetypes {
 /*
  * Months of the year.
  */
-char *months[13] = {
+const char *months[13] = {
 	"jan", "feb", "mar", "apr", "may", "jun",
 	"jul", "aug", "sep", "oct", "nov", "dec", 0,
 };
@@ -170,23 +167,29 @@ main(int argc, char **argv)
 	 */
 	while (argc > 0 && **argv == '-') {
 		(*argv)++;
-		while (**argv) switch (*(*argv)++) {
+		while (**argv) {
+			switch (*(*argv)++) {
 
-			case 'c' :	cshflag++; 
-					shell = CSHELL;
-					break;
+			case 'c':
+				cshflag++;
+				shell = CSHELL;
+				break;
 
-			case 's' :	shflag++;
-					shell = BOURNE;
-					break;
+			case 's':
+				shflag++;
+				shell = BOURNE;
+				break;
 
-			case 'm' :	mailflag++;
-					break;
+			case 'm':
+				mailflag++;
+				break;
 
-			default	 :	usage();
-
+			default:
+				usage();
+			}
 		}
-		--argc, ++argv;
+		--argc;
+		++argv;
 	}
 	if (shflag && cshflag) {
 		fprintf(stderr,"ambiguous shell request.\n");
@@ -743,7 +746,7 @@ countdays(void)
 int
 isleap(int year)
 {
-	return((year%4 == 0 && year%100 != 0) || year%100 == 0);
+	return ((year % 4 == 0 && year % 100 != 0) || year % 100 == 0);
 }
 
 int

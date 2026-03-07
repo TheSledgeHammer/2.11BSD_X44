@@ -280,7 +280,7 @@ selectroute(dstsock, opts, ro, rt, retifp)
 	struct rtentry *rt;
 	struct ifnet **retifp;
 {
-    struct ifnet *ifp = NULL;
+	struct ifnet *ifp = NULL;
 	struct in6_addr *dst;
 	int error = 0;
 

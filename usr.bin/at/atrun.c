@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if !defined(lint)
 #if 0
 char copyright[] =
@@ -30,44 +31,30 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
  *				University of California @ Berkeley
  *
  */
-# include <sys/cdefs.h>
 
-# include <sys/types.h>
-# include <sys/dir.h>
-# include <sys/file.h>
-# include <sys/time.h>
-# include <sys/param.h>
+#include <sys/types.h>
+#include <sys/dir.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#include <sys/param.h>
 #ifdef notdef
-# include <sys/quota.h>
+#include <sys/quota.h>
 #endif
-# include <sys/stat.h>
-# include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
-# include <dirent.h>
-# include <stdio.h>
-# include <stdlib.h>
-# include <string.h>
-# include <paths.h>
-# include <pwd.h>
-# include <unistd.h>
+#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <paths.h>
+#include <pwd.h>
+#include <unistd.h>
 
-# define ATDIR_OLD      "/usr/spool/at"
-# define ATDIR_NEW      "/usr/var/at/spool"
+#include "pathnames.h"
 
-# define PASTDIR_OLD    "/usr/spool/at/past"
-# define PASTDIR_NEW    "/usr/var/at/spool/past"
-
-# define LASTFILE_OLD   "/usr/spool/at/lasttimedone"
-# define LASTFILE_NEW   "/usr/var/at/spool/lasttimedone"
-
-# define ATDIR		ATDIR_NEW	/* spooling area */
-# define TMPDIR		"/tmp"		/* area for temporary files */
-# define MAILER		"/bin/mail"	/* program to use for sending mail */
-# define NORMAL		0		/* job exited normally */
-# define ABNORMAL	1		/* job exited abnormally */
-# define PASTDIR	PASTDIR_NEW	/* area to run jobs from */
-# define LASTFILE	LASTFILE_NEW	/* update time file */
-
+#define NORMAL		0		/* job exited normally */
+#define ABNORMAL	1		/* job exited abnormally */
 
 char nowtime[11];			/* time it is right now (yy.ddd.hhmm) */
 char errfile[25];			/* file where we redirect errors to */
@@ -356,8 +343,8 @@ run(spoolfile)
 	 *	stderr = /tmp/at.err{pid}
 	 *	
 	 */
-	open("/dev/null", 0);
-	open("/dev/null", 1);
+	open(_PATH_DEVNULL, 0);
+	open(_PATH_DEVNULL, 1);
 	open(errfile, O_CREAT | O_WRONLY, 00644);
 
 	/*

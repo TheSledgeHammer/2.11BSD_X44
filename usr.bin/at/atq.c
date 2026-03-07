@@ -34,19 +34,17 @@ static char sccsid[] = "@(#)atq.c	5.2 (Berkeley) 5/28/86";
  *		University of California @ Berkeley
  *
  */
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/dir.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 
-# include <stdio.h>
-# include <sys/types.h>
-# include <sys/file.h>
-# include <sys/dir.h>
-# include <sys/stat.h>
-# include <sys/time.h>
-# include <pwd.h>
-# include <ctype.h>
- 
-# define ATDIR		"/usr/spool/at"			/* spooling area */
-# define LASTFILE	"/usr/spool/at/lasttimedone"	/* update time record 
-							   file */
+#include <stdio.h>
+#include <pwd.h>
+#include <ctype.h>
+
+#include "pathnames.h"
 
 /*
  * Months of the year
@@ -98,18 +96,23 @@ main(int argc, char **argv)
 	 */
 	while (argc > 0 && **argv == '-') {
 		(*argv)++;
-		while (**argv) switch (*(*argv)++) {
+		while (**argv)
+			switch (*(*argv)++) {
 
-			case 'c' :	cflag++; 
-					break;
+			case 'c':
+				cflag++;
+				break;
 
-			case 'n' :	nflag++; 
-					break;
+			case 'n':
+				nflag++;
+				break;
 
-			default	 :	usage();
+			default:
+				usage();
 
-		}
-		--argc, ++argv;
+			}
+		--argc;
+		++argv;
 	}
 
 	/*
@@ -213,12 +216,10 @@ printqueue(char **namelist)
 	int i;					/* for loop index */
 	int rank = 1;				/* rank of a job */
 	int entryfound;				/* found file owned by user(s)*/
-	int printrank();			/* print the rank of a job */
-	int plastrun();				/* print the last time the 
-						   spooling area was updated */
-	int powner();				/* print the name of the owner
-						   of the job */
-	int getid();				/* get uid of a person */
+	//int printrank();			/* print the rank of a job */
+	//int plastrun();				/* print the last time the spooling area was updated */
+	//int powner();				/* print the name of the owner of the job */
+	//int getid();				/* get uid of a person */
 	char **ptr;				/* scratch pointer */
 	struct stat stbuf;			/* buffer for file stats */
 
@@ -330,7 +331,6 @@ powner(char *file)
 int
 getid(char *name)
 {
-
 	struct passwd *pwdinfo;			/* password info structure */
 
 
@@ -410,8 +410,7 @@ printdate(char *filename)
 	int day	  =  0;				/* day file will be executed */
 	int month =  0;				/* month file will be executed*/
 	int year  =  0;				/* year file will be executed */
-	int get_mth_day();			/* convert a day of year to a
-						   month and day of month */
+	//int get_mth_day();			/* convert a day of year to a month and day of month */
 	char date[18];				/* reformatted execution date */
 
 	/*

@@ -26,29 +26,31 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _NETINET6_IPIP_H_
-#define _NETINET6_IPIP_H_
+#ifndef _PATHNAMES_H_
+#define	_PATHNAMES_H_
 
-#ifdef _KERNEL
+#include <paths.h>
 
-#ifdef IPSEC_XFORM
+#define BOURNE			_PATH_BSHELL	/* run commands with Bourne shell*/
+#define CSHELL			_PATH_CSHELL	/* run commands with C shell */
 
-extern int ipip_allow;
+#define TMPDIR			_PATH_TMP					/* area for temporary files */
+#define MAILER			"/bin/mail"					/* program to use for sending mail */
 
-#define	M_IPSEC	(M_AUTHIPHDR|M_AUTHIPDGM|M_DECRYPTED)
-
-void ipip_input(struct mbuf *, int, struct ifnet *);
-int ipip_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *, int);
-
-void ipip4_input(struct mbuf *, ...);
-int ipip4_output(struct mbuf *, struct ipsecrequest *);
-
-#ifdef INET6
-int ipip6_input(struct mbuf **, int *, int);
-int ipip6_output(struct mbuf **, int *, int);
+#ifdef OLD_PATHS
+#define ATDIR_OLD      "/usr/spool/at"
+#define PASTDIR_OLD    "/usr/spool/at/past"
+#define LASTFILE_OLD   "/usr/spool/at/lasttimedone"
+#define ATDIR			ATDIR_OLD					/* spooling area */
+#define PASTDIR			PASTDIR_OLD
+#define LASTFILE		LASTFILE_OLD				/* update time record file */
+#else
+#define ATDIR_NEW      "/usr/var/at/spool"
+#define PASTDIR_NEW    "/usr/var/at/spool/past"
+#define LASTFILE_NEW   "/usr/var/at/spool/lasttimedone"
+#define ATDIR			ATDIR_NEW					/* spooling area */
+#define PASTDIR			PASTDIR_NEW
+#define LASTFILE		LASTFILE_NEW				/* update time record file */
 #endif
 
-#endif /* IPSEC_XFORM */
-
-#endif /* _KERNEL */
-#endif /* _NETINET6_IPIP_H_ */
+#endif /* _PATHNAMES_H_ */

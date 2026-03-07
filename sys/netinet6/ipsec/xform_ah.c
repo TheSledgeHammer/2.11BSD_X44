@@ -111,7 +111,7 @@
 
 #include <crypto/opencrypto/cryptodev.h>
 
-#define	KEYBITS(bytes)	((bytes) << 3)
+#define	KEYSIZE_BITS(bytes)	((bytes) << 3)
 
 static int ah_key_compare(int, u_int16_t);
 static void ah_keysize_min(const struct auth_hash *, int, u_int16_t *);
@@ -270,10 +270,10 @@ ah_key_compare(a, b)
 	int a;
 	u_int16_t b;
 {
-	if (a == KEYBITS(b)) {
+	if (a == KEYSIZE_BITS(b)) {
 		return (a);
 	}
-	return (KEYBITS(b));
+	return (KEYSIZE_BITS(b));
 }
 
 static void

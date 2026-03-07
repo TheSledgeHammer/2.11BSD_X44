@@ -124,6 +124,9 @@ __KERNEL_RCSID(0, "$NetBSD: in_pcb.c,v 1.94 2004/03/02 02:26:28 thorpej Exp $");
 #include <netinet/in_pcb.h>
 #include <netinet/in_var.h>
 #include <netinet/ip_var.h>
+#ifdef IGMPV3
+#include <netinet/in_msf.h>
+#endif
 
 #ifdef INET6
 #include <netinet/ip6.h>
@@ -615,6 +618,12 @@ in_pcbpurgeif0(table, ifp)
 	struct inpcb *inp, *ninp;
 	struct ip_moptions *imo;
 	int i, gap;
+#ifdef IGMPV3
+	struct sockaddr_storage *del_ss;
+	u_int16_t numsrc;
+	u_int mode;
+	int final, error;
+#endif
 
 	for (inp = (struct inpcb *)CIRCLEQ_FIRST(&table->inpt_queue);
 	    inp != (void *)&table->inpt_queue;
@@ -638,7 +647,30 @@ in_pcbpurgeif0(table, ifp)
 			for (i = 0, gap = 0; i < imo->imo_num_memberships;
 			    i++) {
 				if (imo->imo_membership[i]->inm_ifp == ifp) {
+#ifdef IGMPV3
+					error = in_getmopt_source_list
+						(imo->imo_msf[i], &numsrc,
+						 &del_ss, &mode);
+					if (error != 0) {
+						/* XXX strange... panic/skip? */
+						if (del_ss != NULL)
+							FREE(del_ss, M_IPMOPTS);
+						continue;
+					}
+					final = 1;
+					in_delmulti2(imo->imo_membership[i],
+						    numsrc, del_ss, mode,
+						    final, &error);
+					if (del_ss != NULL)
+						FREE(del_ss, M_IPMOPTS);
+					in_freemopt_source_list
+						(imo->imo_msf[i],
+						 imo->imo_msf[i]->msf_head,
+						 imo->imo_msf[i]->msf_blkhead);
+					IMO_MSF_FREE(imo->imo_msf[i]);
+#else
 					in_delmulti(imo->imo_membership[i]);
+#endif
 					gap++;
 				} else if (gap != 0)
 					imo->imo_membership[i - gap] =

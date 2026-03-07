@@ -3993,6 +3993,37 @@ key_setsadbxsa2(mode, seq, reqid)
 	return m;
 }
 
+#if 0
+static struct mbuf *
+key_setsadbxsa3(id, seq, socket)
+	u_int32_t id;
+	u_int64_t seq, socket;
+{
+	struct mbuf *m;
+	struct sadb_x_sa3 *p;
+	size_t len;
+
+	len = PFKEY_ALIGN8(sizeof(struct sadb_x_sa3));
+	m = key_alloc_mbuf(len);
+	if (!m || m->m_next) {	/*XXX*/
+		if (m)
+			m_freem(m);
+		return NULL;
+	}
+
+	p = mtod(m, struct sadb_x_sa3 *);
+
+	bzero(p, len);
+	p->sadb_x_sa3_len = PFKEY_UNIT64(len);
+	p->sadb_x_sa3_exttype = SADB_X_EXT_SA3;
+	p->sadb_x_sa3_id = id;
+	p->sadb_x_sa3_sequence = seq;
+	p->sadb_x_sa3_socket = socket;
+
+	return m;
+}
+#endif
+
 #ifdef SADB_X_EXT_TAG
 /*
  * set data into sadb_x_tag.
@@ -4495,6 +4526,121 @@ key_sockaddrcmp(sa1, sa2, port)
 	}
 
 	return 0;
+}
+
+/* mode: 0: src 1: dst */
+struct sockaddr *
+key_savget_sa(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+	struct sockaddr *src, *dst;
+	struct secasindex *saidx;
+
+	saidx = &sav->sah->saidx;
+	switch (mode) {
+	case 0:
+		src = (struct sockaddr *)&saidx->src;
+		return (src);
+	case 1:
+		dst = (struct sockaddr *)&saidx->dst;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct sockaddr_in *
+key_savget_sin(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+	struct sockaddr_in *src, *dst;
+	struct secasindex *saidx;
+
+	saidx = &sav->sah->saidx;
+	switch (mode) {
+	case 0:
+		src = (struct sockaddr_in *)&saidx->src;
+		return (src);
+	case 1:
+		dst = (struct sockaddr_in *)&saidx->dst;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct in_addr *
+key_savget_in(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+	struct sockaddr_in *sin;
+	struct in_addr *src, *dst;
+
+	sin = key_savget_sin(sav, mode);
+	switch (mode) {
+	case 0:
+		src = &sin->sin_addr;
+		return (src);
+	case 1:
+		dst = &sin->sin_addr;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct sockaddr_in6 *
+key_savget_sin6(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+	struct sockaddr_in6 *src, *dst;
+	struct secasindex *saidx;
+
+	saidx = &sav->sah->saidx;
+	switch (mode) {
+	case 0:
+		src = (struct sockaddr_in6 *)&saidx->src;
+		return (src);
+	case 1:
+		dst = (struct sockaddr_in6 *)&saidx->dst;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
+}
+
+/* mode: 0: src 1: dst */
+struct in6_addr *
+key_savget_in6(sav, mode)
+    struct secasvar *sav;
+    int mode;
+{
+	struct sockaddr_in6 *sin6;
+	struct in6_addr *src, *dst;
+
+	sin6 = key_savget_sin6(sav, mode);
+	switch (mode) {
+	case 0:
+		src = &sin6->sin6_addr;
+		return (src);
+	case 1:
+		dst = &sin6->sin6_addr;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
 }
 
 /*

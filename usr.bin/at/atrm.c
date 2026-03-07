@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)atrm.c	5.2 (Berkeley) 5/28/86";
  *		University of California @ Berkeley
  *
  */
+# include <sys/cdefs.h>
 
 #include <stdio.h>
 #include <pwd.h>
@@ -40,30 +41,38 @@ static char sccsid[] = "@(#)atrm.c	5.2 (Berkeley) 5/28/86";
 #include <sys/file.h>
 #include <sys/stat.h>
 
+#include "pathnames.h"
+
 #define SUPERUSER	0			/* is user super-user? */
 #define MAXENTRIES	1000			/* max # of entries allowed */
-#define ATDIR		"/usr/spool/at"		/* spooling area */
-
 
 int user;					/* person requesting removal */
 int fflag = 0;					/* suppress announcements? */
 int iflag = 0;					/* run interactively? */
 
+int filewanted(struct direct *);
+char *isusername(char *);
+int removentry(char *, int, int);
+int isowner(char *, char *);
+void powner(char *);
+char yes(void);
+int getid(char *);
+char *getname(int);
+void usage(void);
+
 int
-main(argc,argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	int i;				/* for loop index */
 	int userid;			/* uid of owner of file */
 	int isuname;			/* is a command line argv a user name?*/
 	int numjobs;			/* # of jobs in spooling area */
-	int usage();			/* print usage info and exit */
+//	int usage();			/* print usage info and exit */
 	int allflag = 0;		/* remove all jobs belonging to user? */
 	int jobexists;			/* does a requested job exist? */
-	int alphasort();		/* sort jobs by date of execution */
-	int filewanted();		/* should a file be listed in queue? */
-	char *getname();		/* get a user name from a uid */
+//	int alphasort();		/* sort jobs by date of execution */
+//	int filewanted();		/* should a file be listed in queue? */
+//	char *getname();		/* get a user name from a uid */
 	struct stat *statptr;		/* pointer to file stat structure */
 	struct stat *stbuf[MAXENTRIES]; /* array of pointers to stat structs */
 	struct direct **namelist;	/* names of jobs in spooling area */
@@ -85,17 +94,23 @@ main(argc,argv)
 	while (argc > 0 && **argv == '-') {
 		if (*(++(*argv)) == '\0') {
 			++allflag;
-		} else while (**argv) switch (*(*argv)++) {
+		} else
+			while (**argv)
+				switch (*(*argv)++) {
 
-			case 'f':	++fflag;
+				case 'f':
+					++fflag;
 					break;
-					
-			case 'i':	++iflag;
+
+				case 'i':
+					++iflag;
 					break;
-					
-			default:	usage();
-		}
-		++argv; --argc;
+
+				default:
+					usage();
+				}
+		++argv;
+		--argc;
 	}
 
 	/*
@@ -249,8 +264,7 @@ usage(void)
  * other files in /usr/spool/at don't have any dots in their name.
  */
 int
-filewanted(direntry)
-	struct direct *direntry;
+filewanted(struct direct *direntry)
 {
 	int numdot = 0;			/* number of dots in a filename */
 	char *filename;			/* filename we are looking at */
@@ -269,8 +283,7 @@ filewanted(direntry)
  * user name.
  */
 char *
-isusername(string)
-	char *string;
+isusername(char *string)
 {
 	char *ptr;			/* pointer used for scanning string */
 
@@ -291,10 +304,7 @@ isusername(string)
  * it is removed.  Return TRUE if file removed, else FALSE.
  */
 int
-removentry(filename,inode,user)
-	char *filename;
-	int inode;
-	int user;
+removentry(char *filename, int inode, int user)
 {
 
 	if (!fflag)
@@ -335,9 +345,7 @@ removentry(filename,inode,user)
  * See if "name" owns "job".
  */
 int
-isowner(name,job)
-	char *name;
-	char *job;
+isowner(char *name, char *job)
 {
 	char buf[128];			/* buffer for 1st line of spoolfile 
 					   header */
@@ -363,8 +371,7 @@ isowner(name,job)
  * spoolfile. If we run into trouble getting the name, we'll just print "???".
  */
 void
-powner(file)
-	char *file;
+powner(char *file)
 {
 	char owner[128];			/* the owner */
 	FILE *infile;				/* I/O stream to spoolfile */
@@ -412,8 +419,7 @@ yes(void)
  * such account name exists.
  */
 int
-getid(name)
-	char *name;
+getid(char *name)
 {
 
 	struct passwd *pwdinfo;		/* password info structure */
@@ -428,8 +434,7 @@ getid(name)
  * Get the full login name of a person using his/her user id.
  */
 char *
-getname(uid)
-	int uid;
+getname(int uid)
 {
 	struct passwd *pwdinfo;			/* password info structure */
 	
@@ -437,4 +442,3 @@ getname(uid)
 		return ("???");
 	return (pwdinfo->pw_name);
 }
-

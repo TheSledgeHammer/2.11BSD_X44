@@ -165,14 +165,6 @@ struct sockaddr_in6 *tdb_get_sin6(struct tdb *, int);
 struct in_addr *tdb_get_in(struct tdb *, int);
 struct in6_addr *tdb_get_in6(struct tdb *, int);
 
-/* these should move to netkey! */
-/* sav via secasindex sockaddr_storage to sockaddr */
-struct sockaddr *sav_get_sa(struct secasvar *, int);
-struct sockaddr_in *sav_get_sin(struct secasvar *, int);
-struct sockaddr_in6 *sav_get_sin6(struct secasvar *, int);
-struct in_addr *sav_get_in(struct secasvar *, int);
-struct in6_addr *sav_get_in6(struct secasvar *, int);
-
 void tdb_keycleanup(struct secasvar *);
 int tdb_keysetsaval(struct secasvar *, int);
 #endif /* _KERNEL */

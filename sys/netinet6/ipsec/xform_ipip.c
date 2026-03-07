@@ -46,6 +46,7 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ipip.c,v 1.9.16.1 2007/12/01 17:32:29 bouyer E
  */
 
 #include "opt_inet.h"
+#include "opt_ipsec.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -170,7 +171,7 @@ ipip_input(m, iphlen, gifp)
 
 #ifdef MROUTING
 	if (ipo->ip_v == IPVERSION && ipo->ip_p == IPPROTO_IPV4) {
-		if (IN_MULTICAST(((struct ip *)((char *) ipo + iphlen))->ip_dst.s_addr)) {
+		if (IN_MULTICAST(((struct ip *)((char *)ipo + iphlen))->ip_dst.s_addr)) {
 			ipip_mroute_input(m, iphlen);
 			return;
 		}
@@ -481,7 +482,7 @@ ipe4_output_af(m, isr, mp, skip, length, offset, af)
 	struct mbuf **mp;
 	int skip, length, *offset, af;
 {
-    struct sockaddr *sa;
+	struct sockaddr *sa;
 	u_int8_t tp;
 	int error;
 
@@ -494,11 +495,11 @@ ipe4_output_af(m, isr, mp, skip, length, offset, af)
 #ifdef INET
 	case AF_INET:
 		if (tp == IPEV4) {
-			error = ipv4_init(m, isr->sav, skip, length, offset, sav_get_in(isr->sav, 0), sav_get_in(isr->sav, 1), AF_INET);
+			error = ipv4_init(m, isr->sav, skip, length, offset, key_savget_in(isr->sav, 0), key_savget_in(isr->sav, 1), AF_INET);
 		}
 #ifdef INET6
 		else if (tp == IPEV6) {
-			error = ipv4_init(m, isr->sav, skip, length, offset, sav_get_in(isr->sav, 0), sav_get_in(isr->sav, 1), AF_INET6);
+			error = ipv4_init(m, isr->sav, skip, length, offset, key_savget_in(isr->sav, 0), key_savget_in(isr->sav, 1), AF_INET6);
 		}
 #endif /* INET6 */
 		else {
@@ -510,11 +511,11 @@ ipe4_output_af(m, isr, mp, skip, length, offset, af)
 	case AF_INET6:
 #ifdef INET
 		if (tp == IPEV4) {
-			error = ipv6_init(m, isr->sav, skip, length, offset, sav_get_in6(isr->sav, 0), sav_get_in6(isr->sav, 1), AF_INET);
+			error = ipv6_init(m, isr->sav, skip, length, offset, key_savget_in6(isr->sav, 0), key_savget_in6(isr->sav, 1), AF_INET);
 		} else
 #endif /* INET */
 		if (tp == IPEV6) {
-			error = ipv6_init(m, isr->sav, skip, length, offset, sav_get_in6(isr->sav, 0), sav_get_in6(isr->sav, 1), AF_INET6);
+			error = ipv6_init(m, isr->sav, skip, length, offset, key_savget_in6(isr->sav, 0), key_savget_in6(isr->sav, 1), AF_INET6);
 		}
 		else {
 			goto nofamily;
@@ -523,8 +524,9 @@ ipe4_output_af(m, isr, mp, skip, length, offset, af)
 #endif /* INET6 */
 	default:
 nofamily:
-        sa = sav_get_sa(isr->sav, 1);
-		ipseclog((LOG_ERR, "ipe4_output: unsupported protocol family %u\n", sa->sa_family));
+        sa = key_savget_sa(isr->sav, 1);
+		ipseclog(
+				(LOG_ERR, "ipe4_output: unsupported protocol family %u\n", sa->sa_family));
 		//ipipstat.ipips_family++;
 		error = EAFNOSUPPORT; /* XXX diffs from openbsd */
 		goto bad;
@@ -553,7 +555,7 @@ ipv4_init(m, sav, skip, length, offset, src, dst, af)
 	struct ip *ipo;
 	u_int8_t itos, otos;
 #ifdef INET6
-    u_int32_t itos32;
+	u_int32_t itos32;
 #endif
 	int error;
 
@@ -636,7 +638,7 @@ ipv6_init(m, sav, skip, length, offset, src, dst, af)
 {
 	struct ip6_hdr *ip6o, *ip6;
 	u_int8_t itos, otos;
-    u_int32_t itos32;
+	u_int32_t itos32;
 	int error;
 
 	if (IN6_IS_ADDR_UNSPECIFIED(dst) ||

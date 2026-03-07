@@ -157,19 +157,19 @@ tdb_get_sa(tdb, mode)
     struct tdb *tdb;
     int mode;
 {
-    struct sockaddr *src, *dst;
+	struct sockaddr *src, *dst;
 
-    switch (mode) {
-    case 0:
-        src = (struct sockaddr *)&tdb->tdb_src;
-         return (src);
-    case 1:
-        dst = (struct sockaddr *)&tdb->tdb_dst;
-        return (dst);
-    default:
-        break;
-    }
-    return (NULL);
+	switch (mode) {
+	case 0:
+		src = (struct sockaddr *)&tdb->tdb_src;
+		return (src);
+	case 1:
+		dst = (struct sockaddr *)&tdb->tdb_dst;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
 }
 
 /* mode: 0: src 1: dst */
@@ -178,19 +178,19 @@ tdb_get_sin(tdb, mode)
     struct tdb *tdb;
     int mode;
 {
-    struct sockaddr_in *src, *dst;
+	struct sockaddr_in *src, *dst;
 
-    switch (mode) {
-    case 0:
-        src = (struct sockaddr_in *)&tdb->tdb_src;
-         return (src);
-    case 1:
-        dst = (struct sockaddr_in *)&tdb->tdb_dst;
-        return (dst);
-    default:
-        break;
-    }
-    return (NULL);
+	switch (mode) {
+	case 0:
+		src = (struct sockaddr_in *)&tdb->tdb_src;
+		return (src);
+	case 1:
+		dst = (struct sockaddr_in *)&tdb->tdb_dst;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
 }
 
 /* mode: 0: src 1: dst */
@@ -222,19 +222,19 @@ tdb_get_sin6(tdb, mode)
     struct tdb *tdb;
     int mode;
 {
-    struct sockaddr_in6 *src, *dst;
+	struct sockaddr_in6 *src, *dst;
 
-    switch (mode) {
-    case 0:
-        src = (struct sockaddr_in6 *)&tdb->tdb_src;
-         return (src);
-    case 1:
-        dst = (struct sockaddr_in6 *)&tdb->tdb_dst;
-        return (dst);
-    default:
-        break;
-    }
-    return (NULL);
+	switch (mode) {
+	case 0:
+		src = (struct sockaddr_in6 *)&tdb->tdb_src;
+		return (src);
+	case 1:
+		dst = (struct sockaddr_in6 *)&tdb->tdb_dst;
+		return (dst);
+	default:
+		break;
+	}
+	return (NULL);
 }
 
 /* mode: 0: src 1: dst */
@@ -259,122 +259,6 @@ tdb_get_in6(tdb, mode)
 	}
 	return (NULL);
 }
-
-/* mode: 0: src 1: dst */
-struct sockaddr *
-sav_get_sa(sav, mode)
-    struct secasvar *sav;
-    int mode;
-{
-    struct sockaddr *src, *dst;
-    struct secasindex *saidx;
-
-    saidx = &sav->sah->saidx;
-    switch (mode) {
-    case 0:
-        src = (struct sockaddr *)&saidx->src;
-         return (src);
-    case 1:
-        dst = (struct sockaddr *)&saidx->dst;
-        return (dst);
-    default:
-        break;
-    }
-    return (NULL);
-}
-
-/* mode: 0: src 1: dst */
-struct sockaddr_in *
-sav_get_sin(sav, mode)
-    struct secasvar *sav;
-    int mode;
-{
-    struct sockaddr_in *src, *dst;
-    struct secasindex *saidx;
-
-    saidx = &sav->sah->saidx;
-    switch (mode) {
-    case 0:
-        src = (struct sockaddr_in *)&saidx->src;
-         return (src);
-    case 1:
-        dst = (struct sockaddr_in *)&saidx->dst;
-        return (dst);
-    default:
-        break;
-    }
-    return (NULL);
-}
-
-/* mode: 0: src 1: dst */
-struct in_addr *
-sav_get_in(sav, mode)
-    struct secasvar *sav;
-    int mode;
-{
-	struct sockaddr_in *sin;
-	struct in_addr *src, *dst;
-
-	sin = sav_get_sin(sav, mode);
-	switch (mode) {
-	case 0:
-		src = &sin->sin_addr;
-		return (src);
-	case 1:
-		dst = &sin->sin_addr;
-		return (dst);
-	default:
-		break;
-	}
-	return (NULL);
-}
-
-/* mode: 0: src 1: dst */
-struct sockaddr_in6 *
-sav_get_sin6(sav, mode)
-    struct secasvar *sav;
-    int mode;
-{
-    struct sockaddr_in6 *src, *dst;
-    struct secasindex *saidx;
-
-    saidx = &sav->sah->saidx;
-    switch (mode) {
-    case 0:
-        src = (struct sockaddr_in6 *)&saidx->src;
-         return (src);
-    case 1:
-        dst = (struct sockaddr_in6 *)&saidx->dst;
-        return (dst);
-    default:
-        break;
-    }
-    return (NULL);
-}
-
-/* mode: 0: src 1: dst */
-struct in6_addr *
-sav_get_in6(sav, mode)
-    struct secasvar *sav;
-    int mode;
-{
-	struct sockaddr_in6 *sin6;
-	struct in6_addr *src, *dst;
-
-	sin6 = sav_get_sin6(sav, mode);
-	switch (mode) {
-	case 0:
-		src = &sin6->sin6_addr;
-		return (src);
-	case 1:
-		dst = &sin6->sin6_addr;
-		return (dst);
-	default:
-		break;
-	}
-	return (NULL);
-}
-
 
 static struct xformsw* xforms = NULL;
 

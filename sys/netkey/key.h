@@ -81,6 +81,12 @@ extern void key_sa_recordxfer(struct secasvar *, struct mbuf *);
 extern void key_sa_routechange(struct sockaddr *);
 extern void key_sa_stir_iv(struct secasvar *);
 
+struct sockaddr *key_savget_sa(struct secasvar *, int);
+struct sockaddr_in *key_savget_sin(struct secasvar *, int);
+struct sockaddr_in6 *key_savget_sin6(struct secasvar *, int);
+struct in_addr *key_savget_in(struct secasvar *, int);
+struct in6_addr *key_savget_in6(struct secasvar *, int);
+
 extern int key_sysctl(int *, u_int, void *, size_t *, void *, size_t);
 
 #endif /* defined(_KERNEL) */
