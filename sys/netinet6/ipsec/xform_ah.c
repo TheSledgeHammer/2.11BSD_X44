@@ -530,7 +530,7 @@ ah_zeroize(sav)
 	if (sav->key_auth) {
 		bzero(_KEYBUF(sav->key_auth), _KEYLEN(sav->key_auth));
 	}
-	return (tdb_zeroize(sav->tdb_tdb));
+	return (tdb_zeroize(sav->tdb_tdb, IPPROTO_AH));
 }
 
 static int

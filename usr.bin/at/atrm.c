@@ -32,13 +32,25 @@ static char sccsid[] = "@(#)atrm.c	5.2 (Berkeley) 5/28/86";
  *
  */
 
+#include <sys/types.h>
+#include <sys/dir.h>
+#include <sys/stat.h>
+
+#include <dirent.h>
+#include <err.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <string.h>
 #include <stdio.h>
 #include <pwd.h>
 #include <ctype.h>
-#include <sys/types.h>
-#include <sys/dir.h>
-#include <sys/file.h>
-#include <sys/stat.h>
+#include <signal.h>
+#include <time.h>
+#include <unistd.h>
+#include <util.h>
 
 #include "pathnames.h"
 
@@ -49,7 +61,9 @@ int user;					/* person requesting removal */
 int fflag = 0;					/* suppress announcements? */
 int iflag = 0;					/* run interactively? */
 
-int filewanted(struct direct *);
+static char question[] = "???";
+
+int filewanted(const struct direct *);
 char *isusername(char *);
 int removentry(char *, int, int);
 int isowner(char *, char *);
@@ -63,7 +77,7 @@ int
 main(int argc, char **argv)
 {
 	int i;				/* for loop index */
-	int userid;			/* uid of owner of file */
+	//int userid;			/* uid of owner of file */
 	int isuname;			/* is a command line argv a user name?*/
 	int numjobs;			/* # of jobs in spooling area */
 //	int usage();			/* print usage info and exit */
@@ -93,8 +107,8 @@ main(int argc, char **argv)
 	while (argc > 0 && **argv == '-') {
 		if (*(++(*argv)) == '\0') {
 			++allflag;
-		} else
-			while (**argv)
+		} else {
+			while (**argv) {
 				switch (*(*argv)++) {
 
 				case 'f':
@@ -108,6 +122,8 @@ main(int argc, char **argv)
 				default:
 					usage();
 				}
+			}
+		}
 		++argv;
 		--argc;
 	}
@@ -145,7 +161,7 @@ main(int argc, char **argv)
 	/*
 	 * Get a list of the files in the spooling area.
 	 */
-	if ((numjobs = scandir(".",&namelist,filewanted,alphasort)) < 0) {
+	if ((numjobs = scandir(".", &namelist, filewanted, alphasort)) < 0) {
 		perror(ATDIR);
 		exit(1);
 	}
@@ -155,12 +171,12 @@ main(int argc, char **argv)
 	 * the spooling area.
 	 */
 	for (i = 0; i < numjobs; ++i) { 
-		statptr = (struct stat *) malloc(sizeof(struct stat));
+		statptr = (struct stat *)malloc(sizeof(struct stat));
 		if (statptr == NULL) {
 			perror("malloc");
 			exit(1);
 		}
-		if (stat(namelist[i]->d_name,statptr) < 0) {
+		if (stat(namelist[i]->d_name, statptr) < 0) {
 			perror("stat");
 			continue;
 		}
@@ -174,12 +190,11 @@ main(int argc, char **argv)
 	 * the id's. After all files are removed, exit (status 0).
 	 */
 	if (allflag) {
-		for (i = 0; i < numjobs; ++i) { 
-			if (user == SUPERUSER || isowner(getname(user),
-							namelist[i]->d_name)) 
-				(void) removentry(namelist[i]->d_name,
-						(int)stbuf[i]->st_ino,
-							user);
+		for (i = 0; i < numjobs; ++i) {
+			if (user == SUPERUSER
+					|| isowner(getname(user), namelist[i]->d_name))
+				(void)removentry(namelist[i]->d_name, (int)stbuf[i]->st_ino,
+						user);
 		}
 		exit(0);
 	}
@@ -221,7 +236,7 @@ main(int argc, char **argv)
 			 * thus compare argv to the inode (job #) of the file.
 			 */
 			} else {
-				if (stbuf[i]->st_ino != atoi(*argv)) 
+				if (stbuf[i]->st_ino != (ino_t)atoi(*argv))
 					continue;
 			}
 			++jobexists;
@@ -229,8 +244,7 @@ main(int argc, char **argv)
 			 * if the entry is ultimately removed, don't
 			 * try to remove it again later.
 			 */
-			if (removentry(namelist[i]->d_name,
-			    (int)stbuf[i]->st_ino, user)) {
+			if (removentry(namelist[i]->d_name, (int)stbuf[i]->st_ino, user)) {
 				stbuf[i]->st_ino = 0;
 			}
 		}
@@ -263,7 +277,7 @@ usage(void)
  * other files in /usr/spool/at don't have any dots in their name.
  */
 int
-filewanted(struct direct *direntry)
+filewanted(const struct direct *direntry)
 {
 	int numdot = 0;			/* number of dots in a filename */
 	char *filename;			/* filename we are looking at */
@@ -289,7 +303,8 @@ isusername(char *string)
 	ptr = string;
 	while (isdigit(*ptr))
 		++ptr;
-	return ((*ptr == '\0') ? 0 : 1);
+
+	return ((char *)((*ptr == '\0') ? 0 : 1));
 }
 
 /*
@@ -303,13 +318,13 @@ isusername(char *string)
  * it is removed.  Return TRUE if file removed, else FALSE.
  */
 int
-removentry(char *filename, int inode, int user)
+removentry(char *filename, int inode, int users)
 {
 
 	if (!fflag)
 		printf("%6d: ",inode);
 
-	if (!isowner(getname(user),filename) && user != SUPERUSER) {
+	if (!isowner(getname(users),filename) && users != SUPERUSER) {
 
 		if (!fflag) {
 			printf("permission denied\n");
@@ -318,7 +333,7 @@ removentry(char *filename, int inode, int user)
 
 	} else {
 		if (iflag) {
-			if (user == SUPERUSER) {
+			if (users == SUPERUSER) {
 				printf("\t(owned by ");
 				powner(filename);
 				printf(") ");
@@ -365,6 +380,7 @@ isowner(char *name, char *job)
 	return ((strcmp(name, buf) == 0) ? 1 : 0);
 }
 
+
 /*
  * Print the owner of the job. This is stored on the first line of the
  * spoolfile. If we run into trouble getting the name, we'll just print "???".
@@ -380,13 +396,13 @@ powner(char *file)
 	 */
 
 	if ((infile = fopen(file,"r")) == NULL) {
-		printf("%s","???");
+		printf("%s",question);
 		perror(file);
 		return;
 	}
 
 	if (fscanf(infile,"# owner: %127s%*[^\n]\n",owner) != 1) {
-		printf("%s","???");
+		printf("%s",question);
 		fclose(infile);
 		return;
 	}
@@ -394,6 +410,8 @@ powner(char *file)
 	fclose(infile);
 	printf("%s",owner);
 }
+
+
 
 /*
  * Get answer to interactive prompts, eating all characters beyond the first
@@ -438,6 +456,6 @@ getname(int uid)
 	struct passwd *pwdinfo;			/* password info structure */
 	
 	if ((pwdinfo = getpwuid(uid)) == 0)
-		return ("???");
+		return (question);
 	return (pwdinfo->pw_name);
 }

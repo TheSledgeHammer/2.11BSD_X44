@@ -122,12 +122,13 @@ tdb_init(sav, xsp, txform, thash, tcomp, proto)
 }
 
 int
-tdb_zeroize(tdb)
+tdb_zeroize(tdb, proto)
 	struct tdb *tdb;
+	int proto;
 {
 	int error;
 
-	switch (tdb->tdb_proto) {
+	switch (proto) {
 	case IPPROTO_ESP:
 		error = 0;
 		tdb->tdb_encalgxform = NULL;

@@ -6,15 +6,16 @@
 
 PROG= 	ctimed
 SRCS=	ctimed.c
+MAN=	ctime.3
 
 BINDIR=	/usr/libexec
 BINOWN=		root
 BINMODE=	755
 
-STUBS_DIR:= ${NETBSDSRCDIR}/contrib/oscompat/211bsd/libstubs
+STUBS_DIR= ${NETBSDSRCDIR}/contrib/oscompat/211bsd/libstubs
 .PATH: ${STUBS_DIR}
 
-CPPFLAGS+= -I${STUBS_DIR}
+CPPFLAGS+= -I. -I${.CURDIR} -I${STUBS_DIR}
 
 DPADD+=	${LIBSTUBS}
 LDADD+= -lstubs

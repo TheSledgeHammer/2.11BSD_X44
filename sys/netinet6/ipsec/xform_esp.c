@@ -432,7 +432,7 @@ esp_zeroize(sav)
 	if (sav->key_enc) {
 		bzero(_KEYBUF(sav->key_enc), _KEYLEN(sav->key_enc));
 	}
-	(void)tdb_zeroize(sav->tdb_tdb);
+	(void)tdb_zeroize(sav->tdb_tdb, IPPROTO_ESP);
 	return (error);
 }
 

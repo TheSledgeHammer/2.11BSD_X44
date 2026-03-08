@@ -539,7 +539,6 @@ fakeintr(spic, fakehand, level)
 		panic("fakeintr: no interrupt");
 	}
 
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 	switch (spic->sp_template) {
 	case PIC_I8259:
 		break;
@@ -551,7 +550,6 @@ fakeintr(spic, fakehand, level)
 		softintr_dispatch(which);
 		break;
 	}
-#endif
 	fakehand->ih_pic = softpic_handle_pic(spic);
 	fakehand->ih_apic = softpic_handle_apic(spic);
 	fakehand->ih_level = which;

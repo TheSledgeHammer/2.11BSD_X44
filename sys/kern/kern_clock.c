@@ -21,9 +21,7 @@
 #include <sys/types.h>
 
 #include <machine/cpu.h>
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 #include <machine/intr.h>
-#endif
 
 #ifdef GPROF
 #include <sys/gmon.h>
@@ -45,10 +43,8 @@ long cp_time[CPUSTATES];
 volatile struct timeval time;
 volatile struct	timeval mono_time;
 
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 static void softclockintr(void *);
 void *softclock_si;
-#endif
 
 /*
  * Initialize clock frequencies and start both clocks running.
@@ -58,12 +54,10 @@ initclocks()
 {
 	register int i;
 
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 	softclock_si = softintr_establish(IPL_SOFTCLOCK, softclockintr, NULL);
 	if (softclock_si == NULL) {
 	    panic("initclocks: unable to register softclock intr");
 	}
-#endif
 
 	/*
 	 * Set divisors to 1 (normal case) and let the machine-specific
@@ -190,11 +184,7 @@ hardclock(frame, pc)
 			(void) splsoftclock();
 			softclock(frame, pc);
 		} else {
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 			softintr_schedule(softclock_si);
-#else
-			setsoftclock();
-#endif
 		}
 	}
 }
@@ -303,12 +293,11 @@ softclock(frame, pc)
 
 		if (p->p_uid && p->p_nice == NZERO && u.u_ru.ru_utime > 10L * 60L * hz) {
 			p->p_nice = NZERO + 4;
-			(void) setpri(p);
+			(void)setpri(p);
 		}
 	}
 }
 
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 static void
 softclockintr(void *arg)
 {
@@ -316,7 +305,6 @@ softclockintr(void *arg)
 
     softclock(frame, arg);
 }
-#endif
 
 /*
  * Arrange that (*fun)(arg) is called in t/hz seconds.

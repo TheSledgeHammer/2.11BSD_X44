@@ -106,7 +106,7 @@ main(int argc, char **argv)
 	 */
 	while (argc > 0 && **argv == '-') {
 		(*argv)++;
-		while (**argv)
+		while (**argv) {
 			switch (*(*argv)++) {
 
 			case 'c':
@@ -119,8 +119,8 @@ main(int argc, char **argv)
 
 			default:
 				usage();
-
 			}
+		}
 		--argc;
 		++argv;
 	}

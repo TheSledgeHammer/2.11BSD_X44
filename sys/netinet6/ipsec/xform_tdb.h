@@ -156,7 +156,7 @@ int xform_init(struct secasvar *, int);
 struct tdb *tdb_alloc(int);
 void tdb_free(struct tdb *);
 struct tdb *tdb_init(struct secasvar *, struct xformsw *, const struct enc_xform *, const struct auth_hash *, const struct comp_algo *, u_int8_t);
-int tdb_zeroize(struct tdb *);
+int tdb_zeroize(struct tdb *, int);
 
 /* tdb sockaddr_storage to sockaddr */
 struct sockaddr *tdb_get_sa(struct tdb *, int);

@@ -34,8 +34,6 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
 
 #include <sys/types.h>
 #include <sys/dir.h>
-#include <sys/file.h>
-#include <sys/time.h>
 #include <sys/param.h>
 #ifdef notdef
 #include <sys/quota.h>
@@ -44,12 +42,19 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) 5/28/86";
 #include <sys/wait.h>
 
 #include <dirent.h>
+#include <err.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
+#include <stdarg.h>
 #include <string.h>
-#include <paths.h>
 #include <pwd.h>
+#include <ctype.h>
+#include <signal.h>
+#include <time.h>
 #include <unistd.h>
+#include <util.h>
 
 #include "pathnames.h"
 
@@ -149,8 +154,7 @@ makenowtime(char *curtime)
  * Run a job.
  */
 void
-run(spoolfile)
-    char *spoolfile;
+run(char *spoolfile)
 {
 	int i;				/* scratch variable */
 	int pid;			/* process id of forked shell */
@@ -364,9 +368,10 @@ run(spoolfile)
 	/*
 	 * If not in /bin, look for the shell in /usr/new.
 	 */
+#ifdef notdef
 	sprintf(whichshell, "/usr/new/%s", shell);
 	execl(whichshell, shell, runfile, (char *)0);
-
+#endif
 	/*
 	 * If we don't succeed by now, we're really having troubles,
 	 * so we'll send the owner some mail.
@@ -379,10 +384,7 @@ run(spoolfile)
  * Send mail to the owner of the job. 
  */
 void
-sendmailto(user, jobname, exitstatus)
-    char *user;
-    char *jobname;
-    int exitstatus;
+sendmailto(char *user, char *jobname, int exitstatus)
 {
 	char ch;			/* scratch variable */
 	char mailtouser[100];		/* the process we use to send mail */
@@ -473,8 +475,7 @@ sendmailto(user, jobname, exitstatus)
  * are the only files that represent jobs to be run.
  */
 int
-should_be_run(direntry)
-    struct direct *direntry;
+should_be_run(struct direct *direntry)
 {
 	int numdot = 0;			/* number of dots found in a filename */
 	char *filename;			/* pointer for scanning a filename */
@@ -532,7 +533,7 @@ updatetime(void)
 	/*
 	 * Record the last update time (in seconds since 1/1/70).
 	 */
-	fprintf(lastimefile, "%ld\n", (u_long) time.tv_sec);
+	fprintf(lastimefile, "%ld\n", (u_long)time.tv_sec);
 
 	/*
 	 * Close the record file.
@@ -544,8 +545,7 @@ updatetime(void)
  * Get the full login name of a person using his/her user id.
  */
 char *
-getname(uid)
-    int uid;
+getname(int uid)
 {
 	struct passwd *pwdinfo;			/* password info structure */
 	
@@ -556,18 +556,18 @@ getname(uid)
 	}
 
 	if (setegid(pwdinfo->pw_gid) == -1 || setgid(pwdinfo->pw_gid) == -1) {
-//		perr("Cannot change primary group to %lu", (unsigned long) pwdinfo->pw_gid);
+		perror("Cannot change primary group to %lu", (unsigned long) pwdinfo->pw_gid);
 	}
 
 	if (setsid() == -1)
 		perror("Cannot create a session");
 
 	if (setlogin(pwdinfo->pw_name) == -1) {
-//		perr("Cannot set login name to `%s'", pwdinfo->pw_name);
+		perror("Cannot set login name to `%s'", pwdinfo->pw_name);
 	}
 
 	if (setuid(uid) == -1 || seteuid(uid) == -1) {
-//		perr("Cannot set user id to %lu", (unsigned long) uid);
+		perror("Cannot set user id to %lu", (unsigned long)uid);
 	}
 
 	if (chdir(pwdinfo->pw_dir) == -1) {

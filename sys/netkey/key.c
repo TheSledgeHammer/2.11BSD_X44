@@ -3542,11 +3542,11 @@ key_mature_xform(sav, mature, mustmask, checkmask)
 {
 	/* check authentication algorithm */
 	if ((checkmask & 2) != 0) {
-		const struct auth_hash *thash;
+		const struct auth_hash *algo;
 		int keylen;
 
-		thash = ah_algorithm_lookup(sav->alg_auth);
-		if (!thash) {
+		algo = ah_algorithm_lookup(sav->alg_auth);
+		if (!algo) {
 			ipseclog((LOG_DEBUG, "key_mature: "
 					"unknown authentication algorithm.\n"));
 			return EINVAL;
@@ -3557,9 +3557,9 @@ key_mature_xform(sav, mature, mustmask, checkmask)
 			keylen = sav->key_auth->sadb_key_bits;
 		else
 			keylen = 0;
-		if (keylen < ah_keymin(thash, sav->alg_auth) || ah_keymax(thash, sav->alg_auth) < keylen) {
+		if (keylen < ah_keymin(algo, sav->alg_auth) || ah_keymax(algo, sav->alg_auth) < keylen) {
 			ipseclog((LOG_DEBUG, "key_mature: invalid AH key length %d "
-					"(%d-%d allowed)\n", keylen, thash->keysize, thash->keysize));
+					"(%d-%d allowed)\n", keylen, algo->keysize, algo->keysize));
 			return EINVAL;
 		}
 
@@ -3580,11 +3580,11 @@ key_mature_xform(sav, mature, mustmask, checkmask)
 	/* check encryption algorithm */
 	if ((checkmask & 1) != 0) {
 #ifdef IPSEC_ESP
-		const struct enc_xform *txform;
+		const struct enc_xform *algo;
 		int keylen;
 
-		txform = esp_algorithm_lookup(sav->alg_enc);
-		if (!txform) {
+		algo = esp_algorithm_lookup(sav->alg_enc);
+		if (!algo) {
 			ipseclog((LOG_DEBUG, "key_mature: unknown encryption algorithm.\n"));
 			return EINVAL;
 		}
@@ -3595,11 +3595,11 @@ key_mature_xform(sav, mature, mustmask, checkmask)
 		} else {
 			keylen = 0;
 		}
-		if (keylen < txform->minkey || txform->maxkey < keylen) {
+		if (keylen < algo->minkey || algo->maxkey < keylen) {
 			ipseclog((LOG_DEBUG,
 			    "key_mature: invalid ESP key length %d "
 			    "(%d-%d allowed)\n",
-			    keylen, txform->minkey, txform->maxkey));
+			    keylen, algo->minkey, algo->maxkey));
 			return EINVAL;
 		}
 
@@ -3624,11 +3624,11 @@ key_mature_xform(sav, mature, mustmask, checkmask)
 
 	/* check compression algorithm */
 	if ((checkmask & 4) != 0) {
-		const struct comp_algo *tcomp;
+		const struct comp_algo *algo;
 
 		/* algorithm-dependent check */
-		tcomp = ipcomp_algorithm_lookup(sav->alg_enc);
-		if (!tcomp) {
+		algo = ipcomp_algorithm_lookup(sav->alg_enc);
+		if (!algo) {
 			ipseclog((LOG_DEBUG, "key_mature: unknown compression algorithm.\n"));
 			return EINVAL;
 		}
@@ -4538,6 +4538,9 @@ key_savget_sa(sav, mode)
 	struct secasindex *saidx;
 
 	saidx = &sav->sah->saidx;
+	if (saidx == NULL) {
+		return (NULL);
+	}
 	switch (mode) {
 	case 0:
 		src = (struct sockaddr *)&saidx->src;
@@ -4561,6 +4564,9 @@ key_savget_sin(sav, mode)
 	struct secasindex *saidx;
 
 	saidx = &sav->sah->saidx;
+	if (saidx == NULL) {
+		return (NULL);
+	}
 	switch (mode) {
 	case 0:
 		src = (struct sockaddr_in *)&saidx->src;
@@ -4607,6 +4613,9 @@ key_savget_sin6(sav, mode)
 	struct secasindex *saidx;
 
 	saidx = &sav->sah->saidx;
+	if (saidx == NULL) {
+		return (NULL);
+	}
 	switch (mode) {
 	case 0:
 		src = (struct sockaddr_in6 *)&saidx->src;

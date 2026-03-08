@@ -284,7 +284,7 @@ static int
 ipcomp_zeroize(sav)
 	struct secasvar *sav;
 {
-	return (tdb_zeroize(sav->tdb_tdb));
+	return (tdb_zeroize(sav->tdb_tdb, IPPROTO_IPCOMP));
 }
 
 /*
