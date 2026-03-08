@@ -63,7 +63,7 @@ int iflag = 0;					/* run interactively? */
 
 static char question[] = "???";
 
-int filewanted(const struct direct *);
+int filewanted(struct direct *);
 char *isusername(char *);
 int removentry(char *, int, int);
 int isowner(char *, char *);
@@ -277,7 +277,7 @@ usage(void)
  * other files in /usr/spool/at don't have any dots in their name.
  */
 int
-filewanted(const struct direct *direntry)
+filewanted(struct direct *direntry)
 {
 	int numdot = 0;			/* number of dots in a filename */
 	char *filename;			/* filename we are looking at */
