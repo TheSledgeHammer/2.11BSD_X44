@@ -3,8 +3,8 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= acctd \
-		comsat \
+SUBDIR= acctd atrun \
+		comsat ctimed \
 		fingerd ftpd \
 		getty \
 		httpd \
@@ -19,14 +19,3 @@ SUBDIR+= getNAME makewhatis
 .endif
 
 .include <bsd.subdir.mk>
-
-#
-# TODO:
-# Below cannot be built. Will halt compilation once
-# reached, if added to SUBDIR.
-# fix: 
-# - atrun: 
-#	- compiler will output cannot make atrun.1
-# - ctimed: 
-# 	- compiler will output cannot make ctimed.1
-#
