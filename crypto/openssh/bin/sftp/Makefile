@@ -3,7 +3,7 @@
 BINDIR=	/usr/bin
 
 PROG=	sftp
-SRCS=	sftp.c sftp-client.c sftp-common.c sftp-glob.c
+SRCS=	sftp.c sftp-client.c sftp-common.c sftp-glob.c sftp-usergroup.c
 MAN=	sftp.1
 
 LDADD+=	-ledit -lterminfo
