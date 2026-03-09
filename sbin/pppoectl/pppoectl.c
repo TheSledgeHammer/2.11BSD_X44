@@ -84,7 +84,7 @@ main(int argc, char **argv)
 	int s, c;
 	int errs = 0, verbose = 0, dump = 0, dns1 = 0, dns2 = 0;
 	size_t len;
-	const char *eth_if_name, *access_concentrator, *service;
+	char *eth_if_name, *access_concentrator, *service;
 	const char *ifname, *configname;
 	char *line;
 	int mib[2];

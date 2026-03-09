@@ -7,4 +7,6 @@ USE_FORT?= yes	# network client
 LINKS=  ${BINDIR}/pppoectl ${BINDIR}/ipppctl
 MLINKS= pppoectl.8 ipppctl.8
 
+COPTS.pppoectl.c= ${GCC_NO_STRINGOP_TRUNCATION}
+
 .include <bsd.prog.mk>
