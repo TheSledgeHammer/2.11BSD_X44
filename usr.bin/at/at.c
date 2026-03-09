@@ -135,7 +135,7 @@ struct at_times {
 } attime, nowtime;
 
 char	atfile[100];			/* name of spoolfile "yy.ddd.hhhh.??" */
-char	**environ;			/* user's environment */
+extern char	**environ;			/* user's environment */
 FILE	*spoolfile;			/* spool file */
 FILE	*inputfile;			/* input file ("stdin" or "filename") */
 
@@ -482,7 +482,8 @@ copyenvironment(FILE **spool)
 	char *tmp;			/* scratch pointer */
 	char **environptr = environ;	/* pointer to an environment setting */
 
-	while(*environptr) {
+
+	while (*environptr) {
 		tmp = *environptr;
 
 		/*

@@ -31,26 +31,20 @@
 
 #include <paths.h>
 
-#define BOURNE			_PATH_BSHELL	/* run commands with Bourne shell*/
-#define CSHELL			_PATH_CSHELL	/* run commands with C shell */
+#define BOURNE		_PATH_BSHELL	                /* run commands with Bourne shell*/
+#define CSHELL		_PATH_CSHELL	                /* run commands with C shell */
 
-#define TMPDIR			_PATH_TMP					/* area for temporary files */
-#define MAILER			"/bin/mail"					/* program to use for sending mail */
+#define TMPDIR		_PATH_TMP					    /* area for temporary files */
+#define MAILER		"/bin/mail"					    /* program to use for sending mail */
 
 #ifdef OLD_PATHS
-#define ATDIR_OLD      "/usr/spool/at"
-#define PASTDIR_OLD    "/usr/spool/at/past"
-#define LASTFILE_OLD   "/usr/spool/at/lasttimedone"
-#define ATDIR			ATDIR_OLD					/* spooling area */
-#define PASTDIR			PASTDIR_OLD
-#define LASTFILE		LASTFILE_OLD				/* update time record file */
+#define ATDIR      "/usr/spool/at"                  /* spooling area */
+#define PASTDIR    "/usr/spool/at/past"
+#define LASTFILE   "/usr/spool/at/lasttimedone"     /* update time record file */
 #else
-#define ATDIR_NEW      "/usr/var/at/spool"
-#define PASTDIR_NEW    "/usr/var/at/spool/past"
-#define LASTFILE_NEW   "/usr/var/at/spool/lasttimedone"
-#define ATDIR			ATDIR_NEW					/* spooling area */
-#define PASTDIR			PASTDIR_NEW
-#define LASTFILE		LASTFILE_NEW				/* update time record file */
+#define ATDIR      "/usr/var/at/spool"              /* spooling area */
+#define PASTDIR    "/usr/var/at/spool/past"
+#define LASTFILE   "/usr/var/at/spool/lasttimedone" /* update time record file */
 #endif
 
 #endif /* _PATHNAMES_H_ */
