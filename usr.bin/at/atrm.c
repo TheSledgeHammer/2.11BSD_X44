@@ -216,7 +216,7 @@ main(int argc, char **argv)
 
 	while (argc--) {
 		jobexists = 0;
-		isuname = isusername(*argv);
+		isuname = (int)isusername(*argv);
 		for (i = 0; i < numjobs; ++i) {
 
 			/* if the inode number is 0, this entry was removed */
