@@ -1,7 +1,7 @@
 #	$211BSD_X44: Makefile.inc,v 1.14 2025/05/26 17:33:59 martin Exp $
 #	$NetBSD: Makefile.inc,v 1.14 2018/04/06 18:58:59 christos Exp $
 
-WARNS?=	2
+WARNS?=0
 
 .include <bsd.own.mk>
 
@@ -25,10 +25,10 @@ CPPFLAGS+=-DOPENSSL_API_COMPAT=0x10100000L
 
 CPPFLAGS+=-DLIBWRAP -D__SELECT_DECLARED
 
-LINTFLAGS+=	-X 117	# nonportable '>>' on signed integer type
-LINTFLAGS+=	-X 231	# parameter unused
-LINTFLAGS+=	-X 247	# pointer cast to unrelated type
-LINTFLAGS+=	-X 351	# missing header declaration
+#LINTFLAGS+=	-X 117	# nonportable '>>' on signed integer type
+#LINTFLAGS+=	-X 231	# parameter unused
+#LINTFLAGS+=	-X 247	# pointer cast to unrelated type
+#LINTFLAGS+=	-X 351	# missing header declaration
 
 # We install libssh in /usr/lib/private so applications don't
 # accidentally link against it.  Set LIBSUBDIR so libssh.so.N and
