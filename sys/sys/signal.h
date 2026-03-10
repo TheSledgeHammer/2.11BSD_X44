@@ -49,6 +49,7 @@
 #define _SYS_SIGNAL_H_
 
 #include <machine/signal.h>
+
 #define _NSIG		32
 
 #ifndef	NSIG
@@ -99,7 +100,22 @@
 #define	SIG_CATCH	((void (*) (int))  2)
 #define	SIG_HOLD	((void (*) (int))  3)
 
-typedef unsigned long 	sigset_t;
+typedef unsigned long sigset_t;
+
+/*
+ * Siginfo Compatibility: PLEASE READ!
+ * 1:	Defining siginfo within the kernel will cause
+ * 		issues. See point 3 below.
+ * 2: 	Should only be define outside the kernel.
+ * 		For libraries etc that make use of siginfo.
+ * 		Example: nawk, libpthread.
+ * 3:	See /contrib/oscompat/libnetbsd for siginfo.h
+ * 		that will override this structure when declared.
+ *
+ */
+#ifdef __SIGINFO_DECLARED
+#include <sys/siginfo.h>
+#else
 
 /*
  * Signal vector "template" used in sigaction call.
@@ -110,17 +126,22 @@ struct sigaction {
 	int				sa_flags;			/* see signal options below */
 };
 
+#endif /* __SIGINFO_DECLARED */
+
 #define SA_ONSTACK		0x0001	/* take signal on signal stack */
 #define SA_RESTART		0x0002	/* restart system on signal return */
 #define	SA_DISABLE		0x0004	/* disable taking signals on alternate stack */
 #define SA_NOCLDSTOP	0x0008	/* do not generate SIGCHLD on child stop */
 #define SA_NODEFER		0x0010	/* don't mask the signal we're delivering */
 #define SA_NOCLDWAIT    0x0020	/* do not generate zombies on unwaited child */
+
+/* See siginfo above */
+#ifdef deprecated
 #if (_POSIX_C_SOURCE - 0) >= 199309L || (_XOPEN_SOURCE - 0) >= 500 || \
     defined(__BSD_VISIBLE)
 #define SA_SIGINFO		0x0040	/* take sa_sigaction handler */
 #endif /* (_POSIX_C_SOURCE - 0) >= 199309L || ... */
-
+#endif
 /*
  * Flags for sigprocmask:
  */

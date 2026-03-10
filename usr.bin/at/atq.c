@@ -554,11 +554,11 @@ filewanted(struct direct *direntry)
 int
 creation(const void *d1, const void *d2)
 {
-    const struct direct *dir1, *dir2;
+	const struct direct *dir1, *dir2;
 	struct stat stbuf1, stbuf2;
 
-    dir1 = d1;//__UNCONST(d1);
-    dir2 = d2;//__UNCONST(d2);
+	dir1 = d1;
+	dir2 = d2;
 
 	if (stat((dir1)->d_name,&stbuf1) < 0)
 		return(1);
