@@ -35,13 +35,17 @@
  */
 
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1980, 1990, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)quotacheck.c	8.6 (Berkeley) 4/28/95";
+#endif
 #endif /* not lint */
 
 /*
@@ -132,9 +136,7 @@ int	 	update(char *, char *, int);
 void	usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	register struct fstab *fs;
 	register struct passwd *pw;
@@ -208,7 +210,7 @@ main(argc, argv)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr, "usage:\t%s\n\t%s\n",
 		"quotacheck -a [-guv]",
@@ -217,8 +219,7 @@ usage()
 }
 
 void *
-needchk(fs)
-	register struct fstab *fs;
+needchk(struct fstab *fs)
 {
 	register struct quotaname *qnp;
 	char *qfnp;
@@ -242,6 +243,7 @@ needchk(fs)
 	free(qnp);
 	return (NULL);
 }
+
 #ifdef deprecated
 /*
  * Scan the specified filesystem to check quota(s) present on it.
@@ -315,9 +317,7 @@ chkquota(fsname, mntpt, qnp)
  * Scan the specified filesystem to check quota(s) present on it.
  */
 int
-chkquota(fsname, mntpt, qnp)
-	char *fsname, *mntpt;
-	register struct quotaname *qnp;
+chkquota(char *fsname, char *mntpt, struct quotaname *qnp)
 {
 	register struct fileusage *fup;
 	register union dinode *dp;
@@ -402,9 +402,7 @@ chkquota(fsname, mntpt, qnp)
  * Update a specified quota file.
  */
 int
-update(fsname, quotafile, type)
-	char *fsname, *quotafile;
-	register int type;
+update(char *fsname, char *quotafile, int type)
 {
 	register struct fileusage *fup;
 	register FILE *qfi, *qfo;
@@ -497,9 +495,7 @@ update(fsname, quotafile, type)
  * Check to see if target appears in list of size cnt.
  */
 int
-oneof(target, list, cnt)
-	register char *target, *list[];
-	int cnt;
+oneof(char *target, char *list[], int cnt)
 {
 	register int i;
 
@@ -526,10 +522,7 @@ getquotagid(void)
  * Check to see if a particular quota is to be enabled.
  */
 int
-hasquota(fs, type, qfnamep)
-	register struct fstab *fs;
-	int type;
-	char **qfnamep;
+hasquota(struct fstab *fs, int type, char **qfnamep)
 {
 	register char *opt;
 	char *cp;
@@ -570,9 +563,7 @@ hasquota(fs, type, qfnamep)
  * Lookup an id of a specific type.
  */
 struct fileusage *
-lookup(id, type)
-	u_long id;
-	int type;
+lookup(u_long id, int type)
 {
 	register struct fileusage *fup;
 
@@ -586,10 +577,7 @@ lookup(id, type)
  * Add a new file usage id if it does not already exist.
  */
 struct fileusage *
-addid(id, type, name)
-	u_long id;
-	int type;
-	char *name;
+addid(u_long id, int type, char *name)
 {
 	struct fileusage *fup, **fhp;
 	int len;
@@ -625,8 +613,7 @@ static caddr_t inodebuf;
 #define	INOBUFSIZE	56*1024	/* size of buffer to read inodes */
 
 union dinode *
-getnextinode(inumber)
-	ino_t inumber;
+getnextinode(ino_t inumber)
 {
 	long size;
 	daddr_t dblk;
@@ -760,7 +747,6 @@ resetinodebuf()
 void
 freeinodebuf(void)
 {
-
 	if (inodebuf != NULL) {
 		free(inodebuf);
 	}
@@ -771,12 +757,8 @@ freeinodebuf(void)
  * Read specified disk blocks.
  */
 void
-bread(bno, buf, cnt)
-	daddr_t bno;
-	char *buf;
-	long cnt;
+bread(daddr_t bno, char *buf, long cnt)
 {
-
 	if (lseek(fi, (off_t)bno * dev_bsize, SEEK_SET) < 0 ||
 	    read(fi, buf, cnt) != cnt) {
 		err(1, "block %ld", bno);

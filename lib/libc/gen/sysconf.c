@@ -88,9 +88,9 @@ sysconf(name)
 	case _SC_CHILD_MAX:
 		return (getrlimit(RLIMIT_NPROC, &rl) ? -1 : rl.rlim_cur);
 	case _SC_CLK_TCK:
-        mib[0] = CTL_KERN;
+		mib[0] = CTL_KERN;
 		mib[1] = KERN_CLOCKRATE;
-        goto yesno;
+		goto yesno;
 //		return (CLK_TCK);
 	case _SC_JOB_CONTROL:
 		mib[0] = CTL_KERN;
@@ -121,9 +121,9 @@ sysconf(name)
 /* 1003.1b */
 /* 1003.1c */
 	case _SC_LOGIN_NAME_MAX:
-//        	mib[0] = CTL_KERN;
-//        	mib[1] = KERN_LOGIN_NAME_MAX;
-        	break;
+		//mib[0] = CTL_KERN;
+		//mib[1] = KERN_LOGIN_NAME_MAX;
+		//break;
 /* 1003.1j */
 /* 1003.2 */
 	case _SC_BC_BASE_MAX:
