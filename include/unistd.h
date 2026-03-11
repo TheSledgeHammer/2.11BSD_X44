@@ -214,6 +214,7 @@ int	 			mknod(const char *, mode_t, dev_t);
 char			*mktemp(char *);
 int	 			nice(int);
 int	 			profil(char *, int, int, int);
+int	            quotactl(const char *, int, int, char *);
 int		 		rcmd(char **, int, const char *, const char *, const char *, int *);
 char			*re_comp(const char *);
 int 			re_exec(const char *);
