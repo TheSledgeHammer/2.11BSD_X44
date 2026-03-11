@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
 #if 0
 static char copyright[] =
@@ -54,11 +55,11 @@ static char sccsid[] = "@(#)quotacheck.c	8.6 (Berkeley) 4/28/95";
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/queue.h>
+#include <sys/wait.h>
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ffs/fs.h>
-#include <ufs/ffs/ffs_extern.h>
 
 #include <err.h>
 #include <errno.h>
@@ -71,9 +72,9 @@ static char sccsid[] = "@(#)quotacheck.c	8.6 (Berkeley) 4/28/95";
 #include <string.h>
 #include <unistd.h>
 
-char *qfname = QUOTAFILENAME;
-char *qfextension[] = INITQFNAMES;
-char *quotagroup = QUOTAGROUP;
+const char *qfname = QUOTAFILENAME;
+const char *qfextension[] = INITQFNAMES;
+const char *quotagroup = QUOTAGROUP;
 
 union {
 	struct	fs	sblk;
@@ -120,10 +121,14 @@ int	vflag;			/* verbose */
 int	fi;			/* open disk file descriptor */
 u_long	highid[MAXQUOTAS];	/* highest addid()'ed identifier per type */
 
+
+extern int checkfstab(int, int, void *(*)(struct fstab *), 
+            int (*)(const char *, const char *, const char *, void *, pid_t *));
 struct fileusage *addid(u_long, int, char *);
 char	*blockcheck(char *);
 void	bread(daddr_t, char *, long);
-int	 	chkquota(char *, char *, struct quotaname *);
+int     chkquota(const char *, const char *, const char *, void *, pid_t *);
+int	 	chkquota2(const char *, const char *, struct quotaname *);
 void	freeinodebuf(void);
 union dinode *getnextinode(ino_t);
 int	 	getquotagid(void);
@@ -132,7 +137,7 @@ struct fileusage *lookup(u_long, int);
 void	*needchk(struct fstab *);
 int	 	oneof(char *, char*[], int);
 void	resetinodebuf(void);
-int	 	update(char *, char *, int);
+int	 	update(const char *, const char *, int);
 void	usage(void);
 
 int
@@ -198,7 +203,7 @@ main(int argc, char *argv[])
 		    (auxdata = needchk(fs)) &&
 		    (name = blockcheck(fs->fs_spec))) {
 			done |= 1 << argnum;
-			errs += chkquota(name, fs->fs_file, auxdata);
+			errs += chkquota(fs->fs_vfstype, name, fs->fs_file, auxdata, NULL);
 		}
 	}
 	endfsent();
@@ -317,7 +322,41 @@ chkquota(fsname, mntpt, qnp)
  * Scan the specified filesystem to check quota(s) present on it.
  */
 int
-chkquota(char *fsname, char *mntpt, struct quotaname *qnp)
+chkquota(const char *vfstype, const char *fsname, const char *mntpt, void *auxarg, pid_t *pidp)
+{
+    struct quotaname *qnp = auxarg;
+    int status;
+    pid_t pid;
+
+    switch (pid = fork()) {
+    case -1:    /* error */
+   		warn("fork");
+		return (1);
+    case 0:     /* child */
+        return (chkquota2(fsname, mntpt, qnp));
+    default:	/* parent */
+        if (pidp != NULL) {        
+            *pidp = pid;
+            return (0);
+        }
+        if (waitpid(pid, &status, 0) == -1) {
+			warn("waitpid");
+			return (1);
+		}
+		if (WIFEXITED(status)) {
+			if (WEXITSTATUS(status) != 0)
+				return (WEXITSTATUS(status));
+		} else if (WIFSIGNALED(status)) {
+			warnx("%s: %s", fsname, strsignal(WTERMSIG(status)));
+			return (1);
+		}
+        break;
+    }
+    return (0);
+}
+
+int
+chkquota2(const char *fsname, const char *mntpt, struct quotaname *qnp)
 {
 	register struct fileusage *fup;
 	register union dinode *dp;
@@ -329,13 +368,13 @@ chkquota(char *fsname, char *mntpt, struct quotaname *qnp)
 		return (1);
 	}
 	if (vflag) {
-		(void) printf("*** Checking ");
+		(void)printf("*** Checking ");
 		if (qnp->flags & HASUSR)
-			(void) printf("%s%s", qfextension[USRQUOTA],
+			(void)printf("%s%s", qfextension[USRQUOTA],
 					(qnp->flags & HASGRP) ? " and " : "");
 		if (qnp->flags & HASGRP)
-			(void) printf("%s", qfextension[GRPQUOTA]);
-		(void) printf(" quotas for %s (%s)\n", fsname, mntpt);
+			(void)printf("%s", qfextension[GRPQUOTA]);
+		(void)printf(" quotas for %s (%s)\n", fsname, mntpt);
 	}
 	sync();
 	dev_bsize = 512;
@@ -344,7 +383,7 @@ chkquota(char *fsname, char *mntpt, struct quotaname *qnp)
 			err(1, "cannot find filesystem superblock");
 		}
 		bread(sblock_try[i] / dev_bsize, (char *)&sblock, (long)SBLOCKSIZE);
-		switch (sblock->fs_magic) {
+		switch (sblock.fs_magic) {
 		case FS_UFS2_MAGIC:
 			is_ufs2 = 1;
 			/* FALLTHROUGH */
@@ -356,7 +395,7 @@ chkquota(char *fsname, char *mntpt, struct quotaname *qnp)
 		if (!is_ufs2 && sblock_try[i] == SBLOCK_UFS2) {
 			continue;
 		}
-		if ((is_ufs2 || (sblock->fs_flags & FS_FLAGS_UPDATED)) && sblock->fs_sblockloc != sblock_try[i]) {
+		if ((is_ufs2 || (sblock.fs_flags & FS_FLAGS_UPDATED)) && sblock.fs_sblockloc != sblock_try[i]) {
 			continue;
 		}
 		break;
@@ -376,13 +415,13 @@ chkquota(char *fsname, char *mntpt, struct quotaname *qnp)
 				continue;
 			}
 			if (qnp->flags & HASGRP) {
-				fup = addid((u_long) DIP(dp, gid), GRPQUOTA, (char*) 0);
+				fup = addid((u_long) DIP(dp, gid), GRPQUOTA, (char *)0);
 				fup->fu_curinodes++;
 				if (mode == IFREG || mode == IFDIR || mode == IFLNK)
 					fup->fu_curblocks += DIP(dp, blocks);
 			}
 			if (qnp->flags & HASUSR) {
-				fup = addid((u_long) DIP(dp, uid), USRQUOTA, (char*) 0);
+				fup = addid((u_long) DIP(dp, uid), USRQUOTA, (char *)0);
 				fup->fu_curinodes++;
 				if (mode == IFREG || mode == IFDIR || mode == IFLNK)
 					fup->fu_curblocks += DIP(dp, blocks);
@@ -402,7 +441,7 @@ chkquota(char *fsname, char *mntpt, struct quotaname *qnp)
  * Update a specified quota file.
  */
 int
-update(char *fsname, char *quotafile, int type)
+update(const char *fsname, const char *quotafile, int type)
 {
 	register struct fileusage *fup;
 	register FILE *qfi, *qfo;
@@ -456,10 +495,10 @@ update(char *fsname, char *quotafile, int type)
 				printf("%s: ", fsname);
 			printf("%-8s fixed:", fup->fu_name);
 			if (dqbuf.dqb_curinodes != fup->fu_curinodes)
-				(void)printf("\tinodes %d -> %d",
+				(void)printf("\tinodes %d -> %ld",
 					dqbuf.dqb_curinodes, fup->fu_curinodes);
 			if (dqbuf.dqb_curblocks != fup->fu_curblocks)
-				(void)printf("\tblocks %d -> %d",
+				(void)printf("\tblocks %d -> %ld",
 					dqbuf.dqb_curblocks, fup->fu_curblocks);
 			(void)printf("\n");
 		}
@@ -513,7 +552,7 @@ getquotagid(void)
 {
 	struct group *gr;
 
-	if (gr == getgrnam(quotagroup))
+	if ((gr = getgrnam(quotagroup)))
 		return (gr->gr_gid);
 	return (-1);
 }
@@ -538,7 +577,7 @@ hasquota(struct fstab *fs, int type, char **qfnamep)
 	}
 	strcpy(buf, fs->fs_mntops);
 	for (opt = strtok(buf, ","); opt; opt = strtok(NULL, ",")) {
-		if (cp == strchr(opt, '='))
+		if ((cp = strchr(opt, '=')))
 			*cp++ = '\0';
 		if (type == USRQUOTA && strcmp(opt, usrname) == 0)
 			break;
@@ -582,7 +621,7 @@ addid(u_long id, int type, char *name)
 	struct fileusage *fup, **fhp;
 	int len;
 
-	if (fup == lookup(id, type))
+	if ((fup = lookup(id, type)))
 		return (fup);
 	if (name)
 		len = strlen(name);
@@ -599,7 +638,7 @@ addid(u_long id, int type, char *name)
 	if (name)
 		memmove(fup->fu_name, name, len + 1);
 	else
-		(void) sprintf(fup->fu_name, "%u", id);
+		(void)sprintf(fup->fu_name, "%lu", id);
 	return (fup);
 }
 
@@ -621,10 +660,10 @@ getnextinode(ino_t inumber)
 	struct ufs2_dinode *dp2;
 
 	if (inodebuf == NULL && (inodebuf = malloc(INOBUFSIZE)) == NULL) {
-		quit("cannot allocate inode memory.\n");
+		err(1, "cannot allocate inode memory.\n");
 	}
-	if (inumber != nextino++ || inumber > maxino) {
-		err(1, "bad inode number %d to nextinode", inumber);
+	if (inumber != nextino++ || inumber > (ino_t)maxino) {
+		err(1, "bad inode number %ld to nextinode", inumber);
 	}
 	if (inumber >= lastinum) {
 		readcnt++;

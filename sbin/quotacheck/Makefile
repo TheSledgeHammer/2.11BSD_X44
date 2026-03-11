@@ -6,9 +6,8 @@ PROG=	quotacheck
 SRCS=	quotacheck.c preen.c
 MAN=	quotacheck.8
 
-FFSSRC=  ${NETBSDSRCDIR}/sys/ufs/ffs
 FSCKSRC= ${NETBSDSRCDIR}/sbin/fsck
 
-.PATH:  ${FFSSRC} ${FSCKSRC}
+.PATH:  ${FSCKSRC}
 
 .include <bsd.prog.mk>
