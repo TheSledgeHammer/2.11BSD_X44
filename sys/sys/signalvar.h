@@ -47,6 +47,7 @@ struct sigacts {
 	sigset_t 				ps_catchmask[NSIG];	/* signals to be blocked */
 	sigset_t 				ps_sigonstack;		/* signals to take on sigstack */
 	sigset_t 				ps_sigintr;			/* signals that interrupt syscalls */
+	sigset_t				ps_siginfo;		/* signals that provide siginfo */
 	sigset_t 				ps_oldmask;			/* saved mask from before sigpause */
 	int		 				ps_flags;			/* signal flags, below */
 	struct	 sigaltstack 	ps_sigstk;			/* sp & on stack state variable */
@@ -158,7 +159,7 @@ void	issignal(struct proc *);
 int     _issignal(struct proc *);
 void	psignal(struct proc *, int);
 void	siginit(struct proc *);
-void	trapsignal(struct proc *, int, u_long);
+void	trapsignal(struct proc *, int, u_long, void *, u_long);
 int     core(void);
 
 /* 4.4BSD-Lite2+ Compatability */

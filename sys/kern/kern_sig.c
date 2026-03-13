@@ -274,10 +274,11 @@ pgsignal(pgrp, signum, checkctty)
  * Otherwise, post it normally.
  */
 void
-trapsignal(p, signum, code)
+trapsignal(p, signum, code, addr, trap)
 	struct proc *p;
 	register int signum;
-	u_long code;
+	u_long code, trap;
+	void *addr;
 {
 	register struct sigacts *ps;
 	int mask;
@@ -286,6 +287,9 @@ trapsignal(p, signum, code)
 	mask = sigmask(signum);
 	if ((p->p_flag & P_TRACED) == 0 && (p->p_sigcatch & mask) != 0
 			&& (p->p_sigmask & mask) == 0) {
+
+		siginfo_trapsignal(signum, code, addr, trap);
+
 		p->p_stats->p_ru.ru_nsignals++;
 		sendsig(ps->ps_sigact[signum], signum, p->p_sigmask, code);
 		p->p_sigmask |= ps->ps_catchmask[signum] | mask;
@@ -434,6 +438,7 @@ psignal(p, sig)
 			 * an event, then it goes back to run state.
 			 * Otherwise, process goes back to sleep state.
 			 */
+			siginfo_child(p, SIGCONT);
 			if (action == SIG_DFL)
 				p->p_sig &= ~mask;
 			if (action == SIG_CATCH || p->p_wchan == 0)
@@ -681,11 +686,11 @@ postsig(sig)
 		savfp(&u.u_fps);
 		u.u_fpsaved = 1;
 	}
-	*/
+*/
 
 	p->p_sig &= ~mask;
 	action = u.u_signal[sig];
-
+	siginfo_postsig(sig);
 	if (action != SIG_DFL) {
 #ifdef DIAGNOSTIC
 		if (action == SIG_IGN || (p->p_sigmask & mask))

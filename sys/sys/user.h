@@ -41,7 +41,8 @@
 #define USIZE 			UPAGES					/* pdp11 equivalent of UPAGES */
 
 struct upcb {									/* fake pcb structure */
-	int					(*upcb_sigc)(void);		/* pointer to trampoline code in user space */
+	struct pcb 			u_pcb;					/* pointer to real pcb */
+	int					(*u_pcb_sigc)(void);	/* pointer to trampoline code in user space */
 };
 
 struct fps {
@@ -60,12 +61,13 @@ struct uthread {
 };
 
 struct user {
-	struct trapframe	*u_frame;
-	struct pcb 			u_pcb;
-	//struct upcb			u_upcb;
+	struct trapframe		*u_frame;
+	//struct pcb 			u_pcb;
+	struct upcb			u_upcb;
+#define u_pcb 				u_upcb.u_pcb
 	struct fps 			u_fps;
 	short				u_fpsaved;				/* FP regs saved for this proc */
-	struct fperr 		u_fperr;				/* floating point error save */
+	struct fperr 			u_fperr;				/* floating point error save */
 
 	struct proc 		*u_procp;				/* pointer to proc structure */
 #define u_threado		u_procp->p_threado		/* pointer to thread structure */
@@ -124,6 +126,7 @@ struct user {
 	long				u_sigmask[NSIG];		/* signals to be blocked */
 	long				u_sigonstack;			/* signals to take on sigstack */
 	long				u_sigintr;				/* signals that interrupt syscalls */
+	long				u_siginfo;				/* signals on SA_SIGINFO */
 	long				u_oldmask;				/* saved mask from before sigpause */
 	int					u_code;					/* ``code'' to trap */
 	char				dummy2;					/* Room for another flags byte */
@@ -185,9 +188,6 @@ struct user {
 
 /* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
 	struct kinfo_proc 	*u_kproc;				/* proc + eproc */
-
-/* 1.8 User Threads */
-	//struct uthread		*u_uthread;			/* ptr to uthread */
 };
 
 #ifdef _KERNEL

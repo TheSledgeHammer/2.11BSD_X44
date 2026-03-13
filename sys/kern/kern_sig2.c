@@ -81,8 +81,9 @@ sigaction()
 	u_long bit;
 	int error = 0;
 
-	//u.u_pcb.pcb_sigc = SCARG(uap, sigtramp);	/* save trampoline address */
-
+	if (SCARG(uap, sigtramp) != NULL) {
+		u.u_upcb.u_pcb_sigc = SCARG(uap, sigtramp);	/* save trampoline address */
+	}
 	signum = SCARG(uap, signum);
 	if (signum <= 0 || signum >= NSIG) {
 		error = EINVAL;
@@ -102,6 +103,8 @@ sigaction()
 			sa->sa_flags |= SA_ONSTACK;
 		if ((u.u_sigintr & bit) == 0)
 			sa->sa_flags |= SA_RESTART;
+		if ((u.u_siginfo & bit) != 0)
+			sa->sa_flags |= SA_SIGINFO;
 		if (u.u_procp->p_flag & P_NOCLDSTOP)
 			sa->sa_flags |= SA_NOCLDSTOP;
 		if ((error = copyout(sa, SCARG(uap, osa), sizeof(vec))) != 0)
@@ -258,7 +261,6 @@ out:
  * sigpending and sigsuspend use the standard calling sequence unlike 4.4 which
  * used a nonstandard (mask instead of pointer) calling convention.
 */
-
 int
 sigpending()
 {
@@ -280,7 +282,6 @@ sigpending()
  * sigsuspend is supposed to always return EINTR so we ignore errors on the
  * copyin by assuming a mask of 0.
 */
-
 int
 sigsuspend()
 {
@@ -475,6 +476,71 @@ sigtimedwait()
 	error = copyout(&signo, SCARG(uap, sig), sizeof(int));
 out:
 	return (u.u_error = error);
+}
+
+/*
+ * siginfo initialization
+ */
+void
+siginfo_init(si)
+	siginfo_t *si;
+{
+	bzero((si), sizeof(siginfo_t));
+}
+
+/*
+ * siginfo trapsignal function
+ * called in trapsignal
+ */
+void
+siginfo_trapsignal(signo, code, addr, trap)
+	int signo, code, trap;
+	void *addr;
+{
+	siginfo_t info;
+
+	siginfo_init(&info);
+	info.si_signo = signo;
+	info.si_code = code;
+	info.si_addr = addr;
+	info.si_trap = trap;
+}
+
+/*
+ * siginfo child function.
+ * Fill in signal information and signal the parent for a child status change.
+ */
+void
+siginfo_child(p, status)
+	struct proc *p;
+	int status;
+{
+	struct pstats *stats;
+	siginfo_t info;
+
+	stats = p->p_stats;
+	siginfo_init(&info);
+	info.si_signo = SIGCHLD;
+	info.si_code = (status == SIGCONT ? CLD_CONTINUED : CLD_STOPPED);
+	info.si_pid = p->p_pid;
+	info.si_status = status;
+	info.si_utime = stats->p_ru.ru_utime.tv_sec;
+	info.si_stime = stats->p_ru.ru_stime.tv_sec;
+}
+
+/*
+ * siginfo postsig function
+ * called in postsig
+ */
+void
+siginfo_postsig(signo)
+	int signo;
+{
+	siginfo_t info;
+
+	siginfo_init(&info);
+	info.si_signo = signo;
+	info.si_code = SI_USER;
 }
 
 static int

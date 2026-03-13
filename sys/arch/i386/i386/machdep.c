@@ -464,15 +464,17 @@ sendsig(catcher, sig, mask, code)
 	int sig, mask;
 	u_long  code;
 {
-	struct proc *p = curproc;
+	struct proc *p = u.u_procp;
 	struct trapframe *tf;
 	struct sigframe *fp, frame;
 	struct sigacts *psp = p->p_sigacts;
 	int oonstack;
 	extern int szsigcode;
+
 	/*
 	 * Build the argument list for the signal handler.
 	 */
+	bzero(&frame, sizeof(frame));
 	frame.sf_signum = sig;
 
 	tf = p->p_md.md_regs;

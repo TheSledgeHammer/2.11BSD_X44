@@ -102,14 +102,28 @@
 
 typedef unsigned long sigset_t;
 
+#if (_POSIX_C_SOURCE - 0) >= 199309L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
+#include <sys/siginfo.h>
+#endif
+
 /*
  * Signal vector "template" used in sigaction call.
  */
 struct sigaction {
-	void			(*sa_handler)(int);	/* signal handler */
-	sigset_t 		sa_mask;			/* signal mask to apply */
-	int				sa_flags;			/* see signal options below */
+	union { /* signal handler */
+		void	(*_sa_handler)(int);
+		void 	(*_sa_sigaction)(int, siginfo_t *, void *);
+	} sa_u;
+	sigset_t 	sa_mask;			/* signal mask to apply */
+	int			sa_flags;			/* see signal options below */
 };
+
+#define sa_handler 		sa_u._sa_handler
+#if (_POSIX_C_SOURCE - 0) >= 199309L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
+#define sa_sigaction	sa_u._sa_sigaction
+#endif
 
 #define SA_ONSTACK		0x0001	/* take signal on signal stack */
 #define SA_RESTART		0x0002	/* restart system on signal return */
@@ -117,6 +131,10 @@ struct sigaction {
 #define SA_NOCLDSTOP	0x0008	/* do not generate SIGCHLD on child stop */
 #define SA_NODEFER		0x0010	/* don't mask the signal we're delivering */
 #define SA_NOCLDWAIT    0x0020	/* do not generate zombies on unwaited child */
+#if (_POSIX_C_SOURCE - 0) >= 199309L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
+#define SA_SIGINFO		0x0040	/* take sa_sigaction handler */
+#endif
 
 /*
  * Flags for sigprocmask:
@@ -131,7 +149,7 @@ typedef	void (*sig_t)(int);		        /* type of signal function */
  * Structure used in sigaltstack call.
  */
 typedef struct sigaltstack stack_t;
-struct	sigaltstack {
+struct sigaltstack {
 	void			*ss_base;		    /* signal stack base */
 #define ss_sp		ss_base
 	size_t			ss_size;		    /* signal stack length */
@@ -157,7 +175,7 @@ struct sigvec {
  * 4.3 compatibility:
  * Structure used in sigstack call.
  */
-struct	sigstack {
+struct sigstack {
 	char			*ss_sp;			/* signal stack pointer */
 	int				ss_onstack;		/* current status */
 };

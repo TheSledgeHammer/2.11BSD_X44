@@ -563,7 +563,7 @@ npxintr(void *arg)
 #else
 		code = 0; /* XXX */
 #endif
-		trapsignal(p, SIGFPE, code);
+		trapsignal(p, SIGFPE, code, (void *)frame->if_eip, T_ARITHTRAP);
 	} else {
 		/*
 		 * This is a nested interrupt.  This should only happen when

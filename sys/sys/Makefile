@@ -17,7 +17,7 @@ INCS=		acct.h acl.h agpio.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h 	
 			mman.h mount.h mpx.h msgbuf.h mtio.h mutex.h namei.h null.h param.h percpu.h 	\
 			poll.h power.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h resource.h 	\
 			resourcevar.h rwlock.h scanio.h sched_cfs.h sched_edf.h	sched.h scsiio.h 	\
-			select.h signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h 		\
+			select.h siginfo.h signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h 	\
 			stdbool.h stddef.h stdint.h syscall.h sysctl.h sysdecl.h syslimits.h		\
 			syslog.h systm.h tablet.h termios.h thread.h time.h timeb.h timepps.h 		\
 			times.h timetc.h tls.h tprintf.h trace.h tree.h tty.h ttychars.h ttydefaults.h 	\
