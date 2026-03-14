@@ -524,7 +524,7 @@ faultcommon:
 #endif
 	}
 
-	trapsignal(p, i, ucode, cr2, type & ~T_USER);
+	trapsignal(p, i, ucode, (void *)cr2, (type & ~T_USER));
 	if ((type & T_USER) == 0) {
 		return;
 	}

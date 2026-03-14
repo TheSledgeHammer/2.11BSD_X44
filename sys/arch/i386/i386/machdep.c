@@ -585,7 +585,6 @@ sendsig(catcher, sig, mask, code)
  * psl to gain improper priviledges or to cause
  * a machine fault.
  */
-
 int
 sigreturn()
 {
@@ -627,7 +626,7 @@ sigreturn()
 		}
 		/* go back to user mode if both flags are set */
 		if ((context.sc_eflags & PSL_VIP) && (context.sc_eflags & PSL_VIF)) {
-			trapsignal(p, SIGBUS, 0);
+			trapsignal(p, SIGBUS, 0, (void *)&context.sc_eip, context.sc_trapno);
 		}
 		set_vm86flags(tf, vm86, context.sc_eflags);
 		tf->tf_vm86_gs = context.sc_gs;
