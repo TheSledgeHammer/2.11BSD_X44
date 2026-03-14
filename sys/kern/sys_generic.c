@@ -812,13 +812,13 @@ selrecord(selector, sip)
 	pid_t mypid;
 
 	mypid = selector->p_pid;
-	if (sip->si_pid == mypid)
+	if (sip->sel_pid == mypid)
 		return;
-	if (sip->si_pid && (p = pfind(sip->si_pid)) &&
+	if (sip->sel_pid && (p = pfind(sip->sel_pid)) &&
 	    (p->p_wchan == (caddr_t)&selwait))
-		sip->si_flags |= SI_COLL;
+		sip->sel_flags |= SI_COLL;
 	else
-		sip->si_pid = mypid;
+		sip->sel_pid = mypid;
 }
 
 /*ARGSUSED*/
@@ -861,16 +861,16 @@ _selwakeup(sip)
 {
 	register struct proc *p;
 
-	if (sip->si_pid == 0) {
+	if (sip->sel_pid == 0) {
 		return;
 	}
-	if (sip->si_flags & SI_COLL) {
-		sip->si_flags &= ~SI_COLL;
+	if (sip->sel_flags & SI_COLL) {
+		sip->sel_flags &= ~SI_COLL;
 	}
-	p = pfind(sip->si_pid);
-	sip->si_pid = 0;
+	p = pfind(sip->sel_pid);
+	sip->sel_pid = 0;
 
-	selwakeup(p, sip->si_flags);
+	selwakeup(p, sip->sel_flags);
 }
 
 void
@@ -878,8 +878,8 @@ selnotify(sip, knhint)
 	struct selinfo *sip;
 	long knhint;
 {
-	if (sip->si_pid != 0) {
+	if (sip->sel_pid != 0) {
 		_selwakeup(sip);
 	}
-	KNOTE(&sip->si_klist, knhint);
+	KNOTE(&sip->sel_klist, knhint);
 }

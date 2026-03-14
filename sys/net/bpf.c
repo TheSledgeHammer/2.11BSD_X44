@@ -1136,7 +1136,7 @@ filt_bpfrdetach(struct knote *kn)
 	int s;
 
 	s = splnet();
-	SIMPLEQ_REMOVE(&d->bd_sel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&d->bd_sel.sel_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -1165,7 +1165,7 @@ bpfkqfilter(dev, kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &d->bd_sel.si_klist;
+		klist = &d->bd_sel.sel_klist;
 		kn->kn_fop = &bpfread_filtops;
 		break;
 

@@ -1307,7 +1307,7 @@ filt_ugenrdetach(struct knote *kn)
 	int s;
 
 	s = splusb();
-	SIMPLEQ_REMOVE(&sce->rsel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&sce->rsel.sel_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -1366,7 +1366,7 @@ ugenkqfilter(dev_t dev, struct knote *kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &sce->rsel.si_klist;
+		klist = &sce->rsel.sel_klist;
 		switch (sce->edesc->bmAttributes & UE_XFERTYPE) {
 		case UE_INTERRUPT:
 			kn->kn_fop = &ugenread_intr_filtops;
@@ -1388,7 +1388,7 @@ ugenkqfilter(dev_t dev, struct knote *kn)
 		break;
 
 	case EVFILT_WRITE:
-		klist = &sce->rsel.si_klist;
+		klist = &sce->rsel.sel_klist;
 		switch (sce->edesc->bmAttributes & UE_XFERTYPE) {
 		case UE_INTERRUPT:
 		case UE_ISOCHRONOUS:

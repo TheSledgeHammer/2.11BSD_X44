@@ -1034,7 +1034,7 @@ filt_tunrdetach(struct knote *kn)
 	int s;
 
 	s = splnet();
-	SIMPLEQ_REMOVE(&tp->tun_rsel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&tp->tun_rsel.sel_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -1080,12 +1080,12 @@ tunkqfilter(dev_t dev, struct knote *kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &tp->tun_rsel.si_klist;
+		klist = &tp->tun_rsel.sel_klist;
 		kn->kn_fop = &tunread_filtops;
 		break;
 
 	case EVFILT_WRITE:
-		klist = &tp->tun_rsel.si_klist;
+		klist = &tp->tun_rsel.sel_klist;
 		kn->kn_fop = &tun_seltrue_filtops;
 		break;
 

@@ -650,7 +650,7 @@ filt_rnddetach(kn)
 	int s;
 
 	s = splsoftclock();
-	SIMPLEQ_REMOVE(&rnd_selq.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&rnd_selq.sel_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -697,7 +697,7 @@ random_kqfilter(dev, kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &rnd_selq.si_klist;
+		klist = &rnd_selq.sel_klist;
 		switch (minor(dev)) {
 		case RND_DEV_ARANDOM:
 			kn->kn_fop = &rndread_filtops;
@@ -714,7 +714,7 @@ random_kqfilter(dev, kn)
 		break;
 
 	case EVFILT_WRITE:
-		klist = &rnd_selq.si_klist;
+		klist = &rnd_selq.sel_klist;
 		switch (minor(dev)) {
 		case RND_DEV_ARANDOM:
 			kn->kn_fop = &rndwrite_filtops;

@@ -261,7 +261,7 @@ filt_logrdetach(struct knote *kn)
 	int s;
 
 	s = splhigh();
-	SIMPLEQ_REMOVE(&logsoftc->sc_selp->si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&logsoftc->sc_selp->sel_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -298,7 +298,7 @@ logkqfilter(dev, kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &logsoftc->sc_selp->si_klist;
+		klist = &logsoftc->sc_selp->sel_klist;
 		kn->kn_fop = &logread_filtops;
 		break;
 

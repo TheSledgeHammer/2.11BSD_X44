@@ -319,7 +319,7 @@ sbselqueue(sb)
 	register struct proc *p;
 	extern int selwait;
 
-	p = pfind(sb->sb_sel.si_pid);
+	p = pfind(sb->sb_sel.sel_pid);
 	if(p != NULL) {
 		goto select;
 	} else {
@@ -977,8 +977,8 @@ filt_sordetach(kn)
 	struct socket	*so;
 
 	so = (struct socket *)kn->kn_fp->f_data;
-	SIMPLEQ_REMOVE(&so->so_rcv.sb_sel.si_klist, kn, knote, kn_selnext);
-	if (SIMPLEQ_EMPTY(&so->so_rcv.sb_sel.si_klist))
+	SIMPLEQ_REMOVE(&so->so_rcv.sb_sel.sel_klist, kn, knote, kn_selnext);
+	if (SIMPLEQ_EMPTY(&so->so_rcv.sb_sel.sel_klist))
 		so->so_rcv.sb_flags &= ~SB_KNOTE;
 }
 
@@ -1011,8 +1011,8 @@ filt_sowdetach(kn)
 	struct socket	*so;
 
 	so = (struct socket*) kn->kn_fp->f_data;
-	SIMPLEQ_REMOVE(&so->so_snd.sb_sel.si_klist, kn, knote, kn_selnext);
-	if (SIMPLEQ_EMPTY(&so->so_snd.sb_sel.si_klist))
+	SIMPLEQ_REMOVE(&so->so_snd.sb_sel.sel_klist, kn, knote, kn_selnext);
+	if (SIMPLEQ_EMPTY(&so->so_snd.sb_sel.sel_klist))
 		so->so_snd.sb_flags &= ~SB_KNOTE;
 }
 
@@ -1090,7 +1090,7 @@ sokqfilter(fp, kn)
 	default:
 		return (1);
 	}
-	SIMPLEQ_INSERT_HEAD(&sb->sb_sel.si_klist, kn, kn_selnext);
+	SIMPLEQ_INSERT_HEAD(&sb->sb_sel.sel_klist, kn, kn_selnext);
 	sb->sb_flags |= SB_KNOTE;
 	return (0);
 }

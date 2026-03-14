@@ -218,7 +218,7 @@ filt_wseventrdetach(kn)
 	int s;
 
 	s = splwsevent();
-	SIMPLEQ_REMOVE(&ev->sel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&ev->sel.sel_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -259,7 +259,7 @@ wsevent_kqfilter(ev, kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &ev->sel.si_klist;
+		klist = &ev->sel.sel_klist;
 		kn->kn_fop = &wsevent_filtops;
 		break;
 

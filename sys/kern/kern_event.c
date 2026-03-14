@@ -368,7 +368,7 @@ filt_kqdetach(kn)
 	struct kqueue *kq;
 
 	kq = (struct kqueue *)kn->kn_fp->f_data;
-	SIMPLEQ_REMOVE(&kq->kq_sel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&kq->kq_sel.sel_klist, kn, knote, kn_selnext);
 }
 
 /*
@@ -1324,7 +1324,7 @@ kqueue_kqfilter(fp, kn)
 	if (kn->kn_filter != EVFILT_READ)
 		return (1);
 	kn->kn_fop = &kqread_filtops;
-	SIMPLEQ_INSERT_HEAD(&kq->kq_sel.si_klist, kn, kn_selnext);
+	SIMPLEQ_INSERT_HEAD(&kq->kq_sel.sel_klist, kn, kn_selnext);
 	return (0);
 }
 

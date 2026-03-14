@@ -83,9 +83,9 @@ typedef	struct fd_set {
  * notified when I/O becomes possible.
  */
 struct selinfo {
-	struct klist	si_klist;	/* knotes attached to this selinfo */
-	pid_t			si_pid;		/* process to be notified */
-	short			si_flags;	/* see below */
+	struct klist	sel_klist;	/* knotes attached to this selinfo */
+	pid_t			sel_pid;		/* process to be notified */
+	short			sel_flags;	/* see below */
 };
 #define	SI_COLL		0x0001		/* collision occurred */
 

@@ -971,7 +971,7 @@ evdev_notify_event(client)
 		wsevent_wakeup(evar);
 	}
 
-	KNOTE(&evar->sel.si_klist, 0);
+	KNOTE(&evar->sel.sel_klist, 0);
 
 	if (evar->async) {
 		psignal(evar->io, SIGIO);

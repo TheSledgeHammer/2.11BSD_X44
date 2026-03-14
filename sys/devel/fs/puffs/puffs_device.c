@@ -516,7 +516,7 @@ filt_puffsdetach(struct knote *kn)
 
 	pi = kn->kn_hook;
 	simple_lock(&pi_lock);
-	SIMPLEQ_REMOVE(&pi->pi_sel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&pi->pi_sel.sel_klist, kn, knote, kn_selnext);
 	simple_unlock(&pi_lock);
 }
 
@@ -560,7 +560,7 @@ puffs_fop_kqfilter(struct file *fp, struct knote *kn)
 		return (1);
 	}
 
-	klist = &pi->pi_sel.si_klist;
+	klist = &pi->pi_sel.sel_klist;
 	kn->kn_fop = &puffsioctl_filtops;
 	kn->kn_hook = pi;
 

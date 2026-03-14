@@ -2002,7 +2002,7 @@ filt_audiordetach(struct knote *kn)
 	int s;
 
 	s = splaudio();
-	SIMPLEQ_REMOVE(&sc->sc_rsel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&sc->sc_rsel.sel_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -2034,7 +2034,7 @@ filt_audiowdetach(struct knote *kn)
 	int s;
 
 	s = splaudio();
-	SIMPLEQ_REMOVE(&sc->sc_wsel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&sc->sc_wsel.sel_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -2064,12 +2064,12 @@ audio_kqfilter(struct audio_softc *sc, struct knote *kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &sc->sc_rsel.si_klist;
+		klist = &sc->sc_rsel.sel_klist;
 		kn->kn_fop = &audioread_filtops;
 		break;
 
 	case EVFILT_WRITE:
-		klist = &sc->sc_wsel.si_klist;
+		klist = &sc->sc_wsel.sel_klist;
 		kn->kn_fop = &audiowrite_filtops;
 		break;
 

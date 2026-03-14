@@ -1515,7 +1515,7 @@ vop_nokqfilter(ap)
 
 	kn->kn_hook = (caddr_t)vp;
 
-	klist = &vp->v_sel.si_klist;
+	klist = &vp->v_sel.sel_klist;
 	VHOLD(vp);
 	SIMPLEQ_INSERT_HEAD(klist, kn, kn_selnext);
 
@@ -1532,7 +1532,7 @@ filt_vfsdetach(kn)
 	struct vnode *vp = (struct vnode *)kn->kn_hook;
 
 	KASSERT(&vp->v_sel != NULL);
-	SIMPLEQ_REMOVE_HEAD(&vp->v_sel.si_klist, kn_selnext);
+	SIMPLEQ_REMOVE_HEAD(&vp->v_sel.sel_klist, kn_selnext);
 	//vdrop(vp);
 }
 

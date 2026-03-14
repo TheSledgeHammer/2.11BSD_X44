@@ -907,7 +907,7 @@ filt_ttyrdetach(struct knote *kn)
 
 	tp = kn->kn_hook;
 	s = spltty();
-	SIMPLEQ_REMOVE(&tp->t_rsel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&tp->t_rsel.sel_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -937,7 +937,7 @@ filt_ttywdetach(struct knote *kn)
 	tp = kn->kn_hook;
 	s = spltty();
 	TTY_LOCK(tp);
-	SIMPLEQ_REMOVE(&tp->t_wsel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&tp->t_wsel.sel_klist, kn, knote, kn_selnext);
 	TTY_UNLOCK(tp);
 	splx(s);
 }
@@ -980,11 +980,11 @@ ttykqfilter(dev_t dev, struct knote *kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &tp->t_rsel.si_klist;
+		klist = &tp->t_rsel.sel_klist;
 		kn->kn_fop = &ttyread_filtops;
 		break;
 	case EVFILT_WRITE:
-		klist = &tp->t_wsel.si_klist;
+		klist = &tp->t_wsel.sel_klist;
 		kn->kn_fop = &ttywrite_filtops;
 		break;
 	default:
