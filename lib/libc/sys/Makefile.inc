@@ -22,7 +22,7 @@ GLUE+=          acl_file.c acl_filedesc.c execv.c \
                 ftruncate.c killpg.c lseek.c mmap.c \
 				mpx.c pread.c preadv.c pwrite.c \
 				pwritev.c tls.c truncate.c
-GLUENOERR+=		_fork.c _getcontext.c _getlogin.c
+GLUENOERR+=		_fork.c _getcontext.c _getlogin.c sigaction.c
 
 # 'glue' files might .c or .S depending on the architecture
 .for glue in ${GLUE}
@@ -84,7 +84,7 @@ WEAKASM=        accept.S close.S connect.S execve.S fcntl.S fsync.S kill.S \
                 sysarch.S wait4.S write.S writev.S
 
 NOERR=          getegid.S geteuid.S getgid.S getpgid.S getpid.S getpgrp.S \
-		getppid.S getsid.S getuid.S issetugid.S profil.S sigaction.S \
+		getppid.S getsid.S getuid.S issetugid.S profil.S \
 		sync.S umask.S
 
 PSEUDONOERR=    _exit.S

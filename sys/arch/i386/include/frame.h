@@ -135,12 +135,14 @@ struct intrframe {
 struct sigframe {
 	int					sf_signum;
 	int					sf_code;
+	siginfo_t 			*sf_sip;
 	struct	sigcontext 	*sf_scp;
 	sig_t				sf_handler;
 	int					sf_eax;
 	int					sf_edx;
 	int					sf_ecx;
 	struct	sigcontext 	sf_sc;
+	siginfo_t 			sf_si;
 };
 
 #endif

@@ -449,6 +449,77 @@ vmtime(otime, olbolt, oicr)
 #endif
 
 /*
+ * Build the signal context to be used by sigreturn.
+ */
+void
+buildframe(frame, tf, pcb)
+	struct sigframe *frame;
+	struct trapframe *tf;
+	struct pcb *pcb;
+{
+	struct trapframe_vm86 *tf86;
+	struct vm86_kernel *vm86;
+
+	if (tf->tf_eflags & PSL_VM) {
+		tf86 = (struct trapframe_vm86 *)tf;
+		vm86 = pcb->pcb_vm86;
+
+		frame->sf_sc.sc_gs = tf86->tf_vm86_gs;
+		frame->sf_sc.sc_fs = tf86->tf_vm86_fs;
+		frame->sf_sc.sc_es = tf86->tf_vm86_es;
+		frame->sf_sc.sc_ds = tf86->tf_vm86_ds;
+		if (vm86->vm86_has_vme == 0) {
+			frame->sf_sc.sc_eflags = get_vm86flags(tf86, vm86);
+		}
+		/*
+	 	* We should never have PSL_T set when returning from vm86
+	 	* mode.  It may be set here if we deliver a signal before
+	 	* getting to vm86 mode, so turn it off.
+	 	*/
+		tf86->tf_eflags &= ~(PSL_VM | PSL_T | PSL_VIF | PSL_VIP);
+	} else {
+		frame->sf_sc.sc_gs = tf->tf_gs;
+		frame->sf_sc.sc_fs = tf->tf_fs;
+		frame->sf_sc.sc_es = tf->tf_es;
+		frame->sf_sc.sc_ds = tf->tf_ds;
+		frame->sf_sc.sc_eflags = tf->tf_eflags;
+	}
+	frame->sf_sc.sc_edi = tf->tf_edi;
+	frame->sf_sc.sc_esi = tf->tf_esi;
+	frame->sf_sc.sc_ebp = tf->tf_ebp;
+	frame->sf_sc.sc_ebx = tf->tf_ebx;
+	frame->sf_sc.sc_edx = tf->tf_edx;
+	frame->sf_sc.sc_ecx = tf->tf_ecx;
+	frame->sf_sc.sc_eax = tf->tf_eax;
+	frame->sf_sc.sc_eip = tf->tf_eip;
+	frame->sf_sc.sc_cs = tf->tf_cs;
+	frame->sf_sc.sc_esp = tf->tf_esp;
+	frame->sf_sc.sc_ss = tf->tf_ss;
+	frame->sf_sc.sc_trapno = tf->tf_trapno;
+	frame->sf_sc.sc_err = tf->tf_err;
+}
+
+/*
+ * Build context to run handler in.
+ */
+void
+buildcontext(tf, sigcode, fp)
+	struct trapframe *tf;
+	int sigcode;
+	struct sigframe *fp;
+{
+	tf->tf_gs = GSEL(GUDATA_SEL, SEL_UPL);
+	tf->tf_fs = GSEL(GUDATA_SEL, SEL_UPL);
+	tf->tf_es = GSEL(GUDATA_SEL, SEL_UPL);
+	tf->tf_ds = GSEL(GUDATA_SEL, SEL_UPL);
+	tf->tf_eip = (int)(((char *)PS_STRINGS) - (sigcode));
+	tf->tf_cs = GSEL(GUCODE_SEL, SEL_UPL);
+	tf->tf_eflags &= ~(PSL_T|PSL_VM|PSL_AC);
+	tf->tf_esp = (int)fp;
+	tf->tf_ss = GSEL(GUDATA_SEL, SEL_UPL);
+}
+
+/*
  * Send an interrupt to process.
  *
  * Stack is set up to allow sigcode stored
@@ -494,54 +565,16 @@ sendsig(catcher, sig, mask, code)
 
 	fp->sf_signum = sig;
 	fp->sf_code = code;
+	fp->sf_sip = &fp->sf_si;
 	fp->sf_scp = &fp->sf_sc;
 	fp->sf_handler = catcher;
 
 	/*
 	 * Build the signal context to be used by sigreturn.
 	 */
-	if (tf->tf_eflags & PSL_VM) {
-		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
-		struct vm86_kernel *vm86 =  &p->p_addr->u_pcb.pcb_vm86;
-
-		frame.sf_sc.sc_gs = tf->tf_vm86_gs;
-		frame.sf_sc.sc_fs = tf->tf_vm86_fs;
-		frame.sf_sc.sc_es = tf->tf_vm86_es;
-		frame.sf_sc.sc_ds = tf->tf_vm86_ds;
-		if (vm86->vm86_has_vme == 0) {
-			frame.sf_sc.sc_eflags = get_vm86flags(tf, vm86);
-		}
-		/*
-		 * We should never have PSL_T set when returning from vm86
-		 * mode.  It may be set here if we deliver a signal before
-		 * getting to vm86 mode, so turn it off.
-		 */
-		tf->tf_eflags &= ~(PSL_VM | PSL_T | PSL_VIF | PSL_VIP);
-	} else {
-		frame.sf_sc.sc_gs = tf->tf_gs;
-		frame.sf_sc.sc_fs = tf->tf_fs;
-		frame.sf_sc.sc_es = tf->tf_es;
-		frame.sf_sc.sc_ds = tf->tf_ds;
-		frame.sf_sc.sc_eflags = tf->tf_eflags;
-	}
-
-	frame.sf_sc.sc_edi = tf->tf_edi;
-	frame.sf_sc.sc_esi = tf->tf_esi;
-	frame.sf_sc.sc_ebp = tf->tf_ebp;
-	frame.sf_sc.sc_ebx = tf->tf_ebx;
-	frame.sf_sc.sc_edx = tf->tf_edx;
-	frame.sf_sc.sc_ecx = tf->tf_ecx;
-	frame.sf_sc.sc_eax = tf->tf_eax;
-	frame.sf_sc.sc_eip = tf->tf_eip;
-	frame.sf_sc.sc_cs = tf->tf_cs;
-	frame.sf_sc.sc_esp = tf->tf_esp;
-	frame.sf_sc.sc_ss = tf->tf_ss;
-	frame.sf_sc.sc_trapno = tf->tf_trapno;
-	frame.sf_sc.sc_err = tf->tf_err;
-
+	buildframe(&frame, tf, &p->p_addr->u_pcb);
 	fp->sf_sc.sc_onstack = oonstack;
 	fp->sf_sc.sc_mask = mask;
-
 	if (copyout(&frame, fp, sizeof(frame)) != 0) {
 		/*
 		 * Process has trashed its stack; give it an illegal
@@ -559,16 +592,7 @@ sendsig(catcher, sig, mask, code)
 	/*
 	 * Build context to run handler in.
 	 */
-	tf->tf_gs = GSEL(GUDATA_SEL, SEL_UPL);
-	tf->tf_fs = GSEL(GUDATA_SEL, SEL_UPL);
-	tf->tf_es = GSEL(GUDATA_SEL, SEL_UPL);
-	tf->tf_ds = GSEL(GUDATA_SEL, SEL_UPL);
-	tf->tf_eip = (int)(((char *)PS_STRINGS) - (szsigcode));
-	tf->tf_cs = GSEL(GUCODE_SEL, SEL_UPL);
-	tf->tf_eflags &= ~(PSL_T|PSL_VM|PSL_AC);
-	tf->tf_esp = (int)fp;
-	tf->tf_ss = GSEL(GUDATA_SEL, SEL_UPL);
-
+	buildcontext(tf, szsigcode, fp);
 	/* Remember that we're now on the signal stack. */
 	if (oonstack) {
 		psp->ps_sigstk.ss_flags |= SS_ONSTACK;

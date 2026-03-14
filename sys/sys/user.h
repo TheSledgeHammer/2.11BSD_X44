@@ -40,9 +40,14 @@
  */
 #define USIZE 			UPAGES					/* pdp11 equivalent of UPAGES */
 
+
+/* signal trampoline function */
+typedef int (*sigtramp_t)(void);
+
 struct upcb {									/* fake pcb structure */
 	struct pcb 			u_pcb;					/* pointer to real pcb */
-	int					(*u_pcb_sigc)(void);	/* pointer to trampoline code in user space */
+	sigtramp_t 			u_pcb_sigc;				/* pointer to trampoline code in user space */
+	//int					(*u_pcb_sigc)(void);	/* pointer to trampoline code in user space */
 };
 
 struct fps {
@@ -62,7 +67,6 @@ struct uthread {
 
 struct user {
 	struct trapframe		*u_frame;
-	//struct pcb 			u_pcb;
 	struct upcb			u_upcb;
 #define u_pcb 				u_upcb.u_pcb
 	struct fps 			u_fps;
