@@ -82,7 +82,7 @@ sigaction()
 	int error = 0;
 
 	if (SCARG(uap, sigtramp) != NULL) {
-		u.u_upcb.u_pcb_sigc = SCARG(uap, sigtramp);	/* save trampoline address */
+		u.u_upcb.u_pcb_sigc = (int (*)(void))SCARG(uap, sigtramp);	/* save trampoline address */
 	}
 	signum = SCARG(uap, signum);
 	if (signum <= 0 || signum >= NSIG) {
