@@ -66,7 +66,6 @@ struct uthread {
 };
 
 struct user {
-	struct trapframe		*u_frame;
 	struct upcb			u_upcb;
 #define u_pcb 				u_upcb.u_pcb
 	struct fps 			u_fps;
