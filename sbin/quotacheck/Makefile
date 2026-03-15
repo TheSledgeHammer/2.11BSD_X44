@@ -3,7 +3,7 @@
 .include <bsd.own.mk>
 
 PROG=	quotacheck
-SRCS=	quotacheck.c preen.c
+SRCS=	quotacheck.c preen.c fsutil.c
 MAN=	quotacheck.8
 
 FSCKSRC= ${NETBSDSRCDIR}/sbin/fsck
