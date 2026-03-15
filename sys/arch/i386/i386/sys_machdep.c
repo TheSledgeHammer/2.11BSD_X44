@@ -445,25 +445,27 @@ i386_set_sdbase(p, arg, which)
 	void *arg;
 	char which;
 {
+    struct trapframe *tf;
 	struct segment_descriptor sd;
 	uint32_t base;
 	int error;
 
+    tf = p->p_md.md_regs;
 	error = copyin(arg, &base, sizeof(base));
 	if (error != 0) {
 		return (error);
 	}
-
+    
 	fill_based_sd(&sd, base);
 
 	switch(which) {
 	case 'f':
 		p->p_addr->u_pcb.pcb_fsd = sd;
-		p->p_addr->u_frame->tf_fs = GSEL(GUFS_SEL, SEL_UPL);
+		tf->tf_fs = GSEL(GUFS_SEL, SEL_UPL);
 		break;
 	case 'g':
 		p->p_addr->u_pcb.pcb_gsd = sd;
-		p->p_addr->u_frame->tf_fs = GSEL(GUGS_SEL, SEL_UPL);
+		tf->tf_fs = GSEL(GUGS_SEL, SEL_UPL);
 		break;
 	default:
 		panic("i386_set_sdbase");

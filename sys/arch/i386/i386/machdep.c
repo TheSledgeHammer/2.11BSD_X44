@@ -462,7 +462,7 @@ buildframe(frame, tf, pcb)
 
 	if (tf->tf_eflags & PSL_VM) {
 		tf86 = (struct trapframe_vm86 *)tf;
-		vm86 = pcb->pcb_vm86;
+		vm86 = &pcb->pcb_vm86;
 
 		frame->sf_sc.sc_gs = tf86->tf_vm86_gs;
 		frame->sf_sc.sc_fs = tf86->tf_vm86_fs;
