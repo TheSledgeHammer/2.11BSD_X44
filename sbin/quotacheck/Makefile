@@ -7,7 +7,11 @@ SRCS=	quotacheck.c preen.c
 MAN=	quotacheck.8
 
 FSCKSRC= ${NETBSDSRCDIR}/sbin/fsck
-
 .PATH:  ${FSCKSRC}
+
+CPPFLAGS+=-I${FSCKSRC}
+
+LDADD+=-lutil
+DPADD+=${LIBUTIL}
 
 .include <bsd.prog.mk>

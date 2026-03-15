@@ -71,6 +71,9 @@ static char sccsid[] = "@(#)quotacheck.c	8.6 (Berkeley) 4/28/95";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <util.h>
+
+#include "fsutil.h"
 
 const char *qfname = QUOTAFILENAME;
 const char *qfextension[] = INITQFNAMES;
@@ -122,10 +125,10 @@ int	fi;			/* open disk file descriptor */
 u_long	highid[MAXQUOTAS];	/* highest addid()'ed identifier per type */
 
 
-extern int checkfstab(int, int, void *(*)(struct fstab *), 
-            int (*)(const char *, const char *, const char *, void *, pid_t *));
+//extern int checkfstab(int, int, void *(*)(struct fstab *), 
+//            int (*)(const char *, const char *, const char *, void *, pid_t *));
+//char	*blockcheck(char *);
 struct fileusage *addid(u_long, int, char *);
-char	*blockcheck(char *);
 void	bread(daddr_t, char *, long);
 int     chkquota(const char *, const char *, const char *, void *, pid_t *);
 int	 	chkquota2(const char *, const char *, struct quotaname *);
@@ -149,7 +152,8 @@ main(int argc, char *argv[])
 	struct quotaname *auxdata;
 	int i, argnum, maxrun, errs;
 	long done = 0;
-	char ch, *name;
+	char ch;
+    const char *name;
 
 	errs = maxrun = 0;
 	while ((ch = getopt(argc, argv, "aguvl:")) != EOF) {
