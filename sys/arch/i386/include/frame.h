@@ -133,13 +133,13 @@ struct intrframe {
 #ifdef _KERNEL
 
 struct sigframe {
-	int			sf_signum;
-	int			sf_code;
+	int					sf_signum;
+	int					sf_code;
 	struct	sigcontext 	*sf_scp;	/* "scp" argument for handler */
-	siginfo_t 		*sf_sip;	/* "sip" argument for handler */
-	sig_t			sf_handler;
+	siginfo_t 			*sf_sip;	/* "sip" argument for handler */
+	sig_t				sf_handler;
 	struct	sigcontext 	sf_sc;		/* actual saved context */
-	siginfo_t 		sf_si;		/* actual saved siginfo */
+	siginfo_t 			sf_si;		/* actual saved siginfo */
 };
 
 #endif
