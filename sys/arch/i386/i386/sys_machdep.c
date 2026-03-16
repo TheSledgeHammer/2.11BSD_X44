@@ -445,12 +445,12 @@ i386_set_sdbase(p, arg, which)
 	void *arg;
 	char which;
 {
-    struct trapframe *tf;
+	struct trapframe *tf;
 	struct segment_descriptor sd;
 	uint32_t base;
 	int error;
 
-    tf = p->p_md.md_regs;
+	tf = p->p_md.md_regs;
 	error = copyin(arg, &base, sizeof(base));
 	if (error != 0) {
 		return (error);

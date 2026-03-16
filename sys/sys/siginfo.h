@@ -142,7 +142,7 @@ typedef struct siginfo siginfo_t;
 void siginfo_init(siginfo_t *);
 void siginfo_child(struct proc *, int);
 void siginfo_trapsignal(int, int, void *, int);
-void siginfo_postsig(int);
+void siginfo_postsig(siginfo_t *, int, int);
 
 #endif /* _KERNEL */
 #endif /* _SYS_SIGINFO_H_ */

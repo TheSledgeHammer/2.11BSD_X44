@@ -32,18 +32,18 @@ static char sccsid[] = "@(#)reboot.c	5.5.4 (2.11BSD) 1997/10/3";
 
 #define	OPTS	"lqnhdarsfRD"
 
+static void usage(const char *);
+static void markdown(void);
+
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	int howto;		/* reboot options argument */
 	int needlog = 1;	/* tell syslog what's happening */
 	int quickly = 0;	/* go down quickly & ungracefully */
-	char *myname;		/* name we were invoked as */
+	const char *myname;		/* name we were invoked as */
 	char args[20], *ap;	/* collected arguments for syslog */
 	int i;
-//	char *rindex();
 
 	if (myname == rindex(argv[0], '/'))
 		myname++;
@@ -97,9 +97,9 @@ main(argc, argv)
 			howto |= RB_AUTODEBUG;
 			break;
 		case '?':
-			fprintf(stderr, "usage: %s [-%s]\n", myname, OPTS);
-			exit(EX_USAGE);
+			usage(myname);
 			/*NOTREACHED*/
+
 		}
 		if (index(args + 1, (char) i) == 0) {
 			*ap++ = (char) i;
@@ -178,6 +178,14 @@ main(argc, argv)
 	exit(EX_OSERR);
 }
 
+static void
+usage(const char *myname)
+{
+	fprintf(stderr, "usage: %s [-%s]\n", myname, OPTS);
+	exit(EX_USAGE);
+	/*NOTREACHED*/
+}
+
 
 /*
  * Make shutdown entry in /usr/adm/utmp.
@@ -187,14 +195,14 @@ main(argc, argv)
 #define	SCPYN(a, b)	strncpy(a, b, sizeof(a))
 #define	WTMPF		_PATH_WTMP
 
-void
+static void
 markdown(void)
 {
 	struct utmp wtmp;
 	register int f = open(WTMPF, O_WRONLY|O_APPEND);
 
 	if (f >= 0) {
-		bzero((char *)&wtmp, sizeof(wtmp));
+		memset((char *)&wtmp, 0, sizeof(wtmp));
 		SCPYN(wtmp.ut_line, "~");
 		SCPYN(wtmp.ut_name, "shutdown");
 		SCPYN(wtmp.ut_host, "");

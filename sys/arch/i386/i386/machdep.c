@@ -448,6 +448,40 @@ vmtime(otime, olbolt, oicr)
 }
 #endif
 
+void *
+getframe(psp, tf, sig, oonstack)
+	struct sigacts *psp;
+	struct trapframe *tf;
+	int sig, *oonstack;
+{
+	void *n;
+
+	*oonstack = u.u_sigstk.ss_flags & SA_ONSTACK;
+
+	/*
+	 * Allocate space for the signal handler context.
+	 */
+	if ((u.u_psflags & SAS_ALTSTACK) && !(u.u_sigstk.ss_flags & SA_ONSTACK)
+			&& (u.u_sigonstack & sigmask(sig))) {
+		n = (u.u_sigstk2.ss_base + u.u_sigstk.ss_size - sizeof(struct sigframe));
+		u.u_sigstk.ss_flags |= SA_ONSTACK;
+	} else {
+		n = tf->tf_esp - 1;
+		if (!(u.u_sigstk.ss_flags & SA_ONSTACK)
+				&& n < (caddr_t) -ctob(u.u_ssize) && !grow(u.u_procp, n)) {
+			/*
+			 * Process has trashed its stack; give it an illegal
+			 * instruction violation to halt it in its tracks.
+			 */
+			fatalsig(SIGILL);
+			return (NULL);
+		}
+	}
+	psp->ps_sigstk = u.u_sigstk;
+	psp->ps_sigstk2 = u.u_sigstk2;
+	return (n);
+}
+
 /*
  * Build the signal context to be used by sigreturn.
  */
@@ -538,7 +572,6 @@ sendsig(catcher, sig, mask, code)
 	struct proc *p = u.u_procp;
 	struct trapframe *tf;
 	struct sigframe *fp, frame;
-	struct sigacts *psp = p->p_sigacts;
 	int oonstack;
 	extern int szsigcode;
 
@@ -549,24 +582,12 @@ sendsig(catcher, sig, mask, code)
 	frame.sf_signum = sig;
 
 	tf = p->p_md.md_regs;
-	oonstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
-
-	/*
-	 * Allocate space for the signal handler context.
-	 */
-	if ((psp->ps_flags & SAS_ALTSTACK) && !oonstack &&
-	    (psp->ps_sigonstack & sigmask(sig))) {
-		fp = (struct sigframe *)(psp->ps_sigstk2.ss_sp +
-		    psp->ps_sigstk.ss_size - sizeof(struct sigframe));
-		psp->ps_sigstk.ss_flags |= SS_ONSTACK;
-	} else {
-		fp = (struct sigframe *)tf->tf_esp - 1;
-	}
+	fp = getframe(p->p_sigacts, tf, sig, &oonstack);
 
 	fp->sf_signum = sig;
 	fp->sf_code = code;
-	fp->sf_sip = &fp->sf_si;
 	fp->sf_scp = &fp->sf_sc;
+	fp->sf_sip = &fp->sf_si;
 	fp->sf_handler = catcher;
 
 	/*
@@ -580,12 +601,7 @@ sendsig(catcher, sig, mask, code)
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
 		 */
-		SIGACTION(p, SIGILL) = SIG_DFL;
-		sig = sigmask(SIGILL);
-		p->p_sigignore &= ~sig;
-		p->p_sigcatch &= ~sig;
-		p->p_sigmask &= ~sig;
-		psignal(p, SIGILL);
+		fatalsig(SIGILL);
 		return;
 	}
 
@@ -595,7 +611,8 @@ sendsig(catcher, sig, mask, code)
 	buildcontext(tf, szsigcode, fp);
 	/* Remember that we're now on the signal stack. */
 	if (oonstack) {
-		psp->ps_sigstk.ss_flags |= SS_ONSTACK;
+		u.u_sigstk.ss_flags |= SS_ONSTACK;
+		p->p_sigacts->ps_sigstk = u.u_sigstk;
 	}
 }
 
@@ -630,12 +647,13 @@ sigreturn()
 	 * program jumps out of a signal handler.
 	 */
 	scp = SCARG(uap, sigcntxp);
-	if (copyin((caddr_t)scp, &context, sizeof(*scp)) != 0)
+	u.u_error = copyin((caddr_t)scp, &context, sizeof(*scp));
+	if (u.u_error != 0)
 		return (EFAULT);
 
 	eflags = scp->sc_ps;
 	if (context.sc_eflags & PSL_VM) {
-		struct trapframe_vm86 *tf = (struct trapframe_vm86 *)tf;
+		struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *)tf;
 		struct vm86_kernel *vm86;
 		/*
 		 * if pcb_ext == 0 or vm86_inited == 0, the user hasn't
@@ -652,11 +670,11 @@ sigreturn()
 		if ((context.sc_eflags & PSL_VIP) && (context.sc_eflags & PSL_VIF)) {
 			trapsignal(p, SIGBUS, 0, (void *)&context.sc_eip, context.sc_trapno);
 		}
-		set_vm86flags(tf, vm86, context.sc_eflags);
-		tf->tf_vm86_gs = context.sc_gs;
-		tf->tf_vm86_fs = context.sc_fs;
-		tf->tf_vm86_es = context.sc_es;
-		tf->tf_vm86_ds = context.sc_ds;
+		set_vm86flags(tf86, vm86, context.sc_eflags);
+		tf86->tf_vm86_gs = context.sc_gs;
+		tf86->tf_vm86_fs = context.sc_fs;
+		tf86->tf_vm86_es = context.sc_es;
+		tf86->tf_vm86_ds = context.sc_ds;
 	} else {
 		/*
 		 * Check for security violations.  If we're returning to
@@ -686,9 +704,11 @@ sigreturn()
 	tf->tf_ss = context.sc_ss;
 
 	if (context.sc_onstack & 01)
-		p->p_sigacts->ps_sigstk.ss_flags |= SS_ONSTACK;
+		u.u_sigstk.ss_flags |= SS_ONSTACK;
 	else
-		p->p_sigacts->ps_sigstk.ss_flags &= ~SS_ONSTACK;
+		u.u_sigstk.ss_flags &= ~SS_ONSTACK;
+
+	p->p_sigacts->ps_sigstk = u.u_sigstk;
 	p->p_sigmask = context.sc_mask & ~sigcantmask;
 
 	return (EJUSTRETURN);

@@ -185,6 +185,7 @@ fatalsig(signum)
 
 	p = u.u_procp;
 	u.u_signal[signum] = SIG_DFL;
+	SIGACTION(p, signum) = SIG_DFL;
 	mask = sigmask(signum);
 	p->p_sigignore &= ~mask;
 	p->p_sigcatch &= ~mask;
@@ -533,14 +534,15 @@ siginfo_child(p, status)
  * called in postsig
  */
 void
-siginfo_postsig(signo)
-	int signo;
+siginfo_postsig(si, signo, code)
+	siginfo_t *si;
+	int signo, code;
 {
-	siginfo_t info;
-
-	siginfo_init(&info);
-	info.si_signo = signo;
-	info.si_code = SI_USER;
+	if (si == NULL) {
+		siginfo_init(si);
+	}
+	si->si_signo = signo;
+	si->si_code = code;
 }
 
 static int

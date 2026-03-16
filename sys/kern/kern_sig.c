@@ -679,6 +679,7 @@ postsig(sig)
 	register struct proc *p;
 	long mask = sigmask(sig), returnmask;
 	register sig_t action;
+	siginfo_t info;
 
 	p = u.u_procp;
 /*
@@ -690,7 +691,7 @@ postsig(sig)
 
 	p->p_sig &= ~mask;
 	action = u.u_signal[sig];
-	siginfo_postsig(sig);
+	siginfo_postsig(&info, sig, SI_USER);
 	if (action != SIG_DFL) {
 #ifdef DIAGNOSTIC
 		if (action == SIG_IGN || (p->p_sigmask & mask))
@@ -713,9 +714,10 @@ postsig(sig)
 		} else
 			returnmask = p->p_sigmask;
 		p->p_sigmask |= u.u_sigmask[sig] | mask;
-		(void) spl0();
+		(void)spl0();
 		u.u_ru.ru_nsignals++;
 		sendsig(action, sig, returnmask, 0);
+		siginfo_postsig(&info, sig, 0);
 		return;
 	}
 	u.u_acflag |= AXSIG;

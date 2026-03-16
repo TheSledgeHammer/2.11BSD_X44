@@ -34,9 +34,17 @@
 #include <signal.h>
 #include <unistd.h>
 
+static int sigtramp(void);
+
+static int
+sigtramp(void)
+{
+	return (0);
+}
+
 /* ingores 1st argument; int sigtramp(void) (this is a temporary solution) */
 int
 sigaction(int signum, const struct sigaction *nsa, struct sigaction *osa)
 {
-	return (__syscall((quad_t)SYS_sigaction, 0, signum, nsa, osa));
+	return (__syscall((quad_t)SYS_sigaction, sigtramp, signum, nsa, osa));
 }
