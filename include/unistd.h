@@ -219,7 +219,7 @@ int		 		rcmd(char **, int, const char *, const char *, const char *, int *);
 char			*re_comp(const char *);
 int 			re_exec(const char *);
 char			*sbrk(int);
-int	 			reboot(int, char *);
+int	 			reboot(int);
 int	 			revoke(const char *);
 int	 			rresvport(int *);
 int	 			ruserok(const char *, int, const char *, const char *);
