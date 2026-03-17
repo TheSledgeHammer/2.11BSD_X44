@@ -158,6 +158,7 @@ void	postsig(int);
 void	issignal(struct proc *);
 int     _issignal(struct proc *);
 void	psignal(struct proc *, int);
+void 	fatalsig(int);
 void	siginit(struct proc *);
 void	trapsignal(struct proc *, int, u_long, void *, u_long);
 int     core(void);
