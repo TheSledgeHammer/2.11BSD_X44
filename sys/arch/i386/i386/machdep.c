@@ -462,11 +462,10 @@ set_trapframe(pcb, stack, sigcode)
 		kstack = stack;
 	}
 
-	*pcb->pcb_sigc = kstack;
+	*pcb->pcb_sigc = *kstack;
 	tframe = *pcb->pcb_sigc;
 	return (tframe);
 }
-
 
 /* gets i386 trapframe with parameters */
 int
