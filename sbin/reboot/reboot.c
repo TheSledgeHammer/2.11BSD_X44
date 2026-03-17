@@ -45,7 +45,7 @@ main(int argc, char **argv)
 	char args[20], *ap;	/* collected arguments for syslog */
 	int i;
 
-	if (myname == rindex(argv[0], '/'))
+	if ((myname = rindex(argv[0], '/')))
 		myname++;
 	else
 		myname = argv[0];
@@ -115,13 +115,13 @@ main(int argc, char **argv)
 		howto &= ~RB_NOFSCK;
 	}
 	if (needlog) {
-		char *user;
+		const char *user;
 		struct passwd *pw;
 
 		user = getlogin();
-		if (user == (char*) 0 && (pw = getpwuid(getuid())))
+		if (user == (const char *)0 && (pw = getpwuid(getuid())))
 			user = pw->pw_name;
-		if (user == (char*) 0)
+		if (user == (const char *)0)
 			user = "root";
 		openlog(myname, 0, LOG_AUTH);
 		syslog(LOG_CRIT, "%s; %s by %s", args, (howto & RB_HALT) ? "halted" : "rebooted", user);
@@ -133,7 +133,7 @@ main(int argc, char **argv)
 	if (!(howto & RB_NOSYNC))
 		sync();
 
-	(void) signal(SIGHUP, SIG_IGN); /* for remote connections */
+	(void)signal(SIGHUP, SIG_IGN); /* for remote connections */
 	if (kill(1, SIGTSTP) == -1) {
 		fprintf(stderr, "%s: can\'t idle init\n", myname);
 		exit(EX_NOPERM);
