@@ -617,9 +617,9 @@ syscall(frame)
 	register struct proc *p;
 	register int i;
 	register_t code, args[8], rval[2];
-    u_quad_t sticks;
-    int error, nsys;
-    short argsize;
+	u_quad_t sticks;
+	int error, nsys;
+	short argsize;
 
 	sticks = p->p_sticks;
 	if (ISPL(frame->tf_cs) != SEL_UPL) {
@@ -632,14 +632,13 @@ syscall(frame)
 	callp = p->p_emul->e_sysent;
 	code = TF_CODE_ALLOC(frame, nsys);
 
-	curpcb->pcb_flags &= ~FM_TRAP; /* used by sendsig */
 	params = (caddr_t) frame->tf_esp + sizeof(int);
 
 	if (callp == sysent) {
-		if(code == SYS_syscall) {
+		if (code == SYS_syscall) {
 			code = fuword(params);
 			params += sizeof(int);
-		} else if(code == SYS__syscall){
+		} else if (code == SYS__syscall) {
 			code = fuword(params + sizeof(int));
 			params += sizeof(quad_t);
 		}
@@ -651,11 +650,11 @@ syscall(frame)
 		callp += code;
 	}
 	argsize = callp->sy_argsize;
-	if(argsize && (error = copyin(params, args, argsize))) {
-        frame->tf_eax = error;
-		frame->tf_eflags |= PSL_C;	/* carry bit */
-        goto done;
-    }
+	if (argsize && (error = copyin(params, args, argsize))) {
+		frame->tf_eax = error;
+		frame->tf_eflags |= PSL_C; /* carry bit */
+		goto done;
+	}
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSCALL)) {
 		ktrsyscall(p, code, argsize, args);
@@ -664,17 +663,17 @@ syscall(frame)
 
 	rval[0] = 0;
 	rval[1] = 0;
-    error = (*callp->sy_call)(p, args, rval);
-    switch (error) {
-    case 0:
+	error = (*callp->sy_call)(p, args, rval);
+	switch (error) {
+	case 0:
 		frame->tf_eax = rval[0];
 		frame->tf_edx = rval[1];
-		frame->tf_eflags &= ~PSL_C;	/* carry bit */
+		frame->tf_eflags &= ~PSL_C; /* carry bit */
 		break;
 
-    case ERESTART:
-    	frame->tf_eip -= frame->tf_err;
-    	break;
+	case ERESTART:
+		frame->tf_eip -= frame->tf_err;
+		break;
 
 	case EJUSTRETURN:
 		/* nothing to do */
@@ -682,9 +681,9 @@ syscall(frame)
 
 	default:
 		frame->tf_eax = error;
-		frame->tf_eflags |= PSL_C;	/* carry bit */
+		frame->tf_eflags |= PSL_C; /* carry bit */
 		break;
-    }
+	}
 
 done:
 	/*
@@ -716,14 +715,14 @@ user_page_fault(p, map, addr, ftype, type)
 
 	vm = p->p_vmspace;
 
-	va = trunc_page((vm_offset_t)addr);
+	va = trunc_page((vm_offset_t )addr);
 
 	/*
 	 * XXX: rude hack to make stack limits "work"
 	 */
 	nss = 0;
-	if ((caddr_t)va >= vm->vm_maxsaddr && map != kernel_map) {
-		nss = clrnd(btoc(USRSTACK - (unsigned)va));
+	if ((caddr_t) va >= vm->vm_maxsaddr && map != kernel_map) {
+		nss = clrnd(btoc(USRSTACK - (unsigned) va));
 		if (nss > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
 			return (KERN_FAILURE);
 		}
@@ -736,7 +735,7 @@ user_page_fault(p, map, addr, ftype, type)
 	}
 
 	/* check if page table fault, increment wiring */
-	vm_map_pageable(map, v, round_page(v+1), FALSE);
+	vm_map_pageable(map, v, round_page(v + 1), FALSE);
 
 	if ((rv = vm_fault(map, va, ftype, FALSE)) != KERN_SUCCESS) {
 		return (rv);
@@ -754,7 +753,7 @@ user_page_fault(p, map, addr, ftype, type)
 	 * as long as not a page table fault as well
 	 */
 	if (!v && type != T_PAGEFLT) {
-		vm_map_pageable(map, va, round_page(va+1), FALSE);
+		vm_map_pageable(map, va, round_page(va + 1), FALSE);
 	}
 	return (KERN_SUCCESS);
 }

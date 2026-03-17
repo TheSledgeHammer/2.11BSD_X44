@@ -448,6 +448,49 @@ vmtime(otime, olbolt, oicr)
 }
 #endif
 
+/* sets i386 trapframe */
+int
+set_trapframe(pcb, stack, sigcode)
+	struct pcb *pcb;
+	int *stack, sigcode;
+{
+	int tframe, *kstack;
+
+	if (*stack == 0) {
+		*kstack = (int)(((char *)PS_STRINGS) - (sigcode));
+	} else {
+		kstack = stack;
+	}
+
+	*pcb->pcb_sigc = kstack;
+	tframe = *pcb->pcb_sigc;
+	return (tframe);
+}
+
+
+/* gets i386 trapframe with parameters */
+int
+get_trapframe(pcb, sigcode)
+	struct pcb *pcb;
+	int sigcode;
+{
+	int tframe = 0;
+
+	if (pcb != NULL) {
+		tframe = set_trapframe(pcb, &proc0kstack, sigcode);
+	}
+	return (tframe);
+}
+
+/* gets i386 trapframe without parameters */
+int
+i386_trapframe(void)
+{
+	extern int szsigcode;
+
+	return (get_trapframe(curpcb, szsigcode));
+}
+
 void *
 getframe(psp, tf, sig, oonstack)
 	struct sigacts *psp;
@@ -539,8 +582,9 @@ buildframe(frame, tf, pcb)
  * Build context to run handler in.
  */
 void
-buildcontext(tf, sigcode, fp)
+buildcontext(tf, pcb, sigcode, fp)
 	struct trapframe *tf;
+	struct pcb *pcb;
 	int sigcode;
 	struct sigframe *fp;
 {
@@ -548,7 +592,7 @@ buildcontext(tf, sigcode, fp)
 	tf->tf_fs = GSEL(GUDATA_SEL, SEL_UPL);
 	tf->tf_es = GSEL(GUDATA_SEL, SEL_UPL);
 	tf->tf_ds = GSEL(GUDATA_SEL, SEL_UPL);
-	tf->tf_eip = (int)(((char *)PS_STRINGS) - (sigcode));
+	tf->tf_eip = get_trapframe(pcb, sigcode);
 	tf->tf_cs = GSEL(GUCODE_SEL, SEL_UPL);
 	tf->tf_eflags &= ~(PSL_T|PSL_VM|PSL_AC);
 	tf->tf_esp = (int)fp;
@@ -610,7 +654,9 @@ sendsig(catcher, sig, mask, code)
 	/*
 	 * Build context to run handler in.
 	 */
-	buildcontext(tf, szsigcode, fp);
+	buildcontext(tf, &p->p_addr->u_pcb, szsigcode, fp);
+	u.u_pcb.u_pcb_sigc = i386_trapframe;
+
 	/* Remember that we're now on the signal stack. */
 	if (oonstack) {
 		u.u_sigstk.ss_flags |= SS_ONSTACK;
@@ -734,6 +780,22 @@ boot(arghowto)
 	howto = arghowto;
 	if ((howto & RB_NOSYNC) == 0 && waittime < 0) {
 		waittime = 0;
+		(void) splnet();
+		printf("syncing disks... ");
+		/*
+		 * Release inodes held by texts before update.
+		 */
+		if (panicstr == 0) {
+			vnode_pager_umount(NULL);
+		}
+		sync((struct sigcontext *)0);
+
+		/*
+		 * Unmount filesystems
+		 */
+		if (panicstr == 0) {
+			vfs_unmountall();
+		}
 	}
 	/* Disable interrupts. */
 	splhigh();
