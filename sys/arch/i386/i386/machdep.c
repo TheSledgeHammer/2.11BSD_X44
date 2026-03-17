@@ -455,6 +455,7 @@ getframe(psp, tf, sig, oonstack)
 	int sig, *oonstack;
 {
 	void *n;
+    vm_offset_t s;
 
 	*oonstack = u.u_sigstk.ss_flags & SA_ONSTACK;
 
@@ -466,9 +467,10 @@ getframe(psp, tf, sig, oonstack)
 		n = (u.u_sigstk2.ss_base + u.u_sigstk.ss_size - sizeof(struct sigframe));
 		u.u_sigstk.ss_flags |= SA_ONSTACK;
 	} else {
-		n = tf->tf_esp - 1;
+		n = (struct trapframe *)tf->tf_esp - 1;
+        s = (vm_offset_t)n;
 		if (!(u.u_sigstk.ss_flags & SA_ONSTACK)
-				&& n < (caddr_t) -ctob(u.u_ssize) && !grow(u.u_procp, n)) {
+				&& (caddr_t)n < (caddr_t)-ctob(u.u_ssize) && !grow(u.u_procp, s)) {
 			/*
 			 * Process has trashed its stack; give it an illegal
 			 * instruction violation to halt it in its tracks.
