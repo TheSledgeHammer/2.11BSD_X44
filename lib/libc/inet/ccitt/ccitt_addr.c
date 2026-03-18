@@ -183,7 +183,7 @@ optional_udata(addr, udata, udlen)
 	int rval = 2;
 
 	addr++;
-	ap = udata + 4;	/* first four bytes are protocol id */
+	ap = udata + 4; /* first four bytes are protocol id */
 	limit = ap + sizeof(udata) - 4;
 	udlen = 4;
 	while (*addr) {
@@ -231,23 +231,23 @@ copychar(from, to)
 	const char *from;
 	char *to;
 {
-    register int n = 0;
+	register int n = 0;
 
-    if (*from != '\\' || from[1] < '0' || from[1] > '7') {
-        *to = *from++;
-        return (from);
-    }
-    n = *++from - '0';
-    from++;
-    if (*from >= '0' && *from <= '7') {
-        register int n1 = 0;
+	if (*from != '\\' || from[1] < '0' || from[1] > '7') {
+		*to = *from++;
+		return (from);
+	}
+	n = *++from - '0';
+	from++;
+	if (*from >= '0' && *from <= '7') {
+		register int n1 = 0;
 
-        n = n*8 + *from++ - '0';
-        if (*from >= '0' && *from <= '7' && (n1 = n*8 + *from-'0') < 256) {
-            n = n1;
-            from++;
-        }
-    }
-    *to = (char)n;
-    return (from);
+		n = n * 8 + *from++ - '0';
+		if (*from >= '0' && *from <= '7' && (n1 = n * 8 + *from - '0') < 256) {
+			n = n1;
+			from++;
+		}
+	}
+	*to = (char) n;
+	return (from);
 }
