@@ -448,9 +448,9 @@ vmtime(otime, olbolt, oicr)
 }
 #endif
 
-/* sets i386 trapframe */
+/* sets i386 sigtramp */
 int
-set_trapframe(pcb, stack, sigcode)
+set_sigtramp(pcb, stack, sigcode)
 	struct pcb *pcb;
 	int *stack, sigcode;
 {
@@ -467,27 +467,27 @@ set_trapframe(pcb, stack, sigcode)
 	return (tframe);
 }
 
-/* gets i386 trapframe with parameters */
+/* gets i386 sigtramp with parameters */
 int
-get_trapframe(pcb, sigcode)
+get_sigtramp(pcb, sigcode)
 	struct pcb *pcb;
 	int sigcode;
 {
 	int tframe = 0;
 
 	if (pcb != NULL) {
-		tframe = set_trapframe(pcb, &proc0kstack, sigcode);
+		tframe = set_sigtramp(pcb, &proc0kstack, sigcode);
 	}
 	return (tframe);
 }
 
-/* gets i386 trapframe without parameters */
+/* gets i386 sigtramp without parameters */
 int
-i386_trapframe(void)
+i386_sigtramp(void)
 {
 	extern int szsigcode;
 
-	return (get_trapframe(curpcb, szsigcode));
+	return (get_sigtramp(curpcb, szsigcode));
 }
 
 void *
@@ -591,11 +591,12 @@ buildcontext(tf, pcb, sigcode, fp)
 	tf->tf_fs = GSEL(GUDATA_SEL, SEL_UPL);
 	tf->tf_es = GSEL(GUDATA_SEL, SEL_UPL);
 	tf->tf_ds = GSEL(GUDATA_SEL, SEL_UPL);
-	tf->tf_eip = get_trapframe(pcb, sigcode);
+	tf->tf_eip = get_sigtramp(pcb, sigcode);
 	tf->tf_cs = GSEL(GUCODE_SEL, SEL_UPL);
 	tf->tf_eflags &= ~(PSL_T|PSL_VM|PSL_AC);
 	tf->tf_esp = (int)fp;
 	tf->tf_ss = GSEL(GUDATA_SEL, SEL_UPL);
+	u.u_pcb.u_pcb_sigc = i386_sigtramp;
 }
 
 /*
@@ -654,7 +655,6 @@ sendsig(catcher, sig, mask, code)
 	 * Build context to run handler in.
 	 */
 	buildcontext(tf, &p->p_addr->u_pcb, szsigcode, fp);
-	u.u_pcb.u_pcb_sigc = i386_trapframe;
 
 	/* Remember that we're now on the signal stack. */
 	if (oonstack) {

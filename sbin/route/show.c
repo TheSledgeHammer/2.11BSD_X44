@@ -102,9 +102,7 @@ static void p_flags(int);
  * Print routing tables.
  */
 void
-show(argc, argv)
-	int argc;
-	char **argv;
+show(int argc, char **argv)
 {
 	size_t needed;
 	int mib[6];
@@ -147,7 +145,7 @@ show(argc, argv)
  * Print header for routing table columns.
  */
 static void
-pr_rthdr()
+pr_rthdr(void)
 {
 
 	printf("%-*.*s %-*.*s %-6.6s\n",
@@ -161,8 +159,7 @@ pr_rthdr()
  * Print a routing table entry.
  */
 static void
-p_rtentry(rtm)
-	struct rt_msghdr *rtm;
+p_rtentry(struct rt_msghdr *rtm)
 {
 	struct sockaddr *sa = (struct sockaddr *)(rtm + 1);
 #ifdef notdef
@@ -219,8 +216,7 @@ p_rtentry(rtm)
  * Print address family header before a section of the routing table.
  */
 static void
-pr_family(af)
-	int af;
+pr_family(int af)
 {
 	char *afname;
 
@@ -259,9 +255,7 @@ pr_family(af)
 
 
 static void
-p_sockaddr(sa, nm, flags, width)
-	struct sockaddr *sa, *nm;
-	int flags, width;
+p_sockaddr(struct sockaddr *sa, struct sockaddr *nm, int flags, int width)
 {
 	char workbuf[128], *cplim;
 	char *cp = workbuf;
@@ -320,8 +314,7 @@ p_sockaddr(sa, nm, flags, width)
 }
 
 static void
-p_flags(f)
-	int f;
+p_flags(int f)
 {
 	char name[33], *flags;
 	const struct bits *p = bits;

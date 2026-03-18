@@ -16,6 +16,7 @@ SRCS+=	inet_addr.c inet_cidr_ntop.c inet_cidr_pton.c \
 		inet_ntoa.c nsap_addr.c
 
 # sub-directories inet sources
+.include "${.CURDIR}/inet/ccitt/Makefile.inc"
 .include "${.CURDIR}/inet/iso/Makefile.inc"
 .include "${.CURDIR}/inet/ns/Makefile.inc"
 

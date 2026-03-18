@@ -11,6 +11,25 @@ SRCS=	route.c show.c keywords.c
 CPPFLAGS+=-DINET6
 .endif
 
+#CPPFLAGS+=-DAPPLETALK
+
+# ISO/OSI Networks
+CPPFLAGS+=-DISO
+NETISOSRC= ${NETBSDSRCDIR}/lib/libc/inet/iso
+.PATH:  ${NETISOSRC}
+CPPFLAGS+=-I${NETISOSRC}
+SRCS+= iso_addr.c iso_ntoa.c
+
+# Xerox NS Networks
+CPPFLAGS+=-DXNS
+
+# X.25 Networks
+CPPFLAGS+=-DCCITT
+NETCCITTSRC= ${NETBSDSRCDIR}/lib/libc/inet/ccitt
+.PATH:  ${NETCCITTSRC}
+CPPFLAGS+=-I${NETCCITTSRC}
+SRCS+= ccitt_addr.c
+
 # The Makefile over in ../../distrib/utils/x_route
 # would like keywords.[ch] to always exist here, so
 # they are now checked in as sources.

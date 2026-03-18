@@ -37,13 +37,17 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1989, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)cal.c	8.4 (Berkeley) 4/2/94";
+#endif
 #endif /* not lint */
 
 #ifndef lint
@@ -82,7 +86,7 @@ static int days_in_month[2][13] = {
 	{0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
 };
 
-int sep1752[MAXDAYS] = {
+static int sep1752[MAXDAYS] = {
 	SPACE,	SPACE,	1,	2,	14,	15,	16,
 	17,	18,	19,	20,	21,	22,	23,
 	24,	25,	26,	27,	28,	29,	30,
@@ -105,18 +109,18 @@ int sep1752[MAXDAYS] = {
 	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
 };
 
-char *month_names[12] = {
+static const char *month_names[12] = {
 	"January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December",
 };
 
-char *day_headings = " S  M Tu  W Th  F  S";
-char *j_day_headings = "  S   M  Tu   W  Th   F   S";
+static const char *day_headings = " Su  Mo Tu  We Th  Fr  Sa";
+static const char *j_day_headings = "  Su   Mo  Tu   We  Th   Fr   Sa";
 
 /* leap year -- account for gregorian reformation in 1752 */
 #define	leap_year(yr) \
 	((yr) <= 1752 ? !((yr) % 4) : \
-			!((yr) % 4) && ((yr) % 100) || !((yr) % 400))
+			!(((yr) % 4) && ((yr) % 100)) || !((yr) % 400))
 
 /* number of centuries since 1700, not inclusive */
 #define	centuries_since_1700(yr) \
@@ -136,7 +140,7 @@ const char *md, *me;
 
 void	init_hilite(void);
 void	ascii_day(char *, int);
-void	center(char *, int, int);
+void	center(const char *, int, int);
 void	day_array(int, int, int *);
 int		day_in_week(int, int, int);
 int		day_in_year(int, int, int);
@@ -147,9 +151,7 @@ void	usage(void);
 void	yearly(int);
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	struct tm *local_time;
 	time_t now;
@@ -213,8 +215,7 @@ main(argc, argv)
 #define	J_HEAD_SEP	2
 
 void
-monthly(month, year)
-	int month, year;
+monthly(int month, int year)
 {
 	int col, row, len, days[MAXDAYS];
 	char *p, lineout[30];
@@ -235,8 +236,7 @@ monthly(month, year)
 }
 
 void
-j_yearly(year)
-	int year;
+j_yearly(int year)
 {
 	int col, *dp, i, month, row, which_cal;
 	int days[12][MAXDAYS];
@@ -270,8 +270,7 @@ j_yearly(year)
 }
 
 void
-yearly(year)
-	int year;
+yearly(int year)
 {
 	int col, *dp, i, month, row, which_cal;
 	int days[12][MAXDAYS];
@@ -313,9 +312,7 @@ yearly(year)
  *	builds that array for any month from Jan. 1 through Dec. 9999.
  */
 void
-day_array(month, year, days)
-	int month, year;
-	int *days;
+day_array(int month, int year, int *days)
 {
 	int day, dw, dm;
 
@@ -337,8 +334,7 @@ day_array(month, year, days)
  *	return the 1 based day number within the year
  */
 int
-day_in_year(day, month, year)
-	int day, month, year;
+day_in_year(int day, int month, int year)
 {
 	int i, leap;
 
@@ -356,8 +352,7 @@ day_in_year(day, month, year)
  *	missing days.
  */
 int
-day_in_week(day, month, year)
-	int day, month, year;
+day_in_week(int day, int month, int year)
 {
 	long temp;
 
@@ -371,12 +366,10 @@ day_in_week(day, month, year)
 }
 
 void
-ascii_day(p, day)
-	char *p;
-	int day;
+ascii_day(char *p, int day)
 {
 	int display, val;
-	static char *aday[] = {
+	static const char *aday[] = {
 		"",
 		" 1", " 2", " 3", " 4", " 5", " 6", " 7",
 		" 8", " 9", "10", "11", "12", "13", "14",
@@ -412,8 +405,7 @@ ascii_day(p, day)
 }
 
 void
-trim_trailing_spaces(s)
-	char *s;
+trim_trailing_spaces(char *s)
 {
 	char *p;
 
@@ -427,10 +419,7 @@ trim_trailing_spaces(s)
 }
 
 void
-center(str, len, separate)
-	char *str;
-	int len;
-	int separate;
+center(const char *str, int len, int separate)
 {
 
 	len -= strlen(str);
@@ -468,7 +457,7 @@ init_hilite(void)
 }
 
 void
-usage()
+usage(void)
 {
 
 	(void)fprintf(stderr, "usage: cal [-hjy] [[month] year]\n");

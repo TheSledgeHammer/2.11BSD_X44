@@ -37,7 +37,8 @@ ns_ntoa(addr)
 	sprintf(obuf, "%x", ntohl(net.long_e));
 	cp = spectHex(obuf);
 	cp2 = cp + 1;
-	while (*up==0 && up < uplim) up++;
+	while (*up == 0 && up < uplim)
+		up++;
 	if (up == uplim) {
 		if (port) {
 			sprintf(cp, ".0");
@@ -46,7 +47,8 @@ ns_ntoa(addr)
 	} else {
 		sprintf(cp, ".%x", *up++);
 		while (up < uplim) {
-			while (*cp) cp++;
+			while (*cp)
+				cp++;
 			sprintf(cp, "%02x", *up++);
 		}
 		cp = spectHex(cp2);

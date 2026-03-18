@@ -72,6 +72,19 @@ struct iso_addr {
 	char            isoa_genaddr[20];	/* general opaque address */
 };
 
+struct sockaddr_iso {
+	u_char	 		siso_len;			/* length */
+	u_char	 		siso_family;		/* family */
+	u_char			siso_plen;			/* presentation selector length */
+	u_char			siso_slen;			/* session selector length */
+	u_char			siso_tlen;			/* transport selector length */
+	struct iso_addr	siso_addr;			/* network address */
+	u_char			siso_pad[6];		/* space for gosip v2 sels */
+										/* makes struct 32 bytes long */
+};
+#define siso_nlen 	siso_addr.isoa_len
+#define siso_data 	siso_addr.isoa_genaddr
+
 __BEGIN_DECLS
 struct iso_addr *iso_addr(const char *);
 char *iso_ntoa(const struct iso_addr *);

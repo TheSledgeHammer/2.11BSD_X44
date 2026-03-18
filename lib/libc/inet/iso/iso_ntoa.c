@@ -71,5 +71,5 @@ iso_ntoa(isoa)
 			*out++ = hexlist[i];
 	}
 	*out = 0;
-	return(obuf + 1);
+	return (obuf + 1);
 }

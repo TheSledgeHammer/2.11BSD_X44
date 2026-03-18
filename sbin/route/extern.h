@@ -30,7 +30,9 @@
  */
 
 struct sockaddr;
+#ifdef XNS
 struct sockaddr_ns;
+#endif
 
 /* show.c */
 void show(int, char **);
@@ -42,4 +44,9 @@ int netmask_length(struct sockaddr *, int);
 char *netmask_string(struct sockaddr *, int);
 char *routename(struct sockaddr *, struct sockaddr *, int);
 char *netname(struct sockaddr *, struct sockaddr *);
+#ifdef XNS
 char *ns_print(struct sockaddr_ns *);
+#endif
+#ifdef CCITT
+int x25_makemask(void);
+#endif
