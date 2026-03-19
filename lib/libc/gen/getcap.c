@@ -92,7 +92,7 @@ static int		gottoprec;			/* Flag indicating retrieval of toprecord */
 static int	 	expandtc = 1;		/* flag to expand tc= or not */
 
 static int	cdbget(DB *, char **, const char *);
-static int 	getent(char **, size_t *, char **, int, const char *, int, char *);
+static int 	getent(char **, size_t *, const char * const *, int, const char *, int, char *);
 static int	nfcmp(char *, char *);
 
 /*
@@ -215,7 +215,7 @@ cgetcap(buf, cap, type)
 int
 cgetent(buf, db_array, name)
 	char **buf;
-	char **db_array;
+	const char * const *db_array;
 	const char *name;
 {
 	size_t dummy;
@@ -254,14 +254,14 @@ csetexpandtc(int etc)
 static int
 getent(cap, len, db_array, fd, name, depth, nfield)
 	char **cap, *nfield;
-	char **db_array;
+	const char * const *db_array;
 	const char *name;
 	size_t *len;
 	int fd, depth;
 {
 	char *record, *newrecord;
 	char *r_end, *rp; /* pacify gcc */
-	char **db_p;
+	const char * const *db_p;
 	int myfd, eof, foundit;
 	int tc_not_resolved;
 
@@ -747,7 +747,7 @@ cgetmatch(buf, name)
 int
 cgetfirst(buf, db_array)
 	char **buf;
-	char **db_array;
+	const char * const *db_array;
 {
 
 	_DIAGASSERT(buf != NULL);
@@ -762,7 +762,7 @@ static int slash;
 static char **dbp;
 
 int
-cgetclose()
+cgetclose(void)
 {
 	if (pfp != NULL) {
 		(void) fclose(pfp);
@@ -782,7 +782,7 @@ cgetclose()
 int
 cgetnext(bp, db_array)
     char **bp;
-	char **db_array;
+	const char * const *db_array;
 {
 	size_t len;
 	int status, done;
