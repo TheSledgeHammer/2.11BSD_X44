@@ -596,7 +596,7 @@ buildcontext(tf, pcb, sigcode, fp)
 	tf->tf_eflags &= ~(PSL_T|PSL_VM|PSL_AC);
 	tf->tf_esp = (int)fp;
 	tf->tf_ss = GSEL(GUDATA_SEL, SEL_UPL);
-	u.u_pcb.u_pcb_sigc = i386_sigtramp;
+	u.u_upcb.u_pcb_sigc = i386_sigtramp;
 }
 
 /*
