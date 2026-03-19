@@ -12,9 +12,9 @@ CWARNFLAGS.clang+=	-Wno-unneeded-internal-declaration \
 
 WARNS?=	4
 
-IDIST=		${NETBSDSRCDIR}/external/bsd/ntp/dist
-NTP_SRCDIR=	${NETBSDSRCDIR}/external/bsd/ntp
-NTP_HTMLDIR=	/usr/share/doc/reference/ref8
+IDIST=		${NETBSDSRCDIR}/contrib/ntp/dist
+NTP_SRCDIR=	${NETBSDSRCDIR}/contrib/ntp
+NTP_HTMLDIR=	/usr/share/doc/html/
 
 SYSCONFDIR=/etc
 LOCALSTATEDIR=/var
