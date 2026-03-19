@@ -35,13 +35,15 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-
 #include <sys/socket.h>
+
+#include <string.h>
+#include <stdlib.h>
 
 #include "x25.h"
 
 static int x121_address(const char *, struct x25_addr *, int, int);
-static int optional_priority(const char *, char *, char *);
+static int optional_priority(const char *, char, char);
 static int optional_udata(const char *, char *, int);
 static const char *copychar(const char *, char *);
 
@@ -58,8 +60,8 @@ ccitt_addr(addr, xp)
 	memset(xp, 0, sizeof(*xp));
 	xp->x25_family = AF_CCITT;
 	xp->x25_len = sizeof(*xp);
-	xaddr = xp->x25_addr;
-	opts = xp->x25_opts;
+	xaddr = &xp->x25_addr;
+	opts = &xp->x25_opts;
 
 	/*
 	 * process optional priority and reverse charging flags
@@ -176,7 +178,7 @@ out:
 static int
 optional_udata(addr, udata, udlen)
 	const char *addr;
-	char udata[16];
+	char *udata;
 	int udlen;
 {
 	register char *ap, *limit;
