@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)gettytab.c	5.1 (Berkeley) 4/29/85";
 int
 getent(char *bp, const char *name)
 {
-	char *dba[2];
+	const char *dba[2];
 	dba[0] = _PATH_GETTYTAB;
 	dba[1] = NULL;
 
