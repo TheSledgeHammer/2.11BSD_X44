@@ -85,7 +85,7 @@ __RCSID("$NetBSD: route.c,v 1.71 2004/01/05 23:23:33 jmmv Exp $");
 typedef union sockunion *sup;
 
 int main(int, char **);
-static void usage(char *) __attribute__((__noreturn__));
+static void usage(const char *) __attribute__((__noreturn__));
 static char *any_ntoa(const struct sockaddr *);
 static void set_metric(char *, int);
 static int newroute(int, char **);
@@ -535,7 +535,7 @@ routename(struct sockaddr *sa, struct sockaddr *nm, int flags)
 			if (hp) {
 				if ((cp = strchr(hp->h_name, '.')) &&
 				    !strcmp(cp + 1, domain))
-					*cp = 0;
+					cp = 0;
 				cp = hp->h_name;
 			}
 		}
@@ -627,7 +627,7 @@ routename(struct sockaddr *sa, struct sockaddr *nm, int flags)
 char *
 netname(struct sockaddr *sa, struct sockaddr *nm)
 {
-	char *cp = 0;
+	const char *cp = 0;
 	static char line[50];
 	struct netent *np = 0;
 	u_int32_t net, mask;
@@ -807,7 +807,8 @@ set_metric(char *value, int key)
 static int
 newroute(int argc, char **argv)
 {
-	char *cmd, *dest = "", *gateway = "";
+	char *cmd;
+    const char *dest = "", *gateway = "";
 	const char *error;
 	int ishost = 0, ret, attempts, oerrno, flags = RTF_STATIC;
 	int key;
@@ -1122,7 +1123,7 @@ inet_makenetandmask(u_int32_t net, struct sockaddr_in *isin)
 static int
 inet6_makenetandmask(struct sockaddr_in6 *sin6)
 {
-	char *plen;
+	const char *plen;
 	struct in6_addr in6;
 
 	plen = NULL;
@@ -1405,20 +1406,21 @@ int
 x25_makemask(void)
 {
 	register char *cp;
+    
 
 	if ((rtm_addrs & RTA_NETMASK) == 0) {
 		rtm_addrs |= RTA_NETMASK;
 		for (cp = (char *)&so_mask.sx25.x25_net;
 		     cp < &so_mask.sx25.x25_opts.op_flags; cp++)
 			*cp = -1;
-		so_mask.sx25.x25_len = (u_char)&(((sup)0)->sx25.x25_opts);
+		so_mask.sx25.x25_len = (u_char *)&(((sup)0)->sx25.x25_opts);
 	}
 	return 0;
 }
 #endif
 
 #ifdef XNS
-char *
+const char *
 ns_print(struct sockaddr_ns *sns)
 {
 	struct ns_addr work;
@@ -1428,7 +1430,7 @@ ns_print(struct sockaddr_ns *sns)
 	} net;
 	u_short port;
 	static char mybuf[50], cport[10], chost[25];
-	char *host = "";
+	const char *host = "";
 	char *p;
 	u_char *q;
 
@@ -1977,7 +1979,7 @@ keyword(char *cp)
 }
 
 static void
-sodump(sup su, char *which)
+sodump(sup su, const char *which)
 {
 #ifdef INET6
 	char ntop_buf[NI_MAXHOST];
