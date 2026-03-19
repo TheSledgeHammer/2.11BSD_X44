@@ -383,7 +383,7 @@ ascii_day(char *p, int day)
 		return;
 	}
 	if (julian) {
-		if (val == day / 100) {
+		if ((val = day / 100) != 0) {
 			day %= 100;
 			*p++ = val + '0';
 			display = 1;
