@@ -41,6 +41,7 @@
  *	@(#)pk_input.c	8.1 (Berkeley) 6/10/93
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
@@ -59,6 +60,8 @@
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
 #include <netccitt/llc_var.h>
+
+struct pkcb_q pkcb_q;
 
 /*
  * ccittintr() is the generic interrupt handler for HDLC, LLC2, and X.25. This
@@ -283,18 +286,6 @@ pk_ctlinput(code, src, addr)
 }
 
 struct ifqueue pkintrq;
-
-void
-pk_init(void)
-{
-	TAILQ_INIT(&pkcb_q);
-
-	pkintrq.ifq_maxlen = IFQ_MAXLEN;
-
-#ifdef RADIX_ART
-	rtable_art_init(AF_CCITT, sizeof(struct x25_addr));
-#endif
-}
 
 /*
  * This routine is called if there are semi-smart devices that do HDLC

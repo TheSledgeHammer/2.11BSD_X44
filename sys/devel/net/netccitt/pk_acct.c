@@ -143,6 +143,7 @@ pk_acct(lcp)
 	acbuf.x25acct_txcnt = lcp->lcd_txcnt;
 	acbuf.x25acct_rxcnt = lcp->lcd_rxcnt;
 
-	(void)vn_rdwr(UIO_WRITE, vp, (caddr_t)&acbuf, sizeof(acbuf), (off_t)0,
-			UIO_SYSSPACE, IO_UNIT | IO_APPEND, curproc->p_ucred, (int *)0, (struct proc *)0);
+	(void) vn_rdwr(UIO_WRITE, vp, (caddr_t) &acbuf, sizeof(acbuf), (off_t) 0,
+			UIO_SYSSPACE, IO_UNIT | IO_APPEND, curproc->p_ucred, (int*) 0,
+			(struct proc*) 0);
 }

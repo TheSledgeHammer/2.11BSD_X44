@@ -367,14 +367,8 @@ pk_control(so, cmd, data, ifp)
 			if (ia == 0)
 				return (ENOBUFS);
 			bzero((caddr_t) ia, sizeof(*ia));
-			if ((ifa = TAILQ_FIRST(&ifp->if_addrlist))) {
-				for (; TAILQ_NEXT(ifa, ifa_list); ifa = TAILQ_NEXT(ifa, ifa_list)) {
-					;
-				}
-				TAILQ_NEXT(ifa, ifa_list) = &ia->ia_ifa;
-			} else {
-				ifp->if_addrlist = &ia->ia_ifa;
-			}
+			TAILQ_INSERT_TAIL(&ifp->if_addrlist, &ia->ia_ifa, ifa_list);
+			ifp->if_addrlist = &ia->ia_ifa;
 			ifa = &ia->ia_ifa;
 			ifa->ifa_netmask = (struct sockaddr *)&pk_sockmask;
 			ifa->ifa_addr = (struct sockaddr *)&ia->ia_xc.xc_addr;
@@ -391,9 +385,11 @@ pk_control(so, cmd, data, ifp)
 		if (ia->ia_maxlcn != old_maxlcn && old_maxlcn != 0) {
 			/* VERY messy XXX */
 			register struct pkcb *pkp;
-			FOR_ALL_PKCBS(pkp)
-			if (pkp->pk_ia == ia)
-				pk_resize(pkp);
+			FOR_ALL_PKCBS(pkp) {
+				if (pkp->pk_ia == ia)
+					pk_resize(pkp);
+			}
+
 		}
 		/*
 		 * Give the interface a chance to initialize if this
@@ -513,7 +509,7 @@ old_to_new(m)
  * socket address to the old style
  */
 static void
-new_to_old (m)
+new_to_old(m)
 	register struct mbuf *m;
 {
 	register struct x25_sockaddr *oldp;

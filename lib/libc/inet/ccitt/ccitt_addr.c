@@ -68,7 +68,7 @@ ccitt_addr(addr, xp)
 	 */
 	rval = optional_priority(addr, opts->op_psize, opts->op_flags);
 	if (rval != 1) {
-		goto out;
+		return (rval);
 	}
 
 	/*
@@ -76,18 +76,16 @@ ccitt_addr(addr, xp)
 	 */
 	rval = x121_address(addr, xaddr, xp->x25_net, havenet);
 	if (rval != 2) {
-		goto out;
+		return (rval);
 	}
 	/*
 	 * optional user data, bytes 4 to 16
 	 */
 	rval = optional_udata(addr, xp->x25_udata, xp->x25_udlen);
 	if (rval != 2) {
-		goto out;
+		return (rval);
 	}
-
-out:
-	return (rval);
+	return (1);
 }
 
 /*

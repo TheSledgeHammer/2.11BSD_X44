@@ -179,6 +179,7 @@ struct x25_ifaddr {
 	struct sockaddr_x25 ia_dstaddr; /* reserve space for route dst */
 };
 
+LIST_HEAD(llinfo_x25_q, llinfo_x25);
 struct llinfo_x25 {
 	LIST_ENTRY(llinfo_x25) lx_list;
 	struct rtentry *lx_rt;			/* back pointer to route */
@@ -249,12 +250,17 @@ struct mbuf_cache {
 	struct mbuf **mbc_cache;
 };
 
+#if defined(_KERNEL) && defined(CCITT)
 extern const struct x25bitslice x25_bitslice[];
-extern struct pklcd_q	pk_lcdhead;
+extern struct pklcd_q	pklcd_q;
 extern struct pklcd_q	pk_listenhead;
 extern struct pkcb_q 	pkcb_q;
+extern struct llinfo_x25_q llinfo_x25_q;
+
+extern struct mbuf_cache pk_input_cache;
+extern struct mbuf_cache pk_output_cache;
 
 extern char	*pk_name[], *pk_state[];
 extern int	pk_t20, pk_t21, pk_t22, pk_t23;
-
+#endif
 #endif /* _NETCCITT_PK_VAR_H_ */

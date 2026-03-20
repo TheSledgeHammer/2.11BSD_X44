@@ -249,4 +249,5 @@ struct data_packet {
 #define	DTE_PRETENDDTE		0x0020
 
 #define MAXRESTARTCOLLISIONS	10
+
 #endif /* _NETCCITT_PK_H_ */

@@ -292,7 +292,7 @@ llc_sapinfo_enter(struct sockaddr_dl *key, struct sockaddr *value, struct rtentr
 
 		nprt->rt_llinfo = malloc(size, M_PCB, M_WAITOK|M_ZERO);
 		if (nprt->rt_llinfo) {
-			((struct llc_sapinfo *) (nprt->rt_llinfo))->np_rt = rt;
+			((struct llc_sapinfo *)(nprt->rt_llinfo))->np_rt = rt;
 		}
 	} else {
 		nprt->rt_refcnt--;

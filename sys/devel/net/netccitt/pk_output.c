@@ -41,6 +41,7 @@
  *	@(#)pk_output.c	8.2 (Berkeley) 9/22/94
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
