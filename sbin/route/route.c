@@ -1408,7 +1408,6 @@ x25_makemask(struct sockaddr_x25 *sx25)
 	register char *cp;
 	void *optlen;
 
-	sx25->x25_net;
 	if ((rtm_addrs & RTA_NETMASK) == 0) {
 		rtm_addrs |= RTA_NETMASK;
 		for (cp = (char *)sx25->x25_net; cp < &sx25->x25_opts.op_flags; cp++) {
