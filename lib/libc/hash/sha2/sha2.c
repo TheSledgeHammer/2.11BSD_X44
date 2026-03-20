@@ -52,11 +52,8 @@ __RCSID("$NetBSD: sha2.c,v 1.24 2013/06/09 19:46:56 christos Exp $");
 #include <stdint.h>
 
 #include <sys/types.h>
-#if HAVE_NBTOOL_CONFIG_H
+
 #include <sha2.h>
-#else
-#include <hash/sha2.h>
-#endif
 
 #if HAVE_SYS_ENDIAN_H
 # include <sys/endian.h>

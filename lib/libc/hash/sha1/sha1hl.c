@@ -13,10 +13,6 @@ __RCSID("$NetBSD: sha1hl.c,v 1.4 2008/04/13 02:04:32 dholland Exp $");
 
 #define	HASH_ALGORITHM	SHA1
 
-#if HAVE_NBTOOL_CONFIG_H
 #define HASH_INCLUDE	<sha1.h>
-#else
-#define HASH_INCLUDE	<hash/sha1.h>
-#endif
 
 #include "../hashhl.c"

@@ -48,11 +48,7 @@ __RCSID("$NetBSD: rmd160.c,v 1.7 2015/04/21 12:47:33 riastradh Exp $");
 #include <sys/types.h>
 #include <sys/endian.h>
 
-#if HAVE_NBTOOL_CONFIG_H
 #include <rmd160.h>
-#else
-#include <hash/rmd160.h>
-#endif
 
 #define PUT_64BIT_LE(cp, value) do { \
 	(cp)[7] = (u_char)((value) >> 56); \

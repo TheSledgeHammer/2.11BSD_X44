@@ -98,7 +98,7 @@ static char sccsid[] = "@(#)res_init.c	6.8 (Berkeley) 3/7/88";
 #include <unistd.h>
 
 #define HAVE_MD5
-#include <hash/md5.h>
+#include <md5.h>
 
 #ifndef _MD5_H_
 # define _MD5_H_ 1	/* make sure we do not include rsaref md5.h file */

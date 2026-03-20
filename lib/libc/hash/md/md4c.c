@@ -43,11 +43,7 @@ __RCSID("$NetBSD: md4c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
 #include <assert.h>
 #include <string.h>
 
-#if HAVE_NBTOOL_CONFIG_H
 #include <md4.h>
-#else
-#include <hash/md4.h>
-#endif
 
 #if !HAVE_MD4_H
 

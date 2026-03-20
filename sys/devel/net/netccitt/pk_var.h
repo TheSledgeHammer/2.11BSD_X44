@@ -99,7 +99,7 @@ struct pklcd {
 	short   lcd_state;				/* Logical Channel state */
 	short   lcd_timer;				/* Various timer values */
 	short   lcd_dg_timer;			/* to reclaim idle datagram circuits */
-	bool	lcd_intrconf_pending;	/* Interrupt confirmation pending */
+	bool_t	lcd_intrconf_pending;	/* Interrupt confirmation pending */
 	u_char	lcd_intrdata;			/* Octet of incoming intr data */
 	char	lcd_retry;				/* Timer retry count */
 	char	lcd_rsn;				/* Seq no of last received packet */
@@ -107,10 +107,10 @@ struct pklcd {
 	char	lcd_output_window;		/* Output flow control window */
 	char	lcd_input_window;		/* Input flow control window */
 	char	lcd_last_transmitted_pr;/* Last Pr value transmitted */
-	bool	lcd_rnr_condition;		/* Remote in busy condition */
-	bool	lcd_window_condition;	/* Output window size exceeded */
-	bool	lcd_reset_condition;	/* True, if waiting reset confirm */
-	bool	lcd_rxrnr_condition;	/* True, if we have sent rnr */
+	bool_t	lcd_rnr_condition;		/* Remote in busy condition */
+	bool_t	lcd_window_condition;	/* Output window size exceeded */
+	bool_t	lcd_reset_condition;	/* True, if waiting reset confirm */
+	bool_t	lcd_rxrnr_condition;	/* True, if we have sent rnr */
 	char	lcd_packetsize;			/* Maximum packet size */
 	char	lcd_windowsize;			/* Window size - both directions */
 	u_char	lcd_closed_user_group;	/* Closed user group specification */
@@ -154,6 +154,12 @@ struct pkcb {
 	struct rtentry *pk_llrt;       	/* pointer to reverse mapping */
 	u_short pk_refcount;  			/* ref count */
 };
+
+#define FOR_ALL_PKCBS(p) \
+	TAILQ_FOREACH(p, &pkcb_q, pk_q)
+
+#define	PQEMPTY	\
+	TAILQ_EMPTY(&pkcb_q)
 
 /*
  *	Interface address, x25 version. Exactly one of these structures is
@@ -246,7 +252,7 @@ struct mbuf_cache {
 extern const struct x25bitslice x25_bitslice[];
 extern struct pklcd_q	pk_lcdhead;
 extern struct pklcd_q	pk_listenhead;
-extern struct pkcb_q 	pk_cbhead;
+extern struct pkcb_q 	pkcb_q;
 
 extern char	*pk_name[], *pk_state[];
 extern int	pk_t20, pk_t21, pk_t22, pk_t23;

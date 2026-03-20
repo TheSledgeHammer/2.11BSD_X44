@@ -226,11 +226,10 @@ llc_seq2slot(struct llc_linkcb *linkp, short seqn)
 void
 llc_init(void)
 {
-	rn_inithead((void **)&rt_tables[AF_LINK], 32);
-
 	TAILQ_INIT(&llccb_q);
-
 	llcintrq.ifq_maxlen = IFQ_MAXLEN;
+
+
 }
 
 struct llc_linkcb *

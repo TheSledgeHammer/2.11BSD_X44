@@ -44,11 +44,7 @@ __RCSID("$NetBSD: md5c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
 #include <assert.h>
 #include <string.h>
 
-#if HAVE_NBTOOL_CONFIG_H
 #include <md5.h>
-#else
-#include <hash/md5.h>
-#endif
 
 #if !HAVE_MD5_H
 

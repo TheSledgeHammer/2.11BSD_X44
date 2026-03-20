@@ -14,10 +14,6 @@ __RCSID("$NetBSD: sha512hl.c,v 1.8 2008/04/13 02:04:32 dholland Exp $");
 #define	HASH_ALGORITHM	SHA512
 #define	HASH_FNPREFIX	SHA512_
 
-#if HAVE_NBTOOL_CONFIG_H
 #define HASH_INCLUDE    <sha2.h>
-#else
-#define HASH_INCLUDE    <hash/sha2.h>
-#endif
 
 #include "../hashhl.c"

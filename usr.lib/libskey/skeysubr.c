@@ -24,10 +24,10 @@ __RCSID("$NetBSD: skeysubr.c,v 1.28 2012/03/22 22:59:43 joerg Exp $");
 #include <signal.h>
 #include <termios.h>
 
-#include <hash/md4.h>
-#include <hash/md5.h>
-#include <hash/rmd160.h>
-#include <hash/sha1.h>
+#include <md4.h>
+#include <md5.h>
+#include <rmd160.h>
+#include <sha1.h>
 
 #include "skey.h"
 

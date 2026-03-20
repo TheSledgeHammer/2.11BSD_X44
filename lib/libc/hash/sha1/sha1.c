@@ -32,11 +32,8 @@ __RCSID("$NetBSD: sha1.c,v 1.6 2009/11/06 20:31:18 joerg Exp $");
 #include <string.h>
 
 #include <sys/types.h>
-#if HAVE_NBTOOL_CONFIG_H
+
 #include <sha1.h>
-#else
-#include <hash/sha1.h>
-#endif
 
 #if !HAVE_SHA1_H
 

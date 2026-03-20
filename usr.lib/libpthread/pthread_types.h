@@ -59,7 +59,6 @@ struct name {													\
 _PTQ_HEAD(pthread_queue_t, __pthread_st);
 
 struct	__pthread_st;
-struct  __pthread_siginfo_st;
 struct	__pthread_attr_st;
 struct	__pthread_mutex_st;
 struct	__pthread_mutexattr_st;
@@ -71,9 +70,7 @@ struct	__pthread_rwlockattr_st;
 struct	__pthread_barrier_st;
 struct	__pthread_barrierattr_st;
 
-
 typedef struct __pthread_st *pthread_t;
-typedef struct __pthread_siginfo_st pthread_siginfo_t;
 typedef struct __pthread_attr_st pthread_attr_t;
 typedef struct __pthread_mutex_st pthread_mutex_t;
 typedef struct __pthread_mutexattr_st pthread_mutexattr_t;

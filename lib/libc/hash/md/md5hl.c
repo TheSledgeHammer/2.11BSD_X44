@@ -12,10 +12,6 @@ __RCSID("$NetBSD: md5hl.c,v 1.7 2005/09/26 03:01:41 christos Exp $");
 
 #define	MDALGORITHM	MD5
 
-#if HAVE_NBTOOL_CONFIG_H
 #define MDINCLUDE <md5.h>
-#else
-#define MDINCLUDE <hash/md5.h>
-#endif
 
 #include "mdXhl.c"

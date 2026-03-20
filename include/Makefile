@@ -22,11 +22,10 @@ INCS=   a.out.h ar.h assert.h atomic.h bitstring.h cdbr.h cdbw.h complex.h 	\
         stdlib.h string.h stringlist.h strings.h struct.h sysexits.h tar.h 	\
         time.h ttyent.h tzfile.h ucontext.h ulimit.h unistd.h util.h utime.h 	\
         utmp.h utmpx.h uuid.h varargs.h vfont.h vis.h vmf.h wchar.h wctype.h
+INCS+=	md2.h md4.h md5.h rmd160.h sha1.h sha2.h sha3.h
         
 INCS+=	arpa/ftp.h arpa/inet.h arpa/nameser.h arpa/telnet.h arpa/tftp.h
 
-INCS+=	hash/md2.h hash/md4.h hash/md5.h hash/rmd160.h hash/sha1.h          	\
-        hash/sha2.h hash/sha3.h
 INCS+=	old/dk.h old/psout.h
 
 INCS+=	protocols/dumprestor.h protocols/routed.h protocols/rwhod.h        	\

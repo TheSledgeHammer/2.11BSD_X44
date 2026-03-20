@@ -96,7 +96,7 @@ static int inet6_makenetandmask(struct sockaddr_in6 *);
 static int getaddr(int, char *, struct hostent **);
 static int flushroutes(int, char *[], int);
 #ifndef SMALL
-static int prefixlen(char *);
+static int prefixlen(const char *);
 static void interfaces(void);
 static void monitor(void);
 static void print_getmsg(struct rt_msghdr *, int);
@@ -109,7 +109,7 @@ static void pmsg_common(struct rt_msghdr *);
 static void pmsg_addrs(char *, int);
 static void bprintf(FILE *, int, u_char *);
 static int keyword(char *);
-static void sodump(sup, char *);
+static void sodump(sup, const char *);
 static void sockaddr(char *, struct sockaddr *);
 
 union sockunion {
@@ -207,7 +207,7 @@ main(int argc, char **argv)
 
 	pid = getpid();
 	if (tflag)
-		sock = open("/dev/null", O_WRONLY, 0);
+		sock = open(_PATH_DEVNULL, O_WRONLY, 0);
 	else
 		sock = socket(PF_ROUTE, SOCK_RAW, 0);
 	if (sock < 0)
@@ -1285,7 +1285,7 @@ getaddr(int which, char *s, struct hostent **hpp)
 #ifdef CCITT
 	case AF_CCITT:
 		ccitt_addr(s, &su->sx25);
-		return (which == RTA_DST ? x25_makemask() : 1);
+		return (which == RTA_DST ? x25_makemask(&su->sx25) : 1);
 #endif
 #endif /* SMALL */
 
@@ -1347,7 +1347,7 @@ netdone:
 }
 
 int
-prefixlen(char *s)
+prefixlen(const char *s)
 {
 	int len = atoi(s), q, r;
 	int max;
@@ -1403,17 +1403,19 @@ prefixlen(char *s)
 
 #ifdef CCITT
 int
-x25_makemask(void)
+x25_makemask(struct sockaddr_x25 *sx25)
 {
 	register char *cp;
-    
+	void *optlen;
 
+	sx25->x25_net;
 	if ((rtm_addrs & RTA_NETMASK) == 0) {
 		rtm_addrs |= RTA_NETMASK;
-		for (cp = (char *)&so_mask.sx25.x25_net;
-		     cp < &so_mask.sx25.x25_opts.op_flags; cp++)
+		for (cp = (char *)sx25->x25_net; cp < &sx25->x25_opts.op_flags; cp++) {
 			*cp = -1;
-		so_mask.sx25.x25_len = (u_char *)&(((sup)0)->sx25.x25_opts);
+		}
+		optlen = (struct x25opts *)&sx25->x25_opts;
+		sx25->x25_len = (u_char)optlen;
 	}
 	return 0;
 }
@@ -1531,10 +1533,13 @@ rtmsg(int cmd, int flags)
 	char *cp = m_rtmsg.m_space;
 	int l;
 
-#define NEXTADDR(w, u) \
-	if (rtm_addrs & (w)) {\
-	    l = ROUNDUP(u.sa.sa_len); memmove(cp, &(u), l); cp += l;\
-	    if (verbose && ! shortoutput) sodump(&(u),"u");\
+#define NEXTADDR(w, u) 					\
+	if (rtm_addrs & (w)) {				\
+	    l = ROUNDUP(u.sa.sa_len);		\
+	    memmove(cp, &(u), l); cp += l;	\
+	    if (verbose && ! shortoutput) { \
+	    	sodump(&(u),"u");			\
+	    }								\
 	}
 
 	errno = 0;
@@ -1649,7 +1654,7 @@ mask_addr(void)
 #endif /* SMALL */
 }
 
-char *msgtypes[] = {
+const char *msgtypes[] = {
 	"",
 	"RTM_ADD: Add Route",
 	"RTM_DELETE: Delete Route",
@@ -1991,7 +1996,9 @@ sodump(sup su, const char *which)
 		    which, inet_ntoa(su->sin.sin_addr));
 		break;
 #ifndef SMALL
+#ifdef APPLETALK
 	case AF_APPLETALK:
+#endif
 #endif
 	case AF_LINK:
 		(void) printf("%s: link %s; ",

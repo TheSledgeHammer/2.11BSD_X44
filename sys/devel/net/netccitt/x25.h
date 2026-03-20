@@ -64,10 +64,10 @@
 #define HDLCPROTO_LAPD		4
 
 /* socket options */
-#define PK_ACCTFILE		1	/* use level = CCITTPROTO_X25 */
+#define PK_ACCTFILE			1	/* use level = CCITTPROTO_X25 */
 #define PK_FACILITIES		2	/* use level = CCITTPROTO_X25 */
-#define PK_RTATTACH		3	/* use level = CCITTPROTO_X25 */
-#define PK_PRLISTEN		4	/* use level = CCITTPROTO_X25 */
+#define PK_RTATTACH			3	/* use level = CCITTPROTO_X25 */
+#define PK_PRLISTEN			4	/* use level = CCITTPROTO_X25 */
 
 #define MAX_FACILITIES		109 /* maximum size for facilities */
 
@@ -103,31 +103,31 @@ struct x25_addr {
 
 struct sockaddr_x25 {
 	u_char			x25_len;
-	sa_family_t		x25_family;	/* must be AF_CCITT */
-	short			x25_net;	/* network id code (usually a dnic) */
+	sa_family_t		x25_family;		/* must be AF_CCITT */
+	short			x25_net;		/* network id code (usually a dnic) */
 	//char			x25_addr[16];	/* X.121 address (null terminated) */
-	struct x25_addr		x25_addr;	/* X.121 address (null terminated) */
-	struct x25opts 		x25_opts;
-	short			x25_udlen;	/* user data field length */
+	struct x25_addr	x25_addr;		/* X.121 address (null terminated) */
+	struct x25opts 	x25_opts;
+	short			x25_udlen;		/* user data field length */
 	char			x25_udata[16];	/* user data field */
 };
 
 struct x25config {
-	struct sockaddr_x25 	xc_addr;	/* link level parameters */
+	struct sockaddr_x25 xc_addr;	/* link level parameters */
 	u_short			xc_lproto:4;	/* link level protocol eg. CCITTPROTO_HDLC */
 	u_short			xc_lptype:4;	/* protocol type eg. HDLCPROTO_LAPB */
 	u_short			xc_ltrace:1;	/* link level tracing flag */
 	u_short			xc_lwsize:7;	/* link level window size */
 	u_short			xc_lxidxchg:1;  /* link level XID exchange flag - NOT YET */
 	/* packet level parameters */
-	u_short     		xc_rsvd1:2;
-	u_short     		xc_pwsize:3;	/* default window size */
-	u_short 		xc_psize:4;	/* default packet size 7=128, 8=256, ... */
-	u_short			xc_type:3;	/* network type */
+	u_short     	xc_rsvd1:2;
+	u_short     	xc_pwsize:3;	/* default window size */
+	u_short 		xc_psize:4;		/* default packet size 7=128, 8=256, ... */
+	u_short			xc_type:3;		/* network type */
 	u_short 		xc_ptrace:1;	/* packet level tracing flag */
 	u_short 		xc_nodnic:1;	/* remove our dnic when calling on net */
 	u_short 		xc_prepnd0:1;	/* prepend 0 when making offnet calls */
-	u_short			xc_maxlcn;	/* max logical channels */
+	u_short			xc_maxlcn;		/* max logical channels */
 	u_short			xc_dg_idletimo;	/* timeout for idle datagram circuits. */
 };
 #define X25_1976	0

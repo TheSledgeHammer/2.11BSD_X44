@@ -497,7 +497,7 @@ getframe(psp, tf, sig, oonstack)
 	int sig, *oonstack;
 {
 	void *n;
-    vm_offset_t s;
+	vm_offset_t s;
 
 	*oonstack = u.u_sigstk.ss_flags & SA_ONSTACK;
 

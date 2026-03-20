@@ -45,11 +45,8 @@ __RCSID("$NetBSD: sha3.c,v 1.2 2020/05/30 18:40:28 riastradh Exp $");
 #define	SHA3_ASSERT	_DIAGASSERT
 
 #include <sys/endian.h>
-#if HAVE_NBTOOL_CONFIG_H
+
 #include <sha3.h>
-#else
-#include <hash/sha3.h>
-#endif
 
 #include "keccak.h"
 
