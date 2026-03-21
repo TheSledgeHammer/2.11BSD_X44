@@ -961,7 +961,7 @@
 /* #undef HAVE_SYS_CAPABILITY_H */
 
 /* Define to 1 if you have the <sys/clockctl.h> header file. */
-#define HAVE_SYS_CLOCKCTL_H 1
+/* #undef HAVE_SYS_CLOCKCTL_H */
 
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
@@ -977,7 +977,7 @@
 #define HAVE_SYS_IOCTL_H 1
 
 /* Define to 1 if you have the <sys/ipc.h> header file. */
-#define HAVE_SYS_IPC_H 1
+/* #undef HAVE_SYS_IPC_H */
 
 /* Define to 1 if you have the <sys/limits.h> header file. */
 /* #undef HAVE_SYS_LIMITS_H */
@@ -1032,7 +1032,7 @@
 #define HAVE_SYS_SELECT_H 1
 
 /* Define to 1 if you have the <sys/shm.h> header file. */
-#define HAVE_SYS_SHM_H 1
+/* #undef HAVE_SYS_SHM_H */
 
 /* Define to 1 if you have the <sys/signal.h> header file. */
 #define HAVE_SYS_SIGNAL_H 1
@@ -1041,7 +1041,7 @@
 #define HAVE_SYS_SOCKET_H 1
 
 /* Define to 1 if you have the <sys/sockio.h> header file. */
-#define HAVE_SYS_SOCKIO_H 1
+/* #undef HAVE_SYS_SOCKIO_H */
 
 /* Define to 1 if you have the <sys/soundcard.h> header file. */
 /* #undef HAVE_SYS_SOUNDCARD_H */
@@ -1074,7 +1074,7 @@
 /* #undef HAVE_SYS_TIMERS_H */
 
 /* Define to 1 if you have the <sys/timex.h> header file. */
-#define HAVE_SYS_TIMEX_H 1
+/* #undef HAVE_SYS_TIMEX_H */
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 #define HAVE_SYS_TIME_H 1
