@@ -251,6 +251,7 @@ struct mbuf_cache {
 };
 
 #if defined(_KERNEL) && defined(CCITT)
+extern struct ifqueue pkintrq;
 extern const struct x25bitslice x25_bitslice[];
 extern struct pklcd_q	pklcd_q;
 extern struct pklcd_q	pk_listenhead;

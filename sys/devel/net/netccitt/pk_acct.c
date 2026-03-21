@@ -63,8 +63,7 @@ struct vnode *pkacctp;
  *  Turn on packet accounting
  */
 int
-pk_accton(path)
-	char *path;
+pk_accton(char *path)
 {
 	register struct vnode *vp = NULL;
 	struct nameidata nd;
@@ -97,8 +96,7 @@ close:
  *  Write a record on the accounting file.
  */
 void
-pk_acct(lcp)
-	register struct pklcd *lcp;
+pk_acct(struct pklcd *lcp)
 {
 	register struct vnode *vp;
 	register struct sockaddr_x25 *sa;

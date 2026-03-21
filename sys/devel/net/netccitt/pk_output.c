@@ -61,8 +61,7 @@ struct mbuf_cache pk_output_cache = { 0 }, pk_input_cache;
 struct mbuf *nextpk(struct pklcd *);
 
 void
-pk_output(lcp)
-	register struct pklcd *lcp;
+pk_output(struct pklcd *lcp)
 {
 	register struct x25_packet *xp;
 	register struct mbuf *m;
@@ -191,8 +190,7 @@ pk_output(lcp)
  */
 
 struct mbuf *
-nextpk(lcp)
-	struct pklcd *lcp;
+nextpk(struct pklcd *lcp)
 {
 	register struct mbuf *m, *n;
 	struct socket *so = lcp->lcd_so;

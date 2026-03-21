@@ -75,11 +75,7 @@ static void new_to_old(struct mbuf *);
  *
  */
 int
-pk_usrreq(so, req, m, nam, control)
-	struct socket *so;
-	int req;
-	register struct mbuf *m, *nam;
-	struct mbuf *control;
+pk_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct mbuf *control)
 {
 	register struct pklcd *lcp = (struct pklcd *)so->so_pcb;
 	register int error = 0;
@@ -305,8 +301,7 @@ release:
  */
 /* ARGSUSED */
 int
-pk_start(lcp)
-	register struct pklcd *lcp;
+pk_start(struct pklcd *lcp)
 {
 	pk_output(lcp);
 	return (0); /* XXX pk_output should return a value */
@@ -323,11 +318,7 @@ struct sockaddr_x25 pk_sockmask = {
 
 /*ARGSUSED*/
 int
-pk_control(so, cmd, data, ifp)
-	struct socket *so;
-	u_long cmd;
-	caddr_t data;
-	register struct ifnet *ifp;
+pk_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp)
 {
 	register struct ifreq_x25 *ifr = (struct ifreq_x25 *)data;
 	register struct ifaddr *ifa = 0;
@@ -416,10 +407,7 @@ pk_control(so, cmd, data, ifp)
 }
 
 int
-pk_ctloutput(cmd, so, level, optname, mp)
-	struct socket *so;
-	struct mbuf **mp;
-	int cmd, level, optname;
+pk_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **mp)
 {
 	register struct mbuf *m = *mp;
 	register struct pklcd *lcp = (struct pklcd *)so->so_pcb;
@@ -466,8 +454,7 @@ pk_ctloutput(cmd, so, level, optname, mp)
  */
 
 static void
-old_to_new(m)
-	register struct mbuf *m;
+old_to_new(struct mbuf *m)
 {
 	register struct x25_sockaddr *oldp;
 	register struct sockaddr_x25 *newp;
@@ -509,8 +496,7 @@ old_to_new(m)
  * socket address to the old style
  */
 static void
-new_to_old(m)
-	register struct mbuf *m;
+new_to_old(struct mbuf *m)
 {
 	register struct x25_sockaddr *oldp;
 	register struct sockaddr_x25 *newp;
@@ -543,8 +529,7 @@ new_to_old(m)
 }
 
 int
-pk_checksockaddr(m)
-	struct mbuf *m;
+pk_checksockaddr(struct mbuf *m)
 {
 	register struct sockaddr_x25 *sa = mtod (m, struct sockaddr_x25 *);
 	struct x25_addr *addr = &sa->x25_addr;
@@ -563,9 +548,7 @@ pk_checksockaddr(m)
 }
 
 int
-pk_send(lcp, m)
-	struct pklcd *lcp;
-	register struct mbuf *m;
+pk_send(struct pklcd *lcp, struct mbuf *m)
 {
 	int mqbit = 0, error = 0;
 	register struct x25_packet *xp;

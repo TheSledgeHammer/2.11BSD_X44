@@ -87,8 +87,7 @@ struct x25bitslice x25_bitslice[] = {
  */
 
 struct pklcd *
-pk_attach(so)
-	struct socket *so;
+pk_attach(struct socket *so)
 {
 	register struct pklcd *lcp;
 	register int error = ENOBUFS;
@@ -118,8 +117,7 @@ pk_attach(so)
  *  Disconnect X.25 protocol from socket.
  */
 void
-pk_disconnect(lcp)
-	register struct pklcd *lcp;
+pk_disconnect(struct pklcd *lcp)
 {
 	register struct socket *so = lcp -> lcd_so;
 	register struct pklcd *l, *p;
@@ -155,8 +153,7 @@ pk_disconnect(lcp)
  *  connection and internal descriptors. Wake up any sleepers.
  */
 void
-pk_close(lcp)
-	struct pklcd *lcp;
+pk_close(struct pklcd *lcp)
 {
 	register struct socket *so = lcp->lcd_so;
 
@@ -192,8 +189,7 @@ pk_close(lcp)
 */
 
 struct mbuf *
-pk_template(lcn, type)
-	int lcn, type;
+pk_template(int lcn, int type)
 {
 	register struct mbuf *m;
 	register struct x25_packet *xp;
@@ -230,9 +226,7 @@ pk_template(lcn, type)
  *  state.
  */
 void
-pk_restart(pkp, restart_cause)
-	register struct pkcb *pkp;
-	int restart_cause;
+pk_restart(struct pkcb *pkp, int restart_cause)
 {
 	register struct mbuf *m;
 	register struct pklcd *lcp;
@@ -280,8 +274,7 @@ pk_restart(pkp, restart_cause)
  *  This procedure frees up the Logical Channel Descripter.
  */
 void
-pk_freelcd(lcp)
-	register struct pklcd *lcp;
+pk_freelcd(struct pklcd *lcp)
 {
 	if (lcp == NULL)
 		return;
@@ -295,8 +288,7 @@ pk_freelcd(lcp)
 }
 
 static struct x25_ifaddr *
-pk_ifwithaddr (sx)
-	struct sockaddr_x25 *sx;
+pk_ifwithaddr(struct sockaddr_x25 *sx)
 {
 	struct ifnet *ifp;
 	struct ifaddr *ifa;
@@ -330,9 +322,7 @@ pk_ifwithaddr (sx)
 					(struct pkcb *)((rt)->rt_llinfo))
 
 int
-pk_bind(lcp, nam)
-	struct pklcd *lcp;
-	struct mbuf *nam;
+pk_bind(struct pklcd *lcp, struct mbuf *nam)
 {
 	register struct pklcd *pp;
 	register struct sockaddr_x25 *sa;
@@ -379,8 +369,7 @@ pk_bind(lcp, nam)
  * Include a bound control block in the list of listeners.
  */
 int
-pk_listen(lcp)
-	register struct pklcd *lcp;
+pk_listen(struct pklcd *lcp)
 {
 	register struct pklcd *pp;
 
@@ -403,9 +392,7 @@ pk_listen(lcp)
  * Include a listening control block for the benefit of other protocols.
  */
 int
-pk_protolisten(spi, spilen, callee)
-	u_char spi, spilen;
-	int (*callee)(struct mbuf *, void *);
+pk_protolisten(u_char spi, u_char spilen, int (*callee)(struct mbuf *, void *))
 {
 	register struct pklcd *lcp = pk_attach((struct socket*) 0);
 	register struct mbuf *nam;
@@ -438,10 +425,7 @@ pk_protolisten(spi, spilen, callee)
  * by the remote DTE.
  */
 void
-pk_assoc(pkp, lcp, sa)
-	register struct pkcb *pkp;
-	register struct pklcd *lcp;
-	register struct sockaddr_x25 *sa;
+pk_assoc(struct pkcb *pkp, struct pklcd *lcp, struct sockaddr_x25 *sa)
 {
 	lcp->lcd_pkp = pkp;
 	lcp->lcd_packetsize = pkp->pk_xcp->xc_psize;
@@ -463,9 +447,7 @@ pk_assoc(pkp, lcp, sa)
 }
 
 int
-pk_connect(lcp, sa)
-	register struct pklcd *lcp;
-	register struct sockaddr_x25 *sa;
+pk_connect(struct pklcd *lcp, struct sockaddr_x25 *sa)
 {
 	register struct pkcb *pkp;
 	register struct rtentry *rt;
@@ -536,8 +518,7 @@ pk_connect(lcp, sa)
 #define RESHUFFLELCN(maxlcn, lcn) ((maxlcn) - (lcn) + 1)
 
 void
-pk_callcomplete(pkp)
-	register struct pkcb *pkp;
+pk_callcomplete(struct pkcb *pkp)
 {
 	register struct pklcd *lcp;
 	register int i;
@@ -609,10 +590,7 @@ struct bcdinfo {
  *  address, facilities fields and the user data field.
  */
 void
-pk_callrequest(lcp, sa, xcp)
-	struct pklcd *lcp;
-	register struct sockaddr_x25 *sa;
-	register struct x25config *xcp;
+pk_callrequest(struct pklcd *lcp, struct sockaddr_x25 *sa, struct x25config *xcp)
 {
 	register struct x25_calladdr *a;
 	register struct mbuf *m = lcp->lcd_template;
@@ -640,10 +618,7 @@ pk_callrequest(lcp, sa, xcp)
 }
 
 void
-pk_build_facilities(m, sa, type)
-	register struct mbuf *m;
-	struct sockaddr_x25 *sa;
-	int type;
+pk_build_facilities(struct mbuf *m, struct sockaddr_x25 *sa, int type)
 {
 	register octet *cp;
 	register octet *fcp;
@@ -678,10 +653,7 @@ pk_build_facilities(m, sa, type)
 }
 
 unsigned int
-to_bcd(b, sa, xcp)
-	register struct bcdinfo *b;
-	struct sockaddr_x25 *sa;
-	register struct x25config *xcp;
+to_bcd(struct bcdinfo *b, struct sockaddr_x25 *sa, struct x25config *xcp)
 {
 	register char *x = sa->x25_addr;
 	unsigned int start = b->posn;
@@ -722,8 +694,7 @@ to_bcd(b, sa, xcp)
  *		- from lowest to highest number if playing DCE.
  */
 int
-pk_getlcn(pkp)
-	register struct pkcb *pkp;
+pk_getlcn(struct pkcb *pkp)
 {
 	register int i;
 
@@ -747,9 +718,7 @@ pk_getlcn(pkp)
  *  set to "SENT_CLEAR".
  */
 void
-pk_clear(lcp, diagnostic, abortive)
-	register struct pklcd *lcp;
-	int diagnostic, abortive;
+pk_clear(struct pklcd *lcp, int diagnostic, int abortive)
 {
 	register struct mbuf *m = pk_template(lcp->lcd_lcn, X25_CLEAR);
 
@@ -778,9 +747,7 @@ pk_clear(lcp, diagnostic, abortive)
  * vice versa), or if forced to generate one.  One forces RNR's to ack data.
  */
 void
-pk_flowcontrol(lcp, inhibit, forced)
-	register struct pklcd *lcp;
-	int inhibit, forced;
+pk_flowcontrol(struct pklcd *lcp, int inhibit, int forced)
 {
 	inhibit = (inhibit != 0);
 	if (lcp == 0 || lcp->lcd_state != DATA_TRANSFER
@@ -797,9 +764,7 @@ pk_flowcontrol(lcp, inhibit, forced)
  */
 
 static void
-pk_reset(lcp, diagnostic)
-	register struct pklcd *lcp;
-	int diagnostic;
+pk_reset(struct pklcd *lcp, int diagnostic)
 {
 	register struct mbuf *m;
 	register struct socket *so = lcp->lcd_so;
@@ -832,8 +797,7 @@ pk_reset(lcp, diagnostic)
  *  virtual circuit.
  */
 void
-pk_flush(lcp)
-	register struct pklcd *lcp;
+pk_flush(struct pklcd *lcp)
 {
 	register struct socket *so;
 
@@ -858,12 +822,8 @@ pk_flush(lcp)
  *  This procedure handles all local protocol procedure errors.
  */
 void
-pk_procerror(error, lcp, errstr, diagnostic)
-	int error, diagnostic;
-	register struct pklcd *lcp;
-	char *errstr;
+pk_procerror(int error, struct pklcd *lcp, char *errstr, int diagnostic)
 {
-
 	pk_message(lcp->lcd_lcn, lcp->lcd_pkp->pk_xcp, errstr);
 
 	switch (error) {
@@ -886,9 +846,7 @@ pk_procerror(error, lcp, errstr, diagnostic)
  *  packets.
  */
 int
-pk_ack(lcp, pr)
-	struct pklcd *lcp;
-	unsigned pr;
+pk_ack(struct pklcd *lcp, unsigned int pr)
 {
 	register struct socket *so = lcp->lcd_so;
 
@@ -923,8 +881,7 @@ pk_ack(lcp, pr)
  *  code to be used in switchs or arrays.
  */
 int
-pk_decode(xp)
-	register struct x25_packet *xp;
+pk_decode(struct x25_packet *xp)
 {
 	register int type;
 
@@ -1016,9 +973,7 @@ pk_decode(xp)
  *  for the restart.
  */
 void
-pk_restartcause (pkp, xp)
-	struct pkcb *pkp;
-	register struct x25_packet *xp;
+pk_restartcause(struct pkcb *pkp, struct x25_packet *xp)
 {
 	register struct x25config *xcp = pkp->pk_xcp;
 	register int lcn = LCN(xp);
@@ -1051,9 +1006,7 @@ int Reset_cause[] = {
  *  A reset packet has arrived. Return the cause to the user.
  */
 void
-pk_resetcause(pkp, xp)
-	struct pkcb *pkp;
-	register struct x25_packet *xp;
+pk_resetcause(struct pkcb *pkp, struct x25_packet *xp)
 {
 	register struct pklcd *lcp = pkp->pk_chan[LCN(xp)];
 	register int code = xp->packet_data;
@@ -1080,9 +1033,7 @@ int Clear_cause[] = {
  *  A clear packet has arrived. Return the cause to the user.
  */
 void
-pk_clearcause(pkp, xp)
-	struct pkcb *pkp;
-	register struct x25_packet *xp;
+pk_clearcause(struct pkcb *pkp, struct x25_packet *xp)
 {
 	register struct pklcd *lcp = pkp->pk_chan[LCN(xp)];
 	register int code = xp->packet_data;
@@ -1094,8 +1045,7 @@ pk_clearcause(pkp, xp)
 }
 
 char *
-format_ntn(xcp)
-	register struct x25config *xcp;
+format_ntn(struct x25config *xcp)
 {
 	return (xcp->xc_addr.x25_addr.xa_addr);
 }
@@ -1123,10 +1073,7 @@ pk_message(int lcn, struct x25config *xcp, const char *fmt, ...)
 }
 
 int
-pk_fragment(lcp, m0, qbit, mbit, wait)
-	struct mbuf *m0;
-	register struct pklcd *lcp;
-	int qbit, mbit, wait;
+pk_fragment(struct pklcd *lcp, struct mbuf *m0, int qbit, int mbit, int wait)
 {
 	register struct mbuf *m = m0;
 	register struct x25_packet *xp;

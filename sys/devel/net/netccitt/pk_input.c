@@ -69,7 +69,7 @@ struct pkcb_q pkcb_q;
  * employ boards that do all the stuff themselves, e.g. ADAX X.25 or TPS ISDN.)
  */
 void
-ccittintr()
+ccittintr(void)
 {
 	extern struct ifqueue pkintrq;
 	extern struct ifqueue hdintrq;
@@ -88,9 +88,7 @@ ccittintr()
 }
 
 struct pkcb *
-pk_newlink(ia, llnext)
-	struct x25_ifaddr *ia;
-	caddr_t llnext;
+pk_newlink(struct x25_ifaddr *ia, caddr_t llnext)
 {
 	register struct x25config *xcp = &ia->ia_xc;
 	register struct pkcb *pkp;
@@ -136,8 +134,7 @@ pk_newlink(ia, llnext)
 }
 
 int
-pk_dellink(pkp)
-	register struct pkcb *pkp;
+pk_dellink(struct pkcb *pkp)
 {
 	register int i;
 	register struct protosw *pp;
@@ -196,8 +193,7 @@ pk_dellink(pkp)
 }
 
 int
-pk_resize(pkp)
-	register struct pkcb *pkp;
+pk_resize(struct pkcb *pkp)
 {
 	struct pklcd *dev_lcp = 0;
 	struct x25config *xcp = pkp->pk_xcp;
@@ -238,10 +234,7 @@ pk_resize(pkp)
  */
 /*VARARGS*/
 void *
-pk_ctlinput(code, src, addr)
-	int code;
-	struct sockaddr *src;
-	void *addr;
+pk_ctlinput(int code, struct sockaddr *src, void *addr)
 {
 	register struct pkcb *pkp = (struct pkcb *)addr;
 
@@ -338,8 +331,7 @@ struct mbuf_cache pk_input_cache = { 0 };
 			((xp)->packet_cause >= X25_RESTART_DTE_ORIGINATED2))
 
 void
-pk_input(m)
-	register struct mbuf *m;
+pk_input(struct mbuf *m)
 {
 	register struct x25_packet *xp;
 	register struct pklcd *lcp;
@@ -786,9 +778,7 @@ pk_input(m)
 }
 
 static void
-prune_dnic(from, to, dnicname, xcp)
-	char *from, *to, *dnicname;
-	register struct x25config *xcp;
+prune_dnic(char *from, char *to, char *dnicname, struct x25config *xcp)
 {
 	register char *cp1 = from, *cp2 = from;
 
@@ -807,9 +797,7 @@ copyrest:
 }
 /* static */
 void
-pk_simple_bsd(from, to, lower, len)
-	register octet *from, *to;
-	register len, lower;
+pk_simple_bsd(octet *from, octet *to, int lower, int len)
 {
 	register int c;
 
@@ -829,10 +817,7 @@ pk_simple_bsd(from, to, lower, len)
 
 /*static octet * */
 void
-pk_from_bcd(a, iscalling, sa, xcp)
-	register struct x25_calladdr *a;
-	register struct sockaddr_x25 *sa;
-	register struct x25config *xcp;
+pk_from_bcd(struct x25_calladdr *a, int iscalling, struct sockaddr_x25 *sa, struct x25config *xcp)
 {
 	octet buf[MAXADDRLN+1];
 	octet *cp;
@@ -859,10 +844,7 @@ pk_from_bcd(a, iscalling, sa, xcp)
 }
 
 static void
-save_extra(m0, fp, so)
-	struct mbuf *m0;
-	octet *fp;
-	struct socket *so;
+save_extra(struct mbuf *m0, octet *fp, struct socket *so)
 {
 	register struct mbuf *m;
 	struct cmsghdr cmsghdr;
@@ -889,9 +871,7 @@ save_extra(m0, fp, so)
  * sockets awaiting connections.
  */
 void
-pk_incoming_call(pkp, m0)
-	struct mbuf *m0;
-	struct pkcb *pkp;
+pk_incoming_call(struct pkcb *pkp, struct mbuf *m0)
 {
 	register struct pklcd *lcp = 0, *l;
 	register struct sockaddr_x25 *sa;
@@ -1029,9 +1009,7 @@ pk_incoming_call(pkp, m0)
 }
 
 void
-pk_call_accepted(lcp, m)
-	struct pklcd *lcp;
-	struct mbuf *m;
+pk_call_accepted(struct pklcd *lcp, struct mbuf *m)
 {
 	register struct x25_calladdr *ap;
 	register octet *fcp;
@@ -1057,9 +1035,7 @@ pk_call_accepted(lcp, m)
 }
 
 void
-pk_parse_facilities(fcp, sa)
-	register octet *fcp;
-	register struct sockaddr_x25 *sa;
+pk_parse_facilities(octet *fcp, struct sockaddr_x25 *sa)
 {
 	register octet *maxfcp;
 

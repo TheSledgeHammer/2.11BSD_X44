@@ -1,5 +1,3 @@
-/*	$NetBSD: if_x25subr.c,v 1.33 2003/11/11 20:25:26 jonathan Exp $	*/
-
 /*
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -12,7 +10,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -32,7 +34,6 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: if_x25subr.c,v 1.33 2003/11/11 20:25:26 jonathan Exp $");
 
 #include "opt_inet.h"
 #include "opt_iso.h"
@@ -49,7 +50,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_x25subr.c,v 1.33 2003/11/11 20:25:26 jonathan Exp
 #include <sys/errno.h>
 #include <sys/syslog.h>
 
-#include <machine/cpu.h>	/* XXX for setsoftnet().  This must die. */
+#include <machine/cpu.h>
 
 #include <net/if.h>
 #include <net/if_types.h>
@@ -97,8 +98,7 @@ static struct llinfo_x25 *x25_lxalloc(struct rtentry *);
  * Ancillary routines
  */
 static struct llinfo_x25 *
-x25_lxalloc(rt)
-	struct rtentry *rt;
+x25_lxalloc(struct rtentry *rt)
 {
 	register struct llinfo_x25 *lx;
 	register struct sockaddr *dst = rt_key(rt);
@@ -125,8 +125,7 @@ x25_lxalloc(rt)
 }
 
 void
-x25_lxfree(lx)
-	struct llinfo_x25 *lx;
+x25_lxfree(struct llinfo_x25 *lx)
 {
 	struct rtentry *rt = lx->lx_rt;
 	struct pklcd *lcp = lx->lx_lcd;
@@ -148,9 +147,7 @@ x25_lxfree(lx)
  * Process a x25 packet as datagram;
  */
 int
-x25_ifinput(m, v)
-	struct mbuf *m;
-	void *v;
+x25_ifinput(struct mbuf *m, void *v)
 {
 	struct pklcd *lcp = v;
 	struct llinfo_x25 *lx = (struct llinfo_x25 *)lcp->lcd_upnext;
@@ -217,9 +214,7 @@ x25_ifinput(m, v)
 }
 
 void
-x25_connect_callback(lcp, m)
-	register struct pklcd *lcp;
-	register struct mbuf *m;
+x25_connect_callback(struct pklcd *lcp, struct mbuf *m)
 {
 	register struct llinfo_x25 *lx = (struct llinfo_x25 *)lcp->lcd_upnext;
 	int do_clear = 1;
@@ -250,9 +245,7 @@ x25_connect_callback(lcp, m)
 #define RT(p) ((struct rtentry *)(p))
 
 int
-x25_dgram_incoming(m0, v)
-	struct mbuf    *m0;
-	void *v;
+x25_dgram_incoming(struct mbuf *m0, void *v)
 {
 	struct pklcd *lcp = v;
 	struct rtentry *rt, *nrt;
@@ -287,11 +280,7 @@ refuse:
  * X.25 output routine.
  */
 int
-x25_ifoutput(ifp, m0, dst, rt)
-	struct	ifnet *ifp;
-	struct	mbuf *m0;
-	struct	sockaddr *dst;
-	register struct	rtentry *rt;
+x25_ifoutput(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst, struct rtentry *rt)
 {
 	register struct mbuf *m = m0;
 	register struct llinfo_x25 *lx;
@@ -398,8 +387,7 @@ next_circuit:
  * Simpleminded timer routine.
  */
 void
-x25_iftimeout(ifp)
-	struct ifnet *ifp;
+x25_iftimeout(struct ifnet *ifp)
 {
 	register struct pkcb *pkcb = 0;
 	register struct pklcd **lcpp, *lcp;
@@ -423,13 +411,10 @@ x25_iftimeout(ifp)
  * or deletions of old ones.
  */
 void
-x25_rtrequest(cmd, rt, dst)
-	int cmd;
-	register struct rtentry *rt;
-	struct sockaddr *dst;
+x25_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 {
-	register struct llinfo_x25 *lx = (struct llinfo_x25*) rt->rt_llinfo;
-	register struct sockaddr_x25 *sa = (struct sockaddr_x25*) rt->rt_gateway;
+	register struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
+	register struct sockaddr_x25 *sa = (struct sockaddr_x25 *)rt->rt_gateway;
 	register struct pklcd *lcp;
 
 	/* would put this pk_init, except routing table doesn't
@@ -474,10 +459,7 @@ x25_rtrequest(cmd, rt, dst)
 int x25_dont_rtinvert = 0;
 
 void
-x25_rtinvert(cmd, sa, rt)
-	int cmd;
-	register struct sockaddr *sa;
-	register struct rtentry *rt;
+x25_rtinvert(int cmd, struct sockaddr *sa, struct rtentry *rt)
 {
 	struct rtentry *rt2 = 0;
 	/*
@@ -532,14 +514,12 @@ union imp_addr {
  * the IP to X.25 translation.
  */
 void
-x25_ddnip_to_ccitt(src, rt)
-	struct sockaddr_in *src;
-	register struct rtentry *rt;
+x25_ddnip_to_ccitt(struct sockaddr_in *src, struct rtentry *rt)
 {
 	register struct sockaddr_x25 *dst = (struct sockaddr_x25*) rt->rt_gateway;
 	union imp_addr imp_addr;
 	int imp_no, imp_port, temp;
-	char *x25addr = dst->x25_addr;
+	char *x25addr = dst->x25_addr.xa_addr;
 
 	imp_addr.ip = src->sin_addr;
 	*dst = blank_x25;
@@ -584,10 +564,7 @@ x25_ddnip_to_ccitt(src, rt)
  * call request is honored with the intent of starting datagram forwarding.
  */
 void
-x25_dg_rtinit(dst, ia, af)
-	struct sockaddr_x25 *dst;
-	register struct x25_ifaddr *ia;
-	int af;
+x25_dg_rtinit(struct sockaddr_x25 *dst, struct x25_ifaddr *ia, int af)
 {
 	struct sockaddr *sa = 0;
 	struct rtentry *rt;
@@ -617,7 +594,7 @@ x25_dg_rtinit(dst, ia, af)
 		}
 		{
 
-			register char *x25addr = dst->x25_addr;
+			register char *x25addr = dst->x25_addr.xa_addr;
 
 			switch (x25addr[5] & 0x0f) {
 			case 0: /* Physical:  0000 0 IIIHH00 [SS]	 */
@@ -713,8 +690,7 @@ struct x25_dgproto {
 };
 
 int
-pk_user_protolisten(info)
-	u_char *info;
+pk_user_protolisten(u_char *info)
 {
 	struct x25_dgproto *dp = x25_dgprototab
 			+ ((sizeof x25_dgprototab) / (sizeof *dp));
@@ -744,9 +720,7 @@ gotspi:
  * the rtentry to the socket.
  */
 int
-pk_rtattach(so, m0)
-	struct socket *so;
-	struct mbuf    *m0;
+pk_rtattach(struct socket *so, struct mbuf *m0)
 {
 	struct pklcd *lcp = (struct pklcd *) so->so_pcb;
 	struct mbuf *m = m0;
@@ -812,9 +786,7 @@ pk_rtattach(so, m0)
 }
 
 int
-x25_rtattach(lcp0, rt)
-	struct pklcd *lcp0;
-	struct rtentry *rt;
+x25_rtattach(struct pklcd *lcp0, struct rtentry *rt)
 {
 	struct llinfo_x25 *lx = (struct llinfo_x25 *) rt->rt_llinfo;
 	struct pklcd *lcp;
