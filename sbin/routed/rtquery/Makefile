@@ -11,5 +11,7 @@ LDSTATIC?=
 .endif
 #COPTS=	-g -DDEBUG -Wall
 
+CPPFLAGS+= -D__SELECT_DECLARED
+
 .include "../../Makefile.inc"
 .include <bsd.prog.mk>
