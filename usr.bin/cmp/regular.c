@@ -83,7 +83,7 @@ c_regular(int fd1, const char *file1, off_t skip1, off_t len1,
 		p2 = mmap(NULL, blk_sz, PROT_READ, MAP_FILE|MAP_SHARED,
 		    fd2, skip2);
 		if (p2 == MAP_FAILED) {
-			munmap(p1, blk_sz);
+			munmap((void *)p1, blk_sz);
 			goto mmap_failed;
 		}
 
@@ -101,8 +101,8 @@ c_regular(int fd1, const char *file1, off_t skip1, off_t len1,
 			if (ch == '\n')
 				++line;
 		}
-		munmap(p1 - blk_sz, blk_sz);
-		munmap(p2 - blk_sz, blk_sz);
+		munmap((void *)p1 - blk_sz, blk_sz);
+		munmap((void *)p2 - blk_sz, blk_sz);
 		skip1 += blk_sz;
 		skip2 += blk_sz;
 	}
