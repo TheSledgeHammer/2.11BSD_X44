@@ -379,7 +379,7 @@ static char hexlist[] = "0123456789abcdef";
 static char *
 any_ntoa(const struct sockaddr *sa)
 {
-	static char obuf[60];
+	static char obuf[64];
 	const char *in;
 	char *out;
 	int len;
