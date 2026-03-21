@@ -218,7 +218,7 @@ p_rtentry(struct rt_msghdr *rtm)
 static void
 pr_family(int af)
 {
-	char *afname;
+	const char *afname;
 
 	switch (af) {
 	case AF_INET:
@@ -278,13 +278,13 @@ p_sockaddr(struct sockaddr *sa, struct sockaddr *nm, int flags, int width)
 	case AF_INET6:
 		cp = routename(sa, nm, flags);
 		/* make sure numeric address is not truncated */
-		if (strchr(cp, ':') != NULL && strlen(cp) > width)
+		if (strchr(cp, ':') != NULL && strlen(cp) > (size_t)width)
 			width = strlen(cp);
 		break;
 #endif /* INET6 */
 
 	case AF_NS:
-		cp = ns_print((struct sockaddr_ns *)sa);
+		cp = __UNCONST(ns_print((struct sockaddr_ns *)sa));
 		break;
 #endif /* SMALL */
 

@@ -379,7 +379,7 @@ static char hexlist[] = "0123456789abcdef";
 static char *
 any_ntoa(const struct sockaddr *sa)
 {
-	static char obuf[64];
+	static char obuf[60];
 	const char *in;
 	char *out;
 	int len;
@@ -396,7 +396,6 @@ any_ntoa(const struct sockaddr *sa)
 	out[-1] = '\0';
 	return obuf;
 }
-
 
 int
 netmask_length(struct sockaddr *nm, int family)
@@ -594,17 +593,20 @@ routename(struct sockaddr *sa, struct sockaddr *nm, int flags)
 #endif
 #ifdef XNS
 	case AF_NS:
-		return (ns_print((struct sockaddr_ns *)sa));
+        (void)snprintf(line, sizeof(line), "ns %s", 
+            ns_print((struct sockaddr_ns *)sa));
+        break;
+//		return (ns_print((struct sockaddr_ns *)sa));
 #endif
 #ifdef ISO
 	case AF_ISO:
-		(void)snprintf(line, sizeof line, "iso %s",
+		(void)snprintf(line, sizeof(line), "iso %s",
 		    iso_ntoa(&((struct sockaddr_iso *)sa)->siso_addr));
 		break;
 #endif
 #ifdef APPLETALK
 	case AF_APPLETALK:
-		(void) snprintf(line, sizeof(line), "atalk %d.%d",
+		(void)snprintf(line, sizeof(line), "atalk %d.%d",
 		    ((struct sockaddr_at *)sa)->sat_addr.s_net,
 		    ((struct sockaddr_at *)sa)->sat_addr.s_node);
 		break;
@@ -612,7 +614,7 @@ routename(struct sockaddr *sa, struct sockaddr *nm, int flags)
 #endif /* SMALL */
 
 	default:
-		(void)snprintf(line, sizeof line, "(%d) %s",
+		(void)snprintf(line, sizeof(line), "(%d) %s",
 			sa->sa_family, any_ntoa(sa));
 		break;
 
@@ -754,17 +756,20 @@ netname(struct sockaddr *sa, struct sockaddr *nm)
 #endif
 #ifdef XNS
 	case AF_NS:
-		return (ns_print((struct sockaddr_ns *)sa));
+        (void)snprintf(line, sizeof(line), "ns %s", 
+            ns_print((struct sockaddr_ns *)sa));
+        break;
+//		return (ns_print((struct sockaddr_ns *)sa));
 #endif
 #ifdef ISO
 	case AF_ISO:
-		(void)snprintf(line, sizeof line, "iso %s",
+		(void)snprintf(line, sizeof(line), "iso %s",
 		    iso_ntoa(&((struct sockaddr_iso *)sa)->siso_addr));
 		break;
 #endif
 #ifdef APPLETALK
 	case AF_APPLETALK:
-		(void) snprintf(line, sizeof(line), "atalk %d.%d",
+		(void)snprintf(line, sizeof(line), "atalk %d.%d",
 		    ((struct sockaddr_at *)sa)->sat_addr.s_net,
 		    ((struct sockaddr_at *)sa)->sat_addr.s_node);
 		break;
@@ -772,7 +777,7 @@ netname(struct sockaddr *sa, struct sockaddr *nm)
 #endif /* SMALL */
 
 	default:
-		(void)snprintf(line, sizeof line, "af %d: %s",
+		(void)snprintf(line, sizeof(line), "af %d: %s",
 			sa->sa_family, any_ntoa(sa));
 		break;
 	}
@@ -1406,15 +1411,13 @@ int
 x25_makemask(struct sockaddr_x25 *sx25)
 {
 	register char *cp;
-	void *optlen;
 
 	if ((rtm_addrs & RTA_NETMASK) == 0) {
 		rtm_addrs |= RTA_NETMASK;
-		for (cp = (char *)sx25->x25_net; cp < &sx25->x25_opts.op_flags; cp++) {
+		for (cp = (char *)&sx25->x25_net; cp < &sx25->x25_opts.op_flags; cp++) {
 			*cp = -1;
 		}
-		optlen = (struct x25opts *)&sx25->x25_opts;
-		sx25->x25_len = (u_char)optlen;
+        memcpy(&sx25->x25_len, &sx25->x25_opts, sizeof(sx25->x25_opts));
 	}
 	return 0;
 }
@@ -1738,14 +1741,14 @@ print_rtmsg(struct rt_msghdr *rtm, int msglen)
 		    linkstate(ifm)
 #endif /* SMALL */
 		    );
-		bprintf(stdout, ifm->ifm_flags, ifnetflags);
+		bprintf(stdout, ifm->ifm_flags, (u_char *)ifnetflags);
 		pmsg_addrs((char *)(ifm + 1), ifm->ifm_addrs);
 		break;
 	case RTM_NEWADDR:
 	case RTM_DELADDR:
 		ifam = (struct ifa_msghdr *)rtm;
 		(void) printf("metric %d, flags:", ifam->ifam_metric);
-		bprintf(stdout, ifam->ifam_flags, routeflags);
+		bprintf(stdout, ifam->ifam_flags, (u_char *)routeflags);
 		pmsg_addrs((char *)(ifam + 1), ifam->ifam_addrs);
 		break;
 	case RTM_IFANNOUNCE:
@@ -1772,7 +1775,7 @@ print_rtmsg(struct rt_msghdr *rtm, int msglen)
 		case RTM_MISS:
 			(void) printf("pid: %d, seq %d, errno %d, flags:",
 				rtm->rtm_pid, rtm->rtm_seq, rtm->rtm_errno);
-			bprintf(stdout, rtm->rtm_flags, routeflags);
+			bprintf(stdout, rtm->rtm_flags, (u_char *)routeflags);
 			pmsg_common(rtm);
 			break;
 	}
@@ -1854,7 +1857,7 @@ print_getmsg(struct rt_msghdr *rtm, int msglen)
 		    ifp->sdl_nlen, ifp->sdl_data);
 	if (! shortoutput) {
 		(void)printf("      flags: ");
-		bprintf(stdout, rtm->rtm_flags, routeflags);
+		bprintf(stdout, rtm->rtm_flags, (u_char *)routeflags);
 	}
 
 #define lock(f)	((rtm->rtm_rmx.rmx_locks & __CONCAT(RTV_,f)) ? 'L' : ' ')
@@ -1907,7 +1910,7 @@ print_getmsg(struct rt_msghdr *rtm, int msglen)
 		pmsg_common(rtm);
 	else if (rtm->rtm_addrs &~ RTA_IGN) {
 		(void) printf("sockaddrs: ");
-		bprintf(stdout, rtm->rtm_addrs, addrnames);
+		bprintf(stdout, rtm->rtm_addrs, (u_char *)addrnames);
 		putchar('\n');
 	}
 #undef	RTA_IGN
@@ -1918,9 +1921,9 @@ void
 pmsg_common(struct rt_msghdr *rtm)
 {
 	(void) printf("\nlocks: ");
-	bprintf(stdout, rtm->rtm_rmx.rmx_locks, metricnames);
+	bprintf(stdout, rtm->rtm_rmx.rmx_locks, (u_char *)metricnames);
 	(void) printf(" inits: ");
-	bprintf(stdout, rtm->rtm_inits, metricnames);
+	bprintf(stdout, rtm->rtm_inits, (u_char *)metricnames);
 	pmsg_addrs(((char *)(rtm + 1)), rtm->rtm_addrs);
 }
 
@@ -1932,7 +1935,7 @@ pmsg_addrs(char *cp, int addrs)
 
 	if (addrs != 0) {
 		(void) printf("\nsockaddrs: ");
-		bprintf(stdout, addrs, addrnames);
+		bprintf(stdout, addrs, (u_char *)addrnames);
 		(void) putchar('\n');
 		for (i = 1; i; i <<= 1)
 			if (i & addrs) {
@@ -2049,7 +2052,7 @@ sockaddr(char *addr, struct sockaddr *sa)
 	char *cplim = cp + size;
 	int byte = 0, state = VIRGIN, new = 0;
 
-	(void) memset(cp, 0, size);
+	(void)memset(cp, 0, size);
 	cp++;
 	do {
 		if ((*addr >= '0') && (*addr <= '9')) {

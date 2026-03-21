@@ -29,6 +29,8 @@ NETCCITTSRC= ${NETBSDSRCDIR}/lib/libc/inet/ccitt
 .PATH:  ${NETCCITTSRC}
 CPPFLAGS+=-I${NETCCITTSRC}
 
+COPTS.route.c+= ${GCC_NO_FORMAT_TRUNCATION}
+
 # The Makefile over in ../../distrib/utils/x_route
 # would like keywords.[ch] to always exist here, so
 # they are now checked in as sources.
