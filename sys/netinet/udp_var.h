@@ -37,9 +37,9 @@
 /*
  * UDP kernel structures and variables.
  */
-struct	udpiphdr {
-	struct 	ipovly ui_i;		/* overlaid ip structure */
-	struct	udphdr ui_u;		/* udp header */
+struct udpiphdr {
+	struct ipovly ui_i;		/* overlaid ip structure */
+	struct udphdr ui_u;		/* udp header */
 };
 #define	ui_x1		ui_i.ih_x1
 #define	ui_pr		ui_i.ih_pr
@@ -51,7 +51,7 @@ struct	udpiphdr {
 #define	ui_ulen		ui_u.uh_ulen
 #define	ui_sum		ui_u.uh_sum
 
-struct	udpstat {
+struct udpstat {
 								/* input statistics: */
 	u_quad_t udps_ipackets;		/* total input packets */
 	u_quad_t udps_hdrops;		/* packet shorter than header */

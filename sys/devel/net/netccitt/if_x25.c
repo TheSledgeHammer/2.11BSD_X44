@@ -726,8 +726,8 @@ pk_rtattach(struct socket *so, struct mbuf *m0)
 	struct mbuf *m = m0;
 	struct sockaddr *dst = mtod(m, struct sockaddr *);
 	struct rtentry *rt = rtalloc1(dst, 0);
-	struct llinfo_x25 *lx;
-	caddr_t         cp;
+	struct llinfo_x25 *lx, *next;
+	caddr_t cp;
 
 #define ROUNDUP(a) \
 	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
@@ -746,25 +746,28 @@ pk_rtattach(struct socket *so, struct mbuf *m0)
 	while (rt && ((cp == 0 && rt_mask(rt) != 0)
 			|| (cp != 0	&& (rt_mask(rt) == 0 ||
 					Bcmp(cp, rt_mask(rt), rt_mask(rt)->sa_len)) != 0)))
-		rt = (struct rtentry*) rt->rt_nodes->rn_dupedkey;
+		rt = (struct rtentry *)rt->rt_nodes->rn_dupedkey;
 	if (rt == 0 || (rt->rt_flags & RTF_GATEWAY)
 			|| (lx = (struct llinfo_x25 *)rt->rt_llinfo) == 0)
 		return ESRCH;
 	if (lcp == 0)
 		return ENOTCONN;
+	next = LIST_NEXT(lx, lx_list);
 	switch (lcp->lcd_state) {
 	default:
 		return ENOTCONN;
 
 	case READY:
 		/* Detach VC from rtentry */
-		if (lx->lx_lcd == 0)
+		if (lx->lx_lcd == 0) {
 			return ENOTCONN;
+		}
 		lcp->lcd_so = 0;
 		pk_close(lcp);
 		lcp = lx->lx_lcd;
-		if (LIST_NEXT(lx, lx_list)->lx_rt == rt)
+		if (next->lx_rt == rt) {
 			x25_lxfree(lx);
+		}
 		lcp->lcd_so = so;
 		lcp->lcd_upper = 0;
 		lcp->lcd_upnext = 0;
