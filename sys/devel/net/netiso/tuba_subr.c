@@ -88,14 +88,14 @@ int	tubahashsize = TUBAHASHSIZE;
 #define TUBAHDRSIZE 	((LLC)+(CLNP_FIXED)+(ADDRESSES)+(CLNP_SEGMENT)+(TCP))
 
 #ifdef INET
-static void tuba4_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, size_t size);
+static void tuba4_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size);
 static void tuba4_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, int tlen, unsigned long lindex, unsigned long findex);
 static int tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype);
 static void tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype);
 #endif
 
 #ifdef INET6
-static void tuba6_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, size_t size);
+static void tuba6_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size);
 static void tuba6_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, u_long cksum, int tlen, unsigned long lindex, unsigned long findex);
 static int tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int transtype);
 static void tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype);
@@ -196,18 +196,20 @@ tuba_pcbdetach(struct isopcb *isop)
 /*
  * Avoid  in_pcbconnect in faked out tcp_input()
  */
+#ifdef INET
 int
-tuba_pcbconnect(struct inpcb *inp, struct mbuf *nam)
+tuba4_pcbconnect(void *v, struct mbuf *nam)
 {
-	register struct sockaddr_iso *siso;
+	struct inpcb *inp;
+	struct sockaddr_iso *siso;
 	struct sockaddr_in *sin;
 	struct isopcb *isop;
-	struct tcpcb *tp;
 	int error;
 
+	inp = (struct inpcb *)v;
 	sin = mtod(nam, struct sockaddr_in*);
 	tp = intotcpcb(inp);
-	isop = (struct isopcb *) tp->t_tuba_pcb;
+	isop = (struct isopcb *)tp->t_tuba_pcb;
 	/* hardwire iso_pcbbind() here */
 	siso = isop->isop_laddr = &isop->isop_sladdr;
 	*siso = tuba_table[inp->inp_laddr.s_addr]->tc_siso;
@@ -223,21 +225,56 @@ tuba_pcbconnect(struct inpcb *inp, struct mbuf *nam)
 	siso = mtod(nam, struct sockaddr_iso *);
 	*siso = tuba_table[inp->inp_faddr.s_addr]->tc_siso;
 	siso->siso_tlen = sizeof(inp->inp_fport);
-	bcopy((caddr_t) &inp->inp_fport, TSEL(siso), sizeof(inp->inp_fport));
+	bcopy((caddr_t)&inp->inp_fport, TSEL(siso), sizeof(inp->inp_fport));
 	error = iso_pcbconnect(isop, nam);
 	if (error == 0) {
 		tuba_refcnt(isop, 1);
 	}
 	return (error);
 }
+#endif
+#ifdef INET6
+int
+tuba6_pcbconnect(void *v, struct mbuf *nam)
+{
+	struct in6pcb *in6p;
+	struct sockaddr_iso *siso;
+	struct sockaddr_in6 *sin6;
+	struct isopcb *isop;
+	int error;
+
+	in6p = (struct in6pcb *)v;
+	sin = mtod(nam, struct sockaddr_in*);
+	tp = in6totcpcb(in6p);
+	isop = (struct isopcb *)tp->t_tuba_pcb;
+	/* hardwire iso_pcbbind() here */
+	siso = isop->isop_laddr = &isop->isop_sladdr;
+	*siso = tuba_table[in6p->in6p_laddr.s6_addr]->tc_siso;
+	siso->siso_tlen = sizeof(in6p->in6p_lport);
+	bcopy((caddr_t)&in6p->in6p_lport, TSEL(siso), sizeof(in6p->in6p_lport));
+
+	/* hardwire in_pcbconnect() here without assigning route */
+	in6p->in6p_fport = sin6->sin6_port;
+	in6p->in6p_faddr = sin6->sin6_addr;
+
+	/* reuse nam argument to call iso_pcbconnect() */
+	nam->m_len = sizeof(*siso);
+	siso = mtod(nam, struct sockaddr_iso *);
+	*siso = tuba_table[in6p->in6p_faddr.s6_addr]->tc_siso;
+	siso->siso_tlen = sizeof(in6p->in6p_fport);
+	bcopy((caddr_t)&in6p->in6p_fport, TSEL(siso), sizeof(in6p->in6p_fport));
+	error = iso_pcbconnect(isop, nam);
+	if (error == 0) {
+		tuba_refcnt(isop, 1);
+	}
+	return (error);
+}
+#endif
 
 #ifdef INET
-
 static void
-tuba4_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, size_t size)
+tuba4_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size)
 {
-	int off;
-
 	m->m_data -= sizeof(struct ip);
 	m->m_len += sizeof(struct ip);
 	m->m_pkthdr.len += sizeof(struct ip);
@@ -295,7 +332,7 @@ tuba4_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *d
 	}
 	ip->ip_p = ISOPROTO_TCP;
 	ip->ip_len = htons((u_short)tlen);
-	if (ip->ip_sum == in_cksum(m, m->m_pkthdr.len)) {
+	if (ip->ip_sum == in4_cksum(m, ISOPROTO_TCP, sizeof(struct ip), m->m_pkthdr.len)) {
 		tcpstat.tcps_rcvbadsum++;
 		m_freem(m);
 		return;
@@ -419,10 +456,8 @@ tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
 #ifdef INET6
 
 static void
-tuba6_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, size_t size)
+tuba6_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size)
 {
-	int off;
-
 	m->m_data -= sizeof(struct ip6_hdr);
 	m->m_len += sizeof(struct ip6_hdr);
 	m->m_pkthdr.len += sizeof(struct ip6_hdr);
@@ -480,7 +515,7 @@ tuba6_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *d
 	}
 	ip6->ip6_nxt = ISOPROTO_TCP;
 	ip6->ip6_plen = htons((u_short)tlen);
-	if (cksum == in6_cksum(m, m->m_pkthdr.len)) {
+	if (cksum == in6_cksum(m, ISOPROTO_TCP, sizeof(struct ip6_hdr), m->m_pkthdr.len)) {
 		tcpstat.tcps_rcvbadsum++;
 		m_freem(m);
 		return;
@@ -725,10 +760,12 @@ tuba_tcp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 	len = m->m_len;
 	tlen = m->m_pkthdr.len;
 #ifdef INET
-	tuba4_input_mbuf(m, src, dst, len, (sizeof(struct tcphdr *) + sizeof(struct ip *)));
+	iphlen = (sizeof(struct tcphdr *) + sizeof(struct ip *));
+	tuba4_input_mbuf(m, src, dst, len, off, iphlen);
 #endif
 #ifdef INET6
-	tuba6_input_mbuf(m, src, dst, len, (sizeof(struct tcphdr *) + sizeof(struct ip6_hdr *)));
+	iphlen = (sizeof(struct tcphdr *) + sizeof(struct ip6_hdr *));
+	tuba6_input_mbuf(m, src, dst, len, off, iphlen);
 #endif
 
 	/*
@@ -758,8 +795,14 @@ tuba_tcp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 	}
 
 #define TUBA_INCLUDE
+#ifdef INET
 #define	in_pcbconnect	tuba_pcbconnect
-#define	tcb				tuba_inpcb
+#define	tcb				tuba4_inpcb
+#endif
+#ifdef INET6
+#define	in6_pcbconnect	tuba6_pcbconnect
+#define	tcb				tuba6_inpcb
+#endif
 #include <netinet/tcp_input.c>
 }
 

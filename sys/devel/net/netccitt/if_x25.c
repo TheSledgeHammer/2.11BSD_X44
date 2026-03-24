@@ -63,7 +63,7 @@
 #include <netccitt/pk_var.h>
 //#include <netccitt/pk_extern.h>
 
-struct llinfo_x25_q llinfo_x25_q;
+struct llinfo_x25_list llinfo_x25_head;
 struct pklcd_q pk_listenhead;
 
 struct sockaddr *x25_dgram_sockmask;
@@ -115,7 +115,7 @@ x25_lxalloc(struct rtentry *rt)
 		LIST_INSERT_AFTER((struct llinfo_x25 *)rt->rt_llinfo, lx, lx_list);
 	} else {
 		rt->rt_llinfo = (caddr_t)lx;
-		LIST_INSERT_HEAD(&llinfo_x25_q, lx, lx_list);
+		LIST_INSERT_HEAD(&llinfo_x25_head, lx, lx_list);
 	}
 	for (ifa = TAILQ_FIRST(&rt->rt_ifp->if_addrlist); ifa; ifa = TAILQ_NEXT(ifa, ifa_list)) {
 		if (ifa->ifa_addr->sa_family == AF_CCITT)
@@ -663,7 +663,7 @@ pk_init(void)
 	TAILQ_INIT(&pkcb_q);
 	TAILQ_INIT(&pklcd_q);
 	TAILQ_INIT(&pk_listenhead);
-	LIST_INIT(&llinfo_x25_q);
+	LIST_INIT(&llinfo_x25_head);
 	if (x25_startproto) {
 		pk_protolisten(0xcc, 1, x25_dgram_incoming);
 		pk_protolisten(0x81, 1, x25_dgram_incoming);

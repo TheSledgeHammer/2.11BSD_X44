@@ -272,8 +272,8 @@ in6_pcbbind(v, nam, p)
 			 * deprecated addresses (default: forbid bind(2)).
 			 */
 			if (ia &&
-			    ((struct in6_ifaddr *)ia)->ia6_flags &
-			    (IN6_IFF_ANYCAST|IN6_IFF_NOTREADY|IN6_IFF_DETACHED))
+			    (((struct in6_ifaddr *)ia)->ia6_flags &
+			    (IN6_IFF_ANYCAST|IN6_IFF_NOTREADY|IN6_IFF_DETACHED)))
 				return (EADDRNOTAVAIL);
 		}
 		if (lport) {
@@ -377,8 +377,7 @@ in6_pcbconnect(v, nam)
 			in6p->in6p_laddr.s6_addr16[5] = htons(0xffff);
 		if (!IN6_IS_ADDR_V4MAPPED(&in6p->in6p_laddr))
 			return EINVAL;
-	} else
-	{
+	} else {
 		if (IN6_IS_ADDR_V4MAPPED(&in6p->in6p_laddr))
 			return EINVAL;
 	}
@@ -416,8 +415,7 @@ in6_pcbconnect(v, nam)
 #else
 		return EADDRNOTAVAIL;
 #endif
-	} else
-	{
+	} else {
 		/*
 		 * XXX: in6_selectsrc might replace the bound local address
 		 * with the address specified by setsockopt(IPV6_PKTINFO).
@@ -445,8 +443,7 @@ in6_pcbconnect(v, nam)
 		return (EADDRINUSE);
 	if (IN6_IS_ADDR_UNSPECIFIED(&in6p->in6p_laddr) ||
 	    (IN6_IS_ADDR_V4MAPPED(&in6p->in6p_laddr) &&
-	     in6p->in6p_laddr.s6_addr32[3] == 0))
-	{
+	     in6p->in6p_laddr.s6_addr32[3] == 0)) {
 		if (in6p->in6p_lport == 0) {
 			(void)in6_pcbbind(in6p, (struct mbuf *)0,
 			    (struct proc *)0);

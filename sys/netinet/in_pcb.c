@@ -1052,9 +1052,9 @@ in_pcbhash(struct inpcbtable *table, struct in_addr laddr, u_int lport, struct i
 	struct inpcbhead *inhash;
 	uint32_t nethash;
 
-	uint32_t lahash = fnva_32_buf(laddr, sizeof(*laddr), FNV1_32_INIT);	/* laddr hash */
+	uint32_t lahash = fnva_32_buf(&laddr->s_addr, sizeof(laddr->s_addr), FNV1_32_INIT);	/* laddr hash */
 	uint32_t lphash = fnva_32_buf(&lport, sizeof(lport), FNV1_32_INIT);	/* lport hash */
-	uint32_t fahash = fnva_32_buf(faddr, sizeof(*faddr), FNV1_32_INIT);	/* faddr hash */
+	uint32_t fahash = fnva_32_buf(&faddr->s_addr, sizeof(faddr->s_addr), FNV1_32_INIT);	/* faddr hash */
 	uint32_t fphash = fnva_32_buf(&fport, sizeof(fport), FNV1_32_INIT);	/* fport hash */
 
 	nethash = ntohl(laddr.s_addr) + ntohs(lport) + ntohl(faddr.s_addr) + ntohs(fport);

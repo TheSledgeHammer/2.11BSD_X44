@@ -60,8 +60,7 @@ extern	int arpt_keep, arpt_prune;	/* use same values as arp cache */
 static void tuba_timer(void *);
 
 static void
-tuba_timer(v)
- 	 void *v;
+tuba_timer(void *v)
 {
 	struct tuba_cache *tc;
 	int	i, s;
@@ -77,9 +76,9 @@ tuba_timer(v)
 			rn_delete(&tc->tc_siso.siso_addr, NULL, tuba_tree);
 			Free(tc);
 		}
+		callout_schedule(&tc->tc_callout, arpt_prune * hz);
 	}
 	splx(s);
-	callout_schedule(&tc->tc_callout, arpt_prune * hz);
 }
 
 void
@@ -99,9 +98,7 @@ tuba_table_init(void)
 }
 
 int
-tuba_lookup(rnh, siso)
-	struct radix_node_head *rnh;
-	register struct sockaddr_iso *siso;
+tuba_lookup(struct radix_node_head *rnh, struct sockaddr_iso *siso)
 {
     struct radix_node *rn;
     register struct tuba_cache *tc;

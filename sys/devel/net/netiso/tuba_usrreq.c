@@ -34,11 +34,7 @@
  */
 
 int
-tuba_usrreq(so, req, m, nam, control, p)
-	struct socket *so;
-	int req;
-	struct mbuf *m, *nam, *control;
-	struct proc *p;
+tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct mbuf *control, struct proc *p)
 {
 	register struct inpcb *inp;
 	register struct isopcb *isop;
@@ -49,7 +45,7 @@ tuba_usrreq(so, req, m, nam, control, p)
 	struct sockaddr_iso *siso;
 
 	if (req == PRU_CONTROL) {
-		return (iso_control(so, (int) m, (caddr_t) nam, (struct ifnet*) control, p));
+		return (iso_control(so, (int)m, (caddr_t)nam, (struct ifnet *)control, p));
 	}
 
 	s = splnet();
@@ -93,12 +89,14 @@ notrace:
 }
 
 int
-tuba_ctloutput(op, so, level, optname, mp)
-	int op;
-	struct socket *so;
-	int level, optname;
-	struct mbuf **mp;
+tuba_ctloutput(int op, struct socket *so, int level, int optname, struct mbuf **mp)
 {
-	return ((level != IPPROTO_TCP ? clnp_ctloutput : tcp_ctloutput)(op, so,
-			level, optname, mp));
+	int error;
+
+    if (level != IPPROTO_TCP) {
+        error = clnp_ctloutput(op, so, level, optname, mp);
+    } else {
+        error = tcp_ctloutput(op, so, level, optname, mp);
+    }
+	return (error);
 }

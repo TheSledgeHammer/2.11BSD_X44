@@ -605,7 +605,8 @@ done:
 	return (error);
 }
 
-void
-clnp_ctloutput()
+int
+clnp_ctloutput(int op, struct socket *so, int level, int optname, struct mbuf **mp)
 {
+	return (ENOSYS);
 }
