@@ -83,8 +83,6 @@ SOFTWARE.
 //#include <netiso/iso_pcb.h>
 #include <netiso/iso_var.h>
 
-
-
 struct isopcb {
 	LIST_ENTRY(isopcb) 		isop_hash;
 	CIRCLEQ_ENTRY(isopcb) 	isop_queue;

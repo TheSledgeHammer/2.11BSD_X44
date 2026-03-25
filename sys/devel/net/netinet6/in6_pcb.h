@@ -67,18 +67,10 @@
 #include <sys/queue.h>
 #include <netinet/in_pcb_hdr.h>
 
-/*
- * Common structure pcb for internet protocol implementation.
- * Here are stored pointers to local and foreign host table
- * entries, local and foreign socket numbers, and pointers
- * up (to a socket structure) and down (to a protocol-specific)
- * control block.
- */
-struct icmp6_filter;
-
 struct	in6pcb {
 	struct inpcb_hdr in6p_head;
-#define in6p_hash	in6p_head.inph_hash
+#define in6p_fhash	in6p_head.inph_fhash
+#define in6p_lhash	in6p_head.inph_lhash
 #define in6p_queue	in6p_head.inph_queue
 #define in6p_af		in6p_head.inph_af
 #define in6p_ppcb	in6p_head.inph_ppcb
@@ -101,73 +93,8 @@ struct	in6pcb {
 	struct icmp6_filter *in6p_icmp6filt;
 	int	in6p_cksum;		/* IPV6_CHECKSUM setsockopt */
 };
-//#define in6p_faddr	in6p_ip6.ip6_dst
-//#define in6p_laddr	in6p_ip6.ip6_src
 
-/* states in inp_state: */
-#define	IN6P_ATTACHED		INP_ATTACHED
-#define	IN6P_BOUND		INP_BOUND
-#define	IN6P_CONNECTED		INP_CONNECTED
+#define IN6PLOOKUP_LOCAL		INPLOOKUP_LOCAL
+#define IN6PLOOKUP_FOREIGN		INPLOOKUP_FOREIGN
 
-/*
- * Flags in in6p_flags
- * We define KAME's original flags in higher 16 bits as much as possible
- * for compatibility with *bsd*s.
- */
-#define IN6P_RECVOPTS		0x00001000 /* receive incoming IP6 options */
-#define IN6P_RECVRETOPTS	0x00002000 /* receive IP6 options for reply */
-#define IN6P_RECVDSTADDR	0x00004000 /* receive IP6 dst address */
-#define IN6P_IPV6_V6ONLY	0x00008000 /* restrict AF_INET6 socket for v6 */
-#define IN6P_PKTINFO		0x00010000 /* receive IP6 dst and I/F */
-#define IN6P_HOPLIMIT		0x00020000 /* receive hoplimit */
-#define IN6P_HOPOPTS		0x00040000 /* receive hop-by-hop options */
-#define IN6P_DSTOPTS		0x00080000 /* receive dst options after rthdr */
-#define IN6P_RTHDR			0x00100000 /* receive routing header */
-#define IN6P_RTHDRDSTOPTS	0x00200000 /* receive dstoptions before rthdr */
-#define IN6P_TCLASS			0x00400000 /* traffic class */
-#define IN6P_AUTOFLOWLABEL	0x00800000 /* arc4random flowlabel */
-
-#define IN6P_HIGHPORT		0x01000000 /* user wants "high" port binding */
-#define IN6P_LOWPORT		0x02000000 /* user wants "low" port binding */
-#define IN6P_ANONPORT		0x04000000 /* port chosen for user */
-#define IN6P_FAITH			0x08000000 /* accept FAITH'ed connections */
-#if 0 /* obsoleted */
-#define IN6P_BINDV6ONLY		0x10000000 /* do not grab IPv4 traffic */
-#endif
-#define IN6P_MINMTU			0x20000000 /* use minimum MTU */
-#define IN6P_RFC2292		0x40000000 /* RFC2292 */
-
-#define IN6P_CONTROLOPTS	(IN6P_PKTINFO|IN6P_HOPLIMIT|IN6P_HOPOPTS|		\
-				 	 	 	 IN6P_DSTOPTS|IN6P_RTHDR|IN6P_RTHDRDSTOPTS| 	\
-							 IN6P_TCLASS|IN6P_AUTOFLOWLABEL|IN6P_RFC2292|	\
-							 IN6P_MINMTU)
-
-#define sotoin6pcb(so)	((struct in6pcb *)(so)->so_pcb)
-
-#ifdef _KERNEL
-void	in6_losing(struct in6pcb *);
-void	in6_pcbinit(struct inpcbtable *, int, int);
-int	in6_pcballoc(struct socket *, void *);
-int	in6_pcbbind(void *, struct mbuf *, struct proc *);
-int	in6_pcbconnect(void *, struct mbuf *);
-void	in6_pcbdetach(struct in6pcb *);
-void	in6_pcbdisconnect(struct in6pcb *);
-struct	in6pcb *in6_pcblookup_port(struct inpcbtable *, struct in6_addr *, u_int, int);
-int	in6_pcbnotify(struct inpcbtable *, struct sockaddr *, u_int, struct sockaddr *, u_int, int, void *, void (*)(struct in6pcb *, int));
-void	in6_pcbpurgeif0(struct inpcbtable *, struct ifnet *);
-void	in6_pcbpurgeif(struct inpcbtable *, struct ifnet *);
-void	in6_pcbstate(struct in6pcb *, int);
-void	in6_rtchange(struct in6pcb *, int);
-void	in6_setpeeraddr(struct in6pcb *, struct mbuf *);
-void	in6_setsockaddr(struct in6pcb *, struct mbuf *);
-
-/* in in6_src.c */
-int	in6_selecthlim(struct in6pcb *, struct ifnet *);
-int	in6_pcbsetport(struct in6_addr *, struct in6pcb *, struct proc *);
-
-extern struct rtentry *in6_pcbrtentry(struct in6pcb *);
-extern struct in6pcb *in6_pcblookup_connect(struct inpcbtable *, struct in6_addr *, u_int, struct in6_addr *, u_int, int);
-extern struct in6pcb *in6_pcblookup_bind(struct inpcbtable *, struct in6_addr *, u_int, int);
-#endif /* _KERNEL */
-
-#endif /* !_NETINET6_IN6_PCB_H_ */
+#endif /* _NETINET6_IN6_PCB_H_ */

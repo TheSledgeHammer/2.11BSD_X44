@@ -72,6 +72,7 @@
 
 struct inpcbtable	tubapcbtable;
 struct inpcb		tuba_inpcb;
+struct in6pcb		tuba_in6pcb;
 struct isopcb		tuba_isopcb;
 
 #define	TUBAHASHSIZE	128
@@ -207,7 +208,7 @@ tuba4_pcbconnect(void *v, struct mbuf *nam)
 	int error;
 
 	inp = (struct inpcb *)v;
-	sin = mtod(nam, struct sockaddr_in*);
+	sin = mtod(nam, struct sockaddr_in *);
 	tp = intotcpcb(inp);
 	isop = (struct isopcb *)tp->t_tuba_pcb;
 	/* hardwire iso_pcbbind() here */
@@ -244,7 +245,7 @@ tuba6_pcbconnect(void *v, struct mbuf *nam)
 	int error;
 
 	in6p = (struct in6pcb *)v;
-	sin = mtod(nam, struct sockaddr_in*);
+	sin6 = mtod(nam, struct sockaddr_in6 *);
 	tp = in6totcpcb(in6p);
 	isop = (struct isopcb *)tp->t_tuba_pcb;
 	/* hardwire iso_pcbbind() here */
@@ -760,11 +761,11 @@ tuba_tcp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 	len = m->m_len;
 	tlen = m->m_pkthdr.len;
 #ifdef INET
-	iphlen = (sizeof(struct tcphdr *) + sizeof(struct ip *));
+	iphlen = (sizeof(struct tcphdr) + sizeof(struct ip));
 	tuba4_input_mbuf(m, src, dst, len, off, iphlen);
 #endif
 #ifdef INET6
-	iphlen = (sizeof(struct tcphdr *) + sizeof(struct ip6_hdr *));
+	iphlen = (sizeof(struct tcphdr) + sizeof(struct ip6_hdr));
 	tuba6_input_mbuf(m, src, dst, len, off, iphlen);
 #endif
 
@@ -796,12 +797,12 @@ tuba_tcp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 
 #define TUBA_INCLUDE
 #ifdef INET
-#define	in_pcbconnect	tuba_pcbconnect
-#define	tcb				tuba4_inpcb
+#define	in_pcbconnect	tuba4_pcbconnect
+#define	tcb				tuba_inpcb
 #endif
 #ifdef INET6
 #define	in6_pcbconnect	tuba6_pcbconnect
-#define	tcb				tuba6_inpcb
+#define	tcb				tuba_in6pcb
 #endif
 #include <netinet/tcp_input.c>
 }
