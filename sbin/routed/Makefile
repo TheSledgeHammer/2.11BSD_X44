@@ -14,8 +14,9 @@ DPADD+=	${LIBUTIL}
 MLINKS=	routed.8 rdisc.8
 #COPTS+=-g -DDEBUG -Wall
 
-COPTS.main.c = -Wno-format-nonliteral
-COPTS.trace.c = -Wno-format-nonliteral
+COPTS.if.c += ${GCC_NO_FORMAT_TRUNCATION}
+COPTS.main.c += -Wno-format-nonliteral
+COPTS.trace.c += -Wno-format-nonliteral
 
 .include <bsd.prog.mk>
 .include <bsd.subdir.mk>
