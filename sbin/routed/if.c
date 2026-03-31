@@ -981,7 +981,7 @@ ifinit(void)
 				} else if (now.tv_sec>(ifp->int_data.ts
 						       + CHECK_BAD_INTERVAL)) {
 					trace_act("interface %s has been off"
-						  " %ld seconds; forget it",
+						  " %lld seconds; forget it",
 						  ifp->int_name,
 						  now.tv_sec-ifp->int_data.ts);
 					ifdel(ifp);

@@ -7,6 +7,7 @@ SRCS=	if.c input.c main.c output.c parms.c radix.c rdisc.c table.c trace.c
 MAN=	routed.8
 SUBDIR=	rtquery
 
+CPPFLAGS+= -D__SELECT_DECLARED
 LDADD+=	-lutil
 DPADD+=	${LIBUTIL}
 
@@ -14,7 +15,7 @@ DPADD+=	${LIBUTIL}
 MLINKS=	routed.8 rdisc.8
 #COPTS+=-g -DDEBUG -Wall
 
-COPTS.if.c += ${GCC_NO_FORMAT_TRUNCATION}
+COPTS.if.c += ${GCC_NO_FORMAT_TRUNCATION} ${GCC_NO_STRINGOP_TRUNCATION}
 COPTS.main.c += -Wno-format-nonliteral
 COPTS.trace.c += -Wno-format-nonliteral
 
