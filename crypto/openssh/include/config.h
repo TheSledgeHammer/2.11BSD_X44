@@ -1407,7 +1407,7 @@
 #define HAVE_STRUCT_STAT_ST_BLKSIZE 1
 
 /* Define to 1 if `st_mtim' is a member of `struct stat'. */
-#define HAVE_STRUCT_STAT_ST_MTIM 1
+/* #undef HAVE_STRUCT_STAT_ST_MTIM */
 
 /* Define to 1 if `st_mtime' is a member of `struct stat'. */
 #define HAVE_STRUCT_STAT_ST_MTIME 1
