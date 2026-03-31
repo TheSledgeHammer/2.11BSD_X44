@@ -55,11 +55,11 @@ __RCSID("$NetBSD: comm.c,v 1.13 2003/08/07 11:13:27 agc Exp $");
 
 #define	MAXLINELEN	(LINE_MAX + 1)
 
-char *tabs[] = { "", "\t", "\t\t" };
+const char *tabs[] = { "", "\t", "\t\t" };
 
 FILE   *file(const char *);
 int	main(int, char **);
-void	show(FILE *, char *, char *);
+void	show(FILE *, const char *, char *);
 void	usage(void);
 
 int
@@ -68,8 +68,8 @@ main(int argc, char **argv)
 	int comp, file1done, file2done, read1, read2;
 	int ch, flag1, flag2, flag3;
 	FILE *fp1, *fp2;
-	char *col1, *col2, *col3;
-	char **p, line1[MAXLINELEN], line2[MAXLINELEN];
+	const char *col1, *col2, *col3, **p;
+	char line1[MAXLINELEN], line2[MAXLINELEN];
 	int (*compare)(const char *, const char *);
 
 	(void)setlocale(LC_ALL, "");
@@ -165,7 +165,7 @@ main(int argc, char **argv)
 }
 
 void
-show(FILE *fp, char *offset, char *buf)
+show(FILE *fp, const char *offset, char *buf)
 {
 	while (printf("%s%s", offset, buf) >= 0 && fgets(buf, MAXLINELEN, fp))
 		;
