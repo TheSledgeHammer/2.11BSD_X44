@@ -105,9 +105,7 @@ struct interval {
 char *shutter;
 
 int
-main(argc,argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	register i, ufd;
 	register char *f;
@@ -293,8 +291,7 @@ main(argc,argv)
 }
 
 time_t
-getsdt(s)
-	register char *s;
+getsdt(char *s)
 {
 	time_t t, t1, tim;
 	register char c;
@@ -350,10 +347,7 @@ badform:
 }
 
 void
-warn(term, sdt, now, type)
-	FILE *term;
-	time_t sdt, now;
-	char *type;
+warn(FILE *term, time_t sdt, time_t now, char *type)
 {
 	char *ts;
 	register delay = sdt - now;
@@ -380,7 +374,7 @@ warn(term, sdt, now, type)
 }
 
 void
-doitfast()
+doitfast(void)
 {
 	register FILE *fastd;
 
@@ -391,8 +385,7 @@ doitfast()
 }
 
 void
-nolog(sdt)
-	time_t sdt;
+nolog(time_t sdt)
 {
 	register FILE *nologf;
 
@@ -406,7 +399,7 @@ nolog(sdt)
 }
 
 void
-finish()
+finish(void)
 {
 	(void) signal(SIGTERM, SIG_IGN);
 	(void) unlink(nologin);
@@ -414,7 +407,7 @@ finish()
 }
 
 void
-timeout()
+timeout(void)
 {
 	longjmp(alarmbuf, 1);
 }

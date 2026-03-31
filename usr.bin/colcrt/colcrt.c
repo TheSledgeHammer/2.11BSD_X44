@@ -74,14 +74,12 @@ char	*progname;
 FILE	*f;
 
 int	main(int, char **);
-void	move(int, int);
-void	pflush(int);
+void move(int, int);
+void pflush(int);
 int	plus(char, char);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int c;
 	char *cp, *dp;
@@ -193,8 +191,7 @@ main(argc, argv)
 }
 
 int
-plus(c, d)
-	char c, d;
+plus(char c, char d)
 {
 
 	return ((c == '|' && d == '-') || d == '_');
@@ -203,8 +200,7 @@ plus(c, d)
 int first;
 
 void
-pflush(ol)
-	int ol;
+pflush(int ol)
 {
 	int i;
 	char *cp;
@@ -238,8 +234,7 @@ pflush(ol)
 }
 
 void
-move(l, m)
-	int l, m;
+move(int l, int m)
 {
 	char *cp, *dp;
 

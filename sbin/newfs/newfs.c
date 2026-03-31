@@ -179,9 +179,7 @@ char	device[MAXPATHLEN];
 char	*progname;
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	extern char *optarg;
 	extern int optind;
@@ -559,9 +557,7 @@ char lmsg[] = "%s: can't read disk label";
 
 
 struct disklabel *
-getdisklabel(s, fd)
-	char *s;
-	int fd;
+getdisklabel(char *s, int fd)
 {
 	static struct disklabel lab;
 
@@ -584,10 +580,7 @@ getdisklabel(s, fd)
 }
 
 void
-rewritelabel(s, fd, lp)
-	char *s;
-	int fd;
-	register struct disklabel *lp;
+rewritelabel(char *s, int fd, struct disklabel *lp)
 {
 #ifdef COMPAT
 	if (unlabeled)
@@ -675,7 +668,7 @@ fatal(const char *fmt, ...)
 }
 
 void
-usage()
+usage(void)
 {
 	if (mfs) {
 		fprintf(stderr,

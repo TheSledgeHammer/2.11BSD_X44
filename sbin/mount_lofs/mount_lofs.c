@@ -39,6 +39,7 @@
 
 #include <sys/param.h>
 #include <sys/mount.h>
+
 #include <miscfs/lofs/lofs.h>
 
 #include <errno.h>
@@ -50,9 +51,7 @@
 void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	struct lofs_args args;
 	int ch, mntflags;
@@ -83,7 +82,7 @@ main(argc, argv)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr,
 	    "usage: mount_lofs [ -F fsoptions ] target_fs mount_point\n");

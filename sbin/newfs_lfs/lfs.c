@@ -249,15 +249,7 @@ static void put(int, off_t, void *, size_t);
 #define	SUMERR "Multiple summary blocks in segment 1 not yet implemented\nsummary is %d bytes."
 
 int
-make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size, version)
-	int fd;
-	struct disklabel *lp;
-	struct partition *partp;
-	int minfree;
-	int block_size;
-	int frag_size;
-	int seg_size;
-	int version;
+make_lfs(int fd, struct disklabel *lp, struct partition *partp, int minfree, int block_size, int frag_size, int seg_size, int version)
 {
 	struct lfs *lfsp;
 	int ret;
@@ -270,11 +262,7 @@ make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size, version)
 }
 
 static void
-put(fd, off, p, len)
-	int fd;
-	off_t off;
-	void *p;
-	size_t len;
+put(int fd, off_t off, void *p, size_t len)
 {
 	int wbytes;
 
@@ -296,14 +284,13 @@ put(fd, off, p, len)
  */
 
 void
-lfsinit()
+lfsinit(void)
 {
 
 }
 
 static void
-segerror(nblocks)
-	int nblocks;
+segerror(int nblocks)
 {
 #define	SEGERR \
 "File requires more than the number of direct blocks; increase block or segment size."
@@ -313,8 +300,7 @@ segerror(nblocks)
 }
 
 static struct lfs *
-get_lfs_by_version(version)
-	int version;
+get_lfs_by_version(int version)
 {
 	struct lfs *lfsp;
 	int ret;
@@ -344,15 +330,7 @@ get_lfs_by_version(version)
 }
 
 static int
-build_lfs(lfsp, fd, lp, partp, minfree, block_size, frag_size, seg_size)
-	struct lfs *lfsp;
-	int fd;
-	struct disklabel *lp;
-	struct partition *partp;
-	int minfree;
-	int block_size;
-	int frag_size;
-	int seg_size;
+build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *partp, int minfree, int block_size, int frag_size, int seg_size)
 {
 	union dinode *dip;			/* Pointer to a disk inode */
 	caddr_t dpagep;				/* Pointer to page of disk inodes */
@@ -789,12 +767,7 @@ build_lfs(lfsp, fd, lp, partp, minfree, block_size, frag_size, seg_size)
 }
 
 static ufs2_daddr_t
-make_dinode(ino, dp, nblocks, saddr, lfsp)
-	ino_t ino;					/* inode we're creating */
-	union dinode *dp;
-	int nblocks;				/* number of blocks in file */
-	ufs2_daddr_t saddr;			/* starting block address */
-	struct lfs *lfsp;			/* superblock */
+make_dinode(ino_t ino /* inode we're creating */, union dinode *dp, int nblocks /* number of blocks in file */, ufs2_daddr_t saddr /* starting block address */, struct lfs *lfsp /* superblock */)
 {
 	int db_per_fb, i;
 
@@ -823,10 +796,7 @@ make_dinode(ino, dp, nblocks, saddr, lfsp)
  * entries in protodir fir in the first DIRBLKSIZ.
  */
 static void
-make_dir(bufp, protodir, entries)
-	void *bufp;
-	register struct direct *protodir;
-	int entries;
+make_dir(void *bufp, struct direct *protodir, int entries)
 {
 	char *cp;
 	int i, spcleft;

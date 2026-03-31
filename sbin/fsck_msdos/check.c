@@ -49,8 +49,7 @@ __RCSID("$NetBSD: check.c,v 1.12 2001/04/06 16:52:41 wiz Exp $");
 #include "fsutil.h"
 
 int
-checkfilesys(filename)
-	const char *filename;
+checkfilesys(const char *filename)
 {
 	int dosfs;
 	struct bootblock boot;

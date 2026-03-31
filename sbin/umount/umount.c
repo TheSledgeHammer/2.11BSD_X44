@@ -77,9 +77,7 @@ void usage(void);
 int	 xdr_dir(XDR *, char *);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int all, ch, errs, mnts;
 	char **typelist = NULL;
@@ -158,8 +156,7 @@ main(argc, argv)
 }
 
 int
-umountall(typelist)
-	char **typelist;
+umountall(char **typelist)
 {
 	struct fstab *fs;
 	int rval, type;
@@ -201,9 +198,7 @@ umountall(typelist)
 }
 
 int
-umountfs(name, typelist)
-	char *name;
-	char **typelist;
+umountfs(char *name, char **typelist)
 {
 	enum clnt_stat clnt_stat;
 	struct hostent *hp;
@@ -303,10 +298,7 @@ umountfs(name, typelist)
 }
 
 char *
-getmntname(name, what, type)
-	char *name;
-	mntwhat what;
-	char **type;
+getmntname(char *name, mntwhat what, char **type)
 {
 	static struct statfs *mntbuf;
 	static int mntsize;
@@ -333,8 +325,7 @@ getmntname(name, what, type)
 }
 
 int
-namematch(hp)
-	struct hostent *hp;
+namematch(struct hostent *hp)
 {
 	char *cp, **np;
 
@@ -365,15 +356,13 @@ namematch(hp)
  * xdr routines for mount rpc's
  */
 int
-xdr_dir(xdrsp, dirp)
-	XDR *xdrsp;
-	char *dirp;
+xdr_dir(XDR *xdrsp, char *dirp)
 {
 	return (xdr_string(xdrsp, &dirp, RPCMNT_PATHLEN));
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr,
 	    "usage: %s\n       %s\n",
@@ -385,9 +374,7 @@ usage()
 static enum { IN_LIST, NOT_IN_LIST } which;
 
 int
-selected(type, typelist)
-	char type;
-	char **typelist;
+selected(char type, char **typelist)
 {
 	/* If no type specified, it's always selected. */
 	if (typelist == NULL) {
@@ -402,9 +389,7 @@ selected(type, typelist)
 }
 
 void
-maketypelist(fslist, typelist)
-	register char *fslist;
-	char **typelist;
+maketypelist(char *fslist, char **typelist)
 {
 	register int *av, i;
 	char *nextcp;
@@ -445,8 +430,7 @@ maketypelist(fslist, typelist)
 }
 
 int
-fsnametotype(name)
-	char *name;
+fsnametotype(char *name)
 {
 	static char *namelist[] = INITMOUNTNAMES;
 	register char **cp;

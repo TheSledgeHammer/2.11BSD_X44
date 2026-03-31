@@ -48,11 +48,11 @@ static char sccsid[] = "@(#)mount_ufs.c	8.2.2 (2.11BSD) 1996/4/18";
 #include <string.h>
 #include <unistd.h>
 
-#include <devel/ufs211/ufs211_mount.h>
+#include <ufs/ufs211/ufs211_mount.h>
 
 #include "mntopts.h"
 
-void	ufs211_usage();
+void	usage();
 
 static struct mntopt mopts[] = {
 	MOPT_STDOPTS,
@@ -63,9 +63,7 @@ static struct mntopt mopts[] = {
 };
 
 int
-mount_ufs211(argc, argv)
-	int argc;
-	register char *argv[];
+mount_ufs211(int argc, char *argv[])
 {
 	extern int optreset;
 	int ch, mntflags;
@@ -79,13 +77,13 @@ mount_ufs211(argc, argv)
 			break;
 		case '?':
 		default:
-			ufs_usage();
+			usage();
 		}
 	argc -= optind;
 	argv += optind;
 
 	if (argc != 2)
-		ufs_usage();
+		usage();
 
 	if (mount(argv[0], argv[1], mntflags) < 0) {
 		(void)fprintf(stderr, "%s on %s: ", argv[0], argv[1]);
@@ -112,7 +110,7 @@ mount_ufs211(argc, argv)
 }
 
 void
-ufs211_usage()
+usage(void)
 {
 	(void)fprintf(stderr, "usage: mount_ufs211 [-o options] special node\n");
 	exit(1);

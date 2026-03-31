@@ -56,10 +56,7 @@ static char *keyval(int);
  * List entries on the tape.
  */
 long
-listfile(name, ino, type)
-	char *name;
-	ino_t ino;
-	int type;
+listfile(char *name, ino_t ino, int type)
 {
 	long descend = hflag ? GOOD : FAIL;
 
@@ -75,10 +72,7 @@ listfile(name, ino, type)
  * Request that new entries be extracted.
  */
 long
-addfile(name, ino, type)
-	char *name;
-	ino_t ino;
-	int type;
+addfile(char *name, ino_t ino, int type)
 {
 	struct entry *ep;
 	long descend = hflag ? GOOD : FAIL;
@@ -119,10 +113,7 @@ addfile(name, ino, type)
  */
 /* ARGSUSED */
 long
-deletefile(name, ino, type)
-	char *name;
-	ino_t ino;
-	int type;
+deletefile(char *name, ino_t ino, int type)
 {
 	long descend = hflag ? GOOD : FAIL;
 	struct entry *ep;
@@ -160,7 +151,7 @@ static struct entry *removelist;
  *	Remove directories from the lookup chains.
  */
 void
-removeoldleaves()
+removeoldleaves(void)
 {
 	struct entry *ep, *nextep;
 	ino_t i, mydirino;
@@ -213,10 +204,7 @@ removeoldleaves()
  *	Renames are done at the same time.
  */
 long
-nodeupdates(name, ino, type)
-	char *name;
-	ino_t ino;
-	int type;
+nodeupdates(char *name, ino_t ino, int type)
 {
 	struct entry *ep, *np, *ip;
 	long descend = GOOD;
@@ -503,8 +491,7 @@ nodeupdates(name, ino, type)
  * Calculate the active flags in a key.
  */
 static char *
-keyval(key)
-	int key;
+keyval(int key)
 {
 	static char keybuf[32];
 
@@ -525,7 +512,7 @@ keyval(key)
  * Find unreferenced link names.
  */
 void
-findunreflinks()
+findunreflinks(void)
 {
 	struct entry *ep, *np;
 	ino_t i;
@@ -573,7 +560,7 @@ findunreflinks()
  * time O(N).
  */
 void
-removeoldnodes()
+removeoldnodes(void)
 {
 	struct entry *ep, **prev;
 	long change;
@@ -602,8 +589,7 @@ removeoldnodes()
  * Extract new leaves.
  */
 void
-createleaves(symtabfile)
-	char *symtabfile;
+createleaves(char *symtabfile)
 {
 	struct entry *ep;
 	ino_t first;
@@ -682,7 +668,7 @@ createleaves(symtabfile)
  * Efficiently extract a subset of the files on a tape.
  */
 void
-createfiles()
+createfiles(void)
 {
 	ino_t first, next, last;
 	struct entry *ep;
@@ -786,7 +772,7 @@ new_volume:
  * Add links.
  */
 void
-createlinks()
+createlinks(void)
 {
 	struct entry *np, *ep;
 	ino_t i;
@@ -826,7 +812,7 @@ createlinks()
  * that no temporary names remain.
  */
 void
-checkrestore()
+checkrestore(void)
 {
 	struct entry *ep;
 	ino_t i;
@@ -848,10 +834,7 @@ checkrestore()
  * A paranoid check that things are as they should be.
  */
 long
-verifyfile(name, ino, type)
-	char *name;
-	ino_t ino;
-	int type;
+verifyfile(char *name, ino_t ino, int type)
 {
 	struct entry *np, *ep;
 	long descend = GOOD;

@@ -63,16 +63,14 @@ void	show(FILE *, char *, char *);
 void	usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	int comp, file1done, file2done, read1, read2;
 	int ch, flag1, flag2, flag3;
 	FILE *fp1, *fp2;
 	char *col1, *col2, *col3;
 	char **p, line1[MAXLINELEN], line2[MAXLINELEN];
-	int (*compare)(const char*,const char*);
+	int (*compare)(const char *, const char *);
 
 	(void)setlocale(LC_ALL, "");
 
@@ -167,17 +165,14 @@ main(argc, argv)
 }
 
 void
-show(fp, offset, buf)
-	FILE *fp;
-	char *offset, *buf;
+show(FILE *fp, char *offset, char *buf)
 {
 	while (printf("%s%s", offset, buf) >= 0 && fgets(buf, MAXLINELEN, fp))
 		;
 }
 
 FILE *
-file(name)
-	const char *name;
+file(const char *name)
 {
 	FILE *fp;
 
@@ -189,7 +184,7 @@ file(name)
 }
 
 void
-usage()
+usage(void)
 {
 
 	(void)fprintf(stderr, "usage: comm [-123] file1 file2\n");

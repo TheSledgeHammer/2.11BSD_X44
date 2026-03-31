@@ -152,9 +152,7 @@ void	usage(void);
 void 	Write(int, void *, int);
 
 int
-main(argc, argv)
-	char *argv[];
-	int argc;
+main(int argc, char *argv[])
 {
 	int ch;
 
@@ -277,7 +275,7 @@ err:
 }
 
 void
-kmem_setup()
+kmem_setup(void)
 {
 	FILE *fp;
 	int kmem, i;
@@ -347,7 +345,7 @@ kmem_setup()
 }
 
 void
-check_kmem()
+check_kmem(void)
 {
 	register char *cp;
 	FILE *fp;
@@ -376,7 +374,7 @@ check_kmem()
 }
 
 void
-clear_dump()
+clear_dump(void)
 {
 	long newdumplo;
 
@@ -386,7 +384,7 @@ clear_dump()
 }
 
 int
-dump_exists()
+dump_exists(void)
 {
 	int newdumpmag;
 
@@ -404,8 +402,7 @@ dump_exists()
 
 
 char *
-rawname(s)
-	char *s;
+rawname(char *s)
 {
 	char *sl, name[MAXPATHLEN];
 
@@ -423,7 +420,7 @@ rawname(s)
 }
 
 int
-get_crashtime()
+get_crashtime(void)
 {
 	time_t clobber = (time_t)0;
 
@@ -468,8 +465,7 @@ get_crashtime()
 }
 
 char *
-path(file)
-	char *file;
+path(char *file)
 {
 	register char *cp = malloc(strlen(file) + strlen(dirname) + 2);
 
@@ -482,8 +478,7 @@ path(file)
 char buf[1024 * 1024];
 
 int
-read_number(fn)
-	char *fn;
+read_number(char *fn)
 {
 	register FILE *fp;
 	register int bounds;
@@ -515,7 +510,7 @@ read_number(fn)
 }
 
 void
-save_core()
+save_core(void)
 {
 	register FILE *fp;
 	register int bounds, ifd, nr, nw, ofd;
@@ -630,7 +625,7 @@ char *months[] = {
 };
 
 void
-log_entry()
+log_entry(void)
 {
 	FILE *fp;
 	struct tm *tm, *localtime();
@@ -651,7 +646,7 @@ log_entry()
 }
 
 int
-check_space()
+check_space(void)
 {
 	register FILE *fp;
 	char *tvmunix;
@@ -698,9 +693,7 @@ check_space()
  */
 
 int
-Open(name, rw)
-	char *name;
-	int rw;
+Open(char *name, int rw)
 {
 	int fd;
 
@@ -712,9 +705,7 @@ Open(name, rw)
 }
 
 int
-Read(fd, buff, size)
-	int fd, size;
-	char *buff;
+Read(int fd, char *buff, int size)
 {
 	int ret;
 
@@ -726,9 +717,7 @@ Read(fd, buff, size)
 }
 
 off_t
-Lseek(fd, off, flag)
-	int fd, flag;
-	off_t off;
+Lseek(int fd, off_t off, int flag)
 {
 	off_t ret;
 
@@ -740,9 +729,7 @@ Lseek(fd, off, flag)
 }
 
 int
-Create(file, mode)
-	char *file;
-	int mode;
+Create(char *file, int mode)
 {
 	register int fd;
 
@@ -754,10 +741,7 @@ Create(file, mode)
 }
 
 void
-Write(fd, buf, size)
-	int fd, size;
-	char *buf;
-
+Write(int fd, char *buf, int size)
 {
 	if (write(fd, buf, size) < size) {
 		syslog(LOG_ERR, "write: %s", strerror(n == -1 ? errno : EIO));
@@ -766,7 +750,7 @@ Write(fd, buf, size)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)syslog(LOG_ERR, "usage: savecore [-cfvz] [-N system] directory");
 	exit(1);

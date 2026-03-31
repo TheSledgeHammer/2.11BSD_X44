@@ -116,9 +116,7 @@ static void rewritelabel(char *, int, struct disklabel *);
 static void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	register int ch;
 	register struct partition *pp;
@@ -332,9 +330,7 @@ char lmsg[] = "%s: can't read disk label";
 #endif
 
 static struct disklabel *
-getdisklabel(s, fd)
-	char *s;
-	int fd;
+getdisklabel(char *s, int fd)
 {
 	static struct disklabel lab;
 
@@ -358,8 +354,7 @@ getdisklabel(s, fd)
 }
 
 static struct disklabel *
-debug_readlabel(fd)
-	int fd;
+debug_readlabel(int fd)
 {
 	static struct disklabel lab;
 	int n;
@@ -373,10 +368,7 @@ debug_readlabel(fd)
 }
 
 static void
-rewritelabel(s, fd, lp)
-	char *s;
-	int fd;
-	register struct disklabel *lp;
+rewritelabel(char *s, int fd, struct disklabel *lp)
 {
 #ifdef COMPAT
 	if (unlabeled)
@@ -427,7 +419,7 @@ rewritelabel(s, fd, lp)
 }
 
 void
-usage()
+usage(void)
 {
 	if (mfs) {
 		fprintf(stderr,

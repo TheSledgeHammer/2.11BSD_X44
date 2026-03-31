@@ -58,15 +58,13 @@ static void usage(void);
 int main(int, char **);
 
 static void
-usage()
+usage(void)
 {
 	errexit("usage: fsck_msdos [-fnpy] filesystem ... \n");
 }
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	int ret = 0, erg;
 	int ch;

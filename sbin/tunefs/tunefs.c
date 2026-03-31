@@ -85,9 +85,7 @@ void getsb(struct fs *, char *);
 void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int	ch, Aflag, Fflag, Nflag, openflags;
 	char *special, *name;
@@ -272,7 +270,7 @@ main(argc, argv)
 }
 
 void
-usage()
+usage(void)
 {
 
 	fprintf(stderr, "Usage: tunefs [-AN] tuneup-options special-device\n");

@@ -66,9 +66,7 @@ void	invoke_cleaner(char *);
 int short_rds, cleaner_debug;
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	struct ufs_args args;
 	int ch, mntflags, noclean;
@@ -121,8 +119,7 @@ main(argc, argv)
 }
 
 void
-invoke_cleaner(name)
-	char *name;
+invoke_cleaner(char *name)
 {
 	char *args[6], **ap = args;
 
@@ -140,7 +137,7 @@ invoke_cleaner(name)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr,
 		"usage: mount_lfs [-dns] [-o options] special node\n");

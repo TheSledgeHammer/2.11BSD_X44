@@ -69,9 +69,7 @@ struct mntopt mopts[] = {
 void	usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	struct iso_args args;
 	int ch, mntflags, opts;
@@ -121,7 +119,7 @@ main(argc, argv)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr,
 		"usage: mount_cd9660 [-egrt] [-o options] special node\n");

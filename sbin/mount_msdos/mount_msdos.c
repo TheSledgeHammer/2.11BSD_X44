@@ -72,18 +72,14 @@ static void	usage(void)) __attribute__((__noreturn__);
 
 #ifndef MOUNT_NOMAIN
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	return mount_msdos(argc, argv);
 }
 #endif
 
 int
-mount_msdos(argc, argv)
-	int argc;
-	char **argv;
+mount_msdos(int argc, char **argv)
 {
 	struct msdosfs_args args;
 	struct stat sb;
@@ -199,7 +195,7 @@ mount_msdos(argc, argv)
 }
 
 static void
-usage()
+usage(void)
 {
 
 	fprintf(stderr, "usage: mount_msdos [-9Gls] [-g gid] [-M mask] [-m mask] [-o options]\n"

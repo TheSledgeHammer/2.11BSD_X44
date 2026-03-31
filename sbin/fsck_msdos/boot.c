@@ -48,9 +48,7 @@ __RCSID("$NetBSD: boot.c,v 1.9 2003/07/24 19:25:46 ws Exp $");
 #include "fsutil.h"
 
 int
-readboot(dosfs, boot)
-	int dosfs;
-	struct bootblock *boot;
+readboot(int dosfs, struct bootblock *boot)
 {
 	u_char block[DOSBOOTBLOCKSIZE];
 	u_char fsinfo[2 * DOSBOOTBLOCKSIZE];
@@ -230,9 +228,7 @@ readboot(dosfs, boot)
 }
 
 int
-writefsinfo(dosfs, boot)
-	int dosfs;
-	struct bootblock *boot;
+writefsinfo(int dosfs, struct bootblock *boot)
 {
 	u_char fsinfo[2 * DOSBOOTBLOCKSIZE];
 

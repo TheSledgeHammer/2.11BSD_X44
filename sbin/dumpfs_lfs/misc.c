@@ -46,11 +46,7 @@ static char sccsid[] = "@(#)misc.c	8.2 (Berkeley) 4/28/95";
 #include "extern.h"
 
 void
-get(fd, off, p, len)
-	int fd;
-	off_t off;
-	void *p;
-	size_t len;
+get(int fd, off_t off, void *p, size_t len)
 {
 	int rbytes;
 

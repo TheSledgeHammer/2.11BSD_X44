@@ -125,9 +125,7 @@ static	void swapoff_command(int, char **);
 #endif
 
 int
-main(argc, argv)
-	int	argc;
-	char	*argv[];
+main(int argc, char *argv[])
 {
 	int	c;
 
@@ -286,9 +284,7 @@ main(argc, argv)
  * swapon_command: emulate the old swapon(8) program.
  */
 static void
-swapon_command(argc, argv)
-	int argc;
-	char **argv;
+swapon_command(int argc, char **argv)
 {
 	int ch, fiztab = 0;
 
@@ -342,8 +338,7 @@ swapon_command(argc, argv)
  * change_priority:  change the priority of a swap device.
  */
 static void
-change_priority(path)
-	const char	*path;
+change_priority(const char *path)
 {
 
 	if (swapctl(SWAP_CTL, path, pri) < 0)
@@ -354,9 +349,7 @@ change_priority(path)
  * add_swap:  add the pathname to the list of swap devices.
  */
 static int
-add_swap(path, priority)
-	const char *path;
-	int priority;
+add_swap(const char *path, int priority)
 {
 	struct stat sb;
 
@@ -380,8 +373,7 @@ oops:
  * delete_swap:  remove the pathname to the list of swap devices.
  */
 static int
-delete_swap(path)
-	const char *path;
+delete_swap(const char *path)
 {
 
 	if (swapctl(SWAP_OFF, path, pri) < 0) {
@@ -392,8 +384,7 @@ delete_swap(path)
 }
 
 static void
-set_dumpdev(path)
-	const char *path;
+set_dumpdev(const char *path)
 {
 
 	if (swapctl(SWAP_DUMPDEV, path, NULL) == -1)
@@ -403,7 +394,7 @@ set_dumpdev(path)
 }
 
 static void
-get_dumpdev()
+get_dumpdev(void)
 {
 	dev_t	dev;
 	char 	*name;
@@ -421,8 +412,7 @@ get_dumpdev()
 }
 
 static void
-do_fstab(add)
-	int add;
+do_fstab(int add)
 {
 	struct	fstab *fp;
 	char	*s;
@@ -545,7 +535,7 @@ do_fstab(add)
 }
 
 static void
-usage()
+usage(void)
 {
 	const char *progname = getprogname();
 

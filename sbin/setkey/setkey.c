@@ -97,7 +97,7 @@ extern int lineno;
 extern int parse(FILE **);
 
 void
-usage()
+usage(void)
 {
 
 	printf("usage: setkey [-v] file ...\n");
@@ -110,9 +110,7 @@ usage()
 }
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	FILE *fp = stdin;
 	int c;
@@ -237,7 +235,7 @@ main(argc, argv)
 }
 
 int
-get_supported()
+get_supported(void)
 {
 
 	if (pfkey_send_register(so, SADB_SATYPE_UNSPEC) < 0)
@@ -250,8 +248,7 @@ get_supported()
 }
 
 void
-sendkeyshort(type)
-        u_int type;
+sendkeyshort(u_int type)
 {
 	struct sadb_msg msg;
 
@@ -270,7 +267,7 @@ sendkeyshort(type)
 }
 
 void
-promisc()
+promisc(void)
 {
 	struct sadb_msg msg;
 	u_char rbuf[1024 * 32];	/* XXX: Enough ? Should I do MSG_PEEK ? */
@@ -336,9 +333,7 @@ promisc()
 }
 
 int
-sendkeymsg(buf, len)
-	char *buf;
-	size_t len;
+sendkeymsg(char *buf, size_t len)
 {
 	u_char rbuf[1024 * 32];	/* XXX: Enough ? Should I do MSG_PEEK ? */
 	ssize_t l;
@@ -410,9 +405,7 @@ end:
 }
 
 int
-postproc(msg, len)
-	struct sadb_msg *msg;
-	int len;
+postproc(struct sadb_msg *msg, int len)
 {
 
 	if (msg->sadb_msg_errno != 0) {
@@ -496,8 +489,7 @@ postproc(msg, len)
 }
 
 int
-fileproc(filename)
-	const char *filename;
+fileproc(const char *filename)
 {
 	int fd;
 	ssize_t len, l;
@@ -541,8 +533,7 @@ fileproc(filename)
 }
 
 int
-dumpkernfs(dir)
-	const char *dir;
+dumpkernfs(const char *dir)
 {
 	DIR *p;
 	struct dirent *d;
@@ -564,9 +555,7 @@ dumpkernfs(dir)
 }
 
 int
-sysctldump(type, satype)
-	u_int type;
-	u_int8_t satype;
+sysctldump(u_int type, u_int8_t satype)
 {
 	int mib[] = { CTL_NET, PF_KEY, KEYCTL_DUMPSA, 0 };
 	size_t len, l;
@@ -633,8 +622,7 @@ static const char *ipproto[] = {
 	(((x) < sizeof(tab)/sizeof(tab[0]) && tab[(x)])	? tab[(x)] : numstr(x))
 
 const char *
-numstr(x)
-	int x;
+numstr(int x)
 {
 	static char buf[20];
 	snprintf(buf, sizeof(buf), "#%d", x);
@@ -642,15 +630,14 @@ numstr(x)
 }
 
 void
-shortdump_hdr()
+shortdump_hdr(void)
 {
 	printf("%-4s %-3s %-1s %-8s %-7s %s -> %s\n",
 		"time", "p", "s", "spi", "ltime", "src", "dst");
 }
 
 void
-shortdump(msg)
-	struct sadb_msg *msg;
+shortdump(struct sadb_msg *msg)
 {
 	caddr_t mhp[SADB_EXT_MAX + 1];
 	char buf[NI_MAXHOST], pbuf[NI_MAXSERV];
@@ -736,7 +723,7 @@ shortdump(msg)
  * Print the timestamp
  */
 static void
-printdate()
+printdate(void)
 {
 	struct timeval tp;
 	int s;

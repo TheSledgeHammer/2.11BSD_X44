@@ -75,9 +75,7 @@ static int findspeed(int);
 static void	usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	register int fd;
 	register char *dev = argv[1];
@@ -228,8 +226,7 @@ struct sg_spds {
 };
 
 static int
-findspeed(speed)
-	register int speed;
+findspeed(int speed)
 {
 	register struct sg_spds *sp;
 

@@ -112,13 +112,7 @@ void	clrblock(struct fs *, unsigned char *, int);
 void 	setblock(struct fs *, unsigned char *, int);
 
 void
-mkfs(pp, fsys, fi, fo, mfsmode, mfsuid, mfsgid)
-	struct partition *pp;
-	char *fsys;
-	int fi, fo;
-	mode_t mfsmode;
-	uid_t mfsuid;
-	gid_t mfsgid;
+mkfs(struct partition *pp, char *fsys, int fi, int fo, mode_t mfsmode, uid_t mfsuid, gid_t mfsgid)
 {
 	register long i, mincpc, mincpg, inospercg;
 	long cylno, rpos, blk, j, warn = 0;
@@ -704,9 +698,7 @@ next:
  * Initialize a cylinder group.
  */
 void
-initcg(cylno, utime)
-	uint32_t cylno;
-	const struct timeval *utime;
+initcg(uint32_t cylno, const struct timeval *utime)
 {
 	daddr_t cbase, dmax;
 	uint32_t d, dlower, dupper, blkno;
@@ -898,11 +890,7 @@ union dinode node;
 char buf[MAXBSIZE];
 
 void
-fsinit(utime, mfsmode, mfsuid, mfsgid)
-	const struct timeval *utime;
-	mode_t mfsmode;
-	uid_t mfsuid;
-	gid_t mfsgid;
+fsinit(const struct timeval *utime, mode_t mfsmode, uid_t mfsuid, gid_t mfsgid)
 {
 	int i;
 
@@ -1029,9 +1017,7 @@ fsinit(utime, mfsmode, mfsuid, mfsgid)
  * return size of directory.
  */
 int
-makedir(protodir, entries)
-	register struct direct *protodir;
-	int entries;
+makedir(struct direct *protodir, int entries)
 {
 	char *cp;
 	int i, spcleft;
@@ -1052,9 +1038,7 @@ makedir(protodir, entries)
  * allocate a block or frag
  */
 daddr_t
-alloc(size, mode)
-	int size;
-	int mode;
+alloc(int size, int mode)
 {
 	int i, frag;
 	daddr_t d, blkno;
@@ -1107,10 +1091,7 @@ goth:
  * Calculate number of inodes per group.
  */
 long
-calcipg(cpg, bpcg, usedbp)
-	long cpg;
-	long bpcg;
-	off_t *usedbp;
+calcipg(long cpg, long bpcg, off_t *usedbp)
 {
 	int i;
 	long ipg, new_ipg, ncg, ncyl;
@@ -1144,9 +1125,7 @@ calcipg(cpg, bpcg, usedbp)
  * Allocate an inode on the disk
  */
 void
-iput(ip, ino)
-	register union dinode *ip;
-	register ino_t ino;
+iput(union dinode *ip, ino_t ino)
 {
 	struct ufs1_dinode dp1[UFS1_MAXINOPB];
 	struct ufs2_dinode dp2[UFS2_MAXINOPB];
@@ -1190,7 +1169,7 @@ iput(ip, ino)
  * Notify parent process that the filesystem has created itself successfully.
  */
 void
-started()
+started(void)
 {
 
 	exit(0);
@@ -1200,8 +1179,7 @@ started()
  * Replace libc function with one suited to our needs.
  */
 caddr_t
-malloc(size)
-	register u_long size;
+malloc(u_long size)
 {
 	char *base, *i;
 	static u_long pgsz;
@@ -1232,9 +1210,7 @@ malloc(size)
  * Replace libc function with one suited to our needs.
  */
 caddr_t
-realloc(ptr, size)
-	char *ptr;
-	u_long size;
+realloc(char *ptr, u_long size)
 {
 	void *p;
 
@@ -1249,8 +1225,7 @@ realloc(ptr, size)
  * Replace libc function with one suited to our needs.
  */
 char *
-calloc(size, numelm)
-	u_long size, numelm;
+calloc(u_long size, u_long numelm)
 {
 	caddr_t base;
 
@@ -1263,8 +1238,7 @@ calloc(size, numelm)
 /*
  * Replace libc function with one suited to our needs.
  */
-free(ptr)
-	char *ptr;
+free(char *ptr)
 {
 	
 	/* do not worry about it for now */
@@ -1274,10 +1248,7 @@ free(ptr)
  * read a block from the file system
  */
 void
-rdfs(bno, size, bf)
-	daddr_t bno;
-	int size;
-	char *bf;
+rdfs(daddr_t bno, int size, char *bf)
 {
 	int n;
 
@@ -1302,10 +1273,7 @@ rdfs(bno, size, bf)
  * write a block to the file system
  */
 void
-wtfs(bno, size, bf)
-	daddr_t bno;
-	int size;
-	char *bf;
+wtfs(daddr_t bno, int size, char *bf)
 {
 	int n;
 
@@ -1332,10 +1300,7 @@ wtfs(bno, size, bf)
  * check if a block is available
  */
 int
-isblock(fs, cp, h)
-	struct fs *fs;
-	unsigned char *cp;
-	int h;
+isblock(struct fs *fs, unsigned char *cp, int h)
 {
 	unsigned char mask;
 
@@ -1365,10 +1330,7 @@ isblock(fs, cp, h)
  * take a block out of the map
  */
 void
-clrblock(fs, cp, h)
-	struct fs *fs;
-	unsigned char *cp;
-	int h;
+clrblock(struct fs *fs, unsigned char *cp, int h)
 {
 	switch ((fs)->fs_frag) {
 	case 8:
@@ -1397,10 +1359,7 @@ clrblock(fs, cp, h)
  * put a block into the map
  */
 void
-setblock(fs, cp, h)
-	struct fs *fs;
-	unsigned char *cp;
-	int h;
+setblock(struct fs *fs, unsigned char *cp, int h)
 {
 	switch (fs->fs_frag) {
 	case 8:

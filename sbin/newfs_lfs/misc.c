@@ -43,14 +43,14 @@ static char sccsid[] = "@(#)misc.c	8.1 (Berkeley) 6/5/93";
 #include "extern.h"
 
 u_int
-log2(num)
-        u_int num;
+log2(u_int num)
 {
-        register u_int i, limit;
+	register u_int i, limit;
 
-        limit = 1;
-        for (i = 0; limit < num; limit = limit << 1, i++);
-        return (i);
+	limit = 1;
+	for (i = 0; limit < num; limit = limit << 1, i++)
+		;
+	return (i);
 }
 
 #include <stdarg.h>

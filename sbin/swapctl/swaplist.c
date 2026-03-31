@@ -50,12 +50,7 @@
 #include "swapctl.h"
 
 void
-list_swap(pri, kflag, pflag, tflag, dolong)
-	int	pri;
-	int	kflag;
-	int	pflag;
-	int	tflag;
-	int	dolong;
+list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
 {
 	struct	swapent *sep, *fsep;
 	long	blocksize;

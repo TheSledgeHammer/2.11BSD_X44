@@ -72,18 +72,14 @@ static void	usage(void);
 
 #ifndef MOUNT_NOMAIN
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	return mount_union(argc, argv);
 }
 #endif
 
 int
-mount_union(argc, argv)
-	int argc;
-	char *argv[];
+mount_union(int argc, char *argv[])
 {
 	struct union_args args;
 	int ch, mntflags;
@@ -130,9 +126,7 @@ mount_union(argc, argv)
 }
 
 static int
-subdir(p, dir)
-	const char *p;
-	const char *dir;
+subdir(const char *p, const char *dir)
 {
 	int l;
 
@@ -147,7 +141,7 @@ subdir(p, dir)
 }
 
 static void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr,
 		"usage: mount_union [-br] [-o options] target_fs mount_point\n");

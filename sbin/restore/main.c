@@ -82,9 +82,7 @@ static	void obsolete(int *, char **[]);
 static	void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int ch;
 	ino_t ino;
@@ -288,7 +286,7 @@ main(argc, argv)
 }
 
 static void
-usage()
+usage(void)
 {
 	const char *progname = getprogname();
 
@@ -316,9 +314,7 @@ usage()
  *	getopt(3) will like.
  */
 static void
-obsolete(argcp, argvp)
-	int *argcp;
-	char **argvp[];
+obsolete(int *argcp, char **argvp[])
 {
 	int argc, flags;
 	char *ap, **argv, *flagsp, **nargv, *p;
