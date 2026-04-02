@@ -90,14 +90,14 @@ int	tubahashsize = TUBAHASHSIZE;
 
 #ifdef INET
 static void tuba4_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size);
-static void tuba4_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, int tlen, unsigned long lindex, unsigned long findex);
+static void tuba_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, int tlen, unsigned long lindex, unsigned long findex);
 static int tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype);
 static void tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype);
 #endif
 
 #ifdef INET6
 static void tuba6_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size);
-static void tuba6_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, u_long cksum, int tlen, unsigned long lindex, unsigned long findex);
+static void tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, u_long cksum, int tlen, unsigned long lindex, unsigned long findex);
 static int tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int transtype);
 static void tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype);
 #endif
@@ -323,7 +323,7 @@ tuba4_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *
 }
 
 static void
-tuba4_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, int tlen, unsigned long lindex, unsigned long findex)
+tuba_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, int tlen, unsigned long lindex, unsigned long findex)
 {
 	ip->ip_dst.s_addr = tuba_table[lindex]->tc_sum;
 	if (dst->siso_nlen & 1) {
@@ -437,7 +437,7 @@ tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
 			tcpstat.tcps_rcvshort++;
 			return;
 		}
-		tuba4_ip4_cksum(m, src, dst, ip, toff, tlen, lindex, findex);
+		tuba_ip4_cksum(m, src, dst, ip, toff, tlen, lindex, findex);
 		break;
 	case 1: /* UDP */
 		struct udphdr *uh = (struct udphdr *)arg;
@@ -445,7 +445,7 @@ tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
 		if (uh == NULL) {
 			return;
 		}
-		tuba4_ip4_cksum(m, src, dst, ip, toff, tlen, lindex, findex);
+		tuba_ip4_cksum(m, src, dst, ip, toff, tlen, lindex, findex);
 		break;
 	default:
 		m_freem(m);
@@ -506,7 +506,7 @@ tuba6_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *
 }
 
 static void
-tuba6_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, u_long cksum, int tlen, unsigned long lindex, unsigned long findex)
+tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, u_long cksum, int tlen, unsigned long lindex, unsigned long findex)
 {
 	ip6->ip6_dst.s6_addr = tuba_table[lindex]->tc_sum;
 	if (dst->siso_nlen & 1) {
@@ -620,7 +620,7 @@ tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
 			tcpstat.tcps_rcvshort++;
 			return;
 		}
-		tuba6_ip6_cksum(m, src, dst, ip6, th->th_sum, toff, tlen, lindex, findex);
+		tuba_ip6_cksum(m, src, dst, ip6, th->th_sum, toff, tlen, lindex, findex);
 		break;
 	case 1: /* UDP */
 		struct udphdr *uh = (struct udphdr *)arg;
@@ -628,7 +628,7 @@ tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
 		if (uh == NULL) {
 			return;
 		}
-		tuba6_ip6_cksum(m, src, dst, ip6, uh->uh_sum, toff, tlen, lindex, findex);
+		tuba_ip6_cksum(m, src, dst, ip6, uh->uh_sum, toff, tlen, lindex, findex);
 		break;
 	default:
 		m_freem(m);

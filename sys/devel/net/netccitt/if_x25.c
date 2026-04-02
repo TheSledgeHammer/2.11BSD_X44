@@ -414,6 +414,70 @@ void
 x25_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 {
 	register struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
+
+	x25_rtrequest2(cmd, rt, lx, dst);
+}
+
+void
+x25_rtrequest2(int cmd, struct rtentry *rt, struct llinfo_x25 *lx, struct sockaddr *dst)
+{
+	register struct sockaddr_x25 *sa = (struct sockaddr_x25 *)rt->rt_gateway;
+	register struct pklcd *lcp;
+
+	/* would put this pk_init, except routing table doesn't
+	 exist yet. */
+	if (x25_dgram_sockmask == 0) {
+		x25_dgram_sockmask = SA(rn_addmask((caddr_t)&x25_dgmask, 0, 4)->rn_key);
+	}
+
+	switch (cmd) {
+	case RTM_DELETE:
+		while (rt->rt_llinfo) {
+			x25_lxfree((struct llinfo *)rt->rt_llinfo);
+		}
+		x25_rtinvert(RTM_DELETE, rt->rt_gateway, rt);
+		return;
+	case RTM_ADD:
+		if (rt->rt_flags & RTF_GATEWAY) {
+			if (rt->rt_llinfo) {
+				RTFREE((struct rtentry *)rt->rt_llinfo);
+				rt->rt_llinfo = (caddr_t)rtalloc1(rt->rt_gateway, 1);
+				return;
+			}
+		}
+		if ((rt->rt_flags & RTF_HOST) == 0) {
+			return;
+		}
+		break;
+	default:
+		return;
+	}
+
+	if (lx == 0 && (lx = x25_lxalloc(rt)) == 0) {
+		return;
+	}
+	if ((lcp = lx->lx_lcd) && lcp->lcd_state != READY) {
+		/*
+		 * This can only happen on a RTM_CHANGE operation
+		 * though cmd will be RTM_ADD.
+		 */
+		if (lcp->lcd_ceaddr
+				&& Bcmp(rt->rt_gateway, lcp->lcd_ceaddr,
+						lcp->lcd_ceaddr->x25_len) != 0) {
+			x25_rtinvert(RTM_DELETE, lcp->lcd_ceaddr, rt);
+			lcp->lcd_upper = 0;
+			pk_disconnect(lcp);
+		}
+		lcp = 0;
+	}
+	x25_rtinvert(RTM_ADD, rt->rt_gateway, rt);
+}
+
+#ifdef old
+void
+x25_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
+{
+	register struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
 	register struct sockaddr_x25 *sa = (struct sockaddr_x25 *)rt->rt_gateway;
 	register struct pklcd *lcp;
 
@@ -455,6 +519,7 @@ x25_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 	}
 	x25_rtinvert(RTM_ADD, rt->rt_gateway, rt);
 }
+#endif
 
 int x25_dont_rtinvert = 0;
 
@@ -485,8 +550,9 @@ x25_rtinvert(int cmd, struct sockaddr *sa, struct rtentry *rt)
 			|| rt->rt_llinfo != (caddr_t) rt2) {
 		printf("x25_rtchange: inverse route screwup\n");
 		return;
-	} else
+	} else {
 		rt2->rt_refcnt--;
+	}
 	rtrequest(RTM_DELETE, sa, rt_key(rt2), x25_dgram_sockmask, 0,
 			(struct rtentry**) 0);
 }

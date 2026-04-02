@@ -44,29 +44,22 @@ xotattach()
 
 }
 
-void
-xot_init(struct xot_packet *xot, struct in_addr src, struct in_addr dst, u_char xotver, u_char xotlen, int zero)
-{
-	xot_ip_init(&xot->xp_ip, src, dst, zero);
-	xot_tcp_init(&xot->xp_tcp, zero);
-	xot_hdr_init(&xot->xp_hdr, xotver, xotlen, zero);
-}
-
 static void
-xot_ip_init(struct xot_iphdr *xip, struct in_addr src, struct in_addr dst, int zero)
+xot_ip_init(struct xot_iphdr *xip, struct in_addr src, struct in_addr dst, int ipproto, int zero)
 {
 	if (zero) {
-		bzero(xip, 0, sizeof(struct xot_iphdr));
+		bzero((caddr_t)xip, sizeof(*xip));
 	}
 	xip->xi_src = src;
 	xip->xi_dst = dst;
+	xip->xi_p = ipproto;
 }
 
 static void
 xot_tcp_init(struct xot_tcphdr *xtcp, int zero)
 {
 	if (zero) {
-		bzero(xtcp, 0, sizeof(struct xot_tcphdr));
+		bzero((caddr_t)xtcp, sizeof(*xtcp));
 	}
 	xtcp->xt_sport = XOT_TCPPORT;
 	xtcp->xt_dport = XOT_TCPPORT;
@@ -76,7 +69,7 @@ static void
 xot_hdr_init(struct xot_hdr *hdr, u_char xotver, u_char xotlen, int zero)
 {
 	if (zero) {
-		bzero(hdr, 0, sizeof(struct xot_hdr));
+		bzero((caddr_t)hdr, sizeof(*hdr));
 	}
 	if (xotver != XOT_HDR_VERSION) {
 		xotver = -1;
@@ -88,11 +81,33 @@ xot_hdr_init(struct xot_hdr *hdr, u_char xotver, u_char xotlen, int zero)
 	hdr->xh_len = xotlen;
 }
 
+static void
+xot_init(struct xot_packet *xot, struct in_addr src, struct in_addr dst, u_char xotver, u_char xotlen, int ipproto, int zero)
+{
+	xot_ip_init(&xot->xp_ip, src, dst, ipproto, zero);
+	xot_tcp_init(&xot->xp_tcp, zero);
+	xot_hdr_init(&xot->xp_hdr, xotver, xotlen, zero);
+}
+
+void
+xot_packet_init(struct xot_packet *xot, struct sockaddr_in *src, struct sockaddr_in *dst, u_char xotver, u_char xotlen, int ipproto, int zero)
+{
+	if (src != NULL) {
+		src->sin_family = AF_INET;
+		src->sin_len = sizeof(*src);
+	}
+	if (dst != NULL) {
+		dst->sin_family = AF_INET;
+		dst->sin_len = sizeof(*dst);
+	}
+	xot_init(xot, src->sin_addr, dst->sin_addr, xotver, xotlen, ipproto, zero);
+}
+
+#ifdef notyet
 struct tcphdr *
-xot_attach(struct mbuf *m, struct socket *so, int hlen)
+xot_attach(struct mbuf *m, struct socket *so, struct pklcd *lcd)
 {
 	struct tcphdr *th;
-	struct pklcd *lcd;
 	int error;
 
 	/* attach tcp to enter listen state */
@@ -101,15 +116,18 @@ xot_attach(struct mbuf *m, struct socket *so, int hlen)
 		return (NULL);
 	}
 
+	/* allocate tcphdr */
+	th = mtod(m, sizeof(struct tcphdr *));
+	if (th == NULL) {
+		return (NULL);
+	}
+
 	/* attach x25 to enter listen state */
 	lcd = pk_attach(so);
 	if (lcd == NULL) {
 		return (NULL);
 	}
-
-	/* allocate tcphdr */
-	tp = mtod(m, sizeof(hlen));
-	return (tp);
+	return (th);
 }
 
 void
@@ -129,29 +147,48 @@ xot_detach(short state, short lcn)
 		}
 	}
 }
+#endif
 
 void
-xotiphdr(struct route *ro, struct xot_packet *xot, u_char xotver, u_char xotlen, int zero)
+xotiphdr(struct xot_packet *xot, struct route *ro, int zero)
 {
 	struct rtentry *rt;
 	struct mbuf     mhead;
-	struct sockaddr_in *sin;
+	struct sockaddr_in *sin, *dst;
 
 	sin = satosin(&ro->ro_dst);
-	sin->sin_family = AF_INET;
-	sin->sin_len = sizeof(*sin);
+	if (zero) {
+		bzero((caddr_t)ro, sizeof(*ro));
+	}
 	if (ro->ro_rt) {
-		struct sockaddr_in *dst;
 		dst = satosin(rt_key(ro->ro_rt));
-		if ((ro->ro_rt->rt_flags & RTF_UP) == 0 ||
-		    sin->sin_addr.s_addr != dst->sin_addr.s_addr) {
+		if ((ro->ro_rt->rt_flags & RTF_UP) == 0
+				|| sin->sin_addr.s_addr != dst->sin_addr.s_addr) {
 			RTFREE(ro->ro_rt);
-			ro->ro_rt = (struct rtentry *)0;
+			ro->ro_rt = (struct rtentry *)NULL;
 		}
 	}
 	rtalloc(ro);
-	xot_init(xot, NULL, sin->sin_addr, xotver, xotlen, zero);
+	if (ro->ro_rt) {
+		ro->ro_rt->rt_use++;
+	}
+	xot_packet_init(xot, NULL, sin, XOT_HDR_VERSION, XOT_HDR_LENGTH, zero);
+	mhead.m_data = (caddr_t)&xot->xp_hdr;
+	mhead.m_len = sizeof(struct xot_hdr);
+	mhead.m_next = 0;
+}
 
+void
+xotrtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
+{
+	struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
+
+	x25_rtrequest2(cmd, rt, lx, dst);
+	xotiphdr(&lx->lx_xot, &lx->lx_route, 0);
+	if (lx->lx_route.ro_rt) {
+		rt->rt_rmx.rmx_mtu = lx->lx_route.ro_rt->rt_rmx.rmx_mtu
+				- sizeof(lx->lx_xot);
+	}
 }
 
 int
