@@ -1,6 +1,6 @@
 /*
  * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+ * Copyright (c) 2026 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,15 +33,40 @@ struct sockaddr_xot {
 
 };
 
+/* xot header */
 struct xot_hdr {
-	u_char 				xoth_vers;	/* xot version number */
-	u_char 				xoth_len;	/* length of x25 packet */
+	u_char 				xh_vers;	/* xot version number */
+	u_char 				xh_len;		/* length of x25 packet */
 };
 
-struct xot_tcpiphdr {
-	struct tcpiphdr		xtip_tcpip;
-	struct xot_hdr 		xtip_xot;
-	struct x25config 	xtip_x25;
+#define XOT_HDR_VERSION 	0
+#define XOT_HDR_LENGTH 		sizeof(struct x25_packet)
+
+/* xot tcp */
+struct xot_tcphdr {
+	struct tcphdr		xt_tcp;
+#define xt_sport 		xt_tcp.th_sport /* source port */
+#define xt_dport 		xt_tcp.th_dport /* destination port */
+};
+
+#define XOT_TCPPORT 1998 /* tcp port number */
+#define XOT_TCPHLEN (sizeof(struct xot_hdr) + sizeof(struct tcphdr)) /* xot_hdr + tcphdr header length */
+
+/* xot ip */
+struct xot_iphdr {
+	struct ip			xi_ip;
+#define xi_src 			xi_ip.ip_src	/* source ip address */
+#define xi_dst			xi_ip.ip_dst	/* destination ip address */
+#define xi_p			xi_ip.ip_p		/* ip protocol */
+};
+
+#define XOT_IPHLEN (sizeof(struct xot_hdr) + sizeof(struct ip)) /* xot_hdr + ip header length */
+
+struct xot_packet {
+	struct xot_iphdr	xp_ip;
+	struct xot_tcphdr	xp_tcp;
+	struct xot_hdr 		xp_hdr;
+	struct x25_packet	xp_x25p;
 };
 
 #endif /* _NETCCITT_XOTVAR_H_ */

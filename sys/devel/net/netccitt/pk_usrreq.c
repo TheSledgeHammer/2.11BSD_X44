@@ -460,21 +460,23 @@ old_to_new(struct mbuf *m)
 	register struct sockaddr_x25 *newp;
 	register char *ocp, *ncp;
 	struct sockaddr_x25 new;
-	struct x25_addr *x25a;
+	struct addr_x25 *x25a_old;
+	struct x25_addr *x25a_new;
 
 	oldp = mtod(m, struct x25_sockaddr*);
+	x25a_old = &oldp->xaddr_addr;
 	newp = &new;
 	bzero((caddr_t) newp, sizeof(*newp));
 
-	x25a = &newp->x25_addr;
+	x25a_new = &newp->x25_addr;
 	newp->x25_family = AF_CCITT;
 	newp->x25_len = sizeof(*newp);
 	newp->x25_opts.op_flags = (oldp->xaddr_facilities & X25_REVERSE_CHARGE)
 			| X25_MQBIT | X25_OLDSOCKADDR;
 	if (oldp->xaddr_facilities & XS_HIPRIO) /* Datapac specific */
 		newp->x25_opts.op_psize = X25_PS128;
-	bcopy((caddr_t) oldp->xaddr_addr, x25a->xa_addr,
-			(unsigned) min(oldp->xaddr_len, sizeof(x25a->xa_addr) - 1));
+	bcopy((caddr_t)x25a_old->xa_addr, x25a_new->xa_addr,
+			(unsigned) min(oldp->xaddr_len, sizeof(x25a_new->xa_addr) - 1));
 	if (bcmp((caddr_t) oldp->xaddr_proto, newp->x25_udata, 4) != 0) {
 		bcopy((caddr_t) oldp->xaddr_proto, newp->x25_udata, 4);
 		newp->x25_udlen = 4;
@@ -502,18 +504,20 @@ new_to_old(struct mbuf *m)
 	register struct sockaddr_x25 *newp;
 	register char *ocp, *ncp;
 	struct x25_sockaddr old;
-	struct x25_addr *x25a;
+	struct addr_x25 *x25a_old;
+	struct x25_addr *x25a_new;
 
 	oldp = &old;
 	newp = mtod(m, struct sockaddr_x25*);
 	bzero((caddr_t) oldp, sizeof(*oldp));
 
-	x25a = &newp->x25_addr;
+	x25a_old = &old->xaddr_addr;
+	x25a_new = &newp->x25_addr;
 	oldp->xaddr_facilities = newp->x25_opts.op_flags & X25_REVERSE_CHARGE;
 	if (newp->x25_opts.op_psize == X25_PS128)
 		oldp->xaddr_facilities |= XS_HIPRIO; /* Datapac specific */
-	ocp = (char*) oldp->xaddr_addr;
-	ncp = x25a->xa_addr;
+	ocp = (char *)x25a_old->xa_addr;
+	ncp = x25a_new->xa_addr;
 	while (*ncp) {
 		*ocp++ = *ncp++;
 		oldp->xaddr_len++;

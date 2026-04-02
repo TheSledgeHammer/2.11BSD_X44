@@ -345,7 +345,7 @@ next_circuit:
 			if ((rt->rt_flags & RTF_XRESOLVE) == 0)
 				senderr(EHOSTUNREACH);
 		} else if (x25_autoconnect) {
-			error = pk_connect(lcp, (struct sockaddr_x25*) rt->rt_gateway);
+			error = pk_connect(lcp, (struct sockaddr_x25 *)rt->rt_gateway);
 		}
 		if (error)
 			senderr(error);

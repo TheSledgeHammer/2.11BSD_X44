@@ -72,6 +72,29 @@
 #define MAX_FACILITIES		109 /* maximum size for facilities */
 
 /*
+ *  X.25 Socket address structure.  It contains the  X.121 or variation of
+ *  X.121, facilities information, higher level protocol value (first four
+ *  bytes of the User Data field), and the last  12 characters of the User
+ *  Data field.
+ */
+
+#define XS_REVERSE_CHARGE	0x01
+#define XS_HIPRIO			0x02
+
+struct addr_x25 {				/* obsolete - use x25_addr */
+	u_char xa_addr[15];
+};
+
+struct x25_sockaddr {			/* obsolete - use sockaddr_x25 */
+    short  xaddr_len;			/* Length of xaddr_addr.		*/
+    struct addr_x25 xaddr_addr; /* Network dependent or X.121 address.	*/
+    //u_char xaddr_addr[15];		/* Network dependent or X.121 address.	*/
+    u_char xaddr_facilities;	/* Facilities information.		*/
+    u_char xaddr_proto[4];		/* Protocol ID (4 bytes of user data).	*/
+    u_char xaddr_userdata[12];	/* Remaining User data field.		*/
+};
+
+/*
  *  X.25 Socket address structure.  It contains the network id, X.121
  *  address, facilities information, higher level protocol value (first four
  *  bytes of the User Data field), and up to 12 characters of User Data.
@@ -85,8 +108,8 @@ struct x25opts {
 };
 /* pk_var.h defines other lcd_flags */
 #define X25_REVERSE_CHARGE	0x01	/* remote DTE pays for call */
-#define X25_DBIT		0x02	/* not yet supported */
-#define X25_MQBIT		0x04	/* prepend M&Q bit status byte to packet data */
+#define X25_DBIT			0x02	/* not yet supported */
+#define X25_MQBIT			0x04	/* prepend M&Q bit status byte to packet data */
 #define X25_OLDSOCKADDR		0x08	/* uses old sockaddr structure */
 #define X25_DG_CIRCUIT		0x10	/* lcd_flag: used for datagrams */
 #define X25_DG_ROUTING		0x20	/* lcd_flag: peer addr not yet known */

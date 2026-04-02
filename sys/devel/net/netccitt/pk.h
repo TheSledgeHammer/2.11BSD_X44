@@ -171,7 +171,7 @@ struct data_packet {
 
 #define PKHEADERLN	3
 
-#define DP(xp)          (((struct data_packet *)&(xp) -> packet_type) -> bits)
+#define DP(xp)          (((struct data_packet *)&(xp)->packet_type)->bits)
 #define PS(xp)           X25GBITS(DP(xp), p_s)
 #define PR(xp)           X25GBITS(DP(xp), p_r)
 #define MBIT(xp)         X25GBITS(DP(xp), m_bit)
@@ -181,10 +181,10 @@ struct data_packet {
 
 #define LCN(xp)								\
 	(xp -> logical_channel_number + 		\
-			(X25GBITS(xp -> bits, lc_group_number) ? (X25GBITS(xp -> bits, lc_group_number) << 8) : 0))
+			(X25GBITS((xp)->bits, lc_group_number) ? (X25GBITS((xp)->bits, lc_group_number) << 8) : 0))
 #define SET_LCN(xp, lcn) 					\
-	((xp -> logical_channel_number = lcn), 	\
-			(X25SBITS(xp -> bits, lc_group_number, lcn > 255 ? lcn >> 8 : 0)))
+	(((xp)->logical_channel_number = (lcn)), 	\
+			(X25SBITS((xp)->bits, lc_group_number, (lcn) > 255 ? (lcn) >> 8 : 0)))
 
 /* Define X.25 packet level states. */
 
