@@ -57,6 +57,7 @@
 #define CCITTPROTO_HDLC		1
 #define CCITTPROTO_X25		2	/* packet level protocol */
 #define IEEEPROTO_802LLC	3	/* doesn't belong here */
+#define CCITTPROTO_TCP		4	/* X.25 over TCP/IP */
 
 #define HDLCPROTO_LAP		1
 #define HDLCPROTO_LAPB		2

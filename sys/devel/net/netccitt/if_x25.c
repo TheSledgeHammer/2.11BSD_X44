@@ -286,8 +286,8 @@ x25_ifoutput(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst, struct rt
 	register struct llinfo_x25 *lx;
 	struct pklcd *lcp;
 	int s, error = 0;
-
 	int plen;
+
 	for (plen = 0; m; m = m->m_next)
 		plen += m->m_len;
 	m = m0;
@@ -831,6 +831,7 @@ pk_rtattach(struct socket *so, struct mbuf *m0)
 		lcp->lcd_so = 0;
 		pk_close(lcp);
 		lcp = lx->lx_lcd;
+
 		if (next->lx_rt == rt) {
 			x25_lxfree(lx);
 		}

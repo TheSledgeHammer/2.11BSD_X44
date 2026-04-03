@@ -47,10 +47,11 @@ struct xot_tcphdr {
 	struct tcphdr		xt_tcp;
 #define xt_sport 		xt_tcp.th_sport /* source port */
 #define xt_dport 		xt_tcp.th_dport /* destination port */
+#define xt_flags		xt_tcp.th_flags /* flags */
 };
 
-#define XOT_TCPPORT 1998 /* tcp port number */
-#define XOT_TCPHLEN (sizeof(struct xot_hdr) + sizeof(struct tcphdr)) /* xot_hdr + tcphdr header length */
+#define XOT_TCPPORT 	1998 /* tcp port number */
+#define XOT_TCPHLEN 	(sizeof(struct xot_hdr) + sizeof(struct tcphdr)) /* xot_hdr + tcphdr header length */
 
 /* xot ip */
 struct xot_iphdr {
@@ -58,10 +59,13 @@ struct xot_iphdr {
 #define xi_src 			xi_ip.ip_src	/* source ip address */
 #define xi_dst			xi_ip.ip_dst	/* destination ip address */
 #define xi_p			xi_ip.ip_p		/* ip protocol */
+#define xi_len			xi_ip.ip_len	/* ip len */
 };
 
-#define XOT_IPHLEN (sizeof(struct xot_hdr) + sizeof(struct ip)) /* xot_hdr + ip header length */
+#define XOT_IPHLEN 		(sizeof(struct xot_hdr) + sizeof(struct ip)) /* xot_hdr + ip header length */
+#define XOT_TCPIPHLEN	(sizeof(struct xot_hdr) + sizeof(struct tcphdr) + sizeof(struct ip))  /* xot_hdr + tcphdr + ip header length */
 
+/* xot packet */
 struct xot_packet {
 	struct xot_iphdr	xp_ip;
 	struct xot_tcphdr	xp_tcp;

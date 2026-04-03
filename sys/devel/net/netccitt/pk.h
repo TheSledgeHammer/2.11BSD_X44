@@ -179,12 +179,14 @@ struct data_packet {
 #define SPS(xp, v)       X25SBITS(DP(xp), p_s, (v))
 #define SMBIT(xp, v)     X25SBITS(DP(xp), m_bit, (v))
 
+#define MAXNUMLCNS 		255 /* max logical channel number */
+
 #define LCN(xp)								\
 	(xp -> logical_channel_number + 		\
 			(X25GBITS((xp)->bits, lc_group_number) ? (X25GBITS((xp)->bits, lc_group_number) << 8) : 0))
 #define SET_LCN(xp, lcn) 					\
 	(((xp)->logical_channel_number = (lcn)), 	\
-			(X25SBITS((xp)->bits, lc_group_number, (lcn) > 255 ? (lcn) >> 8 : 0)))
+			(X25SBITS((xp)->bits, lc_group_number, (lcn) > MAXNUMLCNS ? (lcn) >> 8 : 0)))
 
 /* Define X.25 packet level states. */
 

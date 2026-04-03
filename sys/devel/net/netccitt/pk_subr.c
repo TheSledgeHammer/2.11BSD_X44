@@ -469,7 +469,7 @@ pk_connect(struct pklcd *lcp, struct sockaddr_x25 *sa)
 	 * Have we entered the LLC address?
 	 */
 	if ((nrt = llc_sapinfo_enter(rt->rt_gateway, rt_key(rt), rt, 0)))
-		pkp -> pk_llrt = nrt;
+		pkp->pk_llrt = nrt;
 
 	/*
 	 * Have we allocated an LLC2 link yet?

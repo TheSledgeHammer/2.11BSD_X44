@@ -26,19 +26,48 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* XOT: RFC1613
- * X.25 over TCP/IP (XOT)
+/*
+ * Contains two different approaches
+ *
+ * 1)
+ * 		XOT: RFC1613
+ * 		X.25 over TCP/IP (XOT)
+ * 2)
+ * 		XOT:
+ * 		X.25 Tunnel over IP (Similar to ISO EON)
+ * 		Will use the gif tunnel protocol
  */
 
-#include <sys/malloc.h>
+#include <sys/cdefs.h>
 
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/buf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
+
+#include <machine/cpu.h>
+
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/if_dl.h>
+#include <net/netisr.h>
 #include <net/route.h>
 
-#include <netccitt/x25.h>
-#include <netccitt/xotvar.h>
-
+#include <netinet/ip.h>
 #include <netinet/tcp.h>
 
+#include <netccitt/x25.h>
+#include <netccitt/pk.h>
+#include <netccitt/pk_var.h>
+#include <netccitt/xotvar.h>
+
+#define IPPROTO_XOT 	40
+
+void
 xotattach()
 {
 
@@ -150,7 +179,7 @@ xot_detach(short state, short lcn)
 #endif
 
 void
-xotiphdr(struct xot_packet *xot, struct route *ro, int zero)
+xotiphdr(struct xot_packet *xot, struct route *ro, int ipproto, int zero)
 {
 	struct rtentry *rt;
 	struct mbuf     mhead;
@@ -172,29 +201,154 @@ xotiphdr(struct xot_packet *xot, struct route *ro, int zero)
 	if (ro->ro_rt) {
 		ro->ro_rt->rt_use++;
 	}
-	xot_packet_init(xot, NULL, sin, XOT_HDR_VERSION, XOT_HDR_LENGTH, zero);
+	xot_packet_init(xot, NULL, sin, XOT_HDR_VERSION, XOT_HDR_LENGTH, ipproto, zero);
 	mhead.m_data = (caddr_t)&xot->xp_hdr;
 	mhead.m_len = sizeof(struct xot_hdr);
 	mhead.m_next = 0;
 }
 
 void
-xotrtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
+xotrtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst, int ipproto)
 {
 	struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
 
 	x25_rtrequest2(cmd, rt, lx, dst);
-	xotiphdr(&lx->lx_xot, &lx->lx_route, 0);
+	lx->lx_flags |= RTF_UP;
+	xotiphdr(&lx->lx_xot, &lx->lx_route, ipproto, 0);
 	if (lx->lx_route.ro_rt) {
 		rt->rt_rmx.rmx_mtu = lx->lx_route.ro_rt->rt_rmx.rmx_mtu
 				- sizeof(lx->lx_xot);
 	}
 }
 
-int
-xotoutput()
+/*
+ * check xot_hdr isvalid:
+ * Checks xot header version and length match the required xot version and length.
+ */
+bool_t
+xot_hdr_isvalid(struct xot_packet *xot)
+{
+	/* check xot_hdr isvalid */
+	if ((xot->xp_hdr.xh_vers != XOT_HDR_VERSION) || (xot->xp_hdr.xh_len != XOT_HDR_LENGTH)) {
+		return (FALSE);
+	}
+	return (TRUE);
+}
+
+/*
+ * check tcp isvalid:
+ * Checks tcp source and destination ports match xot required ports.
+ * Checks tcp flags for syn packets.
+ */
+bool_t
+xot_tcp_isvalid(struct xot_packet *xot)
 {
 
+	if ((xot->xp_tcp.xt_sport != XOT_TCPPORT)
+			|| (xot->xp_tcp.xt_dport != XOT_TCPPORT)
+			|| ((xot->xp_tcp.xt_flags & TH_SYN) == 0)) {
+		return (FALSE);
+	}
+	return (TRUE);
+}
+
+/*
+ * Generate Hash from network addr and network port
+ */
+u_int32_t
+xot_nethash(void *addr, unsigned long *port)
+{
+	u_int32_t ahash = fnva_32_buf(addr, sizeof(addr), FNV1_32_INIT);
+	u_int32_t phash = fnva_32_buf(port, sizeof(port), FNV1_32_INIT);
+    return ((ahash + phash) % MAXNUMLCNS);
+}
+
+/*
+ * Generate an X.25 LCN (logical channel number) from nethash
+ * NOTE: Should only match outgoing interface for TCP/IP.
+ */
+void
+xot_set_lcn(struct xot_packet *xot, void *addr, u_int16_t port)
+{
+	u_int32_t lcn = xot_nethash(addr, &port);
+	SET_LCN(&xot->xp_x25p, lcn);
+}
+
+/* xot output: tcp/ip
+ 1. validate xot header
+ xot header passed:
+ 2. setup tcp header (includes ip)
+ 3. create a tcp connection (includes ip)
+ 4. validate tcp header
+tcp header passed:
+ 5. setup x25 packet (update ip)
+	a: virtual circuits
+	b: flow control (optional)
+ 6. create a x25 connection (update ip)
+ 7. tcp_output
+
+ xot input: tcp/ip
+ 1. get tcp
+ 2. validate tcp header
+ tcp header passed:
+ 3. get x.25 packet
+ 4. validate xot header
+*/
+
+int
+xotoutput(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rtentry *rt)
+{
+	struct sockaddr_x25 *sx25;
+	struct llinfo_x25 *lx;
+	struct xot_packet *xot;
+	struct route *ro;
+	int datalen;
+	struct mbuf *mh;
+	int error;
+
+	sx25 = (struct sockaddr_x25 *)dst;
+	error = 0;
+
+	ifp->if_opackets++;
+	xot = &lx->lx_xot;
+	ro = &lx->lx_iproute;
+
+	if ((lx->lx_flags & RTF_UP) == 0) {
+		xotrtrequest(RTM_CHANGE, rt, dst, IPPROTO_XOT);
+		if ((lx->lx_flags & RTF_UP) == 0) {
+			return (EHOSTUNREACH);
+		}
+	}
+	if ((m->m_flags & M_PKTHDR) == 0) {
+		printf("xot: got non headered packet\n");
+		return (EINVAL);
+	}
+
+	datalen = m->m_pkthdr.len + XOT_IPHLEN;
+	if (datalen > IP_MAXPACKET) {
+		m_freem(m);
+		return (EMSGSIZE);
+	}
+	mh = m_gethdr(M_DONTWAIT, MT_HEADER);
+	if (mh == 0) {
+		m_freem(m);
+		return (ENOBUFS);
+	}
+	mh->m_next = m;
+	m = mh;
+	MH_ALIGN(m, sizeof(struct xot_packet));
+	m->m_len = sizeof(struct xot_packet);
+	m->m_pkthdr.len = datalen;
+	xot->xp_ip.xi_len = htons(datalen);
+	ifp->if_obytes += datalen;
+	*mtod(m, struct xot_packet *) = *xot;
+
+	error = ip_output(m, (struct mbuf *) 0, ro, 0, (struct ip_moptions *)NULL, (struct socket *)NULL);
+	if (error) {
+		ifp->if_oerrors++;
+		ifp->if_ierrors = error;
+	}
+	return (error);
 }
 
 void

@@ -201,6 +201,7 @@ tuba_pcbdetach(struct isopcb *isop)
 int
 tuba4_pcbconnect(void *v, struct mbuf *nam)
 {
+	struct tcpcb *tp;
 	struct inpcb *inp;
 	struct sockaddr_iso *siso;
 	struct sockaddr_in *sin;
@@ -238,6 +239,7 @@ tuba4_pcbconnect(void *v, struct mbuf *nam)
 int
 tuba6_pcbconnect(void *v, struct mbuf *nam)
 {
+	struct tcpcb *tp;
 	struct in6pcb *in6p;
 	struct sockaddr_iso *siso;
 	struct sockaddr_in6 *sin6;

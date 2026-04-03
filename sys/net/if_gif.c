@@ -218,6 +218,10 @@ gif_encapcheck(m, off, proto, arg)
 	case IPPROTO_IPV6:
 		break;
 #endif
+#ifdef ISO
+	case IPPROTO_EON:
+		break;
+#endif
 	default:
 		return 0;
 	}
@@ -294,6 +298,15 @@ gif_output(ifp, m, dst, rt)
 
 	/* inner AF-specific encapsulation */
 	switch (dst->sa_family) {
+#ifdef ISO
+	case AF_ISO:
+		m = gif_eon_encap(m);
+		if (!m) {
+			error = ENOBUFS;
+			goto end;
+		}
+		break;
+#endif
 	default:
 		break;
 	}
@@ -479,6 +492,15 @@ gif_input(m, af, ifp)
 	case AF_INET6:
 		ifq = &ip6intrq;
 		isr = NETISR_IPV6;
+		break;
+#endif
+#ifdef ISO
+	case AF_ISO:
+		m = gif_eon_decap(ifp, m);
+		if (!m)
+			return;
+		ifq = &clnlintrq;
+		isr = NETISR_ISO;
 		break;
 #endif
 	default:
