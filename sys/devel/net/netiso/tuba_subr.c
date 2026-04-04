@@ -147,12 +147,14 @@ tuba_cksum(u_long *sum, int *offset, struct sockaddr_iso **siso, u_long index)
 int
 tuba_tcp_output(struct mbuf *m, struct isopcb *isop, struct tcphdr *th, int af)
 {
+	th = mtod(m, struct tcphdr *);
 	return (tuba_output(m, isop, (struct tcphdr *)th, th->th_sum, 0, af));
 }
 
 int
 tuba_udp_output(struct mbuf *m, struct isopcb *isop, struct udphdr *uh, int af)
 {
+	uh = mtod(m, struct udphdr *);
 	return (tuba_output(m, isop, (struct udphdr *)uh, uh->uh_sum, 1, af));
 }
 
@@ -361,18 +363,10 @@ tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
 		isop = &tuba_isopcb;
 		switch (transtype) {
 		case 0: /* TCP */
-			struct tcphdr *th;
-			th = mtod(m, struct tcphdr *);
-			if (th != NULL) {
-				arg = th;
-			}
+			struct tcphdr *th = (struct tcphdr *)arg;
 			break;
 		case 1: /* UDP */
-			struct udphdr *uh;
-			uh = mtod(m, struct udphdr *);
-			if (uh != NULL) {
-				arg = uh;
-			}
+			struct udphdr *uh = (struct udphdr *)arg;
 			break;
 		default:
 			return (ENXIO);
@@ -410,15 +404,9 @@ tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
 		switch (transtype) {
 		case 0: /* TCP */
 			struct tcphdr *th = (struct tcphdr *)arg;
-			if (th == NULL) {
-				th = mtod(m, struct tcphdr *);
-			}
 			break;
 		case 1: /* UDP */
 			struct udphdr *uh = (struct udphdr *)arg;
-			if (uh == NULL) {
-				uh = mtod(m, struct udphdr *);
-			}
 			break;
 		default:
 			return (ENXIO);
@@ -554,18 +542,10 @@ tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int t
 		isop = &tuba_isopcb;
 		switch (transtype) {
 		case 0: /* TCP */
-			struct tcphdr *th;
-			th = mtod(m, struct tcphdr *);
-			if (th != NULL) {
-				arg = th;
-			}
+			struct tcphdr *th = (struct tcphdr *)arg;
 			break;
 		case 1: /* UDP */
-			struct udphdr *uh;
-			uh = mtod(m, struct udphdr *);
-			if (uh != NULL) {
-				arg = uh;
-			}
+			struct udphdr *uh = (struct udphdr *)arg;
 			break;
 		default:
 			return (ENXIO);
@@ -603,15 +583,9 @@ tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int t
 		switch (transtype) {
 		case 0: /* TCP */
 			struct tcphdr *th = (struct tcphdr *)arg;
-			if (th == NULL) {
-				th = mtod(m, struct tcphdr *);
-			}
 			break;
 		case 1: /* UDP */
 			struct udphdr *uh = (struct udphdr *)arg;
-			if (uh == NULL) {
-				uh = mtod(m, struct udphdr *);
-			}
 			break;
 		default:
 			return (ENXIO);
