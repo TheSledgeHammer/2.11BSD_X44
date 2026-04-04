@@ -60,6 +60,8 @@ struct xot_iphdr {
 #define xi_dst			xi_ip.ip_dst	/* destination ip address */
 #define xi_p			xi_ip.ip_p		/* ip protocol */
 #define xi_len			xi_ip.ip_len	/* ip len */
+#define xi_sum			xi_ip.ip_sum	/* ip sum */
+#define xi_ttl			xi_ip.ip_ttl	/* ip ttl */
 };
 
 #define XOT_IPHLEN 		(sizeof(struct xot_hdr) + sizeof(struct ip)) /* xot_hdr + ip header length */

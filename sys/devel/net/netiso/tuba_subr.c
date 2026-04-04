@@ -361,12 +361,18 @@ tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
 		isop = &tuba_isopcb;
 		switch (transtype) {
 		case 0: /* TCP */
-			struct tcphdr *th = (struct tcphdr *)arg;
+			struct tcphdr *th;
 			th = mtod(m, struct tcphdr *);
+			if (th != NULL) {
+				arg = th;
+			}
 			break;
 		case 1: /* UDP */
-			struct udphdr *uh = (struct udphdr *)arg;
+			struct udphdr *uh;
 			uh = mtod(m, struct udphdr *);
+			if (uh != NULL) {
+				arg = uh;
+			}
 			break;
 		default:
 			return (ENXIO);
@@ -404,11 +410,15 @@ tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
 		switch (transtype) {
 		case 0: /* TCP */
 			struct tcphdr *th = (struct tcphdr *)arg;
-			th = mtod(m, struct tcphdr *);
+			if (th == NULL) {
+				th = mtod(m, struct tcphdr *);
+			}
 			break;
 		case 1: /* UDP */
 			struct udphdr *uh = (struct udphdr *)arg;
-			uh = mtod(m, struct udphdr *);
+			if (uh == NULL) {
+				uh = mtod(m, struct udphdr *);
+			}
 			break;
 		default:
 			return (ENXIO);
@@ -544,12 +554,18 @@ tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int t
 		isop = &tuba_isopcb;
 		switch (transtype) {
 		case 0: /* TCP */
-			struct tcphdr *th = (struct tcphdr *)arg;
+			struct tcphdr *th;
 			th = mtod(m, struct tcphdr *);
+			if (th != NULL) {
+				arg = th;
+			}
 			break;
 		case 1: /* UDP */
-			struct udphdr *uh = (struct udphdr *)arg;
+			struct udphdr *uh;
 			uh = mtod(m, struct udphdr *);
+			if (uh != NULL) {
+				arg = uh;
+			}
 			break;
 		default:
 			return (ENXIO);
@@ -587,11 +603,15 @@ tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int t
 		switch (transtype) {
 		case 0: /* TCP */
 			struct tcphdr *th = (struct tcphdr *)arg;
-			th = mtod(m, struct tcphdr *);
+			if (th == NULL) {
+				th = mtod(m, struct tcphdr *);
+			}
 			break;
 		case 1: /* UDP */
 			struct udphdr *uh = (struct udphdr *)arg;
-			uh = mtod(m, struct udphdr *);
+			if (uh == NULL) {
+				uh = mtod(m, struct udphdr *);
+			}
 			break;
 		default:
 			return (ENXIO);

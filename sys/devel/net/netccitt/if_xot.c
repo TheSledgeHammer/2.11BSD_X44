@@ -74,14 +74,35 @@ xotattach()
 }
 
 static void
-xot_ip_init(struct xot_iphdr *xip, struct in_addr src, struct in_addr dst, int ipproto, int zero)
+xot_mbuf_init(struct mbuf *m, struct xot_packet *xot)
+{
+	m->m_data = (caddr_t)&xot->xp_hdr;
+	m->m_len = sizeof(struct xot_hdr);
+	m->m_next = 0;
+}
+
+static void
+xot_ip_init(struct mbuf *m, struct xot_iphdr *xip, struct in_addr src, struct in_addr dst, int ipproto, int zero)
 {
 	if (zero) {
 		bzero((caddr_t)xip, sizeof(*xip));
 	}
+	switch (ipproto) {
+	case CCITTPROTO_TCP:
+		xip->xi_p = CCITTPROTO_TCP;
+		xip->xi_ttl = MAXTTL;
+		xip->xi_len = XOT_TCPIPHLEN;
+		xip->xi_sum = in4_cksum(m, CCITTPROTO_TCP, sizeof(struct ip), m->m_pkthdr.len);
+		break;
+	case IPPROTO_XOT:
+		xip->xi_p = IPPROTO_XOT;
+		xip->xi_ttl = MAXTTL;
+		xip->xi_len = XOT_IPHLEN;
+		xip->xi_sum = in4_cksum(m, IPPROTO_XOT, sizeof(struct ip), m->m_pkthdr.len);
+		break;
+	}
 	xip->xi_src = src;
 	xip->xi_dst = dst;
-	xip->xi_p = ipproto;
 }
 
 static void
@@ -111,15 +132,16 @@ xot_hdr_init(struct xot_hdr *hdr, u_char xotver, u_char xotlen, int zero)
 }
 
 static void
-xot_init(struct xot_packet *xot, struct in_addr src, struct in_addr dst, u_char xotver, u_char xotlen, int ipproto, int zero)
+xot_init(struct mbuf *m, struct xot_packet *xot, struct in_addr src, struct in_addr dst, u_char xotver, u_char xotlen, int ipproto, int zero)
 {
-	xot_ip_init(&xot->xp_ip, src, dst, ipproto, zero);
+	xot_ip_init(m, &xot->xp_ip, src, dst, ipproto, zero);
 	xot_tcp_init(&xot->xp_tcp, zero);
 	xot_hdr_init(&xot->xp_hdr, xotver, xotlen, zero);
+	xot_mbuf_init(m, xot);
 }
 
 void
-xot_packet_init(struct xot_packet *xot, struct sockaddr_in *src, struct sockaddr_in *dst, u_char xotver, u_char xotlen, int ipproto, int zero)
+xot_packet_init(struct mbuf *m, struct xot_packet *xot, struct sockaddr_in *src, struct sockaddr_in *dst, u_char xotver, u_char xotlen, int ipproto, int zero)
 {
 	if (src != NULL) {
 		src->sin_family = AF_INET;
@@ -129,7 +151,7 @@ xot_packet_init(struct xot_packet *xot, struct sockaddr_in *src, struct sockaddr
 		dst->sin_family = AF_INET;
 		dst->sin_len = sizeof(*dst);
 	}
-	xot_init(xot, src->sin_addr, dst->sin_addr, xotver, xotlen, ipproto, zero);
+	xot_init(m, xot, src->sin_addr, dst->sin_addr, xotver, xotlen, ipproto, zero);
 }
 
 #ifdef notyet
@@ -201,10 +223,7 @@ xotiphdr(struct xot_packet *xot, struct route *ro, int ipproto, int zero)
 	if (ro->ro_rt) {
 		ro->ro_rt->rt_use++;
 	}
-	xot_packet_init(xot, NULL, sin, XOT_HDR_VERSION, XOT_HDR_LENGTH, ipproto, zero);
-	mhead.m_data = (caddr_t)&xot->xp_hdr;
-	mhead.m_len = sizeof(struct xot_hdr);
-	mhead.m_next = 0;
+	xot_packet_init(&mhead, xot, NULL, sin, XOT_HDR_VERSION, XOT_HDR_LENGTH, ipproto, zero);
 }
 
 void
@@ -243,7 +262,6 @@ xot_hdr_isvalid(struct xot_packet *xot)
 bool_t
 xot_tcp_isvalid(struct xot_packet *xot)
 {
-
 	if ((xot->xp_tcp.xt_sport != XOT_TCPPORT)
 			|| (xot->xp_tcp.xt_dport != XOT_TCPPORT)
 			|| ((xot->xp_tcp.xt_flags & TH_SYN) == 0)) {
@@ -295,6 +313,137 @@ tcp header passed:
  4. validate xot header
 */
 
+static int
+xot_common_output(struct mbuf *m, struct xot_packet *xot, int len, size_t size, int ipproto)
+{
+	struct mbuf *mh;
+	int datalen = len;
+
+	/* validate xot header */
+	if (xot_hdr_isvalid(xot) != TRUE) {
+		printf("xot_output: xot header is invalid\n");
+		return (EINVAL);
+	}
+
+	/* mbufs */
+	if ((m->m_flags & M_PKTHDR) == 0) {
+		printf("xot_output: got non headered packet\n");
+		return (EINVAL);
+	}
+	switch (ipproto) {
+	case CCITTPROTO_TCP:
+		datalen = m->m_pkthdr.len + XOT_TCPIPHLEN;
+		break;
+	case IPPROTO_XOT:
+		datalen = m->m_pkthdr.len + XOT_IPHLEN;
+		if (datalen > IP_MAXPACKET) {
+			m_freem(m);
+			return (EMSGSIZE);
+		}
+		break;
+	}
+	mh = m_gethdr(M_DONTWAIT, MT_HEADER);
+	if (mh == 0) {
+		m_freem(m);
+		return (ENOBUFS);
+	}
+	mh->m_next = m;
+	m = mh;
+	MH_ALIGN(m, size);
+	m->m_len = size;
+	m->m_pkthdr.len = datalen;
+	len = datalen;
+	return (0);
+}
+
+static void
+xot_common_input(struct mbuf *m, struct xot_packet *xot, int len, int off, size_t size, int ipproto)
+{
+	/* validate xot header */
+	if (xot_hdr_isvalid(xot) != TRUE) {
+		printf("xot_intput: xot header is invalid\n");
+		return;
+	}
+
+	/* mbufs */
+	switch (ipproto) {
+	case CCITTPROTO_TCP:
+		off = ((sizeof(long) - 1) & ((m->m_flags & M_EXT) ?
+			(m->m_data - m->m_ext.ext_buf) :  (m->m_data - m->m_pktdat)));
+		if (off || len < sizeof(struct tcphdr)) {
+			struct mbuf *m0 = m;
+			m0 = m_gethdr(M_DONTWAIT, MT_HEADER);
+			if (m0 == 0) {
+				m_freem(m);
+				return;
+			}
+			m->m_next = m0;
+			m->m_data += max_linkhdr;
+			m->m_pkthdr = m0->m_pkthdr;
+			m->m_flags = m0->m_flags & M_COPYFLAGS;
+			if (len < sizeof(struct tcphdr)) {
+				m->m_len = 0;
+				m = m_pullup(m, size);
+				if (m == 0) {
+					return;
+				}
+			} else {
+				bcopy(mtod(m0, caddr_t) + sizeof(struct ip),
+						mtod(m, caddr_t) + sizeof(struct ip),
+						sizeof(struct tcphdr));
+				m0->m_len -= size;
+				m0->m_data += size;
+				m->m_len = size;
+			}
+		}
+		break;
+	case IPPROTO_XOT:
+		if (len > sizeof(struct ip)) {
+			ip_stripoptions(m);
+		}
+		if (m->m_len < XOT_IPHLEN) {
+			m = m_pullup(m, size);
+			if (m == 0) {
+				m_freem(m);
+				return;
+			}
+		}
+		break;
+	}
+}
+
+xot_tcp_output(struct mbuf *m, struct rtentry *rt)
+{
+	struct tcphdr *th;
+	struct llinfo_x25 *lx;
+	struct xot_packet *xot;
+	struct route *ro;
+	int error, len, off;
+
+	lx = (struct llinfo_x25 *)rt->rt_llinfo;
+	if ((rt == NULL) || (lx == NULL)) {
+		m_freem(m);
+		return (EINVAL);
+	}
+
+	xot = &lx->lx_xot;
+	ro = &lx->lx_iproute;
+	error = xot_common_output(m, xot, len, sizeof(struct xot_packet), CCITTPROTO_TCP);
+	if (error != 0) {
+		return (error);
+	}
+
+	/* validate tcphdr */
+	if (xot_tcp_isvalid(xot) != TRUE) {
+		printf("xot_output: tcphdr is invalid\n");
+		return (EINVAL);
+	}
+
+	th = &xot->xp_tcp;
+
+	return (tcp_output(th));
+}
+
 int
 xotoutput(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rtentry *rt)
 {
@@ -312,6 +461,11 @@ xotoutput(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rtentr
 	ifp->if_opackets++;
 	xot = &lx->lx_xot;
 	ro = &lx->lx_iproute;
+
+	/* xot header is invalid */
+	if (xot_hdr_isvalid(xot) == FALSE) {
+		return (EINVAL);
+	}
 
 	if ((lx->lx_flags & RTF_UP) == 0) {
 		xotrtrequest(RTM_CHANGE, rt, dst, IPPROTO_XOT);
