@@ -42,6 +42,10 @@
  */
 
 #include <sys/cdefs.h>
+
+#include "opt_hdlc.h"
+#include "opt_llc.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
@@ -59,6 +63,7 @@
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
+#include <netccitt/pk_extern.h>
 #include <netccitt/llc_var.h>
 
 struct pkcb_q pkcb_q;

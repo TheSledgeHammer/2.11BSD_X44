@@ -499,16 +499,19 @@ in_pcbrehash(struct inpcbhead *head, struct inpcb *inp, int which)
 static void
 in_pcbinsert(struct inpcbtable *table, struct inpcb *inp, int which)
 {
+	struct inpcbhead *head;
+	struct inpcb_hdr *inph;
+
+	head = NULL;
+	inph = &inp->inp_head;
 	switch (which) {
 	case INPLOOKUP_FOREIGN:
-		LIST_INSERT_HEAD(
-				INPCBHASH_FOREIGN(table, inp->inp_faddr, inp->inp_fport, inp->inp_laddr, inp->inp_lport),
-				&inp->inp_head, inph_fhash);
+		head = INPCBHASH_FOREIGN(table, inp->inp_faddr, inp->inp_fport, inp->inp_laddr, inp->inp_lport);
+		LIST_INSERT_HEAD(head, inph, inph_fhash);
 		break;
 	case INPLOOKUP_LOCAL:
-		LIST_INSERT_HEAD(
-				INPCBHASH_LOCAL(table, inp->inp_faddr, inp->inp_fport, inp->inp_laddr, inp->inp_lport),
-				&inp->inp_head, inph_lhash);
+		head = INPCBHASH_LOCAL(table, inp->inp_faddr, inp->inp_fport, inp->inp_laddr, inp->inp_lport);
+		LIST_INSERT_HEAD(head, inph, inph_lhash);
 		break;
 	}
 }

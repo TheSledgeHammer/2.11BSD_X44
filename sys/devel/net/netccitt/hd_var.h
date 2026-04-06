@@ -69,8 +69,8 @@ struct hdcb {
 	char	hd_retxqi;
 	char	hd_rrtimer;
 	char	hd_timer;
-#define SET_TIMER(hdp)		hdp->hd_timer = hd_t1
-#define KILL_TIMER(hdp)		hdp->hd_timer = 0
+#define SET_TIMER(hdp)		((hdp)->hd_timer = hd_t1)
+#define KILL_TIMER(hdp)		((hdp)->hd_timer = 0)
 	char	hd_dontcopy;	/* if-driver doesn't free I-frames */
 	struct ifnet *hd_ifp;	/* device's network visible interface */
 	struct ifaddr *hd_ifa;	/* device's X.25 network address */
@@ -110,5 +110,39 @@ extern int	hd_t1;			/* timer T1 value */
 extern int	hd_t3;			/* RR send timer */
 extern int	hd_n2;			/* frame retransmission limit */
 
+
+/* hd_debug.c */
+void hd_trace(struct hdcb *, int , struct mbuf *);
+int hd_dumptrace(struct hdcb *);
+
+/* hd_input.c */
+void hdintr(void);
+int process_rxframe(struct hdcb *, struct mbuf *);
+int process_iframe(struct hdcb *, struct mbuf *, struct Hdlc_iframe *);
+bool_t range_check(int, int , int );
+void process_sframe(struct hdcb *, struct Hdlc_sframe *, int);
+bool_t valid_nr(struct hdcb *, int , int);
+
+/* hd_output.c */
+int hd_output(struct mbuf *, ...);
+void hd_start(struct hdcb *);
+void hd_send_iframe(struct hdcb *, struct mbuf *, int);
+int hd_ifoutput(struct mbuf *, ...);
+void hd_resend_iframe(struct hdcb *);
+
+/* hd_subr.c */
+void hd_init(void);
+void *hd_ctlinput(int , struct sockaddr *, void *);
+void hd_initvars(struct hdcb *);
+int hd_decode(struct hdcb *, struct Hdlc_frame *);
+void hd_writeinternal(struct hdcb *, int, int);
+void hd_append(struct hdtxq *, struct mbuf *);
+void hd_flush(struct ifnet *);
+void hd_message(struct hdcb *, char *);
+int hd_status(struct hdcb *);
+struct mbuf *hd_remove(struct hdtxq *);
+
+/* hd_timer.c */
+void hd_slowtimo(void);
 #endif
 #endif /* _NETCCITT_HD_VAR_H_ */

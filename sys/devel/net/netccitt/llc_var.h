@@ -282,6 +282,4 @@ void llc_start(struct llc_linkcb *);
 int llc_send(struct llc_linkcb *, int, int, int);
 int llc_resend(struct llc_linkcb *, int, int);
 int llc_rawsend(struct llc_linkcb *, struct mbuf *, struct llc *, int, int, int, int);
-int x25_llc(int, struct sockaddr *);
-
 #endif /* _NETCCITT_LLC_VAR_H_ */

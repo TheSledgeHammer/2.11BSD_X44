@@ -42,6 +42,7 @@
  */
 
 #include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
@@ -60,6 +61,7 @@
 #include <netccitt/x25err.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
+#include <netccitt/pk_extern.h>
 
 int     pk_sendspace = 1024 * 2 + 8;
 int     pk_recvspace = 1024 * 2 + 8;
@@ -78,6 +80,10 @@ struct x25bitslice x25_bitslice[] = {
 		{ 0xe,  0x1 },
 		{ 0x1,  0x0 }
 };
+
+
+static struct x25_ifaddr *pk_ifwithaddr(struct sockaddr_x25 *);
+static void pk_reset(struct pklcd *, int);
 
 /*
  *  Attach X.25 protocol to socket, allocate logical channel descripter

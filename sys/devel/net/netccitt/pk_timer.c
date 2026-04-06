@@ -42,6 +42,7 @@
  */
 
 #include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
@@ -55,6 +56,7 @@
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
+#include <netccitt/pk_extern.h>
 
 /*
  * Various timer values.  They can be adjusted

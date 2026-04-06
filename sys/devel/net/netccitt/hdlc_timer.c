@@ -35,115 +35,115 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pk_acct.c	8.2 (Berkeley) 5/14/95
+ *	@(#)hd_timer.c	8.1 (Berkeley) 6/10/93
  */
 
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/namei.h>
-#include <sys/proc.h>
-#include <sys/vnode.h>
-#include <sys/kernel.h>
-#include <sys/errno.h>
-#include <sys/file.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
 #include <sys/socket.h>
-#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
 
 #include <net/if.h>
 
+#include <netccitt/hdlc.h>
+#include <netccitt/hd_var.h>
 #include <netccitt/x25.h>
-#include <netccitt/pk.h>
-#include <netccitt/pk_var.h>
 #include <netccitt/pk_extern.h>
-#include <netccitt/x25acct.h>
-
-struct vnode *pkacctp;
 
 /*
- *  Turn on packet accounting
+ * these can be patched with adb if the
+ * default values are inappropriate
  */
-int
-pk_accton(char *path)
-{
-	register struct vnode *vp = NULL;
-	struct nameidata nd;
-	struct vnode *oacctp = pkacctp;
-	struct proc *p = curproc;
-	int error;
-
-	if (path == 0) {
-		goto close;
-	}
-	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, path, p);
-	if ((error = vn_open(&nd, FWRITE, 0644))) {
-		return (error);
-	}
-	vp = nd.ni_vp;
-	VOP_UNLOCK(vp, 0, p);
-	if (vp->v_type != VREG) {
-		vrele(vp);
-		return (EACCES);
-	}
-	pkacctp = vp;
-	if (oacctp) {
-close:
-		error = vn_close(oacctp, FWRITE, p->p_ucred, p);
-	}
-	return (error);
-}
+int	hd_t1 = T1;
+int	hd_t3 = T3;
+int	hd_n2 = N2;
 
 /*
- *  Write a record on the accounting file.
+ *  HDLC TIMER
+ *
+ *  This routine is called every 500ms by the kernel. Decrement timer by this
+ *  amount - if expired then process the event.
  */
+
 void
-pk_acct(struct pklcd *lcp)
+hd_slowtimo(void)
 {
-	register struct vnode *vp;
-	register struct sockaddr_x25 *sa;
-	register char *src, *dst;
-	register int len;
-	register long etime;
-	static struct x25acct acbuf;
 
-	if ((vp = pkacctp) == 0)
-		return;
-	bzero((caddr_t) &acbuf, sizeof(acbuf));
-	if (lcp->lcd_ceaddr != 0) {
-		sa = lcp->lcd_ceaddr;
-	} else if (lcp->lcd_craddr != 0) {
-		sa = lcp->lcd_craddr;
-		acbuf.x25acct_callin = 1;
-	} else {
-		return;
+	struct hdcb *hdp;
+	int s = splnet();
+
+	LIST_FOREACH(hdp, &hdcb_head, hd_list) {
+		if (hdp->hd_rrtimer && (--hdp->hd_rrtimer == 0)) {
+			if (hdp->hd_lasttxnr != hdp->hd_vr)
+				hd_writeinternal(hdp, HDLC_RR, POLLOFF);
+		}
+		if (!(hdp->hd_timer && --hdp->hd_timer == 0))
+			continue;
+
+		switch (hdp->hd_state) {
+		case INIT:
+		case DISC_SENT:
+			hd_writeinternal(hdp, HDLC_DISC, POLLON);
+			break;
+
+		case ABM:
+			if (hdp->hd_lastrxnr != hdp->hd_vs) { /* XXX */
+				hdp->hd_timeouts++;
+				hd_resend_iframe(hdp);
+			}
+			break;
+
+		case WAIT_SABM:
+			hd_writeinternal(hdp, HDLC_FRMR, POLLOFF);
+			if (++hdp->hd_retxcnt == hd_n2) {
+				hdp->hd_retxcnt = 0;
+				hd_writeinternal(hdp, HDLC_SABM, POLLOFF);
+				hdp->hd_state = WAIT_UA;
+			}
+			break;
+
+		case DM_SENT:
+			if (++hdp->hd_retxcnt == hd_n2) {
+				/* Notify the packet level. */
+				(void)pk_ctlinput(PRC_LINKDOWN, (struct sockaddr *)hdp->hd_pkp, NULL);
+				hdp->hd_retxcnt = 0;
+				hdp->hd_state = SABM_SENT;
+				hd_writeinternal(hdp, HDLC_SABM, POLLOFF);
+			} else
+				hd_writeinternal(hdp, HDLC_DM, POLLOFF);
+			break;
+
+		case WAIT_UA:
+			if (++hdp->hd_retxcnt == hd_n2) {
+				hdp->hd_retxcnt = 0;
+				hd_writeinternal(hdp, HDLC_DM, POLLOFF);
+				hdp->hd_state = DM_SENT;
+			} else
+				hd_writeinternal(hdp, HDLC_SABM, POLLOFF);
+			break;
+
+		case SABM_SENT:
+			/* Do this indefinitely. */
+			hd_writeinternal(hdp, HDLC_SABM, POLLON);
+			break;
+
+		case DISCONNECTED:
+			/*
+			 * Poll the interface driver flags waiting
+			 * for the IFF_UP bit to come on.
+			 */
+			if (hdp->hd_ifp->if_flags & IFF_UP)
+				hdp->hd_state = INIT;
+
+		}
+		SET_TIMER(hdp);
 	}
-
-	if (sa->x25_opts.op_flags & X25_REVERSE_CHARGE)
-		acbuf.x25acct_revcharge = 1;
-	acbuf.x25acct_stime = lcp->lcd_stime;
-	acbuf.x25acct_etime = time.tv_sec - acbuf.x25acct_stime;
-	acbuf.x25acct_uid = curproc->p_cred->p_ruid;
-	acbuf.x25acct_psize = sa->x25_opts.op_psize;
-	acbuf.x25acct_net = sa->x25_net;
-
-	/*
-	 * Convert address to bcd
-	 */
-	src = sa->x25_addr.xa_addr;
-	dst = acbuf.x25acct_addr;
-	for (len = 0; *src; len++)
-		if (len & 01)
-			*dst++ |= *src++ & 0xf;
-		else
-			*dst = *src++ << 4;
-	acbuf.x25acct_addrlen = len;
-
-	bcopy(sa->x25_udata, acbuf.x25acct_udata, sizeof(acbuf.x25acct_udata));
-	acbuf.x25acct_txcnt = lcp->lcd_txcnt;
-	acbuf.x25acct_rxcnt = lcp->lcd_rxcnt;
-
-	(void) vn_rdwr(UIO_WRITE, vp, (caddr_t) &acbuf, sizeof(acbuf), (off_t) 0,
-			UIO_SYSSPACE, IO_UNIT | IO_APPEND, curproc->p_ucred, (int*) 0,
-			(struct proc*) 0);
+	splx(s);
 }

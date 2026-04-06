@@ -60,9 +60,30 @@
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
+#include <netccitt/pk_extern.h>
 
+static void pk_setsockaddr(struct pklcd *, struct mbuf *);
+static void pk_setpeeraddr(struct pklcd *, struct mbuf *);
 static void old_to_new(struct mbuf *);
 static void new_to_old(struct mbuf *);
+
+static void
+pk_setsockaddr(struct pklcd *lcp, struct mbuf *nam)
+{
+	nam->m_len = sizeof(struct sockaddr_x25);
+	bcopy(lcp->lcd_ceaddr, mtod(nam, caddr_t), (size_t)nam->m_len);
+	if (lcp->lcd_flags & X25_OLDSOCKADDR)
+		new_to_old(nam);
+}
+
+static void
+pk_setpeeraddr(struct pklcd *lcp, struct mbuf *nam)
+{
+	nam->m_len = sizeof(struct sockaddr_x25);
+	bcopy(lcp->lcd_craddr, mtod(nam, caddr_t), (size_t)nam->m_len);
+	if (lcp->lcd_flags & X25_OLDSOCKADDR)
+		new_to_old(nam);
+}
 
 /*
  *
@@ -167,11 +188,7 @@ pk_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 	case PRU_ACCEPT:
 		if (lcp->lcd_craddr == NULL)
 			break;
-		bcopy((caddr_t)lcp->lcd_craddr, mtod(nam, caddr_t),
-				sizeof(struct sockaddr_x25));
-		nam->m_len = sizeof(struct sockaddr_x25);
-		if (lcp->lcd_flags & X25_OLDSOCKADDR)
-			new_to_old(nam);
+		pk_setpeeraddr(lcp, nam);
 		break;
 
 		/*
@@ -245,23 +262,13 @@ pk_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 	case PRU_SOCKADDR:
 		if (lcp->lcd_ceaddr == 0)
 			return (EADDRNOTAVAIL);
-		nam->m_len = sizeof(struct sockaddr_x25);
-		bcopy((caddr_t) lcp->lcd_ceaddr, mtod(nam, caddr_t),
-				sizeof(struct sockaddr_x25));
-		if (lcp->lcd_flags & X25_OLDSOCKADDR)
-			new_to_old(nam);
+		pk_setsockaddr(lcp, nam);
 		break;
 
 	case PRU_PEERADDR:
 		if (lcp->lcd_state != DATA_TRANSFER)
 			return (ENOTCONN);
-		nam->m_len = sizeof(struct sockaddr_x25);
-		bcopy(
-				lcp->lcd_craddr ?
-						(caddr_t) lcp->lcd_craddr : (caddr_t)lcp->lcd_ceaddr,
-				mtod(nam, caddr_t), sizeof(struct sockaddr_x25));
-		if (lcp->lcd_flags & X25_OLDSOCKADDR)
-			new_to_old(nam);
+		pk_setpeeraddr(lcp, nam);
 		break;
 
 		/*

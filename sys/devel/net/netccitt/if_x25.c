@@ -61,7 +61,31 @@
 #include <netccitt/x25err.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
-//#include <netccitt/pk_extern.h>
+#include <netccitt/pk_extern.h>
+
+#ifdef INET
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#else
+#ifdef _KERNEL
+#error options CCITT assumes options INET
+#endif
+#endif
+
+#ifdef NS
+#include <netns/ns.h>
+#include <netns/ns_if.h>
+#endif
+
+#ifdef ISO
+#include <netiso/argo_debug.h>
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
+#ifdef TPCONS
+#include <netiso/tp_param.h>
+#include <netiso/tp_var.h>
+#endif
+#endif
 
 struct llinfo_x25_list llinfo_x25_head;
 struct pklcd_q pk_listenhead;

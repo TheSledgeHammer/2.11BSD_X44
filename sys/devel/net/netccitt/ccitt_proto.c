@@ -86,14 +86,28 @@ __KERNEL_RCSID(0, "$NetBSD: ccitt_proto.c,v 1.16 2005/01/23 22:24:39 matt Exp $"
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <net/if_llc.h>
-#include <netccitt/dll.h>
-#include <netccitt/llc_var.h>
+
+#include <netccitt/x25.h>
 
 #include <net/radix.h>
 
 extern	struct domain ccittdomain;
 
+#ifdef LLC
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/if_llc.h>
+#include <netccitt/dll.h>
+#include <netccitt/llc_var.h>
+#endif
+#ifdef HDLC
+#include <netccitt/hdlc.h>
+#include <netccitt/hd_var.h>
+#endif
+#include <netccitt/pk_extern.h>
+
 struct protosw ccittsw[] = {
+#ifdef LLC
 		{ /* LLC */
 				.pr_type		= 0,
 				.pr_domain		= &ccittdomain,
@@ -110,6 +124,8 @@ struct protosw ccittsw[] = {
 				.pr_drain		= 0,
 				.pr_sysctl		= NULL,
 		},
+#endif
+#ifdef HDLC
 		{ /* HDLC */
 				.pr_type		= 0,
 				.pr_domain		= &ccittdomain,
@@ -126,6 +142,7 @@ struct protosw ccittsw[] = {
 				.pr_drain		= 0,
 				.pr_sysctl		= NULL,
 		},
+#endif
 		{ /* X25 Packet */
 				.pr_type		= SOCK_STREAM,
 				.pr_domain		= &ccittdomain,

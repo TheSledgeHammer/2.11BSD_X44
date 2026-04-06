@@ -47,7 +47,6 @@
 #define FALSE   0
 #define TRUE    1
 typedef u_char 	octet;
-typedef char    bool;
 #endif
 
 #include <sys/types.h>

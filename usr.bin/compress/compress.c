@@ -55,13 +55,16 @@ __RCSID("$NetBSD: compress.c,v 1.20 2003/08/07 11:13:28 agc Exp $");
 #include <string.h>
 #include <unistd.h>
 
-void	compress(char *, char *, int);
-void	cwarn(const char *, ...) __attribute__((__format__(__printf__,1,2)));
-void	cwarnx(const char *, ...) __attribute__((__format__(__printf__,1,2)));
-void	decompress(char *, char *, int);
+#define PATH_STDIN	"/dev/stdin"
+#define PATH_STDOUT "/dev/stdout"
+
+void compress(const char *, const char *, int);
+void cwarn(const char *, ...) __attribute__((__format__(__printf__,1,2)));
+void cwarnx(const char *, ...) __attribute__((__format__(__printf__,1,2)));
+void decompress(const char *, const char *, int);
 int	permission(char *);
-void	setfile(char *, struct stat *);
-void	usage(int);
+void setfile(char *, struct stat *);
+void usage(int);
 
 int	main(int, char *[]);
 extern FILE *zopen(const char *fname, const char *mode, int bits);
@@ -124,12 +127,12 @@ main(int argc, char **argv)
 		case COMPRESS:
 			isstdout = 1;
 			isstdin = 1;
-			(void)compress("/dev/stdin", "/dev/stdout", bits);
+			(void)compress(PATH_STDIN, PATH_STDOUT, bits);
 			break;
 		case DECOMPRESS:
 			isstdout = 1;
 			isstdin = 1;
-			(void)decompress("/dev/stdin", "/dev/stdout", bits);
+			(void)decompress(PATH_STDIN, PATH_STDOUT, bits);
 			break;
 		}
 		exit (eval);
@@ -144,7 +147,7 @@ main(int argc, char **argv)
 		case COMPRESS:
 			if (cat) {
 				isstdout = 1;
-				compress(*argv, "/dev/stdout", bits);
+				compress(*argv, PATH_STDOUT, bits);
 				break;
 			}
 			if ((p = strrchr(*argv, '.')) != NULL &&
@@ -177,7 +180,7 @@ main(int argc, char **argv)
 				newname[len + 1] = 'Z';
 				newname[len + 2] = '\0';
 				decompress(newname,
-				    cat ? "/dev/stdout" : *argv, bits);
+				    cat ? PATH_STDOUT : *argv, bits);
 				if (cat)
 					isstdout = 1;
 			} else {
@@ -188,7 +191,7 @@ main(int argc, char **argv)
 				memmove(newname, *argv, len - 2);
 				newname[len - 2] = '\0';
 				decompress(*argv,
-				    cat ? "/dev/stdout" : newname, bits);
+				    cat ? PATH_STDOUT : newname, bits);
 				if (cat)
 					isstdout = 1;
 			}
@@ -199,7 +202,7 @@ main(int argc, char **argv)
 }
 
 void
-compress(char *in, char *out, int bits)
+compress(const char *in, const char *out, int bits)
 {
 	int nr;
 	struct stat isb, sb;
@@ -238,7 +241,7 @@ compress(char *in, char *out, int bits)
 		goto err;
 	}
 	while ((nr = fread(buf, 1, sizeof(buf), ifp)) != 0)
-		if (fwrite(buf, 1, nr, ofp) != nr) {
+		if (fwrite(buf, 1, nr, ofp) != (size_t)nr) {
 			cwarn("%s", out);
 			goto err;
 		}
@@ -286,17 +289,18 @@ compress(char *in, char *out, int bits)
 	}
 	return;
 
-err:	if (ofp) {
+err:
+	if (ofp) {
 		if (oreg)
-			(void)unlink(out);
-		(void)fclose(ofp);
+			(void) unlink(out);
+		(void) fclose(ofp);
 	}
 	if (ifp)
-		(void)fclose(ifp);
+		(void) fclose(ifp);
 }
 
 void
-decompress(char *in, char *out, int bits)
+decompress(const char *in, const char *out, int bits)
 {
 	int nr;
 	struct stat sb;
@@ -335,7 +339,7 @@ decompress(char *in, char *out, int bits)
 		isreg = 0;
 
 	while ((nr = fread(buf, 1, sizeof(buf), ifp)) != 0)
-		if (fwrite(buf, 1, nr, ofp) != nr) {
+		if (fwrite(buf, 1, nr, ofp) != (size_t)nr) {
 			cwarn("%s", out);
 			goto err;
 		}
@@ -359,13 +363,14 @@ decompress(char *in, char *out, int bits)
 	}
 	return;
 
-err:	if (ofp) {
+err:
+	if (ofp) {
 		if (oreg)
-			(void)unlink(out);
-		(void)fclose(ofp);
+			(void) unlink(out);
+		(void) fclose(ofp);
 	}
 	if (ifp)
-		(void)fclose(ifp);
+		(void) fclose(ifp);
 }
 
 void

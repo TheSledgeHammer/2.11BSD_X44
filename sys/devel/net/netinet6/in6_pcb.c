@@ -323,16 +323,19 @@ in6_pcbrehash(struct inpcbhead *head, struct in6pcb *in6p, int which)
 static void
 in6_pcbinsert(struct inpcbtable *table, struct in6pcb *in6p, int which)
 {
+	struct inpcbhead *head;
+	struct inpcb_hdr *inph;
+
+	head = NULL;
+	inph = &in6p->in6p_head;
 	switch (which) {
 	case IN6PLOOKUP_FOREIGN:
-		LIST_INSERT_HEAD(
-				IN6PCBHASH_FOREIGN(table, &in6p->in6p_faddr, in6p->in6p_fport, &in6p->in6p_laddr, in6p->in6p_lport),
-				&in6p->in6p_head, inph_fhash);
+		head = IN6PCBHASH_FOREIGN(table, &in6p->in6p_faddr, in6p->in6p_fport, &in6p->in6p_laddr, in6p->in6p_lport);
+		LIST_INSERT_HEAD(head, inph, inph_fhash);
 		break;
 	case IN6PLOOKUP_LOCAL:
-		LIST_INSERT_HEAD(
-				IN6PCBHASH_LOCAL(table, &in6p->in6p_faddr, in6p->in6p_fport, &in6p->in6p_laddr, in6p->in6p_lport),
-				&in6p->in6p_head, inph_lhash);
+		head = IN6PCBHASH_LOCAL(table, &in6p->in6p_faddr, in6p->in6p_fport, &in6p->in6p_laddr, in6p->in6p_lport);
+		LIST_INSERT_HEAD(head, inph, inph_lhash);
 		break;
 	}
 }

@@ -35,21 +35,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pk_acct.c	8.2 (Berkeley) 5/14/95
+ *	@(#)pk_debug.c	8.1 (Berkeley) 6/10/93
  */
 
 #include <sys/cdefs.h>
-
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/namei.h>
-#include <sys/proc.h>
-#include <sys/vnode.h>
-#include <sys/kernel.h>
-#include <sys/errno.h>
-#include <sys/file.h>
+#include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/protosw.h>
 #include <sys/socketvar.h>
+#include <sys/errno.h>
 
 #include <net/if.h>
 
@@ -57,93 +53,84 @@
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
 #include <netccitt/pk_extern.h>
-#include <netccitt/x25acct.h>
 
-struct vnode *pkacctp;
+char *pk_state[] = { "Listen", "Ready", "Received-Call", "Sent-Call",
+		"Data-Transfer", "Received-Clear", "Sent-Clear", };
 
-/*
- *  Turn on packet accounting
- */
-int
-pk_accton(char *path)
+char *pk_name[] = {
+	"Call",		"Call-Conf",	"Clear",
+	"Clear-Conf",	"Data",		"Intr",		"Intr-Conf",
+	"Rr",		"Rnr",		"Reset",	"Reset-Conf",
+	"Restart",	"Restart-Conf",	"Reject",	"Diagnostic",
+	"Invalid"
+};
+
+void
+pk_trace(struct x25config *xcp, struct mbuf *m, char *dir)
 {
-	register struct vnode *vp = NULL;
-	struct nameidata nd;
-	struct vnode *oacctp = pkacctp;
-	struct proc *p = curproc;
-	int error;
+	register char *s;
+	struct x25_packet *xp = mtod(m, struct x25_packet *);
+	register int i, len = 0, cnt = 0;
 
-	if (path == 0) {
-		goto close;
+	if (xcp -> xc_ptrace == 0)
+		return;
+
+	i = pk_decode (xp) / MAXSTATES;
+	for (; m; m = m -> m_next) {
+		len = len + m -> m_len;
+		++cnt;
 	}
-	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, path, p);
-	if ((error = vn_open(&nd, FWRITE, 0644))) {
-		return (error);
-	}
-	vp = nd.ni_vp;
-	VOP_UNLOCK(vp, 0, p);
-	if (vp->v_type != VREG) {
-		vrele(vp);
-		return (EACCES);
-	}
-	pkacctp = vp;
-	if (oacctp) {
-close:
-		error = vn_close(oacctp, FWRITE, p->p_ucred, p);
-	}
-	return (error);
+	printf ("LCN=%d %s:	%s	#=%d, len=%d ",
+		LCN(xp), dir, pk_name[i], cnt, len);
+	for (s = (char *) xp, i = 0; i < 5; ++i, ++s)
+		printf ("%x ", (int) * s & 0xff);
+	printf ("\n");
 }
 
-/*
- *  Write a record on the accounting file.
- */
 void
-pk_acct(struct pklcd *lcp)
+mbuf_cache(struct mbuf_cache *c, struct mbuf *m)
 {
-	register struct vnode *vp;
-	register struct sockaddr_x25 *sa;
-	register char *src, *dst;
-	register int len;
-	register long etime;
-	static struct x25acct acbuf;
+	register struct mbuf **mp;
 
-	if ((vp = pkacctp) == 0)
-		return;
-	bzero((caddr_t) &acbuf, sizeof(acbuf));
-	if (lcp->lcd_ceaddr != 0) {
-		sa = lcp->lcd_ceaddr;
-	} else if (lcp->lcd_craddr != 0) {
-		sa = lcp->lcd_craddr;
-		acbuf.x25acct_callin = 1;
-	} else {
-		return;
+	if (c->mbc_size != c->mbc_oldsize) {
+		unsigned zero_size, copy_size;
+		unsigned new_size = c->mbc_size * sizeof(m);
+		caddr_t cache = (caddr_t)c->mbc_cache;
+
+		if (new_size) {
+			c->mbc_cache = (struct mbuf **)
+				malloc(new_size, M_MBUF, M_NOWAIT);
+			if (c->mbc_cache == 0) {
+				c->mbc_cache = (struct mbuf **)cache;
+				return;
+			}
+			c->mbc_num %= c->mbc_size;
+		} else
+			c->mbc_cache = 0;
+		if (c->mbc_size < c->mbc_oldsize) {
+			register struct mbuf **mplim;
+			mp = c->mbc_size + (struct mbuf **)cache;
+			mplim = c->mbc_oldsize + (struct mbuf **)cache;
+			while (mp < mplim)
+				m_freem(*mp++);
+			zero_size = 0;
+		} else
+			zero_size = (c->mbc_size - c->mbc_oldsize) * sizeof(m);
+		copy_size = new_size - zero_size;
+		c->mbc_oldsize = c->mbc_size;
+		if (copy_size)
+			bcopy(cache, (caddr_t)c->mbc_cache, copy_size);
+		if (cache)
+			free(cache, M_MBUF);
+		if (zero_size)
+			bzero(copy_size + (caddr_t)c->mbc_cache, zero_size);
 	}
-
-	if (sa->x25_opts.op_flags & X25_REVERSE_CHARGE)
-		acbuf.x25acct_revcharge = 1;
-	acbuf.x25acct_stime = lcp->lcd_stime;
-	acbuf.x25acct_etime = time.tv_sec - acbuf.x25acct_stime;
-	acbuf.x25acct_uid = curproc->p_cred->p_ruid;
-	acbuf.x25acct_psize = sa->x25_opts.op_psize;
-	acbuf.x25acct_net = sa->x25_net;
-
-	/*
-	 * Convert address to bcd
-	 */
-	src = sa->x25_addr.xa_addr;
-	dst = acbuf.x25acct_addr;
-	for (len = 0; *src; len++)
-		if (len & 01)
-			*dst++ |= *src++ & 0xf;
-		else
-			*dst = *src++ << 4;
-	acbuf.x25acct_addrlen = len;
-
-	bcopy(sa->x25_udata, acbuf.x25acct_udata, sizeof(acbuf.x25acct_udata));
-	acbuf.x25acct_txcnt = lcp->lcd_txcnt;
-	acbuf.x25acct_rxcnt = lcp->lcd_rxcnt;
-
-	(void) vn_rdwr(UIO_WRITE, vp, (caddr_t) &acbuf, sizeof(acbuf), (off_t) 0,
-			UIO_SYSSPACE, IO_UNIT | IO_APPEND, curproc->p_ucred, (int*) 0,
-			(struct proc*) 0);
+	if (c->mbc_size == 0)
+		return;
+	mp = c->mbc_cache + c->mbc_num;
+	c->mbc_num = (1 + c->mbc_num) % c->mbc_size;
+	if (*mp)
+		m_freem(*mp);
+	if (*mp = m_copym(m, 0, M_COPYALL, M_DONTWAIT))
+		(*mp)->m_flags |= m->m_flags & 0x08;
 }

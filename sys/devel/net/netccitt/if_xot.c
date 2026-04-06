@@ -441,7 +441,30 @@ xot_tcp_output(struct mbuf *m, struct rtentry *rt)
 
 	th = &xot->xp_tcp;
 
+
 	return (tcp_output(th));
+}
+
+xot_tcp_input(struct mbuf *m)
+{
+	struct xot_packet *xot;
+	struct tcphdr *th;
+
+
+	xot = mtod(m, struct xot_packet *);
+	if (xot == NULL) {
+		return;
+	}
+
+	len = m->m_len;
+	tlen = m->m_pkthdr.len;
+
+	IP6_EXTHDR_GET(&xot->xp_tcp, struct tcphdr *, m, toff, sizeof(struct tcphdr));
+	if (&xot->xp_tcp != NULL) {
+		th = &xot->xp_tcp;
+	}
+
+	xot_common_input(m, xot, len, off, XOT_TCPIPHLEN, CCITTPROTO_TCP);
 }
 
 int

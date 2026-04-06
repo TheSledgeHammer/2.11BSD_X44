@@ -2,7 +2,7 @@
 
 defflag		CCITT
 defflag		HDLC			# CCITT over HDLC
-defflag		LLC			# CCITT over LLC2 (& IEEE LLC?)
+defflag		LLC				# CCITT over LLC2 (& IEEE LLC?)
 
 file	netccitt/ccitt_proto.c		ccitt
 file	netccitt/hd_debug.c			hdlc
@@ -18,7 +18,7 @@ file	netccitt/llc_subr.c			llc
 file	netccitt/pk_acct.c			ccitt
 #file	netccitt/pk_debug.c			ccitt
 file	netccitt/pk_input.c			ccitt
-file	netccitt/pk_llc.c			llc | hdlc 
+file	netccitt/pk_llc.c			llc | hdlc
 file	netccitt/pk_output.c		ccitt
 file	netccitt/pk_subr.c			ccitt
 file	netccitt/pk_timer.c			ccitt
