@@ -302,8 +302,6 @@ uint32_t 	lowbias32(uint32_t);
 uint32_t 	lowbias32_r(uint32_t);
 uint32_t 	triple32(uint32_t);
 uint32_t 	triple32_r(uint32_t);
-uint32_t 	hash32(uint32_t);
-uint32_t 	murmurhash32_mix32(uint32_t);
 uint32_t 	murmur3_32_hash(const void *, size_t, uint32_t);
 uint32_t 	murmur3_32_hash32(const uint32_t *, size_t, uint32_t);
 

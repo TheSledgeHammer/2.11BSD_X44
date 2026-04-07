@@ -46,16 +46,16 @@ prospector32(uint32_t x)
 
 /*
  * lowbias32
- * exact bias: 0.17353355999581582
+ * exact bias: 0.10734781817103507
  */
 uint32_t
 lowbias32(uint32_t x)
 {
     x ^= x >> 16;
-    x *= UINT32_C(0x7feb352d);
+    x *= UINT32_C(0x21f0aaad);
     x ^= x >> 15;
-    x *= UINT32_C(0x846ca68b);
-    x ^= x >> 16;
+    x *= UINT32_C(0xf35a2d97);
+    x ^= x >> 15;
     return (x);
 }
 
@@ -63,10 +63,10 @@ lowbias32(uint32_t x)
 uint32_t
 lowbias32_r(uint32_t x)
 {
-    x ^= x >> 16;
-    x *= UINT32_C(0x43021123);
+    x ^= x >> 15;
+    x *= UINT32_C(0x37132227);
     x ^= x >> 15 ^ x >> 30;
-    x *= UINT32_C(0x1d69e2a5);
+    x *= UINT32_C(0x333c4925);
     x ^= x >> 16;
     return (x);
 }
@@ -99,27 +99,5 @@ triple32_r(uint32_t x)
     x ^= x >> 11 ^ x >> 22;
     x *= UINT32_C(0x79a85073);
     x ^= x >> 17;
-    return (x);
-}
-
-/* hash32 */
-uint32_t
-hash32(uint32_t x)
-{
-    x = ((x >> 16) ^ x) * UINT32_C(0x45d9f3b);
-    x = ((x >> 16) ^ x) * UINT32_C(0x45d9f3b);
-    x = (x >> 16) ^ x;
-    return (x);
-}
-
-/* murmurhash32_mix32 */
-uint32_t
-murmurhash32_mix32(uint32_t x)
-{
-    x ^= x >> 16;
-    x *= UINT32_C(0x85ebca6b);
-    x ^= x >> 13;
-    x *= UINT32_C(0xc2b2ae35);
-    x ^= x >> 16;
     return (x);
 }
