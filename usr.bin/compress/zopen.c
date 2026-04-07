@@ -249,7 +249,7 @@ zwrite(void *cookie, const char *wbp, int num)
 
 	zs = cookie;
 	count = num;
-	bp = (u_char *)wbp;
+	bp = (const u_char *)wbp;
 	if (state == S_MIDDLE)
 		goto middle;
 	state = S_MIDDLE;
@@ -402,7 +402,7 @@ output(struct s_zstate *zs, code_int ocode)
 			bp = buf;
 			bits = n_bits;
 			bytes_out += bits;
-			if (fwrite(bp, sizeof(char), bits, fp) != bits)
+			if (fwrite(bp, sizeof(char), bits, fp) != (size_t)bits)
 				return (-1);
 			bp += bits;
 			bits = 0;
@@ -418,7 +418,7 @@ output(struct s_zstate *zs, code_int ocode)
 			* discover the size increase until after it has read it.
 			*/
 			if (offset > 0) {
-				if (fwrite(buf, 1, n_bits, fp) != n_bits)
+				if (fwrite(buf, 1, n_bits, fp) != (size_t)n_bits)
 					return (-1);
 				bytes_out += n_bits;
 			}
@@ -439,7 +439,7 @@ output(struct s_zstate *zs, code_int ocode)
 		/* At EOF, write the rest of the buffer. */
 		if (offset > 0) {
 			offset = (offset + 7) / 8;
-			if (fwrite(buf, 1, offset, fp) != offset)
+			if (fwrite(buf, 1, offset, fp) != (size_t)offset)
 				return (-1);
 			bytes_out += offset;
 		}
