@@ -62,8 +62,8 @@ void compress(const char *, const char *, int);
 void cwarn(const char *, ...) __attribute__((__format__(__printf__,1,2)));
 void cwarnx(const char *, ...) __attribute__((__format__(__printf__,1,2)));
 void decompress(const char *, const char *, int);
-int	permission(char *);
-void setfile(char *, struct stat *);
+int	permission(const char *);
+void setfile(const char *, struct stat *);
 void usage(int);
 
 int	main(int, char *[]);
@@ -374,7 +374,7 @@ err:
 }
 
 void
-setfile(char *name, struct stat *fs)
+setfile(const char *name, struct stat *fs)
 {
 	static struct timeval tv[2];
 
@@ -409,7 +409,7 @@ setfile(char *name, struct stat *fs)
 }
 
 int
-permission(char *fname)
+permission(const char *fname)
 {
 	int ch, first;
 
