@@ -36,7 +36,7 @@
 #include <sys/cdefs.h>
 
 #include "opt_inet.h"
-#include "opt_iso.h"
+//#include "opt_iso.h"
 #include "opt_ns.h"
 
 #include <sys/param.h>
