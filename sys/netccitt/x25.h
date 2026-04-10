@@ -194,6 +194,11 @@ void pk_init(void);
 int pk_user_protolisten(u_char *);
 int pk_rtattach(struct socket *, struct mbuf *);
 int x25_rtattach(struct pklcd *, struct rtentry *);
+#else
+#include <sys/cdefs.h>
+__BEGIN_DECLS
+int ccitt_addr(const char *, struct sockaddr_x25 *);
+__END_DECLS
 #endif
 
 #endif /* _NETCCITT_X25_H_ */
