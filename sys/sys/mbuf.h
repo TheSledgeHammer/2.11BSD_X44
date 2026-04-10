@@ -550,8 +550,8 @@ void			m_remove_pkthdr(struct mbuf *);
 void			m_copy_pkthdr(struct mbuf *, struct mbuf *);
 void			m_move_pkthdr(struct mbuf *, struct mbuf *);
 
-#define m_copyback(m, off, len, cp)	\
-	(m_copydata(m, off, len, cp))
+#define m_copym(m, off0, len)       (m_copy(m, off0, len))
+#define m_copyback(m, off, len, cp)	(m_copydata(m, off, len, cp))
 
 /* Packet tag routines */
 struct m_tag 	*m_tag_get(int, int, int);
