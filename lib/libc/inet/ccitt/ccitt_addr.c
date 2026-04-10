@@ -34,13 +34,14 @@
  */
 
 #include <sys/cdefs.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 
 #include <string.h>
 #include <stdlib.h>
 
-#include "x25.h"
+#include <netccitt/x25.h>
 
 static int x121_address(const char *, struct x25_addr *, int, int);
 static int optional_priority(const char *, char, char);
