@@ -549,6 +549,50 @@ sbappendrecord(sb, m0)
 }
 
 /*
+ * As above except that OOB data
+ * is inserted at the beginning of the sockbuf,
+ * but after any other OOB data.
+ */
+void
+sbinsertoob(sb, m0)
+	register struct sockbuf *sb;
+	register struct mbuf *m0;
+{
+	register struct mbuf *m;
+	register struct mbuf **mp;
+
+	if (m0 == 0)
+		return;
+	for (mp = &sb->sb_mb; m = *mp; mp = &((*mp)->m_nextpkt)) {
+	    again:
+		switch (m->m_type) {
+
+		case MT_OOBDATA:
+			continue;		/* WANT next train */
+
+		case MT_CONTROL:
+			if (m = m->m_next)
+				goto again;	/* inspect THIS train further */
+		}
+		break;
+	}
+	/*
+	 * Put the first mbuf on the queue.
+	 * Note this permits zero length records.
+	 */
+	sballoc(sb, m0);
+	m0->m_nextpkt = *mp;
+	*mp = m0;
+	m = m0->m_next;
+	m0->m_next = 0;
+	if (m && (m0->m_flags & M_EOR)) {
+		m0->m_flags &= ~M_EOR;
+		m->m_flags |= M_EOR;
+	}
+	sbcompress(sb, m, m0);
+}
+
+/*
  * Append address and data, and optionally, rights
  * to the receive queue of a socket.  Return 0 if
  * no space in sockbuf or insufficient mbufs.
