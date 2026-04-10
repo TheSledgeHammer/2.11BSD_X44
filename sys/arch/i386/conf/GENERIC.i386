@@ -66,7 +66,7 @@ file-system 		FFS			# UFS
 file-system 		LFS			# log-structured file system
 file-system 		MFS			# memory file system
 file-system 		UFS211			# 2.11BSD's UFS
-#file-system 	  NFS		  # Network File System client
+#file-system 	  	NFS		  # Network File System client
 file-system 		CD9660			# ISO 9660 + Rock Ridge file system
 file-system 		MSDOSFS			# MS-DOS file system
 file-system 		FDESC			# /dev/fd
@@ -78,7 +78,7 @@ file-system 		UFML			# ufml file system
 options			QUOTA			# UFS quotas
 
 # Disk Format options
-#options			DISK_SLICES		# enable diskslices (WIP)
+#options		DISK_SLICES		# enable diskslices (WIP)
 
 # Networking options
 #options 		GATEWAY			# packet forwarding
@@ -96,6 +96,7 @@ options		    FAST_IPSEC    		# IP security with opencrypto
 #options 		MROUTING			# IP multicast routing
 #options 		IGMPV3				# IPv4 Source-Specific Multicast (SSM)
 #options 		MLDV2				# IPv6 Source-Specific Multicast (SSM)
+#options		CCITT,LLC,HDLC		# X.25
 options 		NS			     	# XNS
 options 		NSIP				# XNS tunneling over IP
 options 		PPP_BSDCOMP			# BSD-Compress compression support for PPP

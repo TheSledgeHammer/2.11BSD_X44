@@ -34,31 +34,34 @@ static job	*jhead = NULL, *jtail = NULL;
 
 
 void
-job_add(e, u)
-	register entry *e;
-	register user *u;
+job_add(entry *e, user *u)
 {
 	register job *j;
 
 	/* if already on queue, keep going */
-	for (j=jhead; j; j=j->next)
-		if (j->e == e && j->u == u) { return; }
+	for (j = jhead; j; j = j->next)
+		if (j->e == e && j->u == u) {
+			return;
+		}
 
 	/* build a job queue element */
-	j = (job*)malloc(sizeof(job));
-	j->next = (job*) NULL;
+	j = (job *)malloc(sizeof(job));
+	j->next = (job *)NULL;
 	j->e = e;
 	j->u = u;
 
 	/* add it to the tail */
-	if (!jhead) { jhead=j; }
-	else { jtail->next=j; }
+	if (!jhead) {
+		jhead = j;
+	} else {
+		jtail->next = j;
+	}
 	jtail = j;
 }
 
 
 int
-job_runqueue()
+job_runqueue(void)
 {
 	register job	*j, *jn;
 	register int	run = 0;

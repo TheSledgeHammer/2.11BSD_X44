@@ -15,14 +15,30 @@
  * Paul Vixie          <paul@vix.com>          uunet!decwrl!vixie!paul
  */
 
+#if !defined(POSIX) && !defined(ATT)
+/* classic BSD */
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <dirent.h>
 #include <sys/dir.h>
 
 #define DIR_T struct direct
-#define	WEXITSTATUS(x)	((x).w_retcode)
-#define	WTERMSIG(x)	((x).w_termsig)
-#define	WCOREDUMP(x)	((x).w_coredump)
 
-extern	int		setsid __P((void));
+#endif
+
+#ifndef WEXITSTATUS
+#define	WEXITSTATUS(x)	((x).w_retcode)
+#endif
+
+#ifndef WTERMSIG
+#define	WTERMSIG(x)		((x).w_termsig)
+#endif
+
+#ifndef WCOREDUMP
+#define	WCOREDUMP(x)	((x).w_coredump)
+#endif
+
+#ifdef NEED_SETSID
+extern	int		setsid(void);
+#endif

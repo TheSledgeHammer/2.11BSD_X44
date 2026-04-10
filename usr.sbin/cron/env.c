@@ -24,7 +24,7 @@ static char rcsid[] = "$Id: env.c,v 2.7 1994/01/26 02:25:50 vixie Exp vixie $";
 
 
 char **
-env_init()
+env_init(void)
 {
 	register char	**p = (char **) malloc(sizeof(char **));
 
@@ -34,8 +34,7 @@ env_init()
 
 
 void
-env_free(envp)
-	char	**envp;
+env_free(char **envp)
 {
 	register char	**p;
 
@@ -46,16 +45,15 @@ env_free(envp)
 
 
 char **
-env_copy(envp)
-	char	**envp;
+env_copy(char **envp)
 {
 	register int	count, i;
 	register char	**p;
 
-	for (count = 0;  envp[count] != NULL;  count++)
+	for (count = 0; envp[count] != NULL; count++)
 		;
-	p = (char **) malloc((count+1) * sizeof(char *));  /* 1 for the NULL */
-	for (i = 0;  i < count;  i++)
+	p = (char **)malloc((count + 1) * sizeof(char*)); /* 1 for the NULL */
+	for (i = 0; i < count; i++)
 		p[i] = strdup(envp[i]);
 	p[count] = NULL;
 	return (p);
@@ -63,9 +61,7 @@ env_copy(envp)
 
 
 char **
-env_set(envp, envstr)
-	char	**envp;
-	char	*envstr;
+env_set(char **envp, char *envstr)
 {
 	register int	count, found;
 	register char	**p;
@@ -109,9 +105,7 @@ env_set(envp, envstr)
  *		TRUE = was an env setting
  */
 int
-load_env(envstr, f)
-	char	*envstr;
-	FILE	*f;
+load_env(char *envstr, FILE *f)
 {
 	long	filepos;
 	int	fileline;
@@ -161,14 +155,12 @@ load_env(envstr, f)
 
 
 char *
-env_get(name, envp)
-	char	*name;
-	char	**envp;
+env_get(char *name, char **envp)
 {
 	register int	len = strlen(name);
 	register char	*p, *q;
 
-	while (p = *envp++) {
+	while ((p = *envp++)) {
 		if (!(q = strchr(p, '=')))
 			continue;
 		if ((q - p) == len && !strncmp(p, name, len))

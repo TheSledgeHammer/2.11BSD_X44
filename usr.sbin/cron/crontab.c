@@ -40,25 +40,24 @@ static char	*Options[] = { "???", "list", "delete", "edit", "replace" };
 #endif
 
 
-static	PID_T		Pid;
-static	char		User[MAX_UNAME], RealUser[MAX_UNAME];
-static	char		Filename[MAX_FNAME];
-static	FILE		*NewCrontab;
-static	int		CheckErrorCount;
-static	enum opt_t	Option;
-static	struct passwd	*pw;
-static	void		list_cmd __P((void)),
-			delete_cmd __P((void)),
-			edit_cmd __P((void)),
-			poke_daemon __P((void)),
-			check_error __P((char *)),
-			parse_args __P((int c, char *v[]));
-static	int		replace_cmd __P((void));
+static PID_T		Pid;
+static char		User[MAX_UNAME], RealUser[MAX_UNAME];
+static char		Filename[MAX_FNAME];
+static FILE		*NewCrontab;
+static int		CheckErrorCount;
+static enum opt_t	Option;
+static struct passwd	*pw;
+static void list_cmd(void),
+			delete_cmd(void),
+			edit_cmd(void),
+			poke_daemon(void),
+ 	 	 	check_error(char *),
+			parse_args(int c, char *v[]);
+static int	replace_cmd(void);
 
 
 static void
-usage(msg)
-	char *msg;
+usage(char *msg)
 {
 	fprintf(stderr, "%s: usage error: %s\n", ProgramName, msg);
 	fprintf(stderr, "usage:\t%s [-u user] file\n", ProgramName);
@@ -72,9 +71,7 @@ usage(msg)
 
 
 int
-main(argc, argv)
-	int	argc;
-	char	*argv[];
+main(int argc, char	*argv[])
 {
 	int	exitstatus;
 
@@ -112,9 +109,7 @@ main(argc, argv)
 	
 
 static void
-parse_args(argc, argv)
-	int	argc;
-	char	*argv[];
+parse_args(int argc, char *argv[])
 {
 	int		argch;
 
@@ -221,7 +216,8 @@ parse_args(argc, argv)
 
 
 static void
-list_cmd() {
+list_cmd(void)
+{
 	char	n[MAX_FNAME];
 	register FILE	*f;
 	int	ch;
@@ -246,7 +242,8 @@ list_cmd() {
 
 
 static void
-delete_cmd() {
+delete_cmd(void)
+{
 	char	n[MAX_FNAME];
 
 	log_it(RealUser, Pid, "DELETE", User);
@@ -263,8 +260,7 @@ delete_cmd() {
 
 
 static void
-check_error(msg)
-	char	*msg;
+check_error(char *msg)
 {
 	CheckErrorCount++;
 	fprintf(stderr, "\"%s\":%d: %s\n", Filename, LineNumber-1, msg);
@@ -272,7 +268,8 @@ check_error(msg)
 
 
 static void
-edit_cmd() {
+edit_cmd(void)
+{
 	char		n[MAX_FNAME], q[MAX_TEMPSTR], *editor;
 	register FILE	*f;
 	register int	ch;
@@ -466,7 +463,8 @@ edit_cmd() {
  *		-2	on install error
  */
 static int
-replace_cmd() {
+replace_cmd(void)
+{
 	char	n[MAX_FNAME], envstr[MAX_ENVSTR], tn[MAX_FNAME];
 	register FILE	*tmp;
 	register int	ch;
@@ -573,7 +571,8 @@ replace_cmd() {
 
 
 static void
-poke_daemon() {
+poke_daemon(void)
+{
 	struct timeval tvs[2];
 
 	(void) gettimeofday(&tvs[0], NULL);

@@ -76,22 +76,17 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: ccitt_proto.c,v 1.16 2005/01/23 22:24:39 matt Exp $");
 
+#include "opt_ccitt.h"
+
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/protosw.h>
 #include <sys/domain.h>
 
-#include <netccitt/x25.h>
-
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <net/if_llc.h>
-
-#include <netccitt/x25.h>
-
 #include <net/radix.h>
-
-extern	struct domain ccittdomain;
 
 #ifdef LLC
 #include <net/if.h>
@@ -105,6 +100,9 @@ extern	struct domain ccittdomain;
 #include <netccitt/hd_var.h>
 #endif
 #include <netccitt/pk_extern.h>
+#include <netccitt/x25.h>
+
+extern	struct domain ccittdomain;
 
 struct protosw ccittsw[] = {
 #ifdef LLC

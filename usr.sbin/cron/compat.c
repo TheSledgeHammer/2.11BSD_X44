@@ -36,22 +36,20 @@ static char rcsid[] = "$Id: compat.c,v 1.6 1994/01/15 20:43:43 vixie Exp $";
 int
 setsid()
 {
-	int	newpgrp;
-	register int	fd;
+	int newpgrp;
+	register int fd;
 
 	newpgrp = setpgrp(0, getpid());
-	if	((fd = open(_PATH_TTY, 2)) >= 0)
-		{
-		(void) ioctl(fd, TIOCNOTTY, (char*)0);
+	if ((fd = open(_PATH_TTY, 2)) >= 0) {
+		(void) ioctl(fd, TIOCNOTTY, (char*) 0);
 		(void) close(fd);
-		}
-	if	((fd = open(_PATH_DEVNULL, O_RDWR, 0)) != -1)
-		{
-		(void)dup2(fd, 0);
-		(void)dup2(fd, 1);
-		(void)dup2(fd, 2);
-		if	(fd > 2)
-			(void)close(fd);
-		}
+	}
+	if ((fd = open(_PATH_DEVNULL, O_RDWR, 0)) != -1) {
+		(void) dup2(fd, 0);
+		(void) dup2(fd, 1);
+		(void) dup2(fd, 2);
+		if (fd > 2)
+			(void) close(fd);
+	}
 	return newpgrp;
 }

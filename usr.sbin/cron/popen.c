@@ -42,8 +42,7 @@ static PID_T *pids;
 static int fds;
 
 FILE *
-cron_popen(program, type)
-	char *program, *type;
+cron_popen(char *program, char *type)
 {
 	register char *cp;
 	FILE *iop;
@@ -141,8 +140,7 @@ pfree:
 }
 
 int
-cron_pclose(iop)
-	FILE *iop;
+cron_pclose(FILE *iop)
 {
 	register int fdes;
 	sigset_t omask, nmask;
@@ -154,17 +152,17 @@ cron_pclose(iop)
 	 * `popened' command, or, if already `pclosed'.
 	 */
 	if (pids == 0 || pids[fdes = fileno(iop)] == 0)
-		return(-1);
-	(void)fclose(iop);
+		return (-1);
+	(void) fclose(iop);
 	sigemptyset(&nmask);
 	sigaddset(&nmask, SIGINT);
 	sigaddset(&nmask, SIGQUIT);
 	sigaddset(&nmask, SIGHUP);
 	sigprocmask(SIG_BLOCK, &nmask, &omask);
-	do	{
+	do {
 		pid = waitpid(pids[fdes], &stat_loc, NULL);
-		} while (pid == -1 && errno == EINTR);
-	(void)sigprocmask(SIG_SETMASK, &omask, NULL);
+	} while (pid == -1 && errno == EINTR);
+	(void) sigprocmask(SIG_SETMASK, &omask, NULL);
 	pids[fdes] = 0;
 	return (pid == -1 ? -1 : WEXITSTATUS(stat_loc));
 }

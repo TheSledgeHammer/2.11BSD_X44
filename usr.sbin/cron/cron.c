@@ -25,27 +25,26 @@ static char sccsid[] = "@(#)cron.c 2.11.1 (2.11BSD) 1999/08/05";
 #include <sys/signal.h>
 #include <sys/time.h>
 
-static	void	usage __P((void)),
-		run_reboot_jobs __P((cron_db *)),
-		cron_tick __P((cron_db *)),
-		cron_sync __P((void)),
-		cron_sleep __P((void)),
-		sigchld_handler __P((int)),
-		sighup_handler __P((int)),
-		parse_args __P((int c, char *v[]));
+static void	usage(void),
+			run_reboot_jobs(cron_db *),
+			cron_tick(cron_db *),
+			cron_sync(void),
+			cron_sleep(void),
+			sigchld_handler(int),
+			sighup_handler(int),
+			parse_args(int c, char *v[]);
 
 
 static void
-usage() {
+usage(void)
+{
 	fprintf(stderr, "usage:  %s [-x debugflag[,...]]\n", ProgramName);
 	exit(ERROR_EXIT);
 }
 
 
 int
-main(argc, argv)
-	int	argc;
-	char	*argv[];
+main(int argc, char *argv[])
 {
 	cron_db	database;
 
@@ -117,8 +116,7 @@ main(argc, argv)
 
 
 static void
-run_reboot_jobs(db)
-	cron_db *db;
+run_reboot_jobs(cron_db *db)
 {
 	register user		*u;
 	register entry		*e;
@@ -135,8 +133,7 @@ run_reboot_jobs(db)
 
 
 static void
-cron_tick(db)
-	cron_db	*db;
+cron_tick(cron_db *db)
 {
  	register struct tm	*tm = localtime(&TargetTime);
 	register int		minute, hour, dom, month, dow;
@@ -190,7 +187,8 @@ cron_tick(db)
  * that's something sysadmin's know to expect what with crashing computers..
  */
 static void
-cron_sync() {
+cron_sync(void)
+{
  	register struct tm	*tm;
 
 	TargetTime = time((time_t*)0);
@@ -200,7 +198,8 @@ cron_sync() {
 
 
 static void
-cron_sleep() {
+cron_sleep(void)
+{
 	register int	seconds_to_wait;
 
 	do {
@@ -228,7 +227,8 @@ cron_sleep() {
 
 
 static void
-sigchld_handler(x) {
+sigchld_handler(int x)
+{
 	WAIT_T		waiter;
 	PID_T		pid;
 
@@ -252,15 +252,14 @@ sigchld_handler(x) {
 }
 
 static void
-sighup_handler(x) {
+sighup_handler(int x)
+{
 	log_close();
 }
 
 
 static void
-parse_args(argc, argv)
-	int	argc;
-	char	*argv[];
+parse_args(int argc, char *argv[])
 {
 	int	argch;
 

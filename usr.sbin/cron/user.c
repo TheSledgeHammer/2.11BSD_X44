@@ -26,8 +26,7 @@ static char rcsid[] = "$Id: user.c,v 2.8 1994/01/15 20:43:43 vixie Exp $";
 
 
 void
-free_user(u)
-	user	*u;
+free_user(user *u)
 {
 	register entry	*e, *ne;
 
@@ -41,10 +40,7 @@ free_user(u)
 
 
 user *
-load_user(crontab_fd, pw, name)
-	int		crontab_fd;
-	struct passwd	*pw;		/* NULL implies syscrontab */
-	char		*name;
+load_user(int crontab_fd, struct passwd *pw /* NULL implies syscrontab */, char *name)
 {
 	char	envstr[MAX_ENVSTR];
 	FILE	*file;

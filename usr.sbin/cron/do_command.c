@@ -25,12 +25,10 @@ static char rcsid[] = "$Id: do_command.c,v 2.12 1994/01/15 20:43:43 vixie Exp $"
 # include <syslog.h>
 #endif
 
-static void		child_process __P((entry *, user *));
+static void		child_process(entry *, user *);
 
 void
-do_command(e, u)
-	entry	*e;
-	user	*u;
+do_command(entry *e, user *u)
 {
 	Debug(DPROC, ("[%d] do_command(%s, (%s,%d,%d))\n",
 		getpid(), e->cmd, u->name, e->uid, e->gid))
@@ -62,9 +60,7 @@ do_command(e, u)
 
 
 static void
-child_process(e, u)
-	entry	*e;
-	user	*u;
+child_process(entry *e, user *u)
 {
 	int		stdin_pipe[2], stdout_pipe[2];
 	register char	*input_data;
@@ -77,7 +73,7 @@ child_process(e, u)
 	/* mark ourselves as different to PS command watchers by upshifting
 	 * our program name.  This has no effect on some kernels.
 	 */
-	for (input_data = ProgramName;  ch = *input_data;  input_data++)
+	for (input_data = ProgramName;  (ch = *input_data);  input_data++)
 		*input_data = (islower(ch) ? toupper(ch) : ch);
 
 	/* discover some useful and important environment settings
@@ -106,7 +102,7 @@ child_process(e, u)
 	 * but that happens later.
 	 */
 	escaped = FALSE;
-	for (input_data = e->cmd;  ch = *input_data;  input_data++) {
+	for (input_data = e->cmd;  (ch = *input_data);  input_data++) {
 		if (escaped) {
 			escaped = FALSE;
 			continue;

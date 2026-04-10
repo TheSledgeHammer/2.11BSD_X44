@@ -39,6 +39,11 @@
 #ifndef _NETCCITT_PK_EXTERN_H_
 #define _NETCCITT_PK_EXTERN_H_
 
+#ifndef CCITT_TYPES_DEFINED
+#define CCITT_TYPES_DEFINED
+typedef u_char octet;
+#endif
+
 #ifdef _KERNEL
 
 #include <netccitt/x25isr.h>
@@ -64,6 +69,7 @@ void mbuf_cache(struct mbuf_cache *, struct mbuf *);
 struct pkcb *pk_newlink(struct x25_ifaddr *, caddr_t);
 int pk_dellink(struct pkcb *);
 int pk_resize(struct pkcb *);
+
 void *pk_ctlinput(int, struct sockaddr *, void *);
 void pkintr(void);
 void pk_input(struct mbuf *, ...);
@@ -122,7 +128,7 @@ void pk_message(int, struct x25config *, char *, ...) __attribute__((__format__(
 int pk_fragment(struct pklcd *, struct mbuf *, int, int, int);
 
 /* pk_timer.c */
-void pk_timer(void);
+void pk_slowtimo(void);
 
 /* pk_usrreq.c */
 int pk_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);

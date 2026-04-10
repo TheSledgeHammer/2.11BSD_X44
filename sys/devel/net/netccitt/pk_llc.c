@@ -41,7 +41,7 @@
 
 #include <sys/cdefs.h>
 
-#include "opt_llc.h"
+#include "opt_ccitt.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
