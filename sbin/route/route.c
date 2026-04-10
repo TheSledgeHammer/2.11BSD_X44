@@ -64,7 +64,7 @@ __RCSID("$NetBSD: route.c,v 1.71 2004/01/05 23:23:33 jmmv Exp $");
 #include "iso.h"
 #endif
 #ifdef CCITT
-#include "x25.h"
+#include <netccitt/x25.h>
 #endif
 #include <arpa/inet.h>
 #include <netdb.h>
