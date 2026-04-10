@@ -231,22 +231,22 @@ struct mbuf {
 #define	M_COPYFLAGS		(M_PKTHDR|M_EOR|M_BCAST|M_MCAST|M_CANFASTFWD|M_ANYCAST6|M_LINK0|M_LINK1|M_LINK2|M_LOOP)
 
 /* mbuf types */
-#define	MT_FREE			M_FREE  	/* 0 should be on free list */
-#define	MT_DATA			M_MBUF		/* 1 dynamic (data) allocation */
-#define	MT_HEADER		M_MBUF		/* 2 packet header */
-#define	MT_SOCKET		M_SOCKET	/* 3 socket structure */
-#define	MT_PCB			M_PCB		/* 4 protocol control block */
-#define	MT_RTABLE		M_RTABLE	/* 5 routing tables */
-#define	MT_HTABLE		M_HTABLE	/* 6 IMP host tables */
-#define	MT_ATABLE		0			/* 7 address resolution tables */
-#define	MT_SONAME		M_MBUF		/* 8 socket name */
-#define	MT_ZOMBIE		0			/* 9 zombie proc status */
-#define	MT_SOOPTS		M_SOOPTS	/* 10 socket options */
-#define	MT_FTABLE		M_FTABLE	/* 11 fragment reassembly header */
-#define	MT_RIGHTS		M_MBUF 		/* 12 access rights */
-#define	MT_IFADDR		M_IFADDR	/* 13 interface address */
-#define MT_CONTROL		M_MBUF 		/* 14 extra-data protocol message */
-#define MT_OOBDATA		M_MBUF		/* 15 expedited data  */
+#define	MT_FREE			0  	    /* 0 should be on free list */
+#define	MT_DATA			1		/* 1 dynamic (data) allocation */
+#define	MT_HEADER		2		/* 2 packet header */
+#define	MT_SOCKET		3	    /* 3 socket structure */
+#define	MT_PCB			4		/* 4 protocol control block */
+#define	MT_RTABLE		5	    /* 5 routing tables */
+#define	MT_HTABLE		6	    /* 6 IMP host tables */
+#define	MT_ATABLE		7		/* 7 address resolution tables */
+#define	MT_SONAME		8		/* 8 socket name */
+#define	MT_ZOMBIE		9		/* 9 zombie proc status */
+#define	MT_SOOPTS		10	    /* 10 socket options */
+#define	MT_FTABLE		11	    /* 11 fragment reassembly header */
+#define	MT_RIGHTS		12  	/* 12 access rights */
+#define	MT_IFADDR		13	    /* 13 interface address */
+#define MT_CONTROL		14 		/* 14 extra-data protocol message */
+#define MT_OOBDATA		15		/* 15 expedited data  */
 #define	NMBTYPES		16
 
 /* flags to m_get */

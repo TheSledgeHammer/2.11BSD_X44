@@ -320,6 +320,7 @@ void	sbwakeup(struct sockbuf *);
 void	sowakeup(struct socket *, struct sockbuf *);
 int		soreserve(struct socket *, int, int);
 int		sbreserve(struct sockbuf *, u_long);
+void	sbinsertoob(struct sockbuf *, struct mbuf *);
 void	sbrelease(struct sockbuf *);
 void	sbappend(struct sockbuf *, struct mbuf *);
 void	sbappendrecord(struct sockbuf *, struct mbuf *);
