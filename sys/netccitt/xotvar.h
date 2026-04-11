@@ -29,6 +29,8 @@
 #ifndef _NETCCITT_XOTVAR_H_
 #define _NETCCITT_XOTVAR_H_
 
+#define IPPROTO_XOT 	40
+
 struct sockaddr_xot {
 
 };
@@ -53,7 +55,7 @@ struct xot_tcphdr {
 #define XOT_TCPPORT 	1998 /* tcp port number */
 #define XOT_TCPHLEN 	(sizeof(struct xot_hdr) + sizeof(struct tcphdr)) /* xot_hdr + tcphdr header length */
 
-/* xot ip */
+/* xot ipv4 */
 struct xot_iphdr {
 	struct ip			xi_ip;
 #define xi_src 			xi_ip.ip_src	/* source ip address */
@@ -64,15 +66,39 @@ struct xot_iphdr {
 #define xi_ttl			xi_ip.ip_ttl	/* ip ttl */
 };
 
+/* xot ipv6 */
+struct xot_ip6hdr {
+	struct ip6_hdr 		xi6_ip6;
+#define xi6_src 		xi6_ip.ip6_src	/* source ip address */
+#define xi6_dst			xi6_ip.ip6_dst	/* destination ip address */
+};
+
 #define XOT_IPHLEN 		(sizeof(struct xot_hdr) + sizeof(struct ip)) /* xot_hdr + ip header length */
 #define XOT_TCPIPHLEN	(sizeof(struct xot_hdr) + sizeof(struct tcphdr) + sizeof(struct ip))  /* xot_hdr + tcphdr + ip header length */
 
 /* xot packet */
 struct xot_packet {
 	struct xot_iphdr	xp_ip;
+#ifndef XOT_TUN
 	struct xot_tcphdr	xp_tcp;
+#endif
 	struct xot_hdr 		xp_hdr;
 	struct x25_packet	xp_x25p;
 };
 
+
+/* xot_subr.c */
+void xot_packet_init(struct mbuf *, struct xot_packet *, struct sockaddr_in *, struct sockaddr_in *dst, u_char, u_char, int, u_int16_t, int);
+bool_t xot_hdr_isvalid(struct xot_packet *);
+bool_t xot_tcp_isvalid(struct xot_packet *);
+
+/* xot_tun.c */
+#ifdef XOT_TUN
+void xot_tun_attach(void);
+int xot_tun_ioctl(struct ifnet *, u_long, caddr_t);
+void xotiphdr(struct xot_packet *, struct route *, int);
+void xotrtrequest(int, struct rtentry *, struct rt_addrinfo *);
+int xot_tun_output(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
+void xot_tun_input(struct mbuf *, ...);
+#endif
 #endif /* _NETCCITT_XOTVAR_H_ */

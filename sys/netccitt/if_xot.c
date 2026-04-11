@@ -31,11 +31,15 @@
  *
  * 1)
  * 		XOT: RFC1613
- * 		X.25 over TCP/IP (XOT)
+ * 		- X.25 over TCP/IP (XOT)
+ * 		- Follows the above RFC documentation as close as possible.
+ *
  * 2)
- * 		XOT:
- * 		X.25 Tunnel over IP (Similar to ISO EON)
- * 		Will use the gif tunnel protocol
+ * 		XOT_TUN:
+ * 		- see xot_tun.c for current implementation
+ * 		- X.25 Tunnel over IP (Similar to ISO EON)
+ * 		- Does not use tcp header.
+ * 		- Will provide interface with gif tunnel.
  */
 
 #include <sys/cdefs.h>
@@ -65,12 +69,12 @@
 #include <netccitt/pk_var.h>
 #include <netccitt/xotvar.h>
 
-#define IPPROTO_XOT 	40
-
 void
-xotattach()
+xotattach(void)
 {
-
+#ifdef XOT_TUN
+	xot_tun_init();
+#endif
 }
 
 static void
@@ -79,79 +83,6 @@ xot_mbuf_init(struct mbuf *m, struct xot_packet *xot)
 	m->m_data = (caddr_t)&xot->xp_hdr;
 	m->m_len = sizeof(struct xot_hdr);
 	m->m_next = 0;
-}
-
-static void
-xot_ip_init(struct mbuf *m, struct xot_iphdr *xip, struct in_addr src, struct in_addr dst, int ipproto, int zero)
-{
-	if (zero) {
-		bzero((caddr_t)xip, sizeof(*xip));
-	}
-	switch (ipproto) {
-	case CCITTPROTO_TCP:
-		xip->xi_p = CCITTPROTO_TCP;
-		xip->xi_ttl = MAXTTL;
-		xip->xi_len = XOT_TCPIPHLEN;
-		xip->xi_sum = in4_cksum(m, CCITTPROTO_TCP, sizeof(struct ip), m->m_pkthdr.len);
-		break;
-	case IPPROTO_XOT:
-		xip->xi_p = IPPROTO_XOT;
-		xip->xi_ttl = MAXTTL;
-		xip->xi_len = XOT_IPHLEN;
-		xip->xi_sum = in4_cksum(m, IPPROTO_XOT, sizeof(struct ip), m->m_pkthdr.len);
-		break;
-	}
-	xip->xi_src = src;
-	xip->xi_dst = dst;
-}
-
-static void
-xot_tcp_init(struct xot_tcphdr *xtcp, int zero)
-{
-	if (zero) {
-		bzero((caddr_t)xtcp, sizeof(*xtcp));
-	}
-	xtcp->xt_sport = XOT_TCPPORT;
-	xtcp->xt_dport = XOT_TCPPORT;
-}
-
-static void
-xot_hdr_init(struct xot_hdr *hdr, u_char xotver, u_char xotlen, int zero)
-{
-	if (zero) {
-		bzero((caddr_t)hdr, sizeof(*hdr));
-	}
-	if (xotver != XOT_HDR_VERSION) {
-		xotver = -1;
-	}
-	if (xotlen != XOT_HDR_LENGTH) {
-		xotlen = -1;
-	}
-	hdr->xh_vers = xotver;
-	hdr->xh_len = xotlen;
-}
-
-static void
-xot_init(struct mbuf *m, struct xot_packet *xot, struct in_addr src, struct in_addr dst, u_char xotver, u_char xotlen, int ipproto, int zero)
-{
-	xot_ip_init(m, &xot->xp_ip, src, dst, ipproto, zero);
-	xot_tcp_init(&xot->xp_tcp, zero);
-	xot_hdr_init(&xot->xp_hdr, xotver, xotlen, zero);
-	xot_mbuf_init(m, xot);
-}
-
-void
-xot_packet_init(struct mbuf *m, struct xot_packet *xot, struct sockaddr_in *src, struct sockaddr_in *dst, u_char xotver, u_char xotlen, int ipproto, int zero)
-{
-	if (src != NULL) {
-		src->sin_family = AF_INET;
-		src->sin_len = sizeof(*src);
-	}
-	if (dst != NULL) {
-		dst->sin_family = AF_INET;
-		dst->sin_len = sizeof(*dst);
-	}
-	xot_init(m, xot, src->sin_addr, dst->sin_addr, xotver, xotlen, ipproto, zero);
 }
 
 #ifdef notyet

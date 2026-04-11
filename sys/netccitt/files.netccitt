@@ -3,6 +3,8 @@
 defflag	opt_ccitt.h	CCITT
 defflag	opt_ccitt.h	HDLC			# CCITT over HDLC
 defflag	opt_ccitt.h	LLC				# CCITT over LLC2 (& IEEE LLC?)
+defflag	opt_ccitt.h	XOT				# CCITT over TCP/IP
+defflag	opt_ccitt.h	XOT_TUN			# CCITT over IP Tunnel
 
 file	netccitt/ccitt_proto.c		ccitt
 file	netccitt/hd_debug.c			hdlc
