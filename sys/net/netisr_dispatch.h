@@ -38,6 +38,9 @@
 #ifdef NS
 	DONET(NETISR_NS,nsintr)
 #endif
+#ifdef CCITT
+	DONET(NETISR_CCITT,ccittintr);
+#endif
 #if NSL > 0 && !defined(__HAVE_GENERIC_SOFT_INTERRUPTS)
 	DONET(NETISR_SLIP,slnetisr);
 #endif

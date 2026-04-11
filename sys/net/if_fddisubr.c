@@ -99,6 +99,7 @@
 __KERNEL_RCSID(0, "$NetBSD: if_fddisubr.c,v 1.52 2004/03/22 18:02:12 matt Exp $");
 
 #include "opt_inet.h"
+#include "opt_ccitt.h"
 #include "opt_ns.h"
 
 #include "bpfilter.h"
@@ -146,6 +147,15 @@ __KERNEL_RCSID(0, "$NetBSD: if_fddisubr.c,v 1.52 2004/03/22 18:02:12 matt Exp $"
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
+#endif
+
+#ifdef LLC
+#include <netccitt/dll.h>
+#include <netccitt/llc_var.h>
+#endif
+
+#if defined(LLC) && defined(CCITT)
+extern struct ifqueue pkintrq;
 #endif
 
 #define senderr(e) { error = (e); goto bad;}
@@ -275,7 +285,6 @@ fddi_output(ifp, m0, dst, rt0)
 #endif /* AF_ARP */
 	case AF_IPX:
 	case AF_APPLETALK:
-
 #ifdef NS
 	case AF_NS:
 		etype = htons(ETHERTYPE_NS);
@@ -288,10 +297,50 @@ fddi_output(ifp, m0, dst, rt0)
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		break;
 #endif
-
 	case AF_ISO:
+#ifdef	LLC
 /*	case AF_NSAP: */
-	case AF_CCITT: {
+	case AF_CCITT:
+	{
+		struct sockaddr_dl *sdl = (struct sockaddr_dl *)rt->rt_gateway;
+
+		if (sdl && sdl->sdl_family == AF_LINK && sdl->sdl_alen > 0) {
+			bcopy(LLADDR(sdl), (char*) edst, sizeof(edst));
+		} else {
+			goto bad;
+		}
+		/* Not a link interface ? Funny ... */
+
+		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1)
+				&& (mcopy = m_copy(m, 0, (int) M_COPYALL))) {
+			M_PREPEND(mcopy, sizeof(*fh), M_DONTWAIT);
+			if (mcopy) {
+				fh = mtod(mcopy, struct fddi_header *);
+				bcopy((caddr_t) edst, (caddr_t)fh->fddi_dhost, sizeof(edst));
+				bcopy((caddr_t) FDDIADDR(ifp), (caddr_t)fh->fddi_shost, sizeof(edst));
+				fh->fddi_fc = FDDIFC_LLC_ASYNC | FDDIFC_LLC_PRIO4;
+			}
+		}
+		etype = 0;
+#ifdef LLC_DEBUG
+		{
+			int i;
+			struct llc *l = mtod(m, struct llc *);
+
+			printf("fddi_output: sending LLC2 pkt to: ");
+			for (i = 0; i < 6; i++) {
+				printf("%x ", edst[i] & 0xff);
+			}
+			printf(" len 0x%x dsap 0x%x ssap 0x%x control 0x%x\n",
+					m->m_pkthdr.len, l->llc_dsap & 0xff, l->llc_ssap & 0xff,
+					l->llc_control & 0xff);
+
+		}
+#endif /* LLC_DEBUG */
+		break;
+	}
+
+#endif /* LLC */
 
 	case pseudo_AF_HDRCMPLT:
 	{
@@ -530,8 +579,28 @@ fddi_input(ifp, m)
 		break;
 	}
 #endif /* INET || NS */
-	case LLC_ISO_LSAP: 
+	case LLC_ISO_LSAP:
+#ifdef LLC
 	case LLC_X25_LSAP:
+	{
+		M_PREPEND(m, sizeof(struct sockaddr_dl_header), M_DONTWAIT);
+		if (m == 0) {
+			return;
+		}
+		if (!sockaddr_dl_sethdrif(ifp, fh->fddi_shost, LLC_X25_LSAP, fh->fddi_dhost,
+		LLC_X25_LSAP, 6, m, AF_CCITT)) {
+			panic("ETHER cons addr failure");
+		}
+		mtod(m, struct sockaddr_dl_header *)->sdlhdr_len = m->m_pkthdr.len
+				- sizeof(struct sockaddr_dl_header);
+#ifdef LLC_DEBUG
+		printf("llc packet\n");
+#endif /* LLC_DEBUG */
+		schednetisr(NETISR_CCITT);
+		inq = &llcintrq;
+		break;
+	}
+#endif /* LLC */
 	default:
 		ifp->if_noproto++;
 	dropanyway:

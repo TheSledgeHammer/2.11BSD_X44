@@ -227,11 +227,11 @@ xotiphdr(struct xot_packet *xot, struct route *ro, int ipproto, int zero)
 }
 
 void
-xotrtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst, int ipproto)
+xotrtrequest(int cmd, struct rtentry *rt, struct rt_addrinfo *info, int ipproto)
 {
 	struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
 
-	x25_rtrequest2(cmd, rt, lx, dst);
+	x25_rtrequest2(cmd, rt, lx, info);
 	lx->lx_flags |= RTF_UP;
 	xotiphdr(&lx->lx_xot, &lx->lx_route, ipproto, 0);
 	if (lx->lx_route.ro_rt) {

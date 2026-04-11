@@ -64,6 +64,7 @@
 __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron Exp $");
 
 #include "opt_inet.h"
+#include "opt_ccitt.h"
 #include "opt_ns.h"
 #include "opt_gateway.h"
 #include "opt_pfil_hooks.h"
@@ -140,6 +141,15 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
+#endif
+
+#ifdef LLC
+#include <netccitt/dll.h>
+#include <netccitt/llc_var.h>
+#endif
+
+#if defined(LLC) && defined(CCITT)
+extern struct ifqueue pkintrq;
 #endif
 
 #ifdef MPLS
@@ -300,7 +310,41 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 /*	case AF_NSAP: */
 	case AF_APPLETALK:
 	case AF_ISO:
+#ifdef LLC
 	case AF_CCITT:
+		struct sockaddr_dl *sdl = (struct sockaddr_dl *)rt->rt_gateway;
+
+		if (sdl && sdl->sdl_family == AF_LINK && sdl->sdl_alen > 0) {
+			bcopy(LLADDR(sdl), (char*) edst, sizeof(edst));
+		} else {
+			goto bad;
+		}
+		/* Not a link interface ? Funny ... */
+		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1)
+				&& (mcopy = m_copy(m, 0, (int) M_COPYALL))) {
+			M_PREPEND(mcopy, sizeof(*eh), M_DONTWAIT);
+			if (mcopy) {
+				eh = mtod(mcopy, struct ether_header *);
+				bcopy((caddr_t) edst, (caddr_t)eh->ether_dhost, sizeof(edst));
+				bcopy(LLADDR(ifp->if_sadl), (caddr_t)eh->ether_shost, sizeof(edst));
+			}
+		}
+#ifdef LLC_DEBUG
+		{
+			struct llc *l = mtod(m, struct llc*);
+			int i;
+
+			printf("ether_output: sending LLC2 pkt to: ");
+			for (i = 0; i < 6; i++) {
+				printf("%x ", edst[i] & 0xff);
+			}
+			printf(" len 0x%x dsap 0x%x ssap 0x%x control 0x%x\n",
+					m->m_pkthdr.len, l->llc_dsap & 0xff, l->llc_ssap & 0xff,
+					l->llc_control & 0xff);
+		}
+#endif /* LLC_DEBUG */
+		break;
+#endif /* LLC */
 	case pseudo_AF_HDRCMPLT:
 		hdrcmplt = 1;
 		eh = (struct ether_header *)dst->sa_data;
@@ -802,7 +846,28 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 			break;
 		case LLC_ARP_LSAP:
 		case LLC_XNS_LSAP:
+#ifdef LLC
 		case LLC_X25_LSAP:
+			if (m->m_pkthdr.len > etype) {
+				m_adj(m, etype - m->m_pkthdr.len);
+			}
+			M_PREPEND(m, sizeof(struct sockaddr_dl_header), M_DONTWAIT);
+			if (m == 0) {
+				return;
+			}
+			if (!sockaddr_dl_sethdrif(ifp, eh->ether_shost, LLC_X25_LSAP,
+					eh->ether_dhost, LLC_X25_LSAP, 6, m, AF_CCITT)) {
+				panic("ETHER cons addr failure");
+			}
+
+			mtod(m, struct sockaddr_dl_header *)->sdlhdr_len = etype;
+#ifdef LLC_DEBUG
+			printf("llc packet\n");
+#endif /* LLC_DEBUG */
+			schednetisr(NETISR_CCITT);
+			inq = &llcintrq;
+			break;
+#endif
 		default:
 		    m_freem(m);
 		    return;

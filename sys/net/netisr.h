@@ -88,6 +88,9 @@
 #ifdef NS
 #include <netns/ns_var.h>
 #endif
+#ifdef CCITT
+#include <netccitt/x25isr.h>
+#endif
 
 #ifndef __HAVE_GENERIC_SOFT_INTERRUPTS		/* XXX XXX XXX */
 #if NSL > 0

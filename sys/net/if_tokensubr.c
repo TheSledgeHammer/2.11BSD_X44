@@ -68,6 +68,7 @@
 __KERNEL_RCSID(0, "$NetBSD: if_tokensubr.c,v 1.25 2004/03/22 18:02:12 matt Exp $");
 
 #include "opt_inet.h"
+#include "opt_ccitt.h"
 #include "opt_ns.h"
 #include "opt_gateway.h"
 
@@ -113,6 +114,11 @@ __KERNEL_RCSID(0, "$NetBSD: if_tokensubr.c,v 1.25 2004/03/22 18:02:12 matt Exp $
 
 #include "bpfilter.h"
 
+#ifdef LLC
+#include <netccitt/dll.h>
+#include <netccitt/llc_var.h>
+#endif
+
 /*
  * TODO:
  * handle source routing via send_xid()
@@ -121,6 +127,9 @@ __KERNEL_RCSID(0, "$NetBSD: if_tokensubr.c,v 1.25 2004/03/22 18:02:12 matt Exp $
  * IPX cases
  * handle "fast" forwarding like if_ether and if_fddi
  */
+#if defined(LLC) && defined(CCITT)
+extern struct ifqueue pkintrq;
+#endif
 
 #define senderr(e) { error = (e); goto bad;}
 
@@ -301,7 +310,45 @@ token_output(ifp, m0, dst, rt0)
 		break;
 #endif
 	case AF_ISO:
+#ifdef	LLC
 	case AF_CCITT:
+	{
+		struct sockaddr_dl *sdl = (struct sockaddr_dl *)rt->rt_gateway;
+
+		if (sdl && sdl->sdl_family == AF_LINK && sdl->sdl_alen > 0) {
+			bcopy(LLADDR(sdl), (char*) edst, sizeof(edst));
+		} else {
+			/* Not a link interface ? Funny ... */
+			goto bad;
+		}
+		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1)
+				&& (mcopy = m_copy(m, 0, (int)M_COPYALL))) {
+			M_PREPEND(mcopy, sizeof(*trh), M_DONTWAIT);
+			if (mcopy) {
+				trh = mtod(mcopy, struct token_header *);
+				bcopy((caddr_t) edst, (caddr_t) trh->token_dhost, sizeof(edst));
+				bcopy(LLADDR(ifp->if_sadl), (caddr_t) trh->token_shost, sizeof(edst));
+			}
+		}
+		etype = 0;
+#ifdef LLC_DEBUG
+		{
+			int i;
+			struct llc *l = mtod(m, struct llc *);
+
+			printf("token_output: sending LLC2 pkt to: ");
+			for (i = 0; i < ISO88025_ADDR_LEN; i++) {
+				printf("%x ", edst[i] & 0xff);
+			}
+			printf(" len 0x%x dsap 0x%x ssap 0x%x control 0x%x\n", etype & 0xff,
+					l->llc_dsap & 0xff, l->llc_ssap & 0xff,
+					l->llc_control & 0xff);
+
+		}
+#endif /* LLC_DEBUG */
+		break;
+	}
+#endif /* LLC */
 	case AF_UNSPEC:
 	{
 		struct ether_header *eh;
@@ -328,7 +375,6 @@ token_output(ifp, m0, dst, rt0)
 		    dst->sa_family);
 		senderr(EAFNOSUPPORT);
 	}
-
 
 	if (mcopy)
 		(void) looutput(ifp, mcopy, dst, rt);
@@ -483,7 +529,32 @@ token_input(ifp, m)
 	}
 #endif /* INET || NS */
 	case LLC_ISO_LSAP:
+#ifdef LLC
 	case LLC_X25_LSAP:
+	{
+		/*
+		 * XXX check for source routing info ? (sizeof(struct sockaddr_dl_header) and
+		 * ISO88025_ADDR_LEN)
+		 */
+		M_PREPEND(m, sizeof(struct sockaddr_dl_header), M_DONTWAIT);
+		if (m == 0) {
+			return;
+		}
+		if (!sockaddr_dl_sethdrif(ifp, trh->token_shost, LLC_X25_LSAP,
+				trh->token_dhost, LLC_X25_LSAP, ISO88025_ADDR_LEN, m,
+				AF_CCITT)) {
+			panic("ETHER cons addr failure");
+		}
+		mtod(m, struct sockaddr_dl_header *)->sdlhdr_len = m->m_pkthdr.len
+				- sizeof(struct sockaddr_dl_header);
+#ifdef LLC_DEBUG
+		printf("llc packet\n");
+#endif /* LLC_DEBUG */
+		schednetisr(NETISR_CCITT);
+		inq = &llcintrq;
+		break;
+	}
+#endif /* LLC */
 	default:
 		/* printf("token_input: unknown dsap 0x%x\n", l->llc_dsap); */
 		ifp->if_noproto++;
