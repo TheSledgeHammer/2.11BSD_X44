@@ -54,7 +54,7 @@ exec_ecoff_linker(p, elp)
 		return ENOEXEC;
 	}
 
-	if (ECOFF_BADMAG(ecoff))
+	if (ECOFF_BADMAG(&ecoff->f))
 		return ENOEXEC;
 
 	switch (ecoff->a.magic) {
