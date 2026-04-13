@@ -62,7 +62,7 @@ exec_xcoff_linker(p, elp)
 		return ENOEXEC;
 	}
 
-	if (XCOFF_BADMAG(xcoff)) {
+	if (XCOFF_BADMAG(&xcoff->f)) {
 		return ENOEXEC;
 	}
 
