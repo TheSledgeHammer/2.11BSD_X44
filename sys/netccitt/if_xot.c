@@ -72,7 +72,7 @@
 void
 xotattach(void)
 {
-#ifdef XOT_TUN
+#if !defined(XOT) && defined(XOT_TUN)
 	xot_tun_init();
 #endif
 }

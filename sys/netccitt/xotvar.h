@@ -56,6 +56,7 @@ struct xot_tcphdr {
 #define XOT_TCPHLEN 	(sizeof(struct xot_hdr) + sizeof(struct tcphdr)) /* xot_hdr + tcphdr header length */
 
 /* xot ipv4 */
+#ifdef INET
 struct xot_iphdr {
 	struct ip			xi_ip;
 #define xi_src 			xi_ip.ip_src	/* source ip address */
@@ -66,29 +67,56 @@ struct xot_iphdr {
 #define xi_ttl			xi_ip.ip_ttl	/* ip ttl */
 };
 
-/* xot ipv6 */
-struct xot_ip6hdr {
-	struct ip6_hdr 		xi6_ip6;
-#define xi6_src 		xi6_ip.ip6_src	/* source ip address */
-#define xi6_dst			xi6_ip.ip6_dst	/* destination ip address */
-};
-
 #define XOT_IPHLEN 		(sizeof(struct xot_hdr) + sizeof(struct ip)) /* xot_hdr + ip header length */
 #define XOT_TCPIPHLEN	(sizeof(struct xot_hdr) + sizeof(struct tcphdr) + sizeof(struct ip))  /* xot_hdr + tcphdr + ip header length */
+#endif
+
+/* xot ipv6 */
+#ifdef INET6
+struct xot_ip6hdr {
+	struct ip6_hdr 		xi6_ip6;
+#define xi6_src 		xi6_ip6.ip6_src	/* source ip address */
+#define xi6_dst			xi6_ip6.ip6_dst	/* destination ip address */
+#define xi6_plen		xi6_ip6.ip6_plen	/* payload length */
+#define xi6_nxt			xi6_ip6.ip6_nxt	/* next header */
+};
+
+#define XOT_IP6HLEN 	(sizeof(struct xot_hdr) + sizeof(struct ip6_hdr)) /* xot_hdr + ip6 header length */
+#define XOT_TCPIP6HLEN	(sizeof(struct xot_hdr) + sizeof(struct tcphdr) + sizeof(struct ip6_hdr))  /* xot_hdr + tcphdr + ip6 header length */
+#endif
 
 /* xot packet */
 struct xot_packet {
-	struct xot_iphdr	xp_ip;
-#ifndef XOT_TUN
+	union {
+		struct xot_iphdr  ip4;
+		struct xot_ip6hdr ip6;
+	} xp_ip46;
+#define xp_ip 			xp_ip46.ip4
+#define xp_ip6 			xp_ip46.ip6
+#if defined(XOT) && !defined(XOT_TUN)
 	struct xot_tcphdr	xp_tcp;
 #endif
 	struct xot_hdr 		xp_hdr;
 	struct x25_packet	xp_x25p;
 };
 
+LIST_HEAD(xot_llinfo_head, xot_llinfo) llinfo_eon;
+struct xot_llinfo {
+	LIST_ENTRY(xot_llinfo) xl_list;	/* keep all in a list */
+	int xl_flags;
+	struct rtentry *xl_rt;			/* back pointer to parent route */
+	struct xot_packet xl_xot;		/* xot: x25 over tcp/ip */
+	struct route xl_route;			/* if direct route cache IP info */
+									/* if gateway, cache secondary route */
+};
+#define xl_tcphdr	xl_xot.xp_tcp
+#define xl_iphdr 	xl_xot.xp_ip
+#define xl_xothdr 	xl_xot.xp_hdr
+#define xl_x25p 	xl_xot.xp_x25p
 
+extern struct xot_llinfo_head llinfo_xot;
 /* xot_subr.c */
-void xot_packet_init(struct mbuf *, struct xot_packet *, struct sockaddr_in *, struct sockaddr_in *dst, u_char, u_char, int, u_int16_t, int);
+void xot_packet_init(struct mbuf *, struct xot_packet *, void *, void *, u_char, u_char, int, u_int16_t, int, int);
 bool_t xot_hdr_isvalid(struct xot_packet *);
 bool_t xot_tcp_isvalid(struct xot_packet *);
 

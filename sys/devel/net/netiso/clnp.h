@@ -491,8 +491,8 @@ int troll_output(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentr
 #endif
 
 /* clnp_input.c */
-void clnp_init (void);
-void clnlintr   (void);
+void clnp_init(void);
+void clnlintr(void);
 void clnp_input(struct mbuf *, ...);
 
 /* clnp_options.c */

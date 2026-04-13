@@ -67,6 +67,7 @@
 #include <netccitt/xotvar.h>
 
 struct ifnet  xotif[1];
+struct xot_llinfo_head llinfo_xot;
 
 void
 xot_tun_attach(void)
@@ -78,7 +79,6 @@ xot_tun_attach(void)
 	ifp->if_mtu = ETHERMTU;
 	ifp->if_softc = NULL;
 	/* since everything will go out over ether or token ring */
-
 	ifp->if_ioctl = xot_tun_ioctl;
 	ifp->if_output = xot_tun_output;
 	ifp->if_type = IFT_X25;
@@ -88,6 +88,7 @@ xot_tun_attach(void)
 	if_attach(ifp);
 	if_alloc_sadl(ifp);
 	xot_tun_ioctl(ifp, SIOCSIFADDR, (caddr_t)TAILQ_FIRST(ifp->if_addrlist));
+	LIST_INIT(&llinfo_xot);
 }
 
 int
@@ -138,40 +139,79 @@ xotiphdr(struct xot_packet *xot, struct route *ro, int zero)
 	if (ro->ro_rt) {
 		ro->ro_rt->rt_use++;
 	}
-	xot_packet_init(&mhead, xot, NULL, sin, XOT_HDR_VERSION, XOT_HDR_LENGTH, IPPROTO_XOT, XOT_IPHLEN, zero);
+	mhead.m_data = (caddr_t)&xot->xp_hdr;
+	mhead.m_len = sizeof(struct xot_hdr);
+	mhead.m_next = 0;
+	xot_packet_init(&mhead, xot, NULL, (struct sockaddr_in *)sin, XOT_HDR_VERSION, XOT_HDR_LENGTH, IPPROTO_XOT, XOT_IPHLEN, zero, AF_INET);
 }
 
 void
 xotrtrequest(int cmd, struct rtentry *rt, struct rt_addrinfo *info)
 {
-	struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
+	struct xot_llinfo *xl = (struct xot_llinfo *)rt->rt_llinfo;
+	struct sockaddr *gate;
 
-	x25_rtrequest2(cmd, rt, lx, info);
-	lx->lx_flags |= RTF_UP;
-	xotiphdr(&lx->lx_xot, &lx->lx_route, 0);
-	if (lx->lx_route.ro_rt) {
-		rt->rt_rmx.rmx_mtu = lx->lx_route.ro_rt->rt_rmx.rmx_mtu
-				- sizeof(lx->lx_xot);
+	switch (cmd) {
+	case RTM_DELETE:
+		if (xl) {
+			if (xl->xl_route.ro_rt) {
+				RTFREE(xl->xl_route.ro_rt);
+			}
+			Free(xl);
+			rt->rt_llinfo = 0;
+		}
+		return;
+
+	case RTM_ADD:
+	case RTM_RESOLVE:
+		rt->rt_rmx.rmx_mtu = loif[0].if_mtu;	/* unless better below */
+		R_Malloc(xl, struct xot_llinfo *, sizeof(*xl));
+		rt->rt_llinfo = (caddr_t)xl;
+		if (xl == NULL) {
+			return;
+		}
+		Bzero(xl, sizeof(*xl));
+		LIST_INSERT_HEAD(&llinfo_xot, xl, xl_list);
+		xl->xl_rt = rt;
+		break;
+	}
+	if (info && (gate = info->rti_info[RTAX_GATEWAY])) {
+		switch (gate->sa_family) {
+		case AF_LINK:
+			break;
+		case AF_INET:
+			break;
+		default:
+			return;
+		}
+	}
+	xl->xl_flags |= RTF_UP;
+	xotiphdr(&xl->xl_xot, &xl->xl_route, 0);
+	if (xl->xl_route.ro_rt) {
+		rt->rt_rmx.rmx_mtu = xl->xl_route.ro_rt->rt_rmx.rmx_mtu
+				- sizeof(xl->xl_xot);
 	}
 }
 
 int
-xot_tun_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rtentry *rt)
+xot_tun_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sdst, struct rtentry *rt)
 {
-	struct llinfo_x25 *lx;
+	struct sockaddr_x25 *dst;
+	struct xot_llinfo *xl;
 	struct xot_packet *xot;
 	struct route *ro;
 	struct mbuf *mh;
 	int error, len, off;
 
-	lx = (struct llinfo_x25 *)rt->rt_llinfo;
-	if ((rt == NULL) || (lx == NULL)) {
+	dst = (struct sockaddr_x25 *)sdst;
+	xl = (struct xot_llinfo *)rt->rt_llinfo;
+	if ((rt == NULL) || (xl == NULL)) {
 		m_freem(m);
 		return (EINVAL);
 	}
-	if ((lx->lx_flags & RTF_UP) == 0) {
+	if ((xl->xl_flags & RTF_UP) == 0) {
 		xotrtrequest(RTM_CHANGE, rt, (struct rt_addrinfo *)NULL);
-		if ((lx->lx_flags & RTF_UP) == 0) {
+		if ((xl->xl_flags & RTF_UP) == 0) {
 			return (EHOSTUNREACH);
 		}
 	}
@@ -180,8 +220,8 @@ xot_tun_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct r
 		return (EINVAL);
 	}
 
-	xot = &lx->lx_xot;
-	ro = &lx->lx_iproute;
+	xot = &xl->xl_xot;
+	ro = &xl->xl_route;
 	/* validate xot header */
 	if (xot_hdr_isvalid(xot) != TRUE) {
 		printf("xot_tun_output: xot header is invalid\n");
@@ -228,6 +268,8 @@ xot_tun_input(struct mbuf *m, ...)
 	va_start(ap, m);
 	iphlen = va_arg(ap, int);
 	va_end(ap);
+
+	xotifp = &xotif[0];
 
 	if (m == NULL) {
 		return;
@@ -287,4 +329,20 @@ xot_tun_input(struct mbuf *m, ...)
 		schednetisr(NETISR_CCITT);
 		splx(s);
 	}
+}
+
+void *
+xot_tun_ctlinput(int cmd, struct sockaddr *sa, void *arg)
+{
+	switch (cmd) {
+	case PRC_LINKUP:
+		break;
+	case PRC_LINKDOWN:
+		break;
+	case PRC_LINKRESET:
+		break;
+	case PRC_CONNECT_INDICATION:
+	case PRC_DISCONNECT_INDICATION:
+	}
+	return (NULL);
 }

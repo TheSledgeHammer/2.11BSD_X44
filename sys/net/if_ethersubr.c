@@ -858,7 +858,7 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 				return;
 			}
 			if (!sockaddr_dl_sethdrif(ifp, eh->ether_shost, LLC_X25_LSAP,
-					eh->ether_dhost, LLC_X25_LSAP, 6, m, AF_CCITT)) {
+					eh->ether_dhost, LLC_X25_LSAP, 6, m, AF_LINK)) {
 				panic("ETHER cons addr failure");
 			}
 

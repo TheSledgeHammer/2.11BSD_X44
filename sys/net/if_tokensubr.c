@@ -542,7 +542,7 @@ token_input(ifp, m)
 		}
 		if (!sockaddr_dl_sethdrif(ifp, trh->token_shost, LLC_X25_LSAP,
 				trh->token_dhost, LLC_X25_LSAP, ISO88025_ADDR_LEN, m,
-				AF_CCITT)) {
+				AF_LINK)) {
 			panic("ETHER cons addr failure");
 		}
 		mtod(m, struct sockaddr_dl_header *)->sdlhdr_len = m->m_pkthdr.len

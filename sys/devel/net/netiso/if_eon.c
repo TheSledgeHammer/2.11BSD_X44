@@ -282,7 +282,7 @@ eonrtrequest(cmd, rt, info)
 {
 	unsigned long   zerodst = 0;
 	caddr_t         ipaddrloc = (caddr_t) & zerodst;
-	struct eon_llinfo *el = (struct eon_llinfo *) rt->rt_llinfo;
+	struct eon_llinfo *el = (struct eon_llinfo *)rt->rt_llinfo;
 	struct sockaddr *gate;
 
 	/*

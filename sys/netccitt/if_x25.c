@@ -503,7 +503,7 @@ x25_rtrequest2(int cmd, struct rtentry *rt, struct llinfo_x25 *lx, struct rt_add
 
 #ifdef old
 void
-x25_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
+x25_rtrequest(int cmd, struct rtentry *rt, struct rt_addrinfo *info)
 {
 	register struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
 	register struct sockaddr_x25 *sa = (struct sockaddr_x25 *)rt->rt_gateway;

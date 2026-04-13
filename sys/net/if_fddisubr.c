@@ -316,8 +316,8 @@ fddi_output(ifp, m0, dst, rt0)
 			M_PREPEND(mcopy, sizeof(*fh), M_DONTWAIT);
 			if (mcopy) {
 				fh = mtod(mcopy, struct fddi_header *);
-				bcopy((caddr_t) edst, (caddr_t)fh->fddi_dhost, sizeof(edst));
-				bcopy((caddr_t) FDDIADDR(ifp), (caddr_t)fh->fddi_shost, sizeof(edst));
+				bcopy((caddr_t)edst, (caddr_t)fh->fddi_dhost, sizeof(edst));
+				bcopy((caddr_t)FDDIADDR(ifp), (caddr_t)fh->fddi_shost, sizeof(edst));
 				fh->fddi_fc = FDDIFC_LLC_ASYNC | FDDIFC_LLC_PRIO4;
 			}
 		}
@@ -588,7 +588,7 @@ fddi_input(ifp, m)
 			return;
 		}
 		if (!sockaddr_dl_sethdrif(ifp, fh->fddi_shost, LLC_X25_LSAP, fh->fddi_dhost,
-		LLC_X25_LSAP, 6, m, AF_CCITT)) {
+		LLC_X25_LSAP, 6, m, AF_LINK)) {
 			panic("ETHER cons addr failure");
 		}
 		mtod(m, struct sockaddr_dl_header *)->sdlhdr_len = m->m_pkthdr.len

@@ -89,4 +89,9 @@ struct inpcb {
 	int	  inp_errormtu;		/* MTU of last xmit status = EMSGSIZE */
 };
 
+/* changed functions */
+struct inpcb *in_pcblookup_port(struct inpcbtable *, struct in_addr, u_int, struct in_addr, u_int, int);
+struct inpcb *in_pcblookup_connect(struct inpcbtable *, struct in_addr, u_int, struct in_addr, u_int);
+struct inpcb *in_pcblookup_bind(struct inpcbtable *, struct in_addr, u_int, struct in_addr, u_int);
+
 #endif /* _NETINET_IN_PCB_H_ */

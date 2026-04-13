@@ -182,11 +182,6 @@ struct llinfo_x25 {
 	int	lx_flags;
 	int	lx_timer;					/* for idle timeout */
 	int	lx_family;					/* for dispatch */
-#ifdef XOT
-	struct xot_packet lx_xot;		/* xot: x25 over tcp/ip */
-	struct route lx_route;			/* if direct route cache IP info */
-									/* if gateway, cache secondary route */
-#endif
 };
 
 /* States for lx_state */

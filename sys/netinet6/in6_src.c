@@ -572,7 +572,7 @@ in6_pcbsetport(laddr, in6p, p)
 
 	if (in6p->in6p_flags & IN6P_LOWPORT) {
 #ifndef IPNOPRIVPORTS
-		if (p == 0 || (suser(p->p_ucred, &p->p_acflag) != 0))
+		if (p == 0 || (suser1(p->p_ucred, &p->p_acflag) != 0))
 			return (EACCES);
 #endif
 		min = ip6_lowportmin;
@@ -598,8 +598,7 @@ in6_pcbsetport(laddr, in6p, p)
 #ifdef INET
 		if (IN6_IS_ADDR_V4MAPPED(laddr)) {
 			t = in_pcblookup_port(table,
-			    *(struct in_addr *)&in6p->in6p_laddr.s6_addr32[3],
-			    lport, wild);
+			    *(struct in_addr *)&in6p->in6p_laddr.s6_addr32[3], lport, wild);
 		} else
 #endif
 		{

@@ -94,7 +94,19 @@ struct	in6pcb {
 	int	in6p_cksum;		/* IPV6_CHECKSUM setsockopt */
 };
 
-#define IN6PLOOKUP_LOCAL		INPLOOKUP_LOCAL
-#define IN6PLOOKUP_FOREIGN		INPLOOKUP_FOREIGN
+/* lookup: */
+#define IN6PLOOKUP_LOCAL	INPLOOKUP_LOCAL
+#define IN6PLOOKUP_FOREIGN	INPLOOKUP_FOREIGN
+
+/* states in inp_state: */
+#define	IN6P_ATTACHED		INP_ATTACHED
+#define	IN6P_BOUND			INP_BOUND
+#define	IN6P_CONNECTED		INP_CONNECTED
+
+/* changed functions */
+struct in6pcb *in6_pcblookup_port(struct inpcbtable *, struct in6_addr *, u_int, struct in6_addr *, u_int, int);
+struct in6pcb *in6_pcblookup_connect(struct inpcbtable *, struct in6_addr *, u_int, struct in6_addr *, u_int, int);
+struct in6pcb *in6_pcblookup_bind(struct inpcbtable *, struct in6_addr *, u_int, struct in6_addr *, u_int, int);
+
 
 #endif /* _NETINET6_IN6_PCB_H_ */
