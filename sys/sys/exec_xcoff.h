@@ -80,7 +80,9 @@ typedef struct xcoff64_filehdr {
 
 typedef struct xcoff32_aouthdr {
 	uint16_t	mflag;			/* flags */
+    uint16_t    magic;          /* magic */
 	uint16_t 	vstamp;			/* version */
+    XCOFF_PAD
 	uint32_t  	tsize;			/* text size in bytes */
 	uint32_t  	dsize;			/* initialized data size in bytes */
 	uint32_t  	bsize;			/* uninitialized data size in bytes */
@@ -109,11 +111,14 @@ typedef struct xcoff32_aouthdr {
 	uint8_t		flags;			/* flags and thread-local storage */
 	uint16_t 	sntdata;		/* section number for .tdata */
 	uint16_t 	sntbss;			/* section number for .tbss */
+    XCOFF_MACHDEP;
 } xcoff32_aouthdr;
 
 typedef struct xcoff64_aouthdr {
 	uint16_t	mflag;			/* flags */
+    uint16_t    magic;          /* magic */
 	uint16_t 	vstamp;			/* version */
+    XCOFF_PAD
 	uint64_t  	tsize;			/* text size in bytes */
 	uint64_t  	dsize;			/* initialized data size in bytes */
 	uint64_t  	bsize;			/* uninitialized data size in bytes */
@@ -143,6 +148,7 @@ typedef struct xcoff64_aouthdr {
 	uint16_t 	sntdata;		/* section number for .tdata */
 	uint16_t 	sntbss;			/* section number for .tbss */
 	uint16_t 	x64flags;		/* xcoff64 only flags */
+    XCOFF_MACHDEP;
 } xcoff64_aouthdr;
 
 /* o_flags */
