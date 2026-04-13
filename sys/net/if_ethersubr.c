@@ -312,6 +312,7 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 	case AF_ISO:
 #ifdef LLC
 	case AF_CCITT:
+    {    
 		struct sockaddr_dl *sdl = (struct sockaddr_dl *)rt->rt_gateway;
 
 		if (sdl && sdl->sdl_family == AF_LINK && sdl->sdl_alen > 0) {
@@ -344,6 +345,7 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 		}
 #endif /* LLC_DEBUG */
 		break;
+    }
 #endif /* LLC */
 	case pseudo_AF_HDRCMPLT:
 		hdrcmplt = 1;
