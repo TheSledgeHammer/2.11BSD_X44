@@ -69,7 +69,7 @@ union nsap_service {
 };
 
 /* nsap_service class types */
-enum nsap_class {
+enum nsap_classes {
 	NSAP_CLASS_UNKNOWN,
 	/* iso (native) */
 	NSAP_CLASS_CONS,
