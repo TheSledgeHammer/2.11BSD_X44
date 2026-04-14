@@ -26,8 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _NETTPI_ISO_SAP_H_
-#define _NETTPI_ISO_SAP_H_
+#ifndef _NETTPI_ISO_NSAP_H_
+#define _NETTPI_ISO_NSAP_H_
 
 /*
  * Service Access Point: (In-Kernel Only)
@@ -52,33 +52,42 @@ union sockaddr_union {
 
 /* addr union structure */
 union addr_union {
-	struct in_addr 	in4;	/* ipv4 */
-	struct in6_addr in6;	/* ipv6 */
-	struct iso_addr	iso;	/* iso */
-	struct ns_addr	ns;		/* xns */
-	struct x25_addr	x25;	/* x25 */
+	struct in_addr 	in4;		/* ipv4 */
+	struct in6_addr in6;		/* ipv6 */
+	struct iso_addr	iso;		/* iso */
+	struct ns_addr	ns;			/* xns */
+	struct x25_addr	x25;		/* x25 */
+	// sna, ipx, atm
 };
 
 /* NSAP: Network Service Access Point */
 #define ISOLEN 64
 union nsap_service {
-	char ns_addr;	/* addr */
-	unsigned char ns_addrlen[ISOLEN]; /* length */
-	int ns_class;
+	char ns_addr[ISOLEN];		/* address */
+	unsigned char ns_addrlen; 	/* address length */
+	int ns_class;				/* class */
+};
+
+/* nsap_service class types */
+enum nsap_class {
+	NSAP_CLASS_UNKNOWN,
+	/* iso (native) */
+	NSAP_CLASS_CONS,
+	NSAP_CLASS_CLNS,
 };
 
 /* nsap addr */
 struct nsap_addr {
 	union nsap_service nsapa_service;
-#define nsapa_addr	nsapa_service.ns_addr
-#define nsapa_len	nsapa_service.ns_addrlen
+#define nsapa_addr nsapa_service.ns_addr
+#define nsapa_len nsapa_service.ns_addrlen
 #define nsapa_class nsapa_service.ns_class
 	union addr_union nsapa_union;
-#define nsapa_in4	nsapa_union.in4
-#define nsapa_in6	nsapa_union.in6
-#define nsapa_ns	nsapa_union.ns
-#define nsapa_iso	nsapa_union.iso
-#define nsapa_x25	nsapa_union.x25
+#define nsapa_in4 nsapa_union.in4
+#define nsapa_in6 nsapa_union.in6
+#define nsapa_ns nsapa_union.ns
+#define nsapa_iso nsapa_union.iso
+#define nsapa_x25 nsapa_union.x25
 };
 
 /* sockaddr nsap */
@@ -86,22 +95,15 @@ struct sockaddr_nsap {
 	long snsap_type; 	/* stack type */
 	long snsap_subnet;	/* subnet type */
 	union sockaddr_union snsap_union;
-#define snsap_sa	snsap_union.sa
-#define snsap_sin4	snsap_union.sin4
-#define snsap_sin6	snsap_union.sin6
-#define snsap_sns	snsap_union.sns
-#define snsap_siso	snsap_union.siso
-#define snsap_sx25	snsap_union.sx25
+#define snsap_sa snsap_union.sa
+#define snsap_sin4 snsap_union.sin4
+#define snsap_sin6 snsap_union.sin6
+#define snsap_sns snsap_union.sns
+#define snsap_siso snsap_union.siso
+#define snsap_sx25 snsap_union.sx25
 };
 
-struct nsap_info {
-	struct sockaddr_nsap ni_snsap; 	/* nsap sockaddr */
-	struct addr_nsap ni_addr; 		/* nsap address */
-	unsigned char ni_prefix[ISOLEN];
-	unsigned char ni_class[ISOLEN];
-};
-
-/* stack types */
+/* sockaddr_nsap stack types */
 enum nsap_types {
 	NSAP_TYPE_UNKNOWN,
 	NSAP_TYPE_SA,
@@ -110,9 +112,12 @@ enum nsap_types {
 	NSAP_TYPE_SNS,
 	NSAP_TYPE_SISO,
 	NSAP_TYPE_SX25,
+	NSAP_TYPE_SATM,
+	NSAP_TYPE_SIPX,
+	NSAP_TYPE_SSNA,
 };
 
-/* subnet types */
+/* sockaddr_nsap subnet types */
 enum nsap_subnets {
 	NSAP_SUBNET_UNKNOWN,
 	/* inet (v4 and v6) */
@@ -124,7 +129,28 @@ enum nsap_subnets {
 	/* xns */
 	NSAP_SUBNET_IDP,
 	/* x25 */
-	NSAP_SUBNET_X25
+	NSAP_SUBNET_X25,
+	/* atm */
+	NSAP_SUBNET_ATM,
+	/* ipx */
+	NSAP_SUBNET_SPX,
+	/* sna (NCP?? and/or SDLC??)*/
+	NSAP_SUBNET_IPX,
+};
+
+/* NSAP addr (ISO/OSI equivalent) */
+struct nsap_iso {
+	struct sockaddr_nsap niso_snsap; 	/*  sockaddr_nsap (BSD-style) */
+	struct nsap_addr niso_addr; 		/* nsap_addr (BSD-style) */
+};
+
+/* ISODE Based code */
+struct nsap_info {
+	struct nsap_iso ni_nsap;
+	unsigned char ni_prefix[ISOLEN];
+	int ni_plen;
+	unsigned char ni_class[ISOLEN];
+	int ni_stack;
 };
 
 /* SAP Selector (for TSAP, SSAP and PSAP) */
@@ -134,13 +160,15 @@ union sap_type {
 };
 
 /* TSAP: Transport Service Access Point */
-struct tsap_addr {
-	struct nsap_addr ta_addr[ISOLEN];
-	int ta_naddr;
-	int ta_selectlen;
-	union sap_type ta_type;
-#define	ta_selector	ta_type.st_selector
-#define	ta_port		ta_type.st_port
+
+/* TSAP addr (ISO/OSI equivalent) */
+struct tsap_iso {
+	struct nsap_iso tiso_addr[ISOLEN];
+	int tiso_naddr;
+	int tiso_selectlen;
+	union sap_type tiso_type;
+#define	tiso_selector tiso_type.st_selector
+#define	tiso_port tiso_type.st_port
 };
 
-#endif /* SYS_DEVEL_NET_NETTPI_ISO_SAP_H_ */
+#endif /* _NETTPI_ISO_NSAP_H_ */

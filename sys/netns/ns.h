@@ -95,7 +95,7 @@ union ns_net {
 };
 
 union ns_net_u {
-	union ns_net	net_e;
+	union ns_net net_e;
 	u_int32_t	long_e;
 };
 

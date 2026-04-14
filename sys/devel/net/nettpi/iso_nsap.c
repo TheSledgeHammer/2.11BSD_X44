@@ -29,7 +29,7 @@
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 
-#include "iso_sap.h"
+#include "iso_nsap.h"
 
 void
 nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
@@ -54,6 +54,8 @@ nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
 			case NSAP_SUBNET_UDP:
 				snsap->snsap_subnet = NSAP_SUBNET_UDP;
 				break;
+			case NSAP_SUBNET_UNKNOWN:
+				/* FALLTHROUGH */
 			default:
 				snsap->snsap_subnet = NSAP_SUBNET_UNKNOWN;
 				break;
@@ -76,6 +78,8 @@ nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
 			case NSAP_SUBNET_UDP:
 				snsap->snsap_subnet = NSAP_SUBNET_UDP;
 				break;
+			case NSAP_SUBNET_UNKNOWN:
+				/* FALLTHROUGH */
 			default:
 				snsap->snsap_subnet = NSAP_SUBNET_UNKNOWN;
 				break;
@@ -110,6 +114,8 @@ nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
 			case NSAP_SUBNET_CLNS:
 				snsap->snsap_subnet = NSAP_SUBNET_CLNS;
 				break;
+			case NSAP_SUBNET_UNKNOWN:
+				/* FALLTHROUGH */
 			default:
 				snsap->snsap_subnet = NSAP_SUBNET_UNKNOWN;
 				break;
@@ -129,6 +135,11 @@ nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
 		}
 		break;
 	}
+	case NSAP_TYPE_SATM:
+	case NSAP_TYPE_SIPX:
+	case NSAP_TYPE_SSNA:
+	case NSAP_TYPE_UNKNOWN:
+		/* FALLTHROUGH */
 	default:
 		snsap->snsap_type = NSAP_TYPE_UNKNOWN;
 		snsap->snsap_subnet = NSAP_SUBNET_UNKNOWN;
@@ -136,8 +147,100 @@ nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
 	}
 }
 
+/*
+ * Only ISO/OSI based services have currently been defined.
+ * - All others fall into the class type of unknown (i.e. TCP, UDP, ATM, X25, IPX, SNA, etc)
+ */
 void
-nsap_setaddr(struct nsap_addr *nsapa, void *arg, int class)
+nsap_service(struct nsap_addr *nsapa, char *addr, u_char len, int class)
 {
-
+	if (nsapa != NULL) {
+		nsapa->nsapa_addr = addr;
+		nsapa->nsapa_len = len;
+		nsapa->nsapa_class = class;
+	}
 }
+
+void
+nsap_setaddr(struct nsap_addr *nsapa, void *arg, int type, char *addr, u_char addrlen, int class)
+{
+	if (nsapa == NULL) {
+		return;
+	}
+
+	switch (type) {
+	case NSAP_TYPE_SIN4:
+	{
+		struct in_addr *in4 = (struct in_addr *)arg;
+		if (in4 != NULL) {
+			*nsapa->nsapa_in4 = in4;
+			//nsap_service(addr, addrlen, NSAP_CLASS_UNKNOWN); /* not defined! */
+			goto unknown;
+		}
+		break;
+	}
+	case NSAP_TYPE_SIN6:
+	{
+		struct in6_addr *in6 = (struct in6_addr *)arg;
+		if (in6 != NULL) {
+			*nsapa->nsapa_in6 = in6;
+			//nsap_service(addr, addrlen, NSAP_CLASS_UNKNOWN); /* not defined! */
+			goto unknown;
+		}
+		break;
+	}
+	case NSAP_TYPE_SNS:
+	{
+		struct ns_addr *ns = (struct ns_addr *)arg;
+		if (ns != NULL) {
+			*nsapa->nsapa_ns = ns;
+			//nsap_service(addr, addrlen, NSAP_CLASS_UNKNOWN); /* not defined! */
+			goto unknown;
+		}
+		break;
+	}
+	case NSAP_TYPE_SISO:
+	{
+		struct iso_addr *iso = (struct iso_addr *)arg;
+		if (iso != NULL) {
+			*nsapa->nsapa_iso = iso;
+			nsapa->nsapa_addr = 0;
+			nsapa->nsapa_len = 0;
+			switch (class) {
+			case NSAP_CLASS_CONS:
+				nsap_service(addr, addrlen, NSAP_CLASS_CONS);
+				break;
+			case NSAP_CLASS_CLNS:
+				nsap_service(addr, addrlen, NSAP_CLASS_CLNS);
+				break;
+			case NSAP_CLASS_UNKNOWN:
+				/* FALLTHROUGH */
+			default:
+				goto unknown;
+			}
+		}
+		break;
+	}
+	case NSAP_TYPE_SX25:
+	{
+		struct x25_addr *x25 = (struct x25_addr *)arg;
+		if (x25 != NULL) {
+			*nsapa->nsapa_x25 = x25;
+			//nsap_service(addr, addrlen, NSAP_CLASS_UNKNOWN); /* not defined! */
+			goto unknown;
+		}
+		break;
+	}
+	case NSAP_TYPE_SATM:
+	case NSAP_TYPE_SIPX:
+	case NSAP_TYPE_SSNA:
+	case NSAP_TYPE_UNKNOWN:
+		/* FALLTHROUGH */
+	default:
+	unknown:
+		nsap_service(NULL, NULL, NSAP_CLASS_UNKNOWN);
+		break;
+	}
+}
+
+
