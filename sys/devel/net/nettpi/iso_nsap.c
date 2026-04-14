@@ -204,8 +204,6 @@ nsap_setaddr(struct nsap_addr *nsapa, void *arg, int type, char *addr, u_char ad
 		struct iso_addr *iso = (struct iso_addr *)arg;
 		if (iso != NULL) {
 			*nsapa->nsapa_iso = iso;
-			nsapa->nsapa_addr = 0;
-			nsapa->nsapa_len = 0;
 			switch (class) {
 			case NSAP_CLASS_CONS:
 				nsap_service(addr, addrlen, NSAP_CLASS_CONS);
