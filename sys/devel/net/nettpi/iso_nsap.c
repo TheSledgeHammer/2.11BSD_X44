@@ -26,6 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/errno.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 
@@ -149,15 +150,33 @@ nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
 
 /*
  * Only ISO/OSI based services have currently been defined.
- * - All others fall into the class type of unknown (i.e. TCP, UDP, ATM, X25, IPX, SNA, etc)
  */
 void
 nsap_service(struct nsap_addr *nsapa, char *addr, u_char len, int class)
 {
 	if (nsapa != NULL) {
-		nsapa->nsapa_addr = addr;
-		nsapa->nsapa_len = len;
-		nsapa->nsapa_class = class;
+		switch (class) {
+		case NSAP_CLASS_CONS:	/* connection oriented */
+			nsapa->nsapa_addr = addr;
+			nsapa->nsapa_len = len;
+			nsapa->nsapa_class = NSAP_CLASS_CONS;
+			break;
+		case NSAP_CLASS_CLNS: /* connection-less oriented  */
+			nsapa->nsapa_addr = addr;
+			nsapa->nsapa_len = len;
+			nsapa->nsapa_class = NSAP_CLASS_CLNS;
+			break;
+		case NSAP_CLASS_UNKNOWN: /* everything else */
+unknown:
+			/* FALLTHROUGH */
+		default:
+			nsapa->nsapa_addr = addr;
+			nsapa->nsapa_len = len;
+			nsapa->nsapa_class = NSAP_CLASS_UNKNOWN;
+			break;
+		}
+	} else {
+		goto unknown;
 	}
 }
 
@@ -174,7 +193,8 @@ nsap_setaddr(struct nsap_addr *nsapa, void *arg, int type, char *addr, u_char ad
 		struct in_addr *in4 = (struct in_addr *)arg;
 		if (in4 != NULL) {
 			*nsapa->nsapa_in4 = in4;
-			//nsap_service(addr, addrlen, NSAP_CLASS_UNKNOWN); /* not defined! */
+			nsap_service(nsapa, addr, addrlen, NSAP_CLASS_CLNS);
+		} else {
 			goto unknown;
 		}
 		break;
@@ -184,7 +204,8 @@ nsap_setaddr(struct nsap_addr *nsapa, void *arg, int type, char *addr, u_char ad
 		struct in6_addr *in6 = (struct in6_addr *)arg;
 		if (in6 != NULL) {
 			*nsapa->nsapa_in6 = in6;
-			//nsap_service(addr, addrlen, NSAP_CLASS_UNKNOWN); /* not defined! */
+			nsap_service(nsapa, addr, addrlen, NSAP_CLASS_CLNS);
+		} else {
 			goto unknown;
 		}
 		break;
@@ -194,7 +215,8 @@ nsap_setaddr(struct nsap_addr *nsapa, void *arg, int type, char *addr, u_char ad
 		struct ns_addr *ns = (struct ns_addr *)arg;
 		if (ns != NULL) {
 			*nsapa->nsapa_ns = ns;
-			//nsap_service(addr, addrlen, NSAP_CLASS_UNKNOWN); /* not defined! */
+			nsap_service(nsapa, addr, addrlen, NSAP_CLASS_CLNS);
+		} else {
 			goto unknown;
 		}
 		break;
@@ -206,16 +228,16 @@ nsap_setaddr(struct nsap_addr *nsapa, void *arg, int type, char *addr, u_char ad
 			*nsapa->nsapa_iso = iso;
 			switch (class) {
 			case NSAP_CLASS_CONS:
-				nsap_service(addr, addrlen, NSAP_CLASS_CONS);
+				nsap_service(nsapa, addr, addrlen, NSAP_CLASS_CONS);
 				break;
 			case NSAP_CLASS_CLNS:
-				nsap_service(addr, addrlen, NSAP_CLASS_CLNS);
+				nsap_service(nsapa, addr, addrlen, NSAP_CLASS_CLNS);
 				break;
 			case NSAP_CLASS_UNKNOWN:
-				/* FALLTHROUGH */
-			default:
 				goto unknown;
 			}
+		} else {
+			goto unknown;
 		}
 		break;
 	}
@@ -224,7 +246,8 @@ nsap_setaddr(struct nsap_addr *nsapa, void *arg, int type, char *addr, u_char ad
 		struct x25_addr *x25 = (struct x25_addr *)arg;
 		if (x25 != NULL) {
 			*nsapa->nsapa_x25 = x25;
-			//nsap_service(addr, addrlen, NSAP_CLASS_UNKNOWN); /* not defined! */
+			nsap_service(nsapa, addr, addrlen, NSAP_CLASS_CONS);
+		} else {
 			goto unknown;
 		}
 		break;
@@ -233,12 +256,208 @@ nsap_setaddr(struct nsap_addr *nsapa, void *arg, int type, char *addr, u_char ad
 	case NSAP_TYPE_SIPX:
 	case NSAP_TYPE_SSNA:
 	case NSAP_TYPE_UNKNOWN:
+unknown:
 		/* FALLTHROUGH */
 	default:
-	unknown:
-		nsap_service(NULL, NULL, NSAP_CLASS_UNKNOWN);
+		nsap_service(nsapa, NULL, NULL, NSAP_CLASS_UNKNOWN);
 		break;
 	}
 }
 
+int
+nsap_connect(struct sockaddr_nsap *snsap, int subnet, struct mbuf *nam, int af)
+{
+	switch (af) {
+	case AF_INET:
+	{
+		struct sockaddr_in *sin = mtod(nam, struct sockaddr_in);
+		nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, subnet);
+		if (nam->m_len != sizeof(sin)) {
+			return (EINVAL);
+		}
+		if (sin->sin_family != AF_INET) {
+			return (EAFNOSUPPORT);
+		}
+		if (sin->sin_port == 0) {
+			return (EADDRNOTAVAIL);
+		}
+		break;
+	}
+	case AF_INET6:
+	{
+		struct sockaddr_in6 *sin6 = mtod(nam, struct sockaddr_in6);
+		nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, subnet);
+		if (nam->m_len != sizeof(sin6)) {
+			return (EINVAL);
+		}
+		if (sin6->sin6_family != AF_INET6) {
+			return (EAFNOSUPPORT);
+		}
+		if (sin6->sin6_port == 0) {
+			return (EADDRNOTAVAIL);
+		}
+		break;
+	}
+	case AF_ISO:
+	{
+		struct sockaddr_iso *siso = mtod(nam, struct sockaddr_iso);
+		nsap_setsockaddr(snsap, (struct sockaddr_iso *)siso, NSAP_TYPE_SISO, subnet);
+		if (nam->m_len != sizeof(siso)) {
+			return (EINVAL);
+		}
+		if (siso->siso_family != AF_ISO) {
+			return (EAFNOSUPPORT);
+		}
+		if (siso->siso_nlen == 0) {
+			return (EADDRNOTAVAIL);
+		}
+		break;
+	}
+	case AF_NS:
+	{
+		struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns);
+		nsap_setsockaddr(snsap, (struct sockaddr_ns *)sns, NSAP_TYPE_SNS, NSAP_SUBNET_IDP);
+		if (nam->m_len != sizeof(sns)) {
+			return (EINVAL);
+		}
+		if (sns->sns_family != AF_NS) {
+			return (EAFNOSUPPORT);
+		}
+		if (sns->sns_port == 0) {
+			return (EADDRNOTAVAIL);
+		}
+		break;
+	}
+	case AF_CCITT:
+	{
+		struct sockaddr_x25 *sx25 = mtod(nam, struct sockaddr_x25);
+		nsap_setsockaddr(snsap, (struct sockaddr_x25 *)sx25, NSAP_TYPE_SX25, NSAP_SUBNET_X25);
+		if (nam->m_len != sizeof(sx25)) {
+			return (EINVAL);
+		}
+		if (sx25->x25_family != AF_CCITT) {
+			return (EAFNOSUPPORT);
+		}
+		if (sx25->x25_len == 0) {
+			return (EADDRNOTAVAIL);
+		}
+		break;
+	}
+	case AF_NATM:
+	case AF_IPX:
+	case AF_SNA:
+	default:
+		nsap_setsockaddr(snsap, NULL, NSAP_TYPE_UNKNOWN, NSAP_SUBNET_UNKNOWN);
+		return (EAFNOSUPPORT);
+	}
+	return (0);
+}
 
+void
+nsap_disconnect(struct sockaddr_nsap *snsap, int af, int subnet)
+{
+	switch (af) {
+	case AF_INET:
+	{
+		struct sockaddr_in *sin = &snsap->snsap_sin4;
+		if (sin != NULL) {
+			switch (subnet) {
+			case NSAP_SUBNET_TCP:
+				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_TCP);
+				break;
+			case NSAP_SUBNET_UDP:
+				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_UDP);
+				break;
+			case NSAP_SUBNET_UNKNOWN:
+				/* FALLTHROUGH */
+			default:
+				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_UNKNOWN);
+				break;
+			}
+		} else {
+			goto unknown;
+		}
+		break;
+	}
+	case AF_INET6:
+	{
+		struct sockaddr_in6 *sin6 = &snsap->snsap_sin6;
+		if (sin6 != NULL) {
+			switch (subnet) {
+			case NSAP_SUBNET_TCP:
+				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_TCP);
+				break;
+			case NSAP_SUBNET_UDP:
+				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_UDP);
+				break;
+			case NSAP_SUBNET_UNKNOWN:
+				/* FALLTHROUGH */
+			default:
+				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_UNKNOWN);
+				break;
+			}
+		} else {
+			goto unknown;
+		}
+		break;
+	}
+	case AF_ISO:
+	{
+		struct sockaddr_iso *sisos = &snsap->snsap_siso;
+		if (sisos != NULL) {
+			switch (subnet) {
+			case NSAP_SUBNET_CONS:
+				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_CONS);
+				break;
+			case NSAP_SUBNET_CLNS:
+				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_CLNS);
+				break;
+			case NSAP_SUBNET_UNKNOWN:
+				/* FALLTHROUGH */
+			default:
+				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN);
+				break;
+			}
+
+		} else {
+			goto unknown;
+		}
+		break;
+	}
+	case AF_NS:
+	{
+		struct sockaddr_ns *sns = &snsap->snsap_sns;
+		if (sns != NULL) {
+			if (subnet == NSAP_SUBNET_IDP) {
+				nsap_setsockaddr(snsap, (struct sockaddr_ns *)sns, NSAP_TYPE_SNS, NSAP_SUBNET_IDP);
+			} else {
+				nsap_setsockaddr(snsap, (struct sockaddr_ns *)sns, NSAP_TYPE_SNS, NSAP_SUBNET_UNKNOWN);
+			}
+		} else {
+			goto unknown;
+		}
+		break;
+	}
+	case AF_CCITT:
+	{
+		struct sockaddr_x25 *sx25 = &snsap->snsap_sx25;
+		if (sx25 != NULL) {
+			if (subnet == NSAP_SUBNET_X25) {
+				nsap_setsockaddr(snsap, (struct sockaddr_x25 *)sx25, NSAP_TYPE_SX25, NSAP_SUBNET_X25);
+			} else {
+				nsap_setsockaddr(snsap, (struct sockaddr_x25 *)sx25, NSAP_TYPE_SX25, NSAP_SUBNET_UNKNOWN);
+			}
+		} else {
+			goto unknown;
+		}
+		break;
+	}
+	case AF_NATM:
+	case AF_IPX:
+	case AF_SNA:
+	default:
+unknown:
+		nsap_setsockaddr(snsap, NULL, NSAP_TYPE_UNKNOWN, NSAP_SUBNET_UNKNOWN);
+		break;
+	}
+}

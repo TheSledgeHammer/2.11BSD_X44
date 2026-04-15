@@ -36,7 +36,7 @@ static char sccsid[] = "@(#) crontab.c 2.13.1 (2.11BSD) 1999/8/9";
 enum opt_t	{ opt_unknown, opt_list, opt_delete, opt_edit, opt_replace };
 
 #if DEBUGGING
-static char	*Options[] = { "???", "list", "delete", "edit", "replace" };
+static const char	*Options[] = { "???", "list", "delete", "edit", "replace" };
 #endif
 
 
@@ -57,7 +57,7 @@ static int	replace_cmd(void);
 
 
 static void
-usage(char *msg)
+usage(const char *msg)
 {
 	fprintf(stderr, "%s: usage error: %s\n", ProgramName, msg);
 	fprintf(stderr, "usage:\t%s [-u user] file\n", ProgramName);
@@ -93,15 +93,19 @@ main(int argc, char	*argv[])
 	}
 	exitstatus = OK_EXIT;
 	switch (Option) {
-	case opt_list:		list_cmd();
-				break;
-	case opt_delete:	delete_cmd();
-				break;
-	case opt_edit:		edit_cmd();
-				break;
-	case opt_replace:	if (replace_cmd() < 0)
-					exitstatus = ERROR_EXIT;
-				break;
+	case opt_list:
+		list_cmd();
+		break;
+	case opt_delete:
+		delete_cmd();
+		break;
+	case opt_edit:
+		edit_cmd();
+		break;
+	case opt_replace:
+		if (replace_cmd() < 0)
+			exitstatus = ERROR_EXIT;
+		break;
 	}
 	exit(0);
 	/*NOTREACHED*/

@@ -448,6 +448,20 @@ in6_pcbconnect(void *v, struct mbuf *nam)
 }
 
 void
+in6_pcbdisconnect(struct in6pcb *in6p)
+{
+	bzero((caddr_t)&in6p->in6p_faddr, sizeof(in6p->in6p_faddr));
+	in6p->in6p_fport = 0;
+	in6_pcbstate(in6p, IN6P_BOUND);
+	in6p->in6p_flowinfo &= ~IPV6_FLOWLABEL_MASK;
+#if defined(IPSEC) || defined(FAST_IPSEC)
+	ipsec_pcbdisconn(in6p->in6p_sp);
+#endif
+	if (in6p->in6p_socket->so_state & SS_NOFDREF)
+		in6_pcbdetach(in6p);
+}
+
+void
 in6_pcbdetach(struct in6pcb *in6p)
 {
 	struct socket *so = in6p->in6p_socket;

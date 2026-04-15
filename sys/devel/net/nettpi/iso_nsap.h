@@ -41,7 +41,6 @@
 
 /* sockaddr union structure */
 union sockaddr_union {
-	struct sockaddr sa;
 	struct sockaddr_in 	sin4;	/* ipv4 */
 	struct sockaddr_in6 sin6;	/* ipv6 */
 	struct sockaddr_iso siso;	/* iso */
@@ -61,7 +60,8 @@ union addr_union {
 };
 
 /* NSAP: Network Service Access Point */
-#define ISOLEN 64
+#define ISOLEN 64 /* ISO MAX LEN */
+
 union nsap_service {
 	char ns_addr[ISOLEN];		/* address */
 	unsigned char ns_addrlen; 	/* address length */
@@ -106,7 +106,6 @@ struct sockaddr_nsap {
 /* sockaddr_nsap stack types */
 enum nsap_types {
 	NSAP_TYPE_UNKNOWN,
-	NSAP_TYPE_SA,
 	NSAP_TYPE_SIN4,
 	NSAP_TYPE_SIN6,
 	NSAP_TYPE_SNS,
@@ -135,13 +134,13 @@ enum nsap_subnets {
 	/* ipx */
 	NSAP_SUBNET_SPX,
 	/* sna (NCP?? and/or SDLC??)*/
-	NSAP_SUBNET_IPX,
+	NSAP_SUBNET_SNA,
 };
 
 /* NSAP addr (ISO/OSI equivalent) */
 struct nsap_iso {
-	struct sockaddr_nsap niso_snsap; 	/*  sockaddr_nsap (BSD-style) */
-	struct nsap_addr niso_addr; 		/* nsap_addr (BSD-style) */
+	struct sockaddr_nsap niiso_snsap; 	/*  sockaddr_nsap (BSD-style) */
+	struct nsap_addr niiso_addr; 		/* nsap_addr (BSD-style) */
 };
 
 /* ISODE Based code */
@@ -153,22 +152,39 @@ struct nsap_info {
 	int ni_stack;
 };
 
-/* SAP Selector (for TSAP, SSAP and PSAP) */
+/* SAP Selector (Used by TSAP, SSAP and PSAP) */
 union sap_type {
-	unsigned char st_selector[8];
-	int st_port;
+	unsigned char selector[8];
+	int port;
 };
 
 /* TSAP: Transport Service Access Point */
-
 /* TSAP addr (ISO/OSI equivalent) */
 struct tsap_iso {
-	struct nsap_iso tiso_addr[ISOLEN];
-	int tiso_naddr;
-	int tiso_selectlen;
-	union sap_type tiso_type;
-#define	tiso_selector tiso_type.st_selector
-#define	tiso_port tiso_type.st_port
+	struct nsap_iso tiiso_addr[ISOLEN];
+	int tiiso_naddr;
+	int tiiso_selectlen;
+	union sap_type tiiso_type;
+#define	tiiso_selector tiiso_type.selector
+#define	tiiso_port tiiso_type.port
+};
+
+/* SSAP: Session Service Access Point */
+/* SSAP addr (ISO/OSI equivalent) */
+struct ssap_iso {
+	struct tsap_iso siiso_addr[ISOLEN];
+	union sap_type siiso_type;
+#define	siiso_selector siiso_type.selector
+#define	siiso_port siiso_type.port
+};
+
+/* PSAP: Presentation Service Access Point */
+/* PSAP addr (ISO/OSI equivalent) */
+struct psap_iso {
+	struct ssap_iso piiso_addr[ISOLEN];
+	union sap_type piiso_type;
+#define	piiso_selector piiso_type.selector
+#define	piiso_port piiso_type.port
 };
 
 #endif /* _NETTPI_ISO_NSAP_H_ */

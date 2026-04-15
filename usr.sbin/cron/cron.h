@@ -194,7 +194,7 @@ void	set_cron_uid(void),
 		free_entry(entry *),
 		acquire_daemonlock(int),
 		skip_comments(FILE *),
-		log_it(char *, int, char *, char *),
+		log_it(const char *, int, const char *, const char *),
 		log_close(void);
 
 int		job_runqueue(void),
@@ -219,7 +219,7 @@ char	*env_get(char *, char **),
 user	*load_user(int, struct passwd *, char *),
 		*find_user(cron_db *, char *);
 
-entry	*load_entry(FILE *, void (*)(), struct passwd *, char **);
+entry	*load_entry(FILE *, void (*)(void), struct passwd *, char **);
 
 FILE	*cron_popen(char *, char *);
 
