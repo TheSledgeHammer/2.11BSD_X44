@@ -84,6 +84,7 @@ CPPFLAGS+= -I${IDIST}/sntp/libopts
 COPTS.decodenetnum.c+= -Wno-sign-compare
 COPTS.msyslog.c+= -Wno-error=format-nonliteral
 COPTS.ntp_intres.c+= -Wno-sign-compare
+COPTS.ntp_rfc2553.c+= -Wno-sign-compare
 
 # For MKREPRO, avoid using __DATE__ and __TIME__.
 # Instead, use the date and time from ${IMPORTDATE_FILE}.
