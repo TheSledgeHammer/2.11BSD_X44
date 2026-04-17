@@ -4,11 +4,17 @@
 
 PROG=	crontab
 SRCS=	crontab.c misc.c entry.c env.c compat.c
-CPPFLAGS+=-I${.CURDIR} -I${NETBSDSRCDIR}/usr.sbin/cron -DDEBUGGING=1
-CPPFLAGS+=-DUSE_UTIMES
-BINOWN =root
-BINMODE=4555
-MAN=	crontab.1 crontab.5
 
-.PATH: ${NETBSDSRCDIR}/usr.sbin/cron
+CRONDIR= ${NETBSDSRCDIR}/usr.sbin/cron 
+CPPFLAGS+=-I${.CURDIR} -I${CRONDIR} -DDEBUGGING=1
+CPPFLAGS+=-DUSE_UTIMES -DPOSIX
+
+BINOWN=root
+BINMODE=4555
+MAN= crontab.1 crontab.5
+
+.PATH: ${CRONDIR}
+
+COPTS.crontab.c+= ${GCC_NO_FORMAT_OVERFLOW}
+
 .include <bsd.prog.mk>
