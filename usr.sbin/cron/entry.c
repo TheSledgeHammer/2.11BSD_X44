@@ -64,7 +64,7 @@ free_entry(entry *e)
  * otherwise return a pointer to a new entry.
  */
 entry *
-load_entry(FILE *file, void (*error_func)(void), struct passwd *pw, char **envp)
+load_entry(FILE *file, void (*error_func)(char *), struct passwd *pw, char **envp)
 {
 	/* this function reads one crontab entry -- the next -- from a file.
 	 * it skips any leading blank lines, ignores comments, and returns

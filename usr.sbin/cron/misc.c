@@ -610,14 +610,14 @@ arpadate(time_t *clock)
 static int save_euid;
 
 int
-swap_uids()
+swap_uids(void)
 {
 	save_euid = geteuid();
 	return (seteuid(getuid()));
 }
 
 int
-swap_uids_back()
+swap_uids_back(void)
 {
 	return (seteuid(save_euid));
 }

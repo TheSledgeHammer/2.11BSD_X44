@@ -30,8 +30,11 @@
 #include <sys/param.h>
 #include "compat.h"
 
+#include <signal.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <err.h>
+#include <errno.h>
 #include <bitstring.h>
 #include <pwd.h>
 #include <sys/wait.h>
@@ -202,6 +205,7 @@ int		job_runqueue(void),
 		get_char(FILE *),
 		get_string(char *, int, FILE *, char *),
 		swap_uids(void),
+        swap_uids_back(void),
 		load_env(char *, FILE *),
 		cron_pclose(FILE *),
 		strcmp_until(char *, char *, int),
@@ -219,7 +223,7 @@ char	*env_get(char *, char **),
 user	*load_user(int, struct passwd *, char *),
 		*find_user(cron_db *, char *);
 
-entry	*load_entry(FILE *, void (*)(void), struct passwd *, char **);
+entry	*load_entry(FILE *, void (*)(char *), struct passwd *, char **);
 
 FILE	*cron_popen(char *, char *);
 

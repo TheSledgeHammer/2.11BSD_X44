@@ -36,23 +36,23 @@ static char sccsid[] = "@(#) crontab.c 2.13.1 (2.11BSD) 1999/8/9";
 enum opt_t	{ opt_unknown, opt_list, opt_delete, opt_edit, opt_replace };
 
 #if DEBUGGING
-static const char	*Options[] = { "???", "list", "delete", "edit", "replace" };
+static const char *Options[] = { "???", "list", "delete", "edit", "replace" };
 #endif
 
 
-static PID_T		Pid;
-static char		User[MAX_UNAME], RealUser[MAX_UNAME];
-static char		Filename[MAX_FNAME];
-static FILE		*NewCrontab;
-static int		CheckErrorCount;
-static enum opt_t	Option;
-static struct passwd	*pw;
+static PID_T Pid;
+static char	User[MAX_UNAME], RealUser[MAX_UNAME];
+static char	Filename[MAX_FNAME];
+static FILE *NewCrontab;
+static int CheckErrorCount;
+static enum opt_t Option;
+static struct passwd *pw;
 static void list_cmd(void),
 			delete_cmd(void),
 			edit_cmd(void),
 			poke_daemon(void),
  	 	 	check_error(char *),
-			parse_args(int c, char *v[]);
+			parse_args(int, char **);
 static int	replace_cmd(void);
 
 
@@ -106,8 +106,10 @@ main(int argc, char	*argv[])
 		if (replace_cmd() < 0)
 			exitstatus = ERROR_EXIT;
 		break;
+    case opt_unknown:
+        break;
 	}
-	exit(0);
+	exit(exitstatus);
 	/*NOTREACHED*/
 }
 	
@@ -274,7 +276,8 @@ check_error(char *msg)
 static void
 edit_cmd(void)
 {
-	char		n[MAX_FNAME], q[MAX_TEMPSTR], *editor;
+	char n[MAX_FNAME], q[MAX_TEMPSTR];
+    const char *editor;
 	register FILE	*f;
 	register int	ch;
 	int		t, x;
@@ -292,13 +295,13 @@ edit_cmd(void)
 		}
 		fprintf(stderr, "no crontab for %s - using an empty one\n",
 			User);
-		if (!(f = fopen("/dev/null", "r"))) {
+		if (!(f = fopen(_PATH_DEVNULL, "r"))) {
 			perror("/dev/null");
 			exit(ERROR_EXIT);
 		}
 	}
 
-	(void) sprintf(Filename, "/tmp/crontab.%d", Pid);
+	(void)sprintf(Filename, "/tmp/crontab.%d", Pid);
 	if (-1 == (t = open(Filename, O_CREAT|O_EXCL|O_RDWR, 0600))) {
 		perror(Filename);
 		goto fatal;
@@ -448,11 +451,10 @@ edit_cmd(void)
 		/*NOTREACHED*/
 	case -2:
 	abandon:
-		fprintf(stderr, "%s: edits left in %s\n",
-			ProgramName, Filename);
+		warnx("%s: edits left in %s\n", ProgramName, Filename);
 		goto done;
 	default:
-		fprintf(stderr, "%s: panic: bad switch() in replace_cmd()\n");
+		warnx("panic: bad switch() in replace_cmd()\n");
 		goto fatal;
 	}
  remove:

@@ -24,8 +24,34 @@
 #define const
 #endif
 
+#if defined(UNIXPC) || defined(unixpc)
+#define UNIXPC 1
+#define ATT 1
+#endif
+
+#ifndef POSIX
+#if (BSD >= 199103) || defined(__linux) || defined(ultrix) || defined(AIX) ||\
+	defined(HPUX) || defined(CONVEX) || defined(IRIX)
+#define POSIX
+#endif
+#endif
+
+#ifndef BSD
+#if defined(ultrix)
+#define BSD 198902
+#endif
+#endif
+
 /*****************************************************************/
 
+#if defined(POSIX) || defined(ATT)
+#define WAIT_T	int
+#endif
+
+#if !defined(POSIX) && !defined(ATT)
+/* classic BSD */
 #define	WAIT_T	union wait
+#endif
+
 #define	PID_T	pid_t
 #define	TIME_T	time_t
