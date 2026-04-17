@@ -49,12 +49,11 @@ nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
 			*snsap->snsap_sin4 = sin;
 			snsap->snsap_type = NSAP_TYPE_SIN4;
 			switch (subnet) {
-			case NSAP_SUBNET_TCP:
-				snsap->snsap_subnet = NSAP_SUBNET_TCP;
+			case NSAP_SUBNET_IPV4:
+				snsap->snsap_subnet = NSAP_SUBNET_IPV4;
 				break;
-			case NSAP_SUBNET_UDP:
-				snsap->snsap_subnet = NSAP_SUBNET_UDP;
-				break;
+			case NSAP_SUBNET_IPV6:
+				/* FALLTHROUGH */
 			case NSAP_SUBNET_UNKNOWN:
 				/* FALLTHROUGH */
 			default:
@@ -73,11 +72,10 @@ nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
 			*snsap->snsap_sin6 = sin6;
 			snsap->snsap_type = NSAP_TYPE_SIN6;
 			switch (subnet) {
-			case NSAP_SUBNET_TCP:
-				snsap->snsap_subnet = NSAP_SUBNET_TCP;
-				break;
-			case NSAP_SUBNET_UDP:
-				snsap->snsap_subnet = NSAP_SUBNET_UDP;
+			case NSAP_SUBNET_IPV4:
+				/* FALLTHROUGH */
+			case NSAP_SUBNET_IPV6:
+				snsap->snsap_subnet = NSAP_SUBNET_IPV6;
 				break;
 			case NSAP_SUBNET_UNKNOWN:
 				/* FALLTHROUGH */
@@ -114,6 +112,15 @@ nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, int type, int subnet)
 				break;
 			case NSAP_SUBNET_CLNS:
 				snsap->snsap_subnet = NSAP_SUBNET_CLNS;
+				break;
+			case NSAP_SUBNET_CLNP:
+				snsap->snsap_subnet = NSAP_SUBNET_CLNP;
+				break;
+			case NSAP_SUBNET_ISIS:
+				snsap->snsap_subnet = NSAP_SUBNET_ISIS;
+				break;
+			case NSAP_SUBNET_ESIS:
+				snsap->snsap_subnet = NSAP_SUBNET_ESIS;
 				break;
 			case NSAP_SUBNET_UNKNOWN:
 				/* FALLTHROUGH */
@@ -271,7 +278,7 @@ nsap_connect(struct sockaddr_nsap *snsap, int subnet, struct mbuf *nam, int af)
 	case AF_INET:
 	{
 		struct sockaddr_in *sin = mtod(nam, struct sockaddr_in);
-		nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, subnet);
+		nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4);
 		if (nam->m_len != sizeof(sin)) {
 			return (EINVAL);
 		}
@@ -286,7 +293,7 @@ nsap_connect(struct sockaddr_nsap *snsap, int subnet, struct mbuf *nam, int af)
 	case AF_INET6:
 	{
 		struct sockaddr_in6 *sin6 = mtod(nam, struct sockaddr_in6);
-		nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, subnet);
+		nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6);
 		if (nam->m_len != sizeof(sin6)) {
 			return (EINVAL);
 		}
@@ -362,12 +369,11 @@ nsap_disconnect(struct sockaddr_nsap *snsap, int af, int subnet)
 		struct sockaddr_in *sin = &snsap->snsap_sin4;
 		if (sin != NULL) {
 			switch (subnet) {
-			case NSAP_SUBNET_TCP:
-				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_TCP);
+			case NSAP_SUBNET_IPV4:
+				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4);
 				break;
-			case NSAP_SUBNET_UDP:
-				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_UDP);
-				break;
+			case NSAP_SUBNET_IPV6:
+				/* FALLTHROUGH */
 			case NSAP_SUBNET_UNKNOWN:
 				/* FALLTHROUGH */
 			default:
@@ -384,11 +390,10 @@ nsap_disconnect(struct sockaddr_nsap *snsap, int af, int subnet)
 		struct sockaddr_in6 *sin6 = &snsap->snsap_sin6;
 		if (sin6 != NULL) {
 			switch (subnet) {
-			case NSAP_SUBNET_TCP:
-				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_TCP);
-				break;
-			case NSAP_SUBNET_UDP:
-				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_UDP);
+			case NSAP_SUBNET_IPV4:
+				/* FALLTHROUGH */
+			case NSAP_SUBNET_IPV6:
+				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6);
 				break;
 			case NSAP_SUBNET_UNKNOWN:
 				/* FALLTHROUGH */
@@ -411,6 +416,15 @@ nsap_disconnect(struct sockaddr_nsap *snsap, int af, int subnet)
 				break;
 			case NSAP_SUBNET_CLNS:
 				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_CLNS);
+				break;
+			case NSAP_SUBNET_CLNP:
+				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_CLNP);
+				break;
+			case NSAP_SUBNET_ISIS:
+				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_ISIS);
+				break;
+			case NSAP_SUBNET_ESIS:
+				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_ESIS);
 				break;
 			case NSAP_SUBNET_UNKNOWN:
 				/* FALLTHROUGH */

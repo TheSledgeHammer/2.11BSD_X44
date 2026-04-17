@@ -41,11 +41,11 @@
 
 /* sockaddr union structure */
 union sockaddr_union {
-	struct sockaddr_in 	sin4;	/* ipv4 */
+	struct sockaddr_in sin4;	/* ipv4 */
 	struct sockaddr_in6 sin6;	/* ipv6 */
 	struct sockaddr_iso siso;	/* iso */
-	struct sockaddr_ns 	sns; 	/* xns */
-	struct sockaddr_x25	sx25;	/* x25 */
+	struct sockaddr_ns sns; 	/* xns */
+	struct sockaddr_x25 sx25;	/* x25 */
 	// sna, ipx, atm
 };
 
@@ -54,7 +54,7 @@ union addr_union {
 	struct in_addr 	in4;		/* ipv4 */
 	struct in6_addr in6;		/* ipv6 */
 	struct iso_addr	iso;		/* iso */
-	struct ns_addr	ns;			/* xns */
+	struct ns_addr	ns;		/* xns */
 	struct x25_addr	x25;		/* x25 */
 	// sna, ipx, atm
 };
@@ -65,14 +65,16 @@ union addr_union {
 union nsap_service {
 	char ns_addr[ISOLEN];		/* address */
 	unsigned char ns_addrlen; 	/* address length */
-	int ns_class;				/* class */
+	int ns_class;			/* class */
 };
 
 /* nsap_service class types */
 enum nsap_classes {
 	NSAP_CLASS_UNKNOWN,
 	/* iso (native) */
+	/* Connection Oriented */
 	NSAP_CLASS_CONS,
+	/* Connection-less Oriented */
 	NSAP_CLASS_CLNS,
 };
 
@@ -95,7 +97,6 @@ struct sockaddr_nsap {
 	long snsap_type; 	/* stack type */
 	long snsap_subnet;	/* subnet type */
 	union sockaddr_union snsap_union;
-#define snsap_sa snsap_union.sa
 #define snsap_sin4 snsap_union.sin4
 #define snsap_sin6 snsap_union.sin6
 #define snsap_sns snsap_union.sns
@@ -120,11 +121,14 @@ enum nsap_types {
 enum nsap_subnets {
 	NSAP_SUBNET_UNKNOWN,
 	/* inet (v4 and v6) */
-	NSAP_SUBNET_TCP,
-	NSAP_SUBNET_UDP,
+	NSAP_SUBNET_IPV4,
+	NSAP_SUBNET_IPV6,
 	/* iso (native) */
 	NSAP_SUBNET_CONS,
+	NSAP_SUBNET_CLNP,
 	NSAP_SUBNET_CLNS,
+	NSAP_SUBNET_ISIS,
+	NSAP_SUBNET_ESIS,
 	/* xns */
 	NSAP_SUBNET_IDP,
 	/* x25 */
@@ -132,8 +136,8 @@ enum nsap_subnets {
 	/* atm */
 	NSAP_SUBNET_ATM,
 	/* ipx */
-	NSAP_SUBNET_SPX,
-	/* sna (NCP?? and/or SDLC??)*/
+	NSAP_SUBNET_IPX,
+	/* sna */
 	NSAP_SUBNET_SNA,
 };
 
