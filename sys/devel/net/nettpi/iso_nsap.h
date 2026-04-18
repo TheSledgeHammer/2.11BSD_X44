@@ -115,9 +115,13 @@ enum nsap_types {
 	NSAP_TYPE_SATM,
 	NSAP_TYPE_SIPX,
 	NSAP_TYPE_SSNA,
+
+	/* should alway be last */
+	NSAP_TYPE_MAX
 };
 
 /* sockaddr_nsap subnet types */
+/* Network Layer Protocols */
 enum nsap_subnets {
 	NSAP_SUBNET_UNKNOWN,
 	/* inet (v4 and v6) */
@@ -125,8 +129,8 @@ enum nsap_subnets {
 	NSAP_SUBNET_IPV6,
 	/* iso (native) */
 	NSAP_SUBNET_CONS,
-	NSAP_SUBNET_CLNP,
 	NSAP_SUBNET_CLNS,
+	NSAP_SUBNET_CLNP,
 	NSAP_SUBNET_ISIS,
 	NSAP_SUBNET_ESIS,
 	/* xns */
@@ -139,6 +143,9 @@ enum nsap_subnets {
 	NSAP_SUBNET_IPX,
 	/* sna */
 	NSAP_SUBNET_SNA,
+
+	/* should alway be last */
+	NSAP_SUBNET_MAX
 };
 
 /* NSAP addr (ISO/OSI equivalent) */
