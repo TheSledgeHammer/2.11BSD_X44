@@ -54,7 +54,7 @@ union addr_union {
 	struct in_addr 	in4;		/* ipv4 */
 	struct in6_addr in6;		/* ipv6 */
 	struct iso_addr	iso;		/* iso */
-	struct ns_addr	ns;		/* xns */
+	struct ns_addr	ns;			/* xns */
 	struct x25_addr	x25;		/* x25 */
 	// sna, ipx, atm
 };
@@ -65,7 +65,7 @@ union addr_union {
 union nsap_service {
 	char ns_addr[ISOLEN];		/* address */
 	unsigned char ns_addrlen; 	/* address length */
-	int ns_class;			/* class */
+	int ns_class;				/* class */
 };
 
 /* nsap_service class types */
@@ -81,27 +81,35 @@ enum nsap_classes {
 /* nsap addr */
 struct nsap_addr {
 	union nsap_service nsapa_service;
-#define nsapa_addr nsapa_service.ns_addr
-#define nsapa_len nsapa_service.ns_addrlen
-#define nsapa_class nsapa_service.ns_class
-	union addr_union nsapa_union;
-#define nsapa_in4 nsapa_union.in4
-#define nsapa_in6 nsapa_union.in6
-#define nsapa_ns nsapa_union.ns
-#define nsapa_iso nsapa_union.iso
-#define nsapa_x25 nsapa_union.x25
+#define nsapa_service_addr 	nsapa_service.ns_addr
+#define nsapa_service_len 	nsapa_service.ns_addrlen
+#define nsapa_service_class nsapa_service.ns_class
+	union addr_union nsapa_addr;
+#define nsapa_in4 	nsapa_addr.in4
+#define nsapa_in6 	nsapa_addr.in6
+#define nsapa_ns 	nsapa_addr.ns
+#define nsapa_iso 	nsapa_addr.iso
+#define nsapa_x25 	nsapa_addr.x25
 };
 
 /* sockaddr nsap */
 struct sockaddr_nsap {
 	long snsap_type; 	/* stack type */
 	long snsap_subnet;	/* subnet type */
-	union sockaddr_union snsap_union;
-#define snsap_sin4 snsap_union.sin4
-#define snsap_sin6 snsap_union.sin6
-#define snsap_sns snsap_union.sns
-#define snsap_siso snsap_union.siso
-#define snsap_sx25 snsap_union.sx25
+	/* sockaddr's */
+	union sockaddr_union snsap_sockaddr;
+#define snsap_sin4 	snsap_sockaddr.sin4
+#define snsap_sin6 	snsap_sockaddr.sin6
+#define snsap_sns 	snsap_sockaddr.sns
+#define snsap_siso 	snsap_sockaddr.siso
+#define snsap_sx25 	snsap_sockaddr.sx25
+	/* addr's */
+	union addr_union snsap_addr;
+#define snsap_addr_in4 	snsap_addr.nsapa_in4
+#define snsap_addr_in6 	snsap_addr.nsapa_in6
+#define snsap_addr_ns 	snsap_addr.nsapa_ns
+#define snsap_addr_iso 	snsap_addr.nsapa_iso
+#define snsap_addr_x25 	snsap_addr.nsapa_x25
 };
 
 /* sockaddr_nsap stack types */
@@ -151,7 +159,11 @@ enum nsap_subnets {
 /* NSAP addr (ISO/OSI equivalent) */
 struct nsap_iso {
 	struct sockaddr_nsap niiso_snsap; 	/*  sockaddr_nsap (BSD-style) */
-	struct nsap_addr niiso_addr; 		/* nsap_addr (BSD-style) */
+	//struct nsap_addr niiso_addr; 		/* nsap_addr (BSD-style) */
+
+	uint32_t niiso_type_id;			/* type id (not nsap_types) */
+	uint32_t niiso_subnet_id;		/* subnet id (not nsap_subnets) */
+
 };
 
 /* ISODE Based code */
