@@ -510,7 +510,7 @@ nsap_connect(struct sockaddr_nsap *snsap, long subnet, int class, struct mbuf *n
 		if (sx25->x25_len == 0) {
 			return (EADDRNOTAVAIL);
 		}
-		nsap_setaddr(&snsap->snsap_addr, (struct x25_addr *)&sx25->x25_addr, NSAP_TYPE_SNS, NSAP_CLASS_CONS);
+		nsap_setaddr(&snsap->snsap_addr, (struct x25_addr *)&sx25->x25_addr, NSAP_TYPE_SX25, NSAP_CLASS_CONS);
 		break;
 	}
 	case AF_NATM:
