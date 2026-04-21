@@ -160,7 +160,7 @@ enum nsap_subnets {
 struct nsap_iso {
 	LIST_ENTRY(nsap_iso) nsi_lhash;	/* local nsap */
 	LIST_ENTRY(nsap_iso) nsi_fhash; /* Foreign nsap */
-	struct sockaddr_nsap *nsi_nsap; 	/*  sockaddr_nsap (BSD-style) */
+	struct sockaddr_nsap *nsi_snsap; 	/*  sockaddr_nsap (BSD-style) */
 	///struct nsap_addr 	 *nsi_naddr; 		/* nsap_addr (BSD-style) */
 	uint32_t nsi_type_id;			/* type id (not nsap_types) */
 	uint32_t nsi_subnet_id;		/* subnet id (not nsap_subnets) */

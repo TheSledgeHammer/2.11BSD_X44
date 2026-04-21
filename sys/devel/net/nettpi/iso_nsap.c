@@ -40,6 +40,10 @@ uint32_t tsap_id(long type, long subnet);
 #define TSAPHASH_LOCAL(tsiso, type, subnet) 	&(tsiso)->tsi_localhashtbl[tsap_id((type), (subnet))]
 #define TSAPHASH_FOREIGN(tsiso, type, subnet) 	&(tsiso)->tsi_foriegnhashtbl[tsap_id((type), (subnet))]
 
+static uint32_t tsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
+static long tsap_id_cnt;
+
+static void tsap_setup_tsap_id_table(void);
 
 static void
 nsap_type(struct sockaddr_nsap *snsap, int type)
@@ -136,7 +140,7 @@ nsap_subnet(struct sockaddr_nsap *snsap, int subnet)
 uint32_t
 nsap_id_hash(uint32_t x, int len)
 {
-	return ((lowbias32(x) % len));
+	return (enhanced_double_hash(x, len));
 }
 
 /*
@@ -462,7 +466,7 @@ nsap_connect(struct sockaddr_nsap *snsap, long subnet, int class, struct mbuf *n
 		if (sin6->sin6_port == 0) {
 			return (EADDRNOTAVAIL);
 		}
-		nsap_setaddr(&snsap->snsap_addr, (struct in6_addr *)&sin6->sin6_addr, NSAP_TYPE_SIN4, NSAP_CLASS_CLNS);
+		nsap_setaddr(&snsap->snsap_addr, (struct in6_addr *)&sin6->sin6_addr, NSAP_TYPE_SIN6, NSAP_CLASS_CLNS);
 		break;
 	}
 	case AF_ISO:
@@ -658,30 +662,45 @@ unknown:
 /* TSAP's */
 
 void
-tsap_init(struct tsap_iso *tsap, long type, long subnet)
+tsap_init(struct tsap_iso *tsap)
 {
 	tsap->tsi_foriegnhashtbl = hashinit(ISOLEN, M_PCB, &tsap->tsi_foreignhash);
 	tsap->tsi_localhashtbl = hashinit(ISOLEN, M_PCB, &tsap->tsi_localhash);
-	tsap->tsi_id = tsap_id(type, subnet);
+	tsap_setup_tsap_id_table();
 }
 
-struct nsap_iso *
-tsap_lookup_foreign(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, long type, long subnet)
+void
+tsap_set_tsap_id(struct tsap_iso *tsap, long type, long subnet)
 {
-	return (tsap_hashlookup(tsap, snsap, type, subnet, TPI_FOREIGN));
+	tsap->tsi_id = tsap_valid_ids[type][subnet];
 }
 
 struct nsap_iso *
-tsap_lookup_local(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, long type, long subnet)
+tsap_lookup_foreign(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long type, long subnet, int class)
 {
-	return (tsap_hashlookup(tsap, snsap, type, subnet, TPI_LOCAL));
+	/* validate tsap id */
+	if (tsap->tsi_id != tsap_valid_ids[type][subnet]) {
+		return (NULL);
+	}
+	return (tsap_hashlookup(tsap, snsap, nsapa, type, subnet, class, TPI_FOREIGN));
 }
 
 struct nsap_iso *
-tsap_hashlookup(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, long type, long subnet, int which)
+tsap_lookup_local(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long type, long subnet, int class)
+{
+	/* validate tsap id */
+	if (tsap->tsi_id != tsap_valid_ids[type][subnet]) {
+		return (NULL);
+	}
+	return (tsap_hashlookup(tsap, snsap, nsapa, type, subnet, class, TPI_LOCAL));
+}
+
+struct nsap_iso *
+tsap_hashlookup(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long type, long subnet, int class, int which)
 {
 	struct nsapisohead *head;
 	struct nsap_iso *nsap;
+	struct nsap_addr *snsapa;
 
 	switch (which) {
 	case TPI_FOREIGN:
@@ -693,7 +712,35 @@ tsap_hashlookup(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, long type, l
 			if (nsap->nsi_subnet_id != nsap_subnet_id(subnet)) {
 				continue;
 			}
-			if (nsap->nsi_nsap == snsap) {
+			/* get sockaddr_nsap */
+			if (nsap->nsi_snsap == snsap) {
+				/* get nsap_addr */
+				snsapa = &nsap->nsi_snsap->snsap_addr;
+				if (snsapa == nsapa) {
+					/* check service_class against class */
+					if (snsapa->nsapa_service_class == class) {
+						/* check type and subnet against class */
+						switch (class) {
+						case NSAP_CLASS_CONS:
+							if (type != (NSAP_TYPE_SISO | NSAP_TYPE_SX25)) {
+								if (subnet
+										!= (NSAP_SUBNET_CONS | NSAP_SUBNET_X25)) {
+									goto unknown;
+								}
+							}
+							break;
+						case NSAP_CLASS_CLNS:
+							if (type == (NSAP_TYPE_SISO | NSAP_TYPE_SX25)) {
+								if (subnet
+										== (NSAP_SUBNET_CONS | NSAP_SUBNET_X25)) {
+									goto unknown;
+								}
+							}
+							break;
+						}
+					}
+				}
+				/* validate type and subnet */
 				if (snsap->snsap_type == type) {
 					nsap->nsi_type_id = nsap_type_id(snsap->snsap_type);
 				} else {
@@ -718,7 +765,35 @@ tsap_hashlookup(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, long type, l
 			if (nsap->nsi_subnet_id != nsap_subnet_id(subnet)) {
 				continue;
 			}
-			if (nsap->nsi_nsap == snsap) {
+			/* get sockaddr_nsap */
+			if (nsap->nsi_snsap == snsap) {
+				/* get nsap_addr */
+				snsapa = &nsap->nsi_snsap->snsap_addr;
+				if (snsapa == nsapa) {
+					/* check service_class against class */
+					if (snsapa->nsapa_service_class == class) {
+						/* check type and subnet against class */
+						switch (class) {
+						case NSAP_CLASS_CONS:
+							if (type != (NSAP_TYPE_SISO | NSAP_TYPE_SX25)) {
+								if (subnet
+										!= (NSAP_SUBNET_CONS | NSAP_SUBNET_X25)) {
+									goto unknown;
+								}
+							}
+							break;
+						case NSAP_CLASS_CLNS:
+							if (type == (NSAP_TYPE_SISO | NSAP_TYPE_SX25)) {
+								if (subnet
+										== (NSAP_SUBNET_CONS | NSAP_SUBNET_X25)) {
+									goto unknown;
+								}
+							}
+							break;
+						}
+					}
+				}
+				/* validate type and subnet */
 				if (snsap->snsap_type == type) {
 					nsap->nsi_type_id = nsap_type_id(snsap->snsap_type);
 				} else {
@@ -735,6 +810,7 @@ tsap_hashlookup(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, long type, l
 		break;
 	}
 
+unknown:
 	return (NULL);
 
 out:
@@ -795,4 +871,46 @@ tsap_remove(struct nsap_iso *nsap, long type, long subnet, int which)
 		LIST_REMOVE(nsap, nsi_lhash);
 		break;
 	}
+}
+
+static void
+tsap_setup_tsap_id_table(void)
+{
+    long type, subnet, cnt;
+    uint32_t tsap_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
+
+    type = subnet = cnt = 0;
+    /* generate tsap_id table */
+    for (type = 1; type < NSAP_TYPE_MAX; type++) {
+        for (subnet = 1; subnet < NSAP_SUBNET_MAX; subnet++) {
+            tsap_ids[type][subnet] = 0;
+            tsap_ids[NSAP_TYPE_SIN4][NSAP_SUBNET_IPV4] = tsap_id(NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4); /* tsap id should match sin6 with ipv4 */
+            tsap_ids[NSAP_TYPE_SIN4][NSAP_SUBNET_IPV6] = tsap_id(NSAP_TYPE_SIN4, NSAP_SUBNET_IPV6);
+            tsap_ids[NSAP_TYPE_SIN6][NSAP_SUBNET_IPV4] = tsap_id(NSAP_TYPE_SIN6, NSAP_SUBNET_IPV4); /* tsap id should match sin4 with ipv6 */
+            tsap_ids[NSAP_TYPE_SIN6][NSAP_SUBNET_IPV6] = tsap_id(NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6);
+            tsap_ids[NSAP_TYPE_SNS][NSAP_SUBNET_IDP] = tsap_id(NSAP_TYPE_SNS, NSAP_SUBNET_IDP);
+            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_CONS] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_CONS);
+            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_CLNS] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_CLNS);
+            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_CLNP] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_CLNP);
+            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_ISIS] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_ISIS);
+            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_ESIS] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_ESIS);
+            tsap_ids[NSAP_TYPE_SX25][NSAP_SUBNET_X25] = tsap_id(NSAP_TYPE_SX25, NSAP_SUBNET_X25);
+            tsap_ids[NSAP_TYPE_SATM][NSAP_SUBNET_ATM] = tsap_id(NSAP_TYPE_SATM, NSAP_SUBNET_ATM);
+            tsap_ids[NSAP_TYPE_SIPX][NSAP_SUBNET_IPX] = tsap_id(NSAP_TYPE_SIPX, NSAP_SUBNET_IPX);
+            tsap_ids[NSAP_TYPE_SSNA][NSAP_SUBNET_SNA] = tsap_id(NSAP_TYPE_SSNA, NSAP_SUBNET_SNA);
+            //printf("tsap_ids[type%ld][subnet%ld]: %u\n", type, subnet, tsap_ids[type][subnet]);
+        }
+    }
+    /* remove invalid tsap_ids (i.e. any with 0) table */
+    for (type = 1; type < NSAP_TYPE_MAX; type++) {
+        for (subnet = 1; subnet < NSAP_SUBNET_MAX; subnet++) {
+            if (tsap_ids[type][subnet] != 0) {
+            	tsap_valid_ids[type][subnet] = tsap_ids[type][subnet];
+                cnt++;
+                //printf("valid_ids[type%ld][subnet%ld]: %u\n", type, subnet, valid_ids[type][subnet]);
+            }
+        }
+    }
+    tsap_id_cnt = cnt;
+    //printf("cnt: %d\n", cnt);
 }

@@ -304,5 +304,5 @@ uint32_t 	triple32(uint32_t);
 uint32_t 	triple32_r(uint32_t);
 uint32_t 	murmur3_32_hash(const void *, size_t, uint32_t);
 uint32_t 	murmur3_32_hash32(const uint32_t *, size_t, uint32_t);
-
+uint32_t 	enhanced_double_hash(uint32_t, int);
 #endif /* _LIB_LIBKERN_LIBKERN_H_ */
