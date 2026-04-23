@@ -1323,16 +1323,17 @@ vm_amap_cleaner_segment(amap, anon, segment)
 }
 
 void
-vm_amap_cleaner_page(amap, anon, segment, page)
+vm_amap_cleaner_page(amap, anon, segment, page, pgoffset)
 	vm_amap_t 	 	amap;
 	vm_anon_t 		anon;
 	vm_segment_t 	segment;
 	vm_page_t 		page;
+	vm_offset_t		pgoffset;
 {
 	vm_page_t chkpage;
 
 	if (page->segment != segment) {
-		chkpage = vm_page_lookup(segment, page->offset);
+		chkpage = vm_page_lookup(segment, pgoffset);
 		if (chkpage != NULL) {
 			if (chkpage->segment == segment) {
 				if (chkpage != page) {
@@ -1363,9 +1364,10 @@ vm_amap_cleaner_page(amap, anon, segment, page)
  *	vm_amap_cleaner:		[ internal use only ]
  */
 void
-vm_amap_cleaner(amap, anon)
+vm_amap_cleaner(amap, anon, pgoffset)
 	vm_amap_t 	 	amap;
 	vm_anon_t 		anon;
+	vm_offset_t		pgoffset;
 {
 	vm_segment_t segment;
 	vm_page_t page;
@@ -1375,7 +1377,7 @@ vm_amap_cleaner(amap, anon)
 	page = anon->u.an_page;
 	if (segment != NULL) {
 		if (page != NULL) {
-			vm_amap_cleaner_page(amap, anon, segment, page);
+			vm_amap_cleaner_page(amap, anon, segment, page, pgoffset);
 		} else {
 			vm_amap_cleaner_segment(amap, anon, segment);
 		}
@@ -1401,7 +1403,7 @@ vm_amap_clean(current, size, offset, amap)
 	amap_lock(amap);
 	for (; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
 		anon = vm_amap_lookup(&current->aref, offset);
-		vm_amap_cleaner(amap, anon);
+		vm_amap_cleaner(amap, anon, offset);
 		vm_amap_unadd(current->aref.ar_amap, offset);
 		refs = --anon->an_ref;
 		simple_unlock(&anon->an_lock);
