@@ -44,12 +44,12 @@
 
 struct nspcb tp_nspcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
 
-void in_getsufx(void *, u_short *, caddr_t, int);
-void in_putsufx(void *, caddr_t, int, int);
-void in_recycle_tsuffix(void *);
-void in_putnetaddr(void *, struct sockaddr *, int);
-int in_cmpnetaddr(void *, struct sockaddr *, int);
-void in_getnetaddr(void *, struct mbuf *, int);
+void ns_getsufx(void *, u_short *, caddr_t, int);
+void ns_putsufx(void *, caddr_t, int, int);
+void ns_recycle_tsuffix(void *);
+void ns_putnetaddr(void *, struct sockaddr *, int);
+int ns_cmpnetaddr(void *, struct sockaddr *, int);
+void ns_getnetaddr(void *, struct mbuf *, int);
 
 int tpidp_mtu(struct tpipcb *);
 int tpidp_output(void *, struct mbuf *, int, int);

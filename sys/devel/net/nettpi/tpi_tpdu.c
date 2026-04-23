@@ -39,13 +39,13 @@
 void
 tpdu_variable_add(struct tpdu *tpdu, struct mbuf *m, unsigned char type, unsigned char reglen, unsigned char xtdlen, unsigned char class, unsigned char maxlength)
 {
-	tpdu->_tpduv = mtod(m, struct tpdu_variable *);
+	tpdu->_tpduv = mtod(m, struct tpdu_variable*);
 	tpdu->_tpduv->ve_type = type;
 	tpdu->_tpduv->ve_class = class;
 	tpdu->_tpduv->ve_rf_length = reglen;
 	tpdu->_tpduv->ve_xf_length = xtdlen;
 	tpdu->_tpduv->ve_max_length = maxlength;
-    LIST_INSERT_HEAD(&tpdu->_tpduvh, tpdu->_tpduv, ve_link);
+	LIST_INSERT_HEAD(&tpdu->_tpduvh, tpdu->_tpduv, ve_link);
 }
 
 /*
@@ -146,44 +146,6 @@ tpdu_state_types(int tpdu_kind)
 	case TPDUT_XPD:
 	case TPDUT_XAK:
 	case TPDUT_RJ:
-	}
-}
-
-
-tpdu_state_class(int tpdu_class, int tpdu_kind)
-{
-	switch (tpdu_class) {
-	case TPDU_CLASS0:
-		/* Not valid in TP0 */
-		if ((tpdu_kind == (TPDUT_DC | TPDUT_AK | TPDUT_XPD | TPDUT_XAK | TPDUT_RJ))) {
-			break;
-		}
-		break;
-	case TPDU_CLASS1:
-		/* Not valid in TP1:
-		 * - with receipt confirmation option enabled
-		 */
-		int confirm = 0;
-		if ((tpdu_kind == (TPDUT_AK) && confirm == 0)) {
-			break;
-		}
-		break;
-	case TPDU_CLASS2:
-		/* Not valid in TP2:
-		 * - with explicit flow control option enabled
-		 */
-		int flow_control = 0;
-		if ((tpdu_kind == TPDUT_RJ) || (tpdu_kind == (TPDUT_AK | TPDUT_XPD | TPDUT_XAK) && (flow_control == 0))) {
-			break;
-		}
-		break;
-	case TPDU_CLASS3:
-	case TPDU_CLASS4:
-		/* Not valid in TP4: */
-		if ((tpdu_kind == TPDUT_RJ)) {
-			break;
-		}
-		break;
 	}
 }
 
@@ -322,35 +284,175 @@ tp_state_inact()
 
 }
 
-/* state action/event handle */
-connect_confirm()
+
+
+/* tpdu state actions (user requests) */
+/*
+ * Check current TPDU class with TPDU kind and options (if any).
+ * enable_confirm: 0 = yes, 1 = no
+ * flow_control: 0 = yes, 1 = no
+ * returns 0 if successful and 1 if unsuccessful.
+ */
+int
+tpdu_state_options(int tpdu_class, int tpdu_kind, int enable_confirm, int flow_control)
+{
+	int error;
+
+	switch (tpdu_class) {
+	case TPDU_CLASS0:
+		if (tpdu_kind == (TPDUT_DC | TPDUT_AK | TPDUT_XPD | TPDUT_XAK | TPDUT_RJ)) {
+			error = 1;
+			break;
+		}
+		error = 0;
+		break;
+	case TPDU_CLASS1:
+		if ((tpdu_kind == TPDUT_AK) && (enable_confirm == 0)) {
+			error = 1;
+			break;
+		}
+		error = 0;
+		break;
+	case TPDU_CLASS2:
+		if (tpdu_kind == TPDUT_RJ) {
+			error = 1;
+			break;
+		}
+		if ((tpdu_kind == (TPDUT_AK | TPDUT_XPD | TPDUT_XAK)) && (flow_control == 0)) {
+			error = 1;
+			break;
+		}
+		error = 0;
+		break;
+	case TPDU_CLASS3:
+		/* accepts all */
+		error = 0;
+		break;
+	case TPDU_CLASS4:
+		if ((tpdu_kind == TPDUT_RJ)) {
+			error = 1;
+			break;
+		}
+		error = 0;
+		break;
+	default:
+		error = 1;
+		break;
+	}
+	return (error);
+}
+
+tpdu_connect_confirm(int tpdu_class, int enable_confirm, int flow_control)
 {
 	//TPDUT_CC+TPDU_CMD
+	int action = 1;
+
+	action = tpdu_state_options(tpdu_class, TPDUT_CC, enable_confirm, flow_control);
+	if (action != 0) {
+		return (action);
+	}
+	return (action);
 }
 
-connect_request()
+tpdu_connect_request(int tpdu_class, int enable_confirm, int flow_control)
 {
 	//TPDUT_CR+TPDU_CMD
+	int action = 1;
+	action = tpdu_state_options(tpdu_class, TPDUT_CR, enable_confirm, flow_control);
+	if (action != 0) {
+		return (action);
+	}
+	return (action);
 }
 
-disconnect_confirm()
+tpdu_disconnect_confirm(int tpdu_class, int enable_confirm, int flow_control)
 {
 	//TPDUT_DC+TPDU_CMD
+	int action = 1;
+	action = tpdu_state_options(tpdu_class, TPDUT_DC, enable_confirm, flow_control);
+	if (action != 0) {
+		return (action);
+	}
+	return (action);
 }
 
-disconnect_request()
+tpdu_disconnect_request(int tpdu_class, int enable_confirm, int flow_control)
 {
 	//TPDUT_DR+TPDU_CMD
+	int action = 1;
+	action = tpdu_state_options(tpdu_class, TPDUT_DR, enable_confirm, flow_control);
+	if (action != 0) {
+		return (action);
+	}
+	return (action);
 }
 
-send_acknowledge()
+tpdu_send_acknowledge(int tpdu_class, int tpdu_kind, int enable_confirm, int flow_control)
 {
 	//TPDUT_AK+TPDU_CMD
 	//TPDUT_XAK+TPDU_CMD
+	int action = 1;
+
+	switch (tpdu_kind) {
+	case TPDUT_AK:
+		action = tpdu_state_options(tpdu_class, TPDUT_AK, enable_confirm, flow_control);
+		if (action != 0) {
+			break;
+		}
+		break;
+	case TPDUT_DT:
+		action = tpdu_state_options(tpdu_class, TPDUT_DT, enable_confirm, flow_control);
+		if (action != 0) {
+			break;
+		}
+		break;
+	case TPDUT_XPD:
+		action = tpdu_state_options(tpdu_class, TPDUT_XPD, enable_confirm, flow_control);
+		if (action != 0) {
+			break;
+		}
+		break;
+	case TPDUT_XAK:
+		action = tpdu_state_options(tpdu_class, TPDUT_XAK, enable_confirm, flow_control);
+		if (action != 0) {
+			break;
+		}
+		break;
+	}
+	return (action);
 }
 
-receive_acknowledge()
+tpdu_receive_acknowledge(int tpdu_class, int tpdu_kind, int enable_confirm, int flow_control)
 {
 	//TPDUT_AK+TPDU_CMD
 	//TPDUT_XAK+TPDU_CMD
+	int action = 1;
+
+	switch (tpdu_kind) {
+	case TPDUT_AK:
+		action = tpdu_state_options(tpdu_class, TPDUT_AK, enable_confirm, flow_control);
+		if (action != 0) {
+			break;
+		}
+		break;
+	case TPDUT_DT:
+		action = tpdu_state_options(tpdu_class, TPDUT_DT, enable_confirm, flow_control);
+		if (action != 0) {
+			break;
+		}
+		break;
+	case TPDUT_XPD:
+		action = tpdu_state_options(tpdu_class, TPDUT_XPD, enable_confirm, flow_control);
+		if (action != 0) {
+			break;
+		}
+		break;
+	case TPDUT_XAK:
+		action = tpdu_state_options(tpdu_class, TPDUT_XAK, enable_confirm, flow_control);
+		if (action != 0) {
+			break;
+		}
+		break;
+	}
+	return (action);
 }

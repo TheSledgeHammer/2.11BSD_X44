@@ -97,8 +97,8 @@ struct inpcbtable {
 #define inpt_lasthi inpt_lastport
 
 /* lookup */
-#define INPLOOKUP_FOREIGN	0xFA
-#define INPLOOKUP_LOCAL		0xFB
+#define INPLOOKUP_FOREIGN	0xAA
+#define INPLOOKUP_LOCAL		0xAB
 
 /* states in inp_state: */
 #define	INP_ATTACHED		0

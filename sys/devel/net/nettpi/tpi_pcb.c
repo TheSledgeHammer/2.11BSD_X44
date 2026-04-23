@@ -166,7 +166,7 @@ tpi_getref(struct tpi_ref **tpref, struct tpi_refinfo *tprefinfo, struct tpipcb 
 
 	obase = (caddr_t) tprefinfo->tpr_base;
 	size = tprefinfo->tpr_size * sizeof(struct tpi_ref);
-	r = (struct tpi_ref*) malloc(size + size, M_PCB, M_NOWAIT);
+	r = (struct tpi_ref *)malloc(size + size, M_PCB, M_NOWAIT);
 	if (r == 0) {
 		return (--tprefinfo->tpr_numopen, TP_ENOREF);
 	}

@@ -24,10 +24,6 @@ SRCS+=	nsdispatch.c nslexer.l nsparser.y
 SRCS+=	hesiod.c
 .endif
 
-# sub-directories net sources
-#.include "${.CURDIR}/net/hosttable/Makefile.inc"
-#.include "${.CURDIR}/net/named/Makefile.inc"
-
 SRCS+=	getaddrinfo.c getnameinfo.c
 .if (${USE_INET6} != "no")
 SRCS+=	ip6opt.c rthdr.c

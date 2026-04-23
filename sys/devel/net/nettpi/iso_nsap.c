@@ -27,23 +27,11 @@
  */
 
 #include <sys/errno.h>
+#include <sys/malloc.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 
 #include "iso_nsap.h"
-
-uint32_t nsap_id_hash(uint32_t x, int len);
-uint32_t nsap_type_id(long type);
-uint32_t nsap_subnet_id(long subnet);
-uint32_t tsap_id(long type, long subnet);
-
-#define TSAPHASH_LOCAL(tsiso, type, subnet) 	&(tsiso)->tsi_localhashtbl[tsap_id((type), (subnet))]
-#define TSAPHASH_FOREIGN(tsiso, type, subnet) 	&(tsiso)->tsi_foriegnhashtbl[tsap_id((type), (subnet))]
-
-static uint32_t tsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
-static long tsap_id_cnt;
-
-static void tsap_setup_tsap_id_table(void);
 
 static void
 nsap_type(struct sockaddr_nsap *snsap, int type)
@@ -137,6 +125,29 @@ nsap_subnet(struct sockaddr_nsap *snsap, int subnet)
 	}
 }
 
+struct nsap_iso *
+nsap_alloc(long type, long subnet)
+{
+	struct nsap_iso *nsap;
+
+	MALLOC(nsap, struct nsap_iso *, sizeof(*nsap), M_ISOSAP, M_WAITOK);
+	if (nsap == NULL) {
+		return (NULL);
+	}
+	bzero((caddr_t)nsap, sizeof(*nsap));
+	nsap->nsi_type_id = nsap_type_id(type);
+	nsap->nsi_subnet_id = nsap_subnet_id(subnet);
+	return (nsap);
+}
+
+void
+nsap_free(struct nsap_iso *nsap)
+{
+	if (nsap != NULL) {
+		FREE(nsap, M_ISOSAP);
+	}
+}
+
 uint32_t
 nsap_id_hash(uint32_t x, int len)
 {
@@ -150,11 +161,14 @@ nsap_id_hash(uint32_t x, int len)
 uint32_t
 nsap_type_id(long type)
 {
-	int len = ISOLEN;
+	uint32_t type_id;
+	int len;
+
+	len = ISOLEN;
 	if ((type <= NSAP_TYPE_UNKNOWN) || (type >= NSAP_TYPE_MAX)) {
 		len = 1;
 	}
-	uint32_t type_id = nsap_id_hash(type, len);
+	type_id = nsap_id_hash(type, len);
 	return (type_id);
 }
 
@@ -165,31 +179,15 @@ nsap_type_id(long type)
 uint32_t
 nsap_subnet_id(long subnet)
 {
-	int len = ISOLEN;
+	uint32_t subnet_id;
+	int len;
+
+	len = ISOLEN;
 	if ((subnet <= NSAP_SUBNET_UNKNOWN) || (subnet >= NSAP_SUBNET_MAX)) {
 		len = 1;
 	}
-	uint32_t subnet_id = nsap_id_hash(subnet, len);
+	subnet_id = nsap_id_hash(subnet, len);
 	return (subnet_id);
-}
-
-/*
- * tsap identifier:
- * - generates a tsap_id from the nsap_type_id and nsap_subnet_id.
- * - returns 0 if either nsap_type_id or nsap_subnet_id equals 0
- */
-uint32_t
-tsap_id(long type, long subnet)
-{
-	int len = ISOLEN;
-	uint32_t type_id = nsap_type_id(type);
-	uint32_t subnet_id = nsap_subnet_id(subnet);
-	if ((type_id == 0) || (subnet_id == 0)) {
-		len = 1;
-	}
-	uint32_t hashid = ((type_id + subnet_id) - ISOLEN);
-	uint32_t tsap_id = nsap_id_hash(hashid, len);
-	return (tsap_id);
 }
 
 void
@@ -433,8 +431,12 @@ unknown:
 	}
 }
 
+/*
+ * nsap_connect:
+ * - Assumes sockaddr for the selected protocol family has been defined prior to nsap_connect.
+ */
 int
-nsap_connect(struct sockaddr_nsap *snsap, long subnet, int class, struct mbuf *nam, int af)
+nsap_connect(struct mbuf *nam, struct sockaddr_nsap *snsap, long subnet, int class, int af)
 {
 	switch (af) {
 	case AF_INET:
@@ -537,10 +539,12 @@ nsap_disconnect(struct sockaddr_nsap *snsap, int subnet, int af)
 		struct sockaddr_in *sin = &snsap->snsap_sin4;
 		if (sin != NULL) {
 			switch (subnet) {
-			case NSAP_SUBNET_IPV6:
-				/* FALLTHROUGH */
 			case NSAP_SUBNET_IPV4:
 				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4);
+				nsap_setaddr(&snsap->snsap_addr, (struct in_addr *)&sin->sin_addr, NSAP_TYPE_SIN4, NSAP_CLASS_CLNS);
+				break;
+			case NSAP_SUBNET_IPV6:
+				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV6);
 				nsap_setaddr(&snsap->snsap_addr, (struct in_addr *)&sin->sin_addr, NSAP_TYPE_SIN4, NSAP_CLASS_CLNS);
 				break;
 			case NSAP_SUBNET_UNKNOWN:
@@ -561,7 +565,9 @@ nsap_disconnect(struct sockaddr_nsap *snsap, int subnet, int af)
 		if (sin6 != NULL) {
 			switch (subnet) {
 			case NSAP_SUBNET_IPV4:
-				/* FALLTHROUGH */
+				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV4);
+				nsap_setaddr(&snsap->snsap_addr, (struct in6_addr *)&sin6->sin6_addr, NSAP_TYPE_SIN6, NSAP_CLASS_CLNS);
+				break;
 			case NSAP_SUBNET_IPV6:
 				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6);
 				nsap_setaddr(&snsap->snsap_addr, (struct in6_addr *)&sin6->sin6_addr, NSAP_TYPE_SIN6, NSAP_CLASS_CLNS);
@@ -610,7 +616,6 @@ nsap_disconnect(struct sockaddr_nsap *snsap, int subnet, int af)
 				nsap_setaddr(&snsap->snsap_addr, (struct iso_addr *)&sisos->siso_addr, NSAP_TYPE_SISO, NSAP_CLASS_UNKNOWN);
 				break;
 			}
-
 		} else {
 			goto unknown;
 		}
@@ -657,260 +662,4 @@ unknown:
 		nsap_setaddr(&snsap->snsap_addr, NULL, NSAP_TYPE_UNKNOWN, NSAP_CLASS_UNKNOWN);
 		break;
 	}
-}
-
-/* TSAP's */
-
-void
-tsap_init(struct tsap_iso *tsap)
-{
-	tsap->tsi_foriegnhashtbl = hashinit(ISOLEN, M_PCB, &tsap->tsi_foreignhash);
-	tsap->tsi_localhashtbl = hashinit(ISOLEN, M_PCB, &tsap->tsi_localhash);
-	tsap_setup_tsap_id_table();
-}
-
-void
-tsap_set_tsap_id(struct tsap_iso *tsap, long type, long subnet)
-{
-	tsap->tsi_id = tsap_valid_ids[type][subnet];
-}
-
-struct nsap_iso *
-tsap_lookup_foreign(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long type, long subnet, int class)
-{
-	/* validate tsap id */
-	if (tsap->tsi_id != tsap_valid_ids[type][subnet]) {
-		return (NULL);
-	}
-	return (tsap_hashlookup(tsap, snsap, nsapa, type, subnet, class, TPI_FOREIGN));
-}
-
-struct nsap_iso *
-tsap_lookup_local(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long type, long subnet, int class)
-{
-	/* validate tsap id */
-	if (tsap->tsi_id != tsap_valid_ids[type][subnet]) {
-		return (NULL);
-	}
-	return (tsap_hashlookup(tsap, snsap, nsapa, type, subnet, class, TPI_LOCAL));
-}
-
-struct nsap_iso *
-tsap_hashlookup(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long type, long subnet, int class, int which)
-{
-	struct nsapisohead *head;
-	struct nsap_iso *nsap;
-	struct nsap_addr *snsapa;
-
-	switch (which) {
-	case TPI_FOREIGN:
-		head = TSAPHASH_FOREIGN(tsap, type, subnet);
-		LIST_FOREACH(nsap, head, nsi_fhash) {
-			if (nsap->nsi_type_id != nsap_type_id(type)) {
-				continue;
-			}
-			if (nsap->nsi_subnet_id != nsap_subnet_id(subnet)) {
-				continue;
-			}
-			/* get sockaddr_nsap */
-			if (nsap->nsi_snsap == snsap) {
-				/* get nsap_addr */
-				snsapa = &nsap->nsi_snsap->snsap_addr;
-				if (snsapa == nsapa) {
-					/* check service_class against class */
-					if (snsapa->nsapa_service_class == class) {
-						/* check type and subnet against class */
-						switch (class) {
-						case NSAP_CLASS_CONS:
-							if (type != (NSAP_TYPE_SISO | NSAP_TYPE_SX25)) {
-								if (subnet
-										!= (NSAP_SUBNET_CONS | NSAP_SUBNET_X25)) {
-									goto unknown;
-								}
-							}
-							break;
-						case NSAP_CLASS_CLNS:
-							if (type == (NSAP_TYPE_SISO | NSAP_TYPE_SX25)) {
-								if (subnet
-										== (NSAP_SUBNET_CONS | NSAP_SUBNET_X25)) {
-									goto unknown;
-								}
-							}
-							break;
-						}
-					}
-				}
-				/* validate type and subnet */
-				if (snsap->snsap_type == type) {
-					nsap->nsi_type_id = nsap_type_id(snsap->snsap_type);
-				} else {
-					nsap->nsi_type_id = nsap_type_id(type);
-				}
-				if (snsap->snsap_subnet == subnet) {
-					nsap->nsi_subnet_id = nsap_subnet_id(snsap->snsap_subnet);
-				} else {
-					nsap->nsi_subnet_id = nsap_subnet_id(subnet);
-				}
-				goto out;
-			}
-		}
-		break;
-
-	case TPI_LOCAL:
-		head = TSAPHASH_LOCAL(tsap, type, subnet);
-		LIST_FOREACH(nsap, head, nsi_lhash) {
-			if (nsap->nsi_type_id != nsap_type_id(type)) {
-				continue;
-			}
-			if (nsap->nsi_subnet_id != nsap_subnet_id(subnet)) {
-				continue;
-			}
-			/* get sockaddr_nsap */
-			if (nsap->nsi_snsap == snsap) {
-				/* get nsap_addr */
-				snsapa = &nsap->nsi_snsap->snsap_addr;
-				if (snsapa == nsapa) {
-					/* check service_class against class */
-					if (snsapa->nsapa_service_class == class) {
-						/* check type and subnet against class */
-						switch (class) {
-						case NSAP_CLASS_CONS:
-							if (type != (NSAP_TYPE_SISO | NSAP_TYPE_SX25)) {
-								if (subnet
-										!= (NSAP_SUBNET_CONS | NSAP_SUBNET_X25)) {
-									goto unknown;
-								}
-							}
-							break;
-						case NSAP_CLASS_CLNS:
-							if (type == (NSAP_TYPE_SISO | NSAP_TYPE_SX25)) {
-								if (subnet
-										== (NSAP_SUBNET_CONS | NSAP_SUBNET_X25)) {
-									goto unknown;
-								}
-							}
-							break;
-						}
-					}
-				}
-				/* validate type and subnet */
-				if (snsap->snsap_type == type) {
-					nsap->nsi_type_id = nsap_type_id(snsap->snsap_type);
-				} else {
-					nsap->nsi_type_id = nsap_type_id(type);
-				}
-				if (snsap->snsap_subnet == subnet) {
-					nsap->nsi_subnet_id = nsap_subnet_id(snsap->snsap_subnet);
-				} else {
-					nsap->nsi_subnet_id = nsap_subnet_id(subnet);
-				}
-				goto out;
-			}
-		}
-		break;
-	}
-
-unknown:
-	return (NULL);
-
-out:
-	tsap_rehash(tsap, nsap, type, subnet, which);
-	return (nsap);
-}
-
-void
-tsap_rehash(struct tsap_iso *tsap, struct nsap_iso *nsap, long type, long subnet, int which)
-{
-	struct nsapisohead *head;
-
-	switch (which) {
-	case TPI_FOREIGN:
-		head = TSAPHASH_FOREIGN(tsap, type, subnet);
-		if (nsap != LIST_FIRST(head)) {
-			LIST_REMOVE(nsap, nsi_fhash);
-			LIST_INSERT_HEAD(head, nsap, nsi_fhash);
-		}
-		break;
-	case TPI_LOCAL:
-		head = TSAPHASH_LOCAL(tsap, type, subnet);
-		if (nsap != LIST_FIRST(head)) {
-			LIST_REMOVE(nsap, nsi_lhash);
-			LIST_INSERT_HEAD(head, nsap, nsi_lhash);
-		}
-		break;
-	}
-}
-
-void
-tsap_insert(struct tsap_iso *tsap, struct nsap_iso *nsap, long type, long subnet, int which)
-{
-	struct nsapisohead *head;
-
-	head = NULL;
-
-	switch (which) {
-	case TPI_FOREIGN:
-		head = TSAPHASH_FOREIGN(tsap, type, subnet);
-		LIST_INSERT_HEAD(head, nsap, nsi_fhash);
-		break;
-	case TPI_LOCAL:
-		head = TSAPHASH_LOCAL(tsap, type, subnet);
-		LIST_INSERT_HEAD(head, nsap, nsi_lhash);
-		break;
-	}
-}
-
-void
-tsap_remove(struct nsap_iso *nsap, long type, long subnet, int which)
-{
-	switch (which) {
-	case TPI_FOREIGN:
-		LIST_REMOVE(nsap, nsi_fhash);
-		break;
-	case TPI_LOCAL:
-		LIST_REMOVE(nsap, nsi_lhash);
-		break;
-	}
-}
-
-static void
-tsap_setup_tsap_id_table(void)
-{
-    long type, subnet, cnt;
-    uint32_t tsap_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
-
-    type = subnet = cnt = 0;
-    /* generate tsap_id table */
-    for (type = 1; type < NSAP_TYPE_MAX; type++) {
-        for (subnet = 1; subnet < NSAP_SUBNET_MAX; subnet++) {
-            tsap_ids[type][subnet] = 0;
-            tsap_ids[NSAP_TYPE_SIN4][NSAP_SUBNET_IPV4] = tsap_id(NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4); /* tsap id should match sin6 with ipv4 */
-            tsap_ids[NSAP_TYPE_SIN4][NSAP_SUBNET_IPV6] = tsap_id(NSAP_TYPE_SIN4, NSAP_SUBNET_IPV6);
-            tsap_ids[NSAP_TYPE_SIN6][NSAP_SUBNET_IPV4] = tsap_id(NSAP_TYPE_SIN6, NSAP_SUBNET_IPV4); /* tsap id should match sin4 with ipv6 */
-            tsap_ids[NSAP_TYPE_SIN6][NSAP_SUBNET_IPV6] = tsap_id(NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6);
-            tsap_ids[NSAP_TYPE_SNS][NSAP_SUBNET_IDP] = tsap_id(NSAP_TYPE_SNS, NSAP_SUBNET_IDP);
-            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_CONS] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_CONS);
-            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_CLNS] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_CLNS);
-            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_CLNP] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_CLNP);
-            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_ISIS] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_ISIS);
-            tsap_ids[NSAP_TYPE_SISO][NSAP_SUBNET_ESIS] = tsap_id(NSAP_TYPE_SISO, NSAP_SUBNET_ESIS);
-            tsap_ids[NSAP_TYPE_SX25][NSAP_SUBNET_X25] = tsap_id(NSAP_TYPE_SX25, NSAP_SUBNET_X25);
-            tsap_ids[NSAP_TYPE_SATM][NSAP_SUBNET_ATM] = tsap_id(NSAP_TYPE_SATM, NSAP_SUBNET_ATM);
-            tsap_ids[NSAP_TYPE_SIPX][NSAP_SUBNET_IPX] = tsap_id(NSAP_TYPE_SIPX, NSAP_SUBNET_IPX);
-            tsap_ids[NSAP_TYPE_SSNA][NSAP_SUBNET_SNA] = tsap_id(NSAP_TYPE_SSNA, NSAP_SUBNET_SNA);
-            //printf("tsap_ids[type%ld][subnet%ld]: %u\n", type, subnet, tsap_ids[type][subnet]);
-        }
-    }
-    /* remove invalid tsap_ids (i.e. any with 0) table */
-    for (type = 1; type < NSAP_TYPE_MAX; type++) {
-        for (subnet = 1; subnet < NSAP_SUBNET_MAX; subnet++) {
-            if (tsap_ids[type][subnet] != 0) {
-            	tsap_valid_ids[type][subnet] = tsap_ids[type][subnet];
-                cnt++;
-                //printf("valid_ids[type%ld][subnet%ld]: %u\n", type, subnet, valid_ids[type][subnet]);
-            }
-        }
-    }
-    tsap_id_cnt = cnt;
-    //printf("cnt: %d\n", cnt);
 }

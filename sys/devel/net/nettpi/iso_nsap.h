@@ -39,6 +39,9 @@
  * - setup user library
  */
 
+/* malloctypes */
+#define M_ISOSAP 	103 /* netiso service access points */
+
 /* sockaddr union structure */
 union sockaddr_union {
 	struct sockaddr_in sin4;	/* ipv4 */
@@ -158,29 +161,81 @@ enum nsap_subnets {
 
 /* NSAP addr (ISO/OSI equivalent) */
 struct nsap_iso {
-	LIST_ENTRY(nsap_iso) nsi_lhash;	/* local nsap */
-	LIST_ENTRY(nsap_iso) nsi_fhash; /* Foreign nsap */
-	struct sockaddr_nsap *nsi_snsap; 	/*  sockaddr_nsap (BSD-style) */
-	///struct nsap_addr 	 *nsi_naddr; 		/* nsap_addr (BSD-style) */
-	uint32_t nsi_type_id;			/* type id (not nsap_types) */
-	uint32_t nsi_subnet_id;		/* subnet id (not nsap_subnets) */
+	LIST_ENTRY(nsap_iso) nsi_lhash;		/* local nsap */
+	LIST_ENTRY(nsap_iso) nsi_fhash; 	/* foreign nsap */
+	uint32_t nsi_type_id;				/* type id (not nsap_types) */
+	uint32_t nsi_subnet_id;				/* subnet id (not nsap_subnets) */
+	struct sockaddr_nsap *nsi_snsap;	/* sockaddr_nsap (BSD-style) */
+#define nsi_nsapa nsi_snsap->snsap_addr /* nsap_addr (BSD-style) */
+#define nsi_iso   nsi_snsap->snsap_siso /* ISO/OSI sockaddr */
+#define nsi_selectlen nsi_iso.siso_nlen
 };
 
 LIST_HEAD(nsapisohead, nsap_iso);
 
+#define TSAPLOOKUP_FOREIGN	0xBA
+#define TSAPLOOKUP_LOCAL	0xBB
+
 /* TSAP: Transport Service Access Point */
+/* Transport Layer Protocols */
+enum tsap_protocols {
+	TSAP_PROTOCOL_UNKNOWN,
+	/* inet (v4 and v6) */
+	TSAP_PROTOCOL_TCP,
+	TSAP_PROTOCOL_UDP,
+	/* iso */
+	TSAP_PROTOCOL_TP0,
+	TSAP_PROTOCOL_TP1,
+	TSAP_PROTOCOL_TP2,
+	TSAP_PROTOCOL_TP3,
+	TSAP_PROTOCOL_TP4,
+	/* xns */
+	TSAP_PROTOCOL_SPP,
+	/* ipx */
+	TSAP_PROTOCOL_SPX,
+	/* sna */
+	TSAP_PROTOCOL_SNA,
+
+	/* should alway be last */
+	TSAP_PROTOCOL_MAX
+};
+
 /* TSAP addr (ISO/OSI equivalent) */
 struct tsap_iso {
-	struct nsapisohead *tsi_localhashtbl;
-	struct nsapisohead *tsi_foriegnhashtbl;
-	struct nsap_iso *tsi_nsaps;
-	//tsi_addr		/* service_addr */
-	//tsi_addrlen 	/* service_addrlen */
-	//uint16_t tsi_port;
-	uint32_t tsi_id;	/* tsap id */
+	struct nsapisohead *tsi_localhashtbl;	/* local nsap hashtable */
+	struct nsapisohead *tsi_foriegnhashtbl; /* foreign nsap hashtable */
 	u_long tsi_localhash;
 	u_long tsi_foreignhash;
+	uint32_t tsi_id;						/* tsap id */
+	struct nsap_iso *tsi_nsaps; 			/* nsap back pointer */
+#define tsi_addr 		tsi_nsaps->nsi_nsapa.nsapa_service_addr
+#define tsi_addrlen 	tsi_nsaps->nsi_nsapa.nsapa_service_addrlen
+#define tsi_class		tsi_nsaps->nsi_nsapa.nsapa_service_class
+#define tsi_selectlen 	tsi_nsaps->nsi_iso.siso_tlen
 };
+
+/* NSAP */
+uint32_t nsap_id_hash(uint32_t, int);
+uint32_t nsap_type_id(long);
+uint32_t nsap_subnet_id(long);
+struct nsap_iso *nsap_alloc(long, long);
+void nsap_free(struct nsap_iso *);
+void nsap_setsockaddr(struct sockaddr_nsap *, void *, long, long);
+void nsap_service(struct nsap_addr *, char *, u_char, int);
+void nsap_setaddr(struct nsap_addr *, void *, long, int);
+int nsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
+void nsap_disconnect(struct sockaddr_nsap *, int, int);
+
+/* TSAP */
+extern uint32_t tsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
+
+int tsap_alloc(struct tsap_iso *, long, long);
+void tsap_init(struct tsap_iso *);
+int tsap_connect(struct mbuf *, int, int);
+void tsap_disconnect(void *, int, int);
+struct nsap_iso *tsap_lookup_foreign(struct tsap_iso *, struct sockaddr_nsap *, struct nsap_addr *, long, long, int);
+struct nsap_iso *tsap_lookup_local(struct tsap_iso *, struct sockaddr_nsap *, struct nsap_addr *, long, long, int);
+uint32_t tsap_id(long, long);
 
 #ifdef notyet
 /* ISODE Based code */
