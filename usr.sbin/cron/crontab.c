@@ -41,7 +41,7 @@ static const char *Options[] = { "???", "list", "delete", "edit", "replace" };
 
 
 static PID_T Pid;
-static char	User[MAX_UNAME], RealUser[MAX_UNAME];
+static const char User[MAX_UNAME], RealUser[MAX_UNAME];
 static char	Filename[MAX_FNAME];
 static FILE *NewCrontab;
 static int CheckErrorCount;
@@ -121,7 +121,7 @@ parse_args(int argc, char *argv[])
 
 	if (!(pw = getpwuid(getuid()))) {
 		fprintf(stderr, "%s: your UID isn't in the passwd file.\n",
-			ProgramName);
+				ProgramName);
 		fprintf(stderr, "bailing out.\n");
 		exit(ERROR_EXIT);
 	}
@@ -136,16 +136,13 @@ parse_args(int argc, char *argv[])
 				usage("bad debug option");
 			break;
 		case 'u':
-			if (getuid() != ROOT_UID)
-			{
-				fprintf(stderr,
-					"must be privileged to use -u\n");
+			if (getuid() != ROOT_UID) {
+				fprintf(stderr, "must be privileged to use -u\n");
 				exit(ERROR_EXIT);
 			}
-			if (!(pw = getpwnam(optarg)))
-			{
-				fprintf(stderr, "%s:  user `%s' unknown\n",
-					ProgramName, optarg);
+			if (!(pw = getpwnam(optarg))) {
+				fprintf(stderr, "%s:  user `%s' unknown\n", ProgramName,
+						optarg);
 				exit(ERROR_EXIT);
 			}
 			(void) strcpy(User, optarg);
@@ -293,16 +290,15 @@ edit_cmd(void)
 			perror(n);
 			exit(ERROR_EXIT);
 		}
-		fprintf(stderr, "no crontab for %s - using an empty one\n",
-			User);
+		fprintf(stderr, "no crontab for %s - using an empty one\n", User);
 		if (!(f = fopen(_PATH_DEVNULL, "r"))) {
 			perror("/dev/null");
 			exit(ERROR_EXIT);
 		}
 	}
 
-	(void)sprintf(Filename, "/tmp/crontab.%d", Pid);
-	if (-1 == (t = open(Filename, O_CREAT|O_EXCL|O_RDWR, 0600))) {
+	(void) sprintf(Filename, "/tmp/crontab.%d", Pid);
+	if (-1 == (t = open(Filename, O_CREAT | O_EXCL | O_RDWR, 0600))) {
 		perror(Filename);
 		goto fatal;
 	}
@@ -319,7 +315,7 @@ edit_cmd(void)
 
 	/* ignore the top few comments since we probably put them there.
 	 */
-	for (x = 0;  x < NHEADER_LINES;  x++) {
+	for (x = 0; x < NHEADER_LINES; x++) {
 		ch = get_char(f);
 		if (EOF == ch)
 			break;
@@ -344,12 +340,14 @@ edit_cmd(void)
 		perror(Filename);
 		exit(ERROR_EXIT);
 	}
+
  again:
 	rewind(NewCrontab);
 	if (ferror(NewCrontab)) {
 		fprintf(stderr, "%s: error while writing new crontab to %s\n",
 			ProgramName, Filename);
- fatal:		unlink(Filename);
+ fatal:
+ 	 	unlink(Filename);
 		exit(ERROR_EXIT);
 	}
 	if (fstat(t, &statbuf) < 0) {
@@ -358,9 +356,7 @@ edit_cmd(void)
 	}
 	mtime = statbuf.st_mtime;
 
-	if ((!(editor = getenv("VISUAL")))
-	 && (!(editor = getenv("EDITOR")))
-	    ) {
+	if ((!(editor = getenv("VISUAL"))) && (!(editor = getenv("EDITOR")))) {
 		editor = EDITOR;
 	}
 
@@ -387,8 +383,7 @@ edit_cmd(void)
 			exit(ERROR_EXIT);
 		}
 		if (strlen(editor) + strlen(Filename) + 2 >= MAX_TEMPSTR) {
-			fprintf(stderr, "%s: editor or filename too long\n",
-				ProgramName);
+			fprintf(stderr, "%s: editor or filename too long\n", ProgramName);
 			exit(ERROR_EXIT);
 		}
 		sprintf(q, "%s %s", editor, Filename);
@@ -404,20 +399,19 @@ edit_cmd(void)
 	/* parent */
 	xpid = wait(&waiter);
 	if (xpid != pid) {
-		fprintf(stderr, "%s: wrong PID (%d != %d) from \"%s\"\n",
-			ProgramName, xpid, pid, editor);
+		fprintf(stderr, "%s: wrong PID (%d != %d) from \"%s\"\n", ProgramName,
+				xpid, pid, editor);
 		goto fatal;
 	}
 	if (WIFEXITED(waiter) && WEXITSTATUS(waiter)) {
-		fprintf(stderr, "%s: \"%s\" exited with status %d\n",
-			ProgramName, editor, WEXITSTATUS(waiter));
+		fprintf(stderr, "%s: \"%s\" exited with status %d\n", ProgramName,
+				editor, WEXITSTATUS(waiter));
 		goto fatal;
 	}
 	if (WIFSIGNALED(waiter)) {
-		fprintf(stderr,
-			"%s: \"%s\" killed; signal %d (%score dumped)\n",
-			ProgramName, editor, WTERMSIG(waiter),
-			WCOREDUMP(waiter) ?"" :"no ");
+		fprintf(stderr, "%s: \"%s\" killed; signal %d (%score dumped)\n",
+				ProgramName, editor, WTERMSIG(waiter),
+				WCOREDUMP(waiter) ? "" : "no ");
 		goto fatal;
 	}
 	if (fstat(t, &statbuf) < 0) {
@@ -425,8 +419,7 @@ edit_cmd(void)
 		goto fatal;
 	}
 	if (mtime == statbuf.st_mtime) {
-		fprintf(stderr, "%s: no changes made to crontab\n",
-			ProgramName);
+		fprintf(stderr, "%s: no changes made to crontab\n", ProgramName);
 		goto remove;
 	}
 	fprintf(stderr, "%s: installing new crontab\n", ProgramName);
@@ -450,16 +443,16 @@ edit_cmd(void)
 		}
 		/*NOTREACHED*/
 	case -2:
-	abandon:
+abandon:
 		warnx("%s: edits left in %s\n", ProgramName, Filename);
 		goto done;
 	default:
 		warnx("panic: bad switch() in replace_cmd()\n");
 		goto fatal;
 	}
- remove:
+remove:
 	unlink(Filename);
- done:
+done:
 	log_it(RealUser, Pid, "END EDIT", User);
 }
 	
@@ -501,12 +494,14 @@ replace_cmd(void)
 	while (EOF != (ch = get_char(NewCrontab)))
 		putc(ch, tmp);
 	ftruncate(fileno(tmp), ftell(tmp));
-	fflush(tmp);  rewind(tmp);
+	fflush(tmp);
+	rewind(tmp);
 
 	if (ferror(tmp)) {
 		fprintf(stderr, "%s: error while writing new crontab to %s\n",
-			ProgramName, tn);
-		fclose(tmp);  unlink(tn);
+				ProgramName, tn);
+		fclose(tmp);
+		unlink(tn);
 		return (-2);
 	}
 
@@ -518,7 +513,8 @@ replace_cmd(void)
 	 *		vix 31mar87
 	 */
 	Set_LineNum(1 - NHEADER_LINES)
-	CheckErrorCount = 0;  eof = FALSE;
+	CheckErrorCount = 0;
+	eof = FALSE;
 	while (!CheckErrorCount && !eof) {
 		switch (load_env(envstr, tmp)) {
 		case ERR:
@@ -536,23 +532,24 @@ replace_cmd(void)
 
 	if (CheckErrorCount != 0) {
 		fprintf(stderr, "errors in crontab file, can't install.\n");
-		fclose(tmp);  unlink(tn);
+		fclose(tmp);
+		unlink(tn);
 		return (-1);
 	}
 
-	if (fchown(fileno(tmp), ROOT_UID, -1) < OK)
-		{
+	if (fchown(fileno(tmp), ROOT_UID, -1) < OK) {
 		perror("chown");
-		fclose(tmp);  unlink(tn);
+		fclose(tmp);
+		unlink(tn);
 		return (-2);
-		}
+	}
 
-	if (fchmod(fileno(tmp), 0600) < OK)
-		{
+	if (fchmod(fileno(tmp), 0600) < OK) {
 		perror("chown");
-		fclose(tmp);  unlink(tn);
+		fclose(tmp);
+		unlink(tn);
 		return (-2);
-		}
+	}
 
 	if (fclose(tmp) == EOF) {
 		perror("fclose");
@@ -560,10 +557,9 @@ replace_cmd(void)
 		return (-2);
 	}
 
-	(void) sprintf(n, CRON_TAB(User));
+	(void)sprintf(n, CRON_TAB(User));
 	if (rename(tn, n)) {
-		fprintf(stderr, "%s: error renaming %s to %s\n",
-			ProgramName, tn, n);
+		fprintf(stderr, "%s: error renaming %s to %s\n", ProgramName, tn, n);
 		perror("rename");
 		unlink(tn);
 		return (-2);

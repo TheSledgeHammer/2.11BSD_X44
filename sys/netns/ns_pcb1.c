@@ -53,95 +53,59 @@ __KERNEL_RCSID(0, "$NetBSD: ns_pcb.c,v 1.20 2004/02/24 15:22:01 wiz Exp $");
 #include <netns/ns_var.h>
 
 struct nspcb {
-	LIST_ENTRY(nspcb) 	 	nsp_hash;
-	LIST_ENTRY(nspcb) 	 	nsp_lhash;
-	CIRCLEQ_ENTRY(nspcb) 		nsp_queue;
-	struct nspcbtable		*nsp_table;
-	int 				nsp_state;		/* bind/connect state */
-	struct socket 			*nsp_socket;		/* back pointer to socket */
-	struct ns_addr 			nsp_faddr;		/* destination address */
-	struct ns_addr 			nsp_laddr;		/* socket's address */
-	caddr_t				nsp_pcb;		/* protocol specific stuff */
-	struct route 			nsp_route;		/* routing information */
-	struct ns_addr 			nsp_lastdst;		/* validate cached route for dg socks*/
-	long				nsp_notify_param;	/* extra info passed via ns_pcbnotify*/
-	short				nsp_flags;
-	u_int8_t 			nsp_dpt;		/* default packet type for idp_output*/
-	u_int8_t 			nsp_rpt;		/* last received packet type by idp_input() */
+	LIST_ENTRY(nspcb) nsp_hash;
+	CIRCLEQ_ENTRY(nspcb) nsp_queue; /* doubly linked list */
+	struct nspcbtable *nsp_table;
+	struct socket *nsp_socket;		/* back pointer to socket */
+	struct ns_addr nsp_faddr;		/* destination address */
+	struct ns_addr nsp_laddr;		/* socket's address */
+	caddr_t	nsp_pcb;			/* protocol specific stuff */
+	struct route nsp_route;			/* routing information */
+	struct ns_addr nsp_lastdst;		/* validate cached route for dg socks*/
+	long nsp_notify_param;			/* extra info passed via ns_pcbnotify*/
+	short nsp_flags;
+	u_int8_t nsp_dpt;			/* default packet type for idp_output*/
+	u_int8_t nsp_rpt;			/* last received packet type by idp_input() */
 };
-#define nsp_lport 			nsp_laddr.x_port
-#define nsp_fport 			nsp_faddr.x_port
+#define nsp_lport nsp_laddr.x_port
+#define nsp_fport nsp_faddr.x_port
 
 LIST_HEAD(nspcbhead, nspcb);
 CIRCLEQ_HEAD(nspcbqueue, nspcb);
 
 struct nspcbtable {
-	struct nspcbqueue 		nspt_queue;
-	struct nspcbhead 		*nspt_hashtbl;
-	struct nspcbhead 		*nspt_porthashtbl;
-	struct nspcbhead 		*nspt_bindhashtbl;
-	struct nspcbhead 		*nspt_connecthashtbl;
-	u_long 				nspt_porthash;
-	u_long 				nspt_bindhash;
-	u_long 				nspt_connecthash;
+	struct nspcbqueue nspt_queue;
+	struct nspcbhead *nspt_hashtbl;
+	u_long nspt_hash;
 };
-
-/* states in nsp_state: */
-#define	NSP_ATTACHED	0
-#define	NSP_BOUND		1
-#define	NSP_CONNECTED	2
 
 static const struct	ns_addr zerons_addr;
 
-#define	NSPCBHASH_PORT(table, lport) \
-	&(table)->nspt_porthashtbl[ntohs(lport) & (table)->nspt_porthash]
-#define	NSPCBHASH_BIND(table, laddr, lport) \
-	&(table)->nspt_bindhashtbl[ \
-	    ((ntohl((laddr).x_port) + ntohs(lport))) & (table)->nspt_bindhash]
-#define	NSPCBHASH_CONNECT(table, faddr, fport, laddr, lport) \
-	&(table)->nspt_connecthashtbl[ \
-	    ((ntohl((faddr).x_port) + ntohs(fport)) + \
-	     (ntohl((laddr).x_port) + ntohs(lport))) & (table)->nspt_connecthash]
+#define NSPCBHASH(table, faddr, fport, laddr, lport) 	\
+	&(table)->nspt_hashtbl[((ntohl((faddr)) + ntohs(fport)) + \
+	     (ntohl((laddr)) + ntohs(lport))) & (table)->nspt_hash]
 
-struct nspcbhead *
-ns_pcbhash(table, laddr, lport, faddr, fport)
-	struct nspcbtable *table;
-	struct ns_addr laddr, faddr;
-	uint16_t lport, fport;
-{
-	struct nspcbhead *nshash;
-	uint32_t nethash;
-
-	uint32_t lahash = fnva_32_buf(laddr, sizeof(*laddr), FNV1_32_INIT);	/* laddr hash */
-	uint32_t lphash = fnva_32_buf(&lport, sizeof(lport), FNV1_32_INIT);	/* lport hash */
-	uint32_t fahash = fnva_32_buf(faddr, sizeof(*faddr), FNV1_32_INIT);	/* faddr hash */
-	uint32_t fphash = fnva_32_buf(&fport, sizeof(fport), FNV1_32_INIT);	/* fport hash */
-
-	nethash = ntohl(laddr.x_port) + ntohs(lport) + ntohl(faddr.x_port) + ntohs(fport);
-	nshash = &table->nspt_hashtbl[nethash & table->nspt_hashtbl];
-	return (nshash);
-}
+static struct nspcb *ns_pcbhashlookup(struct nspcbtable *, struct ns_addr *, u_int16_t, struct ns_addr *, u_int16_t, int);
+static void ns_pcbrehash(struct nspcbhead *, struct nspcb *);
+static void ns_pcbinsert(struct nspcbtable *, struct nspcb *);
+static void ns_pcbremove(struct nspcb *);
 
 void
-ns_pcbinit(table, bindhashsize, connecthashsize)
+ns_pcbinit(table, hashsize)
 	struct nspcbtable *table;
-	int bindhashsize, connecthashsize;
+	int hashsize;
 {
 	CIRCLEQ_INIT(&table->nspt_queue);
-	table->nspt_hashtbl = hashinit(bindhashsize, M_PCB, &table->nspt_hashtbl);
-	table->nspt_bindhashtbl = hashinit(bindhashsize, M_PCB, &table->nspt_bindhash);
-	table->nspt_connecthashtbl = hashinit(connecthashsize, M_PCB, &table->nspt_connecthash);
+	table->nspt_hashtbl = hashinit(hashsize, M_PCB, &table->nspt_hash);
 }
 
 int
-ns_pcballoc(so, v)
-	struct socket *so;
-	void *v;
+ns_pcballoc(struct socket *so, void *v)
 {
 	struct nspcbtable *table = v;
 	struct nspcb *nsp;
 
-	nsp = malloc(sizeof(*nsp), M_PCB, M_NOWAIT);
+	MALLOC(nsp, struct nspcb *, sizeof(*nsp), M_PCB, M_WAITOK);
 	if (nsp == 0) {
 		return (ENOBUFS);
 	}
@@ -149,61 +113,13 @@ ns_pcballoc(so, v)
 	nsp->nsp_table = table;
 	nsp->nsp_socket = so;
 	so->so_pcb = nsp;
-	ns_pcbhash(table, nsp->nsp_laddr, nsp->nsp_lport, nsp->nsp_faddr, nsp->nsp_lport);
 	CIRCLEQ_INSERT_HEAD(&table->nspt_queue, nsp, nsp_queue);
-	LIST_INSERT_HEAD(ns_pcbhash(table, nsp->nsp_laddr, nsp->nsp_lport, nsp->nsp_faddr, nsp->nsp_lport), nsp, nsp_lhash);
-	ns_pcbstate(nsp, NSP_ATTACHED);
+	ns_pcbinsert(table, nsp);
 	return (0);
 }
 
-struct nspcb *
-ns_pcblookup(table, faddr, fport_arg, laddr, lport_arg, wildp)
-	struct nspcbtable *table;
-	struct ns_addr faddr, laddr;
-	u_int lport_arg, fport_arg;
-	int wildp;
-{
-	struct nspcbhead *head;
-	struct nspcb *nsp;
-	int matchwild = 3, wildcard;
-	u_int16_t lport = lport_arg;
-	u_int16_t fport = fport_arg;
-
-	head = ns_pcbhash(table, laddr, lport, faddr, fport);
-	LIST_FOREACH(nsp, head, nsp_lhash) {
-		if (nsp->nsp_lport != lport) {
-
-		}
-		if (ns_nullhost(nsp->nsp_faddr)) {
-			if (!ns_nullhost(faddr))
-				wildcard++;
-		} else {
-			if (ns_nullhost(*faddr))
-				wildcard++;
-			else {
-				if (!ns_hosteq(nsp->nsp_faddr, faddr))
-					continue;
-				if (nsp->nsp_fport != fport) {
-					if (nsp->nsp_fport != 0)
-						continue;
-					else
-						wildcard++;
-				}
-			}
-		}
-	}
-
-	head = ns_pcbhash(table, zerons_addr, lport, faddr, fport);
-	LIST_FOREACH(nsp, head, nsp_hash) {
-
-	}
-}
-
 int
-ns_pcbbind(v, nam, p)
-	void *v;
-	struct mbuf *nam;
-	struct proc *p;
+ns_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 {
 	struct nspcb *nsp;
 	struct socket *so;
@@ -245,7 +161,7 @@ ns_pcbbind(v, nam, p)
 				&& (p == 0 || suser1(p->p_ucred, &p->p_acflag))) {
 			return (EACCES);
 		}
-		t = ns_pcblookup_port(table, &zerons_addr, lport, wild);
+		t = ns_pcblookup(table, &zerons_addr, lport, wild);
 		if (t == 0) {
 			return (EADDRINUSE);
 		}
@@ -258,13 +174,9 @@ noname:
 				nspcb.nsp_lport = NSPORT_RESERVED;
 				lport = htons(nspcb.nsp_lport);
 			}
-		} while (ns_pcblookup_port(table, &zerons_addr, lport, wild));
+		} while (ns_pcblookup(table, &zerons_addr, lport, wild));
 	}
 	nsp->nsp_lport = lport;
-	LIST_REMOVE(&nsp->nsp_head, nsp_lhash);
-	head = NSPCBHASH_PORT(table, nsp->nsp_lport);
-	LIST_INSERT_HEAD(head, &nsp->nsp_head, nsp_lhash);
-	ns_pcbstate(nsp, NSP_BOUND);
 	return (0);
 }
 
@@ -275,9 +187,7 @@ noname:
  * then pick one.
  */
 int
-ns_pcbconnect(v, nam)
-	void *v;
-	struct mbuf *nam;
+ns_pcbconnect(void *v, struct mbuf *nam)
 {
 	struct nspcb *nsp = v;
 	struct ns_ifaddr *ia;
@@ -365,15 +275,13 @@ ns_pcbconnect(v, nam)
 		}
 		nsp->nsp_laddr.x_net = satons_addr(ia->ia_addr).x_net;
 	}
-	if (ns_pcblookup_connect(nsp->nsp_table, &sns->sns_addr,
-			sns->sns_addr.x_port,
-			!ns_nullhost(nsp->nsp_laddr) ? nsp->nsp_laddr : &ia->ia_addr,
-			nsp->nsp_lport)) {
+	if (ns_pcblookup(nsp->nsp_table, &sns->sns_addr, nsp->nsp_lport, 0)) {
 		return (EADDRINUSE);
 	}
 	if (ns_nullhost(nsp->nsp_laddr)) {
-		if (nsp->nsp_lport == 0)
-			(void) ns_pcbbind(nsp, (struct mbuf*) 0, (struct proc*) 0);
+		if (nsp->nsp_lport == 0) {
+			(void)ns_pcbbind(nsp, (struct mbuf *)0, (struct proc *)0);
+		}
 		nsp->nsp_laddr.x_host = ns_thishost;
 	}
 	nsp->nsp_faddr = sns->sns_addr;
@@ -382,38 +290,34 @@ ns_pcbconnect(v, nam)
 }
 
 void
-ns_pcbdisconnect(v)
-	void *v;
+ns_pcbdisconnect(void *v)
 {
 	struct nspcb *nsp = v;
 
 	nsp->nsp_faddr = zerons_addr;
-	ns_pcbstate(nsp, NSP_BOUND);
-	if (nsp->nsp_socket->so_state & SS_NOFDREF)
+	if (nsp->nsp_socket->so_state & SS_NOFDREF) {
 		ns_pcbdetach(nsp);
+	}
 }
 
 void
-ns_pcbdetach(v)
-	void *v;
+ns_pcbdetach(void *v)
 {
 	struct nspcb *nsp = v;
 	struct socket *so = nsp->nsp_socket;
 
 	so->so_pcb = 0;
 	sofree(so);
-	if (nsp->nsp_route.ro_rt)
+	if (nsp->nsp_route.ro_rt) {
 		rtfree(nsp->nsp_route.ro_rt);
-	ns_pcbstate(nsp, NSP_ATTACHED);
-	LIST_REMOVE(&nsp->nsp_head, nsph_lhash);
-	CIRCLEQ_REMOVE(&nsp->nsp_table->nspt_queue, &nsp->nsp_head, nsph_queue);
+	}
+	ns_pcbremove(nsp);
+	CIRCLEQ_REMOVE(&nsp->nsp_table->nspt_queue, nsp, nsp_queue);
 	free(nsp, M_PCB);
 }
 
 void
-ns_setsockaddr(nsp, nam)
-	struct nspcb *nsp;
-	struct mbuf *nam;
+ns_setsockaddr(struct nspcb *nsp, struct mbuf *nam)
 {
 	struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
 
@@ -426,9 +330,7 @@ ns_setsockaddr(nsp, nam)
 }
 
 void
-ns_setpeeraddr(nsp, nam)
-	struct nspcb *nsp;
-	struct mbuf *nam;
+ns_setpeeraddr(struct nspcb *nsp, struct mbuf *nam)
 {
 	struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
 
@@ -448,21 +350,15 @@ ns_setpeeraddr(nsp, nam)
  * be a parameter list!)
  */
 void
-ns_pcbnotify(table, faddr, fport, laddr, lport, errno, notify, param)
-	struct nspcbtable *table;
-	struct ns_addr faddr, laddr;
-	u_int16_t fport, lport;
-	long param;
-	int errno;
-	void (*notify)(struct nspcb *);
+ns_pcbnotify(struct nspcbtable *table, struct ns_addr *dst, int errno, void (*notify)(struct nspcb *, int), long param)
 {
 	struct nspcbhead *head;
 	struct nspcb *nsp, *oinp;
 	int s = splnet();
 
-	head = NSPCBHASH_CONNECT(table, faddr, fport, laddr, lport);
+	head = NSPCBHASH(table, dst, nsp->nsp_fport, &nsp->nsp_laddr, nsp->nsp_lport);
 	for (nsp = (struct nspcb *)LIST_FIRST(head); nsp != NULL;) {
-		if (!ns_hosteq(nsp->nsp_faddr, faddr)) {
+		if (!ns_hosteq(*dst, nsp->nsp_faddr)) {
 		next:
 			nsp = (struct nspcb *)LIST_NEXT(nsp, nsp_hash);
 			continue;
@@ -476,16 +372,16 @@ ns_pcbnotify(table, faddr, fport, laddr, lport, errno, notify, param)
 		oinp = nsp;
 		nsp = (struct nspcb *)LIST_NEXT(nsp, nsp_hash);
 		oinp->nsp_notify_param = param;
-		(*notify)(oinp);
+		(*notify)(oinp, errno);
 	}
 	splx(s);
 }
 
+#ifdef notdef
 /*
  * After a routing change, flush old routing
  * and allocate a (hopefully) better one.
  */
-void
 ns_rtchange(nsp)
 	struct nspcb *nsp;
 {
@@ -499,142 +395,92 @@ ns_rtchange(nsp)
 	}
 	/* SHOULD NOTIFY HIGHER-LEVEL PROTOCOLS */
 }
+#endif
 
 struct nspcb *
-ns_pcblookup_port(table, faddr, lport, wildp)
-	struct nspcbtable *table;
-	const struct ns_addr faddr;
-	u_int16_t lport;
-	int wildp;
+ns_pcblookup(struct nspcbtable *table, struct ns_addr *faddr, u_int16_t lport_arg, int wildp)
+{
+	u_short lport = lport_arg;
+	u_short fport = faddr->x_port;
+
+	return (ns_pcbhashlookup(table, faddr, fport, &zerons_addr, lport_arg, wildp));
+}
+
+static struct nspcb *
+ns_pcbhashlookup(struct nspcbtable *table, struct ns_addr *faddr, u_int16_t fport_arg, struct ns_addr *laddr, u_int16_t lport_arg, int wildp)
 {
 	struct nspcbhead *head;
-	struct nspcb_hdr *nsph;
 	struct nspcb *nsp, *match;
 	int matchwild = 3, wildcard;
-	u_int16_t fport;
+	u_int16_t lport = lport_arg;
+	u_int16_t fport = fport_arg;
 
-	fport = faddr->x_port;
-	head = NSPCBHASH_PORT(table, lport);
-	LIST_FOREACH(nsph, head, nsph_lhash) {
-		nsp = (struct nspcb *)nsph;
+	head = NSPCBHASH(table, laddr, lport, faddr, fport);
+	LIST_FOREACH(nsp, head, nsp_hash) {
 		if (nsp->nsp_lport != lport) {
 			continue;
 		}
 		wildcard = 0;
 		if (ns_nullhost(nsp->nsp_faddr)) {
-			if (!ns_nullhost(faddr))
+			if (!ns_nullhost(*faddr)) {
 				wildcard++;
+			}
 		} else {
-			if (ns_nullhost(*faddr))
+			if (ns_nullhost(*faddr)) {
 				wildcard++;
-			else {
-				if (!ns_hosteq(nsp->nsp_faddr, faddr))
+			} else {
+				if (!ns_hosteq(nsp->nsp_faddr, *faddr)) {
 					continue;
+				}
 				if (nsp->nsp_fport != fport) {
-					if (nsp->nsp_fport != 0)
+					if (nsp->nsp_fport != 0) {
 						continue;
-					else
+					} else {
 						wildcard++;
+					}
 				}
 			}
 		}
-		if (wildcard && wildp == 0)
+		if (wildcard && wildp == 0) {
 			continue;
+		}
 		if (wildcard < matchwild) {
 			match = nsp;
 			matchwild = wildcard;
-			if (wildcard == 0)
-				break;
+			if (wildcard == 0) {
+				goto found;
+			}
 		}
 	}
+
+	ns_pcbrehash(head, nsp);
+	return (nsp);
+
+found:
 	return (match);
 }
 
-struct nspcb *
-ns_pcblookup_connect(table, faddr, fport, laddr, lport)
-	struct nspcbtable *table;
-	const struct ns_addr faddr, laddr;
-	u_int16_t fport, lport;
+static void
+ns_pcbrehash(struct nspcbhead *head, struct nspcb *nsp)
 {
-	struct nspcbhead *head;
-	struct nspcb_hdr *nsph;
-	struct nspcb *nsp;
-
-	head = NSPCBHASH_CONNECT(table, faddr, fport, laddr, lport);
-	LIST_FOREACH(nsph, head, nsph_hash) {
-		nsp = (struct nspcb *)nsph;
-		if (ns_hosteq(nsp->nsp_faddr, faddr) &&
-				nsp->nsp_fport == fport &&
-				nsp->nsp_lport == lport &&
-				ns_hosteq(nsp->nsp_laddr, laddr)) {
-			goto out;
-		}
+	/* Move this PCB to the head of hash chain. */
+	if (nsp != LIST_FIRST(head)) {
+		LIST_REMOVE(nsp, nsp_hash);
+		LIST_INSERT_HEAD(head, nsp, nsp_hash);
 	}
-
-out:
-	nsph = &nsp->nsp_head;
-	if (nsph != LIST_FIRST(head)) {
-		LIST_REMOVE(nsph, nsph_hash);
-		LIST_INSERT_HEAD(head, nsph, nsph_hash);
-	}
-	return (nsp);
 }
 
-struct nspcb *
-ns_pcblookup_bind(table, laddr, lport)
-	struct nspcbtable *table;
-	const struct ns_addr laddr;
-	u_int16_t lport;
+static void
+ns_pcbinsert(struct nspcbtable *table, struct nspcb *nsp)
 {
 	struct nspcbhead *head;
-	struct nspcb_hdr *nsph;
-	struct nspcb *nsp;
 
-	head = NSPCBHASH_BIND(table, laddr, lport);
-	LIST_FOREACH(nsph, head, nsph_hash) {
-		nsp = (struct nspcb *)nsph;
-		if (nsp->nsp_lport == lport && ns_hosteq(nsp->nsp_laddr, laddr)) {
-			goto out;
-		}
-	}
-	head = NSPCBHASH_BIND(table, laddr, lport);
-	LIST_FOREACH(nsph, head, nsph_hash) {
-		nsp = (struct nspcb *)nsph;
-		if (nsp->nsp_lport == lport && ns_hosteq(nsp->nsp_laddr, zerons_addr)) {
-			goto out;
-		}
-	}
-
-out:
-	nsph = &nsp->nsp_head;
-	if (nsph != LIST_FIRST(head)) {
-		LIST_REMOVE(nsph, nsph_hash);
-		LIST_INSERT_HEAD(head, nsph, nsph_hash);
-	}
-	return (nsp);
+	head = NSPCBHASH(table, nsp->nsp_faddr, nsp->nsp_fport, nsp->nsp_laddr, nsp->nsp_lport);
+	LIST_INSERT_HEAD(head, nsp, nsp_hash);
 }
 
-void
-ns_pcbstate(nsp, state)
-	const struct nspcb *nsp;
-	int state;
+static void
+ns_pcbremove(struct nspcb *nsp)
 {
-	struct nspcbhead *head;
-
-	if (nsp->nsp_state > NSP_ATTACHED) {
-		LIST_REMOVE(&nsp->nsp_head, nsph_hash);
-	}
-
-	switch (state) {
-	case NSP_BOUND:
-		head = NSPCBHASH_BIND(nsp->nsp_table, nsp->nsp_laddr, nsp->nsp_lport);
-		LIST_INSERT_HEAD(head, &nsp->nsp_head, nsph_hash);
-		break;
-	case NSP_CONNECTED:
-		head = NSPCBHASH_CONNECT(nsp->nsp_table, nsp->nsp_faddr, nsp->nsp_fport, nsp->nsp_laddr, nsp->nsp_lport);
-		LIST_INSERT_HEAD(head, &nsp->nsp_head, nsph_hash);
-		break;
-	}
-
-	nsp->nsp_state = state;
+	LIST_REMOVE(nsp, nsp_hash);
 }
