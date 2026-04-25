@@ -155,7 +155,7 @@ load_env(char *envstr, FILE *f)
 
 
 char *
-env_get(char *name, char **envp)
+env_get(const char *name, char **envp)
 {
 	register int	len = strlen(name);
 	register char	*p, *q;

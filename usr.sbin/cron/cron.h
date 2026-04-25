@@ -197,22 +197,23 @@ void	set_cron_uid(void),
 		free_entry(entry *),
 		acquire_daemonlock(int),
 		skip_comments(FILE *),
+        mkprint(char *, unsigned char *, int),
 		log_it(const char *, int, const char *, const char *),
 		log_close(void);
 
 int		job_runqueue(void),
 		set_debug_flags(char *),
 		get_char(FILE *),
-		get_string(char *, int, FILE *, char *),
+		get_string(char *, int, FILE *, const char *),
 		swap_uids(void),
         swap_uids_back(void),
 		load_env(char *, FILE *),
 		cron_pclose(FILE *),
 		strcmp_until(char *, char *, int),
-		allowed(char *),
+		allowed(const char *),
 		strdtb(char *);
 
-char	*env_get(char *, char **),
+char	*env_get(const char *, char **),
 		*arpadate(time_t *),
 		*mkprints(unsigned char *, unsigned int),
 		*first_word(char *, char *),
@@ -223,7 +224,7 @@ char	*env_get(char *, char **),
 user	*load_user(int, struct passwd *, char *),
 		*find_user(cron_db *, char *);
 
-entry	*load_entry(FILE *, void (*)(char *), struct passwd *, char **);
+entry	*load_entry(FILE *, void (*)(const char *), struct passwd *, char **);
 
 FILE	*cron_popen(char *, char *);
 

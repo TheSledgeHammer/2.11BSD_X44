@@ -41,7 +41,8 @@ static const char *Options[] = { "???", "list", "delete", "edit", "replace" };
 
 
 static PID_T Pid;
-static const char User[MAX_UNAME], RealUser[MAX_UNAME];
+static char User[MAX_UNAME];
+static char RealUser[MAX_UNAME];
 static char	Filename[MAX_FNAME];
 static FILE *NewCrontab;
 static int CheckErrorCount;
@@ -51,7 +52,7 @@ static void list_cmd(void),
 			delete_cmd(void),
 			edit_cmd(void),
 			poke_daemon(void),
- 	 	 	check_error(char *),
+ 	 	 	check_error(const char *),
 			parse_args(int, char **);
 static int	replace_cmd(void);
 
@@ -263,7 +264,7 @@ delete_cmd(void)
 
 
 static void
-check_error(char *msg)
+check_error(const char *msg)
 {
 	CheckErrorCount++;
 	fprintf(stderr, "\"%s\":%d: %s\n", Filename, LineNumber-1, msg);
