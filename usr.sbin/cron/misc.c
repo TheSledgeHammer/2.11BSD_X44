@@ -16,7 +16,9 @@
  */
 
 #if !defined(lint) && !defined(LINT)
+#if 0
 static char rcsid[] = "$Id: misc.c,v 2.9 1994/01/15 20:43:43 vixie Exp $";
+#endif
 #endif
 
 /* vix 26jan87 [RCS has the rest of the log]
@@ -311,7 +313,7 @@ unget_char(int ch, FILE *file)
  *		(4) returns EOF or terminating character, whichever
  */
 int
-get_string(char *string, int size, FILE *file, char *terms)
+get_string(char *string, int size, FILE *file, const char *terms)
 {
 	register int	ch;
 
@@ -373,7 +375,7 @@ skip_comments(FILE *file)
  *	FALSE otherwise.
  */
 static int
-in_file(char *string, FILE *file)
+in_file(const char *string, FILE *file)
 {
 	char line[MAX_TEMPSTR];
 
@@ -394,7 +396,7 @@ in_file(char *string, FILE *file)
  *	or (neither file exists but user=="root" so it's okay)
  */
 int
-allowed(char *username)
+allowed(const char *username)
 {
 	static int	init = FALSE;
 	static FILE	*allow, *deny;

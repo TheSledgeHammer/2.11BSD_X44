@@ -16,5 +16,6 @@ MAN= crontab.1 crontab.5
 .PATH: ${CRONDIR}
 
 COPTS.crontab.c+= ${GCC_NO_FORMAT_OVERFLOW}
+COPTS.misc.c+= ${GCC_NO_FORMAT_OVERFLOW}
 
 .include <bsd.prog.mk>

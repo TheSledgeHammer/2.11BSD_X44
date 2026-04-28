@@ -16,7 +16,9 @@
  */
 
 #if !defined(lint) && !defined(LINT)
+#if 0
 static char rcsid[] = "$Id: env.c,v 2.7 1994/01/26 02:25:50 vixie Exp vixie $";
+#endif
 #endif
 
 
@@ -155,7 +157,7 @@ load_env(char *envstr, FILE *f)
 
 
 char *
-env_get(char *name, char **envp)
+env_get(const char *name, char **envp)
 {
 	register int	len = strlen(name);
 	register char	*p, *q;

@@ -16,7 +16,9 @@
  */
 
 #if !defined(lint) && !defined(LINT)
+#if 0
 static char rcsid[] = "$Id: compat.c,v 1.6 1994/01/15 20:43:43 vixie Exp $";
+#endif
 #endif
 
 /* vix 30dec93 [broke this out of misc.c - see RCS log for history]
@@ -34,7 +36,7 @@ static char rcsid[] = "$Id: compat.c,v 1.6 1994/01/15 20:43:43 vixie Exp $";
  * and does not fork (because that has been done already).
 */
 int
-setsid()
+setsid(void)
 {
 	int newpgrp;
 	register int fd;
@@ -53,3 +55,4 @@ setsid()
 	}
 	return newpgrp;
 }
+
