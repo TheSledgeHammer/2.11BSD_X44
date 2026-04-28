@@ -58,7 +58,7 @@
 #include <vm/include/vm_pager.h>
 #include <vm/include/vm_aobject.h>
 
-struct aobjectswhash		*aobjectswhash;
+struct aobjectswhash	*aobjectswhash;
 struct aobjectlist 		aobject_list;
 simple_lock_data_t 		aobject_list_lock;
 
@@ -200,15 +200,17 @@ vm_aobject_deallocate(object)
 	vm_page_t	 	page;
 	bool_t 			busybody;
 
+	simple_lock(&object->Lock);
+
 	aobject = (vm_aobject_t)object;
+
 	/*
  	 * detaching from kernel_object is a noop.
  	 */
 	if (object->ref_count == VM_OBJ_KERN) {
+		simple_unlock(&object->Lock);
 		return;
 	}
-
-	simple_lock(&object->Lock);
 
 	object->ref_count--;					/* drop ref! */
 	if (object->ref_count) {				/* still more refs? */
@@ -562,7 +564,7 @@ restart:
 
 		rv = vm_aobject_pagein(aobj, startslot, endslot);
 		if (rv) {
-			//vm_aobject_detach(&aobj->u_obj);
+			vm_aobject_deallocate(&aobj->u_obj);
 			return (rv);
 		}
 
@@ -573,7 +575,7 @@ restart:
 
 		simple_lock(&aobject_list_lock);
 		nextaobj = LIST_NEXT(aobj, u_list);
-		//vm_aobject_detach(&aobj->u_obj);
+		vm_aobject_deallocate(&aobj->u_obj);
 	}
 
 	/*

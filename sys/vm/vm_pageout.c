@@ -221,6 +221,16 @@ vm_pageout_scan_page(pglst, segment, object, pages_free, pages_freed)
 		if (segment == NULL || segment != page->segment) {
 			segment = page->segment;
 		}
+
+		/*
+		 * If the page is dirty but already being washed, skip it.
+		 */
+		if ((page->flags & PG_LAUNDRY) == 0) {
+			continue;
+		}
+
+
+
 		vm_pageout_inactive_scanner(page, segment, object, pages_freed);
 
 		/*
@@ -284,8 +294,9 @@ vm_pageout_inactive_scanner(page, segment, object, pages_freed)
 	/*
 	 * set PQ_ANON if it isn't set already.
 	 */
-	if ((page->flags & PG_ANON) == 0)
+	if ((page->flags & PG_ANON) == 0) {
 		page->flags |= PG_ANON;
+	}
 
 	/*
 	 * If the segment & page is clean, free it up.
@@ -314,25 +325,13 @@ vm_pageout_inactive_scanner(page, segment, object, pages_freed)
 				vm_object_unlock(object);
 			}
 		}
-		//continue;
 	}
 
 	/*
 	 * If the page is dirty but already being washed, skip it.
 	 */
 	if ((page->flags & PG_LAUNDRY) == 0) {
-		//continue;
-	}
-
-	/*
-	 * free any swap space allocated to the page since
-	 * we'll have to write it again with its new data.
-	 */
-	if ((page->flags & PG_ANON) && anon->an_swslot) {
-		vm_swap_free(anon->an_swslot, 1);
-		anon->an_swslot = 0;
-	} else if (page->flags & PG_AOBJ) {
-		vm_aobject_dropswap(object, page->offset >> PAGE_SHIFT);
+		goto dirty;
 	}
 
 	/*
@@ -341,17 +340,32 @@ vm_pageout_inactive_scanner(page, segment, object, pages_freed)
 	 * the laundry.
 	 */
 	if (!vm_object_lock_try(object)) {
-		//continue;
+		goto dirty;
 	}
+
+	/*
+	 * free any swap space allocated to the page since
+	 * we'll have to write it again with its new data.
+	 */
+dirty:
+	if ((page->flags & PG_ANON) && anon->an_swslot) {
+		vm_swap_free(anon->an_swslot, 1);
+		anon->an_swslot = 0;
+	} else if (page->flags & PG_AOBJ) {
+		vm_aobject_dropswap(object, page->offset >> PAGE_SHIFT);
+	}
+
 	cnt.v_pageouts++;
 #ifdef CLUSTERED_PAGEOUT
 	if (object->pager && vm_pager_cancluster(object->pager, PG_CLUSTERPUT)) {
 		vm_pageout_cluster(page, segment, object);
 	} else
 #endif
+	{
 		vm_pageout_active(page, segment, object);
 		vm_thread_wakeup(object);
 		vm_object_unlock(object);
+	}
 }
 
 /*
