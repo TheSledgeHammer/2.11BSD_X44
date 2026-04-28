@@ -46,7 +46,7 @@ struct sap_select {
 };
 
 /* sap class types */
-enum nsap_classes {
+enum sap_classes {
 	SAP_CLASS_UNKNOWN,
 	/* iso (native) */
 	/* Connection Oriented */
