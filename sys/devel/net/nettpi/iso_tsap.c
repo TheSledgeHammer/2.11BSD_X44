@@ -33,7 +33,10 @@
 
 #include "iso_nsap.h"
 
-struct nsapisotable tsapisotable;
+static void tsap_attach_af(struct tsap_iso *, int);
+static void tsap_detach_af(struct tsap_iso *, int);
+
+struct nsapisotable tsapisotable; /* tsap iso table */
 
 /* TSAP's */
 void
@@ -42,25 +45,116 @@ tsap_init(struct tsap_iso *tsap)
 	nsap_init(&tsapisotable);
 }
 
-void
-tsap_attach(struct tsap_iso *tsap, long type, long subnet, long protocol, int class)
+static void
+tsap_attach_af(struct tsap_iso *tsap, int af)
 {
-	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, type, subnet);
+    switch (af) {
+	case AF_INET:
+    	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4);
+    	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV6);
+		break;
+	case AF_INET6:
+    	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV4);
+    	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6);
+		break;
+	case AF_NS:
+		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SNS, NSAP_SUBNET_IDP);
+		break;
+	case AF_ISO:
+    	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_CONS);
+    	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_CLNS);
+    	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_CLNP);
+    	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_ISIS);
+    	nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_ESIS);
+		break;
+	case AF_CCITT:
+		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SX25, NSAP_SUBNET_X25);
+		break;
+	case AF_NATM:
+		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SATM, NSAP_SUBNET_ATM);
+		break;
+	case AF_IPX:
+		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIPX, NSAP_SUBNET_IPX);
+		break;
+	case AF_SNA:
+		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SSNA, NSAP_SUBNET_SNA);
+		break;
+    }
+}
 
+static void
+tsap_detach_af(struct tsap_iso *tsap, int af)
+{
+    switch (af) {
+	case AF_INET:
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4);
+    	nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV6);
+		break;
+	case AF_INET6:
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV4);
+    	nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6);
+		break;
+	case AF_NS:
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SNS, NSAP_SUBNET_IDP);
+		break;
+	case AF_ISO:
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_CONS);
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_CLNS);
+    	nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_CLNP);
+    	nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_ISIS);
+    	nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO, NSAP_SUBNET_ESIS);
+		break;
+	case AF_CCITT:
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SX25, NSAP_SUBNET_X25);
+		break;
+	case AF_NATM:
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SATM, NSAP_SUBNET_ATM);
+		break;
+	case AF_IPX:
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIPX, NSAP_SUBNET_IPX);
+		break;
+	case AF_SNA:
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SSNA, NSAP_SUBNET_SNA);
+		break;
+    }
+}
+
+void
+tsap_attach(struct tsap_iso *tsap, long protocol, int af)
+{
+	long type, subnet;
+	int class;
+
+	if (tsap == NULL) {
+		return;
+	}
+	tsap_attach_af(tsap, af);
+
+	type = tsap->tsi_nsaps->nsi_snsap->snsap_type;
+	subnet = tsap->tsi_nsaps->nsi_snsap->snsap_subnet;
+	if (((af == AF_ISO) && (type == NSAP_SUBNET_CONS))
+			|| ((af == AF_CCITT) && (type == NSAP_SUBNET_X25))) {
+		class = NSAP_CLASS_CONS;
+	} else {
+		class = NSAP_CLASS_CLNS;
+	}
 	tsap_select(&tsap->tsi_select, protocol, type, subnet, class);
 }
 
 void
-tsap_detach(struct tsap_iso *tsap, long type, long subnet)
+tsap_detach(struct tsap_iso *tsap, long protocol, int af)
 {
-	nsap_detach(&tsapisotable, tsap->tsi_nsaps, type, subnet);
+	if (tsap != NULL) {
+		if (tsap->tsi_protocol == protocol) {
+			tsap_detach_af(&tsapisotable, af);
+		}
+	}
 }
 
 void
 tsap_select(struct sap_select *select, long proto, long type, long subnet, int class)
 {
 	bzero(select, sizeof(*select));
-
     select->ss_type = sap_type_select(type);
     select->ss_subnet = sap_subnet_select(subnet);
     select->ss_class = sap_class_select(class);
@@ -68,16 +162,38 @@ tsap_select(struct sap_select *select, long proto, long type, long subnet, int c
 }
 
 /*
+ * tsap_acknowledge:
+ * looks up nsap information from what tsap has provided.
+ * returns 0 on success.
+ */
+int
+tsap_acknowledge(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long protocol)
+{
+	struct nsap_iso *nsap;
+
+	if (tsap != NULL) {
+		nsap = nsap_lookup(&tsapisotable, snsap, nsapa, tsap->tsi_type, tsap->tsi_subnet, tsap->tsi_class);
+		if (nsap != NULL) {
+			if (tsap->tsi_protocol == protocol) {
+				if (tsap->tsi_nsaps != *nsap) {
+					return (1);
+				}
+				return (0);
+			}
+		}
+	}
+	return (1);
+}
+
+/*
  * tsap_connect:
  * - Makes the same assumptions as nsap_connect.
  */
 int
-tsap_connect(struct mbuf *nam, int class, int af)
+tsap_connect(struct mbuf *nam, struct sockaddr_nsap *snsap, long subnet, int class, int af)
 {
-	struct sockaddr_nsap *snsap;
 	int error;
 
-	snsap = mtod(nam, struct sockaddr_nsap *);
 	if (snsap == NULL) {
 		return (EINVAL);
 	}
@@ -98,9 +214,17 @@ tsap_connect(struct mbuf *nam, int class, int af)
 			error = EAFNOSUPPORT;
 			break;
 		case AF_ISO:
-			error = nsap_connect(nam, snsap, NSAP_SUBNET_CONS,	NSAP_CLASS_CONS, AF_ISO);
+			if (subnet != NSAP_SUBNET_CONS) {
+				error = EAFNOSUPPORT;
+				break;
+			}
+			error = nsap_connect(nam, snsap, NSAP_SUBNET_CONS, NSAP_CLASS_CONS, AF_ISO);
 			break;
 		case AF_CCITT:
+			if (subnet != NSAP_SUBNET_X25) {
+				error = EAFNOSUPPORT;
+				break;
+			}
 			error = nsap_connect(nam, snsap, NSAP_SUBNET_X25, NSAP_CLASS_CONS, AF_CCITT);
 			break;
 		case AF_NATM:
@@ -125,16 +249,34 @@ tsap_connect(struct mbuf *nam, int class, int af)
 	{
 		switch (af) {
 		case AF_INET:
-			error = nsap_connect(nam, snsap, (NSAP_SUBNET_IPV4 | NSAP_SUBNET_IPV6), NSAP_CLASS_CLNS, AF_INET);
+			if ((subnet != NSAP_SUBNET_IPV4) || (subnet != NSAP_SUBNET_IPV6)) {
+				error = EAFNOSUPPORT;
+				break;
+			}
+			error = nsap_connect(nam, snsap, subnet, NSAP_CLASS_CLNS, AF_INET);
 			break;
 		case AF_INET6:
-			error = nsap_connect(nam, snsap, (NSAP_SUBNET_IPV4 | NSAP_SUBNET_IPV6), NSAP_CLASS_CLNS, AF_INET6);
+			if ((subnet != NSAP_SUBNET_IPV4) || (subnet != NSAP_SUBNET_IPV6)) {
+				error = EAFNOSUPPORT;
+				break;
+			}
+			error = nsap_connect(nam, snsap, subnet, NSAP_CLASS_CLNS, AF_INET6);
 			break;
 		case AF_ISO:
-			error = nsap_connect(nam, snsap, (NSAP_SUBNET_CLNS | NSAP_SUBNET_CLNP | NSAP_SUBNET_ISIS | NSAP_SUBNET_ESIS),
-					NSAP_CLASS_CLNS, AF_ISO);
+			if ((subnet != NSAP_SUBNET_CLNS)
+					|| (subnet != NSAP_SUBNET_CLNP)
+					|| (subnet != NSAP_SUBNET_ISIS)
+					|| (subnet != NSAP_SUBNET_ESIS)) {
+				error = EAFNOSUPPORT;
+				break;
+			}
+			error = nsap_connect(nam, snsap, subnet, NSAP_CLASS_CLNS, AF_ISO);
 			break;
 		case AF_NS:
+			if (subnet != NSAP_SUBNET_IDP) {
+				error = EAFNOSUPPORT;
+				break;
+			}
 			error = nsap_connect(nam, snsap, NSAP_SUBNET_IDP, NSAP_CLASS_CLNS, AF_NS);
 			break;
 		case AF_CCITT:
@@ -142,12 +284,24 @@ tsap_connect(struct mbuf *nam, int class, int af)
 			error = EAFNOSUPPORT;
 			break;
 		case AF_NATM:
+			if (subnet != NSAP_SUBNET_ATM) {
+				error = EAFNOSUPPORT;
+				break;
+			}
 			error = nsap_connect(nam, snsap, NSAP_SUBNET_ATM, NSAP_CLASS_CLNS, AF_NATM);
 			break;
 		case AF_IPX:
+			if (subnet != NSAP_SUBNET_IPX) {
+				error = EAFNOSUPPORT;
+				break;
+			}
 			error = nsap_connect(nam, snsap, NSAP_SUBNET_IPX, NSAP_CLASS_CLNS, AF_IPX);
 			break;
 		case AF_SNA:
+			if (subnet != NSAP_SUBNET_SNA) {
+				error = EAFNOSUPPORT;
+				break;
+			}
 			error = nsap_connect(nam, snsap, NSAP_SUBNET_SNA, NSAP_CLASS_CLNS, AF_SNA);
 			break;
 		default:
@@ -164,15 +318,12 @@ tsap_connect(struct mbuf *nam, int class, int af)
 }
 
 void
-tsap_disconnect(void *v, int class, int af)
+tsap_disconnect(struct sockaddr_nsap *snsap, long subnet, int class, int af)
 {
-	struct sockaddr_nsap *snsap;
-
-	snsap = (struct sockaddr_nsap *)v;
 	if (snsap == NULL) {
+		printf("tsap_disconnect: tsap is empty or has already been disconnected\n");
 		return;
 	}
-
 	switch (class) {
 	case NSAP_CLASS_CONS:
 	{
@@ -187,9 +338,15 @@ tsap_disconnect(void *v, int class, int af)
 			printf("tsap_disconnect: Cannot disconnect IDP while in a connection oriented mode\n");
 			break;
 		case AF_ISO:
+			if (subnet != NSAP_SUBNET_CONS) {
+				break;
+			}
 			nsap_disconnect(snsap, NSAP_SUBNET_CONS, AF_ISO);
 			break;
 		case AF_CCITT:
+			if (subnet != NSAP_SUBNET_X25) {
+				break;
+			}
 			nsap_disconnect(snsap, NSAP_SUBNET_X25, AF_CCITT);
 			break;
 		case AF_NATM:
@@ -211,28 +368,51 @@ tsap_disconnect(void *v, int class, int af)
 	{
 		switch (af) {
 		case AF_INET:
-			nsap_disconnect(snsap, (NSAP_SUBNET_IPV4 | NSAP_SUBNET_IPV6), AF_INET);
+			if ((subnet != NSAP_SUBNET_IPV4) || (subnet != NSAP_SUBNET_IPV6)) {
+				break;
+			}
+			nsap_disconnect(snsap, subnet, AF_INET);
 			break;
 		case AF_INET6:
-			nsap_disconnect(snsap, (NSAP_SUBNET_IPV4 | NSAP_SUBNET_IPV6), AF_INET6);
+			if ((subnet != NSAP_SUBNET_IPV4) || (subnet != NSAP_SUBNET_IPV6)) {
+				break;
+			}
+			nsap_disconnect(snsap, subnet, AF_INET6);
 			break;
 		case AF_ISO:
-			nsap_disconnect(snsap, (NSAP_SUBNET_CLNS | NSAP_SUBNET_CLNP | NSAP_SUBNET_ISIS | NSAP_SUBNET_ESIS),
-					AF_ISO);
+			if ((subnet != NSAP_SUBNET_CLNS)
+					|| (subnet != NSAP_SUBNET_CLNP)
+					|| (subnet != NSAP_SUBNET_ISIS)
+					|| (subnet != NSAP_SUBNET_ESIS)) {
+				break;
+			}
+			nsap_disconnect(snsap, subnet, AF_ISO);
 			break;
 		case AF_NS:
+			if (subnet != NSAP_SUBNET_IDP) {
+				break;
+			}
 			nsap_disconnect(snsap, NSAP_SUBNET_IDP, AF_NS);
 			break;
 		case AF_CCITT:
 			printf("tsap_disconnect: Cannot disconnect X.25 while in a connection-less oriented mode\n");
 			break;
 		case AF_NATM:
+			if (subnet != NSAP_SUBNET_ATM) {
+				break;
+			}
 			nsap_disconnect(snsap, NSAP_SUBNET_ATM, AF_NATM);
 			break;
 		case AF_IPX:
+			if (subnet != NSAP_SUBNET_IPX) {
+				break;
+			}
 			nsap_disconnect(snsap, NSAP_SUBNET_IPX, AF_IPX);
 			break;
 		case AF_SNA:
+			if (subnet != NSAP_SUBNET_SNA) {
+				break;
+			}
 			nsap_disconnect(snsap, NSAP_SUBNET_SNA, AF_SNA);
 			break;
 		default:

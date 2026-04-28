@@ -180,38 +180,33 @@ struct tsap_iso {
 #define tsi_protocol	tsi_select.ss_protocol
 };
 
-//#define TSAPLOOKUP_FOREIGN	0xBA
-//#define TSAPLOOKUP_LOCAL	0xBB
-
-
 /* NSAP */
 extern uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
 
-uint32_t nsap_id_hash(uint32_t, int);
 uint32_t nsap_type_id(long);
 uint32_t nsap_subnet_id(long);
 uint32_t nsap_id(long, long);
-void nsap_init(struct nsapisotable *);
 struct nsap_iso *nsap_alloc(struct nsapisotable *, long, long);
 void nsap_free(struct nsap_iso *);
+void nsap_service(struct sap_service *, char *, u_char, int);
+void nsap_setsockaddr(struct sockaddr_nsap *, void *, long, long);
+void nsap_setaddr(struct nsap_addr *, void *, long, int);
 
+void nsap_init(struct nsapisotable *);
 void nsap_attach(struct nsapisotable *, struct nsap_iso *, long, long);
 void nsap_detach(struct nsapisotable *, struct nsap_iso *, long, long);
-struct nsap_iso *nsap_lookup(struct nsapisotable *, struct sockaddr_nsap *, struct nsap_addr *, long, long);
-
-void nsap_setsockaddr(struct sockaddr_nsap *, void *, long, long);
-void nsap_service(struct nsap_service *, char *, u_char, int);
-void nsap_setaddr(struct nsap_addr *, void *, long, int);
 int nsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
 void nsap_disconnect(struct sockaddr_nsap *, int, int);
+struct nsap_iso *nsap_lookup(struct nsapisotable *, struct sockaddr_nsap *, struct nsap_addr *, long, long);
 
 /* TSAP */
 void tsap_init(struct tsap_iso *);
-int tsap_attach(struct tsap_iso *, long, long, long, int);
-void tsap_detach(struct tsap_iso *, long, long);
-int tsap_select(struct tsap_iso *, long, long, long, int);
-int tsap_connect(struct mbuf *, int, int);
-void tsap_disconnect(void *, int, int);
+void tsap_attach(struct tsap_iso *, long, int);
+void tsap_detach(struct tsap_iso *, long, int);
+void tsap_select(struct tsap_iso *, long, long, long, int);
+int tsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
+void tsap_disconnect(struct sockaddr_nsap *, int, int);
+int tsap_acknowledge(struct tsap_iso *, struct sockaddr_nsap *, struct nsap_addr *, long);
 
 #ifdef notyet
 /* ISODE Based code */
