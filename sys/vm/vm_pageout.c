@@ -222,15 +222,6 @@ vm_pageout_scan_page(pglst, segment, object, pages_free, pages_freed)
 			segment = page->segment;
 		}
 
-		/*
-		 * If the page is dirty but already being washed, skip it.
-		 */
-		if ((page->flags & PG_LAUNDRY) == 0) {
-			continue;
-		}
-
-
-
 		vm_pageout_inactive_scanner(page, segment, object, pages_freed);
 
 		/*
