@@ -59,7 +59,7 @@ union addr_union {
 	struct in_addr 	in4;		/* ipv4 */
 	struct in6_addr in6;		/* ipv6 */
 	struct iso_addr	iso;		/* iso */
-	struct ns_addr	ns;			/* xns */
+	struct ns_addr	ns;		/* xns */
 	struct x25_addr	x25;		/* x25 */
 	// sna, ipx, atm
 };
@@ -74,15 +74,15 @@ union addr_union {
 /* nsap addr */
 struct nsap_addr {
 	struct sap_service nsapa_service;
-#define nsapa_service_addr 		nsapa_service.ns_addr
+#define nsapa_service_addr 	nsapa_service.ns_addr
 #define nsapa_service_addrlen 	nsapa_service.ns_addrlen
 #define nsapa_service_class 	nsapa_service.ns_class
 	union addr_union u_addr;
-#define nsapa_in4 	u_addr.in4
-#define nsapa_in6 	u_addr.in6
-#define nsapa_ns 	u_addr.ns
-#define nsapa_iso 	u_addr.iso
-#define nsapa_x25 	u_addr.x25
+#define nsapa_in4 	 u_addr.in4
+#define nsapa_in6 	 u_addr.in6
+#define nsapa_ns 	 u_addr.ns
+#define nsapa_iso 	 u_addr.iso
+#define nsapa_x25 	 u_addr.x25
 };
 
 /* sockaddr nsap */
@@ -135,10 +135,10 @@ struct sockaddr_nsap {
 
 /* NSAP addr (ISO/OSI equivalent) */
 struct nsap_iso {
-	LIST_ENTRY(nsap_iso) nsi_hash;		/* nsap */
-	uint32_t nsi_type_id;				/* type id (not nsap_types) */
-	uint32_t nsi_subnet_id;				/* subnet id (not nsap_subnets) */
-	struct sockaddr_nsap *nsi_snsap;	/* sockaddr_nsap (BSD-style) */
+	LIST_ENTRY(nsap_iso) nsi_hash;	/* nsap */
+	uint32_t nsi_type_id;		/* type id (not nsap_types) */
+	uint32_t nsi_subnet_id;		/* subnet id (not nsap_subnets) */
+	struct sockaddr_nsap *nsi_snsap;/* sockaddr_nsap (BSD-style) */
 #define nsi_nsapa nsi_snsap->snsap_addr /* nsap_addr (BSD-style) */
 #define nsi_iso   nsi_snsap->snsap_siso /* ISO/OSI sockaddr */
 #define nsi_selectlen nsi_iso.siso_nlen
@@ -174,18 +174,18 @@ struct nsapisotable {
 struct tsap_iso {
 	struct nsap_iso  tsi_nsaps[ISOLEN];
 	struct sap_select tsi_select;
-#define tsi_type		tsi_select.ss_type
-#define tsi_subnet		tsi_select.ss_subnet
-#define tsi_class		tsi_select.ss_class
+#define tsi_sid		tsi_select.ss_sid
+#define tsi_af		tsi_select.ss_af
+#define tsi_type	tsi_select.ss_type
+#define tsi_subnet	tsi_select.ss_subnet
+#define tsi_class	tsi_select.ss_class
 #define tsi_protocol	tsi_select.ss_protocol
+#define tsi_selector	tsi_select.ss_selector
 };
 
 /* NSAP */
 extern uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
 
-uint32_t nsap_type_id(long);
-uint32_t nsap_subnet_id(long);
-uint32_t nsap_id(long, long);
 struct nsap_iso *nsap_alloc(struct nsapisotable *, long, long);
 void nsap_free(struct nsap_iso *);
 void nsap_service(struct sap_service *, char *, u_char, int);

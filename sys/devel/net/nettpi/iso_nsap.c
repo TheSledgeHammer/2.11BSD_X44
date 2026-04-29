@@ -41,7 +41,6 @@ static long nsap_id_cnt;
 static void nsap_class(struct sap_service *, int);
 static void nsap_type(struct sockaddr_nsap *, long);
 static void nsap_subnet(struct sockaddr_nsap *, long);
-static uint32_t nsap_id_hash(uint32_t, int);
 static int nsap_id_compare(uint32_t, uint32_t);
 static void nsap_rehash(struct nsapisotable *, struct nsap_iso *, long, long);
 static void nsap_insert(struct nsapisotable *, struct nsap_iso *, long, long);
@@ -143,70 +142,6 @@ nsap_subnet(struct sockaddr_nsap *snsap, long subnet)
 		return;
 	}
 	snsap->snsap_subnet = sap_subnet_select(subnet);
-}
-
-static uint32_t
-nsap_id_hash(uint32_t x, int len)
-{
-	return (enhanced_double_hash(x, len));
-}
-
-/*
- * nsap type identifier:
- * returns 0 if type is unknown or max
- */
-uint32_t
-nsap_type_id(long type)
-{
-	uint32_t type_id;
-	int len;
-
-	len = ISOLEN;
-	if ((type <= NSAP_TYPE_UNKNOWN) || (type >= NSAP_TYPE_MAX)) {
-		len = 1;
-	}
-	type_id = nsap_id_hash(type, len);
-	return (type_id);
-}
-
-/*
- * nsap subnet identifier:
- * returns 0 if subnet is unknown or max
- */
-uint32_t
-nsap_subnet_id(long subnet)
-{
-	uint32_t subnet_id;
-	int len;
-
-	len = ISOLEN;
-	if ((subnet <= NSAP_SUBNET_UNKNOWN) || (subnet >= NSAP_SUBNET_MAX)) {
-		len = 1;
-	}
-	subnet_id = nsap_id_hash(subnet, len);
-	return (subnet_id);
-}
-
-/*
- * nsap identifier:
- * - generates a nsap_id from the nsap_type_id and nsap_subnet_id.
- * - returns 0 if either nsap_type_id or nsap_subnet_id equals 0
- */
-uint32_t
-nsap_id(long type, long subnet)
-{
-	uint32_t type_id, subnet_id, hashid, nsap_id;
-	int len;
-
-	len = ISOLEN;
-	type_id = nsap_type_id(type);
-	subnet_id = nsap_subnet_id(subnet);
-	if ((type_id == 0) || (subnet_id == 0)) {
-		len = 1;
-	}
-	hashid = ((type_id + (subnet_id + (len-1))) - len);
-	nsap_id = nsap_id_hash(hashid, len);
-	return (tsap_id);
 }
 
 static int

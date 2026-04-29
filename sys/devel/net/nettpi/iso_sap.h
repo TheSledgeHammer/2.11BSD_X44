@@ -37,12 +37,22 @@ struct sap_service {
 	int ns_class;				/* class */
 };
 
+/*
+ * sap select is setup per network stack.
+ * type, subnet, protocol and class are defined
+ * by what a given network stack offers.
+ * Example:
+ * - INET/6 only offers CLNS class.
+ * - ISO offers both CONS and CLNS classes.
+ */
 struct sap_select {
-	unsigned char selector[8]; /* unused */
-	long ss_type;		/* sockaddr (from nsap) */
-	long ss_subnet;		/* network protocol (from nsap) */
-	long ss_protocol;	/* transport protocol (from tsap) */
-	int ss_class;		/* connection orientation (from nsap) */
+	uint32_t ss_selector[8]; 			/* selector hash */
+	int ss_sid;							/* select id */
+	int ss_af;							/* address family */
+	long ss_type[SAP_TYPE_MAX];			/* sockaddr array */
+	long ss_subnet[SAP_SUBNET_MAX];		/* network protocol array */
+	long ss_protocol[SAP_PROTOCOL_MAX];	/* transport protocol array */
+	int ss_class[SAP_CLASS_MAX];		/* connection orientation array */
 };
 
 /* sap class types */
@@ -290,5 +300,138 @@ sap_protocol_select(long protocol)
 	}
 	return (select);
 }
+
+/*
+ * sap class hash:
+ * returns 0 if class is unknown or max
+ */
+static __inline uint32_t
+sap_class_hash(int clazz)
+{
+	uint32_t class_id;
+	int len;
+
+	len = ISOLEN;
+	if ((clazz <= SAP_CLASS_UNKNOWN) || (clazz >= SAP_CLASS_MAX)) {
+		len = 1;
+	}
+	class_id = enhanced_double_hash(clazz, len);
+	return (class_id);
+}
+
+/*
+ * sap type hash:
+ * returns 0 if type is unknown or max
+ */
+static __inline uint32_t
+sap_type_hash(long type)
+{
+	uint32_t type_id;
+	int len;
+
+	len = ISOLEN;
+	if ((type <= SAP_TYPE_UNKNOWN) || (type >= SAP_TYPE_MAX)) {
+		len = 1;
+	}
+	type_id = enhanced_double_hash(type, len);
+	return (type_id);
+}
+
+/*
+ * sap subnet hash:
+ * returns 0 if subnet is unknown or max
+ */
+static __inline uint32_t
+sap_subnet_hash(long subnet)
+{
+	uint32_t subnet_id;
+	int len;
+
+	len = ISOLEN;
+	if ((subnet <= SAP_SUBNET_UNKNOWN) || (subnet >= SAP_SUBNET_MAX)) {
+		len = 1;
+	}
+	subnet_id = enhanced_double_hash(subnet, len);
+	return (subnet_id);
+}
+
+/*
+ * sap protocol hash:
+ * returns 0 if protocol is unknown or max
+ */
+static __inline uint32_t
+sap_protocol_hash(long protocol)
+{
+	uint32_t protocol_id;
+	int len;
+
+	len = ISOLEN;
+	if ((protocol <= SAP_PROTOCOL_UNKNOWN) || (protocol >= SAP_PROTOCOL_MAX)) {
+		len = 1;
+	}
+	protocol_id = enhanced_double_hash(protocol, len);
+	return (protocol_id);
+}
+
+/*
+ * sap hash:
+ * - generates a sap_id from the sap_type_id, sap_subnet_id,
+ * sap_protocol_id and sap_class_id.
+ */
+static __inline uint32_t
+sap_hash(long type, long subnet, long protocol, int clazz)
+{
+	uint32_t sap_id, type_id, subnet_id, protocol_id, class_id, hashid;
+	int len;
+
+	len = ISOLEN;
+	if ((protocol == 0) && (clazz == 0)) {
+        type_id = sap_type_hash(type);
+        subnet_id = sap_subnet_hash(subnet);
+		if ((type_id == 0) || (subnet_id == 0)) {
+			len = 1;
+		}
+		hashid = (type_id + (subnet_id + (len - 1))) - len;
+	} else {
+        type_id = sap_type_hash(type);
+        subnet_id = sap_subnet_hash(subnet);
+        protocol_id = sap_protocol_hash(protocol);
+        class_id = sap_class_hash(clazz);
+		if ((type_id == 0) || (subnet_id == 0) || (protocol_id == 0)
+				|| (class_id == 0)) {
+			len = 1;
+		}
+		hashid = (type_id + (subnet_id + (len - 1)) + (protocol_id + (len - 2))
+				+ (class_id + (len - 3))) - len;
+	}
+	sap_id = enhanced_double_hash(hashid, len);
+	return (sap_id);
+}
+
+/*
+ * nsap type identifier:
+ * returns 0 if type is unknown or max
+ */
+#define nsap_type_id(type)	\
+	sap_type_hash(type)
+
+/*
+ * nsap subnet identifier:
+ * returns 0 if subnet is unknown or max
+ */
+#define nsap_subnet_id(subnet) \
+	sap_subnet_hash(subnet)
+
+/*
+ * nsap identifier:
+ */
+#define nsap_id(type, subnet) \
+	sap_hash(type, subnet, 0, 0)
+
+/*
+ * tsap identifier:
+ */
+#define tsap_id(type, subnet, protocol, clazz) \
+	sap_hash(type, subnet, protocol, clazz)
 
 #endif /* _NETTPI_ISO_SAP_H_ */
