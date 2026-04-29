@@ -45,6 +45,12 @@ struct sap_service {
  * - INET/6 only offers CLNS class.
  * - ISO offers both CONS and CLNS classes.
  */
+
+#define SAP_SELECT_TYPE_MAX 	1
+#define SAP_SELECT_SUBNET_MAX 	5
+#define SAP_SELECT_PROTOCOL_MAX 5
+#define SAP_SELECT_CLASS_MAX 	2
+
 struct sap_select {
 	uint32_t ss_selector[8]; 			/* selector hash */
 	int ss_sid;							/* select id */
@@ -302,6 +308,26 @@ sap_protocol_select(long protocol)
 }
 
 /*
+ * sap item lookup:
+ * search sap_array for sap_item
+ * returns item if found or -1 if not found.
+ */
+static __inline long
+sap_item_lookup(long sap_item, long *sap_array, int nelems)
+{
+	long item = -1;
+	int i;
+
+	for (i = 0; i < nelems; i++) {
+		item = sap_array[i];
+		if (item == sap_item) {
+			break;
+		}
+	}
+	return (item);
+}
+
+/*
  * sap class hash:
  * returns 0 if class is unknown or max
  */
@@ -386,17 +412,17 @@ sap_hash(long type, long subnet, long protocol, int clazz)
 
 	len = ISOLEN;
 	if ((protocol == 0) && (clazz == 0)) {
-        type_id = sap_type_hash(type);
-        subnet_id = sap_subnet_hash(subnet);
+		type_id = sap_type_hash(type);
+		subnet_id = sap_subnet_hash(subnet);
 		if ((type_id == 0) || (subnet_id == 0)) {
 			len = 1;
 		}
 		hashid = (type_id + (subnet_id + (len - 1))) - len;
 	} else {
-        type_id = sap_type_hash(type);
-        subnet_id = sap_subnet_hash(subnet);
-        protocol_id = sap_protocol_hash(protocol);
-        class_id = sap_class_hash(clazz);
+		type_id = sap_type_hash(type);
+		subnet_id = sap_subnet_hash(subnet);
+		protocol_id = sap_protocol_hash(protocol);
+		class_id = sap_class_hash(clazz);
 		if ((type_id == 0) || (subnet_id == 0) || (protocol_id == 0)
 				|| (class_id == 0)) {
 			len = 1;

@@ -172,13 +172,13 @@ struct nsapisotable {
 
 /* TSAP addr (ISO/OSI equivalent) */
 struct tsap_iso {
-	struct nsap_iso  tsi_nsaps[ISOLEN];
+	struct nsap_iso tsi_nsaps[ISOLEN];
 	struct sap_select tsi_select;
-#define tsi_sid		tsi_select.ss_sid
-#define tsi_af		tsi_select.ss_af
-#define tsi_type	tsi_select.ss_type
-#define tsi_subnet	tsi_select.ss_subnet
-#define tsi_class	tsi_select.ss_class
+#define tsi_sid			tsi_select.ss_sid
+#define tsi_af			tsi_select.ss_af
+#define tsi_type		tsi_select.ss_type
+#define tsi_subnet		tsi_select.ss_subnet
+#define tsi_class		tsi_select.ss_class
 #define tsi_protocol	tsi_select.ss_protocol
 #define tsi_selector	tsi_select.ss_selector
 };
@@ -201,9 +201,9 @@ struct nsap_iso *nsap_lookup(struct nsapisotable *, struct sockaddr_nsap *, stru
 
 /* TSAP */
 void tsap_init(struct tsap_iso *);
-void tsap_attach(struct tsap_iso *, long, int);
-void tsap_detach(struct tsap_iso *, long, int);
-void tsap_select(struct tsap_iso *, long, long, long, int);
+void tsap_attach(struct tsap_iso *, int);
+void tsap_detach(struct tsap_iso *, int);
+//void tsap_select(struct tsap_iso *, long, long, long, int);
 int tsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
 void tsap_disconnect(struct sockaddr_nsap *, int, int);
 int tsap_acknowledge(struct tsap_iso *, struct sockaddr_nsap *, struct nsap_addr *, long);

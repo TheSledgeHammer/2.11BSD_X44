@@ -33,6 +33,7 @@
  * 		- setting up tsap_id
  * 		- retrieval of types, protocols, classes and subnets.
  * - Sap select now works of each network stack. As define by the sap_table.
+ * - tsap_acknowledge: won't work properly with new sap select
  */
 
 #include <sys/errno.h>
@@ -142,44 +143,20 @@ tsap_attach(struct tsap_iso *tsap, int af)
 }
 
 void
-tsap_detach(struct tsap_iso *tsap, long protocol, int af)
+tsap_detach(struct tsap_iso *tsap, int af)
 {
 	if (tsap != NULL) {
-		tsap_detach_af(&tsapisotable, af);
+		tsap_detach_af(tsap, af);
 	}
-	tsap_sap_protocol(tsap, protocol);
 }
 
 void
-sap_init(struct sap_select *select, int sid)
+sap_select(struct sap_select *select, int sid, int af)
 {
 	bzero(select, sizeof(*select));
-	select = &sap_table[sid];
-
-	long type, subnet, protocol;
-	int clazz;
-
-
-	long sap_type = select->ss_type[type];
-	long sap_subnet = select->ss_subnet[subnet];
-	long sap_protocol = select->ss_protocol[protocol];
-	int sap_class = select->ss_class[clazz];
-
-	tsap_selector_init(select, sap_type, sap_subnet, sap_protocol, sap_class);
-}
-
-void
-tsap_selector_id(struct tsap_iso *tsap, int af)
-{
-	int sid;
-
-	sid = sap_get_sid_from_af(af);
-	if (sid == -1) {
-		return;
-	}
-	if ((sap_table[sid].ss_sid == sid) && (sap_table[sid].ss_af == af)) {
-
-		tsap_select_init(&sap_table[sid], sap_table[sid].ss_type, sap_table[sid].ss_subnet, sap_table[sid].ss_protocol, sap_table[sid].ss_class);
+	select = tsap_select_lookup(sid, af);
+	if (select != NULL) {
+		tsap_select_init(select, select->ss_type, select->ss_subnet, select->ss_protocol, select->ss_class);
 	}
 }
 
@@ -578,7 +555,6 @@ static int tsap_select_initd = 1; /* tsap select init switch */
 void
 tsap_select_init(struct sap_select *select, long *type, long *subnet, long *protocol, int *class)
 {
-    bzero(select, sizeof(*select));
     bcopy(type, select->ss_type, sizeof(*select->ss_type));
     bcopy(subnet, select->ss_subnet, sizeof(*select->ss_subnet));
     bcopy(protocol, select->ss_protocol, sizeof(*select->ss_protocol));
@@ -596,6 +572,103 @@ tsap_selector_init(struct sap_select *select, long type, long subnet, long proto
         return;
     }
 	select->ss_selector[0] = tsap_id(type, subnet, protocol, class);
+}
+
+struct sap_select *
+tsap_select_lookup(int sid, int af)
+{
+	struct sap_select *select;
+
+	select = &sap_table[sid];
+	if (select != NULL) {
+		if ((select->ss_sid == sid) && (select->ss_af == af)) {
+			return (select);
+		}
+	}
+	return (NULL);
+}
+
+long
+tsap_select_lookup_type(int sid, int af, long type)
+{
+	struct sap_select *select;
+	long sap_type;
+
+	select = tsap_select_lookup(sid, af);
+	if (select != NULL) {
+		sap_type = sap_item_lookup(type, select->ss_type, SAP_TYPE_MAX);
+		if (sap_type != sap_type_select(type)) {
+			sap_type = SAP_TYPE_UNKNOWN;
+		}
+	}
+	return (sap_type);
+}
+
+long
+tsap_select_lookup_subnet(int sid, int af, long subnet)
+{
+	struct sap_select *select;
+	long sap_subnet;
+
+	select = tsap_select_lookup(sid, af);
+	if (select != NULL) {
+		sap_subnet = sap_item_lookup(subnet, select->ss_subnet, SAP_SUBNET_MAX);
+		if (sap_subnet != sap_subnet_select(subnet)) {
+			sap_subnet = SAP_SUBNET_UNKNOWN;
+		}
+	}
+	return (sap_subnet);
+}
+
+long
+tsap_select_lookup_protocol(int sid, int af, long protocol)
+{
+	struct sap_select *select;
+	long sap_protocol;
+
+	select = tsap_select_lookup(sid, af);
+	if (select != NULL) {
+		sap_protocol = sap_item_lookup(protocol, select->ss_protocol,
+				SAP_PROTOCOL_MAX);
+		if (sap_protocol != sap_protocol_select(protocol)) {
+			sap_protocol = SAP_PROTOCOL_UNKNOWN;
+		}
+	}
+	return (sap_protocol);
+}
+
+int
+tsap_select_lookup_class(int sid, int af, int clazz)
+{
+	struct sap_select *select;
+	long sap_class;
+
+	select = tsap_select_lookup(sid, af);
+	if (select != NULL) {
+		sap_class = sap_item_lookup(clazz, select->ss_class, SAP_CLASS_MAX);
+		if (sap_class != sap_class_select(clazz)) {
+			sap_class = SAP_CLASS_UNKNOWN;
+		}
+	}
+	return (sap_class);
+}
+
+#ifdef notyet
+static void
+tsap_setup_selector_id(uint32_t tsap_ids[8])
+{
+	long type, subnet, protocol;
+	int class;
+
+    for (type = 1; type < SAP_TYPE_MAX; type++) {
+        for (subnet = 1; subnet < SAP_SUBNET_MAX; subnet++) {
+        	for (protocol = 1; protocol < SAP_PROTOCOL_MAX; protocol++) {
+        		for (class = 1; class < SAP_CLASS_MAX; class++) {
+        			tsap_ids[0] = tsap_id(type, subnet, protocol, class);
+        		}
+        	}
+        }
+    }
 }
 
 static __inline int
@@ -675,3 +748,4 @@ sap_get_sid_from_af(int af)
 	}
 	return (sid);
 }
+#endif
