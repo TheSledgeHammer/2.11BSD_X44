@@ -200,13 +200,24 @@ void nsap_disconnect(struct sockaddr_nsap *, int, int);
 struct nsap_iso *nsap_lookup(struct nsapisotable *, struct sockaddr_nsap *, struct nsap_addr *, long, long);
 
 /* TSAP */
+extern uint32_t tsap_valid_ids[8];
+
 void tsap_init(struct tsap_iso *);
 void tsap_attach(struct tsap_iso *, int);
 void tsap_detach(struct tsap_iso *, int);
-//void tsap_select(struct tsap_iso *, long, long, long, int);
+int tsap_validate(struct tsap_iso *, struct nsap_iso *, int, int);
+int tsap_acknowledge(struct tsap_iso *, struct sockaddr_nsap *, struct nsap_addr *, long, int, int);
 int tsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
 void tsap_disconnect(struct sockaddr_nsap *, int, int);
-int tsap_acknowledge(struct tsap_iso *, struct sockaddr_nsap *, struct nsap_addr *, long);
+
+/* TSAP select */
+struct sap_select *tsap_select_lookup(int, int);
+long tsap_select_lookup_type(int, int, long);
+long tsap_select_lookup_subnet(int, int, long);
+long tsap_select_lookup_protocol(int, int, long);
+int tsap_select_lookup_class(int, int, int);
+int tsap_select_sid_to_af(int);
+int tsap_select_af_to_sid(int);
 
 #ifdef notyet
 /* ISODE Based code */
