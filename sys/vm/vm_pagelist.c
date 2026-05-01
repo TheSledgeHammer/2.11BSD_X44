@@ -638,7 +638,6 @@ vm_pagelist_found_chunk(idx, end, segmented, slist, rlist)
 	while (idx < end) {
 		if (segmented == TRUE) {
 			seg = &vm_segment_array[idx];
-			vm_pagelist_add_segmented_memory(seg, slist);
 			/* check if list of pages is empty */
 			if (TAILQ_FIRST(&seg->memq) != NULL) {
 				TAILQ_FOREACH(pg, &seg->memq, pageq) {
@@ -653,11 +652,16 @@ vm_pagelist_found_chunk(idx, end, segmented, slist, rlist)
 						 */
 						return (ENOMEM);
 					} else {
+						/* Pages available */
 						vm_pagelist_add_paged_memory(pg, seg, rlist);
+						idx++;
 						STAT_INCR(vm_pagelist_alloc_memory_npages);
+						return (0);
 					}
 				}
 			}
+			/* Segment available */
+			vm_pagelist_add_segmented_memory(seg, slist);
 			idx++;
 			STAT_INCR(vm_pagelist_alloc_memory_nsegments);
 		} else {

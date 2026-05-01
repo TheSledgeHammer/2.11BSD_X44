@@ -74,7 +74,7 @@ union addr_union {
 /* nsap addr */
 struct nsap_addr {
 	struct sap_service nsapa_service;
-#define nsapa_service_addr 	nsapa_service.ns_addr
+#define nsapa_service_addr 		nsapa_service.ns_addr
 #define nsapa_service_addrlen 	nsapa_service.ns_addrlen
 #define nsapa_service_class 	nsapa_service.ns_class
 	union addr_union u_addr;
@@ -135,14 +135,11 @@ struct sockaddr_nsap {
 
 /* NSAP addr (ISO/OSI equivalent) */
 struct nsap_iso {
-	LIST_ENTRY(nsap_iso) nsi_hash;	/* nsap */
+	LIST_ENTRY(nsap_iso) nsi_hash;	/* nsap table */
 	uint32_t nsi_type_id;			/* type id (not nsap_types) */
 	uint32_t nsi_subnet_id;			/* subnet id (not nsap_subnets) */
 	struct sockaddr_nsap *nsi_snsap;/* sockaddr_nsap (BSD-style) */
-#define nsi_nsapa nsi_snsap->snsap_addr /* nsap_addr (BSD-style) */
-
-#define nsi_iso   nsi_snsap->snsap_siso /* ISO/OSI sockaddr */
-#define nsi_selectlen nsi_iso.siso_nlen
+	struct nsap_addr *nsi_nsapa;	/* nsap_addr (BSD-style) */
 };
 
 LIST_HEAD(nsapisohead, nsap_iso);
@@ -188,11 +185,12 @@ void nsap_free(struct nsap_iso *);
 void nsap_service(struct sap_service *, char *, u_char, int);
 void nsap_setsockaddr(struct sockaddr_nsap *, void *, long, long);
 void nsap_setaddr(struct nsap_addr *, void *, long, int);
-int nsap_service_check(struct sap_service *, char *, u_char, int);
-int nsap_service_class_check(long, long, int);
 
-int nsap_type_id_isvalid(struct nsap_iso *, long);
-int nsap_subnet_id_isvalid(struct nsap_iso *, long);
+int nsap_compare_sockaddr_nsap(struct sockaddr_nsap *, struct sockaddr_nsap *);
+int nsap_compare_sap_service(struct sap_service *, char *, u_char, int);
+int nsap_compare_sap_service_class(long, long, int);
+int nsap_compare_type_id(struct nsap_iso *, long);
+int nsap_compare_subnet_id(struct nsap_iso *, long);
 
 void nsap_init(struct nsapisotable *);
 void nsap_attach(struct nsapisotable *, struct nsap_iso *, long, long);
