@@ -136,10 +136,11 @@ struct sockaddr_nsap {
 /* NSAP addr (ISO/OSI equivalent) */
 struct nsap_iso {
 	LIST_ENTRY(nsap_iso) nsi_hash;	/* nsap */
-	uint32_t nsi_type_id;		/* type id (not nsap_types) */
-	uint32_t nsi_subnet_id;		/* subnet id (not nsap_subnets) */
+	uint32_t nsi_type_id;			/* type id (not nsap_types) */
+	uint32_t nsi_subnet_id;			/* subnet id (not nsap_subnets) */
 	struct sockaddr_nsap *nsi_snsap;/* sockaddr_nsap (BSD-style) */
 #define nsi_nsapa nsi_snsap->snsap_addr /* nsap_addr (BSD-style) */
+
 #define nsi_iso   nsi_snsap->snsap_siso /* ISO/OSI sockaddr */
 #define nsi_selectlen nsi_iso.siso_nlen
 };
@@ -176,10 +177,6 @@ struct tsap_iso {
 	struct sap_select tsi_select;
 #define tsi_sid			tsi_select.ss_sid
 #define tsi_af			tsi_select.ss_af
-#define tsi_type		tsi_select.ss_type
-#define tsi_subnet		tsi_select.ss_subnet
-#define tsi_class		tsi_select.ss_class
-#define tsi_protocol	tsi_select.ss_protocol
 #define tsi_selector	tsi_select.ss_selector
 };
 
@@ -191,6 +188,11 @@ void nsap_free(struct nsap_iso *);
 void nsap_service(struct sap_service *, char *, u_char, int);
 void nsap_setsockaddr(struct sockaddr_nsap *, void *, long, long);
 void nsap_setaddr(struct nsap_addr *, void *, long, int);
+int nsap_service_check(struct sap_service *, char *, u_char, int);
+int nsap_service_class_check(long, long, int);
+
+int nsap_type_id_isvalid(struct nsap_iso *, long);
+int nsap_subnet_id_isvalid(struct nsap_iso *, long);
 
 void nsap_init(struct nsapisotable *);
 void nsap_attach(struct nsapisotable *, struct nsap_iso *, long, long);
@@ -200,7 +202,7 @@ void nsap_disconnect(struct sockaddr_nsap *, int, int);
 struct nsap_iso *nsap_lookup(struct nsapisotable *, struct sockaddr_nsap *, struct nsap_addr *, long, long);
 
 /* TSAP */
-extern uint32_t tsap_valid_ids[8];
+extern uint32_t tsap_valid_ids[SAP_TABLE_MAX];
 
 void tsap_init(struct tsap_iso *);
 void tsap_attach(struct tsap_iso *, int);
@@ -216,6 +218,7 @@ long tsap_select_lookup_type(int, int, long);
 long tsap_select_lookup_subnet(int, int, long);
 long tsap_select_lookup_protocol(int, int, long);
 int tsap_select_lookup_class(int, int, int);
+uint32_t tsap_select_lookup_selector(struct sap_select *, int);
 int tsap_select_sid_to_af(int);
 int tsap_select_af_to_sid(int);
 

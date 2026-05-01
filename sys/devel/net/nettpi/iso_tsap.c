@@ -43,98 +43,96 @@
 
 #include "iso_nsap.h"
 
-uint32_t tsap_valid_ids[8];
+uint32_t tsap_valid_ids[SAP_TABLE_MAX];
 struct nsapisotable tsapisotable; /* tsap iso table */
 
-#define SAP_TABLE_MAX 9
-
 struct sap_select sap_table[] = {
-		/* 0 - AF_INET */
+		/* 0 - AF_UNSPEC */
 		{
 				.ss_sid = 0,
-				.ss_af = AF_INET,
-				.ss_type =  { SAP_TYPE_SIN4 },
-				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
-				.ss_protocol = { SAP_PROTOCOL_TCP,  SAP_PROTOCOL_UDP },
-				.ss_class = { SAP_CLASS_CLNS },
-		},
-		/* 1 - AF_INET6 */
-		{
-				.ss_sid = 1,
-				.ss_af = AF_INET6,
-				.ss_type =  { SAP_TYPE_SIN6 },
-				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
-				.ss_protocol = { SAP_PROTOCOL_TCP,  SAP_PROTOCOL_UDP },
-				.ss_class = { SAP_CLASS_CLNS },
-		},
-		/* 2 - AF_NS */
-		{
-				.ss_sid = 2,
-				.ss_af = AF_NS,
-				.ss_type =  { SAP_TYPE_SNS },
-				.ss_subnet = { SAP_SUBNET_IDP },
-				.ss_protocol = { SAP_PROTOCOL_SPP },
-				.ss_class = { SAP_CLASS_CLNS },
-		},
-		/* 3 - AF_ISO */
-		{
-				.ss_sid = 3,
-				.ss_af = AF_ISO,
-				.ss_type =  { SAP_TYPE_SISO },
-				.ss_subnet = { SAP_SUBNET_CONS, SAP_SUBNET_CLNS, SAP_SUBNET_CLNP, SAP_SUBNET_ISIS, SAP_SUBNET_ESIS },
-				.ss_protocol = { SAP_PROTOCOL_TP0, SAP_PROTOCOL_TP1, SAP_PROTOCOL_TP2, SAP_PROTOCOL_TP3, SAP_PROTOCOL_TP4 },
-				.ss_class = { SAP_CLASS_CONS, SAP_CLASS_CLNS },
-		},
-		/* 4 - AF_CCITT */
-		{
-				.ss_sid = 4,
-				.ss_af = AF_CCITT,
-				.ss_type =  { SAP_TYPE_SX25 },
-				.ss_subnet = { SAP_SUBNET_X25 },
-				.ss_protocol = { SAP_PROTOCOL_X25 },
-				.ss_class = { SAP_CLASS_CONS },
-		},
-		/* 5 - AF_NATM */
-		{
-				.ss_sid = 5,
-				.ss_af = AF_NATM,
-				.ss_type =  { SAP_TYPE_SATM },
-				.ss_subnet = { SAP_SUBNET_ATM },
-				.ss_protocol = { SAP_PROTOCOL_ATM },
-				.ss_class = { SAP_CLASS_CLNS },
-		},
-		/* 6 - AF_IPX */
-		{
-				.ss_sid = 6,
-				.ss_af = AF_IPX,
-				.ss_type =  { SAP_TYPE_SIPX },
-				.ss_subnet = { SAP_SUBNET_IPX },
-				.ss_protocol = { SAP_PROTOCOL_SPX },
-				.ss_class = { SAP_CLASS_CLNS },
-		},
-		/* 7 - AF_SNA */
-		{
-				.ss_sid = 7,
-				.ss_af = AF_SNA,
-				.ss_type =  { SAP_TYPE_SSNA },
-				.ss_subnet = { SAP_SUBNET_SNA },
-				.ss_protocol = { SAP_PROTOCOL_SNA },
-				.ss_class = { SAP_CLASS_CLNS },
-		},
-		/* 8 - AF_UNSPEC */
-		{
-				.ss_sid = 8,
 				.ss_af = AF_UNSPEC,
 				.ss_type =  { SAP_TYPE_UNKNOWN },
 				.ss_subnet = { SAP_SUBNET_UNKNOWN },
 				.ss_protocol = { SAP_PROTOCOL_UNKNOWN },
 				.ss_class = { SAP_CLASS_UNKNOWN },
 		},
+		/* 1 - AF_INET */
+		{
+				.ss_sid = 1,
+				.ss_af = AF_INET,
+				.ss_type =  { SAP_TYPE_SIN4 },
+				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
+				.ss_protocol = { SAP_PROTOCOL_TCP,  SAP_PROTOCOL_UDP },
+				.ss_class = { SAP_CLASS_CLNS },
+		},
+		/* 2 - AF_INET6 */
+		{
+				.ss_sid = 2,
+				.ss_af = AF_INET6,
+				.ss_type =  { SAP_TYPE_SIN6 },
+				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
+				.ss_protocol = { SAP_PROTOCOL_TCP,  SAP_PROTOCOL_UDP },
+				.ss_class = { SAP_CLASS_CLNS },
+		},
+		/* 3 - AF_NS */
+		{
+				.ss_sid = 3,
+				.ss_af = AF_NS,
+				.ss_type =  { SAP_TYPE_SNS },
+				.ss_subnet = { SAP_SUBNET_IDP },
+				.ss_protocol = { SAP_PROTOCOL_SPP },
+				.ss_class = { SAP_CLASS_CLNS },
+		},
+		/* 4 - AF_ISO */
+		{
+				.ss_sid = 4,
+				.ss_af = AF_ISO,
+				.ss_type =  { SAP_TYPE_SISO },
+				.ss_subnet = { SAP_SUBNET_CONS, SAP_SUBNET_CLNS, SAP_SUBNET_CLNP, SAP_SUBNET_ISIS, SAP_SUBNET_ESIS },
+				.ss_protocol = { SAP_PROTOCOL_TP0, SAP_PROTOCOL_TP1, SAP_PROTOCOL_TP2, SAP_PROTOCOL_TP3, SAP_PROTOCOL_TP4 },
+				.ss_class = { SAP_CLASS_CONS, SAP_CLASS_CLNS },
+		},
+		/* 5 - AF_CCITT */
+		{
+				.ss_sid = 5,
+				.ss_af = AF_CCITT,
+				.ss_type =  { SAP_TYPE_SX25 },
+				.ss_subnet = { SAP_SUBNET_X25 },
+				.ss_protocol = { SAP_PROTOCOL_X25 },
+				.ss_class = { SAP_CLASS_CONS },
+		},
+		/* 6 - AF_NATM */
+		{
+				.ss_sid = 6,
+				.ss_af = AF_NATM,
+				.ss_type =  { SAP_TYPE_SATM },
+				.ss_subnet = { SAP_SUBNET_ATM },
+				.ss_protocol = { SAP_PROTOCOL_ATM },
+				.ss_class = { SAP_CLASS_CLNS },
+		},
+		/* 7 - AF_IPX */
+		{
+				.ss_sid = 7,
+				.ss_af = AF_IPX,
+				.ss_type =  { SAP_TYPE_SIPX },
+				.ss_subnet = { SAP_SUBNET_IPX },
+				.ss_protocol = { SAP_PROTOCOL_SPX },
+				.ss_class = { SAP_CLASS_CLNS },
+		},
+		/* 8 - AF_SNA */
+		{
+				.ss_sid = 8,
+				.ss_af = AF_SNA,
+				.ss_type =  { SAP_TYPE_SSNA },
+				.ss_subnet = { SAP_SUBNET_SNA },
+				.ss_protocol = { SAP_PROTOCOL_SNA },
+				.ss_class = { SAP_CLASS_CLNS },
+		},
 };
 
-void tsap_set_select_id(struct sap_select *select, int sid);
+void tsap_set_selector(struct sap_select *, int);
 static void tsap_setup_select(struct sap_select *, long *, long *, long *, int *);
-static void tsap_setup_select_id(struct sap_select *);
+static void tsap_setup_selector(struct sap_select *);
 static void tsap_attach_af(struct tsap_iso *, int);
 static void tsap_detach_af(struct tsap_iso *, int);
 
@@ -144,7 +142,7 @@ void
 tsap_init(struct tsap_iso *tsap)
 {
 	nsap_init(&tsapisotable);
-	tsap_setup_select_id(&tsap->tsi_select);
+	tsap_setup_selector(&tsap->tsi_select);
 }
 
 void
@@ -174,23 +172,21 @@ tsap_select_init(struct sap_select *select, int sid, int af)
 	select = tsap_select_lookup(sid, af);
 	if (select != NULL) {
 		tsap_setup_select(select, select->ss_type, select->ss_subnet, select->ss_protocol, select->ss_class);
-		tsap_set_select_id(select, sid);
+		tsap_set_selector(select, sid);
 	}
 }
 
-void
-tsap_set_select_id(struct sap_select *select, int sid)
+static void
+tsap_set_selector(struct sap_select *select, int sid)
 {
-	if (sid != 8) {
-		select->ss_selector[sid] = tsap_valid_ids[sid];
-	}
+	select->ss_selector[sid] = tsap_valid_ids[sid];
 }
 
 int
 tsap_validate(struct tsap_iso *tsap, struct nsap_iso *nsap, int sid, int af)
 {
 	if (tsap != NULL) {
-		if ((sid != 8) && (af != AF_UNSPEC)) {
+		if ((tsap->tsi_selector[sid] != 0) && (tsap_valid_ids[sid] != 0)) {
 			if (tsap->tsi_selector[sid] == tsap_valid_ids[sid]) {
 				if (tsap->tsi_nsaps != *nsap) {
 					return (1);
@@ -206,20 +202,20 @@ int
 tsap_acknowledge(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long protocol, int sid, int af)
 {
 	struct nsap_iso *nsap;
-	long stype, ssubnet, sprotocol;
-	int sclass, error;
+	long sap_type, sap_subnet, sap_protocol;
+	int sap_class, error;
 
-	stype = tsap_select_lookup_type(sid, af, snsap->snsap_type);
-	ssubnet = tsap_select_lookup_subnet(sid, af, snsap->snsap_subnet);
-	sprotocol = tsap_select_lookup_protocol(sid, af, protocol);
-	sclass = tsap_select_lookup_class(sid, af, nsapa->nsapa_service_class);
+	sap_type = tsap_select_lookup_type(sid, af, snsap->snsap_type);
+	sap_subnet = tsap_select_lookup_subnet(sid, af, snsap->snsap_subnet);
+	sap_protocol = tsap_select_lookup_protocol(sid, af, protocol);
+	sap_class = tsap_select_lookup_class(sid, af, nsapa->nsapa_service_class);
 
 	/* check tsap id */
-	error = tsap_id(stype, ssubnet, sprotocol, sclass);
+	error = tsap_id(sap_type, sap_subnet, sap_protocol, sap_class);
 	if (error == 0) {
 		return (1);
 	}
-	nsap = nsap_lookup(&tsapisotable, snsap, nsapa, stype, ssubnet, sclass);
+	nsap = nsap_lookup(&tsapisotable, snsap, nsapa, sap_type, sap_subnet, sap_class);
 	if (nsap == NULL) {
 		error = 1;
 	} else {
@@ -305,6 +301,18 @@ tsap_select_lookup_class(int sid, int af, int clazz)
 		}
 	}
 	return (sap_class);
+}
+
+uint32_t
+tsap_select_lookup_selector(struct sap_select *select, int sid)
+{
+	if (select != NULL) {
+		if (select->ss_selector[sid] == 0) {
+			tsap_set_selector(select, sid);
+		}
+		return (select->ss_selector[sid]);
+	}
+	return (0);
 }
 
 /*
@@ -704,11 +712,11 @@ tsap_setup_select(struct sap_select *select, long *type, long *subnet, long *pro
 }
 
 static void
-tsap_setup_select_id(struct sap_select *select)
+tsap_setup_selector(struct sap_select *select)
 {
 	int i;
 
-	for (i = 0; i < (SAP_TABLE_MAX - 1); i++) {
+	for (i = 1; i < SAP_TABLE_MAX; i++) {
 		select = &sap_table[i];
 		if (select != NULL) {
 			tsap_valid_ids[i] = tsap_id(*select->ss_type, *select->ss_subnet, *select->ss_protocol, *select->ss_class);

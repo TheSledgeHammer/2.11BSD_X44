@@ -46,6 +46,7 @@ static void nsap_rehash(struct nsapisotable *, struct nsap_iso *, long, long);
 static void nsap_insert(struct nsapisotable *, struct nsap_iso *, long, long);
 static void nsap_remove(struct nsap_iso *);
 static void nsap_setup_id_table(void);
+void nsap_set_nsap_id(struct nsapisotable *, long, long);
 
 void
 nsap_init(struct nsapisotable *table)
@@ -149,6 +150,76 @@ nsap_id_compare(uint32_t a, uint32_t b)
 {
 	if (a != b) {
 		return (1);
+	}
+	return (0);
+}
+
+int
+nsap_type_id_isvalid(struct nsap_iso *nsap, long type)
+{
+	if (nsap_id_compare(nsap->nsi_type_id, nsap_type_id(type)) == 0) {
+		return (0);
+	}
+	return (1);
+}
+
+int
+nsap_subnet_id_isvalid(struct nsap_iso *nsap, long subnet)
+{
+	if (nsap_id_compare(nsap->nsi_subnet_id, nsap_subnet_id(subnet)) == 0) {
+		return (0);
+	}
+	return (1);
+}
+
+/*
+ * Check sap_service addr, addrlen and class.
+ * returns following
+ * 0 = all matching
+ * 1 = non matching
+ * -1 = class doesn't match.
+ */
+int
+nsap_service_check(struct sap_service *service, char *addr, u_char addrlen, int class)
+{
+	if (service != NULL) {
+		if ((bcmp(service->ns_addr, addr, addrlen) == 0)
+				&& (service->ns_addrlen == addrlen)) {
+			if (service->ns_class != class) {
+				return (-1);
+			}
+			return (0);
+		}
+	}
+	return (1);
+}
+
+/*
+ * Check class
+ * against the specified type and subnet.
+ * returns -1 if connection mode, 1 if connectionless mode or
+ * 0 if class matches.
+ */
+int
+nsap_service_class_check(long type, long subnet, int class)
+{
+	switch (class) {
+	case NSAP_CLASS_CONS:
+		if ((type != NSAP_TYPE_SISO) && (subnet != NSAP_SUBNET_CONS)) {
+			return (-1);
+		}
+		if ((type != NSAP_TYPE_SX25) && (subnet != NSAP_SUBNET_X25)) {
+			return (-1);
+		}
+		break;
+	case NSAP_CLASS_CLNS:
+		if ((type == NSAP_TYPE_SISO) && (subnet == NSAP_SUBNET_CONS)) {
+			return (1);
+		}
+		if ((type == NSAP_TYPE_SX25) && (subnet == NSAP_SUBNET_X25)) {
+			return (1);
+		}
+		break;
 	}
 	return (0);
 }
@@ -628,6 +699,7 @@ nsap_lookup(struct nsapisotable *table, struct sockaddr_nsap *snsap, struct nsap
 	struct nsapisohead *head;
 	struct nsap_iso *nsap;
 	struct nsap_addr *snsapa;
+	int error;
 
 	if (nsap_valid_ids[type][subnet] == 0) {
 		goto unknown;
@@ -635,47 +707,44 @@ nsap_lookup(struct nsapisotable *table, struct sockaddr_nsap *snsap, struct nsap
 
 	head = NSAPHASH(table, type, subnet);
 	LIST_FOREACH(nsap, head, nsi_hash) {
-		if (nsap_id_compare(nsap->nsi_type_id, nsap_type_id(type)) != 0) {
+		if (nsap_type_id_isvalid(nsap->nsi_type_id, type) != 0) {
 			continue;
 		}
-		if (nsap_id_compare(nsap->nsi_subnet_id, nsap_subnet_id(subnet)) != 0) {
+		if (nsap_subnet_id_isvalid(nsap->nsi_subnet_id, subnet) != 0) {
 			continue;
 		}
+
 		/* get sockaddr_nsap */
 		if (nsap->nsi_snsap == snsap) {
 			/* get nsap_addr */
 			snsapa = &nsap->nsi_snsap->snsap_addr;
-			if (snsapa == nsapa) {
-				/* check service_class against class */
-				if (snsapa->nsapa_service_class == class) {
-					/* check type and subnet against class */
-					switch (snsapa->nsapa_service_class) {
-					case NSAP_CLASS_CONS:
-						if ((type != (NSAP_TYPE_SISO | NSAP_TYPE_SX25))
-								&& (subnet != (NSAP_SUBNET_CONS | NSAP_SUBNET_X25))) {
-							goto unknown;
-						}
-						break;
-					case NSAP_CLASS_CLNS:
-						if ((type == (NSAP_TYPE_SISO | NSAP_TYPE_SX25))
-								&& (subnet == (NSAP_SUBNET_CONS | NSAP_SUBNET_X25))) {
-							goto unknown;
-						}
-						break;
+			/* check nsap addr service */
+			if (snsapa != NULL) {
+				if (snsapa == nsapa) {
+					goto validate;
+				}
+				error = nsap_service_check(nsapa, snsapa->nsapa_service_addr,
+						snsapa->nsapa_service_addrlen, snsapa->nsapa_service_class);
+				/* check for class mismatch */
+				if (error > 0) {
+					error = nsap_service_class_check(type, subnet, class);
+					if (error != 0) {
+						goto unknown;
 					}
 				}
 			}
+validate:
 			/* validate type */
 			if (snsap->snsap_type == type) {
-				if ((nsap_id_compare(nsap->nsi_type_id, nsap_type_id(snsap->snsap_type)) != 0)
-						|| (nsap_id_compare(nsap->nsi_type_id, nsap_type_id(type)) != 0)) {
+				if ((nsap_type_id_isvalid(nsap->nsi_type_id, snsap->snsap_type) != 0)
+						|| (nsap_type_id_isvalid(nsap->nsi_type_id, type) != 0)) {
 					goto unknown;
 				}
 			}
 			/* validate subnet */
 			if (snsap->snsap_subnet == subnet) {
-				if ((nsap_id_compare(nsap->nsi_subnet_id, nsap_subnet_id(snsap->snsap_subnet)) != 0)
-						|| (nsap_id_compare(nsap->nsi_subnet_id, nsap_subnet_id(subnet)) != 0)) {
+				if ((nsap_subnet_id_isvalid(nsap->nsi_subnet_id, snsap->snsap_subnet) != 0)
+						|| (nsap_subnet_id_isvalid(nsap->nsi_subnet_id, subnet) != 0)) {
 					goto unknown;
 				}
 			}

@@ -45,9 +45,11 @@ struct sap_service {
  * - INET/6 only offers CLNS class.
  * - ISO offers both CONS and CLNS classes.
  */
+#define SAP_TABLE_MAX 9
+
 struct sap_select {
-	uint32_t ss_selector[8]; 			/* selector hash */
-	int ss_sid;							/* select id */
+	uint32_t ss_selector[SAP_TABLE_MAX];/* selector id cksum */
+	int ss_sid;							/* sap select id */
 	int ss_af;							/* address family */
 	long ss_type[SAP_TYPE_MAX];			/* sockaddr array */
 	long ss_subnet[SAP_SUBNET_MAX];		/* network protocol array */
