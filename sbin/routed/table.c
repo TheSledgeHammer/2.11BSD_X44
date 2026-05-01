@@ -1289,11 +1289,12 @@ read_rt(void)
 			gate = 0;
 		}
 
-		if (INFO_AUTHOR(&info) != 0)
+		if (INFO_AUTHOR(&info) != 0) {
 			snprintf(strp, str + sizeof(str) - strp,
 			    " by authority of %s",
 			    saddr_ntoa(INFO_AUTHOR(&info)));
 			strp += strlen(strp);
+        }
 
 		switch (m.r.rtm.rtm_type) {
 		case RTM_ADD:
@@ -2130,7 +2131,7 @@ age(naddr bad_gate)
 		if (ifp->int_act_time != NEVER
 		    && now.tv_sec - ifp->int_act_time > EXPIRE_TIME) {
 			msglog("remote interface %s to %s timed out after"
-			       " %ld:%ld",
+			       " %lld:%lld",
 			       ifp->int_name,
 			       naddr_ntoa(ifp->int_dstaddr),
 			       (now.tv_sec - ifp->int_act_time)/60,
