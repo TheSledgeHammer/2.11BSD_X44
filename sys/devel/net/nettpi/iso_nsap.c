@@ -36,7 +36,8 @@
 uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
 static long nsap_id_cnt;
 
-#define NSAPHASH(table, type, subnet) 	&(table)->nsit_hashtbl[nsap_id((type), (subnet))]
+#define NSAPHASH(table, type, subnet) \
+	&(table)->nsit_hashtbl[nsap_id((type), (subnet))]
 
 static void nsap_class(struct sap_service *, int);
 static void nsap_type(struct sockaddr_nsap *, long);
@@ -46,7 +47,6 @@ static void nsap_rehash(struct nsapisotable *, struct nsap_iso *, long, long);
 static void nsap_insert(struct nsapisotable *, struct nsap_iso *, long, long);
 static void nsap_remove(struct nsap_iso *);
 static void nsap_setup_id_table(void);
-void nsap_set_nsap_id(struct nsapisotable *, long, long);
 
 void
 nsap_init(struct nsapisotable *table)
@@ -79,24 +79,18 @@ nsap_free(struct nsap_iso *nsap)
 }
 
 void
-nsap_set_nsap_id(struct nsapisotable *table, long type, long subnet)
+nsap_attach(struct nsapisotable *table, struct nsap_iso *nsap, long type, long subnet)
 {
-	table->nsit_id = nsap_valid_ids[type][subnet];
-}
-
-void
-nsap_attach(struct nsapisotable *table, struct nsap_iso *naddr, long type, long subnet)
-{
-	struct nsap_iso *nsap;
+	struct nsap_iso *nsiiso;
 	struct nsapisohead *head;
 
-	nsap = nsap_alloc(table, type, subnet);
-	if (nsap == NULL) {
+	nsiiso = nsap_alloc(table, type, subnet);
+	if (nsiiso == NULL) {
 		return;
 	}
-	nsap_set_nsap_id(table, type, subnet);
-	nsap_insert(table, nsap, type, subnet);
-	naddr = nsap;
+	table->nsit_id = nsap_valid_ids[type][subnet];
+	nsap_insert(table, nsiiso, type, subnet);
+	nsap = nsiiso;
 }
 
 void
@@ -180,6 +174,7 @@ nsap_compare_sockaddr_nsap(struct sockaddr_nsap *a, struct sockaddr_nsap *b)
 	} else if (a->snsap_subnet != b->snsap_subnet) {
 		return (1);
 	} else {
+
 		return (0);
 	}
 }
@@ -710,7 +705,6 @@ nsap_lookup(struct nsapisotable *table, struct sockaddr_nsap *snsap, struct nsap
 {
 	struct nsapisohead *head;
 	struct nsap_iso *nsap;
-	struct nsap_addr *snsapa;
 	int error;
 
 	head = NSAPHASH(table, type, subnet);
@@ -745,13 +739,6 @@ validate:
 		/* nsap_addr */
 		if (nsap->nsi_nsapa != NULL) {
 			if (nsap->nsi_nsapa == nsapa) {
-				snsapa = &nsap->nsi_snsap->snsap_addr;
-				if (snsapa != nsap->nsi_nsapa) {
-					error = nsap_compare_sap_service(nsapa,
-							snsapa->nsapa_service_addr,
-							snsapa->nsapa_service_addrlen,
-							snsapa->nsapa_service_class);
-				}
 				goto out;
 			} else {
 				error = nsap_compare_sap_service(nsapa,

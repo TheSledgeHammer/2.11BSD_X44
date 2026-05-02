@@ -172,11 +172,33 @@ struct nsapisotable {
 struct tsap_iso {
 	struct nsap_iso tsi_nsaps[ISOLEN];
 	struct sap_select tsi_select;
+#define tsi_selector	tsi_select.ss_selector
 #define tsi_sid			tsi_select.ss_sid
 #define tsi_af			tsi_select.ss_af
-#define tsi_selector	tsi_select.ss_selector
 };
 
+/* SSAP: Session Service Access Point */
+/* SSAP addr (ISO/OSI equivalent) */
+struct ssap_iso {
+	struct tsap_iso ssi_tsaps[ISOLEN];
+	struct sap_select ssi_select;
+#define ssi_selector	ssi_select.ss_selector
+#define ssi_sid			ssi_select.ss_sid
+#define ssi_af			ssi_select.ss_af
+};
+
+/* PSAP: Presentation Service Access Point */
+/* PSAP addr (ISO/OSI equivalent) */
+struct psap_iso {
+	struct ssap_iso psi_ssaps[ISOLEN];
+	struct sap_select psi_select;
+#define psi_selector	psi_select.ss_selector
+#define psi_sid			psi_select.ss_sid
+#define psi_af			psi_select.ss_af
+};
+
+
+/* prototypes */
 /* NSAP */
 extern uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
 
@@ -211,6 +233,7 @@ int tsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
 void tsap_disconnect(struct sockaddr_nsap *, int, int);
 
 /* TSAP select */
+void tsap_select_init(struct sap_select *, int, int);
 struct sap_select *tsap_select_lookup(int, int);
 long tsap_select_lookup_type(int, int, long);
 long tsap_select_lookup_subnet(int, int, long);

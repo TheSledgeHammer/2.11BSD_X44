@@ -28,12 +28,14 @@
 
 /*
  * TODO:
- * - Finish re-work on how tsap's retrieve information from
- * sap_select structure (i.e. sap_table below).
- * 		- setting up tsap_id
- * 		- retrieval of types, protocols, classes and subnets.
- * - Sap select now works of each network stack. As define by the sap_table.
- * - tsap_acknowledge: won't work properly with new sap select
+ * - rename: functions that are layer independent or have commonality between
+ * each layer.
+ * - most sap_select functions fall into this category.
+ */
+/*
+ * NSAP & TSAP network stack dependent setup/initialization:
+ * - will occur from a tp_protosw callback function. (labelled tppw_init)
+ * - the tppw_init callback will run from within the tp_init function.
  */
 
 #include <sys/errno.h>
@@ -130,12 +132,10 @@ struct sap_select sap_table[] = {
 		},
 };
 
-void tsap_set_selector(struct sap_select *, int);
 static void tsap_setup_select(struct sap_select *, long *, long *, long *, int *);
 static void tsap_setup_selector(struct sap_select *);
 static void tsap_attach_af(struct tsap_iso *, int);
 static void tsap_detach_af(struct tsap_iso *, int);
-
 
 /* TSAP's */
 void
@@ -165,21 +165,15 @@ tsap_detach(struct tsap_iso *tsap, int af)
 	}
 }
 
-static void
+void
 tsap_select_init(struct sap_select *select, int sid, int af)
 {
 	bzero(select, sizeof(*select));
 	select = tsap_select_lookup(sid, af);
 	if (select != NULL) {
 		tsap_setup_select(select, select->ss_type, select->ss_subnet, select->ss_protocol, select->ss_class);
-		tsap_set_selector(select, sid);
+		select->ss_selector[sid] = tsap_valid_ids[sid];
 	}
-}
-
-static void
-tsap_set_selector(struct sap_select *select, int sid)
-{
-	select->ss_selector[sid] = tsap_valid_ids[sid];
 }
 
 int
@@ -308,7 +302,7 @@ tsap_select_lookup_selector(struct sap_select *select, int sid)
 {
 	if (select != NULL) {
 		if (select->ss_selector[sid] == 0) {
-			tsap_set_selector(select, sid);
+			select->ss_selector[sid] = tsap_valid_ids[sid];
 		}
 		return (select->ss_selector[sid]);
 	}
