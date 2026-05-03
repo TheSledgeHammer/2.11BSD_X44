@@ -30,10 +30,6 @@
  * Work in Progress:
  * - psap's and ssap's will eventually be in seperate source files.
  */
-/*
- * TODO:
- * - Compare functions
- */
 
 #include "iso_nsap.h"
 
@@ -44,7 +40,7 @@ ssap_init(struct ssap_iso *ssap, struct tsap_iso tsap[ISOLEN], int sid, int af)
 	ssap->ssi_tsaps = tsap;
 	ssap->ssi_sid = sid;
 	ssap->ssi_af = af;
-	tsap_select_init(&ssap->ssi_select, sid, af);
+	sap_select_init(&ssap->ssi_select, sid, af);
 }
 
 struct tsap_iso *
@@ -59,6 +55,29 @@ ssap_to_tsap(struct ssap_iso *ssap)
 	return (NULL);
 }
 
+/*
+ * ssap_iso_compare:
+ * - compares tsap_iso and sap_select
+ * returns -1 if a, 1 if b and 0 if equal
+ */
+int
+ssap_iso_compare(struct ssap_iso *a, struct ssap_iso *b)
+{
+	int error;
+
+	if (a != b) {
+		error = tsap_iso_compare(&a->ssi_tsaps, &b->ssi_tsaps);
+		if (error != 0) {
+			return (error);
+		}
+		error = sap_select_compare(&a->ssi_select, &b->ssi_select);
+		if (error != 0) {
+			return (error);
+		}
+	}
+	return (0);
+}
+
 /* PSAP's */
 void
 psap_init(struct psap_iso *psap, struct ssap_iso ssap[ISOLEN], int sid, int af)
@@ -66,7 +85,7 @@ psap_init(struct psap_iso *psap, struct ssap_iso ssap[ISOLEN], int sid, int af)
 	psap->psi_ssaps = ssap;
 	psap->psi_sid = sid;
 	psap->psi_af = af;
-	tsap_select_init(&psap->psi_select, sid, af);
+	sap_select_init(&psap->psi_select, sid, af);
 }
 
 struct ssap_iso *
@@ -79,4 +98,27 @@ psap_to_ssap(struct psap_iso *psap)
 		return (ssap);
 	}
 	return (NULL);
+}
+
+/*
+ * psap_iso_compare:
+ * - compares ssap_iso and sap_select
+ * returns -1 if a, 1 if b and 0 if equal
+ */
+int
+psap_iso_compare(struct psap_iso *a, struct psap_iso *b)
+{
+	int error;
+
+	if (a != b) {
+		error = ssap_iso_compare(&a->psi_ssaps, &b->psi_ssaps);
+		if (error != 0) {
+			return (error);
+		}
+		error = sap_select_compare(&a->psi_select, &b->psi_select);
+		if (error != 0) {
+			return (error);
+		}
+	}
+	return (0);
 }

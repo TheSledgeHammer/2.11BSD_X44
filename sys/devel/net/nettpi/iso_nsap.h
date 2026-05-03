@@ -29,6 +29,8 @@
 #ifndef _NETTPI_ISO_NSAP_H_
 #define _NETTPI_ISO_NSAP_H_
 
+#include <sys/queue.h>
+
 #include "iso_sap.h"
 
 /*
@@ -208,12 +210,6 @@ void nsap_service(struct sap_service *, char *, u_char, int);
 void nsap_setsockaddr(struct sockaddr_nsap *, void *, long, long);
 void nsap_setaddr(struct nsap_addr *, void *, long, int);
 
-int nsap_compare_sockaddr_nsap(struct sockaddr_nsap *, struct sockaddr_nsap *);
-int nsap_compare_sap_service(struct sap_service *, char *, u_char, int);
-int nsap_compare_sap_service_class(long, long, int);
-int nsap_compare_type_id(struct nsap_iso *, long);
-int nsap_compare_subnet_id(struct nsap_iso *, long);
-
 void nsap_init(struct nsapisotable *);
 void nsap_attach(struct nsapisotable *, struct nsap_iso *, long, long);
 void nsap_detach(struct nsapisotable *, struct nsap_iso *, long, long);
@@ -232,16 +228,10 @@ int tsap_acknowledge(struct tsap_iso *, struct sockaddr_nsap *, struct nsap_addr
 int tsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
 void tsap_disconnect(struct sockaddr_nsap *, int, int);
 
-/* TSAP select */
-void tsap_select_init(struct sap_select *, int, int);
-struct sap_select *tsap_select_lookup(int, int);
-long tsap_select_lookup_type(int, int, long);
-long tsap_select_lookup_subnet(int, int, long);
-long tsap_select_lookup_protocol(int, int, long);
-int tsap_select_lookup_class(int, int, int);
-uint32_t tsap_select_lookup_selector(struct sap_select *, int);
-int tsap_select_sid_to_af(int);
-int tsap_select_af_to_sid(int);
+int nsap_iso_compare(struct nsap_iso *, struct nsap_iso *);
+int tsap_iso_compare(struct tsap_iso *, struct tsap_iso *);
+int ssap_iso_compare(struct ssap_iso *, struct ssap_iso *);
+int psap_iso_compare(struct psap_iso *, struct psap_iso *);
 
 #ifdef notyet
 /* ISODE Based code */

@@ -141,187 +141,30 @@ enum sap_protocols {
 	SAP_PROTOCOL_MAX
 };
 
-static __inline int
-sap_class_select(int clazz)
-{
-	int select = -1;
+extern struct sap_select sap_table[SAP_TABLE_MAX];
 
-	switch (clazz) {
-	case SAP_CLASS_CONS:
-		select = SAP_CLASS_CONS;
-		break;
-	case SAP_CLASS_CLNS:
-		select = SAP_CLASS_CLNS;
-		break;
-	case SAP_CLASS_UNKNOWN:
-		/* FALLTHROUGH */
-	default:
-		select = SAP_CLASS_UNKNOWN;
-		break;
-	}
-	return (select);
-}
+int sap_class_select(int);
+long sap_type_select(long);
+long sap_subnet_select(long);
+long sap_protocol_select(long);
+long sap_item_lookup(long, long *, int);
 
-static __inline long
-sap_type_select(long type)
-{
-	long select = -1;
+void sap_select_init(struct sap_select *, int, int);
 
-	switch (type) {
-	case SAP_TYPE_SIN4:
-		select = SAP_TYPE_SIN4;
-		break;
-	case SAP_TYPE_SIN6:
-		select = SAP_TYPE_SIN6;
-		break;
-	case SAP_TYPE_SNS:
-		select = SAP_TYPE_SNS;
-		break;
-	case SAP_TYPE_SISO:
-		select = SAP_TYPE_SISO;
-		break;
-	case SAP_TYPE_SX25:
-		select = SAP_TYPE_SX25;
-		break;
-	case SAP_TYPE_SATM:
-		select = SAP_TYPE_SATM;
-		break;
-	case SAP_TYPE_SIPX:
-		select = SAP_TYPE_SIPX;
-		break;
-	case SAP_TYPE_SSNA:
-		select = SAP_TYPE_SSNA;
-		break;
-	case SAP_TYPE_UNKNOWN:
-		/* FALLTHROUGH */
-	default:
-		select = SAP_TYPE_UNKNOWN;
-		break;
-	}
-	return (select);
-}
+int nsap_addr_compare(struct nsap_addr *, struct nsap_addr *);
+int sockaddr_nsap_compare(struct sockaddr_nsap *, struct sockaddr_nsap *);
+int sap_service_compare(struct sap_service *, struct sap_service *);
+int sap_service_check_class(long, long, int);
+int sap_select_compare(struct sap_select *, struct sap_select *);
 
-static __inline long
-sap_subnet_select(long subnet)
-{
-	long select = -1;
-
-	switch (subnet) {
-	case SAP_SUBNET_IPV4:
-		select = SAP_SUBNET_IPV4;
-		break;
-	case SAP_SUBNET_IPV6:
-		select = SAP_SUBNET_IPV6;
-		break;
-	case SAP_SUBNET_IDP:
-		select = SAP_SUBNET_IDP;
-		break;
-	case SAP_SUBNET_CONS:
-		select = SAP_SUBNET_CONS;
-		break;
-	case SAP_SUBNET_CLNS:
-		select = SAP_SUBNET_CLNS;
-		break;
-	case SAP_SUBNET_CLNP:
-		select = SAP_SUBNET_CLNP;
-		break;
-	case SAP_SUBNET_ISIS:
-		select = SAP_SUBNET_ISIS;
-		break;
-	case SAP_SUBNET_ESIS:
-		select = SAP_SUBNET_ESIS;
-		break;
-	case SAP_SUBNET_X25:
-		select = SAP_SUBNET_X25;
-		break;
-	case SAP_SUBNET_ATM:
-		select = SAP_SUBNET_ATM;
-		break;
-	case SAP_SUBNET_IPX:
-		select = SAP_SUBNET_IPX;
-		break;
-	case SAP_SUBNET_SNA:
-		select = SAP_SUBNET_SNA;
-		break;
-	case SAP_SUBNET_UNKNOWN:
-		/* FALLTHROUGH */
-	default:
-		select = SAP_SUBNET_UNKNOWN;
-		break;
-	}
-	return (select);
-}
-
-static __inline long
-sap_protocol_select(long protocol)
-{
-	long select = -1;
-
-	switch (protocol) {
-	case SAP_PROTOCOL_TCP:
-		select = SAP_PROTOCOL_TCP;
-		break;
-	case SAP_PROTOCOL_UDP:
-		select = SAP_PROTOCOL_UDP;
-		break;
-	case SAP_PROTOCOL_TP0:
-		select = SAP_PROTOCOL_TP0;
-		break;
-	case SAP_PROTOCOL_TP1:
-		select = SAP_PROTOCOL_TP1;
-		break;
-	case SAP_PROTOCOL_TP2:
-		select = SAP_PROTOCOL_TP2;
-		break;
-	case SAP_PROTOCOL_TP3:
-		select = SAP_PROTOCOL_TP3;
-		break;
-	case SAP_PROTOCOL_TP4:
-		select = SAP_PROTOCOL_TP4;
-		break;
-	case SAP_PROTOCOL_SPP:
-		select = SAP_PROTOCOL_SPP;
-		break;
-	case SAP_PROTOCOL_X25:
-		select = SAP_PROTOCOL_X25;
-		break;
-	case SAP_PROTOCOL_ATM:
-		select = SAP_PROTOCOL_ATM;
-		break;
-	case SAP_PROTOCOL_SPX:
-		select = SAP_PROTOCOL_SPX;
-		break;
-	case SAP_PROTOCOL_SNA:
-		select = SAP_PROTOCOL_SNA;
-		break;
-	case SAP_PROTOCOL_UNKNOWN:
-		/* FALLTHROUGH */
-	default:
-		select = SAP_PROTOCOL_UNKNOWN;
-		break;
-	}
-	return (select);
-}
-
-/*
- * sap item lookup:
- * search sap_array for sap_item
- * returns item if found or -1 if not found.
- */
-static __inline long
-sap_item_lookup(long sap_item, long *sap_array, int nelems)
-{
-	long item = -1;
-	int i;
-
-	for (i = 0; i < nelems; i++) {
-		item = sap_array[i];
-		if (item == sap_item) {
-			break;
-		}
-	}
-	return (item);
-}
+struct sap_select *sap_select_lookup(int, int);
+long sap_select_lookup_type(int, int, long);
+long sap_select_lookup_subnet(int, int, long);
+long sap_select_lookup_protocol(int, int, long);
+int sap_select_lookup_class(int, int, int);
+uint32_t sap_select_lookup_selector(struct sap_select *, int);
+int sap_select_sid_to_af(int);
+int sap_select_af_to_sid(int);
 
 /*
  * sap class hash:
@@ -393,41 +236,6 @@ sap_protocol_hash(long protocol)
 	}
 	protocol_id = enhanced_double_hash(protocol, len);
 	return (protocol_id);
-}
-
-/*
- * sap hash:
- * - generates a sap_id from the sap_type_id, sap_subnet_id,
- * sap_protocol_id and sap_class_id.
- */
-static __inline uint32_t
-sap_hash(long type, long subnet, long protocol, int clazz)
-{
-	uint32_t sap_id, type_id, subnet_id, protocol_id, class_id, hashid;
-	int len;
-
-	len = ISOLEN;
-	if ((protocol == 0) && (clazz == 0)) {
-		type_id = sap_type_hash(type);
-		subnet_id = sap_subnet_hash(subnet);
-		if ((type_id == 0) || (subnet_id == 0)) {
-			len = 1;
-		}
-		hashid = (type_id + (subnet_id + (len - 1))) - len;
-	} else {
-		type_id = sap_type_hash(type);
-		subnet_id = sap_subnet_hash(subnet);
-		protocol_id = sap_protocol_hash(protocol);
-		class_id = sap_class_hash(clazz);
-		if ((type_id == 0) || (subnet_id == 0) || (protocol_id == 0)
-				|| (class_id == 0)) {
-			len = 1;
-		}
-		hashid = (type_id + (subnet_id + (len - 1)) + (protocol_id + (len - 2))
-				+ (class_id + (len - 3))) - len;
-	}
-	sap_id = enhanced_double_hash(hashid, len);
-	return (sap_id);
 }
 
 /*

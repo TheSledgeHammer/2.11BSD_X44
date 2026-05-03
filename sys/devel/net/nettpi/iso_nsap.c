@@ -26,8 +26,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
+#include <sys/systm.h>
+#include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
+#include <sys/null.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 
@@ -42,7 +47,13 @@ static long nsap_id_cnt;
 static void nsap_class(struct sap_service *, int);
 static void nsap_type(struct sockaddr_nsap *, long);
 static void nsap_subnet(struct sockaddr_nsap *, long);
-static int nsap_id_compare(uint32_t, uint32_t);
+
+static int nsap_type_id_check(uint32_t, long);
+static int nsap_subnet_id_check(uint32_t, long);
+static int nsap_id_check(struct nsap_iso *, long, long);
+static int nsap_compare_type_id(struct nsap_iso *, struct nsap_iso *);
+static int nsap_compare_subnet_id(struct nsap_iso *, struct nsap_iso *);
+
 static void nsap_rehash(struct nsapisotable *, struct nsap_iso *, long, long);
 static void nsap_insert(struct nsapisotable *, struct nsap_iso *, long, long);
 static void nsap_remove(struct nsap_iso *);
@@ -140,95 +151,123 @@ nsap_subnet(struct sockaddr_nsap *snsap, long subnet)
 }
 
 static int
-nsap_id_compare(uint32_t a, uint32_t b)
+nsap_type_id_check(uint32_t id, long type)
 {
-	if (a != b) {
+	if (id > nsap_type_id(type)) {
+		return (-1);
+	} else if (id < nsap_type_id(type)) {
 		return (1);
 	}
 	return (0);
 }
 
-int
-nsap_compare_type_id(struct nsap_iso *nsap, long type)
+static int
+nsap_subnet_id_check(uint32_t id, long subnet)
 {
-	if (nsap_id_compare(nsap->nsi_type_id, nsap_type_id(type)) == 0) {
-		return (0);
-	}
-	return (1);
-}
-
-int
-nsap_compare_subnet_id(struct nsap_iso *nsap, long subnet)
-{
-	if (nsap_id_compare(nsap->nsi_subnet_id, nsap_subnet_id(subnet)) == 0) {
-		return (0);
-	}
-	return (1);
-}
-
-int
-nsap_compare_sockaddr_nsap(struct sockaddr_nsap *a, struct sockaddr_nsap *b)
-{
-	if (a->snsap_type != b->snsap_type) {
+	if (id > nsap_subnet_id(subnet)) {
 		return (-1);
-	} else if (a->snsap_subnet != b->snsap_subnet) {
+	} else if (id < nsap_subnet_id(subnet)) {
+		return (1);
+	}
+	return (0);
+}
+
+static int
+nsap_id_check(struct nsap_iso *nsap, long type, long subnet)
+{
+	int error;
+
+	error = nsap_type_id_check(nsap->nsi_type_id, type);
+	if (error != 0) {
+		return (error);
+	}
+	error = nsap_subnet_id_check(nsap->nsi_subnet_id, subnet);
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
+}
+
+static int
+nsap_compare_type_id(struct nsap_iso *a, struct nsap_iso *b)
+{
+	if (a->nsi_type_id > b->nsi_type_id) {
+		return (-1);
+	} else if (a->nsi_type_id < b->nsi_type_id) {
 		return (1);
 	} else {
+		return (0);
+	}
+}
 
+static int
+nsap_compare_subnet_id(struct nsap_iso *a, struct nsap_iso *b)
+{
+	if (a->nsi_subnet_id > b->nsi_subnet_id) {
+		return (-1);
+	} else if (a->nsi_subnet_id < b->nsi_subnet_id) {
+		return (1);
+	} else {
 		return (0);
 	}
 }
 
 /*
- * Check sap_service addr, addrlen and class.
- * returns following
- * 0 = all matching
- * 1 = non matching
- * -1 = class doesn't match.
+ * nsap_iso_compare:
+ * - compares sockaddr_nsap, nsap_addr, type_id and subnet_id
+ * returns -1 if a, 1 if b and 0 if equal
  */
 int
-nsap_compare_sap_service(struct sap_service *service, char *addr, u_char addrlen, int class)
+nsap_iso_compare(struct nsap_iso *a, struct nsap_iso *b)
 {
-	if (service != NULL) {
-		if ((bcmp(service->ns_addr, addr, addrlen) == 0)
-				&& (service->ns_addrlen == addrlen)) {
-			if (service->ns_class != class) {
-				return (-1);
-			}
-			return (0);
+	int error;
+
+	if (a != b) {
+		error = sockaddr_nsap_compare(a->nsi_snsap, b->nsi_snsap);
+		if (error != 0) {
+			return (error);
+		}
+		error = nsap_addr_compare(a->nsi_nsapa, b->nsi_nsapa);
+		if (error != 0) {
+			return (error);
+		}
+		error = nsap_compare_type_id(a, b);
+		if (error != 0) {
+			return (error);
+		}
+		error = nsap_compare_subnet_id(a, b);
+		if (error != 0) {
+			return (error);
 		}
 	}
-	return (1);
+	return (0);
 }
 
 /*
- * Check class
- * against the specified type and subnet.
- * returns -1 if connection mode, 1 if connectionless mode or
- * 0 if class matches.
+ * Only ISO/OSI based services have currently been defined.
  */
-int
-nsap_compare_sap_service_class(long type, long subnet, int class)
+void
+nsap_service(struct sap_service *service, char *addr, u_char addrlen, int class)
 {
 	switch (class) {
-	case NSAP_CLASS_CONS:
-		if ((type != NSAP_TYPE_SISO) && (subnet != NSAP_SUBNET_CONS)) {
-			return (-1);
-		}
-		if ((type != NSAP_TYPE_SX25) && (subnet != NSAP_SUBNET_X25)) {
-			return (-1);
-		}
+	case NSAP_CLASS_CONS: /* connection oriented */
+		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
+		service->ns_addrlen = addrlen;
+		nsap_class(service, NSAP_CLASS_CONS);
 		break;
-	case NSAP_CLASS_CLNS:
-		if ((type == NSAP_TYPE_SISO) && (subnet == NSAP_SUBNET_CONS)) {
-			return (1);
-		}
-		if ((type == NSAP_TYPE_SX25) && (subnet == NSAP_SUBNET_X25)) {
-			return (1);
-		}
+	case NSAP_CLASS_CLNS: /* connection-less oriented  */
+		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
+		service->ns_addrlen = addrlen;
+		nsap_class(service, NSAP_CLASS_CLNS);
+		break;
+	case NSAP_CLASS_UNKNOWN: /* everything else */
+		/* FALLTHROUGH */
+	default:
+		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
+		service->ns_addrlen = addrlen;
+		nsap_class(service, NSAP_CLASS_UNKNOWN);
 		break;
 	}
-	return (0);
 }
 
 void
@@ -352,33 +391,6 @@ unknown:
 	default:
 		nsap_type(snsap, NSAP_TYPE_UNKNOWN);
 		nsap_subnet(snsap, NSAP_SUBNET_UNKNOWN);
-		break;
-	}
-}
-
-/*
- * Only ISO/OSI based services have currently been defined.
- */
-void
-nsap_service(struct sap_service *service, char *addr, u_char addrlen, int class)
-{
-	switch (class) {
-	case NSAP_CLASS_CONS: /* connection oriented */
-		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
-		service->ns_addrlen = addrlen;
-		nsap_class(service, NSAP_CLASS_CONS);
-		break;
-	case NSAP_CLASS_CLNS: /* connection-less oriented  */
-		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
-		service->ns_addrlen = addrlen;
-		nsap_class(service, NSAP_CLASS_CLNS);
-		break;
-	case NSAP_CLASS_UNKNOWN: /* everything else */
-		/* FALLTHROUGH */
-	default:
-		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
-		service->ns_addrlen = addrlen;
-		nsap_class(service, NSAP_CLASS_UNKNOWN);
 		break;
 	}
 }
@@ -711,53 +723,28 @@ nsap_lookup(struct nsapisotable *table, struct sockaddr_nsap *snsap, struct nsap
 	LIST_FOREACH(nsap, head, nsi_hash) {
 		/* sockaddr_nsap */
 		if (nsap->nsi_snsap != NULL) {
-			if (nsap->nsi_snsap == snsap) {
-				goto validate;
-			} else {
-				error = nsap_compare_sockaddr_nsap(nsap->nsi_snsap, snsap);
+			error = sockaddr_nsap_compare(nsap->nsi_snsap, snsap);
+			if (error != 0) {
+				/* validate type_id and subnet_id */
+				error = nsap_id_check(nsap, snsap->snsap_type, snsap->snsap_subnet);
 				if (error != 0) {
-					goto unknown;
-				}
-				/* validate type_id */
-				if ((nsap_compare_type_id(nsap->nsi_type_id, snsap->snsap_type)
-						!= 0)
-						|| (nsap_compare_type_id(nsap->nsi_type_id, type) != 0)) {
-					goto unknown;
-				}
-
-				/* validate subnet_id */
-				if ((nsap_compare_subnet_id(nsap->nsi_subnet_id,
-						snsap->snsap_subnet) != 0)
-						|| (nsap_compare_subnet_id(nsap->nsi_subnet_id, subnet)
-								!= 0)) {
-					goto unknown;
+					return (NULL);
 				}
 			}
 		}
 
-validate:
 		/* nsap_addr */
 		if (nsap->nsi_nsapa != NULL) {
-			if (nsap->nsi_nsapa == nsapa) {
-				goto out;
-			} else {
-				error = nsap_compare_sap_service(nsapa,
-						nsap->nsi_nsapa->nsapa_service_addr,
-						nsap->nsi_nsapa->nsapa_service_addrlen,
-						nsap->nsi_nsapa->nsapa_service_class);
-			}
-			if (error > 0) {
-				error = nsap_compare_sap_service_class(type, subnet, class);
+			error = nsap_addr_compare(nsap->nsi_nsapa, nsapa);
+			if (error != 0) {
+				error = sap_service_check_class(type, subnet, class);
 				if (error != 0) {
-					goto unknown;
+					return (NULL);
 				}
 			}
-			goto out;
 		}
+		goto out;
 	}
-
-unknown:
-	return (NULL);
 
 out:
 	nsap_rehash(table, nsap, type, subnet);
