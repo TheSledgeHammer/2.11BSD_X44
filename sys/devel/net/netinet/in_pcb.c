@@ -558,6 +558,7 @@ in_pcbnotify(struct inpcbtable *table, struct in_addr faddr,
 			nmatch++;
 		}
 	}
+	return (nmatch);
 }
 
 void

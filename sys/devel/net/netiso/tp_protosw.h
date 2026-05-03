@@ -73,34 +73,37 @@ SOFTWARE.
 #ifndef _NETTPI_TPI_PROTOSW_H_
 #define _NETTPI_TPI_PROTOSW_H_
 
-struct tpi_protosw {
-	int		tpi_afamily;											/* address family */
-	void	(*tpi_putnetaddr)(void *, struct sockaddr *, int);		/* puts addresses in tpi pcb */
-	void	(*tpi_getnetaddr)(void *, struct mbuf *, int);			/* gets addresses from tpi pcb */
-	int		(*tpi_cmpnetaddr)(void *, struct sockaddr *, int);		/* compares address in pcb with sockaddr */
-	int		(*tpi_putsufx)(void *, caddr_t, int, int);				/* puts transport suffixes in tpi pcb */
-	int		(*tpi_getsufx)(void *, u_short *, caddr_t, int);		/* gets transport suffixes from tpi pcb */
-	int		(*tpi_recycle_suffix)(void *);							/* clears suffix from tpi pcb */
-	int		(*tpi_mtu)(void *);										/* figures out mtu based on tpi used */
-	int		(*tpi_pcbbind)(void *);									/* bind to pcb for net level */
-	int		(*tpi_pcbconnect)(void *, struct mbuf *);				/* connect for net level */
-	void	(*tpi_pcbdisconnect)(void *);							/* disconnect net level */
-	int 	(*tpi_pcbattach)(struct socket *, int);					/* attach net level pcb */
-	void	(*tpi_pcbdetach)(void *);								/* detach net level pcb */
-	int		(*tpi_pcballoc)(struct socket *, void *);				/* allocate a net level pcb */
-	int		(*tpi_output)(void *, struct mbuf *, int, int);			/* prepare a packet to give to tpi */
-	int		(*tpi_dgoutput)(void *, void *, struct mbuf *, int, void *, int); /* prepare a packet to give to tpi */
-	int		(*tpi_ctloutput)(int, struct sockaddr *, void *);		/* hook for network set/get options */
-	caddr_t	tpi_pcblist;											/* list of xx_pcb's for connections */
+struct tp_protosw {
+	int		tp_afamily;												/* address family */
+	//void 	(*tp_init)();
+	void	(*tp_putnetaddr)(void *, struct sockaddr *, int);		/* puts addresses in tp pcb */
+	void	(*tp_getnetaddr)(void *, struct mbuf *, int);			/* gets addresses from tp pcb */
+	int		(*tp_cmpnetaddr)(void *, struct sockaddr *, int);		/* compares address in pcb with sockaddr */
+	int		(*tp_putsufx)(void *, caddr_t, int, int);				/* puts transport suffixes in tp pcb */
+	int		(*tp_getsufx)(void *, u_short *, caddr_t, int);			/* gets transport suffixes from tp pcb */
+	int		(*tp_recycle_suffix)(void *);							/* clears suffix from tp pcb */
+	int		(*tp_mtu)(void *);										/* figures out mtu based on tp used */
+	int		(*tp_pcbbind)(void *);									/* bind to pcb for net level */
+	int		(*tp_pcbconnect)(void *, struct mbuf *);				/* connect for net level */
+	void	(*tp_pcbdisconnect)(void *);							/* disconnect net level */
+	int 	(*tp_pcbattach)(struct socket *, int);					/* attach net level pcb */
+	void	(*tp_pcbdetach)(void *);								/* detach net level pcb */
+	int		(*tp_pcballoc)(struct socket *, void *);				/* allocate a net level pcb */
+	int		(*tp_output)(void *, struct mbuf *, int, int);			/* prepare a packet to give to tp */
+	int		(*tp_dgoutput)(void *, void *, struct mbuf *, int, void *, int); /* prepare a packet to give to tp */
+	int		(*tp_ctloutput)(int, struct sockaddr *, void *);		/* hook for network set/get options */
+	caddr_t	tp_pcblist;												/* list of xx_pcb's for connections */
 };
 
-extern struct tpi_protosw *tpi_protosw;
+extern struct tp_protosw *tp_protosw;
 
 /* network protocols */
-extern struct tpi_protosw tpin4_protosw;
-extern struct tpi_protosw tpin6_protosw;
-extern struct tpi_protosw tpiso_protosw;
-extern struct tpi_protosw tpns_protosw;
-extern struct tpi_protosw tpx25_protosw;
+extern struct tp_protosw tpin4_protosw;
+extern struct tp_protosw tpin6_protosw;
+extern struct tp_protosw tpiso_protosw;
+extern struct tp_protosw tpns_protosw;
+extern struct tp_protosw tpx25_protosw;
+
+void tp_protosw_init(void);
 
 #endif /* _NETTPI_TPI_PROTOSW_H_ */

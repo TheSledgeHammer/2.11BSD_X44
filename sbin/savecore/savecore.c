@@ -32,13 +32,17 @@
  */
 
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1986, 1992, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)savecore.c	8.5 (Berkeley) 4/28/95";
+#endif
 #endif /* not lint */
 /*
  * savecore, 1.1 (2.11BSD) 1995/07/15
@@ -142,7 +146,7 @@ int	 	dump_exists(void);
 char	*find_dev(dev_t, int);
 int	 	get_crashtime(void);
 void	kmem_setup(void);
-void	log(int, char *, ...);
+//void	log(int, char *, ...);
 void	Lseek(int, off_t, int);
 int	 	Open(char *, int rw);
 int	 	Read(int, void *, int);
@@ -226,9 +230,7 @@ main(int argc, char *argv[])
 }
 
 char *
-find_dev(dev, type)
-	register dev_t dev;
-	register int type;
+find_dev(dev_t dev, int type)
 {
 	register DIR *dfd;
 	struct dirent *dir;
@@ -361,8 +363,8 @@ check_kmem(void)
 	if (strcmp(vers, core_vers) && system == 0)
 		syslog(LOG_WARNING, "warning: %s version mismatch:\n\t%s\nand\t%s\n",
 		_PATH_UNIX, vers, core_vers);
-	(void) fseek(fp, (off_t) (dumplo + ok(dump_nl[X_PANICSTR].n_value)), L_SET);
-	(void) fread(&panicstr, sizeof(panicstr), 1, fp);
+	(void)fseek(fp, (off_t) (dumplo + ok(dump_nl[X_PANICSTR].n_value)), L_SET);
+	(void)fread(&panicstr, sizeof(panicstr), 1, fp);
 	if (panicstr) {
 		(void) fseek(fp, dumplo + ok(panicstr), L_SET);
 		cp = panic_mesg;
@@ -615,11 +617,11 @@ err2:			syslog(LOG_WARNING, "WARNING: vmcore may be incomplete");
 		(void) close(ofd);
 }
 
-char *days[] = {
+const char *days[] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 
-char *months[] = {
+const char *months[] = {
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
 	"Oct", "Nov", "Dec"
 };
@@ -628,7 +630,7 @@ void
 log_entry(void)
 {
 	FILE *fp;
-	struct tm *tm, *localtime();
+	struct tm *tm;
 
 	tm = localtime(&now);
 	fp = fopen(SHUTDOWNLOG, "a");

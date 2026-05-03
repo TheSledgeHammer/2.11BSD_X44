@@ -45,6 +45,60 @@
 
 #include "iso_nsap.h"
 
+/*
+ * tp protosw:
+ * - new init function
+ */
+void
+tpin_init(struct tsap_iso *tsap)
+{
+	tsap_attach(tsap, AF_INET);
+}
+
+void
+tpin6_init(struct tsap_iso *tsap)
+{
+	tsap_attach(tsap, AF_INET6);
+}
+
+void
+tpiso_init(struct tsap_iso *tsap)
+{
+	tsap_attach(tsap, AF_ISO);
+}
+
+void
+tpns_init(struct tsap_iso *tsap)
+{
+	tsap_attach(tsap, AF_NS);
+}
+
+struct tp_protosw tp_protosw[] = {
+		{
+				&tpin4_protosw
+		},
+		{
+				&tpin6_protosw
+		},
+		{
+				&tpiso_protosw
+		},
+		{
+				&tpns_protosw
+		},
+};
+
+
+void
+tp_protosw_init(struct tsap_iso *tsap)
+{
+	int i;
+
+	for (i = 0; i < (sizeof(tp_protosw)/sizeof(tp_protosw[0])); i++) {
+		(*tp_protosw[i].tp_init)(tsap);
+	}
+}
+
 uint32_t tsap_valid_ids[SAP_TABLE_MAX];
 struct nsapisotable tsapisotable; /* tsap iso table */
 

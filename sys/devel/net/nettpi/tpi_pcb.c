@@ -483,6 +483,20 @@ tpi_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 	return ((tpp->tpp_tpproto->tpi_pcbbind)(tpp->tpp_npcb, nam, p));
 }
 
+tp_pcbconnect(void *v, struct mbuf *nam)
+{
+	struct tpipcb *tpp = v;
+
+	return ((tpp->tpp_tpproto->tpi_pcbconnect)(tpp->tpp_npcb, nam));
+}
+
+tp_pcbdisconnect(void *v)
+{
+	struct tpipcb *tpp = v;
+
+	(tpp->tpp_tpproto->tpi_pcbdisconnect)(tpp->tpp_npcb);
+}
+
 int
 tpi_pcbconnect(void *v, struct mbuf *nam, int which, int af)
 {
