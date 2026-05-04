@@ -236,7 +236,7 @@
 
 /* Define to 1 if you have the declaration of `memrchr', and to 0 if you
    don't. */
-#define HAVE_DECL_MEMRCHR 0
+/* #undef HAVE_DECL_MEMRCHR */
 
 /* Define to 1 if you have the declaration of `nanosleep', and to 0 if you
    don't. */
