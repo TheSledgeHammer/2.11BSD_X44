@@ -31,28 +31,35 @@ static char rcsid[] = "$Id: compat.c,v 1.6 1994/01/15 20:43:43 vixie Exp $";
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
+#include <errno.h>
+#include <paths.h>
+
 /*
  * Ripped off from daemon(3) - differences are this sets the process group
  * and does not fork (because that has been done already).
 */
+#ifdef NEED_SETSID
 int
 setsid(void)
 {
 	int newpgrp;
 	register int fd;
-
-	newpgrp = setpgrp(0, getpid());
+#if defined(POSIX)
+	newpgrp = setpgid(0, getpid());
+#else
+    newpgrp = setpgrp(0, getpid());
+#endif
 	if ((fd = open(_PATH_TTY, 2)) >= 0) {
 		(void) ioctl(fd, TIOCNOTTY, (char*) 0);
 		(void) close(fd);
 	}
 	if ((fd = open(_PATH_DEVNULL, O_RDWR, 0)) != -1) {
-		(void) dup2(fd, 0);
-		(void) dup2(fd, 1);
-		(void) dup2(fd, 2);
+		(void)dup2(fd, 0);
+		(void)dup2(fd, 1);
+		(void)dup2(fd, 2);
 		if (fd > 2)
 			(void) close(fd);
 	}
 	return newpgrp;
 }
-
+#endif /* NEED_SETSID */
