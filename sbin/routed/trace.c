@@ -599,7 +599,7 @@ rtname(naddr dst,
 	int i;
 
 	i = snprintf(buf, sizeof(buf), "%-16s-->", addrname(dst, mask, 0));
-	if (i >= sizeof(buf) || i < 0)
+	if ((u_int)i >= sizeof(buf) || i < 0)
 		return buf;
 	(void)snprintf(&buf[i], sizeof(buf) - i, "%-*s", 15+20-MAX(20, i),
 	    naddr_ntoa(gate));
