@@ -136,7 +136,7 @@ struct rip {
 
 #define	RIPCMD_MAX			6
 #ifdef RIPCMDS
-char *ripcmds[RIPCMD_MAX] =
+const char *ripcmds[RIPCMD_MAX] =
   { "#0", "REQUEST", "RESPONSE", "TRACEON", "TRACEOFF" };
 #endif
 
