@@ -3,4 +3,7 @@
 PROG=	ac
 MAN=	ac.8
 
+COPTS.ac.c += ${GCC_NO_STRINGOP_TRUNCATION}
+
 .include <bsd.prog.mk>
+
