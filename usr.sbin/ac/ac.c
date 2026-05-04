@@ -370,7 +370,7 @@ show_users(struct user_list *list)
  * print total login time for 24hr period in decimal hours
  */
 static void
-show_today(struct user_list *users, struct user_list *logins, time_t secs)
+show_today(struct user_list *users, struct utmp_list *logins, time_t secs)
 {
 	struct user_list *up;
 	struct utmp_list *lp;
