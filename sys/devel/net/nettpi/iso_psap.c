@@ -73,10 +73,11 @@ psap_attach(struct psap_iso *psap, struct ssap_iso ssap[ISOLEN], int af)
 }
 
 void
-psap_detach(struct psap_iso *psap, long type, long subnet, int af)
+psap_detach(struct psap_iso *psap, struct ssap_iso *ssap, int af)
 {
 	if (psap != NULL) {
-		ssap_detach(&psap->psi_ssaps, type, subnet, af);
+		ssap_detach(ssap, &ssap->ssi_tsaps, af);
+		bcopy(ssap, psap->psi_ssaps, sizeof(psap->psi_ssaps));
 		if (psap->psi_ssaps == NULL) {
 			psap_destroy(psap);
 		}

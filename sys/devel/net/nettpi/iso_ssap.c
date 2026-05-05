@@ -57,7 +57,7 @@ ssap_destroy(struct ssap_iso *ssap)
 }
 
 void
-ssap_attach(struct ssap_iso *ssap, struct tsap_iso tsap[ISOLEN], int af)
+ssap_attach(struct ssap_iso *ssap, struct tsap_iso *tsap, int af)
 {
 	struct ssap_iso *ssiso;
 	int sid;
@@ -72,10 +72,11 @@ ssap_attach(struct ssap_iso *ssap, struct tsap_iso tsap[ISOLEN], int af)
 }
 
 void
-ssap_detach(struct ssap_iso *ssap, long type, long subnet, int af)
+ssap_detach(struct ssap_iso *ssap, struct tsap_iso *tsap, int af)
 {
 	if (ssap != NULL) {
-		tsap_detach(&ssap->ssi_tsaps, type, subnet, af);
+		tsap_detach(tsap, &tsap->tsi_nsaps, af);
+		bcopy(tsap, ssap->ssi_tsaps, sizeof(ssap->ssi_tsaps));
 		if (ssap->ssi_tsaps == NULL) {
 			ssap_destroy(ssap);
 		}
