@@ -58,7 +58,7 @@ psap_destroy(struct psap_iso *psap)
 }
 
 void
-psap_attach(struct psap_iso *psap, struct ssap_iso ssap[ISOLEN], int af)
+psap_attach(struct psap_iso *psap, struct ssap_iso *ssap, int af)
 {
 	struct psap_iso *psiso;
 	int sid;
