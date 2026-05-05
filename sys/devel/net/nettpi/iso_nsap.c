@@ -55,7 +55,9 @@ static int nsap_compare_type_id(struct nsap_iso *, struct nsap_iso *);
 static int nsap_compare_subnet_id(struct nsap_iso *, struct nsap_iso *);
 
 static void nsap_insert(struct nsapisotable *, struct nsap_iso *, long, long);
-static void nsap_remove(struct nsap_iso *, long, long);
+static void nsap_remove(struct nsapisotable *, struct nsap_iso *, long, long);
+static void nsap_insert_af(struct nsapisotable *, struct nsap_iso *, int);
+static void nsap_remove_af(struct nsapisotable *, struct nsap_iso *, int);
 static void nsap_setup_id_table(void);
 
 void
@@ -88,30 +90,26 @@ nsap_destroy(struct nsap_iso *nsap)
 }
 
 void
-nsap_attach(struct nsapisotable *table, struct nsap_iso *nsap, long type, long subnet)
+nsap_attach(struct nsapisotable *table, struct nsap_iso *nsap, int af)
 {
 	struct nsap_iso *nsiiso;
 	struct nsapisohead *head;
 
 	nsiiso = nsap_create(table);
 	if (nsiiso != NULL) {
-		nsap_insert(table, nsiiso, type, subnet);
+		nsap_insert_af(table, nsiiso, af);
 		nsap = nsiiso;
 	}
 	nsap = NULL;
 }
 
 void
-nsap_detach(struct nsapisotable *table, struct nsap_iso *nsap, long type, long subnet)
+nsap_detach(struct nsapisotable *table, struct nsap_iso *nsap, int af)
 {
-	struct nsapisohead *head;
-
-	head = NSAPHASH(table, type, subnet);
-	if (LIST_EMPTY(head)) {
-		nsap_destroy(nsap);
-	}
 	if (nsap != NULL) {
-		nsap_remove(nsap, type, subnet);
+		nsap_remove_af(table, nsap, af);
+	} else {
+		nsap_destroy(nsap);
 	}
 }
 
@@ -781,12 +779,113 @@ nsap_insert(struct nsapisotable *table, struct nsap_iso *nsap, long type, long s
 }
 
 static void
-nsap_remove(struct nsap_iso *nsap, long type, long subnet)
+nsap_remove(struct nsapisotable *table, struct nsap_iso *nsap, long type, long subnet)
 {
+	nsap = nsap_lookup(table, type, subnet);
 	if (nsap != NULL) {
-		if (nsap_id_check(nsap, type, subnet)) {
-			LIST_REMOVE(nsap, nsi_hash);
-		}
+		LIST_REMOVE(nsap, nsi_hash);
+	}
+}
+
+static void
+nsap_insert_af(struct nsapisotable *table, struct nsap_iso *nsap, int af)
+{
+	switch (af) {
+	case AF_INET:
+		nsap_insert(table, nsap, NSAP_TYPE_SIN4,
+				NSAP_SUBNET_IPV4);
+		nsap_insert(table, nsap, NSAP_TYPE_SIN4,
+				NSAP_SUBNET_IPV6);
+		break;
+	case AF_INET6:
+		nsap_insert(table, nsap, NSAP_TYPE_SIN6,
+				NSAP_SUBNET_IPV4);
+		nsap_insert(table, nsap, NSAP_TYPE_SIN6,
+				NSAP_SUBNET_IPV6);
+		break;
+	case AF_NS:
+		nsap_insert(table, nsap, NSAP_TYPE_SNS,
+				NSAP_SUBNET_IDP);
+		break;
+	case AF_ISO:
+		nsap_insert(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_CONS);
+		nsap_insert(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_CLNS);
+		nsap_insert(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_CLNP);
+		nsap_insert(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_ISIS);
+		nsap_insert(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_ESIS);
+		break;
+	case AF_CCITT:
+		nsap_insert(table, nsap, NSAP_TYPE_SX25,
+				NSAP_SUBNET_X25);
+		break;
+	case AF_NATM:
+		nsap_insert(table, nsap, NSAP_TYPE_SATM,
+				NSAP_SUBNET_ATM);
+		break;
+	case AF_IPX:
+		nsap_insert(table, nsap, NSAP_TYPE_SIPX,
+				NSAP_SUBNET_IPX);
+		break;
+	case AF_SNA:
+		nsap_insert(table, nsap, NSAP_TYPE_SSNA,
+				NSAP_SUBNET_SNA);
+		break;
+	}
+}
+
+static void
+nsap_remove_af(struct nsapisotable *table, struct nsap_iso *nsap, int af)
+{
+	switch (af) {
+	case AF_INET:
+		nsap_remove(table, nsap, NSAP_TYPE_SIN4,
+				NSAP_SUBNET_IPV4);
+		nsap_remove(table, nsap, NSAP_TYPE_SIN4,
+				NSAP_SUBNET_IPV6);
+		break;
+	case AF_INET6:
+		nsap_remove(table, nsap, NSAP_TYPE_SIN6,
+				NSAP_SUBNET_IPV4);
+		nsap_remove(table, nsap, NSAP_TYPE_SIN6,
+				NSAP_SUBNET_IPV6);
+		break;
+	case AF_NS:
+		nsap_remove(table, nsap, NSAP_TYPE_SNS,
+				NSAP_SUBNET_IDP);
+		break;
+	case AF_ISO:
+		nsap_remove(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_CONS);
+		nsap_remove(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_CLNS);
+		nsap_remove(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_CLNP);
+		nsap_remove(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_ISIS);
+		nsap_remove(table, nsap, NSAP_TYPE_SISO,
+				NSAP_SUBNET_ESIS);
+		break;
+	case AF_CCITT:
+		nsap_remove(table, nsap, NSAP_TYPE_SX25,
+				NSAP_SUBNET_X25);
+		break;
+	case AF_NATM:
+		nsap_remove(table, nsap, NSAP_TYPE_SATM,
+				NSAP_SUBNET_ATM);
+		break;
+	case AF_IPX:
+		nsap_remove(table, nsap, NSAP_TYPE_SIPX,
+				NSAP_SUBNET_IPX);
+		break;
+	case AF_SNA:
+		nsap_remove(table, nsap, NSAP_TYPE_SSNA,
+				NSAP_SUBNET_SNA);
+		break;
 	}
 }
 

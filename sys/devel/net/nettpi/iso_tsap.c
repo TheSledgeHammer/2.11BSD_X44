@@ -45,99 +45,7 @@
 
 #include "iso_nsap.h"
 
-/*
- * tp protosw:
- * - new init function
- */
-void
-tpin_init(struct tsap_iso *tsap)
-{
-	tsap_attach(tsap, AF_INET);
-}
-
-void
-tpin6_init(struct tsap_iso *tsap)
-{
-	tsap_attach(tsap, AF_INET6);
-}
-
-void
-tpiso_init(struct tsap_iso *tsap)
-{
-	tsap_attach(tsap, AF_ISO);
-}
-
-void
-tpns_init(struct tsap_iso *tsap)
-{
-	tsap_attach(tsap, AF_NS);
-}
-
-struct tp_protosw tp_protosw[] = {
-		{
-				&tpin4_protosw
-		},
-		{
-				&tpin6_protosw
-		},
-		{
-				&tpiso_protosw
-		},
-		{
-				&tpns_protosw
-		},
-};
-
-
-void
-tp_protosw_init(int af)
-{
-	int i;
-
-	for (i = 0; i < (sizeof(tp_protosw)/sizeof(tp_protosw[0])); i++) {
-		(*tp_protosw[i].tp_init)(af);
-	}
-}
-
 uint32_t tsap_valid_ids[SAP_TABLE_MAX];
-struct nsapisotable tsapisotable; /* tsap iso table */
-
-static void tsap_attach_af(struct tsap_iso *, int);
-static void tsap_detach_af(struct tsap_iso *, int);
-
-
-
-void
-sap_init(long type, long subnet, int af)
-{
-	struct nsap_iso *nsap;
-	struct tsap_iso *tsap;
-	struct ssap_iso *ssap;
-	struct psap_iso *psap;
-
-	nsap_attach(&tsapisotable, nsap, type, subnet);
-	if (nsap == NULL) {
-		return;
-	}
-	tsap_attach(tsap, nsap, af);
-	if (tsap == NULL) {
-		return;
-	}
-	ssap_attach(ssap, tsap, af);
-	if (ssap == NULL) {
-		return;
-	}
-	psap_attach(psap, ssap, af);
-	if (psap == NULL) {
-		return;
-	}
-}
-
-sap_free()
-{
-
-
-}
 
 /* TSAP's */
 struct tsap_iso *
@@ -178,14 +86,38 @@ tsap_attach(struct tsap_iso *tsap, struct nsap_iso *nsap, int af)
 }
 
 void
-tsap_detach(struct tsap_iso *tsap, long type, long subnet, int af)
+tsap_detach(struct tsap_iso *tsap, struct nsap_iso *nsap, int af)
 {
 	if (tsap != NULL) {
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, type, subnet);
+		nsap_detach(&tp_xsap_isotable, nsap, af);
+		bcopy(nsap, tsap->tsi_nsaps, sizeof(tsap->tsi_nsaps));
 		if (tsap->tsi_nsaps == NULL) {
 			tsap_destroy(tsap);
 		}
 	}
+}
+
+/*
+ * tsap_iso_compare:
+ * - compares nsap_iso and sap_select
+ * returns -1 if a, 1 if b and 0 if equal
+ */
+int
+tsap_iso_compare(struct tsap_iso *a, struct tsap_iso *b)
+{
+	int error;
+
+	if (a != b) {
+		error = nsap_iso_compare(&a->tsi_nsaps, &b->tsi_nsaps);
+		if (error != 0) {
+			return (error);
+		}
+		error = sap_select_compare(&a->tsi_select, &b->tsi_select);
+		if (error != 0) {
+			return (error);
+		}
+	}
+	return (0);
 }
 
 int
@@ -221,36 +153,13 @@ tsap_acknowledge(struct tsap_iso *tsap, long type, long subnet, long protocol, i
 	if (error == 0) {
 		return (1);
 	}
-	nsap = nsap_lookup(&tsapisotable, sap_type, sap_subnet);
+	nsap = nsap_lookup(&tp_xsap_isotable, sap_type, sap_subnet);
 	if (nsap == NULL) {
 		error = 1;
 	} else {
 		error = tsap_validate(tsap, nsap, sid, af);
 	}
 	return (error);
-}
-
-/*
- * tsap_iso_compare:
- * - compares nsap_iso and sap_select
- * returns -1 if a, 1 if b and 0 if equal
- */
-int
-tsap_iso_compare(struct tsap_iso *a, struct tsap_iso *b)
-{
-	int error;
-
-	if (a != b) {
-		error = nsap_iso_compare(&a->tsi_nsaps, &b->tsi_nsaps);
-		if (error != 0) {
-			return (error);
-		}
-		error = sap_select_compare(&a->tsi_select, &b->tsi_select);
-		if (error != 0) {
-			return (error);
-		}
-	}
-	return (0);
 }
 
 /*
@@ -507,108 +416,6 @@ tsap_disconnect(struct sockaddr_nsap *snsap, long subnet, int class, int af)
 	}
 	default:
 		nsap_disconnect(snsap, NSAP_SUBNET_UNKNOWN, AF_UNSPEC);
-		break;
-	}
-}
-
-static void
-tsap_attach_af(struct tsap_iso *tsap, int af)
-{
-	switch (af) {
-	case AF_INET:
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN4,
-				NSAP_SUBNET_IPV4);
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN4,
-				NSAP_SUBNET_IPV6);
-		break;
-	case AF_INET6:
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN6,
-				NSAP_SUBNET_IPV4);
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN6,
-				NSAP_SUBNET_IPV6);
-		break;
-	case AF_NS:
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SNS,
-				NSAP_SUBNET_IDP);
-		break;
-	case AF_ISO:
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_CONS);
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_CLNS);
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_CLNP);
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_ISIS);
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_ESIS);
-		break;
-	case AF_CCITT:
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SX25,
-				NSAP_SUBNET_X25);
-		break;
-	case AF_NATM:
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SATM,
-				NSAP_SUBNET_ATM);
-		break;
-	case AF_IPX:
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIPX,
-				NSAP_SUBNET_IPX);
-		break;
-	case AF_SNA:
-		nsap_attach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SSNA,
-				NSAP_SUBNET_SNA);
-		break;
-	}
-}
-
-static void
-tsap_detach_af(struct tsap_iso *tsap, int af)
-{
-	switch (af) {
-	case AF_INET:
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN4,
-				NSAP_SUBNET_IPV4);
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN4,
-				NSAP_SUBNET_IPV6);
-		break;
-	case AF_INET6:
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN6,
-				NSAP_SUBNET_IPV4);
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIN6,
-				NSAP_SUBNET_IPV6);
-		break;
-	case AF_NS:
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SNS,
-				NSAP_SUBNET_IDP);
-		break;
-	case AF_ISO:
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_CONS);
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_CLNS);
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_CLNP);
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_ISIS);
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SISO,
-				NSAP_SUBNET_ESIS);
-		break;
-	case AF_CCITT:
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SX25,
-				NSAP_SUBNET_X25);
-		break;
-	case AF_NATM:
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SATM,
-				NSAP_SUBNET_ATM);
-		break;
-	case AF_IPX:
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SIPX,
-				NSAP_SUBNET_IPX);
-		break;
-	case AF_SNA:
-		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, NSAP_TYPE_SSNA,
-				NSAP_SUBNET_SNA);
 		break;
 	}
 }
