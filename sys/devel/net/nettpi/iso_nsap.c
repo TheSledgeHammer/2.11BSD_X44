@@ -54,9 +54,8 @@ static int nsap_id_check(struct nsap_iso *, long, long);
 static int nsap_compare_type_id(struct nsap_iso *, struct nsap_iso *);
 static int nsap_compare_subnet_id(struct nsap_iso *, struct nsap_iso *);
 
-static void nsap_rehash(struct nsapisotable *, struct nsap_iso *, long, long);
 static void nsap_insert(struct nsapisotable *, struct nsap_iso *, long, long);
-static void nsap_remove(struct nsap_iso *);
+static void nsap_remove(struct nsap_iso *, long, long);
 static void nsap_setup_id_table(void);
 
 void
@@ -67,7 +66,7 @@ nsap_init(struct nsapisotable *table)
 }
 
 struct nsap_iso *
-nsap_alloc(struct nsapisotable *table, long type, long subnet)
+nsap_create(struct nsapisotable *table)
 {
 	struct nsap_iso *nsap;
 
@@ -76,13 +75,12 @@ nsap_alloc(struct nsapisotable *table, long type, long subnet)
 		return (NULL);
 	}
 	bzero((caddr_t)nsap, sizeof(*nsap));
-	nsap->nsi_type_id = nsap_type_id(type);
-	nsap->nsi_subnet_id = nsap_subnet_id(subnet);
+	nsap_init(table);
 	return (nsap);
 }
 
 void
-nsap_free(struct nsap_iso *nsap)
+nsap_destroy(struct nsap_iso *nsap)
 {
 	if (nsap != NULL) {
 		FREE(nsap, M_ISOSAP);
@@ -95,13 +93,12 @@ nsap_attach(struct nsapisotable *table, struct nsap_iso *nsap, long type, long s
 	struct nsap_iso *nsiiso;
 	struct nsapisohead *head;
 
-	nsiiso = nsap_alloc(table, type, subnet);
-	if (nsiiso == NULL) {
-		return;
+	nsiiso = nsap_create(table);
+	if (nsiiso != NULL) {
+		nsap_insert(table, nsiiso, type, subnet);
+		nsap = nsiiso;
 	}
-	table->nsit_id = nsap_valid_ids[type][subnet];
-	nsap_insert(table, nsiiso, type, subnet);
-	nsap = nsiiso;
+	nsap = NULL;
 }
 
 void
@@ -109,17 +106,12 @@ nsap_detach(struct nsapisotable *table, struct nsap_iso *nsap, long type, long s
 {
 	struct nsapisohead *head;
 
-	if (table->nsit_id != nsap_valid_ids[type][subnet]) {
-		return;
-	}
-
 	head = NSAPHASH(table, type, subnet);
 	if (LIST_EMPTY(head)) {
-		nsap_free(nsap);
-		return;
+		nsap_destroy(nsap);
 	}
 	if (nsap != NULL) {
-		nsap_remove(nsap);
+		nsap_remove(nsap, type, subnet);
 	}
 }
 
@@ -712,15 +704,14 @@ unknown:
 	}
 }
 
-struct nsap_iso *
-nsap_lookup(struct nsapisotable *table, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long type, long subnet, int class)
+int
+nsap_acknowledge_snsap(struct nsapisotable *table, struct sockaddr_nsap *snsap, long type, long subnet)
 {
-	struct nsapisohead *head;
 	struct nsap_iso *nsap;
 	int error;
 
-	head = NSAPHASH(table, type, subnet);
-	LIST_FOREACH(nsap, head, nsi_hash) {
+	nsap = nsap_lookup(table, type, subnet);
+	if (nsap != NULL) {
 		/* sockaddr_nsap */
 		if (nsap->nsi_snsap != NULL) {
 			error = sockaddr_nsap_compare(nsap->nsi_snsap, snsap);
@@ -728,39 +719,49 @@ nsap_lookup(struct nsapisotable *table, struct sockaddr_nsap *snsap, struct nsap
 				/* validate type_id and subnet_id */
 				error = nsap_id_check(nsap, snsap->snsap_type, snsap->snsap_subnet);
 				if (error != 0) {
-					return (NULL);
+					return (error);
 				}
 			}
 		}
+	}
+	return (0);
+}
 
+int
+nsap_acknowledge_nsapa(struct nsapisotable *table, struct nsap_addr *nsapa, long type, long subnet, int class)
+{
+	struct nsap_iso *nsap;
+	int error;
+
+	nsap = nsap_lookup(table, type, subnet);
+	if (nsap != NULL) {
 		/* nsap_addr */
 		if (nsap->nsi_nsapa != NULL) {
 			error = nsap_addr_compare(nsap->nsi_nsapa, nsapa);
 			if (error != 0) {
 				error = sap_service_check_class(type, subnet, class);
 				if (error != 0) {
-					return (NULL);
+					return (error);
 				}
 			}
 		}
-		goto out;
 	}
-
-out:
-	nsap_rehash(table, nsap, type, subnet);
-	return (nsap);
+	return (0);
 }
 
-static void
-nsap_rehash(struct nsapisotable *table, struct nsap_iso *nsap, long type, long subnet)
+struct nsap_iso *
+nsap_lookup(struct nsapisotable *table, long type, long subnet)
 {
 	struct nsapisohead *head;
+	struct nsap_iso *nsap;
 
 	head = NSAPHASH(table, type, subnet);
-	if (nsap != LIST_FIRST(head)) {
-		LIST_REMOVE(nsap, nsi_hash);
-		LIST_INSERT_HEAD(head, nsap, nsi_hash);
+	LIST_FOREACH(nsap, head, nsi_hash) {
+		if (nsap_id_check(nsap, type, subnet)) {
+			return (nsap);
+		}
 	}
+	return (NULL);
 }
 
 static void
@@ -769,13 +770,24 @@ nsap_insert(struct nsapisotable *table, struct nsap_iso *nsap, long type, long s
 	struct nsapisohead *head;
 
 	head = NSAPHASH(table, type, subnet);
+	if ((head == NULL) || (nsap == NULL)) {
+		return;
+	}
+
+	nsap->nsi_type_id = nsap_type_id(type);
+	nsap->nsi_subnet_id = nsap_subnet_id(subnet);
+	table->nsit_id = nsap_valid_ids[type][subnet];
 	LIST_INSERT_HEAD(head, nsap, nsi_hash);
 }
 
 static void
-nsap_remove(struct nsap_iso *nsap)
+nsap_remove(struct nsap_iso *nsap, long type, long subnet)
 {
-	LIST_REMOVE(nsap, nsi_hash);
+	if (nsap != NULL) {
+		if (nsap_id_check(nsap, type, subnet)) {
+			LIST_REMOVE(nsap, nsi_hash);
+		}
+	}
 }
 
 static void

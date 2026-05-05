@@ -1353,11 +1353,12 @@ vm_getswapbuf(sbp)
 	struct buf *bp;
 	int s;
 
+	s = splbio();
 	if (sbp == NULL) {
 		sbp = swapbuf_alloc();
 	}
-	s = splbio();
-	while((bp = TAILQ_FIRST(&sbp->sw_bswlist)) == NULL) {
+
+	while ((bp = TAILQ_FIRST(&sbp->sw_bswlist)) == NULL) {
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)&bp, BPRIO_DEFAULT);
 	}
@@ -1379,24 +1380,25 @@ vm_getswapbuf(sbp)
 
 void
 vm_putswapbuf(sbp, bp)
-	struct swapbuf 	*sbp;
-	struct buf 		*bp;
+	struct swapbuf *sbp;
+	struct buf *bp;
 {
 	int s;
 
-	if(sbp == NULL) {
+	s = splbio();
+	if (sbp == NULL) {
 		sbp = vm_swapbuf_get(bp);
 	}
-	s = splbio();
+
 	if (bp->b_vp) {
 		brelvp(bp);
 	}
+
 	if (bp->b_flags & B_WANTED) {
 		bp->b_flags &= ~B_WANTED;
 		wakeup((caddr_t) bp);
 	}
 	sbp->sw_buf = bp;
-	//bp->b_swbuf = sbp;
 	TAILQ_INSERT_HEAD(&sbp->sw_bswlist, bp, b_freelist);
 	free(bp, M_TEMP);
 	splx(s);
@@ -1404,7 +1406,7 @@ vm_putswapbuf(sbp, bp)
 
 struct swapbuf *
 vm_swapbuf_get(bp)
-	struct buf 	*bp;
+	struct buf *bp;
 {
 	register struct swapbuf *sbp;
 

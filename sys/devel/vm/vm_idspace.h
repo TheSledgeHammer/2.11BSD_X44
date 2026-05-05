@@ -106,10 +106,10 @@ struct vm_segmap_head;
 LIST_HEAD(vm_segmap_head, vm_segment_map);
 struct vm_segment_map {
 	LIST_ENTRY(vm_segment_map) segmlist; 			/* register list */
-	vm_segment_register_t segment_register[NOVL]; 	/* virtual segment registers */
-	int segment_number; 							/* virtual segment register number */
+	vm_segment_register_t segreg[NOVL]; 			/* virtual segment registers */
+	int segnum; 									/* virtual segment register number */
 	int flags;										/* virtual segment register flags */
-	short attributes;								/* virtual segment register attributes */
+	short attr;										/* virtual segment register attributes */
 
 	union { /* segment mapping store */
 		vm_offset_t kdsa5;	/* virtual SEG5 address */
@@ -129,12 +129,13 @@ extern struct vm_segmap_head segmaplist;
 #define SEGM_TX			0x020	/* Software: text segment */
 #define SEGM_ABS		0x040	/* Software: absolute address */
 
+/* segment map flags */
 #define SEGM_SAVE		0x60	/* Software: save virtual segment register's to savemap */
 #define SEGM_RESTORE	0x80	/* Software: restore virtual segment register's from savemap */
 
 #define SEGM_SEG5		0x100	/* map SEG5 only */
 #define SEGM_SEG6		0x120	/* map SEG6 only */
-#define SEGM_SEG56		(SEGM_SEG5|SEGM_SEG6) /* map both SEG5 and SEG6 */
+#define SEGM_SEG56		(SEGM_SEG5 | SEGM_SEG6) /* map both SEG5 and SEG6 */
 
 /* virtual kernel I & D space */
 extern char *kispace_min, *kispace_max; /* kernel i-space vm_map range */

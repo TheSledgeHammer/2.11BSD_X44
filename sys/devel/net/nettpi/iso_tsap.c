@@ -90,12 +90,12 @@ struct tp_protosw tp_protosw[] = {
 
 
 void
-tp_protosw_init(struct tsap_iso *tsap)
+tp_protosw_init(int af)
 {
 	int i;
 
 	for (i = 0; i < (sizeof(tp_protosw)/sizeof(tp_protosw[0])); i++) {
-		(*tp_protosw[i].tp_init)(tsap);
+		(*tp_protosw[i].tp_init)(af);
 	}
 }
 
@@ -105,30 +105,86 @@ struct nsapisotable tsapisotable; /* tsap iso table */
 static void tsap_attach_af(struct tsap_iso *, int);
 static void tsap_detach_af(struct tsap_iso *, int);
 
-/* TSAP's */
+
+
 void
-tsap_init(struct tsap_iso *tsap)
+sap_init(long type, long subnet, int af)
 {
-	nsap_init(&tsapisotable);
+	struct nsap_iso *nsap;
+	struct tsap_iso *tsap;
+	struct ssap_iso *ssap;
+	struct psap_iso *psap;
+
+	nsap_attach(&tsapisotable, nsap, type, subnet);
+	if (nsap == NULL) {
+		return;
+	}
+	tsap_attach(tsap, nsap, af);
+	if (tsap == NULL) {
+		return;
+	}
+	ssap_attach(ssap, tsap, af);
+	if (ssap == NULL) {
+		return;
+	}
+	psap_attach(psap, ssap, af);
+	if (psap == NULL) {
+		return;
+	}
+}
+
+sap_free()
+{
+
+
+}
+
+/* TSAP's */
+struct tsap_iso *
+tsap_create(struct nsap_iso *nsap, int af)
+{
+	struct tsap_iso *tsap;
+
+	MALLOC(tsap, struct tsap_iso *, sizeof(*tsap), M_ISOSAP, M_WAITOK);
+	if (tsap == NULL) {
+		return (NULL);
+	}
+	bzero((caddr_t)tsap, sizeof(*tsap));
+	bcopy(nsap, tsap->tsi_nsaps, sizeof(tsap->tsi_nsaps));
+	return (tsap);
 }
 
 void
-tsap_attach(struct tsap_iso *tsap, int af)
+tsap_destroy(struct tsap_iso *tsap)
 {
-	int sid;
-
 	if (tsap != NULL) {
-		tsap_attach_af(tsap, af);
-		sid = sap_select_af_to_sid(af);
-		sap_select_init(&tsap->tsi_select, sid, af);
+		FREE(tsap, M_ISOSAP);
 	}
 }
 
 void
-tsap_detach(struct tsap_iso *tsap, int af)
+tsap_attach(struct tsap_iso *tsap, struct nsap_iso *nsap, int af)
+{
+	struct tsap_iso *tsiso;
+	int sid;
+
+	tsiso = tsap_create(nsap, af);
+	if (tsiso != NULL) {
+		sid = sap_select_af_to_sid(af);
+		sap_select_init(&tsiso->tsi_select, sid, af);
+		tsap = tsiso;
+	}
+	tsap = NULL;
+}
+
+void
+tsap_detach(struct tsap_iso *tsap, long type, long subnet, int af)
 {
 	if (tsap != NULL) {
-		tsap_detach_af(tsap, af);
+		nsap_detach(&tsapisotable, &tsap->tsi_nsaps, type, subnet);
+		if (tsap->tsi_nsaps == NULL) {
+			tsap_destroy(tsap);
+		}
 	}
 }
 
@@ -149,23 +205,23 @@ tsap_validate(struct tsap_iso *tsap, struct nsap_iso *nsap, int sid, int af)
 }
 
 int
-tsap_acknowledge(struct tsap_iso *tsap, struct sockaddr_nsap *snsap, struct nsap_addr *nsapa, long protocol, int sid, int af)
+tsap_acknowledge(struct tsap_iso *tsap, long type, long subnet, long protocol, int class, int sid, int af)
 {
 	struct nsap_iso *nsap;
 	long sap_type, sap_subnet, sap_protocol;
 	int sap_class, error;
 
-	sap_type = sap_select_lookup_type(sid, af, snsap->snsap_type);
-	sap_subnet = sap_select_lookup_subnet(sid, af, snsap->snsap_subnet);
+	sap_type = sap_select_lookup_type(sid, af, type);
+	sap_subnet = sap_select_lookup_subnet(sid, af, subnet);
 	sap_protocol = sap_select_lookup_protocol(sid, af, protocol);
-	sap_class = sap_select_lookup_class(sid, af, nsapa->nsapa_service_class);
+	sap_class = sap_select_lookup_class(sid, af, class);
 
 	/* check tsap id */
 	error = tsap_id(sap_type, sap_subnet, sap_protocol, sap_class);
 	if (error == 0) {
 		return (1);
 	}
-	nsap = nsap_lookup(&tsapisotable, snsap, nsapa, sap_type, sap_subnet, sap_class);
+	nsap = nsap_lookup(&tsapisotable, sap_type, sap_subnet);
 	if (nsap == NULL) {
 		error = 1;
 	} else {

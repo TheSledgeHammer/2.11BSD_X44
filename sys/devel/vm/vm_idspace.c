@@ -27,13 +27,23 @@
  */
 
 /* Code is based on 2.11BSD's PDP-11 code */
-
+#include <sys/malloc.h>
 #include <vm_idspace.h>
 
 /* vm_segment_map */
 #define M_VMSEGMAP 103
 
 struct vm_segmap_head segmaplist;
+
+/* seginfo */
+struct vm_segment_register seginfo[NOVL];
+static void vm_seginfo_get(int, vm_offset_t *, vm_offset_t *);
+static void vm_seginfo_put(int, vm_offset_t *, vm_offset_t *);
+
+/* savemap */
+struct vm_segment_register savemap[2];
+static void vm_savemap_get(int, vm_offset_t *, vm_offset_t *);
+static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
 
 #define segmap_lock()
 #define segmap_unlock()
@@ -46,34 +56,35 @@ vm_segment_map_init(void)
 }
 
 void
-vm_segment_map_insert(segment_register, segment_number)
-	vm_segment_register_t segment_register;
-	int segment_number;
+vm_segment_map_insert(segreg, segnum, flags, attr)
+	vm_segment_register_t segreg;
+	int segnum, flags;
+	short attr;
 {
-	vm_segment_map_t segm;
+	vm_segment_map_t segmap;
 
-	segm = (vm_segment_map_t)malloc((u_long)sizeof(struct vm_segment_map), M_VMSEGMAP, M_WAITOK);
-	segm->segment_register = segment_register;
-	segm->segment_number = segment_number;
-	//segm->attributes;
-	//segm->flags = flags;
+	segmap = (vm_segment_map_t)malloc((u_long)sizeof(struct vm_segment_map), M_VMSEGMAP, M_WAITOK);
+	segmap->segreg = segreg;
+	segmap->segnum = segnum;
+	segmap->flags = flags;
+	segmap->attr = attr;
 	//lock
-	LIST_INSERT_HEAD(&segmaplist, segm, segmlist);
+	LIST_INSERT_HEAD(&segmaplist, segmap, segmlist);
 	//unlock
 }
 
 vm_segment_map_t
-vm_segment_map_lookup(segment_register, segment_number)
-	vm_segment_register_t segment_register;
-	int segment_number;
+vm_segment_map_lookup(segreg, segnum)
+	vm_segment_register_t segreg;
+	int segnum;
 {
-	vm_segment_map_t segm;
+	vm_segment_map_t segmap;
 
 	//lock
-	LIST_FOREACH(segm, &segmaplist, segmlist) {
-		if ((segm->segment_register == segment_register) && (segm->segment_number == segment_number)) {
+	LIST_FOREACH(segmap, &segmaplist, segmlist) {
+		if ((segmap->segreg == segreg) && (segmap->segnum == segnum)) {
 			//unlock
-			return (segm);
+			return (segmap);
 		}
 	}
 	//unlock
@@ -81,53 +92,75 @@ vm_segment_map_lookup(segment_register, segment_number)
 }
 
 void
-vm_segment_map_remove(segment_register, segment_number)
-	vm_segment_register_t segment_register;
-	int segment_number;
+vm_segment_map_remove(segreg, segnum)
+	vm_segment_register_t segreg;
+	int segnum;
 {
-	vm_segment_map_t segm;
+	vm_segment_map_t segmap;
 
-	segm = vm_segment_map_lookup(segment_register, segment_number);
-	if (segm != NULL) {
-		LIST_REMOVE(segm, segmlist);
+	//lock
+	LIST_FOREACH(segmap, &segmaplist, segmlist) {
+		if ((segmap->segreg == segreg) && (segmap->segnum == segnum)) {
+			LIST_REMOVE(segmap, segmlist);
+			//unlock
+		}
 	}
+	//unlock
 }
 
-/* vm_segment_register */
-
-struct vm_segment_register seginfo[NOVL];
-
-/* vm_segment_register savemaps */
-struct vm_segment_register savemap[2];
+/* vm_segment_register: seginfo */
 
 static void
-savemap_put(segnum, addr, desc)
+vm_seginfo_get(segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
-	if ((segnum < 0) || (segnum > 1)) {
-		panic("savemap_put: segnum is outside the valid range. Range is between 0 and 1\n");
-		return;
+	if (seginfo[segnum] != NULL) {
+		if ((segnum >= 0) && (segnum <= NOVL)) {
+			*addr = seginfo[segnum].addr;
+			*desc = seginfo[segnum].desc;
+		}
 	}
+}
+
+static void
+vm_seginfo_put(segnum, addr, desc)
+	int segnum;
+	vm_offset_t *addr, *desc;
+{
+	if ((addr != NULL) && (desc != NULL)) {
+		if ((segnum >= 0) && (segnum <= NOVL)) {
+			seginfo[segnum].addr = *addr;
+			seginfo[segnum].desc = *desc;
+		}
+	}
+}
+
+/* vm_segment_register savemap */
+static void
+vm_savemap_get(segnum, addr, desc)
+	int segnum;
+	vm_offset_t *addr, *desc;
+{
 	if (&savemap[segnum] != NULL) {
-		*addr = savemap[segnum].addr;
-		*desc = savemap[segnum].desc;
+		if ((segnum >= 0) && (segnum <= 1)) {
+			*addr = savemap[segnum].addr;
+			*desc = savemap[segnum].desc;
+		}
 	}
 }
 
 static void
-savemap_get(segnum, addr, desc)
+vm_savemap_put(segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
-	if ((segnum < 0) || (segnum > 1)) {
-		panic("savemap_get: segnum is outside the valid range. Range is between 0 and 1\n");
-		return;
+	if ((addr != NULL) && (desc != NULL)) {
+		if ((segnum >= 0) && (segnum <= 1)) {
+			savemap[segnum].addr = *addr;
+			savemap[segnum].desc = *desc;
+		}
 	}
-    if ((addr != NULL) && (desc != NULL)) {
-    	savemap[segnum].addr = *addr;
-        savemap[segnum].desc = *desc;
-    }
 }
 
 /* save registers to SEG5 and SEG6 */
@@ -138,14 +171,14 @@ vm_segment_map_save(map, flags)
 {
 	switch (flags) {
 	case SEGM_SEG5:
-		savemap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		vm_savemap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
 		break;
 	case SEGM_SEG6:
-		savemap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		vm_savemap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
 		break;
 	case SEGM_SEG56:
-		savemap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
-		savemap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		vm_savemap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		vm_savemap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
 		break;
 	}
 }
@@ -158,36 +191,14 @@ vm_segment_map_restore(map, flags)
 {
 	switch (flags) {
 	case SEGM_SEG5:
-		savemap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		vm_savemap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
 		break;
 	case SEGM_SEG6:
-		savemap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		vm_savemap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
 		break;
 	case SEGM_SEG56:
-		savemap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
-		savemap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		vm_savemap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		vm_savemap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
 		break;
 	}
-}
-
-void
-vm_segment_register_put(segment_number, addr, desc)
-	int segment_number;
-	vm_offset_t addr, desc;
-{
-	seginfo[segment_number].addr = addr;
-	seginfo[segment_number].addr = desc;
-}
-
-vm_segment_register_t
-vm_segment_register_get(segment_number)
-	int segment_number;
-{
-	vm_segment_register_t segm;
-
-	segm = &seginfo[segment_number];
-	if (segm != NULL) {
-		return (segm);
-	}
-	return (NULL);
 }

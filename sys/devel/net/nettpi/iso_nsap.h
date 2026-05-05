@@ -204,29 +204,36 @@ struct psap_iso {
 /* NSAP */
 extern uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
 
-struct nsap_iso *nsap_alloc(struct nsapisotable *, long, long);
-void nsap_free(struct nsap_iso *);
 void nsap_service(struct sap_service *, char *, u_char, int);
 void nsap_setsockaddr(struct sockaddr_nsap *, void *, long, long);
 void nsap_setaddr(struct nsap_addr *, void *, long, int);
 
-void nsap_init(struct nsapisotable *);
 void nsap_attach(struct nsapisotable *, struct nsap_iso *, long, long);
 void nsap_detach(struct nsapisotable *, struct nsap_iso *, long, long);
 int nsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
 void nsap_disconnect(struct sockaddr_nsap *, int, int);
-struct nsap_iso *nsap_lookup(struct nsapisotable *, struct sockaddr_nsap *, struct nsap_addr *, long, long);
+
+struct nsap_iso *nsap_lookup(struct nsapisotable *, long, long);
+int nsap_acknowledge_snsap(struct nsapisotable *, struct sockaddr_nsap *, long, long);
+int nsap_acknowledge_nsapa(struct nsapisotable *, struct nsap_addr *, long, long, int);
 
 /* TSAP */
 extern uint32_t tsap_valid_ids[SAP_TABLE_MAX];
 
-void tsap_init(struct tsap_iso *);
-void tsap_attach(struct tsap_iso *, int);
-void tsap_detach(struct tsap_iso *, int);
+void tsap_attach(struct tsap_iso *, struct nsap_iso *, int);
+void tsap_detach(struct tsap_iso *, long, long, int);
 int tsap_validate(struct tsap_iso *, struct nsap_iso *, int, int);
-int tsap_acknowledge(struct tsap_iso *, struct sockaddr_nsap *, struct nsap_addr *, long, int, int);
+int tsap_acknowledge(struct tsap_iso *, long, long, long, int, int, int);
 int tsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
 void tsap_disconnect(struct sockaddr_nsap *, int, int);
+
+/* SSAP */
+void ssap_attach(struct ssap_iso *, struct tsap_iso *, int);
+void ssap_detach(struct ssap_iso *, long, long, int);
+
+/* PSAP */
+void psap_attach(struct psap_iso *, struct ssap_iso *, int);
+void psap_detach(struct psap_iso *, long, long, int);
 
 int nsap_iso_compare(struct nsap_iso *, struct nsap_iso *);
 int tsap_iso_compare(struct tsap_iso *, struct tsap_iso *);

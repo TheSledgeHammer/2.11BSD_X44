@@ -33,83 +33,84 @@
 
 #include "iso_nsap.h"
 
-/* SSAP's */
-struct ssap_iso *
-ssap_create(struct tsap_iso *tsap)
-{
-	struct ssap_iso *ssap;
+/* PSAP's */
 
-	MALLOC(ssap, struct ssap_iso *, sizeof(*ssap), M_ISOSAP, M_WAITOK);
-	if (ssap == NULL) {
+struct psap_iso *
+psap_create(struct ssap_iso *ssap)
+{
+	struct psap_iso *psap;
+
+	MALLOC(psap, struct psap_iso *, sizeof(*psap), M_ISOSAP, M_WAITOK);
+	if (psap == NULL) {
 		return (NULL);
 	}
-	bzero((caddr_t)ssap, sizeof(*ssap));
-	bcopy(tsap, ssap->ssi_tsaps, sizeof(ssap->ssi_tsaps));
-	return (ssap);
+	bzero((caddr_t)psap, sizeof(*psap));
+	bcopy(ssap, psap->psi_ssaps, sizeof(psap->psi_ssaps));
+	return (psap);
 }
 
 void
-ssap_destroy(struct ssap_iso *ssap)
+psap_destroy(struct psap_iso *psap)
 {
-	if (ssap != NULL) {
-		FREE(ssap, M_ISOSAP);
+	if (psap != NULL) {
+		FREE(psap, M_ISOSAP);
 	}
 }
 
 void
-ssap_attach(struct ssap_iso *ssap, struct tsap_iso tsap[ISOLEN], int af)
+psap_attach(struct psap_iso *psap, struct ssap_iso ssap[ISOLEN], int af)
 {
-	struct ssap_iso *ssiso;
+	struct psap_iso *psiso;
 	int sid;
 
-	ssiso = ssap_create(tsap);
-	if (ssiso != NULL) {
+	psiso = psap_create(ssap);
+	if (psiso != NULL) {
 		sid = sap_select_af_to_sid(af);
-		sap_select_init(&ssiso->ssi_select, sid, af);
-		ssap = ssiso;
+		sap_select_init(&psiso->psi_select, sid, af);
+		psap = psiso;
 	}
-	ssap = NULL;
+	psap = NULL;
 }
 
 void
-ssap_detach(struct ssap_iso *ssap, long type, long subnet, int af)
+psap_detach(struct psap_iso *psap, long type, long subnet, int af)
 {
-	if (ssap != NULL) {
-		tsap_detach(&ssap->ssi_tsaps, type, subnet, af);
-		if (ssap->ssi_tsaps == NULL) {
-			ssap_destroy(ssap);
+	if (psap != NULL) {
+		ssap_detach(&psap->psi_ssaps, type, subnet, af);
+		if (psap->psi_ssaps == NULL) {
+			psap_destroy(psap);
 		}
 	}
 }
 
-struct tsap_iso *
-ssap_to_tsap(struct ssap_iso *ssap)
+struct ssap_iso *
+psap_to_ssap(struct psap_iso *psap)
 {
-	struct tsap_iso *tsap;
+	struct ssap_iso *ssap;
 
-	tsap = &ssap->ssi_tsaps;
-	if (tsap != NULL) {
-		return (tsap);
+	ssap = &psap->psi_ssaps;
+	if (ssap != NULL) {
+		return (ssap);
 	}
 	return (NULL);
 }
 
 /*
- * ssap_iso_compare:
- * - compares tsap_iso and sap_select
+ * psap_iso_compare:
+ * - compares ssap_iso and sap_select
  * returns -1 if a, 1 if b and 0 if equal
  */
 int
-ssap_iso_compare(struct ssap_iso *a, struct ssap_iso *b)
+psap_iso_compare(struct psap_iso *a, struct psap_iso *b)
 {
 	int error;
 
 	if (a != b) {
-		error = tsap_iso_compare(&a->ssi_tsaps, &b->ssi_tsaps);
+		error = ssap_iso_compare(&a->psi_ssaps, &b->psi_ssaps);
 		if (error != 0) {
 			return (error);
 		}
-		error = sap_select_compare(&a->ssi_select, &b->ssi_select);
+		error = sap_select_compare(&a->psi_select, &b->psi_select);
 		if (error != 0) {
 			return (error);
 		}
