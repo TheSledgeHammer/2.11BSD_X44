@@ -34,13 +34,11 @@ struct tp_protosw {
 };
 
 struct tp_xsap_router tp_xsap_router;
-struct nsapisotable tp_xsap_isotable;
-
 
 void
 tp_xsap_router_attach(struct tp_xsap_router *router, int af)
 {
-	nsap_attach(&tp_xsap_isotable, &router->txr_nsap, af);
+	nsap_attach(&router->txr_nsap, af);
 	tsap_attach(&router->txr_tsap, &router->txr_nsap, af);
 	ssap_attach(&router->txr_ssap, &router->txr_tsap, af);
 	psap_attach(&router->txr_psap, &router->txr_ssap, af);
@@ -49,7 +47,7 @@ tp_xsap_router_attach(struct tp_xsap_router *router, int af)
 void
 tp_xsap_router_detach(struct tp_xsap_router *router, int af)
 {
-	nsap_detach(&tp_xsap_isotable, &router->txr_nsap, af);
+	nsap_detach(&router->txr_nsap, af);
 	tsap_detach(&router->txr_tsap, &router->txr_nsap, af);
 	ssap_detach(&router->txr_ssap, &router->txr_tsap, af);
 	psap_detach(&router->txr_psap, &router->txr_ssap, af);

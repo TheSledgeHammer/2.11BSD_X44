@@ -785,7 +785,7 @@ udp4_realinput(src, dst, m, off)
 		inp = in_pcblookup_connect(&udbtable, *src4, *sport, *dst4, *dport);
 		if (inp == 0) {
 			++udpstat.udps_pcbhashmiss;
-			inp = in_pcblookup_bind(&udbtable, *dst4, *dport);
+			inp = in_pcblookup_bind(&udbtable, *src4, *sport, *dst4, *dport);
 			if (inp == 0)
 				return rcvcnt;
 		}
@@ -910,10 +910,11 @@ udp6_realinput(af, src, dst, m, off)
 		 * Locate pcb for datagram.
 		 */
 		in6p = in6_pcblookup_connect(&udbtable, &src6, sport,
-		    &dst6, dport, 0);
+				&dst6, dport, 0);
 		if (in6p == 0) {
 			++udpstat.udps_pcbhashmiss;
-			in6p = in6_pcblookup_bind(&udbtable, &dst6, dport, 0);
+			in6p = in6_pcblookup_bind(&udbtable, &src6, sport,
+					&dst6, dport, 0);
 			if (in6p == 0)
 				return rcvcnt;
 		}

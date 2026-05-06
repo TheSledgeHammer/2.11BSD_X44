@@ -71,15 +71,15 @@ struct inpcbpolicy;
  * align it with inpcb and in6pcb!
  */
 struct inpcb_hdr {
-	LIST_ENTRY(inpcb_hdr) inph_hash;
-	LIST_ENTRY(inpcb_hdr) inph_lhash;
+	LIST_ENTRY(inpcb_hdr) inph_fhash;	/* foreign */
+	LIST_ENTRY(inpcb_hdr) inph_lhash;	/* local */
 	CIRCLEQ_ENTRY(inpcb_hdr) inph_queue;
-	int	  inph_af;		/* address family - AF_INET */
-	caddr_t	  inph_ppcb;		/* pointer to per-protocol pcb */
-	int	  inph_state;		/* bind/connect state */
-	struct	  socket *inph_socket;	/* back pointer to socket */
-	struct	  inpcbtable *inph_table;
-	struct	  inpcbpolicy *inph_sp;	/* security policy */
+	int inph_af;						/* address family - AF_INET */
+	caddr_t inph_ppcb;					/* pointer to per-protocol pcb */
+	int inph_state;						/* bind/connect state */
+	struct socket *inph_socket;			/* back pointer to socket */
+	struct inpcbtable *inph_table;
+	struct inpcbpolicy *inph_sp;		/* security policy */
 };
 
 #define	sotoinpcb_hdr(so)	((struct inpcb_hdr *)(so)->so_pcb)
@@ -88,18 +88,19 @@ LIST_HEAD(inpcbhead, inpcb_hdr);
 CIRCLEQ_HEAD(inpcbqueue, inpcb_hdr);
 
 struct inpcbtable {
-	struct 	  inpcbqueue inpt_queue;
-	struct	  inpcbhead *inpt_porthashtbl;
-	struct	  inpcbhead *inpt_bindhashtbl;
-	struct	  inpcbhead *inpt_connecthashtbl;
-	u_long	  inpt_porthash;
-	u_long	  inpt_bindhash;
-	u_long	  inpt_connecthash;
+	struct inpcbqueue inpt_queue;
+	struct inpcbhead *inpt_localhashtbl;
+	struct inpcbhead *inpt_foreignhashtbl;
+	u_long inpt_localhash;
+	u_long inpt_foreignhash;
 	u_int16_t inpt_lastport;
 	u_int16_t inpt_lastlow;
 };
-
 #define inpt_lasthi inpt_lastport
+
+/* lookup */
+#define INPLOOKUP_FOREIGN	0xAA
+#define INPLOOKUP_LOCAL		0xAB
 
 /* states in inp_state: */
 #define	INP_ATTACHED		0

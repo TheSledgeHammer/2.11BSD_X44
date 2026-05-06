@@ -2332,7 +2332,7 @@ pf_socket_lookup(uid_t *uid, gid_t *gid, int direction, struct pf_pdesc *pd)
 		inp = in_pcblookup_connect(tb, saddr->v4, sport, daddr->v4,
 		    dport);
 		if (inp == NULL) {
-			inp = in_pcblookup_bind(tb, daddr->v4, dport);
+			inp = in_pcblookup_bind(tb, saddr->v4, sport, daddr->v4, dport);
 			if (inp == NULL)
 				return (0);
 		}
@@ -2343,7 +2343,7 @@ pf_socket_lookup(uid_t *uid, gid_t *gid, int direction, struct pf_pdesc *pd)
 		in6p = in6_pcblookup_connect(tb, &saddr->v6, sport, &daddr->v6,
 		    dport, 0);
 		if (in6p == NULL) {
-			in6p = in6_pcblookup_bind(tb, &daddr->v6, dport, 0);
+			in6p = in6_pcblookup_bind(tb, &saddr->v6, sport, &daddr->v6, dport, 0);
 			if (inp == NULL)
 				return (0);
 		}

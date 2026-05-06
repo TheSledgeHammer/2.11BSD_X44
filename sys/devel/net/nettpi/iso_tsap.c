@@ -47,6 +47,9 @@
 
 uint32_t tsap_valid_ids[SAP_TABLE_MAX];
 
+static int tsap_validate(struct tsap_iso *, struct nsap_iso *, int, int);
+static int tsap_acknowledge(struct tsap_iso *, struct nsap_iso *, long, long, long, int, int, int);
+
 /* TSAP's */
 struct tsap_iso *
 tsap_create(struct nsap_iso *nsap, int af)
@@ -89,7 +92,7 @@ void
 tsap_detach(struct tsap_iso *tsap, struct nsap_iso *nsap, int af)
 {
 	if (tsap != NULL) {
-		nsap_detach(&tp_xsap_isotable, nsap, af);
+		nsap_detach(nsap, af);
 		bcopy(nsap, tsap->tsi_nsaps, sizeof(tsap->tsi_nsaps));
 		if (tsap->tsi_nsaps == NULL) {
 			tsap_destroy(tsap);
@@ -120,7 +123,7 @@ tsap_iso_compare(struct tsap_iso *a, struct tsap_iso *b)
 	return (0);
 }
 
-int
+static int
 tsap_validate(struct tsap_iso *tsap, struct nsap_iso *nsap, int sid, int af)
 {
 	if (tsap != NULL) {
@@ -136,10 +139,9 @@ tsap_validate(struct tsap_iso *tsap, struct nsap_iso *nsap, int sid, int af)
 	return (1);
 }
 
-int
-tsap_acknowledge(struct tsap_iso *tsap, long type, long subnet, long protocol, int class, int sid, int af)
+static int
+tsap_acknowledge(struct tsap_iso *tsap, struct nsap_iso *nsap, long type, long subnet, long protocol, int class, int sid, int af)
 {
-	struct nsap_iso *nsap;
 	long sap_type, sap_subnet, sap_protocol;
 	int sap_class, error;
 
@@ -151,271 +153,385 @@ tsap_acknowledge(struct tsap_iso *tsap, long type, long subnet, long protocol, i
 	/* check tsap id */
 	error = tsap_id(sap_type, sap_subnet, sap_protocol, sap_class);
 	if (error == 0) {
-		return (1);
+		return (EAFNOSUPPORT);
 	}
-	nsap = nsap_lookup(&tp_xsap_isotable, sap_type, sap_subnet);
-	if (nsap == NULL) {
-		error = 1;
-	} else {
-		error = tsap_validate(tsap, nsap, sid, af);
+	error = tsap_validate(tsap, nsap, sid, af);
+	if (error != 0) {
+		return (EAFNOSUPPORT);
 	}
-	return (error);
+	return (0);
 }
 
-/*
- * tsap_connect:
- * - Makes the same assumptions as nsap_connect.
- */
 int
-tsap_connect(struct mbuf *nam, struct sockaddr_nsap *snsap, long subnet, int class, int af)
+tsap_canconnect(struct tsap_iso *tsap, struct nsap_iso *nsap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
 {
 	int error;
 
-	if (snsap == NULL) {
-		return (EINVAL);
+	error = tsap_acknowledge(tsap, nsap, type, subnet, protocol, class, sid, af);
+	if (error != 0) {
+		return (error);
 	}
-	switch (class) {
-	case NSAP_CLASS_CONS: {
-		switch (af) {
-		case AF_INET:
-			printf(
-					"tsap_connect: Cannot connect IPV4 while in a connection oriented mode\n");
+	return (nsap_canconnect(nsap->nsi_snsap, arg, type, subnet, class));
+}
+
+int
+tsap_candisconnect(struct tsap_iso *tsap, struct nsap_iso *nsap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
+{
+	int error;
+
+	error = tsap_acknowledge(tsap, nsap, type, subnet, protocol, class, sid, af);
+	if (error != 0) {
+		return (error);
+	}
+	return (nsap_candisconnect(nsap->nsi_snsap, arg, type, subnet, class));
+}
+
+int
+tsap_connect(struct tsap_iso *tsap, struct nsap_iso *nsap, void *arg, long subnet, long protocol, int af)
+{
+	int error, sid;
+
+	sid = sap_select_af_to_sid(af);
+	if (af != sap_select_sid_to_af(sid)) {
+		return (EAFNOSUPPORT);
+	}
+	switch (af) {
+	case AF_INET:
+	{
+		struct sockaddr_in *sin = (struct sockaddr_in *)arg;
+		if (sin->sin_family != AF_INET) {
 			error = EAFNOSUPPORT;
 			break;
-		case AF_INET6:
-			printf(
-					"tsap_connect: Cannot connect IPV6 while in a connection oriented mode\n");
-			error = EAFNOSUPPORT;
+		}
+		if (sin->sin_port == 0) {
+			error = EADDRNOTAVAIL;
 			break;
-		case AF_NS:
-			printf(
-					"tsap_connect: Cannot connect IDP while in a connection oriented mode\n");
-			error = EAFNOSUPPORT;
+		}
+		switch (protocol) {
+		case TSAP_PROTOCOL_TCP:
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_in *)sin,
+					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_TCP,
+					NSAP_CLASS_CLNS, sid, AF_INET);
 			break;
-		case AF_ISO:
-			if (subnet != NSAP_SUBNET_CONS) {
-				error = EAFNOSUPPORT;
-				break;
-			}
-			error = nsap_connect(nam, snsap, NSAP_SUBNET_CONS, NSAP_CLASS_CONS,
-			AF_ISO);
-			break;
-		case AF_CCITT:
-			if (subnet != NSAP_SUBNET_X25) {
-				error = EAFNOSUPPORT;
-				break;
-			}
-			error = nsap_connect(nam, snsap, NSAP_SUBNET_X25, NSAP_CLASS_CONS,
-			AF_CCITT);
-			break;
-		case AF_NATM:
-			printf(
-					"tsap_connect: Cannot connect ATM while in a connection oriented mode\n");
-			error = EAFNOSUPPORT;
-			break;
-		case AF_IPX:
-			printf(
-					"tsap_connect: Cannot connect IPX while in a connection oriented mode\n");
-			error = EAFNOSUPPORT;
-			break;
-		case AF_SNA:
-			printf(
-					"tsap_connect: Cannot connect SNA while in a connection oriented mode\n");
-			error = EAFNOSUPPORT;
+		case TSAP_PROTOCOL_UDP:
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_in *)sin,
+					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_UDP,
+					NSAP_CLASS_CLNS, sid, AF_INET);
 			break;
 		default:
-			error = nsap_connect(nam, snsap, NSAP_SUBNET_UNKNOWN,
-			NSAP_CLASS_CONS, AF_UNSPEC);
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_in *)sin,
+					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_UNKNOWN,
+					NSAP_CLASS_CLNS, sid, AF_INET);
 			break;
 		}
 		break;
 	}
-	case NSAP_CLASS_CLNS: {
-		switch (af) {
-		case AF_INET:
-			if ((subnet != NSAP_SUBNET_IPV4) || (subnet != NSAP_SUBNET_IPV6)) {
-				error = EAFNOSUPPORT;
-				break;
-			}
-			error = nsap_connect(nam, snsap, subnet, NSAP_CLASS_CLNS, AF_INET);
-			break;
-		case AF_INET6:
-			if ((subnet != NSAP_SUBNET_IPV4) || (subnet != NSAP_SUBNET_IPV6)) {
-				error = EAFNOSUPPORT;
-				break;
-			}
-			error = nsap_connect(nam, snsap, subnet, NSAP_CLASS_CLNS, AF_INET6);
-			break;
-		case AF_ISO:
-			if ((subnet != NSAP_SUBNET_CLNS) || (subnet != NSAP_SUBNET_CLNP)
-					|| (subnet != NSAP_SUBNET_ISIS)
-					|| (subnet != NSAP_SUBNET_ESIS)) {
-				error = EAFNOSUPPORT;
-				break;
-			}
-			error = nsap_connect(nam, snsap, subnet, NSAP_CLASS_CLNS, AF_ISO);
-			break;
-		case AF_NS:
-			if (subnet != NSAP_SUBNET_IDP) {
-				error = EAFNOSUPPORT;
-				break;
-			}
-			error = nsap_connect(nam, snsap, NSAP_SUBNET_IDP, NSAP_CLASS_CLNS,
-			AF_NS);
-			break;
-		case AF_CCITT:
-			printf(
-					"tsap_connect: Cannot connect X.25 while in a connection-less oriented mode\n");
+	case AF_INET6:
+	{
+		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)arg;
+		if (sin6->sin6_family != AF_INET6) {
 			error = EAFNOSUPPORT;
 			break;
-		case AF_NATM:
-			if (subnet != NSAP_SUBNET_ATM) {
-				error = EAFNOSUPPORT;
-				break;
-			}
-			error = nsap_connect(nam, snsap, NSAP_SUBNET_ATM, NSAP_CLASS_CLNS,
-			AF_NATM);
+		}
+		if (sin6->sin6_port == 0) {
+			error = EADDRNOTAVAIL;
 			break;
-		case AF_IPX:
-			if (subnet != NSAP_SUBNET_IPX) {
-				error = EAFNOSUPPORT;
-				break;
-			}
-			error = nsap_connect(nam, snsap, NSAP_SUBNET_IPX, NSAP_CLASS_CLNS,
-			AF_IPX);
+		}
+		switch (protocol) {
+		case TSAP_PROTOCOL_TCP:
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_in6 *)sin6,
+					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_TCP,
+					NSAP_CLASS_CLNS, sid, AF_INET6);
 			break;
-		case AF_SNA:
-			if (subnet != NSAP_SUBNET_SNA) {
-				error = EAFNOSUPPORT;
-				break;
-			}
-			error = nsap_connect(nam, snsap, NSAP_SUBNET_SNA, NSAP_CLASS_CLNS,
-			AF_SNA);
+		case TSAP_PROTOCOL_UDP:
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_in6 *)sin6,
+					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_UDP,
+					NSAP_CLASS_CLNS, sid, AF_INET6);
 			break;
 		default:
-			error = nsap_connect(nam, snsap, NSAP_SUBNET_UNKNOWN,
-			NSAP_CLASS_CLNS, AF_UNSPEC);
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_in6 *)sin6,
+					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_UNKNOWN,
+					NSAP_CLASS_CLNS, sid, AF_INET6);
 			break;
 		}
 		break;
 	}
+	case AF_ISO:
+	{
+		struct sockaddr_iso *siso = (struct sockaddr_iso *)arg;
+		if (siso->siso_family != AF_ISO) {
+			error = EAFNOSUPPORT;
+			break;
+		}
+		if (siso->siso_nlen == 0) {
+			error = EADDRNOTAVAIL;
+			break;
+		}
+		switch (protocol) {
+		case TSAP_PROTOCOL_TP0:
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP0,
+					NSAP_CLASS_CONS, sid, AF_ISO);
+			break;
+		case TSAP_PROTOCOL_TP1:
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP1,
+					NSAP_CLASS_CONS, sid, AF_ISO);
+			break;
+		case TSAP_PROTOCOL_TP2:
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP2,
+					NSAP_CLASS_CONS, sid, AF_ISO);
+			break;
+		case TSAP_PROTOCOL_TP3:
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP3,
+					NSAP_CLASS_CONS, sid, AF_ISO);
+			break;
+		case TSAP_PROTOCOL_TP4:
+		{
+			switch (subnet) {
+			case NSAP_SUBNET_CLNS:
+				error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_CLNS, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			case NSAP_SUBNET_CLNP:
+				error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_CLNP, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			case NSAP_SUBNET_ISIS:
+				error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_ISIS, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			case NSAP_SUBNET_ESIS:
+				error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_ESIS, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			default:
+				error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			}
+			break;
+		}
+		default:
+			error = tsap_canconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_UNKNOWN,
+					NSAP_CLASS_UNKNOWN, sid, AF_ISO);
+			break;
+		}
+		break;
+	}
+	case AF_NS:
+	{
+		struct sockaddr_ns *sns = (struct sockaddr_ns *)arg;
+		if (sns->sns_family != AF_NS) {
+			error = EAFNOSUPPORT;
+			break;
+		}
+		if (sns->sns_port == 0) {
+			error = EADDRNOTAVAIL;
+			break;
+		}
+		error = tsap_canconnect(tsap, nsap, (struct sockaddr_ns *)sns,
+				NSAP_TYPE_SNS, NSAP_SUBNET_IDP, TSAP_PROTOCOL_SPP,
+				NSAP_CLASS_CLNS, sid, AF_NS);
+		break;
+	}
+	case AF_CCITT:
+	{
+		struct sockaddr_x25 *sx25 = (struct sockaddr_x25 *)arg;
+		if (sx25->x25_family != AF_CCITT) {
+			error = EAFNOSUPPORT;
+			break;
+		}
+		if (sx25->x25_len == 0) {
+			error = EADDRNOTAVAIL;
+			break;
+		}
+		error = tsap_canconnect(tsap, nsap, (struct sockaddr_x25 *)sx25,
+				NSAP_TYPE_SX25, NSAP_SUBNET_X25, TSAP_PROTOCOL_X25,
+				NSAP_CLASS_CONS, sid, AF_CCITT);
+		break;
+	}
+	case AF_NATM:
+	case AF_IPX:
+	case AF_SNA:
 	default:
-		error = nsap_connect(nam, snsap, NSAP_SUBNET_UNKNOWN, NSAP_CLASS_UNKNOWN, AF_UNSPEC);
+		error = tsap_canconnect(tsap, nsap, NULL, NSAP_TYPE_UNKNOWN,
+				NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_UNKNOWN,
+				NSAP_CLASS_UNKNOWN, sid, AF_UNSPEC);
 		break;
 	}
 	return (error);
 }
 
-void
-tsap_disconnect(struct sockaddr_nsap *snsap, long subnet, int class, int af)
+int
+tsap_disconnect(struct tsap_iso *tsap, struct nsap_iso *nsap, void *arg, long subnet, long protocol, int af)
 {
-	if (snsap == NULL) {
-		printf("tsap_disconnect: tsap is empty or has already been disconnected\n");
-		return;
+	int error, sid;
+
+	sid = sap_select_af_to_sid(af);
+	if (af != sap_select_sid_to_af(sid)) {
+		return (EAFNOSUPPORT);
 	}
-	switch (class) {
-	case NSAP_CLASS_CONS: {
-		switch (af) {
-		case AF_INET:
-			printf(
-					"tsap_disconnect: Cannot disconnect IPV4 while in a connection oriented mode\n");
+	switch (af) {
+	case AF_INET:
+	{
+		struct sockaddr_in *sin = (struct sockaddr_in *)arg;
+		if (sin->sin_family != AF_INET) {
+			error = EAFNOSUPPORT;
 			break;
-		case AF_INET6:
-			printf(
-					"tsap_disconnect: Cannot disconnect IPV6 while in a connection oriented mode\n");
+		}
+		switch (protocol) {
+		case TSAP_PROTOCOL_TCP:
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_in *)sin,
+					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_TCP,
+					NSAP_CLASS_CLNS, sid, AF_INET);
 			break;
-		case AF_NS:
-			printf(
-					"tsap_disconnect: Cannot disconnect IDP while in a connection oriented mode\n");
-			break;
-		case AF_ISO:
-			if (subnet != NSAP_SUBNET_CONS) {
-				break;
-			}
-			nsap_disconnect(snsap, NSAP_SUBNET_CONS, AF_ISO);
-			break;
-		case AF_CCITT:
-			if (subnet != NSAP_SUBNET_X25) {
-				break;
-			}
-			nsap_disconnect(snsap, NSAP_SUBNET_X25, AF_CCITT);
-			break;
-		case AF_NATM:
-			printf(
-					"tsap_disconnect: Cannot disconnect ATM while in a connection oriented mode\n");
-			break;
-		case AF_IPX:
-			printf(
-					"tsap_disconnect: Cannot disconnect IPX while in a connection oriented mode\n");
-			break;
-		case AF_SNA:
-			printf(
-					"tsap_disconnect: Cannot disconnect SNA while in a connection oriented mode\n");
+		case TSAP_PROTOCOL_UDP:
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_in *)sin,
+					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_UDP,
+					NSAP_CLASS_CLNS, sid, AF_INET);
 			break;
 		default:
-			nsap_disconnect(snsap, NSAP_SUBNET_UNKNOWN, AF_UNSPEC);
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_in *)sin,
+					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_UNKNOWN,
+					NSAP_CLASS_CLNS, sid, AF_INET);
 			break;
 		}
 		break;
 	}
-	case NSAP_CLASS_CLNS: {
-		switch (af) {
-		case AF_INET:
-			if ((subnet != NSAP_SUBNET_IPV4) || (subnet != NSAP_SUBNET_IPV6)) {
-				break;
-			}
-			nsap_disconnect(snsap, subnet, AF_INET);
+	case AF_INET6:
+	{
+		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)arg;
+		if (sin6->sin6_family != AF_INET6) {
+			error = EAFNOSUPPORT;
 			break;
-		case AF_INET6:
-			if ((subnet != NSAP_SUBNET_IPV4) || (subnet != NSAP_SUBNET_IPV6)) {
-				break;
-			}
-			nsap_disconnect(snsap, subnet, AF_INET6);
+		}
+		switch (protocol) {
+		case TSAP_PROTOCOL_TCP:
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_in6 *)sin6,
+					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_TCP,
+					NSAP_CLASS_CLNS, sid, AF_INET6);
 			break;
-		case AF_ISO:
-			if ((subnet != NSAP_SUBNET_CLNS) || (subnet != NSAP_SUBNET_CLNP)
-					|| (subnet != NSAP_SUBNET_ISIS)
-					|| (subnet != NSAP_SUBNET_ESIS)) {
-				break;
-			}
-			nsap_disconnect(snsap, subnet, AF_ISO);
-			break;
-		case AF_NS:
-			if (subnet != NSAP_SUBNET_IDP) {
-				break;
-			}
-			nsap_disconnect(snsap, NSAP_SUBNET_IDP, AF_NS);
-			break;
-		case AF_CCITT:
-			printf(
-					"tsap_disconnect: Cannot disconnect X.25 while in a connection-less oriented mode\n");
-			break;
-		case AF_NATM:
-			if (subnet != NSAP_SUBNET_ATM) {
-				break;
-			}
-			nsap_disconnect(snsap, NSAP_SUBNET_ATM, AF_NATM);
-			break;
-		case AF_IPX:
-			if (subnet != NSAP_SUBNET_IPX) {
-				break;
-			}
-			nsap_disconnect(snsap, NSAP_SUBNET_IPX, AF_IPX);
-			break;
-		case AF_SNA:
-			if (subnet != NSAP_SUBNET_SNA) {
-				break;
-			}
-			nsap_disconnect(snsap, NSAP_SUBNET_SNA, AF_SNA);
+		case TSAP_PROTOCOL_UDP:
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_in6 *)sin6,
+					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_UDP,
+					NSAP_CLASS_CLNS, sid, AF_INET6);
 			break;
 		default:
-			nsap_disconnect(snsap, NSAP_SUBNET_UNKNOWN, AF_UNSPEC);
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_in6 *)sin6,
+					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_UNKNOWN,
+					NSAP_CLASS_CLNS, sid, AF_INET6);
 			break;
 		}
 		break;
 	}
+	case AF_ISO:
+	{
+		struct sockaddr_iso *siso = (struct sockaddr_iso *)arg;
+		if (siso->siso_family != AF_ISO) {
+			error = EAFNOSUPPORT;
+			break;
+		}
+		switch (protocol) {
+		case TSAP_PROTOCOL_TP0:
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP0,
+					NSAP_CLASS_CONS, sid, AF_ISO);
+			break;
+		case TSAP_PROTOCOL_TP1:
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP1,
+					NSAP_CLASS_CONS, sid, AF_ISO);
+			break;
+		case TSAP_PROTOCOL_TP2:
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP2,
+					NSAP_CLASS_CONS, sid, AF_ISO);
+			break;
+		case TSAP_PROTOCOL_TP3:
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP3,
+					NSAP_CLASS_CONS, sid, AF_ISO);
+			break;
+		case TSAP_PROTOCOL_TP4:
+		{
+			switch (subnet) {
+			case NSAP_SUBNET_CLNS:
+				error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_CLNS, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			case NSAP_SUBNET_CLNP:
+				error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_CLNP, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			case NSAP_SUBNET_ISIS:
+				error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_ISIS, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			case NSAP_SUBNET_ESIS:
+				error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_ESIS, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			default:
+				error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+						NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_TP4,
+						NSAP_CLASS_CLNS, sid, AF_ISO);
+				break;
+			}
+			break;
+		}
+		default:
+			error = tsap_candisconnect(tsap, nsap, (struct sockaddr_iso *)siso,
+					NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_UNKNOWN,
+					NSAP_CLASS_UNKNOWN, sid, AF_ISO);
+			break;
+		}
+		break;
+	}
+	case AF_NS:
+	{
+		struct sockaddr_ns *sns = (struct sockaddr_ns *)arg;
+		if (sns->sns_family != AF_NS) {
+			error = EAFNOSUPPORT;
+			break;
+		}
+		error = tsap_candisconnect(tsap, nsap, (struct sockaddr_ns *)sns,
+				NSAP_TYPE_SNS, NSAP_SUBNET_IDP, TSAP_PROTOCOL_SPP,
+				NSAP_CLASS_CLNS, sid, AF_NS);
+		break;
+	}
+	case AF_CCITT:
+	{
+		struct sockaddr_x25 *sx25 = (struct sockaddr_x25 *)arg;
+		if (sx25->x25_family != AF_CCITT) {
+			error = EAFNOSUPPORT;
+			break;
+		}
+		error = tsap_candisconnect(tsap, nsap, (struct sockaddr_x25 *)sx25,
+				NSAP_TYPE_SX25, NSAP_SUBNET_X25, TSAP_PROTOCOL_X25,
+				NSAP_CLASS_CONS, sid, AF_CCITT);
+		break;
+	}
+	case AF_NATM:
+	case AF_IPX:
+	case AF_SNA:
 	default:
-		nsap_disconnect(snsap, NSAP_SUBNET_UNKNOWN, AF_UNSPEC);
+		error = tsap_candisconnect(tsap, nsap, NULL, NSAP_TYPE_UNKNOWN,
+				NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_UNKNOWN,
+				NSAP_CLASS_UNKNOWN, sid, AF_UNSPEC);
 		break;
 	}
+	return (error);
 }

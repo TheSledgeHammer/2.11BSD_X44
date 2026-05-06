@@ -75,7 +75,8 @@
  */
 struct inpcb {
 	struct inpcb_hdr inp_head;
-#define inp_hash	inp_head.inph_hash
+#define inp_fhash	inp_head.inph_fhash
+#define inp_lhash	inp_head.inph_lhash
 #define inp_queue	inp_head.inph_queue
 #define inp_af		inp_head.inph_af
 #define inp_ppcb	inp_head.inph_ppcb
@@ -83,64 +84,59 @@ struct inpcb {
 #define inp_socket	inp_head.inph_socket
 #define inp_table	inp_head.inph_table
 #define inp_sp		inp_head.inph_sp
-	struct route inp_route;		/* placeholder for routing entry */
-	struct in_addr inp_faddr;	/* foreign host table entry */
-	u_int16_t inp_fport;		/* foreign port */
-	struct in_addr inp_laddr;	/* local host table entry */
-	u_int16_t inp_lport;		/* local port */
-	int	  inp_flags;		/* generic IP/datagram flags */
-	struct ip inp_ip;		/* header prototype; should have more */
-	struct mbuf *inp_options;	/* IP options */
-	struct ip_moptions *inp_moptions; /* IP multicast options */
-	int	  inp_errormtu;		/* MTU of last xmit status = EMSGSIZE */
+	struct route inp_route;				/* placeholder for routing entry */
+	struct in_addr inp_faddr;			/* foreign host table entry */
+	u_int16_t inp_fport;				/* foreign port */
+	struct in_addr inp_laddr;			/* local host table entry */
+	u_int16_t inp_lport;				/* local port */
+	int	  inp_flags;					/* generic IP/datagram flags */
+	struct ip inp_ip;					/* header prototype; should have more */
+	struct mbuf *inp_options;			/* IP options */
+	struct ip_moptions *inp_moptions; 	/* IP multicast options */
+	int	  inp_errormtu;					/* MTU of last xmit status = EMSGSIZE */
 };
-//#define	inp_faddr	inp_ip.ip_dst
-//#define	inp_laddr	inp_ip.ip_src
 
 /* flags in inp_flags: */
 #define	INP_RECVOPTS		0x01	/* receive incoming IP options */
 #define	INP_RECVRETOPTS		0x02	/* receive IP options for reply */
 #define	INP_RECVDSTADDR		0x04	/* receive IP dst address */
-#define	INP_HDRINCL		0x08	/* user supplies entire IP header */
+#define	INP_HDRINCL			0x08	/* user supplies entire IP header */
 #define	INP_HIGHPORT		0x10	/* (unused; FreeBSD compat) */
-#define	INP_LOWPORT		0x20	/* user wants "low" port binding */
+#define	INP_LOWPORT			0x20	/* user wants "low" port binding */
 #define	INP_ANONPORT		0x40	/* port chosen for user */
-#define	INP_RECVIF		0x80	/* receive incoming interface */
+#define	INP_RECVIF			0x80	/* receive incoming interface */
 #define	INP_CONTROLOPTS		(INP_RECVOPTS|INP_RECVRETOPTS|INP_RECVDSTADDR|\
 				INP_RECVIF)
 
 #define	sotoinpcb(so)		((struct inpcb *)(so)->so_pcb)
 
 #ifdef _KERNEL
-void	in_losing(struct inpcb *);
+void in_losing(struct inpcb *);
 int	in_pcballoc(struct socket *, void *);
 int	in_pcbbind(void *, struct mbuf *, struct proc *);
 int	in_pcbconnect(void *, struct mbuf *);
-void	in_pcbdetach(void *);
-void	in_pcbdisconnect(void *);
-void	in_pcbinit(struct inpcbtable *, int, int);
-struct inpcb *
-	in_pcblookup_port(struct inpcbtable *,
-	    struct in_addr, u_int, int);
-struct inpcb *
-	in_pcblookup_bind(struct inpcbtable *,
-	    struct in_addr, u_int);
-struct inpcb *
-	in_pcblookup_connect(struct inpcbtable *,
-	    struct in_addr, u_int, struct in_addr, u_int);
-int	in_pcbnotify(struct inpcbtable *, struct in_addr, u_int,
-	    struct in_addr, u_int, int, void (*)(struct inpcb *, int));
-void	in_pcbnotifyall(struct inpcbtable *, struct in_addr, int,
-	    void (*)(struct inpcb *, int));
-void	in_pcbpurgeif0(struct inpcbtable *, struct ifnet *);
-void	in_pcbpurgeif(struct inpcbtable *, struct ifnet *);
-void	in_pcbstate(struct inpcb *, int);
-void	in_rtchange(struct inpcb *, int);
-void	in_setpeeraddr(struct inpcb *, struct mbuf *);
-void	in_setsockaddr(struct inpcb *, struct mbuf *);
-struct rtentry *
-	in_pcbrtentry(struct inpcb *);
-extern struct sockaddr_in *in_selectsrc(struct sockaddr_in *, struct route *, int, struct ip_moptions *, int *);
+void in_pcbdetach(void *);
+void in_pcbdisconnect(void *);
+void in_pcbinit(struct inpcbtable *, int, int);
+struct inpcb* in_pcblookup_port(struct inpcbtable*, struct in_addr, u_int,
+		struct in_addr, u_int, int);
+struct inpcb* in_pcblookup_connect(struct inpcbtable*, struct in_addr, u_int,
+		struct in_addr, u_int);
+struct inpcb* in_pcblookup_bind(struct inpcbtable*, struct in_addr, u_int,
+		struct in_addr, u_int);
+int in_pcbnotify(struct inpcbtable*, struct in_addr, u_int, struct in_addr,
+		u_int, int, void (*)(struct inpcb*, int));
+void in_pcbnotifyall(struct inpcbtable*, struct in_addr, int,
+		void (*)(struct inpcb*, int));
+void in_pcbpurgeif0(struct inpcbtable *, struct ifnet *);
+void in_pcbpurgeif(struct inpcbtable *, struct ifnet *);
+void in_pcbstate(struct inpcb *, int);
+void in_rtchange(struct inpcb *, int);
+void in_setpeeraddr(struct inpcb *, struct mbuf *);
+void in_setsockaddr(struct inpcb *, struct mbuf *);
+struct rtentry *in_pcbrtentry(struct inpcb *);
+extern struct sockaddr_in* in_selectsrc(struct sockaddr_in*, struct route*, int,
+		struct ip_moptions*, int*);
 #endif
 
 #endif /* _NETINET_IN_PCB_H_ */

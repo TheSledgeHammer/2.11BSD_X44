@@ -275,6 +275,7 @@ rip6_ctlinput(cmd, sa, d)
 	struct ip6_hdr *ip6;
 	struct ip6ctlparam *ip6cp = NULL;
 	const struct sockaddr_in6 *sa6_src = NULL;
+	const struct sockaddr_in6 *sa6_dst = NULL;
 	void *cmdarg;
 	void (*notify)(struct in6pcb *, int) = in6_rtchange;
 	int nxt;
@@ -300,11 +301,13 @@ rip6_ctlinput(cmd, sa, d)
 		ip6 = ip6cp->ip6c_ip6;
 		cmdarg = ip6cp->ip6c_cmdarg;
 		sa6_src = ip6cp->ip6c_src;
+		sa6_dst = ip6cp->ip6c_dst;
 		nxt = ip6cp->ip6c_nxt;
 	} else {
 		ip6 = NULL;
 		cmdarg = NULL;
 		sa6_src = &sa6_any;
+		sa6_dst = &sa6_any;
 		nxt = -1;
 	}
 
@@ -323,19 +326,6 @@ rip6_ctlinput(cmd, sa, d)
 		in6p = NULL;
 		in6p = in6_pcblookup_connect(&raw6cbtable, &sa6->sin6_addr, 0,
 		    (struct in6_addr *)&sa6_src->sin6_addr, 0, 0);
-#if 0
-		if (!in6p) {
-			/*
-			 * As the use of sendto(2) is fairly popular,
-			 * we may want to allow non-connected pcb too.
-			 * But it could be too weak against attacks...
-			 * We should at least check if the local
-			 * address (= s) is really ours.
-			 */
-			in6p = in6_pcblookup_bind(&raw6cbtable,
-			    &sa6->sin6_addr, 0, 0))
-		}
-#endif
 
 		if (in6p && in6p->in6p_ip6.ip6_nxt &&
 		    in6p->in6p_ip6.ip6_nxt == nxt)

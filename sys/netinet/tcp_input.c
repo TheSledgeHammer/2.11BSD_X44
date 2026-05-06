@@ -1051,10 +1051,11 @@ findpcb:
 #ifdef INET
 	case AF_INET:
 		inp = in_pcblookup_connect(&tcbtable, ip->ip_src, th->th_sport,
-		    ip->ip_dst, th->th_dport);
+				ip->ip_dst, th->th_dport);
 		if (inp == 0) {
 			++tcpstat.tcps_pcbhashmiss;
-			inp = in_pcblookup_bind(&tcbtable, ip->ip_dst, th->th_dport);
+			inp = in_pcblookup_bind(&tcbtable, ip->ip_src, th->th_sport,
+					ip->ip_dst, th->th_dport);
 		}
 #ifdef INET6
 		if (inp == 0) {
@@ -1067,12 +1068,12 @@ findpcb:
 			bzero(&d, sizeof(d));
 			d.s6_addr16[5] = htons(0xffff);
 			bcopy(&ip->ip_dst, &d.s6_addr32[3], sizeof(ip->ip_dst));
-			in6p = in6_pcblookup_connect(&tcbtable, &s,
-			    th->th_sport, &d, th->th_dport, 0);
+			in6p = in6_pcblookup_connect(&tcbtable, &s, th->th_sport, &d,
+					th->th_dport, 0);
 			if (in6p == 0) {
 				++tcpstat.tcps_pcbhashmiss;
-				in6p = in6_pcblookup_bind(&tcbtable, &d,
-				    th->th_dport, 0);
+				in6p = in6_pcblookup_bind(&tcbtable, &s, th->th_sport, &d,
+						th->th_dport, 0);
 			}
 		}
 #endif
@@ -1118,11 +1119,11 @@ findpcb:
 		faith = 0;
 #endif
 		in6p = in6_pcblookup_connect(&tcbtable, &ip6->ip6_src,
-		    th->th_sport, &ip6->ip6_dst, th->th_dport, faith);
+				th->th_sport, &ip6->ip6_dst, th->th_dport, faith);
 		if (in6p == NULL) {
 			++tcpstat.tcps_pcbhashmiss;
-			in6p = in6_pcblookup_bind(&tcbtable, &ip6->ip6_dst,
-				th->th_dport, faith);
+			in6p = in6_pcblookup_bind(&tcbtable, &ip6->ip6_src,
+				    th->th_sport, &ip6->ip6_dst, th->th_dport, faith);
 		}
 		if (in6p == NULL) {
 			++tcpstat.tcps_noport;

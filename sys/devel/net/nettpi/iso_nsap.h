@@ -212,34 +212,30 @@ struct tp_xsap_router {
 };
 
 extern struct tp_xsap_router tp_xsap_router;
-extern struct nsapisotable tp_xsap_isotable;
 
 /* prototypes */
 /* NSAP */
 extern uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
 
-void nsap_service(struct sap_service *, char *, u_char, int);
-void nsap_setsockaddr(struct sockaddr_nsap *, void *, long, long);
-void nsap_setaddr(struct nsap_addr *, void *, long, int);
-
-void nsap_attach(struct nsapisotable *, struct nsap_iso *, int);
-void nsap_detach(struct nsapisotable *, struct nsap_iso *, int);
-int nsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
-void nsap_disconnect(struct sockaddr_nsap *, int, int);
-
-struct nsap_iso *nsap_lookup(struct nsapisotable *, long, long);
-int nsap_acknowledge_snsap(struct nsapisotable *, struct sockaddr_nsap *, long, long);
-int nsap_acknowledge_nsapa(struct nsapisotable *, struct nsap_addr *, long, long, int);
+void nsap_attach(struct nsap_iso *, int);
+void nsap_detach(struct nsap_iso *, int);
+int nsap_canconnect(struct sockaddr_nsap *, void *, long, long, int);
+int nsap_candisconnect(struct sockaddr_nsap *, void *, long, long, int);
+struct nsap_iso *nsap_lookup(long, long);
+int nsap_acknowledge_snsap(struct sockaddr_nsap *, long, long);
+int nsap_acknowledge_nsapa(struct nsap_addr *, long, long, int);
 
 /* TSAP */
 extern uint32_t tsap_valid_ids[SAP_TABLE_MAX];
 
 void tsap_attach(struct tsap_iso *, struct nsap_iso *, int);
 void tsap_detach(struct tsap_iso *, struct nsap_iso *, int);
-int tsap_validate(struct tsap_iso *, struct nsap_iso *, int, int);
-int tsap_acknowledge(struct tsap_iso *, long, long, long, int, int, int);
-int tsap_connect(struct mbuf *, struct sockaddr_nsap *, long, int, int);
-void tsap_disconnect(struct sockaddr_nsap *, int, int);
+int tsap_canconnect(struct tsap_iso *, struct nsap_iso *, void *, long, long, long,
+		int, int, int);
+int tsap_candisconnect(struct tsap_iso *, struct nsap_iso *, void *, long, long,
+		long, int, int, int);
+int tsap_connect(struct tsap_iso *, struct nsap_iso *, void *, long, long, int);
+int tsap_disconnect(struct tsap_iso *, struct nsap_iso *, void *, long, long, int);
 
 /* SSAP */
 void ssap_attach(struct ssap_iso *, struct tsap_iso *, int);

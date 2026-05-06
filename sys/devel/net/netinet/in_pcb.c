@@ -967,7 +967,6 @@ in_pcbhashlookup(struct inpcbtable *table, struct in_addr faddr, u_int fport_arg
 				matchwild = wildcard;
 				if (matchwild == 0) {
 					goto found;
-					//break;
 				}
 			}
 		}

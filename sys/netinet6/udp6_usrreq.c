@@ -212,18 +212,6 @@ udp6_ctlinput(cmd, sa, d)
 			    uh.uh_dport, (struct in6_addr *)&sa6_src->sin6_addr,
 			    uh.uh_sport, 0))
 				valid++;
-#if 0
-			/*
-			 * As the use of sendto(2) is fairly popular,
-			 * we may want to allow non-connected pcb too.
-			 * But it could be too weak against attacks...
-			 * We should at least check if the local address (= s)
-			 * is really ours.
-			 */
-			else if (in6_pcblookup_bind(&udbtable, &sa6->sin6_addr,
-			    uh.uh_dport, 0))
-				valid++;
-#endif
 
 			/*
 			 * Depending on the value of "valid" and routing table

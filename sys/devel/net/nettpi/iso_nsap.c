@@ -38,11 +38,15 @@
 
 #include "iso_nsap.h"
 
+struct nsapisotable nsapisotable;
+
 uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
 static long nsap_id_cnt;
 
 #define NSAPHASH(table, type, subnet) \
 	&(table)->nsit_hashtbl[nsap_id((type), (subnet))]
+
+static void nsap_init(struct nsapisotable *);
 
 static void nsap_class(struct sap_service *, int);
 static void nsap_type(struct sockaddr_nsap *, long);
@@ -53,14 +57,17 @@ static int nsap_subnet_id_check(uint32_t, long);
 static int nsap_id_check(struct nsap_iso *, long, long);
 static int nsap_compare_type_id(struct nsap_iso *, struct nsap_iso *);
 static int nsap_compare_subnet_id(struct nsap_iso *, struct nsap_iso *);
-
+static void nsap_service(struct sap_service *, char *, u_char, int);
+static void nsap_setup_snsap(struct sockaddr_nsap *, void *, long, long);
+static void nsap_setup_nsapa(struct nsap_addr *, void *, long, int);
 static void nsap_insert(struct nsapisotable *, struct nsap_iso *, long, long);
 static void nsap_remove(struct nsapisotable *, struct nsap_iso *, long, long);
+static  struct nsap_iso *nsap_hashlookup(struct nsapisotable *, long, long);
 static void nsap_insert_af(struct nsapisotable *, struct nsap_iso *, int);
 static void nsap_remove_af(struct nsapisotable *, struct nsap_iso *, int);
 static void nsap_setup_id_table(void);
 
-void
+static void
 nsap_init(struct nsapisotable *table)
 {
 	table->nsit_hashtbl = hashinit(ISOLEN, M_ISOSAP, &table->nsit_hash);
@@ -90,24 +97,24 @@ nsap_destroy(struct nsap_iso *nsap)
 }
 
 void
-nsap_attach(struct nsapisotable *table, struct nsap_iso *nsap, int af)
+nsap_attach(struct nsap_iso *nsap, int af)
 {
 	struct nsap_iso *nsiiso;
 	struct nsapisohead *head;
 
-	nsiiso = nsap_create(table);
+	nsiiso = nsap_create(&nsapisotable);
 	if (nsiiso != NULL) {
-		nsap_insert_af(table, nsiiso, af);
+		nsap_insert_af(&nsapisotable, nsiiso, af);
 		nsap = nsiiso;
 	}
 	nsap = NULL;
 }
 
 void
-nsap_detach(struct nsapisotable *table, struct nsap_iso *nsap, int af)
+nsap_detach(struct nsap_iso *nsap, int af)
 {
 	if (nsap != NULL) {
-		nsap_remove_af(table, nsap, af);
+		nsap_remove_af(&nsapisotable, nsap, af);
 	} else {
 		nsap_destroy(nsap);
 	}
@@ -236,7 +243,7 @@ nsap_iso_compare(struct nsap_iso *a, struct nsap_iso *b)
 /*
  * Only ISO/OSI based services have currently been defined.
  */
-void
+static void
 nsap_service(struct sap_service *service, char *addr, u_char addrlen, int class)
 {
 	switch (class) {
@@ -260,13 +267,9 @@ nsap_service(struct sap_service *service, char *addr, u_char addrlen, int class)
 	}
 }
 
-void
-nsap_setsockaddr(struct sockaddr_nsap *snsap, void *arg, long type, long subnet)
+static void
+nsap_setup_snsap(struct sockaddr_nsap *snsap, void *arg, long type, long subnet)
 {
-	if (snsap == NULL) {
-		return;
-	}
-
 	switch (type) {
 	case NSAP_TYPE_SIN4:
 	{
@@ -385,13 +388,9 @@ unknown:
 	}
 }
 
-void
-nsap_setaddr(struct nsap_addr *nsapa, void *arg, long type, int class)
+static void
+nsap_setup_nsapa(struct nsap_addr *nsapa, void *arg, long type, int class)
 {
-	if (nsapa == NULL) {
-		return;
-	}
-
 	switch (type) {
 	case NSAP_TYPE_SIN4:
 	{
@@ -470,245 +469,75 @@ unknown:
 }
 
 /*
- * nsap_connect:
- * - Assumes sockaddr for the selected protocol family has been defined prior to nsap_connect.
+ * nsap_canconnect:
+ * - checks if nsap provider can connect to nsap user.
+ *
  */
 int
-nsap_connect(struct mbuf *nam, struct sockaddr_nsap *snsap, long subnet, int class, int af)
+nsap_canconnect(struct sockaddr_nsap *snsap, void *arg, long type, long subnet, int class)
 {
-	switch (af) {
-	case AF_INET:
-	{
-		struct sockaddr_in *sin = mtod(nam, struct sockaddr_in);
-		nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4);
-		if (nam->m_len != sizeof(sin)) {
-			return (EINVAL);
-		}
-		if (sin->sin_family != AF_INET) {
-			return (EAFNOSUPPORT);
-		}
-		if (sin->sin_port == 0) {
-			return (EADDRNOTAVAIL);
-		}
-		nsap_setaddr(&snsap->snsap_addr, (struct in_addr *)&sin->sin_addr, NSAP_TYPE_SIN4, NSAP_CLASS_CLNS);
-		break;
+	struct nsap_addr *nsapa;
+	int error;
+
+	if (snsap == NULL) {
+		return (EINVAL);
 	}
-	case AF_INET6:
-	{
-		struct sockaddr_in6 *sin6 = mtod(nam, struct sockaddr_in6);
-		nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6);
-		if (nam->m_len != sizeof(sin6)) {
-			return (EINVAL);
-		}
-		if (sin6->sin6_family != AF_INET6) {
-			return (EAFNOSUPPORT);
-		}
-		if (sin6->sin6_port == 0) {
-			return (EADDRNOTAVAIL);
-		}
-		nsap_setaddr(&snsap->snsap_addr, (struct in6_addr *)&sin6->sin6_addr, NSAP_TYPE_SIN6, NSAP_CLASS_CLNS);
-		break;
+	error = nsap_acknowledge_snsap(&nsapisotable, snsap, type, subnet);
+	if (error != 0) {
+		return (error);
 	}
-	case AF_ISO:
-	{
-		struct sockaddr_iso *siso = mtod(nam, struct sockaddr_iso);
-		nsap_setsockaddr(snsap, (struct sockaddr_iso *)siso, NSAP_TYPE_SISO, subnet);
-		if (nam->m_len != sizeof(siso)) {
-			return (EINVAL);
-		}
-		if (siso->siso_family != AF_ISO) {
-			return (EAFNOSUPPORT);
-		}
-		if (siso->siso_nlen == 0) {
-			return (EADDRNOTAVAIL);
-		}
-		nsap_setaddr(&snsap->snsap_addr, (struct iso_addr *)&siso->siso_addr, NSAP_TYPE_SISO, class);
-		break;
+	nsap_setup_snsap(snsap, arg, type, subnet);
+	nsapa = &snsap->snsap_addr;
+	if (nsapa == NULL) {
+		return (EINVAL);
 	}
-	case AF_NS:
-	{
-		struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns);
-		nsap_setsockaddr(snsap, (struct sockaddr_ns *)sns, NSAP_TYPE_SNS, NSAP_SUBNET_IDP);
-		if (nam->m_len != sizeof(sns)) {
-			return (EINVAL);
-		}
-		if (sns->sns_family != AF_NS) {
-			return (EAFNOSUPPORT);
-		}
-		if (sns->sns_port == 0) {
-			return (EADDRNOTAVAIL);
-		}
-		nsap_setaddr(&snsap->snsap_addr, (struct ns_addr *)&sns->sns_addr, NSAP_TYPE_SNS, NSAP_CLASS_CLNS);
-		break;
+	error = nsap_acknowledge_nsapa(&nsapisotable, nsapa, type, subnet, class);
+	if (error != 0) {
+		return (error);
 	}
-	case AF_CCITT:
-	{
-		struct sockaddr_x25 *sx25 = mtod(nam, struct sockaddr_x25);
-		nsap_setsockaddr(snsap, (struct sockaddr_x25 *)sx25, NSAP_TYPE_SX25, NSAP_SUBNET_X25);
-		if (nam->m_len != sizeof(sx25)) {
-			return (EINVAL);
-		}
-		if (sx25->x25_family != AF_CCITT) {
-			return (EAFNOSUPPORT);
-		}
-		if (sx25->x25_len == 0) {
-			return (EADDRNOTAVAIL);
-		}
-		nsap_setaddr(&snsap->snsap_addr, (struct x25_addr *)&sx25->x25_addr, NSAP_TYPE_SX25, NSAP_CLASS_CONS);
-		break;
-	}
-	case AF_NATM:
-	case AF_IPX:
-	case AF_SNA:
-	default:
-		nsap_setsockaddr(snsap, NULL, NSAP_TYPE_UNKNOWN, NSAP_SUBNET_UNKNOWN);
-		nsap_setaddr(&snsap->snsap_addr, NULL, NSAP_TYPE_UNKNOWN, NSAP_CLASS_UNKNOWN);
-		return (EAFNOSUPPORT);
-	}
+	nsap_setup_nsapa(nsapa, arg, type, class);
 	return (0);
 }
 
-void
-nsap_disconnect(struct sockaddr_nsap *snsap, int subnet, int af)
+/*
+ * nsap_candisconnect:
+ * - checks if nsap provider can disconnect from nsap user.
+ *
+ */
+int
+nsap_candisconnect(struct sockaddr_nsap *snsap, void *arg, long type, long subnet, int class)
 {
-	switch (af) {
-	case AF_INET:
-	{
-		struct sockaddr_in *sin = &snsap->snsap_sin4;
-		if (sin != NULL) {
-			switch (subnet) {
-			case NSAP_SUBNET_IPV4:
-				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4);
-				nsap_setaddr(&snsap->snsap_addr, (struct in_addr *)&sin->sin_addr, NSAP_TYPE_SIN4, NSAP_CLASS_CLNS);
-				break;
-			case NSAP_SUBNET_IPV6:
-				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_IPV6);
-				nsap_setaddr(&snsap->snsap_addr, (struct in_addr *)&sin->sin_addr, NSAP_TYPE_SIN4, NSAP_CLASS_CLNS);
-				break;
-			case NSAP_SUBNET_UNKNOWN:
-				/* FALLTHROUGH */
-			default:
-				nsap_setsockaddr(snsap, (struct sockaddr_in *)sin, NSAP_TYPE_SIN4, NSAP_SUBNET_UNKNOWN);
-				nsap_setaddr(&snsap->snsap_addr, (struct in_addr *)&sin->sin_addr, NSAP_TYPE_SIN4, NSAP_CLASS_UNKNOWN);
-				break;
-			}
-		} else {
-			goto unknown;
-		}
-		break;
+	struct nsap_addr *nsapa;
+	int error;
+
+	if (snsap == NULL) {
+		return (EINVAL);
 	}
-	case AF_INET6:
-	{
-		struct sockaddr_in6 *sin6 = &snsap->snsap_sin6;
-		if (sin6 != NULL) {
-			switch (subnet) {
-			case NSAP_SUBNET_IPV4:
-				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV4);
-				nsap_setaddr(&snsap->snsap_addr, (struct in6_addr *)&sin6->sin6_addr, NSAP_TYPE_SIN6, NSAP_CLASS_CLNS);
-				break;
-			case NSAP_SUBNET_IPV6:
-				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6);
-				nsap_setaddr(&snsap->snsap_addr, (struct in6_addr *)&sin6->sin6_addr, NSAP_TYPE_SIN6, NSAP_CLASS_CLNS);
-				break;
-			case NSAP_SUBNET_UNKNOWN:
-				/* FALLTHROUGH */
-			default:
-				nsap_setsockaddr(snsap, (struct sockaddr_in6 *)sin6, NSAP_TYPE_SIN6, NSAP_SUBNET_UNKNOWN);
-				nsap_setaddr(&snsap->snsap_addr, (struct in6_addr *)&sin6->sin6_addr, NSAP_TYPE_SIN6, NSAP_CLASS_UNKNOWN);
-				break;
-			}
-		} else {
-			goto unknown;
-		}
-		break;
+	error = nsap_acknowledge_snsap(&nsapisotable, snsap, type, subnet);
+	if (error != 0) {
+		return (error);
 	}
-	case AF_ISO:
-	{
-		struct sockaddr_iso *sisos = &snsap->snsap_siso;
-		if (sisos != NULL) {
-			switch (subnet) {
-			case NSAP_SUBNET_CONS:
-				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_CONS);
-				nsap_setaddr(&snsap->snsap_addr, (struct iso_addr *)&sisos->siso_addr, NSAP_TYPE_SISO, NSAP_CLASS_CONS);
-				break;
-			case NSAP_SUBNET_CLNS:
-				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_CLNS);
-				nsap_setaddr(&snsap->snsap_addr, (struct iso_addr *)&sisos->siso_addr, NSAP_TYPE_SISO, NSAP_CLASS_CLNS);
-				break;
-			case NSAP_SUBNET_CLNP:
-				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_CLNP);
-				nsap_setaddr(&snsap->snsap_addr, (struct iso_addr *)&sisos->siso_addr, NSAP_TYPE_SISO, NSAP_CLASS_CLNS);
-				break;
-			case NSAP_SUBNET_ISIS:
-				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_ISIS);
-				nsap_setaddr(&snsap->snsap_addr, (struct iso_addr *)&sisos->siso_addr, NSAP_TYPE_SISO, NSAP_CLASS_CLNS);
-				break;
-			case NSAP_SUBNET_ESIS:
-				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_ESIS);
-				nsap_setaddr(&snsap->snsap_addr, (struct iso_addr *)&sisos->siso_addr, NSAP_TYPE_SISO, NSAP_CLASS_CLNS);
-				break;
-			case NSAP_SUBNET_UNKNOWN:
-				/* FALLTHROUGH */
-			default:
-				nsap_setsockaddr(snsap, (struct sockaddr_iso *)sisos, NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN);
-				nsap_setaddr(&snsap->snsap_addr, (struct iso_addr *)&sisos->siso_addr, NSAP_TYPE_SISO, NSAP_CLASS_UNKNOWN);
-				break;
-			}
-		} else {
-			goto unknown;
-		}
-		break;
+	nsap_setup_snsap(snsap, NULL, NSAP_TYPE_UNKNOWN, NSAP_SUBNET_UNKNOWN);
+	nsapa = &snsap->snsap_addr;
+	if (nsapa == NULL) {
+		return (EINVAL);
 	}
-	case AF_NS:
-	{
-		struct sockaddr_ns *sns = &snsap->snsap_sns;
-		if (sns != NULL) {
-			if (subnet == NSAP_SUBNET_IDP) {
-				nsap_setsockaddr(snsap, (struct sockaddr_ns *)sns, NSAP_TYPE_SNS, NSAP_SUBNET_IDP);
-				nsap_setaddr(&snsap->snsap_addr, (struct ns_addr *)&sns->sns_addr, NSAP_TYPE_SX25, NSAP_CLASS_CLNS);
-			} else {
-				nsap_setsockaddr(snsap, (struct sockaddr_ns *)sns, NSAP_TYPE_SNS, NSAP_SUBNET_UNKNOWN);
-				nsap_setaddr(&snsap->snsap_addr, (struct ns_addr *)&sns->sns_addr, NSAP_TYPE_SNS, NSAP_CLASS_UNKNOWN);
-			}
-		} else {
-			goto unknown;
-		}
-		break;
+	error = nsap_acknowledge_nsapa(&nsapisotable, nsapa, type, subnet, class);
+	if (error != 0) {
+		return (error);
 	}
-	case AF_CCITT:
-	{
-		struct sockaddr_x25 *sx25 = &snsap->snsap_sx25;
-		if (sx25 != NULL) {
-			if (subnet == NSAP_SUBNET_X25) {
-				nsap_setsockaddr(snsap, (struct sockaddr_x25 *)sx25, NSAP_TYPE_SX25, NSAP_SUBNET_X25);
-				nsap_setaddr(&snsap->snsap_addr, (struct x25_addr *)&sx25->x25_addr, NSAP_TYPE_SX25, NSAP_CLASS_CONS);
-			} else {
-				nsap_setsockaddr(snsap, (struct sockaddr_x25 *)sx25, NSAP_TYPE_SX25, NSAP_SUBNET_UNKNOWN);
-				nsap_setaddr(&snsap->snsap_addr, (struct x25_addr *)&sx25->x25_addr, NSAP_TYPE_SX25, NSAP_CLASS_UNKNOWN);
-			}
-		} else {
-			goto unknown;
-		}
-		break;
-	}
-	case AF_NATM:
-	case AF_IPX:
-	case AF_SNA:
-	default:
-unknown:
-		nsap_setsockaddr(snsap, NULL, NSAP_TYPE_UNKNOWN, NSAP_SUBNET_UNKNOWN);
-		nsap_setaddr(&snsap->snsap_addr, NULL, NSAP_TYPE_UNKNOWN, NSAP_CLASS_UNKNOWN);
-		break;
-	}
+	nsap_setup_nsapa(nsapa, NULL, NSAP_TYPE_UNKNOWN, NSAP_CLASS_UNKNOWN);
+	return (0);
 }
 
+
 int
-nsap_acknowledge_snsap(struct nsapisotable *table, struct sockaddr_nsap *snsap, long type, long subnet)
+nsap_acknowledge_snsap(struct sockaddr_nsap *snsap, long type, long subnet)
 {
 	struct nsap_iso *nsap;
 	int error;
 
-	nsap = nsap_lookup(table, type, subnet);
+	nsap = nsap_lookup(&nsapisotable, type, subnet);
 	if (nsap != NULL) {
 		/* sockaddr_nsap */
 		if (nsap->nsi_snsap != NULL) {
@@ -726,12 +555,12 @@ nsap_acknowledge_snsap(struct nsapisotable *table, struct sockaddr_nsap *snsap, 
 }
 
 int
-nsap_acknowledge_nsapa(struct nsapisotable *table, struct nsap_addr *nsapa, long type, long subnet, int class)
+nsap_acknowledge_nsapa(struct nsap_addr *nsapa, long type, long subnet, int class)
 {
 	struct nsap_iso *nsap;
 	int error;
 
-	nsap = nsap_lookup(table, type, subnet);
+	nsap = nsap_lookup(type, subnet);
 	if (nsap != NULL) {
 		/* nsap_addr */
 		if (nsap->nsi_nsapa != NULL) {
@@ -748,7 +577,13 @@ nsap_acknowledge_nsapa(struct nsapisotable *table, struct nsap_addr *nsapa, long
 }
 
 struct nsap_iso *
-nsap_lookup(struct nsapisotable *table, long type, long subnet)
+nsap_lookup(long type, long subnet)
+{
+	return (nsap_hashlookup(&nsapisotable, type, subnet));
+}
+
+static struct nsap_iso *
+nsap_hashlookup(struct nsapisotable *table, long type, long subnet)
 {
 	struct nsapisohead *head;
 	struct nsap_iso *nsap;
@@ -781,7 +616,7 @@ nsap_insert(struct nsapisotable *table, struct nsap_iso *nsap, long type, long s
 static void
 nsap_remove(struct nsapisotable *table, struct nsap_iso *nsap, long type, long subnet)
 {
-	nsap = nsap_lookup(table, type, subnet);
+	nsap = nsap_hashlookup(table, type, subnet);
 	if (nsap != NULL) {
 		LIST_REMOVE(nsap, nsi_hash);
 	}
