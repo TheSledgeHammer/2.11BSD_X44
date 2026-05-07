@@ -121,6 +121,8 @@ struct in6_addr zeroin6_addr;
 #define	IN6PCBHASH_FOREIGN(table, laddr, lport, faddr, fport)  \
 	(&(table)->inpt_foreignhashtbl[IN6PCBHASH((laddr), (lport), (faddr), (fport)) & table->inpt_foreignhash])
 
+static struct in6pcb *in6_pcblookup_local(struct inpcbtable *, struct in6_addr *, u_int, struct in6_addr *, u_int, int);
+static struct in6pcb *in6_pcblookup_foreign(struct inpcbtable *, struct in6_addr *, u_int, struct in6_addr *, u_int, int);
 static struct in6pcb *in6_pcbhashlookup(struct inpcbtable *, struct in6_addr *, u_int, struct in6_addr *, u_int, int, int, int);
 static void in6_pcbrehash(struct inpcbhead *, struct in6pcb *, int);
 static void in6_pcbinsert(struct inpcbtable *, struct in6pcb *, int);
@@ -898,7 +900,7 @@ in6_pcbrtentry(struct in6pcb *in6p)
 	return (ro->ro_rt);
 }
 
-struct in6pcb *
+static struct in6pcb *
 in6_pcblookup_local(struct inpcbtable *table, struct in6_addr *faddr6, u_int fport_arg, struct in6_addr *laddr6, u_int lport_arg, int lookup_wildcard)
 {
 	u_int16_t fport = fport_arg, lport = lport_arg;
@@ -906,7 +908,7 @@ in6_pcblookup_local(struct inpcbtable *table, struct in6_addr *faddr6, u_int fpo
 	return (in6_pcbhashlookup(table, faddr6, fport, laddr6, lport, 1, lookup_wildcard, IN6PLOOKUP_LOCAL));
 }
 
-struct in6pcb *
+static struct in6pcb *
 in6_pcblookup_foreign(struct inpcbtable *table, struct in6_addr *faddr6, u_int fport_arg, struct in6_addr *laddr6, u_int lport_arg, int faith)
 {
 	u_int16_t fport = fport_arg, lport = lport_arg;
@@ -944,9 +946,9 @@ in6_pcbhashlookup(struct inpcbtable *table, struct in6_addr *faddr6, u_int fport
 					&& (in6p->in6p_flags & IN6P_IPV6_V6ONLY)) {
 				continue;
 			}
-			if (IN6_ARE_ADDR_EQUAL(in6p->in6p_faddr, faddr6)
+			if (IN6_ARE_ADDR_EQUAL(&in6p->in6p_faddr, faddr6)
 					&& in6p->in6p_fport == fport && in6p->in6p_lport == lport
-					&& IN6_ARE_ADDR_EQUAL(in6p->in6p_laddr, laddr6)) {
+					&& IN6_ARE_ADDR_EQUAL(&in6p->in6p_laddr, laddr6)) {
 				goto out;
 			}
 		}

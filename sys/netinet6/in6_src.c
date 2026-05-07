@@ -597,8 +597,8 @@ in6_pcbsetport(laddr, in6p, p)
 			lport = max;
 #ifdef INET
 		if (IN6_IS_ADDR_V4MAPPED(laddr)) {
-			t = in_pcblookup_port(table, &zeroin6_addr, 0,
-					*(struct in_addr*) &in6p->in6p_laddr.s6_addr32[3], lport,
+			t = in_pcblookup_port(table, *(struct in_addr *)&zeroin6_addr.s6_addr32[3], 0,
+					*(struct in_addr *)&in6p->in6p_laddr.s6_addr32[3], lport,
 					wild);
 		} else
 #endif
