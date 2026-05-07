@@ -153,6 +153,8 @@ struct in_addr zeroin_addr;
 #define	INPCBHASH_FOREIGN(table, laddr, lport, faddr, fport)  \
 	(&(table)->inpt_foreignhashtbl[INPCBHASH((laddr), (lport), (faddr), (fport)) & table->inpt_foreignhash])
 
+static struct inpcb *in_pcblookup_local(struct inpcbtable *, struct in_addr, u_int, struct in_addr, u_int, int);
+static struct inpcb *in_pcblookup_foreign(struct inpcbtable *, struct in_addr, u_int, struct in_addr, u_int);
 static struct inpcb *in_pcbhashlookup(struct inpcbtable *, struct in_addr, u_int, struct in_addr, u_int, int, int);
 static void in_pcbrehash(struct inpcbhead *, struct inpcb *, int);
 static void in_pcbinsert(struct inpcbtable *, struct inpcb *, int);
@@ -879,7 +881,7 @@ in_selectsrc(struct sockaddr_in *sin, struct route *ro, int soopts, struct ip_mo
 	return satosin(&ia->ia_addr);
 }
 
-struct inpcb *
+static struct inpcb *
 in_pcblookup_local(struct inpcbtable *table, struct in_addr faddr, u_int fport_arg, struct in_addr laddr, u_int lport_arg, int lookup_wildcard)
 {
 	u_int16_t fport = fport_arg, lport = lport_arg;
@@ -887,7 +889,7 @@ in_pcblookup_local(struct inpcbtable *table, struct in_addr faddr, u_int fport_a
 	return (in_pcbhashlookup(table, faddr, fport, laddr, lport, lookup_wildcard, INPLOOKUP_LOCAL));
 }
 
-struct inpcb *
+static struct inpcb *
 in_pcblookup_foreign(struct inpcbtable *table, struct in_addr faddr, u_int fport_arg, struct in_addr laddr, u_int lport_arg)
 {
 	u_int16_t fport = fport_arg, lport = lport_arg;
@@ -1003,7 +1005,7 @@ in_pcbrehash(struct inpcbhead *head, struct inpcb *inp, int which)
 	if (inph != LIST_FIRST(head)) {
 		switch (which) {
 		case INPLOOKUP_FOREIGN:
-			LIST_REMOVE(inph, inph_hash);
+			LIST_REMOVE(inph, inph_fhash);
 			LIST_INSERT_HEAD(head, inph, inph_fhash);
 			break;
 		case INPLOOKUP_LOCAL:
