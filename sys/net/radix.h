@@ -142,12 +142,13 @@ struct radix_node_head {
 #endif /*_KERNEL*/
 
 void rn_init(void);
-int	 rnh_inithead(void **, int);
-int	 rn_inithead(void **, int);
-int	 rn_inithead0(struct radix_node_head *, int);
-int	 rn_refines(void *, void *);
-int	 rn_walktree(struct radix_node_head *, int (*)(struct radix_node *, void *), void *);
-struct radix_node *rn_next(struct radix_node *);
+
+int
+	 rnh_inithead(void **, int),
+	 rn_inithead(void **, int),
+	 rn_inithead0(struct radix_node_head *, int),
+	 rn_refines(void *, void *),
+	 rn_walktree(struct radix_node_head *, int (*)(struct radix_node *, void *), void *);
 
 struct radix_node
 	 *rn_addmask(void *, int, int),
@@ -157,6 +158,7 @@ struct radix_node
 	 *rn_lookup(void *, void *, struct radix_node_head *),
 	 *rn_match(void *, struct radix_node_head *),
 	 *rn_newpair(void *, int, struct radix_node[2]),
+	 *rn_next(struct radix_node *),
 	 *rn_search(void *, struct radix_node *),
 	 *rn_search_m(void *, struct radix_node *, void *);
 

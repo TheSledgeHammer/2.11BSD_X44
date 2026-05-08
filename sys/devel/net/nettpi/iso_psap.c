@@ -84,6 +84,9 @@ psap_detach(struct psap_iso *psap, struct ssap_iso *ssap, int af)
 	}
 }
 
+/*
+ * returns an ssap from psap
+ */
 struct ssap_iso *
 psap_to_ssap(struct psap_iso *psap)
 {

@@ -70,9 +70,11 @@
 #include <netiso/iso_var.h>
 #include <netiso/tuba_table.h>
 
-struct inpcbtable	tubapcbtable;
+struct inpcbtable	tubainptable; /* in pcbtable */
 struct inpcb		tuba_inpcb;
 struct in6pcb		tuba_in6pcb;
+
+//struct isopcbtable  tubaisoptable; /* iso pcbtable */
 struct isopcb		tuba_isopcb;
 
 #define	TUBAHASHSIZE	128
@@ -102,17 +104,15 @@ static int tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long c
 static void tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype);
 #endif
 
-static int tuba_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int transtype, int af);
-static void tuba_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, struct ip6_hdr *ip6, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype, int af);
-
-
 /*
  * Tuba initialization
  */
 void
 tuba_init(void)
 {
-	in_pcbinit(&tubapcbtable, tubahashsize, tubahashsize);
+	in_pcbinit(&tubainptable, tubahashsize, tubahashsize);
+
+	//iso_pcbinit(&tubaisoptable, &tuba_isopcb, tubahashsize);
 	tuba_isopcb.isop_next = tuba_isopcb.isop_prev = &tuba_isopcb;
 	tuba_isopcb.isop_faddr = &tuba_isopcb.isop_sfaddr;
 	tuba_isopcb.isop_laddr = &tuba_isopcb.isop_sladdr;
@@ -638,7 +638,7 @@ tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
  * 0 = TCP
  * 1 = UDP
  */
-static int
+int
 tuba_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int transtype, int af)
 {
 	int rval;
@@ -666,7 +666,7 @@ tuba_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int tr
  * 0 = TCP
  * 1 = UDP
  */
-static void
+void
 tuba_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, struct ip6_hdr *ip6, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype, int af)
 {
 	switch (af) {

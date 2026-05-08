@@ -67,4 +67,16 @@ extern struct radix_node_head *tuba_tree;
 void tuba_table_init(void);
 #endif
 
+
+void tuba_init(void);
+int tuba_cksum(u_long *, int *, struct sockaddr_iso **, u_long);
+
+int  tuba4_pcbconnect(void *, struct mbuf *);
+int  tuba6_pcbconnect(void *, struct mbuf *);
+
+int tuba_output(struct mbuf *, struct isopcb *, void *, u_long, int, int);
+void tuba_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
+		struct ip *, struct ip6_hdr *, void*, int, int, unsigned long,
+		unsigned long, int, int);
+
 #endif /* _NETISO_TUBA_TABLE_H_ */

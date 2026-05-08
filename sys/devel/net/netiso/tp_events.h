@@ -4,8 +4,8 @@
 #define _NETISO_TP_EVENTS_H_
 
 struct tp_event {
-	int 			ev_number;
-	struct timeval 	e_time;
+	int ev_number;
+	struct timeval e_time;
 
 	union {
 		struct {

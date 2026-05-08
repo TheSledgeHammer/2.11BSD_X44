@@ -137,20 +137,20 @@ struct sockaddr_nsap {
 
 /* NSAP addr (ISO/OSI equivalent) */
 struct nsap_iso {
-	LIST_ENTRY(nsap_iso) nsi_hash;	/* nsap table */
+	LIST_ENTRY(nsap_iso) nsi_hash;		/* nsap table */
+	uint32_t nsi_id;			/* nsap id */
 	uint32_t nsi_type_id;			/* type id (not nsap_types) */
 	uint32_t nsi_subnet_id;			/* subnet id (not nsap_subnets) */
-	struct sockaddr_nsap *nsi_snsap;/* sockaddr_nsap (BSD-style) */
-	struct nsap_addr *nsi_nsapa;	/* nsap_addr (BSD-style) */
+	struct sockaddr_nsap *nsi_snsap;	/* sockaddr_nsap (BSD-style) */
+	struct nsap_addr *nsi_nsapa;		/* nsap_addr (BSD-style) */
 };
 
 LIST_HEAD(nsapisohead, nsap_iso);
 
 /* NSAP Table: */
 struct nsapisotable {
-	struct nsapisohead *nsit_hashtbl;
-	u_long nsit_hash;
-	uint32_t nsit_id;		/* nsap id */
+	struct nsapisohead *nsi_hashtbl;
+	u_long nsi_hash;
 };
 
 /* TSAP: Transport Service Access Point */
@@ -219,6 +219,7 @@ extern uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
 
 void nsap_attach(struct nsap_iso *, int);
 void nsap_detach(struct nsap_iso *, int);
+int nsap_iso_compare(struct nsap_iso *, struct nsap_iso *);
 int nsap_canconnect(struct sockaddr_nsap *, void *, long, long, int);
 int nsap_candisconnect(struct sockaddr_nsap *, void *, long, long, int);
 struct nsap_iso *nsap_lookup(long, long);
@@ -230,6 +231,8 @@ extern uint32_t tsap_valid_ids[SAP_TABLE_MAX];
 
 void tsap_attach(struct tsap_iso *, struct nsap_iso *, int);
 void tsap_detach(struct tsap_iso *, struct nsap_iso *, int);
+struct nsap_iso *tsap_to_nsap(struct tsap_iso *);
+int tsap_iso_compare(struct tsap_iso *, struct tsap_iso *);
 int tsap_canconnect(struct tsap_iso *, struct nsap_iso *, void *, long, long, long,
 		int, int, int);
 int tsap_candisconnect(struct tsap_iso *, struct nsap_iso *, void *, long, long,
@@ -240,14 +243,13 @@ int tsap_disconnect(struct tsap_iso *, struct nsap_iso *, void *, long, long, in
 /* SSAP */
 void ssap_attach(struct ssap_iso *, struct tsap_iso *, int);
 void ssap_detach(struct ssap_iso *, struct tsap_iso *, int);
+struct tsap_iso *ssap_to_tsap(struct ssap_iso *);
+int ssap_iso_compare(struct ssap_iso *, struct ssap_iso *);
 
 /* PSAP */
 void psap_attach(struct psap_iso *, struct ssap_iso *, int);
 void psap_detach(struct psap_iso *, struct ssap_iso *, int);
-
-int nsap_iso_compare(struct nsap_iso *, struct nsap_iso *);
-int tsap_iso_compare(struct tsap_iso *, struct tsap_iso *);
-int ssap_iso_compare(struct ssap_iso *, struct ssap_iso *);
+struct ssap_iso *psap_to_ssap(struct psap_iso *);
 int psap_iso_compare(struct psap_iso *, struct psap_iso *);
 
 #ifdef notyet

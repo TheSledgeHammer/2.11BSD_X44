@@ -84,8 +84,9 @@ SOFTWARE.
 #include <netiso/iso_var.h>
 
 struct isopcb {
-	LIST_ENTRY(isopcb) 		isop_hash;
-	CIRCLEQ_ENTRY(isopcb) 	isop_queue;
+	LIST_ENTRY(isopcb) 	  isop_hash;
+	CIRCLEQ_ENTRY(isopcb) isop_queue;
+	struct isopcbtable	*isop_table;
 	struct socket  		*isop_socket;		/* back pointer to socket */
 	struct sockaddr_iso *isop_laddr;
 	struct sockaddr_iso *isop_faddr;
@@ -112,12 +113,8 @@ CIRCLEQ_HEAD(isopcbqueue, isopcb);
 
 struct isopcbtable {
 	struct isopcbqueue 	isopt_queue;
-	struct isopcbtable 	*isopt_porthashtbl;
-	//struct isopcbtable 	*isopt_bindhashtbl;
-	//struct isopcbtable 	*isopt_connecthashtbl;
-	u_long	  			isopt_porthash;
-	u_long	  			isopt_bindhash;
-	u_long	  			isopt_connecthash;
+	struct isopcbtable 	*isopt_hashtbl;
+	u_long	  			isopt_hash;
 };
 
 struct iso_addr zeroiso_addr;
@@ -126,34 +123,26 @@ struct iso_addr zeroiso_addr;
 unsigned char   argo_debug[128];
 #endif
 
-#define	ISOPCBHASH_PORT(table, laddr) \
-	&(table)->isopt_porthashtbl[laddr & (table)->isopt_porthash]
+#define ISOPCBHASH(table, laddr, faddr)	\
+	(&(table)->isopt_hashtbl[(ntohl(TSEL((laddr))) + ntohl(TSEL((faddr))))])
 
-/*
-#define	ISOPCBHASH_BIND(table, laddr, lport) \
-	&(table)->isopt_bindhashtbl[ \
-	    ((ntohl((laddr).s_addr) + ntohs(lport))) & (table)->isopt_bindhash]
-#define	ISOPCBHASH_CONNECT(table, faddr, fport, laddr, lport) \
-	&(table)->isopt_connecthashtbl[ \
-	    ((ntohl((faddr).s_addr) + ntohs(fport)) + \
-	     (ntohl((laddr).s_addr) + ntohs(lport))) & (table)->isopt_connecthash]
-*/
+static struct isopcb *iso_pcbhashlookup(struct isopcbtable *, struct sockaddr_iso *, caddr_t, int, struct sockaddr_iso *, int);
+static void iso_pcbrehash(struct isopcbhead *, struct isopcb *);
+static void iso_pcbinsert(struct isopcbtable *, struct isopcb *);
+static void iso_pcbremove(struct isopcb *);
 
 void
-iso_pcbinit(table, bindhashsize/*, connecthashsize*/)
-	struct isopcbtable *table;
-	int bindhashsize;//, connecthashsize;
+iso_pcbinit(struct isopcbtable *table, struct isopcb *isop, int hashsize)
 {
 	CIRCLEQ_INIT(&table->isopt_queue);
-	table->isopt_porthashtbl = hashinit(bindhashsize, M_PCB, &table->isopt_porthash);
-	//table->isopt_bindhashtbl = hashinit(bindhashsize, M_PCB, &table->isopt_bindhash);
-	//table->isopt_connecthashtbl = hashinit(connecthashsize, M_PCB, &table->isopt_connecthash);
+	table->isopt_hashtbl = hashinit(hashsize, M_PCB, &table->isopt_hash);
+
+	isop->isop_faddr = isop->isop_sfaddr;
+	isop->isop_laddr = isop->isop_sladdr;
 }
 
 int
-iso_pcballoc(so, v)
-	struct socket  *so;
-	void *v;
+iso_pcballoc(struct socket *so, void *v)
 {
 	struct isopcbtable *table = v;
 	struct isopcb *isop;
@@ -165,16 +154,13 @@ iso_pcballoc(so, v)
 	isop->isop_table = table;
 	isop->isop_socket = so;
 	so->so_pcb = isop;
-
 	CIRCLEQ_INSERT_HEAD(&table->isopt_queue, isop, isop_queue);
+	iso_pcbinsert(table, isop);
 	return (0);
 }
 
 int
-iso_pcbbind(v, nam, p)
-	void *v;
-	struct mbuf *nam;
-	struct proc *p;
+iso_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 {
 	struct isopcb *isop = v;
 	struct isopcbtable *table = isop->isop_table;
@@ -251,12 +237,14 @@ iso_pcbbind(v, nam, p)
 	if (siso->siso_tlen == 0)
 		goto noname;
 	if ((isop->isop_socket->so_options & SO_REUSEADDR) == 0
-			&& iso_pcblookup(table, 0, (caddr_t) 0, isop->isop_laddr))
+			&& iso_pcblookup(table, isop->isop_faddr, (caddr_t) 0, 0,
+					isop->isop_laddr))
 		return EADDRINUSE;
 	if (siso->siso_tlen <= 2) {
 		bcopy(TSEL(siso), suf.data, sizeof(suf.data));
 		suf.s = ntohs(suf.s);
-		if (suf.s < ISO_PORT_RESERVED && (p == 0 || suser(p->p_ucred, &p->p_acflag)))
+		if (suf.s < ISO_PORT_RESERVED
+				&& (p == 0 || suser(p->p_ucred, &p->p_acflag)))
 			return EACCES;
 	} else {
 		char *cp;
@@ -275,20 +263,20 @@ noname:
 			suf.s = htons(isop->isop_lport);
 			cp[0] = suf.data[0];
 			cp[1] = suf.data[1];
-		} while (iso_pcblookup(table, 0, (caddr_t)  0, isop->isop_laddr));
+		} while (iso_pcblookup(table, isop->isop_faddr, (caddr_t)0, 0, isop->isop_laddr));
 	}
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_ISO]) {
 		printf("iso_pcbbind returns 0, suf 0x%x\n", suf.s);
 	}
 #endif
+	iso_pcbremove(isop);
+	iso_pcbinsert(table, isop);
 	return 0;
 }
 
 int
-iso_pcbconnect(v, nam)
-	void *v;
-	struct mbuf    *nam;
+iso_pcbconnect(void *v, struct mbuf *nam)
 {
 	struct isopcb *isop = v;
 	struct iso_ifaddr *ia = NULL;
@@ -362,7 +350,7 @@ iso_pcbconnect(v, nam)
 		caddr_t oldtsel, newtsel;
 		siso = isop->isop_laddr;
 		if (siso == 0 || siso->siso_tlen == 0)
-			(void) iso_pcbbind(isop, (struct mbuf*) 0, (struct proc*) 0);
+			(void) iso_pcbbind(isop, (struct mbuf *)0, (struct proc *)0);
 		/*
 		 * Here we have problem of squezeing in a definite network address
 		 * into an existing sockaddr_iso, which in fact may not have room
@@ -432,8 +420,7 @@ iso_pcbconnect(v, nam)
 }
 
 void
-iso_pcbdisconnect(v)
-	void *v;
+iso_pcbdisconnect(void *v)
 {
 	struct isopcb  *isop = v;
 	struct sockaddr_iso *siso;
@@ -460,8 +447,7 @@ iso_pcbdisconnect(v)
 }
 
 void
-iso_pcbdetach(v)
-	void *v;
+iso_pcbdetach(void *v)
 {
 	struct isopcb  *isop = v;
 	struct socket  *so = isop->isop_socket;
@@ -531,6 +517,7 @@ iso_pcbdetach(v)
 		printf("iso_pcbdetach 4 \n");
 	}
 #endif
+	iso_pcbremove(isop);
 	CIRCLEQ_REMOVE(&isop->isop_table->isopt_queue, isop, isop_queue);
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_ISO]) {
@@ -543,11 +530,7 @@ iso_pcbdetach(v)
 }
 
 void
-iso_pcbnotify(table, siso, errno, notify)
-	struct isopcbtable  *table;
-	struct sockaddr_iso *siso;
-	int             errno;
-	void (*notify)(struct isopcb *);
+iso_pcbnotify(struct isopcbtable *table, struct sockaddr_iso *faddr, struct sockaddr_iso *laddr, int errno, void (*notify)(struct isopcb *, int))
 {
 	struct isopcbhead *head;
 	struct isopcb *isop, *nisop;
@@ -558,25 +541,41 @@ iso_pcbnotify(table, siso, errno, notify)
 		printf("iso_pcbnotify(table %p, notify %p) dst:\n", table, notify);
 	}
 #endif
-	head = ISOPCBHASH_PORT(table, siso);
+	head = ISOPCBHASH(table, faddr, laddr);
 	for (isop = (struct isopcb *)LIST_FIRST(head); isop != NULL; isop = nisop) {
 		nisop = (struct isopcb *)LIST_NEXT(isop, isop_hash);
-		if (isop->isop_socket == 0 || isop->isop_faddr == 0 || !SAME_ISOADDR(siso, isop->isop_faddr)) {
+		if (isop->isop_socket == 0) {
+			if (isop->isop_faddr == 0 || !SAME_ISOADDR(faddr, isop->isop_faddr) ) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_ISO]) {
-				printf("iso_pcbnotify: CONTINUE isop %p, sock %p\n",
-				    isop, isop->isop_socket);
-				printf("addrmatch cmp'd with (%p):\n",
-					isop->isop_faddr);
-				dump_isoaddr(isop->isop_faddr);
-			}
+				if (argo_debug[D_ISO]) {
+					printf("iso_pcbnotify: CONTINUE isop %p, sock %p\n",
+					    isop, isop->isop_socket);
+					printf("addrmatch cmp'd with (%p):\n",
+						isop->isop_faddr);
+					dump_isoaddr(isop->isop_faddr);
+				}
 #endif
-			continue;
+				continue;
+			}
+			if (isop->isop_laddr == 0 || !SAME_ISOADDR(laddr, isop->isop_laddr)) {
+#ifdef ARGO_DEBUG
+				if (argo_debug[D_ISO]) {
+					printf("iso_pcbnotify: CONTINUE isop %p, sock %p\n",
+					    isop, isop->isop_socket);
+					printf("addrmatch cmp'd with (%p):\n",
+						isop->isop_laddr);
+					dump_isoaddr(isop->isop_laddr);
+				}
+#endif
+				continue;
+			}
 		}
-		if (errno)
+		if (errno) {
 			isop->isop_socket->so_error = errno;
-		if (notify)
-			(*notify)(isop);
+		}
+		if (notify) {
+			(*notify)(isop, errno);
+		}
 	}
 	splx(s);
 #ifdef ARGO_DEBUG
@@ -617,7 +616,7 @@ iso_pcblookup(table, fportlen, fport, laddr)
 			continue;
 		}
 		if (fportlen && isop->isop_faddr
-				&& bcmp(fport, TSEL(isop->isop_faddr), (unsigned) fportlen)) {
+				&& bcmp(fport, TSEL(isop->isop_faddr), (unsigned int)fportlen)) {
 			continue;
 		}
 		/*
@@ -646,13 +645,21 @@ out:
 	return (isop);
 }
 
+struct isopcb  *
+iso_pcblookup(struct isopcbtable *table, struct sockaddr_iso *faddr, caddr_t fport, int fportlen, struct sockaddr_iso *laddr)
+{
+	unsigned int flen = fportlen;
+	unsigned int llen = laddr->siso_tlen;
+
+	return (iso_pcbhashlookup(table, faddr, fport, flen, laddr, llen));
+}
+
 /*
  * After a routing change, flush old routing
  * and allocate a (hopefully) better one.
  */
 void
-iso_rtchange(isop)
-	struct isopcb *isop;
+iso_rtchange(struct isopcb *isop)
 {
 	if (isop->isop_route.ro_rt) {
 		rtfree(isop->isop_route.ro_rt);
@@ -666,17 +673,95 @@ iso_rtchange(isop)
 }
 
 void
-iso_pcbpurgeif(table, ifp)
-	struct isopcbtable *table;
-	struct ifnet *ifp;
+iso_pcbpurgeif(struct isopcbtable *table, struct ifnet *ifp)
 {
 	struct isopcb *isop, *nisop;
 
-	for (isop = (struct isopcb*) CIRCLEQ_FIRST(&table->isopt_queue);
-			isop != (void*) &table->isopt_queue; isop = nisop) {
-		nisop = (struct isopcb*) CIRCLEQ_NEXT(isop, isop_queue);
+	for (isop = (struct isopcb *)CIRCLEQ_FIRST(&table->isopt_queue);
+			isop != (void *)&table->isopt_queue; isop = nisop) {
+		nisop = (struct isopcb *)CIRCLEQ_NEXT(isop, isop_queue);
 		if (isop->isop_route.ro_rt != NULL
-				&& isop->isop_route.ro_rt->rt_ifp == ifp)
+				&& isop->isop_route.ro_rt->rt_ifp == ifp) {
 			iso_rtchange(isop, 0);
+		}
 	}
+}
+
+static struct isopcb  *
+iso_pcbhashlookup(struct isopcbtable *table, struct sockaddr_iso *faddr, caddr_t fport, int fportlen, struct sockaddr_iso *laddr, int lportlen)
+{
+	struct isopcbhead *head;
+	struct isopcb *isop;
+	caddr_t fport_arg = fport;
+	caddr_t fp = TSEL(faddr);
+	caddr_t lp = TSEL(laddr);
+	unsigned int flen = fportlen;
+	unsigned int llen = lportlen;
+
+	head = ISOPCBHASH(table, laddr, faddr);
+	LIST_FOREACH(isop, head, isop_hash) {
+		if (isop->isop_faddr == 0) {
+			continue;
+		}
+		if (isop->isop_laddr == 0) {
+			continue;
+		}
+		if (isop->isop_faddr->siso_tlen != flen) {
+			continue;
+		}
+		if (isop->isop_laddr->siso_tlen != llen) {
+			continue;
+		}
+		if (bcmp(fp, TSEL(isop->isop_faddr), flen)) {
+			continue;
+		}
+		if (bcmp(lp, TSEL(isop->isop_laddr), llen)) {
+			continue;
+		}
+		if (flen && isop->isop_faddr
+				&& bcmp(fport_arg, TSEL(isop->isop_faddr), (unsigned int)flen)) {
+			continue;
+		}
+
+		/*
+		 * PHASE2 addrmatch1 should be iso_addrmatch(a, b, mask)
+		 * where mask is taken from isop->isop_laddrmask (new field)
+		 * isop_lnetmask will also be available in isop if (laddr !=
+		 * &zeroiso_addr && !iso_addrmatch1(laddr,
+		 * &(isop->isop_laddr.siso_addr))) continue;
+		 */
+		if (laddr->siso_nlen && (!SAME_ISOADDR(laddr, isop->isop_laddr))) {
+			continue;
+		}
+		goto out;
+	}
+	return (NULL);
+
+out:
+	iso_pcbrehash(head, isop);
+	return (isop);
+}
+
+static void
+iso_pcbrehash(struct isopcbhead *head, struct isopcb *isop)
+{
+	if (isop != LIST_FIRST(head)) {
+		LIST_REMOVE(isop, isop_hash);
+		LIST_INSERT_HEAD(head, isop, isop_hash);
+	}
+
+}
+static void
+iso_pcbinsert(struct isopcbtable *table, struct isopcb *isop)
+{
+	struct isopcbhead *head;
+
+	head = ISOPCBHASH(table, isop->isop_laddr, isop->isop_faddr);
+	LIST_INSERT_HEAD(head, isop, isop_hash);
+}
+
+static void
+iso_pcbremove(struct isopcb *isop)
+{
+	LIST_REMOVE(isop, isop_hash);
 }

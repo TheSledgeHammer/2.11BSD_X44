@@ -101,6 +101,21 @@ tsap_detach(struct tsap_iso *tsap, struct nsap_iso *nsap, int af)
 }
 
 /*
+ * returns an nsap from tsap
+ */
+struct nsap_iso *
+tsap_to_nsap(struct tsap_iso *tsap)
+{
+	struct nsap_iso *nsap;
+
+	nsap = &tsap->tsi_nsaps;
+	if (nsap != NULL) {
+		return (nsap);
+	}
+	return (NULL);
+}
+
+/*
  * tsap_iso_compare:
  * - compares nsap_iso and sap_select
  * returns -1 if a, 1 if b and 0 if equal

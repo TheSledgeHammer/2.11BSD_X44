@@ -44,7 +44,7 @@ uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
 static long nsap_id_cnt;
 
 #define NSAPHASH(table, type, subnet) \
-	&(table)->nsit_hashtbl[nsap_id((type), (subnet))]
+	&(table)->nsi_hashtbl[nsap_id((type), (subnet))]
 
 static void nsap_init(struct nsapisotable *);
 
@@ -70,7 +70,7 @@ static void nsap_setup_id_table(void);
 static void
 nsap_init(struct nsapisotable *table)
 {
-	table->nsit_hashtbl = hashinit(ISOLEN, M_ISOSAP, &table->nsit_hash);
+	table->nsi_hashtbl = hashinit(ISOLEN, M_ISOSAP, &table->nsi_hash);
 	nsap_setup_id_table();
 }
 
@@ -609,7 +609,7 @@ nsap_insert(struct nsapisotable *table, struct nsap_iso *nsap, long type, long s
 
 	nsap->nsi_type_id = nsap_type_id(type);
 	nsap->nsi_subnet_id = nsap_subnet_id(subnet);
-	table->nsit_id = nsap_valid_ids[type][subnet];
+	nsap->nsi_id = nsap_valid_ids[type][subnet];
 	LIST_INSERT_HEAD(head, nsap, nsi_hash);
 }
 

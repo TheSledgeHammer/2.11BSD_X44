@@ -133,10 +133,12 @@ struct art_node_head {
 	unsigned int art_limit;			/* max prefixlen */
 };
 
-void	 rn_art_init(void);
-int	 	 rn_art_inithead(void **, int);
-void	 rn_art_setlimit(struct radix_node_head *, unsigned int);
-void	 rtable_art_init(int, int); /* sets rnh_addrsize */
+void
+	 rn_art_init(void),
+	 rn_art_setlimit(struct radix_node_head *, unsigned int),
+	 rtable_art_init(int, int); /* sets rnh_addrsize */
+
+int	 rn_art_inithead(void **, int);
 
 struct radix_node
 	 *rn_art_addroute(void *, void *, struct radix_node_head *, struct radix_node [2]),
@@ -144,7 +146,5 @@ struct radix_node
 	 *rn_art_insert(void *, struct radix_node_head *, int *, struct radix_node [2]),
 	 *rn_art_lookup(void *, void *, struct radix_node_head *),
 	 *rn_art_match(void *, struct radix_node_head *);
-
 #endif
-
 #endif /* _NET_RADIX_ART_H_ */
