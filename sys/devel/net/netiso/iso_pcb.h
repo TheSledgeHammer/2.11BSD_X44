@@ -63,23 +63,18 @@ SOFTWARE.
 
 #include <net/route.h>
 
-//#include <netiso/iso_pcb_hdr.h>
-
 #define	MAXX25CRUDLEN	16	/* 16 bytes of call request user data */
 
 /*
  * Common structure pcb for argo protocol implementation.
  */
-
-struct route_iso {
-	struct rtentry 		*ro_rt;
-	struct sockaddr_iso ro_dst;
-};
-
 struct isopcb {
-	struct isopcb  		*isop_next;			/* pointers to other pcb's */
-	struct isopcb  		*isop_prev;
-	struct isopcb  		*isop_head;			/* pointer back to chain of pcbs for this protocol */
+	CIRCLEQ_ENTRY(isopcb) isop_queue;
+	LIST_ENTRY(isopcb) 	isop_hash;
+	struct isopcbtable	*isop_table;
+	//struct isopcb  		*isop_next;			/* pointers to other pcb's */
+	//struct isopcb  		*isop_prev;
+	//struct isopcb  		*isop_head;			/* pointer back to chain of pcbs for this protocol */
 	struct socket  		*isop_socket;		/* back pointer to socket */
 	struct sockaddr_iso *isop_laddr;
 	struct sockaddr_iso *isop_faddr;
@@ -98,7 +93,20 @@ struct isopcb {
 	struct mbuf    		*isop_mfaddr;		/* dynamically allocated faddr */
 	struct sockaddr_iso isop_sladdr;		/* preallocated laddr */
 	struct sockaddr_iso isop_sfaddr;		/* preallocated faddr */
-	struct isopcbtable	*isop_table;
+};
+
+LIST_HEAD(isopcbhead, isopcb);
+CIRCLEQ_HEAD(isopcbqueue, isopcb);
+
+struct isopcbtable {
+	struct isopcbqueue 	isopt_queue;
+	struct isopcbtable 	*isopt_hashtbl;
+	u_long	  			isopt_hash;
+};
+
+struct route_iso {
+	struct rtentry 		*ro_rt;
+	struct sockaddr_iso ro_dst;
 };
 
 #ifdef sotorawcb
@@ -123,8 +131,6 @@ struct isopcbtable;
 struct isopcb;
 struct mbuf;
 struct sockaddr_iso;
-
-
 #endif
 
 #endif /* !_NETISO_ISO_PCB_H_ */

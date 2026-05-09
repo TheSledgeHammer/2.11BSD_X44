@@ -1,3 +1,5 @@
+/*	$NetBSD: tp_param.h,v 1.14 2003/08/11 15:17:30 itojun Exp $	*/
+
 /*-
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_user.h	8.1 (Berkeley) 6/10/93
+ *	@(#)tp_param.h	8.1 (Berkeley) 6/10/93
  */
 
 /***********************************************************
@@ -59,91 +57,52 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
+#ifndef _NETISO_TP_ISO_H_
+#define _NETISO_TP_ISO_H_
+
+/******************************************************
+ * Some fundamental data types
+ *****************************************************/
+
+#define		TP_LOCAL		22
+#define		TP_FOREIGN		33
+
+#ifndef 	EOK
+#define 	EOK 			0
+#endif				/* EOK */
+
+#define 	TP_CLASS_0 		(1<<0)
+#define 	TP_CLASS_1 		(1<<1)
+#define 	TP_CLASS_2 		(1<<2)
+#define 	TP_CLASS_3 		(1<<3)
+#define 	TP_CLASS_4 		(1<<4)
+
+#define 	TP_FORCE 		0x1
+#define 	TP_STRICT 		0x2
+
 /*
- * ARGO TP
- *
- * $Header: tp_user.h,v 5.2 88/11/04 15:44:44 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_user.h,v $
- *
- * These are the values a real-live user ;-) needs.
+ * These sockopt level definitions should be considered for socket.h
  */
+#define	SOL_TRANSPORT		0xfffe
+#define	SOL_NETWORK			0xfffd
 
-#ifndef __TP_USER_H__
-#define __TP_USER_H__
+#ifdef _KERNEL
+struct isopcb;
+struct mbuf;
+struct sockaddr;
 
-#include  <sys/types.h>
-
-struct tpi_conn_param {
-	/* PER CONNECTION parameters */
-	short	p_Nretrans;
-	short	p_dr_ticks;
-
-	short	p_cc_ticks;
-	short	p_dt_ticks;
-
-	short	p_x_ticks;
-	short	p_cr_ticks;
-
-	short	p_keepalive_ticks;
-	short	p_sendack_ticks;
-
-	short	p_ref_ticks;
-	short	p_inact_ticks;
-
-	short	p_ptpdusize;			/* preferred tpdusize/128 */
-	short	p_winsize;
-
-	u_char	p_tpdusize; 			/* log 2 of size */
-
-	u_char	p_ack_strat;			/* see comments in tp_pcb.h */
-	u_char	p_rx_strat;				/* see comments in tp_pcb.h */
-	u_char	p_class;	 			/* class bitmask */
-	u_char	p_xtd_format;
-	u_char	p_xpd_service;
-	u_char	p_use_checksum;
-	u_char	p_use_nxpd; 			/* netwk expedited data: not implemented */
-	u_char	p_use_rcc;				/* receipt confirmation: not implemented */
-	u_char	p_use_efc;				/* explicit flow control: not implemented */
-	u_char	p_no_disc_indications;	/* don't deliver indic on disc */
-	u_char	p_dont_change_params;	/* use these params as they are */
-	u_char	p_netservice;
-	u_char	p_version;				/* only here for checking */
-};
-
-/* read only flags */
-#define TPFLAG_NLQOS_PDN		(u_char)0x01
-#define TPFLAG_PEER_ON_SAMENET	(u_char)0x02
-#define TPFLAG_GENERAL_ADDR		(u_char)0x04 /* bound to wildcard addr */
-
-struct tpi_conn_param tpi_conn_param[] = {
-		{
-				.p_Nretrans = 0,
-				.p_dr_ticks = 0,
-				.p_cc_ticks = 0,
-				.p_dt_ticks = 0,
-				.p_x_ticks = 0,
-				.p_cr_ticks = 0,
-				.p_keepalive_ticks = 0,
-				.p_sendack_ticks = 0,
-				.p_ref_ticks = 0,
-				.p_inact_ticks = 0,
-				.p_ptpdusize = 0,
-				.p_winsize = 0,
-				.p_tpdusize = 0,
-				.p_ack_strat = 0,
-				.p_rx_strat = 0,
-				.p_class = 0,
-				.p_xtd_format = 0,
-				.p_xpd_service = 0,
-				.p_use_checksum = 0,
-				.p_use_nxpd = 0,
-				.p_use_rcc = 0,
-				.p_use_efc = 0,
-				.p_no_disc_indications = 0,
-				.p_dont_change_params = 0,
-				.p_netservice = 0,
-				.p_version = 0,
-		},
-};
-
-#endif /* __TP_USER_H__ */
+/* tp_iso.c */
+void	iso_sapattach(struct tp_xsap_router *);
+void	iso_sapdetach(struct tp_xsap_router *);
+void 	iso_getsufx(void *, u_short *, caddr_t, int);
+void 	iso_putsufx(void *, caddr_t, int, int);
+void 	iso_getsufx(void *, u_short *, caddr_t, int);
+void 	iso_putsufx(void *, caddr_t, int, int);
+void 	iso_recycle_tsuffix(void *);
+void 	iso_putnetaddr(void *, struct sockaddr *, int);
+int 	iso_cmpnetaddr(void *, struct sockaddr *, int);
+void 	iso_getnetaddr(void *, struct mbuf *, int);
+void 	iso_rtchange(struct isopcb *);
+#endif
+#endif /* _NETISO_TP_ISO_H_ */

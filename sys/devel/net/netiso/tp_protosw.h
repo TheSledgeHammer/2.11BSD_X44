@@ -70,12 +70,13 @@ SOFTWARE.
  * and a bunch of #define values that are used in the tpcb.
  */
 
-#ifndef _NETTPI_TPI_PROTOSW_H_
-#define _NETTPI_TPI_PROTOSW_H_
+#ifndef _NETISO_TP_PROTOSW_H_
+#define _NETISO_TP_PROTOSW_H_
 
 struct tp_protosw {
 	int		tp_afamily;												/* address family */
-	//void 	(*tp_init)();
+	void	(*tp_xsapattach)(void *);								/* attach sap layer services */
+	void	(*tp_xsapdetach)(void *);								/* detach sap layer services */
 	void	(*tp_putnetaddr)(void *, struct sockaddr *, int);		/* puts addresses in tp pcb */
 	void	(*tp_getnetaddr)(void *, struct mbuf *, int);			/* gets addresses from tp pcb */
 	int		(*tp_cmpnetaddr)(void *, struct sockaddr *, int);		/* compares address in pcb with sockaddr */
@@ -83,7 +84,7 @@ struct tp_protosw {
 	int		(*tp_getsufx)(void *, u_short *, caddr_t, int);			/* gets transport suffixes from tp pcb */
 	int		(*tp_recycle_suffix)(void *);							/* clears suffix from tp pcb */
 	int		(*tp_mtu)(void *);										/* figures out mtu based on tp used */
-	int		(*tp_pcbbind)(void *);									/* bind to pcb for net level */
+	int		(*tp_pcbbind)(void *, struct mbuf *);					/* bind to pcb for net level */
 	int		(*tp_pcbconnect)(void *, struct mbuf *);				/* connect for net level */
 	void	(*tp_pcbdisconnect)(void *);							/* disconnect net level */
 	int 	(*tp_pcbattach)(struct socket *, int);					/* attach net level pcb */
@@ -105,5 +106,7 @@ extern struct tp_protosw tpns_protosw;
 extern struct tp_protosw tpx25_protosw;
 
 void tp_protosw_init(void);
+void tp_xsap_attach(struct tp_xsap_router *, int);
+void tp_xsap_detach(struct tp_xsap_router *, int);
 
-#endif /* _NETTPI_TPI_PROTOSW_H_ */
+#endif /* _NETISO_TP_PROTOSW_H_ */

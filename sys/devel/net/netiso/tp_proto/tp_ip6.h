@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_user.h	8.1 (Berkeley) 6/10/93
+ *	@(#)tp_ip.h	8.1 (Berkeley) 6/10/93
  */
 
 /***********************************************************
@@ -62,88 +62,46 @@ SOFTWARE.
 /*
  * ARGO TP
  *
- * $Header: tp_user.h,v 5.2 88/11/04 15:44:44 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_user.h,v $
+ * $Header: tp_ip.h,v 5.1 88/10/12 12:19:47 root Exp $
+ * $Source: /usr/argo/sys/netiso/RCS/tp_ip.h,v $
  *
- * These are the values a real-live user ;-) needs.
+ * internet IP6-dependent structures and include files
+ *
  */
+#ifndef _NETISO_TP_IP6_H_
+#define _NETISO_TP_IP6_H_
 
-#ifndef __TP_USER_H__
-#define __TP_USER_H__
+#ifndef SOCK_STREAM
+#include <sys/socket.h>
+#endif
 
-#include  <sys/types.h>
+#include <net/route.h>
 
-struct tpi_conn_param {
-	/* PER CONNECTION parameters */
-	short	p_Nretrans;
-	short	p_dr_ticks;
+#include <netinet6/in6.h>
+#include <netinet6/in6_pcb.h>
+#include <netinet6/ip6_var.h>
 
-	short	p_cc_ticks;
-	short	p_dt_ticks;
+struct in6pcb tp_in6pcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
 
-	short	p_x_ticks;
-	short	p_cr_ticks;
+void in6_sapattach(struct tp_xsap_router *);
+void in6_sapdetach(struct tp_xsap_router *);
+void in6_getsufx(void *, u_short *, caddr_t, int);
+void in6_putsufx(void *, caddr_t, int, int);
+void in6_recycle_tsuffix(void *);
+void in6_putnetaddr(void *, struct sockaddr *, int);
+int in6_cmpnetaddr(void *, struct sockaddr *, int);
+void in6_getnetaddr(void *, struct mbuf *, int);
 
-	short	p_keepalive_ticks;
-	short	p_sendack_ticks;
+int tpip6_mtu(struct tpipcb *);
+int tpip6_output(void *, struct mbuf *, int, int);
+int tpip6_output_dg(void *, void *, struct mbuf *, int, void *, int);
+int tpip6_output_sc(struct mbuf *m0, ...);
+int tpip6_input(struct mbuf *, int);
+void tpip6_quench(struct in6pcb *, int);
+void tpip6_abort(struct in6pcb *, int);
+void *tpip6_ctlinput(int, struct sockaddr *, void *);
 
-	short	p_ref_ticks;
-	short	p_inact_ticks;
+void tpin6_quench(struct in6pcb *);
+void tpin6_abort(struct in6pcb *);
 
-	short	p_ptpdusize;			/* preferred tpdusize/128 */
-	short	p_winsize;
-
-	u_char	p_tpdusize; 			/* log 2 of size */
-
-	u_char	p_ack_strat;			/* see comments in tp_pcb.h */
-	u_char	p_rx_strat;				/* see comments in tp_pcb.h */
-	u_char	p_class;	 			/* class bitmask */
-	u_char	p_xtd_format;
-	u_char	p_xpd_service;
-	u_char	p_use_checksum;
-	u_char	p_use_nxpd; 			/* netwk expedited data: not implemented */
-	u_char	p_use_rcc;				/* receipt confirmation: not implemented */
-	u_char	p_use_efc;				/* explicit flow control: not implemented */
-	u_char	p_no_disc_indications;	/* don't deliver indic on disc */
-	u_char	p_dont_change_params;	/* use these params as they are */
-	u_char	p_netservice;
-	u_char	p_version;				/* only here for checking */
-};
-
-/* read only flags */
-#define TPFLAG_NLQOS_PDN		(u_char)0x01
-#define TPFLAG_PEER_ON_SAMENET	(u_char)0x02
-#define TPFLAG_GENERAL_ADDR		(u_char)0x04 /* bound to wildcard addr */
-
-struct tpi_conn_param tpi_conn_param[] = {
-		{
-				.p_Nretrans = 0,
-				.p_dr_ticks = 0,
-				.p_cc_ticks = 0,
-				.p_dt_ticks = 0,
-				.p_x_ticks = 0,
-				.p_cr_ticks = 0,
-				.p_keepalive_ticks = 0,
-				.p_sendack_ticks = 0,
-				.p_ref_ticks = 0,
-				.p_inact_ticks = 0,
-				.p_ptpdusize = 0,
-				.p_winsize = 0,
-				.p_tpdusize = 0,
-				.p_ack_strat = 0,
-				.p_rx_strat = 0,
-				.p_class = 0,
-				.p_xtd_format = 0,
-				.p_xpd_service = 0,
-				.p_use_checksum = 0,
-				.p_use_nxpd = 0,
-				.p_use_rcc = 0,
-				.p_use_efc = 0,
-				.p_no_disc_indications = 0,
-				.p_dont_change_params = 0,
-				.p_netservice = 0,
-				.p_version = 0,
-		},
-};
-
-#endif /* __TP_USER_H__ */
+#endif /* _NETISO_TP_IP6_H_ */

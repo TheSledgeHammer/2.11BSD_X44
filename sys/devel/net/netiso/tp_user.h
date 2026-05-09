@@ -68,8 +68,8 @@ SOFTWARE.
  * These are the values a real-live user ;-) needs.
  */
 
-#ifndef __TP_USER_H__
-#define __TP_USER_H__
+#ifndef _NETISO_TP_USER_H__
+#define _NETISO_TP_USER_H__
 
 #include  <sys/types.h>
 
@@ -146,4 +146,4 @@ struct tpi_conn_param tpi_conn_param[] = {
 		},
 };
 
-#endif /* __TP_USER_H__ */
+#endif /* _NETISO_TP_USER_H__ */

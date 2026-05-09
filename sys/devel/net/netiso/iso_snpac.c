@@ -63,7 +63,7 @@ __KERNEL_RCSID(0, "$NetBSD: iso_snpac.c,v 1.30 2003/10/30 01:43:10 simonb Exp $"
 
 #include "opt_iso.h"
 
-#ifdef ISO
+//#ifdef ISO
 
 #include <sys/param.h>
 #include <sys/systm.h>

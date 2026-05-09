@@ -128,15 +128,15 @@ struct snpa_hdr {
 
 #ifdef _KERNEL
 TAILQ_HEAD(iso_ifaddrhead, iso_ifaddr);
-extern struct iso_ifaddrhead iso_ifaddr; /* linked list of iso address ifaces */
-struct ifqueue 		clnlintrq;		/* clnl packet input queue */
+extern struct iso_ifaddrhead iso_ifaddr; 	/* linked list of iso address ifaces */
+struct ifqueue  clnlintrq;					/* clnl packet input queue */
 
 int iso_control(struct socket *, u_long, caddr_t, struct ifnet *, struct proc *);
 void iso_purgeaddr(struct ifaddr *, struct ifnet *);
 void iso_purgeif(struct ifnet *);
 void iso_ifscrub(struct ifnet *, struct iso_ifaddr *);
 int iso_ifinit(struct ifnet *, struct iso_ifaddr *, struct sockaddr_iso *, int );
-struct iso_ifaddr	*iso_localifa(struct sockaddr_iso *);
+struct iso_ifaddr *iso_localifa(struct sockaddr_iso *);
 
 #endif /* _KERNEL */
 #endif /* _NETISO_ISO_VAR_H_ */

@@ -59,7 +59,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-#ifdef TP_PERF_MEAS
+#ifdef _NETISO_TP_PERF_MEAS_
 #define tpmeas(a, b, t, c, d, e) \
 	Tpmeas((u_int)(a), (u_int)(b), t, (u_int)(c), (u_int)(d), (u_int)(e))
 
@@ -91,4 +91,4 @@ extern struct tp_Meas tp_Meas[];
 #define TPtime_open_X		0x28 /* xtd format */
 #define TPtime_close		0x09
 
-#endif /* TP_PERF_MEAS
+#endif /* _NETISO_TP_PERF_MEAS_

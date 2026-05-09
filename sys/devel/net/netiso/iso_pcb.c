@@ -60,31 +60,34 @@ SOFTWARE.
 /*
  * Iso address family net-layer(s) pcb stuff. NEH 1/29/87
  */
-
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: iso_pcb.c,v 1.25 2003/10/30 01:43:10 simonb Exp $");
 
 #include "opt_iso.h"
 
-//#ifdef ISO
+#ifdef ISO
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/malloc.h>
 #include <sys/mbuf.h>
+#include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/errno.h>
 #include <sys/proc.h>
+#include <sys/queue.h>
+
+#include <net/if.h>
+#include <net/route.h>
+
+#include <netinet/in_systm.h>
 
 #include <netiso/argo_debug.h>
 #include <netiso/iso.h>
 #include <netiso/clnp.h>
-#include <netinet/in_systm.h>
-#include <net/if.h>
-#include <net/route.h>
 #include <netiso/iso_pcb.h>
 #include <netiso/iso_var.h>
-#include <sys/protosw.h>
 
 #ifdef TPCONS
 #include <netccitt/x25.h>
@@ -93,13 +96,26 @@ __KERNEL_RCSID(0, "$NetBSD: iso_pcb.c,v 1.25 2003/10/30 01:43:10 simonb Exp $");
 #include <netccitt/pk_extern.h>
 #endif
 
-struct iso_addr zeroiso_addr = {
-	0
-};
+struct iso_addr zeroiso_addr;
 
 #ifdef ARGO_DEBUG
 unsigned char   argo_debug[128];
 #endif
+
+#define ISOPCBHASH(table, laddr, faddr)	\
+	(&(table)->isopt_hashtbl[(ntohl(TSEL((laddr))) + ntohl(TSEL((faddr))))])
+
+static struct isopcb *iso_pcbhashlookup(struct isopcbtable *, struct sockaddr_iso *, caddr_t, int, struct sockaddr_iso *, int);
+static void iso_pcbrehash(struct isopcbhead *, struct isopcb *);
+static void iso_pcbinsert(struct isopcbtable *, struct isopcb *);
+static void iso_pcbremove(struct isopcb *);
+
+void
+iso_pcbinit(struct isopcbtable *table, int hashsize)
+{
+	CIRCLEQ_INIT(&table->isopt_queue);
+	table->isopt_hashtbl = hashinit(hashsize, M_PCB, &table->isopt_hash);
+}
 
 /*
  * FUNCTION:		iso_pcballoc
@@ -111,29 +127,21 @@ unsigned char   argo_debug[128];
  * RETURNS:		0 if OK, ENOBUFS if can't alloc the necessary mbuf
  */
 int
-iso_pcballoc(so, v)
-	struct socket  *so;
-	void *v;
+iso_pcballoc(struct socket *so, void *v)
 {
-	struct isopcb  *head = v;
+	struct isopcbtable *table = v;
 	struct isopcb *isop;
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_ISO]) {
-		printf("iso_pcballoc(so %p)\n", so);
-	}
-#endif
 	MALLOC(isop, struct isopcb *, sizeof(*isop), M_PCB, M_NOWAIT);
-	if (isop == NULL) {
+	if (isop == NULL)
 		return ENOBUFS;
-	}
 	bzero(isop, sizeof(*isop));
-	isop->isop_head = head;
+	isop->isop_table = table;
 	isop->isop_socket = so;
-	insque(isop, head);
-	if (so)
-		so->so_pcb = isop;
-	return 0;
+	so->so_pcb = isop;
+	CIRCLEQ_INSERT_HEAD(&table->isopt_queue, isop, isop_queue);
+	iso_pcbinsert(table, isop);
+	return (0);
 }
 
 /*
@@ -154,19 +162,16 @@ iso_pcballoc(so, v)
  * NOTES:
  */
 int
-iso_pcbbind(v, nam, p)
-	void *v;
-	struct mbuf *nam;
-	struct proc *p;
+iso_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 {
 	struct isopcb *isop = v;
-	struct isopcb *head = isop->isop_head;
+	struct isopcbtable *table = isop->isop_table;
+	struct socket *so = isop->isop_socket;
 	struct sockaddr_iso *siso;
 	struct iso_ifaddr *ia;
-
 	union {
-		char            data[2];
-		u_short         s;
+		char  data[2];
+		u_short s;
 	} suf;
 
 #ifdef ARGO_DEBUG
@@ -175,11 +180,11 @@ iso_pcbbind(v, nam, p)
 	}
 #endif
 	suf.s = 0;
-	if (TAILQ_FIRST(iso_ifaddr) == 0)	/* any interfaces attached? */
+	if (TAILQ_FIRST(iso_ifaddr) == 0) /* any interfaces attached? */
 		return EADDRNOTAVAIL;
-	if (isop->isop_laddr)	/* already bound */
+	if (isop->isop_laddr) /* already bound */
 		return EADDRINUSE;
-	if (nam == (struct mbuf *) 0) {
+	if (nam == (struct mbuf*) 0) {
 		isop->isop_laddr = &isop->isop_sladdr;
 		isop->isop_sladdr.siso_len = sizeof(struct sockaddr_iso);
 		isop->isop_sladdr.siso_family = AF_ISO;
@@ -189,7 +194,7 @@ iso_pcbbind(v, nam, p)
 		isop->isop_sladdr.siso_plen = 0;
 		goto noname;
 	}
-	siso = mtod(nam, struct sockaddr_iso *);
+	siso = mtod(nam, struct sockaddr_iso*);
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_ISO]) {
 		printf("iso_pcbbind(name len 0x%x)\n", nam->m_len);
@@ -215,7 +220,8 @@ iso_pcbbind(v, nam, p)
 			printf("iso_pcbbind: bind to NOT zeroisoaddr\n");
 		}
 #endif
-		for (ia = TAILQ_FIRST(iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list))
+		for (ia = TAILQ_FIRST(iso_ifaddr); ia != 0;
+				ia = TAILQ_NEXT(ia, ia_list))
 			if (SAME_ISOIFADDR(siso, &ia->ia_addr))
 				break;
 		if (ia == 0)
@@ -227,13 +233,14 @@ iso_pcbbind(v, nam, p)
 		if ((nam = m_copy(nam, 0, (int) M_COPYALL)) == 0)
 			return ENOBUFS;
 		isop->isop_mladdr = nam;
-		isop->isop_laddr = mtod(nam, struct sockaddr_iso *);
+		isop->isop_laddr = mtod(nam, struct sockaddr_iso*);
 	}
 	bcopy((caddr_t) siso, (caddr_t) isop->isop_laddr, siso->siso_len);
 	if (siso->siso_tlen == 0)
 		goto noname;
 	if ((isop->isop_socket->so_options & SO_REUSEADDR) == 0
-			&& iso_pcblookup(head, 0, (caddr_t) 0, isop->isop_laddr))
+			&& iso_pcblookup(table, isop->isop_faddr, (caddr_t) 0, 0,
+					isop->isop_laddr))
 		return EADDRINUSE;
 	if (siso->siso_tlen <= 2) {
 		bcopy(TSEL(siso), suf.data, sizeof(suf.data));
@@ -242,7 +249,7 @@ iso_pcbbind(v, nam, p)
 				&& (p == 0 || suser(p->p_ucred, &p->p_acflag)))
 			return EACCES;
 	} else {
-		char  *cp;
+		char *cp;
 noname:
 		cp = TSEL(isop->isop_laddr);
 		isop->isop_laddr->siso_tlen = 2;
@@ -252,21 +259,24 @@ noname:
 		}
 #endif
 		do {
-			if (head->isop_lport++ < ISO_PORT_RESERVED
-					|| head->isop_lport > ISO_PORT_USERRESERVED)
-				head->isop_lport = ISO_PORT_RESERVED;
-			suf.s = htons(head->isop_lport);
+			if (isop->isop_lport++ < ISO_PORT_RESERVED || isop->isop_lport > ISO_PORT_USERRESERVED) {
+				isop->isop_lport = ISO_PORT_RESERVED;
+			}
+			suf.s = htons(isop->isop_lport);
 			cp[0] = suf.data[0];
 			cp[1] = suf.data[1];
-		} while (iso_pcblookup(head, 0, (caddr_t) 0, isop->isop_laddr));
+		} while (iso_pcblookup(table, isop->isop_faddr, (caddr_t)0, 0, isop->isop_laddr));
 	}
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_ISO]) {
 		printf("iso_pcbbind returns 0, suf 0x%x\n", suf.s);
 	}
 #endif
+	iso_pcbremove(isop);
+	iso_pcbinsert(table, isop);
 	return 0;
 }
+
 /*
  * FUNCTION:		iso_pcbconnect
  *
@@ -289,14 +299,12 @@ noname:
  * NOTES:
  */
 int
-iso_pcbconnect(v, nam)
-	void *v;
-	struct mbuf    *nam;
+iso_pcbconnect(void *v, struct mbuf *nam)
 {
 	struct isopcb *isop = v;
+	struct iso_ifaddr *ia = NULL;
 	struct sockaddr_iso *siso = mtod(nam, struct sockaddr_iso *);
-	int             local_zero, error = 0;
-	struct iso_ifaddr *ia;
+	int local_zero, error = 0;
 
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_ISO]) {
@@ -315,11 +323,12 @@ iso_pcbconnect(v, nam)
 			int nlen = ia->ia_addr.siso_nlen;
 			memmove(nlen + TSEL(siso), TSEL(siso),
 					siso->siso_plen + siso->siso_tlen + siso->siso_slen);
-			bcopy((caddr_t) & ia->ia_addr.siso_addr,
-					(caddr_t) & siso->siso_addr, nlen + 1);
+			bcopy((caddr_t) &ia->ia_addr.siso_addr, (caddr_t) &siso->siso_addr,
+					nlen + 1);
 			/* includes siso->siso_nlen = nlen; */
-		} else
+		} else {
 			return EADDRNOTAVAIL;
+		}
 	}
 	/*
 	 * Local zero means either not bound, or bound to a TSEL, but no
@@ -360,11 +369,11 @@ iso_pcbconnect(v, nam)
 	}
 #endif
 	if (local_zero) {
-		int nlen, tlen, totlen;
+		int nlen, tlen, totlen, off;
 		caddr_t oldtsel, newtsel;
 		siso = isop->isop_laddr;
 		if (siso == 0 || siso->siso_tlen == 0)
-			(void) iso_pcbbind(isop, (struct mbuf*) 0, (struct proc*) 0);
+			(void) iso_pcbbind(isop, (struct mbuf *)0, (struct proc *)0);
 		/*
 		 * Here we have problem of squezeing in a definite network address
 		 * into an existing sockaddr_iso, which in fact may not have room
@@ -374,7 +383,8 @@ iso_pcbconnect(v, nam)
 		oldtsel = TSEL(siso);
 		tlen = siso->siso_tlen;
 		nlen = ia->ia_addr.siso_nlen;
-		totlen = tlen + nlen + offsetof(struct sockaddr_iso, siso_data[0]);
+		off = offsetof(struct sockaddr_iso, siso_data[0]);
+		totlen = tlen + nlen + off;
 		if ((siso == &isop->isop_sladdr)
 				&& (totlen > sizeof(isop->isop_sladdr))) {
 			struct mbuf *m = m_get(M_DONTWAIT, MT_SONAME);
@@ -421,8 +431,8 @@ iso_pcbconnect(v, nam)
 	bcopy((caddr_t) siso, (caddr_t) isop->isop_faddr, siso->siso_len);
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_ISO]) {
-		printf("in iso_pcbconnect after bcopy isop %p isop->sock %p\n",
-		    isop, isop->isop_socket);
+		printf("in iso_pcbconnect after bcopy isop %p isop->sock %p\n", isop,
+				isop->isop_socket);
 		printf("iso_pcbconnect connected to addr:\n");
 		dump_isoaddr(isop->isop_faddr);
 		printf("iso_pcbconnect end: src addr:\n");
@@ -447,8 +457,7 @@ iso_pcbconnect(v, nam)
  * NOTES:
  */
 void
-iso_pcbdisconnect(v)
-	void *v;
+iso_pcbdisconnect(void *v)
 {
 	struct isopcb  *isop = v;
 	struct sockaddr_iso *siso;
@@ -458,6 +467,7 @@ iso_pcbdisconnect(v)
 		printf("iso_pcbdisconnect(isop %p)\n", isop);
 	}
 #endif
+
 	/*
 	 * Preserver binding infnormation if already bound.
 	 */
@@ -487,8 +497,7 @@ iso_pcbdisconnect(v)
  * NOTES:
  */
 void
-iso_pcbdetach(v)
-	void *v;
+iso_pcbdetach(void *v)
 {
 	struct isopcb  *isop = v;
 	struct socket  *so = isop->isop_socket;
@@ -501,7 +510,7 @@ iso_pcbdetach(v)
 #endif
 #ifdef TPCONS
 	if (isop->isop_chan) {
-		struct pklcd *lcp = (struct pklcd *) isop->isop_chan;
+		struct pklcd *lcp = (struct pklcd*) isop->isop_chan;
 		if (--isop->isop_refcnt > 0)
 			return;
 		if (lcp && lcp->lcd_state == DATA_TRANSFER) {
@@ -513,7 +522,7 @@ iso_pcbdetach(v)
 	}
 #endif
 	if (so) { /* in the x.25 domain, we sometimes have no socket */
-		so->so_pcb = 0;
+		so->so_pcb = NULL;
 		sofree(so);
 	}
 #ifdef ARGO_DEBUG
@@ -536,12 +545,11 @@ iso_pcbdetach(v)
 	}
 #endif
 	if (isop->isop_clnpcache != NULL) {
-		struct clnp_cache *clcp =
-		mtod(isop->isop_clnpcache, struct clnp_cache *);
+		struct clnp_cache *clcp = mtod(isop->isop_clnpcache, struct clnp_cache*);
 #ifdef ARGO_DEBUG
 		if (argo_debug[D_ISO]) {
-			printf("iso_pcbdetach 3.2: clcp %p freeing clc_hdr %p\n",
-			    clcp, clcp->clc_hdr);
+			printf("iso_pcbdetach 3.2: clcp %p freeing clc_hdr %p\n", clcp,
+					clcp->clc_hdr);
 		}
 #endif
 		if (clcp->clc_hdr != NULL)
@@ -549,7 +557,7 @@ iso_pcbdetach(v)
 #ifdef ARGO_DEBUG
 		if (argo_debug[D_ISO]) {
 			printf("iso_pcbdetach 3.3: freeing cache %p\n",
-			    isop->isop_clnpcache);
+					isop->isop_clnpcache);
 		}
 #endif
 		m_free(isop->isop_clnpcache);
@@ -559,7 +567,8 @@ iso_pcbdetach(v)
 		printf("iso_pcbdetach 4 \n");
 	}
 #endif
-	remque(isop);
+	iso_pcbremove(isop);
+	CIRCLEQ_REMOVE(&isop->isop_table->isopt_queue, isop, isop_queue);
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_ISO]) {
 		printf("iso_pcbdetach 5 \n");
@@ -569,7 +578,6 @@ iso_pcbdetach(v)
 		m_freem(isop->isop_mladdr);
 	free((caddr_t) isop, M_PCB);
 }
-
 
 /*
  * FUNCTION:		iso_pcbnotify
@@ -585,39 +593,52 @@ iso_pcbdetach(v)
  * NOTES:		(notify) is called at splnet!
  */
 void
-iso_pcbnotify(head, siso, errno, notify)
-	struct isopcb  *head;
-	struct sockaddr_iso *siso;
-	int             errno;
-	void (*notify)(struct isopcb *);
+iso_pcbnotify(struct isopcbtable *table, struct sockaddr_iso *faddr, struct sockaddr_iso *laddr, int errno, void (*notify)(struct isopcb *, int))
 {
-	struct isopcb *isop;
-	int             s = splnet();
+	struct isopcbhead *head;
+	struct isopcb *isop, *nisop;
+	int  s = splnet();
 
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_ISO]) {
-		printf("iso_pcbnotify(head %p, notify %p) dst:\n",
-			head, notify);
+		printf("iso_pcbnotify(table %p, notify %p) dst:\n", table, notify);
 	}
 #endif
-	for (isop = head->isop_next; isop != head; isop = isop->isop_next) {
-		if (isop->isop_socket == 0 || isop->isop_faddr == 0 ||
-		    !SAME_ISOADDR(siso, isop->isop_faddr)) {
+	head = ISOPCBHASH(table, faddr, laddr);
+	for (isop = (struct isopcb *)LIST_FIRST(head); isop != NULL; isop = nisop) {
+		nisop = (struct isopcb *)LIST_NEXT(isop, isop_hash);
+		if (isop->isop_socket == 0) {
+			if (isop->isop_faddr == 0 || !SAME_ISOADDR(faddr, isop->isop_faddr) ) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_ISO]) {
-				printf("iso_pcbnotify: CONTINUE isop %p, sock %p\n",
-				    isop, isop->isop_socket);
-				printf("addrmatch cmp'd with (%p):\n",
-					isop->isop_faddr);
-				dump_isoaddr(isop->isop_faddr);
-			}
+				if (argo_debug[D_ISO]) {
+					printf("iso_pcbnotify: CONTINUE isop %p, sock %p\n",
+					    isop, isop->isop_socket);
+					printf("addrmatch cmp'd with (%p):\n",
+						isop->isop_faddr);
+					dump_isoaddr(isop->isop_faddr);
+				}
 #endif
-			continue;
+				continue;
+			}
+			if (isop->isop_laddr == 0 || !SAME_ISOADDR(laddr, isop->isop_laddr)) {
+#ifdef ARGO_DEBUG
+				if (argo_debug[D_ISO]) {
+					printf("iso_pcbnotify: CONTINUE isop %p, sock %p\n",
+					    isop, isop->isop_socket);
+					printf("addrmatch cmp'd with (%p):\n",
+						isop->isop_laddr);
+					dump_isoaddr(isop->isop_laddr);
+				}
+#endif
+				continue;
+			}
 		}
-		if (errno)
+		if (errno) {
 			isop->isop_socket->so_error = errno;
-		if (notify)
-			(*notify) (isop);
+		}
+		if (notify) {
+			(*notify)(isop, errno);
+		}
 	}
 	splx(s);
 #ifdef ARGO_DEBUG
@@ -643,32 +664,50 @@ iso_pcbnotify(head, siso, errno, notify)
  * NOTES:
  */
 struct isopcb  *
-iso_pcblookup(head, fportlen, fport, laddr)
-	struct isopcb  *head;
-	struct sockaddr_iso *laddr;
-	caddr_t         fport;
-	int             fportlen;
+iso_pcblookup(struct isopcbtable *table, struct sockaddr_iso *faddr, caddr_t fport, int fportlen, struct sockaddr_iso *laddr)
 {
-	struct isopcb *isop;
-	caddr_t lp = TSEL(laddr);
-	unsigned int    llen = laddr->siso_tlen;
+	unsigned int flen = fportlen;
+	unsigned int llen = laddr->siso_tlen;
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_ISO]) {
-		printf("iso_pcblookup(head %p laddr %p fport %p)\n",
-		       head, laddr, fport);
-	}
-#endif
-	for (isop = head->isop_next; isop != head; isop = isop->isop_next) {
-		if (isop->isop_laddr == 0 || isop->isop_laddr == laddr)
+	return (iso_pcbhashlookup(table, faddr, fport, flen, laddr, llen));
+}
+
+static struct isopcb  *
+iso_pcbhashlookup(struct isopcbtable *table, struct sockaddr_iso *faddr, caddr_t fport, int fportlen, struct sockaddr_iso *laddr, int lportlen)
+{
+	struct isopcbhead *head;
+	struct isopcb *isop;
+	caddr_t fport_arg = fport;
+	caddr_t fp = TSEL(faddr);
+	caddr_t lp = TSEL(laddr);
+	unsigned int flen = fportlen;
+	unsigned int llen = lportlen;
+
+	head = ISOPCBHASH(table, laddr, faddr);
+	LIST_FOREACH(isop, head, isop_hash) {
+		if (isop->isop_faddr == 0) {
 			continue;
-		if (isop->isop_laddr->siso_tlen != llen)
+		}
+		if (isop->isop_laddr == 0) {
 			continue;
-		if (bcmp(lp, TSEL(isop->isop_laddr), llen))
+		}
+		if (isop->isop_faddr->siso_tlen != flen) {
 			continue;
-		if (fportlen && isop->isop_faddr &&
-		    bcmp(fport, TSEL(isop->isop_faddr), (unsigned) fportlen))
+		}
+		if (isop->isop_laddr->siso_tlen != llen) {
 			continue;
+		}
+		if (bcmp(fp, TSEL(isop->isop_faddr), flen)) {
+			continue;
+		}
+		if (bcmp(lp, TSEL(isop->isop_laddr), llen)) {
+			continue;
+		}
+		if (flen && isop->isop_faddr
+				&& bcmp(fport_arg, TSEL(isop->isop_faddr), (unsigned int)flen)) {
+			continue;
+		}
+
 		/*
 		 * PHASE2 addrmatch1 should be iso_addrmatch(a, b, mask)
 		 * where mask is taken from isop->isop_laddrmask (new field)
@@ -676,11 +715,40 @@ iso_pcblookup(head, fportlen, fport, laddr)
 		 * &zeroiso_addr && !iso_addrmatch1(laddr,
 		 * &(isop->isop_laddr.siso_addr))) continue;
 		 */
-		if (laddr->siso_nlen && (!SAME_ISOADDR(laddr, isop->isop_laddr)))
+		if (laddr->siso_nlen && (!SAME_ISOADDR(laddr, isop->isop_laddr))) {
 			continue;
-		return (isop);
+		}
+		goto out;
 	}
-	return (struct isopcb *) 0;
+	return (NULL);
+
+out:
+	iso_pcbrehash(head, isop);
+	return (isop);
+}
+
+static void
+iso_pcbrehash(struct isopcbhead *head, struct isopcb *isop)
+{
+	if (isop != LIST_FIRST(head)) {
+		LIST_REMOVE(isop, isop_hash);
+		LIST_INSERT_HEAD(head, isop, isop_hash);
+	}
+
+}
+static void
+iso_pcbinsert(struct isopcbtable *table, struct isopcb *isop)
+{
+	struct isopcbhead *head;
+
+	head = ISOPCBHASH(table, isop->isop_laddr, isop->isop_faddr);
+	LIST_INSERT_HEAD(head, isop, isop_hash);
+}
+
+static void
+iso_pcbremove(struct isopcb *isop)
+{
+	LIST_REMOVE(isop, isop_hash);
 }
 
 #endif /* ISO */

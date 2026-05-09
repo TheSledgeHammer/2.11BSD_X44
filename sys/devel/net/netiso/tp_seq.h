@@ -115,7 +115,6 @@ SOFTWARE.
 
 #define SEQ_ADD(tpcb, Seq, amt) (((Seq) + (unsigned)amt) & (tpcb)->tpp_seqmask)
 
-
 #define IN_RWINDOW(tpcb, seq, lwe, uwe)\
 	( SEQ_GEQ(tpcb, seq, lwe) && SEQ_LT(tpcb, seq, uwe) )
 

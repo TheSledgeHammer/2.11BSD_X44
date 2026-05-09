@@ -67,8 +67,8 @@ SOFTWARE.
  *
  */
 
-#ifndef __TP_PARAM__
-#define __TP_PARAM__
+#ifndef _NETISO_TP_PARAM_
+#define _NETISO_TP_PARAM_
 
 
 /******************************************************
@@ -364,4 +364,4 @@ extern int tp_rttadd, tp_rttdiv;
 #endif  /* tp_NSTATES  */
 #endif /* KERNEL */
 
-#endif /* __TP_PARAM__ */
+#endif /* _NETISO_TP_PARAM_ */

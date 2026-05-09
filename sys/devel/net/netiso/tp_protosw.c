@@ -35,6 +35,11 @@
 
 #include <netiso/tp_protosw.h>
 
+#include <netiso/tp_proto/tp_ip.h>
+#include <netiso/tp_proto/tp_ip6.h>
+#include <netiso/tp_proto/tp_iso.h>
+#include <netiso/tp_proto/tp_ns.h>
+
 struct tp_protosw tp_protosw[] = {
 		{
 				&tpin4_protosw
@@ -50,13 +55,65 @@ struct tp_protosw tp_protosw[] = {
 		},
 };
 
+struct tp_xsap_router tp_xsap_router;
 
+static void tp_protosw_attach(struct tp_xsap_router *);
+static void tp_protosw_detach(struct tp_xsap_router *);
+
+/* init function for the new attach and detach callback functions */
 void
 tp_protosw_init(void)
 {
-	int i;
+	int sid, af;
 
-	for (i = 0; i < (sizeof(tp_protosw)/sizeof(tp_protosw[0])); i++) {
-		(*tp_protosw[i].tp_init)();
+	for (sid = 0; sid < SAP_TABLE_MAX; sid++) {
+		af = sap_select_sid_to_af(sid);
+		if (af != 0) {
+			tp_protosw_attach(&tp_xsap_router);
+		} else {
+			tp_protosw_detach(&tp_xsap_router);
+		}
 	}
+}
+
+static void
+tp_protosw_attach(struct tp_xsap_router *router)
+{
+	int i;
+	int len;
+
+	len = (sizeof(tp_protosw)/sizeof(tp_protosw[0]));
+	for (i = 0; i < len; i++) {
+		(*tp_protosw[i].tp_xsap_attach)(router);
+	}
+}
+
+static void
+tp_protosw_detach(struct tp_xsap_router *router)
+{
+	int i;
+	int len;
+
+	len = (sizeof(tp_protosw)/sizeof(tp_protosw[0]));
+	for (i = 0; i < len; i++) {
+		(*tp_protosw[i].tp_xsap_detach)(router);
+	}
+}
+
+void
+tp_xsap_attach(struct tp_xsap_router *router, int af)
+{
+	nsap_attach(&router->txr_nsap, af);
+	tsap_attach(&router->txr_tsap, &router->txr_nsap, af);
+	ssap_attach(&router->txr_ssap, &router->txr_tsap, af);
+	psap_attach(&router->txr_psap, &router->txr_ssap, af);
+}
+
+void
+tp_xsap_detach(struct tp_xsap_router *router, int af)
+{
+	nsap_detach(&router->txr_nsap, af);
+	tsap_detach(&router->txr_tsap, &router->txr_nsap, af);
+	ssap_detach(&router->txr_ssap, &router->txr_tsap, af);
+	psap_detach(&router->txr_psap, &router->txr_ssap, af);
 }

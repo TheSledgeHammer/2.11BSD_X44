@@ -1,12 +1,6 @@
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This software was developed by the Computer Systems Engineering group
- * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
- * contributed to Berkeley.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,37 +25,43 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)tp_iso.c	8.2 (Berkeley) 9/22/94
  */
 
-#include <sys/cdefs.h>
+#ifndef _NETISO_TP_NS_H_
+#define _NETISO_TP_NS_H_
 
-#include "quad.h"
+#ifndef SOCK_STREAM
+#include <sys/socket.h>
+#endif
 
-/*
- * Divide two signed quads.
- */
-quad_t
-__divmoddi4(quad_t a, quad_t b, quad_t *rem)
-{
-	u_quad_t ua, ub, uq, urem;
-	int negq, negr;
+#include <net/route.h>
 
-	if (a < 0) {
-		ua = -(u_quad_t)a;
-		negq = 1;
-		negr = 1;
-	} else {
-		ua = a;
-		negq = 0;
-		negr = 0;
-	}
-	if (b < 0) {
-		ub = -(u_quad_t)b;
-		negq ^= 1;
-	} else
-		ub = b;
-	uq = __qdivrem(ua, ub, &urem);
-	if (rem != 0)
-		*rem = negr ? -urem : urem;
-	return (negq ? -uq : uq);
-}
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/ns_var.h>
+
+struct nspcb tp_nspcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
+
+void ns_sapattach(struct tp_xsap_router *);
+void ns_sapdetach(struct tp_xsap_router *);
+void ns_getsufx(void *, u_short *, caddr_t, int);
+void ns_putsufx(void *, caddr_t, int, int);
+void ns_recycle_tsuffix(void *);
+void ns_putnetaddr(void *, struct sockaddr *, int);
+int ns_cmpnetaddr(void *, struct sockaddr *, int);
+void ns_getnetaddr(void *, struct mbuf *, int);
+
+int tpidp_mtu(struct tpipcb *);
+int tpidp_output(void *, struct mbuf *, int, int);
+int tpidp_output_dg(void *, void *, struct mbuf *, int, void *, int);
+int tpidp_input(struct mbuf *, int);
+void tpidp_quench(struct nspcb *, int);
+void tpidp_abort(struct nspcb *, int);
+void *tpidp_ctlinput(int, struct sockaddr *, void *);
+
+void tpns_quench(struct nspcb *);
+void tpns_abort(struct nspcb *);
+
+#endif /* _NETISO_TP_NS_H_ */

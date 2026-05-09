@@ -54,14 +54,14 @@ tp_xsap_router_detach(struct tp_xsap_router *router, int af)
 }
 
 void
-tp_protosw_attach(struct tp_xsap_router *router, int af)
+tp_protosw_attach(struct tp_xsap_router *router)
 {
 	int i;
 	int len;
 
 	len = (sizeof(tp_protosw)/sizeof(tp_protosw[0]));
 	for (i = 0; i < len; i++) {
-		(*tp_protosw[i].tp_xsap_attach)(router, af);
+		(*tp_protosw[i].tp_xsap_attach)(router);
 	}
 }
 
@@ -73,7 +73,7 @@ tp_protosw_detach(struct tp_xsap_router *router, int af)
 
 	len = (sizeof(tp_protosw)/sizeof(tp_protosw[0]));
 	for (i = 0; i < len; i++) {
-		(*tp_protosw[i].tp_xsap_detach)(router, af);
+		(*tp_protosw[i].tp_xsap_detach)(router);
 	}
 }
 

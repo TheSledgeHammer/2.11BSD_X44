@@ -1,12 +1,6 @@
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This software was developed by the Computer Systems Engineering group
- * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
- * contributed to Berkeley.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,37 +25,32 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)tp_iso.c	8.2 (Berkeley) 9/22/94
  */
 
-#include <sys/cdefs.h>
+#include <sys/socket.h>
 
-#include "quad.h"
+#include <tpi_protosw.h>
 
-/*
- * Divide two signed quads.
- */
-quad_t
-__divmoddi4(quad_t a, quad_t b, quad_t *rem)
-{
-	u_quad_t ua, ub, uq, urem;
-	int negq, negr;
-
-	if (a < 0) {
-		ua = -(u_quad_t)a;
-		negq = 1;
-		negr = 1;
-	} else {
-		ua = a;
-		negq = 0;
-		negr = 0;
-	}
-	if (b < 0) {
-		ub = -(u_quad_t)b;
-		negq ^= 1;
-	} else
-		ub = b;
-	uq = __qdivrem(ua, ub, &urem);
-	if (rem != 0)
-		*rem = negr ? -urem : urem;
-	return (negq ? -uq : uq);
-}
+struct tpi_protosw tpx25_protosw = {
+ 	.tpi_afamily = AF_CCITT,
+ 	.tpi_putnetaddr = x25_putnetaddr,
+ 	.tpi_getnetaddr = x25_getnetaddr,
+ 	.tpi_cmpnetaddr = x25_cmpnetaddr,
+ 	.tpi_putsufx = x25_putsufx,
+ 	.tpi_getsufx = x25_getsufx,
+ 	.tpi_recycle_suffix = x25_recycle_tsuffix,
+ 	/*
+ 	.tpi_mtu =
+ 	.tpi_pcbbind =
+ 	.tpi_pcbconn =
+ 	.tpi_pcbdisc =
+ 	.tpi_pcbdetach =
+ 	.tpi_pcballoc =
+ 	.tpi_output =
+ 	.tpi_dgoutput =
+ 	.tpi_ctloutput =
+ 	.tpi_pcblist =
+ 	*/
+};

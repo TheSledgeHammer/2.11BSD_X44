@@ -94,12 +94,7 @@ int  iso_interfaces = 0;	/* number of external interfaces */
  */
 /* ARGSUSED */
 int
-iso_control(so, cmd, data, ifp, p)
-	struct socket *so;
-	u_long cmd;
-	caddr_t data;
-	struct ifnet *ifp;
-	struct proc *p;
+iso_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp, struct proc *p)
 {
 	struct iso_ifreq *ifr = (struct iso_ifreq *) data;
 	struct iso_ifaddr *ia = 0;
@@ -230,9 +225,7 @@ iso_control(so, cmd, data, ifp, p)
 }
 
 void
-iso_purgeaddr(ifa, ifp)
-	struct ifaddr *ifa;
-	struct ifnet *ifp;
+iso_purgeaddr(struct ifaddr *ifa, struct ifnet *ifp)
 {
 	struct iso_ifaddr *ia = (void *) ifa;
 
@@ -244,8 +237,7 @@ iso_purgeaddr(ifa, ifp)
 }
 
 void
-iso_purgeif(ifp)
-	struct ifnet *ifp;
+iso_purgeif(struct ifnet *ifp)
 {
 	struct ifaddr *ifa, *nifa;
 
@@ -261,9 +253,7 @@ iso_purgeif(ifp)
  * Delete any existing route for an interface.
  */
 void
-iso_ifscrub(ifp, ia)
-	struct ifnet *ifp;
-	struct iso_ifaddr *ia;
+iso_ifscrub(struct ifnet *ifp, struct iso_ifaddr *ia)
 {
 	int  nsellength = ia->ia_addr.siso_tlen;
 	if ((ia->ia_flags & IFA_ROUTE) == 0)
@@ -285,11 +275,7 @@ iso_ifscrub(ifp, ia)
  * and routing table entry.
  */
 int
-iso_ifinit(ifp, ia, siso, scrub)
-	struct ifnet *ifp;
-	struct iso_ifaddr *ia;
-	struct sockaddr_iso *siso;
-	int scrub;
+iso_ifinit(struct ifnet *ifp, struct iso_ifaddr *ia, struct sockaddr_iso *siso, int scrub)
 {
 	struct sockaddr_iso oldaddr;
 	int s = splnet(), error, nsellength;
@@ -342,8 +328,7 @@ iso_ifinit(ifp, ia, siso, scrub)
 }
 
 struct iso_ifaddr *
-iso_localifa(siso)
-	struct sockaddr_iso *siso;
+iso_localifa(struct sockaddr_iso *siso)
 {
 	struct iso_ifaddr *ia;
 	char  *cp1, *cp2, *cp3;
