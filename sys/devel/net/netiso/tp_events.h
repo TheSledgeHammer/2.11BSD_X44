@@ -71,10 +71,6 @@ struct tp_event {
 		struct {
 			unsigned char e_reason;
 		} EV_T_DISC_req;
-
-		struct {
-
-		} EV_RJ_TPDU;
 	} ev_union;
 }; /* end struct event */
 

@@ -131,7 +131,7 @@ struct tpdu_crcc {
     unsigned short      crcc_sref;      /* source reference */
     unsigned short      crcc_opt:4;
     unsigned short      crcc_class:4;
-    unsigned short		crcc_xx:8;	/* unused */
+    unsigned short		crcc_xx:8;		/* unused */
 };
 
 struct tpdu_ak31 {
