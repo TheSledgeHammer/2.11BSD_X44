@@ -293,8 +293,14 @@ u_int32_t 	arc4random(void);
 u_int64_t	arc4random64(void);
 void	 	arc4randbytes(void *, size_t);
 
+/* crc */
 uint32_t    crc32(const void *, size_t);
 uint32_t    crc32_ext(uint32_t, const uint8_t *, size_t);
+
+/* fletcher */
+uint16_t 	fletcher16(uint8_t *, int);
+uint32_t 	fletcher32(uint16_t *, int);
+uint64_t 	fletcher64(uint32_t *, int);
 
 /* Hash Functions */
 uint32_t 	prospector32(uint32_t);
@@ -304,5 +310,6 @@ uint32_t 	triple32(uint32_t);
 uint32_t 	triple32_r(uint32_t);
 uint32_t 	murmur3_32_hash(const void *, size_t, uint32_t);
 uint32_t 	murmur3_32_hash32(const uint32_t *, size_t, uint32_t);
+
 uint32_t 	enhanced_double_hash(uint32_t, int);
 #endif /* _LIB_LIBKERN_LIBKERN_H_ */

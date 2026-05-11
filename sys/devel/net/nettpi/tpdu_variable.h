@@ -25,17 +25,18 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Below code is all referenced from,
+ * RFC905: "ISO Transport Protocol Specification ISO DP 8073"
+ */
 
 /*
  * Notes:
  * - Some of these are already present within netiso's TP implementation.
+ * - Includes all possible tpdu variables, with the notion of modularizing it
+ * 		to tailor to different needs.
  */
 
-/*
- * TODO:
- * - define error_rate and transmit_delay for CC and CR.
- * - fill out tpdu_variable_rest
- */
 #ifndef _NETTPI_TPI_TPDU_VARIABLE_H_
 #define _NETTPI_TPI_TPDU_VARIABLE_H_
 
@@ -55,64 +56,73 @@ unsigned char tpdu_sizes = {
 };
 
 struct cksum16 {
-	unsigned char cksum:2; 			/* checksum (Uses Fletcher16/32) */
+	unsigned short ck_cksum; 		/* checksum (Uses Fletcher16) */
 };
 
 struct error_rate3 { 				/* 3 octets in length */
-	unsigned char val;  			/* target value, power of 10 */
-	unsigned char min; 				/* min accetable, power of 10 */
-	unsigned char size;				/* TSDU size, power of 2 */
+	unsigned char er_val;  			/* target value, power of 10 */
+	unsigned char er_min; 			/* min accetable, power of 10 */
+	unsigned char er_size;			/* TSDU size, power of 2 */
 };
 
 struct error_rate12 { 				/* 12 octets in length */
-	unsigned char caller_val:3;		/* caller value */
-	unsigned char caller_min:3;		/* caller min */
-	unsigned char calling_min:3;	/* calling value */
-	unsigned char calling_val:3;	/* calling min */
+	unsigned int er_caller_val;		/* caller value */
+	unsigned int er_caller_min;		/* caller min */
+	unsigned int er_calling_min;	/* calling value */
+	unsigned int er_calling_val;	/* calling min */
 };
 
 struct throughput12 { 				/* 12 octets in length */
-	unsigned char caller_val:3;		/* caller value */
-	unsigned char caller_min:3;		/* caller min */
-	unsigned char calling_min:3;	/* calling value */
-	unsigned char calling_val:3;	/* calling min */
+	unsigned int tp_caller_val;		/* caller value */
+	unsigned int tp_caller_min;		/* caller min */
+	unsigned int tp_calling_min;	/* calling value */
+	unsigned int tp_calling_val;	/* calling min */
 };
 
 struct throughput24 { 				/* 24 octets in length */
-	unsigned char max:12;			/* max throughput */
-	unsigned char avg:12;			/* average throughput */
-	unsigned char caller_val:3;
-	unsigned char caller_min:3;
-	unsigned char calling_min:3;
-	unsigned char calling_val:3;
+	unsigned long tp_max;			/* max throughput */
+	unsigned long tp_avg;			/* average throughput */
 };
 
 struct transit_delay {				/* 8 octets in length */
-	unsigned char caller_val:2;		/* caller value */
-	unsigned char caller_min:2;		/* caller min */
-	unsigned char calling_min:2;	/* calling value */
-	unsigned char calling_val:2;	/* calling min */
+	unsigned short td_caller_val;	/* caller value */
+	unsigned short td_caller_min;	/* caller min */
+	unsigned short td_calling_val;	/* calling value */
+	unsigned short td_calling_min;	/* calling min */
 };
 
 /* these not correct */
 struct flow_control {				/* 8 octets in length */
-	unsigned char window_edge0:1;	/* lower window edge: Bit 8 of Octet 4 set to zero */
-	unsigned char window_edge:2;	/* lower window edge (16-bits) */
-	unsigned char subseq:2;			/* sub-sequence of received AK TPDU (16-bits) */
-	unsigned char cdt:4;			/* cdt field of received AK TPDU (16-bits) */
+	unsigned short fc_window_edge;	/* lower window edge (16-bits) */
+	unsigned short fc_window_edge0:8;	/* lower window edge: Bit 8 of Octet 4 set to zero */
+	unsigned short fc_subseq;		/* sub-sequence of received AK TPDU (16-bits) */
+	unsigned short fc_cdt;			/* cdt field of received AK TPDU (16-bits) */
+};
+
+/*
+ * Maximum number of parameters that may be contained within
+ * the variable portion is:
+ * tpdu length indicator - tpdu fixed part.
+ */
+#define TPDUV_NUM_MAX(li) ((li) - sizeof(struct tpdu_fixed))
+
+struct tpdu_variable {
+	unsigned char fd_code; 			/* parameter code: no codes use bits 7 and 8  */
+	unsigned char fd_length;		/* length indication (in octects): limit: 247, max: 255 */
+	unsigned char fd_value;			/* variable value */
 };
 
 struct tpduv_crcc {
-	unsigned int  crcc_caller_id;		/* TSAP_ID of caller */
-	unsigned int  crcc_calling_id;		/* TSAP_ID of calling */
-	unsigned char crcc_size;
-	unsigned char crcc_version; 		/* version number */
+	unsigned int  crcc_caller_id;	/* TSAP_ID of caller */
+	unsigned int  crcc_calling_id;	/* TSAP_ID of calling */
+	unsigned char crcc_size;		/* See tpdu_sizes above (RFC default: 128) */
+	unsigned char crcc_version; 	/* version number */
 	unsigned int  crcc_security;
 	unsigned char crcc_opt_select;
 	SeqNum 		  crcc_alt_class;
-	unsigned char crcc_ack_time:2;
-	unsigned char crcc_priority:2;
-	unsigned char crcc_assignment_time:2; /* the TTR value in seconds */
+	unsigned short crcc_ack_time;
+	unsigned short crcc_priority;
+	unsigned short crcc_assignment_time; /* the TTR value in seconds */
 };
 
 /* public tpdu variable structures */
@@ -125,23 +135,34 @@ struct tpduv_cr {
 	struct error_rate3	cr_erate3;
 	struct error_rate12 cr_erate12;
 	struct transit_delay cr_trans_delay;
-#define cr_caller_id	cr_tpduv.crcc_caller_id
-#define cr_calling_id	cr_tpduv.crcc_calling_id
-#define cr_size			cr_tpduv.crcc_size
-#define cr_version		cr_tpduv.crcc_version
-#define cr_security		cr_tpduv.crcc_security
-#define cr_opt_select	cr_tpduv.crcc_opt_select
-#define cr_alt_class	cr_tpduv.crcc_alt_class
-#define cr_ack_time		cr_tpduv.crcc_ack_time
-#define cr_priority  	cr_tpduv.crcc_priority
-#define cr_ttr			cr_tpduv.crcc_assignment_time
-#define cr_cksum  		cr_cksum16.cksum
-#define cr_caller_val	cr_throughput12.caller_val
-#define cr_caller_min	cr_throughput12.caller_min
-#define cr_calling_val	cr_throughput12.calling_val
-#define cr_calling_min	cr_throughput12.calling_min
-#define cr_tpmax		cr_throughput24.max
-#define cr_tpavg		cr_throughput24.avg
+#define cr_caller_id			cr_tpduv.crcc_caller_id
+#define cr_calling_id			cr_tpduv.crcc_calling_id
+#define cr_size					cr_tpduv.crcc_size
+#define cr_version				cr_tpduv.crcc_version
+#define cr_security				cr_tpduv.crcc_security
+#define cr_opt_select			cr_tpduv.crcc_opt_select
+#define cr_alt_class			cr_tpduv.crcc_alt_class
+#define cr_ack_time				cr_tpduv.crcc_ack_time
+#define cr_priority  			cr_tpduv.crcc_priority
+#define cr_ttr					cr_tpduv.crcc_assignment_time
+#define cr_cksum  				cr_cksum16.ck_cksum
+#define cr_tput_caller_val		cr_throughput12.tp_caller_val
+#define cr_tput_caller_min		cr_throughput12.tp_caller_min
+#define cr_tput_calling_val		cr_throughput12.tp_calling_val
+#define cr_tput_calling_min		cr_throughput12.tp_calling_min
+#define cr_tput_max				cr_throughput24.tp_max
+#define cr_tput_avg				cr_throughput24.tp_avg
+#define cr_erate_val			cr_erate3.er_val
+#define cr_erate_min			cr_erate3.er_min
+#define cr_erate_size			cr_erate3.er_size
+#define cr_erate_caller_val		cr_erate12.er_caller_val
+#define cr_erate_caller_min		cr_erate12.er_caller_min
+#define cr_erate_calling_val	cr_erate12.er_calling_val
+#define cr_erate_calling_min	cr_erate12.er_calling_min
+#define cr_tdelay_caller_val	cr_trans_delay.td_caller_val
+#define cr_tdelay_caller_min	cr_trans_delay.td_caller_min
+#define cr_tdelay_calling_val	cr_trans_delay.td_calling_val
+#define cr_tdelay_calling_min	cr_trans_delay.td_calling_min
 };
 
 struct tpduv_cc {
@@ -151,59 +172,69 @@ struct tpduv_cc {
 	struct error_rate3	cc_erate3;
 	struct error_rate12 cc_erate12;
 	struct transit_delay cc_trans_delay;
-#define cc_caller_id	cc_tpduv.crcc_caller_id
-#define cc_calling_id	cc_tpduv.crcc_calling_id
-#define cc_size			cc_tpduv.crcc_size
-#define cc_version		cc_tpduv.crcc_version
-#define cc_security		cc_tpduv.crcc_security
-#define cc_ack_time		cc_tpduv.crcc_ack_time
-#define cc_priority  	cc_tpduv.crcc_priority
-#define cc_ttr			cc_tpduv.crcc_assignment_time
-#define cc_cksum  		cc_cksum16.cksum
-#define cc_caller_val	cc_throughput12.caller_val
-#define cc_caller_min	cc_throughput12.caller_min
-#define cc_calling_val	cc_throughput12.calling_val
-#define cc_calling_min	cc_throughput12.calling_min
-#define cc_tpmax		cc_throughput24.max
-#define cc_tpavg		cc_throughput24.avg
-
+#define cc_caller_id			cc_tpduv.crcc_caller_id
+#define cc_calling_id			cc_tpduv.crcc_calling_id
+#define cc_size					cc_tpduv.crcc_size
+#define cc_version				cc_tpduv.crcc_version
+#define cc_security				cc_tpduv.crcc_security
+#define cc_ack_time				cc_tpduv.crcc_ack_time
+#define cc_priority  			cc_tpduv.crcc_priority
+#define cc_ttr					cc_tpduv.crcc_assignment_time
+#define cc_cksum  				cc_cksum16.ck_cksum
+#define cc_tput_caller_val		cc_throughput12.tp_caller_val
+#define cc_tput_caller_min		cc_throughput12.tp_caller_min
+#define cc_tput_calling_val		cc_throughput12.tp_calling_val
+#define cc_tput_calling_min		cc_throughput12.tp_calling_min
+#define cc_tput_max				cc_throughput24.tp_max
+#define cc_tput_avg				cc_throughput24.tp_avg
+#define cc_erate_val			cc_erate3.er_val
+#define cc_erate_min			cc_erate3.er_min
+#define cc_erate_size			cc_erate3.er_size
+#define cc_erate_caller_val		cc_erate12.er_caller_val
+#define cc_erate_caller_min		cc_erate12.er_caller_min
+#define cc_erate_calling_val	cc_erate12.er_calling_val
+#define cc_erate_calling_min	cc_erate12.er_calling_min
+#define cc_tdelay_caller_val	cc_trans_delay.td_caller_val
+#define cc_tdelay_caller_min	cc_trans_delay.td_caller_min
+#define cc_tdelay_calling_val	cc_trans_delay.td_calling_val
+#define cc_tdelay_calling_min	cc_trans_delay.td_calling_min
 };
 
 struct tpduv_dr {
 	unsigned char 		dr_add_info:31;
 	struct cksum16 		dr_cksum16;
-#define dr_cksum  		dr_cksum16.cksum
+#define dr_cksum  		dr_cksum16.ck_cksum
 };
 
 struct tpduv_dc {
 	struct cksum16 		dc_cksum16;
-#define dc_cksum  		dc_cksum16.cksum
+#define dc_cksum  		dc_cksum16.ck_cksum
 };
 
 struct tpduv_dt {
 	struct cksum16 		dt_cksum16;
-#define dt_cksum  		dt_cksum16.cksum
+#define dt_cksum  		dt_cksum16.ck_cksum
 };
 
 struct tpduv_ak {
 	struct cksum16 		ak_cksum16;
 	struct flow_control ak_flow;
-#define ak_cksum  		ak_cksum16.cksum
-#define	ak_winedge0 	ak_flow.window_edge0
-#define ak_winedge		ak_flow.window_edge
-#define ak_subseq		ak_flow.subseq
-#define	ak_cdt			ak_flow.cdt
+#define ak_cksum  		ak_cksum16.ck_cksum
+#define	ak_winedge0 	ak_flow.fc_window_edge0
+#define ak_winedge		ak_flow.fc_window_edge
+#define ak_subseq		ak_flow.fc_subseq
+#define	ak_cdt			ak_flow.fc_cdt
 };
 
 struct tpduv_xak {
 	struct cksum16 		xak_cksum16;
-#define xak_cksum  		xak_cksum16.cksum
+#define xak_cksum  		xak_cksum16.ck_cksum
 };
 
 struct tpduv_er {
 	unsigned char 		er_invalid:31;	/* invalid TPDU */
 	struct cksum16 		er_cksum16;
-#define er_cksum  		er_cksum16.cksum
+#define er_cksum  		er_cksum16.ck_cksum
 };
 
 union tpdu_variable_rest {
@@ -224,4 +255,10 @@ union tpdu_variable_rest {
 	struct tpduv_er		_tpduvr_er;
 };
 
+struct tpdu {
+	struct tpdu_fixed   		_tpduf;
+	union tpdu_fixed_rest   	_tpduvf;
+	struct tpdu_variable   		_tpduv;
+	union tpdu_variable_rest   	_tpduvr;
+};
 #endif /* _NETTPI_TPI_TPDU_VARIABLE_H_ */
