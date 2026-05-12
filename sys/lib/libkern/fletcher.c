@@ -30,11 +30,11 @@
  * Fletcher Algorithms:
  * Based on the following paper:
  * "Efficient Implementation of the
- * 	OSI Transport-Protocol
- * 	Checksum Algorithm
- * 	Using 8/16-Bit Arithmetic.
- * 	Alistair A.R. Cockburn,
- * 	IBM Research Division, Zurich Research Laboratory"
+ * OSI Transport-Protocol
+ * Checksum Algorithm
+ * Using 8/16-Bit Arithmetic.
+ * Alistair A.R. Cockburn,
+ * IBM Research Division, Zurich Research Laboratory"
  */
 
 #include <sys/cdefs.h>
@@ -42,6 +42,12 @@
 #include <sys/types.h>
 
 #include <lib/libkern/libkern.h>
+
+/*
+ * Notes:
+ * - Fletcher32 and Fletcher64 are not implemented correctly.
+ * They will not output a valid checksum.
+ */
 
 uint16_t
 fletcher16(uint8_t *data, int count)
@@ -76,6 +82,7 @@ fletcher16(uint8_t *data, int count)
     return ((c1 << 8) | c0);
 }
 
+#ifdef notyet
 uint32_t
 fletcher32(uint16_t *data, int count)
 {
@@ -141,3 +148,4 @@ fletcher64(uint32_t *data, int count)
     }
     return ((c1 << 32) | c0);
 }
+#endif

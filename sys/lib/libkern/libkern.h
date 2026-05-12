@@ -299,8 +299,10 @@ uint32_t    crc32_ext(uint32_t, const uint8_t *, size_t);
 
 /* fletcher */
 uint16_t 	fletcher16(uint8_t *, int);
+#ifdef notyet
 uint32_t 	fletcher32(uint16_t *, int);
 uint64_t 	fletcher64(uint32_t *, int);
+#endif
 
 /* Hash Functions */
 uint32_t 	prospector32(uint32_t);

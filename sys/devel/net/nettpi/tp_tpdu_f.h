@@ -62,8 +62,12 @@ SOFTWARE.
  * without going mad.
  */
 
-#ifndef _NETTPI_TPI_TPDU_H_
-#define _NETTPI_TPI_TPDU_H_
+/*
+ * TPDU Fixed Part
+ */
+
+#ifndef _NETISO_TP_TPDU_F_H_
+#define _NETISO_TP_TPDU_F_H_
 
 /* private tpdu structures */
 
@@ -98,21 +102,6 @@ struct seqeot31 {
 };
 
 /*
- * variable part of tpdu
- * Derived from tpdu_info[][4] in tp_input.c
- */
-struct tpdu_variable_head;
-LIST_HEAD(tpdu_variable_head, tpdu_variable);
-struct tpdu_variable {
-	unsigned char 		ve_rf_length;    /* length: regular format */
-	unsigned char 		ve_xf_length;    /* length: extended format */
-	unsigned char  		ve_type;         /* tpdu type (DT, CR, etc.) */
-	unsigned char  		ve_class;        /* tpdu class (0, 4, etc.) */
-    unsigned char 		ve_max_length;   /* max length */
-    LIST_ENTRY(tpdu_variable) ve_link;	 /* variable list */
-};
-
-/*
  * This much of a tpdu is the same for all types of tpdus  (except DT tpdus
  * in class 0; their exceptions are handled by the data structure below
  */
@@ -131,7 +120,7 @@ struct tpdu_crcc {
     unsigned short      crcc_sref;      /* source reference */
     unsigned short      crcc_opt:4;
     unsigned short      crcc_class:4;
-    unsigned short		crcc_xx:8;		/* unused */
+    unsigned short		crcc_xx:8;	/* unused */
 };
 
 struct tpdu_ak31 {
@@ -154,7 +143,7 @@ struct tp0du {
 #define tp0du_mbz 	tp0_mbz
 
 /* TPDU connect request */
-struct tpdu_cr {
+struct tpduf_cr {
     struct tpdu_fixed   cr_tpduf;
     struct tpdu_crcc    cr_crcc;
 #define cr_li           cr_tpduf.fd_li
@@ -168,7 +157,7 @@ struct tpdu_cr {
 };
 
 /* TPDU connect confirm */
-struct tpdu_cc {
+struct tpduf_cc {
     struct tpdu_fixed   cc_tpduf;
     struct tpdu_crcc    cc_crcc;
 #define cc_li           cc_tpduf.fd_li
@@ -181,7 +170,7 @@ struct tpdu_cc {
 };
 
 /* TPDU disconnect request */
-struct tpdu_dr {
+struct tpduf_dr {
     struct tpdu_fixed   dr_tpduf;
     unsigned short      dr_sref;
     unsigned char       dr_reason;
@@ -191,7 +180,7 @@ struct tpdu_dr {
 };
 
 /* TPDU disconnect confirm */
-struct tpdu_dc {
+struct tpduf_dc {
     struct tpdu_fixed   dc_tpduf;
     unsigned short      dc_sref;
 #define dc_li           dc_tpduf.fd_li
@@ -200,7 +189,7 @@ struct tpdu_dc {
 };
 
 /* TPDU data */
-struct tpdu_dt {
+struct tpduf_dt {
     struct tpdu_fixed   dt_tpduf;
     struct seqeot7      dt_seq7;
     struct seqeot31     dt_seq31;
@@ -214,7 +203,7 @@ struct tpdu_dt {
 };
 
 /* TPDU expedited data */
-struct tpdu_xpd {
+struct tpduf_xpd {
     struct tpdu_fixed   xpd_tpduf;
     struct seqeot7      xpd_seq7;
     struct seqeot31     xpd_seq31;
@@ -228,7 +217,7 @@ struct tpdu_xpd {
 };
 
 /* TPDU data acknowledge */
-struct tpdu_ak {
+struct tpduf_ak {
     struct tpdu_fixed   ak_tpduf;
     struct tpdu_ak31    ak_ak31;
     struct seqeot7      ak_seq7;
@@ -244,7 +233,7 @@ struct tpdu_ak {
 };
 
 /* TPDU expedited data acknowledge */
-struct tpdu_xak {
+struct tpduf_xak {
     struct tpdu_fixed   xak_tpduf;
     struct seqeot7      xak_seq7;
     struct seqeot31     xak_seq31;
@@ -256,7 +245,7 @@ struct tpdu_xak {
 };
 
 /* TPDU error */
-struct tpdu_er {
+struct tpduf_er {
     struct tpdu_fixed   er_tpduf;
     unsigned char       er_reason;			/* [ ISO 8073 13.12.3.c ] */
 #define er_li           er_tpduf.fd_li
@@ -265,7 +254,7 @@ struct tpdu_er {
 };
 
 /* TPDU reject */
-struct tpdu_rj {
+struct tpduf_rj {
     struct tpdu_fixed   rj_tpduf;
     struct seqeot7      rj_seq7;
     struct seqeot31     rj_seq31;
@@ -283,7 +272,7 @@ struct tpdu_rj {
  * among the tpdu types :
  */
 union tpdu_fixed_rest {
-    struct tpdu_cr      _tpdufr_cr;
+    struct tpduf_cr      _tpdufr_cr;
 #define tpdu_CRli       _tpdufr_cr.cr_li
 #define tpdu_CRtype     _tpdufr_cr.cr_type
 #define tpdu_CRcdt      _tpdufr_cr.cr_cdt
@@ -293,7 +282,7 @@ union tpdu_fixed_rest {
 #define tpdu_CRclass    _tpdufr_cr.cr_class
 #define tpdu_CRoptions  _tpdufr_cr.cr_opt
 
-    struct tpdu_cc      _tpdufr_cc;
+    struct tpduf_cc      _tpdufr_cc;
 #define tpdu_CCli       _tpdufr_cc.cc_li
 #define tpdu_CCtype     _tpdufr_cc.cc_type
 #define tpdu_CCcdt      _tpdufr_cc.cc_cdt
@@ -302,14 +291,14 @@ union tpdu_fixed_rest {
 #define tpdu_CCclass    _tpdufr_cc.cc_class
 #define tpdu_CCoptions  _tpdufr_cc.cc_opt
 
-    struct tpdu_dr      _tpdufr_dr;
+    struct tpduf_dr      _tpdufr_dr;
 #define tpdu_DRli       _tpdufr_dr.dr_li
 #define tpdu_DRtype     _tpdufr_dr.dr_type
 #define tpdu_DRdref     _tpdufr_dr.dr_dref
 #define tpdu_DRsref     _tpdufr_dr.dr_sref
 #define tpdu_DRreason   _tpdufr_dr.dr_reason
 
-    struct tpdu_dc      _tpdufr_dc;
+    struct tpduf_dc      _tpdufr_dc;
 #define tpdu_DCli       _tpdufr_dc.dc_li
 #define tpdu_DCtype     _tpdufr_dc.dc_type
 #define tpdu_DCdref     _tpdufr_dc.dc_dref
@@ -318,7 +307,7 @@ union tpdu_fixed_rest {
     unsigned int        _tpdufr_Xseqeot;
 #define tpdu_seqeotX    _tpdufr._tpdufr_Xseqeot
 
-    struct tpdu_dt      _tpdufr_dt;
+    struct tpduf_dt      _tpdufr_dt;
 #define tpdu_DTli       _tpdufr_dt.dt_li
 #define tpdu_DTtype     _tpdufr_dt.dt_type
 #define tpdu_DTdref     _tpdufr_dt.dt_dref
@@ -327,7 +316,7 @@ union tpdu_fixed_rest {
 #define tpdu_DTseqX     _tpdufr_dt.dt_Xseq
 #define tpdu_DTeotX     _tpdufr_dt.dt_Xeot
 
-    struct tpdu_xpd     _tpdufr_xpd;
+    struct tpduf_xpd     _tpdufr_xpd;
 #define tpdu_XPDli      _tpdufr_xpd.xpd_li
 #define tpdu_XPDtype    _tpdufr_xpd.xpd_type
 #define tpdu_XPDdref    _tpdufr_xpd.xpd_dref
@@ -336,7 +325,7 @@ union tpdu_fixed_rest {
 #define tpdu_XPDseqX    _tpdufr_xpd.xpd_Xseq
 #define tpdu_XPDeotX    _tpdufr_xpd.xpd_Xeot
 
-    struct tpdu_ak      _tpdufr_ak;
+    struct tpduf_ak      _tpdufr_ak;
 #define tpdu_AKli       _tpdufr_ak.ak_li
 #define tpdu_AKtype     _tpdufr_ak.ak_type
 #define tpdu_AKdref     _tpdufr_ak.ak_dref
@@ -346,20 +335,20 @@ union tpdu_fixed_rest {
 #define tpdu_AKcdt      _tpdufr_ak.ak_cdt
 #define tpdu_AKcdtX     _tpdufr_ak.ak_cdtX
 
-    struct tpdu_xak     _tpdufr_xak;
+    struct tpduf_xak     _tpdufr_xak;
 #define tpdu_XAKli      _tpdufr_xak.xak_li
 #define tpdu_XAKtype    _tpdufr_xak.xak_type
 #define tpdu_XAKdref    _tpdufr_xak.xak_dref
 #define tpdu_XAKseq     _tpdufr_xak.xak_seq
 #define tpdu_XAKseqX    _tpdufr_xak.xak_Xseq
 
-    struct tpdu_er      _tpdufr_er;
+    struct tpduf_er      _tpdufr_er;
 #define tpdu_ERli       _tpdufr_er.er_li
 #define tpdu_ERtype     _tpdufr_er.er_type
 #define tpdu_ERdref     _tpdufr_er.er_dref
 #define tpdu_ERreason   _tpdufr_er.er_reason
 
-    struct tpdu_rj      _tpdufr_rj;
+    struct tpduf_rj      _tpdufr_rj;
 #define tpdu_RJli       _tpdufr_rj.rj_li
 #define tpdu_RJtype     _tpdufr_rj.rj_type
 #define tpdu_RJdref     _tpdufr_rj.rj_dref
@@ -367,19 +356,4 @@ union tpdu_fixed_rest {
 #define tpdu_RJseqX    	_tpdufr_rj.rj_Xseq
 };
 
-/* OPTIONS and ADDL OPTIONS bits */
-#define TPO_USE_EFC		0x1
-#define TPO_XTD_FMT		0x2
-#define TPAO_USE_TXPD 	0x1
-#define TPAO_NO_CSUM 	0x2
-#define TPAO_USE_RCC 	0x4
-#define TPAO_USE_NXPD 	0x8
-
-struct tpdu {
-	struct tpdu_fixed   		_tpduf;
-	union tpdu_fixed_rest   	_tpdufr;
-	struct tpdu_variable 		*_tpduv;	/* variable back-pointer */
-	struct tpdu_variable_head 	_tpduvh;	/* variable list head */
-};
-
-#endif /* _NETTPI_TPI_TPDU_H_ */
+#endif /* _NETISO_TP_TPDU_F_H_ */

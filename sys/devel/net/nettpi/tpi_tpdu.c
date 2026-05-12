@@ -33,57 +33,72 @@
 #include <netiso/tp_events.h>
 #include <netiso/tp_param.h>
 
-#include "tpi_tpdu.h"
+#include "tp_tpdu.h"
 #include "tpdu_var.h"
 
+struct tpdu_info_head tp_info_list;
+
 void
-tpdu_variable_add(struct tpdu *tpdu, struct mbuf *m, unsigned char type, unsigned char reglen, unsigned char xtdlen, unsigned char class, unsigned char maxlength)
+tpdu_info_add(struct tpdu_info *ti, struct tpdu *tpdu, unsigned char type, unsigned char reglen, unsigned char xtdlen, unsigned char class, unsigned char maxlength)
 {
-	tpdu->_tpduv = mtod(m, struct tpdu_variable*);
-	tpdu->_tpduv->ve_type = type;
-	tpdu->_tpduv->ve_class = class;
-	tpdu->_tpduv->ve_rf_length = reglen;
-	tpdu->_tpduv->ve_xf_length = xtdlen;
-	tpdu->_tpduv->ve_max_length = maxlength;
-	LIST_INSERT_HEAD(&tpdu->_tpduvh, tpdu->_tpduv, ve_link);
+	ti->ti_tpdu = tpdu;
+	ti->ti_type = type;
+	ti->ti_class = class;
+	ti->ti_rf_length = reglen;
+	ti->ti_xf_length = xtdlen;
+	ti->ti_max_length = maxlength;
+	LIST_INSERT_HEAD(&tp_info_list, ti, ti_link);
+}
+
+void
+tpdu_info_remove(struct tpdu *tpdu, unsigned char type, unsigned char class)
+{
+	struct tpdu_info *ti;
+	ti = tpdu_info_lookup(tpdu, type, class);
+	if (ti != NULL) {
+		LIST_REMOVE(ti, ti_link);
+	}
+}
+
+/*
+ * tpdu info lookup
+ */
+struct tpdu_info *
+tpdu_info_lookup(struct tpdu *tpdu, unsigned char type, unsigned char class)
+{
+	struct tpdu_info *ti;
+
+	LIST_FOREACH(ti, &tp_info_list, ti_link) {
+		if ((ti->ti_tpdu == tpdu) && (ti->ti_type == type)
+				&& (ti->ti_class == class)) {
+			return (ti);
+		}
+	}
+	return (NULL);
 }
 
 /*
  * Derived from tpdu_info[][4] in tp_input.c
  */
 void
-tpdu_variable_init(struct tpdu *tpdu, struct mbuf *m)
+tpdu_info_setup(struct tpdu_info *ti, struct tpdu *tpdu)
 {
-	LIST_INIT(&tpdu->_tpduvh);
+	LIST_INIT(&tp_info_list);
 
-	tpdu_variable_add(tpdu, m, XPD_TPDU_type, 0x5, 0x8, 0x0, TP_MAX_XPD_DATA);
-	tpdu_variable_add(tpdu, m, XAK_TPDU_type, 0x5, 0x8, 0x0, 0x0);
-	tpdu_variable_add(tpdu, m, GR_TPDU_type, 0x0, 0x0, 0x0, 0x0);
-	tpdu_variable_add(tpdu, m, AK_TPDU_type, 0x5, 0xa, 0x0, 0x0);
-	tpdu_variable_add(tpdu, m, ER_TPDU_type, 0x5, 0x5, 0x0, 0x0);
-	tpdu_variable_add(tpdu, m, DR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_DR_DATA);
-	tpdu_variable_add(tpdu, m, DC_TPDU_type, 0x6, 0x6, 0x0, 0x0);
-	tpdu_variable_add(tpdu, m, CC_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CC_DATA);
-	tpdu_variable_add(tpdu, m, CR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CR_DATA);
-	tpdu_variable_add(tpdu, m, DT_TPDU_type, 0x5, 0x8, 0x3, 0x0);
+	tpdu_info_add(ti, tpdu, XPD_TPDU_type, 0x5, 0x8, 0x0, TP_MAX_XPD_DATA);
+	tpdu_info_add(ti, tpdu, XAK_TPDU_type, 0x5, 0x8, 0x0, 0x0);
+	tpdu_info_add(ti, tpdu, GR_TPDU_type, 0x0, 0x0, 0x0, 0x0);
+	tpdu_info_add(ti, tpdu, AK_TPDU_type, 0x5, 0xa, 0x0, 0x0);
+	tpdu_info_add(ti, tpdu, ER_TPDU_type, 0x5, 0x5, 0x0, 0x0);
+	tpdu_info_add(ti, tpdu, DR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_DR_DATA);
+	tpdu_info_add(ti, tpdu, DC_TPDU_type, 0x6, 0x6, 0x0, 0x0);
+	tpdu_info_add(ti, tpdu, CC_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CC_DATA);
+	tpdu_info_add(ti, tpdu, CR_TPDU_type, 0x7, 0x7, 0x7, TP_MAX_CR_DATA);
+	tpdu_info_add(ti, tpdu, DT_TPDU_type, 0x5, 0x8, 0x3, 0x0);
 	/*
 	 * Missing RJ_TPDU_TYPE. As this was not originally available.
 	 * As well as not being present in tp_driver.
 	 */
-}
-
-/*
- * Search for tpdu variables by tpdu_type
- */
-struct tpdu_variable *
-tpdu_variable_lookup(struct tpdu *tpdu, unsigned char type)
-{
-	LIST_FOREACH(tpdu->_tpduv, &tpdu->_tpduvh, ve_link) {
-		if (tpdu->_tpduv->ve_type == type) {
-			return (tpdu->_tpduv);
-		}
-	}
-	return (NULL);
 }
 
 #define TPDU_COMMAND(tpdu_kind, cmdrsp) ((tpdu_kind) + (cmdrsp))

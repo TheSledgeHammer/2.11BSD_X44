@@ -3,8 +3,6 @@
 #include <sys/types.h>
 #include <lib/libkern/libkern.h>
 
-/* TODO: fix wstack-usage compile error in enhanced_double_hash */
-
 /*
  * enhanced_double_hashing: (Double hashing with cubic function)
  */
@@ -16,19 +14,12 @@ static int Prime(int nelems);
 uint32_t
 enhanced_double_hash(uint32_t x, int nelems)
 {
-    uint32_t hash[nelems];
+    uint32_t *hash;
     uint32_t y = 0;
     int p = 0;
 
-    if (nelems <= 1) {
-        return (0);
-    }
     enhanced_double_hashing(x, hash, nelems);
-
     p = Prime(nelems);
-    if (p > nelems) {
-        p = nelems;
-    }
     y = hash[nelems];
     return (y);
 }
@@ -41,7 +32,6 @@ enhanced_double_hashing(uint32_t x, uint32_t hashes[], int nelems)
     int i = 0;
 
     if (nelems <= 1) {
-        //printf("enhanced_double_hashing: nelems (%d) must be greater than 1\n", nelems);
         return;
     }
     hashes[i] = a;
