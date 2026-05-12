@@ -20,7 +20,7 @@ enhanced_double_hash(uint32_t x, int nelems)
 
     enhanced_double_hashing(x, hash, nelems);
     p = Prime(nelems);
-    y = hash[nelems];
+    y = hash[p];
     return (y);
 }
 
