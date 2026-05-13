@@ -242,17 +242,17 @@ sap_hash(long type, long subnet, long protocol, int clazz, int len)
     uint32_t sap_id, type_id, subnet_id, protocol_id, class_id, hashid;
 
     if ((protocol == 0) && (clazz == 0)) {
-        type_id = sap_type_hash(type);
-        subnet_id = sap_subnet_hash(subnet);
+        type_id = sap_type_hash(type, len);
+        subnet_id = sap_subnet_hash(subnet, len);
         if ((type_id == 0) || (subnet_id == 0)) {
             len = 1;
         }
         hashid = (type_id + (subnet_id + (len - 1))) - len;
     } else {
-        type_id = sap_type_hash(type);
-        subnet_id = sap_subnet_hash(subnet);
-        protocol_id = sap_protocol_hash(protocol);
-        class_id = sap_class_hash(clazz);
+        type_id = sap_type_hash(type, len);
+        subnet_id = sap_subnet_hash(subnet, len);
+        protocol_id = sap_protocol_hash(protocol, len);
+        class_id = sap_class_hash(clazz, len);
         if ((type_id == 0) || (subnet_id == 0) || (protocol_id == 0)
                 || (class_id == 0)) {
             len = 1;
