@@ -95,28 +95,10 @@ SOFTWARE.
 #include <netiso/tp_proto/tp_iso.h>
 #include <netiso/tp_proto/tp_ns.h>
 
-struct tp_protosw tp_protosw[] = {
-		{ /* IPv4 */
-				&tpin4_protosw
-		},
-		{ /* IPv6 */
-				&tpin6_protosw
-		},
-		{ /* ISO */
-				&tpiso_protosw
-		},
-		{ /* XNS */
-				&tpns_protosw
-		},
-		{ /* X25 */
-				&tpx25_protosw
-		},
-};
-
 struct inpcbtable tp_inpcbtable;
 struct isopcbtable tp_isopcbtable;
 
-struct tppcbhead tp_list;
+struct tppcbhead tp_pcblist;
 struct tppcbhead tp_listeners;
 
 #define	TPHASHSIZE	128
@@ -150,7 +132,7 @@ tp_init(void)
 	in_pcbinit(&tp_inpcbtable, TPHASHSIZE, TPHASHSIZE);
 	iso_pcbinit(&tp_isopcbtable, TPHASHSIZE);
 
-	LIST_INIT(&tp_list);
+	LIST_INIT(&tp_pcblist);
 	LIST_INIT(&tp_listeners);
 	tp_protosw_init();
 
@@ -651,7 +633,7 @@ tp_tselinuse(u_short tlen, char *tsel, struct sockaddr_iso *siso, int reuseaddr)
 	struct tp_pcb *tpcb;
 	struct tp_pcb *t;
 
-	LIST_FOREACH(tpcb, &tp_list, tp_list) {
+	LIST_FOREACH(tpcb, &tp_pcblist, tp_list) {
 		t = (struct tp_pcb *)LIST_NEXT(tpcb, tp_list);
 		if (t == NULL) {
 			return (1);
@@ -753,7 +735,7 @@ tp_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 			}
 		}
 		bcopy(tsel, tpcb->tp_lsuffix, (tpcb->tp_lsuffixlen = tlen));
-		LIST_INSERT_HEAD(&tp_list, tpcb, tp_list);
+		LIST_INSERT_HEAD(&tp_pcblist, tpcb, tp_list);
 	} else {
 		if (tlen || siso == 0) {
 			return (EINVAL);
@@ -768,7 +750,7 @@ tp_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 
 
 int
-tp_mtu(struct tp_pcb *tpcb, struct	rtentry *rt, int size)
+tp_mtu(struct tp_pcb *tpcb, struct rtentry *rt, int size)
 {
 	tpcb->tp_routep = &rt;
 	return (size);
@@ -777,6 +759,12 @@ tp_mtu(struct tp_pcb *tpcb, struct	rtentry *rt, int size)
 void
 tp_quench(struct tp_pcb *tpcb, int cmd)
 {
+	IFDEBUG(D_QUENCH)
+		printf("tp_quench tpcb 0x%x ref 0x%x sufx 0x%x\n",
+			tpcb, tpcb->tp_lref, *(u_short *)(tpcb->tp_lsuffix));
+		printf("cong_win 0x%x decbit 0x%x \n",
+			tpcb->tp_cong_win, tpcb->tp_decbit);
+	ENDDEBUG
 	switch (cmd) {
 	case PRC_QUENCH:
 		tpcb->tp_cong_win = tpcb->tp_l_tpdusize;
@@ -790,13 +778,21 @@ tp_quench(struct tp_pcb *tpcb, int cmd)
 	}
 }
 
-void
+int
 tp_abort(struct tp_pcb *tpcb, int cmd)
 {
 	struct tp_event e;
 
 	e.ev_number = ER_TPDU;
 	e.ATTR(ER_TPDU).e_reason = ENETRESET;
-	tp_driver(tpcb, &e);
-	return;
+	return (tp_driver(tpcb, &e));
+}
+
+int
+tp_reset(struct tp_pcb *tpcb, int cmd)
+{
+	struct tp_event e;
+
+	e.ev_number = T_NETRESET;
+	return (tp_driver(tpcb, &e));
 }

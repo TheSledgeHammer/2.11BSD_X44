@@ -31,6 +31,8 @@
 
 #define ISOLEN 64 /* ISO MAX LEN */
 
+#define TSAPID_LEN 16
+
 struct sap_service {
 	char ns_addr[ISOLEN];		/* address */
 	unsigned char ns_addrlen; 	/* address length */
@@ -171,12 +173,10 @@ int sap_select_af_to_sid(int);
  * returns 0 if class is unknown or max
  */
 static __inline uint32_t
-sap_class_hash(int clazz)
+sap_class_hash(int clazz, int len)
 {
 	uint32_t class_id;
-	int len;
 
-	len = ISOLEN;
 	if ((clazz <= SAP_CLASS_UNKNOWN) || (clazz >= SAP_CLASS_MAX)) {
 		len = 1;
 	}
@@ -189,12 +189,10 @@ sap_class_hash(int clazz)
  * returns 0 if type is unknown or max
  */
 static __inline uint32_t
-sap_type_hash(long type)
+sap_type_hash(long type, int len)
 {
 	uint32_t type_id;
-	int len;
 
-	len = ISOLEN;
 	if ((type <= SAP_TYPE_UNKNOWN) || (type >= SAP_TYPE_MAX)) {
 		len = 1;
 	}
@@ -207,12 +205,10 @@ sap_type_hash(long type)
  * returns 0 if subnet is unknown or max
  */
 static __inline uint32_t
-sap_subnet_hash(long subnet)
+sap_subnet_hash(long subnet, int len)
 {
 	uint32_t subnet_id;
-	int len;
 
-	len = ISOLEN;
 	if ((subnet <= SAP_SUBNET_UNKNOWN) || (subnet >= SAP_SUBNET_MAX)) {
 		len = 1;
 	}
@@ -225,12 +221,10 @@ sap_subnet_hash(long subnet)
  * returns 0 if protocol is unknown or max
  */
 static __inline uint32_t
-sap_protocol_hash(long protocol)
+sap_protocol_hash(long protocol, int len)
 {
 	uint32_t protocol_id;
-	int len;
 
-	len = ISOLEN;
 	if ((protocol <= SAP_PROTOCOL_UNKNOWN) || (protocol >= SAP_PROTOCOL_MAX)) {
 		len = 1;
 	}
@@ -239,29 +233,74 @@ sap_protocol_hash(long protocol)
 }
 
 /*
+ * Common sap hash:
+ * for NSAP ID and TSAP ID
+ */
+static __inline uint32_t
+sap_hash(long type, long subnet, long protocol, int clazz, int len)
+{
+    uint32_t sap_id, type_id, subnet_id, protocol_id, class_id, hashid;
+
+    if ((protocol == 0) && (clazz == 0)) {
+        type_id = sap_type_hash(type);
+        subnet_id = sap_subnet_hash(subnet);
+        if ((type_id == 0) || (subnet_id == 0)) {
+            len = 1;
+        }
+        hashid = (type_id + (subnet_id + (len - 1))) - len;
+    } else {
+        type_id = sap_type_hash(type);
+        subnet_id = sap_subnet_hash(subnet);
+        protocol_id = sap_protocol_hash(protocol);
+        class_id = sap_class_hash(clazz);
+        if ((type_id == 0) || (subnet_id == 0) || (protocol_id == 0)
+                || (class_id == 0)) {
+            len = 1;
+        }
+        hashid = (type_id + (subnet_id + (len - 1)) + (protocol_id + (len - 2)) + (class_id + (len - 2))) - len;
+    }
+    sap_id = enhanced_double_hash(hashid, len);
+    return (sap_id);
+}
+
+/*
+ * nsap class identifier:
+ * returns 0 if class is unknown or max
+ */
+#define nsap_class_id(clazz)	\
+	sap_type_hash(clazz, ISOLEN)
+
+/*
  * nsap type identifier:
  * returns 0 if type is unknown or max
  */
 #define nsap_type_id(type)	\
-	sap_type_hash(type)
+	sap_type_hash(type, ISOLEN)
 
 /*
  * nsap subnet identifier:
  * returns 0 if subnet is unknown or max
  */
 #define nsap_subnet_id(subnet) \
-	sap_subnet_hash(subnet)
+	sap_subnet_hash(subnet, ISOLEN)
 
 /*
  * nsap identifier:
  */
 #define nsap_id(type, subnet) \
-	sap_hash(type, subnet, 0, 0)
+	sap_hash(type, subnet, 0, 0, ISOLEN)
+
+/*
+ * tsap protocol identifier:
+ * returns 0 if protocol is unknown or max
+ */
+#define tsap_protocol_id(protocol) \
+	sap_protocol_hash(protocol, ISOLEN)
 
 /*
  * tsap identifier:
  */
 #define tsap_id(type, subnet, protocol, clazz) \
-	sap_hash(type, subnet, protocol, clazz)
+	sap_hash(type, subnet, protocol, clazz, ISOLEN)
 
 #endif /* _NETTPI_ISO_SAP_H_ */

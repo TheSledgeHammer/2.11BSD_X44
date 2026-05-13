@@ -65,7 +65,7 @@ __KERNEL_RCSID(0, "$NetBSD: iso_pcb.c,v 1.25 2003/10/30 01:43:10 simonb Exp $");
 
 #include "opt_iso.h"
 
-#ifdef ISO
+//#ifdef ISO
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -102,8 +102,11 @@ struct iso_addr zeroiso_addr;
 unsigned char   argo_debug[128];
 #endif
 
+#define TSELHASH(isop) \
+	(ntohl((isop)->siso_data) + ntohs((isop)->siso_nlen))
+
 #define ISOPCBHASH(table, laddr, faddr)	\
-	(&(table)->isopt_hashtbl[(ntohl(TSEL((laddr))) + ntohl(TSEL((faddr))))])
+	(&(table)->isopt_hashtbl[(TSELHASH((laddr)) + TSELHASH((faddr)))])
 
 static struct isopcb *iso_pcbhashlookup(struct isopcbtable *, struct sockaddr_iso *, caddr_t, int, struct sockaddr_iso *, int);
 static void iso_pcbrehash(struct isopcbhead *, struct isopcb *);
@@ -646,6 +649,17 @@ iso_pcbnotify(struct isopcbtable *table, struct sockaddr_iso *faddr, struct sock
 		printf("END OF iso_pcbnotify\n");
 	}
 #endif
+}
+
+void
+iso_rtchange(struct isopcb *isop, int errno)
+{
+	/*
+	if (isop->isop_route.ro_rt) {
+		rtfree(isop->isop_route.ro_rt);
+		isop->isop_route.ro_rt = 0;
+	}
+	*/
 }
 
 

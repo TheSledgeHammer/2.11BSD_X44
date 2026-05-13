@@ -65,7 +65,9 @@ static char sccsid[] = "@(#)savecore.c	8.5 (Berkeley) 4/28/95";
 #include <tzfile.h>
 #include <unistd.h>
 
-#ifdef	pdp11
+extern FILE *zopen(const char *fname, const char *mode);
+
+#if defined(pdp11)
 #define	CLICK	ctob(1)		/* size of core units */
 #define	REGLOC	0300		/* offset of saved registers in disk dump */
 #define	NREGS	8		/* r0-6, KA6 */

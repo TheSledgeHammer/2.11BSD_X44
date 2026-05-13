@@ -87,6 +87,8 @@ SOFTWARE.
 #define	SOL_TRANSPORT		0xfffe
 #define	SOL_NETWORK			0xfffd
 
+struct isopcb tp_isopcb;
+
 #ifdef _KERNEL
 struct isopcb;
 struct mbuf;
@@ -103,6 +105,19 @@ void 	iso_recycle_tsuffix(void *);
 void 	iso_putnetaddr(void *, struct sockaddr *, int);
 int 	iso_cmpnetaddr(void *, struct sockaddr *, int);
 void 	iso_getnetaddr(void *, struct mbuf *, int);
-void 	iso_rtchange(struct isopcb *);
+
+int 	tpclnp_mtu(struct tp_pcb *);
+int 	tpclnp_output(void *, struct mbuf *, int, int);
+int 	tpclnp_output_dg(void *, void *, struct mbuf *, int, void *, int);
+int 	tpclnp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int, int);
+void 	tpclnp_quench(struct inpcb *);
+void	tpclnp_abort(struct inpcb *);
+void 	tpclnp_reset(struct isopcb *);
+void 	*tpclnp_ctlinput(int, struct sockaddr *, void *);
+void	tpclnp_ctlinput1(int, struct iso_addr *);
+void 	tpiso_decbit(struct isopcb *, int);
+void 	tpiso_quench(struct isopcb *, int);
+void 	tpiso_abort(struct isopcb *, int);
+void 	tpiso_reset(struct isopcb *, int);
 #endif
 #endif /* _NETISO_TP_ISO_H_ */

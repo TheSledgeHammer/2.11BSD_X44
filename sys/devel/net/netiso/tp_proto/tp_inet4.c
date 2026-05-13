@@ -300,7 +300,7 @@ tpip_input(struct mbuf *m, int iplen)
 	 */
 	hdrlen = iplen + 1 + mtod(m, u_char *)[iplen];
 
-	if( m->m_len < hdrlen ) {
+	if (m->m_len < hdrlen ) {
 		if((m = m_pullup(m, hdrlen)) == MNULL){
 			IFDEBUG(D_TPINPUT)
 				printf("tp_input, pullup 2!\n");
@@ -361,7 +361,7 @@ tpip_quench(struct inpcb *inp, int cmd)
 void
 tpip_abort(struct inpcb *inp, int cmd)
 {
-	tp_abort((struct tp_pcb *)inp->inp_ppcb, cmd);
+	(void)tp_abort((struct tp_pcb *)inp->inp_ppcb, cmd);
 }
 
 void *
@@ -381,7 +381,7 @@ tpip_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	}
 	switch (cmd) {
 	case PRC_QUENCH:
-		in_pcbnotify(&tp_inpcb, (struct sockaddr *)sin, 0,
+		in_pcbnotify(&tp_inpcbtable, (struct sockaddr *)sin, 0,
 			zeroin_addr, 0, cmd, tpip_quench);
 		break;
 	case PRC_ROUTEDEAD:
@@ -389,7 +389,7 @@ tpip_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	case PRC_UNREACH_NET:
 	case PRC_IFDOWN:
 	case PRC_HOSTDEAD:
-		in_pcbnotify(&tp_inpcb, (struct sockaddr *)sin, 0,
+		in_pcbnotify(&tp_inpcbtable, (struct sockaddr *)sin, 0,
 			zeroin_addr, 0, cmd, in_rtchange);
 		break;
 	default:
@@ -409,7 +409,7 @@ tpip_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	case PRC_PARAMPROB:
 */
 
-		in_pcbnotify(&tp_inpcb, (struct sockaddr*) sin, 0, zeroin_addr, 0, cmd, tpip_abort);
+		in_pcbnotify(&tp_inpcbtable, (struct sockaddr *)sin, 0, zeroin_addr, 0, cmd, tpip_abort);
 	}
 	return (NULL);
 }

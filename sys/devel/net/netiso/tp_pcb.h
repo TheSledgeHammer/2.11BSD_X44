@@ -321,18 +321,35 @@ u_int	tp_start_win;
         CONG_INIT_SAMPLE(pcb); \
     }
 
-#ifdef KERNEL
-extern struct tp_refinfo 	tp_refinfo;
-extern struct tp_ref	*tp_ref;
-extern struct tp_param	tp_param;
-extern struct tppcbhead tp_list;
-extern struct tppcbhead tp_listeners;
-extern struct tp_pcb	*tp_ftimeolist;
-#endif
+
 
 #define	sototpcb(so) 	((struct tp_pcb *)(so->so_pcb))
 #define	sototpref(so)	((sototpcb(so)->tp_ref))
 #define	tpcbtoso(tp)	((struct socket *)((tp)->tp_sock))
 #define	tpcbtoref(tp)	((struct tp_ref *)((tp)->tp_ref))
+
+#ifdef KERNEL
+extern struct tp_refinfo 	tp_refinfo;
+extern struct tp_ref	*tp_ref;
+extern struct tp_param	tp_param;
+extern struct tppcbhead tp_pcblist;
+extern struct tppcbhead tp_listeners;
+extern struct tp_pcb	*tp_ftimeolist;
+#endif
+
+void tp_init(void);
+void tp_soisdisconnecting(struct socket *);
+void tp_soisdisconnected(struct tp_pcb *);
+void tp_freeref(RefNum);
+u_long tp_getref(struct tp_pcb *);
+int tpi_set_npcb(struct tp_pcb *);
+int tp_attach(struct socket *, int);
+void tp_detach(struct tp_pcb *);
+int tp_tselinuse(u_short, char *, struct sockaddr_iso *, int);
+int tp_pcbbind(void *, struct mbuf *, struct proc *);
+int tp_mtu(struct tp_pcb *, struct rtentry *, int);
+void tp_quench(struct tp_pcb *, int);
+int tp_abort(struct tp_pcb *, int);
+int tp_reset(struct tp_pcb *, int);
 
 #endif  /* _NETISO_TP_PCB__ */

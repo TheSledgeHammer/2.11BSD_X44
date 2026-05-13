@@ -50,6 +50,41 @@ uint32_t tsap_valid_ids[SAP_TABLE_MAX];
 static int tsap_validate(struct tsap_iso *, struct nsap_iso *, int, int);
 static int tsap_acknowledge(struct tsap_iso *, struct nsap_iso *, long, long, long, int, int, int);
 
+/*
+ * TSAP MAC ID:
+ * - TSAP MAC ID is the expanded TSAP ID in notation format.
+ * - Can be in ascii or hex.
+ * Current Format is:
+ * - ID (ACSII): WIP
+ * - ID (HEX): cn.type.subnet.protocol.class
+ *
+ * Format Legend:
+ * - cn: connection number
+ * - type: sap_type
+ * - subnet: sap_subnet
+ * - protocol: sap_protocol
+ * - class: sap_class
+ */
+
+#define TSAP_MACID_LEN 32
+
+void
+tsap_mac_id(int cn, long type, long subnet, long protocol, int clazz)
+{
+    uint32_t cn_id, type_id, subnet_id, protocol_id, class_id;
+    int len = TSAP_MACID_LEN;
+
+    char tsap_hexid[len];
+
+    cn_id = enhanced_double_hash(cn, len);
+    type_id = sap_type_hash(type, len);
+    subnet_id = sap_subnet_hash(subnet, len);
+    protocol_id = sap_protocol_hash(protocol, len);
+    class_id = sap_class_hash(clazz, len);
+    (void)snprintf(tsap_hexid, sizeof(tsap_hexid), "%X.%X.%X.%X.%X\n", cn_id, type_id, subnet_id, protocol_id, class_id);
+    //printf("%s\n", tsap_hexid);
+}
+
 /* TSAP's */
 struct tsap_iso *
 tsap_create(struct nsap_iso *nsap, int af)
