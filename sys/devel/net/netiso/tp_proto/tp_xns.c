@@ -70,6 +70,7 @@ struct tp_protosw tpns_protosw = {
 		.tp_pcbbind = ns_pcbbind,
 		.tp_pcbconnect = ns_pcbconnect,
 		.tp_pcbdisconnect = ns_pcbdisconnect,
+		.tp_pcbattach = 0,
 		.tp_pcbdetach = ns_pcbdetach,
 		.tp_pcballoc = ns_pcballoc,
 		.tp_output = tpidp_output,
@@ -216,26 +217,37 @@ tpidp_mtu(struct tp_pcb *tpcb)
 }
 
 int
-tpidp_output(void *v, struct mbuf *m0, int datalen, int nochksum)
+tpidp_output(struct mbuf *m0, ...)
 {
 	struct nspcb *nsp;
+	int datalen, nochksum;
+	va_list	ap;
 
-	nsp = (struct nspcb *)v;
-	return (tpip_output_dg(&nsp->nsp_laddr, &nsp->nsp_faddr, m0, datalen, &nsp->nsp_route, nochksum));
+	va_start(ap, m0);
+	nsp = va_arg(ap, struct nspcb *);
+	datalen = va_arg(ap, int);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
+	return (tpip_output_dg(m0, &nsp->nsp_laddr, &nsp->nsp_faddr, datalen, &nsp->nsp_route, nochksum));
 }
 
 int
-tpidp_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen, void *ro_arg, int nochksum)
+tpidp_output_dg(struct mbuf *m0, ...)
 {
 	struct ns_addr *laddr, *faddr;
 	struct route *ro;
 	register struct mbuf *m;
 	register struct idp *idp;
-	int error;
+	int error, datalen, nochksum;
+	va_list ap;
 
-	laddr = (struct ns_addr *)laddr_arg;
-	faddr = (struct ns_addr *)faddr_arg;
-	ro = (struct route *)ro_arg;
+	va_start(ap, m0);
+	laddr = va_arg(ap, struct in_addr *);
+	faddr = va_arg(ap, struct in_addr *);
+	datalen = va_arg(ap, int);
+	ro = va_arg(ap, struct route *);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
 
 	MGETHDR(m, M_DONTWAIT, TPMT_IPHDR);
 	if (m == 0) {
@@ -269,11 +281,16 @@ bad:
 }
 
 int
-tpidp_input(struct mbuf *m, int idplen)
+tpidp_input(struct mbuf *m, ...)
 {
 	struct sockaddr_ns src, dst;
 	register struct idp *idp;
-	int	s, hdrlen;
+	int	s, idplen, hdrlen;
+	va_list ap;
+
+	va_start(ap, m);
+	idplen = va_arg(ap, int);
+	va_end(ap);
 
 	s = splnet();
 	IncStat(ts_pkt_rcvd);

@@ -174,5 +174,4 @@ char            *iso_ntoa(const struct iso_addr *);
 #include <sys/cdefs.h>
 
 #endif /* _KERNEL */
-
 #endif /* _NETISO_ISO_H_ */

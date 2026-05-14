@@ -102,6 +102,7 @@ struct tppcbhead tp_pcblist;
 struct tppcbhead tp_listeners;
 
 #define	TPHASHSIZE	128
+int tphashsize = TPHASHSIZE;
 
 u_long tp_sendspace = 1024 * 4;
 u_long tp_recvspace = 1024 * 4;
@@ -129,8 +130,8 @@ tp_init(void)
 {
 	static int init_done = 0;
 
-	in_pcbinit(&tp_inpcbtable, TPHASHSIZE, TPHASHSIZE);
-	iso_pcbinit(&tp_isopcbtable, TPHASHSIZE);
+	in_pcbinit(&tp_inpcbtable, tphashsize, tphashsize);
+	iso_pcbinit(&tp_isopcbtable, tphashsize);
 
 	LIST_INIT(&tp_pcblist);
 	LIST_INIT(&tp_listeners);
@@ -416,7 +417,7 @@ tp_attach(struct socket *so, int protocol)
 		error = ENOBUFS;
 		goto bad2;
 	}
-	bzero( (caddr_t)tpcb, sizeof (struct tp_pcb) );
+	bzero((caddr_t)tpcb, sizeof(struct tp_pcb));
 
 	if ( ((lref = tp_getref(tpcb)) &  TP_ENOREF) != 0 ) {
 		error = ETOOMANYREFS;
@@ -429,9 +430,9 @@ tp_attach(struct socket *so, int protocol)
 	/* tpcb->tp_proto = protocol; someday maybe? */
 	if (protocol && protocol < ISOPROTO_TP4) {
 		tpcb->tp_netservice = ISO_CONS;
-		tpcb->tp_snduna = (SeqNum) -1;/* kludge so the pseudo-ack from the CR/CC
-								 * will generate correct fake-ack values
-								 */
+		tpcb->tp_snduna = (SeqNum)-1;	/* kludge so the pseudo-ack from the CR/CC
+		 	 	 	 	 	 	 	 	 * will generate correct fake-ack values
+		 	 	 	 	 	 	 	 	 */
 	} else {
 		tpcb->tp_netservice = (dom== AF_INET)?IN_CLNS:ISO_CLNS;
 		/* the default */
@@ -439,20 +440,20 @@ tp_attach(struct socket *so, int protocol)
 	tpcb->_tp_param = tp_conn_param[tpcb->tp_netservice];
 
 	tpcb->tp_state = TP_CLOSED;
-	tpcb->tp_vers  = TP_VERSION;
+	tpcb->tp_vers = TP_VERSION;
 	tpcb->tp_notdetached = 1;
 
-		   /* Spec says default is 128 octets,
-			* that is, if the tpdusize argument never appears, use 128.
-			* As the initiator, we will always "propose" the 2048
-			* size, that is, we will put this argument in the CR
-			* always, but accept what the other side sends on the CC.
-			* If the initiator sends us something larger on a CR,
-			* we'll respond w/ this.
-			* Our maximum is 4096.  See tp_chksum.c comments.
-			*/
+	/* Spec says default is 128 octets,
+	 * that is, if the tpdusize argument never appears, use 128.
+	 * As the initiator, we will always "propose" the 2048
+	 * size, that is, we will put this argument in the CR
+	 * always, but accept what the other side sends on the CC.
+	 * If the initiator sends us something larger on a CR,
+	 * we'll respond w/ this.
+	 * Our maximum is 4096.  See tp_chksum.c comments.
+	 */
 	tpcb->tp_cong_win =
-		tpcb->tp_l_tpdusize = 1 << tpcb->tp_tpdusize;
+	tpcb->tp_l_tpdusize = 1 << tpcb->tp_tpdusize;
 
 	tpcb->tp_seqmask  = TP_NML_FMT_MASK;
 	tpcb->tp_seqbit  =  TP_NML_FMT_BIT;
@@ -465,7 +466,7 @@ tp_attach(struct socket *so, int protocol)
 	KASSERT(tpcb->tp_tpproto->tp_afamily == tpcb->tp_domain);
 
 	/* nothing to do for iso case */
-	if( dom == AF_INET ) {
+	if (dom == AF_INET) {
 		sotoinpcb(so)->inp_ppcb = (caddr_t)tpcb;
 	}
 
@@ -575,9 +576,7 @@ tp_detach(struct tp_pcb *tpcb)
 
 	if (tpcb->tp_state == TP_LISTENING) {
 		struct tp_pcb *tt;
-
-		LIST_FOREACH(tt, &tp_listeners, tp_nextlisten)
-		{
+		LIST_FOREACH(tt, &tp_listeners, tp_nextlisten) {
 			if (tt == tpcb) {
 				break;
 			}
@@ -730,7 +729,9 @@ tp_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 				case AF_INET:
 					((struct sockaddr_in *)siso)->sin_port = tutil;
 					break;
+#ifdef INET6
 				case AF_INET6:
+#endif
 				}
 			}
 		}

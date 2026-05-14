@@ -74,6 +74,7 @@ struct tp_protosw tpiso_protosw = {
  	.tp_pcbbind = iso_pcbbind,
  	.tp_pcbconnect = iso_pcbconnect,
  	.tp_pcbdisconnect = iso_pcbdisconnect,
+	.tp_pcbattach = 0,
  	.tp_pcbdetach = iso_pcbdetach,
  	.tp_pcballoc = iso_pcballoc,
  	.tp_output = tpclnp_output,
@@ -358,12 +359,17 @@ tpclnp_mtu(struct tp_pcb *tpcb)
  *  whatever (E*) is returned form the net layer output routine.
  */
 int
-tpclnp_output(void *v, struct mbuf *m0, int datalen, int nochksum)
+tpclnp_output(struct mbuf *m0, ...)
 {
 	struct isopcb *isop;
-	register struct mbuf *m = m0;
+	int datalen, nochksum;
+	va_list	ap;
 
-	isop = (struct isopcb *)v;
+	va_start(ap, m0);
+	isop = va_arg(ap, struct isopcb *);
+	datalen = va_arg(ap, int);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
 
 	IncStat(ts_tpdu_sent);
 
@@ -395,18 +401,23 @@ tpclnp_output(void *v, struct mbuf *m0, int datalen, int nochksum)
  *  whatever (E*) is returned form the net layer output routine.
  */
 int
-tpclnp_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen, void *ro_arg, int nochksum)
+tpclnp_output_dg(struct mbuf *m0, ...)
 {
 	struct iso_addr *laddr, *faddr;
 	struct route *ro;
 	struct isopcb tmppcb;
-	int err;
+	int err, datalen, nochksum;
 	int	flags;
 	register struct mbuf *m = m0;
+	va_list ap;
 
-	laddr = (struct iso_addr *)laddr_arg;
-	faddr = (struct iso_addr *)faddr_arg;
-	ro = (struct route *)ro_arg;
+	va_start(ap, m0);
+	laddr = va_arg(ap, struct iso_addr *);
+	faddr = va_arg(ap, struct iso_addr *);
+	datalen = va_arg(ap, int);
+	ro = va_arg(ap, struct route *);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
 
 	IFDEBUG(D_TPISO)
 		printf("tpclnp_output_dg  datalen 0x%x m0 0x%x\n", datalen, m0);
@@ -456,8 +467,17 @@ tpclnp_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen,
  * No return value.
  */
 int
-tpclnp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int clnp_len, int ce_bit)
+tpclnp_input(struct mbuf *m, ...)
 {
+	struct sockaddr_iso *src, *dst;
+	int clnp_len, ce_bit;
+	va_list ap;
+
+	va_start(ap, m);
+	clnp_len = va_arg(ap, int);
+	ce_bit = va_arg(ap, int);
+	va_end(ap);
+
 	IncStat(ts_pkt_rcvd);
 
 	IFDEBUG(D_TPINPUT)

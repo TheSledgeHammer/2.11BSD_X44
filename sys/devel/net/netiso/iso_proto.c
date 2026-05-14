@@ -87,7 +87,7 @@ __KERNEL_RCSID(0, "$NetBSD: iso_proto.c,v 1.14 2003/08/07 16:33:37 agc Exp $");
 #include <netiso/tuba_table.h>
 #endif
 
-extern	struct domain isodomain;
+extern struct domain isodomain;
 
 void
 iso_init(void)

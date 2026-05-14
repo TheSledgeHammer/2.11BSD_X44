@@ -80,7 +80,6 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 	 * allocate an isopcb and separate the control block from
 	 * tcp/ip ones.
 	 */
-
 	}
 
 notrace:
@@ -100,3 +99,42 @@ tuba_ctloutput(int op, struct socket *so, int level, int optname, struct mbuf **
     }
 	return (error);
 }
+
+/*
+int
+tuba_tcp_usrreq(struct socket *so, int req)
+{
+	struct in6pcb *in6p;
+	struct inpcb *inp;
+	int error;
+
+	switch (req) {
+	case PRU_ATTACH:
+		if (inp != 0) {
+			error = EISCONN;
+			break;
+		}
+		error = tcp_attach(so);
+		if (error) {
+			break;
+		}
+		tp = sototcpcb(so);
+		break;
+	case PRU_DETACH:
+		tp = tcp_disconnect(tp);
+		break;
+	case PRU_BIND:
+
+	case PRU_CONNECT:
+		if (inp) {
+			error = tuba4_pcbconnect(inp, nam);
+		}
+		if (in6p) {
+			error = tuba6_pcbconnect(in6p, nam);
+		}
+		break;
+	case PRU_CONNECT2:
+	case PRU_DISCONNECT:
+	}
+}
+*/

@@ -74,11 +74,20 @@ struct inpcbtable	tubainptable; /* in pcbtable */
 struct inpcb		tuba_inpcb;
 struct in6pcb		tuba_in6pcb;
 
-//struct isopcbtable  tubaisoptable; /* iso pcbtable */
-struct isopcb		tuba_isopcb;
-
 #define	TUBAHASHSIZE	128
 int	tubahashsize = TUBAHASHSIZE;
+struct isopcbtable  tubaisoptable; /* iso pcbtable */
+struct isopcb		tuba_isopcb;
+struct sockaddr_iso tuba_addrs[2] = {
+		{
+				.siso_len = sizeof(tuba_addrs),
+				.siso_family = AF_ISO,
+		},
+		{
+				.siso_len = sizeof(tuba_addrs[1]),
+				.siso_family = AF_ISO,
+		},
+};
 
 /*
  * Tuba Header Size
@@ -111,12 +120,14 @@ void
 tuba_init(void)
 {
 	in_pcbinit(&tubainptable, tubahashsize, tubahashsize);
-
-	//iso_pcbinit(&tubaisoptable, &tuba_isopcb, tubahashsize);
+	iso_pcbinit(&tubaisoptable, tubahashsize);
+	/* now preallocate sladdr and sfaddr */
+	iso_pcbprealloc(&tubaisoptable, &tuba_isopcb, tuba_addrs[1]);
+	/*
 	tuba_isopcb.isop_next = tuba_isopcb.isop_prev = &tuba_isopcb;
 	tuba_isopcb.isop_faddr = &tuba_isopcb.isop_sfaddr;
 	tuba_isopcb.isop_laddr = &tuba_isopcb.isop_sladdr;
-
+	*/
 	if (max_protohdr < TUBAHDRSIZE) {
 		max_protohdr = TUBAHDRSIZE;
 	}

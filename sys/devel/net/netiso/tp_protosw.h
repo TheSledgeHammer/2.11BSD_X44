@@ -90,8 +90,8 @@ struct tp_protosw {
 	int 	(*tp_pcbattach)(struct socket *, int);					/* attach net level pcb */
 	void	(*tp_pcbdetach)(void *);								/* detach net level pcb */
 	int		(*tp_pcballoc)(struct socket *, void *);				/* allocate a net level pcb */
-	int		(*tp_output)(void *, struct mbuf *, int, int);			/* prepare a packet to give to tp */
-	int		(*tp_dgoutput)(void *, void *, struct mbuf *, int, void *, int); /* prepare a packet to give to tp */
+	int		(*tp_output)(struct mbuf *, ...);						/* prepare a packet to give to tp */
+	int		(*tp_dgoutput)(struct mbuf *, ...); 					/* prepare a packet to give to tp */
 	int		(*tp_ctloutput)(int, struct sockaddr *, void *);		/* hook for network set/get options */
 	caddr_t	tp_pcblist;												/* list of xx_pcb's for connections */
 };
@@ -103,7 +103,7 @@ extern struct tp_protosw tpin4_protosw;
 extern struct tp_protosw tpin6_protosw;
 extern struct tp_protosw tpiso_protosw;
 extern struct tp_protosw tpns_protosw;
-extern struct tp_protosw tpx25_protosw;
+extern struct tp_protosw tpcons_protosw;
 
 void tp_protosw_init(void);
 void tp_xsap_attach(struct tp_xsap_router *, int);

@@ -83,6 +83,7 @@ SOFTWARE.
 #include <sys/mbuf.h>
 #include <sys/errno.h>
 #include <sys/time.h>
+#include <sys/stdarg.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -111,6 +112,7 @@ struct tp_protosw tpcons_protosw = {
  	.tp_pcbbind = iso_pcbbind,
  	.tp_pcbconnect = tpcons_pcbconnect,
  	.tp_pcbdisconnect = iso_pcbdisconnect,
+	.tp_pcbattach = 0,
  	.tp_pcbdetach = iso_pcbdetach,
  	.tp_pcballoc = iso_pcballoc,
  	.tp_output = tpcons_output,
@@ -223,26 +225,55 @@ tpcons_ctlinput(int cmd, struct sockaddr *sa, void *v)
  * No return value.
  */
 int
-tpcons_input(struct mbuf *m, struct sockaddr_iso *faddr, struct sockaddr_iso *laddr, caddr_t channel)
+tpcons_input(struct mbuf *m, ...)
 {
-	if ( m == NULL) {
-		return (0);
-	}
+	struct sockaddr_iso *faddr, *laddr;
+	caddr_t channel;
+	va_list ap;
 
+	va_start(ap, m);
+	channel = va_arg(ap, caddr_t);
+	va_end(ap);
 	m = (struct mbuf *)tp_inputprep(m);
+
 	IFDEBUG(D_TPINPUT)
 		printf("tpcons_input before tp_input(m 0x%x)\n", m);
 		dump_buf( m, 12+ m->m_len);
 	ENDDEBUG
-	tp_input(m, faddr, laddr, channel, tpcons_output, 0);
+	(void)tp_input(m, faddr, laddr, channel, tpcons_output, 0);
 	return (0);
 }
 
-static int
-tpcons_output_sc(struct isopcb *isop, struct mbuf *m0, struct mbuf *m, struct iso_addr *laddr, struct iso_addr *faddr, int datalen, struct route *ro, int nochksum)
+/*
+ * CALLED FROM:
+ *  tp_emit()
+ * FUNCTION and ARGUMENTS:
+ *  Take a packet(m0) from tp and package it so that cons will accept it.
+ *  This means filling in a few of the fields.
+ *  inp is the isopcb structure; datalen is the length of the data in the
+ *  mbuf string m0.
+ * RETURN VALUE:
+ *  whatever (E*) is returned form the net layer output routine.
+ */
+int
+tpcons_output(struct mbuf *m0, ...)
 {
-	int error;
+	struct isopcb *isop;
+	struct mbuf *m;
+	int error, datalen, nochksum;
+	va_list ap;
 
+	va_start(ap, m0);
+	isop = va_arg(ap, struct isopcb *);
+	datalen = va_arg(ap, int);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
+
+	IFDEBUG(D_EMIT)
+		printf(
+		"tpcons_output(isop 0x%x, m 0x%x, len 0x%x socket 0x%x\n",
+			isop, m0, datalen, isop->isop_socket);
+	ENDDEBUG
 	if (m == NULL) {
 		return (0);
 	}
@@ -278,55 +309,21 @@ tpcons_output_sc(struct isopcb *isop, struct mbuf *m0, struct mbuf *m, struct is
 	return (error);
 }
 
-/*
- * CALLED FROM:
- *  tp_emit()
- * FUNCTION and ARGUMENTS:
- *  Take a packet(m0) from tp and package it so that cons will accept it.
- *  This means filling in a few of the fields.
- *  inp is the isopcb structure; datalen is the length of the data in the
- *  mbuf string m0.
- * RETURN VALUE:
- *  whatever (E*) is returned form the net layer output routine.
- */
-int
-tpcons_output(void *v, struct mbuf *m0, int datalen, int nochksum)
-{
-	struct isopcb *isop;
-	struct mbuf *m;
-
-	isop = (struct isopcb *)v;
-	m = m0;
-
-	IFDEBUG(D_EMIT)
-		printf(
-		"tpcons_output(isop 0x%x, m 0x%x, len 0x%x socket 0x%x\n",
-			isop, m0, datalen, isop->isop_socket);
-	ENDDEBUG
-	return (tpcons_output_sc(isop, m0, m, isop->isop_laddr, isop->isop_faddr, datalen, &isop->isop_route, nochksum));
-}
-
-int
-tpcons_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen, void *ro_arg, int nochksum)
-{
-	struct iso_addr *laddr, *faddr;
-	struct route *ro;
-	struct mbuf *m;
-
-	laddr = (struct iso_addr *)laddr_arg;
-	faddr = (struct iso_addr *)faddr_arg;
-	ro = (struct route *)ro_arg;
-
-	return (tpcons_output_sc());
-}
-
 static int
-tpcons_dg_output_sc(caddr_t chan, struct mbuf *m0, int datalen, int nochksum)
+tpcons_dg_output_dg(struct mbuf *m0, ...)
 {
 	struct pklcd *lcp;
+	caddr_t chan;
+	int datalen, nochksum;
+	va_list ap;
 
+	va_start(ap, m0);
+	chan = va_arg(ap, caddr_t);
+	datalen = va_arg(ap, int);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
 	lcp = (struct pklcd *)chan;
-	return (tpcons_output(lcp->lcd_upnext, m0, datalen, nochksum));
+	return (tpcons_output(m0, lcp->lcd_upnext, datalen, nochksum));
 }
 
 /*
@@ -342,5 +339,5 @@ tpcons_dg_output_sc(caddr_t chan, struct mbuf *m0, int datalen, int nochksum)
 int
 tpcons_dg_output(caddr_t chan, struct mbuf *m0, int datalen)
 {
-	return (tpcons_dg_output_sc(chan, m0, datalen, 0));
+	return (tpcons_dg_output_dg(m0, chan, datalen, 0));
 }

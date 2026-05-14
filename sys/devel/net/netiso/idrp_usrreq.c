@@ -60,6 +60,9 @@ __KERNEL_RCSID(0, "$NetBSD: idrp_usrreq.c,v 1.12 2003/08/07 16:33:35 agc Exp $")
 
 LIST_HEAD(, rawcb) idrp_pcb;
 struct isopcb idrp_isop;
+struct isopcbtable idrp_isoptable;
+#define IDRPHASHSIZE 128
+static int idrphashsize = IDRPHASHSIZE;
 static struct sockaddr_iso idrp_addrs[2] = {
 		{
 				.siso_len = sizeof(idrp_addrs),
@@ -75,17 +78,21 @@ static struct sockaddr_iso idrp_addrs[2] = {
  * IDRP initialization
  */
 void
-idrp_init()
+idrp_init(void)
 {
 	extern struct clnl_protosw clnl_protox[256];
 
 	LIST_INIT(&idrp_pcb);
 
-	idrp_isop.isop_next = idrp_isop.isop_prev = &idrp_isop;
+	iso_pcbinit(&idrp_isoptable, idrphashsize);
+	 /* now preallocate sladdr and sfaddr */
+	iso_pcbprealloc(&idrp_isoptable, &idrp_isop, idrp_addrs[1]);
+	/*
 	idrp_isop.isop_faddr = &idrp_isop.isop_sfaddr;
 	idrp_isop.isop_laddr = &idrp_isop.isop_sladdr;
 	idrp_isop.isop_sladdr = idrp_addrs[1];
 	idrp_isop.isop_sfaddr = idrp_addrs[1];
+	*/
 	clnl_protox[ISO10747_IDRP].clnl_input = idrp_input;
 }
 
@@ -116,7 +123,7 @@ bad:		m_freem(m);
 	bcopy((caddr_t) & (src->siso_addr), (caddr_t) & idrp_addrs[0].siso_addr,
 	      1 + src->siso_nlen);
 	bzero(idrp_addrs[1].siso_data, sizeof(idrp_addrs[1].siso_data));
-	bcopy((caddr_t) & (dst->siso_addr), (caddr_t) & idrp_addrs[1].siso_addr,
+	bcopy((caddr_t) & (dst->siso_addr), (caddr_t) &idrp_addrs[1].siso_addr,
 	      1 + dst->siso_nlen);
 	if (sbappendaddr(&idrp_isop.isop_socket->so_rcv,
 			 sisotosa(idrp_addrs), m, (struct mbuf *) 0) == 0)
@@ -150,11 +157,7 @@ u_long          idrp_recvspace = 40 * 1024;	/* 40 1K datagrams */
 
 /* ARGSUSED */
 int
-idrp_usrreq(so, req, m, nam, control, p)
-	struct socket *so;
-	int req;
-	struct mbuf *m, *nam, *control;
-	struct proc *p;
+idrp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct mbuf *control, struct proc *p)
 {
 	struct rawcb *rp;
 	int error = 0;

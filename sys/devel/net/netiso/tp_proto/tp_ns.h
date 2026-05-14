@@ -53,10 +53,10 @@ void ns_putnetaddr(void *, struct sockaddr *, int);
 int ns_cmpnetaddr(void *, struct sockaddr *, int);
 void ns_getnetaddr(void *, struct mbuf *, int);
 
-int tpidp_mtu(struct tpipcb *);
-int tpidp_output(void *, struct mbuf *, int, int);
-int tpidp_output_dg(void *, void *, struct mbuf *, int, void *, int);
-int tpidp_input(struct mbuf *, int);
+int tpidp_mtu(struct tp_pcb *);
+int tpidp_output(struct mbuf *, ...);
+int tpidp_output_dg(struct mbuf *, ...);
+int tpidp_input(struct mbuf *, ...);
 void tpidp_quench(struct nspcb *, int);
 void tpidp_abort(struct nspcb *, int);
 void *tpidp_ctlinput(int, struct sockaddr *, void *);

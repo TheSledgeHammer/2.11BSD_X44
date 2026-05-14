@@ -106,10 +106,10 @@ static struct clnp_fixed er_template = {
  * NOTES:
  */
 void
-clnp_er_input(m, src, reason)
-	struct mbuf    *m;	/* ptr to packet itself */
-	struct iso_addr *src;	/* ptr to src of er */
-	u_int           reason;	/* reason code of er */
+clnp_er_input(
+		struct mbuf *m,	/* ptr to packet itself */
+		struct iso_addr *src,	/* ptr to src of er */
+		u_int reason /* reason code of er */)
 {
 	int             cmd = -1;
 
@@ -196,9 +196,9 @@ clnp_er_input(m, src, reason)
  *			up the header of the datagram into one mbuf.
  */
 void
-clnp_discard(m, reason)
-	struct mbuf    *m;	/* header of packet to discard */
-	u_int           reason;	/* reason for discard */
+clnp_discard(
+		struct mbuf *m,	/* header of packet to discard */
+		u_int reason /* reason for discard */)
 {
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_DISCARD]) {
@@ -239,9 +239,9 @@ clnp_discard(m, reason)
  *			an ER.
  */
 void
-clnp_emit_er(m, reason)
-	struct mbuf    *m;	/* header of packet to discard */
-	u_int           reason;	/* reason for discard */
+clnp_emit_er(
+		struct mbuf *m,	/* header of packet to discard */
+		u_int reason /* reason for discard */)
 {
 	struct clnp_fixed *clnp = mtod(m, struct clnp_fixed *);
 	struct clnp_fixed *er;
@@ -382,8 +382,7 @@ done:
 }
 
 int
-clnp_er_index(p)
-	u_int p;
+clnp_er_index(u_int p)
 {
 	u_char *cp = clnp_er_codes + CLNP_ERRORS;
 	while (cp > clnp_er_codes) {

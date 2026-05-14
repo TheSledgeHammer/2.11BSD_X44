@@ -65,6 +65,7 @@ struct tp_protosw tpin6_protosw = {
 		.tp_pcbbind = in6_pcbbind,
 		.tp_pcbconnect = in6_pcbconnect,
 		.tp_pcbdisconnect = in6_pcbdisconnect,
+		.tp_pcbattach = 0,
 		.tp_pcbdetach = in6_pcbdetach,
 		.tp_pcballoc = in6_pcballoc,
 		.tp_output = tpip6_output,
@@ -211,26 +212,38 @@ tpip6_mtu(struct tp_pcb *tpcb)
 }
 
 int
-tpip6_output(void *v, struct mbuf *m0, int datalen, int nochksum)
+tpip6_output(struct mbuf *m0, ...)
 {
 	struct in6pcb *in6p;
+	int datalen, nochksum;
+	va_list	ap;
 
-	in6p = (struct in6pcb *)v;
-	return (tpip6_output_dg(&in6p->in6p_laddr, &in6p->in6p_faddr, m0, datalen, &in6p->in6p_route, nochksum));
+	va_start(ap, m0);
+	in6p = va_arg(ap, struct in6pcb *);
+	datalen = va_arg(ap, int);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
+	return (tpip6_output_dg(m0, &in6p->in6p_laddr, &in6p->in6p_faddr, datalen, &in6p->in6p_route, nochksum));
 }
 
 int
-tpip6_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen, void *ro_arg, int nochksum)
+tpip6_output_dg(struct mbuf *m0, ...)
 {
 	struct in6_addr *laddr, *faddr;
 	struct route_in6 *ro;
 	register struct mbuf *m;
 	register struct ip6_hdr *ip6;
-	int error;
+	struct route_in6 *ro;
+	int error, datalen, nochksum;
+	va_list ap;
 
-	laddr = (struct in6_addr *)laddr_arg;
-	faddr = (struct in6_addr *)faddr_arg;
-	ro = (struct route_in6 *)ro_arg;
+	va_start(ap, m0);
+	laddr = va_arg(ap, struct in6_addr *);
+	faddr = va_arg(ap, struct in6_addr *);
+	datalen = va_arg(ap, int);
+	ro = va_arg(ap, struct route_in6 *);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
 
 	MGETHDR(m, M_DONTWAIT, TPMT_IPHDR);
 	if (m == 0) {
@@ -255,7 +268,7 @@ tpip6_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen, 
 		dump_mbuf(m, "tpip6_output_dg before ip6_output\n");
 	ENDDEBUG
 
-	error = tpip6_output_sc(m, NULL, ro, IP_ALLOWBROADCAST, NULL, NULL, NULL);
+	error = ip6_output(m, NULL, ro, IP_ALLOWBROADCAST /* is this correct?? */, NULL, NULL, NULL);
 	return (error);
 
 bad:
@@ -265,33 +278,16 @@ bad:
 }
 
 int
-tpip6_output_sc(struct mbuf *m0, ...)
-{
-	struct ip6_pktopts *opt;
-	struct route_in6 *ro;
-	int flags;
-	struct ip6_moptions *im6o;
-	struct socket *so;
-	struct ifnet **ifpp;
-	va_list ap;
-
-	va_start(ap, m0);
-	opt = va_arg(ap, struct ip6_pktopts *);
-	ro = va_arg(ap, struct route_in6 *);
-	flags = va_arg(ap, int);
-	im6o = va_arg(ap, struct ip6_moptions *);
-	so = va_arg(ap, struct socket *);
-	ifpp = va_arg(ap, struct ifnet **);
-	va_end(ap);
-	return (ip6_output(m, opt, ro, flags, im6o, so, ifpp));
-}
-
-int
-tpip6_input(struct mbuf *m, int iplen)
+tpip6_input(struct mbuf *m0, ...)
 {
 	struct sockaddr_in6 src6, dst6;
 	register struct ip6_hdr *ip6;
-	int	s, hdrlen;
+	int	s, ip6len, hdrlen;
+	va_list ap;
+
+	va_start(ap, m);
+	ip6len = va_arg(ap, int);
+	va_end(ap);
 
 	s = splnet();
 	IncStat(ts_pkt_rcvd);
@@ -305,7 +301,7 @@ tpip6_input(struct mbuf *m, int iplen)
 	 * up to almost the next mbuf's worth.
 	 */
 
-	if((m = m_pullup(m, iplen + 1)) == MNULL)
+	if((m = m_pullup(m, ip6len + 1)) == MNULL)
 		goto discard;
 	CHANGE_MTYPE(m, TPMT_DATA);
 
@@ -314,7 +310,7 @@ tpip6_input(struct mbuf *m, int iplen)
 	 * Unfortunately, there may be IP options to skip past so we
 	 * just fetch it as an unsigned char.
 	 */
-	hdrlen = iplen + 1 + mtod(m, u_char *)[iplen];
+	hdrlen = ip6len + 1 + mtod(m, u_char *)[ip6len];
 
 	if( m->m_len < hdrlen ) {
 		if((m = m_pullup(m, hdrlen)) == MNULL){
@@ -342,8 +338,8 @@ tpip6_input(struct mbuf *m, int iplen)
 	 * drop the ip header from the front of the mbuf
 	 * this is necessary for the tp checksum
 	 */
-	m->m_len -= iplen;
-	m->m_data += iplen;
+	m->m_len -= ip6len;
+	m->m_data += ip6len;
 
 	src6.sin6_addr = *(struct in6_addr *)&(ip6->ip6_src);
 	src6.sin6_family  = AF_INET6;

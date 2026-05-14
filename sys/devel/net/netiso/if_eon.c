@@ -119,9 +119,9 @@ extern struct timeval time;
 struct ifnet    eonif[1];
 
 void
-eonprotoinit()
+eonprotoinit(void)
 {
-	(void) eonattach();
+	(void)eonattach();
 }
 
 LIST_HEAD( , eon_llinfo) llinfo_eon;
@@ -137,7 +137,7 @@ LIST_HEAD( , eon_llinfo) llinfo_eon;
  */
 
 void
-eonattach()
+eonattach(void)
 {
 	struct ifnet *ifp = eonif;
 
@@ -182,13 +182,10 @@ eonattach()
  * RETURNS:			nothing
  */
 int
-eonioctl(ifp, cmd, data)
-	struct ifnet *ifp;
-	u_long          cmd;
-	caddr_t data;
+eonioctl(struct ifnet *ifp, u_long cmd, void *data)
 {
-	int             s = splnet();
-	int    error = 0;
+	int s = splnet();
+	int error = 0;
 
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_EON]) {
@@ -216,11 +213,7 @@ eonioctl(ifp, cmd, data)
 
 
 void
-eoniphdr(hdr, loc, ro, class, zero)
-	struct route   *ro;
-	struct eon_iphdr *hdr;
-	caddr_t         loc;
-	int		class, zero;
+eoniphdr(struct route *ro, struct eon_iphdr *hdr, const void *loc, int class, int zero)
 {
 	struct mbuf     mhead;
 	struct sockaddr_in *sin = satosin(&ro->ro_dst);
@@ -275,13 +268,10 @@ eoniphdr(hdr, loc, ro, class, zero)
  * RETURNS:			nothing
  */
 void
-eonrtrequest(cmd, rt, info)
-	int cmd;
-	struct rtentry *rt;
-	struct rt_addrinfo *info;
+eonrtrequest(int cmd, struct rtentry *rt, struct rt_addrinfo *info)
 {
-	unsigned long   zerodst = 0;
-	caddr_t         ipaddrloc = (caddr_t) & zerodst;
+	unsigned long zerodst = 0;
+	caddr_t ipaddrloc = (caddr_t) & zerodst;
 	struct eon_llinfo *el = (struct eon_llinfo *)rt->rt_llinfo;
 	struct sockaddr *gate;
 
@@ -350,11 +340,8 @@ eonrtrequest(cmd, rt, info)
  *
  */
 int
-eonoutput(ifp, m, sdst, rt)
-	struct ifnet   *ifp;
-	struct mbuf *m;	/* packet */
-	struct sockaddr *sdst;		/* destination addr */
-	struct rtentry *rt;
+eonoutput(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *sdst,
+		struct rtentry *rt)
 {
 	struct sockaddr_iso *dst = (struct sockaddr_iso *) sdst;
 	struct eon_llinfo *el;
@@ -588,10 +575,7 @@ eoninput(struct mbuf *m, ...)
 }
 
 void *
-eonctlinput(cmd, sa, dummy)
-	int             cmd;
-	struct sockaddr *sa;
-	void *dummy;
+eonctlinput(int cmd, struct sockaddr *sa, void *dummy)
 {
 	struct sockaddr_in *sin = (struct sockaddr_in *) sa;
 #ifdef ARGO_DEBUG

@@ -59,36 +59,39 @@ __KERNEL_RCSID(0, "$NetBSD: cltp_usrreq.c,v 1.23 2003/09/30 00:01:18 christos Ex
 #include <machine/stdarg.h>
 #endif
 
+#define CLTPHASHSIZE 128;
+int cltphashsize = CLTPHASHSIZE;
+int cltp_cksum = 1;
+struct isopcbtable  cltbtable;
+struct isopcb   cltb;
+struct cltpstat cltpstat;
+
 /*
  * CLTP protocol implementation.
  * Per ISO 8602, December, 1987.
  */
 void
-cltp_init()
+cltp_init(void)
 {
 
-	cltb.isop_next = cltb.isop_prev = &cltb;
+	//cltb.isop_next = cltb.isop_prev = &cltb;
+	iso_pcbinit(&cltbtable, cltphashsize);
 }
-
-int cltp_cksum = 1;
-struct isopcb   cltb;
-struct cltpstat cltpstat;
-
 
 /* ARGUSED */
 void
 cltp_input(struct mbuf *m0, ...)
 {
 	struct sockaddr *srcsa, *dstsa;
-	u_int           cons_channel;
+	u_int cons_channel;
 	struct isopcb *isop;
 	struct mbuf *m = m0;
 	struct mbuf *m_src = 0;
 	u_char *up = mtod(m, u_char *);
 	struct sockaddr_iso *src;
-	int             len, hdrlen = *up + 1, dlen = 0;
-	u_char         *uplim = up + hdrlen;
-	caddr_t         dtsap = NULL;
+	int len, hdrlen = *up + 1, dlen = 0;
+	u_char *uplim = up + hdrlen;
+	caddr_t dtsap = NULL;
 	va_list ap;
 
 	va_start(ap, m0);
@@ -106,9 +109,9 @@ cltp_input(struct mbuf *m0, ...)
 		case CLTPOVAL_SRC:
 			src->siso_tlen = up[1];
 			src->siso_len = up[1] + TSEL(src) - (caddr_t) src;
-			if (src->siso_len < sizeof(*src))
+			if (src->siso_len < sizeof(*src)) {
 				src->siso_len = sizeof(*src);
-			else if (src->siso_len > sizeof(*src)) {
+			} else if (src->siso_len > sizeof(*src)) {
 				MGET(m_src, M_DONTWAIT, MT_SONAME);
 				if (m_src == 0)
 					goto bad;
@@ -121,7 +124,7 @@ cltp_input(struct mbuf *m0, ...)
 			continue;
 
 		case CLTPOVAL_DST:
-			dtsap = 2 + (caddr_t) up;
+			dtsap = 2 + (caddr_t)up;
 			dlen = up[1];
 			up += 2 + dlen;
 			continue;
@@ -141,6 +144,18 @@ cltp_input(struct mbuf *m0, ...)
 		}
 	if (dlen == 0 || src->siso_tlen == 0)
 		goto bad;
+
+	CIRCLEQ_FOREACH(isop, &cltbtable.isopt_queue, isop_queue) {
+		if (isop == CIRCLEQ_FIRST(&cltbtable->isopt_queue)) {
+			cltpstat.cltps_noport++;
+			goto bad;
+		}
+		if (isop->isop_laddr &&
+		    bcmp(TSEL(isop->isop_laddr), dtsap, dlen) == 0) {
+			break;
+		}
+	}
+/*
 	for (isop = cltb.isop_next;; isop = isop->isop_next) {
 		if (isop == &cltb) {
 			cltpstat.cltps_noport++;
@@ -150,6 +165,7 @@ cltp_input(struct mbuf *m0, ...)
 		    bcmp(TSEL(isop->isop_laddr), dtsap, dlen) == 0)
 			break;
 	}
+*/
 	m = m0;
 	m->m_len -= hdrlen;
 	m->m_data += hdrlen;
@@ -171,8 +187,7 @@ bad:
  * just wake up so that he can collect error status.
  */
 void
-cltp_notify(isop)
-	struct isopcb *isop;
+cltp_notify(struct isopcb *isop)
 {
 
 	sorwakeup(isop->isop_socket);

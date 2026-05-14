@@ -94,9 +94,9 @@ int in_cmpnetaddr(void *, struct sockaddr *, int);
 void in_getnetaddr(void *, struct mbuf *, int);
 
 int tpip_mtu(struct tpipcb *);
-int tpip_output(void *, struct mbuf *, int, int);
-int tpip_output_dg(void *, void *, struct mbuf *, int, void *, int);
-int tpip_input(struct mbuf *, int);
+int tpip_output(struct mbuf *, ...);
+int tpip_output_dg(struct mbuf *, ...);
+int tpip_input(struct mbuf *, ...);
 void tpip_quench(struct inpcb *, int);
 void tpip_abort(struct inpcb *, int);
 void *tpip_ctlinput(int, struct sockaddr *, void *);

@@ -65,7 +65,7 @@ __KERNEL_RCSID(0, "$NetBSD: iso_pcb.c,v 1.25 2003/10/30 01:43:10 simonb Exp $");
 
 #include "opt_iso.h"
 
-//#ifdef ISO
+#ifdef ISO
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -118,6 +118,27 @@ iso_pcbinit(struct isopcbtable *table, int hashsize)
 {
 	CIRCLEQ_INIT(&table->isopt_queue);
 	table->isopt_hashtbl = hashinit(hashsize, M_PCB, &table->isopt_hash);
+}
+
+/*
+ * FUNCTION: iso_pcbprealloc
+ *
+ * PURPOSE:  preallocates sfaddr and sladdr on isopcb structure,
+ * 			 and insert into isopcbtable structure if not null.
+ */
+void
+iso_pcbprealloc(struct isopcbtable *table, struct isopcb *isop, struct sockaddr_iso *siso_addrs)
+{
+    isop->isop_faddr = &isop->isop_sfaddr;
+    isop->isop_laddr = &isop->isop_sladdr;
+    isop->isop_sladdr = *siso_addrs;
+    isop->isop_sfaddr = *siso_addrs;
+    if (table != NULL) {
+        if ((isop->isop_table != table) || (isop->isop_table == NULL)) {
+        	isop->isop_table = table;
+        }
+        iso_pcbinsert(table, isop);
+    }
 }
 
 /*

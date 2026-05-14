@@ -67,6 +67,7 @@ struct tp_protosw tpin4_protosw = {
 		.tp_pcbbind = in_pcbbind,
 		.tp_pcbconnect = in_pcbconnect,
 		.tp_pcbdisconnect = in_pcbdisconnect,
+		.tp_pcbattach = 0,
 		.tp_pcbdetach = in_pcbdetach,
 		.tp_pcballoc = in_pcballoc,
 		.tp_output = tpip_output,
@@ -213,26 +214,37 @@ tpip_mtu(struct tp_pcb *tpcb)
 }
 
 int
-tpip_output(void *v, struct mbuf *m0, int datalen, int nochksum)
+tpip_output(struct mbuf *m0, ...)
 {
 	struct inpcb *inp;
+	int datalen, nochksum;
+	va_list	ap;
 
-	inp = (struct inpcb *)v;
-	return (tpip_output_dg(&inp->inp_laddr, &inp->inp_faddr, m0, datalen, &inp->inp_route, nochksum));
+	va_start(ap, m0);
+	inp = va_arg(ap, struct inpcb *);
+	datalen = va_arg(ap, int);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
+	return (tpip_output_dg(m0, &inp->inp_laddr, &inp->inp_faddr, datalen, &inp->inp_route, nochksum));
 }
 
 int
-tpip_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen, void *ro_arg, int nochksum)
+tpip_output_dg(struct mbuf *m0, ...)
 {
 	struct in_addr *laddr, *faddr;
 	struct route *ro;
 	register struct mbuf *m;
 	register struct ip *ip;
-	int error;
+	int error, datalen, nochksum;
+	va_list ap;
 
-	laddr = (struct in_addr *)laddr_arg;
-	faddr = (struct in_addr *)faddr_arg;
-	ro = (struct route *)ro_arg;
+	va_start(ap, m0);
+	laddr = va_arg(ap, struct in_addr *);
+	faddr = va_arg(ap, struct in_addr *);
+	datalen = va_arg(ap, int);
+	ro = va_arg(ap, struct route *);
+	nochksum = va_arg(ap, int);
+	va_end(ap);
 
 	MGETHDR(m, M_DONTWAIT, TPMT_IPHDR);
 	if (m == 0) {
@@ -261,7 +273,7 @@ tpip_output_dg(void *laddr_arg, void *faddr_arg, struct mbuf *m0, int datalen, v
 		dump_mbuf(m, "tpip_output_dg before ip_output\n");
 	ENDDEBUG
 
-	error = ip_output(m, (struct mbuf *)0, ro, IP_ALLOWBROADCAST, NULL);
+	error = ip_output(m, (struct mbuf *)0, ro, IP_ALLOWBROADCAST, NULL, NULL);
 	return (error);
 
 bad:
@@ -271,11 +283,16 @@ bad:
 }
 
 int
-tpip_input(struct mbuf *m, int iplen)
+tpip_input(struct mbuf *m, ...)
 {
 	struct sockaddr_in src, dst;
 	register struct ip 	*ip;
-	int	s, hdrlen;
+	int	s, iplen, hdrlen;
+	va_list ap;
+
+	va_start(ap, m);
+	iplen = va_arg(ap, int);
+	va_end(ap);
 
 	s = splnet();
 	IncStat(ts_pkt_rcvd);
