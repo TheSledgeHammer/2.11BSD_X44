@@ -62,8 +62,7 @@ __KERNEL_RCSID(0, "$NetBSD: cltp_usrreq.c,v 1.23 2003/09/30 00:01:18 christos Ex
 #define CLTPHASHSIZE 128;
 int cltphashsize = CLTPHASHSIZE;
 int cltp_cksum = 1;
-struct isopcbtable  cltbtable;
-struct isopcb   cltb;
+struct isopcbtable  cltptable;
 struct cltpstat cltpstat;
 
 /*
@@ -75,7 +74,7 @@ cltp_init(void)
 {
 
 	//cltb.isop_next = cltb.isop_prev = &cltb;
-	iso_pcbinit(&cltbtable, cltphashsize);
+	iso_pcbinit(&cltptable, cltphashsize);
 }
 
 /* ARGUSED */
@@ -117,7 +116,7 @@ cltp_input(struct mbuf *m0, ...)
 					goto bad;
 				m_src->m_len = src->siso_len;
 				src = mtod(m_src, struct sockaddr_iso *);
-				bcopy((caddr_t) srcsa, (caddr_t) src, srcsa->sa_len);
+				bcopy((caddr_t)srcsa, (caddr_t)src, srcsa->sa_len);
 			}
 			bcopy((caddr_t) up + 2, TSEL(src), up[1]);
 			up += 2 + src->siso_tlen;
@@ -145,8 +144,8 @@ cltp_input(struct mbuf *m0, ...)
 	if (dlen == 0 || src->siso_tlen == 0)
 		goto bad;
 
-	CIRCLEQ_FOREACH(isop, &cltbtable.isopt_queue, isop_queue) {
-		if (isop == CIRCLEQ_FIRST(&cltbtable->isopt_queue)) {
+	CIRCLEQ_FOREACH(isop, &cltptable.isopt_queue, isop_queue) {
+		if (isop == CIRCLEQ_FIRST(&cltptable->isopt_queue)) {
 			cltpstat.cltps_noport++;
 			goto bad;
 		}
@@ -189,16 +188,12 @@ bad:
 void
 cltp_notify(struct isopcb *isop)
 {
-
 	sorwakeup(isop->isop_socket);
 	sowwakeup(isop->isop_socket);
 }
 
 void
-cltp_ctlinput(cmd, sa, dummy)
-	int             cmd;
-	struct sockaddr *sa;
-	void *dummy;
+cltp_ctlinput(int cmd, struct sockaddr *sa, void *dummy)
 {
 	extern u_char   inetctlerrmap[];
 	struct sockaddr_iso *siso;
@@ -208,8 +203,9 @@ cltp_ctlinput(cmd, sa, dummy)
 	if (sa->sa_family != AF_ISO && sa->sa_family != AF_CCITT)
 		return;
 	siso = satosiso(sa);
-	if (siso == 0 || siso->siso_nlen == 0)
+	if (siso == 0 || siso->siso_nlen == 0) {
 		return;
+	}
 
 	switch (cmd) {
 	case PRC_ROUTEDEAD:
@@ -217,15 +213,13 @@ cltp_ctlinput(cmd, sa, dummy)
 	case PRC_REDIRECT_HOST:
 	case PRC_REDIRECT_TOSNET:
 	case PRC_REDIRECT_TOSHOST:
-		iso_pcbnotify(&cltb, siso,
-			      (int) inetctlerrmap[cmd], iso_rtchange);
+		iso_pcbnotify(&cltptable, siso, &blank_siso, (int)inetctlerrmap[cmd], iso_rtchange);
 		break;
 
 	default:
 		if (inetctlerrmap[cmd] == 0)
 			return;	/* XXX */
-		iso_pcbnotify(&cltb, siso, (int) inetctlerrmap[cmd],
-			      cltp_notify);
+		iso_pcbnotify(&cltptable, siso, &blank_siso, (int)inetctlerrmap[cmd], cltp_notify);
 	}
 }
 
@@ -233,9 +227,9 @@ int
 cltp_output(struct mbuf *m, ...)
 {
 	struct isopcb *isop;
-	int    len;
+	int len;
 	struct sockaddr_iso *siso;
-	int             hdrlen, error = 0, docsum;
+	int hdrlen, error = 0, docsum;
 	u_char *up;
 	va_list ap;
 
@@ -289,25 +283,18 @@ bad:
 }
 
 u_long          cltp_sendspace = 9216;	/* really max datagram size */
-u_long          cltp_recvspace = 40 * (1024 + sizeof(struct sockaddr_iso));
-/* 40 1K datagrams */
-
+u_long          cltp_recvspace = 40 * (1024 + sizeof(struct sockaddr_iso)); /* 40 1K datagrams */
 
 /* ARGSUSED */
 int
-cltp_usrreq(so, req, m, nam, control, p)
-	struct socket *so;
-	int req;
-	struct mbuf *m, *nam, *control;
-	struct proc *p;
+cltp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct mbuf *control, struct proc *p)
 {
 	struct isopcb *isop;
 	int s;
 	int error = 0;
 
 	if (req == PRU_CONTROL)
-		return (iso_control(so, (long)m, (caddr_t)nam,
-		    (struct ifnet *)control, p));
+		return (iso_control(so, (long)m, (caddr_t)nam, (struct ifnet *)control, p));
 
 	if (req == PRU_PURGEIF) {
 		iso_purgeif((struct ifnet *)control);
@@ -337,7 +324,7 @@ cltp_usrreq(so, req, m, nam, control, p)
 			if (error)
 				break;
 		}
-		error = iso_pcballoc(so, &cltb);
+		error = iso_pcballoc(so, &cltptable);
 		if (error)
 			break;
 		break;

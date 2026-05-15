@@ -335,7 +335,7 @@ clnp_usrreq(so, req, m, nam, control, p)
 
 			if (nam->m_len != sizeof(*addr))
 				return (EINVAL);
-			if ((ifnet.tqh_first == 0) ||
+			if ((TAILQ_FIRST(&ifnet) == 0) ||
 			    (addr->siso_family != AF_ISO) ||
 			    (addr->siso_addr.isoa_len &&
 			     ifa_ifwithaddr(sisotosa(addr)) == 0))
@@ -351,7 +351,7 @@ clnp_usrreq(so, req, m, nam, control, p)
 
 			if ((nam->m_len > sizeof(*addr)) || (addr->siso_len > sizeof(*addr)))
 				return (EINVAL);
-			if (ifnet.tqh_first == 0)
+			if (TAILQ_FIRST(&ifnet) == 0)
 				return (EADDRNOTAVAIL);
 
 			/* copy the address */

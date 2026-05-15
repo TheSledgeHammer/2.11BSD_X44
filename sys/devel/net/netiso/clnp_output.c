@@ -136,7 +136,7 @@ u_char          qos_option[] = {CLNPOVAL_QOS, 1,
 CLNPOVAL_GLOBAL | CLNPOVAL_SEQUENCING | CLNPOVAL_LOWDELAY};
 #endif				/* DECBIT */
 
-int             clnp_id = 0;	/* id for segmented dgrams */
+int clnp_id = 0;	/* id for segmented dgrams */
 
 /*
  * FUNCTION:		clnp_output

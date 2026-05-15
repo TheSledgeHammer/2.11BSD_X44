@@ -131,6 +131,17 @@ struct isopcbtable;
 struct isopcb;
 struct mbuf;
 struct sockaddr_iso;
+
+void iso_pcbinit(struct isopcbtable *, int);
+void iso_pcbprealloc(struct isopcbtable *, struct sockaddr_iso *);
+int iso_pcballoc(struct socket *, void *);
+int iso_pcbbind(void *, struct mbuf *, struct proc *);
+int iso_pcbconnect(void *, struct mbuf *);
+void iso_pcbdisconnect(void *);
+void iso_pcbdetach(void *);
+void iso_pcbnotify(struct isopcbtable *, struct sockaddr_iso *, struct sockaddr_iso *, int, void (*)(struct isopcb *, int));
+void iso_rtchange(struct isopcb *, int);
+struct isopcb *iso_pcblookup(struct isopcbtable *, struct sockaddr_iso *, caddr_t, int, struct sockaddr_iso *);
 #endif
 
 #endif /* !_NETISO_ISO_PCB_H_ */

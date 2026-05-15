@@ -153,9 +153,10 @@ struct clnp_frag {
 	u_int           cfr_last;	/* offset of last byte of this frag */
 	u_int           cfr_bytes;	/* bytes to shave to get to data */
 	struct mbuf    *cfr_data;	/* ptr to data for this frag */
-	struct clnp_frag *cfr_next;	/* next fragment in list */
+	LIST_ENTRY(clnp_frag) cfr_next; /* next fragment in list */
 };
 
+LIST_HEAD(clnp_fragl_head, clnp_fragl);
 struct clnp_fragl {
 	struct iso_addr cfl_src;		/* source of the pkt */
 	struct iso_addr cfl_dst;		/* destination of the pkt */
@@ -163,8 +164,8 @@ struct clnp_fragl {
 	u_char          cfl_ttl;		/* current ttl of pkt */
 	u_short         cfl_last;		/* offset of last byte of packet */
 	struct mbuf    *cfl_orighdr;	/* ptr to original header */
-	struct clnp_frag *cfl_frags;	/* linked list of fragments for pkt */
-	struct clnp_fragl *cfl_next;	/* next pkt being reassembled */
+	LIST_HEAD(, clnp_frag) cfl_frags; /* linked list of fragments for pkt */
+	LIST_ENTRY(clnp_fragl) cfl_next; /* next pkt being reassembled */
 };
 
 /*
@@ -468,6 +469,8 @@ struct isopcb;
 struct snpa_hdr;
 struct iso_ifaddr;
 struct route_iso;
+
+extern struct clnp_fragl_head clnp_fragl_list;
 
 /* clnp_debug.c */
 char *clnp_hexp(char *, int, char *);

@@ -33,6 +33,7 @@
  *	@(#)tuba_subr.c	8.1 (Berkeley) 6/10/93
  */
 
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -70,12 +71,13 @@
 #include <netiso/iso_var.h>
 #include <netiso/tuba_table.h>
 
+#define	TUBAHASHSIZE	128
+int	tubahashsize = TUBAHASHSIZE;
+
 struct inpcbtable	tubainptable; /* in pcbtable */
 struct inpcb		tuba_inpcb;
 struct in6pcb		tuba_in6pcb;
 
-#define	TUBAHASHSIZE	128
-int	tubahashsize = TUBAHASHSIZE;
 struct isopcbtable  tubaisoptable; /* iso pcbtable */
 struct isopcb		tuba_isopcb;
 struct sockaddr_iso tuba_addrs[2] = {
@@ -119,10 +121,12 @@ static void tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockadd
 void
 tuba_init(void)
 {
+	/* INET */
 	in_pcbinit(&tubainptable, tubahashsize, tubahashsize);
+	/* ISO */
 	iso_pcbinit(&tubaisoptable, tubahashsize);
 	/* now preallocate sladdr and sfaddr */
-	iso_pcbprealloc(&tubaisoptable, &tuba_isopcb, tuba_addrs[1]);
+	iso_pcbprealloc(&tubaisoptable, tuba_addrs[1]);
 	/*
 	tuba_isopcb.isop_next = tuba_isopcb.isop_prev = &tuba_isopcb;
 	tuba_isopcb.isop_faddr = &tuba_isopcb.isop_sfaddr;
@@ -248,6 +252,7 @@ tuba4_pcbconnect(void *v, struct mbuf *nam)
 	return (error);
 }
 #endif
+
 #ifdef INET6
 int
 tuba6_pcbconnect(void *v, struct mbuf *nam)

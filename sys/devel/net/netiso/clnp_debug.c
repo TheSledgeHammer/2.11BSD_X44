@@ -147,10 +147,11 @@ char           *clnp_saddr_isop(struct sockaddr_iso *);
  *	Do not null terminate.
  */
 char *
-clnp_hexp(src, len, where)
-	char           *src;	/* src of data to print */
-	int             len;	/* lengthof src */
-	char           *where;	/* where to put data */
+clnp_hexp(
+		char *src,		/* src of data to print */
+		int len,		/* lengthof src */
+		char *where,	/* where to put data */
+	)
 {
 	int             i;
 
@@ -169,8 +170,7 @@ static char     iso_addr_b[50];
 #define	DELIM	'.';
 
 char *
-clnp_iso_addrp(isoa)
-	struct iso_addr *isoa;
+clnp_iso_addrp(struct iso_addr *isoa)
 {
 	char           *cp;
 #ifdef notdef
@@ -256,8 +256,7 @@ clnp_iso_addrp(isoa)
 }
 
 char *
-clnp_saddr_isop(s)
-	struct sockaddr_iso *s;
+clnp_saddr_isop(struct sockaddr_iso *s)
 {
 	char  *cp = clnp_iso_addrp(&s->siso_addr);
 

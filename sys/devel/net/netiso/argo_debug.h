@@ -69,8 +69,7 @@ void Dump_buf(caddr_t, int);
  **********************************************/
 #ifndef ARGO_DEBUG
 #define ARGO_DEBUG
-#endif				/* ARGO_DEBUG */
-
+#endif	/* ARGO_DEBUG */
 
 #ifdef ARGO_DEBUG
 /*
@@ -83,9 +82,26 @@ void Dump_buf(caddr_t, int);
     #endif
 */
 
-extern	unsigned char   argo_debug[128];
+extern unsigned char argo_debug[128];
 
-#endif				/* ARGO_DEBUG */
+#define IFDEBUG(ascii) \
+	if (argo_debug[ascii]) {
+#define ENDDEBUG ; }
+
+
+#else  /* ARGO_DEBUG */
+
+/***********************************************
+ * DEBUG OFF:
+ **********************************************/
+
+#ifndef STAR
+#define STAR *
+#endif	/* STAR */
+#define IFDEBUG(ascii)	 //*beginning of comment*/STAR
+#define ENDDEBUG	 STAR/*end of comment*//
+
+#endif /* ARGO_DEBUG */
 
 /***********************************************
  * ASSERT
@@ -252,4 +268,4 @@ if( !(phrase) ) printf("ASSERTION NOT VALID at line %d file %s\n",__LINE__,__FIL
 
 #endif				/* ARGO_DEBUG */
 
-#endif				/* _NETISO_ARGO_DEBUG_H_ */
+#endif	/* _NETISO_ARGO_DEBUG_H_ */

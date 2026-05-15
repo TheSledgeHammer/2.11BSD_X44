@@ -113,12 +113,10 @@ clnp_er_input(
 {
 	int             cmd = -1;
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_CTLINPUT]) {
+	IFDEBUG(D_CTLINPUT)
 		printf("clnp_er_input: m %p, src %s, reason x%x\n",
 		    m, clnp_iso_addrp(src), reason);
-	}
-#endif
+	ENDDEBUG
 
 	INCSTAT(cns_er_inhist[clnp_er_index(reason)]);
 	switch (reason) {
@@ -200,11 +198,9 @@ clnp_discard(
 		struct mbuf *m,	/* header of packet to discard */
 		u_int reason /* reason for discard */)
 {
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_DISCARD]) {
+	IFDEBUG(D_DISCARD)
 		printf("clnp_discard: m %p, reason x%x\n", m, reason);
-	}
-#endif
+	ENDDEBUG
 
 	if (m != NULL) {
 		if (m->m_len >= sizeof(struct clnp_fixed)) {
@@ -253,12 +249,10 @@ clnp_emit_er(
 	int             total_len;	/* total len of dg */
 	struct iso_ifaddr *ia = 0;
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_DISCARD]) {
+	IFDEBUG(D_DISCARD)
 		printf("clnp_emit_er: m %p, hdr len %d\n",
 		       m, clnp->cnf_hdr_len);
-	}
-#endif
+	ENDDEBUG
 
 	bzero((caddr_t) & route, sizeof(route));
 
@@ -310,19 +304,15 @@ clnp_emit_er(
 		goto bad;
 	ifp = ia->ia_ifp;
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_DISCARD]) {
+	IFDEBUG(D_DISCARD)
 		printf("clnp_emit_er: to %s", clnp_iso_addrp(&src));
 		printf(" from %s\n", clnp_iso_addrp(our_addr));
-	}
-#endif
+	ENDDEBUG
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_DISCARD]) {
+	IFDEBUG(D_DISCARD)
 		printf("clnp_emit_er: packet routed to %s\n",
 		    clnp_iso_addrp(&satosiso(first_hop)->siso_addr));
-	}
-#endif
+	ENDDEBUG
 
 	/* allocate mbuf for er pdu header: punt on no space */
 	/*

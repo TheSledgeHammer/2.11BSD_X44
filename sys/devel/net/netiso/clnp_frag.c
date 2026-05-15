@@ -80,7 +80,8 @@ __KERNEL_RCSID(0, "$NetBSD: clnp_frag.c,v 1.16 2003/08/07 16:33:32 agc Exp $");
 #include <netiso/argo_debug.h>
 
 /* all fragments are hung off this list */
-struct clnp_fragl *clnp_frags = NULL;
+//struct clnp_fragl *clnp_frags = NULL;
+struct clnp_fragl_head clnp_fragl_list = LIST_HEAD_INITIALIZER(clnp_fragl_list);
 
 /*
  * FUNCTION:		clnp_fragment
@@ -143,8 +144,7 @@ clnp_fragment(
 		while (total_len > 0) {
 			int             remaining, last_frag;
 
-#ifdef ARGO_DEBUG
-			if (argo_debug[D_FRAG]) {
+			IFDEBUG(D_FRAG)
 				struct mbuf    *mdump = frag_hdr;
 				int             tot_mlen = 0;
 				printf("clnp_fragment: total_len %d:\n",
@@ -157,8 +157,7 @@ clnp_fragment(
 				}
 				printf("clnp_fragment: sum of mbuf chain %d:\n",
 				    tot_mlen);
-			}
-#endif
+			ENDDEBUG
 
 			frag_size = min(total_len, frag_size);
 			if ((remaining = total_len - frag_size) == 0)
@@ -175,9 +174,7 @@ clnp_fragment(
 					frag_size -= 8;
 			}
 
-
-#ifdef ARGO_DEBUG
-			if (argo_debug[D_FRAG]) {
+			IFDEBUG(D_FRAG)
 				printf(
 				    "clnp_fragment: seg off %d, size %d, rem %d\n",
 				    ntohs(seg_part.cng_off), frag_size,
@@ -185,8 +182,7 @@ clnp_fragment(
 				if (last_frag)
 					printf(
 					  "clnp_fragment: last fragment\n");
-			}
-#endif
+			ENDDEBUG
 
 			if (last_frag) {
 				/*
@@ -226,7 +222,7 @@ clnp_fragment(
 			      sizeof(struct clnp_segment));
 
 			{
-				int             derived_len = hdr_len + frag_size;
+				int derived_len = hdr_len + frag_size;
 				HTOC(clnp->cnf_seglen_msb,
 				     clnp->cnf_seglen_lsb, derived_len);
 				if ((frag_hdr->m_flags & M_PKTHDR) == 0)
@@ -242,8 +238,7 @@ clnp_fragment(
 				iso_gen_csum(frag_hdr, CLNP_CKSUM_OFF, hdr_len);
 			}
 
-#ifdef ARGO_DEBUG
-			if (argo_debug[D_DUMPOUT]) {
+			IFDEBUG(D_DUMPOUT)
 				struct mbuf    *mdump = frag_hdr;
 				printf("clnp_fragment: sending dg:\n");
 				while (mdump != NULL) {
@@ -251,8 +246,7 @@ clnp_fragment(
 					    mdump, mdump->m_len);
 					mdump = mdump->m_next;
 				}
-			}
-#endif
+			ENDDEBUG
 
 #ifdef	TROLL
 			error = troll_output(ifp, frag_hdr, first_hop, rt);
@@ -301,7 +295,7 @@ clnp_fragment(
 					num_bytes *= troll_random();
 				frag_size -= num_bytes;
 			}
-#endif				/* TROLL */
+#endif	/* TROLL */
 			total_len -= frag_size;
 			if (!last_frag) {
 				frag_base += frag_size;
@@ -349,15 +343,13 @@ clnp_reass(
 	struct clnp_fragl *cfh;
 
 	/* look for other fragments of this datagram */
-	for (cfh = clnp_frags; cfh != NULL; cfh = cfh->cfl_next) {
+	LIST_FOREACH(cfh, &clnp_fragl_list, cfl_next) {
 		if (seg->cng_id == cfh->cfl_id &&
 		    iso_addrmatch1(src, &cfh->cfl_src) &&
 		    iso_addrmatch1(dst, &cfh->cfl_dst)) {
-#ifdef ARGO_DEBUG
-			if (argo_debug[D_REASS]) {
+			IFDEBUG(D_REASS)
 				printf("clnp_reass: found packet\n");
-			}
-#endif
+			ENDDEBUG
 			/*
 			 * There are other fragments here already. Lets see if
 			 * this fragment is of any help
@@ -374,11 +366,9 @@ clnp_reass(
 		}
 	}
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_REASS]) {
+	IFDEBUG(D_REASS)
 		printf("clnp_reass: new packet!\n");
-	}
-#endif
+	ENDDEBUG
 
 	/*
 	 * This is the first fragment. If src is not consuming too many
@@ -442,12 +432,14 @@ clnp_newpkt(m, src, dst, seg)
 	cfh->cfl_id = seg->cng_id;
 	cfh->cfl_ttl = clnp->cnf_ttl;
 	cfh->cfl_last = (seg->cng_tot_len - clnp->cnf_hdr_len) - 1;
-	cfh->cfl_frags = NULL;
-	cfh->cfl_next = NULL;
+	//cfh->cfl_frags = NULL;
+	//cfh->cfl_next = NULL;
+	LIST_INIT(&cfh->cfl_frags);
 
 	/* Insert into list of packets */
-	cfh->cfl_next = clnp_frags;
-	clnp_frags = cfh;
+	//cfh->cfl_next = clnp_frags;
+	//clnp_frags = cfh;
+	LIST_INSERT_HEAD(&clnp_fragl_list, cfh, cfl_next);
 
 	/* Insert this fragment into list headed by cfh */
 	clnp_insert_frag(cfh, m, seg);
@@ -491,32 +483,33 @@ clnp_insert_frag(
 	fraglen -= clnp->cnf_hdr_len;
 	last = (first + fraglen) - 1;
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_REASS]) {
+
+	IFDEBUG(D_REASS)
 		printf("clnp_insert_frag: New fragment: [%d-%d], len %d\n",
 		    first, last, fraglen);
 		printf("clnp_insert_frag: current fragments:\n");
-		for (cf = cfh->cfl_frags; cf != NULL; cf = cf->cfr_next) {
+
+		LIST_FOREACH(cf, &cfh->cfl_frags, cfr_next) {
+		//for (cf = cfh->cfl_frags; cf != NULL; cf = cf->cfr_next) {
 			printf("\tcf %p: [%d-%d]\n",
 			    cf, cf->cfr_first, cf->cfr_last);
 		}
-	}
-#endif
+	ENDDEBUG
 
-	if (cfh->cfl_frags != NULL) {
+	if (!LIST_EMPTY(cfh->cfl_frags)) {
+	//if (cfh->cfl_frags != NULL) {
 		/*
 		 * Find fragment which begins after the new one
 		 */
-		for (cf = cfh->cfl_frags; cf != NULL;
-		     cf_prev = cf, cf = cf->cfr_next) {
+		for (cf = LIST_FIRST(&cfh->cfl_frags); cf != NULL;
+		     cf_prev = cf, cf = LIST_NEXT(cf, cfr_next)) {
 			if (cf->cfr_first > first) {
 				cf_sub = cf;
 				break;
 			}
 		}
 
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_REASS]) {
+		IFDEBUG(D_REASS)
 			printf("clnp_insert_frag: Previous frag is ");
 			if (cf_prev == NULL)
 				printf("NULL\n");
@@ -529,8 +522,7 @@ clnp_insert_frag(
 			else
 				printf("[%d-%d]\n", cf_sub->cfr_first,
 				    cf_sub->cfr_last);
-		}
-#endif
+		ENDDEBUG
 
 		/*
 		 * If there is a fragment before the new one, check if it
@@ -539,15 +531,13 @@ clnp_insert_frag(
 		 */
 		if (cf_prev != NULL) {
 			if (cf_prev->cfr_last > first) {
-				u_short         overlap = cf_prev->cfr_last - first;
+				u_short  overlap = cf_prev->cfr_last - first;
 
-#ifdef ARGO_DEBUG
-				if (argo_debug[D_REASS]) {
+				IFDEBUG(D_REASS)
 					printf(
 					    "clnp_insert_frag: previous overlaps by %d\n",
 					    overlap);
-				}
-#endif
+				ENDDEBUG
 
 				if (overlap > fraglen) {
 					/*
@@ -578,17 +568,16 @@ clnp_insert_frag(
 		 *	the new one overlaps data on existing fragments. If so,
 		 *	then trim the extra data off the end of the new one.
 		 */
-		for (cf = cf_sub; cf != NULL; cf = cf->cfr_next) {
+		for (cf = cf_sub; cf != NULL; cf = LIST_NEXT(cf, cfr_next)) {
+		//for (cf = cf_sub; cf != NULL; cf = cf->cfr_next) {
 			if (cf->cfr_first < last) {
-				u_short         overlap = last - cf->cfr_first;
+				u_short  overlap = last - cf->cfr_first;
 
-#ifdef ARGO_DEBUG
-				if (argo_debug[D_REASS]) {
+				IFDEBUG(D_REASS)
 					printf(
 					    "clnp_insert_frag: subsequent overlaps by %d\n",
 					    overlap);
-				}
-#endif
+				ENDDEBUG
 
 				if (overlap > fraglen) {
 					/*
@@ -616,6 +605,7 @@ clnp_insert_frag(
 			}
 		}
 	}
+
 	/*
 	 * Insert the new fragment beween cf_prev and cf_sub
 	 *
@@ -642,13 +632,11 @@ clnp_insert_frag(
 		/* bytes is number of bytes left in front of data */
 		bytes = clnp->cnf_hdr_len - pad;
 
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_REASS]) {
+		IFDEBUG(D_REASS)
 			printf(
 			"clnp_insert_frag: clnp %p requires %d alignment\n",
 			       clnp, pad);
-		}
-#endif
+		ENDDEBUG
 
 		/* make it word aligned if necessary */
 		if (pad)
@@ -657,16 +645,13 @@ clnp_insert_frag(
 		cf = mtod(m, struct clnp_frag *);
 		cf->cfr_bytes = bytes;
 
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_REASS]) {
+		IFDEBUG(D_REASS)
 			printf("clnp_insert_frag: cf now %p, cfr_bytes %d\n",
 			       cf, cf->cfr_bytes);
-		}
-#endif
+		ENDDEBUG
 	}
 	cf->cfr_first = first;
 	cf->cfr_last = last;
-
 
 	/*
 	 * The data is the mbuf itself, although we must remember that the
@@ -675,11 +660,15 @@ clnp_insert_frag(
 	cf->cfr_data = m;
 
 	/* link into place */
-	cf->cfr_next = cf_sub;
-	if (cf_prev == NULL)
-		cfh->cfl_frags = cf;
-	else
-		cf_prev->cfr_next = cf;
+	LIST_INSERT_AFTER(cf, cf_sub, cfr_next);
+	//cf->cfr_next = cf_sub;
+	if (cf_prev == NULL) {
+		//cfh->cfl_frags = cf;
+		LIST_INSERT_HEAD(&cfh->cfl_frags, cf, cfr_next);
+	} else {
+		//cf_prev->cfr_next = cf;
+		LIST_INSERT_AFTER(cf_prev, cf, cfr_next);
+	}
 }
 
 /*
@@ -703,18 +692,16 @@ clnp_insert_frag(
 struct mbuf    *
 clnp_comp_pdu(struct clnp_fragl *cfh	/* fragment header */)
 {
-	struct clnp_frag *cf = cfh->cfl_frags;
+	struct clnp_frag *cf = LIST_FIRST(&cfh->cfl_frags);
 
-	while (cf->cfr_next != NULL) {
-		struct clnp_frag *cf_next = cf->cfr_next;
+	while (LIST_NEXT(cf, cfr_next) != NULL) {
+		struct clnp_frag *cf_next = LIST_NEXT(cf, cfr_next);
 
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_REASS]) {
+		IFDEBUG(D_REASS)
 			printf("clnp_comp_pdu: comparing: [%d-%d] to [%d-%d]\n",
 			    cf->cfr_first, cf->cfr_last, cf_next->cfr_first,
 			    cf_next->cfr_last);
-		}
-#endif
+		ENDDEBUG
 
 		if (cf->cfr_last == (cf_next->cfr_first - 1)) {
 			/*
@@ -728,10 +715,9 @@ clnp_comp_pdu(struct clnp_fragl *cfh	/* fragment header */)
 			struct clnp_frag *next_frag;
 
 			cf_next_hdr = *cf_next;
-			next_frag = cf_next->cfr_next;
+			next_frag = LIST_NEXT(cf_next, cfr_next);
 
-#ifdef ARGO_DEBUG
-			if (argo_debug[D_REASS]) {
+			IFDEBUG(D_REASS)
 				struct mbuf    *mdump;
 				int             l;
 				printf("clnp_comp_pdu: merging fragments\n");
@@ -761,8 +747,7 @@ clnp_comp_pdu(struct clnp_fragl *cfh	/* fragment header */)
 					mdump = mdump->m_next;
 				}
 				printf("\ttotal len: %d\n", l);
-			}
-#endif
+			ENDDEBUG
 
 			cf->cfr_last = cf_next->cfr_last;
 			/*
@@ -770,25 +755,26 @@ clnp_comp_pdu(struct clnp_fragl *cfh	/* fragment header */)
 			 * because we have adjusted the clnp_frag structure
 			 * away...
 			 */
-#ifdef ARGO_DEBUG
-			if (argo_debug[D_REASS]) {
+			IFDEBUG(D_REASS)
 				printf("clnp_comp_pdu: shaving off %d bytes\n",
 				       cf_next_hdr.cfr_bytes);
-			}
-#endif
+			ENDDEBUG
+
 			m_adj(cf_next_hdr.cfr_data,
 			      (int) cf_next_hdr.cfr_bytes);
 			m_cat(cf->cfr_data, cf_next_hdr.cfr_data);
-			cf->cfr_next = next_frag;
+
+			//cf->cfr_next = next_frag;
+			LIST_NEXT(cf, cfr_next) = next_frag;
 		} else {
-			cf = cf->cfr_next;
+			//cf = cf->cfr_next;
+			cf = LIST_NEXT(cf, cfr_next);
 		}
 	}
 
-	cf = cfh->cfl_frags;
+	cf = LIST_FIRST(&cfh->cfl_frags);
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_REASS]) {
+	IFDEBUG(D_REASS)
 		struct mbuf    *mdump = cf->cfr_data;
 		printf("clnp_comp_pdu: first frag now: [%d-%d]\n",
 		    cf->cfr_first, cf->cfr_last);
@@ -798,8 +784,7 @@ clnp_comp_pdu(struct clnp_fragl *cfh	/* fragment header */)
 			/* dump_buf(mtod(mdump, caddr_t), mdump->m_len); */
 			mdump = mdump->m_next;
 		}
-	}
-#endif
+	ENDDEBUG
 
 	/* Check if datagram is complete */
 	if ((cf->cfr_first == 0) && (cf->cfr_last == cfh->cfl_last)) {
@@ -814,18 +799,16 @@ clnp_comp_pdu(struct clnp_fragl *cfh	/* fragment header */)
 		struct mbuf    *hdr = cfh->cfl_orighdr;
 		struct clnp_fragl *scan;
 
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_REASS]) {
+
+		IFDEBUG(D_REASS)
 			printf("clnp_comp_pdu: complete pdu!\n");
-		}
-#endif
+		ENDDEBUG
 
 		m_adj(data, (int) cf->cfr_bytes);
 		m_cat(hdr, data);
 
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_DUMPIN]) {
-			struct mbuf    *mdump = hdr;
+		IFDEBUG(D_DUMPIN)
+			struct mbuf  *mdump = hdr;
 			printf("clnp_comp_pdu: pdu is:\n");
 			while (mdump != NULL) {
 				printf("mbuf %p, m_len %d\n",
@@ -835,22 +818,30 @@ clnp_comp_pdu(struct clnp_fragl *cfh	/* fragment header */)
 #endif
 				mdump = mdump->m_next;
 			}
-		}
-#endif
+		ENDDEBUG
 
 		/*
 		 * Remove cfh from the list of fragmented pdus
 		 */
-		if (clnp_frags == cfh) {
-			clnp_frags = cfh->cfl_next;
+		if (LIST_FIRST(&clnp_fragl_list) == cfh) {
+		//if (clnp_frags == cfh) {
+			//clnp_frags = cfh->cfl_next;
+			LIST_REMOVE(cfh, cfl_next);
 		} else {
-			for (scan = clnp_frags; scan != NULL;
-			     scan = scan->cfl_next) {
+			LIST_FOREACH(scan, &clnp_fragl_list, cfl_next) {
+				if (LIST_NEXT(scan, cfl_next) == cfh) {
+					LIST_REMOVE(scan, cfl_next);
+					break;
+				}
+			}
+			/*
+			for (scan = clnp_frags; scan != NULL; scan = scan->cfl_next) {
 				if (scan->cfl_next == cfh) {
 					scan->cfl_next = cfh->cfl_next;
 					break;
 				}
 			}
+			*/
 		}
 
 		/* free cfh */
@@ -860,9 +851,12 @@ clnp_comp_pdu(struct clnp_fragl *cfh	/* fragment header */)
 	}
 	return (NULL);
 }
-#ifdef	TROLL
-static int      troll_cnt;
+
+#ifdef TROLL
+static int troll_cnt;
+
 #include <sys/time.h>
+
 /*
  * FUNCTION:		troll_random
  *
@@ -875,10 +869,10 @@ static int      troll_cnt;
  * NOTES:		This is based on the clock.
  */
 float
-troll_random()
+troll_random(void)
 {
 	extern struct timeval time;
-	long            t = time.tv_usec % 100;
+	long  t = time.tv_usec % 100;
 
 	return ((float) t / (float) 100);
 }
@@ -901,11 +895,7 @@ troll_random()
  *			troll control structure (Troll).
  */
 int
-troll_output(ifp, m, dst, rt)
-	struct ifnet   *ifp;
-	struct mbuf    *m;
-	struct sockaddr *dst;
-	struct rtentry *rt;
+troll_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rtentry *rt)
 {
 	int             err = 0;
 	troll_cnt++;

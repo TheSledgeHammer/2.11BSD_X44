@@ -86,7 +86,7 @@ idrp_init(void)
 
 	iso_pcbinit(&idrp_isoptable, idrphashsize);
 	 /* now preallocate sladdr and sfaddr */
-	iso_pcbprealloc(&idrp_isoptable, &idrp_isop, idrp_addrs[1]);
+	iso_pcbprealloc(&idrp_isoptable, idrp_addrs[1]);
 	/*
 	idrp_isop.isop_faddr = &idrp_isop.isop_sfaddr;
 	idrp_isop.isop_laddr = &idrp_isop.isop_sladdr;

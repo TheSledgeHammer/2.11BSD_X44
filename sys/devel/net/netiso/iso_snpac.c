@@ -182,11 +182,9 @@ llc_rtrequest(int req, struct rtentry *rt, struct rt_addrinfo *info)
 	int addrlen = ifp->if_addrlen;
 #define LLC_SIZE 3		/* XXXXXX do this right later */
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_SNPA]) {
+	IFDEBUG (D_SNPA)
 		printf("llc_rtrequest(%d, %p, %p)\n", req, rt, info);
-	}
-#endif
+	ENDDEBUG
 	if (rt->rt_flags & RTF_GATEWAY) {
 		return;
 	} else {
@@ -334,11 +332,10 @@ iso_snparesolve(struct ifnet *ifp /* outgoing interface */,
 		/*
 		 *	This is a subnetwork address. Return it immediately
 		 */
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_SNPA]) {
+		IFDEBUG(D_SNPA)
 			printf("iso_snparesolve: return SN address\n");
-		}
-#endif
+		ENDDEBUG
+
 		addrlen = dest->siso_nlen - 1;	/* subtract size of AFI */
 		found_snpa = (caddr_t) dest->siso_data + 1;
 		/*
@@ -427,19 +424,15 @@ snpac_add(struct ifnet   *ifp,		/* interface info is related to */
 	int snpalen = min(ifp->if_addrlen, MAX_SNPALEN);
 	int new_entry = 0, index = ifp->if_index, iftype = ifp->if_type;
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_SNPA]) {
+	IFDEBUG(D_SNPA)
 		printf("snpac_add(%p, %p, %p, %x, %x, %x)\n",
 		    ifp, nsap, snpa, type, ht, nsellength);
-	}
-#endif
+	ENDDEBUG
 	zap_isoaddr(dst, nsap);
 	rt = rtalloc1(sisotosa(&dst), 0);
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_SNPA]) {
+	IFDEBUG(D_SNPA)
 		printf("snpac_add: rtalloc1 returns %p\n", rt);
-	}
-#endif
+	ENDDEBUG
 	if (rt == 0) {
 		struct sockaddr *netmask;
 		int             flags;
@@ -539,15 +532,13 @@ snpac_ioctl(
 {
 	struct systype_req *rq = (struct systype_req *) data;
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_IOCTL]) {
+	IFDEBUG(D_IOCTL)
 		if (cmd == SIOCSSTYPE)
 			printf("snpac_ioctl: cmd set, type x%x, ht %d, ct %d\n",
 			    rq->sr_type, rq->sr_holdt, rq->sr_configt);
 		else
 			printf("snpac_ioctl: cmd get\n");
-	}
-#endif
+	ENDDEBUG
 
 	if (cmd == SIOCSSTYPE) {
 		if (p == 0 || suser(p->p_ucred, &p->p_acflag))
@@ -717,8 +708,7 @@ snpac_rtrequest(int req, struct iso_addr *host, struct iso_addr *gateway,
 {
 	struct iso_addr *r;
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_SNPA]) {
+	IFDEBUG(D_SNPA)
 		printf("snpac_rtrequest: ");
 		if (req == RTM_ADD)
 			printf("add");
@@ -728,9 +718,7 @@ snpac_rtrequest(int req, struct iso_addr *host, struct iso_addr *gateway,
 			printf("unknown command");
 		printf(" dst: %s\n", clnp_iso_addrp(host));
 		printf("\tgateway: %s\n", clnp_iso_addrp(gateway));
-	}
-#endif
-
+	ENDDEBUG
 
 	zap_isoaddr(dst, host);
 	zap_isoaddr(gte, gateway);
@@ -780,4 +768,4 @@ snpac_addrt(struct ifnet *ifp, struct iso_addr *host, struct iso_addr *gateway, 
 			   RTF_DONE | RTF_HOST, sisotosa(&gte), 0);
 	}
 }
-#endif				/* ISO */
+#endif /* ISO */

@@ -77,7 +77,7 @@ __KERNEL_RCSID(0, "$NetBSD: clnp_timer.c,v 1.11 2003/08/07 16:33:34 agc Exp $");
 #include <netiso/clnp_stat.h>
 #include <netiso/argo_debug.h>
 
-extern struct clnp_fragl *clnp_frags;
+//extern struct clnp_fragl *clnp_frags;
 
 /*
  * FUNCTION:		clnp_freefrags
@@ -92,16 +92,16 @@ extern struct clnp_fragl *clnp_frags;
  *			TODO: send ER back to source
  */
 struct clnp_fragl *
-clnp_freefrags(cfh)
-	struct clnp_fragl *cfh;	/* fragment header to delete */
+clnp_freefrags(
+		struct clnp_fragl *cfh /* fragment header to delete */)
 {
-	struct clnp_fragl *next = cfh->cfl_next;
+	struct clnp_fragl *next = LIST_NEXT(cfh, cfl_next);
 	struct clnp_frag *cf;
 
 	/* free any frags hanging around */
-	cf = cfh->cfl_frags;
+	cf = LIST_FIRST(&cfh->cfl_frags);
 	while (cf != NULL) {
-		struct clnp_frag *cf_next = cf->cfr_next;
+		struct clnp_frag *cf_next = LIST_NEXT(cf, cfr_next);
 		INCSTAT(cns_fragdropped);
 		m_freem(cf->cfr_data);
 		cf = cf_next;
@@ -111,14 +111,16 @@ clnp_freefrags(cfh)
 	INCSTAT(cns_fragdropped);
 	m_freem(cfh->cfl_orighdr);
 
-	if (clnp_frags == cfh) {
-		clnp_frags = cfh->cfl_next;
+	if (LIST_FIRST(&clnp_fragl_list) == cfh) {
+		//clnp_frags = cfh->cfl_next;
+		LIST_REMOVE(cfh, cfl_next);
 	} else {
 		struct clnp_fragl *scan;
-
-		for (scan = clnp_frags; scan != NULL; scan = scan->cfl_next) {
-			if (scan->cfl_next == cfh) {
-				scan->cfl_next = cfh->cfl_next;
+		LIST_FOREACH(scan, &clnp_fragl_list, cfl_next) {
+		//for (scan = clnp_frags; scan != NULL; scan = scan->cfl_next) {
+			if (LIST_NEXT(scan, cfl_next) == cfh) {
+				//scan->cfl_next = cfh->cfl_next;
+				LIST_REMOVE(cfh, cfl_next);
 				break;
 			}
 		}
@@ -143,17 +145,18 @@ clnp_freefrags(cfh)
  * NOTES:
  */
 void
-clnp_slowtimo()
+clnp_slowtimo(void)
 {
-	struct clnp_fragl *cfh = clnp_frags;
+	struct clnp_fragl *cfh;
 	int             s = splsoftnet();
 
-	while (cfh != NULL) {
+	LIST_FOREACH(cfh, &clnp_fragl_list, cfl_next) {
+	//while (cfh != NULL) {
 		if (--cfh->cfl_ttl == 0) {
 			cfh = clnp_freefrags(cfh);
 			INCSTAT(cns_fragtimeout);
 		} else {
-			cfh = cfh->cfl_next;
+			cfh = LIST_NEXT(cfh, cfl_next);
 		}
 	}
 	splx(s);
@@ -172,10 +175,11 @@ clnp_slowtimo()
  *	TODO: should send back ER
  */
 void
-clnp_drain()
+clnp_drain(void)
 {
-	struct clnp_fragl *cfh = clnp_frags;
+	struct clnp_fragl *cfh;
 
-	while (cfh != NULL)
+	LIST_FOREACH(cfh, &clnp_fragl_list, cfl_next) {
 		cfh = clnp_freefrags(cfh);
+	}
 }

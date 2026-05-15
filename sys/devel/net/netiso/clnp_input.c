@@ -120,7 +120,7 @@ struct clnp_stat clnp_stat;
  * NOTES:
  */
 void
-clnp_init()
+clnp_init(voif)
 {
 	struct protosw *pr;
 
@@ -157,7 +157,7 @@ clnp_init()
  * NOTES:
  */
 void
-clnlintr()
+clnlintr(void)
 {
 	struct mbuf *m;/* ptr to first mbuf of pkt */
 	struct clnl_fixed *clnl;	/* ptr to fixed part of clnl
@@ -217,8 +217,7 @@ next:
 	default:
 		break;
 	}
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_INPUT]) {
+	IFDEBUG(D_INPUT)
 		int             i;
 		printf("clnlintr: src:");
 		for (i = 0; i < 6; i++)
@@ -229,8 +228,7 @@ next:
 			printf("%x%c", sh.snh_dhost[i] & 0xff,
 			    (i < 5) ? ':' : ' ');
 		printf("\n");
-	}
-#endif
+	ENDDEBUG
 
 	/*
 	 * Get the fixed part of the clnl header into the first mbuf.
@@ -270,7 +268,7 @@ next:
 
 
 	if (clnlsw->clnl_input)
-		(*clnlsw->clnl_input) (m, &sh);
+		(*clnlsw->clnl_input)(m, &sh);
 	else
 		m_freem(m);
 
@@ -331,28 +329,25 @@ clnp_input(struct mbuf *m, ...)
 		return;
 	}
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_INPUT]) {
+	IFDEBUG(D_INPUT)
 		printf(
 		    "clnp_input: processing dg; First mbuf m_len %d, m_type x%x, %s\n",
 		    m->m_len, m->m_type, IS_CLUSTER(m) ? "cluster" : "normal");
-	}
-#endif
+	ENDDEBUG
 	need_afrin = 0;
 
 	/*
 	 *	If no iso addresses have been set, there is nothing
 	 *	to do with the packet.
 	 */
-	if (iso_ifaddr.tqh_first == 0) {
+	if (TAILQ_FIRST(&iso_ifaddr) == 0) {
 		clnp_discard(m, ADDR_DESTUNREACH);
 		return;
 	}
 	INCSTAT(cns_total);
 	clnp = mtod(m, struct clnp_fixed *);
 
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_DUMPIN]) {
+	IFDEBUG(D_DUMPIN)
 		struct mbuf    *mhead;
 		int             total_len = 0;
 		printf("clnp_input: clnp header:\n");
@@ -364,8 +359,7 @@ clnp_input(struct mbuf *m, ...)
 		}
 		printf("clnp_input: total length of mbuf chain %d:\n",
 		total_len);
-	}
-#endif
+	ENDDEBUG
 
 	/*
 	 *	Compute checksum (if necessary) and drop packet if
@@ -408,12 +402,10 @@ clnp_input(struct mbuf *m, ...)
 		clnp_discard(m, GEN_INCOMPLETE);
 		return;
 	}
-#ifdef ARGO_DEBUG
-	if (argo_debug[D_INPUT]) {
+	IFDEBUG(D_INPUT)
 		printf("clnp_input: from %s", clnp_iso_addrp(&src));
 		printf(" to %s\n", clnp_iso_addrp(&dst));
-	}
-#endif
+	ENDDEBUG
 
 	/*
 	 * extract the segmentation information, if it is present.
@@ -472,13 +464,11 @@ clnp_input(struct mbuf *m, ...)
 
 		if (errcode != 0) {
 			clnp_discard(m, (char) errcode);
-#ifdef ARGO_DEBUG
-			if (argo_debug[D_INPUT]) {
+			IFDEBUG(D_INPUT)
 				printf(
 				    "clnp_input: dropped (err x%x) due to bad options\n",
 				    errcode);
-			}
-#endif
+			ENDDEBUG
 			return;
 		}
 	}
@@ -486,11 +476,9 @@ clnp_input(struct mbuf *m, ...)
 	 *	check if this packet is for us. if not, then forward
 	 */
 	if (clnp_ours(&dst) == 0) {
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_INPUT]) {
+		IFDEBUG(D_INPUT)
 			printf("clnp_input: forwarding packet not for us\n");
-		}
-#endif
+		ENDDEBUG
 		clnp_forward(m, seg_len, &dst, oidxp, seg_off, shp);
 		return;
 	}
@@ -501,7 +489,7 @@ clnp_input(struct mbuf *m, ...)
 	 *	all end systems, then send an esh to the source
 	 */
 	if ((shp->snh_flags & M_MCAST) && (iso_systype == SNPA_ES)) {
-		extern short    esis_holding_time;
+		extern short esis_holding_time;
 
 		esis_shoutput(shp->snh_ifp, ESIS_ESH, esis_holding_time,
 			      shp->snh_shost, 6, &dst);
@@ -553,24 +541,20 @@ clnp_input(struct mbuf *m, ...)
 		break;
 	case CLNP_RAW:
 	case CLNP_ECR:
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_INPUT]) {
+		IFDEBUG(D_INPUT)
 			printf("clnp_input: raw input of %d bytes\n",
 			    clnp->cnf_type & CNF_SEG_OK ?
 			    seg_part.cng_tot_len : seg_len);
-		}
-#endif
+		ENDDEBUG
 		(*isosw[clnp_protox[ISOPROTO_RAW]].pr_input)(m, &source,
 							     &target,
 							 clnp->cnf_hdr_len);
 		break;
 
 	case CLNP_EC:
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_INPUT]) {
+		IFDEBUG(D_INPUT)
 			printf("clnp_input: echoing packet\n");
-		}
-#endif
+		ENDDEBUG
 		(void) clnp_echoreply(m, (clnp->cnf_type & CNF_SEG_OK ?
 				      (int) seg_part.cng_tot_len : seg_len),
 				      &source, &target, oidxp);

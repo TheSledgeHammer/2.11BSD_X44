@@ -60,6 +60,7 @@ SOFTWARE.
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
 #ifdef _NETISO_TP_PERF_MEAS_
+
 #define tpmeas(a, b, t, c, d, e) \
 	Tpmeas((u_int)(a), (u_int)(b), t, (u_int)(c), (u_int)(d), (u_int)(e))
 

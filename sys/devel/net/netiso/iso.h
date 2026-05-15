@@ -157,10 +157,25 @@ struct sockaddr_iso {
 #define SAME_ISOIFADDR(a, b) 	\
 	(bcmp((a)->siso_data, (b)->siso_data, (unsigned)((b)->siso_nlen - (b)->siso_tlen)) == 0)
 
+/*
+ * The following are specific values for siso->siso_data[0],
+ * otherwise known as the AFI:
+ */
+#define	AFI_37		0x37	/* bcd of "37" */
+#define AFI_OSINET	0x47	/* bcd of "47" */
+#define AFI_RFC986	0x47	/* bcd of "47" */
+#define	AFI_SNA		0x00	/* SubNetwork Address; invalid really... */
+
 #define IFA_INISO(x)	(&((struct sockaddr_iso *)((x)->ifa_addr))->siso_addr)
 #define IFA_DSTISO(x)	(&((struct sockaddr_iso *)((x)->ifa_dstaddr))->siso_addr)
 
 #ifdef _KERNEL
+
+#include <sys/protosw.h>
+
+extern struct domain isodomain;
+extern const struct protosw isosw[];
+extern struct sockaddr_iso blank_siso;
 
 #define	satosiso(sa)	((struct sockaddr_iso *)(sa))
 #define	satocsiso(sa)	((const struct sockaddr_iso *)(sa))
@@ -168,10 +183,10 @@ struct sockaddr_iso {
 
 #else
 /* user utilities definitions from the iso library */
-struct iso_addr *iso_addr(const char *);
-char            *iso_ntoa(const struct iso_addr *);
 
 #include <sys/cdefs.h>
 
+struct iso_addr *iso_addr(const char *);
+char            *iso_ntoa(const struct iso_addr *);
 #endif /* _KERNEL */
 #endif /* _NETISO_ISO_H_ */

@@ -108,6 +108,7 @@ unsigned char   argo_debug[128];
 #define ISOPCBHASH(table, laddr, faddr)	\
 	(&(table)->isopt_hashtbl[(TSELHASH((laddr)) + TSELHASH((faddr)))])
 
+static int iso_pcbprealloc1(struct socket *, struct isopcbtable *, struct sockaddr_iso *, bool_t);
 static struct isopcb *iso_pcbhashlookup(struct isopcbtable *, struct sockaddr_iso *, caddr_t, int, struct sockaddr_iso *, int);
 static void iso_pcbrehash(struct isopcbhead *, struct isopcb *);
 static void iso_pcbinsert(struct isopcbtable *, struct isopcb *);
@@ -123,37 +124,31 @@ iso_pcbinit(struct isopcbtable *table, int hashsize)
 /*
  * FUNCTION: iso_pcbprealloc
  *
- * PURPOSE:  preallocates sfaddr and sladdr on isopcb structure,
- * 			 and insert into isopcbtable structure if not null.
+ * PURPOSE:	preallocate an isopcb structure
+ *			without socket (so), and initialize preallocated
+ *			faddr (siso_addrs) and laddr (siso_addrs),
+ *			and puts it in the queue with head (head)
  */
 void
-iso_pcbprealloc(struct isopcbtable *table, struct isopcb *isop, struct sockaddr_iso *siso_addrs)
+iso_pcbprealloc(struct isopcbtable *table, struct sockaddr_iso *siso_addrs)
 {
-    isop->isop_faddr = &isop->isop_sfaddr;
-    isop->isop_laddr = &isop->isop_sladdr;
-    isop->isop_sladdr = *siso_addrs;
-    isop->isop_sfaddr = *siso_addrs;
-    if (table != NULL) {
-        if ((isop->isop_table != table) || (isop->isop_table == NULL)) {
-        	isop->isop_table = table;
-        }
-        iso_pcbinsert(table, isop);
-    }
+	(void)iso_pcbprealloc1(NULL, table, siso_addrs, TRUE);
 }
 
 /*
  * FUNCTION:		iso_pcballoc
  *
  * PURPOSE:		creates an isopcb structure in an mbuf,
- *			with socket (so), and
- *			puts it in the queue with head (head)
+ *				with socket (so), and
+ *				puts it in the queue with head (head)
  *
  * RETURNS:		0 if OK, ENOBUFS if can't alloc the necessary mbuf
  */
 int
 iso_pcballoc(struct socket *so, void *v)
 {
-	struct isopcbtable *table = v;
+	struct isopcbtable *table = (struct isopcbtable *)v;
+#ifdef notyet
 	struct isopcb *isop;
 
 	MALLOC(isop, struct isopcb *, sizeof(*isop), M_PCB, M_NOWAIT);
@@ -165,6 +160,44 @@ iso_pcballoc(struct socket *so, void *v)
 	so->so_pcb = isop;
 	CIRCLEQ_INSERT_HEAD(&table->isopt_queue, isop, isop_queue);
 	iso_pcbinsert(table, isop);
+	return (0);
+#endif
+	return (iso_pcbprealloc1(so, table, NULL, FALSE));
+}
+
+/*
+ * FUNCTION:	iso_pcbprealloc1
+ *
+ * PURPOSE 1:	see iso_pcballoc
+ *
+ * PURPOSE 2:	see iso_pcbprealloc
+ *
+ * RETURNS:		0 if OK, ENOBUFS if can't alloc the necessary mbuf
+ */
+static int
+iso_pcbprealloc1(struct socket *so, struct isopcbtable *table, struct sockaddr_iso *siso_addrs, bool_t prealloc)
+{
+	struct isopcb *isop;
+
+	MALLOC(isop, struct isopcb *, sizeof(*isop), M_PCB, M_NOWAIT);
+	if (isop == NULL) {
+		return (ENOBUFS);
+	}
+	bzero(isop, sizeof(*isop));
+	isop->isop_table = table;
+	isop->isop_socket = so;
+	so->so_pcb = isop;
+	if (prealloc == TRUE) {
+		if (siso_addrs == NULL) {
+			return (ENOBUFS);
+		}
+	    isop->isop_faddr = &isop->isop_sfaddr;
+	    isop->isop_laddr = &isop->isop_sladdr;
+	    isop->isop_sladdr = *siso_addrs;
+	    isop->isop_sfaddr = *siso_addrs;
+	}
+    CIRCLEQ_INSERT_HEAD(&table->isopt_queue, isop, isop_queue);
+    iso_pcbinsert(table, isop);
 	return (0);
 }
 

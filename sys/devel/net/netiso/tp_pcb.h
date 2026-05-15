@@ -105,10 +105,10 @@ SOFTWARE.
  * way it's used, not because the correspondence is exact.
  * REF_CLOSED could correspond to REFWAIT
  */
-#define REF_FROZEN 3	/* has ref timer only */
-#define REF_OPEN 2		/* has timers, possibly active */
+#define REF_FROZEN 	3	/* has ref timer only */
+#define REF_OPEN 	2	/* has timers, possibly active */
 #define REF_OPENING 1	/* in use (has a pcb) but no timers */
-#define REF_FREE 0		/* free to reallocate */
+#define REF_FREE 	0	/* free to reallocate */
 
 #define TM_NTIMERS 		6
 
@@ -125,20 +125,15 @@ struct tp_refinfo {
 };
 
 LIST_HEAD(tppcbhead, tp_pcb);
-
 struct tp_pcb {
 	LIST_ENTRY(tp_pcb) tp_list;
 	LIST_ENTRY(tp_pcb) tp_nextlisten;	/* chain all listeners */
-	//struct tp_pcb		*tp_next;
-	//struct tp_pcb		*tp_prev;
-	//struct tp_pcb		*tp_nextlisten; /* chain all listeners */
 	struct socket 		*tp_sock;		/* back ptr */
 	u_short 			tp_state;		/* state of fsm */
 	short 				tp_retrans;		/* # times can still retrans */
 	caddr_t				tp_npcb;		/* to lower layer pcb */
 	struct tp_protosw	*tp_tpproto;	/* lower-layer dependent routines */
 	struct rtentry		**tp_routep;	/* obtain mtu; inside npcb */
-
 
 	RefNum				tp_lref;	 	/* local reference */
 	RefNum 				tp_fref;		/* foreign reference */
@@ -244,7 +239,6 @@ struct tp_pcb {
 #define PEER_IS_LOCAL(t)	(((t)->tp_flags & TPF_PEER_ON_SAME_NET) != 0)
 #define USES_PDN(t)			(((t)->tp_flags & TPF_NLQOS_PDN) != 0)
 
-
 	unsigned
 		tp_sendfcc:1,			/* shall next ack include FCC parameter? */
 		tp_trace:1,				/* is this pcb being traced? (not used yet) */
@@ -321,6 +315,7 @@ u_int	tp_start_win;
         CONG_INIT_SAMPLE(pcb); \
     }
 
+#define CONG_ACK(pcb, seq)
 
 
 #define	sototpcb(so) 	((struct tp_pcb *)(so->so_pcb))
@@ -335,7 +330,6 @@ extern struct tp_param	tp_param;
 extern struct tppcbhead tp_pcblist;
 extern struct tppcbhead tp_listeners;
 extern struct tp_pcb	*tp_ftimeolist;
-#endif
 
 void tp_init(void);
 void tp_soisdisconnecting(struct socket *);
@@ -351,5 +345,5 @@ int tp_mtu(struct tp_pcb *, struct rtentry *, int);
 void tp_quench(struct tp_pcb *, int);
 int tp_abort(struct tp_pcb *, int);
 int tp_reset(struct tp_pcb *, int);
-
+#endif
 #endif  /* _NETISO_TP_PCB__ */

@@ -75,37 +75,37 @@ SOFTWARE.
  * compile time parameters that can be changed
  *****************************************************/
 
-#define 	TP_CLASSES_IMPLEMENTED 0x11 /* zero and 4 */
+#define TP_CLASSES_IMPLEMENTED 0x11 /* zero and 4 */
 
-#define		TP_DECBIT_CLEAR_COUNT	3
+#define	TP_DECBIT_CLEAR_COUNT	3
 
 /*#define 	N_TPREF				100 */
 #ifdef KERNEL
 extern int N_TPREF;
 #endif
 
-#define 	TP_SOCKBUFSIZE		((u_long)4096)
-#define 	TP0_SOCKBUFSIZE		((u_long)512)
-#define		MAX_TSAP_SEL_LEN	64
+#define TP_SOCKBUFSIZE		((u_long)4096)
+#define TP0_SOCKBUFSIZE		((u_long)512)
+#define	MAX_TSAP_SEL_LEN	64
 
 /* maximum tpdu size we'll accept: */
-#define 	TP_TPDUSIZE			0xc		/* 4096 octets for classes 1-4*/
-#define 	TP0_TPDUSIZE		0xb		/* 2048 octets for class 0 */
-#define 	TP_DFL_TPDUSIZE		0x7		/* 128 octets default */
+#define TP_TPDUSIZE			0xc		/* 4096 octets for classes 1-4*/
+#define TP0_TPDUSIZE		0xb		/* 2048 octets for class 0 */
+#define TP_DFL_TPDUSIZE		0x7		/* 128 octets default */
 	/* NOTE: don't ever negotiate 8192 because could get
 	 * wraparound in checksumming
 	 * (No mtu is likely to be larger than 4K anyway...)
 	 */
-#define		TP_NRETRANS			12		/* TCP_MAXRXTSHIFT + 1 */
-#define		TP_MAXRXTSHIFT		6		/* factor of 64 */
-#define		TP_MAXPORT			0xefff
+#define	TP_NRETRANS			12		/* TCP_MAXRXTSHIFT + 1 */
+#define	TP_MAXRXTSHIFT		6		/* factor of 64 */
+#define	TP_MAXPORT			0xefff
 
 /* ALPHA: to be used in the context: gain= 1/(2**alpha), or
  * put another way, gaintimes(x) (x)>>alpha (forgetting the case alpha==0)
  */
-#define 	TP_RTT_ALPHA		3
-#define 	TP_RTV_ALPHA		2
-#define		TP_REXMTVAL(tpcb)\
+#define TP_RTT_ALPHA		3
+#define TP_RTV_ALPHA		2
+#define	TP_REXMTVAL(tpcb)\
 	((tp_rttadd + (tpcb)->tp_rtt + ((tpcb)->tp_rtv) << 2) / tp_rttdiv)
 #define		TP_RANGESET(tv, value, min, max) \
 	((tv = value) > (max) ? (tv = max) : (tv < min ? tv = min : tv))
@@ -113,10 +113,10 @@ extern int N_TPREF;
 /*
  * not sure how to treat data on disconnect
  */
-#define 	T_CONN_DATA			0x1
-#define 	T_DISCONNECT		0x2
-#define 	T_DISC_DATA			0x4
-#define 	T_XDATA				0x8
+#define T_CONN_DATA			0x1
+#define T_DISCONNECT		0x2
+#define T_DISC_DATA			0x4
+#define T_XDATA				0x8
 
 #define ISO_CLNS	 			0
 #define IN_CLNS	 	 			1
@@ -147,22 +147,22 @@ extern int N_TPREF;
  * constants used in the protocol
  *****************************************************/
 
-#define		TP_VERSION 			0x1
+#define	TP_VERSION 			0x1
 
-#define 	TP_MAX_HEADER_LEN	256
+#define TP_MAX_HEADER_LEN	256
 
-#define 	TP_MIN_TPDUSIZE		0x7		/* 128 octets */
-#define 	TP_MAX_TPDUSIZE		0xd		/* 8192 octets */
+#define TP_MIN_TPDUSIZE		0x7		/* 128 octets */
+#define TP_MAX_TPDUSIZE		0xd		/* 8192 octets */
 
-#define		TP_MAX_XPD_DATA		0x10	/* 16 octets */
-#define		TP_MAX_CC_DATA		0x20	/* 32 octets */
-#define		TP_MAX_CR_DATA		TP_MAX_CC_DATA
-#define		TP_MAX_DR_DATA		0x40	/* 64 octets */
+#define	TP_MAX_XPD_DATA		0x10	/* 16 octets */
+#define	TP_MAX_CC_DATA		0x20	/* 32 octets */
+#define	TP_MAX_CR_DATA		TP_MAX_CC_DATA
+#define	TP_MAX_DR_DATA		0x40	/* 64 octets */
 
-#define		TP_XTD_FMT_BIT 	0x80000000
-#define		TP_XTD_FMT_MASK	0x7fffffff
-#define		TP_NML_FMT_BIT 	0x80
-#define		TP_NML_FMT_MASK	0x7f
+#define	TP_XTD_FMT_BIT 		0x80000000
+#define	TP_XTD_FMT_MASK		0x7fffffff
+#define	TP_NML_FMT_BIT 		0x80
+#define	TP_NML_FMT_MASK		0x7f
 
 /*
  * values for the tpdu_type field, 2nd byte in a tpdu
@@ -187,69 +187,69 @@ extern int N_TPREF;
  * identifiers for the variable-length options in tpdus
  */
 
-#define		TPP_acktime			0x85
-#define		TPP_residER			0x86
-#define		TPP_priority		0x87
-#define		TPP_transdelay		0x88
-#define		TPP_throughput		0x89
-#define		TPP_subseq			0x8a
-#define		TPP_flow_cntl_conf	0x8c	/* not implemented */
-#define		TPP_addl_info		0xe0
-#define		TPP_tpdu_size		0xc0
-#define		TPP_calling_sufx	0xc1
-#define		TPP_invalid_tpdu	0xc1	/* the bozos used a value twice */
-#define		TPP_called_sufx		0xc2
-#define		TPP_checksum		0xc3
-#define		TPP_vers			0xc4
-#define		TPP_security		0xc5
-#define		TPP_addl_opt		0xc6
-#define		TPP_alt_class		0xc7
-#define		TPP_perf_meas		0xc8	/* local item : perf meas on, svp */
-#define		TPP_ptpdu_size		0xf0	/* preferred TPDU size */
-#define		TPP_inact_time		0xf2	/* inactivity time exchanged */
+#define	TPP_acktime			0x85
+#define	TPP_residER			0x86
+#define	TPP_priority		0x87
+#define	TPP_transdelay		0x88
+#define	TPP_throughput		0x89
+#define	TPP_subseq			0x8a
+#define	TPP_flow_cntl_conf	0x8c	/* not implemented */
+#define	TPP_addl_info		0xe0
+#define	TPP_tpdu_size		0xc0
+#define	TPP_calling_sufx	0xc1
+#define	TPP_invalid_tpdu	0xc1	/* the bozos used a value twice */
+#define	TPP_called_sufx		0xc2
+#define	TPP_checksum		0xc3
+#define	TPP_vers			0xc4
+#define	TPP_security		0xc5
+#define	TPP_addl_opt		0xc6
+#define	TPP_alt_class		0xc7
+#define	TPP_perf_meas		0xc8	/* local item : perf meas on, svp */
+#define	TPP_ptpdu_size		0xf0	/* preferred TPDU size */
+#define	TPP_inact_time		0xf2	/* inactivity time exchanged */
 
 
 /******************************************************
  * Some fundamental data types
  *****************************************************/
-#ifndef		TRUE
-#define		TRUE				1
-#endif		/* TRUE */
+#ifndef	TRUE
+#define	TRUE				1
+#endif /* TRUE */
 
-#ifndef		FALSE
-#define		FALSE				0
+#ifndef	FALSE
+#define	FALSE				0
 #endif		/* FALSE */
 
-#define		TP_LOCAL				22
-#define		TP_FOREIGN				33
+#define	TP_LOCAL				22
+#define	TP_FOREIGN				33
 
-#ifndef 	EOK
-#define 	EOK 	0
-#endif  	/* EOK */
+#ifndef EOK
+#define EOK 	0
+#endif  /* EOK */
 
-#define 	TP_CLASS_0 	(1<<0)
-#define 	TP_CLASS_1 	(1<<1)
-#define 	TP_CLASS_2 	(1<<2)
-#define 	TP_CLASS_3 	(1<<3)
-#define 	TP_CLASS_4 	(1<<4)
+#define TP_CLASS_0 	(1<<0)
+#define TP_CLASS_1 	(1<<1)
+#define TP_CLASS_2 	(1<<2)
+#define TP_CLASS_3 	(1<<3)
+#define TP_CLASS_4 	(1<<4)
 
-#define 	TP_FORCE 	0x1
-#define 	TP_STRICT 	0x2
+#define TP_FORCE 	0x1
+#define TP_STRICT 	0x2
 
-#ifndef 	MNULL
-#define 	MNULL				(struct mbuf *)0
+#ifndef MNULL
+#define MNULL				(struct mbuf *)0
 #endif 	/* MNULL */
 	/* if ../sys/mbuf.h gets MT_types up to 0x40, these will
 	 * have to be changed:
 	 */
-#define 	MT_XPD 				0x44
-#define 	MT_EOT 				0x40
+#define MT_XPD 				0x44
+#define MT_EOT 				0x40
 
-#define		TP_ENOREF			0x80000000
+#define	TP_ENOREF			0x80000000
 
-typedef 	unsigned int	SeqNum;
-typedef		unsigned short	RefNum;
-typedef		int				ProtoHook;
+typedef unsigned int	SeqNum;
+typedef	unsigned short	RefNum;
+typedef	int				ProtoHook;
 
 /******************************************************
  * Macro used all over, for driver

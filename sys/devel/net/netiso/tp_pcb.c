@@ -246,7 +246,6 @@ tp_getrefinfo(struct tp_ref **tpref, struct tp_refinfo *tprefinfo, struct tp_pcb
 	caddr_t obase;
 	unsigned int size;
 
-
 	if (++tprefinfo->tpr_numopen < tprefinfo->tpr_size) {
 		for (r = tprefinfo->tpr_base, rlim = r + tprefinfo->tpr_size;
 				++r < rlim;) { /* tp_ref[0] is never used */
@@ -398,9 +397,11 @@ tp_attach(struct socket *so, int protocol)
 	IFDEBUG(D_CONN)
 		printf("tp_attach:dom 0x%x so 0x%x ", dom, so);
 	ENDDEBUG
+
 	IFTRACE(D_CONN)
 		tptrace(TPPTmisc, "tp_attach:dom so", dom, so, 0, 0);
 	ENDTRACE
+
 	if (so->so_pcb != NULL) {
 		return (EISCONN);	/* socket already part of a connection*/
 	}
@@ -434,7 +435,7 @@ tp_attach(struct socket *so, int protocol)
 		 	 	 	 	 	 	 	 	 * will generate correct fake-ack values
 		 	 	 	 	 	 	 	 	 */
 	} else {
-		tpcb->tp_netservice = (dom== AF_INET)?IN_CLNS:ISO_CLNS;
+		tpcb->tp_netservice = (dom == AF_INET) ? IN_CLNS : ISO_CLNS;
 		/* the default */
 	}
 	tpcb->_tp_param = tp_conn_param[tpcb->tp_netservice];
@@ -482,7 +483,6 @@ bad3:
 	IFDEBUG(D_CONN)
 		printf("BAD3 in tp_attach, so 0x%x\n", so);
 	ENDDEBUG
-
 	free((caddr_t)tpcb, M_PCB); /* never a cluster  */
 
 bad2:
@@ -495,6 +495,7 @@ bad2:
 	IFDEBUG(D_CONN)
 		printf("BAD in tp_attach, so 0x%x\n", so);
 	ENDDEBUG
+
 	return (error);
 }
 
@@ -532,7 +533,7 @@ tp_detach(struct tp_pcb *tpcb)
 	ENDDEBUG
 	IFTRACE(D_CONN)
 		tptraceTPCB(TPPTmisc, "tp_detach tpcb so lsufx", tpcb, so,
-			*(u_short*) (tpcb->tp_lsuffix), 0);
+			*(u_short *)(tpcb->tp_lsuffix), 0);
 	ENDTRACE
 
 	IFDEBUG(D_CONN)
