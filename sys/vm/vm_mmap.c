@@ -1053,7 +1053,6 @@ vm_mincore(vm_map_t map, vm_offset_t addr, vm_size_t len, vm_offset_t offset, ch
 			goto out;
 		}
 		if (eoffset != offset) {
-			vm_map_unlock_read(map);
 			error = ENOMEM;
 			goto out;
 		}
