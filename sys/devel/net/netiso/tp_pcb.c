@@ -89,11 +89,7 @@ SOFTWARE.
 #include <netiso/tp_meas.h>
 #include <netiso/tp_seq.h>
 #include <netiso/tp_clnp.h>
-
-#include <netiso/tp_proto/tp_ip.h>
-#include <netiso/tp_proto/tp_ip6.h>
-#include <netiso/tp_proto/tp_iso.h>
-#include <netiso/tp_proto/tp_ns.h>
+#include <netiso/tp_protosw.h>
 
 struct inpcbtable tp_inpcbtable;
 struct isopcbtable tp_isopcbtable;
@@ -267,7 +263,7 @@ tp_getrefinfo(struct tp_ref **tpref, struct tp_refinfo *tprefinfo, struct tp_pcb
 	tprefinfo->tpr_size *= 2;
 	bcopy(obase, (caddr_t) r, size);
 	free(obase, M_PCB);
-	r = (struct tpi_ref *)(size + (caddr_t)r);
+	r = (struct tp_ref *)(size + (caddr_t)r);
 	bzero((caddr_t) r, size);
 
 got_one:
@@ -339,7 +335,7 @@ tp_getref(struct tp_pcb *tpcb)
  *  any old ones that might need re-assigning.
  */
 int
-tpi_set_npcb(struct tp_pcb *tpcb)
+tp_set_npcb(struct tp_pcb *tpcb)
 {
 	register struct socket *so = tpcb->tp_sock;
 	int error;
@@ -351,7 +347,7 @@ tpi_set_npcb(struct tp_pcb *tpcb)
 		(tpcb->tp_tpproto->tp_pcbdetach)(tpcb->tp_npcb);
 		so->so_state = so_state;
 	}
-	tpcb->tp_tpproto = &tpi_protosw[tpcb->tp_netservice];
+	tpcb->tp_tpproto = &tp_protosw[tpcb->tp_netservice];
 	/* xx_pcballoc sets so_pcb */
 	error = (tpcb->tp_tpproto->tp_pcballoc)(so, tpcb->tp_tpproto->tp_pcblist);
 	tpcb->tp_npcb = so->so_pcb;
@@ -704,7 +700,7 @@ tp_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 	}
 	if (tpcb->tp_lsuffixlen == 0) {
 		if (tlen) {
-			if (tpi_tselinuse(tlen, tsel, siso, tpcb->tp_sock->so_options & SO_REUSEADDR)) {
+			if (tp_tselinuse(tlen, tsel, siso, tpcb->tp_sock->so_options & SO_REUSEADDR)) {
 				return (EINVAL);
 			}
 		} else {
@@ -717,7 +713,7 @@ tp_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 					tp_unique = ISO_PORT_RESERVED;
 				}
 				tutil = htons(tp_unique);
-				if (tpi_tselinuse(tlen, tsel, siso, 0) == 0) {
+				if (tp_tselinuse(tlen, tsel, siso, 0) == 0) {
 					break;
 				}
 			}

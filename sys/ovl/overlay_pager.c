@@ -267,11 +267,11 @@ overlay_pager_io(ovl, vpage, npages, flags)
 	}
 
 	/* determine number of pages, to find overlay segment & page offset */
-	if(npages == 1) {
+	if (npages == 1) {
 		ovl_segment = CIRCLEQ_FIRST(&ovl_object->seglist);
 		ovl_page = TAILQ_FIRST(&ovl_segment->pglist);
 	} else {
-		while(npages--) {
+		while (npages--) {
 			segoffset = stoa(round_segment(npages) / SEGMENT_SIZE);
 			pgoffset = ptoa(round_page(npages) / PAGE_SIZE);
 			if(ovl_segment_lookup(ovl_object, segoffset)) {

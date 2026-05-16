@@ -73,6 +73,22 @@ SOFTWARE.
 #ifndef _NETISO_TP_PROTOSW_H_
 #define _NETISO_TP_PROTOSW_H_
 
+#ifdef ISO
+#include <netiso/tp_proto/tp_iso.h>
+#ifdef TPCONS
+#include <netiso/tp_proto/tp_cons.h>
+#endif
+#endif
+#ifdef INET
+#include <netiso/tp_proto/tp_ip.h>
+#endif
+#ifdef INET6
+#include <netiso/tp_proto/tp_ip6.h>
+#endif
+#ifdef NS
+#include <netiso/tp_proto/tp_ns.h>
+#endif
+
 struct tp_protosw {
 	int		tp_afamily;												/* address family */
 	void	(*tp_xsapattach)(void *);								/* attach sap layer services */
@@ -99,11 +115,21 @@ struct tp_protosw {
 extern struct tp_protosw *tp_protosw;
 
 /* network protocols */
-extern struct tp_protosw tpin4_protosw;
-extern struct tp_protosw tpin6_protosw;
+#ifdef ISO
 extern struct tp_protosw tpiso_protosw;
-extern struct tp_protosw tpns_protosw;
+#ifdef TPCONS
 extern struct tp_protosw tpcons_protosw;
+#endif
+#endif
+#ifdef INET
+extern struct tp_protosw tpin4_protosw;
+#endif
+#ifdef INET6
+extern struct tp_protosw tpin6_protosw;
+#endif
+#ifdef NS
+extern struct tp_protosw tpns_protosw;
+#endif
 
 void tp_protosw_init(void);
 void tp_xsap_attach(struct tp_xsap_router *, int);

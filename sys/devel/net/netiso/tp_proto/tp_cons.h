@@ -60,48 +60,28 @@ SOFTWARE.
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
 /*
- * ARGO
+ * ARGO TP
  *
  * $Header: tp_ip.h,v 5.1 88/10/12 12:19:47 root Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_ip.h,v $
  *
- * xerox network IDP-dependent structures and include files
- *
  */
 
-#ifndef _NETISO_TP_NS_H_
-#define _NETISO_TP_NS_H_
+#ifndef _NETISO_TP_CONS_H_
+#define _NETISO_TP_CONS_H_
 
-#ifndef SOCK_STREAM
-#include <sys/socket.h>
+#include <netiso/cons.h>
+
+#ifdef _KERNEL
+struct mbuf;
+struct sockaddr;
+
+int tpcons_pcbconnect(void *, struct mbuf *);
+void *tpcons_ctlinput(int, struct sockaddr *, void *);
+int tpcons_input(struct mbuf *, ...);
+int tpcons_output(struct mbuf *, ...);
+int tpcons_dg_output(caddr_t, struct mbuf *, int);
+
 #endif
 
-#include <net/route.h>
-
-#include <netns/ns.h>
-#include <netns/ns_pcb.h>
-#include <netns/ns_var.h>
-
-struct nspcb tp_nspcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
-
-void ns_sapattach(struct tp_xsap_router *);
-void ns_sapdetach(struct tp_xsap_router *);
-void ns_getsufx(void *, u_short *, caddr_t, int);
-void ns_putsufx(void *, caddr_t, int, int);
-void ns_recycle_tsuffix(void *);
-void ns_putnetaddr(void *, struct sockaddr *, int);
-int ns_cmpnetaddr(void *, struct sockaddr *, int);
-void ns_getnetaddr(void *, struct mbuf *, int);
-
-int tpidp_mtu(struct tp_pcb *);
-int tpidp_output(struct mbuf *, ...);
-int tpidp_output_dg(struct mbuf *, ...);
-int tpidp_input(struct mbuf *, ...);
-void tpidp_quench(struct nspcb *, int);
-void tpidp_abort(struct nspcb *, int);
-void *tpidp_ctlinput(int, struct sockaddr *, void *);
-
-void tpns_quench(struct nspcb *);
-void tpns_abort(struct nspcb *);
-
-#endif /* _NETISO_TP_NS_H_ */
+#endif /* _NETISO_TP_CONS_H_ */

@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_ip.h	8.1 (Berkeley) 6/10/93
+ *	@(#)cons.h	8.1 (Berkeley) 6/10/93
  */
 
 /***********************************************************
@@ -60,48 +60,37 @@ SOFTWARE.
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
 /*
- * ARGO
+ * $Header: cons.h,v 4.4 88/09/09 19:01:28 nhall Exp $
+ * $Source: /usr/argo/sys/netiso/RCS/cons.h,v $
  *
- * $Header: tp_ip.h,v 5.1 88/10/12 12:19:47 root Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_ip.h,v $
- *
- * xerox network IDP-dependent structures and include files
- *
+ * interface between TP and CONS
  */
 
-#ifndef _NETISO_TP_NS_H_
-#define _NETISO_TP_NS_H_
+#ifndef _NETISO_CONS_H_
+#define _NETISO_CONS_H_
 
-#ifndef SOCK_STREAM
-#include <sys/socket.h>
-#endif
+#define	CONSOPT_X25CRUD	0x01		/* set x.25 call request user data */
 
-#include <net/route.h>
+struct dte_addr {
+	u_char 	dtea_addr[7];
+	u_char	dtea_niblen;
+};
 
-#include <netns/ns.h>
-#include <netns/ns_pcb.h>
-#include <netns/ns_var.h>
+#ifdef _KERNEL
 
-struct nspcb tp_nspcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
+#define CONN_OPEN		0x33
+#define CONN_CONFIRM	0x30
+#define CONN_REFUSE		0x31
+#define CONN_CLOSE		0x32
 
-void ns_sapattach(struct tp_xsap_router *);
-void ns_sapdetach(struct tp_xsap_router *);
-void ns_getsufx(void *, u_short *, caddr_t, int);
-void ns_putsufx(void *, caddr_t, int, int);
-void ns_recycle_tsuffix(void *);
-void ns_putnetaddr(void *, struct sockaddr *, int);
-int ns_cmpnetaddr(void *, struct sockaddr *, int);
-void ns_getnetaddr(void *, struct mbuf *, int);
+#define	CONS_IS_DGM		0x1
+#define	CONS_NOT_DGM	0x0
 
-int tpidp_mtu(struct tp_pcb *);
-int tpidp_output(struct mbuf *, ...);
-int tpidp_output_dg(struct mbuf *, ...);
-int tpidp_input(struct mbuf *, ...);
-void tpidp_quench(struct nspcb *, int);
-void tpidp_abort(struct nspcb *, int);
-void *tpidp_ctlinput(int, struct sockaddr *, void *);
+#ifndef	PRC_NCMDS
+#include <sys/protosw.h>
+#endif	/* PRC_NCMDS */
 
-void tpns_quench(struct nspcb *);
-void tpns_abort(struct nspcb *);
+#define PRC_CONS_SEND_DONE 2 /* something unused in protosw.h */
 
-#endif /* _NETISO_TP_NS_H_ */
+#endif	/* KERNEL */
+#endif /* _NETISO_CONS_H_ */

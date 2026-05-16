@@ -75,6 +75,9 @@ SOFTWARE.
  *	cons_chan_to_tpcb: find a tpcb based on the channel #
  */
 
+#ifdef ISO
+#ifdef TPCONS
+
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -88,9 +91,19 @@ SOFTWARE.
 #include <net/if.h>
 #include <net/route.h>
 
+#include <netiso/tp_param.h>
+#include <netiso/argo_debug.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_trace.h>
+#include <netiso/tp_tpdu.h>
 #include <netiso/tp_protosw.h>
+#include <netiso/tp_proto/tp_cons.h>
+#include <netiso/tp_seq.h>
 
-#include <netiso/tp_proto/tp_iso.h>
+#include <netiso/iso.h>
+#include <netiso/iso_errno.h>
+#include <netiso/iso_pcb.h>
 
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
@@ -116,7 +129,7 @@ struct tp_protosw tpcons_protosw = {
  	.tp_pcbdetach = iso_pcbdetach,
  	.tp_pcballoc = iso_pcballoc,
  	.tp_output = tpcons_output,
- 	.tp_dgoutput = tpcons_output_dg,
+ 	.tp_dgoutput = tpcons_output,
  	.tp_ctloutput = 0,
  	.tp_pcblist = &tp_isopcb
 };
@@ -341,3 +354,6 @@ tpcons_dg_output(caddr_t chan, struct mbuf *m0, int datalen)
 {
 	return (tpcons_dg_output_dg(m0, chan, datalen, 0));
 }
+
+#endif /* TPCONS */
+#endif /* ISO */

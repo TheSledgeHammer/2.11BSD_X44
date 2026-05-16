@@ -103,4 +103,5 @@ void *tpip_ctlinput(int, struct sockaddr *, void *);
 
 void tpin_quench(struct inpcb *);
 void tpin_abort(struct inpcb *);
+
 #endif /* _NETISO_TP_IP_H_ */
