@@ -683,6 +683,7 @@ mincore()
 	int error;
 
 	p = u.u_procp;
+	map = &p->p_vmspace->vm_map
 	addr = (vm_offset_t)SCARG(uap, addr);
 	size = (vm_size_t)SCARG(uap, len);
 	vec = SCARG(uap, vec);
