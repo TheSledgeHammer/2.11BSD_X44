@@ -1061,7 +1061,7 @@ vm_mincore(vm_map_t map, vm_offset_t addr, vm_size_t len, vm_offset_t offset, ch
 			continue;
 		}
 		if ((entry->object.vm_object == NULL)
-				|| (entry->aref.ar_amap == NULL)) {
+				&& (entry->aref.ar_amap == NULL)) {
 			error = ENOMEM;
 			goto out;
 		}
