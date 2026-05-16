@@ -682,7 +682,7 @@ mincore()
 	int error;
 
 	p = u.u_procp;
-	map = &p->p_vmspace->vm_map
+	map = &p->p_vmspace->vm_map;
 	addr = (vm_offset_t)SCARG(uap, addr);
 	size = (vm_size_t)SCARG(uap, len);
 	vec = SCARG(uap, vec);
@@ -1139,9 +1139,6 @@ vm_mincore(vm_map_t map, vm_offset_t addr, vm_size_t len, vm_offset_t offset, ch
 		if (eoffset != offset) {
 			error = ENOMEM;
 			goto out;
-		}
-		if (entry->is_sub_map == TRUE) {
-			continue;
 		}
 		if ((entry->object.vm_object == NULL)
 				&& (entry->aref.ar_amap == NULL)) {
