@@ -80,7 +80,6 @@ int mmapdebug = 0;
 #endif
 
 int vm_mincore(vm_map_t, vm_offset_t, vm_size_t, vm_offset_t, char *);
-static int vm_mincore_segment_page(vm_map_entry_t, vm_amap_t, vm_object_t, vm_size_t, vm_offset_t);
 
 /* ARGSUSED */
 int
@@ -1023,82 +1022,6 @@ out:
 }
 
 /*
- * Internal version of mincore.
- * Currently used by mincore.
- */
-int
-vm_mincore(vm_map_t map, vm_offset_t addr, vm_size_t len, vm_offset_t offset, char *vec)
-{
-	vm_map_entry_t entry;
-	vm_object_t object;
-	vm_amap_t amap;
-	vm_offset_t estart, eend, eaddr, eoffset;
-	vm_size_t elen;
-	int error, npages, vecindex;
-	char *evec;
-
-	vm_map_lock_read(map);
-	if (vm_map_lookup_entry(map, addr, &entry)) {
-		estart = entry->start;
-		eend = entry->end;
-		eoffset = entry->offset;
-		elen = (eend - estart);
-		eaddr = ((estart + elen) - elen);
-
-		if (elen != len) {
-			error = ENOMEM;
-			goto out;
-		}
-		if (eaddr != addr) {
-			error = ENOMEM;
-			goto out;
-		}
-		if (eoffset != offset) {
-			error = ENOMEM;
-			goto out;
-		}
-		if (entry->is_sub_map == TRUE) {
-			continue;
-		}
-		if ((entry->object.vm_object == NULL)
-				&& (entry->aref.ar_amap == NULL)) {
-			error = ENOMEM;
-			goto out;
-		}
-		amap = entry->aref.ar_amap;			/* top layer */
-		object = entry->object.vm_object;	/* bottom layer */
-
-		error = vm_mincore_segment_page(entry, amap, object, elen, eoffset);
-		switch (error) {
-		case 0:
-			/* Nothing was found */
-			error = ENOMEM;
-			goto out;
-		case 1:
-			*evec = (char)error;
-			npages = atop(eaddr - eoffset);
-			for (vecindex = 0; vecindex < npages; vecindex++) {
-				/* found vec */
-				if (evec == vec) {
-					error = KERN_SUCCESS;
-					goto out;
-				} else {
-					error = ENOMEM;
-					goto out;
-				}
-			}
-			break;
-		case ENOMEM:
-			goto out;
-		}
-	}
-
-out:
-	vm_map_unlock_read(map);
-	return (error);
-}
-
-/*
  * Find mincore entries from Segments and pages.
  */
 static int
@@ -1177,7 +1100,79 @@ vm_mincore_segment_page(vm_map_entry_t entry, vm_amap_t amap, vm_object_t object
 
 	/* check for segment and page inconsistencies */
 	if (sgi < pgi) {
-		return (ENOMEM);
+		return (0);
 	}
 	return (pgi);
+}
+
+/*
+ * Internal version of mincore.
+ * Currently used by mincore.
+ */
+int
+vm_mincore(vm_map_t map, vm_offset_t addr, vm_size_t len, vm_offset_t offset, char *vec)
+{
+	vm_map_entry_t entry;
+	vm_object_t object;
+	vm_amap_t amap;
+	vm_offset_t estart, eend, eaddr, eoffset;
+	vm_size_t elen;
+	int error, npages, vecindex;
+	char *evec;
+
+	vm_map_lock_read(map);
+	if (vm_map_lookup_entry(map, addr, &entry)) {
+		estart = entry->start;
+		eend = entry->end;
+		eoffset = entry->offset;
+		elen = (eend - estart);
+		eaddr = ((estart + elen) - elen);
+
+		if (elen != len) {
+			error = ENOMEM;
+			goto out;
+		}
+		if (eaddr != addr) {
+			error = ENOMEM;
+			goto out;
+		}
+		if (eoffset != offset) {
+			error = ENOMEM;
+			goto out;
+		}
+		if (entry->is_sub_map == TRUE) {
+			continue;
+		}
+		if ((entry->object.vm_object == NULL)
+				&& (entry->aref.ar_amap == NULL)) {
+			error = ENOMEM;
+			goto out;
+		}
+		amap = entry->aref.ar_amap;			/* top layer */
+		object = entry->object.vm_object;	/* bottom layer */
+
+		error = vm_mincore_segment_page(entry, amap, object, elen, eoffset);
+		if (error != 0) {
+			*evec = (char)error;
+			npages = atop(eaddr - eoffset);
+			for (vecindex = 0; vecindex < npages; vecindex++) {
+				/* found vec */
+				if (evec == vec) {
+					error = KERN_SUCCESS;
+					goto out;
+				} else {
+					error = ENOMEM;
+					goto out;
+				}
+			}
+		} else {
+			/* Nothing was found */
+			error = ENOMEM;
+			goto out;
+		}
+	}
+
+out:
+	vm_map_unlock_read(map);
+	return (error);
 }
