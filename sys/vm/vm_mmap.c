@@ -1137,8 +1137,8 @@ retry:
 		estart = entry->start;
 		eend = entry->end;
 		eoffset = entry->offset;
-		elen = (eend - estart);
-		eaddr = round_page(((estart + elen) - elen));
+		elen = round_page((eend - estart));
+		eaddr = ((estart + elen) - elen);
 
 		if (eaddr != addr) {
 			error = ENOMEM;

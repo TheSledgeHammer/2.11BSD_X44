@@ -83,39 +83,40 @@ extern FILE *zopen(const char *fname, const char *mode);
 
 struct nlist current_nl[] = {
 #define	X_DUMPDEV	0
-	{ "_dumpdev" },
+		{ .n_name = "_dumpdev" },
 #define	X_DUMPLO	1
-	{ "_dumplo" },
+		{ .n_name = "_dumplo" },
 #define	X_TIME		2
-	{ "_time" },
+		{ .n_name = "_time" },
 #define	X_DUMPSIZE	3
-	{ "_dumpsize" },
+		{ .n_name = "_dumpsize" },
 #define	X_PANICSTR	4
-	{ "_panicstr" },
+		{ .n_name = "_panicstr" },
 #define	X_PHYSMEM	5
-	{ "_physmem" },
+		{ .n_name = "_physmem" },
 #define	X_BOOTIME	6
-	{ "_boottime" },
+		{ .n_name = "_boottime" },
 #define	X_VERSION	7
-	{ "_version" },
+		{ .n_name = "_version" },
 #define	X_DUMPMAG	8
-	{ "_dumpmag" },
-	{ "" },
+		{ .n_name = "_dumpmag" },
+
+		{ .n_name = "" },
 };
 int cursyms[] = { X_DUMPDEV, X_DUMPLO, X_VERSION, X_DUMPMAG, -1 };
 int dumpsyms[] = { X_TIME, X_DUMPSIZE, X_PANICSTR, X_PHYSMEM, X_BOOTIME, X_VERSION, X_DUMPMAG, -1 };
 
 struct nlist dump_nl[] = {	/* Name list for dumped system. */
-	{ "_dumpdev" },		/* Entries MUST be the same as */
-	{ "_dumplo" },		/*	those in current_nl[].  */
-	{ "_time" },
-	{ "_dumpsize" },
-	{ "_panicstr" },
-	{ "_physmem" },
-	{ "_boottime" },
-	{ "_version" },
-	{ "_dumpmag" },
-	{ "" },
+		{ .n_name = "_dumpdev" },		/* Entries MUST be the same as */
+		{ .n_name = "_dumplo" },		/*	those in current_nl[].  */
+		{ .n_name = "_time" },
+		{ .n_name = "_dumpsize" },
+		{ .n_name = "_panicstr" },
+		{ .n_name = "_physmem" },
+		{ .n_name = "_boottime" },
+		{ .n_name = "_version" },
+		{ .n_name = "_dumpmag" },
+		{ .n_name = "" },
 };
 
 /* Types match kernel declarations. */
@@ -123,9 +124,9 @@ long	dumplo;				/* where dump starts on dumpdev */
 int		dumpmag;			/* magic number in dump */
 int		dumpsize;			/* amount of memory dumped */
 
-char	*system;
-char	*dirname;			/* directory to save dumps in */
-char	*ddname;			/* name of dump device */
+const char	*system;
+const char	*dirname;		/* directory to save dumps in */
+const char	*ddname;		/* name of dump device */
 dev_t	dumpdev;			/* dump device */
 time_t	dumptime;			/* time the dump was taken */
 time_t	boottime;			/* time we were rebooted */

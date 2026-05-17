@@ -73,9 +73,9 @@ __RCSID("$NetBSD: symtab.c,v 1.19 2003/08/07 10:04:38 agc Exp $");
 static struct entry **entry;
 static long entrytblsize;
 
-static void		 addino(ino_t, struct entry *);
+static void	addino(ino_t, struct entry *);
 static struct entry	*lookupparent(char *);
-static void		 removeentry(struct entry *);
+static void	removeentry(struct entry *);
 
 /*
  * Look up an entry by inode number
