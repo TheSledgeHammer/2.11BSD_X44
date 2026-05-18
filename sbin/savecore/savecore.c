@@ -31,6 +31,8 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
 #if 0
 static char copyright[] =
@@ -60,12 +62,19 @@ static char sccsid[] = "@(#)savecore.c	8.5 (Berkeley) 4/28/95";
 #include <nlist.h>
 #include <paths.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tzfile.h>
 #include <unistd.h>
+#include <util.h>
+#include <limits.h>
+#include <kvm.h>
 
 extern FILE *zopen(const char *fname, const char *mode);
+
+#define	KREAD(kd, addr, p)\
+	(kvm_read(kd, addr, (char *)(p), sizeof(*(p))) != sizeof(*(p)))
 
 #if defined(pdp11)
 #define	CLICK	ctob(1)		/* size of core units */
@@ -124,7 +133,7 @@ long	dumplo;				/* where dump starts on dumpdev */
 int		dumpmag;			/* magic number in dump */
 int		dumpsize;			/* amount of memory dumped */
 
-const char	*system;
+const char	*vmunix;
 const char	*dirname;		/* directory to save dumps in */
 const char	*ddname;		/* name of dump device */
 dev_t	dumpdev;			/* dump device */
@@ -137,6 +146,7 @@ char	vers[1024];
 char	core_vers[1024];
 char	panic_mesg[1024];
 int		panicstr;
+char	gzmode[3];
 
 int	clear, compress, force, verbose;	/* flags */
 int	debug;
@@ -151,7 +161,7 @@ int	 	get_crashtime(void);
 void	kmem_setup(void);
 //void	log(int, char *, ...);
 void	Lseek(int, off_t, int);
-int	 	Open(char *, int rw);
+int	 	Open(const char *, int rw);
 int	 	Read(int, void *, int);
 char	*rawname(char *s);
 void	save_core(void);
@@ -161,11 +171,14 @@ void 	Write(int, void *, int);
 int
 main(int argc, char *argv[])
 {
-	int ch;
-
+	int ch, level;
+	char *ep;
+    
+	level = 1;		/* default to fastest gzip compression */
+	gzmode[0] = 'w';
 	openlog("savecore", LOG_PERROR, LOG_DAEMON);
 
-	while ((ch = getopt(argc, argv, "cdfN:vz")) != EOF) {
+	while ((ch = getopt(argc, argv, "cdfN:vzZ")) != EOF) {
 		switch(ch) {
 		case 'c':
 			clear = 1;
@@ -180,10 +193,18 @@ main(int argc, char *argv[])
 			force = 1;
 			break;
 		case 'N':
-			system = optarg;
+			vmunix = optarg;
 			break;
 		case 'z':
 			compress = 1;
+			break;
+		case 'Z':
+			level = (int)strtol(optarg, &ep, 10);
+			if (level < 0 || level > 9) {
+				(void)syslog(LOG_ERR, "invalid compression %s",
+				    optarg);
+				usage();
+			}
 			break;
 		case '?':
 		default:
@@ -200,7 +221,7 @@ main(int argc, char *argv[])
 		dirname = argv[0];
 	}
 	if (argc == 2) {
-		system = argv[1];
+		vmunix = argv[1];
 	}
 	(void)time(&now);
 	kmem_setup();
@@ -282,6 +303,118 @@ err:
 void
 kmem_setup(void)
 {
+    kvm_t *kd_kern, *kd_dump;
+    int i;
+    char errbuf[_POSIX2_LINE_MAX];
+
+	/*
+	 * Some names we need for the currently running system, others for
+	 * the system that was running when the dump was made.  The values
+	 * obtained from the current system are used to look for things in
+	 * /dev/kmem that cannot be found in the dump_sys namelist, but are
+	 * presumed to be the same (since the disk partitions are probably
+	 * the same!)
+	 */
+    kd_kern = kvm_openfiles(vmunix, NULL, NULL, O_RDONLY, errbuf);
+	if (kd_kern == NULL) {
+		syslog(LOG_ERR, "%s: kvm_openfiles: %s", vmunix, errbuf);
+		exit(1);
+	}
+
+    if (kvm_nlist(kd_kern, current_nl) == -1) {
+   		syslog(LOG_ERR, "%s: kvm_nlist: %s", kernel, kvm_geterr(kd_kern));
+    }
+
+    for (i = 0; cursyms[i] != -1; i++) {
+		if (current_nl[cursyms[i]].n_value == 0) {
+			syslog(LOG_ERR, "%s: %s not in namelist",
+			    vmunix, current_nl[cursyms[i]].n_name);
+			exit(1);
+		}
+    }
+
+    if (KREAD(kd_kern, current_nl[X_PHYSMEM].n_value, &physmem) != 0) {
+		if (verbose) {
+		    syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_kern));
+        }
+		exit(1);
+    }
+
+    if (KREAD(kd_kern, current_nl[X_BOOTIME].n_value, &boottime) != 0) {
+		if (verbose) {
+		    syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_kern));
+        }
+		exit(1);
+    }
+
+	if (KREAD(kd_kern, current_nl[X_DUMPDEV].n_value, &dumpdev) != 0) {
+		if (verbose) {
+		    syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_kern));
+        }
+		exit(1);
+	}
+
+	if (dumpdev == NODEV) {
+		syslog(LOG_WARNING, "no core dump (no dumpdev)");
+		exit(1);
+	}
+	{
+	    long l_dumplo;
+
+	    if (KREAD(kd_kern, current_nl[X_DUMPLO].n_value, &l_dumplo) != 0) {
+		    if (verbose) {
+			    syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_kern));
+		        exit(1);
+            }
+	    }
+	    if (l_dumplo == -1) {
+    		syslog(LOG_WARNING, "no core dump (invalid dumplo)");
+	    	exit(1);
+	    }
+	    dumplo = DEV_BSIZE * (off_t) l_dumplo;
+	}
+
+    if (verbose)
+		(void)printf("dumplo = %lld (%ld * %ld)\n",
+		    (long long)dumplo, (long)(dumplo / DEV_BSIZE), (long)DEV_BSIZE);
+	if (KREAD(kd_kern, current_nl[X_DUMPMAG].n_value, &dumpmag) != 0) {
+		if (verbose)
+		    syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_kern));
+		exit(1);
+	}
+
+	(void)kvm_read(kd_kern, current_nl[X_VERSION].n_value, vers,
+	    sizeof(vers));
+	vers[sizeof(vers) - 1] = '\0';
+
+	ddname = find_dev(dumpdev, S_IFBLK);
+	dumpfd = Open(ddname, O_RDWR);
+
+    kd_dump = kvm_openfiles(vmunix, ddname, NULL, O_RDWR, errbuf);
+	if (kd_dump == NULL) {
+		syslog(LOG_ERR, "%s: kvm_openfiles: %s", vmunix, errbuf);
+		exit(1);
+	}
+
+	if (kvm_nlist(kd_dump, dump_nl) == -1) {
+		syslog(LOG_ERR, "%s: kvm_nlist: %s", vmunix, kvm_geterr(kd_dump));
+    }
+
+	for (i = 0; dumpsyms[i] != -1; i++) {
+		if (dump_nl[dumpsyms[i]].n_value == 0) {
+			syslog(LOG_ERR, "%s: %s not in namelist",
+			    vmunix, dump_nl[dumpsyms[i]].n_name);
+			exit(1);
+		}
+    }
+
+    kvm_close(kd_kern);
+}
+
+#ifdef notyet
+void
+kmem_setup2(void)
+{
 	FILE *fp;
 	int kmem, i;
 	char *dump_sys;
@@ -303,7 +436,7 @@ kmem_setup(void)
 			exit(1);
 		}
 
-	dump_sys = system ? system : _PATH_UNIX;
+	dump_sys = vmunix ? vmunix : _PATH_UNIX;
 	if ((nlist(dump_sys, dump_nl)) == -1)
 		syslog(LOG_ERR, "%s: nlist: %s", dump_sys, strerror(errno));
 	for (i = 0; dumpsyms[i] != -1; i++)
@@ -341,13 +474,14 @@ kmem_setup(void)
 		syslog(LOG_ERR, "%s: fdopen: %m", _PATH_KMEM);
 		exit(1);
 	}
-	if (system)
+	if (vmunix)
 		return;
 	(void)fseek(fp, (off_t)current_nl[X_VERSION].n_value, L_SET);
 	(void)fgets(vers, sizeof(vers), fp);
 
 	/* Don't fclose(fp), we use dumpfd later. */
 }
+#endif
 
 void
 check_kmem(void)
@@ -363,7 +497,7 @@ check_kmem(void)
 	}
 	fseek(fp, (off_t) (dumplo + ok(dump_nl[X_VERSION].n_value)), L_SET);
 	fgets(core_vers, sizeof(core_vers), fp);
-	if (strcmp(vers, core_vers) && system == 0)
+	if (strcmp(vers, core_vers) && vmunix == 0)
 		syslog(LOG_WARNING, "warning: %s version mismatch:\n\t%s\nand\t%s\n",
 		_PATH_UNIX, vers, core_vers);
 	(void)fseek(fp, (off_t) (dumplo + ok(dump_nl[X_PANICSTR].n_value)), L_SET);
@@ -432,7 +566,7 @@ get_crashtime(void)
 	if (dumpdev == NODEV) {
 		return (0);
 	}
-	if (system) {
+	if (vmunix) {
 		return (1);
 	}
 	dumpfd = Open(ddname, 2);
@@ -587,7 +721,7 @@ err2:			syslog(LOG_WARNING, "WARNING: vmcore may be incomplete");
 		(void)close(ofd);
 
 	/* Copy the kernel. */
-	ifd = Open(system ? system : _PATH_UNIX, O_RDONLY);
+	ifd = Open(vmunix ? vmunix : _PATH_UNIX, O_RDONLY);
 	(void) snprintf(path, sizeof(path), "%s/vmunix.%d%s", dirname, bounds, compress ? ".Z" : "");
 	if (compress) {
 		if ((fp = zopen(path, "w", 0)) == NULL) {
@@ -605,13 +739,13 @@ err2:			syslog(LOG_WARNING, "WARNING: vmcore may be incomplete");
 			nw = write(ofd, buf, nr);
 		if (nw != nr) {
 			syslog(LOG_ERR, "%s: %s", path, strerror(nw == 0 ? EIO : errno));
-			syslog(LOG_WARNING, "WARNING: system may be incomplete");
+			syslog(LOG_WARNING, "WARNING: vmunix may be incomplete");
 			exit(1);
 		}
 	}
 	if (nr < 0) {
-		syslog(LOG_ERR, "%s: %s", system ? system : _PATH_UNIX, strerror(errno));
-		syslog(LOG_WARNING, "WARNING: system may be incomplete");
+		syslog(LOG_ERR, "%s: %s", vmunix ? vmunix : _PATH_UNIX, strerror(errno));
+		syslog(LOG_WARNING, "WARNING: vmunix may be incomplete");
 		exit(1);
 	}
 	if (compress)
@@ -660,7 +794,7 @@ check_space(void)
 	struct statfs fsbuf;
 	char buf[100], path[MAXPATHLEN];
 
-	tvmunix = system ? system : _PATH_UNIX;
+	tvmunix = vmunix ? vmunix : _PATH_UNIX;
 	if (stat(tvmunix, &st) < 0) {
 		syslog(LOG_ERR, "%s: %m", tvmunix);
 		exit(1);
@@ -698,7 +832,7 @@ check_space(void)
  */
 
 int
-Open(char *name, int rw)
+Open(const char *name, int rw)
 {
 	int fd;
 
