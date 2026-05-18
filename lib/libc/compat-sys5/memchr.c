@@ -36,3 +36,12 @@ memchr(s, c, n)
     }
 	return (NULL);
 }
+
+void *
+memrchr(const void *s, int c, size_t n)
+{
+    if (n != 0) {
+        return (memchr(s, c, n));
+    }
+    return (NULL);
+}
