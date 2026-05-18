@@ -796,11 +796,8 @@ ReStart:
 			 */
 			nanon = vm_anon_alloc();
 			if (nanon) {
-				nsg = vm_segment_anon_alloc(NULL, 0, nanon);
-				if (nsg != NULL) {
-					if (TAILQ_EMPTY(&nsg->memq)) {
-						npg = vm_page_anon_alloc(nsg, 0, nanon);
-					}
+				if (sg != NULL) {
+					nsg = vm_segment_anon_alloc(NULL, 0, nanon);
 				} else {
 					nsg = NULL;
 					npg = vm_page_anon_alloc(NULL, 0, nanon);
