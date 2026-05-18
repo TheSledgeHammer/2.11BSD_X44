@@ -967,7 +967,7 @@ vm_fault_amap(vfi, anons)
 	int lcv;
 
 	if (vfi->amap) {
-		amap_lock(vfi->amap);
+		vm_amap_lock(vfi->amap);
 		anons = anons_store;
 		vm_amap_lookups(&vfi->entry->aref, vfi->startva - vfi->entry->start, anons, vfi->npages);
 	} else {
@@ -1184,7 +1184,7 @@ vm_fault_anonget(vfi, amap, anon)
 		}
 		locked = vm_fault_relock(vfi);
 		if (locked && amap != NULL) {
-			amap_lock(amap);
+			vm_amap_lock(amap);
 		}
 		if (locked || we_own) {
 			simple_lock(&anon->an_lock);
@@ -1304,7 +1304,7 @@ vm_fault_unlockall(vfi, amap, obj, anon)
 		simple_unlock(&obj->Lock);
 	}
 	if (amap) {
-		amap_unlock(amap);
+		vm_amap_unlock(amap);
 	}
 	vm_fault_unlockmaps(vfi, FALSE);
 }

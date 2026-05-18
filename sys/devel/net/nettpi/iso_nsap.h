@@ -233,69 +233,35 @@ void tsap_attach(struct tsap_iso *, struct nsap_iso *, int);
 void tsap_detach(struct tsap_iso *, struct nsap_iso *, int);
 struct nsap_iso *tsap_to_nsap(struct tsap_iso *);
 int tsap_iso_compare(struct tsap_iso *, struct tsap_iso *);
-int tsap_canconnect(struct tsap_iso *, struct nsap_iso *, void *, long, long, long,
+int tsap_canconnect(struct tsap_iso *, void *, long, long, long,
 		int, int, int);
-int tsap_candisconnect(struct tsap_iso *, struct nsap_iso *, void *, long, long,
+int tsap_candisconnect(struct tsap_iso *, void *, long, long,
 		long, int, int, int);
-int tsap_connect(struct tsap_iso *, struct nsap_iso *, void *, long, long, int);
-int tsap_disconnect(struct tsap_iso *, struct nsap_iso *, void *, long, long, int);
+int tsap_connect(struct tsap_iso *, void *, long, long, int);
+int tsap_disconnect(struct tsap_iso *, void *, long, long, int);
 
 /* SSAP */
 void ssap_attach(struct ssap_iso *, struct tsap_iso *, int);
 void ssap_detach(struct ssap_iso *, struct tsap_iso *, int);
 struct tsap_iso *ssap_to_tsap(struct ssap_iso *);
 int ssap_iso_compare(struct ssap_iso *, struct ssap_iso *);
+int ssap_canconnect(struct ssap_iso *, void *, long, long, long,
+		int, int, int);
+int ssap_candisconnect(struct ssap_iso *, void *, long, long,
+		long, int, int, int);
+int ssap_connect(struct ssap_iso *, void *, long, long, int);
+int ssap_disconnect(struct ssap_iso *, void *, long, long, int);
 
 /* PSAP */
 void psap_attach(struct psap_iso *, struct ssap_iso *, int);
 void psap_detach(struct psap_iso *, struct ssap_iso *, int);
 struct ssap_iso *psap_to_ssap(struct psap_iso *);
 int psap_iso_compare(struct psap_iso *, struct psap_iso *);
-
-#ifdef notyet
-/* ISODE Based code */
-struct nsap_info {
-	struct nsap_iso ni_nsap;
-	unsigned char ni_prefix[ISOLEN];
-	int ni_plen;
-	unsigned char ni_class[ISOLEN];
-	int ni_stack;
-};
-
-/* SAP Selector (Used by TSAP, SSAP and PSAP) */
-union sap_type {
-	unsigned char selector[8];
-	int port;
-};
-
-/* TSAP: Transport Service Access Point */
-/* TSAP addr (ISO/OSI equivalent) */
-struct tsap_iso2 {
-	struct nsap_iso tiiso_addr[ISOLEN];
-	int tiiso_naddr;
-	int tiiso_selectlen;
-	union sap_type tiiso_type;
-#define	tiiso_selector tiiso_type.selector
-#define	tiiso_port tiiso_type.port
-};
-
-/* SSAP: Session Service Access Point */
-/* SSAP addr (ISO/OSI equivalent) */
-struct ssap_iso {
-	struct tsap_iso siiso_addr[ISOLEN];
-	union sap_type siiso_type;
-#define	siiso_selector siiso_type.selector
-#define	siiso_port siiso_type.port
-};
-
-/* PSAP: Presentation Service Access Point */
-/* PSAP addr (ISO/OSI equivalent) */
-struct psap_iso {
-	struct ssap_iso piiso_addr[ISOLEN];
-	union sap_type piiso_type;
-#define	piiso_selector piiso_type.selector
-#define	piiso_port piiso_type.port
-};
-#endif
+int psap_canconnect(struct psap_iso *, void *, long, long, long,
+		int, int, int);
+int psap_candisconnect(struct psap_iso *, void *, long, long,
+		long, int, int, int);
+int psap_connect(struct psap_iso *, void *, long, long, int);
+int psap_disconnect(struct psap_iso *, void *, long, long, int);
 
 #endif /* _NETTPI_ISO_NSAP_H_ */

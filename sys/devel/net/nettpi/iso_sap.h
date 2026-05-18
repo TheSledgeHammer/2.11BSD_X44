@@ -72,7 +72,8 @@ enum sap_classes {
 	SAP_CLASS_MAX
 };
 
-/* sap stack types (labeled by sockaddr) */
+/* sap stack types */
+/* uses sockaddr names */
 enum sap_types {
 	SAP_TYPE_UNKNOWN,
 	SAP_TYPE_SIN4,
@@ -117,6 +118,7 @@ enum sap_subnets {
 };
 
 /* sap protocols */
+/* Transport Layer Protocols */
 enum sap_protocols {
 	SAP_PROTOCOL_UNKNOWN,
 	/* inet (v4 and v6) */
@@ -143,6 +145,12 @@ enum sap_protocols {
 	SAP_PROTOCOL_MAX
 };
 
+/* ISO/OSI Layers */
+#define ISOL_NETWORK		3
+#define ISOL_TRANSPORT		4
+#define ISOL_SESSION		5
+#define ISOL_PRESENTATION	6
+
 extern struct sap_select sap_table[SAP_TABLE_MAX];
 
 int sap_class_select(int);
@@ -151,14 +159,17 @@ long sap_subnet_select(long);
 long sap_protocol_select(long);
 long sap_item_lookup(long, long *, int);
 
-void sap_select_init(struct sap_select *, int, int);
-
 int nsap_addr_compare(struct nsap_addr *, struct nsap_addr *);
+uint16_t sockaddr_nsap_port(struct sockaddr_nsap *, int);
+u_char sockaddr_nsap_isolayer_selectlen(struct sockaddr_nsap *, int);
 int sockaddr_nsap_compare(struct sockaddr_nsap *, struct sockaddr_nsap *);
+
+void sap_service_init(struct sap_service *, char *, u_char, int);
 int sap_service_compare(struct sap_service *, struct sap_service *);
 int sap_service_check_class(long, long, int);
-int sap_select_compare(struct sap_select *, struct sap_select *);
 
+void sap_select_init(struct sap_select *, int, int);
+int sap_select_compare(struct sap_select *, struct sap_select *);
 struct sap_select *sap_select_lookup(int, int);
 long sap_select_lookup_type(int, int, long);
 long sap_select_lookup_subnet(int, int, long);

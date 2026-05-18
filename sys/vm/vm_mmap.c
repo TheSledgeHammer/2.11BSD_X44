@@ -1035,7 +1035,7 @@ vm_mincore_segment_page(vm_map_entry_t entry, vm_amap_t amap, vm_object_t object
 	int i, j;
 
 	if (amap != NULL) {
-		amap_lock(amap);
+		vm_amap_lock(amap);
 	}
 	if (object != NULL) {
 		vm_object_lock(object);
@@ -1095,7 +1095,7 @@ vm_mincore_segment_page(vm_map_entry_t entry, vm_amap_t amap, vm_object_t object
 		}
 	}
 	if (amap != NULL) {
-		amap_unlock(amap);
+		vm_amap_unlock(amap);
 	}
 	if (object != NULL) {
 		vm_object_unlock(object);
@@ -1130,8 +1130,8 @@ vm_mincore(vm_map_t map, vm_offset_t addr, vm_size_t len, vm_offset_t offset, ch
 
 	retries = 0;
 
-retry:
 	vm_map_lock_read(map);
+retry:
 	isentry = vm_map_lookup_entry(map, addr, &entry);
 	if (isentry == TRUE) {
 		estart = entry->start;

@@ -76,6 +76,9 @@ extern FILE *zopen(const char *fname, const char *mode);
 #define	KREAD(kd, addr, p)\
 	(kvm_read(kd, addr, (char *)(p), sizeof(*(p))) != sizeof(*(p)))
 
+#define KWRITE(kd, addr, p)\
+	(kvm_write(kd, addr, (char *)(p), sizeof(*(p))) != sizeof(*(p)))
+
 #if defined(pdp11)
 #define	CLICK	ctob(1)		/* size of core units */
 #define	REGLOC	0300		/* offset of saved registers in disk dump */
@@ -132,6 +135,7 @@ struct nlist dump_nl[] = {	/* Name list for dumped system. */
 long	dumplo;				/* where dump starts on dumpdev */
 int		dumpmag;			/* magic number in dump */
 int		dumpsize;			/* amount of memory dumped */
+off_t 	dumpbytes;			/* in bytes */
 
 const char	*vmunix;
 const char	*dirname;		/* directory to save dumps in */
@@ -147,6 +151,8 @@ char	core_vers[1024];
 char	panic_mesg[1024];
 int		panicstr;
 char	gzmode[3];
+
+kvm_t *kd_kern, *kd_dump;
 
 int	clear, compress, force, verbose;	/* flags */
 int	debug;
@@ -303,9 +309,9 @@ err:
 void
 kmem_setup(void)
 {
-    kvm_t *kd_kern, *kd_dump;
     int i;
     char errbuf[_POSIX2_LINE_MAX];
+    const char *dump_sys;
 
 	/*
 	 * Some names we need for the currently running system, others for
@@ -322,7 +328,7 @@ kmem_setup(void)
 	}
 
     if (kvm_nlist(kd_kern, current_nl) == -1) {
-   		syslog(LOG_ERR, "%s: kvm_nlist: %s", kernel, kvm_geterr(kd_kern));
+   		syslog(LOG_ERR, "%s: kvm_nlist: %s", vmunix, kvm_geterr(kd_kern));
     }
 
     for (i = 0; cursyms[i] != -1; i++) {
@@ -378,8 +384,9 @@ kmem_setup(void)
 		(void)printf("dumplo = %lld (%ld * %ld)\n",
 		    (long long)dumplo, (long)(dumplo / DEV_BSIZE), (long)DEV_BSIZE);
 	if (KREAD(kd_kern, current_nl[X_DUMPMAG].n_value, &dumpmag) != 0) {
-		if (verbose)
+		if (verbose) {
 		    syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_kern));
+		}
 		exit(1);
 	}
 
@@ -387,23 +394,24 @@ kmem_setup(void)
 	    sizeof(vers));
 	vers[sizeof(vers) - 1] = '\0';
 
+	dump_sys = vmunix ? vmunix : _PATH_UNIX;
 	ddname = find_dev(dumpdev, S_IFBLK);
 	dumpfd = Open(ddname, O_RDWR);
 
-    kd_dump = kvm_openfiles(vmunix, ddname, NULL, O_RDWR, errbuf);
+    kd_dump = kvm_openfiles(dump_sys, ddname, NULL, O_RDWR, errbuf);
 	if (kd_dump == NULL) {
-		syslog(LOG_ERR, "%s: kvm_openfiles: %s", vmunix, errbuf);
+		syslog(LOG_ERR, "%s: kvm_openfiles: %s", dump_sys, errbuf);
 		exit(1);
 	}
 
 	if (kvm_nlist(kd_dump, dump_nl) == -1) {
-		syslog(LOG_ERR, "%s: kvm_nlist: %s", vmunix, kvm_geterr(kd_dump));
+		syslog(LOG_ERR, "%s: kvm_nlist: %s", dump_sys, kvm_geterr(kd_dump));
     }
 
 	for (i = 0; dumpsyms[i] != -1; i++) {
 		if (dump_nl[dumpsyms[i]].n_value == 0) {
 			syslog(LOG_ERR, "%s: %s not in namelist",
-			    vmunix, dump_nl[dumpsyms[i]].n_name);
+					dump_sys, dump_nl[dumpsyms[i]].n_name);
 			exit(1);
 		}
     }
@@ -411,105 +419,41 @@ kmem_setup(void)
     kvm_close(kd_kern);
 }
 
-#ifdef notyet
-void
-kmem_setup2(void)
-{
-	FILE *fp;
-	int kmem, i;
-	char *dump_sys;
-
-	/*
-	 * Some names we need for the currently running system, others for
-	 * the system that was running when the dump was made.  The values
-	 * obtained from the current system are used to look for things in
-	 * /dev/kmem that cannot be found in the dump_sys namelist, but are
-	 * presumed to be the same (since the disk partitions are probably
-	 * the same!)
-	 */
-	if ((nlist(_PATH_UNIX, current_nl)) == -1)
-		syslog(LOG_ERR, "%s: nlist: %s", _PATH_UNIX, strerror(errno));
-	for (i = 0; cursyms[i] != -1; i++)
-		if (current_nl[cursyms[i]].n_value == 0) {
-			syslog(LOG_ERR, "%s: %s not in namelist",
-			    _PATH_UNIX, current_nl[cursyms[i]].n_name);
-			exit(1);
-		}
-
-	dump_sys = vmunix ? vmunix : _PATH_UNIX;
-	if ((nlist(dump_sys, dump_nl)) == -1)
-		syslog(LOG_ERR, "%s: nlist: %s", dump_sys, strerror(errno));
-	for (i = 0; dumpsyms[i] != -1; i++)
-		if (dump_nl[dumpsyms[i]].n_value == 0) {
-			syslog(LOG_ERR, "%s: %s not in namelist",
-			    dump_sys, dump_nl[dumpsyms[i]].n_name);
-			exit(1);
-		}
-
-	kmem = Open(_PATH_KMEM, O_RDONLY);
-	Lseek(kmem, (off_t)current_nl[X_DUMPDEV].n_value, L_SET);
-	(void)Read(kmem, &dumpdev, sizeof(dumpdev));
-	if (dumpdev == NODEV) {
-		syslog(LOG_WARNING, "no core dump (no dumpdev)");
-		exit(1);
-	}
-	Lseek(kmem, (off_t)current_nl[X_DUMPLO].n_value, L_SET);
-	(void)Read(kmem, &dumplo, sizeof(dumplo));
-	if (verbose)
-		(void)printf("dumplo = %d (%d * %d)\n", dumplo, dumplo/DEV_BSIZE, DEV_BSIZE);
-
-	Lseek(kmem, (off_t)current_nl[X_PHYSMEM].n_value, L_SET);
-	Read(kmem, (char *)&physmem, sizeof physmem);
-	if (current_nl[X_BOOTIME].n_value != 0) {
-		Lseek(kmem, (off_t)current_nl[X_BOOTIME].n_value, L_SET);
-		Read(kmem, (char *)&boottime, sizeof boottime);
-	}
-	Lseek(kmem, (off_t)current_nl[X_DUMPMAG].n_value, L_SET);
-	(void)Read(kmem, &dumpmag, sizeof(dumpmag));
-	dumplo *= DEV_BSIZE;
-	ddname = find_dev(dumpdev, S_IFBLK);
-	dumpfd = Open(ddname, O_RDWR);
-	fp = fdopen(kmem, "r");
-	if (fp == NULL) {
-		syslog(LOG_ERR, "%s: fdopen: %m", _PATH_KMEM);
-		exit(1);
-	}
-	if (vmunix)
-		return;
-	(void)fseek(fp, (off_t)current_nl[X_VERSION].n_value, L_SET);
-	(void)fgets(vers, sizeof(vers), fp);
-
-	/* Don't fclose(fp), we use dumpfd later. */
-}
-#endif
-
 void
 check_kmem(void)
 {
-	register char *cp;
-	FILE *fp;
-	char core_vers[1024];
+	char *cp;
+	long panicloc;
 
-	fp = fdopen(dumpfd, "r");
-	if (fp == NULL) {
-		syslog(LOG_ERR, "%s: fdopen: %m", ddname);
-		exit(1);
-	}
-	fseek(fp, (off_t) (dumplo + ok(dump_nl[X_VERSION].n_value)), L_SET);
-	fgets(core_vers, sizeof(core_vers), fp);
-	if (strcmp(vers, core_vers) && vmunix == 0)
+	(void)kvm_read(kd_dump, dump_nl[X_VERSION].n_value, core_vers,
+	    sizeof(core_vers));
+	core_vers[sizeof(core_vers) - 1] = '\0';
+
+	if (strcmp(vers, core_vers) != 0) {
 		syslog(LOG_WARNING, "warning: %s version mismatch:\n\t%s\nand\t%s\n",
-		_PATH_UNIX, vers, core_vers);
-	(void)fseek(fp, (off_t) (dumplo + ok(dump_nl[X_PANICSTR].n_value)), L_SET);
-	(void)fread(&panicstr, sizeof(panicstr), 1, fp);
-	if (panicstr) {
-		(void) fseek(fp, dumplo + ok(panicstr), L_SET);
-		cp = panic_mesg;
-		do
-			*cp = getc(fp);
-		while (*cp++ && cp < &panic_mesg[sizeof(panic_mesg)]);
+				vmunix, vers, core_vers);
 	}
-	/* Don't fclose(fp), we use dumpfd later. */
+
+	if (KREAD(kd_dump, dump_nl[X_PANICSTR].n_value, &panicstr) != 0) {
+		if (verbose) {
+			syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_dump));
+		}
+		return;
+	}
+	if (panicstr) {
+		cp = panic_mesg;
+		panicloc = panicstr;
+		do {
+			if (KREAD(kd_dump, panicloc, cp) != 0) {
+				if (verbose) {
+					syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_dump));
+				}
+				break;
+			}
+			panicloc++;
+		} while (*cp++ && cp < &panic_mesg[sizeof(panic_mesg) - 1]);
+		panic_mesg[sizeof(panic_mesg) - 1] = '\0';
+	}
 }
 
 void
@@ -518,8 +462,20 @@ clear_dump(void)
 	long newdumplo;
 
 	newdumplo = 0;
-	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_DUMPMAG].n_value)), L_SET);
-	Write(dumpfd, &newdumplo, sizeof(newdumplo));
+
+	/* Read existing dump location */
+	Lseek(dumpfd, dumplo, SEEK_SET);
+	if (KWRITE(kd_dump, dumplo, &newdumplo) != 0) {
+		if (verbose) {
+		    syslog(LOG_WARNING, "kvm_write: %s", kvm_geterr(kd_dump));
+		}
+	}
+
+	if (newdumplo != dumplo) {
+		if (verbose) {
+			syslog(LOG_WARNING, "clear dump (0x%x != 0x%x)", newdumplo, dumplo);
+		}
+	}
 }
 
 int
@@ -527,41 +483,43 @@ dump_exists(void)
 {
 	int newdumpmag;
 
-	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_DUMPMAG].n_value)), L_SET);
-	(void)Read(dumpfd, &newdumpmag, sizeof(newdumpmag));
-	if (newdumpmag != dumpmag) {
-		if (verbose)
-			syslog(LOG_WARNING, "magic number mismatch (%x != %x)",
-			    newdumpmag, dumpmag);
-		syslog(LOG_WARNING, "no core dump");
+	if (KREAD(kd_dump, dump_nl[X_DUMPMAG].n_value, &newdumpmag) != 0) {
+		if (verbose) {
+		    syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_dump));
+		}
 		return (0);
 	}
+
+
+	/* Read the dump size. */
+	if (KREAD(kd_dump, dump_nl[X_DUMPSIZE].n_value, &dumpsize) != 0) {
+		if (verbose) {
+		    syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_dump));
+		}
+		return (0);
+	}
+	dumpbytes = (off_t)dumpsize * getpagesize();
+
+	/*
+	 * Return zero if core dump doesn't seem to be there, and note
+	 * it for syslog.  This check and return happens after the dump size
+	 * is read, so dumpsize is whether or not the core is valid (for -f).
+	 */
+	if (newdumpmag != dumpmag) {
+		if (verbose) {
+			syslog(LOG_WARNING, "magic number mismatch (0x%x != 0x%x)",
+					newdumpmag, dumpmag);
+			return (0);
+		}
+		syslog(LOG_WARNING, "no core dump");
+	}
 	return (1);
-}
-
-
-char *
-rawname(char *s)
-{
-	char *sl, name[MAXPATHLEN];
-
-	if ((sl = strrchr(s, '/')) == NULL || sl[1] == '0') {
-		syslog(LOG_ERR,
-		    "can't make raw dump device name from %s", s);
-		return (s);
-	}
-	(void)snprintf(name, sizeof(name), "%.*s/r%s", sl - s, s, sl + 1);
-	if ((sl = strdup(name)) == NULL) {
-		syslog(LOG_ERR, "%s", strerror(errno));
-		exit(1);
-	}
-	return (sl);
 }
 
 int
 get_crashtime(void)
 {
-	time_t clobber = (time_t)0;
+	struct timeval dtime, clobber;
 
 	if (dumpdev == NODEV) {
 		return (0);
@@ -569,17 +527,27 @@ get_crashtime(void)
 	if (vmunix) {
 		return (1);
 	}
-	dumpfd = Open(ddname, 2);
-	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_TIME].n_value)), L_SET);
-	(void)Read(dumpfd, &dumptime, sizeof(dumptime));
-	if (!debug) {
-		Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_TIME].n_value)), L_SET);
-		Write(dumpfd, (char *)&clobber, sizeof clobber);
+
+	if (KREAD(kd_dump, dump_nl[X_TIME].n_value, &dtime) != 0) {
+		if (verbose) {
+		    syslog(LOG_WARNING, "kvm_read: %s", kvm_geterr(kd_dump));
+		}
+		return (0);
 	}
-	close(dumpfd);
+	if (!debug) {
+		if (KREAD(kd_dump, dump_nl[X_TIME].n_value, &clobber) != 0) {
+			if (verbose) {
+			    syslog(LOG_WARNING, "kvm_write: %s", kvm_geterr(kd_dump));
+			}
+			return (0);
+		}
+	}
+
+	dumptime = dtime.tv_sec;
 	if (dumptime == 0) {
-		if (verbose || debug)
+		if (verbose || debug) {
 			syslog(LOG_ERR, "dump time is zero");
+		}
 		return (0);
 	}
 	(void)printf("savecore: system went down at %s", ctime(&dumptime));
@@ -604,20 +572,38 @@ get_crashtime(void)
 }
 
 char *
+rawname(char *s)
+{
+	const char *sl, name[MAXPATHLEN];
+
+	if ((sl = strrchr(s, '/')) == NULL || sl[1] == '0') {
+		syslog(LOG_ERR,
+		    "can't make raw dump device name from %s", s);
+		return (s);
+	}
+	(void)snprintf(name, sizeof(name), "%.*s/r%s", sl - s, s, sl + 1);
+	if ((sl = strdup(name)) == NULL) {
+		syslog(LOG_ERR, "%s", strerror(errno));
+		exit(1);
+	}
+	return (sl);
+}
+
+char *
 path(char *file)
 {
 	register char *cp = malloc(strlen(file) + strlen(dirname) + 2);
 
-	(void) strcpy(cp, dirname);
-	(void) strcat(cp, "/");
-	(void) strcat(cp, file);
+	(void)strcpy(cp, dirname);
+	(void)strcat(cp, "/");
+	(void)strcat(cp, file);
 	return (cp);
 }
 
 char buf[1024 * 1024];
 
 int
-read_number(char *fn)
+read_number(const char *fn)
 {
 	register FILE *fp;
 	register int bounds;
@@ -659,18 +645,24 @@ save_core(void)
 	 * Get the current number and update the bounds file.  Do the update
 	 * now, because may fail later and don't want to overwrite anything.
 	 */
+	umask(066);
 	cpath = path(cpath);
 	bounds = read_number("bounds");
 
 	/* Create the core file. */
 	(void)snprintf(cpath, sizeof(cpath), "%s/vmcore.%d%s", dirname, bounds, compress ? ".Z" : "");
 	if (compress) {
-		if ((fp = zopen(cpath, "w", 0)) == NULL) {
+		if ((fp = zopen(cpath, gzmode)) == NULL) {
 			syslog(LOG_ERR, "%s: %s", cpath, strerror(errno));
 			exit(1);
 		}
 	} else {
 		ofd = Create(cpath, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+		fp = fdopen(ofd, "w");
+		if (fp == NULL) {
+			syslog(LOG_ERR, "%s: fdopen: %m", cpath);
+			exit(1);
+		}
 	}
 
 	/* Open the raw device. */
@@ -681,64 +673,68 @@ save_core(void)
 	}
 
 	/* Read the dump size. */
-	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_DUMPSIZE].n_value)), L_SET);
-	(void)Read(dumpfd, &dumpsize, sizeof(dumpsize));
+	Lseek(dumpfd, dumplo, SEEK_SET);
+	(void)Read(dumpfd, &dumpbytes, sizeof(dumpbytes));
 
 	/* Seek to the start of the core. */
-	Lseek(ifd, (off_t)dumplo, L_SET);
+	Lseek(ifd, (off_t)dumplo, SEEK_SET);
 
 	/* Copy the core file. */
-	dumpsize *= NBPG;
-	syslog(LOG_NOTICE, "writing %score to %s", compress ? "compressed " : "", path);
-	for (; dumpsize > 0; dumpsize -= nr) {
-		(void)printf("%6dK\r", dumpsize / 1024);
+	//dumpsize *= NBPG;
+	syslog(LOG_NOTICE, "writing %score to %s", compress ? "compressed " : "", cpath);
+	for (; dumpbytes  > 0; dumpbytes  -= nr) {
+		(void)printf("%6dK\r", dumpbytes / 1024);
 		(void)fflush(stdout);
-		nr = read(ifd, buf, MIN(dumpsize, sizeof(buf)));
+		nr = read(ifd, buf, MIN(dumpbytes, sizeof(buf)));
 		if (nr <= 0) {
-			if (nr == 0)
+			if (nr == 0) {
 				syslog(LOG_WARNING, "WARNING: EOF on dump device");
-			else
+			} else {
 				syslog(LOG_ERR, "%s: %m", rawp);
+			}
 			goto err2;
 		}
-		if (compress)
+		if (compress) {
 			nw = fwrite(buf, 1, nr, fp);
-		else
+		} else {
 			nw = write(ofd, buf, nr);
+		}
 		if (nw != nr) {
-			syslog(LOG_ERR, "%s: %s",
-			    path, strerror(nw == 0 ? EIO : errno));
-err2:			syslog(LOG_WARNING, "WARNING: vmcore may be incomplete");
-			(void) printf("\n");
+			syslog(LOG_ERR, "%s: %s", cpath, strerror(nw == 0 ? EIO : errno));
+err2:
+			syslog(LOG_WARNING, "WARNING: vmcore may be incomplete");
+			(void)printf("\n");
 			exit(1);
 		}
 	}
-	(void) printf("\n");
-	(void) close(ifd);
-	if (compress)
+	(void)printf("\n");
+	(void)close(ifd);
+	if (compress) {
 		(void)fclose(fp);
-	else
+	} else {
 		(void)close(ofd);
+	}
 
 	/* Copy the kernel. */
 	ifd = Open(vmunix ? vmunix : _PATH_UNIX, O_RDONLY);
-	(void) snprintf(path, sizeof(path), "%s/vmunix.%d%s", dirname, bounds, compress ? ".Z" : "");
+	(void)snprintf(path, sizeof(path), "%s/vmunix.%d%s", dirname, bounds, compress ? ".Z" : "");
 	if (compress) {
-		if ((fp = zopen(path, "w", 0)) == NULL) {
-			syslog(LOG_ERR, "%s: %s", path, strerror(errno));
+		if ((fp = zopen(path, gzmode)) == NULL) {
+			syslog(LOG_ERR, "%s: %s", cpath, strerror(errno));
 			exit(1);
 		}
 	} else {
-		ofd = Create(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+		ofd = Create(cpath, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	}
-	syslog(LOG_NOTICE, "writing %skernel to %s", compress ? "compressed " : "", path);
+	syslog(LOG_NOTICE, "writing %skernel to %s", compress ? "compressed " : "", cpath);
 	while ((nr = read(ifd, buf, sizeof(buf))) > 0) {
-		if (compress)
+		if (compress) {
 			nw = fwrite(buf, 1, nr, fp);
-		else
+		} else {
 			nw = write(ofd, buf, nr);
+		}
 		if (nw != nr) {
-			syslog(LOG_ERR, "%s: %s", path, strerror(nw == 0 ? EIO : errno));
+			syslog(LOG_ERR, "%s: %s", cpath, strerror(nw == 0 ? EIO : errno));
 			syslog(LOG_WARNING, "WARNING: vmunix may be incomplete");
 			exit(1);
 		}
@@ -748,10 +744,11 @@ err2:			syslog(LOG_WARNING, "WARNING: vmcore may be incomplete");
 		syslog(LOG_WARNING, "WARNING: vmunix may be incomplete");
 		exit(1);
 	}
-	if (compress)
-		(void) fclose(fp);
-	else
-		(void) close(ofd);
+	if (compress) {
+		(void)fclose(fp);
+	} else {
+		(void)close(ofd);
+	}
 }
 
 const char *days[] = {
@@ -777,10 +774,11 @@ log_entry(void)
 	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Reboot", tm->tm_hour,
 		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
 		tm->tm_mday, tm->tm_year + 1900);
-	if (panicstr)
+	if (panicstr) {
 		fprintf(fp, " after panic:  %s\n", panic_mesg);
-	else
+	} else {
 		putc('\n', fp);
+	}
 	fclose(fp);
 }
 
@@ -788,7 +786,7 @@ int
 check_space(void)
 {
 	register FILE *fp;
-	char *tvmunix;
+	const char *tvmunix;
 	off_t minfree, spacefree, vmunixsize, needed;
 	struct stat st;
 	struct statfs fsbuf;
@@ -807,13 +805,14 @@ check_space(void)
  	spacefree = (fsbuf.f_bavail * fsbuf.f_bsize) / 1024;
 
 	(void)snprintf(path, sizeof(path), "%s/minfree", dirname);
-	if ((fp = fopen(path, "r")) == NULL)
+	if ((fp = fopen(path, "r")) == NULL) {
 		minfree = 0;
-	else {
-		if (fgets(buf, sizeof(buf), fp) == NULL)
+	} else {
+		if (fgets(buf, sizeof(buf), fp) == NULL) {
 			minfree = 0;
-		else
+		} else {
 			minfree = atoi(buf);
+		}
 		(void)fclose(fp);
 	}
 
@@ -891,6 +890,181 @@ Write(int fd, char *buf, int size)
 void
 usage(void)
 {
-	(void)syslog(LOG_ERR, "usage: savecore [-cfvz] [-N system] directory");
+	(void)syslog(LOG_ERR, "usage: savecore [-cfvz] [-N system] [-Z level] directory");
 	exit(1);
 }
+
+#ifdef notyet
+void
+kmem_setup(void)
+{
+	FILE *fp;
+	int kmem, i;
+	const char *dump_sys;
+
+	/*
+	 * Some names we need for the currently running system, others for
+	 * the system that was running when the dump was made.  The values
+	 * obtained from the current system are used to look for things in
+	 * /dev/kmem that cannot be found in the dump_sys namelist, but are
+	 * presumed to be the same (since the disk partitions are probably
+	 * the same!)
+	 */
+	if ((nlist(_PATH_UNIX, current_nl)) == -1)
+		syslog(LOG_ERR, "%s: nlist: %s", _PATH_UNIX, strerror(errno));
+	for (i = 0; cursyms[i] != -1; i++)
+		if (current_nl[cursyms[i]].n_value == 0) {
+			syslog(LOG_ERR, "%s: %s not in namelist",
+			    _PATH_UNIX, current_nl[cursyms[i]].n_name);
+			exit(1);
+		}
+
+	dump_sys = vmunix ? vmunix : _PATH_UNIX;
+	if ((nlist(dump_sys, dump_nl)) == -1)
+		syslog(LOG_ERR, "%s: nlist: %s", dump_sys, strerror(errno));
+	for (i = 0; dumpsyms[i] != -1; i++)
+		if (dump_nl[dumpsyms[i]].n_value == 0) {
+			syslog(LOG_ERR, "%s: %s not in namelist",
+			    dump_sys, dump_nl[dumpsyms[i]].n_name);
+			exit(1);
+		}
+
+	kmem = Open(_PATH_KMEM, O_RDONLY);
+	Lseek(kmem, (off_t)current_nl[X_DUMPDEV].n_value, SEEK_SET);
+	(void)Read(kmem, &dumpdev, sizeof(dumpdev));
+	if (dumpdev == NODEV) {
+		syslog(LOG_WARNING, "no core dump (no dumpdev)");
+		exit(1);
+	}
+	Lseek(kmem, (off_t)current_nl[X_DUMPLO].n_value, SEEK_SET);
+	(void)Read(kmem, &dumplo, sizeof(dumplo));
+	if (verbose)
+		(void)printf("dumplo = %d (%d * %d)\n", dumplo, dumplo/DEV_BSIZE, DEV_BSIZE);
+
+	Lseek(kmem, (off_t)current_nl[X_PHYSMEM].n_value, L_SET);
+	Read(kmem, (char *)&physmem, sizeof physmem);
+	if (current_nl[X_BOOTIME].n_value != 0) {
+		Lseek(kmem, (off_t)current_nl[X_BOOTIME].n_value, SEEK_SET);
+		Read(kmem, (char *)&boottime, sizeof boottime);
+	}
+	Lseek(kmem, (off_t)current_nl[X_DUMPMAG].n_value, SEEK_SET);
+	(void)Read(kmem, &dumpmag, sizeof(dumpmag));
+	dumplo *= DEV_BSIZE;
+	ddname = find_dev(dumpdev, S_IFBLK);
+	dumpfd = Open(ddname, O_RDWR);
+	fp = fdopen(kmem, "r");
+	if (fp == NULL) {
+		syslog(LOG_ERR, "%s: fdopen: %m", _PATH_KMEM);
+		exit(1);
+	}
+	if (vmunix)
+		return;
+	(void)fseek(fp, (off_t)current_nl[X_VERSION].n_value, SEEK_SET);
+	(void)fgets(vers, sizeof(vers), fp);
+
+	/* Don't fclose(fp), we use dumpfd later. */
+}
+
+void
+check_kmem(void)
+{
+	register char *cp;
+	FILE *fp;
+	char core_vers[1024];
+
+	fp = fdopen(dumpfd, "r");
+	if (fp == NULL) {
+		syslog(LOG_ERR, "%s: fdopen: %m", ddname);
+		exit(1);
+	}
+	fseek(fp, (off_t) (dumplo + ok(dump_nl[X_VERSION].n_value)), SEEK_SET);
+	fgets(core_vers, sizeof(core_vers), fp);
+	if (strcmp(vers, core_vers) && vmunix == 0)
+		syslog(LOG_WARNING, "warning: %s version mismatch:\n\t%s\nand\t%s\n",
+		_PATH_UNIX, vers, core_vers);
+	(void)fseek(fp, (off_t) (dumplo + ok(dump_nl[X_PANICSTR].n_value)), SEEK_SET);
+	(void)fread(&panicstr, sizeof(panicstr), 1, fp);
+	if (panicstr) {
+		(void) fseek(fp, dumplo + ok(panicstr), SEEK_SET);
+		cp = panic_mesg;
+		do
+			*cp = getc(fp);
+		while (*cp++ && cp < &panic_mesg[sizeof(panic_mesg)]);
+	}
+	/* Don't fclose(fp), we use dumpfd later. */
+}
+
+void
+clear_dump(void)
+{
+	long newdumplo;
+
+	newdumplo = 0;
+	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_DUMPMAG].n_value)), SEEK_SET);
+	Write(dumpfd, &newdumplo, sizeof(newdumplo));
+}
+
+int
+dump_exists(void)
+{
+	int newdumpmag;
+
+	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_DUMPMAG].n_value)), SEEK_SET);
+	(void)Read(dumpfd, &newdumpmag, sizeof(newdumpmag));
+	if (newdumpmag != dumpmag) {
+		if (verbose) {
+			syslog(LOG_WARNING, "magic number mismatch (%x != %x)",
+			    newdumpmag, dumpmag);
+		}
+		syslog(LOG_WARNING, "no core dump");
+		return (0);
+	}
+	return (1);
+}
+
+int
+get_crashtime(void)
+{
+	time_t clobber = (time_t)0;
+
+	if (dumpdev == NODEV) {
+		return (0);
+	}
+	if (vmunix) {
+		return (1);
+	}
+
+	dumpfd = Open(ddname, 2);
+	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_TIME].n_value)), SEEK_SET);
+	(void)Read(dumpfd, &dumptime, sizeof(dumptime));
+	if (!debug) {
+		Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_TIME].n_value)), SEEK_SET);
+		Write(dumpfd, (char *)&clobber, sizeof clobber);
+	}
+	close(dumpfd);
+	if (dumptime == 0) {
+		if (verbose || debug)
+			syslog(LOG_ERR, "dump time is zero");
+		return (0);
+	}
+	(void)printf("savecore: system went down at %s", ctime(&dumptime));
+#define	LEEWAY	(7 * SECSPERDAY)
+	if (dumptime < now - LEEWAY || dumptime > now + LEEWAY) {
+		(void)printf("dump time is unreasonable\n");
+		return (0);
+	}
+	if (dumptime > now) {
+		printf("Time was lost: was %s\n", ctime(&now));
+		if (boottime != 0) {
+			struct timeval tp;
+			now = now - boottime + dumptime;
+			tp.tv_sec = now;
+			tp.tv_usec = 0;
+			if (settimeofday(&tp, (struct timezone*) NULL)) {
+				printf("\t-- resetting clock to %s\n", ctime(&now));
+			}
+		}
+	}
+	return (1);
+}
+#endif

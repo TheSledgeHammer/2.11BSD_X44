@@ -246,25 +246,8 @@ nsap_iso_compare(struct nsap_iso *a, struct nsap_iso *b)
 static void
 nsap_service(struct sap_service *service, char *addr, u_char addrlen, int class)
 {
-	switch (class) {
-	case NSAP_CLASS_CONS: /* connection oriented */
-		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
-		service->ns_addrlen = addrlen;
-		nsap_class(service, NSAP_CLASS_CONS);
-		break;
-	case NSAP_CLASS_CLNS: /* connection-less oriented  */
-		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
-		service->ns_addrlen = addrlen;
-		nsap_class(service, NSAP_CLASS_CLNS);
-		break;
-	case NSAP_CLASS_UNKNOWN: /* everything else */
-		/* FALLTHROUGH */
-	default:
-		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
-		service->ns_addrlen = addrlen;
-		nsap_class(service, NSAP_CLASS_UNKNOWN);
-		break;
-	}
+	sap_service_init(service, addr, addrlen, class);
+	nsap_class(service, class);
 }
 
 static void
@@ -471,7 +454,6 @@ unknown:
 /*
  * nsap_canconnect:
  * - checks if nsap provider can connect to nsap user.
- *
  */
 int
 nsap_canconnect(struct sockaddr_nsap *snsap, void *arg, long type, long subnet, int class)
@@ -479,30 +461,31 @@ nsap_canconnect(struct sockaddr_nsap *snsap, void *arg, long type, long subnet, 
 	struct nsap_addr *nsapa;
 	int error;
 
-	if (snsap == NULL) {
+	if (snsap != NULL) {
+		error = nsap_acknowledge_snsap(&nsapisotable, snsap, type, subnet);
+		if (error != 0) {
+			return (error);
+		}
+		nsap_setup_snsap(snsap, arg, type, subnet);
+	} else {
 		return (EINVAL);
 	}
-	error = nsap_acknowledge_snsap(&nsapisotable, snsap, type, subnet);
-	if (error != 0) {
-		return (error);
-	}
-	nsap_setup_snsap(snsap, arg, type, subnet);
 	nsapa = &snsap->snsap_addr;
-	if (nsapa == NULL) {
+	if (nsapa != NULL) {
+		error = nsap_acknowledge_nsapa(&nsapisotable, nsapa, type, subnet, class);
+		if (error != 0) {
+			return (error);
+		}
+		nsap_setup_nsapa(nsapa, arg, type, class);
+	} else {
 		return (EINVAL);
 	}
-	error = nsap_acknowledge_nsapa(&nsapisotable, nsapa, type, subnet, class);
-	if (error != 0) {
-		return (error);
-	}
-	nsap_setup_nsapa(nsapa, arg, type, class);
 	return (0);
 }
 
 /*
  * nsap_candisconnect:
  * - checks if nsap provider can disconnect from nsap user.
- *
  */
 int
 nsap_candisconnect(struct sockaddr_nsap *snsap, void *arg, long type, long subnet, int class)
@@ -510,26 +493,27 @@ nsap_candisconnect(struct sockaddr_nsap *snsap, void *arg, long type, long subne
 	struct nsap_addr *nsapa;
 	int error;
 
-	if (snsap == NULL) {
+	if (snsap != NULL) {
+		error = nsap_acknowledge_snsap(&nsapisotable, snsap, type, subnet);
+		if (error != 0) {
+			return (error);
+		}
+		nsap_setup_snsap(snsap, NULL, NSAP_TYPE_UNKNOWN, NSAP_SUBNET_UNKNOWN);
+	} else {
 		return (EINVAL);
 	}
-	error = nsap_acknowledge_snsap(&nsapisotable, snsap, type, subnet);
-	if (error != 0) {
-		return (error);
-	}
-	nsap_setup_snsap(snsap, NULL, NSAP_TYPE_UNKNOWN, NSAP_SUBNET_UNKNOWN);
 	nsapa = &snsap->snsap_addr;
-	if (nsapa == NULL) {
+	if (nsapa != NULL) {
+		error = nsap_acknowledge_nsapa(&nsapisotable, nsapa, type, subnet, class);
+		if (error != 0) {
+			return (error);
+		}
+		nsap_setup_nsapa(nsapa, NULL, NSAP_TYPE_UNKNOWN, NSAP_CLASS_UNKNOWN);
+	} else {
 		return (EINVAL);
 	}
-	error = nsap_acknowledge_nsapa(&nsapisotable, nsapa, type, subnet, class);
-	if (error != 0) {
-		return (error);
-	}
-	nsap_setup_nsapa(nsapa, NULL, NSAP_TYPE_UNKNOWN, NSAP_CLASS_UNKNOWN);
 	return (0);
 }
-
 
 int
 nsap_acknowledge_snsap(struct sockaddr_nsap *snsap, long type, long subnet)
@@ -622,6 +606,7 @@ nsap_remove(struct nsapisotable *table, struct nsap_iso *nsap, long type, long s
 	}
 }
 
+/* Inserts all valid network layer protocols for that address family */
 static void
 nsap_insert_af(struct nsapisotable *table, struct nsap_iso *nsap, int af)
 {
@@ -673,6 +658,7 @@ nsap_insert_af(struct nsapisotable *table, struct nsap_iso *nsap, int af)
 	}
 }
 
+/* Removes all valid network layer protocols for that address family */
 static void
 nsap_remove_af(struct nsapisotable *table, struct nsap_iso *nsap, int af)
 {

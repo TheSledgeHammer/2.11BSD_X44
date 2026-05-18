@@ -82,7 +82,7 @@ mincore_segment_page(vm_map_entry_t entry, vm_amap_t amap, vm_object_t object, v
 	int i, j;
 
 	if (amap != NULL) {
-		amap_lock(amap);
+		vm_amap_lock(amap);
 	}
 	if (object != NULL) {
 		vm_object_lock(object);
@@ -140,7 +140,7 @@ mincore_segment_page(vm_map_entry_t entry, vm_amap_t amap, vm_object_t object, v
 		}
 	}
 	if (amap != NULL) {
-		amap_unlock(amap);
+		vm_amap_unlock(amap);
 	}
 	if (object != NULL) {
 		vm_object_unlock(object);
@@ -332,7 +332,7 @@ mincore1()
 		amap = entry->aref.ar_amap;	/* top layer */
 		object = entry->object.vm_object;	/* bottom layer */
 		if (amap != NULL) {
-			amap_lock(amap);
+			vm_amap_lock(amap);
 		}
 		if (object != NULL) {
 			vm_object_lock(object);

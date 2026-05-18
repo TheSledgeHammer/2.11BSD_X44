@@ -270,7 +270,7 @@ vm_amap_free(amap)
 	if (amap->am_ppref && amap->am_ppref != PPREF_NONE)
 		FREE(amap->am_ppref, M_VMAMAP);
 #endif
-	amap_unlock(amap);	/* mainly for lock debugging */
+	vm_amap_unlock(amap);	/* mainly for lock debugging */
 }
 
 /*
@@ -308,7 +308,7 @@ vm_amap_extend(entry, addsize)
 	 * there are some unused slots before us in the amap.
 	 */
 
-	amap_lock(amap); /* lock! */
+	vm_amap_lock(amap); /* lock! */
 
 	AMAP_B2SLOT(slotmapped, entry->end - entry->start); /* slots mapped */
 	AMAP_B2SLOT(slotadd, addsize); 						/* slots to add */
@@ -326,7 +326,7 @@ vm_amap_extend(entry, addsize)
 			vm_amap_pp_adjref(amap, slotoff + slotmapped, addsize, 1);
 		}
 #endif
-		amap_unlock(amap);
+		vm_amap_unlock(amap);
 		return; /* done! */
 	}
 
@@ -345,7 +345,7 @@ vm_amap_extend(entry, addsize)
 		}
 #endif
 		amap->am_nslot = slotneed;
-		amap_unlock(amap);
+		vm_amap_unlock(amap);
 		/*
 		 * no need to zero am_anon since that was done at
 		 * alloc time and we never shrink an allocation.
@@ -360,7 +360,7 @@ vm_amap_extend(entry, addsize)
 	 * XXXCDC: could we take advantage of a kernel realloc()?
 	 */
 
-	amap_unlock(amap); /* unlock in case we sleep in malloc */
+	vm_amap_unlock(amap); /* unlock in case we sleep in malloc */
 #ifdef VM_AMAP_PPREF
 	newppref = NULL;
 	if (amap->am_ppref && amap->am_ppref != PPREF_NONE) {
@@ -375,7 +375,7 @@ vm_amap_extend(entry, addsize)
 	MALLOC(newsl, int *, slotneed * sizeof(int), M_VMAMAP, M_WAITOK);
 	MALLOC(newbck, int *, slotneed * sizeof(int), M_VMAMAP, M_WAITOK);
 	MALLOC(newover, struct vm_anon **, slotneed * sizeof(struct vm_anon *), M_VMAMAP, M_WAITOK);
-	amap_lock(amap); /* re-lock! */
+	vm_amap_lock(amap); /* re-lock! */
 
 #ifdef DIAGNOSTIC
 	if (amap->am_maxslot >= slotneed)
@@ -425,7 +425,7 @@ vm_amap_extend(entry, addsize)
 	amap->am_maxslot = slotneed;
 
 	/* unlock */
-	amap_unlock(amap);
+	vm_amap_unlock(amap);
 
 	/* and free */
 	FREE(oldsl, M_VMAMAP);
@@ -501,7 +501,7 @@ vm_amap_wipeout(amap)
 	vm_anon_t anon;
 
 	vm_amap_list_remove(amap);
-	amap_unlock(amap);
+	vm_amap_unlock(amap);
 
 	for (lcv = 0 ; lcv < amap->am_nused ; lcv++) {
 		int refs;
@@ -616,7 +616,7 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 		return;
 	}
 	srcamap = entry->aref.ar_amap;
-	amap_lock(srcamap);
+	vm_amap_lock(srcamap);
 
 	/*
 	 * need to double check reference count now that we've got the
@@ -630,7 +630,7 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 		entry->needs_copy = FALSE;
 		amap->am_ref--;				/* drop final reference to map */
 		vm_amap_free(amap);			/* dispose of new (unused) amap */
-		amap_unlock(srcamap);
+		vm_amap_unlock(srcamap);
 		return;
 	}
 
@@ -668,7 +668,7 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 	}
 #endif
 
-	amap_unlock(srcamap);
+	vm_amap_unlock(srcamap);
 
 	vm_amap_list_insert(amap);
 
@@ -713,9 +713,10 @@ vm_amap_cow_now(map, entry)
 	vm_map_entry_t entry;
 {
 	vm_amap_t amap;
-	int lcv, slot;
 	vm_anon_t anon, nanon;
-	vm_page_t pg, npg;
+	vm_segment_t sg, nsg;
+	vm_page_t pg, npg, spg;
+	int lcv, slot;
 
 	amap = entry->aref.ar_amap;
 	/*
@@ -724,7 +725,7 @@ vm_amap_cow_now(map, entry)
 	 * am_anon[] array on us while the lock is dropped.
 	 */
 ReStart:
-	amap_lock(amap);
+	vm_amap_lock(amap);
 
 	for (lcv = 0 ; lcv < amap->am_nused ; lcv++) {
 
@@ -736,15 +737,29 @@ ReStart:
 		anon = amap->am_anon[slot];
 		simple_lock(&anon->an_lock);
 
+		sg = anon->u.an_segment;
 		pg = anon->u.an_page;
 
 		/*
 		 * page must be resident since parent is wired
 		 */
-
-		if (pg == NULL) {
-		    panic("amap_cow_now: non-resident wired page in anon %p",
-			anon);
+		if (sg != NULL) {
+			if (pg != NULL) {
+				/* Check segment page matches page */
+				if (pg->segment == sg) {
+					TAILQ_FOREACH(spg, &sg->memq, listq) {
+						if (spg->segment == sg) {
+							if (spg == pg) {
+								break;
+							}
+						}
+					}
+				} else {
+					panic("amap_cow_now: segment page in anon does not match page in anon %p", anon);
+				}
+			} else {
+				panic("amap_cow_now: non-resident wired page in anon %p", anon);
+			}
 		}
 
 		/*
@@ -760,12 +775,19 @@ ReStart:
 		if (anon->an_ref > 1) {
 
 			/*
-			 * if the page is busy then we have to unlock, wait for
+			 * if the segment and/or page is busy then we have to unlock, wait for
 			 * it and then restart.
 			 */
+			if (sg != NULL) {
+				if (sg->flags & SEG_BUSY) {
+					sg->flags |= SEG_WANTED;
+					vm_amap_unlock(amap);
+					goto ReStart;
+				}
+			}
 			if (pg->flags & PG_BUSY) {
 				pg->flags |= PG_WANTED;
-				amap_unlock(amap);
+				vm_amap_unlock(amap);
 				goto ReStart;
 			}
 
@@ -774,11 +796,20 @@ ReStart:
 			 */
 			nanon = vm_anon_alloc();
 			if (nanon) {
-				npg = vm_page_anon_alloc(NULL, 0, nanon);
+				nsg = vm_segment_anon_alloc(NULL, 0, nanon);
+				if (nsg != NULL) {
+					if (TAILQ_EMPTY(&nsg->memq)) {
+						npg = vm_page_anon_alloc(nsg, 0, nanon);
+					}
+				} else {
+					nsg = NULL;
+					npg = vm_page_anon_alloc(NULL, 0, nanon);
+				}
 			} else {
 				npg = NULL;	/* XXX: quiet gcc warning */
 			}
-			if (nanon == NULL || npg == NULL) {
+
+			if ((nanon == NULL) || ((nsg == NULL) && (npg == NULL))) {
 				/* out of memory */
 				/*
 				 * XXXCDC: we should cause fork to fail, but
@@ -788,28 +819,49 @@ ReStart:
 					vm_anon_free(nanon);
 				}
 				simple_unlock(&anon->an_lock);
-				amap_unlock(amap);
+				vm_amap_unlock(amap);
 				vm_wait();
 				goto ReStart;
 			}
 
-			/*
-			 * got it... now we can copy the data and replace anon
-			 * with our new one...
-			 */
-			vm_page_copy(pg, npg);			/* old -> new */
-			anon->an_ref--;					/* can't drop to zero */
-			amap->am_anon[slot] = nanon;	/* replace */
+			if ((sg != NULL) && (nsg != NULL)) {
+				/*
+				 * got it... now we can copy the data and replace anon
+				 * with our new one...
+				 */
+				vm_segment_copy(sg, nsg);		/* old -> new */
+				anon->an_ref--;					/* can't drop to zero */
+				amap->am_anon[slot] = nanon;	/* replace */
 
-			/*
-			 * drop PG_BUSY on new page ... since we have had it's
-			 * owner locked the whole time it can't be
-			 * PG_RELEASED | PG_WANTED.
-			 */
-			npg->flags &= ~(PG_BUSY|PG_FAKE);
-			vm_page_lock_queues();
-			vm_page_activate(npg);
-			vm_page_unlock_queues();
+				/*
+				 * drop SEG_BUSY on new segment ... since we have had it's
+				 * owner locked the whole time it can't be
+				 * SEG_RELEASED | SEG_WANTED.
+				 */
+				nsg->flags &= ~(SEG_BUSY);
+				vm_segment_lock_lists();
+				vm_segment_activate(nsg);
+				vm_segment_unlock_listss();
+			} else {
+
+				/*
+				 * got it... now we can copy the data and replace anon
+				 * with our new one...
+				 */
+				vm_page_copy(pg, npg);			/* old -> new */
+				anon->an_ref--;					/* can't drop to zero */
+				amap->am_anon[slot] = nanon;	/* replace */
+
+				/*
+				 * drop PG_BUSY on new page ... since we have had it's
+				 * owner locked the whole time it can't be
+				 * PG_RELEASED | PG_WANTED.
+				 */
+				npg->flags &= ~(PG_BUSY|PG_FAKE);
+				vm_page_lock_queues();
+				vm_page_activate(npg);
+				vm_page_unlock_queues();
+			}
 		}
 
 		simple_unlock(&anon->an_lock);
@@ -844,7 +896,7 @@ vm_amap_splitref(origref, splitref, offset)
 	/*
 	 * lock the amap
 	 */
-	amap_lock(origref->ar_amap);
+	vm_amap_lock(origref->ar_amap);
 
 	/*
 	 * now: amap is locked and we have a valid am_mapped array.
@@ -867,7 +919,7 @@ vm_amap_splitref(origref, splitref, offset)
 	splitref->ar_amap->am_ref++;		/* not a share reference */
 	splitref->ar_pageoff = origref->ar_pageoff + leftslots;
 
-	amap_unlock(origref->ar_amap);
+	vm_amap_unlock(origref->ar_amap);
 }
 
 #ifdef VM_AMAP_PPREF
@@ -1195,7 +1247,7 @@ vm_amap_ref(entry, flags)
 	vm_amap_t amap;
 
 	amap = entry->aref.ar_amap;
-	amap_lock(amap);
+	vm_amap_lock(amap);
 	amap->am_ref++;
 	if (flags & AMAP_SHARED) {
 		amap->am_flags |= AMAP_SHARED;
@@ -1212,7 +1264,7 @@ vm_amap_ref(entry, flags)
 		}
 	}
 #endif
-	amap_unlock(amap);
+	vm_amap_unlock(amap);
 }
 
 /*
@@ -1236,7 +1288,7 @@ vm_amap_unref(entry, all)
 	/*
 	 * lock it
 	 */
-	amap_lock(amap);
+	vm_amap_lock(amap);
 
 	/*
 	 * if we are the last reference, free the amap and return.
@@ -1267,7 +1319,7 @@ vm_amap_unref(entry, all)
 		}
 	}
 #endif
-	amap_unlock(amap);
+	vm_amap_unlock(amap);
 }
 
 void
@@ -1284,7 +1336,7 @@ vm_amap_cleaner_segment(amap, anon, segment)
 				if (anon->u.an_page != page) {
 					simple_unlock(&anon->an_lock);
 				}
-				if (amap_refs(amap) > 1) {
+				if (vm_amap_refs(amap) > 1) {
 					vm_page_lock_queues();
 					if (page->wire_count != 0) {
 						vm_page_unlock_queues();
@@ -1303,7 +1355,7 @@ vm_amap_cleaner_segment(amap, anon, segment)
 			}
 		}
 	} else {
-		if (amap_refs(amap) > 1) {
+		if (vm_amap_refs(amap) > 1) {
 			vm_segment_lock_lists();
 			if (segment->wire_tracker != 0) {
 				vm_segment_unlock_lists();
@@ -1342,7 +1394,7 @@ vm_amap_cleaner_page(amap, anon, segment, page, pgoffset)
 			}
 		}
 	}
-	if (amap_refs(amap) > 1) {
+	if (vm_amap_refs(amap) > 1) {
 		vm_page_lock_queues();
 		if (page->wire_count != 0) {
 			vm_page_unlock_queues();
@@ -1400,7 +1452,7 @@ vm_amap_clean(current, size, offset, amap)
 	vm_anon_t anon;
 	int refs;
 
-	amap_lock(amap);
+	vm_amap_lock(amap);
 	for (; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
 		anon = vm_amap_lookup(&current->aref, offset);
 		vm_amap_cleaner(amap, anon, offset);
@@ -1412,5 +1464,5 @@ vm_amap_clean(current, size, offset, amap)
 		}
 		continue;
 	}
-	amap_unlock(amap);
+	vm_amap_unlock(amap);
 }

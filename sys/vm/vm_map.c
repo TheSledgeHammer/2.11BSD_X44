@@ -714,7 +714,7 @@ vm_map_insert(map, object, offset, start, end)
 			(prev_entry->advice != advice) &&
 		    (prev_entry->wired_count == 0) &&
 			(prev_entry->aref.ar_amap &&
-					amap_refs(prev_entry->aref.ar_amap) != 1)) {
+					vm_amap_refs(prev_entry->aref.ar_amap) != 1)) {
 			error = vm_object_coalesce(prev_entry->object.vm_object, NULL,
 					prev_entry->offset, (vm_offset_t) 0,
 					(vm_size_t) (prev_entry->end - prev_entry->start),
@@ -2728,7 +2728,7 @@ vmspace_fork(vm1)
 			new_entry->is_a_map = FALSE;
 			vm_map_entry_link(new_map, CIRCLEQ_FIRST(&new_map->cl_header)->cl_entry.cqe_prev, new_entry);
 			if (old_entry->aref.ar_amap != NULL) {
-				if ((amap_flags(old_entry->aref.ar_amap) & AMAP_SHARED) != 0 || old_entry->wired_count != 0) {
+				if ((vm_amap_flags(old_entry->aref.ar_amap) & AMAP_SHARED) != 0 || old_entry->wired_count != 0) {
 					vm_amap_copy(new_map, new_entry, M_WAITOK, FALSE, 0, 0);
 				}
 			}

@@ -301,42 +301,6 @@ sap_item_lookup(long sap_item, long *sap_array, int nelems)
 	return (item);
 }
 
-static void
-sap_select_setup(struct sap_select *select, long *type, long *subnet, long *protocol, int *class)
-{
-    bcopy(type, select->ss_type, sizeof(*select->ss_type));
-    bcopy(subnet, select->ss_subnet, sizeof(*select->ss_subnet));
-    bcopy(protocol, select->ss_protocol, sizeof(*select->ss_protocol));
-    bcopy(class, select->ss_class, sizeof(*select->ss_class));
-}
-
-static void
-sap_select_selector_setup(struct sap_select *select)
-{
-	int i;
-	uint32_t sap_hashtable[SAP_TABLE_MAX];
-
-	for (i = 1; i < SAP_TABLE_MAX; i++) {
-		select = &sap_table[i];
-		if (select != NULL) {
-			sap_hashids[i] = sap_hash(*select->ss_type, *select->ss_subnet, *select->ss_protocol, *select->ss_class);
-			tsap_valid_ids[i] = sap_hashids[i];
-		}
-	}
-}
-
-void
-sap_select_init(struct sap_select *select, int sid, int af)
-{
-	bzero(select, sizeof(*select));
-	select = sap_select_lookup(sid, af);
-	if (select != NULL) {
-		sap_select_setup(select, select->ss_type, select->ss_subnet, select->ss_protocol, select->ss_class);
-		sap_select_selector_setup(select);
-		select->ss_selector[sid] = sap_hashids[sid];
-	}
-}
-
 /*
  * nsap_addr functions
  */
@@ -381,6 +345,44 @@ sockaddr_nsap_compare_subnet(struct sockaddr_nsap *a, struct sockaddr_nsap *b)
 	}
 }
 
+uint16_t
+sockaddr_nsap_port(struct sockaddr_nsap *snsap, int af)
+{
+	uint16_t port;
+
+	switch (af) {
+	case AF_INET:
+		port = snsap->snsap_sin4.sin_port;
+		break;
+	case AF_INET6:
+		port = snsap->snsap_sin6.sin6_port;
+		break;
+	}
+	return (port);
+}
+
+u_char
+sockaddr_nsap_isolayer_selectlen(struct sockaddr_nsap *snsap, int isolayer)
+{
+	u_char sel;
+
+	switch (isolayer) {
+	case ISOL_NETWORK:
+		sel = snsap->snsap_siso.siso_nlen;
+		break;
+	case ISOL_TRANSPORT:
+		sel = snsap->snsap_siso.siso_tlen;
+		break;
+	case ISOL_SESSION:
+		sel = snsap->snsap_siso.siso_slen;
+		break;
+	case ISOL_PRESENTATION:
+		sel = snsap->snsap_siso.siso_plen;
+		break;
+	}
+	return (sel);
+}
+
 /*
  * sockaddr_nsap_compare:
  * - compares type, subnet, class and nsap_addr.
@@ -415,6 +417,31 @@ sockaddr_nsap_compare(struct sockaddr_nsap *a, struct sockaddr_nsap *b)
 /*
  * sap_service functions
  */
+void
+sap_service_init(struct sap_service *service, char *addr, u_char addrlen, int class)
+{
+	bzero(service, sizeof(*service));
+	switch (class) {
+	case SAP_CLASS_CONS: /* connection oriented */
+		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
+		service->ns_addrlen = addrlen;
+		service->ns_class = SAP_CLASS_CONS;
+		break;
+	case SAP_CLASS_CLNS: /* connection-less oriented  */
+		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
+		service->ns_addrlen = addrlen;
+		service->ns_class = SAP_CLASS_CLNS;
+		break;
+	case SAP_CLASS_UNKNOWN: /* everything else */
+		/* FALLTHROUGH */
+	default:
+		bcopy(addr, service->ns_addr, sizeof(service->ns_addr));
+		service->ns_addrlen = addrlen;
+		service->ns_class = SAP_CLASS_UNKNOWN;
+		break;
+	}
+}
+
 static int
 sap_service_compare_addr(struct sap_service *a, struct sap_service *b)
 {
@@ -508,6 +535,42 @@ sap_service_compare(struct sap_service *a, struct sap_service *b)
 /*
  * sap_select functions
  */
+static void
+sap_select_setup(struct sap_select *select, long *type, long *subnet, long *protocol, int *class)
+{
+    bcopy(type, select->ss_type, sizeof(*select->ss_type));
+    bcopy(subnet, select->ss_subnet, sizeof(*select->ss_subnet));
+    bcopy(protocol, select->ss_protocol, sizeof(*select->ss_protocol));
+    bcopy(class, select->ss_class, sizeof(*select->ss_class));
+}
+
+static void
+sap_select_selector_setup(struct sap_select *select)
+{
+	int i;
+	uint32_t sap_hashtable[SAP_TABLE_MAX];
+
+	for (i = 1; i < SAP_TABLE_MAX; i++) {
+		select = &sap_table[i];
+		if (select != NULL) {
+			sap_hashids[i] = sap_hash(*select->ss_type, *select->ss_subnet, *select->ss_protocol, *select->ss_class);
+			tsap_valid_ids[i] = sap_hashids[i];
+		}
+	}
+}
+
+void
+sap_select_init(struct sap_select *select, int sid, int af)
+{
+	bzero(select, sizeof(*select));
+	select = sap_select_lookup(sid, af);
+	if (select != NULL) {
+		sap_select_setup(select, select->ss_type, select->ss_subnet, select->ss_protocol, select->ss_class);
+		sap_select_selector_setup(select);
+		select->ss_selector[sid] = sap_hashids[sid];
+	}
+}
+
 struct sap_select *
 sap_select_lookup(int sid, int af)
 {

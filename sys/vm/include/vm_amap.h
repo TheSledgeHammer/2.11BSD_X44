@@ -232,10 +232,10 @@ struct vm_amap {
  * lock/unlock/refs/flags macros
  */
 
-#define amap_flags(AMAP)	((AMAP)->am_flags)
-#define amap_refs(AMAP)		((AMAP)->am_ref)
-#define amap_lock(AMAP)		simple_lock(&(AMAP)->am_lock)
-#define amap_unlock(AMAP)	simple_unlock(&(AMAP)->am_lock)
+#define vm_amap_flags(AMAP)		((AMAP)->am_flags)
+#define vm_amap_refs(AMAP)		((AMAP)->am_ref)
+#define vm_amap_lock(AMAP)		simple_lock(&(AMAP)->am_lock)
+#define vm_amap_unlock(AMAP)	simple_unlock(&(AMAP)->am_lock)
 
 /*
  * if we enable PPREF, then we have a couple of extra functions that

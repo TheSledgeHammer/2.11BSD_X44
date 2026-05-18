@@ -121,3 +121,55 @@ psap_iso_compare(struct psap_iso *a, struct psap_iso *b)
 	}
 	return (0);
 }
+
+int
+psap_canconnect(struct psap_iso *psap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
+{
+	struct ssap_iso *ssap;
+	int error;
+
+	ssap = psap_to_ssap(psap);
+	if (ssap == NULL) {
+		return (EINVAL);
+	}
+	return (ssap_canconnect(ssap, arg, type, subnet, protocol, class, sid, af));
+}
+
+int
+psap_candisconnect(struct psap_iso *psap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
+{
+	struct ssap_iso *ssap;
+	int error;
+
+	ssap = psap_to_ssap(psap);
+	if (ssap == NULL) {
+		return (EINVAL);
+	}
+	return (ssap_candisconnect(ssap, arg, type, subnet, protocol, class, sid, af));
+}
+
+int
+psap_connect(struct psap_iso *psap, void *arg, long subnet, long protocol, int af)
+{
+	struct ssap_iso *ssap;
+	int error;
+
+	ssap = psap_to_ssap(psap);
+	if (ssap == NULL) {
+		return (EINVAL);
+	}
+	return (ssap_connect(ssap, arg, subnet, protocol, class, af));
+}
+
+int
+psap_disconnect(struct psap_iso *psap, void *arg, long subnet, long protocol, int af)
+{
+	struct ssap_iso *ssap;
+	int error;
+
+	ssap = psap_to_ssap(psap);
+	if (ssap == NULL) {
+		return (EINVAL);
+	}
+	return (ssap_disconnect(ssap, arg, subnet, protocol, class, af));
+}
