@@ -102,17 +102,11 @@ struct sockaddr_iso tuba_addrs[2] = {
 #define TUBAHDRSIZE 	((LLC)+(CLNP_FIXED)+(ADDRESSES)+(CLNP_SEGMENT)+(TCP))
 
 #ifdef INET
-static void tuba4_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size);
-static void tuba_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, int tlen, unsigned long lindex, unsigned long findex);
-static int tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype);
-static void tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype);
+static void tuba_ip4_cksum(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, struct ip *, int, unsigned long, unsigned long);
 #endif
 
 #ifdef INET6
-static void tuba6_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size);
-static void tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, u_long cksum, int tlen, unsigned long lindex, unsigned long findex);
-static int tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int transtype);
-static void tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype);
+static void tuba_ip6_cksum(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, struct ip6_hdr *, u_long, int, unsigned long, unsigned long);
 #endif
 
 /*
@@ -127,11 +121,6 @@ tuba_init(void)
 	iso_pcbinit(&tubaisoptable, tubahashsize);
 	/* now preallocate sladdr and sfaddr */
 	iso_pcbprealloc(&tubaisoptable, tuba_addrs[1]);
-	/*
-	tuba_isopcb.isop_next = tuba_isopcb.isop_prev = &tuba_isopcb;
-	tuba_isopcb.isop_faddr = &tuba_isopcb.isop_sfaddr;
-	tuba_isopcb.isop_laddr = &tuba_isopcb.isop_sladdr;
-	*/
 	if (max_protohdr < TUBAHDRSIZE) {
 		max_protohdr = TUBAHDRSIZE;
 	}
@@ -157,20 +146,6 @@ tuba_cksum(u_long *sum, int *offset, struct sockaddr_iso **siso, u_long index)
 		error = 1;
 	}
 	return (error);
-}
-
-int
-tuba_tcp_output(struct mbuf *m, struct isopcb *isop, struct tcphdr *th, int af)
-{
-	th = mtod(m, struct tcphdr *);
-	return (tuba_output(m, isop, (struct tcphdr *)th, th->th_sum, 0, af));
-}
-
-int
-tuba_udp_output(struct mbuf *m, struct isopcb *isop, struct udphdr *uh, int af)
-{
-	uh = mtod(m, struct udphdr *);
-	return (tuba_output(m, isop, (struct udphdr *)uh, uh->uh_sum, 1, af));
 }
 
 void
@@ -251,50 +226,9 @@ tuba4_pcbconnect(void *v, struct mbuf *nam)
 	}
 	return (error);
 }
-#endif
 
-#ifdef INET6
-int
-tuba6_pcbconnect(void *v, struct mbuf *nam)
-{
-	struct tcpcb *tp;
-	struct in6pcb *in6p;
-	struct sockaddr_iso *siso;
-	struct sockaddr_in6 *sin6;
-	struct isopcb *isop;
-	int error;
-
-	in6p = (struct in6pcb *)v;
-	sin6 = mtod(nam, struct sockaddr_in6 *);
-	tp = in6totcpcb(in6p);
-	isop = (struct isopcb *)tp->t_tuba_pcb;
-	/* hardwire iso_pcbbind() here */
-	siso = isop->isop_laddr = &isop->isop_sladdr;
-	*siso = tuba_table[in6p->in6p_laddr.s6_addr]->tc_siso;
-	siso->siso_tlen = sizeof(in6p->in6p_lport);
-	bcopy((caddr_t)&in6p->in6p_lport, TSEL(siso), sizeof(in6p->in6p_lport));
-
-	/* hardwire in_pcbconnect() here without assigning route */
-	in6p->in6p_fport = sin6->sin6_port;
-	in6p->in6p_faddr = sin6->sin6_addr;
-
-	/* reuse nam argument to call iso_pcbconnect() */
-	nam->m_len = sizeof(*siso);
-	siso = mtod(nam, struct sockaddr_iso *);
-	*siso = tuba_table[in6p->in6p_faddr.s6_addr]->tc_siso;
-	siso->siso_tlen = sizeof(in6p->in6p_fport);
-	bcopy((caddr_t)&in6p->in6p_fport, TSEL(siso), sizeof(in6p->in6p_fport));
-	error = iso_pcbconnect(isop, nam);
-	if (error == 0) {
-		tuba_refcnt(isop, 1);
-	}
-	return (error);
-}
-#endif
-
-#ifdef INET
-static void
-tuba4_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size)
+void
+tuba4_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size)
 {
 	m->m_data -= sizeof(struct ip);
 	m->m_len += sizeof(struct ip);
@@ -367,7 +301,7 @@ tuba_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
  * 0 = TCP
  * 1 = UDP
  */
-static int
+int
 tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
 {
 	struct ip *ip;
@@ -441,7 +375,7 @@ tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
  * 0 = TCP
  * 1 = UDP
  */
-static void
+void
 tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype)
 {
 	ip = mtod(m, struct ip *);
@@ -471,9 +405,45 @@ tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
 #endif
 
 #ifdef INET6
+int
+tuba6_pcbconnect(void *v, struct mbuf *nam)
+{
+	struct tcpcb *tp;
+	struct in6pcb *in6p;
+	struct sockaddr_iso *siso;
+	struct sockaddr_in6 *sin6;
+	struct isopcb *isop;
+	int error;
 
-static void
-tuba6_input_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size)
+	in6p = (struct in6pcb *)v;
+	sin6 = mtod(nam, struct sockaddr_in6 *);
+	tp = in6totcpcb(in6p);
+	isop = (struct isopcb *)tp->t_tuba_pcb;
+	/* hardwire iso_pcbbind() here */
+	siso = isop->isop_laddr = &isop->isop_sladdr;
+	*siso = tuba_table[in6p->in6p_laddr.s6_addr]->tc_siso;
+	siso->siso_tlen = sizeof(in6p->in6p_lport);
+	bcopy((caddr_t)&in6p->in6p_lport, TSEL(siso), sizeof(in6p->in6p_lport));
+
+	/* hardwire in_pcbconnect() here without assigning route */
+	in6p->in6p_fport = sin6->sin6_port;
+	in6p->in6p_faddr = sin6->sin6_addr;
+
+	/* reuse nam argument to call iso_pcbconnect() */
+	nam->m_len = sizeof(*siso);
+	siso = mtod(nam, struct sockaddr_iso *);
+	*siso = tuba_table[in6p->in6p_faddr.s6_addr]->tc_siso;
+	siso->siso_tlen = sizeof(in6p->in6p_fport);
+	bcopy((caddr_t)&in6p->in6p_fport, TSEL(siso), sizeof(in6p->in6p_fport));
+	error = iso_pcbconnect(isop, nam);
+	if (error == 0) {
+		tuba_refcnt(isop, 1);
+	}
+	return (error);
+}
+
+void
+tuba6_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, int len, int off, size_t size)
 {
 	m->m_data -= sizeof(struct ip6_hdr);
 	m->m_len += sizeof(struct ip6_hdr);
@@ -546,7 +516,7 @@ tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
  * 0 = TCP
  * 1 = UDP
  */
-static int
+int
 tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int transtype)
 {
 	struct ip6_hdr *ip6;
@@ -620,7 +590,7 @@ tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int t
  * 0 = TCP
  * 1 = UDP
  */
-static void
+void
 tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype)
 {
 	ip6 = mtod(m, struct ip6_hdr *);
@@ -648,186 +618,3 @@ tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
 	}
 }
 #endif
-
-/*
- * transtype:
- * 0 = TCP
- * 1 = UDP
- */
-int
-tuba_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int transtype, int af)
-{
-	int rval;
-
-	switch (af) {
-#ifdef INET
-	case AF_INET:
-		rval = tuba4_ouput(m, isop, arg, transtype);
-		break;
-#endif
-#ifdef INET6
-	case AF_INET6:
-		rval = tuba6_ouput(m, isop, arg, cksum, transtype);
-		break;
-#endif
-	default:
-		rval = ENXIO;
-		break;
-	}
-	return (rval);
-}
-
-/*
- * transtype:
- * 0 = TCP
- * 1 = UDP
- */
-void
-tuba_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, struct ip6_hdr *ip6, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype, int af)
-{
-	switch (af) {
-#ifdef INET
-	case AF_INET:
-		switch (transtype) {
-		case 0:
-			tuba4_input(m, src, dst, ip, arg, toff, tlen, lindex, findex, 0);
-			break;
-		case 1:
-			tuba4_input(m, src, dst, ip, arg, toff, tlen, lindex, findex, 1);
-			break;
-		}
-		break;
-#endif
-#ifdef INET6
-	case AF_INET6:
-		switch (transtype) {
-		case 0:
-			tuba6_input(m, src, dst, ip6, arg, toff, tlen, lindex, findex, 0);
-			break;
-		case 1:
-			tuba6_input(m, src, dst, ip6, arg, toff, tlen, lindex, findex, 1);
-			break;
-		}
-		break;
-#endif
-	default:
-		m_freem(m);
-		return;
-	}
-}
-
-void
-tuba_tcp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst)
-{
-	unsigned long sum, lindex, findex;
-	struct tcphdr *th;
-	struct ip *ip;
-	struct inpcb *inp;
-#ifdef INET6
-	struct ip6_hdr *ip6;
-	struct in6pcb *in6p;
-#endif
-	u_int8_t *optp = NULL;
-	int optlen = 0;
-	int len, tlen, toff, hdroptlen = 0;
-	struct tcpcb *tp = 0;
-	int tiflags;
-	struct socket *so = NULL;
-	int todrop, acked, ourfinisacked, needoutput = 0;
-#ifdef TCP_DEBUG
-	short ostate = 0;
-#endif
-	int iss = 0;
-	u_long tiwin;
-	struct tcp_opt_info opti;
-	int off, iphlen;
-	va_list ap;
-	int af;		/* af on the wire */
-	struct mbuf *tcp_saveti = NULL;
-
-	va_start(ap, m);
-	toff = va_arg(ap, int);
-	(void)va_arg(ap, int);		/* ignore value, advance ap */
-	va_end(ap);
-
-	/*
-	 * Do some housekeeping looking up CLNP addresses.
-	 * If we are out of space might as well drop the packet now.
-	 */
-	tcpstat.tcps_rcvtotal++;
-
-	bzero(&opti, sizeof(opti));
-	opti.ts_present = 0;
-	opti.maxseg = 0;
-
-	lindex = tuba_lookup(dst, M_DONTWAIT);
-	findex = tuba_lookup(src, M_DONTWAIT);
-	if (lindex == 0 || findex == 0) {
-		goto drop;
-	}
-
-	/*
-	 * CLNP gave us an mbuf chain WITH the clnp header pulled up,
-	 * but the data pointer pushed past it.
-	 */
-	len = m->m_len;
-	tlen = m->m_pkthdr.len;
-#ifdef INET
-	iphlen = (sizeof(struct tcphdr) + sizeof(struct ip));
-	tuba4_input_mbuf(m, src, dst, len, off, iphlen);
-#endif
-#ifdef INET6
-	iphlen = (sizeof(struct tcphdr) + sizeof(struct ip6_hdr));
-	tuba6_input_mbuf(m, src, dst, len, off, iphlen);
-#endif
-
-	/*
-	 * Get IP and TCP header together in first mbuf.
-	 * Note: IP leaves IP header in first mbuf.
-	 */
-	ip = mtod(m, struct ip *);
-#ifdef INET6
-	ip6 = NULL;
-#endif
-	switch (ip->ip_v) {
-#ifdef INET
-	case 4:
-		af = AF_INET;
-		tuba_input(m, src, dst, ip, (struct tcphdr *)th, toff, tlen, lindex, findex, 0, af);
-		break;
-#endif
-#ifdef INET6
-	case 6:
-		af = AF_INET6;
-		tuba_input(m, src, dst, ip6, (struct tcphdr *)th, toff, tlen, lindex, findex, 0, af);
-		break;
-#endif
-	default:
-		m_freem(m);
-		return;
-	}
-
-#define TUBA_INCLUDE
-#ifdef INET
-#define	in_pcbconnect	tuba4_pcbconnect
-#define	tcb				tuba_inpcb
-#endif
-#ifdef INET6
-#define	in6_pcbconnect	tuba6_pcbconnect
-#define	tcb				tuba_in6pcb
-#endif
-#include <netinet/tcp_input.c>
-}
-
-#ifdef notyet
-#define tcp_slowtimo	tuba_slowtimo
-#define tcp_fasttimo	tuba_fasttimo
-
-#include <netinet/tcp_timer.c>
-#endif
-
-void
-tuba_udp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst)
-{
-
-}

@@ -106,17 +106,20 @@ nsap_attach(struct nsap_iso *nsap, int af)
 	if (nsiiso != NULL) {
 		nsap_insert_af(&nsapisotable, nsiiso, af);
 		nsap = nsiiso;
+	} else {
+		nsap = NULL;
 	}
-	nsap = NULL;
 }
 
 void
 nsap_detach(struct nsap_iso *nsap, int af)
 {
 	if (nsap != NULL) {
-		nsap_remove_af(&nsapisotable, nsap, af);
-	} else {
-		nsap_destroy(nsap);
+		if (!LIST_EMPTY(&nsapisotable)) {
+			nsap_remove_af(&nsapisotable, nsap, af);
+		} else {
+			nsap_destroy(nsap);
+		}
 	}
 }
 

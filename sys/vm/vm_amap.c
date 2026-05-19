@@ -686,6 +686,29 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 }
 
 /*
+ * Check amap segment and page are pointing to the same
+ * location.
+ */
+static int
+vm_amap_cow_segment_page_match(sg, pg)
+	vm_segment_t sg;
+	vm_page_t pg;
+{
+	vm_page_t spg;
+
+	if (pg->segment == sg) {
+		TAILQ_FOREACH(spg, &sg->memq, listq) {
+			if (spg->segment == sg) {
+				if (spg == pg) {
+					return (0);
+				}
+			}
+		}
+	}
+	return (1);
+}
+
+/*
  * amap_cow_now: resolve all copy-on-write faults in an amap now for fork(2)
  *
  *	called during fork(2) when the parent process has a wired map
@@ -746,20 +769,14 @@ ReStart:
 		if (sg != NULL) {
 			if (pg != NULL) {
 				/* Check segment page matches page */
-				if (pg->segment == sg) {
-					TAILQ_FOREACH(spg, &sg->memq, listq) {
-						if (spg->segment == sg) {
-							if (spg == pg) {
-								break;
-							}
-						}
-					}
-				} else {
+				if (vm_amap_cow_segment_page_match(sg, pg) != 0) {
 					panic("amap_cow_now: segment page in anon does not match page in anon %p", anon);
 				}
 			} else {
 				panic("amap_cow_now: non-resident wired page in anon %p", anon);
 			}
+		} else {
+			panic("amap_cow_now: non-resident wired segment in anon %p", anon);
 		}
 
 		/*
@@ -773,17 +790,14 @@ ReStart:
 		 */
 
 		if (anon->an_ref > 1) {
-
 			/*
 			 * if the segment and/or page is busy then we have to unlock, wait for
 			 * it and then restart.
 			 */
-			if (sg != NULL) {
-				if (sg->flags & SEG_BUSY) {
-					sg->flags |= SEG_WANTED;
-					vm_amap_unlock(amap);
-					goto ReStart;
-				}
+			if (sg->flags & SEG_BUSY) {
+				sg->flags |= SEG_WANTED;
+				vm_amap_unlock(amap);
+				goto ReStart;
 			}
 			if (pg->flags & PG_BUSY) {
 				pg->flags |= PG_WANTED;
@@ -796,16 +810,22 @@ ReStart:
 			 */
 			nanon = vm_anon_alloc();
 			if (nanon) {
-				if (sg != NULL) {
+				/*
+				 * if all pages in segment are wired, perform a copy-on-write
+				 * on segment, otherwise perform a copy-on-write on page
+				 */
+				if (sg->wire_tracker >= (SEGMENT_SIZE/PAGE_SIZE)) {
 					nsg = vm_segment_anon_alloc(NULL, 0, nanon);
-				} else {
+				}
+				if(sg->wire_tracker < (SEGMENT_SIZE/PAGE_SIZE)) {
+					npg = vm_page_anon_alloc(sg, 0, nanon);
 					nsg = NULL;
-					npg = vm_page_anon_alloc(NULL, 0, nanon);
 				}
 			} else {
-				npg = NULL;	/* XXX: quiet gcc warning */
+				/* XXX: quiet gcc warning */
+				nsg = NULL;
+				npg = NULL;
 			}
-
 			if ((nanon == NULL) || ((nsg == NULL) && (npg == NULL))) {
 				/* out of memory */
 				/*
@@ -821,7 +841,7 @@ ReStart:
 				goto ReStart;
 			}
 
-			if ((sg != NULL) && (nsg != NULL)) {
+			if (nsg != NULL) {
 				/*
 				 * got it... now we can copy the data and replace anon
 				 * with our new one...

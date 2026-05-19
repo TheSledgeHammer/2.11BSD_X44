@@ -226,7 +226,6 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_input.c,v 1.190.2.6.2.2 2005/04/22 06:58:50 tron
 #endif
 #endif	/* FAST_IPSEC*/
 
-
 int	tcprexmtthresh = 3;
 int	tcp_log_refused;
 

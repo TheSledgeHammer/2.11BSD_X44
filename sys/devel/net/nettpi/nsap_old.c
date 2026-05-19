@@ -28,6 +28,9 @@
 
 #include <sys/null.h>
 
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_protosw.h>
+
 #include "iso_nsap.h"
 
 /*

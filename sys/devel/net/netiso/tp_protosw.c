@@ -41,20 +41,20 @@
 #include <netiso/tp_proto/tp_ns.h>
 
 struct tp_protosw tp_protosw[] = {
-		{
+		{	/* INET 0 */
 				&tpin4_protosw
 		},
-		{
+		{	/* INET6 1 */
 				&tpin6_protosw
 		},
-		{
+		{	/* ISO 2 */
 				&tpiso_protosw
 		},
-		{
-				&tpcons_protosw
-		},
-		{
+		{	/* XNS 3 */
 				&tpns_protosw
+		},
+		{	/* ISO TPCONS 4 */
+				&tpcons_protosw
 		},
 };
 
