@@ -817,7 +817,7 @@ ReStart:
 				if (sg->wire_tracker >= (SEGMENT_SIZE/PAGE_SIZE)) {
 					nsg = vm_segment_anon_alloc(NULL, 0, nanon);
 				}
-				if(sg->wire_tracker < (SEGMENT_SIZE/PAGE_SIZE)) {
+				if (sg->wire_tracker < (SEGMENT_SIZE/PAGE_SIZE)) {
 					npg = vm_page_anon_alloc(sg, 0, nanon);
 					nsg = NULL;
 				}
