@@ -87,6 +87,7 @@ COPTS.ntp_intres.c+= -Wno-sign-compare
 COPTS.ntp_rfc2553.c+= -Wno-sign-compare
 COPTS.socktoa.c+= -Wno-restrict
 COPTS.socktohost.c+= -Wno-sign-compare -Wno-restrict
+COPTS.timetoa.c+= ${GCC_NO_FORMAT_TRUNCATION}
 
 # For MKREPRO, avoid using __DATE__ and __TIME__.
 # Instead, use the date and time from ${IMPORTDATE_FILE}.
