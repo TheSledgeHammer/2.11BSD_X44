@@ -83,13 +83,13 @@ extern FILE *zopen(const char *fname, const char *mode);
 #define	CLICK	ctob(1)		/* size of core units */
 #define	REGLOC	0300		/* offset of saved registers in disk dump */
 #define	NREGS	8		/* r0-6, KA6 */
-#endif
 
-#define	DAY			(60L*60L*24L)
-#define	LEEWAY		(3*DAY)
+#define	DAY		(60L*60L*24L)
+#define	LEEWAY	(3*DAY)
 
 #define	eq(a,b)		(!strcmp(a,b))
 #define	ok(number)	((off_t) ((number)&0177777))
+#endif
 
 #define	SHUTDOWNLOG	"/usr/adm/shutdownlog"
 
@@ -157,22 +157,24 @@ kvm_t *kd_kern, *kd_dump;
 int	clear, compress, force, verbose;	/* flags */
 int	debug;
 
-void	check_kmem(void);
-int	 	check_space(void);
-void	clear_dump(void);
-int	 	Create(char *, int);
-int	 	dump_exists(void);
-char	*find_dev(dev_t, int);
-int	 	get_crashtime(void);
-void	kmem_setup(void);
-//void	log(int, char *, ...);
-void	Lseek(int, off_t, int);
-int	 	Open(const char *, int rw);
-int	 	Read(int, void *, int);
-char	*rawname(char *s);
-void	save_core(void);
-void	usage(void);
-void 	Write(int, void *, int);
+void check_kmem(void);
+int	check_space(void);
+void clear_dump(void);
+int	Create(char *, int);
+int	dump_exists(void);
+char *find_dev(dev_t, mode_t);
+int get_crashtime(void);
+void kmem_setup(void);
+void log_entry(void);
+const char *Path(const char *);
+int read_number(const char *);
+off_t Lseek(int, off_t, int);
+int Open(const char *, int);
+int	Read(int, void *, int);
+const char *rawname(const char *);
+void save_core(void);
+void usage(void);
+void Write(int, void *, int);
 
 int
 main(int argc, char *argv[])
@@ -231,6 +233,7 @@ main(int argc, char *argv[])
 	}
 	(void)time(&now);
 	kmem_setup();
+    log_entry();
 
 	if (clear) {
 		clear_dump();
@@ -257,53 +260,6 @@ main(int argc, char *argv[])
 
 	clear_dump();
 	exit(0);
-}
-
-char *
-find_dev(dev_t dev, int type)
-{
-	register DIR *dfd;
-	struct dirent *dir;
-	struct stat sb;
-	register char *dp, *cp;
-
-	dfd = opendir(_PATH_DEV);
-	if ((dfd = opendir(_PATH_DEV)) == NULL) {
-		syslog(LOG_ERR, "%s: %s", _PATH_DEV, strerror(errno));
-		exit(1);
-	}
-	cp = devname(dev, type);
-	if (!cp) {
-		if (debug) {
-			goto err;
-		}
-		goto err;
-	}
-	(void)strcpy(cp, _PATH_DEV);
-	while ((dir = readdir(dfd))) {
-		(void)strcpy(devname + sizeof(_PATH_DEV) - 1, dir->d_name);
-		if (lstat(cp, &sb)) {
-			syslog(LOG_ERR, "%s: %s", cp, strerror(errno));
-			continue;
-		}
-		if ((sb.st_mode & S_IFMT) != type) {
-			continue;
-		}
-		if (dev == sb.st_rdev) {
-			closedir(dfd);
-			if ((dp = strdup(cp)) == NULL) {
-				syslog(LOG_ERR, "%s", strerror(errno));
-				exit(1);
-			}
-			return (dp);
-		}
-	}
-
-err:
-	closedir(dfd);
-	syslog(LOG_ERR, "can't find device %d/%d", major(dev), minor(dev));
-	exit(1);
-	return (NULL);
 }
 
 void
@@ -473,7 +429,7 @@ clear_dump(void)
 
 	if (newdumplo != dumplo) {
 		if (verbose) {
-			syslog(LOG_WARNING, "clear dump (0x%x != 0x%x)", newdumplo, dumplo);
+			syslog(LOG_WARNING, "clear dump (0x%lx != 0x%lx)", newdumplo, dumplo);
 		}
 	}
 }
@@ -516,6 +472,56 @@ dump_exists(void)
 	return (1);
 }
 
+char *
+find_dev(dev_t dev, mode_t type)
+{
+	register DIR *dfd;
+	struct dirent *dir;
+	struct stat sb;
+	char *dp, *cp, device[MAXPATHLEN + 1];
+    size_t len;
+
+	dfd = opendir(_PATH_DEV);
+	if ((dfd = opendir(_PATH_DEV)) == NULL) {
+		syslog(LOG_ERR, "%s: %s", _PATH_DEV, strerror(errno));
+		exit(1);
+	}
+	cp = devname(dev, type);
+	if (!cp) {
+		if (debug) {
+			goto err;
+		}
+		goto err;
+	}
+	(void)strlcpy(device, _PATH_DEV, sizeof(device));
+    cp = &device[strlen(device)];
+    len = sizeof(device) - strlen(device);
+	while ((dir = readdir(dfd))) {
+		(void)strlcpy(cp, dir->d_name, len);
+		if (lstat(device, &sb)) {
+			syslog(LOG_ERR, "%s: %s", device, strerror(errno));
+			continue;
+		}
+		if ((sb.st_mode & S_IFMT) != type) {
+			continue;
+		}
+		if (dev == sb.st_rdev) {
+			closedir(dfd);
+			if ((dp = strdup(device)) == NULL) {
+				syslog(LOG_ERR, "%s", strerror(errno));
+				exit(1);
+			}
+			return (dp);
+		}
+	}
+
+err:
+	closedir(dfd);
+	syslog(LOG_ERR, "can't find device %d/%d", major(dev), minor(dev));
+	exit(1);
+	return (NULL);
+}
+
 int
 get_crashtime(void)
 {
@@ -535,7 +541,7 @@ get_crashtime(void)
 		return (0);
 	}
 	if (!debug) {
-		if (KREAD(kd_dump, dump_nl[X_TIME].n_value, &clobber) != 0) {
+		if (KWRITE(kd_dump, dump_nl[X_TIME].n_value, &clobber) != 0) {
 			if (verbose) {
 			    syslog(LOG_WARNING, "kvm_write: %s", kvm_geterr(kd_dump));
 			}
@@ -563,7 +569,7 @@ get_crashtime(void)
 			now = now - boottime + dumptime;
 			tp.tv_sec = now;
 			tp.tv_usec = 0;
-			if (settimeofday(&tp, (struct timezone*) NULL)) {
+			if (settimeofday(&tp, (struct timezone *) NULL)) {
 				printf("\t-- resetting clock to %s\n", ctime(&now));
 			}
 		}
@@ -571,10 +577,11 @@ get_crashtime(void)
 	return (1);
 }
 
-char *
-rawname(char *s)
+const char *
+rawname(const char *s)
 {
-	const char *sl, name[MAXPATHLEN];
+	const char *sl;
+    char name[MAXPATHLEN];
 
 	if ((sl = strrchr(s, '/')) == NULL || sl[1] == '0') {
 		syslog(LOG_ERR,
@@ -589,14 +596,14 @@ rawname(char *s)
 	return (sl);
 }
 
-char *
-path(char *file)
+const char *
+Path(const char *file)
 {
-	register char *cp = malloc(strlen(file) + strlen(dirname) + 2);
+	const char *cp = malloc(strlen(file) + strlen(dirname) + 2);
 
-	(void)strcpy(cp, dirname);
-	(void)strcat(cp, "/");
-	(void)strcat(cp, file);
+	(void)strlcpy(__UNCONST(cp), dirname, sizeof(cp));
+	(void)strcat(__UNCONST(cp), "/");
+	(void)strcat(__UNCONST(cp), file);
 	return (cp);
 }
 
@@ -608,7 +615,7 @@ read_number(const char *fn)
 	register FILE *fp;
 	register int bounds;
 
-	fn = path(fn);
+	fn = Path(fn);
 	if ((fp = fopen(fn, "r")) == NULL) {
 		syslog(LOG_WARNING, "%s: %s", fn, strerror(errno));
 		bounds = 0;
@@ -639,18 +646,19 @@ save_core(void)
 {
 	register FILE *fp;
 	register int bounds, ifd, nr, nw, ofd;
-	char *rawp, cpath[MAXPATHLEN];
+	const char *rawp;
+    char cpath[MAXPATHLEN];
 
+    ofd = -1;
 	/*
 	 * Get the current number and update the bounds file.  Do the update
 	 * now, because may fail later and don't want to overwrite anything.
 	 */
 	umask(066);
-	cpath = path(cpath);
 	bounds = read_number("bounds");
 
 	/* Create the core file. */
-	(void)snprintf(cpath, sizeof(cpath), "%s/vmcore.%d%s", dirname, bounds, compress ? ".Z" : "");
+	(void)snprintf(cpath, sizeof(cpath), "%s/vmcore.%d%s", dirname, bounds, compress ? ".gz" : "");
 	if (compress) {
 		if ((fp = zopen(cpath, gzmode)) == NULL) {
 			syslog(LOG_ERR, "%s: %s", cpath, strerror(errno));
@@ -683,7 +691,7 @@ save_core(void)
 	//dumpsize *= NBPG;
 	syslog(LOG_NOTICE, "writing %score to %s", compress ? "compressed " : "", cpath);
 	for (; dumpbytes  > 0; dumpbytes  -= nr) {
-		(void)printf("%6dK\r", dumpbytes / 1024);
+		(void)printf("%6lld\r", dumpbytes);
 		(void)fflush(stdout);
 		nr = read(ifd, buf, MIN(dumpbytes, sizeof(buf)));
 		if (nr <= 0) {
@@ -694,11 +702,7 @@ save_core(void)
 			}
 			goto err2;
 		}
-		if (compress) {
-			nw = fwrite(buf, 1, nr, fp);
-		} else {
-			nw = write(ofd, buf, nr);
-		}
+        nw = fwrite(buf, 1, nr, fp);
 		if (nw != nr) {
 			syslog(LOG_ERR, "%s: %s", cpath, strerror(nw == 0 ? EIO : errno));
 err2:
@@ -717,9 +721,9 @@ err2:
 
 	/* Copy the kernel. */
 	ifd = Open(vmunix ? vmunix : _PATH_UNIX, O_RDONLY);
-	(void)snprintf(path, sizeof(path), "%s/vmunix.%d%s", dirname, bounds, compress ? ".Z" : "");
+	(void)snprintf(cpath, sizeof(cpath), "%s/vmunix.%d%s", dirname, bounds, compress ? ".gz" : "");
 	if (compress) {
-		if ((fp = zopen(path, gzmode)) == NULL) {
+		if ((fp = zopen(cpath, gzmode)) == NULL) {
 			syslog(LOG_ERR, "%s: %s", cpath, strerror(errno));
 			exit(1);
 		}
@@ -790,7 +794,7 @@ check_space(void)
 	off_t minfree, spacefree, vmunixsize, needed;
 	struct stat st;
 	struct statfs fsbuf;
-	char buf[100], path[MAXPATHLEN];
+	char buffer[100], path[MAXPATHLEN];
 
 	tvmunix = vmunix ? vmunix : _PATH_UNIX;
 	if (stat(tvmunix, &st) < 0) {
@@ -808,10 +812,10 @@ check_space(void)
 	if ((fp = fopen(path, "r")) == NULL) {
 		minfree = 0;
 	} else {
-		if (fgets(buf, sizeof(buf), fp) == NULL) {
+		if (fgets(buffer, sizeof(buffer), fp) == NULL) {
 			minfree = 0;
 		} else {
-			minfree = atoi(buf);
+			minfree = atoi(buffer);
 		}
 		(void)fclose(fp);
 	}
@@ -843,11 +847,11 @@ Open(const char *name, int rw)
 }
 
 int
-Read(int fd, char *buff, int size)
+Read(int fd, void *buffer, int size)
 {
 	int ret;
 
-	if ((ret = read(fd, buff, size)) < 0) {
+	if ((ret = read(fd, buffer, size)) < 0) {
 		syslog(LOG_ERR, "read: %m");
 		exit(1);
 	}
@@ -879,10 +883,11 @@ Create(char *file, int mode)
 }
 
 void
-Write(int fd, char *buf, int size)
+Write(int fd, void *buffer, int size)
 {
-	if (write(fd, buf, size) < size) {
-		syslog(LOG_ERR, "write: %s", strerror(n == -1 ? errno : EIO));
+    int ret;
+	if ((ret = write(fd, buffer, size)) < size) {
+		syslog(LOG_ERR, "write: %s", strerror(ret == -1 ? errno : EIO));
 		exit(1);
 	}
 }
