@@ -45,6 +45,7 @@ SRCS=   assertions.c               \
 	tsmemcmp.c		   \
         sockaddr.c
 
+COPTS.assertions.c+= ${GCC_NO_FORMAT_OVERFLOW}
 COPTS.log.c+=	-Wno-error=format-nonliteral
 
 .include <bsd.lib.mk>
