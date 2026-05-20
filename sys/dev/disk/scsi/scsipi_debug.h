@@ -37,7 +37,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "opt_scsipi_debug.h"
+//#include "opt_scsipi_debug.h"
 
 /*
  * Originally written by Julian Elischer (julian@tfs.com)
