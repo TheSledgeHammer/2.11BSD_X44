@@ -470,6 +470,21 @@
 #endif
 
 /*
+ * Suppresses `variable set but not used' warnings.
+ *
+ * Typically for #ifdefs, where one branch of the #ifdef uses a
+ * variable but the other does not.  Useful in patching external code
+ * to keep the patches narrowly scoped.
+ *
+ * Limitation: Only for variables, and only non-volatile variables.
+ *
+ * (Abusing this for anything else may lead to side effects.  Pointers
+ * to volatile objects are OK, as in `volatile int *a', as long as the
+ * pointer itself is not volatile, as in `int *volatile a'.)
+ */
+#define	__USE(a) (/*LINTED*/(void)(a))
+
+/*
  * Keywords added in C11.
  */
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
