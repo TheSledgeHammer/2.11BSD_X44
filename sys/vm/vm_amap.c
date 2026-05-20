@@ -858,7 +858,7 @@ ReStart:
 				nsg->flags &= ~(SEG_BUSY);
 				vm_segment_lock_lists();
 				vm_segment_activate(nsg);
-				vm_segment_unlock_listss();
+				vm_segment_unlock_lists();
 			} else {
 
 				/*
