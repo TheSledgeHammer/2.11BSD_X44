@@ -73,10 +73,10 @@ static char sccsid[] = "@(#)savecore.c	8.5 (Berkeley) 4/28/95";
 
 extern FILE *zopen(const char *fname, const char *mode);
 
-#define	KREAD(kd, addr, p)\
+#define	KREAD(kd, addr, p)	\
 	(kvm_read(kd, addr, (char *)(p), sizeof(*(p))) != sizeof(*(p)))
 
-#define KWRITE(kd, addr, p)\
+#define KWRITE(kd, addr, p)	\
 	(kvm_write(kd, addr, (char *)(p), sizeof(*(p))) != sizeof(*(p)))
 
 #if defined(pdp11)
@@ -431,6 +431,7 @@ clear_dump(void)
 		if (verbose) {
 			syslog(LOG_WARNING, "clear dump (0x%lx != 0x%lx)", newdumplo, dumplo);
 		}
+		syslog(LOG_WARNING, "unable to clear dump");
 	}
 }
 

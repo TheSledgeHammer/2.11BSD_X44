@@ -175,20 +175,6 @@ tdfind(tid)
 	return (NULL);
 }
 
-#ifdef deprecated
-struct thread *
-proc_tdfind(p, tid)
-	struct proc *p;
-	pid_t tid;
-{
-	p->p_threado = tdfind(tid);
-	if (p->p_threado != NULL) {
-		return (p->p_threado);
-	}
-	return (NULL);
-}
-#endif
-
 struct thread *
 proc_tdfind(p, tid)
 	struct proc *p;
@@ -315,18 +301,6 @@ thread_stacklimit(td)
 }
 
 /* find process from thread */
-#ifdef deprecated
-struct proc *
-thread_pfind(td)
-	register struct thread *td;
-{
-	td->td_procp = pfind(td->td_ptid);
-	if (td->td_procp != NULL) {
-		return (td->td_procp);
-	}
-	return (NULL);
-}
-#endif
 struct proc *
 thread_pfind(td, pid)
 	struct thread *td;

@@ -75,11 +75,11 @@
 int	tubahashsize = TUBAHASHSIZE;
 
 struct inpcbtable	tubainptable; /* in pcbtable */
-struct inpcb		tuba_inpcb;
-struct in6pcb		tuba_in6pcb;
+//struct inpcb		tuba_inpcb;
+//struct in6pcb		tuba_in6pcb;
 
 struct isopcbtable  tubaisoptable; /* iso pcbtable */
-struct isopcb		tuba_isopcb;
+//struct isopcb		tuba_isopcb;
 struct sockaddr_iso tuba_addrs[2] = {
 		{
 				.siso_len = sizeof(tuba_addrs),

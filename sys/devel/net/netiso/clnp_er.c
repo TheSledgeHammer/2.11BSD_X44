@@ -112,12 +112,12 @@ clnp_er_input(
 		u_int reason /* reason code of er */)
 {
 	int             cmd = -1;
-
+#ifdef ARGO_DEBUG
 	IFDEBUG(D_CTLINPUT)
 		printf("clnp_er_input: m %p, src %s, reason x%x\n",
 		    m, clnp_iso_addrp(src), reason);
 	ENDDEBUG
-
+#endif
 	INCSTAT(cns_er_inhist[clnp_er_index(reason)]);
 	switch (reason) {
 	case GEN_NOREAS:
@@ -198,10 +198,11 @@ clnp_discard(
 		struct mbuf *m,	/* header of packet to discard */
 		u_int reason /* reason for discard */)
 {
+#ifdef ARGO_DEBUG
 	IFDEBUG(D_DISCARD)
 		printf("clnp_discard: m %p, reason x%x\n", m, reason);
 	ENDDEBUG
-
+#endif
 	if (m != NULL) {
 		if (m->m_len >= sizeof(struct clnp_fixed)) {
 			struct clnp_fixed *clnp =
@@ -248,12 +249,12 @@ clnp_emit_er(
 	caddr_t         hoff, hend;
 	int             total_len;	/* total len of dg */
 	struct iso_ifaddr *ia = 0;
-
+#ifdef ARGO_DEBUG
 	IFDEBUG(D_DISCARD)
 		printf("clnp_emit_er: m %p, hdr len %d\n",
 		       m, clnp->cnf_hdr_len);
 	ENDDEBUG
-
+#endif
 	bzero((caddr_t) & route, sizeof(route));
 
 	/*
@@ -303,17 +304,18 @@ clnp_emit_er(
 	else
 		goto bad;
 	ifp = ia->ia_ifp;
-
+#ifdef ARGO_DEBUG
 	IFDEBUG(D_DISCARD)
 		printf("clnp_emit_er: to %s", clnp_iso_addrp(&src));
 		printf(" from %s\n", clnp_iso_addrp(our_addr));
 	ENDDEBUG
-
+#endif
+#ifdef ARGO_DEBUG
 	IFDEBUG(D_DISCARD)
 		printf("clnp_emit_er: packet routed to %s\n",
 		    clnp_iso_addrp(&satosiso(first_hop)->siso_addr));
 	ENDDEBUG
-
+#endif
 	/* allocate mbuf for er pdu header: punt on no space */
 	/*
 	 * fixed part, two addresses and their length bytes, and a 

@@ -104,9 +104,9 @@ clnp_update_srcrt(
 
 	if (CLNPSRCRT_TERM(oidx, options)) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_OPTIONS]) {
+		IFDEBUG(D_OPTIONS)
 			printf("clnp_update_srcrt: src rt terminated\n");
-		}
+		ENDDEBUG
 #endif
 		return;
 	}
@@ -115,17 +115,17 @@ clnp_update_srcrt(
 	isoa.isoa_len = len;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_OPTIONS]) {
+	IFDEBUG(D_OPTIONS)
 		printf("clnp_update_srcrt: current src rt: %s\n",
 		    clnp_iso_addrp(&isoa));
-	}
+	ENDDEBUG
 #endif
 
 	if (clnp_ours(&isoa)) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_OPTIONS]) {
+		IFDEBUG(D_OPTIONS)
 			printf("clnp_update_srcrt: updating src rt\n");
-		}
+		ENDDEBUG
 #endif
 
 		/* update pointer to next src route */
@@ -170,14 +170,14 @@ clnp_dooptions(
 		rec_start = opt + off - 1;
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_OPTIONS]) {
+		IFDEBUG(D_OPTIONS)
 			printf("clnp_dooptions: record route: option %p for %d bytes\n",
 			    opt, oidx->cni_recrt_len);
 			printf("\tfree slot offset x%x\n", off);
 			printf("clnp_dooptions: recording %s\n", clnp_iso_addrp(isoa));
 			printf("clnp_dooptions: option dump:\n");
 			dump_buf(opt, oidx->cni_recrt_len);
-		}
+		ENDDEBUG
 #endif
 
 		/* proceed only if recording has not been terminated */
@@ -192,10 +192,10 @@ clnp_dooptions(
 				*(opt + 1) = 0xff;	/* terminate recording */
 			} else {
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_OPTIONS]) {
+				IFDEBUG(D_OPTIONS)
 					printf("clnp_dooptions: new addr at %p for %d\n",
 					       rec_start, new_addrlen);
-				}
+				ENDDEBUG
 #endif
 
 				bcopy((caddr_t) isoa, rec_start, new_addrlen);
@@ -204,10 +204,10 @@ clnp_dooptions(
 				*(opt + 1) += new_addrlen;
 
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_OPTIONS]) {
+				IFDEBUG(D_OPTIONS)
 					printf("clnp_dooptions: new option dump:\n");
 					dump_buf(opt, oidx->cni_recrt_len);
-				}
+				ENDDEBUG
 #endif
 			}
 		}
@@ -299,10 +299,10 @@ clnp_opt_sanity(
 	/* flags for catching duplicate options */
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_OPTIONS]) {
+	IFDEBUG(D_OPTIONS)
 		printf("clnp_opt_sanity: checking %d bytes of data:\n", len);
 		dump_buf(opts, len);
-	}
+	ENDDEBUG
 #endif
 
 	/* clear option index field if passed */
@@ -325,7 +325,7 @@ clnp_opt_sanity(
 		opcode = *opts++;
 		oplen = *opts++;
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_OPTIONS]) {
+		IFDEBUG(D_OPTIONS)
 			printf("clnp_opt_sanity: opcode is %x and oplen %d\n",
 			    opcode, oplen);
 			printf("clnp_opt_sanity: clnpoval_SRCRT is %x\n", CLNPOVAL_SRCRT);
@@ -356,7 +356,7 @@ clnp_opt_sanity(
 				printf("UNKNOWN option %x\n", opcode);
 				break;
 			}
-		}
+		ENDDEBUG
 #endif
 
 		/* don't allow crazy length values */
@@ -400,9 +400,9 @@ clnp_opt_sanity(
 								 * route option */
 
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_OPTIONS]) {
+				IFDEBUG(D_OPTIONS)
 					printf("clnp_opt_sanity: SRC RT\n");
-				}
+				ENDDEBUG
 #endif
 
 				if (srcrt++)	/* duplicate ? */
@@ -451,9 +451,9 @@ clnp_opt_sanity(
 				if (opts >= route_end) {
 					if (opts == route_end) {
 #ifdef ARGO_DEBUG
-						if (argo_debug[D_OPTIONS]) {
+						IFDEBUG(D_OPTIONS)
 							printf("clnp_opt_sanity: end of src route info\n");
-						}
+						ENDDEBUG
 #endif
 						break;
 					} else
@@ -554,18 +554,18 @@ clnp_opt_sanity(
 
 		default:{
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_OPTIONS]) {
+				IFDEBUG(D_OPTIONS)
 					printf("clnp_opt_sanity: UNKNOWN OPTION 0x%x\n", opcode);
-				}
+				ENDDEBUG
 #endif
 				return (DISC_UNSUPPOPT);
 			}
 		}
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_OPTIONS]) {
+	IFDEBUG(D_OPTIONS)
 		printf("clnp_opt_sanity: return(0)\n");
-	}
+	ENDDEBUG
 #endif
 	return (0);
 }

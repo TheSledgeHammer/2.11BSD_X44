@@ -217,6 +217,7 @@ next:
 	default:
 		break;
 	}
+#ifdef ARGO_DEBUG
 	IFDEBUG(D_INPUT)
 		int             i;
 		printf("clnlintr: src:");
@@ -229,6 +230,7 @@ next:
 			    (i < 5) ? ':' : ' ');
 		printf("\n");
 	ENDDEBUG
+#endif
 
 	/*
 	 * Get the fixed part of the clnl header into the first mbuf.
@@ -329,11 +331,13 @@ clnp_input(struct mbuf *m, ...)
 		return;
 	}
 
+#ifdef ARGO_DEBUG
 	IFDEBUG(D_INPUT)
 		printf(
 		    "clnp_input: processing dg; First mbuf m_len %d, m_type x%x, %s\n",
 		    m->m_len, m->m_type, IS_CLUSTER(m) ? "cluster" : "normal");
 	ENDDEBUG
+#endif
 	need_afrin = 0;
 
 	/*
@@ -347,6 +351,7 @@ clnp_input(struct mbuf *m, ...)
 	INCSTAT(cns_total);
 	clnp = mtod(m, struct clnp_fixed *);
 
+#ifdef ARGO_DEBUG
 	IFDEBUG(D_DUMPIN)
 		struct mbuf    *mhead;
 		int             total_len = 0;
@@ -360,6 +365,7 @@ clnp_input(struct mbuf *m, ...)
 		printf("clnp_input: total length of mbuf chain %d:\n",
 		total_len);
 	ENDDEBUG
+#endif
 
 	/*
 	 *	Compute checksum (if necessary) and drop packet if
@@ -402,10 +408,13 @@ clnp_input(struct mbuf *m, ...)
 		clnp_discard(m, GEN_INCOMPLETE);
 		return;
 	}
+
+#ifdef ARGO_DEBUG
 	IFDEBUG(D_INPUT)
 		printf("clnp_input: from %s", clnp_iso_addrp(&src));
 		printf(" to %s\n", clnp_iso_addrp(&dst));
 	ENDDEBUG
+#endif
 
 	/*
 	 * extract the segmentation information, if it is present.
@@ -464,11 +473,13 @@ clnp_input(struct mbuf *m, ...)
 
 		if (errcode != 0) {
 			clnp_discard(m, (char) errcode);
+#ifdef ARGO_DEBUG
 			IFDEBUG(D_INPUT)
 				printf(
 				    "clnp_input: dropped (err x%x) due to bad options\n",
 				    errcode);
 			ENDDEBUG
+#endif
 			return;
 		}
 	}
@@ -476,9 +487,11 @@ clnp_input(struct mbuf *m, ...)
 	 *	check if this packet is for us. if not, then forward
 	 */
 	if (clnp_ours(&dst) == 0) {
+#ifdef ARGO_DEBUG
 		IFDEBUG(D_INPUT)
 			printf("clnp_input: forwarding packet not for us\n");
 		ENDDEBUG
+#endif
 		clnp_forward(m, seg_len, &dst, oidxp, seg_off, shp);
 		return;
 	}
@@ -541,20 +554,24 @@ clnp_input(struct mbuf *m, ...)
 		break;
 	case CLNP_RAW:
 	case CLNP_ECR:
+#ifdef ARGO_DEBUG
 		IFDEBUG(D_INPUT)
 			printf("clnp_input: raw input of %d bytes\n",
 			    clnp->cnf_type & CNF_SEG_OK ?
 			    seg_part.cng_tot_len : seg_len);
 		ENDDEBUG
+#endif
 		(*isosw[clnp_protox[ISOPROTO_RAW]].pr_input)(m, &source,
 							     &target,
 							 clnp->cnf_hdr_len);
 		break;
 
 	case CLNP_EC:
+#ifdef ARGO_DEBUG
 		IFDEBUG(D_INPUT)
 			printf("clnp_input: echoing packet\n");
 		ENDDEBUG
+#endif
 		(void) clnp_echoreply(m, (clnp->cnf_type & CNF_SEG_OK ?
 				      (int) seg_part.cng_tot_len : seg_len),
 				      &source, &target, oidxp);

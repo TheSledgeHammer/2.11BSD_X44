@@ -444,6 +444,7 @@ clnp_output(struct mbuf *m0, ...)
 		} else {
 #ifdef ARGO_DEBUG
 			if (argo_debug[D_OUTPUT]) {
+
 			}
 #endif
 			error = clnp_route(dst, &isop->isop_route, flags,

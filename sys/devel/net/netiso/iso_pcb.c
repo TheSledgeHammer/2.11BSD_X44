@@ -132,7 +132,12 @@ iso_pcbinit(struct isopcbtable *table, int hashsize)
 void
 iso_pcbprealloc(struct isopcbtable *table, struct sockaddr_iso *siso_addrs)
 {
-	(void)iso_pcbprealloc1(NULL, table, siso_addrs, TRUE);
+	int error;
+
+	error = iso_pcbprealloc1(NULL, table, siso_addrs, TRUE);
+	if (error != 0) {
+		panic("iso_pcbprealloc: unsuccessful");
+	}
 }
 
 /*
@@ -148,20 +153,6 @@ int
 iso_pcballoc(struct socket *so, void *v)
 {
 	struct isopcbtable *table = (struct isopcbtable *)v;
-#ifdef notyet
-	struct isopcb *isop;
-
-	MALLOC(isop, struct isopcb *, sizeof(*isop), M_PCB, M_NOWAIT);
-	if (isop == NULL)
-		return ENOBUFS;
-	bzero(isop, sizeof(*isop));
-	isop->isop_table = table;
-	isop->isop_socket = so;
-	so->so_pcb = isop;
-	CIRCLEQ_INSERT_HEAD(&table->isopt_queue, isop, isop_queue);
-	iso_pcbinsert(table, isop);
-	return (0);
-#endif
 	return (iso_pcbprealloc1(so, table, NULL, FALSE));
 }
 
