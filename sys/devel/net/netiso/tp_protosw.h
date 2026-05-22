@@ -132,7 +132,7 @@ extern struct tp_protosw tpns_protosw;
 #endif
 
 void tp_protosw_init(void);
-void tp_xsap_attach(struct tp_xsap_router *, int);
-void tp_xsap_detach(struct tp_xsap_router *, int);
+void tp_xsap_attach(struct tp_xsap *, int);
+void tp_xsap_detach(struct tp_xsap *, int);
 
 #endif /* _NETISO_TP_PROTOSW_H_ */

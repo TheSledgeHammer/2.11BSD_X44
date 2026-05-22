@@ -49,6 +49,8 @@ uint32_t tsap_valid_ids[SAP_TABLE_MAX];
 
 static int tsap_validate(struct tsap_iso *, struct nsap_iso *, int, int);
 static int tsap_acknowledge(struct tsap_iso *, struct nsap_iso *, long, long, long, int, int, int);
+static int tsap_canconnect(struct tsap_iso *, void *, long, long, long, int, int, int);
+static int tsap_candisconnect(struct tsap_iso *, void *, long, long, long, int, int, int);
 
 /*
  * TSAP MAC ID:
@@ -212,7 +214,7 @@ tsap_acknowledge(struct tsap_iso *tsap, struct nsap_iso *nsap, long type, long s
 	return (0);
 }
 
-int
+static int
 tsap_canconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
 {
 	struct nsap_iso *nsap;
@@ -229,7 +231,7 @@ tsap_canconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, long p
 	return (nsap_canconnect(nsap->nsi_snsap, arg, type, subnet, class));
 }
 
-int
+static int
 tsap_candisconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
 {
 	struct nsap_iso *nsap;
@@ -247,351 +249,315 @@ tsap_candisconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, lon
 }
 
 int
-tsap_connect(struct tsap_iso *tsap, void *arg, long subnet, long protocol, int af)
+tsap_connect(struct tsap_iso *tsap, void *arg, int af)
 {
+	long type, subnet, protocol;
+	int class;
 	int error, sid;
 
 	sid = sap_select_af_to_sid(af);
 	if (af != sap_select_sid_to_af(sid)) {
 		return (EAFNOSUPPORT);
 	}
-	switch (af) {
-	case AF_INET:
-	{
-		struct sockaddr_in *sin = (struct sockaddr_in *)arg;
-		if (sin->sin_family != AF_INET) {
-			error = EAFNOSUPPORT;
+	for (type = 0; type < SAP_TYPE_MAX; type++) {
+		if (sap_select_lookup_type(sid, af, type)) {
 			break;
 		}
-		if (sin->sin_port == 0) {
-			error = EADDRNOTAVAIL;
-			break;
-		}
-		switch (protocol) {
-		case TSAP_PROTOCOL_TCP:
-			error = tsap_canconnect(tsap, (struct sockaddr_in *)sin,
-					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_TCP,
-					NSAP_CLASS_CLNS, sid, AF_INET);
-			break;
-		case TSAP_PROTOCOL_UDP:
-			error = tsap_canconnect(tsap, (struct sockaddr_in *)sin,
-					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_UDP,
-					NSAP_CLASS_CLNS, sid, AF_INET);
-			break;
-		default:
-			error = tsap_canconnect(tsap, (struct sockaddr_in *)sin,
-					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_UNKNOWN,
-					NSAP_CLASS_CLNS, sid, AF_INET);
-			break;
-		}
-		break;
 	}
-	case AF_INET6:
-	{
-		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)arg;
-		if (sin6->sin6_family != AF_INET6) {
-			error = EAFNOSUPPORT;
+	for (subnet = 0; subnet < SAP_SUBNET_MAX; subnet++) {
+		if (sap_select_lookup_subnet(sid, af, subnet)) {
 			break;
 		}
-		if (sin6->sin6_port == 0) {
-			error = EADDRNOTAVAIL;
-			break;
-		}
-		switch (protocol) {
-		case TSAP_PROTOCOL_TCP:
-			error = tsap_canconnect(tsap, (struct sockaddr_in6 *)sin6,
-					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_TCP,
-					NSAP_CLASS_CLNS, sid, AF_INET6);
-			break;
-		case TSAP_PROTOCOL_UDP:
-			error = tsap_canconnect(tsap, (struct sockaddr_in6 *)sin6,
-					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_UDP,
-					NSAP_CLASS_CLNS, sid, AF_INET6);
-			break;
-		default:
-			error = tsap_canconnect(tsap, (struct sockaddr_in6 *)sin6,
-					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_UNKNOWN,
-					NSAP_CLASS_CLNS, sid, AF_INET6);
-			break;
-		}
-		break;
 	}
-	case AF_ISO:
-	{
-		struct sockaddr_iso *siso = (struct sockaddr_iso *)arg;
-		if (siso->siso_family != AF_ISO) {
-			error = EAFNOSUPPORT;
+	for (protocol = 0; protocol < SAP_PROTOCOL_MAX; protocol++) {
+		if (sap_select_lookup_protocol(sid, af, protocol)) {
 			break;
 		}
-		if (siso->siso_nlen == 0) {
-			error = EADDRNOTAVAIL;
-			break;
-		}
-		switch (protocol) {
-		case TSAP_PROTOCOL_TP0:
-			error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP0,
-					NSAP_CLASS_CONS, sid, AF_ISO);
-			break;
-		case TSAP_PROTOCOL_TP1:
-			error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP1,
-					NSAP_CLASS_CONS, sid, AF_ISO);
-			break;
-		case TSAP_PROTOCOL_TP2:
-			error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP2,
-					NSAP_CLASS_CONS, sid, AF_ISO);
-			break;
-		case TSAP_PROTOCOL_TP3:
-			error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP3,
-					NSAP_CLASS_CONS, sid, AF_ISO);
-			break;
-		case TSAP_PROTOCOL_TP4:
-		{
-			switch (subnet) {
-			case NSAP_SUBNET_CLNS:
-				error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_CLNS, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			case NSAP_SUBNET_CLNP:
-				error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_CLNP, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			case NSAP_SUBNET_ISIS:
-				error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_ISIS, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			case NSAP_SUBNET_ESIS:
-				error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_ESIS, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			default:
-				error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			}
-			break;
-		}
-		default:
-			error = tsap_canconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_UNKNOWN,
-					NSAP_CLASS_UNKNOWN, sid, AF_ISO);
-			break;
-		}
-		break;
 	}
-	case AF_NS:
-	{
-		struct sockaddr_ns *sns = (struct sockaddr_ns *)arg;
-		if (sns->sns_family != AF_NS) {
-			error = EAFNOSUPPORT;
+	for (class = 0; class < SAP_CLASS_MAX; class++) {
+		if (sap_select_lookup_class(sid, af, class)) {
 			break;
 		}
-		if (sns->sns_port == 0) {
-			error = EADDRNOTAVAIL;
-			break;
-		}
-		error = tsap_canconnect(tsap, (struct sockaddr_ns *)sns,
-				NSAP_TYPE_SNS, NSAP_SUBNET_IDP, TSAP_PROTOCOL_SPP,
-				NSAP_CLASS_CLNS, sid, AF_NS);
-		break;
 	}
-	case AF_CCITT:
-	{
-		struct sockaddr_x25 *sx25 = (struct sockaddr_x25 *)arg;
-		if (sx25->x25_family != AF_CCITT) {
-			error = EAFNOSUPPORT;
-			break;
-		}
-		if (sx25->x25_len == 0) {
-			error = EADDRNOTAVAIL;
-			break;
-		}
-		error = tsap_canconnect(tsap, (struct sockaddr_x25 *)sx25,
-				NSAP_TYPE_SX25, NSAP_SUBNET_X25, TSAP_PROTOCOL_X25,
-				NSAP_CLASS_CONS, sid, AF_CCITT);
-		break;
+	error = tsap_canconnect(tsap, arg, type, subnet, protocol, class, sid, af);
+	if (error != 0) {
+		return (error);
 	}
-	case AF_NATM:
-	case AF_IPX:
-	case AF_SNA:
-	default:
-		error = tsap_canconnect(tsap, NULL, NSAP_TYPE_UNKNOWN,
-				NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_UNKNOWN,
-				NSAP_CLASS_UNKNOWN, sid, AF_UNSPEC);
-		break;
-	}
-	return (error);
+	return (0);
 }
 
 int
-tsap_disconnect(struct tsap_iso *tsap, void *arg, long subnet, long protocol, int af)
+tsap_disconnect(struct tsap_iso *tsap, void *arg, int af)
 {
+	long type, subnet, protocol;
+	int class;
 	int error, sid;
 
 	sid = sap_select_af_to_sid(af);
 	if (af != sap_select_sid_to_af(sid)) {
 		return (EAFNOSUPPORT);
 	}
-	switch (af) {
-	case AF_INET:
-	{
-		struct sockaddr_in *sin = (struct sockaddr_in *)arg;
-		if (sin->sin_family != AF_INET) {
-			error = EAFNOSUPPORT;
+
+	for (type = 0; type < SAP_TYPE_MAX; type++) {
+		if (sap_select_lookup_type(sid, af, type)) {
 			break;
 		}
-		switch (protocol) {
-		case TSAP_PROTOCOL_TCP:
-			error = tsap_candisconnect(tsap, (struct sockaddr_in *)sin,
-					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_TCP,
-					NSAP_CLASS_CLNS, sid, AF_INET);
-			break;
-		case TSAP_PROTOCOL_UDP:
-			error = tsap_candisconnect(tsap, (struct sockaddr_in *)sin,
-					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_UDP,
-					NSAP_CLASS_CLNS, sid, AF_INET);
-			break;
-		default:
-			error = tsap_candisconnect(tsap, (struct sockaddr_in *)sin,
-					NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, TSAP_PROTOCOL_UNKNOWN,
-					NSAP_CLASS_CLNS, sid, AF_INET);
-			break;
-		}
-		break;
 	}
-	case AF_INET6:
-	{
-		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)arg;
-		if (sin6->sin6_family != AF_INET6) {
-			error = EAFNOSUPPORT;
+	for (subnet = 0; subnet < SAP_SUBNET_MAX; subnet++) {
+		if (sap_select_lookup_subnet(sid, af, subnet)) {
 			break;
 		}
-		switch (protocol) {
-		case TSAP_PROTOCOL_TCP:
-			error = tsap_candisconnect(tsap, (struct sockaddr_in6 *)sin6,
-					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_TCP,
-					NSAP_CLASS_CLNS, sid, AF_INET6);
-			break;
-		case TSAP_PROTOCOL_UDP:
-			error = tsap_candisconnect(tsap, (struct sockaddr_in6 *)sin6,
-					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_UDP,
-					NSAP_CLASS_CLNS, sid, AF_INET6);
-			break;
-		default:
-			error = tsap_candisconnect(tsap, (struct sockaddr_in6 *)sin6,
-					NSAP_TYPE_SIN6, NSAP_SUBNET_IPV6, TSAP_PROTOCOL_UNKNOWN,
-					NSAP_CLASS_CLNS, sid, AF_INET6);
-			break;
-		}
-		break;
 	}
-	case AF_ISO:
-	{
-		struct sockaddr_iso *siso = (struct sockaddr_iso *)arg;
-		if (siso->siso_family != AF_ISO) {
-			error = EAFNOSUPPORT;
+	for (protocol = 0; protocol < SAP_PROTOCOL_MAX; protocol++) {
+		if (sap_select_lookup_protocol(sid, af, protocol)) {
 			break;
 		}
-		switch (protocol) {
-		case TSAP_PROTOCOL_TP0:
-			error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP0,
-					NSAP_CLASS_CONS, sid, AF_ISO);
-			break;
-		case TSAP_PROTOCOL_TP1:
-			error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP1,
-					NSAP_CLASS_CONS, sid, AF_ISO);
-			break;
-		case TSAP_PROTOCOL_TP2:
-			error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP2,
-					NSAP_CLASS_CONS, sid, AF_ISO);
-			break;
-		case TSAP_PROTOCOL_TP3:
-			error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_CONS, TSAP_PROTOCOL_TP3,
-					NSAP_CLASS_CONS, sid, AF_ISO);
-			break;
-		case TSAP_PROTOCOL_TP4:
-		{
-			switch (subnet) {
-			case NSAP_SUBNET_CLNS:
-				error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_CLNS, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			case NSAP_SUBNET_CLNP:
-				error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_CLNP, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			case NSAP_SUBNET_ISIS:
-				error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_ISIS, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			case NSAP_SUBNET_ESIS:
-				error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_ESIS, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			default:
-				error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-						NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_TP4,
-						NSAP_CLASS_CLNS, sid, AF_ISO);
-				break;
-			}
-			break;
-		}
-		default:
-			error = tsap_candisconnect(tsap, (struct sockaddr_iso *)siso,
-					NSAP_TYPE_SISO, NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_UNKNOWN,
-					NSAP_CLASS_UNKNOWN, sid, AF_ISO);
-			break;
-		}
-		break;
 	}
-	case AF_NS:
-	{
-		struct sockaddr_ns *sns = (struct sockaddr_ns *)arg;
-		if (sns->sns_family != AF_NS) {
-			error = EAFNOSUPPORT;
+	for (class = 0; class < SAP_CLASS_MAX; class++) {
+		if (sap_select_lookup_class(sid, af, class)) {
 			break;
 		}
-		error = tsap_candisconnect(tsap, (struct sockaddr_ns *)sns,
-				NSAP_TYPE_SNS, NSAP_SUBNET_IDP, TSAP_PROTOCOL_SPP,
-				NSAP_CLASS_CLNS, sid, AF_NS);
-		break;
 	}
-	case AF_CCITT:
-	{
-		struct sockaddr_x25 *sx25 = (struct sockaddr_x25 *)arg;
-		if (sx25->x25_family != AF_CCITT) {
-			error = EAFNOSUPPORT;
-			break;
-		}
-		error = tsap_candisconnect(tsap, (struct sockaddr_x25 *)sx25,
-				NSAP_TYPE_SX25, NSAP_SUBNET_X25, TSAP_PROTOCOL_X25,
-				NSAP_CLASS_CONS, sid, AF_CCITT);
-		break;
+	error = tsap_candisconnect(tsap, arg, type, subnet, protocol, class, sid, af);
+	if (error != 0) {
+		return (error);
 	}
-	case AF_NATM:
-	case AF_IPX:
-	case AF_SNA:
-	default:
-		error = tsap_candisconnect(tsap, NULL, NSAP_TYPE_UNKNOWN,
-				NSAP_SUBNET_UNKNOWN, TSAP_PROTOCOL_UNKNOWN,
-				NSAP_CLASS_UNKNOWN, sid, AF_UNSPEC);
-		break;
+	return (0);
+}
+
+
+/* ISO */
+int
+tpiso_pcbconnect(struct tsap_iso *tsap, void *v, struct mbuf *nam)
+{
+	struct isopcb *isop;
+	struct sockaddr_iso *siso;
+	int error;
+
+	isop = (struct isopcb *)v;
+	siso = mtod(nam, struct sockaddr_iso);
+	if (nam->m_len != sizeof(siso)) {
+		return (EINVAL);
 	}
-	return (error);
+	if (siso->siso_family != AF_ISO) {
+		return (EAFNOSUPPORT);
+	}
+	if (siso->siso_nlen == 0) {
+		return (EADDRNOTAVAIL);
+	}
+	error = tsap_connect(tsap, siso, AF_ISO);
+	if (error != 0) {
+		return (error);
+	}
+	return (iso_pcbconnect(isop, nam));
+}
+
+void
+tpiso_pcbdisconnect(struct tsap_iso *tsap, void *v)
+{
+	struct isopcb *isop;
+	struct sockaddr_iso *siso;
+	int error;
+
+	isop = (struct isopcb *)v;
+	siso = &tsap->tsi_nsaps->nsi_snsap->snsap_siso;
+	if (siso == NULL) {
+		return;
+	}
+	error = tsap_disconnect(tsap, siso, AF_ISO);
+	if (error != 0) {
+		return;
+	}
+	if (isop) {
+		iso_pcbdisconnect(isop);
+	}
+}
+
+/* ISO TPCONS */
+int
+tpcons_pcbconnect(struct tsap_iso *tsap, void *v, struct mbuf *nam)
+{
+	struct isopcb *isop;
+	struct sockaddr_iso *siso;
+	int error;
+
+	isop = (struct isopcb *)v;
+	siso = mtod(nam, struct sockaddr_iso);
+	if (nam->m_len != sizeof(siso)) {
+		return (EINVAL);
+	}
+	if (siso->siso_family != AF_ISO) {
+		return (EAFNOSUPPORT);
+	}
+	if (siso->siso_nlen == 0) {
+		return (EADDRNOTAVAIL);
+	}
+
+	error = tsap_connect(tsap, siso, AF_ISO);
+	if (error != 0) {
+		return (error);
+	}
+	return (tpcons_pcbconnect(isop, nam));
+}
+
+void
+tpcons_pcbdisconnect(struct tsap_iso *tsap, void *v)
+{
+	struct isopcb *isop;
+	struct sockaddr_iso *siso;
+	int error;
+
+	isop = (struct isopcb *)v;
+	siso = &tsap->tsi_nsaps->nsi_snsap->snsap_siso;
+	if (siso == NULL) {
+		return;
+	}
+	error = tsap_disconnect(tsap, siso, AF_ISO);
+	if (error != 0) {
+		return;
+	}
+	if (isop) {
+		iso_pcbdisconnect(isop);
+	}
+}
+
+/* INET */
+int
+tpip_pcbconnect(struct tsap_iso *tsap, void *v, struct mbuf *nam)
+{
+	struct inpcb *inp;
+	struct sockaddr_in *sin;
+	int error;
+
+	inp = (struct inpcb *)v;
+	sin = mtod(nam, struct sockaddr_in);
+	if (nam->m_len != sizeof(sin)) {
+		return (EINVAL);
+	}
+	if (sin->sin_family != AF_INET) {
+		return (EAFNOSUPPORT);
+	}
+	if (sin->sin_port == 0) {
+		return (EADDRNOTAVAIL);
+	}
+	error = tsap_connect(tsap, sin, AF_INET);
+	if (error != 0) {
+		return (error);
+	}
+	return (in_pcbconnect(inp, nam));
+}
+
+void
+tpip_pcbdisconnect(struct tsap_iso *tsap, void *v)
+{
+	struct inpcb *inp;
+	struct sockaddr_in *sin;
+	int error;
+
+	inp = (struct inpcb *)v;
+	sin = &tsap->tsi_nsaps->nsi_snsap->snsap_sin4;
+	if (sin == NULL) {
+		return;
+	}
+	error = tsap_disconnect(tsap, sin, AF_INET);
+	if (error != 0) {
+		return;
+	}
+	if (inp) {
+		in_pcbdisconnect(inp);
+	}
+}
+
+/* INET6 */
+int
+tpip6_pcbconnect(struct tsap_iso *tsap, void *v, struct mbuf *nam)
+{
+	struct in6pcb *in6p;
+	struct sockaddr_in6 *sin6;
+	int error;
+
+	in6p = (struct in6pcb *)v;
+	sin6 = mtod(nam, struct sockaddr_in6);
+	if (nam->m_len != sizeof(sin6)) {
+		return (EINVAL);
+	}
+	if (sin6->sin6_family != AF_INET6) {
+		return (EAFNOSUPPORT);
+	}
+	if (sin6->sin6_port == 0) {
+		return (EADDRNOTAVAIL);
+	}
+	error = tsap_connect(tsap, sin6, AF_INET6);
+	if (error != 0) {
+		return (error);
+	}
+	return (in6_pcbconnect(in6p, nam));
+}
+
+void
+tpip6_pcbdisconnect(struct tsap_iso *tsap, void *v)
+{
+	struct in6pcb *in6p;
+	struct sockaddr_in6 *sin6;
+	int error;
+
+	in6p = (struct in6pcb *)v;
+	sin6 = &tsap->tsi_nsaps->nsi_snsap->snsap_sin6;
+	if (sin6 == NULL) {
+		return;
+	}
+	error = tsap_disconnect(tsap, sin6, AF_INET6);
+	if (error != 0) {
+		return;
+	}
+	if (in6p) {
+		in6_pcbdisconnect(in6p);
+	}
+}
+
+/* XNS */
+int
+tpns_pcbconnect(struct tsap_iso *tsap, void *v, struct mbuf *nam)
+{
+	struct nspcb *nsp;
+	struct sockaddr_ns *sns;
+	int error;
+
+	nsp = (struct nspcb *)v;
+	sns = mtod(nam, struct sockaddr_ns);
+	if (nam->m_len != sizeof(sns)) {
+		return (EINVAL);
+	}
+	if (sns->sns_family != AF_NS) {
+		return (EAFNOSUPPORT);
+	}
+	if (sns->sns_port == 0) {
+		return (EADDRNOTAVAIL);
+	}
+	error = tsap_connect(tsap, sns, AF_NS);
+	if (error != 0) {
+		return (error);
+	}
+	return (ns_pcbconnect(nsp, nam));
+}
+
+void
+tpns_pcbdisconnect(struct tsap_iso *tsap, void *v)
+{
+	struct nspcb *nsp;
+	struct sockaddr_ns *sns;
+	int error;
+
+	nsp = (struct nspcb *)v;
+	sns = &tsap->tsi_nsaps->nsi_snsap->snsap_sns;
+	if (sns == NULL) {
+		return;
+	}
+	error = tsap_disconnect(tsap, sns, AF_NS);
+	if (error != 0) {
+		return;
+	}
+	if (nsp) {
+		ns_pcbdisconnect(nsp);
+	}
 }

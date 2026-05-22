@@ -113,7 +113,7 @@ tuba_attach(struct socket *so)
 			in_pcbdetach(inp);
 			return (ENOBUFS);
 		}
-		tp->t_tuba_pcb = (caddr_t) isop;
+		tp->t_tuba_pcb = (caddr_t)isop;
 	}
 	return (0);
 }

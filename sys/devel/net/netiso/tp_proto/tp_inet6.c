@@ -75,15 +75,17 @@ struct tp_protosw tpin6_protosw = {
 };
 
 void
-in6_sapattach(struct tp_xsap_router *router)
+in6_sapattach(void *v)
 {
-	tp_xsap_attach(router, AF_INET6);
+	struct tp_xsap *xsap = (struct tp_xsap *)v;
+	tp_xsap_attach(xsap, AF_INET6);
 }
 
 void
-in6_sapdetach(struct tp_xsap_router *router)
+in6_sapdetach(void *v)
 {
-	tp_xsap_detach(router, AF_INET6);
+	struct tp_xsap *xsap = (struct tp_xsap *)v;
+	tp_xsap_detach(xsap, AF_INET6);
 }
 
 void

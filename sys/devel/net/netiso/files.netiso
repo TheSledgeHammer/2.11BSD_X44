@@ -1,10 +1,10 @@
 #	$NetBSD: files.netiso,v 1.4 2007/01/11 00:00:41 cube Exp $
 
-defflag opt_iso.h		ISO 	# ISO network stack
-defflag opt_iso.h		TPIP	# ISO network TP with IPv4/IPv6
-defflag opt_iso.h		TPNS	# ISO network TP with XNS
-defflag opt_iso.h		TUBA	# TCP/IP over ISO
-defflag	opt_iso.h		EON		# ISO clnp over IP
+defflag opt_iso.h	ISO 	# ISO network stack
+defflag opt_iso.h	TPIP	# ISO network TP with IPv4/IPv6
+defflag opt_iso.h	TPNS	# ISO network TP with XNS
+defflag opt_iso.h	TUBA	# TCP/IP over ISO
+defflag	opt_iso.h 	EON		# ISO clnp over IP
 
 file	netiso/clnp_debug.c		iso
 file	netiso/clnp_er.c		iso
@@ -52,4 +52,5 @@ file	netiso/tp_proto/tp_inet6.c	iso | tpip
 # TUBA
 file	netiso/tuba_subr.c		iso | tuba
 file	netiso/tuba_table.c		iso | tuba
+file	netiso/tuba_tcp.c		iso | tuba
 file	netiso/tuba_usrreq.c	iso | tuba

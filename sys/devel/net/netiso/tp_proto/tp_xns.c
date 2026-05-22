@@ -80,15 +80,17 @@ struct tp_protosw tpns_protosw = {
 };
 
 void
-ns_sapattach(struct tp_xsap_router *router)
+ns_sapattach(void *v)
 {
-	tp_xsap_attach(router, AF_NS);
+	struct tp_xsap *xsap = (struct tp_xsap *)v;
+	tp_xsap_attach(xsap, AF_NS);
 }
 
 void
-ns_sapdetach(struct tp_xsap_router *router)
+ns_sapdetach(void *v)
 {
-	tp_xsap_detach(router, AF_NS);
+	struct tp_xsap *xsap = (struct tp_xsap *)v;
+	tp_xsap_detach(xsap, AF_NS);
 }
 
 void

@@ -58,10 +58,10 @@ struct tp_protosw tp_protosw[] = {
 		},
 };
 
-struct tp_xsap_router tp_xsap_router;
+struct tp_xsap tp_xsap;
 
-static void tp_protosw_attach(struct tp_xsap_router *);
-static void tp_protosw_detach(struct tp_xsap_router *);
+static void tp_protosw_attach(struct tp_xsap *);
+static void tp_protosw_detach(struct tp_xsap *);
 
 /* init function for the new attach and detach callback functions */
 void
@@ -72,53 +72,53 @@ tp_protosw_init(void)
 	for (sid = 0; sid < SAP_TABLE_MAX; sid++) {
 		af = sap_select_sid_to_af(sid);
 		if (af != 0) {
-			tp_protosw_attach(&tp_xsap_router);
+			tp_protosw_attach(&tp_xsap);
 		} else {
-			tp_protosw_detach(&tp_xsap_router);
+			tp_protosw_detach(&tp_xsap);
 		}
 	}
 }
 
 static void
-tp_protosw_attach(struct tp_xsap_router *router)
+tp_protosw_attach(struct tp_xsap *xsap)
 {
 	int i;
 	int len;
 
 	len = (sizeof(tp_protosw)/sizeof(tp_protosw[0]));
 	for (i = 0; i < len; i++) {
-		(*tp_protosw[i].tp_xsap_attach)(router);
+		(*tp_protosw[i].tp_xsap_attach)(xsap);
 	}
 }
 
 static void
-tp_protosw_detach(struct tp_xsap_router *router)
+tp_protosw_detach(struct tp_xsap *xsap)
 {
 	int i;
 	int len;
 
 	len = (sizeof(tp_protosw)/sizeof(tp_protosw[0]));
 	for (i = 0; i < len; i++) {
-		(*tp_protosw[i].tp_xsap_detach)(router);
+		(*tp_protosw[i].tp_xsap_detach)(xsap);
 	}
 }
 
 void
-tp_xsap_attach(struct tp_xsap_router *router, int af)
+tp_xsap_attach(struct tp_xsap *xsap, int af)
 {
-	nsap_attach(&router->txr_nsap, af);
-	tsap_attach(&router->txr_tsap, &router->txr_nsap, af);
-	ssap_attach(&router->txr_ssap, &router->txr_tsap, af);
-	psap_attach(&router->txr_psap, &router->txr_ssap, af);
+	nsap_attach(&xsap->tx_nsap, af);
+	tsap_attach(&xsap->tx_tsap, &xsap->tx_nsap, af);
+	ssap_attach(&xsap->tx_ssap, &xsap->tx_tsap, af);
+	psap_attach(&xsap->tx_psap, &xsap->tx_ssap, af);
 }
 
 void
-tp_xsap_detach(struct tp_xsap_router *router, int af)
+tp_xsap_detach(struct tp_xsap *xsap, int af)
 {
-	nsap_detach(&router->txr_nsap, af);
-	tsap_detach(&router->txr_tsap, &router->txr_nsap, af);
-	ssap_detach(&router->txr_ssap, &router->txr_tsap, af);
-	psap_detach(&router->txr_psap, &router->txr_ssap, af);
+	nsap_detach(&xsap->tx_nsap, af);
+	tsap_detach(&xsap->tx_tsap, &xsap->tx_nsap, af);
+	ssap_detach(&xsap->tx_ssap, &xsap->tx_tsap, af);
+	psap_detach(&xsap->tx_psap, &xsap->tx_ssap, af);
 }
 
 #ifdef notyet

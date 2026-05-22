@@ -84,15 +84,17 @@ struct tp_protosw tpiso_protosw = {
 };
 
 void
-iso_sapattach(struct tp_xsap_router *router)
+iso_sapattach(void *v)
 {
-	tp_xsap_attach(router, AF_ISO);
+	struct tp_xsap *xsap = (struct tp_xsap *)v;
+	tp_xsap_attach(xsap, AF_ISO);
 }
 
 void
-iso_sapdetach(struct tp_xsap_router *router)
+iso_sapdetach(void *v)
 {
-	tp_xsap_detach(router, AF_ISO);
+	struct tp_xsap *xsap = (struct tp_xsap *)v;
+	tp_xsap_detach(xsap, AF_ISO);
 }
 
 /*

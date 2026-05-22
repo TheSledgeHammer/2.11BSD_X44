@@ -95,8 +95,8 @@ struct mbuf;
 struct sockaddr;
 
 /* tp_iso.c */
-void	iso_sapattach(struct tp_xsap_router *);
-void	iso_sapdetach(struct tp_xsap_router *);
+void	iso_sapattach(void *);
+void	iso_sapdetach(void *);
 void 	iso_getsufx(void *, u_short *, caddr_t, int);
 void 	iso_putsufx(void *, caddr_t, int, int);
 void 	iso_getsufx(void *, u_short *, caddr_t, int);

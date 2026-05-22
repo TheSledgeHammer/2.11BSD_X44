@@ -61,7 +61,7 @@ union addr_union {
 	struct in_addr 	in4;		/* ipv4 */
 	struct in6_addr in6;		/* ipv6 */
 	struct iso_addr	iso;		/* iso */
-	struct ns_addr	ns;		/* xns */
+	struct ns_addr	ns;			/* xns */
 	struct x25_addr	x25;		/* x25 */
 	// sna, ipx, atm
 };
@@ -204,14 +204,14 @@ struct psap_iso {
  * - provides tp with each iso sap layer for
  * attaching to and detaching from.
  */
-struct tp_xsap_router {
-	struct nsap_iso txr_nsap;
-	struct tsap_iso txr_tsap;
-	struct ssap_iso txr_ssap;
-	struct psap_iso txr_psap;
+struct tp_xsap {
+	struct nsap_iso tx_nsap;
+	struct tsap_iso tx_tsap;
+	struct ssap_iso tx_ssap;
+	struct psap_iso tx_psap;
 };
 
-extern struct tp_xsap_router tp_xsap_router;
+extern struct tp_xsap tp_xsap;
 
 /* prototypes */
 /* NSAP */
@@ -233,35 +233,23 @@ void tsap_attach(struct tsap_iso *, struct nsap_iso *, int);
 void tsap_detach(struct tsap_iso *, struct nsap_iso *, int);
 struct nsap_iso *tsap_to_nsap(struct tsap_iso *);
 int tsap_iso_compare(struct tsap_iso *, struct tsap_iso *);
-int tsap_canconnect(struct tsap_iso *, void *, long, long, long,
-		int, int, int);
-int tsap_candisconnect(struct tsap_iso *, void *, long, long,
-		long, int, int, int);
-int tsap_connect(struct tsap_iso *, void *, long, long, int);
-int tsap_disconnect(struct tsap_iso *, void *, long, long, int);
+int tsap_connect(struct tsap_iso *, void *, int);
+int tsap_disconnect(struct tsap_iso *, void *, int);
 
 /* SSAP */
 void ssap_attach(struct ssap_iso *, struct tsap_iso *, int);
 void ssap_detach(struct ssap_iso *, struct tsap_iso *, int);
 struct tsap_iso *ssap_to_tsap(struct ssap_iso *);
 int ssap_iso_compare(struct ssap_iso *, struct ssap_iso *);
-int ssap_canconnect(struct ssap_iso *, void *, long, long, long,
-		int, int, int);
-int ssap_candisconnect(struct ssap_iso *, void *, long, long,
-		long, int, int, int);
-int ssap_connect(struct ssap_iso *, void *, long, long, int);
-int ssap_disconnect(struct ssap_iso *, void *, long, long, int);
+int ssap_connect(struct ssap_iso *, void *, int);
+int ssap_disconnect(struct ssap_iso *, void *, int);
 
 /* PSAP */
 void psap_attach(struct psap_iso *, struct ssap_iso *, int);
 void psap_detach(struct psap_iso *, struct ssap_iso *, int);
 struct ssap_iso *psap_to_ssap(struct psap_iso *);
 int psap_iso_compare(struct psap_iso *, struct psap_iso *);
-int psap_canconnect(struct psap_iso *, void *, long, long, long,
-		int, int, int);
-int psap_candisconnect(struct psap_iso *, void *, long, long,
-		long, int, int, int);
-int psap_connect(struct psap_iso *, void *, long, long, int);
-int psap_disconnect(struct psap_iso *, void *, long, long, int);
+int psap_connect(struct psap_iso *, void *, int);
+int psap_disconnect(struct psap_iso *, void *, int);
 
 #endif /* _NETTPI_ISO_NSAP_H_ */

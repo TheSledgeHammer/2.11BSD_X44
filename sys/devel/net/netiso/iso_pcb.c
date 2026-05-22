@@ -507,7 +507,7 @@ iso_pcbconnect(void *v, struct mbuf *nam)
 void
 iso_pcbdisconnect(void *v)
 {
-	struct isopcb  *isop = v;
+	struct isopcb *isop = v;
 	struct sockaddr_iso *siso;
 
 #ifdef ARGO_DEBUG

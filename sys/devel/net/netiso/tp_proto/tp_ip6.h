@@ -83,8 +83,8 @@ SOFTWARE.
 
 struct in6pcb tp_in6pcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
 
-void in6_sapattach(struct tp_xsap_router *);
-void in6_sapdetach(struct tp_xsap_router *);
+void in6_sapattach(void *);
+void in6_sapdetach(void *);
 void in6_getsufx(void *, u_short *, caddr_t, int);
 void in6_putsufx(void *, caddr_t, int, int);
 void in6_recycle_tsuffix(void *);

@@ -84,8 +84,8 @@ SOFTWARE.
 
 struct inpcb tp_inpcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
 
-void in_sapattach(struct tp_xsap_router *);
-void in_sapdetach(struct tp_xsap_router *);
+void in_sapattach(void *);
+void in_sapdetach(void *);
 void in_getsufx(void *, u_short *, caddr_t, int);
 void in_putsufx(void *, caddr_t, int, int);
 void in_recycle_tsuffix(void *);
