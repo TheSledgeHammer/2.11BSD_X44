@@ -81,8 +81,6 @@
  * TCP protocol interface to socket abstraction.
  */
 extern char *tcpstates[];
-extern struct inpcbtable tubainptable;
-extern struct isopcbtable tubaisoptable;
 
 int
 tuba_attach(struct socket *so)

@@ -910,8 +910,8 @@ troll_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rte
 		 *	Duplicate every Nth packet
 		 *	TODO: random?
 		 */
-		float           f_freq = troll_cnt * trollctl.tr_dup_freq;
-		int             i_freq = troll_cnt * trollctl.tr_dup_freq;
+		float f_freq = troll_cnt * trollctl.tr_dup_freq;
+		int i_freq = troll_cnt * trollctl.tr_dup_freq;
 		if (i_freq == f_freq) {
 			struct mbuf    *dup = m_copy(m, 0, (int) M_COPYALL);
 			if (dup != NULL)
@@ -924,10 +924,10 @@ troll_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rte
 	} else if (trollctl.tr_ops & TR_CHANGE) {
 		struct clnp_fixed *clnp = mtod(m, struct clnp_fixed *);
 		clnp->cnf_cksum_msb = 0;
-		err = (*ifp->if_output) (ifp, m, dst, rt);
+		err = (*ifp->if_output)(ifp, m, dst, rt);
 		return (err);
 	} else {
-		err = (*ifp->if_output) (ifp, m, dst, rt);
+		err = (*ifp->if_output)(ifp, m, dst, rt);
 		return (err);
 	}
 }

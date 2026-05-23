@@ -149,13 +149,13 @@ tuba_tcp_input(struct mbuf *m, ...)
 #ifdef INET
 	case 4:
 		af = AF_INET;
-		tuba4_input(m, src, dst, ip, (struct tcphdr *)th, toff, tlen, lindex, findex, 0);
+		tuba4_input(m, src, dst, ip, th, toff, tlen, lindex, findex);
 		break;
 #endif
 #ifdef INET6
 	case 6:
 		af = AF_INET6;
-		tuba6_input(m, src, dst, ip6, (struct tcphdr *)th, toff, tlen, lindex, findex, 0);
+		tuba6_input(m, src, dst, ip6, th, toff, tlen, lindex, findex);
 		break;
 #endif
 	default:
@@ -166,12 +166,11 @@ tuba_tcp_input(struct mbuf *m, ...)
 #define TUBA_INCLUDE
 #ifdef INET
 #define	in_pcbconnect	tuba4_pcbconnect
-#define	tcb				tuba_inpcb
 #endif
 #ifdef INET6
 #define	in6_pcbconnect	tuba6_pcbconnect
-#define	tcb				tuba_in6pcb
 #endif
+#define	tcbtable		tubainptable
 #include <netinet/tcp_input.c>
 }
 

@@ -75,11 +75,8 @@
 int	tubahashsize = TUBAHASHSIZE;
 
 struct inpcbtable	tubainptable; /* in pcbtable */
-//struct inpcb		tuba_inpcb;
-//struct in6pcb		tuba_in6pcb;
-
 struct isopcbtable  tubaisoptable; /* iso pcbtable */
-//struct isopcb		tuba_isopcb;
+
 struct sockaddr_iso tuba_addrs[2] = {
 		{
 				.siso_len = sizeof(tuba_addrs),
@@ -102,11 +99,11 @@ struct sockaddr_iso tuba_addrs[2] = {
 #define TUBAHDRSIZE 	((LLC)+(CLNP_FIXED)+(ADDRESSES)+(CLNP_SEGMENT)+(TCP))
 
 #ifdef INET
-static void tuba_ip4_cksum(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, struct ip *, int, unsigned long, unsigned long);
+static void tuba_ip4_cksum(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, struct ip *, struct tcphdr *, int, u_long, u_long);
 #endif
 
 #ifdef INET6
-static void tuba_ip6_cksum(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, struct ip6_hdr *, u_long, int, unsigned long, unsigned long);
+static void tuba_ip6_cksum(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, struct ip6_hdr *, struct tcphdr *, int, u_long, u_long);
 #endif
 
 /*
@@ -277,7 +274,7 @@ tuba4_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, i
 }
 
 static void
-tuba_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, int tlen, unsigned long lindex, unsigned long findex)
+tuba_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, struct tcphdr *th, int tlen, u_long lindex, u_long findex)
 {
 	ip->ip_dst.s_addr = tuba_table[lindex]->tc_sum;
 	if (dst->siso_nlen & 1) {
@@ -287,7 +284,7 @@ tuba_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 	}
 	ip->ip_p = ISOPROTO_TCP;
 	ip->ip_len = htons((u_short)tlen);
-	if (ip->ip_sum == in4_cksum(m, ISOPROTO_TCP, sizeof(struct ip), m->m_pkthdr.len)) {
+	if (th->th_sum == in4_cksum(m, ISOPROTO_TCP, sizeof(struct ip), m->m_pkthdr.len)) {
 		tcpstat.tcps_rcvbadsum++;
 		m_freem(m);
 		return;
@@ -296,31 +293,21 @@ tuba_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 	ip->ip_dst.s_addr = lindex;
 }
 
-/*
- * transtype:
- * 0 = TCP
- * 1 = UDP
- */
 int
-tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
+tuba4_output(struct mbuf *m, struct tcpcb *tp)
 {
 	struct ip *ip;
+	struct tcphdr *th;
+	struct isopcb *isop;
 	int error, offset;
 	u_long sum;
 
+	isop = (struct isopcb *)tp->t_tuba_pcb;
+	th = (struct tcphdr *)tp->t_template;
 	ip = mtod(m, struct ip *);
-	if (arg == NULL || isop == NULL) {
-		isop = &tuba_isopcb;
-		switch (transtype) {
-		case 0: /* TCP */
-			struct tcphdr *th = (struct tcphdr *)arg;
-			break;
-		case 1: /* UDP */
-			struct udphdr *uh = (struct udphdr *)arg;
-			break;
-		default:
-			return (ENXIO);
-		}
+	if (tp == 0 || th == 0 || isop == 0) {
+		isop = iso_pcballoc(NULL, &tubaisoptable);
+		th = mtod(m, struct tcphdr *);
 		sum = 0;
 		offset = 0;
 		error = tuba_cksum(&sum, &offset, &isop->isop_faddr, ip->ip_dst.s_addr);
@@ -335,7 +322,7 @@ tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
 		}
 		REDUCE(sum, sum);
 	}
-	if (tsum == 0) {
+	if (th->th_sum == 0) {
 		isop = NULL;
 		sum = 0;
 		offset = 0;
@@ -350,19 +337,10 @@ tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
 			return (EADDRNOTAVAIL);
 		}
 		REDUCE(sum, sum);
-		ip->ip_sum = sum;
-		switch (transtype) {
-		case 0: /* TCP */
-			struct tcphdr *th = (struct tcphdr *)arg;
-			break;
-		case 1: /* UDP */
-			struct udphdr *uh = (struct udphdr *)arg;
-			break;
-		default:
-			return (ENXIO);
-		}
+		th->th_sum = sum;
+		th = mtod(m, struct tcphdr *);
+		REDUCE(th->th_sum, (th->th_sum + (0xffff ^ sum)));
 	}
-	REDUCE(ip->ip_sum, (ip->ip_sum + (0xffff ^ sum)));
 
 	m->m_len -= sizeof(struct ip);
 	m->m_pkthdr.len -= sizeof(struct ip);
@@ -370,37 +348,16 @@ tuba4_ouput(struct mbuf *m, struct isopcb *isop, void *arg, int transtype)
 	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
 
-/*
- * transtype:
- * 0 = TCP
- * 1 = UDP
- */
 void
-tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype)
+tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, struct tcphdr *th, int toff, int tlen, u_long lindex, u_long findex)
 {
 	ip = mtod(m, struct ip *);
-	switch (transtype) {
-	case 0: /* TCP */
-		struct tcphdr *th = (struct tcphdr *)arg;
-		IP6_EXTHDR_GET(th, struct tcphdr *, m, toff, sizeof(struct tcphdr));
-		if (th == NULL) {
-			tcpstat.tcps_rcvshort++;
-			return;
-		}
-		tuba_ip4_cksum(m, src, dst, ip, toff, tlen, lindex, findex);
-		break;
-	case 1: /* UDP */
-		struct udphdr *uh = (struct udphdr *)arg;
-		IP6_EXTHDR_GET(uh, struct udphdr *, m, toff, sizeof(struct udphdr));
-		if (uh == NULL) {
-			return;
-		}
-		tuba_ip4_cksum(m, src, dst, ip, toff, tlen, lindex, findex);
-		break;
-	default:
-		m_freem(m);
+	IP6_EXTHDR_GET(th, struct tcphdr *, m, toff, sizeof(struct tcphdr));
+	if (th == NULL) {
+		tcpstat.tcps_rcvshort++;
 		return;
 	}
+	tuba_ip4_cksum(m, src, dst, ip, th, tlen, lindex, findex);
 }
 #endif
 
@@ -492,7 +449,7 @@ tuba6_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, i
 }
 
 static void
-tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, u_long cksum, int tlen, unsigned long lindex, unsigned long findex)
+tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, struct tcphdr *th, int tlen, u_long lindex, u_long findex)
 {
 	ip6->ip6_dst.s6_addr = tuba_table[lindex]->tc_sum;
 	if (dst->siso_nlen & 1) {
@@ -502,7 +459,7 @@ tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 	}
 	ip6->ip6_nxt = ISOPROTO_TCP;
 	ip6->ip6_plen = htons((u_short)tlen);
-	if (cksum == in6_cksum(m, ISOPROTO_TCP, sizeof(struct ip6_hdr), m->m_pkthdr.len)) {
+	if (th->th_sum == in6_cksum(m, ISOPROTO_TCP, sizeof(struct ip6_hdr), m->m_pkthdr.len)) {
 		tcpstat.tcps_rcvbadsum++;
 		m_freem(m);
 		return;
@@ -511,31 +468,21 @@ tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 	ip6->ip6_dst.s6_addr = lindex;
 }
 
-/*
- * transtype:
- * 0 = TCP
- * 1 = UDP
- */
 int
-tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int transtype)
+tuba6_output(struct mbuf *m, struct tcpcb *tp)
 {
 	struct ip6_hdr *ip6;
+	struct tcphdr *th;
+	struct isopcb *isop;
 	int error, offset;
 	u_long sum;
 
+	isop = (struct isopcb *)tp->t_tuba_pcb;
+	th = (struct tcphdr *)tp->t_template;
 	ip6 = mtod(m, struct ip6_hdr *);
-	if (arg == NULL || isop == NULL) {
-		isop = &tuba_isopcb;
-		switch (transtype) {
-		case 0: /* TCP */
-			struct tcphdr *th = (struct tcphdr *)arg;
-			break;
-		case 1: /* UDP */
-			struct udphdr *uh = (struct udphdr *)arg;
-			break;
-		default:
-			return (ENXIO);
-		}
+	if (tp == 0 || th == 0 || isop == 0) {
+		isop = iso_pcballoc(NULL, &tubaisoptable);
+		th = mtod(m, struct tcphdr *);
 		sum = 0;
 		offset = 0;
 		error = tuba_cksum(&sum, &offset, &isop->isop_faddr, ip6->ip6_dst.s6_addr);
@@ -550,7 +497,7 @@ tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int t
 		}
 		REDUCE(sum, sum);
 	}
-	if (cksum == 0) {
+	if (th->th_sum == 0) {
 		isop = NULL;
 		sum = 0;
 		offset = 0;
@@ -565,19 +512,10 @@ tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int t
 			return (EADDRNOTAVAIL);
 		}
 		REDUCE(sum, sum);
-		cksum = sum;
-		switch (transtype) {
-		case 0: /* TCP */
-			struct tcphdr *th = (struct tcphdr *)arg;
-			break;
-		case 1: /* UDP */
-			struct udphdr *uh = (struct udphdr *)arg;
-			break;
-		default:
-			return (ENXIO);
-		}
+		th->th_sum = sum;
+		th = mtod(m, struct tcphdr *);
+		REDUCE(th->th_sum, (th->th_sum + (0xffff ^ sum)));
 	}
-	REDUCE(cksum, (cksum + (0xffff ^ sum)));
 
 	m->m_len -= sizeof(struct ip6_hdr);
 	m->m_pkthdr.len -= sizeof(struct ip6_hdr);
@@ -585,36 +523,16 @@ tuba6_output(struct mbuf *m, struct isopcb *isop, void *arg, u_long cksum, int t
 	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
 
-/*
- * transtype:
- * 0 = TCP
- * 1 = UDP
- */
 void
-tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, void *arg, int toff, int tlen, unsigned long lindex, unsigned long findex, int transtype)
+tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, struct tcphdr *th, int toff, int tlen, u_long lindex, u_long findex)
 {
 	ip6 = mtod(m, struct ip6_hdr *);
-	switch (transtype) {
-	case 0: /* TCP */
-		struct tcphdr *th = (struct tcphdr *)arg;
-		IP6_EXTHDR_GET(th, struct tcphdr *, m, toff, sizeof(struct tcphdr));
-		if (th == NULL) {
-			tcpstat.tcps_rcvshort++;
-			return;
-		}
-		tuba_ip6_cksum(m, src, dst, ip6, th->th_sum, toff, tlen, lindex, findex);
-		break;
-	case 1: /* UDP */
-		struct udphdr *uh = (struct udphdr *)arg;
-		IP6_EXTHDR_GET(uh, struct udphdr *, m, toff, sizeof(struct udphdr));
-		if (uh == NULL) {
-			return;
-		}
-		tuba_ip6_cksum(m, src, dst, ip6, uh->uh_sum, toff, tlen, lindex, findex);
-		break;
-	default:
-		m_freem(m);
+	IP6_EXTHDR_GET(th, struct tcphdr *, m, toff, sizeof(struct tcphdr));
+	if (th == NULL) {
+		tcpstat.tcps_rcvshort++;
 		return;
 	}
+	tuba_ip6_cksum(m, src, dst, ip6, th, tlen, lindex, findex);
 }
+
 #endif

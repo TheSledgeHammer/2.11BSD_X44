@@ -122,35 +122,6 @@ psap_iso_compare(struct psap_iso *a, struct psap_iso *b)
 	return (0);
 }
 
-/* Connect & Disconnect provide this functionality */
-#ifdef deprecated
-int
-psap_canconnect(struct psap_iso *psap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
-{
-	struct ssap_iso *ssap;
-	int error;
-
-	ssap = psap_to_ssap(psap);
-	if (ssap == NULL) {
-		return (EINVAL);
-	}
-	return (ssap_canconnect(ssap, arg, type, subnet, protocol, class, sid, af));
-}
-
-int
-psap_candisconnect(struct psap_iso *psap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
-{
-	struct ssap_iso *ssap;
-	int error;
-
-	ssap = psap_to_ssap(psap);
-	if (ssap == NULL) {
-		return (EINVAL);
-	}
-	return (ssap_candisconnect(ssap, arg, type, subnet, protocol, class, sid, af));
-}
-#endif
-
 int
 psap_connect(struct psap_iso *psap, void *arg, int af)
 {

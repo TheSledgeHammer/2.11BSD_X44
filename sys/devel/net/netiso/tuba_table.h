@@ -63,6 +63,8 @@ struct tuba_cache {
 extern int tuba_table_size;
 extern struct tuba_cache **tuba_table;
 extern struct radix_node_head *tuba_tree;
+extern struct inpcbtable tubainptable;
+extern struct isopcbtable tubaisoptable;
 
 void tuba_init(void);
 void tuba_table_init(void);
@@ -73,16 +75,16 @@ void tuba_refcnt(struct isopcb *, int);
 int tuba4_pcbconnect(void *, struct mbuf *);
 void tuba4_mbuf(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int,
 		int, size_t);
-int tuba4_ouput(struct mbuf *, struct isopcb *, void *, int);
+int tuba4_ouput(struct mbuf *, struct tcpcb *);
 void tuba4_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
-		struct ip*, void *, int, int, unsigned long, unsigned long, int);
+		struct ip *, struct tcphdr *, int, int, u_long, u_long);
 
 int tuba6_pcbconnect(void *, struct mbuf *);
 void tuba6_mbuf(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int,
 		int, size_t);
-int tuba6_output(struct mbuf *, struct isopcb *, void *, u_long, int);
+int tuba6_output(struct mbuf *, struct tcpcb *);
 void tuba6_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
-		struct ip6_hdr *, void *, int, int, unsigned long, unsigned long, int);
+		struct ip6_hdr *, struct tcphdr *, int, int, u_long, u_long);
 
 #endif
 #endif /* _NETISO_TUBA_TABLE_H_ */
