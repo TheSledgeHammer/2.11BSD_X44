@@ -69,8 +69,8 @@ SOFTWARE.
  * Definitions needed for the protocol trace mechanism.
  */
 
-#ifndef __TP_TRACE__
-#define __TP_TRACE__
+#ifndef _NETISO_TP_TRACE_H__
+#define _NETISO_TP_TRACE_H__
 
 #define TPPTsendack	1
 #define TPPTgotack	2
@@ -100,22 +100,22 @@ SOFTWARE.
 
 /* for packet tracing */
 struct tp_timeval {
-	SeqNum	tptv_seq;
+	SeqNum tptv_seq;
 	u_int tptv_kind;
 	u_int tptv_window;
 	u_int tptv_size;
 };
 
 struct tp_Trace {
-	u_int	tpt_event;
-	u_int	tpt_arg;
-	u_int 	tpt_arg2;
+	u_int tpt_event;
+	u_int tpt_arg;
+	u_int tpt_arg2;
 	int	tpt_tseq;
-	struct timeval	tpt_time;
+	struct timeval tpt_time;
 	union {
-		struct inpcb	tpt_Inpcb; /* protocol control block */
-		struct tp_ref 	tpt_Ref; /* ref part of pcb */
-		struct tpdu 	tpt_Tpdu; /* header*/
+		struct inpcb tpt_Inpcb; /* protocol control block */
+		struct tp_ref tpt_Ref; /* ref part of pcb */
+		struct tpdu tpt_Tpdu; /* header*/
 		struct tp_refinfo tpt_Param; /* ?? bytes, make sure < 128??*/
 		struct tp_timeval tpt_Time;
 		struct {
@@ -126,7 +126,7 @@ struct tp_Trace {
 			char tpt_Str[TPTRACE_STRLEN];
 			u_int tptm_1;
 		} tptmisc;
-		u_char 			tpt_Ertpdu; /* use rest of structure */
+		u_char tpt_Ertpdu; /* use rest of structure */
 	} tpt_stuff;
 };
 
@@ -187,7 +187,7 @@ int tp_Tracen = 0;
 
 #define IFTRACE(ascii) \
 	if (0) {
-#define ENDTRACE}
+#define ENDTRACE  }
 
 #endif /* TPPT */
-#endif /* __TP_TRACE__ */
+#endif /* _NETISO_TP_TRACE_H__ */

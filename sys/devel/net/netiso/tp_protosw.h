@@ -91,8 +91,6 @@ SOFTWARE.
 
 struct tp_protosw {
 	int		tp_afamily;												/* address family */
-	void	(*tp_xsapattach)(void *);								/* attach sap layer services */
-	void	(*tp_xsapdetach)(void *);								/* detach sap layer services */
 	void	(*tp_putnetaddr)(void *, struct sockaddr *, int);		/* puts addresses in tp pcb */
 	void	(*tp_getnetaddr)(void *, struct mbuf *, int);			/* gets addresses from tp pcb */
 	int		(*tp_cmpnetaddr)(void *, struct sockaddr *, int);		/* compares address in pcb with sockaddr */
@@ -130,9 +128,4 @@ extern struct tp_protosw tpin6_protosw;
 #ifdef NS
 extern struct tp_protosw tpns_protosw;
 #endif
-
-void tp_protosw_init(void);
-void tp_xsap_attach(struct tp_xsap *, int);
-void tp_xsap_detach(struct tp_xsap *, int);
-
 #endif /* _NETISO_TP_PROTOSW_H_ */

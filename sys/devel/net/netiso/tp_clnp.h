@@ -1,4 +1,4 @@
-/*	$NetBSD: tp_tpdu.h,v 1.11 2005/12/11 00:01:36 elad Exp $	*/
+/*	$NetBSD: tp_clnp.h,v 1.8 2003/08/07 16:33:38 agc Exp $	*/
 
 /*-
  * Copyright (c) 1991, 1993
@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_tpdu.h	8.1 (Berkeley) 6/10/93
+ *	@(#)tp_clnp.h	8.1 (Berkeley) 6/10/93
  */
 
 /***********************************************************
@@ -54,43 +54,34 @@ SOFTWARE.
 
 ******************************************************************/
 
-#ifndef _NETISO_TPDU_H_
-#define _NETISO_TPDU_H_
-
-#include <netiso/tp_tpdu_f.h> /* needed for tpdu fixed part */
-#include <netiso/tp_tpdu_v.h> /* needed for tpdu variable part */
-
-/* OPTIONS and ADDL OPTIONS bits */
-#define TPO_USE_EFC		0x1
-#define TPO_XTD_FMT		0x2
-#define TPAO_USE_TXPD 	0x1
-#define TPAO_NO_CSUM 	0x2
-#define TPAO_USE_RCC 	0x4
-#define TPAO_USE_NXPD 	0x8
-
-struct tpdu {
-	struct tpdu_fixed   		_tpduf;
-	union tpdu_fixed_rest   	_tpdufr;
-	struct tpdu_variable   		_tpduv;
-	union tpdu_variable_rest   	_tpduvr;
-};
-
 /*
- * tpdu info
- * Derived from tpdu_info[][4] in tp_input.c
+ * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-struct tpdu_info_head;
-LIST_HEAD(tpdu_info_head, tpdu_info);
-struct tpdu_info {
-	unsigned char ti_rf_length;    	/* length: regular format */
-	unsigned char ti_xf_length;    	/* length: extended format */
-	unsigned char ti_type;         	/* tpdu type (DT, CR, etc.) */
-	unsigned char ti_class;        	/* tpdu class (0, 4, etc.) */
-    unsigned char ti_max_length;   	/* max length */
-    struct tpdu *ti_tpdu;			/* pointer to tpdu */
-    LIST_ENTRY(tpdu_info) ti_link; 	/* info list */
-};
+/*
+ * AF_ISO net-dependent structures and include files
+ */
 
-extern struct tpdu_info_head tp_info_list;
+#ifndef _NETISO_TP_CLNP_H_
+#define _NETISO_TP_CLNP_H_
 
-#endif /* _NETISO_TPDU_H_ */
+#ifndef SOCK_STREAM
+#include <sys/socket.h>
+#endif				/* SOCK_STREAM */
+
+#ifndef RTFREE
+#include <net/route.h>
+#endif
+#include <netiso/iso.h>
+#include <netiso/clnp.h>
+#include <netiso/iso_pcb.h>
+#ifndef IF_DEQUEUE
+#include <net/if.h>
+#endif
+#include <netiso/iso_var.h>
+
+#ifdef _KERNEL
+extern struct isopcb   tp_isopcb;
+#endif
+/* queue of active inpcbs for tp ; for tp with dod ip */
+
+#endif				/* _NETISO_TP_CLNP_H_ */

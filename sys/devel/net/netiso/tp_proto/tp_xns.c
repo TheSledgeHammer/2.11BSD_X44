@@ -58,8 +58,6 @@
 
 struct tp_protosw tpns_protosw = {
 		.tp_afamily = AF_NS,
-		.tp_xsapattach = ns_sapattach,
-		.tp_xsapdetach = ns_sapdetach,
 		.tp_putnetaddr = ns_putnetaddr,
 		.tp_getnetaddr = ns_getnetaddr,
 		.tp_cmpnetaddr = ns_cmpnetaddr,
@@ -78,20 +76,6 @@ struct tp_protosw tpns_protosw = {
 		.tp_ctloutput = 0,
 		.tp_pcblist = &tp_nspcb,
 };
-
-void
-ns_sapattach(void *v)
-{
-	struct tp_xsap *xsap = (struct tp_xsap *)v;
-	tp_xsap_attach(xsap, AF_NS);
-}
-
-void
-ns_sapdetach(void *v)
-{
-	struct tp_xsap *xsap = (struct tp_xsap *)v;
-	tp_xsap_detach(xsap, AF_NS);
-}
 
 void
 ns_getsufx(void *v, u_short *lenp, caddr_t data_out, int which)

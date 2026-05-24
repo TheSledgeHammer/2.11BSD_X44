@@ -1,3 +1,5 @@
+/*	$NetBSD: tp_meas.c,v 1.10 2003/08/07 16:33:40 agc Exp $	*/
+
 /*-
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_pcb.h	8.2 (Berkeley) 9/22/94
+ *	@(#)tp_meas.c	8.1 (Berkeley) 6/10/93
  */
 
 /***********************************************************
@@ -60,47 +58,68 @@ SOFTWARE.
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
 /*
- * ARGO TP
- *
- * $Header: tp_pcb.h,v 5.2 88/11/18 17:09:32 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.h,v $
- *
- *
- * This file defines the transport protocol control block (tpcb).
- * and a bunch of #define values that are used in the tpcb.
+ * tp_meas.c : create a performance measurement event
+ * in the circular buffer tp_Meas[]
  */
 
-#ifndef _NETTPI_TPI_PROTOSW_H_
-#define _NETTPI_TPI_PROTOSW_H_
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: tp_meas.c,v 1.10 2003/08/07 16:33:40 agc Exp $");
 
-struct tpi_protosw {
-	int		tpi_afamily;											/* address family */
-	void	(*tpi_putnetaddr)(void *, struct sockaddr *, int);		/* puts addresses in tpi pcb */
-	void	(*tpi_getnetaddr)(void *, struct mbuf *, int);			/* gets addresses from tpi pcb */
-	int		(*tpi_cmpnetaddr)(void *, struct sockaddr *, int);		/* compares address in pcb with sockaddr */
-	int		(*tpi_putsufx)(void *, caddr_t, int, int);				/* puts transport suffixes in tpi pcb */
-	int		(*tpi_getsufx)(void *, u_short *, caddr_t, int);		/* gets transport suffixes from tpi pcb */
-	int		(*tpi_recycle_suffix)(void *);							/* clears suffix from tpi pcb */
-	int		(*tpi_mtu)(void *);										/* figures out mtu based on tpi used */
-	int		(*tpi_pcbbind)(void *);									/* bind to pcb for net level */
-	int		(*tpi_pcbconnect)(void *, struct mbuf *);				/* connect for net level */
-	void	(*tpi_pcbdisconnect)(void *);							/* disconnect net level */
-	int 	(*tpi_pcbattach)(struct socket *, int);					/* attach net level pcb */
-	void	(*tpi_pcbdetach)(void *);								/* detach net level pcb */
-	int		(*tpi_pcballoc)(struct socket *, void *);				/* allocate a net level pcb */
-	int		(*tpi_output)(void *, struct mbuf *, int, int);			/* prepare a packet to give to tpi */
-	int		(*tpi_dgoutput)(void *, void *, struct mbuf *, int, void *, int); /* prepare a packet to give to tpi */
-	int		(*tpi_ctloutput)(int, struct sockaddr *, void *);		/* hook for network set/get options */
-	caddr_t	tpi_pcblist;											/* list of xx_pcb's for connections */
-};
+#include <sys/types.h>
+#include <sys/time.h>
 
-extern struct tpi_protosw *tpi_protosw;
+#include <netiso/argo_debug.h>
+#include <netiso/tp_meas.h>
 
-/* network protocols */
-extern struct tpi_protosw tpin4_protosw;
-extern struct tpi_protosw tpin6_protosw;
-extern struct tpi_protosw tpiso_protosw;
-extern struct tpi_protosw tpns_protosw;
-extern struct tpi_protosw tpx25_protosw;
+extern struct timeval time;
 
-#endif /* _NETTPI_TPI_PROTOSW_H_ */
+#ifdef TP_PERF_MEAS
+int             tp_Measn = 0;
+struct tp_Meas  tp_Meas[TPMEASN];
+
+/*
+ * NAME:	 tpmeas()
+ *
+ * CALLED FROM: tp_emit(), tp_soisdisconecting(), tp_soisdisconnected()
+ *	tp0_stash(), tp_stash(), tp_send(), tp_goodack(), tp_usrreq()
+ *
+ * FUNCTION and ARGUMENTS:
+ *  stashes a performance-measurement event for the given reference (ref)
+ *  (kind) tells which kind of event, timev is the time to be stored
+ *  with this event, (seq), (win), and (size) are integers that usually
+ *  refer to the sequence number, window number (on send) and
+ *  size of tpdu or window.
+ *
+ * RETURNS:		Nada
+ *
+ * SIDE EFFECTS:
+ *
+ * NOTES:
+ */
+void
+Tpmeas(ref, kind, timev, seq, win, size)
+	u_int           ref;
+	u_int           kind;
+	struct timeval *timev;
+	u_int           seq, win, size;
+{
+	struct tp_Meas *tpm;
+	static int      mseq;
+
+	tpm = &tp_Meas[tp_Measn++];
+	tp_Measn %= TPMEASN;
+
+	tpm->tpm_kind = kind;
+	tpm->tpm_tseq = mseq++;
+	tpm->tpm_ref = ref;
+	if (kind == TPtime_from_ll)
+		bcopy((caddr_t) timev, (caddr_t) & tpm->tpm_time, sizeof(struct timeval));
+	else
+		bcopy((caddr_t) & time,
+		      (caddr_t) & tpm->tpm_time, sizeof(struct timeval));
+	tpm->tpm_seq = seq;
+	tpm->tpm_window = win;
+	tpm->tpm_size = size;
+}
+
+#endif				/* TP_PERF_MEAS */

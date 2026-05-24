@@ -324,7 +324,7 @@ u_int	tp_start_win;
 #define	tpcbtoref(tp)	((struct tp_ref *)((tp)->tp_ref))
 
 #ifdef KERNEL
-extern struct tp_refinfo 	tp_refinfo;
+extern struct tp_refinfo tp_refinfo;
 extern struct tp_ref	*tp_ref;
 extern struct tp_param	tp_param;
 extern struct tppcbhead tp_pcblist;
@@ -342,7 +342,6 @@ void tp_detach(struct tp_pcb *);
 int tp_tselinuse(u_short, char *, struct sockaddr_iso *, int);
 int tp_pcbbind(void *, struct mbuf *, struct proc *);
 int tp_mtu(struct tp_pcb *, struct rtentry *, int);
-void tp_quench(struct tp_pcb *, int);
 int tp_abort(struct tp_pcb *, int);
 int tp_reset(struct tp_pcb *, int);
 #endif

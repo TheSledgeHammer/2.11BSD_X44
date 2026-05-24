@@ -137,9 +137,6 @@ struct tpi_event {
 #define DT_TPDU 		0xc
 #define XPD_TPDU 		0xd
 #define XAK_TPDU 		0xe
-
-#define RJ_TPDU 		0x19
-
 #define T_CONN_req 		0xf
 #define T_DISC_req 		0x10
 #define T_LISTEN_req 	0x11
@@ -150,5 +147,6 @@ struct tpi_event {
 #define T_DETACH 		0x16
 #define T_NETRESET 		0x17
 #define T_ACPT_req 		0x18
+#define RJ_TPDU 		0x19
 
 #endif /* _NETTPI_TPI_EVENTS_H_ */

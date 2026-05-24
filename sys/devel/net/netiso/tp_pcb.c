@@ -91,6 +91,36 @@ SOFTWARE.
 #include <netiso/tp_clnp.h>
 #include <netiso/tp_protosw.h>
 
+struct tp_protosw tp_protosw[] = {
+#ifdef INET
+		{	/* INET 0 */
+				&tpin4_protosw
+		},
+#endif
+#ifdef INET6
+		{	/* INET6 1 */
+				&tpin6_protosw
+		},
+#endif
+#ifdef ISO
+		{	/* ISO 2 */
+				&tpiso_protosw
+		},
+#endif
+#ifdef NS
+		{	/* XNS 3 */
+				&tpns_protosw
+		},
+#endif
+#ifdef ISO
+#ifdef TPCONS
+		{	/* ISO TPCONS 4 */
+				&tpcons_protosw
+		},
+#endif
+#endif
+};
+
 struct inpcbtable tp_inpcbtable;
 struct isopcbtable tp_isopcbtable;
 
@@ -131,7 +161,6 @@ tp_init(void)
 
 	LIST_INIT(&tp_pcblist);
 	LIST_INIT(&tp_listeners);
-	tp_protosw_init();
 
 	tp_start_win = 2;
 	bzero((caddr_t)&tp_stat, sizeof(struct tp_stat));
@@ -752,28 +781,6 @@ tp_mtu(struct tp_pcb *tpcb, struct rtentry *rt, int size)
 {
 	tpcb->tp_routep = &rt;
 	return (size);
-}
-
-void
-tp_quench(struct tp_pcb *tpcb, int cmd)
-{
-	IFDEBUG(D_QUENCH)
-		printf("tp_quench tpcb 0x%x ref 0x%x sufx 0x%x\n",
-			tpcb, tpcb->tp_lref, *(u_short *)(tpcb->tp_lsuffix));
-		printf("cong_win 0x%x decbit 0x%x \n",
-			tpcb->tp_cong_win, tpcb->tp_decbit);
-	ENDDEBUG
-	switch (cmd) {
-	case PRC_QUENCH:
-		tpcb->tp_cong_win = tpcb->tp_l_tpdusize;
-		IncStat(ts_quench);
-		break;
-	case PRC_QUENCH2:
-		tpcb->tp_cong_win = tpcb->tp_l_tpdusize; /* might as well quench source also */
-		tpcb->tp_decbit = TP_DECBIT_CLEAR_COUNT;
-		IncStat(ts_rcvdecbit);
-		break;
-	}
 }
 
 int

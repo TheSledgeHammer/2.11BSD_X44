@@ -1,4 +1,4 @@
-/*	$NetBSD: tp_meas.h,v 1.7 2003/08/07 16:33:40 agc Exp $	*/
+/*	$NetBSD: tp_trace.c,v 1.9 2003/08/07 16:33:43 agc Exp $	*/
 
 /*-
  * Copyright (c) 1991, 1993
@@ -28,11 +28,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_meas.h	8.1 (Berkeley) 6/10/93
+ *	@(#)tp_trace.c	8.1 (Berkeley) 6/10/93
  */
 
 /***********************************************************
-				Copyright IBM Corporation 1987
+		Copyright IBM Corporation 1987
 
                       All Rights Reserved
 
@@ -57,36 +57,108 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-#ifdef TP_PERF_MEAS
-#define tpmeas(a, b, t, c, d, e) \
-	Tpmeas((u_int)(a), (u_int)(b), t, (u_int)(c), (u_int)(d), (u_int)(e))
+/*
+ * The whole protocol trace module. We keep a circular buffer of trace
+ * structures, which are big unions of different structures we might want to
+ * see. Unfortunately this gets too big pretty easily. Pcbs were removed from
+ * the tracing when the kernel got too big to boot.
+ */
 
-struct tp_Meas {
-	int             tpm_tseq;
-	u_char          tpm_kind;
-	u_short         tpm_ref;
-	u_short         tpm_size;
-	u_short         tpm_window;
-	u_int           tpm_seq;
-	struct timeval  tpm_time;
-};
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: tp_trace.c,v 1.9 2003/08/07 16:33:43 agc Exp $");
 
-#define TPMEASN 4000
-extern int      tp_Measn;
-extern struct tp_Meas tp_Meas[];
+#define TP_TRACEFILE
+
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+
+#include <netiso/tp_param.h>
+#include <netiso/tp_timer.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_param.h>
+#include <netiso/tp_ip.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_tpdu.h>
+#include <netiso/argo_debug.h>
+#include <netiso/tp_trace.h>
+
+#ifdef TPPT
+static          tp_seq = 0;
+u_char          tp_traceflags[128];
 
 /*
- * the kinds of events for packet tracing are:
+ * The argument tpcb is the obvious.
+ * event here is just the type of trace event - TPPTmisc, etc.
+ * The rest of the arguments have different uses depending
+ * on the type of trace event.
  */
-#define TPtime_from_session	0x01
-#define TPtime_to_session	0x02
-#define TPtime_ack_rcvd		0x03
-#define TPtime_ack_sent		0x04
-#define TPtime_from_ll		0x05
-#define TPtime_to_ll		0x06
-#define TPsbsend			0x07
-#define TPtime_open			0x08
-#define TPtime_open_X		0x28	/* xtd format */
-#define TPtime_close		0x09
+/* ARGSUSED */
+/* VARARGS */
 
-#endif				/* TP_PERF_MEAS */
+void
+tpTrace(struct tp_pcb *tpcb, u_int event, u_int arg, u_int src, u_int len, u_int arg4, u_int arg5)
+{
+	struct tp_Trace *tp;
+
+	tp = &tp_Trace[tp_Tracen++];
+	tp_Tracen %= TPTRACEN;
+
+	tp->tpt_event = event;
+	tp->tpt_tseq = tp_seq++;
+	tp->tpt_arg = arg;
+	if (tpcb)
+		tp->tpt_arg2 = tpcb->tp_lref;
+	bcopy((caddr_t) & time, (caddr_t) & tp->tpt_time, sizeof(struct timeval));
+
+	switch (event) {
+
+	case TPPTertpdu:
+		bcopy((caddr_t) src, (caddr_t) & tp->tpt_ertpdu,
+		      (unsigned) MIN((int) len, sizeof(struct tp_Trace)));
+		break;
+
+	case TPPTusrreq:
+	case TPPTmisc:
+
+		/* arg is a string */
+		bcopy((caddr_t) arg, (caddr_t) tp->tpt_str,
+		 (unsigned) MIN(1 + strlen((caddr_t) arg), TPTRACE_STRLEN));
+		tp->tpt_m2 = src;
+		tp->tpt_m3 = len;
+		tp->tpt_m4 = arg4;
+		tp->tpt_m1 = arg5;
+		break;
+
+	case TPPTgotXack:
+	case TPPTXack:
+	case TPPTsendack:
+	case TPPTgotack:
+	case TPPTack:
+	case TPPTindicate:
+	default:
+	case TPPTdriver:
+		tp->tpt_m2 = arg;
+		tp->tpt_m3 = src;
+		tp->tpt_m4 = len;
+		tp->tpt_m5 = arg4;
+		tp->tpt_m1 = arg5;
+		break;
+	case TPPTparam:
+		bcopy((caddr_t) src, (caddr_t) & tp->tpt_param, sizeof(struct tp_param));
+		break;
+	case TPPTref:
+		bcopy((caddr_t) src, (caddr_t) & tp->tpt_ref, sizeof(struct tp_ref));
+		break;
+
+	case TPPTtpduin:
+	case TPPTtpduout:
+		tp->tpt_arg2 = arg4;
+		bcopy((caddr_t) src, (caddr_t) & tp->tpt_tpdu,
+		      (unsigned) MIN((int) len, sizeof(struct tp_Trace)));
+		break;
+	}
+}
+#endif				/* TPPT */

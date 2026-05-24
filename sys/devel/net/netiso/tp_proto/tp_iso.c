@@ -62,8 +62,6 @@
 
 struct tp_protosw tpiso_protosw = {
  	.tp_afamily = AF_ISO,
-	.tp_xsapattach = iso_sapattach,
-	.tp_xsapdetach = iso_sapdetach,
  	.tp_putnetaddr = iso_putnetaddr,
  	.tp_getnetaddr = iso_getnetaddr,
  	.tp_cmpnetaddr = iso_cmpnetaddr,

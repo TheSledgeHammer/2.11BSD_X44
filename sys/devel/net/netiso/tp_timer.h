@@ -1,4 +1,4 @@
-/*	$NetBSD: tp_tpdu.h,v 1.11 2005/12/11 00:01:36 elad Exp $	*/
+/*	$NetBSD: tp_timer.h,v 1.7 2003/08/07 16:33:42 agc Exp $	*/
 
 /*-
  * Copyright (c) 1991, 1993
@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_tpdu.h	8.1 (Berkeley) 6/10/93
+ *	@(#)tp_timer.h	8.1 (Berkeley) 6/10/93
  */
 
 /***********************************************************
@@ -54,43 +54,39 @@ SOFTWARE.
 
 ******************************************************************/
 
-#ifndef _NETISO_TPDU_H_
-#define _NETISO_TPDU_H_
-
-#include <netiso/tp_tpdu_f.h> /* needed for tpdu fixed part */
-#include <netiso/tp_tpdu_v.h> /* needed for tpdu variable part */
-
-/* OPTIONS and ADDL OPTIONS bits */
-#define TPO_USE_EFC		0x1
-#define TPO_XTD_FMT		0x2
-#define TPAO_USE_TXPD 	0x1
-#define TPAO_NO_CSUM 	0x2
-#define TPAO_USE_RCC 	0x4
-#define TPAO_USE_NXPD 	0x8
-
-struct tpdu {
-	struct tpdu_fixed   		_tpduf;
-	union tpdu_fixed_rest   	_tpdufr;
-	struct tpdu_variable   		_tpduv;
-	union tpdu_variable_rest   	_tpduvr;
-};
-
 /*
- * tpdu info
- * Derived from tpdu_info[][4] in tp_input.c
+ * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-struct tpdu_info_head;
-LIST_HEAD(tpdu_info_head, tpdu_info);
-struct tpdu_info {
-	unsigned char ti_rf_length;    	/* length: regular format */
-	unsigned char ti_xf_length;    	/* length: extended format */
-	unsigned char ti_type;         	/* tpdu type (DT, CR, etc.) */
-	unsigned char ti_class;        	/* tpdu class (0, 4, etc.) */
-    unsigned char ti_max_length;   	/* max length */
-    struct tpdu *ti_tpdu;			/* pointer to tpdu */
-    LIST_ENTRY(tpdu_info) ti_link; 	/* info list */
-};
+/*
+ * The callout structures used by the tp timers.
+ */
 
-extern struct tpdu_info_head tp_info_list;
+#ifndef _NETISO_TP_TIMER_H_
+#define _NETISO_TP_TIMER_H_
 
-#endif /* _NETISO_TPDU_H_ */
+#define SET_DELACK(t) { \
+    (t)->tp_flags |= TPF_DELACK; \
+    if ((t)->tp_fasttimeo == 0)	{ \
+    	(t)->tp_fasttimeo = tp_ftimeolist; \
+    	tp_ftimeolist = (t); \
+    } \
+}
+
+#ifdef ARGO_DEBUG
+#define TP_DEBUG_TIMERS
+#endif
+
+#ifndef TP_DEBUG_TIMERS
+#define tp_ctimeout(tpcb, which, timo) \
+	((tpcb)->tp_timer[which] = (timo))
+#define tp_cuntimeout(tpcb, which) \
+	((tpcb)->tp_timer[which] = 0)
+#define tp_etimeout tp_ctimeout
+#define tp_euntimeout tp_cuntimeout
+#define tp_ctimeout_MIN(p, w, t) { \
+	if ((p)->tp_timer[w] > (t)) { \
+		(p)->tp_timer[w] = (t); \
+	} \
+}
+#endif				/* TP_DEBUG_TIMERS */
+#endif				/* _NETISO_TP_TIMER_H_ */

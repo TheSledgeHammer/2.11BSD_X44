@@ -35,7 +35,6 @@ file	netiso/tp_input.c		iso | tpip
 file	netiso/tp_meas.c		iso | tpip
 file	netiso/tp_output.c		iso | tpip
 file	netiso/tp_pcb.c			iso
-file	netiso/tp_protosw.c		iso | tpip 
 file	netiso/tp_subr.c		iso | tpip
 file	netiso/tp_subr2.c		iso | tpip
 file	netiso/tp_timer.c		iso | tpip

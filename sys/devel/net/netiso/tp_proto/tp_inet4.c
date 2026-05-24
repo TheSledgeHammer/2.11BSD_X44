@@ -55,8 +55,6 @@
 
 struct tp_protosw tpin4_protosw = {
 		.tp_afamily = AF_INET,
-		.tp_xsapattach = in_sapattach,
-		.tp_xsapdetach = in_sapdetach,
 		.tp_putnetaddr = in_putnetaddr,
 		.tp_getnetaddr = in_getnetaddr,
 		.tp_cmpnetaddr = in_cmpnetaddr,
@@ -75,20 +73,6 @@ struct tp_protosw tpin4_protosw = {
 		.tp_ctloutput = 0,
 		.tp_pcblist = &tp_inpcb,
 };
-
-void
-in_sapattach(void *v)
-{
-	struct tp_xsap *xsap = (struct tp_xsap *)v;
-	tp_xsap_attach(xsap, AF_INET);
-}
-
-void
-in_sapdetach(void *v)
-{
-	struct tp_xsap *xsap = (struct tp_xsap *)v;
-	tp_xsap_detach(xsap, AF_INET);
-}
 
 void
 in_getsufx(void *v, u_short *lenp, caddr_t data_out, int which)
