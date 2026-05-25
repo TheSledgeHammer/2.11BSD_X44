@@ -69,21 +69,22 @@ extern struct isopcbtable tubaisoptable;
 void tuba_init(void);
 void tuba_table_init(void);
 int tuba_cksum(u_long *, int *, struct sockaddr_iso **, u_long);
+int tuba_pcbattach(struct socket *, int);
 void tuba_pcbdetach(struct isopcb *);
 void tuba_refcnt(struct isopcb *, int);
 
 int tuba4_pcbconnect(void *, struct mbuf *);
 void tuba4_mbuf(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int,
 		int, size_t);
-int tuba4_ouput(struct mbuf *, struct tcpcb *);
-void tuba4_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
+int tuba4_tcp_ouput(struct mbuf *, struct tcpcb *);
+void tuba4_tcp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
 		struct ip *, struct tcphdr *, int, int, u_long, u_long);
 
 int tuba6_pcbconnect(void *, struct mbuf *);
 void tuba6_mbuf(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int,
 		int, size_t);
-int tuba6_output(struct mbuf *, struct tcpcb *);
-void tuba6_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
+int tuba6_tcp_output(struct mbuf *, struct tcpcb *);
+void tuba6_tcp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
 		struct ip6_hdr *, struct tcphdr *, int, int, u_long, u_long);
 
 #endif

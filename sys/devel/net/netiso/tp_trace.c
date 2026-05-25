@@ -79,7 +79,7 @@ __KERNEL_RCSID(0, "$NetBSD: tp_trace.c,v 1.9 2003/08/07 16:33:43 agc Exp $");
 #include <netiso/tp_timer.h>
 #include <netiso/tp_stat.h>
 #include <netiso/tp_param.h>
-#include <netiso/tp_ip.h>
+#include <netiso/tp_proto/tp_ip.h>
 #include <netiso/tp_pcb.h>
 #include <netiso/tp_tpdu.h>
 #include <netiso/argo_debug.h>

@@ -54,6 +54,7 @@ __RCSID("$NetBSD: scsictl.c,v 1.33 2011/08/29 14:35:04 joerg Exp $");
 #include <util.h>
 
 #include <dev/disk/scsi/scsipi_all.h>
+#include <dev/disk/scsi/scsi_all.h>
 #include <dev/disk/scsi/scsi_disk.h>
 #include <dev/disk/scsi/scsipiconf.h>
 
@@ -111,9 +112,9 @@ struct command device_commands[] = {
 	{ NULL,		NULL,			NULL },
 };
 
-void	bus_reset(int, char *[]);
-void	bus_scan(int, char *[]);
-void	bus_detach(int, char *[]);
+void bus_reset(int, char *[]);
+void bus_scan(int, char *[]);
+void bus_detach(int, char *[]);
 
 struct command bus_commands[] = {
 	{ "reset",	"",			bus_reset },
@@ -232,13 +233,13 @@ device_format(int argc, char *argv[])
 		/* optional defect list */
 	} dfl;
 	struct {
-		struct scsi_mode_parameter_header_6 header;
+		struct scsipi_mode_header header;
 		struct scsi_general_block_descriptor blk_desc;
 		struct page_disk_format format_page;
 	} mode_page;
 	struct {
-		struct scsi_mode_parameter_header_6 header;
-		struct scsi_general_block_descriptor blk_desc;
+		struct scsipi_mode_header  header;
+		struct scsi_blk_desc  blk_desc;
 	} data_select;
 	
 
@@ -355,7 +356,7 @@ device_format(int argc, char *argv[])
 		fflush(stdout);
 		do {
 			scsireq_t req;
-			struct scsi_test_unit_ready tcmd;
+			struct scsipi_test_unit_ready tcmd;
 
 			memset(&tcmd, 0, sizeof(cmd));
 			tcmd.opcode = TEST_UNIT_READY;
@@ -510,7 +511,7 @@ device_reassign(int argc, char *argv[])
 void
 device_release(int argc, char *argv[])
 {
-	struct scsi_test_unit_ready cmd;	/* close enough */
+	struct scsipi_test_unit_ready cmd;	/* close enough */
 
 	/* No arguments. */
 	if (argc != 0)
@@ -538,7 +539,7 @@ device_release(int argc, char *argv[])
 void
 device_reserve(int argc, char *argv[])
 {
-	struct scsi_test_unit_ready cmd;	/* close enough */
+	struct scsipi_test_unit_ready cmd;	/* close enough */
 
 	/* No arguments. */
 	if (argc != 0)
@@ -603,8 +604,8 @@ void
 device_getcache(int argc, char *argv[])
 {
 	struct {
-		struct scsi_mode_parameter_header_6 header;
-		struct scsi_general_block_descriptor blk_desc;
+		struct scsipi_mode_header header;
+		struct scsi_blk_desc blk_desc;
 		struct page_caching caching_params;
 	} data;
 
@@ -636,8 +637,8 @@ void
 device_setcache(int argc, char *argv[])
 {
 	struct {
-		struct scsi_mode_parameter_header_6 header;
-		struct scsi_general_block_descriptor blk_desc;
+		struct scsipi_mode_header header;
+		struct scsi_blk_desc blk_desc;
 		struct page_caching caching_params;
 	} data;
 	int dlen;
@@ -694,7 +695,7 @@ device_setcache(int argc, char *argv[])
 void
 device_flushcache(int argc, char *argv[])
 {
-	struct scsi_test_unit_ready cmd;	/* close enough */
+	struct scsipi_test_unit_ready cmd;	/* close enough */
 
 	/* No arguments. */
 	if (argc != 0)
@@ -757,7 +758,7 @@ device_setspeed(int argc, char *argv[])
 void
 device_prevent(int argc, char *argv[])
 {
-	struct scsi_prevent_allow_medium_removal cmd;
+	struct scsipi_prevent cmd;
 
 	/* No arguments. */
 	if (argc != 0)
@@ -781,7 +782,7 @@ device_prevent(int argc, char *argv[])
 void
 device_allow(int argc, char *argv[])
 {
-	struct scsi_prevent_allow_medium_removal cmd;
+	struct scsipi_prevent cmd;
 
 	/* No arguments. */
 	if (argc != 0)
@@ -853,7 +854,7 @@ device_stop(int argc, char *argv[])
 void
 device_tur(int argc, char *argv[])
 {
-	struct scsi_test_unit_ready cmd;
+	struct scsipi_test_unit_ready cmd;
 
 	/* No arguments. */
 	if (argc != 0)

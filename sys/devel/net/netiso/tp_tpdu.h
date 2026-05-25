@@ -61,8 +61,8 @@ SOFTWARE.
 #include <netiso/tp_tpdu_v.h> /* needed for tpdu variable part */
 
 /* OPTIONS and ADDL OPTIONS bits */
-#define TPO_USE_EFC		0x1
-#define TPO_XTD_FMT		0x2
+#define TPO_USE_EFC 	0x1
+#define TPO_XTD_FMT 	0x2
 #define TPAO_USE_TXPD 	0x1
 #define TPAO_NO_CSUM 	0x2
 #define TPAO_USE_RCC 	0x4
@@ -75,6 +75,7 @@ struct tpdu {
 	union tpdu_variable_rest   	_tpduvr;
 };
 
+#ifdef notyet
 /*
  * tpdu info
  * Derived from tpdu_info[][4] in tp_input.c
@@ -91,6 +92,9 @@ struct tpdu_info {
     LIST_ENTRY(tpdu_info) ti_link; 	/* info list */
 };
 
-extern struct tpdu_info_head tp_info_list;
-
+void tpdu_info_init(struct tpdu *);
+void tpdu_info_add(struct tpdu *, unsigned char, unsigned char, unsigned char, unsigned char, unsigned char);
+void tpdu_info_remove(struct tpdu *, unsigned char);
+struct tpdu_info *tpdu_info_lookup(struct tpdu *, unsigned char);
+#endif
 #endif /* _NETISO_TPDU_H_ */

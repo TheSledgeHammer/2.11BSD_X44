@@ -43,14 +43,11 @@ static const struct act_ent {
 static int trick_hc = 1;
 
 #include "tp_events.h"
-static int _Xebec_action __P((int, struct tp_event *, struct tp_pcb *));
-static int _Xebec_index __P((struct tp_event *, struct tp_pcb *));
+static int _Xebec_action(int, struct tp_event *, struct tp_pcb *);
+static int _Xebec_index(struct tp_event *, struct tp_pcb *);
 
 static int
-_Xebec_action(a, e, p)
-	int             a;
-	struct tp_event *e;
-	struct tp_pcb  *p;
+_Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 {
 	int             error;
 	struct mbuf    *data = NULL;
@@ -818,9 +815,7 @@ _Xebec_action(a, e, p)
 }
 
 static int
-_Xebec_index(e, p)
-	struct tp_event *e;
-	struct tp_pcb  *p;
+_Xebec_index(struct tp_event *e, struct tp_pcb *p)
 {
 	switch ((e->ev_number << 4) + (p->tp_state)) {
 	case 0x12:
@@ -953,7 +948,7 @@ _Xebec_index(e, p)
 		return 0;
 	}			/* end switch */
 }				/* _Xebec_index() */
-static const int      inx[26][9] =
+static const int inx[26][9] =
 {
     {0, 0, 0, 0, 0, 0, 0, 0, 0,},
     {0x0, 0x0, 0x0, 0x0, 0x31, 0x0, 0x0, 0x0, 0x0,},
@@ -982,12 +977,11 @@ static const int      inx[26][9] =
     {0x0, 0x49, -1, 0x45, -1, 0x44, 0x48, -1, 0x0,},
     {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, -1,},
 };
+
 int
-tp_driver(p, e)
-	struct tp_pcb *p;
-	struct tp_event *e;
+tp_driver(struct tp_pcb *p, struct tp_event *e)
 {
-	int    index, error = 0;
+	int index, error = 0;
 	const struct act_ent *a;
 	static struct act_ent erroraction = {0, -1};
 

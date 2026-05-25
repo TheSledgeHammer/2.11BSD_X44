@@ -89,34 +89,7 @@ __KERNEL_RCSID(0, "$NetBSD: iso_proto.c,v 1.14 2003/08/07 16:33:37 agc Exp $");
 
 extern struct domain isodomain;
 
-void
-iso_init(void)
-{
-#ifdef RADIX_ART
-	rtable_art_init(AF_ISO, sizeof(struct iso_addr));
-#endif
-#ifdef TUBA
-	tuba_table_init();
-#endif
-}
-
 struct protosw isosw[] = {
-		{
-				.pr_type		= 0,
-				.pr_domain		= &isodomain,
-				.pr_protocol 	= 0,
-				.pr_flags		= 0,
-				.pr_input 		= 0,
-				.pr_output		= 0,
-				.pr_ctlinput 	= 0,
-				.pr_ctloutput	= 0,
-				.pr_usrreq		= 0,
-				.pr_init		= iso_init,
-				.pr_fasttimo	= 0,
-				.pr_slowtimo	= 0,
-				.pr_drain		= 0,
-				.pr_sysctl		= 0,
-		},
 		/* CLTP protocol */
 		{
 				.pr_type		= SOCK_DGRAM,
@@ -149,6 +122,23 @@ struct protosw isosw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= clnp_slowtimo,
 				.pr_drain		= clnp_drain,
+				.pr_sysctl		= 0,
+		},
+		/* RAW CLNP protocol */
+		{
+				.pr_type		= SOCK_DGRAM,
+				.pr_domain		= &isodomain,
+				.pr_protocol 	= ISOPROTO_RAW,
+				.pr_flags		= PR_ATOMIC|PR_ADDR,
+				.pr_input 		= rclnp_input,
+				.pr_output		= rclnp_output,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput	= rclnp_ctloutput,
+				.pr_usrreq		= clnp_usrreq,
+				.pr_init		= 0,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
 				.pr_sysctl		= 0,
 		},
 		/* ES-IS protocol */
@@ -202,6 +192,42 @@ struct protosw isosw[] = {
 				.pr_drain		= 0,
 				.pr_sysctl		= 0,
 		},
+		/* ISOPROTO_TP */
+		{
+				.pr_type		= SOCK_DGRAM,
+				.pr_domain		= &isodomain,
+				.pr_protocol 	= ISOPROTO_TP,
+				.pr_flags		= PR_CONNREQUIRED|PR_WANTRCVD,
+				.pr_input 		= tpclnp_input,
+				.pr_output		= 0,
+				.pr_ctlinput 	= tpclnp_ctlinput,
+				.pr_ctloutput	= tp_ctloutput,
+				.pr_usrreq		= tp_usrreq,
+				.pr_init		= tp_init,
+				.pr_fasttimo	= tp_fasttimo,
+				.pr_slowtimo	= tp_slowtimo,
+				.pr_drain		= tp_drain,
+				.pr_sysctl		= 0,
+		},
+#ifdef TPCONS
+		/* ISOPROTO_TP */
+		{
+				.pr_type		= SOCK_DGRAM,
+				.pr_domain		= &isodomain,
+				.pr_protocol 	= ISOPROTO_TP0,
+				.pr_flags		= PR_CONNREQUIRED|PR_WANTRCVD,
+				.pr_input 		= tpcons_input,
+				.pr_output		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput	= tp_ctloutput,
+				.pr_usrreq		= tp_usrreq,
+				.pr_init		= cons_init,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
+				.pr_sysctl		= 0,
+		},
+#endif
 #ifdef TUBA
 		/* ISOPROTO_TUBA */
 		{
@@ -214,7 +240,7 @@ struct protosw isosw[] = {
 				.pr_ctlinput 	= 0,
 				.pr_ctloutput	= tuba_ctloutput,
 				.pr_usrreq		= tuba_usrreq,
-				.pr_init		= iso_init,
+				.pr_init		= tuba_init,
 				.pr_fasttimo	= tuba_fasttimo,
 				.pr_slowtimo	= tuba_fasttimo,
 				.pr_drain		= 0,

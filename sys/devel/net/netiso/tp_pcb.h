@@ -315,9 +315,6 @@ u_int	tp_start_win;
         CONG_INIT_SAMPLE(pcb); \
     }
 
-#define CONG_ACK(pcb, seq)
-
-
 #define	sototpcb(so) 	((struct tp_pcb *)(so->so_pcb))
 #define	sototpref(so)	((sototpcb(so)->tp_ref))
 #define	tpcbtoso(tp)	((struct socket *)((tp)->tp_sock))

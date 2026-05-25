@@ -79,7 +79,7 @@ __KERNEL_RCSID(0, "$NetBSD: tp_subr.c,v 1.18 2003/08/11 15:17:31 itojun Exp $");
 #include <sys/time.h>
 #include <sys/kernel.h>
 
-#include <netiso/tp_ip.h>
+#include <netiso/tp_proto/tp_ip.h>
 #include <netiso/iso.h>
 #include <netiso/argo_debug.h>
 #include <netiso/tp_timer.h>

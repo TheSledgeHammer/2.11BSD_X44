@@ -85,6 +85,12 @@ __KERNEL_RCSID(0, "$NetBSD: iso.c,v 1.33 2003/08/07 16:33:36 agc Exp $");
 #include <netiso/iso_pcb.h>
 #include <netiso/clnp.h>
 #include <netiso/argo_debug.h>
+#ifdef	TPCONS
+#include <netiso/cons.h>
+#endif	/* TPCONS */
+#ifdef TUBA
+#include <netiso/tuba_table.h>
+#endif
 
 int  iso_interfaces = 0;	/* number of external interfaces */
 
@@ -96,9 +102,9 @@ int  iso_interfaces = 0;	/* number of external interfaces */
 int
 iso_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp, struct proc *p)
 {
-	struct iso_ifreq *ifr = (struct iso_ifreq *) data;
+	struct iso_ifreq *ifr = (struct iso_ifreq *)data;
 	struct iso_ifaddr *ia = 0;
-	struct iso_aliasreq *ifra = (struct iso_aliasreq *) data;
+	struct iso_aliasreq *ifra = (struct iso_aliasreq *)data;
 	int error, hostIsNew, maskIsNew;
 
 	/*
@@ -113,37 +119,41 @@ iso_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp, stru
 	}
 
 	switch (cmd) {
-
 	case SIOCAIFADDR_ISO:
 	case SIOCDIFADDR_ISO:
-		if (ifra->ifra_addr.siso_family == AF_ISO)
+		if (ifra->ifra_addr.siso_family == AF_ISO) {
 			for (; ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
 				if (ia->ia_ifp == ifp &&
 				    SAME_ISOADDR(&ia->ia_addr, &ifra->ifra_addr))
 					break;
 			}
-		if (cmd == SIOCDIFADDR_ISO && ia == 0)
-			return (EADDRNOTAVAIL);
-		/* FALLTHROUGH */
-#if 0
-	case SIOCSIFADDR:
-	case SIOCSIFNETMASK:
-	case SIOCSIFDSTADDR:
-#endif
-		if (p == 0 || (error = suser1(p->p_ucred, &p->p_acflag)))
+		}
+		if ((so->so_state & SS_PRIV) == 0) {
 			return (EPERM);
-
-		if (ifp == 0)
+		}
+		if (ifp == 0) {
 			panic("iso_control");
-		if (ia == 0) {
-			MALLOC(ia, struct iso_ifaddr *, sizeof(*ia), M_IFADDR, M_WAITOK);
-			if (ia == 0)
+		}
+		if (ia == (struct iso_ifaddr *)0) {
+			struct iso_ifaddr *nia;
+			if (cmd == SIOCDIFADDR_ISO) {
+				return (EADDRNOTAVAIL);
+			}
+#ifdef TUBA
+			if (tuba_tree == 0) {
+				tuba_table_init();
+			}
+#endif
+			MALLOC(nia, struct iso_ifaddr *, sizeof(*nia),
+				       M_IFADDR, M_WAITOK);
+			if (nia == (struct iso_ifaddr *)0) {
 				return (ENOBUFS);
-			bzero((caddr_t)ia, sizeof(*ia));
-			TAILQ_INSERT_TAIL(&iso_ifaddr, ia, ia_list);
+			}
+			bzero((caddr_t)nia, sizeof(*nia));
+			TAILQ_INSERT_TAIL(&iso_ifaddr, nia, ia_list);
+			ia = nia;
 			IFAREF((struct ifaddr *)ia);
-			TAILQ_INSERT_TAIL(&ifp->if_addrlist, (struct ifaddr *)ia,
-			    ifa_list);
+			TAILQ_INSERT_TAIL(&ifp->if_addrlist, (struct ifaddr *)ia, ifa_list);
 			IFAREF((struct ifaddr *)ia);
 			ia->ia_ifa.ifa_addr = sisotosa(&ia->ia_addr);
 			ia->ia_ifa.ifa_dstaddr = sisotosa(&ia->ia_dstaddr);
@@ -154,12 +164,14 @@ iso_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp, stru
 			}
 		}
 		break;
-
-	case SIOCGIFADDR_ISO:
-	case SIOCGIFNETMASK_ISO:
-	case SIOCGIFDSTADDR_ISO:
-		if (ia == 0)
+#define cmdbyte(x)	(((x) >> 8) & 0xff)
+	default:
+		if (cmdbyte(cmd) == 'a') {
+			return (snpac_ioctl(so, cmd, data));
+		}
+		if (ia == (struct iso_ifaddr *)0) {
 			return (EADDRNOTAVAIL);
+		}
 		break;
 	}
 	switch (cmd) {
@@ -212,11 +224,7 @@ iso_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp, stru
 	case SIOCDIFADDR_ISO:
 		iso_purgeaddr(&ia->ia_ifa, ifp);
 		break;
-
-#define cmdbyte(x)	(((x) >> 8) & 0xff)
 	default:
-		if (cmdbyte(cmd) == 'a')
-			return (snpac_ioctl(so, cmd, data, p));
 		if (ifp == 0 || ifp->if_ioctl == 0)
 			return (EOPNOTSUPP);
 		return ((*ifp->if_ioctl)(ifp, cmd, data));
@@ -365,4 +373,69 @@ iso_localifa(struct sockaddr_iso *siso)
 next:		;
 	}
 	return ia_maybe;
+}
+
+/*
+ * FUNCTION:		iso_nlctloutput
+ *
+ * PURPOSE:			Set options at the network level
+ *
+ * RETURNS:			E*
+ *
+ * SIDE EFFECTS:
+ *
+ * NOTES:			This could embody some of the functions of
+ *					rclnp_ctloutput and cons_ctloutput.
+ */
+int
+iso_tpctloutput(int cmd, int optname, caddr_t pcb, struct mbuf *m)
+{
+	struct isopcb *isop = (struct isopcb *)pcb;
+	int error = 0; /* return value */
+	caddr_t data; /* data for option */
+	int data_len; /* data's length */
+
+	IFDEBUG(D_ISO)
+		printf("iso_nlctloutput: cmd %x, opt %x, pcb %x, m %x\n",
+			cmd, optname, pcb, m);
+	ENDDEBUG
+
+	if ((cmd != PRCO_GETOPT) && (cmd != PRCO_SETOPT))
+		return (EOPNOTSUPP);
+
+	data = mtod(m, caddr_t);
+	data_len = (m)->m_len;
+
+	IFDEBUG(D_ISO)
+		printf("iso_nlctloutput: data is:\n");
+		dump_buf(data, data_len);
+	ENDDEBUG
+
+	switch (optname) {
+#ifdef	TPCONS
+	case CONSOPT_X25CRUD:
+		if (cmd == PRCO_GETOPT) {
+			error = EOPNOTSUPP;
+			break;
+		}
+
+		if (data_len > MAXX25CRUDLEN) {
+			error = EINVAL;
+			break;
+		}
+
+		IFDEBUG(D_ISO)
+			printf("iso_nlctloutput: setting x25 crud\n");
+		ENDDEBUG
+
+		bcopy(data, (caddr_t)isop->isop_x25crud, (unsigned)data_len);
+		isop->isop_x25crud_len = data_len;
+		break;
+#endif	/* TPCONS */
+		default:
+		error = EOPNOTSUPP;
+	}
+	if (cmd == PRCO_SETOPT)
+		m_freem(m);
+	return (error);
 }

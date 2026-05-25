@@ -105,21 +105,21 @@ tuba_lookup(struct radix_node_head *rnh, struct sockaddr_iso *siso)
 	struct tuba_cache **new;
 	int dupentry = 0, sum_a = 0, sum_b = 0, old_size, i;
 
-    rn =  rnh->rnh_matchaddr((caddr_t)&siso->siso_addr, tuba_tree);
-    if (rn && (rn->rn_flags & RNF_ROOT) == 0) {
-        tc = (struct tuba_cache *)rn;
-        tc->tc_time = time.tv_sec;
-        i = tc->tc_index;
+	rn = rnh->rnh_matchaddr((caddr_t)&siso->siso_addr, tuba_tree);
+	if (rn && (rn->rn_flags & RNF_ROOT) == 0) {
+		tc = (struct tuba_cache *) rn;
+		tc->tc_time = time.tv_sec;
+		i = tc->tc_index;
 done:
         siso->siso_nlen--;
-        return (i);
-    }
-    R_Malloc(tc, struct tuba_cache *, sizeof(*tc));
-    if (tc == NULL) {
-        i = 0;
+		return (i);
+	}
+	R_Malloc(tc, struct tuba_cache *, sizeof(*tc));
+	if (tc == NULL) {
+		i = 0;
 		goto done;
-    }
-    Bzero(tc, sizeof(*tc));
+	}
+	Bzero(tc, sizeof(*tc));
 	tc->tc_addr = siso->siso_addr;
 	siso->siso_nlen--;
 	tc->tc_siso.siso_addr = siso->siso_addr;
@@ -130,7 +130,7 @@ done:
 	tc->tc_siso.siso_family = AF_ISO;
 	tc->tc_siso.siso_len = sizeof(tc->tc_siso);
 	tc->tc_time = time.tv_sec;
-	for (i = sum_a = tc->tc_siso.siso_nlen; --i >= 0; ) {
+	for (i = sum_a = tc->tc_siso.siso_nlen; --i >= 0;) {
 		*(i & 1 ? &sum_a : &sum_b) += (u_char)tc->tc_siso.siso_data[i];
 	}
 	REDUCE(tc->tc_sum, (sum_a << 8) + sum_b);
@@ -157,15 +157,15 @@ done:
 		Free(tc);
 		return (0);
 	}
-    Bzero(new, i);
+	Bzero(new, i);
 	if (tuba_table) {
 		Bcopy(tuba_table, new, i >> 1);
 		Free(tuba_table);
 	}
-    tuba_table = new;
+	tuba_table = new;
 	i = tuba_table_size;
 fixup:
 	tuba_table[i] = tc;
 	tc->tc_index = i;
-    return (tc->tc_index);
+	return (tc->tc_index);
 }

@@ -96,7 +96,7 @@ scsi_command(int fd, void *cmd, size_t cmdlen, void *data, size_t datalen,
 void
 scsi_mode_sense(int fd, u_int8_t pgcode, u_int8_t pctl, void *buf, size_t len)
 {
-	struct scsi_mode_sense_6 cmd;
+	struct scsipi_mode_sense cmd;
 
 	memset(&cmd, 0, sizeof(cmd));
 	memset(buf, 0, len);
@@ -111,7 +111,7 @@ scsi_mode_sense(int fd, u_int8_t pgcode, u_int8_t pctl, void *buf, size_t len)
 void
 scsi_mode_select(int fd, u_int8_t byte2, void *buf, size_t len)
 {
-	struct scsi_mode_select_6 cmd;
+	struct scsipi_mode_select cmd;
 
 	memset(&cmd, 0, sizeof(cmd));
 
@@ -125,7 +125,7 @@ scsi_mode_select(int fd, u_int8_t byte2, void *buf, size_t len)
 void
 scsi_request_sense(int fd, void *buf, size_t len)
 {
-	struct scsi_request_sense cmd;
+	struct scsipi_sense cmd;
 
 	memset(&cmd, 0, sizeof(cmd));
 	memset(buf, 0, len);

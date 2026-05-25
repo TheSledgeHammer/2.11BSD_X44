@@ -95,7 +95,7 @@ __KERNEL_RCSID(0, "$NetBSD: tp_subr2.c,v 1.22 2003/08/11 15:17:31 itojun Exp $")
 
 #include <netiso/argo_debug.h>
 #include <netiso/tp_param.h>
-#include <netiso/tp_ip.h>
+#include <netiso/tp_proto/tp_ip.h>
 #include <netiso/iso.h>
 #include <netiso/iso_errno.h>
 #include <netiso/iso_pcb.h>

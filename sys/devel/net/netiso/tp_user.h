@@ -152,10 +152,8 @@ struct tp_disc_reason {
 #define TPFLAG_GENERAL_ADDR		(u_char)0x04	/* bound to wildcard
 							 * addr */
 
-
 /*
  * **********************end flags******************************
  */
 
-
-#endif				/* _NETISO_TP_USER_H_ */
+#endif	/* _NETISO_TP_USER_H_ */

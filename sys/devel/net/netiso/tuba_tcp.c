@@ -149,13 +149,13 @@ tuba_tcp_input(struct mbuf *m, ...)
 #ifdef INET
 	case 4:
 		af = AF_INET;
-		tuba4_input(m, src, dst, ip, th, toff, tlen, lindex, findex);
+		tuba4_tcp_input(m, src, dst, ip, th, toff, tlen, lindex, findex);
 		break;
 #endif
 #ifdef INET6
 	case 6:
 		af = AF_INET6;
-		tuba6_input(m, src, dst, ip6, th, toff, tlen, lindex, findex);
+		tuba6_tcp_input(m, src, dst, ip6, th, toff, tlen, lindex, findex);
 		break;
 #endif
 	default:

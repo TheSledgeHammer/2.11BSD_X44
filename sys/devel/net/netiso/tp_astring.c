@@ -34,7 +34,7 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: tp_astring.c,v 1.5 2003/08/07 16:33:38 agc Exp $");
 
-char           *tp_sstring[] = {
+char *tp_sstring[] = {
 	"ST_ERROR(0x0)",
 	"TP_CLOSED(0x1)",
 	"TP_CRSENT(0x2)",
@@ -46,7 +46,7 @@ char           *tp_sstring[] = {
 	"TP_CONFIRMING(0x8)",
 };
 
-char           *tp_estring[] = {
+char *tp_estring[] = {
 	"TM_inact(0x0)",
 	"TM_retrans(0x1)",
 	"TM_sendack(0x2)",

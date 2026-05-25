@@ -81,7 +81,7 @@ __KERNEL_RCSID(0, "$NetBSD: tp_output.c,v 1.24 2003/08/11 15:17:30 itojun Exp $"
 #include <netiso/tp_param.h>
 #include <netiso/tp_user.h>
 #include <netiso/tp_stat.h>
-#include <netiso/tp_ip.h>
+#include <netiso/tp_proto/tp_ip.h>
 #include <netiso/tp_clnp.h>
 #include <netiso/tp_timer.h>
 #include <netiso/argo_debug.h>
@@ -117,13 +117,10 @@ __KERNEL_RCSID(0, "$NetBSD: tp_output.c,v 1.24 2003/08/11 15:17:30 itojun Exp $"
  */
 
 int
-tp_consistency(tpcb, cmd, param)
-	u_int           cmd;
-	struct tp_conn_param *param;
-	struct tp_pcb  *tpcb;
+tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 {
-	int    error = EOK;
-	int             class_to_use = tp_mask_to_num(param->p_class);
+	int error = EOK;
+	int class_to_use = tp_mask_to_num(param->p_class);
 
 #ifdef TPPT
 	if (tp_traceflags[D_SETPARAMS]) {
@@ -311,7 +308,7 @@ tp_consistency(tpcb, cmd, param)
 	}
 
 	if ((error == 0) && (cmd & TP_FORCE)) {
-		long            dusize = ((long) param->p_ptpdusize) << 7;
+		long dusize = ((long) param->p_ptpdusize) << 7;
 		/* Enforce Negotation rules below */
 		tpcb->tp_class = param->p_class;
 		if (tpcb->tp_use_checksum || param->p_use_checksum)
@@ -388,17 +385,14 @@ done:
  * NOTES:
  */
 int
-tp_ctloutput(cmd, so, level, optname, mp)
-	int             cmd, level, optname;
-	struct socket  *so;
-	struct mbuf   **mp;
+tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **mp)
 {
 	struct proc *p = curproc;		/* XXX */
 	struct tp_pcb  *tpcb = sototpcb(so);
-	int             s = splsoftnet();
-	caddr_t         value;
-	unsigned        val_len;
-	int             error = 0;
+	int s = splsoftnet();
+	caddr_t value;
+	unsigned val_len;
+	int error = 0;
 
 #ifdef TPPT
 	if (tp_traceflags[D_REQUEST]) {
@@ -433,12 +427,12 @@ tp_ctloutput(cmd, so, level, optname, mp)
 	 *	Hook so one can set network options via a tp socket.
 	 */
 	if (level == SOL_NETWORK) {
-		if ((tpcb->tp_nlproto == NULL) || (tpcb->tp_npcb == NULL))
+		if ((tpcb->tp_tpproto == NULL) || (tpcb->tp_npcb == NULL))
 			error = ENOTSOCK;
-		else if (tpcb->tp_nlproto->nlp_ctloutput == NULL)
+		else if (tpcb->tp_tpproto->tp_ctloutput == NULL)
 			error = EOPNOTSUPP;
 		else
-			return ((tpcb->tp_nlproto->nlp_ctloutput) (cmd, optname,
+			return ((tpcb->tp_tpproto->tp_ctloutput) (cmd, optname,
 						       tpcb->tp_npcb, *mp));
 		goto done;
 	} else if (level == SOL_SOCKET) {
@@ -509,12 +503,12 @@ tp_ctloutput(cmd, so, level, optname, mp)
 			error = EPERM;
 		} else if (cmd != PRCO_SETOPT || tpcb->tp_state != TP_CLOSED ||
 			   (tpcb->tp_flags & TPF_GENERAL_ADDR) ||
-			   tpcb->tp_next == 0)
+			   LIST_NEXT(tpcb, tp_list) == 0)
 			error = EINVAL;
 		else {
 			struct tp_pcb *t;
 			error = EADDRINUSE;
-			for (t = tp_listeners; t; t = t->tp_nextlisten)
+			LIST_FOREACH(t, &tp_listeners, tp_nextlisten) {
 				if ((t->tp_flags & TPF_GENERAL_ADDR) == 0 &&
 				    t->tp_domain == tpcb->tp_domain)
 					switch (tpcb->tp_domain) {
@@ -537,10 +531,14 @@ tp_ctloutput(cmd, so, level, optname, mp)
 			tpcb->tp_lsuffixlen = 0;
 			tpcb->tp_state = TP_LISTENING;
 			error = 0;
-			remque(tpcb);
+			//remque(tpcb);
+			LIST_REMOVE(tpcb, tp_list);
+			LIST_INSERT_HEAD(&tp_listeners, tpcb, tp_nextlisten);
+			/*
 			tpcb->tp_next = tpcb->tp_prev = tpcb;
 			tpcb->tp_nextlisten = tp_listeners;
 			tp_listeners = tpcb;
+			*/
 		}
 		break;
 

@@ -32,11 +32,6 @@
  *
  *	@(#)tuba_usrreq.c	8.1 (Berkeley) 6/10/93
  */
-
-/*
- * TODO:
- * - Add IPv6 Support.
- */
  
 #include <sys/cdefs.h>
 
@@ -82,40 +77,6 @@
  */
 extern char *tcpstates[];
 
-int
-tuba_attach(struct socket *so)
-{
-	struct tcpcb *tp;
-	struct isopcb *isop;
-	struct inpcb *inp;
-	int error;
-
-	error = iso_pcballoc(so, &tubaisoptable);
-	if (error != 0) {
-		return (error);
-	}
-	isop = (struct isopcb *)so->so_pcb;
-	so->so_pcb = 0;
-	error = tcp_attach(so);
-	if (error != 0) {
-		isop->isop_socket = 0;
-		iso_pcbdetach(isop);
-	} else {
-		error = in_pcballoc(so, &tubainptable);
-		if (error != 0) {
-			return (error);
-		}
-		inp = sotoinpcb(so);
-		tp = intotcpcb(inp);
-		if (tp == 0) {
-			in_pcbdetach(inp);
-			return (ENOBUFS);
-		}
-		tp->t_tuba_pcb = (caddr_t)isop;
-	}
-	return (0);
-}
-
 /*
  * Process a TCP user request for TCP tb.  If this is a send request
  * then m is the mbuf chain of send data.  If this is a timer expiration
@@ -125,39 +86,92 @@ tuba_attach(struct socket *so)
 int
 tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct mbuf *control, struct proc *p)
 {
-	register struct inpcb *inp;
-	register struct isopcb *isop = NULL;
-	register struct tcpcb *tp = NULL;
+#ifdef INET
+	struct inpcb *inp;
+#endif
+#ifdef INET6
+	struct in6pcb *in6p;
+#endif
+	struct isopcb *isop = NULL;
+	struct tcpcb *tp = NULL;
 	int s;
 	int error = 0;
 	int ostate;
+	int family;	/* family of the socket */
 	struct sockaddr_iso *siso;
 
-	if (req == PRU_CONTROL)
+	family = so->so_proto->pr_domain->dom_family;
+
+	if (req == PRU_CONTROL) {
 		return (iso_control(so, (long)m, (caddr_t)nam,
 		    (struct ifnet *)control, p));
+	}
 
 	s = splsoftnet();
-	inp = sotoinpcb(so);
+	switch (family) {
+#ifdef INET
+	case PF_INET:
+		inp = sotoinpcb(so);
+#ifdef INET6
+		in6p = NULL;
+#endif
+		break;
+#endif
+#ifdef INET6
+	case PF_INET6:
+		inp = NULL;
+		in6p = sotoin6pcb(so);
+		break;
+#endif
+	default:
+		splx(s);
+		return (EAFNOSUPPORT);
+	}
+
 	/*
 	 * When a TCP is attached to a socket, then there will be
 	 * a (struct inpcb) pointed at by the socket, and this
 	 * structure will point at a subsidary (struct tcpcb).
 	 */
+#ifndef INET6
 	if (inp == 0 && req != PRU_ATTACH) {
+#else
+	if ((inp == 0 && in6p == 0) && req != PRU_ATTACH) {
+#endif
 		error = EINVAL;
 		goto release;
 	}
+#ifdef INET
 	if (inp) {
 		tp = intotcpcb(inp);
-		if (tp == 0)
-			panic("tuba_usrreq");
+		if (tp == 0) {
+			panic("tuba_usrreq: tcppcb");
+		}
 		ostate = tp->t_state;
 		isop = (struct isopcb *)tp->t_tuba_pcb;
-		if (isop == 0)
-			panic("tuba_usrreq 2");
-	} else
+		if (isop == 0) {
+			panic("tuba_usrreq: isopcb");
+		}
+	} else {
 		ostate = 0;
+	}
+#endif
+#ifdef INET6
+	if (in6p) {
+		tp = in6totcpcb(in6p);
+		if (tp == 0) {
+			panic("tuba_usrreq: tcppcb");
+		}
+		ostate = tp->t_state;
+		isop = (struct isopcb *)tp->t_tuba_pcb;
+		if (isop == 0) {
+			panic("tuba_usrreq: isopcb");
+		}
+	} else {
+		ostate = 0;
+	}
+#endif
+
 	switch (req) {
 
 		/*
@@ -167,26 +181,9 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 		 * tcp/ip ones.
 		 */
 	case PRU_ATTACH:
-		error = iso_pcballoc(so, &tubaisoptable);
+		error = tuba_pcbattach(so, family);
 		if (error != 0) {
-			break;
-		}
-		isop = (struct isopcb *)so->so_pcb;
-		so->so_pcb = 0;
-		error = tcp_usrreq(so, req, m, nam, control, p);
-		if (error != 0) {
-			isop->isop_socket = 0;
-			iso_pcbdetach(isop);
-		} else {
-			inp = sotoinpcb(so);
-			CIRCLEQ_REMOVE(&tubainptable->inpt_queue, &inp->inp_head, inph_queue);
-			CIRCLEQ_INSERT_HEAD(&tubainptable->inpt_queue, &inp->inp_head, inph_queue);
-			inp->inp_table = &tubainptable;
-			tp = intotcpcb(inp);
-
-			if (tp == 0)
-				panic("tuba_usrreq 3");
-			tp->t_tuba_pcb = (caddr_t) isop;
+			panic("tuba_usrreq: attach");
 		}
 		goto notrace;
 
@@ -218,22 +215,51 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 			break;
 		}
 		error = iso_pcbbind(isop, nam, p);
-		if ((error = iso_pcbbind(isop, nam, p)) ||
-		    (siso = isop->isop_laddr) == 0)
+		siso = isop->isop_laddr;
+		if (error || siso == 0) {
 			break;
-		bcopy(TSEL(siso), &inp->inp_lport, 2);
-		if (siso->siso_nlen
-				&& !(inp->inp_laddr.s_addr = tuba_lookup(siso, M_WAITOK)))
-			error = ENOBUFS;
+		}
+		switch (family) {
+#ifdef INET
+		case PF_INET:
+			bcopy(TSEL(siso), &inp->inp_lport, 2);
+			inp->inp_laddr.s_addr = tuba_lookup(siso, M_WAITOK);
+			if (siso->siso_nlen && !inp->inp_laddr.s_addr) {
+				error = ENOBUFS;
+			}
+			break;
+#endif
+#ifdef INET
+		case PF_INET6:
+			bcopy(TSEL(siso), &in6p->in6p_lport, 2);
+			in6p->in6p_laddr.s6_addr = tuba_lookup(siso, M_WAITOK);
+			if (siso->siso_nlen && !in6p->in6p_laddr.s6_addr) {
+				error = ENOBUFS;
+			}
+			break;
+#endif
+		}
 		break;
 
 	case PRU_LISTEN:
+#ifdef INET
 		if (inp->inp_lport == 0) {
 			error = iso_pcbbind(isop, (struct mbuf *)0, (struct proc *)0);
-			if (error)
+			if (error) {
 				break;
+			}
 		}
 		bcopy(TSEL(isop->isop_laddr), &inp->inp_lport, 2);
+#endif
+#ifdef INET6
+		if (in6p->in6p_lport == 0) {
+			error = iso_pcbbind(isop, (struct mbuf *)0, (struct proc *)0);
+			if (error) {
+				break;
+			}
+		}
+		bcopy(TSEL(isop->isop_laddr), &in6p->in6p_lport, 2);
+#endif
 		tp->t_state = TCPS_LISTEN;
 		break;
 
@@ -241,12 +267,25 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 		 * Prepare to accept connections.
 		 */
 	case PRU_CONNECT:
+#ifdef INET
 		if (inp->inp_lport == 0) {
 			error = iso_pcbbind(isop, (struct mbuf *)0, (struct proc *)0);
-			if (error)
+			if (error) {
 				break;
+			}
 		}
 		bcopy(TSEL(isop->isop_laddr), &inp->inp_lport, 2);
+#endif
+#ifdef INET6
+		if (in6p->in6p_lport == 0) {
+			error = iso_pcbbind(isop, (struct mbuf *)0, (struct proc *)0);
+			if (error) {
+				break;
+			}
+		}
+		bcopy(TSEL(isop->isop_laddr), &in6p->in6p_lport, 2);
+#endif
+
 		/*
 		 * Initiate connection to peer.
 		 * Create a template for use in transmissions on this connection.
@@ -254,7 +293,8 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 		 * Start keep-alive timer, and seed output sequence space.
 		 * Send initial segment on connection.
 		 */
-		if ((error = iso_pcbconnect(isop, nam)) != 0) {
+		error = iso_pcbconnect(isop, nam);
+		if (error != 0) {
 			break;
 		}
 		if ((siso = isop->isop_laddr) && siso->siso_nlen > 1) {
@@ -263,8 +303,9 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 			panic("tuba_usrreq: connect");
 		}
 		siso = mtod(nam, struct sockaddr_iso *);
-		if (!(inp->inp_faddr.s_addr = tuba_lookup(siso, M_WAITOK))) {
-	unconnect:
+#ifdef INET
+		inp->inp_faddr.s_addr = tuba_lookup(siso, M_WAITOK);
+		if (!inp->inp_faddr.s_addr) {
 			iso_pcbdisconnect(isop);
 			error = ENOBUFS;
 			break;
@@ -273,10 +314,34 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 		if (inp->inp_laddr.s_addr == 0 &&
 		    (inp->inp_laddr.s_addr =
 		     tuba_lookup(isop->isop_laddr, M_WAITOK)) == 0) {
-			goto unconnect;
+			iso_pcbdisconnect(isop);
+			error = ENOBUFS;
+			break;
 		}
-		if ((tp->t_template = tcp_template(tp)) == 0)
-			goto unconnect;
+#endif
+#ifdef INET6
+		in6p->in6p_faddr.s6_addr = tuba_lookup(siso, M_WAITOK);
+		if (!in6p->in6p_faddr.s6_addr) {
+			iso_pcbdisconnect(isop);
+			error = ENOBUFS;
+			break;
+		}
+		bcopy(TSEL(isop->isop_faddr), &in6p->in6p_fport, 2);
+		if (in6p->in6p_laddr.s6_addr == 0 &&
+		    (in6p->in6p_laddr.s6_addr =
+		     tuba_lookup(isop->isop_laddr, M_WAITOK)) == 0) {
+			iso_pcbdisconnect(isop);
+			error = ENOBUFS;
+			break;
+		}
+#endif
+		tp->t_template = tcp_template(tp);
+		if (tp->t_template == 0) {
+			iso_pcbdisconnect(isop);
+			error = ENOBUFS;
+			break;
+		}
+
 		soisconnecting(so);
 		tcpstat.tcps_connattempt++;
 		tp->t_state = TCPS_SYN_SENT;
@@ -354,76 +419,10 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 		goto notrace;
 	}
 	if (tp && (so->so_options & SO_DEBUG)) {
-		tcp_trace(TA_USER, ostate, tp, (struct tcpiphdr *)0, req);
+		tcp_trace(TA_USER, ostate, tp, (struct tcphdr *)0, req);
 	}
 notrace:
 release:
-	splx(s);
-	return (error);
-}
-
-int
-tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct mbuf *control, struct proc *p)
-{
-	register struct inpcb *inp;
-	register struct isopcb *isop;
-	register struct tcpcb *tp;
-	int s;
-	int error = 0;
-	int ostate;
-	struct sockaddr_iso *siso;
-
-	if (req == PRU_CONTROL) {
-		return (iso_control(so, (int)m, (caddr_t)nam, (struct ifnet *)control, p));
-	}
-
-	s = splnet();
-	inp = sotoinpcb(so);
-	/*
-	 * When a TCP is attached to a socket, then there will be
-	 * a (struct inpcb) pointed at by the socket, and this
-	 * structure will point at a subsidary (struct tcpcb).
-	 */
-	if (inp == 0  && req != PRU_ATTACH) {
-		splx(s);
-		return (EINVAL);		/* XXX */
-	}
-	if (inp) {
-		tp = intotcpcb(inp);
-		if (tp == 0) {
-			panic("tuba_usrreq");
-		}
-		ostate = tp->t_state;
-		isop = (struct isopcb *)tp->t_tuba_pcb;
-		if (isop == 0) {
-			panic("tuba_usrreq 2");
-		}
-	} else {
-		ostate = 0;
-	}
-
-	switch (req) {
-	/*
-	 * TCP attaches to socket via PRU_ATTACH, reserving space,
-	 * and an internet control block.  We also need to
-	 * allocate an isopcb and separate the control block from
-	 * tcp/ip ones.
-	 */
-	case PRU_ATTACH:
-	case PRU_DETACH:
-	case PRU_BIND:
-	case PRU_LISTEN:
-	case PRU_CONNECT:
-	case PRU_CONNECT2:
-	case PRU_DISCONNECT:
-	case PRU_ACCEPT:
-	case PRU_SHUTDOWN:
-	case PRU_ABORT:
-	case PRU_SOCKADDR:
-	case PRU_PEERADDR:
-	}
-
-notrace:
 	splx(s);
 	return (error);
 }

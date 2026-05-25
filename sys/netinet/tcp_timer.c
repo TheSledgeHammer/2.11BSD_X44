@@ -242,14 +242,14 @@ tcp_delack(void *arg)
  * causes finite state machine actions if timers expire.
  */
 void
-tcp_slowtimo()
+tcp_slowtimo(void)
 {
 	int s;
 
 	s = splsoftnet();
 	tcp_maxidle = tcp_keepcnt * tcp_keepintvl;
 	tcp_iss_seq += TCP_ISSINCR;			/* increment iss */
-	tcp_now++;					/* for timestamps */
+	tcp_now++;							/* for timestamps */
 	splx(s);
 }
 

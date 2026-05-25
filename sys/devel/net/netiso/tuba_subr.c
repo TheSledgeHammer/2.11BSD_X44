@@ -112,6 +112,9 @@ static void tuba_ip6_cksum(struct mbuf *, struct sockaddr_iso *, struct sockaddr
 void
 tuba_init(void)
 {
+#ifdef RADIX_ART
+	rtable_art_init(AF_ISO, sizeof(struct iso_addr));
+#endif
 	/* INET */
 	in_pcbinit(&tubainptable, tubahashsize, tubahashsize);
 	/* ISO */
@@ -170,6 +173,73 @@ tuba_refcnt(struct isopcb *isop, int delta)
 	if ((index != 0) && (tc != NULL) && (delta == 1 || tc->tc_refcnt > 0)) {
 		tc->tc_refcnt += delta;
 	}
+}
+
+int
+tuba_pcbattach(struct socket *so, int family)
+{
+	struct tcpcb *tp;
+	struct isopcb *isop;
+#ifdef INET
+	struct inpcb *inp;
+#endif
+#ifdef INET6
+	struct in6pcb *in6p;
+#endif
+	int error;
+
+	error = iso_pcballoc(so, &tubaisoptable);
+	if (error != 0) {
+		return (error);
+	}
+	isop = (struct isopcb *)so->so_pcb;
+	so->so_pcb = 0;
+	error = tcp_attach(so);
+	if (error != 0) {
+		isop->isop_socket = 0;
+		iso_pcbdetach(isop);
+	} else {
+		switch (family) {
+#ifdef INET
+		case PF_INET:
+			if (inp != 0) {
+				return (EISCONN);
+			}
+			error = in_pcballoc(so, &tubainptable);
+			if (error != 0) {
+				return (error);
+			}
+			inp = sotoinpcb(so);
+			tp = intotcpcb(inp);
+			if (tp == 0) {
+				in_pcbdetach(inp);
+				return (ENOBUFS);
+			}
+			break;
+#endif
+#ifdef INET6
+		case PF_INET6:
+			if (inp != 0 || in6p != 0) {
+				return (EISCONN);
+			}
+			error = in6_pcballoc(so, &tubainptable);
+			if (error != 0) {
+				return (error);
+			}
+			in6p = sotoin6pcb(so);
+			tp = in6totcpcb(in6p);
+			if (tp == 0) {
+				in6_pcbdetach(in6p);
+				return (ENOBUFS);
+			}
+			break;
+#endif
+		default:
+			return (EAFNOSUPPORT);
+		}
+		tp->t_tuba_pcb = (caddr_t)isop;
+	}
+	return (0);
 }
 
 void
@@ -294,7 +364,7 @@ tuba_ip4_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 }
 
 int
-tuba4_output(struct mbuf *m, struct tcpcb *tp)
+tuba4_tcp_output(struct mbuf *m, struct tcpcb *tp)
 {
 	struct ip *ip;
 	struct tcphdr *th;
@@ -349,7 +419,7 @@ tuba4_output(struct mbuf *m, struct tcpcb *tp)
 }
 
 void
-tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, struct tcphdr *th, int toff, int tlen, u_long lindex, u_long findex)
+tuba4_tcp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, struct tcphdr *th, int toff, int tlen, u_long lindex, u_long findex)
 {
 	ip = mtod(m, struct ip *);
 	IP6_EXTHDR_GET(th, struct tcphdr *, m, toff, sizeof(struct tcphdr));
@@ -359,6 +429,25 @@ tuba4_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
 	}
 	tuba_ip4_cksum(m, src, dst, ip, th, tlen, lindex, findex);
 }
+
+#ifdef notyet
+int
+tuba4_udp_output(struct mbuf *m, )
+{
+
+}
+
+void
+tuba4_udp_input(struct mbuf *m, struct ip *ip, struct udphdr *uh)
+{
+	ip = mtod(m, struct ip *);
+	IP6_EXTHDR_GET(uh, struct udphdr *, m, toff, sizeof(struct udphdr));
+	if (uh == NULL) {
+		udpstat.udps_hdrops++;
+		return;
+	}
+}
+#endif
 #endif
 
 #ifdef INET6
@@ -469,7 +558,7 @@ tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 }
 
 int
-tuba6_output(struct mbuf *m, struct tcpcb *tp)
+tuba6_tcp_output(struct mbuf *m, struct tcpcb *tp)
 {
 	struct ip6_hdr *ip6;
 	struct tcphdr *th;
@@ -524,7 +613,7 @@ tuba6_output(struct mbuf *m, struct tcpcb *tp)
 }
 
 void
-tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, struct tcphdr *th, int toff, int tlen, u_long lindex, u_long findex)
+tuba6_tcp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, struct tcphdr *th, int toff, int tlen, u_long lindex, u_long findex)
 {
 	ip6 = mtod(m, struct ip6_hdr *);
 	IP6_EXTHDR_GET(th, struct tcphdr *, m, toff, sizeof(struct tcphdr));
@@ -535,4 +624,22 @@ tuba6_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, 
 	tuba_ip6_cksum(m, src, dst, ip6, th, tlen, lindex, findex);
 }
 
+#ifdef notyet
+int
+tuba6_udp_output(struct mbuf *m, )
+{
+
+}
+
+void
+tuba6_udp_input(struct mbuf *m, struct ip6_hdr *ip6, struct udphdr *uh)
+{
+	ip6 = mtod(m, struct ip6_hdr *);
+	IP6_EXTHDR_GET(uh, struct udphdr *, m, toff, sizeof(struct udphdr));
+	if (uh == NULL) {
+		udpstat.udps_hdrops++;
+		return;
+	}
+}
+#endif
 #endif

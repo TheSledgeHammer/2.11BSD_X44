@@ -82,7 +82,7 @@ __KERNEL_RCSID(0, "$NetBSD: tp_usrreq.c,v 1.23 2003/08/11 15:17:31 itojun Exp $"
 #include <netiso/tp_timer.h>
 #include <netiso/tp_stat.h>
 #include <netiso/tp_seq.h>
-#include <netiso/tp_ip.h>
+#include <netiso/tp_proto/tp_ip.h>
 #include <netiso/tp_pcb.h>
 #include <netiso/tp_var.h>
 #include <netiso/argo_debug.h>
@@ -103,11 +103,9 @@ struct tp_pcb  *tp_listeners, *tp_intercepts;
  *  print (str) followed by the control info in the mbufs of an mbuf chain (n)
  */
 void
-dump_mbuf(n, str)
-	struct mbuf    *n;
-	char           *str;
+dump_mbuf(struct mbuf *n, char *str)
 {
-	struct mbuf    *nextrecord;
+	struct mbuf *nextrecord;
 
 	printf("dump %s\n", str);
 
@@ -164,12 +162,7 @@ dump_mbuf(n, str)
  *  E* whatever is returned from the fsm.
  */
 int
-tp_rcvoob(tpcb, so, m, outflags, inflags)
-	struct tp_pcb  *tpcb;
-	struct socket *so;
-	struct mbuf *m;
-	int            *outflags;
-	int             inflags;
+tp_rcvoob(struct tp_pcb *tpcb, struct socket *so, struct mbuf *m, int *outflags, int inflags)
 {
 	struct mbuf *n;
 	struct sockbuf *sb = &so->so_rcv;
@@ -279,10 +272,6 @@ restart:
  */
 int
 tp_sendoob(struct tp_pcb *tpcb, struct socket *so, struct mbuf *xdata, int *outflags)
-	struct tp_pcb  *tpcb;
-	struct socket *so;
-	struct mbuf *xdata;
-	int *outflags;	/* not used */
 {
 	/*
 	 * Each mbuf chain represents a sequence # in the XPD seq space.

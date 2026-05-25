@@ -107,10 +107,6 @@ __KERNEL_RCSID(0, "$NetBSD: tp_input.c,v 1.17 2004/02/13 17:56:17 wiz Exp $");
 #include <netiso/tp_var.h>
 #include <netiso/iso_var.h>
 
-#ifdef TRUE
-#undef FALSE
-#undef TRUE
-#endif
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
@@ -119,11 +115,10 @@ __KERNEL_RCSID(0, "$NetBSD: tp_input.c,v 1.17 2004/02/13 17:56:17 wiz Exp $");
 
 static struct socket *tp_newsocket(struct socket *, struct sockaddr *, caddr_t, u_int, u_int);
 
-struct mbuf    *
-tp_inputprep(m)
-	struct mbuf *m;
+struct mbuf *
+tp_inputprep(struct mbuf *m)
 {
-	int             hdrlen;
+	int hdrlen;
 
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_TPINPUT]) {
@@ -260,12 +255,7 @@ static u_char   tpdu_info[][4] =
  * NOTES:
  */
 static struct socket *
-tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
-	struct socket  *so;
-	struct sockaddr *fname;
-	caddr_t         cons_channel;
-	u_int          class_to_use;
-	u_int           netservice;
+tp_newsocket(struct socket *so, struct sockaddr *fname, caddr_t cons_channel, u_int class_to_use, u_int netservice)
 {
 	struct tp_pcb *tpcb = sototpcb(so);	/* old tpcb, needed
 							 * below */
@@ -918,20 +908,19 @@ again:
 			 * kind of like a pcbconnect() but don't need
 			 * or want all those checks.
 			 */
-			(tpcb->tp_nlproto->nlp_putnetaddr) (tpcb->tp_npcb, faddr, TP_FOREIGN);
-			(tpcb->tp_nlproto->nlp_putnetaddr) (tpcb->tp_npcb, laddr, TP_LOCAL);
+			(tpcb->tp_tpproto->tp_putnetaddr)(tpcb->tp_npcb, faddr, TP_FOREIGN);
+			(tpcb->tp_tpproto->tp_putnetaddr)(tpcb->tp_npcb, laddr, TP_LOCAL);
 
 			/* stash the f suffix in the new tpcb */
 			if ((tpcb->tp_fsuffixlen = fsufxlen) != 0) {
 				bcopy(fsufxloc, tpcb->tp_fsuffix, fsufxlen);
-				(tpcb->tp_nlproto->nlp_putsufx)
+				(tpcb->tp_tpproto->tp_putsufx)
 					(tpcb->tp_npcb, fsufxloc, fsufxlen, TP_FOREIGN);
 			}
 			/* stash the l suffix in the new tpcb */
 			tpcb->tp_lsuffixlen = lsufxlen;
 			bcopy(lsufxloc, tpcb->tp_lsuffix, lsufxlen);
-			(tpcb->tp_nlproto->nlp_putsufx)
-				(tpcb->tp_npcb, lsufxloc, lsufxlen, TP_LOCAL);
+			(tpcb->tp_tpproto->tp_putsufx)(tpcb->tp_npcb, lsufxloc, lsufxlen, TP_LOCAL);
 #ifdef TP_PERF_MEAS
 			if (tpcb->tp_perf_on = perf_meas) {	/* assignment */
 				/*
@@ -1748,9 +1737,7 @@ respond:
  * NOTES:	 It would be nice if it got the network header size as well.
  */
 int
-tp_headersize(dutype, tpcb)
-	int             dutype;
-	struct tp_pcb  *tpcb;
+tp_headersize(int dutype, struct tp_pcb *tpcb)
 {
 	int    size = 0;
 

@@ -100,10 +100,6 @@ __KERNEL_RCSID(0, "$NetBSD: tp_emit.c,v 1.18 2003/08/11 15:17:29 itojun Exp $");
 #include <netiso/iso_errno.h>
 #include <netiso/iso_var.h>
 
-#ifdef TRUE
-#undef FALSE
-#undef TRUE
-#endif
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
@@ -159,20 +155,15 @@ char tp_delay = 0x00;/* delay to keep token ring from blowing it */
  */
 
 int
-tp_emit(dutype, tpcb, seq, eot, data)
-	int             dutype;
-	struct tp_pcb  *tpcb;
-	SeqNum          seq;
-	u_int           eot;
-	struct mbuf    *data;
+tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *data)
 {
 	struct tpdu *hdr;
 	struct mbuf *m;
-	int             csum_offset = 0;
-	int             datalen = 0;
-	int             error = 0;
-	SeqNum          olduwe;
-	int             acking_ooo;
+	int csum_offset = 0;
+	int datalen = 0;
+	int error = 0;
+	SeqNum olduwe;
+	int acking_ooo;
 
 	/*
 	 * NOTE: here we treat tpdu_li as if it DID include the li field, up
@@ -854,22 +845,16 @@ done:
  */
 
 int
-tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
-	      dgout_routine)
-	int             error;
-	u_long          sref;
-	struct sockaddr_iso *faddr, *laddr;
-	struct mbuf    *erdata;
-	int             erlen;
-	struct tp_pcb  *tpcb;
-	caddr_t         cons_channel;
-        int 	      (*dgout_routine) __P((struct mbuf *, ...));
+tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
+		struct sockaddr_iso *laddr, struct mbuf *erdata, int erlen,
+		struct tp_pcb *tpcb, caddr_t cons_channel,
+		int (*dgout_routine)(struct mbuf *, ...))
 {
-	int             dutype;
-	int             datalen = 0;
+	int dutype;
+	int datalen = 0;
 	struct tpdu *hdr;
 	struct mbuf *m;
-	int             csum_offset;
+	int csum_offset;
 
 #ifdef TPPT
 	if (tp_traceflags[D_ERROR_EMIT]) {
@@ -1086,7 +1071,7 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 			dump_addr(sisotosa(faddr));
 		}
 #endif
-		return (*tpcb->tp_nlproto->nlp_dgoutput) (m, datalen,
+		return (*tpcb->tp_tpproto->tp_dgoutput)(m, datalen,
 							 &laddr->siso_addr,
 							 &faddr->siso_addr,
 		        /* no route */ (caddr_t) 0, !tpcb->tp_use_checksum);
@@ -1099,7 +1084,7 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 			dump_addr(sisotosa(faddr));
 		}
 #endif
-		return (*dgout_routine) (m, datalen, &laddr->siso_addr, &faddr->siso_addr,
+		return (*dgout_routine)(m, datalen, &laddr->siso_addr, &faddr->siso_addr,
 				        (caddr_t) 0, /* nochecksum==false */ 0);
 	} else {
 #ifdef ARGO_DEBUG
