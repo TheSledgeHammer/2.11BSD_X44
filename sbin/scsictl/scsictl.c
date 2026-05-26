@@ -225,7 +225,7 @@ device_format(int argc, char *argv[])
 	    PC*1, PC*2, PC*3, PC*4, PC*5, PC*6, PC*7, PC*8, PC*9, 65536
 	};
 	char *cp, buffer[64];
-	struct scsi_sense_data sense;
+	struct scsipi_sense_data sense;
 	struct scsi_format_unit cmd;
 	struct {
 		struct scsi_format_unit_defect_list_header header;
@@ -234,7 +234,7 @@ device_format(int argc, char *argv[])
 	} dfl;
 	struct {
 		struct scsipi_mode_header header;
-		struct scsi_general_block_descriptor blk_desc;
+		struct scsi_blk_desc blk_desc;
 		struct page_disk_format format_page;
 	} mode_page;
 	struct {
@@ -255,7 +255,7 @@ device_format(int argc, char *argv[])
 	 */
 	for (i = 0; i < 8; i++) {
 		scsi_request_sense(fd, &sense, sizeof (sense));
-		if ((j = SSD_SENSE_KEY(sense.flags)) == SKEY_NO_SENSE)
+		if ((j = sense.flags & SSD_KEY) == SKEY_NO_SENSE)
 			break;
 	}
 	/*
@@ -305,8 +305,7 @@ device_format(int argc, char *argv[])
 
 		memset(&data_select, 0, sizeof(data_select));
 
-		data_select.header.blk_desc_len =
-		    sizeof(struct scsi_general_block_descriptor);
+		data_select.header.blk_desc_len = sizeof(struct scsi_blk_desc);
 		/*
 		 * blklen in desc is 3 bytes with a leading reserved byte
 		 */
@@ -397,7 +396,7 @@ device_format(int argc, char *argv[])
 				}
 			}
 			sleep(10);
-		} while (SSD_SENSE_KEY(sense.flags) == SKEY_NOT_READY);
+		} while ((sense.flags & SSD_KEY) == SKEY_NOT_READY);
 		printf(".100%%..done.\n");
 	}
 	return;
