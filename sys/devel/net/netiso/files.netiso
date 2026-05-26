@@ -3,7 +3,7 @@
 defflag opt_iso.h	ISO 	# ISO network stack
 defflag opt_iso.h	TPIP	# ISO network TP with IPv4/IPv6
 defflag opt_iso.h	TPNS	# ISO network TP with XNS
-defflag opt_iso.h	TUBA	# TCP/IP over ISO
+defflag opt_iso.h	TUBA	# TCP/IP over ISO with bigger addresses
 defflag	opt_iso.h 	EON		# ISO clnp over IP
 
 file	netiso/clnp_debug.c		iso
@@ -40,13 +40,6 @@ file	netiso/tp_subr2.c		iso | tpip
 file	netiso/tp_timer.c		iso | tpip
 file	netiso/tp_trace.c		iso | tpip
 file	netiso/tp_usrreq.c		iso | tpip
-
-# TP Protocols
-file	netiso/tp_proto/tp_cons.c	iso
-file	netiso/tp_proto/tp_iso.c	iso	
-file	netiso/tp_proto/tp_inet.c	iso | tpip
-file	netiso/tp_proto/tp_inet6.c	iso | tpip
-#file	netiso/tp_proto/tp_ns.c		iso	| tpns
 
 # TUBA
 file	netiso/tuba_subr.c		iso | tuba

@@ -268,7 +268,7 @@ bad:
 	return (error);
 }
 
-int
+void
 tpip_input(struct mbuf *m, ...)
 {
 	struct sockaddr_in src, dst;
@@ -340,7 +340,7 @@ tpip_input(struct mbuf *m, ...)
 	dst.sin_len  = sizeof(dst);
 
 	(void)tp_input(m, (struct sockaddr *)&src, (struct sockaddr *)&dst, 0, tpip_output_dg, 0);
-	return (0);
+	return;
 
 discard:
 	IFDEBUG(D_TPINPUT)
@@ -352,7 +352,6 @@ discard:
 	m_freem(m);
 	IncStat(ts_recv_drop);
 	splx(s);
-	return (0);
 }
 
 void

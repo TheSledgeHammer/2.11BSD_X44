@@ -56,7 +56,7 @@ extern struct cltpstat cltpstat;
 /* cltp_usrreq.c */
 void cltp_init(void);
 void cltp_input(struct mbuf *, ...);
-void cltp_notify(struct isopcb *);
+void cltp_notify(struct isopcb *, int);
 void cltp_ctlinput(int, struct sockaddr *, void *);
 int cltp_output(struct mbuf *, ...);
 int cltp_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);

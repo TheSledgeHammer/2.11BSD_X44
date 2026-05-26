@@ -54,7 +54,7 @@ __KERNEL_RCSID(0, "$NetBSD: cltp_usrreq.c,v 1.23 2003/09/30 00:01:18 christos Ex
 #include <netiso/iso_var.h>
 #include <netiso/clnp.h>
 #include <netiso/cltp_var.h>
-#include <netiso/tp_iso.h>
+#include <netiso/tp_proto/tp_iso.h>
 
 #include <machine/stdarg.h>
 #endif
@@ -145,7 +145,7 @@ cltp_input(struct mbuf *m0, ...)
 		goto bad;
 
 	CIRCLEQ_FOREACH(isop, &cltptable.isopt_queue, isop_queue) {
-		if (isop == CIRCLEQ_FIRST(&cltptable->isopt_queue)) {
+		if (isop == CIRCLEQ_FIRST(&cltptable.isopt_queue)) {
 			cltpstat.cltps_noport++;
 			goto bad;
 		}
@@ -186,7 +186,7 @@ bad:
  * just wake up so that he can collect error status.
  */
 void
-cltp_notify(struct isopcb *isop)
+cltp_notify(struct isopcb *isop, int errno)
 {
 	sorwakeup(isop->isop_socket);
 	sowwakeup(isop->isop_socket);
@@ -276,7 +276,7 @@ cltp_output(struct mbuf *m, ...)
 		iso_gen_csum(m, 2 + up - mtod(m, u_char *), len);
 	}
 	cltpstat.cltps_opackets++;
-	return (tpclnp_output(m, len, isop, !docsum));
+	return (tpclnp_output(m, isop, len, !docsum));
 bad:
 	m_freem(m);
 	return (error);

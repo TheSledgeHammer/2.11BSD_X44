@@ -81,7 +81,7 @@ __KERNEL_RCSID(0, "$NetBSD: clnp_raw.c,v 1.19 2003/08/07 16:33:33 agc Exp $");
 #include <netiso/clnp_stat.h>
 #include <netiso/argo_debug.h>
 
-#include <netiso/tp_iso.h>	/* XXX -- defines SOL_NETWORK */
+#include <netiso/tp_proto/tp_iso.h>	/* XXX -- defines SOL_NETWORK */
 
 #include <machine/stdarg.h>
 

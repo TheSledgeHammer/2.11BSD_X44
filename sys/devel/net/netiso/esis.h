@@ -116,10 +116,6 @@ struct esis_stat {
 };
 
 #ifdef	_KERNEL
-extern struct esis_stat esis_stat;
-extern short esis_holding_time;
-extern short esis_config_time;
-extern short esis_esconfig_time;
 struct socket;
 struct mbuf;
 struct snpa_hdr;
@@ -128,16 +124,23 @@ struct iso_addr;
 struct rtentry;
 struct sockaddr_dl;
 
+extern struct rawcbhead esis_pcb;
+extern struct esis_stat esis_stat;
+extern struct callout esis_config_ch;
+extern short esis_holding_time;
+extern short esis_config_time;
+extern short esis_esconfig_time;
+
 void esis_init(void);
 int esis_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 void esis_input(struct mbuf *, ...);
 void esis_rdoutput(struct snpa_hdr *, struct mbuf *, struct clnp_optidx *, struct iso_addr *, struct rtentry *);
-int esis_insert_addr(void *, int *, struct iso_addr *, struct mbuf *, int);
+int esis_insert_addr(caddr_t *, int *, struct iso_addr *, struct mbuf *, int);
 void esis_eshinput(struct mbuf *, struct snpa_hdr *);
 void esis_ishinput(struct mbuf *, struct snpa_hdr *);
 void esis_rdinput(struct mbuf *, struct snpa_hdr *);
 void esis_config(void *);
-void esis_shoutput(struct ifnet *, int, int, void *, int, struct iso_addr *);
+void esis_shoutput(struct ifnet *, int, int, caddr_t, int, struct iso_addr *);
 void isis_input(struct mbuf *, ...);
 int isis_output(struct mbuf *, ...);
 void *esis_ctlinput(int, struct sockaddr *, void *);

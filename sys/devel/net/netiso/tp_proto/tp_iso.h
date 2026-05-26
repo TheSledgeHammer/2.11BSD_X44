@@ -87,16 +87,15 @@ SOFTWARE.
 #define	SOL_TRANSPORT		0xfffe
 #define	SOL_NETWORK			0xfffd
 
-struct isopcb tp_isopcb;
+#define tp_isopcb tp_isopcbtable
 
 #ifdef _KERNEL
+struct tp_pcb;
 struct isopcb;
 struct mbuf;
 struct sockaddr;
 
 /* tp_iso.c */
-void	iso_sapattach(void *);
-void	iso_sapdetach(void *);
 void 	iso_getsufx(void *, u_short *, caddr_t, int);
 void 	iso_putsufx(void *, caddr_t, int, int);
 void 	iso_getsufx(void *, u_short *, caddr_t, int);
@@ -107,11 +106,11 @@ int 	iso_cmpnetaddr(void *, struct sockaddr *, int);
 void 	iso_getnetaddr(void *, struct mbuf *, int);
 
 int 	tpclnp_mtu(struct tp_pcb *);
-int 	tpclnp_output(void *, struct mbuf *, int, int);
-int 	tpclnp_output_dg(void *, void *, struct mbuf *, int, void *, int);
-int 	tpclnp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int, int);
-void 	tpclnp_quench(struct inpcb *);
-void	tpclnp_abort(struct inpcb *);
+int 	tpclnp_output(struct mbuf *, ...);
+int 	tpclnp_output_dg(struct mbuf *, ...);
+void 	tpclnp_input(struct mbuf *, ...);
+void 	tpclnp_quench(struct isopcb *);
+void	tpclnp_abort(struct isopcb *);
 void 	tpclnp_reset(struct isopcb *);
 void 	*tpclnp_ctlinput(int, struct sockaddr *, void *);
 void	tpclnp_ctlinput1(int, struct iso_addr *);

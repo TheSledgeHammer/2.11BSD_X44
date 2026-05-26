@@ -120,7 +120,7 @@ struct clnp_stat clnp_stat;
  * NOTES:
  */
 void
-clnp_init(voif)
+clnp_init(void)
 {
 	struct protosw *pr;
 
@@ -322,7 +322,7 @@ clnp_input(struct mbuf *m, ...)
  	/*
  	 * make sure this interface has a ISO address
  	 */
-	for (ifa = TAILQ_FIRST(shp->snh_ifp->if_addrlist); ifa != 0;
+	for (ifa = TAILQ_FIRST(&shp->snh_ifp->if_addrlist); ifa != 0;
 	     ifa = TAILQ_NEXT(ifa, ifa_list))
 		if (ifa->ifa_addr->sa_family == AF_ISO)
 			break;

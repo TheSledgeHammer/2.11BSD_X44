@@ -83,6 +83,10 @@ __KERNEL_RCSID(0, "$NetBSD: iso_proto.c,v 1.14 2003/08/07 16:33:37 agc Exp $");
 #include <netiso/idrp_var.h>
 #include <netiso/iso_pcb.h>
 #include <netiso/cltp_var.h>
+#include <netiso/tp_protosw.h>
+#include <netiso/tp_param.h>
+#include <netiso/tp_var.h>
+#include <netiso/tp_pcb.h>
 #ifdef TUBA
 #include <netiso/tuba_table.h>
 #endif

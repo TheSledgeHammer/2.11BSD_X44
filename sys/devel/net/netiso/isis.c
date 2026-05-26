@@ -93,6 +93,7 @@ __KERNEL_RCSID(0, "$NetBSD: esis.c,v 1.30 2003/08/07 16:33:35 agc Exp $");
 
 #include <machine/stdarg.h>
 
+extern struct sockaddr_dl esis_dl;
 
 /*
  * FUNCTION:		isis_input
@@ -138,7 +139,7 @@ isis_input(struct mbuf *m0, ...)
 	esis_dl.sdl_alen = ifp->if_addrlen;
 	esis_dl.sdl_index = ifp->if_index;
 	bcopy(shp->snh_shost, (caddr_t) esis_dl.sdl_data, esis_dl.sdl_alen);
-	for (rp = LIST_FIRST(esis_pcb); rp != 0; rp = LIST_NEXT(rp, rcb_list)) {
+	for (rp = LIST_FIRST(&esis_pcb); rp != 0; rp = LIST_NEXT(rp, rcb_list)) {
 		if (first_rp == 0) {
 			first_rp = rp;
 			continue;
@@ -161,7 +162,7 @@ isis_input(struct mbuf *m0, ...)
 		}
 	}
 	if (first_rp && sbappendaddr(&first_rp->rcb_socket->so_rcv,
-	       (struct sockaddr *) &esis_dl, m0, (struct mbuf *) 0) != 0) {
+	       (struct sockaddr *)&esis_dl, m0, (struct mbuf *) 0) != 0) {
 		sorwakeup(first_rp->rcb_socket);
 		return;
 	}

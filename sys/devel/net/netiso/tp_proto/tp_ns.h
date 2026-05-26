@@ -84,8 +84,6 @@ SOFTWARE.
 
 struct nspcb tp_nspcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
 
-void ns_sapattach(void *);
-void ns_sapdetach(void *);
 void ns_getsufx(void *, u_short *, caddr_t, int);
 void ns_putsufx(void *, caddr_t, int, int);
 void ns_recycle_tsuffix(void *);

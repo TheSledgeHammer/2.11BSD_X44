@@ -64,6 +64,8 @@ SOFTWARE.
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: iso.c,v 1.33 2003/08/07 16:33:36 agc Exp $");
 
+#include "opt_iso.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/ioctl.h>
@@ -92,7 +94,95 @@ __KERNEL_RCSID(0, "$NetBSD: iso.c,v 1.33 2003/08/07 16:33:36 agc Exp $");
 #include <netiso/tuba_table.h>
 #endif
 
+#ifdef ISO
+
 int  iso_interfaces = 0;	/* number of external interfaces */
+
+/*
+ * FUNCTION:		iso_addrmatch1
+ *
+ * PURPOSE:		decide if the two iso_addrs passed are equal
+ *
+ * RETURNS:		true if the addrs match, false if they do not
+ *
+ * SIDE EFFECTS:
+ *
+ * NOTES:
+ */
+int
+iso_addrmatch1(struct iso_addr *isoaa, struct iso_addr *isoab)
+{
+	u_int           compare_len;
+
+#ifdef ARGO_DEBUG
+	if (argo_debug[D_ROUTE]) {
+		printf("iso_addrmatch1: comparing lengths: %d to %d\n", isoaa->isoa_len,
+		    isoab->isoa_len);
+		printf("a:\n");
+		dump_buf(isoaa->isoa_genaddr, isoaa->isoa_len);
+		printf("b:\n");
+		dump_buf(isoab->isoa_genaddr, isoab->isoa_len);
+	}
+#endif
+
+	if ((compare_len = isoaa->isoa_len) != isoab->isoa_len) {
+#ifdef ARGO_DEBUG
+		if (argo_debug[D_ROUTE]) {
+			printf("iso_addrmatch1: returning false because of lengths\n");
+		}
+#endif
+		return 0;
+	}
+#ifdef notdef
+	/* TODO : generalize this to all afis with masks */
+	if (isoaa->isoa_afi == AFI_37) {
+		/*
+		 * must not compare 2 least significant digits, or for that
+		 * matter, the DSP
+		 */
+		compare_len = ADDR37_IDI_LEN - 1;
+	}
+#endif
+
+#ifdef ARGO_DEBUG
+	if (argo_debug[D_ROUTE]) {
+		int             i;
+		char           *a, *b;
+
+		a = isoaa->isoa_genaddr;
+		b = isoab->isoa_genaddr;
+
+		for (i = 0; i < compare_len; i++) {
+			printf("<%x=%x>", a[i] & 0xff, b[i] & 0xff);
+			if (a[i] != b[i]) {
+				printf("\naddrs are not equal at byte %d\n", i);
+				return (0);
+			}
+		}
+		printf("\n");
+		printf("addrs are equal\n");
+		return (1);
+	}
+#endif
+	return (!bcmp(isoaa->isoa_genaddr, isoab->isoa_genaddr, compare_len));
+}
+
+/*
+ * FUNCTION:		iso_addrmatch
+ *
+ * PURPOSE:		decide if the two sockadrr_isos passed are equal
+ *
+ * RETURNS:		true if the addrs match, false if they do not
+ *
+ * SIDE EFFECTS:
+ *
+ * NOTES:
+ */
+int
+iso_addrmatch(struct sockaddr_iso *sisoa, struct sockaddr_iso *sisob)
+{
+	return (iso_addrmatch1(&sisoa->siso_addr, &sisob->siso_addr));
+}
 
 /*
  * Generic iso control operations (ioctl's).
@@ -111,7 +201,7 @@ iso_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp, stru
 	 * Find address for this interface, if it exists.
 	 */
 	if (ifp) {
-		for (ia = TAILQ_FIRST(iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
+		for (ia = TAILQ_FIRST(&iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
 			if (ia->ia_ifp == ifp) {
 				break;
 			}
@@ -167,7 +257,7 @@ iso_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp, stru
 #define cmdbyte(x)	(((x) >> 8) & 0xff)
 	default:
 		if (cmdbyte(cmd) == 'a') {
-			return (snpac_ioctl(so, cmd, data));
+			return (snpac_ioctl(so, cmd, data, p));
 		}
 		if (ia == (struct iso_ifaddr *)0) {
 			return (EADDRNOTAVAIL);
@@ -346,7 +436,7 @@ iso_localifa(struct sockaddr_iso *siso)
 	 * We make one pass looking for both net matches and an exact
 	 * dst addr.
 	 */
-	for (ia = TAILQ_FIRST(iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
+	for (ia = TAILQ_FIRST(&iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
 		if ((ifp = ia->ia_ifp) == 0 || ((ifp->if_flags & IFF_UP) == 0))
 			continue;
 		if (ifp->if_flags & IFF_POINTOPOINT) {
@@ -373,6 +463,24 @@ iso_localifa(struct sockaddr_iso *siso)
 next:		;
 	}
 	return ia_maybe;
+}
+
+/*
+ * FUNCTION:		iso_ck_addr
+ *
+ * PURPOSE:		return true if the iso_addr passed is
+ *			within the legal size limit for an iso address.
+ *
+ * RETURNS:		true or false
+ *
+ * SIDE EFFECTS:
+ *
+ */
+int
+iso_ck_addr(struct iso_addr *isoa)
+{
+	return (isoa->isoa_len <= 20);
+
 }
 
 /*
@@ -439,3 +547,35 @@ iso_tpctloutput(int cmd, int optname, caddr_t pcb, struct mbuf *m)
 		m_freem(m);
 	return (error);
 }
+
+#endif /* ISO */
+
+#ifdef ARGO_DEBUG
+/*
+ * FUNCTION:		dump_isoaddr
+ *
+ * PURPOSE:		debugging
+ *
+ * RETURNS:		nada
+ *
+ */
+void
+dump_isoaddr(struct sockaddr_iso *s)
+{
+	if (s->siso_family == AF_ISO) {
+		printf("ISO address: suffixlen %d, %s\n",
+		       s->siso_tlen, clnp_saddr_isop(s));
+	} else if (s->siso_family == AF_INET) {
+		/* hack */
+		struct sockaddr_in *sin = satosin(s);
+
+		printf("%d.%d.%d.%d: %d",
+		       (sin->sin_addr.s_addr >> 24) & 0xff,
+		       (sin->sin_addr.s_addr >> 16) & 0xff,
+		       (sin->sin_addr.s_addr >> 8) & 0xff,
+		       (sin->sin_addr.s_addr) & 0xff,
+		       sin->sin_port);
+	}
+}
+
+#endif /* ARGO_DEBUG */

@@ -57,7 +57,6 @@
 #include <netiso/cltp_var.h>
 
 #include <netiso/tp_protosw.h>
-
 #include <netiso/tp_proto/tp_iso.h>
 
 struct tp_protosw tpiso_protosw = {
@@ -80,20 +79,6 @@ struct tp_protosw tpiso_protosw = {
  	.tp_ctloutput = 0,
  	.tp_pcblist = &tp_isopcb
 };
-
-void
-iso_sapattach(void *v)
-{
-	struct tp_xsap *xsap = (struct tp_xsap *)v;
-	tp_xsap_attach(xsap, AF_ISO);
-}
-
-void
-iso_sapdetach(void *v)
-{
-	struct tp_xsap *xsap = (struct tp_xsap *)v;
-	tp_xsap_detach(xsap, AF_ISO);
-}
 
 /*
  * CALLED FROM:
@@ -497,17 +482,18 @@ tpclnp_input(struct mbuf *m, ...)
 	switch (dst->siso_data[dst->siso_nlen - 1]) {
 #ifdef TUBA
 	case ISOPROTO_TCP:
-		return (tuba_tcpinput(m, src, dst));
+		tuba_tcp_input(m, src, dst);
 #endif
 	case 0:
 		if (m->m_len == 0 && (m = m_pullup(m, 1)) == 0)
-			return 0;
+			return;
 		if (*(mtod(m, u_char *)) == ISO10747_IDRP)
-			return (idrp_input(m, src, dst));
+			idrp_input(m, src, dst);
+            return;
 	}
 	m = tp_inputprep(m);
 	if (m == 0)
-		return 0;
+		return;
 	if (mtod(m, u_char *)[1] == UD_TPDU_type) {
 		cltp_input(m, src, dst, 0);
 	}
@@ -539,8 +525,6 @@ tpclnp_input(struct mbuf *m, ...)
 			}
 		}
 	ENDDEBUG
-
-	return 0;
 }
 
 /*
@@ -595,7 +579,6 @@ tpiso_reset(struct isopcb *isop, int cmd)
 	(void)tp_reset((struct tp_pcb *)sotoisopcb(isop->isop_socket), cmd);
 }
 
-struct sockaddr_iso zerosiso;
 /*
  * CALLED FROM:
  *  The network layer through the protosw table.
@@ -621,20 +604,20 @@ tpclnp_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	}
 	switch (cmd) {
 	case PRC_QUENCH2:
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &zerosiso, cmd, tpiso_decbit);
+		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, tpiso_decbit);
 		break;
 	case PRC_QUENCH:
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &zerosiso, cmd, tpiso_quench);
+		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, tpiso_quench);
 		break;
 	case PRC_TIMXCEED_REASS:
 	case PRC_ROUTEDEAD:
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &zerosiso, cmd, tpiso_reset);
+		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, tpiso_reset);
 		break;
 	case PRC_HOSTUNREACH:
 	case PRC_UNREACH_NET:
 	case PRC_IFDOWN:
 	case PRC_HOSTDEAD:
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &zerosiso, cmd, (int)inetctlerrmap[cmd], iso_rtchange);
+		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, (int)inetctlerrmap[cmd], iso_rtchange);
 		break;
 	default:
 		/*
@@ -651,7 +634,7 @@ tpclnp_ctlinput(int cmd, struct sockaddr *sa, void *v)
 		case	PRC_TIMXCEED_INTRANS:
 		case	PRC_PARAMPROB:
 		*/
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &zerosiso, cmd, (int)inetctlerrmap[cmd], tpiso_abort);
+		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, (int)inetctlerrmap[cmd], tpiso_abort);
 		break;
 	}
 	return (NULL);

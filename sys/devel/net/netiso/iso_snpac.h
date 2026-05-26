@@ -105,4 +105,25 @@ struct llinfo_llc {
 #define	SIOCSSTYPE 	_IOW('a', 39, struct systype_req)	/* set system type */
 #define	SIOCGSTYPE 	_IOR('a', 40, struct systype_req)	/* get system type */
 
+#ifdef _KERNEL
+extern struct callout snpac_age_ch;
+extern int iso_systype;
+extern char all_es_snpa[];
+extern char all_is_snpa[];
+extern char all_l1is_snpa[];
+extern char all_l2is_snpa[];
+
+void llc_rtrequest(int, struct rtentry *, struct rt_addrinfo *);
+void iso_setmcasts(struct ifnet *, int);
+int iso_snparesolve(struct ifnet *, struct sockaddr_iso *, caddr_t, int *);
+void snpac_free(struct llinfo_llc *);
+int snpac_add(struct ifnet *, struct iso_addr *, caddr_t, int, u_short, int);
+int snpac_ioctl(struct socket *, u_long, caddr_t, struct proc *);
+void snpac_logdefis(struct rtentry *);
+void snpac_age(void *v);
+int snpac_ownmulti(caddr_t, u_int);
+void snpac_flushifp(struct ifnet *);
+void snpac_rtrequest(int, struct iso_addr *, struct iso_addr *, struct iso_addr *, int, struct rtentry **);
+void snpac_addrt(struct ifnet *, struct iso_addr *, struct iso_addr *, struct iso_addr *);
+#endif
 #endif /* !_NETISO_ISO_SNPAC_H_ */

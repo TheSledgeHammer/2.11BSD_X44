@@ -101,14 +101,14 @@ __KERNEL_RCSID(0, "$NetBSD: esis.c,v 1.30 2003/08/07 16:33:35 agc Exp $");
  *	esis_esconfig_time - suggested es configuration time placed in the ish.
  *
  */
-LIST_HEAD(, rawcb) esis_pcb;
+struct rawcbhead esis_pcb;
 struct esis_stat esis_stat;
 int             esis_sendspace = 2048;
 int             esis_recvspace = 2048;
 short           esis_holding_time = ESIS_HT;
 short           esis_config_time = ESIS_CONFIG;
 short           esis_esconfig_time = ESIS_CONFIG;
-struct sockaddr_dl esis_dl = {sizeof(esis_dl), AF_LINK};
+struct sockaddr_dl esis_dl = { sizeof(esis_dl), AF_LINK };
 
 struct callout	esis_config_ch;
 
@@ -280,7 +280,7 @@ esis_input(struct mbuf *m0, ...)
 	shp = va_arg(ap, struct snpa_hdr *);
 	va_end(ap);
 
-	for (ifa = TAILQ_FIRST(shp->snh_ifp->if_addrlist); ifa != 0;
+	for (ifa = TAILQ_FIRST(&shp->snh_ifp->if_addrlist); ifa != 0;
 	     ifa = TAILQ_NEXT(ifa, ifa_list))
 		if (ifa->ifa_addr->sa_family == AF_ISO)
 			break;
@@ -320,7 +320,7 @@ esis_input(struct mbuf *m0, ...)
 	}
 
 bad:
-	if (LIST_FIRST(esis_pcb) != 0)
+	if (LIST_FIRST(&esis_pcb) != 0)
 		isis_input(m0, shp);
 	else
 		m_freem(m0);
@@ -426,7 +426,7 @@ esis_rdoutput(
 			return;
 		}
 #endif
-		(void) esis_insert_addr(&cp, &len, rd_gwnsap, m, 0);
+		(void)esis_insert_addr(&cp, &len, rd_gwnsap, m, 0);
 	} else {
 		*cp++ = 0;	/* NETL */
 		len++;
@@ -508,7 +508,7 @@ esis_rdoutput(
  */
 int
 esis_insert_addr(
-		void  *buf,	/* ptr to buffer to put address into */
+		caddr_t *buf,	/* ptr to buffer to put address into */
 		int *len,	/* ptr to length of buffer so far */
 		struct iso_addr *isoa,	/* ptr to address */
 		struct mbuf *m,/* determine if there remains space */
@@ -588,7 +588,7 @@ esis_eshinput(
 		 * See if we want to compress out multiple nsaps
 		 * differing only by nsel
 		 */
-		for (ifa = TAILQ_FIRST(shp->snh_ifp->if_addrlist); ifa != 0;
+		for (ifa = TAILQ_FIRST(&shp->snh_ifp->if_addrlist); ifa != 0;
 		     ifa = TAILQ_NEXT(ifa, ifa_list))
 			if (ifa->ifa_addr->sa_family == AF_ISO) {
 				nsellength =
@@ -849,13 +849,13 @@ esis_config(void *v)
 	 * iso_ifaddr structure to encapsulate and transmit it.  This could
 	 * work to advantage for non-broadcast media
 	 */
-	for (ifp = TAILQ_FIRST(ifnet); ifp != 0; ifp = TAILQ_NEXT(ifp, if_list)) {
+	for (ifp = TAILQ_FIRST(&ifnet); ifp != 0; ifp = TAILQ_NEXT(ifp, if_list)) {
 		if ((ifp->if_flags & IFF_UP) &&
 		    (ifp->if_flags & IFF_BROADCAST)) {
 			/* search for an ISO address family */
 			struct ifaddr  *ifa;
 
-			for (ifa = TAILQ_FIRST(ifp->if_addrlist); ifa != 0;
+			for (ifa = TAILQ_FIRST(&ifp->if_addrlist); ifa != 0;
 			     ifa = TAILQ_NEXT(ifa, ifa_list)) {
 				if (ifa->ifa_addr->sa_family == AF_ISO) {
 					esis_shoutput(ifp,
@@ -882,13 +882,8 @@ esis_config(void *v)
  * NOTES:
  */
 void
-esis_shoutput(
-		struct ifnet   *ifp,
-		int             type,
-		int             ht,
-		void 			*sn_addr,
-		int             sn_len,
-		struct iso_addr *isoa)
+esis_shoutput(struct ifnet *ifp, int type, int ht, caddr_t sn_addr, 
+    int sn_len, struct iso_addr *isoa)
 {
 	struct mbuf    *m, *m0;
 	caddr_t         cp, naddrp;
@@ -909,7 +904,7 @@ esis_shoutput(
 
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_ESISOUTPUT]) {
-		int             i;
+		int i;
 		printf("esis_shoutput: ifp %p (%s), %s, ht %d, to: [%d] ",
 		    ifp, ifp->if_xname,
 		    type == ESIS_ESH ? "esh" : "ish",
@@ -957,14 +952,14 @@ esis_shoutput(
 		(void) esis_insert_addr(&cp, &len, isoa, m, 0);
 		naddr = 1;
 	}
-	for (ia = TAILQ_FIRST(iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
+	for (ia = TAILQ_FIRST(&iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
 		int nsellen = (type == ESIS_ISH ? ia->ia_addr.siso_tlen : 0);
 		int n = ia->ia_addr.siso_nlen;
 		struct iso_ifaddr *ia2;
 
 		if (type == ESIS_ISH && naddr > 0)
 			break;
-		for (ia2 = TAILQ_FIRST(iso_ifaddr); ia2 != ia;
+		for (ia2 = TAILQ_FIRST(&iso_ifaddr); ia2 != ia;
 		     ia2 = TAILQ_NEXT(ia2, ia_list))
 			if (Bcmp(ia->ia_addr.siso_data,
 				 ia2->ia_addr.siso_data, n) == 0)
@@ -1070,7 +1065,7 @@ isis_input(struct mbuf *m0, ...)
 	esis_dl.sdl_alen = ifp->if_addrlen;
 	esis_dl.sdl_index = ifp->if_index;
 	bcopy(shp->snh_shost, (caddr_t) esis_dl.sdl_data, esis_dl.sdl_alen);
-	for (rp = LIST_FIRST(esis_pcb); rp != 0; rp = LIST_NEXT(rp, rcb_list)) {
+	for (rp = LIST_FIRST(&esis_pcb); rp != 0; rp = LIST_NEXT(rp, rcb_list)) {
 		if (first_rp == 0) {
 			first_rp = rp;
 			continue;
@@ -1192,7 +1187,7 @@ esis_ctlinput(
 	if (siso->sa_family != AF_ISO)
 		return NULL;
 	if (req == PRC_IFDOWN)
-		for (ia = TAILQ_FIRST(iso_ifaddr); ia != 0;
+		for (ia = TAILQ_FIRST(&iso_ifaddr); ia != 0;
 		     ia = TAILQ_NEXT(ia, ia_list)) {
 			if (iso_addrmatch(IA_SIS(ia),
 					  (struct sockaddr_iso *) siso))

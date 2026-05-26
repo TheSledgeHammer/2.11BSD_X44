@@ -320,13 +320,15 @@ u_int	tp_start_win;
 #define	tpcbtoso(tp)	((struct socket *)((tp)->tp_sock))
 #define	tpcbtoref(tp)	((struct tp_ref *)((tp)->tp_ref))
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct tp_refinfo tp_refinfo;
 extern struct tp_ref	*tp_ref;
 extern struct tp_param	tp_param;
 extern struct tppcbhead tp_pcblist;
 extern struct tppcbhead tp_listeners;
 extern struct tp_pcb	*tp_ftimeolist;
+extern struct inpcbtable tp_inpcbtable;
+extern struct isopcbtable tp_isopcbtable;
 
 void tp_init(void);
 void tp_soisdisconnecting(struct socket *);

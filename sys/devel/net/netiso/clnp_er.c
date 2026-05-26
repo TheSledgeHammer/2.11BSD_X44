@@ -80,7 +80,7 @@ __KERNEL_RCSID(0, "$NetBSD: clnp_er.c,v 1.14 2003/08/07 16:33:32 agc Exp $");
 #include <netiso/clnp.h>
 #include <netiso/clnp_stat.h>
 #include <netiso/argo_debug.h>
-#include <netiso/tp_iso.h>
+#include <netiso/tp_proto/tp_iso.h>
 
 static struct clnp_fixed er_template = {
 		.cnf_proto_id = ISO8473_CLNP,					/* network identifier */

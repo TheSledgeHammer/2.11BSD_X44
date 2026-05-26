@@ -65,6 +65,11 @@ SOFTWARE.
 
 #define	MAXX25CRUDLEN	16	/* 16 bytes of call request user data */
 
+struct route_iso {
+	struct rtentry 		*ro_rt;
+	struct sockaddr_iso ro_dst;
+};
+
 /*
  * Common structure pcb for argo protocol implementation.
  */
@@ -100,13 +105,8 @@ CIRCLEQ_HEAD(isopcbqueue, isopcb);
 
 struct isopcbtable {
 	struct isopcbqueue 	isopt_queue;
-	struct isopcbtable 	*isopt_hashtbl;
+	struct isopcbhead 	*isopt_hashtbl;
 	u_long	  			isopt_hash;
-};
-
-struct route_iso {
-	struct rtentry 		*ro_rt;
-	struct sockaddr_iso ro_dst;
 };
 
 #ifdef sotorawcb

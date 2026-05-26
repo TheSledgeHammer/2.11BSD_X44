@@ -527,7 +527,6 @@ snpac_ioctl(
 		struct socket *so,
 		u_long cmd,		/* ioctl to process */
 		caddr_t data,		/* data for the cmd */
-		struct socket  *so,
 		struct proc *p)
 {
 	struct systype_req *rq = (struct systype_req *) data;
@@ -541,7 +540,7 @@ snpac_ioctl(
 	ENDDEBUG
 
 	if (cmd == SIOCSSTYPE) {
-		if (p == 0 || suser(p->p_ucred, &p->p_acflag))
+		if (p == 0 || suser1(p->p_ucred, &p->p_acflag))
 			return (EPERM);
 		if ((rq->sr_type & (SNPA_ES | SNPA_IS)) == (SNPA_ES | SNPA_IS))
 			return (EINVAL);
@@ -634,7 +633,7 @@ snpac_age(void *v)
 
 	callout_reset(&snpac_age_ch, SNPAC_AGE * hz, snpac_age, NULL);
 
-	for (lc = LIST_FIRST(llinfo_llc); lc != 0; lc = nlc) {
+	for (lc = LIST_FIRST(&llinfo_llc); lc != 0; lc = nlc) {
 		nlc = LIST_NEXT(lc, lc_list);
 		if (lc->lc_flags & SNPA_VALID) {
 			rt = lc->lc_rt;
@@ -683,7 +682,7 @@ snpac_flushifp(struct ifnet *ifp)
 {
 	struct llinfo_llc *lc;
 
-	for (lc = LIST_FIRST(llinfo_llc); lc != 0; lc = LIST_NEXT(lc, lc_list)) {
+	for (lc = LIST_FIRST(&llinfo_llc); lc != 0; lc = LIST_NEXT(lc, lc_list)) {
 		if (lc->lc_rt->rt_ifp == ifp && (lc->lc_flags & SNPA_VALID)) {
 			snpac_free(lc);
 		}

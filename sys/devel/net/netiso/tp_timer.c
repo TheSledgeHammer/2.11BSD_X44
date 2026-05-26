@@ -80,9 +80,9 @@ __KERNEL_RCSID(0, "$NetBSD: tp_timer.c,v 1.13 2003/08/07 16:33:42 agc Exp $");
 #include <netiso/tp_var.h>
 
 struct tp_ref  *tp_ref;
-int             tp_rttdiv, tp_rttadd, N_TPREF = 127;
+int tp_rttdiv, tp_rttadd, N_TPREF = 127;
 struct tp_refinfo tp_refinfo;
-struct tp_pcb  *tp_ftimeolist = (struct tp_pcb *) & tp_ftimeolist;
+struct tp_pcb  *tp_ftimeolist = (struct tp_pcb *)&tp_ftimeolist;
 
 /*
  * CALLED FROM:
@@ -232,7 +232,7 @@ tp_slowtimo(void)
 void
 tp_data_retrans(struct tp_pcb *tpcb)
 {
-	int             rexmt, win;
+	int rexmt, win;
 	tpcb->tp_rttemit = 0;	/* cancel current round trip time */
 	tpcb->tp_dupacks = 0;
 	tpcb->tp_sndnxt = tpcb->tp_snduna;

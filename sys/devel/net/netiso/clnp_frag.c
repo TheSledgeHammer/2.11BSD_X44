@@ -499,7 +499,7 @@ clnp_insert_frag(
 		}
 	ENDDEBUG
 #endif
-	if (!LIST_EMPTY(cfh->cfl_frags)) {
+	if (!LIST_EMPTY(&cfh->cfl_frags)) {
 	//if (cfh->cfl_frags != NULL) {
 		/*
 		 * Find fragment which begins after the new one

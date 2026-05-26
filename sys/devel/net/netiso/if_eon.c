@@ -69,7 +69,7 @@ SOFTWARE.
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: if_eon.c,v 1.42 2003/09/30 00:01:18 christos Exp $");
 
-#include "opt_eon.h"
+#include "opt_iso.h"
 
 #ifdef EON
 #define NEON 1
@@ -159,7 +159,7 @@ eonattach(void)
 	ifp->if_flags = IFF_BROADCAST;
 	if_attach(ifp);
 	if_alloc_sadl(ifp);
-	eonioctl(ifp, SIOCSIFADDR, (caddr_t) TAILQ_FIRST(ifp->if_addrlist));
+	eonioctl(ifp, SIOCSIFADDR, (caddr_t)TAILQ_FIRST(&ifp->if_addrlist));
 	LIST_INIT(&llinfo_eon);
 
 #ifdef ARGO_DEBUG
@@ -182,7 +182,7 @@ eonattach(void)
  * RETURNS:			nothing
  */
 int
-eonioctl(struct ifnet *ifp, u_long cmd, void *data)
+eonioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 {
 	int s = splnet();
 	int error = 0;
@@ -213,7 +213,7 @@ eonioctl(struct ifnet *ifp, u_long cmd, void *data)
 
 
 void
-eoniphdr(struct route *ro, struct eon_iphdr *hdr, const void *loc, int class, int zero)
+eoniphdr(struct eon_iphdr *hdr, caddr_t loc, struct route *ro, int class, int zero)
 {
 	struct mbuf     mhead;
 	struct sockaddr_in *sin = satosin(&ro->ro_dst);
@@ -281,7 +281,8 @@ eonrtrequest(int cmd, struct rtentry *rt, struct rt_addrinfo *info)
 	switch (cmd) {
 	case RTM_DELETE:
 		if (el) {
-			remque(&(el->el_qhdr));
+//			remque(&(el->el_qhdr));
+            LIST_REMOVE(el, el_list);
 			if (el->el_iproute.ro_rt)
 				RTFREE(el->el_iproute.ro_rt);
 			Free(el);
@@ -340,10 +341,9 @@ eonrtrequest(int cmd, struct rtentry *rt, struct rt_addrinfo *info)
  *
  */
 int
-eonoutput(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *sdst,
-		struct rtentry *rt)
+eonoutput(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sdst, struct rtentry *rt)
 {
-	struct sockaddr_iso *dst = (struct sockaddr_iso *) sdst;
+	struct sockaddr_iso *dst = (struct sockaddr_iso *)sdst;
 	struct eon_llinfo *el;
 	struct eon_iphdr *ei;
 	struct route   *ro;

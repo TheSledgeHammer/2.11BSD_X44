@@ -273,87 +273,87 @@ struct tpduf_rj {
  */
 union tpdu_fixed_rest {
     struct tpduf_cr      _tpdufr_cr;
-#define tpdu_CRli       _tpdufr_cr.cr_li
-#define tpdu_CRtype     _tpdufr_cr.cr_type
-#define tpdu_CRcdt      _tpdufr_cr.cr_cdt
-#define tpdu_CRdref_0   _tpdufr_cr.cr_dref_0
-#define tpdu_CRsref     _tpdufr_cr.cr_sref
-#define tpdu_sref       _tpdufr_cr.cr_tpdu_sref
-#define tpdu_CRclass    _tpdufr_cr.cr_class
-#define tpdu_CRoptions  _tpdufr_cr.cr_opt
+#define tpdu_CRli       _tpdufr._tpdufr_cr.cr_li
+#define tpdu_CRtype     _tpdufr._tpdufr_cr.cr_type
+#define tpdu_CRcdt      _tpdufr._tpdufr_cr.cr_cdt
+#define tpdu_CRdref_0   _tpdufr._tpdufr_cr.cr_dref_0
+#define tpdu_CRsref     _tpdufr._tpdufr_cr.cr_sref
+#define tpdu_sref       _tpdufr._tpdufr_cr.cr_tpdu_sref
+#define tpdu_CRclass    _tpdufr._tpdufr_cr.cr_class
+#define tpdu_CRoptions  _tpdufr._tpdufr_cr.cr_opt
 
     struct tpduf_cc      _tpdufr_cc;
-#define tpdu_CCli       _tpdufr_cc.cc_li
-#define tpdu_CCtype     _tpdufr_cc.cc_type
-#define tpdu_CCcdt      _tpdufr_cc.cc_cdt
-#define tpdu_CCdref     _tpdufr_cc.cc_dref
-#define tpdu_CCsref     _tpdufr_cc.cc_sref
-#define tpdu_CCclass    _tpdufr_cc.cc_class
-#define tpdu_CCoptions  _tpdufr_cc.cc_opt
+#define tpdu_CCli       _tpdufr._tpdufr_cc.cc_li
+#define tpdu_CCtype     _tpdufr._tpdufr_cc.cc_type
+#define tpdu_CCcdt      _tpdufr._tpdufr_cc.cc_cdt
+#define tpdu_CCdref     _tpdufr._tpdufr_cc.cc_dref
+#define tpdu_CCsref     _tpdufr._tpdufr_cc.cc_sref
+#define tpdu_CCclass    _tpdufr._tpdufr_cc.cc_class
+#define tpdu_CCoptions  _tpdufr._tpdufr_cc.cc_opt
 
     struct tpduf_dr      _tpdufr_dr;
-#define tpdu_DRli       _tpdufr_dr.dr_li
-#define tpdu_DRtype     _tpdufr_dr.dr_type
-#define tpdu_DRdref     _tpdufr_dr.dr_dref
-#define tpdu_DRsref     _tpdufr_dr.dr_sref
-#define tpdu_DRreason   _tpdufr_dr.dr_reason
+#define tpdu_DRli       _tpdufr._tpdufr_dr.dr_li
+#define tpdu_DRtype     _tpdufr._tpdufr_dr.dr_type
+#define tpdu_DRdref     _tpdufr._tpdufr_dr.dr_dref
+#define tpdu_DRsref     _tpdufr._tpdufr_dr.dr_sref
+#define tpdu_DRreason   _tpdufr._tpdufr_dr.dr_reason
 
     struct tpduf_dc      _tpdufr_dc;
-#define tpdu_DCli       _tpdufr_dc.dc_li
-#define tpdu_DCtype     _tpdufr_dc.dc_type
-#define tpdu_DCdref     _tpdufr_dc.dc_dref
-#define tpdu_DCsref     _tpdufr_dc.dc_sref
+#define tpdu_DCli       _tpdufr._tpdufr_dc.dc_li
+#define tpdu_DCtype     _tpdufr._tpdufr_dc.dc_type
+#define tpdu_DCdref     _tpdufr._tpdufr_dc.dc_dref
+#define tpdu_DCsref     _tpdufr._tpdufr_dc.dc_sref
 
     unsigned int        _tpdufr_Xseqeot;
 #define tpdu_seqeotX    _tpdufr._tpdufr_Xseqeot
 
     struct tpduf_dt      _tpdufr_dt;
-#define tpdu_DTli       _tpdufr_dt.dt_li
-#define tpdu_DTtype     _tpdufr_dt.dt_type
-#define tpdu_DTdref     _tpdufr_dt.dt_dref
-#define tpdu_DTseq      _tpdufr_dt.dt_seq
-#define tpdu_DTeot      _tpdufr_dt.dt_eot
-#define tpdu_DTseqX     _tpdufr_dt.dt_Xseq
-#define tpdu_DTeotX     _tpdufr_dt.dt_Xeot
+#define tpdu_DTli       _tpdufr._tpdufr_dt.dt_li
+#define tpdu_DTtype     _tpdufr._tpdufr_dt.dt_type
+#define tpdu_DTdref     _tpdufr._tpdufr_dt.dt_dref
+#define tpdu_DTseq      _tpdufr._tpdufr_dt.dt_seq
+#define tpdu_DTeot      _tpdufr._tpdufr_dt.dt_eot
+#define tpdu_DTseqX     _tpdufr._tpdufr_dt.dt_Xseq
+#define tpdu_DTeotX     _tpdufr._tpdufr_dt.dt_Xeot
 
     struct tpduf_xpd     _tpdufr_xpd;
-#define tpdu_XPDli      _tpdufr_xpd.xpd_li
-#define tpdu_XPDtype    _tpdufr_xpd.xpd_type
-#define tpdu_XPDdref    _tpdufr_xpd.xpd_dref
-#define tpdu_XPDseq     _tpdufr_xpd.xpd_seq
-#define tpdu_XPDeot     _tpdufr_xpd.xpd_eot
-#define tpdu_XPDseqX    _tpdufr_xpd.xpd_Xseq
-#define tpdu_XPDeotX    _tpdufr_xpd.xpd_Xeot
+#define tpdu_XPDli      _tpdufr._tpdufr_xpd.xpd_li
+#define tpdu_XPDtype    _tpdufr._tpdufr_xpd.xpd_type
+#define tpdu_XPDdref    _tpdufr._tpdufr_xpd.xpd_dref
+#define tpdu_XPDseq     _tpdufr._tpdufr_xpd.xpd_seq
+#define tpdu_XPDeot     _tpdufr._tpdufr_xpd.xpd_eot
+#define tpdu_XPDseqX    _tpdufr._tpdufr_xpd.xpd_Xseq
+#define tpdu_XPDeotX    _tpdufr._tpdufr_xpd.xpd_Xeot
 
     struct tpduf_ak      _tpdufr_ak;
-#define tpdu_AKli       _tpdufr_ak.ak_li
-#define tpdu_AKtype     _tpdufr_ak.ak_type
-#define tpdu_AKdref     _tpdufr_ak.ak_dref
-#define tpdu_AKseq      _tpdufr_ak.ak_seq
-#define tpdu_AKseqX     _tpdufr_ak.ak_yrseq
+#define tpdu_AKli       _tpdufr._tpdufr_ak.ak_li
+#define tpdu_AKtype     _tpdufr._tpdufr_ak.ak_type
+#define tpdu_AKdref     _tpdufr._tpdufr_ak.ak_dref
+#define tpdu_AKseq      _tpdufr._tpdufr_ak.ak_seq
+#define tpdu_AKseqX     _tpdufr._tpdufr_ak.ak_yrseq
 	/* location of cdt depends on size of seq. numbers */
-#define tpdu_AKcdt      _tpdufr_ak.ak_cdt
-#define tpdu_AKcdtX     _tpdufr_ak.ak_cdtX
+#define tpdu_AKcdt      _tpdufr._tpdufr_ak.ak_cdt
+#define tpdu_AKcdtX     _tpdufr._tpdufr_ak.ak_cdtX
 
     struct tpduf_xak     _tpdufr_xak;
-#define tpdu_XAKli      _tpdufr_xak.xak_li
-#define tpdu_XAKtype    _tpdufr_xak.xak_type
-#define tpdu_XAKdref    _tpdufr_xak.xak_dref
-#define tpdu_XAKseq     _tpdufr_xak.xak_seq
-#define tpdu_XAKseqX    _tpdufr_xak.xak_Xseq
+#define tpdu_XAKli      _tpdufr._tpdufr_xak.xak_li
+#define tpdu_XAKtype    _tpdufr._tpdufr_xak.xak_type
+#define tpdu_XAKdref    _tpdufr._tpdufr_xak.xak_dref
+#define tpdu_XAKseq     _tpdufr._tpdufr_xak.xak_seq
+#define tpdu_XAKseqX    _tpdufr._tpdufr_xak.xak_Xseq
 
     struct tpduf_er      _tpdufr_er;
-#define tpdu_ERli       _tpdufr_er.er_li
-#define tpdu_ERtype     _tpdufr_er.er_type
-#define tpdu_ERdref     _tpdufr_er.er_dref
-#define tpdu_ERreason   _tpdufr_er.er_reason
+#define tpdu_ERli       _tpdufr._tpdufr_er.er_li
+#define tpdu_ERtype     _tpdufr._tpdufr_er.er_type
+#define tpdu_ERdref     _tpdufr._tpdufr_er.er_dref
+#define tpdu_ERreason   _tpdufr._tpdufr_er.er_reason
 
     struct tpduf_rj      _tpdufr_rj;
-#define tpdu_RJli       _tpdufr_rj.rj_li
-#define tpdu_RJtype     _tpdufr_rj.rj_type
-#define tpdu_RJdref     _tpdufr_rj.rj_dref
-#define tpdu_RJseq     	_tpdufr_rj.rj_seq
-#define tpdu_RJseqX    	_tpdufr_rj.rj_Xseq
+#define tpdu_RJli       _tpdufr._tpdufr_rj.rj_li
+#define tpdu_RJtype     _tpdufr._tpdufr_rj.rj_type
+#define tpdu_RJdref     _tpdufr._tpdufr_rj.rj_dref
+#define tpdu_RJseq     	_tpdufr._tpdufr_rj.rj_seq
+#define tpdu_RJseqX    	_tpdufr._tpdufr_rj.rj_Xseq
 };
 
 #endif /* _NETISO_TP_TPDU_F_H_ */

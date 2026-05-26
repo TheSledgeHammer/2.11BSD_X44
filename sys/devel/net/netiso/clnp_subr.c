@@ -63,7 +63,7 @@ __KERNEL_RCSID(0, "$NetBSD: clnp_subr.c,v 1.15.6.1 2007/03/29 08:57:21 ghen Exp 
 
 #include "opt_iso.h"
 
-//#ifdef ISO
+#ifdef ISO
 
 #include <sys/param.h>
 #include <sys/mbuf.h>
@@ -208,7 +208,7 @@ clnp_ours(struct iso_addr *dst	/* ptr to destination address */)
 {
 	struct iso_ifaddr *ia;	/* scan through interface addresses */
 
-	for (ia = TAILQ_FIRST(iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
+	for (ia = TAILQ_FIRST(&iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
 #ifdef ARGO_DEBUG
 		if (argo_debug[D_ROUTE]) {
 			printf("clnp_ours: ia_sis %p, dst %p\n", 

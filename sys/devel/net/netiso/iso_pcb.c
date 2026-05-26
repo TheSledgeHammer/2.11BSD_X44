@@ -228,7 +228,7 @@ iso_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 	}
 #endif
 	suf.s = 0;
-	if (TAILQ_FIRST(iso_ifaddr) == 0) /* any interfaces attached? */
+	if (TAILQ_FIRST(&iso_ifaddr) == 0) /* any interfaces attached? */
 		return EADDRNOTAVAIL;
 	if (isop->isop_laddr) /* already bound */
 		return EADDRINUSE;
@@ -268,7 +268,7 @@ iso_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 			printf("iso_pcbbind: bind to NOT zeroisoaddr\n");
 		}
 #endif
-		for (ia = TAILQ_FIRST(iso_ifaddr); ia != 0;
+		for (ia = TAILQ_FIRST(&iso_ifaddr); ia != 0;
 				ia = TAILQ_NEXT(ia, ia_list))
 			if (SAME_ISOIFADDR(siso, &ia->ia_addr))
 				break;
@@ -367,7 +367,7 @@ iso_pcbconnect(void *v, struct mbuf *nam)
 	if (siso->siso_family != AF_ISO)
 		return EAFNOSUPPORT;
 	if (siso->siso_nlen == 0) {
-		if ((ia = TAILQ_FIRST(iso_ifaddr)) != NULL) {
+		if ((ia = TAILQ_FIRST(&iso_ifaddr)) != NULL) {
 			int nlen = ia->ia_addr.siso_nlen;
 			memmove(nlen + TSEL(siso), TSEL(siso),
 					siso->siso_plen + siso->siso_tlen + siso->siso_slen);

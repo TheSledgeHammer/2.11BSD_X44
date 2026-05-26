@@ -77,14 +77,12 @@ SOFTWARE.
 
 #include <net/route.h>
 
-#include <netinet6/in6.h>
-#include <netinet6/in6_pcb.h>
+#include <netinet/ip6.h>
+#ifdef INET6
 #include <netinet6/ip6_var.h>
 
-struct in6pcb tp_in6pcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
+#define tp_in6pcb tp_inpcbtable     /* queue of active inpcbs for tp ; for tp with dod ip */
 
-void in6_sapattach(void *);
-void in6_sapdetach(void *);
 void in6_getsufx(void *, u_short *, caddr_t, int);
 void in6_putsufx(void *, caddr_t, int, int);
 void in6_recycle_tsuffix(void *);
@@ -92,15 +90,15 @@ void in6_putnetaddr(void *, struct sockaddr *, int);
 int in6_cmpnetaddr(void *, struct sockaddr *, int);
 void in6_getnetaddr(void *, struct mbuf *, int);
 
-int tpip6_mtu(struct tpipcb *);
+int tpip6_mtu(struct tp_pcb *);
 int tpip6_output(struct mbuf *, ...);
 int tpip6_output_dg(struct mbuf *, ...);
-int tpip6_input(struct mbuf *, ...);
+void tpip6_input(struct mbuf *, ...);
 void tpip6_quench(struct in6pcb *, int);
 void tpip6_abort(struct in6pcb *, int);
 void *tpip6_ctlinput(int, struct sockaddr *, void *);
 
 void tpin6_quench(struct in6pcb *);
 void tpin6_abort(struct in6pcb *);
-
+#endif
 #endif /* _NETISO_TP_IP6_H_ */

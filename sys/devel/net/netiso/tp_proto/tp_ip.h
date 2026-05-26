@@ -78,14 +78,13 @@ SOFTWARE.
 
 #include <net/route.h>
 
+#ifdef INET
 #include <netinet/in.h>
 #include <netinet/in_pcb.h>
 #include <netinet/ip_var.h>
 
-struct inpcb tp_inpcb;		/* queue of active inpcbs for tp ; for tp with dod ip */
+#define tp_inpcb tp_inpcbtable /* queue of active inpcbs for tp ; for tp with dod ip */
 
-void in_sapattach(void *);
-void in_sapdetach(void *);
 void in_getsufx(void *, u_short *, caddr_t, int);
 void in_putsufx(void *, caddr_t, int, int);
 void in_recycle_tsuffix(void *);
@@ -103,5 +102,5 @@ void *tpip_ctlinput(int, struct sockaddr *, void *);
 
 void tpin_quench(struct inpcb *);
 void tpin_abort(struct inpcb *);
-
+#endif
 #endif /* _NETISO_TP_IP_H_ */

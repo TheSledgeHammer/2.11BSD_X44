@@ -42,14 +42,12 @@
 
 #include <net/if.h>
 
+#include <netinet/in.h>
+
 #include <netiso/tp_pcb.h>
 #include <netiso/tp_protosw.h>
 
 #include <netiso/tp_proto/tp_ip6.h>
-
-#include <netinet/in.h>
-#include <netinet/ip6.h>
-#include <netinet6/in6_var.h>
 
 struct tp_protosw tpin6_protosw = {
 		.tp_afamily = AF_INET6,
@@ -263,7 +261,7 @@ bad:
 	return (error);
 }
 
-int
+void
 tpip6_input(struct mbuf *m0, ...)
 {
 	struct sockaddr_in6 src6, dst6;
@@ -335,7 +333,7 @@ tpip6_input(struct mbuf *m0, ...)
 	dst6.sin6_len  = sizeof(dst6);
 
 	(void)tp_input(m, (struct sockaddr *)&src6, (struct sockaddr *)&dst6, 0, tpip6_output_dg, 0);
-	return (0);
+	return;
 
 discard:
 	IFDEBUG(D_TPINPUT)
@@ -347,7 +345,6 @@ discard:
 	m_freem(m);
 	IncStat(ts_recv_drop);
 	splx(s);
-	return (0);
 }
 
 void

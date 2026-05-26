@@ -150,7 +150,7 @@ char *
 clnp_hexp(
 		char *src,		/* src of data to print */
 		int len,		/* lengthof src */
-		char *where,	/* where to put data */
+		char *where	/* where to put data */
 	)
 {
 	int             i;

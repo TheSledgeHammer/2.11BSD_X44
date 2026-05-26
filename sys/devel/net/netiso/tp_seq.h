@@ -77,43 +77,43 @@ SOFTWARE.
 #define _NETISO_TP_SEQ_
 
 #define SEQ(tpcb,x) \
-	((x) & (tpcb)->tpp_seqmask)
+	((x) & (tpcb)->tp_seqmask)
 
 #define SEQ_GT(tpcb, seq, operand ) \
 ( ((int)((seq)-(operand)) > 0)\
-? ((int)((seq)-(operand)) < (int)(tpcb)->tpp_seqhalf)\
-: !(-((int)(seq)-(operand)) < (int)(tpcb)->tpp_seqhalf))
+? ((int)((seq)-(operand)) < (int)(tpcb)->tp_seqhalf)\
+: !(-((int)(seq)-(operand)) < (int)(tpcb)->tp_seqhalf))
 
 #define SEQ_GEQ(tpcb, seq, operand ) \
 ( ((int)((seq)-(operand)) >= 0)\
-? ((int)((seq)-(operand)) < (int)(tpcb)->tpp_seqhalf)\
-: !((-((int)(seq)-(operand))) < (int)(tpcb)->tpp_seqhalf))
+? ((int)((seq)-(operand)) < (int)(tpcb)->tp_seqhalf)\
+: !((-((int)(seq)-(operand))) < (int)(tpcb)->tp_seqhalf))
 
 #define SEQ_LEQ(tpcb, seq, operand ) \
 ( ((int)((seq)-(operand)) <= 0)\
-? ((-(int)((seq)-(operand))) < (int)(tpcb)->tpp_seqhalf)\
-: !(((int)(seq)-(operand)) < (int)(tpcb)->tpp_seqhalf))
+? ((-(int)((seq)-(operand))) < (int)(tpcb)->tp_seqhalf)\
+: !(((int)(seq)-(operand)) < (int)(tpcb)->tp_seqhalf))
 
 #define SEQ_LT(tpcb, seq, operand ) \
 ( ((int)((seq)-(operand)) < 0)\
-? ((-(int)((seq)-(operand))) < (int)(tpcb)->tpp_seqhalf)\
-: !(((int)(seq)-(operand)) < (int)(tpcb)->tpp_seqhalf))
+? ((-(int)((seq)-(operand))) < (int)(tpcb)->tp_seqhalf)\
+: !(((int)(seq)-(operand)) < (int)(tpcb)->tp_seqhalf))
 
 #define SEQ_MIN(tpcb, a, b) ( SEQ_GT(tpcb, a, b) ? b : a)
 
 #define SEQ_MAX(tpcb, a, b) ( SEQ_GT(tpcb, a, b) ? a : b)
 
-#define SEQ_INC(tpcb, Seq) ((++Seq), ((Seq) &= (tpcb)->tpp_seqmask))
+#define SEQ_INC(tpcb, Seq) ((++Seq), ((Seq) &= (tpcb)->tp_seqmask))
 
 #define SEQ_DEC(tpcb, Seq)\
-	((Seq) = (((Seq)+(unsigned)((int)(tpcb)->tpp_seqbit - 1))&(tpcb)->tpp_seqmask))
+	((Seq) = (((Seq)+(unsigned)((int)(tpcb)->tp_seqbit - 1))&(tpcb)->tp_seqmask))
 
 /* (amt) had better be less than the seq bit ! */
 
 #define SEQ_SUB(tpcb, Seq, amt)\
-	(((Seq) + (unsigned)((int)(tpcb)->tpp_seqbit - amt)) & (tpcb)->tpp_seqmask)
+	(((Seq) + (unsigned)((int)(tpcb)->tp_seqbit - amt)) & (tpcb)->tp_seqmask)
 
-#define SEQ_ADD(tpcb, Seq, amt) (((Seq) + (unsigned)amt) & (tpcb)->tpp_seqmask)
+#define SEQ_ADD(tpcb, Seq, amt) (((Seq) + (unsigned)amt) & (tpcb)->tp_seqmask)
 
 #define IN_RWINDOW(tpcb, seq, lwe, uwe)\
 	( SEQ_GEQ(tpcb, seq, lwe) && SEQ_LT(tpcb, seq, uwe) )

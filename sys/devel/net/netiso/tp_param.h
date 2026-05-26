@@ -277,8 +277,8 @@ typedef	int				ProtoHook;
  * Some macros used for address families
  *****************************************************/
 
-#define satosiso(ADDR) ((struct sockaddr_iso *)(ADDR))
-#define satosin(ADDR) ((struct sockaddr_in *)(ADDR))
+//#define satosiso(ADDR) ((struct sockaddr_iso *)(ADDR))
+//#define satosin(ADDR) ((struct sockaddr_in *)(ADDR))
 
 /******************************************************
  * Macro used for changing types of mbufs

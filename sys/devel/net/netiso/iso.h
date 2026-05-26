@@ -174,12 +174,22 @@ struct sockaddr_iso {
 #include <sys/protosw.h>
 
 extern struct domain isodomain;
-extern const struct protosw isosw[];
+extern struct protosw isosw[];
 extern struct sockaddr_iso blank_siso;
 
 #define	satosiso(sa)	((struct sockaddr_iso *)(sa))
 #define	satocsiso(sa)	((const struct sockaddr_iso *)(sa))
 #define	sisotosa(siso)	((struct sockaddr *)(siso))
+
+/* iso.c */
+int iso_addrmatch1(struct iso_addr *, struct iso_addr *);
+int iso_addrmatch(struct sockaddr_iso *, struct sockaddr_iso *);
+int iso_ck_addr(struct iso_addr *);
+void dump_isoaddr(struct sockaddr_iso *);
+
+/* iso_chksum.c */
+int iso_check_csum(struct mbuf *, int);
+void iso_gen_csum(struct mbuf *, int, int);
 
 #else
 /* user utilities definitions from the iso library */

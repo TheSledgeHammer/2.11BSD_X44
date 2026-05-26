@@ -46,6 +46,7 @@
 
 /* private tpdu structures */
 
+#ifdef notyet
 /* sizes in octets */
 unsigned char tpdu_sizes = {
 		8192, /*  (not allowed in Class 0) */
@@ -56,6 +57,7 @@ unsigned char tpdu_sizes = {
 		256,
 		128
 };
+#endif
 
 struct cksum16 {
 	unsigned short ck_cksum; 		/* checksum (Uses Fletcher16) */
@@ -215,7 +217,7 @@ struct tpduv_cc {
 /* TPDU disconnect request */
 struct tpduv_dr {
 	struct tpdu_variable dr_tpduv;
-	unsigned char 		dr_add_info:31;
+	unsigned char 		dr_add_info;
 	struct cksum16 		dr_cksum16;
 #define dr_pcode		dr_tpduv.fd_pcode
 #define dr_pli			dr_tpduv.fd_pli
@@ -262,10 +264,10 @@ struct tpduv_ak {
 #define ak_pli			ak_tpduv.fd_pli
 #define ak_pvalue		ak_tpduv.fd_pvalue
 #define ak_cksum  		ak_cksum16.ck_cksum
-#define	ak_winedge0 	ak_flow.fc_window_edge0
-#define ak_winedge		ak_flow.fc_window_edge
-#define ak_subseq		ak_flow.fc_subseq
-#define	ak_cdt			ak_flow.fc_cdt
+#define	ak_flow_winedge0 	ak_flow.fc_window_edge0
+#define ak_flow_winedge		ak_flow.fc_window_edge
+#define ak_flow_subseq		ak_flow.fc_subseq
+#define	ak_flow_cdt			ak_flow.fc_cdt
 };
 
 /* TPDU expedited data acknowledge */
@@ -281,7 +283,7 @@ struct tpduv_xak {
 /* TPDU error */
 struct tpduv_er {
 	struct tpdu_variable er_tpduv;
-	unsigned char 		er_invalid:31;	/* invalid TPDU */
+	unsigned char 		er_invalid;	/* invalid TPDU */
 	struct cksum16 		er_cksum16;
 #define er_pcode		er_tpduv.fd_pcode
 #define er_pli			er_tpduv.fd_pli
@@ -291,116 +293,116 @@ struct tpduv_er {
 
 union tpdu_variable_rest {
 	struct tpduv_cr 				_tpduvr_cr;
-#define tpdu_CRpcode 				_tpduvr_cr.cr_pcode
-#define tpdu_CRpli 					_tpduvr_cr.cr_pli
-#define tpdu_CRpvalue 				_tpduvr_cr.cr_pvalue
-#define tpdu_CRcaller_id 			_tpduvr_cr.cr_caller_id
-#define tpdu_CRcalling_id 			_tpduvr_cr.cr_calling_id
-#define tpdu_CRsize 				_tpduvr_cr.cr_size
-#define tpdu_CRversion 				_tpduvr_cr.cr_version
-#define tpdu_CRsecurity 			_tpduvr_cr.cr_security
-#define tpdu_CRopt_select 			_tpduvr_cr.cr_opt_select
-#define tpdu_CRalt_class 			_tpduvr_cr.cr_alt_class
-#define tpdu_CRack_time 			_tpduvr_cr.cr_ack_time
-#define tpdu_CRpriority 			_tpduvr_cr.cr_priority
-#define tpdu_CRttr 					_tpduvr_cr.cr_ttr
-#define tpdu_CRcksum 				_tpduvr_cr.cr_cksum
-#define tpdu_CRtput_caller_val 		_tpduvr_cr.cr_tput_caller_val
-#define tpdu_CRtput_caller_min 		_tpduvr_cr.cr_tput_caller_min
-#define tpdu_CRtput_calling_val 	_tpduvr_cr.cr_tput_calling_val
-#define tpdu_CRtput_calling_min 	_tpduvr_cr.cr_tput_calling_min
-#define tpdu_CRtput_max 			_tpduvr_cr.cr_tput_max
-#define tpdu_CRtput_avg 			_tpduvr_cr.cr_tput_avg
-#define tpdu_CRerate_val 			_tpduvr_cr.cr_erate_val
-#define tpdu_CRerate_min 			_tpduvr_cr.cr_erate_min
-#define tpdu_CRerate_size 			_tpduvr_cr.cr_erate_size
-#define tpdu_CRerate_caller_val 	_tpduvr_cr.cr_erate_caller_val
-#define tpdu_CRerate_caller_min 	_tpduvr_cr.cr_erate_caller_min
-#define tpdu_CRerate_calling_val 	_tpduvr_cr.cr_erate_calling_val
-#define tpdu_CRerate_calling_min 	_tpduvr_cr.cr_erate_calling_min
-#define tpdu_CRtdelay_caller_val 	_tpduvr_cr.cr_tdelay_caller_val
-#define tpdu_CRtdelay_caller_min 	_tpduvr_cr.cr_tdelay_caller_min
-#define tpdu_CRtdelay_calling_val 	_tpduvr_cr.cr_tdelay_calling_val
-#define tpdu_CRtdelay_calling_min 	_tpduvr_cr.cr_tdelay_calling_min
+#define tpdu_CRpcode 				_tpduvr._tpduvr_cr.cr_pcode
+#define tpdu_CRpli 					_tpduvr._tpduvr_cr.cr_pli
+#define tpdu_CRpvalue 				_tpduvr._tpduvr_cr.cr_pvalue
+#define tpdu_CRcaller_id 			_tpduvr._tpduvr_cr.cr_caller_id
+#define tpdu_CRcalling_id 			_tpduvr._tpduvr_cr.cr_calling_id
+#define tpdu_CRsize 				_tpduvr._tpduvr_cr.cr_size
+#define tpdu_CRversion 				_tpduvr._tpduvr_cr.cr_version
+#define tpdu_CRsecurity 			_tpduvr._tpduvr_cr.cr_security
+#define tpdu_CRopt_select 			_tpduvr._tpduvr_cr.cr_opt_select
+#define tpdu_CRalt_class 			_tpduvr._tpduvr_cr.cr_alt_class
+#define tpdu_CRack_time 			_tpduvr._tpduvr_cr.cr_ack_time
+#define tpdu_CRpriority 			_tpduvr._tpduvr_cr.cr_priority
+#define tpdu_CRttr 					_tpduvr._tpduvr_cr.cr_ttr
+#define tpdu_CRcksum 				_tpduvr._tpduvr_cr.cr_cksum
+#define tpdu_CRtput_caller_val 		_tpduvr._tpduvr_cr.cr_tput_caller_val
+#define tpdu_CRtput_caller_min 		_tpduvr._tpduvr_cr.cr_tput_caller_min
+#define tpdu_CRtput_calling_val 	_tpduvr._tpduvr_cr.cr_tput_calling_val
+#define tpdu_CRtput_calling_min 	_tpduvr._tpduvr_cr.cr_tput_calling_min
+#define tpdu_CRtput_max 			_tpduvr._tpduvr_cr.cr_tput_max
+#define tpdu_CRtput_avg 			_tpduvr._tpduvr_cr.cr_tput_avg
+#define tpdu_CRerate_val 			_tpduvr._tpduvr_cr.cr_erate_val
+#define tpdu_CRerate_min 			_tpduvr._tpduvr_cr.cr_erate_min
+#define tpdu_CRerate_size 			_tpduvr._tpduvr_cr.cr_erate_size
+#define tpdu_CRerate_caller_val 	_tpduvr._tpduvr_cr.cr_erate_caller_val
+#define tpdu_CRerate_caller_min 	_tpduvr._tpduvr_cr.cr_erate_caller_min
+#define tpdu_CRerate_calling_val 	_tpduvr._tpduvr_cr.cr_erate_calling_val
+#define tpdu_CRerate_calling_min 	_tpduvr._tpduvr_cr.cr_erate_calling_min
+#define tpdu_CRtdelay_caller_val 	_tpduvr._tpduvr_cr.cr_tdelay_caller_val
+#define tpdu_CRtdelay_caller_min 	_tpduvr._tpduvr_cr.cr_tdelay_caller_min
+#define tpdu_CRtdelay_calling_val 	_tpduvr._tpduvr_cr.cr_tdelay_calling_val
+#define tpdu_CRtdelay_calling_min 	_tpduvr._tpduvr_cr.cr_tdelay_calling_min
 
 	struct tpduv_cc					_tpduvr_cc;
-#define tpdu_CCpcode 				_tpduvr_cc.cc_pcode
-#define tpdu_CCpli 					_tpduvr_cc.cc_pli
-#define tpdu_CCpvalue 				_tpduvr_cc.cc_pvalue
-#define tpdu_CCcaller_id 			_tpduvr_cc.cc_caller_id
-#define tpdu_CCcalling_id 			_tpduvr_cc.cc_calling_id
-#define tpdu_CCsize 				_tpduvr_cc.cc_size
-#define tpdu_CCversion	 			_tpduvr_cc.cc_version
-#define tpdu_CCsecurity 			_tpduvr_cc.cc_security
-#define tpdu_CCack_time 			_tpduvr_cc.cc_ack_time
-#define tpdu_CCpriority 			_tpduvr_cc.cc_priority
-#define tpdu_CCttr 					_tpduvr_cc.cc_ttr
-#define tpdu_CCcksum 				_tpduvr_cc.cc_cksum
-#define tpdu_CCtput_caller_val 		_tpduvr_cc.cc_tput_caller_val
-#define tpdu_CCtput_caller_min 		_tpduvr_cc.cc_tput_caller_min
-#define tpdu_CCtput_calling_val 	_tpduvr_cc.cc_tput_calling_val
-#define tpdu_CCtput_calling_min 	_tpduvr_cc.cc_tput_calling_min
-#define tpdu_CCtput_max 			_tpduvr_cc.cc_tput_max
-#define tpdu_CCtput_avg 			_tpduvr_cc.cc_tput_avg
-#define tpdu_CCerate_val 			_tpduvr_cc.cc_erate_val
-#define tpdu_CCerate_min 			_tpduvr_cc.cc_erate_min
-#define tpdu_CCerate_size 			_tpduvr_cc.cc_erate_size
-#define tpdu_CCerate_caller_val 	_tpduvr_cc.cc_erate_caller_val
-#define tpdu_CCerate_caller_min 	_tpduvr_cc.cc_erate_caller_min
-#define tpdu_CCerate_calling_val 	_tpduvr_cc.cc_erate_calling_val
-#define tpdu_CCerate_calling_min 	_tpduvr_cc.cc_erate_calling_min
-#define tpdu_CCtdelay_caller_val 	_tpduvr_cc.cc_tdelay_caller_val
-#define tpdu_CCtdelay_caller_min 	_tpduvr_cc.cc_tdelay_caller_min
-#define tpdu_CCtdelay_calling_val 	_tpduvr_cc.cc_tdelay_calling_val
-#define tpdu_CCtdelay_calling_min 	_tpduvr_cc.cc_tdelay_calling_min
+#define tpdu_CCpcode 				_tpduvr._tpduvr_cc.cc_pcode
+#define tpdu_CCpli 					_tpduvr._tpduvr_cc.cc_pli
+#define tpdu_CCpvalue 				_tpduvr._tpduvr_cc.cc_pvalue
+#define tpdu_CCcaller_id 			_tpduvr._tpduvr_cc.cc_caller_id
+#define tpdu_CCcalling_id 			_tpduvr._tpduvr_cc.cc_calling_id
+#define tpdu_CCsize 				_tpduvr._tpduvr_cc.cc_size
+#define tpdu_CCversion	 			_tpduvr._tpduvr_cc.cc_version
+#define tpdu_CCsecurity 			_tpduvr._tpduvr_cc.cc_security
+#define tpdu_CCack_time 			_tpduvr._tpduvr_cc.cc_ack_time
+#define tpdu_CCpriority 			_tpduvr._tpduvr_cc.cc_priority
+#define tpdu_CCttr 					_tpduvr._tpduvr_cc.cc_ttr
+#define tpdu_CCcksum 				_tpduvr._tpduvr_cc.cc_cksum
+#define tpdu_CCtput_caller_val 		_tpduvr._tpduvr_cc.cc_tput_caller_val
+#define tpdu_CCtput_caller_min 		_tpduvr._tpduvr_cc.cc_tput_caller_min
+#define tpdu_CCtput_calling_val 	_tpduvr._tpduvr_cc.cc_tput_calling_val
+#define tpdu_CCtput_calling_min 	_tpduvr._tpduvr_cc.cc_tput_calling_min
+#define tpdu_CCtput_max 			_tpduvr._tpduvr_cc.cc_tput_max
+#define tpdu_CCtput_avg 			_tpduvr._tpduvr_cc.cc_tput_avg
+#define tpdu_CCerate_val 			_tpduvr._tpduvr_cc.cc_erate_val
+#define tpdu_CCerate_min 			_tpduvr._tpduvr_cc.cc_erate_min
+#define tpdu_CCerate_size 			_tpduvr._tpduvr_cc.cc_erate_size
+#define tpdu_CCerate_caller_val 	_tpduvr._tpduvr_cc.cc_erate_caller_val
+#define tpdu_CCerate_caller_min 	_tpduvr._tpduvr_cc.cc_erate_caller_min
+#define tpdu_CCerate_calling_val 	_tpduvr._tpduvr_cc.cc_erate_calling_val
+#define tpdu_CCerate_calling_min 	_tpduvr._tpduvr_cc.cc_erate_calling_min
+#define tpdu_CCtdelay_caller_val 	_tpduvr._tpduvr_cc.cc_tdelay_caller_val
+#define tpdu_CCtdelay_caller_min 	_tpduvr._tpduvr_cc.cc_tdelay_caller_min
+#define tpdu_CCtdelay_calling_val 	_tpduvr._tpduvr_cc.cc_tdelay_calling_val
+#define tpdu_CCtdelay_calling_min 	_tpduvr._tpduvr_cc.cc_tdelay_calling_min
 
 	struct tpduv_dr					_tpduvr_dr;
-#define tpdu_DRpcode 				_tpduvr_dr.dr_pcode
-#define tpdu_DRpli 					_tpduvr_dr.dr_pli
-#define tpdu_DRpvalue 				_tpduvr_dr.dr_pvalue
-#define tpdu_DRadd_info				_tpduvr_dr.dr_add_info
-#define tpdu_DRcksum 				_tpduvr_dr.dr_cksum
+#define tpdu_DRpcode 				_tpduvr._tpduvr_dr.dr_pcode
+#define tpdu_DRpli 					_tpduvr._tpduvr_dr.dr_pli
+#define tpdu_DRpvalue 				_tpduvr._tpduvr_dr.dr_pvalue
+#define tpdu_DRadd_info				_tpduvr._tpduvr_dr.dr_add_info
+#define tpdu_DRcksum 				_tpduvr._tpduvr_dr.dr_cksum
 
 	struct tpduv_dc					_tpduvr_dc;
-#define tpdu_DCpcode 				_tpduvr_dc.dc_pcode
-#define tpdu_DCpli 					_tpduvr_dc.dc_pli
-#define tpdu_DCpvalue 				_tpduvr_dc.dc_pvalue
-#define tpdu_DCcksum 				_tpduvr_dc.dc_cksum
+#define tpdu_DCpcode 				_tpduvr._tpduvr_dc.dc_pcode
+#define tpdu_DCpli 					_tpduvr._tpduvr_dc.dc_pli
+#define tpdu_DCpvalue 				_tpduvr._tpduvr_dc.dc_pvalue
+#define tpdu_DCcksum 				_tpduvr._tpduvr_dc.dc_cksum
 
 	struct tpduv_dt					_tpduvr_dt;
-#define tpdu_DTpcode 				_tpduvr_dt.dt_pcode
-#define tpdu_DTpli 					_tpduvr_dt.dt_pli
-#define tpdu_DTpvalue 				_tpduvr_dt.dt_pvalue
-#define tpdu_DTcksum 				_tpduvr_dt.dt_cksum
+#define tpdu_DTpcode 				_tpduvr._tpduvr_dt.dt_pcode
+#define tpdu_DTpli 					_tpduvr._tpduvr_dt.dt_pli
+#define tpdu_DTpvalue 				_tpduvr._tpduvr_dt.dt_pvalue
+#define tpdu_DTcksum 				_tpduvr._tpduvr_dt.dt_cksum
 
 	struct tpduv_xpd				_tpduvr_xpd;
-#define tpdu_XPDpcode 				_tpduvr_xpd.pcode
-#define tpdu_XPDpli 				_tpduvr_xpd.pli
-#define tpdu_XPDpvalue 				_tpduvr_xpd.pvalue
-#define tpdu_XPDcksum 				_tpduvr_xpd.cksum
+#define tpdu_XPDpcode 				_tpduvr._tpduvr_xpd.pcode
+#define tpdu_XPDpli 				_tpduvr._tpduvr_xpd.pli
+#define tpdu_XPDpvalue 				_tpduvr._tpduvr_xpd.pvalue
+#define tpdu_XPDcksum 				_tpduvr._tpduvr_xpd.cksum
 
 	struct tpduv_ak					_tpduvr_ak;
-#define tpdu_AKpcode 				_tpduvr_ak.ak_pcode
-#define tpdu_AKpli 					_tpduvr_ak.ak_pli
-#define tpdu_AKpvalue 				_tpduvr_ak.ak_pvalue
-#define tpdu_AKcksum 				_tpduvr_ak.ak_cksum
-#define tpdu_AKwinedge0 			_tpduvr_ak.ak_winedge0
-#define tpdu_AKwinedge 				_tpduvr_ak.ak_winedge
-#define tpdu_AKsubseq 				_tpduvr_ak.ak_subseq
-#define tpdu_AKcdt 					_tpduvr_ak.ak_cdt
+#define tpdu_AKpcode 				_tpduvr._tpduvr_ak.ak_pcode
+#define tpdu_AKpli 					_tpduvr._tpduvr_ak.ak_pli
+#define tpdu_AKpvalue 				_tpduvr._tpduvr_ak.ak_pvalue
+#define tpdu_AKcksum 				_tpduvr._tpduvr_ak.ak_cksum
+#define tpdu_AKflow_winedge0 		_tpduvr._tpduvr_ak.ak_flow_winedge0
+#define tpdu_AKflow_winedge 		_tpduvr._tpduvr_ak.ak_flow_winedge
+#define tpdu_AKflow_subseq 			_tpduvr._tpduvr_ak.ak_flow_subseq
+#define tpdu_AKflow_cdt 			_tpduvr._tpduvr_ak.ak_flow_cdt
 
 	struct tpduv_xak				_tpduvr_xak;
-#define tpdu_XAKpcode 				_tpduvr_xak.xak_pcode
-#define tpdu_XAKpli 				_tpduvr_xak.xak_pli
-#define tpdu_XAKpvalue 				_tpduvr_xak.xak_pvalue
-#define tpdu_XAKcksum 				_tpduvr_xak.xak_cksum
+#define tpdu_XAKpcode 				_tpduvr._tpduvr_xak.xak_pcode
+#define tpdu_XAKpli 				_tpduvr._tpduvr_xak.xak_pli
+#define tpdu_XAKpvalue 				_tpduvr._tpduvr_xak.xak_pvalue
+#define tpdu_XAKcksum 				_tpduvr._tpduvr_xak.xak_cksum
 
 	struct tpduv_er					_tpduvr_er;
-#define tpdu_ERpcode 				_tpduvr_er.er_pcode
-#define tpdu_ERpli 					_tpduvr_er.er_pli
-#define tpdu_ERpvalue 				_tpduvr_er.er_pvalue
-#define tpdu_ERinvalid				_tpduvr_er.er_invalid
-#define tpdu_ERcksum 				_tpduvr_er.er_ckum
+#define tpdu_ERpcode 				_tpduvr._tpduvr_er.er_pcode
+#define tpdu_ERpli 					_tpduvr._tpduvr_er.er_pli
+#define tpdu_ERpvalue 				_tpduvr._tpduvr_er.er_pvalue
+#define tpdu_ERinvalid				_tpduvr._tpduvr_er.er_invalid
+#define tpdu_ERcksum 				_tpduvr._tpduvr_er.er_ckum
 };
 
 #endif /* _NETISO_TPDU_V_H_ */

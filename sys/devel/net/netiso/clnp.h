@@ -506,7 +506,7 @@ int clnp_opt_sanity(struct mbuf *, caddr_t, int, struct clnp_optidx *);
 
 /* clnp_output.c */
 int clnp_output(struct mbuf *, ...);
-void clnp_ctloutput(void);
+int clnp_ctloutput(int, struct socket *, int, int, struct mbuf **);
 
 /* clnp_raw.c */
 void rclnp_input(struct mbuf *, ...);
