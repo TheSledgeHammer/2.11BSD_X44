@@ -42,6 +42,14 @@
  * - replace parts of the current tpi pcb for selecting different protocol stacks.
  * - setup user library
  */
+/*
+ * Changes:
+ * - current selector id's for NSAP's and TSAP's are designed for
+ * internal identification of other network protocols, offering a limit
+ * range of connections.
+ * - hence the selector id's would need change to allow a much larger range
+ * of connections if they were used in user-space.
+ */
 
 /* malloctypes */
 #define M_ISOSAP 	103 /* netiso service access points */

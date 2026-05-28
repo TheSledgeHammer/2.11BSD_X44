@@ -194,8 +194,11 @@ extern struct tp_stat tp_stat;
 
 #ifdef TP_PERF_MEAS
 
-#define PStat(Tpcb, X) (Tpcb)->tp_p_meas->/**/X	/**/
-#define IncPStat(Tpcb, X) if((Tpcb)->tp_perf_on) (Tpcb)->tp_p_meas->/**/X/**/++
+#define PStat(Tpcb, X) \
+	(Tpcb)->tp_p_meas->##X
+
+#define IncPStat(Tpcb, X) \
+	if((Tpcb)->tp_perf_on) (Tpcb)->tp_p_meas->##X##++
 
 /*
  * BEWARE OF MACROS like this ^^^ must be sure it's surrounded by {} if it's
@@ -274,9 +277,8 @@ struct tp_pmeas {
 #define IncPStat(tpcb, x)	/* no-op */
 #define tpmeas(a,b,c,d,e,f) 0
 
-#endif				/* TP_PERF_MEAS */
+#endif	/* TP_PERF_MEAS */
 
+#define DOPERF(tpcb)  (tpcb->tp_perf_on && tpcb->tp_p_meas)
 
-#define  DOPERF(tpcb)  (tpcb->tp_perf_on && tpcb->tp_p_meas)
-
-#endif				/* _NETISO_TP_STAT_H_ */
+#endif /* _NETISO_TP_STAT_H_ */

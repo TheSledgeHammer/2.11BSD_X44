@@ -97,11 +97,7 @@ struct tp_Meas  tp_Meas[TPMEASN];
  * NOTES:
  */
 void
-Tpmeas(ref, kind, timev, seq, win, size)
-	u_int           ref;
-	u_int           kind;
-	struct timeval *timev;
-	u_int           seq, win, size;
+Tpmeas(u_int ref, u_int kind, struct timeval *timev, u_int seq, u_int win, u_int size)
 {
 	struct tp_Meas *tpm;
 	static int      mseq;
@@ -113,10 +109,9 @@ Tpmeas(ref, kind, timev, seq, win, size)
 	tpm->tpm_tseq = mseq++;
 	tpm->tpm_ref = ref;
 	if (kind == TPtime_from_ll)
-		bcopy((caddr_t) timev, (caddr_t) & tpm->tpm_time, sizeof(struct timeval));
+		bcopy((caddr_t)timev, (caddr_t)&tpm->tpm_time, sizeof(struct timeval));
 	else
-		bcopy((caddr_t) & time,
-		      (caddr_t) & tpm->tpm_time, sizeof(struct timeval));
+		bcopy((caddr_t)&time, (caddr_t)&tpm->tpm_time, sizeof(struct timeval));
 	tpm->tpm_seq = seq;
 	tpm->tpm_window = win;
 	tpm->tpm_size = size;

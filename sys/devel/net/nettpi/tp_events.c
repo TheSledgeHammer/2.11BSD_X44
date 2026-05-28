@@ -26,7 +26,95 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/queue.h>
 #include "devel/net/nettpi/tpi_events.h"
+#include "devel/net/nettpi/tpi_tpkt.h"
+
+struct tsap_ref {
+	struct nsap_iso tf_nsap;
+	present;
+	selectlen;
+};
+
+struct tsap_packet {
+	struct tpkt *tsp_pkt;
+	tsp_code
+};
+
+#define TPDU_CODE(tpdu) ((tpdu)->_tpduv.fd_pcode & DT_TPDU)
+
+struct tsap_blk {
+	CIRCLEQ_ENTRY(tsap_blk) tb_queue;
+
+	struct tsap_iso *tb_called;
+	struct tsap_iso *tb_calling;
+
+	struct tsap_ref tb_initiator;
+	struct tsap_ref tb_responder;
+
+	//socket??, sockaddr??
+
+	struct tpkt *tb_pkt;
+	struct tp_event *tb_event;
+
+	//reason, cdt, seq, data, datalen, class
+};
+
+struct tsap_blkqueue;
+CIRCLEQ_HEAD(tsap_blkqueue, tsap_blk);
+
+struct tsap_blkqueue tsapblkqueue;
+
+void
+tsap_blk_init(struct tsap_blkqueue *tblkqueue)
+{
+	CIRCLEQ_INIT(tblkqueue);
+}
+
+struct tsap_blk *
+tsap_blk_create(size_t size)
+{
+	struct tsap_blk *tblk;
+
+	tblk = (struct tsap_blk *)malloc(size, M_ISOSAP, M_WAITOK);
+	if (tblk == NULL) {
+		return (NULL);
+	}
+
+	CIRCLEQ_INSERT_HEAD(&tsapblkqueue, tblk, tb_queue);
+	return (tblk);
+}
+
+tsap_blk_lookup()
+{
+	struct tsap_blk *tblk;
+
+	CIRCLEQ_FOREACH(tblk, &tsapblkqueue, tb_queue) {
+
+	}
+}
+
+tsap_connect_request(struct tsap_iso *calling, struct tsap_iso *called)
+{
+	struct tsap_blk *tblk;
+
+	tblk = tsap_blk_create(sizeof(struct tsap_blk *));
+	if (tblk == NULL) {
+		tsap_disconnect();
+	}
+	if (calling == NULL) {
+		struct tsap_iso *tiso;
+		struct nsap_iso *niso;
+		nsap_iso_attach(niso);
+		tsap_iso_attach(tiso, niso);
+		calling = tiso;
+	}
+	tblk->tb_calling = calling;
+
+	tsap_iso_compare(calling, called);
+	tsap_connect();
+
+}
 
 void
 tp_event_set_tpdu(struct tpi_event *event, int tpdu_event_kind,

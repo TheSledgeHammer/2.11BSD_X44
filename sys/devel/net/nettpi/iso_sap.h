@@ -50,7 +50,7 @@ struct sap_service {
 #define SAP_TABLE_MAX 9
 
 struct sap_select {
-	uint32_t ss_selector[SAP_TABLE_MAX];/* selector id cksum */
+	uint32_t ss_selector[SAP_TABLE_MAX];	/* selector id cksum */
 	int ss_sid;							/* sap select id */
 	int ss_af;							/* address family */
 	long ss_type[SAP_TYPE_MAX];			/* sockaddr array */

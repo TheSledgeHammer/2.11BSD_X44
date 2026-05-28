@@ -8,9 +8,8 @@ __KERNEL_RCSID(0, "$NetBSD: tp_driver.c,v 1.16 2003/09/06 23:56:27 christos Exp 
 static const struct act_ent {
 	int             a_newstate;
 	int             a_action;
-} statetable[] = {{
-		0, 0
-},
+} statetable[] = {
+		{ 0, 0 },
 #include "tp_states.init"
 };
 
@@ -37,30 +36,31 @@ static const struct act_ent {
 #include <netiso/cons.h>
 
 #define DRIVERTRACE TPPTdriver
-#define sbwakeup(sb, dir)	sowakeup(p->tp_sock, sb, dir);
-#define MCPY(d, w) (d ? m_copym(d, 0, (int)M_COPYALL, w): 0)
+#define sbwakeup(sb)	sowakeup(p->tp_sock, sb);
+#define MCPY(d, w) 		(d ? m_copym(d, 0, w) : 0)
 
 static int trick_hc = 1;
 
 #include "tp_events.h"
+
 static int _Xebec_action(int, struct tp_event *, struct tp_pcb *);
 static int _Xebec_index(struct tp_event *, struct tp_pcb *);
 
 static int
 _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 {
-	int             error;
-	struct mbuf    *data = NULL;
-	int             doack;
-	struct socket  *so = p->tp_sock;
+	int error;
+	struct mbuf *data = NULL;
+	int doack;
+	struct socket *so = p->tp_sock;
 	struct sockbuf *sb;
-	int             timo;
+	int timo;
 
 	switch (a) {
 	case -1:
 		return tp_protocol_error(e, p);
 	case 0x1:
-		(void) tp_emit(DC_TPDU_type, p, 0, 0, NULL);
+		(void)tp_emit(DC_TPDU_type, p, 0, 0, NULL);
 		break;
 	case 0x2:
 #ifdef TP_DEBUG
@@ -70,7 +70,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		break;
 	case 0x3:
 		/* oh, man is this grotesque or what? */
-		(void) tp_goodack(p, e->ev_union.EV_AK_TPDU.e_cdt, e->ev_union.EV_AK_TPDU.e_seq, e->ev_union.EV_AK_TPDU.e_subseq);
+		(void)tp_goodack(p, e->ev_union.EV_AK_TPDU.e_cdt, e->ev_union.EV_AK_TPDU.e_seq, e->ev_union.EV_AK_TPDU.e_subseq);
 		/*
 		 * but it's necessary because this pseudo-ack may
 		 * happen before the CC arrives, but we HAVE to
@@ -121,7 +121,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		}
 #endif
 		soisconnected(p->tp_sock);
-		(void) tp_emit(CC_TPDU_type, p, 0, 0, NULL);
+		(void)tp_emit(CC_TPDU_type, p, 0, 0, NULL);
 		p->tp_fcredit = 1;
 		break;
 	case 0x8:
@@ -140,7 +140,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		if ((p->tp_rx_strat & TPRX_FASTSTART) && (p->tp_fcredit > 0))
 			p->tp_cong_win = p->tp_fcredit * p->tp_l_tpdusize;
 		p->tp_retrans = p->tp_Nretrans;
-		tp_ctimeout(p, TM_retrans, (int) p->tp_cc_ticks);
+		tp_ctimeout(p, TM_retrans, (int)p->tp_cc_ticks);
 		break;
 	case 0x9:
 #ifdef ARGO_DEBUG
@@ -189,7 +189,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		if (p->tp_state == TP_OPEN)
 			tp_indicate(T_DISCONNECT, p, 0);
 		else {
-			int             so_error = ECONNREFUSED;
+			int so_error = ECONNREFUSED;
 			if (e->ev_union.EV_DR_TPDU.e_reason != (E_TP_NO_SESSION ^ TP_ERROR_MASK) &&
 			    e->ev_union.EV_DR_TPDU.e_reason != (E_TP_NO_CR_ON_NC ^ TP_ERROR_MASK) &&
 			    e->ev_union.EV_DR_TPDU.e_reason != (E_TP_REF_OVERFLOW ^ TP_ERROR_MASK))
@@ -212,7 +212,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		break;
 	case 0xc:
 		if (e->ev_union.EV_DR_TPDU.e_sref != 0)
-			(void) tp_emit(DC_TPDU_type, p, 0, 0, NULL);
+			(void)tp_emit(DC_TPDU_type, p, 0, 0, NULL);
 		/*
 		 * reference timer already set - reset it to be safe
 		 * (???)
@@ -300,7 +300,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 					e->ev_union.EV_CC_TPDU.e_data);
 			e->ev_union.EV_CC_TPDU.e_data = NULL;
 		}
-		(void) tp_emit(AK_TPDU_type, p, p->tp_rcvnxt, 0, NULL);
+		(void)tp_emit(AK_TPDU_type, p, p->tp_rcvnxt, 0, NULL);
 		tp_ctimeout(p, TM_inact, (int) p->tp_inact_ticks);
 		break;
 	case 0x16:
@@ -379,7 +379,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		break;
 	case 0x1a:
 		tp0_stash(p, e);
-		sbwakeup(&p->tp_sock->so_rcv, POLL_IN);
+		sbwakeup(&p->tp_sock->so_rcv);
 
 #ifdef ARGO_DEBUG
 		if (argo_debug[D_DATA]) {
@@ -389,7 +389,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		break;
 	case 0x1b:
 		tp_ctimeout(p, TM_inact, (int) p->tp_inact_ticks);
-		sbwakeup(&p->tp_sock->so_rcv, POLL_IN);
+		sbwakeup(&p->tp_sock->so_rcv);
 
 		doack = tp_stash(p, e);
 #ifdef ARGO_DEBUG
@@ -477,9 +477,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		}
 #endif
 		tp_indicate(T_XDATA, p, 0);
-		sbwakeup(&p->tp_Xrcv, POLL_IN);
+		sbwakeup(&p->tp_Xrcv);
 
-		(void) tp_emit(XAK_TPDU_type, p, p->tp_Xrcvnxt, 0, NULL);
+		(void)tp_emit(XAK_TPDU_type, p, p->tp_Xrcvnxt, 0, NULL);
 		SEQ_INC(p, p->tp_Xrcvnxt);
 		break;
 	case 0x1f:
@@ -715,7 +715,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		if (p->tp_class != TP_CLASS_0) {
 			tp_ctimeout(p, TM_inact, (int) p->tp_inact_ticks);
 		}
-		sbwakeup(sb, POLL_OUT);
+		sbwakeup(sb);
 #ifdef ARGO_DEBUG
 		if (argo_debug[D_ACKRECV]) {
 			printf("GOOD ACK new sndnxt 0x%x\n", p->tp_sndnxt);
@@ -746,7 +746,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		tp_ctimeout(p, TM_inact, (int) p->tp_inact_ticks);
 		tp_cuntimeout(p, TM_retrans);
 
-		sbwakeup(&p->tp_sock->so_snd, POLL_OUT);
+		sbwakeup(&p->tp_sock->so_snd);
 
 		/* resume normal data */
 		tp_send(p);
@@ -783,7 +783,7 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		break;
 	case 0x36:
 		if (trick_hc) {
-			SeqNum          ack_thresh;
+			SeqNum ack_thresh;
 			/*
 			 * If the upper window edge has advanced a reasonable
 			 * amount beyond what was known, send an ACK.
@@ -946,36 +946,37 @@ _Xebec_index(struct tp_event *e, struct tp_pcb *p)
 			return 0x11;
 	default:
 		return 0;
-	}			/* end switch */
-}				/* _Xebec_index() */
+	} /* end switch */
+} /* _Xebec_index() */
+
 static const int inx[26][9] =
 {
-    {0, 0, 0, 0, 0, 0, 0, 0, 0,},
-    {0x0, 0x0, 0x0, 0x0, 0x31, 0x0, 0x0, 0x0, 0x0,},
-    {0x0, 0x0, -1, -1, -1, -1, 0x0, 0x0, 0x0,},
-    {0x0, 0x0, 0x0, 0x0, 0x3e, 0x0, 0x0, 0x0, 0x0,},
-    {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,},
-    {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x36, 0x0, 0x0,},
-    {0x0, 0x0, 0x0, 0x0, -1, 0x0, 0x0, 0x0, 0x0,},
-    {0x0, 0x7, 0x15, 0x1b, -1, 0x17, 0x3, 0xa, 0x0,},
-    {0x0, 0x19, 0x6, 0x20, 0x37, 0x8, 0x3, -1, 0x0,},
-    {0x0, 0x14, 0x13, 0x13, 0x13, 0x16, -1, 0xa, 0x0,},
-    {0x0, 0x7, 0x6, 0x1, 0x9, 0x18, 0x3, 0xa, 0x0,},
-    {0x0, 0x19, -1, 0x1, 0x37, 0x8, 0x3, 0xa, 0x0,},
-    {0x0, 0x7, -1, 0x26, -1, 0x8, 0x3, 0xa, 0x0,},
-    {0x0, 0x7, 0x6, -1, -1, 0x8, 0x3, 0xa, 0x0,},
-    {0x0, 0x7, 0x6, -1, -1, 0x8, 0x3, 0xa, 0x0,},
-    {0x0, 0x7, 0x6, 0x1, -1, 0x8, 0x3, 0xa, 0x0,},
-    {0x0, 0x12, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,},
-    {0x0, 0x0, -1, 0x2e, -1, 0x0, 0x4, 0x0, 0x2e,},
-    {0x0, 0xb, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,},
-    {0x0, 0x0, 0x0, 0x0, 0x38, 0x0, 0x0, 0x0, 0x0,},
-    {0x0, 0x0, 0x0, 0x0, 0x39, 0x0, 0x0, 0x0, 0x0,},
-    {0x0, 0x0, 0x0, 0x0, -1, 0x0, 0x41, 0x0, 0x0,},
-    {0x0, 0x0, 0x0, 0x0, 0x28, 0x0, 0x41, 0x0, 0x0,},
-    {0x0, 0xc, -1, 0x2c, 0x0, 0x2c, 0x4, 0xc, 0x2c,},
-    {0x0, 0x49, -1, 0x45, -1, 0x44, 0x48, -1, 0x0,},
-    {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, -1,},
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{ 0x0, 0x0, 0x0, 0x0, 0x31, 0x0, 0x0, 0x0, 0x0, },
+		{ 0x0, 0x0, -1, -1, -1, -1, 0x0, 0x0, 0x0, },
+		{ 0x0, 0x0, 0x0, 0x0, 0x3e, 0x0, 0x0, 0x0, 0x0, },
+		{ 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, },
+		{ 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x36, 0x0, 0x0, },
+		{ 0x0, 0x0, 0x0, 0x0, -1, 0x0, 0x0, 0x0, 0x0, },
+		{ 0x0, 0x7, 0x15, 0x1b, -1, 0x17, 0x3, 0xa, 0x0, },
+		{ 0x0, 0x19, 0x6, 0x20, 0x37, 0x8, 0x3, -1, 0x0, },
+		{ 0x0, 0x14, 0x13, 0x13, 0x13, 0x16, -1, 0xa, 0x0, },
+		{ 0x0, 0x7, 0x6, 0x1, 0x9, 0x18, 0x3, 0xa, 0x0, },
+		{ 0x0, 0x19, -1, 0x1, 0x37, 0x8, 0x3, 0xa, 0x0, },
+		{ 0x0, 0x7, -1, 0x26, -1, 0x8, 0x3, 0xa, 0x0, },
+		{ 0x0, 0x7, 0x6, -1, -1, 0x8, 0x3, 0xa, 0x0, },
+		{ 0x0, 0x7, 0x6, -1, -1, 0x8, 0x3, 0xa, 0x0, },
+		{ 0x0, 0x7, 0x6, 0x1, -1, 0x8, 0x3, 0xa, 0x0, },
+		{ 0x0, 0x12, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, },
+		{ 0x0, 0x0, -1, 0x2e, -1, 0x0, 0x4, 0x0, 0x2e, },
+		{ 0x0, 0xb, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, },
+		{ 0x0, 0x0, 0x0, 0x0, 0x38, 0x0, 0x0, 0x0, 0x0, },
+		{ 0x0, 0x0, 0x0, 0x0, 0x39, 0x0, 0x0, 0x0, 0x0, },
+		{ 0x0, 0x0, 0x0, 0x0, -1, 0x0, 0x41, 0x0, 0x0, },
+		{ 0x0, 0x0, 0x0, 0x0, 0x28, 0x0, 0x41, 0x0, 0x0, },
+		{ 0x0, 0xc, -1, 0x2c, 0x0, 0x2c, 0x4, 0xc, 0x2c, },
+		{ 0x0, 0x49, -1, 0x45, -1, 0x44, 0x48, -1, 0x0, },
+		{ 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, -1, },
 };
 
 int

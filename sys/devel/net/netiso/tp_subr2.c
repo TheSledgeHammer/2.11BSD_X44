@@ -629,8 +629,7 @@ punt_route:
 int
 tp_route_to(struct mbuf *m, struct tp_pcb *tpcb, caddr_t channel)
 {
-	struct sockaddr_iso *siso;	/* NOTE: this may be a
-						 * sockaddr_in */
+	struct sockaddr_iso *siso;	/* NOTE: this may be a sockaddr_in */
 	int error = 0, save_netservice = tpcb->tp_netservice;
 	struct rtentry *rt = 0;
 	int nhdr_size;
@@ -801,7 +800,7 @@ tp0_openflow(struct tp_pcb *tpcb)
 	if (tpcb->tp_netservice != ISO_CONS)
 		printf("tp0_openflow: tp running over something weird\n");
 	else {
-		struct pklcd *lcp = (struct pklcd *) isop->isop_chan;
+		struct pklcd *lcp = (struct pklcd *)isop->isop_chan;
 		if (lcp->lcd_rxrnr_condition)
 			pk_flowcontrol(lcp, 0, 0);
 	}

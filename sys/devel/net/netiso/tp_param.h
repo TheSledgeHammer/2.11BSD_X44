@@ -220,8 +220,8 @@ extern int N_TPREF;
 #define	FALSE				0
 #endif		/* FALSE */
 
-#define	TP_LOCAL				22
-#define	TP_FOREIGN				33
+#define	TP_LOCAL			22
+#define	TP_FOREIGN			33
 
 #ifndef EOK
 #define EOK 	0
@@ -255,8 +255,8 @@ typedef	int				ProtoHook;
  * Macro used all over, for driver
  *****************************************************/
 
-#define  DoEvent(x) \
-  ((E.ev_number=(x)),(tp_driver(tpcb,&E)))
+#define DoEvent(x) \
+  ((E.ev_number = (x)), (tp_driver(tpcb, &E)))
 
 /******************************************************
  * Some macros used all over, for timestamping
@@ -264,12 +264,12 @@ typedef	int				ProtoHook;
 
 #define GET_CUR_TIME(tvalp) ((*tvalp) = time)
 
-#define GET_TIME_SINCE(oldtvalp, diffp) {\
-	(diffp)->tv_sec = time.tv_sec - (oldtvalp)->tv_sec;\
-	(diffp)->tv_usec = time.tv_usec - (oldtvalp)->tv_usec;\
-	if( (diffp)->tv_usec <0 ) {\
-		(diffp)->tv_sec --;\
-		(diffp)->tv_usec = 1000000 - (diffp)->tv_usec;\
+#define GET_TIME_SINCE(oldtvalp, diffp) {	\
+	(diffp)->tv_sec = time.tv_sec - (oldtvalp)->tv_sec;	\
+	(diffp)->tv_usec = time.tv_usec - (oldtvalp)->tv_usec;	\
+	if( (diffp)->tv_usec <0 ) {	\
+		(diffp)->tv_sec --;	\
+		(diffp)->tv_usec = 1000000 - (diffp)->tv_usec;	\
 	}\
 }
 
@@ -284,9 +284,10 @@ typedef	int				ProtoHook;
  * Macro used for changing types of mbufs
  *****************************************************/
 
-#define CHANGE_MTYPE(m, TYPE)\
-	if((m)->m_type != TYPE) { \
-		mbstat.m_mtypes[(m)->m_type]--; mbstat.m_mtypes[TYPE]++; \
+#define CHANGE_MTYPE(m, TYPE) \
+	if ((m)->m_type != TYPE) { \
+		mbstat.m_mtypes[(m)->m_type]--; \
+		mbstat.m_mtypes[TYPE]++; \
 		(m)->m_type = TYPE; \
 	}
 
@@ -303,26 +304,27 @@ struct tp_vbp {
 	char 	tpv_len;
 	char	tpv_val;
 };
-#define vbptr(x) ((struct tp_vbp *)(x))
-#define vbval(x,type) (*((type *)&(((struct tp_vbp *)(x))->tpv_val)))
-#define vbcode(x) (vbptr(x)->tpv_code)
-#define vblen(x) (vbptr(x)->tpv_len)
+#define vbptr(x) 		((struct tp_vbp *)(x))
+#define vbval(x,type) 	(*((type *)&(((struct tp_vbp *)(x))->tpv_val)))
+#define vbcode(x) 		(vbptr(x)->tpv_code)
+#define vblen(x) 		(vbptr(x)->tpv_len)
 
-#define vb_putval(dst,type,src)\
-	bcopy((caddr_t)&(src),(caddr_t)&(((struct tp_vbp *)(dst))->tpv_val),\
+#define vb_putval(dst,type,src) \
+	bcopy((caddr_t)&(src),(caddr_t)&(((struct tp_vbp *)(dst))->tpv_val), \
 	sizeof(type))
 
-#define vb_getval(src,type,dst)\
-bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val),(caddr_t)&(dst),sizeof(type))
+#define vb_getval(src,type,dst) \
+	bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val), (caddr_t)&(dst), sizeof(type))
 
-#define ADDOPTION(type, DU, len, src)\
-{	register caddr_t P;\
-	P = (caddr_t)(DU) + (int)((DU)->tpdu_li);\
-	vbptr(P)->tpv_code = type;\
-	vbptr(P)->tpv_len = len;\
-	bcopy((caddr_t)&src, (caddr_t)&(vbptr(P)->tpv_val), (unsigned)len);\
+#define ADDOPTION(type, DU, len, src) { \
+	register caddr_t P;	\
+	P = (caddr_t)(DU) + (int)((DU)->tpdu_li); \
+	vbptr(P)->tpv_code = type; \
+	vbptr(P)->tpv_len = len; \
+	bcopy((caddr_t)&src, (caddr_t)&(vbptr(P)->tpv_val), (unsigned)len);	\
 	DU->tpdu_li += len+2;/* 1 for code, 1 for length */\
 }
+
 /******************************************************
  * Macro for the local credit:
  * uses max transmission unit for the ll
@@ -332,36 +334,38 @@ bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val),(caddr_t)&(dst),sizeof(type)
 #if defined(ARGO_DEBUG)&&!defined(LOCAL_CREDIT_EXPAND)
 #define LOCAL_CREDIT(tpcb) tp_local_credit(tpcb)
 #else
-#define LOCAL_CREDIT(tpcb) { if (tpcb->tp_rsycnt == 0) {\
-    register struct sockbuf *xxsb = &((tpcb)->tp_sock->so_rcv);\
-    register int xxi = sbspace(xxsb);\
-    xxi = (xxi<0) ? 0 : ((xxi) / (tpcb)->tp_l_tpdusize);\
-    xxi = min(xxi, (tpcb)->tp_maxlcredit); \
-    if (!(tpcb->tp_cebit_off)) { \
-        (tpcb)->tp_lcredit = ROUND((tpcb)->tp_win_recv); \
-        if (xxi < (tpcb)->tp_lcredit) { \
-            (tpcb)->tp_lcredit = xxi; \
+#define LOCAL_CREDIT(tpcb) { \
+	if (tpcb->tp_rsycnt == 0) {	\
+		register struct sockbuf *xxsb = &((tpcb)->tp_sock->so_rcv);	\
+		register int xxi = sbspace(xxsb); \
+		xxi = (xxi<0) ? 0 : ((xxi) / (tpcb)->tp_l_tpdusize); \
+		xxi = min(xxi, (tpcb)->tp_maxlcredit); \
+		if (!(tpcb->tp_cebit_off)) { \
+			(tpcb)->tp_lcredit = ROUND((tpcb)->tp_win_recv); \
+			if (xxi < (tpcb)->tp_lcredit) { \
+				(tpcb)->tp_lcredit = xxi; \
+			} \
+        } else { \
+        	(tpcb)->tp_lcredit = xxi; \
         } \
-    } else \
-        (tpcb)->tp_lcredit = xxi; \
-} }
+	} \
+}
+
 #endif /* ARGO_DEBUG */
 
-#ifdef KERNEL
+//#ifdef _KERNEL
 extern int tp_rttadd, tp_rttdiv;
 #include <sys/syslog.h>
-#define printf logpri(LOG_DEBUG),addlog
+#define printf  logpri(LOG_DEBUG), addlog
 
 #ifndef  tp_NSTATES
 
 #include <netiso/tp_states.h>
 #include <netiso/tp_events.h>
-#if defined(__STDC__) || defined(__cplusplus)
-#undef ATTR
-#define ATTR(X) ev_union.EV_ ## X
-#endif /* defined(__STDC__) || defined(__cplusplus) */
+
+#define TPDU_ATTR(X) ev_union.EV_##X##_TPDU
 
 #endif  /* tp_NSTATES  */
-#endif /* KERNEL */
+#endif /* _KERNEL */
 
 #endif /* _NETISO_TP_PARAM_ */

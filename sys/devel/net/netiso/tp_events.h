@@ -75,13 +75,13 @@ struct tp_event {
 }; /* end struct event */
 
 /* Macros */
-#define EV_ATTR(X)			\
+#define TP_EVENT_ATTR(X)		\
 	ev_union.EV_##X
 
-#define EV_GET(X, Y)		\
+#define TP_EVENT_GET(X, Y)		\
 	ev_union.EV_##X.e_##Y
 
-#define EV_SET(X, Y, Z)		\
+#define TP_EVENT_SET(X, Y, Z)	\
 	ev_union.EV_##X.e_##Y = Z;
 
 #define TM_inact 		0x0
@@ -109,5 +109,10 @@ struct tp_event {
 #define T_DETACH 		0x16
 #define T_NETRESET 		0x17
 #define T_ACPT_req 		0x18
+
+#define tp_NEVENTS 		0x19
+
+#define ATTR(X)	\
+	ev_union.EV_##X
 
 #endif /* _NETISO_TP_EVENTS_H_ */

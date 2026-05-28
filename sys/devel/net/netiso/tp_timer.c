@@ -79,10 +79,10 @@ __KERNEL_RCSID(0, "$NetBSD: tp_timer.c,v 1.13 2003/08/07 16:33:42 agc Exp $");
 #include <netiso/tp_seq.h>
 #include <netiso/tp_var.h>
 
-struct tp_ref  *tp_ref;
+struct tp_ref *tp_ref;
 int tp_rttdiv, tp_rttadd, N_TPREF = 127;
 struct tp_refinfo tp_refinfo;
-struct tp_pcb  *tp_ftimeolist = (struct tp_pcb *)&tp_ftimeolist;
+struct tp_pcb *tp_ftimeolist = (struct tp_pcb *)&tp_ftimeolist;
 
 /*
  * CALLED FROM:
@@ -98,17 +98,21 @@ tp_timerinit(void)
 	/*
 	 * Initialize storage
 	 */
-	if (tp_refinfo.tpr_base)
+	if (tp_refinfo.tpr_base) {
 		return;
+	}
 	tp_refinfo.tpr_size = N_TPREF + 1;	/* Need to start somewhere */
 	s = sizeof(*tp_ref) * tp_refinfo.tpr_size;
-	if ((tp_ref = (struct tp_ref *) malloc(s, M_PCB, M_NOWAIT)) == 0)
+	tp_ref = (struct tp_ref *)malloc(s, M_PCB, M_NOWAIT);
+	if (tp_ref == 0) {
 		panic("tp_timerinit");
-	bzero((caddr_t) tp_ref, (unsigned) s);
+	}
+	bzero((caddr_t)tp_ref, (unsigned)s);
 	tp_refinfo.tpr_base = tp_ref;
 	tp_rttdiv = hz / PR_SLOWHZ;
 	tp_rttadd = (2 * tp_rttdiv) - 1;
 }
+
 #ifdef TP_DEBUG_TIMERS
 /**********************  e timers *************************/
 
@@ -121,7 +125,6 @@ tp_timerinit(void)
 void
 tp_etimeout(struct tp_pcb *tpcb, int fun /* function to be called */, int ticks)
 {
-
 	u_int *callp;
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_TIMER]) {
@@ -140,8 +143,9 @@ tp_etimeout(struct tp_pcb *tpcb, int fun /* function to be called */, int ticks)
 	if (ticks == 0)
 		ticks = 1;
 	callp = tpcb->tp_timer + fun;
-	if (*callp == 0 || *callp > ticks)
+	if (*callp == 0 || *callp > ticks) {
 		*callp = ticks;
+	}
 }
 
 /*
@@ -186,7 +190,7 @@ tp_slowtimo(void)
 	struct tp_ref *rp;
 	struct tp_pcb  *tpcb;
 	struct tp_event E;
-	int             s = splsoftnet(), t;
+	int s = splsoftnet(), t;
 
 	/* check only open reference structures */
 	IncStat(ts_Cticks);

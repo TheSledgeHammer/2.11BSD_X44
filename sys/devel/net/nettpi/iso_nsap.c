@@ -26,6 +26,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * Future Implementations:
+ * - May benefit from using Radix Tree for lookups combined with a list.
+ * 	- Use One node per address family.
+ * 	e.g. radix_node_head root[8].
+ */
+
 #include <sys/cdefs.h>
 
 #include <sys/systm.h>
@@ -241,6 +248,24 @@ nsap_iso_compare(struct nsap_iso *a, struct nsap_iso *b)
 		}
 	}
 	return (0);
+}
+
+void
+nsap_iso_attach(struct nsap_iso *nsap)
+{
+	nsap_attach(nsap, AF_ISO);
+	nsap_attach(nsap, AF_INET);
+	nsap_attach(nsap, AF_INET6);
+	nsap_attach(nsap, AF_NS);
+}
+
+void
+nsap_iso_detach(struct nsap_iso *nsap)
+{
+	nsap_detach(nsap, AF_ISO);
+	nsap_detach(nsap, AF_INET);
+	nsap_detach(nsap, AF_INET6);
+	nsap_detach(nsap, AF_NS);
 }
 
 /*
@@ -759,3 +784,95 @@ nsap_setup_id_table(void)
     }
     nsap_id_cnt = cnt;
 }
+
+#ifdef nsap_radix
+
+/* NSAP using Radix lookups */
+/* sap select id */
+enum sap_sids {
+	SAP_SID_UNKNOWN,
+	SAP_SID_INET4,
+	SAP_SID_INET6,
+	SAP_SID_NS,
+	SAP_SID_ISO,
+	SAP_SID_X25,
+	SAP_SID_ATM,
+	SAP_SID_IPX,
+	SAP_SID_SNA,
+	SAP_SID_MAX
+};
+
+struct nsap_iso1 {
+	struct radix_node nsi_nodes[SAP_TABLE_MAX];
+	struct sockaddr_nsap *nsi_smask[SAP_TABLE_MAX]; /* masked sockaddr */
+
+	LIST_ENTRY(nsap_iso) nsi_hash;
+	struct sockaddr_nsap *nsi_snsap;
+
+	uint32_t nsi_id;			/* nsap id */
+	uint32_t nsi_type_id;		/* type id (not nsap_types) */
+	uint32_t nsi_subnet_id;		/* subnet id (not nsap_subnets) */
+};
+
+struct nsapisotree {
+	struct radix_node_head *nsi_tree[SAP_TABLE_MAX];
+	struct nsapisohead *nsi_hashtbl;
+	u_long nsi_hash;
+};
+
+/* sockaddr_nsap radix masks */
+#define sap_unknown(nsap) 	((nsap)->nsi_smask[SAP_SID_UNKNOWN])
+#define sap_inet4(nsap) 	((nsap)->nsi_smask[SAP_SID_INET4])
+#define sap_inet6(nsap)		((nsap)->nsi_smask[SAP_SID_INET6])
+#define sap_ns(nsap)		((nsap)->nsi_smask[SAP_SID_NS])
+#define sap_iso(nsap)		((nsap)->nsi_smask[SAP_SID_ISO])
+#define sap_x25(nsap)		((nsap)->nsi_smask[SAP_SID_X25])
+#define sap_atm(nsap)		((nsap)->nsi_smask[SAP_SID_ATM])
+#define sap_ipx(nsap)		((nsap)->nsi_smask[SAP_SID_IPX])
+#define sap_sna(nsap)		((nsap)->nsi_smask[SAP_SID_SNA])
+
+
+struct radix_node *
+nsap_radix_node_add(struct nsapisotree *tree, struct nsap_iso1 *nsap, struct sockaddr_nsap *snsap, int sid)
+{
+	struct radix_node_head *rnh = nsap_radix_node_head(tree, sid);
+	struct sockaddr_nsap *smask = nsap->nsi_smask[sid];
+	struct radix_node *rn = rnh->rnh_addaddr(snsap, smask, rnh, nsap->nsi_nodes);
+	return (rn);
+}
+
+struct radix_node *
+nsap_radix_node_delete(struct nsapisotree *tree, struct nsap_iso1 *nsap, struct sockaddr_nsap *snsap, int sid)
+{
+	struct radix_node_head *rnh = nsap_radix_node_head(tree, sid);
+	struct sockaddr_nsap *smask = nsap->nsi_smask[sid];
+	struct radix_node *rn = rnh->rnh_deladdr(snsap, smask, rnh);
+	return (rn);
+}
+
+struct radix_node *
+nsap_radix_node_lookup(struct nsapisotree *tree, struct nsap_iso1 *nsap, struct sockaddr_nsap *snsap, int sid)
+{
+	struct radix_node_head *rnh = nsap_radix_node_head(tree, sid);
+	struct sockaddr_nsap *smask = nsap->nsi_smask[sid];
+	struct radix_node *rn = rnh->rnh_lookup(snsap, smask, rnh);
+	return (rn);
+}
+
+void
+nsap_insert1(struct nsapisotree *tree, struct nsap_iso1 *nsap, struct sockaddr_nsap *snsap, long type, long subnet, int sid)
+{
+
+	head = NSAPHASH(tree, type, subnet);
+	rn = nsap_radix_node_add(tree, nsap, snsap, sid);
+	if (head == NULL || nsap == NULL || rn == NULL) {
+		return;
+	}
+	nsap->nsi_snsap = snsap;
+
+	nsap->nsi_type_id = nsap_type_id(type);
+	nsap->nsi_subnet_id = nsap_subnet_id(subnet);
+	nsap->nsi_id = nsap_valid_ids[type][subnet];
+	LIST_INSERT_HEAD(head, nsap, nsi_hash);
+}
+#endif

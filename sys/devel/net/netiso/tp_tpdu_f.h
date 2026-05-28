@@ -83,8 +83,13 @@ SOFTWARE.
  */
 union seq_type {
     struct {
+#if BYTE_ORDER == LITTLE_ENDIAN
+        unsigned int    st_seq:31;  	/* 31 bit sequence number */
+        unsigned int    st_eot:1;   	/* end-of-tsdu */
+#else
         unsigned int    st_eot:1;   	/* end-of-tsdu */
         unsigned int    st_seq:31;  	/* 31 bit sequence number */
+#endif
     } st;
     unsigned int        s_seqeot;
 #define s_eot	        st.st_eot
@@ -92,13 +97,23 @@ union seq_type {
 };
 
 struct seqeot7 {
+#if BYTE_ORDER == LITTLE_ENDIAN
+    unsigned char 	seq:7;		/* 7 bit sequence number */
+    unsigned char 	eot:1;		/* end-of-tsdu */
+#else
     unsigned char 	eot:1;		/* end-of-tsdu */
     unsigned char 	seq:7;		/* 7 bit sequence number */
+#endif
 };
 
 struct seqeot31 {
+#if BYTE_ORDER == LITTLE_ENDIAN
+    unsigned int 	Xseq:31;	/* 31 bit sequence number */
+    unsigned int 	Xeot:1;		/* end-of-tsdu */
+#else
     unsigned int 	Xeot:1;		/* end-of-tsdu */
     unsigned int 	Xseq:31;	/* 31 bit sequence number */
+#endif
 };
 
 /*
@@ -118,14 +133,24 @@ struct tpdu_fixed {
 
 struct tpdu_crcc {
     unsigned short      crcc_sref;      /* source reference */
-    unsigned short      crcc_opt:4;
-    unsigned short      crcc_class:4;
-    unsigned short		crcc_xx:8;	/* unused */
+#if BYTE_ORDER == LITTLE_ENDIAN
+    unsigned short      crcc_opt:4;		/* options [ISO 8073 13.3.3.e] */
+    unsigned short      crcc_class:4;	/* class [ISO 8073 13.3.3.e] */
+#else
+    unsigned short      crcc_class:4;  	/* class [ISO 8073 13.3.3.e] */
+    unsigned short      crcc_opt:4;		/* options [ISO 8073 13.3.3.e] */
+#endif
+    unsigned short		crcc_xx:8;		/* unused */
 };
 
 struct tpdu_ak31 {
+#if BYTE_ORDER == LITTLE_ENDIAN
+	unsigned int        ak31_yrseq:31;	/* [ ISO 8073 13.9.3.d ] */
+    unsigned int        ak31_yrseq0:1;	/* always zero */
+#else
     unsigned int        ak31_yrseq0:1;	/* always zero */
     unsigned int        ak31_yrseq:31;	/* [ ISO 8073 13.9.3.d ] */
+#endif
     unsigned short      ak31_cdt;	/* [ ISO 8073 13.9.3.b ] */
 };
 
@@ -134,11 +159,15 @@ struct tpdu_ak31 {
 struct tp0du {
 	unsigned char   tp0_li;		/* same as in tpdu_fixed */
 	unsigned char   tp0_cdt_type;	/* same as in tpdu_fixed */
+#if BYTE_ORDER == LITTLE_ENDIAN
+	unsigned char	tp0_mbz:7;	/* must be zero */
+	unsigned char	tp0_eot:1;	/* eot */
+#else
 	unsigned char	tp0_eot:1;	/* eot */
 	unsigned char	tp0_mbz:7;	/* must be zero */
+#endif
 	unsigned char	tp0_notused:8;	/* data begins on this octet */
 };
-
 #define tp0du_eot 	tp0_eot
 #define tp0du_mbz 	tp0_mbz
 
@@ -272,6 +301,7 @@ struct tpduf_rj {
  * among the tpdu types :
  */
 union tpdu_fixed_rest {
+	struct tpduf_crcc	 _tpdufr_crcc;
     struct tpduf_cr      _tpdufr_cr;
 #define tpdu_CRli       _tpdufr._tpdufr_cr.cr_li
 #define tpdu_CRtype     _tpdufr._tpdufr_cr.cr_type
@@ -280,7 +310,7 @@ union tpdu_fixed_rest {
 #define tpdu_CRsref     _tpdufr._tpdufr_cr.cr_sref
 #define tpdu_sref       _tpdufr._tpdufr_cr.cr_tpdu_sref
 #define tpdu_CRclass    _tpdufr._tpdufr_cr.cr_class
-#define tpdu_CRoptions  _tpdufr._tpdufr_cr.cr_opt
+#define tpdu_CRoptions  _tpdufr._tpdufr_cr.cr_options
 
     struct tpduf_cc      _tpdufr_cc;
 #define tpdu_CCli       _tpdufr._tpdufr_cc.cc_li
@@ -289,7 +319,7 @@ union tpdu_fixed_rest {
 #define tpdu_CCdref     _tpdufr._tpdufr_cc.cc_dref
 #define tpdu_CCsref     _tpdufr._tpdufr_cc.cc_sref
 #define tpdu_CCclass    _tpdufr._tpdufr_cc.cc_class
-#define tpdu_CCoptions  _tpdufr._tpdufr_cc.cc_opt
+#define tpdu_CCoptions  _tpdufr._tpdufr_cc.cc_options
 
     struct tpduf_dr      _tpdufr_dr;
 #define tpdu_DRli       _tpdufr._tpdufr_dr.dr_li

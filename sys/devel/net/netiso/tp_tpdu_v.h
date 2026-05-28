@@ -48,14 +48,14 @@
 
 #ifdef notyet
 /* sizes in octets */
-unsigned char tpdu_sizes = {
+unsigned char tpdu_sizes[] = {
 		8192, /*  (not allowed in Class 0) */
 		4097, /*  (not allowed in Class 0) */
 		2048,
 		1024,
 		512,
 		256,
-		128
+		128 /* default */
 };
 #endif
 
@@ -115,6 +115,9 @@ struct tpdu_variable {
 	unsigned char fd_pli;			/* parameter length indicator (in octects): limit: 247, max: 255 */
 	unsigned char fd_pvalue;		/* parameter variable value */
 };
+#define tpdu_pcode 	_tpduv.fd_pcode
+#define tpdu_pli 	_tpduv.fd_pli
+#define tpdu_pvalue	_tpduv.fd_pvalue
 
 struct tpduv_crcc {
 	unsigned int  crcc_caller_id;	/* TSAP_ID of caller */
@@ -292,6 +295,7 @@ struct tpduv_er {
 };
 
 union tpdu_variable_rest {
+	struct tpduv_crcc				_tpduvr_crcc;
 	struct tpduv_cr 				_tpduvr_cr;
 #define tpdu_CRpcode 				_tpduvr._tpduvr_cr.cr_pcode
 #define tpdu_CRpli 					_tpduvr._tpduvr_cr.cr_pli

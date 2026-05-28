@@ -258,7 +258,8 @@ art_newtable(struct art_table *parent)
 {
 	struct art_table *t;
 
-	t = (struct art_table *)malloc(sizeof(*t), M_RTABLE, M_NOWAIT);
+	//t = (struct art_table *)malloc(sizeof(*t), M_RTABLE, M_NOWAIT);
+	R_Malloc(t, struct art_table *, sizeof(*t));
 	if (t) {
 		bzero(t, sizeof(*t));
 #ifndef ART_BITLEN_CONSTANT
@@ -899,7 +900,6 @@ rn_art_lookup(void *v_arg, void *m_arg, struct radix_node_head *head)
 struct radix_node *
 rn_art_match(void *v_arg, struct radix_node_head *head)
 {
-
 	return rn_art_lookup(v_arg, NULL, head);
 }
 
@@ -1002,7 +1002,6 @@ rn_art_delete(void *v_arg, void *netmask_arg, struct radix_node_head *head)
 void
 rn_art_setlimit(struct radix_node_head *head, unsigned int limit)
 {
-
 	((struct art_node_head *)head)->art_limit = limit;
 }
 
@@ -1014,7 +1013,7 @@ rn_art_inithead(void **head, int off)
 
 	if (*head)
 		return (1);
-	R_Malloc(rnh, struct art_node_head *, sizeof (*rnh));
+	R_Malloc(rnh, struct art_node_head *, sizeof(*rnh));
 	if (rnh == 0)
 		return (0);
 	Bzero(rnh, sizeof (*rnh));
@@ -1044,7 +1043,6 @@ rn_art_inithead(void **head, int off)
 void
 rn_art_init(void)
 {
-
 #ifdef DIAGNOSTIC
 	/* make sure artidx_t makes sense */
 	if (ART_BITLEN + 1 > sizeof(artidx_t) * 8) {

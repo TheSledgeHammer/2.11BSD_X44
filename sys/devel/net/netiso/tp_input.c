@@ -212,8 +212,8 @@ static u_char   tpdu_info[][4] =
 	/* DT_TPDU_type		0xf */ { 0x5, 0x8, 0x3, 0x0		},
 };
 
-#define CHECK(Phrase, Erval, Stat, Whattodo, Loc)\
-	if (Phrase) {error = (Erval); errlen = (int)(Loc); IncStat(Stat);\
+#define CHECK(Phrase, Erval, Stat, Whattodo, Loc)	\
+	if (Phrase) {error = (Erval); errlen = (int)(Loc); IncStat(Stat);	\
 	goto Whattodo; }
 
 /*
@@ -221,15 +221,18 @@ static u_char   tpdu_info[][4] =
  * VALUE FIRST!
  */
 
-#define WHILE_OPTIONS(P, hdr, format)\
-{	caddr_t P = tpdu_info[(hdr)->tpdu_type][(format)] + (caddr_t)hdr;\
-	caddr_t PLIM = 1 + hdr->tpdu_li + (caddr_t)hdr;\
-	for (;; P += 2 + ((struct tp_vbp *)P)->tpv_len) {\
-		CHECK((P > PLIM), E_TP_LENGTH_INVAL, ts_inv_length,\
-				respond, P - (caddr_t)hdr);\
-		if (P == PLIM) break;
+#define WHILE_OPTIONS(P, hdr, format)	\
+{	caddr_t P = tpdu_info[(hdr)->tpdu_type][(format)] + (caddr_t)hdr;	\
+	caddr_t PLIM = 1 + hdr->tpdu_li + (caddr_t)hdr;	\
+	for (;; P += 2 + ((struct tp_vbp *)P)->tpv_len) {	\
+		CHECK((P > PLIM), E_TP_LENGTH_INVAL, ts_inv_length,	respond, \
+				P - (caddr_t)hdr); \
+		if (P == PLIM) { \
+			break; \
+		} \
+	}
 
-#define END_WHILE_OPTIONS(P) } }
+#define END_WHILE_OPTIONS(P) }
 
 /* end groan */
 
@@ -272,7 +275,8 @@ tp_newsocket(struct socket *so, struct sockaddr *fname, caddr_t cons_channel, u_
 	}
 #endif
 
-	if ((so = sonewconn(so, SS_ISCONFIRMING)) == (struct socket *) 0)
+	so = sonewconn1(so, SS_ISCONFIRMING);
+	if (so == (struct socket *) 0)
 		return so;
 #ifdef TPPT
 	if (tp_traceflags[D_NEWSOCK]) {
@@ -318,7 +322,7 @@ tp_newsocket(struct socket *so, struct sockaddr *fname, caddr_t cons_channel, u_
 		 * These data are the connect- , confirm- or disconnect-
 		 * data.
 		 */
-		struct mbuf    *conndata;
+		struct mbuf *conndata;
 
 		conndata = m_copy(tpcb->tp_ucddata, 0, (int) M_COPYALL);
 #ifdef ARGO_DEBUG
@@ -406,17 +410,11 @@ ok:
  * reasonable minimum.
  */
 void
-#if __STDC__
 tp_input(struct mbuf *m, ...)
-#else
-tp_input(m, va_alist)
-	struct mbuf *m;
-	va_dcl
-#endif
 {
 	struct sockaddr *faddr, *laddr;	/* NSAP addresses */
 	caddr_t         cons_channel;
-	int             (*dgout_routine) __P((struct mbuf *, ...));
+	int             (*dgout_routine)(struct mbuf *, ...);
 	int             ce_bit;
 	struct tp_pcb *tpcb;
 	struct tpdu *hdr;
@@ -444,7 +442,7 @@ tp_input(m, va_alist)
 	laddr = va_arg(ap, struct sockaddr *);
 	cons_channel = va_arg(ap, caddr_t);
 	/* XXX: Does va_arg does not work for function ptrs */
-	dgout_routine = (int (*) __P((struct mbuf *, ...))) va_arg(ap, void *);
+	dgout_routine = (int (*)(struct mbuf *, ...)) va_arg(ap, void *);
 	ce_bit = va_arg(ap, int);
 	va_end(ap);
 
@@ -517,7 +515,7 @@ again:
 	}
 #endif
 
-		dref = ntohs((short) hdr->tpdu_dref);
+	dref = ntohs((short) hdr->tpdu_dref);
 	sref = ntohs((short) hdr->tpdu_sref);
 	dutype = (int) hdr->tpdu_type;
 
@@ -604,7 +602,7 @@ again:
 			 * could use vb_getval, but we want to save the loc &
 			 * len for later use
 			 */
-			fsufxloc = (caddr_t) & vbptr(P)->tpv_val;
+			fsufxloc = (caddr_t)&vbptr(P)->tpv_val;
 			fsufxlen = vbptr(P)->tpv_len;
 #ifdef ARGO_DEBUG
 			if (argo_debug[D_TPINPUT]) {
@@ -612,7 +610,7 @@ again:
 				{
 					int    j;
 					for (j = 0; j < fsufxlen; j++) {
-						printf(" 0x%x. ", *((caddr_t) (fsufxloc + j)));
+						printf(" 0x%x. ", *((caddr_t)(fsufxloc + j)));
 					}
 					printf("\n");
 				}
@@ -624,7 +622,7 @@ again:
 			 * could use vb_getval, but we want to save the loc &
 			 * len for later use
 			 */
-			lsufxloc = (caddr_t) & vbptr(P)->tpv_val;
+			lsufxloc = (caddr_t)&vbptr(P)->tpv_val;
 			lsufxlen = vbptr(P)->tpv_len;
 #ifdef ARGO_DEBUG
 			if (argo_debug[D_TPINPUT]) {
@@ -632,7 +630,7 @@ again:
 				{
 					int    j;
 					for (j = 0; j < lsufxlen; j++) {
-						printf(" 0x%x. ", *((u_char *) (lsufxloc + j)));
+						printf(" 0x%x. ", *((u_char *)(lsufxloc + j)));
 					}
 					printf("\n");
 				}
@@ -654,7 +652,7 @@ again:
 			 */
 			CHECK((vbval(P, u_char) != TP_VERSION),
 			      E_TP_INV_PVAL, ts_inv_pval, setversion,
-			(1 + (caddr_t) & vbptr(P)->tpv_val - (caddr_t) hdr));
+			(1 + (caddr_t)&vbptr(P)->tpv_val - (caddr_t)hdr));
 	setversion:
 			version = vbval(P, u_char);
 			break;
@@ -675,9 +673,9 @@ again:
 
 		case TPP_alt_class:
 			{
-				u_char         *aclass = 0;
-				int    i;
-				static u_char   bad_alt_classes[5] =
+				u_char *aclass = 0;
+				int i;
+				static u_char bad_alt_classes[5] =
 				{~0, ~3, ~5, ~0xf, ~0x1f};
 
 				aclass =
@@ -687,7 +685,7 @@ again:
 				}
 				CHECK((bad_alt_classes[hdr->tpdu_CRclass] & alt_classes),
 				      E_TP_INV_PVAL, ts_inv_aclass, respond,
-				      ((caddr_t) aclass) - (caddr_t) hdr);
+				      ((caddr_t)aclass) - (caddr_t)hdr);
 #ifdef ARGO_DEBUG
 				if (argo_debug[D_TPINPUT]) {
 					printf("alt_classes 0x%x\n", alt_classes);
@@ -749,18 +747,20 @@ again:
 			 * listen over any network service provider,
 			 * (cons or clns or ip).
 			 */
-			for (t = tp_listeners; t; t = t->tp_nextlisten)
+			LIST_FOREACH(t, &tp_listeners, tp_nextlisten) {
+			//for (t = tp_listeners; t; t = t->tp_nextlisten)
 				if ((t->tp_lsuffixlen == 0 ||
 				     (lsufxlen == t->tp_lsuffixlen &&
 				      bcmp(lsufxloc, t->tp_lsuffix, lsufxlen) == 0)) &&
 				    ((t->tp_flags & TPF_GENERAL_ADDR) ||
 				     (laddr->sa_family == t->tp_domain &&
-				      (*t->tp_nlproto->nlp_cmpnetaddr)
-				      (t->tp_npcb, laddr, TP_LOCAL))))
+				      (*t->tp_tpproto->tp_cmpnetaddr)(t->tp_npcb, laddr, TP_LOCAL)))) {
 					break;
+				}
+			}
 
 			CHECK(t == 0, E_TP_NO_SESSION, ts_inv_sufx, respond,
-			  (1 + 2 + (caddr_t) & hdr->_tpduf - (caddr_t) hdr))
+			  (1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 			/*
 			 * _tpduf is the fixed part; add 2 to get the dref
 			 * bits of the fixed part (can't take the address of
@@ -772,10 +772,11 @@ again:
 			}
 #endif
 			tpcb = t;
-			for (t = tpcb->tp_next; t != tpcb; t = t->tp_next) {
+			for (t = LIST_NEXT(tpcb, tp_list); t != tpcb; t = LIST_NEXT(t, tp_list)) {
+			//for (t = tpcb->tp_next; t != tpcb; t = t->tp_next) {
 				if (sref != t->tp_fref)
 					continue;
-				if ((*tpcb->tp_nlproto->nlp_cmpnetaddr) (
+				if ((*tpcb->tp_tpproto->tp_cmpnetaddr) (
 					   t->tp_npcb, faddr, TP_FOREIGN)) {
 #ifdef ARGO_DEBUG
 					if (argo_debug[D_TPINPUT]) {
@@ -834,10 +835,11 @@ again:
 			tpp.p_use_rcc = (addlopt & TPAO_USE_RCC) == TPAO_USE_RCC;
 #endif				/* notdef */
 
+
 			CHECK(
 			      tp_consistency(tpcb, 0 /* not force or strict */ , &tpp) != 0,
 			E_TP_NEGOT_FAILED, ts_negotfailed, clear_parent_tcb,
-			      (1 + 2 + (caddr_t) & hdr->_tpdufr.CRCC - (caddr_t) hdr)
+			      (1 + 2 + (caddr_t)&hdr->_tpdufr._tpdufr_crcc - (caddr_t)hdr)
 			/* ^ more or less the location of class */
 				)
 		}
@@ -853,7 +855,7 @@ again:
 		CHECK(((class_to_use == TP_CLASS_0) && 
 		      (dgout_routine != tpcons_output)),
 			E_TP_NEGOT_FAILED, ts_negotfailed, clear_parent_tcb,
-		     (1 + 2 + (caddr_t) & hdr->_tpdufr.CRCC - (caddr_t) hdr)
+		     (1 + 2 + (caddr_t)&hdr->_tpdufr._tpdufr_crcc - (caddr_t)hdr)
 		/* ^ more or less the location of class */
 			)
 #ifdef ARGO_DEBUG
@@ -939,7 +941,7 @@ again:
 			 * in the LISTENING tpcb. Now we set the options in
 			 * the new socket's tpcb.
 			 */
-			(void) tp_consistency(tpcb, TP_FORCE, &tpp);
+			(void)tp_consistency(tpcb, TP_FORCE, &tpp);
 
 			if (!tpcb->tp_use_checksum)
 				IncStat(ts_csum_off);
@@ -1077,7 +1079,7 @@ again:
 				CHECK((dusize < TP_MIN_TPDUSIZE ||
 				       dusize > TP_MAX_TPDUSIZE || dusize > odusize),
 				      E_TP_INV_PVAL, ts_inv_pval, respond,
-				      (1 + (caddr_t) & vbptr(P)->tpv_val - (caddr_t) hdr))
+				      (1 + (caddr_t)&vbptr(P)->tpv_val - (caddr_t)hdr))
 #ifdef ARGO_DEBUG
 					if (argo_debug[D_TPINPUT]) {
 					printf("CC dusize 0x%x\n", dusize);
@@ -1105,7 +1107,7 @@ again:
 				CHECK((pdusize == 0 ||
 				       (opdusize && (pdusize > opdusize))),
 				      E_TP_INV_PVAL, ts_inv_pval, respond,
-				      (1 + (caddr_t) & vbptr(P)->tpv_val - (caddr_t) hdr))
+				      (1 + (caddr_t)&vbptr(P)->tpv_val - (caddr_t)hdr))
 			}
 			break;
 	caseof(CC_TPDU_type, TPP_calling_sufx):
@@ -1114,7 +1116,7 @@ again:
 				printf("CC calling (local) sufxlen 0x%x\n", lsufxlen);
 			}
 #endif
-			lsufxloc = (caddr_t) & vbptr(P)->tpv_val;
+			lsufxloc = (caddr_t)&vbptr(P)->tpv_val;
 			lsufxlen = vbptr(P)->tpv_len;
 			break;
 	caseof(CC_TPDU_type, TPP_acktime):
@@ -1127,7 +1129,7 @@ again:
 				acktime = 2;
 			break;
 	caseof(CC_TPDU_type, TPP_called_sufx):
-			fsufxloc = (caddr_t) & vbptr(P)->tpv_val;
+			fsufxloc = (caddr_t)&vbptr(P)->tpv_val;
 			fsufxlen = vbptr(P)->tpv_len;
 #ifdef ARGO_DEBUG
 			if (argo_debug[D_TPINPUT]) {
@@ -1155,7 +1157,7 @@ again:
 	caseof(XAK_TPDU_type, TPP_checksum):
 	caseof(DC_TPDU_type, TPP_checksum):
 			if (tpcb->tp_use_checksum) {
-				CHECK(iso_check_csum(m, (int) hdr->tpdu_li + 1),
+				CHECK(iso_check_csum(m, (int)hdr->tpdu_li + 1),
 				      E_TP_INV_PVAL, ts_bad_csum, discard, 0)
 			}
 			break;
@@ -1263,7 +1265,7 @@ again:
 					    ((class_to_use == TP_CLASS_0) &&
 					  (dgout_routine != tpcons_output)),
 				 E_TP_NEGOT_FAILED, ts_negotfailed, respond,
-					      (1 + 2 + (caddr_t) & hdr->_tpdufr.CRCC - (caddr_t) hdr)
+					      (1 + 2 + (caddr_t)&hdr->_tpdufr._tpdufr_crcc - (caddr_t)hdr)
 				/* ^ more or less the location of class */
 					)
 #ifdef TPCONS
@@ -1298,13 +1300,13 @@ again:
 				CHECK(((tpcb->tp_fsuffixlen != fsufxlen) ||
 				bcmp(fsufxloc, tpcb->tp_fsuffix, fsufxlen)),
 				      E_TP_INV_PVAL, ts_inv_sufx, respond,
-				      (1 + fsufxloc - (caddr_t) hdr))
+				      (1 + fsufxloc - (caddr_t)hdr))
 			}
 			if (lsufxlen) {
 				CHECK(((tpcb->tp_lsuffixlen != lsufxlen) ||
 				bcmp(lsufxloc, tpcb->tp_lsuffix, lsufxlen)),
 				      E_TP_INV_PVAL, ts_inv_sufx, respond,
-				      (1 + lsufxloc - (caddr_t) hdr))
+				      (1 + lsufxloc - (caddr_t)hdr))
 			}
 			e.TPDU_ATTR(CC).e_sref = sref;
 			e.TPDU_ATTR(CC).e_cdt = hdr->tpdu_CCcdt;
@@ -1320,7 +1322,7 @@ again:
 
 			CHECK((sref != tpcb->tp_fref),
 			      E_TP_MISM_REFS, ts_inv_sufx, discard,
-			 (1 + (caddr_t) & hdr->tpdu_DCsref - (caddr_t) hdr))
+			 (1 + (caddr_t)&hdr->tpdu_DCsref - (caddr_t)hdr))
 				e.ev_number = DC_TPDU;
 			IncStat(ts_DC_rcvd);
 			break;
@@ -1338,9 +1340,9 @@ again:
 			CHECK((sref != 0 && sref != tpcb->tp_fref &&
 			       tpcb->tp_state != TP_CRSENT),
 			      (TP_ERROR_SNDC | E_TP_MISM_REFS), ts_inv_sufx, respond,
-			 (1 + (caddr_t) & hdr->tpdu_DRsref - (caddr_t) hdr))
+			 (1 + (caddr_t)&hdr->tpdu_DRsref - (caddr_t)hdr))
 				e.TPDU_ATTR(DR).e_reason = hdr->tpdu_DRreason;
-			e.TPDU_ATTR(DR).e_sref = (u_short) sref;
+			e.TPDU_ATTR(DR).e_sref = (u_short)sref;
 			takes_data = TRUE;
 			e.ev_number = DR_TPDU;
 			IncStat(ts_DR_rcvd);
@@ -1436,8 +1438,8 @@ again:
 
 #ifdef ARGO_DEBUG
 			if (argo_debug[D_DROP]) {
-				if (time.tv_usec & 0x4 &&
-				    hdr->tpdu_DTseq & 0x1) {
+				if ((time.tv_usec & 0x4) &&
+				    (hdr->tpdu_DTseq & 0x1)) {
 					IncStat(ts_ydebug);
 					goto discard;
 				}
@@ -1448,7 +1450,7 @@ again:
 		tp0_data:
 #endif
 				e.TPDU_ATTR(DT).e_seq = 0;	/* actually don't care */
-				e.TPDU_ATTR(DT).e_eot = (((struct tp0du *) hdr)->tp0du_eot);
+				e.TPDU_ATTR(DT).e_eot = (((struct tp0du *)hdr)->tp0du_eot);
 			} else if (tpcb->tp_xtd_format) {
 #ifdef BYTE_ORDER
 				union seq_type  seqeotX;
@@ -1497,16 +1499,16 @@ again:
 	 * points into the mbuf's data area and we're still using hdr (the
 	 * tpdu header)
 	 */
-	m->m_len -= ((int) hdr->tpdu_li + 1);
-	m->m_data += ((int) hdr->tpdu_li + 1);
+	m->m_len -= ((int)hdr->tpdu_li + 1);
+	m->m_data += ((int)hdr->tpdu_li + 1);
 
 	if (takes_data) {
-		int             max = tpdu_info[hdr->tpdu_type][TP_MAX_DATA_INDEX];
-		int             datalen = tpdu_len - hdr->tpdu_li - 1, mbtype = MT_DATA;
+		int max = tpdu_info[hdr->tpdu_type][TP_MAX_DATA_INDEX];
+		int datalen = tpdu_len - hdr->tpdu_li - 1, mbtype = MT_DATA;
 		struct {
 			struct tp_disc_reason dr;
 			struct cmsghdr  x_hdr;
-		}               x;
+		} x;
 #define c_hdr x.x_hdr
 		struct mbuf *n;
 
@@ -1542,9 +1544,9 @@ again:
 			}
 			if (hdr->tpdu_type == DR_TPDU_type) {
 				datalen += sizeof(x) - sizeof(c_hdr);
-				bcopy((caddr_t) & x, mtod(n, caddr_t), n->m_len = sizeof(x));
+				bcopy((caddr_t)&x, mtod(n, caddr_t), n->m_len = sizeof(x));
 			} else
-				bcopy((caddr_t) & c_hdr, mtod(n, caddr_t),
+				bcopy((caddr_t)&c_hdr, mtod(n, caddr_t),
 				      n->m_len = sizeof(c_hdr));
 			n->m_next = m;
 			m = n;
@@ -1591,8 +1593,8 @@ again:
 
 	error = tp_driver(tpcb, &e);
 
-	ASSERT(tpcb != (struct tp_pcb *) 0);
-	ASSERT(tpcb->tp_sock != (struct socket *) 0);
+	ASSERT(tpcb != (struct tp_pcb *)0);
+	ASSERT(tpcb->tp_sock != (struct socket *)0);
 	if (tpcb->tp_sock->so_error == 0)
 		tpcb->tp_sock->so_error = error;
 
@@ -1702,7 +1704,7 @@ respond:
 #endif
 		if (sref == 0)
 		goto discard;
-	(void) tp_error_emit(error, (u_long) sref, satosiso(faddr),
+	(void) tp_error_emit(error, (u_long)sref, satosiso(faddr),
 			     satosiso(laddr), m, errlen, tpcb,
 			     cons_channel, dgout_routine);
 #ifdef ARGO_DEBUG

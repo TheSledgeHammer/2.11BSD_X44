@@ -192,7 +192,7 @@ int
 tpip6_mtu(struct tp_pcb *tpcb)
 {
 	struct in6pcb *in6p = (struct in6pcb *)tpcb->tp_npcb;
-	return (tpi_mtu(tpcb, in6p->in6p_route.ro_rt, sizeof(struct ip6_hdr)));
+	return (tp_mtu(tpcb, in6p->in6p_route.ro_rt, sizeof(struct ip6_hdr)));
 }
 
 int

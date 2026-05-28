@@ -78,10 +78,6 @@ SOFTWARE.
 #include <net/if.h>
 #endif
 #include <netiso/iso_var.h>
+#include <netiso/tp_proto/tp_iso.h>
 
-#ifdef _KERNEL
-extern struct isopcb   tp_isopcb;
-#endif
-/* queue of active inpcbs for tp ; for tp with dod ip */
-
-#endif				/* _NETISO_TP_CLNP_H_ */
+#endif /* _NETISO_TP_CLNP_H_ */

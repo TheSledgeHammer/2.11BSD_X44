@@ -109,7 +109,7 @@ SOFTWARE.
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
 
-#include <netiso/if_cons.c>
+//#include <netiso/if_cons.c>
 
 struct tp_protosw tpcons_protosw = {
  	.tp_afamily = AF_ISO,

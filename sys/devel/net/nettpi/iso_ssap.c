@@ -121,6 +121,24 @@ ssap_iso_compare(struct ssap_iso *a, struct ssap_iso *b)
 	return (0);
 }
 
+void
+ssap_iso_attach(struct ssap_iso *ssap, struct tsap_iso *tsap)
+{
+	ssap_attach(ssap, tsap,AF_ISO);
+	ssap_attach(ssap, tsap,AF_INET);
+	ssap_attach(ssap, tsap, AF_INET6);
+	ssap_attach(ssap, tsap, AF_NS);
+}
+
+void
+ssap_iso_detach(struct ssap_iso *ssap, struct tsap_iso *tsap)
+{
+	ssap_detach(ssap, tsap, AF_ISO);
+	ssap_detach(ssap, tsap, AF_INET);
+	ssap_detach(ssap, tsap, AF_INET6);
+	ssap_detach(ssap, tsap, AF_NS);
+}
+
 int
 ssap_connect(struct ssap_iso *ssap, void *arg, int af)
 {

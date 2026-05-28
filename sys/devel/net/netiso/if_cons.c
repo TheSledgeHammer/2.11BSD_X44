@@ -64,7 +64,7 @@ SOFTWARE.
  */
 
 #ifdef TPCONS
-#ifdef KERNEL
+#ifdef _KERNEL
 #ifdef ARGO_DEBUG
 unsigned LAST_CALL_PCB;
 #endif /* ARGO_DEBUG */
@@ -88,7 +88,8 @@ unsigned LAST_CALL_PCB;
 #include <netiso/argo_debug.h>
 #include <netiso/tp_trace.h>
 #include <netiso/iso.h>
-#include <netiso/cons.h>
+//#include <netiso/cons.h>
+#include <netiso/tp_proto/tp_cons.h>
 #include <netiso/iso_pcb.h>
 #include <netiso/iso_var.h>
 #include <netiso/tp_var.h>

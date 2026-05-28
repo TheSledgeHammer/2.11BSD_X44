@@ -56,19 +56,19 @@
 
 /* TPDU timer events */
 #define TPDU_INACT			TPDU_CMDCLASS(10)	/* TM_inact */
-#define TPDU_RETRANS			TPDU_CMDCLASS(12)	/* TM_retrans */
-#define TPDU_SENDACK			TPDU_CMDCLASS(13)	/* TM_sendack */
-#define TPDU_NOTUSED			TPDU_CMDCLASS(14)	/* TM_notused */
-#define TPDU_REFERENCE			TPDU_CMDCLASS(15)	/* TM_reference */
-#define TPDU_DATA_RETRANS		TPDU_CMDCLASS(16)	/* TM_data_retrans */
+#define TPDU_RETRANS		TPDU_CMDCLASS(12)	/* TM_retrans */
+#define TPDU_SENDACK		TPDU_CMDCLASS(13)	/* TM_sendack */
+#define TPDU_NOTUSED		TPDU_CMDCLASS(14)	/* TM_notused */
+#define TPDU_REFERENCE		TPDU_CMDCLASS(15)	/* TM_reference */
+#define TPDU_DATA_RETRANS	TPDU_CMDCLASS(16)	/* TM_data_retrans */
 
-/* TS-user requests */
-#define TSU_CONNECT_REQUEST		TPDU_CMDCLASS(17)	/* T_CONN_req */
-#define TSU_CONNECT_RESPONSE		TPDU_CMDCLASS(18)	/* T_LISTEN_req */
-#define TSU_DISCONNECT_REQUEST		TPDU_CMDCLASS(19)	/* T_DISC_req */
-#define TSU_DATA_REQUEST		TPDU_CMDCLASS(20)	/* T_DATA_req */
-#define TSU_XPD_DATA_REQUEST		TPDU_CMDCLASS(21)	/* T_XPD_req */
-#define TSU_NETRESET			TPDU_CMDCLASS(22)	/* T_NETRESET */
+/* Transport layer user requests */
+#define TL_CONNECT_REQUEST		TPDU_CMDCLASS(17)	/* T_CONN_req */
+#define TL_CONNECT_RESPONSE		TPDU_CMDCLASS(18)	/* T_LISTEN_req */
+#define TL_DISCONNECT_REQUEST	TPDU_CMDCLASS(19)	/* T_DISC_req */
+#define TL_DATA_REQUEST			TPDU_CMDCLASS(20)	/* T_DATA_req */
+#define TL_XPD_DATA_REQUEST		TPDU_CMDCLASS(21)	/* T_XPD_req */
+#define TL_NETRESET				TPDU_CMDCLASS(22)	/* T_NETRESET */
 /* Currently Missing */
 /* T_USR_rcvd */
 /* T_USR_Xrcvd */

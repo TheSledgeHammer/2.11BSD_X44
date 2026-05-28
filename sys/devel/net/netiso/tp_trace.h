@@ -92,7 +92,7 @@ SOFTWARE.
 
 /* this #if is to avoid lint */
 
-#if defined(TP_TRACEFILE) || !defined(KERNEL)
+#if defined(TP_TRACEFILE) || !defined(_KERNEL)
 
 #include <netiso/tp_tpdu.h>
 
@@ -148,7 +148,7 @@ struct tp_Trace {
 #define tpt_window tpt_stuff.tpt_Time.tptv_window
 #define tpt_size tpt_stuff.tpt_Time.tptv_size
 
-#endif /* defined(TP_TRACEFILE)||!defined(KERNEL) */
+#endif /* defined(TP_TRACEFILE)||!defined(_KERNEL) */
 
 #ifdef TPPT
 

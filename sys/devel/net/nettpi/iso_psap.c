@@ -122,6 +122,24 @@ psap_iso_compare(struct psap_iso *a, struct psap_iso *b)
 	return (0);
 }
 
+void
+psap_iso_attach(struct psap_iso *psap, struct ssap_iso *ssap)
+{
+	psap_attach(psap, ssap, AF_ISO);
+	psap_attach(psap, ssap, AF_INET);
+	psap_attach(psap, ssap, AF_INET6);
+	psap_attach(psap, ssap, AF_NS);
+}
+
+void
+psap_iso_detach(struct psap_iso *psap, struct ssap_iso *ssap)
+{
+	psap_detach(psap, ssap, AF_ISO);
+	psap_detach(psap, ssap, AF_INET);
+	psap_detach(psap, ssap, AF_INET6);
+	psap_detach(psap, ssap, AF_NS);
+}
+
 int
 psap_connect(struct psap_iso *psap, void *arg, int af)
 {

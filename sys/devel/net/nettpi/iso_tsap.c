@@ -175,6 +175,24 @@ tsap_iso_compare(struct tsap_iso *a, struct tsap_iso *b)
 	return (0);
 }
 
+void
+tsap_iso_attach(struct tsap_iso *tsap, struct nsap_iso *nsap)
+{
+	tsap_attach(tsap, nsap, AF_ISO);
+	tsap_attach(tsap, nsap, AF_INET);
+	tsap_attach(tsap, nsap, AF_INET6);
+	tsap_attach(tsap, nsap, AF_NS);
+}
+
+void
+tsap_iso_detach(struct tsap_iso *tsap, struct nsap_iso *nsap)
+{
+	tsap_detach(tsap, nsap, AF_ISO);
+	tsap_detach(tsap, nsap, AF_INET);
+	tsap_detach(tsap, nsap, AF_INET6);
+	tsap_detach(tsap, nsap, AF_NS);
+}
+
 static int
 tsap_validate(struct tsap_iso *tsap, struct nsap_iso *nsap, int sid, int af)
 {

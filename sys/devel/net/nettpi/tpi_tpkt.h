@@ -38,10 +38,10 @@
 #define TPKT_MAXLEN 	65635
 
 struct tpkt {
-    unsigned short	pkt_vers:8;     /* version (8-bits)(vers:3) */
-    unsigned int	pkt_len:16;     /* length in octets including packet header (16-bits)(min: 7 max: 65635)  */
-    unsigned short	pkt_reserved:8; /* reserved (8-bits)(val:0) */
-    struct tpdu_xpd  	*pkt_tpdu;  	/* TPDU Expedited Data Only */
+    unsigned short	pkt_vers;    	/* version (8-bits)(vers:3) */
+    unsigned char	pkt_len;     	/* length in octets including packet header (16-bits)(min: 7 max: 65635)  */
+    unsigned short	pkt_reserved; 	/* reserved (8-bits)(val:0) */
+    struct tpdu  	*pkt_tpdu;  	/* TPDU  */
 };
 
 /* Primitives */

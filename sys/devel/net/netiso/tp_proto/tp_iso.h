@@ -87,9 +87,10 @@ SOFTWARE.
 #define	SOL_TRANSPORT		0xfffe
 #define	SOL_NETWORK			0xfffd
 
-#define tp_isopcb tp_isopcbtable
-
 #ifdef _KERNEL
+
+#define tp_isopcb tp_isopcbtable	/* queue of active inpcbs for tp ; for tp with dod ip */
+
 struct tp_pcb;
 struct isopcb;
 struct mbuf;
