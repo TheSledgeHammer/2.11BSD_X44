@@ -132,19 +132,20 @@ struct socket {
 /*
  * Socket state bits.
  */
-#define	SS_NOFDREF			0x001	/* no file table ref any more */
-#define	SS_ISCONNECTED		0x002	/* socket connected to a peer */
-#define	SS_ISCONNECTING		0x004	/* in process of connecting to peer */
-#define	SS_ISDISCONNECTED	0x008	/* socket connected to a peer */
-#define	SS_ISDISCONNECTING	0x010	/* in process of disconnecting */
-#define	SS_CANTSENDMORE		0x020	/* can't send more data to peer */
-#define	SS_CANTRCVMORE		0x040	/* can't receive more data from peer */
-#define	SS_RCVATMARK		0x080	/* at mark on input */
-#define	SS_MORETOCOME		0x400	/* hint from sosend to lower layer; more data coming */
+#define	SS_NOFDREF			0x0001	/* no file table ref any more */
+#define	SS_ISCONNECTED		0x0002	/* socket connected to a peer */
+#define	SS_ISCONNECTING		0x0004	/* in process of connecting to peer */
+#define	SS_ISDISCONNECTED	0x0008	/* socket connected to a peer */
+#define	SS_ISDISCONNECTING	0x0010	/* in process of disconnecting */
+#define	SS_CANTSENDMORE		0x0020	/* can't send more data to peer */
+#define	SS_CANTRCVMORE		0x0040	/* can't receive more data from peer */
+#define	SS_RCVATMARK		0x0080	/* at mark on input */
+#define	SS_MORETOCOME		0x0100	/* hint from sosend to lower layer; more data coming */
 
-#define	SS_PRIV				0x100	/* privileged for broadcast, raw... */
-#define	SS_NBIO				0x200	/* non-blocking ops */
-#define	SS_ASYNC			0x400	/* async i/o notify */
+#define	SS_PRIV				0x0200	/* privileged for broadcast, raw... */
+#define	SS_NBIO				0x0400	/* non-blocking ops */
+#define	SS_ASYNC			0x0800	/* async i/o notify */
+#define	SS_ISCONFIRMING		0x1000	/* deciding to accept connection req */
 
 /*
  * Macros for sockets and socket buffering.
