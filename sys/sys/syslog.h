@@ -183,7 +183,8 @@ int		setlogmask(int);
 void	syslog(int, const char *, ...) __sysloglike(2,3);
 void	vsyslog(int, const char *, __va_list) __sysloglike(2,0);
 __END_DECLS
-
+#else
+void    logpri(int);
 #endif /* !KERNEL */
 
 #endif
