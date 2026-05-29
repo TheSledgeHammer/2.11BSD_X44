@@ -29,7 +29,13 @@
  *	@(#)tp_iso.c	8.2 (Berkeley) 9/22/94
  */
 
+
 #include <sys/cdefs.h>
+
+#include "opt_inet.h"
+#include "opt_iso.h"
+
+#ifdef INET
 
 #include <sys/param.h>
 #include <sys/mbuf.h>
@@ -38,16 +44,21 @@
 #include <sys/socketvar.h>
 #include <sys/errno.h>
 #include <sys/time.h>
+#include <sys/systm.h>
 
 #include <net/if.h>
 
-#include <netiso/tp_pcb.h>
+#include <netiso/tp_param.h>
+#include <netiso/argo_debug.h>
+#include <netiso/tp_stat.h>
 #include <netiso/tp_protosw.h>
-
 #include <netiso/tp_proto/tp_ip.h>
-
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_trace.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_tpdu.h>
+#include <netiso/tp_var.h>
 #include <netinet/in_var.h>
-#include <netinet/ip_icmp.h>
 
 #ifndef ISO
 #include <netiso/iso_chksum.c>
@@ -193,8 +204,9 @@ in_getnetaddr(void *v, struct mbuf *name, int which)
 
 /* tpip */
 int
-tpip_mtu(struct tp_pcb *tpcb)
+tpip_mtu(void *v)
 {
+    struct tp_pcb *tpcb = (struct tp_pcb *)v;
 	struct inpcb *inp = (struct inpcb *)tpcb->tp_npcb;
 	return (tp_mtu(tpcb, inp->inp_route.ro_rt, sizeof(struct ip)));
 }
@@ -429,3 +441,12 @@ tpin_abort(struct inpcb *inp)
 {
 	tpip_abort(inp, 0);
 }
+
+#ifdef ARGO_DEBUG
+void
+dump_inaddr(struct sockaddr_in *addr)
+{
+	printf("INET: port 0x%x; addr 0x%x\n", addr->sin_port, addr->sin_addr);
+}
+#endif /* ARGO_DEBUG */
+#endif /* INET */

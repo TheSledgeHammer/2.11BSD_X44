@@ -131,7 +131,7 @@ struct tpdu_fixed {
 #define tpdu_cdt 	_tpduf.fd_cdt
 #define tpdu_dref 	_tpduf.fd_dref
 
-struct tpdu_crcc {
+struct tpduf_crcc {
     unsigned short      crcc_sref;      /* source reference */
 #if BYTE_ORDER == LITTLE_ENDIAN
     unsigned short      crcc_opt:4;		/* options [ISO 8073 13.3.3.e] */
@@ -143,7 +143,7 @@ struct tpdu_crcc {
     unsigned short		crcc_xx:8;		/* unused */
 };
 
-struct tpdu_ak31 {
+struct tpduf_ak31 {
 #if BYTE_ORDER == LITTLE_ENDIAN
 	unsigned int        ak31_yrseq:31;	/* [ ISO 8073 13.9.3.d ] */
     unsigned int        ak31_yrseq0:1;	/* always zero */
@@ -174,7 +174,7 @@ struct tp0du {
 /* TPDU connect request */
 struct tpduf_cr {
     struct tpdu_fixed   cr_tpduf;
-    struct tpdu_crcc    cr_crcc;
+    struct tpduf_crcc    cr_crcc;
 #define cr_li           cr_tpduf.fd_li
 #define cr_type         cr_tpduf.fd_type
 #define cr_cdt          cr_tpduf.fd_cdt
@@ -188,7 +188,7 @@ struct tpduf_cr {
 /* TPDU connect confirm */
 struct tpduf_cc {
     struct tpdu_fixed   cc_tpduf;
-    struct tpdu_crcc    cc_crcc;
+    struct tpduf_crcc    cc_crcc;
 #define cc_li           cc_tpduf.fd_li
 #define cc_type         cc_tpduf.fd_type
 #define cc_cdt          cc_tpduf.fd_cdt
@@ -248,7 +248,7 @@ struct tpduf_xpd {
 /* TPDU data acknowledge */
 struct tpduf_ak {
     struct tpdu_fixed   ak_tpduf;
-    struct tpdu_ak31    ak_ak31;
+    struct tpduf_ak31    ak_ak31;
     struct seqeot7      ak_seq7;
     struct seqeot31     ak_seq31;
 #define ak_li           ak_tpduf.fd_li

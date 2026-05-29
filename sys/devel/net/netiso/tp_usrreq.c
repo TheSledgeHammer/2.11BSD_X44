@@ -82,6 +82,7 @@ __KERNEL_RCSID(0, "$NetBSD: tp_usrreq.c,v 1.23 2003/08/11 15:17:31 itojun Exp $"
 #include <netiso/tp_timer.h>
 #include <netiso/tp_stat.h>
 #include <netiso/tp_seq.h>
+#include <netiso/tp_protosw.h>
 #include <netiso/tp_proto/tp_ip.h>
 #include <netiso/tp_pcb.h>
 #include <netiso/tp_var.h>
@@ -91,9 +92,10 @@ __KERNEL_RCSID(0, "$NetBSD: tp_usrreq.c,v 1.23 2003/08/11 15:17:31 itojun Exp $"
 #include <netiso/iso.h>
 #include <netiso/iso_errno.h>
 
-int             TNew;
-int             TPNagle1, TPNagle2;
-struct tp_pcb  *tp_listeners, *tp_intercepts;
+int TNew;
+int TPNagle1, TPNagle2;
+struct tppcbhead tp_listeners;
+struct tp_pcb *tp_intercepts;
 
 #ifdef ARGO_DEBUG
 /*

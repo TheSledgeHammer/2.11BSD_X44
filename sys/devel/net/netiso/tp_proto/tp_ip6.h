@@ -75,11 +75,17 @@ SOFTWARE.
 #include <sys/socket.h>
 #endif
 
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 #include <net/route.h>
-
 #include <netinet/ip6.h>
-#ifdef INET6
+#include <netinet6/in6_pcb.h>
 #include <netinet6/ip6_var.h>
+
+#ifdef INET6
+
+struct tp_pcb;
 
 #define tp_in6pcb tp_inpcbtable     /* queue of active inpcbs for tp ; for tp with dod ip */
 
@@ -90,7 +96,7 @@ void in6_putnetaddr(void *, struct sockaddr *, int);
 int in6_cmpnetaddr(void *, struct sockaddr *, int);
 void in6_getnetaddr(void *, struct mbuf *, int);
 
-int tpip6_mtu(struct tp_pcb *);
+int tpip6_mtu(void *);
 int tpip6_output(struct mbuf *, ...);
 int tpip6_output_dg(struct mbuf *, ...);
 void tpip6_input(struct mbuf *, ...);

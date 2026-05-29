@@ -79,7 +79,7 @@ __KERNEL_RCSID(0, "$NetBSD: tp_subr.c,v 1.18 2003/08/11 15:17:31 itojun Exp $");
 #include <sys/time.h>
 #include <sys/kernel.h>
 
-#include <netiso/tp_proto/tp_ip.h>
+
 #include <netiso/iso.h>
 #include <netiso/argo_debug.h>
 #include <netiso/tp_timer.h>
@@ -90,9 +90,11 @@ __KERNEL_RCSID(0, "$NetBSD: tp_subr.c,v 1.18 2003/08/11 15:17:31 itojun Exp $");
 #include <netiso/tp_trace.h>
 #include <netiso/tp_meas.h>
 #include <netiso/tp_seq.h>
+#include <netiso/tp_protosw.h>
+#include <netiso/tp_proto/tp_ip.h>
 #include <netiso/tp_var.h>
 
-int             tprexmtthresh = 3;
+int tprexmtthresh = 3;
 
 /*
  * CALLED FROM:
@@ -165,7 +167,7 @@ tp_rtt_rtv(struct tp_pcb *tpcb)
 	int old = tpcb->tp_rtt;
 	int elapsed, delta = 0;
 
-	elapsed = hardclock_ticks - tpcb->tp_rttemit;
+	elapsed = hard_ticks - tpcb->tp_rttemit;
 
 	if (tpcb->tp_rtt != 0) {
 		/*
@@ -448,7 +450,7 @@ tp_sbdrop(struct tp_pcb *tpcb, SeqNum seq)
 		       oldi, oldcc - sb->sb_cc, tpcb, seq);
 	}
 #endif
-	if (sb_notify(sb))
+	if (sb->sb_flags & SB_NOTIFY)
 		sowwakeup(tpcb->tp_sock);
 	return (oldcc - sb->sb_cc);
 }
@@ -482,7 +484,7 @@ tp_send(struct tp_pcb *tpcb)
 	SeqNum highseq, checkseq;
 	int idle, idleticks, off, cong_win;
 #ifdef TP_PERF_MEAS
-	int             send_start_time = hardclock_ticks;
+	int             send_start_time = hard_ticks;
 	SeqNum          oldnxt = tpcb->tp_sndnxt;
 #endif /* TP_PERF_MEAS */
 
@@ -586,7 +588,7 @@ tp_send(struct tp_pcb *tpcb)
 			 * not currently timing anything.
 			 */
 			if (tpcb->tp_rttemit == 0) {
-				tpcb->tp_rttemit = hardclock_ticks;
+				tpcb->tp_rttemit = hard_ticks;
 				tpcb->tp_rttseq = tpcb->tp_sndnxt;
 			}
 			tpcb->tp_sndnxt = tpcb->tp_sndnew;
@@ -614,7 +616,7 @@ tp_send(struct tp_pcb *tpcb)
 		int             s, elapsed, *t;
 		struct timeval  now;
 
-		elapsed = hardclock_ticks - send_start_time;
+		elapsed = hard_ticks - send_start_time;
 
 		npkts = SEQ_SUB(tpcb, tpcb->tp_sndnxt, oldnxt);
 

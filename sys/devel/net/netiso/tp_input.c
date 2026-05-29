@@ -106,6 +106,8 @@ __KERNEL_RCSID(0, "$NetBSD: tp_input.c,v 1.17 2004/02/13 17:56:17 wiz Exp $");
 #include <netiso/tp_tpdu.h>
 #include <netiso/tp_var.h>
 #include <netiso/iso_var.h>
+#include <netiso/tp_protosw.h>
+#include <netiso/tp_proto/tp_cons.h>
 
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
@@ -221,18 +223,15 @@ static u_char   tpdu_info[][4] =
  * VALUE FIRST!
  */
 
-#define WHILE_OPTIONS(P, hdr, format)	\
-{	caddr_t P = tpdu_info[(hdr)->tpdu_type][(format)] + (caddr_t)hdr;	\
-	caddr_t PLIM = 1 + hdr->tpdu_li + (caddr_t)hdr;	\
-	for (;; P += 2 + ((struct tp_vbp *)P)->tpv_len) {	\
-		CHECK((P > PLIM), E_TP_LENGTH_INVAL, ts_inv_length,	respond, \
-				P - (caddr_t)hdr); \
-		if (P == PLIM) { \
-			break; \
-		} \
-	}
+#define WHILE_OPTIONS(P, hdr, format)\
+{	caddr_t P = tpdu_info[(hdr)->tpdu_type][(format)] + (caddr_t)hdr;\
+	caddr_t PLIM = 1 + hdr->tpdu_li + (caddr_t)hdr;\
+	for (;; P += 2 + ((struct tp_vbp *)P)->tpv_len) {\
+		CHECK((P > PLIM), E_TP_LENGTH_INVAL, ts_inv_length,\
+				respond, P - (caddr_t)hdr);\
+		if (P == PLIM) break;
 
-#define END_WHILE_OPTIONS(P) }
+#define END_WHILE_OPTIONS(P) } }
 
 /* end groan */
 
@@ -1250,7 +1249,7 @@ again:
 				CHECK(
 				  tp_consistency(tpcb, TP_FORCE, &tpp) != 0,
 				 E_TP_NEGOT_FAILED, ts_negotfailed, respond,
-				      (1 + 2 + (caddr_t) & hdr->_tpdufr.CRCC - (caddr_t) hdr)
+				      (1 + 2 + (caddr_t) & hdr->_tpdufr._tpdufr_crcc - (caddr_t)hdr)
 				/* ^ more or less the location of class */
 					)
 #ifdef TPPT

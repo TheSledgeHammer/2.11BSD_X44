@@ -94,11 +94,11 @@ struct tp_protosw {
 	void	(*tp_putnetaddr)(void *, struct sockaddr *, int);		/* puts addresses in tp pcb */
 	void	(*tp_getnetaddr)(void *, struct mbuf *, int);			/* gets addresses from tp pcb */
 	int		(*tp_cmpnetaddr)(void *, struct sockaddr *, int);		/* compares address in pcb with sockaddr */
-	int		(*tp_putsufx)(void *, caddr_t, int, int);				/* puts transport suffixes in tp pcb */
-	int		(*tp_getsufx)(void *, u_short *, caddr_t, int);			/* gets transport suffixes from tp pcb */
-	int		(*tp_recycle_suffix)(void *);							/* clears suffix from tp pcb */
+	void	(*tp_putsufx)(void *, caddr_t, int, int);				/* puts transport suffixes in tp pcb */
+	void	(*tp_getsufx)(void *, u_short *, caddr_t, int);			/* gets transport suffixes from tp pcb */
+	void	(*tp_recycle_suffix)(void *);							/* clears suffix from tp pcb */
 	int		(*tp_mtu)(void *);										/* figures out mtu based on tp used */
-	int		(*tp_pcbbind)(void *, struct mbuf *);					/* bind to pcb for net level */
+	int		(*tp_pcbbind)(void *, struct mbuf *, struct proc *);					/* bind to pcb for net level */
 	int		(*tp_pcbconnect)(void *, struct mbuf *);				/* connect for net level */
 	void	(*tp_pcbdisconnect)(void *);							/* disconnect net level */
 	int 	(*tp_pcbattach)(struct socket *, int);					/* attach net level pcb */
@@ -106,26 +106,14 @@ struct tp_protosw {
 	int		(*tp_pcballoc)(struct socket *, void *);				/* allocate a net level pcb */
 	int		(*tp_output)(struct mbuf *, ...);						/* prepare a packet to give to tp */
 	int		(*tp_dgoutput)(struct mbuf *, ...); 					/* prepare a packet to give to tp */
-	int		(*tp_ctloutput)(int, struct sockaddr *, void *);		/* hook for network set/get options */
+	int		(*tp_ctloutput)(int, int, caddr_t, struct mbuf *);		/* hook for network set/get options */
 	caddr_t	tp_pcblist;												/* list of xx_pcb's for connections */
 };
 
-extern struct tp_protosw *tp_protosw;
-
-/* network protocols */
-#ifdef ISO
+extern struct tp_protosw tp_protosw[];
 extern struct tp_protosw tpiso_protosw;
-#ifdef TPCONS
-extern struct tp_protosw tpcons_protosw;
-#endif
-#endif
-#ifdef INET
 extern struct tp_protosw tpin4_protosw;
-#endif
-#ifdef INET6
 extern struct tp_protosw tpin6_protosw;
-#endif
-#ifdef NS
-extern struct tp_protosw tpns_protosw;
-#endif
+extern struct tp_protosw tpcons_protosw;
+//extern struct tp_protosw tpns_protosw;
 #endif /* _NETISO_TP_PROTOSW_H_ */

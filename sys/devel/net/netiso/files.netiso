@@ -43,7 +43,7 @@ file	netiso/tp_trace.c		iso | tpip
 file	netiso/tp_usrreq.c		iso | tpip
 
 # TUBA
-file	netiso/tuba_subr.c		iso | tuba
-file	netiso/tuba_table.c		iso | tuba
-file	netiso/tuba_tcp.c		iso | tuba
-file	netiso/tuba_usrreq.c	iso | tuba
+file	netiso/tuba_subr.c		tuba
+file	netiso/tuba_table.c		tuba
+file	netiso/tuba_tcp.c		tuba
+file	netiso/tuba_usrreq.c	tuba

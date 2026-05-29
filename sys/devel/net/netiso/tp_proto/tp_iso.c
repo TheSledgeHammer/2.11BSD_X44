@@ -31,6 +31,9 @@
 
 #include <sys/cdefs.h>
 
+#include "opt_iso.h"
+#ifdef ISO
+
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -40,8 +43,8 @@
 #include <sys/errno.h>
 #include <sys/time.h>
 #include <sys/protosw.h>
+#include <sys/systm.h>
 #include <sys/kernel.h>
-#include <sys/stdarg.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -50,14 +53,17 @@
 #include <netiso/tp_param.h>
 #include <netiso/tp_stat.h>
 #include <netiso/tp_pcb.h>
+#include <netiso/tp_protosw.h>
 #include <netiso/tp_trace.h>
 #include <netiso/tp_stat.h>
 #include <netiso/tp_tpdu.h>
 #include <netiso/tp_clnp.h>
-#include <netiso/cltp_var.h>
-
-#include <netiso/tp_protosw.h>
 #include <netiso/tp_proto/tp_iso.h>
+#include <netiso/tp_var.h>
+#include <netiso/cltp_var.h>
+#include <netiso/idrp_var.h>
+
+#include <machine/stdarg.h>
 
 struct tp_protosw tpiso_protosw = {
  	.tp_afamily = AF_ISO,
@@ -77,7 +83,7 @@ struct tp_protosw tpiso_protosw = {
  	.tp_output = tpclnp_output,
  	.tp_dgoutput = tpclnp_output_dg,
  	.tp_ctloutput = 0,
- 	.tp_pcblist = &tp_isopcb
+ 	.tp_pcblist = (caddr_t)&tp_isopcbtable
 };
 
 /*
@@ -92,7 +98,6 @@ iso_getsufx(void *v, u_short *lenp, caddr_t data_out, int which)
 	struct isopcb *isop = (struct isopcb *)v;
 	struct sockaddr_iso *addr = 0;
 
-	*lenp = addr->siso_tlen;
 	switch (which) {
 	case TP_LOCAL:
 		addr = isop->isop_laddr;
@@ -101,7 +106,7 @@ iso_getsufx(void *v, u_short *lenp, caddr_t data_out, int which)
 		addr = isop->isop_faddr;
 	}
 	if (addr) {
-		bcopy(TSEL(addr), data_out, lenp);
+		bcopy(TSEL(addr), data_out, (*lenp = addr->siso_tlen));
 	}
 }
 
@@ -190,12 +195,12 @@ void
 iso_putnetaddr(void *v, struct sockaddr *name, int which)
 {
 	struct isopcb *isop;
-	struct isopcb *sname;
+	struct sockaddr_iso *sname;
 	struct sockaddr_iso **sisop, *backup;
 	struct sockaddr_iso *siso;
 
 	isop = (struct isopcb *)v;
-	sname = (struct isopcb *)name;
+	sname = (struct sockaddr_iso *)name;
 	switch (which) {
 	default:
 		printf("iso_putnetaddr: should panic\n");
@@ -270,25 +275,15 @@ iso_cmpnetaddr(void *v, struct sockaddr *name, int which)
 void
 iso_getnetaddr(void *v, struct mbuf *name, int which)
 {
+    struct inpcb *inp;
 	struct isopcb *isop;
 	struct sockaddr_iso *siso;
 
-	isop = (struct isopcb *)v;
-	siso = mtod(name, struct sockaddr_iso *);
-	bzero((caddr_t)siso, sizeof(*siso));
-	switch (which) {
-	case TP_LOCAL:
-		siso->siso_addr = isop->isop_laddr;
-		break;
-	case TP_FOREIGN:
-		siso->siso_addr = isop->isop_faddr;
-		break;
-	default:
-		return;
-	}
+    inp = (struct inpcb *)v;
+	isop = (struct isopcb *)inp;
+	siso = (which == TP_LOCAL ? isop->isop_laddr : isop->isop_faddr);
 	if (siso) {
-		name->m_len = siso->siso_len;
-		bcopy((caddr_t)siso, mtod(name, caddr_t), (unsigned)name->m_len);
+		bcopy((caddr_t)siso, mtod(name, caddr_t), (unsigned)(name->m_len = siso->siso_len));
 	} else {
 		name->m_len = 0;
 	}
@@ -313,8 +308,9 @@ iso_getnetaddr(void *v, struct mbuf *name, int which)
  * NOTES:
  */
 int
-tpclnp_mtu(struct tp_pcb *tpcb)
+tpclnp_mtu(void *v)
 {
+    struct tp_pcb *tpcb = (struct tp_pcb *)v;
 	struct isopcb *isop;
 	int size;
 
@@ -328,7 +324,7 @@ tpclnp_mtu(struct tp_pcb *tpcb)
 		size = (sizeof(struct clnp_fixed) + sizeof(struct clnp_segment) +
 				2 * sizeof(struct iso_addr));
 	}
-	return (tp_mtu(tpcb, &isop->isop_route.ro_rt, size));
+	return (tp_mtu(tpcb, isop->isop_route.ro_rt, size));
 }
 
 /*
@@ -451,11 +447,12 @@ tpclnp_output_dg(struct mbuf *m0, ...)
  * Take a packet (m) from clnp, strip off the clnp header and give it to tp
  * No return value.
  */
-int
+void
 tpclnp_input(struct mbuf *m, ...)
 {
 	struct sockaddr_iso *src, *dst;
 	int clnp_len, ce_bit;
+    void (*input)(struct mbuf *, ...) = tp_input;
 	va_list ap;
 
 	va_start(ap, m);
@@ -510,7 +507,7 @@ tpclnp_input(struct mbuf *m, ...)
 		dump_isoaddr(dst);
 	ENDDEBUG
 
-	(void)tp_input(m, (struct sockaddr *)&src, (struct sockaddr *)&dst, 0, tpclnp_output_dg, ce_bit);
+	(*input)(m, (struct sockaddr *)&src, (struct sockaddr *)&dst, 0, tpclnp_output_dg, ce_bit);
 
 	IFDEBUG(D_QUENCH)
 		{
@@ -518,9 +515,9 @@ tpclnp_input(struct mbuf *m, ...)
 				printf("tpclnp_input: FAKING %s\n",
 					tp_stat.ts_pkt_rcvd & 0x1?"QUENCH":"QUENCH2");
 				if(tp_stat.ts_pkt_rcvd & 0x1) {
-					tpclnp_ctlinput(PRC_QUENCH, &src);
+					tpclnp_ctlinput(PRC_QUENCH, (struct sockaddr *)&src, NULL);
 				} else {
-					tpclnp_ctlinput(PRC_QUENCH2, &src);
+					tpclnp_ctlinput(PRC_QUENCH2, (struct sockaddr *)&src, NULL);
 				}
 			}
 		}
@@ -548,7 +545,7 @@ tpiso_decbit(struct isopcb *isop, int cmd)
 void
 tpiso_quench(struct isopcb *isop, int cmd)
 {
-	tp_quench((struct tp_pcb *)sotoisopcb(isop->isop_socket), cmd);
+	tp_quench((struct tp_pcb *)sotoinpcb(isop->isop_socket), cmd);
 }
 
 /*
@@ -604,20 +601,20 @@ tpclnp_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	}
 	switch (cmd) {
 	case PRC_QUENCH2:
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, tpiso_decbit);
+		iso_pcbnotify(&tp_isopcbtable, siso, &blank_siso, 0, tpiso_decbit);
 		break;
 	case PRC_QUENCH:
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, tpiso_quench);
+		iso_pcbnotify(&tp_isopcbtable, siso, &blank_siso, 0, tpiso_quench);
 		break;
 	case PRC_TIMXCEED_REASS:
 	case PRC_ROUTEDEAD:
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, tpiso_reset);
+		iso_pcbnotify(&tp_isopcbtable, siso, &blank_siso, 0, tpiso_reset);
 		break;
 	case PRC_HOSTUNREACH:
 	case PRC_UNREACH_NET:
 	case PRC_IFDOWN:
 	case PRC_HOSTDEAD:
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, (int)inetctlerrmap[cmd], iso_rtchange);
+		iso_pcbnotify(&tp_isopcbtable, siso, &blank_siso, (int)inetctlerrmap[cmd], iso_rtchange);
 		break;
 	default:
 		/*
@@ -634,7 +631,7 @@ tpclnp_ctlinput(int cmd, struct sockaddr *sa, void *v)
 		case	PRC_TIMXCEED_INTRANS:
 		case	PRC_PARAMPROB:
 		*/
-		iso_pcbnotify(&tp_isopcbtable, (struct sockaddr *)siso, &blank_siso, cmd, (int)inetctlerrmap[cmd], tpiso_abort);
+		iso_pcbnotify(&tp_isopcbtable, siso, &blank_siso, (int)inetctlerrmap[cmd], tpiso_abort);
 		break;
 	}
 	return (NULL);
@@ -674,3 +671,5 @@ tpclnp_quench(struct isopcb *isop)
 {
 	tpiso_quench(isop, PRC_QUENCH);
 }
+
+#endif /* ISO */

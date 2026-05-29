@@ -80,7 +80,7 @@ SOFTWARE.
 #define	TP_DECBIT_CLEAR_COUNT	3
 
 /*#define 	N_TPREF				100 */
-#ifdef KERNEL
+#ifdef _KERNEL
 extern int N_TPREF;
 #endif
 
@@ -205,6 +205,7 @@ extern int N_TPREF;
 #define	TPP_addl_opt		0xc6
 #define	TPP_alt_class		0xc7
 #define	TPP_perf_meas		0xc8	/* local item : perf meas on, svp */
+
 #define	TPP_ptpdu_size		0xf0	/* preferred TPDU size */
 #define	TPP_inact_time		0xf2	/* inactivity time exchanged */
 
@@ -317,7 +318,7 @@ struct tp_vbp {
 	bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val), (caddr_t)&(dst), sizeof(type))
 
 #define ADDOPTION(type, DU, len, src) { \
-	register caddr_t P;	\
+	caddr_t P;	\
 	P = (caddr_t)(DU) + (int)((DU)->tpdu_li); \
 	vbptr(P)->tpv_code = type; \
 	vbptr(P)->tpv_len = len; \
@@ -353,7 +354,7 @@ struct tp_vbp {
 
 #endif /* ARGO_DEBUG */
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 extern int tp_rttadd, tp_rttdiv;
 #include <sys/syslog.h>
 #define printf  logpri(LOG_DEBUG), addlog
@@ -363,7 +364,15 @@ extern int tp_rttadd, tp_rttdiv;
 #include <netiso/tp_states.h>
 #include <netiso/tp_events.h>
 
-#define TPDU_ATTR(X) ev_union.EV_##X##_TPDU
+#ifndef __CONCAT3
+# if __STDC__
+#  define __CONCAT3(a,b,c) a ## b ## c
+# else
+#  define __CONCAT3(a,b,c) a/**/b/**/c
+# endif /* __STDC__ */
+#endif
+
+#define TPDU_ATTR(X)	__CONCAT3(ev_union.EV_,X,_TPDU)
 
 #endif  /* tp_NSTATES  */
 #endif /* _KERNEL */

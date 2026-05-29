@@ -163,8 +163,23 @@ tp_euntimeout(struct tp_pcb *tpcb, int fun)
 	}
 #endif
 
-	if (tpcb)
+	if (tpcb) {
 		tpcb->tp_timer[fun] = 0;
+    }
+}
+
+#else
+
+void
+tp_etimeout(struct tp_pcb *tpcb, int which, int timo)
+{
+    tpcb->tp_timer[which] = timo;
+}
+
+void
+tp_euntimeout(struct tp_pcb *tpcb, int which)
+{
+    tpcb->tp_timer[fun] = 0;
 }
 
 /****************  c timers **********************
@@ -345,7 +360,7 @@ tp_ctimeout_MIN(struct tp_pcb *tpcb, int which, int ticks)
 			tpcb->tp_lref, which, tpcb, tpcb->tp_timer[which]);
 	}
 #endif
-		IncStat(ts_Cset);
+	IncStat(ts_Cset);
 	if (tpcb->tp_timer[which]) {
 		tpcb->tp_timer[which] = min(ticks, tpcb->tp_timer[which]);
 		IncStat(ts_Ccan_act);
@@ -382,4 +397,15 @@ tp_cuntimeout(struct tp_pcb *tpcb, int which)
 		IncStat(ts_Ccan_inact);
 	tpcb->tp_timer[which] = 0;
 }
+
+#else
+
+void
+tp_ctimeout_MIN(struct tp_pcb *p, int w, int t)
+{
+    if (p->tp_timer[w] > t) {
+        p->tp_timer[w] = t;
+    }
+}
+
 #endif

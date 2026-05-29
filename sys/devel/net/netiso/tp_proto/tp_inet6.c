@@ -31,23 +31,33 @@
 
 #include <sys/cdefs.h>
 
+#include "opt_inet.h"
+#include "opt_iso.h"
+
+#ifdef INET6
+
 #include <sys/param.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-#include <sys/stdarg.h>
 #include <sys/errno.h>
 #include <sys/time.h>
+#include <sys/systm.h>
 
 #include <net/if.h>
 
-#include <netinet/in.h>
-
-#include <netiso/tp_pcb.h>
+#include <netiso/tp_param.h>
+#include <netiso/argo_debug.h>
+#include <netiso/tp_stat.h>
 #include <netiso/tp_protosw.h>
-
 #include <netiso/tp_proto/tp_ip6.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_trace.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_tpdu.h>
+#include <netiso/tp_var.h>
+#include <netinet6/in6_var.h>
 
 struct tp_protosw tpin6_protosw = {
 		.tp_afamily = AF_INET6,
@@ -67,7 +77,7 @@ struct tp_protosw tpin6_protosw = {
 		.tp_output = tpip6_output,
 		.tp_dgoutput = tpip6_output_dg,
 		.tp_ctloutput = 0,
-		.tp_pcblist = &tp_in6pcb,
+		.tp_pcblist = (caddr_t)&tp_inpcbtable,
 };
 
 void
@@ -189,8 +199,9 @@ in6_getnetaddr(void *v, struct mbuf *name, int which)
 
 /* tpip6 */
 int
-tpip6_mtu(struct tp_pcb *tpcb)
+tpip6_mtu(void *)
 {
+    struct tp_pcb *tpcb = (struct tp_pcb *)v;
 	struct in6pcb *in6p = (struct in6pcb *)tpcb->tp_npcb;
 	return (tp_mtu(tpcb, in6p->in6p_route.ro_rt, sizeof(struct ip6_hdr)));
 }
@@ -421,3 +432,5 @@ tpin6_abort(struct in6pcb *in6p)
 {
 	tpip6_abort(in6p, 0);
 }
+
+#endif /* INET6 */

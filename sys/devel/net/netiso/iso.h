@@ -190,6 +190,8 @@ void dump_isoaddr(struct sockaddr_iso *);
 /* iso_chksum.c */
 int iso_check_csum(struct mbuf *, int);
 void iso_gen_csum(struct mbuf *, int, int);
+int m_datalen(struct mbuf *);
+int m_compress(struct mbuf *, struct mbuf **);
 
 #else
 /* user utilities definitions from the iso library */

@@ -78,6 +78,5 @@ SOFTWARE.
 #include <net/if.h>
 #endif
 #include <netiso/iso_var.h>
-#include <netiso/tp_proto/tp_iso.h>
 
 #endif /* _NETISO_TP_CLNP_H_ */

@@ -81,7 +81,9 @@ __KERNEL_RCSID(0, "$NetBSD: tp_output.c,v 1.24 2003/08/11 15:17:30 itojun Exp $"
 #include <netiso/tp_param.h>
 #include <netiso/tp_user.h>
 #include <netiso/tp_stat.h>
+#include <netiso/tp_protosw.h>
 #include <netiso/tp_proto/tp_ip.h>
+#include <netiso/tp_proto/tp_iso.h>
 #include <netiso/tp_clnp.h>
 #include <netiso/tp_timer.h>
 #include <netiso/argo_debug.h>
@@ -432,8 +434,7 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 		else if (tpcb->tp_tpproto->tp_ctloutput == NULL)
 			error = EOPNOTSUPP;
 		else
-			return ((tpcb->tp_tpproto->tp_ctloutput) (cmd, optname,
-						       tpcb->tp_npcb, *mp));
+			return ((tpcb->tp_tpproto->tp_ctloutput)(cmd, optname, tpcb->tp_npcb, *mp));
 		goto done;
 	} else if (level == SOL_SOCKET) {
 		if (optname == SO_RCVBUF && cmd == PRCO_SETOPT) {
@@ -496,16 +497,16 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 	switch (optname) {
 
 	case TPOPT_INTERCEPT:
-#define INA(t) (((struct inpcb *)(t->tp_npcb))->inp_laddr.s_addr)
+#define INA(t)  (((struct inpcb *)(t->tp_npcb))->inp_laddr.s_addr)
 #define ISOA(t) (((struct isopcb *)(t->tp_npcb))->isop_laddr->siso_addr)
 
 		if (p == 0 || (error = suser(p->p_ucred, &p->p_acflag))) {
 			error = EPERM;
 		} else if (cmd != PRCO_SETOPT || tpcb->tp_state != TP_CLOSED ||
 			   (tpcb->tp_flags & TPF_GENERAL_ADDR) ||
-			   LIST_NEXT(tpcb, tp_list) == 0)
+			   LIST_NEXT(tpcb, tp_list) == 0) {
 			error = EINVAL;
-		else {
+		} else {
 			struct tp_pcb *t;
 			error = EADDRINUSE;
 			LIST_FOREACH(t, &tp_listeners, tp_nextlisten) {
@@ -528,6 +529,7 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 						continue;
 #endif
 					}
+            }
 			tpcb->tp_lsuffixlen = 0;
 			tpcb->tp_state = TP_LISTENING;
 			error = 0;

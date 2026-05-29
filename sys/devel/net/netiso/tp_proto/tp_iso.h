@@ -89,10 +89,9 @@ SOFTWARE.
 
 #ifdef _KERNEL
 
-#define tp_isopcb tp_isopcbtable	/* queue of active inpcbs for tp ; for tp with dod ip */
-
 struct tp_pcb;
 struct isopcb;
+struct iso_addr;
 struct mbuf;
 struct sockaddr;
 
@@ -106,7 +105,7 @@ void 	iso_putnetaddr(void *, struct sockaddr *, int);
 int 	iso_cmpnetaddr(void *, struct sockaddr *, int);
 void 	iso_getnetaddr(void *, struct mbuf *, int);
 
-int 	tpclnp_mtu(struct tp_pcb *);
+int 	tpclnp_mtu(void *);
 int 	tpclnp_output(struct mbuf *, ...);
 int 	tpclnp_output_dg(struct mbuf *, ...);
 void 	tpclnp_input(struct mbuf *, ...);
@@ -115,6 +114,7 @@ void	tpclnp_abort(struct isopcb *);
 void 	tpclnp_reset(struct isopcb *);
 void 	*tpclnp_ctlinput(int, struct sockaddr *, void *);
 void	tpclnp_ctlinput1(int, struct iso_addr *);
+
 void 	tpiso_decbit(struct isopcb *, int);
 void 	tpiso_quench(struct isopcb *, int);
 void 	tpiso_abort(struct isopcb *, int);

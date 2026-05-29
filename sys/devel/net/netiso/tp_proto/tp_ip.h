@@ -76,12 +76,16 @@ SOFTWARE.
 #include <sys/socket.h>
 #endif
 
-#include <net/route.h>
-
-#ifdef INET
 #include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <net/route.h>
 #include <netinet/in_pcb.h>
 #include <netinet/ip_var.h>
+
+#ifdef INET
+
+struct tp_pcb;
 
 #define tp_inpcb tp_inpcbtable /* queue of active inpcbs for tp ; for tp with dod ip */
 
@@ -92,7 +96,7 @@ void in_putnetaddr(void *, struct sockaddr *, int);
 int in_cmpnetaddr(void *, struct sockaddr *, int);
 void in_getnetaddr(void *, struct mbuf *, int);
 
-int tpip_mtu(struct tpipcb *);
+int tpip_mtu(void *);
 int tpip_output(struct mbuf *, ...);
 int tpip_output_dg(struct mbuf *, ...);
 int tpip_input(struct mbuf *, ...);
@@ -102,5 +106,6 @@ void *tpip_ctlinput(int, struct sockaddr *, void *);
 
 void tpin_quench(struct inpcb *);
 void tpin_abort(struct inpcb *);
+void dump_inaddr(struct sockaddr_in *);
 #endif
 #endif /* _NETISO_TP_IP_H_ */

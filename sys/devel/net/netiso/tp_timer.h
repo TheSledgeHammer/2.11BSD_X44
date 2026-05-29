@@ -77,17 +77,13 @@ SOFTWARE.
 #endif
 
 #ifndef TP_DEBUG_TIMERS
-#define tp_ctimeout(tpcb, which, timo) \
-	((tpcb)->tp_timer[which] = (timo))
+//#define tp_etimeout(tpcb, which, timo) ((tpcb)->tp_timer[which] = (timo))
+//#define tp_euntimeout(tpcb, which) ((tpcb)->tp_timer[which] = 0)
+//#define tp_etimeout tp_ctimeout
+//#define tp_euntimeout tp_cuntimeout
 
-#define tp_cuntimeout(tpcb, which) \
-	((tpcb)->tp_timer[which] = 0)
-
-#define tp_etimeout 	tp_ctimeout
-#define tp_euntimeout 	tp_cuntimeout
-
-#define tp_ctimeout_MIN(p, w, t) \
-	{ if ((p)->tp_timer[w] > (t)) (p)->tp_timer[w] = (t); }
+//#define tp_ctimeout_MIN(p, w, t) \
+//	{ if ((p)->tp_timer[w] > (t)) (p)->tp_timer[w] = (t); }
 
 #endif /* TP_DEBUG_TIMERS */
 #endif /* _NETISO_TP_TIMER_H_ */

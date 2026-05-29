@@ -112,6 +112,13 @@ SOFTWARE.
 
 #define TM_NTIMERS 		6
 
+struct iso_addr;
+struct sockaddr;
+struct socket;
+struct tp_pcb;
+struct inpcb;
+struct in6pcb;
+
 struct tp_ref {
 	struct tp_pcb 		*tpr_pcb;	/* back ptr to PCB */
 };
@@ -321,6 +328,8 @@ u_int	tp_start_win;
 #define	tpcbtoref(tp)	((struct tp_ref *)((tp)->tp_ref))
 
 #ifdef _KERNEL
+struct sockaddr_iso;
+
 extern struct tp_refinfo tp_refinfo;
 extern struct tp_ref	*tp_ref;
 extern struct tp_param	tp_param;
@@ -335,7 +344,7 @@ void tp_soisdisconnecting(struct socket *);
 void tp_soisdisconnected(struct tp_pcb *);
 void tp_freeref(RefNum);
 u_long tp_getref(struct tp_pcb *);
-int tpi_set_npcb(struct tp_pcb *);
+int tp_set_npcb(struct tp_pcb *);
 int tp_attach(struct socket *, int);
 void tp_detach(struct tp_pcb *);
 int tp_tselinuse(u_short, char *, struct sockaddr_iso *, int);

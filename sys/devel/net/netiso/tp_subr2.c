@@ -95,6 +95,7 @@ __KERNEL_RCSID(0, "$NetBSD: tp_subr2.c,v 1.22 2003/08/11 15:17:31 itojun Exp $")
 
 #include <netiso/argo_debug.h>
 #include <netiso/tp_param.h>
+#include <netiso/tp_protosw.h>
 #include <netiso/tp_proto/tp_ip.h>
 #include <netiso/iso.h>
 #include <netiso/iso_errno.h>
@@ -369,7 +370,7 @@ tp_recycle_tsuffix(void *v)
 void
 tp_quench(struct inpcb *ipcb, int cmd)
 {
-	struct tp_pcb  *tpcb = (struct tp_pcb *) ipcb;
+	struct tp_pcb  *tpcb = (struct tp_pcb *)ipcb;
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_QUENCH]) {
 		printf("tp_quench tpcb %p ref 0x%x sufx 0x%x\n",
@@ -391,7 +392,6 @@ tp_quench(struct inpcb *ipcb, int cmd)
 		break;
 	}
 }
-
 
 /*
  * NAME:	tp_netcmd()
