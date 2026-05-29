@@ -93,7 +93,6 @@ const char hexdigits[] = "0123456789abcdef";
 const char HEXDIGITS[] = "0123456789ABCDEF";
 
 /* internal methods */
-static void logpri(int);
 static void prf(const char *, u_int *, int, struct tty *, va_list);
 static void prf1(const char *, int, struct tty *, va_list);
 static void prf2(const char *, int, va_list);
@@ -301,7 +300,7 @@ vlog(level, fmt, ap)
 	logwakeup(logMSG);
 }
 
-static void
+void
 logpri(level)
 	int level;
 {
