@@ -42,7 +42,7 @@ struct sap_select sap_table[] = {
 				.ss_af = AF_UNSPEC,
 				.ss_type =  { SAP_TYPE_UNKNOWN },
 				.ss_subnet = { SAP_SUBNET_UNKNOWN },
-				.ss_protocol = { SAP_PROTOCOL_UNKNOWN },
+				.ss_subtran = { SAP_SUBTRAN_UNKNOWN },
 				.ss_class = { SAP_CLASS_UNKNOWN },
 		},
 		/* 1 - AF_INET */
@@ -51,7 +51,7 @@ struct sap_select sap_table[] = {
 				.ss_af = AF_INET,
 				.ss_type =  { SAP_TYPE_SIN4 },
 				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
-				.ss_protocol = { SAP_PROTOCOL_TCP,  SAP_PROTOCOL_UDP },
+				.ss_subtran = { SAP_SUBTRAN_TCP,  SAP_SUBTRAN_UDP },
 				.ss_class = { SAP_CLASS_CLNS },
 		},
 		/* 2 - AF_INET6 */
@@ -60,7 +60,7 @@ struct sap_select sap_table[] = {
 				.ss_af = AF_INET6,
 				.ss_type =  { SAP_TYPE_SIN6 },
 				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
-				.ss_protocol = { SAP_PROTOCOL_TCP,  SAP_PROTOCOL_UDP },
+				.ss_subtran = { SAP_SUBTRAN_TCP,  SAP_SUBTRAN_UDP },
 				.ss_class = { SAP_CLASS_CLNS },
 		},
 		/* 3 - AF_NS */
@@ -69,7 +69,7 @@ struct sap_select sap_table[] = {
 				.ss_af = AF_NS,
 				.ss_type =  { SAP_TYPE_SNS },
 				.ss_subnet = { SAP_SUBNET_IDP },
-				.ss_protocol = { SAP_PROTOCOL_SPP },
+				.ss_subtran = { SAP_SUBTRAN_SPP },
 				.ss_class = { SAP_CLASS_CLNS },
 		},
 		/* 4 - AF_ISO */
@@ -78,7 +78,7 @@ struct sap_select sap_table[] = {
 				.ss_af = AF_ISO,
 				.ss_type =  { SAP_TYPE_SISO },
 				.ss_subnet = { SAP_SUBNET_CONS, SAP_SUBNET_CLNS, SAP_SUBNET_CLNP, SAP_SUBNET_ISIS, SAP_SUBNET_ESIS },
-				.ss_protocol = { SAP_PROTOCOL_TP0, SAP_PROTOCOL_TP1, SAP_PROTOCOL_TP2, SAP_PROTOCOL_TP3, SAP_PROTOCOL_TP4 },
+				.ss_subtran = { SAP_SUBTRAN_TP0, SAP_SUBTRAN_TP1, SAP_SUBTRAN_TP2, SAP_SUBTRAN_TP3, SAP_SUBTRAN_TP4 },
 				.ss_class = { SAP_CLASS_CONS, SAP_CLASS_CLNS },
 		},
 		/* 5 - AF_CCITT */
@@ -87,7 +87,7 @@ struct sap_select sap_table[] = {
 				.ss_af = AF_CCITT,
 				.ss_type =  { SAP_TYPE_SX25 },
 				.ss_subnet = { SAP_SUBNET_X25 },
-				.ss_protocol = { SAP_PROTOCOL_X25 },
+				.ss_subtran = { SAP_SUBTRAN_X25 },
 				.ss_class = { SAP_CLASS_CONS },
 		},
 		/* 6 - AF_NATM */
@@ -96,7 +96,7 @@ struct sap_select sap_table[] = {
 				.ss_af = AF_NATM,
 				.ss_type =  { SAP_TYPE_SATM },
 				.ss_subnet = { SAP_SUBNET_ATM },
-				.ss_protocol = { SAP_PROTOCOL_ATM },
+				.ss_subtran = { SAP_SUBTRAN_ATM },
 				.ss_class = { SAP_CLASS_CLNS },
 		},
 		/* 7 - AF_IPX */
@@ -105,7 +105,7 @@ struct sap_select sap_table[] = {
 				.ss_af = AF_IPX,
 				.ss_type =  { SAP_TYPE_SIPX },
 				.ss_subnet = { SAP_SUBNET_IPX },
-				.ss_protocol = { SAP_PROTOCOL_SPX },
+				.ss_subtran = { SAP_SUBTRAN_SPX },
 				.ss_class = { SAP_CLASS_CLNS },
 		},
 		/* 8 - AF_SNA */
@@ -114,7 +114,7 @@ struct sap_select sap_table[] = {
 				.ss_af = AF_SNA,
 				.ss_type =  { SAP_TYPE_SSNA },
 				.ss_subnet = { SAP_SUBNET_SNA },
-				.ss_protocol = { SAP_PROTOCOL_SNA },
+				.ss_subtran = { SAP_SUBTRAN_SNA },
 				.ss_class = { SAP_CLASS_CLNS },
 		},
 };
@@ -231,54 +231,90 @@ sap_subnet_select(long subnet)
 }
 
 long
-sap_protocol_select(long protocol)
+sap_subtran_select(long subtran)
 {
 	long select = -1;
 
-	switch (protocol) {
-	case SAP_PROTOCOL_TCP:
-		select = SAP_PROTOCOL_TCP;
+	switch (subtran) {
+	case SAP_SUBTRAN_TCP:
+		select = SAP_SUBTRAN_TCP;
 		break;
-	case SAP_PROTOCOL_UDP:
-		select = SAP_PROTOCOL_UDP;
+	case SAP_SUBTRAN_UDP:
+		select = SAP_SUBTRAN_UDP;
 		break;
-	case SAP_PROTOCOL_TP0:
-		select = SAP_PROTOCOL_TP0;
+	case SAP_SUBTRAN_TP0:
+		select = SAP_SUBTRAN_TP0;
 		break;
-	case SAP_PROTOCOL_TP1:
-		select = SAP_PROTOCOL_TP1;
+	case SAP_SUBTRAN_TP1:
+		select = SAP_SUBTRAN_TP1;
 		break;
-	case SAP_PROTOCOL_TP2:
-		select = SAP_PROTOCOL_TP2;
+	case SAP_SUBTRAN_TP2:
+		select = SAP_SUBTRAN_TP2;
 		break;
-	case SAP_PROTOCOL_TP3:
-		select = SAP_PROTOCOL_TP3;
+	case SAP_SUBTRAN_TP3:
+		select = SAP_SUBTRAN_TP3;
 		break;
-	case SAP_PROTOCOL_TP4:
-		select = SAP_PROTOCOL_TP4;
+	case SAP_SUBTRAN_TP4:
+		select = SAP_SUBTRAN_TP4;
 		break;
-	case SAP_PROTOCOL_SPP:
-		select = SAP_PROTOCOL_SPP;
+	case SAP_SUBTRAN_SPP:
+		select = SAP_SUBTRAN_SPP;
 		break;
-	case SAP_PROTOCOL_X25:
-		select = SAP_PROTOCOL_X25;
+	case SAP_SUBTRAN_X25:
+		select = SAP_SUBTRAN_X25;
 		break;
-	case SAP_PROTOCOL_ATM:
-		select = SAP_PROTOCOL_ATM;
+	case SAP_SUBTRAN_ATM:
+		select = SAP_SUBTRAN_ATM;
 		break;
-	case SAP_PROTOCOL_SPX:
-		select = SAP_PROTOCOL_SPX;
+	case SAP_SUBTRAN_SPX:
+		select = SAP_SUBTRAN_SPX;
 		break;
-	case SAP_PROTOCOL_SNA:
-		select = SAP_PROTOCOL_SNA;
+	case SAP_SUBTRAN_SNA:
+		select = SAP_SUBTRAN_SNA;
 		break;
-	case SAP_PROTOCOL_UNKNOWN:
+	case SAP_SUBTRAN_UNKNOWN:
 		/* FALLTHROUGH */
 	default:
-		select = SAP_PROTOCOL_UNKNOWN;
+		select = SAP_SUBTRAN_UNKNOWN;
 		break;
 	}
 	return (select);
+}
+
+void
+sap_class(struct sap_service *service, int clazz)
+{
+	if (service == NULL) {
+		return;
+	}
+	service->ns_class = sap_class_select(clazz);
+}
+
+void
+sap_type(struct sockaddr_nsap *snsap, long type)
+{
+	if (snsap == NULL) {
+		return;
+	}
+	snsap->snsap_type = sap_type_select(type);
+}
+
+void
+sap_subnet(struct sockaddr_nsap *snsap, long subnet)
+{
+	if (snsap == NULL) {
+		return;
+	}
+	snsap->snsap_subnet = sap_subnet_select(subnet);
+}
+
+void
+sap_subtran(struct sockaddr_nsap *snsap, long subtran)
+{
+	if (snsap == NULL) {
+		return;
+	}
+	snsap->snsap_subtran = sap_subtran_select(subtran);
 }
 
 /*
@@ -345,6 +381,18 @@ sockaddr_nsap_compare_subnet(struct sockaddr_nsap *a, struct sockaddr_nsap *b)
 	}
 }
 
+static int
+sockaddr_nsap_compare_subtran(struct sockaddr_nsap *a, struct sockaddr_nsap *b)
+{
+	if (a->snsap_subtran > b->snsap_subtran) {
+		return (-1);
+	} else if (a->snsap_subtran < b->snsap_subtran) {
+		return (1);
+	} else {
+		return (0);
+	}
+}
+
 uint16_t
 sockaddr_nsap_port(struct sockaddr_nsap *snsap, int af)
 {
@@ -403,6 +451,10 @@ sockaddr_nsap_compare(struct sockaddr_nsap *a, struct sockaddr_nsap *b)
 			return (error);
 		}
 		error = sockaddr_nsap_compare_subnet(a, b);
+		if (error != 0) {
+			return (error);
+		}
+		error = sockaddr_nsap_compare_subtran(a, b);
 		if (error != 0) {
 			return (error);
 		}
@@ -536,11 +588,11 @@ sap_service_compare(struct sap_service *a, struct sap_service *b)
  * sap_select functions
  */
 static void
-sap_select_setup(struct sap_select *select, long *type, long *subnet, long *protocol, int *class)
+sap_select_setup(struct sap_select *select, long *type, long *subnet, long *subtran, int *class)
 {
     bcopy(type, select->ss_type, sizeof(*select->ss_type));
     bcopy(subnet, select->ss_subnet, sizeof(*select->ss_subnet));
-    bcopy(protocol, select->ss_protocol, sizeof(*select->ss_protocol));
+    bcopy(subtran, select->ss_subtran, sizeof(*select->ss_subtran));
     bcopy(class, select->ss_class, sizeof(*select->ss_class));
 }
 
@@ -553,7 +605,7 @@ sap_select_selector_setup(struct sap_select *select)
 	for (i = 1; i < SAP_TABLE_MAX; i++) {
 		select = &sap_table[i];
 		if (select != NULL) {
-			sap_hashids[i] = sap_hash(*select->ss_type, *select->ss_subnet, *select->ss_protocol, *select->ss_class);
+			sap_hashids[i] = sap_hash(*select->ss_type, *select->ss_subnet, *select->ss_subtran, *select->ss_class);
 			tsap_valid_ids[i] = sap_hashids[i];
 		}
 	}
@@ -565,7 +617,7 @@ sap_select_init(struct sap_select *select, int sid, int af)
 	bzero(select, sizeof(*select));
 	select = sap_select_lookup(sid, af);
 	if (select != NULL) {
-		sap_select_setup(select, select->ss_type, select->ss_subnet, select->ss_protocol, select->ss_class);
+		sap_select_setup(select, select->ss_type, select->ss_subnet, select->ss_subtran, select->ss_class);
 		sap_select_selector_setup(select);
 		select->ss_selector[sid] = sap_hashids[sid];
 	}
@@ -618,20 +670,20 @@ sap_select_lookup_subnet(int sid, int af, long subnet)
 }
 
 long
-sap_select_lookup_protocol(int sid, int af, long protocol)
+sap_select_lookup_subtran(int sid, int af, long subtran)
 {
 	struct sap_select *select;
-	long sap_protocol;
+	long sap_subtran;
 
 	select = sap_select_lookup(sid, af);
 	if (select != NULL) {
-		sap_protocol = sap_item_lookup(protocol, select->ss_protocol,
-				SAP_PROTOCOL_MAX);
-		if (sap_protocol != sap_protocol_select(protocol)) {
-			sap_protocol = SAP_PROTOCOL_UNKNOWN;
+		sap_subtran = sap_item_lookup(subtran, select->ss_subtran,
+				SAP_SUBTRAN_MAX);
+		if (sap_subtran != sap_subtran_select(subtran)) {
+			sap_subtran = SAP_SUBTRAN_UNKNOWN;
 		}
 	}
-	return (sap_protocol);
+	return (sap_subtran);
 }
 
 int

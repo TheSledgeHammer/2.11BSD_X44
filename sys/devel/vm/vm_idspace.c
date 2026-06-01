@@ -35,12 +35,12 @@
 
 struct vm_segmap_head segmaplist;
 
-/* seginfo */
-struct vm_segment_register seginfo[NOVL];
-static void vm_seginfo_get(int, vm_offset_t *, vm_offset_t *);
-static void vm_seginfo_put(int, vm_offset_t *, vm_offset_t *);
+/* infomap: generic register */
+struct vm_segment_register infomap[NOVL];
+static void vm_infomap_get(int, vm_offset_t *, vm_offset_t *);
+static void vm_infomap_put(int, vm_offset_t *, vm_offset_t *);
 
-/* savemap */
+/* savemap: save registers */
 struct vm_segment_register savemap[2];
 static void vm_savemap_get(int, vm_offset_t *, vm_offset_t *);
 static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
@@ -108,30 +108,30 @@ vm_segment_map_remove(segreg, segnum)
 	//unlock
 }
 
-/* vm_segment_register: seginfo */
+/* vm_segment_register: infomap */
 
 static void
-vm_seginfo_get(segnum, addr, desc)
+vm_infomap_get(segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
-	if (seginfo[segnum] != NULL) {
+	if (infomap[segnum] != NULL) {
 		if ((segnum >= 0) && (segnum <= NOVL)) {
-			*addr = seginfo[segnum].addr;
-			*desc = seginfo[segnum].desc;
+			*addr = infomap[segnum].addr;
+			*desc = infomap[segnum].desc;
 		}
 	}
 }
 
 static void
-vm_seginfo_put(segnum, addr, desc)
+vm_infomap_put(segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
 	if ((addr != NULL) && (desc != NULL)) {
 		if ((segnum >= 0) && (segnum <= NOVL)) {
-			seginfo[segnum].addr = *addr;
-			seginfo[segnum].desc = *desc;
+			infomap[segnum].addr = *addr;
+			infomap[segnum].desc = *desc;
 		}
 	}
 }

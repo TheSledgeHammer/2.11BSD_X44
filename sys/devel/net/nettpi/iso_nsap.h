@@ -99,6 +99,7 @@ struct nsap_addr {
 struct sockaddr_nsap {
 	long snsap_type; 	/* stack type */
 	long snsap_subnet;	/* subnet type */
+	long snsap_subtran;	/* subtran type */
 	/* sockaddr's */
 	union sockaddr_union u_sockaddr;
 #define snsap_sin4 	u_sockaddr.sin4
@@ -163,20 +164,20 @@ struct nsapisotable {
 
 /* TSAP: Transport Service Access Point */
 /* tsap protocols */
-#define TSAP_PROTOCOL_UNKNOWN 	SAP_PROTOCOL_UNKNOWN
-#define TSAP_PROTOCOL_TCP 		SAP_PROTOCOL_TCP
-#define TSAP_PROTOCOL_UDP 		SAP_PROTOCOL_UDP
-#define TSAP_PROTOCOL_TP0 		SAP_PROTOCOL_TP0
-#define TSAP_PROTOCOL_TP1 		SAP_PROTOCOL_TP1
-#define TSAP_PROTOCOL_TP2 		SAP_PROTOCOL_TP2
-#define TSAP_PROTOCOL_TP3 		SAP_PROTOCOL_TP3
-#define TSAP_PROTOCOL_TP4 		SAP_PROTOCOL_TP4
-#define TSAP_PROTOCOL_SPP 		SAP_PROTOCOL_SPP
-#define TSAP_PROTOCOL_X25 		SAP_PROTOCOL_X25
-#define TSAP_PROTOCOL_ATM 		SAP_PROTOCOL_ATM
-#define TSAP_PROTOCOL_SPX 		SAP_PROTOCOL_SPX
-#define TSAP_PROTOCOL_SNA 		SAP_PROTOCOL_SNA
-#define TSAP_PROTOCOL_MAX 		SAP_PROTOCOL_MAX
+#define TSAP_SUBTRAN_UNKNOWN 	SAP_SUBTRAN_UNKNOWN
+#define TSAP_SUBTRAN_TCP 		SAP_SUBTRAN_TCP
+#define TSAP_SUBTRAN_UDP 		SAP_SUBTRAN_UDP
+#define TSAP_SUBTRAN_TP0 		SAP_SUBTRAN_TP0
+#define TSAP_SUBTRAN_TP1 		SAP_SUBTRAN_TP1
+#define TSAP_SUBTRAN_TP2 		SAP_SUBTRAN_TP2
+#define TSAP_SUBTRAN_TP3 		SAP_SUBTRAN_TP3
+#define TSAP_SUBTRAN_TP4 		SAP_SUBTRAN_TP4
+#define TSAP_SUBTRAN_SPP 		SAP_SUBTRAN_SPP
+#define TSAP_SUBTRAN_X25 		SAP_SUBTRAN_X25
+#define TSAP_SUBTRAN_ATM 		SAP_SUBTRAN_ATM
+#define TSAP_SUBTRAN_SPX 		SAP_SUBTRAN_SPX
+#define TSAP_SUBTRAN_SNA 		SAP_SUBTRAN_SNA
+#define TSAP_SUBTRAN_MAX 		SAP_SUBTRAN_MAX
 
 /* TSAP addr (ISO/OSI equivalent) */
 struct tsap_iso {

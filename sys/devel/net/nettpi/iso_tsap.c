@@ -71,9 +71,9 @@ static int tsap_candisconnect(struct tsap_iso *, void *, long, long, long, int, 
 #define TSAP_MACID_LEN 32
 
 void
-tsap_mac_id(int cn, long type, long subnet, long protocol, int clazz)
+tsap_mac_id(int cn, long type, long subnet, long subtran, int clazz)
 {
-    uint32_t cn_id, type_id, subnet_id, protocol_id, class_id;
+    uint32_t cn_id, type_id, subnet_id, subtran_id, class_id;
     int len = TSAP_MACID_LEN;
 
     char tsap_hexid[len];
@@ -81,9 +81,9 @@ tsap_mac_id(int cn, long type, long subnet, long protocol, int clazz)
     cn_id = enhanced_double_hash(cn, len);
     type_id = sap_type_hash(type, len);
     subnet_id = sap_subnet_hash(subnet, len);
-    protocol_id = sap_protocol_hash(protocol, len);
+    subtran_id = sap_subtran_hash(subtran, len);
     class_id = sap_class_hash(clazz, len);
-    (void)snprintf(tsap_hexid, sizeof(tsap_hexid), "%X.%X.%X.%X.%X\n", cn_id, type_id, subnet_id, protocol_id, class_id);
+    (void)snprintf(tsap_hexid, sizeof(tsap_hexid), "%X.%X.%X.%X.%X\n", cn_id, type_id, subnet_id, subtran_id, class_id);
     //printf("%s\n", tsap_hexid);
 }
 
@@ -210,18 +210,18 @@ tsap_validate(struct tsap_iso *tsap, struct nsap_iso *nsap, int sid, int af)
 }
 
 static int
-tsap_acknowledge(struct tsap_iso *tsap, struct nsap_iso *nsap, long type, long subnet, long protocol, int class, int sid, int af)
+tsap_acknowledge(struct tsap_iso *tsap, struct nsap_iso *nsap, long type, long subnet, long subtran, int class, int sid, int af)
 {
-	long sap_type, sap_subnet, sap_protocol;
+	long sap_type, sap_subnet, sap_subtran;
 	int sap_class, error;
 
 	sap_type = sap_select_lookup_type(sid, af, type);
 	sap_subnet = sap_select_lookup_subnet(sid, af, subnet);
-	sap_protocol = sap_select_lookup_protocol(sid, af, protocol);
+	sap_subtran = sap_select_lookup_subtran(sid, af, subtran);
 	sap_class = sap_select_lookup_class(sid, af, class);
 
 	/* check tsap id */
-	error = tsap_id(sap_type, sap_subnet, sap_protocol, sap_class);
+	error = tsap_id(sap_type, sap_subnet, sap_subtran, sap_class);
 	if (error == 0) {
 		return (EAFNOSUPPORT);
 	}
@@ -233,7 +233,7 @@ tsap_acknowledge(struct tsap_iso *tsap, struct nsap_iso *nsap, long type, long s
 }
 
 static int
-tsap_canconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
+tsap_canconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, long subtran, int class, int sid, int af)
 {
 	struct nsap_iso *nsap;
 	int error;
@@ -242,7 +242,7 @@ tsap_canconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, long p
 	if (nsap == NULL) {
 		return (EINVAL);
 	}
-	error = tsap_acknowledge(tsap, nsap, type, subnet, protocol, class, sid, af);
+	error = tsap_acknowledge(tsap, nsap, type, subnet, subtran, class, sid, af);
 	if (error != 0) {
 		return (error);
 	}
@@ -250,7 +250,7 @@ tsap_canconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, long p
 }
 
 static int
-tsap_candisconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, long protocol, int class, int sid, int af)
+tsap_candisconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, long subtran, int class, int sid, int af)
 {
 	struct nsap_iso *nsap;
 	int error;
@@ -259,7 +259,7 @@ tsap_candisconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, lon
 	if (nsap == NULL) {
 		return (EINVAL);
 	}
-	error = tsap_acknowledge(tsap, nsap, type, subnet, protocol, class, sid, af);
+	error = tsap_acknowledge(tsap, nsap, type, subnet, subtran, class, sid, af);
 	if (error != 0) {
 		return (error);
 	}
@@ -269,7 +269,7 @@ tsap_candisconnect(struct tsap_iso *tsap, void *arg, long type, long subnet, lon
 int
 tsap_connect(struct tsap_iso *tsap, void *arg, int af)
 {
-	long type, subnet, protocol;
+	long type, subnet, subtran;
 	int class;
 	int error, sid;
 
@@ -287,8 +287,8 @@ tsap_connect(struct tsap_iso *tsap, void *arg, int af)
 			break;
 		}
 	}
-	for (protocol = 0; protocol < SAP_PROTOCOL_MAX; protocol++) {
-		if (sap_select_lookup_protocol(sid, af, protocol)) {
+	for (subtran = 0; subtran < SAP_SUBTRAN_MAX; subtran++) {
+		if (sap_select_lookup_subtran(sid, af, subtran)) {
 			break;
 		}
 	}
@@ -297,7 +297,7 @@ tsap_connect(struct tsap_iso *tsap, void *arg, int af)
 			break;
 		}
 	}
-	error = tsap_canconnect(tsap, arg, type, subnet, protocol, class, sid, af);
+	error = tsap_canconnect(tsap, arg, type, subnet, subtran, class, sid, af);
 	if (error != 0) {
 		return (error);
 	}
@@ -307,7 +307,7 @@ tsap_connect(struct tsap_iso *tsap, void *arg, int af)
 int
 tsap_disconnect(struct tsap_iso *tsap, void *arg, int af)
 {
-	long type, subnet, protocol;
+	long type, subnet, subtran;
 	int class;
 	int error, sid;
 
@@ -326,8 +326,8 @@ tsap_disconnect(struct tsap_iso *tsap, void *arg, int af)
 			break;
 		}
 	}
-	for (protocol = 0; protocol < SAP_PROTOCOL_MAX; protocol++) {
-		if (sap_select_lookup_protocol(sid, af, protocol)) {
+	for (subtran = 0; subtran < SAP_SUBTRAN_MAX; subtran++) {
+		if (sap_select_lookup_subtran(sid, af, subtran)) {
 			break;
 		}
 	}
@@ -336,7 +336,7 @@ tsap_disconnect(struct tsap_iso *tsap, void *arg, int af)
 			break;
 		}
 	}
-	error = tsap_candisconnect(tsap, arg, type, subnet, protocol, class, sid, af);
+	error = tsap_candisconnect(tsap, arg, type, subnet, subtran, class, sid, af);
 	if (error != 0) {
 		return (error);
 	}

@@ -54,11 +54,6 @@ static long nsap_id_cnt;
 	&(table)->nsi_hashtbl[nsap_id((type), (subnet))]
 
 static void nsap_init(struct nsapisotable *);
-
-static void nsap_class(struct sap_service *, int);
-static void nsap_type(struct sockaddr_nsap *, long);
-static void nsap_subnet(struct sockaddr_nsap *, long);
-
 static int nsap_type_id_check(uint32_t, long);
 static int nsap_subnet_id_check(uint32_t, long);
 static int nsap_id_check(struct nsap_iso *, long, long);
@@ -128,33 +123,6 @@ nsap_detach(struct nsap_iso *nsap, int af)
 			nsap_destroy(nsap);
 		}
 	}
-}
-
-static void
-nsap_class(struct sap_service *service, int clazz)
-{
-	if (service == NULL) {
-		return;
-	}
-	service->ns_class = sap_class_select(clazz);
-}
-
-static void
-nsap_type(struct sockaddr_nsap *snsap, long type)
-{
-	if (snsap == NULL) {
-		return;
-	}
-	snsap->snsap_type = sap_type_select(type);
-}
-
-static void
-nsap_subnet(struct sockaddr_nsap *snsap, long subnet)
-{
-	if (snsap == NULL) {
-		return;
-	}
-	snsap->snsap_subnet = sap_subnet_select(subnet);
 }
 
 static int
@@ -275,7 +243,7 @@ static void
 nsap_service(struct sap_service *service, char *addr, u_char addrlen, int class)
 {
 	sap_service_init(service, addr, addrlen, class);
-	nsap_class(service, class);
+	sap_class(service, class);
 }
 
 static void
@@ -287,18 +255,18 @@ nsap_setup_snsap(struct sockaddr_nsap *snsap, void *arg, long type, long subnet)
 		struct sockaddr_in *sin = (struct sockaddr_in *)arg;
 		if (sin != NULL) {
 			snsap->snsap_sin4 = *sin;
-			nsap_type(snsap, NSAP_TYPE_SIN4);
+			sap_type(snsap, NSAP_TYPE_SIN4);
 			switch (subnet) {
 			case NSAP_SUBNET_IPV4:
-				nsap_subnet(snsap, NSAP_SUBNET_IPV4);
+				sap_subnet(snsap, NSAP_SUBNET_IPV4);
 				break;
 			case NSAP_SUBNET_IPV6:
-				nsap_subnet(snsap, NSAP_SUBNET_IPV4);
+				sap_subnet(snsap, NSAP_SUBNET_IPV4);
 				break;
 			case NSAP_SUBNET_UNKNOWN:
 				/* FALLTHROUGH */
 			default:
-				nsap_subnet(snsap, NSAP_SUBNET_UNKNOWN);
+				sap_subnet(snsap, NSAP_SUBNET_UNKNOWN);
 				break;
 			}
 		} else {
@@ -311,17 +279,17 @@ nsap_setup_snsap(struct sockaddr_nsap *snsap, void *arg, long type, long subnet)
 		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)arg;
 		if (sin6 != NULL) {
 			snsap->snsap_sin6 = *sin6;
-			nsap_type(snsap, NSAP_TYPE_SIN6);
+			sap_type(snsap, NSAP_TYPE_SIN6);
 			switch (subnet) {
 			case NSAP_SUBNET_IPV4:
 				/* FALLTHROUGH */
 			case NSAP_SUBNET_IPV6:
-				nsap_subnet(snsap, NSAP_SUBNET_IPV6);
+				sap_subnet(snsap, NSAP_SUBNET_IPV6);
 				break;
 			case NSAP_SUBNET_UNKNOWN:
 				/* FALLTHROUGH */
 			default:
-				nsap_subnet(snsap, NSAP_SUBNET_UNKNOWN);
+				sap_subnet(snsap, NSAP_SUBNET_UNKNOWN);
 				break;
 			}
 		} else {
@@ -334,8 +302,8 @@ nsap_setup_snsap(struct sockaddr_nsap *snsap, void *arg, long type, long subnet)
 		struct sockaddr_ns *sns = (struct sockaddr_ns *)arg;
 		if (sns != NULL) {
 			snsap->snsap_sns = *sns;
-			nsap_type(snsap, NSAP_TYPE_SNS);
-			nsap_subnet(snsap, NSAP_SUBNET_IDP);
+			sap_type(snsap, NSAP_TYPE_SNS);
+			sap_subnet(snsap, NSAP_SUBNET_IDP);
 		} else {
 			goto unknown;
 		}
@@ -346,27 +314,27 @@ nsap_setup_snsap(struct sockaddr_nsap *snsap, void *arg, long type, long subnet)
 		struct sockaddr_iso *siso = (struct sockaddr_iso *)arg;
 		if (siso != NULL) {
 			snsap->snsap_siso = *siso;
-			nsap_type(snsap, NSAP_TYPE_SISO);
+			sap_type(snsap, NSAP_TYPE_SISO);
 			switch (subnet) {
 			case NSAP_SUBNET_CONS:
-				nsap_subnet(snsap, NSAP_SUBNET_CONS);
+				sap_subnet(snsap, NSAP_SUBNET_CONS);
 				break;
 			case NSAP_SUBNET_CLNS:
-				nsap_subnet(snsap, NSAP_SUBNET_CLNS);
+				sap_subnet(snsap, NSAP_SUBNET_CLNS);
 				break;
 			case NSAP_SUBNET_CLNP:
-				nsap_subnet(snsap, NSAP_SUBNET_CLNP);
+				sap_subnet(snsap, NSAP_SUBNET_CLNP);
 				break;
 			case NSAP_SUBNET_ISIS:
-				nsap_subnet(snsap, NSAP_SUBNET_ISIS);
+				sap_subnet(snsap, NSAP_SUBNET_ISIS);
 				break;
 			case NSAP_SUBNET_ESIS:
-				nsap_subnet(snsap, NSAP_SUBNET_ESIS);
+				sap_subnet(snsap, NSAP_SUBNET_ESIS);
 				break;
 			case NSAP_SUBNET_UNKNOWN:
 				/* FALLTHROUGH */
 			default:
-				nsap_subnet(snsap, NSAP_SUBNET_UNKNOWN);
+				sap_subnet(snsap, NSAP_SUBNET_UNKNOWN);
 				break;
 			}
 		} else {
@@ -379,8 +347,8 @@ nsap_setup_snsap(struct sockaddr_nsap *snsap, void *arg, long type, long subnet)
 		struct sockaddr_x25 *sx25 = (struct sockaddr_x25 *)arg;
 		if (sx25 != NULL) {
 			snsap->snsap_sx25 = *sx25;
-			nsap_type(snsap, NSAP_TYPE_SX25);
-			nsap_subnet(snsap, NSAP_SUBNET_X25);
+			sap_type(snsap, NSAP_TYPE_SX25);
+			sap_subnet(snsap, NSAP_SUBNET_X25);
 		} else {
 			goto unknown;
 		}
@@ -393,8 +361,8 @@ nsap_setup_snsap(struct sockaddr_nsap *snsap, void *arg, long type, long subnet)
 unknown:
 		/* FALLTHROUGH */
 	default:
-		nsap_type(snsap, NSAP_TYPE_UNKNOWN);
-		nsap_subnet(snsap, NSAP_SUBNET_UNKNOWN);
+		sap_type(snsap, NSAP_TYPE_UNKNOWN);
+		sap_subnet(snsap, NSAP_SUBNET_UNKNOWN);
 		break;
 	}
 }
@@ -804,11 +772,10 @@ enum sap_sids {
 
 struct nsap_iso1 {
 	struct radix_node nsi_nodes[SAP_TABLE_MAX];
-	struct sockaddr_nsap *nsi_smask[SAP_TABLE_MAX]; /* masked sockaddr */
-
 	LIST_ENTRY(nsap_iso) nsi_hash;
-	struct sockaddr_nsap *nsi_snsap;
 
+	struct sockaddr_nsap *nsi_smask[SAP_TABLE_MAX]; /* masked sockaddr */
+	struct sockaddr_nsap *nsi_snsap;
 	uint32_t nsi_id;			/* nsap id */
 	uint32_t nsi_type_id;		/* type id (not nsap_types) */
 	uint32_t nsi_subnet_id;		/* subnet id (not nsap_subnets) */
@@ -818,6 +785,35 @@ struct nsapisotree {
 	struct radix_node_head *nsi_tree[SAP_TABLE_MAX];
 	struct nsapisohead *nsi_hashtbl;
 	u_long nsi_hash;
+};
+
+/* service access point */
+struct sap_addr {
+	char saa_addr[ISOLEN];		/* address */
+	unsigned char saa_addrlen; 	/* address length */
+};
+
+struct sockaddr_sap {
+	long saap_type;				/* stack type (address family) */
+	long saap_subnet;			/* subnet type (network layer protocols) */
+	long saap_subtran;			/* subtran type (transport layer protocols) */
+	int saap_class;				/* class type (connection or connection-less) */
+	struct sap_addr saap_addr;
+};
+
+struct sap_head;
+LIST_HEAD(sap_head, sap_node);
+struct sap_tree {
+	struct radix_node_head *st_tree[9];
+	struct sap_head *st_hashtbl;
+	u_long st_hash;
+};
+
+struct sap_node {
+	LIST_ENTRY(sap_node) st_hash;
+	struct radix_node st_node[9];
+	struct sockaddr_sap *st_smask[9];
+	struct sockaddr_sap *st_saap;
 };
 
 /* sockaddr_nsap radix masks */
@@ -831,48 +827,141 @@ struct nsapisotree {
 #define sap_ipx(nsap)		((nsap)->nsi_smask[SAP_SID_IPX])
 #define sap_sna(nsap)		((nsap)->nsi_smask[SAP_SID_SNA])
 
+struct radix_node_head *
+nsap_radix_node_head(struct nsapisotree *tree, int sid)
+{
+	return (tree->nsi_tree[sid]);
+}
 
 struct radix_node *
 nsap_radix_node_add(struct nsapisotree *tree, struct nsap_iso1 *nsap, struct sockaddr_nsap *snsap, int sid)
 {
-	struct radix_node_head *rnh = nsap_radix_node_head(tree, sid);
-	struct sockaddr_nsap *smask = nsap->nsi_smask[sid];
-	struct radix_node *rn = rnh->rnh_addaddr(snsap, smask, rnh, nsap->nsi_nodes);
+	struct radix_node_head *rnh;
+	struct sockaddr_nsap *smask;
+	struct radix_node *rn;
+
+	rnh = nsap_radix_node_head(tree, sid);
+	if (rnh == NULL) {
+		return (NULL);
+	}
+	smask = nsap->nsi_smask[sid];
+	if (smask == NULL) {
+		return (NULL);
+	}
+	rn = rnh->rnh_addaddr(snsap, smask, rnh, nsap->nsi_nodes);
 	return (rn);
 }
 
 struct radix_node *
 nsap_radix_node_delete(struct nsapisotree *tree, struct nsap_iso1 *nsap, struct sockaddr_nsap *snsap, int sid)
 {
-	struct radix_node_head *rnh = nsap_radix_node_head(tree, sid);
-	struct sockaddr_nsap *smask = nsap->nsi_smask[sid];
-	struct radix_node *rn = rnh->rnh_deladdr(snsap, smask, rnh);
+	struct radix_node_head *rnh;
+	struct sockaddr_nsap *smask;
+	struct radix_node *rn;
+
+	rnh = nsap_radix_node_head(tree, sid);
+	if (rnh == NULL) {
+		return (NULL);
+	}
+	smask = nsap->nsi_smask[sid];
+	if (smask == NULL) {
+		return (NULL);
+	}
+	rn = rnh->rnh_deladdr(snsap, smask, rnh);
+	return (rn);
+}
+
+struct radix_node *
+nsap_radix_node_matchaddr(struct nsapisotree *tree, struct sockaddr_nsap *snsap, int sid)
+{
+	struct radix_node_head *rnh;
+	struct radix_node *rn;
+
+	rnh = nsap_radix_node_head(tree, sid);
+	if (rnh == NULL) {
+		return (NULL);
+	}
+	rn = rnh->rnh_matchaddr(snsap, rnh);
 	return (rn);
 }
 
 struct radix_node *
 nsap_radix_node_lookup(struct nsapisotree *tree, struct nsap_iso1 *nsap, struct sockaddr_nsap *snsap, int sid)
 {
-	struct radix_node_head *rnh = nsap_radix_node_head(tree, sid);
-	struct sockaddr_nsap *smask = nsap->nsi_smask[sid];
-	struct radix_node *rn = rnh->rnh_lookup(snsap, smask, rnh);
+	struct radix_node_head *rnh;
+	struct sockaddr_nsap *smask;
+	struct radix_node *rn;
+
+	rnh = nsap_radix_node_head(tree, sid);
+	if (rnh == NULL) {
+		return (NULL);
+	}
+	smask = nsap->nsi_smask[sid];
+	if (smask == NULL) {
+		return (NULL);
+	}
+	rn = rnh->rnh_lookup(snsap, smask, rnh);
 	return (rn);
+}
+
+struct nsap_iso1 *
+nsap_lookup(struct nsapisotree *tree, struct sockaddr_nsap *snsap, long type, long subnet, int sid)
+{
+	struct radix_node_head *rnh;
+	struct radix_node *rn;
+	struct nsap_iso1 *nsap, *match;
+	int error;
+
+	rnh = nsap_radix_node_head(tree, sid);
+	if (rnh == NULL) {
+		return (NULL);
+	}
+
+	rn = nsap_radix_node_matchaddr(snsap, sid);
+	if (rn && (rn->rn_flags & RNF_ROOT) == 0) {
+		match = (struct nsap_iso1 *)rn;
+		error = nsap_id_check(match, type, subnet);
+	}
+
+	nsap = nsap_hashlookup(tree, type, subnet);
+	if (nsap != NULL) {
+		if (error != 0) {
+			match = nsap;
+		}
+	}
+	return (match);
 }
 
 void
 nsap_insert1(struct nsapisotree *tree, struct nsap_iso1 *nsap, struct sockaddr_nsap *snsap, long type, long subnet, int sid)
 {
+	struct nsapisohead *head;
+	struct radix_node *rn;
 
 	head = NSAPHASH(tree, type, subnet);
-	rn = nsap_radix_node_add(tree, nsap, snsap, sid);
-	if (head == NULL || nsap == NULL || rn == NULL) {
+	if (head == NULL || nsap == NULL) {
 		return;
 	}
-	nsap->nsi_snsap = snsap;
+	rn = nsap_radix_node_add(tree, nsap, snsap, sid);
+	if (rn == NULL) {
+		return;
+	}
 
+	nsap->nsi_snsap = snsap;
 	nsap->nsi_type_id = nsap_type_id(type);
 	nsap->nsi_subnet_id = nsap_subnet_id(subnet);
 	nsap->nsi_id = nsap_valid_ids[type][subnet];
 	LIST_INSERT_HEAD(head, nsap, nsi_hash);
+}
+
+void
+nsap_insert1_af(struct nsapisotree *tree, struct nsap_iso1 *nsap, int sid, int af)
+{
+	switch (af) {
+	case AF_INET:
+		nsap_insert1(tree, nsap, sap_inet4(nsap), NSAP_TYPE_SIN4, NSAP_SUBNET_IPV4, SAP_SID_INET4);
+		nsap_insert1(tree, nsap, sap_inet4(nsap), NSAP_TYPE_SIN4, NSAP_SUBNET_IPV6, SAP_SID_INET4);
+		break;
+	}
 }
 #endif

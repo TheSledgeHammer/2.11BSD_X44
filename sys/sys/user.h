@@ -67,10 +67,10 @@ struct uthread {
 
 struct user {
 	struct upcb			u_upcb;
-#define u_pcb 				u_upcb.u_pcb
+#define u_pcb 			u_upcb.u_pcb
 	struct fps 			u_fps;
 	short				u_fpsaved;				/* FP regs saved for this proc */
-	struct fperr 			u_fperr;				/* floating point error save */
+	struct fperr 		u_fperr;				/* floating point error save */
 
 	struct proc 		*u_procp;				/* pointer to proc structure */
 #define u_threado		u_procp->p_threado		/* pointer to thread structure */

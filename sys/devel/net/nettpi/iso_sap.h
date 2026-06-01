@@ -51,12 +51,12 @@ struct sap_service {
 
 struct sap_select {
 	uint32_t ss_selector[SAP_TABLE_MAX];	/* selector id cksum */
-	int ss_sid;							/* sap select id */
-	int ss_af;							/* address family */
-	long ss_type[SAP_TYPE_MAX];			/* sockaddr array */
-	long ss_subnet[SAP_SUBNET_MAX];		/* network protocol array */
-	long ss_protocol[SAP_PROTOCOL_MAX];	/* transport protocol array */
-	int ss_class[SAP_CLASS_MAX];		/* connection orientation array */
+	int ss_sid;								/* sap select id */
+	int ss_af;								/* address family */
+	long ss_type[SAP_TYPE_MAX];				/* sockaddr array */
+	long ss_subnet[SAP_SUBNET_MAX];			/* network protocol array */
+	long ss_subtran[SAP_SUBTRAN_MAX];		/* transport protocol array */
+	int ss_class[SAP_CLASS_MAX];			/* connection orientation array */
 };
 
 /* sap class types */
@@ -117,32 +117,32 @@ enum sap_subnets {
 	SAP_SUBNET_MAX
 };
 
-/* sap protocols */
+/* sap subtran type */
 /* Transport Layer Protocols */
-enum sap_protocols {
-	SAP_PROTOCOL_UNKNOWN,
+enum sap_subtran {
+	SAP_SUBTRAN_UNKNOWN,
 	/* inet (v4 and v6) */
-	SAP_PROTOCOL_TCP,
-	SAP_PROTOCOL_UDP,
+	SAP_SUBTRAN_TCP,
+	SAP_SUBTRAN_UDP,
 	/* iso */
-	SAP_PROTOCOL_TP0,
-	SAP_PROTOCOL_TP1,
-	SAP_PROTOCOL_TP2,
-	SAP_PROTOCOL_TP3,
-	SAP_PROTOCOL_TP4,
+	SAP_SUBTRAN_TP0,
+	SAP_SUBTRAN_TP1,
+	SAP_SUBTRAN_TP2,
+	SAP_SUBTRAN_TP3,
+	SAP_SUBTRAN_TP4,
 	/* xns */
-	SAP_PROTOCOL_SPP,
+	SAP_SUBTRAN_SPP,
 	/* x25 */
-	SAP_PROTOCOL_X25,
+	SAP_SUBTRAN_X25,
 	/* atm */
-	SAP_PROTOCOL_ATM,
+	SAP_SUBTRAN_ATM,
 	/* ipx */
-	SAP_PROTOCOL_SPX,
+	SAP_SUBTRAN_SPX,
 	/* sna */
-	SAP_PROTOCOL_SNA,
+	SAP_SUBTRAN_SNA,
 
 	/* should alway be last */
-	SAP_PROTOCOL_MAX
+	SAP_SUBTRAN_MAX
 };
 
 /* ISO/OSI Layers */
@@ -156,7 +156,12 @@ extern struct sap_select sap_table[SAP_TABLE_MAX];
 int sap_class_select(int);
 long sap_type_select(long);
 long sap_subnet_select(long);
-long sap_protocol_select(long);
+long sap_subtran_select(long);
+void sap_class(struct sap_service *, int);
+void sap_type(struct sockaddr_nsap *, long);
+void sap_subnet(struct sockaddr_nsap *, long);
+void sap_subtran(struct sockaddr_nsap *, long);
+
 long sap_item_lookup(long, long *, int);
 
 int nsap_addr_compare(struct nsap_addr *, struct nsap_addr *);
@@ -173,7 +178,7 @@ int sap_select_compare(struct sap_select *, struct sap_select *);
 struct sap_select *sap_select_lookup(int, int);
 long sap_select_lookup_type(int, int, long);
 long sap_select_lookup_subnet(int, int, long);
-long sap_select_lookup_protocol(int, int, long);
+long sap_select_lookup_subtran(int, int, long);
 int sap_select_lookup_class(int, int, int);
 uint32_t sap_select_lookup_selector(struct sap_select *, int);
 int sap_select_sid_to_af(int);
@@ -228,19 +233,19 @@ sap_subnet_hash(long subnet, int len)
 }
 
 /*
- * sap protocol hash:
- * returns 0 if protocol is unknown or max
+ * sap subtran hash:
+ * returns 0 if subtran is unknown or max
  */
 static __inline uint32_t
-sap_protocol_hash(long protocol, int len)
+sap_subtran_hash(long subtran, int len)
 {
-	uint32_t protocol_id;
+	uint32_t subtran_id;
 
-	if ((protocol <= SAP_PROTOCOL_UNKNOWN) || (protocol >= SAP_PROTOCOL_MAX)) {
+	if ((subtran <= SAP_SUBTRAN_UNKNOWN) || (subtran >= SAP_SUBTRAN_MAX)) {
 		len = 1;
 	}
-	protocol_id = enhanced_double_hash(protocol, len);
-	return (protocol_id);
+	subtran_id = enhanced_double_hash(subtran, len);
+	return (subtran_id);
 }
 
 /*
@@ -248,11 +253,11 @@ sap_protocol_hash(long protocol, int len)
  * for NSAP ID and TSAP ID
  */
 static __inline uint32_t
-sap_hash(long type, long subnet, long protocol, int clazz, int len)
+sap_hash(long type, long subnet, long subtran, int clazz, int len)
 {
-    uint32_t sap_id, type_id, subnet_id, protocol_id, class_id, hashid;
+    uint32_t sap_id, type_id, subnet_id, subtran_id, class_id, hashid;
 
-    if ((protocol == 0) && (clazz == 0)) {
+    if ((subtran == 0) && (clazz == 0)) {
         type_id = sap_type_hash(type, len);
         subnet_id = sap_subnet_hash(subnet, len);
         if ((type_id == 0) || (subnet_id == 0)) {
@@ -262,13 +267,13 @@ sap_hash(long type, long subnet, long protocol, int clazz, int len)
     } else {
         type_id = sap_type_hash(type, len);
         subnet_id = sap_subnet_hash(subnet, len);
-        protocol_id = sap_protocol_hash(protocol, len);
+        subtran_id = sap_subtran_hash(subtran, len);
         class_id = sap_class_hash(clazz, len);
-        if ((type_id == 0) || (subnet_id == 0) || (protocol_id == 0)
+        if ((type_id == 0) || (subnet_id == 0) || (subtran_id == 0)
                 || (class_id == 0)) {
             len = 1;
         }
-        hashid = (type_id + (subnet_id + (len - 1)) + (protocol_id + (len - 2)) + (class_id + (len - 2))) - len;
+        hashid = (type_id + (subnet_id + (len - 1)) + (subtran_id + (len - 2)) + (class_id + (len - 2))) - len;
     }
     sap_id = enhanced_double_hash(hashid, len);
     return (sap_id);
@@ -305,8 +310,8 @@ sap_hash(long type, long subnet, long protocol, int clazz, int len)
  * tsap protocol identifier:
  * returns 0 if protocol is unknown or max
  */
-#define tsap_protocol_id(protocol) \
-	sap_protocol_hash(protocol, ISOLEN)
+#define tsap_subtran_id(subtran) \
+	sap_subtran_hash(subtran, ISOLEN)
 
 /*
  * tsap identifier:

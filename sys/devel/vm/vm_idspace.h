@@ -99,7 +99,8 @@ struct vm_segment_register {
 
 #define NOVL 32
 
-extern struct vm_segment_register seginfo[NOVL];
+extern struct vm_segment_register infomap[NOVL];
+extern struct vm_segment_register savemap[2];
 
 /* virtual segmentation map */
 struct vm_segmap_head;
@@ -109,8 +110,11 @@ struct vm_segment_map {
 	vm_segment_register_t segreg[NOVL]; 			/* virtual segment registers */
 	int segnum; 									/* virtual segment register number */
 	int flags;										/* virtual segment register flags */
-	short attr;										/* virtual segment register attributes */
-
+	short attr;										/* virtual segment register attributes (deprecated: see below) */
+	vm_prot_t protect; 								/* protection codes (will use vm protection codes) */
+	bool_t is_text; 								/* text segment */
+	bool_t is_extension; 							/* extension direction */
+	bool_t is_abs;									/* absolute address */
 	union { /* segment mapping store */
 		vm_offset_t kdsa5;	/* virtual SEG5 address */
 		vm_offset_t kdsd5;	/* virtual SEG5 descriptor */
@@ -121,13 +125,20 @@ struct vm_segment_map {
 extern struct vm_segmap_head segmaplist;
 
 /* segment map attributes */
-#define SEGM_RO			0x002	/* Read only */
-#define SEGM_RW			0x006	/* Read and write */
-#define SEGM_NOACCESS 	0x000	/* Abort all accesses */
-#define SEGM_ACCESS		0x007	/* Mask for access field */
-#define SEGM_ED			0x010	/* Extension direction */
+#define SEGM_RO			0x002	/* Read only: same as VM_PROT_READ */
+#define SEGM_RW			0x006	/* Read and write: same as (VM_PROT_READ|VM_PROT_WRITE) */
+#define SEGM_NOACCESS 	0x000	/* Abort all accesses (No/Cancel Execute permissions??) */
+#define SEGM_ACCESS		0x007	/* Mask for access field (Execute permissions??) */
+#define SEGM_ED			0x010	/* Extension direction (usage ??) */
 #define SEGM_TX			0x020	/* Software: text segment */
-#define SEGM_ABS		0x040	/* Software: absolute address */
+#define SEGM_ABS		0x040	/* Software: absolute address (usage ??) */
+/*
+ * absolute address: (unsure of context: is this physical, processor, etc)
+ * if address means physical address, then this
+ * is not relevant from the vm/ovl
+ * context, as both physical and virtual addresses
+ * can already be obtained and managed by pmap.
+ */
 
 /* segment map flags */
 #define SEGM_SAVE		0x60	/* Software: save virtual segment register's to savemap */
