@@ -29,7 +29,9 @@
 /* Code is based on 2.11BSD's PDP-11 code */
 
 #include <sys/malloc.h>
+
 #include <vm_idspace.h>
+#include <vm_kspace.h>
 
 #include <arch/i386/include/pmap.h>
 #include <arch/i386/include/vmparam.h>

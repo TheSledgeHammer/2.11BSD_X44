@@ -28,12 +28,13 @@
 
 /* Code is based on 2.11BSD's PDP-11 code */
 #include <sys/malloc.h>
+
 #include <vm_idspace.h>
 
 /* vm_segment_map */
 #define M_VMSEGMAP 103
 
-struct vm_segmap_head segmaplist;
+struct vm_segmap_list segmaplist;
 
 /* infomap: generic register */
 struct vm_segment_register infomap[NOVL];
@@ -56,18 +57,19 @@ vm_segment_map_init(void)
 }
 
 void
-vm_segment_map_insert(segreg, segnum, flags, attr)
+vm_segment_map_insert(segreg, segnum, flags, prot)
 	vm_segment_register_t segreg;
 	int segnum, flags;
-	short attr;
+	vm_prot_t prot;
 {
 	vm_segment_map_t segmap;
 
 	segmap = (vm_segment_map_t)malloc((u_long)sizeof(struct vm_segment_map), M_VMSEGMAP, M_WAITOK);
 	segmap->segreg = segreg;
+	segmap->size = (segreg->addr + segreg->desc);
 	segmap->segnum = segnum;
 	segmap->flags = flags;
-	segmap->attr = attr;
+	segmap->protect = prot;
 	//lock
 	LIST_INSERT_HEAD(&segmaplist, segmap, segmlist);
 	//unlock
@@ -108,15 +110,86 @@ vm_segment_map_remove(segreg, segnum)
 	//unlock
 }
 
-/* vm_segment_register: infomap */
+/*
+ * TODO:
+ * Saving to mapstore
+ */
+void
+vm_segmap_put(segnum, addr, desc, flags, prot)
+	//vm_segment_map_t segmap;
+	int segnum, flags;
+	vm_offset_t *addr, *desc;
+	int segnum, flags;
+	vm_prot_t prot;
+{
+	vm_segment_register_t segreg = NULL;
 
+	if ((prot == VM_PROT_READ) || ((flags == SEGM_RESTORE) == 0)) {
+		panic("vm_segmap_put: %d and/or %d, cannot perform simultaneous read and writes to a single segment\n",
+				prot, flags);
+		panic("vm_segmap_put: %d, cannot write to a segment marked as read only \n",
+				prot);
+		return;
+	} else {
+		if ((flags == (SEGM_SAVE|SEGM_SEG5|SEGM_SEG6|SEGM_SEG56)) == 0) {
+			vm_savemap_put(segnum, addr, desc);
+			segreg = &savemap[segnum];
+		} else {
+			vm_infomap_put(segnum, addr, desc);
+			segreg = &infomap[segnum];
+		}
+	}
+	if (segreg == NULL) {
+		return;
+	}
+	vm_segment_map_insert(segreg, segnum, flags, prot);
+}
+
+/*
+ * TODO:
+ * Restoring from mapstore
+ */
+vm_segment_map_t
+vm_segmap_get(segnum, addr, desc, flags, prot)
+	int segnum, flags;
+	vm_offset_t *addr, *desc;
+	int segnum, flags;
+	vm_prot_t prot;
+{
+	vm_segment_map_t segmap;
+	vm_segment_register_t segreg = NULL;
+
+	if ((prot == VM_PROT_WRITE) || ((flags == SEGM_SAVE) == 0)) {
+		panic("vm_segmap_get: %d and/or %d, cannot perform simultaneous read and writes to a single segment\n",
+				prot, flags);
+		return (NULL);
+	} else {
+		if ((flags == (SEGM_RESTORE|SEGM_SEG5|SEGM_SEG6|SEGM_SEG56)) == 0) {
+			vm_savemap_get(segnum, addr, desc);
+			segreg = &savemap[segnum];
+		} else {
+			vm_infomap_get(segnum, addr, desc);
+			segreg = &infomap[segnum];
+		}
+	}
+	if (segreg == NULL) {
+		return (NULL);
+	}
+	segmap = vm_segment_map_lookup(segreg, segnum);
+	if (segmap == NULL) {
+		panic("vm_segmap_get: unable to find segmap\n");
+	}
+	return (segmap);
+}
+
+/* vm_segment_register: infomap */
 static void
 vm_infomap_get(segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
-	if (infomap[segnum] != NULL) {
-		if ((segnum >= 0) && (segnum <= NOVL)) {
+	if (&infomap[segnum] != NULL) {
+		if ((segnum >= 0) && (segnum <= (NOVL - 1))) {
 			*addr = infomap[segnum].addr;
 			*desc = infomap[segnum].desc;
 		}
@@ -129,7 +202,7 @@ vm_infomap_put(segnum, addr, desc)
 	vm_offset_t *addr, *desc;
 {
 	if ((addr != NULL) && (desc != NULL)) {
-		if ((segnum >= 0) && (segnum <= NOVL)) {
+		if ((segnum >= 0) && (segnum <= (NOVL - 1))) {
 			infomap[segnum].addr = *addr;
 			infomap[segnum].desc = *desc;
 		}
@@ -165,40 +238,42 @@ vm_savemap_put(segnum, addr, desc)
 
 /* save registers to SEG5 and SEG6 */
 void
-vm_segment_map_save(map, flags)
+vm_segment_map_save(map, flags, prot)
 	vm_segment_map_t map;
 	int flags;
+	vm_prot_t prot;
 {
 	switch (flags) {
 	case SEGM_SEG5:
-		vm_savemap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		vm_segmap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5, SEGM_SEG5, prot);
 		break;
 	case SEGM_SEG6:
-		vm_savemap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		vm_segmap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6, SEGM_SEG6, prot);
 		break;
 	case SEGM_SEG56:
-		vm_savemap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
-		vm_savemap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		vm_segmap_put(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5, SEGM_SEG56, prot);
+		vm_segmap_put(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6, SEGM_SEG56, prot);
 		break;
 	}
 }
 
 /* restore registers from SEG5 and SEG6 */
 void
-vm_segment_map_restore(map, flags)
+vm_segment_map_restore(map, flags, prot)
 	vm_segment_map_t map;
 	int flags;
+	vm_prot_t prot;
 {
 	switch (flags) {
 	case SEGM_SEG5:
-		vm_savemap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
+		vm_segmap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5, SEGM_SEG5, prot);
 		break;
 	case SEGM_SEG6:
-		vm_savemap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		vm_segmap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6, SEGM_SEG6, prot);
 		break;
 	case SEGM_SEG56:
-		vm_savemap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5);
-		vm_savemap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6);
+		vm_segmap_get(0, &map->mapstore.kdsa5, &map->mapstore.kdsd5, SEGM_SEG56, prot);
+		vm_segmap_get(1, &map->mapstore.kdsa6, &map->mapstore.kdsd6, SEGM_SEG56, prot);
 		break;
 	}
 }

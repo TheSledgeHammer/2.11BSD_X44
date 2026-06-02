@@ -79,17 +79,13 @@
 
 #include <vm/include/vm.h>
 
+#define NOVL 32
+
 struct vm_segment_register;
 typedef struct vm_segment_register *vm_segment_register_t;
 
 struct vm_segment_map;
 typedef struct vm_segment_map *vm_segment_map_t;
-
-struct vm_kspace;
-typedef struct vm_kspace *vm_kspace_t;
-
-struct vm_uspace;
-typedef struct vm_uspace *vm_uspace_t;
 
 /* virtual segment registers */
 struct vm_segment_register {
@@ -97,32 +93,37 @@ struct vm_segment_register {
 	vm_offset_t desc;	/* register descriptor */
 };
 
-#define NOVL 32
-
 extern struct vm_segment_register infomap[NOVL];
 extern struct vm_segment_register savemap[2];
 
 /* virtual segmentation map */
-struct vm_segmap_head;
-LIST_HEAD(vm_segmap_head, vm_segment_map);
+struct vm_segmap_list;
+LIST_HEAD(vm_segmap_list, vm_segment_map);
 struct vm_segment_map {
-	LIST_ENTRY(vm_segment_map) segmlist; 			/* register list */
-	vm_segment_register_t segreg[NOVL]; 			/* virtual segment registers */
-	int segnum; 									/* virtual segment register number */
-	int flags;										/* virtual segment register flags */
-	short attr;										/* virtual segment register attributes (deprecated: see below) */
-	vm_prot_t protect; 								/* protection codes (will use vm protection codes) */
-	bool_t is_text; 								/* text segment */
-	bool_t is_extension; 							/* extension direction */
-	bool_t is_abs;									/* absolute address */
+	LIST_ENTRY(vm_segment_map) segmlist; 	/* register list */
+	vm_segment_register_t segreg; 			/* virtual segment registers */
+	vm_size_t size;							/* virtual segment size */
+	int segnum; 							/* virtual segment register number */
+	int flags;								/* virtual segment register flags */
+	//short attr;							/* virtual segment register attributes (deprecated: see below) */
+	vm_prot_t protect; 						/* protection codes (will use vm protection codes) */
+	bool_t is_text; 						/* text segment */
+	bool_t is_extension; 					/* extension direction */
+	bool_t is_abs;							/* absolute address */
 	union { /* segment mapping store */
 		vm_offset_t kdsa5;	/* virtual SEG5 address */
 		vm_offset_t kdsd5;	/* virtual SEG5 descriptor */
 		vm_offset_t kdsa6;	/* virtual SEG6 address */
 		vm_offset_t kdsd6;	/* virtual SEG6 descriptor */
 	} mapstore;
+	union {	 /* segment map objects */
+		vm_object_t vm_object;
+#ifdef OVERLAY
+		ovl_object_t ovl_object;
+#endif
+	} object;
 };
-extern struct vm_segmap_head segmaplist;
+extern struct vm_segmap_list segmaplist;
 
 /* segment map attributes */
 #define SEGM_RO			0x002	/* Read only: same as VM_PROT_READ */
@@ -146,51 +147,6 @@ extern struct vm_segmap_head segmaplist;
 
 #define SEGM_SEG5		0x100	/* map SEG5 only */
 #define SEGM_SEG6		0x120	/* map SEG6 only */
-#define SEGM_SEG56		(SEGM_SEG5 | SEGM_SEG6) /* map both SEG5 and SEG6 */
-
-/* virtual kernel I & D space */
-extern char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
-extern char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
-
-struct vm_kspace {
-	/* vm */
-	vm_map_t desc_map;	/* descriptor map (i.e kdsd_map and kisd_map) */
-	vm_map_t addr_map; 	/* address map (i.e kdsa_map and kisa_map) */
-	vm_object_t object; /* object */
-	vm_offset_t offset; /* object offset */
-
-	/* segmentation */
-	vm_segment_map_t segmap; /* segment map */
-};
-
-extern vm_object_t kspace_object; /* single kspace object */
-
-/* virtual user I & D space */
-extern char *uispace_min, *uispace_max; /* user i-space vm_map range */
-extern char *udspace_min, *udspace_max; /* user d-space vm_map range */
-
-struct vm_uspace {
-	/* vm */
-	vm_map_t desc_map;	/* descriptor vm_map (i.e udsd_map and uisd_map) */
-	vm_map_t addr_map; 	/* address vm_map (i.e udsa_map and uisa_map) */
-	vm_object_t object;	/* object */
-	vm_offset_t offset; /* object offset */
-
-	/* segmentation */
-	vm_segment_map_t segmap; /* segment map */
-};
-
-extern vm_object_t uspace_object; /* single uspace object */
-
-/* Should be placed in vm_kern.h and be external */
-extern vm_map_t    kisd_map; /* kernel I-Space descriptor map */
-extern vm_map_t    kdsd_map; /* kernel D-Space descriptor map */
-extern vm_map_t    kisa_map; /* kernel I-Space address map */
-extern vm_map_t    kdsa_map; /* kernel D-Space address map */
-
-extern vm_map_t    uisd_map; /* user I-Space descriptor map */
-extern vm_map_t    udsd_map; /* user D-Space descriptor map */
-extern vm_map_t    uisa_map; /* user I-Space address map */
-extern vm_map_t    udsa_map; /* user D-Space address map */
+#define SEGM_SEG56		(SEGM_SEG5|SEGM_SEG6) /* map both SEG5 and SEG6 */
 
 #endif /* _VM_IDSPACE_H_ */
