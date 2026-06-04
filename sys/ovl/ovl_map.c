@@ -1059,6 +1059,26 @@ ovl_map_submap(map, start, end, submap)
 	return (result);
 }
 
+/*
+ *	ovl_map_protect:
+ *
+ *	Sets the protection of the specified address
+ *	region in the target map.  If "set_max" is
+ *	specified, the maximum protection is to be set;
+ *	otherwise, only the current protection is affected.
+ */
+int
+ovl_map_protect(map, start, end, new_prot, set_max)
+	register ovl_map_t		map;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+	register vm_prot_t		new_prot;
+	register bool_t			set_max;
+{
+
+	return (KERN_SUCCESS);
+}
+
 void
 ovl_map_entry_delete(map, entry)
 	register ovl_map_t			map;

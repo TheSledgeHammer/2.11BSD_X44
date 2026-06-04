@@ -91,7 +91,7 @@ ovl_allocate(map, addr, size, anywhere)
 	if (anywhere) {
 		*addr = ovl_map_min(map);
 	}
-	result = ovl_map_find(map, NULL, (vm_offset_t) 0, addr, size, anywhere);
+	result = ovl_map_find(map, NULL, (vm_offset_t)0, addr, size, anywhere);
 
 	return (result);
 }
@@ -106,7 +106,7 @@ ovl_deallocate(map, start, size)
 		return(KERN_INVALID_ARGUMENT);
 
 	if (size == (vm_offset_t) 0)
-		return(KERN_SUCCESS);
+		return (KERN_SUCCESS);
 
 	return (ovl_map_remove(map, start, (start+size)));
 }

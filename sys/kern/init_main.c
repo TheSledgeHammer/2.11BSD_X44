@@ -214,7 +214,7 @@ main(framep)
 	/*
 	 * set up system process 0 (swapper)
 	 */
-    LIST_INSERT_HEAD(&allproc, p, p_list);
+	LIST_INSERT_HEAD(&allproc, p, p_list);
 	p->p_pgrp = &pgrp0;
 
 	/* set up kernel thread 0 */

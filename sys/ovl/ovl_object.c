@@ -372,7 +372,7 @@ ovl_object_enter_vm_object(oobject, vobject)
 {
     struct ovl_vm_object_hash_head  	*vbucket;
 
-    if(vobject == NULL) {
+    if (vobject == NULL) {
         return;
     }
 

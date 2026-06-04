@@ -347,9 +347,9 @@ again:
 		/*
 		 * Child process.  Set start time and get to work.
 		 */
-		(void) splclock();
+		(void)splclock();
 		rpp->p_stats->p_start = time;
-		(void) spl0();
+		(void)spl0();
 		rpp->p_acflag = AFORK;
 		return (0);
 	}
@@ -357,10 +357,10 @@ again:
 	/*
 	 * Make child runnable and add to run queue.
 	 */
-	(void) splhigh();
+	(void)splhigh();
 	rpp->p_stat = SRUN;
 	setrq(rpp);
-	(void) spl0();
+	(void)spl0();
 
 	/*
 	 * Now can be swapped.

@@ -694,7 +694,7 @@ vm_map_insert(map, object, offset, start, end)
 	 *	end point.
 	 */
 
-	 if((CIRCLEQ_NEXT(prev_entry, cl_entry) != CIRCLEQ_FIRST(&map->cl_header)) && (CIRCLEQ_NEXT(prev_entry, cl_entry)->start < end)) {
+	 if ((CIRCLEQ_NEXT(prev_entry, cl_entry) != CIRCLEQ_FIRST(&map->cl_header)) && (CIRCLEQ_NEXT(prev_entry, cl_entry)->start < end)) {
 		 return (KERN_NO_SPACE);
 	 }
 
@@ -1329,7 +1329,7 @@ vm_map_submap(map, start, end, submap)
 	}
 	vm_map_unlock(map);
 
-	return(result);
+	return (result);
 }
 
 /*
@@ -1346,7 +1346,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 	register vm_prot_t		new_prot;
-	register bool_t		set_max;
+	register bool_t			set_max;
 {
 	register vm_map_entry_t		current;
 	vm_map_entry_t			entry;
@@ -1414,7 +1414,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 				vm_offset_t	share_end;
 
 				vm_map_lock(current->object.share_map);
-				(void) vm_map_lookup_entry(
+				(void)vm_map_lookup_entry(
 						current->object.share_map,
 						current->offset,
 						&share_entry);

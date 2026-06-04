@@ -105,12 +105,11 @@ struct vm_segment_map {
 	vm_size_t size;							/* virtual segment size */
 	int segnum; 							/* virtual segment register number */
 	int flags;								/* virtual segment register flags */
-	//short attr;							/* virtual segment register attributes (deprecated: see below) */
 	vm_prot_t protect; 						/* protection codes (will use vm protection codes) */
 	bool_t is_text; 						/* text segment */
 	bool_t is_extension; 					/* extension direction */
 	bool_t is_abs;							/* absolute address */
-	union { /* segment mapping store */
+	struct { /* segment mapping store */
 		vm_offset_t kdsa5;	/* virtual SEG5 address */
 		vm_offset_t kdsd5;	/* virtual SEG5 descriptor */
 		vm_offset_t kdsa6;	/* virtual SEG6 address */
@@ -125,7 +124,7 @@ struct vm_segment_map {
 };
 extern struct vm_segmap_list segmaplist;
 
-/* segment map attributes */
+/* segment map flags */
 #define SEGM_RO			0x002	/* Read only: same as VM_PROT_READ */
 #define SEGM_RW			0x006	/* Read and write: same as (VM_PROT_READ|VM_PROT_WRITE) */
 #define SEGM_NOACCESS 	0x000	/* Abort all accesses (No/Cancel Execute permissions??) */
@@ -140,13 +139,10 @@ extern struct vm_segmap_list segmaplist;
  * context, as both physical and virtual addresses
  * can already be obtained and managed by pmap.
  */
-
-/* segment map flags */
-#define SEGM_SAVE		0x60	/* Software: save virtual segment register's to savemap */
-#define SEGM_RESTORE	0x80	/* Software: restore virtual segment register's from savemap */
-
-#define SEGM_SEG5		0x100	/* map SEG5 only */
-#define SEGM_SEG6		0x120	/* map SEG6 only */
-#define SEGM_SEG56		(SEGM_SEG5|SEGM_SEG6) /* map both SEG5 and SEG6 */
+#define SEGM_SEG5		0x60	/* map SEG5 only */
+#define SEGM_SEG6		0x80	/* map SEG6 only */
+#define SEGM_SEG56		0x100 	/* map both SEG5 and SEG6 */
+#define SEGM_SAVE		(0x120 & (SEGM_SEG5|SEGM_SEG6|SEGM_SEG56))	/* Software: save virtual segment register's to savemap */
+#define SEGM_RESTORE	(0x140 & (SEGM_SEG5|SEGM_SEG6|SEGM_SEG56))	/* Software: restore virtual segment register's from savemap */
 
 #endif /* _VM_IDSPACE_H_ */

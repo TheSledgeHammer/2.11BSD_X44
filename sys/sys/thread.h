@@ -112,7 +112,7 @@ extern struct lock_holder 	thread_loholder;
 #define THREAD_LOCK(td)		(mtx_lock((td)->td_mtx, &thread_loholder))
 #define THREAD_UNLOCK(td) 	(mtx_unlock((td)->td_mtx, &thread_loholder))
 
-#define	TID_MIN			31000
+#define	TID_MIN			30001
 #define	TID_MAX			99000
 #define NO_TID			NO_PID
 
