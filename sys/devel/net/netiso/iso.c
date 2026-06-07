@@ -515,7 +515,7 @@ iso_tpctloutput(int cmd, int optname, caddr_t pcb, struct mbuf *m)
 	data_len = (m)->m_len;
 
 	IFDEBUG(D_ISO)
-		printf("iso_nlctloutput: data is:\n");
+		printf("iso_tpctloutput: data is:\n");
 		dump_buf(data, data_len);
 	ENDDEBUG
 
@@ -533,7 +533,7 @@ iso_tpctloutput(int cmd, int optname, caddr_t pcb, struct mbuf *m)
 		}
 
 		IFDEBUG(D_ISO)
-			printf("iso_nlctloutput: setting x25 crud\n");
+			printf("iso_tpctloutput: setting x25 crud\n");
 		ENDDEBUG
 
 		bcopy(data, (caddr_t)isop->isop_x25crud, (unsigned)data_len);

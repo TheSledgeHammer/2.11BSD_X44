@@ -82,7 +82,7 @@ struct tp_protosw tpin4_protosw = {
 		.tp_output = tpip_output,
 		.tp_dgoutput = tpip_output_dg,
 		.tp_ctloutput = 0,
-		.tp_pcblist = &tp_inpcb,
+		.tp_pcblist = (caddr_t)&tp_inpcbtable,
 };
 
 void

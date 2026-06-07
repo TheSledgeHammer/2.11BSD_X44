@@ -158,7 +158,7 @@ void tp_drain(void);
 void tp_indicate(int, struct tp_pcb *, u_short);
 void tp_getoptions(struct tp_pcb *);
 void tp_recycle_tsuffix(void *);
-void tp_quench(struct inpcb *, int);
+void tp_quench(struct tp_pcb *, int);
 void tp_netcmd(struct tp_pcb *, int);
 int tp_mask_to_num(u_char);
 void tp_mss(struct tp_pcb *, int);

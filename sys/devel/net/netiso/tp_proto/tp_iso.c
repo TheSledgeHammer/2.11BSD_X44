@@ -82,7 +82,7 @@ struct tp_protosw tpiso_protosw = {
  	.tp_pcballoc = iso_pcballoc,
  	.tp_output = tpclnp_output,
  	.tp_dgoutput = tpclnp_output_dg,
- 	.tp_ctloutput = 0,
+ 	.tp_ctloutput = iso_tpctloutput,
  	.tp_pcblist = (caddr_t)&tp_isopcbtable
 };
 

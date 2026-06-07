@@ -29,118 +29,164 @@
 /* Code is based on 2.11BSD's PDP-11 code */
 #include <sys/malloc.h>
 
+#include <vm/include/vm.h>
 #include <vm_idspace.h>
 
-/* vm_segment_map */
-#define M_VMSEGMAP 103
-
-struct vm_segmap_list segmaplist;
-
-/* infomap: generic register */
-struct vm_segment_register infomap[NOVL];
-static void vm_infomap_get(int, vm_offset_t *, vm_offset_t *);
-static void vm_infomap_put(int, vm_offset_t *, vm_offset_t *);
-
-/* savemap: save registers */
-struct vm_segment_register savemap[2];
-static void vm_savemap_get(int, vm_offset_t *, vm_offset_t *);
-static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
-
-#define segmap_lock()
-#define segmap_unlock()
-
-void
-vm_segment_map_init(void)
-{
-	LIST_INIT(&segmaplist);
-	//lock_init
-}
-
 /*
- * vm_segment_map_create:
- * Creates a segment_map.
- * returns segmap on success
+ * idspace layout:
+ * - An idspace is a vm_segment sub-divided into 16 regions.
+ * - Each region contains 64 pages or is 262144 in size.
+ * - Each region can contain a register.
+ * - A register is similar to pmap (but different purpose),
+ * with an address and descriptor.
  */
 
-vm_segment_map_t
-vm_segment_map_create(segreg, segnum, flags, prot)
-	vm_segment_register_t segreg;
-	int segnum, flags;
-	vm_prot_t prot;
-{
-	vm_segment_map_t segmap;
+/* generic registers */
+struct vm_segment_register segregs[NOVL];
 
-	segmap = (vm_segment_map_t)malloc((u_long)sizeof(struct vm_segment_map), M_VMSEGMAP, M_WAITOK);
-	if (segmap == NULL) {
-		return (NULL);
+static void vm_idspace_setup(vm_idspace_t, vm_object_t, vm_offset_t);
+static void vm_genmap_get(int, vm_offset_t *, vm_offset_t *);
+static void vm_genmap_put(int, vm_offset_t *, vm_offset_t *);
+static void vm_savemap_get(int, vm_offset_t *, vm_offset_t *);
+static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
+static void vm_segment_region_saveseg5(vm_segment_region_t, vm_offset_t *, vm_offset_t *);
+static void vm_segment_region_saveseg6(vm_segment_region_t, vm_offset_t *, vm_offset_t *);
+
+simple_lock_data_t vm_idspace_lock;
+
+void
+vm_idspace_init(idspace, object, offset, mtype)
+	vm_idspace_t idspace;
+	vm_object_t object;
+	vm_offset_t offset;
+	int mtype;
+{
+	idspace = vm_idspace_allocate(object, offset);
+	if (idspace != NULL) {
+		/* initialize first segment region */
+		vm_region_insert(idspace, 0, mtype);
 	}
-	if (segreg == NULL) {
-		segmap->segreg = NULL;
-		segmap->segnum = -1;
-	} else {
-		segmap->segreg = segreg;
-		segmap->segnum = segnum;
-	}
-	segmap->flags = flags;
-	segmap->protect = prot;
-	segmap->is_text = FALSE;
-	segmap->is_extension = FALSE;
-	segmap->is_abs = FALSE;
-	return (segmap);
+}
+
+vm_idspace_t
+vm_idspace_allocate(object, offset, mtype)
+	vm_object_t object;
+	vm_offset_t offset;
+	int mtype;
+{
+	register vm_idspace_t result;
+
+	result = (vm_idspace_t)malloc((u_long)sizeof(*result), mtype, M_WAITOK);
+	vm_idspace_setup(result, object, offset);
+	return (result);
 }
 
 void
-vm_segment_map_insert(segreg, segnum, flags, prot)
-	vm_segment_register_t segreg;
-	int segnum, flags;
-	vm_prot_t prot;
+vm_idspace_deallocate(idspace, mtype)
+	vm_idspace_t idspace;
+	int mtype;
 {
-	vm_segment_map_t segmap;
-
-	segmap = (vm_segment_map_t)malloc((u_long)sizeof(struct vm_segment_map), M_VMSEGMAP, M_WAITOK);
-	segmap->segreg = segreg;
-	segmap->size = (segreg->addr + segreg->desc);
-	segmap->segnum = segnum;
-	segmap->flags = flags;
-	segmap->protect = prot;
-	//lock
-	LIST_INSERT_HEAD(&segmaplist, segmap, segmlist);
-	//unlock
+	if (idspace != NULL) {
+		if (!TAILQ_EMPTY(&idspace->header)) {
+			return;
+		}
+		free(idspace, mtype);
+	}
 }
 
-vm_segment_map_t
-vm_segment_map_lookup(segreg, segnum)
-	vm_segment_register_t segreg;
+static void
+vm_idspace_setup(idspace, object, offset)
+	vm_idspace_t idspace;
+	vm_object_t object;
+	vm_offset_t offset;
+{
+	vm_segment_t segment;
+	vm_page_t pagemap[NOVL];
+	vm_offset_t pgoffset;
+	int i;
+
+	TAILQ_INIT(&idspace->header);
+	simple_lock_init(&vm_idspace_lock, "vm_idspace_lock");
+
+	/* setup segment */
+	segment = vm_segment_alloc(object, offset);
+	idspace->segment = segment;
+
+	/* setup pages */
+	for (i = 0; i < NOVL; i++) {
+		pgoffset = i * NOVL_PAGES * PAGE_SIZE;
+		pagemap[i] = vm_page_alloc(segment, pgoffset);
+		idspace->pagemap[i] = pagemap[i];
+	}
+}
+
+void
+vm_segment_region_insert(idspace, segnum, mtype)
+	vm_idspace_t idspace;
+	int segnum, mtype;
+{
+	vm_segment_region_t region;
+	vm_page_t page;
+
+	if (idspace == NULL) {
+		return;
+	}
+	page = idspace->pagemap[segnum];
+	if (page == NULL) {
+		return;
+	}
+	region = (vm_segment_region_t)malloc((u_long)sizeof(struct vm_segment_region), mtype, M_WAITOK);
+	region->page = page;
+	//region->size = ;
+	region->segreg = &segregs[segnum];
+	region->segnum = segnum;
+	region->flags = 0;
+	region->protect = VM_PROT_ALL;
+	region->is_text = FALSE;
+	region->is_extension = FALSE;
+	region->is_abs = FALSE;
+
+	simple_lock(&vm_idspace_lock);
+	TAILQ_INSERT_TAIL(&idspace->header, region, segm);
+	simple_unlock(&vm_idspace_lock);
+}
+
+void
+vm_segment_region_remove(idspace, segnum)
+	vm_idspace_t idspace;
 	int segnum;
 {
-	vm_segment_map_t segmap;
+	vm_segment_region_t region;
+	vm_page_t pagemap;
 
-	//lock
-	LIST_FOREACH(segmap, &segmaplist, segmlist) {
-		if ((segmap->segreg == segreg) && (segmap->segnum == segnum)) {
-			//unlock
-			return (segmap);
+	pagemap = idspace->pagemap[segnum];
+	simple_lock(&vm_idspace_lock);
+	TAILQ_FOREACH(region, &idspace->header, segm) {
+		if ((region->page == pagemap) && (region->segnum == segnum)) {
+			TAILQ_REMOVE(&idspace->header, region, segm);
+			simple_unlock(&vm_idspace_lock);
 		}
 	}
-	//unlock
+}
+
+vm_segment_region_t
+vm_segment_region_lookup(idspace, segnum)
+	vm_idspace_t idspace;
+	int segnum;
+{
+	vm_segment_region_t region;
+	vm_page_t pagemap;
+
+	pagemap = idspace->pagemap[segnum];
+	simple_lock(&vm_idspace_lock);
+	TAILQ_FOREACH(region, &idspace->header, segm) {
+		if ((region->page == pagemap) && (region->segnum == segnum)) {
+			simple_unlock(&vm_idspace_lock);
+			return (NULL);
+		}
+	}
+	simple_unlock(&vm_idspace_lock);
 	return (NULL);
-}
-
-void
-vm_segment_map_remove(segreg, segnum)
-	vm_segment_register_t segreg;
-	int segnum;
-{
-	vm_segment_map_t segmap;
-
-	//lock
-	LIST_FOREACH(segmap, &segmaplist, segmlist) {
-		if ((segmap->segreg == segreg) && (segmap->segnum == segnum)) {
-			LIST_REMOVE(segmap, segmlist);
-			//unlock
-		}
-	}
-	//unlock
 }
 
 /*
@@ -148,27 +194,27 @@ vm_segment_map_remove(segreg, segnum)
  * segreg will not be null if successful.
  */
 void
-vm_segment_register_write(segmap, segnum, addr, desc)
-	vm_segment_map_t segmap;
+vm_segment_register_write(region, segnum, addr, desc)
+	vm_segment_region_t region;
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
-	if (segmap->protect & VM_PROT_WRITE) {
-		if (segmap->flags & SEGM_SAVE) {
-			switch (segmap->flags) {
+	if (region->protect & VM_PROT_WRITE) {
+		if (region->flags & SEGM_SAVE) {
+			switch (region->flags) {
 			case SEGM_SEG5:
-				vm_segment_map_to_seg5(segmap, addr, desc);
-				vm_segmap_put(0, &segmap->mapstore.kdsa5, &segmap->mapstore.kdsd5);
+				vm_segment_region_saveseg5(region, addr, desc);
+				vm_segmap_put(NOVL_SEG5, &region->mapstore.kdsa5, &region->mapstore.kdsd5);
 				break;
 			case SEGM_SEG6:
-				vm_segment_map_to_seg6(segmap, addr, desc);
-				vm_segmap_put(1, &segmap->mapstore.kdsa6, &segmap->mapstore.kdsd6);
+				vm_segment_region_saveseg6(region, addr, desc);
+				vm_segmap_put(NOVL_SEG6, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			case SEGM_SEG56:
-				vm_segment_map_to_seg5(segmap, addr, desc);
-				vm_savemap_put(0, &segmap->mapstore.kdsa5, &segmap->mapstore.kdsd5);
-				vm_segment_map_to_seg6(segmap, addr, desc);
-				vm_savemap_put(1, &segmap->mapstore.kdsa6, &segmap->mapstore.kdsd6);
+				vm_segment_region_saveseg5(region, addr, desc);
+				vm_savemap_put(NOVL_SEG5, &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_segment_region_saveseg6(region, addr, desc);
+				vm_savemap_put(NOVL_SEG6, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			default:
 				panic("vm_segment_register_write: no valid save register specified");
@@ -176,7 +222,7 @@ vm_segment_register_write(segmap, segnum, addr, desc)
 			}
 			return;
 		}
-		vm_infomap_put(segnum, addr, desc);
+		vm_genmap_put(segnum, addr, desc);
 	}
 }
 
@@ -185,23 +231,23 @@ vm_segment_register_write(segmap, segnum, addr, desc)
  * segreg will not be null if successful.
  */
 void
-vm_segment_register_read(segmap, segnum, addr, desc)
-	vm_segment_map_t segmap;
+vm_segment_register_read(region, segnum, addr, desc)
+	vm_segment_region_t region;
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
-	if (segmap->protect & VM_PROT_READ) {
-		if (segmap->flags & SEGM_RESTORE) {
-			switch (segmap->flags) {
+	if (region->protect & VM_PROT_READ) {
+		if (region->flags & SEGM_RESTORE) {
+			switch (region->flags) {
 			case SEGM_SEG5:
-				vm_savemap_get(0, &segmap->mapstore.kdsa5, &segmap->mapstore.kdsd5);
+				vm_savemap_get(NOVL_SEG5, &region->mapstore.kdsa5, &region->mapstore.kdsd5);
 				break;
 			case SEGM_SEG6:
-				vm_savemap_get(1, &segmap->mapstore.kdsa6, &segmap->mapstore.kdsd6);
+				vm_savemap_get(NOVL_SEG6, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			case SEGM_SEG56:
-				vm_savemap_get(0, &segmap->mapstore.kdsa5, &segmap->mapstore.kdsd5);
-				vm_savemap_get(1, &segmap->mapstore.kdsa6, &segmap->mapstore.kdsd6);
+				vm_savemap_get(NOVL_SEG5, &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_savemap_get(NOVL_SEG6, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			default:
 				panic("vm_segment_register_read: no valid save register specified");
@@ -209,33 +255,33 @@ vm_segment_register_read(segmap, segnum, addr, desc)
 			}
 			return;
 		}
-		vm_infomap_get(segnum, addr, desc);
+		vm_genmap_get(segnum, addr, desc);
 	}
 }
 
 /* vm_segment_register: infomap */
 static void
-vm_infomap_get(segnum, addr, desc)
+vm_genmap_get(segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
-	if (&infomap[segnum] != NULL) {
-		if ((segnum >= 0) && (segnum <= (NOVL - 1))) {
-			*addr = infomap[segnum].addr;
-			*desc = infomap[segnum].desc;
+	if (&segregs[segnum] != NULL) {
+		if ((segnum >= 0) && (segnum <= (NOVL - 2))) {
+			*addr = segregs[segnum].addr;
+			*desc = segregs[segnum].desc;
 		}
 	}
 }
 
 static void
-vm_infomap_put(segnum, addr, desc)
+vm_genmap_put(segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
 	if ((addr != NULL) && (desc != NULL)) {
-		if ((segnum >= 0) && (segnum <= (NOVL - 1))) {
-			infomap[segnum].addr = *addr;
-			infomap[segnum].desc = *desc;
+		if ((segnum >= 0) && (segnum <= (NOVL - 2))) {
+			segregs[segnum].addr = *addr;
+			segregs[segnum].desc = *desc;
 		}
 	}
 }
@@ -246,10 +292,10 @@ vm_savemap_get(segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
-	if (&savemap[segnum] != NULL) {
-		if ((segnum >= 0) && (segnum <= 1)) {
-			*addr = savemap[segnum].addr;
-			*desc = savemap[segnum].desc;
+	if (&segregs[segnum] != NULL) {
+		if ((segnum >= NOVL_SEG5) && (segnum <= NOVL_SEG6)) {
+			*addr = segregs[segnum].addr;
+			*desc = segregs[segnum].desc;
 		}
 	}
 }
@@ -260,37 +306,37 @@ vm_savemap_put(segnum, addr, desc)
 	vm_offset_t *addr, *desc;
 {
 	if ((addr != NULL) && (desc != NULL)) {
-		if ((segnum >= 0) && (segnum <= 1)) {
-			savemap[segnum].addr = *addr;
-			savemap[segnum].desc = *desc;
+		if ((segnum >= NOVL_SEG5) && (segnum <= NOVL_SEG6)) {
+			segregs[segnum].addr = *addr;
+			segregs[segnum].desc = *desc;
 		}
 	}
 }
 
 /*
- * vm_segment_mapstore_to_seg5:
+ * vm_segment_region_saveseg5:
  * copy contents of the address and the descriptor to
  * seg5 mapstore.
  */
-void
-vm_segment_map_to_seg5(segmap, addr, desc)
-	vm_segment_map_t segmap;
+static void
+vm_segment_region_saveseg5(region, addr, desc)
+	vm_segment_region_t region;
 	vm_offset_t *addr, *desc;
 {
-	bcopy(addr, &segmap->mapstore.kdsa5, sizeof(*addr));
-	bcopy(desc, &segmap->mapstore.kdsd5, sizeof(*desc));
+	bcopy(addr, &region->mapstore.kdsa5, sizeof(*addr));
+	bcopy(desc, &region->mapstore.kdsd5, sizeof(*desc));
 }
 
 /*
- * vm_segment_mapstore_to_seg6:
+ * vm_segment_region_saveseg6:
  * copy contents of the address and the descriptor to
  * seg6 mapstore.
  */
-void
-vm_segment_map_to_seg6(segmap, addr, desc)
-	vm_segment_map_t segmap;
+static void
+vm_segment_region_saveseg6(region, addr, desc)
+	vm_segment_region_t region;
 	vm_offset_t *addr, *desc;
 {
-	bcopy(addr, &segmap->mapstore.kdsa6, sizeof(*addr));
-	bcopy(desc, &segmap->mapstore.kdsd6, sizeof(*desc));
+	bcopy(addr, &region->mapstore.kdsa6, sizeof(*addr));
+	bcopy(desc, &region->mapstore.kdsd6, sizeof(*desc));
 }

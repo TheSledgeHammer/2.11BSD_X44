@@ -185,6 +185,7 @@ extern struct sockaddr_iso blank_siso;
 int iso_addrmatch1(struct iso_addr *, struct iso_addr *);
 int iso_addrmatch(struct sockaddr_iso *, struct sockaddr_iso *);
 int iso_ck_addr(struct iso_addr *);
+int iso_tpctloutput(int, int, caddr_t, struct mbuf *);
 void dump_isoaddr(struct sockaddr_iso *);
 
 /* iso_chksum.c */

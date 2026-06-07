@@ -368,9 +368,8 @@ tp_recycle_tsuffix(void *v)
  * NOTES:
  */
 void
-tp_quench(struct inpcb *ipcb, int cmd)
+tp_quench(struct tp_pcb *tpcb, int cmd)
 {
-	struct tp_pcb  *tpcb = (struct tp_pcb *)ipcb;
 #ifdef ARGO_DEBUG
 	if (argo_debug[D_QUENCH]) {
 		printf("tp_quench tpcb %p ref 0x%x sufx 0x%x\n",

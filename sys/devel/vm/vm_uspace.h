@@ -43,8 +43,7 @@ struct vm_uspace {
 	vm_object_t object;	/* object */
 	vm_offset_t offset; /* object offset */
 
-	/* segmentation */
-	vm_segment_map_t segmap; /* segment map */
+	vm_idspace_t idspace;	/* idspace for uspace */
 };
 
 extern vm_object_t uspace_object; /* single uspace object */

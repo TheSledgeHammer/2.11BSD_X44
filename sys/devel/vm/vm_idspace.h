@@ -79,52 +79,59 @@
 
 #include <vm/include/vm.h>
 
-#define NOVL 32
+#define NOVL 16
+#define NOVL_PAGES 64 /* Number of Pages */
+
+/* savemap segnum for seg5 and seg6 */
+#define NOVL_SEG5 (NOVL-1)	/* segnum for SEG5 store */
+#define NOVL_SEG6 (NOVL)	/* segnum for SEG6 store */
 
 struct vm_segment_register;
 typedef struct vm_segment_register *vm_segment_register_t;
 
-struct vm_segment_map;
-typedef struct vm_segment_map *vm_segment_map_t;
+struct vm_segment_region;
+typedef struct vm_segment_region *vm_segment_region_t;
 
-/* virtual segment registers */
+struct vm_idspace;
+typedef struct vm_idspace *vm_idspace_t;
+
+/* segment registers */
 struct vm_segment_register {
 	vm_offset_t addr;	/* register address */
 	vm_offset_t desc;	/* register descriptor */
 };
 
-extern struct vm_segment_register infomap[NOVL];
-extern struct vm_segment_register savemap[2];
+extern struct vm_segment_register segregs[NOVL];
 
-/* virtual segmentation map */
-struct vm_segmap_list;
-LIST_HEAD(vm_segmap_list, vm_segment_map);
-struct vm_segment_map {
-	LIST_ENTRY(vm_segment_map) segmlist; 	/* register list */
-	vm_segment_register_t segreg; 			/* virtual segment registers */
-	vm_size_t size;							/* virtual segment size */
-	int segnum; 							/* virtual segment register number */
-	int flags;								/* virtual segment register flags */
-	vm_prot_t protect; 						/* protection codes (will use vm protection codes) */
-	bool_t is_text; 						/* text segment */
-	bool_t is_extension; 					/* extension direction */
-	bool_t is_abs;							/* absolute address */
+/* segment region */
+struct vm_segment_region {
+	TAILQ_ENTRY(vm_segment_region) segm; /* region entry */
+	vm_page_t page;						/* page back pointer in idspace */
+	vm_segment_register_t segreg; 		/* virtual segment register */
+	int segnum; 						/* virtual segment register number */
+	int flags;							/* virtual segment register flags */
+	vm_prot_t protect; 					/* protection codes */
+	bool_t is_text; 					/* text segment */
+	bool_t is_extension; 				/* extension direction */
+	bool_t is_abs;						/* absolute address */
 	struct { /* segment mapping store */
-		vm_offset_t kdsa5;	/* virtual SEG5 address */
-		vm_offset_t kdsd5;	/* virtual SEG5 descriptor */
-		vm_offset_t kdsa6;	/* virtual SEG6 address */
-		vm_offset_t kdsd6;	/* virtual SEG6 descriptor */
+		vm_offset_t kdsa5;				/* virtual SEG5 address */
+		vm_offset_t kdsd5;				/* virtual SEG5 descriptor */
+		vm_offset_t kdsa6;				/* virtual SEG6 address */
+		vm_offset_t kdsd6;				/* virtual SEG6 descriptor */
 	} mapstore;
-	union {	 /* segment map objects */
-		vm_object_t vm_object;
-#ifdef OVERLAY
-		ovl_object_t ovl_object;
-#endif
-	} object;
 };
-extern struct vm_segmap_list segmaplist;
 
-/* segment map flags */
+/* idspace */
+struct vm_segregion_queue;
+TAILQ_HEAD(vm_segregion_queue, vm_segment_region);
+struct vm_idspace {
+	struct vm_segregion_queue header;	/* queue of regions */
+	vm_segment_t segment;			/* idspace segment */
+	vm_page_t pagemap[NOVL];		/* idspace page map of region */
+};
+
+/* segment region flags */
 #define SEGM_RO			0x002	/* Read only: same as VM_PROT_READ */
 #define SEGM_RW			0x006	/* Read and write: same as (VM_PROT_READ|VM_PROT_WRITE) */
 #define SEGM_NOACCESS 	0x000	/* Abort all accesses (No/Cancel Execute permissions??) */
@@ -144,5 +151,19 @@ extern struct vm_segmap_list segmaplist;
 #define SEGM_SEG56		0x100 	/* map both SEG5 and SEG6 */
 #define SEGM_SAVE		(0x120 & (SEGM_SEG5|SEGM_SEG6|SEGM_SEG56))	/* Software: save virtual segment register's to savemap */
 #define SEGM_RESTORE	(0x140 & (SEGM_SEG5|SEGM_SEG6|SEGM_SEG56))	/* Software: restore virtual segment register's from savemap */
+
+/* vm_idspace */
+void vm_idspace_init(vm_idspace_t, vm_object_t, vm_offset_t, int);
+vm_idspace_t vm_idspace_allocate(vm_object_t, vm_offset_t, int);
+void vm_idspace_deallocate(vm_idspace_t, int);
+
+/* vm_segment_region */
+void vm_segment_region_insert(vm_idspace_t, int, int);
+void vm_segment_region_remove(vm_idspace_t, int);
+vm_segment_region_t vm_segment_region_lookup(vm_idspace_t, int);
+
+/* vm_segment_register */
+void vm_segment_register_write(vm_segment_region_t, int, vm_offset_t *, vm_offset_t *);
+void vm_segment_register_read(vm_segment_region_t, int, vm_offset_t *, vm_offset_t *);
 
 #endif /* _VM_IDSPACE_H_ */

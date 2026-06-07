@@ -91,6 +91,7 @@ SOFTWARE.
 #include <netiso/tp_seq.h>
 #include <netiso/tp_clnp.h>
 #include <netiso/tp_protosw.h>
+#include <netiso/tp_proto/tp_iso.h>
 #include <netiso/tp_proto/tp_ip.h>
 #include <netiso/tp_proto/tp_ip6.h>
 #include <netiso/tp_proto/tp_cons.h>
@@ -99,7 +100,6 @@ SOFTWARE.
 /*
  * ticks are in units of: 500 nano-fortnights ;-) or 500 ms or 1/2 second
  */
-
 struct tp_conn_param tp_conn_param[] = {
 	/* ISO_CLNS: TP4 CONNECTION LESS */
 	{
@@ -246,51 +246,32 @@ struct tp_conn_param tp_conn_param[] = {
 	},
 };
 
-struct tp_protosw tp_protosw[] = {
-	/* ISO_CLNS */
+struct tp_protosw *tp_protosw[] = {
+		/* ISO_CLNS */
 #ifdef ISO
-	{AF_ISO, iso_putnetaddr, iso_getnetaddr, iso_cmpnetaddr,
-		iso_putsufx, iso_getsufx,
-		iso_recycle_tsuffix,
-		tpclnp_mtu, iso_pcbbind, iso_pcbconnect,
-		iso_pcbdisconnect, iso_pcbdetach,
-		iso_pcballoc,
-		tpclnp_output, tpclnp_output_dg, iso_nlctloutput,
-		(caddr_t) & tp_isopcbtable,
-	},
+		&tpiso_protosw,
 #else
-	{0},
-#endif				/* ISO */
-	/* IN_CLNS */
+		NULL,
+#endif	/* ISO */
+		/* IN_CLNS */
 #ifdef INET
-	{AF_INET, in_putnetaddr, in_getnetaddr, in_cmpnetaddr,
-		in_putsufx, in_getsufx,
-		in_recycle_tsuffix,
-		tpip_mtu, in_pcbbind, in_pcbconnect,
-		in_pcbdisconnect, in_pcbdetach,
-		in_pcballoc,
-		tpip_output, tpip_output_dg, /* nl_ctloutput */ NULL,
-		(caddr_t) & tp_inpcbtable,
-	},
+		&tpin4_protosw,
 #else
-	{0},
-#endif				/* INET */
-	/* ISO_CONS */
+		NULL,
+#endif 	/* INET */
+		/* IN6_CLNS */
+#ifdef INET6
+		&tpin6_protosw,
+#else
+		NULL,
+#endif 	/* INET6 */
+		/* ISO_CONS */
 #if defined(ISO) && defined(TPCONS)
-	{AF_ISO, iso_putnetaddr, iso_getnetaddr, iso_cmpnetaddr,
-		iso_putsufx, iso_getsufx,
-		iso_recycle_tsuffix,
-		tpclnp_mtu, iso_pcbbind, tpcons_pcbconnect,
-		iso_pcbdisconnect, iso_pcbdetach,
-		iso_pcballoc,
-		tpcons_output, tpcons_output, iso_nlctloutput,
-		(caddr_t) & tp_isopcbtable,
-	},
+		&tpcons_protosw,
 #else
-	{0},
-#endif				/* ISO_CONS */
-	/* End of protosw marker */
-	{0}
+		NULL,
+#endif	/* ISO_CONS */
+		NULL,
 };
 
 struct inpcbtable tp_inpcbtable;
@@ -959,7 +940,6 @@ tp_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 	}
 	return ((tpcb->tp_tpproto->tp_pcbbind)(tpcb->tp_npcb, nam, p));
 }
-
 
 int
 tp_mtu(struct tp_pcb *tpcb, struct rtentry *rt, int size)

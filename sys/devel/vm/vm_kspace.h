@@ -43,8 +43,7 @@ struct vm_kspace {
 	vm_object_t object; /* object */
 	vm_offset_t offset; /* object offset */
 
-	/* segmentation */
-	vm_segment_map_t segmap; /* segment map */
+	vm_idspace_t idspace; /* idspace for kspace */
 };
 
 extern vm_object_t kspace_object; /* single kspace object */
