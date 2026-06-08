@@ -36,7 +36,7 @@
 #include <arch/i386/include/pmap.h>
 #include <arch/i386/include/vmparam.h>
 
-#define VM_KSPACE 	104
+#define M_VMKSPACE 	104
 
 #define KSPACE_MIN	VM_MIN_KERNEL_ADDRESS
 #define KSPACE_MAX	VM_MAX_KERNEL_ADDRESS
@@ -71,42 +71,47 @@ vm_kdspace_map_init(kspace, min, max, size)
 }
 
 void
-vm_kspace_init(min, max, size)
+vm_kspace_init(min, max)
 	vm_offset_t min, max;
-	vm_size_t size;
 {
 	vm_kspace_t kspace;
-	vm_object_t object;
+	vm_size_t size;
 
-	MALLOC(kspace, struct vm_kspace *, sizeof(struct vm_kspace *), VM_KSPACE, M_WAITOK);
-
+	/* Allocate Kspace */
+	MALLOC(kspace, struct vm_kspace *, sizeof(struct vm_kspace *), M_VMKSPACE, M_WAITOK);
 	if (min < KSPACE_MIN && max > KSPACE_MAX) {
-		FREE(kspace, VM_KSPACE);
+		FREE(kspace, M_VMKSPACE);
 		return;
 	}
 
+	/* Get Object Size */
+	size = (max - min);
+
+	/* Init I */
 	kispace_min = (char *)min;
 	kispace_max = (char *)max;
 	vm_kispace_map_init(kspace, &min, &max, size);
 
+	/* Init D */
 	kdspace_min = (char *)min;
 	kdspace_max = (char *)max;
 	vm_kdspace_map_init(kspace, &min, &max, size);
 
-	object = vm_kspace_object_create(size);
-	kspace->object = object;
+	/* Allocate Object */
+	vm_kspace_object_allocate(kspace, size, kspace_object);
+
+	/* Init idspace */
+	vm_idspace_init(kspace->idspace, kspace->object, min, M_VMKSPACE);
 }
 
-vm_object_t
-vm_kspace_object_create(size)
+void
+vm_kspace_object_allocate(kspace, size, object)
+	vm_kspace_t kspace;
 	vm_size_t size;
+	vm_object_t object;
 {
-	vm_object_t result;
-
-	result = vm_object_allocate(size);
-	if (result != NULL) {
-		kspace_object = result;
-		return (result);
+	object = vm_object_allocate(size);
+	if (object != NULL) {
+		kspace->object = object;
 	}
-	return (NULL);
 }

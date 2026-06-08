@@ -36,7 +36,7 @@
 #include <arch/i386/include/pmap.h>
 #include <arch/i386/include/vmparam.h>
 
-#define VM_USPACE 	105
+#define M_VMUSPACE 	105
 
 #define USPACE_MIN	USRSTACK
 #define USPACE_MAX	VM_MAXUSER_ADDRESS
@@ -71,42 +71,47 @@ vm_udspace_map_init(uspace, min, max, size)
 }
 
 void
-vm_uspace_init(min, max, size)
+vm_uspace_init(min, max)
 	vm_offset_t min, max;
-	vm_size_t size;
 {
 	vm_uspace_t uspace;
-	vm_object_t object;
+	vm_size_t size;
 
-	MALLOC(uspace, struct vm_uspace *, sizeof(struct vm_uspace *), VM_USPACE, M_WAITOK);
-
+	/* Allocate Uspace */
+	MALLOC(uspace, struct vm_uspace *, sizeof(struct vm_uspace *), M_VMUSPACE, M_WAITOK);
 	if (min < USPACE_MIN && max > USPACE_MAX) {
-		FREE(uspace, VM_USPACE);
+		FREE(uspace, M_VMUSPACE);
 		return;
 	}
 
+	/* Get Object Size */
+	size = (max - min);
+
+	/* Init I */
 	uispace_min = (char *)min;
 	uispace_max = (char *)max;
 	vm_uispace_map_init(uspace, &min, &max, size);
 
+	/* Init D */
 	udspace_min = (char *)min;
 	udspace_max = (char *)max;
 	vm_udspace_map_init(uspace, &min, &max, size);
 
-	object = vm_uspace_object_create(size);
-	uspace->object = object;
+	/* Allocate Object */
+	vm_uspace_object_allocate(uspace, size, uspace_object);
+
+	/* Init idspace */
+	vm_idspace_init(uspace->idspace, uspace->object, min, M_VMUSPACE);
 }
 
-vm_object_t
-vm_uspace_object_create(size)
+void
+vm_uspace_object_allocate(uspace, size, object)
+	vm_uspace_t uspace;
 	vm_size_t size;
+	vm_object_t object;
 {
-	vm_object_t result;
-
-	result = vm_object_allocate(size);
-	if (result != NULL) {
-		uspace_object = result;
-		return (result);
+	object = vm_object_allocate(size);
+	if (object != NULL) {
+		uspace->object = object;
 	}
-	return (NULL);
 }

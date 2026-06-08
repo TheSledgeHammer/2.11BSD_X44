@@ -76,7 +76,7 @@ vm_idspace_allocate(object, offset, mtype)
 {
 	register vm_idspace_t result;
 
-	result = (vm_idspace_t)malloc((u_long)sizeof(*result), mtype, M_WAITOK);
+	MALLOC(result, struct vm_idspace *, sizeof(struct vm_idspace *), mtype, M_WAITOK);
 	vm_idspace_setup(result, object, offset);
 	return (result);
 }
@@ -204,17 +204,17 @@ vm_segment_register_write(region, segnum, addr, desc)
 			switch (region->flags) {
 			case SEGM_SEG5:
 				vm_segment_region_saveseg5(region, addr, desc);
-				vm_segmap_put(NOVL_SEG5, &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_segmap_put((NOVL - 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
 				break;
 			case SEGM_SEG6:
 				vm_segment_region_saveseg6(region, addr, desc);
-				vm_segmap_put(NOVL_SEG6, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
+				vm_segmap_put(NOVL, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			case SEGM_SEG56:
 				vm_segment_region_saveseg5(region, addr, desc);
-				vm_savemap_put(NOVL_SEG5, &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_savemap_put((NOVL - 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
 				vm_segment_region_saveseg6(region, addr, desc);
-				vm_savemap_put(NOVL_SEG6, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
+				vm_savemap_put(NOVL, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			default:
 				panic("vm_segment_register_write: no valid save register specified");
@@ -240,14 +240,14 @@ vm_segment_register_read(region, segnum, addr, desc)
 		if (region->flags & SEGM_RESTORE) {
 			switch (region->flags) {
 			case SEGM_SEG5:
-				vm_savemap_get(NOVL_SEG5, &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_savemap_get((NOVL - 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
 				break;
 			case SEGM_SEG6:
-				vm_savemap_get(NOVL_SEG6, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
+				vm_savemap_get(NOVL, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			case SEGM_SEG56:
-				vm_savemap_get(NOVL_SEG5, &region->mapstore.kdsa5, &region->mapstore.kdsd5);
-				vm_savemap_get(NOVL_SEG6, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
+				vm_savemap_get((NOVL - 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_savemap_get(NOVL, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			default:
 				panic("vm_segment_register_read: no valid save register specified");
@@ -293,7 +293,7 @@ vm_savemap_get(segnum, addr, desc)
 	vm_offset_t *addr, *desc;
 {
 	if (&segregs[segnum] != NULL) {
-		if ((segnum >= NOVL_SEG5) && (segnum <= NOVL_SEG6)) {
+		if ((segnum >= (NOVL - 1)) && (segnum <= NOVL)) {
 			*addr = segregs[segnum].addr;
 			*desc = segregs[segnum].desc;
 		}
@@ -306,7 +306,7 @@ vm_savemap_put(segnum, addr, desc)
 	vm_offset_t *addr, *desc;
 {
 	if ((addr != NULL) && (desc != NULL)) {
-		if ((segnum >= NOVL_SEG5) && (segnum <= NOVL_SEG6)) {
+		if ((segnum >= (NOVL - 1)) && (segnum <= NOVL)) {
 			segregs[segnum].addr = *addr;
 			segregs[segnum].desc = *desc;
 		}

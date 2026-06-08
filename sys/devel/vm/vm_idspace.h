@@ -80,11 +80,7 @@
 #include <vm/include/vm.h>
 
 #define NOVL 16
-#define NOVL_PAGES 64 /* Number of Pages */
-
-/* savemap segnum for seg5 and seg6 */
-#define NOVL_SEG5 (NOVL-1)	/* segnum for SEG5 store */
-#define NOVL_SEG6 (NOVL)	/* segnum for SEG6 store */
+#define NOVL_PAGES ((SEGMENT_SIZE/PAGE_SIZE)/NOVL) /* Number of Pages */
 
 struct vm_segment_register;
 typedef struct vm_segment_register *vm_segment_register_t;
