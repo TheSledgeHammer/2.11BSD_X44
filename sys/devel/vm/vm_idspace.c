@@ -193,7 +193,7 @@ vm_segment_region_lookup(idspace, segnum)
  * Write to a segment register.
  * segreg will not be null if successful.
  */
-void
+int
 vm_segment_register_write(region, segnum, addr, desc)
 	vm_segment_region_t region;
 	int segnum;
@@ -220,17 +220,25 @@ vm_segment_register_write(region, segnum, addr, desc)
 				panic("vm_segment_register_write: no valid save register specified");
 				break;
 			}
-			return;
+			goto out;
 		}
 		vm_genmap_put(segnum, addr, desc);
 	}
+
+out:
+	if (region->segreg == &segregs[segnum]) {
+		if ((region->segreg->addr == addr) && (region->segreg->desc == desc)) {
+			return (0);
+		}
+	}
+	return (1);
 }
 
 /*
  * Reads from a segment register.
  * segreg will not be null if successful.
  */
-void
+int
 vm_segment_register_read(region, segnum, addr, desc)
 	vm_segment_region_t region;
 	int segnum;
@@ -253,10 +261,18 @@ vm_segment_register_read(region, segnum, addr, desc)
 				panic("vm_segment_register_read: no valid save register specified");
 				break;
 			}
-			return;
+			goto out;
 		}
 		vm_genmap_get(segnum, addr, desc);
 	}
+
+out:
+	if (region->segreg == &segregs[segnum]) {
+		if ((region->segreg->addr == addr) && (region->segreg->desc == desc)) {
+			return (0);
+		}
+	}
+	return (1);
 }
 
 /* vm_segment_register: infomap */

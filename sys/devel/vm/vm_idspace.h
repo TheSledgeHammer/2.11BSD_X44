@@ -123,8 +123,9 @@ struct vm_segregion_queue;
 TAILQ_HEAD(vm_segregion_queue, vm_segment_region);
 struct vm_idspace {
 	struct vm_segregion_queue header;	/* queue of regions */
-	vm_segment_t segment;			/* idspace segment */
-	vm_page_t pagemap[NOVL];		/* idspace page map of region */
+//	vm_object_t object;					/* idspace object */
+	vm_segment_t segment;				/* idspace segment */
+	vm_page_t pagemap[NOVL];			/* idspace page map of region */
 };
 
 /* segment region flags */
@@ -159,7 +160,7 @@ void vm_segment_region_remove(vm_idspace_t, int);
 vm_segment_region_t vm_segment_region_lookup(vm_idspace_t, int);
 
 /* vm_segment_register */
-void vm_segment_register_write(vm_segment_region_t, int, vm_offset_t *, vm_offset_t *);
-void vm_segment_register_read(vm_segment_region_t, int, vm_offset_t *, vm_offset_t *);
+int vm_segment_register_write(vm_segment_region_t, int, vm_offset_t *, vm_offset_t *);
+int vm_segment_register_read(vm_segment_region_t, int, vm_offset_t *, vm_offset_t *);
 
 #endif /* _VM_IDSPACE_H_ */

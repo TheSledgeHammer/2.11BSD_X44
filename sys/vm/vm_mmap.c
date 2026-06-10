@@ -340,8 +340,8 @@ msync()
 		return (EINVAL);
 
 	map = &p->p_vmspace->vm_map;
-	addr = (vm_offset_t) SCARG(uap, addr);
-	size = (vm_size_t) SCARG(uap, len);
+	addr = (vm_offset_t)SCARG(uap, addr);
+	size = (vm_size_t)SCARG(uap, len);
 	flags = SCARG(uap, flags);
 
 	/* sanity check flags */
@@ -438,10 +438,10 @@ munmap()
 		printf("munmap(%d): addr %x len %x\n", p->p_pid, SCARG(uap, addr),
 				SCARG(uap, len));
 #endif
-	addr = (vm_offset_t) SCARG(uap, addr);
+	addr = (vm_offset_t)SCARG(uap, addr);
 	if ((addr & PAGE_MASK) || SCARG(uap, len) < 0)
 		return (EINVAL);
-	size = (vm_size_t) round_page(SCARG(uap, len));
+	size = (vm_size_t)round_page(SCARG(uap, len));
 	if (size == 0)
 		return (0);
 	/*
@@ -756,7 +756,7 @@ munlock()
 		printf("munlock(%d): addr %x len %x\n", p->p_pid, SCARG(uap, addr),
 				SCARG(uap, len));
 #endif
-	addr = (vm_offset_t) SCARG(uap, addr);
+	addr = (vm_offset_t)SCARG(uap, addr);
 	if ((addr & PAGE_MASK)
 			|| SCARG(uap, addr) + SCARG(uap, len) < SCARG(uap, addr))
 		return (EINVAL);
@@ -1117,22 +1117,20 @@ vm_mincore_segment_page(vm_map_entry_t entry, vm_amap_t amap, vm_object_t object
 int
 vm_mincore(vm_map_t map, vm_offset_t addr, vm_size_t len, vm_offset_t offset, char *vec)
 {
-	vm_map_entry_t entry;
+	vm_map_entry_t entry, next;
 	vm_object_t object;
 	vm_amap_t amap;
 	vm_offset_t estart, eend, eaddr, eoffset;
 	vm_size_t elen;
 	vm_offset_t npages, pgoff;
 	vm_size_t pglen;
-	int error, retries;
+	int error;
 	char *evec;
 	bool_t isentry;
 
-	retries = 0;
-
 	vm_map_lock_read(map);
-retry:
 	isentry = vm_map_lookup_entry(map, addr, &entry);
+retry:
 	if (isentry == TRUE) {
 		estart = entry->start;
 		eend = entry->end;
@@ -1177,13 +1175,26 @@ retry:
 		error = KERN_SUCCESS;
 		goto out;
 	} else {
-		entry = CIRCLEQ_NEXT(entry, cl_entry);
-		if (retries == 4) {
-			error = ENOMEM;
-			goto out;
+		CIRCLEQ_FOREACH(next, &map->cl_header, cl_entry) {
+			if (next != entry) {
+				estart = entry->start;
+				eend = entry->end;
+				elen = round_page((eend - estart));
+				eaddr = ((estart + elen) - elen);
+				/* check next entry address is not greater than the address */
+				if (eaddr <= addr) {
+	                isentry = vm_map_lookup_entry(map, addr, &entry);
+	                goto retry;
+				} else {
+					error = ENOMEM;
+					goto out;
+				}
+			} else {
+				/* exit, entry is already known */
+				error = ENOMEM;
+				goto out;
+			}
 		}
-		retries++;
-		goto retry;
 	}
 
 out:
