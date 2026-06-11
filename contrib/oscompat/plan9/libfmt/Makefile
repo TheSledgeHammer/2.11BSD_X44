@@ -67,4 +67,6 @@ SRCS= ${CFILES} ${NUM} ${NAN}
 INCS+=    ${HFILES}
 INCSDIR=  /usr/include
 
+LIBDPLIBS+= m ${NETBSDSRCDIR}/usr.lib/libm
+
 .include <bsd.lib.mk>
