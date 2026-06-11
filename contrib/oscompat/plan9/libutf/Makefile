@@ -1,12 +1,12 @@
 #	$211BSD: Makefile,v 1.0 2025/05/19 19:27:27 Exp $
 
+#.include <bsd.own.mk>
+
+.include "../Makefile.inc"
+
 LIB= utf
 MAN= rune.3 runestrcat.3 utf.7
 VERSION=2.0
-
-.include <bsd.own.mk>
-
-.include "../Makefile.inc"
 
 CPPFLAGS+= -I${PLAN9_INCLUDE}
 CPPFLAGS+= -I${PLAN9_LIBUTF}
