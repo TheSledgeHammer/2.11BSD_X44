@@ -1,6 +1,6 @@
 Application	Version
 -----------	-------
-libndbm/	4.3BSD		 	(dbm & ndbm before it was merged into Berkley DB)
+libndbm/	4.3BSD		 	(dbm & ndbm)
 libfortran/	4.3BSD			(Contains libF77, libI77 and libU77)
 libmp/		4.3BSD
 libom/		4.3BSD  	   	(used for both libom.a and libm.a)
