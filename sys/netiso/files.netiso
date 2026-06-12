@@ -1,0 +1,50 @@
+#	$NetBSD: files.netiso,v 1.4 2007/01/11 00:00:41 cube Exp $
+
+defflag opt_iso.h	ISO 	# ISO network stack
+defflag opt_iso.h	TPIP	# ISO network TP with IPv4/IPv6
+defflag opt_iso.h	TPNS	# ISO network TP with XNS
+defflag	opt_iso.h	TPCONS	# ISO network TP with X.25
+defflag opt_iso.h	TUBA	# TCP/IP over ISO with bigger addresses
+defflag	opt_iso.h 	EON		# ISO clnp over IP
+
+file	netiso/clnp_debug.c		iso
+file	netiso/clnp_er.c		iso
+file	netiso/clnp_frag.c		iso
+file	netiso/clnp_input.c		iso
+file	netiso/clnp_options.c	iso
+file	netiso/clnp_output.c	iso
+file	netiso/clnp_raw.c		iso
+file	netiso/clnp_subr.c		iso
+file	netiso/clnp_timer.c		iso
+file	netiso/cltp_usrreq.c	iso
+
+file	netiso/esis.c			iso
+file	netiso/isis.c			iso
+file	netiso/idrp_usrreq.c	iso
+file	netiso/if_eon.c			eon
+file	netiso/if_cons.c		iso | tpcons
+
+file	netiso/iso.c			iso
+file	netiso/iso_chksum.c		iso
+file	netiso/iso_pcb.c		iso
+file	netiso/iso_proto.c		iso
+file	netiso/iso_snpac.c		iso
+
+file	netiso/tp_astring.c 	iso | tpip
+file	netiso/tp_driver.c		iso | tpip
+file	netiso/tp_emit.c		iso | tpip
+file	netiso/tp_input.c		iso | tpip
+file	netiso/tp_meas.c		iso | tpip
+file	netiso/tp_output.c		iso | tpip
+file	netiso/tp_pcb.c			iso
+file	netiso/tp_subr.c		iso | tpip
+file	netiso/tp_subr2.c		iso | tpip
+file	netiso/tp_timer.c		iso | tpip
+file	netiso/tp_trace.c		iso | tpip
+file	netiso/tp_usrreq.c		iso | tpip
+
+# TUBA
+file	netiso/tuba_subr.c		tuba
+file	netiso/tuba_table.c		tuba
+file	netiso/tuba_tcp.c		tuba
+file	netiso/tuba_usrreq.c	tuba
