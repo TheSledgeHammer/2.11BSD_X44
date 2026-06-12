@@ -93,10 +93,10 @@ in_getsufx(void *v, u_short *lenp, caddr_t data_out, int which)
 	*lenp = sizeof(u_short);
 	switch (which) {
 	case TP_LOCAL:
-		*data_out = (caddr_t)inp->inp_lport;
+		*(u_short *)data_out = inp->inp_lport;
 		break;
 	case TP_FOREIGN:
-		*data_out = (caddr_t)inp->inp_fport;
+		*(u_short *)data_out = inp->inp_fport;
 		break;
 	}
 }
@@ -395,16 +395,14 @@ tpip_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	}
 	switch (cmd) {
 	case PRC_QUENCH:
-		in_pcbnotify(&tp_inpcbtable, (struct sockaddr *)sin, 0,
-			zeroin_addr, 0, cmd, tpip_quench);
+		in_pcbnotify(&tp_inpcbtable, sin->sin_addr, 0, zeroin_addr, 0, cmd, tpip_quench);
 		break;
 	case PRC_ROUTEDEAD:
 	case PRC_HOSTUNREACH:
 	case PRC_UNREACH_NET:
 	case PRC_IFDOWN:
 	case PRC_HOSTDEAD:
-		in_pcbnotify(&tp_inpcbtable, (struct sockaddr *)sin, 0,
-			zeroin_addr, 0, cmd, in_rtchange);
+		in_pcbnotify(&tp_inpcbtable, sin->sin_addr, 0, zeroin_addr, 0, cmd, in_rtchange);
 		break;
 	default:
 /*
@@ -423,7 +421,7 @@ tpip_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	case PRC_PARAMPROB:
 */
 
-		in_pcbnotify(&tp_inpcbtable, (struct sockaddr *)sin, 0, zeroin_addr, 0, cmd, tpip_abort);
+		in_pcbnotify(&tp_inpcbtable, sin->sin_addr, 0, zeroin_addr, 0, cmd, tpip_abort);
 	}
 	return (NULL);
 }

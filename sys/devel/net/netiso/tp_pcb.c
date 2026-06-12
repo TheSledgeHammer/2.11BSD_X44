@@ -101,149 +101,150 @@ SOFTWARE.
  * ticks are in units of: 500 nano-fortnights ;-) or 500 ms or 1/2 second
  */
 struct tp_conn_param tp_conn_param[] = {
-	/* ISO_CLNS: TP4 CONNECTION LESS */
-	{
-		TP_NRETRANS,	/* short p_Nretrans;  */
-		20,		/* 10 sec *//* short p_dr_ticks;  */
+		/* ISO_CLNS: TP4 CONNECTION LESS */
+		{
+				.p_Nretrans = TP_NRETRANS,
+				.p_dr_ticks = 20,			/* 10 sec */
 
-		20,		/* 10 sec *//* short p_cc_ticks; */
-		20,		/* 10 sec *//* short p_dt_ticks; */
+				.p_cc_ticks = 20,			/* 10 sec */
+				.p_dt_ticks = 20,			/* 10 sec */
 
-		40,		/* 20 sec *//* short p_x_ticks;	 */
-		80,		/* 40 sec *//* short p_cr_ticks; */
+				.p_x_ticks = 40,			/* 20 sec */
+				.p_cr_ticks = 80,			/* 40 sec */
 
-		240,		/* 2 min *//* short p_keepalive_ticks; */
-		10,		/* 5 sec *//* short p_sendack_ticks;  */
+				.p_keepalive_ticks = 240,	/* 2 min */
+				.p_sendack_ticks = 10,		/* 5 sec */
 
-		600,		/* 5 min *//* short p_ref_ticks;	 */
-		360,		/* 3 min *//* short p_inact_ticks;	 */
+				.p_ref_ticks = 600,			/* 5 min */
+				.p_inact_ticks = 360,		/* 3 min */
 
-		(short) 100,	/* short p_lcdtfract */
-		(short) TP_SOCKBUFSIZE,	/* short p_winsize */
-		TP_TPDUSIZE,	/* u_char p_tpdusize */
+				.p_ptpdusize = (short)100,	/* short p_lcdtfract */
+				.p_winsize = (short)TP_SOCKBUFSIZE,
+				.p_tpdusize = TP_TPDUSIZE,
 
-		TPACK_WINDOW,	/* 4 bits p_ack_strat */
-		TPRX_USE_CW | TPRX_FASTSTART,
-		/* 4 bits p_rx_strat */
-		TP_CLASS_4 | TP_CLASS_0,	/* 5 bits p_class */
-		1,		/* 1 bit xtd format */
-		1,		/* 1 bit xpd service */
-		1,		/* 1 bit use_checksum */
-		0,		/* 1 bit use net xpd */
-		0,		/* 1 bit use rcc */
-		0,		/* 1 bit use efc */
-		1,		/* no disc indications */
-		0,		/* don't change params */
-		ISO_CLNS,	/* p_netservice */
-	},
-	/* IN_CLNS: TP4 CONNECTION LESS */
-	{
-		TP_NRETRANS,	/* short p_Nretrans;  */
-		20,		/* 10 sec *//* short p_dr_ticks;  */
+				.p_ack_strat = TPACK_WINDOW, /* 4 bits */
+				.p_rx_strat = TPRX_USE_CW | TPRX_FASTSTART,	/* 4 bits */
+				.p_class = TP_CLASS_4 | TP_CLASS_0,			/* 5 bits */
+				.p_xtd_format = 1,			/* 1 bit */
+				.p_xpd_service = 1,			/* 1 bit */
+				.p_use_checksum = 1,		/* 1 bit */
+				.p_use_nxpd = 0,			/* 1 bit */
+				.p_use_rcc = 0,				/* 1 bit */
+				.p_use_efc = 0,				/* 1 bit */
+				.p_no_disc_indications = 1,
+				.p_dont_change_params = 0,
+				.p_netservice = ISO_CLNS,
+				.p_version = 0,
+		},
+		/* IN_CLNS: TP4 CONNECTION LESS */
+		{
+				.p_Nretrans = TP_NRETRANS,
+				.p_dr_ticks = 20,			/* 10 sec */
 
-		20,		/* 10 sec *//* short p_cc_ticks; */
-		20,		/* 10 sec *//* short p_dt_ticks; */
+				.p_cc_ticks = 20,			/* 10 sec */
+				.p_dt_ticks = 20,			/* 10 sec */
 
-		40,		/* 20 sec *//* short p_x_ticks;	 */
-		80,		/* 40 sec *//* short p_cr_ticks; */
+				.p_x_ticks = 40,			/* 20 sec */
+				.p_cr_ticks = 80,			/* 40 sec */
 
-		240,		/* 2 min *//* short p_keepalive_ticks; */
-		10,		/* 5 sec *//* short p_sendack_ticks;  */
+				.p_keepalive_ticks = 240,	/* 2 min */
+				.p_sendack_ticks = 10,		/* 5 sec */
 
-		600,		/* 5 min *//* short p_ref_ticks;	 */
-		360,		/* 3 min *//* short p_inact_ticks;	 */
+				.p_ref_ticks = 600,			/* 5 min */
+				.p_inact_ticks = 360,		/* 3 min */
 
-		(short) 100,	/* short p_lcdtfract */
-		(short) TP_SOCKBUFSIZE,	/* short p_winsize */
-		TP_TPDUSIZE,	/* u_char p_tpdusize */
+				.p_ptpdusize = (short)100, 	/* short p_lcdtfract */
+				.p_winsize = (short)TP_SOCKBUFSIZE,
+				.p_tpdusize = TP_TPDUSIZE,
 
-		TPACK_WINDOW,	/* 4 bits p_ack_strat */
-		TPRX_USE_CW | TPRX_FASTSTART,
-		/* 4 bits p_rx_strat */
-		TP_CLASS_4,	/* 5 bits p_class */
-		1,		/* 1 bit xtd format */
-		1,		/* 1 bit xpd service */
-		1,		/* 1 bit use_checksum */
-		0,		/* 1 bit use net xpd */
-		0,		/* 1 bit use rcc */
-		0,		/* 1 bit use efc */
-		1,		/* no disc indications */
-		0,		/* don't change params */
-		IN_CLNS,	/* p_netservice */
-	},
-	/* ISO_CONS: TP0 CONNECTION MODE */
-	{
-		TP_NRETRANS,	/* short p_Nretrans;  */
-		0,		/* n/a *//* short p_dr_ticks; */
+				.p_ack_strat = TPACK_WINDOW, /* 4 bits */
+				.p_rx_strat = TPRX_USE_CW | TPRX_FASTSTART, /* 4 bits */
+				.p_class = TP_CLASS_4, 		/* 5 bits */
+				.p_xtd_format = 1,			/* 1 bit */
+				.p_xpd_service = 1,			/* 1 bit */
+				.p_use_checksum = 1,		/* 1 bit */
+				.p_use_nxpd = 0,			/* 1 bit */
+				.p_use_rcc = 0,				/* 1 bit */
+				.p_use_efc = 0,				/* 1 bit */
+				.p_no_disc_indications = 1,
+				.p_dont_change_params = 0,
+				.p_netservice = IN_CLNS,
+				.p_version = 0,
+		},
+		/* ISO_CONS: TP0 CONNECTION MODE */
+		{
+				.p_Nretrans = TP_NRETRANS,
+				.p_dr_ticks = 0,			/* n/a */
 
-		40,		/* 20 sec *//* short p_cc_ticks; */
-		0,		/* n/a *//* short p_dt_ticks; */
+				.p_cc_ticks = 40,			/* 20 sec */
+				.p_dt_ticks = 0,			/* n/a */
 
-		0,		/* n/a *//* short p_x_ticks;	 */
-		360,		/* 3  min *//* short p_cr_ticks; */
+				.p_x_ticks = 0,				/* n/a */
+				.p_cr_ticks = 360,			/* 3 min */
 
-		0,		/* n/a *//* short p_keepalive_ticks; */
-		0,		/* n/a *//* short p_sendack_ticks; */
+				.p_keepalive_ticks = 0,		/* n/a */
+				.p_sendack_ticks = 0,		/* n/a */
 
-		600,		/* for cr/cc to clear *//* short p_ref_ticks;	 */
-		0,		/* n/a *//* short p_inact_ticks;	 */
+				.p_ref_ticks = 600,			/* for cr/cc to clear */
+				.p_inact_ticks = 0, 		/* n/a */
 
-		/*
-		 * Use tp4 defaults just in case the user changes ONLY the
-		 * class
-		 */
-		(short) 100,	/* short p_lcdtfract */
-		(short) TP0_SOCKBUFSIZE,	/* short p_winsize */
-		TP0_TPDUSIZE,	/* 8 bits p_tpdusize */
+				/*
+				 * Use tp4 defaults just in case the user changes ONLY the
+				 * class
+				 */
+				.p_ptpdusize = (short)100,	/* short p_lcdtfract */
+				.p_winsize = (short)TP0_SOCKBUFSIZE,
+				.p_tpdusize = TP0_TPDUSIZE,
 
-		0,		/* 4 bits p_ack_strat */
-		0,		/* 4 bits p_rx_strat */
-		TP_CLASS_0,	/* 5 bits p_class */
-		0,		/* 1 bit xtd format */
-		0,		/* 1 bit xpd service */
-		0,		/* 1 bit use_checksum */
-		0,		/* 1 bit use net xpd */
-		0,		/* 1 bit use rcc */
-		0,		/* 1 bit use efc */
-		0,		/* no disc indications */
-		0,		/* don't change params */
-		ISO_CONS,	/* p_netservice */
-	},
-	/* ISO_COSNS: TP4 CONNECTION LESS SERVICE over CONSNS */
-	{
-		TP_NRETRANS,	/* short p_Nretrans;  */
-		40,		/* 20 sec *//* short p_dr_ticks;  */
+				.p_ack_strat = 0,			/* 4 bits */
+				.p_rx_strat = 0,			/* 4 bits */
+				.p_class = TP_CLASS_0,		/* 5 bits */
+				.p_xtd_format = 0,			/* 1 bit */
+				.p_xpd_service = 0,			/* 1 bit */
+				.p_use_checksum = 0, 		/* 1 bit */
+				.p_use_nxpd = 0, 			/* 1 bit */
+				.p_use_rcc = 0,				/* 1 bit */
+				.p_use_efc = 0,				/* 1 bit */
+				.p_no_disc_indications = 0,
+				.p_dont_change_params = 0,
+				.p_netservice = ISO_CONS,
+				.p_version = 0,
+		},
+		/* ISO_COSNS: TP4 CONNECTION LESS SERVICE over CONSNS */
+		{
+				.p_Nretrans = TP_NRETRANS,
+				.p_dr_ticks = 40,			/* 20 sec */
 
-		40,		/* 20 sec *//* short p_cc_ticks; */
-		80,		/* 40 sec *//* short p_dt_ticks; */
+				.p_cc_ticks = 40,			/* 20 sec */
+				.p_dt_ticks = 80,			/* 40 sec */
 
-		120,		/* 1 min *//* short p_x_ticks;	 */
-		360,		/* 3 min *//* short p_cr_ticks; */
+				.p_x_ticks = 120, 			/* 1 min */
+				.p_cr_ticks = 360, 			/* 3 min */
 
-		360,		/* 3 min *//* short p_keepalive_ticks; */
-		20,		/* 10 sec *//* short p_sendack_ticks;  */
+				.p_keepalive_ticks = 360,	/* 3 min */
+				.p_sendack_ticks = 20,		/* 10 sec */
 
-		600,		/* 5 min *//* short p_ref_ticks;	 */
-		480,		/* 4 min *//* short p_inact_ticks;	 */
+				.p_ref_ticks = 600,			/* 5 min */
+				.p_inact_ticks = 480,		/* 4 min */
 
-		(short) 100,	/* short p_lcdtfract */
-		(short) TP0_SOCKBUFSIZE,	/* short p_winsize */
-		TP0_TPDUSIZE,	/* u_char p_tpdusize */
+				.p_ptpdusize = (short)100,	/* short p_lcdtfract */
+				.p_winsize = (short)TP0_SOCKBUFSIZE,
+				.p_tpdusize = TP0_TPDUSIZE,
 
-		TPACK_WINDOW,	/* 4 bits p_ack_strat */
-		TPRX_USE_CW,	/* No fast start */
-		/* 4 bits p_rx_strat */
-		TP_CLASS_4 | TP_CLASS_0,	/* 5 bits p_class */
-		0,		/* 1 bit xtd format */
-		1,		/* 1 bit xpd service */
-		1,		/* 1 bit use_checksum */
-		0,		/* 1 bit use net xpd */
-		0,		/* 1 bit use rcc */
-		0,		/* 1 bit use efc */
-		0,		/* no disc indications */
-		0,		/* don't change params */
-		ISO_COSNS,	/* p_netservice */
-	},
+				.p_ack_strat = TPACK_WINDOW, /* 4 bits */
+				.p_rx_strat = TPRX_USE_CW, 	/* 4 bits */
+				.p_class = TP_CLASS_4 | TP_CLASS_0, /* 5 bits */
+				.p_xtd_format = 0, 			/* 1 bit */
+				.p_xpd_service = 1, 		/* 1 bit */
+				.p_use_checksum = 1,	 	/* 1 bit */
+				.p_use_nxpd = 0, 			/* 1 bit */
+				.p_use_rcc = 0, 			/* 1 bit */
+				.p_use_efc = 0, 			/* 1 bit */
+				.p_no_disc_indications = 0,
+				.p_dont_change_params = 0,
+				.p_netservice = ISO_COSNS,
+				.p_version = 0,
+		},
 };
 
 struct tp_protosw *tp_protosw[] = {

@@ -47,27 +47,85 @@ char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
 char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
 
 void
-vm_kispace_map_init(kspace, min, max, size)
+vm_kispace_map_init(kspace, object, offset, min, max, size, pageable)
 	vm_kspace_t kspace;
+	vm_object_t object;
+	vm_offset_t offset;
 	vm_offset_t *min, *max;
 	vm_size_t size;
+	bool_t pageable;
 {
-	kisd_map = kmem_suballoc(kernel_map, min, max, size, FALSE);
-	kisa_map = kmem_suballoc(kernel_map, min, max, size, FALSE);
-	kspace->desc_map = kisd_map;
-	kspace->addr_map = kisa_map;
+	vm_offset_t *imin, *dmin;
+	vm_offset_t *imax, *dmax;
+
+	kispace_min = (char *)min;
+	kispace_max = (char *)max;
+
+	/*
+	 * These may need to be adjusted to account for the map/s needing more or less space,
+	 * instead of an even split.
+	 */
+	imin = min; 			/* instruction map min */
+	imax = ((max-min)/2); 	/* instruction map max */
+	dmin = imax + 1; 		/* descriptor map min */
+	dmax = max; 			/* descriptor map max */
+
+	/* I-Space instruction map */
+	kisa_map = vm_kspace_map_allocate(object, offset, imin, imax, size, pageable);
+	if (kisa_map != NULL) {
+		kspace->addr_map = kisa_map;
+		kspace->i_start = &imin;
+		kspace->i_end = &imax;
+	}
+
+	/* I-Space descriptor map */
+	kisd_map = vm_kspace_map_allocate(object, offset, dmin, dmax, size, pageable);
+	if (kisd_map != NULL) {
+		kspace->desc_map = kisd_map;
+		kspace->d_start = &dmin;
+		kspace->d_end = &dmax;
+	}
 }
 
 void
-vm_kdspace_map_init(kspace, min, max, size)
+vm_kdspace_map_init(kspace, object, offset, min, max, size, pageable)
 	vm_kspace_t kspace;
+	vm_object_t object;
+	vm_offset_t offset;
 	vm_offset_t *min, *max;
 	vm_size_t size;
+	bool_t pageable;
 {
-	kdsd_map = kmem_suballoc(kernel_map, min, max, size, FALSE);
-	kdsa_map = kmem_suballoc(kernel_map, min, max, size, FALSE);
-	kspace->desc_map = kdsd_map;
-	kspace->addr_map = kdsa_map;
+	vm_offset_t *imin, *dmin;
+	vm_offset_t *imax, *dmax;
+
+	kdspace_min = (char *)min;
+	kdspace_max = (char *)max;
+
+	/*
+	 * These may need to be adjusted to account for the map/s needing more or less space,
+	 * instead of an even split.
+	 */
+	imin = min; 			/* instruction map min */
+	imax = ((max-min)/2); 	/* instruction map max */
+	dmin = imax + 1; 		/* descriptor map min */
+	dmax = max; 			/* descriptor map max */
+
+	/* D-Space instruction map */
+	kdsa_map = vm_kspace_map_allocate(object, offset, imin, imax, size, pageable);
+	if (kdsa_map != NULL) {
+		kspace->addr_map = kisa_map;
+		kspace->i_start = &imin;
+		kspace->i_end = &imax;
+	}
+
+	/* D-Space descriptor map */
+	kdsd_map = vm_kspace_map_allocate(object, offset, dmin, dmax, size, pageable);
+	if (kdsd_map != NULL) {
+		kspace->desc_map = kdsd_map;
+		kspace->d_start = &dmin;
+		kspace->d_end = &dmax;
+	}
 }
 
 void
@@ -84,28 +142,24 @@ vm_kspace_init(min, max)
 		return;
 	}
 
-	/* Get Object Size */
+	/* Set Object Size */
 	size = (max - min);
 
-	/* Init I */
-	kispace_min = (char *)min;
-	kispace_max = (char *)max;
-	vm_kispace_map_init(kspace, &min, &max, size);
-
-	/* Init D */
-	kdspace_min = (char *)min;
-	kdspace_max = (char *)max;
-	vm_kdspace_map_init(kspace, &min, &max, size);
-
 	/* Allocate Object */
-	vm_kspace_object_allocate(kspace, size, kspace_object);
+	vm_kspace_object_init(kspace, size, kspace_object);
+
+	/* Init I-Space */
+	vm_kispace_map_init(kspace, kspace_object, min, &min, &max, size, TRUE);
+
+	/* Init D-Space */
+	vm_kdspace_map_init(kspace, kspace_object, min, &min, &max, size, TRUE);
 
 	/* Init idspace */
 	vm_idspace_init(kspace->idspace, kspace->object, min, M_VMKSPACE);
 }
 
 void
-vm_kspace_object_allocate(kspace, size, object)
+vm_kspace_object_init(kspace, size, object)
 	vm_kspace_t kspace;
 	vm_size_t size;
 	vm_object_t object;
@@ -114,4 +168,35 @@ vm_kspace_object_allocate(kspace, size, object)
 	if (object != NULL) {
 		kspace->object = object;
 	}
+}
+
+/* allocate and insert map */
+vm_map_t
+vm_kspace_map_allocate(object, offset, min, max, size, pageable)
+	vm_object_t object;
+	vm_offset_t offset, *min, *max;
+	vm_size_t size;
+	bool_t pageable;
+{
+	vm_map_t map;
+	vm_offset_t start, end;
+	int error;
+
+	map = kmem_suballoc(kernel_map, min, max, size, pageable);
+	if (map != NULL) {
+		start = vm_map_min(map);
+		end = vm_map_max(map);
+		if ((start < *min) || (end > *max)) {
+			return (NULL);
+		}
+		vm_map_lock(map);
+		error = vm_map_insert(map, object, offset, start, end);
+		if (error != KERN_SUCCESS) {
+			vm_map_remove(map, start, end);
+			vm_map_unlock(map);
+			return (NULL);
+		}
+	}
+	vm_map_unlock(map);
+	return (map);
 }

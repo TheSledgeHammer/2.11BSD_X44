@@ -40,10 +40,16 @@ struct vm_uspace {
 	/* vm */
 	vm_map_t desc_map;	/* descriptor vm_map (i.e udsd_map and uisd_map) */
 	vm_map_t addr_map; 	/* address vm_map (i.e udsa_map and uisa_map) */
+	vm_offset_t i_start; /* i-space start address */
+	vm_offset_t i_end;	/* i-space end address */
+	vm_offset_t d_start; /* d-space start address */
+	vm_offset_t d_end;	/* d-space end address */
 	vm_object_t object;	/* object */
 	vm_offset_t offset; /* object offset */
 
-	vm_idspace_t idspace;	/* idspace for uspace */
+	vm_idspace_t idspace; /* idspace for uspace */
+	vm_offset_t addr;	/* segment register address */
+	vm_offset_t desc;	/* segment register descriptor */
 };
 
 extern vm_object_t uspace_object; /* single uspace object */

@@ -57,6 +57,7 @@
 #include <netiso/tp_stat.h>
 #include <netiso/tp_tpdu.h>
 #include <netiso/tp_var.h>
+
 #include <netinet6/in6_var.h>
 
 struct tp_protosw tpin6_protosw = {
@@ -88,10 +89,10 @@ in6_getsufx(void *v, u_short *lenp, caddr_t data_out, int which)
 	*lenp = sizeof(u_short);
 	switch (which) {
 	case TP_LOCAL:
-		*data_out = (caddr_t)in6p->in6p_lport;
+		*(u_short *)data_out = in6p->in6p_lport;
 		break;
 	case TP_FOREIGN:
-		*data_out = (caddr_t)in6p->in6p_fport;
+		*(u_short *)data_out = in6p->in6p_fport;
 		break;
 	}
 }
@@ -361,13 +362,13 @@ discard:
 void
 tpip6_quench(struct in6pcb *in6p, int cmd)
 {
-	tpi_quench((struct tpipcb *)sotoin6pcb(in6p->in6p_socket), cmd);
+	tp_quench((struct tpipcb *)sotoin6pcb(in6p->in6p_socket), cmd);
 }
 
 void
 tpip6_abort(struct in6pcb *in6p, int cmd)
 {
-	tpi_abort((struct tp_pcb *)in6p->in6p_ppcb, cmd);
+	(void)tp_abort((struct tp_pcb *)in6p->in6p_ppcb, cmd);
 }
 
 void *
@@ -387,16 +388,14 @@ tpip6_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	}
 	switch (cmd) {
 	case PRC_QUENCH:
-		in6_pcbnotify(&tp_in6pcb, (struct sockaddr *)sin6, 0,
-			zeroin6_addr, 0, cmd, tpip6_quench);
+		in6_pcbnotify(&tp_inpcbtable, sa, 0, (struct sockaddr *)sin6, 0, cmd, tpip6_quench);
 		break;
 	case PRC_ROUTEDEAD:
 	case PRC_HOSTUNREACH:
 	case PRC_UNREACH_NET:
 	case PRC_IFDOWN:
 	case PRC_HOSTDEAD:
-		in6_pcbnotify(&tp_in6pcb, (struct sockaddr *)sin6, 0,
-			zeroin6_addr, 0, cmd, in6_rtchange);
+		in6_pcbnotify(&tp_inpcbtable, sa, 0, (struct sockaddr *)sin6, 0, cmd, in6_rtchange);
 		break;
 	default:
 /*
@@ -415,7 +414,7 @@ tpip6_ctlinput(int cmd, struct sockaddr *sa, void *v)
 	case PRC_PARAMPROB:
 */
 
-		in6_pcbnotify(&tp_in6pcb, (struct sockaddr *)sin6, 0, zeroin6_addr, 0, cmd, tpip6_abort);
+		in6_pcbnotify(&tp_inpcbtable, sa, 0, (struct sockaddr *)sin6, 0, cmd, tpip6_abort);
 	}
 	return (NULL);
 }
@@ -433,4 +432,11 @@ tpin6_abort(struct in6pcb *in6p)
 	tpip6_abort(in6p, 0);
 }
 
+#ifdef ARGO_DEBUG
+void
+dump_in6addr(struct sockaddr_in6 *addr6)
+{
+	printf("INET6: port 0x%x; addr 0x%x\n", addr6->sin6_port, addr6->sin6_addr);
+}
+#endif /* ARGO_DEBUG */
 #endif /* INET6 */

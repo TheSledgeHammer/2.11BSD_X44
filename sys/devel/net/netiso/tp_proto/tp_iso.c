@@ -32,7 +32,7 @@
 #include <sys/cdefs.h>
 
 #include "opt_iso.h"
-#ifdef ISO
+//#ifdef ISO
 
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -275,12 +275,10 @@ iso_cmpnetaddr(void *v, struct sockaddr *name, int which)
 void
 iso_getnetaddr(void *v, struct mbuf *name, int which)
 {
-    struct inpcb *inp;
 	struct isopcb *isop;
 	struct sockaddr_iso *siso;
 
-    inp = (struct inpcb *)v;
-	isop = (struct isopcb *)inp;
+	isop = (struct isopcb *)v;
 	siso = (which == TP_LOCAL ? isop->isop_laddr : isop->isop_faddr);
 	if (siso) {
 		bcopy((caddr_t)siso, mtod(name, caddr_t), (unsigned)(name->m_len = siso->siso_len));

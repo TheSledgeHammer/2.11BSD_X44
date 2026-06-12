@@ -40,10 +40,16 @@ struct vm_kspace {
 	/* vm */
 	vm_map_t desc_map;	/* descriptor map (i.e kdsd_map and kisd_map) */
 	vm_map_t addr_map; 	/* address map (i.e kdsa_map and kisa_map) */
+	vm_offset_t i_start; /* i-space start address */
+	vm_offset_t i_end;	/* i-space end address */
+	vm_offset_t d_start; /* d-space start address */
+	vm_offset_t d_end;	/* d-space end address */
 	vm_object_t object; /* object */
 	vm_offset_t offset; /* object offset */
 
 	vm_idspace_t idspace; /* idspace for kspace */
+	vm_offset_t addr;	/* segment register address */
+	vm_offset_t desc;	/* segment register descriptor */
 };
 
 extern vm_object_t kspace_object; /* single kspace object */

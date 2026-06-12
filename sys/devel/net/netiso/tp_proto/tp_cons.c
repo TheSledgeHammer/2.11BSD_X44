@@ -129,7 +129,7 @@ struct tp_protosw tpcons_protosw = {
  	.tp_output = tpcons_output,
  	.tp_dgoutput = tpcons_output,
  	.tp_ctloutput = 0,
- 	.tp_pcblist = &tp_isopcb
+ 	.tp_pcblist = (caddr_t)&tp_isopcbtable
 };
 
 /*

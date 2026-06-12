@@ -89,7 +89,7 @@ struct tp_conn_param {
 	u_char          p_tpdusize;	/* log 2 of size */
 
 	u_char          p_ack_strat;	/* see comments in tp_pcb.h */
-	u_char          p_rx_strat;	/* see comments in tp_pcb.h */
+	u_char          p_rx_strat;		/* see comments in tp_pcb.h */
 	u_char          p_class;/* class bitmask */
 	u_char          p_xtd_format;
 	u_char          p_xpd_service;
