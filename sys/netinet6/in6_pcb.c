@@ -452,8 +452,10 @@ in6_pcbconnect(void *v, struct mbuf *nam)
 }
 
 void
-in6_pcbdisconnect(struct in6pcb *in6p)
+in6_pcbdisconnect(void *v)
 {
+    struct in6pcb *in6p = v;
+
 	bzero((caddr_t)&in6p->in6p_faddr, sizeof(in6p->in6p_faddr));
 	in6p->in6p_fport = 0;
 	in6_pcbstate(in6p, IN6P_BOUND);
@@ -466,8 +468,9 @@ in6_pcbdisconnect(struct in6pcb *in6p)
 }
 
 void
-in6_pcbdetach(struct in6pcb *in6p)
+in6_pcbdetach(void *v)
 {
+    struct in6pcb *in6p = v;
 	struct socket *so = in6p->in6p_socket;
 	int s;
 

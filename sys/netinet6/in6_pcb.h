@@ -153,8 +153,8 @@ void in6_pcbinit(struct inpcbtable *, int, int);
 int	in6_pcballoc(struct socket *, void *);
 int	in6_pcbbind(void *, struct mbuf *, struct proc *);
 int	in6_pcbconnect(void *, struct mbuf *);
-void in6_pcbdetach(struct in6pcb *);
-void in6_pcbdisconnect(struct in6pcb*);
+void in6_pcbdetach(void *);
+void in6_pcbdisconnect(void *);
 struct in6pcb* in6_pcblookup_port(struct inpcbtable*, struct in6_addr*, u_int,
 		struct in6_addr*, u_int, int);
 int in6_pcbnotify(struct inpcbtable*, struct sockaddr*, u_int, struct sockaddr*,
