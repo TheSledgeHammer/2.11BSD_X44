@@ -97,6 +97,11 @@ options		    FAST_IPSEC    		# IP security with opencrypto
 #options 		IGMPV3				# IPv4 Source-Specific Multicast (SSM)
 #options 		MLDV2				# IPv6 Source-Specific Multicast (SSM)
 #options		CCITT,LLC,HDLC		# X.25
+#options		ISO                 # OSI
+#options		EON                 # OSI tunneling over ip
+#options	    TPIP                # OSI TP IPv4 and IPv6
+#options	    TPCONS              # OSI TP X.25 (requires CCITT)
+#options		TUBA                # TCP/(IPv4/IPv6) tunneling over OSI
 options 		NS			     	# XNS
 options 		NSIP				# XNS tunneling over IP
 options 		PPP_BSDCOMP			# BSD-Compress compression support for PPP
@@ -104,8 +109,8 @@ options 		PPP_DEFLATE			# Deflate compression support for PPP
 options 		PPP_FILTER			# Active filter support for PPP (requires bpf)
 options 		PFIL_HOOKS			# pfil(9) packet filter hooks
 #options		RADIX_ART			# Radix ART support
-#options    		RADIX_ART_TRACE     		# Radix ART Tracing
-#options    		RADIX_ART_STAT      		# Radix ART Stats
+#options    	RADIX_ART_TRACE     		# Radix ART Tracing
+#options    	RADIX_ART_STAT      		# Radix ART Stats
 #options		RADIX_MPATH			# Radix Multipath support
 #options 		TCP_DEBUG			# Record last TCP_NDEBUG packets with SO_DEBUG
 
