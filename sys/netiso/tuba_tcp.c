@@ -35,25 +35,52 @@
 
 #include <sys/cdefs.h>
 
+#include "opt_inet.h"
+#include "opt_iso.h"
+#include "opt_ipsec.h"
+#include "opt_inet_csum.h"
+#include "opt_tcp_debug.h"
+
 #include <sys/param.h>
-#include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
+#include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-#include <sys/protosw.h>
 #include <sys/errno.h>
+#include <sys/syslog.h>
+#include <sys/domain.h>
+#include <sys/kernel.h>
 
-#include <net/route.h>
 #include <net/if.h>
+#include <net/route.h>
+#include <net/if_types.h>
 
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/in_pcb.h>
+#include <netinet/in_var.h>
 #include <netinet/ip_var.h>
-#include <netinet/ip_icmp.h>
+
+#ifdef INET6
+#ifndef INET
+#include <netinet/in.h>
+#endif
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/in6_pcb.h>
+#include <netinet6/in6_var.h>
+#include <netinet/icmp6.h>
+#include <netinet6/nd6.h>
+#endif
+
+#ifndef INET6
+/* always need ip6.h for IP6_EXTHDR_GET */
+#include <netinet/ip6.h>
+#endif
+
 #include <netinet/tcp.h>
 #include <netinet/tcp_fsm.h>
 #include <netinet/tcp_seq.h>
@@ -61,6 +88,28 @@
 #include <netinet/tcp_var.h>
 #include <netinet/tcpip.h>
 #include <netinet/tcp_debug.h>
+
+#include <machine/stdarg.h>
+
+#ifdef IPSEC
+#include <netinet6/ipsec/ipsec.h>
+#include <netkey/key.h>
+#endif /*IPSEC*/
+#ifdef INET6
+#include "faith.h"
+#if defined(NFAITH) && NFAITH > 0
+#include <net/if_faith.h>
+#endif
+#endif	/* IPSEC */
+
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec_var.h>			/* XXX ipsecstat namespace */
+#include <netipsec/key.h>
+#ifdef INET6
+#include <netipsec/ipsec6.h>
+#endif
+#endif	/* FAST_IPSEC*/
 
 #include <netiso/argo_debug.h>
 #include <netiso/iso.h>
@@ -116,8 +165,8 @@ tuba_tcp_input(struct mbuf *m, ...)
 	opti.ts_present = 0;
 	opti.maxseg = 0;
 
-	lindex = tuba_lookup(dst, M_DONTWAIT);
-	findex = tuba_lookup(src, M_DONTWAIT);
+	lindex = tuba_lookup(tuba_tree, dst);
+	findex = tuba_lookup(tuba_tree, src);
 	if (lindex == 0 || findex == 0) {
 		goto drop;
 	}
@@ -166,15 +215,19 @@ tuba_tcp_input(struct mbuf *m, ...)
 #define TUBA_INCLUDE
 #ifdef INET
 #define	in_pcbconnect	tuba4_pcbconnect
+extern void tcp4_log_refused(const struct ip *, const struct tcphdr *);
 #endif
 #ifdef INET6
 #define	in6_pcbconnect	tuba6_pcbconnect
+extern void tcp6_log_refused(const struct ip6_hdr *, const struct tcphdr *);
 #endif
 #define	tcbtable		tubainptable
+
 #include <netinet/tcp_input.c>
 }
 
-#define tcp_slowtimo	tuba_slowtimo
-#define tcp_fasttimo	tuba_fasttimo
-
-#include <netinet/tcp_timer.c>
+void
+tuba_slowtimo(void)
+{
+    tcp_slowtimo();
+}

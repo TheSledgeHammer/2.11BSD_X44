@@ -35,14 +35,19 @@
  
 #include <sys/cdefs.h>
 
+#include "opt_inet.h"
+#include "opt_iso.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
+#include <sys/callout.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/protosw.h>
 #include <sys/errno.h>
+#include <sys/domain.h>
 #include <sys/stat.h>
 
 #include <net/if.h>
@@ -53,6 +58,22 @@
 #include <netinet/ip.h>
 #include <netinet/in_pcb.h>
 #include <netinet/ip_var.h>
+
+#ifdef INET6
+#ifndef INET
+#include <netinet/in.h>
+#endif
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/in6_pcb.h>
+#include <netinet6/in6_var.h>
+#endif
+
+#ifndef INET6
+/* always need ip6.h for IP6_EXTHDR_GET */
+#include <netinet/ip6.h>
+#endif
+
 #include <netinet/tcp.h>
 #include <netinet/tcp_fsm.h>
 #include <netinet/tcp_seq.h>
@@ -67,10 +88,10 @@
 #include <netiso/clnp.h>
 #include <netiso/iso_pcb.h>
 #include <netiso/iso_var.h>
-#include <netiso/tuba_table.h>
+#include <netiso/tp_protosw.h>
+#include <netiso/tp_trace.h>
 #include <netiso/tp_var.h>
-
-#include <sys/queue.h>
+#include <netiso/tuba_table.h>
 
 /*
  * TCP protocol interface to socket abstraction.
@@ -223,7 +244,7 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 #ifdef INET
 		case PF_INET:
 			bcopy(TSEL(siso), &inp->inp_lport, 2);
-			inp->inp_laddr.s_addr = tuba_lookup(siso, M_WAITOK);
+			inp->inp_laddr.s_addr = tuba_lookup(tuba_tree, siso);
 			if (siso->siso_nlen && !inp->inp_laddr.s_addr) {
 				error = ENOBUFS;
 			}
@@ -232,8 +253,8 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 #ifdef INET
 		case PF_INET6:
 			bcopy(TSEL(siso), &in6p->in6p_lport, 2);
-			in6p->in6p_laddr.s6_addr = tuba_lookup(siso, M_WAITOK);
-			if (siso->siso_nlen && !in6p->in6p_laddr.s6_addr) {
+			in6p->in6p_laddr.s6_addr32[3] = tuba_lookup(tuba_tree, siso);
+			if (siso->siso_nlen && !in6p->in6p_laddr.s6_addr32[3]) {
 				error = ENOBUFS;
 			}
 			break;
@@ -304,7 +325,7 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 		}
 		siso = mtod(nam, struct sockaddr_iso *);
 #ifdef INET
-		inp->inp_faddr.s_addr = tuba_lookup(siso, M_WAITOK);
+		inp->inp_faddr.s_addr = tuba_lookup(tuba_tree, siso);
 		if (!inp->inp_faddr.s_addr) {
 			iso_pcbdisconnect(isop);
 			error = ENOBUFS;
@@ -313,23 +334,23 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 		bcopy(TSEL(isop->isop_faddr), &inp->inp_fport, 2);
 		if (inp->inp_laddr.s_addr == 0 &&
 		    (inp->inp_laddr.s_addr =
-		     tuba_lookup(isop->isop_laddr, M_WAITOK)) == 0) {
+		     tuba_lookup(tuba_tree, isop->isop_laddr)) == 0) {
 			iso_pcbdisconnect(isop);
 			error = ENOBUFS;
 			break;
 		}
 #endif
 #ifdef INET6
-		in6p->in6p_faddr.s6_addr = tuba_lookup(siso, M_WAITOK);
-		if (!in6p->in6p_faddr.s6_addr) {
+		in6p->in6p_faddr.s6_addr32[3] = tuba_lookup(tuba_tree, siso);
+		if (!in6p->in6p_faddr.s6_addr32[3]) {
 			iso_pcbdisconnect(isop);
 			error = ENOBUFS;
 			break;
 		}
 		bcopy(TSEL(isop->isop_faddr), &in6p->in6p_fport, 2);
-		if (in6p->in6p_laddr.s6_addr == 0 &&
-		    (in6p->in6p_laddr.s6_addr =
-		     tuba_lookup(isop->isop_laddr, M_WAITOK)) == 0) {
+		if (in6p->in6p_laddr.s6_addr32[3] == 0 &&
+		    (in6p->in6p_laddr.s6_addr32[3] =
+		     tuba_lookup(tuba_tree, isop->isop_laddr)) == 0) {
 			iso_pcbdisconnect(isop);
 			error = ENOBUFS;
 			break;
@@ -345,8 +366,8 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 		soisconnecting(so);
 		tcpstat.tcps_connattempt++;
 		tp->t_state = TCPS_SYN_SENT;
-		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
-		tp->iss = tcp_new_iss(tp, sizeof(tp), 0);
+		TCP_TIMER_ARM(tp, TCPT_KEEP, TCPTV_KEEP_INIT);
+		tp->iss = tcp_new_iss(tp, 0);
 		tcp_sendseqinit(tp);
 		error = tcp_output(tp);
 		tuba_refcnt(isop, 1);
@@ -418,9 +439,11 @@ tuba_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct
 		error = tcp_usrreq(so, req, m, nam, control, p);
 		goto notrace;
 	}
+#ifdef TCP_DEBUG
 	if (tp && (so->so_options & SO_DEBUG)) {
-		tcp_trace(TA_USER, ostate, tp, (struct tcphdr *)0, req);
+		tcp_trace(TA_USER, ostate, tp, NULL, req);
 	}
+#endif
 notrace:
 release:
 	splx(s);

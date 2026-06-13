@@ -34,6 +34,10 @@
  */
 
 #include <sys/cdefs.h>
+
+#include "opt_inet.h"
+#include "opt_iso.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -50,6 +54,7 @@
 #include <net/radix.h>
 
 #include <netiso/iso.h>
+#include <netiso/iso_pcb.h>
 #include <netiso/tuba_table.h>
 
 int	tuba_table_size;
@@ -92,8 +97,8 @@ tuba_table_init(void)
 		return;
 	}
 	bzero(tc, sizeof(*tc));
-	callout_init(tc->tc_callout);
-	callout_setfunc(tc->tc_callout, tuba_timer, tc);
+	callout_init(&tc->tc_callout);
+	callout_setfunc(&tc->tc_callout, tuba_timer, tc);
 	//timeout(tuba_timer, (caddr_t)0, arpt_prune * hz);
 }
 

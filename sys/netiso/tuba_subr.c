@@ -35,6 +35,9 @@
 
 #include <sys/cdefs.h>
 
+#include "opt_inet.h"
+#include "opt_iso.h"
+
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
@@ -53,7 +56,22 @@
 #include <netinet/ip.h>
 #include <netinet/in_pcb.h>
 #include <netinet/ip_var.h>
-#include <netinet/ip_icmp.h>
+
+#ifdef INET6
+#ifndef INET
+#include <netinet/in.h>
+#endif
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/in6_pcb.h>
+#include <netinet6/in6_var.h>
+#endif
+
+#ifndef INET6
+/* always need ip6.h for IP6_EXTHDR_GET */
+#include <netinet/ip6.h>
+#endif
+
 #include <netinet/tcp.h>
 #include <netinet/tcp_fsm.h>
 #include <netinet/tcp_seq.h>
@@ -61,8 +79,6 @@
 #include <netinet/tcp_var.h>
 #include <netinet/tcpip.h>
 #include <netinet/tcp_debug.h>
-#include <netinet/udp.h>
-#include <netinet/udp_var.h>
 
 #include <netiso/argo_debug.h>
 #include <netiso/iso.h>
@@ -120,7 +136,7 @@ tuba_init(void)
 	/* ISO */
 	iso_pcbinit(&tubaisoptable, tubahashsize);
 	/* now preallocate sladdr and sfaddr */
-	iso_pcbprealloc(&tubaisoptable, tuba_addrs[1]);
+	iso_pcbprealloc(&tubaisoptable, &tuba_addrs[1]);
 	if (max_protohdr < TUBAHDRSIZE) {
 		max_protohdr = TUBAHDRSIZE;
 	}
@@ -376,7 +392,11 @@ tuba4_tcp_output(struct mbuf *m, struct tcpcb *tp)
 	th = (struct tcphdr *)tp->t_template;
 	ip = mtod(m, struct ip *);
 	if (tp == 0 || th == 0 || isop == 0) {
-		isop = iso_pcballoc(NULL, &tubaisoptable);
+		error = iso_pcballoc(NULL, &tubaisoptable);
+        if (error != 0) {
+            return (error);
+        }
+        isop = iso_pcblookup(&tubaisoptable, isop->isop_faddr, (caddr_t)0, 0, isop->isop_laddr);
 		th = mtod(m, struct tcphdr *);
 		sum = 0;
 		offset = 0;
@@ -467,7 +487,7 @@ tuba6_pcbconnect(void *v, struct mbuf *nam)
 	isop = (struct isopcb *)tp->t_tuba_pcb;
 	/* hardwire iso_pcbbind() here */
 	siso = isop->isop_laddr = &isop->isop_sladdr;
-	*siso = tuba_table[in6p->in6p_laddr.s6_addr]->tc_siso;
+	*siso = tuba_table[in6p->in6p_laddr.s6_addr32[3]]->tc_siso;
 	siso->siso_tlen = sizeof(in6p->in6p_lport);
 	bcopy((caddr_t)&in6p->in6p_lport, TSEL(siso), sizeof(in6p->in6p_lport));
 
@@ -478,7 +498,7 @@ tuba6_pcbconnect(void *v, struct mbuf *nam)
 	/* reuse nam argument to call iso_pcbconnect() */
 	nam->m_len = sizeof(*siso);
 	siso = mtod(nam, struct sockaddr_iso *);
-	*siso = tuba_table[in6p->in6p_faddr.s6_addr]->tc_siso;
+	*siso = tuba_table[in6p->in6p_faddr.s6_addr32[3]]->tc_siso;
 	siso->siso_tlen = sizeof(in6p->in6p_fport);
 	bcopy((caddr_t)&in6p->in6p_fport, TSEL(siso), sizeof(in6p->in6p_fport));
 	error = iso_pcbconnect(isop, nam);
@@ -540,11 +560,11 @@ tuba6_mbuf(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, i
 static void
 tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, struct tcphdr *th, int tlen, u_long lindex, u_long findex)
 {
-	ip6->ip6_dst.s6_addr = tuba_table[lindex]->tc_sum;
+	ip6->ip6_dst.s6_addr32[3] = tuba_table[lindex]->tc_sum;
 	if (dst->siso_nlen & 1) {
-		ip6->ip6_src.s6_addr = tuba_table[findex]->tc_sum;
+		ip6->ip6_src.s6_addr32[3] = tuba_table[findex]->tc_sum;
 	} else {
-		ip6->ip6_src.s6_addr = tuba_table[findex]->tc_ssum;
+		ip6->ip6_src.s6_addr32[3] = tuba_table[findex]->tc_ssum;
 	}
 	ip6->ip6_nxt = ISOPROTO_TCP;
 	ip6->ip6_plen = htons((u_short)tlen);
@@ -553,8 +573,8 @@ tuba_ip6_cksum(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *ds
 		m_freem(m);
 		return;
 	}
-	ip6->ip6_src.s6_addr = findex;
-	ip6->ip6_dst.s6_addr = lindex;
+	ip6->ip6_src.s6_addr32[3] = findex;
+	ip6->ip6_dst.s6_addr32[3] = lindex;
 }
 
 int
@@ -570,16 +590,20 @@ tuba6_tcp_output(struct mbuf *m, struct tcpcb *tp)
 	th = (struct tcphdr *)tp->t_template;
 	ip6 = mtod(m, struct ip6_hdr *);
 	if (tp == 0 || th == 0 || isop == 0) {
-		isop = iso_pcballoc(NULL, &tubaisoptable);
+        error = iso_pcballoc(NULL, &tubaisoptable);
+        if (error != 0) {
+            return (error);
+        }
+        isop = iso_pcblookup(&tubaisoptable, isop->isop_faddr, (caddr_t)0, 0, isop->isop_laddr);
 		th = mtod(m, struct tcphdr *);
 		sum = 0;
 		offset = 0;
-		error = tuba_cksum(&sum, &offset, &isop->isop_faddr, ip6->ip6_dst.s6_addr);
+		error = tuba_cksum(&sum, &offset, &isop->isop_faddr, ip6->ip6_dst.s6_addr32[3]);
 		if (error) {
 			m_freem(m);
 			return (EADDRNOTAVAIL);
 		}
-		error = tuba_cksum(&sum, &offset, &isop->isop_laddr, ip6->ip6_src.s6_addr);
+		error = tuba_cksum(&sum, &offset, &isop->isop_laddr, ip6->ip6_src.s6_addr32[3]);
 		if (error) {
 			m_freem(m);
 			return (EADDRNOTAVAIL);
@@ -590,12 +614,12 @@ tuba6_tcp_output(struct mbuf *m, struct tcpcb *tp)
 		isop = NULL;
 		sum = 0;
 		offset = 0;
-		error = tuba_cksum(&sum, &offset, NULL, ip6->ip6_dst.s6_addr);
+		error = tuba_cksum(&sum, &offset, NULL, ip6->ip6_dst.s6_addr32[3]);
 		if (error) {
 			m_freem(m);
 			return (EADDRNOTAVAIL);
 		}
-		error = tuba_cksum(&sum, &offset, NULL, ip6->ip6_src.s6_addr);
+		error = tuba_cksum(&sum, &offset, NULL, ip6->ip6_src.s6_addr32[3]);
 		if (error) {
 			m_freem(m);
 			return (EADDRNOTAVAIL);

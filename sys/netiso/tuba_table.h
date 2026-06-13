@@ -60,6 +60,12 @@ struct tuba_cache {
 		s.s = (b); t = s.c[0]; s.c[0] = s.c[1]; s.c[1] = t; a = s.s;}
 
 #ifdef _KERNEL
+struct ip;
+struct ip6_hdr;
+struct radix_node_head;
+struct tcphdr;
+struct tcpcb;
+
 extern int tuba_table_size;
 extern struct tuba_cache **tuba_table;
 extern struct radix_node_head *tuba_tree;
@@ -69,23 +75,30 @@ extern struct isopcbtable tubaisoptable;
 void tuba_init(void);
 void tuba_table_init(void);
 int tuba_cksum(u_long *, int *, struct sockaddr_iso **, u_long);
+int tuba_lookup(struct radix_node_head *, struct sockaddr_iso *);
 int tuba_pcbattach(struct socket *, int);
 void tuba_pcbdetach(struct isopcb *);
 void tuba_refcnt(struct isopcb *, int);
+void tuba_tcp_input(struct mbuf *, ...);
+int tuba_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
+int tuba_ctloutput(int, struct socket *, int, int, struct mbuf **);
+void tuba_slowtimo(void);
 
+#ifdef INET
 int tuba4_pcbconnect(void *, struct mbuf *);
 void tuba4_mbuf(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int,
 		int, size_t);
 int tuba4_tcp_ouput(struct mbuf *, struct tcpcb *);
 void tuba4_tcp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
 		struct ip *, struct tcphdr *, int, int, u_long, u_long);
-
+#endif
+#ifdef INET6
 int tuba6_pcbconnect(void *, struct mbuf *);
 void tuba6_mbuf(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int,
 		int, size_t);
 int tuba6_tcp_output(struct mbuf *, struct tcpcb *);
 void tuba6_tcp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
 		struct ip6_hdr *, struct tcphdr *, int, int, u_long, u_long);
-
+#endif
 #endif
 #endif /* _NETISO_TUBA_TABLE_H_ */
