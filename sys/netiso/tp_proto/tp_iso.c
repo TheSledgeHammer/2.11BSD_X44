@@ -32,6 +32,7 @@
 #include <sys/cdefs.h>
 
 #include "opt_iso.h"
+
 #ifdef ISO
 
 #include <sys/param.h>
@@ -62,6 +63,10 @@
 #include <netiso/tp_var.h>
 #include <netiso/cltp_var.h>
 #include <netiso/idrp_var.h>
+
+#ifdef TUBA
+#include <netiso/tuba_table.h>
+#endif
 
 #include <machine/stdarg.h>
 
