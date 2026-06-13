@@ -33,6 +33,9 @@ struct sockaddr;
 #ifdef XNS
 struct sockaddr_ns;
 #endif
+#ifdef ISO
+struct sockaddr_iso;
+#endif
 #ifdef CCITT
 struct sockaddr_x25;
 #endif

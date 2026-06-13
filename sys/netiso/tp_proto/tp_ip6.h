@@ -105,5 +105,6 @@ void *tpip6_ctlinput(int, struct sockaddr *, void *);
 
 void tpin6_quench(struct in6pcb *);
 void tpin6_abort(struct in6pcb *);
+void dump_in6addr(struct sockaddr_in6 *);
 #endif
 #endif /* _NETISO_TP_IP6_H_ */

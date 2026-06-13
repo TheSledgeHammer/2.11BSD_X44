@@ -89,7 +89,7 @@ int tuba4_pcbconnect(void *, struct mbuf *);
 void tuba4_mbuf(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int,
 		int, size_t);
 int tuba4_tcp_ouput(struct mbuf *, struct tcpcb *);
-void tuba4_tcp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
+int tuba4_tcp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
 		struct ip *, struct tcphdr *, int, int, u_long, u_long);
 #endif
 #ifdef INET6
@@ -97,7 +97,7 @@ int tuba6_pcbconnect(void *, struct mbuf *);
 void tuba6_mbuf(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *, int,
 		int, size_t);
 int tuba6_tcp_output(struct mbuf *, struct tcpcb *);
-void tuba6_tcp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
+int tuba6_tcp_input(struct mbuf *, struct sockaddr_iso *, struct sockaddr_iso *,
 		struct ip6_hdr *, struct tcphdr *, int, int, u_long, u_long);
 #endif
 #endif

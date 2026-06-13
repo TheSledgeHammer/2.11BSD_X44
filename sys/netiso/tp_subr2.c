@@ -849,6 +849,11 @@ dump_addr(struct sockaddr *addr)
 	case AF_INET:
 		dump_inaddr(satosin(addr));
 		break;
+#ifdef INET6
+	case AF_INET6:
+		dump_in6addr(satosin6(addr));
+		break;
+#endif
 #ifdef ISO
 	case AF_ISO:
 		dump_isoaddr(satosiso(addr));

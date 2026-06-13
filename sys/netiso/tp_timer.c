@@ -114,6 +114,7 @@ tp_timerinit(void)
 }
 
 #ifdef TP_DEBUG_TIMERS
+
 /**********************  e timers *************************/
 
 /*
@@ -127,15 +128,15 @@ tp_etimeout(struct tp_pcb *tpcb, int fun /* function to be called */, int ticks)
 {
 	u_int *callp;
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TIMER]) {
+	IFDEBUG(D_TIMER)
 		printf("etimeout pcb %p state 0x%x\n", tpcb, tpcb->tp_state);
-	}
+	ENDDEBUG
 #endif
 #ifdef TPPT
-	if (tp_traceflags[D_TIMER]) {
+	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_etimeout ref refstate tks Etick", tpcb->tp_lref,
 			tpcb->tp_state, ticks, tp_stat.ts_Eticks);
-	}
+	ENDTRACE
 #endif
 	if (tpcb == 0)
 		return;
@@ -158,9 +159,9 @@ void
 tp_euntimeout(struct tp_pcb *tpcb, int fun)
 {
 #ifdef TPPT
-	if (tp_traceflags[D_TIMER]) {
+	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_euntimeout ref", tpcb->tp_lref, 0, 0, 0);
-	}
+	ENDTRACE
 #endif
 
 	if (tpcb) {
@@ -190,6 +191,7 @@ tp_euntimeout(struct tp_pcb *tpcb, int which)
  * mess with the chains
  */
 #endif
+
 /*
  * CALLED FROM:
  *  the clock, every 500 ms
@@ -220,19 +222,18 @@ tp_slowtimo(void)
 				*cp = 0;
 				E.ev_number = t;
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_TIMER]) {
-					printf("tp_slowtimo: pcb %p t %d\n",
-					       tpcb, t);
-				}
+				IFDEBUG(D_TIMER)
+					printf("tp_slowtimo: pcb %p t %d\n", tpcb, t);
+				ENDDEBUG
 #endif
 				IncStat(ts_Cexpired);
 				tp_driver(tpcb, &E);
 				if (t == TM_reference && tpcb->tp_state == TP_CLOSED) {
 					if (tpcb->tp_notdetached) {
 #ifdef ARGO_DEBUG
-						if (argo_debug[D_CONN]) {
+						IFDEBUG(D_CONN)
 							printf("PRU_DETACH: not detached\n");
-						}
+						ENDDEBUG
 #endif
 						tp_detach(tpcb);
 					}
@@ -264,10 +265,10 @@ tp_data_retrans(struct tp_pcb *tpcb)
 		 * The retransmission timer should have been reset in goodack()
 		 */
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ACKRECV]) {
+		IFDEBUG(D_ACKRECV)
 			printf("tp_data_retrans: 0 window tpcb %p una 0x%x\n",
 			       tpcb, tpcb->tp_snduna);
-		}
+		ENDDEBUG
 #endif
 		tpcb->tp_rxtshift = 0;
 		tpcb->tp_timer[TM_data_retrans] = 0;
@@ -331,10 +332,10 @@ tp_ctimeout(struct tp_pcb *tpcb, int which, int ticks)
 {
 
 #ifdef TPPT
-	if (tp_traceflags[D_TIMER]) {
+	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_ctimeout ref which tpcb active",
 			tpcb->tp_lref, which, tpcb, tpcb->tp_timer[which]);
-	}
+	ENDTRACE
 #endif
 	if (tpcb->tp_timer[which])
 		IncStat(ts_Ccan_act);
@@ -355,10 +356,10 @@ void
 tp_ctimeout_MIN(struct tp_pcb *tpcb, int which, int ticks)
 {
 #ifdef TPPT
-	if (tp_traceflags[D_TIMER]) {
+	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_ctimeout_MIN ref which tpcb active",
 			tpcb->tp_lref, which, tpcb, tpcb->tp_timer[which]);
-	}
+	ENDTRACE
 #endif
 	IncStat(ts_Cset);
 	if (tpcb->tp_timer[which]) {
@@ -378,17 +379,17 @@ void
 tp_cuntimeout(struct tp_pcb *tpcb, int which)
 {
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TIMER]) {
+	IFDEBUG(D_TIMER)
 		printf("tp_cuntimeout(%p, %d) active %d\n",
 		       tpcb, which, tpcb->tp_timer[which]);
-	}
+	ENDDEBUG
 #endif
 
 #ifdef TPPT
-	if (tp_traceflags[D_TIMER]) {
+	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_cuntimeout ref which, active", refp - tp_ref,
 			which, tpcb->tp_timer[which], 0);
-	}
+	ENDTRACE
 #endif
 
 	if (tpcb->tp_timer[which])

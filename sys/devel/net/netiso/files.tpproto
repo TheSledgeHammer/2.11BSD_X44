@@ -1,8 +1,0 @@
-#	$NetBSD: files.netiso,v 1.4 2007/01/11 00:00:41 cube Exp $
-
-# TP Protocols
-file	netiso/tp_proto/tp_cons.c	iso	| tpcons
-file	netiso/tp_proto/tp_iso.c	iso	
-file	netiso/tp_proto/tp_inet4.c	iso | tpip
-file	netiso/tp_proto/tp_inet6.c	iso | tpip
-#file	netiso/tp_proto/tp_ns.c		iso	| tpns

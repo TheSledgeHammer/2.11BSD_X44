@@ -196,7 +196,7 @@ vm_kspace_map_allocate(object, offset, min, max, size, pageable)
 			vm_map_unlock(map);
 			return (NULL);
 		}
+		vm_map_unlock(map);
 	}
-	vm_map_unlock(map);
 	return (map);
 }

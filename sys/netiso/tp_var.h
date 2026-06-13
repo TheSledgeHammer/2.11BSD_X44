@@ -55,15 +55,6 @@ struct sockaddr;
 struct x25_packet;
 struct in_addr;
 
-#ifdef notyet
-/* tp_cons.c */
-int tpcons_pcbconnect(void *, struct mbuf *);
-void *tpcons_ctlinput(int, struct sockaddr *, void *);
-void tpcons_input(struct mbuf *, ...);
-int tpcons_output(struct mbuf *, ...);
-int tpcons_output_dg(struct mbuf *, ...);
-#endif
-
 /* tp_driver.c */
 int tp_driver(struct tp_pcb *, struct tp_event *);
 
@@ -74,49 +65,10 @@ int tp_error_emit(int, u_long, struct sockaddr_iso *,
 		       struct tp_pcb *, caddr_t, 
 		       int (*)(struct mbuf *, ...));
 
-#ifdef notyet
-/* tp_inet.c */
-void in_getsufx(void *, u_short *, caddr_t, int);
-void in_putsufx(void *, caddr_t, int, int);
-void in_recycle_tsuffix(void *);
-void in_putnetaddr(void *, struct sockaddr *, int);
-int in_cmpnetaddr(void *, struct sockaddr *, int);
-void in_getnetaddr(void *, struct mbuf *, int);
-int tpip_mtu(void *);
-int tpip_output(struct mbuf *, ...);
-int tpip_output_dg(struct mbuf *, ...);
-void tpip_input(struct mbuf *, ...);
-void tpin_quench(struct inpcb *, int);
-void *tpip_ctlinput(int, struct sockaddr *, void *);
-void tpin_abort(struct inpcb *, int);
-void dump_inaddr(struct sockaddr_in *);
-#endif
-
 /* tp_input.c */
 struct mbuf *tp_inputprep(struct mbuf *);
 void tp_input(struct mbuf *, ...);
 int tp_headersize(int, struct tp_pcb *);
-
-#ifdef notyet
-/* tp_iso.c */
-void iso_getsufx(void *, u_short *, caddr_t, int);
-void iso_putsufx(void *, caddr_t, int, int);
-void iso_recycle_tsuffix(void *);
-void iso_putnetaddr(void *, struct sockaddr *, int);
-int iso_cmpnetaddr(void *, struct sockaddr *, int);
-void iso_getnetaddr(void *, struct mbuf *, int);
-int tpclnp_mtu(void *);
-int tpclnp_output(struct mbuf *, ...);
-int tpclnp_output_dg(struct mbuf *, ...);
-void tpclnp_input(struct mbuf *, ...);
-void iso_rtchange(struct isopcb *);
-void tpiso_decbit(struct isopcb *);
-void tpiso_quench(struct isopcb *);
-void *tpclnp_ctlinput(int, struct sockaddr *, void *);
-void tpclnp_ctlinput1(int, struct iso_addr *);
-void tpiso_abort(struct isopcb *);
-void tpiso_reset(struct isopcb *);
-#endif
 
 /* tp_meas.c */
 void Tpmeas(u_int, u_int, struct timeval *, u_int, u_int, u_int);
@@ -124,20 +76,6 @@ void Tpmeas(u_int, u_int, struct timeval *, u_int, u_int, u_int);
 /* tp_output.c */
 int tp_consistency(struct tp_pcb *, u_int, struct tp_conn_param *);
 int tp_ctloutput(int, struct socket *, int, int, struct mbuf **);
-
-#ifdef notyet
-/* tp_pcb.c */
-void tp_init(void);
-void tp_soisdisconnecting(struct socket *);
-void tp_soisdisconnected(struct tp_pcb *);
-void tp_freeref(RefNum);
-u_long tp_getref(struct tp_pcb *);
-int tp_set_npcb(struct tp_pcb *);
-int tp_attach(struct socket *, long);
-void tp_detach(struct tp_pcb *);
-int tp_tselinuse(int, caddr_t, struct sockaddr_iso *, int);
-int tp_pcbbind(void *, struct mbuf *, struct proc *);
-#endif
 
 /* tp_subr.c */
 int tp_goodXack(struct tp_pcb *, SeqNum);

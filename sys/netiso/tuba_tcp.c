@@ -142,7 +142,7 @@ tuba_tcp_input(struct mbuf *m, ...)
 	int iss = 0;
 	u_long tiwin;
 	struct tcp_opt_info opti;
-	int off, iphlen;
+	int off, iphlen, error;
 	va_list ap;
 	int af;		/* af on the wire */
 	struct sockaddr_iso *src, *dst;
@@ -198,13 +198,21 @@ tuba_tcp_input(struct mbuf *m, ...)
 #ifdef INET
 	case 4:
 		af = AF_INET;
-		tuba4_tcp_input(m, src, dst, ip, th, toff, tlen, lindex, findex);
+		error = tuba4_tcp_input(m, src, dst, ip, th, toff, tlen, lindex, findex);
+		if (error != 0) {
+			return;
+		}
 		break;
 #endif
 #ifdef INET6
 	case 6:
 		af = AF_INET6;
-		tuba6_tcp_input(m, src, dst, ip6, th, toff, tlen, lindex, findex);
+		error = tuba6_tcp_input(m, src, dst, ip6, th, toff, tlen, lindex, findex);
+		if (error > 0) {
+			goto drop;
+		} else {
+			return;
+		}
 		break;
 #endif
 	default:

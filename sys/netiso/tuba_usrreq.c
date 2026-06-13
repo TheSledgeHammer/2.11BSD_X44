@@ -455,10 +455,10 @@ tuba_ctloutput(int op, struct socket *so, int level, int optname, struct mbuf **
 {
 	int error;
 
-    if (level != IPPROTO_TCP) {
-        error = rclnp_ctloutput(op, so, level, optname, mp);
-    } else {
-        error = tcp_ctloutput(op, so, level, optname, mp);
-    }
+	if (level != IPPROTO_TCP) {
+		error = rclnp_ctloutput(op, so, level, optname, mp);
+	} else {
+		error = tcp_ctloutput(op, so, level, optname, mp);
+	}
 	return (error);
 }

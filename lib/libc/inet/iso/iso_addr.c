@@ -39,7 +39,8 @@ __RCSID("$NetBSD: iso_addr.c,v 1.12 2005/11/29 03:11:59 christos Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include "iso.h"
+
+#include <netiso/iso.h>
 
 #include <assert.h>
 #include <string.h>

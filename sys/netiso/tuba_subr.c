@@ -438,16 +438,17 @@ tuba4_tcp_output(struct mbuf *m, struct tcpcb *tp)
 	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
 
-void
+int
 tuba4_tcp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip *ip, struct tcphdr *th, int toff, int tlen, u_long lindex, u_long findex)
 {
 	ip = mtod(m, struct ip *);
 	IP6_EXTHDR_GET(th, struct tcphdr *, m, toff, sizeof(struct tcphdr));
 	if (th == NULL) {
 		tcpstat.tcps_rcvshort++;
-		return;
+		return (-1);
 	}
 	tuba_ip4_cksum(m, src, dst, ip, th, tlen, lindex, findex);
+	return (0);
 }
 
 #ifdef notyet
@@ -636,16 +637,46 @@ tuba6_tcp_output(struct mbuf *m, struct tcpcb *tp)
 	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
 
-void
+int
 tuba6_tcp_input(struct mbuf *m, struct sockaddr_iso *src, struct sockaddr_iso *dst, struct ip6_hdr *ip6, struct tcphdr *th, int toff, int tlen, u_long lindex, u_long findex)
 {
 	ip6 = mtod(m, struct ip6_hdr *);
 	IP6_EXTHDR_GET(th, struct tcphdr *, m, toff, sizeof(struct tcphdr));
 	if (th == NULL) {
 		tcpstat.tcps_rcvshort++;
-		return;
+		return (-1);
+	}
+
+	/* Be proactive about malicious use of IPv4 mapped address */
+	if (IN6_IS_ADDR_V4MAPPED(&ip6->ip6_src) ||
+	    IN6_IS_ADDR_V4MAPPED(&ip6->ip6_dst)) {
+		/* XXX stat */
+		return (1);
+	}
+
+	/*
+	 * Be proactive about unspecified IPv6 address in source.
+	 * As we use all-zero to indicate unbounded/unconnected pcb,
+	 * unspecified IPv6 address can be used to confuse us.
+	 *
+	 * Note that packets with unspecified IPv6 destination is
+	 * already dropped in ip6_input.
+	 */
+	if (IN6_IS_ADDR_UNSPECIFIED(&ip6->ip6_src)) {
+		/* XXX stat */
+		return (1);
+	}
+
+	/*
+	 * Make sure destination address is not multicast.
+	 * Source address checked in ip6_input().
+	 */
+	if (IN6_IS_ADDR_MULTICAST(&ip6->ip6_dst)) {
+		/* XXX stat */
+		return (1);
 	}
 	tuba_ip6_cksum(m, src, dst, ip6, th, tlen, lindex, findex);
+	return (0);
 }
 
 #ifdef notyet

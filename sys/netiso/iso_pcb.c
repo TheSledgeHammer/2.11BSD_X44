@@ -63,7 +63,7 @@ SOFTWARE.
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: iso_pcb.c,v 1.25 2003/10/30 01:43:10 simonb Exp $");
 
-#include "opt_ccitt.h"
+//#include "opt_ccitt.h"
 #include "opt_iso.h"
 
 #ifdef ISO
@@ -91,12 +91,12 @@ __KERNEL_RCSID(0, "$NetBSD: iso_pcb.c,v 1.25 2003/10/30 01:43:10 simonb Exp $");
 #include <netiso/iso_var.h>
 
 #ifdef TPCONS
-#ifdef CCITT
+//#ifdef CCITT
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
 #include <netccitt/pk_extern.h>
-#endif
+//#endif
 #endif
 
 struct iso_addr zeroiso_addr;
@@ -185,13 +185,13 @@ iso_pcbprealloc1(struct socket *so, struct isopcbtable *table, struct sockaddr_i
 		if (siso_addrs == NULL) {
 			return (ENOBUFS);
 		}
-	    isop->isop_faddr = &isop->isop_sfaddr;
-	    isop->isop_laddr = &isop->isop_sladdr;
-	    isop->isop_sladdr = *siso_addrs;
-	    isop->isop_sfaddr = *siso_addrs;
+		isop->isop_faddr = &isop->isop_sfaddr;
+		isop->isop_laddr = &isop->isop_sladdr;
+		isop->isop_sladdr = *siso_addrs;
+		isop->isop_sfaddr = *siso_addrs;
 	}
-    CIRCLEQ_INSERT_HEAD(&table->isopt_queue, isop, isop_queue);
-    iso_pcbinsert(table, isop);
+	CIRCLEQ_INSERT_HEAD(&table->isopt_queue, isop, isop_queue);
+	iso_pcbinsert(table, isop);
 	return (0);
 }
 
@@ -561,7 +561,7 @@ iso_pcbdetach(void *v)
 #endif
 #ifdef TPCONS
 	if (isop->isop_chan) {
-#ifdef CCITT
+//#ifdef CCITT
 		struct pklcd *lcp = (struct pklcd*) isop->isop_chan;
 		if (--isop->isop_refcnt > 0)
 			return;
@@ -570,7 +570,7 @@ iso_pcbdetach(void *v)
 			lcp->lcd_upnext = 0;
 			pk_disconnect(lcp);
 		}
-#endif
+//#endif
 		isop->isop_chan = 0;
 	}
 #endif
