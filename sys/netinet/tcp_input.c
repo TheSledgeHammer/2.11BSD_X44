@@ -147,6 +147,8 @@
  *	connections.
  */
 
+#ifndef TUBA_INCLUDE
+
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: tcp_input.c,v 1.190.2.6.2.2 2005/04/22 06:58:50 tron Exp $");
 
@@ -185,7 +187,7 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_input.c,v 1.190.2.6.2.2 2005/04/22 06:58:50 tron
 #include <netinet/ip6.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/in6_pcb.h>
-#include <netinet6/ip6_var.h>
+//#include <netinet6/ip6_var.h>
 #include <netinet6/in6_var.h>
 #include <netinet/icmp6.h>
 #include <netinet6/nd6.h>
@@ -225,6 +227,8 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_input.c,v 1.190.2.6.2.2 2005/04/22 06:58:50 tron
 #include <netipsec/ipsec6.h>
 #endif
 #endif	/* FAST_IPSEC*/
+
+#endif /* TUBA_INCLUDE */
 
 int	tcprexmtthresh = 3;
 int	tcp_log_refused;
@@ -332,6 +336,8 @@ extern struct evcnt tcp_reass_fragdup;
 #define	TCP_REASS_COUNTER_INCR(ev)	/* nothing */
 
 #endif /* TCP_REASS_COUNTERS */
+
+#ifndef TUBA_INCLUDE
 
 #ifdef INET
 static void tcp4_log_refused(const struct ip *, const struct tcphdr *);
@@ -984,6 +990,8 @@ tcp_input(struct mbuf *m, ...)
 		m_freem(m);
 		return;
 	}
+
+#endif /* TUBA_INCLUDE */
 
 	KASSERT(TCP_HDR_ALIGNED_P(th));
 
@@ -2634,6 +2642,8 @@ drop:
 		m_freem(tcp_saveti);
 	m_freem(m);
 	return;
+
+#ifndef TUBA_INCLUDE
 }
 
 void
@@ -3969,3 +3979,5 @@ syn_cache_respond(sc, m)
 	}
 	return (error);
 }
+
+#endif /* TUBA_INCLUDE */
