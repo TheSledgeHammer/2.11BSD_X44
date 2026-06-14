@@ -130,6 +130,7 @@ static void morecore(size_t);
 static void *imalloc(size_t);
 
 #define	MAGIC		0xef		/* magic # on accounting info */
+#define	AMAGIC		0xdf		/* magic # for aligned alloc */
 #define RMAGIC		0x5555		/* magic # on range info */
 
 #ifdef RCHECK
@@ -143,6 +144,8 @@ static void *imalloc(size_t);
  * smallest allocatable block is 8 bytes.  The overhead information
  * precedes the data area returned to the user.
  */
+#define	FIRST_BUCKET_SHIFT	3
+#define	FIRST_BUCKET_SIZE	(1U << FIRST_BUCKET_SHIFT)
 #define	NBUCKETS 30
 static	union overhead *nextf[NBUCKETS];
 
@@ -252,6 +255,27 @@ imalloc(size_t nbytes)
   	*(u_short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
   	return ((char *)(op + 1));
+}
+
+void *
+xmalloc_aligned(size_t size, size_t align, size_t offset)
+{
+	void *mem;
+	union overhead *ov;
+	uintptr_t x;
+
+	if (align < FIRST_BUCKET_SIZE)
+		align = FIRST_BUCKET_SIZE;
+	offset &= align - 1;
+	mem = imalloc(size + align + offset + sizeof(union overhead));
+	if (mem == NULL)
+		return (NULL);
+	x = roundup2((uintptr_t)mem + sizeof(union overhead), align);
+	x += offset;
+	ov = (union overhead *)(x - sizeof(union overhead));
+	ov->ov_magic = AMAGIC;
+	ov->ov_index = x - (uintptr_t)mem + sizeof(union overhead);
+	return ((void *)x);
 }
 
 /*

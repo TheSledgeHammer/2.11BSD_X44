@@ -46,15 +46,12 @@ __RCSID("$NetBSD: tls.c,v 1.29 2026/03/15 13:56:17 skrll Exp $");
 #include <sys/ucontext.h>
 #include <sys/tls.h>
 
-//#include <lwp.h>
-#include <stdalign.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <string.h>
 #include "debug.h"
 
 #include "rtld.h"
-
-//#include <machine/lwp_private.h>
 
 #if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
 
@@ -190,9 +187,9 @@ _rtld_tls_get_addr(void *tls, size_t idx, size_t offset)
 {
 	struct tls_tcb *tcb = tls;
 	void **dtv, **new_dtv;
-	sigset_t mask;
+//	sigset_t mask;
 
-	_rtld_exclusive_enter(&mask);
+//	_rtld_exclusive_enter(&mask);
 
 	dtv = tcb->tcb_dtv;
 
@@ -224,7 +221,7 @@ _rtld_tls_get_addr(void *tls, size_t idx, size_t offset)
 	if (__predict_false(dtv[idx] == NULL))
 		dtv[idx] = _rtld_tls_module_allocate(tcb, idx);
 
-	_rtld_exclusive_exit(&mask);
+//	_rtld_exclusive_exit(&mask);
 
 	return (uint8_t *)dtv[idx] + offset;
 }
@@ -250,8 +247,7 @@ _rtld_tls_initial_allocation(void)
 	    RTLD_STATIC_TLS_RESERVATION;
 
 #ifndef __HAVE_TLS_VARIANT_I
-	_rtld_tls_static_space = roundup2(_rtld_tls_static_space,
-	    alignof(max_align_t));
+	_rtld_tls_static_space = roundup2(_rtld_tls_static_space, _rtld_tls_static_offset + RTLD_STATIC_TLS_RESERVATION);
 
 	if (_rtld_tls_static_max_align > sizeof(struct tls_tcb))
 		_rtld_tls_static_space += _rtld_tls_static_max_align - sizeof(struct tls_tcb);
@@ -297,7 +293,7 @@ _rtld_tls_allocate_locked(void)
 	tcb = (struct tls_tcb *)p;
 	tcb->tcb_self = tcb;
 #endif
-	dbg(("lwp %d tls tcb %p", _lwp_self(), tcb));
+//	dbg(("lwp %d tls tcb %p", _lwp_self(), tcb));
 	/*
 	 * "2 +" because the first element is the generation and the second
 	 * one is the maximum index.
@@ -345,11 +341,11 @@ struct tls_tcb *
 _rtld_tls_allocate(void)
 {
 	struct tls_tcb *tcb;
-	sigset_t mask;
+//	sigset_t mask;
 
-	_rtld_exclusive_enter(&mask);
+//	_rtld_exclusive_enter(&mask);
 	tcb = _rtld_tls_allocate_locked();
-	_rtld_exclusive_exit(&mask);
+//	_rtld_exclusive_exit(&mask);
 
 	return tcb;
 }
@@ -367,9 +363,9 @@ _rtld_tls_free(struct tls_tcb *tcb)
 {
 	size_t i, max_index;
 	uint8_t *p, *p_end;
-	sigset_t mask;
+//	sigset_t mask;
 
-	_rtld_exclusive_enter(&mask);
+//	_rtld_exclusive_enter(&mask);
 
 #ifdef __HAVE_TLS_VARIANT_I
 	p = (uint8_t *)tcb;
@@ -387,7 +383,7 @@ _rtld_tls_free(struct tls_tcb *tcb)
 	xfree(tcb->tcb_dtv - 1);	/* retreat back to DTV_MAX_INDEX */
 	xfree(p);
 
-	_rtld_exclusive_exit(&mask);
+//	_rtld_exclusive_exit(&mask);
 }
 
 /*
