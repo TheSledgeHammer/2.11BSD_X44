@@ -330,9 +330,3 @@ tls()
 	u.u_error = error;
 	return (error);
 }
-
-void *
-gettlsaddr(void)
-{
-    return (cpu_get_tls_addr());
-}
