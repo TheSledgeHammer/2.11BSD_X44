@@ -45,7 +45,10 @@ void	_libc_init(void) __attribute__((__constructor__, __used__));
 
 void	__guard_setup(void);
 void	__atexit_init(void);
-//void 	__static_tls_setup(void);
+
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
+__dso_hidden void 	__static_tls_setup(void);
+#endif
 
 static int libc_initialised;
 
@@ -67,8 +70,10 @@ _libc_init(void)
 	/* For -fstack-protector */
 	__guard_setup();
 
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
 	/* Initialize TLS for statically linked programs. */
-	//__static_tls_setup();
+	__static_tls_setup();
+#endif
 
 	/* Initialize the atexit mutexes */
 	__atexit_init();
