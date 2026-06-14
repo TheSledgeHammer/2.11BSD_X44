@@ -214,3 +214,26 @@ _rtld_relocate_plt_objects(const Obj_Entry *obj)
 	}
 	return err;
 }
+
+/*
+ * i386 specific GNU variant of __tls_get_addr using register based
+ * argument passing.
+ */
+#define	DTV_MAX_INDEX(dtv)	((size_t)((dtv)[-1]))
+
+__dso_public __attribute__((__regparm__(1)));
+void *
+___tls_get_addr(void *arg_)
+{
+	size_t *arg = (size_t *)arg_;
+	void **dtv;
+	struct tls_tcb *tcb = __lwp_getprivate_fast();
+	size_t idx = arg[0], offset = arg[1];
+
+	dtv = tcb->tcb_dtv;
+
+	if (__predict_true(idx < DTV_MAX_INDEX(dtv) && dtv[idx] != NULL))
+		return (uint8_t *)dtv[idx] + offset;
+
+	return _rtld_tls_get_addr(tcb, idx, offset);
+}

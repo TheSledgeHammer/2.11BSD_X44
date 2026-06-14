@@ -34,6 +34,7 @@
 __KERNEL_RCSID(0, "$NetBSD: if_gif.c,v 1.44.4.1 2005/05/24 19:34:14 riz Exp $");
 
 #include "opt_inet.h"
+#include "opt_iso.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -73,6 +74,11 @@ __KERNEL_RCSID(0, "$NetBSD: if_gif.c,v 1.44.4.1 2005/05/24 19:34:14 riz Exp $");
 #include <netinet6/in6_gif.h>
 #include <netinet6/ip6protosw.h>
 #endif /* INET6 */
+
+#ifdef ISO
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
+#endif
 
 #include <netinet/ip_encap.h>
 #include <net/if_gif.h>
@@ -939,3 +945,67 @@ gif_delete_tunnel(ifp)
 		ifp->if_flags &= ~IFF_RUNNING;
 	splx(s);
 }
+
+#ifdef ISO
+struct eonhdr {
+	u_int8_t version;
+	u_int8_t class;
+	u_int16_t cksum;
+};
+
+/*
+ * prepend EON header to ISO PDU
+ */
+static struct mbuf *
+gif_eon_encap(struct mbuf *m)
+{
+	struct eonhdr *ehdr;
+
+	M_PREPEND(m, sizeof(*ehdr), M_DONTWAIT);
+	if (m && m->m_len < sizeof(*ehdr))
+		m = m_pullup(m, sizeof(*ehdr));
+	if (m == NULL)
+		return NULL;
+	ehdr = mtod(m, struct eonhdr *);
+	ehdr->version = 1;
+	ehdr->class = 0;		/* always unicast */
+#if 0
+	/* calculate the checksum of the eonhdr */
+	{
+		struct mbuf mhead;
+		memset(&mhead, 0, sizeof(mhead));
+		ehdr->cksum = 0;
+		mhead.m_data = (caddr_t)ehdr;
+		mhead.m_len = sizeof(*ehdr);
+		mhead.m_next = 0;
+		iso_gen_csum(&mhead, offsetof(struct eonhdr, cksum),
+		    mhead.m_len);
+	}
+#else
+	/* since the data is always constant we'll just plug the value in */
+	ehdr->cksum = htons(0xfc02);
+#endif
+	return m;
+}
+
+/*
+ * remove EON header and check checksum
+ */
+static struct mbuf *
+gif_eon_decap(struct ifnet *ifp, struct mbuf *m)
+{
+	struct eonhdr *ehdr;
+
+	if (m->m_len < sizeof(*ehdr) &&
+	    (m = m_pullup(m, sizeof(*ehdr))) == NULL) {
+		ifp->if_ierrors++;
+		return NULL;
+	}
+	if (iso_check_csum(m, sizeof(struct eonhdr))) {
+		m_freem(m);
+		return NULL;
+	}
+	m_adj(m, sizeof(*ehdr));
+	return m;
+}
+#endif /*ISO*/

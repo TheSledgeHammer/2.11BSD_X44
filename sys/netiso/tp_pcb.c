@@ -617,7 +617,11 @@ tp_attach(struct socket *so, int protocol)
 		 	 	 	 	 	 	 	 	 * will generate correct fake-ack values
 		 	 	 	 	 	 	 	 	 */
 	} else {
-		tpcb->tp_netservice = (dom == AF_INET) ? IN_CLNS : ISO_CLNS;
+		switch (dom) {
+		default:
+
+		}
+		tpcb->tp_netservice = (dom == (AF_INET || AF_INET6)) ? IN_CLNS : ISO_CLNS;
 		/* the default */
 	}
 	tpcb->_tp_param = tp_conn_param[tpcb->tp_netservice];
@@ -649,8 +653,15 @@ tp_attach(struct socket *so, int protocol)
 	KASSERT(tpcb->tp_tpproto->tp_afamily == tpcb->tp_domain);
 
 	/* nothing to do for iso case */
-	if (dom == AF_INET) {
+	switch (dom) {
+	case AF_INET:
 		sotoinpcb(so)->inp_ppcb = (caddr_t)tpcb;
+		break;
+#ifdef INET6
+	case AF_INET6:
+		sotoin6pcb(so)->in6p_ppcb = (caddr_t)tpcb;
+		break;
+#endif
 	}
 
 	return (0);

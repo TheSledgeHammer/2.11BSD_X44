@@ -223,6 +223,25 @@ struct protosw isosw[] = {
 				.pr_drain		= tp_drain,
 				.pr_sysctl		= 0,
 		},
+#ifdef TUBA
+		/* ISOPROTO_TUBA */
+		{
+				.pr_type		= SOCK_STREAM,
+				.pr_domain		= &isodomain,
+				.pr_protocol 	= ISOPROTO_TCP,
+				.pr_flags		= PR_CONNREQUIRED|PR_WANTRCVD,
+				.pr_input 		= tuba_tcp_input,
+				.pr_output		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput	= tuba_ctloutput,
+				.pr_usrreq		= tuba_usrreq,
+				.pr_init		= tuba_init,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= tuba_slowtimo,
+				.pr_drain		= 0,
+				.pr_sysctl		= 0,
+		}
+#endif
 #ifdef TPCONS
 		/* ISOPROTO_TP */
 		{
@@ -241,25 +260,6 @@ struct protosw isosw[] = {
 				.pr_drain		= 0,
 				.pr_sysctl		= 0,
 		},
-#endif
-#ifdef TUBA
-		/* ISOPROTO_TUBA */
-		{
-				.pr_type		= SOCK_STREAM,
-				.pr_domain		= &isodomain,
-				.pr_protocol 	= ISOPROTO_TCP,
-				.pr_flags		= PR_CONNREQUIRED|PR_WANTRCVD,
-				.pr_input 		= tuba_tcp_input,
-				.pr_output		= 0,
-				.pr_ctlinput 	= 0,
-				.pr_ctloutput	= tuba_ctloutput,
-				.pr_usrreq		= tuba_usrreq,
-				.pr_init		= tuba_init,
-				.pr_fasttimo	= tuba_fasttimo,
-				.pr_slowtimo	= tuba_fasttimo,
-				.pr_drain		= 0,
-				.pr_sysctl		= 0,
-		}
 #endif
 };
 

@@ -171,7 +171,7 @@ _rtld_call_fini_functions(int force)
 		(*obj->fini)();
 	}
 
-        _rtld_objlist_clear(&finilist);
+	_rtld_objlist_clear(&finilist);
 }
 
 static void
@@ -209,7 +209,7 @@ _rtld_call_init_functions()
 		(*obj->init)();
 	}
 
-        _rtld_objlist_clear(&initlist);
+	_rtld_objlist_clear(&initlist);
 }
 
 /*
@@ -313,6 +313,7 @@ _rtld(Elf_Addr *sp, Elf_Addr relocbase)
 	char          **env;
 	const AuxInfo  *aux;
 	const AuxInfo  *auxp;
+	Obj_Entry      *obj;
 	Elf_Addr       *const osp = sp;
 	bool            bind_now = 0;
 	const char     *ld_bind_now;
@@ -526,6 +527,15 @@ _rtld(Elf_Addr *sp, Elf_Addr relocbase)
 	if (_rtld_load_needed_objects(_rtld_objmain, RTLD_MAIN) == -1)
 		_rtld_die();
 
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
+	dbg(("initializing initial Thread Local Storage offsets"));
+	/*
+	 * All initial objects get the TLS space from the static block.
+	 */
+	for (obj = _rtld_objlist; obj != NULL; obj = obj->next)
+		_rtld_tls_offset_allocate(obj);
+#endif
+
 	dbg(("relocating objects"));
 	if (_rtld_relocate_objects(_rtld_objmain, bind_now) == -1)
 		_rtld_die();
@@ -533,6 +543,16 @@ _rtld(Elf_Addr *sp, Elf_Addr relocbase)
 	dbg(("doing copy relocations"));
 	if (_rtld_do_copy_relocations(_rtld_objmain) == -1)
 		_rtld_die();
+
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
+	dbg(("initializing Thread Local Storage for main thread"));
+	/*
+	 * Set up TLS area for the main thread.
+	 * This has to be done after all relocations are processed,
+	 * since .tdata may contain relocations.
+	 */
+	_rtld_tls_initial_allocation();
+#endif
 
 	/*
 	 * Set the __progname,  environ and, __mainprog_obj before
@@ -1056,12 +1076,12 @@ dl_iterate_phdr(int (*callback)(struct dl_phdr_info *, size_t, void *), void *pa
 		    STAILQ_FIRST(&obj->names)->name : obj->path;
 		phdr_info.dlpi_phdr = obj->phdr;
 		phdr_info.dlpi_phnum = obj->phsize / sizeof(obj->phdr[0]);
-#if 1
-		phdr_info.dlpi_tls_modid = 0;
-		phdr_info.dlpi_tls_data = 0;
-#else
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
 		phdr_info.dlpi_tls_modid = obj->tlsindex;
 		phdr_info.dlpi_tls_data = obj->tlsinit;
+#else
+		phdr_info.dlpi_tls_modid = 0;
+		phdr_info.dlpi_tls_data = 0;
 #endif
 		phdr_info.dlpi_adds = _rtld_objloads;
 		phdr_info.dlpi_subs = _rtld_objloads - _rtld_objcount;

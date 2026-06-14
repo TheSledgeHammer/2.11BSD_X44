@@ -117,6 +117,10 @@ extern struct in6_ifreq		ifr6;
 extern struct in6_ifreq		in6_ridreq;
 extern struct in6_aliasreq	in6_addreq;
 #endif
+#ifdef ISO
+extern struct iso_ifreq	iso_ridreq;
+extern struct iso_aliasreq iso_addreq;
+#endif
 
 extern char 				name[30];
 extern int 					s;
@@ -147,6 +151,11 @@ void in6_init(void);
 void in6_status(int);
 void in6_fillscopeid(struct sockaddr_in6 *);
 #endif
+
+/* af_iso */
+void iso_init(void);
+void iso_status(int);
+void adjust_nsellength(int);
 
 /* af_ns */
 void xns_init(void);

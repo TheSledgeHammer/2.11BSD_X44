@@ -448,9 +448,8 @@ main(int argc, char *argv[])
 	}
 
 #ifndef INET_ONLY
-
+	adjust_nsellength(AF_ISO);
 	xns_nsip(setipdst, AF_NS);
-
 #endif	/* INET_ONLY */
 
 	if (clearaddr) {
@@ -499,6 +498,7 @@ cmds_init(void)
 	carp_init();
 #endif
 	tunnel_init();
+	iso_init();
 	xns_init();
 	vlan_init();
 }

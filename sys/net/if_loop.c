@@ -68,6 +68,7 @@
 __KERNEL_RCSID(0, "$NetBSD: if_loop.c,v 1.49 2003/11/13 01:48:13 jonathan Exp $");
 
 #include "opt_inet.h"
+#include "opt_iso.h"
 #include "opt_ns.h"
 
 #include "bpfilter.h"
@@ -102,6 +103,11 @@ __KERNEL_RCSID(0, "$NetBSD: if_loop.c,v 1.49 2003/11/13 01:48:13 jonathan Exp $"
 #endif
 #include <netinet6/in6_var.h>
 #include <netinet/ip6.h>
+#endif
+
+#ifdef ISO
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
 #endif
 
 #ifdef NS
@@ -264,6 +270,12 @@ looutput(ifp, m, dst, rt)
 		isr = NETISR_IPV6;
 		break;
 #endif
+#ifdef ISO
+	case AF_ISO:
+		ifq = &clnlintrq;
+		isr = NETISR_ISO;
+		break;
+#endif
 #ifdef NS
 	case AF_NS:
 		ifq = &nsintrq;
@@ -320,6 +332,12 @@ lostart(struct ifnet *ifp)
 			m->m_flags |= M_LOOP;
 			ifq = &ip6intrq;
 			isr = NETISR_IPV6;
+			break;
+#endif
+#ifdef ISO
+		case AF_ISO:
+			ifq = &clnlintrq;
+			isr = NETISR_ISO;
 			break;
 #endif
 #ifdef NS

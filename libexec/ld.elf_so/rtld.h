@@ -203,7 +203,12 @@ typedef struct Struct_Obj_Entry {
 					 * priority over others */
 			phdr_loaded:1;	/* Phdr is loaded and doesn't need to
 					 * be freed. */
-
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
+	u_int32_t tls_static:1,	/* True if static TLS offset
+					 * has been allocated */
+			tls_dynamic:1;	/* True if any non-static DTV entry
+					 * has been allocated */
+#endif
 	struct link_map linkmap;	/* for GDB */
 
 	/* These items are computed by map_object() or by digest_phdr(). */
@@ -217,6 +222,16 @@ typedef struct Struct_Obj_Entry {
 	size_t		pathlen;	/* Pathname length */
 	STAILQ_HEAD(, Struct_Name_Entry) names;	/* List of names for this object we
 						   know about. */
+
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
+	/* Thread Local Storage support for this module */
+	size_t		tlsindex;	/* Index in DTV */
+	void		*tlsinit;	/* Base address of TLS init block */
+	size_t		tlsinitsize;	/* Size of TLS init block */
+	size_t		tlssize;	/* Size of TLS block */
+	size_t		tlsoffset;	/* Offset in the static TLS block */
+	size_t		tlsalign;	/* Needed alignment for static TLS */
+#endif
 } Obj_Entry;
 
 typedef struct Struct_DoneList {
@@ -242,6 +257,9 @@ extern bool _rtld_trust;
 extern Objlist _rtld_list_global;
 extern Objlist _rtld_list_main;
 extern Elf_Sym _rtld_sym_zero;
+
+/* Preallocation for static TLS model */
+#define	RTLD_STATIC_TLS_RESERVATION	64
 
 /* rtld.c */
 
@@ -315,6 +333,23 @@ const Elf_Sym *_rtld_symlook_needed(const char *, unsigned long,
     DoneList *, DoneList *);
 #ifdef COMBRELOC
 void _rtld_combreloc_reset(const Obj_Entry *);
+#endif
+
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
+/* tls.c */
+void *_rtld_tls_get_addr(void *, size_t, size_t);
+void _rtld_tls_initial_allocation(void);
+int _rtld_tls_offset_allocate(Obj_Entry *);
+void _rtld_tls_offset_free(Obj_Entry *);
+
+extern size_t _rtld_tls_dtv_generation;
+extern size_t _rtld_tls_max_index;
+
+__dso_public extern void *__tls_get_addr(void *);
+#ifdef __i386__
+__dso_public extern void *___tls_get_addr(void *)
+    __attribute__((__regparm__(1)));
+#endif
 #endif
 
 /* map_object.c */

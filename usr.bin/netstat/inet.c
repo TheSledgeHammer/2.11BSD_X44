@@ -113,10 +113,9 @@ protopr(off, name)
 	if (off == 0)
 		return;
 	istcp = strcmp(name, "tcp") == 0;
-	kread(off, (char *)&table, sizeof table);
-	prev = head =
-	    (struct inpcb *)&((struct inpcbtable *)off)->inpt_queue.cqh_first;
-	next = (struct inpcb *)table.inpt_queue.cqh_first;
+	kread(off, (char *)&table, sizeof(table));
+	prev = head = (struct inpcb *)CIRCLEQ_FIRST(&((struct inpcbtable *)off)->inpt_queue);
+	next = (struct inpcb *)CIRCLEQ_FIRST(&table.inpt_queue);
 
 	compact = 0;
 	if (Aflag) {
@@ -129,13 +128,13 @@ protopr(off, name)
 	} else
 		width = 22;
 	while (next != head) {
-		kread((u_long)next, (char *)&inpcb, sizeof inpcb);
-		if ((struct inpcb *)inpcb.inp_queue.cqe_prev != prev) {
+		kread((u_long)next, (char *)&inpcb, sizeof(inpcb));
+		if ((struct inpcb *)CIRCLEQ_PREV(inpcb, inp_queue) != prev) {
 			printf("???\n");
 			break;
 		}
 		prev = next;
-		next = (struct inpcb *)inpcb.inp_queue.cqe_next;
+		next = (struct inpcb *)CIRCLEQ_NEXT(inpcb, inp_queue);
 
 		if (inpcb.inp_af != AF_INET)
 			continue;

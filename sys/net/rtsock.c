@@ -64,6 +64,8 @@
 __KERNEL_RCSID(0, "$NetBSD: rtsock.c,v 1.67.2.1.2.1 2005/05/18 18:28:39 riz Exp $");
 
 #include "opt_inet.h"
+#include "opt_iso.h"
+#include "opt_ns.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -129,10 +131,16 @@ rt_adjustcount(af, cnt)
 		route_cb.ip6_count += cnt;
 		return;
 #endif
+#ifdef ISO
+	case AF_ISO:
+		route_cb.iso_count += cnt;
+		return;
+#endif
+#ifdef NS
 	case AF_NS:
 		route_cb.ns_count += cnt;
 		return;
-		return;
+#endif
 	}
 }
 

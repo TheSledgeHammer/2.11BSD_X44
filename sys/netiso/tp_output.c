@@ -156,7 +156,7 @@ tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 		break;
 	case IN_CLNS:
 		/* param->p_netservice in INET DOMAIN */
-		if (tpcb->tp_domain != AF_INET) {
+		if (tpcb->tp_domain != (AF_INET || AF_INET6)) {
 			error = EINVAL;
 			goto done;
 		}
@@ -498,6 +498,7 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 
 	case TPOPT_INTERCEPT:
 #define INA(t)  (((struct inpcb *)(t->tp_npcb))->inp_laddr.s_addr)
+#define IN6A(t)  (((struct in6pcb *)(t->tp_npcb))->in6p_laddr.s6_addr32[3])
 #define ISOA(t) (((struct isopcb *)(t->tp_npcb))->isop_laddr->siso_addr)
 
 		if (p == 0 || (error = suser(p->p_ucred, &p->p_acflag))) {
@@ -518,6 +519,12 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 #ifdef	INET
 					case AF_INET:
 						if (INA(t) == INA(tpcb))
+							goto done;
+						continue;
+#endif
+#ifdef	INET6
+					case AF_INET6:
+						if (IN6A(t) == IN6A(tpcb))
 							goto done;
 						continue;
 #endif

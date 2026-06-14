@@ -69,6 +69,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_tokensubr.c,v 1.25 2004/03/22 18:02:12 matt Exp $
 
 #include "opt_inet.h"
 #include "opt_ccitt.h"
+#include "opt_iso.h"
 #include "opt_ns.h"
 #include "opt_gateway.h"
 
@@ -110,6 +111,13 @@ __KERNEL_RCSID(0, "$NetBSD: if_tokensubr.c,v 1.25 2004/03/22 18:02:12 matt Exp $
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
+#endif
+
+#ifdef ISO
+#include <netiso/argo_debug.h>
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
+#include <netiso/iso_snpac.h>
 #endif
 
 #include "bpfilter.h"
@@ -309,7 +317,48 @@ token_output(ifp, m0, dst, rt0)
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		break;
 #endif
+#ifdef ISO
 	case AF_ISO:
+	{
+		int	snpalen;
+		struct	llc *l;
+		struct sockaddr_dl *sdl = (struct sockaddr_dl *)rt->rt_gateway;
+
+		if (rt && sdl && sdl->sdl_family == AF_LINK && sdl->sdl_alen > 0) {
+			bcopy(LLADDR(sdl), (caddr_t)edst, sizeof(edst));
+		} else if ((error = iso_snparesolve(ifp, (struct sockaddr_iso *)dst, (char *)edst, &snpalen))) {
+			goto bad; /* Not resolved */
+		}
+		/* If broadcasting on a simplex interface, loopback a copy. */
+		if (*edst & 1)
+			m->m_flags |= (M_BCAST|M_MCAST);
+		if ((m->m_flags & M_BCAST) && (ifp->if_flags & IFF_SIMPLEX) && (mcopy =
+				m_copy(m, 0, (int) M_COPYALL))) {
+			M_PREPEND(mcopy, sizeof(*trh), M_DONTWAIT);
+			if (mcopy) {
+				trh = mtod(mcopy, struct token_header*);
+				bcopy((caddr_t) edst, (caddr_t) trh->token_dhost, sizeof(edst));
+				bcopy(LLADDR(ifp->if_sadl), (caddr_t) trh->token_shost, sizeof(edst));
+			}
+		}
+		M_PREPEND(m, 3, M_DONTWAIT);
+		if (m == NULL) {
+			return (0);
+		}
+		etype = 0;
+		l = mtod(m, struct llc*);
+		l->llc_dsap = l->llc_ssap = LLC_ISO_LSAP;
+		l->llc_control = LLC_UI;
+		IFDEBUG(D_ETHER)
+			int i;
+			printf("token_output: sending pkt to: ");
+			for (i=0; i < ISO88025_ADDR_LEN; i++)
+				printf("%x ", edst[i] & 0xff);
+			printf("\n");
+		ENDDEBUG
+		break;
+	}
+#endif /* ISO */
 #ifdef	LLC
 	case AF_CCITT:
 	{
@@ -528,7 +577,71 @@ token_input(ifp, m)
 		break;
 	}
 #endif /* INET || NS */
+#ifdef	ISO
 	case LLC_ISO_LSAP:
+		switch (l->llc_control) {
+		case LLC_UI:
+			/* LLC_UI_P forbidden in class 1 service */
+			if ((l->llc_dsap == LLC_ISO_LSAP) &&
+			    (l->llc_ssap == LLC_ISO_LSAP)) {
+				/* LSAP for ISO */
+				m->m_data += 3;		/* XXX */
+				m->m_len -= 3;		/* XXX */
+				m->m_pkthdr.len -= 3;	/* XXX */
+				M_PREPEND(m, sizeof *trh, M_DONTWAIT);
+				if (m == 0) {
+					return;
+				}
+				*mtod(m, struct token_header *) = *trh;
+				IFDEBUG(D_ETHER)
+					printf("clnp packet");
+				ENDDEBUG
+				schednetisr(NETISR_ISO);
+				inq = &clnlintrq;
+				break;
+			}
+			goto dropanyway;
+
+		case LLC_XID:
+		case LLC_XID_P:
+			if (m->m_len < ISO88025_ADDR_LEN) {
+				goto dropanyway;
+			}
+			l->llc_window = 0;
+			l->llc_fid = 9;
+			l->llc_class = 1;
+			l->llc_dsap = l->llc_ssap = 0;
+			/* Fall through to */
+		case LLC_TEST:
+		case LLC_TEST_P: {
+			struct sockaddr sa;
+			struct ether_header *eh;
+			int i;
+			u_char c = l->llc_dsap;
+
+			l->llc_dsap = l->llc_ssap;
+			l->llc_ssap = c;
+			if (m->m_flags & (M_BCAST | M_MCAST)) {
+				bcopy(LLADDR(ifp->if_sadl), (caddr_t)trh->token_dhost, ISO88025_ADDR_LEN);
+			}
+			sa.sa_family = AF_UNSPEC;
+			sa.sa_len = sizeof(sa);
+			eh = (struct ether_header *)sa.sa_data;
+			for (i = 0; i < ISO88025_ADDR_LEN; i++) {
+				eh->ether_shost[i] = c = trh->token_dhost[i];
+				eh->ether_dhost[i] = eh->ether_dhost[i] = trh->token_shost[i];
+				eh->ether_shost[i] = c;
+			}
+			eh->ether_type = 0;
+			ifp->if_output(ifp, m, &sa, NULL);
+			return;
+		}
+		default:
+			m_freem(m);
+			return;
+		}
+		break;
+#endif /* ISO */
 #ifdef LLC
 	case LLC_X25_LSAP:
 	{

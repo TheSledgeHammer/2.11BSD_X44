@@ -36,6 +36,8 @@ __RCSID("$NetBSD: tls.c,v 1.6 2011/04/07 02:19:28 matt Exp $");
 #include <sys/mman.h>
 #include <sys/tls.h>
 
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
+
 #include <link_elf.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -66,20 +68,35 @@ _rtld_tls_allocate(void)
 	char *p;
 
 	if (initial_thread_tcb == NULL) {
+#ifdef __HAVE_TLS_VARIANT_I
+		tls_allocation = tls_size;
+#else
 		tls_allocation = tls_size + sizeof(*tcb);
+#endif
 
-		initial_thread_tcb = p = mmap(NULL, tls_allocation,
+		initial_thread_tcb = p = mmap(NULL, tls_allocation + sizeof(*tcb),
 				PROT_READ | PROT_WRITE, MAP_ANON, -1, 0);
+		if (p == MAP_FAILED) {
+			initial_thread_tcb = p = NULL;
+		}
 	} else {
-		p = calloc(1, tls_allocation);
+		p = calloc(1, tls_allocation + sizeof(*tcb));
 	}
 	if (p == NULL) {
 		static const char msg[] =  "TLS allocation failed, terminating\n";
 		write(STDERR_FILENO, msg, sizeof(msg));
 		_exit(127);
 	}
-	tcb = (struct tls_tcb *)(p + tls_size);
+#ifdef __HAVE_TLS_VARIANT_I
+	/* LINTED */
+	tcb = (struct tls_tcb *)p;
+	p += sizeof(struct tls_tcb);
+#else
+	/* LINTED tls_size is rounded above */
+	tcb = (struct tls_tcb *)(p + tls_allocation);
+	p = (char *)tcb - tls_size;
 	tcb->tcb_self = tcb;
+#endif
 	memcpy(p, tls_initaddr, tls_initsize);
 
 	return (tcb);
@@ -90,6 +107,13 @@ _rtld_tls_free(struct tls_tcb *tcb)
 {
 	char *p;
 
+#ifdef __HAVE_TLS_VARIANT_I
+	/* LINTED */
+	p = (uint8_t *)tcb;
+#else
+	/* LINTED */
+	p = (char *)tcb - tls_allocation;
+#endif
 	p = (char *)tcb - tls_size;
 	if (p == initial_thread_tcb) {
 		munmap(p, tls_allocation);
@@ -112,7 +136,11 @@ __static_tls_setup_cb(struct dl_phdr_info *data, size_t len, void *cookie)
 		}
 		tls_initaddr = (void *)(phdr->p_vaddr + data->dlpi_addr);
 		tls_initsize = phdr->p_filesz;
+#ifdef __HAVE_TLS_VARIANT_I
 		tls_size = phdr->p_memsz;
+#else
+		tls_size = roundup2(phdr->p_memsz, phdr->p_align);
+#endif
 	}
 	return (0);
 }
@@ -128,3 +156,5 @@ __static_tls_setup(void)
 
 	settls(tcb);
 }
+
+#endif /* __HAVE_TLS_VARIANT_I || __HAVE_TLS_VARIANT_II */

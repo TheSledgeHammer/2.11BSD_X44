@@ -41,6 +41,9 @@
 /* Machine-dependent: global defines */
 //#define	__HAVE_GENERIC_SOFT_INTERRUPTS
 
+#define	__HAVE_TLS_VARIANT_II
+#define	__HAVE_COMMON___TLS_GET_ADDR
+
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 typedef struct _physadr {
 	int 	r[1];

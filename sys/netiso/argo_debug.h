@@ -88,7 +88,6 @@ extern unsigned char argo_debug[128];
 	if (argo_debug[ascii]) {
 #define ENDDEBUG ; }
 
-
 #else  /* ARGO_DEBUG */
 
 /***********************************************

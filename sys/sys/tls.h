@@ -32,10 +32,21 @@
 #include <sys/cdefs.h>
 #include <machine/types.h>
 
+#if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
+
+#if defined(__HAVE_TLS_VARIANT_I) && defined(__HAVE_TLS_VARIANT_II)
+#error Only one TLS variant can be supported at a time
+#endif
+
 struct tls_tcb {
+#ifdef __HAVE_TLS_VARIANT_I
+	void	**tcb_dtv;
+	void	*tcb_pthread;
+#else
 	void	*tcb_self;
 	void	**tcb_dtv;
 	void	*tcb_pthread;
+#endif
 };
 
 /*
@@ -51,19 +62,18 @@ enum tls_cmdops {
 int cpu_get_tls_tcb(struct proc *, void *);
 int cpu_set_tls_tcb(struct proc *, void *);
 void *cpu_get_tls_addr(void);
+
 #else
+
 __BEGIN_DECLS
-/* kernel tls syscall callback */
-int tls(int, void *);
-/* get tls */
-int gettls(void *);
-/* set tls */
-int settls(void *);
-/* get tls addr */
-void *gettlsaddr(void);
+int tls(int, void *); /* kernel tls syscall callback */
+int gettls(void *);	/* get tls */
+int settls(void *);	/* set tls */
+void *gettlsaddr(void); /* get tls addr */
 struct tls_tcb *_rtld_tls_allocate(void);
 void _rtld_tls_free(struct tls_tcb *);
 __END_DECLS
 #endif /* !_KERNEL */
+#endif /* __HAVE_TLS_VARIANT_I || __HAVE_TLS_VARIANT_II */
 
 #endif /* SYS_TLS_H_ */

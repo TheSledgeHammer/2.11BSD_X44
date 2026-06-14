@@ -7,7 +7,7 @@ PROG=	ifconfig
 MAN=	ifconfig.8
 
 INCS=	ifconfig.h	
-SRCS=	af_inet.c af_ns.c ifcarp.c ifconfig.c \
+SRCS=	af_inet.c af_iso.c af_ns.c ifcarp.c ifconfig.c \
 	ifieee80211.c ifmedia.c iftunnel.c ifvlan.c
 
 .if (${USE_INET6} != "no")
@@ -23,6 +23,7 @@ LDADD+=-lutil
 
 COPTS.af_inet.c+= ${GCC_NO_STRINGOP_TRUNCATION}
 COPTS.af_inet6.c+= ${GCC_NO_STRINGOP_TRUNCATION}
+COPTS.af_iso.c+= ${GCC_NO_STRINGOP_TRUNCATION}
 COPTS.af_ns.c+= ${GCC_NO_STRINGOP_TRUNCATION}
 COPTS.ifconfig.c+= ${GCC_NO_STRINGOP_TRUNCATION}
 COPTS.ifieee80211.c+= ${GCC_NO_STRINGOP_TRUNCATION}

@@ -987,8 +987,8 @@ struct pfr_tstats {
 	u_int64_t	 pfrts_match;
 	u_int64_t	 pfrts_nomatch;
 	long		 pfrts_tzero;
-	int		 pfrts_cnt;
-	int		 pfrts_refcnt[PFR_REFCNT_MAX];
+	int		 	 pfrts_cnt;
+	int		 	 pfrts_refcnt[PFR_REFCNT_MAX];
 };
 #define	pfrts_name	pfrts_t.pfrt_name
 #define pfrts_flags	pfrts_t.pfrt_flags
@@ -1100,11 +1100,11 @@ struct pf_pdesc {
 	union {
 		struct tcphdr		*tcp;
 		struct udphdr		*udp;
-		struct icmp		*icmp;
+		struct icmp			*icmp;
 #ifdef INET6
-		struct icmp6_hdr	*icmp6;
+		struct icmp6_hdr 	*icmp6;
 #endif /* INET6 */
-		void			*any;
+		void				*any;
 	} hdr;
 	struct pf_addr	 baddr;		/* address before translation */
 	struct pf_addr	 naddr;		/* address after translation */

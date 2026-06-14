@@ -65,6 +65,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 
 #include "opt_inet.h"
 #include "opt_ccitt.h"
+#include "opt_iso.h"
 #include "opt_ns.h"
 #include "opt_gateway.h"
 #include "opt_pfil_hooks.h"
@@ -141,6 +142,13 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
+#endif
+
+#ifdef ISO
+#include <netiso/argo_debug.h>
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
+#include <netiso/iso_snpac.h>
 #endif
 
 #ifdef LLC
@@ -309,14 +317,56 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 #endif
 /*	case AF_NSAP: */
 	case AF_APPLETALK:
+#ifdef ISO
 	case AF_ISO:
+	{
+		int snpalen;
+		struct llc *l;
+		struct sockaddr_dl *sdl = (struct sockaddr_dl *)rt->rt_gateway;
+
+		if (rt && sdl && sdl->sdl_family == AF_LINK && sdl->sdl_alen > 0) {
+			bcopy(LLADDR(sdl), (caddr_t)edst, sizeof(edst));
+		} else if ((error = iso_snparesolve(ifp, (struct sockaddr_iso *)dst, (char *)edst, &snpalen))) {
+			goto bad; /* Not Resolved */
+		}
+		/* If broadcasting on a simplex interface, loopback a copy */
+		if (*edst & 1)
+			m->m_flags |= (M_BCAST | M_MCAST);
+		if ((m->m_flags & M_BCAST) && (ifp->if_flags & IFF_SIMPLEX) && (mcopy =	m_copy(m, 0, (int)M_COPYALL))) {
+			M_PREPEND(mcopy, sizeof(*eh), M_DONTWAIT);
+			if (mcopy) {
+				eh = mtod(mcopy, struct ether_header *);
+				bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof(edst));
+				bcopy(LLADDR(ifp->if_sadl), (caddr_t)eh->ether_shost, sizeof(edst));
+			}
+		}
+		M_PREPEND(m, 3, M_DONTWAIT);
+		if (m == NULL) {
+			return (0);
+		}
+		etype = m->m_pkthdr.len;
+		l = mtod(m, struct llc*);
+		l->llc_dsap = l->llc_ssap = LLC_ISO_LSAP;
+		l->llc_control = LLC_UI;
+		len += 3;
+#ifdef ARGO_DEBUG
+		if (argo_debug[D_ETHER]) {
+			int i;
+			printf("unoutput: sending pkt to: ");
+			for (i = 0; i < 6; i++)
+				printf("%x ", edst[i] & 0xff);
+			printf("\n");
+#endif
+		break;
+	}
+#endif /* ISO */
 #ifdef LLC
 	case AF_CCITT:
     {    
 		struct sockaddr_dl *sdl = (struct sockaddr_dl *)rt->rt_gateway;
 
 		if (sdl && sdl->sdl_family == AF_LINK && sdl->sdl_alen > 0) {
-			bcopy(LLADDR(sdl), (char*) edst, sizeof(edst));
+			bcopy(LLADDR(sdl), (char *)edst, sizeof(edst));
 		} else {
 			goto bad;
 		}
@@ -330,6 +380,7 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 				bcopy(LLADDR(ifp->if_sadl), (caddr_t)eh->ether_shost, sizeof(edst));
 			}
 		}
+		etype = m->m_pkthdr.len;
 #ifdef LLC_DEBUG
 		{
 			struct llc *l = mtod(m, struct llc*);
@@ -824,10 +875,10 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		schednetisr(NETISR_NS);
 		inq = &nsintrq;
 		break;
-
 #endif
 	default:
 #if defined (ISO) || defined (LLC)
+#ifdef ISO
 		if (eh->ether_type > ETHERMTU) {
 			goto dropanyway;
 		}
@@ -837,15 +888,70 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		case LLC_ISO_LSAP:
 			switch (l->llc_control) {
 			case LLC_UI:
+				/* LLC_UI_P forbidden in class 1 service */
+				if ((l->llc_dsap == LLC_ISO_LSAP)
+						&& (l->llc_ssap == LLC_ISO_LSAP)) {
+					/* LSAP for ISO */
+					if (m->m_pkthdr.len > eh->ether_type) {
+						m_adj(m, eh->ether_type - m->m_pkthdr.len);
+					}
+					m->m_data += 3; /* XXX */
+					m->m_len -= 3; /* XXX */
+					m->m_pkthdr.len -= 3; /* XXX */
+					M_PREPEND(m, sizeof *eh, M_DONTWAIT);
+					if (m == 0) {
+						return;
+					}
+					*mtod(m, struct ether_header*) = *eh;
+#ifdef ARGO_DEBUG
+					if (argo_debug[D_ETHER]) {
+						printf("clnp packet");
+					}
+#endif
+					schednetisr(NETISR_ISO);
+					inq = &clnlintrq;
+					break;
+				}
+				goto dropanyway;
 			case LLC_XID:
 			case LLC_XID_P:
+				if(m->m_len < 6)
+					goto dropanyway;
+				l->llc_window = 0;
+				l->llc_fid = 9;
+				l->llc_class = 1;
+				l->llc_dsap = l->llc_ssap = 0;
+				/* Fall through to */
 			case LLC_TEST:
 			case LLC_TEST_P:
+			{
+				struct sockaddr sa;
+				struct ether_header *eh2;
+				int i;
+				u_char c = l->llc_dsap;
+
+				l->llc_dsap = l->llc_ssap;
+				l->llc_ssap = c;
+				if (m->m_flags & (M_BCAST | M_MCAST)) {
+					bcopy(LLADDR(ifp->if_sadl), (caddr_t)eh->ether_dhost, 6);
+				}
+				sa.sa_family = AF_UNSPEC;
+				sa.sa_len = sizeof(sa);
+				eh2 = (struct ether_header*) sa.sa_data;
+				for (i = 0; i < 6; i++) {
+					eh2->ether_shost[i] = c = eh->ether_dhost[i];
+					eh2->ether_dhost[i] = eh->ether_dhost[i] = eh->ether_shost[i];
+					eh->ether_shost[i] = c;
+				}
+				ifp->if_output(ifp, m, &sa, NULL);
+				return;
+			}
 			default:
 			    m_freem(m);
 			    return;
 			}
 			break;
+#endif /* ISO */
 		case LLC_ARP_LSAP:
 		case LLC_XNS_LSAP:
 #ifdef LLC

@@ -43,4 +43,7 @@ void elf_relocate(int, char **, int);
 /* libc_init.c */
 void _libc_init(void);
 
+/* libc_tls.c */
+//void __static_tls_setup(void);
+
 #endif /* _DLFCN_PRIVATE_H_ */
