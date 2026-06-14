@@ -122,7 +122,7 @@ _rtld_tls_free(struct tls_tcb *tcb)
 	}
 }
 
-static int
+static int __section(".text.startup")
 __static_tls_setup_cb(struct dl_phdr_info *data, size_t len, void *cookie)
 {
 	const Elf_Phdr *phdr;

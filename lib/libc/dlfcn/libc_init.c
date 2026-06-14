@@ -52,7 +52,7 @@ __dso_hidden void 	__static_tls_setup(void);
 
 static int libc_initialised;
 
-void
+void __section(".text.startup")
 _libc_init(void)
 {
 	if (libc_initialised) {
