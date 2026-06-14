@@ -78,6 +78,7 @@ SRCS+=  search.c
 SRCS+=  headers.c
 SRCS+=  paths.c
 SRCS+=  expand.c
+SRCS+=  tls.c
 
 #.if ${USE_FORT} == "yes"
 #.PATH.c: ${NETBSDSRCDIR}/lib/libc/ssp
