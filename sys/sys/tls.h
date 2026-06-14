@@ -26,11 +26,12 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SYS_TLS_H_
-#define SYS_TLS_H_
+#ifndef _SYS_TLS_H_
+#define _SYS_TLS_H_
 
 #include <sys/cdefs.h>
 #include <machine/types.h>
+#include <machine/tls.h>
 
 #if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
 
@@ -58,22 +59,23 @@ enum tls_cmdops {
 	SETTLS,
 };
 
-#ifdef _KERNEL
-int cpu_get_tls_tcb(struct proc *, void *);
-int cpu_set_tls_tcb(struct proc *, void *);
-void *cpu_get_tls_addr(void);
-
-#else
-
+#ifndef _KERNEL
 __BEGIN_DECLS
+
+/* get tls addr */
+static inline void *
+gettlsaddr(void)
+{
+    return (cpu_get_tls_addr());
+}
+
 int tls(int, void *); /* kernel tls syscall callback */
 int gettls(void *);	/* get tls */
 int settls(void *);	/* set tls */
-void *gettlsaddr(void); /* get tls addr */
+//extern void *gettlsaddr(void); 
 struct tls_tcb *_rtld_tls_allocate(void);
 void _rtld_tls_free(struct tls_tcb *);
 __END_DECLS
 #endif /* !_KERNEL */
 #endif /* __HAVE_TLS_VARIANT_I || __HAVE_TLS_VARIANT_II */
-
-#endif /* SYS_TLS_H_ */
+#endif /* _SYS_TLS_H_ */
