@@ -51,7 +51,6 @@
 #include <sys/trace.h>
 #include <sys/malloc.h>
 #include <sys/user.h>
-#include <sys/tls.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/pmap.h>
@@ -65,6 +64,7 @@
 #include <machine/psl.h>
 #include <machine/reg.h>
 #include <machine/sysarch.h>
+#include <machine/tls.h>
 
 extern vm_map_t kernel_map;
 
@@ -567,13 +567,4 @@ cpu_set_tls_tcb(p, arg)
 	void *arg;
 {
 	return (i386_set_sdbase(p, arg, 'g'));
-}
-
-void *
-cpu_get_tls_addr(void)
-{
-	void *tmp;
-
-	__asm volatile("movl %%gs:0, %0" : "=r" (tmp));
-	return (tmp);
 }
