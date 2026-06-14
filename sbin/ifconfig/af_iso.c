@@ -116,12 +116,12 @@ setnsellength(const char *val, int d)
 }
 
 void
-fixnsel(struct sockaddr_iso *s)
+fixnsel(struct sockaddr_iso *siso)
 {
-	if (s->siso_family == 0) {
+	if (siso->siso_family == 0) {
 		return;
 	}
-	s->siso_tlen = nsellength;
+	siso->siso_tlen = nsellength;
 }
 
 void
