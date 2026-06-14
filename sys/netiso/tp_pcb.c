@@ -617,10 +617,6 @@ tp_attach(struct socket *so, int protocol)
 		 	 	 	 	 	 	 	 	 * will generate correct fake-ack values
 		 	 	 	 	 	 	 	 	 */
 	} else {
-		switch (dom) {
-		default:
-
-		}
 		tpcb->tp_netservice = (dom == (AF_INET || AF_INET6)) ? IN_CLNS : ISO_CLNS;
 		/* the default */
 	}
