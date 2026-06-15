@@ -269,10 +269,11 @@ tuba_pcbdetach(struct isopcb *isop)
 	iso_pcbdetach(isop);
 }
 
+#ifdef INET
+
 /*
  * Avoid  in_pcbconnect in faked out tcp_input()
  */
-#ifdef INET
 int
 tuba4_pcbconnect(void *v, struct mbuf *nam)
 {
@@ -393,10 +394,11 @@ tuba4_tcp_output(struct mbuf *m, struct tcpcb *tp)
 	ip = mtod(m, struct ip *);
 	if (tp == 0 || th == 0 || isop == 0) {
 		error = iso_pcballoc(NULL, &tubaisoptable);
-        if (error != 0) {
-            return (error);
-        }
-        isop = iso_pcblookup(&tubaisoptable, isop->isop_faddr, (caddr_t)0, 0, isop->isop_laddr);
+		if (error != 0) {
+			return (error);
+		}
+		isop = iso_pcblookup(&tubaisoptable, isop->isop_faddr, (caddr_t)0, 0,
+				isop->isop_laddr);
 		th = mtod(m, struct tcphdr *);
 		sum = 0;
 		offset = 0;
@@ -472,6 +474,10 @@ tuba4_udp_input(struct mbuf *m, struct ip *ip, struct udphdr *uh)
 #endif
 
 #ifdef INET6
+
+/*
+ * Avoid  in6_pcbconnect in faked out tcp_input()
+ */
 int
 tuba6_pcbconnect(void *v, struct mbuf *nam)
 {
@@ -591,20 +597,23 @@ tuba6_tcp_output(struct mbuf *m, struct tcpcb *tp)
 	th = (struct tcphdr *)tp->t_template;
 	ip6 = mtod(m, struct ip6_hdr *);
 	if (tp == 0 || th == 0 || isop == 0) {
-        error = iso_pcballoc(NULL, &tubaisoptable);
-        if (error != 0) {
-            return (error);
-        }
-        isop = iso_pcblookup(&tubaisoptable, isop->isop_faddr, (caddr_t)0, 0, isop->isop_laddr);
+		error = iso_pcballoc(NULL, &tubaisoptable);
+		if (error != 0) {
+			return (error);
+		}
+		isop = iso_pcblookup(&tubaisoptable, isop->isop_faddr, (caddr_t)0, 0,
+				isop->isop_laddr);
 		th = mtod(m, struct tcphdr *);
 		sum = 0;
 		offset = 0;
-		error = tuba_cksum(&sum, &offset, &isop->isop_faddr, ip6->ip6_dst.s6_addr32[3]);
+		error = tuba_cksum(&sum, &offset, &isop->isop_faddr,
+				ip6->ip6_dst.s6_addr32[3]);
 		if (error) {
 			m_freem(m);
 			return (EADDRNOTAVAIL);
 		}
-		error = tuba_cksum(&sum, &offset, &isop->isop_laddr, ip6->ip6_src.s6_addr32[3]);
+		error = tuba_cksum(&sum, &offset, &isop->isop_laddr,
+				ip6->ip6_src.s6_addr32[3]);
 		if (error) {
 			m_freem(m);
 			return (EADDRNOTAVAIL);

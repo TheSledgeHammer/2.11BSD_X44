@@ -52,7 +52,7 @@ struct sap_select sap_table[] = {
 				.ss_type =  { SAP_TYPE_SIN4 },
 				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
 				.ss_subtran = { SAP_SUBTRAN_TCP,  SAP_SUBTRAN_UDP },
-				.ss_class = { SAP_CLASS_CLNS },
+				.ss_class = { SAP_CLASS_CONS, SAP_CLASS_CLNS },
 		},
 		/* 2 - AF_INET6 */
 		{
@@ -61,7 +61,7 @@ struct sap_select sap_table[] = {
 				.ss_type =  { SAP_TYPE_SIN6 },
 				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
 				.ss_subtran = { SAP_SUBTRAN_TCP,  SAP_SUBTRAN_UDP },
-				.ss_class = { SAP_CLASS_CLNS },
+				.ss_class = { SAP_CLASS_CONS, SAP_CLASS_CLNS },
 		},
 		/* 3 - AF_NS */
 		{
@@ -97,7 +97,7 @@ struct sap_select sap_table[] = {
 				.ss_type =  { SAP_TYPE_SATM },
 				.ss_subnet = { SAP_SUBNET_ATM },
 				.ss_subtran = { SAP_SUBTRAN_ATM },
-				.ss_class = { SAP_CLASS_CLNS },
+				.ss_class = { SAP_CLASS_CONS },
 		},
 		/* 7 - AF_IPX */
 		{
