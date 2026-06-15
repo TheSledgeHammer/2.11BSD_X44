@@ -377,7 +377,7 @@ sap_radix_node_add(struct sap_tree *tree, struct sap_node *sap, struct sockaddr_
 	struct sockaddr_sap *smask;
 	struct radix_node *rn;
 
-	rnh = nsap_radix_node_head(tree, sid);
+	rnh = sap_radix_node_head(tree, sid);
 	if (rnh == NULL) {
 		return (NULL);
 	}
@@ -396,7 +396,7 @@ sap_radix_node_delete(struct sap_tree *tree, struct sap_node *sap, struct sockad
 	struct sockaddr_sap *smask;
 	struct radix_node *rn;
 
-	rnh = nsap_radix_node_head(tree, sid);
+	rnh = sap_radix_node_head(tree, sid);
 	if (rnh == NULL) {
 		return (NULL);
 	}
@@ -414,7 +414,7 @@ sap_radix_node_matchaddr(struct sap_tree *tree, struct sockaddr_sap *sasap, int 
 	struct radix_node_head *rnh;
 	struct radix_node *rn;
 
-	rnh = nsap_radix_node_head(tree, sid);
+	rnh = sap_radix_node_head(tree, sid);
 	if (rnh == NULL) {
 		return (NULL);
 	}
@@ -429,7 +429,7 @@ sap_radix_node_lookup(struct sap_tree *tree, struct sap_node *sap, struct sockad
 	struct sockaddr_sap *smask;
 	struct radix_node *rn;
 
-	rnh = nsap_radix_node_head(tree, sid);
+	rnh = sap_radix_node_head(tree, sid);
 	if (rnh == NULL) {
 		return (NULL);
 	}
@@ -465,7 +465,7 @@ sap_lookup(struct sap_tree *tree, struct sockaddr_sap *sasap, long type, long su
 	struct sap_node *sap, *match;
 	int error;
 
-	rnh = nsap_radix_node_head(tree, sid);
+	rnh = sap_radix_node_head(tree, sid);
 	if (rnh == NULL) {
 		return (NULL);
 	}
@@ -495,7 +495,7 @@ sap_insert(struct sap_tree *tree, struct sap_node *sap, struct sockaddr_sap *sas
 	if (head == NULL || sap == NULL) {
 		return;
 	}
-	rn = nsap_radix_node_add(tree, sap, sasap, sid);
+	rn = sap_radix_node_add(tree, sap, sasap, sid);
 	if (rn == NULL) {
 		return;
 	}
