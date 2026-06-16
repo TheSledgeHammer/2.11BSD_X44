@@ -356,6 +356,7 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 			for (i = 0; i < 6; i++)
 				printf("%x ", edst[i] & 0xff);
 			printf("\n");
+		}
 #endif
 		break;
 	}
