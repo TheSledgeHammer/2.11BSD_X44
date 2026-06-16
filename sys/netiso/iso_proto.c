@@ -240,7 +240,7 @@ struct protosw isosw[] = {
 				.pr_slowtimo	= tuba_slowtimo,
 				.pr_drain		= 0,
 				.pr_sysctl		= 0,
-		}
+		},
 #endif
 #ifdef TPCONS
 		/* ISOPROTO_TP */
