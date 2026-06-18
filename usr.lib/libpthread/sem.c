@@ -69,7 +69,6 @@
 __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 
 #include <sys/types.h>
-//#include <sys/ksem.h>
 #include <sys/queue.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -81,14 +80,15 @@ __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 #include "pthread_int.h"
 #include "pthread_syscalls.h"
 
-struct _sem_st {
+//#ifdef notyet
+struct _sems_st {
 	unsigned int	usem_magic;
 #define	USEM_MAGIC	0x09fa4012
 
 	LIST_ENTRY(_sem_st) usem_list;
-	semid_t		usem_semid;	/* 0 -> user (non-shared) */
+	semid_t			usem_semid;	/* 0 -> user (non-shared) */
 #define	USEM_USER	0		/* assumes kernel does not use NULL */
-	sem_t		*usem_identity;
+	sem_t			*usem_identity;
 
 	/* Protects data below. */
 	pthread_spin_t	usem_interlock;
@@ -96,39 +96,53 @@ struct _sem_st {
 	struct pthread_queue_t usem_waiters;
 	unsigned int	usem_count;
 };
+//#endif
 
-static int sem_alloc(unsigned int value, semid_t semid, sem_t *semp);
-static void sem_free(sem_t sem);
+static int sem_alloc(unsigned int, semid_t, sem_t *);
+static void sem_free(sem_t);
+static int sem_errorcheck(sem_t *);
 
 static LIST_HEAD(, _sem_st) named_sems = LIST_HEAD_INITIALIZER(&named_sems);
 static pthread_mutex_t named_sems_mtx = PTHREAD_MUTEX_INITIALIZER;
-
-static void
-sem_free(sem_t sem)
-{
-
-	sem->usem_magic = 0;
-	free(sem);
-}
 
 static int
 sem_alloc(unsigned int value, semid_t semid, sem_t *semp)
 {
 	sem_t sem;
 
-	if (value > SEM_VALUE_MAX)
+	if (value > SEM_VALUE_MAX) {
 		return (EINVAL);
+	}
 
-	if ((sem = malloc(sizeof(struct _sem_st))) == NULL)
+	sem = malloc(sizeof(struct _sem_st));
+	if (sem == NULL) {
 		return (ENOSPC);
+	}
 
 	sem->usem_magic = USEM_MAGIC;
 	pthread_lockinit(&sem->usem_interlock);
 	PTQ_INIT(&sem->usem_waiters);
 	sem->usem_count = value;
 	sem->usem_semid = semid;
-
 	*semp = sem;
+	return (0);
+}
+
+static void
+sem_free(sem_t sem)
+{
+	sem->usem_magic = 0;
+	free(sem);
+}
+
+static int
+sem_errorcheck(sem_t *sem)
+{
+#ifdef ERRORCHECK
+	if (sem == NULL || *sem == NULL || (*sem)->usem_magic != USEM_MAGIC) {
+		return (-1);
+	}
+#endif
 	return (0);
 }
 
@@ -140,12 +154,15 @@ sem_init(sem_t *sem, int pshared, unsigned int value)
 
 	semid = USEM_USER;
 
-	if (pshared && pthread_sys_ksem_init(value, &semid) == -1)
+	if (pshared && pthread_sys_ksem_init(value, &semid) == -1) {
 		return (-1);
+	}
 
-	if ((error = sem_alloc(value, semid, sem)) != 0) {
-		if (semid != USEM_USER)
+	error = sem_alloc(value, semid, sem);
+	if (error != 0) {
+		if (semid != USEM_USER) {
 			pthread_sys_ksem_destroy(semid);
+		}
 		errno = error;
 		return (-1);
 	}
@@ -158,16 +175,15 @@ sem_destroy(sem_t *sem)
 {
 	pthread_t self;
 
-#ifdef ERRORCHECK
-	if (sem == NULL || *sem == NULL || (*sem)->usem_magic != USEM_MAGIC) {
+	if (sem_errorcheck(sem) != 0) {
 		errno = EINVAL;
 		return (-1);
 	}
-#endif
 
 	if ((*sem)->usem_semid != USEM_USER) {
-		if (pthread_sys_ksem_destroy((*sem)->usem_semid))
+		if (pthread_sys_ksem_destroy((*sem)->usem_semid)) {
 			return (-1);
+		}
 	} else {
 		self = pthread__self();
 		pthread_spinlock(self, &(*sem)->usem_interlock);
@@ -180,7 +196,6 @@ sem_destroy(sem_t *sem)
 	}
 
 	sem_free(*sem);
-
 	return (0);
 }
 
@@ -208,8 +223,9 @@ sem_open(const char *name, int oflag, ...)
 	 * We can be lazy and let the kernel handle the oflag,
 	 * we'll just merge duplicate IDs into our list.
 	 */
-	if (pthread_sys_ksem_open(name, oflag, mode, value, &semid) == -1)
+	if (pthread_sys_ksem_open(name, oflag, mode, value, &semid) == -1) {
 		return (SEM_FAILED);
+	}
 
 	/*
 	 * Search for a duplicate ID, we must return the same sem_t *
@@ -227,8 +243,10 @@ sem_open(const char *name, int oflag, ...)
 		error = ENOSPC;
 		goto bad;
 	}
-	if ((error = sem_alloc(value, semid, sem)) != 0)
+
+	if ((error = sem_alloc(value, semid, sem)) != 0) {
 		goto bad;
+	}
 
 	LIST_INSERT_HEAD(&named_sems, *sem, usem_list);
 	(*sem)->usem_identity = sem;
@@ -240,8 +258,9 @@ sem_open(const char *name, int oflag, ...)
 	pthread_mutex_unlock(&named_sems_mtx);
 	pthread_sys_ksem_close(semid);
 	if (sem != NULL) {
-		if (*sem != NULL)
+		if (*sem != NULL) {
 			sem_free(*sem);
+		}
 		free(sem);
 	}
 	errno = error;
@@ -251,13 +270,10 @@ sem_open(const char *name, int oflag, ...)
 int
 sem_close(sem_t *sem)
 {
-
-#ifdef ERRORCHECK
-	if (sem == NULL || *sem == NULL || (*sem)->usem_magic != USEM_MAGIC) {
+	if (sem_errorcheck(sem) != 0) {
 		errno = EINVAL;
 		return (-1);
 	}
-#endif
 
 	if ((*sem)->usem_semid == USEM_USER) {
 		errno = EINVAL;
@@ -279,7 +295,6 @@ sem_close(sem_t *sem)
 int
 sem_unlink(const char *name)
 {
-
 	return (pthread_sys_ksem_unlink(name));
 }
 
@@ -288,12 +303,10 @@ sem_wait(sem_t *sem)
 {
 	pthread_t self;
 
-#ifdef ERRORCHECK
-	if (sem == NULL || *sem == NULL || (*sem)->usem_magic != USEM_MAGIC) {
+	if (sem_errorcheck(sem) != 0) {
 		errno = EINVAL;
 		return (-1);
 	}
-#endif
 
 	self = pthread__self();
 
@@ -341,15 +354,14 @@ sem_trywait(sem_t *sem)
 {
 	pthread_t self;
 
-#ifdef ERRORCHECK
-	if (sem == NULL || *sem == NULL || (*sem)->usem_magic != USEM_MAGIC) {
+	if (sem_errorcheck(sem) != 0) {
 		errno = EINVAL;
 		return (-1);
 	}
-#endif
 
-	if ((*sem)->usem_semid != USEM_USER)
+	if ((*sem)->usem_semid != USEM_USER) {
 		return (pthread_sys_ksem_trywait((*sem)->usem_semid));
+	}
 
 	self = pthread__self();
 
@@ -373,15 +385,14 @@ sem_post(sem_t *sem)
 {
 	pthread_t self, blocked;
 
-#ifdef ERRORCHECK
-	if (sem == NULL || *sem == NULL || (*sem)->usem_magic != USEM_MAGIC) {
+	if (sem_errorcheck(sem) != 0) {
 		errno = EINVAL;
 		return (-1);
 	}
-#endif
 
-	if ((*sem)->usem_semid != USEM_USER)
+	if ((*sem)->usem_semid != USEM_USER) {
 		return (pthread_sys_ksem_post((*sem)->usem_semid));
+	}
 
 	self = pthread__self();
 
@@ -403,14 +414,14 @@ sem_getvalue(sem_t *sem, int *sval)
 {
 	pthread_t self;
 
-#ifdef ERRORCHECK
-	if (sem == NULL || *sem == NULL || (*sem)->usem_magic != USEM_MAGIC) {
+	if (sem_errorcheck(sem) != 0) {
 		errno = EINVAL;
 		return (-1);
 	}
-#endif
-	if ((*sem)->usem_semid != USEM_USER)
+
+	if ((*sem)->usem_semid != USEM_USER) {
 		return (pthread_sys_ksem_getvalue((*sem)->usem_semid, sval));
+	}
 
 	self = pthread__self();
 
