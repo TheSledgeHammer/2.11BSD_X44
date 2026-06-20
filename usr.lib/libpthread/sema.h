@@ -29,7 +29,8 @@
 #ifndef _LIB_PTHREAD_SEMA_H_
 #define _LIB_PTHREAD_SEMA_H_
 
-struct _sem_st {
+#ifdef notyet
+struct sem_st {
 	unsigned int	usem_magic;
 
 	LIST_ENTRY(_sem_st) usem_list;
@@ -40,13 +41,12 @@ struct _sem_st {
 
 	struct pthread_queue_t usem_waiters;
 	unsigned int	usem_count;
-
 	volatile int 	usem_waitcount;
 };
 
 #define	USEM_MAGIC	0x09fa4012
 #define	USEM_USER	0		/* assumes kernel does not use NULL */
-
+#endif
 __BEGIN_DECLS
 int sem_errorcheck(sem_t *);
 int sema_alloc(int, unsigned int, semid_t, size_t, sem_t *);

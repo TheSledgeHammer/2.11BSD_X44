@@ -79,15 +79,15 @@ int		pthread_sys_wait4(pid_t, int *, int, struct rusage *);
 int		pthread_sys_write(int, const void *, size_t);
 int		pthread_sys_writev(int, const struct iovec *, int);
 
-int 		pthread_sys_ksem_close(semid_t);
-int 		pthread_sys_ksem_destroy(semid_t);
-int 		pthread_sys_ksem_getvalue(semid_t, int *);
-int 		pthread_sys_ksem_init(unsigned int, semid_t *);
-int 		pthread_sys_ksem_open(const char *, int, mode_t, unsigned int, semid_t *);
-int 		pthread_sys_ksem_post(semid_t);
-int 		pthread_sys_ksem_trywait(semid_t);
-int 		pthread_sys_ksem_unlink(const char *);
-int 		pthread_sys_ksem_wait(semid_t);
+int 	pthread_sys_ksem_close(semid_t);
+int 	pthread_sys_ksem_destroy(semid_t);
+int 	pthread_sys_ksem_getvalue(semid_t, int *);
+int 	pthread_sys_ksem_init(unsigned int, semid_t *);
+int 	pthread_sys_ksem_open(const char *, int, mode_t, unsigned int, semid_t *);
+int 	pthread_sys_ksem_post(semid_t);
+int 	pthread_sys_ksem_trywait(semid_t);
+int 	pthread_sys_ksem_unlink(const char *);
+int 	pthread_sys_ksem_wait(semid_t);
 __END_DECLS
 
 #endif /* _LIB_PTHREAD_SYSCALLS_H */

@@ -1177,14 +1177,14 @@ retry:
 	} else {
 		CIRCLEQ_FOREACH(next, &map->cl_header, cl_entry) {
 			if (next != entry) {
-				estart = entry->start;
-				eend = entry->end;
+				estart = next->start;
+				eend = next->end;
 				elen = round_page((eend - estart));
 				eaddr = ((estart + elen) - elen);
 				/* check next entry address is not greater than the address */
 				if (eaddr <= addr) {
-	                isentry = vm_map_lookup_entry(map, addr, &entry);
-	                goto retry;
+					isentry = vm_map_lookup_entry(map, addr, &entry);
+					goto retry;
 				} else {
 					error = ENOMEM;
 					goto out;

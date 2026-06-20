@@ -60,6 +60,7 @@
 
 #include <sys/types.h>
 #include <sys/atomic.h>
+#include <sys/time.h>
 #include <sys/queue.h>
 #include <sys/mman.h>
 
@@ -68,69 +69,74 @@
 #include <fcntl.h>
 #include <semaphore.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sha2.h>
+#include <unistd.h>
 
 #include "pthread.h"
 #include "pthread_int.h"
-#include "sema.h"
+//#include "sema.h"
 
-static char const *sem_prefix = "/var/run/sem";
+struct _sem_st {
+	unsigned int	usem_magic;
+#define	USEM_MAGIC	0x09fa4012
+
+	LIST_ENTRY(_sem_st) usem_list;
+	semid_t			usem_semid;	/* 0 -> user (non-shared) */
+#define	USEM_USER	0		/* assumes kernel does not use NULL */
+	sem_t			*usem_identity;
+
+	/* Protects data below. */
+	pthread_spin_t	usem_interlock;
+
+	struct pthread_queue_t usem_waiters;
+	unsigned int	usem_count;
+	volatile int 	usem_waitcount;
+};
+
+typedef struct _sem_st *sem_t;
+
+//static char const *sem_prefix = "/var/run/sem";
+
+static char const *sem_prefix = "/tmp/%s.sem";
+
+#define SEMID_PROC 		0
+#define SEMID_FORK		1
+#define SEMID_NAMED		2
+#define SEMID_USER 		SEMID_PROC
+
+#define SEM_PATH_SIZE 	(5 + SHA256_DIGEST_STRING_LENGTH + 4)
+#define SEM_MMAP_SIZE 	(getpagesize())
+
 
 static int get_path(const char *name, char *path, size_t len, char const **prefix);
 
-int
-sema_alloc(int pshared, unsigned int value, semid_t semid, size_t size, sem_t *semp)
-{
-	sem_t sem, sem_map;
+static int sema_create(int, semid_t *, sem_t *);
 
-	if (value > SEM_VALUE_MAX) {
-		return (EINVAL);
-	}
+static int
+sema_create(int pshared, semid_t *semid, sem_t *semp)
+{
+	sem_t sem, sem_base;
+	int sem_count;
 
 	if (pshared) {
-		sem_map = mmap(NULL, size, (PROT_READ | PROT_WRITE), (MAP_ANON | MAP_SHARED), -1, 0);
-		if (sem_map == MAP_FAILED) {
-			return (ENOSPC);
+		sem_base = mmap(NULL, SEM_MMAP_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+		sem_count = (SEM_MMAP_SIZE / sizeof(*sem));
+		sem = sem_base++;
+		if (--sem_count == 0) {
+			sem_base = NULL;
 		}
-		sem = sem_map;
+		*semid = SEMID_FORK;
 	} else {
 		sem = malloc(sizeof(struct _sem_st));
-		if (sem == NULL) {
-			return (ENOSPC);
-		}
+		*semid = SEMID_PROC;
 	}
-
-	sem->usem_magic = USEM_MAGIC;
-	pthread_lockinit(&sem->usem_interlock);
-	PTQ_INIT(&sem->usem_waiters);
-	sem->usem_count = value;
-	sem->usem_semid = semid;
+	if (sem == NULL) {
+		errno = ENOSPC;
+		return (ENOSPC);
+	}
 	*semp = sem;
-	return (0);
-}
-
-void
-sema_free(sem_t sem)
-{
-	sem->usem_magic = 0;
-	free(sem);
-}
-
-int
-sem_init(sem_t *sem, int pshared, unsigned int value)
-{
-	semid_t	semid;
-	int error;
-
-	semid = USEM_USER;
-
-	error = sema_alloc(pshared, value, semid, getpagesize(), sem);
-	if (error != 0) {
-		if (semid != USEM_USER) {
-			(void)sema_destroy(sem);
-		}
-		errno = error;
-		return (-1);
-	}
 	return (0);
 }
 
@@ -146,47 +152,58 @@ sem_errorcheck(sem_t *sem)
 }
 
 int
-sema_destroy(sem_t *sem)
+sema_init(sem_t *sem, int pshared, unsigned int value)
 {
-	if (sem_errorcheck(sem) != 0) {
-		errno = EINVAL;
+	semid_t	semid;
+	int error;
+
+	error = sema_create(pshared, &semid, sem);
+	if (error != 0) {
+		errno = error;
 		return (-1);
 	}
-
-	if ((*sem)->usem_waitcount) {
-		errno = EBUSY;
+	error = sem_alloc(value, semid, sem);
+	if (error != 0) {
+		if (semid != SEMID_USER) {
+			sema_destroy(sem);
+		}
+		errno = error;
 		return (-1);
-	}
-
-	if ((*sem)->usem_semid) {
-		sem_free(*sem);
 	}
 	return (0);
 }
 
 int
-sema_open(const char *name, int oflag, mode_t mode, unsigned int value, size_t size, semid_t *idp)
+sema_destroy(sem_t *sem)
 {
-	sem_t sem;
+	if ((*sem)->usem_waitcount) {
+		errno = EBUSY;
+		return (-1);
+	}
+
+	sem_free(*sem);
+	return (0);
+}
+
+static void
+makesempath(const char *origpath, char *sempath, size_t len)
+{
+	char buf[SHA256_DIGEST_STRING_LENGTH];
+
+	SHA256Data(origpath, strlen(origpath), buf);
+	snprintf(sempath, len, sem_prefix, buf);
+}
+
+int
+sema_open(const char *name, int oflag, mode_t mode, unsigned int value, semid_t *idp, sem_t sem)
+{
 	struct stat sb;
-	char path[MAXPATHLEN], sempath[MAXPATHLEN];
+	char sempath[SEM_PATH_SIZE];
 	char const *prefix = NULL;
 	size_t path_len;
 	int error, fd;
 
-	error = get_path(name, path, MAXPATHLEN, &prefix);
-	if (error) {
-		errno = error;
-		return (-1);
-	}
-
-	strlcpy(sempath, prefix, sizeof(sempath));
-	path_len = strlcat(sempath, "/sem.XXXXXX", sizeof(sempath));
-	if (path_len > sizeof(sempath)) {
-		errno = ENAMETOOLONG;
-		return (-1);
-	}
-
+	makesempath(name, sempath, sizeof(sempath));
 	fd = open(sempath, O_RDWR | O_NOFOLLOW | oflag, mode);
 	if (fd == -1) {
 		return (-1);
@@ -199,7 +216,7 @@ sema_open(const char *name, int oflag, mode_t mode, unsigned int value, size_t s
 		error = EPERM;
 		goto bad;
 	}
-	if (sb.st_size != (off_t)size) {
+	if (sb.st_size != (off_t)SEM_MMAP_SIZE) {
 		if (!(oflag & O_CREAT)) {
 			error = EINVAL;
 			goto bad;
@@ -208,18 +225,20 @@ sema_open(const char *name, int oflag, mode_t mode, unsigned int value, size_t s
 			error = EINVAL;
 			goto bad;
 		}
-		if (ftruncate(fd, size) == -1) {
+		if (ftruncate(fd, SEM_MMAP_SIZE) == -1) {
 			error = EINVAL;
 			goto bad;
 		}
 	}
 
-	sem = mmap(NULL, size, (PROT_READ | PROT_WRITE), (MAP_ANON | MAP_SHARED), fd, 0);
+	sem = mmap(NULL, SEM_MMAP_SIZE, (PROT_READ | PROT_WRITE), (MAP_ANON | MAP_SHARED), fd, 0);
 	if (sem == MAP_FAILED) {
 		error = EINVAL;
 		goto bad;
 	}
-	*idp = sem;
+	sem->usem_count = value;
+	sem->usem_semid = SEMID_NAMED;
+	*idp = sem->usem_semid;
 	return (0);
 
 bad:
@@ -229,14 +248,14 @@ bad:
 }
 
 int
-sema_close(sem_t *sem, size_t size)
+sema_close(sem_t *sem)
 {
-	if (sem_errorcheck(sem) != 0) {
+	if ((*sem)->usem_semid == -1) {
 		errno = EINVAL;
 		return (-1);
 	}
 
-	munmap(sem, size);
+	munmap(sem, SEM_MMAP_SIZE);
 	free(sem);
 	return (0);
 }
@@ -244,17 +263,12 @@ sema_close(sem_t *sem, size_t size)
 int
 sema_unlink(const char *name)
 {
-	char path[MATHPATHLEN];
-	const char *prefix;
+	char sempath[SEM_PATH_SIZE];
 	int error;
 
-	error = get_path(name, path, MATHPATHLEN, &prefix);
-	if (error) {
-		errno = error;
-		return (-1);
-	}
-	error = unlink(name);
-	if(error) {
+	makesempath(name, sempath, sizeof(sempath));
+	error = unlink(sempath);
+	if (error != 0) {
 		if ((errno != ENAMETOOLONG) && (errno != ENOENT)) {
 			errno = EACCES;
 		}
@@ -268,21 +282,25 @@ int
 sema_wait(sem_t *sem, struct timespec *abstime)
 {
 	unsigned int val;
-	int error;
+	int error, timo;
 
 	atomic_inc_int((*sem)->usem_waitcount);
 	for (;;) {
 		while ((val = (*sem)->usem_count) > 0) {
-			if (atomic_cas_uint((*sem)->usem_count, val, val - 1) == val) {
+			if (atomic_cas_uint(&(*sem)->usem_count, val, val - 1) == val) {
 				membar_enter_after_atomic();
 				atomic_dec_int((*sem)->usem_waitcount);
 				return (0);
 			}
 		}
 		/* missing time shit here */
-		error =
+		error = ts2timo(CLOCK_REALTIME, TIMER_ABSTIME, abstime, &timo, NULL);
+		if (error != 0) {
+			goto out;
+		}
 	}
 
+out:
 	atomic_dec_int((*sem)->usem_waitcount);
 	return (error);
 }
@@ -293,18 +311,12 @@ sema_trywait(sem_t *sem)
 {
 	unsigned int val;
 
-	if (sem_errorcheck(sem) != 0) {
-		errno = EINVAL;
-		return (-1);
-	}
-
 	while ((val = (*sem)->usem_count) > 0) {
-		if (atomic_cas_uint((*sem)->usem_count, val, val - 1) == val) {
+		if (atomic_cas_uint(&(*sem)->usem_count, val, val - 1) == val) {
 			membar_enter_after_atomic();
 			return (0);
 		}
 	}
-
 	errno = EAGAIN;
 	return (-1);
 }
@@ -312,22 +324,15 @@ sema_trywait(sem_t *sem)
 int
 sema_post(sem_t *sem)
 {
-	if (sem_errorcheck(sem) != 0) {
-		errno = EINVAL;
-		return (-1);
-	}
-	atomic_inc_int((*sem)->usem_count);
+	membar_exit_before_atomic();
+	atomic_inc_int(&(*sem)->usem_count);
 	return (0);
 }
 
 int
 sema_getvalue(sem_t *sem, int *sval)
 {
-	if (sem_errorcheck(sem) != 0) {
-		errno = EINVAL;
-		return (-1);
-	}
-	sval = (*sem)->usem_count;
+	sval = (int)(*sem)->usem_count;
 	return (0);
 }
 
@@ -354,4 +359,86 @@ get_path(const char *name, char *path, size_t len, char const **prefix)
 		return (ENAMETOOLONG);
 	}
 	return (0);
+}
+
+/*
+ * Calculate delta and convert from struct timespec to the ticks.
+ */
+static int
+ts2timo(clockid_t clock_id, int flags, struct timespec *ts, int *timo, struct timespec *start)
+{
+	int error;
+	struct timespec tsd;
+
+	if (ts->tv_nsec < 0 || ts->tv_nsec >= 1000000000L) {
+		return (EINVAL);
+	}
+
+	if ((flags & TIMER_ABSTIME) != 0 || start != NULL) {
+		error = clock_gettime(clock_id, &tsd);
+		if (error != 0) {
+			return (error);
+		}
+		if (start != NULL) {
+			*start = tsd;
+		}
+	}
+
+	if ((flags & TIMER_ABSTIME) != 0) {
+		if (timespeccmp(ts, &tsd, <) || timespeccmp(ts, &tsd, >)) {
+			return (EINVAL);
+		}
+		timespecsub(ts, &tsd, &tsd);
+		ts = &tsd;
+	}
+
+	error = itimespecfix(ts);
+	if (error != 0) {
+		return (error);
+	}
+
+	if (ts->tv_sec == 0 && ts->tv_nsec == 0) {
+		return (ETIMEDOUT);
+	}
+
+	*timo = tstohz(ts);
+	DIAGASSERT(timo > 0);
+	return (0);
+}
+
+static int
+tstohz(const struct timespec *ts)
+{
+	struct timeval tv;
+
+	/*
+	 * usec has great enough resolution for hz, so convert to a
+	 * timeval and use tvtohz() above.
+	 */
+	tv.tv_sec = ts->tv_sec;
+	tv.tv_usec = (ts->tv_nsec + 999)/1000;
+	if (tv.tv_usec >= 1000000) {
+		if (__predict_false(tv.tv_sec == sizeof(time_t))) {
+			return (INT_MAX);
+		}
+		tv.tv_sec++;
+		tv.tv_usec -= 1000000;
+	}
+	return (tvtohz(&tv));
+}
+
+sem_t
+sem_get(semid_t semid)
+{
+	sem_t sem;
+
+	pthread_mutex_lock(&named_sems_mtx);
+	LIST_FOREACH(sem, &named_sems, usem_list) {
+		if (sem->usem_semid == semid) {
+			pthread_mutex_unlock(&named_sems_mtx);
+			return (sem->usem_identity);
+		}
+	}
+	pthread_mutex_unlock(&named_sems_mtx);
+	return (sem);
 }
