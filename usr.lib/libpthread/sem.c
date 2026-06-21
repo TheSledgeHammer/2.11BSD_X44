@@ -143,7 +143,7 @@ __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 #define SEM_PATH_SIZE 	(5 + SHA256_DIGEST_STRING_LENGTH + 4)
 #define SEM_MMAP_SIZE 	(getpagesize())
 
-static char const *sem_prefix = "/tmp/%s.sem";
+static const char *sem_prefix = "/tmp/%s.sem";
 #endif
 
 struct _sems_st {
@@ -181,6 +181,7 @@ static int sem_errorcheck(sem_t *);
 static int sem_alloc(unsigned int, semid_t, sem_t *);
 static void sem_free(sem_t);
 static sem_t sem_lookup(semid_t);
+int sem_timedwait(sem_t *, const struct timespec *);
 
 #ifndef USE_KSEM
 static int sema_create(int, semid_t *, sem_t *);
@@ -190,9 +191,13 @@ static int sema_open(const char *, int, mode_t, unsigned int, semid_t *, sem_t);
 static int sema_close(semid_t);
 static int sema_unlink(const char *);
 static int sema_wait(semid_t);
+static int sema_timedwait(semid_t, struct timespec *);
 static int sema_trywait(semid_t);
 static int sema_getvalue(semid_t, int *);
 static int sema_post(semid_t);
+static int sema_do_wait(sem_t, bool_t, struct timespec *);
+static int ts2timo(clockid_t, int, struct timespec *, int *, struct timespec *);
+static int tstohz(const struct timespec *);
 #endif
 
 static int
@@ -430,7 +435,6 @@ sem_close(sem_t *sem)
 		return (-1);
 	}
 
-
 	LIST_REMOVE((*sem), usem_list);
 	pthread_mutex_unlock(&named_sems_mtx);
 	sem_free(*sem);
@@ -466,6 +470,60 @@ sem_wait(sem_t *sem)
 		return (pthread_sys_ksem_wait((*sem)->usem_semid));
 #else
 		return (sema_wait((*sem)->usem_semid));
+#endif
+	}
+
+	for (;;) {
+		pthread_spinlock(self, &(*sem)->usem_interlock);
+		pthread_spinlock(self, &self->pt_statelock);
+		if (self->pt_cancel) {
+			pthread_spinunlock(self, &self->pt_statelock);
+			pthread_spinunlock(self, &(*sem)->usem_interlock);
+			pthread_exit(PTHREAD_CANCELED);
+		}
+
+		if ((*sem)->usem_count > 0) {
+			pthread_spinunlock(self, &self->pt_statelock);
+			break;
+		}
+
+		PTQ_INSERT_TAIL(&(*sem)->usem_waiters, self, pt_sleep);
+		self->pt_state = PT_STATE_BLOCKED_QUEUE;
+		self->pt_sleepobj = *sem;
+		self->pt_sleepq = &(*sem)->usem_waiters;
+		self->pt_sleeplock = &(*sem)->usem_interlock;
+		pthread_spinunlock(self, &self->pt_statelock);
+
+		/* XXX What about signals? */
+
+		pthread__block(self, &(*sem)->usem_interlock);
+		/* interlock is not held when we return */
+	}
+
+	(*sem)->usem_count--;
+
+	pthread_spinunlock(self, &(*sem)->usem_interlock);
+
+	return (0);
+}
+
+int
+sem_timedwait(sem_t *sem, const struct timespec *abstime)
+{
+	pthread_t self;
+
+	if (sem_errorcheck(sem) != 0 || (abstime == NULL)) {
+		errno = EINVAL;
+		return (-1);
+	}
+
+	self = pthread__self();
+
+	if ((*sem)->usem_semid != USEM_USER) {
+#ifdef USE_KSEM
+		return (ENOSYS);
+#else
+		return (sema_timedwait((*sem)->usem_semid, abstime));
 #endif
 	}
 
@@ -743,56 +801,60 @@ sema_unlink(const char *name)
 	return (0);
 }
 
-static int ts2timo(clockid_t clock_id, int flags, struct timespec *ts, int *timo, struct timespec *start);
-static int tstohz(const struct timespec *ts);
-
 static int
 sema_wait(semid_t semid)
 {
 	sem_t sem;
-	struct timespec *abstime = NULL;
-	unsigned int val;
-	int error, timo;
+	int error;
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		atomic_inc_int(sem->usem_waitcount);
-		for (;;) {
-			while ((val = sem->usem_count) > 0) {
-				if (atomic_cas_uint(&sem->usem_count, val, val - 1) == val) {
-					membar_enter_after_atomic();
-					atomic_dec_int(sem->usem_waitcount);
-					return (0);
-				}
-			}
-			/* missing time shit here */
-			error = ts2timo(CLOCK_REALTIME, TIMER_ABSTIME, abstime, &timo, NULL);
-			if (error != 0) {
-				goto out;
-			}
+		error = sema_do_wait(sem, FALSE, NULL);
+		if (error == 0) {
+			return (0);
 		}
+		errno = error;
+	} else {
+		errno = EAGAIN;
 	}
-out:
-	atomic_dec_int(sem->usem_waitcount);
-	return (error);
+	return (-1);
+}
+
+static int
+sema_timedwait(semid_t semid, struct timespec *abstime)
+{
+	sem_t sem;
+	int error;
+
+	sem = sem_lookup(semid);
+	if (sem != NULL) {
+		error = sema_do_wait(sem, FALSE, abstime);
+		if (error == 0) {
+			return (0);
+		}
+		errno = error;
+	} else {
+		errno = EAGAIN;
+	}
+	return (-1);
 }
 
 static int
 sema_trywait(semid_t semid)
 {
 	sem_t sem;
-	unsigned int val;
+	int error;
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		while ((val = sem->usem_count) > 0) {
-			if (atomic_cas_uint(&sem->usem_count, val, val - 1) == val) {
-				membar_enter_after_atomic();
-				return (0);
-			}
+		error = sema_do_wait(sem, TRUE, NULL);
+		if (error == 0) {
+			return (0);
 		}
+		errno = error;
+	} else {
+		errno = EAGAIN;
 	}
-	errno = EAGAIN;
 	return (-1);
 }
 
@@ -803,10 +865,8 @@ sema_getvalue(semid_t semid, int *sval)
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		if (sem->usem_semid == semid) {
-			*sval = sem->usem_count;
-			return (0);
-		}
+		*sval = sem->usem_count;
+		return (0);
 	}
 	return (-1);
 }
@@ -818,13 +878,48 @@ sema_post(semid_t semid)
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		if (sem->usem_semid == semid) {
-			membar_exit_before_atomic();
-			atomic_inc_int(&(*sem)->usem_count);
-			return (0);
-		}
+		membar_exit_before_atomic();
+		atomic_inc_int(&sem->usem_count);
+		return (0);
 	}
 	return (-1);
+}
+
+static int
+sema_do_wait(sem_t sem, bool_t try_p, struct timespec *abstime)
+{
+	int error, timeo;
+	unsigned int val;
+
+	error = 0;
+	atomic_inc_int(sem->usem_waitcount);
+	while ((val = sem->usem_count) > 0) {
+		if (atomic_cas_uint(&sem->usem_count, val, val - 1) == val) {
+			membar_enter_after_atomic();
+			goto out;
+		}
+	}
+	while ((val = sem->usem_count) == 0) {
+		atomic_inc_int(&sem->usem_count);
+		if (!try_p && abstime != NULL) {
+			error = ts2timo(CLOCK_REALTIME, TIMER_ABSTIME, abstime, &timeo, NULL);
+			if (error != 0) {
+				goto out;
+			}
+		} else {
+			timeo = 0;
+		}
+		if (try_p) {
+			error = EAGAIN;
+		} else {
+			error = 0;
+		}
+		goto out;
+	}
+
+out:
+	atomic_dec_int(sem->usem_waitcount);
+	return (error);
 }
 
 /*
