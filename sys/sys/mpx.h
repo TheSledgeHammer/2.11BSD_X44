@@ -69,9 +69,9 @@ enum mpx_cmdops {
 	MPXGET
 };
 
-#define MPX_LOCK_INIT(mpx, name)  simple_lock_init(&(mpx)->mpx_slock, name)
-#define MPX_LOCK(mpx)		simple_lock(&(mpx)->mpx_slock)
-#define MPX_UNLOCK(mpx)		simple_unlock(&(mpx)->mpx_slock)
+#define MPX_LOCK_INIT(mpx, name)  	simple_lock_init(&(mpx)->mpx_slock, name)
+#define MPX_LOCK(mpx)				simple_lock(&(mpx)->mpx_slock)
+#define MPX_UNLOCK(mpx)				simple_unlock(&(mpx)->mpx_slock)
 
 /*
 extern struct lock_holder mpx_loholder;

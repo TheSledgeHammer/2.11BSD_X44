@@ -406,7 +406,7 @@ orphanpg(pg)
 }
 
 #ifdef DEBUG
-pgrpdump()
+pgrpdump(void)
 {
 	register struct pgrp *pgrp;
 	register struct proc *p;

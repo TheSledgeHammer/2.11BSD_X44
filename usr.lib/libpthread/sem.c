@@ -124,6 +124,7 @@ __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 #include <sys/mman.h>
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <semaphore.h>
@@ -146,7 +147,7 @@ __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 static const char *sem_prefix = "/tmp/%s.sem";
 #endif
 
-struct _sems_st {
+struct _sem_st {
 	unsigned int	usem_magic;
 
 	LIST_ENTRY(_sem_st) usem_list;
@@ -180,7 +181,7 @@ static pthread_mutex_t named_sems_mtx = PTHREAD_MUTEX_INITIALIZER;
 static int sem_errorcheck(sem_t *);
 static int sem_alloc(unsigned int, semid_t, sem_t *);
 static void sem_free(sem_t);
-static sem_t sem_lookup(semid_t);
+static sem_t *sem_lookup(semid_t);
 int sem_timedwait(sem_t *, const struct timespec *);
 
 #ifndef USE_KSEM
@@ -241,7 +242,7 @@ sem_free(sem_t sem)
 	free(sem);
 }
 
-static sem_t
+static sem_t *
 sem_lookup(semid_t semid)
 {
 	sem_t sem;
@@ -327,9 +328,9 @@ sem_destroy(sem_t *sem)
 sem_t *
 sem_open(const char *name, int oflag, ...)
 {
-	sem_t *sem, s;
+	sem_t *sem, *s;
 #ifndef USE_KSEM
-	sem_t tmp;
+	sem_t *tmp;
 #endif
 	semid_t semid;
 	mode_t mode;
@@ -365,21 +366,14 @@ sem_open(const char *name, int oflag, ...)
 	 */
 	s = sem_lookup(semid);
 	if (s != NULL) {
-#ifndef USE_KSEM
-		/* free duplicate in mmap */
-		munmap(tmp, SEM_MMAP_SIZE);
-#endif
-		return (s->usem_identity);
+		return ((*s)->usem_identity);
 	}
 
 	pthread_mutex_lock(&named_sems_mtx);
-#ifndef USE_KSEM
-	s = tmp;
-#endif
 	sem = malloc(sizeof(*sem));
 	if (sem == NULL) {
 #ifndef USE_KSEM
-		munmap(s, SEM_MMAP_SIZE);
+		munmap((caddr_t)*tmp, SEM_MMAP_SIZE);
 #endif
 		error = ENOSPC;
 		goto bad;
@@ -688,15 +682,15 @@ sema_create(int pshared, semid_t *semid, sem_t *semp)
 static int
 sema_destroy(semid_t semid)
 {
-	sem_t sem;
+	sem_t *sem;
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		if (sem->usem_waitcount) {
+		if ((*sem)->usem_waitcount) {
 			errno = EBUSY;
 			return (-1);
 		}
-		sem_free(sem);
+		sem_free(*sem);
 		return (0);
 	}
 	return (-1);
@@ -712,8 +706,9 @@ makesempath(const char *origpath, char *sempath, size_t len)
 }
 
 static int
-sema_open(const char *name, int oflag, mode_t mode, unsigned int value, semid_t *idp, sem_t sem)
+sema_open(const char *name, int oflag, mode_t mode, unsigned int value, semid_t *idp, sem_t *semp)
 {
+	sem_t sem;
 	struct stat sb;
 	char sempath[SEM_PATH_SIZE];
 	char const *prefix = NULL;
@@ -756,9 +751,11 @@ sema_open(const char *name, int oflag, mode_t mode, unsigned int value, semid_t 
 	sem->usem_count = value;
 	sem->usem_semid = SEMID_NAMED;
 	*idp = sem->usem_semid;
+	*semp = sem;
 	return (0);
 
 bad:
+	*semp = NULL;
 	close(fd);
 	errno = error;
 	return (-1);
@@ -767,16 +764,16 @@ bad:
 static int
 sema_close(semid_t semid)
 {
-	sem_t sem;
+	sem_t *sem;
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		if (sem->usem_semid == -1) {
+		if ((*sem)->usem_semid == -1) {
 			errno = EINVAL;
 			return (-1);
 		}
-		munmap(sem, SEM_MMAP_SIZE);
-		free(sem);
+		munmap((caddr_t)*sem, SEM_MMAP_SIZE);
+		free(*sem);
 		return (0);
 	}
 
@@ -804,12 +801,12 @@ sema_unlink(const char *name)
 static int
 sema_wait(semid_t semid)
 {
-	sem_t sem;
+	sem_t *sem;
 	int error;
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		error = sema_do_wait(sem, FALSE, NULL);
+		error = sema_do_wait(sem, false, NULL);
 		if (error == 0) {
 			return (0);
 		}
@@ -823,12 +820,12 @@ sema_wait(semid_t semid)
 static int
 sema_timedwait(semid_t semid, struct timespec *abstime)
 {
-	sem_t sem;
+	sem_t *sem;
 	int error;
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		error = sema_do_wait(sem, FALSE, abstime);
+		error = sema_do_wait(sem, false, abstime);
 		if (error == 0) {
 			return (0);
 		}
@@ -842,12 +839,12 @@ sema_timedwait(semid_t semid, struct timespec *abstime)
 static int
 sema_trywait(semid_t semid)
 {
-	sem_t sem;
+	sem_t *sem;
 	int error;
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		error = sema_do_wait(sem, TRUE, NULL);
+		error = sema_do_wait(sem, true, NULL);
 		if (error == 0) {
 			return (0);
 		}
@@ -861,11 +858,11 @@ sema_trywait(semid_t semid)
 static int
 sema_getvalue(semid_t semid, int *sval)
 {
-	sem_t sem;
+	sem_t *sem;
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
-		*sval = sem->usem_count;
+		*sval = (*sem)->usem_count;
 		return (0);
 	}
 	return (-1);
@@ -874,33 +871,32 @@ sema_getvalue(semid_t semid, int *sval)
 static int
 sema_post(semid_t semid)
 {
-	sem_t sem;
+	sem_t *sem;
 
 	sem = sem_lookup(semid);
 	if (sem != NULL) {
 		membar_exit_before_atomic();
-		atomic_inc_int(&sem->usem_count);
+		atomic_inc_int(&(*sem)->usem_count);
 		return (0);
 	}
 	return (-1);
 }
 
 static int
-sema_do_wait(sem_t sem, bool_t try_p, struct timespec *abstime)
+sema_do_wait(sem_t *sem, bool_t try_p, struct timespec *abstime)
 {
 	int error, timeo;
 	unsigned int val;
 
 	error = 0;
-	atomic_inc_int(sem->usem_waitcount);
-	while ((val = sem->usem_count) > 0) {
-		if (atomic_cas_uint(&sem->usem_count, val, val - 1) == val) {
+	atomic_inc_int((*sem)->usem_waitcount);
+	while ((val = (*sem)->usem_count) > 0) {
+		if (atomic_cas_uint(&(*sem)->usem_count, val, val - 1) == val) {
 			membar_enter_after_atomic();
 			goto out;
 		}
 	}
-	while ((val = sem->usem_count) == 0) {
-		atomic_inc_int(&sem->usem_count);
+	while ((val = (*sem)->usem_count) == 0) {
 		if (!try_p && abstime != NULL) {
 			error = ts2timo(CLOCK_REALTIME, TIMER_ABSTIME, abstime, &timeo, NULL);
 			if (error != 0) {
@@ -918,7 +914,7 @@ sema_do_wait(sem_t sem, bool_t try_p, struct timespec *abstime)
 	}
 
 out:
-	atomic_dec_int(sem->usem_waitcount);
+	atomic_dec_int((*sem)->usem_waitcount);
 	return (error);
 }
 
@@ -930,7 +926,9 @@ ts2timo(clockid_t clock_id, int flags, struct timespec *ts, int *timo, struct ti
 {
 	int error;
 	struct timespec tsd;
+	int timeo;
 
+	timeo = *timo;
 	if (ts->tv_nsec < 0 || ts->tv_nsec >= 1000000000L) {
 		return (EINVAL);
 	}
@@ -953,11 +951,23 @@ ts2timo(clockid_t clock_id, int flags, struct timespec *ts, int *timo, struct ti
 		ts = &tsd;
 	}
 
+	if (ts->tv_nsec < 0 || ts->tv_nsec >= 1000000000) {
+		return (EINVAL);
+	}
+
+	if (ts->tv_sec < 0) {
+		return (ETIMEDOUT);
+	}
+
+	if (ts->tv_sec == 0 && ts->tv_nsec != 0 && ts->tv_nsec < (timeo * 1000)) {
+		ts->tv_nsec = timeo * 1000;
+	}
+	/*
 	error = itimespecfix(ts);
 	if (error != 0) {
 		return (error);
 	}
-
+	*/
 	if (ts->tv_sec == 0 && ts->tv_nsec == 0) {
 		return (ETIMEDOUT);
 	}
@@ -965,27 +975,6 @@ ts2timo(clockid_t clock_id, int flags, struct timespec *ts, int *timo, struct ti
 	*timo = tstohz(ts);
 	DIAGASSERT(timo > 0);
 	return (0);
-}
-
-static int
-tstohz(const struct timespec *ts)
-{
-	struct timeval tv;
-
-	/*
-	 * usec has great enough resolution for hz, so convert to a
-	 * timeval and use tvtohz() above.
-	 */
-	tv.tv_sec = ts->tv_sec;
-	tv.tv_usec = (ts->tv_nsec + 999)/1000;
-	if (tv.tv_usec >= 1000000) {
-		if (__predict_false(tv.tv_sec == sizeof(time_t))) {
-			return (INT_MAX);
-		}
-		tv.tv_sec++;
-		tv.tv_usec -= 1000000;
-	}
-	return (tvtohz(&tv));
 }
 
 #endif /* USE_KSEM */

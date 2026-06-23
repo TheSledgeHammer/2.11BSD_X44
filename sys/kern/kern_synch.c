@@ -68,8 +68,8 @@
 fixpt_t	ccpu = 				0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
 #define	CCPU_SHIFT			11
 
-#define	SQSIZE				100						/* Must be power of 2 */
-#define	HASH(x)				(((long)x >> 5) & (SQSIZE - 1))
+#define	SQSIZE				128						/* Must be power of 2 */
+#define	HASH(x)				(((long)(x) >> 5) & (SQSIZE - 1))
 #define	SCHMAG				8/10
 #define	PPQ					(128 / NQS)				/* priorities per queue */
 struct prochd 				qs[NQS];
@@ -546,9 +546,9 @@ setrun(p)
 	if ((p->p_flag & P_SLOAD) == 0) {
 		if (runout != 0) {
 			runout = 0;
-			wakeup((caddr_t) &runout);
+			wakeup((caddr_t)&runout);
 		} else {
-			wakeup((caddr_t) &proc0);
+			wakeup((caddr_t)&proc0);
 		}
 	}
 }

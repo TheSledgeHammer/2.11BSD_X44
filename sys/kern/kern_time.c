@@ -200,7 +200,7 @@ adjtime()
 		atv.tv_usec = (adjdelta % hz) * mshz;
 		adjdelta = adjust;
 	}
-	(void) copyout((caddr_t)&atv, (caddr_t)SCARG(uap, olddelta), sizeof(struct timeval));
+	(void)copyout((caddr_t)&atv, (caddr_t)SCARG(uap, olddelta), sizeof(struct timeval));
 	return (0);
 }
 
@@ -489,6 +489,33 @@ tvtohz(tv)
 	}
 
 	return ((int)ticks);
+}
+
+/*
+ * Compute number of ticks in the specified amount of time.
+ *
+ * Round up, clamped to INT_MAX.  Return 0 iff ts <= 0.
+ */
+int
+tstohz(ts)
+	const struct timespec *ts;
+{
+	struct timeval tv;
+
+	/*
+	 * usec has great enough resolution for hz, so convert to a
+	 * timeval and use tvtohz() above.
+	 */
+	tv.tv_sec = ts->tv_sec;
+	tv.tv_usec = (ts->tv_nsec + 999)/1000;
+	if (tv.tv_usec >= 1000000) {
+		if (__predict_false(tv.tv_sec == sizeof(time_t))) {
+			return (INT_MAX);
+		}
+		tv.tv_sec++;
+		tv.tv_usec -= 1000000;
+	}
+	return (tvtohz(&tv));
 }
 
 /* TODO: Merge settime and setthetime */

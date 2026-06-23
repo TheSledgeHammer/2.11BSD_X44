@@ -1180,7 +1180,7 @@ vm_object_enter(object, pager)
 		return;
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
-	entry = (vm_object_hash_entry_t)malloc((u_long)sizeof *entry, M_VMOBJHASH, M_WAITOK);
+	entry = (vm_object_hash_entry_t)malloc((u_long)sizeof(*entry), M_VMOBJHASH, M_WAITOK);
 	entry->object = object;
 	object->flags |= OBJ_CANPERSIST;
 

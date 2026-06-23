@@ -241,7 +241,7 @@ connect()
 	register struct socket *so;
 	struct mbuf *nam;
 	int s;
-	struct	socket	kcopy;
+	struct socket kcopy;
 
 	if (netoff)
 		return(u.u_error = ENETDOWN);
@@ -660,16 +660,16 @@ recvit(s, mp, flags, namelenp, rightslenp)
 		if (len <= 0 || from == 0)
 			len = 0;
 		else
-			(void) netcopyout(from, mp->msg_name, &len);
-		(void) copyout((caddr_t) & len, namelenp, sizeof(int));
+			(void)netcopyout(from, mp->msg_name, &len);
+		(void)copyout((caddr_t) & len, namelenp, sizeof(int));
 	}
 	if (mp->msg_accrights) {
 		len = mp->msg_accrightslen;
 		if (len <= 0 || rights == 0)
 			len = 0;
 		else
-			(void) netcopyout(rights, mp->msg_accrights, &len);
-		(void) copyout((caddr_t) & len, rightslenp, sizeof(int));
+			(void)netcopyout(rights, mp->msg_accrights, &len);
+		(void)copyout((caddr_t) & len, rightslenp, sizeof(int));
 	}
 	if (rights)
 		m_freem(rights);
