@@ -30,12 +30,8 @@
  */
 
 /*
- * WIP
- *
  * TODO:
- * - further optimizations to the futex queue to improve insertion and removal.
- * - futex wake and requeue functions missing retval
- * - implement the futex syscall.
+ * - missing wakeup in futex_queue_abort?
  */
 
 #include <sys/cdefs.h>
@@ -43,16 +39,18 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-#include <sys/types.h>
+#include <sys/errno.h>
 #include <sys/malloc.h>
 #include <sys/time.h>
-#include <sys/fnv_hash.h>
 #include <sys/lock.h>
 #include <sys/queue.h>
+#include <sys/fnv_hash.h>
+#include <sys/syscall.h>
+#include <sys/sysdecl.h>
+
+#include <devel/futex.h>
 
 #include <vm/include/vm.h>
-
-#define M_FUTEX 105
 
 #define futex_malloc(size, flags)	malloc(size, M_FUTEX, flags)
 #define futex_free(addr)			free(addr, M_FUTEX)
@@ -80,8 +78,8 @@ struct futex {
 	struct lock_object fx_qlock;	/* futex qlock */
 	union futex_key	fx_key;
 	unsigned long fx_refcnt;		/* unused */
-	struct proc *fx_procp; 			/* unused: futex proc */
-	pid_t fx_pid;					/* unused: futex proc pid */
+	//struct proc *fx_procp; 			/* unused: futex proc */
+	//pid_t fx_pid;					/* unused: futex proc pid */
 };
 
 #define futex_qlock_init(fx) 	simple_lock_init(&(fx)->fx_qlock, "futex qlock")
@@ -93,60 +91,81 @@ struct futex {
 
 static struct futex_head futex_hashtab[FUTEX_SQSIZE];
 
-//static struct futex futex_tab;
-//static struct futex_queue futex_slpque;
-
+static u_int32_t futex_key_hash(union futex_key *);
+static struct futex_head *futex_hashtable(union futex_key *);
+static struct futex *futex_create(union futex_key *);
 static void futex_key_init(union futex_key *, struct vmspace *, vm_offset_t);
 static void futex_key_fini(union futex_key *);
+static void futex_queue_init(struct futex_queue *);
+static void futex_queue_insert(struct futex_queue *, struct futex *, union futex_key *);
+static struct futex_queue *futex_queue_lookup(struct futex *, union futex_key *);
+static int futex_lookup_create(struct futex *, struct vmspace *, vm_offset_t);
 static int futex_clock_gettime(clockid_t, struct timespec *);
 static void futex_wait_abort(struct futex_queue *);
 static int futex_wait(struct futex_queue *, const struct timespec *, clockid_t);
 static int futex_wake(struct futex *, int, struct futex *, int);
-static int futex_func_wait(struct vmspace *, vm_offset_t, const struct timespec *, clockid_t, int);
-static int futex_func_wake(struct vmspace *, vm_offset_t, int);
-static int futex_func_requeue(struct vmspace *, vm_offset_t, int, vm_offset_t, int);
+static int futex_func_wait(struct vmspace *, vm_offset_t, const struct timespec *, clockid_t, int, register_t *);
+static int futex_func_wake(struct vmspace *, vm_offset_t, int, register_t *);
+static int futex_func_requeue(struct vmspace *, vm_offset_t, int, vm_offset_t, int, register_t *);
 
 static int
-do_futex(struct vmspace *vmspace, int op, const struct timespec *timeout, clockid_t clock_id, vm_offset_t addr1, vm_offset_t addr2, int nwake, int nrequeue, int flags)
+do_futex(struct vmspace *vmspace, int op, const struct timespec *timeout, clockid_t clock_id, vm_offset_t addr1, int nwake, vm_offset_t addr2, int nrequeue)
 {
-	int error;
+	int error, flags;
+	register_t retval;
 
+	flags = op & FUTEX_FLAG_MASK;
+	op &= FUTEX_OP_MASK;
 	switch (op) {
 	case FUTEX_WAIT:
-		error = futex_func_wait(vmspace, addr1, timeout, clock_id, flags);
+		u.u_error = futex_func_wait(vmspace, addr1, timeout, clock_id, flags, &retval);
+		u.u_r.r_val1 = retval;
 		break;
 	case FUTEX_WAKE:
-		error = futex_func_wake(vmspace, addr1, nwake);
+		u.u_error = futex_func_wake(vmspace, addr1, nwake, &retval);
+		u.u_r.r_val1 = retval;
 		break;
 	case FUTEX_REQUEUE:
-		error = futex_func_requeue(vmspace, addr1, nwake, addr2, nrequeue);
+		u.u_error = futex_func_requeue(vmspace, addr1, nwake, addr2, nrequeue, &retval);
+		u.u_r.r_val1 = retval;
 		break;
 	default:
-		error = ENOSYS;
+		u.u_error = ENOSYS;
 		break;
 	}
-	return (error);
+	return (u.u_error);
 }
 
 int
 futex()
 {
 	register struct futex_args {
-		syscallarg(int *) addr;
 		syscallarg(int) op;
-		syscallarg(int) val;
 		syscallarg(const struct timespec *) timeout;
-		syscallarg(int *) addr2;
-		syscallarg(int) val2;
-		syscallarg(int) val3;
+		syscallarg(clockid_t) clock_id;
+		syscallarg(u_long *) addr1;
+		syscallarg(int) nwake;
+		syscallarg(u_long *) addr2;
+		syscallarg(int) nrequeue;
 	} uap = (struct futex_args *)u.u_ap;
 	register struct proc *p;
 	struct vmspace *vmspace;
+	struct timespec ts, *tsp;
 
 	p = u.u_procp;
 	vmspace = p->p_vmspace;
+	if (SCARG(uap, timeout)) {
+		u.u_error = copyin(SCARG(uap, timeout), &ts, sizeof(ts));
+		if (u.u_error) {
+			return (u.u_error);
+		}
+		tsp = &ts;
+	} else {
+		tsp = NULL;
+	}
 
-	do_futex(vmspace, SCARG(uap, op), SCARG(uap, timeout), SCARG(uap, addr), SCARG(uap, addr2), SCARG(uap, addr));
+	u.u_error = do_futex(vmspace, SCARG(uap, op), tsp, SCARG(uap, clock_id), SCARG(uap, addr1), SCARG(uap, nwake), SCARG(uap, addr2), SCARG(uap, nrequeue));
+	return (u.u_error);
 }
 
 /* run in main.c */
@@ -158,8 +177,6 @@ futex_init(void)
 	for (i = 0; i < FUTEX_SQSIZE; i++) {
 		TAILQ_INIT(&futex_hashtab[i]);
 	}
-    //futex_qlock_init(&futex_tab);
-	//futex_lock_init(&futex_slpque);
 }
 
 static u_int32_t
@@ -188,7 +205,7 @@ futex_create(union futex_key *key)
 {
 	struct futex *fx;
 
-	fx = (struct futex *)futex_malloc(*fx, M_WAITOK);
+	fx = (struct futex *)futex_malloc(sizeof(*fx), M_WAITOK);
 	if (fx == NULL) {
 		futex_key_fini(key);
 		return (NULL);
@@ -206,6 +223,7 @@ futex_key_init(union futex_key *fk, struct vmspace *vmspace, vm_offset_t addr)
 	vm_map_t map;
 	vm_map_entry_t entry;
 	vm_object_t object;
+	//vm_amap_t amap;
 	vm_offset_t eaddr, offset;
 	vm_size_t elen;
 
@@ -217,6 +235,7 @@ futex_key_init(union futex_key *fk, struct vmspace *vmspace, vm_offset_t addr)
 			eaddr = ((entry->start + elen) - elen);
 			if (eaddr == addr) {
 				object = entry->object.vm_object;
+				//amap = entry->aref.ar_amap;
 				offset = entry->offset;
 			}
 		}
@@ -224,6 +243,7 @@ futex_key_init(union futex_key *fk, struct vmspace *vmspace, vm_offset_t addr)
 	vm_map_unlock_read(map);
 	fk->fk_vmspace = vmspace;
 	fk->fk_object = object;
+	//fk->fk_amap = amap;
 	fk->fk_offset = offset;
 }
 
@@ -238,13 +258,18 @@ futex_queue_init(struct futex_queue *fq)
 {
 	struct futex_queue *result;
 
-	result = (struct futex_queue *)futex_malloc(*result, M_WAITOK);
-	if (result == NULL) {
-		return;
+	if (fq != NULL) {
+		futex_lock_init(fq);
+		fq->fq_futex = NULL;
+	} else {
+		result = (struct futex_queue *)futex_malloc(sizeof(*result), M_WAITOK);
+		if (result == NULL) {
+			return;
+		}
+		futex_lock_init(result);
+		result->fq_futex = NULL;
+		fq = result;
 	}
-	futex_lock_init(result);
-	result->fq_futex = NULL;
-	fq = result;
 }
 
 static void
@@ -273,7 +298,7 @@ futex_queue_remove(struct futex_queue *fq, struct futex *fx, union futex_key *ke
 	futex_unlock(fq);
 }
 
-struct futex_queue *
+static struct futex_queue *
 futex_queue_lookup(struct futex *fx, union futex_key *key)
 {
 	struct futex_head *head;
@@ -291,29 +316,7 @@ futex_queue_lookup(struct futex *fx, union futex_key *key)
 	return (NULL);
 }
 
-#ifdef notyet
-void
-futex_drain(struct futex *fx)
-{
-	struct futex_queue *fq;
-
-	futex_qlock(fx);
-	fq = futex_queue_lookup(fx, &fx->fx_key);
-	if (fq != NULL) {
-		futex_queue_remove(fq, fx, &fx->fx_key);
-	}
-	futex_qunlock(fx);
-}
-
-void
-futex_destroy(struct futex *fx)
-{
-	futex_drain(fx);
-	futex_free(fx);
-}
-#endif
-
-int
+static int
 futex_lookup_create(struct futex *fx0, struct vmspace *vmspace, vm_offset_t addr)
 {
 	union futex_key fk;
@@ -325,12 +328,20 @@ futex_lookup_create(struct futex *fx0, struct vmspace *vmspace, vm_offset_t addr
 
 	fq = futex_queue_lookup(fx0, &fk);
 	if (fq != NULL) {
+		/*
+		 * We either found one, or there was an error.
+		 * In either case, we are done with the key.
+		 */
 		futex_key_fini(fk);
 		goto out;
 	} else {
 		futex_queue_init(fq);
 	}
 
+	/*
+	 * Create a futex record.  This transfers ownership of the key
+	 * in all cases.
+	 */
 	fx = futex_create(&fk);
 	if (fx == NULL) {
 		error = ENOMEM;
@@ -346,10 +357,13 @@ futex_lookup_create(struct futex *fx0, struct vmspace *vmspace, vm_offset_t addr
 		fx = NULL;
 	}
 
+	/* Success!  */
+	KASSERT(error == 0);
 out:
 	if (fx != NULL) {
 		futex_free(fx);
 	}
+	KASSERT(error || fx0 != NULL);
 	return (error);
 }
 
@@ -379,11 +393,22 @@ futex_clock_gettime(clockid_t clock_id, struct timespec *tp)
 	return (0);
 }
 
+/*
+ * futex_wait_abort(fq)
+ *
+ *	Caller is no longer waiting for fq.  Remove it from any queue
+ *	if it was on one.  Caller must hold fq->fq_lock.
+ */
 static void
 futex_wait_abort(struct futex_queue *fq)
 {
 	struct futex *fx;
 
+	/*
+	 * Grab the futex queue.  It can't go away as long as we hold
+	 * fq_lock.  However, we can't take the queue lock because
+	 * that's a lock order reversal.
+	 */
 	fx = fq->fq_futex;
 
 	futex_qlock(fx);
@@ -400,25 +425,31 @@ futex_wait(struct futex_queue *fq, const struct timespec *deadline, clockid_t cl
 	int error;
 
 	error = 0;
+	/* Test and wait under the wait lock.  */
 	futex_lock(fq);
 	for (;;) {
+		/* If we're done yet, stop and report success.  */
 		if (fq->fq_futex == NULL) {
 			error = 0;
 			break;
 		}
 
+		/* If anything went wrong in the last iteration, stop.  */
 		if (error) {
 			break;
 		}
 
+		/* Not done yet.  Wait.  */
 		if (deadline) {
 			struct timespec ts;
 
+			/* Check our watch.  */
 			error = futex_clock_gettime(clock_id, &ts);
 			if (error) {
 				break;
 			}
 
+			/* If we're past the deadline, ETIMEDOUT.  */
 			if (timespeccmp(deadline, &ts, <=)) {
 				error = ETIMEDOUT;
 				break;
@@ -427,15 +458,28 @@ futex_wait(struct futex_queue *fq, const struct timespec *deadline, clockid_t cl
 			/* Count how much time is left.  */
 			timespecsub(deadline, &ts, &ts);
 
+			/*
+			 * Wait for that much time, allowing signals.
+			 * Ignore EWOULDBLOCK, however: we will detect
+			 * timeout ourselves on the next iteration of
+			 * the loop -- and the timeout may have been
+			 * truncated by tstohz, anyway.
+			 */
 			error = ltsleep(fq, PWAIT|PCATCH, "fsleep", MAX(1, tstohz(&ts)), &fq->fq_lock);
 			if (error == EWOULDBLOCK) {
 				error = 0;
 			}
 		} else {
+			/* Wait indefinitely, allowing signals. */
 			error = ltsleep(fq, PWAIT|PCATCH, "fsleep", 0, &fq->fq_lock);
 		}
 	}
 
+	/*
+	 * If we were woken up, the waker will have removed fq from the
+	 * queue.  But if anything went wrong, we must remove fq from
+	 * the queue ourselves.
+	 */
 	if (error) {
 		futex_wait_abort(fq);
 	}
@@ -484,7 +528,7 @@ futex_wake(struct futex *fx1, int nwake, struct futex *fx2, int nrequeue)
 }
 
 static int
-futex_func_wait(struct vmspace *vmspace, vm_offset_t addr, const struct timespec *timeout, clockid_t clock_id, int flags)
+futex_func_wait(struct vmspace *vmspace, vm_offset_t addr, const struct timespec *timeout, clockid_t clock_id, int flags, register_t *retval)
 {
 	struct futex_queue *fq;
 	struct futex *fx;
@@ -493,6 +537,7 @@ futex_func_wait(struct vmspace *vmspace, vm_offset_t addr, const struct timespec
 	const struct timespec *deadline;
 	int error;
 
+	/* Determine a deadline on the specified clock.  */
 	if (timeout == NULL || (flags & TIMER_ABSTIME) == TIMER_ABSTIME) {
 		deadline = timeout;
 	} else {
@@ -504,6 +549,7 @@ futex_func_wait(struct vmspace *vmspace, vm_offset_t addr, const struct timespec
 		deadline = &ts;
 	}
 
+	/* Get the futex, creating it if necessary.  */
 	error = futex_lookup_create(fx, vmspace, addr);
 	if (error) {
 		return (error);
@@ -511,18 +557,29 @@ futex_func_wait(struct vmspace *vmspace, vm_offset_t addr, const struct timespec
 
 	KASSERT(fx);
 
+	/* Get ready to wait.  */
 	futex_queue_init(fq);
 
 	futex_qlock(fx);
 	futex_queue_insert(fq, fx, &fx->fx_key);
 	futex_qunlock(fx);
 
+	/*
+	 * We cannot drop our reference to the futex here, because
+	 * we might be enqueued on a different one when we are awakened.
+	 * The references will be managed on our behalf in the requeue
+	 * and wake cases.
+	 */
 	fx = NULL;
 
+	/* Wait. */
 	error = futex_wait(fx, deadline, clock_id);
 	if (error) {
 		goto out;
 	}
+
+	/* Return 0 on success, error on failure. */
+	retval = 0;
 
 out:
 	if (fx != NULL) {
@@ -532,17 +589,19 @@ out:
 }
 
 static int
-futex_func_wake(struct vmspace *vmspace, vm_offset_t addr, int nwake)
+futex_func_wake(struct vmspace *vmspace, vm_offset_t addr, int nwake, register_t *retval)
 {
 	struct futex *fx;
 	int error, nwoken;
 
 	error = nwoken = 0;
+	/* Reject negative number of wakeups.  */
 	if (nwake < 0) {
 		error = EINVAL;
 		goto out;
 	}
 
+	/* Look up the futex, if any.  */
 	error = futex_lookup_create(fx, vmspace, addr);
 	if (error) {
 		goto out;
@@ -556,11 +615,15 @@ futex_func_wake(struct vmspace *vmspace, vm_offset_t addr, int nwake)
 	futex_qunlock(fx);
 
 out:
+	/* Return the number of waiters woken.  */
+	retval = nwoken;
+
+	/* Success!  */
 	return (error);
 }
 
 static int
-futex_func_requeue(struct vmspace *vmspace, vm_offset_t addr, int nwake, vm_offset_t addr2, int nrequeue)
+futex_func_requeue(struct vmspace *vmspace, vm_offset_t addr, int nwake, vm_offset_t addr2, int nrequeue, register_t *retval)
 {
 	struct futex *fx1, *fx2;
 	int nwoken_or_requeued = 0;
@@ -577,10 +640,15 @@ futex_func_requeue(struct vmspace *vmspace, vm_offset_t addr, int nwake, vm_offs
 		goto out;
 	}
 
+	/* If there is none for FUTEX_REQUEUE, nothing to do. */
 	if (fx1 == NULL) {
 		goto out;
 	}
 
+	/*
+	 * We may need to create the destination futex because it's
+	 * entirely possible it does not currently have any waiters.
+	 */
 	error = futex_lookup_create(fx2, vmspace, addr2);
 	if (error) {
 		goto out;
@@ -606,6 +674,10 @@ futex_func_requeue(struct vmspace *vmspace, vm_offset_t addr, int nwake, vm_offs
 	}
 
 out:
+	/* Return the number of waiters woken or requeued.  */
+	retval = nwoken_or_requeued;
+
+	/* Release the futexes if we got them.  */
 	if (fx2 != NULL) {
 		futex_free(fx2);
 	}
