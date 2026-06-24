@@ -196,4 +196,5 @@ char *syscallnames[] = {
 	"fchroot",			/* 176 = fchroot */
 	"getfh",			/* 177 = getfh */
 	"fpathconf",			/* 178 = fpathconf */
+	"futex",			/* 179 = futex */
 };

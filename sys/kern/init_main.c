@@ -80,6 +80,7 @@
 #include <sys/null.h>
 #include <sys/domain.h>
 #include <sys/uuid.h>
+#include <sys/futex.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_psegment.h>
@@ -309,6 +310,8 @@ main(framep)
 
 	thread_rqinit(p);
 	thread_sqinit(p);
+
+    futex_init();
 
 	/* Configure virtual memory system, set vm rlimits. */
 	vm_init_limits(p);

@@ -192,6 +192,7 @@ int	tls();
 int	fchroot();
 int	getfh();
 int	fpathconf();
+int	futex();
 #define	s(type)	sizeof(type)
 
 struct sysent sysent[] = {
@@ -565,6 +566,8 @@ struct sysent sysent[] = {
 	    getfh },				/* 177 = getfh */
 	{ 0, 0,
 	    fpathconf },			/* 178 = fpathconf */
+	{ 0, 0,
+	    futex },				/* 179 = futex */
 };
 
 int	nsysent= sizeof(sysent) / sizeof(sysent[0]);

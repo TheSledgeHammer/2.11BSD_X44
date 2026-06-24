@@ -232,3 +232,4 @@
 176 STD		{ int fchroot(); }
 177 STD		{ int getfh(); }
 178 STD		{ int fpathconf(); }
+179 STD		{ int futex(); }
