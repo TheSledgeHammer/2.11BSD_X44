@@ -86,6 +86,17 @@ struct _sem_st {
 	unsigned int	usem_count;
 };
 
+#define	USEM_MAGIC		0x09fa4012
+#define	USEM_USER		0		/* assumes kernel does not use NULL */
+
+static LIST_HEAD(, _sem_st) named_sems = LIST_HEAD_INITIALIZER(&named_sems);
+static pthread_mutex_t named_sems_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+static int sem_errorcheck(sem_t *);
+static int sem_alloc(unsigned int, semid_t, sem_t *);
+static void sem_free(sem_t);
+static sem_t *sem_lookup(semid_t);
+
 static int
 sem_errorcheck(sem_t *sem)
 {
