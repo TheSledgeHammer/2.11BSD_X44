@@ -181,7 +181,6 @@ static int sem_alloc(unsigned int, semid_t, sem_t *);
 static void sem_free(sem_t);
 static sem_t *sem_lookup(semid_t);
 
-#ifndef USE_KSEM
 static int sema_create(int, semid_t *, sem_t *);
 static int sema_destroy(semid_t);
 static void makesempath(const char *, char *, size_t);
@@ -194,7 +193,6 @@ static int sema_trywait(semid_t);
 static int sema_getvalue(semid_t, int *);
 static int sema_post(semid_t);
 static int sema_do_wait(sem_t, bool_t, struct timespec *);
-#endif
 
 static int
 sem_errorcheck(sem_t *sem)
