@@ -36,7 +36,7 @@ ARCHDIR=	${.CURDIR}/arch/${ARCHSUBDIR}
 CPPFLAGS+=	-I${ARCHDIR} -I${.CURDIR} -I${.OBJDIR} -D_LIBC -D_REENTRANT
 CPPFLAGS+=	-I${.CURDIR}/../../libc/include
 CPPFLAGS+=	-D__LIBPTHREAD_SOURCE__ -D__LIBC_THREAD_STUBS
-
+#CPPFLAGS+= 	-DUSE_KSEM
 # XXX: This crappy poke at libc's internals needs to be fixed.
 CPPFLAGS+=-I${NETBSDSRCDIR}/sys -I${.CURDIR}/../../libc
 
@@ -67,7 +67,11 @@ SRCS+=	pthread_syscalls.c
 SRCS+=	pthread_tsd.c
 SRCS+=  pthread_debug.c
 SRCS+=	sched.c
+.if defined(USE_KSEM)
+SRCS+=	sema.c
+.else
 SRCS+=	sem.c
+.endif
 # Architecture-dependent files
 SRCS+=	pthread_switch.S
 SRCS+=  _context_u.S

@@ -112,7 +112,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define USE_KSEM /* Sema functions not ready */
+/*
+ * For semaphores that implement kernel semaphores instead of futexes see sema.c.
+ * NOTES:
+ * - kernel semaphores have not been implemented in the kernel and are just place holders.
+ * - However if you wish to use them instead (for whatever reason), you will need to unblank
+ *   "CPPFLAGS+= -DUSE_KSEM" in the libpthread Makefile.
+ */
 
 #include <sys/cdefs.h>
 __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
@@ -136,16 +142,12 @@ __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 
 #include "pthread.h"
 #include "pthread_int.h"
- /* Implements kernel semaphores */
-#ifdef USE_KSEM
 #include "pthread_syscalls.h"
-#else /* !USE_KSEM */
 
 #define SEM_PATH_SIZE 	(5 + SHA256_DIGEST_STRING_LENGTH + 4)
 #define SEM_MMAP_SIZE 	(getpagesize())
 
 static const char *sem_prefix = "/tmp/%s.sem";
-#endif
 
 struct _sem_st {
 	unsigned int	usem_magic;
@@ -160,20 +162,16 @@ struct _sem_st {
 
 	struct pthread_queue_t usem_waiters;
 	unsigned int	usem_count;
-#ifndef USE_KSEM
 	volatile int 	usem_waitcount;
-#endif
 };
 
 #define	USEM_MAGIC		0x09fa4012
 #define	USEM_USER		0		/* assumes kernel does not use NULL */
 
-#ifndef USE_KSEM
-#define	SEM_MAGIC		USEM_MAGIC
-#define SEMID_PROC 		USEM_USER
+#define	SEM_MAGIC		0x09fa4012
+#define SEMID_PROC 		0		/* assumes kernel does not use NULL */
 #define SEMID_FORK		1
 #define SEMID_NAMED		2
-#endif
 
 static LIST_HEAD(, _sem_st) named_sems = LIST_HEAD_INITIALIZER(&named_sems);
 static pthread_mutex_t named_sems_mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -182,7 +180,6 @@ static int sem_errorcheck(sem_t *);
 static int sem_alloc(unsigned int, semid_t, sem_t *);
 static void sem_free(sem_t);
 static sem_t *sem_lookup(semid_t);
-int sem_timedwait(sem_t *, const struct timespec *);
 
 #ifndef USE_KSEM
 static int sema_create(int, semid_t *, sem_t *);
@@ -197,15 +194,13 @@ static int sema_trywait(semid_t);
 static int sema_getvalue(semid_t, int *);
 static int sema_post(semid_t);
 static int sema_do_wait(sem_t, bool_t, struct timespec *);
-static int ts2timo(clockid_t, int, struct timespec *, int *, struct timespec *);
-static int tstohz(const struct timespec *);
 #endif
 
 static int
 sem_errorcheck(sem_t *sem)
 {
 #ifdef ERRORCHECK
-	if (sem == NULL || *sem == NULL || (*sem)->usem_magic != USEM_MAGIC) {
+	if (sem == NULL || *sem == NULL || (*sem)->usem_magic != SEM_MAGIC) {
 		return (-1);
 	}
 #endif
@@ -226,7 +221,7 @@ sem_alloc(unsigned int value, semid_t semid, sem_t *semp)
 		return (ENOSPC);
 	}
 
-	sem->usem_magic = USEM_MAGIC;
+	sem->usem_magic = SEM_MAGIC;
 	pthread_lockinit(&sem->usem_interlock);
 	PTQ_INIT(&sem->usem_waiters);
 	sem->usem_count = value;
@@ -264,26 +259,16 @@ sem_init(sem_t *sem, int pshared, unsigned int value)
 	semid_t	semid;
 	int error;
 
-#ifdef USE_KSEM
-	semid = USEM_USER;
-	if (pshared && pthread_sys_ksem_init(value, &semid) == -1) {
-		return (-1);
-	}
-#else
 	error = sema_create(pshared, &semid, sem);
 	if (error != 0) {
 		errno = error;
 		return (-1);
 	}
-#endif
+
 	error = sem_alloc(value, semid, sem);
 	if (error != 0) {
-		if (semid != USEM_USER) {
-#ifdef USE_KSEM
-			pthread_sys_ksem_destroy(semid);
-#else
+		if (semid != SEMID_PROC) {
 			sema_destroy(semid);
-#endif
 		}
 		errno = error;
 		return (-1);
@@ -302,12 +287,8 @@ sem_destroy(sem_t *sem)
 		return (-1);
 	}
 
-	if ((*sem)->usem_semid != USEM_USER) {
-#ifdef USE_KSEM
-		if (pthread_sys_ksem_destroy((*sem)->usem_semid)) {
-#else
+	if ((*sem)->usem_semid != SEMID_PROC) {
 		if (sema_destroy((*sem)->usem_semid)) {
-#endif
 			return (-1);
 		}
 	} else {
@@ -329,9 +310,7 @@ sem_t *
 sem_open(const char *name, int oflag, ...)
 {
 	sem_t *sem, *s;
-#ifndef USE_KSEM
 	sem_t *tmp;
-#endif
 	semid_t semid;
 	mode_t mode;
 	unsigned int value;
@@ -352,11 +331,7 @@ sem_open(const char *name, int oflag, ...)
 	 * We can be lazy and let the kernel handle the oflag,
 	 * we'll just merge duplicate IDs into our list.
 	 */
-#ifdef USE_KSEM
-	if (pthread_sys_ksem_open(name, oflag, mode, value, &semid) == -1) {
-#else
 	if (sema_open(name, oflag, mode, value, &semid, tmp) != 0) {
-#endif
 		return (SEM_FAILED);
 	}
 
@@ -372,9 +347,7 @@ sem_open(const char *name, int oflag, ...)
 	pthread_mutex_lock(&named_sems_mtx);
 	sem = malloc(sizeof(*sem));
 	if (sem == NULL) {
-#ifndef USE_KSEM
 		munmap((caddr_t)*tmp, SEM_MMAP_SIZE);
-#endif
 		error = ENOSPC;
 		goto bad;
 	}
@@ -391,11 +364,7 @@ sem_open(const char *name, int oflag, ...)
 
  bad:
 	pthread_mutex_unlock(&named_sems_mtx);
-#ifdef USE_KSEM
-	pthread_sys_ksem_close(semid);
-#else
 	sema_close(semid);
-#endif
 	if (sem != NULL) {
 		if (*sem != NULL) {
 			sem_free(*sem);
@@ -414,17 +383,13 @@ sem_close(sem_t *sem)
 		return (-1);
 	}
 
-	if ((*sem)->usem_semid == USEM_USER) {
+	if ((*sem)->usem_semid == SEMID_PROC) {
 		errno = EINVAL;
 		return (-1);
 	}
 
 	pthread_mutex_lock(&named_sems_mtx);
-#ifdef USE_KSEM
-	if (pthread_sys_ksem_close((*sem)->usem_semid) == -1) {
-#else
 	if (sema_close((*sem)->usem_semid) == -1) {
-#endif
 		pthread_mutex_unlock(&named_sems_mtx);
 		return (-1);
 	}
@@ -439,11 +404,7 @@ sem_close(sem_t *sem)
 int
 sem_unlink(const char *name)
 {
-#ifdef USE_KSEM
-	return (pthread_sys_ksem_unlink(name));
-#else
 	return (sema_unlink(name));
-#endif
 }
 
 int
@@ -458,13 +419,9 @@ sem_wait(sem_t *sem)
 
 	self = pthread__self();
 
-	if ((*sem)->usem_semid != USEM_USER) {
+	if ((*sem)->usem_semid != SEMID_PROC) {
 		pthread__testcancel(self);
-#ifdef USE_KSEM
-		return (pthread_sys_ksem_wait((*sem)->usem_semid));
-#else
 		return (sema_wait((*sem)->usem_semid));
-#endif
 	}
 
 	for (;;) {
@@ -513,12 +470,8 @@ sem_timedwait(sem_t *sem, const struct timespec *abstime)
 
 	self = pthread__self();
 
-	if ((*sem)->usem_semid != USEM_USER) {
-#ifdef USE_KSEM
-		return (ENOSYS);
-#else
+	if ((*sem)->usem_semid != SEMID_PROC) {
 		return (sema_timedwait((*sem)->usem_semid, abstime));
-#endif
 	}
 
 	for (;;) {
@@ -565,12 +518,8 @@ sem_trywait(sem_t *sem)
 		return (-1);
 	}
 
-	if ((*sem)->usem_semid != USEM_USER) {
-#ifdef USE_KSEM
-		return (pthread_sys_ksem_trywait((*sem)->usem_semid));
-#else
+	if ((*sem)->usem_semid != SEMID_PROC) {
 		return (sema_trywait((*sem)->usem_semid));
-#endif
 	}
 
 	self = pthread__self();
@@ -600,12 +549,8 @@ sem_post(sem_t *sem)
 		return (-1);
 	}
 
-	if ((*sem)->usem_semid != USEM_USER) {
-#ifdef USE_KSEM
-		return (pthread_sys_ksem_post((*sem)->usem_semid));
-#else
+	if ((*sem)->usem_semid != SEMID_PROC) {
 		return (sema_post((*sem)->usem_semid));
-#endif
 	}
 
 	self = pthread__self();
@@ -633,12 +578,8 @@ sem_getvalue(sem_t *sem, int *sval)
 		return (-1);
 	}
 
-	if ((*sem)->usem_semid != USEM_USER) {
-#ifdef USE_KSEM
-		return (pthread_sys_ksem_getvalue((*sem)->usem_semid, sval));
-#else
+	if ((*sem)->usem_semid != SEMID_PROC) {
 		return (sema_getvalue((*sem)->usem_semid, sval));
-#endif
 	}
 
 	self = pthread__self();
@@ -651,8 +592,6 @@ sem_getvalue(sem_t *sem, int *sval)
 }
 
 /* Sema: internal sem functions */
-#ifndef USE_KSEM
-
 static int
 sema_create(int pshared, semid_t *semid, sem_t *semp)
 {
@@ -885,7 +824,7 @@ sema_post(semid_t semid)
 static int
 sema_do_wait(sem_t *sem, bool_t try_p, struct timespec *abstime)
 {
-	int error, timeo;
+	int error/*, timeo*/;
 	unsigned int val;
 
 	error = 0;
@@ -898,12 +837,10 @@ sema_do_wait(sem_t *sem, bool_t try_p, struct timespec *abstime)
 	}
 	while ((val = (*sem)->usem_count) == 0) {
 		if (!try_p && abstime != NULL) {
-			error = ts2timo(CLOCK_REALTIME, TIMER_ABSTIME, abstime, &timeo, NULL);
+			error = pthread_sys_futex_wait(abstime, CLOCK_REALTIME, &(*sem)->usem_count, 0, TIMER_ABSTIME);
 			if (error != 0) {
 				goto out;
 			}
-		} else {
-			timeo = 0;
 		}
 		if (try_p) {
 			error = EAGAIN;
@@ -917,64 +854,3 @@ out:
 	atomic_dec_int((*sem)->usem_waitcount);
 	return (error);
 }
-
-/*
- * Calculate delta and convert from struct timespec to the ticks.
- */
-static int
-ts2timo(clockid_t clock_id, int flags, struct timespec *ts, int *timo, struct timespec *start)
-{
-	int error;
-	struct timespec tsd;
-	int timeo;
-
-	timeo = *timo;
-	if (ts->tv_nsec < 0 || ts->tv_nsec >= 1000000000L) {
-		return (EINVAL);
-	}
-
-	if ((flags & TIMER_ABSTIME) != 0 || start != NULL) {
-		error = clock_gettime(clock_id, &tsd);
-		if (error != 0) {
-			return (error);
-		}
-		if (start != NULL) {
-			*start = tsd;
-		}
-	}
-
-	if ((flags & TIMER_ABSTIME) != 0) {
-		if (timespeccmp(ts, &tsd, <) || timespeccmp(ts, &tsd, >)) {
-			return (EINVAL);
-		}
-		timespecsub(ts, &tsd, &tsd);
-		ts = &tsd;
-	}
-
-	if (ts->tv_nsec < 0 || ts->tv_nsec >= 1000000000) {
-		return (EINVAL);
-	}
-
-	if (ts->tv_sec < 0) {
-		return (ETIMEDOUT);
-	}
-
-	if (ts->tv_sec == 0 && ts->tv_nsec != 0 && ts->tv_nsec < (timeo * 1000)) {
-		ts->tv_nsec = timeo * 1000;
-	}
-	/*
-	error = itimespecfix(ts);
-	if (error != 0) {
-		return (error);
-	}
-	*/
-	if (ts->tv_sec == 0 && ts->tv_nsec == 0) {
-		return (ETIMEDOUT);
-	}
-
-	*timo = tstohz(ts);
-	DIAGASSERT(timo > 0);
-	return (0);
-}
-
-#endif /* USE_KSEM */

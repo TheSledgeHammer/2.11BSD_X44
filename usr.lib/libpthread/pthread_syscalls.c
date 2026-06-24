@@ -77,7 +77,7 @@ __strong_alias(__exeve, pthread_sys_execve)
 __strong_alias(_fcntl, pthread_sys_fcntl)
 __strong_alias(_fsync, pthread_sys_fsync)
 __strong_alias(_getitimer, pthread_sys_getitimer)
-
+__strong_alias(_futex, pthread_sys_futex)
 #ifdef USE_KSEM
 __strong_alias(_ksem_close, pthread_sys_ksem_close)
 __strong_alias(_ksem_destroy, pthread_sys_ksem_destroy)
@@ -89,7 +89,6 @@ __strong_alias(_ksem_trywait, pthread_sys_ksem_trywait)
 __strong_alias(_ksem_unlink, pthread_sys_ksem_unlink)
 __strong_alias(_ksem_wait, pthread_sys_ksem_wait)
 #endif
-
 __strong_alias(_msgrcv, pthread_sys_msgrcv)
 __strong_alias(_msgsnd, pthread_sys_msgsnd)
 __strong_alias(_msync, pthread_sys_msync)
@@ -236,7 +235,6 @@ pthread_sys_fsync_range(int d, int f, off_t s, off_t e)
 	return (retval);
 }
 
-#ifdef notready
 int
 pthread_sys_futex(int op, const struct timespec *tp, clockid_t clock_id, u_long *addr1, u_long val, int nwake, u_long *addr2, int nrequeue, int flags)
 {
@@ -253,7 +251,7 @@ pthread_sys_futex(int op, const struct timespec *tp, clockid_t clock_id, u_long 
 int
 pthread_sys_futex_wait(const struct timespec *tp, clockid_t clock_id, u_long *addr, u_long val, int flags)
 {
-	return (pthread_sys_futex(FUTEX_WAIT, tp clock_id, addr, val, 0, NULL, 0, flags));
+	return (pthread_sys_futex(FUTEX_WAIT, tp, clock_id, addr, val, 0, NULL, 0, flags));
 }
 
 int
@@ -267,8 +265,8 @@ pthread_sys_futex_requeue(u_long *addr1, u_long val, int nwake, u_long *addr2, i
 {
 	return (pthread_sys_futex(FUTEX_REQUEUE, NULL, 0, addr1, val, nwake, addr2, nrequeue, 0));
 }
-#endif
 
+#ifdef USE_KSEM
 int
 pthread_sys_ksem_close(semid_t id)
 {
@@ -322,6 +320,7 @@ pthread_sys_ksem_wait(semid_t id)
 {
 	return (ENOSYS);
 }
+#endif
 
 ssize_t
 pthread_sys_msgrcv(int msgid, void *msgp, size_t msgsz, long msgtyp, int msgflg)

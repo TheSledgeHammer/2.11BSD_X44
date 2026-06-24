@@ -30,15 +30,11 @@ enum futex_cmdops {
 };
 
 #ifdef _KERNEL
-
 void futex_init(void);
-
 #else /* !_KERNEL */
-
 #include <sys/cdefs.h>
-
 __BEGIN_DECLS
-int futex(int, const struct timespec *, clockid_t, u_long *, int, u_long *, int);
+int futex(int, const struct timespec *, clockid_t, u_long *, u_long, int, u_long *, int, int);
 __END_DECLS
 #endif
 #endif /* SYS_FUTEX_H_ */
