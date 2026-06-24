@@ -182,3 +182,4 @@ extern int	tls();
 extern int	fchroot();
 extern int	getfh();
 extern int	fpathconf();
+extern int	futex();

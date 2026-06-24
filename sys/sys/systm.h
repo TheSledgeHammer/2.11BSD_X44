@@ -115,6 +115,7 @@ extern char	runout;					/* scheduling flag */
 extern char	curpri;					/* more scheduling */
 extern int	noproc;					/* no one is running just now */
 
+#ifdef _KERNEL
 /* system call args */
 #define	syscallarg(x)	union { x datum; register_t pad; }
 
@@ -143,7 +144,7 @@ extern struct sysent {
 extern int nsysent;
 
 /* Initialize the world */
-#ifdef _KERNEL
+//#ifdef _KERNEL
 extern void startup(void);			/* cpu startup */
 extern void consinit(void);			/* console startup */
 extern void cinit(void);			/* clist startup */
@@ -159,49 +160,49 @@ extern void vfsinit(void);			/* vfs startup */
 struct clockframe;
 struct timeval;
 
-int 	nodev(void);
-int 	nulldev(void *);
-int 	nullop(void *);
-int 	enodev(void);
-int 	enoioctl(void);
-int 	enxio(void);
-int 	eopnotsupp(void *);
-int 	einval(void);
-int 	nonet(void);
-int 	nosys();
+int nodev(void);
+int nulldev(void *);
+int nullop(void *);
+int enodev(void);
+int enoioctl(void);
+int enxio(void);
+int eopnotsupp(void *);
+int einval(void);
+int nonet(void);
+int nosys();
 
 #ifdef _KERNEL
-void 	*hashinit(int, int, u_long *);
-void 	*hashfree(void *, int, int, u_long *);
+void *hashinit(int, int, u_long *);
+void *hashfree(void *, int, int, u_long *);
 
 int	ureadc(int, struct uio *);
 #endif
 
-void 	panic(const char *, ...) __attribute__((__noreturn__,__format__(__printf__,1,2)));
-void	tablefull(const char *);
-void	addlog(const char *, ...) __attribute__((__format__(__printf__,1,2)));
-void	log(int, const char *, ...);
-void	vlog(int, const char *, va_list);
+void panic(const char *, ...) __attribute__((__noreturn__,__format__(__printf__,1,2)));
+void tablefull(const char *);
+void addlog(const char *, ...) __attribute__((__format__(__printf__,1,2)));
+void log(int, const char *, ...);
+void vlog(int, const char *, va_list);
 
 #ifdef _KERNEL
 /* subr_prf.c */
-void	printf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
+void printf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
 int	sprintf(char *, const char *, ...)  __attribute__((__format__(__printf__,2,3)));
 int	snprintf(char *, size_t, const char *, ...) __attribute__((__format__(__printf__,3,4)));
-void	vprintf(const char *, va_list);
+void vprintf(const char *, va_list);
 int	vsprintf(char *, const char *, va_list);
 int	vsnprintf(char *, size_t, const char *, va_list);
 #endif
 
-void	ttyprintf(struct tty *, const char *, ...);
-void	uprintf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
-void    printn(long, u_int, int, struct tty *);
-char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
+void ttyprintf(struct tty *, const char *, ...);
+void uprintf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
+void printn(long, u_int, int, struct tty *);
+char *bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 
 #ifdef _KERNEL
-void 	ovbcopy(const void *, void *, u_int);
-void 	bcopy(const void *, void *, u_int);
-void 	bzero(void *, u_int);
+void ovbcopy(const void *, void *, u_int);
+void bcopy(const void *, void *, u_int);
+void bzero(void *, u_int);
 int	bcmp(const void *, const void *, size_t);
 #endif
 
@@ -215,7 +216,7 @@ int	fubyte(const void *);
 int	fuibyte(void *);
 int	fuword(const void *);
 int	fuiword(void *);
-int 	fusword(const void *);
+int fusword(const void *);
 int	subyte(void *, int);
 int	suibyte(void *, int);
 int	suword(void *, int);
@@ -223,20 +224,20 @@ int	suiword(void *, int);
 int	susword(void *, int);
 
 int	hzto(struct timeval *tv);
-void 	timeout(void (*func)(void *), void *, int);
-void 	untimeout(void (*func)(void *), void *);
-void	realitexpire(void *);
+void timeout(void (*func)(void *), void *, int);
+void untimeout(void (*func)(void *), void *);
+void realitexpire(void *);
 
-void	initclocks(void);
-void 	hardclock(struct clockframe *, caddr_t);
-void 	softclock(struct clockframe *, caddr_t);
-void	gatherstats(struct clockframe *);
-void    startprofclock(struct proc *);
-void    stopprofclock(struct proc *);
+void initclocks(void);
+void hardclock(struct clockframe *, caddr_t);
+void softclock(struct clockframe *, caddr_t);
+void gatherstats(struct clockframe *);
+void startprofclock(struct proc *);
+void stopprofclock(struct proc *);
 
 /* kern_environment.c / kenv.h */
-char	*kern_getenv(const char *);
-void	freeenv(char *);
+char *kern_getenv(const char *);
+void freeenv(char *);
 int	getenv_int(const char *, int *);
 int	getenv_uint(const char *, unsigned int *);
 int	getenv_long(const char *, long *);
@@ -260,8 +261,8 @@ int	getenv_array(const char *, void *, int, int *, int, bool_t);
 extern const char hexdigits[];	/* "0123456789abcdef" in subr_prf.c */
 extern const char HEXDIGITS[];	/* "0123456789ABCDEF" in subr_prf.c */
 
-extern	void	_insque(void *, void *);
-extern	void	_remque(void *);
+extern void	_insque(void *, void *);
+extern void	_remque(void *);
 
 /* casts to keep lint happy */
 //#ifdef lint

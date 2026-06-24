@@ -185,4 +185,5 @@
 #define	SYS_fchroot	176
 #define	SYS_getfh	177
 #define	SYS_fpathconf	178
-#define	SYS_MAXSYSCALL	179
+#define	SYS_futex	179
+#define	SYS_MAXSYSCALL	180
