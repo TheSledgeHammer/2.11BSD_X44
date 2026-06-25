@@ -208,9 +208,9 @@ setswap(majdev, mindev)
 	int swmaj, swmin;
 
 	temp = 0;
-	swmaj = major(swp->sw_dev);
-	swmin = minor(swp->sw_dev);
 	for (swp = swdevt; swp->sw_dev != NODEV; swp++) {
+		swmaj = major(swp->sw_dev);
+		swmin = minor(swp->sw_dev);
 		if (majdev == swmaj && (mindev == swmin)) {
 			temp = swdevt[0].sw_dev;
 			swdevt[0].sw_dev = swp->sw_dev;
