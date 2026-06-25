@@ -152,6 +152,7 @@ struct stat {
 #define	S_IFMPC	 0030000	/* multiplexed char special */
 #define	S_IFCHR	 0020000	/* character special */
 #define	S_IFBLK	 0060000	/* block special */
+#define	S_IFMPB	 0070000	/* multiplexed block special */
 #define	S_IFREG	 0100000	/* regular */
 #define	S_IFLNK	 0120000	/* symbolic link */
 #define	S_IFSOCK 0140000	/* socket */
