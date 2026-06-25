@@ -116,8 +116,6 @@
  * For semaphores that implement kernel semaphores instead of futexes see sema.c.
  * NOTES:
  * - kernel semaphores have not been implemented in the kernel and are just place holders.
- * - However if you wish to use them instead (for whatever reason), you will need to unblank
- *   "CPPFLAGS+= -DUSE_KSEM" in the libpthread Makefile.
  */
 
 #include <sys/cdefs.h>
@@ -128,6 +126,7 @@ __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 #include <sys/time.h>
 #include <sys/queue.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -137,6 +136,7 @@ __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <sha2.h>
 #include <unistd.h>
 
@@ -165,9 +165,6 @@ struct _sem_st {
 	volatile int 	usem_waitcount;
 };
 
-#define	USEM_MAGIC		0x09fa4012
-#define	USEM_USER		0		/* assumes kernel does not use NULL */
-
 #define	SEM_MAGIC		0x09fa4012
 #define SEMID_PROC 		0		/* assumes kernel does not use NULL */
 #define SEMID_FORK		1
@@ -184,15 +181,15 @@ static sem_t *sem_lookup(semid_t);
 static int sema_create(int, semid_t *, sem_t *);
 static int sema_destroy(semid_t);
 static void makesempath(const char *, char *, size_t);
-static int sema_open(const char *, int, mode_t, unsigned int, semid_t *, sem_t);
+static int sema_open(const char *, int, mode_t, unsigned int, semid_t *, sem_t *);
 static int sema_close(semid_t);
 static int sema_unlink(const char *);
 static int sema_wait(semid_t);
-static int sema_timedwait(semid_t, struct timespec *);
+static int sema_timedwait(semid_t, const struct timespec *);
 static int sema_trywait(semid_t);
 static int sema_getvalue(semid_t, int *);
 static int sema_post(semid_t);
-static int sema_do_wait(sem_t, bool_t, struct timespec *);
+static int sema_do_wait(sem_t *, bool, const struct timespec *);
 
 static int
 sem_errorcheck(sem_t *sem)
@@ -308,7 +305,7 @@ sem_t *
 sem_open(const char *name, int oflag, ...)
 {
 	sem_t *sem, *s;
-	sem_t *tmp;
+	sem_t tmp;
 	semid_t semid;
 	mode_t mode;
 	unsigned int value;
@@ -329,7 +326,7 @@ sem_open(const char *name, int oflag, ...)
 	 * We can be lazy and let the kernel handle the oflag,
 	 * we'll just merge duplicate IDs into our list.
 	 */
-	if (sema_open(name, oflag, mode, value, &semid, tmp) != 0) {
+	if (sema_open(name, oflag, mode, value, &semid, &tmp) != 0) {
 		return (SEM_FAILED);
 	}
 
@@ -345,7 +342,7 @@ sem_open(const char *name, int oflag, ...)
 	pthread_mutex_lock(&named_sems_mtx);
 	sem = malloc(sizeof(*sem));
 	if (sem == NULL) {
-		munmap((caddr_t)*tmp, SEM_MMAP_SIZE);
+		munmap((caddr_t)tmp, SEM_MMAP_SIZE);
 		error = ENOSPC;
 		goto bad;
 	}
@@ -597,7 +594,7 @@ sema_create(int pshared, semid_t *semid, sem_t *semp)
 	int sem_count;
 
 	if (pshared) {
-		sem_base = mmap(NULL, SEM_MMAP_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+		sem_base = (sem_t)mmap(NULL, SEM_MMAP_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
 		sem_count = (SEM_MMAP_SIZE / sizeof(*sem));
 		sem = sem_base++;
 		if (--sem_count == 0) {
@@ -638,7 +635,7 @@ makesempath(const char *origpath, char *sempath, size_t len)
 {
 	char buf[SHA256_DIGEST_STRING_LENGTH];
 
-	SHA256Data(origpath, strlen(origpath), buf);
+	SHA256_Data((unsigned char *)origpath, strlen(origpath), buf);
 	snprintf(sempath, len, sem_prefix, buf);
 }
 
@@ -648,8 +645,6 @@ sema_open(const char *name, int oflag, mode_t mode, unsigned int value, semid_t 
 	sem_t sem;
 	struct stat sb;
 	char sempath[SEM_PATH_SIZE];
-	char const *prefix = NULL;
-	size_t path_len;
 	int error, fd;
 
 	makesempath(name, sempath, sizeof(sempath));
@@ -680,7 +675,7 @@ sema_open(const char *name, int oflag, mode_t mode, unsigned int value, semid_t 
 		}
 	}
 
-	sem = mmap(NULL, SEM_MMAP_SIZE, (PROT_READ | PROT_WRITE), (MAP_ANON | MAP_SHARED), fd, 0);
+	sem = (sem_t)mmap(NULL, SEM_MMAP_SIZE, (PROT_READ | PROT_WRITE), (MAP_ANON | MAP_SHARED), fd, 0);
 	if (sem == MAP_FAILED) {
 		error = EINVAL;
 		goto bad;
@@ -755,7 +750,7 @@ sema_wait(semid_t semid)
 }
 
 static int
-sema_timedwait(semid_t semid, struct timespec *abstime)
+sema_timedwait(semid_t semid, const struct timespec *abstime)
 {
 	sem_t *sem;
 	int error;
@@ -820,13 +815,13 @@ sema_post(semid_t semid)
 }
 
 static int
-sema_do_wait(sem_t *sem, bool_t try_p, struct timespec *abstime)
+sema_do_wait(sem_t *sem, bool try_p, const struct timespec *abstime)
 {
-	int error/*, timeo*/;
+	int error;
 	unsigned int val;
 
 	error = 0;
-	atomic_inc_int((*sem)->usem_waitcount);
+	atomic_inc_int((volatile unsigned int *)&(*sem)->usem_waitcount);
 	while ((val = (*sem)->usem_count) > 0) {
 		if (atomic_cas_uint(&(*sem)->usem_count, val, val - 1) == val) {
 			membar_enter_after_atomic();
@@ -835,7 +830,7 @@ sema_do_wait(sem_t *sem, bool_t try_p, struct timespec *abstime)
 	}
 	while ((val = (*sem)->usem_count) == 0) {
 		if (!try_p && abstime != NULL) {
-			error = pthread_sys_futex_wait(abstime, CLOCK_REALTIME, &(*sem)->usem_count, 0, TIMER_ABSTIME);
+			error = pthread_sys_futex_wait(abstime, CLOCK_REALTIME, (unsigned long *)&(*sem)->usem_count, 0, TIMER_ABSTIME);
 			if (error != 0) {
 				goto out;
 			}
@@ -849,6 +844,6 @@ sema_do_wait(sem_t *sem, bool_t try_p, struct timespec *abstime)
 	}
 
 out:
-	atomic_dec_int((*sem)->usem_waitcount);
+	atomic_dec_int((volatile unsigned int *)&(*sem)->usem_waitcount);
 	return (error);
 }

@@ -47,6 +47,7 @@
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/wait.h>
+#include <sys/futex.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -257,7 +258,7 @@ pthread_sys_futex_wait(const struct timespec *tp, clockid_t clock_id, u_long *ad
 int
 pthread_sys_futex_wake(u_long *addr, int nwake)
 {
-	return (pthread_sys_futex(FUTEX_WAKE, NULL, NULL, addr, 0, nwake, NULL, 0, 0));
+	return (pthread_sys_futex(FUTEX_WAKE, NULL, 0, addr, 0, nwake, NULL, 0, 0));
 }
 
 int

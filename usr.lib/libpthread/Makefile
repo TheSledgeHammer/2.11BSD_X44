@@ -34,11 +34,11 @@ ARCHDIR=	${.CURDIR}/arch/${ARCHSUBDIR}
 .PATH:	${ARCHDIR}
 
 CPPFLAGS+=	-I${ARCHDIR} -I${.CURDIR} -I${.OBJDIR} -D_LIBC -D_REENTRANT
-CPPFLAGS+=	-I${.CURDIR}/../../libc/include
+CPPFLAGS+=	-I${.CURDIR}/../../lib/libc/include
 CPPFLAGS+=	-D__LIBPTHREAD_SOURCE__ -D__LIBC_THREAD_STUBS
-#CPPFLAGS+= 	-DUSE_KSEM
+
 # XXX: This crappy poke at libc's internals needs to be fixed.
-CPPFLAGS+=-I${NETBSDSRCDIR}/sys -I${.CURDIR}/../../libc
+CPPFLAGS+=-I${NETBSDSRCDIR}/sys -I${.CURDIR}/../../lib/libc
 
 DPSRCS+=		assym.h
 CLEANFILES+=	assym.h
@@ -51,7 +51,7 @@ assym.h: ${ARCHDIR}/genassym.cf pthread.h pthread_int.h pthread_md.h
 
 SRCS=	pthread.c
 SRCS+=	pthread_alarms.c
-SRCS=	pthread_atfork.c
+SRCS+=	pthread_atfork.c
 SRCS+=	pthread_attr.c
 SRCS+=	pthread_barrier.c
 SRCS+=	pthread_cond.c
@@ -67,11 +67,7 @@ SRCS+=	pthread_syscalls.c
 SRCS+=	pthread_tsd.c
 SRCS+=  pthread_debug.c
 SRCS+=	sched.c
-.if defined(USE_KSEM)
-SRCS+=	sema.c
-.else
 SRCS+=	sem.c
-.endif
 # Architecture-dependent files
 SRCS+=	pthread_switch.S
 SRCS+=  _context_u.S
@@ -86,8 +82,8 @@ pthread_specific.po: pthread_specific.o
 	${_MKTARGET_CREATE}
 	cp pthread_specific.o pthread_specific.po
 
-COPTS.pthread.c += -Wno-stack-protector -Wno-format-nonliteral
-COPTS.pthread_attr.c += -Wno-format-nonliteral
+COPTS.pthread.c+= -Wno-stack-protector -Wno-format-nonliteral
+COPTS.pthread_attr.c+= -Wno-format-nonliteral
 
 # Internal spinlock routines are performance critical.  Don't profile them,
 # it's incompatibile with -fomit-frame-pointer.
@@ -101,11 +97,13 @@ pthread_mutex.po: pthread_mutex.o
 	${_MKTARGET_CREATE}
 	cp pthread_mutex.o pthread_mutex.po
 
-COPTS.pthread.c += -Wno-stack-protector
+COPTS.pthread.c+= -Wno-stack-protector
 
 _context_u.po: _context_u.o
 	${_MKTARGET_CREATE}
 	cp _context_u.o _context_u.po
+
+COPTS.sem.c+= -Wno-format-nonliteral
 
 MAN+=	pthread.3 \
 	pthread_attr.3 pthread_attr_setcreatesuspend_np.3 \

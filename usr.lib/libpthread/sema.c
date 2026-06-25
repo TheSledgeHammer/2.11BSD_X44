@@ -40,8 +40,8 @@
  * For semaphores that implement kernel semaphores instead of futexes.
  * NOTES:
  * - kernel semaphores have not been implemented in the kernel and are just place holders.
- * - However if you wish to use them instead (for whatever reason), you will need to unblank
- *   "CPPFLAGS+= -DUSE_KSEM" in the libpthread Makefile.
+ * - However if you wish to use them instead (for whatever reason), you will need to modify
+ * the libpthread Makefile
  */
 
 #ifdef USE_KSEM
@@ -72,11 +72,9 @@ __RCSID("$NetBSD: sem.c,v 1.7 2003/11/24 23:54:13 cl Exp $");
 
 struct _sem_st {
 	unsigned int	usem_magic;
-#define	USEM_MAGIC	0x09fa4012
 
 	LIST_ENTRY(_sem_st) usem_list;
 	semid_t			usem_semid;	/* 0 -> user (non-shared) */
-#define	USEM_USER	0		/* assumes kernel does not use NULL */
 	sem_t			*usem_identity;
 
 	/* Protects data below. */
@@ -209,9 +207,6 @@ sem_t *
 sem_open(const char *name, int oflag, ...)
 {
 	sem_t *sem, *s;
-#ifndef USE_KSEM
-	sem_t *tmp;
-#endif
 	semid_t semid;
 	mode_t mode;
 	unsigned int value;
