@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/acct.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include <err.h>
 #include <errno.h>
@@ -18,11 +19,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 
 static int Suspend = 2;		/* %free when accounting suspended */
 static int Resume = 4;		/* %free when accounting to be resumed */
 static int Chkfreq = 30;	/* how often (seconds) to check disk space */
-static char *Acctfile;
+static const char *Acctfile;
 
 static pid_t pid_min = 3;	/* min pid's including threads */
 static pid_t pid_max = 99000;	/* max pid's including threads */
@@ -35,8 +37,8 @@ main(int argc, char **argv)
 {
 	int ch;
 	pid_t pid;
-	char *cffile = _PATH_ACCTDCF;
-	char *pidfile = _PATH_ACCTDPID;
+	const char *cffile = _PATH_ACCTDCF;
+	const char *pidfile = _PATH_ACCTDPID;
 	char *cp;
 	long l;
 	register FILE *fp;
@@ -219,6 +221,6 @@ main(int argc, char **argv)
 void
 usage(void)
 {
-	(void)fprintf(stderr, "Usage: %s [-f acctfile] [-s %suspend] [-r %resume] [-t chkfreq] [acctfile]", getprogname());
+	(void)fprintf(stderr, "Usage: %s [-f acctfile] [-s suspend] [-r resume] [-t chkfreq] [acctfile]", getprogname());
 	exit(1);
 }
