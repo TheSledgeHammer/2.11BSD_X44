@@ -1,4 +1,4 @@
-/* $211BSD$ */
+/*	$211BSD$	*/
 
 /*
  * System call switch table.
@@ -193,6 +193,7 @@ int	fchroot();
 int	getfh();
 int	fpathconf();
 int	futex();
+
 #define	s(type)	sizeof(type)
 
 struct sysent sysent[] = {

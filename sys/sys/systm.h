@@ -115,12 +115,12 @@ extern char	runout;					/* scheduling flag */
 extern char	curpri;					/* more scheduling */
 extern int	noproc;					/* no one is running just now */
 
-#ifdef _KERNEL
 /* system call args */
-//#define	syscallarg(x)	union { x datum; register_t pad; }
+#define	syscallarg(x)	union { x datum; register_t pad; }
 
 #define	SCARG(p,k)		((p)->k.datum)	/* get arg from args pointer */
 
+#ifdef _KERNEL
 /*
  * exec system call, with and without environments.
  */
@@ -144,7 +144,6 @@ extern struct sysent {
 extern int nsysent;
 
 /* Initialize the world */
-//#ifdef _KERNEL
 extern void startup(void);			/* cpu startup */
 extern void consinit(void);			/* console startup */
 extern void cinit(void);			/* clist startup */

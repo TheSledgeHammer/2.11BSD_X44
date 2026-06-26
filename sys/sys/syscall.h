@@ -1,4 +1,4 @@
-/* $211BSD$ */
+/*	$211BSD$	*/
 
 /*
  * System call numbers.
