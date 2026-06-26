@@ -7,6 +7,8 @@
  * created from;	@(#)syscalls.master	8.6 (Berkeley) 3/30/95
  */
 
+#define	syscallarg(x)	union { x datum; register_t pad; }
+
 extern int	nosys();
 extern int	rexit();
 extern int	fork();

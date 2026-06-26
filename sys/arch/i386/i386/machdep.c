@@ -59,6 +59,7 @@
 #include <sys/msgbuf.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
+#include <sys/sysdecl.h>
 #include <sys/sysctl.h>
 #include <sys/mount.h>
 #include <sys/exec_linker.h>

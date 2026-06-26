@@ -36,7 +36,6 @@ __KERNEL_RCSID(0, "$NetBSD: kern_uuid.c,v 1.1 2004/01/29 02:00:03 tsarna Exp $")
 #include <sys/lock.h>
 #include <sys/systm.h>
 #include <sys/uuid.h>
-
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/mount.h>

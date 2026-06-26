@@ -117,7 +117,7 @@ extern int	noproc;					/* no one is running just now */
 
 #ifdef _KERNEL
 /* system call args */
-#define	syscallarg(x)	union { x datum; register_t pad; }
+//#define	syscallarg(x)	union { x datum; register_t pad; }
 
 #define	SCARG(p,k)		((p)->k.datum)	/* get arg from args pointer */
 

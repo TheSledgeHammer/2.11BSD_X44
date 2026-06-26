@@ -137,7 +137,12 @@ NR == 1 {
 	printf " * created from%s\n */\n\n", $0 > sysnumhdr
 	
 	printf " * created from%s\n */\n\n", $0 > sysproto
-
+	
+	printf "#define\tsyscallarg(x)\tunion { x datum; register_t pad; }\n" \
+		> sysproto
+	
+	printf("\n") > sysproto
+	
 	next
 }
 NF == 0 || $1 ~ /^;/ {

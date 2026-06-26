@@ -55,6 +55,7 @@
 #include <sys/tty.h>
 #include <sys/map.h>
 #include <sys/sysctl.h>
+#include <sys/sysdecl.h>
 
 #include <vm/include/vm.h>
 

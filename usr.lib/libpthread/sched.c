@@ -60,8 +60,7 @@ sched_getparam(pid_t pid, struct sched_param *param)
 
 /* ARGSUSED */
 int
-sched_setscheduler(pid_t pid, int policy,
-    const struct sched_param *param)
+sched_setscheduler(pid_t pid, int policy, const struct sched_param *param)
 {
 	return ENOSYS;
 }

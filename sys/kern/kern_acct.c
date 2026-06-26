@@ -60,6 +60,7 @@
 #include <sys/file.h>
 #include <sys/syslog.h>
 #include <sys/kernel.h>
+#include <sys/sysdecl.h>
 #include <sys/namei.h>
 #include <sys/errno.h>
 #include <sys/acct.h>
@@ -97,7 +98,7 @@ acct()
 {
 	register struct acct_args {
 		syscallarg(char	*) path;
-		syscallarg(pid_t)	pid;
+		syscallarg(pid_t) pid;
 	} *uap = (struct acct_args *)u.u_ap;
 
 	struct proc *p;

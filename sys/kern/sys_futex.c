@@ -124,7 +124,6 @@ do_futex(p, op, timeout, clock_id, addr1, val, nwake, addr2, nrequeue, flags)
 	int flags;
 {
 	struct vmspace *vmspace;
-	int error;
 	register_t retval;
 
 	vmspace = p->p_vmspace;

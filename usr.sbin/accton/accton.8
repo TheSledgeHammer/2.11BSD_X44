@@ -1,57 +1,65 @@
-.\" $NetBSD: accton.8,v 1.10 2003/02/14 16:11:34 grant Exp $
 .\"
-.\" Copyright (c) 1993 Christopher G. Demetriou
-.\" All rights reserved.
+.\"	@(#) 2.11BSD accton.8 1.0 1999/2/19
 .\"
-.\" Redistribution and use in source and binary forms, with or without
-.\" modification, are permitted provided that the following conditions
-.\" are met:
-.\" 1. Redistributions of source code must retain the above copyright
-.\"    notice, this list of conditions and the following disclaimer.
-.\" 2. Redistributions in binary form must reproduce the above copyright
-.\"    notice, this list of conditions and the following disclaimer in the
-.\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"          This product includes software developed for the
-.\"          NetBSD Project.  See http://www.NetBSD.org/ for
-.\"          information about NetBSD.
-.\" 4. The name of the author may not be used to endorse or promote products
-.\"    derived from this software without specific prior written permission.
-.\"
-.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-.\" IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-.\" NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-.\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-.\"
-.\" <<Id: LICENSE,v 1.2 2000/06/14 15:57:33 cgd Exp>>
-.\"
-.Dd October 18, 1993
-.Dt ACCTON 8
-.Os
-.Sh NAME
-.Nm accton
-.Nd enable/disable system accounting
-.Sh SYNOPSIS
-.Nm
-.Op Ar file
-.Sh DESCRIPTION
-With an argument naming an existing
-.Ar file ,
-.Nm
-causes system accounting information for every process executed
-to be placed at the end of the file.  If no argument is given,
-accounting is turned off.
-.Sh SEE ALSO
-.Xr lastcomm 1 ,
-.Xr acct 5
-.Sh HISTORY
-The
-.Nm
-command has existed nearly forever, but this man page is new.
+.TH ACCTON 8 "February 19, 1999"
+.UC 4
+.SH NAME
+accton \- enable/disable system accounting
+.SH SYNOPSIS
+.B accton
+[\fB\-f file\fP]
+[\fB\-r resum\fP]
+[\fB\-s suspend\fP]
+[\fB\-t freq\fP]
+[\fBfilename\fP]
+.SH DESCRIPTION
+With no argument,
+.B accton
+will disable system accounting.  If the \fB\-f\fP option is
+given or the last argument is an existing pathname
+accounting is enabled and for every process which terminates
+under normal conditions an accounting record is sent to the accounting 
+daemon.
+.PP
+.B accton
+is a frontend to  the accounting daemon:
+.BR acctd (8).
+Accounting is turned off by sending a SIGTERM to the running accounting daemon.
+Changes in configuration (free space thresholds, etc) are made by writing
+/etc/acctd.cf and issuing a SIGHUP to the accounting daemon.  If the daemon
+is not running it is started.
+.PP
+The options are:
+.TP 10
+\-f file
+Specifies the name of an existing file to which accounting records
+are to be appended.  If this option and a trailing filename (the
+historical form of use) is given then the last filename given is  used.
+.TP 10
+\-r resum
+Percentage of diskspace that must be free in order for accounting to
+be resumed.  The default is 4%.
+.TP 10
+\-s susp
+If the percentage of free diskspace falls below \fBsusp\fP accounting
+is suspended.  The default is 2%.
+.TP 10
+\-t freq
+How often (in seconds) to check the free diskpace.  Default is 30.
+.SH FILES
+.TP 20
+/usr/libexec/acctd
+The accounting daemon that reads /dev/acct
+.TP 20
+/etc/acctd.cf
+The configuration file.  Must be owned by root and writeable only by root.
+This file, while simple text, is not meant for human editing since the
+parse is simpleminded and the daemon is paranoid.
+.SH SEE ALSO
+acct(5),
+acctd(8),
+sa(8)
+.SH HISTORY
+A
+.B accton
+command appeared in Version 7 AT&T UNIX.

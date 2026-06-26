@@ -51,6 +51,7 @@
 #include <sys/filedesc.h>
 #include <sys/event.h>
 #include <sys/eventvar.h>
+#include <sys/sysdecl.h>
 
 int     kqueue_rw(struct file *, struct uio *, struct ucred *);
 int     kqueue_read(struct file *, struct uio *, struct ucred *);
@@ -60,7 +61,6 @@ int     kqueue_poll(struct file *, int, struct proc *);
 int		kqueue_stat(struct file *, struct stat *, struct proc *);
 int     kqueue_close(struct file *, struct proc *);
 int     kqueue_kqfilter(struct file *, struct knote *);
-
 
 struct fileops kqueueops = {
 		.fo_rw = kqueue_rw,

@@ -54,6 +54,7 @@
 #include <sys/protosw.h>
 #include <sys/namei.h>
 #include <sys/syslog.h>
+#include <sys/sysdecl.h>
 
 #include <netinet/in.h>
 #include <netinet/tcp.h>

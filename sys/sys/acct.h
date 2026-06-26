@@ -44,7 +44,7 @@ struct acct {
 #define AHZ 64
 
 #ifndef	_KERNEL
-struct vnode	*acctp;
+struct vnode *acctp;
 
 #define	_PATH_ACCTD		"/usr/libexec/acctd"
 #define	_PATH_ACCTFILE	"/usr/adm/acct"

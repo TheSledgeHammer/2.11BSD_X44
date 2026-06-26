@@ -62,6 +62,7 @@
 #include <sys/tty.h>
 #include <sys/ptrace.h>
 #include <sys/ktrace.h>
+#include <sys/sysdecl.h>
 
 #include <vm/include/vm.h>
 

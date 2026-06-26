@@ -46,6 +46,7 @@
 #include <sys/proc.h>
 #include <sys/uio.h>
 #include <sys/kernel.h>
+#include <sys/sysdecl.h>
 #include <sys/mtio.h>
 #include <sys/buf.h>
 #include <sys/trace.h>

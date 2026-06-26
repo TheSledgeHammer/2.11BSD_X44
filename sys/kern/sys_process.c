@@ -15,7 +15,7 @@
 #include <sys/vnode.h>
 #include <sys/buf.h>
 #include <sys/ptrace.h>
-
+#include <sys/sysdecl.h>
 #include <sys/mount.h>
 
 #include <vm/include/vm.h>

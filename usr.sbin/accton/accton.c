@@ -1,49 +1,17 @@
-/*	$NetBSD: accton.c,v 1.9 2003/08/07 11:25:11 agc Exp $	*/
-
 /*
- * Copyright (c) 1988, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * Steven Schultz - sms@moe.2bsd.com
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *	@(#)accton.c	1.1 (2.11BSD) 1999/5/5
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- */
+ * accton - enable/disable process accounting.
+*/
 
 #include <sys/cdefs.h>
-#ifndef lint
-__COPYRIGHT("@(#) Copyright (c) 1988, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n");
-#endif /* not lint */
-
-#ifndef lint
-#if 0
-static char sccsid[] = "@(#)accton.c	8.1 (Berkeley) 6/6/93";
-#else
-__RCSID("$NetBSD: accton.c,v 1.9 2003/08/07 11:25:11 agc Exp $");
-#endif
-#endif /* not lint */
 
 #include <sys/types.h>
+#include <sys/acct.h>
+#include <sys/stat.h>
+
 #include <err.h>
 #include <errno.h>
 #include <unistd.h>
@@ -51,44 +19,206 @@ __RCSID("$NetBSD: accton.c,v 1.9 2003/08/07 11:25:11 agc Exp $");
 #include <stdio.h>
 #include <string.h>
 
+static int Suspend = 2;		/* %free when accounting suspended */
+static int Resume = 4;		/* %free when accounting to be resumed */
+static int Chkfreq = 30;	/* how often (seconds) to check disk space */
+static char *Acctfile;
+
+static pid_t pid_min = 3;	/* min pid's including threads */
+static pid_t pid_max = 99000;	/* max pid's including threads */
+
 int	main(int, char **);
 void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char **argv)
 {
 	int ch;
+	pid_t pid;
+	char *cffile = _PATH_ACCTDCF;
+	char *pidfile = _PATH_ACCTDPID;
+	char *cp;
+	long l;
+	register FILE *fp;
+	int status;
+	struct stat st;
 
-	while ((ch = getopt(argc, argv, "")) != -1)
-		switch(ch) {
+	if (getuid()) {
+		errx(1, "Only root can run this program");
+	}
+
+	/*
+	 * Handle the simple case of no arguments at all.  This turns off accounting
+	 * completely by killing the accounting daemon 'acctd'.
+	 */
+	if (argc == 1) {
+		fp = fopen(pidfile, "r");
+		/*
+		 * Note: it is not fatal to fail opening the pid file.  The accounting daemon
+		 * may not have been run on this system yet.
+		 */
+		if (!fp) {
+			exit(0);
+		}
+		if (fscanf(fp, "%d\n", &pid) != 1) {
+			errx(1, "%s corrupt/unparseable", pidfile);
+		}
+		if (pid < pid_min || pid > pid_max) { /* Paranoia */
+			errx(1, "%s content out of bound(%d > pid > %d)", pidfile, pid_max, pid_min);
+		}
+		fclose(fp);
+		if (kill(pid, SIGTERM) < 0) {
+			/*
+			 * It is not an error to turn off accounting if it is already disabled.  Ignore
+			 * the no such process error from kill.
+			 */
+			if (errno != ESRCH) {
+				err(1, "kill(%d,SIGTERM)", pid);
+			}
+			exit(0);
+		}
+	}
+
+	while ((ch = getopt(argc, argv, "f:r:s:t:")) != EOF) {
+		switch (ch) {
+		case 'f':
+			Acctfile = optarg;
+			break;
+		case 'r':
+			cp = NULL;
+			l = strtol(optarg, &cp, 10);
+			if (l < 0 || l > 99 || (cp && *cp)) {
+				errx(1, "bad -r value");
+			}
+			Resume = (int)l;
+			break;
+		case 's':
+			cp = NULL;
+			l = strtol(optarg, &cp, 10);
+			if (l < 0 || l > 99 || (cp && *cp)) {
+				errx(1, "bad -s value");
+			}
+			Suspend = (int)l;
+			break;
+		case 't':
+			cp = NULL;
+			l = strtol(optarg, &cp, 10);
+			if (l < 5 || l > 3600 || (cp && *cp)) {
+				errx(1, "bad -t value (3600 >= t >= 5");
+			}
+			Chkfreq = (int)l;
+			break;
 		case '?':
 		default:
 			usage();
+			/* NOTREACHED */
 		}
+	}
 	argc -= optind;
 	argv += optind;
 
-	switch(argc) {
-	case 0: 
-		if (acct(NULL))
-			err(1, "acct");
-		break;
-	case 1:
-		if (acct(*argv))
-			err(1, "acct `%s'", *argv);
-		break;
-	default:
+	/*
+	 * If we have exactly one argument left then it must be a filename.  This
+	 * preserves the historical practice of running "accton /usr/adm/acct" to
+	 * enable accounting.  It is an error to have more than one argument at this
+	 * point.
+	 */
+	if (argc == 1) {
+		if (Acctfile) {
+			warnx("'-f %s' being overridden by trailing '%s'", Acctfile, *argv);
+		}
+		Acctfile = *argv;
+	} else if (argc != 0) {
 		usage();
+		/* NOTREACHED */
+	}
+	/*
+	 * If after all of that we still don't have a file name then use the
+	 * default one.
+	 */
+	if (!Acctfile) {
+		Acctfile = _PATH_ACCTFILE;
+	}
+
+	/*
+	 * Now open the conf file (creating it if it does not exist) and write out
+	 * the parameters for the accounting daemon.  The conf file format is simple:
+	 * "tag=value\n".  NO EXTRA WHITE SPACE or COMMENTS!
+	 *
+	 * IF the file already exists it must be owned by root and not writeable by
+	 * group or other.  This is because the conf file contains a pathname that
+	 * will be trusted by a daemon running as root.  The same check is made by
+	 * 'acctd' to prevent believing bogus information.
+	 */
+	if (stat(cffile, &st) == 0) {
+		if (st.st_uid != 0) {
+			errx(1, "%s not owned by root", cffile);
+		}
+		if (st.st_mode & (S_IWGRP | S_IWOTH)) {
+			errx(1, "%s writeable by group/other", cffile);
+		}
+	}
+	fp = fopen(cffile, "w");
+	if (!fp) {
+		errx(1, "fopen(%s,w)", cffile);
+	}
+	fprintf(fp, "suspend=%d\n", Suspend);
+	fprintf(fp, "resume=%d\n", Resume);
+	fprintf(fp, "chkfreq=%d\n", Chkfreq);
+	fprintf(fp, "acctfile=%s\n", Acctfile);
+	fclose(fp);
+
+	/*
+	 * After writing the conf file we need to send the current running 'acctd'
+	 * process (if any) a SIGHUP.  If the pidfile can not be opened this may be
+	 * the first time 'acctd' has ever been run.
+	 */
+	fp = fopen(pidfile, "r");
+	if (fp) {
+		if (fscanf(fp, "%d\n", &pid) != 1) {
+			errx(1, "%s corrupt/unparseable", pidfile);
+		}
+		if (pid < pid_min || pid > pid_max) { /* Paranoia */
+			errx(1, "%s content out of bound(%d > pid > %d)", pidfile, pid_max, pid_min);
+		}
+		fclose(fp);
+		/*
+		 * If the signal can be successfully posted to the process then do not
+		 * attempt to start another instance of acctd (it will fail but syslog
+		 * an annoying error message).  If the signal can not be posted but the
+		 * acctd process does not exist then go start it.  Otherwise complain.
+		 */
+		if (kill(pid, SIGHUP) < 0) {
+			if (errno != ESRCH) {
+				err(1, "%d from %s bogus value", pid, pidfile);
+			}
+			/* process no longer exists, fall thru and start it */
+		} else {
+			exit(0);
+		}
+	}
+	pid = vfork();
+	switch (pid) {
+	case -1:
+		err(1, "vfork");
+		/* NOTREACHED */
+	case 0: /* Child process */
+		if (execl(_PATH_ACCTD, "acctd", NULL) < 0) {
+			err(1, "execl %s", _PATH_ACCTD);
+		}
+		/* NOTREACHED */
+	default: /* Parent */
+		break;
+	}
+	if (waitpid(pid, &status, 0) < 0) {
+		err(1, "waitpid for %d", pid);
 	}
 	exit(0);
 }
 
 void
-usage()
+usage(void)
 {
-
-	(void)fprintf(stderr, "usage: %s [file]\n", getprogname());
+	(void)fprintf(stderr, "Usage: %s [-f acctfile] [-s %suspend] [-r %resume] [-t chkfreq] [acctfile]", getprogname());
 	exit(1);
 }

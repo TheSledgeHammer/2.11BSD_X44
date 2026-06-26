@@ -23,6 +23,7 @@
 #include <sys/event.h>
 #include <sys/ktrace.h>
 #include <sys/malloc.h>
+#include <sys/sysdecl.h>
 
 #include <machine/setjmp.h>
 	

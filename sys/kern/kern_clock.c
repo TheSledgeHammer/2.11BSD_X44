@@ -19,6 +19,7 @@
 #include <sys/time.h>
 #include <sys/signal.h>
 #include <sys/types.h>
+#include <sys/sysdecl.h>
 
 #include <machine/cpu.h>
 #include <machine/intr.h>

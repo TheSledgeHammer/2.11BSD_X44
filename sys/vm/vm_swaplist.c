@@ -36,8 +36,6 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/user.h>
-//#include <sys/buf.h>
-//#include <sys/bufq.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
