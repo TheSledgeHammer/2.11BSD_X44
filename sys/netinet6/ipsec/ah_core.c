@@ -66,7 +66,7 @@ __KERNEL_RCSID(0, "$NetBSD: ah_core.c,v 1.36 2004/03/10 03:45:04 itojun Exp $");
 #include <netinet/icmp6.h>
 #endif
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/ah_aesxcbcmac.h>
 #ifdef IPSEC_ESP

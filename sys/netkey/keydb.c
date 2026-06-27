@@ -53,7 +53,7 @@ __KERNEL_RCSID(0, "$NetBSD: keydb.c,v 1.15 2003/09/12 07:38:11 itojun Exp $");
 #include <net/pfkeyv2.h>
 #include <netkey/keydb.h>
 #include <netkey/key.h>
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 
 #include <net/net_osdep.h>
 

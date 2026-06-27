@@ -73,7 +73,7 @@ __KERNEL_RCSID(0, "$NetBSD: esp_input.c,v 1.35 2004/02/11 10:47:28 itojun Exp $"
 #include <netinet6/ip6protosw.h>
 #endif
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
 #ifdef IPSEC_XFORM

@@ -106,7 +106,7 @@ __KERNEL_RCSID(0, "$NetBSD: in6_proto.c,v 1.56 2003/12/04 19:38:24 atatat Exp $"
 #include <netinet6/nd6.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #ifdef IPSEC_ESP
 #include <netinet6/ipsec/esp.h>

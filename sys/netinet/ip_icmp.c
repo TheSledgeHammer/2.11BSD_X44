@@ -130,7 +130,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_icmp.c,v 1.82.2.2 2004/08/03 22:37:09 jmc Exp $")
 #include <netinet/icmp_var.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netkey/key.h>
 #endif
 

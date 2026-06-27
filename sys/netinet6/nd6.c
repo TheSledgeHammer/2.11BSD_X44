@@ -65,7 +65,7 @@ __KERNEL_RCSID(0, "$NetBSD: nd6.c,v 1.89.4.1 2005/04/07 15:25:59 he Exp $");
 #include <netinet/icmp6.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #endif
 
 #ifdef FAST_IPSEC

@@ -151,7 +151,7 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_subr.c,v 1.160.2.5 2004/09/19 15:38:01 he Exp $"
 #include <netinet/tcpip.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #endif /*IPSEC*/
 
 #ifdef FAST_IPSEC

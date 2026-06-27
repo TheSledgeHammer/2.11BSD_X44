@@ -24,7 +24,7 @@
 #include <net/if.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #endif
 #ifdef FAST_IPSEC
 #include <netipsec/ipsec.h>

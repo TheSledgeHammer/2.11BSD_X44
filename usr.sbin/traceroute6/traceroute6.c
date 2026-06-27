@@ -279,7 +279,7 @@ __RCSID("$NetBSD: traceroute6.c,v 1.34 2004/01/25 03:26:30 itojun Exp $");
 
 #ifdef IPSEC
 #include <net/route.h>
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #endif
 
 #define DUMMY_PORT 10010

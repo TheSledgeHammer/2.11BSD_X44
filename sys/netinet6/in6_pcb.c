@@ -97,7 +97,7 @@ extern struct ifnet loif[NLOOP];
 #include "faith.h"
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netkey/key.h>
 #endif /* IPSEC */
 

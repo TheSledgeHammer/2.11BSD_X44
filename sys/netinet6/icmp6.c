@@ -99,7 +99,7 @@ __KERNEL_RCSID(0, "$NetBSD: icmp6.c,v 1.106.2.1.4.1 2005/10/28 23:10:38 riz Exp 
 #include <netinet6/ip6protosw.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netkey/key.h>
 #endif
 

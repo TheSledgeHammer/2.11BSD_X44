@@ -60,7 +60,7 @@
 #include <netinet6/in6_var.h>
 #endif
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ipip.h>
 #ifdef IPSEC_XFORM
 #include <netinet6/ipsec/xform_tdb.h>

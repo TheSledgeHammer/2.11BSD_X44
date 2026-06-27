@@ -111,7 +111,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_input.c,v 1.73.2.1.4.3 2007/06/04 19:26:07 bouye
 #include <net/if_stf.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #endif
 
 #ifdef FAST_IPSEC

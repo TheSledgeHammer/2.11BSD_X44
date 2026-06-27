@@ -171,7 +171,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_output.c,v 1.130 2004/03/02 02:28:28 thorpej Exp 
 #include <machine/stdarg.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netkey/key.h>
 #include <netkey/key_debug.h>
 #endif /*IPSEC*/

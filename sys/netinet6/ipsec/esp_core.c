@@ -52,7 +52,7 @@ __KERNEL_RCSID(0, "$NetBSD: esp_core.c,v 1.33 2003/08/27 00:08:31 thorpej Exp $"
 
 #include <netinet/in.h>
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
 #include <netinet6/ipsec/esp_rijndael.h>

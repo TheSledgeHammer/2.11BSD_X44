@@ -47,7 +47,7 @@ __KERNEL_RCSID(0, "$NetBSD: esp_aesctr.c,v 1.1.8.1 2005/10/11 16:29:36 riz Exp $
 
 #include <netinet/in.h>
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/esp.h>
 #include <netinet6/ipsec/esp_aesctr.h>
 

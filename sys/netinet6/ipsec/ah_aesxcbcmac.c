@@ -47,7 +47,7 @@ __KERNEL_RCSID(0, "$NetBSD: ah_aesxcbcmac.c,v 1.1.8.1 2005/07/28 20:22:35 jdc Ex
 
 #include <netinet/in.h>
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/ah_aesxcbcmac.h>
 

@@ -221,8 +221,8 @@ noname:
 		if (namelen > nam->m_len)
 			namelen = nam->m_len;
 		/* SHOULD COPY OUT A CHAIN HERE */
-		(void) copyout(mtod(nam, caddr_t), (caddr_t)SCARG(uap, name), (u_int)namelen);
-		(void) copyout((caddr_t)&namelen, (caddr_t)SCARG(uap, anamelen), sizeof(*SCARG(uap, anamelen)));
+		(void)copyout(mtod(nam, caddr_t), (caddr_t)SCARG(uap, name), (u_int)namelen);
+		(void)copyout((caddr_t)&namelen, (caddr_t)SCARG(uap, anamelen), sizeof(*SCARG(uap, anamelen)));
 	}
 	m_freem(nam);
 	splx(s);
@@ -352,7 +352,7 @@ socketpair()
 			goto free4;
 	}
 	u.u_r.r_val1 = 0;
-	(void) copyout((caddr_t)sv, (caddr_t)SCARG(uap, rsv), 2 * sizeof (int));
+	(void)copyout((caddr_t)sv, (caddr_t)SCARG(uap, rsv), 2 * sizeof (int));
 	return (u.u_error);;
 free4:
 	fp2->f_count = 0;
@@ -661,7 +661,7 @@ recvit(s, mp, flags, namelenp, rightslenp)
 			len = 0;
 		else
 			(void)netcopyout(from, mp->msg_name, &len);
-		(void)copyout((caddr_t) & len, namelenp, sizeof(int));
+		(void)copyout((caddr_t)&len, namelenp, sizeof(int));
 	}
 	if (mp->msg_accrights) {
 		len = mp->msg_accrightslen;
@@ -669,7 +669,7 @@ recvit(s, mp, flags, namelenp, rightslenp)
 			len = 0;
 		else
 			(void)netcopyout(rights, mp->msg_accrights, &len);
-		(void)copyout((caddr_t) & len, rightslenp, sizeof(int));
+		(void)copyout((caddr_t)&len, rightslenp, sizeof(int));
 	}
 	if (rights)
 		m_freem(rights);
@@ -726,7 +726,7 @@ setsockopt()
 		MBZAP(m, SCARG(uap, valsize), MT_SOOPTS);
 		u.u_error = copyin(SCARG(uap, val), mtod(m, caddr_t), (u_int)SCARG(uap, valsize));
 		if (u.u_error) {
-			(void) m_free(m);
+			(void)m_free(m);
 			return (u.u_error);
 		}
 	}

@@ -48,7 +48,7 @@
 
 #include <netinet/in.h>
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
 #include <netinet6/ipsec/ipip.h>

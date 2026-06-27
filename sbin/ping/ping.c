@@ -89,7 +89,7 @@ __RCSID("$NetBSD: ping.c,v 1.75.6.1 2007/08/11 14:25:43 bouyer Exp $");
 #include <netdb.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #endif /*IPSEC*/
 #ifdef FAST_IPSEC
 #include <netipsec/ipsec.h>

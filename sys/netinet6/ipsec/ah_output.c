@@ -68,7 +68,7 @@ __KERNEL_RCSID(0, "$NetBSD: ah_output.c,v 1.24 2003/09/07 15:59:36 itojun Exp $"
 #include <netinet/icmp6.h>
 #endif
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #ifdef IPSEC_XFORM
 #include <netinet6/ipsec/xform_tdb.h>

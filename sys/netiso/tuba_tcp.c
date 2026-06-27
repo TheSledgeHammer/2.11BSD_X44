@@ -92,7 +92,7 @@
 #include <machine/stdarg.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netkey/key.h>
 #endif /*IPSEC*/
 #ifdef INET6

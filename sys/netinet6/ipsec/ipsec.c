@@ -78,7 +78,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipsec.c,v 1.95.2.1.2.2 2005/03/16 22:59:09 tron Exp 
 #include <netinet/icmp6.h>
 #endif
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
 #include <netinet6/ipsec/ipcomp.h>

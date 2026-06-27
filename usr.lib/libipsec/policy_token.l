@@ -39,7 +39,7 @@
 
 #ifdef IPSEC
 #include <netkey/keydb.h>
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #endif
 #ifdef FAST_IPSEC
 #include <netipsec/keydb.h>

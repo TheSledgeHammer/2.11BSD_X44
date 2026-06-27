@@ -44,7 +44,7 @@ __KERNEL_RCSID(0, "$NetBSD: esp_rijndael.c,v 1.17 2003/08/27 14:23:25 itojun Exp
 #include <net/route.h>
 #include <netinet/in.h>
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/esp.h>
 #include <netinet6/ipsec/esp_rijndael.h>
 

@@ -79,7 +79,7 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ipip.c,v 1.9.16.1 2007/12/01 17:32:29 bouyer E
 #include <netinet6/ip6protosw.h>
 #endif
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ipip.h>
 #include <netinet6/ipsec/xform_tdb.h>
 

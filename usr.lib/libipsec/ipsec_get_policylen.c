@@ -37,7 +37,7 @@ __RCSID("$NetBSD: ipsec_get_policylen.c,v 1.4 2003/03/09 01:03:55 lukem Exp $");
 #include <sys/param.h>
 
 #ifdef IPSEC
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #endif
 #ifdef FAST_IPSEC
 #include <netipsec/ipsec.h>

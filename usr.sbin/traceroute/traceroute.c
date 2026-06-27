@@ -235,7 +235,7 @@ __RCSID("$NetBSD: traceroute.c,v 1.60 2004/01/05 23:23:39 jmmv Exp $");
 #include <poll.h>
 #ifdef IPSEC
 #include <net/route.h>
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #endif
 
 #ifdef HAVE_OS_PROTO_H

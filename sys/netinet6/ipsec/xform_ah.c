@@ -94,7 +94,7 @@
 #include <netinet/ip_ecn.h>
 #include <netinet/ip6.h>
 
-#include <netinet6/ipsec/ipsec.h>
+#include <netinet6/ipsec.h>
 #include <netinet6/ipsec/ah.h>
 #include <netinet6/ipsec/esp.h>
 #include <netinet6/ipsec/xform_tdb.h>
