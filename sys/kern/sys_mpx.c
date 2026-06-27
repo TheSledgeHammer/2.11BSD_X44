@@ -170,6 +170,9 @@ mpxchan(cmd, mpx, idx, data)
 			return (u.u_error);
 		}
 		u.u_error = copyout(&mx, mpx, sizeof(mx));
+		if (u.u_error) {
+			return (u.u_error);
+		}
 		break;
 
 	default:
