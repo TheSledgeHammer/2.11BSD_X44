@@ -81,13 +81,13 @@ __RCSID("$NetBSD: arp.c,v 1.39 2003/08/14 10:06:36 itojun Exp $");
 #include <ifaddrs.h>
 
 int	delete(const char *, const char *);
-void	dump(u_long);
-void	delete_all(void);
-void	sdl_print(const struct sockaddr_dl *);
+void dump(u_long);
+void delete_all(void);
+void sdl_print(const struct sockaddr_dl *);
 int	getifname(u_int16_t, char *, size_t);
 int	atosdl(const char *s, struct sockaddr_dl *sdl);
 int	file(char *);
-void	get(const char *);
+void get(const char *);
 int	getinetaddr(const char *, struct in_addr *);
 void getsocket(void);
 int	main(int, char **);
@@ -101,9 +101,7 @@ static int s = -1;
 static struct ifaddrs* ifaddrs = NULL;
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	int ch;
 	int op = 0;
@@ -173,8 +171,7 @@ main(argc, argv)
  * Process a file to set standard arp entries
  */
 int
-file(name)
-	char *name;
+file(char *name)
 {
 	char line[100], arg[5][50], *args[5];
 	int i, retval;
@@ -204,7 +201,7 @@ file(name)
 }
 
 void
-getsocket()
+getsocket(void)
 {
 	if (s >= 0)
 		return;
@@ -226,9 +223,7 @@ struct	{
  * Set an individual arp entry 
  */
 int
-set(argc, argv)
-	int argc;
-	char **argv;
+set(int argc, char **argv)
 {
 	struct sockaddr_inarp *sin;
 	struct sockaddr_dl *sdl;
@@ -312,8 +307,7 @@ overwrite:
  * Display an individual arp entry
  */
 void
-get(host)
-	const char *host;
+get(const char *host)
 {
 	struct sockaddr_inarp *sin;
 
@@ -333,9 +327,7 @@ get(host)
  * Delete an arp entry 
  */
 int
-delete(host, info)
-	const char *host;
-	const char *info;
+delete(const char *host, const char *info)
 {
 	struct sockaddr_inarp *sin;
 	struct rt_msghdr *rtm;
@@ -390,13 +382,13 @@ delete:
  * Dump the entire arp table
  */
 void
-dump(addr)
-	u_long addr;
+dump(u_long addr)
 {
 	int mib[6];
 	size_t needed;
 	char ifname[IFNAMSIZ];
-	char *host, *lim, *buf, *next;
+	const char *host;
+    char *lim, *buf, *next;
 	struct rt_msghdr *rtm;
 	struct sockaddr_inarp *sin;
 	struct sockaddr_dl *sdl;
@@ -475,7 +467,7 @@ delete_all(void)
 	char *lim, *buf, *next;
 	struct rt_msghdr *rtm;
 	struct sockaddr_inarp *sin;
-	struct sockaddr_dl *sdl;
+//	struct sockaddr_dl *sdl;
 
 	mib[0] = CTL_NET;
 	mib[1] = PF_ROUTE;
@@ -495,8 +487,7 @@ delete_all(void)
 	for (next = buf; next < lim; next += rtm->rtm_msglen) {
 		rtm = (struct rt_msghdr *)next;
 		sin = (struct sockaddr_inarp *)(rtm + 1);
-		sdl = (struct sockaddr_dl *)
-		    (ROUNDUP(sin->sin_len) + (char *)sin);
+//		sdl = (struct sockaddr_dl *)(ROUNDUP(sin->sin_len) + (char *)sin);
 		snprintf(addr, sizeof(addr), "%s", inet_ntoa(sin->sin_addr));
 		delete(addr, NULL);
 	}
@@ -504,12 +495,11 @@ delete_all(void)
 }
 
 void
-sdl_print(sdl)
-	const struct sockaddr_dl *sdl;
+sdl_print(const struct sockaddr_dl *sdl)
 {
 	char hbuf[NI_MAXHOST];
 
-	if (getnameinfo((struct sockaddr *)sdl, sdl->sdl_len,
+	if (getnameinfo((const struct sockaddr *)sdl, sdl->sdl_len,
 	    hbuf, sizeof(hbuf), NULL, 0, NI_NUMERICHOST) != 0)
 		printf("<invalid>");
 	else
@@ -517,9 +507,7 @@ sdl_print(sdl)
 }
 
 int
-atosdl(s, sdl)
-	const char *s;
-	struct sockaddr_dl *sdl;
+atosdl(const char *ss, struct sockaddr_dl *sdl)
 {
 	int i;
 	long b;
@@ -531,8 +519,8 @@ atosdl(s, sdl)
 	endp = ((caddr_t)sdl) + sdl->sdl_len;
 	i = 0;
 	
-	b = strtol(s, &t, 16);
-	if (t == s)
+	b = strtol(ss, &t, 16);
+	if (t == ss)
 		return 1;
 
 	*p++ = b;
@@ -551,7 +539,7 @@ atosdl(s, sdl)
 }
 
 void
-usage()
+usage(void)
 {
 	const char *progname;
 
@@ -566,8 +554,7 @@ usage()
 }
 
 int
-rtmsg(cmd)
-	int cmd;
+rtmsg(int cmd)
 {
 	static int seq;
 	int rlen;
@@ -638,9 +625,7 @@ doit:
 }
 
 int
-getinetaddr(host, inap)
-	const char *host;
-	struct in_addr *inap;
+getinetaddr(const char *host, struct in_addr *inap)
 {
 	struct hostent *hp;
 
@@ -655,10 +640,7 @@ getinetaddr(host, inap)
 }
 
 int
-getifname(ifindex, ifname, l)
-	u_int16_t ifindex;
-	char* ifname;
-	size_t l;
+getifname(u_int16_t ifindex, char *ifname, size_t l)
 {
 	int i;
 	struct ifaddrs *addr;
@@ -677,7 +659,7 @@ getifname(ifindex, ifname, l)
 
 		sdl = (const struct sockaddr_dl *) addr->ifa_addr;
 		if (sdl && sdl->sdl_index == ifindex) {
-			(void) strlcpy(ifname, addr->ifa_name, l);
+			(void)strlcpy(ifname, addr->ifa_name, l);
 			return 0;
 		}
 	}
