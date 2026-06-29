@@ -153,6 +153,8 @@ struct vm_idspace {
 void vm_idspace_init(vm_idspace_t, vm_object_t, vm_offset_t, int);
 vm_idspace_t vm_idspace_allocate(vm_object_t, vm_offset_t, int);
 void vm_idspace_deallocate(vm_idspace_t, int);
+vm_map_t vm_idspace_map_allocate(vm_object_t, vm_offset_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+vm_page_t vm_idspace_pagemap_allocate(vm_segment_t, int);
 
 /* vm_segment_region */
 void vm_segment_region_insert(vm_idspace_t, int, int);

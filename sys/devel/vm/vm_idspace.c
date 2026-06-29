@@ -44,6 +44,8 @@
 /* generic registers */
 struct vm_segment_register segregs[NOVL];
 
+simple_lock_data_t vm_idspace_lock;
+
 static void vm_idspace_setup(vm_idspace_t, vm_object_t, vm_offset_t);
 static void vm_genmap_get(int, vm_offset_t *, vm_offset_t *);
 static void vm_genmap_put(int, vm_offset_t *, vm_offset_t *);
@@ -51,8 +53,6 @@ static void vm_savemap_get(int, vm_offset_t *, vm_offset_t *);
 static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
 static void vm_segment_region_saveseg5(vm_segment_region_t, vm_offset_t *, vm_offset_t *);
 static void vm_segment_region_saveseg6(vm_segment_region_t, vm_offset_t *, vm_offset_t *);
-
-simple_lock_data_t vm_idspace_lock;
 
 void
 vm_idspace_init(idspace, object, offset, mtype)
@@ -101,8 +101,6 @@ vm_idspace_setup(idspace, object, offset)
 	vm_offset_t offset;
 {
 	vm_segment_t segment;
-	vm_page_t pagemap[NOVL];
-	vm_offset_t pgoffset;
 	int i;
 
 	TAILQ_INIT(&idspace->header);
@@ -114,10 +112,56 @@ vm_idspace_setup(idspace, object, offset)
 
 	/* setup pages */
 	for (i = 0; i < NOVL; i++) {
-		pgoffset = i * NOVL_PAGES * PAGE_SIZE;
-		pagemap[i] = vm_page_alloc(segment, pgoffset);
-		idspace->pagemap[i] = pagemap[i];
+		idspace->pagemap[i] = vm_idspace_pagemap_allocate(segment, i);
 	}
+}
+
+/* allocate and insert map */
+vm_map_t
+vm_idspace_map_allocate(object, offset, min, max, size, pageable)
+	vm_object_t object;
+	vm_offset_t offset, *min, *max;
+	vm_size_t size;
+	bool_t pageable;
+{
+	vm_map_t map;
+	vm_offset_t start, end;
+	int error;
+
+	map = kmem_suballoc(kernel_map, min, max, size, pageable);
+	if (map != NULL) {
+		start = vm_map_min(map);
+		end = vm_map_max(map);
+		if ((start < *min) || (end > *max)) {
+			return (NULL);
+		}
+		vm_map_lock(map);
+		error = vm_map_insert(map, object, offset, start, end);
+		if (error != KERN_SUCCESS) {
+			vm_map_remove(map, start, end);
+			vm_map_unlock(map);
+			return (NULL);
+		}
+		vm_map_unlock(map);
+	}
+	return (map);
+}
+
+/* allocate pages for pagemap */
+vm_page_t
+vm_idspace_pagemap_allocate(segment, nelems)
+	vm_segment_t segment;
+	int nelems;
+{
+	vm_page_t pagemap[NOVL];
+	vm_offset_t pgoffset;
+
+	pgoffset = nelems * NOVL_PAGES * PAGE_SIZE;
+	pagemap[nelems] = vm_page_alloc(segment, pgoffset);
+	if (pagemap[nelems] != NULL) {
+		return (pagemap[nelems]);
+	}
+	return (NULL);
 }
 
 void

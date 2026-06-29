@@ -71,7 +71,7 @@ vm_kispace_map_init(kspace, object, offset, min, max, size, pageable)
 	dmax = max; 			/* descriptor map max */
 
 	/* I-Space instruction map */
-	kisa_map = vm_kspace_map_allocate(object, offset, imin, imax, size, pageable);
+	kisa_map = vm_idspace_map_allocate(object, offset, imin, imax, size, pageable);
 	if (kisa_map != NULL) {
 		kspace->addr_map = kisa_map;
 		kspace->i_start = &imin;
@@ -79,7 +79,7 @@ vm_kispace_map_init(kspace, object, offset, min, max, size, pageable)
 	}
 
 	/* I-Space descriptor map */
-	kisd_map = vm_kspace_map_allocate(object, offset, dmin, dmax, size, pageable);
+	kisd_map = vm_idspace_map_allocate(object, offset, dmin, dmax, size, pageable);
 	if (kisd_map != NULL) {
 		kspace->desc_map = kisd_map;
 		kspace->d_start = &dmin;
@@ -112,7 +112,7 @@ vm_kdspace_map_init(kspace, object, offset, min, max, size, pageable)
 	dmax = max; 			/* descriptor map max */
 
 	/* D-Space instruction map */
-	kdsa_map = vm_kspace_map_allocate(object, offset, imin, imax, size, pageable);
+	kdsa_map = vm_idspace_map_allocate(object, offset, imin, imax, size, pageable);
 	if (kdsa_map != NULL) {
 		kspace->addr_map = kisa_map;
 		kspace->i_start = &imin;
@@ -120,7 +120,7 @@ vm_kdspace_map_init(kspace, object, offset, min, max, size, pageable)
 	}
 
 	/* D-Space descriptor map */
-	kdsd_map = vm_kspace_map_allocate(object, offset, dmin, dmax, size, pageable);
+	kdsd_map = vm_idspace_map_allocate(object, offset, dmin, dmax, size, pageable);
 	if (kdsd_map != NULL) {
 		kspace->desc_map = kdsd_map;
 		kspace->d_start = &dmin;
@@ -168,35 +168,4 @@ vm_kspace_object_init(kspace, size, object)
 	if (object != NULL) {
 		kspace->object = object;
 	}
-}
-
-/* allocate and insert map */
-vm_map_t
-vm_kspace_map_allocate(object, offset, min, max, size, pageable)
-	vm_object_t object;
-	vm_offset_t offset, *min, *max;
-	vm_size_t size;
-	bool_t pageable;
-{
-	vm_map_t map;
-	vm_offset_t start, end;
-	int error;
-
-	map = kmem_suballoc(kernel_map, min, max, size, pageable);
-	if (map != NULL) {
-		start = vm_map_min(map);
-		end = vm_map_max(map);
-		if ((start < *min) || (end > *max)) {
-			return (NULL);
-		}
-		vm_map_lock(map);
-		error = vm_map_insert(map, object, offset, start, end);
-		if (error != KERN_SUCCESS) {
-			vm_map_remove(map, start, end);
-			vm_map_unlock(map);
-			return (NULL);
-		}
-		vm_map_unlock(map);
-	}
-	return (map);
 }
