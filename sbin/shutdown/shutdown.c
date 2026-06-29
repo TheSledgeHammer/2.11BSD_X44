@@ -17,9 +17,11 @@ static char sccsid[] = "@(#)shutdown.c	5.6.3 (2.11BSD GTE) 1997/10/3";
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/syslog.h>
+#include <sys/stat.h>
 
 #include <err.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <signal.h>
 #include <setjmp.h>
@@ -62,9 +64,6 @@ static char sccsid[] = "@(#)shutdown.c	5.6.3 (2.11BSD GTE) 1997/10/3";
 
 char hostname[MAXHOSTNAMELEN];
 
-int	timeout(void);
-time_t	getsdt(char *);
-
 struct utmp utmp;
 int sint;
 long stogo;
@@ -78,7 +77,7 @@ char *nosync = NULL;
 char nosyncflag[] = "-n";
 char term[sizeof tpath + sizeof utmp.ut_line];
 char tbuf[BUFSIZ];
-char nolog1[] = "\n\nNO LOGINS: System going down at %5.5s\n\n";
+const char nolog1[] = "\n\nNO LOGINS: System going down at %5.5s\n\n";
 char nolog2[NLOG+1];
 #ifdef	DEBUG
 char nologin[] = _PATH_NOLOGIN;
@@ -109,10 +108,11 @@ struct interval {
 const char *shutter;
 
 static time_t getsdt(char *);
-static void warn(FILE *, time_t, time_t, char *);
+static void do_warn(FILE *, time_t, time_t, const char *);
 static void doitfast(void);
 static void nolog(time_t);
 static void finish(int);
+static void finished(void);
 static void timeout(int);
 static void usage(void);
 static void usage_warn(int);
@@ -121,7 +121,7 @@ int
 main(int argc, char **argv)
 {
 	register int i, ufd;
-	register char *f;
+	register const char *f;
 	char *ts;
 	time_t sdt;
 	int h, m;
@@ -141,7 +141,7 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 	while (argc > 0 && (f = argv[0], *f++ == '-')) {
-		while (i == *f++) {
+		while ((i = *f++)) {
 			switch (i) {
 			case 'k':
 				killflg = 0;
@@ -171,11 +171,11 @@ main(int argc, char **argv)
 	}
 	if (fast && (nosync == nosyncflag)) {
 	        printf ("shutdown: Incompatible switches 'fast' & 'nosync'\n");
-		finish();
+		finished();
 	}
 	if (geteuid()) {
 		fprintf(stderr, "NOT super-user\n");
-		finish();
+		finished();
 	}
 	nowtime = time((time_t *)0);
 	sdt = getsdt(argv[0]);
@@ -214,7 +214,7 @@ main(int argc, char **argv)
 	sint = 1 HOURS;
 	f = "";
 
-	ufd = open(_PATH_UTMP,0);
+	ufd = open(_PATH_UTMP, 0);
 	if (ufd < 0) {
 		err(1, "%s", _PATH_UTMP);
 		/* NOTREACHED */
@@ -243,7 +243,7 @@ main(int argc, char **argv)
 					continue;
 				}
 				(void)strcpy(term, tpath);
-				(void)strncat(term, utmp.ut_line, sizeof(utmp.ut_line));
+				(void)strncat(term, utmp.ut_line, sizeof(term));
 				(void)alarm(3);
 #ifdef DEBUG
 				if ((termf = stdout) != NULL)
@@ -254,7 +254,7 @@ main(int argc, char **argv)
 					(void)alarm(0);
 					setbuf(termf, tbuf);
 					fprintf(termf, "\n\r\n");
-					warn(termf, sdt, nowtime, f);
+					do_warn(termf, sdt, nowtime, f);
 					if (first || sdt - nowtime > 1 MINUTES) {
 						if (*nolog2)
 							fprintf(termf, "\t...%s", nolog2);
@@ -280,19 +280,19 @@ main(int argc, char **argv)
 			(void)unlink(nologin);
 			if (!killflg) {
 				printf("but you'll have to do it yourself\n");
-				finish();
+				finished();
 			}
 			if (fast) {
 				doitfast();
 			}
 #ifndef DEBUG
 			if (doreboot) {
-				execle(REBOOT, "reboot", "-l", nosync, 0, 0);
+				execle(REBOOT, "reboot", "-l", nosync, (char *)NULL, (char *)NULL);
 			}
 			if (halt) {
-				execle(HALT, "halt", "-l", nosync, 0, 0);
+				execle(HALT, "halt", "-l", nosync, (char *)NULL, (char *)NULL);
 			}
-			(void) kill(1, SIGTERM); /* to single user */
+			(void)kill(1, SIGTERM); /* to single user */
 #else
 			if (doreboot) {
 				printf("REBOOT");
@@ -308,7 +308,7 @@ main(int argc, char **argv)
 				printf("kill -HUP 1\n");
 			}
 #endif
-			finish();
+			finished();
 		}
 		stogo = sdt - time((time_t *) 0);
 		if (stogo > 0 && sint > 0) {
@@ -364,19 +364,20 @@ getsdt(char *s)
 	if (tim < t || tim >= ((time_t) 24 * 3600)) {
 		/* before now or after midnight */
 		printf("That must be tomorrow\nCan't you wait till then?\n");
-		finish();
+		finished();
 	}
 
 	return (t1 + tim - t);
 
 badform:
 	printf("Bad time format\n");
-	finish();
+	finished();
 	/*NOTREACHED*/
+    return (NULL);
 }
 
 static void
-warn(FILE *term, time_t sdt, time_t now, char *type)
+do_warn(FILE *termf, time_t sdt, time_t now, const char *type)
 {
 	char *ts;
 	register time_t delay = sdt - now;
@@ -385,21 +386,21 @@ warn(FILE *term, time_t sdt, time_t now, char *type)
 		while (delay % 5)
 			delay++;
 
-	fprintf(term,
+	fprintf(termf,
 	    "\007\007\t*** %sSystem shutdown message from %s@%s ***\r\n\n",
 		    type, shutter, hostname);
 
 	ts = ctime(&sdt);
 	if (delay > 10 MINUTES) {
-		fprintf(term, "System going down at %5.5s\r\n", ts+11);
+		fprintf(termf, "System going down at %5.5s\r\n", ts+11);
 	} else if (delay > 95 SECONDS) {
-		fprintf(term, "System going down in %d minute%s\r\n",
+		fprintf(termf, "System going down in %lld minute%s\r\n",
 		    (delay+30)/60, (delay+30)/60 != 1 ? "s" : "");
 	} else if (delay > 0) {
-		fprintf(term, "System going down in %d second%s\r\n",
+		fprintf(termf, "System going down in %lld second%s\r\n",
 		    delay, delay != 1 ? "s" : "");
 	} else {
-		fprintf(term, "System going down IMMEDIATELY\r\n");
+		fprintf(termf, "System going down IMMEDIATELY\r\n");
 	}
 }
 
@@ -438,6 +439,12 @@ finish(int signo)
 }
 
 static void
+finished(void)
+{
+    finish(0);
+}
+
+static void
 timeout(int signo)
 {
 	longjmp(alarmbuf, 1);
@@ -447,7 +454,7 @@ static void
 usage(void)
 {
 	fprintf(stderr, "Usage: shutdown [ -krhfn ] shutdowntime [ message ]\n");
-	finish();
+	finished();
 }
 
 static void
