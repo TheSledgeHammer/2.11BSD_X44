@@ -53,6 +53,6 @@ CFILES=\
 
 SRCS= ${CFILES}
 
-COPTS.match.c = -Wno-stringop-overflow
+COPTS.match.c = ${GCC_NO_STRINGOP_OVERFLOW}
 
 .include <bsd.prog.mk>
