@@ -328,37 +328,6 @@ again:
 	u.u_procp = rpp;
 
 	/*
-	 * If there is not enough core for the new process, swap out the
-	 * current process to generate the copy.
-	 */
-	if (a[2] == NULL) {
-		rip->p_stat = SIDL;
-		rpp->p_addr = (struct user *)a1;
-		rpp->p_stat = SRUN;
-		xswapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
-		rip->p_stat = SRUN;
-		u.u_procp = rip;
-	} else {
-		/*
-		 * There is core, so just copy.
-		 */
-		rpp->p_addr = (struct user *)a[2];
-		bcopy(a1, rpp->p_addr, USIZE);
-		u.u_procp = rip;
-		if (isvfork == 0) {
-			rpp->p_daddr = a[0];
-			bcopy(rip->p_daddr, rpp->p_daddr, rpp->p_dsize);
-			rpp->p_saddr = a[1];
-			bcopy(rip->p_saddr, rpp->p_saddr, rpp->p_ssize);
-		}
-		s = splhigh();
-		rpp->p_stat = SRUN;
-		setrq(rpp);
-		splx(s);
-	}
-	rpp->p_flag |= P_SSWAP;
-
-	/*
 	 * set priority of child to be that of parent
 	 */
 	rpp->p_estcpu = rip->p_estcpu;
@@ -414,6 +383,37 @@ again:
 	rip->p_flag &= ~P_NOSWAP;
 
 	/*
+	 * If there is not enough core for the new process, swap out the
+	 * current process to generate the copy.
+	 */
+	if (a[2] == NULL) {
+		rip->p_stat = SIDL;
+		rpp->p_addr = (struct user *)a1;
+		rpp->p_stat = SRUN;
+		xswapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
+		rip->p_stat = SRUN;
+		u.u_procp = rip;
+	} else {
+		/*
+		 * There is core, so just copy.
+		 */
+		rpp->p_addr = (struct user *)a[2];
+		bcopy(a1, rpp->p_addr, USIZE);
+		u.u_procp = rip;
+		if (isvfork == 0) {
+			rpp->p_daddr = a[0];
+			bcopy(rip->p_daddr, rpp->p_daddr, rpp->p_dsize);
+			rpp->p_saddr = a[1];
+			bcopy(rip->p_saddr, rpp->p_saddr, rpp->p_ssize);
+		}
+		s = splhigh();
+		rpp->p_stat = SRUN;
+		setrq(rpp);
+		splx(s);
+	}
+	rpp->p_flag |= P_SSWAP;
+
+	/*
 	 * Preserve synchronization semantics of vfork.  If waiting for
 	 * child to exec or exit, set P_PPWAIT on child, and sleep on our
 	 * proc (in case of exit).
@@ -452,7 +452,7 @@ again:
 			rpp->p_flag |= P_SVFDONE;
 			wakeup((caddr_t)rip);
 			/* must do estabur if dsize/ssize are different */
-			vm_estabur(u.u_procp, u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, SEG_RO);
+			vm_estabur(u.u_procp, u.u_dsize, u.u_ssize, u.u_tsize, u.u_sep, SEG_RO);
 			rip->p_flag &= ~P_SVFPRNT;
 		}
 
