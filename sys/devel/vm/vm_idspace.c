@@ -63,6 +63,7 @@ vm_idspace_init(idspace, object, offset, mtype)
 {
 	idspace = vm_idspace_allocate(object, offset);
 	if (idspace != NULL) {
+		vm_idspace_setup(idspace, object, offset);
 		/* initialize first segment region */
 		vm_region_insert(idspace, 0, mtype);
 	}
@@ -77,7 +78,6 @@ vm_idspace_allocate(object, offset, mtype)
 	register vm_idspace_t result;
 
 	MALLOC(result, struct vm_idspace *, sizeof(struct vm_idspace *), mtype, M_WAITOK);
-	vm_idspace_setup(result, object, offset);
 	return (result);
 }
 
@@ -90,7 +90,7 @@ vm_idspace_deallocate(idspace, mtype)
 		if (!TAILQ_EMPTY(&idspace->header)) {
 			return;
 		}
-		free(idspace, mtype);
+		FREE(idspace, mtype);
 	}
 }
 
@@ -164,6 +164,30 @@ vm_idspace_pagemap_allocate(segment, nelems)
 	return (NULL);
 }
 
+vm_segment_region_t
+vm_segment_region_alloc(mtype)
+	int mtype;
+{
+	vm_segment_region_t region;
+
+	region = (vm_segment_region_t)malloc(
+			(u_long)sizeof(struct vm_segment_region), mtype, M_WAITOK);
+	if (region == NULL) {
+		return (NULL);
+	}
+	return (region);
+}
+
+void
+vm_segment_region_free(region, mtype)
+	vm_segment_region_t region;
+	int mtype;
+{
+	if (region != NULL) {
+		free(region, mtype);
+	}
+}
+
 void
 vm_segment_region_insert(idspace, segnum, mtype)
 	vm_idspace_t idspace;
@@ -179,7 +203,11 @@ vm_segment_region_insert(idspace, segnum, mtype)
 	if (page == NULL) {
 		return;
 	}
-	region = (vm_segment_region_t)malloc((u_long)sizeof(struct vm_segment_region), mtype, M_WAITOK);
+
+	region = vm_segment_region_alloc(mtype);
+	if (region == NULL) {
+		return;
+	}
 	region->page = page;
 	//region->size = ;
 	region->segreg = &segregs[segnum];

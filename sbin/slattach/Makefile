@@ -3,4 +3,6 @@
 PROG=	slattach
 MAN=	slattach.8
 
+CPPFLAGS+= -DUSE_OLD_TTY
+
 .include <bsd.prog.mk>

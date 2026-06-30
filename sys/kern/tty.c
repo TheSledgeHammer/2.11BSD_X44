@@ -397,7 +397,7 @@ ttioctl_sc(tp, com, data, flag)
 	case TIOCSETC:
 	case TIOCSLTC:
 		while (isbackground(curproc, tp) && u.u_procp->p_pgrp->pg_jobc
-				&& (u.u_procp->p_flag & P_PPWAIT) == 0
+				&& (u.u_procp->p_flag & (P_SVFORK | P_PPWAIT)) == 0
 				&& (u.u_procp->p_sigignore & sigmask(SIGTTOU)) == 0
 				&& (u.u_procp->p_sigmask & sigmask(SIGTTOU)) == 0) {
 			pgsignal(u.u_procp->p_pgrp, SIGTTOU, 1);
@@ -415,7 +415,7 @@ ttioctl_sc(tp, com, data, flag)
 	case TIOCSTI:
 	case TIOCSWINSZ:
 		while (tp->t_line == NTTYDISC && u.u_procp->p_pgrp != tp->t_pgrp
-				&& tp == u.u_ttyp && (u.u_procp->p_flag & P_SVFORK) == 0
+				&& tp == u.u_ttyp && (u.u_procp->p_flag & (P_SVFORK | P_PPWAIT)) == 0
 				&& !(u.u_procp->p_sigignore & sigmask(SIGTTOU))
 				&& !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
 			gsignal(u.u_procp->p_pgrp->pg_id, SIGTTOU);
@@ -489,7 +489,7 @@ ttioctl_sc(tp, com, data, flag)
 				return error;
 
 #ifndef	UCONSOLE
-			if (error = suser())
+			if ((error = suser()))
 				return (error);
 #endif
 			constty = tp;
@@ -498,7 +498,7 @@ ttioctl_sc(tp, com, data, flag)
 		break;
 
 	case TIOCDRAIN: 		/* wait till output drained */
-		if (error = ttywait(tp))
+		if ((error = ttywait(tp)))
 			return (error);
 		break;
 
@@ -1647,7 +1647,7 @@ loop:
 	if (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
 		if ((u.u_procp->p_sigignore & sigmask(SIGTTIN))
 				|| (u.u_procp->p_sigmask & sigmask(SIGTTIN))
-				|| (u.u_procp->p_flag & P_SVFORK))
+				|| (u.u_procp->p_flag & (P_SVFORK | P_PPWAIT)))
 			TTY_UNLOCK(tp);
 			splx(s);
 			return (EIO);
@@ -1880,7 +1880,7 @@ loop:
 	 * Hang the process if it's in the background.
 	 */
 	if (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp
-			&& (tp->t_flags & TOSTOP) && (u.u_procp->p_flag & P_SVFORK) == 0
+			&& (tp->t_flags & TOSTOP) && (u.u_procp->p_flag & (P_SVFORK | P_PPWAIT)) == 0
 			&& !(u.u_procp->p_sigignore & sigmask(SIGTTOU))
 			&& !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
 		gsignal(u.u_procp->p_pgrp->pg_id, SIGTTOU);

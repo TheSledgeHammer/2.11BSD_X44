@@ -196,7 +196,7 @@ again:
 				isbackground(u.u_procp, tp)) {
 			if ((u.u_procp->p_sigignore & sigmask(SIGTTIN))
 					|| (u.u_procp->p_sigmask & sigmask(SIGTTIN))
-					|| (u.u_procp->p_flag & P_SVFORK)) {
+					|| (u.u_procp->p_flag & (P_SVFORK | P_PPWAIT))) {
 				return (EIO);
 			}
 			gsignal(u.u_procp->p_pgrp->pg_id, SIGTTIN);

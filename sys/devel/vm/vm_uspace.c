@@ -169,3 +169,53 @@ vm_uspace_object_init(uspace, size, object)
 		uspace->object = object;
 	}
 }
+
+/* uspace regions */
+void
+vm_uspace_region_insert(uspace, segnum)
+	vm_uspace_t uspace;
+	int segnum;
+{
+	vm_idspace_t idspace;
+
+	idspace = uspace->idspace;
+	if (idspace == NULL) {
+		return;
+	}
+	vm_segment_region_insert(idspace, segnum, M_VMUSPACE);
+}
+
+void
+vm_uspace_region_remove(uspace, segnum)
+	vm_uspace_t uspace;
+	int segnum;
+{
+	vm_idspace_t idspace;
+
+	idspace = uspace->idspace;
+	if (idspace == NULL) {
+		return;
+	}
+	vm_segment_region_remove(idspace, segnum);
+}
+
+vm_segment_region_t
+vm_uspace_region_lookup(uspace, segnum)
+	vm_uspace_t uspace;
+	int segnum;
+{
+	vm_idspace_t idspace;
+	vm_segment_region_t region;
+
+	idspace = uspace->idspace;
+	if (idspace == NULL) {
+		return (NULL);
+	}
+	region = vm_segment_region_lookup(idspace, segnum);
+	if (region == NULL) {
+		return (NULL);
+	}
+	return (region);
+}
+
+

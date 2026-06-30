@@ -699,6 +699,12 @@ vm_pagelist_is_segmented(size, forced)
 	int rval;
 	bool_t segmented;
 
+	/* If forced just return segmented as true */
+	if (forced == 0) {
+		segmented = TRUE;
+		return (segmented);
+	}
+
 	/* Check if number of pages expands beyond a single segment */
 	rval = vm_pagelist_check_memory(size);
 	if (rval != 0) {
@@ -710,9 +716,6 @@ vm_pagelist_is_segmented(size, forced)
 		}
 	} else {
 		segmented = FALSE;
-	}
-	if (forced == 0) {
-		segmented = TRUE;
 	}
 	return (segmented);
 }

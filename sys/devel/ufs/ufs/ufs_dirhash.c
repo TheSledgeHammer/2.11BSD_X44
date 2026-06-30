@@ -491,7 +491,8 @@ ufsdirhash_remove(struct inode *ip, struct direct *dirp, doff_t offset)
 	struct dirhash *dh;
 	int slot;
 
-	if ((dh = ip->i_dirhash) == NULL)
+	dh = ip->i_dirhash;
+	if (dh == NULL)
 		return;
 
 	DIRHASH_LOCK(dh);

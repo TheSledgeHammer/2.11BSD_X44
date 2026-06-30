@@ -28,10 +28,12 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/stat.h>
 
-#include <sys/vm/include/vm_swap.h>
+#include <vm/include/vm_swap.h>
 
 #include <unistd.h>
 #include <err.h>

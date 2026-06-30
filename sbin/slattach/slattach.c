@@ -34,18 +34,23 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1988, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)slattach.c	8.2 (Berkeley) 1/7/94";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sgtty.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -62,14 +67,15 @@ static char sccsid[] = "@(#)slattach.c	8.2 (Berkeley) 1/7/94";
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sgtty.h>
 #include <termios.h>
 #include <unistd.h>
 
 #define DEFAULT_BAUD	9600
 int	slipdisc = SLIPDISC;
 
-char	devname[32];
-char	hostname[MAXHOSTNAMELEN];
+char devicename[32];
+char hostname[MAXHOSTNAMELEN];
 
 static int findspeed(int);
 static void	usage(void);
@@ -124,8 +130,8 @@ main(int argc, char *argv[])
 
 	dev = *argv;
 	if (strncmp(_PATH_DEV, dev, sizeof(_PATH_DEV) - 1)) {
-		(void)snprintf(devname, sizeof(devname), "%s%s", _PATH_DEV, dev);
-		dev = devname;
+		(void)snprintf(devicename, sizeof(devicename), "%s%s", _PATH_DEV, dev);
+		dev = devicename;
 	}
 	if ((fd = open(dev, O_RDWR | O_NDELAY)) < 0) {
 		perror(dev);
@@ -170,7 +176,7 @@ main(int argc, char *argv[])
 
 struct sg_spds {
 	int sp_val, sp_name;
-}       spds[] = {
+} spds[] = {
 #ifdef B50
 	{ 50, B50 },
 #endif

@@ -279,7 +279,7 @@ int	tcsendbreak(int, int);
 pid_t	tcgetsid(int);
 //#endif /* _XOPEN_SOURCE || __BSD_VISIBLE */
 //#ifndef _POSIX_SOURCE
-void	cfmakeraw(struct termios *);
+void cfmakeraw(struct termios *);
 int	cfsetspeed(struct termios *, speed_t);
 //#endif /* !_POSIX_SOURCE */
 #endif /* _XOPEN_SOURCE || __BSD_VISIBLE */

@@ -1010,7 +1010,6 @@ vm_map_findspace(map, start, length, addr)
  *	map with the given length.  The search is defined to be
  *	first-fit from the specified address; the region found is
  *	returned in the same parameter.
- *
  */
 int
 vm_map_find(map, object, offset, addr, length, find_space)

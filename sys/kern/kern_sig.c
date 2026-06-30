@@ -407,7 +407,7 @@ psignal(p, sig)
 			 * If a child holding parent blocked,
 			 * stopping could cause deadlock.
 			 */
-			if (p->p_flag & P_SVFORK)
+			if ((p->p_flag & (P_SVFORK | P_PPWAIT)))
 				goto out;
 			p->p_sig &= ~mask;
 			p->p_ptracesig = sig;
@@ -509,7 +509,7 @@ issignal(p)
 
 	for (;;) {
 		mask = p->p_sig & ~p->p_sigmask;
-		if (p->p_flag&P_SVFORK)
+		if ((p->p_flag & (P_SVFORK | P_PPWAIT)))
 			mask &= ~stopsigmask;
 		if (mask == 0)
 			return;		/* No signals to send */
@@ -524,7 +524,7 @@ issignal(p)
 			p->p_sig &= ~mask;
 			continue;
 		}
-		if ((p->p_flag & P_TRACED) && (p->p_flag & P_SVFORK) == 0) {
+		if ((p->p_flag & P_TRACED) && (p->p_flag & (P_SVFORK | P_PPWAIT)) == 0) {
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
@@ -568,7 +568,7 @@ issignal(p)
 			 * to the top to rescan signals.  This ensures
 			 * that p_sig* and u_signal are consistent.
 			 */
-			if ((p->p_flag& P_TRACED) == 0)
+			if ((p->p_flag & P_TRACED) == 0)
 				continue;
 			prop = sigprop[sig];
 		}

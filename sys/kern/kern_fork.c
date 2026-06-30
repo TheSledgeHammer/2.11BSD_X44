@@ -58,6 +58,7 @@
 #include <sys/vnode.h>
 #include <sys/acct.h>
 #include <sys/ktrace.h>
+#include <sys/map.h>
 #include <sys/vmsystm.h>
 
 #include <machine/setjmp.h>
@@ -171,6 +172,9 @@ newproc(isvfork)
 {
 	register struct proc *rip, *rpp;
 	static int mpid, pidchecked = 0;
+	void *a1;
+	int s;
+	memaddr_t a[3];
 
 	mpid++;
 retry:
@@ -253,8 +257,8 @@ again:
 	 * Start by zeroing the section of proc that is zero-initialized,
 	 * then copy the section that is copied directly from the parent.
 	 */
-	bzero(&rpp->p_startzero, (unsigned) ((caddr_t)&rpp->p_endzero - (caddr_t)&rpp->p_startzero));
-	bzero(&rip->p_startzero, (unsigned) ((caddr_t)&rpp->p_endzero - (caddr_t)&rpp->p_startzero));
+	bzero(&rpp->p_startzero, (unsigned)((caddr_t)&rpp->p_endzero - (caddr_t)&rpp->p_startzero));
+	bzero(&rip->p_startzero, (unsigned)((caddr_t)&rpp->p_endzero - (caddr_t)&rpp->p_startzero));
 
 	rpp->p_flag = P_INMEM;
 	if (rip->p_flag & P_PROFIL) {
@@ -269,6 +273,11 @@ again:
 	rpp->p_textvp = rip->p_textvp;
 	if(rpp->p_textvp)
 		VREF(rpp->p_textvp);
+
+	if ((rip->p_textp != NULL) && !isvfork) {
+		rip->p_textp->psx_count++;
+		rip->p_textp->psx_ccount++;
+	}
 
 	rpp->p_fd = fdcopy(rip->p_fd);
 
@@ -305,12 +314,49 @@ again:
 	rpp->p_ssize = rip->p_ssize;
 	rpp->p_daddr = rip->p_daddr;
 	rpp->p_saddr = rip->p_saddr;
+	a1 = rip->p_addr;
+	if (isvfork) {
+		a[2] = rmalloc(coremap, USIZE);
+	} else {
+		a[2] = rmalloc3(coremap, rip->p_dsize, rip->p_ssize, USIZE, a);
+	}
 
     /*
      * Partially simulate the environment of the new process so that
      * when it is actually created (by copying) it will look right.
      */
 	u.u_procp = rpp;
+
+	/*
+	 * If there is not enough core for the new process, swap out the
+	 * current process to generate the copy.
+	 */
+	if (a[2] == NULL) {
+		rip->p_stat = SIDL;
+		rpp->p_addr = (struct user *)a1;
+		rpp->p_stat = SRUN;
+		xswapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
+		rip->p_stat = SRUN;
+		u.u_procp = rip;
+	} else {
+		/*
+		 * There is core, so just copy.
+		 */
+		rpp->p_addr = (struct user *)a[2];
+		bcopy(a1, rpp->p_addr, USIZE);
+		u.u_procp = rip;
+		if (isvfork == 0) {
+			rpp->p_daddr = a[0];
+			bcopy(rip->p_daddr, rpp->p_daddr, rpp->p_dsize);
+			rpp->p_saddr = a[1];
+			bcopy(rip->p_saddr, rpp->p_saddr, rpp->p_ssize);
+		}
+		s = splhigh();
+		rpp->p_stat = SRUN;
+		setrq(rpp);
+		splx(s);
+	}
+	rpp->p_flag |= P_SSWAP;
 
 	/*
 	 * set priority of child to be that of parent
@@ -343,7 +389,7 @@ again:
 
 	u.u_r.r_val1 = rip->p_pid;
 	u.u_r.r_val2 = 1;
-	if(vm_fork(rip, rpp, isvfork)) {
+	if (vm_fork(rip, rpp, isvfork)) {
 		/*
 		 * Child process.  Set start time and get to work.
 		 */
@@ -365,7 +411,7 @@ again:
 	/*
 	 * Now can be swapped.
 	 */
-	rip->p_flag |= P_NOSWAP;
+	rip->p_flag &= ~P_NOSWAP;
 
 	/*
 	 * Preserve synchronization semantics of vfork.  If waiting for
@@ -373,6 +419,43 @@ again:
 	 * proc (in case of exit).
 	 */
 	if (isvfork) {
+		if (rpp->p_flag & P_SVFORK) {
+			/*
+			 *  Set the parent's sizes to 0, since the child now
+			 *  has the data and stack.
+			 *  (If we had to swap, just free parent resources.)
+			 *  Then wait for the child to finish with it.
+			 */
+			if (a[2] == NULL) {
+				rmfree(coremap, rip->p_dsize, rip->p_daddr);
+				rmfree(coremap, rip->p_ssize, rip->p_saddr);
+			}
+			rip->p_dsize = 0;
+			rip->p_ssize = 0;
+			rip->p_textp = NULL;
+			rpp->p_flag |= P_SVFORK;
+			rip->p_flag |= P_SVFPRNT;
+			while (rpp->p_flag & P_SVFORK) {
+				tsleep(rpp, PSWP+1, "svfork", 0);
+			}
+			if ((rpp->p_flag & P_SLOAD) == 0) {
+				panic("newproc vfork");
+			}
+			u.u_dsize = rip->p_dsize = rpp->p_dsize;
+			rip->p_daddr = rpp->p_daddr;
+			rpp->p_dsize = 0;
+			u.u_ssize = rip->p_ssize = rpp->p_ssize;
+			rip->p_saddr = rpp->p_saddr;
+			rpp->p_ssize = 0;
+			rip->p_textp = rpp->p_textp;
+			rpp->p_textp = NULL;
+			rpp->p_flag |= P_SVFDONE;
+			wakeup((caddr_t)rip);
+			/* must do estabur if dsize/ssize are different */
+			vm_estabur(u.u_procp, u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, SEG_RO);
+			rip->p_flag &= ~P_SVFPRNT;
+		}
+
 		while (rpp->p_flag & P_PPWAIT) {
 			tsleep(rip, PWAIT, "ppwait", 0);
 		}

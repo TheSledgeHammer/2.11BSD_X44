@@ -157,6 +157,8 @@ vm_map_t vm_idspace_map_allocate(vm_object_t, vm_offset_t, vm_offset_t *, vm_off
 vm_page_t vm_idspace_pagemap_allocate(vm_segment_t, int);
 
 /* vm_segment_region */
+vm_segment_region_t vm_segment_region_alloc(int);
+void vm_segment_region_free(vm_segment_region_t, int);
 void vm_segment_region_insert(vm_idspace_t, int, int);
 void vm_segment_region_remove(vm_idspace_t, int);
 vm_segment_region_t vm_segment_region_lookup(vm_idspace_t, int);

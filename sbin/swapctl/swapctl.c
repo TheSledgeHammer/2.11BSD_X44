@@ -53,10 +53,12 @@
  *	<dev>		add this device
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/stat.h>
 
-#include <sys/vm/include/vm_swap.h>
+#include <vm/include/vm_swap.h>
 
 #include <unistd.h>
 #include <err.h>
@@ -111,17 +113,17 @@ char	*tflag;		/* swap device type (blk or noblk) */
 
 int	pri;		/* uses 0 as default pri */
 
-static	void change_priority(const char *);
-static	int  add_swap(const char *, int);
-static	int  delete_swap(const char *);
-static	void set_dumpdev(const char *);
-static	void get_dumpdev(void);
+static void change_priority(const char *);
+static int  add_swap(const char *, int);
+static int  delete_swap(const char *);
+static void set_dumpdev(const char *);
+static void get_dumpdev(void);
 int  main(int, char *[]);
-static	void do_fstab(int);
-static	void usage(void);
-static	void swapon_command(int, char **);
+static void do_fstab(int);
+static void usage(void);
+static void swapon_command(int, char **);
 #if 0
-static	void swapoff_command(int, char **);
+static void swapoff_command(int, char **);
 #endif
 
 int

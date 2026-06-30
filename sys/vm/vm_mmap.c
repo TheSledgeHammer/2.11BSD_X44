@@ -87,35 +87,35 @@ sbrk()
 {
 	register struct sbrk_args {
 		syscallarg(int) incr;
-		syscallarg(int)	sep;
 	} *uap = (struct sbrk_args *) u.u_ap;
 
 	struct proc *p;
 	register_t *retval;
 	register segsz_t n, d;
-	int error;
+	int error, sep;
 
 	p = u.u_procp;
+	sep = u.u_sep;
 	n = btoc(SCARG(uap, incr));
-	switch (SCARG(uap, sep)) {
+	switch (sep) {
 	case PSEG_NOSEP:
-		SCARG(uap, sep) = PSEG_NOSEP;
+		sep = PSEG_NOSEP;
 		break;
 
 	case PSEG_SEP:
-		SCARG(uap, sep) = PSEG_SEP;
+		sep = PSEG_SEP;
 		n -= ctos(p->p_tsize) * stoc(1);
 		break;
 
 	default:
-		SCARG(uap, sep) = PSEG_NOSEP;
+		sep = PSEG_NOSEP;
 		break;
 	}
 
 	if (n < 0) {
 		n = 0;
 	}
-	error = vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO);
+	error = vm_estabur(p, n, p->p_ssize, p->p_tsize, sep, SEG_RO);
 	if (error != 0) {
 		return (error);
 	}
@@ -136,34 +136,34 @@ sstk()
 {
 	register struct sstk_args {
 		syscallarg(int) incr;
-		syscallarg(int)	sep;
 	} *uap = (struct sstk_args *) u.u_ap;
 	struct proc *p;
 	register_t *retval;
 	register segsz_t n, s;
-	int error;
+	int error, sep;
 	
 	p = u.u_procp;
+	sep = u.u_sep;
 	n = btoc(SCARG(uap, incr));
-	switch (SCARG(uap, sep)) {
+	switch (sep) {
 	case PSEG_NOSEP:
-		SCARG(uap, sep) = PSEG_NOSEP;
+		sep = PSEG_NOSEP;
 		break;
 
 	case PSEG_SEP:
-		SCARG(uap, sep) = PSEG_SEP;
+		sep = PSEG_SEP;
 		n -= ctos(p->p_tsize) * stoc(1);
 		break;
 
 	default:
-		SCARG(uap, sep) = PSEG_NOSEP;
+		sep = PSEG_NOSEP;
 		break;
 	}
 
 	if (n < 0) {
 		n = 0;
 	}
-	error = vm_estabur(p, p->p_dsize, n, p->p_tsize, SCARG(uap, sep), SEG_RO);
+	error = vm_estabur(p, p->p_dsize, n, p->p_tsize, sep, SEG_RO);
 	if (error != 0) {
 		return (error);
 	}
