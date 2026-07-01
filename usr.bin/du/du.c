@@ -61,23 +61,21 @@ __RCSID("$NetBSD: du.c,v 1.23.2.1 2004/05/17 09:17:43 tron Exp $");
 
 int	linkchk(FTSENT *);
 int	main(int, char **);
-void	prstat(const char *, int64_t);
-void	usage(void);
+void prstat(const char *, int64_t);
+void usage(void);
 
 int hflag;
 long blocksize;
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char **argv)
 {
 	FTS *fts;
 	FTSENT *p;
 	int64_t totalblocks;
 	int ftsoptions, listdirs, listfiles;
 	int Hflag, Lflag, Pflag, aflag, ch, cflag, gkmflag, nflag, rval, sflag;
-	char *noargv[2];
+	const char *noargv[2];
 
 	Hflag = Lflag = Pflag = aflag = cflag = gkmflag = nflag = sflag = 0;
 	totalblocks = 0;
@@ -168,7 +166,7 @@ main(argc, argv)
 	if (!*argv) {
 		noargv[0] = ".";
 		noargv[1] = NULL;
-		argv = noargv;
+		argv = __UNCONST(noargv);
 	}
 
 	if (!gkmflag)
@@ -240,18 +238,8 @@ main(argc, argv)
 void
 prstat(const char *fname, int64_t blocks)
 {
-	if (hflag) {
-		char buf[5];
-		int64_t sz = blocks * 512;
-
-		humanize_number(buf, sizeof(buf), sz, "", HN_AUTOSCALE,
-		    HN_B | HN_NOSPACE | HN_DECIMAL);
-
-		(void)printf("%s\t%s\n", buf, fname);
-	} else
-		(void)printf("%lld\t%s\n",
-		    (long long)howmany(blocks, (int64_t)blocksize),
-		    fname);
+    (void)printf("%lld\t%s\n", (long long)howmany(blocks, 
+        (int64_t)blocksize), fname);
 }
 
 
@@ -261,8 +249,7 @@ typedef struct _ID {
 } ID;
 
 int
-linkchk(p)
-	FTSENT *p;
+linkchk(FTSENT *p)
 {
 	static ID *files;
 	static int maxfiles, nfiles;
@@ -287,7 +274,7 @@ linkchk(p)
 }
 
 void
-usage()
+usage(void)
 {
 
 	(void)fprintf(stderr,
