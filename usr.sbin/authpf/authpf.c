@@ -55,29 +55,29 @@
 extern int	symset(const char *, const char *, int);
 
 static int	read_config(FILE *);
-static void	print_message(char *);
-static int	allowed_luser(char *);
-static int	check_luser(char *, char *);
+static void	print_message(const char *);
+static int	allowed_luser(const char *);
+static int	check_luser(const char *, const char *);
 static int	remove_stale_rulesets(void);
 static int	change_filter(int, const char *, const char *);
 static int	change_table(int, const char *, const char *);
 static void	authpf_kill_states(void);
 
 int	dev;			/* pf device */
-char	anchorname[PF_ANCHOR_NAME_SIZE] = "authpf";
-char	rulesetname[MAXPATHLEN - PF_ANCHOR_NAME_SIZE - 2];
-char	tablename[PF_TABLE_NAME_SIZE] = "authpf_users";
+char anchorname[PF_ANCHOR_NAME_SIZE] = "authpf";
+char rulesetname[MAXPATHLEN - PF_ANCHOR_NAME_SIZE - 2];
+char tablename[PF_TABLE_NAME_SIZE] = "authpf_users";
 
-FILE	*pidfp;
-char	*infile;		/* file name printed by yyerror() in parse.y */
-char	 luser[MAXLOGNAME];	/* username */
-char	 ipsrc[256];		/* ip as a string */
-char	 pidfile[MAXPATHLEN];	/* we save pid in this file. */
+FILE *pidfp;
+char *infile;		/* file name printed by yyerror() in parse.y */
+char luser[MAXLOGNAME];	/* username */
+char ipsrc[256];		/* ip as a string */
+char pidfile[MAXPATHLEN];	/* we save pid in this file. */
 
-struct timeval	Tstart, Tend;	/* start and end times of session */
+struct timeval Tstart, Tend;	/* start and end times of session */
 
-volatile sig_atomic_t	want_death;
-static void		need_death(int signo);
+volatile sig_atomic_t want_death;
+static void	need_death(int signo);
 static __dead void	do_death(int);
 
 /*
@@ -89,13 +89,13 @@ static __dead void	do_death(int);
 int
 main(int argc, char *argv[])
 {
-	int		 lockcnt = 0, n, pidfd;
-	FILE		*config;
-	struct in6_addr	 ina;
-	struct passwd	*pw;
-	char		*cp;
-	uid_t		 uid;
-	char		*shell;
+	int lockcnt = 0, n, pidfd;
+	FILE *config;
+	struct in6_addr ina;
+	struct passwd *pw;
+	char *cp;
+	uid_t uid;
+	char *shell;
 	login_cap_t	*lc;
 
 	config = fopen(PATH_CONFFILE, "r");
@@ -334,7 +334,7 @@ die:
 static int
 read_config(FILE *f)
 {
-	char	buf[1024];
+	char buf[1024];
 	int	i = 0;
 
 	do {
@@ -400,10 +400,10 @@ parse_error:
  * they've been bad or we're unavailable.
  */
 static void
-print_message(char *filename)
+print_message(const char *filename)
 {
-	char	 buf[1024];
-	FILE	*f;
+	char buf[1024];
+	FILE *f;
 
 	if ((f = fopen(filename, "r")) == NULL)
 		return; /* fail silently, we don't care if it isn't there */
@@ -431,12 +431,12 @@ print_message(char *filename)
  * the session terminates in the same manner as being banned.
  */
 static int
-allowed_luser(char *luser)
+allowed_luser(const char *luser)
 {
-	char	*buf, *lbuf;
-	int	 matched;
-	size_t	 len;
-	FILE	*f;
+	char *buf, *lbuf;
+	int matched;
+	size_t len;
+	FILE *f;
 
 	if ((f = fopen(PATH_ALLOWFILE, "r")) == NULL) {
 		if (errno == ENOENT) {
@@ -507,11 +507,11 @@ allowed_luser(char *luser)
  * going to be un-banned.)
  */
 static int
-check_luser(char *luserdir, char *luser)
+check_luser(const char *luserdir, const char *luser)
 {
-	FILE	*f;
-	int	 n;
-	char	 tmp[MAXPATHLEN];
+	FILE *f;
+	int n;
+	char tmp[MAXPATHLEN];
 
 	n = snprintf(tmp, sizeof(tmp), "%s/%s", luserdir, luser);
 	if (n < 0 || (u_int)n >= sizeof(tmp)) {
@@ -628,14 +628,14 @@ remove_stale_rulesets(void)
 static int
 change_filter(int add, const char *luser, const char *ipsrc)
 {
-	char	*pargv[13] = {
+	const char *pargv[13] = {
 		"pfctl", "-p", "/dev/pf", "-q", "-a", "anchor/ruleset",
 		"-D", "user_ip=X", "-D", "user_id=X", "-f",
 		"file", NULL
 	};
-	char	*fdpath = NULL, *userstr = NULL, *ipstr = NULL;
-	char	*rsn = NULL, *fn = NULL;
-	pid_t	pid;
+	const char *fdpath = NULL, *userstr = NULL, *ipstr = NULL;
+	const char *rsn = NULL, *fn = NULL;
+	pid_t pid;
 	int	s;
 
 	if (luser == NULL || !luser[0] || ipsrc == NULL || !ipsrc[0]) {
