@@ -170,11 +170,11 @@ main(int argc, char *argv[])
 	}
 
 	if ((n = snprintf(rulesetname, sizeof(rulesetname), "%s(%ld)",
-	    luser, (long)getpid())) < 0 || n >= sizeof(rulesetname)) {
+	    luser, (long)getpid())) < 0 || n >= (int)sizeof(rulesetname)) {
 		syslog(LOG_INFO, "%s(%ld) too large, ruleset name will be %ld",
 		    luser, (long)getpid(), (long)getpid());
 		if ((n = snprintf(rulesetname, sizeof(rulesetname), "%ld",
-		    (long)getpid())) < 0 || n >= sizeof(rulesetname)) {
+		    (long)getpid())) < 0 || n >= (int)sizeof(rulesetname)) {
 			syslog(LOG_ERR, "pid too large for ruleset name");
 			goto die;
 		}
@@ -431,9 +431,9 @@ print_message(const char *filename)
  * the session terminates in the same manner as being banned.
  */
 static int
-allowed_luser(const char *luser)
+allowed_luser(const char *user)
 {
-	char *buf, *lbuf;
+	const char *buf, *lbuf;
 	int matched;
 	size_t len;
 	FILE *f;
@@ -475,7 +475,7 @@ allowed_luser(const char *luser)
 				buf = lbuf;
 			}
 
-			matched = strcmp(luser, buf) == 0 || strcmp("*", buf) == 0;
+			matched = strcmp(user, buf) == 0 || strcmp("*", buf) == 0;
 
 			if (lbuf != NULL) {
 				free(lbuf);
@@ -486,7 +486,7 @@ allowed_luser(const char *luser)
 				return (1); /* matched an allowed username */
 		}
 		syslog(LOG_INFO, "denied access to %s: not listed in %s",
-		    luser, PATH_ALLOWFILE);
+		    user, PATH_ALLOWFILE);
 
 		/* reuse buf */
 		buf = "\n\nSorry, you are not allowed to use this facility!\n";
@@ -507,13 +507,13 @@ allowed_luser(const char *luser)
  * going to be un-banned.)
  */
 static int
-check_luser(const char *luserdir, const char *luser)
+check_luser(const char *luserdir, const char *user)
 {
 	FILE *f;
 	int n;
 	char tmp[MAXPATHLEN];
 
-	n = snprintf(tmp, sizeof(tmp), "%s/%s", luserdir, luser);
+	n = snprintf(tmp, sizeof(tmp), "%s/%s", luserdir, user);
 	if (n < 0 || (u_int)n >= sizeof(tmp)) {
 		syslog(LOG_ERR, "provided banned directory line too long (%s)",
 		    luserdir);
@@ -542,7 +542,7 @@ check_luser(const char *luserdir, const char *luser)
 		 * tell what they can do and where they can go.
 		 */
 		syslog(LOG_INFO, "denied access to %s: %s exists",
-		    luser, tmp);
+		    user, tmp);
 
 		/* reuse tmp */
 		strlcpy(tmp, "\n\n-**- Sorry, you have been banned! -**-\n\n",
@@ -565,8 +565,8 @@ check_luser(const char *luserdir, const char *luser)
 static int
 remove_stale_rulesets(void)
 {
-	struct pfioc_ruleset	 prs;
-	u_int32_t		 nr, mnr;
+	struct pfioc_ruleset prs;
+	u_int32_t nr, mnr;
 
 	memset(&prs, 0, sizeof(prs));
 	strlcpy(prs.path, anchorname, sizeof(prs.path));
@@ -580,8 +580,8 @@ remove_stale_rulesets(void)
 	mnr = prs.nr;
 	nr = 0;
 	while (nr < mnr) {
-		char	*s, *t;
-		pid_t	 pid;
+		char *s, *t;
+		pid_t pid;
 
 		prs.nr = nr;
 		if (ioctl(dev, DIOCGETRULESET, &prs))
@@ -596,23 +596,23 @@ remove_stale_rulesets(void)
 		    (*s && (t == prs.name || *s != ')')))
 			return (1);
 		if (kill(pid, 0) && errno != EPERM) {
-			int			i;
-			struct pfioc_trans_e	t_e[PF_RULESET_MAX+1];
-			struct pfioc_trans	t;
+			int	i;
+			struct pfioc_trans_e pt_e[PF_RULESET_MAX+1];
+			struct pfioc_trans	pt;
 
-			bzero(&t, sizeof(t));
-			bzero(t_e, sizeof(t_e));
-			t.size = PF_RULESET_MAX+1;
-			t.esize = sizeof(t_e[0]);
-			t.array = t_e;
+			bzero(&pt, sizeof(pt));
+			bzero(pt_e, sizeof(pt_e));
+			pt.size = PF_RULESET_MAX+1;
+			pt.esize = sizeof(pt_e[0]);
+			pt.array = pt_e;
 			for (i = 0; i < PF_RULESET_MAX+1; ++i) {
-				t_e[i].rs_num = i;
-				snprintf(t_e[i].anchor, sizeof(t_e[i].anchor),
+				pt_e[i].rs_num = i;
+				snprintf(pt_e[i].anchor, sizeof(pt_e[i].anchor),
 				    "%s/%s", anchorname, prs.name);
 			}
-			t_e[PF_RULESET_MAX].rs_num = PF_RULESET_TABLE;
-			if ((ioctl(dev, DIOCXBEGIN, &t) ||
-			    ioctl(dev, DIOCXCOMMIT, &t)) &&
+			pt_e[PF_RULESET_MAX].rs_num = PF_RULESET_TABLE;
+			if ((ioctl(dev, DIOCXBEGIN, &pt) ||
+			    ioctl(dev, DIOCXCOMMIT, &pt)) &&
 			    errno != EINVAL)
 				return (1);
 			mnr--;
@@ -626,19 +626,19 @@ remove_stale_rulesets(void)
  * Add/remove filter entries for user "luser" from ip "ipsrc"
  */
 static int
-change_filter(int add, const char *luser, const char *ipsrc)
+change_filter(int add, const char *user, const char *ips)
 {
-	const char *pargv[13] = {
+	 const char *pargv[13] = {
 		"pfctl", "-p", "/dev/pf", "-q", "-a", "anchor/ruleset",
 		"-D", "user_ip=X", "-D", "user_id=X", "-f",
 		"file", NULL
 	};
-	const char *fdpath = NULL, *userstr = NULL, *ipstr = NULL;
-	const char *rsn = NULL, *fn = NULL;
+	char *fdpath = NULL, *userstr = NULL, *ipstr = NULL;
+	char *rsn = NULL, *fn = NULL;
 	pid_t pid;
 	int	s;
 
-	if (luser == NULL || !luser[0] || ipsrc == NULL || !ipsrc[0]) {
+	if (user == NULL || !user[0] || ips == NULL || !ips[0]) {
 		syslog(LOG_ERR, "invalid luser/ipsrc");
 		goto error;
 	}
@@ -647,15 +647,15 @@ change_filter(int add, const char *luser, const char *ipsrc)
 		goto no_mem;
 	if (asprintf(&fdpath, "/dev/fd/%d", dev) == -1)
 		goto no_mem;
-	if (asprintf(&ipstr, "user_ip=%s", ipsrc) == -1)
+	if (asprintf(&ipstr, "user_ip=%s", ips) == -1)
 		goto no_mem;
-	if (asprintf(&userstr, "user_id=%s", luser) == -1)
+	if (asprintf(&userstr, "user_id=%s", user) == -1)
 		goto no_mem;
 
 	if (add) {
 		struct stat sb;
 
-		if (asprintf(&fn, "%s/%s/authpf.rules", PATH_USER_DIR, luser)
+		if (asprintf(&fn, "%s/%s/authpf.rules", PATH_USER_DIR, user)
 		    == -1)
 			goto no_mem;
 		if (stat(fn, &sb) == -1) {
@@ -664,20 +664,20 @@ change_filter(int add, const char *luser, const char *ipsrc)
 				goto no_mem;
 		}
 	}
-	pargv[2] = fdpath;
-	pargv[5] = rsn;
-	pargv[7] = userstr;
-	pargv[9] = ipstr;
+	pargv[2] = __UNCONST(fdpath);
+	pargv[5] = __UNCONST(rsn);
+	pargv[7] = __UNCONST(userstr);
+	pargv[9] = __UNCONST(ipstr);
 	if (!add)
 		pargv[11] = "/dev/null";
 	else
-		pargv[11] = fn;
+		pargv[11] = __UNCONST(fn);
 
 	switch (pid = fork()) {
 	case -1:
 		err(1, "fork failed");
 	case 0:
-		execvp(PATH_PFCTL, pargv);
+		execvp(PATH_PFCTL, &pargv);
 		err(1, "exec of %s failed", PATH_PFCTL);
 	}
 
@@ -692,11 +692,11 @@ change_filter(int add, const char *luser, const char *ipsrc)
 
 	if (add) {
 		gettimeofday(&Tstart, NULL);
-		syslog(LOG_INFO, "allowing %s, user %s", ipsrc, luser);
+		syslog(LOG_INFO, "allowing %s, user %s", ips, user);
 	} else {
 		gettimeofday(&Tend, NULL);
-		syslog(LOG_INFO, "removed %s, user %s - duration %ld seconds",
-		    ipsrc, luser, Tend.tv_sec - Tstart.tv_sec);
+		syslog(LOG_INFO, "removed %s, user %s - duration %lld seconds",
+		    ips, user, Tend.tv_sec - Tstart.tv_sec);
 	}
 	return (0);
 no_mem:
@@ -720,7 +720,7 @@ error:
  * Add/remove this IP from the "authpf_users" table.
  */
 static int
-change_table(int add, const char *luser, const char *ipsrc)
+change_table(int add, const char *user, const char *ips)
 {
 	struct pfioc_table	io;
 	struct pfr_addr		addr;
@@ -732,12 +732,12 @@ change_table(int add, const char *luser, const char *ipsrc)
 	io.pfrio_size = 1;
 
 	bzero(&addr, sizeof(addr));
-	if (ipsrc == NULL || !ipsrc[0])
+	if (ips == NULL || !ips[0])
 		return (-1);
-	if (inet_pton(AF_INET, ipsrc, &addr.pfra_ip4addr) == 1) {
+	if (inet_pton(AF_INET, ips, &addr.pfra_ip4addr) == 1) {
 		addr.pfra_af = AF_INET;
 		addr.pfra_net = 32;
-	} else if (inet_pton(AF_INET6, ipsrc, &addr.pfra_ip6addr) == 1) {
+	} else if (inet_pton(AF_INET6, ips, &addr.pfra_ip6addr) == 1) {
 		addr.pfra_af = AF_INET6;
 		addr.pfra_net = 128;
 	} else {
@@ -748,7 +748,7 @@ change_table(int add, const char *luser, const char *ipsrc)
 	if (ioctl(dev, add ? DIOCRADDADDRS : DIOCRDELADDRS, &io) &&
 	    errno != ESRCH) {
 		syslog(LOG_ERR, "cannot %s %s from table %s: %s",
-		    add ? "add" : "remove", ipsrc, tablename,
+		    add ? "add" : "remove", ips, tablename,
 		    strerror(errno));
 		return (-1);
 	}
