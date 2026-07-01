@@ -90,6 +90,7 @@ main(int argc, char *argv[])
 	int ch, speed;
 	sigset_t nsigset;
 	int opt_detach = 1;
+	int cflag = HUPCL;
 
 	while ((ch = getopt(argc, argv, "hHlmns:")) != -1) {
 		switch (ch) {
