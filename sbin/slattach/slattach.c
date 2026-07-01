@@ -87,10 +87,10 @@ main(int argc, char *argv[])
 	register char *dev = argv[1];
 	struct sgttyb sgtty;
 	struct termios tty;
-	int ch, speed;
+	int ch, speed = DEFAULT_BAUD;
 	sigset_t nsigset;
 	int opt_detach = 1;
-	int cflag = HUPCL;
+    int cflag = HUPCL;
 
 	while ((ch = getopt(argc, argv, "hHlmns:")) != -1) {
 		switch (ch) {
