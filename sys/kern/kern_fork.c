@@ -401,9 +401,9 @@ again:
 		bcopy(a1, rpp->p_addr, USIZE);
 		u.u_procp = rip;
 		if (isvfork == 0) {
-			rpp->p_daddr = a[0];
+			rpp->p_daddr = (caddr_t)a[0];
 			bcopy(rip->p_daddr, rpp->p_daddr, rpp->p_dsize);
-			rpp->p_saddr = a[1];
+			rpp->p_saddr = (caddr_t)a[1];
 			bcopy(rip->p_saddr, rpp->p_saddr, rpp->p_ssize);
 		}
 		s = splhigh();
@@ -427,8 +427,8 @@ again:
 			 *  Then wait for the child to finish with it.
 			 */
 			if (a[2] == NULL) {
-				rmfree(coremap, rip->p_dsize, rip->p_daddr);
-				rmfree(coremap, rip->p_ssize, rip->p_saddr);
+				rmfree(coremap, rip->p_dsize, (memaddr_t)rip->p_daddr);
+				rmfree(coremap, rip->p_ssize, (memaddr_t)rip->p_saddr);
 			}
 			rip->p_dsize = 0;
 			rip->p_ssize = 0;
