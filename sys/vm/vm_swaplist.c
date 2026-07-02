@@ -38,6 +38,8 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
+#include <sys/buf.h>
+#include <sys/bufq.h>
 #include <sys/dmap.h>		/* XXX */
 #include <sys/vnode.h>
 #include <sys/malloc.h>
@@ -62,7 +64,7 @@
 * NOTE: this code is more or less a copy of vnd.c; we use the same
 * structure names here to ease porting..
 */
-struct vndxfer {
+struct swvndxfer {
 	struct buf				*vx_bp;			/* Pointer to parent buffer */
 	struct swapdev			*vx_sdp;
 	int						vx_error;
@@ -72,23 +74,23 @@ struct vndxfer {
 #define VX_DEAD				2
 };
 
-struct vndbuf {
+struct swvndbuf {
 	struct buf				vb_buf;
-	struct vndxfer			*vb_xfer;
+	struct swvndxfer		*vb_xfer;
 };
 
 /*
  * local variables
  */
-static struct extent 			*swapextent;		/* controls the mapping of /dev/drum */
+static struct extent *swapextent;		/* controls the mapping of /dev/drum */
 SIMPLEQ_HEAD(swapbufhead, swapbuf);
 
 /* list of all active swap devices [by priority] */
 LIST_HEAD(swap_priority, swappri);
-static struct swap_priority 	swap_priority;
+static struct swap_priority swap_priority;
 
-simple_lock_data_t 	swap_data_lock;
-lock_data_t 		swap_syscall_lock;
+simple_lock_data_t swap_data_lock;
+lock_data_t swap_syscall_lock;
 
 int swapdrum_on(struct proc *, struct swdevt *);
 int swapdrum_off(struct proc *, struct swdevt *);
@@ -132,34 +134,34 @@ swapdrum_init(swp)
 	}
 }
 
-struct vndxfer *
-vndxfer_alloc(void)
+struct swvndxfer *
+swvndxfer_alloc(void)
 {
-	struct vndxfer *vndx;
+	struct swvndxfer *vndx;
 
-	vndx = (struct vndxfer *)rmalloc(swapmap, sizeof(struct vndxfer *));
+	vndx = (struct swvndxfer *)rmalloc(swapmap, sizeof(struct swvndxfer *));
 	return (vndx);
 }
 
 void
-vndxfer_free(vndx)
-	struct vndxfer *vndx;
+swvndxfer_free(vndx)
+	struct swvndxfer *vndx;
 {
 	rmfree(swapmap, sizeof(vndx), (long)vndx);
 }
 
-struct vndbuf *
-vndbuf_alloc(void)
+struct swvndbuf *
+swvndbuf_alloc(void)
 {
-	struct vndbuf *vndb;
+	struct swvndbuf *vndb;
 
-	vndb = (struct vndbuf *)rmalloc(swapmap, sizeof(struct vndbuf *));
+	vndb = (struct swvndbuf *)rmalloc(swapmap, sizeof(struct swvndbuf *));
 	return (vndb);
 }
 
 void
-vndbuf_free(vndb)
-	struct vndbuf *vndb;
+swvndbuf_free(vndb)
+	struct swvndbuf *vndb;
 {
 	rmfree(swapmap, sizeof(vndb), (long)vndb);
 }
@@ -939,7 +941,7 @@ sw_reg_strategy(swp, bp, bn)
 {
 	struct swapdev	*sdp;
 	struct vnode	*vp;
-	struct vndxfer	*vnx;
+	struct swvndxfer *vnx;
 	daddr_t			nbn;
 	caddr_t			addr;
 	off_t			byteoff;
@@ -951,7 +953,7 @@ sw_reg_strategy(swp, bp, bn)
 	 * allocate a vndxfer head for this transfer and point it to
 	 * our buffer.
 	 */
-	vnx = vndxfer_alloc();
+	vnx = swvndxfer_alloc();
 	vnx->vx_flags = VX_BUSY;
 	vnx->vx_error = 0;
 	vnx->vx_pending = 0;
@@ -968,7 +970,7 @@ sw_reg_strategy(swp, bp, bn)
 	byteoff = dbtob((u_int64_t)bn);
 
 	for (resid = bp->b_resid; resid; resid -= sz) {
-		struct vndbuf	*nbp;
+		struct swvndbuf	*nbp;
 
 		/*
 		 * translate byteoffset into block number.  return values:
@@ -1020,7 +1022,7 @@ sw_reg_strategy(swp, bp, bn)
 		 * at the front of the nbp structure so that you can
 		 * cast pointers between the two structure easily.
 		 */
-		nbp = vndbuf_alloc();
+		nbp = swvndbuf_alloc();
 		BUF_INIT(&nbp->vb_buf);
 		//nbp->vb_buf = swbuf; /* XXX: FIX */
 		nbp->vb_buf.b_flags    = bp->b_flags | B_CALL;
@@ -1044,7 +1046,7 @@ sw_reg_strategy(swp, bp, bn)
 		 */
 		s = splbio();
 		if (vnx->vx_error != 0) {
-			vndbuf_free(nbp);
+			swvndbuf_free(nbp);
 			goto out;
 		}
 		vnx->vx_pending++;
@@ -1070,7 +1072,7 @@ out: /* Arrive here at splbio */
 			bp->b_error = vnx->vx_error;
 			bp->b_flags |= B_ERROR;
 		}
-		vndxfer_free(vnx);
+		swvndxfer_free(vnx);
 		biodone(bp);
 	}
 	splx(s);
@@ -1119,14 +1121,14 @@ sw_reg_start(swp)
 /*
  * sw_reg_iodone: one of our i/o's has completed and needs post-i/o cleanup
  *
- * => note that we can recover the vndbuf struct by casting the buf ptr
+ * => note that we can recover the swvndbuf struct by casting the buf ptr
  */
 static void
 sw_reg_iodone(bp)
 	struct buf *bp;
 {
-	struct vndbuf *vbp = (struct vndbuf *) bp;
-	struct vndxfer *vnx = vbp->vb_xfer;
+	struct swvndbuf *vbp = (struct swvndbuf *) bp;
+	struct swvndxfer *vnx = vbp->vb_xfer;
 	struct buf *pbp = vnx->vx_bp;		/* parent buffer */
 	struct swapdev	*sdp = vnx->vx_sdp;
 	int s, resid, error;
@@ -1149,7 +1151,7 @@ sw_reg_iodone(bp)
 	/*
 	 * kill vbp structure
 	 */
-	vndbuf_free(vbp);
+	swvndbuf_free(vbp);
 
 	/*
 	 * wrap up this transaction if it has run to completion or, in
@@ -1160,13 +1162,13 @@ sw_reg_iodone(bp)
 		pbp->b_flags |= B_ERROR;
 		pbp->b_error = vnx->vx_error;
 		if ((vnx->vx_flags & VX_BUSY) == 0 && vnx->vx_pending == 0) {
-			vndxfer_free(vnx);
+			swvndxfer_free(vnx);
 			biodone(pbp);
 		}
 	} else if (pbp->b_resid == 0) {
 		KASSERT(vnx->vx_pending == 0);
 		if ((vnx->vx_flags & VX_BUSY) == 0) {
-			vndxfer_free(vnx);
+			swvndxfer_free(vnx);
 			biodone(pbp);
 		}
 	}

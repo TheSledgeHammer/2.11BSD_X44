@@ -37,6 +37,7 @@ extern char *uispace_min, *uispace_max; /* user i-space vm_map range */
 extern char *udspace_min, *udspace_max; /* user d-space vm_map range */
 
 struct vm_uspace {
+#ifdef deprecated
 	/* vm */
 	vm_map_t desc_map;	/* descriptor vm_map (i.e udsd_map and uisd_map) */
 	vm_map_t addr_map; 	/* address vm_map (i.e udsa_map and uisa_map) */
@@ -46,10 +47,16 @@ struct vm_uspace {
 	vm_offset_t d_end;	/* d-space end address */
 	vm_object_t object;	/* object */
 	vm_offset_t offset; /* object offset */
-
-	vm_idspace_t idspace; /* idspace for uspace */
+#endif
 	vm_offset_t addr;	/* segment register address */
 	vm_offset_t desc;	/* segment register descriptor */
+
+	/* idspace */
+	vm_idspace_t idspace; /* idspace for uspace */
+#define uisa_space idspace->aspace /* uisa space */
+#define uisd_space idspace->dspace /* uisd space */
+#define udsa_space idspace->aspace /* udsa space */
+#define udsd_space idspace->dspace /* udsd space */
 };
 
 extern vm_object_t uspace_object; /* single uspace object */

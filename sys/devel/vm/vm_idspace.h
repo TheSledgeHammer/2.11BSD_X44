@@ -88,6 +88,9 @@ typedef struct vm_segment_register *vm_segment_register_t;
 struct vm_segment_region;
 typedef struct vm_segment_region *vm_segment_region_t;
 
+struct vm_idspace_map;
+typedef struct vm_idspace_map *vm_idspace_map_t;
+
 struct vm_idspace;
 typedef struct vm_idspace *vm_idspace_t;
 
@@ -102,7 +105,8 @@ extern struct vm_segment_register segregs[NOVL];
 /* segment region */
 struct vm_segment_region {
 	TAILQ_ENTRY(vm_segment_region) segm; /* region entry */
-	vm_page_t page;						/* page back pointer in idspace */
+	//vm_segment_t segment;				/* segment in idspace */
+	vm_page_t page;						/* page in idspace */
 	vm_segment_register_t segreg; 		/* virtual segment register */
 	int segnum; 						/* virtual segment register number */
 	int flags;							/* virtual segment register flags */
@@ -118,14 +122,30 @@ struct vm_segment_region {
 	} mapstore;
 };
 
+/* idspace map */
+struct vm_idspace_map {
+	vm_map_t map;		/* map */
+	vm_offset_t start;	/* start address */
+	vm_offset_t end;	/* end address */
+	vm_size_t size;		/* size */
+};
+
 /* idspace */
 struct vm_segregion_queue;
 TAILQ_HEAD(vm_segregion_queue, vm_segment_region);
 struct vm_idspace {
 	struct vm_segregion_queue header;	/* queue of regions */
-//	vm_object_t object;					/* idspace object */
+	struct vm_idspace_map aspace;		/* address space (i.e kdsa_map, kisa_map, udsa_map, uisa_map) */
+	struct vm_idspace_map dspace;		/* descriptor space (i.e kdsd_map, kisd_map, udsd_map, uisd_map) */
+	vm_object_t object;					/* idspace object */
 	vm_segment_t segment;				/* idspace segment */
 	vm_page_t pagemap[NOVL];			/* idspace page map of region */
+#ifdef deprecated
+	vm_map_t map;						/* idspace map */
+    vm_offset_t start;      			/* start address */
+    vm_offset_t end;        			/* end address */
+    vm_size_t size;         			/* size */
+#endif
 };
 
 /* segment region flags */
@@ -150,16 +170,21 @@ struct vm_idspace {
 #define SEGM_RESTORE	(0x140 & (SEGM_SEG5|SEGM_SEG6|SEGM_SEG56))	/* Software: restore virtual segment register's from savemap */
 
 /* vm_idspace */
-void vm_idspace_init(vm_idspace_t, vm_object_t, vm_offset_t, int);
+int vm_idspace_init(vm_idspace_t, vm_idspace_map_t, int, vm_map_t, vm_offset_t *,
+		vm_offset_t *, vm_size_t, bool_t);
 vm_idspace_t vm_idspace_allocate(vm_object_t, vm_offset_t, int);
 void vm_idspace_deallocate(vm_idspace_t, int);
+
+#ifdef deprecated
+void vm_idspace_init(vm_idspace_t, vm_object_t, vm_offset_t, int);
 vm_map_t vm_idspace_map_allocate(vm_object_t, vm_offset_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
 vm_page_t vm_idspace_pagemap_allocate(vm_segment_t, int);
+#endif
 
 /* vm_segment_region */
 vm_segment_region_t vm_segment_region_alloc(int);
 void vm_segment_region_free(vm_segment_region_t, int);
-void vm_segment_region_insert(vm_idspace_t, int, int);
+void vm_segment_region_insert(vm_idspace_t, vm_segment_region_t, int, int);
 void vm_segment_region_remove(vm_idspace_t, int);
 vm_segment_region_t vm_segment_region_lookup(vm_idspace_t, int);
 

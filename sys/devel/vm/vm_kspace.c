@@ -47,16 +47,18 @@ char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
 char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
 
 void
-vm_kispace_map_init(kspace, object, offset, min, max, size, pageable)
+vm_kispace_map_init(kspace, mtype, object, min, max, size, pageable)
 	vm_kspace_t kspace;
+	int mtype;
 	vm_object_t object;
-	vm_offset_t offset;
+	//vm_offset_t offset;
 	vm_offset_t *min, *max;
 	vm_size_t size;
 	bool_t pageable;
 {
 	vm_offset_t *imin, *dmin;
 	vm_offset_t *imax, *dmax;
+	int error;
 
 	kispace_min = (char *)min;
 	kispace_max = (char *)max;
@@ -71,33 +73,46 @@ vm_kispace_map_init(kspace, object, offset, min, max, size, pageable)
 	dmax = max; 			/* descriptor map max */
 
 	/* I-Space instruction map */
+	error = vm_idspace_init(kspace->idspace, &kspace->kisa_space, mtype, kisa_map, imin, imax, object, size, pageable);
+	if (error != 0) {
+		return;
+	}
+#ifdef deprecated
 	kisa_map = vm_idspace_map_allocate(object, offset, imin, imax, size, pageable);
 	if (kisa_map != NULL) {
 		kspace->addr_map = kisa_map;
 		kspace->i_start = &imin;
 		kspace->i_end = &imax;
 	}
-
+#endif
 	/* I-Space descriptor map */
+	error = vm_idspace_init(kspace->idspace, &kspace->kisd_space, mtype, kisd_map, dmin, dmax, object, size, pageable);
+	if (error != 0) {
+		return;
+	}
+#ifdef deprecated
 	kisd_map = vm_idspace_map_allocate(object, offset, dmin, dmax, size, pageable);
 	if (kisd_map != NULL) {
 		kspace->desc_map = kisd_map;
 		kspace->d_start = &dmin;
 		kspace->d_end = &dmax;
 	}
+#endif
 }
 
 void
-vm_kdspace_map_init(kspace, object, offset, min, max, size, pageable)
+vm_kdspace_map_init(kspace, mtype, object, min, max, size, pageable)
 	vm_kspace_t kspace;
+	int mtype;
 	vm_object_t object;
-	vm_offset_t offset;
+	//vm_offset_t offset;
 	vm_offset_t *min, *max;
 	vm_size_t size;
 	bool_t pageable;
 {
 	vm_offset_t *imin, *dmin;
 	vm_offset_t *imax, *dmax;
+	int error;
 
 	kdspace_min = (char *)min;
 	kdspace_max = (char *)max;
@@ -112,20 +127,32 @@ vm_kdspace_map_init(kspace, object, offset, min, max, size, pageable)
 	dmax = max; 			/* descriptor map max */
 
 	/* D-Space instruction map */
+	error = vm_idspace_init(kspace->idspace, &kspace->kdsa_space, mtype, kdsa_map, imin, imax, object, size, pageable);
+	if (error != 0) {
+		return;
+	}
+#ifdef deprecated
 	kdsa_map = vm_idspace_map_allocate(object, offset, imin, imax, size, pageable);
 	if (kdsa_map != NULL) {
 		kspace->addr_map = kisa_map;
 		kspace->i_start = &imin;
 		kspace->i_end = &imax;
 	}
+#endif
 
 	/* D-Space descriptor map */
+	error = vm_idspace_init(kspace->idspace, &kspace->kdsd_space, mtype, kdsa_map, dmin, dmax, object, size, pageable);
+	if (error != 0) {
+		return;
+	}
+#ifdef deprecated
 	kdsd_map = vm_idspace_map_allocate(object, offset, dmin, dmax, size, pageable);
 	if (kdsd_map != NULL) {
 		kspace->desc_map = kdsd_map;
 		kspace->d_start = &dmin;
 		kspace->d_end = &dmax;
 	}
+#endif
 }
 
 void
@@ -144,20 +171,22 @@ vm_kspace_init(min, max)
 
 	/* Set Object Size */
 	size = (max - min);
-
+#ifdef deprecated
 	/* Allocate Object */
 	vm_kspace_object_init(kspace, size, kspace_object);
-
+#endif
 	/* Init I-Space */
-	vm_kispace_map_init(kspace, kspace_object, min, &min, &max, size, TRUE);
+	vm_kispace_map_init(kspace, M_VMKSPACE, kspace_object, min, &min, &max, size, TRUE);
 
 	/* Init D-Space */
-	vm_kdspace_map_init(kspace, kspace_object, min, &min, &max, size, TRUE);
-
+	vm_kdspace_map_init(kspace, M_VMKSPACE, kspace_object, min, &min, &max, size, TRUE);
+#ifdef deprecated
 	/* Init idspace */
 	vm_idspace_init(kspace->idspace, kspace->object, min, M_VMKSPACE);
+#endif
 }
 
+#ifdef deprecated
 void
 vm_kspace_object_init(kspace, size, object)
 	vm_kspace_t kspace;
@@ -169,6 +198,7 @@ vm_kspace_object_init(kspace, size, object)
 		kspace->object = object;
 	}
 }
+#endif
 
 /* kspace regions */
 void

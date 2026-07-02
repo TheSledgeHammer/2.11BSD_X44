@@ -98,9 +98,9 @@ extern
 simple_lock_data_t 	swap_data_lock;
 
 extern
-lock_data_t 		swap_syscall_lock;
+lock_data_t 	swap_syscall_lock;
 
-int			vm_swap_alloc(struct swdevt *, int *, bool_t);
+int				vm_swap_alloc(struct swdevt *, int *, bool_t);
 void			vm_swap_free(int, int);
 void			vm_swap_markbad(int, int);
 void			vm_swap_stats(int, struct swdevt *, int, register_t *);

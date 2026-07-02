@@ -433,7 +433,7 @@ print_message(const char *filename)
 static int
 allowed_luser(const char *user)
 {
-	const char *buf, *lbuf;
+	char *buf, *lbuf;
 	int matched;
 	size_t len;
 	FILE *f;
@@ -677,7 +677,7 @@ change_filter(int add, const char *user, const char *ips)
 	case -1:
 		err(1, "fork failed");
 	case 0:
-		execvp(PATH_PFCTL, &pargv);
+		execvp(PATH_PFCTL, __UNCONST(pargv));
 		err(1, "exec of %s failed", PATH_PFCTL);
 	}
 

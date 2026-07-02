@@ -125,3 +125,22 @@ vm_pmap_bootstrap(vm_offset_t *data, vm_size_t map_size, unsigned long map_numbe
 	entry_data_size = round_page(mapsize + entrysize);
 	*data = (vm_offset_t)pmap_bootstrap_alloc(entry_data_size);
 }
+
+vm_idspace_segment_allocate(idspace, object, )
+{
+
+}
+
+vm_idspace_object_allocate(idspace, object, offset, size)
+{
+
+	object = vm_object_allocate(size);
+	if (object != NULL) {
+		idspace->object = object;
+		idspace->offset = offset;
+
+	}
+
+
+
+}
