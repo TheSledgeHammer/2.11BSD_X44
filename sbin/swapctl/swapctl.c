@@ -322,7 +322,7 @@ swapon_command(int argc, char **argv)
 		goto swapon_usage;
 
 	while (argc) {
-		if (! add_swap(argv[0], pri))
+		if (!add_swap(argv[0], pri))
 			exit(1);
 		argc--;
 		argv++;
@@ -471,7 +471,7 @@ do_fstab(int add)
 
 			if (strlen(spec) == 0) {
 				warnx("empty mountpoint");
-				free(__UNCONST(spec);
+				free(__UNCONST(spec));
 				continue;
 			}
 			if (add) {
