@@ -33,7 +33,8 @@
 #ifndef _VM_SWAP_H_
 #define _VM_SWAP_H_
 
-#include <sys/buf.h>
+#ifdef _KERNEL
+//#include <sys/buf.h>
 #include <sys/bufq.h>
 
 #define	SWSLOT_BAD						(-1)
@@ -84,6 +85,8 @@ struct swapbuf {
 	TAILQ_HEAD(, buf)					sw_bswlist;		/* Head of swap I/O buffer headers free list. */
 	int 								sw_nswbuf;
 };
+
+#endif /* _KERNEL */
 
 #define SWAP_ON				1		/* begin swapping on device */
 #define SWAP_OFF			2		/* stop swapping on device */
