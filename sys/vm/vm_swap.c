@@ -241,6 +241,7 @@ swstrategy(bp)
 	swapdrum_strategy(sp, bp, vp);
 }
 
+
 /*
  * Swfree(index) frees the index'th portion of the swap map.
  * Each of the nswdev devices provides 1/nswdev'th of the swap
@@ -252,10 +253,10 @@ swfree(p, index, nslots)
 	struct proc *p;
 	int index, nslots;
 {
-	register struct swdevt 	*swp;
+	register struct swdevt *swp;
 	register struct swapdev *sdp;
-	register struct vnode 	*vp;
-	const struct bdevsw		*bdev;
+	register struct vnode *vp;
+	const struct bdevsw *bdev;
 	register swblk_t vsbase, dvbase;
 	register int nblks, npages, startslot;
 	register long blk;
@@ -437,7 +438,7 @@ swap_interleaved(swp, nswdev, nswap)
 /* find startslot for /dev/drum */
 static int
 swap_search(sdp, nblks, npages)
-	struct swapdev 	*sdp;
+	struct swapdev *sdp;
 	int nblks, npages;
 {
 	long blk;

@@ -92,9 +92,11 @@ struct swapbuf {
 #define SWAP_OFF			2		/* stop swapping on device */
 #define SWAP_NSWAP			3		/* how many swap devices ? */
 #define SWAP_CTL			5		/* change priority on device */
-#define SWAP_STATS			6		/* get device info */
-#define SWAP_DUMPDEV		7		/* use this device as dump device */
-#define SWAP_GETDUMPDEV		8		/* use this device as dump device */
+#define SWAP_DEVPATH		6		/* swap device path */
+#define SWAP_DEVNAME		7		/* swap device name */
+#define SWAP_STATS			8		/* get device info */
+#define SWAP_DUMPDEV		9		/* use this device as dump device */
+#define SWAP_GETDUMPDEV		10		/* use this device as dump device */
 
 #ifdef _KERNEL
 extern

@@ -118,6 +118,8 @@ static int  add_swap(char *, int);
 static int  delete_swap(char *);
 static void set_dumpdev(char *);
 static void get_dumpdev(void);
+static int swap_path(char *, int);
+static int swap_name(char *, int);
 int  main(int, char *[]);
 static void do_fstab(int);
 static void usage(void);
@@ -377,7 +379,6 @@ oops:
 static int
 delete_swap(char *path)
 {
-
 	if (swapctl(SWAP_OFF, path, pri) < 0) {
 		warn("%s", path);
 		return (0);
@@ -389,10 +390,11 @@ static void
 set_dumpdev(char *path)
 {
 
-	if (swapctl(SWAP_DUMPDEV, path, NULL) == -1)
+	if (swapctl(SWAP_DUMPDEV, path, NULL) == -1) {
 		warn("could not set dump device to %s", path);
-	else
+	} else {
 		printf("%s: setting dump device to %s\n", getprogname(), path);
+	}
 }
 
 static void
@@ -401,27 +403,73 @@ get_dumpdev(void)
 	dev_t	dev;
 	char 	*name;
 
-	if (swapctl(SWAP_GETDUMPDEV, &dev, NULL) == -1)
+	if (swapctl(SWAP_GETDUMPDEV, &dev, NULL) == -1) {
 		warn("could not get dump device");
-	else {
+	} else {
 		name = devname(dev, S_IFBLK);
 		printf("dump device is ");
-		if (name)
+		if (name) {
 			printf("%s\n", name);
-		else
+		} else {
 			printf("major %d minor %d\n", major(dev), minor(dev));
+		}
 	}
+}
+
+static int
+swap_path(char *path, int ignoreebusy)
+{
+	int error;
+
+	if (swapctl(SWAP_DEVPATH, path, NULL) == -1) {
+		switch (errno) {
+		case EBUSY:
+			if (!ignoreebusy) {
+				fprintf(stderr, "swapctl: %s: device path already exists\n", path);
+			}
+			break;
+		default:
+			fprintf(stderr, "swapctl: %s: device path\n", path);
+			break;
+		}
+		return (1);
+	}
+	return (0);
+}
+
+static int
+swap_name(char *name, int ignoreebusy)
+{
+	if (swapctl(SWAP_DEVNAME, name, NULL) == -1) {
+		switch (errno) {
+		case EINVAL:
+			fprintf(stderr, "swapctl: %s: device name not configured\n", name);
+			break;
+		case EBUSY:
+			if (!ignoreebusy) {
+				fprintf(stderr, "swapctl: %s: device name already in use\n", name);
+			}
+			break;
+		default:
+			fprintf(stderr, "swapctl: %s: device name\n", name);
+			break;
+		}
+		return (1);
+	}
+	return (0);
 }
 
 static void
 do_fstab(int add)
 {
-	struct	fstab *fp;
-	char	*s;
-	long	priority;
-	struct	stat st;
+	struct fstab *fp;
+	char *s;
+	long priority;
+	struct stat st;
 	int	isblk;
 	int	gotone = 0;
+	int gotpath = 0;
+	int gotname = 0;
 #define PATH_MOUNT	"/sbin/mount_nfs"
 #define PATH_UMOUNT	"/sbin/umount"
 	char	cmd[2*PATH_MAX+sizeof(PATH_MOUNT)+2];
@@ -434,13 +482,23 @@ do_fstab(int add)
 		spec = fp->fs_spec;
 		cmd[0] = '\0';
 
-		if (strcmp(fp->fs_type, "dp") == 0 && add) {
+		if (strcmp(fp->fs_type, FSTAB_DP) == 0 && add) {
 			set_dumpdev(spec);
 			continue;
 		}
 
-		if (strcmp(fp->fs_type, "sw") != 0)
+		if (strcmp(fp->fs_type, FSTAB_SW) != 0) {
 			continue;
+		}
+
+		if (swap_path(fp->fs_spec, 1) != 0) {
+			continue;
+		}
+
+		if (swap_name(fp->fs_spec, 1) != 0) {
+			continue;
+		}
+
 		isblk = 0;
 
 		if ((s = strstr(fp->fs_mntops, PRIORITYEQ)) != NULL) {

@@ -28,6 +28,7 @@
 #define	FSTAB_RQ	"rq"	/* read/write with quotas */
 #define	FSTAB_RO	"ro"	/* read-only device */
 #define	FSTAB_SW	"sw"	/* swap device */
+#define	FSTAB_DP	"dp"	/* dump device */
 #define	FSTAB_XX	"xx"	/* ignore totally */
 
 struct fstab {

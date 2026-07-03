@@ -92,6 +92,9 @@ static struct swap_priority swap_priority;
 simple_lock_data_t swap_data_lock;
 lock_data_t swap_syscall_lock;
 
+int swapdrum_name(struct proc *, struct vnode *, struct swdevt *, int, void *);
+int swapdrum_path(struct proc *, struct vnode *, int, void *, char *, size_t *);
+int swapdrum_getdumpdev(int, void *);
 int swapdrum_on(struct proc *, struct swdevt *);
 int swapdrum_off(struct proc *, struct swdevt *);
 int swap_miniroot(struct proc *, struct swapdev *, struct vnode *, int, long);
@@ -365,23 +368,24 @@ int
 swapctl()
 {
 	register struct swapctl_args {
-		syscallarg(int) 	cmd;
-		syscallarg(void *) 	arg;
-		syscallarg(int) 	misc;
+		syscallarg(int) cmd;
+		syscallarg(void *) arg;
+		syscallarg(int) misc;
 	} *uap = (struct swapctl_args *)u.u_ap;
-	struct proc 	*p;
-	int 			*retval;
-	struct vnode 	*vp;
+	struct proc *p;
+	int *retval;
+	struct vnode *vp;
 	struct nameidata nd;
 	struct swappri *spp;
 	struct swapdev *sdp;
 	struct swdevt *swp;
 	char userpath[PATH_MAX + 1];
-	size_t	len;
-	int	error, misc;
-	int	priority;
+	size_t len;
+	int error, misc;
+	int priority;
 
 	p = u.u_procp;
+	swp = &swdevt[0];
 
 	misc = SCARG(uap, misc);
 
@@ -417,21 +421,45 @@ swapctl()
 	 * XXX: a NULL arg means use the root vnode pointer (e.g. for
 	 * miniroot)
 	 */
+	switch (SCARG(uap, cmd)) {
+	case SWAP_DEVPATH:
+		error = swapdrum_path(p, vp, SCARG(uap, cmd), SCARG(uap, arg), userpath, &len);
+		if (error != 0) {
+			goto out;
+		}
+		break;
+	case SWAP_DEVNAME:
+		error = swapdrum_name(p, vp, swp, SCARG(uap, cmd), SCARG(uap, arg));
+		if (error != 0) {
+			goto out;
+		}
+		break;
+	case SWAP_STATS:
+		/* needs updating */
+		//error = vm_swap_stats(SCARG(uap, cmd), swp, sec, retval);
+		break;
+	case SWAP_GETDUMPDEV:
+		error = swapdrum_getdumpdev(SCARG(uap, cmd), SCARG(uap, arg));
+		goto out;
+	}
+#ifdef deprecated
+	/* see swapdrum_path */
 	if (SCARG(uap, arg) == NULL) {
 		vp = rootvp;		/* miniroot */
 		if (vget(vp, LK_EXCLUSIVE, p)) {
 			error = EBUSY;
 			goto out;
 		}
-		if (SCARG(uap, cmd) == SWAP_ON &&
-		    copystr("miniroot", userpath, sizeof userpath, &len))
+		if (SCARG(uap, cmd) == SWAP_ON
+				&& copystr("miniroot", userpath, sizeof(userpath), &len)) {
 			panic("swapctl: miniroot copy failed");
+		}
 	} else {
-		int		space;
-		char	*where;
+		int space;
+		char *where;
 
 		if (SCARG(uap, cmd) == SWAP_ON) {
-			if ((error = copyinstr(SCARG(uap, arg), userpath, sizeof userpath, &len)))
+			if ((error = copyinstr(SCARG(uap, arg), userpath, sizeof(userpath), &len)))
 				goto out;
 			space = UIO_SYSSPACE;
 			where = userpath;
@@ -445,11 +473,10 @@ swapctl()
 		}
 		vp = nd.ni_vp;
 	}
+#endif
 	/* note: "vp" is referenced and locked */
-
 	error = 0;		/* assume no error */
-	switch(SCARG(uap, cmd)) {
-
+	switch (SCARG(uap, cmd)) {
 	case SWAP_DUMPDEV:
 		if (vp->v_type != VBLK) {
 			error = ENOTBLK;
@@ -465,7 +492,7 @@ swapctl()
 		 * any empty priority structures.
 		 */
 		priority = SCARG(uap, misc);
-		spp = malloc(sizeof *spp, M_SWAPMAP, M_WAITOK);
+		spp = malloc(sizeof(*spp), M_SWAPMAP, M_WAITOK);
 		simple_lock(&swap_data_lock);
 		if ((sdp = swaplist_find(vp, 1)) == NULL) {
 			error = ENOENT;
@@ -488,12 +515,19 @@ swapctl()
 		 */
 
 		priority = SCARG(uap, misc);
-		sdp = (struct swapdev *)malloc(sizeof *sdp, M_SWAPMAP, M_WAITOK);
-		spp = (struct swappri *)malloc(sizeof *spp, M_SWAPMAP, M_WAITOK);
+
+		sdp = (struct swapdev *)malloc(sizeof(*sdp), M_SWAPMAP, M_WAITOK);
+		spp = (struct swappri *)malloc(sizeof(*spp), M_SWAPMAP, M_WAITOK);
 		bzero(sdp, sizeof(*sdp));
-		swp->sw_flags = SW_FAKE;
-		swp->sw_vp = vp;
-		swp->sw_dev = (vp->v_type == VBLK) ? vp->v_rdev : NODEV;
+		if ((swp->sw_flags & SW_FAKE) != 0) {
+			swp->sw_flags = SW_FAKE;
+		}
+		if (swp->sw_vp != vp) {
+			swp->sw_vp = vp;
+		}
+		if (swp->sw_dev != vp->v_rdev) {
+			swp->sw_dev = (vp->v_type == VBLK) ? vp->v_rdev : NODEV;
+		}
 		bufq_alloc(&sdp->swd_tab, BUFQ_DISKSORT|BUFQ_SORT_RAWBLOCK);
 		simple_lock(&swap_data_lock);
 		if (swaplist_find(vp, 0) != NULL) {
@@ -521,7 +555,7 @@ swapctl()
 
 		if ((error = swapdrum_on(p, swp)) != 0) {
 			simple_lock(&swap_data_lock);
-			(void) swaplist_find(vp, 1);  /* kill fake entry */
+			(void)swaplist_find(vp, 1);  /* kill fake entry */
 			swaplist_trim();
 			simple_unlock(&swap_data_lock);
 			bufq_free(&sdp->swd_tab);
@@ -566,6 +600,124 @@ swapctl()
 
 out:
 	lockmgr(&swap_syscall_lock, LK_RELEASE, (void *)0, p->p_pid);
+	return (error);
+}
+
+int
+swapdrum_name(p, vp, swp, cmd, arg)
+	struct proc *p;
+	struct vnode *vp;
+	struct swdevt *swp;
+	int cmd;
+	void *arg;
+{
+	struct swdevt *sp;
+	struct swapdev *sdp;
+	struct nameidata nd;
+	dev_t dev;
+	char *name;
+	int error, nblks, nslots, npages;
+
+	name = (char *)arg;
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, name, p);
+	if ((error = namei(&nd))) {
+		return (error);
+	}
+	vp = nd.ni_vp;
+	if (vp->v_type != VBLK) {
+		vrele(vp);
+		return (ENOTBLK);
+	}
+	dev = (dev_t)vp->v_rdev;
+	if (major(dev) >= nblkdev) {
+		vrele(vp);
+		return (ENXIO);
+	}
+	for (sp = swp; sp->sw_dev != NODEV; swp++) {
+		sdp = sp->sw_swapdev;
+		nblks = sp->sw_nblks;
+		npages = dbtob(nblks) >> PAGE_SHIFT;
+		nslots = swap_search(sdp, nblks, npages);
+		if (sp->sw_dev == dev) {
+			if (sp->sw_flags & SW_FREED) {
+				vrele(vp);
+				return (EBUSY);
+			}
+			sp->sw_vp = vp;
+			if ((error = swfree(p, sp - swdevt, nslots))) {
+				vrele(vp);
+				return (error);
+			}
+			swp = sp;
+			return (0);
+		}
+#ifdef SEQSWAP
+		/*
+		 * If we have reached a non-freed sequential device without
+		 * finding what we are looking for, it is an error.
+		 * That is because all interleaved devices must come first
+		 * and sequential devices must be freed in order.
+		 */
+		if ((sp->sw_flags & (SW_SEQUENTIAL | SW_FREED)) == SW_SEQUENTIAL) {
+			break;
+		}
+#endif
+	}
+	vrele(vp);
+	return (EINVAL);
+}
+
+int
+swapdrum_path(p, vp, cmd, arg, path, len)
+	struct proc *p;
+	struct vnode *vp;
+	int cmd;
+	void *arg;
+	char *path;
+	size_t *len;
+{
+	struct nameidata nd;
+	int error, space;
+	char *where;
+
+	if (arg == NULL) {
+		vp = rootvp; /* miniroot */
+		if (vget(vp, LK_EXCLUSIVE, p)) {
+			return (EBUSY);
+		}
+		if ((cmd == SWAP_ON) && copystr("miniroot", path, sizeof(path), len)) {
+			panic("swapctl: miniroot copy failed");
+		}
+	} else {
+		if (cmd == SWAP_ON) {
+			if ((error = copyinstr(arg, path, sizeof(path), len))) {
+				return (error);
+			}
+			space = UIO_SYSSPACE;
+			where = path;
+		} else {
+			space = UIO_USERSPACE;
+			where = (char *)arg;
+		}
+		NDINIT(&nd, LOOKUP, FOLLOW|LOCKLEAF, space, where, p);
+		if ((error = namei(&nd))) {
+			return (error);
+		}
+		vp = nd.ni_vp;
+	}
+	return (0);
+}
+
+int
+swapdrum_getdumpdev(cmd, arg)
+	int cmd;
+	void *arg;
+{
+	dev_t *devp;
+	int error;
+
+	devp = (dev_t *)arg;
+	error = copyout(&dumpdev, devp, sizeof(dumpdev));
 	return (error);
 }
 

@@ -32,7 +32,7 @@
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/conf.h>
+//#include <sys/conf.h>
 
 #include <vm/include/vm_swap.h>
 
@@ -52,6 +52,13 @@
 
 #include "swapctl.h"
 
+void
+list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
+{
+	fprintf(stderr, "swapctl: SWAP_STATS is currently not working\n");
+}
+
+#ifdef notready
 void
 list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
 {
@@ -111,7 +118,7 @@ list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
 			    (long)(dbtoqb(inuse) / blocksize),
 			    (long)(dbtoqb(size - inuse) / blocksize),
 			    (double)inuse / (double)size * 100.0,
-			    sep->se_priority);
+			    sep->sw_priority);
 		}
 	}
 	if (tflag)
@@ -134,3 +141,4 @@ list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
 	if (fsep)
 		(void)free(fsep);
 }
+#endif
