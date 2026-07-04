@@ -185,29 +185,7 @@ swapbuf_free(swbuf)
 	rmfree(swapmap, sizeof(swbuf), (long)swbuf);
 }
 
-void
-vm_swap_inuse(cmd, arg, misc, inuse)
-	int cmd;
-	void *arg;
-	int misc, inuse;
-{
-	struct swappri *spp;
-	struct swapdev *sdp;
-	struct swapent *sep;
-	int count = 0;
-
-	sep = (struct swapent *)arg;
-	LIST_FOREACH(spp, &swap_priority, spi_swappri) {
-		CIRCLEQ_FOREACH(sdp, &spp->spi_swapdev, swd_next) {
-			if (count >= misc) {
-				continue;
-			}
-			inuse = btodb((u_int64_t)sdp->swd_npginuse << PAGE_SHIFT);
-			sep++;
-		}
-	}
-}
-
+#ifdef notyet
 void
 vm_swap_stats(cmd, swp, sec, retval)
 	int cmd;
@@ -232,8 +210,8 @@ vm_swap_stats(cmd, swp, sec, retval)
 	*retval = count;
 	return;
 }
+#endif
 
-#ifdef notyet
 int
 vm_swap_stats(swp, cmd, arg, misc, retval)
 	struct swdevt *swp;
@@ -266,7 +244,6 @@ vm_swap_stats(swp, cmd, arg, misc, retval)
 		}
 	}
 	*retval = count;
-
 	error = copyout(sep, arg, len);
 	free(sep, M_TEMP);
 	if (error != 0) {
@@ -274,7 +251,6 @@ vm_swap_stats(swp, cmd, arg, misc, retval)
 	}
 	return (0);
 }
-#endif
 
 /*
  * swaplist functions: functions that operate on the list of swap
@@ -439,7 +415,7 @@ swapctl()
 		syscallarg(int) misc;
 	} *uap = (struct swapctl_args *)u.u_ap;
 	struct proc *p;
-	int *retval;
+	register_t *retval;
 	struct vnode *vp;
 	struct nameidata nd;
 	struct swappri *spp;
@@ -493,49 +469,13 @@ swapctl()
 		}
 		break;
 	case SWAP_STATS:
-#ifdef notyet
 		error = vm_swap_stats(swp, SCARG(uap, cmd), SCARG(uap, arg), SCARG(uap, misc), retval);
-		if (error != 0) {
-			goto out;
-		}
-		break;
-#endif
+        goto out;
 	case SWAP_GETDUMPDEV:
 		error = swapdrum_getdumpdev(SCARG(uap, cmd), SCARG(uap, arg));
 		goto out;
 	}
-#ifdef deprecated
-	/* see swapdrum_path */
-	if (SCARG(uap, arg) == NULL) {
-		vp = rootvp;		/* miniroot */
-		if (vget(vp, LK_EXCLUSIVE, p)) {
-			error = EBUSY;
-			goto out;
-		}
-		if (SCARG(uap, cmd) == SWAP_ON
-				&& copystr("miniroot", userpath, sizeof(userpath), &len)) {
-			panic("swapctl: miniroot copy failed");
-		}
-	} else {
-		int space;
-		char *where;
 
-		if (SCARG(uap, cmd) == SWAP_ON) {
-			if ((error = copyinstr(SCARG(uap, arg), userpath, sizeof(userpath), &len)))
-				goto out;
-			space = UIO_SYSSPACE;
-			where = userpath;
-		} else {
-			space = UIO_USERSPACE;
-			where = (char *)SCARG(uap, arg);
-		}
-		NDINIT(&nd, LOOKUP, FOLLOW|LOCKLEAF, space, where, p);
-		if ((error = namei(&nd))) {
-			goto out;
-		}
-		vp = nd.ni_vp;
-	}
-#endif
 	/* note: "vp" is referenced and locked */
 	error = 0;		/* assume no error */
 	switch (SCARG(uap, cmd)) {

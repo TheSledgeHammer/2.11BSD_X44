@@ -92,7 +92,6 @@ static void swap_sequential(struct swdevt *, int, int);
 #else
 static void	swap_interleaved(struct swdevt *, int, int);
 #endif
-static int 	swap_search(struct swapdev *, int, int);
 
 /*
  * Set up swap devices.
@@ -436,7 +435,7 @@ swap_interleaved(swp, nswdev, nswap)
 #endif
 
 /* find startslot for /dev/drum */
-static int
+int
 swap_search(sdp, nblks, npages)
 	struct swapdev *sdp;
 	int nblks, npages;
