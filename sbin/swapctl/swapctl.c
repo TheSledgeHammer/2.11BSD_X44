@@ -344,7 +344,6 @@ swapon_command(int argc, char **argv)
 static void
 change_priority(char *path)
 {
-
 	if (swapctl(SWAP_CTL, path, pri) < 0)
 		warn("%s", path);
 }
@@ -419,8 +418,6 @@ get_dumpdev(void)
 static int
 swap_path(char *path, int ignoreebusy)
 {
-	int error;
-
 	if (swapctl(SWAP_DEVPATH, path, NULL) == -1) {
 		switch (errno) {
 		case EBUSY:
@@ -468,8 +465,6 @@ do_fstab(int add)
 	struct stat st;
 	int	isblk;
 	int	gotone = 0;
-	int gotpath = 0;
-	int gotname = 0;
 #define PATH_MOUNT	"/sbin/mount_nfs"
 #define PATH_UMOUNT	"/sbin/umount"
 	char	cmd[2*PATH_MAX+sizeof(PATH_MOUNT)+2];

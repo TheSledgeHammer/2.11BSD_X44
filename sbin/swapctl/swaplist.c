@@ -32,7 +32,6 @@
 
 #include <sys/param.h>
 #include <sys/stat.h>
-//#include <sys/conf.h>
 
 #include <vm/include/vm_swap.h>
 
@@ -55,14 +54,7 @@
 void
 list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
 {
-	fprintf(stderr, "swapctl: SWAP_STATS is currently not working\n");
-}
-
-#ifdef notready
-void
-list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
-{
-	struct	swdevt *sep, *fsep;
+	struct	swapent *sep, *fsep;
 	long	blocksize;
 	char	*header;
 	size_t	l;
@@ -74,7 +66,7 @@ list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
 		exit(0);
 	}
 
-	fsep = sep = (struct swdevt *)malloc(nswap * sizeof(*sep));
+	fsep = sep = (struct swapent *)malloc(nswap * sizeof(*sep));
 	if (sep == NULL)
 		err(1, "malloc");
 	rnswap = swapctl(SWAP_STATS, (void *)sep, nswap);
@@ -87,13 +79,13 @@ list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
 	pathmax = 11;
 	if (dolong && tflag == 0) {
 		if (kflag) {
-			header = "1K-blocks";
+			header = __UNCONST("1K-blocks");
 			blocksize = 1024;
 			hlen = strlen(header);
 		} else
 			header = getbsize(&hlen, &blocksize);
 		for (i = rnswap; i-- > 0; sep++)
-			if (pathmax < (l = strlen(sep->sw_path)))
+			if ((size_t)pathmax < (l = strlen(sep->se_path)))
 				pathmax = l;
 		sep = fsep;
 		(void)printf("%-*s %*s %8s %8s %8s  %s\n",
@@ -102,23 +94,23 @@ list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
 	}
 	totalsize = totalinuse = ncounted = 0;
 	for (; rnswap-- > 0; sep++) {
-		if (pflag && sep->sw_priority != pri)
+		if (pflag && sep->se_priority != pri)
 			continue;
 		ncounted++;
-		size = sep->sw_nblks;
-		inuse = sep->sw_inuse;
+		size = sep->se_nblks;
+		inuse = sep->se_inuse;
 		totalsize += size;
 		totalinuse += inuse;
 
 		if (dolong && tflag == 0) {
-			(void)printf("%-*s %*ld ", pathmax, sep->sw_path, hlen,
+			(void)printf("%-*s %*ld ", pathmax, sep->se_path, hlen,
 			    (long)(dbtoqb(size) / blocksize));
 
 			(void)printf("%8ld %8ld %5.0f%%    %d\n",
 			    (long)(dbtoqb(inuse) / blocksize),
 			    (long)(dbtoqb(size - inuse) / blocksize),
 			    (double)inuse / (double)size * 100.0,
-			    sep->sw_priority);
+			    sep->se_priority);
 		}
 	}
 	if (tflag)
@@ -141,4 +133,3 @@ list_swap(int pri, int kflag, int pflag, int tflag, int dolong)
 	if (fsep)
 		(void)free(fsep);
 }
-#endif
