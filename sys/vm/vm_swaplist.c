@@ -186,6 +186,29 @@ swapbuf_free(swbuf)
 }
 
 void
+vm_swap_inuse(cmd, arg, misc, inuse)
+	int cmd;
+	void *arg;
+	int misc, inuse;
+{
+	struct swappri *spp;
+	struct swapdev *sdp;
+	struct swapent *sep;
+	int count = 0;
+
+	sep = (struct swapent *)arg;
+	LIST_FOREACH(spp, &swap_priority, spi_swappri) {
+		CIRCLEQ_FOREACH(sdp, &spp->spi_swapdev, swd_next) {
+			if (count >= misc) {
+				continue;
+			}
+			inuse = btodb((u_int64_t)sdp->swd_npginuse << PAGE_SHIFT);
+			sep++;
+		}
+	}
+}
+
+void
 vm_swap_stats(cmd, swp, sec, retval)
 	int cmd;
 	struct swdevt *swp;
@@ -209,6 +232,49 @@ vm_swap_stats(cmd, swp, sec, retval)
 	*retval = count;
 	return;
 }
+
+#ifdef notyet
+int
+vm_swap_stats(swp, cmd, arg, misc, retval)
+	struct swdevt *swp;
+	int cmd;
+	void *arg;
+	int misc;
+	register_t *retval;
+{
+	struct swappri *spp;
+	struct swapdev *sdp;
+	struct swapent *sep;
+	int count, error;
+	size_t len;
+
+	count = 0;
+	len = sizeof(struct swapent) * misc;
+	sep = (struct swapent *)malloc(len, M_TEMP, M_WAITOK);
+	LIST_FOREACH(spp, &swap_priority, spi_swappri) {
+		CIRCLEQ_FOREACH(sdp, &spp->spi_swapdev, swd_next) {
+			if (count >= misc) {
+				continue;
+			}
+			sep->se_dev = swp->sw_dev;
+			sep->se_flags = swp->sw_flags;
+			sep->se_nblks = swp->sw_nblks;
+			sep->se_inuse = btodb((u_int64_t)sdp->swd_npginuse << PAGE_SHIFT);
+			bcopy(sdp->swd_path, &sep->se_path, sdp->swd_pathlen);
+			count++;
+			sep++;
+		}
+	}
+	*retval = count;
+
+	error = copyout(sep, arg, len);
+	free(sep, M_TEMP);
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
+}
+#endif
 
 /*
  * swaplist functions: functions that operate on the list of swap
@@ -413,14 +479,6 @@ swapctl()
 		goto out;
 	}
 
-	/*
-	 * at this point we expect a path name in arg.   we will
-	 * use namei() to gain a vnode reference (vref), and lock
-	 * the vnode (VOP_LOCK).
-	 *
-	 * XXX: a NULL arg means use the root vnode pointer (e.g. for
-	 * miniroot)
-	 */
 	switch (SCARG(uap, cmd)) {
 	case SWAP_DEVPATH:
 		error = swapdrum_path(p, vp, SCARG(uap, cmd), SCARG(uap, arg), userpath, &len);
@@ -435,9 +493,13 @@ swapctl()
 		}
 		break;
 	case SWAP_STATS:
-		/* needs updating */
-		//error = vm_swap_stats(SCARG(uap, cmd), swp, sec, retval);
+#ifdef notyet
+		error = vm_swap_stats(swp, SCARG(uap, cmd), SCARG(uap, arg), SCARG(uap, misc), retval);
+		if (error != 0) {
+			goto out;
+		}
 		break;
+#endif
 	case SWAP_GETDUMPDEV:
 		error = swapdrum_getdumpdev(SCARG(uap, cmd), SCARG(uap, arg));
 		goto out;
@@ -680,6 +742,14 @@ swapdrum_path(p, vp, cmd, arg, path, len)
 	int error, space;
 	char *where;
 
+	/*
+	 * at this point we expect a path name in arg.   we will
+	 * use namei() to gain a vnode reference (vref), and lock
+	 * the vnode (VOP_LOCK).
+	 *
+	 * XXX: a NULL arg means use the root vnode pointer (e.g. for
+	 * miniroot)
+	 */
 	if (arg == NULL) {
 		vp = rootvp; /* miniroot */
 		if (vget(vp, LK_EXCLUSIVE, p)) {
@@ -852,7 +922,7 @@ swapdrum_on(p, swp)
 
 	/* check if vp == rootvp via swap_miniroot */
 	error = swap_miniroot(p, sdp, vp, npages, addr);
-	if(error != 0) {
+	if (error != 0) {
 		return (error);
 	}
 
@@ -873,7 +943,7 @@ swapdrum_on(p, swp)
 	swapdrum_add(sdp, npages);
 	sdp->swd_npages = npages;
 	swp->sw_flags &= ~SW_FAKE;	/* going live */
-	swp->sw_flags |= (SW_INUSE|SW_ENABLE);
+	swp->sw_flags |= (SW_INUSE | SW_ENABLE);
 	cnt.v_swpages += size;
 	cnt.v_swpgavail += size;
 	simple_unlock(&swap_data_lock);
@@ -1176,7 +1246,6 @@ sw_reg_strategy(swp, bp, bn)
 		 */
 		nbp = swvndbuf_alloc();
 		BUF_INIT(&nbp->vb_buf);
-		//nbp->vb_buf = swbuf; /* XXX: FIX */
 		nbp->vb_buf.b_flags    = bp->b_flags | B_CALL;
 		nbp->vb_buf.b_bcount   = sz;
 		nbp->vb_buf.b_bufsize  = sz;

@@ -34,7 +34,6 @@
 #define _VM_SWAP_H_
 
 #ifdef _KERNEL
-//#include <sys/buf.h>
 #include <sys/bufq.h>
 
 #define	SWSLOT_BAD						(-1)
@@ -87,6 +86,16 @@ struct swapbuf {
 };
 
 #endif /* _KERNEL */
+
+/* These structures are used to return swap information for userland */
+struct swapent {
+	dev_t se_dev;				/* device id */
+	int	se_flags;				/* flags */
+	int	se_nblks;				/* total blocks */
+	int	se_inuse;				/* blocks in use */
+	int	se_priority;			/* priority of this device */
+	char se_path[PATH_MAX+1];	/* path name */
+};
 
 #define SWAP_ON				1		/* begin swapping on device */
 #define SWAP_OFF			2		/* stop swapping on device */

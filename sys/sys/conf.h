@@ -126,11 +126,12 @@ struct swdevt {
 	dev_t			sw_dev;					/* device id */
 	int				sw_flags;				/* flags */
 	int				sw_nblks;				/* total blocks */
-	int				sw_inuse;				/* blocks in use */
-	int				sw_priority;			/* device priority */
 	struct vnode 	*sw_vp;					/* swap vnode */
+	/* swapdev */
+	//int				sw_inuse;				/* blocks in use */
+	//char			sw_path[PATH_MAX+1]; 	/* path name */
+	//int				sw_priority;			/* device priority */
 	struct swapdev 	*sw_swapdev;			/* swapdrum device */
-	char			sw_path[PATH_MAX+1]; 	/* path name */
 };
 
 #define	SW_FREED		0x01
