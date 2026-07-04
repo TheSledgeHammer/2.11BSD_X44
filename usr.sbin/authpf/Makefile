@@ -7,6 +7,9 @@ BINOWN= root
 BINGRP= authpf
 BINMODE= 6555
 SRCS=	authpf.c
-CFLAGS+= -Wall
+#CFLAGS+= -Wall
+
+DPADD= ${LIBM} ${LIBUTIL}
+LDADD= -lm -lutil
 
 .include <bsd.prog.mk>

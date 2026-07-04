@@ -489,7 +489,7 @@ allowed_luser(const char *user)
 		    user, PATH_ALLOWFILE);
 
 		/* reuse buf */
-		buf = "\n\nSorry, you are not allowed to use this facility!\n";
+		buf = __UNCONST("\n\nSorry, you are not allowed to use this facility!\n");
 		fputs(buf, stdout);
 	}
 	fflush(stdout);
