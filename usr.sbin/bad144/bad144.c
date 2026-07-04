@@ -74,6 +74,7 @@ __RCSID("$NetBSD: bad144.c,v 1.21 2003/08/07 11:25:13 agc Exp $");
 #include <util.h>
 
 #define RETRIES	10		/* number of retries on reading old sectors */
+#define NBT_BAD MAXBAD
 
 #ifdef __vax__
 int	fflag;
@@ -110,7 +111,10 @@ int
 main(int argc, char *argv[])
 {
 	struct bt_bad *bt;
-	daddr_t	sn, bn[NBT_BAD];
+#ifdef __vax__
+    daddr_t bn[NBT_BAD];
+#endif
+	daddr_t	sn;
 	int i, f, nbad, new, bad, errs, ch;
 	char diskname[MAXPATHLEN];
 
@@ -183,7 +187,7 @@ main(int argc, char *argv[])
 		sn = getold(f, &oldbad);
 		printf("bad block information at sector %lld in %s:\n",
 		    (long long)sn, name);
-		printf("cartridge serial number: %d(10)\n", oldbad.bt_csn);
+		printf("cartridge serial number: %ld(10)\n", oldbad.bt_csn);
 		switch (oldbad.bt_flag) {
 
 		case (u_short)-1:
@@ -252,7 +256,9 @@ main(int argc, char *argv[])
 			errs++;
 			continue;
 		}
+#ifdef __vax__
 		bn[i] = sn;
+#endif
 		curbad.bt_bad[i].bt_cyl = sn / (dp->d_nsectors*dp->d_ntracks);
 		sn %= (dp->d_nsectors*dp->d_ntracks);
 		curbad.bt_bad[i].bt_trksec =
