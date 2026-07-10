@@ -171,39 +171,6 @@ vm_idspace_object_init(idspace, object, size)
 }
 
 static int
-vm_segment_region_check_segment(region, object, nelems)
-	vm_segment_region_t region;
-	vm_object_t object;
-	int nelems;
-{
-	vm_segment_t segment;
-	vm_offset_t offset;
-
-	offset = segnum_to_offset(nelems);
-	segment = vm_segment_lookup(object, offset);
-	if (region->segment == segment) {
-		return (0);
-	}
-	return (1);
-}
-
-static int
-vm_segment_region_check_page(region, nelems)
-	vm_segment_region_t region;
-	int nelems;
-{
-	vm_page_t page;
-	vm_offset_t offset;
-
-	offset = segnum_to_offset(nelems);
-	page = vm_page_lookup(region->segment, offset);
-	if (region->page == page) {
-		return (0);
-	}
-	return (1);
-}
-
-static int
 vm_idspace_segment_alloc(idspace, segnum)
 	vm_idspace_t idspace;
 	int segnum;
@@ -240,6 +207,39 @@ vm_idspace_page_alloc(idspace, segnum)
 	page = vm_page_alloc(idspace->segment, offset);
 	if (page != NULL) {
 		idspace->page = page;
+		return (0);
+	}
+	return (1);
+}
+
+static int
+vm_segment_region_check_segment(region, object, nelems)
+	vm_segment_region_t region;
+	vm_object_t object;
+	int nelems;
+{
+	vm_segment_t segment;
+	vm_offset_t offset;
+
+	offset = segnum_to_offset(nelems);
+	segment = vm_segment_lookup(object, offset);
+	if (region->segment == segment) {
+		return (0);
+	}
+	return (1);
+}
+
+static int
+vm_segment_region_check_page(region, nelems)
+	vm_segment_region_t region;
+	int nelems;
+{
+	vm_page_t page;
+	vm_offset_t offset;
+
+	offset = segnum_to_offset(nelems);
+	page = vm_page_lookup(region->segment, offset);
+	if (region->page == page) {
 		return (0);
 	}
 	return (1);
