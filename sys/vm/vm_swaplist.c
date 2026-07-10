@@ -185,33 +185,6 @@ swapbuf_free(swbuf)
 	rmfree(swapmap, sizeof(swbuf), (long)swbuf);
 }
 
-#ifdef notyet
-void
-vm_swap_stats(cmd, swp, sec, retval)
-	int cmd;
-	struct swdevt *swp;
-	int sec;
-	register_t *retval;
-{
-	struct swappri *spp;
-	struct swapdev *sdp;
-	int count = 0;
-
-	LIST_FOREACH(spp, &swap_priority, spi_swappri) {
-		for (sdp = CIRCLEQ_FIRST(&spp->spi_swapdev);
-				sdp != (void*) &spp->spi_swapdev && sec-- > 0; sdp = CIRCLEQ_NEXT(sdp, swd_next)) {
-			sdp->swd_swdevt->sw_inuse = btodb((u_int64_t)sdp->swd_npginuse << PAGE_SHIFT);
-			bcopy(&sdp->swd_swdevt, swp, sizeof(struct swdevt));
-			bcopy(sdp->swd_path, &swp->sw_path, sdp->swd_pathlen);
-			count++;
-			swp++;
-		}
-	}
-	*retval = count;
-	return;
-}
-#endif
-
 int
 vm_swap_stats(swp, cmd, arg, misc, retval)
 	struct swdevt *swp;

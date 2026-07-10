@@ -79,8 +79,14 @@
 
 #include <vm/include/vm.h>
 
-#define NOVL 16
-#define NOVL_PAGES ((SEGMENT_SIZE/PAGE_SIZE)/NOVL) /* Number of Pages */
+#define NOVL 			16								/* Number of Overlays (Used for Overlay Space funnily enough!) */
+#define NOVL_SIZE		(PAGE_SIZE * NOVL) 				/* size of novl */
+#define NOVL_MASK		(NOVL_SIZE - 1)					/* size of novl - 1 */
+#define NOVL_SHIFT		18
+#define NOVL_PAGES 		((SEGMENT_SIZE/PAGE_SIZE)/NOVL) /* Number of Pages per NOVL (64) */
+#define NOVL_SEGMENTS 	1								/* Number of Segments per NOVL */
+
+#define segnum_to_offset(x) (vm_offset_t)((x) + NOVL_SIZE) /* return offset from segnum */
 
 struct vm_segment_register;
 typedef struct vm_segment_register *vm_segment_register_t;
@@ -105,7 +111,7 @@ extern struct vm_segment_register segregs[NOVL];
 /* segment region */
 struct vm_segment_region {
 	TAILQ_ENTRY(vm_segment_region) segm; /* region entry */
-	//vm_segment_t segment;				/* segment in idspace */
+	vm_segment_t segment;				/* segment in idspace */
 	vm_page_t page;						/* page in idspace */
 	vm_segment_register_t segreg; 		/* virtual segment register */
 	int segnum; 						/* virtual segment register number */
@@ -139,7 +145,7 @@ struct vm_idspace {
 	struct vm_idspace_map dspace;		/* descriptor space (i.e kdsd_map, kisd_map, udsd_map, uisd_map) */
 	vm_object_t object;					/* idspace object */
 	vm_segment_t segment;				/* idspace segment */
-	vm_page_t pagemap[NOVL];			/* idspace page map of region */
+	vm_page_t page;						/* idspace page map of region */
 #ifdef deprecated
 	vm_map_t map;						/* idspace map */
     vm_offset_t start;      			/* start address */
