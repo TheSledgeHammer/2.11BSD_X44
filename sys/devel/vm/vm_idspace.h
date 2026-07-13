@@ -80,7 +80,7 @@
 #include <vm/include/vm.h>
 
 #define NOVL 			16								/* Number of Overlays (Used for Overlay Space funnily enough!) */
-#define NOVL_SIZE		(PAGE_SIZE * NOVL) 				/* size of novl */
+#define NOVL_SIZE		(SEGMENT_SIZE / NOVL) 				/* size of novl */
 #define NOVL_MASK		(NOVL_SIZE - 1)					/* size of novl - 1 */
 #define NOVL_SHIFT		18
 #define NOVL_PAGES 		((SEGMENT_SIZE/PAGE_SIZE)/NOVL) /* Number of Pages per NOVL (64) */
