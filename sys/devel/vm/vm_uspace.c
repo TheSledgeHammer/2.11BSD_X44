@@ -51,7 +51,6 @@ vm_uispace_map_init(uspace, mtype, object, min, max, size, pageable)
 	vm_uspace_t uspace;
 	int mtype;
 	vm_object_t object;
-	//vm_offset_t offset;
 	vm_offset_t *min, *max;
 	vm_size_t size;
 	bool_t pageable;
@@ -73,40 +72,25 @@ vm_uispace_map_init(uspace, mtype, object, min, max, size, pageable)
 	dmax = max; 			/* descriptor map max */
 
 	/* I-Space instruction map */
-	error = vm_idspace_init(uspace->idspace, &uspace->uisa_space, mtype, uisa_map, imin, imax, object, size, pageable);
+	error = vm_idspace_init(uspace->idspace_i, &uspace->uisa_space, mtype,
+			uisa_map, imin, imax, object, size, pageable);
 	if (error != 0) {
 		return;
 	}
-#ifdef deprecated
-	uisa_map = vm_idspace_map_allocate(object, offset, imin, imax, size, pageable);
-	if (uisa_map != NULL) {
-		uspace->addr_map = uisa_map;
-		uspace->i_start = &imin;
-		uspace->i_end = &imax;
-	}
-#endif
 
 	/* I-Space descriptor map */
-	error = vm_idspace_init(uspace->idspace, &uspace->uisd_space, mtype, uisd_map, dmin, dmax, object, size, pageable);
+	error = vm_idspace_init(uspace->idspace_d, &uspace->uisd_space, mtype,
+			uisd_map, dmin, dmax, object, size, pageable);
 	if (error != 0) {
 		return;
 	}
-#ifdef deprecated
-	uisd_map = vm_idspace_map_allocate(object, offset, dmin, dmax, size, pageable);
-	if (uisd_map != NULL) {
-		uspace->desc_map = uisd_map;
-		uspace->d_start = &dmin;
-		uspace->d_end = &dmax;
-	}
-#endif
 }
 
 void
-vm_udspace_map_init(uspace, mtype, object, offset, min, max, size, pageable)
+vm_udspace_map_init(uspace, mtype, object, min, max, size, pageable)
 	vm_uspace_t uspace;
 	int mtype;
 	vm_object_t object;
-	vm_offset_t offset;
 	vm_offset_t *min, *max;
 	vm_size_t size;
 	bool_t pageable;
@@ -128,32 +112,18 @@ vm_udspace_map_init(uspace, mtype, object, offset, min, max, size, pageable)
 	dmax = max; 			/* descriptor map max */
 
 	/* D-Space instruction map */
-	error = vm_idspace_init(uspace->idspace, &uspace->udsa_space, mtype, udsa_map, imin, imax, object, size, pageable);
+	error = vm_idspace_init(uspace->idspace_i, &uspace->udsa_space, mtype,
+			udsa_map, imin, imax, object, size, pageable);
 	if (error != 0) {
 		return;
 	}
-#ifdef deprecated
-	udsa_map = vm_idspace_map_allocate(object, offset, imin, imax, size, pageable);
-	if (udsa_map != NULL) {
-		uspace->addr_map = udsa_map;
-		uspace->i_start = &imin;
-		uspace->i_end = &imax;
-	}
-#endif
 
 	/* D-Space descriptor map */
-	error = vm_idspace_init(uspace->idspace, &uspace->udsd_space, mtype, udsd_map, dmin, dmax, object, size, pageable);
+	error = vm_idspace_init(uspace->idspace_d, &uspace->udsd_space, mtype,
+			udsd_map, dmin, dmax, object, size, pageable);
 	if (error != 0) {
 		return;
 	}
-#ifdef deprecated
-	udsd_map = vm_idspace_map_allocate(object, offset, dmin, dmax, size, pageable);
-	if (udsd_map != NULL) {
-		uspace->desc_map = udsd_map;
-		uspace->d_start = &dmin;
-		uspace->d_end = &dmax;
-	}
-#endif
 }
 
 void
@@ -172,34 +142,15 @@ vm_uspace_init(min, max)
 
 	/* Set Object Size */
 	size = (max - min);
-#ifdef deprecated
-	/* Allocate Object */
-	vm_uspace_object_init(uspace, size, uspace_object);
-#endif
+
 	/* Init I-Space */
-	vm_uispace_map_init(uspace, M_VMUSPACE, uspace_object, min, &min, &max, size, TRUE);
+	vm_uispace_map_init(uspace, M_VMUSPACE, uspace_object, min, &min, &max,
+			size, TRUE);
 
 	/* Init D-Space */
-	vm_udspace_map_init(uspace, M_VMUSPACE, uspace_object, min, &min, &max, size, TRUE);
-#ifdef deprecated
-	/* Init idspace */
-	vm_idspace_init(uspace->idspace, uspace->object, min, M_VMUSPACE);
-#endif
+	vm_udspace_map_init(uspace, M_VMUSPACE, uspace_object, min, &min, &max,
+			size, TRUE);
 }
-
-#ifdef deprecated
-void
-vm_uspace_object_init(uspace, size, object)
-	vm_uspace_t uspace;
-	vm_size_t size;
-	vm_object_t object;
-{
-	object = vm_object_allocate(size);
-	if (object != NULL) {
-		uspace->object = object;
-	}
-}
-#endif
 
 /* uspace regions */
 void

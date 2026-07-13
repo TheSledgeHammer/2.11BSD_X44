@@ -106,8 +106,6 @@ struct vm_segment_register {
 	vm_offset_t desc;	/* register descriptor */
 };
 
-extern struct vm_segment_register segregs[NOVL];
-
 /* segment region */
 struct vm_segment_region {
 	TAILQ_ENTRY(vm_segment_region) segm; /* region entry */
@@ -120,7 +118,7 @@ struct vm_segment_region {
 	bool_t is_text; 					/* text segment */
 	bool_t is_extension; 				/* extension direction */
 	bool_t is_abs;						/* absolute address */
-	struct { /* segment mapping store */
+	struct { 							/* segment mapping store */
 		vm_offset_t kdsa5;				/* virtual SEG5 address */
 		vm_offset_t kdsd5;				/* virtual SEG5 descriptor */
 		vm_offset_t kdsa6;				/* virtual SEG6 address */
@@ -145,13 +143,10 @@ struct vm_idspace {
 	struct vm_idspace_map dspace;		/* descriptor space (i.e kdsd_map, kisd_map, udsd_map, uisd_map) */
 	vm_object_t object;					/* idspace object */
 	vm_segment_t segment;				/* idspace segment */
-	vm_page_t page;						/* idspace page map of region */
-#ifdef deprecated
-	vm_map_t map;						/* idspace map */
-    vm_offset_t start;      			/* start address */
-    vm_offset_t end;        			/* end address */
-    vm_size_t size;         			/* size */
-#endif
+	vm_page_t page;						/* idspace page */
+	int mtype;							/* idspace malloctype */
+	vm_segment_region_t region;			/* region */
+	int segnum;
 };
 
 /* segment region flags */
@@ -176,6 +171,8 @@ struct vm_idspace {
 #define SEGM_RESTORE	(0x140 & (SEGM_SEG5|SEGM_SEG6|SEGM_SEG56))	/* Software: restore virtual segment register's from savemap */
 
 /* vm_idspace */
+extern struct vm_segment_register segregs[NOVL];
+
 int vm_idspace_init(vm_idspace_t, vm_idspace_map_t, int, vm_map_t, vm_offset_t *,
 		vm_offset_t *, vm_size_t, bool_t);
 vm_idspace_t vm_idspace_allocate(vm_object_t, vm_offset_t, int);
@@ -190,7 +187,7 @@ vm_page_t vm_idspace_pagemap_allocate(vm_segment_t, int);
 /* vm_segment_region */
 vm_segment_region_t vm_segment_region_alloc(int);
 void vm_segment_region_free(vm_segment_region_t, int);
-void vm_segment_region_insert(vm_idspace_t, vm_segment_region_t, int, int);
+void vm_segment_region_insert(vm_idspace_t, vm_segment_region_t, int);
 void vm_segment_region_remove(vm_idspace_t, int);
 vm_segment_region_t vm_segment_region_lookup(vm_idspace_t, int);
 

@@ -64,6 +64,9 @@ static void vm_genmap_put(int, vm_offset_t *, vm_offset_t *);
 static void vm_savemap_get(int, vm_offset_t *, vm_offset_t *);
 static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
 
+/*
+ * vm_idspace
+ */
 int
 vm_idspace_init(idspace, idspacemap, mtype, map, min, max, object, size, pageable)
 	vm_idspace_t idspace;
@@ -94,11 +97,14 @@ vm_idspace_init(idspace, idspacemap, mtype, map, min, max, object, size, pageabl
 }
 
 static void
-vm_idspace_alloc(idspace)
+vm_idspace_alloc(idspace, mtype)
 	vm_idspace_t idspace;
+	int mtype;
 {
 	TAILQ_INIT(&idspace->header);
 	simple_lock_init(&vm_idspace_lock, "vm_idspace_lock");
+
+	idspace->mtype = mtype;
 }
 
 vm_idspace_t
@@ -109,7 +115,7 @@ vm_idspace_allocate(mtype)
 
 	MALLOC(result, struct vm_idspace *, sizeof(struct vm_idspace *), mtype, M_WAITOK);
 	if (result != NULL) {
-		vm_idspace_alloc(result);
+		vm_idspace_alloc(result, mtype);
 	}
 	return (result);
 }
@@ -212,16 +218,19 @@ vm_idspace_page_alloc(idspace, segnum)
 	return (1);
 }
 
+/*
+ * vm_segment_region
+ */
 static int
-vm_segment_region_check_segment(region, object, nelems)
+vm_segment_region_check_segment(region, object, segnum)
 	vm_segment_region_t region;
 	vm_object_t object;
-	int nelems;
+	int segnum;
 {
 	vm_segment_t segment;
 	vm_offset_t offset;
 
-	offset = segnum_to_offset(nelems);
+	offset = segnum_to_offset(segnum);
 	segment = vm_segment_lookup(object, offset);
 	if (region->segment == segment) {
 		return (0);
@@ -230,14 +239,14 @@ vm_segment_region_check_segment(region, object, nelems)
 }
 
 static int
-vm_segment_region_check_page(region, nelems)
+vm_segment_region_check_page(region, segnum)
 	vm_segment_region_t region;
-	int nelems;
+	int segnum;
 {
 	vm_page_t page;
 	vm_offset_t offset;
 
-	offset = segnum_to_offset(nelems);
+	offset = segnum_to_offset(segnum);
 	page = vm_page_lookup(region->segment, offset);
 	if (region->page == page) {
 		return (0);
@@ -270,10 +279,10 @@ vm_segment_region_free(region, mtype)
 }
 
 void
-vm_segment_region_insert(idspace, region, segnum, mtype)
+vm_segment_region_insert(idspace, region, segnum)
 	vm_idspace_t idspace;
 	vm_segment_region_t region;
-	int segnum, mtype;
+	int segnum;
 {
 	if ((idspace == NULL) || (region == NULL)
 			|| (vm_idspace_segment_alloc(region, segnum) != 0)
@@ -336,6 +345,9 @@ vm_segment_region_lookup(idspace, segnum)
 	return (NULL);
 }
 
+/*
+ * vm_segment_register
+ */
 /*
  * Write to a segment register.
  * segreg will not be null if successful.

@@ -37,27 +37,16 @@ extern char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
 extern char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
 
 struct vm_kspace {
-#ifdef deprecated
-	/* vm */
-	vm_map_t desc_map;	/* descriptor map (i.e kdsd_map and kisd_map) */
-	vm_map_t addr_map; 	/* address map (i.e kdsa_map and kisa_map) */
-	vm_offset_t i_start; /* i-space start address */
-	vm_offset_t i_end;	/* i-space end address */
-	vm_offset_t d_start; /* d-space start address */
-	vm_offset_t d_end;	/* d-space end address */
-	vm_object_t object; /* object */
-	vm_offset_t offset; /* object offset */
-#endif
+	/* idspace */
+	vm_idspace_t idspace_i; /* instruction idspace for kspace */
+	vm_idspace_t idspace_d; /* data idspace for kspace */
+#define kisa_space idspace_i->aspace /* kisa space */
+#define kisd_space idspace_i->dspace /* kisd space */
+#define kdsa_space idspace_d->aspace /* kdsa space */
+#define kdsd_space idspace_d->dspace /* kdsd space */
 
 	vm_offset_t addr;	/* segment register address */
 	vm_offset_t desc;	/* segment register descriptor */
-
-	/* idspace */
-	vm_idspace_t idspace; /* idspace for kspace */
-#define kisa_space idspace->aspace /* kisa space */
-#define kisd_space idspace->dspace /* kisd space */
-#define kdsa_space idspace->aspace /* kdsa space */
-#define kdsd_space idspace->dspace /* kdsd space */
 };
 
 extern vm_object_t kspace_object; /* single kspace object */
