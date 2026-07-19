@@ -1026,7 +1026,13 @@ out:
  * Find mincore entries from Segments and pages.
  */
 static int
-vm_mincore_segment_page(vm_map_entry_t entry, vm_amap_t amap, vm_object_t object, vm_size_t size, vm_offset_t offset, char *vec)
+vm_mincore_segment_page(entry, amap, object, size, offset, vec)
+	vm_map_entry_t entry;
+	vm_amap_t amap;
+	vm_object_t object;
+	vm_size_t size;
+	vm_offset_t offset;
+	char *vec;
 {
 	vm_anon_t anon;
 	vm_segment_t segment;
@@ -1115,7 +1121,12 @@ vm_mincore_segment_page(vm_map_entry_t entry, vm_amap_t amap, vm_object_t object
  * Currently used by mincore.
  */
 int
-vm_mincore(vm_map_t map, vm_offset_t addr, vm_size_t len, vm_offset_t offset, char *vec)
+vm_mincore(map, addr, len, offset, vec)
+	vm_map_t map;
+	vm_offset_t addr;
+	vm_size_t len;
+	vm_offset_t offset;
+	char *vec;
 {
 	vm_map_entry_t entry, next;
 	vm_object_t object;
@@ -1136,17 +1147,17 @@ retry:
 		eend = entry->end;
 		eoffset = entry->offset;
 		elen = round_page((eend - estart));
-		eaddr = ((estart + elen) - elen);
+		eaddr = (eoffset + elen);
 
-		if (eaddr != addr) {
-			error = ENOMEM;
-			goto out;
-		}
 		if (elen != len) {
 			error = ENOMEM;
 			goto out;
 		}
 		if (eoffset != offset) {
+			error = ENOMEM;
+			goto out;
+		}
+		if (eaddr != addr) {
 			error = ENOMEM;
 			goto out;
 		}
@@ -1179,8 +1190,9 @@ retry:
 			if (next != entry) {
 				estart = next->start;
 				eend = next->end;
+				eoffset = next->offset;
 				elen = round_page((eend - estart));
-				eaddr = ((estart + elen) - elen);
+				eaddr = (eoffset + elen);
 				/* check next entry address is not greater than the address */
 				if (eaddr <= addr) {
 					isentry = vm_map_lookup_entry(map, addr, &entry);

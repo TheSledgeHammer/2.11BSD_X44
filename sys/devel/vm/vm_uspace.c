@@ -169,7 +169,7 @@ vm_uspace_region_insert(uspace, segnum)
 	if (region == NULL) {
 		region = vm_segment_region_alloc(M_VMUSPACE);
 	}
-	vm_segment_region_insert(idspace, region, segnum, M_VMUSPACE);
+	vm_segment_region_insert(idspace, region, segnum);
 }
 
 void

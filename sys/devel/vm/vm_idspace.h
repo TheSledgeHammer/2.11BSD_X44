@@ -79,14 +79,64 @@
 
 #include <vm/include/vm.h>
 
-#define NOVL 			16								/* Number of Overlays (Used for Overlay Space funnily enough!) */
-#define NOVL_SIZE		(SEGMENT_SIZE / NOVL) 				/* size of novl */
+#define NOVL 			16								/* Number of Overlays */
+#define NOVL_SIZE		(SEGMENT_SIZE / NOVL) 			/* size of novl */
 #define NOVL_MASK		(NOVL_SIZE - 1)					/* size of novl - 1 */
 #define NOVL_SHIFT		18
 #define NOVL_PAGES 		((SEGMENT_SIZE/PAGE_SIZE)/NOVL) /* Number of Pages per NOVL (64) */
 #define NOVL_SEGMENTS 	1								/* Number of Segments per NOVL */
 
-#define segnum_to_offset(x) (vm_offset_t)((x) + NOVL_SIZE) /* return offset from segnum */
+#define	trunc_novl(x)    ((vm_offset_t)(((vm_offset_t)(x)) & ~NOVL_MASK))
+#define	round_novl(x)    ((vm_offset_t)((((vm_offset_t)(x)) + NOVL_MASK) & ~NOVL_MASK))
+#define num_novl(x)      ((vm_offset_t)((((vm_offset_t)(x)) + NOVL_MASK) >> NOVL_SHIFT))
+
+/*
+ * returns offset from segnum
+ */
+static inline vm_offset_t
+segnum_to_offset(int x)
+{
+	 vm_offset_t offset;
+
+	 if (x == 0) {
+		 offset = (vm_offset_t)(x + NOVL_SIZE);
+	 } else {
+		 offset = (vm_offset_t)(x * NOVL_SIZE);
+	 }
+	 return (offset);
+}
+
+/*
+ * returns a single segment offset from segnum
+ */
+static inline vm_offset_t
+segnum_to_segment_offset(int x)
+{
+	vm_offset_t offset;
+	int i;
+
+	for (i = 0; i < NOVL + 1; i++) {
+		if (i == x) {
+			offset = segnum_to_offset(i);
+			offset = (offset / NOVL_SEGMENTS);
+			return (offset);
+		}
+	}
+	return (0);
+}
+
+/*
+ * returns a single page offset from segnum
+ */
+static inline vm_offset_t
+segnum_to_page_offset(int x)
+{
+	vm_offset_t offset;
+
+	offset = segnum_to_offset(x);
+	offset = (offset / NOVL_PAGES);
+	return (offset);
+}
 
 struct vm_segment_register;
 typedef struct vm_segment_register *vm_segment_register_t;
@@ -132,6 +182,7 @@ struct vm_idspace_map {
 	vm_offset_t start;	/* start address */
 	vm_offset_t end;	/* end address */
 	vm_size_t size;		/* size */
+	vm_offset_t offset; /* offset */
 };
 
 /* idspace */

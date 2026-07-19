@@ -103,7 +103,6 @@ vm_idspace_alloc(idspace, mtype)
 {
 	TAILQ_INIT(&idspace->header);
 	simple_lock_init(&vm_idspace_lock, "vm_idspace_lock");
-
 	idspace->mtype = mtype;
 }
 
@@ -154,7 +153,7 @@ vm_idspace_map_init(idspacemap, map, min, max, size, pageable)
 		idspacemap->start = *min;
 		idspacemap->end = *max;
 		if (size > (*max - *min)) {
-			size = (*max - *min);
+			size = round_page(*max - *min);
 		}
 		idspacemap->size = size;
 		return (0);
@@ -188,7 +187,7 @@ vm_idspace_segment_alloc(idspace, segnum)
 		return (1);
 	}
 
-	offset = segnum_to_offset(segnum);
+	offset = segnum_to_segment_offset(segnum);
 	segment = vm_segment_alloc(idspace->object, offset);
 	if (segment != NULL) {
 		idspace->segment = segment;
@@ -209,7 +208,7 @@ vm_idspace_page_alloc(idspace, segnum)
 		return (1);
 	}
 
-	offset = segnum_to_offset(segnum);
+	offset = segnum_to_page_offset(segnum);
 	page = vm_page_alloc(idspace->segment, offset);
 	if (page != NULL) {
 		idspace->page = page;
@@ -230,7 +229,7 @@ vm_segment_region_check_segment(region, object, segnum)
 	vm_segment_t segment;
 	vm_offset_t offset;
 
-	offset = segnum_to_offset(segnum);
+	offset = segnum_to_segment_offset(segnum);
 	segment = vm_segment_lookup(object, offset);
 	if (region->segment == segment) {
 		return (0);
@@ -246,7 +245,7 @@ vm_segment_region_check_page(region, segnum)
 	vm_page_t page;
 	vm_offset_t offset;
 
-	offset = segnum_to_offset(segnum);
+	offset = segnum_to_page_offset(segnum);
 	page = vm_page_lookup(region->segment, offset);
 	if (region->page == page) {
 		return (0);
@@ -596,7 +595,7 @@ vm_idspace_pagemap_allocate(segment, nelems)
 	vm_page_t pagemap[NOVL];
 	vm_offset_t pgoffset;
 
-	pgoffset = nelems * NOVL_PAGES * PAGE_SIZE;
+	pgoffset = nelems + NOVL_PAGES * PAGE_SIZE;
 	pagemap[nelems] = vm_page_alloc(segment, pgoffset);
 	if (pagemap[nelems] != NULL) {
 		return (pagemap[nelems]);
