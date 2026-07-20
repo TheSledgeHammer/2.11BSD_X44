@@ -145,8 +145,6 @@ vm_idspace_map_alloc(idspacemap, map, start, end, size)
 	idspacemap->start = start;
 	idspacemap->end = end;
 	idspacemap->size = size;
-	idspacemap->addr = 0;
-	idspacemap->desc = 0;
 }
 
 static int
