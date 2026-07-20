@@ -204,7 +204,6 @@ vm_fork(p1, p2, isvfork)
 	register struct user *up;
 	vm_offset_t addr;
 
-
 	/*
 	 * avoid copying any of the parent's pagetables or other per-process
 	 * objects that reside in the map by marking all of them non-inheritable
