@@ -546,7 +546,7 @@ xswapout(p, freecore, odata, ostack)
 	/*
 	 * Unwire the to-be-swapped process's user struct and kernel stack.
 	 */
-	vm_map_pageable(kernel_map, addr, addr + addr+size, TRUE);
+	vm_map_pageable(kernel_map, addr, addr + size, TRUE);
 	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
 
 	vm_xswapout(p, addr, size, freecore, odata, ostack);
@@ -576,15 +576,21 @@ assert_wait(event, ruptible)
 	void *event;
 	bool_t ruptible;
 {
+	struct thread *curthread;
+
+	curthread = curproc->p_curthread;
 #ifdef lint
 	ruptible++;
 #endif
+	/*
 	curproc->p_thread = event;
+	*/
+	curthread->td_event = event;
 }
 
 /* ARG-UNUSED */
 void
-vm_thread_block()
+vm_thread_block(void)
 {
 	struct thread *curthread;
 	int s = splhigh();
@@ -612,20 +618,19 @@ vm_thread_sleep(event, lock, ruptible)
 #ifdef lint
 	ruptible++;
 #endif
-/*
+	/*
 	curproc->p_thread = event;
 	simple_unlock(lock);
 	if (curproc->p_thread) {
 		tsleep(event, PVM, "thrd_sleep", 0);
 	}
-*/
+	*/
 	curthread = curproc->p_curthread;
 	curthread->td_event = event;
 	simple_unlock(lock);
 	if (curthread->td_event) {
 		thread_tsleep(event, PVM, "thrd_sleep", 0);
 	}
-
 	splx(s);
 }
 

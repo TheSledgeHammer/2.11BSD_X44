@@ -162,8 +162,8 @@
  * Some macros for units conversion
  */
 /* Core clicks (4096 bytes) to segments and vice versa */
-#define	ctos(x)			(x)	//((x)<<SGSHIFT)
-#define	stoc(x)			(x) //(((unsigned)(x)+(SGOFSET))>>SGSHIFT)
+#define	ctos(x)			(x)
+#define	stoc(x)			(x)
 
 /* Core clicks (4096 bytes) to disk blocks */
 #define	ctod(x)			((x)<<(PGSHIFT-DEV_BSHIFT))

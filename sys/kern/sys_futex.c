@@ -77,8 +77,6 @@ struct futex {
 	struct lock_object fx_qlock;	/* futex qlock */
 	union futex_key	fx_key;
 	unsigned long fx_refcnt;		/* unused */
-	//struct proc *fx_procp; 			/* unused: futex proc */
-	//pid_t fx_pid;					/* unused: futex proc pid */
 };
 
 #define futex_qlock(fx)			simple_lock(&(fx)->fx_qlock)
@@ -276,7 +274,7 @@ futex_key_init(key, vmspace, uaddr)
 	vm_map_entry_t entry;
 	vm_object_t object;
 	//vm_amap_t amap;
-	vm_offset_t eaddr, offset, addr;
+	vm_offset_t eaddr, eoffset, offset, addr;
 	vm_size_t elen;
 
 	addr = *uaddr;
@@ -284,12 +282,13 @@ futex_key_init(key, vmspace, uaddr)
 	vm_map_lock_read(map);
 	if (vm_map_lookup_entry(map, addr, &entry)) {
 		if (entry->inheritance == VM_INHERIT_SHARE) {
+			eoffset = entry->offset;
 			elen = round_page((entry->end - entry->start));
-			eaddr = ((entry->start + elen) - elen);
+			eaddr = (eoffset + elen);
 			if (eaddr == addr) {
 				object = entry->object.vm_object;
 				//amap = entry->aref.ar_amap;
-				offset = entry->offset;
+				offset = eoffset;
 			}
 		}
 	}

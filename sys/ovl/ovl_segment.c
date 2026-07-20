@@ -366,8 +366,8 @@ vm_segment_t
 ovl_segment_lookup_vm_segment(osegment)
 	ovl_segment_t 				osegment;
 {
-	register vm_segment_t 	  	vsegment;
-    struct ovl_vm_segment_hash_head 	*vbucket;
+	register vm_segment_t vsegment;
+    struct ovl_vm_segment_hash_head *vbucket;
 
     vbucket = &ovl_vm_segment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
     ovl_vm_segment_hash_lock();
@@ -386,8 +386,8 @@ void
 ovl_segment_remove_vm_segment(vsegment)
 	vm_segment_t 	  			vsegment;
 {
-	register ovl_segment_t 		osegment;
-    struct ovl_vm_segment_hash_head 	*vbucket;
+	register ovl_segment_t 	osegment;
+    struct ovl_vm_segment_hash_head *vbucket;
 
     vbucket = &ovl_vm_segment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
 	TAILQ_FOREACH(osegment, vbucket, vm_segment_hlist) {

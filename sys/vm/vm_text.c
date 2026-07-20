@@ -23,9 +23,9 @@
 
 #include <machine/setjmp.h>
 
-struct txtlist      vm_text_list;
-struct vm_xstats 	*xstats;			/* cache statistics */
-int					xcache;				/* number of "sticky" texts retained */
+struct txtlist vm_text_list;
+struct vm_xstats *xstats;		/* cache statistics */
+int	xcache;						/* number of "sticky" texts retained */
 
 void vm_swkill(struct proc *, char *);
 void vm_xswap(memaddr_t, memaddr_t, int, struct vnode *, int);
@@ -384,7 +384,7 @@ vm_xswap(blkno, coreaddr, count, vp, rdflg)
 		}
 		VHOLD(vp);
 		bp->b_vp = vp;
-		bp->b_dev = swapdev; 				/* TODO: add support for finding swapdrum */
+		bp->b_dev = swapdev;
 		bp->b_bcount = ctob(tcount);
 		bp->b_un.b_addr = (caddr_t)(coreaddr << 6);
 		bp->b_xmem = (coreaddr >> 10) & 077;

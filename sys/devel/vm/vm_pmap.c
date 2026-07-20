@@ -128,117 +128,166 @@ vm_pmap_bootstrap(vm_offset_t *data, vm_size_t map_size, unsigned long map_numbe
 
 #include "vm_idspace.h"
 
-
-
-vm_offset_t
-vm_idspace_map_alloc(idspace, idspacemap, offset, size)
+int
+vm_idspace_region_allocate(idspace, segnum)
 	vm_idspace_t idspace;
-	vm_idspace_map_t idspacemap;
-	vm_offset_t	offset;
-	vm_size_t size;
+	int segnum;
 {
-	vm_offset_t	addr;
-	int error;
+	vm_segment_region_t region;
 
-	size = round_page(size);
-
-	for (;;) {
-		/*
-		 * To make this work for more than one map,
-		 * use the map's lock to lock out sleepers/wakers.
-		 */
-		vm_map_lock(idspacemap->map);
-		if (vm_map_findspace(idspacemap->map, idspacemap->start, size, &addr) == 0) {
-			break;
-		}
-		/* no space now; see if we can ever get space */
-		if (vm_map_max(idspacemap->map) - vm_map_min(idspacemap->map) < size) {
-			vm_map_unlock(idspacemap->map);
-			return (0);
-		}
-		assert_wait(idspacemap->map, TRUE);
-		vm_map_unlock(idspacemap->map);
-		vm_thread_block();
-	}
-	error = vm_map_insert(idspacemap->map, idspace->object, offset, addr, (addr + size));
-	if (error != 0) {
-		vm_map_remove(idspacemap->map, addr, (addr + size));
-		vm_map_unlock(idspacemap->map);
+	region = vm_segment_region_alloc(idspace->mtype);
+	if (region != NULL) {
+		idspace->region = region;
+		vm_segment_region_insert(idspace, region, segnum);
 		return (0);
 	}
-	vm_map_unlock(idspacemap->map);
-	return (addr);
+	return (1);
 }
 
 void
-vm_idspace_map_free(idspacemap, addr, size)
-	vm_idspace_map_t idspacemap;
-	vm_offset_t	addr;
-	vm_size_t size;
-{
-	vm_map_lock(idspacemap->map);
-	(void)vm_map_delete(idspacemap->map, trunc_page(addr), round_page(addr + size));
-	vm_thread_wakeup(idspacemap->map);
-	vm_map_unlock(idspacemap->map);
-}
-
-
-vm_idspace_map_insert(idspace, idspacemap, offset, size)
+vm_idspace_region_deallocate(idspace, segnum)
 	vm_idspace_t idspace;
-	vm_idspace_map_t idspacemap;
-	vm_offset_t	offset;
-	vm_size_t size;
+	int segnum;
 {
-	vm_offset_t	addr;
+	vm_segment_region_t region;
 
-	addr = vm_idspace_map_alloc(idspace, offset, size);
-	if (addr > 0) {
-		idspacemap->addr = addr;
+	region = idspace->region;
+	if (region != NULL) {
+		vm_segment_region_remove(region, segnum);
+		if (TAILQ_EMPTY(&idspace->header)) {
+			vm_segment_region_free(region, idspace->mtype);
+			idspace->region = region;
+		}
 	}
 }
 
-
-vm_idspace_map_remove(idspace, idspacemap, addr, size)
+int
+vm_idspace_region_read(idspace, segnum, addr, desc, flags, is_txt, is_ext, is_abs)
 	vm_idspace_t idspace;
-	vm_idspace_map_t idspacemap;
-	vm_offset_t	addr;
-	vm_size_t size;
+	int segnum, flags;
+	vm_offset_t addr, desc;
+	bool_t is_txt, is_ext, is_abs;
 {
-	if (idspacemap->map != NULL) {
-		vm_idspace_map_free(idspacemap->map, addr, size);
-	}
-}
+	vm_segment_region_t region;
+	int error;
 
-vm_offset_t
-map_findspace(idspacemap, object)
-	vm_idspace_map_t idspacemap;
-	vm_object_t object;
-{
-	vm_map_t map;
-	vm_offset_t	start, end, offset, addr;
-	vm_size_t size;
-
-	map = idspacemap->map;
-	start = idspacemap->start;
-	size = idspacemap->size;
-	idspacemap->offset = offset;
-	vm_map_lock(map);
-	if (vm_map_findspace(map, start, size, &addr)) {
-		vm_map_unlock(map);
+	region = idspace->region;
+	if (region != NULL) {
+		region->flags = flags;
+		region->is_text = is_txt;
+		region->is_extension = is_ext;
+		region->is_abs = is_abs;
+		error = vm_segment_register_read(region, segnum, addr, desc);
+		if (error != 0) {
+			return (error);
+		}
 		return (0);
 	}
-	offset = (addr - start);
-
-	vm_map_insert(map, object, offset, addr, (addr + size));
-	vm_map_unlock(map);
-	return (addr);
+	return (1);
 }
 
+int
+vm_idspace_region_write(idspace, segnum, addr, desc, flags, is_txt, is_ext, is_abs)
+	vm_idspace_t idspace;
+	int segnum, flags;
+	vm_offset_t addr, desc;
+	bool_t is_txt, is_ext, is_abs;
+{
+	vm_segment_region_t region;
+	int error;
+
+	region = idspace->region;
+	if (region != NULL) {
+		region->flags = flags;
+		region->is_text = is_txt;
+		region->is_extension = is_ext;
+		region->is_abs = is_abs;
+		error = vm_segment_register_write(region, segnum, addr, desc);
+		if (error != 0) {
+			return (error);
+		}
+		return (0);
+	}
+	return (1);
+}
+
+int
+vm_idspace_map(idspace, idspacemap, val, size, segnum)
+	vm_idspace_t idspace;
+	vm_idspace_map_t idspacemap;
+	vm_offset_t val;
+	vm_size_t size;
+	int segnum;
+{
+	vm_map_t map;
+	int error;
+
+	map = idspacemap->map;
+	if (val == 0) {
+		val = kmem_alloc_wait(map, size);
+	}
+
+	error = vm_idspace_region_allocate(idspace, segnum);
+	if (error != 0) {
+		return (error);
+	}
+	if (idspace->region != NULL) {
+		error = vm_idspace_map_check_protection(idspace, idspacemap);
+		if (error != 0) {
+			return (error);
+		}
+	}
+	return (0);
+}
+
+int
+vm_idspace_unmap(idspace, idspacemap, val, size, segnum)
+	vm_idspace_t idspace;
+	vm_idspace_map_t idspacemap;
+	vm_offset_t val;
+	vm_size_t size;
+	int segnum;
+{
+	vm_map_t map;
+	int error;
+
+	map = idspacemap->map;
+	kmem_free_wakeup(map, val, size);
+	if (idspace->region != NULL) {
+		error = vm_idspace_map_check_protection(idspace, idspacemap);
+		if (error != 0) {
+			return (error);
+		}
+		vm_idspace_region_deallocate(idspace, segnum);
+	}
+	return (0);
+}
+
+int
+vm_idspace_map_protect(idspace, idspacemap, set_max)
+	vm_idspace_t idspace;
+	vm_idspace_map_t idspacemap;
+	bool_t	set_max;
+{
+	return (vm_map_protect(idspacemap->map, idspacemap->start, idspacemap->end,
+			idspace->region->protect, set_max));
+}
+
+int
+vm_idspace_map_check_protection(idspace, idspacemap)
+	vm_idspace_t idspace;
+	vm_idspace_map_t idspacemap;
+{
+	return (vm_map_check_protection(idspacemap->map, idspacemap->start,
+			idspacemap->end, idspace->region->protect));
+}
+
+
 static int
-vm_idspace_map_check_entry(idspacemap, addr, offset)
+vm_idspace_map_check_map_entry(idspacemap, addr, size)
 	vm_idspace_map_t idspacemap;
 	vm_offset_t addr;
-	vm_offset_t offset;
+	vm_size_t size;
 {
 	vm_map_t map;
 	vm_map_entry_t entry, next;
@@ -249,6 +298,7 @@ vm_idspace_map_check_entry(idspacemap, addr, offset)
 	int error;
 
 	map = idspacemap->map;
+	vm_map_lock_read(map);
 	isentry = vm_map_lookup_entry(map, addr, &entry);
 retry:
 	if (isentry) {
@@ -259,16 +309,11 @@ retry:
 		eaddr = (eoffset + esize);
 		object = entry->object.vm_object;
 
-		if ((estart < idspacemap->start) || (eend > idspacemap->end)
-				|| (start > idspacemap->end) || (eend < idspacemap->start)) {
-			error = ENOMEM;
-			goto out;
-		}
 		if (eoffset != offset) {
 			error = ENOMEM;
 			goto out;
 		}
-		if (esize > idspacemap->size) {
+		if (esize != size) {
 			error = ENOMEM;
 			goto out;
 		}
@@ -280,6 +325,7 @@ retry:
 			error = ENOMEM;
 			goto out;
 		}
+		kmem_free_wakeup(map, eaddr, esize);
 		error = 0;
 		goto out;
 	} else {
@@ -306,5 +352,6 @@ retry:
 	}
 
 out:
+	vm_map_unlock_read(map);
 	return (error);
 }

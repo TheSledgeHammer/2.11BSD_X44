@@ -1075,7 +1075,109 @@ ovl_map_protect(map, start, end, new_prot, set_max)
 	register vm_prot_t		new_prot;
 	register bool_t			set_max;
 {
+	register ovl_map_entry_t current;
+	ovl_map_entry_t	entry;
 
+	ovl_map_lock(map);
+
+	OVL_MAP_RANGE_CHECK(map, start, end);
+
+	if (ovl_map_lookup_entry(map, start, &entry)) {
+		ovl_map_clip_start(map, entry, start);
+	} else {
+		entry = CIRCLEQ_NEXT(entry, cl_entry);
+	}
+
+	/*
+	 *	Make a first pass to check for protection
+	 *	violations.
+	 */
+
+	current = entry;
+	while ((current != CIRCLEQ_FIRST(&map->cl_header)) && (current->start < end)) {
+		if (current->is_sub_map) {
+			return (KERN_INVALID_ARGUMENT);
+		}
+		if ((new_prot & current->max_protection) != new_prot) {
+			ovl_map_unlock(map);
+			return (KERN_PROTECTION_FAILURE);
+		}
+		current = CIRCLEQ_NEXT(entry, cl_entry);
+	}
+
+	/*
+	 *	Go back and fix up protections.
+	 *	[Note that clipping is not necessary the second time.]
+	 */
+
+	current = entry;
+
+	while ((current != CIRCLEQ_FIRST(&map->cl_header)) && (current->start < end)) {
+		vm_prot_t old_prot;
+
+		ovl_map_clip_end(map, current, end);
+
+		old_prot = current->protection;
+		if (set_max) {
+			current->protection =
+				(current->max_protection = new_prot) &
+					old_prot;
+		} else {
+			current->protection = new_prot;
+		}
+
+		/*
+		 *	Update physical map if necessary.
+		 *	Worry about copy-on-write here -- CHECK THIS XXX
+		 */
+
+		if (current->protection != old_prot) {
+
+#define MASK(entry)	((entry)->copy_on_write ? ~VM_PROT_WRITE : VM_PROT_ALL)
+#define	max(a,b)	((a) > (b) ? (a) : (b))
+
+			if (current->is_a_map) {
+				ovl_map_entry_t	share_entry;
+				vm_offset_t	share_end;
+
+				ovl_map_lock(current->object.share_map);
+				(void)ovl_map_lookup_entry(
+						current->object.share_map,
+						current->offset,
+						&share_entry);
+				share_end = current->offset +
+					(current->end - current->start);
+				while ((share_entry !=
+					CIRCLEQ_FIRST(&current->object.share_map->cl_header)) &&
+					(share_entry->start < share_end)) {
+
+					pmap_protect(map->pmap,
+						(max(share_entry->start,
+							current->offset) -
+							current->offset +
+							current->start),
+						min(share_entry->end,
+							share_end) -
+						current->offset +
+						current->start,
+						current->protection &
+							MASK(share_entry));
+
+					share_entry = CIRCLEQ_NEXT(share_entry, cl_entry);
+				}
+				ovl_map_unlock(current->object.share_map);
+			} else {
+			 	pmap_protect(map->pmap, current->start,
+					current->end,
+					current->protection & MASK(entry));
+			}
+#undef	max
+#undef	MASK
+		}
+		current = CIRCLEQ_NEXT(current, cl_entry);
+	}
+
+	ovl_map_unlock(map);
 	return (KERN_SUCCESS);
 }
 

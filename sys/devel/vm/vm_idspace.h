@@ -182,22 +182,20 @@ struct vm_idspace_map {
 	vm_offset_t start;	/* start address */
 	vm_offset_t end;	/* end address */
 	vm_size_t size;		/* size */
-	vm_offset_t offset; /* offset */
 };
 
 /* idspace */
 struct vm_segregion_queue;
 TAILQ_HEAD(vm_segregion_queue, vm_segment_region);
 struct vm_idspace {
-	struct vm_segregion_queue header;	/* queue of regions */
+	struct vm_segregion_queue header;	/* list of regions */
+	vm_segment_region_t region;			/* region back-pointer */
 	struct vm_idspace_map aspace;		/* address space (i.e kdsa_map, kisa_map, udsa_map, uisa_map) */
 	struct vm_idspace_map dspace;		/* descriptor space (i.e kdsd_map, kisd_map, udsd_map, uisd_map) */
 	vm_object_t object;					/* idspace object */
 	vm_segment_t segment;				/* idspace segment */
 	vm_page_t page;						/* idspace page */
 	int mtype;							/* idspace malloctype */
-	vm_segment_region_t region;			/* region */
-	int segnum;
 };
 
 /* segment region flags */

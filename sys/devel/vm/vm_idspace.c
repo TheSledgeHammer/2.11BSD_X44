@@ -46,6 +46,8 @@ struct vm_segment_register segregs[NOVL];
 
 simple_lock_data_t vm_idspace_lock;
 
+static void vm_idspace_map_alloc(vm_idspace_map_t, vm_map_t, vm_offset_t,
+		vm_offset_t, vm_size_t);
 static int vm_idspace_map_init(vm_idspace_map_t, vm_map_t, vm_offset_t *,
 		vm_offset_t *, vm_size_t, bool_t);
 static int vm_idspace_object_init(vm_idspace_t, vm_object_t, vm_size_t);
@@ -132,6 +134,21 @@ vm_idspace_deallocate(idspace, mtype)
 	}
 }
 
+static void
+vm_idspace_map_alloc(idspacemap, map, start, end, size)
+	vm_idspace_map_t idspacemap;
+	vm_map_t map;
+	vm_offset_t start, end;
+	vm_size_t size;
+{
+	idspacemap->map = map;
+	idspacemap->start = start;
+	idspacemap->end = end;
+	idspacemap->size = size;
+	idspacemap->addr = 0;
+	idspacemap->desc = 0;
+}
+
 static int
 vm_idspace_map_init(idspacemap, map, min, max, size, pageable)
 	vm_idspace_map_t idspacemap;
@@ -149,13 +166,10 @@ vm_idspace_map_init(idspacemap, map, min, max, size, pageable)
 
 	map = kmem_suballoc(kernel_map, min, max, size, pageable);
 	if (map != NULL) {
-		idspacemap->map = map;
-		idspacemap->start = *min;
-		idspacemap->end = *max;
 		if (size > (*max - *min)) {
 			size = round_page(*max - *min);
 		}
-		idspacemap->size = size;
+		vm_idspace_map_alloc(idspacemap, map, *min, *max, size);
 		return (0);
 	}
 	return (1);
@@ -283,9 +297,10 @@ vm_segment_region_insert(idspace, region, segnum)
 	vm_segment_region_t region;
 	int segnum;
 {
-	if ((idspace == NULL) || (region == NULL)
-			|| (vm_idspace_segment_alloc(region, segnum) != 0)
-			|| (vm_idspace_page_alloc(region, segnum) != 0)) {
+	if ((idspace == NULL) ||
+			(region == NULL) ||
+			(vm_idspace_segment_alloc(idspace, segnum) != 0) ||
+			(vm_idspace_page_alloc(idspace, segnum) != 0)) {
 		return;
 	}
 
@@ -314,8 +329,8 @@ vm_segment_region_remove(idspace, segnum)
 	simple_lock(&vm_idspace_lock);
 	TAILQ_FOREACH(region, &idspace->header, segm) {
 		if (region->segnum == segnum) {
-			if (vm_segment_region_check_segment(region, segnum)
-					&& vm_segment_region_check_page(region, idspace->object, segnum)) {
+			if (vm_segment_region_check_segment(region, idspace->object, segnum)
+					&& vm_segment_region_check_page(region, segnum)) {
 				TAILQ_REMOVE(&idspace->header, region, segm);
 				simple_unlock(&vm_idspace_lock);
 			}
@@ -333,8 +348,8 @@ vm_segment_region_lookup(idspace, segnum)
 	simple_lock(&vm_idspace_lock);
 	TAILQ_FOREACH(region, &idspace->header, segm) {
 		if (region->segnum == segnum) {
-			if (vm_segment_region_check_segment(region, segnum)
-					&& vm_segment_region_check_page(region, idspace->object, segnum)) {
+			if (vm_segment_region_check_segment(region, idspace->object, segnum)
+					&& vm_segment_region_check_page(region, segnum)) {
 				simple_unlock(&vm_idspace_lock);
 				return (NULL);
 			}
@@ -357,6 +372,9 @@ vm_segment_register_write(region, segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
+	if (region == NULL) {
+		return (1);
+	}
 	if (region->protect & VM_PROT_WRITE) {
 		if (region->flags & SEGM_SAVE) {
 			switch (region->flags) {
@@ -402,6 +420,9 @@ vm_segment_register_read(region, segnum, addr, desc)
 	int segnum;
 	vm_offset_t *addr, *desc;
 {
+	if (region == NULL) {
+		return (1);
+	}
 	if (region->protect & VM_PROT_READ) {
 		if (region->flags & SEGM_RESTORE) {
 			switch (region->flags) {

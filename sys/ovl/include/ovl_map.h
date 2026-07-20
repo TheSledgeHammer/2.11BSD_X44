@@ -49,6 +49,7 @@ struct ovl_map_entry {
   vm_offset_t				          	offset;			/* offset into object */
   bool_t								is_a_map;		/* Is "object" a map? */
   bool_t								is_sub_map;		/* Is "object" a submap? */
+  bool_t								copy_on_write;	/* is data copy-on-write */
   vm_prot_t								protection;		/* protection code */
   vm_prot_t								max_protection;	/* maximum protection */
   vm_inherit_t							inheritance;	/* inheritance */
@@ -123,7 +124,6 @@ struct ovl_map {
 /* XXX: number of overlay maps and entries to statically allocate */
 #define MAX_OMAP			5
 #define	MAX_OMAPENT			180
-#define	MAX_NOVL			16			/* number of overlay entries */
 
 #ifdef _KERNEL
 struct pmap;

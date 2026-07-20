@@ -76,6 +76,10 @@
 
 vm_map_t	kernel_map;
 
+static void kmem_alloc_object(vm_object_t, vm_size_t, vm_offset_t);
+static vm_offset_t kmem_malloc_all(vm_map_t, vm_offset_t, vm_object_t, vm_size_t, vm_offset_t);
+static void kmem_malloc_lthru(vm_map_t, vm_offset_t, vm_object_t, vm_size_t, vm_offset_t);
+
 /*
  *	kmem_alloc_pageable:
  *
@@ -105,7 +109,7 @@ kmem_alloc_pageable(map, size)
 	return (addr);
 }
 
-void
+static void
 kmem_alloc_object(object, size, offset)
 	vm_object_t object;
 	vm_size_t   size;
@@ -291,7 +295,7 @@ kmem_suballoc(parent, min, max, size, pageable)
  * We don't worry about expanding the map (adding entries) since entries
  * for wired maps are statically allocated.
  */
-vm_offset_t
+static vm_offset_t
 kmem_malloc_all(map, addr, object, size, offset)
 	vm_map_t	map;
 	vm_offset_t	addr;
@@ -359,7 +363,7 @@ kmem_malloc_all(map, addr, object, size, offset)
 	return (addr);
 }
 
-void
+static void
 kmem_malloc_lthru(map, addr, object, size, offset)
 	vm_map_t	map;
 	vm_offset_t	addr;

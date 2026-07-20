@@ -406,10 +406,10 @@ again:
 			rpp->p_saddr = (caddr_t)a[1];
 			bcopy(rip->p_saddr, rpp->p_saddr, rpp->p_ssize);
 		}
-		s = splhigh();
+		(void)splhigh();
 		rpp->p_stat = SRUN;
 		setrq(rpp);
-		splx(s);
+		(void)spl0();
 	}
 	rpp->p_flag |= P_SSWAP;
 
