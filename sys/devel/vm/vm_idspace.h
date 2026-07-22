@@ -182,6 +182,8 @@ struct vm_idspace_map {
 	vm_offset_t start;	/* start address */
 	vm_offset_t end;	/* end address */
 	vm_size_t size;		/* size */
+	vm_offset_t temp;	/* temp storage */
+	bool_t is_alloced;	/* is allocated (using kmem or omem) */
 };
 
 /* idspace */
@@ -196,6 +198,17 @@ struct vm_idspace {
 	vm_segment_t segment;				/* idspace segment */
 	vm_page_t page;						/* idspace page */
 	int mtype;							/* idspace malloctype */
+};
+
+enum maptypes {
+	KISA,	/* kernel instruction address */
+	KISD,	/* kernel instruction descriptor */
+	KDSA,	/* kernel data address */
+	KDSD,	/* kernel data descriptor */
+	UISA,	/* user instruction address */
+	UISD,	/* user instruction descriptor */
+	UDSA,	/* user data address */
+	UDSD,	/* user data descriptor */
 };
 
 /* segment region flags */

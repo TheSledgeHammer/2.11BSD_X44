@@ -153,10 +153,72 @@ vm_kspace_init(min, max)
 }
 
 /* kspace maps */
-vm_kspace_map()
+int
+vm_kspace_map_alloc(kspace, val, size, segnum, maptype)
+	vm_kspace_t kspace;
+	vm_offset_t val;
+	vm_size_t size;
+	int segnum, maptype;
 {
+	vm_idspace_t idspace_i, idspace_d;
+	int error;
 
+	idspace_i = kspace->idspace_i;
+	idspace_d = kspace->idspace_d;
+	if ((idspace_i != NULL) && (idspace_d == NULL)) {
+		switch (maptype) {
+		case KISA:
+			error = vm_idspace_map(idspace_i, kisa_space, val, size, segnum);
+			break;
+		case KISD:
+			error = vm_idspace_map(idspace_i, kisd_space, val, size, segnum);
+			break;
+		case KDSA:
+			error = vm_idspace_map(idspace_d, kdsa_space, val, size, segnum);
+			break;
+		case KDSD:
+			error = vm_idspace_map(idspace_d, kdsd_space, val, size, segnum);
+			break;
+		}
+	} else {
+		error = ENOMEM;
+	}
+	return (error);
 }
+
+int
+vm_kspace_map_free(kspace, val, size, segnum, maptype)
+	vm_kspace_t kspace;
+	vm_offset_t val;
+	vm_size_t size;
+	int segnum, maptype;
+{
+	vm_idspace_t idspace_i, idspace_d;
+	int error;
+
+	idspace_i = kspace->idspace_i;
+	idspace_d = kspace->idspace_d;
+	if ((idspace_i != NULL) && (idspace_d != NULL)) {
+		switch (maptype) {
+		case KISA:
+			error = vm_idspace_unmap(idspace_i, kisa_space, val, size, segnum);
+			break;
+		case KISD:
+			error = vm_idspace_unmap(idspace_i, kisd_space, val, size, segnum);
+			break;
+		case KDSA:
+			error = vm_idspace_unmap(idspace_d, kdsa_space, val, size, segnum);
+			break;
+		case KDSD:
+			error = vm_idspace_unmap(idspace_d, kdsd_space, val, size, segnum);
+			break;
+		}
+	} else {
+		error = ENOMEM;
+	}
+	return (error);
+}
+
 
 /* kspace regions */
 void
@@ -179,28 +241,9 @@ vm_kspace_region_insert(kspace, segnum, sepid)
 			idspace->region = region;
 		}
 	}
-
-
 	if (idspace != NULL) {
 		vm_segment_region_insert(idspace, region, segnum);
 	}
-}
-
-set_idspace(kspace, sepid)
-	vm_kspace_t kspace;
-	int sepid;
-{
-	vm_idspace_t idspace;
-
-	switch (sepid) {
-	case 0:
-		idspace = kspace->idspace_i;
-		break;
-	case 1:
-		idspace = kspace->idspace_d;
-		break;
-	}
-
 }
 
 void

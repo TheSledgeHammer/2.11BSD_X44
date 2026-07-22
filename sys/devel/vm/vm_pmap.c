@@ -230,13 +230,23 @@ vm_idspace_map(idspace, idspacemap, val, size, segnum)
 	region = idspace->region;
 	if (region != NULL) {
 		map = idspacemap->map;
-		if (map == NULL) {
+		if (map != NULL) {
+			/*
+			 * allocated val with kmem if is_alloced is false and val equals
+			 * 0.
+			 */
+			if ((idspacemap->is_alloced != TRUE) && (val == 0)) {
+				val = kmem_alloc_wait(map, size);
+				idspacemap->is_alloced = TRUE;
+			}
+		} else {
 			return (ENOMEM);
 		}
 		error = vm_idspace_map_check_protection(idspace, idspacemap);
 		if (error != 0) {
 			return (error);
 		}
+
 		return (0);
 	}
 	return (ENOMEM);
@@ -257,7 +267,16 @@ vm_idspace_unmap(idspace, idspacemap, val, size, segnum)
 	region = idspace->region;
 	if (region != NULL) {
 		map = idspacemap->map;
-		if (map == NULL) {
+		if (map != NULL) {
+			/*
+			 * free val from kmem if is_alloced is true and val is greater
+			 * than 0.
+			 */
+			if ((idspacemap->is_alloced != FALSE) && (val > 0)) {
+				kmem_free_wakeup(map, val, size);
+				idspacemap->is_alloced = FALSE;
+			}
+		} else {
 			return (ENOMEM);
 		}
 		error = vm_idspace_map_check_protection(idspace, idspacemap);
@@ -269,7 +288,6 @@ vm_idspace_unmap(idspace, idspacemap, val, size, segnum)
 	}
 	return (ENOMEM);
 }
-
 
 int
 vm_idspace_map_protect(idspace, idspacemap, set_max)
