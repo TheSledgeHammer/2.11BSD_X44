@@ -179,7 +179,7 @@ vmspace_alloc(min, max, pageable)
 	register struct vmspace *vm;
 
 	MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
-	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
+	bzero(vm, (caddr_t)&vm->vm_startcopy - (caddr_t)vm);
 	vm_map_init(&vm->vm_map, min, max, pageable);
 	pmap_pinit(&vm->vm_pmap);
 	vm->vm_map.pmap = &vm->vm_pmap;		/* XXX */

@@ -137,8 +137,8 @@ vm_idspace_region_allocate(idspace, segnum)
 
 	region = vm_segment_region_alloc(idspace->mtype);
 	if (region != NULL) {
-		idspace->region = region;
 		vm_segment_region_insert(idspace, region, segnum);
+		idspace->region = region;
 		return (0);
 	}
 	return (ENOMEM);
@@ -290,22 +290,22 @@ vm_idspace_unmap(idspace, idspacemap, val, size, segnum)
 }
 
 int
-vm_idspace_map_protect(idspace, idspacemap, set_max)
-	vm_idspace_t idspace;
+vm_idspace_map_protect(idspacemap, region, set_max)
 	vm_idspace_map_t idspacemap;
+	vm_segment_region_t region;
 	bool_t	set_max;
 {
 	return (vm_map_protect(idspacemap->map, idspacemap->start, idspacemap->end,
-			idspace->region->protect, set_max));
+			region->protect, set_max));
 }
 
 int
-vm_idspace_map_check_protection(idspace, idspacemap)
-	vm_idspace_t idspace;
+vm_idspace_map_check_protection(idspacemap, region)
 	vm_idspace_map_t idspacemap;
+	vm_segment_region_t region;
 {
 	return (vm_map_check_protection(idspacemap->map, idspacemap->start,
-			idspacemap->end, idspace->region->protect));
+			idspacemap->end, region->protect));
 }
 
 

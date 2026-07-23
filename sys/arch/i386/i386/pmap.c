@@ -642,7 +642,7 @@ pmap_isvalidphys(addr)
 		return (1);
 	if (addr >= 0x100000)
 		return (1);
-	return(0);
+	return (0);
 }
 
 /*

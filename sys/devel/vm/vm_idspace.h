@@ -182,7 +182,7 @@ struct vm_idspace_map {
 	vm_offset_t start;	/* start address */
 	vm_offset_t end;	/* end address */
 	vm_size_t size;		/* size */
-	vm_offset_t temp;	/* temp storage */
+	vm_offset_t space;	/* temp storage */
 	bool_t is_alloced;	/* is allocated (using kmem or omem) */
 };
 
