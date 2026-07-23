@@ -219,7 +219,7 @@ vm_idspace_unmap(idspace, entry, val, size, segnum)
 	}
 
 	map = entry->map;
-	if (map != NULL) {
+	if (map == NULL) {
 		return (ENOMEM);
 	}
 
