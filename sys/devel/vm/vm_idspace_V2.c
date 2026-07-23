@@ -75,8 +75,8 @@ static void vm_idspace_entry_alloc(vm_idspace_entry_t, vm_map_t, vm_offset_t,
 static int vm_idspace_entry_init(vm_idspace_entry_t, vm_map_t, vm_offset_t *,
 		vm_offset_t *, vm_size_t, bool_t);
 static int vm_idspace_entry_object_init(vm_idspace_entry_t, vm_object_t, vm_size_t);
-static int vm_idspace_entry_segment_alloc(vm_idspace_t, int);
-static int vm_idspace_entry_page_alloc(vm_idspace_t, int);
+static int vm_idspace_entry_segment_alloc(vm_idspace_entry_t, int);
+static int vm_idspace_entry_page_alloc(vm_idspace_entry_t, int);
 
 static int vm_segment_region_check_segment(vm_segment_region_t, vm_object_t, int);
 static int vm_segment_region_check_page(vm_segment_region_t, int);
