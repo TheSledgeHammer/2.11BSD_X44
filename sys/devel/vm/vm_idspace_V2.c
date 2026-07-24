@@ -146,9 +146,13 @@ vm_idspace_allocate(mtype)
 void
 vm_idspace_deallocate(idspace, entry, mtype)
 	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
 	int mtype;
 {
 	if (idspace != NULL) {
+		if (entry != NULL) {
+			return;
+		}
 		FREE(idspace, mtype);
 	}
 }

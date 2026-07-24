@@ -667,7 +667,7 @@ pmap_bootstrap_allocate(va, size)
 		va = pmap_map(va, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
 		avail_start += PAGE_SIZE;
 	}
-	bzero((caddr_t) va, size);
+	bzero((caddr_t)va, size);
 	return ((void *) va);
 }
 

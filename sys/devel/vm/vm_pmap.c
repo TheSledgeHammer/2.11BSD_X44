@@ -126,6 +126,26 @@ vm_pmap_bootstrap(vm_offset_t *data, vm_size_t map_size, unsigned long map_numbe
 	*data = (vm_offset_t)pmap_bootstrap_alloc(entry_data_size);
 }
 
+/*
+ * Based around 2.11BSD's phys system call
+ * Setup u.uisa and u.uisd from pmap.
+ */
+vm_offset_t uisd_tmp, uisa_tmp;
+void
+vm_pmap_phys(map, va, start, end)
+	vm_map_t map;
+	vm_offset_t va, start, end;
+{
+	size = round_page(size);
+	for (va = start; va < end; va += PAGE_SIZE) {
+
+	}
+	if (va) {
+		uisd_tmp = va;
+		uisa_tmp = pmap_extract(vm_map_pmap(map), va);
+	}
+}
+
 #include "vm_idspace.h"
 
 int

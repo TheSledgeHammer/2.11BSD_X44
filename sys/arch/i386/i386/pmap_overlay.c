@@ -101,7 +101,14 @@ void
 pmap_pinit_ovltab(ovltab)
 	ovl_entry_t *ovltab;
 {
+	int i;
+
 	ovltab = (ovl_entry_t *)omem_alloc(overlay_map, (vm_offset_t)NPGOVL * sizeof(ovl_entry_t));
+
+	/* install self-referential address mapping entry */
+	for (i = 0; i < NPGOVL; i++) {
+		ovltab[i] = pmap_extract(kernel_pmap, (vm_offset_t)ovltab);
+	}
 }
 
 void
