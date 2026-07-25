@@ -89,6 +89,100 @@ static void vm_genmap_put(int, vm_offset_t *, vm_offset_t *);
 static void vm_savemap_get(int, vm_offset_t *, vm_offset_t *);
 static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
 
+
+/*
+ * Based around 2.11BSD's phys system call
+ * Setup u.uisa and u.uisd from pmap.
+ *
+ * TODO: vm_pmap
+ * - resolve phys and virt when segnum is greater than NOVL (16).
+ */
+/* temp maps for uisa and uisd */
+vm_offset_t uisd_tmp[NOVL], uisa_tmp[NOVL];
+
+int
+vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end)
+	vm_map_t map;
+	vm_offset_t *virt, *phys, *nsegs;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	pmap_t pmap;
+	vm_offset_t addr;
+
+	pmap = vm_map_pmap(map);
+	size = round_page(size);
+	if ((pmap == NULL) || ((end - start) < size)) {
+		return (1);
+	}
+	for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
+		if (addr == size) {
+			*nsegs = atos(addr);
+			*virt = addr;
+			*phys = pmap_extract(pmap, addr);
+			return (0);
+		}
+	}
+	return (1);
+}
+
+int
+vm_pmap_validate_phys(map, virt, phys, nsegs, size, start, end)
+	vm_map_t map;
+	vm_offset_t *virt, *phys, *nsegs;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	vm_offset_t stso;
+	int segnum, error, num;
+
+
+
+	error = vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end);
+	if (error != 0) {
+		return (error);
+	}
+	/* initialize temp uisa and uisd */
+	uisd_tmp[0] = 0;
+	uisa_tmp[0] = 0;
+
+	/* sanity check */
+	num = (int)*nsegs;
+	for (segnum = 0; segnum < num; segnum++) {
+		stso = segnum_to_segment_offset(segnum);
+		if ((stso * num) == *virt) {
+			uisd_tmp[segnum] = *virt;
+			uisa_tmp[segnum] = *phys;
+			return (0);
+		}
+	}
+	return (1);
+}
+
+void
+vm_pmap_phys(map, size, start, end)
+	vm_map_t map;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	pmap_t pmap;
+	vm_offset_t addr, virt, phys, num;
+	int segnum, error;
+
+	error = vm_pmap_validate_phys(map, &virt, &phys, &num, size, start, end);
+	if (error != 0) {
+		return;
+	}
+
+	u.u_uisd[0] = uisd_tmp[0];
+	u.u_uisa[0] = uisa_tmp[0];
+
+	for (segnum = 0; segnum < num; segnum++) {
+		u.u_uisd[segnum] = uisd_tmp[segnum];
+		u.u_uisa[segnum] = uisa_tmp[segnum];
+	}
+}
+
 /*
  * vm_idspace
  */
@@ -117,6 +211,7 @@ vm_idspace_init(idspace, entry, mtype, map, min, max, object, size, pageable)
 			vm_idspace_deallocate(idspace, entry, mtype);
 			return (error);
 		}
+		vm_pmap_phys(map, size, *min, *max);
 	}
 	return (0);
 }

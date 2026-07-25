@@ -126,27 +126,103 @@ vm_pmap_bootstrap(vm_offset_t *data, vm_size_t map_size, unsigned long map_numbe
 	*data = (vm_offset_t)pmap_bootstrap_alloc(entry_data_size);
 }
 
+#include "vm_idspace.h"
+
 /*
  * Based around 2.11BSD's phys system call
  * Setup u.uisa and u.uisd from pmap.
  */
-vm_offset_t uisd_tmp, uisa_tmp;
-void
-vm_pmap_phys(map, va, start, end)
-	vm_map_t map;
-	vm_offset_t va, start, end;
-{
-	size = round_page(size);
-	for (va = start; va < end; va += PAGE_SIZE) {
+vm_offset_t uisd_tmp[NOVL], uisa_tmp[NOVL];
 
+int
+vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end)
+	vm_map_t map;
+	vm_offset_t *virt, *phys, *nsegs;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	pmap_t pmap;
+	vm_offset_t addr;
+
+	pmap = vm_map_pmap(map);
+	size = round_page(size);
+	if ((pmap == NULL) || ((end - start) < size)) {
+		return (1);
 	}
-	if (va) {
-		uisd_tmp = va;
-		uisa_tmp = pmap_extract(vm_map_pmap(map), va);
+	for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
+		if (addr == size) {
+			*nsegs = atos(addr);
+			*virt = addr;
+			*phys = pmap_extract(pmap, addr);
+			return (0);
+		}
+	}
+	return (1);
+}
+
+int
+vm_pmap_validate_phys(map, virt, phys, nsegs, size, start, end)
+	vm_map_t map;
+	vm_offset_t *virt, *phys, *nsegs;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	vm_offset_t stso;
+	int segnum, error, num;
+
+
+
+	error = vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end);
+	if (error != 0) {
+		return (error);
+	}
+	/* initialize temp uisa and uisd */
+	uisd_tmp[0] = 0;
+	uisa_tmp[0] = 0;
+
+	/* sanity check */
+	num = (int)*nsegs;
+	for (segnum = 0; segnum < num; segnum++) {
+		stso = segnum_to_segment_offset(segnum);
+		if ((stso * num) == *virt) {
+			uisd_tmp[segnum] = *virt;
+			uisa_tmp[segnum] = *phys;
+			return (0);
+		}
+	}
+	return (1);
+}
+
+void
+vm_pmap_phys(map, size, start, end)
+	vm_map_t map;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	pmap_t pmap;
+	vm_offset_t addr, virt, phys, num;
+	int segnum, error;
+
+	error = vm_pmap_validate_phys(map, &virt, &phys, &num, size, start, end);
+	if (error != 0) {
+		return;
+	}
+
+	u.u_uisd[0] = uisd_tmp[0];
+	u.u_uisa[0] = uisa_tmp[0];
+
+	for (segnum = 0; segnum < num; segnum++) {
+		u.u_uisd[segnum] = uisd_tmp[segnum];
+		u.u_uisa[segnum] = uisa_tmp[segnum];
 	}
 }
 
-#include "vm_idspace.h"
+void
+vm_idspace_entry_init_phys(entry)
+	vm_idspace_entry_t entry;
+{
+	vm_pmap_phys(entry->map, entry->size, entry->start, entry->end);
+}
 
 int
 vm_idspace_region_allocate(idspace, segnum)
