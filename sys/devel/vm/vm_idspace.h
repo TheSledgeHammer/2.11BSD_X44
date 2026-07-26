@@ -144,8 +144,8 @@ typedef struct vm_segment_register *vm_segment_register_t;
 struct vm_segment_region;
 typedef struct vm_segment_region *vm_segment_region_t;
 
-struct vm_idspace_map;
-typedef struct vm_idspace_map *vm_idspace_map_t;
+struct vm_idspace_entry;
+typedef struct vm_idspace_entry *vm_idspace_entry_t;
 
 struct vm_idspace;
 typedef struct vm_idspace *vm_idspace_t;
@@ -176,27 +176,27 @@ struct vm_segment_region {
 	} mapstore;
 };
 
-/* idspace map */
-struct vm_idspace_map {
-	vm_map_t map;		/* map */
-	vm_offset_t start;	/* start address */
-	vm_offset_t end;	/* end address */
-	vm_size_t size;		/* size */
-	vm_offset_t space;	/* temp storage */
-	bool_t is_alloced;	/* is allocated (using kmem or omem) */
-};
-
-/* idspace */
+/* vm idspace entry */
 struct vm_segregion_queue;
 TAILQ_HEAD(vm_segregion_queue, vm_segment_region);
-struct vm_idspace {
+struct vm_idspace_entry {
 	struct vm_segregion_queue header;	/* list of regions */
 	vm_segment_region_t region;			/* region back-pointer */
-	struct vm_idspace_map aspace;		/* address space (i.e kdsa_map, kisa_map, udsa_map, uisa_map) */
-	struct vm_idspace_map dspace;		/* descriptor space (i.e kdsd_map, kisd_map, udsd_map, uisd_map) */
-	vm_object_t object;					/* idspace object */
-	vm_segment_t segment;				/* idspace segment */
-	vm_page_t page;						/* idspace page */
+	vm_map_t map;						/* map */
+	vm_offset_t start;					/* start address */
+	vm_offset_t end;					/* end address */
+	vm_size_t size;						/* size */
+	vm_offset_t space;					/* temp storage */
+	vm_object_t object;					/* object */
+	vm_segment_t segment;				/* segment */
+	vm_page_t page;						/* page */
+	bool_t is_alloced;					/* is allocated (using kmem or omem) */
+};
+
+/* vm idspace */
+struct vm_idspace {
+	struct vm_idspace_entry aspace;		/* address space (i.e kdsa_map, kisa_map, udsa_map, uisa_map) */
+	struct vm_idspace_entry dspace;		/* descriptor space (i.e kdsd_map, kisd_map, udsd_map, uisd_map) */
 	int mtype;							/* idspace malloctype */
 };
 

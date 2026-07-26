@@ -26,33 +26,33 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* A revised version of vm_idspace.c and vm_pmap.c in devel/vm */
+
 /* Code is based on 2.11BSD's PDP-11 code */
+
 #include <sys/malloc.h>
+#include <sys/queue.h>
+#include <sys/null.h>
 
 #include <vm/include/vm.h>
+#include <vm/include/vm_page.h>
+#include <vm/include/vm_segment.h>
 #include <vm_idspace.h>
-
-/*
- * idspace layout:
- * - An idspace is a vm_segment sub-divided into 16 regions.
- * - Each region contains 64 pages or is 262144 in size.
- * - Each region can contain a register.
- * - A register is similar to pmap (but different purpose),
- * with an address and descriptor.
- */
 
 /* generic registers */
 struct vm_segment_register segregs[NOVL];
 
-simple_lock_data_t vm_idspace_lock;
+simple_lock_data_t vm_segment_region_lock;
 
-static void vm_idspace_map_alloc(vm_idspace_map_t, vm_map_t, vm_offset_t,
+static bool_t uses_allocator = FALSE;
+
+static void vm_idspace_entry_alloc(vm_idspace_entry_t, vm_map_t, vm_offset_t,
 		vm_offset_t, vm_size_t);
-static int vm_idspace_map_init(vm_idspace_map_t, vm_map_t, vm_offset_t *,
+static int vm_idspace_entry_init(vm_idspace_entry_t, vm_map_t, vm_offset_t *,
 		vm_offset_t *, vm_size_t, bool_t);
-static int vm_idspace_object_init(vm_idspace_t, vm_object_t, vm_size_t);
-static int vm_idspace_segment_alloc(vm_idspace_t, int);
-static int vm_idspace_page_alloc(vm_idspace_t, int);
+static int vm_idspace_entry_object_init(vm_idspace_entry_t, vm_object_t, vm_size_t);
+static int vm_idspace_entry_segment_alloc(vm_idspace_entry_t, int);
+static int vm_idspace_entry_page_alloc(vm_idspace_entry_t, int);
 
 static int vm_segment_region_check_segment(vm_segment_region_t, vm_object_t, int);
 static int vm_segment_region_check_page(vm_segment_region_t, int);
@@ -60,19 +60,156 @@ static void vm_segment_region_saveseg5(vm_segment_region_t, vm_offset_t *,
 		vm_offset_t *);
 static void vm_segment_region_saveseg6(vm_segment_region_t, vm_offset_t *,
 		vm_offset_t *);
-//static void vm_idspace_setup(vm_idspace_t, vm_object_t, vm_offset_t);
 static void vm_genmap_get(int, vm_offset_t *, vm_offset_t *);
 static void vm_genmap_put(int, vm_offset_t *, vm_offset_t *);
 static void vm_savemap_get(int, vm_offset_t *, vm_offset_t *);
 static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
 
 /*
+ * Based around 2.11BSD's phys system call
+ * Setup u.uisa and u.uisd from pmap.
+ *
+ * TODO: vm_pmap
+ * - resolve phys and virt when segnum is greater than NOVL (16).
+ */
+/* temp maps for uisa and uisd */
+vm_offset_t uisd_tmp[NOVL], uisa_tmp[NOVL];
+
+/*
+ * vm_pmap_lookup_phys:
+ * returns virtual, physical and number of segments as variables.
+ * Optional variables:
+ * Setting the below:
+ * - size = 0: will loop through entire address range (start to end)
+ * - size > 0: will find a matching address of that size.
+ * returns 0 if successful or 1 if unsuccessful.
+ */
+int
+vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end)
+	vm_map_t map;
+	vm_offset_t *virt, *phys, *nsegs;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	pmap_t pmap;
+	vm_offset_t addr;
+
+	pmap = vm_map_pmap(map);
+	if (pmap == NULL) {
+		return (1);
+	}
+	if (size != 0) {
+		size = round_page(size);
+		if ((end - start) < size) {
+			return (1);
+		}
+		for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
+			if (addr == size) {
+				*nsegs = atos(addr);
+				*virt = addr;
+				*phys = pmap_extract(pmap, addr);
+				return (0);
+			}
+		}
+	} else {
+		/* loop through entire address range */
+		for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
+			*nsegs = atos(addr);
+			*virt = addr;
+			*phys = pmap_extract(pmap, addr);
+		}
+		return (0);
+	}
+	return (1);
+}
+
+int
+vm_pmap_validate_phys(map, virt, phys, nsegs, size, start, end)
+	vm_map_t map;
+	vm_offset_t *virt, *phys, *nsegs;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	vm_offset_t stoso, stosa;
+	int segnum, error, num;
+
+	error = vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end);
+	if (error != 0) {
+		return (error);
+	}
+
+	num = (int)*nsegs;
+
+	/* initialize temp uisa and uisd */
+	uisd_tmp[0] = 0;
+	uisa_tmp[0] = 0;
+
+	/* sanity check */
+	for (segnum = 0; segnum < num; segnum++) {
+		stoso = segnum_to_segment_offset(segnum);
+		stosa = (stoso * num);
+		if ((stoso * num) == *virt) {
+			uisd_tmp[segnum] = *virt;
+			uisa_tmp[segnum] = *phys;
+			return (0);
+		}
+	}
+	return (1);
+}
+
+void
+vm_pmap_phys(map, size, start, end)
+	vm_map_t map;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	pmap_t pmap;
+	vm_offset_t addr, virt, phys, num;
+	int segnum, error;
+
+	error = vm_pmap_validate_phys(map, &virt, &phys, &num, size, start, end);
+	if (error != 0) {
+		return;
+	}
+
+	u.u_uisd[0] = uisd_tmp[0];
+	u.u_uisa[0] = uisa_tmp[0];
+
+	for (segnum = 0; segnum < num; segnum++) {
+		u.u_uisd[segnum] = uisd_tmp[segnum];
+		u.u_uisa[segnum] = uisa_tmp[segnum];
+	}
+}
+
+/* initialize pmap_phys */
+int
+vm_pmap_init_phys(entry)
+	vm_idspace_entry_t entry;
+{
+	vm_offset_t virt, phys, num;
+	int error;
+
+	error = vm_pmap_validate_phys(entry->map, &virt, &phys, &num, 0, entry->start, entry->end);
+	if (error != 0) {
+		return (error);
+	}
+
+	u.u_uisd[0] = 0;
+	u.u_uisd[0] = 0;
+
+	printf("vm_idspace: max virtual address %lu\n", virt);
+	printf("vm_idspace: max physical address %lu\n", phys);
+	printf("vm_idspace: max number of vm_segments %lu\n", num);
+	return (0);
+}
+
+/*
  * vm_idspace
  */
 int
-vm_idspace_init(idspace, idspacemap, mtype, map, min, max, object, size, pageable)
+vm_idspace_init(idspace, entry, mtype, map, min, max, object, size, pageable)
 	vm_idspace_t idspace;
-	vm_idspace_map_t idspacemap;
+	vm_idspace_entry_t entry;
 	int mtype;
 	vm_map_t map;
 	vm_offset_t *min, *max;
@@ -84,14 +221,19 @@ vm_idspace_init(idspace, idspacemap, mtype, map, min, max, object, size, pageabl
 
 	idspace = vm_idspace_allocate(mtype);
 	if (idspace != NULL) {
-		error = vm_idspace_map_init(idspacemap, map, min, max, size, pageable);
+		error = vm_idspace_entry_init(entry, map, min, max, size, pageable);
 		if (error != 0) {
-			vm_idspace_deallocate(idspace, mtype);
+			vm_idspace_deallocate(idspace, entry, mtype);
 			return (error);
 		}
-		error = vm_idspace_object_init(idspace, object, size);
+		error = vm_idspace_entry_object_init(entry, object, size);
 		if (error != 0) {
-			vm_idspace_deallocate(idspace, mtype);
+			vm_idspace_deallocate(idspace, entry, mtype);
+			return (error);
+		}
+		error = vm_pmap_init_phys(entry);
+		if (error != 0) {
+			vm_idspace_deallocate(idspace, entry, mtype);
 			return (error);
 		}
 	}
@@ -103,9 +245,8 @@ vm_idspace_alloc(idspace, mtype)
 	vm_idspace_t idspace;
 	int mtype;
 {
-	TAILQ_INIT(&idspace->header);
-	simple_lock_init(&vm_idspace_lock, "vm_idspace_lock");
 	idspace->mtype = mtype;
+	simple_lock_init(&vm_segment_region_lock, "vm_segment_region_lock");
 }
 
 vm_idspace_t
@@ -122,35 +263,135 @@ vm_idspace_allocate(mtype)
 }
 
 void
-vm_idspace_deallocate(idspace, mtype)
+vm_idspace_deallocate(idspace, entry, mtype)
 	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
 	int mtype;
 {
 	if (idspace != NULL) {
-		if (!TAILQ_EMPTY(&idspace->header)) {
+		if (entry != NULL) {
 			return;
 		}
 		FREE(idspace, mtype);
 	}
 }
 
+int
+vm_idspace_map(idspace, entry, val, size, segnum)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	vm_offset_t val;
+	vm_size_t size;
+	int segnum;
+{
+	vm_map_t map;
+	vm_segment_region_t region;
+	int error;
+
+	if (entry == NULL) {
+		return (ENOMEM);
+	}
+
+	map = entry->map;
+	if (map == NULL) {
+		return (ENOMEM);
+	}
+
+	/*
+	 * allocated val with kmem if is_alloced is false and val equals
+	 * 0.
+	 */
+	if ((uses_allocator != TRUE) && (val == 0)) {
+		val = kmem_alloc_wait(map, size);
+		bcopy(val, entry->space, size);
+		uses_allocator = TRUE;
+	}
+
+	error = vm_idspace_entry_region_allocate(idspace, entry, segnum);
+	if (error != 0) {
+		return (error);
+	}
+
+	region = entry->region;
+	if (region == NULL) {
+		return (ENOMEM);
+	}
+
+	error = vm_map_check_protection(entry->map, entry->start, entry->end, region->protect);
+	if (error != 0) {
+		return (error);
+	}
+
+	return (0);
+}
+
+int
+vm_idspace_unmap(idspace, entry, val, size, segnum)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	vm_offset_t val;
+	vm_size_t size;
+	int segnum;
+{
+	vm_map_t map;
+	vm_segment_region_t region;
+	int error;
+
+	if (entry == NULL) {
+		return (ENOMEM);
+	}
+
+	map = entry->map;
+	if (map == NULL) {
+		return (ENOMEM);
+	}
+
+	/*
+	 * free val from kmem if is_alloced is true and val is greater
+	 * than 0.
+	 */
+	if ((uses_allocator != FALSE) && (val != 0)) {
+		kmem_free_wakeup(map, val, size);
+		bcopy(val, entry->space, size);
+		uses_allocator = FALSE;
+	}
+
+	region = entry->region;
+	if (region == NULL) {
+		return (ENOMEM);
+	}
+
+	error = vm_map_check_protection(entry->map, entry->start, entry->end, region->protect);
+	if (error != 0) {
+		return (error);
+	}
+
+	vm_idspace_entry_region_deallocate(idspace, entry, segnum);
+	return (0);
+}
+
+/*
+ * vm_idspace_entry
+ */
 static void
-vm_idspace_map_alloc(idspacemap, map, start, end, size)
-	vm_idspace_map_t idspacemap;
+vm_idspace_entry_alloc(entry, map, start, end, size)
+	vm_idspace_entry_t entry;
 	vm_map_t map;
 	vm_offset_t start, end;
 	vm_size_t size;
 {
-	idspacemap->map = map;
-	idspacemap->start = start;
-	idspacemap->end = end;
-	idspacemap->size = size;
-	idspacemap->is_alloced = FALSE;
+	TAILQ_INIT(&entry->header);
+	entry->region = NULL;
+	entry->map = map;
+	entry->start = start;
+	entry->end = end;
+	entry->size = size;
+	entry->space = 0;
 }
 
 static int
-vm_idspace_map_init(idspacemap, map, min, max, size, pageable)
-	vm_idspace_map_t idspacemap;
+vm_idspace_entry_init(entry, map, min, max, size, pageable)
+	vm_idspace_entry_t entry;
 	vm_map_t map;
 	vm_offset_t *min, *max;
 	vm_size_t size;
@@ -162,69 +403,153 @@ vm_idspace_map_init(idspacemap, map, min, max, size, pageable)
 	if (size > *max) {
 		size = *max;
 	}
-
 	map = kmem_suballoc(kernel_map, min, max, size, pageable);
 	if (map != NULL) {
 		if (size > (*max - *min)) {
 			size = round_page(*max - *min);
 		}
-		vm_idspace_map_alloc(idspacemap, map, *min, *max, size);
+		vm_idspace_entry_alloc(entry, map, *min, *max, size);
 		return (0);
 	}
 	return (1);
 }
 
 static int
-vm_idspace_object_init(idspace, object, size)
-	vm_idspace_t idspace;
+vm_idspace_entry_object_init(entry, object, size)
+	vm_idspace_entry_t entry;
 	vm_object_t object;
 	vm_size_t size;
 {
 	object = vm_object_allocate(size);
 	if (object != NULL) {
-		idspace->object = object;
+		entry->object = object;
 		return (0);
 	}
 	return (1);
 }
 
 static int
-vm_idspace_segment_alloc(idspace, segnum)
-	vm_idspace_t idspace;
+vm_idspace_entry_segment_alloc(entry, segnum)
+	vm_idspace_entry_t entry;
 	int segnum;
 {
 	vm_segment_t segment;
 	vm_offset_t offset;
 
-	if (idspace->object == NULL) {
+	if (entry->object == NULL) {
 		return (1);
 	}
 
 	offset = segnum_to_segment_offset(segnum);
-	segment = vm_segment_alloc(idspace->object, offset);
+	segment = vm_segment_alloc(entry->object, offset);
 	if (segment != NULL) {
-		idspace->segment = segment;
+		entry->segment = segment;
 		return (0);
 	}
 	return (1);
 }
 
 static int
-vm_idspace_page_alloc(idspace, segnum)
-	vm_idspace_t idspace;
+vm_idspace_entry_page_alloc(entry, segnum)
+	vm_idspace_entry_t entry;
 	int segnum;
 {
 	vm_page_t page;
 	vm_offset_t offset;
 
-	if (idspace->segment == NULL) {
+	if (entry->segment == NULL) {
 		return (1);
 	}
 
 	offset = segnum_to_page_offset(segnum);
-	page = vm_page_alloc(idspace->segment, offset);
+	page = vm_page_alloc(entry->segment, offset);
 	if (page != NULL) {
-		idspace->page = page;
+		entry->page = page;
+		return (0);
+	}
+	return (1);
+}
+
+int
+vm_idspace_entry_region_allocate(idspace, entry, segnum)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	int segnum;
+{
+	vm_segment_region_t region;
+
+	region = vm_segment_region_alloc(idspace->mtype);
+	if (region != NULL) {
+		vm_segment_region_insert(entry, region, segnum);
+		entry->region = region;
+		return (0);
+	}
+	return (ENOMEM);
+}
+
+void
+vm_idspace_entry_region_deallocate(idspace, entry, segnum)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	int segnum;
+{
+	vm_segment_region_t region;
+
+	region = entry->region;
+	if (region != NULL) {
+		vm_segment_region_remove(region, segnum);
+		if (TAILQ_EMPTY(&entry->header)) {
+			vm_segment_region_free(region, idspace->mtype);
+			entry->region = region;
+		}
+	}
+}
+
+int
+vm_idspace_entry_region_read(entry, segnum, addr, desc, flags, is_txt, is_ext, is_abs)
+	vm_idspace_entry_t entry;
+	int segnum, flags;
+	vm_offset_t addr, desc;
+	bool_t is_txt, is_ext, is_abs;
+{
+	vm_segment_region_t region;
+	int error;
+
+	region = entry->region;
+	if (region != NULL) {
+		region->flags = flags;
+		region->is_text = is_txt;
+		region->is_extension = is_ext;
+		region->is_abs = is_abs;
+		error = vm_segment_register_read(region, segnum, addr, desc);
+		if (error != 0) {
+			return (error);
+		}
+		return (0);
+	}
+	return (1);
+}
+
+int
+vm_idspace_entry_region_write(entry, segnum, addr, desc, flags, is_txt, is_ext, is_abs)
+	vm_idspace_entry_t entry;
+	int segnum, flags;
+	vm_offset_t addr, desc;
+	bool_t is_txt, is_ext, is_abs;
+{
+	vm_segment_region_t region;
+	int error;
+
+	region = entry->region;
+	if (region != NULL) {
+		region->flags = flags;
+		region->is_text = is_txt;
+		region->is_extension = is_ext;
+		region->is_abs = is_abs;
+		error = vm_segment_register_write(region, segnum, addr, desc);
+		if (error != 0) {
+			return (error);
+		}
 		return (0);
 	}
 	return (1);
@@ -291,20 +616,20 @@ vm_segment_region_free(region, mtype)
 }
 
 void
-vm_segment_region_insert(idspace, region, segnum)
-	vm_idspace_t idspace;
+vm_segment_region_insert(entry, region, segnum)
+	vm_idspace_entry_t entry;
 	vm_segment_region_t region;
 	int segnum;
 {
-	if ((idspace == NULL) ||
+	if ((entry == NULL) ||
 			(region == NULL) ||
-			(vm_idspace_segment_alloc(idspace, segnum) != 0) ||
-			(vm_idspace_page_alloc(idspace, segnum) != 0)) {
+			(vm_idspace_entry_segment_alloc(entry, segnum) != 0) ||
+			(vm_idspace_entry_page_alloc(entry, segnum) != 0)) {
 		return;
 	}
 
-	region->segment = idspace->segment;
-	region->page = idspace->page;
+	region->segment = entry->segment;
+	region->page = entry->page;
 	region->segreg = &segregs[segnum];
 	region->segnum = segnum;
 	region->flags = 0;
@@ -313,48 +638,48 @@ vm_segment_region_insert(idspace, region, segnum)
 	region->is_extension = FALSE;
 	region->is_abs = FALSE;
 
-	simple_lock(&vm_idspace_lock);
-	TAILQ_INSERT_TAIL(&idspace->header, region, segm);
-	simple_unlock(&vm_idspace_lock);
+	simple_lock(&vm_segment_region_lock);
+	TAILQ_INSERT_TAIL(&entry->header, region, segm);
+	simple_unlock(&vm_segment_region_lock);
 }
 
 void
-vm_segment_region_remove(idspace, segnum)
-	vm_idspace_t idspace;
+vm_segment_region_remove(entry, segnum)
+	vm_idspace_entry_t entry;
 	int segnum;
 {
 	vm_segment_region_t region;
 
-	simple_lock(&vm_idspace_lock);
-	TAILQ_FOREACH(region, &idspace->header, segm) {
+	simple_lock(&vm_segment_region_lock);
+	TAILQ_FOREACH(region, &entry->header, segm) {
 		if (region->segnum == segnum) {
-			if (vm_segment_region_check_segment(region, idspace->object, segnum)
+			if (vm_segment_region_check_segment(region, entry->object, segnum)
 					&& vm_segment_region_check_page(region, segnum)) {
-				TAILQ_REMOVE(&idspace->header, region, segm);
-				simple_unlock(&vm_idspace_lock);
+				TAILQ_REMOVE(&entry->header, region, segm);
+				simple_unlock(&vm_segment_region_lock);
 			}
 		}
 	}
 }
 
 vm_segment_region_t
-vm_segment_region_lookup(idspace, segnum)
-	vm_idspace_t idspace;
+vm_segment_region_lookup(entry, segnum)
+	vm_idspace_entry_t entry;
 	int segnum;
 {
 	vm_segment_region_t region;
 
-	simple_lock(&vm_idspace_lock);
-	TAILQ_FOREACH(region, &idspace->header, segm) {
+	simple_lock(&vm_segment_region_lock);
+	TAILQ_FOREACH(region, &entry->header, segm) {
 		if (region->segnum == segnum) {
-			if (vm_segment_region_check_segment(region, idspace->object, segnum)
+			if (vm_segment_region_check_segment(region, entry->object, segnum)
 					&& vm_segment_region_check_page(region, segnum)) {
-				simple_unlock(&vm_idspace_lock);
+				simple_unlock(&vm_segment_region_lock);
 				return (NULL);
 			}
 		}
 	}
-	simple_unlock(&vm_idspace_lock);
+	simple_unlock(&vm_segment_region_lock);
 	return (NULL);
 }
 
@@ -534,92 +859,3 @@ vm_segment_region_saveseg6(region, addr, desc)
 	bcopy(addr, &region->mapstore.kdsa6, sizeof(*addr));
 	bcopy(desc, &region->mapstore.kdsd6, sizeof(*desc));
 }
-
-
-#ifdef deprecated
-void
-vm_idspace_init(idspace, object, offset, mtype)
-	vm_idspace_t idspace;
-	vm_object_t object;
-	vm_offset_t offset;
-	int mtype;
-{
-	idspace = vm_idspace_allocate(mtype);
-	if (idspace != NULL) {
-		vm_idspace_setup(idspace, object, offset);
-		/* initialize first segment region */
-		vm_region_insert(idspace, 0, mtype);
-	}
-}
-
-static void
-vm_idspace_setup(idspace, object, offset)
-	vm_idspace_t idspace;
-	vm_object_t object;
-	vm_offset_t offset;
-{
-	vm_segment_t segment;
-	int i;
-
-	TAILQ_INIT(&idspace->header);
-	simple_lock_init(&vm_idspace_lock, "vm_idspace_lock");
-
-	/* setup segment */
-	segment = vm_segment_alloc(object, offset);
-	idspace->segment = segment;
-
-	/* setup pages */
-	for (i = 0; i < NOVL; i++) {
-		idspace->pagemap[i] = vm_idspace_pagemap_allocate(segment, i);
-	}
-}
-
-
-/* allocate and insert map */
-vm_map_t
-vm_idspace_map_allocate(object, offset, min, max, size, pageable)
-	vm_object_t object;
-	vm_offset_t offset, *min, *max;
-	vm_size_t size;
-	bool_t pageable;
-{
-	vm_map_t map;
-	vm_offset_t start, end;
-	int error;
-
-	map = kmem_suballoc(kernel_map, min, max, size, pageable);
-	if (map != NULL) {
-		start = vm_map_min(map);
-		end = vm_map_max(map);
-		if ((start < *min) || (end > *max)) {
-			return (NULL);
-		}
-		vm_map_lock(map);
-		error = vm_map_insert(map, object, offset, start, end);
-		if (error != KERN_SUCCESS) {
-			vm_map_remove(map, start, end);
-			vm_map_unlock(map);
-			return (NULL);
-		}
-		vm_map_unlock(map);
-	}
-	return (map);
-}
-
-/* allocate pages for pagemap */
-vm_page_t
-vm_idspace_pagemap_allocate(segment, nelems)
-	vm_segment_t segment;
-	int nelems;
-{
-	vm_page_t pagemap[NOVL];
-	vm_offset_t pgoffset;
-
-	pgoffset = nelems + NOVL_PAGES * PAGE_SIZE;
-	pagemap[nelems] = vm_page_alloc(segment, pgoffset);
-	if (pagemap[nelems] != NULL) {
-		return (pagemap[nelems]);
-	}
-	return (NULL);
-}
-#endif
