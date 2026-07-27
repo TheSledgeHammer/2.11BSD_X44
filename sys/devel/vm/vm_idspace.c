@@ -70,7 +70,7 @@ static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
  * Setup u.uisa and u.uisd from pmap.
  *
  * TODO: vm_pmap
- * - resolve phys and virt when segnum is greater than NOVL (16).
+ * - resolve phys and virt when segno is greater than NOVL (16).
  */
 /* temp maps for uisa and uisd */
 vm_offset_t uisd_tmp[NOVL], uisa_tmp[NOVL];
@@ -130,27 +130,34 @@ vm_pmap_validate_phys(map, virt, phys, nsegs, size, start, end)
 	vm_size_t size;
 	vm_offset_t start, end;
 {
-	vm_offset_t stoso, stosa;
-	int segnum, error, num;
+	vm_offset_t stoso, stosa, num, ovlrem;
+	int i, j, error;
 
 	error = vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end);
 	if (error != 0) {
 		return (error);
 	}
 
-	num = (int)*nsegs;
-
-	/* initialize temp uisa and uisd */
-	uisd_tmp[0] = 0;
-	uisa_tmp[0] = 0;
+	num = *nsegs;
+	if (num > NOVL) {
+		ovlrem = (num - NOVL);
+	}
 
 	/* sanity check */
-	for (segnum = 0; segnum < num; segnum++) {
-		stoso = segnum_to_segment_offset(segnum);
-		stosa = (stoso * num);
-		if ((stoso * num) == *virt) {
-			uisd_tmp[segnum] = *virt;
-			uisa_tmp[segnum] = *phys;
+	for (i = 0; i < NOVL; i++) {
+		stoso = segno_to_segment_offset(i);
+		if (ovlrem > 0) {
+			for (j = 0; j < ovlrem; j++) {
+				stoso = segno_to_segment_offset(j);
+				stosa = (stoso * num);
+				if (stosa == *virt) {
+					return (0);
+				}
+			}
+			return (1);
+		}
+		stosa = (stoso * NOVL);
+		if (stosa == *virt) {
 			return (0);
 		}
 	}
@@ -158,26 +165,30 @@ vm_pmap_validate_phys(map, virt, phys, nsegs, size, start, end)
 }
 
 void
-vm_pmap_phys(map, size, start, end)
+vm_pmap_phys(map, size, segno, start, end)
 	vm_map_t map;
 	vm_size_t size;
+	int segno;
 	vm_offset_t start, end;
 {
-	pmap_t pmap;
-	vm_offset_t addr, virt, phys, num;
-	int segnum, error;
+	vm_offset_t virt, phys, num;
+	vm_offset_t stoso, stosa;
+	int i, error;
 
 	error = vm_pmap_validate_phys(map, &virt, &phys, &num, size, start, end);
 	if (error != 0) {
 		return;
 	}
 
-	u.u_uisd[0] = uisd_tmp[0];
-	u.u_uisa[0] = uisa_tmp[0];
+	if ((segno < 0) || (segno > num) || (segno > NOVL)) {
+		return;
+	}
 
-	for (segnum = 0; segnum < num; segnum++) {
-		u.u_uisd[segnum] = uisd_tmp[segnum];
-		u.u_uisa[segnum] = uisa_tmp[segnum];
+	stoso = segnum_to_segment_offset(segno);
+	stosa = (stoso * segno);
+	if (stosa == virt) {
+		u.u_uisd[segno] = (virt | SEGM_RW | SEGM_ABS);
+		u.u_uisa[segno] = phys;
 	}
 }
 
@@ -277,12 +288,12 @@ vm_idspace_deallocate(idspace, entry, mtype)
 }
 
 int
-vm_idspace_map(idspace, entry, val, size, segnum)
+vm_idspace_map(idspace, entry, val, size, segno)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
 	vm_offset_t val;
 	vm_size_t size;
-	int segnum;
+	int segno;
 {
 	vm_map_t map;
 	vm_segment_region_t region;
@@ -307,7 +318,7 @@ vm_idspace_map(idspace, entry, val, size, segnum)
 		uses_allocator = TRUE;
 	}
 
-	error = vm_idspace_entry_region_allocate(idspace, entry, segnum);
+	error = vm_idspace_entry_region_allocate(idspace, entry, segno);
 	if (error != 0) {
 		return (error);
 	}
@@ -326,12 +337,12 @@ vm_idspace_map(idspace, entry, val, size, segnum)
 }
 
 int
-vm_idspace_unmap(idspace, entry, val, size, segnum)
+vm_idspace_unmap(idspace, entry, val, size, segno)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
 	vm_offset_t val;
 	vm_size_t size;
-	int segnum;
+	int segno;
 {
 	vm_map_t map;
 	vm_segment_region_t region;
@@ -366,7 +377,7 @@ vm_idspace_unmap(idspace, entry, val, size, segnum)
 		return (error);
 	}
 
-	vm_idspace_entry_region_deallocate(idspace, entry, segnum);
+	vm_idspace_entry_region_deallocate(idspace, entry, segno);
 	return (0);
 }
 
@@ -429,9 +440,9 @@ vm_idspace_entry_object_init(entry, object, size)
 }
 
 static int
-vm_idspace_entry_segment_alloc(entry, segnum)
+vm_idspace_entry_segment_alloc(entry, segno)
 	vm_idspace_entry_t entry;
-	int segnum;
+	int segno;
 {
 	vm_segment_t segment;
 	vm_offset_t offset;
@@ -440,7 +451,7 @@ vm_idspace_entry_segment_alloc(entry, segnum)
 		return (1);
 	}
 
-	offset = segnum_to_segment_offset(segnum);
+	offset = segnum_to_segment_offset(segno);
 	segment = vm_segment_alloc(entry->object, offset);
 	if (segment != NULL) {
 		entry->segment = segment;
@@ -450,9 +461,9 @@ vm_idspace_entry_segment_alloc(entry, segnum)
 }
 
 static int
-vm_idspace_entry_page_alloc(entry, segnum)
+vm_idspace_entry_page_alloc(entry, segno)
 	vm_idspace_entry_t entry;
-	int segnum;
+	int segno;
 {
 	vm_page_t page;
 	vm_offset_t offset;
@@ -461,7 +472,7 @@ vm_idspace_entry_page_alloc(entry, segnum)
 		return (1);
 	}
 
-	offset = segnum_to_page_offset(segnum);
+	offset = segnum_to_page_offset(segno);
 	page = vm_page_alloc(entry->segment, offset);
 	if (page != NULL) {
 		entry->page = page;
@@ -471,16 +482,16 @@ vm_idspace_entry_page_alloc(entry, segnum)
 }
 
 int
-vm_idspace_entry_region_allocate(idspace, entry, segnum)
+vm_idspace_entry_region_allocate(idspace, entry, segno)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
-	int segnum;
+	int segno;
 {
 	vm_segment_region_t region;
 
 	region = vm_segment_region_alloc(idspace->mtype);
 	if (region != NULL) {
-		vm_segment_region_insert(entry, region, segnum);
+		vm_segment_region_insert(entry, region, segno);
 		entry->region = region;
 		return (0);
 	}
@@ -488,16 +499,16 @@ vm_idspace_entry_region_allocate(idspace, entry, segnum)
 }
 
 void
-vm_idspace_entry_region_deallocate(idspace, entry, segnum)
+vm_idspace_entry_region_deallocate(idspace, entry, segno)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
-	int segnum;
+	int segno;
 {
 	vm_segment_region_t region;
 
 	region = entry->region;
 	if (region != NULL) {
-		vm_segment_region_remove(region, segnum);
+		vm_segment_region_remove(region, segno);
 		if (TAILQ_EMPTY(&entry->header)) {
 			vm_segment_region_free(region, idspace->mtype);
 			entry->region = region;
@@ -506,9 +517,9 @@ vm_idspace_entry_region_deallocate(idspace, entry, segnum)
 }
 
 int
-vm_idspace_entry_region_read(entry, segnum, addr, desc, flags, is_txt, is_ext, is_abs)
+vm_idspace_entry_region_read(entry, segno, addr, desc, flags, is_txt, is_ext, is_abs)
 	vm_idspace_entry_t entry;
-	int segnum, flags;
+	int segno, flags;
 	vm_offset_t addr, desc;
 	bool_t is_txt, is_ext, is_abs;
 {
@@ -521,7 +532,7 @@ vm_idspace_entry_region_read(entry, segnum, addr, desc, flags, is_txt, is_ext, i
 		region->is_text = is_txt;
 		region->is_extension = is_ext;
 		region->is_abs = is_abs;
-		error = vm_segment_register_read(region, segnum, addr, desc);
+		error = vm_segment_register_read(region, segno, addr, desc);
 		if (error != 0) {
 			return (error);
 		}
@@ -531,9 +542,9 @@ vm_idspace_entry_region_read(entry, segnum, addr, desc, flags, is_txt, is_ext, i
 }
 
 int
-vm_idspace_entry_region_write(entry, segnum, addr, desc, flags, is_txt, is_ext, is_abs)
+vm_idspace_entry_region_write(entry, segno, addr, desc, flags, is_txt, is_ext, is_abs)
 	vm_idspace_entry_t entry;
-	int segnum, flags;
+	int segno, flags;
 	vm_offset_t addr, desc;
 	bool_t is_txt, is_ext, is_abs;
 {
@@ -546,7 +557,7 @@ vm_idspace_entry_region_write(entry, segnum, addr, desc, flags, is_txt, is_ext, 
 		region->is_text = is_txt;
 		region->is_extension = is_ext;
 		region->is_abs = is_abs;
-		error = vm_segment_register_write(region, segnum, addr, desc);
+		error = vm_segment_register_write(region, segno, addr, desc);
 		if (error != 0) {
 			return (error);
 		}
@@ -559,15 +570,15 @@ vm_idspace_entry_region_write(entry, segnum, addr, desc, flags, is_txt, is_ext, 
  * vm_segment_region
  */
 static int
-vm_segment_region_check_segment(region, object, segnum)
+vm_segment_region_check_segment(region, object, segno)
 	vm_segment_region_t region;
 	vm_object_t object;
-	int segnum;
+	int segno;
 {
 	vm_segment_t segment;
 	vm_offset_t offset;
 
-	offset = segnum_to_segment_offset(segnum);
+	offset = segnum_to_segment_offset(segno);
 	segment = vm_segment_lookup(object, offset);
 	if (region->segment == segment) {
 		return (0);
@@ -576,14 +587,14 @@ vm_segment_region_check_segment(region, object, segnum)
 }
 
 static int
-vm_segment_region_check_page(region, segnum)
+vm_segment_region_check_page(region, segno)
 	vm_segment_region_t region;
-	int segnum;
+	int segno;
 {
 	vm_page_t page;
 	vm_offset_t offset;
 
-	offset = segnum_to_page_offset(segnum);
+	offset = segnum_to_page_offset(segno);
 	page = vm_page_lookup(region->segment, offset);
 	if (region->page == page) {
 		return (0);
@@ -616,22 +627,22 @@ vm_segment_region_free(region, mtype)
 }
 
 void
-vm_segment_region_insert(entry, region, segnum)
+vm_segment_region_insert(entry, region, segno)
 	vm_idspace_entry_t entry;
 	vm_segment_region_t region;
-	int segnum;
+	int segno;
 {
 	if ((entry == NULL) ||
 			(region == NULL) ||
-			(vm_idspace_entry_segment_alloc(entry, segnum) != 0) ||
-			(vm_idspace_entry_page_alloc(entry, segnum) != 0)) {
+			(vm_idspace_entry_segment_alloc(entry, segno) != 0) ||
+			(vm_idspace_entry_page_alloc(entry, segno) != 0)) {
 		return;
 	}
 
 	region->segment = entry->segment;
 	region->page = entry->page;
-	region->segreg = &segregs[segnum];
-	region->segnum = segnum;
+	region->segreg = &segregs[segno];
+	region->segno = segno;
 	region->flags = 0;
 	region->protect = VM_PROT_ALL;
 	region->is_text = FALSE;
@@ -644,17 +655,17 @@ vm_segment_region_insert(entry, region, segnum)
 }
 
 void
-vm_segment_region_remove(entry, segnum)
+vm_segment_region_remove(entry, segno)
 	vm_idspace_entry_t entry;
-	int segnum;
+	int segno;
 {
 	vm_segment_region_t region;
 
 	simple_lock(&vm_segment_region_lock);
 	TAILQ_FOREACH(region, &entry->header, segm) {
-		if (region->segnum == segnum) {
-			if (vm_segment_region_check_segment(region, entry->object, segnum)
-					&& vm_segment_region_check_page(region, segnum)) {
+		if (region->segno == segno) {
+			if (vm_segment_region_check_segment(region, entry->object, segno)
+					&& vm_segment_region_check_page(region, segno)) {
 				TAILQ_REMOVE(&entry->header, region, segm);
 				simple_unlock(&vm_segment_region_lock);
 			}
@@ -663,17 +674,17 @@ vm_segment_region_remove(entry, segnum)
 }
 
 vm_segment_region_t
-vm_segment_region_lookup(entry, segnum)
+vm_segment_region_lookup(entry, segno)
 	vm_idspace_entry_t entry;
-	int segnum;
+	int segno;
 {
 	vm_segment_region_t region;
 
 	simple_lock(&vm_segment_region_lock);
 	TAILQ_FOREACH(region, &entry->header, segm) {
-		if (region->segnum == segnum) {
-			if (vm_segment_region_check_segment(region, entry->object, segnum)
-					&& vm_segment_region_check_page(region, segnum)) {
+		if (region->segno == segno) {
+			if (vm_segment_region_check_segment(region, entry->object, segno)
+					&& vm_segment_region_check_page(region, segno)) {
 				simple_unlock(&vm_segment_region_lock);
 				return (NULL);
 			}
@@ -691,9 +702,9 @@ vm_segment_region_lookup(entry, segnum)
  * segreg will not be null if successful.
  */
 int
-vm_segment_register_write(region, segnum, addr, desc)
+vm_segment_register_write(region, segno, addr, desc)
 	vm_segment_region_t region;
-	int segnum;
+	int segno;
 	vm_offset_t *addr, *desc;
 {
 	if (region == NULL) {
@@ -722,11 +733,11 @@ vm_segment_register_write(region, segnum, addr, desc)
 			}
 			goto out;
 		}
-		vm_genmap_put(segnum, addr, desc);
+		vm_genmap_put(segno, addr, desc);
 	}
 
 out:
-	if (region->segreg == &segregs[segnum]) {
+	if (region->segreg == &segregs[segno]) {
 		if ((region->segreg->addr == addr) && (region->segreg->desc == desc)) {
 			return (0);
 		}
@@ -739,9 +750,9 @@ out:
  * segreg will not be null if successful.
  */
 int
-vm_segment_register_read(region, segnum, addr, desc)
+vm_segment_register_read(region, segno, addr, desc)
 	vm_segment_region_t region;
-	int segnum;
+	int segno;
 	vm_offset_t *addr, *desc;
 {
 	if (region == NULL) {
@@ -766,11 +777,11 @@ vm_segment_register_read(region, segnum, addr, desc)
 			}
 			goto out;
 		}
-		vm_genmap_get(segnum, addr, desc);
+		vm_genmap_get(segno, addr, desc);
 	}
 
 out:
-	if (region->segreg == &segregs[segnum]) {
+	if (region->segreg == &segregs[segno]) {
 		if ((region->segreg->addr == addr) && (region->segreg->desc == desc)) {
 			return (0);
 		}
@@ -780,54 +791,54 @@ out:
 
 /* vm_segment_register: infomap */
 static void
-vm_genmap_get(segnum, addr, desc)
-	int segnum;
+vm_genmap_get(segno, addr, desc)
+	int segno;
 	vm_offset_t *addr, *desc;
 {
-	if (&segregs[segnum] != NULL) {
-		if ((segnum >= 0) && (segnum <= (NOVL - 2))) {
-			*addr = segregs[segnum].addr;
-			*desc = segregs[segnum].desc;
+	if (&segregs[segno] != NULL) {
+		if ((segno >= 0) && (segno <= (NOVL - 2))) {
+			*addr = segregs[segno].addr;
+			*desc = segregs[segno].desc;
 		}
 	}
 }
 
 static void
-vm_genmap_put(segnum, addr, desc)
-	int segnum;
+vm_genmap_put(segno, addr, desc)
+	int segno;
 	vm_offset_t *addr, *desc;
 {
 	if ((addr != NULL) && (desc != NULL)) {
-		if ((segnum >= 0) && (segnum <= (NOVL - 2))) {
-			segregs[segnum].addr = *addr;
-			segregs[segnum].desc = *desc;
+		if ((segno >= 0) && (segno <= (NOVL - 2))) {
+			segregs[segno].addr = *addr;
+			segregs[segno].desc = *desc;
 		}
 	}
 }
 
 /* vm_segment_register savemap */
 static void
-vm_savemap_get(segnum, addr, desc)
-	int segnum;
+vm_savemap_get(segno, addr, desc)
+	int segno;
 	vm_offset_t *addr, *desc;
 {
-	if (&segregs[segnum] != NULL) {
-		if ((segnum >= (NOVL - 1)) && (segnum <= NOVL)) {
-			*addr = segregs[segnum].addr;
-			*desc = segregs[segnum].desc;
+	if (&segregs[segno] != NULL) {
+		if ((segno >= (NOVL - 1)) && (segno <= NOVL)) {
+			*addr = segregs[segno].addr;
+			*desc = segregs[segno].desc;
 		}
 	}
 }
 
 static void
-vm_savemap_put(segnum, addr, desc)
-	int segnum;
+vm_savemap_put(segno, addr, desc)
+	int segno;
 	vm_offset_t *addr, *desc;
 {
 	if ((addr != NULL) && (desc != NULL)) {
-		if ((segnum >= (NOVL - 1)) && (segnum <= NOVL)) {
-			segregs[segnum].addr = *addr;
-			segregs[segnum].desc = *desc;
+		if ((segno >= (NOVL - 1)) && (segno <= NOVL)) {
+			segregs[segno].addr = *addr;
+			segregs[segno].desc = *desc;
 		}
 	}
 }

@@ -162,7 +162,7 @@ struct vm_segment_region {
 	vm_segment_t segment;				/* segment in idspace */
 	vm_page_t page;						/* page in idspace */
 	vm_segment_register_t segreg; 		/* virtual segment register */
-	int segnum; 						/* virtual segment register number */
+	int segno; 							/* virtual segment register number */
 	int flags;							/* virtual segment register flags */
 	vm_prot_t protect; 					/* protection codes */
 	bool_t is_text; 					/* text segment */
