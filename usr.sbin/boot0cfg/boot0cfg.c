@@ -375,8 +375,6 @@ read_mbr(const char *disk, u_int8_t **mbr, int check_version)
 static void
 write_mbr(const char *fname, int flags, u_int8_t *mbr, int mbr_size, int disable_dsn)
 {
-	const char *errmsg;
-	char *pname;
 	ssize_t n;
 	int fd;
 
