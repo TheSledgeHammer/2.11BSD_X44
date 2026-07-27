@@ -5,6 +5,7 @@
 PROG=	boot0cfg
 MAN=	boot0cfg.8
 
+COPTS.boot0cfg.c+= ${GCC_NO_STRINGOP_OVERFLOW}
 #NO_WCAST_ALIGN=
 
 .include <bsd.prog.mk>
