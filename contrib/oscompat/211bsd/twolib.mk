@@ -3,13 +3,6 @@
 #
 # 2.11BSD Original Libraries
 #
-MKLIBNDBM?= 	no
-MKLIBFORTRAN?= 	no
-MKLIBMP?= 		no
-MKLIBOM?= 		no
-MKLIBSTUBS?= 	yes
-MKLIBTERMCAP?= 	no
-MKLIBVMF?= 		no
 
 #
 # Notes/Info:
