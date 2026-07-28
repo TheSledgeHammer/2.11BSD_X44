@@ -1,7 +1,7 @@
 #	$211BSD: Makefile,v 1.0 2025/05/19 19:27:27 Exp $
 
 .include <bsd.own.mk>
-.include "plan9.mk"
+.include <bsd.oscompat.mk>
 
 .if (${MKLIBUTF} != "no")
 SUBDIR+= libutf
