@@ -219,7 +219,7 @@ vm_pmap_phys_seperate(size, segno, virt, phys)
 		return (EINVAL);
 	}
 
-	data = u.u_uisd[segno + 8];
+	data = u.u_uisd[segno + segnomax];
 
 	if ((data != 0) && ((data & SEGM_ABS) == 0)) {
 		return (EINVAL);
