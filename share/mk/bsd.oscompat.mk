@@ -81,7 +81,7 @@ ${var}?=	${${var}.:Uyes}
 # 2.11BSD options which default to "no"
 _MK211BSD.no= \
 	MKLIBNDBM \
-    MKLIBFORTRAN \
+	MKLIBFORTRAN \
 	MKLIBMP \
 	MKLIBOM \
 	MKLIBTERMCAP \

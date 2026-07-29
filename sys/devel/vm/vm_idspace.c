@@ -30,6 +30,9 @@
 
 /* Code is based on 2.11BSD's PDP-11 code */
 
+/* Separate I & D is currently not fully supported */
+#define NONSEPARATE
+
 #include <sys/malloc.h>
 #include <sys/queue.h>
 #include <sys/null.h>
@@ -46,6 +49,12 @@ simple_lock_data_t vm_segment_region_lock;
 
 static bool_t uses_allocator = FALSE;
 
+#ifdef NONSEPARATE
+static int vm_pmap_phys_nonseperate(vm_size_t, int, vm_offset_t, vm_offset_t);
+#else
+static int vm_pmap_phys_seperate(vm_size_t, int, vm_offset_t, vm_offset_t);
+#endif
+static int vm_pmap_init_phys(vm_idspace_entry_t);
 static void vm_idspace_entry_alloc(vm_idspace_entry_t, vm_map_t, vm_offset_t,
 		vm_offset_t, vm_size_t);
 static int vm_idspace_entry_init(vm_idspace_entry_t, vm_map_t, vm_offset_t *,
@@ -72,8 +81,6 @@ static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
  * TODO: vm_pmap
  * - resolve phys and virt when segno is greater than NOVL (16).
  */
-/* temp maps for uisa and uisd */
-vm_offset_t uisd_tmp[NOVL], uisa_tmp[NOVL];
 
 /*
  * vm_pmap_lookup_phys:
@@ -112,7 +119,6 @@ vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end)
 			}
 		}
 	} else {
-		/* loop through entire address range */
 		for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
 			*nsegs = atos(addr);
 			*virt = addr;
@@ -164,7 +170,83 @@ vm_pmap_validate_phys(map, virt, phys, nsegs, size, start, end)
 	return (1);
 }
 
-void
+#ifdef NONSEPARATE
+
+static int
+vm_pmap_phys_nonseperate(size, segno, virt, phys)
+	vm_size_t size;
+	int segno;
+	vm_offset_t virt, phys;
+{
+	vm_offset_t data;
+	int segnomax;
+
+	segnomax = (NOVL/2); /* max of 8 */
+	if ((segno < 0) || (segno > segnomax)) {
+		return (EINVAL);
+	}
+
+	data = u.u_uisd[segno];
+
+	if ((data != 0) && ((data & SEGM_ABS) == 0)) {
+		return (EINVAL);
+	}
+
+	u.u_uisd[segno] = 0;
+	u.u_uisa[segno] = 0;
+	if (size) {
+		u.u_uisd[segno] = (virt | SEGM_RW | SEGM_ABS);
+		u.u_uisa[segno] = phys;
+	}
+
+	vm_sureg();
+	return (0);
+}
+
+#else /* !NONSEPARATE */
+
+static int
+vm_pmap_phys_seperate(size, segno, virt, phys)
+	vm_size_t size;
+	int segno;
+	vm_offset_t virt, phys;
+{
+	vm_offset_t data;
+	int segnomax;
+
+	segnomax = (NOVL/2); /* max of 8 */
+	if ((segno < 0) || (segno > segnomax)) {
+		return (EINVAL);
+	}
+
+	data = u.u_uisd[segno + 8];
+
+	if ((data != 0) && ((data & SEGM_ABS) == 0)) {
+		return (EINVAL);
+	}
+
+	u.u_uisd[segno + segnomax] = 0;
+	u.u_uisa[segno + segnomax] = 0;
+	if (!u.u_sep) {
+		u.u_uisd[segno] = 0;
+		u.u_uisa[segno] = 0;
+	}
+	if (size) {
+		u.u_uisd[segno + segnomax] = (virt | SEGM_RW | SEGM_ABS);
+		u.u_uisa[segno + segnomax] = phys;
+		if (!u.u_sep) {
+			u.u_uisa[segno] = u.u_uisa[segno + segnomax];
+			u.u_uisd[segno] = u.u_uisd[segno + segnomax];
+		}
+	}
+
+	vm_sureg();
+	return (0);
+}
+
+#endif /* !NONSEPARATE */
+
+int
 vm_pmap_phys(map, size, segno, start, end)
 	vm_map_t map;
 	vm_size_t size;
@@ -172,28 +254,23 @@ vm_pmap_phys(map, size, segno, start, end)
 	vm_offset_t start, end;
 {
 	vm_offset_t virt, phys, num;
-	vm_offset_t stoso, stosa;
-	int i, error;
+	int error;
 
 	error = vm_pmap_validate_phys(map, &virt, &phys, &num, size, start, end);
 	if (error != 0) {
-		return;
+		return (error);
 	}
 
-	if ((segno < 0) || (segno > num) || (segno > NOVL)) {
-		return;
-	}
-
-	stoso = segnum_to_segment_offset(segno);
-	stosa = (stoso * segno);
-	if (stosa == virt) {
-		u.u_uisd[segno] = (virt | SEGM_RW | SEGM_ABS);
-		u.u_uisa[segno] = phys;
-	}
+#ifdef NONSEPARATE
+	error = vm_pmap_phys_nonseperate(size, segno, virt, phys);
+#else
+	error = vm_pmap_phys_seperate(size, segno, virt, phys);
+#endif
+	return (error);
 }
 
 /* initialize pmap_phys */
-int
+static int
 vm_pmap_init_phys(entry)
 	vm_idspace_entry_t entry;
 {
@@ -309,7 +386,7 @@ vm_idspace_map(idspace, entry, val, size, segno)
 	}
 
 	/*
-	 * allocated val with kmem if is_alloced is false and val equals
+	 * allocated val with kmem if uses_allocator is false and val equals
 	 * 0.
 	 */
 	if ((uses_allocator != TRUE) && (val == 0)) {
@@ -358,7 +435,7 @@ vm_idspace_unmap(idspace, entry, val, size, segno)
 	}
 
 	/*
-	 * free val from kmem if is_alloced is true and val is greater
+	 * free val from kmem if uses_allocator is true and val is greater
 	 * than 0.
 	 */
 	if ((uses_allocator != FALSE) && (val != 0)) {
@@ -451,7 +528,7 @@ vm_idspace_entry_segment_alloc(entry, segno)
 		return (1);
 	}
 
-	offset = segnum_to_segment_offset(segno);
+	offset = segno_to_segment_offset(segno);
 	segment = vm_segment_alloc(entry->object, offset);
 	if (segment != NULL) {
 		entry->segment = segment;
@@ -472,7 +549,7 @@ vm_idspace_entry_page_alloc(entry, segno)
 		return (1);
 	}
 
-	offset = segnum_to_page_offset(segno);
+	offset = segno_to_page_offset(segno);
 	page = vm_page_alloc(entry->segment, offset);
 	if (page != NULL) {
 		entry->page = page;
@@ -578,7 +655,7 @@ vm_segment_region_check_segment(region, object, segno)
 	vm_segment_t segment;
 	vm_offset_t offset;
 
-	offset = segnum_to_segment_offset(segno);
+	offset = segno_to_segment_offset(segno);
 	segment = vm_segment_lookup(object, offset);
 	if (region->segment == segment) {
 		return (0);
@@ -594,7 +671,7 @@ vm_segment_region_check_page(region, segno)
 	vm_page_t page;
 	vm_offset_t offset;
 
-	offset = segnum_to_page_offset(segno);
+	offset = segno_to_page_offset(segno);
 	page = vm_page_lookup(region->segment, offset);
 	if (region->page == page) {
 		return (0);
@@ -667,9 +744,9 @@ vm_segment_region_remove(entry, segno)
 			if (vm_segment_region_check_segment(region, entry->object, segno)
 					&& vm_segment_region_check_page(region, segno)) {
 				TAILQ_REMOVE(&entry->header, region, segm);
-				simple_unlock(&vm_segment_region_lock);
 			}
 		}
+		simple_unlock(&vm_segment_region_lock);
 	}
 }
 

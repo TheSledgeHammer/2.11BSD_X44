@@ -91,10 +91,10 @@
 #define num_novl(x)      ((vm_offset_t)((((vm_offset_t)(x)) + NOVL_MASK) >> NOVL_SHIFT))
 
 /*
- * returns offset from segnum
+ * returns offset from segno
  */
 static inline vm_offset_t
-segnum_to_offset(int x)
+segno_to_offset(int x)
 {
 	 vm_offset_t offset;
 
@@ -107,17 +107,17 @@ segnum_to_offset(int x)
 }
 
 /*
- * returns a single segment offset from segnum
+ * returns a single segment offset from segno
  */
 static inline vm_offset_t
-segnum_to_segment_offset(int x)
+segno_to_segment_offset(int x)
 {
 	vm_offset_t offset;
 	int i;
 
 	for (i = 0; i < NOVL + 1; i++) {
 		if (i == x) {
-			offset = segnum_to_offset(i);
+			offset = segno_to_offset(i);
 			offset = (offset / NOVL_SEGMENTS);
 			return (offset);
 		}
@@ -126,14 +126,14 @@ segnum_to_segment_offset(int x)
 }
 
 /*
- * returns a single page offset from segnum
+ * returns a single page offset from segno
  */
 static inline vm_offset_t
-segnum_to_page_offset(int x)
+segno_to_page_offset(int x)
 {
 	vm_offset_t offset;
 
-	offset = segnum_to_offset(x);
+	offset = segno_to_offset(x);
 	offset = (offset / NOVL_PAGES);
 	return (offset);
 }
@@ -235,16 +235,23 @@ enum maptypes {
 /* vm_idspace */
 extern struct vm_segment_register segregs[NOVL];
 
-int vm_idspace_init(vm_idspace_t, vm_idspace_map_t, int, vm_map_t, vm_offset_t *,
-		vm_offset_t *, vm_size_t, bool_t);
-vm_idspace_t vm_idspace_allocate(vm_object_t, vm_offset_t, int);
-void vm_idspace_deallocate(vm_idspace_t, int);
+int vm_pmap_phys(vm_map_t, vm_size_t, int, vm_offset_t, vm_offset_t);
+int vm_idspace_init(vm_idspace_t, vm_idspace_entry_t, int, vm_map_t,
+		vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+vm_idspace_t vm_idspace_allocate(int);
+void vm_idspace_deallocate(vm_idspace_t, vm_idspace_entry_t, int);
+int vm_idspace_map(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_size_t,
+		int);
+int vm_idspace_unmap(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_size_t,
+		int);
 
-#ifdef deprecated
-void vm_idspace_init(vm_idspace_t, vm_object_t, vm_offset_t, int);
-vm_map_t vm_idspace_map_allocate(vm_object_t, vm_offset_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
-vm_page_t vm_idspace_pagemap_allocate(vm_segment_t, int);
-#endif
+/* vm_idspace_entry */
+int vm_idspace_entry_region_allocate(vm_idspace_t, vm_idspace_entry_t, int);
+void vm_idspace_entry_region_deallocate(vm_idspace_t, vm_idspace_entry_t, int);
+int vm_idspace_entry_region_read(vm_idspace_entry_t, int, vm_offset_t,
+		vm_offset_t, int, bool_t, bool_t, bool_t);
+int vm_idspace_entry_region_write(vm_idspace_entry_t, int, vm_offset_t,
+		vm_offset_t, int, bool_t, bool_t, bool_t);
 
 /* vm_segment_region */
 vm_segment_region_t vm_segment_region_alloc(int);
@@ -254,7 +261,9 @@ void vm_segment_region_remove(vm_idspace_t, int);
 vm_segment_region_t vm_segment_region_lookup(vm_idspace_t, int);
 
 /* vm_segment_register */
-int vm_segment_register_write(vm_segment_region_t, int, vm_offset_t *, vm_offset_t *);
-int vm_segment_register_read(vm_segment_region_t, int, vm_offset_t *, vm_offset_t *);
+int vm_segment_register_write(vm_segment_region_t, int, vm_offset_t *,
+		vm_offset_t *);
+int vm_segment_register_read(vm_segment_region_t, int, vm_offset_t *,
+		vm_offset_t *);
 
 #endif /* _VM_IDSPACE_H_ */
