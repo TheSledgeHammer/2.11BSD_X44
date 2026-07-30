@@ -42,8 +42,11 @@
 #include <vm/include/vm_segment.h>
 #include <vm_idspace.h>
 
-/* generic registers */
-struct vm_segment_register segregs[NOVL];
+/*
+ * segment registers:
+ * Contains 16 Generic and 2 Save (18 Total)
+ */
+struct vm_segment_register segregs[NOVL+2];
 
 simple_lock_data_t vm_segment_region_lock;
 
@@ -283,7 +286,7 @@ vm_pmap_init_phys(entry)
 	}
 
 	u.u_uisd[0] = 0;
-	u.u_uisd[0] = 0;
+	u.u_uisa[0] = 0;
 
 	printf("vm_idspace: max virtual address %lu\n", virt);
 	printf("vm_idspace: max physical address %lu\n", phys);
@@ -365,15 +368,15 @@ vm_idspace_deallocate(idspace, entry, mtype)
 }
 
 int
-vm_idspace_map(idspace, entry, val, size, segno)
+vm_idspace_map(idspace, entry, segno)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
-	vm_offset_t val;
-	vm_size_t size;
 	int segno;
 {
 	vm_map_t map;
 	vm_segment_region_t region;
+	vm_offset_t start, end;
+	vm_prot_t prot;
 	int error;
 
 	if (entry == NULL) {
@@ -381,18 +384,10 @@ vm_idspace_map(idspace, entry, val, size, segno)
 	}
 
 	map = entry->map;
+	start = entry->start;
+	end = entry->end;
 	if (map == NULL) {
 		return (ENOMEM);
-	}
-
-	/*
-	 * allocated val with kmem if uses_allocator is false and val equals
-	 * 0.
-	 */
-	if ((uses_allocator != TRUE) && (val == 0)) {
-		val = kmem_alloc_wait(map, size);
-		bcopy(val, entry->space, size);
-		uses_allocator = TRUE;
 	}
 
 	error = vm_idspace_entry_region_allocate(idspace, entry, segno);
@@ -405,24 +400,24 @@ vm_idspace_map(idspace, entry, val, size, segno)
 		return (ENOMEM);
 	}
 
-	error = vm_map_check_protection(entry->map, entry->start, entry->end, region->protect);
+	prot = region->protect;
+	error = vm_map_check_protection(map, start, end, prot);
 	if (error != 0) {
 		return (error);
 	}
-
 	return (0);
 }
 
 int
-vm_idspace_unmap(idspace, entry, val, size, segno)
+vm_idspace_unmap(idspace, entry, segno)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
-	vm_offset_t val;
-	vm_size_t size;
 	int segno;
 {
 	vm_map_t map;
 	vm_segment_region_t region;
+	vm_offset_t start, end;
+	vm_prot_t prot;
 	int error;
 
 	if (entry == NULL) {
@@ -430,31 +425,148 @@ vm_idspace_unmap(idspace, entry, val, size, segno)
 	}
 
 	map = entry->map;
+	region = entry->region;
+	start = entry->start;
+	end = entry->end;
 	if (map == NULL) {
 		return (ENOMEM);
 	}
 
-	/*
-	 * free val from kmem if uses_allocator is true and val is greater
-	 * than 0.
-	 */
-	if ((uses_allocator != FALSE) && (val != 0)) {
-		kmem_free_wakeup(map, val, size);
-		bcopy(val, entry->space, size);
-		uses_allocator = FALSE;
-	}
-
-	region = entry->region;
 	if (region == NULL) {
-		return (ENOMEM);
+		/* nothing to free */
+		return (0);
 	}
 
-	error = vm_map_check_protection(entry->map, entry->start, entry->end, region->protect);
+	prot = region->protect;
+	error = vm_map_check_protection(map, start, end, prot);
+	if (error != 0) {
+		return (error);
+	}
+	vm_idspace_entry_region_deallocate(idspace, entry, segno);
+	return (0);
+}
+
+int
+vm_idspace_write(idspace, entry, size, segno, is_txt, is_ext)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	vm_size_t size;
+	int segno;
+	bool_t is_txt, is_ext;
+{
+	vm_offset_t addr, desc;
+	int error;
+
+	error = vm_pmap_phys(entry->map, size, segno, entry->start, entry->end);
 	if (error != 0) {
 		return (error);
 	}
 
-	vm_idspace_entry_region_deallocate(idspace, entry, segno);
+	desc = u.u_uisd[segno];
+	addr = u.u_uisa[segno];
+
+	error = vm_idspace_entry_region_write(entry, segno, addr, desc,
+			(SEGM_RW | SEGM_ACCESS), is_txt, is_ext, TRUE);
+	if (error != 0) {
+		return (error);
+	}
+
+	error = vm_map_protect(entry->map, entry->start, entry->end,
+			entry->region->protect, FALSE);
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
+}
+
+int
+vm_idspace_read(idspace, entry, size, segno, is_txt, is_ext)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	vm_size_t size;
+	int segno;
+	bool_t is_txt, is_ext;
+{
+	vm_offset_t addr, desc;
+	int error;
+
+	error = vm_pmap_phys(entry->map, size, segno, entry->start, entry->end);
+	if (error != 0) {
+		return (error);
+	}
+
+	desc = u.u_uisd[segno];
+	addr = u.u_uisa[segno];
+
+	error = vm_idspace_entry_region_read(entry, segno, addr, desc,
+			(SEGM_RW | SEGM_RO | SEGM_ACCESS), is_txt, is_ext, TRUE);
+	if (error != 0) {
+		return (error);
+	}
+
+	error = vm_map_protect(entry->map, entry->start, entry->end,
+			entry->region->protect, FALSE);
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
+}
+
+int
+vm_idspace_save(idspace, entry, size, flags)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	vm_size_t size;
+	int flags;
+{
+	vm_offset_t addr, desc;
+	int error;
+
+	addr = kmem_alloc_wait(entry->map, size);
+	desc = (addr | SEGM_SAVE | SEGM_RW | SEGM_ACCESS);
+	bcopy(addr, entry->kisa, size);
+	bcopy(desc, entry->kisd, size);
+
+	error = vm_idspace_entry_region_save(entry, addr, desc, (SEGM_SAVE | SEGM_RW | SEGM_ACCESS));
+	if (error != 0) {
+		return (error);
+	}
+
+	error = vm_map_protect(entry->map, entry->start, entry->end,
+			entry->region->protect, FALSE);
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
+}
+
+int
+vm_idspace_restore(idspace, entry, size, flags)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	vm_size_t size;
+{
+	vm_offset_t addr, desc;
+	int error;
+
+	addr = entry->kisa;
+	desc = entry->kisd;
+
+	error = vm_idspace_entry_region_restore(entry, addr, desc, (SEGM_RESTORE | SEGM_RW | SEGM_RO | SEGM_ACCESS));
+	if (error != 0) {
+		return (error);
+	}
+
+	kmem_free_wakeup(entry->map, addr, size);
+	desc = addr;
+	bzero(entry->kisa, size);
+	bzero(entry->kisd, size);
+
+	error = vm_map_protect(entry->map, entry->start, entry->end,
+			entry->region->protect, FALSE);
+	if (error != 0) {
+		return (error);
+	}
 	return (0);
 }
 
@@ -474,7 +586,7 @@ vm_idspace_entry_alloc(entry, map, start, end, size)
 	entry->start = start;
 	entry->end = end;
 	entry->size = size;
-	entry->space = 0;
+	//entry->space = 0;
 }
 
 static int
@@ -643,6 +755,54 @@ vm_idspace_entry_region_write(entry, segno, addr, desc, flags, is_txt, is_ext, i
 	return (1);
 }
 
+int
+vm_idspace_entry_region_save(entry, addr, desc, flags)
+	vm_idspace_entry_t entry;
+	vm_offset_t addr, desc;
+	int flags;
+{
+	vm_segment_region_t region;
+	int error;
+
+	region = entry->region;
+	if (region != NULL) {
+		region->flags = flags;
+		region->is_text = FALSE;
+		region->is_extension = FALSE;
+		region->is_abs = FALSE;
+		error = vm_segment_register_save(region, addr, desc, flags);
+		if (error != 0) {
+			return (error);
+		}
+		return (0);
+	}
+	return (1);
+}
+
+int
+vm_idspace_entry_region_restore(entry, addr, desc, flags)
+	vm_idspace_entry_t entry;
+	vm_offset_t addr, desc;
+	int flags;
+{
+	vm_segment_region_t region;
+	int error;
+
+	region = entry->region;
+	if (region != NULL) {
+		region->flags = flags;
+		region->is_text = FALSE;
+		region->is_extension = FALSE;
+		region->is_abs = FALSE;
+		error = vm_segment_register_restore(region, addr, desc, flags);
+		if (error != 0) {
+			return (error);
+		}
+		return (0);
+	}
+	return (1);
+}
+
 /*
  * vm_segment_region
  */
@@ -776,7 +936,7 @@ vm_segment_region_lookup(entry, segno)
  */
 /*
  * Write to a segment register.
- * segreg will not be null if successful.
+ * returns 0 on success or 1 if unsuccessful.
  */
 int
 vm_segment_register_write(region, segno, addr, desc)
@@ -789,24 +949,28 @@ vm_segment_register_write(region, segno, addr, desc)
 	}
 	if (region->protect & VM_PROT_WRITE) {
 		if (region->flags & SEGM_SAVE) {
+			if (segno <= NOVL) {
+				goto bad;
+			}
 			switch (region->flags) {
 			case SEGM_SEG5:
 				vm_segment_region_saveseg5(region, addr, desc);
-				vm_segmap_put((NOVL - 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_segmap_put((NOVL + 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
 				break;
 			case SEGM_SEG6:
 				vm_segment_region_saveseg6(region, addr, desc);
-				vm_segmap_put(NOVL, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
+				vm_segmap_put((NOVL + 2), &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			case SEGM_SEG56:
 				vm_segment_region_saveseg5(region, addr, desc);
-				vm_savemap_put((NOVL - 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_savemap_put((NOVL + 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
 				vm_segment_region_saveseg6(region, addr, desc);
-				vm_savemap_put(NOVL, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
+				vm_savemap_put((NOVL + 2), &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			default:
+bad:
 				panic("vm_segment_register_write: no valid save register specified");
-				break;
+				return (1);
 			}
 			goto out;
 		}
@@ -824,7 +988,7 @@ out:
 
 /*
  * Reads from a segment register.
- * segreg will not be null if successful.
+ * returns 0 on success or 1 if unsuccessful.
  */
 int
 vm_segment_register_read(region, segno, addr, desc)
@@ -837,20 +1001,24 @@ vm_segment_register_read(region, segno, addr, desc)
 	}
 	if (region->protect & VM_PROT_READ) {
 		if (region->flags & SEGM_RESTORE) {
+			if (segno <= NOVL) {
+				goto bad;
+			}
 			switch (region->flags) {
 			case SEGM_SEG5:
-				vm_savemap_get((NOVL - 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_savemap_get((NOVL + 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
 				break;
 			case SEGM_SEG6:
-				vm_savemap_get(NOVL, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
+				vm_savemap_get((NOVL + 2), &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			case SEGM_SEG56:
-				vm_savemap_get((NOVL - 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
-				vm_savemap_get(NOVL, &region->mapstore.kdsa6, &region->mapstore.kdsd6);
+				vm_savemap_get((NOVL + 1), &region->mapstore.kdsa5, &region->mapstore.kdsd5);
+				vm_savemap_get((NOVL + 2), &region->mapstore.kdsa6, &region->mapstore.kdsd6);
 				break;
 			default:
+bad:
 				panic("vm_segment_register_read: no valid save register specified");
-				break;
+				return (1);
 			}
 			goto out;
 		}
@@ -866,6 +1034,60 @@ out:
 	return (1);
 }
 
+/*
+ * Saves to segment register.
+ */
+int
+vm_segment_register_save(region, addr, desc, flags)
+	vm_segment_region_t region;
+	vm_offset_t *addr, *desc;
+	int flags;
+{
+	int segno;
+
+	switch (flags) {
+	case SEGM_SEG5:
+		segno = (NOVL + 1);
+		break;
+	case SEGM_SEG6:
+		segno = (NOVL + 2);
+		break;
+	case SEGM_SEG56:
+		segno = (NOVL + 1);
+		break;
+	default:
+		return (1);
+	}
+	return (vm_segment_register_write(region, segno, addr, desc));
+}
+
+/*
+ * Restores from segment register.
+ */
+int
+vm_segment_register_restore(region, addr, desc, flags)
+	vm_segment_region_t region;
+	vm_offset_t *addr, *desc;
+	int flags;
+{
+	int segno;
+
+	switch (flags) {
+	case SEGM_SEG5:
+		segno = (NOVL + 1);
+		break;
+	case SEGM_SEG6:
+		segno = (NOVL + 2);
+		break;
+	case SEGM_SEG56:
+		segno = (NOVL + 1);
+		break;
+	default:
+		return (1);
+	}
+	return (vm_segment_register_read(region, segno, addr, desc));
+}
+
 /* vm_segment_register: infomap */
 static void
 vm_genmap_get(segno, addr, desc)
@@ -873,7 +1095,7 @@ vm_genmap_get(segno, addr, desc)
 	vm_offset_t *addr, *desc;
 {
 	if (&segregs[segno] != NULL) {
-		if ((segno >= 0) && (segno <= (NOVL - 2))) {
+		if ((segno >= 0) && (segno <= NOVL)) {
 			*addr = segregs[segno].addr;
 			*desc = segregs[segno].desc;
 		}
@@ -886,7 +1108,7 @@ vm_genmap_put(segno, addr, desc)
 	vm_offset_t *addr, *desc;
 {
 	if ((addr != NULL) && (desc != NULL)) {
-		if ((segno >= 0) && (segno <= (NOVL - 2))) {
+		if ((segno >= 0) && (segno <= NOVL)) {
 			segregs[segno].addr = *addr;
 			segregs[segno].desc = *desc;
 		}
@@ -900,7 +1122,7 @@ vm_savemap_get(segno, addr, desc)
 	vm_offset_t *addr, *desc;
 {
 	if (&segregs[segno] != NULL) {
-		if ((segno >= (NOVL - 1)) && (segno <= NOVL)) {
+		if ((segno >= (NOVL + 1)) && (segno <= (NOVL + 2))) {
 			*addr = segregs[segno].addr;
 			*desc = segregs[segno].desc;
 		}
@@ -913,7 +1135,7 @@ vm_savemap_put(segno, addr, desc)
 	vm_offset_t *addr, *desc;
 {
 	if ((addr != NULL) && (desc != NULL)) {
-		if ((segno >= (NOVL - 1)) && (segno <= NOVL)) {
+		if ((segno >= (NOVL + 1)) && (segno <= (NOVL + 2))) {
 			segregs[segno].addr = *addr;
 			segregs[segno].desc = *desc;
 		}

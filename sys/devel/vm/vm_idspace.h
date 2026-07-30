@@ -186,11 +186,12 @@ struct vm_idspace_entry {
 	vm_offset_t start;					/* start address */
 	vm_offset_t end;					/* end address */
 	vm_size_t size;						/* size */
-	vm_offset_t space;					/* temp storage */
 	vm_object_t object;					/* object */
 	vm_segment_t segment;				/* segment */
 	vm_page_t page;						/* page */
-	bool_t is_alloced;					/* is allocated (using kmem or omem) */
+	vm_offset_t space;
+	vm_offset_t kisa;
+	vm_offset_t kisd;
 };
 
 /* vm idspace */
@@ -240,10 +241,12 @@ int vm_idspace_init(vm_idspace_t, vm_idspace_entry_t, int, vm_map_t,
 		vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
 vm_idspace_t vm_idspace_allocate(int);
 void vm_idspace_deallocate(vm_idspace_t, vm_idspace_entry_t, int);
-int vm_idspace_map(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_size_t,
-		int);
-int vm_idspace_unmap(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_size_t,
-		int);
+int vm_idspace_map(vm_idspace_t, vm_idspace_entry_t, int,);
+int vm_idspace_unmap(vm_idspace_t, vm_idspace_entry_t, int);
+int vm_idspace_write(vm_idspace_t, vm_idspace_entry_t, int, bool_t, bool_t);
+int vm_idspace_read(vm_idspace_t, vm_idspace_entry_t, int, bool_t, bool_t);
+int vm_idspace_save(vm_idspace_t, vm_idspace_entry_t, vm_size_t, int);
+int vm_idspace_restore(vm_idspace_t, vm_idspace_entry_t, vm_size_t, int);
 
 /* vm_idspace_entry */
 int vm_idspace_entry_region_allocate(vm_idspace_t, vm_idspace_entry_t, int);
@@ -252,6 +255,10 @@ int vm_idspace_entry_region_read(vm_idspace_entry_t, int, vm_offset_t,
 		vm_offset_t, int, bool_t, bool_t, bool_t);
 int vm_idspace_entry_region_write(vm_idspace_entry_t, int, vm_offset_t,
 		vm_offset_t, int, bool_t, bool_t, bool_t);
+int vm_idspace_entry_region_save(vm_idspace_entry_t, vm_offset_t, vm_offset_t,
+		int);
+int vm_idspace_entry_region_restore(vm_idspace_entry_t, vm_offset_t,
+		vm_offset_t, int);
 
 /* vm_segment_region */
 vm_segment_region_t vm_segment_region_alloc(int);
@@ -265,5 +272,9 @@ int vm_segment_register_write(vm_segment_region_t, int, vm_offset_t *,
 		vm_offset_t *);
 int vm_segment_register_read(vm_segment_region_t, int, vm_offset_t *,
 		vm_offset_t *);
+int vm_segment_register_save(vm_segment_region_t, vm_offset_t *, vm_offset_t *,
+		int);
+int vm_segment_register_restore(vm_segment_region_t, vm_offset_t *, vm_offset_t *,
+		int);
 
 #endif /* _VM_IDSPACE_H_ */

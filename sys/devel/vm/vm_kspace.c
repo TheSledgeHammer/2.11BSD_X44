@@ -154,127 +154,92 @@ vm_kspace_init(min, max)
 
 /* kspace maps */
 int
-vm_kspace_map_alloc(kspace, val, size, segnum, maptype)
+vm_kspace_map_alloc(kspace, segno, maptype)
 	vm_kspace_t kspace;
-	vm_offset_t val;
-	vm_size_t size;
-	int segnum, maptype;
+	int segno, maptype;
 {
 	vm_idspace_t idspace_i, idspace_d;
 	int error;
 
 	idspace_i = kspace->idspace_i;
-	idspace_d = kspace->idspace_d;
-	if ((idspace_i != NULL) && (idspace_d == NULL)) {
+	if (idspace_i != NULL) {
 		switch (maptype) {
 		case KISA:
-			error = vm_idspace_map(idspace_i, kisa_space, val, size, segnum);
+			error = vm_idspace_map(idspace_i, kisa_space, segno);
 			break;
 		case KISD:
-			error = vm_idspace_map(idspace_i, kisd_space, val, size, segnum);
+			error = vm_idspace_map(idspace_i, kisd_space, segno);
 			break;
-		case KDSA:
-			error = vm_idspace_map(idspace_d, kdsa_space, val, size, segnum);
-			break;
-		case KDSD:
-			error = vm_idspace_map(idspace_d, kdsd_space, val, size, segnum);
+		default:
+			error = ENOMEM;
 			break;
 		}
-	} else {
-		error = ENOMEM;
+	}
+
+	idspace_d = kspace->idspace_d;
+	if (idspace_d != NULL) {
+		switch (maptype) {
+		case KDSA:
+			error = vm_idspace_map(idspace_d, kdsa_space, segno);
+			break;
+		case KDSD:
+			error = vm_idspace_map(idspace_d, kdsd_space, segno);
+			break;
+		default:
+			error = ENOMEM;
+			break;
+		}
 	}
 	return (error);
 }
 
 int
-vm_kspace_map_free(kspace, val, size, segnum, maptype)
+vm_kspace_map_free(kspace, segno, maptype)
 	vm_kspace_t kspace;
-	vm_offset_t val;
-	vm_size_t size;
-	int segnum, maptype;
+	int segno, maptype;
 {
 	vm_idspace_t idspace_i, idspace_d;
 	int error;
 
 	idspace_i = kspace->idspace_i;
-	idspace_d = kspace->idspace_d;
-	if ((idspace_i != NULL) && (idspace_d != NULL)) {
+	if (idspace_i != NULL) {
 		switch (maptype) {
 		case KISA:
-			error = vm_idspace_unmap(idspace_i, kisa_space, val, size, segnum);
+			error = vm_idspace_unmap(idspace_i, kisa_space, segno);
 			break;
 		case KISD:
-			error = vm_idspace_unmap(idspace_i, kisd_space, val, size, segnum);
+			error = vm_idspace_unmap(idspace_i, kisd_space, segno);
 			break;
-		case KDSA:
-			error = vm_idspace_unmap(idspace_d, kdsa_space, val, size, segnum);
-			break;
-		case KDSD:
-			error = vm_idspace_unmap(idspace_d, kdsd_space, val, size, segnum);
+		default:
+			error = ENOMEM;
 			break;
 		}
-	} else {
-		error = ENOMEM;
+	}
+
+	idspace_d = kspace->idspace_d;
+	if (idspace_d != NULL) {
+		switch (maptype) {
+		case KDSA:
+			error = vm_idspace_unmap(idspace_d, kdsa_space, segno);
+			break;
+		case KDSD:
+			error = vm_idspace_unmap(idspace_d, kdsd_space, segno);
+			break;
+		default:
+			error = ENOMEM;
+			break;
+		}
 	}
 	return (error);
 }
 
 
-/* kspace regions */
-void
-vm_kspace_region_insert(kspace, segnum, sepid)
-	vm_kspace_t kspace;
-	int segnum, sepid;
+vm_kspace_save(kspace, size, segno)
 {
-	vm_idspace_t idspace;
 
-	vm_segment_region_t region;
-
-	if (sepid == 0) {
-		idspace = kspace->idspace_i;
-	} else {
-		idspace = kspace->idspace_d;
-	}
-	if (idspace != NULL) {
-		region = vm_segment_region_alloc(M_VMKSPACE);
-		if (region != NULL) {
-			idspace->region = region;
-		}
-	}
-	if (idspace != NULL) {
-		vm_segment_region_insert(idspace, region, segnum);
-	}
 }
 
-void
-vm_kspace_region_remove(kspace, segnum)
-	vm_kspace_t kspace;
-	int segnum;
+vm_kspace_restore()
 {
-	vm_idspace_t idspace;
 
-	idspace = kspace->idspace;
-	if (idspace == NULL) {
-		return;
-	}
-	vm_segment_region_remove(idspace, segnum);
-}
-
-vm_segment_region_t
-vm_kspace_region_lookup(kspace, segnum)
-	vm_kspace_t kspace;
-	int segnum;
-{
-	vm_idspace_t idspace;
-	vm_segment_region_t region;
-
-	idspace = kspace->idspace;
-	if (idspace == NULL) {
-		return (NULL);
-	}
-	region = vm_segment_region_lookup(idspace, segnum);
-	if (region == NULL) {
-		return (NULL);
-	}
-	return (region);
 }
