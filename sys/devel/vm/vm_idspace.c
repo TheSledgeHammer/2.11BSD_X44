@@ -509,17 +509,18 @@ vm_idspace_read(idspace, entry, addr, desc, size, segno, is_txt, is_ext)
 }
 
 int
-vm_idspace_save(idspace, entry, val, size)
+vm_idspace_save(idspace, entry, val, size, flags)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
 	vm_offset_t val;
 	vm_size_t size;
+	int flags;
 {
 	int error;
 
 	val = kmem_alloc_wait(entry->map, size);
 
-	error = vm_idspace_entry_region_save(entry, val, val, (SEGM_SAVE | SEGM_RW | SEGM_ACCESS));
+	error = vm_idspace_entry_region_save(entry, val, val, (SEGM_SAVE | SEGM_RW | SEGM_ACCESS | flags));
 	if (error != 0) {
 		return (error);
 	}
@@ -533,16 +534,17 @@ vm_idspace_save(idspace, entry, val, size)
 }
 
 int
-vm_idspace_restore(idspace, entry, val, size)
+vm_idspace_restore(idspace, entry, val, size, flags)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
 	vm_offset_t val;
 	vm_size_t size;
+	int flags;
 {
 	int error;
 
 	error = vm_idspace_entry_region_restore(entry, val, val,
-			(SEGM_RESTORE | SEGM_RO | SEGM_RW | SEGM_ACCESS));
+			(SEGM_RESTORE | SEGM_RO | SEGM_RW | SEGM_ACCESS | flags));
 	if (error != 0) {
 		return (error);
 	}

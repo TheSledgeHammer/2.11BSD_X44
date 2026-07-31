@@ -234,13 +234,14 @@ vm_kspace_map_free(kspace, segno, maptype)
 }
 
 int
-vm_kspace_save(kspace, segno, maptype)
+vm_kspace_save(kspace, maptype, flags)
 	vm_kspace_t kspace;
-	int segno, maptype;
+	int maptype, flags;
 {
 	vm_idspace_t idspace_i, idspace_d;
-	int error;
+	int error, segno;
 
+	segno = (NOVL + 1);
 	error = vm_kspace_map_alloc(kspace, segno, maptype);
 	if (error != 0) {
 		(void)vm_kspace_map_free(kspace, segno, maptype);
@@ -251,11 +252,11 @@ vm_kspace_save(kspace, segno, maptype)
 		switch (maptype) {
 		case KISA:
 			error = vm_idspace_save(idspace_i, kisa_space, kisa_space->kisa,
-					sizeof(kisa_space->kisa), segno);
+					sizeof(kisa_space->kisa), segno, flags);
 			break;
 		case KISD:
 			error = vm_idspace_save(idspace_i, kisd_space, kisd_space->kisd,
-					sizeof(kisd_space->kisd), segno);
+					sizeof(kisd_space->kisd), segno, flags);
 			break;
 		default:
 			error = ENOMEM;
@@ -268,11 +269,11 @@ vm_kspace_save(kspace, segno, maptype)
 		switch (maptype) {
 		case KDSA:
 			error = vm_idspace_save(idspace_d, kdsa_space, kdsa_space->kisa,
-					sizeof(kdsa_space->kisa), segno);
+					sizeof(kdsa_space->kisa), segno, flags);
 			break;
 		case KDSD:
 			error = vm_idspace_save(idspace_d, kdsd_space, kdsd_space->kisd,
-					sizeof(kdsd_space->kisd), segno);
+					sizeof(kdsd_space->kisd), segno, flags);
 			break;
 		default:
 			error = ENOMEM;
@@ -283,23 +284,24 @@ vm_kspace_save(kspace, segno, maptype)
 }
 
 int
-vm_kspace_restore(kspace, segno, maptype)
+vm_kspace_restore(kspace, maptype, flags)
 	vm_kspace_t kspace;
-	int segno, maptype;
+	int maptype, flags;
 {
 	vm_idspace_t idspace_i, idspace_d;
-	int error;
+	int error, segno;
 
+	segno = (NOVL + 1);
 	idspace_i = kspace->idspace_i;
 	if (idspace_i != NULL) {
 		switch (maptype) {
 		case KISA:
 			error = vm_idspace_save(idspace_i, kisa_space, kisa_space->kisa,
-					sizeof(kisa_space->kisa), segno);
+					sizeof(kisa_space->kisa), segno, flags);
 			break;
 		case KISD:
 			error = vm_idspace_save(idspace_i, kisd_space, kisd_space->kisd,
-					sizeof(kisd_space->kisd), segno);
+					sizeof(kisd_space->kisd), segno, flags);
 			break;
 		default:
 			error = ENOMEM;
@@ -312,11 +314,11 @@ vm_kspace_restore(kspace, segno, maptype)
 		switch (maptype) {
 		case KDSA:
 			error = vm_idspace_restore(idspace_d, kdsa_space, kdsa_space->kisa,
-					sizeof(kdsa_space->kisa), segno);
+					sizeof(kdsa_space->kisa), segno, flags);
 			break;
 		case KDSD:
 			error = vm_idspace_restore(idspace_d, kdsd_space, kdsd_space->kisd,
-					sizeof(kdsd_space->kisd), segno);
+					sizeof(kdsd_space->kisd), segno, flags);
 			break;
 		default:
 			error = ENOMEM;

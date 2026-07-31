@@ -247,8 +247,8 @@ int vm_idspace_write(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_offset_t,
 		vm_size_t, int, bool_t, bool_t);
 int vm_idspace_read(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_offset_t,
 		vm_size_t, int, bool_t, bool_t);
-int vm_idspace_save(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_size_t);
-int vm_idspace_restore(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_size_t);
+int vm_idspace_save(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_size_t, int);
+int vm_idspace_restore(vm_idspace_t, vm_idspace_entry_t, vm_offset_t, vm_size_t, int);
 
 /* vm_idspace_entry */
 int vm_idspace_entry_region_allocate(vm_idspace_t, vm_idspace_entry_t, int);

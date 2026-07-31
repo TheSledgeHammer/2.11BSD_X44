@@ -57,4 +57,30 @@ extern vm_map_t    kdsd_map; /* kernel D-Space descriptor map */
 extern vm_map_t    kisa_map; /* kernel I-Space address map */
 extern vm_map_t    kdsa_map; /* kernel D-Space address map */
 
+int vm_kspace_map_alloc(vm_kspace_t, int, int);
+int vm_kspace_map_free(vm_kspace_t, int, int);
+int vm_kspace_save(vm_kspace_t, int, int);
+int vm_kspace_restore(vm_kspace_t, int, int);
+
+/* macros for 2.11BSD like save and restore maps */
+#ifdef NONSEPERATE
+#define savemap(kspace, flags) \
+	vm_kspace_save((kspace), KISA, (flags)); \
+	vm_kspace_save((kspace), KISD, (flags));
+
+#define restoremap(kspace, flags) \
+	vm_kspace_restore((kspace), KISA, (flags)); \
+	vm_kspace_restore((kspace), KISD, (flags));
+
+#else
+
+#define savemap(kspace, flags) \
+	vm_kspace_save((kspace), KDSA, (flags)); \
+	vm_kspace_save((kspace), KDSD, (flags));
+
+#define restoremap(kspace, flags) \
+	vm_kspace_restore((kspace), KDSA, (flags)); \
+	vm_kspace_restore((kspace), KDSD, (flags));
+
+#endif
 #endif /* _VM_KSPACE_H_ */
