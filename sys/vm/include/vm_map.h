@@ -218,7 +218,7 @@ typedef struct {
 #ifdef _KERNEL
 bool_t		vm_map_check_protection(vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t);
 int		 	vm_map_copy(vm_map_t, vm_map_t, vm_offset_t, vm_size_t, vm_offset_t, bool_t, bool_t);
-void		vm_map_copy_entry (vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t);
+void		vm_map_copy_entry(vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t);
 struct pmap;
 vm_map_t	vm_map_create(struct pmap *, vm_offset_t, vm_offset_t, bool_t);
 void		vm_map_deallocate(vm_map_t);

@@ -50,7 +50,7 @@ struct vm_segment_register segregs[NOVL+2];
 
 simple_lock_data_t vm_segment_region_lock;
 
-static bool_t uses_allocator = FALSE;
+//static bool_t uses_allocator = FALSE;
 
 #ifdef NONSEPARATE
 static int vm_pmap_phys_nonseperate(vm_size_t, int, vm_offset_t, vm_offset_t);
@@ -447,14 +447,14 @@ vm_idspace_unmap(idspace, entry, segno)
 }
 
 int
-vm_idspace_write(idspace, entry, size, segno, is_txt, is_ext)
+vm_idspace_write(idspace, entry, addr, desc, size, segno, is_txt, is_ext)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
+	vm_offset_t addr, desc;
 	vm_size_t size;
 	int segno;
 	bool_t is_txt, is_ext;
 {
-	vm_offset_t addr, desc;
 	int error;
 
 	error = vm_pmap_phys(entry->map, size, segno, entry->start, entry->end);
@@ -462,8 +462,9 @@ vm_idspace_write(idspace, entry, size, segno, is_txt, is_ext)
 		return (error);
 	}
 
-	desc = u.u_uisd[segno];
-	addr = u.u_uisa[segno];
+	if ((desc != (vm_offset_t)u.u_uisd[segno]) && (addr != (vm_offset_t)u.u_uisa[segno])) {
+		return (ENOMEM);
+	}
 
 	error = vm_idspace_entry_region_write(entry, segno, addr, desc,
 			(SEGM_RW | SEGM_ACCESS), is_txt, is_ext, TRUE);
@@ -480,14 +481,14 @@ vm_idspace_write(idspace, entry, size, segno, is_txt, is_ext)
 }
 
 int
-vm_idspace_read(idspace, entry, size, segno, is_txt, is_ext)
+vm_idspace_read(idspace, entry, addr, desc, size, segno, is_txt, is_ext)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
+	vm_offset_t addr, desc;
 	vm_size_t size;
 	int segno;
 	bool_t is_txt, is_ext;
 {
-	vm_offset_t addr, desc;
 	int error;
 
 	error = vm_pmap_phys(entry->map, size, segno, entry->start, entry->end);
@@ -495,39 +496,30 @@ vm_idspace_read(idspace, entry, size, segno, is_txt, is_ext)
 		return (error);
 	}
 
-	desc = u.u_uisd[segno];
-	addr = u.u_uisa[segno];
+	if ((desc != u.u_uisd[segno]) && (addr != u.u_uisa[segno])) {
+		return (ENOMEM);
+	}
 
 	error = vm_idspace_entry_region_read(entry, segno, addr, desc,
 			(SEGM_RW | SEGM_RO | SEGM_ACCESS), is_txt, is_ext, TRUE);
 	if (error != 0) {
 		return (error);
 	}
-
-	error = vm_map_protect(entry->map, entry->start, entry->end,
-			entry->region->protect, FALSE);
-	if (error != 0) {
-		return (error);
-	}
 	return (0);
 }
 
 int
-vm_idspace_save(idspace, entry, size, flags)
+vm_idspace_save(idspace, entry, val, size)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
+	vm_offset_t val;
 	vm_size_t size;
-	int flags;
 {
-	vm_offset_t addr, desc;
 	int error;
 
-	addr = kmem_alloc_wait(entry->map, size);
-	desc = (addr | SEGM_SAVE | SEGM_RW | SEGM_ACCESS);
-	bcopy(addr, entry->kisa, size);
-	bcopy(desc, entry->kisd, size);
+	val = kmem_alloc_wait(entry->map, size);
 
-	error = vm_idspace_entry_region_save(entry, addr, desc, (SEGM_SAVE | SEGM_RW | SEGM_ACCESS));
+	error = vm_idspace_entry_region_save(entry, val, val, (SEGM_SAVE | SEGM_RW | SEGM_ACCESS));
 	if (error != 0) {
 		return (error);
 	}
@@ -541,32 +533,21 @@ vm_idspace_save(idspace, entry, size, flags)
 }
 
 int
-vm_idspace_restore(idspace, entry, size, flags)
+vm_idspace_restore(idspace, entry, val, size)
 	vm_idspace_t idspace;
 	vm_idspace_entry_t entry;
+	vm_offset_t val;
 	vm_size_t size;
 {
-	vm_offset_t addr, desc;
 	int error;
 
-	addr = entry->kisa;
-	desc = entry->kisd;
-
-	error = vm_idspace_entry_region_restore(entry, addr, desc, (SEGM_RESTORE | SEGM_RW | SEGM_RO | SEGM_ACCESS));
+	error = vm_idspace_entry_region_restore(entry, val, val,
+			(SEGM_RESTORE | SEGM_RO | SEGM_RW | SEGM_ACCESS));
 	if (error != 0) {
 		return (error);
 	}
 
-	kmem_free_wakeup(entry->map, addr, size);
-	desc = addr;
-	bzero(entry->kisa, size);
-	bzero(entry->kisd, size);
-
-	error = vm_map_protect(entry->map, entry->start, entry->end,
-			entry->region->protect, FALSE);
-	if (error != 0) {
-		return (error);
-	}
+	kmem_free_wakeup(entry->map, val, size);
 	return (0);
 }
 

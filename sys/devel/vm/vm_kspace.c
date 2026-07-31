@@ -233,13 +233,97 @@ vm_kspace_map_free(kspace, segno, maptype)
 	return (error);
 }
 
-
-vm_kspace_save(kspace, size, segno)
+int
+vm_kspace_save(kspace, segno, maptype)
+	vm_kspace_t kspace;
+	int segno, maptype;
 {
+	vm_idspace_t idspace_i, idspace_d;
+	int error;
 
+	error = vm_kspace_map_alloc(kspace, segno, maptype);
+	if (error != 0) {
+		(void)vm_kspace_map_free(kspace, segno, maptype);
+		return (error);
+	}
+	idspace_i = kspace->idspace_i;
+	if (idspace_i != NULL) {
+		switch (maptype) {
+		case KISA:
+			error = vm_idspace_save(idspace_i, kisa_space, kisa_space->kisa,
+					sizeof(kisa_space->kisa), segno);
+			break;
+		case KISD:
+			error = vm_idspace_save(idspace_i, kisd_space, kisd_space->kisd,
+					sizeof(kisd_space->kisd), segno);
+			break;
+		default:
+			error = ENOMEM;
+			break;
+		}
+	}
+
+	idspace_d = kspace->idspace_d;
+	if (idspace_d != NULL) {
+		switch (maptype) {
+		case KDSA:
+			error = vm_idspace_save(idspace_d, kdsa_space, kdsa_space->kisa,
+					sizeof(kdsa_space->kisa), segno);
+			break;
+		case KDSD:
+			error = vm_idspace_save(idspace_d, kdsd_space, kdsd_space->kisd,
+					sizeof(kdsd_space->kisd), segno);
+			break;
+		default:
+			error = ENOMEM;
+			break;
+		}
+	}
+	return (error);
 }
 
-vm_kspace_restore()
+int
+vm_kspace_restore(kspace, segno, maptype)
+	vm_kspace_t kspace;
+	int segno, maptype;
 {
+	vm_idspace_t idspace_i, idspace_d;
+	int error;
 
+	idspace_i = kspace->idspace_i;
+	if (idspace_i != NULL) {
+		switch (maptype) {
+		case KISA:
+			error = vm_idspace_save(idspace_i, kisa_space, kisa_space->kisa,
+					sizeof(kisa_space->kisa), segno);
+			break;
+		case KISD:
+			error = vm_idspace_save(idspace_i, kisd_space, kisd_space->kisd,
+					sizeof(kisd_space->kisd), segno);
+			break;
+		default:
+			error = ENOMEM;
+			break;
+		}
+	}
+
+	idspace_d = kspace->idspace_d;
+	if (idspace_d != NULL) {
+		switch (maptype) {
+		case KDSA:
+			error = vm_idspace_restore(idspace_d, kdsa_space, kdsa_space->kisa,
+					sizeof(kdsa_space->kisa), segno);
+			break;
+		case KDSD:
+			error = vm_idspace_restore(idspace_d, kdsd_space, kdsd_space->kisd,
+					sizeof(kdsd_space->kisd), segno);
+			break;
+		default:
+			error = ENOMEM;
+			break;
+		}
+	}
+	return (error);
 }
+
+

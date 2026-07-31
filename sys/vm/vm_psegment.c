@@ -80,7 +80,7 @@ vm_psegment_release(pseg)
 	rmfree(coremap, sizeof(struct vm_data), (long)pseg->ps_data);
 	rmfree(coremap, sizeof(struct vm_stack), (long)pseg->ps_stack);
 	rmfree(coremap, sizeof(struct vm_text), (long)pseg->ps_text);
-    rmfree(coremap, sizeof(struct vm_pseudo_segment), (long)pseg);
+	rmfree(coremap, sizeof(struct vm_pseudo_segment), (long)pseg);
 }
 
 /*

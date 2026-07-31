@@ -404,6 +404,201 @@ vm_idspace_map_check_protection(idspacemap, region)
 			idspacemap->end, region->protect));
 }
 
+vm_offset_t
+estabur_lookup(addr, size)
+	vm_offset_t addr;
+	vm_size_t size;
+{
+	vm_offset_t val;
+
+	for (val = 0; val <= round_page(size); val += PAGE_SIZE) {
+		if (addr == val) {
+			return (addr);
+		}
+	}
+	return (0);
+}
+
+int
+estabur_validate(map, addr, desc, data, size, val, type, flags)
+	vm_map_t map;
+	vm_offset_t *addr, *desc;
+	vm_offset_t data;
+	vm_size_t size;
+	vm_offset_t val;
+	int type, flags;
+{
+	vm_offset_t virt, phys, num;
+	int error;
+
+	error = vm_pmap_validate_phys(map, &virt, &phys, &num, size, vm_map_min(map), vm_map_max(map));
+	if (error != 0) {
+		return (error);
+	}
+
+	if ((virt != desc) && (phys != addr)) {
+		return (ENOMEM);
+	}
+
+	while (data >= round_page(size)) {
+		if (type == (PSEG_DATA | PSEG_TEXT)) {
+			*desc++ = (data | flags);
+			*addr++ = val;
+			val += size;
+			data -= size;
+		} else {
+			val -= size;
+			data -= size;
+			*--desc = (data | flags);
+			*--addr = val;
+		}
+	}
+	if (data) {
+		if (type == (PSEG_DATA | PSEG_TEXT)) {
+			*desc++ = (data | flags);
+			*addr++ = val;
+			if (type == PSEG_DATA) {
+				val += data;
+			}
+		} else {
+			*--desc = (data | flags);
+			*--addr = (val - size);
+		}
+	}
+	return (0);
+}
+
+/* text */
+int
+estabur_text(map, ntext, addr, desc, size, xrw)
+	vm_map_t map;
+	vm_offset_t ntext;
+	vm_offset_t *addr, *desc;
+	vm_size_t size;
+	int xrw;
+{
+	vm_offset_t val;
+	int error;
+
+	val = 0;
+	error = estabur_validate(map, addr, desc, ntext, size, val, PSEG_TEXT, (xrw | SEGM_TX));
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
+}
+
+/* data */
+int
+estabur_data(map, ndata, addr, desc, size)
+	vm_map_t map;
+	vm_offset_t ndata;
+	vm_offset_t *addr, *desc;
+	vm_size_t size;
+{
+	vm_offset_t val;
+	int error;
+
+	val = 0;
+	error = estabur_validate(map, addr, desc, ndata, size, val, PSEG_DATA, SEGM_RW);
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
+}
+
+/* stack */
+int
+estabur_stack(map, nstack, addr, desc, size)
+	vm_map_t map;
+	vm_offset_t nstack;
+	vm_offset_t *addr, *desc;
+	vm_size_t size;
+{
+	vm_offset_t val;
+	int error;
+
+	val = nstack;
+	error = estabur_validate(map, addr, desc, nstack, size, val, PSEG_STACK, (SEGM_RW | SEGM_ED));
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
+}
+
+int
+estabur(map, nt, nd, ns, sep, size, xrw)
+	vm_map_t map;
+	vm_offset_t nt, nd, ns;
+	vm_size_t size;
+	int sep, xrw;
+{
+	vm_offset_t *addr, *desc;
+	int error;
+
+	addr = &u.u_uisa[0];
+	desc = &u.u_uisd[0];
+
+	error = estabur_text(map, nt, addr, desc, size, xrw);
+	if (error != 0) {
+		return (error);
+	}
+
+	if (sep) {
+		while (addr < &u.u_uisa[8]) {
+			*addr++ = 0;
+			*desc++ = 0;
+		}
+	}
+
+	error = estabur_data(map, nd, addr, desc, size);
+	if (error != 0) {
+		return (error);
+	}
+
+	while (*addr < &u.u_uisa[8]) {
+		if (*desc & SEGM_ABS) {
+			desc++;
+			addr++;
+			continue;
+		}
+		*desc++ = 0;
+		*addr++ = 0;
+	}
+
+	if (sep) {
+		while (addr < &u.u_uisa[16]) {
+			if (*desc & SEGM_ABS) {
+				desc++;
+				addr++;
+				continue;
+			}
+			*desc++ = 0;
+			*addr++ = 0;
+		}
+	}
+
+	error = estabur_stack(map, ns, addr, desc, size);
+	if (error != 0) {
+		return (error);
+	}
+
+	if (!sep) {
+		addr = &u.u_uisa[0];
+		desc = &u.u_uisa[8];
+		while (addr < &u.u_uisa[8]) {
+			*desc++ = *addr++;
+		}
+		addr = &u.u_uisd[0];
+		desc = &u.u_uisd[8];
+		while (addr < &u.u_uisd[8]) {
+			*desc++ = *addr++;
+		}
+	}
+
+	vm_sureg();
+	return (0);
+}
 
 static int
 vm_idspace_map_check_map_entry(idspacemap, addr, size)
