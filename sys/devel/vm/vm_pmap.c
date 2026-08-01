@@ -445,7 +445,7 @@ vm_sureg(void)
 	rdp = ;
 	uap = &u.u_uisa[0];
 	for (udp = &u.u_uisd[0]; udp < limudp;) {
-		*rap = *uap++ + (*udp & SEGM_TX ? taddr :
+		*rap++ = *uap++ + (*udp & SEGM_TX ? taddr :
 				(*udp & SEGM_ED ? saddr: (*udp & SEGM_ABS ? 0 : daddr)));
 		*rdp++ = *udp++;
 	}
