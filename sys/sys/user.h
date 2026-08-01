@@ -111,17 +111,17 @@ struct user {
 
 	label_t				u_ssave;				/* label variable for swapping */
 	label_t				u_rsave;				/* save info when exchanging stacks */
-	short				u_uisa[16];				/* segmentation address prototypes */
-	short				u_uisd[16];				/* segmentation descriptor prototypes */
+	u_long				u_uisa[16];				/* segmentation address prototypes */
+	u_long				u_uisd[16];				/* segmentation descriptor prototypes */
 	char				u_sep;					/* flag for I and D separation */
 
 /* 1.2.5 - overlay information */
 	struct u_ovd { 								/* automatic overlay data */
-		short 			uo_curov; 				/* current overlay */
-		short 			uo_ovbase; 				/* base of overlay area, seg. */
-		u_short 		uo_dbase; 				/* start of data, clicks */
-		u_short 		uo_ov_offst[NOVL + 1]; 	/* overlay offsets in text */
-		short 			uo_nseg; 				/* number of overlay seg. regs. */
+		long 			uo_curov; 				/* current overlay */
+		long 			uo_ovbase; 				/* base of overlay area, seg. */
+		u_long 			uo_dbase; 				/* start of data, clicks */
+		u_long 			uo_ov_offst[NOVL + 1]; 	/* overlay offsets in text */
+		long 			uo_nseg; 				/* number of overlay seg. regs. */
 	} u_ovdata;
 
 /* 1.3 - signal management */

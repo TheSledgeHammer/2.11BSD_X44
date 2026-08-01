@@ -69,6 +69,23 @@ extern struct mapent _coremap[];
  */
 
 /*
+ * check mapsize, addr and size, meet set conditions.
+ * panic if not
+ */
+static void
+rmcheck(addr, size, func, name, mapsize)
+	memaddr_t addr;
+	size_t size;
+	char *func, *name;
+	int mapsize;
+{
+	/* mapsize had better be at least 2 */
+	if (mapsize < 2 || addr <= 0 || size < 0) {
+		panic("%s: %s", func, name);
+	}
+}
+
+/*
  * creates a mapent in map.
  */
 struct mapent *
@@ -102,9 +119,7 @@ rminit(mp, addr, size, name, mtype, mapsize)
 	struct mapent *ep;
 
 	/* mapsize had better be at least 2 */
-	if (mapsize < 2 || addr <= 0 || size < 0) {
-		panic("rminit %s", name);
-	}
+	rmcheck(addr, size, "rminit", name, mapsize);
 
 	mp->m_name = name;
 	mp->m_types = mtype;
@@ -127,14 +142,14 @@ rmallocate(mp, addr, size, mapsize)
 	struct mapent *ep;
 
 	/* mapsize had better be at least 2 */
-	if (mapsize < 2 || addr <= 0 || size < 0) {
-		panic("rmallocate %s", mp->m_name);
-	}
+	rmcheck(addr, size, "rmallocate", mp->m_name, mapsize);
 
 	ep = rmcreate(mp, addr, size, mapsize);
+	/*
 	if (rmalloc(mp, size) != 0) {
 		rmfree(mp, size, addr);
 	}
+	*/
 }
 
 /*
@@ -159,7 +174,7 @@ rmalloc(mp, size)
 	if (!size) {
 		panic("rmalloc: size = 0");
 	}
-	if(mp == swapmap && size > dmmax) {
+	if (mp == swapmap && size > dmmax) {
 		panic("rmalloc");
 	}
 

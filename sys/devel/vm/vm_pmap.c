@@ -87,6 +87,15 @@ vm_pmap_bootstrap(void)
 	kentry_data = (vm_offset_t)pmap_bootstrap_alloc(kentry_data_size);
 }
 
+void
+pmap_bootstrap(vm_offset_t *data, vm_size_t data_size, vm_size_t map_size, unsigned long map_number, size_t mapsize, vm_size_t entry_size, unsigned long entry_number, size_t entrysize)
+{
+	map_size = (map_number * mapsize);
+	entry_size = (entry_number * entrysize);
+	data_size = round_page(map_size + entry_size);
+	data = (vm_offset_t)pmap_bootstrap_alloc(data_size);
+}
+
 /*
  * vm_pmap_bootinit:
  *
@@ -150,7 +159,7 @@ estabur_lookup(map, size, addr, desc, val, type, flags)
 
 	/* check data size */
 	if (data < SEGMENT_SIZE) {
-		data = ptoa(num);
+		data = ptoa(atop(stoa(num)));
 	} else {
 		data = stoa(num);
 	}
@@ -188,18 +197,16 @@ estabur_lookup(map, size, addr, desc, val, type, flags)
 
 /* text */
 static int
-estabur_text(map, text, tsize, taddr, addr, desc, flags)
+estabur_text(map, text, tsize, taddr, addr, desc, val, flags)
 	vm_map_t map;
 	vm_text_t text;
 	vm_size_t tsize;
 	caddr_t taddr;
-	vm_offset_t *addr, *desc;
+	vm_offset_t *addr, *desc, val;
 	int flags;
 {
-	vm_offset_t val;
 	int error;
 
-	val = 0;
 	if (text == NULL) {
 		return (ENOMEM);
 	}
@@ -214,18 +221,16 @@ estabur_text(map, text, tsize, taddr, addr, desc, flags)
 
 /* data */
 static int
-estabur_data(map, data, dsize, daddr, addr, desc, flags)
+estabur_data(map, data, dsize, daddr, addr, desc, val, flags)
 	vm_map_t map;
 	vm_data_t data;
 	vm_size_t dsize;
 	caddr_t daddr;
-	vm_offset_t *addr, *desc;
+	vm_offset_t *addr, *desc, val;
 	int flags;
 {
-	vm_offset_t val;
 	int error;
 
-	val = 0;
 	if (data == NULL) {
 		return (ENOMEM);
 	}
@@ -240,18 +245,16 @@ estabur_data(map, data, dsize, daddr, addr, desc, flags)
 
 /* stack */
 static int
-estabur_stack(map, stack, ssize, saddr, addr, desc, flags)
+estabur_stack(map, stack, ssize, saddr, addr, desc, val, flags)
 	vm_map_t map;
 	vm_stack_t stack;
 	vm_size_t ssize;
 	caddr_t saddr;
-	vm_offset_t *addr, *desc;
+	vm_offset_t *addr, *desc, val;
 	int flags;
 {
-	vm_offset_t val;
 	int error;
 
-	val = ssize;
 	if (stack == NULL) {
 		return (ENOMEM);
 	}
@@ -273,17 +276,60 @@ estabur(map, text, data, stack, tsize, dsize, ssize, sep, flags)
 	segsz_t tsize, dsize, ssize;
 	int sep, flags;
 {
-	vm_offset_t *addr, *desc;
+	vm_offset_t *addr, *desc, val, ts;
 	int error;
 
-	addr = &u.u_uisa[0];
-	desc = &u.u_uisd[0];
-
-	error = estabur_text(map, text, (vm_size_t)tsize, text->psx_taddr, addr, desc, (flags | SEGM_TX));
-	if (error != 0) {
-		return (error);
+	if (u.u_ovdata.uo_ovbase && tsize) {
+		ts = u.u_ovdata.uo_dbase;
+	} else {
+		ts = tsize;
+	}
+	if (sep) {
+#ifndef NONSEPARATE
+		if (!sep_id) {
+			goto nomem;
+		}
+		if (ctos(ts) > 8 || (ctos(dsize) + ctos(ssize)) > 8) {
+#endif /* !NONSEPARATE */
+			goto nomem;
+		}
+	} else {
+		if ((ctos(ts) + ctos(dsize) + ctos(ssize)) > 8) {
+			goto nomem;
+		}
+	}
+	if (u.u_ovdata.uo_ovbase && tsize) {
+		ts = u.u_ovdata.uo_ov_offst[NOVL];
+	}
+	if ((ts + dsize + ssize + USIZE) > maxmem) {
+nomem:
+		u.u_error = ENOMEM;
+		return (-1);
 	}
 
+	val = 0;
+	addr = &u.u_uisa[0];
+	desc = &u.u_uisd[0];
+	error = estabur_text(map, text, (vm_size_t)tsize, text->psx_taddr, addr, desc, val, (flags | SEGM_TX));
+	if (error != 0) {
+		u.u_error = error;
+		return (-1);
+	}
+#ifdef NONSEPARATE
+	if (u.u_ovdata.uo_ovbase && ts) {
+#else /* !NONSEPARATE */
+	if ((u.u_ovdata.uo_ovbase && ts) && !sep) {
+#endif /* !NONSEPARATE */
+		/*
+		 * overlay process, adjust accordingly.
+		 * The overlay segment's registers will be set by
+		 * choverlay() from sureg().
+		 */
+		for (val = 0; val < u.u_ovdata.uo_nseg; val++) {
+			*addr++ = 0;
+			*desc++ = 0;
+		}
+	}
 #ifndef NONSEPARATE
 	if (sep) {
 		while (addr < &u.u_uisa[8]) {
@@ -292,10 +338,11 @@ estabur(map, text, data, stack, tsize, dsize, ssize, sep, flags)
 		}
 	}
 #endif /* !NONSEPARATE */
-
-	error = estabur_data(map, data, (vm_size_t)dsize, data->psx_daddr, addr, desc, SEG_RW);
+	val = 0;
+	error = estabur_data(map, data, (vm_size_t)dsize, data->psx_daddr, addr, desc, val, SEG_RW);
 	if (error != 0) {
-		return (error);
+		u.u_error = error;
+		return (-1);
 	}
 
 	while (*addr < &u.u_uisa[8]) {
@@ -321,10 +368,11 @@ estabur(map, text, data, stack, tsize, dsize, ssize, sep, flags)
 		}
 	}
 #endif /* !NONSEPARATE */
-
-	error = estabur_stack(map, stack, (vm_size_t)ssize, stack->psx_saddr, addr, desc, (SEG_RW | SEGM_ED));
+	val = ssize;
+	error = estabur_stack(map, stack, (vm_size_t)ssize, stack->psx_saddr, addr, desc, val, (SEG_RW | SEGM_ED));
 	if (error != 0) {
-		return (error);
+		u.u_error = error;
+		return (-1);
 	}
 
 #ifndef NONSEPARATE
@@ -369,6 +417,44 @@ vm_estabur(p, tsize, dsize, ssize, sep, flags)
 	}
 	return (0);
 }
+
+void
+vm_sureg(void)
+{
+	struct proc *p;
+	vm_text_t tp;
+	vm_offset_t *limudp, *uap, *udp, *rap, *rdp;
+	caddr_t taddr, daddr, saddr;
+
+	p = u.u_procp;
+	taddr = daddr = p->p_daddr;
+	saddr = p->p_saddr;
+	tp = p->p_textp;
+	if (tp != NULL) {
+		taddr = tp->psx_caddr;
+	}
+#ifndef NONSEPARATE
+	limudp = &u.u_uisd[16];
+	if (!sep_id) {
+		limudp = &u.u_uisd[8];
+	}
+#else /* !NONSEPARATE */
+	limudp = &u.u_uisd[8];
+#endif /* !NONSEPARATE */
+	rap = ;
+	rdp = ;
+	uap = &u.u_uisa[0];
+	for (udp = &u.u_uisd[0]; udp < limudp;) {
+		*rap = *uap++ + (*udp & SEGM_TX ? taddr :
+				(*udp & SEGM_ED ? saddr: (*udp & SEGM_ABS ? 0 : daddr)));
+		*rdp++ = *udp++;
+	}
+
+	if (u.u_ovdata.uo_ovbase && (u.u_uisd[0] & SEGM_TX)) {
+		choverlay(u.u_uisd[0] & SEGM_ACCESS);
+	}
+}
+
 
 static int
 vm_idspace_map_check_map_entry(idspacemap, addr, size)

@@ -98,6 +98,7 @@ extern int selwait;					/* select timeout address */
 
 extern int maxmem;					/* actual max memory per process */
 extern int physmem;					/* physical memory */
+extern bool_t sep_id;				/* separate I/D */
 
 extern dev_t rootdev;				/* device of the root */
 extern struct vnode *rootvp;		/* vnode equivalent to above */

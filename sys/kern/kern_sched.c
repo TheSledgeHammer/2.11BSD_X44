@@ -408,3 +408,4 @@ sched_destroy_threads(pp, ecode, all)
 		pp->p_flag &= ~P_TDDESTROY;
 	}
 }
+

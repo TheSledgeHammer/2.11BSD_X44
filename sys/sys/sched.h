@@ -91,61 +91,59 @@
 #include <sys/lock.h>
 #include <sys/queue.h>
 
-struct sched_factor;
-
 /* Schedulers & Common Information used across schedulers */
 /* global scheduler */
 struct sched {
-	struct proc 		*sc_procp;			/* pointer to proc */
-	struct thread		*sc_threado;			/* pointer to thread */
+	struct proc *sc_procp; 			/* pointer to proc */
+	struct thread *sc_threado; 		/* pointer to thread */
 
-	struct sched_factor 	*sc_factor;			/* schedule factor */
+	struct sched_factor *sc_factor; /* schedule factor */
 
     union {
-    	struct sched_edf	*u_edf;				/* earliest deadline first scheduler */
-    	struct sched_cfs 	*u_cfs;				/* completely fair scheduler */
+		struct sched_edf *u_edf; /* earliest deadline first scheduler */
+		struct sched_cfs *u_cfs; /* completely fair scheduler */
     } sc_u;
 #define sc_edf			sc_u.u_edf
 #define sc_cfs			sc_u.u_cfs
 
     /* schedule base factors */
-    u_char  			sc_priweight;			/* priority weighting: see below. */
-    u_char			sc_slack;			/* slack / laxity time */
-    u_char			sc_utilization;			/* utilization */
-    u_char			sc_demand;			/* demand */
-    u_char			sc_workload;			/* workload */
+	u_char sc_priweight; 	/* priority weighting: see below. */
+	u_char sc_slack; 		/* slack / laxity time */
+	u_char sc_utilization; 	/* utilization */
+	u_char sc_demand; 		/* demand */
+	u_char sc_workload; 	/* workload */
 };
 
 /* schedule factors */
 struct sched_factor {
     union {
-        u_char  factor;						/* utilization factor */
-        int 	rate;						/* utilization rate */
-        int	weight; 					/* utilization weight */
+		u_char factor; 	/* utilization factor */
+		int rate; 		/* utilization rate */
+		int weight; 	/* utilization weight */
     } sf_utilization;
-#define sfu_utilization    	sf_utilization.factor
-#define sfu_rate           	sf_utilization.rate
-#define sfu_weight         	sf_utilization.weight
+#define sfu_utilization  sf_utilization.factor
+#define sfu_rate         sf_utilization.rate
+#define sfu_weight       sf_utilization.weight
     union {
-        u_char  factor;						/* demand factor */
-        int 	rate;						/* demand rate */
-        int	weight;						/* demand weight */
+		u_char factor; 	/* demand factor */
+		int rate; 		/* demand rate */
+		int weight; 	/* demand weight */
     } sf_demand;
-#define sfd_demand         	sf_demand.factor
-#define sfd_rate           	sf_demand.rate
-#define sfd_weight         	sf_demand.weight
-    union {
-        u_char  factor;						/* workload factor */
-        int 	rate;						/* workload rate */
-        int	weight;						/* workload weight */
-    } sf_workload;
-#define sfw_workload       	sf_workload.factor
-#define sfw_rate           	sf_workload.rate
-#define sfw_weight         	sf_workload.weight
+#define sfd_demand      sf_demand.factor
+#define sfd_rate        sf_demand.rate
+#define sfd_weight      sf_demand.weight
+	union {
+		u_char factor; 	/* workload factor */
+		int rate; 		/* workload rate */
+		int weight; 	/* workload weight */
+	} sf_workload;
+#define sfw_workload    sf_workload.factor
+#define sfw_rate    	sf_workload.rate
+#define sfw_weight 		sf_workload.weight
 
-    int 			sf_avgrate;			/* average rate */
-    int 			sf_avgweight;			/* average weight */
-    int 			sf_optnthreads;			/* optimal number of threads */
+	int sf_avgrate; 	/* average rate */
+	int sf_avgweight; 	/* average weight */
+	int sf_optnthreads; /* optimal number of threads */
 };
 
 /* Priority Weighting Factors */
