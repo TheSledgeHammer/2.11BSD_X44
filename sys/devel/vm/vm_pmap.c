@@ -162,7 +162,7 @@ estabur_lookup(map, size, addr, desc, val, type, flags)
 			*desc++ = (emask(data, 1) | flags);
 			*addr++ = val;
 			val += data;
-			data -= data;
+			size -= data;
 		} else {
 			val -= data;
 			data -= data;
