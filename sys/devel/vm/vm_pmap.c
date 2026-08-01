@@ -165,7 +165,7 @@ estabur_lookup(map, size, addr, desc, val, type, flags)
 			size -= data;
 		} else {
 			val -= data;
-			data -= data;
+			size -= data;
 			*--desc = (emask(0, 0) | flags);
 			*--addr = val;
 		}
