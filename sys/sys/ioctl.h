@@ -277,7 +277,8 @@ struct ttysize {
 #define	TIOCFLAG_CLOCAL		0x100								/* set clocal on open */
 #define	TIOCFLAG_CRTSCTS	0x120								/* set crtscts on open */
 #define	TIOCFLAG_MDMBUF		0x140								/* set mdmbuf on open */
-#define	TIOCFLAG_PPS		0x180								/* call hardpps on carrier up */
+#define	TIOCFLAG_CDTRCTS	0x180								/* set cdtrcts on open */
+#define	TIOCFLAG_PPS		0x200								/* call hardpps on carrier up */
 
 #define	TIOCRCVFRAME		_IOW('t', 69, struct mbuf *)		/* data frame received */
 #define	TIOCXMTFRAME		_IOW('t', 68, struct mbuf *)		/* data frame transmit */

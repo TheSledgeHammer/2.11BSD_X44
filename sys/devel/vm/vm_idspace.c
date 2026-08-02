@@ -337,6 +337,7 @@ vm_idspace_alloc(idspace, mtype)
 	int mtype;
 {
 	idspace->mtype = mtype;
+	vm_idspace_lock_init(idspace);
 	simple_lock_init(&vm_segment_region_lock, "vm_segment_region_lock");
 }
 
@@ -457,26 +458,32 @@ vm_idspace_write(idspace, entry, addr, desc, size, segno, is_txt, is_ext)
 {
 	int error;
 
+	vm_idspace_lock(idspace);
 	error = vm_pmap_phys(entry->map, size, segno, entry->start, entry->end);
 	if (error != 0) {
+		vm_idspace_unlock(idspace);
 		return (error);
 	}
 
 	if ((desc != (vm_offset_t)u.u_uisd[segno]) && (addr != (vm_offset_t)u.u_uisa[segno])) {
+		vm_idspace_unlock(idspace);
 		return (ENOMEM);
 	}
 
 	error = vm_idspace_entry_region_write(entry, segno, addr, desc,
 			(SEGM_RW | SEGM_ACCESS), is_txt, is_ext, TRUE);
 	if (error != 0) {
+		vm_idspace_unlock(idspace);
 		return (error);
 	}
 
 	error = vm_map_protect(entry->map, entry->start, entry->end,
 			entry->region->protect, FALSE);
 	if (error != 0) {
+		vm_idspace_unlock(idspace);
 		return (error);
 	}
+	vm_idspace_unlock(idspace);
 	return (0);
 }
 
@@ -491,20 +498,25 @@ vm_idspace_read(idspace, entry, addr, desc, size, segno, is_txt, is_ext)
 {
 	int error;
 
+	vm_idspace_lock(idspace);
 	error = vm_pmap_phys(entry->map, size, segno, entry->start, entry->end);
 	if (error != 0) {
+		vm_idspace_unlock(idspace);
 		return (error);
 	}
 
 	if ((desc != u.u_uisd[segno]) && (addr != u.u_uisa[segno])) {
+		vm_idspace_unlock(idspace);
 		return (ENOMEM);
 	}
 
 	error = vm_idspace_entry_region_read(entry, segno, addr, desc,
 			(SEGM_RW | SEGM_RO | SEGM_ACCESS), is_txt, is_ext, TRUE);
 	if (error != 0) {
+		vm_idspace_unlock(idspace);
 		return (error);
 	}
+	vm_idspace_unlock(idspace);
 	return (0);
 }
 
@@ -518,18 +530,22 @@ vm_idspace_save(idspace, entry, val, size, flags)
 {
 	int error;
 
+	vm_idspace_lock(idspace);
 	val = kmem_alloc_wait(entry->map, size);
 
 	error = vm_idspace_entry_region_save(entry, val, val, (SEGM_SAVE | SEGM_RW | SEGM_ACCESS | flags));
 	if (error != 0) {
+		vm_idspace_unlock(idspace);
 		return (error);
 	}
 
 	error = vm_map_protect(entry->map, entry->start, entry->end,
 			entry->region->protect, FALSE);
 	if (error != 0) {
+		vm_idspace_unlock(idspace);
 		return (error);
 	}
+	vm_idspace_unlock(idspace);
 	return (0);
 }
 
@@ -543,13 +559,16 @@ vm_idspace_restore(idspace, entry, val, size, flags)
 {
 	int error;
 
+	vm_idspace_lock(idspace);
 	error = vm_idspace_entry_region_restore(entry, val, val,
 			(SEGM_RESTORE | SEGM_RO | SEGM_RW | SEGM_ACCESS | flags));
 	if (error != 0) {
+		vm_idspace_unlock(idspace);
 		return (error);
 	}
 
 	kmem_free_wakeup(entry->map, val, size);
+	vm_idspace_unlock(idspace);
 	return (0);
 }
 
@@ -569,7 +588,6 @@ vm_idspace_entry_alloc(entry, map, start, end, size)
 	entry->start = start;
 	entry->end = end;
 	entry->size = size;
-	//entry->space = 0;
 }
 
 static int

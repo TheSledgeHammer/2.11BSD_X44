@@ -61,13 +61,13 @@ struct fps {
  */
 struct uthread {
 	struct user 		*utd_addr;				/* u. area */
-	struct thread 		*utd_thread;				/* pointer to thread structure */
+	struct thread 		*utd_thread;			/* pointer to thread structure */
 	struct thread 		*utd_threado;			/* thread overseer */
 };
 
 struct user {
-	struct upcb			u_upcb;
-#define u_pcb 			u_upcb.u_pcb
+	struct upcb			u_upcb;					/* fake pcb structure */
+#define u_pcb 			u_upcb.u_pcb			/* real pcb structure */
 	struct fps 			u_fps;
 	short				u_fpsaved;				/* FP regs saved for this proc */
 	struct fperr 		u_fperr;				/* floating point error save */
@@ -111,8 +111,8 @@ struct user {
 
 	label_t				u_ssave;				/* label variable for swapping */
 	label_t				u_rsave;				/* save info when exchanging stacks */
-	u_long				u_uisa[16];				/* segmentation address prototypes */
-	u_long				u_uisd[16];				/* segmentation descriptor prototypes */
+	u_long				u_uisa[NOVL];			/* segmentation address prototypes */
+	u_long				u_uisd[NOVL];			/* segmentation descriptor prototypes */
 	char				u_sep;					/* flag for I and D separation */
 
 /* 1.2.5 - overlay information */
@@ -120,7 +120,7 @@ struct user {
 		long 			uo_curov; 				/* current overlay */
 		long 			uo_ovbase; 				/* base of overlay area, seg. */
 		u_long 			uo_dbase; 				/* start of data, clicks */
-		u_long 			uo_ov_offst[NOVL + 1]; 	/* overlay offsets in text */
+		u_long 			uo_ov_offst[NOVL]; 		/* overlay offsets in text */
 		long 			uo_nseg; 				/* number of overlay seg. regs. */
 	} u_ovdata;
 

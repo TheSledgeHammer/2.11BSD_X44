@@ -90,54 +90,6 @@
 #define	round_novl(x)    ((vm_offset_t)((((vm_offset_t)(x)) + NOVL_MASK) & ~NOVL_MASK))
 #define num_novl(x)      ((vm_offset_t)((((vm_offset_t)(x)) + NOVL_MASK) >> NOVL_SHIFT))
 
-/*
- * returns offset from segno
- */
-static inline vm_offset_t
-segno_to_offset(int x)
-{
-	 vm_offset_t offset;
-
-	 if (x == 0) {
-		 offset = (vm_offset_t)(x + NOVL_SIZE);
-	 } else {
-		 offset = (vm_offset_t)(x * NOVL_SIZE);
-	 }
-	 return (offset);
-}
-
-/*
- * returns a single segment offset from segno
- */
-static inline vm_offset_t
-segno_to_segment_offset(int x)
-{
-	vm_offset_t offset;
-	int i;
-
-	for (i = 0; i < NOVL + 1; i++) {
-		if (i == x) {
-			offset = segno_to_offset(i);
-			offset = (offset / NOVL_SEGMENTS);
-			return (offset);
-		}
-	}
-	return (0);
-}
-
-/*
- * returns a single page offset from segno
- */
-static inline vm_offset_t
-segno_to_page_offset(int x)
-{
-	vm_offset_t offset;
-
-	offset = segno_to_offset(x);
-	offset = (offset / NOVL_PAGES);
-	return (offset);
-}
-
 struct vm_segment_register;
 typedef struct vm_segment_register *vm_segment_register_t;
 
@@ -189,9 +141,8 @@ struct vm_idspace_entry {
 	vm_object_t object;					/* object */
 	vm_segment_t segment;				/* segment */
 	vm_page_t page;						/* page */
-	vm_offset_t space;
-	vm_offset_t kisa;
-	vm_offset_t kisd;
+	vm_offset_t kisa;					/* segmentation address prototypes */
+	vm_offset_t kisd;					/* segmentation descriptor prototypes */
 };
 
 /* vm idspace */
@@ -199,7 +150,12 @@ struct vm_idspace {
 	struct vm_idspace_entry aspace;		/* address space (i.e kdsa_map, kisa_map, udsa_map, uisa_map) */
 	struct vm_idspace_entry dspace;		/* descriptor space (i.e kdsd_map, kisd_map, udsd_map, uisd_map) */
 	int mtype;							/* idspace malloctype */
+	simple_lock_data_t lock;			/* idspace lock */
 };
+
+#define vm_idspace_lock_init(idspace)	simple_lock_init(&(idspace)->lock, "vm_idspace_lock")
+#define vm_idspace_lock(idspace)		simple_lock(&(idspace)->lock)
+#define vm_idspace_unlock(idspace)		simple_unlock(&(idspace)->lock)
 
 enum maptypes {
 	KISA,	/* kernel instruction address */
@@ -232,6 +188,54 @@ enum maptypes {
 #define SEGM_SEG56		0x100 	/* map both SEG5 and SEG6 */
 #define SEGM_SAVE		(0x120 & (SEGM_SEG5|SEGM_SEG6|SEGM_SEG56))	/* Software: save virtual segment register's to savemap */
 #define SEGM_RESTORE	(0x140 & (SEGM_SEG5|SEGM_SEG6|SEGM_SEG56))	/* Software: restore virtual segment register's from savemap */
+
+/*
+ * returns offset from segno
+ */
+static inline vm_offset_t
+segno_to_offset(int x)
+{
+	 vm_offset_t offset;
+
+	 if (x == 0) {
+		 offset = (vm_offset_t)(x + NOVL_SIZE);
+	 } else {
+		 offset = (vm_offset_t)(x * NOVL_SIZE);
+	 }
+	 return (offset);
+}
+
+/*
+ * returns a single segment offset from segno
+ */
+static inline vm_offset_t
+segno_to_segment_offset(int x)
+{
+	vm_offset_t offset;
+	int i;
+
+	for (i = 0; i < NOVL + 1; i++) {
+		if (i == x) {
+			offset = segno_to_offset(i);
+			offset = (offset / NOVL_SEGMENTS);
+			return (offset);
+		}
+	}
+	return (0);
+}
+
+/*
+ * returns a single page offset from segno
+ */
+static inline vm_offset_t
+segno_to_page_offset(int x)
+{
+	vm_offset_t offset;
+
+	offset = segno_to_offset(x);
+	offset = (offset / NOVL_PAGES);
+	return (offset);
+}
 
 /* vm_idspace */
 extern struct vm_segment_register segregs[NOVL];

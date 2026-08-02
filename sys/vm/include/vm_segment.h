@@ -131,15 +131,23 @@ struct vm_segment {
  */
 #define SEG_ACTIVE		0x001	/* segment is active */
 #define SEG_INACTIVE	0x002	/* segment is inactive */
-#define SEG_RO			0x004	/* read-only */
-#define SEG_WO			0x008	/* write-only */
-#define SEG_RW			0x010	/* read-write */
+#define SEG_RO			0x004	/* read-only (deprecation notice: see below) */
+#define SEG_WO			0x008	/* write-only (deprecation notice: see below) */
+#define SEG_RW			0x010	/* read-write (deprecation notice: see below) */
 #define SEG_ALLOCATED	0x020	/* segment has been allocated */
 #define	SEG_BUSY		0x040	/* segment is in transit (O) */
 #define	SEG_CLEAN		0x080	/* segment has not been modified */
 #define	SEG_RELEASED	0x100	/* segment to be freed when unbusied */
 #define	SEG_WANTED		0x200	/* someone is waiting for segment (O) */
 #define	SEG_FREE		0x400	/* segment is on free list */
+
+/*
+ * Deprecation Notice:
+ * - SEG_RO, SEG_WO and SEG_RW:
+ * 	These will be replaced with equivalents in vm_idspace.
+ * 	As soon as vm_idspace, vm_kspace and vm_uspace are integrated
+ * 	into the kernel and vm.
+ */
 
 #if	VM_SEGMENT_DEBUG
 #define	VM_SEGMENT_CHECK(seg) { 											\

@@ -53,8 +53,7 @@ _MKPLAN9.yes= \
 	MKLIBBIO \
 	MKLIBFMT \
 	MKLIBREGEXP \
-	MKLIBUTF \
-	MKMK
+	MKLIBUTF
 
 # Linux options which default to "yes"
 _MKLINUX.yes=
@@ -100,7 +99,8 @@ _MKNETBSD.no=
 _MKOPENBSD.no=
 
 # Plan9 options which default to "no"
-_MKPLAN9.no=
+_MKPLAN9.no= \
+	MKMK
 
 # Linux options which default to "no"
 _MKLINUX.no=

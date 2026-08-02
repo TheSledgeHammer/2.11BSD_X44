@@ -77,7 +77,7 @@ void openlog_r(const char *, int, int, struct syslog_data *);
 void closelog_r(struct syslog_data *);
 int setlogmask_r(int, struct syslog_data *);
 
-extern	char	*__progname;	/* Program name, from crt0. */
+//extern	char	*__progname;	/* Program name, from crt0. */
 
 struct syslog_data {
 #if defined(pdp11)
@@ -115,8 +115,6 @@ struct syslog_data {
 	.LogFacility = LOG_USER, 		\
 	.LogMask = 0xff 				\
 }
-
-#endif
 
 struct syslog_data _syslog_data = SYSLOG_DATA_INIT;
 
@@ -185,6 +183,7 @@ vsyslog_r(int pri, struct syslog_data *data, const char *fmt, va_list ap)
 	pid_t	pid = 0;
 
 #define	INTERNALLOG	LOG_ERR|LOG_CONS|LOG_PERROR|LOG_PID
+
 	/* Check for invalid bits. */
 	if (pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
 		syslog(INTERNALLOG,

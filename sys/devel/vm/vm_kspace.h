@@ -44,18 +44,27 @@ struct vm_kspace {
 #define kisd_space idspace_i->dspace /* kisd space */
 #define kdsa_space idspace_d->aspace /* kdsa space */
 #define kdsd_space idspace_d->dspace /* kdsd space */
-
-	vm_offset_t addr;	/* segment register address */
-	vm_offset_t desc;	/* segment register descriptor */
 };
 
 extern vm_object_t kspace_object; /* single kspace object */
 
 /* Should be placed in vm_kern.h and be external */
 extern vm_map_t    kisd_map; /* kernel I-Space descriptor map */
-extern vm_map_t    kdsd_map; /* kernel D-Space descriptor map */
 extern vm_map_t    kisa_map; /* kernel I-Space address map */
+extern vm_map_t    kdsd_map; /* kernel D-Space descriptor map */
 extern vm_map_t    kdsa_map; /* kernel D-Space address map */
+
+/* map min offset */
+#define KISA_MIN	vm_map_min(kisa_map)
+#define KISD_MIN	vm_map_min(kisd_map)
+#define KDSA_MIN	vm_map_min(kdsa_map)
+#define KDSD_MIN	vm_map_min(kdsd_map)
+
+/* map max offset */
+#define KISA_MAX	vm_map_max(kisa_map)
+#define KISD_MAX	vm_map_max(kisd_map)
+#define KDSA_MAX	vm_map_max(kdsa_map)
+#define KDSD_MAX	vm_map_max(kdsd_map)
 
 int vm_kspace_map_alloc(vm_kspace_t, int, int);
 int vm_kspace_map_free(vm_kspace_t, int, int);
@@ -65,22 +74,21 @@ int vm_kspace_restore(vm_kspace_t, int, int);
 /* macros for 2.11BSD like save and restore maps */
 #ifdef NONSEPERATE
 #define savemap(kspace, flags) \
-	vm_kspace_save((kspace), KISA, (flags)); \
-	vm_kspace_save((kspace), KISD, (flags));
+	(void)vm_kspace_save((kspace), KISA, (flags)); \
+	(void)vm_kspace_save((kspace), KISD, (flags));
 
 #define restoremap(kspace, flags) \
-	vm_kspace_restore((kspace), KISA, (flags)); \
-	vm_kspace_restore((kspace), KISD, (flags));
+	(void)vm_kspace_restore((kspace), KISA, (flags)); \
+	(void)vm_kspace_restore((kspace), KISD, (flags));
 
 #else
 
 #define savemap(kspace, flags) \
-	vm_kspace_save((kspace), KDSA, (flags)); \
-	vm_kspace_save((kspace), KDSD, (flags));
+	(void)vm_kspace_save((kspace), KDSA, (flags)); \
+	(void)vm_kspace_save((kspace), KDSD, (flags));
 
 #define restoremap(kspace, flags) \
-	vm_kspace_restore((kspace), KDSA, (flags)); \
-	vm_kspace_restore((kspace), KDSD, (flags));
-
+	(void)vm_kspace_restore((kspace), KDSA, (flags)); \
+	(void)vm_kspace_restore((kspace), KDSD, (flags));
 #endif
 #endif /* _VM_KSPACE_H_ */

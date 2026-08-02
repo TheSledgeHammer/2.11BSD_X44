@@ -418,6 +418,8 @@ vm_estabur(p, tsize, dsize, ssize, sep, flags)
 	return (0);
 }
 
+#include "vm_uspace.h"
+
 void
 vm_sureg(void)
 {
@@ -441,8 +443,8 @@ vm_sureg(void)
 #else /* !NONSEPARATE */
 	limudp = &u.u_uisd[8];
 #endif /* !NONSEPARATE */
-	rap = ;
-	rdp = ;
+	rap = UISA_MIN;//vm_map_min(uisa_map);
+	rdp = UISD_MIN;//vm_map_min(uisd_map);
 	uap = &u.u_uisa[0];
 	for (udp = &u.u_uisd[0]; udp < limudp;) {
 		*rap++ = *uap++ + (*udp & SEGM_TX ? taddr :
