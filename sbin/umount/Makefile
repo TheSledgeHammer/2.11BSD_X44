@@ -14,6 +14,6 @@ SRCS+=	vfslist.c
 LDADD+=-lutil
 DPADD+=${LIBUTIL}
 
-COPTS.umount.c+=	${CC_WNO_CAST_FUNCTION_TYPE}
+COPTS.umount.c+=	${GCC_NO_CAST_FUNCTION_TYPE}
 
 .include <bsd.prog.mk>

@@ -31,14 +31,19 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1980, 1989, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)umount.c	8.8 (Berkeley) 5/8/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -46,7 +51,6 @@ static char sccsid[] = "@(#)umount.c	8.8 (Berkeley) 5/8/95";
 #include <sys/mount.h>
 #include <sys/time.h>
 #include <sys/socket.h>
-#include <sys/socketvar.h>
 
 #include <netdb.h>
 #include <rpc/rpc.h>
@@ -61,26 +65,35 @@ static char sccsid[] = "@(#)umount.c	8.8 (Berkeley) 5/8/95";
 #include <string.h>
 #include <unistd.h>
 
+#include "vfslist.h"
+
 typedef enum { MNTON, MNTFROM } mntwhat;
 
 int	fake, fflag, vflag;
-char	*nfshost;
+char *nfshost;
+/*
+int	checkvfsname(const char *, const char **);
+char **makevfslist(const char *);
+*/
 
-int	 checkvfsname(const char *, char **);
-char *getmntname(char *, mntwhat, char **);
-char **makevfslist(char *);
-int	 selected(char, char **);
-int	 namematch(struct hostent *);
-int	 umountall(char **);
-int	 umountfs(char *, char **);
-void usage(void);
-int	 xdr_dir(XDR *, char *);
+static char *getmntname(const char *, mntwhat, char **);
+static int selected(char, const char **);
+static int namematch(struct hostent *);
+static int umountall(const char **);
+static int umountfs(const char *, const char **);
+static void usage(void);
+static int xdr_dir(XDR *, char *);
+
+#ifdef notyet
+static void maketypelist(char *, const char **);
+static int fsnametotype(const char *);
+#endif
 
 int
 main(int argc, char *argv[])
 {
 	int all, ch, errs, mnts;
-	char **typelist = NULL;
+	const char **typelist = NULL;
 	struct statfs *mntbuf;
 
 	/* Start disks transferring immediately. */
@@ -155,8 +168,8 @@ main(int argc, char *argv[])
 	exit(errs);
 }
 
-int
-umountall(char **typelist)
+static int
+umountall(const char **typelist)
 {
 	struct fstab *fs;
 	int rval, type;
@@ -197,8 +210,8 @@ umountall(char **typelist)
 	return (0);
 }
 
-int
-umountfs(char *name, char **typelist)
+static int
+umountfs(const char *name, const char **typelist)
 {
 	enum clnt_stat clnt_stat;
 	struct hostent *hp;
@@ -207,7 +220,8 @@ umountfs(char *name, char **typelist)
 	struct timeval pertry, try;
 	CLIENT *clp;
 	int so;
-	char *type, *delimp, *hostp, *mntpt, rname[MAXPATHLEN];
+    const char *mntpt;
+	char *type, *delimp, *hostp, rname[MAXPATHLEN];
 
 	if (realpath(name, rname) == NULL) {
 		warn("%s", rname);
@@ -297,8 +311,8 @@ umountfs(char *name, char **typelist)
 	return (0);
 }
 
-char *
-getmntname(char *name, mntwhat what, char **type)
+static char *
+getmntname(const char *name, mntwhat what, char **type)
 {
 	static struct statfs *mntbuf;
 	static int mntsize;
@@ -324,7 +338,7 @@ getmntname(char *name, mntwhat what, char **type)
 	return (NULL);
 }
 
-int
+static int
 namematch(struct hostent *hp)
 {
 	char *cp, **np;
@@ -355,13 +369,13 @@ namematch(struct hostent *hp)
 /*
  * xdr routines for mount rpc's
  */
-int
+static int
 xdr_dir(XDR *xdrsp, char *dirp)
 {
 	return (xdr_string(xdrsp, &dirp, RPCMNT_PATHLEN));
 }
 
-void
+static void
 usage(void)
 {
 	(void)fprintf(stderr,
@@ -373,8 +387,8 @@ usage(void)
 
 static enum { IN_LIST, NOT_IN_LIST } which;
 
-int
-selected(char type, char **typelist)
+static int
+selected(char type, const char **typelist)
 {
 	/* If no type specified, it's always selected. */
 	if (typelist == NULL) {
@@ -388,8 +402,9 @@ selected(char type, char **typelist)
 	return (which == IN_LIST ? 0 : 1);
 }
 
-void
-maketypelist(char *fslist, char **typelist)
+#ifdef notyet
+static void
+maketypelist(char *fslist, const char **typelist)
 {
 	register int *av, i;
 	char *nextcp;
@@ -429,11 +444,11 @@ maketypelist(char *fslist, char **typelist)
 	av[i++] = MOUNT_NONE;
 }
 
-int
-fsnametotype(char *name)
+static int
+fsnametotype(const char *name)
 {
-	static char *namelist[] = INITMOUNTNAMES;
-	register char **cp;
+	static const char *namelist[] = INITMOUNTNAMES;
+	register const char **cp;
 
 	for (cp = namelist; *cp; ++cp) {
 		if (strcmp(name, *cp) == 0) {
@@ -442,3 +457,4 @@ fsnametotype(char *name)
 	}
 	return (MOUNT_NONE);
 }
+#endif
