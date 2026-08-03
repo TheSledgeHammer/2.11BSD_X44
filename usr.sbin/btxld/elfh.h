@@ -28,6 +28,13 @@
 
 #include <sys/exec_elf.h>
 
+/* e_ident */
+#define	IS_ELF(ehdr)	\
+        ((ehdr).e_ident[EI_MAG0] == ELFMAG0 && \
+    	(ehdr).e_ident[EI_MAG1] == ELFMAG1 && \
+		(ehdr).e_ident[EI_MAG2] == ELFMAG2 && \
+		(ehdr).e_ident[EI_MAG3] == ELFMAG3)
+
 struct elfh {
     Elf32_Ehdr 	e;					/* ELF header */
     Elf32_Phdr 	p[2];				/* program header */
