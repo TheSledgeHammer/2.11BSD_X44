@@ -274,13 +274,13 @@ __END_DECLS
  * Generic client creation routine. Supported protocols are "udp" and "tcp"
  * CLIENT *
  * clnt_create(host, prog, vers, prot);
- *	char *host; 	-- hostname
+ *	const char *host; 	-- hostname
  *	u_long prog;	-- program number
  *	u_long vers;	-- version number
- *	char *prot;	-- protocol
+ *	const char *prot;	-- protocol
  */
 __BEGIN_DECLS
-extern CLIENT *clnt_create(char *, u_long, u_long, char *);
+extern CLIENT *clnt_create(const char *, u_long, u_long, const char *);
 __END_DECLS
 
 
@@ -331,8 +331,8 @@ __END_DECLS
  * Print why creation failed
  */
 __BEGIN_DECLS
-extern void clnt_pcreateerror(char *);			/* stderr */
-extern char *clnt_spcreateerror(char *);			/* string */
+extern void clnt_pcreateerror(const char *);			/* stderr */
+extern char *clnt_spcreateerror(const char *);			/* string */
 __END_DECLS
 
 /*
@@ -347,8 +347,8 @@ __END_DECLS
  * Print an English error message, given the client error code
  */
 __BEGIN_DECLS
-extern void clnt_perror(CLIENT *, char *); 		/* stderr */
-extern char *clnt_sperror(CLIENT *, char *);	/* string */
+extern void clnt_perror(CLIENT *, const char *); 		/* stderr */
+extern char *clnt_sperror(CLIENT *, const char *);	/* string */
 __END_DECLS
 
 

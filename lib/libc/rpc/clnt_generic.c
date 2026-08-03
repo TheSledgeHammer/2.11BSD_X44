@@ -64,10 +64,10 @@ __weak_alias(clnt_create,_clnt_create);
  */
 CLIENT *
 clnt_create(hostname, prog, vers, proto)
-	char *hostname;
+	const char *hostname;
 	u_long prog;
 	u_long vers;
-	char *proto;
+	const char *proto;
 {
 	struct hostent *h;
 	struct protoent *p;

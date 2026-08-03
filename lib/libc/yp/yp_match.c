@@ -217,7 +217,7 @@ again:
 		      _yplib_timeout);
 	if (r != RPC_SUCCESS) {
 		if (_yplib_bindtries <= 0 && ++nerrs == _yplib_nerrs) {
-			clnt_perror(ysd->dom_client, __UNCONST("yp_match: clnt_call"));
+			clnt_perror(ysd->dom_client, "yp_match: clnt_call");
 			nerrs = 0;
 		}
 		else if (_yplib_bindtries > 0 && ++nerrs == _yplib_bindtries) {

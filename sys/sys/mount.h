@@ -107,19 +107,19 @@ struct statfs {
 #define	MOUNT_MSDOS	"msdos"		/* MSDOS Filesystem */
 #define	MOUNT_LFS	"lfs"		/* Log-based Filesystem */
 #define	MOUNT_FDESC	"fdesc"		/* File Descriptor Filesystem */
-#define	MOUNT_CD9660	"cd9660"	/* ISO9660 (aka CDROM) Filesystem */
-#define	MOUNT_LOFS	"lofs"		/* Loopback Filesystem */
-#define	MOUNT_UNION	"union"		/* Union (translucent) Filesystem */
-#define	MOUNT_UFS211	"ufs211"	/* 2.11BSD UFS Filesystem */
-#define	MOUNT_UFML	"ufml"		/* UFML Filesystem */
+#define	MOUNT_CD9660 "cd9660"	/* ISO9660 (aka CDROM) Filesystem */
+#define	MOUNT_LOFS	 "lofs"		/* Loopback Filesystem */
+#define	MOUNT_UNION	 "union"		/* Union (translucent) Filesystem */
+#define	MOUNT_UFS211 "ufs211"	/* 2.11BSD UFS Filesystem */
+#define	MOUNT_UFML	 "ufml"		/* UFML Filesystem */
 
 #define	INITMOUNTNAMES { 	\
-	MOUNT_NONE, 	/* 0 */	\
-	MOUNT_UFS, 	/* 1 */	\
-	MOUNT_FFS, 	/* 2 */	\
-	MOUNT_NFS,	/* 3 */	\
-	MOUNT_MFS, 	/* 4 */	\
-	MOUNT_LFS, 	/* 5 */	\
+	MOUNT_NONE,		/* 0 */	\
+	MOUNT_UFS, 		/* 1 */	\
+	MOUNT_FFS, 		/* 2 */	\
+	MOUNT_NFS,		/* 3 */	\
+	MOUNT_MFS, 		/* 4 */	\
+	MOUNT_LFS, 		/* 5 */	\
 	MOUNT_MSDOS, 	/* 6 */ \
 	MOUNT_FDESC, 	/* 7 */	\
 	MOUNT_LOFS, 	/* 8 */	\

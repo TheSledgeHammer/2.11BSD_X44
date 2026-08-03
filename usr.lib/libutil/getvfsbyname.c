@@ -40,11 +40,11 @@ static char sccsid[] = "@(#)kvm_getvfsbyname.c	8.1 (Berkeley) 4/3/95";
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/sysctl.h>
+
 #include <errno.h>
 #include <kvm.h>
 #include <string.h>
-
-int getvfsbyname(const char *, struct vfsconf *);
+#include <util.h>
 
 /*
  * Given a filesystem name, determine if it is resident in the kernel,

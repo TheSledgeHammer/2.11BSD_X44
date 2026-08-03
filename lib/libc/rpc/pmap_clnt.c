@@ -91,7 +91,7 @@ pmap_set(program, version, protocol, port)
 	parms.pm_port = port;
 	if (CLNT_CALL(client, PMAPPROC_SET, (xdrproc_t)xdr_pmap, 
 	    &parms, (xdrproc_t)xdr_bool, &rslt, tottimeout) != RPC_SUCCESS) {
-		clnt_perror(client, __UNCONST("Cannot register service"));
+		clnt_perror(client, "Cannot register service");
 		rslt = FALSE;
 	}
 	CLNT_DESTROY(client);

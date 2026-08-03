@@ -72,7 +72,7 @@ static char *_buf(void);
 static char *auth_errmsg(enum auth_stat);
 
 static char *
-_buf()
+_buf(void)
 {
 
 	buflen = 256;
@@ -87,7 +87,7 @@ _buf()
 char *
 clnt_sperror(rpch, s)
 	CLIENT *rpch;
-	char *s;
+	const char *s;
 {
 	struct rpc_err e;
 	char *err;
@@ -174,7 +174,7 @@ clnt_sperror(rpch, s)
 void
 clnt_perror(rpch, s)
 	CLIENT *rpch;
-	char *s;
+	const char *s;
 {
 	(void) fprintf(stderr, "%s\n", clnt_sperror(rpch,s));
 }
@@ -231,7 +231,7 @@ clnt_perrno(num)
 
 char *
 clnt_spcreateerror(s)
-	char *s;
+	const char *s;
 {
 	char *str = _buf();
 	size_t len = buflen, i;
@@ -277,7 +277,7 @@ clnt_spcreateerror(s)
 
 void
 clnt_pcreateerror(s)
-	char *s;
+	const char *s;
 {
 	(void) fprintf(stderr, "%s\n", clnt_spcreateerror(s));
 }

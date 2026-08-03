@@ -215,7 +215,7 @@ trynet:
 		client = clnttcp_create(&clnt_sin, YPBINDPROG, YPBINDVERS,
 					&clnt_sock, 0, 0);
 		if (client == NULL) {
-			clnt_pcreateerror(__UNCONST("clnttcp_create"));
+			clnt_pcreateerror("clnttcp_create");
 			if (new)
 				free(ysd);
 			return YPERR_YPBIND;
@@ -263,7 +263,7 @@ gotit:
 	ysd->dom_client = clntudp_create(&ysd->dom_server_addr,
 	    YPPROG, YPVERS, _yplib_rpc_timeout, &ysd->dom_socket);
 	if (ysd->dom_client == NULL) {
-		clnt_pcreateerror(__UNCONST("clntudp_create"));
+		clnt_pcreateerror("clntudp_create");
 		ysd->dom_vers = -1;
 		goto again;
 	}

@@ -91,12 +91,12 @@ static int readtcp(caddr_t, caddr_t, int);
 static int writetcp(caddr_t, caddr_t, int);
 
 static const struct clnt_ops tcp_ops = {
-		clnttcp_call,
-		clnttcp_abort,
-		clnttcp_geterr,
-		clnttcp_freeres,
-		clnttcp_destroy,
-		clnttcp_control
+		.cl_call = clnttcp_call,
+		.cl_abort = clnttcp_abort,
+		.cl_geterr = clnttcp_geterr,
+		.cl_freeres = clnttcp_freeres,
+		.cl_destroy = clnttcp_destroy,
+		.cl_control = clnttcp_control
 };
 
 

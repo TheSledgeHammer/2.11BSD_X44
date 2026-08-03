@@ -93,7 +93,7 @@ pmap_getmaps(address)
 		if (CLNT_CALL(client, PMAPPROC_DUMP, (xdrproc_t)xdr_void, NULL,
 		    (xdrproc_t)xdr_pmaplist, &head, minutetimeout) !=
 		    RPC_SUCCESS) {
-			clnt_perror(client, __UNCONST("pmap_getmaps rpc problem"));
+			clnt_perror(client, "pmap_getmaps rpc problem");
 		}
 		CLNT_DESTROY(client);
 	}

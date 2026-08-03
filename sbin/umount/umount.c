@@ -64,6 +64,7 @@ static char sccsid[] = "@(#)umount.c	8.8 (Berkeley) 5/8/95";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <util.h>
 
 #include "vfslist.h"
 
@@ -71,13 +72,12 @@ typedef enum { MNTON, MNTFROM } mntwhat;
 
 int	fake, fflag, vflag;
 char *nfshost;
+
 /*
 int	checkvfsname(const char *, const char **);
 char **makevfslist(const char *);
 */
-
 static char *getmntname(const char *, mntwhat, char **);
-static int selected(char, const char **);
 static int namematch(struct hostent *);
 static int umountall(const char **);
 static int umountfs(const char *, const char **);
@@ -85,6 +85,7 @@ static void usage(void);
 static int xdr_dir(XDR *, char *);
 
 #ifdef notyet
+static int selected(char, const char **);
 static void maketypelist(char *, const char **);
 static int fsnametotype(const char *);
 #endif
@@ -189,12 +190,15 @@ umountall(const char **typelist)
 		    strcmp(fs->fs_type, FSTAB_RQ))
 			continue;
 		/* If an unknown file system type, complain. */
-		if (getvfsbyname(fs->fs_vfstype, &vfc) < 0) {
+		if (getvfsbyname(fs->fs_vfstype, &vfc) < 0
+				|| fsnametotype(fs->fs_vfstype) == 0) {
 			warnx("%s: unknown mount type", fs->fs_vfstype);
 			continue;
 		}
-		if (checkvfsname(fs->fs_vfstype, typelist))
+		if (checkvfsname(fs->fs_vfstype, typelist)
+				|| selected(fs->fs_vfstype)) {
 			continue;
+		}
 
 		/* 
 		 * We want to unmount the file systems in the reverse order
@@ -385,6 +389,7 @@ usage(void)
 	exit(1);
 }
 
+#ifdef notyet
 static enum { IN_LIST, NOT_IN_LIST } which;
 
 static int
@@ -402,7 +407,6 @@ selected(char type, const char **typelist)
 	return (which == IN_LIST ? 0 : 1);
 }
 
-#ifdef notyet
 static void
 maketypelist(char *fslist, const char **typelist)
 {

@@ -79,12 +79,12 @@ static bool_t clntudp_control(CLIENT *, u_int, char *);
 static void clntudp_destroy(CLIENT *);
 
 static const struct clnt_ops udp_ops = {
-		clntudp_call,
-		clntudp_abort,
-		clntudp_geterr,
-		clntudp_freeres,
-		clntudp_destroy,
-		clntudp_control
+		.cl_call = clntudp_call,
+		.cl_abort = clntudp_abort,
+		.cl_geterr = clntudp_geterr,
+		.cl_freeres = clntudp_freeres,
+		.cl_destroy = clntudp_destroy,
+		.cl_control = clntudp_control
 };
 
 /* 

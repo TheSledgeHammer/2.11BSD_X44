@@ -31,7 +31,7 @@ LIB=	util
 CPPFLAGS+=-DLIBC_SCCS -I${.CURDIR}
 SRCS+=	efun.c 														\
 		getbootfile.c getmaxpartitions.c getrawpartition.c 			\
-        if_media.c                                                  \
+        getvfsbyname.c if_media.c                                   \
 		login.c loginx.c login_cap.c login_tty.c logout.c logoutx.c \
 		logwtmp.c logwtmpx.c opendisk.c parsedate.y pidfile.c 		\
 		pidlock.c pty.c pw_util.c raise_default_signal.c 			\
@@ -40,9 +40,9 @@ SRCS+=	efun.c 														\
 
 MAN=	efun.3 														\
 		getbootfile.3 getmaxpartitions.3 getrawpartition.3 			\
-		login.3 login_cap.3 loginx.3 opendisk.3 parsedate.3 		\
-		pidfile.3 pidlock.3 raise_default_signal.3 secure_path.3 	\
-		snprintb.3 sockaddr_snprintf.3 stat_flags.3 				\
+		getvfsbyname.3 login.3 login_cap.3 loginx.3 opendisk.3 		\
+		parsedate.3 pidfile.3 pidlock.3 raise_default_signal.3 		\
+		secure_path.3 snprintb.3 sockaddr_snprintf.3 stat_flags.3 	\
 		ttyaction.3 ttymsg.3
 
 CPPFLAGS.sockaddr_snprintf.c+=-DHAVE_UTIL_H

@@ -89,12 +89,12 @@ static bool_t clntraw_control(CLIENT *, u_int, char *);
 static void clntraw_destroy(CLIENT *);
 
 static const struct clnt_ops client_ops = {
-		clntraw_call,
-		clntraw_abort,
-		clntraw_geterr,
-		clntraw_freeres,
-		clntraw_destroy,
-		clntraw_control
+		.cl_call = clntraw_call,
+		.cl_abort = clntraw_abort,
+		.cl_geterr = clntraw_geterr,
+		.cl_freeres = clntraw_freeres,
+		.cl_destroy = clntraw_destroy,
+		.cl_control = clntraw_control
 };
 
 /*
@@ -240,8 +240,8 @@ clntraw_geterr(cl, err)
 	CLIENT *cl;
 	struct rpc_err *err;
 {
-}
 
+}
 
 /* ARGSUSED */
 static bool_t
@@ -267,6 +267,7 @@ static void
 clntraw_abort(cl)
 	CLIENT *cl;
 {
+
 }
 
 /*ARGSUSED*/
@@ -284,4 +285,5 @@ static void
 clntraw_destroy(cl)
 	CLIENT *cl;
 {
+
 }
