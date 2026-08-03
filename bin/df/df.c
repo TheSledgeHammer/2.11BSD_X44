@@ -64,14 +64,14 @@ static char sccsid[] = "@(#)df.c	8.9 (Berkeley) 5/8/95";
 #include <string.h>
 #include <unistd.h>
 
-int	  checkvfsname(const char *, char **);
-char	**makevfslist(char *);
-long	  regetmntinfo(struct statfs **, long, char **);
-int	  bread(off_t, void *, int);
-char	 *getmntpt(char *);
-void	  prtstat(struct statfs *, int);
-void	  ufs_df(char *, int);
-void	  usage(void);
+#include "vfslist.h"
+
+long regetmntinfo(struct statfs **, long, const char **);
+int	bread(off_t, void *, int);
+char *getmntpt(char *);
+void prtstat(struct statfs *, int);
+void ufs_df(char *, int);
+void usage(void);
 
 int	iflag, nflag;
 struct	ufs_args mdev;
@@ -83,7 +83,8 @@ main(int argc, char *argv[])
 	struct statfs statfsbuf, *mntbuf;
 	long mntsize;
 	int ch, i, maxwidth, width;
-	char *mntpt, **vfslist;
+	char *mntpt;
+    const char **vfslist;
 
 	vfslist = NULL;
 	while ((ch = getopt(argc, argv, "int:")) != EOF)
@@ -197,7 +198,7 @@ getmntpt(char *name)
  * current (not cached) info.  Returns the new count of valid statfs bufs.
  */
 long
-regetmntinfo(struct statfs **mntbufp, long mntsize, char **vfslist)
+regetmntinfo(struct statfs **mntbufp, long mntsize, const char **vfslist)
 {
 	int i, j;
 	struct statfs *mntbuf;
