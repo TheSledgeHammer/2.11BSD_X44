@@ -73,15 +73,15 @@ extern struct mapent _coremap[];
  * panic if not
  */
 static void
-rmcheck(addr, size, func, name, mapsize)
+rmcheck(addr, size, msg, name, mapsize)
 	memaddr_t addr;
 	size_t size;
-	char *func, *name;
+	char *msg, *name;
 	int mapsize;
 {
 	/* mapsize had better be at least 2 */
 	if (mapsize < 2 || addr <= 0 || size < 0) {
-		panic("%s: %s", func, name);
+		panic("%s: %s", msg, name);
 	}
 }
 
