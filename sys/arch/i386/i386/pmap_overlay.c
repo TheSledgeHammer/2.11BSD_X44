@@ -107,7 +107,7 @@ pmap_pinit_ovltab(ovltab)
 
 	/* install self-referential address mapping entry */
 	for (i = 0; i < NPGOVL; i++) {
-		ovltab[i] = pmap_extract(kernel_pmap, (vm_offset_t)ovltab);
+		ovltab[i] = pmap_extract(kernel_pmap, (vm_offset_t)ovltab) | PG_V;
 	}
 }
 

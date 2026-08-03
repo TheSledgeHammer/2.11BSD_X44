@@ -53,14 +53,12 @@ __RCSID("$NetBSD: expand.c,v 1.9 2003/08/07 11:13:39 agc Exp $");
 int	nstops;
 int	tabstops[100];
 
-static	void getstops(char *);
+static void getstops(char *);
 int	main(int, char **);
-static	void usage(void);
+static void usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int c, column;
 	int n;
@@ -149,8 +147,7 @@ main(argc, argv)
 }
 
 static void
-getstops(cp)
-	char *cp;
+getstops(char *cp)
 {
 	int i;
 
@@ -176,9 +173,8 @@ bad:
 }
 
 static void
-usage()
+usage(void)
 {
-
 	(void)fprintf(stderr, "usage: expand [-t tablist] [file ...]\n");
 	exit(EXIT_FAILURE);
 }

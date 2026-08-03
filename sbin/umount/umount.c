@@ -73,22 +73,12 @@ typedef enum { MNTON, MNTFROM } mntwhat;
 int	fake, fflag, vflag;
 char *nfshost;
 
-/*
-int	checkvfsname(const char *, const char **);
-char **makevfslist(const char *);
-*/
 static char *getmntname(const char *, mntwhat, char **);
 static int namematch(struct hostent *);
 static int umountall(const char **);
 static int umountfs(const char *, const char **);
 static void usage(void);
 static int xdr_dir(XDR *, char *);
-
-#ifdef notyet
-static int selected(char, const char **);
-static void maketypelist(char *, const char **);
-static int fsnametotype(const char *);
-#endif
 
 int
 main(int argc, char *argv[])
@@ -190,13 +180,13 @@ umountall(const char **typelist)
 		    strcmp(fs->fs_type, FSTAB_RQ))
 			continue;
 		/* If an unknown file system type, complain. */
-		if (getvfsbyname(fs->fs_vfstype, &vfc) < 0
-				|| fsnametotype(fs->fs_vfstype) == 0) {
+		if ((getvfsbyname(fs->fs_vfstype, &vfc) < 0)
+				|| ((type = fsnametotype(fs->fs_vfstype)) == 0)) {
 			warnx("%s: unknown mount type", fs->fs_vfstype);
 			continue;
 		}
 		if (checkvfsname(fs->fs_vfstype, typelist)
-				|| selected(fs->fs_vfstype)) {
+				|| selected(type)) {
 			continue;
 		}
 
@@ -205,7 +195,8 @@ umountall(const char **typelist)
 		 * that they were mounted.  So, we save off the file name
 		 * in some allocated memory, and then call recursively.
 		 */
-		if ((cp = malloc((size_t)strlen(fs->fs_file) + 1)) == NULL)
+		cp = malloc((size_t)strlen(fs->fs_file) + 1);
+		if (cp == NULL)
 			err(1, NULL);
 		(void)strcpy(cp, fs->fs_file);
 		rval = umountall(typelist);
@@ -224,8 +215,8 @@ umountfs(const char *name, const char **typelist)
 	struct timeval pertry, try;
 	CLIENT *clp;
 	int so;
-    const char *mntpt;
-	char *type, *delimp, *hostp, rname[MAXPATHLEN];
+    const char *mntpt, *hostp;
+	char *type, *delimp, rname[MAXPATHLEN];
 
 	if (realpath(name, rname) == NULL) {
 		warn("%s", rname);
@@ -304,7 +295,7 @@ umountfs(const char *name, const char **typelist)
 		clp->cl_auth = authunix_create_default();
 		try.tv_sec = 20;
 		try.tv_usec = 0;
-		clnt_stat = clnt_call(clp, RPCMNT_UMOUNT, xdr_dir, name, xdr_void, (caddr_t)0, try);
+		clnt_stat = clnt_call(clp, RPCMNT_UMOUNT, xdr_dir, __UNCONST(name), xdr_void, (caddr_t)0, try);
 		if (clnt_stat != RPC_SUCCESS) {
 			clnt_perror(clp, "Bad MNT RPC");
 			return (1);
@@ -347,24 +338,29 @@ namematch(struct hostent *hp)
 {
 	char *cp, **np;
 
-	if ((hp == NULL) || (nfshost == NULL))
+	if ((hp == NULL) || (nfshost == NULL)) {
 		return (1);
+	}
 
-	if (strcasecmp(nfshost, hp->h_name) == 0)
+	if (strcasecmp(nfshost, hp->h_name) == 0) {
 		return (1);
+	}
 
 	if ((cp = strchr(hp->h_name, '.')) != NULL) {
 		*cp = '\0';
-		if (strcasecmp(nfshost, hp->h_name) == 0)
+		if (strcasecmp(nfshost, hp->h_name) == 0) {
 			return (1);
+		}
 	}
 	for (np = hp->h_aliases; *np; np++) {
-		if (strcasecmp(nfshost, *np) == 0)
+		if (strcasecmp(nfshost, *np) == 0) {
 			return (1);
+		}
 		if ((cp = strchr(*np, '.')) != NULL) {
 			*cp = '\0';
-			if (strcasecmp(nfshost, *np) == 0)
+			if (strcasecmp(nfshost, *np) == 0) {
 				return (1);
+			}
 		}
 	}
 	return (0);
@@ -390,75 +386,60 @@ usage(void)
 }
 
 #ifdef notyet
-static enum { IN_LIST, NOT_IN_LIST } which;
+struct addrinfo *nfshost_ai = NULL;
+static int namematch2(struct addrinfo *);
+static int sacmp(struct sockaddr *, struct sockaddr *);
 
 static int
-selected(char type, const char **typelist)
+sacmp(struct sockaddr *sa1, struct sockaddr *sa2)
 {
-	/* If no type specified, it's always selected. */
-	if (typelist == NULL) {
+	void *p1, *p2;
+	int len;
+
+	if (sa1->sa_family != sa2->sa_family)
+		return (1);
+
+	switch (sa1->sa_family) {
+	case AF_INET:
+		p1 = &((struct sockaddr_in *)sa1)->sin_addr;
+		p2 = &((struct sockaddr_in *)sa2)->sin_addr;
+		len = 4;
+		break;
+	case AF_INET6:
+		p1 = &((struct sockaddr_in6 *)sa1)->sin6_addr;
+		p2 = &((struct sockaddr_in6 *)sa2)->sin6_addr;
+		len = 16;
+		if (((struct sockaddr_in6 *)sa1)->sin6_scope_id !=
+		    ((struct sockaddr_in6 *)sa2)->sin6_scope_id)
+			return (1);
+		break;
+	default:
 		return (1);
 	}
-	for (; *typelist != MOUNT_NONE; ++typelist) {
-		if (type == *typelist) {
-			return (which == IN_LIST ? 1 : 0);
-		}
-	}
-	return (which == IN_LIST ? 0 : 1);
-}
 
-static void
-maketypelist(char *fslist, const char **typelist)
-{
-	register int *av, i;
-	char *nextcp;
-
-	if ((fslist == NULL) || (fslist[0] == '\0'))
-		errx(1, "empty type list");
-
-	/*
-	 * XXX
-	 * Note: the syntax is "noxxx,yyy" for no xxx's and
-	 * no yyy's, not the more intuitive "noyyy,noyyy".
-	 */
-	if (fslist[0] == 'n' && fslist[1] == 'o') {
-		fslist += 2;
-		which = NOT_IN_LIST;
-	} else
-		which = IN_LIST;
-
-	/* Count the number of types. */
-	for (i = 0, nextcp = fslist; *nextcp != NULL; ++nextcp)
-		if (*nextcp == ',')
-			i++;
-
-	/* Build an array of that many types. */
-	if ((av = typelist = (int *)malloc((i + 2) * sizeof(int))) == NULL)
-		err(1, NULL);
-	for (i = 0; fslist != NULL; fslist = nextcp, ++i) {
-		if ((nextcp = strchr(fslist, ',')) != NULL) {
-			*nextcp++ = '\0';
-		}
-		av[i] = fsnametotype(fslist);
-		if (av[i] == MOUNT_NONE) {
-			errx(1, "%s: unknown mount type", fslist);
-		}
-	}
-	/* Terminate the array. */
-	av[i++] = MOUNT_NONE;
+	return memcmp(p1, p2, len);
 }
 
 static int
-fsnametotype(const char *name)
+namematch2(struct addrinfo *ai)
 {
-	static const char *namelist[] = INITMOUNTNAMES;
-	register const char **cp;
+	struct addrinfo *aip;
 
-	for (cp = namelist; *cp; ++cp) {
-		if (strcmp(name, *cp) == 0) {
-			return (cp - namelist);
-		}
+	if (nfshost == NULL || nfshost_ai == NULL) {
+		return (1);
 	}
-	return (MOUNT_NONE);
+
+	while (ai != NULL) {
+		aip = nfshost_ai;
+		while (aip != NULL) {
+			if (sacmp(ai->ai_addr, aip->ai_addr) == 0) {
+				return (1);
+			}
+			aip = aip->ai_next;
+		}
+		ai = ai->ai_next;
+	}
+	return (0);
 }
+
 #endif

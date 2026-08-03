@@ -414,7 +414,7 @@ pmap_cold(void)
 #ifdef OVERLAY
 	/* Install Overlay Space */
 	for (a = 0; a < NPGOVL; a++) {
-		IdleOVL[a] = (OVLphys + ptoa(a));
+		IdleOVL[a] = (OVLphys + ptoa(a)) | PG_V | PG_RW;
 	}
 #endif
 
