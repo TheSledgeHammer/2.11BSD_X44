@@ -110,7 +110,7 @@ makevfslist(const char *fslist)
 {
 	const char **av;
 	int i;
-	char *nextcp;
+	char *nextcp, *fsl;
 
 	if (fslist == NULL) {
 		return (NULL);
@@ -119,7 +119,11 @@ makevfslist(const char *fslist)
 		fslist += 2;
 		skipvfs = 1;
 	}
-	for (i = 0, nextcp = fslist; *nextcp; nextcp++) {
+	if ((fsl = strdup(fslist)) == NULL) {
+		warn("strdup");
+		return (NULL);
+	}
+	for (i = 0, nextcp = fsl; *nextcp; nextcp++) {
 		if (*nextcp == ',') {
 			i++;
 		}
@@ -128,7 +132,7 @@ makevfslist(const char *fslist)
 		warn("malloc");
 		return (NULL);
 	}
-	nextcp = fslist;
+	nextcp = fsl;
 	i = 0;
 	av[i++] = nextcp;
 	while ((nextcp = strchr(nextcp, ',')) != NULL) {
@@ -143,7 +147,7 @@ void
 maketypelist(const char *fslist)
 {
 	int *av, i;
-	char *nextcp;
+	char *nextcp, *fsl;
 
 	if ((fslist == NULL) || (fslist[0] == '\0')) {
 		errx(1, "empty type list");
@@ -161,8 +165,12 @@ maketypelist(const char *fslist)
 		which = IN_LIST;
 	}
 
+	if ((fsl = strdup(fslist)) == NULL) {
+		errx(1, "strdup");
+	}
+
 	/* Count the number of types. */
-	for (i = 0, nextcp = fslist; *nextcp != NULL; ++nextcp) {
+	for (i = 0, nextcp = fsl; *nextcp != NULL; ++nextcp) {
 		if (*nextcp == ',') {
 			i++;
 		}
@@ -172,8 +180,8 @@ maketypelist(const char *fslist)
 	if ((av = typelist = (int *)malloc((i + 2) * sizeof(int))) == NULL) {
 		err(1, NULL);
 	}
-	for (i = 0; fslist != NULL; fslist = nextcp, ++i) {
-		if ((nextcp = strchr(fslist, ',')) != NULL) {
+	for (i = 0; fsl != NULL; fsl = nextcp, ++i) {
+		if ((nextcp = strchr(fsl, ',')) != NULL) {
 			*nextcp++ = '\0';
 		}
 		av[i] = fsnametotype(fslist);
