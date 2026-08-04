@@ -19,7 +19,9 @@ SCRIPT_ENV= \
 	AWK=${TOOL_AWK:Q} \
 	SED=${TOOL_SED:Q}
 
-keysym.h: mkkeysym.sh ${DESTDIR}/usr/include/dev/wscons/wsksymdef.h
+WSKEYSYM_H=/usr/include/dev/misc/wscons/wsksymdef.h
+
+keysym.h: mkkeysym.sh ${DESTDIR}${WSKEYSYM_H}
 	${_MKTARGET_CREATE}
 	${SCRIPT_ENV} ${HOST_SH} ${.CURDIR}/mkkeysym.sh \
-	  ${DESTDIR}/usr/include/dev/wscons/wsksymdef.h > keysym.h
+	  ${DESTDIR}${WSKEYSYM_H} > keysym.h
