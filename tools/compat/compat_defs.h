@@ -439,6 +439,10 @@ int issetugid(void);
 int mkstemp(char *);
 #endif
 
+#if !HAVE_DECL_MKSTEMPS
+int mkstemps(char *, int);
+#endif
+
 #if !HAVE_DECL_MKDTEMP
 char *mkdtemp(char *);
 #endif

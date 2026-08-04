@@ -535,6 +535,9 @@ sap_insert_af(struct sap_tree *tree, struct sap_node *sap, int sid, int af)
 {
 	switch (af) {
 	case AF_INET:
+		if (sid != SAP_SID_INET4) {
+			goto unknown;
+		}
 		sap_insert(tree, sap, sap_smask_inet4(sap), SAP_TYPE_SIN4, SAP_SUBNET_IPV4, SAP_SUBTRAN_TCP, SAP_CLASS_CONS, SAP_SID_INET4);
 		sap_insert(tree, sap, sap_smask_inet4(sap), SAP_TYPE_SIN4, SAP_SUBNET_IPV4, SAP_SUBTRAN_UDP, SAP_CLASS_CLNS, SAP_SID_INET4);
 		sap_insert(tree, sap, sap_smask_inet4(sap), SAP_TYPE_SIN4, SAP_SUBNET_IPV4, SAP_SUBTRAN_TCP, SAP_CLASS_CONS, SAP_SID_INET4);
@@ -546,6 +549,9 @@ sap_insert_af(struct sap_tree *tree, struct sap_node *sap, int sid, int af)
 		sap_insert(tree, sap, sap_smask_inet4(sap), SAP_TYPE_SIN4, SAP_SUBNET_IPV6, SAP_SUBTRAN_UDP, SAP_CLASS_CLNS, SAP_SID_INET4);
 		break;
 	case AF_INET6:
+		if (sid != SAP_SID_INET6) {
+			goto unknown;
+		}
 		sap_insert(tree, sap, sap_smask_inet6(sap), SAP_TYPE_SIN6, SAP_SUBNET_IPV6, SAP_SUBTRAN_TCP, SAP_CLASS_CONS, SAP_SID_INET6);
 		sap_insert(tree, sap, sap_smask_inet6(sap), SAP_TYPE_SIN6, SAP_SUBNET_IPV6, SAP_SUBTRAN_UDP, SAP_CLASS_CLNS, SAP_SID_INET6);
 		sap_insert(tree, sap, sap_smask_inet6(sap), SAP_TYPE_SIN6, SAP_SUBNET_IPV6, SAP_SUBTRAN_TCP, SAP_CLASS_CONS, SAP_SID_INET6);
@@ -557,9 +563,15 @@ sap_insert_af(struct sap_tree *tree, struct sap_node *sap, int sid, int af)
 		sap_insert(tree, sap, sap_smask_inet6(sap), SAP_TYPE_SIN6, SAP_SUBNET_IPV4, SAP_SUBTRAN_UDP, SAP_CLASS_CLNS, SAP_SID_INET6);
 		break;
 	case AF_NS:
+		if (sid != SAP_SID_NS) {
+			goto unknown;
+		}
 		sap_insert(tree, sap, sap_smask_iso(sap), SAP_TYPE_SNS, SAP_SUBNET_IDP, SAP_SUBTRAN_SPP, SAP_CLASS_CLNS, SAP_SID_NS);
 		break;
 	case AF_ISO:
+		if (sid != SAP_SID_ISO) {
+			goto unknown;
+		}
 		sap_insert(tree, sap, sap_smask_iso(sap), SAP_TYPE_SISO, SAP_SUBNET_CONS, SAP_SUBTRAN_TP0, SAP_CLASS_CONS, SAP_SID_ISO);
 		sap_insert(tree, sap, sap_smask_iso(sap), SAP_TYPE_SISO, SAP_SUBNET_CONS, SAP_SUBTRAN_TP1, SAP_CLASS_CONS, SAP_SID_ISO);
 		sap_insert(tree, sap, sap_smask_iso(sap), SAP_TYPE_SISO, SAP_SUBNET_CONS, SAP_SUBTRAN_TP2, SAP_CLASS_CONS, SAP_SID_ISO);
@@ -571,16 +583,34 @@ sap_insert_af(struct sap_tree *tree, struct sap_node *sap, int sid, int af)
 		sap_insert(tree, sap, sap_smask_iso(sap), SAP_TYPE_SISO, SAP_SUBNET_ESIS, SAP_SUBTRAN_TP4, SAP_CLASS_CLNS, SAP_SID_ISO);
 		break;
 	case AF_CCITT:
+		if (sid != SAP_SID_X25) {
+			goto unknown;
+		}
 		sap_insert(tree, sap, sap_smask_x25(sap), SAP_TYPE_SX25, SAP_SUBNET_X25, SAP_SUBTRAN_X25, SAP_CLASS_CONS, SAP_SID_X25);
 		break;
 	case AF_NATM:
+		if (sid != SAP_SID_ATM) {
+			goto unknown;
+		}
 		sap_insert(tree, sap, sap_smask_atm(sap), SAP_TYPE_SATM, SAP_SUBNET_ATM, SAP_SUBTRAN_ATM, SAP_CLASS_CONS, SAP_SID_ATM);
 		break;
 	case AF_IPX:
+		if (sid != SAP_SID_IPX) {
+			goto unknown;
+		}
 		sap_insert(tree, sap, sap_smask_ipx(sap), SAP_TYPE_SIPX, SAP_SUBNET_IPX, SAP_SUBTRAN_SPX, SAP_CLASS_CLNS, SAP_SID_IPX);
 		break;
 	case AF_SNA:
+		if (sid != SAP_SID_SNA) {
+			goto unknown;
+		}
 		sap_insert(tree, sap, sap_smask_sna(sap), SAP_TYPE_SSNA, SAP_SUBNET_SNA, SAP_SUBTRAN_SNA, SAP_CLASS_CLNS, SAP_SID_SNA);
+		break;
+	case AF_UNSPEC:
+unknown:
+		/* FALLTHROUGH */
+	default:
+		sap_insert(tree, sap, sap_smask_unknown(sap), SAP_TYPE_UNKNOWN, SAP_SUBNET_UNKNOWN, SAP_SUBTRAN_UNKNOWN, SAP_CLASS_UNKNOWN, SAP_SID_UNKNOWN);
 		break;
 	}
 }
@@ -590,6 +620,9 @@ sap_remove_af(struct sap_tree *tree, struct sap_node *sap, int sid, int af)
 {
 	switch (af) {
 	case AF_INET:
+		if (sid != SAP_SID_INET4) {
+			goto unknown;
+		}
 		sap_remove(tree, sap_smask_inet4(sap), SAP_TYPE_SIN4, SAP_SUBNET_IPV4, SAP_SUBTRAN_TCP, SAP_CLASS_CONS, SAP_SID_INET4);
 		sap_remove(tree, sap_smask_inet4(sap), SAP_TYPE_SIN4, SAP_SUBNET_IPV4, SAP_SUBTRAN_UDP, SAP_CLASS_CLNS, SAP_SID_INET4);
 		sap_remove(tree, sap_smask_inet4(sap), SAP_TYPE_SIN4, SAP_SUBNET_IPV4, SAP_SUBTRAN_TCP, SAP_CLASS_CONS, SAP_SID_INET4);
@@ -601,6 +634,9 @@ sap_remove_af(struct sap_tree *tree, struct sap_node *sap, int sid, int af)
 		sap_remove(tree, sap_smask_inet4(sap), SAP_TYPE_SIN4, SAP_SUBNET_IPV6, SAP_SUBTRAN_UDP, SAP_CLASS_CLNS, SAP_SID_INET4);
 		break;
 	case AF_INET6:
+		if (sid != SAP_SID_INET6) {
+			goto unknown;
+		}
 		sap_remove(tree, sap_smask_inet6(sap), SAP_TYPE_SIN6, SAP_SUBNET_IPV6, SAP_SUBTRAN_TCP, SAP_CLASS_CONS, SAP_SID_INET6);
 		sap_remove(tree, sap_smask_inet6(sap), SAP_TYPE_SIN6, SAP_SUBNET_IPV6, SAP_SUBTRAN_UDP, SAP_CLASS_CLNS, SAP_SID_INET6);
 		sap_remove(tree, sap_smask_inet6(sap), SAP_TYPE_SIN6, SAP_SUBNET_IPV6, SAP_SUBTRAN_TCP, SAP_CLASS_CONS, SAP_SID_INET6);
@@ -612,9 +648,15 @@ sap_remove_af(struct sap_tree *tree, struct sap_node *sap, int sid, int af)
 		sap_remove(tree, sap_smask_inet6(sap), SAP_TYPE_SIN6, SAP_SUBNET_IPV4, SAP_SUBTRAN_UDP, SAP_CLASS_CLNS, SAP_SID_INET6);
 		break;
 	case AF_NS:
+		if (sid != SAP_SID_NS) {
+			goto unknown;
+		}
 		sap_remove(tree, sap_smask_iso(sap), SAP_TYPE_SNS, SAP_SUBNET_IDP, SAP_SUBTRAN_SPP, SAP_CLASS_CLNS, SAP_SID_NS);
 		break;
 	case AF_ISO:
+		if (sid != SAP_SID_ISO) {
+			goto unknown;
+		}
 		sap_remove(tree, sap_smask_iso(sap), SAP_TYPE_SISO, SAP_SUBNET_CONS, SAP_SUBTRAN_TP0, SAP_CLASS_CONS, SAP_SID_ISO);
 		sap_remove(tree, sap_smask_iso(sap), SAP_TYPE_SISO, SAP_SUBNET_CONS, SAP_SUBTRAN_TP1, SAP_CLASS_CONS, SAP_SID_ISO);
 		sap_remove(tree, sap_smask_iso(sap), SAP_TYPE_SISO, SAP_SUBNET_CONS, SAP_SUBTRAN_TP2, SAP_CLASS_CONS, SAP_SID_ISO);
@@ -626,16 +668,34 @@ sap_remove_af(struct sap_tree *tree, struct sap_node *sap, int sid, int af)
 		sap_remove(tree, sap_smask_iso(sap), SAP_TYPE_SISO, SAP_SUBNET_ESIS, SAP_SUBTRAN_TP4, SAP_CLASS_CLNS, SAP_SID_ISO);
 		break;
 	case AF_CCITT:
+		if (sid != SAP_SID_X25) {
+			goto unknown;
+		}
 		sap_remove(tree, sap_smask_x25(sap), SAP_TYPE_SX25, SAP_SUBNET_X25, SAP_SUBTRAN_X25, SAP_CLASS_CONS, SAP_SID_X25);
 		break;
 	case AF_NATM:
+		if (sid != SAP_SID_ATM) {
+			goto unknown;
+		}
 		sap_remove(tree, sap_smask_atm(sap), SAP_TYPE_SATM, SAP_SUBNET_ATM, SAP_SUBTRAN_ATM, SAP_CLASS_CONS, SAP_SID_ATM);
 		break;
 	case AF_IPX:
+		if (sid != SAP_SID_IPX) {
+			goto unknown;
+		}
 		sap_remove(tree, sap_smask_ipx(sap), SAP_TYPE_SIPX, SAP_SUBNET_IPX, SAP_SUBTRAN_SPX, SAP_CLASS_CLNS, SAP_SID_IPX);
 		break;
 	case AF_SNA:
+		if (sid != SAP_SID_SNA) {
+			goto unknown;
+		}
 		sap_remove(tree, sap_smask_sna(sap), SAP_TYPE_SSNA, SAP_SUBNET_SNA, SAP_SUBTRAN_SNA, SAP_CLASS_CLNS, SAP_SID_SNA);
+		break;
+	case AF_UNSPEC:
+unknown:
+		/* FALLTHROUGH */
+	default:
+		sap_remove(tree, sap_smask_unknown(sap), SAP_TYPE_UNKNOWN, SAP_SUBNET_UNKNOWN, SAP_SUBTRAN_UNKNOWN, SAP_CLASS_UNKNOWN, SAP_SID_UNKNOWN);
 		break;
 	}
 }
@@ -915,7 +975,7 @@ sockaddr_sap_compare(struct sockaddr_sap *a, struct sockaddr_sap *b)
 static int
 sap_addr_compare_addr(struct sap_addr *a, struct sap_addr *b)
 {
-	if (bcmp(a->ns_addr, b->ns_addr, sizeof(a->ns_addr)) != 0) {
+	if (bcmp(a->saa_addr, b->saa_addr, sizeof(a->saa_addr)) != 0) {
 		return (1);
 	}
 	return (0);
@@ -924,9 +984,9 @@ sap_addr_compare_addr(struct sap_addr *a, struct sap_addr *b)
 static int
 sap_addr_compare_addrlen(struct sap_addr *a, struct sap_addr *b)
 {
-	if (a->ns_addrlen > b->ns_addrlen) {
+	if (a->saa_addrlen > b->saa_addrlen) {
 		return (-1);
-	} else if (a->ns_addrlen < b->ns_addrlen) {
+	} else if (a->saa_addrlen < b->saa_addrlen) {
 		return (1);
 	} else {
 		return (0);

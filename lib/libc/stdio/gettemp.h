@@ -44,8 +44,8 @@
 #endif
 
 __BEGIN_DECLS
-int     GETTEMP(char *, int *, int);
-int     _gettemp(char *, int *, int);
+int GETTEMP(char *, int *, int, int, int);
+int _gettemp(char *, int *, int, int, int);
 __END_DECLS
 
 #endif /* _GETTEMP_H_ */

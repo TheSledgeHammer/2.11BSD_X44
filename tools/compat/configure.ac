@@ -177,7 +177,7 @@ AC_CHECK_DECLS([asprintf, asnprintf, vasprintf, vasnprintf, vsnprintf, fgetln, f
 #include <stdio.h>
 ])
 
-AC_CHECK_DECLS([atoll, heapsort, mkdtemp, mkstemp, reallocarr, reallocarray,
+AC_CHECK_DECLS([atoll, heapsort, mkdtemp, mkstemp, mkstemps, reallocarr, reallocarray,
 	getsubopt, setenv, strtoi, strtoll, strtou, setprogname,
 	getprogname],,, [
 #include <stdlib.h>
@@ -220,9 +220,9 @@ AC_CHECK_FUNCS(asprintf asnprintf basename devname dirfd dirname 		\
 	esetfunc fgetln flock fpurge __fpurge futimes getline 				\
 	getopt getopt_long group_from_gid gid_from_group 					\
 	heapsort isblank issetugid lchflags lchmod lchown lutimes mkstemp	\
-	mkdtemp poll pread putc_unlocked pwcache_userdb pwcache_groupdb 	\
-	pwrite raise_default_signal random reallocarr reallocarray setenv   \
-	setgroupent setprogname setpassent 									\
+	mkstemps mkdtemp poll pread putc_unlocked pwcache_userdb 			\
+	pwcache_groupdb pwrite raise_default_signal random reallocarr 		\
+	reallocarray setenv setgroupent setprogname setpassent 				\
 	snprintf strlcat strlcpy strmode strcasecmp strncasecmp strndup 	\
 	strnlen strsep strsuftoll strtoll strtou                            \
     user_from_uid uid_from_user vasprintf vasnprintf vsnprintf)

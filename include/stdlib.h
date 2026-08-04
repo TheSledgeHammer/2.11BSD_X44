@@ -194,8 +194,9 @@ long	 random(void);
 char	 *setstate(char *);
 void	 srandom(unsigned long);
 
-char	 *mkdtemp(char *);
-int	 mkstemp(char *);
+char	*mkdtemp(char *);
+int	 	mkstemp(char *);
+int	 	mkstemps(char *, int);
 #ifdef __MKTEMP_OK__
 	__RENAME(_mktemp)
 #endif

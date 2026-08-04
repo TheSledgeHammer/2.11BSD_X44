@@ -35,6 +35,8 @@
 #define SAPLEN 64 		/* SAP MAX LEN */
 
 #define SAP_TABLE_MAX 9
+#define SAP_RADIX_MAX SAP_TABLE_MAX
+
 struct sap_select {
 	uint32_t ss_selector[SAP_TABLE_MAX];	/* selector id cksum */
 	int ss_sid;								/* sap select id */
@@ -63,7 +65,7 @@ struct sap_head;
 LIST_HEAD(sap_head, sap_node);
 /* sap tree */
 struct sap_tree {
-	struct radix_node_head *st_tree[9];	/* radix head per af */
+	struct radix_node_head *st_tree[SAP_RADIX_MAX];	/* radix head per af */
 	struct sap_head *st_hashtbl;		/* sap hashtable */
 	u_long st_hash;						/* sap hash */
 };
@@ -71,8 +73,8 @@ struct sap_tree {
 /* sap node */
 struct sap_node {
 	LIST_ENTRY(sap_node) st_hash;		/* sap entry */
-	struct radix_node st_nodes[9];		/* radix node per af */
-	struct sockaddr_sap *st_smask[9];	/* radix mask per af */
+	struct radix_node st_nodes[SAP_RADIX_MAX];/* radix node per af */
+	struct sockaddr_sap *st_smask[SAP_RADIX_MAX];/* radix mask per af */
 	struct sockaddr_sap *st_sasap;		/* sockaddr_sap  */
 	struct sap_addr *st_sapa;			/* sap_addr  */
 	uint32_t st_type_id;				/* type id */
@@ -80,6 +82,18 @@ struct sap_node {
 	uint32_t st_subtran_id;				/* subtran id */
 	uint32_t st_class_id;				/* class id */
 };
+
+/* sockaddr_sap radix masks */
+#define sap_smask(sap, sid) 	((sap)->st_smask[(sid)])
+#define sap_smask_unknown(sap) 	sap_smask(sap, SAP_SID_UNKNOWN)
+#define sap_smask_inet4(sap) 	sap_smask(sap, SAP_SID_INET4)
+#define sap_smask_inet6(sap)	sap_smask(sap, SAP_SID_INET6)
+#define sap_smask_ns(sap)		sap_smask(sap, SAP_SID_NS)
+#define sap_smask_iso(sap)		sap_smask(sap, SAP_SID_ISO)
+#define sap_smask_x25(sap)		sap_smask(sap, SAP_SID_X25)
+#define sap_smask_atm(sap)		sap_smask(sap, SAP_SID_ATM)
+#define sap_smask_ipx(sap)		sap_smask(sap, SAP_SID_IPX)
+#define sap_smask_sna(sap)		sap_smask(sap, SAP_SID_SNA)
 
 /* sap select id's */
 enum sap_sids {
@@ -97,6 +111,7 @@ enum sap_sids {
 
 /* sap class types */
 enum sap_classes {
+	/* unknown should alway be first */
 	SAP_CLASS_UNKNOWN,
 	/* iso (native) */
 	/* Connection Oriented */
@@ -104,13 +119,14 @@ enum sap_classes {
 	/* Connection-less Oriented */
 	SAP_CLASS_CLNS,
 
-	/* should alway be last */
+	/* max should alway be last */
 	SAP_CLASS_MAX
 };
 
 /* sap stack types */
 /* uses sockaddr names */
 enum sap_types {
+	/* unknown should alway be first */
 	SAP_TYPE_UNKNOWN,
 	SAP_TYPE_SIN4,
 	SAP_TYPE_SIN6,
@@ -121,13 +137,14 @@ enum sap_types {
 	SAP_TYPE_SIPX,
 	SAP_TYPE_SSNA,
 
-	/* should alway be last */
+	/* max should alway be last */
 	SAP_TYPE_MAX
 };
 
 /* sap subnet types */
 /* Network Layer Protocols */
 enum sap_subnets {
+	/* unknown should alway be first */
 	SAP_SUBNET_UNKNOWN,
 	/* inet (v4 and v6) */
 	SAP_SUBNET_IPV4,
@@ -149,13 +166,14 @@ enum sap_subnets {
 	/* sna */
 	SAP_SUBNET_SNA,
 
-	/* should alway be last */
+	/* max should alway be last */
 	SAP_SUBNET_MAX
 };
 
 /* sap subtran type */
 /* Transport Layer Protocols */
 enum sap_subtran {
+	/* unknown should alway be first */
 	SAP_SUBTRAN_UNKNOWN,
 	/* inet (v4 and v6) */
 	SAP_SUBTRAN_TCP,
@@ -177,21 +195,9 @@ enum sap_subtran {
 	/* sna */
 	SAP_SUBTRAN_SNA,
 
-	/* should alway be last */
+	/* max should alway be last */
 	SAP_SUBTRAN_MAX
 };
-
-/* sockaddr_sap radix masks */
-#define sap_smask(sap, sid) 	((sap)->st_smask[(sid)])
-#define sap_smask_unknown(sap) 	sap_smask(sap, SAP_SID_UNKNOWN)
-#define sap_smask_inet4(sap) 	sap_smask(sap, SAP_SID_INET4)
-#define sap_smask_inet6(sap)	sap_smask(sap, SAP_SID_INET6)
-#define sap_smask_ns(sap)		sap_smask(sap, SAP_SID_NS)
-#define sap_smask_iso(sap)		sap_smask(sap, SAP_SID_ISO)
-#define sap_smask_x25(sap)		sap_smask(sap, SAP_SID_X25)
-#define sap_smask_atm(sap)		sap_smask(sap, SAP_SID_ATM)
-#define sap_smask_ipx(sap)		sap_smask(sap, SAP_SID_IPX)
-#define sap_smask_sna(sap)		sap_smask(sap, SAP_SID_SNA)
 
 extern struct sap_tree sap_radix_tree;
 extern struct sap_select sap_table[SAP_TABLE_MAX];

@@ -48,17 +48,20 @@ static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) 9/14/87";
 #ifdef __weak_alias
 __weak_alias(mkdtemp,_mkdtemp)
 __weak_alias(mkstemp,_mkstemp)
+__weak_alias(mkstemps,_mkstemps)
 __weak_alias(mktemp,_mktemp)
 #endif
 
 char *_mkdtemp(char *);
 int  _mkstemp(char *);
+int  _mkstemps(char *, int);
+char *_mktemp(char *);
 
 char *
 _mkdtemp(as)
 	char *as;
 {
-	return (GETTEMP(as, NULL, 1) ? as : NULL);
+	return (GETTEMP(as, NULL, 1, 0, 0) ? as : NULL);
 }
 
 char *
@@ -67,16 +70,16 @@ mkdtemp(as)
 {
 	_DIAGASSERT(as != NULL);
 
-	return (_gettemp(as, (int *)NULL, 1) ? as : (char *)NULL);
+	return (_gettemp(as, (int *)NULL, 1, 0, 0) ? as : (char *)NULL);
 }
 
 int
 _mkstemp(as)
-	char	*as;
+	char *as;
 {
 	int	fd;
 
-	return (GETTEMP(as, &fd, 0) ? fd : -1);
+	return (GETTEMP(as, &fd, 0, 0, 0) ? fd : -1);
 }
 
 int
@@ -87,23 +90,43 @@ mkstemp(as)
 
 	_DIAGASSERT(as != NULL);
 
-	return (_gettemp(as, &fd, 0) ? fd : -1);
+	return (_gettemp(as, &fd, 0, 0, 0) ? fd : -1);
+}
+
+int
+mkstemps(as, slen)
+	char *as;
+	int slen;
+{
+	int fd;
+
+	return (_gettemp(as, &fd, 0, slen, 0) ? fd : -1);
+}
+
+int
+_mkstemps(as, slen)
+	char *as;
+	int slen;
+{
+	int fd;
+
+	return (GETTEMP(as, &fd, 0, slen, 0) ? fd : -1);
 }
 
 char *
 _mktemp(as)
-	char	*as;
+	char *as;
 {
-	return (GETTEMP(as, NULL, 0) ? as : NULL);
+	return (GETTEMP(as, NULL, 0, 0, 0) ? as : NULL);
 }
 
 char *
 mktemp(as)
-	char	*as;
+	char *as;
 {
 	_DIAGASSERT(as != NULL);
 
-	return (_gettemp(as, (int *)NULL, 0) ? as : (char *)NULL);
+	return (_gettemp(as, (int *)NULL, 0, 0, 0) ? as : (char *)NULL);
 }
 
 #endif /* !HAVE_NBTOOL_CONFIG_H || !HAVE_MKSTEMP || !HAVE_MKDTEMP */

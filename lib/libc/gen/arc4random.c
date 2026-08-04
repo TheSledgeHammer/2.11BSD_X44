@@ -480,7 +480,7 @@ arc4random_addrandom(dat, datlen)
 	u_char *dat;
 	int     datlen;
 {
-	chacha_random_buf(&rs, (u_char *) dat, (int) datlen);
+	chacha_random_buf(&rs, (u_char *)dat, (int)datlen);
 }
 
 u_int32_t

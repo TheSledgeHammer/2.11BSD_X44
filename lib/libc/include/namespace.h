@@ -448,9 +448,13 @@
 #define lseek					_lseek
 #define mergesort				_mergesort
 #define mi_vector_hash				_mi_vector_hash
+#define mktemp					_mktemp
+#define mkdtemp					_mkdtemp
+#define mkstemp					_mkstemp
+#define mkstemps				_mkstemps
 #define mmap					_mmap
 #define mpool_close				_mpool_close
-#define mpool_filter				_mpool_filter
+#define mpool_filter			_mpool_filter
 #define mpool_get				_mpool_get
 #define mpool_new				_mpool_new
 #define mpool_open				_mpool_open

@@ -55,6 +55,192 @@ __RCSID("$NetBSD: gettemp.c,v 1.13 2003/12/05 00:57:36 uebayasi Exp $");
 #include <fcntl.h>
 #include <string.h>
 
+static const unsigned char padchar[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+#ifndef O_DIRECT
+#define O_DIRECT 0
+#endif
+#ifndef O_CLOFORK
+#define O_CLOFORK 0
+#endif
+
+int
+GETTEMP(path, doopen, domkdir, slen, oflags)
+	char *path;
+	int *doopen;
+	int domkdir;
+	int slen;
+	int oflags;
+{
+	char *start, *trv, *suffp, *carryp;
+	const char *pad;
+	struct stat sbuf;
+	uint32_t rand;
+	char carrybuf[MAXPATHLEN];
+	/* To guarantee multiple calls generate unique names even if
+	   the file is not created. 676 different possibilities with 7
+	   or more X's, 26 with 6 or less. */
+	static char xtra[2] = "aa";
+	int xcnt = 0;
+
+	_DIAGASSERT(path != NULL);
+	/* doopen may be NULL */
+	if ((doopen != NULL && domkdir) || slen < 0 ||
+			(oflags & ~(O_APPEND | O_DIRECT | O_SHLOCK | O_EXLOCK | O_SYNC |
+					O_CLOEXEC | O_CLOFORK)) != 0) {
+		errno = EINVAL;
+		return (0);
+	}
+
+	/* Move to end of path and count trailing X's. */
+	for (trv = path; *trv != '\0'; ++trv) {
+		if (*trv == 'X') {
+			xcnt++;
+		} else {
+			xcnt = 0;
+		}
+	}
+
+	/* Use at least one from xtra.  Use 2 if more than 6 X's. */
+	if (*(trv - 1) == 'X') {
+		*--trv = xtra[0];
+	}
+	if (xcnt > 6 && *(trv - 1) == 'X') {
+		*--trv = xtra[1];
+	}
+
+	if (trv - path >= MAXPATHLEN) {
+		errno = ENAMETOOLONG;
+		return (0);
+	}
+
+	trv -= slen;
+	suffp = trv;
+	--trv;
+	if (trv < path || NULL != strchr(suffp, '/')) {
+		errno = EINVAL;
+		return (0);
+	}
+
+	/* Set remaining X's with random characters. */
+	while (trv >= path && *--trv == 'X') {
+		rand = arc4random_uniform((unsigned int)(sizeof(padchar) - 1));
+		*trv = padchar[rand];
+	}
+	start = trv + 1;
+
+	/* save first combination of random characters */
+	memcpy(carrybuf, start, (size_t)(suffp - start));
+
+	/* update xtra for next call. */
+	if (xtra[0] != 'z') {
+		xtra[0]++;
+	} else {
+		xtra[0] = 'a';
+		if (xtra[1] != 'z') {
+			xtra[1]++;
+		} else {
+			xtra[1] = 'a';
+		}
+	}
+
+	/*
+	 * check the target directory; if you have six X's and it
+	 * doesn't exist this runs for a *very* long time.
+	 */
+	if (doopen != NULL || domkdir) {
+		for (; trv > path; --trv) {
+			if (trv <= path) {
+				break;
+			}
+			if (*trv == '/') {
+				*trv = '\0';
+				if (stat(path, &sbuf)) {
+					return (0);
+				}
+				if (!S_ISDIR(sbuf.st_mode)) {
+					errno = ENOTDIR;
+					return (0);
+				}
+				*trv = '/';
+				break;
+			}
+		}
+	}
+
+	for (;;) {
+		if (doopen) {
+			if ((*doopen =
+			    open(path, O_CREAT | O_EXCL | O_RDWR, 0600)) >= 0) {
+				return (1);
+			}
+			if (errno != EEXIST) {
+				return (0);
+			}
+		} else if (domkdir) {
+			if (mkdir(path, 0700) >= 0) {
+				return (1);
+			}
+			if (errno != EEXIST) {
+				return (0);
+			}
+		} else if (lstat(path, &sbuf)) {
+			return (errno == ENOENT ? 1 : 0);
+		}
+
+		/*
+		 * If we have a collision,
+		 * cycle through the space of filenames
+		 */
+		for (trv = start, carryp = carrybuf;;) {
+			/* have we tried all possible permutations? */
+			if (trv == suffp) {
+				return (0); /* yes - exit with EEXIST */
+			}
+			pad = strchr((const char *)padchar, *trv);
+			if (pad == NULL) {
+				/* this should never happen */
+				errno = EIO;
+				return (0);
+			}
+			/* increment character */
+			*trv = (*++pad == '\0') ? padchar[0] : *pad;
+			/* carry to next position? */
+			if (*trv == *carryp) {
+				/* increment position and loop */
+				++trv;
+				++carryp;
+			} else {
+				break;
+			}
+		}
+	}
+	/*NOTREACHED*/
+}
+
+#define	YES	1
+#define	NO	0
+
+int
+_gettemp(as, doopen, domkdir, slen, oflags)
+	char *as;
+	int *doopen;
+	int domkdir;
+	int slen;
+	int oflags;
+{
+	int rval;
+
+	rval = GETTEMP(as, doopen, domkdir, slen, oflags);
+	if (rval != YES) {
+		return (NO);
+	}
+	return (YES);
+}
+
+/* Below do not support mkstemps which needs slen and oflags */
+#ifdef deprecated
+
 int
 GETTEMP(path, doopen, domkdir)
 	char *path;
@@ -164,13 +350,13 @@ GETTEMP(path, doopen, domkdir)
 
 int
 _gettemp(as, doopen, domkdir)
-	char	*as;
-	register int *doopen;
+	char *as;
+	int *doopen;
 	int domkdir;
 {
-	register char	*start, *trv;
+	register char *start, *trv;
 	struct stat	sbuf;
-	u_int	pid;
+	u_int pid;
 
 	_DIAGASSERT(as != NULL);
 
@@ -238,4 +424,5 @@ _gettemp(as, doopen, domkdir)
 	/*NOTREACHED*/
 }
 
+#endif
 #endif /* !HAVE_NBTOOL_CONFIG_H || !HAVE_MKSTEMP || !HAVE_MKDTEMP */
