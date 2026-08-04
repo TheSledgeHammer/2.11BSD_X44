@@ -16,7 +16,7 @@ CPPFLAGS+=-I${DIST}
 
 SRCS=libopts.c
 
-COPTS.libopts.c += -DPOSIX_SHELL="\"/bin/sh\"" -Wno-format-nonliteral
+COPTS.libopts.c += -DPOSIX_SHELL="\"/bin/sh\"" -Wno-format-nonliteral ${GCC_NO_FORMAT_OVERFLOW}
 COPTS.libopts.c+=	${${ACTIVE_CC} == "gcc":? -Wno-format-contains-nul :}
 COPTS.libopts.c+=	${${ACTIVE_CC} == "clang":? -Wno-format :}
 
