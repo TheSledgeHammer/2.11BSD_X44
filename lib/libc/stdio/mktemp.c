@@ -94,16 +94,6 @@ mkstemp(as)
 }
 
 int
-mkstemps(as, slen)
-	char *as;
-	int slen;
-{
-	int fd;
-
-	return (_gettemp(as, &fd, 0, slen, 0) ? fd : -1);
-}
-
-int
 _mkstemps(as, slen)
 	char *as;
 	int slen;
@@ -111,6 +101,18 @@ _mkstemps(as, slen)
 	int fd;
 
 	return (GETTEMP(as, &fd, 0, slen, 0) ? fd : -1);
+}
+
+int
+mkstemps(as, slen)
+	char *as;
+	int slen;
+{
+	int fd;
+
+	_DIAGASSERT(as != NULL);
+	
+	return (_gettemp(as, &fd, 0, slen, 0) ? fd : -1);
 }
 
 char *
