@@ -4,9 +4,9 @@
 .include <bsd.own.mk>
 
 PROG=	find
-SRCS=	find.c function.c ls.c main.c misc.c operator.c option.c stat_flags.c
+SRCS=	find.c function.c ls.c main.c misc.c operator.c option.c
 
-CPPFLAGS+=	-I${NETBSDSRCDIR}/bin/ls
-.PATH:	${NETBSDSRCDIR}/bin/ls
+LDADD+=-lutil
+DPADD+=${LIBUTIL}
 
 .include <bsd.prog.mk>

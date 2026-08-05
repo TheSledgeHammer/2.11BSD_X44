@@ -59,9 +59,9 @@ __RCSID("$NetBSD: function.c,v 1.46.4.2 2005/10/11 23:47:05 reed Exp $");
 #include <string.h>
 #include <tzfile.h>
 #include <unistd.h>
+#include <util.h>
 
 #include "find.h"
-#include "stat_flags.h"
 
 #define	COMPARE(a, b) {							\
 	switch (plan->flags) {						\
