@@ -222,12 +222,12 @@ vesagtf_mode_params(unsigned h_pixels, unsigned v_lines, unsigned freq,
     unsigned interlace;
     uint64_t h_period_est;
     unsigned vsync_plus_bp;
-    unsigned v_back_porch;
+    unsigned v_back_porch __unused;
     unsigned total_v_lines;
     uint64_t v_field_est;
     uint64_t h_period;
     unsigned v_field_rate;
-    unsigned v_frame_rate;
+    unsigned v_frame_rate __unused;
     unsigned left_margin;
     unsigned right_margin;
     unsigned total_active_pixels;
