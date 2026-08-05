@@ -276,10 +276,10 @@ uniquepath(void)
 	if ((defnewp = gettag("_default_new2", 1)) == NULL)
 		err(1, "malloc");
 
-	for (i = 0; i < manpaths.gl_pathc; i++) {
+	for (i = 0; i < (size_t)manpaths.gl_pathc; i++) {
 		lnk = 0;
 		lstat(manpaths.gl_pathv[i], &st1);
-		for (j = 0; j < manpaths.gl_pathc; j++) {
+		for (j = 0; j < (size_t)manpaths.gl_pathc; j++) {
 			if (i != j) {
 				lstat(manpaths.gl_pathv[j], &st2);
 				if (st1.st_ino == st2.st_ino) {
