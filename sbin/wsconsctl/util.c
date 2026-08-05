@@ -33,6 +33,7 @@
 
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsksymdef.h>
+
 #include <dev/video/videomode/videomode.h>
 #include <dev/video/videomode/edidreg.h>
 #include <dev/video/videomode/edidvar.h>
@@ -256,8 +257,8 @@ pr_field(struct field *f, const char *sep)
 	const char *p;
 	unsigned int flags;
 	int first, i, mask;
-	struct wsdisplayio_edid_info *info;
-	struct edid_info edid;
+//	struct wsdisplayio_edid_info *info;
+//	struct edid_info edid;
 
 	if (sep)
 		(void)printf("%s%s", f->name, sep);
@@ -328,6 +329,7 @@ pr_field(struct field *f, const char *sep)
 			(void)printf("none");
 		break;
 	case FMT_EDID:
+#ifdef notyet
 		info = (struct wsdisplayio_edid_info *)f->valp;
 		if (edid_parse(info->edid_data, &edid))
 			(void)printf("invalid");
@@ -336,6 +338,7 @@ pr_field(struct field *f, const char *sep)
 			edid_print(&edid);
 		}
 		break;
+#endif
 	default:
 		errx(EXIT_FAILURE, "internal error: pr_field: no format %d",
 		    f->format);
