@@ -52,13 +52,13 @@ __weak_alias(mkstemps,_mkstemps)
 __weak_alias(mktemp,_mktemp)
 #endif
 
-char *_mkdtemp(char *);
-int  _mkstemp(char *);
-int  _mkstemps(char *, int);
-char *_mktemp(char *);
+char *__mkdtemp(char *);
+int  __mkstemp(char *);
+int  __mkstemps(char *, int);
+char *__mktemp(char *);
 
 char *
-_mkdtemp(as)
+__mkdtemp(as)
 	char *as;
 {
 	return (GETTEMP(as, NULL, 1, 0, 0) ? as : NULL);
@@ -70,11 +70,11 @@ mkdtemp(as)
 {
 	_DIAGASSERT(as != NULL);
 
-	return (_gettemp(as, (int *)NULL, 1, 0, 0) ? as : (char *)NULL);
+	return (_gettemp(as, NULL, 1, 0, 0) ? as : NULL);
 }
 
 int
-_mkstemp(as)
+__mkstemp(as)
 	char *as;
 {
 	int	fd;
@@ -94,7 +94,7 @@ mkstemp(as)
 }
 
 int
-_mkstemps(as, slen)
+__mkstemps(as, slen)
 	char *as;
 	int slen;
 {
@@ -116,7 +116,7 @@ mkstemps(as, slen)
 }
 
 char *
-_mktemp(as)
+__mktemp(as)
 	char *as;
 {
 	return (GETTEMP(as, NULL, 0, 0, 0) ? as : NULL);
@@ -128,7 +128,7 @@ mktemp(as)
 {
 	_DIAGASSERT(as != NULL);
 
-	return (_gettemp(as, (int *)NULL, 0, 0, 0) ? as : (char *)NULL);
+	return (_gettemp(as, NULL, 0, 0, 0) ? as : NULL);
 }
 
 #endif /* !HAVE_NBTOOL_CONFIG_H || !HAVE_MKSTEMP || !HAVE_MKDTEMP */
