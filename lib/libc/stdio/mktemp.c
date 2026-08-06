@@ -52,17 +52,7 @@ __weak_alias(mkstemps,_mkstemps)
 __weak_alias(mktemp,_mktemp)
 #endif
 
-char *__mkdtemp(char *);
-int  __mkstemp(char *);
-int  __mkstemps(char *, int);
-char *__mktemp(char *);
-
-char *
-__mkdtemp(as)
-	char *as;
-{
-	return (GETTEMP(as, NULL, 1, 0, 0) ? as : NULL);
-}
+static int _gettemp(char *, int *, int, int, int);
 
 char *
 mkdtemp(as)
@@ -74,15 +64,6 @@ mkdtemp(as)
 }
 
 int
-__mkstemp(as)
-	char *as;
-{
-	int	fd;
-
-	return (GETTEMP(as, &fd, 0, 0, 0) ? fd : -1);
-}
-
-int
 mkstemp(as)
 	char *as;
 {
@@ -91,16 +72,6 @@ mkstemp(as)
 	_DIAGASSERT(as != NULL);
 
 	return (_gettemp(as, &fd, 0, 0, 0) ? fd : -1);
-}
-
-int
-__mkstemps(as, slen)
-	char *as;
-	int slen;
-{
-	int fd;
-
-	return (GETTEMP(as, &fd, 0, slen, 0) ? fd : -1);
 }
 
 int
@@ -116,19 +87,32 @@ mkstemps(as, slen)
 }
 
 char *
-__mktemp(as)
-	char *as;
-{
-	return (GETTEMP(as, NULL, 0, 0, 0) ? as : NULL);
-}
-
-char *
 mktemp(as)
 	char *as;
 {
 	_DIAGASSERT(as != NULL);
 
 	return (_gettemp(as, NULL, 0, 0, 0) ? as : NULL);
+}
+
+#define	YES	1
+#define	NO	0
+
+static int
+_gettemp(as, doopen, domkdir, slen, oflags)
+	char *as;
+	int *doopen;
+	int domkdir;
+	int slen;
+	int oflags;
+{
+	int rval;
+
+	rval = GETTEMP(as, doopen, domkdir, slen, oflags);
+	if (rval != YES) {
+		return (NO);
+	}
+	return (YES);
 }
 
 #endif /* !HAVE_NBTOOL_CONFIG_H || !HAVE_MKSTEMP || !HAVE_MKDTEMP */

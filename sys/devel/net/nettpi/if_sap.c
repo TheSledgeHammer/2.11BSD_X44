@@ -129,7 +129,7 @@ struct sap_select sap_table[] = {
 void
 sap_init(struct sap_tree *tree)
 {
-	tree->st_hashtbl = hashinit(SAPLEN, M_SAP, &tree->st_hash);
+	tree->st_hashtbl = hashinit(SAPLEN, M_IFSAP, &tree->st_hash);
 }
 
 int

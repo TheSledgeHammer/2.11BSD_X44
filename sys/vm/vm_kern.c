@@ -264,7 +264,7 @@ kmem_suballoc(parent, min, max, size, pageable)
 	size = round_page(size);
 
 	*min = (vm_offset_t)vm_map_min(parent);
-	ret = vm_map_find(parent, NULL, (vm_offset_t) 0, min, size, TRUE);
+	ret = vm_map_find(parent, NULL, (vm_offset_t)0, min, size, TRUE);
 	if (ret != KERN_SUCCESS) {
 		printf("kmem_suballoc: bad status return of %d.\n", ret);
 		panic("kmem_suballoc");
@@ -272,10 +272,13 @@ kmem_suballoc(parent, min, max, size, pageable)
 	*max = *min + size;
 	pmap_reference(vm_map_pmap(parent));
 	result = vm_map_create(vm_map_pmap(parent), *min, *max, pageable);
-	if (result == NULL)
+	if (result == NULL) {
 		panic("kmem_suballoc: cannot create submap");
-	if ((ret = vm_map_submap(parent, *min, *max, result)) != KERN_SUCCESS)
+	}
+	ret = vm_map_submap(parent, *min, *max, result);
+	if (ret != KERN_SUCCESS) {
 		panic("kmem_suballoc: unable to change range to submap");
+	}
 	return (result);
 }
 

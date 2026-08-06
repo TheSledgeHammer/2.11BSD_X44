@@ -111,13 +111,11 @@ getuser(const char *user)
 }
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
-	char	*user;		/* user to switch to before running program */
-	char	*group;		/* group to switch to ... */
-	char	*grouplist;	/* group list to switch to ... */
+	char *user; /* user to switch to before running program */
+	char *group; /* group to switch to ... */
+	char *grouplist; /* group list to switch to ... */
 	char *p;
 	int ch;
 	char *shell;
@@ -200,7 +198,7 @@ main(argc, argv)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr, "usage: %s [-G group,group,...] [-g group] "
 	    "[-u user]chroot newroot [command]\n");

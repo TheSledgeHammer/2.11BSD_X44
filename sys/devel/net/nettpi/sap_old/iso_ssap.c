@@ -31,16 +31,15 @@
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 
-#include "if_sap.h"
 #include "iso_nsap.h"
 
 /* SSAP's */
-static struct ssap_iso *
+struct ssap_iso *
 ssap_create(struct tsap_iso *tsap)
 {
 	struct ssap_iso *ssap;
 
-	MALLOC(ssap, struct ssap_iso *, sizeof(*ssap), M_IFSAP, M_WAITOK);
+	MALLOC(ssap, struct ssap_iso *, sizeof(*ssap), M_ISOSAP, M_WAITOK);
 	if (ssap == NULL) {
 		return (NULL);
 	}
@@ -49,33 +48,34 @@ ssap_create(struct tsap_iso *tsap)
 	return (ssap);
 }
 
-static void
+void
 ssap_destroy(struct ssap_iso *ssap)
 {
 	if (ssap != NULL) {
-		FREE(ssap, M_IFSAP);
+		FREE(ssap, M_ISOSAP);
 	}
 }
 
 void
-ssap_attach(struct ssap_iso *ssap, struct tsap_iso *tsap, int sid, int af)
+ssap_attach(struct ssap_iso *ssap, struct tsap_iso *tsap, int af)
 {
 	struct ssap_iso *ssiso;
+	int sid;
 
 	ssiso = ssap_create(tsap);
 	if (ssiso != NULL) {
+		sid = sap_select_af_to_sid(af);
 		sap_select_init(&ssiso->ssi_select, sid, af);
 		ssap = ssiso;
-	} else {
-		ssap = NULL;
 	}
+	ssap = NULL;
 }
 
 void
-ssap_detach(struct ssap_iso *ssap, struct tsap_iso *tsap, int sid, int af)
+ssap_detach(struct ssap_iso *ssap, struct tsap_iso *tsap, int af)
 {
 	if (ssap != NULL) {
-		tsap_detach(tsap, &tsap->tsi_nsaps, sid, af);
+		tsap_detach(tsap, &tsap->tsi_nsaps, af);
 		bcopy(tsap, ssap->ssi_tsaps, sizeof(ssap->ssi_tsaps));
 		if (ssap->ssi_tsaps == NULL) {
 			ssap_destroy(ssap);
@@ -96,24 +96,6 @@ ssap_to_tsap(struct ssap_iso *ssap)
 		return (tsap);
 	}
 	return (NULL);
-}
-
-void
-ssap_iso_attach(struct ssap_iso *ssap, struct tsap_iso *tsap)
-{
-	ssap_attach(ssap, tsap, SAP_SID_ISO, AF_ISO);
-	ssap_attach(ssap, tsap, SAP_SID_INET4, AF_INET);
-	ssap_attach(ssap, tsap, SAP_SID_INET6, AF_INET6);
-	ssap_attach(ssap, tsap, SAP_SID_NS, AF_NS);
-}
-
-void
-ssap_iso_detach(struct ssap_iso *ssap, struct tsap_iso *tsap)
-{
-	ssap_detach(ssap, tsap, SAP_SID_ISO, AF_ISO);
-	ssap_detach(ssap, tsap, SAP_SID_INET4, AF_INET);
-	ssap_detach(ssap, tsap, SAP_SID_INET6, AF_INET6);
-	ssap_detach(ssap, tsap, SAP_SID_NS, AF_NS);
 }
 
 /*
@@ -137,4 +119,48 @@ ssap_iso_compare(struct ssap_iso *a, struct ssap_iso *b)
 		}
 	}
 	return (0);
+}
+
+void
+ssap_iso_attach(struct ssap_iso *ssap, struct tsap_iso *tsap)
+{
+	ssap_attach(ssap, tsap,AF_ISO);
+	ssap_attach(ssap, tsap,AF_INET);
+	ssap_attach(ssap, tsap, AF_INET6);
+	ssap_attach(ssap, tsap, AF_NS);
+}
+
+void
+ssap_iso_detach(struct ssap_iso *ssap, struct tsap_iso *tsap)
+{
+	ssap_detach(ssap, tsap, AF_ISO);
+	ssap_detach(ssap, tsap, AF_INET);
+	ssap_detach(ssap, tsap, AF_INET6);
+	ssap_detach(ssap, tsap, AF_NS);
+}
+
+int
+ssap_connect(struct ssap_iso *ssap, void *arg, int af)
+{
+	struct tsap_iso *tsap;
+	int error;
+
+	tsap = ssap_to_tsap(ssap);
+	if (tsap == NULL) {
+		return (EINVAL);
+	}
+	return (tsap_connect(tsap, arg, af));
+}
+
+int
+ssap_disconnect(struct ssap_iso *ssap, void *arg, int af)
+{
+	struct tsap_iso *tsap;
+	int error;
+
+	tsap = ssap_to_tsap(ssap);
+	if (tsap == NULL) {
+		return (EINVAL);
+	}
+	return (tsap_disconnect(tsap, arg, af));
 }

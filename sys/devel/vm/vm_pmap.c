@@ -66,76 +66,89 @@
 #include <sys/systm.h>
 
 #include <vm/include/vm.h>
+#include <vm/include/vm_map.h>
 #include <vm/include/vm_page.h>
 
-vm_offset_t	kentry_data;
-
-/*
- * vm_pmap_bootstrap:
- *
- * Allocates virtual address space from pmap_bootstrap_alloc.
- */
-void
-vm_pmap_bootstrap(void)
-{
-    extern vm_offset_t	kentry_data;
-    vm_size_t kentry_data_size, kmap_size, kentry_size;
-
-    kmap_size = (MAX_KMAP * sizeof(struct vm_map));
-	kentry_size = (MAX_KMAPENT * sizeof(struct vm_map_entry));
-	kentry_data_size = round_page(kmap_size + kentry_size);
-	kentry_data = (vm_offset_t)pmap_bootstrap_alloc(kentry_data_size);
-}
-
-void
-pmap_bootstrap(vm_offset_t *data, vm_size_t data_size, vm_size_t map_size, unsigned long map_number, size_t mapsize, vm_size_t entry_size, unsigned long entry_number, size_t entrysize)
-{
-	map_size = (map_number * mapsize);
-	entry_size = (entry_number * entrysize);
-	data_size = round_page(map_size + entry_size);
-	data = (vm_offset_t)pmap_bootstrap_alloc(data_size);
-}
-
-/*
- * vm_pmap_bootinit:
- *
- * Allocates item from space made available by vm_pmap_bootstrap.
- */
-void *
-vm_pmap_bootinit(item, size, nitems)
-	void 		*item;
-	vm_size_t 	size;
-	int 		nitems;
-{
-	extern vm_offset_t	kentry_data;
-	vm_size_t free, totsize, result, itemsize;
-
-	free = kentry_data;
-	totsize = (size * nitems);
-	result = (free - totsize);
-	itemsize = (vm_size_t)(sizeof(item) + size);
-	if ((free < totsize) || (itemsize > result)) {
-		panic("vm_pmap_bootinit: not enough space allocated");
-	}
-	bzero(item, totsize);
-	item = (void *)(vm_size_t)itemsize;
-	kentry_data = result;
-	return (item);
-}
-
-
-void
-vm_pmap_bootstrap(vm_offset_t *data, vm_size_t map_size, unsigned long map_number, vm_size_t entry_size, unsigned long entry_number)
-{
-	vm_size_t entry_data_size, mapsize, entrysize;
-
-    mapsize = (map_number * map_size);
-	entrysize = (entry_number * entry_size);
-	entry_data_size = round_page(mapsize + entrysize);
-	*data = (vm_offset_t)pmap_bootstrap_alloc(entry_data_size);
-}
-
 #include "vm_idspace.h"
+
+/*
+ * vm_map_range_valid:
+ * Check's address is within the map's min and max offset.
+ * returns true is it is or false if not.
+ */
+bool_t
+vm_map_range_valid(map, addr)
+	vm_map_t map;
+	vm_offset_t addr;
+{
+	vm_offset_t start, end;
+	vm_offset_t base, i;
+
+	start = map->min_offset;
+	end = map->max_offset;
+	if (((end - start) < addr) || (addr < start) || (addr > end)) {
+		return (FALSE);
+	}
+	if ((addr == vm_map_min(map)) || (addr == vm_map_max(map))) {
+		return (TRUE);
+	}
+	for (i = trunc_page(start); i < round_page(end); i += PAGE_SIZE) {
+		base = (addr + i);
+		if (base == (addr + i)) {
+			addr = base;
+			return (TRUE);
+		}
+	}
+	return (FALSE);
+}
+
+#	define UISA	((u_short *) 0177640)	/* first user I-space address */
+
+choverlay_lookup(map, ovbase)
+{
+	for (i = trunc_page(map->min_offset); i < round_page(map->max_offset); i += PAGE_SIZE) {
+
+	}
+
+}
+
+vm_offset_t
+vm_map_addr(map, addr, use_min, use_max)
+	vm_map_t map;
+	vm_offset_t addr;
+	bool_t use_min, use_max;
+{
+	vm_offset_t base;
+	bool_t valid;
+
+	valid = vm_map_range_valid(map, addr);
+	if (valid != TRUE) {
+		return (0);
+	}
+	if (addr == 0) {
+		if ((use_min == TRUE) && (use_max != TRUE)) {
+			return (vm_map_min(map));
+		}
+		if ((use_min != TRUE) && (use_max == TRUE)) {
+			return (vm_map_max(map));
+		}
+		return (0);
+	}
+	return (addr);
+}
+
+vm_offset_t
+vm_idspace_map_addr(idspace, entry, addr, use_min, use_max)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	vm_offset_t addr;
+	bool_t use_min, use_max;
+{
+	if (idspace != NULL) {
+		return (vm_map_addr(entry->map, addr, use_min, use_max));
+	}
+	return (0);
+}
 
 static int
 estabur_lookup(map, size, addr, desc, val, type, flags)
@@ -457,6 +470,30 @@ vm_sureg(void)
 	}
 }
 
+
+vm_sureg(void)
+{
+	vm_offset_t *rap, *rdp;
+#ifdef NONSEPARATE
+	rap = vm_map_addr(uisa_map, 0, TRUE, FALSE);
+	rdp = vm_map_addr(uisd_map, 0, TRUE, FALSE);
+#else /* !NONSEPARATE */
+	rap = vm_map_addr(udsa_map, 0, TRUE, FALSE);
+	rdp = vm_map_addr(udsd_map, 0, TRUE, FALSE);
+#endif /* !NONSEPARATE */
+}
+
+choverlay(ovbase)
+{
+	vm_offset_t *rap, *rdp;
+#ifdef NONSEPARATE
+	rap = vm_map_addr(uisa_map, ovbase, FALSE, FALSE);
+	rdp = vm_map_addr(uisd_map, ovbase, FALSE, FALSE);
+#else /* !NONSEPARATE */
+	rap = vm_map_addr(udsa_map, ovbase, FALSE, FALSE);
+	rdp = vm_map_addr(udsd_map, ovbase, FALSE, FALSE);
+#endif /* !NONSEPARATE */
+}
 
 static int
 vm_idspace_map_check_map_entry(idspacemap, addr, size)

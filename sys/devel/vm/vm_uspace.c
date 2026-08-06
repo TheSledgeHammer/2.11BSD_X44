@@ -126,12 +126,47 @@ vm_udspace_map_init(uspace, mtype, object, min, max, size, pageable)
 	}
 }
 
-void
-vm_uspace_init(min, max)
+vm_uspace_t
+vm_uspace_allocate(min, max, size)
 	vm_offset_t min, max;
+	vm_size_t size;
 {
 	vm_uspace_t uspace;
+
+	if (min < USPACE_MIN && max > USPACE_MAX) {
+		return (NULL);
+	}
+	uspace = (vm_uspace_t)malloc(sizeof(*uspace), M_VMUSPACE, M_WAITOK);
+	//MALLOC(uspace, struct vm_uspace *, sizeof(struct vm_uspace *), M_VMUSPACE, M_WAITOK);
+	if (uspace == NULL) {
+		return (NULL);
+	}
+	vm_uspace_init(uspace, min, max, size);
+	return (uspace);
+}
+
+vm_uspace_deallocate(uspace)
+	vm_uspace_t uspace;
+{
+	if (uspace != NULL) {
+		if (uspace->idspace_i != NULL) {
+			return;
+		}
+		if (uspace->idspace_d != NULL) {
+			return;
+		}
+		free(uspace, M_VMUSPACE);
+	}
+}
+
+void
+vm_uspace_init(uspace, min, max, size)
+	vm_uspace_t uspace;
+	vm_offset_t min, max;
 	vm_size_t size;
+{
+	//vm_uspace_t uspace;
+	//vm_size_t size;
 
 	/* Allocate Uspace */
 	MALLOC(uspace, struct vm_uspace *, sizeof(struct vm_uspace *), M_VMUSPACE, M_WAITOK);
@@ -330,3 +365,53 @@ vm_uspace_read(uspace, size, segno, maptype, is_txt, is_ext)
 	}
 	return (error);
 }
+
+vm_offset_t
+vm_uspace_space(uspace, addr, use_min, use_max, maptype)
+	vm_uspace_t uspace;
+	vm_offset_t addr;
+	bool_t use_min, use_max;
+	int maptype;
+{
+	vm_idspace_t idspace_i, idspace_d;
+	vm_offset_t val;
+
+	idspace_i = uspace->idspace_i;
+	if (idspace_i != NULL) {
+		switch (maptype) {
+		case UISA:
+			val = vm_idspace_map_addr(idspace_i, uisa_space, addr, use_min, use_max);
+			break;
+		case UISD:
+			val = vm_idspace_map_addr(idspace_i, uisd_space, addr, use_min, use_max);
+			break;
+		default:
+			val = addr;
+			break;
+		}
+	}
+
+	idspace_d = uspace->idspace_d;
+	if (idspace_d != NULL) {
+		switch (maptype) {
+		case UDSA:
+			val = vm_idspace_map_addr(idspace_d, udsa_space, addr, use_min, use_max);
+			break;
+		case UDSD:
+			val = vm_idspace_map_addr(idspace_d, udsd_space, addr, use_min, use_max);
+			break;
+		default:
+			val = addr;
+			break;
+		}
+	}
+	return (val);
+}
+
+vm_offset_t vm_uspace_space(vm_uspace_t, vm_offset_t, bool_t, bool_t, int);
+
+#define USPACE_ADDR(uspace, addr, maptype) 		vm_uspace_addr((uspace), (addr), FALSE, FALSE, (maptype))
+#define USPACE_ADDR_MIN(uspace, maptype) 		vm_uspace_addr((uspace), 0, TRUE, FALSE, (maptype))
+#define USPACE_ADDR_MAX(uspace, maptype) 		vm_uspace_addr((uspace), 0, FALSE, TRUE, (maptype))
+
+#define UISA_ADDR(uspace, addr)					USPACE_ADDR(uspace, addr, UISA)

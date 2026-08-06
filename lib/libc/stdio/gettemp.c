@@ -218,24 +218,4 @@ GETTEMP(path, doopen, domkdir, slen, oflags)
 	/*NOTREACHED*/
 }
 
-#define	YES	1
-#define	NO	0
-
-int
-_gettemp(as, doopen, domkdir, slen, oflags)
-	char *as;
-	int *doopen;
-	int domkdir;
-	int slen;
-	int oflags;
-{
-	int rval;
-
-	rval = GETTEMP(as, doopen, domkdir, slen, oflags);
-	if (rval != YES) {
-		return (NO);
-	}
-	return (YES);
-}
-
 #endif /* !HAVE_NBTOOL_CONFIG_H || !HAVE_MKSTEMP || !HAVE_MKDTEMP */

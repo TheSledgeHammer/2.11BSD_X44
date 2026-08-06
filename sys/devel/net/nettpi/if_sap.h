@@ -30,9 +30,9 @@
 #define _NET_IF_SAP_H_
 
 /* malloctypes */
-#define M_SAP 	103 	/* service access point */
+#define M_IFSAP 	103 	/* service access point */
 
-#define SAPLEN 64 		/* SAP MAX LEN */
+#define SAPLEN 		64 		/* SAP MAX LEN */
 
 #define SAP_TABLE_MAX 9
 #define SAP_RADIX_MAX SAP_TABLE_MAX
@@ -83,18 +83,6 @@ struct sap_node {
 	uint32_t st_class_id;				/* class id */
 };
 
-/* sockaddr_sap radix masks */
-#define sap_smask(sap, sid) 	((sap)->st_smask[(sid)])
-#define sap_smask_unknown(sap) 	sap_smask(sap, SAP_SID_UNKNOWN)
-#define sap_smask_inet4(sap) 	sap_smask(sap, SAP_SID_INET4)
-#define sap_smask_inet6(sap)	sap_smask(sap, SAP_SID_INET6)
-#define sap_smask_ns(sap)		sap_smask(sap, SAP_SID_NS)
-#define sap_smask_iso(sap)		sap_smask(sap, SAP_SID_ISO)
-#define sap_smask_x25(sap)		sap_smask(sap, SAP_SID_X25)
-#define sap_smask_atm(sap)		sap_smask(sap, SAP_SID_ATM)
-#define sap_smask_ipx(sap)		sap_smask(sap, SAP_SID_IPX)
-#define sap_smask_sna(sap)		sap_smask(sap, SAP_SID_SNA)
-
 /* sap select id's */
 enum sap_sids {
 	SAP_SID_UNKNOWN,
@@ -108,6 +96,18 @@ enum sap_sids {
 	SAP_SID_SNA,
 	SAP_SID_MAX
 };
+
+/* sockaddr_sap radix masks */
+#define sap_smask(sap, sid) 	((sap)->st_smask[(sid)])
+#define sap_smask_unknown(sap) 	sap_smask(sap, SAP_SID_UNKNOWN)
+#define sap_smask_inet4(sap) 	sap_smask(sap, SAP_SID_INET4)
+#define sap_smask_inet6(sap)	sap_smask(sap, SAP_SID_INET6)
+#define sap_smask_ns(sap)		sap_smask(sap, SAP_SID_NS)
+#define sap_smask_iso(sap)		sap_smask(sap, SAP_SID_ISO)
+#define sap_smask_x25(sap)		sap_smask(sap, SAP_SID_X25)
+#define sap_smask_atm(sap)		sap_smask(sap, SAP_SID_ATM)
+#define sap_smask_ipx(sap)		sap_smask(sap, SAP_SID_IPX)
+#define sap_smask_sna(sap)		sap_smask(sap, SAP_SID_SNA)
 
 /* sap class types */
 enum sap_classes {

@@ -30,7 +30,7 @@
 
 #if HAVE_NBTOOL_CONFIG_H
 # include "nbtool_config.h"
-# define	GETTEMP		gettemp
+# define GETTEMP 	gettemp
 #else
 # include <assert.h>
 # include <errno.h>
@@ -40,12 +40,11 @@
 
 # include "reentrant.h"
 # include "local.h"
-//# define	GETTEMP		_gettemp
+//# define	GETTEMP	_gettemp
 #endif
 
 __BEGIN_DECLS
 int GETTEMP(char *, int *, int, int, int);
-int _gettemp(char *, int *, int, int, int);
 __END_DECLS
 
 #endif /* _GETTEMP_H_ */

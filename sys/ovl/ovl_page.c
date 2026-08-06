@@ -93,8 +93,8 @@
 #include <sys/systm.h>
 #include <sys/fnv_hash.h>
 
-#include  <ovl/include/ovl.h>
-#include  <ovl/include/ovl_page.h>
+#include <ovl/include/ovl.h>
+#include <ovl/include/ovl_page.h>
 
 struct ovl_pglist			*ovl_page_buckets;			/* Array of buckets */
 int							ovl_page_bucket_count = 0;	/* How big is array? */

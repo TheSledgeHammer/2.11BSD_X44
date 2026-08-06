@@ -29,160 +29,18 @@
 #ifndef _NETTPI_ISO_NSAP_H_
 #define _NETTPI_ISO_NSAP_H_
 
-#include <sys/queue.h>
-
-#include "iso_sap.h"
-
-/*
- * Service Access Point: (In-Kernel Only)
- * - Code is based on code from ISODE. (see isoaddrs.h)
- * - For ISODE Git:
- * 		- refer to following: https://github.com/Wildboar-Software/isode
- * Planned:
- * - replace parts of the current tpi pcb for selecting different protocol stacks.
- * - setup user library
- */
-/*
- * Changes:
- * - current selector id's for NSAP's and TSAP's are designed for
- * internal identification of other network protocols, offering a limit
- * range of connections.
- * - hence the selector id's would need change to allow a much larger range
- * of connections if they were used in user-space.
- */
-
-/* malloctypes */
-#define M_ISOSAP 	103 /* netiso service access points */
-
-/* sockaddr union structure */
-union sockaddr_union {
-	struct sockaddr_in sin4;	/* ipv4 */
-	struct sockaddr_in6 sin6;	/* ipv6 */
-	struct sockaddr_iso siso;	/* iso */
-	struct sockaddr_ns sns; 	/* xns */
-	struct sockaddr_x25 sx25;	/* x25 */
-	// sna, ipx, atm
-};
-
-/* addr union structure */
-union addr_union {
-	struct in_addr 	in4;		/* ipv4 */
-	struct in6_addr in6;		/* ipv6 */
-	struct iso_addr	iso;		/* iso */
-	struct ns_addr	ns;			/* xns */
-	struct x25_addr	x25;		/* x25 */
-	// sna, ipx, atm
-};
-
-/* NSAP: Network Service Access Point */
-/* nsap class types */
-#define NSAP_CLASS_UNKNOWN 	SAP_CLASS_UNKNOWN
-#define NSAP_CLASS_CONS		SAP_CLASS_CONS
-#define NSAP_CLASS_CLNS		SAP_CLASS_CLNS
-#define NSAP_CLASS_MAX		SAP_CLASS_MAX
-
-/* nsap addr */
-struct nsap_addr {
-	struct sap_service nsapa_service;
-#define nsapa_service_addr 		nsapa_service.ns_addr
-#define nsapa_service_addrlen 	nsapa_service.ns_addrlen
-#define nsapa_service_class 	nsapa_service.ns_class
-	union addr_union u_addr;
-#define nsapa_in4 	 u_addr.in4
-#define nsapa_in6 	 u_addr.in6
-#define nsapa_ns 	 u_addr.ns
-#define nsapa_iso 	 u_addr.iso
-#define nsapa_x25 	 u_addr.x25
-};
-
-/* sockaddr nsap */
-struct sockaddr_nsap {
-	long snsap_type; 	/* stack type */
-	long snsap_subnet;	/* subnet type */
-	long snsap_subtran;	/* subtran type */
-	/* sockaddr's */
-	union sockaddr_union u_sockaddr;
-#define snsap_sin4 	u_sockaddr.sin4
-#define snsap_sin6 	u_sockaddr.sin6
-#define snsap_sns 	u_sockaddr.sns
-#define snsap_siso 	u_sockaddr.siso
-#define snsap_sx25 	u_sockaddr.sx25
-	/* addr's */
-	struct nsap_addr snsap_addr;
-#define snsap_addr_in4 	snsap_addr.nsapa_in4
-#define snsap_addr_in6 	snsap_addr.nsapa_in6
-#define snsap_addr_ns 	snsap_addr.nsapa_ns
-#define snsap_addr_iso 	snsap_addr.nsapa_iso
-#define snsap_addr_x25 	snsap_addr.nsapa_x25
-};
-
-/* nsap stack types (labeled by sockaddr) */
-#define NSAP_TYPE_UNKNOWN 	SAP_TYPE_UNKNOWN
-#define NSAP_TYPE_SIN4		SAP_TYPE_SIN4
-#define NSAP_TYPE_SIN6		SAP_TYPE_SIN6
-#define NSAP_TYPE_SNS		SAP_TYPE_SNS
-#define NSAP_TYPE_SISO		SAP_TYPE_SISO
-#define NSAP_TYPE_SX25		SAP_TYPE_SX25
-#define NSAP_TYPE_SATM		SAP_TYPE_SATM
-#define NSAP_TYPE_SIPX		SAP_TYPE_SIPX
-#define NSAP_TYPE_SSNA		SAP_TYPE_SSNA
-#define NSAP_TYPE_MAX		SAP_TYPE_MAX
-
-/* nsap subnet types (protocols) */
-#define NSAP_SUBNET_UNKNOWN SAP_SUBNET_UNKNOWN
-#define NSAP_SUBNET_IPV4 	SAP_SUBNET_IPV4
-#define NSAP_SUBNET_IPV6 	SAP_SUBNET_IPV6
-#define NSAP_SUBNET_CONS 	SAP_SUBNET_CONS
-#define NSAP_SUBNET_CLNS 	SAP_SUBNET_CLNS
-#define NSAP_SUBNET_CLNP 	SAP_SUBNET_CLNP
-#define NSAP_SUBNET_ISIS 	SAP_SUBNET_ISIS
-#define NSAP_SUBNET_ESIS 	SAP_SUBNET_ESIS
-#define NSAP_SUBNET_IDP 	SAP_SUBNET_IDP
-#define NSAP_SUBNET_X25 	SAP_SUBNET_X25
-#define NSAP_SUBNET_ATM 	SAP_SUBNET_ATM
-#define NSAP_SUBNET_IPX 	SAP_SUBNET_IPX
-#define NSAP_SUBNET_SNA 	SAP_SUBNET_SNA
-#define NSAP_SUBNET_MAX		SAP_SUBNET_MAX
-
 /* NSAP addr (ISO/OSI equivalent) */
 struct nsap_iso {
-	LIST_ENTRY(nsap_iso) nsi_hash;		/* nsap table */
-	uint32_t nsi_id;			/* nsap id */
-	uint32_t nsi_type_id;			/* type id (not nsap_types) */
-	uint32_t nsi_subnet_id;			/* subnet id (not nsap_subnets) */
-	struct sockaddr_nsap *nsi_snsap;	/* sockaddr_nsap (BSD-style) */
-	struct nsap_addr *nsi_nsapa;		/* nsap_addr (BSD-style) */
+	struct sap_tree 	*nsi_tree;
+	struct sap_node 	*nsi_node;
+#define nsi_snsap 		nsi_node->st_sasap 	/* sockaddr_sap */
+#define nsi_nsapa 		nsi_node->st_sapa   /* sap_addr */
 };
-
-LIST_HEAD(nsapisohead, nsap_iso);
-
-/* NSAP Table: */
-struct nsapisotable {
-	struct nsapisohead *nsi_hashtbl;
-	u_long nsi_hash;
-};
-
-/* TSAP: Transport Service Access Point */
-/* tsap protocols */
-#define TSAP_SUBTRAN_UNKNOWN 	SAP_SUBTRAN_UNKNOWN
-#define TSAP_SUBTRAN_TCP 		SAP_SUBTRAN_TCP
-#define TSAP_SUBTRAN_UDP 		SAP_SUBTRAN_UDP
-#define TSAP_SUBTRAN_TP0 		SAP_SUBTRAN_TP0
-#define TSAP_SUBTRAN_TP1 		SAP_SUBTRAN_TP1
-#define TSAP_SUBTRAN_TP2 		SAP_SUBTRAN_TP2
-#define TSAP_SUBTRAN_TP3 		SAP_SUBTRAN_TP3
-#define TSAP_SUBTRAN_TP4 		SAP_SUBTRAN_TP4
-#define TSAP_SUBTRAN_SPP 		SAP_SUBTRAN_SPP
-#define TSAP_SUBTRAN_X25 		SAP_SUBTRAN_X25
-#define TSAP_SUBTRAN_ATM 		SAP_SUBTRAN_ATM
-#define TSAP_SUBTRAN_SPX 		SAP_SUBTRAN_SPX
-#define TSAP_SUBTRAN_SNA 		SAP_SUBTRAN_SNA
-#define TSAP_SUBTRAN_MAX 		SAP_SUBTRAN_MAX
 
 /* TSAP addr (ISO/OSI equivalent) */
 struct tsap_iso {
-	struct nsap_iso tsi_nsaps[ISOLEN];
-	struct sap_select tsi_select;
+	struct nsap_iso 	tsi_nsaps[SAPLEN];
+	struct sap_select 	tsi_select;
 #define tsi_selector	tsi_select.ss_selector
 #define tsi_sid			tsi_select.ss_sid
 #define tsi_af			tsi_select.ss_af
@@ -191,8 +49,8 @@ struct tsap_iso {
 /* SSAP: Session Service Access Point */
 /* SSAP addr (ISO/OSI equivalent) */
 struct ssap_iso {
-	struct tsap_iso ssi_tsaps[ISOLEN];
-	struct sap_select ssi_select;
+	struct tsap_iso 	ssi_tsaps[SAPLEN];
+	struct sap_select 	ssi_select;
 #define ssi_selector	ssi_select.ss_selector
 #define ssi_sid			ssi_select.ss_sid
 #define ssi_af			ssi_select.ss_af
@@ -201,64 +59,42 @@ struct ssap_iso {
 /* PSAP: Presentation Service Access Point */
 /* PSAP addr (ISO/OSI equivalent) */
 struct psap_iso {
-	struct ssap_iso psi_ssaps[ISOLEN];
-	struct sap_select psi_select;
+	struct ssap_iso 	psi_ssaps[SAPLEN];
+	struct sap_select 	psi_select;
 #define psi_selector	psi_select.ss_selector
 #define psi_sid			psi_select.ss_sid
 #define psi_af			psi_select.ss_af
 };
 
-/*
- * TP XSAP Router:
- * - provides tp with each iso sap layer for
- * attaching to and detaching from.
- */
-struct tp_xsap {
-	struct nsap_iso tx_nsap;
-	struct tsap_iso tx_tsap;
-	struct ssap_iso tx_ssap;
-	struct psap_iso tx_psap;
-};
-
-extern struct tp_xsap tp_xsap;
-
-/* prototypes */
-/* NSAP */
-extern uint32_t nsap_valid_ids[NSAP_TYPE_MAX][NSAP_SUBNET_MAX];
-
-void nsap_attach(struct nsap_iso *, int);
-void nsap_detach(struct nsap_iso *, int);
+/* NSAP's */
+void nsap_attach(struct nsap_iso *, int, int);
+void nsap_detach(struct nsap_iso *, int, int);
+void nsap_iso_attach(struct nsap_iso *);
+void nsap_iso_detach(struct nsap_iso *);
 int nsap_iso_compare(struct nsap_iso *, struct nsap_iso *);
-int nsap_canconnect(struct sockaddr_nsap *, void *, long, long, int);
-int nsap_candisconnect(struct sockaddr_nsap *, void *, long, long, int);
-struct nsap_iso *nsap_lookup(long, long);
-int nsap_acknowledge_snsap(struct sockaddr_nsap *, long, long);
-int nsap_acknowledge_nsapa(struct nsap_addr *, long, long, int);
 
-/* TSAP */
-extern uint32_t tsap_valid_ids[SAP_TABLE_MAX];
-
-void tsap_attach(struct tsap_iso *, struct nsap_iso *, int);
-void tsap_detach(struct tsap_iso *, struct nsap_iso *, int);
+/* TSAP's */
+void tsap_attach(struct tsap_iso *, struct nsap_iso *, int, int);
+void tsap_detach(struct tsap_iso *, struct nsap_iso *, int, int);
 struct nsap_iso *tsap_to_nsap(struct tsap_iso *);
+void tsap_iso_attach(struct tsap_iso *, struct nsap_iso *);
+void tsap_iso_detach(struct tsap_iso *, struct nsap_iso *);
 int tsap_iso_compare(struct tsap_iso *, struct tsap_iso *);
-int tsap_connect(struct tsap_iso *, void *, int);
-int tsap_disconnect(struct tsap_iso *, void *, int);
 
-/* SSAP */
-void ssap_attach(struct ssap_iso *, struct tsap_iso *, int);
-void ssap_detach(struct ssap_iso *, struct tsap_iso *, int);
+/* SSAP's */
+void ssap_attach(struct ssap_iso *, struct tsap_iso *, int, int);
+void ssap_detach(struct ssap_iso *, struct tsap_iso *, int, int);
 struct tsap_iso *ssap_to_tsap(struct ssap_iso *);
+void ssap_iso_attach(struct ssap_iso *, struct tsap_iso *);
+void ssap_iso_detach(struct ssap_iso *, struct tsap_iso *);
 int ssap_iso_compare(struct ssap_iso *, struct ssap_iso *);
-int ssap_connect(struct ssap_iso *, void *, int);
-int ssap_disconnect(struct ssap_iso *, void *, int);
 
 /* PSAP */
-void psap_attach(struct psap_iso *, struct ssap_iso *, int);
-void psap_detach(struct psap_iso *, struct ssap_iso *, int);
+void psap_attach(struct psap_iso *, struct ssap_iso *, int, int);
+void psap_detach(struct psap_iso *, struct ssap_iso *, int, int);
 struct ssap_iso *psap_to_ssap(struct psap_iso *);
+void psap_iso_attach(struct psap_iso *, struct ssap_iso *);
+void psap_iso_detach(struct psap_iso *, struct ssap_iso *);
 int psap_iso_compare(struct psap_iso *, struct psap_iso *);
-int psap_connect(struct psap_iso *, void *, int);
-int psap_disconnect(struct psap_iso *, void *, int);
 
 #endif /* _NETTPI_ISO_NSAP_H_ */
