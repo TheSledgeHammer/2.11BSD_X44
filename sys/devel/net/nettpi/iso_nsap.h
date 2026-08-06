@@ -29,6 +29,7 @@
 #ifndef _NETTPI_ISO_NSAP_H_
 #define _NETTPI_ISO_NSAP_H_
 
+/* NSAP: Network Service Access Point */
 /* NSAP addr (ISO/OSI equivalent) */
 struct nsap_iso {
 	struct sap_tree 	*nsi_tree;
@@ -37,6 +38,7 @@ struct nsap_iso {
 #define nsi_nsapa 		nsi_node->st_sapa   /* sap_addr */
 };
 
+/* TSAP: Transport Service Access Point */
 /* TSAP addr (ISO/OSI equivalent) */
 struct tsap_iso {
 	struct nsap_iso 	tsi_nsaps[SAPLEN];
@@ -89,7 +91,7 @@ void ssap_iso_attach(struct ssap_iso *, struct tsap_iso *);
 void ssap_iso_detach(struct ssap_iso *, struct tsap_iso *);
 int ssap_iso_compare(struct ssap_iso *, struct ssap_iso *);
 
-/* PSAP */
+/* PSAP's */
 void psap_attach(struct psap_iso *, struct ssap_iso *, int, int);
 void psap_detach(struct psap_iso *, struct ssap_iso *, int, int);
 struct ssap_iso *psap_to_ssap(struct psap_iso *);
