@@ -64,13 +64,14 @@ static char sccsid[] = "@(#)chown.c	8.8 (Berkeley) 4/4/94";
 void a_gid(const char *);
 void a_uid(const char *);
 void chownerr(const char *);
-u_long id(const char *, const char *);
+uid_t id(const char *, const char *);
 void usage(void);
 
 uid_t uid;
 gid_t gid;
 int Rflag, ischown, fflag;
-char *gname, *myname;
+const char *gname;
+char *myname;
 
 int
 main(int argc, char *argv[])
@@ -201,7 +202,7 @@ a_gid(const char *s)
 	if (*s == '\0')			/* Argument was "uid[:.]". */
 		return;
 	gname = s;
-	gid = ((gr = getgrnam(s)) == NULL) ? id(s, "group") : gr->gr_gid;
+	gid = ((gr = getgrnam(s)) == NULL) ? gr->gr_gid : id(s, "group");
 }
 
 void
@@ -211,13 +212,13 @@ a_uid(const char *s)
 
 	if (*s == '\0')			/* Argument was "[:.]gid". */
 		return;
-	uid = ((pw = getpwnam(s)) == NULL) ? id(s, "user") : pw->pw_uid;
+	uid = ((pw = getpwnam(s)) == NULL) ? pw->pw_uid : id(s, "user");
 }
 
-u_long
+uid_t
 id(const char *name, const char *type)
 {
-	u_long val;
+	uid_t val;
 	char *ep;
 
 	/*
@@ -234,21 +235,27 @@ id(const char *name, const char *type)
 }
 
 void
-chownerr(char *file)
+chownerr(const char *file)
 {
-	static int euid = -1, ngroups = -1;
-	int groups[NGROUPS];
+	static uid_t euid = -1;
+    static int ngroups = -1;
+    static long ngroups_max;
+	gid_t *groups;
 
 	/* Check for chown without being root. */
 	if (errno != EPERM ||
-	    (uid != -1 && euid == -1 && (euid = geteuid()) != 0)) {
+	    (uid != (uid_t)-1 && euid == (uid_t)-1 && (euid = geteuid()) != 0)) {
 		if (fflag)
 			exit(0);
 		err(1, "%s", file);
 	}
 
 	/* Check group membership; kernel just returns EPERM. */
-	if (gid != -1 && ngroups == -1) {
+	if (gid != (gid_t)(-1) && ngroups == -1 &&
+	    euid == (uid_t)(-1) && (euid = geteuid()) != 0) {
+		ngroups_max = sysconf(_SC_NGROUPS_MAX) + 1;
+		if ((groups = malloc(sizeof(gid_t) * ngroups_max)) == NULL)
+			err(1, "malloc");
 		ngroups = getgroups(NGROUPS, groups);
 		while (--ngroups >= 0 && gid != groups[ngroups]);
 		if (ngroups < 0) {
