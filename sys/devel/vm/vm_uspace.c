@@ -367,9 +367,9 @@ vm_uspace_read(uspace, size, segno, maptype, is_txt, is_ext)
 }
 
 vm_offset_t
-vm_uspace_space(uspace, addr, use_min, use_max, maptype)
+vm_uspace_offset(uspace, offset, use_min, use_max, maptype)
 	vm_uspace_t uspace;
-	vm_offset_t addr;
+	vm_offset_t offset;
 	bool_t use_min, use_max;
 	int maptype;
 {
@@ -380,13 +380,13 @@ vm_uspace_space(uspace, addr, use_min, use_max, maptype)
 	if (idspace_i != NULL) {
 		switch (maptype) {
 		case UISA:
-			val = vm_idspace_map_addr(idspace_i, uisa_space, addr, use_min, use_max);
+			val = vm_idspace_map_offset(idspace_i, uisa_space, offset, use_min, use_max);
 			break;
 		case UISD:
-			val = vm_idspace_map_addr(idspace_i, uisd_space, addr, use_min, use_max);
+			val = vm_idspace_map_offset(idspace_i, uisd_space, offset, use_min, use_max);
 			break;
 		default:
-			val = addr;
+			val = 0;
 			break;
 		}
 	}
@@ -395,23 +395,15 @@ vm_uspace_space(uspace, addr, use_min, use_max, maptype)
 	if (idspace_d != NULL) {
 		switch (maptype) {
 		case UDSA:
-			val = vm_idspace_map_addr(idspace_d, udsa_space, addr, use_min, use_max);
+			val = vm_idspace_map_offset(idspace_d, udsa_space, offset, use_min, use_max);
 			break;
 		case UDSD:
-			val = vm_idspace_map_addr(idspace_d, udsd_space, addr, use_min, use_max);
+			val = vm_idspace_map_offset(idspace_d, udsd_space, offset, use_min, use_max);
 			break;
 		default:
-			val = addr;
+			val = 0;
 			break;
 		}
 	}
 	return (val);
 }
-
-vm_offset_t vm_uspace_space(vm_uspace_t, vm_offset_t, bool_t, bool_t, int);
-
-#define USPACE_ADDR(uspace, addr, maptype) 		vm_uspace_addr((uspace), (addr), FALSE, FALSE, (maptype))
-#define USPACE_ADDR_MIN(uspace, maptype) 		vm_uspace_addr((uspace), 0, TRUE, FALSE, (maptype))
-#define USPACE_ADDR_MAX(uspace, maptype) 		vm_uspace_addr((uspace), 0, FALSE, TRUE, (maptype))
-
-#define UISA_ADDR(uspace, addr)					USPACE_ADDR(uspace, addr, UISA)

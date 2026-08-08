@@ -368,6 +368,26 @@ vm_idspace_deallocate(idspace, entry, mtype)
 	}
 }
 
+vm_offset_t
+vm_idspace_map_offset(idspace, entry, offset, use_min, use_max)
+	vm_idspace_t idspace;
+	vm_idspace_entry_t entry;
+	vm_offset_t offset;
+	bool_t use_min, use_max;
+{
+	vm_map_t map;
+
+	if (entry == NULL) {
+		return (0);
+	}
+
+	map = entry->map;
+	if (map == NULL) {
+		return (0);
+	}
+	return (vm_map_offset(map, offset, use_min, use_max));
+}
+
 int
 vm_idspace_map(idspace, entry, segno)
 	vm_idspace_t idspace;

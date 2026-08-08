@@ -31,14 +31,19 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)newfs.c	8.13 (Berkeley) 5/1/95";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1983, 1989, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 /*
@@ -181,8 +186,8 @@ char	*progname;
 int
 main(int argc, char *argv[])
 {
-	extern char *optarg;
-	extern int optind;
+	//extern char *optarg;
+	//extern int optind;
 	register int ch;
 	register struct partition *pp;
 	register struct disklabel *lp;

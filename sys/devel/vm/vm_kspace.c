@@ -328,4 +328,45 @@ vm_kspace_restore(kspace, maptype, flags)
 	return (error);
 }
 
+vm_offset_t
+vm_kspace_offset(kspace, offset, use_min, use_max, maptype)
+	vm_kspace_t kspace;
+	vm_offset_t offset;
+	bool_t use_min, use_max;
+	int maptype;
+{
+	vm_idspace_t idspace_i, idspace_d;
+	vm_offset_t val;
+
+	idspace_i = kspace->idspace_i;
+	if (idspace_i != NULL) {
+		switch (maptype) {
+		case KISA:
+			val = vm_idspace_map_offset(idspace_i, kisa_space, offset, use_min, use_max);
+			break;
+		case KISD:
+			val = vm_idspace_map_offset(idspace_i, kisd_space, offset, use_min, use_max);
+			break;
+		default:
+			val = 0;
+			break;
+		}
+	}
+
+	idspace_d = kspace->idspace_d;
+	if (idspace_d != NULL) {
+		switch (maptype) {
+		case KDSA:
+			val = vm_idspace_map_offset(idspace_d, kdsa_space, offset, use_min, use_max);
+			break;
+		case KDSD:
+			val = vm_idspace_map_offset(idspace_d, kdsd_space, offset, use_min, use_max);
+			break;
+		default:
+			val = 0;
+			break;
+		}
+	}
+	return (val);
+}
 
